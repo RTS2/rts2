@@ -11,9 +11,10 @@ int db_end_observation (int tar_id, int obs_id, const time_t * end_time);
 
 int db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id);
 
-int db_add_darkfield (char *path, const time_t * exposure_time, float
-		      exposure_length, float temp);
-int db_get_darkfield (char *camera_name, float exposure_length,
+int db_add_darkfield (char *path, const time_t * exposure_time, int
+		      exposure_length, int temp, char *camera_name);
+
+int db_get_darkfield (char *camera_name, int exposure_length,
 		      int camera_temperature, char **path);
 
 #endif /* __RTS_DB__ */

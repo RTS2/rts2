@@ -95,8 +95,8 @@ err:
 }
 
 extern int
-db_add_darkfield (char *path, const time_t * exposure_time, float
-		  exposure_length, float temp)
+db_add_darkfield (char *path, const time_t * exposure_time, int
+		  exposure_length, int temp, char *camera_name)
 {
   EXEC SQL BEGIN DECLARE SECTION;
 
@@ -104,14 +104,16 @@ db_add_darkfield (char *path, const time_t * exposure_time, float
   float chip_temp = temp;
   long int exp_time = *exposure_time;
   long int exp_length = exposure_length;
+  char *d_camera_name = camera_name;
 
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL BEGIN;
 
   EXEC SQL INSERT INTO darks (dark_name, dark_date, dark_exposure,
-			      dark_temperature)
-    VALUES (:image_path, abstime (:exp_time),:exp_length,:chip_temp);
+			      dark_temperature, camera_name)
+    VALUES (:image_path,
+	    abstime (:exp_time),:exp_length,:chip_temp,:d_camera_name);
 
   EXEC SQL END;
 
@@ -217,7 +219,7 @@ err:
  * @return set *path (malloc) and retuns 0 when dark is founded, -1 otherwise
  */
 int
-db_get_darkfield (char *camera_name, float exposure_length, int
+db_get_darkfield (char *camera_name, int exposure_length, int
 		  camera_temperature, char **path)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -226,8 +228,6 @@ db_get_darkfield (char *camera_name, float exposure_length, int
   float d_exposure_length = exposure_length;
   int d_camera_temperature = camera_temperature;
   EXEC SQL END DECLARE SECTION;
-  if (*path)
-    free (path);
   EXEC SQL BEGIN;
   EXEC SQL DECLARE dark_cursor CURSOR FOR
     SELECT dark_name FROM darks WHERE camera_name =:d_camera_name AND
@@ -237,6 +237,7 @@ db_get_darkfield (char *camera_name, float exposure_length, int
   test_sql;
   EXEC SQL OPEN dark_cursor;
   EXEC SQL FETCH next FROM dark_cursor INTO:d_path;
+  test_sql;
   if (!sqlca.sqlcode)
     {
       *path = (char *) malloc (strlen (d_path) + 1);
@@ -247,6 +248,7 @@ db_get_darkfield (char *camera_name, float exposure_length, int
     }
   *path = NULL;
   EXEC SQL CLOSE dark_cursor;
+  test_sql;
   EXEC SQL END;
   return -1;
 err:
