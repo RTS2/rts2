@@ -28,10 +28,13 @@
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
 #include "../utils/mkpath.h"
+#include "../utils/mv.h"
 #include "../writers/fits.h"
 #include "status.h"
 #include "selector.h"
 #include "../db/db.h"
+
+#define EXPOSURE_TIME		60
 
 
 int camd_id, teld_id;
@@ -92,39 +95,39 @@ data_handler (int sock, size_t size, struct image_info *image)
   mkpath (dirname, 0777);
 
   strftime (filen, 250, "%Y%m%d%H%M%S.fits", &gmt);
-  asprintf (&filename, "!%s%s", dirname, filen);
+  asprintf (&filename, "%s%s", dirname, filen);
 
-  printf ("filename: %s", filename);
+  printf ("filename: %s\n", filename);
 
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
       perror ("camc data_handler fits_init");
-      free (filename);
-      return -1;
+      ret = -1;
+      goto free_filename;
     }
 
   if (image->target_type == TARGET_DARK)
     {
       if (dark_name)
 	free (dark_name);
-      dark_name = (char *) malloc (strlen (filename));
-      strcpy (dark_name, filename + 1);
+      dark_name = (char *) malloc (strlen (filename) + 1);
+      strcpy (dark_name, filename);
     }
-  free (filename);
-
   printf ("reading data socket: %i size: %i\n", sock, size);
 
   while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
     {
       if ((ret = fits_handler (data, s, &receiver)) < 0)
-	return -1;
+	goto free_filename;
       if (ret == 1)
 	break;
     }
+
   if (s < 0)
     {
       perror ("camc data_handler");
-      return -1;
+      ret = -1;
+      goto free_filename;
     }
 
   printf ("reading finished\n");
@@ -133,7 +136,8 @@ data_handler (int sock, size_t size, struct image_info *image)
       || fits_close (&receiver))
     {
       perror ("camc data_handler fits_write");
-      return -1;
+      ret = -1;
+      goto free_filename;
     }
 
   switch (image->target_type)
@@ -141,21 +145,20 @@ data_handler (int sock, size_t size, struct image_info *image)
     case TARGET_LIGHT:
       printf ("chdir %s\n", dirname);
 
-      if (chdir (dirname))
+      if ((ret = chdir (dirname)))
 	{
 	  perror ("chdir");
-	  return -1;
+	  goto free_filename;
 	}
-      free (dirname);
 
       asprintf (&cmd, "/home/rtopera/bin/detect %s 2>&1", filen);
       printf ("calling %s.", cmd);
 
-      if (system (cmd))
+      if ((ret = system (cmd)))
 	{
 	  perror ("system");
 	  free (cmd);
-	  return -1;
+	  goto free_filename;
 	}
 
       free (cmd);
@@ -168,7 +171,8 @@ data_handler (int sock, size_t size, struct image_info *image)
 	{
 	  perror ("popen");
 	  free (cmd);
-	  return -1;
+	  ret = -1;
+	  goto free_filename;
 	};
 
       free (cmd);
@@ -179,28 +183,40 @@ data_handler (int sock, size_t size, struct image_info *image)
 	  (past_out, "%li %f %f (%f,%f)", &id, &ra, &dec, &ra_err,
 	   &dec_err) != 5)
 	{
-	  printf ("scanf error, invalid line\n");
-	  return -1;
+	  char *trash_name;
+	  asprintf (&trash_name, "/trash/%s", filen);
+	  printf ("%s scanf error, invalid line\n", filename);
+	  printf ("mv %s -> %s", filename, trash_name);
+	  if ((ret = (mv (filename, trash_name))))
+	    perror ("rename bad image");
+	  printf ("..OK\n");
+	  free (trash_name);
+	  goto free_filename;
 	}
 
-      printf ("ra: %f dec: %f ra_err: %f dec_err: %f\n", ra, dec, ra_err,
-	      dec_err);
+      printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
+	      ra_err, dec_err);
 
-      return devcli_command (teld_id, NULL, "correct %i %f %f",
-			     image->telescope.correction_mark, ra_err / 60.0,
-			     dec_err / 60.0);
+      if (!devcli_command (teld_id, NULL, "correct %i %f %f",
+			   image->telescope.correction_mark, ra_err / 60.0,
+			   dec_err / 60.0))
+	perror ("telescope correct");
+      break;
+
     case TARGET_DARK:
-      free (dirname);
-
       printf ("darkname: %s\n", dark_name);
 
-      return db_add_darkfield (dark_name, &image->exposure_time,
-			       image->exposure_length,
-			       image->camera.ccd_temperature * 100);
+      ret = db_add_darkfield (dark_name, &image->exposure_time,
+			      image->exposure_length,
+			      image->camera.ccd_temperature * 100);
+      break;
     }
 
   free (dirname);
   return 0;
+free_filename:
+  free (filename);
+  return ret;
 #undef receiver
 }
 
@@ -215,7 +231,7 @@ readout (struct target *plan, int npic)
 
       info = (struct image_info *) malloc (sizeof (struct image_info));
       info->exposure_time = time (NULL);
-      info->exposure_length = 120;
+      info->exposure_length = EXPOSURE_TIME;
       info->target_id = plan->id;
       info->observation_id = plan->obs_id;
       info->target_type = plan->type;
@@ -342,14 +358,33 @@ main (int argc, char **argv)
   TELD_WRITE_READ ("ready");
   TELD_WRITE_READ ("info");
 
+  srandom (time (NULL));
+
   umask (0x002);
 
-  plan = (struct target*) malloc (sizeof (struct target));
+  devcli_server_command (NULL, "priority 137");
 
-  printf ("Making plan... \n");
+  printf ("waiting for priority\n");
+
+  devcli_wait_for_status ("teld", "priority", DEVICE_MASK_PRIORITY,
+			  DEVICE_PRIORITY, 0);
+
+  printf ("waiting end\n");
+
+
+  plan = (struct target *) malloc (sizeof (struct target));
+
   time (&start_time);
   start_time += 20;
-  get_next_plan (plan, SELECTOR_AIRMASS, NULL, start_time, 0);
+
+
+  printf ("Making plan %li... \n", start_time);
+  if (get_next_plan
+      (plan, SELECTOR_AIRMASS, NULL, start_time, 0, EXPOSURE_TIME))
+    {
+      printf ("Error making plan\n");
+      exit (EXIT_FAILURE);
+    }
   printf ("...plan made\n");
   fflush (stdout);
 
@@ -364,14 +399,6 @@ main (int argc, char **argv)
 	  continue;
 	}
 
-      devcli_server_command (NULL, "priority 120");
-
-      printf ("waiting for priority\n");
-
-      devcli_wait_for_status ("teld", "priority", DEVICE_MASK_PRIORITY,
-			      DEVICE_PRIORITY, 0);
-
-      printf ("waiting end\n");
 
       if (last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
 	{
@@ -415,12 +442,12 @@ main (int argc, char **argv)
 
       time (&t);
       printf ("exposure countdown %s..\n", ctime (&t));
-      t += 120;
+      t += EXPOSURE_TIME;
       printf ("readout at: %s\n", ctime (&t));
       if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
-	  devcli_command (camd_id, NULL, "expose 0 %i 120",
-			  last->type != TARGET_DARK))
+	  devcli_command (camd_id, NULL, "expose 0 %i %i",
+			  last->type != TARGET_DARK, EXPOSURE_TIME))
 	{
 	  perror ("expose:");
 	}
@@ -428,7 +455,8 @@ main (int argc, char **argv)
       // generate next plan entry
       i++;
       plan = (struct target *) malloc (sizeof (struct target));
-      get_next_plan (plan, SELECTOR_AIRMASS, last, start_time, i);
+      get_next_plan (plan, SELECTOR_AIRMASS, last, start_time, i,
+		     EXPOSURE_TIME);
       last->next = plan;
       printf ("next plan #%i: id %i type %i\n", i, last->next->id,
 	      last->next->type);
