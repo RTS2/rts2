@@ -65,8 +65,8 @@ move (struct target *last)
       struct ln_hrz_posn hrz;
       object.ra = last->ra;
       object.dec = last->dec;
-      observer.lat = 37.1;
-      observer.lng = 6.377;
+      observer.lat = telescope->info.telescope.latitude;
+      observer.lng = telescope->info.telescope.longtitude;
       get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
@@ -118,7 +118,9 @@ generate_next (int i, struct target *plan)
   printf ("Making plan %s", ctime (&start_time));
   if (get_next_plan
       (plan, SELECTOR_AIRMASS, &start_time, i, EXPOSURE_TIME,
-       devcli_server ()->statutes[0].status, 6.733, 37.1))
+       devcli_server ()->statutes[0].status,
+       telescope->info.telescope.longtitude,
+       telescope->info.telescope.latitude))
     {
       printf ("Error making plan\n");
       exit (EXIT_FAILURE);
