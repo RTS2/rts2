@@ -1,3 +1,30 @@
+0.3
+===
+ * planner
+    o language definition
+    o threading of planner tasks
+ * telescope 
+    o position corections
+
+0.2
+===
+ * client library
+    o messages, responses and data handling
+    o design
+ * central server
+    o IPC with select
+    o design
+
+0.1.1
+===
+ * priority handling
+    o messages in serverd
+    o receiving in devdem
+    o priority blocks
+    o thread canceling
+ * DEVDEM_WITH_CLIENT macro
+    o changes in devdem.[hc] to accomodate such macro
+
 0.1
 ===
  * basic functionality
