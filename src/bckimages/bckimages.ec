@@ -4,6 +4,7 @@
 #include "../utils/mkpath.h"
 #include "../utils/mv.h"
 
+#include <ctype.h>
 #include <getopt.h>
 #include <glob.h>
 #include <libgen.h>
@@ -25,8 +26,11 @@ struct move_files
 };
 
 int
-move_images (char *epoch_id, int old_med, int new_med, int max_size)
+move_images (char *epoch_id, int old_med, int new_med, double max_size)
 {
+  double size_count = 0;
+  int img_move_count = 0;
+  int file_move_count = 0;
   EXEC SQL BEGIN DECLARE SECTION;
   VARCHAR old_path[200];
   VARCHAR new_path[200];
@@ -39,10 +43,8 @@ move_images (char *epoch_id, int old_med, int new_med, int max_size)
   EXEC SQL END DECLARE SECTION;
   struct stat fst;
   struct move_files *mvf, *tmvf;
-  int move_files_count = 1;
   char *new_path_str, *old_path_str;
   EXEC SQL BEGIN;
-
   EXEC SQL DECLARE images_to_move CURSOR FOR SELECT imgpath (med_id, epoch_id,
 							     mount_name,
 							     camera_name,
@@ -59,13 +61,15 @@ move_images (char *epoch_id, int old_med, int new_med, int max_size)
 
   EXEC SQL OPEN images_to_move;
 
-  printf ("fetching rows..\n");
+  printf ("Fetching rows\n");
 
   while (!sqlca.sqlcode)
     {
+      double tmp_count = 0;
+      int move_files_count = 1;
       EXEC SQL FETCH next FROM images_to_move
 	INTO:old_path,:new_path,:camera_name,:mount_name,:img_date;
-      if (sqlca.sqlcode)
+      if (sqlca.sqlcode < 0)
 	{
 	  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 	  return -1;
@@ -73,9 +77,9 @@ move_images (char *epoch_id, int old_med, int new_med, int max_size)
       old_path_str = (char *) malloc (old_path.len + 1);
       new_path_str = (char *) malloc (new_path.len + 1);
       memcpy (old_path_str, old_path.arr, old_path.len);
-      old_path_str[old_path.len + 1] = '\0';
+      old_path_str[old_path.len] = 0;
       memcpy (new_path_str, new_path.arr, new_path.len);
-      old_path_str[new_path.len + 1] = '\0';
+      new_path_str[new_path.len] = 0;
       if (stat (old_path_str, &fst))
 	{
 	  printf ("Missing image file %s\n", old_path_str);
@@ -89,46 +93,55 @@ move_images (char *epoch_id, int old_med, int new_med, int max_size)
 	  strcpy (glob_str, old_path_str);
 	  strcat (glob_str, ".*");
 	  max_size -= fst.st_size;
-
-	  if (glob (glob_str, GLOB_ERR, NULL, &pglob))
+	  tmp_count += fst.st_size;
+	  if (!glob (glob_str, GLOB_ERR, NULL, &pglob))
 	    {
 	      char **fn = pglob.gl_pathv;
-	      mvf = (struct move_files *) malloc (1 + pglob.gl_pathc);
+	      mvf =
+		(struct move_files *) malloc (sizeof (struct move_files) *
+					      (pglob.gl_pathc + 1));
 	      mvf->old_path = old_path_str;
 	      mvf->new_path = new_path_str;
 	      tmvf = mvf;
 	      tmvf++;
-	      for (; fn; fn++, tmvf++, move_files_count++)
+	      for (; *fn; fn++, tmvf++, move_files_count++)
 		{
 		  char *new_glob_path =
 		    (char *) malloc (new_path.len + strlen (*fn) -
 				     old_path.len + 1);
-		  strcpy (new_glob_path, old_path_str);
-		  strcat (new_glob_path, *fn + old_path.len + 1);
-		  printf ("%s->%s", *fn, new_glob_path);
-		  stat (*fn, &fst);
+		  strcpy (new_glob_path, new_path_str);
+		  strcat (new_glob_path, *fn + old_path.len);
+		  if (stat (*fn, &fst))
+		    {
+		      perror ("stat");
+		      continue;
+		    }
 		  max_size -= fst.st_size;
+		  tmp_count += fst.st_size;
 		  tmvf->old_path = strdup (*fn);
 		  tmvf->new_path = new_glob_path;
 		}
 	    }
 	  else
 	    {
-	      mvf = (struct move_files *) malloc (1);
+	      mvf = (struct move_files *) malloc (sizeof (struct move_files));
 	      mvf->old_path = old_path_str;
 	      mvf->new_path = new_path_str;
 	    }
 	  free (glob_str);
 	  globfree (&pglob);
-	  printf ("globbing OK\n");
 
 	  if (max_size < 0)
 	    {
-	      printf ("files to big, ending");
+	      printf
+		("End after moving %i images (%i files, %.0f bytes), size exceeded.\n",
+		 img_move_count, file_move_count, size_count);
 	      EXEC SQL CLOSE images_to_move;
 	      EXEC SQL END;
 	      return 0;
 	    }
+
+	  size_count += tmp_count;
 
 	  if (do_move)
 	    {
@@ -140,23 +153,31 @@ move_images (char *epoch_id, int old_med, int new_med, int max_size)
 		img_date =:img_date AND camera_name =:camera_name AND
 		mount_name =:mount_name;
 	    };
-
-	  printf ("dir make, db changed\n");
-
+	  img_move_count++;
 	  for (i = 0, tmvf = mvf; i < move_files_count; i++, tmvf++)
 	    {
-	      printf ("%s->%s\n", tmvf->old_path, tmvf->new_path);
+	      printf ("%s->%s", tmvf->old_path, tmvf->new_path);
 	      if (do_move)
 		{
-		  mv (tmvf->old_path, tmvf->new_path);
-		};
+		  if (mv (tmvf->old_path, tmvf->new_path))
+		    printf ("..failed\n");
+		  else
+		    printf ("..ok\n");
+		}
+	      else
+		{
+		  printf ("..not done\n");
+		}
+	      file_move_count++;
 	      free (tmvf->old_path);
 	      free (tmvf->new_path);
 	    }
 	  free (mvf);
 	}
     }
-  printf ("last row sucessfully fetched.\n");
+  printf
+    ("Last table row sucessfully fetched.\n%i images (%i files) were moved (%.0f bytes of data)\n",
+     img_move_count, file_move_count, size_count);
 
   EXEC SQL CLOSE images_to_move;
   EXEC SQL END;
@@ -169,16 +190,18 @@ main (int argc, char **argv)
   int c;
   char *epoch_name;
 //  char cameras_names[500];
-  long max_size = 0;
+  double max_size = 0;
   int new_med = -1;
   int old_med = -1;
+  int vali;
+  char *size_str;
 
 //  cameras_names[0] = 0;
-  epoch_name = "002";
+  epoch_name = NULL;
 
   while (1)
     {
-      c = getopt (argc, argv, "hin:m:v");
+      c = getopt (argc, argv, "hin:m:ve:");
       if (c == -1)
 	break;
       switch (c)
@@ -191,7 +214,7 @@ main (int argc, char **argv)
 	  if (epoch_name)
 	    {
 	      fprintf (stderr,
-		       "Cannot work with more than three epoch names.\n");
+		       "Cannot work with more than one epoch names.\n");
 	      exit (EXIT_FAILURE);
 	    }
 	  if (strlen (optarg) != 3)
@@ -212,7 +235,8 @@ main (int argc, char **argv)
 		  "\t-m <med_id>         old media id (from where images will be moved)\n"
 		  "\t-h                  prints that help\n"
 		  "\t-i                  don't do any move, just print what will be done\n"
-		  "  Size is given in bytes\n", argv[0]);
+		  "  Size is given in bytes as n, MB as nM or GB as nG.\n",
+		  argv[0]);
 	  exit (EXIT_SUCCESS);
 	case 'i':
 	  do_move = 0;
@@ -237,9 +261,39 @@ main (int argc, char **argv)
       fprintf (stderr, " You must specifie new size as only parameter!\n");
       exit (EXIT_FAILURE);
     }
-  max_size = atoi (argv[optind++]);
-  if (epoch_name)
-    printf ("Epoch name: %s\n", epoch_name);
+  size_str = argv[optind++];
+  vali = strlen (size_str) - 1;
+  c = size_str[vali];
+  if (isalpha (size_str[vali]))
+    {
+      size_str[vali] = 0;
+      max_size = atof (size_str);
+      printf ("%f\n", max_size);
+      switch (c)
+	{
+	case 'G':
+	case 'g':
+	  max_size *= 1024 * 1024 * 1024;	// gb = 2 ^ 32 b
+	  break;
+	case 'M':
+	case 'm':
+	  max_size *= 1024 * 1024;
+	  break;
+	case 'K':
+	case 'k':
+	  max_size *= 1024;
+	  break;
+	default:
+	  fprintf (stderr, "Unknow size value '%c'.\n", c);
+	  exit (EXIT_FAILURE);
+	}
+    }
+  else
+    max_size = atof (size_str);
+  if (!epoch_name)
+    epoch_name = "002";
+  printf ("Epoch name: %s\n", epoch_name);
+  printf ("Size: %.0f bytes\n", max_size);
   if (new_med == -1 || old_med == -1)
     {
       fprintf (stderr, "Medias id must be given!\n");
