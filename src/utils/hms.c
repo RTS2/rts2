@@ -85,7 +85,7 @@ hmstod (const char *hptr)
   return ret;
 }
 
-/* Gives h, m and s values from double.
+/** Gives h, m and s values from double.
 *
 * @see hmstod
 * @param value Value to convert
@@ -115,7 +115,7 @@ dtoints (double value, int *h, int *m, int *s)
   return 0;
 }
 
-/* Opposite to hmstod.
+/** Opposite to hmstod.
 * @see hmstod
 * @param value Value to convert
 * @param hptr  Should be allocated to minimal 10 characters

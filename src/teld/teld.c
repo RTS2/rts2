@@ -1,4 +1,5 @@
-/*! Telescope deamon.
+/*! 
+* @file Telescope deamon.
 * $Id$
 * @author petr
 */

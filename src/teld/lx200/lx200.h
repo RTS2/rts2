@@ -17,6 +17,7 @@
 #define PORT_TIMEOUT	5
 
 // basic functions
+int tel_status (int *status);
 int tel_connect (const char *devptr);
 void tel_cleanup (int err, void *args);
 int tel_is_ready (void);

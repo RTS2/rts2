@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -g
 LDFLAGS = -lm -lpthread
 
-all: test devdem.o
+all: devdem.o devcli.o hms.o
 
 test: hms.o test.o
 

@@ -203,6 +203,11 @@ camd_handle_command (char *argv, size_t argc)
     {
       test_length (1);
       get_chip;
+      if (readout[chip].data_size_in_bytes == 0)
+	{
+	  devdem_write_command_end ("Data not available", DEVDEM_E_SYSTEM);
+	  return -1;
+	}
       ret =
 	devdem_send_data (NULL, readout[chip].data,
 			  readout[chip].data_size_in_bytes);
@@ -216,7 +221,7 @@ camd_handle_command (char *argv, size_t argc)
       cool.temperature = round (strtod (param, &endpar) * 10);
       if (endpar && !*endpar)
 	{
-	  devdem_write_command_end ("Invalit temperature: %s",
+	  devdem_write_command_end ("Invalid temperature: %s",
 				    DEVDEM_E_PARAMSVAL, param);
 	  return -1;
 	}

@@ -1,20 +1,21 @@
-/*! @file Device daemon skeleton code.
-* $Id$
-* Implements simple TCP/IP server, calling hander for every command it
-* receives.
-*
-* Command string is defined as follow:
-* <ul>
-* 	<li>commands ::= com | com + ';' + commands
-* 	<li>com ::= name + ' '\+ + params
-* 	<li>params ::= '' | par + ' '\+ + params
-* 	<li>par ::= hms | decimal | integer
-* </ul>
-* In dev demon is implemented only split for ';', all other splits
-* must be implemented in a device driver handler routine.
-*
-* @author petr
-*/
+/*! 
+ * @file Device daemon skeleton code.
+ * $Id$
+ * Implements simple TCP/IP server, calling hander for every command it
+ * receives.
+ *
+ * Command string is defined as follow:
+ * <ul>
+ * 	<li>commands ::= com | com + ';' + commands
+ * 	<li>com ::= name + ' '\+ + params
+ * 	<li>params ::= '' | par + ' '\+ + params
+ * 	<li>par ::= hms | decimal | integer
+ * </ul>
+ * In dev demon is implemented only split for ';', all other splits
+ * must be implemented in a device driver handler routine.
+ *
+ * @author petr
+ */
 
 #define _GNU_SOURCE
 

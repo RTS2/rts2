@@ -1,24 +1,25 @@
-/*! @file Status constant.
+/*! @file 
+ * Status constants.
+ * 
  * @author petr
  */
 
 // Camera status
 
-#define CAM_READY 		0x00
+#define CAM_MASK_EXPOSE		0x01
 
-#define CAM_MASK_EXPOSE		0x03
+#define CAM_NOEXPOSURE		0x00
+#define CAM_EXPOSING		0x01
 
-#define CAM_NOEXPOSE		0x00
-#define CAM_EXPOSE		0x01
+#define CAM_MASK_READING	0x02
+
+#define CAM_NOTREADING		0x00
 #define CAM_READING		0x02
-#define CAM_READED		0x03
 
-#define CAM_MASK_COOLING	0x0C
+#define CAM_MASK_DATA		0x04
 
-#define CAM_COOL_OF		0x00
-#define CAM_FAN_ON		0x04
-#define CAM_COOL_PWR		0x08
-#define CAM_COOL_TEMP		0x0C
+#define CAM_NODATA		0x00
+#define CAM_DATA		0x04
 
 #define CAM_MASK_SHUTTER	0x30
 
@@ -26,14 +27,18 @@
 #define CAM_SHUT_SET		0x10
 #define CAM_SHUT_TRANS		0x20
 
-#define CAM_MASK_KIND		0xC0
+#define CAM_MASK_COOLING	0xC0
 
-#define CAM_CAM			0x00
-#define CAM_CHIP		0x40
+#define CAM_COOL_OFF		0x00
+#define CAM_COOL_FAN		0x40
+#define CAM_COOL_PWR		0x80
+#define CAM_COOL_TEMP		0xC0
+
 
 // telescope status
+#define TEL_MASK_MOVING		0x01
 
-#define TEL_READY		0x00
+#define TEL_STILL		0x00
 #define TEL_MOVING		0x01
 
 #define TEL_MASK_TRACK		0x02

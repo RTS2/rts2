@@ -7,10 +7,10 @@ all: camd
 camd: camd.o sbig.o pardrv.a ../utils/devdem.o
 
 clean: 
-	$(RM) -rf *.o *~ core
+	$(RM) *.o *~ core
 
 mrproper:
-	$(RM) -rf *.o *~ core
+	$(RM) *.o *~ core camd
 
 indent:
 	indent *.c *h

@@ -32,6 +32,7 @@
 
 #include "lx200.h"
 #include "../utils/hms.h"
+#include "../status.h"
 
 //! device name
 char *port_dev;
@@ -69,6 +70,25 @@ tel_cleanup (int err, void *args)
     syslog (LOG_ERR, "semctl %i IPC_RMID: %m", semid);
 }
 
+/*! Reports telescope status
+ *
+ * @param status Status to return
+ * @return 0 on success, -1 & set errno otherwise
+ */
+int
+tel_status (int *status)
+{
+  union semun sem_un;
+  *status = 0;
+  if (semctl (semid, SEM_MOVE, IPC_STAT, &sem_un) < 0)
+    {
+      syslog (LOG_ERR, "semctl: %m");
+      return -1;
+    }
+  *status |= sem_un.val ? TEL_MOVING : TEL_STILL;
+  return 0;
+}
+
 /*! Connect on given port
  * 
  * @param devptr Pointer to device name
@@ -85,6 +105,7 @@ tel_connect (const char *devptr)
   port_dev = malloc (strlen (devptr) + 1);
   strcpy (port_dev, devptr);
   port = open (port_dev, O_RDWR);
+  free (port_dev);
   if (port < 0)
     return -1;
 
@@ -118,7 +139,7 @@ tel_connect (const char *devptr)
 
   if (semctl (semid, 0, SETALL, sem_un) < 0)
     {
-      syslog (LOG_ERR, "semop init: %m");
+      syslog (LOG_ERR, "semctl init: %m");
       return -1;
     }
 
@@ -235,6 +256,9 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
     return -1;
   if (tcflush (port, TCIOFLUSH) < 0)
     goto unlock;		// we need to unlock
+  if (tel_write (wbuf, wcount) < 0)
+    goto unlock;
+
   if (tel_write (wbuf, wcount) < 0)
     goto unlock;
 

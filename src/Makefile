@@ -9,6 +9,7 @@ clean:
 	for dir in $(SUBDIRS) ; do 	\
 		$(MAKE) -C $$dir clean;	\
 	done
+	$(RM) *~ core
 
 indent:
 	for dir in $(SUBDIRS) ; do 	\

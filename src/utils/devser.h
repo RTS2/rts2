@@ -1,7 +1,9 @@
-/*! @file Device deamon header file.
-* $Id$
-* @author petr
-*/
+/*! 
+ * @file Device deamon header file.
+ * $Id$
+ * @author petr
+ */
+
 #ifndef __RTS_DEVDEM__
 #define __RTS_DEVDEM__
 
