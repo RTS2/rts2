@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <getopt.h>
 #include <mcheck.h>
 #include <pthread.h>
