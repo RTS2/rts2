@@ -5,7 +5,7 @@ BIN = teld_lx200
 all: $(BIN)
 
 CFLAGS = @CFLAGS@ -I@top_srcdir@/include
-LDFLAGS = @LDFLAGS@ @LIBS@
+LDFLAGS = @LDFLAGS@ @LIB_M@ @LIB_PTHREAD@
 
 lx200/lx200.a: telescope.h lx200/Makefile lx200/lx200.c
 	$(MAKE) -C lx200

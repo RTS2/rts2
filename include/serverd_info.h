@@ -51,7 +51,6 @@ struct client
   int id;
   char login[CLIENT_LOGIN_SIZE];
   int priority;
-  char active;
   char have_priority;
   char status_txt[MAX_STATUS_TXT];
   struct client *next;

@@ -44,15 +44,16 @@
 
 
 // telescope status
-#define TEL_MASK_MOVING		0x01
+#define TEL_MASK_MOVING		0x03
 
-#define TEL_STILL		0x00
+#define TEL_OBSERVING		0x00
 #define TEL_MOVING		0x01
+#define TEL_PARKED		0x02
 
-#define TEL_MASK_TRACK		0x02
+#define TEL_MASK_TRACK		0x04
 
 #define TEL_NOTRACK		0x00
-#define TEL_TRACKING		0x02
+#define TEL_TRACKING		0x04
 
 // dome status
 

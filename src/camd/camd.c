@@ -99,8 +99,8 @@ void
 clean_readout_cancel (void *arg)
 {
   devdem_status_mask (READOUT->chip,
-		      CAM_MASK_READING | CAM_MASK_DATA,
-		      CAM_NOTREADING | CAM_NODATA, "reading chip canceled");
+		      CAM_MASK_READING,
+		      CAM_NOTREADING, "reading chip canceled");
 }
 
 // wrapper to call sbig readout in thread 
@@ -151,8 +151,8 @@ start_readout (void *arg)
 
   syslog (LOG_INFO, "reading chip %i finished.", READOUT->chip);
   devdem_status_mask (READOUT->chip,
-		      CAM_MASK_READING | CAM_MASK_DATA,
-		      CAM_NOTREADING | CAM_NODATA, "reading chip finished");
+		      CAM_MASK_READING,
+		      CAM_NOTREADING, "reading chip finished");
   return NULL;
 
 err:
@@ -160,8 +160,7 @@ err:
   devser_data_done (READOUT->conn_id);
   syslog (LOG_ERR, "error during chip %i readout", READOUT->chip);
   devdem_status_mask (READOUT->chip,
-		      CAM_MASK_READING | CAM_MASK_DATA,
-		      CAM_NOTREADING | CAM_NODATA, "reading chip error");
+		      CAM_MASK_READING, CAM_NOTREADING, "reading chip error");
   return NULL;
 }
 
@@ -383,8 +382,8 @@ camd_handle_command (char *command)
 	}
 
       devdem_status_mask (chip,
-			  CAM_MASK_READING,
-			  CAM_READING, "reading chip started");
+			  CAM_MASK_READING | CAM_MASK_DATA,
+			  CAM_READING | CAM_NODATA, "reading chip started");
 
       if ((ret =
 	   devser_thread_create (start_readout,
@@ -392,8 +391,8 @@ camd_handle_command (char *command)
 				 &rd->thread_id, clean_readout_cancel)))
 	{
 	  devdem_status_mask (chip,
-			      CAM_MASK_READING | CAM_MASK_DATA,
-			      CAM_NOTREADING | CAM_NODATA,
+			      CAM_MASK_READING,
+			      CAM_NOTREADING,
 			      "error creating readout thread");
 
 	  devser_data_done (rd->conn_id);

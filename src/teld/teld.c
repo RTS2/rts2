@@ -56,7 +56,7 @@ void
 client_move_cancel (void *arg)
 {
   telescope_stop ();
-  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
+  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "move canceled");
 }
 
 void *
@@ -65,11 +65,11 @@ start_move (void *arg)
   int ret;
   if ((ret = telescope_move_to (RADEC->ra, RADEC->dec)) < 0)
     {
-      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "with error");
     }
   else
     {
-      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move finished");
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "move finished");
     }
   return NULL;
 }
@@ -87,11 +87,11 @@ start_park (void *arg)
   int ret;
   if ((ret = telescope_park ()) < 0)
     {
-      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "with error");
     }
   else
     {
-      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "parked");
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "parked");
     }
   return NULL;
 }
@@ -146,7 +146,7 @@ teld_handle_command (char *command)
 	  devser_thread_create (start_move, (void *) &coord, sizeof coord,
 				NULL, client_move_cancel) < 0)
 	{
-	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL,
+	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
 			      "cannot create thread");
 	}
       devdem_priority_block_end ();
@@ -229,7 +229,7 @@ teld_handle_command (char *command)
 	  devser_thread_create (start_park, NULL, 0, NULL,
 				client_move_cancel) < 0)
 	{
-	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL,
+	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
 			      "not parking - cannot create thread");
 	}
       devdem_priority_block_end ();
