@@ -2,6 +2,7 @@
 #include <mcheck.h>
 #include <libnova.h>
 #include <getopt.h>
+#include <panel.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -17,6 +18,7 @@
 
 WINDOW *status_win;
 WINDOW *cmd_win;
+PANEL *stdpanel;
 
 #define ROW_SIZE	10
 #define COL_SIZE	25
@@ -195,7 +197,7 @@ status (WINDOW * wnd, struct device *dev)
   else
     wstandout (wnd);
 
-  mvwprintw (wnd, 0, 1, "==== Name: %s ======", dev->name);
+  mvwprintw (wnd, 0, 1, "==== DEV: %-8s ===", dev->name);
   if (ret)
     {
       if (has_colors ())
@@ -245,6 +247,23 @@ status_change (struct device *dev, char *status_name, int new_state)
 {
   status ((WINDOW *) dev->notifier_data, dev);
   return 0;
+}
+
+int
+msg_box (char *message)
+{
+  int key = 0;
+  WINDOW *wnd = newwin (5, COLS / 2, LINES / 2, COLS / 2 - COLS / 4);
+  PANEL *msg_pan = new_panel (wnd);
+  box (wnd, 0, 0);
+  mvwprintw (wnd, 2, 2 + (COLS / 2 - strlen (message)) / 2, message);
+  wrefresh (wnd);
+  key = wgetch (wnd);
+  del_panel (msg_pan);
+  delwin (wnd);
+  update_panels ();
+  doupdate ();
+  return key;
 }
 
 int
@@ -331,7 +350,9 @@ main (int argc, char **argv)
   wnd_col = COLS / COL_SIZE;
   wnd = (WINDOW **) malloc (sizeof (WINDOW) * wnd_row * wnd_col);
 
-  cmd_win = newwin (2, COLS, 0, 0);
+  stdpanel = new_panel (stdscr);
+
+  cmd_win = subwin (stdscr, 2, COLS, 0, 0);
 
   keypad (cmd_win, TRUE);
   scrollok (cmd_win, TRUE);
@@ -340,8 +361,8 @@ main (int argc, char **argv)
   for (cmd_col = 0; cmd_col < wnd_col; cmd_col++)
     for (cmd_line = 0; cmd_line < wnd_row; cmd_line++)
       wnd[cmd_col * wnd_row + cmd_line] =
-	newwin (l / wnd_row, COLS / wnd_col, 2 + cmd_line * l / wnd_row,
-		cmd_col * COLS / wnd_col);
+	subwin (stdscr, l / wnd_row, COLS / wnd_col,
+		2 + cmd_line * l / wnd_row, cmd_col * COLS / wnd_col);
   cmd_line = 0;
   cmd_col = 0;
   status_win = wnd[wnd_col * wnd_row - 1];
@@ -371,13 +392,16 @@ main (int argc, char **argv)
       switch (key)
 	{
 	case KEY_F (2):
-	  devcli_server_command (NULL, "off");
+	  if (msg_box ("Are you sure to switch off (y/n)?") == 'y')
+	    devcli_server_command (NULL, "off");
 	  break;
 	case KEY_F (3):
-	  devcli_server_command (NULL, "standby");
+	  if (msg_box ("Are you sure to switch to standby (y/n)?") == 'y')
+	    devcli_server_command (NULL, "standby");
 	  break;
 	case KEY_F (4):
-	  devcli_server_command (NULL, "on");
+	  if (msg_box ("Are you sure to switch to on (y/n)?") == 'y')
+	    devcli_server_command (NULL, "on");
 	  break;
 	case KEY_F (5):
 	  status (wnd[wnd_col * wnd_row - 2], devcli_server ());
@@ -439,6 +463,7 @@ end:
 
   devcli_server_disconnect ();
 
+  del_panel (stdpanel);
   nocbreak ();
   echo ();
   endwin ();

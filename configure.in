@@ -50,6 +50,14 @@ AC_SUBST(LIB_NCURSES), [cat << EOF
 EOF
 exit 1])
 
+AC_CHECK_LIB([panel], [update_panels], LIB_PANEL="-lpanel";
+AC_SUBST(LIB_PANEL), [cat <<EOF
+**** You don't have panel library installed, which is
+**** ussually part of ncurses library. Please prove
+**** your system for such library.
+EOF
+exit 1])
+
 AC_CHECK_LIB([nova], [get_ln_version], LIB_NOVA="-lnova"; 
 AC_SUBST(LIB_NOVA), [cat << EOF
 **** You don't have libnova library.
