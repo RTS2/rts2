@@ -4,6 +4,9 @@
  * <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
  * <cguirao@eso.org>
  *
+ * This is JUST A DRIVER, you shall to consult deamon for network
+ * interface.
+ *
  * @author petr 
  */
 
@@ -11,12 +14,14 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <strings.h>
+#include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <syslog.h>
 #include <termios.h>
 #include <unistd.h>
+
+#include "../utils/hms.c"
 
 char *port_dev;	// device name
 int port;		// port descriptor
@@ -42,8 +47,9 @@ int init(const char *devptr)
   port = open( port_dev, O_RDWR );
   if ( open == -1 ) 
 	  return -1;
-  pthread_mutex_init( tel_mutex, NULL ); // those calls shall never fall
-  pthread_mutex_init( mov_mutex, NULL );
+
+  tel_mutex = PTHREAD_MUTEX_INITIALIZER;
+  mov_mutex = PTHREAD_MUTEX_INITIALIZER;
 
   if ( tcgetattr (port, &tel_termios ) == -1 )
 	 return -1;
@@ -70,268 +76,357 @@ int init(const char *devptr)
  * 
  * Log all flow as LOG_DEBUG to syslog
  * 
+ * @exception EIO when there aren't data from port
+ * @exception common select() exceptions
+ * 
  * @param buf buffer to read in data
- * @param count how much data will read
+ * @param count how much data will be readed
  * @return -1 on failure, otherwise number of read data 
  */
-int tel_read ( char *buf, int count )
+int tel_read( char *buf, int count )
 {
   int readed;
   fd_set pfds;
   struct timeval tv;
 
-  readed = 0;
   tv.sec = PORT_TIME_OUT;
   tv.usec = 0;
   
-  while ( readed < count )
+  for (readed = 0 ; readed < count ; readed++ )
   {
     FD_ZERO( &pfds );
     FD_SET( port, &pfds );
     if ( select(port + 1, &pfds, NULL ,NULL , &tv) == 1)
-	    return -1;
+      return -1;
 
-    if (FD_ISSET( port, &pfds) )
-      buf[readed] = read( port, 1);
+    if (FD_ISSET( port, &pfds) ) {
+      if ( read( port, &buf[readed], 1) == -1 )
+        return -1;
+    }
     else {
       syslog (LOG_DEBUG, "Cannot retrieve data from port" );
-      errno =  
+      errno = EIO; 
       return -1;
-			else:
-				self._log('telescope',"Cannot retrive data from telescope")
-				raise TelescopeError("Cannot retrive data from telescope")
-		# if not(self.silence):
-		if not(silence):
-			self._log('telescope-debug',"readed: "+str(ret))
-		return ret		
-	
-	def _readhash(self,max=100):
-		"Internal, will read from port till it will read # character. Return all previou character (do not return ending #)"
-		i=0
-		last=""
-		ret=""
-		while i<max and last!="#":
-			ret=ret+last
-			last=self._read(1,1)
-		self._log('telescope-debug',"hash-readed: "+str(ret))
-		return ret	
-	
-	def _write(self,what):
-		"Internal, what = what string to send to LX200"
-		# if not(self.silence):
-		self._log('telescope-debug',"will write: "+str(what))
-		return os.write(self._lx200port,what)
-	
-	def _writeread(self,what,howmuch):
-		"""Internal, should be used instead of _write and _read - flush dev, write, read."""
-		self._lock.acquire()
-		try:
-			termios.tcflush(self._lx200port,TERMIOS.TCIOFLUSH)
-			self._write(what)
-			return self._read(howmuch)
-		finally:
-			# we need to clear lock in any case
-			# don't worry, acording to python doc we do it even if return fails
-			self._lock.release()
-	
-	def _writereadhash(self,what,max):
-		"""Similar to _writeread, but will use _readhash for read"""
-		self._lock.acquire()
-		try:
-			termios.tcflush(self._lx200port,TERMIOS.TCIOFLUSH)
-			self._write(what)
-			return self._readhash(max)
-		finally:
-			# we need to clear lock in any case
-			# don't worry, acording to python doc we do it even if return fails
-			self._lock.release()
-	
-	
-	def setrate(self,newRate):
-		"Set slew rate, newRate: SLEW or FIND or CENTER or GUIDE"
-		if(newRate == SLEW): 
-			self._write("#:RS#",5)
-		elif(newRate == FIND): 
-			self._write("#:RM#",5)
-		elif(newRate == CENTER): 
-			self._write("#:RC#",5)
-		elif(newRate == GUIDE): 
-			self._write("#:RG#",5)
-	
-	def startslew(self,direction):
-		"Start slew, direction: NORTH,EAST,SOUTH,WEST"
-		if(direction == NORTH):
-			self._write("#:Mn#",5)
-		elif(direction == EAST):
-			self._write("#:Me#",5)
-		elif(direction == SOUTH):
-			self._write("#:Ms#",5)
-		elif(direction == WEST):
-			self._write("#:Mw#",5)
-	
-	def stopslew(self,direction):
-		"Stop slew, see also StartSlew"
-		if(direction == NORTH):
-			self._write("#:Qn#",5)
-		elif(direction == EAST):
-			self._write("#:Qe#",5)
-		elif(direction == SOUTH):
-			self._write("#:Qs#",5)
-		elif(direction == WEST):
-			self._write("#:Qw#",5)
-	
-	def disconnectlx200(self):
-		"Close coonection to LX200"
-		try:
-			os.close(self._lx200port)
-		except:
-			print "Cannot close"
-	
-	def getrahms(self):
-		"Get current RA as string"
-		returnStr=self._writereadhash("#:GR#",10)
-		raHrs=returnStr[:2]
-		raMin=returnStr[3:5]
-		raSec=returnStr[6:]
-		raHrs=float(raHrs)
-		raMin=float(raMin)
-		raSec=float(raSec)
-		return raHrs,raMin,raSec
-	
-	def getra(self):
-		"Get current RA as float number (return value)" 
-		raHrs,raMin,raSec=self.getrahms()
-		returnVal = float(raHrs) + float(raMin)/60.0 + float(raSec)/3600.0
-		return returnVal
-	
-	def _getdeg(self,command):
-		"Reads degrees from telescope"
-		returnStr=self._writereadhash(command,10)
-		decDeg=float(returnStr[:3])
-		decMin=float(returnStr[4:6])
-		try:
-			decSec=float(returnStr[7:])
-		except ValueError:
-			decSec=0
-		return decDeg,decMin,decSec
-	
-	def getdecdms(self):
-		"get current Dec as three floats (dd,mm,ss)"
-		return self._getdeg("#:GD#")
-		
-	def getdec(self):
-		"Get current Dec as float number (return value)"
-		decDeg,decMin,decSec=self.getdecdms()
-		if(decDeg >= 0.0):
-			returnVal = decDeg + decMin/60.0 + decSec/3600.0
-		else:	
-			returnVal = decDeg - decMin/60.0 - decSec/3600.0
-		return returnVal
-	
-	def _gettime(self,command):
-		"Read time from telescope"
-		returnStr=self._writereadhash(command,10)
-		# get out last #
-		# returnStr=returnStr[:-1]
-		HH,MM,SS=string.split(returnStr,":")
-		return float(HH),float(MM),float(SS)
-	
-	def localtime(self):
-		"Get telescope local time"
-		return self._gettime("#:GL#")
+    }
+  }
+  return readed;
+}
 
-	def sideraltime(self):
-		"Get telescope sideral time"
-		return self._gettime("#:GS#")
-	
-	def latitude(self):
-		"Get the latitude (-90-+90) of the currently selected site"
-		return self._getdeg("#:Gt#")
-		
-	def longtitude(self):
-		"Get the longtitude (0-360) of the currently selected site"
-		return self._getdeg("#:Gg#")
-		
-	def _setra(self,ra):
-		"Internall, set object ra"
-		if (ra>=0) and (ra<=24): 
-			raHrs = int(ra)
-			raMin = int((ra-raHrs)*60.0)
-			raSec = int((ra-raHrs-raMin/60.0)*3600)
-			outputStr='#:Sr%02d:%02d:%02d#' % (raHrs,raMin,raSec)
-			inputStr='0'
-			count = 0 
-			while count < 200:		
-				inputStr=self._writeread(outputStr,1)
-				if inputStr[0] == '1':
-					break
-				count = count + 1
-				self.log('telescope','Rettring setra for ' + str(count) + \
-					'time due to incorrect return:' + repr(inputStr))
-				time.sleep(1)
+/* Will read from port till it encoutered # character
+ * Read ending #, but doesn't return it.
+ * 
+ * @see tel_read() for description
+ */
 
-			if count >= 200:
-				self._log('telescope','Setra unsucessfull due to incorrect return.')
-				raise TelescopeError,"Timeout waiting for 1 after Sd"
-		else:
-			self._log("telescope","Invalid ra to _setra:"+str(ra))
-			raise TelescopeError,"Invalid ra:"+str(ra)
-	
-	def _setdec(self,dec):
-		"Internal, set object dec"
-		if (abs(dec)<=90): 
-			decDeg = int(dec)
-			mind = abs(dec-decDeg)*60
-			decMin = int(mind)
-			decSec = round((mind-decMin)*60,2)
-			outputStr='#:Sd%+02d%c%02d:%02d#' % (decDeg,0xdf,decMin,decSec)
-			inputStr='0'
-			count = 0
-			while count < 200:
-				inputStr=self._writeread(outputStr,1)
-				if inputStr[0] == '1':
-					break
-					count = count + 1
-	
-				self.log('telescope','Rettring setra for ' + str(count) + \
-					'time due to incorrect return:'+repr(inputStr))
-				time.sleep(1)
-	
-			if count >= 200:
-				self._log('telescope','Setdec unsucessfull due to incorrect return.')
-				raise TelescopeError,"Timeout waiting for 1 after Sr"
-	
-		else:
-			sel._log("telescope","Invalid dec:"+str(dec))
-			raise TelescopeError, "Invalid dec:"+str(dec)
+int tel_read_hash( char *buf, int count ) {
+  int readed;
+  buf[0] = 0;
+  
+  for (readed = 0 ; readed < count && buf[readed] != '#' ;
+   readed++) {
+    if ( tel_read( &buf[readed], 1 ) == -1 )
+      return -1;
+  }
+  if ( buf[readed] == '#' )
+    buf[readed] = 0;
+  syslog (LOG_DEBUG, "Hash-readed:'%s'", buf );
+  return readed;
+}
 
-	def _slew(self):	
-		inputStr=self._writeread("#:MS#",1)
-		if(inputStr[0] == '0'):
-			returnVal = 0
-		else:
-			returnVal = inputStr[0]
-			inputStr = "1"
-			while(inputStr[0] != '#'):
-				inputStr=self._read(1)
-		return returnVal
-		
-	def slewtocoords(self,newRA,newDec):
-		"Move (=Slew) to newRA and newDec, which must be floats\n\
-		return: 0 =all ok, 1=telescope below horizont, 2=upper limit" 
-		self._setra(newRA)
-		self._setdec(newDec)
-		return self._slew()		
+/* Will write on telescope port string.
+ *
+ * @exception EIO, .. common write exceptions 
+ * 
+ * @param buf buffer to write
+ * @param count count to write
+ * @return -1 on failure, count otherwise
+ */
 
-	def checkcoords(self,desRA,desDec):
-		"Check, whatewer telescope match given coordinates"
-		raError = self.getra() - desRA
-		decError = self.getdec() - desDec
-		if(abs(raError) > 0.05 or abs(decError) > 0.5):
-			return 0
-		else:
-			return 1
+int tel_write( char *buf, int count ) {
+  syslog( LOG_DEBUG, "will write:'%s'", buf);
+  return write(port, buf, count); 
+}
+	
 
+/* Combine write && read together
+ * Flush port to clear any gargabe.
+ *
+ * @exception EINVAL and other mutex exceptions
+ * 
+ * @param wbuf buffer to write on port
+ * @param wcount write count
+ * @param rbuf buffer to read from port
+ * @param rcount maximal number of characters to read
+ * @return -1 and set errno on failure, rcount otherwise
+ */
+
+int tel_write_read( char *wbuf, int wcount, char *rbuf, int rcount) {
+  int tmp_rcount = -1;
+  if ( !( errno = pthread_mutex_lock (&tel_mutex) ) )
+    return -1;
+  if ( tcflush(port, TCIOFLUSH) == -1)
+    goto unlock; // we need to unlock
+  if ( tel_write(wbuf, wcount) == -1 )
+    goto unlock;
+  
+  tmp_rcount = tel_read( rbuf, rcount );
+
+unlock:
+  if ( !( errno = pthread_mutex_unlock (&tel_mutex) ) ) {
+    syslog( LOG_EMERG, "Cannot unlock tel_mutex in tel_write_read:%s", strerror);
+    return -1;
+  }
+
+  return tmp_rcount;
+}
+
+/* Combine write && read_hash together 
+ *
+ * @see tel_write_read for definition
+ */
+
+int tel_write_read_hash( char *wbuf, int rcount, char *wbuf, int rcount ) {
+  int tmp_rcount = -1;
+  if ( !( errno = pthread_mutex_lock (&tel_mutex) ) )
+    return -1;
+  if ( tcflush(port, TCIOFLUSH) == -1)
+    goto unlock; // we need to unlock
+  if ( tel_write(wbuf, wcount) == -1 )
+    goto unlock;
+  
+  tmp_rcount = tel_read_hash( rbuf, rcount );
+
+unlock:
+  if ( !( errno = pthread_mutex_unlock (&tel_mutex) ) ) {
+    syslog( LOG_EMERG, "Cannot unlock tel_mutex in tel_write_read_hash:%s", strerror);
+    return -1;
+  }
+
+  return tmp_rcount;
+}
+
+/* Set slew rate. For completness?
+ * 
+ * This functions are there IMHO mainly for historical reasons. They
+ * don't have any use, since if you start move and then die, telescope
+ * will move forewer till it doesn't hurt itself. So it's quite
+ * dangerous to use them for automatic observation. Better use quide
+ * commands from attached CCD, since it defines timeout, which rules
+ * CCD.
+ *
+ * @param new_rate New rate to set. Uses RATE_<SPEED> constant.
+ * @return -1 on failure & set errno, 5 (>=0) otherwise
+ */
+int tel_set_rate( char new_rate) {
+  char command[6];
+  sprintf( command, "#:R%c#", new_rate );
+  return tel_write( command, 5);
+}
+
+/* Start slew. Again for completness?
+ * @see tel_set_rate() for speed.
+ *
+ * @param direction direction
+ * @return -1 on failure & set errnom, 5 (>=0) otherwise
+ */
+int tel_start_slew( char direction) {
+  char command[6];
+  sprintf( command, "#:M%c#", direction );
+  tel_write(command ,5);
+}
+
+/* Stop sleew. Again only for completness?
+ * 
+ * @see tel_start_slew for direction.	
+ */
+int tel_stop_slew( char direction ) {
+  char command[6];
+  sprintf( command, "#:Q%c#", direction );
+  tel_write(command ,5);
+}
+
+/* Disconnect lx200.
+ *
+ * @return -1 on failure and set errno, 0 otherwise
+ */
+int tel_disconnect(void) {
+ return close(port);
+}
+
+/* Reads some value from lx200 in hms format
+ * Utility function for all those read_ra and other.
+ * 
+ * @param hmsptr where hms will be stored
+ * @return -1 and set errno on error, otherwise 0
+ */
+int tel_read_hms(double *hmsptr, char *command) {
+  char wbuf[11];
+  if ( tel_write_read_hash(command, strlen(command), wbuf, 10) == -1)
+    return -1;
+  *raptr = hmstod(wbuf);
+  if (errno)
+    return -1;
+  return 0;
+}
+
+/* Reads lx200 right ascenation.
+ * @param raptr where ra will be stored
+ * @return -1 and set errno on error, otherwise 0
+ */
+int tel_read_ra(double *raptr) {
+  return tel_read_hms(decptr, "#:GR#");
+}
+
+/* Reads LX200 declination.
+ * @param decptr where dec will be stored 
+ * @return -1 and set errno on error, otherwise 0
+ */
+int tel_read_dec(double *decptr) {
+  return tel_read_hms(decptr, "#:GD#");
+}
+
+/* Returns LX200 local time.
+ * @param tptr where time will be stored
+ * @return -1 and errno on error, otherwise 0
+ */
+int tel_read_localtime(double *tptr) {
+  return tel_read_hms(decptr, "#:GL#");
+}
+
+/* Returns LX200 local time.
+ * @param tptr where time will be strored
+ * @return -1 and errno on error, otherwise 0
+ */
+int tel_read_localtime(double *tptr) {
+  return tel_read_hms(decptr, "#:GL#");
+}
+
+/* Returns LX200 sideral time.
+ * @param tptr where time will be stored
+ * @return -1 and errno on error, otherwise 0
+ */
+int tel_read_sideraltime(double *tptr) {
+  return tel_read_hms(decptr, "#:GS#");
+}
+
+/* Reads LX200 latitude.
+ * @param latptr where latitude will be stored  
+ * @return -1 and errno on error, otherwise 0
+ */
+int tel_read_latitude(double *tptr) {
+  return tel_read_hms(decptr, "#:Gt#");
+}
+
+/* Reads LX200 longtitude.
+ * @param latptr where longtitude will be stored  
+ * @return -1 and errno on error, otherwise 0
+ */
+int tel_read_longtitude(double *tptr) {
+  return tel_read_hms(decptr, "#:Gg#");
+}
+
+/* Repeat LX200 write
+ * Handy for setting ra and dec.
+ * Meade tends to have problems with that.
+ *
+ * @param command command to write on port
+ */
+int tel_rep_write(command) {
+  int count;
+  char retstr;
+  for (count = 0; count < 200; count++) {
+    if ( tel_write_read(command, strlen(command), &retstr, 1) == -1 )
+      return -1;
+    if ( retstr == '1')
+      break;
+    sleep(1);
+    syslog( LOG_DEBUG, "tel_rep_write - for %i time.", count);
+  }
+  if ( count == 200 ) {
+    syslog( LOG_ERR, "tel_rep_write unsucessful due to incorrect return.");
+    errno = EIO;
+    return -1;
+  }
+  return 0;
+}
+
+/* Set LX200 right ascenation
+ * @param ra right ascenation to set in decimal hours
+ * @return -1 and errno on error, otherwise 0
+ */
+int tel_write_ra(double ra) {
+  char command[14];
+  int h,m,s;
+  if ( ra<0) 
+    ra = floor( ra/24 ) * -24 + ra; //normalize ra
+  if ( ra>24 )
+    ra = ra - floor (ra/24) * 24;
+  h = floor(ra);
+  m = floor((ra-h)*60);
+  s = floor((ra-h-m/60)*3600);  
+  if ( snprintf( command, 13, "#:Sr%02d:%02d:%02d#", h, m ,s) == -1)
+    return -1;
+  return tel_rep_write(command);
+}
+
+/* Set LX200 declination
+ * @param dec declination to set in decimal degrees
+ * @return -1 and errno on error, otherwise 0
+ */
+int tel_write_dec(double dec) {
+  char command[15];
+  int h,m,s;
+  if ( ra<0 ) 
+    ra = floor( ra/90 ) * -90 + ra; //normalize dec
+  if ( ra>90 )
+    ra = ra - floor (ra/90) * 90;
+  h = floor(dec);
+  m = floor((dec-h)*60);
+  s = floor((dec-h-m/60)*3600);
+  if ( snprintf( command, 14, "#:Sd%+02d\xdf%02d:%02d#", h, m ,s) == -1)
+    return -1;
+  return tel_rep_write(command);
+} 
+
+/* Move LX200 to new coordinates
+ * @param ra new right ascenation
+ * @param dec new declination
+ * @exception EINVAL When telescope is below horizont, or upper limit was reached
+ * @return -1 and errno on exception, otherwise 0
+ */
+int tel_move_to(ra, dec) {
+  char retstr;
+  int max_read = 200;  // maximal read till # is encountered
+  if (tel_write_ra(ra) == -1 || tel_write_dec(dec) == -1)
+    return -1;
+  if (tel_write_read("#:MS#", 5, &retstr, 1) == -1) 
+    return -1;
+  if ( retstr == '0' ) 
+    return 0;
+  retstr = 0;
+  while ( max_read > 0 && retstr !='#' ) 
+    if ( tel_read(&retstr, 1) == -1 )
+      return -1;
+  errno = EINVAL;
+  return -1;
+
+
+/* Check, if telescope match given coordinates
+ *
+ * @param ra target right ascenation
+ * @param dec target declination
+ * @return -1 and errno on exception, 0 if matched, 1 if not matched
+ */
+int tel_check_coords(ra, dec) {
+  double err_ra, err_dec;
+  if ( (tel_read_ra(&err_ra) == -1) || (tel_read_dec(&err_dec) == -1) )
+    return -1;
+  err_ra -= ra;
+  err_dec -= dec;
+  if (fabs(err_ra) > 0.05 or fabs(err_dec) > 0.5) 
+    return 1; 
+  return 0;
+}
 	def _moveto(self,newRA,newDec):
 		"Internal, will moto to new RA and dec"
 		self._moving_lock.acquire()
