@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <time.h>
 #include <stdlib.h>
+#include <getopt.h>
 #include "libpq-fe.h"
 
 PGconn *conn;
@@ -17,6 +18,11 @@ exit_nicely ()
   PQfinish (conn);
   exit (1);
 }
+
+int night_day = 0;
+int night_month = 0;
+int night_year = 0;
+int target = 0;
 
 #define PQ_EXEC(command) \
       res = PQexec(conn, command); \
@@ -43,12 +49,17 @@ get_list (int tar_id)
   int nFields;
   int i;
 
-//  int tar_id;
   time_t count_date;
   struct tm date;
   uint64_t count_value;
   char count_filter[3];
   char *command;
+  char sel[2000] =
+    "SELECT "
+    "  tar_id,"
+    "  MIN(count_date) as cd,"
+    "  int8(AVG(count_value / count_exposure)),"
+    "  count_filter " "FROM" "  targets_counts ";
   PGresult *res;
 // d d y b v u
   int filters[] = { 0, 0, 4, 2, 1, 3 };
@@ -59,19 +70,16 @@ get_list (int tar_id)
   PQ_EXEC (command);
   PQclear (res);
 
-  command =
-    "SELECT "
-    "  tar_id,"
-    "  MIN(count_date) as cd,"
-    "  int8(AVG(count_value / count_exposure)),"
-    "  count_filter "
-    "FROM"
-    "  targets_counts "
-    "WHERE"
-    "  count_exposure > 0 "
-    "GROUP BY" "  tar_id, count_filter, obs_id " "ORDER BY" "  cd ASC;";
+  if (target)
+    {
+      sprintf (sel, "%s WHERE tar_id = %i ", sel, target);
+    }
 
-  res = PQexecParams (conn, command, 0, NULL, NULL, NULL, NULL, 1);
+  strcat (sel,
+	  "GROUP BY"
+	  "  tar_id, count_filter, obs_id " "ORDER BY" "  cd ASC;");
+
+  res = PQexecParams (conn, sel, 0, NULL, NULL, NULL, NULL, 1);
   if (PQresultStatus (res) != PGRES_TUPLES_OK)
     {
       fprintf (stderr, "SELECT failed: %s", PQerrorMessage (conn));
@@ -108,6 +116,7 @@ int
 main (int argc, char **argv)
 {
   const char *conninfo;
+  int c;
 
   conninfo = "dbname = stars";
 
@@ -118,6 +127,38 @@ main (int argc, char **argv)
       fprintf (stderr, "Connection to database '%s' failed.\n", PQdb (conn));
       fprintf (stderr, "%s", PQerrorMessage (conn));
       exit_nicely ();
+    }
+  while (1)
+    {
+      static struct option long_option[] = {
+	{"start_day", 1, 0, 'd'},
+	{"start_month", 1, 0, 'm'},
+	{"start_year", 1, 0, 'y'},
+	{"target", 1, 0, 't'},
+	{0, 0, 0, 0}
+      };
+      c = getopt_long (argc, argv, "d:m:y:t:", long_option, NULL);
+      if (c == -1)
+	break;
+      switch (c)
+	{
+	case 'd':
+	  night_day = atoi (optarg);
+	  break;
+	case 'm':
+	  night_month = atoi (optarg);
+	  break;
+	case 'y':
+	  night_year = atoi (optarg);
+	  break;
+	case 't':
+	  target = atoi (optarg);
+	  break;
+	case '?':
+	  break;
+	default:
+	  printf ("?? getopt ret: %o\n", c);
+	}
     }
 
   get_list (120);
