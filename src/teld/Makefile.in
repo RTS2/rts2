@@ -4,9 +4,7 @@ BIN = teld_lx200
 
 all: $(BIN)
 
-include ../../make.conf
-
-LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD) -I@top_srcdir@/include
+LDFLAGS += @LIB_M@ @LIB_PTHREAD@ -I@top_srcdir@/include
 
 lx200/lx200.a: telescope.h lx200/Makefile lx200/lx200.c
 	$(MAKE) -C lx200

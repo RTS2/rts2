@@ -4,7 +4,7 @@ BIN = serverd test
 
 all: $(BIN)
 
-LDFLAGS += @LIBS@ -lnova
+LDFLAGS += @LIBS@
 CFLAGS += -I/usr/local/include -I@top_srcdir@/include
 
 serverd: serverd.o riseset.o ../utils/devser.a
