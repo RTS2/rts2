@@ -10,7 +10,18 @@
 use strict;
 
 my $file = $ARGV[0];
+my $ntries = $ARGV[1];
 
+my $CENTER_RA = 160;
+my $CENTER_DEC = 140;
+
+my $COL_RA = 2;
+my $COL_DEC = 3;
+
+my $DIAM_RA = 40;
+my $DIAM_DEC = 40;
+
+# get the file
 unless (open (FILE,"<${file}.sex"))
 {
   system "/home/rtopera/bin/detect $file";
@@ -23,13 +34,17 @@ while (my $in = <FILE>)
 {
   next if ($in =~ /^#/);
   my @a = split (/\s+/, $in);
+  # second or so try..
+  if ($ntries > 1)
+  {
+    next if (
+        (abs ($a[$COL_RA] - $CENTER_RA) > $DIAM_RA)
+     or (abs ($a[$COL_DEC] - $CENTER_DEC) > $DIAM_DEC));
+  }
   push @arr, [@a]
 }
 
 @arr = sort {$b->[6] <=> $a->[6]} @arr;
-
-#my $ra_err = ($arr[0][2] - 188) * 60 / 376;
-#my $dec_err = ($arr[0][3] - 145) * 60 / 290; 
 
 open FILE, "<${file}" or die "Cannot open fits file $file";
 
@@ -51,8 +66,8 @@ while ($a = <FILE>)
 
 #print $flip . "\n";
 
-my $ra_err = + ($arr[0][2] - 160) * 0.2956 * $flip;
-my $dec_err = + ($arr[0][3] - 140) * 0.2853 * $flip; 
+my $ra_err = + ($arr[0][$COL_RA] - $CENTER_RA) * 0.2956 * $flip;
+my $dec_err = + ($arr[0][$COL_DEC] - $CENTER_DEC) * 0.2853 * $flip; 
 
 
 printf ("%4.4f %4.4f %i", $ra_err, $dec_err, ($arr[0][6]) % 10000);
