@@ -358,7 +358,9 @@ camera_readout_line (int chip_id, short start, short length, void *data)
       printf ("digitize line:%i", ret);
       return -1;
     }
-  fflush (stdout);
+#ifdef DEBUG
+  printf ("get line\n");
+#endif /* DEBUG */
 
   return 0;
 };

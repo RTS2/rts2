@@ -45,7 +45,7 @@ extern unsigned short pp_ospeed;	// default let be 1.25 us
 	outportb(baseAddress, 0xb0 | a);
 #endif
 
-#if 0
+#if 1
 // For standard parallel port
 #define _CAMERA_PULSE(a);	\
 	outportb(baseAddress, 0x38 | a);\
@@ -57,7 +57,7 @@ extern unsigned short pp_ospeed;	// default let be 1.25 us
 	outportb(baseAddress, 0x30 | a);
 #endif
 
-#if 1
+#if 0
 // For our new fast parallel port (non-standard)
 #define _CAMERA_PULSE(a);	\
 	outportb(baseAddress, 0x38 | a);\

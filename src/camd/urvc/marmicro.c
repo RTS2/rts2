@@ -89,10 +89,10 @@ CameraOut (unsigned char reg, int val)
 #endif
 
   outportb (baseAddress, reg + val);
-  outportb (baseAddress, reg + val);
+//  outportb (baseAddress, reg + val);
   outportb (baseAddress, reg + val + 0x80);
   outportb (baseAddress, reg + val + 0x80);
-  outportb (baseAddress, reg + val);
+//  outportb (baseAddress, reg + val);
   outportb (baseAddress, reg + val);
 
   // Nejsem si prils jisty...
