@@ -1,2 +1,6 @@
 
-SUBDIRS =	src #doc
+SUBDIRS =	doc	\
+		include \
+		man	\
+		src 	\
+		html	
