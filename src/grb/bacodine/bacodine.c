@@ -14,7 +14,7 @@ process_grb_event_t process_grb;
  *		that a site would use to become a GCN site connected via
  *		the Internet socket method.  These parts can be cut and spliced
  *		into your site instrument-control software  or
- *		this program can be used as the basis of your intrument's control
+ *		this program can be used as the basis of your instrument's control
  *		program (there is a place noted below where to put your
  *		instrument-specific code).
  *
@@ -25,7 +25,7 @@ process_grb_event_t process_grb;
  *		considered the common sense notion of who is "serving" who, but
  *		it is necessary for the case of multiple sites.  The GCN machine
  *		needs to be able to handle the case when one or more of
- *		the collaboration sites "goes down".  To do this we need to be
+ *		the GCN sites "goes off-line".  To do this GCN needs to be
  *		the "client".  If your "server" is running at the appropriate time,
  *		the GCN "client" will connect to it and send I'm_alive packets and
  *		the various burst position packet types enabled for your site.
@@ -64,7 +64,7 @@ process_grb_event_t process_grb;
  *		time period, but it is op-sys/machine dependent and I thought it
  *		better to leave it out of this "general purpose demo program".
  *
- *		Another scenario which produces a sitution where connection is
+ *		Another scenario which produces a situation where connection is
  *		not made comes from having two socket_demo programs running
  *		simultaneously.  This can easily happen when running socket_demo
  *		in the background, and then invoking it a second time.  It can also
@@ -76,7 +76,7 @@ process_grb_event_t process_grb;
  *		But it is infact still present -- at least to the point of still
  *		holding on to the socket connection and port number.  Thus it will
  *		be competing for packets with the second invokation, and both will
- *		loose.  It looks to the user that the second porgram can never connect.
+ *		loose.  It looks to the user that the second program can never connect.
  *		This can be very very perplexing to the user/operator.  The solution
  *		to this is making sure you use all the appropriate options to the
  *		system utility that tells you about entries (active AND defunct) in
@@ -88,7 +88,7 @@ process_grb_event_t process_grb;
  *		This program duplicates almost all of its output to the logfile
  *		also to the standardout.  This duplication to the stdout allows the
  *		first-time/interactive user to "see" what is going on with the
- *		operations of the program.  After a while you will probably want
+ *		operations of the program.  After a while, you will probably want
  *		to invoke the program with the stdout redirected to /dev/null and
  *		run it in the background:
  *			socket_demo 5000 >& /dev/null &
@@ -105,12 +105,12 @@ process_grb_event_t process_grb;
  *		Byte and/or word swapping my be required if the ordering
  *		of your machine is different than the order of a Sun4.
  *
- *		The storage/usage of the IP NUmber and the ???? are also
+ *		The storage/usage of the IP Number and the ???? are also
  *		platform-dependent.  On your site's platform, you may need to make
  *		calls to htol() and ???? to handles these dependencies.
  *
- *		Also, don't forget to change the e-mail addresses hardwired into
- *		the e-mail commands near the end of the e_mail_alert() routine
+ *		Also, don't forget to change the e-mail addresses that are hardwired
+ *		into the e-mail commands near the end of the e_mail_alert() routine
  *		from my addresses to your address(es) (assuming you still want this
  *		feature).
  *
@@ -138,17 +138,18 @@ process_grb_event_t process_grb;
  *		server()		// Set up the server end of a connection
  *		serr()			// Specialized error/status reporting routine
  *		pr_imalive()	// Print the contents of received Imalive packets
- *		pr_packet()		// Contents of Original/TEST/Final/MAXBC/LOCBURST pkts
- *		pr_kill()		// Contents of received KILL packets
- *		pr_alexis()		// Contents of received ALEXIS packets
- *		pr_xte_pca()	// Contents of received XTE-PCA packets
- *		pr_xte_asm()	// Contents of received XTE-ASM packets
- *		pr_xte_asm_trans()// Contents of received XTE-ASM_TRANS packets
- *		pr_sax_wfc()	// Contents of received SAX-WFC packets
- *		pr_ipn()		// Contents of received IPN packets
- *		pr_hete()		// Contents of received HETE packets
- *		chk_imalive()	// Check and report an absense of Imalive packets rcvd
- *		e_mail_alert()	// Send e-mail when no imalive packets
+ *		pr_packet()		// Contents of TEST/Original/Final/MAXBC/LOCBURST pkts
+ *		pr_kill()		// Print the contents of KILL packets
+ *		pr_alexis()		// Print the contents of ALEXIS packets
+ *		pr_xte_pca()	// Print the contents of XTE-PCA packets
+ *		pr_xte_asm()	// Print the contents of XTE-ASM packets
+ *		pr_xte_asm_trans()// Print the contents of XTE-ASM_TRANS packets
+ *		pr_sax_wfc()	// Print the contents of SAX-WFC packets
+ *		pr_ipn()		// Print the contents of IPN packets
+ *		pr_hete()		// Print the contents of HETE packets
+ *		chk_imalive()	// Check and report an absence of Imalive packets rcvd
+ *		e_mail_alert()	// Send e-mail when no Imalive packets
+ *		hete_same()		// Are the four corners the same position?
  *
  *	COMPILATION:
  *		cc socket_demo.c -o socket_demo
@@ -168,8 +169,8 @@ process_grb_event_t process_grb;
  *
  *		3) Inside the e_mail_alert() routine is a command to send an email
  *		to the "opertor(s)".  In this file, it is currently set up
- *		with the email addresses for the GCN Operators (Paul Butterworth and
- *		myself).  When you set this up for your own testing/operations,
+ *		with the email addresses for the GCN Operators (myself).
+ *		When you set this up for your own testing/operations,
  *		change these hardwire addresses to your own address(es).
  *
  *  AUTHOR:
@@ -191,20 +192,23 @@ process_grb_event_t process_grb;
  *		Changed IPN_SRC to IPN_SEG_SRC.							18Dec99
  *		Added the 5 HETE packets handling.						10Feb01
  *		A couple minor tweaks with pr_hete().					17Mar01
- *		CHanged "demo.log" to "socket_demo.log".				18Mar01
+ *		Changed "demo.log" to "socket_demo.log".				18Mar01
+ *		Added the new HETE Validity flag bits.					04Jun01
+ *		Updated a few HETE flag bit defintions.					08Jun01
+ *		Change the HETE types (S/C_ prefix).					22Jun01
+ *		Added the new HETE Probably trigger flag bits.			22Aug01
  */
 
 
 /* Please note that these include_files are the ones for SunOS Version 4.1.3 1.
  * On other machine with different operating systems (and even different
  * versions of SunOS), these include_files may have different names.
- * If, when you compile socket_demo.c onn your local platform, you find
+ * If, when you compile socket_demo.c on your local platform, you find
  * that one or more of these files are "not found", then you will have
  * to explore your system's include_files to find the contents that are missing
  * during the compilation process.  Unfortunately, there are too many
  * combinations of op_sys's for me to incorporate the appropriate 
- * include_files.
- */
+ * include_files.                                                           */
 #include <stdio.h>		/* Standard i/o header file */
 #include <sys/types.h>		/* File typedefs header file */
 #include <sys/socket.h>		/* Socket structure header file */
@@ -219,7 +223,7 @@ process_grb_event_t process_grb;
 #include <errno.h>
 #include <strings.h>
 
-char *version = "socket_demo     Ver: 3.7   18 Mar 01";
+char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 
 #define	TRUE	1
 #define	FALSE	0
@@ -227,8 +231,8 @@ char *version = "socket_demo     Ver: 3.7   18 Mar 01";
 
 /* Indices into the socket packet array of 40 longs.  The naming and
  * definition of these 40 is based on the contents for the first packet
- * defined (the grb_coords packets).  The packing for the other packet types
- * reuses some of these 40 but they have different meaning/content.        */
+ * defined (the grb_coords packets; type=1).  The packing for the other packet
+ * types reuses some of these 40 but they have different meaning/content.    */
 #define PKT_TYPE      0		/* Packet type (see below) */
 #define PKT_SERNUM    1		/* Packet serial number (1 to 4billion) */
 #define PKT_HOP_CNT   2		/* Packet hop counter */
@@ -256,16 +260,17 @@ char *version = "socket_demo     Ver: 3.7   18 Mar 01";
 #define PKT_SPARE23  23		/* Beginning of spare section */
 #define PKT_SPARE38  38		/* End of spare section */
 #define PKT_TERM     39		/* Packet termination char */
-/* NOTE:  Some of the fields above are used in slightly different ways
+/* NOTE:  Some of the fields above are used in different ways
  * for the various different packet Types.
  * You should see the socket_packet_definition_document for the details 
  * for each field within each packet type.  The various pr_*() routines
  * can also be of use in determining the packing contents & quantization.
- */
+ * The socket packet definition document is located at:
+ * http://gcn.gsfc.nasa.gov/gcn/sock_pkt_def_doc.html                       */
 
 #define SIZ_PKT      40		/* Number of longwords in socket packet */
 
-/* Mask patterns for extractions from the trig_id in the socket packet: */
+/* Masks for extractions for the GRO-BATSE-based TRIGGER_ID in the packet: */
 #define SUSP_GRB            0x00000001	/* Suspected GRB */
 #define DEF_GRB             0x00000002	/* Definitely a GRB */
 #define NEAR_SUN            0x00000004	/* Coords is near the Sun (<15deg) */
@@ -276,7 +281,7 @@ char *version = "socket_demo     Ver: 3.7   18 Mar 01";
 #define DEF_UNK             0x00000080	/* Definitely an Unknown */
 #define	EARTHWARD			0x00000100	/* Location towards Earth center */
 #define SOFT_FLAG			0x00000200	/* Small hardness ratio (>1.5) */
-#define	NEAR_SAA			0x00000400	/* It is near/in the SAA region */
+#define	NEAR_SAA			0x00000400	/* S/c is near/in the SAA region */
 #define	DEF_SAA				0x00000800	/* Definitely an SAA region */
 #define SUSP_SF             0x00001000	/* Suspected Solar Flare */
 #define DEF_SF              0x00002000	/* Definitely a Solar Flare */
@@ -290,7 +295,7 @@ char *version = "socket_demo     Ver: 3.7   18 Mar 01";
 #define HI_ISO_RATIO        0x00200000	/* Hi C3/C2 D-Iso ratio */
 #define	LOW_INTEN           0x00400000	/* Inten too small to be a real GRB */
 
-/* Mask patterns for extractions from the misc in the socket packet: */
+/* Masks for extractions for the GRO-BATSE-based MISC in the packet: */
 #define TM_IND_MASK         0x00000001	/* TM Indicator mask */
 #define BAD_CALC_MASK       0x00000002	/* Singular matrix (bad calculation) */
 #define C_FOV_MASK          0x00000004	/* COMPTEL FOV indicator mask */
@@ -303,14 +308,15 @@ char *version = "socket_demo     Ver: 3.7   18 Mar 01";
 #define IPN_FLUE_MASK       0x00001000	/* Passed the IPN Fluence thresh */
 #define XTE_CRITERIA        0x00002000	/* Meets XTE-PCA follow-up criteria */
 #define OBS_STATUS          0x00004000	/* Won't/will obs & Didn't/did see */
-/*#define SPARE2_MASK         0x00007800	/* spare bits */
+/*#define SPARE2_MASK       0x00007800	/* spare bits */
 #define NO_TRIG_MASK        0x00008000	/* BATSE is not in a triggerable mode */
 #define VER_MINOR_MASK      0x0FFF0000	/* Program Minor Version Number mask */
 #define VER_MAJOR_MASK      0xF0000000	/* Program Major Version Number mask */
 
 
-/* The HETE packet word definitions: */
-#define H_TRIG_FLAGS	9	/* See flags below */
+/* The HETE-based packet word definitions: */
+/* The definitions for 0-8 are the same as in the BATSE-based packet. */
+#define H_TRIG_FLAGS	9	/* See trigger flag bits below */
 #define H_GAMMA_CTS_S	10	/* cts/s defined by gamma, can be 0 */
 #define H_WXM_S_N 		11	/* Trigger score [S/N] */
 #define H_SXC_CTS_S		12	/* cts/s defined by SXC, can be 0 */
@@ -359,69 +365,97 @@ char *version = "socket_demo     Ver: 3.7   18 Mar 01";
 #define H_TRIGNUM_SHIFT	0	/* Trigger number in low bits */
 #define H_WHO_TRIG_MASK	0x00000007	/* Gamma, XG, or SXC */
 
-/* HETE "flag" bitmap definitions: */
-#define H_GAMMA_TRIG	0x00000001	/* Did gamma trigger? */
+/* HETE H_TRIG_FLAGS bit_flags definitions: */
+#define H_GAMMA_TRIG	0x00000001	/* Did FREGATE trigger? 1=yes */
 #define H_WXM_TRIG		0x00000002	/* Did WXM trigger? */
 #define H_SXC_TRIG		0x00000004	/* Did SXC trigger? */
 #define H_ART_TRIG		0x00000008	/* Artificial trigger */
-#define H_PROB_GRB		0x00000010	/* Probable GRB */
+#define H_POSS_GRB		0x00000010	/* Possible GRB */
 #define H_DEF_GRB 		0x00000020	/* Definite GRB */
-#define H_DEF_NOT_GRB	0x00000040	/* Definitely NOT GRB */
-#define H_NEAR_SAA		0x00000080	/* Near SAA */
-#define H_PROB_SGR		0x00000100	/* Probable SGR */
+#define H_DEF_NOT_GRB	0x00000040	/* Definitely NOT a GRB */
+#define H_NEAR_SAA		0x00000080	/* S/c is in or near the SAA */
+#define H_POSS_SGR		0x00000100	/* Possible SGR */
 #define H_DEF_SGR 		0x00000200	/* Definite SGR */
-#define H_PROB_XRB		0x00000400	/* Probable XRB */
+#define H_POSS_XRB		0x00000400	/* Possible XRB */
 #define H_DEF_XRB 		0x00000800	/* Definite XRB */
-#define H_GAMMA_DATA	0x00001000	/* Gamma data in message */
-#define H_WXM_DATA		0x00002000	/* WXM data in message */
-#define H_SXC_DATA		0x00004000	/* SXC data in message */
-#define H_OPT_DATA		0x00008000	/* OPT data in message */
-#define H_WXM_POS 		0x00010000	/* WXM position in message */
-#define H_SXC_POS 		0x00020000	/* SXC position in message */
+#define H_GAMMA_DATA	0x00001000	/* FREGATE (gamma) data in this message */
+#define H_WXM_DATA		0x00002000	/* WXM data in this message */
+#define H_SXC_DATA		0x00004000	/* SXC data in this message */
+#define H_OPT_DATA		0x00008000	/* OPT (s/c ACS) data in this message */
+#define H_WXM_POS 		0x00010000	/* WXM position in this message */
+#define H_SXC_POS 		0x00020000	/* SXC position in this message */
+#define H_TRIG_spare1	0x000C0000	/* spare1 */
+#define	H_USE_TRIG_SN	0x00400000	/* Use H_WXM_S_N */
+#define H_TRIG_spare2	0x00800000	/* spare2 */
+#define	H_SXC_EN_TRIG	0x01000000	/* Triggerred in the 1.5-12 keV band */
+#define	H_LOW_EN_TRIG	0x02000000	/* Triggerred in the 2-30 keV band */
+#define	H_MID_EN_TRIG	0x04000000	/* Triggerred in the 6-120 keV band */
+#define	H_HI_EN_TRIG	0x08000000	/* Triggerred in the 25-400 keV band */
+#define H_PROB_XRB		0x10000000	/* Probable XRB */
+#define H_PROB_SGR		0x20000000	/* Probable SGR */
+#define H_PROB_GRB		0x40000000	/* Probable GRB */
+#define H_TRIG_spare3	0x80000000	/* spare3 */
 
-/* HETE "????" bitmap definitions: */
+/* HETE POS_FLAGS bitmap definitions: */
 #define H_WXM_SXC_SAME	0x00000001	/* Positions are consistent */
 #define H_WXM_SXC_DIFF	0x00000002	/* Positions are inconsistent */
 #define H_WXM_LOW_SIG	0x00000004	/* NSIG below a threshold */
 #define H_SXC_LOW_SIG	0x00000008	/* NSIG below a threshold */
-#define H_BURST_VALID	0x00000001	/* Burst declared valid */
-#define H_BURST_INVALID	0x00000002	/* Burst declared invalid */
-#define H_EMERGE_TRIG	0x00000010	/* Emersion trigger */
-#define H_KNOWN_XRS		0x00000020	/* Known X-ray source */
-#define H_NO_POSITION	0x00000040	/* No WXM or SXC position */
 #define H_GAMMA_REFINED	0x00000010	/* Gamma refined since FINAL */
 #define H_WXM_REFINED	0x00000020	/* WXM refined since FINAL */
 #define H_SXC_REFINED	0x00000040	/* SXC refined since FINAL */
+#define H_POS_spare		0xFFFFFFB0	/* spare */
+
+/* HETE VALIDITY flag bit masks: */
+#define H_BURST_VALID	0x00000001	/* Burst declared valid */
+#define H_BURST_INVALID	0x00000002	/* Burst declared invalid */
+#define H_VAL0x4_spare	0x00000004	/* spare */
+#define H_VAL0x8_spare	0x00000008	/* spare */
+#define H_EMERGE_TRIG	0x00000010	/* Emersion trigger */
+#define H_KNOWN_XRS		0x00000020	/* Known X-ray source */
+#define H_NO_POSITION	0x00000040	/* No WXM or SXC position */
+#define H_VAL0x80_spare	0x00000080	/* spare */
+#define H_OPS_ERROR		0x00000100	/* Bad burst: s/c & inst ops error */
+#define H_PARTICLES		0x00000200	/* Bad burst: particles */
+#define H_BAD_FLT_LOC	0x00000400	/* Bad burst: bad flight location */
+#define H_BAD_GND_LOC	0x00000800	/* Bad burst: bad ground location */
+#define H_RISING_BACK	0x00001000	/* Bad burst: rising background */
+#define H_POISSON_TRIG	0x00002000	/* Bad burst: poisson fluctuation trigger */
+#define H_OUTSIDE_FOV	0x00004000	/* Good burst: but outside WSX/SXC FOV */
+#define H_IPN_CROSSING	0x00008000	/* Good burst: IPN crossing match */
+#define H_VALID_spare	0x7FFFC000	/* spare */
+#define H_NOT_A_BURST	0x80000000	/* GndAna shows this trigger to be non-GRB */
 
 
-/* The GCN defined packet types (missing numbers are internal use only): */
-#define	TYPE_UNDEF			0	/* This packet type is undefined */
-/*#define TYPE_GRB_COORDS	1	/* BATSE-Original Trigger coords packet */
-#define	TYPE_TEST_COORDS	2	/* Test coords packet */
-#define	TYPE_IM_ALIVE		3	/* I'm_alive packet */
-#define	TYPE_KILL_SOCKET	4L	/* Kill a socket connection packet */
-/*#define TYPE_MAXBC		11	/* MAXC1/BC packet */
-#define	TYPE_BRAD_COORDS	21	/* Special Test coords packet for BRADFORD */
-/*#define TYPE_GRB_FINAL	22	/* BATSE-Final coords packet */
-/*#define TYPE_HUNTS_SRC	24	/* Huntsville LOCBURST GRB coords packet */
-#define	TYPE_ALEXIS_SRC		25	/* ALEXIS Transient coords packet */
-#define	TYPE_XTE_PCA_ALERT	26	/* XTE-PCA ToO Observation Scheduled packet */
-#define	TYPE_XTE_PCA_SRC	27	/* XTE-PCA GRB coords packet */
-#define	TYPE_XTE_ASM_ALERT	28	/* XTE-ASM Alert packet */
-#define	TYPE_XTE_ASM_SRC	29	/* XTE-ASM GRB coords packet */
-#define	TYPE_COMPTEL_SRC	30	/* COMPTEL GRB coords packet */
-#define	TYPE_IPN_RAW_SRC	31	/* IPN_RAW GRB annulus coords packet */
-#define	TYPE_IPN_SEG_SRC	32	/* IPN_SEGment GRB annulus segment coords pkt */
-#define	TYPE_SAX_WFC_ALERT	33	/* SAX-WFC Alert packet */
-#define	TYPE_SAX_WFC_SRC	34	/* SAX-WFC GRB coords packet */
-#define	TYPE_SAX_NFI_ALERT	35	/* SAX-NFI Alert packet */
-#define	TYPE_SAX_NFI_SRC	36	/* SAX-NFI GRB coords packet */
-#define	TYPE_XTE_ASM_TRANS	37	/* XTE-ASM TRANSIENT coords packet */
-#define	TYPE_spare_SRC		38	/* spare */
-#define	TYPE_IPN_POS_SRC	39	/* IPN_POSition coords packet */
-#define	TYPE_HETE_ALERT_SRC		40	/* HETE Alert packet */
-#define	TYPE_HETE_UPDATE_SRC	41	/* HETE Update packet */
-#define	TYPE_HETE_FINAL_SRC		42	/* HETE Final packet */
+/* The GCN defined packet types (missing numbers are gcn-internal use only): */
+/* Types that are commented out are no longer available (eg GRO de-orbit). */
+#define	TYPE_UNDEF				0	/* This packet type is undefined */
+/*#define TYPE_GRB_COORDS		1	/* BATSE-Original Trigger coords packet */
+#define	TYPE_TEST_COORDS		2	/* Test coords packet */
+#define	TYPE_IM_ALIVE			3	/* I'm_alive packet */
+#define	TYPE_KILL_SOCKET		4	/* Kill a socket connection packet */
+/*#define TYPE_MAXBC			11	/* MAXC1/BC packet */
+#define	TYPE_BRAD_COORDS		21	/* Special Test coords packet for BRADFORD */
+/*#define TYPE_GRB_FINAL		22	/* BATSE-Final coords packet */
+/*#define TYPE_HUNTS_SRC		24	/* Huntsville LOCBURST GRB coords packet */
+#define	TYPE_ALEXIS_SRC			25	/* ALEXIS Transient coords packet */
+#define	TYPE_XTE_PCA_ALERT		26	/* XTE-PCA ToO Scheduled packet */
+#define	TYPE_XTE_PCA_SRC		27	/* XTE-PCA GRB coords packet */
+#define	TYPE_XTE_ASM_ALERT		28	/* XTE-ASM Alert packet */
+#define	TYPE_XTE_ASM_SRC		29	/* XTE-ASM GRB coords packet */
+#define	TYPE_COMPTEL_SRC		30	/* COMPTEL GRB coords packet */
+#define	TYPE_IPN_RAW_SRC		31	/* IPN_RAW GRB annulus coords packet */
+#define	TYPE_IPN_SEG_SRC		32	/* IPN_SEGment GRB annulus segment coords pkt */
+#define	TYPE_SAX_WFC_ALERT		33	/* SAX-WFC Alert packet */
+#define	TYPE_SAX_WFC_SRC		34	/* SAX-WFC GRB coords packet */
+#define	TYPE_SAX_NFI_ALERT		35	/* SAX-NFI Alert packet */
+#define	TYPE_SAX_NFI_SRC		36	/* SAX-NFI GRB coords packet */
+#define	TYPE_XTE_ASM_TRANS		37	/* XTE-ASM TRANSIENT coords packet */
+#define	TYPE_spare_SRC			38	/* spare */
+#define	TYPE_IPN_POS_SRC		39	/* IPN_POSition coords packet */
+#define	TYPE_HETE_ALERT_SRC		40	/* HETE S/C_Alert packet */
+#define	TYPE_HETE_UPDATE_SRC	41	/* HETE S/C_Update packet */
+#define	TYPE_HETE_FINAL_SRC		42	/* HETE S/C_Last packet */
 #define	TYPE_HETE_GNDANA_SRC	43	/* HETE Ground Analysis packet */
 #define	TYPE_HETE_TEST			44	/* HETE Test packet */
 #define	TYPE_GRB_CNTRPART		45	/* GRB Counterpart coords packet */
@@ -433,8 +467,11 @@ FILE *lg;			/* Logfile stream pointer */
 int errno;			/* Error return code number */
 time_t tloc;			/* Seconds since machine epoch */
 long here_sod;			/* Machine GMT converted to sec-of-day */
-long last_here_sod;		/* When the last imalive pkt arrived */
+long last_here_sod;		/* When the last imalive packet arrived */
 double last_imalive_sod;	/* SOD of the previous imalive packet */
+
+#define FIND_SXC	0	/* Used in hete_same() */
+#define	FIND_WXM	1	/* Ditto; check the corners of a WXM box */
 
 /*---------------------------------------------------------------------------*/
 void
@@ -521,7 +558,7 @@ receive_bacodine (process_grb_event_t arg)
       else
 	{
 	  /* If socket is connected, read the socket for packet; if the socket
-	   * does not have a packet, continue to loop. */
+	   * does not have a packet, continue to loop.                        */
 	  if ((bytes = read (inetsd, (char *) lbuf, sizeof (lbuf))) > 0)
 	    {
 	      /* Immediately echo back the packet so GCN can monitor:
@@ -553,11 +590,11 @@ receive_bacodine (process_grb_event_t arg)
 		{
 		  fprintf (lg, " %08lx", lbuf[i]);
 
-		  lo = lbuf[i] & 0x0000FFFF;
-		  hi = lbuf[i] >> 16;
+		  lo = lbuf[i] & 0x0000ffff;
+		  hi = (lbuf[i] >> 16) & 0x000ffff;
 
-		  lo = (lo >> 8) | ((lo & 0xFF) << 8);
-		  hi = (hi >> 8) | ((hi & 0xFF) << 8);
+		  lo = (lo >> 8) | ((lo & 0x00ff) << 8);
+		  hi = (hi >> 8) | ((hi & 0x00ff) << 8);
 
 		  lbuf[i] = (lo << 16) | hi;
 
@@ -576,8 +613,8 @@ receive_bacodine (process_grb_event_t arg)
 		  chk_imalive (1, tloc);	/* Pass time of latest imalive */
 		  break;
 		  /*case TYPE_GRB_COORDS:         /* BATSE-Original (no longer available) */
-		  /*case TYPE_MAXBC:                      /* BATSE-MAXBC (no longer available) */
-		  /*case TYPE_GRB_FINAL:          /* BATSE-Final (no longer available) */
+		  /*case TYPE_MAXBC:                      /* BATSE-MAXBC    (no longer available) */
+		  /*case TYPE_GRB_FINAL:          /* BATSE-Final    (no longer available) */
 		  /*case TYPE_HUNTS_SRC:          /* BATSE-LOCBURST (no longer available) */
 		case TYPE_TEST_COORDS:	/* Test Coordinates */
 		case TYPE_BRAD_COORDS:	/* Special Bradford Test Coords */
@@ -786,7 +823,7 @@ serr (fds, call)
 }
 
 /*---------------------------------------------------------------------------*/
-pr_imalive (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_imalive (lbuf, s)		/* print the contents of the imalive packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -817,7 +854,7 @@ pr_imalive (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_packet (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_packet (lbuf, s)		/* print the contents of the BATSE-based or test packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -871,7 +908,7 @@ pr_packet (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_kill (lbuf, s)		/* Print the contents of the KILL packet to the screen */
+pr_kill (lbuf, s)		/* print the contents of the KILL packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -882,15 +919,14 @@ pr_kill (lbuf, s)		/* Print the contents of the KILL packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_alexis (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_alexis (lbuf, s)		/* print the contents of the ALEXIS packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
   int i;			/* Loop var */
   static char tele[7][16] =
     { "n/a", "1A, 93eV", "1B, 70eV", "2A, 93eV", "2B, 66eV", "3A, 70eV",
-    "3B, 66eV"
-  };
+"3B, 66eV" };
 
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
   fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
@@ -928,7 +964,7 @@ pr_alexis (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_xte_pca (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_xte_pca (lbuf, s)		/* print the contents of the XTE-PCA packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -959,7 +995,7 @@ pr_xte_pca (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_xte_asm (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_xte_asm (lbuf, s)		/* print the contents of the XTE-ASM packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -991,7 +1027,7 @@ pr_xte_asm (lbuf, s)		/* Print the contents of the packet to the screen */
 
 
 /*---------------------------------------------------------------------------*/
-pr_xte_asm_trans (lbuf, s)	/* Print the contents of the packet to the screen */
+pr_xte_asm_trans (lbuf, s)	/* print the contents of the XTE-ASM_TRANS packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -1034,7 +1070,7 @@ pr_xte_asm_trans (lbuf, s)	/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_ipn_seg (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_ipn_seg (lbuf, s)		/* print the contents of the IPN SEGMENT packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -1043,7 +1079,7 @@ pr_ipn_seg (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_sax_wfc (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_sax_wfc (lbuf, s)		/* print the contents of the SAX-WFC packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -1065,7 +1101,7 @@ pr_sax_wfc (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_sax_nfi (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_sax_nfi (lbuf, s)		/* print the contents of the SAX-NFI packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -1075,7 +1111,7 @@ pr_sax_nfi (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-pr_ipn_pos (lbuf, s)		/* Print the contents of the packet to the screen */
+pr_ipn_pos (lbuf, s)		/* print the contents of the IPN POSITION packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -1084,12 +1120,11 @@ pr_ipn_pos (lbuf, s)		/* Print the contents of the packet to the screen */
 }
 
 /*---------------------------------------------------------------------------*/
-/* Please note that not all the many flag bits are extracted and printed
+/* Please note that not all of the many flag bits are extracted and printed
  * in this example routine.  The important ones are shown (plus all the
  * numerical fields).  Please refer to the sock_pkt_def_doc.html on the
- * GCN web site for the full details of the contents of these flag bits.
- */
-pr_hete (lbuf, s)		/* Print the contents of the packet to the screen */
+ * GCN web site for the full details of the contents of these flag bits.     */
+pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
@@ -1100,13 +1135,13 @@ pr_hete (lbuf, s)		/* Print the contents of the packet to the screen */
   switch (lbuf[PKT_TYPE])
     {
     case TYPE_HETE_ALERT_SRC:
-      printf ("Alert");
+      printf ("S/C_Alert");
       break;
     case TYPE_HETE_UPDATE_SRC:
-      printf ("Update");
+      printf ("S/C_Update");
       break;
     case TYPE_HETE_FINAL_SRC:
-      printf ("Final");
+      printf ("S/C_Last");
       break;
     case TYPE_HETE_GNDANA_SRC:
       printf ("GndAna");
@@ -1130,21 +1165,24 @@ pr_hete (lbuf, s)		/* Print the contents of the packet to the screen */
   fprintf (s, "   BURST_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
 
-  fprintf (s, "   TRIGGER_SOURCE:   ");
-  if (lbuf[H_TRIG_FLAGS] & H_GAMMA_TRIG)
-    fprintf (s, "   GAMMA HARDWARE TRIGGER\n");
-  else if (lbuf[H_TRIG_FLAGS] & H_WXM_TRIG)
-    fprintf (s, "   XG SOFTWARE TRIGGER\n");
-  else if (lbuf[H_TRIG_FLAGS] & H_SXC_TRIG)
-    fprintf (s, "   SXC TRIGGER\n");
+  fprintf (s, "   TRIGGER_SOURCE: ");
+  if (lbuf[H_TRIG_FLAGS] & H_SXC_EN_TRIG)
+    fprintf (s, "Trigger on the 1.5-12 keV band.\n");
+  else if (lbuf[H_TRIG_FLAGS] & H_LOW_EN_TRIG)
+    fprintf (s, "Trigger on the 2-30 keV band.\n");
+  else if (lbuf[H_TRIG_FLAGS] & H_MID_EN_TRIG)
+    fprintf (s, "Trigger on the 6-120 keV band.\n");
+  else if (lbuf[H_TRIG_FLAGS] & H_HI_EN_TRIG)
+    fprintf (s, "Trigger on the 25-400 keV band.\n");
   else
-    fprintf (s, "   Error: No trigger source.\n");
+    fprintf (s, "Error: No trigger source!\n");
 
-  fprintf (s, "   GAMMA_CTS_S:   %d  ", lbuf[H_GAMMA_CTS_S]);
-  fprintf (s, "   [cnts/s] on a %.3f s timescale\n",
+  fprintf (s, "   GAMMA_CTS_S:   %d [cnts/s] ", lbuf[H_GAMMA_CTS_S]);
+  fprintf (s, "on a %.3f sec timescale\n",
 	   (float) lbuf[H_GAMMA_TSCALE] / 1000.0);
-  fprintf (s, "   XG trigger timescale is %.3f s, S/N is %d",
-	   (float) lbuf[H_WXM_TSCALE] / 1000.0, lbuf[H_WXM_S_N]);
+  fprintf (s, "   WXM_SIG/NOISE:  %d [sig/noise]  ", lbuf[H_WXM_S_N]);
+  fprintf (s, "on a %.3f sec timescale\n",
+	   (float) lbuf[H_WXM_TSCALE] / 1000.0);
   if (lbuf[H_TRIG_FLAGS] & H_WXM_DATA)	/* Check for XG data and parse */
     fprintf (s, ",  Data present.\n");
   else
@@ -1160,7 +1198,6 @@ pr_hete (lbuf, s)		/* Print the contents of the packet to the screen */
 	   (unsigned short) (lbuf[H_POINTING] >> 16));
   fprintf (s, "   SC_-Z_DEC:   %4d [deg]\n",
 	   (short) (lbuf[H_POINTING] & 0xffff));
-
 
   fprintf (s, "   BURST_RA:    %7.3fd  (current)\n",
 	   lbuf[BURST_RA] / 10000.0);
@@ -1224,21 +1261,127 @@ pr_hete (lbuf, s)		/* Print the contents of the packet to the screen */
   if (lbuf[H_TRIG_FLAGS] & H_ART_TRIG)
     fprintf (s, "   COMMENT:   ARTIFICIAL BURST TRIGGER!\n");
   if (!(lbuf[H_TRIG_FLAGS] & H_OPT_DATA))
-    fprintf (s, "   COMMENT:   No pointing info yet available.\n");
+    fprintf (s, "   COMMENT:   No s/c ACS pointing info available yet.\n");
   if (lbuf[H_TRIG_FLAGS] & H_DEF_GRB)
-    fprintf (s, "   COMMENT:   Definite GRB.\n");
+    fprintf (s, "   COMMENTS:  Definite GRB.\n");
   if (lbuf[H_TRIG_FLAGS] & H_PROB_GRB)
-    fprintf (s, "   COMMENT:   Probable GRB.\n");
-  if (lbuf[H_TRIG_FLAGS] & H_PROB_XRB)
-    fprintf (s, "   COMMENT:   Probable XRB.\n");
+    fprintf (s, "   COMMENTS:  Probable GRB.\n");
+  if (lbuf[H_TRIG_FLAGS] & H_POSS_GRB)
+    fprintf (s, "   COMMENTS:  Possible GRB.\n");
+  if (lbuf[H_TRIG_FLAGS] & H_DEF_NOT_GRB)
+    fprintf (s, "   COMMENTS:  Definitely not a GRB.\n");
   if (lbuf[H_TRIG_FLAGS] & H_DEF_SGR)
-    fprintf (s, "   COMMENT:   Definite SGR.\n");
+    fprintf (s, "   COMMENTS:  Definite SGR.\n");
   if (lbuf[H_TRIG_FLAGS] & H_PROB_SGR)
-    fprintf (s, "   COMMENT:   Probable SGR.\n");
+    fprintf (s, "   COMMENTS:  Probable SGR.\n");
+  if (lbuf[H_TRIG_FLAGS] & H_POSS_SGR)
+    fprintf (s, "   COMMENTS:  Possible SGR.\n");
   if (lbuf[H_TRIG_FLAGS] & H_DEF_XRB)
-    fprintf (s, "   COMMENT:   Definite XRB.\n");
+    fprintf (s, "   COMMENTS:  Definite XRB.\n");
   if (lbuf[H_TRIG_FLAGS] & H_PROB_XRB)
-    fprintf (s, "   COMMENT:   Probable XRB.\n");
+    fprintf (s, "   COMMENTS:  Probable XRB.\n");
+  if (lbuf[H_TRIG_FLAGS] & H_POSS_XRB)
+    fprintf (s, "   COMMENTS:  Possible XRB.\n");
+
+  if (lbuf[H_TRIG_FLAGS] & H_NEAR_SAA)
+    fprintf (s, "   COMMENT:   S/c is in or near the SAA.\n");
+
+  if (lbuf[H_TRIG_FLAGS] & H_WXM_POS)	/* Flag says that SXC position is available */
+    if (hete_same (lbuf, FIND_WXM))
+      fprintf (s,
+	       "   COMMENT:   WXM error box is circular; not rectangular.\n");
+  if (lbuf[H_TRIG_FLAGS] & H_SXC_POS)	/* Flag says that SXC position is available */
+    if (hete_same (lbuf, FIND_SXC))
+      fprintf (s,
+	       "   COMMENT:   SXC error box is circular; not rectangular.\n");
+
+  if (lbuf[H_POS_FLAGS] & H_WXM_SXC_SAME)
+    fprintf (s,
+	     "   COMMENT:   The WXM & SXC positions are consistant; overlapping error boxes.\n");
+  if (lbuf[H_POS_FLAGS] & H_WXM_SXC_DIFF)
+    fprintf (s,
+	     "   COMMENT:   The WXM & SXC positions are NOT consistant; non-overlapping error boxes.\n");
+  if (lbuf[H_POS_FLAGS] & H_WXM_LOW_SIG)
+    fprintf (s, "   COMMENT:   WXM S/N is less than a reasonable value.\n");
+  if (lbuf[H_POS_FLAGS] & H_SXC_LOW_SIG)
+    fprintf (s, "   COMMENT:   SXC S/N is less than a reasonable value.\n");
+
+
+  if ((lbuf[PKT_TYPE] == TYPE_HETE_UPDATE_SRC) ||
+      (lbuf[PKT_TYPE] == TYPE_HETE_FINAL_SRC) ||
+      (lbuf[PKT_TYPE] == TYPE_HETE_GNDANA_SRC))
+    {
+      if (lbuf[H_VALIDITY] & H_EMERGE_TRIG)
+	fprintf (s,
+		 "   COMMENT:   This trigger is the result of Earth Limb emersion.\n");
+      if (lbuf[H_VALIDITY] & H_KNOWN_XRS)
+	fprintf (s,
+		 "   COMMENT:   This position matches a known X-ray source.\n");
+      if ((((lbuf[H_TRIG_FLAGS] & H_WXM_POS) == 0)
+	   && ((lbuf[H_TRIG_FLAGS] & H_SXC_POS) == 0))
+	  || (lbuf[H_VALIDITY] & H_NO_POSITION))
+	fprintf (s,
+		 "   COMMENT:   There is no position known for this trigger at this time.\n");
+    }
+
+  if ((lbuf[PKT_TYPE] == TYPE_HETE_FINAL_SRC) ||
+      (lbuf[PKT_TYPE] == TYPE_HETE_GNDANA_SRC))
+    {
+      if (lbuf[H_VALIDITY] & H_BURST_VALID)
+	fprintf (s, "   COMMENT:       Burst_Validity flag is true.\n");
+      if (lbuf[H_VALIDITY] & H_BURST_INVALID)
+	fprintf (s, "   COMMENT:       Burst_Invalidity flag is true.\n");
+    }
+  if (lbuf[PKT_TYPE] == TYPE_HETE_GNDANA_SRC)
+    {
+      if (lbuf[H_POS_FLAGS] & H_GAMMA_REFINED)
+	fprintf (s,
+		 "   COMMENT:   FREGATE data refined since S/C_Last Notice.\n");
+      if (lbuf[H_POS_FLAGS] & H_WXM_REFINED)
+	fprintf (s,
+		 "   COMMENT:   WXM data refined since S/C_Last Notice.\n");
+      if (lbuf[H_POS_FLAGS] & H_SXC_REFINED)
+	fprintf (s,
+		 "   COMMENT:   SXC data refined since S/C_Last Notice.\n");
+
+
+      if (lbuf[H_VALIDITY] & H_OPS_ERROR)
+	fprintf (s,
+		 "   COMMENT:   Invalid trigger due to operational error.\n");
+      if (lbuf[H_VALIDITY] & H_PARTICLES)
+	fprintf (s, "   COMMENT:   Particle event.\n");
+      if (lbuf[H_VALIDITY] & H_BAD_FLT_LOC)
+	fprintf (s, "   COMMENT:   Invalid localization by flight code.\n");
+      if (lbuf[H_VALIDITY] & H_BAD_GND_LOC)
+	fprintf (s,
+		 "   COMMENT:   Invalid localization by ground analysis code.\n");
+      if (lbuf[H_VALIDITY] & H_RISING_BACK)
+	fprintf (s,
+		 "   COMMENT:   Trigger caused by rising background levels.\n");
+      if (lbuf[H_VALIDITY] & H_POISSON_TRIG)
+	fprintf (s,
+		 "   COMMENT:   Background fluctuation exceeded trigger level.\n");
+      if (lbuf[H_VALIDITY] & H_OUTSIDE_FOV)
+	fprintf (s,
+		 "   COMMENT:   Burst was outside WXM and SXC fields-of-view.\n");
+      if (lbuf[H_VALIDITY] & H_IPN_CROSSING)
+	fprintf (s,
+		 "   COMMENT:   Burst coordinates consistent with IPN annulus.\n");
+      if (lbuf[H_VALIDITY] & H_NOT_A_BURST)
+	fprintf (s,
+		 "   COMMENT:   Ground & human analysis have determined this to be a non-GRB.\n");
+    }
+
+  if (lbuf[PKT_TYPE] == TYPE_HETE_TEST)
+    {
+      fprintf (s, "   COMMENT:\n");
+      fprintf (s, "   COMMENT:   This is a TEST Notice.\n");
+      fprintf (s,
+	       "   COMMENT:   And for this TEST Notice, most of the flags\n");
+      fprintf (s,
+	       "   COMMENT:   have been turned on to show most of the fields.\n");
+    }
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1365,4 +1508,54 @@ e_mail_alert (which)		/* send an E_MAIL ALERT if no pkts in 600sec */
   rtn = system (cmd_str);
   printf ("%sSystem() rtn=%d.\n", rtn ? "ERR: " : "", rtn);
   fprintf (lg, "%sSystem() rtn=%d.\n", rtn ? "ERR: " : "", rtn);
+}
+
+/*---------------------------------------------------------------------------*/
+int
+hete_same (hbuf, find_which)
+     long *hbuf;		/* Ptr to 40-long packet buffer with HETE contents */
+     int find_which;		/* Which instrument box to find the center of */
+{
+  double cra[4], cdec[4];	/* Generic 4 corners locations */
+  int same = 0;			/* Are the 4 corners the same? */
+
+  switch (find_which)
+    {
+    case FIND_SXC:
+      cra[0] = (double) hbuf[H_SXC_CNR1_RA] / 10000.0;	/* All 4 in J2000 */
+      cra[1] = (double) hbuf[H_SXC_CNR2_RA] / 10000.0;
+      cra[2] = (double) hbuf[H_SXC_CNR3_RA] / 10000.0;
+      cra[3] = (double) hbuf[H_SXC_CNR4_RA] / 10000.0;
+      cdec[0] = (double) hbuf[H_SXC_CNR1_DEC] / 10000.0;	/* All 4 in J2000 */
+      cdec[1] = (double) hbuf[H_SXC_CNR2_DEC] / 10000.0;
+      cdec[2] = (double) hbuf[H_SXC_CNR3_DEC] / 10000.0;
+      cdec[3] = (double) hbuf[H_SXC_CNR4_DEC] / 10000.0;
+      break;
+
+    case FIND_WXM:
+      cra[0] = (double) hbuf[H_WXM_CNR1_RA] / 10000.0;	/* All 4 in J2000 */
+      cra[1] = (double) hbuf[H_WXM_CNR2_RA] / 10000.0;
+      cra[2] = (double) hbuf[H_WXM_CNR3_RA] / 10000.0;
+      cra[3] = (double) hbuf[H_WXM_CNR4_RA] / 10000.0;
+      cdec[0] = (double) hbuf[H_WXM_CNR1_DEC] / 10000.0;	/* All 4 in J2000 */
+      cdec[1] = (double) hbuf[H_WXM_CNR2_DEC] / 10000.0;
+      cdec[2] = (double) hbuf[H_WXM_CNR3_DEC] / 10000.0;
+      cdec[3] = (double) hbuf[H_WXM_CNR4_DEC] / 10000.0;
+      break;
+
+    default:
+      printf
+	("ERR: hete_same(): Shouldn't be able to get here; find_which=%d\n",
+	 find_which);
+      fprintf (lg,
+	       "ERR: hete_same(): Shouldn't be able to get here; find_which=%d\n",
+	       find_which);
+      return (0);
+      break;
+    }
+  if ((cra[0] == cra[1]) && (cra[0] == cra[2]) && (cra[0] == cra[3]) &&
+      (cdec[0] == cdec[1]) && (cdec[0] == cdec[2]) && (cdec[0] == cdec[3]))
+    return (1);
+  else
+    return (0);
 }
