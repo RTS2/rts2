@@ -568,6 +568,8 @@ dev_connect (struct device *dev, const char *hostname, uint16_t port)
     goto err;
   return 0;
 err:
+  if (dev->channel.socket != -1)
+    close (dev->channel.socket);
   dev->channel.socket = -1;
   return -1;
 }
