@@ -38,6 +38,8 @@ telescope_command_handler (struct param_status *params,
     return param_next_double (params, &info->siderealtime);
   if (!strcmp (params->param_argv, "localtime"))
     return param_next_double (params, &info->localtime);
+  if (!strcmp (params->param_argv, "correction_mark"))
+    return param_next_integer (params, &info->correction_mark);
   errno = EINVAL;
   return -1;
 };
