@@ -486,8 +486,6 @@ telescope_init (const char *device_name, int telescope_id)
 
     }
 
-  semctl (semid, 1, IPC_RMID);
-
   syslog (LOG_DEBUG, "LX200:Initialization complete");
 
   tcflush (port, TCIOFLUSH);
@@ -530,6 +528,7 @@ telescope_init (const char *device_name, int telescope_id)
 extern void
 telescope_done ()
 {
+  semctl (semid, 1, IPC_RMID);
 }
 
 /*!
