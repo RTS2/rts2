@@ -30,7 +30,7 @@ echo <<<EOT
 			<li>Mount
 		</ul class="menu">
 	</li>
-	<li><a href="targets.php">Targets</a>
+	<li><a href="targets.php?tar_id=&obs_id=">Targets</a>
 		<ul class="menu">
 			<li>
 EOT;

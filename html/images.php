@@ -7,12 +7,10 @@
 		display_settings ('ra');
 		display_settings ('dec');
 		display_settings ('date_from');
-		display_settings ('date_to');
+		display_settings ('date_to', 1);
 		display_settings ('camera_name');
 		display_settings ('mount_name');
-		if (array_key_exists('tar_id', $_SESSION)) {
-			display_settings ('tar_id');
-		}
+		display_settings ('tar_id');
 	echo "<td><input type='submit' value='Change'></input></td></tr></table>\n</form>";
 
 	$q = new Query;

@@ -61,12 +61,13 @@ EOT;
 	}
 
 	function deg2h ($d) {
+		$a = $d;
 		$d = $d / 15.0;
 		$h = floor ($d);
 		$ret = sprintf ("%02d:", $h);
 		$d = fmod ($d, 1) * 60.0;
-		$ret = $ret . sprintf ("%02.0f:", floor($d));
-		$s = fmod ($d, 1) * 60.0; // to correct problems with displying it
+		$ret = $ret . sprintf ("%02.0f:", $d);
+		$s = fmod ($d, 1) * 60.0; 
 		return $ret . sprintf ("%02.1f", $s);
 	}
 
@@ -208,7 +209,7 @@ EOT;
 			if ($from == 1 && $to == 1) {
 				echo "All $limit records are shown.<br>";
 			} else {
-				$url = $_SERVER[REQUEST_URI];
+				$url = $_SERVER['REQUEST_URI'];
 				if (strstr ($url, '?'))
 					$url .= '&';
 				else
@@ -302,13 +303,26 @@ EOT;
 				if ($_SESSION['authorized'])
 					echo "<form name='test' action='$_SERVER[REQUEST_URI]'>\n";
 				echo "<table>\n";
+				$ra = -500;
+				$dec = -500;
 				for ($i = 0; $i < pg_numfields($this->res); $i++) {
 					$name = pg_fieldname($this->res, $i);
+					if ($name == 'tar_ra')
+						$ra = $row[$i];
+					if ($name == 'tar_dec')
+						$dec = $row[$i];
 					$value = get_value ($name, $row[$i]);
 					echo "\t<tr>\n\t\t<td>" . (array_key_exists ($name, $fields_name) ? $fields_name[$name] : $name) . 
 					"\t\t</td><td>\n" . ($_SESSION['authorized'] && array_key_exists($name, $fields_writable) ? "<input type='text' name='$name' value='$value'></input>" : "<input type='hidden' name='$name' value='$value'>$value") . "\n\t</td>\n\t</tr>\n";
 				}
-				echo "</table>\n\t";
+				if ($ra != -500 && $dec != -500)
+				{
+					$q = new Query();
+					echo "\t<tr>\n\t\t<td>All images with $ra, $dec</td>\n\t\t<td><a href='images.php?ra=$ra&dec=$dec&tar_id=&obs_id='>" .
+					$q->simple_query("SELECT COUNT(*) FROM images WHERE isinwcs ($ra, $dec, astrometry);").
+					"</a></td>\n\t</tr>\n";
+					echo "</table>\n\t";
+				}
 				if ($_SESSION['authorized']) 
 					echo "<input type='Submit' value='OK'></input>\n</form>\n";
 			}
@@ -353,7 +367,7 @@ EOT;
 		'obs_id' => 5, 'date_from' => 14,
 		'date_to' => 14, 'page_size' => 3);
 
-	function display_settings ($name) {
+	function display_settings ($name, $lf = 0) {
 		global $settinngs_text;
 		global $settinngs_size;
 		$text = array_key_exists ($name, $settinngs_text) ? $settinngs_text[$name] : "Unknow field: $name";
@@ -379,8 +393,9 @@ EOT;
 "$size></input>
 	</td>
 EOT;
+	if ($lf)
+		echo "</tr><tr>\n";
 	}
-
 
 	function get_str_val ($name) {
 		if (array_key_exists($name, $_REQUEST)) {
