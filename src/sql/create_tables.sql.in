@@ -73,7 +73,6 @@ CREATE TABLE observations (
 	obs_id		integer PRIMARY KEY,
 	obs_start	timestamp,
 	obs_duration	interval,
-	obs_imagescount integer DEFAULT 0 -- number of images taken
 );
 
 CREATE INDEX observations_tar_id ON observations (tar_id);
@@ -128,6 +127,9 @@ GRANT ALL ON observations TO GROUP observers;
 GRANT ALL ON ot TO GROUP observers;
 GRANT ALL ON cameras TO GROUP observers;
 GRANT ALL ON mounts TO GROUP observers;
+GRANT ALL ON darks TO GROUP observers;
+GRANT ALL ON flats TO GROUP observers;
 
-GRANT SELECT ON images_nights TO observers;
-GRANT SELECT ON observations_nights TO observers;
+
+GRANT SELECT ON images_nights TO GROUP observers;
+GRANT SELECT ON observations_nights TO GROUP observers;

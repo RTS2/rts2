@@ -2,29 +2,31 @@ DROP FUNCTION obj_alt (float8, float8, float8, float8, float8);
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_alt (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS 'pg_astrolib', 'obj_alt' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/pgsql/pg_astrolib.so', 'obj_alt' LANGUAGE 'C';
 
 DROP FUNCTION obj_az (float8, float8, float8, float8, float8);
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_az (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS 'pg_astrolib', 'obj_az' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/pgsql/pg_astrolib.so', 'obj_az' LANGUAGE 'C';
 
 DROP FUNCTION obj_rise (float8, float8, float8, float8);
 
 CREATE FUNCTION obj_rise (float8, float8, float8, float8)
-	RETURNS float8 AS 'pg_astrolib', 'obj_rise' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/pgsql/pg_astrolib.so', 'obj_rise' LANGUAGE 'C';
 
 DROP FUNCTION obj_set (float8, float8, float8, float8);
 
 CREATE FUNCTION obj_set (float8, float8, float8, float8)
-	RETURNS float8 AS 'pg_astrolib', 'obj_set' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/pgsql/pg_astrolib.so', 'obj_set' LANGUAGE 'C';
 
 DROP FUNCTION obj_airmass (float8, float8, float8, float8, float8);
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_airmass (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS 'pg_astrolib', 'obj_airmass' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/pgsql/pg_astrolib.so', 'obj_airmass' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION night_num (timestamp) RETURNS integer AS 
-	'SELECT ROUND(EXTRACT(EPOCH FROM $1) / 86400)' LANGUAGE 'SQL';
+DROP FUNCTION night_num (timestamp);
+
+CREATE FUNCTION night_num (timestamp) RETURNS numeric AS 
+	'SELECT FLOOR((EXTRACT(EPOCH FROM $1) - 43200) / 86400)' LANGUAGE 'SQL';
