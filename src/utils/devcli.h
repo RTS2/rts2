@@ -50,7 +50,7 @@ ssize_t devcli_read_data (int socket, void *data, size_t size);
 int devcli_wait_for_status (char *device_name, char *status_name,
 			    int status_mask, int status, time_t timeout);
 
-int devcli_server_command (char *cmd, ...);
-int devcli_command (int channel_id, char *cmd, ...);
+int devcli_server_command (int *ret_code, char *cmd, ...);
+int devcli_command (int channel_id, int *ret_code, char *cmd, ...);
 
 #endif // __RTS_DEVCLI__

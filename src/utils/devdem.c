@@ -460,7 +460,7 @@ server_handle_msg (char *msg)
 {
   if (strncmp (msg, "authorize", 9) == 0)
     {
-      if (devcli_server_command (msg))
+      if (devcli_server_command (NULL, msg))
 	syslog (LOG_ERR, "devcli_command %s: %m", msg);
       return 0;
     }
