@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# Start/stops rts2 deamons (rts2-centrald, rts2-teld-xxx etc..)
+#
+#
+
+case "$1" in
+	start)
+		echo -n "Starting rts2 daemons:"
+
+		echo -n "dome-fram"
+		start-stop-daemon --start --pidfile /var/run/rts2_DOME --exec /home/petr/rts2/src/dome/rts2-dome-fram
+		
+		echo "."
+		;;
+	stop)
+		echo -n "Stopping rts2 daemons:"
+
+		echo -n "dome-fram"
+		start-stop-daemon --stop --pidfile /var/run/rts2_DOME --exec /home/petr/rts2/src/dome/rts2-dome-fram
+
+		echo "."
+		;;
+	*)
+		echo "Usage /etc/init.d/rts2 {start|stop|restart}"
+		exit 1
+		;;
+esac
+
+exit 0
