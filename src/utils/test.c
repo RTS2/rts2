@@ -20,7 +20,6 @@ main (int argc, char **argv)
 //  char hms[60];
 //  int i;
   double value;
-  char *loc;
   printf ("10.2 - %f\n", hmstod ("10.2"));
   printf ("10a58V67 - %f\n", hmstod ("10a58V67"));
 
@@ -51,6 +50,7 @@ main (int argc, char **argv)
 	  get_device_double_default ("hete", "dark_frequency", 25));
 
   printf ("ret: %s\n", get_string_default ("epoch", "000"));
-  printf ("ret: %s\n", get_device_string_default ("CNF1", "script", "AA"));
+  printf ("ret: %s\n",
+	  get_sub_device_string_default ("CNF1", "script", "airmass", "AA"));
   return 0;
 }

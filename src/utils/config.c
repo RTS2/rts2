@@ -34,7 +34,7 @@ free_config ()
 }
 
 int
-read_config (char *filename)
+read_config (const char *filename)
 {
 #define BUF_SIZE	500
   char buf[BUF_SIZE];
@@ -56,7 +56,10 @@ read_config (char *filename)
       while (*bp)		// put out comments
 	{
 	  if (*bp == '#')
-	    *bp = 0;
+	    {
+	      *bp = 0;
+	      break;
+	    }
 	  else
 	    {
 	      switch (state)
@@ -155,7 +158,7 @@ read_config (char *filename)
 }
 
 struct config_entry *
-get_entry (char *name)
+get_entry (const char *name)
 {
   struct config_entry *cfg = config;
   while (cfg && cfg->name)
@@ -168,7 +171,7 @@ get_entry (char *name)
 }
 
 int
-get_string (char *name, char **val)
+get_string (const char *name, char **val)
 {
   struct config_entry *cfg = get_entry (name);
   if (cfg && cfg->type == CFG_STRING)
@@ -180,7 +183,7 @@ get_string (char *name, char **val)
 }
 
 char *
-get_string_default (char *name, char *def)
+get_string_default (const char *name, char *def)
 {
   char *val;
   if (get_string (name, &val) == -1)
@@ -189,7 +192,7 @@ get_string_default (char *name, char *def)
 }
 
 int
-get_double (char *name, double *val)
+get_double (const char *name, double *val)
 {
   struct config_entry *cfg = get_entry (name);
   if (cfg && cfg->type == CFG_DOUBLE)
@@ -201,7 +204,7 @@ get_double (char *name, double *val)
 }
 
 double
-get_double_default (char *name, double def)
+get_double_default (const char *name, double def)
 {
   double val;
   if (get_double (name, &val) == -1)
@@ -210,7 +213,7 @@ get_double_default (char *name, double def)
 }
 
 struct config_entry *
-get_device_entry (char *device, char *name)
+get_device_entry (const char *device, const char *name)
 {
   struct config_entry *cfg = config;
   int dev_len = strlen (device);
@@ -223,11 +226,11 @@ get_device_entry (char *device, char *name)
       cfg = cfg->next;
     }
   // return null, if device doesn't exist
-  return get_entry ("name");
+  return get_entry (name);
 }
 
 extern int
-get_device_string (char *device, char *name, char **val)
+get_device_string (const char *device, const char *name, char **val)
 {
   struct config_entry *cfg = get_device_entry (device, name);
   if (cfg && cfg->type == CFG_STRING)
@@ -239,7 +242,8 @@ get_device_string (char *device, char *name, char **val)
 }
 
 extern char *
-get_device_string_default (char *device, char *name, char *def)
+get_device_string_default (const char *device, const char *name,
+			   const char *def)
 {
   char *val;
   if (get_device_string (device, name, &val) == -1)
@@ -248,7 +252,7 @@ get_device_string_default (char *device, char *name, char *def)
 }
 
 extern int
-get_device_double (char *device, char *name, double *val)
+get_device_double (const char *device, const char *name, double *val)
 {
   struct config_entry *cfg = get_device_entry (device, name);
   if (cfg && cfg->type == CFG_DOUBLE)
@@ -260,10 +264,80 @@ get_device_double (char *device, char *name, double *val)
 }
 
 extern double
-get_device_double_default (char *device, char *name, double def)
+get_device_double_default (const char *device, const char *name, double def)
 {
   double val;
   if (get_device_double (device, name, &val) == -1)
     return get_double_default (name, def);
+  return val;
+}
+
+struct config_entry *
+get_sub_device_entry (const char *device, const char *name, const char *sub)
+{
+  struct config_entry *cfg = config;
+  char *path;
+  path = (char *) malloc (strlen (device) + strlen (name) + strlen (sub) + 3);
+  strcpy (path, device);
+  strcat (path, ".");
+  strcat (path, name);
+  strcat (path, ".");
+  strcat (path, sub);
+  while (cfg && cfg->name)
+    {
+      if (!strcasecmp (cfg->name, path))
+	{
+	  free (path);
+	  return cfg;
+	}
+      cfg = cfg->next;
+    }
+  // return null, if device doesn't exist
+  return get_device_entry (device, name);
+}
+
+extern int
+get_sub_device_string (const char *device, const char *name, const char *sub,
+		       char **val)
+{
+  struct config_entry *cfg = get_sub_device_entry (device, name, sub);
+  if (cfg && cfg->type == CFG_STRING)
+    {
+      *val = cfg->value;
+      return 0;
+    }
+  return -1;
+}
+
+extern char *
+get_sub_device_string_default (const char *device, const char *name,
+			       const char *sub, char *def)
+{
+  char *val;
+  if (get_sub_device_string (device, name, sub, &val) == -1)
+    return def;
+  return val;
+}
+
+extern int
+get_sub_device_double (const char *device, const char *name, const char *sub,
+		       double *val)
+{
+  struct config_entry *cfg = get_sub_device_entry (device, name, sub);
+  if (cfg && cfg->type == CFG_DOUBLE)
+    {
+      *val = *(double *) cfg->value;
+      return 0;
+    }
+  return -1;
+}
+
+extern double
+get_sub_device_double_default (const char *device, const char *name,
+			       const char *sub, double def)
+{
+  double val;
+  if (get_sub_device_double (device, name, sub, &val) == -1)
+    return def;
   return val;
 }
