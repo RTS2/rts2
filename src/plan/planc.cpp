@@ -237,15 +237,16 @@ process_precission (Target * tar, struct device *camera)
     {
       double ra_err = NAN, dec_err = NAN;	// no astrometry
       double ra_margin = 15, dec_margin = 15;	// in arc minutes
-      int tries = 0;
       int max_tries = (int) get_double_default ("maxtries", 5);
+      hi_precision_t hi_precision;
 
+      hi_precision.ntries = 0;
+      
       ra_margin = get_double_default ("ra_margin", ra_margin);
       dec_margin = get_double_default ("dec_margin", dec_margin);
       ra_margin = ra_margin / 60.0;
       dec_margin = dec_margin / 60.0;
 
-      hi_precision_t hi_precision;
 
       pthread_mutex_t ret_mutex = PTHREAD_MUTEX_INITIALIZER;
       pthread_cond_t ret_cond = PTHREAD_COND_INITIALIZER;
@@ -258,7 +259,7 @@ process_precission (Target * tar, struct device *camera)
 	  devcli_command (camera, NULL, "binning 0 %i %i", bin, bin);
 	}
 
-      while (tries < max_tries)
+      while (hi_precision.ntries < max_tries)
 	{
 	  int light = 1;
 	  struct ln_equ_posn object;
@@ -273,7 +274,7 @@ process_precission (Target * tar, struct device *camera)
 	  tar->getPosition (&object);
 	  printf
 	    ("triing to get to %f %f, %i try, %s image, %i total precission, can_df: %i\n",
-	     object.ra, object.dec, tries, (light == 1) ? "light" : "dark",
+	     object.ra, object.dec, hi_precision.ntries, (light == 1) ? "light" : "dark",
 	     precission_count,
 	     ((struct camera_info *) (&(camera->info)))->can_df);
 
@@ -334,7 +335,7 @@ process_precission (Target * tar, struct device *camera)
 	      else
 		{
 		  // not astrometry, get us out of here
-		  tries = max_tries;
+		  hi_precision.ntries = max_tries;
 		  break;
 		}
 	      printf ("ra_err: %f dec_err: %f\n", ra_err, dec_err);
@@ -348,17 +349,24 @@ process_precission (Target * tar, struct device *camera)
 		{
 		  tar->moved = 0;
 		  // try to synchro the scope again
-		  move (tar);
+		  if (hi_precision.hi_precision == 1)
+  		    move (tar);
 		}
-	      tries++;
+	      hi_precision.ntries++;
 	    }
 	}
       if (bin > 1)
 	{
 	  devcli_command (camera, NULL, "binning 0 1 1");
 	}
+      if (tar->hi_precision == 2)
+      {
+        devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
+    	  TEL_OBSERVING, 0);
+      }
+
       pthread_mutex_lock (&precission_mutex);
-      tar->hi_precision = (tries < max_tries) ? 0 : -1;
+      tar->hi_precision = (hi_precision.ntries < max_tries) ? 0 : -1; // return something usefull - tar is pointer, so it will get there
       pthread_cond_broadcast (&precission_cond);
       pthread_mutex_unlock (&precission_mutex);
     }
@@ -587,6 +595,7 @@ execute_camera_script (void *exinfo)
 	      continue;
 	    }
 	  command = s;
+	  printf ("integration exp_stat: %i\n", exp_state);
 	  if (exp_state == EXPOSURE_PROGRESS)
 	    {
 	      devcli_command (camera, NULL, "readout 0");
