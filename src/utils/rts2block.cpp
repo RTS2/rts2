@@ -785,7 +785,7 @@ Rts2Block::sendMail (char *subject, char *text)
     }
   asprintf (&cmd, "/usr/bin/mail -s '%s' 'petr@kubanek.net,prouza@fzu.cz'",
 	    subject);
-  mailFile = popen (cmd, "r");
+  mailFile = popen (cmd, "w");
   if (!mailFile)
     {
       syslog (LOG_ERR, "Rts2Block::sendMail popen: %m");
