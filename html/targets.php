@@ -49,6 +49,17 @@
 		$q->print_form ();
 
 		$row = pg_fetch_array ($q->res, 0);
+		// additional info - now only for GRB
+		switch ($target_type) {
+			case 'G':
+				$f_obs = $q->simple_query ("SELECT MIN(obs_start) - grb_date FROM grb, observations WHERE grb.tar_id = observations.tar_id AND grb.tar_id = $_SESSION[tar_id] GROUP BY grb_date;");
+				if ($f_obs > '') {
+					echo "First observation after $f_obs<p>";
+				} else {
+					echo "No know observations.<p>";
+				}
+				break;
+		}
 		echo "<img src='chart.php?ra=" . $row['tar_ra'] . "&dec=" . $row['tar_dec'] . "' alt='Sky chart'/>\n<hr>\n";
 		$img_count = $q->simple_query ("SELECT img_count FROM targets_images WHERE tar_id = $_SESSION[tar_id]");
 		echo "Images: <a href='images.php'>$img_count</a>";
