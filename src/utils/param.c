@@ -98,6 +98,17 @@ param_next (struct param_status *params)
 }
 
 int
+param_next_char (struct param_status *params, char *ret)
+{
+  if (param_next (params))
+    return -1;
+  if (strlen (params->param_processing) != 1)
+    return -1;
+  *ret = *params->param_processing;
+  return 0;
+}
+
+int
 param_next_string (struct param_status *params, char **ret)
 {
   if (param_next (params))
