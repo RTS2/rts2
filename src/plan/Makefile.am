@@ -4,7 +4,7 @@ bin_PROGRAMS = rts2-planc test
 
 noinst_HEADERS = selector.h
 
-rts2_planc_SOURCES = planc.cpp selector.cpp target.cpp
+rts2_planc_SOURCES = planc.cpp selector.cpp target.cpp centering.cpp
 test_SOURCES = test.cpp target.cpp selector.cpp
 
 EXTRA_DIST = selector.ec

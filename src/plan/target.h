@@ -12,6 +12,7 @@
 #define TYPE_PHOTOMETRIC	'M'
 #define TYPE_TECHNICAL          't'
 #define TYPE_TERESTIAL		'T'
+#define TYPE_CALIBRATION	'c'
 
 class Target
 {

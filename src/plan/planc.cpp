@@ -39,8 +39,9 @@
 #include "phot_info.h"
 #include "../db/db.h"
 #include "../writers/process_image.h"
+#include "centering.h"
 
-#define EXPOSURE_TIME		2*60
+#define EXPOSURE_TIME		60
 
 #define COMMAND_EXPOSURE	'E'
 #define COMMAND_FILTER		'F'
@@ -49,6 +50,8 @@
 #define COMMAND_WAIT            'W'
 #define COMMAND_SLEEP		'S'
 #define COMMAND_UTC_SLEEP	'U'
+#define COMMAND_CENTERING	'c'
+#define	COMMAND_FOCUSING	'f'
 
 struct thread_list
 {
@@ -450,7 +453,7 @@ execute_camera_script (void *exinfo)
   time_t now;
   enum
   { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS,
-    INTEGRATION_PROGRESS
+    INTEGRATION_PROGRESS, CENTERING
   } exp_state;
 
   time (&script_start);
@@ -671,7 +674,7 @@ execute_camera_script (void *exinfo)
 	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
-					  PHOT_NOINTEGRATE, 10000);
+					  PHOT_NOINTEGRATE, 100);
 	    }
 
 	  // now there is no exposure running, do the move
@@ -726,6 +729,24 @@ execute_camera_script (void *exinfo)
 	  pthread_mutex_unlock (&script_thread_count_mutex);
 
 	  break;
+	case COMMAND_CENTERING:
+	  command++;
+	  if (exp_state == EXPOSURE_PROGRESS)
+	    {
+	      devcli_command (camera, NULL, "readout 0");
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_READING, CAM_NOTREADING,
+				      MAX_READOUT_TIME);
+	      exp_state = NO_EXPOSURE;
+	    }
+	  if (exp_state == INTEGRATION_PROGRESS)
+	    {
+	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+					  PHOT_MASK_INTEGRATE,
+					  PHOT_NOINTEGRATE, 10000);
+	    }
+	  exp_state = CENTERING;
+	  rts2_centering (camera, telescope);
 	case COMMAND_SLEEP:
 	  command++;
 	  filter = strtol (command, &s, 10);

@@ -94,5 +94,4 @@ main (int argc, char **argv)
   printf ("t->tar_id: %i\n", plan->next->id);
 
   db_disconnect ();
-
 }
