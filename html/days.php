@@ -71,12 +71,7 @@
 			}
 		}
 		table_end ($wday);
-		if ($last_month %2) {
-			echo "</td>";
-		} else {
-			echo "</td></tr><tr>";
-		}
-		echo "<td valign='top'>\n";
+		echo "</td></tr>\n<tr><td valign='top'>\n";
 	}
 
 	$year = $_REQUEST["year"];
