@@ -5,7 +5,7 @@ struct phot_info
 {
   char type[64];
   int count;
-  int exposure;
+  int integration;
   int filter;
 };
 
