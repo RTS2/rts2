@@ -11,13 +11,10 @@
 
 #include "devdem.h"
 #include "devser.h"
-#include "../status.h"
-
 #include "devconn.h"
-
 #include "devcli.h"
-
 #include "param.h"
+#include "status.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -260,7 +257,7 @@ priority_block_start (int lost_priority)
   has_priority = client_id >= 0 && clients_info->priority_client == client_id;
 
   if (lost_priority)
-	  clients_info->priority_client = -1;
+    clients_info->priority_client = -1;
 
   if (!has_priority)
     {

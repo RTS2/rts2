@@ -1,10 +1,9 @@
 #ifndef __RTS_DEVHND__
 #define __RTS_DEVHND__
 
-#include "camera_info.h"
-#include "telescope_info.h"
+#include "image_info.h"
 #include "param.h"
-#include "../status.h"
+#include "status.h"
 
 union devhnd_info
 {
@@ -15,19 +14,14 @@ union devhnd_info
 typedef int (*devcli_handle_response_t) (struct param_status * params,
 					 union devhnd_info * devhnd_info);
 typedef int (*devcli_handle_data_t) (int sock, size_t size,
-				     struct telescope_info * telescope,
-				     struct camera_info * camera,
-				     double exposure, time_t * exp_start);
+				     struct image_info * image);
 
 struct devcli_channel_handlers
 {
   devcli_handle_response_t command_handler;	//! handler to handle responses
   devcli_handle_response_t message_handler;	//! handler to asynchoronous messages
   devcli_handle_data_t data_handler;	//! handler to ANY received data
-  struct telescope_info telescope;	//! data about data
-  struct camera_info camera;
-  double exposure;
-  time_t exp_start;
+  struct image_info image;	//! data about image data
 };
 
 struct supp_info

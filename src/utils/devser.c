@@ -18,11 +18,9 @@
 #define IPC_MSG_SHIFT		1000
 
 #include "devser.h"
-#include "../status.h"
-
 #include "devconn.h"
-
 #include "param.h"
+#include "status.h"
 
 #include <stdio.h>
 #include <errno.h>

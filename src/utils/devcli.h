@@ -12,6 +12,7 @@
 
 #include "devconn.h"
 #include "devhnd.h"
+#include "image_info.h"
 #include "param.h"
 #include <pthread.h>
 #include <netinet/in.h>
@@ -41,14 +42,10 @@ ssize_t devcli_read_data (int sock, void *data, size_t size);
 
 int devcli_wait_for_status (char *device_name, char *status_name,
 			    int status_mask, int status, time_t tmeout);
-
 int devcli_server_command (int *ret_code, char *cmd, ...);
 int devcli_command (int channel_id, int *ret_code, char *cmd, ...);
+int devcli_image_info (int channel_id, struct image_info *image);
 int devcli_execute (char *line, int *ret_code);
-int devcli_getinfo (int channel_id, union devhnd_info **info);
-int devcli_set_readout_telescope (int channel_id,
-				  const struct telescope_info *telescope);
-int devcli_set_readout_camera (int channel_id,
-			       const struct camera_info *camera,
-			       double exposure, time_t * exp_time);
+int devcli_getinfo (int channel_id, union devhnd_info *info);
+
 #endif // __RTS_DEVCLI__

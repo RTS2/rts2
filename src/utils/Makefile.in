@@ -6,7 +6,7 @@ all: devdem.a devser.a devcli.a test $(BIN)
 
 include ../../make.conf
 
-CFLAGS += -I/usr/src/cfitsio
+CFLAGS += -I/usr/src/cfitsio -I@top_srcdir@/include
 LDFLAGS += -l$(LIB_M)
 
 devdem.a: devdem.o devser.o devcli.o devhnd.o hms.o param.o
