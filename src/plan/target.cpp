@@ -379,8 +379,10 @@ Target::acquire ()
       devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 			      tel_target_state, 120);
 
+      devcli_command (camera, NULL, "base_info", light, exposure);
       devcli_command (camera, NULL, "expose 0 %i %f", light, exposure);
-      devcli_command (telescope, NULL, "base_info;info");
+      devcli_command (telescope, NULL, "base_info");
+      devcli_command (telescope, NULL, "info");
 
       get_info (camera, exposure, &img_hi_precision);
 
@@ -548,7 +550,8 @@ Target::runScript (struct ex_info *exinfo)
 	  && !isspace (*command))
 	{
 	  // wait till exposure end..
-	  devcli_command (telescope, NULL, "base_info;info");
+	  devcli_command (telescope, NULL, "base_info");
+	  devcli_command (telescope, NULL, "info");
 	  get_info (camera, exposure, NULL);
 	  if (exp_state == EXPOSURE_BEGIN)
 	    {
@@ -606,6 +609,7 @@ Target::runScript (struct ex_info *exinfo)
 	    }
 	  devcli_wait_for_status (telescope, "telescope",
 				  TEL_MASK_MOVING, tel_target_state, 300);
+	  devcli_command (camera, &ret, "base_info", light, exposure);
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
 	    {
@@ -860,7 +864,8 @@ Target::runScript (struct ex_info *exinfo)
   switch (exp_state)
     {
     case EXPOSURE_BEGIN:
-      devcli_command (telescope, NULL, "base_info;info");
+      devcli_command (telescope, NULL, "base_info");
+      devcli_command (telescope, NULL, "info");
       get_info (camera, exposure, NULL);
       devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
 			      CAM_NOEXPOSURE,
