@@ -21,7 +21,7 @@
 
 #include <argz.h>
 
-#include "../utils/devdem.h"
+#include "../utils/devser.h"
 #include "../status.h"
 
 #define PORT	5557
@@ -77,9 +77,9 @@ int server_id = -1;
 int
 devices_message_send (char *format, ...)
 {
-  struct serverd_info *info = devdem_shm_data_at ();
+  struct serverd_info *info = devser_shm_data_at ();
   struct device *devices = info->devices;
-  struct devdem_msg msg;
+  struct devser_msg msg;
   char *mtext;
   va_list ap;
   int i;
@@ -98,15 +98,15 @@ devices_message_send (char *format, ...)
       if (*devices[i].name)
 	{
 	  msg.mtype = devices[i].pid;
-	  if (devdem_msg_snd (&msg))
+	  if (devser_msg_snd (&msg))
 	    {
-	      devdem_shm_data_dt (info);
+	      devser_shm_data_dt (info);
 	      return -1;
 	    }
 	}
     }
 
-  devdem_shm_data_dt (info);
+  devser_shm_data_dt (info);
   return 0;
 }
 
@@ -119,7 +119,7 @@ device_serverd_handle_command (char *command)
     }
   else
     {
-      devdem_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s",
+      devser_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s",
 				command);
       return -1;
     }
@@ -167,8 +167,8 @@ clients_change_priority (struct serverd_info *info)
 void
 serverd_exit (int status, void *arg)
 {
-  struct serverd_info *info = (struct serverd_info *) devdem_shm_data_at ();
-  devdem_shm_data_lock ();
+  struct serverd_info *info = (struct serverd_info *) devser_shm_data_at ();
+  devser_shm_data_lock ();
 
   switch (server_type)
     {
@@ -186,8 +186,8 @@ serverd_exit (int status, void *arg)
       syslog (LOG_DEBUG, "exit of unknow type server %i", server_type);
     }
 
-  devdem_shm_data_unlock ();
-  devdem_shm_data_dt (info);
+  devser_shm_data_unlock ();
+  devser_shm_data_dt (info);
 }
 
 int
@@ -196,45 +196,45 @@ client_serverd_handle_command (char *command)
   if (strcmp (command, "priority") == 0)
     {
       struct serverd_info *info =
-	(struct serverd_info *) devdem_shm_data_at ();
+	(struct serverd_info *) devser_shm_data_at ();
       struct client *clients = info->clients;
       // prevent others from accesing priority
       // since we don't wont any other process to change
       // priority while we are testing it
-      devdem_shm_data_lock ();
+      devser_shm_data_lock ();
 
-      if (devdem_param_test_length (1))
+      if (devser_param_test_length (1))
 	goto exit_error;
 
-      devdem_dprintf ("old_priority %i %i", info->priority_client,
+      devser_dprintf ("old_priority %i %i", info->priority_client,
 		      clients[server_id].priority);
 
-      if (devdem_param_next_integer (&(clients[server_id].priority)))
+      if (devser_param_next_integer (&(clients[server_id].priority)))
 	goto exit_error;
 
       if (clients_change_priority (info))
 	{
-	  devdem_write_command_end (DEVDEM_E_PRIORITY,
+	  devser_write_command_end (DEVDEM_E_PRIORITY,
 				    "error when processing priority request");
 	  goto exit_error;
 	}
 
-      devdem_dprintf ("new_priority %i %i", info->priority_client,
+      devser_dprintf ("new_priority %i %i", info->priority_client,
 		      clients[server_id].priority);
 
-      devdem_shm_data_unlock ();
-      devdem_shm_data_dt (info);
+      devser_shm_data_unlock ();
+      devser_shm_data_dt (info);
       return 0;
 
     exit_error:
       // unlock, cleanup
-      devdem_shm_data_unlock ();
-      devdem_shm_data_dt (info);
+      devser_shm_data_unlock ();
+      devser_shm_data_dt (info);
       return -1;
     }
   else
     {
-      devdem_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s",
+      devser_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s",
 				command);
       return -1;
     }
@@ -250,7 +250,7 @@ client_serverd_handle_command (char *command)
 void
 serverd_handle_msg (char *message)
 {
-  devdem_status_message (0, message);
+  devser_status_message (0, message);
 }
 
 
@@ -266,39 +266,39 @@ serverd_handle_command (char *command)
   if (strcmp (command, "info") == 0)
     {
       struct serverd_info *info =
-	(struct serverd_info *) devdem_shm_data_at ();
+	(struct serverd_info *) devser_shm_data_at ();
       struct client *clients = info->clients;
       struct device *devices = info->devices;
       int i;
-      if (devdem_param_test_length (0))
+      if (devser_param_test_length (0))
 	return -1;
 
       for (i = 0; i < MAX_CLIENT; i++)
 	if (*clients[i].login)
-	  devdem_dprintf ("user %s %i", clients[i].login, i);
+	  devser_dprintf ("user %s %i", clients[i].login, i);
 
       for (i = 0; i < MAX_DEVICE; i++)
 	if (*devices[i].name)
-	  devdem_dprintf ("device %s %i", devices[i].name, i);
+	  devser_dprintf ("device %s %i", devices[i].name, i);
 
-      devdem_shm_data_dt (info);
+      devser_shm_data_dt (info);
     }
   else if (strcmp (command, "login") == 0)
     {
       if (server_type == NOT_DEFINED_SERVER)
 	{
 	  struct serverd_info *info =
-	    (struct serverd_info *) devdem_shm_data_at ();
+	    (struct serverd_info *) devser_shm_data_at ();
 	  struct client *clients = info->clients;
 	  char *login;
 	  int i;
-	  if (devdem_param_test_length (1))
+	  if (devser_param_test_length (1))
 	    return -1;
 
-	  if (devdem_param_next_string (&login) < 0)
+	  if (devser_param_next_string (&login) < 0)
 	    return -1;
 
-	  devdem_shm_data_lock ();
+	  devser_shm_data_lock ();
 
 	  // find not used client
 	  for (i = 0; i < MAX_CLIENT; i++)
@@ -310,12 +310,12 @@ serverd_handle_command (char *command)
 		break;
 	      }
 
-	  devdem_shm_data_unlock ();
-	  devdem_shm_data_dt (info);
+	  devser_shm_data_unlock ();
+	  devser_shm_data_dt (info);
 
 	  if (i == MAX_CLIENT)
 	    {
-	      devdem_write_command_end (DEVDEM_E_SYSTEM,
+	      devser_write_command_end (DEVDEM_E_SYSTEM,
 					"cannot allocate client - not enough resources");
 	      return -1;
 	    }
@@ -328,7 +328,7 @@ serverd_handle_command (char *command)
 	}
       else
 	{
-	  devdem_write_command_end (DEVDEM_E_COMMAND,
+	  devser_write_command_end (DEVDEM_E_COMMAND,
 				    "cannot switch server type to CLIENT_SERVER");
 	  return -1;
 	}
@@ -338,44 +338,44 @@ serverd_handle_command (char *command)
       if (server_type == NOT_DEFINED_SERVER)
 	{
 	  struct serverd_info *info =
-	    (struct serverd_info *) devdem_shm_data_at ();
+	    (struct serverd_info *) devser_shm_data_at ();
 	  struct device *devices = info->devices;
 	  char *reg_device;
 	  int i;
 
-	  if (devdem_param_test_length (1))
+	  if (devser_param_test_length (1))
 	    return -1;
-	  if (devdem_param_next_string (&reg_device))
+	  if (devser_param_next_string (&reg_device))
 	    return -1;
 
-	  devdem_shm_data_lock ();
+	  devser_shm_data_lock ();
 	  // find not used device
 	  for (i = 0; i < MAX_DEVICE; i++)
 	    if (!*(devices[i].name))
 	      {
 		strncpy (devices[i].name, reg_device, DEVICE_NAME_SIZE);
-		devices[i].pid = devdem_child_pid;
-		devdem_msg_set_handler (serverd_handle_msg);
+		devices[i].pid = devser_child_pid;
+		devser_msg_set_handler (serverd_handle_msg);
 		server_id = i;
 		break;
 	      }
 	    else if (strcmp (devices[i].name, reg_device) == 0)
 	      {
-		devdem_shm_data_unlock ();
-		devdem_shm_data_dt (info);
+		devser_shm_data_unlock ();
+		devser_shm_data_dt (info);
 
-		devdem_write_command_end (DEVDEM_E_SYSTEM,
+		devser_write_command_end (DEVDEM_E_SYSTEM,
 					  "name %s already registered",
 					  reg_device);
 		return -1;
 	      }
 
-	  devdem_shm_data_unlock ();
-	  devdem_shm_data_dt (info);
+	  devser_shm_data_unlock ();
+	  devser_shm_data_dt (info);
 
 	  if (i == MAX_DEVICE)
 	    {
-	      devdem_write_command_end (DEVDEM_E_SYSTEM,
+	      devser_write_command_end (DEVDEM_E_SYSTEM,
 					"cannot allocate new device - not enough resources");
 	      return -1;
 	    }
@@ -386,7 +386,7 @@ serverd_handle_command (char *command)
 	}
       else
 	{
-	  devdem_write_command_end (DEVDEM_E_COMMAND,
+	  devser_write_command_end (DEVDEM_E_COMMAND,
 				    "cannot switch server type to DEVICE_SERVER");
 	  return -1;
 	}
@@ -397,7 +397,7 @@ serverd_handle_command (char *command)
     return client_serverd_handle_command (command);
   else
     {
-      devdem_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s",
+      devser_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s",
 				command);
       return -1;
     }
@@ -412,6 +412,6 @@ main (void)
   mtrace ();
 #endif
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-  return devdem_run (PORT, serverd_handle_command, stats, 1,
+  return devser_run (PORT, serverd_handle_command, stats, 1,
 		     sizeof (struct serverd_info));
 }
