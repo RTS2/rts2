@@ -6,6 +6,10 @@
 
 #include <time.h>
 
+#define TARGET_LIGHT	1
+#define TARGET_DARK	2
+#define TARGET_FLAT	3
+
 struct image_info
 {
   char *camera_name;
