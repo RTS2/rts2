@@ -2,8 +2,6 @@
 #define _GNU_SOURCE
 #endif
 
-#define MAX_CHIPS 	2	//!maximal number of chips
-
 #include <getopt.h>
 #include <mcheck.h>
 #include <math.h>
@@ -82,7 +80,7 @@ CameraChip::setExposure (float exptime)
  *
  * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure
  */
-int
+long
 CameraChip::isExposing ()
 {
   struct timeval tv;
@@ -96,7 +94,7 @@ CameraChip::isExposing ()
       endExposure ();
       return 0;			// exposure ended
     }
-  return tv.tv_sec - exposureEnd.tv_sec + (tv.tv_usec - exposureEnd.tv_usec) / 100000;	// timeout
+  return (exposureEnd.tv_sec - tv.tv_sec) * 1000000 + (exposureEnd.tv_usec - tv.tv_usec);	// timeout
 }
 
 int
@@ -234,10 +232,10 @@ Rts2DevCamera::addConnection (int in_sock)
   return -1;
 }
 
-int
+long
 Rts2DevCamera::checkExposures ()
 {
-  int ret;
+  long ret;
   for (int i = 0; i < chipNum; i++)
     {
       if (getState (i) & CAM_EXPOSING)
@@ -245,7 +243,10 @@ Rts2DevCamera::checkExposures ()
 	// try to end exposure
 	ret = camWaitExpose (i);
 	if (ret >= 0)
+	{
+		printf ("timeout: %li\n", ret);
 		setTimeout (ret);
+	}
 	if (ret == -2)
 	maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		   CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
@@ -360,7 +361,7 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
   return -1;
 }
 
-int
+long
 Rts2DevCamera::camWaitExpose (int chip)
 {
   int ret;

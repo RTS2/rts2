@@ -7,6 +7,8 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+#define MAX_CHIPS 2
+
 class ChipSubset
 {
 public:
@@ -63,7 +65,7 @@ public:
     return -1;
   }
   int setExposure (float exptime);
-  virtual int isExposing ();
+  virtual long isExposing ();
   int endExposure ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int sendFirstLine ();
@@ -94,7 +96,7 @@ public:
 
   int init ();
   int addConnection (int in_sock);
-  int checkExposures ();
+  long checkExposures ();
   int checkReadouts ();
   int idle ();
 
@@ -119,7 +121,7 @@ public:
   {
     return chips[chip]->startExposure (light, exptime);
   };
-  virtual int camWaitExpose (int chip);
+  virtual long camWaitExpose (int chip);
   virtual int camStopExpose (int chip)
   {
     return -1;

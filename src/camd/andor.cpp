@@ -2,8 +2,6 @@
 #define _GNU_SOURCE
 #endif
 
-#define MAX_CHIPS 	1	//maximal number of chips
-
 #include <math.h>
 #include <mcheck.h>
 #include <stdio.h>
@@ -46,7 +44,7 @@ public:
     {
 	delete dest;
     }
-  virtual int isExposing ();
+  virtual long isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
 private:
@@ -60,10 +58,10 @@ CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
   dest = new long[in_width * in_height];
 };
 
-int
+long
 CameraAndorChip::isExposing ()
 {
-  int ret;
+  long ret;
   ret = CameraChip::isExposing ();
   if (ret > 0)
     return ret;
@@ -196,7 +194,10 @@ Rts2DevCameraAndor::init ()
   //Initialize Shutter
   SetShutter(1,0,50,50);
 
+  SetExposureTime(5.0);
+
   chipNum = 1;
+  printf ("chipNum init:: %i\n", chipNum);
   
   cc =
     new CameraAndorChip (0, width, height, 10, 10, 1);
@@ -243,7 +244,8 @@ Rts2DevCameraAndor::camChipInfo (int chip)
 int
 Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
 {
-  SetExposureTime(exptime);
+  SetExposureTime (exptime);
+  printf ("exptime: %f\n", exptime);
   StartAcquisition();
   return 0;
 }
