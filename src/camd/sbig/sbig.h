@@ -96,8 +96,6 @@ extern int sbig_expose (struct sbig_expose *);
 
 extern int sbig_end_expose (unsigned short);
 
-extern int sbig_expose (struct sbig_expose *);
-
 struct sbig_readout_line
 {
   unsigned short /* CCD_REQUEST */ ccd;
@@ -126,11 +124,9 @@ struct sbig_readout
   unsigned short width, height;
   unsigned short *data;
   int data_size_in_bytes;
-  int (*callback) (int ccd, float percent_complete);
-  int thread_id;
 };
 
-extern int sbig_readout (struct sbig_readout *);
+extern int sbig_end_readout (unsigned int ccd);
 
 extern int sbig_update_clock ();
 

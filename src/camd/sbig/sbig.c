@@ -8,9 +8,6 @@
 
 #include <math.h>
 
-#include "../writers/imghdr.h"
-
-
 extern int
 sbig_init (int port, int options, struct sbig_init *init)
 {
@@ -294,72 +291,6 @@ sbig_end_readout (unsigned int ccd)
 
   in.ccd = ccd;
   return -ParDrvCommand (CC_END_READOUT, &in, NULL);
-};
-
-extern int
-sbig_readout (struct sbig_readout *readout)
-{
-  struct sbig_readout_line line;
-  unsigned int y;
-  int result;
-  int size;
-  struct imghdr *header;
-
-  if ((result = sbig_end_expose (readout->ccd)) < 0)
-    return result;
-
-  if ((readout->y) > 0)
-    {
-      struct sbig_dump_lines dump;
-
-      dump.ccd = readout->ccd;
-      dump.readoutMode = readout->binning;
-      dump.lineLength = readout->y;
-
-      if ((result = sbig_dump_lines (&dump)) < 0)
-	return result;
-    }
-
-  size = sizeof (struct imghdr) +
-    sizeof (unsigned short) * readout->width * readout->height;
-  if (readout->data)
-    free (readout->data);
-
-  if ((readout->data = malloc (size)) == NULL)
-    return -1;
-
-  line.ccd = readout->ccd;
-  line.pixelStart = readout->x;
-  line.pixelLength = readout->width;
-  line.readoutMode = readout->binning;
-  line.data =
-    (unsigned short *) ((char *) readout->data + sizeof (struct imghdr));
-
-  readout->data_size_in_bytes = sizeof (struct imghdr);
-
-  header = (struct imghdr *) (readout->data);
-
-  header->data_type = 1;
-  header->naxes = 2;
-  header->sizes[0] = readout->width;
-  header->sizes[1] = readout->height;
-  header->binnings[0] = 1;
-  header->binnings[1] = 1;
-
-  for (y = 0; y < (readout->height); y++)
-    {
-      if ((result = sbig_readout_line (&line)) != 0)
-	return result;
-
-      line.data += line.pixelLength;
-
-      readout->data_size_in_bytes += 2 * line.pixelLength;
-      readout->callback (readout->ccd, y / (float) (readout->height - 1));
-    }
-
-  readout->callback (readout->ccd, 1);
-
-  return sbig_end_readout (readout->ccd);
 };
 
 extern int

@@ -16,23 +16,24 @@
 #include "../utils/devdem.h"
 #include "../status.h"
 
-#include "../utils/devcli.h"	// client for connection to server
+#include "../writers/imghdr.h"
 
 #define PORT    5556
 
 int port;
 
 struct sbig_init info;
-struct sbig_readout readout[2];
 
-float readout_comp[2];
-
-int
-complete (int ccd, float percent_complete)
+struct readout
 {
-  readout_comp[ccd] = percent_complete;
-  return 1;
-}
+  int conn_id;			// data connection
+  int x, y, width, height;	// image offset and size
+  int ccd;
+  float complete;
+  int thread_id;
+  struct imghdr header;
+};
+struct readout readouts[2];
 
 /* expose functions */
 #define SBIG_EXPOSE ((struct sbig_expose *) arg)
@@ -75,13 +76,13 @@ start_expose (void *arg)
 #undef SBIG_EXPOSE
 
 /* readout functions */
-#define SBIG_READOUT ((struct sbig_readout *) arg)
+#define READOUT ((struct readout *) arg)
 
 // readout cleanup functions 
 void
 clean_readout_cancel (void *arg)
 {
-  devdem_status_mask (SBIG_READOUT->ccd,
+  devdem_status_mask (READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_NODATA, "reading chip canceled");
 }
@@ -91,29 +92,70 @@ void *
 start_readout (void *arg)
 {
   int ret;
-  devdem_status_mask (SBIG_READOUT->ccd,
+  struct sbig_readout_line line;
+  unsigned int y;
+  int result;
+  unsigned short line_buff[5000];
+
+  devdem_status_mask (READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_READING | CAM_NODATA, "reading chip started");
-  if ((ret = sbig_readout (SBIG_READOUT)) < 0)
+
+  if ((ret = sbig_end_expose (READOUT->ccd)))
     {
-      char *err;
-      err = sbig_show_error (ret);
-      syslog (LOG_ERR, "error during chip %i readout: %s",
-	      SBIG_READOUT->ccd, err);
-      free (err);
-      devdem_status_mask (SBIG_READOUT->ccd,
-			  CAM_MASK_READING | CAM_MASK_DATA,
-			  CAM_NOTREADING | CAM_NODATA, "reading chip error");
-      return NULL;
+      goto err;
     }
-  syslog (LOG_INFO, "reading chip %i finished.", SBIG_READOUT->ccd);
-  devdem_status_mask (SBIG_READOUT->ccd,
+
+  if ((READOUT->y) > 0)
+    {
+      struct sbig_dump_lines dump;
+
+      dump.ccd = READOUT->ccd;
+      dump.readoutMode = READOUT->header.binnings[1];
+      dump.lineLength = READOUT->y;
+
+      if ((ret = sbig_dump_lines (&dump)) < 0)
+	goto err;
+    }
+
+  line.ccd = READOUT->ccd;
+  line.pixelStart = READOUT->x;
+  line.pixelLength = READOUT->width;
+  line.readoutMode = READOUT->header.binnings[0];
+  line.data = line_buff;
+
+  for (y = 0; y < (READOUT->height); y++)
+    {
+      int line_size = 2 * line.pixelLength;
+      if ((result = sbig_readout_line (&line)) != 0)
+	goto err;
+
+      devser_data_put (READOUT->conn_id, line_buff, line_size);
+    }
+
+  sbig_end_readout (READOUT->ccd);
+
+  syslog (LOG_INFO, "reading chip %i finished.", READOUT->ccd);
+  devdem_status_mask (READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_DATA, "reading chip finished");
   return NULL;
+
+err:
+  devser_data_done (READOUT->conn_id);
+  {
+    char *err;
+    err = sbig_show_error (ret);
+    syslog (LOG_ERR, "error during chip %i readout: %s", READOUT->ccd, err);
+    free (err);
+    devdem_status_mask (READOUT->ccd,
+			CAM_MASK_READING | CAM_MASK_DATA,
+			CAM_NOTREADING | CAM_NODATA, "reading chip error");
+    return NULL;
+  }
 }
 
-#undef SBIG_READOUT
+#undef READOUT
 
 // macro for chip test
 #define get_chip  \
@@ -136,7 +178,8 @@ start_readout (void *arg)
 }
 
 
-/*! Handle camd command.
+/*! 
+ * Handle camd command.
  *
  * @param command	received command
  * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
@@ -168,7 +211,7 @@ camd_handle_command (char *command)
 	return -1;
       get_chip;
       mode = (readout_mode_t *) (&info.camera_info[chip].readout_mode[0]);
-      devser_dprintf ("binning %i", readout[chip].binning);
+      devser_dprintf ("binning %i", readouts[chip].header.binnings[0]);
       devser_dprintf ("readout_modes %i",
 		      info.camera_info[chip].nmbr_readout_modes);
       for (i = 0; i < info.camera_info[chip].nmbr_readout_modes; i++)
@@ -245,30 +288,50 @@ camd_handle_command (char *command)
     }
   else if (strcmp (command, "readout") == 0)
     {
-      int mode;
+      size_t data_size;
+      struct readout *rd;
+      struct imghdr *header;
+
       if (devser_param_test_length (1))
 	return -1;
-      get_chip;
-      readout[chip].ccd = chip;
-      readout[chip].x = readout[chip].y = 0;
-      mode = readout[chip].binning;
-      readout[chip].width = info.camera_info[chip].readout_mode[mode].width;
-      readout[chip].height = info.camera_info[chip].readout_mode[mode].height;
-      readout[chip].callback = complete;
-
       /* start priority block */
       if (devdem_priority_block_start ())
 	return -1;
 
+      get_chip;
+
+      rd = &readouts[chip];
+      rd->ccd = chip;
+      rd->x = rd->y = 0;
+      rd->width = info.camera_info[chip].readout_mode[0].width;
+      rd->height = info.camera_info[chip].readout_mode[0].height;
+
+      // set data header
+      header = &(rd->header);
+      header->data_type = 1;
+      header->naxes = 2;
+      header->sizes[0] = rd->width;
+      header->sizes[1] = rd->height;
+      header->binnings[0] = 1;
+      header->binnings[1] = 1;
+
+      data_size =
+	sizeof (struct imghdr) +
+	sizeof (unsigned short) * rd->width * rd->height;
+
+      // open data connection
+      devser_data_init (20 * sizeof (unsigned short) * rd->width, data_size,
+			&(rd->conn_id));
+
       if ((ret =
 	   devser_thread_create (start_readout,
-				 (void *) &readout[chip], 0,
-				 &readout[chip].thread_id,
-				 clean_readout_cancel)))
+				 (void *) rd, 0,
+				 &rd->thread_id, clean_readout_cancel)))
 	{
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
 				    "while creating thread for execution: %s",
 				    strerror (errno));
+	  devser_data_done (rd->conn_id);
 	  return -1;
 	}
       devdem_priority_block_end ();
@@ -278,6 +341,9 @@ camd_handle_command (char *command)
     {
       int new_bin;
       if (devser_param_test_length (2))
+	return -1;
+      /* priority block start */
+      if (devdem_priority_block_start ())
 	return -1;
       get_chip;
       if (devser_param_next_integer (&new_bin))
@@ -289,8 +355,11 @@ camd_handle_command (char *command)
 				    new_bin);
 	  return -1;
 	}
-      readout[chip].binning = (unsigned int) new_bin;
+      readouts[chip].header.binnings[0] = (unsigned int) new_bin;
+      readouts[chip].header.binnings[1] = (unsigned int) new_bin;
       ret = 0;
+      devdem_priority_block_end ();
+      /* end of priority block */
     }
   else if (strcmp (command, "stopread") == 0)
     {
@@ -301,14 +370,13 @@ camd_handle_command (char *command)
       /* priority block starts here */
       if (devdem_priority_block_start ())
 	return -1;
-      if ((ret = devser_thread_cancel (readout[chip].thread_id)) < 0)
+      if ((ret = devser_thread_cancel (readouts[chip].thread_id)) < 0)
 	{
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
 				    "while canceling thread: %s",
 				    strerror (errno));
 	  return -1;
 	}
-      readout_comp[chip] = -1;
       devdem_priority_block_end ();
       /* priorioty block end here */
 
@@ -323,22 +391,8 @@ camd_handle_command (char *command)
 	{
 	  devdem_status_message (i, "status request");
 	}
-      devser_dprintf ("readout %f", readout_comp[chip]);
+      devser_dprintf ("readout %f", readouts[chip].complete);
       ret = 0;
-    }
-  else if (strcmp (command, "data") == 0)
-    {
-      if (devser_param_test_length (1))
-	return -1;
-      get_chip;
-      if (readout[chip].data_size_in_bytes == 0)
-	{
-	  devser_write_command_end (DEVDEM_E_SYSTEM, "data not available");
-	  return -1;
-	}
-      ret =
-	devser_send_data (NULL, readout[chip].data,
-			  readout[chip].data_size_in_bytes);
     }
   else if (strcmp (command, "cooltemp") == 0)
     {
@@ -399,16 +453,12 @@ end:
 int
 main (void)
 {
-  int i;
   char *stats[] = { "img_chip", "trc_chip" };
-  struct devcli_channel server_channel;
 
   port = 2;
 #ifdef DEBUG
   mtrace ();
 #endif
-  for (i = 0; i < 2; i++)
-    readout[i].data = NULL;
 
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
@@ -419,7 +469,7 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
-  if (devdem_register (&server_channel, "camd", "localhost", 5557) < 0)
+  if (devdem_register ("localhost", 5557, "camd", DEVICE_TYPE_CCD, PORT) < 0)
     {
       syslog (LOG_ERR, "devdem_register: %m");
       perror ("devdem_register");
