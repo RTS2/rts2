@@ -564,14 +564,12 @@ client_authorize ()
     }
   // now print what status we support
   devser_dprintf ("I status_num %i", status_num);
-  for (key = 0; key < status_num; key++)
+  for (key = 0; key < status_num - 1; key++)
     devser_dprintf ("I status %i %s %i", key,
 		    statutes[key].name, statutes[key].status);
-  if (clients_info->priority_client == client_id)
-    {
-      status_lock (client_status);
-      devser_dprintf ("S priority 1 priority received %i", client_id);
-    }
+  devser_dprintf ("I status %i %s %i", key,
+		  statutes[status_num - 1].name,
+		  clients_info->priority_client == client_id ? 1 : 0);
   // TODO remove pid - not needed ???
   clients_info->clients[client_id].pid = devser_child_pid;
   if (clients_info->priority_client == client_id)
