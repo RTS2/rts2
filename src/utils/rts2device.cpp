@@ -28,6 +28,28 @@ Rts2DevConn::connectionError ()
 }
 
 int
+Rts2DevConn::commandAuthorized ()
+{
+  char *msg;
+  if (isCommand ("ready"))
+    {
+      return master->ready (this);
+    }
+  else if (isCommand ("info"))
+    {
+      return master->info (this);
+    }
+  else if (isCommand ("base_info"))
+    {
+      return master->baseInfo (this);
+    }
+  asprintf (&msg, "devcon unknow command:'%s'", buf);
+  sendCommandEnd (DEVDEM_E_SYSTEM, msg);
+  free (msg);
+  return -1;
+}
+
+int
 Rts2DevConn::command ()
 {
   int ret;
@@ -547,4 +569,61 @@ Rts2Device::sendStatusInfo (Rts2DevConn * conn)
 	return ret;
     }
   return conn->sendPriorityInfo (i);
+}
+
+int
+Rts2Device::ready ()
+{
+  return -1;
+}
+
+int
+Rts2Device::info ()
+{
+  return -1;
+}
+
+int
+Rts2Device::baseInfo ()
+{
+  return -1;
+}
+
+int
+Rts2Device::ready (Rts2Conn * conn)
+{
+  int ret;
+  ret = ready ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
+      return -1;
+    }
+  return 0;
+}
+
+int
+Rts2Device::info (Rts2Conn * conn)
+{
+  int ret;
+  ret = info ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
+      return -1;
+    }
+  return 0;
+}
+
+int
+Rts2Device::baseInfo (Rts2Conn * conn)
+{
+  int ret;
+  ret = baseInfo ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
+      return -1;
+    }
+  return 0;
 }

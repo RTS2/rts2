@@ -33,19 +33,12 @@ class Rts2DevConn:public Rts2Conn
   Rts2Device *master;
   virtual int connectionError ();
 protected:
-    virtual int commandAuthorized ()
-  {
-    char *msg;
-      asprintf (&msg, "devcon unknow command:'%s'", buf);
-      sendCommandEnd (DEVDEM_E_SYSTEM, msg);
-      free (msg);
-      return -1;
-  }
+    virtual int commandAuthorized ();
   int command ();
 public:
-  Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
-							      (Rts2Block *)
-							      in_master)
+    Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
+								(Rts2Block *)
+								in_master)
   {
     master = in_master;
   };
@@ -175,6 +168,15 @@ public:
   {
     return conn_master->send (msg);
   }
+
+  // callback functions for device 
+  virtual int ready ();
+  virtual int info ();
+  virtual int baseInfo ();
+
+  virtual int ready (Rts2Conn * conn);
+  virtual int info (Rts2Conn * conn);
+  virtual int baseInfo (Rts2Conn * conn);
 };
 
 #endif /* !__RTS2_DEVICE__ */
