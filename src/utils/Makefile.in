@@ -4,8 +4,8 @@ BIN=test
 
 all: devdem.a devser.a devcli.a test $(BIN)
 
-CFLAGS += -I/usr/src/cfitsio -I@top_srcdir@/include @debug@
-LDFLAGS += @LIB_M@
+CFLAGS = -g -I/usr/src/cfitsio -I@top_srcdir@/include @debug@
+LDFLAGS = @LIB_M@
 
 devdem.a: devdem.o devser.o devcli.o devhnd.o hms.o param.o
 	$(AR) rcsv $@ $^
@@ -13,7 +13,7 @@ devdem.a: devdem.o devser.o devcli.o devhnd.o hms.o param.o
 devser.a: devser.o hms.o param.o
 	$(AR) rcsv $@ $^
 
-devcli.a: devcli.o devhnd.o param.o hms.o mkpath.o
+devcli.a: devcli.o devhnd.o param.o hms.o mv.o mkpath.o
 	$(AR) rcsv $@ $^
 
 test: hms.o mkpath.o test.o
