@@ -139,6 +139,7 @@ public:
   virtual int camCoolTemp (float new_temp);
   virtual int camCoolShutdown ();
   virtual int camFilter (int new_filter);
+  int camSetShutter (int shut_control);
 };
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int argc, char **argv):
@@ -178,9 +179,10 @@ Rts2DevCameraAndor::init ()
   GetDetector(&width, &height);
 
   //Initialize Shutter
-  SetShutter(1,0,50,50);
+  camSetShutter(0);
 
   SetExposureTime(5.0);
+  SetEMCCDGain (255);
 
   chipNum = 1;
   
@@ -230,6 +232,7 @@ int
 Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
 {
   SetExposureTime (exptime);
+  camSetShutter (light == 1 ? 0 : 2);
   StartAcquisition();
   return 0;
 }
@@ -286,6 +289,12 @@ int
 Rts2DevCameraAndor::camFilter (int new_filter)
 {
   return -1;
+}
+
+int
+Rts2DevCameraAndor::camSetShutter (int shut_control)
+{
+  return SetShutter (1, shut_control, 50, 50);
 }
 
 int
