@@ -1,5 +1,5 @@
-<?
-	include "libnova.php";
+<?php
+#	include "libnova.php";
 	require_once "fitsdb.php";
 
 	function target_info ($con, $tar_id) {

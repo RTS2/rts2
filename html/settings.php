@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fitsdb.php";
 
 	hlavicka ("BARTDB Settings", "BARTDB Settings", "", "ok");
@@ -7,7 +7,7 @@
 	<form action="settings.php" method="get">
 
 	<table>
-<?
+<?php
 		echo "<tr>";
 		display_settings ('ra');
 		echo "</tr><tr>";
@@ -29,6 +29,6 @@
 	</table>
 	<input type="submit" value="Submit"></input>
 	</form>
-<?
+<?php
 	konec ();
 ?>

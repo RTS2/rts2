@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fitsdb.php";
 	hlavicka ("NIGHT Statistics", "", "", "ok");
 	$n = intval ($_REQUEST['night']);

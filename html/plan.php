@@ -1,4 +1,4 @@
-<?
+<?php
 	include "fn.php";
 	hlavicka ("BARTDB", "Seznam GRB", " ", "ok");
 

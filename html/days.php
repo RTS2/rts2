@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fitsdb.php";
 
 	function table_start ($wday) {
@@ -89,7 +89,7 @@ made on night. If you click on link, you will receive list of all observations
 or images made on that night. <i>Night count from 12:00 to 12:00 next day.</i>
 </p>
 <table width='100%'><tr><td valign='top'>
-<?
+<?php
 	$con = pg_connect ("dbname=stars");
 	for ($last_month = 1; $last_month < 13; $last_month++) {
 		print_month ($last_month, $year, $con);

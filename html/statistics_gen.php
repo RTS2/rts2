@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "libnova.php";
 	require_once "fitsdb.php";
 	

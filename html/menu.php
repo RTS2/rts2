@@ -1,11 +1,11 @@
-<?
+<?php
 	require_once "fitsdb.php";
 
 	function head ($title) {
 echo <<<EOT
 <html>
 <head>
-	<link rel="StyleSheet" href="/css/styl.css" type="text/css"/>
+	<link rel="StyleSheet" href="styl.css" type="text/css"/>
 	<style type="text/css">
 		ul.menu {
 			list-style-type: none;

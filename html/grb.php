@@ -1,4 +1,4 @@
-<?
+<?php
 	include "fn.php";
 	include "libnova.php";
 	include "simple_query.php";

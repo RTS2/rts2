@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fitsdb.php";
 	$q = new Query;
 	hlavicka ("BOOTES DB", "Medias", " ", "ok");

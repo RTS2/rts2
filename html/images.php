@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fitsdb.php";
 
 	hlavicka ("BARTDB Images", "Images", " ", "ok");

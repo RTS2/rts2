@@ -1,4 +1,4 @@
-<?
+<?php
 	include "fn.php";
 	include "fitsdb.php";
 
@@ -20,6 +20,6 @@
 	<input type="submit" value="Set"></input>
 </form>
 
-<?
+<?php
 	konec ();
 ?>

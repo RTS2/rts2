@@ -1,4 +1,4 @@
-<?
+<?php
 	include "fitsdb.php";
 
 	$fn = escapeshellarg ("$_REQUEST[fn]");

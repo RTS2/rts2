@@ -1,4 +1,4 @@
-<?
+<?php
 	include "fitsdb.php";
 	if (!$_SESSION['authorized']) {
 		hlavicka ("Bad login", "Bad login", '', "error");

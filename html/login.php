@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fitsdb.php";
 
 	hlavicka ("BARTDB login", "BARTDB login", "", "ok");
@@ -16,6 +16,6 @@
 
 		<input type="submit" value="Submit"></input>
 	</form>
-<?
+<?php
 	konec ();
 ?>

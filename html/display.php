@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fn.php";
 	require_once "fitsdb.php";
 
@@ -6,7 +6,7 @@
 ?>
 	<p>Welcome to BART DB main page. Please use menu on right to navigate throught pictures.
 	Particulary please fill-in <a href="settings.php">settings</a> for your output customization.</p>
-<?
+<?php
 	if ($_SESSION['authorized'])
 		echo "<p>You are logged as '$_SESSION[login]'. You can logout <a href='logout.php'>there</a></p>\n";
 	else
