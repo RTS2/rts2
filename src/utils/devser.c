@@ -1254,7 +1254,9 @@ read_from_client ()
 
   buffer = command_buffer.buf;
   endptr = command_buffer.endptr;
+  syslog (LOG_DEBUG, "read_from_client before read");
   nbytes = read (control_fd, endptr, MAXMSG - (endptr - buffer));
+  syslog (LOG_DEBUG, "read_from_client after read: %i", nbytes);
   if (nbytes < 0)
     {
       /* Read error. */
@@ -1262,8 +1264,11 @@ read_from_client ()
       return -1;
     }
   else if (nbytes == 0)
-    /* End-of-file. */
-    return -1;
+    {
+      /* End-of-file. */
+      syslog (LOG_ERR, "read 0 bytes");
+      return -1;
+    }
   else
     {
       endptr[nbytes] = 0;	// mark end of message
