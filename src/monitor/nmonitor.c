@@ -127,8 +127,7 @@ status_camera (WINDOW * wnd, struct device *dev)
     mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
 	       info->chip_info[0].height);
   else
-    mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
-	       info->chip_info[0].height);
+    mvwprintw (wnd, 3, 1, "Siz: Unknow");
   mvwprintw (wnd, 4, 1, "S/A: %+03.1f %+03.1f oC", info->temperature_setpoint,
 	     info->air_temperature);
   mvwprintw (wnd, 5, 1, "CCD: %+03.3f oC", info->ccd_temperature);
