@@ -4,7 +4,7 @@ all: fits.o
 
 include ../../make.conf
 
-CFLAGS += -I/usr/src/cfitsio
+CFLAGS += -I/usr/src/cfitsio -I@top_srcdir@/include
 
 fits.o: fits.c fits.h 
 	$(CC) -c -o fits.o fits.c $(CFLAGS)

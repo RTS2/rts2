@@ -36,7 +36,6 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 {
   int status;
   fitsfile *fptr;
-  int t = 1;
 
   fits_clear_errmsg ();
 
@@ -61,12 +60,9 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 	}
 
 int
-fits_write_camera (struct fits_receiver_data *receiver,
-		   struct camera_info *camera, float exposure,
-		   time_t * exp_start)
+write_camera (struct fits_receiver_data *receiver, struct camera_info *camera)
 {
   int status = 0;
-  double jd;
   fitsfile *fptr = receiver->ffile;
 
   write_key (TSTRING, "CAMD_NAME", camera->name, "Camera name");
@@ -82,19 +78,15 @@ fits_write_camera (struct fits_receiver_data *receiver,
 	     "Camera cooling power");
   write_key (TSTRING, "CAMD_FAN", camera->fan ? "on" : "off",
 	     "Camera fan status");
-  write_key (TFLOAT, "EXPOSURE", exposure, "Camera exposure time in sec");
-  write_key (TLONG, "CTIME", exp_start, "Camera exposure start");
-  jd = get_julian_from_timet (exp_start);
-  write_key (TDOUBLE, "JD", jd, "Camera exposure Julian date");
   return 0;
 }
 
 int
-fits_write_telescope (struct fits_receiver_data *reciver,
-		      struct telescope_info *telescope)
+write_telescope (struct fits_receiver_data *receiver,
+		 struct telescope_info *telescope)
 {
   int status = 0;
-  fitsfile *fptr = reciver->ffile;
+  fitsfile *fptr = receiver->ffile;
 
   write_key (TSTRING, "TELD_NAME", telescope->name, "Telescope name");
   write_key (TSTRING, "TELD_SERIAL", telescope->serial_number,
@@ -108,6 +100,27 @@ fits_write_telescope (struct fits_receiver_data *reciver,
   write_key (TDOUBLE, "TELD_SIDE", telescope->siderealtime,
 	     "Telescope sidereailtime");
   write_key (TDOUBLE, "T_LOC", telescope->localtime, "Telescope localtime");
+  return 0;
+}
+
+int
+fits_write_image_info (struct fits_receiver_data *receiver,
+		       struct image_info *info)
+{
+  int status = 0;
+  double jd;
+  fitsfile *fptr = receiver->ffile;
+
+  if (write_camera (receiver, &info->camera) ||
+      write_telescope (receiver, &info->telescope))
+    return -1;
+  write_key (TLONG, "CTIME", info->exposure_time, "Camera exposure start");
+  jd = get_julian_from_timet (&info->exposure_time);
+  write_key (TDOUBLE, "JD", jd, "Camera exposure Julian date");
+  write_key (TFLOAT, "EXPOSURE", info->exposure_length,
+	     "Camera exposure time in sec");
+  write_key (TINT, "TARGET", info->target_id, "Target id");
+  write_key (TINT, "OBSERVAT", info->observation_id, "Observation id");
   return 0;
 }
 

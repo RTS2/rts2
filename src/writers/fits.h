@@ -10,8 +10,7 @@
 #include <fitsio.h>
 #include <pthread.h>
 
-#include "telescope_info.h"
-#include "camera_info.h"
+#include "image_info.h"
 
 /*! 
  * Structure to hold additional fits informations.
@@ -28,11 +27,8 @@ struct fits_receiver_data
 
 int fits_create (struct fits_receiver_data *receiver, char *filename);
 
-int fits_write_camera (struct fits_receiver_data *receiver,
-		       struct camera_info *camera, float exposure,
-		       time_t * exp_start);
-int fits_write_telescope (struct fits_receiver_data *receiver,
-			  struct telescope_info *telescope);
+int fits_write_image_info (struct fits_receiver_data *receiver,
+			   struct image_info *image);
 
 int fits_init (struct fits_receiver_data *receiver, size_t expected_size);
 
