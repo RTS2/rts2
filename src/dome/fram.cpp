@@ -39,6 +39,12 @@
 #define FRAM_TIME_CLOSE_RIGHT	30
 #define FRAM_TIME_CLOSE_LEFT	25
 
+// how long we will keep lastWeatherStatus as actual (in second)
+#define FRAM_WEATHER_TIMEOUT	60
+// should be in 0-99 range, as 99 is maximum value which station can measure
+#define FRAM_MAX_WINDSPEED      50
+#define FRAM_MAX_PEAK_WINDSPEED 50
+
 typedef enum
 { VENTIL_AKTIVACNI,
   VENTIL_OTEVIRANI_PRAVY,
@@ -128,12 +134,18 @@ private:
   Rts2DevDome * master;
   int weather_port;
 
+  int rain;
+  float windspeed;
+  time_t lastWeatherStatus;
+
 protected:
 
 public:
     Rts2ConnFramWeather (int in_weather_port, Rts2DevDome * in_master);
   virtual int init ();
   virtual int receive (fd_set * set);
+  // return 1 if weather is favourable to open dome..
+  virtual int isGoodWeather ();
 };
 
 Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port,
@@ -148,6 +160,7 @@ int
 Rts2ConnFramWeather::init ()
 {
   struct sockaddr_in bind_addr;
+  int optval = 1;
   int ret;
 
   bind_addr.sin_family = AF_INET;
@@ -160,7 +173,12 @@ Rts2ConnFramWeather::init ()
       syslog (LOG_ERR, "Rts2ConnFramWeather::init socket: %m");
       return -1;
     }
-
+  ret = fcntl (sock, F_SETFL, O_NONBLOCK);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2ConnFramWeather::init fcntl: %m");
+      return -1;
+    }
   ret = bind (sock, (struct sockaddr *) &bind_addr, sizeof (bind_addr));
   if (ret)
     {
@@ -172,24 +190,66 @@ Rts2ConnFramWeather::init ()
 int
 Rts2ConnFramWeather::receive (fd_set * set)
 {
-  char buf[20];
+  int ret;
+  char buf[100];
+  char status[10];
   int data_size = 0;
+  struct tm statDate;
+  float sec_f;
   if (sock >= 0 && FD_ISSET (sock, set))
     {
-      data_size = read (sock, buf, 3);
-      syslog (LOG_DEBUG, "readed: %i %s", data_size, buf);
-      if (buf[1] == '8')
+      struct sockaddr_in from;
+      socklen_t size = sizeof (from);
+      data_size =
+	recvfrom (sock, buf, 80, 0, (struct sockaddr *) &from, &size);
+      buf[data_size] = 0;
+      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, buf,
+	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
+      // parse weather info
+      ret =
+	sscanf (buf,
+		"windspeed=%f km/h rain=%i date=%i-%i-%i time=%i:%i:%f status=%s",
+		&windspeed, &rain, &statDate.tm_year, &statDate.tm_mon,
+		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
+		&sec_f, status);
+      if (ret != 9)
+	{
+	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
+	  return data_size;
+	}
+      statDate.tm_isdst = 0;
+      statDate.tm_year -= 1900;
+      statDate.tm_mon--;
+      statDate.tm_sec = (int) sec_f;
+      lastWeatherStatus = mktime (&statDate);
+      if (strcmp (status, "watch"))
+	{
+	  // if sensors doesn't work, switch rain on
+	  rain = 1;
+	}
+      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %i status: %s",
+	      windspeed, rain, lastWeatherStatus, status);
+      if (rain != 0 || windspeed > FRAM_MAX_PEAK_WINDSPEED)
 	{
 	  master->closeDome ();
 	  master->sendMaster ("standby");
 	}
-      if (buf[1] == '1')
-	{
-	  master->openDome ();
-	  master->sendMaster ("on");
-	}
+      // ack message
+      ret =
+	sendto (sock, "ack", 3, 0, (struct sockaddr *) &from, sizeof (from));
     }
   return data_size;
+}
+
+int
+Rts2ConnFramWeather::isGoodWeather ()
+{
+  time_t now;
+  time (&now);
+  if (windspeed > FRAM_MAX_WINDSPEED || rain != 0
+      || (now - lastWeatherStatus > FRAM_WEATHER_TIMEOUT))
+    return 0;
+  return 1;
 }
 
 /***********************************************************************************************
@@ -207,10 +267,12 @@ private:
   unsigned char spinac[2];
   unsigned char stav_portu[3];
 
+  Rts2ConnFramWeather *weatherConn;
+
   int zjisti_stav_portu ();
   void zapni_pin (unsigned char c_port, unsigned char pin);
   void vypni_pin (unsigned char c_port, unsigned char pin);
-  int getState (int c_port)
+  int getPortState (int c_port)
   {
     return !!(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
   };
@@ -250,6 +312,7 @@ public:
   virtual ~ Rts2DevDomeFram (void);
   virtual int processOption (int in_opt);
   virtual int init ();
+  virtual int idle ();
 
   virtual int ready ();
   virtual int baseInfo ();
@@ -420,6 +483,8 @@ Rts2DevDomeFram::openDome ()
 {
   if (movingState != MOVE_NONE)
     return -1;
+  if (!weatherConn->isGoodWeather ())
+    return -1;
   if (isOn (KONCAK_OTEVRENI_LEVY) && isOn (KONCAK_OTEVRENI_LEVY))
     {
       return endOpen ();
@@ -480,6 +545,14 @@ Rts2DevDomeFram::endOpen ()
 int
 Rts2DevDomeFram::closeDome ()
 {
+  if (movingState == MOVE_CLOSE_RIGHT
+      || movingState == MOVE_CLOSE_RIGHT_WAIT
+      || movingState == MOVE_CLOSE_LEFT
+      || movingState == MOVE_CLOSE_LEFT_WAIT)
+    {
+      // closing already in progress
+      return 0;
+    }
   if (movingState != MOVE_NONE)
     {
       stopMove ();
@@ -583,8 +656,9 @@ Rts2DevDomeFram::init ()
     {
       if (!connections[i])
 	{
-	  connections[i] = new Rts2ConnFramWeather (5007, this);
-	  connections[i]->init ();
+	  weatherConn = new Rts2ConnFramWeather (5007, this);
+	  weatherConn->init ();
+	  connections[i] = weatherConn;
 	  break;
 	}
     }
@@ -597,6 +671,23 @@ Rts2DevDomeFram::init ()
   return 0;
 }
 
+int
+Rts2DevDomeFram::idle ()
+{
+  // check for weather..
+  if (weatherConn->isGoodWeather () && observingPossible)
+    {
+      openDome ();
+      sendMaster ("on");
+    }
+  else
+    {
+      closeDome ();
+      sendMaster ("standby");
+    }
+  return Rts2DevDome::idle ();
+}
+
 Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
 	     argv)
 {
@@ -606,6 +697,8 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
   domeModel = "FRAM_FORD_2";
 
   movingState = MOVE_NONE;
+
+  weatherConn = NULL;
 }
 
 Rts2DevDomeFram::~Rts2DevDomeFram (void)
@@ -645,10 +738,10 @@ Rts2DevDomeFram::info ()
   ret = zjisti_stav_portu ();
   if (ret)
     return -1;
-  sw_state = getState (KONCAK_OTEVRENI_PRAVY);
-  sw_state |= (getState (KONCAK_OTEVRENI_LEVY) << 1);
-  sw_state |= (getState (KONCAK_ZAVRENI_PRAVY) << 2);
-  sw_state |= (getState (KONCAK_ZAVRENI_LEVY) << 3);
+  sw_state = getPortState (KONCAK_OTEVRENI_PRAVY);
+  sw_state |= (getPortState (KONCAK_OTEVRENI_LEVY) << 1);
+  sw_state |= (getPortState (KONCAK_ZAVRENI_PRAVY) << 2);
+  sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
   return 0;
 }
 
@@ -662,14 +755,14 @@ int
 Rts2DevDomeFram::off ()
 {
   closeDome ();
-  handle_zasuvky (OFF);
+  //handle_zasuvky (OFF);
   return 0;
 }
 
 int
 Rts2DevDomeFram::standby ()
 {
-  handle_zasuvky (STANDBY);
+  //handle_zasuvky (STANDBY);
   closeDome ();
   return 0;
 }
@@ -677,7 +770,7 @@ Rts2DevDomeFram::standby ()
 int
 Rts2DevDomeFram::observing ()
 {
-  handle_zasuvky (OBSERVING);
+  //handle_zasuvky (OBSERVING);
   openDome ();
   return 0;
 }

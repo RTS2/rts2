@@ -13,6 +13,8 @@ Rts2Device (argc, argv, DEVICE_TYPE_DOME, 5552, "DOME")
   setStateNames (1, states_names);
 
   sw_state = -1;
+
+  observingPossible = 0;
 }
 
 int
@@ -141,6 +143,7 @@ Rts2DevDome::baseInfo (Rts2Conn * conn)
 int
 Rts2DevDome::observing ()
 {
+  observingPossible = 1;
   if ((getState (0) & DOME_DOME_MASK) != DOME_OPENED)
     return openDome ();
   return 0;
@@ -165,6 +168,7 @@ Rts2DevDome::off ()
 int
 Rts2DevDome::setMasterState (int new_state)
 {
+  observingPossible = 0;
   if (new_state & SERVERD_STANDBY_MASK == SERVERD_STANDBY)
     {
       switch (new_state & SERVERD_STATUS_MASK)

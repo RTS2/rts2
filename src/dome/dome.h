@@ -12,6 +12,8 @@ protected:
 
   float temperature;
   float humidity;
+
+  int observingPossible;
 public:
     Rts2DevDome (int argc, char **argv);
   virtual int openDome ()
