@@ -7,6 +7,8 @@
  * @author petr
  */
 
+#define _GNU_SOURCE
+
 #define MAX_READOUT_TIME		120
 #define EXPOSURE_TIMEOUT		50
 
