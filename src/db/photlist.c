@@ -23,6 +23,7 @@ int night_day = 0;
 int night_month = 0;
 int night_year = 0;
 int target = 0;
+int target_info = 0;
 
 #define PQ_EXEC(command) \
       res = PQexec(conn, command); \
@@ -41,6 +42,38 @@ print_head (struct tm *date)
   printf ("%3i%3i%5i 426 0\n", date->tm_mday + 1, date->tm_mon + 1,
 	  date->tm_year + 1900);
   printf ("  10.000 20.300 120\n");
+}
+
+void
+print_target_info (int tar_id)
+{
+  char command[200] =
+    "SELECT phot_mag1, phot_mag2, phot_index1, phot_index2 FROM phot WHERE tar_id = ";
+  int i;
+
+  sprintf (command, "%s %i;", command, tar_id);
+  PGresult *res;
+
+  res = PQexecParams (conn, command, 0, NULL, NULL, NULL, NULL, 0);
+  if (PQresultStatus (res) != PGRES_TUPLES_OK)
+    {
+      fprintf (stderr, "SELECT failed: %s", PQerrorMessage (conn));
+      PQclear (res);
+      return;
+    }
+  /* next, print out the rows */
+  if (PQntuples (res) != 1)
+    {
+      printf ("8%4i invalid\n", tar_id);
+      return;
+    }
+  printf ("7%4i", tar_id);
+  for (i = 0; i < PQnfields (res); i++)
+    {
+      printf (" %s", PQgetvalue (res, 0, i));
+    }
+  printf ("\n");
+  PQclear (res);
 }
 
 void
@@ -91,6 +124,11 @@ get_list (int tar_id)
   for (i = 0; i < PQntuples (res); i++)
     {
       tar_id = ntohl (*((uint32_t *) PQgetvalue (res, i, 0)));
+      if (target_info && target_info != tar_id)
+	{
+	  print_target_info (tar_id);
+	  target_info = tar_id;
+	}
       count_date = ntohl (*((uint32_t *) (PQgetvalue (res, i, 1))));
       gmtime_r (&count_date, &date);
       count_value = ntohl (*((uint32_t *) PQgetvalue (res, i, 2)));
@@ -107,6 +145,7 @@ get_list (int tar_id)
     }
 
   PQclear (res);
+  command = "END";
   PQ_EXEC (command);
   PQclear (res);
   return;
@@ -135,9 +174,10 @@ main (int argc, char **argv)
 	{"start_month", 1, 0, 'm'},
 	{"start_year", 1, 0, 'y'},
 	{"target", 1, 0, 't'},
+	{"target_info", 0, 0, 'i'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:m:y:t:", long_option, NULL);
+      c = getopt_long (argc, argv, "d:m:y:t:i", long_option, NULL);
       if (c == -1)
 	break;
       switch (c)
@@ -153,6 +193,9 @@ main (int argc, char **argv)
 	  break;
 	case 't':
 	  target = atoi (optarg);
+	  break;
+	case 'i':
+	  target_info = -1;
 	  break;
 	case '?':
 	  break;
