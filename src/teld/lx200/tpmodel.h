@@ -1,7 +1,7 @@
 #ifndef TPMODEL_H
 #define TPMODEL_H
 
-#include <libnova.h>
+#include <libnova/libnova.h>
 
 int tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go */
 		       struct ln_equ_posn *proper_motion,	/* proper motion of the object: may be NULL */

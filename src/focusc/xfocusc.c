@@ -10,7 +10,7 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -7,7 +7,7 @@
 #define _GNU_SOURCE
 
 #include "db.h"
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <malloc.h>
 #include <pthread.h>
 #include <string.h>

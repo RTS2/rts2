@@ -23,7 +23,7 @@
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
 #include "status.h"
-#include "libnova.h"
+#include <libnova/libnova.h>
 
 #define SERVERD_PORT    	5557	// default serverd port
 #define SERVERD_HOST		"localhost"	// default serverd hostname
