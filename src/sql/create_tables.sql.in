@@ -11,7 +11,7 @@ CREATE TABLE epoch (
 
 CREATE TABLE targets (
 	tar_id		integer PRIMARY KEY,
-	type_id		integer REFERENCES targets(type_id),
+	type_id		char REFERENCES targets(type_id),
 	tar_name	varchar(150),
 	tar_ra		float4,
 	tar_dec		float4,
@@ -22,7 +22,7 @@ CREATE TABLE targets (
 DROP TABLE types;
 
 CREATE TABLE types (
-	type_id		integer PRIMARY KEY,
+	type_id		char PRIMARY KEY,
 	type_description varchar(200)
 );
 
@@ -46,7 +46,7 @@ CREATE TABLE darks (
 
 DROP TABLE flats;
 
-CREATE TABLE flats {
+CREATE TABLE flats ( 
 	flat_name	varchar(250) NOT NULL,
 	flat_date	timestamp,
 	flat_exposure	integer,
@@ -82,7 +82,7 @@ CREATE TABLE cameras (
 CREATE TABLE mounts (
 	mount_name	varchar(8) PRIMARY KEY,
 	mount_long	float,
-	mount_dec	float,
+	mount_lat	float,
 	mount_alt	float,
 	mount_desc	varchar(100)
 );
