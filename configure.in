@@ -14,7 +14,7 @@ AC_PROG_MAKE_SET
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lm':
-AC_CHECK_LIB([m], [main])
+AC_CHECK_LIB([m], [sqrt], LIB_M="-lm"; LIBS="-lm $LIBS"; AC_SUBST(LIB_M))
 # FIXME: Replace `main' with a function in `-lcfitsio':
 AC_CHECK_LIB([cfitsio], [main], , [cat <<EOF
 **** You don't have cfitsio installed.
@@ -24,12 +24,14 @@ exit 1])
 # FIXME: Replace `main' with a function in `-lncurses':
 AC_CHECK_LIB([ncurses], [main])
 # FIXME: Replace `main' with a function in `-lnova':
-AC_CHECK_LIB([nova], [main])
+AC_CHECK_LIB([nova], [get_ln_version])
 # FIXME: Replace `main' with a function in `-lpthread':
-AC_CHECK_LIB([pthread], [main])
+AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
+LIBS="-lpthread $LIBS"; AC_SUBST(LIB_PTHREAD))
 
 #debug="-DDEBUG"
-#AC_SUBSET(debug)
+debug=""
+AC_SUBST(debug)
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -57,6 +59,7 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol])
 
 AC_OUTPUT([Makefile
+	   doc/dia/Makefile
 	   src/Makefile
 	   src/camd/Makefile
 	   src/db/Makefile
