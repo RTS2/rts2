@@ -239,6 +239,28 @@ teld_handle_command (char *command)
       devdem_priority_block_end ();
       return ret;
     }
+  else if (strcmp (command, "start") == 0)
+    {
+      char *direction;
+      if (devdem_priority_block_start ())
+	return -1;
+      if (devser_param_next_string (&direction))
+	return -1;
+      tel_call (telescope_start_move (*direction));
+      devdem_priority_block_end ();
+      return ret;
+    }
+  else if (strcmp (command, "stop") == 0)
+    {
+      char *direction;
+      if (devdem_priority_block_start ())
+	return -1;
+      if (devser_param_next_string (&direction))
+	return -1;
+      tel_call (telescope_stop_move (*direction));
+      devdem_priority_block_end ();
+      return ret;
+    }
   else if (strcmp (command, "help") == 0)
     {
       devser_dprintf ("ready - is telescope ready to observe?");

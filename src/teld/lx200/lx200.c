@@ -642,9 +642,10 @@ tel_set_rate (char new_rate)
  * @return -1 on failure & set errnom, 5 (>=0) otherwise
  */
 int
-tel_start_slew (char direction)
+telescope_start_move (char direction)
 {
   char command[6];
+  tel_set_rate (RATE_FIND);
   sprintf (command, "#:M%c#", direction);
   return tel_write (command, 5) == 1 ? -1 : 0;
 }
@@ -655,7 +656,7 @@ tel_start_slew (char direction)
  * @see tel_start_slew for direction.	
  */
 int
-tel_stop_slew (char direction)
+telescope_stop_move (char direction)
 {
   char command[6];
   sprintf (command, "#:Q%c#", direction);
@@ -932,7 +933,7 @@ telescope_stop ()
   int i;
   for (i = 0; i < 4; i++)
     {
-      if (tel_stop_slew (dirs[i]) < 0)
+      if (telescope_stop_move (dirs[i]) < 0)
 	return -1;
     }
   return 0;
