@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2
 
-bin_PROGRAMS = rts2-camd-sbigusb rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee
 
 noinst_HEADERS = camera_cpp.h
 
