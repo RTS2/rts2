@@ -1,16 +1,9 @@
-SUBDIRS = utils	\
-	writers \
-	serverd \
-	teld	\
+
+SUBDIRS = \
+	utils	\
 	camd	\
 	phot	\
 	dome	\
-	db	\
-	plan	\
-	pgsql	\
-	grb	\
-	monitor	\
-	focusc	\
-	bckimages	\
-	wcs	\
-	sql
+	wcs \
+	${LIBNOVA_SUBDIRS} \
+	${PSQL_SUBDIRS}

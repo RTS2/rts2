@@ -24,15 +24,33 @@ esac],[focusing=yes])
 
 AM_CONDITIONAL(FOCUSING, test x$focusing = xyes)
 
-AC_ARG_ENABLE(x-focusc,
-[  --disable-x-focusc    Disables xfocusc)],
-[case "${enableval}" in
+AC_ARG_WITH(x-focusc,
+[  --without-x-focusc    Disables xfocusc)],
+[case "${withval}" in
 	yes) xfocusc=yes ;;
 	no)  xfocusc=no ;;
 	*) AC_MSG_ERROR(bad value ${enableval} for --enable-xfocusc) ;;
 esac],[xfocusc=yes])
 
 AM_CONDITIONAL(XFOCUSC, test x$xfocusc = xyes)
+
+AC_ARG_WITH(pgsql,
+[  --without-pgsql     Don't build pgsql dependent clients   )],
+[case "${withval}" in
+	yes) psql=yes ;;
+	no)  psql=no ;;
+	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
+esac],[psql=yes])
+
+AC_ARG_WITH(libnova,
+[  --without-libnova     Don't build libnova dependent programs   )],
+[case "${withval}" in
+	yes) libnova=yes ;;
+	no)  libnova=no ;;
+	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
+esac],[libnova=yes])
+
+AM_CONDITIONAL(LIBNOVA, test x$libnova = xyes)
 
 # Checks for libraries.
 
@@ -77,12 +95,15 @@ AC_SUBST(LIB_PANEL), [cat <<EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
-AC_SUBST(LIB_NOVA), [cat << EOF
+if test "x${libnova}" = "xyes"; then
+	AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
+	AC_SUBST(LIB_NOVA), [cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
-exit 1])
+	exit 1])
+	AC_SUBST([LIBNOVA_SUBDIRS], ['teld monitor writers focusc serverd'])
+fi
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
 AC_SUBST(LIB_PTHREAD), [cat << EOF
@@ -93,6 +114,7 @@ exit 1])
 
 if test "x"$xfocusc = "xyes"; then
 	AC_PATH_XTRA
+	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 fi
 
 AC_CHECK_LIB([efence], [malloc], LIB_EFENCE="-lefence", [cat << EOF
@@ -159,9 +181,12 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
-# Check for PostgreSQL
-AC_POSTGRESQL
-AC_ECPG
+if test "x${libnova}" = "xyes" -a "x${psql}" = "xyes"; then
+	# Check for PostgreSQL
+	AC_POSTGRESQL
+	AC_ECPG
+	AC_SUBST([PSQL_SUBDIRS],['db plan pgsql grb bckimages sql'])
+fi
 
 # Checks for library functions.
 AC_FUNC_FORK
@@ -230,6 +255,8 @@ echo "
 
   focusing      ${focusing}
   xfocusc       ${xfocusc}
+  psql		${psql}
+  libnova	${libnova}
 
 ***************************************
 
