@@ -49,6 +49,9 @@
 
 #include <argz.h>
 
+//! data transmission timout in seconds
+#define DATA_TIMEOUT	20
+
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 /* union semun is defined by including <sys/sem.h> */
 #else
@@ -626,7 +629,7 @@ send_data_thread (void *arg)
   while (sended < data_con->data_size
 	 && !data_get (ID, data, DATA_BLOCK_SIZE, &size))
     {
-      send_tout.tv_sec = 9000;
+      send_tout.tv_sec = DATA_TIMEOUT;
       send_tout.tv_usec = 0;
       FD_ZERO (&write_fds);
       FD_SET (data_con->sock, &write_fds);
@@ -736,7 +739,7 @@ devser_data_init (size_t buffer_size, size_t data_size, int *id)
 
   FD_ZERO (&a_set);
   FD_SET (data_listen_sock, &a_set);
-  accept_tout.tv_sec = 500;
+  accept_tout.tv_sec = DATA_TIMEOUT;
   accept_tout.tv_usec = 0;
 
   syslog (LOG_DEBUG, "waiting for connection on port %i", port);
@@ -1313,7 +1316,7 @@ read_from_client ()
     }
   else if (nbytes == 0)
     {
-      syslog (LOG_ERR, "read 0 bytes");
+      syslog (LOG_ERR, "read_from_client read 0 bytes");
       return -1;
     }
   else
@@ -1378,7 +1381,7 @@ devser_on_exit ()
 	  childrens = childrens->next;
 	}
     }
-  syslog (LOG_INFO, "devser exiting");
+  printf ("devser exiting\n");
 }
 
 /*! 
