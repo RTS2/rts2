@@ -19,6 +19,7 @@ typedef struct
   struct ln_equ_posn image_pos;
   pthread_mutex_t *mutex;
   pthread_cond_t *cond;
+  int hi_precision;
 } hi_precision_t;
 
 struct image_info
