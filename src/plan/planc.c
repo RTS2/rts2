@@ -2,14 +2,12 @@
  * @file Plan test client
  * $Id$
  *
- * Client to test camera deamon.
+ * Planner client.
  *
  * @author petr
  */
 
 #define _GNU_SOURCE
-
-#define USE_WF2
 
 #include <errno.h>
 #include <libnova.h>
@@ -39,10 +37,7 @@
 #define EXPOSURE_TIME		60
 #define EPOCH			"002"
 
-struct device *camera, *telescope;
-#ifdef USE_WF2
-struct device *wf2;
-#endif
+struct device *telescope;
 
 pthread_t image_que_thread;
 
@@ -62,20 +57,21 @@ status_handler (struct device *dev, char *status_name, int new_val)
 int
 move (struct target *last)
 {
-  if (last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
+  if ((last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
+      && last->moved == 0)
     {
-      {
-	struct ln_equ_posn object;
-	struct ln_lnlat_posn observer;
-	struct ln_hrz_posn hrz;
-	object.ra = last->ra;
-	object.dec = last->dec;
-	observer.lat = 50;
-	observer.lng = -15;
-	get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
-	printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
-	printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
-      }
+      struct ln_equ_posn object;
+      struct ln_lnlat_posn observer;
+      struct ln_hrz_posn hrz;
+      object.ra = last->ra;
+      object.dec = last->dec;
+      observer.lat = 37.1;
+      observer.lng = 6.377;
+      get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
+      printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
+      printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
+
+      last->moved = 1;
 
       if (devcli_command (telescope, NULL, "move %f %f", last->ra, last->dec))
 	{
@@ -91,26 +87,25 @@ get_info (struct target *entry, struct device *tel, struct device *cam)
 {
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
+  int ret;
 
   info->camera_name = cam->name;
+  printf ("info camera_name = %s\n", cam->name);
   info->telescope_name = tel->name;
   info->exposure_time = time (NULL);
   info->exposure_length = EXPOSURE_TIME;
   info->target_id = entry->id;
   info->observation_id = entry->obs_id;
   info->target_type = entry->type;
-  if (devcli_command (cam, NULL, "info") ||
-      !memcpy (&info->camera, &cam->info, sizeof (struct camera_info)) ||
-      devcli_command (tel, NULL, "info") ||
-      !memcpy (&info->telescope, &tel->info,
-	       sizeof (struct telescope_info))
-      || devcli_image_info (cam, info))
+  if ((ret = devcli_command (cam, NULL, "info")))
     {
-      free (info);
-      return -1;
+      printf ("camera info error\n");
     }
+  memcpy (&info->camera, &cam->info, sizeof (struct camera_info));
+  memcpy (&info->telescope, &tel->info, sizeof (struct telescope_info));
+  devcli_image_info (cam, info);
   free (info);
-  return 0;
+  return ret;
 }
 
 int
@@ -121,7 +116,9 @@ generate_next (int i, struct target *plan)
   start_time += EXPOSURE_TIME;
 
   printf ("Making plan %s", ctime (&start_time));
-  if (get_next_plan (plan, SELECTOR_AIRMASS, &start_time, i, EXPOSURE_TIME))
+  if (get_next_plan
+      (plan, SELECTOR_AIRMASS, &start_time, i, EXPOSURE_TIME,
+       devcli_server ()->statutes[0].status, 6.733, 37.1))
     {
       printf ("Error making plan\n");
       exit (EXIT_FAILURE);
@@ -135,7 +132,11 @@ int
 observe (int watch_status)
 {
   int i = 0;
+  int tar_id = 0;
+  int obs_id = -1;
   struct target *last, *plan, *p;
+  int exposure;
+  int light;
 
   struct tm last_s;
 
@@ -151,6 +152,7 @@ observe (int watch_status)
     {
       time_t t = time (NULL);
       struct timeval tv;
+      struct device *camera = devcli_find ("C0");
       fd_set rdfs;
 
       FD_ZERO (&rdfs);
@@ -160,7 +162,9 @@ observe (int watch_status)
       tv.tv_usec = 0;
 
       if (watch_status
-	  && devcli_server ()->statutes[0].status != SERVERD_NIGHT)
+	  && (devcli_server ()->statutes[0].status != SERVERD_NIGHT &&
+	      devcli_server ()->statutes[0].status != SERVERD_DUSK &&
+	      devcli_server ()->statutes[0].status != SERVERD_DAWN))
 	break;
 
       if (abs (last->ctime - t) > last->tolerance)
@@ -181,10 +185,6 @@ observe (int watch_status)
 	  sleep (sleep_time - t);
 	}
 
-      if (last->type == TARGET_LIGHT)
-	{
-	  db_start_observation (last->id, &t, &last->obs_id);
-	}
 
       gmtime_r (&last_succes, &last_s);
 
@@ -196,68 +196,62 @@ observe (int watch_status)
       devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
-      devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
-			      DEVICE_PRIORITY, 0);
+      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
+				  DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 0);
 
-#ifdef USE_WF2
-      devcli_wait_for_status (wf2, "priority", DEVICE_MASK_PRIORITY,
-			      DEVICE_PRIORITY, 0);
-#endif
       devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 			      TEL_OBSERVING, 0);
 
       printf ("OK\n");
-
       time (&t);
-      if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
-				  CAM_NOTREADING, 0) ||
-	  devcli_command (camera, NULL, "expose 0 %i %i",
-			  last->type != TARGET_DARK, EXPOSURE_TIME))
+      exposure = (last->type == TARGET_FLAT
+		  || last->type == TARGET_FLAT_DARK) ? 1 : EXPOSURE_TIME;
+      light = !(last->type == TARGET_DARK || last->type == TARGET_FLAT_DARK);
+
+      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
+				  CAM_MASK_READING, CAM_NOTREADING, 0);
+
+      if (obs_id >= 0 && last->id != tar_id)
 	{
-	  perror ("expose camera");
+	  if (camera)
+	    t = camera->statutes[0].last_update;
+	  else
+	    time (&t);
+	  db_end_observation (obs_id, &camera->statutes[0].last_update);
+	  obs_id = -1;
 	}
-
-#ifdef USE_WF2
-      if (devcli_wait_for_status (wf2, "img_chip", CAM_MASK_READING,
-				  CAM_NOTREADING, 0) ||
-	  devcli_command (wf2, NULL, "expose 0 %i %i",
-			  last->type != TARGET_DARK, EXPOSURE_TIME))
-	{
-	  perror ("expose wf2");
-	}
-#endif
-      printf ("exposure countdown ..%s", ctime (&t));
-      t += EXPOSURE_TIME;
-      printf ("readout at: %s", ctime (&t));
-
-      i = generate_next (i, plan);
-
-      printf ("next plan #%i: id %i type %i\n", i, last->next->id,
-	      last->next->type);
-
-      get_info (last, telescope, camera);
-#ifdef USE_WF2
-      get_info (last, telescope, wf2);
-#endif
-
-      devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
-			      CAM_NOEXPOSURE, 0);
-#ifdef USE_WF2
-      devcli_wait_for_status (wf2, "img_chip", CAM_MASK_EXPOSE,
-			      CAM_NOEXPOSURE, 0);
-#endif
-
-      move (last->next);
-
-      devcli_command (camera, NULL, "readout 0");
-#ifdef USE_WF2
-      devcli_command (wf2, NULL, "readout 0");
-#endif
 
       if (last->type == TARGET_LIGHT)
 	{
-	  db_end_observation (last->id, last->obs_id, &last->next->ctime);
+	  if (last->id != tar_id)
+	    {
+	      time (&t);
+	      tar_id = last->id;
+	      db_start_observation (last->id, &t, &obs_id);
+	    }
+	  last->obs_id = obs_id;
 	}
+      devcli_command_all (DEVICE_TYPE_CCD, "expose 0 %i %i", light, exposure);
+
+      printf ("exposure countdown ..%s", ctime (&t));
+      t += EXPOSURE_TIME;
+      printf ("readout at: %s", ctime (&t));
+      i = generate_next (i, plan);
+      printf ("next plan #%i: id %i type %i\n", i, last->next->id,
+	      last->next->type);
+      devcli_command (telescope, NULL, "info");
+      for (camera = devcli_devices (); camera; camera = camera->next)
+	get_info (last, telescope, camera);
+      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
+				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE, 0);
+      move (last->next);
+      devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
+    }
+  if (obs_id >= 0)
+    {
+      time_t t;
+      time (&t);
+      db_end_observation (obs_id, &t);
     }
   return 0;
 }
@@ -284,11 +278,20 @@ main (int argc, char **argv)
   while (1)
     {
       static struct option long_option[] = {
-	{"ignore_status", 0, 0, 'i'},
-	{"port", 1, 0, 'p'},
-	{"priority", 1, 0, 'r'},
-	{"help", 0, 0, 'h'},
-	{0, 0, 0, 0}
+	{
+	 "ignore_status", 0, 0, 'i'}
+	,
+	{
+	 "port", 1, 0, 'p'}
+	,
+	{
+	 "priority", 1, 0, 'r'}
+	,
+	{
+	 "help", 0, 0, 'h'}
+	,
+	{
+	 0, 0, 0, 0}
       };
       c = getopt_long (argc, argv, "ip:r:h", long_option, NULL);
 
@@ -350,31 +353,9 @@ main (int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-  camera = devcli_find ("C0");
-  if (!camera)
-    {
-      printf
-	("**** cannot find camera!\n**** please check that it's connected and camd runs.\n");
-      devcli_server_disconnect ();
-      return 0;
-    }
+  devcli_device_data_handler (DEVICE_TYPE_CCD, data_handler);
 
-  camera->data_handler = data_handler;
-
-#ifdef USE_WF2
-  wf2 = devcli_find ("C1");
-  if (!wf2)
-    {
-      printf
-	("**** cannot find camera!\n**** please check that it's connected and camd runs.");
-      devcli_server_disconnect ();
-      return 0;
-    }
-
-  wf2->data_handler = data_handler;
-#endif
-
-  telescope = devcli_find ("T1");
+  telescope = devcli_find ("T0");
   if (!telescope)
     {
       printf
@@ -392,35 +373,16 @@ main (int argc, char **argv)
       return 0;
     }
 
-#define CAMD_WRITE_READ(command) if (devcli_command (camera, NULL, command) < 0) \
-  				{ \
-      		                  perror ("devcli_write_read_camd"); \
-				  return EXIT_FAILURE; \
-				}
-
-#ifdef USE_WF2
-#define WF2_WRITE_READ(command) if (devcli_command (wf2, NULL, command) < 0) \
-  				{ \
-      		                  perror ("devcli_write_read_camd"); \
-				  return EXIT_FAILURE; \
-				}
-#endif
-
-#define TELD_WRITE_READ(command) if (devcli_command (telescope, NULL, command) < 0) \
-  				{ \
-      		                  perror ("devcli_write_read_teld"); \
-				  return EXIT_FAILURE; \
-				}
-  CAMD_WRITE_READ ("ready");
-  CAMD_WRITE_READ ("info");
-
-#ifdef USE_WF2
-  WF2_WRITE_READ ("ready");
-  WF2_WRITE_READ ("info");
-#endif
-
-  TELD_WRITE_READ ("ready");
-  TELD_WRITE_READ ("info");
+  if (devcli_command_all (DEVICE_TYPE_CCD, "ready;info") < 0)
+    {
+      perror ("devcli_write_read_camd camera");
+      return EXIT_FAILURE;
+    }
+  if (devcli_command (telescope, NULL, "ready;base_info;info") < 0)
+    {
+      perror ("devcli_write_read_camd camera");
+      return EXIT_FAILURE;
+    }
 
 //  devcli_set_general_notifier (camera, status_handler, NULL);
 
@@ -431,6 +393,7 @@ main (int argc, char **argv)
   devcli_server_command (NULL, "priority %i", priority);
 
   printf ("waiting for priority on telescope");
+  fflush (stdout);
 
   devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			  DEVICE_PRIORITY, 0);
@@ -443,17 +406,17 @@ loop:
   devcli_server_command (NULL, "status_txt P:waiting");
   if (watch_status)
     {
-      while (devcli_server ()->statutes[0].status != SERVERD_NIGHT)
+      while (!(devcli_server ()->statutes[0].status == SERVERD_NIGHT
+	       || devcli_server ()->statutes[0].status == SERVERD_DUSK
+	       || devcli_server ()->statutes[0].status == SERVERD_DAWN))
 	{
 	  printf ("waiting for night..\n");
 	  fflush (stdout);
 	  devcli_command (telescope, NULL, "park");
 	  sleep (600);
 	}
-
-      observe (watch_status);
     }
-
+  observe (watch_status);
   printf ("done\n");
 
   devcli_command (telescope, NULL, "park");
