@@ -8,6 +8,8 @@ extern "C"
 {
 #endif
 
+#define MAX_COMMAND_LENGTH      2000
+
   int db_connect (void);
   int db_disconnect (void);
 
@@ -15,6 +17,7 @@ extern "C"
   void db_unlock ();
 
   int db_get_media_path (int media_id, char *path, size_t path_len);
+  int db_get_script (int target, char *camera_name, char *script);
 
   int db_start_observation (int id, const time_t * start, int *obs_id);
   int db_end_observation (int obs_id, const time_t * end_time);

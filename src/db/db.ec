@@ -63,16 +63,25 @@ db_get_media_path (int media_id, char *path, size_t path_len)
 
   EXEC SQL BEGIN DECLARE SECTION;
   VARCHAR med_path[50];
+  int med_indicator;
   int med_id = media_id;
   EXEC SQL END DECLARE SECTION;
   db_lock ();
-  EXEC SQL SELECT med_path INTO:med_path FROM medias WHERE med_id =:med_id;
+  EXEC SQL
+  SELECT
+    med_path
+  INTO
+    :med_path :med_indicator
+  FROM
+    medias
+  WHERE med_id =:med_id;
   test_sql;
+  if (med_indicator < 0)
+    goto err;
   db_unlock ();
   strncpy (path, med_path.arr, path_len);
   path[path_len] = '\0';
   return 0;
-#undef test_sql
 err:
 #ifdef DEBUG
   printf ("err db_get_media_path: %li %s\n", sqlca.sqlcode,
@@ -80,6 +89,53 @@ err:
 #endif /* DEBUG */
   db_unlock ();
   path[0] = '\0';
+  return -1;
+}
+
+/**
+ * Return script for camera exposure.
+ *
+ * @param target        target id
+ * @param camera_name   name of the camera
+ * @param script        script
+ * 
+ * return -1 on error, 0 on success
+ */
+extern int
+db_get_script (int target, char *camera_name, char *script)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int tar_id = target;
+  char *cam_name = camera_name;
+  VARCHAR sc_script[MAX_COMMAND_LENGTH];
+  int sc_indicator;
+  EXEC SQL END DECLARE SECTION;
+  db_lock ();
+  EXEC SQL 
+  SELECT
+    script
+  INTO
+    :sc_script :sc_indicator
+  FROM
+    scripts
+  WHERE
+    tar_id = :tar_id
+    AND camera_name = :cam_name;
+  test_sql;
+  if (sc_indicator < 0)
+    goto err;
+  db_unlock ();
+  strncpy (script, sc_script.arr, sc_script.len);
+  script[sc_script.len] = '\0';
+  return 0;
+#undef test_sql
+err:
+#ifdef DEBUG
+  printf ("err db_get_script: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  db_unlock ();
+  script[0] = '\0';
   return -1;
 }
 
@@ -128,6 +184,51 @@ err:
   printf ("err db_end_observation: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
+  return -1;
+}
+
+extern int
+db_add_count (int o_id, const time_t * date, float exposure, char
+	      *filter, double ra, double dec, char *counter)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int obs_id = o_id;
+  long int count_date = *date;
+  float count_exposure = exposure;
+  char *count_filter = filter;
+  double count_ra = ra;
+  double count_dec = dec;
+  char *counter_name = counter;
+  EXEC SQL END DECLARE SECTION;
+  db_lock ();
+  EXEC SQL INSERT 
+  INTO counts (
+     obs_id,
+     count_date,
+     count_exposure,
+     count_filter,
+     count_ra,
+     count_dec,
+     counter_name) 
+  VALUES (
+     :obs_id,
+     abstime
+     (:count_date),
+     :count_exposure,
+     :count_filter,
+     :count_ra,
+     :count_dec,
+     :counter_name
+  );
+  test_sql;
+  db_unlock ();
+  return 0;
+err:
+//#ifdef DEBUG
+  printf ("err db_add_count: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
+//#endif /* DEBUG */
   db_unlock ();
   return -1;
 }
