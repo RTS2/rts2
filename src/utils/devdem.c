@@ -644,7 +644,7 @@ server_message_handler (struct param_status *params)
 void
 devdem_on_exit ()
 {
-  if (getpid () == devser_parent_pid)
+  if (!devser_child_pid)
     {
       if (shmdt (statutes))
 	syslog (LOG_ERR, "shmdt: %m");
@@ -655,12 +655,13 @@ devdem_on_exit ()
       if (shmdt (clients_info))
 	syslog (LOG_ERR, "shmdt clients_info: %m");
     }
-  else if (getpid () == devser_child_pid)
+  else
     {
       if (clients_info->priority_client == client_id)	// we have priority and we exit => we must give up priority
 	client_priority_lost ();
       clients_info->clients[client_id].pid = 0;
     }
+  syslog (LOG_INFO, "exiting");
 }
 
 /*!
@@ -745,6 +746,9 @@ devdem_init (char **status_names, int status_num_in)
   // in IPC message receivers to set priority flag
 
   client_status = status_num - 1;
+
+  atexit (devdem_on_exit);
+
   return 0;
 }
 
@@ -826,7 +830,6 @@ child_init (void)
 int
 devdem_run (int port, devser_handle_command_t in_handler)
 {
-  on_exit (devdem_on_exit, NULL);
   cmd_device_handler = in_handler;
   return devser_run (port, client_handle_commands, child_init);
 }

@@ -82,7 +82,7 @@ devser_handle_command_t cmd_handler = NULL;
 devser_handle_msg_t msg_handler = NULL;
 
 pid_t devser_parent_pid;	//! pid of parent process - process which forks response children
-pid_t devser_child_pid;		//! pid of child process - actual pid of main thread
+pid_t devser_child_pid = 0;	//! pid of child process - actual pid of main thread
 
 //! struct for data connection
 typedef struct
@@ -1053,9 +1053,9 @@ read_from_client ()
  * On exit handler.
  */
 void
-devser_on_exit (int err, void *args)
+devser_on_exit ()
 {
-  if (getpid () == devser_parent_pid)
+  if (!devser_child_pid)
     {
       if (shmctl (data_shm, IPC_RMID, NULL))
 	syslog (LOG_ERR, "IPC_RMID data_shm shmctl: %m");
@@ -1168,6 +1168,13 @@ devser_init (size_t shm_data_size)
       syslog (LOG_ERR, "devser msgget: %m");
       return -1;
     }
+
+  /* register on_exit */
+  atexit (devser_on_exit);
+  signal (SIGTERM, sig_exit);
+  signal (SIGQUIT, sig_exit);
+  signal (SIGINT, sig_exit);
+
   return 0;
 }
 
@@ -1197,12 +1204,6 @@ devser_run (int port, devser_handle_command_t in_handler,
       return -1;
     }
   cmd_handler = in_handler;
-
-  /* register on_exit */
-  on_exit (devser_on_exit, NULL);
-  signal (SIGTERM, sig_exit);
-  signal (SIGQUIT, sig_exit);
-  signal (SIGINT, sig_exit);
 
   /* create the socket and set it up to accept connections */
   sock = make_socket (port);
