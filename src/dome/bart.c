@@ -42,23 +42,23 @@ char zasuvka[] = { 0x9, 0x8, 0x5, 0x4, 0x3 };
 
 int dome_port = -1;
 
-#define NUM_ZAS		2
+#define NUM_ZAS		3
 
 #define OFF		0
 #define STANDBY		1
 #define OBSERVING	2
 
-// prvni zasuvka chlazeni, druha kamery
-int zasuvky_index[NUM_ZAS] = { 2, 1 };
+// prvni zasuvka dalekohled, druha kamery, treti chlazeni
+int zasuvky_index[NUM_ZAS] = { 0, 1, 2 };
 
 // prvni index - cislo stavu (0 - off, 1 - standby, 2 - observing), druhy je stav zasuvky cislo j)
 int zasuvky_stavy[3][NUM_ZAS] = {
   // off
-  {ZAS_VYP, ZAS_VYP},
+  {ZAS_VYP, ZAS_VYP, ZAS_VYP},
   // standby
-  {ZAS_VYP, ZAS_ZAP},
+  {ZAS_ZAP, ZAS_ZAP, ZAS_VYP},
   // observnig
-  {ZAS_ZAP, ZAS_ZAP}
+  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
 static struct dome_info d_info;
