@@ -6,8 +6,7 @@ static const struct
   unsigned int height;
   unsigned int bytes_per_pixel;	/* 3:RGB, 4:RGBA */
   unsigned char pixel_data[62 * 9 * 3 + 1];
-}
-logo_image =
+} logo_image =
 {
 62, 9, 3,
     "\254\255\321\254\255\321\254\255\321\254\255\321\310\311\340\376\376\376"

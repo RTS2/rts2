@@ -73,16 +73,39 @@ main (int argc, char **argv)
   read_long ("OBSERVAT", &obs_id);
   read_string ("CAM_NAME", camera_name);
   read_string ("TEL_NAME", mount_name);
-  printf ("INSERT INTO images"
-	  "(img_id, img_date, img_exposure, img_temperature, img_filter, astrometry, "
-	  "obs_id, camera_name, mount_name, med_id, epoch_id) VALUES (nextval ('img_id'), "
-	  "abstime (%ld), %.0f, %.0f, '%s', 'NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %ld CRPIX2 %ld "
-	  "CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f', %ld, '%s', '%s',"
-	  "0, '003');\n", img_date, img_exposure * 100, img_temperature * 10,
-	  img_filter, naxis[0], naxis[1], ctype[0], ctype[1], crpix[0],
-	  crpix[1], crval[0], crval[1], cdelt[0], cdelt[1],
-	  (crota[0] + crota[1]) / 2.0, eqin, epoch, obs_id, camera_name,
-	  mount_name);
+  printf ("INSERT INTO images ("
+	  "\timg_id\n,"
+	  "\timg_date\n,"
+	  "\timg_exposure,\n"
+	  "\timg_temperature,\n"
+	  "\timg_filter,\n"
+	  "\tastrometry,\n"
+	  "\tobs_id,\n"
+	  "\tcamera_name,\n"
+	  "\tmount_name,\n"
+	  "\tmed_id,\n"
+	  "\tepoch_id)\n"
+	  "VALUES ("
+	  "\tnextval ('img_id'),\n"
+	  "\tabstime (%ld),\n"
+	  "\t%.0f,\n"
+	  "\t%.0f,\n"
+	  "\t'%s',\n"
+	  "\t'NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %ld CRPIX2 %ld "
+	  "CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f',\n"
+	  "\t%ld,\n"
+	  "\t'%s',\n"
+	  "\t'%s',\n"
+	  "\t0,\n"
+	  "\t'00T'\n"
+	  ");\n",
+	  img_date,
+	  img_exposure * 100,
+	  img_temperature * 10,
+	  img_filter,
+	  naxis[0], naxis[1], ctype[0], ctype[1], crpix[0], crpix[1],
+	  crval[0], crval[1], cdelt[0], cdelt[1], (crota[0] + crota[1]) / 2.0,
+	  eqin, epoch, obs_id, camera_name, mount_name);
 err:
   if (status)
     fits_report_error (stderr, status);
