@@ -99,6 +99,27 @@ Selector::add_target_ell (Target *plan, int type, int id, int obs_id,
   return new_plan;
 }
 
+/*Target *
+add_target_lunar (Target *plan, int type, int id, int obs_id,
+  time_t obs_time, int tolerance)
+{
+  Target *new_plan;
+  new_plan = new LunarTarget();
+  new_plan->next = NULL;
+  new_plan->type = type;
+  new_plan->id = id;
+  new_plan->obs_id = obs_id;
+  new_plan->ctime = obs_time;
+  new_plan->tolerance = tolerance;
+  new_plan->moved = 0;
+  new_plan->hi_precision = 0;
+
+  while (plan->next)
+    plan = plan->next;
+  plan->next = new_plan;
+  return new_plan;
+}*/
+
 int
 Selector::select_next_alt (time_t c_start, Target *plan, float lon, float lat)
 {
@@ -727,7 +748,7 @@ ORDER BY
 	{
 	  printf ("photometric find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
-		      PLAN_TOLERANCE, TYPE_OPORTUNITY);
+		      PLAN_TOLERANCE, obs_type);
 	  EXEC SQL CLOSE obs_cursor_photometric;
 	  db_unlock ();
 	  return 0;
@@ -746,6 +767,93 @@ err:
   db_unlock ();
   return -1;
 }
+
+/*!
+ * If needed, select next observation from list of terrestial targets 
+ */
+int
+Selector::select_next_terestial (time_t *c_start, Target *plan, float lon,
+			float lat)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int tar_id;
+  double ra;
+  double dec;
+  int ter_minutes;
+  int ter_offset;
+  int ot_minpause;
+  float db_lon = lon;
+  float db_lat = lat;
+  char obs_type = TYPE_TERESTIAL;
+  int ter_minutes_start;
+  EXEC SQL END DECLARE SECTION;
+  struct tm gmt;
+
+  gmtime_r (c_start, &gmt);
+  ter_minutes_start = gmt.tm_hour * 60 + gmt.tm_min;
+
+  db_lock ();
+#define test_sql if (sqlca.sqlcode < 0) goto err
+EXEC SQL DECLARE obs_cursor_terestial CURSOR FOR SELECT
+        targets.tar_id,
+        tar_ra,
+        tar_dec,
+	ter_minutes,
+	ter_offset
+FROM
+        targets_enabled targets,
+        terestial
+WHERE
+        terestial.tar_id = targets.tar_id
+	AND type_id = :obs_type 
+	AND mod (ter_minutes_start - ter_offset, ter_minutes) > (ter_minutes - 5)
+;
+  EXEC SQL OPEN obs_cursor_terestial;
+  test_sql;
+  while (1)
+    {
+      int last_o;
+      sqlca.sqlcode = 0;
+      EXEC SQL FETCH 
+      	next
+      FROM
+        obs_cursor_terestial
+      INTO
+        :tar_id,
+	:ra,
+	:dec,
+	:ter_minutes,
+	:ter_offset;
+      if (sqlca.sqlcode)
+	goto err;
+      last_o = db_last_observation (tar_id);
+      ot_minpause = 500;
+      printf ("%8i\t%+03.3f\t%+03.3f\t%i\n", tar_id, ra, dec,
+	      ot_minpause);
+      if (last_o == -1 || last_o >= ot_minpause)
+	{
+	  printf ("terestial find id: %i\n", tar_id);
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
+		      PLAN_TOLERANCE, obs_type);
+	  EXEC SQL CLOSE obs_cursor_terestial;
+	  db_unlock ();
+	  return 0;
+	}
+    }
+  EXEC SQL CLOSE obs_cursor_terestial;
+  test_sql;
+  db_unlock ();
+#undef test_sql
+  return -1;
+err:
+//#ifdef DEBUG
+  printf ("err select_next_terestial : %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
+//#endif /* DEBUG */
+  db_unlock ();
+  return -1;
+}
+
 
 /*! 
  * HETE field generation
@@ -862,6 +970,16 @@ Selector::get_next_plan (Target *plan, int selector_type,
 	return 0;
     }
 
+/*  if (selector_type == SELECTOR_LUNAR)
+  {
+    if (number % 3)
+    {
+      add_target_lunar (plan, TARGET_LIGHT, 1201, -1, *obs_start, PLAN_TOLERANCE);
+      return 0;
+    }
+    selector_type = SELECTOR_ELL;
+  } */
+
   // check for OT
   last_good_img = db_last_good_image (get_string_default ("telescope_camera", "C0"));
   printf ("last good image on %s: %i\n", get_string_default ("telescope_camera" ,"C0"), last_good_img);
@@ -874,6 +992,11 @@ Selector::get_next_plan (Target *plan, int selector_type,
       if (!select_next_to (obs_start, plan, 120, 230, lon, lat))
         return 0;
     }
+
+  // check for terestial targets
+  printf ("Triing terestial\n");
+  if (!select_next_terestial (obs_start, plan, lon, lat))
+    return 0;
 
   printf ("selector_type: %i %i\n", selector_type, SELECTOR_ELL);
 

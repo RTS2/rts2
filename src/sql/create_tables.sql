@@ -59,6 +59,12 @@ CREATE TABLE ell (
         ell_mag_2       float8
 );
 
+CREATE TABLE terestial (
+	tar_id		integer REFERENCES targets (tar_id),
+	ter_minutes	integer -- observation every ter_minutes
+	ter_offset	integer -- observation offset in minutes
+)
+
 DROP TABLE cameras;
 
 CREATE TABLE cameras (

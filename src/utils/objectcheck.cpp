@@ -88,6 +88,9 @@ ObjectCheck::is_good (double st, double ra, double dec, int hardness)
 
   double last_ra = 0, last_dec = 0;
 
+  if (horizont.size () == 0)
+     return 1;
+
   for (Iter1 = horizont.begin(); Iter1!= horizont.end(); Iter1++)
   {
      if (Iter1->ra > ha)

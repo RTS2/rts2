@@ -38,6 +38,11 @@ private:
   int
     select_next_photometry (time_t * c_start, Target * plan, float lon,
 			    float lat);
+
+  int
+    select_next_terestial (time_t * c_start, Target * plan, float lon,
+			   float lat);
+
   int
     flat_field (Target * plan, time_t * obs_start, int number, float lon,
 		float lat);

@@ -10,7 +10,8 @@
 #define TYPE_ELLIPTICAL         'E'
 #define TYPE_HETE               'H'
 #define TYPE_PHOTOMETRIC	'M'
-#define TYPE_TECHNICAL          'T'
+#define TYPE_TECHNICAL          't'
+#define TYPE_TERESTIAL		'T'
 
 class Target
 {
@@ -67,6 +68,15 @@ private:
   struct ln_par_orbit orbit;
 public:
     ParTarget (struct ln_par_orbit *in_orbit);
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
+		      double jd);
+};
+
+class LunarTarget:public Target
+{
+public:
+  LunarTarget ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
 		      double jd);

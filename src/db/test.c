@@ -10,6 +10,7 @@ main (int argc, char **argv)
   char *dark_name;
   int tar_id;
   int sq;
+  int obs_id;
   double ra;
   double dec;
   int ret;
@@ -31,6 +32,10 @@ main (int argc, char **argv)
     }
   printf ("sq: %i ra: %f dec: %f target: %i\n", sq, ra, dec, tar_id);
   free (dark_name);
+  db_start_observation (1, &t, &obs_id);
+  printf ("observation id: %i\n", obs_id);
+  db_add_count (obs_id, &t, 10.0, 1234, "VA", 1.2345, 2.345, "PHOT0");
+  db_end_observation (obs_id, &t);
 
   ret = db_get_script (180, "C0", script);
   printf ("script C0: %s ret %i\n", script, ret);

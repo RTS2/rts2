@@ -48,6 +48,7 @@
 #define COMMAND_CHANGE		'C'
 #define COMMAND_WAIT            'W'
 #define COMMAND_SLEEP		'S'
+#define COMMAND_UTC_SLEEP	'U'
 
 struct thread_list
 {
@@ -133,8 +134,15 @@ move (Target * last)
     {
       struct ln_equ_posn object;
       struct ln_hrz_posn hrz;
+      double JD;
       last->getPosition (&object);
-      ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (),
+      JD = ln_get_julian_from_sys ();
+      // correction for terestial target
+      if (last->obs_type == TYPE_TERESTIAL)
+      {
+	      object.ra = object.ra - ln_get_mean_sidereal_time (JD) * 15.0 - observer.lng;
+      }
+      ln_get_hrz_from_equ (&object, &observer, JD,
 			   &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
@@ -720,7 +728,37 @@ execute_camera_script (void *exinfo)
 
 	  break;
 	case COMMAND_SLEEP:
+	  command++;
+	  filter = strtol (command, &s, 10);
+	  if (s == command || (!isspace (*s) && *s))
+	    {
+	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+	      command = s;
+	      continue;
+	    }
+	  command = s;
+	  if (exp_state == EXPOSURE_PROGRESS)
+	    {
+	      devcli_command (camera, NULL, "readout 0");
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_READING, CAM_NOTREADING,
+				      MAX_READOUT_TIME);
+	      exp_state = NO_EXPOSURE;
+	    }
 
+	  time (&t);
+
+	  while (t - script_start < filter)
+	  {
+		int sl;
+		sl = filter - (t - script_start);
+		printf ("sleeping for %i seconds\n", sl);
+		sleep (sl);
+		time (&t);
+	  }
+
+	  break;
+	case COMMAND_UTC_SLEEP:
 	  command++;
 	  filter = strtol (command, &s, 10);
 	  if (s == command || (!isspace (*s) && *s))

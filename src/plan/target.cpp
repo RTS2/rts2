@@ -80,3 +80,18 @@ ParTarget::getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
 {
   return ln_get_par_body_rst (JD, observer, &orbit, rst);
 }
+
+LunarTarget::LunarTarget ()
+{
+}
+
+int LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  ln_get_lunar_equ_coords (JD, pos, 0);
+  return 0;
+}
+
+int LunarTarget::getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst, double JD)
+{
+  return ln_get_lunar_rst (JD, observer, rst);
+}
