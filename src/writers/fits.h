@@ -23,7 +23,8 @@ struct fits_receiver_data
   pthread_t thread;
 };
 
-int fits_init (struct fits_receiver_data *receiver, size_t expected_size, char *filename);
+int fits_init (struct fits_receiver_data *receiver, size_t expected_size,
+	       char *filename);
 
 int fits_handler (void *data, size_t size,
 		  struct fits_receiver_data *receiver);

@@ -24,37 +24,38 @@
  *
  * @return 0 on success, -1 and set errno on error
  */
-int 
-fits_init (struct fits_receiver_data *receiver, size_t expected_size, char *filename)
+int
+fits_init (struct fits_receiver_data *receiver, size_t expected_size,
+	   char *filename)
 {
-   int status;
+  int status;
 
-   fits_clear_errmsg ();
+  fits_clear_errmsg ();
 
-   receiver->offset = 0;
-   receiver->size = 0;
+  receiver->offset = 0;
+  receiver->size = 0;
 
-   status = 0;
- 
-   if (fits_create_file (&(receiver->ffile), filename, &status))
-   {
-     fits_report_error (stderr, status);
-     errno = EINVAL;
-     return -1;
-   }
+  status = 0;
 
-   if (expected_size <= 0)
-   {
-	   errno = EINVAL;
-	   return -1;
-   }
-   if (! (receiver->data = malloc (expected_size)))
-   {
-	   errno = ENOMEM;
-	   return -1;
-   }
-   receiver->size = expected_size;
-   return 0;
+  if (fits_create_file (&(receiver->ffile), filename, &status))
+    {
+      fits_report_error (stderr, status);
+      errno = EINVAL;
+      return -1;
+    }
+
+  if (expected_size <= 0)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+  if (!(receiver->data = malloc (expected_size)))
+    {
+      errno = ENOMEM;
+      return -1;
+    }
+  receiver->size = expected_size;
+  return 0;
 }
 
 /*!
