@@ -2,10 +2,10 @@
 
 all: fits.o
 
-CFLAGS += -I@top_srcdir@/include
+CFLAGS = @CFLAGS@ -I@top_srcdir@/include
+LDFLAGS = @LDFLAGS@
 
-fits.o: fits.c fits.h 
-	$(CC) -c -o fits.o fits.c $(CFLAGS)
+fits.o: fits.c 
 
 clean:
-	$(RM) *.o
+	$(RM) *.o *~

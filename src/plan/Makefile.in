@@ -4,20 +4,15 @@ BIN = planc test
 
 all: $(BIN)
 
-CFLAGS += -I/usr/src/cfitsio -I@top_srcdir@/include -DDEBUG
-LDFLAGS += -L/usr/src/cfitsio -lcfitsio -l$(LIB_M) -l$(LIB_PTHREAD)
+CFLAGS = @CFLAGS@ @LIBPG_CFLAGS@ -I@top_srcdir@/include -DDEBUG
+LDFLAGS = @LIBS@
 
 planc: planc.o selector.o ../db/db.o ../writers/fits.o ../utils/devcli.a
-	$(CC) -o $@ $^ -lcfitsio -lm -lpthread -lecpg -lpq -lnova
 
 test: test.o selector.o ../db/db.o
-	$(CC) -g -o $@ $^ @LIBPG_CFLAGS@ -lecpg -lpq -lnova 
 
 %.c: %.ec
 	@ECPG@ -o $@ $^
-
-selector.o: selector.c
-	$(CC) -g -I/usr/include/postgresql selector.c -c -o selector.o
 
 clean:
 	$(RM) *~ *.o planc test

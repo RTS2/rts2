@@ -1,6 +1,9 @@
 
 all: grbc
 
+CFLAGS = @CFLAGS@ -I@top_srcdir@/include
+LDFLAGS = @LDFLAGS@ @LIBS@
+
 ibas/ibas.a:
 	$(MAKE) -C ibas
 
@@ -12,9 +15,6 @@ grbc: grbc.o ../db/db.o ../utils/devcli.a ../writers/fits.o ibas/ibas.a bacodine
 
 %.c: %.ec
 	@ECPG@ -o $@ $^
-
-CFLAGS += @LIBPG_CFLAGS@ -Iibas -I@top_srcdir@/include
-LDFLAGS += @LIBS@
 
 clean:
 	$(RM) *.o

@@ -6,8 +6,8 @@ all: $(BIN)
 
 SUBDIRS = sbig urvc
 
-LDFLAGS += -O2 @LIB_M@ @LIB_PTHREAD@
-CFLAGS += -O2 -I@top_srcdir@/include
+CFLAGS = -O2 @CFLAGS@ -I@top_srcdir@/include
+LDFLAGS = -O2 @LDFLAGS@ @LIB_M@ @LIB_PTHREAD@
 
 .PHONY=clean
 

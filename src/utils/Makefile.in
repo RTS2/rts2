@@ -4,8 +4,8 @@ BIN=test
 
 all: devdem.a devser.a devcli.a test $(BIN)
 
-CFLAGS = -g -I/usr/src/cfitsio -I@top_srcdir@/include @debug@
-LDFLAGS = @LIB_M@
+CFLAGS = @CFLAGS@ -I@top_srcdir@/include @debug@
+LDFLAGS = @LDFLAGS@ @LIB_M@
 
 devdem.a: devdem.o devser.o devcli.o devhnd.o hms.o param.o
 	$(AR) rcsv $@ $^

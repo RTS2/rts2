@@ -4,8 +4,8 @@ BIN = serverd test
 
 all: $(BIN)
 
-LDFLAGS += @LIBS@
-CFLAGS += -I/usr/local/include -I@top_srcdir@/include
+CFLAGS = @CFLAGS@ -I@top_srcdir@/include
+LDFLAGS = @LDFLAGS@ @LIB_M@ @LIB_NOVA@ @LIB_PTHREAD@
 
 serverd: serverd.o riseset.o ../utils/devser.a
 
@@ -15,4 +15,4 @@ riseset.o:riseset.c
 test: riseset.o
 
 clean:
-	$(RM) *.o *~
+	$(RM) *.o *~ $(BIN)
