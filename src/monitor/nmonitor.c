@@ -1,9 +1,10 @@
 #include <curses.h>
-#include <unistd.h>
 #include <mcheck.h>
+#include <libnova.h>
 #include <getopt.h>
 #include <stdlib.h>
-#include <signal.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "telescope_info.h"
 #include "camera_info.h"
@@ -12,8 +13,6 @@
 #include "../utils/devconn.h"
 #include "../utils/hms.h"
 #include "status.h"
-
-int exit_c = 0;
 
 WINDOW *status_win;
 WINDOW *cmd_win;
@@ -39,6 +38,7 @@ status_serverd (WINDOW * wnd, struct device *dev)
   int i;
   struct client *cli;
   struct serverd_info *info = (struct serverd_info *) &dev->info;
+  wclear (wnd);
   mvwprintw (wnd, 1, 1, "status:");
   switch (dev->statutes[0].status)
     {
@@ -67,7 +67,8 @@ status_serverd (WINDOW * wnd, struct device *dev)
   wmove (wnd, 2, 0);
   for (i = 2, cli = info->clients; cli; cli = cli->next, i++)
     {
-      mvwprintw (wnd, i, 1, "%3i %s", cli->priority, cli->status_txt);
+      mvwprintw (wnd, i, 1, "%3i %c %c %s", cli->priority, cli->active,
+		 cli->have_priority, cli->status_txt);
     }
 }
 
@@ -75,21 +76,36 @@ void
 status_telescope (WINDOW * wnd, struct device *dev)
 {
   char buf[10];
+  struct ln_equ_posn object;
+  struct ln_lnlat_posn observer;
+  struct ln_hrz_posn position;
+
   struct telescope_info *info = (struct telescope_info *) &dev->info;
+
+  object.ra = info->ra;
+  object.dec = info->dec;
+  observer.lat = info->latitude;
+  observer.lng = info->longtitude;
+
+  get_hrz_from_equ_siderealtime (&object, &observer, info->siderealtime,
+				 &position);
+
   dtohms (info->ra / 15, buf);
-  mvwprintw (wnd, 1, 1, " Ra: %8s", buf);
-  mvwprintw (wnd, 2, 1, "Dec: %+03.3f", info->dec);
+
+  mvwprintw (wnd, 1, 1, "R/Az: %s %+03.3f", buf, position.az);
+  mvwprintw (wnd, 2, 1, "D/Al: %+03.3f %+03.3f", info->dec, position.alt);
   mvwprintw (wnd, 3, 1, "Lon: %+03.3f", info->longtitude);
   mvwprintw (wnd, 4, 1, "Lat: %+03.3f", info->latitude);
   dtohms (info->siderealtime, buf);
-  print_status (wnd, 5, 1, dev);
+  mvwprintw (wnd, 5, 1, "Sid: %s", buf);
+  print_status (wnd, 6, 1, dev);
 }
 
 void
 status_camera (WINDOW * wnd, struct device *dev)
 {
   struct camera_info *info = (struct camera_info *) &dev->info;
-  mvwprintw (wnd, 1, 1, "Typ: %s", info->name);
+  mvwprintw (wnd, 1, 1, "Typ: %s", info->type);
   mvwprintw (wnd, 2, 1, "Ser: %s", info->serial_number);
   mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
 	     info->chip_info[0].height);
@@ -102,15 +118,44 @@ status_camera (WINDOW * wnd, struct device *dev)
 }
 
 void
+status_send (struct device *dev, char *cmd)
+{
+  char *txt;
+  txt = (char *) malloc (5 + strlen (dev->name) + strlen (cmd));
+  strcpy (txt, "> ");
+  strcat (txt, dev->name);
+  strcat (txt, ".");
+  strcat (txt, cmd);
+  strcat (txt, "\n");
+  wattrset (status_win, A_STANDOUT);
+  waddstr (status_win, txt);
+  wattrset (status_win, A_NORMAL);
+  free (txt);
+  wrefresh (status_win);
+}
+
+void
+status_receive (struct device *dev, char *str)
+{
+  char *txt;
+  txt = (char *) malloc (4 + strlen (dev->name) + strlen (str));
+  strcpy (txt, dev->name);
+  strcat (txt, ": ");
+  strcat (txt, str);
+  strcat (txt, "\n");
+  waddstr (status_win, txt);
+  free (txt);
+  wrefresh (status_win);
+}
+
+void
 status (WINDOW * wnd, struct device *dev)
 {
   int ret;
   curs_set (0);
-  mvwprintw (status_win, 4, 1, "ready..%s    ", dev->name);
-  wrefresh (status_win);
+  status_send (dev, "ready");
   devcli_command (dev, &ret, "ready");
-  mvwprintw (status_win, 4, 1, "info..%s   ", dev->name);
-  wrefresh (status_win);
+  status_send (dev, "info");
   devcli_command (dev, &ret, "info");
   wclear (wnd);
   mvwprintw (wnd, 0, 1, "==== Name: %s ======", dev->name);
@@ -140,6 +185,8 @@ status (WINDOW * wnd, struct device *dev)
   wrefresh (wnd);
   wmove (cmd_win, cmd_line, cmd_col);
   wrefresh (cmd_win);
+  // callback
+  dev->response_handler = status_receive;
   curs_set (1);
 }
 
@@ -148,15 +195,6 @@ status_change (struct device *dev, char *status_name, int new_state)
 {
   status ((WINDOW *) dev->notifier_data, dev);
   return 0;
-}
-
-void
-ex_func (void)
-{
-  printf ("exit_c: %i", exit_c);
-  if (!exit_c)
-    endwin ();
-  exit_c++;
 }
 
 int
@@ -181,7 +219,6 @@ main (int argc, char **argv)
   while (1)
     {
       static struct option long_option[] = {
-	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
@@ -192,30 +229,21 @@ main (int argc, char **argv)
 
       switch (c)
 	{
-	case 'p':
-	  port = atoi (optarg);
-	  if (port < 1 || port == UINT_MAX)
-	    {
-	      printf ("inval camd_id port option: %s\n", optarg);
-	      exit (EXIT_FAILURE);
-	    }
-	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
-	  exit (EXIT_SUCCESS);
-	case '?':
-	  break;
+	  return EXIT_FAILURE;
 	default:
 	  printf ("?? getopt returned unknow character %o ??\n", c);
 	}
     }
   if (optind != argc - 1)
     {
-      printf ("You must pass server address\n");
-      exit (EXIT_FAILURE);
+      server = "localhost";
     }
-
-  server = argv[optind++];
+  else
+    {
+      server = argv[optind++];
+    }
 
   printf ("connecting to %s:%i\n", server, port);
 
@@ -225,6 +253,8 @@ main (int argc, char **argv)
       perror ("devcli_server_login");
       exit (EXIT_FAILURE);
     }
+
+  devcli_server_command (NULL, "status_txt nmonitor");
 
   if (!initscr ())
     {
@@ -236,8 +266,6 @@ main (int argc, char **argv)
   noecho ();
 
   start_color ();
-
-  atexit (ex_func);
 
   // prepare windows
 
@@ -259,6 +287,8 @@ main (int argc, char **argv)
   wnd[4] = newwin (l / 2, COLS / 3, 2, 2 * COLS / 3);
   wnd[5] = newwin (l / 2, COLS / 3, 2 + l / 2, 2 * COLS / 3);
   status_win = wnd[5];
+  box (status_win, 0, 0);
+  scrollok (status_win, true);
 
   if (!wnd[5])
     {
@@ -311,7 +341,7 @@ main (int argc, char **argv)
 	  wrefresh (cmd_win);
 	  if (devcli_execute (buf, &i))
 	    {
-	      wprintw (cmd_win, " no such device");
+	      wprintw (cmd_win, " error");
 	    }
 	  else
 	    {
@@ -337,6 +367,8 @@ main (int argc, char **argv)
 end:
   erase ();
   refresh ();
+
+  devcli_server_disconnect ();
 
   nocbreak ();
   echo ();
