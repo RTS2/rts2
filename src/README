@@ -1,4 +1,3 @@
-camc		CAMera Client
 camd		CAMera Daemon
 db		DataBase access
 dome		Dome (roof) control
