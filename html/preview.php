@@ -4,8 +4,7 @@
 	$fn = escapeshellarg ("$_REQUEST[fn]");
 	$ra = "";
 	$dec = "";
-#	$f2cj = "/home/mates/rtopera/f2cj";
-	$f2cj = "/home/petr/rts2/html/f2cj";
+	$f2cj = "/usr/local/bin/rts2-f2cj";
 	if (array_key_exists('full', $_REQUEST))
 		$cmd = "$f2cj $fn full";
 	else if (array_key_exists('ra', $_SESSION) && array_key_exists('dec', $_SESSION))

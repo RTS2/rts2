@@ -24,13 +24,14 @@
 	} else {
 		echo "Cannot find any image.<br>\n";
 	}
-	$q->fields = "count(*),MIN(obs_start), MAX(obs_start), MIN(obs_duration), AVG(obs_duration), MAX(obs_duration)";
+	$q->fields = "count(*),MIN(obs_start), MAX(obs_start + obs_duration), MIN(obs_duration), AVG(obs_duration), MAX(obs_duration), EXTRACT (EPOCH FROM SUM(obs_duration)), EXTRACT (EPOCH FROM MAX(obs_start + obs_duration) - MIN (obs_start))";
 	$q->from = "observations";
 	$q->where = " WHERE night_num(obs_start) = $n";
 	$res = $q->do_query ();
 	if (($row = pg_fetch_row ($res)) and ($row[0] > 0)) {
 		echo "Total of <a href='observations.php?night=$n'>$row[0]</a> <b>observations</b> from $row[1] to $row[2]<br>\n";
 		echo "<b>Observations duration</b> - min: $row[3] avg: $row[4] max: $row[5]<br>\n";
+		printf ("<b>Total observation time</b> $row[6] out of $row[7] sec, %.2f %% of time used<br>\n", 100 * $row[6]/$row[7]);
 	} else {
 		echo "Cannot find any observation.<br>\n";
 	}
