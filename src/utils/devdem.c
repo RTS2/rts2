@@ -515,7 +515,7 @@ client_authorize ()
 	{
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
 				    "cannot lock authorize semaphore - paralel authorization");
-	  syslock (LOG_ERR, "authorizing");
+	  syslog (LOG_ERR, "authorizing");
 	  return -1;
 	}
       else
