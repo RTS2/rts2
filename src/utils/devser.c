@@ -630,8 +630,7 @@ send_data_thread (void *arg)
       send_tout.tv_usec = 0;
       FD_ZERO (&write_fds);
       FD_SET (data_con->sock, &write_fds);
-      if ((ret =
-	   select (FD_SETSIZE, NULL, &write_fds, NULL, &send_tout)) < 0)
+      if ((ret = select (FD_SETSIZE, NULL, &write_fds, NULL, &send_tout)) < 0)
 	{
 	  syslog (LOG_ERR, "select: %m port:%i", port);
 	  break;
@@ -1304,7 +1303,7 @@ read_from_client ()
   ret = select (FD_SETSIZE, &read_set, NULL, NULL, NULL);
 
   if (!FD_ISSET (control_fd, &read_set))
-	  return 0;
+    return 0;
   nbytes = read (control_fd, endptr, MAXMSG - (endptr - buffer));
   if (nbytes < 0)
     {
@@ -1388,12 +1387,12 @@ devser_on_exit ()
 void
 ser_sig_exit (int sig)
 {
-  printf ("[%i] devser exiting with signal:%i\n", getpid(), sig);
+  printf ("[%i] devser exiting with signal:%i\n", getpid (), sig);
   if (getpid () == devser_parent_pid || getpid () == devser_child_pid)
-  {
-    printf ("[%i] calling exit\n", getpid());
-    exit (0);
-  }
+    {
+      printf ("[%i] calling exit\n", getpid ());
+      exit (0);
+    }
 }
 
 void
@@ -1415,7 +1414,7 @@ ser_child_sig_exit (int sig)
       while (a_child)
 	{
 	  if (a_child->next)
-		a_child->child_pid = a_child->next->child_pid;
+	    a_child->child_pid = a_child->next->child_pid;
 	  prev = a_child;
 	  a_child = a_child->next;
 	}

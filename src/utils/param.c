@@ -62,10 +62,10 @@ void
 param_done (struct param_status *params)
 {
   if (params)
-  {
-    free (params->param_argv);
-    params->param_argv = NULL;
-  }
+    {
+      free (params->param_argv);
+      params->param_argv = NULL;
+    }
   free (params);
 }
 

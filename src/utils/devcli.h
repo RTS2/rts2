@@ -20,11 +20,43 @@
 /*! 
  * Parameters for one communication channel.
  * 
- * Chanell is in our terminology one communication link, which goes between
+ * Channel is in our terminology one communication link, which goes between
  * client and device server. It has some address, use some socket, have
  * handler for devdem commands returns and messages, space to hold extra 
  * parameters for such a handler, and some other usefull variables.
  */
+
+struct dev_channel
+{
+  int socket;			//! socket for connection
+  struct sockaddr_in address;	//! socket address
+  pthread_t read_thread;	//! read thread
+  pthread_mutex_t used;		//! when locked, that channel is used
+  pthread_mutex_t ret_lock;	//! return lock, for ret_cond
+  pthread_cond_t ret_cond;	//! used to signal command return
+  int ret_code;			//! to store last return code
+  struct devcli_channel_handlers handlers;	//! response handlers
+};
+
+struct device
+{
+  char name[DEVICE_NAME_SIZE];
+  char hostname[DEVICE_URI_SIZE];
+  unsigned int port;
+  int type;
+  int key;			// authorization key
+  int status_num;		//! hold status number
+  union devhnd_info info;	//! info structure
+  struct devconn_status *statutes;	//! holds status informations
+  pthread_mutex_t status_lock;	//! lock status change informations
+  pthread_cond_t status_cond;	//! signalize status change
+  pthread_mutex_t priority_lock;
+  pthread_cond_t priority_cond;
+  int priority;
+  struct dev_channel *channel;
+  devcli_handle_data_t data_handler;	//! handler to received data
+  struct device *next;
+};
 
 int devcli_server_login (const char *hostname,
 			 uint16_t port, char *login, char *password);
@@ -33,19 +65,17 @@ int devcli_server_register (const char *hostname, uint16_t port,
 			    char *device_host,
 			    uint16_t device_port,
 			    struct devcli_channel_handlers *handlers);
-void devcli_server_close (int channel_id);
+void devcli_server_close (struct device *dev);
 void devcli_server_disconnect ();
-int devcli_connectdev (int *channel_id, const char *dev_name,
-		       devcli_handle_data_t data_handler);
-
+struct device *devcli_devices ();
+struct device *devcli_find (const char *device_name);
 ssize_t devcli_read_data (int sock, void *data, size_t size);
 
-int devcli_wait_for_status (char *device_name, char *status_name,
+int devcli_wait_for_status (struct device *dev, char *status_name,
 			    int status_mask, int status, time_t tmeout);
 int devcli_server_command (int *ret_code, char *cmd, ...);
-int devcli_command (int channel_id, int *ret_code, char *cmd, ...);
-int devcli_image_info (int channel_id, struct image_info *image);
+int devcli_command (struct device *dev, int *ret_code, char *cmd, ...);
+int devcli_image_info (struct device *dev, struct image_info *image);
 int devcli_execute (char *line, int *ret_code);
-int devcli_getinfo (int channel_id, union devhnd_info **info);
 
 #endif // __RTS_DEVCLI__

@@ -28,7 +28,7 @@ cp (char *old_name, char *new_name)
     return -1;
   if ((out = open (new_name, O_WRONLY | O_CREAT)) < 0)
     return -1;
-  
+
   while ((readed = read (in, &buf, BUF_SIZE)) > 0)
     {
       if (write (out, buf, readed) != readed)

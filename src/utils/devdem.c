@@ -738,7 +738,7 @@ server_message_priority (struct param_status *params)
       // change priority only if there is such change
       if (clients_info->designated_priority_client != new_priority_client)
 	{
-          clients_info->designated_priority_client = new_priority_client;
+	  clients_info->designated_priority_client = new_priority_client;
 	  // no current priority client => priority_client == -1
 	  // we would like to stop some client only if some is
 	  // running

@@ -20,7 +20,6 @@ struct devcli_channel_handlers
 {
   devcli_handle_response_t command_handler;	//! handler to handle responses
   devcli_handle_response_t message_handler;	//! handler to asynchoronous messages
-  devcli_handle_data_t data_handler;	//! handler to ANY received data
   struct image_info image;	//! data about image data
 };
 
