@@ -9,6 +9,9 @@
 #include <math.h>
 #include <stdarg.h>
 #include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <argz.h>
 
@@ -23,7 +26,7 @@
 
 #define DEVICE_PORT		5556	// default camera TCP/IP port
 #define DEVICE_NAME 		"camd"	// default camera name
-int sbig_port = 2;		// default sbig camera port is 2
+int sbig_port = 0;		// default sbig camera port is 2
 
 struct camera_info info;
 
@@ -62,7 +65,7 @@ void *
 start_expose (void *arg)
 {
   int ret;
-  printf ("exposure time: %f\n", CAMD_EXPOSE->exposure);
+  camera_init ("/dev/ccd1", sbig_port);
   if ((ret =
        camera_expose (CAMD_EXPOSE->chip, &CAMD_EXPOSE->exposure,
 		      CAMD_EXPOSE->light)) < 0)
@@ -120,6 +123,7 @@ start_readout (void *arg)
 	   camera_readout_line (READOUT->chip, READOUT->x, READOUT->width,
 				line_buff)) != 0)
 	goto err;
+
       devser_data_put (READOUT->conn_id, line_buff, line_size);
     }
 
@@ -135,8 +139,8 @@ err:
   devser_data_done (READOUT->conn_id);
   syslog (LOG_ERR, "error during chip %i readout", READOUT->chip);
   devdem_status_mask (READOUT->chip,
-		CAM_MASK_READING | CAM_MASK_DATA,
-		CAM_NOTREADING | CAM_NODATA, "reading chip error");
+		      CAM_MASK_READING | CAM_MASK_DATA,
+		      CAM_NOTREADING | CAM_NODATA, "reading chip error");
   return NULL;
 }
 
@@ -201,7 +205,7 @@ camd_handle_command (char *command)
       cam_call (camera_info (&info));
 
       devser_dprintf ("chip %i width %i", chip, info.chip_info[chip].width);
-      devser_dprintf ("chip %i heigth %i", chip, info.chip_info[chip].height);
+      devser_dprintf ("chip %i height %i", chip, info.chip_info[chip].height);
       devser_dprintf ("chip %i binning_vertical %i", chip,
 		      info.chip_info[chip].binning_vertical);
       devser_dprintf ("chip %i binning_horizontal %i", chip,
