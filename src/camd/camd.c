@@ -673,4 +673,5 @@ main (int argc, char **argv)
 
   devdem_run (device_port, camd_handle_command);
   devdem_done ();
+  return EXIT_SUCCESS;
 }
