@@ -107,7 +107,8 @@ err:
 
 int
 select_next_airmass (time_t c_start, struct target *plan, struct
-		     target *last, double target_airmass, double target_az)
+		     target *last, double target_airmass, double az_end,
+		     double az_start)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -122,19 +123,18 @@ select_next_airmass (time_t c_start, struct target *plan, struct
 
   double az;
   double airmass;
-  double rank;
-
 
   long int obs_start = c_start - 8640;
 
-  double t_az = target_az;
+  double d_az_start = az_start;
+  double d_az_end = az_end;
   double t_airmass = target_airmass;
 
   EXEC SQL END DECLARE SECTION;
 
   printf ("c_start: %s", ctime (&c_start));
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
-  printf ("st: %f\n", st);
+  printf ("st: %f\nairmass: %f", st, t_airmass);
 
 
   EXEC SQL BEGIN;
@@ -142,22 +142,17 @@ select_next_airmass (time_t c_start, struct target *plan, struct
   test_sql;
 
   EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR
-    SELECT tar_id, tar_ra, tar_dec,
+    SELECT targets.tar_id, tar_ra, tar_dec,
     obj_az (tar_ra, tar_dec,:st, -14.95, 50) AS az,
     obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) AS
-    airmass, (abs (obj_airmass (tar_ra, tar_dec,:st,
-				-14.95,
-				50) -:t_airmass) * 180 + abs (obj_az (tar_ra,
-								      tar_dec,:st,
-								      -14.95,
-								      50)
-							      -:t_az)) AS rank
-    FROM targets WHERE NOT EXISTS (SELECT *
-				   FROM observations WHERE observations.
-				   tar_id =
-				   targets.tar_id and observations.obs_start >
-				   abstime (:obs_start)) ORDER BY rank ASC;
-
+    airmass
+    FROM targets, targets_images WHERE targets.tar_id =
+    targets_images.
+    tar_id
+    AND (abs (obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) -:t_airmass)) <
+    0.1 AND (obj_az (tar_ra, tar_dec,:st, -14.95, 50) <:d_az_end OR
+	     obj_az (tar_ra, tar_dec,:st, -14.95,
+		     50) >:d_az_start) ORDER BY img_count ASC;
   EXEC SQL OPEN obs_cursor_airmass;
 
   test_sql;
@@ -165,7 +160,7 @@ select_next_airmass (time_t c_start, struct target *plan, struct
   while (!sqlca.sqlcode)
     {
       EXEC SQL FETCH next FROM obs_cursor_airmass
-	INTO:tar_id,:ra,:dec,:az,:airmass,:rank;
+	INTO:tar_id,:ra,:dec,:az,:airmass;
 
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec,
 	      az, airmass);
@@ -387,7 +382,8 @@ get_next_plan (struct target *plan, int selector_type,
 	  break;
 	}
 
-      return select_next_airmass (obs_start, curr_plan, plan, airmass, az);
+      return select_next_airmass (obs_start, curr_plan, plan, airmass, 150,
+				  210);
       break;
 
     default:
