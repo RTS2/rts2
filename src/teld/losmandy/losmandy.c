@@ -97,6 +97,7 @@ tel_read (char *buf, int count)
   for (readed = 0; readed < count; readed++)
     {
       int ret = read (port, &buf[readed], 1);
+      printf ("read_from: %i size:%i\n", port, ret);
       if (ret == 0)
 	{
 	  errno = ETIMEDOUT;
@@ -154,8 +155,12 @@ tel_read_hash (char *buf, int count)
 int
 tel_write (char *buf, int count)
 {
+  int ret;
   syslog (LOG_DEBUG, "LX200:will write:'%s'", buf);
-  return write (port, buf, count);
+  ret = write (port, buf, count);
+//  printf ("ret: %i port: %i count: %i\n", ret, port, count);
+  tcflush (port, TCIFLUSH);
+  return ret;
 }
 
 /*! 
@@ -191,6 +196,7 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
     goto unlock;
 
   tmp_rcount = tel_read (rbuf, rcount);
+
   if (tmp_rcount > 0)
     {
       buf = (char *) malloc (rcount + 1);
@@ -595,7 +601,7 @@ tel_write_dec (double dec)
 extern int
 telescope_init (const char *device_name, int telescope_id)
 {
-  struct termios newtio;
+  struct termios tel_termios;
   union semun sem_un;
   unsigned short int sem_arr[] = { 1, 1 };
   char rbuf[10];
@@ -619,15 +625,27 @@ telescope_init (const char *device_name, int telescope_id)
 	  syslog (LOG_ERR, "semctl init: %m");
 	  return -1;
 	}
-      newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
-      newtio.c_iflag = IGNPAR;
-      newtio.c_oflag = 0;
-      newtio.c_lflag = 0;
-      newtio.c_cc[VMIN] = 0;
-      newtio.c_cc[VTIME] = 5;
 
-      tcflush (port, TCIOFLUSH);
-      tcsetattr (port, TCSANOW, &newtio);
+      if (tcgetattr (port, &tel_termios) < 0)
+	return -1;
+
+      if (cfsetospeed (&tel_termios, B9600) < 0 ||
+	  cfsetispeed (&tel_termios, B9600) < 0)
+	return -1;
+
+      tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
+      tel_termios.c_oflag = 0;
+      tel_termios.c_cflag =
+	((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
+      tel_termios.c_lflag = 0;
+      tel_termios.c_cc[VMIN] = 0;
+      tel_termios.c_cc[VTIME] = 5;
+
+      if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
+	{
+	  syslog (LOG_ERR, "tcsetattr: %m");
+	  return -1;
+	}
 
       tel_gemini_reset ();
     }
