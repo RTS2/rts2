@@ -25,6 +25,7 @@ typedef int (*devser_handle_msg_t) (char *message);
 typedef void (*devser_thread_cleaner_t) (void *arg);
 
 int devser_init (size_t shm_data_size);
+void devser_done (void);
 int devser_run (int port, devser_handle_command_t in_handler);
 int devser_dprintf (const char *format, ...);
 int devser_write_command_end (int retc, const char *msg_format, ...);
@@ -47,7 +48,6 @@ int devser_message (const char *format, ...);
 void *devser_shm_data_at ();
 void devser_shm_data_lock ();
 void devser_shm_data_unlock ();
-void devser_shm_data_dt (void *mem);
 
 void devser_get_client_ip (struct sockaddr_in *client_ip);
 int devser_set_server_id (int server_id_in,

@@ -1356,26 +1356,7 @@ ser_sig_exit_main (int sig)
 #ifdef DEBUG
   printf ("[%i] devser exiting with signal:%i\n", getpid (), sig);
 #endif /* DEBUG */
-  close (server_socket);
-  while (childrens)
-    {
-#ifdef DEBUG
-      printf ("kill %i\n", childrens->child_pid);
-#endif /* DEBUG */
-      kill (childrens->child_pid, SIGQUIT);
-      childrens = childrens->next;
-    }
-#ifdef DEBUG
-  printf ("devser removing IPC\n");
-#endif /* DEBUG */
-  if (semctl (data_sem, 1, IPC_RMID))
-    {
-      perror ("IPC_RMID data_sem semctl");
-    }
-  if (msgctl (msg_id, IPC_RMID, NULL))
-    {
-      perror ("IPC_RMID msg_id");
-    }
+  devser_done ();
 }
 
 void
@@ -1524,6 +1505,31 @@ devser_init (size_t shm_data_size)
     }
 
   return 0;
+}
+
+void
+devser_done (void)
+{
+  close (server_socket);
+  while (childrens)
+    {
+#ifdef DEBUG
+      printf ("kill %i\n", childrens->child_pid);
+#endif /* DEBUG */
+      kill (childrens->child_pid, SIGQUIT);
+      childrens = childrens->next;
+    }
+#ifdef DEBUG
+  printf ("devser removing IPC\n");
+#endif /* DEBUG */
+  if (semctl (data_sem, 1, IPC_RMID))
+    {
+      perror ("IPC_RMID data_sem semctl");
+    }
+  if (msgctl (msg_id, IPC_RMID, NULL))
+    {
+      perror ("IPC_RMID msg_id");
+    }
 }
 
 /*! 

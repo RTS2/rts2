@@ -925,6 +925,21 @@ devdem_register (char *server_host, uint16_t server_port,
   return 0;
 }
 
+/*!
+ * Destroy all IPC resources allocated for devdem.
+ */
+
+void
+devdem_done (void)
+{
+  devser_done ();
+  if (semctl (status_sem, 1, IPC_RMID))
+    perror ("IPC_RMID status_sem semctl");
+#ifdef DEBUG
+  printf ("devdem exiting\n");
+#endif
+}
+
 /*! 
  * Run device daemon.
  *
@@ -957,11 +972,6 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
     }
 
   devser_run (port, client_handle_commands);
-
-  if (semctl (status_sem, 1, IPC_RMID))
-    perror ("IPC_RMID status_sem semctl");
-#ifdef DEBUG
-  printf ("devdem exiting");
-#endif
+  devdem_done ();
   return 0;
 }

@@ -26,6 +26,7 @@ int devdem_init (char **status_names, int status_num_in,
 int devdem_register (char *server_address, uint16_t server_port,
 		     char *in_device_name, int device_type, char *device_host,
 		     uint16_t device_port);
+void devdem_done (void);
 int devdem_run (uint16_t port, devser_handle_command_t in_handler);
 
 #include "devser.h"
