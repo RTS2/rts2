@@ -4,45 +4,37 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <time.h>
 
 #include "telescope_info.h"
 #include "camera_info.h"
+#include "dome_info.h"
 
-#include "../utils/devcli.h"
 #include "../utils/devconn.h"
+#include "../utils/devcli.h"
 #include "status.h"
 
 void
-status_telescope (const struct telescope_info *info)
+status_telescope (const struct device *dev)
 {
-  if (info)
-    {
-      printf (" Ra: %+03.3f\n", info->ra);
-      printf ("Dec: %+03.3f\n", info->dec);
-      printf ("Lon: %+03.3f\n", info->longtitude);
-      printf ("Lat: %+03.3f\n", info->latitude);
-      printf ("Stm: %02.20f\n", info->siderealtime);
-    }
-  else
-    {
-      printf ("NOT READY\n");
-    }
+  struct telescope_info *info = (struct telescope_info *) &dev->info;
+  printf ("          Ra: %+03.3f\n", info->ra);
+  printf ("         Dec: %+03.3f\n", info->dec);
+  printf ("  Longtitude: %+03.3f\n", info->longtitude);
+  printf ("    Latitude: %+03.3f\n", info->latitude);
+  printf ("Siderealtime: %02.20f\n", info->siderealtime);
+  printf ("Axis count 0: %02.0f\n", info->axis0_counts);
+  printf ("Axis count 1: %02.0f\n", info->axis1_counts);
 }
 
 void
-status_camera (const struct camera_info *info)
+status_camera (const struct device *dev)
 {
-  if (info)
-    {
-      printf ("name: '%s'\n", info->name);
-      printf ("Set: %+03.3f\n", info->temperature_setpoint);
-      printf ("Air: %+03.3f\n", info->air_temperature);
-      printf ("CCD: %+03.3f\n", info->ccd_temperature);
-    }
-  else
-    {
-      printf ("NOT READY\n");
-    }
+  struct camera_info *info = (struct camera_info *) &dev->info;
+  printf ("Type: '%s'\n", info->type);
+  printf (" Set: %+03.3f\n", info->temperature_setpoint);
+  printf (" Air: %+03.3f\n", info->air_temperature);
+  printf (" CCD: %+03.3f\n", info->ccd_temperature);
 }
 
 int
@@ -51,9 +43,11 @@ main (int argc, char **argv)
   uint16_t port = SERVERD_PORT;
   char *server;
   char c;
-  int camd_id, teld_id;
+  struct device *dev;
   int ret_code;
-  union devhnd_info *info;
+  int ret;
+  int i;
+  time_t t;
 
 #ifdef DEBUG
   mtrace ();
@@ -95,10 +89,13 @@ main (int argc, char **argv)
       printf ("You must pass server address\n");
       exit (EXIT_FAILURE);
     }
-
   server = argv[optind++];
 
-  printf ("connecting to %s:%i\n", server, port);
+  time (&t);
+
+  printf ("Bootes status genarated at: %s", ctime (&t));
+
+  printf ("Connecting to %s:%i\n", server, port);
 
   /* connect to the server */
   if (devcli_server_login (server, port, "petr", "petr") < 0)
@@ -107,50 +104,43 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
-  if (devcli_connectdev (&camd_id, "camd", NULL) < 0)
+  for (dev = devcli_devices (); dev; dev = dev->next)
     {
-      perror ("devcli_connectdev");
-      exit (EXIT_FAILURE);
+      printf ("-------------------------------------------------\n");
+      printf (" Device name: %s hostname: %s port: %i\n", dev->name,
+	      dev->hostname, dev->port);
+      if ((ret = devcli_command (dev, &ret_code, "ready")))
+	printf (" Device ready returns %i\n", ret);
+      printf (" Device ready return code : %i\n", ret_code);
+      if ((ret = devcli_command (dev, &ret_code, "base_info")))
+	printf (" Device base_info returns %i\n", ret);
+      printf (" Device base_info return code : %i\n", ret_code);
+      if ((ret = devcli_command (dev, &ret_code, "info")))
+	printf (" Device info returns %i\n", ret);
+      printf (" Device info return code : %i\n", ret_code);
+      switch (dev->type)
+	{
+	case DEVICE_TYPE_MOUNT:
+	  printf ("Type: %i (MOUNT)\n", dev->type);
+	  status_telescope (dev);
+	  break;
+	case DEVICE_TYPE_CCD:
+	  printf ("Type: %i (CCD)\n", dev->type);
+	  status_camera (dev);
+	  break;
+	default:
+	  printf ("Unknow device type: %i\n", dev->type);
+	}
+      printf (" Number of states: %i\n", dev->status_num);
+      for (i = 0; i < dev->status_num; i++)
+	{
+	  struct devconn_status *st = &dev->statutes[i];
+	  if (*st->name)
+	    printf (" Status: %s value: %i\n", st->name, st->status);
+	}
+      printf (" Device %s status ends.\n", dev->name);
     }
-
-  printf ("camd_id: %i\n", camd_id);
-
-  if (devcli_connectdev (&teld_id, "teld", NULL) < 0)
-    {
-      perror ("devcli_connectdev");
-      exit (EXIT_FAILURE);
-    }
-
-  printf ("teld_id: %i\n---------------\n", teld_id);
-
-  while (1)
-    {
-      if (devcli_command (teld_id, &ret_code, "ready"))
-	{
-	  status_telescope (NULL);
-	}
-      else
-	{
-	  devcli_command (teld_id, &ret_code, "info");
-	  devcli_getinfo (teld_id, &info);
-	  status_telescope ((struct telescope_info *) info);
-	}
-
-      if (devcli_command (camd_id, &ret_code, "ready"))
-	{
-	  status_camera (NULL);
-	}
-      else
-	{
-	  devcli_command (camd_id, &ret_code, "info");
-	  devcli_getinfo (camd_id, &info);
-	  status_camera ((struct camera_info *) info);
-	}
-
-      for (c = 10; c; c--)
-	{
-	  printf ("next update in %02i seconds\n", c);
-	  sleep (1);
-	}
-    }
+  time (&t);
+  printf (" Status report ends at %s", ctime (&t));
+  return 0;
 }
