@@ -1,4 +1,5 @@
 #include "../grbc.h"
+#include "../../utils/config.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -350,6 +351,9 @@ char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 #define H_POS_FLAGS		36	/* Collection of various info bits */
 #define H_VALIDITY		37	/* Tells whether burst is valid */
 
+
+#define I_TEST_MPOS	12	/* INTEGRAL test field position */
+
 /* HETE word and bit mask and shift definitions: */
 #define H_MAXDIM_MASK	0xffff0000	/* Dimension in upper bits */
 #define H_MAXDIM_SHIFT	16	/* Dimension in upper bits */
@@ -430,6 +434,9 @@ char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 #define H_VALID_spare	0x7FFFC000	/* spare */
 #define H_NOT_A_BURST	0x80000000	/* GndAna shows this trigger to be non-GRB */
 
+/* INTEGRAL test */
+#define I_TEST		0x80000000	/* INTEGRAL test burst */
+
 
 /* The GCN defined packet types (missing numbers are gcn-internal use only): */
 /* Types that are commented out are no longer available (eg GRO de-orbit). */
@@ -463,6 +470,10 @@ char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 #define	TYPE_HETE_GNDANA_SRC	43	/* HETE Ground Analysis packet */
 #define	TYPE_HETE_TEST			44	/* HETE Test packet */
 #define	TYPE_GRB_CNTRPART		45	/* GRB Counterpart coords packet */
+
+#define TYPE_INTG_WAKEUP		53
+#define TYPE_INTG_REFINED		54
+#define TYPE_INTG_OFFLINE		55
 
 
 /* A few global variables for the socket_demo program: */
@@ -580,6 +591,8 @@ server (hostname, port, type)
     {
       printf ("bind() errno=%i\n", errno);
       perror ("bind()");
+      if (errno = 98)
+	sleep (200);
       return (serr (sd, "server(): bind."));
     }
 
@@ -1250,6 +1263,69 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 
 }
 
+void
+pr_intg (lbuf, s)		/* print the contents of the INTEGRAL-based packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  double ra, dec;
+
+  time_t grb_date;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li,  ", lbuf[PKT_TYPE]);
+  switch (lbuf[PKT_TYPE])
+    {
+    case TYPE_INTG_WAKEUP:
+      printf ("INTEGRAL WAKEUP");
+      break;
+    case TYPE_INTG_REFINED:
+      printf ("INTEGRAL REFINED");
+      break;
+    case TYPE_INTG_OFFLINE:
+      printf ("INTEGRALL OFFLINE");
+      break;
+    default:
+      printf ("Illegal");
+      break;
+    }
+  fprintf (s, "   SN= %li\n", lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=    %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=     %.2f [sec]   delta=%5.2f\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  fprintf (s, "   Trig#=     %li\n",
+	   (lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT);
+  fprintf (s, "   Seq#=      %li\n",
+	   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT);
+  fprintf (s, "   BURST_TJD=    %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   BURST_SOD=  %.2f [sec]   delta=%5.2f\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "   BURST_RA:    %7.3fd  (current)\n", ra);
+  fprintf (s, "   BURST_DEC:   %+7.3fd  (current)\n", dec);
+
+  get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (lbuf[I_TEST_MPOS] && I_TEST)
+    {
+      process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT) %
+		   20, (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
+		   ra, dec, &grb_date);
+    }
+  else if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+    if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+      {
+	process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT)
+		     + 100,
+		     (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT, ra,
+		     dec, &grb_date);
+      }
+}
+
 /*---------------------------------------------------------------------------*/
 void
 e_mail_alert (which)		/* send an E_MAIL ALERT if no pkts in 600sec */
@@ -1393,13 +1469,12 @@ receive_bacodine (process_grb_event_t arg)
   long lo, hi;			/* Lo and Hi portion of long */
   time_t loc_time;
   fd_set read_fd;
-  int test_num = 11;
 
   process_grb = arg;
 
-  port = 5152;			/* Get the cmdline value for the port number */
+  port = get_device_double_default ("bacodine", "port", 5152);	/* Get the cmdline value for the port number */
 
-  if ((lg = fopen ("socket_demo.log", "a")) == NULL)	/* Open for appending */
+  if ((lg = fopen ("/home/petr/socket_demo.log", "a")) == NULL)	/* Open for appending */
     {
       printf ("Failed to open logfile.  Exiting.\n");
       exit (2);
@@ -1559,6 +1634,10 @@ receive_bacodine (process_grb_event_t arg)
 		  pr_ipn_pos (lbuf, stdout);
 		  pr_ipn_pos (lbuf, lg);
 		  break;
+		case TYPE_INTG_WAKEUP:
+		case TYPE_INTG_REFINED:
+		case TYPE_INTG_OFFLINE:
+		  pr_intg (lbuf, lg);
 		case TYPE_KILL_SOCKET:	/* Signal to break connection */
 		  printf ("Got a KILL socket packet.\n");
 		  fprintf (lg, "Got a KILL socket packet.\n");
