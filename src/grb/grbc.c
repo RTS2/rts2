@@ -23,8 +23,6 @@
 #include "../plan/selector.h"
 #include "../utils/config.h"
 
-#include "../../config.h"
-
 #include "image_info.h"
 
 #define EXPOSURE_TIME		20
@@ -83,14 +81,15 @@ readout ()
 {
   struct device *camera;
   devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
-			  TEL_OBSERVING, 0);
+			  TEL_OBSERVING, 120);
   devcli_command_all (DEVICE_TYPE_CCD, "expose 0 1 %i", EXPOSURE_TIME);
 
   devcli_command (telescope, NULL, "info");
   for (camera = devcli_devices (); camera; camera = camera->next)
     get_info (&observing, telescope, camera);
   devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
-			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE, 0);
+			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+			      1.1 * EXPOSURE_TIME + 10);
   devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
   return 0;
 }
@@ -102,8 +101,8 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
   struct ln_lnlat_posn observer;
   struct ln_hrz_posn hrz;
 
-  observer.lat = 50;
-  observer.lng = -14.96;
+  observer.lng = get_double_default ("longtitude", 6.733);
+  observer.lat = get_double_default ("latitude", 37.1);
 
   get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
 
@@ -124,7 +123,7 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
     }
   else if (observing.grb_id < id)	// -1 count as well..get the latest
     {
-      if (hrz.alt > 10)		// start observation - if not above horizont, don't care, we already observe something else
+      if (hrz.alt >= -1)	// start observation - if not above horizont, don't care, we already observe something else
 	{
 	  pthread_mutex_lock (&observing_lock);
 	  db_update_grb (id, &seqn, &ra, &dec, date, &observing.tar_id);
@@ -222,8 +221,8 @@ main (int argc, char **argv)
       return -1;
     }
 
-  observer.lng = get_double_default ("longtitude", -14.95);
-  observer.lat = get_double_default ("latitude", 50);	// Ondrejov as default
+  observer.lng = get_double_default ("longtitude", 6.377);
+  observer.lat = get_double_default ("latitude", 37.1);	// BOOTES as default
 
   printf ("GRB will be observerd at longtitude %f, latitude %f\n",
 	  observer.lng, observer.lat);
@@ -296,8 +295,12 @@ main (int argc, char **argv)
       printf ("Starting observing %i tar_id: %i\n", observing.tar_id,
 	      observing.tar_id);
 
-      devcli_command_all (DEVICE_TYPE_CCD, "ready;info");
-      devcli_command (telescope, NULL, "ready;base_info;info");
+      devcli_server_command (NULL, "info");
+      devcli_command_all (DEVICE_TYPE_CCD, "ready");
+      devcli_command_all (DEVICE_TYPE_CCD, "info");
+      devcli_command (telescope, NULL, "ready");
+      devcli_command (telescope, NULL, "base_info");
+      devcli_command (telescope, NULL, "info");
 
       devcli_server_command (NULL, "priority 200");
 
