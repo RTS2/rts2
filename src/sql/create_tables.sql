@@ -1,3 +1,4 @@
+DROP TABLE ell;
 DROP TABLE ot;
 DROP TABLE grb;
 DROP TABLE targets;
@@ -5,7 +6,6 @@ DROP TABLE epoch;
 DROP TABLE types;
 
 CREATE GROUP "observers";
-CREATE USER "@WWWUSER@";
 
 CREATE TABLE epoch (
 	epoch_id	char(3) PRIMARY KEY,		
@@ -40,6 +40,20 @@ CREATE TABLE ot (
 	ot_imgcount	integer,
 	ot_minpause	interval DEFAULT NULL,
 	ot_priority	integer
+);
+
+--- elliptical target elements; if ell_a < 0, then it's parabollic target
+CREATE TABLE ell (
+        tar_id          integer REFERENCES targets (tar_id),
+        ell_a           float4,
+        ell_e           float4,
+        ell_i           float4,
+        ell_w           float4,
+        ell_omega       float4,
+        ell_n           float4,
+        ell_minpause    interval DEfAULT NULL,
+        ell_priority    integer,
+        ell_JD          float8
 );
 
 DROP TABLE cameras;
