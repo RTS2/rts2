@@ -34,7 +34,6 @@
 struct net_namespace_t
 {
   char name[NAMESPACE_LENGTH];
-  struct devcli_channel_t channel;
 };
 
 struct net_namespace_t namespaces[MAX_NAMESPACE];
@@ -60,64 +59,23 @@ handle_return (char *argv, size_t argc)
   return 0;
 }
 
-/*! 
- * Add one name processing to planer namespace tables
- *
- * @param namespace namespace to add
- * @param hostname  hostname to send command on
- * @param port	    port at hostname (in host byte order)
- * @return 0 on sucess, -1 and set errno on error
- */
-
-int
-plancom_add_namespace (char *namespace, const char *hostname, int port)
-{
-  if (namespaces_size < MAX_NAMESPACE)
-    {
-      struct net_namespace_t *ns;
-      ns = &(namespaces[namespaces_size]);
-      namespaces_size++;
-      strncpy (ns->name, namespace, NAMESPACE_LENGTH);
-      ns->channel.handler = handle_return;
-
-      if (devcli_init_channel (&ns->channel, hostname, port) < 0)
-	return -1;
-      return 0;
-    }
-  errno = ENOMEM;
-  return -1;
-}
-
 /*!
  * Internal, used to process single network command.
  * Gets parsed command and data handlers.
  *
- * @param ns namespace
- * @param comamnd rest of command
- * @param handler data handler
- * @param handler_args handler arguments
+ * @param comamnd	devcli command
  */
 
 int
-process_net_command (char *ns, char *command, devcli_handle_data_t handler,
-		     void *handler_args)
+process_net_command (char *command)
 {
   int ret;
   int i;
-
-  for (i = 0; i < namespaces_size; i++)
-    if (strncmp (ns, namespaces[i].name, NAMESPACE_LENGTH) == 0)
-      {
-	// we found it, so now process it
-	if (devcli_write_read
-	    (&(namespaces[i].channel), command, handler, handler_args,
-	     &ret) < 0)
-	  {
-	    return PLANCOMM_E_HOSTACCES;
-	  }
-	return ret;
-      }
-  return PLANCOMM_E_NAMESPACE;
+  if (devcli_execute (command, &ret) < 0)
+    {
+      return PLANCOMM_E_HOSTACCES;
+    }
+  return 0;
 }
 
 int
