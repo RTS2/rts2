@@ -368,14 +368,6 @@ loop:
   observe (hi_precission);
   printf ("done\n");
 
-  devcli_command (telescope, NULL, "home");
-  devcli_command (telescope, NULL, "park");
-
-  sleep (300);
-
-  if (watch_status)
-    goto loop;
-
   devcli_server_disconnect ();
   db_disconnect ();
 
