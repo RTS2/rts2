@@ -364,7 +364,8 @@ Rts2DevCamera::checkReadouts ()
 	{
 	  setTimeout (ret);
 	}
-      if (ret == -2)
+      if (ret == -2
+	  || (ret == -3 && (getState (i) & CAM_MASK_READING) == CAM_READING))
 	{
 	  setTimeout (USEC_SEC);
 	  maskState (i, CAM_MASK_READING, CAM_NOTREADING,

@@ -43,7 +43,6 @@ Rts2DevCameraMirror::mirror_command (char cmd, int arg, char *ret_cmd,
   flock (mirror_fd, LOCK_EX);
 start:
   ret = write (mirror_fd, command_buffer, 3);
-  printf ("write: %i\n", ret);
   if (ret != 3)
     {
       t = time (NULL);
@@ -56,7 +55,6 @@ start:
   while (readed != 3)
     {
       ret = read (mirror_fd, &command_buffer[readed], 3);
-      printf ("read: %i\n", ret);
       if (ret <= 0)
 	{
 	  t = time (NULL);
@@ -307,7 +305,7 @@ long
 Rts2DevCameraMirror::camWaitExpose (int chip)
 {
   long ret;
-  if (expChip != -1)
+  if (expChip == chip)
     {
       // wait for mirror opening
       if (isMoving ())
@@ -315,6 +313,7 @@ Rts2DevCameraMirror::camWaitExpose (int chip)
       ret = Rts2DevCamera::camExpose (expChip, expLight, expExpTime);
       if (ret)
 	return -2;
+      expChip = -1;
     }
   ret = Rts2DevCamera::camWaitExpose (chip);
   if (ret == -2)

@@ -249,7 +249,7 @@ CameraMiniccdChip::readoutOneLine ()
     }
   if (!readoutConn)
     {
-      return -1;
+      return -3;
     }
 
   ret = sendLineData ();
