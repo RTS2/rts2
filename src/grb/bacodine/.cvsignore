@@ -3,4 +3,5 @@
 Makefile
 Makefile.in
 bacofwd
+rts2-bacmail
 test
