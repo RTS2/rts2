@@ -217,6 +217,7 @@ camd_handle_command (char *command)
       devser_dprintf ("ccd_temperature %0.02f", info.ccd_temperature);
       devser_dprintf ("cooling_power %4i", (int) info.cooling_power);
       devser_dprintf ("fan %i", info.fan);
+      devser_dprintf ("filter %i", info.filter);
     }
   else if (strcmp (command, "chipinfo") == 0)
     {

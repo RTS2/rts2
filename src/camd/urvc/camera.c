@@ -40,6 +40,8 @@ union semun
 };
 #endif
 
+int camera_filter = -1;
+
 int camera_reg = -1;
 
 EEPROMContents eePtr;		// global to prevent multiple EEPROM calls
@@ -360,6 +362,7 @@ camera_info (struct camera_info *info)
   info->air_temperature = ambient_ad2c (qtsr.ambientThermistor);
   info->ccd_temperature = ccd_ad2c (qtsr.ccdThermistor);
   info->fan = gvr.fanEnabled;
+  info->filter = camera_filter;
   return 0;
 err:
   sem_unlock ();
@@ -634,5 +637,6 @@ camera_set_filter (int filter)	/* set camera filter */
       return -1;
     }
   sem_unlock ();
+  camera_filter = filter;
   return 0;
 }

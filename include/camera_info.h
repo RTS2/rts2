@@ -39,6 +39,7 @@ struct camera_info
   float ccd_temperature;	/* o C */
   int cooling_power;		/* 0 - 1000, -1 for unknow */
   int fan;
+  int filter;			/* filter number */
 };
 
 #endif /* __RTS_CAMERA_INFO__ */
