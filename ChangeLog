@@ -1,3 +1,12 @@
+0.3.6
+===
+ * optec focuser and focusing support
+
+0.3.5
+===
+ * hyberbolic orbit
+ * libnova 0.10
+
 0.3.4
 ===
  * bug-fixes
