@@ -1654,6 +1654,7 @@ devser_run (int port, devser_handle_command_t in_handler)
 	{
 	  close (control_fd);
 	  syslog (LOG_INFO, "connection from desc %d closed", control_fd);
+	  devser_thread_cancel_all ();
 	  exit (0);
 	}
     }
