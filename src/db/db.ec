@@ -197,11 +197,19 @@ db_add_count (int o_id, const time_t * date, int count, float exposure,char
   long int count_date = *date;
   int count_value = count;
   float count_exposure = exposure;
-  char *count_filter = filter;
+  VARCHAR counter_filter[10];
   double count_ra = ra;
   double count_dec = dec;
-  char *counter_name = counter;
+  VARCHAR counter_name[10];
   EXEC SQL END DECLARE SECTION;
+  counter_name.len = strlen (counter);
+  if (counter_name.len > 10)
+    counter_name.len = 10;
+  strncpy (counter_name.arr, counter, counter_name.len);
+  counter_filter.len = strlen (filter);
+  if (counter_filter.len > 3)
+    counter_filter.len = 3;
+  strncpy (counter_filter.arr, filter, counter_filter.len);
   db_lock ();
   EXEC SQL INSERT 
   INTO counts (
@@ -219,7 +227,7 @@ db_add_count (int o_id, const time_t * date, int count, float exposure,char
      (:count_date),
      :count_value,
      :count_exposure,
-     :count_filter,
+     :counter_filter,
      :count_ra,
      :count_dec,
      :counter_name
