@@ -46,7 +46,12 @@ complete (int ccd, float percent_complete)
 void *
 start_readout (void *arg)
 {
-  sbig_readout (arg);
+  int ret;
+  if ((ret = sbig_readout (arg)) < 0)
+    {
+      syslog (LOG_ERR, "Error during readout: %s", sbig_show_error (ret));
+      return NULL;
+    }
   syslog (LOG_INFO, "Reading finished.");
   return NULL;
 }
@@ -54,7 +59,7 @@ start_readout (void *arg)
 // macro for length test
 #define test_length(npars) if (argz_count (argv, argc) != npars + 1) { \
         devdem_write_command_end (DEVDEM_E_PARAMSNUM, \
-		"Unknow nmbr of params: expected %i,got %i",\
+		"Bad nmbr of params: expected %i,got %i",\
 		npars, argz_count (argv, argc) - 1 ); \
 	return -1; \
 }
@@ -111,6 +116,7 @@ camd_handle_command (char *argv, size_t argc)
       test_length (1);
       get_chip;
       mode = (readout_mode_t *) (&info.camera_info[chip].readout_mode[0]);
+      devdem_dprintf ("binning %i\n", readout[chip].binning);
       devdem_dprintf ("readout_modes %i\n",
 		      info.camera_info[chip].nmbr_readout_modes);
       for (i = 0; i < info.camera_info[chip].nmbr_readout_modes; i++)
@@ -159,14 +165,14 @@ camd_handle_command (char *argv, size_t argc)
     }
   else if (strcmp (argv, "readout") == 0)
     {
-      int mode = 0;
+      int mode;
       int size;
       typedef void (*gfp) (void *);
       test_length (1);
       get_chip;
       readout[chip].ccd = chip;
-      readout[chip].binning = mode;
       readout[chip].x = readout[chip].y = 0;
+      mode = readout[chip].binning;
       readout[chip].width = info.camera_info[chip].readout_mode[mode].width;
       readout[chip].height = info.camera_info[chip].readout_mode[mode].height;
       size =
@@ -184,6 +190,23 @@ camd_handle_command (char *argv, size_t argc)
 				    strerror (errno));
 	  return -1;
 	}
+    }
+  else if (strcmp (argv, "binning") == 0)
+    {
+      int new_bin;
+      test_length (2);
+      get_chip;
+      param = argz_next (argv, argc, param);
+      new_bin = strtol (param, &param, 10);
+      if (*param || new_bin < 0
+	  || new_bin >= info.camera_info[chip].nmbr_readout_modes)
+	{
+	  devdem_write_command_end (DEVDEM_E_PARAMSVAL, "Invalid binning: %i",
+				    new_bin);
+	  return -1;
+	}
+      readout[chip].binning = (unsigned int) new_bin;
+      ret = 0;
     }
   else if (strcmp (argv, "stopread") == 0)
     {
@@ -248,6 +271,8 @@ camd_handle_command (char *argv, size_t argc)
       devdem_dprintf ("stopexpo <chip> - stop exposition on given chip\n");
       devdem_dprintf ("progexpo <chip> - query exposition progress\n");
       devdem_dprintf ("readout <chip> - start reading given chip\n");
+      devdem_dprintf
+	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       devdem_dprintf ("stopread <chip> - stop reading given chip\n");
       devdem_dprintf
 	("data <chip> - establish data connection on given port and address\n");

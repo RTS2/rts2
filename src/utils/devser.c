@@ -208,7 +208,7 @@ next_free_conn_number ()
   int i;
   for (i = 0; i < MAXDATACONS; i++)
     {
-      if ((errno = pthread_mutex_trylock (&data_cons[i].lock)) == 0)
+      if ((errno = pthread_mutex_trylock (&(data_cons[i].lock))) == 0)
 	return i;
     }
   errno = EAGAIN;
@@ -220,7 +220,6 @@ make_data_socket (struct sockaddr_in *server)
 {
   int test_port;
   int data_sock;
-  int so_reuseaddr = 1;
   /* Create the socket. */
   if ((data_sock = socket (PF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -231,12 +230,6 @@ make_data_socket (struct sockaddr_in *server)
   /* Give the socket a name. */
   server->sin_family = AF_INET;
   server->sin_addr.s_addr = htonl (INADDR_ANY);
-  if (setsockopt
-      (data_sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof (int)) < 0)
-    {
-      syslog (LOG_ERR, "setsockopt: %m");
-      return -1;
-    }
 
   for (test_port = MINDATAPORT; test_port < MAXDATAPORT; test_port++)
     {
@@ -268,6 +261,7 @@ send_data_thread (void *arg)
   data_con = (data_conn_info_t *) arg;
 
   port = ntohs (data_con->my_side.sin_port);
+
   ready_data_ptr = data_ptr = data_con->data_ptr;
   data_size = data_con->data_size;
 
@@ -297,7 +291,8 @@ send_data_thread (void *arg)
 	  syslog (LOG_ERR, "write:%m port:%i", port);
 	  break;
 	}
-      syslog (LOG_DEBUG, "On port %i write %i bytes", port, ret);
+      syslog (LOG_DEBUG, "On port %i[%i] write %i bytes", port,
+	      data_con->sock, ret);
       ready_data_ptr += ret;
     }
   if (close (data_con->sock) < 0)
@@ -306,12 +301,7 @@ send_data_thread (void *arg)
   pthread_mutex_unlock (&data_con->lock);
 
   if (ret < 0)
-    {
-      devdem_write_command_end (DEVDEM_E_SYSTEM, "PORT:%i %s", port,
-				strerror (errno));
-    }
-  else
-    devdem_write_command_end (DEVDEM_DATA, "PORT:%i Data send", port);
+    syslog (LOG_ERR, "Sending data on port: %i %m", port);
   return NULL;
 }
 
@@ -337,6 +327,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
   int conn;
   int size;
   data_conn_info_t *data_con;	// actual data connection
+  struct sockaddr_in control_socaddr;
   fd_set a_set;
 
   if ((conn = next_free_conn_number ()) < 0)
@@ -360,8 +351,8 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
       goto err;
     }
 
-  size = sizeof (data_con->my_side);
-  if (getsockname (control_fd, (struct sockaddr *) &data_con->my_side, &size)
+  size = sizeof (control_socaddr);
+  if (getsockname (control_fd, (struct sockaddr *) &control_socaddr, &size)
       < 0)
     {
       syslog (LOG_ERR, "getsockaddr:%m");
@@ -369,8 +360,8 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
     }
 
   if (devdem_dprintf
-      ("connect %i %s:%i\r\n", conn, inet_ntoa (data_con->my_side.sin_addr),
-       port) < 0)
+      ("connect %i %s:%i %i\r\n", conn,
+       inet_ntoa (control_socaddr.sin_addr), port, data_size) < 0)
     goto err;
 
   FD_ZERO (&a_set);
