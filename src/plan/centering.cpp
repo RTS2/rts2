@@ -1,4 +1,8 @@
+// to keep GCC happy..
+
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif /* ! _GNU_SOURCE */
 
 #include <math.h>
 #include <time.h>
