@@ -691,8 +691,7 @@ devcli_set_command_handler (struct device * dev,
 			    devcli_handle_response_t command_handler)
 {
   devcli_handle_response_t ret = dev->channel.handlers.command_handler;
-  dev->channel.handlers.command_handler =
-    devhnd_devices[dev->type].command_handler;
+  dev->channel.handlers.command_handler = command_handler;
   return ret;
 }
 
