@@ -157,19 +157,8 @@ AC_OUTPUT([Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
 	   src/teld/lx200/Makefile
+	   src/teld/para/Makefile
 	   src/utils/Makefile
 	   src/utils/config.h
            src/wcs/Makefile
 	   src/writers/Makefile])
-#                 doc/Makefile
-#                 doc/dia/Makefile
-#                 doc/doxygen/latex/Makefile
-#                 doc/prezentace/Makefile
-#                 src/camc/Makefile
-#                 src/camd/Makefile
-#                 src/camd/apogee/Makefile
-#                 src/camd/sbig/Makefile
-#                 src/camd/urvc/Makefile
-#                 src/images_util/Makefile
-#                 src/teld/Makefile
-#                 src/teld/lx200/Makefile
