@@ -66,14 +66,12 @@ CameraChip::setExposure (float exptime)
   gettimeofday (&tv, NULL);
 
   long int f_exptime = (long int) floor (exptime);
-  printf ("f_exptime: %li", f_exptime);
   exposureEnd.tv_sec = tv.tv_sec + f_exptime;
   exposureEnd.tv_usec =
     tv.tv_usec + (long int) ((exptime - f_exptime) * 1000000);
   if (tv.tv_usec > 1000000)
     {
       exposureEnd.tv_sec += tv.tv_usec / 1000000;
-      printf ("plus: %i", tv.tv_usec / 1000000);
       exposureEnd.tv_usec = tv.tv_usec % 1000000;
     }
   return 0;
@@ -177,7 +175,7 @@ CameraChip::sendFirstLine ()
       header.binnings[1] = binningVertical;
       header.status = STATUS_FLIP;
       int ret;
-      ret = readoutConn->send ((unsigned short*) &header, sizeof (imghdr) / (sizeof (unsigned short)));
+      ret = readoutConn->send ((char *) &header, sizeof (imghdr));
       if (ret < 0)
 	return 100;		// TODO some better timeout handling
       return 0;
