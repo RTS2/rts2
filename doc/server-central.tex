@@ -1,13 +1,13 @@
 \chapter{Komunikace - autentifikace, zabezpeèení, správa priorit}
 
-Ka¾dé pozorovací stanovi¹tì sestává vìt¹inou z více ovladatelných
+Ka¾dé pozorovací stanovi¹tì sestává vìt¹inou z~více ovladatelných
 èástí - kamer, montá¾e, støechy. Zatím jsme se zabívali tím, jak je
 budeme ovládat ka¾dé zvlá¹».
 
 Existují ale funkce, které je rozumné spravovat centrálnì. Jedná se
-v¾dy o funkce, které by se na v¹ech zaøízením mìli chovat stejnì. Jako
+v¾dy o~funkce, které by se na v¹ech zaøízením mìli chovat stejnì. Jako
 vhodný pøípad mù¾e poslou¾it autentifikace - pøi pou¾ití modelu
-veøejný login s tajným heslem je vhodné zajistit, aby klientu staèil
+veøejný login s~tajným heslem je vhodné zajistit, aby klientu staèil
 jeden login a jedno heslo.
 
 \subsection{Bez centrálního serveru}
@@ -16,8 +16,8 @@ Ka¾dé klient udr¾uje spojení se v¹emi zaøízeními, které potøebuje ke
 svému provozu - viz \ref{fig:client-server-direct.eps}. Na první
 pohled velmi jednoduché a elegantní øe¹ení.
 
-\dia{client-server-direct.eps}{Klient bez centrálního serveru, s
-pøímími spojeními na zaøízení}
+\dia{client-server-direct.eps}{Klient bez centrálního serveru,
+s~pøímími spojeními na zaøízení}
 
 \subsection{S centrálním serverem}
 
@@ -29,12 +29,12 @@ díl komunikace mezi zaøízením a serverem.
 V¹echny funkce probíhají pøes centrální server. Centrální server urèí,
 jakému zaøízení jsou urèeny, a po¹le mu je.
 
-\dia{client-server-central.eps}{Klient s centrálnín serverem bez pøímého
+\dia{client-server-central.eps}{Klient s~centrálnín serverem bez pøímého
 spojení}
 
 \subsubsection{Centrální funkce pøes centrální server, lokální funkce}
 
-\dia{client-server-central-direct.eps}{klient s centrálním serverem s pøímím
+\dia{client-server-central-direct.eps}{klient s~centrálním serverem s~pøímím
 spojením mezi deamony}
 
 Centrální funkce na centrální server, ten distribuuje informace na
