@@ -8,6 +8,7 @@ config.h
 config.log
 config.status
 configure
+missing
 libtool
 stamp-h
 autom4te*
