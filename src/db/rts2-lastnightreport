@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Subject: $1 images for one date from " `date`
+echo "Subject: $1 images for the night ending on " `date`
 
 echo <<EOF
 Images
@@ -15,6 +15,6 @@ Observations
 =======================================================================================
 EOF
 
-psql stars -c "select types.type_description, observations.* from observations, targets, types where types.type_id = targets.type_id and observations.tar_id = targets.tar_id and now () - obs_start < '1 day' order by obs_start desc;"
+psql stars -c "select types.type_description, targets.tar_ra, targets.tar_dec, observations.* from observations, targets, types where types.type_id = targets.type_id and observations.tar_id = targets.tar_id and now () - obs_start < '1 day' order by obs_start desc;"
 
 echo "Report finished at " `date`
