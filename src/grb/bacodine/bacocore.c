@@ -2463,19 +2463,19 @@ receive_bacodine (void *arg)
 		  pr_milagro (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_BAT_GRB_ALERT_SRC:	// 60  // SWIFT BAT GRB ALERT message
-		  pr_swift_bat_alert (lbuf, stdout);
+		  //pr_swift_bat_alert (lbuf, stdout);
 		  pr_swift_bat_alert (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:	// 61  // SWIFT BAT GRB Position Acknowledge message
-		  pr_swift_bat_pos_ack (lbuf, stdout);
+		  //pr_swift_bat_pos_ack (lbuf, stdout);
 		  pr_swift_bat_pos_ack (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:	// 62  // SWIFT BAT GRB Position NOT Ack mesg
-		  pr_swift_bat_pos_nack (lbuf, stdout);
+		  //pr_swift_bat_pos_nack (lbuf, stdout);
 		  pr_swift_bat_pos_nack (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_BAT_GRB_LC_SRC:	// 63  // SWIFT BAT GRB Lightcurve message
-		  pr_swift_bat_lc (lbuf, stdout);
+		  //pr_swift_bat_lc (lbuf, stdout);
 		  pr_swift_bat_lc (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_SCALEDMAP_SRC:	// 64  // SWIFT BAT Scaled Map message
@@ -2485,39 +2485,39 @@ receive_bacodine (void *arg)
 			   "WARN: Should not be able to get a BAT Scaled Map.\n");
 		  break;
 		case TYPE_SWIFT_FOM_2OBSAT_SRC:	// 65  // SWIFT BAT FOM to Observe message
-		  pr_swift_fom_2obs (lbuf, stdout);
+		  //pr_swift_fom_2obs (lbuf, stdout);
 		  pr_swift_fom_2obs (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_FOSC_2OBSAT_SRC:	// 66  // SWIFT BAT S/C to Slew message
-		  pr_swift_sc_2slew (lbuf, stdout);
+		  //pr_swift_sc_2slew (lbuf, stdout);
 		  pr_swift_sc_2slew (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_XRT_POSITION_SRC:	// 67  // SWIFT XRT Position message
-		  pr_swift_xrt_pos_ack (lbuf, stdout);
+		  //pr_swift_xrt_pos_ack (lbuf, stdout);
 		  pr_swift_xrt_pos_ack (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_XRT_SPECTRUM_SRC:	// 68  // SWIFT XRT Spectrum message
-		  pr_swift_xrt_spec (lbuf, stdout);
+		  //pr_swift_xrt_spec (lbuf, stdout);
 		  pr_swift_xrt_spec (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_XRT_IMAGE_SRC:	// 69  // SWIFT XRT Image message
-		  pr_swift_xrt_image (lbuf, stdout);
+		  //pr_swift_xrt_image (lbuf, stdout);
 		  pr_swift_xrt_image (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_XRT_LC_SRC:	// 70  // SWIFT XRT Lightcurve message (aka Prompt)
-		  pr_swift_xrt_lc (lbuf, stdout);
+		  //pr_swift_xrt_lc (lbuf, stdout);
 		  pr_swift_xrt_lc (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_XRT_CENTROID_SRC:	// 71  // SWIFT XRT Pos Nackmessage (Centroid Error )
-		  pr_swift_xrt_pos_nack (lbuf, stdout);
+		  //pr_swift_xrt_pos_nack (lbuf, stdout);
 		  pr_swift_xrt_pos_nack (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_UVOT_DBURST_SRC:	// 72  // SWIFT UVOT DarkBurst message (aka Neighbor)
-		  pr_swift_uvot_dburst (lbuf, stdout);
+		  //pr_swift_uvot_dburst (lbuf, stdout);
 		  pr_swift_uvot_dburst (lbuf, lg);
 		  break;
 		case TYPE_SWIFT_UVOT_FCHART_SRC:	// 73  // SWIFT UVOT Finding Chart message
-		  pr_swift_uvot_fchart (lbuf, stdout);
+		  //pr_swift_uvot_fchart (lbuf, stdout);
 		  pr_swift_uvot_fchart (lbuf, lg);
 		  break;
 
@@ -2526,7 +2526,7 @@ receive_bacodine (void *arg)
 		  // so they will not be duplicated here in this switch().
 
 		case TYPE_SWIFT_UVOT_POS_SRC:	// 81  // SWIFT UVOT Position message
-		  pr_swift_uvot_pos (lbuf, stdout);
+		  //pr_swift_uvot_pos (lbuf, stdout);
 		  pr_swift_uvot_pos (lbuf, lg);
 		  break;
 		case TYPE_KILL_SOCKET:	/* Signal to break connection */
