@@ -20,6 +20,13 @@
 		$q->add_order ('img_date DESC');
 		$q->do_query ();
 		$q->print_table ();
+		$q->clear ();
+		$q->add_field ("count_value, count_date, count_exposure, count_filter, counter_name, count_ra, count_dec");
+		$q->from = 'targets_counts';
+		$q->add_and_where ("obs_id = $_SESSION[obs_id]");
+		$q->add_order ('count_date DESC');
+		$q->do_query ();
+		$q->print_table ();
 	} else {
 		$q->add_field ('observations.tar_id, observations.obs_id, observations.obs_start, observations.obs_duration, targets.tar_ra, targets.tar_dec, targets.tar_name, targets.type_id, observations_images.img_count');
 		$q->add_from ('observations, targets, observations_images');
