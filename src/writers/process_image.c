@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../utils/config.h"
 #include "../utils/devcli.h"
 #include "../utils/mkpath.h"
 #include "../utils/mv.h"
@@ -26,7 +27,6 @@ struct image_que
  *image_que;
 
 pthread_mutex_t image_que_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t image_create_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t image_que_cond = PTHREAD_COND_INITIALIZER;
 
 /*!
@@ -59,7 +59,6 @@ process_images (void *arg)
     {
       // wait for image to process
       pthread_mutex_lock (&image_que_mutex);
-      printf ("after lock");
       while (!image_que)
 	pthread_cond_wait (&image_que_cond, &image_que_mutex);
       actual_image = image_que;
@@ -75,7 +74,9 @@ process_images (void *arg)
 	}
 
       // call image processing script
-      asprintf (&cmd, "/home/petr/rts2/src/plan/img_process %s 2>/dev/null",
+      asprintf (&cmd,
+		get_string_default ("astrometry",
+				    "/home/petr/rts2/src/plan/img_process %s 2>/dev/null"),
 		actual_image->image);
       printf ("\ncalling %s.", cmd);
 
@@ -109,14 +110,9 @@ process_images (void *arg)
       while (!(ret == EOF || ret == 5));
 
       pclose (past_out);
-
-      printf ("will alloc: %i\n", strlen (actual_image->directory) +
-	      strlen (actual_image->image) + 1);
-
       filename =
 	(char *) malloc (strlen (actual_image->directory) +
 			 strlen (actual_image->image) + 1);
-
       strcpy (filename, actual_image->directory);
       strcat (filename, actual_image->image);
 
@@ -141,8 +137,6 @@ process_images (void *arg)
 
 	  printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
 		  ra_err, dec_err);
-
-//        last_succes = time (NULL);
 
 	  if (actual_image->correction_mark >= 0)
 	    {
@@ -242,15 +236,12 @@ data_handler (int sock, size_t size, struct image_info *image)
   strftime (filen, 24, "%Y%m%d%H%M%S.fits", &gmt);
   filen[24] = 0;
   asprintf (&filename, "%s%s", dirname, filen);
-  pthread_mutex_lock (&image_create_mutex);
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
-      pthread_mutex_unlock (&image_create_mutex);
       printf ("camc data_handler fits_init\n");
       ret = -1;
       goto free_filen;
     }
-  pthread_mutex_unlock (&image_create_mutex);
   printf ("reading data socket: %i size: %i\n", sock, size);
 
   while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
