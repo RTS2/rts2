@@ -73,6 +73,7 @@ echo <<<EOT
 		</ul class="menu">
 	</li>
 	<li><a href="days.php?year=2003">Year 2003</a></li>
+	<li><a href="days.php?year=2004">Year 2004</a></li>
 	<li><a href="types.php">Observations types</a></li>
 	<li><a href="medias.php">Medias table</a></li>
 EOT;

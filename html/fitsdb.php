@@ -116,9 +116,9 @@ EOT;
 	);
 
 	$fields_writable = array (
+		'grb_id' => 1,
 		'grb_seqn' => 1,
 		'grb_date' => 1,
-		'grb_last_update' => 1,
 		'ot_imgcount' => 1,
 		'ot_minpause' => 1,
 		'ot_priority' => 1,
@@ -129,7 +129,8 @@ EOT;
 		'tar_dec' => 1, 
 		'tar_type' => 1, 
 		'tar_comment' => 1,
-		'med_path' => 1);
+		'med_path' => 1
+	);
 	
 	class Query {
 		var $fields;
@@ -297,6 +298,35 @@ EOT;
 				echo "<input type='submit' value='Download selected'></inpu>\n</form>\n";
 		}
 
+		function print_radio_list ($table, $name, $desc, $selected) {
+			if (!$this->con)
+				$this->connect ();
+			$res = pg_query ($this->con, "SELECT $name, $desc FROM $table ORDER BY $name");
+			while ($row = pg_fetch_row ($res)) {
+				echo "<input type='radio' name='$name' value='" . $row[0] . "'" . ($selected == $row[0] ? " checked" : "") . ">" . $row[1] . "</input><br/>\n";
+			}
+		}
+
+		function print_field ($name, $value) {
+			global $fields_name;
+			global $fields_writable;
+			echo "\t<tr>\n\t\t<td>" . (array_key_exists ($name, $fields_name) ? $fields_name[$name] : $name) . 
+			"\t\t</td><td>\n";
+			if ($_SESSION['authorized']) {
+				if ($name == "type_id") {
+					echo "<input type='hidden' name='type_id_old' value='$value'></input>"; 
+					$this->print_radio_list ("types", "type_id", "type_description", $value); 
+				} elseif (array_key_exists($name, $fields_writable)) {
+					echo "<input type='text' name='$name' value='$value'></input>";
+				} else {
+					echo "<input type='hidden' name='$name' value='$value'>$value";
+				}
+			} else {
+				echo $value;
+			}
+			echo "\n\t</td>\n\t</tr>\n";
+		}
+
 		function print_form () {
 			global $fields_name;
 			global $fields_writable;
@@ -313,8 +343,7 @@ EOT;
 					if ($name == 'tar_dec')
 						$dec = $row[$i];
 					$value = get_value ($name, $row[$i]);
-					echo "\t<tr>\n\t\t<td>" . (array_key_exists ($name, $fields_name) ? $fields_name[$name] : $name) . 
-					"\t\t</td><td>\n" . ($_SESSION['authorized'] && array_key_exists($name, $fields_writable) ? "<input type='text' name='$name' value='$value'></input>" : "<input type='hidden' name='$name' value='$value'>$value") . "\n\t</td>\n\t</tr>\n";
+					$this->print_field ($name, $value);
 				}
 				if ($ra != -500 && $dec != -500)
 				{

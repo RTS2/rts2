@@ -14,7 +14,7 @@
 	echo "<td><input type='submit' value='Change'></input></td></tr></table>\n</form>";
 
 	$q = new Query;
-	$q->add_field ("imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, img_date) as img_path, img_date, img_exposure/100.0 as img_exposure_sec, img_temperature/10.0 as img_temperature_deg, img_filter, imgrange (astrometry) as img_range, images.obs_id, observations.tar_id, camera_name");
+	$q->add_field ("imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, img_date) as img_path, img_date, round(img_exposure/100.0,2) as img_exposure_sec, round(img_temperature/10.0,2) as img_temperature_deg, img_filter, imgrange (astrometry) as img_range, images.obs_id, observations.tar_id, camera_name");
 	$q->add_from ("images, observations");
 	$q->add_and_where ("observations.obs_id = images.obs_id");
 	$q->add_and_test_where ("img_date >= ", 'date_from');

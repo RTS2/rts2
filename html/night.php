@@ -13,7 +13,7 @@
 	if (($row = pg_fetch_row ($res)) and ($row[5] > 0)) {
 		echo "Total of <a href='images.php?night=$n'>$row[5]</a> <b>images</b> were taken from $row[0] to $row[1]<br>\n";
 		printf ("<b>CCD Temperatures</b> - min: %+.2f avg: %+.2f max: %+.2f<br>\n", $row[2]/10.0, $row[3]/10.0, $row[4]/10.0);
-		$q->fields = "camera_name,count(*), MIN(img_temperature), AVG(img_temperature), MAX(img_temperature), MIN(img_date), MAX(img_date), (MAX(img_date) - MIN(img_date))";
+		$q->fields = "camera_name,count(*), MIN(img_temperature), AVG(img_temperature), MAX(img_temperature), MIN(img_date), MAX(img_date), EXTRACT (EPOCH FROM MAX(img_date) - MIN(img_date))";
 		$q->where = " WHERE night_num(img_date) = $n GROUP BY camera_name";
 		$res = $q->do_query ();
 		echo "Number of images and temperature statistics per camera:\n<table>

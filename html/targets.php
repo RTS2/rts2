@@ -15,25 +15,72 @@
 
 	if ($_SESSION['authorized'] && array_key_exists('tar_id', $_REQUEST) && array_key_exists('type_id', $_REQUEST)) {
 		$tar_id = intval ($_REQUEST['tar_id']);
-		if (!preg_match ('/^[A-Za-z]$/', $_REQUEST['type_id']))
-		{
+		if (!preg_match ('/^[A-Za-z]$/', $_REQUEST['type_id'])) {
 			echo "Invalid type_id entered. Please return back and correct that";
 			exit (1);
 		}
 		$type_id = $_REQUEST['type_id'];
+		preg_replace ('/[^A-Z0-9]/', '', $type_id);
+		$type_id_old = $_REQUEST['type_id_old'];
+		preg_replace ('/[^A-Z0-9]/', '', $type_id_old);
+		$type_id_old = $_REQUEST['type_id_old'];
 		$tar_name = $_REQUEST['tar_name'];
 		preg_replace ('/[^A-Za-z0-9 _\-.]/', '', $tar_name);
 		$tar_ra = s2deg($_REQUEST['tar_ra'], 15);
 		$tar_dec = s2deg($_REQUEST['tar_dec'], 1);
 		$tar_comment = $_REQUEST['tar_comment'];
 		preg_replace ('/[^A-Za-z0-9 _.\-]/', '', $tar_comment);
-		if (array_key_exists('insert',$_REQUEST))
-		{
-			$q->do_query ("INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES (nextval('tar_id'), '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');");
-			echo "INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES (nextval('tar_id'), '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');";
-		}
-		else
+		if (array_key_exists('insert',$_REQUEST)) {
+			$tar_id = $q->simple_query ("SELECT nextval('tar_id');");
+			$q->do_query ("INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES ($tar_id, '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');");
+			// insert defaults to ot table..
+			switch ($type_id) {
+				case 'G':
+					$q->do_query ("INSERT INTO grb (tar_id, grb_id) VALUES ($tar_id, 0)");
+					break;
+				case 'O':
+					$q->do_query ("INSERT INTO ot (tar_id, ot_priority) VALUES ($tar_id, 0)");
+					break;
+			}
+		} else {
+			if ($_REQUEST['type_id_old'] == $type_id) {
+				switch ($type_id) {
+					case 'G':
+						$grb_id = intval ($_REQUEST['grb_id']);
+						$grb_seqn = intval ($_REQUEST['grb_seqn']);
+						$grb_date = $_REQUEST['grb_date'];
+						preg_replace ('/[^0-9: -+]/', '', $grb_date);
+						$q->do_query ("UPDATE grb SET grb_id = $grb_id, grb_seqn = $grb_seqn, grb_date = timestamp '$grb_date' WHERE tar_id = $tar_id");
+						break;
+					case 'O':
+						$ot_imgcount = intval ($_REQUEST['ot_imgcount']);
+						$ot_minpause = $_REQUEST['ot_minpause'];
+						preg_replace ('/[^0-9: ]/', '', $ot_minpause);
+						$ot_priority = intval ($_REQUEST['ot_priority']);
+						$q->do_query ("UPDATE ot SET ot_imgcount = $ot_imgcount, ot_minpause = interval '$ot_minpause', ot_priority = $ot_priority WHERE tar_id = $tar_id");
+						break;
+				}
+			} else {
+				// delete old entries && create new dummy entries
+				switch ($type_id_old) {
+					case 'G':
+						$q->do_query ("DELETE FROM grb WHERE tar_id = $tar_id");
+						break;
+					case 'O':
+						$q->do_query ("DELETE FROM ot WHERE tar_id = $tar_id");
+						break;
+				}
+				switch ($type_id) {
+					case 'G':
+						$q->do_query ("INSERT INTO grb (tar_id, grb_id) VALUES ($tar_id, 0)");
+						break;
+					case 'O':
+						$q->do_query ("INSERT INTO ot (tar_id, ot_priority) VALUES ($tar_id, 0)");
+						break;
+				}
+			}
 			$q->do_query ("UPDATE targets SET type_id='$type_id', tar_name = '$tar_name', tar_ra = $tar_ra, tar_dec = $tar_dec, tar_comment = '$tar_comment' WHERE tar_id = $tar_id");
+		}
 	}
 
 	if (array_key_exists('tar_id', $_SESSION) && !array_key_exists('type_id', $_REQUEST)) {
