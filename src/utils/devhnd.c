@@ -1,23 +1,170 @@
 #include "devhnd.h"
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
 
-struct supp_info devhnd_devices[] = {
-  {NULL, NULL},			// DEVICE_TYPE_UNKNOW
-  {NULL, NULL},			// SERVERD
-  {(devcli_handle_response_t) telescope_command_handler, (devcli_handle_response_t) telescope_message_handler},	// DEVICE_TYPE_MOUNT
-  {(devcli_handle_response_t) camera_command_handler, (devcli_handle_response_t) camera_message_handler},	// DEVICE_TYPE_CCD
-  {NULL, NULL}			// DEVICE_TYPE_DOME
-  // etc..
-};
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
+/*!
+ * Find device with given name.
+ *
+ * @param device_name	name of the device we are looking for
+ *
+ * @return	device structure, NULL if not found
+ */
+struct device *
+get_device (struct device **devices, const char *device_name)
+{
+  struct device *dev = *devices;
+
+  while (dev)
+    {
+      if (!strcmp (dev->name, device_name))
+	return dev;
+      dev = dev->next;
+    }
+
+  dev = (struct device *) malloc (sizeof (struct device));
+  // new device initialization
+  dev->channel = NULL;
+  dev->data_handler = NULL;
+  dev->status_notifier = NULL;
+  dev->notifier_data = NULL;
+  dev->next = *devices;
+  dev->name[0] = 0;
+  dev->statutes = NULL;
+  dev->priority = 0;
+  pthread_mutex_init (&dev->status_lock, NULL);
+  pthread_cond_init (&dev->status_cond, NULL);
+  pthread_mutex_init (&dev->priority_lock, NULL);
+  pthread_cond_init (&dev->priority_cond, NULL);
+  *devices = dev;
+  return dev;
+}
+
+struct client *
+get_client (struct client **clients, int id)
+{
+  struct client *cli = *clients;
+
+  while (cli)
+    {
+      if (cli->id == id)
+	return cli;
+      cli = cli->next;
+    }
+
+  cli = (struct client *) malloc (sizeof (struct client));
+  cli->id = id;
+  cli->login[0] = 0;
+  cli->priority = 0;
+  cli->active = 0;
+  cli->status_txt[0] = 0;
+  cli->next = *clients;
+  *clients = cli;
+  return cli;
+}
+
+int
+serverd_command_handler (struct param_status *params,
+			 struct serverd_info *info)
+{
+  char *str;
+  struct device *dev;
+#ifdef DEBUG
+  printf ("server get response: %s\n", params->param_argv);
+#endif
+  if (strcmp (params->param_argv, "logged_as") == 0)
+    {
+      if (param_get_length (params) != 1
+	  || param_next_integer (params, &info->id))
+	{
+#ifdef DEBUG
+	  printf ("invalid paramaters");
+#endif /* DEBUG */
+	  return -1;
+	}
+      return 0;
+    }
+  if (strcmp (params->param_argv, "authorization_key") == 0)
+    {
+      char *dev_name;
+      int key;
+      if (param_get_length (params) != 2)
+	return -1;
+      if (param_next_string (params, &dev_name)
+	  || param_next_integer (params, &key))
+	{
+#ifdef DEBUG
+	  printf ("invalid param value\n");
+#endif /* DEBUG */
+	  return -1;
+	}
+      dev = get_device (&info->devices, dev_name);
+      if (!dev)
+	{
+	  errno = ENODEV;
+	  return -1;
+	}
+
+      dev->key = key;
+
+#ifdef DEBUG
+      printf ("auth device: %s key: %i\n", dev->name, key);
+#endif
+      return 0;
+    }
+  if (!strcmp (params->param_argv, "device"))
+    {
+      int i;
+#ifdef DEBUG
+      printf ("handling device %i\n", param_get_length (params));
+#endif
+      if (param_get_length (params) != 4 || param_next_integer (params, &i)
+	  || param_next_string (params, &str))
+	return -1;
+      dev = get_device (&info->devices, str);
+
+      strncpy (dev->name, str, DEVICE_NAME_SIZE);
+      if (param_next_ip_address (params, &str, &dev->port)
+	  || param_next_integer (params, &dev->type))
+	return -1;
+      strncpy (dev->hostname, str, DEVICE_URI_SIZE);
+#ifdef DEBUG
+      printf ("id %i name %s host %s port %i type: %i\n", i, dev->name,
+	      dev->hostname, dev->port, dev->type);
+#endif
+      return 0;
+    }
+  if (!strcmp (params->param_argv, "user"))
+    {
+      int id;
+      struct client *cli;
+
+      if (param_next_integer (params, &id))
+	return -1;
+
+      cli = get_client (&info->clients, id);
+      if (param_next_integer (params, &cli->active) ||
+	  param_next_integer (params, &cli->priority)
+	  || param_next_string_copy (params, cli->login, CLIENT_LOGIN_SIZE))
+	return -1;
+
+      param_next_string_copy (params, cli->status_txt, MAX_STATUS_TXT);
+
+      return 0;
+    }
+  errno = EINVAL;
+  return -1;
+}
 
 int
 telescope_command_handler (struct param_status *params,
 			   struct telescope_info *info)
 {
 #ifdef DEBUG
-  printf ("telescope get command: %s\n", params->param_argv);
+  printf ("telescope get response: %s\n", params->param_argv);
 #endif
   if (!strcmp (params->param_argv, "name"))
     return param_next_string_copy (params, info->name, 64);
@@ -44,21 +191,12 @@ telescope_command_handler (struct param_status *params,
   errno = EINVAL;
   return -1;
 };
-
-int
-telescope_message_handler (struct param_status *params,
-			   struct telescope_info *info)
-{
-  printf ("telescope get message: %s\n", params->param_argv);
-  return 0;
-};
-
 int
 camera_command_handler (struct param_status *params, struct camera_info *info)
 {
 #ifdef DEBUG
-  printf ("camera get command: %s %p '%f'\n", params->param_argv, info,
-	  info->ccd_temperature);
+  printf ("camera get response: %s %p '%f'\n",
+	  params->param_argv, info, info->ccd_temperature);
 #endif
   if (!strcmp (params->param_argv, "name"))
     return param_next_string_copy (params, info->name, 64);
@@ -111,14 +249,26 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
       errno = EINVAL;
       return 0;
     }
+#ifdef DEBUG
   fprintf (stderr, "unkow command %s\n", params->param_argv);
+#endif
   errno = EINVAL;
   return -1;
 };
-
-int
-camera_message_handler (struct param_status *params, struct camera_info *info)
-{
-  printf ("camera get message: %s\n", params->param_argv);
-  return 0;
+struct supp_info devhnd_devices[] = {
+  {
+   NULL, NULL}
+  ,				// DEVICE_TYPE_UNKNOW
+  {
+   (devcli_handle_response_t) serverd_command_handler, NULL}
+  ,				// SERVERD
+  {
+   (devcli_handle_response_t) telescope_command_handler, NULL}
+  ,				// DEVICE_TYPE_MOUNT
+  {
+   (devcli_handle_response_t) camera_command_handler, NULL}
+  ,				// DEVICE_TYPE_CCD
+  {
+   NULL, NULL}			// DEVICE_TYPE_DOME
+  // etc..
 };

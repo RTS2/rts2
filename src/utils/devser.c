@@ -631,8 +631,8 @@ send_data_thread (void *arg)
 	{
 	  if ((ret = write (data_con->sock, data, size)) != size)
 	    {
-	      syslog (LOG_ERR, "write:%m port:%i ret:%i size:%i", port, ret,
-		      size);
+	      syslog (LOG_ERR, "devser write:%m port:%i ret:%i size:%i", port,
+		      ret, size);
 	      break;
 	    }
 	}
@@ -1352,14 +1352,18 @@ devser_on_exit ()
 {
   if (!devser_child_pid)
     {
-      syslog (LOG_DEBUG, "devser removing IPC");
+      printf ("devser removing IPC\n");
       if (semctl (data_sem, 1, IPC_RMID))
-	syslog (LOG_ERR, "IPC_RMID data_sem semctl: %m");
+	{
+	  perror ("IPC_RMID data_sem semctl");
+	}
       if (msgctl (msg_id, IPC_RMID, NULL))
-	syslog (LOG_ERR, "IPC_RMID msg_id: %m");
+	{
+	  perror ("IPC_RMID msg_id");
+	}
       while (childrens)
 	{
-	  syslog (LOG_DEBUG, "kill %i", childrens->child_pid);
+	  printf ("kill %i\n", childrens->child_pid);
 	  kill (childrens->child_pid, SIGQUIT);
 	  childrens = childrens->next;
 	}

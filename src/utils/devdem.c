@@ -274,7 +274,8 @@ priority_block_start (int lost_priority)
 
   if (!has_priority)
     {
-      syslog (LOG_DEBUG, "haven't priority");
+      syslog (LOG_DEBUG, "haven't priority; priority has %i (you are %i)",
+	      clients_info->priority_client, client_id);
       priority_block_end ();
       return -1;
     }
@@ -798,17 +799,19 @@ devdem_on_exit ()
   if (!devser_child_pid)
     {
       if (semctl (status_sem, 1, IPC_RMID))
-	syslog (LOG_ERR, "IPC_RMID status_sem semctl: %m");
-      syslog (LOG_DEBUG, "devdem removing end");
+	perror ("IPC_RMID status_sem semctl");
+      printf ("devdem removing end");
     }
   else
     {
       if (clients_info->priority_client == client_id && client_id >= 0)	// we have priority and we exit => we must give up priority
-	client_priority_lost ();
+	{
+	  client_priority_lost ();
+	}
       clients_info->clients[client_id].pid = 0;
       clients_info->clients[client_id].authorized = 0;
     }
-  syslog (LOG_INFO, "devdem exiting");
+  printf (LOG_INFO, "devdem exiting");
 }
 
 /*!
