@@ -39,7 +39,10 @@ public:
   };
   virtual int endClose ()
   {
-    maskState (0, DOME_DOME_MASK, DOME_CLOSED, "dome closed");
+    if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
+      {
+	maskState (0, DOME_DOME_MASK, DOME_CLOSED, "dome closed");
+      }
     return 0;
   };
   virtual long isClosed ()
@@ -73,14 +76,7 @@ public:
   virtual int standby ();
   virtual int off ();
 
-  int setMasterStandby ()
-  {
-    if ((masterState & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
-      {
-	sendMaster ("standby");
-      }
-  }
-
+  int setMasterStandby ();
   virtual int setMasterState (int new_state);
 };
 

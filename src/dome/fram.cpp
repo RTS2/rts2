@@ -208,7 +208,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
       // parse weather info
       ret =
 	sscanf (buf,
-		"windspeed=%f km/h rain=%i date=%i-%i-%i time=%i:%i:%f status=%s",
+		"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%f status=%s",
 		&windspeed, &rain, &statDate.tm_year, &statDate.tm_mon,
 		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
 		&sec_f, status);
@@ -660,7 +660,7 @@ Rts2DevDomeFram::init ()
     {
       if (!connections[i])
 	{
-	  weatherConn = new Rts2ConnFramWeather (5007, this);
+	  weatherConn = new Rts2ConnFramWeather (5002, this);
 	  weatherConn->init ();
 	  connections[i] = weatherConn;
 	  break;
