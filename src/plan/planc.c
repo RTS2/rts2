@@ -30,12 +30,11 @@
 
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
-#include "../utils/mkpath.h"
-#include "../utils/mv.h"
 #include "../writers/fits.h"
 #include "status.h"
 #include "selector.h"
 #include "../db/db.h"
+#include "../writers/process_image.h"
 
 #define EXPOSURE_TIME		60
 #define EPOCH			"002"
@@ -44,300 +43,10 @@ struct device *camera, *telescope;
 #ifdef USE_WF2
 struct device *wf2;
 #endif
-struct target *plan;
 
-struct image_que
-{
-  char *image;
-  char *directory;
-  int correction_mark;
-  struct image_que *previous;
-}
- *image_que;
-
-pthread_mutex_t image_que_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t image_que_cond = PTHREAD_COND_INITIALIZER;
 pthread_t image_que_thread;
 
 time_t last_succes = 0;
-
-
-/*!
- * Handle image processing
- */
-void *
-process_images (struct device *tel)
-{
-  struct image_que *actual_image;
-
-  char *cmd, *filename;
-
-  long int id;
-  double ra, dec, ra_err, dec_err;
-
-  int ret = 0;
-
-  FILE *past_out;
-
-  while (1)
-    {
-      // wait for image to process
-      pthread_mutex_lock (&image_que_mutex);
-      while (!image_que)
-	pthread_cond_wait (&image_que_cond, &image_que_mutex);
-      actual_image = image_que;
-      image_que = image_que->previous;
-      pthread_mutex_unlock (&image_que_mutex);
-
-      printf ("chdir %s\n", actual_image->directory);
-
-      if ((ret = chdir (actual_image->directory)))
-	{
-	  perror ("chdir");
-	  goto free_image;
-	}
-
-      // call image processing script
-      asprintf (&cmd, "/home/petr/rts2/src/plan/img_process %s",
-		actual_image->image);
-      printf ("\ncalling %s.", cmd);
-
-      if (!(past_out = popen (cmd, "r")))
-	{
-	  perror ("popen");
-	  free (cmd);
-	  ret = -1;
-	  goto free_image;
-	};
-
-      free (cmd);
-
-      printf ("OK\n");
-
-      do
-	{
-	  char strs[200];
-	  if (!fgets (strs, 200, past_out))
-	    {
-	      ret = EOF;
-	      break;
-	    }
-
-	  strs[199] = 0;
-
-	  ret = sscanf
-	    (strs, "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
-	     &dec_err);
-	}
-      while (!(ret == EOF || ret == 5));
-
-      pclose (past_out);
-
-      filename =
-	(char *) malloc (strlen (actual_image->directory) +
-			 strlen (actual_image->image) + 2);
-
-      strcpy (filename, actual_image->directory);
-      strcat (filename, "/");
-      strcat (filename, actual_image->image);
-
-      if (ret == EOF)
-	{
-	  // bad image, move to trash
-	  char *trash_name;
-	  asprintf (&trash_name, "/trash/%s", actual_image->image);
-	  printf ("%s scanf error, invalid line\n", filename);
-	  printf ("mv %s -> %s", filename, trash_name);
-	  if ((ret = (mv (filename, trash_name))))
-	    perror ("rename bad image");
-	  printf ("..OK\n");
-	  free (trash_name);
-	}
-      else
-	{
-
-	  printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
-		  ra_err, dec_err);
-
-	  last_succes = time (NULL);
-
-	  if (actual_image->correction_mark >= 0)
-	    {
-	      if (devcli_command (tel, NULL, "correct %i %f %f",
-				  actual_image->correction_mark,
-				  ra_err / 60.0, dec_err / 60.0))
-		perror ("telescope correct");
-	    }
-
-
-	  // add image to db
-	  asprintf (&cmd, "/home/petr/fitsdb/wcs/wcs2db %s|psql stars",
-		    filename);
-
-	  if (system (cmd))
-	    {
-	      perror ("calling wcs2db");
-	    }
-
-	  free (cmd);
-	}
-
-      free (filename);
-
-    free_image:
-      free (actual_image->directory);
-      free (actual_image->image);
-      free (actual_image);
-    }
-}
-
-/*!
- * Handle camera data connection.
- *
- * @params sock 	socket fd.
- *
- * @return	0 on success, -1 and set errno on error.
- */
-int
-data_handler (int sock, size_t size, struct image_info *image)
-{
-  struct fits_receiver_data receiver;
-  struct tm gmt;
-  char data[DATA_BLOCK_SIZE];
-  int ret = 0;
-  ssize_t s;
-  char *filen;
-  char *filename;
-  char *dirname;
-  char *dark_name;
-
-  gmtime_r (&image->exposure_time, &gmt);
-
-  switch (image->target_type)
-    {
-    case TARGET_DARK:
-      if (!asprintf (&dirname, "/darks/%s/%s/", EPOCH, image->camera_name))
-	{
-	  perror ("planc data_handler asprintf");
-	  return -1;
-	}
-      break;
-
-    default:
-      if (!asprintf
-	  (&dirname, "/images/%s/%s/%05i/", EPOCH, image->camera_name,
-	   image->target_id))
-	{
-	  perror ("planc data_handler asprintf");
-	  return -1;
-	}
-    }
-
-  mkpath (dirname, 0777);
-
-  filen = (char *) malloc (25);
-
-  strftime (filen, 24, "%Y%m%d%H%M%S.fits", &gmt);
-  filen[24] = 0;
-  asprintf (&filename, "%s%s", dirname, filen);
-
-  if (fits_create (&receiver, filename) || fits_init (&receiver, size))
-    {
-      printf ("camc data_handler fits_init\n");
-      ret = -1;
-      goto free_filen;
-    }
-
-  printf ("reading data socket: %i size: %i\n", sock, size);
-
-  while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
-    {
-      if (sock < 0 || size != 3145784)
-	{
-	  printf ("socket error: %i", sock);
-	  goto close_fits;
-	}
-
-      if ((ret = fits_handler (data, s, &receiver)) < 0)
-	goto close_fits;
-      if (ret == 1)
-	break;
-    }
-
-  if (s < 0)
-    {
-      perror ("camc data_handler");
-      ret = -1;
-      goto close_fits;
-    }
-
-  printf ("reading finished\n");
-
-  if (image->target_type == TARGET_LIGHT)
-    db_get_darkfield (image->camera_name, image->exposure_length * 100,
-		      image->camera.ccd_temperature * 10, &dark_name);
-
-  if (fits_write_image_info (&receiver, image, dark_name)
-      || fits_close (&receiver))
-    {
-      perror ("camc data_handler fits_write");
-      ret = -1;
-      free (dark_name);
-      goto close_fits;
-    }
-
-  free (dark_name);
-
-  switch (image->target_type)
-    {
-      struct image_que *new_que;
-    case TARGET_LIGHT:
-      printf ("putting %s to que\n", filename);
-
-      new_que = (struct image_que *) malloc (sizeof (struct image_que));
-      new_que->directory = dirname;
-      new_que->image = filen;
-
-      if (strcmp (image->camera_name, "C0") == 0)
-	new_que->correction_mark = image->telescope.correction_mark;
-      else
-	new_que->correction_mark = -1;
-
-
-      pthread_mutex_lock (&image_que_mutex);
-      new_que->previous = image_que;
-      image_que = new_que;
-      pthread_cond_broadcast (&image_que_cond);
-      pthread_mutex_unlock (&image_que_mutex);
-
-      ret = 0;
-
-      goto free_filename;
-
-      break;
-
-    case TARGET_DARK:
-      printf ("darkname: %s\n", filename);
-
-      ret = db_add_darkfield (filename, &image->exposure_time,
-			      image->exposure_length * 100,
-			      image->camera.ccd_temperature * 10,
-			      image->camera_name);
-      break;
-    }
-
-close_fits:
-  fits_close (&receiver);
-
-free_filen:
-  free (filen);
-  free (dirname);
-
-free_filename:
-  free (filename);
-  return ret;
-#undef receiver
-}
 
 int
 status_handler (struct device *dev, char *status_name, int new_val)
@@ -405,29 +114,39 @@ get_info (struct target *entry, struct device *tel, struct device *cam)
 }
 
 int
-observe (int watch_status)
+generate_next (int i, struct target *plan)
 {
-  int i = 0;
-  struct target *last;
   time_t start_time;
-
-  struct tm last_s;
-
-  plan = (struct target *) malloc (sizeof (struct target));
-
   time (&start_time);
-  start_time += 20;
 
   printf ("Making plan %li... \n", start_time);
-  if (get_next_plan
-      (plan, SELECTOR_AIRMASS, NULL, start_time, 0, EXPOSURE_TIME))
+  if (get_next_plan (plan, SELECTOR_AIRMASS, &start_time, i, EXPOSURE_TIME))
     {
       printf ("Error making plan\n");
       exit (EXIT_FAILURE);
     }
   printf ("...plan made\n");
+  i++;
+  return i;
+}
 
-  for (last = plan; last; plan = last, last = last->next, free (plan))
+int
+observe (int watch_status)
+{
+  int i = 0;
+  struct target *last, *plan;
+
+  struct tm last_s;
+
+  plan = (struct target *) malloc (sizeof (struct target));
+  plan->next = NULL;
+  plan->id = -1;
+  i = generate_next (i, plan);
+  last = plan->next;
+  free (plan);
+  plan = last;
+
+  for (; last; plan = last, last = last->next, free (plan))
     {
       time_t t = time (NULL);
       struct timeval tv;
@@ -443,20 +162,22 @@ observe (int watch_status)
 	  && devcli_server ()->statutes[0].status != SERVERD_NIGHT)
 	break;
 
-      if (last->ctime < t)
+      if (abs (last->ctime - t) > last->tolerance)
 	{
 	  printf ("ctime %li (%s)", last->ctime, ctime (&last->ctime));
 	  printf (" < t %li (%s)", t, ctime (&t));
-	  goto generate_next;
+	  generate_next (i, plan);
+	  continue;
 	}
 
       move (last);
 
-      while ((t = time (NULL)) < last->ctime)
+      while ((t = time (NULL)) < last->ctime - last->tolerance)
 	{
-	  printf ("sleeping for %li sec, till %s\n", last->ctime - t,
-		  ctime (&last->ctime));
-	  sleep (last->ctime - t);
+	  time_t sleep_time = last->ctime - last->tolerance;
+	  printf ("sleeping for %li sec, till %s\n", sleep_time - t,
+		  ctime (&sleep_time));
+	  sleep (sleep_time - t);
 	}
 
       if (last->type == TARGET_LIGHT)
@@ -471,6 +192,9 @@ observe (int watch_status)
 			     last->id, last->obs_id, (int) last->ra,
 			     (int) last->dec, last_s.tm_hour, last_s.tm_min);
 
+      devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
+			      DEVICE_PRIORITY, 0);
+
       devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
@@ -484,9 +208,9 @@ observe (int watch_status)
       printf ("OK\n");
 
       time (&t);
-      printf ("exposure countdown %s..\n", ctime (&t));
+      printf ("exposure countdown %s", ctime (&t));
       t += EXPOSURE_TIME;
-      printf ("readout at: %s\n", ctime (&t));
+      printf ("readout at: %s", ctime (&t));
       if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
 	  devcli_command (camera, NULL, "expose 0 %i %i",
@@ -505,18 +229,8 @@ observe (int watch_status)
 	}
 #endif
 
-    generate_next:
-      // generate next plan entry
-      i++;
+      i = generate_next (i, plan);
 
-
-      plan = (struct target *) malloc (sizeof (struct target));
-
-      printf ("Making next plan..\n");
-
-      get_next_plan (plan, SELECTOR_AIRMASS, last, start_time, i,
-		     EXPOSURE_TIME);
-      last->next = plan;
       printf ("next plan #%i: id %i type %i\n", i, last->next->id,
 	      last->next->type);
 
@@ -641,7 +355,7 @@ main (int argc, char **argv)
   if (!camera)
     {
       printf
-	("**** cannot find camera!\n**** please check that it's connected and camd runs.");
+	("**** cannot find camera!\n**** please check that it's connected and camd runs.\n");
       devcli_server_disconnect ();
       return 0;
     }
@@ -709,7 +423,7 @@ main (int argc, char **argv)
   TELD_WRITE_READ ("ready");
   TELD_WRITE_READ ("info");
 
-  devcli_set_general_notifier (camera, status_handler, NULL);
+//  devcli_set_general_notifier (camera, status_handler, NULL);
 
   srandom (time (NULL));
 
@@ -717,7 +431,7 @@ main (int argc, char **argv)
 
   devcli_server_command (NULL, "priority %i", priority);
 
-  printf ("waiting for priority\n");
+  printf ("waiting for priority on telescope");
 
   devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			  DEVICE_PRIORITY, 0);
@@ -730,19 +444,20 @@ loop:
     {
       while (devcli_server ()->statutes[0].status != SERVERD_NIGHT)
 	{
-	  printf ("wating for night..\n");
+	  printf ("waiting for night..\n");
 	  fflush (stdout);
 	  devcli_command (telescope, NULL, "park");
-	  sleep (60);
+	  sleep (600);
 	}
 
-      image_que = NULL;
-      pthread_create (&image_que_thread, NULL, process_images, telescope);
+      pthread_create (&image_que_thread, NULL, process_images, NULL);
 
       observe (watch_status);
     }
 
   printf ("done\n");
+
+  devcli_command (telescope, NULL, "park");
 
   sleep (300);
 

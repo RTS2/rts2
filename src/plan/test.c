@@ -21,8 +21,12 @@ main (int argc, char **argv)
       observer.lat = 50;
       observer.lng = -15;
       get_hrz_from_equ (&object, &observer, jd, &hrz);
-      printf ("%i\t%f\t%f\t%s\t%f\t%f\n", last->id, last->ra, last->dec,
-	      ctime (&last->ctime), hrz.alt, hrz.az);
+      if (last->id > 0)
+	printf ("%i\t%f\t%f\t%s\t%f\t%f\n", last->id, last->ra, last->dec,
+		ctime (&last->ctime), hrz.alt, hrz.az);
+      else
+	printf ("%i\t\t\t\t%s** correction %i\n", last->id,
+		ctime (&last->ctime), last->type);
     }
   free_plan (plan);
   return db_disconnect ();

@@ -10,9 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "selector.h"
+#include "image_info.h"
 
-#define READOUT_TIME	75
-
+#define READOUT_TIME		75
+#define PLAN_TOLERANCE		180
+#define PLAN_DARK_TOLERANCE	1800
 
 int
 find_plan (struct target *plan, int id, time_t c_start)
@@ -27,9 +29,29 @@ find_plan (struct target *plan, int id, time_t c_start)
   return -1;
 }
 
+struct target *
+add_target (struct target *plan, int type, int id, int obs_id, double ra,
+	    double dec, time_t obs_time, int tolerance)
+{
+  struct target *new_plan;
+  new_plan = (struct target *) malloc (sizeof (struct target));
+  new_plan->next = NULL;
+  new_plan->type = type;
+  new_plan->id = id;
+  new_plan->obs_id = obs_id;
+  new_plan->ra = ra;
+  new_plan->dec = dec;
+  new_plan->ctime = obs_time;
+  new_plan->tolerance = tolerance;
+
+  while (plan->next)
+    plan = plan->next;
+  plan->next = new_plan;
+  return new_plan;
+}
 
 int
-select_next_alt (time_t c_start, struct target *plan, struct target *last)
+select_next_alt (time_t c_start, struct target *plan)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -78,12 +100,8 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
 	  printf ("find id: %i\n", tar_id);
-	  last->type = TARGET_LIGHT;
-	  last->id = tar_id;
-	  last->ra = ra;
-	  last->dec = dec;
-	  last->ctime = c_start;
-	  last->next = NULL;
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+		      PLAN_TOLERANCE);
 	  break;
 	}
     }
@@ -106,9 +124,8 @@ err:
 }
 
 int
-select_next_airmass (time_t c_start, struct target *plan, struct
-		     target *last, double target_airmass, double az_end,
-		     double az_start)
+select_next_airmass (time_t c_start, struct target *plan,
+		     double target_airmass, double az_end, double az_start)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -124,11 +141,11 @@ select_next_airmass (time_t c_start, struct target *plan, struct
   double az;
   double airmass;
 
-  long int obs_start = c_start - 8640;
-
   double d_az_start = az_start;
   double d_az_end = az_end;
   double t_airmass = target_airmass;
+
+  int img_count;
 
   EXEC SQL END DECLARE SECTION;
 
@@ -145,12 +162,12 @@ select_next_airmass (time_t c_start, struct target *plan, struct
     SELECT targets.tar_id, tar_ra, tar_dec,
     obj_az (tar_ra, tar_dec,:st, -14.95, 50) AS az,
     obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) AS
-    airmass
+    airmass, img_count
     FROM targets, targets_images WHERE targets.tar_id =
     targets_images.
     tar_id
     AND (abs (obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) -:t_airmass)) <
-    0.1 AND (obj_az (tar_ra, tar_dec,:st, -14.95, 50) <:d_az_end OR
+    0.2 AND (obj_az (tar_ra, tar_dec,:st, -14.95, 50) <:d_az_end OR
 	     obj_az (tar_ra, tar_dec,:st, -14.95,
 		     50) >:d_az_start) ORDER BY img_count ASC;
   EXEC SQL OPEN obs_cursor_airmass;
@@ -160,20 +177,16 @@ select_next_airmass (time_t c_start, struct target *plan, struct
   while (!sqlca.sqlcode)
     {
       EXEC SQL FETCH next FROM obs_cursor_airmass
-	INTO:tar_id,:ra,:dec,:az,:airmass;
+	INTO:tar_id,:ra,:dec,:az,:airmass,:img_count;
 
-      printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec,
-	      az, airmass);
+      printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\t%5i\n", tar_id, ra,
+	      dec, az, airmass, img_count);
 
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
 	  printf ("airmass find id: %i\n", tar_id);
-	  last->type = TARGET_LIGHT;
-	  last->id = tar_id;
-	  last->ra = ra;
-	  last->dec = dec;
-	  last->ctime = c_start;
-	  last->next = NULL;
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+		      PLAN_TOLERANCE);
 	  break;
 	}
     }
@@ -196,7 +209,7 @@ err:
 }
 
 int
-select_next_grb (time_t c_start, struct target *plan, struct target *last)
+select_next_grb (time_t c_start, struct target *plan)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -250,12 +263,8 @@ select_next_grb (time_t c_start, struct target *plan, struct target *last)
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
 	  printf ("grb find id: %i\n", tar_id);
-	  last->type = TARGET_LIGHT;
-	  last->id = tar_id;
-	  last->ra = ra;
-	  last->dec = dec;
-	  last->ctime = c_start;
-	  last->next = NULL;
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+		      PLAN_TOLERANCE);
 
 	  EXEC SQL CLOSE obs_cursor_grb;
 
@@ -297,8 +306,7 @@ err:
  */
 int
 get_next_plan (struct target *plan, int selector_type,
-	       struct target *curr_plan, time_t c_start, int number,
-	       float exposure)
+	       time_t * obs_start, int number, float exposure)
 {
   double az;
   double airmass;
@@ -307,11 +315,11 @@ get_next_plan (struct target *plan, int selector_type,
 
   struct ln_equ_posn moon;
   struct ln_hrz_posn moon_hrz;
+  struct ln_equ_posn sun;
   struct ln_lnlat_posn observer;
 
-  time_t obs_start = c_start + number * (READOUT_TIME + exposure);
-
-  if (!select_next_grb (obs_start, curr_plan, plan))
+  // check for GRB..
+  if (!select_next_grb (*obs_start, plan))
     {
       return 0;
     }
@@ -320,26 +328,21 @@ get_next_plan (struct target *plan, int selector_type,
     {
 
     case SELECTOR_ALTITUDE:
-      return select_next_alt (obs_start, curr_plan, plan);
+      return select_next_alt (*obs_start, plan);
 
     case SELECTOR_AIRMASS:
-      // check for GRB..
       // every 50th image will be dark..
-      if (number % 50 == 5)
+      if (number % 50 == 1)
 	{
-	  plan->type = TARGET_DARK;
-	  plan->id = -1;
-	  plan->ctime = c_start + number * (READOUT_TIME + exposure);
-	  plan->next = NULL;
+	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+		      PLAN_DARK_TOLERANCE);
 	  return 0;
 	}
 
       observer.lng = -15;
       observer.lat = 50;
 
-      c_start += number * (READOUT_TIME + exposure);
-
-      jd = get_julian_from_timet (&c_start);
+      jd = get_julian_from_timet (obs_start);
 
       get_lunar_equ_coords (jd, &moon, 0.01);
       get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);
@@ -382,9 +385,30 @@ get_next_plan (struct target *plan, int selector_type,
 	  break;
 	}
 
-      return select_next_airmass (obs_start, curr_plan, plan, airmass, 150,
-				  210);
+      return select_next_airmass (*obs_start, plan, airmass, 90, 270);
       break;
+
+    case SELECTOR_ANTISOLAR:
+      // every 50th image will be dark..
+      if (number % 50 == 1)
+	{
+	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+		      PLAN_DARK_TOLERANCE);
+	  return 0;
+	}
+
+      observer.lng = -15;
+      observer.lat = 50;
+
+      jd = get_julian_from_timet (obs_start);
+
+      get_equ_solar_coords (jd, &sun);
+      sun.ra = range_degrees (sun.ra - 180);
+      sun.dec = -sun.dec;
+
+      add_target (plan, TARGET_LIGHT, 1000, -1, sun.ra, sun.dec, *obs_start,
+		  PLAN_TOLERANCE);
+      return 0;
 
     default:
       return -1;
@@ -408,10 +432,8 @@ make_plan (struct target **plan, float exposure)
 
   for (i = 0; i < 10; i++)
     {
-      last->next = (struct target *) malloc (sizeof (struct target));
-      last = last->next;
-      last->next = NULL;
-      get_next_plan (last, SELECTOR_AIRMASS, *plan, c_start, i, exposure);
+      get_next_plan (*plan, SELECTOR_ANTISOLAR, &c_start, i, exposure);
+      c_start += READOUT_TIME + exposure;
     }
 
   last = *plan;
