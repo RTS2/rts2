@@ -2,15 +2,17 @@
 
 echo "Processing $1"
 
-# try to get it to ds9..
-# cat $1|xpaset ds9 fits
+dirname=`dirname $1`
+imgname=`echo $1 | sed "s#^$dirname/*##"`
+
+cd $dirname
 
 # image processing
 
-/home/rtopera/src/bdark $1
-/home/rtopera/bin/detect $1
+/home/rtopera/src/bdark $imgname
+/home/rtopera/bin/detect $imgname
 if pwd | grep "CNF1"; then
-	/home/rtopera/bin/npast $1 2>$1.past
+	/home/rtopera/bin/npast $imgname 2>$imgname.past
 else
-	/home/rtopera/bin/past $1 2>$1.past
+	/home/rtopera/bin/past $imgname 2>$imgname.past
 fi

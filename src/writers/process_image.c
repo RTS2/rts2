@@ -29,8 +29,124 @@ struct image_que
 }
  *image_que;
 
+static FILE *cor_log = NULL;
+
 pthread_mutex_t image_que_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t image_que_cond = PTHREAD_COND_INITIALIZER;
+
+int
+astrometry_image (struct image_que *actual_image)
+{
+  struct device *tel;
+
+  long int id;
+  double ra, dec, ra_err, dec_err;
+  time_t t = time (NULL);
+
+  int ret = 0;
+
+  FILE *past_out;
+
+  char *cmd, *filename;
+
+  if (!cor_log)
+    {
+      cor_log = fopen ("/home/petr/tel_move_log", "a");
+      fprintf (cor_log, "===== new log %s", ctime (&t));
+    }
+
+  // call image processing script
+  asprintf (&cmd,
+	    get_string_default ("astrometry",
+				"/home/petr/rts2/src/plan/img_process %s/%s 2>/dev/null"),
+	    actual_image->directory, actual_image->image);
+  printf ("\ncalling %s.", cmd);
+
+  if (!(past_out = popen (cmd, "r")))
+    {
+      perror ("popen");
+      free (cmd);
+      return -1;
+    };
+
+  free (cmd);
+
+  printf ("OK\n");
+
+  do
+    {
+      char strs[200];
+      if (!fgets (strs, 200, past_out))
+	{
+	  ret = EOF;
+	  break;
+	}
+
+      strs[199] = 0;
+
+      ret = sscanf
+	(strs, "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err, &dec_err);
+    }
+  while (!(ret == EOF || ret == 5));
+
+  pclose (past_out);
+  strcat (filename, actual_image->image);
+
+  if (ret == EOF)
+    {
+      // bad image, move to trash
+      char *trash_name;
+      trash_name = (char *) malloc (8 + strlen (filename));
+      sprintf (trash_name, "/trash%s", actual_image->directory);
+      mkpath (trash_name, 0777);
+      strcat (trash_name, actual_image->image);
+
+      printf ("%s scanf error, invalid line\n", filename);
+      printf ("mv %s -> %s", filename, trash_name);
+      if ((ret = (mv (filename, trash_name))))
+	perror ("rename bad image");
+      free (trash_name);
+      printf ("..OK\n");
+    }
+  else
+    {
+
+      printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
+	      ra_err, dec_err);
+
+      if (actual_image->correction_mark >= 0)
+	{
+	  fprintf (cor_log, "%s %f %f %f %f\n", actual_image->image, ra,
+		   dec, ra_err, dec_err);
+	  fflush (cor_log);
+	  if ((tel = devcli_find (actual_image->tel_name)))
+	    {
+	      if (devcli_command (tel, NULL, "correct %i %f %f",
+				  actual_image->correction_mark,
+				  ra_err / 60.0, dec_err / 60.0))
+		perror ("telescope correct");
+	    }
+	  else
+	    {
+	      fprintf (stderr, "**** cannot find telescope name %s\n",
+		       actual_image->tel_name);
+	    }
+	}
+
+      // add image to db
+      asprintf (&cmd,
+		"cd /images && rts2-fits2db %s|psql stars", filename + 8);
+
+      if (system (cmd))
+	{
+	  perror ("calling fits2db");
+	}
+
+      free (cmd);
+    }
+  free (filename);
+  return 0;
+}
 
 /*!
  * Handle image processing
@@ -40,23 +156,8 @@ process_images (void *arg)
 {
   struct image_que *actual_image;
 
-  struct device *tel;
-
-  char *cmd, *filename;
-
-  long int id;
-  double ra, dec, ra_err, dec_err;
-  time_t t = time (NULL);
-
-  int ret = 0;
-
-  FILE *past_out;
-  FILE *cor_log;
-
   image_que = NULL;
 
-  cor_log = fopen ("/home/petr/tel_move_log", "a");
-  fprintf (cor_log, "===== new log %s", ctime (&t));
 
   while (1)
     {
@@ -68,113 +169,9 @@ process_images (void *arg)
       image_que = image_que->previous;
       pthread_mutex_unlock (&image_que_mutex);
 
-      printf ("chdir %s\n", actual_image->directory);
+      // now process image, get astrometry from it..
+      astrometry_image (actual_image);
 
-      if ((ret = chdir (actual_image->directory)))
-	{
-	  perror ("chdir");
-	  goto free_image;
-	}
-
-      // call image processing script
-      asprintf (&cmd,
-		get_string_default ("astrometry",
-				    "/home/petr/rts2/src/plan/img_process %s 2>/dev/null"),
-		actual_image->image);
-      printf ("\ncalling %s.", cmd);
-
-      if (!(past_out = popen (cmd, "r")))
-	{
-	  perror ("popen");
-	  free (cmd);
-	  ret = -1;
-	  goto free_image;
-	};
-
-      free (cmd);
-
-      printf ("OK\n");
-
-      do
-	{
-	  char strs[200];
-	  if (!fgets (strs, 200, past_out))
-	    {
-	      ret = EOF;
-	      break;
-	    }
-
-	  strs[199] = 0;
-
-	  ret = sscanf
-	    (strs, "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
-	     &dec_err);
-	}
-      while (!(ret == EOF || ret == 5));
-
-      pclose (past_out);
-      filename =
-	(char *) malloc (strlen (actual_image->directory) +
-			 strlen (actual_image->image) + 1);
-      strcpy (filename, actual_image->directory);
-      strcat (filename, actual_image->image);
-
-      if (ret == EOF)
-	{
-	  // bad image, move to trash
-	  char *trash_name;
-	  trash_name = (char *) malloc (8 + strlen (filename));
-	  sprintf (trash_name, "/trash%s", actual_image->directory);
-	  mkpath (trash_name, 0777);
-	  strcat (trash_name, actual_image->image);
-
-	  printf ("%s scanf error, invalid line\n", filename);
-	  printf ("mv %s -> %s", filename, trash_name);
-	  if ((ret = (mv (filename, trash_name))))
-	    perror ("rename bad image");
-	  free (trash_name);
-	  printf ("..OK\n");
-	}
-      else
-	{
-
-	  printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
-		  ra_err, dec_err);
-
-	  if (actual_image->correction_mark >= 0)
-	    {
-	      fprintf (cor_log, "%s %f %f %f %f\n", actual_image->image, ra,
-		       dec, ra_err, dec_err);
-	      fflush (cor_log);
-	      if ((tel = devcli_find (actual_image->tel_name)))
-		{
-		  if (devcli_command (tel, NULL, "correct %i %f %f",
-				      actual_image->correction_mark,
-				      ra_err / 60.0, dec_err / 60.0))
-		    perror ("telescope correct");
-		}
-	      else
-		{
-		  fprintf (stderr, "**** cannot find telescope name %s\n",
-			   actual_image->tel_name);
-		}
-	    }
-
-	  // add image to db
-	  asprintf (&cmd,
-		    "cd /images && rts2-fits2db %s|psql stars", filename + 8);
-
-	  if (system (cmd))
-	    {
-	      perror ("calling wcs2db");
-	    }
-
-	  free (cmd);
-	}
-
-      free (filename);
-
-    free_image:
       free (actual_image->directory);
       free (actual_image->image);
       free (actual_image);
