@@ -25,6 +25,8 @@
 #include "devdem.h"
 #include "../status.h"
 
+#include "devconn.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -49,8 +51,6 @@
 #include <sys/msg.h>
 
 #include <argz.h>
-
-#include "devconn.h"
 
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 /* union semun is defined by including <sys/sem.h> */
@@ -115,6 +115,7 @@ struct thread_wrapper_temp
   pthread_mutex_t *lock;
   void *arg;
   void *(*start_routine) (void *);
+  int freed;			//! 2 free || !2 free arg on end.
 };
 
 //! Number of status registers
@@ -317,16 +318,19 @@ devdem_write_command_end (int retc, char *msg_format, ...)
 void *
 thread_wrapper (void *temp)
 {
+#define THREAD_WRAPPER_TEMP ((struct thread_wrapper_temp *) temp)
   void *ret;
-  struct thread_wrapper_temp *arg = (struct thread_wrapper_temp *) temp;
-  pthread_cleanup_push (pthread_mutex_unlock, (void *) (arg->lock));
-  ret =
-    ((struct thread_wrapper_temp *) temp)->
-    start_routine (((struct thread_wrapper_temp *) temp)->arg);
+  pthread_cleanup_push (pthread_mutex_unlock,
+			(void *) (THREAD_WRAPPER_TEMP->lock));
+  ret = THREAD_WRAPPER_TEMP->start_routine (THREAD_WRAPPER_TEMP->arg);
   pthread_cleanup_pop (1);
-  free (((struct thread_wrapper_temp *) temp)->arg);
+  if (THREAD_WRAPPER_TEMP->freed)
+    {
+      free (THREAD_WRAPPER_TEMP->arg);
+    }
   free (temp);
   return ret;
+#undef THREAD_WRAPPER_TEMP
 }
 
 /*! 
@@ -344,8 +348,6 @@ thread_wrapper (void *temp)
  *
  * @param start_routine
  * @param arg 		argument
- * @param arg_size 	size of argument; in bytes; when arg is NULL, arg_size is
- * 			ignored
  * @param id 		if not NULL, returns id of thread, which can by used for 
  * 			@see pthread_cancel_thread (int)
  *
@@ -365,19 +367,25 @@ devdem_thread_create (void *(*start_routine) (void *), void *arg,
 	    malloc (sizeof (struct thread_wrapper_temp));
 	  temp->lock = &threads[i].lock;
 	  temp->start_routine = start_routine;
-	  if (arg)
+	  if (arg_size)
 	    {
-	      temp->arg = malloc (arg_size);
-	      memcpy (temp->arg, arg, arg_size);
+	      if (!(temp->arg = malloc (arg_size)))
+		{
+		  errno = ENOMEM;
+		  return -1;
+		}
+	      temp->freed = 1;
 	    }
 	  else
 	    {
-	      temp->arg = NULL;
+	      temp->arg = arg;
+	      temp->freed = 0;
 	    }
 	  if (id)
 	    *id = i;
-	  return pthread_create (&threads[i].thread, NULL, thread_wrapper,
-				 (void *) temp);
+	  errno = pthread_create (&threads[i].thread, NULL, thread_wrapper,
+				  (void *) temp);
+	  return errno ? -1 : 0;
 	}
     }
   syslog (LOG_WARNING, "reaches MAX_THREADS");
@@ -1028,7 +1036,7 @@ devdem_run (int port, devdem_handle_command_t in_handler,
       return -1;
     }
 
-  // initialize status semaphores
+
   st = statutes;
   sem_un.val = 1;
   for (i = 0; i < status_num; i++, st++)
