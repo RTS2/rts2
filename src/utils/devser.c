@@ -1026,7 +1026,6 @@ devser_shm_data_lock ()
   if (semop (data_sem, &sb, 1) < 0)
     {
       syslog (LOG_ERR, "devser_shm_data_lock semphore -1: %m");
-      exit (EXIT_FAILURE);
     }
 }
 
@@ -1044,7 +1043,6 @@ devser_shm_data_unlock ()
   if (semop (data_sem, &sb, 1) < 0)
     {
       syslog (LOG_ERR, "devser_shm_data_unlock +1: %m");
-      exit (EXIT_FAILURE);
     }
 }
 
@@ -1059,7 +1057,6 @@ devser_shm_data_dt (void *mem)
   if (shmdt (mem) < 0)
     {
       syslog (LOG_ERR, "devser_shm_data_dt: %m");
-      exit (EXIT_FAILURE);
     }
 }
 
