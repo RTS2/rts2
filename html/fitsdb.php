@@ -349,11 +349,11 @@ EOT;
 								">disabled</input>\n";
 							break;
 						default:
-							echo "<input type='text' name='$name' value='$value'></input>";
+							echo "<input type='text' name='$name' value=\"$value\"></input>";
 							break;
 					}
 				} else {
-					echo "<input type='hidden' name='$name' value='$value'>$value";
+					echo "<input type='hidden' name='$name' value=\"$value\">$value";
 				}
 			} else {
 				echo $value;

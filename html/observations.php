@@ -1,5 +1,5 @@
 <?php
-	include "libnova.php";
+#	include "libnova.php";
 	include "infos.php";
 
 	hlavicka ("BARTDB Observations", "Observations details", " ", "ok");

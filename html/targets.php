@@ -195,6 +195,7 @@
 			}
 		}
 		$q->add_and_where ('targets.tar_id = targets_images.tar_id');
+		$q->add_order ('tar_enabled desc');
 		$q->add_order ('img_count DESC');
 		$q->do_query ();
 		$q->print_table();
