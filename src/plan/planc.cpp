@@ -559,6 +559,7 @@ execute_camera_script (void *exinfo)
 	  devcli_command (camera, &ret, "filter %i", filter);
 	  if (ret)
 	    fprintf (stderr, "error executing 'filter %i'", filter);
+	  exp_state = NO_EXPOSURE;
 	  break;
 	case COMMAND_PHOTOMETER:
 	  command++;
