@@ -57,6 +57,7 @@ public:
 
 class Rts2DevConnMaster:public Rts2Conn
 {
+  char *device_host;
   char master_host[HOST_NAME_MAX];
   int master_port;
   char device_name[DEVICE_NAME_SIZE];
@@ -69,7 +70,8 @@ protected:
   int informations ();
   int status ();
 public:
-    Rts2DevConnMaster (Rts2Block * in_master, int in_device_port,
+    Rts2DevConnMaster (Rts2Block * in_master,
+		       char *in_device_host, int in_device_port,
 		       char *in_device_name, int in_device_type,
 		       char *in_master_host, int in_master_port);
   int registerDevice ();
@@ -142,6 +144,8 @@ class Rts2Device:public Rts2Block
   int device_type;
 
   int log_option;
+
+  char *device_host;
 
 protected:
   void setStateNames (int in_states_size, char **states_names);

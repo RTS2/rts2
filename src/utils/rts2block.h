@@ -175,7 +175,6 @@ class Rts2Block
 
   int deamonize;
 
-  int argc;
   char **argv;
 
     std::vector < Rts2Option * >options;
@@ -187,7 +186,9 @@ class Rts2Block
 
   int addConnection (int in_sock);
 protected:
-    virtual void help ();
+  int argc;
+
+  virtual void help ();
 
   virtual int processOption (int in_opt);
   int addOption (char in_short_option, char *in_long_option, int in_has_arg,
@@ -223,9 +224,14 @@ public:
   virtual int sendMessage (char *message);
   virtual int sendMessage (char *message, int val1, int val2);
   virtual int idle ();
-  int setTimeout (long int new_timeout)
+  void setTimeout (long int new_timeout)
   {
     idle_timeout = new_timeout;
+  }
+  void setTimeoutMin (long int new_timeout)
+  {
+    if (new_timeout < idle_timeout)
+      idle_timeout = new_timeout;
   }
   int run ();
   int setPriorityClient (int in_priority_client, int timeout);

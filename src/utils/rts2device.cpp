@@ -107,6 +107,7 @@ Rts2DevConn::setHavePriority (int in_have_priority)
 }
 
 Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master,
+				      char *in_device_host,
 				      int in_device_port,
 				      char *in_device_name,
 				      int in_device_type,
@@ -114,6 +115,7 @@ Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master,
 				      int in_master_port):
 Rts2Conn (-1, in_master)
 {
+  device_host = in_device_host;
   device_port = in_device_port;
   strncpy (device_name, in_device_name, DEVICE_NAME_SIZE);
   device_type = in_device_type;
@@ -126,9 +128,12 @@ int
 Rts2DevConnMaster::registerDevice ()
 {
   char *msg;
-  char device_host[HOST_NAME_MAX];
   int ret;
-  ret = gethostname (device_host, HOST_NAME_MAX);
+  if (!device_host)
+    {
+      device_host = new char[HOST_NAME_MAX];
+      ret = gethostname (device_host, HOST_NAME_MAX);
+    }
   if (ret < 0)
     return -1;
   asprintf (&msg, "register %s %i %s %i", device_name, device_type,
@@ -399,8 +404,12 @@ Rts2Block (in_argc, in_argv)
 
   device_type = in_device_type;
 
+  device_host = NULL;
+
   // now add options..
   addOption ('p', "port", 1, "port to listen for request");
+  addOption ('l', "hostname", 1,
+	     "hostname, if it different from return of gethostname()");
   addOption ('s', "centrald_host", 1,
 	     "name of computer, on which central server runs");
   addOption ('q', "centrald_port", 1, "port number of central host");
@@ -448,6 +457,9 @@ Rts2Device::processOption (int in_opt)
       a_port = atoi (optarg);
       setPort (a_port);
       break;
+    case 'l':
+      device_host = optarg;
+      break;
     case 's':
       centrald_host = optarg;
       break;
@@ -493,8 +505,8 @@ Rts2Device::init ()
   openlog (NULL, log_option, LOG_LOCAL0);
 
   conn_master =
-    new Rts2DevConnMaster (this, getPort (), device_name, device_type,
-			   centrald_host, centrald_port);
+    new Rts2DevConnMaster (this, device_host, getPort (), device_name,
+			   device_type, centrald_host, centrald_port);
   connections[0] = conn_master;
 
   while (connections[0]->init () < 0)
