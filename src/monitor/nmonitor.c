@@ -187,7 +187,7 @@ status_receive (struct device *dev, char *str)
 void
 status (WINDOW * wnd, struct device *dev)
 {
-  int ret;
+  int ret = -1;
   curs_set (0);
   status_send (dev, "ready");
   if (!devcli_command (dev, &ret, "ready"))
