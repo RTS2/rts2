@@ -90,7 +90,9 @@ Target::get_info (struct device *cam,
     }
   memcpy (&info->camera, &cam->info, sizeof (struct camera_info));
   memcpy (&info->telescope, &telescope->info, sizeof (struct telescope_info));
-  if (!img_hi_precision && hi_precision == 3 && !strcmp (cam->name, get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA)))
+  if (!img_hi_precision && hi_precision == 3 
+	&& !strcmp (cam->name, get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA))
+	&& type == TARGET_LIGHT)
   {
     closed_loop_precission.hi_precision = 1;
     info->hi_precision = &closed_loop_precission;
@@ -302,7 +304,7 @@ Target::acquire ()
   double ra_err = NAN, dec_err = NAN;	// no astrometry
   double ra_margin = 15, dec_margin = 15;	// in arc minutes
   int max_tries = (int) get_double_default ("maxtries", 5);
-  if (hi_precision == 0)
+  if (hi_precision == 0 || hi_precision == 3)
     return 0;
 
   camera = devcli_find (get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA));
