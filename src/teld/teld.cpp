@@ -135,7 +135,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
   else
-    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING, "move started");
+    maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
   return ret;
 }
 

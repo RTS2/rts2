@@ -85,6 +85,7 @@ public:
    ~Rts2DevTelescopeGemini (void);
   int processOption (int in_opt);
   int init ();
+  int ready ();
   int baseInfo ();
   int info ();
   int startMove (double tar_ra, double tar_dec);
@@ -672,6 +673,12 @@ Rts2DevTelescopeGemini::init ()
   return 0;
 }
 
+int
+Rts2DevTelescopeGemini::ready ()
+{
+  return 0;
+}
+
 /*!
  * Reads information about telescope.
  *
@@ -813,7 +820,9 @@ Rts2DevTelescopeGemini::isMoving ()
   int32_t status;
   if (tel_gemini_get (99, &status) < 0)
     return -1;
-  return !(status & 8);
+  if (status & 8)
+    return 100;
+  return -2;
 }
 
 int
