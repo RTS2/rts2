@@ -31,7 +31,7 @@
 #include "../writers/fits.h"
 #include "status.h"
 
-#define EXPOSURE_TIME	30.0
+#define EXPOSURE_TIME	5.0
 
 float exposure_time = EXPOSURE_TIME;
 
@@ -146,10 +146,11 @@ readout ()
   info->observation_id = -1;
   info->target_type = 1;
   info->camera_name = camera->name;
-  if (devcli_command (camera, NULL, "info") ||
-      !memcpy (&info->camera, &camera->info, sizeof (struct camera_info)) ||
-      !memset (&info->telescope, 0, sizeof (struct telescope_info)) ||
-      devcli_image_info (camera, info)
+  if (devcli_command (camera, NULL, "base_info")
+      || devcli_command (camera, NULL, "info")
+      || !memcpy (&info->camera, &camera->info, sizeof (struct camera_info))
+      || !memset (&info->telescope, 0, sizeof (struct telescope_info))
+      || devcli_image_info (camera, info)
       || devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
 				 CAM_NOEXPOSURE, 0))
     {
@@ -271,6 +272,7 @@ main (int argc, char **argv)
 				}
 
   CAMD_WRITE_READ ("ready");
+  CAMD_WRITE_READ ("base_info");
   CAMD_WRITE_READ ("info");
   CAMD_WRITE_READ ("chipinfo 0");
 
