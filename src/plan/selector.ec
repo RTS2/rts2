@@ -11,7 +11,7 @@
 #include "../utils/config.h"
 
 #include <malloc.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,7 +76,7 @@ select_next_alt (time_t c_start, struct target *plan, float lon, float lat)
   EXEC SQL END DECLARE SECTION;
 
   printf ("C_start: %s", ctime (&c_start));
-  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 
   db_lock ();
@@ -133,14 +133,13 @@ select_next_gps (time_t c_start, struct target *plan, float lon, float lat)
   obs_start -= get_device_double_default ("gps", "interval", 302400);
 
   printf ("C_start: %s", ctime (&c_start));
-  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 
   db_lock ();
 EXEC SQL DECLARE obs_cursor_gps CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets WHERE targets.type_id = 'P' AND NOT EXISTS (SELECT * FROM observations WHERE observations.tar_id = targets.tar_id AND observations.obs_start >:obs_start) AND
     obj_alt
-    (tar_ra,
-tar_dec,: st,: db_lon,:db_lat) > 10 ORDER BY tar_dec ASC, alt DESC;
+    (tar_ra,tar_dec,:st,:db_lon,:db_lat) > 10 ORDER BY tar_dec ASC, alt DESC;
   EXEC SQL OPEN obs_cursor_gps;
   test_sql;
   printf ("\ttar_id\tra\tdec\talt\n");
@@ -197,9 +196,16 @@ select_next_airmass (time_t c_start, struct target *plan,
 
   db_lock ();
   printf ("c_start: %s", ctime (&c_start));
-  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\nairmass: %f\n", st, t_airmass);
-EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az, obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS airmass, img_count FROM targets, targets_images WHERE targets.tar_id = targets_images.tar_id AND targets.type_id = 'S' AND (abs (obj_airmass (tar_ra, tar_dec,: st,: db_lon,: db_lat) -: t_airmass)) < 0.2 AND (obj_az (tar_ra, tar_dec,: st,: db_lon,: db_lat) <: d_az_end OR obj_az (tar_ra, tar_dec,: st,: db_lon,: db_lat) >:d_az_start) ORDER BY
+EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR SELECT targets.tar_id,
+tar_ra, tar_dec, obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az,
+obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS airmass,
+img_count FROM targets, targets_images WHERE targets.tar_id =
+targets_images.tar_id AND targets.type_id = 'S' AND (abs (obj_airmass
+(tar_ra, tar_dec,:st,:db_lon,:db_lat) - :t_airmass)) < 0.2 AND (obj_az
+(tar_ra, tar_dec,:st,:db_lon,:db_lat) < :d_az_end OR obj_az (tar_ra,
+tar_dec,:st,:db_lon,:db_lat) >:d_az_start) ORDER BY
     img_count
     ASC;
   EXEC SQL OPEN obs_cursor_airmass;
@@ -254,9 +260,9 @@ select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
 
   db_lock ();
   printf ("C_start: %s", ctime (&c_start));
-  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
-EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets, grb WHERE type_id = 'G' AND grb_id > 200 AND obj_alt (tar_ra, tar_dec,: st,: db_lon,: db_lat) > 0 and targets.tar_id = grb.tar_id and grb_last_update > abstime (:obs_start - 200000) ORDER BY alt
+EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets, grb WHERE type_id = 'G' AND grb_id > 200 AND obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 0 and targets.tar_id = grb.tar_id and grb_last_update > abstime (:obs_start - 200000) ORDER BY alt
     DESC;
   EXEC SQL OPEN obs_cursor_grb;
   test_sql;
@@ -319,11 +325,11 @@ select_next_to (time_t c_start, struct target *plan, float az_end,
 
   db_lock ();
 #define test_sql if (sqlca.sqlcode < 0) goto err
-  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   st_deg = 15.0 * st;
   printf ("to st: %f\n", st);
 EXEC SQL DECLARE obs_cursor_to CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt, ot_imgcount, EXTRACT (EPOCH FROM ot_minpause) FROM targets, targets_images, ot WHERE ot.tar_id = targets.tar_id AND targets.tar_id = targets_images.tar_id AND type_id = 'O' AND obj_alt (tar_ra, tar_dec,:st,
-: db_lon,: db_lat) > 10 AND not ((: st_deg - tar_ra > 9.0 * 15.0 AND: st_deg - tar_ra < 15.0 * 15.0) OR (: st_deg - tar_ra < -9.0 * 15.0 AND:																							    st_deg - tar_ra > -15.0 * 15.0)) ORDER BY ot_priority DESC,
+:db_lon,:db_lat) > 10 AND not ((:st_deg - tar_ra > 9.0 * 15.0 AND :st_deg - tar_ra < 15.0 * 15.0) OR (:st_deg - tar_ra < -9.0 * 15.0 AND :st_deg - tar_ra > -15.0 * 15.0)) ORDER BY ot_priority DESC,
     img_count ASC, alt DESC,
     ot_imgcount DESC;
   EXEC SQL OPEN obs_cursor_to;
@@ -408,8 +414,8 @@ hete_mosaic (struct target *plan, double jd, time_t * obs_start, int number)
   if ((number % frequency) == 0)
     {
       int step = (number / frequency) % 4;
-      get_equ_solar_coords (jd, &sun);
-      sun.ra = range_degrees (sun.ra - 180 - 12.5 + 25.0 * (step > 1));
+      ln_get_equ_solar_coords (jd, &sun);
+      sun.ra = ln_range_degrees (sun.ra - 180 - 12.5 + 25.0 * (step > 1));
       sun.dec = (-sun.dec) - (10.0 / 2) + 10 * (step % 2);
       add_target (plan, TARGET_LIGHT, 50 + step, -1, sun.ra, sun.dec,
 		  *obs_start, PLAN_TOLERANCE);
@@ -435,16 +441,16 @@ flat_field (struct target *plan, time_t * obs_start, int number, float lon,
   observer.lng = lon;
   observer.lat = lat;
 
-  jd = get_julian_from_timet (obs_start);
+  jd = ln_get_julian_from_timet (obs_start);
 
-  get_equ_solar_coords (jd, &sun);
-  sun.ra = range_degrees (sun.ra);
-  get_hrz_from_equ (&sun, &observer, jd, &sun_az);
-  sun_az.az = range_degrees (sun_az.az + 180.0 - 3 + 2 * (number % 4));
+  ln_get_equ_solar_coords (jd, &sun);
+  sun.ra = ln_range_degrees (sun.ra);
+  ln_get_hrz_from_equ (&sun, &observer, jd, &sun_az);
+  sun_az.az = ln_range_degrees (sun_az.az + 180.0 - 3 + 2 * (number % 4));
   sun_alt = sun_az.alt;
   sun_az.alt = 45 - 3 + 2 * ((number + 2) % 4);
   // ra + dec of antisun..
-  get_equ_from_hrz (&sun_az, &observer, jd, &sun);
+  ln_get_equ_from_hrz (&sun_az, &observer, jd, &sun);
   add_target (plan,
 	      (sun_alt >
 	       get_double_default ("dark_horizont",
@@ -483,7 +489,7 @@ get_next_plan (struct target *plan, int selector_type,
 
   printf ("lon: %f lat: %f\n", lon, lat);
 
-  jd = get_julian_from_timet (obs_start);
+  jd = ln_get_julian_from_timet (obs_start);
   dark_frequency =
     get_double_default ("dark_frequency", DEFAULT_DARK_FREQUENCY);
 
@@ -542,8 +548,8 @@ get_next_plan (struct target *plan, int selector_type,
       observer.lng = lon;
       observer.lat = lat;
 
-      get_lunar_equ_coords (jd, &moon, 0.01);
-      get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);
+      ln_get_lunar_equ_coords (jd, &moon, 0.01);
+      ln_get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);
 
       switch (number & 1)
 	{

@@ -12,9 +12,10 @@ main (int argc, char **argv)
   char *dp;
   db_connect ();
   read_config (CONFIG_FILE);
+  ECPGdebug (1, "log.out");
   db_get_darkfield ("C0", 6000, -50, &dp);
   printf ("dp: %s\n", dp);
-  make_plan (&plan, 120, 6.733, 37.1);
+  make_plan (&plan, 120, -15, 50);
   for (last = plan; last; last = last->next)
     {
       double jd = get_julian_from_timet (&last->ctime);

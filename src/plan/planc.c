@@ -12,7 +12,8 @@
 #define MAX_READOUT_TIME		120
 
 #include <errno.h>
-#include <libnova.h>
+#include <ctype.h>
+#include <libnova/libnova.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +38,26 @@
 #include "../db/db.h"
 #include "../writers/process_image.h"
 
-#define EXPOSURE_TIME		60
+#define EXPOSURE_TIME		2*60
+
+#define COMMAND_EXPOSURE	'E'
+#define COMMAND_FILTER		'F'
+
+struct thread_list
+{
+  pthread_t thread;
+  struct thread_list *next;
+};
+
+struct ex_info
+{
+  struct device *camera;
+  struct target *last;
+};
+
+pthread_mutex_t exposure_count_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t exposure_count_cond = PTHREAD_COND_INITIALIZER;
+int exposure_count = 0;		// number of running exposures..
 
 struct device *telescope;
 
@@ -69,7 +89,8 @@ move (struct target *last)
       object.dec = last->dec;
       observer.lat = telescope->info.telescope.latitude;
       observer.lng = telescope->info.telescope.longtitude;
-      get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
+      ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (),
+			   &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
 
@@ -93,7 +114,8 @@ move (struct target *last)
 }
 
 int
-get_info (struct target *entry, struct device *tel, struct device *cam)
+get_info (struct target *entry, struct device *tel, struct device *cam,
+	  float exposure)
 {
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
@@ -103,7 +125,7 @@ get_info (struct target *entry, struct device *tel, struct device *cam)
   printf ("info camera_name = %s\n", cam->name);
   info->telescope_name = tel->name;
   info->exposure_time = time (NULL);
-  info->exposure_length = EXPOSURE_TIME;
+  info->exposure_length = exposure;
   info->target_id = entry->id;
   info->observation_id = entry->obs_id;
   info->target_type = entry->type;
@@ -142,6 +164,137 @@ generate_next (int i, struct target *plan)
 }
 
 int
+dec_exposure_count (void)
+{
+  pthread_mutex_lock (&exposure_count_mutex);
+  exposure_count--;
+  pthread_cond_broadcast (&exposure_count_cond);
+  pthread_mutex_unlock (&exposure_count_mutex);
+  return 0;
+}
+
+void *
+execute_camera_script (void *exinfo)
+{
+  struct device *camera = ((struct ex_info *) exinfo)->camera;
+  struct target *last = ((struct ex_info *) exinfo)->last;
+  int light;
+  char *command, *s;
+  float exposure;
+  int filter;
+  int ret;
+  time_t t;
+  char s_time[27];
+  int exp_state;
+
+  light = last->type == TARGET_LIGHT;
+  command = get_device_string_default (camera->name, "script", "E D");
+
+  exp_state = 0;
+
+  while (*command)
+    {
+      if (exp_state && !isspace (*command))
+	{
+	  // wait till exposure end..
+	  devcli_command (telescope, NULL, "base_info;info");
+
+	  get_info (last, telescope, camera, exposure);
+
+	  devcli_wait_for_status (camera, "img_chip",
+				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				  1.1 * exposure + 10);
+	  devcli_command (camera, NULL, "readout 0");
+	  devcli_wait_for_status (camera, "img_chip",
+				  CAM_MASK_READING, CAM_NOTREADING,
+				  MAX_READOUT_TIME);
+	  exp_state = 2;
+	}
+      switch (*command)
+	{
+	case COMMAND_EXPOSURE:
+	  command++;
+	  while (isspace (*command))
+	    command++;
+	  if (*command == 'D')
+	    {
+	      exposure = EXPOSURE_TIME;
+	      command++;
+	    }
+	  else
+	    {
+	      exposure = strtof (command, &s);
+	      if (s == command || (!isspace (*s) && *s))
+		{
+		  fprintf (stderr, "invalid arg, expecting float, get %s\n",
+			   s);
+		  command = s;
+		  continue;
+		}
+	      command = s;
+	    }
+	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
+	  if (ret)
+	    {
+	      fprintf (stderr, "error executing 'expose 0 %i %f', ret = %i\n",
+		       light, exposure, ret);
+	      continue;
+	    }
+	  time (&t);
+	  t += exposure;
+	  ctime_r (&t, s_time);
+	  printf ("exposure countdown (%s), readout at %s", camera->name,
+		  s_time);
+	  exp_state = 1;
+	  break;
+	case COMMAND_FILTER:
+	  command++;
+	  filter = strtol (command, &s, 10);
+	  if (s == command || (!isspace (*s) && *s))
+	    {
+	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+	      command = s;
+	      continue;
+	    }
+	  command = s;
+	  devcli_command (camera, &ret, "filter %i", filter);
+	  if (ret)
+	    fprintf (stderr, "error executing 'filter %i'", filter);
+	  break;
+	default:
+	  if (!isspace (*command))
+	    fprintf (stderr,
+		     "Error in executing - unknow command, script is: %s\n",
+		     command);
+	}
+      command++;
+    }
+  if (exp_state)
+    {
+      if (exp_state == 1)
+	{
+	  devcli_command (telescope, NULL, "base_info;info");
+
+	  get_info (last, telescope, camera, exposure);
+
+	  devcli_wait_for_status (camera, "img_chip",
+				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				  1.1 * exposure + 10);
+	  dec_exposure_count ();
+	  devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
+	  devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
+				      CAM_MASK_READING, CAM_NOTREADING,
+				      MAX_READOUT_TIME);
+	}
+      else
+	{
+	  dec_exposure_count ();
+	}
+    }
+  return 0;
+}
+
+int
 observe (int watch_status)
 {
   int i = 0;
@@ -150,6 +303,8 @@ observe (int watch_status)
   struct target *last, *plan, *p;
   int exposure;
   int light;
+  struct thread_list thread_l;
+  struct thread_list *tl_top;
 
   struct tm last_s;
 
@@ -160,18 +315,16 @@ observe (int watch_status)
   last = plan->next;
   free (plan);
   plan = last;
+  thread_l.next = NULL;
+  thread_l.thread = 0;
 
   devcli_command (telescope, NULL, "info");
 
   for (; last; last = last->next, p = plan, plan = plan->next, free (p))
     {
       time_t t = time (NULL);
+      struct device *camera;
       struct timeval tv;
-      struct device *camera = devcli_find ("C1");
-      fd_set rdfs;
-
-      FD_ZERO (&rdfs);
-      FD_SET (0, &rdfs);
 
       tv.tv_sec = 0;
       tv.tv_usec = 0;
@@ -181,9 +334,6 @@ observe (int watch_status)
 	      devcli_server ()->statutes[0].status != SERVERD_DUSK &&
 	      devcli_server ()->statutes[0].status != SERVERD_DAWN))
 	break;
-      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
-				  DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 0);
-
       devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
       if (abs (last->ctime - t) > last->tolerance)
@@ -216,16 +366,20 @@ observe (int watch_status)
 		  || last->type == TARGET_FLAT_DARK) ? 1 : EXPOSURE_TIME;
       light = !(last->type == TARGET_DARK || last->type == TARGET_FLAT_DARK);
 
-      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
-				  CAM_MASK_READING, CAM_NOTREADING,
-				  MAX_READOUT_TIME);
+      // wait for thread end..
+      if (thread_l.next)
+	for (tl_top = thread_l.next; tl_top; tl_top = tl_top->next)
+	  pthread_join (tl_top->thread, NULL);
 
       if (obs_id >= 0 && last->id != tar_id)
 	{
-	  if (camera && camera->statutes)
-	    t = camera->statutes[0].last_update;
-	  else
-	    time (&t);
+	  time (&t);
+	  for (camera = devcli_devices (); camera; camera = camera->next)
+	    if (camera->type == DEVICE_TYPE_CCD)
+	      {
+		t = camera->statutes[0].last_update;
+		break;
+	      }
 	  db_end_observation (obs_id, &t);
 	  obs_id = -1;
 	}
@@ -240,14 +394,45 @@ observe (int watch_status)
 	    }
 	  last->obs_id = obs_id;
 	}
+
+      // wait till end of telescope movement
       devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 			      TEL_OBSERVING, 0);
 
-      devcli_command_all (DEVICE_TYPE_CCD, "expose 0 %i %i", light, exposure);
+      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
+				  DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 0);
 
-      printf ("exposure countdown ..%s", ctime (&t));
-      t += EXPOSURE_TIME;
-      printf ("readout at: %s", ctime (&t));
+      // execute exposition scripts
+      tl_top = &thread_l;
+      thread_l.thread = 0;
+      thread_l.next = NULL;
+
+      pthread_mutex_lock (&exposure_count_mutex);
+
+      for (camera = devcli_devices (); camera; camera = camera->next)
+	if (camera->type == DEVICE_TYPE_CCD)
+	  {
+	    struct ex_info *exinfo =
+	      (struct ex_info *) malloc (sizeof (struct ex_info));
+	    tl_top->next =
+	      (struct thread_list *) malloc (sizeof (struct thread_list));
+	    tl_top = tl_top->next;
+	    tl_top->next = NULL;
+
+	    exinfo->camera = camera;
+	    exinfo->last = last;
+
+	    // execute per camera script
+	    if (!pthread_create
+		(&tl_top->thread, NULL, execute_camera_script,
+		 (void *) exinfo))
+	      // increase exposure count list
+	      exposure_count++;
+
+	  }
+
+      pthread_mutex_unlock (&exposure_count_mutex);
+
       while (!last->next)
 	{
 	  printf ("Generating next plan: %p %p %p\n", plan, plan->next, last);
@@ -255,16 +440,15 @@ observe (int watch_status)
 	}
       printf ("next plan #%i: id %i type %i\n", i, last->next->id,
 	      last->next->type);
-      devcli_command (telescope, NULL, "base_info;info");
-      for (camera = devcli_devices (); camera; camera = camera->next)
-	if (camera->type == DEVICE_TYPE_CCD)
-	  get_info (last, telescope, camera);
-      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
-				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  1.1 * exposure + 10);
+      // test, if there is none pending exposure
+      pthread_mutex_lock (&exposure_count_mutex);
+      while (exposure_count > 0)
+	{
+	  pthread_cond_wait (&exposure_count_cond, &exposure_count_mutex);
+	}
       move (last->next);
-      devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
     }
+
   if (obs_id >= 0)
     {
       time_t t;
@@ -320,7 +504,7 @@ main (int argc, char **argv)
 	  break;
 	case 'p':
 	  port = atoi (optarg);
-	  if (port < 1 || port == UINT_MAX)
+	  if (port < 1)
 	    {
 	      printf ("invalid server port option: %s\n", optarg);
 	      exit (EXIT_FAILURE);
@@ -335,7 +519,8 @@ main (int argc, char **argv)
 	    }
 	  break;
 	case 'h':
-	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
+	  printf
+	    ("Options:\n\tport|p <port_num>\t\tport of the server\n\tpriority|r <priority>\t\tpriority to run at\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -399,12 +584,12 @@ main (int argc, char **argv)
       || devcli_command_all (DEVICE_TYPE_CCD, "info") < 0)
     {
       perror ("devcli_write_read_camd camera");
-      return EXIT_FAILURE;
+      //return EXIT_FAILURE;
     }
   if (devcli_command (telescope, NULL, "ready;info") < 0)
     {
       perror ("devcli_write_read telescope");
-      return EXIT_FAILURE;
+      //return EXIT_FAILURE;
     }
 
 //  devcli_set_general_notifier (camera, status_handler, NULL);
