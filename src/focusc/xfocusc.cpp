@@ -96,7 +96,7 @@ public:
   pthread_t thr;
   pthread_attr_t attrs;
 
-    DeviceWindow (char *camera_name, Window root_window);
+    DeviceWindow (char *camera_name, Window root_window, int center);
 
    ~DeviceWindow ()
   {
@@ -114,9 +114,31 @@ public:
 
   }
 
+  int center_exposure (void)
+  {
+    struct camera_info *caminfo = (struct camera_info *) &camera->info;
+    int x, y, w, h;
+		devcli_command (camera, NULL, "chipinfo 0");
+		x = caminfo->chip_info[0].width / 2 - 128;
+		y = caminfo->chip_info[0].height / 2 - 128;
+		w =
+		  x + 256 <
+		  caminfo->chip_info[0].width ? 256 : 
+                        caminfo->chip_info[0].width - x;
+		h =
+		  y + 256 <
+		  caminfo->chip_info[0].height ? 256 : 
+                        caminfo->chip_info[0].height - y;
+		  
+		devcli_command (camera, NULL, "box 0 %i %i %i %i", x, y, w, h);
+		printf
+		  ("reading frame center [%i,%i:%i,%i]!!\n==============\n",
+		   x, y, x + w, y + h);
+  }
+
+
   void *event_loop (void *arg)
   {
-    int x, y, w, h;
     struct camera_info *caminfo = (struct camera_info *) &camera->info;
     while (1)
       {
@@ -171,25 +193,12 @@ public:
 		  exposure_time -= 0.01;
 		break;
 	      case XK_f:
-		devcli_command (camera, NULL, "box -1 -1 -1 -1");
+		devcli_command (camera, NULL, "box 0 -1 -1 -1 -1");
 		printf ("reading FULL FRAME!!\n================");
+		break;
 	      case XK_c:
-		devcli_command (camera, NULL, "chipinfo 0");
-		x = caminfo->chip_info[0].width / 2 - 128;
-		y = caminfo->chip_info[0].height / 2 - 128;
-		w =
-		  x + 256 <
-		  caminfo->chip_info[0].width ? 256 : 
-                        caminfo->chip_info[0].width - x;
-		h =
-		  y + 256 <
-		  caminfo->chip_info[0].height ? 256 : 
-                        caminfo->chip_info[0].height - y;
-		  
-		devcli_command (camera, NULL, "box %i %i %i %i", x, y, w, h);
-		printf
-		  ("reading frame center [%i,%i:%i,%i]!!\n==============\n",
-		   x, y, x + w, y + h);
+		center_exposure ();
+		break;
               case XK_p:
                 devcli_command_all (DEVICE_TYPE_PHOT, "integrate 5 10");
                 break;
@@ -428,7 +437,7 @@ public:
 
 };
 
-DeviceWindow::DeviceWindow (char *camera_name, Window root_window)
+DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center)
 {
   XSetWindowAttributes xswa;
 
@@ -461,6 +470,10 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window)
       printf ("**** Cannot find camera\n");
       exit (EXIT_FAILURE);
     }
+  if (center)
+  {
+    center_exposure ();
+  }
   camera->data_handler_args = this;
   camera->data_handler = static_data_handler;
 
@@ -500,6 +513,8 @@ main (int argc, char **argv)
 
   struct device *phot;
 
+  int center = 0;
+
   int c = 0;
 
 #ifdef DEBUG
@@ -513,11 +528,12 @@ main (int argc, char **argv)
     {
       static struct option long_option[] = {
 	{"device", 1, 0, 'd'},
+	{"center", 0, 0, 'c'},
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "d:c:p:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -534,11 +550,15 @@ main (int argc, char **argv)
 	      exit (1);
 	    }
 	  break;
+	case 'c':
+	  center = 1;
+	  break;
 	case 'p':
 	  port = atoi (optarg);
 	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n");
+	  printf ("\tcenter|c\t\tstart center exposure\n");
 	  printf ("Keys:\n"
 		  "\t1,2,3 .. binning 1x1, 2x2, 3x3\n"
 		  "\tq,a   .. increase/decrease exposure 0.01 sec\n"
@@ -607,7 +627,7 @@ main (int argc, char **argv)
 
   for (i = 0; i < camera_num; i++)
     {
-      camera_window[i] = new DeviceWindow (camera_names[i], root_window);
+      camera_window[i] = new DeviceWindow (camera_names[i], root_window, center);
     }
 
   printf ("waiting end\n");
