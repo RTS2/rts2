@@ -50,6 +50,21 @@ LIBS="-lpthread $LIBS"; AC_SUBST(LIB_PTHREAD), [cat << EOF
 EOF
 exit 1])
 
+WWWUSER="none"
+
+AC_MSG_CHECKING(for httpd.conf)
+httpd_conf=`find /etc /usr/local/etc -name httpd.conf 2>/dev/null`
+if test "z"httpd_conf = "z" ; then
+	AC_MSG_RESULT(none found)
+else
+	AC_MSG_RESULT($httpd_conf)
+	AC_MSG_CHECKING(for User in httpd.conf)
+	WWWUSER=`grep '^User ' $httpd_conf | sed -e "s/\(.*User *\| *$\)//"`
+	AC_MSG_RESULT($WWWUSER)
+fi
+
+AC_SUBST(WWWUSER)
+
 #debug="-DDEBUG"
 debug=""
 AC_SUBST(debug)
@@ -94,8 +109,10 @@ AC_OUTPUT([Makefile
 	   src/grb/Makefile
 	   src/grb/bacodine/Makefile
 	   src/grb/ibas/Makefile
+	   src/imgd/Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
+	   src/plan/sql/create_tables.sql
 	   src/plan/pgsql/Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile

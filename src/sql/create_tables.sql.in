@@ -47,6 +47,7 @@ CREATE TABLE darks (
 	dark_date	timestamp,
 	dark_exposure	integer,
 	dark_temperature integer,
+	epoch_id	char(3) NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name)
 );
 
@@ -57,6 +58,7 @@ CREATE TABLE flats (
 	flat_date	timestamp,
 	flat_exposure	integer,
 	flat_temperature integer,
+	epoch_id	char(3) NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name)
 );
 
@@ -113,12 +115,12 @@ CREATE VIEW images_nights AS
 		extract (year from (img_date - interval '12:0:0')) AS img_year
 		FROM images;
 
-GRANT SELECT ON grb TO "www-data";
-GRANT SELECT ON targets TO "www-data";
-GRANT SELECT ON observations TO "www-data";
-GRANT SELECT ON ot TO "www-data";
-GRANT SELECT ON cameras TO "www-data";
-GRANT SELECT ON mounts TO "www-data";
+GRANT SELECT ON grb TO "@WWWUSER@";
+GRANT SELECT ON targets TO "@WWWUSER@";
+GRANT SELECT ON observations TO "@WWWUSER@";
+GRANT SELECT ON ot TO "@WWWUSER@";
+GRANT SELECT ON cameras TO "@WWWUSER@";
+GRANT SELECT ON mounts TO "@WWWUSER@";
 
 GRANT ALL ON grb TO GROUP observers;
 GRANT ALL ON targets TO GROUP observers;
