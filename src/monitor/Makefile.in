@@ -1,7 +1,7 @@
 all: nmonitor
 
 CFLAGS = @CFLAGS@ -I@top_srcdir@/include
-LDFLAGS = @LDFLASG@ @LIB_NCURSES@ @LIB_PTHREAD@ @LIB_M@
+LDFLAGS = @LDFLAGS@ @LIB_NCURSES@ @LIB_PTHREAD@ @LIB_M@
 
 monitor: monitor.o ../utils/devcli.a
 
