@@ -76,14 +76,7 @@ union semun
 int
 tel_status (int *status)
 {
-  union semun sem_un;
-  *status = 0;
-  if (semctl (semid, SEM_MOVE, IPC_STAT, &sem_un) < 0)
-    {
-      syslog (LOG_ERR, "semctl: %m");
-      return -1;
-    }
-  *status |= sem_un.val ? TEL_MOVING : TEL_STILL;
+  *status = semctl (semid, SEM_MOVE, GETVAL) ? TEL_STILL : TEL_MOVING;
   return 0;
 }
 
@@ -119,7 +112,6 @@ tel_read (char *buf, int count)
 	  errno = EIO;
 	  return -1;
 	}
-      syslog (LOG_DEBUG, "readed: %c", buf[readed]);
     }
   return readed;
 }
@@ -200,10 +192,9 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
   if (tel_write (wbuf, wcount) < 0)
     goto unlock;
 
-  syslog (LOG_DEBUG, "LX200:will read %i", rcount);
   tmp_rcount = tel_read (rbuf, rcount);
 
-  syslog (LOG_DEBUG, "LX200:will read %i %m", tmp_rcount);
+  syslog (LOG_DEBUG, "LX200:readed %i", tmp_rcount);
 
 unlock:
 
@@ -287,7 +278,10 @@ tel_read_hms (double *hmsptr, char *command)
 int
 tel_read_ra (double *raptr)
 {
-  return tel_read_hms (raptr, "#:GR#");
+  if (tel_read_hms (raptr, "#:GR#"))
+    return -1;
+  *raptr *= 15.0;
+  return 0;
 }
 
 /*!
@@ -399,6 +393,7 @@ tel_write_ra (double ra)
 {
   char command[14];
   int h, m, s;
+  ra = ra/15;
   if (ra < 0)
     ra = floor (ra / 24) * -24 + ra;	//normalize ra
   if (ra > 24)
@@ -474,19 +469,24 @@ telescope_init (const char *device_name, int telescope_id)
       return -1;
     }
 
-  if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
+  if ((semid = semget (ftok (device_name, 0), 2, 0644)) < 0)
     {
-      syslog (LOG_ERR, "semget: %m");
-      return -1;
+      if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
+	{
+	  syslog (LOG_ERR, "semget: %m");
+	  return -1;
+	}
+      sem_un.array = sem_arr;
+
+      if (semctl (semid, 0, SETALL, sem_un) < 0)
+	{
+	  syslog (LOG_ERR, "semctl init: %m");
+	  return -1;
+	}
+
     }
 
-  sem_un.array = sem_arr;
-
-  if (semctl (semid, 0, SETALL, sem_un) < 0)
-    {
-      syslog (LOG_ERR, "semctl init: %m");
-      return -1;
-    }
+  semctl (semid, 1, IPC_RMID);
 
   syslog (LOG_DEBUG, "LX200:Initialization complete");
 
@@ -530,8 +530,6 @@ telescope_init (const char *device_name, int telescope_id)
 extern void
 telescope_done ()
 {
-  if (semctl (semid, 1, IPC_RMID) < 0)
-    syslog (LOG_ERR, "semctl %i IPC_RMID: %m", semid);
 }
 
 /*!
@@ -655,8 +653,8 @@ tel_check_coords (double ra, double dec)
     return -1;
   err_ra -= ra;
   err_dec -= dec;
-  if (fabs (err_ra) > 0.05 || fabs (err_dec) > 0.5)
-    return 1;
+  if (fabs (err_ra) > 0.5 || fabs (err_dec) > 0.5)
+    return -1;
   return 0;
 }
 
@@ -694,7 +692,7 @@ tel_move_to (double ra, double dec)
       goto unlock;
     }
   timeout = time (NULL) + 100;	// it's quite reasonably to hope that call will not fail
-  while ((time (NULL) <= timeout) && (!tel_check_coords (ra, dec)))
+  while ((time (NULL) <= timeout) && (tel_check_coords (ra, dec)))
     sleep (2);
   // wait for a bit, telescope get confused?? when you check for ra 
   // and dec often and sometime doesn't move to required location
