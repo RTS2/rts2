@@ -1,6 +1,9 @@
 Please skip to "Basic Installation" if you are not performing
 installation from CVS.
 
+Note 1: you need to have libtool installed (apt-get install libtool on Debian),
+otherwise it will not work. I'll investigate that.
+
 Note 2: make usually doesn't work right from rts2 dir, unless you are
 in X and have recent version of Dia..you should change to src subdir,
 and then type make followed as root by make install.things will be
