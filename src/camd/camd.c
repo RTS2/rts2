@@ -27,7 +27,7 @@
 #include "sex_interface.h"
 
 // Should be short: to beat the telescope drift because of bad tracking
-#define FOCUS_EXPOSURE 10.0
+#define FOCUS_EXPOSURE 20.0
 // Something like 20*[f-ratio]
 #define FOCUS_USTEP	200
 #endif /* FOCUSING */
@@ -45,6 +45,8 @@
 #define MAX_CHIPS		2
 
 int sbig_port;			// default sbig camera port is 2
+
+static float cooltemp;
 
 struct camera_info info;
 
@@ -346,7 +348,7 @@ start_focusing (void *arg)
       write_fits (filename, exp_time, x, x, img1);
 
       r = sexi_fwhm (filename + 1, &fwhm[j]);
-      devser_dprintf ("%s", sexi_text);
+//      devser_dprintf ("sexi text %s", sexi_text);
 
       if (r)
 	goto err;
@@ -464,6 +466,13 @@ clean_focusing_cancel (void *arg)
 
 #endif /* FOCUSING */
 
+int
+set_cool_hold ()
+{
+  if (isnan (cooltemp))
+    return camera_cool_hold ();
+  return camera_cool_setpoint (cooltemp);
+}
 
 // macro for chip test
 #define get_chip  \
@@ -843,7 +852,7 @@ camd_handle_command (char *command)
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
-      cam_call (camera_cool_hold ());
+      cam_call (set_cool_hold ());
       devdem_priority_block_end ();
     }
   else if (strcmp (command, "cooltemp") == 0)
@@ -938,7 +947,7 @@ camd_handle_status (int status, int old_status)
     case SERVERD_NIGHT:
     case SERVERD_DUSK:
     case SERVERD_DAWN:
-      ret = camera_cool_hold ();
+      ret = set_cool_hold ();
       break;
     default:			/* SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF */
       ret = camera_cool_shutdown ();
@@ -963,13 +972,15 @@ main (int argc, char **argv)
 
   int ret;
 
-#ifdef DEBUG
+//#ifdef DEBUG
   mtrace ();
-#endif
+//#endif
 
   strcpy (device_name, DEVICE_NAME);
 
   sbig_port = 0;
+
+  cooltemp = NAN;
 
   /* get attrs */
   while (1)
@@ -990,21 +1001,24 @@ main (int argc, char **argv)
 #ifdef MIRROR
 	{"mirror_dev", 1, 0, 'm'},
 #endif /* MIRROR */
+	{"cooltemp", 1, 0, 'c'},
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
 #ifdef FOCUSING
 #ifdef MIRROR
       c =
-	getopt_long (argc, argv, "l:o:e:u:m:p:is:q:d:f:h", long_option, NULL);
+	getopt_long (argc, argv, "l:o:e:u:m:p:is:q:d:f:c:h", long_option,
+		     NULL);
 #else
-      c = getopt_long (argc, argv, "l:o:e:u:p:is:q:d:f:h", long_option, NULL);
+      c =
+	getopt_long (argc, argv, "l:o:e:u:p:is:q:d:f:c:h", long_option, NULL);
 #endif /* MIRROR */
 #else
 #ifdef MIRROR
-      c = getopt_long (argc, argv, "l:p:m:is:q:d:f:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:p:m:is:q:d:f:c:h", long_option, NULL);
 #else
-      c = getopt_long (argc, argv, "l:p:is:q:d:f:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:p:is:q:d:f:c:h", long_option, NULL);
 #endif /* MIRROR */
 #endif /* FOCUSING */
 
@@ -1064,6 +1078,9 @@ main (int argc, char **argv)
 	    }
 	  break;
 #endif /* MIRROR */
+	case 'c':
+	  cooltemp = atof (optarg);
+	  break;
 	case 0:
 	  printf
 	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd\n");
@@ -1114,6 +1131,8 @@ main (int argc, char **argv)
 
   syslog (LOG_DEBUG, "registering on %s:%i as %s", serverd_host, serverd_port,
 	  device_name);
+
+  syslog (LOG_DEBUG, "cooltemp: %f", cooltemp);
 
   if (devdem_register
       (serverd_host, serverd_port, device_name, DEVICE_TYPE_CCD, hostname,
