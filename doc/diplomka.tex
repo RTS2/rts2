@@ -2,69 +2,60 @@
 \usepackage{doc}
 \usepackage{czech}
 \usepackage{graphics}
-	\usepackage{amssymb}
-	\usepackage{makeidx}
-	\usepackage{times}
-	% \usepackage{doxygen/latex/doxygen}
-	\makeindex
+\usepackage{amssymb}
+\usepackage{makeidx}
+\usepackage{times}
+% \usepackage{doxygen/latex/doxygen}
+\makeindex
 
-	\begin{document}
+\begin{document}
 
-	\include{macros}
+\include{macros}
 
-	\include{prvni.tex}
+\pagestyle{empty}
 
-	% úvod
+\include{prvni}
 
-	{\it "Given that there are many telescopes, computers, and inventive
-	amateur and professional astronomers, it is only human nature that
-	successful attemps (and a few unsuccessful ones!) will be made to get
-	computer to control a telescope"} \\
-	\cite{telcontrol}
+% úvod
 
-	\newpage
+{\it "Given that there are many telescopes, computers, and inventive
+amateur and professional astronomers, it is only human nature that
+successful attemps (and a few unsuccessful ones!) will be made to get
+computer to control a telescope"} \\
+\cite{telcontrol}
+\newpage
 
-	% obsah
-	\tableofcontents
+\pagestyle{headings}
+\pagenumbering{roman}
+% obsah
+\tableofcontents
+% zaèátek kapitol
+\pagenumbering{arabic}
+\include{zadani}
+\include{uvod}
+\include{design}
+\include{server}
+\include{client}
+\include{db}
+\include{implementace}
+\include{ide}
+\include{srovnani}
+\appendix
 
-	% zaèátek kapitol
+\include{protokoly}
 
-	\include{zadani}
+\include{ide}
+\include{rts-1-zadani}
 
-	\include{uvod}
+\include{cas}
 
-	\include{design}
+\include{refs}
 
-	\include{server}
+\include{slovnik}
 
-	\include{client}
+\listoffigures
 
-	\include{db}
-
-	\include{ide}
-
-	\include{srovnani}
-
-	\appendix
-
-	\include{protokoly}
-
-	\include{ide}
-
-	\include{rts-1-zadani}
-
-	\include{cas}
-
-	\include{refs}
-
-	\include{slovnik}
-
-	\listoffigures
-
-	% \include{doxygen/latex/refman}
-
+% \include{doxygen/latex/refman}
 % \newpage
-
 % \printindex
-
 \end{document}

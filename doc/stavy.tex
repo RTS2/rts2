@@ -2,9 +2,8 @@
 
 Ka¾dé zaøízení a centrální server má pole stavù. Stav je bitová maska. Podle
 stavu zaøízení lze rozpoznat, jestli server provádí dlouhotrvající funkce.
-Zmìna stavu je distribuována na v¹echny pøipojené procesy, mimo centrálního
-serveru.
+O zmìnì stavu jsou informovány v¹echny pøipojené klienti a zaøízení.
 
 Zaøízení mají navíc jeden speciální stav. Ten urèuje, jestli má klient
-pøístup k exekuèním funkcím na daném zaøízení. Zmìna tohoto stavu je
-oznamována pouze procesùm, kterých se zmìna týká.
+pøístup k exekuèním funkcím. Zmìna tohoto stavu je oznamována pouze procesùm,
+kterých se zmìna týká.

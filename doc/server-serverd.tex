@@ -12,19 +12,25 @@ být napøíklad nepøíznivé poèasí, pøípadnì technické problémy.
 nebì¾í ¾ádné úlohy. Lze pouze uva¾ovat o provádìní výpoèetnì nároèných úkolù
 souvisejících se zpracováním dat z minulých pozorování.
 
-\item[dusk] systém se pøipravuje na pozorování. Pøechod do tohoto stavu slou¾í
-jako informace pro zaøízení, aby se pøipravila k pozorování. Napøíklad zapne
-se chlazení kamer, v pøípadì jasného poèasí se otevøe støecha. Stav zaèíná v
-pevnì danou dobu pøed pøechodem do stavu night.
+\item[evening] veèer. Systém se pøipravuje na pozorování. Pøechod do tohoto
+stavu slou¾í jako informace pro zaøízení, aby se pøipravila k pozorování.
+Napøíklad se zaène s chlazením kamer, otevøe se støecha. Stav zaèíná v pevnì
+danou dobu pøed západem Slunce.
 
-\item[night] systém je plnì pøipraven na pozorování. Pozoruje se. Stav trvá od
-západu po východ Slunce. V tomto stavu nutnì nemusí být temné nebe, stav pouze
-øíká, ¾e Slunce ji¾ není vidìt. Tento stav nabere ohledy na astronomický
-soumrak - s moderní CCD technikou lze pozorovat ji¾ chvíli po západu Slunce,
-tak¾e pro pozorování GRB má význam napøíklad i pozorování tìsnì po západu
-Slunce.
+\item[dusk] soumrak. Systém je pøipraven na pozorování. Obloha je svìtlá, nemá
+smysl provádìt dlouhodobá pozorování. Lze provádìt pozorování jasných objektù
+- pokud dojde v tomto okam¾iku ke gama záblesku, má význam ho pozorovat. Jinak
+je vhodné poøizovat kalibraèní snímky.
 
-\item[dawn] stav pro ukonèení pozorování. Lze uva¾ovat napøíklad o poøizování
-korekèních snímkù, apod. Trvá od konce stavu night po pevnì urèenou dobu.
+\item[night] noc. Systém je plnì pøipraven na pozorování, obloha je temná.
+Pozoruje se. Délka trvání stavu se schoduje s astronomickou nocí.
+
+\item[dawn] rozbøesk. Stav podobný soumraku, vhodný pro pozorování jasných
+objektù nebo poøizování kalibraèních snímkù. Trvá od konce astronomické noci
+po východ Slunce.
+
+\item[morning] ráno. Stav pro ukonèení pozorování. Vypíná se chlazení kamer,
+parkuje dalekohled, zavírá støecha, zpracovávají korekèní snímky.  Trvá od
+východu slunce po pevnì urèenou dobu.
 
 \end{description}

@@ -19,7 +19,7 @@
 Korekce jsou poèítány z pozice dalekohledu v dobì expozice a skuteèené pozice
 støedu snímkù, zji¹tìné dodateènou astrometrií. Oznaème $a$ pozici dalekohledu
 v dobì expozice, $b$ dodateènì zji¹tìnou pozici, pak zji¹tìná chyba $\delta$
-je rovna $a - b$. Pokud by jsme meli jenom jednu korekci, staèí zmìnit o tuto
+je rovna $a - b$. Pokud byjsme mìli jenom jednu korekci, staèí zmìnit o tuto
 hodnotu èítaèe dalekohledu, tedy nastavit je na hodnotu $a` - \delta$, kde
 $a`$ je aktuální pozice dalekohledu v dobì aplikace chyby.
 
@@ -45,7 +45,11 @@ dobu. Mù¾e nastat i tato situace:
 V tomto okam¾iku je potøeba zmìnit hodnoty èítaèe o $\delta_2$ - $\delta_1$.
 Obecnì je potøeba mìnit èítaèe pro snímek $img_a$ o 
 
-{\center $\delta_c - \sum\limits_{i=a}^{c-1} \delta_i$}
+\begin{center}
+
+$\delta_c - \sum\limits_{i=a}^{c-1} \delta_i$
+
+\end{center}
 
 Tohoto cíle je v ovládání serveru dosa¾eno pomocí cyklické fronty a promìnné
 $correction\_mark$. Promìnná $correction\_mark$ neudává index snímku, je
