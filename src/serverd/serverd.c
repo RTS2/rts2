@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 
 #include "../utils/devser.h"
+#include "../utils/location.h"
 #include "status.h"
 
 #define PORT	5557
@@ -59,6 +60,7 @@ struct client
 struct serverd_info
 {
   int priority_client;
+  int last_client;		// last client id
 
   int current_state;
 
@@ -316,7 +318,6 @@ clients_change_priority (time_t timeout)
 	}
     }
 
-
   // change priority and find new client with highest priority
   for (i = 0; i < MAX_CLIENT; i++)
     {
@@ -343,8 +344,8 @@ serverd_riseset_thread (void *arg)
   struct ln_lnlat_posn obs;
   syslog (LOG_DEBUG, "riseset thread start");
 
-  obs.lng = -14.95;
-  obs.lat = 50;
+  obs.lng = get_longtitude ();
+  obs.lat = get_latititude ();
 
   while (1)
     {
@@ -621,7 +622,8 @@ serverd_handle_command (char *command)
 	  devser_shm_data_lock ();
 
 	  // find not used client
-	  for (i = 0; i < MAX_CLIENT; i++)
+	  for (i = (shm_info->last_client + 1) % MAX_CLIENT; i < MAX_CLIENT;
+	       i = (i + 1) % MAX_CLIENT)
 	    if (!*shm_clients[i].login)
 	      {
 		shm_clients[i].authorized = 0;
@@ -637,7 +639,7 @@ serverd_handle_command (char *command)
 		  }
 		break;
 	      }
-
+	  shm_info->last_client = i;
 	  devser_shm_data_unlock ();
 
 	  if (i == MAX_CLIENT)
@@ -775,6 +777,7 @@ main (void)
 
   shm_info->current_state = 0;
   shm_info->priority_client = -1;
+  shm_info->last_client = 0;
 
   devser_thread_create (serverd_riseset_thread, NULL, 0, NULL, NULL);
 
