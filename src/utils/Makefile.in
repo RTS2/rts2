@@ -1,6 +1,6 @@
 # $Id$
 
-BIN=test
+BIN=test msgread
 
 all: devdem.a devser.a devcli.a test $(BIN)
 
