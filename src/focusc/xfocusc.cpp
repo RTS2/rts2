@@ -21,6 +21,7 @@
 #include <pthread.h>
 #include <mcheck.h>
 #include <getopt.h>
+#include <math.h>
 
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
@@ -605,9 +606,9 @@ main (int argc, char **argv)
   // allocate colormap..
   for (int i = 0; i < 256; i++)
     {
-      rgb[i].red = 65536 * (1.0 * i / 256);
-      rgb[i].green = 65536 * (1.0 * i / 256);
-      rgb[i].blue = 65536 * (1.0 * i / 256);
+      rgb[i].red = (unsigned short) (65536 * (1.0 * i / 256));
+      rgb[i].green = (unsigned short) (65536 * (1.0 * i / 256));
+      rgb[i].blue = (unsigned short) (65536 * (1.0 * i / 256));
       rgb[i].flags = DoRed | DoGreen | DoBlue;
 
 
