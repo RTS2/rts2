@@ -1,7 +1,0 @@
-LDFLAGS = @LIB_WCS@ @LIB_M@
-CFLAGS = @CFLAGS@
-
-all: wcs2db
-
-clean:
-	$(RM) *.o wcs2db
