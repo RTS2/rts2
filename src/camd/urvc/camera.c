@@ -4,6 +4,8 @@
  * @author mates
  */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -11,13 +13,32 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/io.h>
+#include <syslog.h>
 #include <errno.h>
 #include <pthread.h>
+
+#include <sys/ipc.h>
+#include <sys/sem.h>
 
 #include "mardrv.h"
 #include "../camera.h"
 
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+/* union semun is defined by including <sys/sem.h> */
+#else
+/* according to X/OPEN we have to define it ourselves */
+union semun
+{
+  int val;			/* value for SETVAL */
+  struct semid_ds *buf;		/* buffer for IPC_STAT, IPC_SET */
+  unsigned short int *array;	/* array for GETALL, SETALL */
+  struct seminfo *__buf;	/* buffer for IPC_INFO */
+};
+#endif
+
 int camera_reg;
+
+int semid = -1;			// semaphore ID 
 
 int chips = 0;
 struct chip_info *ch_info = NULL;
@@ -31,6 +52,33 @@ print_error (PAR_ERROR e)
     printf ("%s ", CE_names[e]);
   printf ("(error 0x%02x)\n", e);
   return e;
+}
+
+void
+sem_lock ()
+{
+  struct sembuf sem_buf;
+  sem_buf.sem_num = 0;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = SEM_UNDO;
+  if (semop (semid, &sem_buf, 1) == -1)
+    {
+      syslog (LOG_ERR, "locking semid: %i %m %i", semid, errno);
+      //  exit (EXIT_FAILURE);
+    }
+}
+
+void
+sem_unlock ()
+{
+  struct sembuf sem_buf;
+  sem_buf.sem_num = 0;
+  sem_buf.sem_op = 1;
+  sem_buf.sem_flg = SEM_UNDO;
+  if (semop (semid, &sem_buf, 1) == -1)
+    {
+      syslog (LOG_ERR, "unlocking semid: %i", semid);
+    }
 }
 
 unsigned int
@@ -126,81 +174,91 @@ camera_init (char *device_name, int camera_id)
 {
   int uu;
   int i;
+  union semun sem_un;
+  unsigned short int sem_arr[] = { 1 };
   EEPROMContents eePtr;
   StatusResults gvr;
   QueryTemperatureStatusResults qtsr;
   PAR_ERROR ret = CE_NO_ERROR;
 
-  begin_realtime ();
-
-  if ((uu = getbaseaddr (camera_id)) == 0)
+  if ((semid = semget (ftok (device_name, camera_id), 1, 0644)) == -1)
     {
-      uu = 0x378;
-      //printf ("-p: parport%d not known to kernel, using default\n", camera_id);
-      //return -1;
-    }
-  baseAddress = uu;
-  CameraOut (0x60, 1);
-  ForceMicroIdle ();
+      if ((semid =
+	   semget (ftok (device_name, camera_id), 1, IPC_CREAT | 0644)) == -1)
+	{
+	  syslog (LOG_ERR, "semget %m");
+	  // exit (EXIT_FAILURE);
+	}
+      sem_un.array = sem_arr;
+      if (semctl (semid, 0, SETALL, sem_un) < 0)
+	{
+	  syslog (LOG_ERR, "semctl init: %m");
+	  // exit (EXIT_FAILURE);
+	}
+      sem_lock ();
+      begin_realtime ();
+      if ((uu = getbaseaddr (camera_id)) == 0)
+	{
+	  uu = 0x378;		// defualt
+	}
+      baseAddress = uu;
+      CameraOut (0x60, 1);
+      ForceMicroIdle ();
 
-  DisableLPTInterrupts (baseAddress);
-  /*
-     ECPSetMode(ECP_NORMAL);
-     if((ECPDetectHardware()))
-     printf("Found ECP...\n");
-     else 
-   */
+      DisableLPTInterrupts (baseAddress);
 #ifdef DEBUG
-  printf ("Using SPP on 0x%x\n", baseAddress);
+      printf ("Using SPP on 0x%x\n", baseAddress);
 #endif
+      measure_pp ();
+      if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &gvr)) ||
+	  (ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
+	{
+	  sem_unlock ();
+	  return -1;
+	}
+      // determine temperature regulation state
+      switch (qtsr.enabled)
+	{
+	case 0:
+	  camera_reg = (qtsr.power > 250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF;
+	  break;
+	case 1:
+	  camera_reg = CAMERA_COOL_HOLD;
+	  break;
+	  break;
+	default:
+	  camera_reg = CAMERA_COOL_OFF;
+	}
+      // get camera info
+      if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
+	{
+	  sem_unlock ();
+	  return -1;
+	}
 
-  measure_pp ();
-
-  if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &gvr)) ||
-      (ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
-    {
-      return -1;
-    }
-
-  // determine temperature regulation state
-  switch (qtsr.enabled)
-    {
-    case 0:
-      camera_reg = (qtsr.power > 250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF;
-      break;
-    case 1:
-      camera_reg = CAMERA_COOL_HOLD;
-      break;
-      break;
-    default:
-      camera_reg = CAMERA_COOL_OFF;
-    }
-
-  // get camera info
-  if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
-    return -1;
-
-  if (Cams[eePtr.model].hasTrack)
-    chips = 2;
-  else
-    chips = 1;
-
-  ch_info = (struct chip_info *) malloc (sizeof (struct chip_info) * chips);
-
-  for (i = 0; i < chips; i++)
-    {
-      ch_info[i].width = Cams[eePtr.model].horzImage;
-      ch_info[i].height = Cams[eePtr.model].vertImage;
-      ch_info[i].binning_vertical = 1;
-      ch_info[i].binning_horizontal = 1;
-      ch_info[i].pixelX = Cams[eePtr.model].pixelX;
-      ch_info[i].pixelY = Cams[eePtr.model].pixelY;
-      if (i)
-	ch_info[i].gain = eePtr.trackingGain;
+      if (Cams[eePtr.model].hasTrack)
+	chips = 2;
       else
-	ch_info[i].gain = eePtr.imagingGain;
-    }
+	chips = 1;
 
+      ch_info =
+	(struct chip_info *) malloc (sizeof (struct chip_info) * chips);
+
+      for (i = 0; i < chips; i++)
+	{
+	  ch_info[i].width = Cams[eePtr.model].horzImage;
+	  ch_info[i].height = Cams[eePtr.model].vertImage;
+	  ch_info[i].binning_vertical = 1;
+	  ch_info[i].binning_horizontal = 1;
+	  ch_info[i].pixelX = Cams[eePtr.model].pixelX;
+	  ch_info[i].pixelY = Cams[eePtr.model].pixelY;
+	  if (i)
+	    ch_info[i].gain = eePtr.trackingGain;
+	  else
+	    ch_info[i].gain = eePtr.imagingGain;
+	}
+      sem_unlock ();
+    }
   return 0;
 }
 
@@ -220,17 +278,16 @@ camera_info (struct camera_info *info)
   StatusResults gvr;
   QueryTemperatureStatusResults qtsr;
 
-
+  sem_lock ();
   if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &gvr)))
-    return -1;
+    goto err;
   if ((ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
-    return -1;
+    goto err;
   // get camera info
   if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
-    return -1;
-
-  strcpy (info->type, Cams[5].fullName);
-  strcpy (info->serial_number, "99EEE");
+    goto err;
+  strcpy (info->type, Cams[eePtr.model].fullName);
+  strcpy (info->serial_number, eePtr.serialNumber);
   info->chips = chips;
   info->chip_info = ch_info;
   info->temperature_regulation = camera_reg;
@@ -239,8 +296,11 @@ camera_info (struct camera_info *info)
   info->air_temperature = ambient_ad2c (qtsr.ambientThermistor);
   info->ccd_temperature = ccd_ad2c (qtsr.ccdThermistor);
   info->fan = gvr.fanEnabled;
-
+  sem_unlock ();
   return 0;
+err:
+  sem_unlock ();
+  return -1;
 }
 
 extern int
@@ -249,16 +309,19 @@ camera_fan (int fan_state)
   MiscellaneousControlParams ctrl;
   StatusResults sr;
 
+  sem_lock ();
   if ((MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr)))
-    return -1;
-
+    goto err;
   ctrl.fanEnable = fan_state;
   ctrl.shutterCommand = 0;
   ctrl.ledState = 0;
-
   if (MicroCommand (MC_MISC_CONTROL, ST7_CAMERA, &ctrl, NULL))
-    return -1;
+    goto err;
+  sem_unlock ();
   return 0;
+err:
+  sem_unlock ();
+  return -1;
 }
 
 extern int
@@ -273,17 +336,14 @@ camera_expose (int chip, float *exposure, int light)
   int ty = 0;
   EEPROMContents eePtr;
 
+  sem_lock ();
   begin_realtime ();
 
   if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
     goto imaging_end;
-  eePtr.model = 5;
-
   sep.ccd = eep.ccd = 0;
-
   sep.exposureTime = (int) *exposure * 100;
   sep.openShutter = light;
-
   if ((ret =
        ClearImagingArray (Cams[eePtr.model].vertBefore +
 			  Cams[eePtr.model].vertImage + 1,
@@ -294,12 +354,15 @@ camera_expose (int chip, float *exposure, int light)
   if ((ret = MicroCommand (MC_START_EXPOSURE, ST7_CAMERA, &sep, NULL)))
     goto imaging_end;
 
+  sem_unlock ();
   // wait for completing exp
   do
     {
+      sem_lock ();
       if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr)))
 	goto imaging_end;
 //      usleep(100000);
+      sem_unlock ();
       pthread_testcancel ();
       TimerDelay (100000);
     }
@@ -312,9 +375,10 @@ camera_expose (int chip, float *exposure, int light)
     goto imaging_end;		// width, len, vertBin
   if ((ret = DumpImagingLines (800 / (bin + 1), ty, bin + 1)))
     goto imaging_end;		// width, len, vertBin
+  sem_unlock ();
   return 0;
-
 imaging_end:
+  sem_unlock ();
   return -1;
 }
 
@@ -323,9 +387,14 @@ camera_end_expose (int chip)
 {
   EndExposureParams eep;
   eep.ccd = chip;
+  sem_lock ();
   begin_realtime ();
   if (MicroCommand (MC_END_EXPOSURE, ST7_CAMERA, &eep, NULL))
-    return -1;
+    {
+      sem_unlock ();
+      return -1;
+    }
+  sem_unlock ();
   return 0;
 };
 
@@ -348,45 +417,46 @@ camera_readout_line (int chip_id, short start, short length, void *data)
 {
   PAR_ERROR ret = CE_NO_ERROR;
   int bin = ch_info[chip_id].binning_vertical;
-
+  sem_lock ();
   disable ();
   CameraOut (0x60, 1);
   SetVdd (1);
   if ((ret = DigitizeImagingLine (chip_id, bin, start, length, data)))
     {
       enable ();
+      sem_unlock ();
       printf ("digitize line:%i", ret);
       return -1;
     }
   enable ();
+  sem_unlock ();
 #ifdef DEBUG
   printf ("get line\n");
 #endif /* DEBUG */
-
   return 0;
 };
 
 extern int
 camera_dump_line (int chip_id)
 {
+  sem_lock ();
   if (chip_id == 1)
     {
       if (DumpImagingLines (800, 1, 1))
-	{
-	  return -1;
-	}
-      return 0;
+	goto err;
     }
   else
     {
       if (DumpTrackingLines (800, 1, 1))
-	{
-	  return -1;
-	}
+	goto err;
     }
+  sem_unlock ();
   return 0;
-
+err:
+  sem_lock ();
+  return 0;
 };
+
 extern int
 camera_end_readout (int chip_id)
 {
@@ -402,9 +472,13 @@ camera_cool_max ()		/* try to max temperature */
   cool.preload = 0;
 
   camera_fan (1);
-
+  sem_lock ();
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
-    return -1;
+    {
+      sem_unlock ();
+      return -1;
+    }
+  sem_unlock ();
   camera_reg = CAMERA_COOL_MAX;
   return 0;
 };
@@ -414,16 +488,18 @@ camera_cool_hold ()		/* hold on that temperature */
 {
   QueryTemperatureStatusResults qtsr;
   float ot;			// optimal temperature
-
   if (camera_reg == CAMERA_COOL_HOLD)
     return 0;			// already cooled
-
+  sem_lock ();
   if (MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr))
-    return -1;
-
+    {
+      sem_unlock ();
+      return -1;
+    }
   ot = ccd_ad2c (qtsr.ccdThermistor);
   ot = ((int) (ot + 5) / 5) * 5;
   camera_fan (1);
+  sem_unlock ();
   return camera_cool_setpoint (ot);
 };
 
@@ -435,11 +511,14 @@ camera_cool_shutdown ()		/* ramp to ambient */
   cool.ccdSetpoint = 0;
   cool.preload = 0;
   camera_reg = CAMERA_COOL_OFF;
-
   camera_fan (0);
-
+  sem_lock ();
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
-    return -1;
+    {
+      sem_unlock ();
+      return -1;
+    }
+  sem_unlock ();
   return 0;
 };
 
@@ -453,10 +532,14 @@ camera_cool_setpoint (float coolpoint)	/* set direct setpoint */
   i = ccd_c2ad (coolpoint) + 0x7;	// zaokrohlovat a neorezavat!
   cool.ccdSetpoint = i;
   cool.preload = 0xaf;
-
   camera_fan (1);
+  sem_lock ();
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
-    return -1;
+    {
+      sem_unlock ();
+      return -1;
+    }
   camera_reg = CAMERA_COOL_HOLD;
+  sem_unlock ();
   return 0;
 };
