@@ -33,7 +33,7 @@ AC_SUBST(LIBPG_SERVER_CFLAGS)
 AC_DEFUN(AC_ECPG, 
 [
 if test -z "$ECPG" ; then
-    AC_PATH_PROG( ECPG, ecpg, no )
+    AC_PATH_PROG( ECPG, ecpg, no, "/usr/lib/postgresql/bin" )
 fi
 
 if test "$ECPG" = "no" -o ! -x $ECPG ; then
