@@ -44,8 +44,7 @@ void
 client_move_cancel (void *arg)
 {
   // TODO find directions to stop slew, try if it works
-  // tel_stop_slew ("R");
-  // tel_stop_slew ("D");
+  tel_stop_slew_any ();
   devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
 }
 
@@ -62,6 +61,23 @@ start_move (void *arg)
   else
     {
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move finished");
+    }
+  return NULL;
+}
+
+void *
+start_park (void *arg)
+{
+  int ret;
+  devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+		      "parking telescope started");
+  if ((ret = tel_park ()) < 0)
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
+    }
+  else
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "parked");
     }
   return NULL;
 }
@@ -130,7 +146,7 @@ teld_handle_command (char *command)
     {
       if (devdem_priority_block_start ())
 	return -1;
-      tel_call (tel_park ());
+      devser_thread_create (start_park, NULL, 0, NULL, client_move_cancel);
       devdem_priority_block_end ();
     }
 // extended functions
@@ -184,10 +200,10 @@ teld_handle_command (char *command)
 }
 
 void
-exit_handler (int err, void *args)
+exit_handler ()
 {
-  if (getpid () == devser_parent_pid)
-    tel_cleanup (err, args);
+  if (!devser_child_pid)
+    tel_cleanup ();
   syslog (LOG_INFO, "Exit");
 }
 
@@ -214,7 +230,7 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
-  on_exit (exit_handler, NULL);
+  atexit (exit_handler);
 
   if (tel_connect ("/dev/ttyS0") < 0)
     {
