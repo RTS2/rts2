@@ -87,6 +87,7 @@ start_integrate (void *arg)
   int loop = 0;
   short it_t = req->time;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  phot_command (PHOT_CMD_RESET, 0);
   phot_command (PHOT_CMD_INTEGRATE, it_t);
   while ((ret = read (fd, &result, 2)) != -1)
     {
@@ -191,11 +192,12 @@ phot_handle_command (char *command)
 	return -1;
       if (devser_param_next_integer (&new_filter))
 	return -1;
-      if (devdem_priority_block_start ())
-	return -1;
+//      if (devdem_priority_block_start ())
+//      return -1;
       phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
       devser_dprintf ("filter %i", new_filter);
-      devdem_priority_block_end ();
+//     devdem_priority_block_end ();
+      ret = errno = 0;
     }
 
   else if (strcmp (command, "help") == 0)
