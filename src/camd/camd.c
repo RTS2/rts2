@@ -133,7 +133,8 @@ start_readout (void *arg)
 				line_buff)) != 0)
 	goto err;
 
-      devser_data_put (READOUT->conn_id, line_buff, line_size);
+      if (devser_data_put (READOUT->conn_id, line_buff, line_size))
+	goto err;
     }
 
   camera_end_readout (READOUT->chip);
