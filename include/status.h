@@ -66,3 +66,11 @@
 #define DEVDEM_E_PARAMSVAL	-3	// invalid parameter(s) value
 #define DEVDEM_E_HW		-4	// some HW failure
 #define DEVDEM_E_SYSTEM		-5	// some system error
+
+// Client errors goes together, intersection between devdem and plancomm clients
+// must be empty.
+
+#define PLANCOMM_E_NAMESPACE	-101	//! invalid namespace
+#define PLANCOMM_E_HOSTACCES	-102	//! no route to host and various other problems. See errno for futhre details.
+#define PLANCOMM_E_COMMAND	-103	//! invalid command
+#define PLANCOMM_E_PARAMSNUM	-104	//! invalid number of parameters to system command
