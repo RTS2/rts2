@@ -339,8 +339,6 @@ Rts2DevCamera::checkExposures ()
 	  ret = camWaitExpose (i);
 	  if (ret >= 0)
 	    {
-	      syslog (LOG_DEBUG, "Rts2DevCamera::checkExposures timeout: %li",
-		      ret);
 	      setTimeout (ret);
 	    }
 	  if (ret == -2)
