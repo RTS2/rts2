@@ -1485,7 +1485,7 @@ receive_bacodine (process_grb_event_t arg)
 	       * accordingly.  Insert that code here.
 	       */
 
-	      for (i = 0; i < sizeof (lbuf); i++)
+	      for (i = 0; i < SIZ_PKT; i++)
 		{
 		  lo = lbuf[i] & 0x0000ffff;
 		  hi = (lbuf[i] >> 16) & 0x000ffff;
@@ -1506,7 +1506,7 @@ receive_bacodine (process_grb_event_t arg)
 		  last_here_sod = here_sod;
 		  last_imalive_sod = lbuf[PKT_SOD] / 100.0;
 		  chk_imalive (1, tloc);	/* Pass time of latest imalive */
-		  if (!(lbuf[PKT_SERNUM] % 20))
+		  if (!(lbuf[PKT_SERNUM] % 100))
 		    process_grb (10, test_num++, 270.0, 60, &tloc);
 		  break;
 		  //case TYPE_GRB_COORDS:         /* BATSE-Original (no longer available) */
