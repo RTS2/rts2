@@ -71,7 +71,7 @@ struct devconn_status *statutes;
 
 //! handler functions
 devser_handle_command_t cmd_device_handler;
-devdem_handle_status_t cmd_device_status_handler;
+status_notifier_t server_status_notifier;
 
 //! information about running devices; held in shared memory
 struct client_info
@@ -772,22 +772,6 @@ server_message_priority (struct param_status *params)
     }
 }
 
-/*!
- * Handle status transation - DAY, DUSK, NIGHT, DAWN and so..
- */
-int
-server_message_status (struct param_status *params)
-{
-  int status;
-  if (param_next_integer (params, &status))
-    return -1;
-  if (cmd_device_status_handler)
-    return cmd_device_status_handler (status);
-  else
-    syslog (LOG_INFO, "status handler for device %s not set", device_name);
-  return 0;
-}
-
 int
 server_message_handler (struct param_status *params, void *info)
 {
@@ -795,12 +779,10 @@ server_message_handler (struct param_status *params, void *info)
   if (param_next_string (params, &command))
     return -1;
   syslog (LOG_DEBUG, "server_message_handler command: %s\n", command);
-  if (strcmp (command, "priority") == 0
+
+  if (strcmp (command, "priority_change") == 0
       || strcmp (command, "priority_deferred") == 0)
     return server_message_priority (params);
-
-  if (strcmp (command, "current_state") == 0)
-    return server_message_status (params);
 
   printf ("command: %s\n", command);
   fflush (stdout);
@@ -839,7 +821,7 @@ devdem_on_exit ()
  */
 int
 devdem_init (char **status_names, int status_num_in,
-	     devdem_handle_status_t in_status_handler)
+	     status_notifier_t server_notifier)
 {
   struct devconn_status *st;
   union semun sem_un;
@@ -849,7 +831,7 @@ devdem_init (char **status_names, int status_num_in,
   if (devser_init (sizeof (struct client_info)))
     return -1;
 
-  cmd_device_status_handler = in_status_handler;
+  server_status_notifier = server_notifier;
 
   clients_info = devser_shm_data_at ();
   memset (clients_info, 0, sizeof (struct client_info));
@@ -965,6 +947,8 @@ devdem_register (char *server_host, uint16_t server_port,
       (server_host, server_port, device_name, device_type, device_host,
        device_port, &handlers) < 0)
     return -1;
+
+  devcli_server_set_notifier (server_status_notifier);
 
   devser_set_server_id (SERVER_CLIENT, server_handle_msg);
   return 0;

@@ -234,23 +234,6 @@ devser_dprintf (const char *format, ...)
   return 0;
 }
 
-int
-devser_message (const char *format, ...)
-{
-  int ret;
-  va_list ap;
-  char *msg;
-
-  va_start (ap, format);
-  if (vasprintf (&msg, format, ap) < 0)
-    return -1;
-  va_end (&ap);
-
-  ret = devser_dprintf ("M %s", msg);
-  free (msg);
-  return ret;
-}
-
 /*! 
  * Write ending message to fd. 
  *
