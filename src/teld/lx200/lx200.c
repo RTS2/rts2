@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
