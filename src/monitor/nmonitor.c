@@ -151,7 +151,10 @@ status_dome (WINDOW * wnd, struct device *dev)
   struct dome_info *info = (struct dome_info *) &dev->info;
   mvwprintw (wnd, 1, 1, "Tem: %+2.2f oC", info->temperature);
   mvwprintw (wnd, 2, 1, "Hum: %2.2f %", info->humidity);
-  print_status (wnd, 3, 1, dev);
+  mvwprintw (wnd, 3, 1, "Dome: %i", info->dome);
+  mvwprintw (wnd, 4, 1, "Pow_tel: %i", info->power_telescope);
+  mvwprintw (wnd, 5, 1, "Pow_cam: %i", info->power_cameras);
+  print_status (wnd, 6, 1, dev);
 }
 
 void
@@ -195,17 +198,22 @@ status_receive (struct device *dev, char *str)
 }
 
 void
-status (WINDOW * wnd, struct device *dev)
+status (WINDOW * wnd, struct device *dev, bool requery)
 {
   int ret = -1;
   curs_set (0);
-  status_send (dev, "ready");
-  if (!devcli_command (dev, &ret, "ready"))
+  if (requery)
     {
-      status_send (dev, "info");
-      devcli_command (dev, &ret, "base_info");
-      ret = devcli_command (dev, &ret, "info");
+      status_send (dev, "ready");
+      if (!devcli_command (dev, &ret, "ready"))
+	{
+	  status_send (dev, "info");
+	  devcli_command (dev, &ret, "base_info");
+	  ret = devcli_command (dev, &ret, "info");
+	}
     }
+  else
+    ret = 0;
   wclear (wnd);
 
   if (has_colors ())
@@ -240,7 +248,8 @@ status (WINDOW * wnd, struct device *dev)
 	  status_telescope (wnd, dev);
 	  break;
 	case DEVICE_TYPE_CCD:
-	  devcli_command (dev, NULL, "chipinfo 0");
+	  if (requery)
+	    devcli_command (dev, NULL, "chipinfo 0");
 	  status_camera (wnd, dev);
 	  break;
 	case DEVICE_TYPE_DOME:
@@ -265,7 +274,8 @@ status (WINDOW * wnd, struct device *dev)
 int
 status_change (struct device *dev, char *status_name, int new_state)
 {
-  status ((WINDOW *) dev->notifier_data, dev);
+
+  status ((WINDOW *) dev->notifier_data, dev, false);
   return 0;
 }
 
@@ -401,13 +411,13 @@ main (int argc, char **argv)
 
   devcli_set_general_notifier (devcli_server (), status_change,
 			       wnd[wnd_col * wnd_row - 2]);
-  status (wnd[wnd_col * wnd_row - 2], devcli_server ());
+  status (wnd[wnd_col * wnd_row - 2], devcli_server (), true);
 
   for (i = 0, dev = devcli_devices (); dev && i < (wnd_col - 1) * wnd_row;
        dev = dev->next, i++)
     {
       devcli_set_general_notifier (dev, status_change, wnd[i]);
-      status (wnd[i], dev);
+      status (wnd[i], dev, true);
     }
 
   while (1)
@@ -428,10 +438,10 @@ main (int argc, char **argv)
 	    devcli_server_command (NULL, "on");
 	  break;
 	case KEY_F (5):
-	  status (wnd[wnd_col * wnd_row - 2], devcli_server ());
+	  status (wnd[wnd_col * wnd_row - 2], devcli_server (), true);
 	  for (i = 0, dev = devcli_devices ();
 	       dev && i < (wnd_col - 1) * wnd_row; dev = dev->next, i++)
-	    status (wnd[i], dev);
+	    status (wnd[i], dev, true);
 	  break;
 	case KEY_F (10):
 	  goto end;
