@@ -9,12 +9,20 @@ more easier that way.
 Instalation from CVS
 ====================
 
+   For inpatient (works on Debian/sarge with automake-1.7 installed -
+apt-get install automake-1.7):
+
+petr@omega:~/rts2$ aclocal-1.7
+petr@omega:~/rts2$ automake-1.7 --add-missing
+petr@omega:~/rts2$ autoconf
+petr@omega:~/rts2$ autoheader
+
    You should take all actions which are required to install an
 autoconf & automake based project. Namely, you should make those
 steps:
    
-   Run aclocal, preferably aclocal-1.6 or newer {aclocal-1.6 is then
-name of script) to produce acinclude.m4 from aclocal.m4.
+   Run aclocal, preferably aclocal-1.6 or newer (aclocal-1.6 is then
+name of the script) to produce acinclude.m4 from aclocal.m4.
    
    Run automake --add-missing, preferably automake-1.6 or newer (same
 as to aclocal apply to automake) to produce Makefile.in from
@@ -23,11 +31,21 @@ Makefile.am.
    Run autoconf, preferably autoconf2.50 or newer, to produce
 configure from configure.in.
    
-   Run autoheade, preferably autoheader2.50 or newer, to produce
+   Run autoheader, preferably autoheader2.50 or newer, to produce
 config.h.in in include subdir.
 
    You should end with running ./configure, thus proceeding as
 described bellow.
+
+   Hint: on most distributions, you can easily test, which versions of
+aclocal & so you have, by typing in bash aclocal and pressing enter.
+List as follow will apear:
+
+petr@omega:~$ aclocal
+aclocal      aclocal-1.4  aclocal-1.7  aclocal-1.8
+
+From that, you can easily see that you have versions 1.4, 1.7 and 1.8
+installed.
 
 Basic Installation
 ==================
