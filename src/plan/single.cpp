@@ -129,7 +129,7 @@ observe (int hi_precission)
   plan->next = NULL;
   plan->id = -1;
   ret = generate_next (plan);
-  if (!ret)
+  if (ret)
     return ret;
   last = plan->next;
   last->setHiPrecission (hi_precission);
@@ -138,14 +138,11 @@ observe (int hi_precission)
 
   devcli_command (telescope, NULL, "info");
 
-  for (; last; last = last->next, p = plan, plan = plan->next)
-    {
-      time_t t = time (NULL);
-      struct device *camera;
+  time_t t = time (NULL);
+  struct device *camera;
 
-      // call next observation
-      last->observe (p);
-    }
+  // call next observation
+  last->observe (p);
 
   if (obs_id >= 0)
     {
@@ -153,6 +150,8 @@ observe (int hi_precission)
       time (&t);
       db_end_observation (obs_id, &t);
     }
+
+  last->wait_for_readout_end ();
 
   free (plan);
   return 0;
@@ -192,12 +191,14 @@ main (int argc, char **argv)
 	{
 	 "guidance", 1, 0, 'g'},
 	{
+	 "target_id", 1, 0, 't'},
+	{
 	 "help", 0, 0, 'h'}
 	,
 	{
 	 0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "aip:r:h", long_option, NULL);
+      c = getopt_long (argc, argv, "aip:r:g:t:h", long_option, NULL);
 
       if (c == -1)
 	break;
