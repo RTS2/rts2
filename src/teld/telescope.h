@@ -1,21 +1,7 @@
 #ifndef __RTS_TELESCOPE__
 #define __RTS_TELESCOPE__
 
-struct telescope_info
-{
-  char name[64];
-  char serial_number[64];
-  double ra;
-  double dec;
-  int moving;
-  double park_dec;
-  // geographic informations
-  double longtitude;
-  double latitude;
-  // time information
-  double siderealtime;
-  double localtime;
-};
+#include "telescope_info.h"
 
 extern int telescope_init (const char *device_name, int telescope_id);
 extern void telescope_done ();
