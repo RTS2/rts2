@@ -2,8 +2,13 @@
 #define __RTS_SELECTOR__
 #include <time.h>
 
+#define TARGET_LIGHT	1
+#define TARGET_DARK	2
+#define TARGET_FLAT	3
+
 struct target
 {
+  int type;
   int id;
   int obs_id;
   double ra;

@@ -15,7 +15,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <argz.h>
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -33,6 +35,8 @@
 
 
 int camd_id, teld_id;
+
+char *dark_name = NULL;
 
 #define fits_call(call) if (call) fits_report_error(stderr, status);
 
@@ -55,20 +59,39 @@ data_handler (int sock, size_t size, struct image_info *image)
   char *filename;
   char *dirname;
 
+  char *cmd;
+  FILE *past_out;
+
+  long int id;
+  float ra;
+  float dec;
+  float ra_err;
+  float dec_err;
+
   gmtime_r (&image->exposure_time, &gmt);
 
-  if (asprintf (&dirname, "~/%i", image->target_id))
+  switch (image->target_type)
     {
-      perror ("planc data_handler asprintf");
-      return -1;
+    case TARGET_DARK:
+      if (!asprintf (&dirname, "/darks/%s/", image->camera.name))
+	{
+	  perror ("planc data_handler asprintf");
+	  return -1;
+	}
+      break;
+    default:
+      if (!asprintf
+	  (&dirname, "/images/%s/%i/", image->camera.name, image->target_id))
+	{
+	  perror ("planc data_handler asprintf");
+	  return -1;
+	}
     }
 
   mkpath (dirname, 0777);
 
   strftime (filen, 250, "%Y%m%d%H%M%S.fits", &gmt);
-  asprintf (&filename, "!%s/%s", dirname, filen);
-
-  free (dirname);
+  asprintf (&filename, "!%s%s", dirname, filen);
 
   printf ("filename: %s", filename);
 
@@ -79,6 +102,13 @@ data_handler (int sock, size_t size, struct image_info *image)
       return -1;
     }
 
+  if (image->target_type == TARGET_DARK)
+    {
+      if (dark_name)
+	free (dark_name);
+      dark_name = (char *) malloc (strlen (filename));
+      strcpy (dark_name, filename + 1);
+    }
   free (filename);
 
   printf ("reading data socket: %i size: %i\n", sock, size);
@@ -98,12 +128,77 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   printf ("reading finished\n");
 
-  if (fits_write_image_info (&receiver, image) || fits_close (&receiver))
+  if (fits_write_image_info (&receiver, image, dark_name)
+      || fits_close (&receiver))
     {
       perror ("camc data_handler fits_write");
       return -1;
     }
 
+  switch (image->target_type)
+    {
+    case TARGET_LIGHT:
+      printf ("chdir %s\n", dirname);
+
+      if (chdir (dirname))
+	{
+	  perror ("chdir");
+	  return -1;
+	}
+      free (dirname);
+
+      asprintf (&cmd, "/home/rtopera/bin/detect %s 2>&1", filen);
+      printf ("calling %s.", cmd);
+
+      if (system (cmd))
+	{
+	  perror ("system");
+	  free (cmd);
+	  return -1;
+	}
+
+      free (cmd);
+
+      // now call past..
+      asprintf (&cmd, "/home/rtopera/bin/past %s 2>%s.past", filen, filen);
+      printf ("\ncalling %s.", cmd);
+
+      if (!(past_out = popen (cmd, "r")))
+	{
+	  perror ("popen");
+	  free (cmd);
+	  return -1;
+	};
+
+      free (cmd);
+
+      printf ("OK\n");
+
+      if (fscanf
+	  (past_out, "%li %f %f (%f,%f)", &id, &ra, &dec, &ra_err,
+	   &dec_err) != 5)
+	{
+	  printf ("scanf error, invalid line\n");
+	  return -1;
+	}
+
+      printf ("ra: %f dec: %f ra_err: %f dec_err: %f\n", ra, dec, ra_err,
+	      dec_err);
+
+      return devcli_command (teld_id, NULL, "correct %i %f %f",
+			     image->telescope.correction_mark, ra_err / 60.0,
+			     dec_err / 60.0);
+    case TARGET_DARK:
+      free (dirname);
+
+      printf ("darkname: %s\n", dark_name);
+
+      return db_add_darkfield (dark_name, &image->exposure_time,
+			       image->exposure_length,
+			       image->camera.ccd_temperature * 100);
+    }
+
+  free (dirname);
   return 0;
 #undef receiver
 }
@@ -115,31 +210,71 @@ expose (int target_id, int observation_id, int npic)
   for (; npic > 0; npic--)
     {
       struct image_info *info;
-      time_t t;
+      union devhnd_info *devinfo;
 
       printf ("exposure countdown %i..\n", npic);
       if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
-	  devcli_command (camd_id, NULL, "expose 0 120"))
+	  devcli_command (camd_id, NULL, "expose 0 1 120"))
 	return -1;
-      t = time (NULL);
       info = (struct image_info *) malloc (sizeof (struct image_info));
-      info->exposure_time = t;
+      info->exposure_time = time (NULL);
       info->exposure_length = 120;
       info->target_id = target_id;
       info->observation_id = observation_id;
+      info->target_type = TARGET_LIGHT;
       if (devcli_command (camd_id, NULL, "info") ||
-	  devcli_getinfo (camd_id, (union devhnd_info *) &info->camera) ||
+	  devcli_getinfo (camd_id, &devinfo) ||
+	  !memcpy (&info->camera, devinfo, sizeof (struct camera_info)) ||
 	  devcli_command (teld_id, NULL, "info") ||
-	  devcli_getinfo (teld_id, (union devhnd_info *) &info->telescope) ||
-	  devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
-				  CAM_NOEXPOSURE, 0)
-	  || devcli_image_info (camd_id, info) ||
-	  devcli_command (camd_id, NULL, "readout 0"))
+	  devcli_getinfo (teld_id, &devinfo) ||
+	  !memcpy (&info->telescope, devinfo, sizeof (struct telescope_info))
+	  || devcli_image_info (camd_id, info)
+	  || devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
+				     CAM_NOEXPOSURE, 0)
+	  || devcli_command (camd_id, NULL, "readout 0"))
 	{
 	  free (info);
 	  return -1;
 	}
+      free (info);
+    }
+  return 0;
+}
+
+int
+dark (int npic)
+{
+  devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
+  for (; npic > 0; npic--)
+    {
+      struct image_info *info;
+      union devhnd_info *devinfo;
+
+      printf ("exposure countdown %i..\n", npic);
+      if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
+				  CAM_NOTREADING, 0) ||
+	  devcli_command (camd_id, NULL, "expose 0 0 120"))
+	return -1;
+      info = (struct image_info *) malloc (sizeof (struct image_info));
+      info->exposure_time = time (NULL);
+      info->exposure_length = 120;
+      info->target_type = TARGET_DARK;
+      if (devcli_command (camd_id, NULL, "info") ||
+	  devcli_getinfo (camd_id, &devinfo) ||
+	  !memcpy (&info->camera, devinfo, sizeof (struct camera_info)) ||
+	  devcli_command (teld_id, NULL, "info") ||
+	  devcli_getinfo (teld_id, &devinfo) ||
+	  !memcpy (&info->telescope, devinfo, sizeof (struct telescope_info))
+	  || devcli_image_info (camd_id, info)
+	  || devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
+				     CAM_NOEXPOSURE, 0)
+	  || devcli_command (camd_id, NULL, "readout 0"))
+	{
+	  free (info);
+	  return -1;
+	}
+      free (info);
     }
   return 0;
 }
@@ -198,7 +333,11 @@ main (int argc, char **argv)
 
   /* connect to db */
 
-  db_connect ();
+  if (c == db_connect ())
+  {
+	fprintf (stderr, "cannot connect to db, SQL error code: %i\n", c);
+  	exit (EXIT_FAILURE);
+  }
 
   printf ("connecting to %s:%i\n", server, port);
 
@@ -227,14 +366,14 @@ main (int argc, char **argv)
 
 #define CAMD_WRITE_READ(command) if (devcli_command (camd_id, NULL, command) < 0) \
   				{ \
-      		                  perror ("devcli_write_read"); \
-				  exit (EXIT_FAILURE); \
+      		                  perror ("devcli_write_read_camd"); \
+				  return EXIT_FAILURE; \
 				}
 
 #define TELD_WRITE_READ(command) if (devcli_command (teld_id, NULL, command) < 0) \
   				{ \
-      		                  perror ("devcli_write_read"); \
-				  exit (EXIT_FAILURE); \
+      		                  perror ("devcli_write_read_teld"); \
+				  return EXIT_FAILURE; \
 				}
   CAMD_WRITE_READ ("ready");
   CAMD_WRITE_READ ("info");
@@ -242,13 +381,18 @@ main (int argc, char **argv)
   TELD_WRITE_READ ("ready");
   TELD_WRITE_READ ("info");
 
+  umask (0x002);
+
+  printf ("Making plan... \n");
+  fflush (stdout);
   // make plan
   make_plan (&plan);
+  printf ("...plan made\n");
+  fflush (stdout);
 
   for (last = plan; last; plan = last, last = last->next, free (plan))
     {
       time_t t = time (NULL);
-      int obs_id;
 
       if (last->ctime < t)
 	{
@@ -266,21 +410,27 @@ main (int argc, char **argv)
 
       printf ("waiting end\n");
 
-      {
-	struct ln_equ_posn object;
-	struct ln_lnlat_posn observer;
-	struct ln_hrz_posn hrz;
-	object.ra = last->ra;
-	object.dec = last->dec;
-	observer.lat = 50;
-	observer.lng = -15;
-	get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
-	printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
-	printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
-      }
-      if (devcli_command (teld_id, NULL, "move %f %f", last->ra, last->dec))
+      if (last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
 	{
-	  printf ("telescope error\n\n--------------\n");
+	  {
+	    struct ln_equ_posn object;
+	    struct ln_lnlat_posn observer;
+	    struct ln_hrz_posn hrz;
+	    object.ra = last->ra;
+	    object.dec = last->dec;
+	    observer.lat = 50;
+	    observer.lng = -15;
+	    get_hrz_from_equ (&object, &observer, get_julian_from_sys (),
+			      &hrz);
+	    printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
+	    printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
+	  }
+
+	  if (devcli_command
+	      (teld_id, NULL, "move %f %f", last->ra, last->dec))
+	    {
+	      printf ("telescope error\n\n--------------\n");
+	    }
 	}
 
       while ((t = time (NULL)) < last->ctime)
@@ -290,16 +440,26 @@ main (int argc, char **argv)
 	  sleep (last->ctime - t);
 	}
 
-      db_start_observation (last->id, &t, &obs_id);
+      if (last->type == TARGET_LIGHT)
+	{
+	  db_start_observation (last->id, &t, &last->obs_id);
+	}
 
       devcli_wait_for_status ("camd", "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
       printf ("OK\n");
 
-      expose (last->id, last->obs_id, 1);
+      if (last->type == TARGET_DARK)
+	{
+	  dark (1);
+	}
+      else
+	{
+	  expose (last->id, last->obs_id, 1);
 
-      db_end_observation (obs_id, time (NULL) - t);
+	  db_end_observation (last->obs_id, time (NULL) - t);
+	}
     }
 
   devcli_server_disconnect ();
