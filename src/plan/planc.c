@@ -9,6 +9,8 @@
 
 #define _GNU_SOURCE
 
+#define MAX_READOUT_TIME		120
+
 #include <errno.h>
 #include <libnova.h>
 #include <stdio.h>
@@ -71,13 +73,12 @@ move (struct target *last)
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
 
-      last->moved = 1;
-
       if (devcli_command (telescope, NULL, "move %f %f", last->ra, last->dec))
 	{
 	  printf ("telescope error\n\n--------------\n");
 	  return -1;
 	}
+      last->moved = 1;
     }
   return 0;
 }
@@ -168,7 +169,11 @@ observe (int watch_status)
 	      devcli_server ()->statutes[0].status != SERVERD_DUSK &&
 	      devcli_server ()->statutes[0].status != SERVERD_DAWN))
 	break;
+      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
+				  DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 0);
 
+      devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
+			      DEVICE_PRIORITY, 0);
       if (abs (last->ctime - t) > last->tolerance)
 	{
 	  printf ("ctime %li (%s)", last->ctime, ctime (&last->ctime));
@@ -176,7 +181,6 @@ observe (int watch_status)
 	  generate_next (i, plan);
 	  continue;
 	}
-
       move (last);
 
       while ((t = time (NULL)) < last->ctime - last->tolerance)
@@ -187,22 +191,12 @@ observe (int watch_status)
 	  sleep (sleep_time - t);
 	}
 
-
       gmtime_r (&last_succes, &last_s);
 
       devcli_server_command (NULL,
 			     "status_txt P:_%i_obs:_%i_ra:%i_dec:%i_suc:%i:%i",
 			     last->id, last->obs_id, (int) last->ra,
 			     (int) last->dec, last_s.tm_hour, last_s.tm_min);
-
-      devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
-			      DEVICE_PRIORITY, 0);
-
-      devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
-				  DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 0);
-
-      devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
-			      TEL_OBSERVING, 0);
 
       printf ("OK\n");
       time (&t);
@@ -211,7 +205,8 @@ observe (int watch_status)
       light = !(last->type == TARGET_DARK || last->type == TARGET_FLAT_DARK);
 
       devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
-				  CAM_MASK_READING, CAM_NOTREADING, 0);
+				  CAM_MASK_READING, CAM_NOTREADING,
+				  MAX_READOUT_TIME);
 
       if (obs_id >= 0 && last->id != tar_id)
 	{
@@ -233,6 +228,9 @@ observe (int watch_status)
 	    }
 	  last->obs_id = obs_id;
 	}
+      devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
+			      TEL_OBSERVING, 0);
+
       devcli_command_all (DEVICE_TYPE_CCD, "expose 0 %i %i", light, exposure);
 
       printf ("exposure countdown ..%s", ctime (&t));
@@ -245,7 +243,8 @@ observe (int watch_status)
       for (camera = devcli_devices (); camera; camera = camera->next)
 	get_info (last, telescope, camera);
       devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
-				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE, 0);
+				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				  1.5 * exposure + 10);
       move (last->next);
       devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
     }
@@ -375,14 +374,15 @@ main (int argc, char **argv)
       return 0;
     }
 
-  if (devcli_command_all (DEVICE_TYPE_CCD, "ready;info") < 0)
+  if (devcli_command_all (DEVICE_TYPE_CCD, "ready") < 0
+      || devcli_command_all (DEVICE_TYPE_CCD, "info") < 0)
     {
       perror ("devcli_write_read_camd camera");
       return EXIT_FAILURE;
     }
   if (devcli_command (telescope, NULL, "ready;base_info;info") < 0)
     {
-      perror ("devcli_write_read_camd camera");
+      perror ("devcli_write_read_camd telescope");
       return EXIT_FAILURE;
     }
 
