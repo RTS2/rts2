@@ -21,19 +21,20 @@ CameraChip::CameraChip (int in_chip_id)
   exposureEnd.tv_sec = 0;
   exposureEnd.tv_usec = 0;
   readoutConn = NULL;
-  binningVertical = 0;
-  binningHorizontal = 0;
-  pixelX = 0;
-  pixelY = 0;
+  binningVertical = 1;
+  binningHorizontal = 1;
   gain = 0;
-  chipSize = new ChipSubset (0, 0, 0, 0);
-  chipReadout = new ChipSubset (0, 0, 0, 0);
+  chipSize = NULL;
+  chipReadout = NULL;
+  chipUsedReadout = NULL;
+  pixelX = nan ("f");
+  pixelY = nan ("f");
   readoutLine = -1;
   sendLine = -1;
 }
 
 CameraChip::CameraChip (int in_chip_id, int in_width, int in_height,
-			int in_pixelX, int in_pixelY, float in_gain)
+			float in_pixelX, float in_pixelY, float in_gain)
 {
   chipId = in_chip_id;
   exposureEnd.tv_sec = 0;
@@ -41,11 +42,11 @@ CameraChip::CameraChip (int in_chip_id, int in_width, int in_height,
   readoutConn = NULL;
   binningVertical = 1;
   binningHorizontal = 1;
+  setSize (in_width, in_height, 0, 0);
   pixelX = in_pixelX;
   pixelY = in_pixelY;
+  chipUsedReadout = NULL;
   gain = in_gain;
-  chipSize = new ChipSubset (0, 0, in_width, in_height);
-  chipReadout = new ChipSubset (0, 0, in_width, in_height);
   readoutLine = -1;
   sendLine = -1;
 }
@@ -135,33 +136,33 @@ CameraChip::send (Rts2Conn * conn)
   sendChip (conn, "height", chipSize->height);
   sendChip (conn, "binning_vertical", binningVertical);
   sendChip (conn, "binning_horizontal", binningHorizontal);
-  sendChip (conn, "pixelX", chipSize->x);
-  sendChip (conn, "pixelY", chipSize->y);
+  sendChip (conn, "pixelX", pixelX);
+  sendChip (conn, "pixelY", pixelY);
   sendChip (conn, "gain", gain);
 }
 
-int 
+int
 CameraChip::sendReadoutData (char *data, size_t data_size)
-  {
-    int ret;
-    ret = readoutConn->send (data, data_size);
-    if ((ret == 0 && data_size > 0) || ret == -2)
+{
+  int ret;
+  ret = readoutConn->send (data, data_size);
+  if ((ret == 0 && data_size > 0) || ret == -2)
     {
       if (send_readout_data_failed++ > MAX_DATA_RETRY)
-      {
-	ret = -1;
-      }
+	{
+	  ret = -1;
+	}
     }
-    else
+  else
     {
       send_readout_data_failed = 0;
     }
-    if (ret == -1)
+  if (ret == -1)
     {
       endReadout ();
     }
-    return ret;
-  }
+  return ret;
+}
 
 
 int
@@ -174,13 +175,16 @@ CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   sendLine = 0;
   send_readout_data_failed = 0;
   dataConn->getAddress ((char *) &address, 200);
-  chipUsedReadout = new ChipSubset (chipReadout);
-  usedBinningVertical = binningVertical;
-  usedBinningHorizontal = binningHorizontal;
+  if (!chipUsedReadout)
+    {
+      chipUsedReadout = new ChipSubset (chipReadout);
+      usedBinningVertical = binningVertical;
+      usedBinningHorizontal = binningHorizontal;
+    }
   asprintf (&msg, "D connect %i %s:%i %i", chipId, address,
 	    dataConn->getLocalPort (),
-	    (chipUsedReadout->width / usedBinningHorizontal) 
-	    * (chipUsedReadout->height / usedBinningVertical) 
+	    (chipUsedReadout->width / usedBinningHorizontal)
+	    * (chipUsedReadout->height / usedBinningVertical)
 	    * sizeof (unsigned short) + sizeof (imghdr));
   conn->send (msg);
   free (msg);
@@ -193,11 +197,12 @@ CameraChip::endReadout ()
   readoutLine = -1;
   sendLine = -1;
   if (readoutConn)
-  {
-    readoutConn->endConnection ();
-    readoutConn = NULL;
-  }
+    {
+      readoutConn->endConnection ();
+      readoutConn = NULL;
+    }
   delete chipUsedReadout;
+  chipUsedReadout = NULL;
   return 0;
 }
 
@@ -237,7 +242,7 @@ Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEV
   int
     i;
   char *
-  states_names[MAX_CHIPS] = { "img_chip", "trc_chip" };
+  states_names[MAX_CHIPS] = { "img_chip", "trc_chip", "intr_chip" };
   for (i = 0; i < MAX_CHIPS; i++)
     chips[i] = NULL;
   setStateNames (MAX_CHIPS, states_names);
@@ -257,33 +262,40 @@ Rts2DevCamera::~Rts2DevCamera ()
 {
   int i;
   for (i = 0; i < chipNum; i++)
-  {
-    delete chips[i];
-    chips[i] = NULL;
-  }
+    {
+      delete chips[i];
+      chips[i] = NULL;
+    }
 }
 
-int
-Rts2DevCamera::init ()
-{
-  int ret;
-  return Rts2Device::init ();
-}
-
-int
-Rts2DevCamera::addConnection (int in_sock)
+void
+Rts2DevCamera::cancelPriorityOperations ()
 {
   int i;
-  for (i = 0; i < MAX_CONN; i++)
+  for (i = 0; i < chipNum; i++)
     {
-      if (!connections[i])
-	{
-	  syslog (LOG_DEBUG, "Rts2DevCamera::addConnection %i", i);
-	  connections[i] = new Rts2DevConnCamera (in_sock, this);
-	  return 0;
-	}
+      chips[i]->endExposure ();
+      chips[i]->endReadout ();
     }
-  return -1;
+}
+
+int
+Rts2DevCamera::initChips ()
+{
+  int ret;
+  for (int i = 0; i < chipNum; i++)
+    {
+      ret = chips[i]->init ();
+      if (ret)
+	return ret;
+    }
+  return 0;
+}
+
+Rts2Conn *
+Rts2DevCamera::createConnection (int in_sock, int conn_num)
+{
+  return new Rts2DevConnCamera (in_sock, this);
 }
 
 long
@@ -293,18 +305,19 @@ Rts2DevCamera::checkExposures ()
   for (int i = 0; i < chipNum; i++)
     {
       if (getState (i) & CAM_EXPOSING)
-      {
-	// try to end exposure
-	ret = camWaitExpose (i);
-	if (ret >= 0)
 	{
-		syslog (LOG_DEBUG, "Rts2DevCamera::checkExposures timeout: %li", ret);
-		setTimeout (ret);
+	  // try to end exposure
+	  ret = camWaitExpose (i);
+	  if (ret >= 0)
+	    {
+	      syslog (LOG_DEBUG, "Rts2DevCamera::checkExposures timeout: %li",
+		      ret);
+	      setTimeout (ret);
+	    }
+	  if (ret == -2)
+	    maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+		       CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
 	}
-	if (ret == -2)
-	maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		   CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
-      }
     }
 }
 
@@ -339,14 +352,16 @@ int
 Rts2DevCamera::setMasterState (int new_state)
 {
   switch (new_state)
-  {
+    {
+    case SERVERD_NIGHT | SERVERD_STANDBY:
     case SERVERD_NIGHT:
       return camCoolHold ();
+    case SERVERD_DUSK | SERVERD_STANDBY:
     case SERVERD_DUSK:
       return camCoolMax ();
     default:
       return camCoolShutdown ();
-  }
+    }
 }
 
 int
@@ -420,8 +435,8 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
   ret = camExpose (chip, light, exptime);
   if (!ret)
     {
-      maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA, CAM_EXPOSING | CAM_NODATA,
-	     "exposure chip started");
+      maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
       chips[chip]->setExposure (exptime);
       return 0;
     }
@@ -476,7 +491,8 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
     {
       if (!connections[i])
 	{
-	  syslog (LOG_DEBUG, "Rts2DevCamera::camReadout add data %i data_conn", i);
+	  syslog (LOG_DEBUG,
+		  "Rts2DevCamera::camReadout add data %i data_conn", i);
 	  connections[i] = data_conn;
 	  break;
 	}
@@ -558,7 +574,8 @@ Rts2DevCamera::camCoolTemp (Rts2Conn * conn, float new_temp)
   int ret;
   ret = camCoolTemp (new_temp);
   if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot set cooling temp to requested temperature");
+    conn->sendCommandEnd (DEVDEM_E_HW,
+			  "cannot set cooling temp to requested temperature");
   return ret;
 }
 
@@ -568,7 +585,8 @@ Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
   int ret;
   ret = camCoolShutdown ();
   if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot shutdown camera cooling system");
+    conn->sendCommandEnd (DEVDEM_E_HW,
+			  "cannot shutdown camera cooling system");
   return ret;
 }
 
