@@ -49,7 +49,7 @@ ObjectCheck::load_horizont (char *horizont_file)
       catch (exception & e)
       {
 	inf.clear ();
-	inf.ignore (numeric_limits < int >::max (), '\n');
+	inf.ignore (20000, '\n');
 	// cerr << "Ignore bad line\n";
 	continue;
       };
