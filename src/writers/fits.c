@@ -89,9 +89,9 @@ write_camera (struct fits_receiver_data *receiver, struct image_info *info)
   int i = 0;
   int last_space = 1;
 
-  camera_name = info->camera_name;
-
   fitsfile *fptr = receiver->ffile;
+
+  camera_name = info->camera_name;
 
   write_key (TSTRING, "CAM_NAME", camera_name, "Camera name");
 
