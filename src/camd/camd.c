@@ -35,11 +35,22 @@ complete (int ccd, float percent_complete)
   return 1;
 }
 
+/* expose functions */
+#define SBIG_EXPOSE ((struct sbig_expose *) arg)
+
+// expose cleanup functions
+void
+clean_expose_cancel (void *arg)
+{
+  devdem_status_mask (SBIG_EXPOSE->ccd,
+		      CAM_MASK_EXPOSE,
+		      CAM_NOEXPOSURE, "exposure chip canceled");
+}
+
 // wrapper to call sbig expose in thread, test for results
 void *
 start_expose (void *arg)
 {
-#define SBIG_EXPOSE ((struct sbig_expose *) arg)
   int ret;
   devdem_status_mask (SBIG_EXPOSE->ccd,
 		      CAM_MASK_EXPOSE, CAM_EXPOSING, "exposure chip started");
@@ -55,20 +66,31 @@ start_expose (void *arg)
 			  CAM_NOEXPOSURE, "exposure chip error");
       return NULL;
     }
-
   syslog (LOG_INFO, "exposure chip %i finished.", SBIG_EXPOSE->ccd);
   devdem_status_mask (SBIG_EXPOSE->ccd,
 		      CAM_MASK_EXPOSE,
 		      CAM_NOEXPOSURE, "exposure chip finished");
   return NULL;
+}
+
 #undef SBIG_EXPOSE
+
+/* readout functions */
+#define SBIG_READOUT ((struct sbig_readout *) arg)
+
+// readout cleanup functions 
+void
+clean_readout_cancel (void *arg)
+{
+  devdem_status_mask (SBIG_READOUT->ccd,
+		      CAM_MASK_READING | CAM_MASK_DATA,
+		      CAM_NOTREADING | CAM_NODATA, "reading chip canceled");
 }
 
 // wrapper to call sbig readout in thread 
 void *
 start_readout (void *arg)
 {
-#define SBIG_READOUT ((struct sbig_readout *) arg)
   int ret;
   devdem_status_mask (SBIG_READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
@@ -90,16 +112,17 @@ start_readout (void *arg)
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_DATA, "reading chip finished");
   return NULL;
-#undef SBIG_READOUT
 }
 
+#undef SBIG_READOUT
+
 // macro for chip test
-#define get_chip  param = argz_next (argv, argc, argv); \
+#define get_chip  \
       if (devdem_param_next_integer (&chip)) \
       	return -1; \
       if ((chip < 0) || (chip >= info.nmbr_chips)) \
         {      \
-	  devdem_write_command_end (DEVDEM_E_PARAMSVAL, "invalid chip: %f", chip);\
+	  devdem_write_command_end (DEVDEM_E_PARAMSVAL, "invalid chip: %i", chip);\
 	  return -1;\
 	}
 
@@ -116,22 +139,20 @@ start_readout (void *arg)
 
 /*! Handle camd command.
  *
- * @param argv arguments (argz vector - see info glibc, section Argz)
- * @param argc arguments count
+ * @param command	received command
  * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
  */
 int
-camd_handle_command (char *argv, size_t argc)
+camd_handle_command (char *command)
 {
   int ret;
-  char *param;
   int chip;
 
-  if (strcmp (argv, "ready") == 0)
+  if (strcmp (command, "ready") == 0)
     {
       cam_call (sbig_init (port, 5, &info));
     }
-  else if (strcmp (argv, "info") == 0)
+  else if (strcmp (command, "info") == 0)
     {
       cam_call (sbig_init (port, 5, &info));
       devdem_dprintf ("name %s", info.camera_name);
@@ -140,7 +161,7 @@ camd_handle_command (char *argv, size_t argc)
       devdem_dprintf ("abg %i", info.imaging_abg_type);
       devdem_dprintf ("chips %i", info.nmbr_chips);
     }
-  else if (strcmp (argv, "chipinfo") == 0)
+  else if (strcmp (command, "chipinfo") == 0)
     {
       int i;
       readout_mode_t *mode;
@@ -160,18 +181,20 @@ camd_handle_command (char *argv, size_t argc)
 	}
       ret = 0;
     }
-  else if (strcmp (argv, "expose") == 0)
+  else if (strcmp (command, "expose") == 0)
     {
       float exptime;
       if (devdem_param_test_length (2))
 	return -1;
       get_chip;
-      param = argz_next (argv, argc, param);
-      exptime = strtof (param, NULL) * 100;
+      if (devdem_param_next_float (&exptime))
+	return -1;
+      exptime = exptime * 100;	// convert to sbig required milliseconds
       if ((exptime <= 0) || (exptime > 330000))
 	{
 	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
-				    "invalid exposure time: %f", exptime);
+				    "invalid exposure time (must be in <0, 330000>): %f",
+				    exptime);
 	}
       else
 	{
@@ -180,33 +203,48 @@ camd_handle_command (char *argv, size_t argc)
 	  expose.exposure_time = exptime;
 	  expose.abg_state = 0;
 	  expose.shutter = 0;
+	  /* priority block start here */
+	  if (devdem_priority_block_start ())
+	    return -1;
+
 	  if ((ret =
 	       devdem_thread_create (start_expose, (void *) &expose,
-				     sizeof expose, NULL)) < 0)
+				     sizeof expose, NULL,
+				     clean_expose_cancel)) < 0)
 	    {
 	      devdem_write_command_end (DEVDEM_E_SYSTEM,
 					"while creating thread for execution: %s",
 					strerror (errno));
 	      return -1;
 	    }
+	  devdem_priority_block_end ();
+	  /* priority block ends here */
 	}
     }
-  else if (strcmp (argv, "stopexpo") == 0)
+  else if (strcmp (command, "stopexpo") == 0)
     {
       if (devdem_param_test_length (1))
 	return -1;
       get_chip;
+
+      /* priority block starts here */
+      if (devdem_priority_block_start ())
+	return -1;
       cam_call (sbig_end_expose (chip));
+      devdem_priority_block_end ();
+      /* priority block stops here */
+
     }
-  else if (strcmp (argv, "progexpo") == 0)
+  else if (strcmp (command, "progexpo") == 0)
     {
       if (devdem_param_test_length (1))
 	return -1;
       get_chip;
-      errno = ENOTSUP;
-      ret = -1;
+      /* TODO add suport for that */
+      devdem_write_command_end (DEVDEM_E_SYSTEM, "not supported (yet)");
+      return -1;
     }
-  else if (strcmp (argv, "readout") == 0)
+  else if (strcmp (command, "readout") == 0)
     {
       int mode;
       if (devdem_param_test_length (1))
@@ -219,27 +257,34 @@ camd_handle_command (char *argv, size_t argc)
       readout[chip].height = info.camera_info[chip].readout_mode[mode].height;
       readout[chip].callback = complete;
 
+      /* start priority block */
+      if (devdem_priority_block_start ())
+	return -1;
+
       if ((ret =
 	   devdem_thread_create (start_readout,
 				 (void *) &readout[chip], 0,
-				 &readout[chip].thread_id)))
+				 &readout[chip].thread_id,
+				 clean_readout_cancel)))
 	{
 	  devdem_write_command_end (DEVDEM_E_SYSTEM,
 				    "while creating thread for execution: %s",
 				    strerror (errno));
 	  return -1;
 	}
+      devdem_priority_block_end ();
+      /* here ends priority block */
     }
-  else if (strcmp (argv, "binning") == 0)
+  else if (strcmp (command, "binning") == 0)
     {
       int new_bin;
       if (devdem_param_test_length (2))
 	return -1;
       get_chip;
-      param = argz_next (argv, argc, param);
-      new_bin = strtol (param, &param, 10);
-      if (*param || new_bin < 0
-	  || new_bin >= info.camera_info[chip].nmbr_readout_modes)
+      if (devdem_param_next_integer (&new_bin))
+	return -1;
+
+      if (new_bin < 0 || new_bin >= info.camera_info[chip].nmbr_readout_modes)
 	{
 	  devdem_write_command_end (DEVDEM_E_PARAMSVAL, "invalid binning: %i",
 				    new_bin);
@@ -248,11 +293,15 @@ camd_handle_command (char *argv, size_t argc)
       readout[chip].binning = (unsigned int) new_bin;
       ret = 0;
     }
-  else if (strcmp (argv, "stopread") == 0)
+  else if (strcmp (command, "stopread") == 0)
     {
       if (devdem_param_test_length (1))
 	return -1;
       get_chip;
+
+      /* priority block starts here */
+      if (devdem_priority_block_start ())
+	return -1;
       if ((ret = devdem_thread_cancel (readout[chip].thread_id)) < 0)
 	{
 	  devdem_write_command_end (DEVDEM_E_SYSTEM,
@@ -261,8 +310,11 @@ camd_handle_command (char *argv, size_t argc)
 	  return -1;
 	}
       readout_comp[chip] = -1;
+      devdem_priority_block_end ();
+      /* priorioty block end here */
+
     }
-  else if (strcmp (argv, "status") == 0)
+  else if (strcmp (command, "status") == 0)
     {
       int i;
       if (devdem_param_test_length (1))
@@ -275,7 +327,7 @@ camd_handle_command (char *argv, size_t argc)
       devdem_dprintf ("readout %f", readout_comp[chip]);
       ret = 0;
     }
-  else if (strcmp (argv, "data") == 0)
+  else if (strcmp (command, "data") == 0)
     {
       if (devdem_param_test_length (1))
 	return -1;
@@ -289,28 +341,31 @@ camd_handle_command (char *argv, size_t argc)
 	devdem_send_data (NULL, readout[chip].data,
 			  readout[chip].data_size_in_bytes);
     }
-  else if (strcmp (argv, "cool_temp") == 0)
+  else if (strcmp (command, "cool_temp") == 0)
     {
-      char *endpar;
       struct sbig_cool cool;
+      float new_temp;
+
       if (devdem_param_test_length (1))
 	return -1;
-      param = argz_next (argv, argc, argv);
-      cool.temperature = round (strtod (param, &endpar) * 10);
-      if (endpar && !*endpar)
-	{
-	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
-				    "invalid temperature: %s", param);
-	  return -1;
-	}
+      if (devdem_param_next_float (&new_temp))
+	return -1;
+      cool.temperature = round (new_temp * 10);	// convert to sbig 1/10 o C
+
       cool.regulation = 1;
+
+      /* priority block starts here */
+      if (devdem_priority_block_start ())
+	return -1;
       cam_call (sbig_set_cooling (&cool));
+      devdem_priority_block_end ();
+      /* priority block ends here */
     }
-  else if (strcmp (argv, "exit") == 0)
+  else if (strcmp (command, "exit") == 0)
     {
       return -2;
     }
-  else if (strcmp (argv, "help") == 0)
+  else if (strcmp (command, "help") == 0)
     {
       devdem_dprintf ("ready - is camera ready?");
       devdem_dprintf ("info - information about camera");
@@ -333,7 +388,8 @@ camd_handle_command (char *argv, size_t argc)
     }
   else
     {
-      devdem_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s", argv);
+      devdem_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s",
+				command);
       return -1;
     }
 
@@ -358,13 +414,13 @@ main (void)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  if (devdem_register (&server_channel, "localhost", 5557) < 0)
+  if (devdem_register (&server_channel, "camd", "localhost", 5557) < 0)
     {
       perror ("devdem_register");
       exit (EXIT_FAILURE);
     }
 
-  info.nmbr_chips = -1;
+  info.nmbr_chips = 2;
 
   return devdem_run (PORT, camd_handle_command, stats, 2, sizeof (pid_t));
 }
