@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <argz.h>
 
@@ -100,6 +101,16 @@ param_next_string (struct param_status *params, char **ret)
     return -1;
 
   *ret = params->param_processing;
+  return 0;
+}
+
+int
+param_next_string_copy (struct param_status *params, char *ret, size_t size)
+{
+  if (param_next (params))
+    return -1;
+  strncpy (ret, params->param_processing, size);
+  ret[size - 1] = 0;
   return 0;
 }
 
