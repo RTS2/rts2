@@ -54,6 +54,7 @@ class CameraSbigChip:public CameraChip
 public:
     CameraSbigChip (int in_chip_id, int in_width, int in_height,
 		    int in_pixelX, int in_pixelY, float in_gain);
+    ~CameraSbigChip ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
 };
@@ -64,10 +65,14 @@ CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
   int size = in_width * in_height *
 			       sizeof (unsigned short);
-  printf ("malloced size: %i\n", size);
   dest =
     (unsigned short *) malloc (size);
 };
+
+CameraSbigChip::~CameraSbigChip ()
+{
+  free (dest);
+}
 
 int
 CameraSbigChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
@@ -99,6 +104,10 @@ CameraSbigChip::readoutOneLine ()
       if (ret)
 	return ret;
     }
+  if (!readoutConn)
+  {
+    return -1;
+  }
   if (send_top < (char *) dest_top)
     {
       sendLine++;
@@ -108,6 +117,7 @@ CameraSbigChip::readoutOneLine ()
       return 0;
     }
   readoutConn->endConnection ();
+  readoutConn = NULL;
   readoutLine = -1;
   return -2;
 }
@@ -123,20 +133,19 @@ class Rts2DevCameraSbig:public Rts2DevCamera
   }
 public:
     Rts2DevCameraSbig (int argc, char **argv);
-  ~Rts2DevCameraSbig (void);
+  ~Rts2DevCameraSbig ();
 
   virtual int init ();
 
   // callback functions for Camera alone
-  virtual int camReady ();
-  virtual int camInfo ();
-  virtual int camBaseInfo ();
+  virtual int ready ();
+  virtual int info ();
+  virtual int baseInfo ();
   virtual int camChipInfo (int chip);
   virtual int camExpose (int chip, int light, float exptime);
   virtual int camWaitExpose (int chip);
   virtual int camStopExpose (int chip);
   virtual int camBox (int chip, int x, int y, int width, int height);
-  virtual int camBinning (int chip, int x_bin, int y_bin);
   virtual int camStopRead (int chip);
   virtual int camCoolMax ();
   virtual int camCoolHold ();
@@ -151,7 +160,7 @@ Rts2DevCamera (argc, argv)
   pcam = NULL;
 }
 
-Rts2DevCameraSbig::~Rts2DevCameraSbig (void)
+Rts2DevCameraSbig::~Rts2DevCameraSbig () 
 {
   delete pcam;
 }
@@ -212,7 +221,7 @@ Rts2DevCameraSbig::init ()
 }
 
 int
-Rts2DevCameraSbig::camReady ()
+Rts2DevCameraSbig::ready ()
 {
   double ccdTemp;
   PAR_ERROR ret;
@@ -221,7 +230,7 @@ Rts2DevCameraSbig::camReady ()
 }
 
 int
-Rts2DevCameraSbig::camInfo ()
+Rts2DevCameraSbig::info ()
 {
   MY_LOGICAL enabled;
   double amb, ccd, set, per;
@@ -239,7 +248,7 @@ Rts2DevCameraSbig::camInfo ()
 }
 
 int
-Rts2DevCameraSbig::camBaseInfo ()
+Rts2DevCameraSbig::baseInfo ()
 {
   GetDriverInfoResults0 gccdir0;
   pcam->GetDriverInfo (DRIVER_STD, gccdir0);
@@ -291,9 +300,10 @@ Rts2DevCameraSbig::camWaitExpose (int chip)
 {
   int ret;
   ret = Rts2DevCamera::camWaitExpose (chip);
-  if (ret == 0)
+  if (ret == -2)
     {
-      return camStopExpose (chip);	// SBIG devices are strange, there is same command for wait and stop
+      camStopExpose (chip);	// SBIG devices are strange, there is same command for wait and stop
+      return -2;
     }
   return -1;
 }
@@ -318,12 +328,6 @@ int
 Rts2DevCameraSbig::camBox (int chip, int x, int y, int width, int height)
 {
   return -1;
-}
-
-int
-Rts2DevCameraSbig::camBinning (int chip, int x_bin, int y_bin)
-{
-  return 0;
 }
 
 int
