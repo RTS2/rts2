@@ -416,6 +416,9 @@ main (int argc, char **argv)
 	case 'a':
 	  observer.lat = atof (optarg);
 	  break;
+	case 'n':
+	  only_n_corrections = atoi (optarg);
+	  break;
 	case 0:
 	  printf ("Options:\n"
 		  "\ttserverd_port|p <port_num>	port of the serverd"
