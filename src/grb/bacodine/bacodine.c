@@ -1167,9 +1167,14 @@ pr_hete (lbuf, s)		/* Print the contents of the packet to the screen */
   fprintf (s, "   BURST_DEC:   %+7.3fd  (current)\n",
 	   lbuf[BURST_DEC] / 10000.0);
 
-  process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
-	       (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-	       lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0);
+  if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+  {
+	  process_grb (
+		(lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
+	  	(lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
+		lbuf[BURST_RA] / 10000.0,
+		lbuf[BURST_DEC] / 10000.0);
+  }
 
   if (lbuf[H_TRIG_FLAGS] & H_WXM_POS)	/* Flag says that WXM pos is available */
     fprintf (s, "   WXM position is available.\n");
