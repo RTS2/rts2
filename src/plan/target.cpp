@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
+#define DEFAULT_TEL_CAMERA "C0"
+
 #include "../utils/devcli.h"
 #include "target.h"
 #include "centering.h"
@@ -68,7 +70,7 @@ Target::move ()
 
 int
 Target::get_info (struct device *cam,
-		  float exposure, hi_precision_t * hi_precision)
+		  float exposure, hi_precision_t * img_hi_precision)
 {
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
@@ -88,7 +90,19 @@ Target::get_info (struct device *cam,
     }
   memcpy (&info->camera, &cam->info, sizeof (struct camera_info));
   memcpy (&info->telescope, &telescope->info, sizeof (struct telescope_info));
-  info->hi_precision = hi_precision;
+  if (!img_hi_precision && hi_precision == 3 && !strcmp (cam->name, get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA)))
+  {
+    closed_loop_precission.hi_precision = 1;
+    info->hi_precision = &closed_loop_precission;
+  }
+  else
+  {	
+    info->hi_precision = img_hi_precision;
+  }
+  if (info->hi_precision)
+  {
+    info->hi_precision->processed = 0;
+  }
   devcli_image_info (cam, info);
   free (info);
   return ret;
@@ -291,7 +305,10 @@ Target::acquire ()
   if (hi_precision == 0)
     return 0;
 
-  camera = devcli_find (get_string_default ("telescope_camera", "C0"));
+  camera = devcli_find (get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA));
+
+  if (!camera)
+    return 0;
 
   exposure =
     get_device_double_default (camera->name, "precission_exposure", exposure);
@@ -311,7 +328,14 @@ Target::acquire ()
   pthread_cond_t ret_cond = PTHREAD_COND_INITIALIZER;
   img_hi_precision.mutex = &ret_mutex;
   img_hi_precision.cond = &ret_cond;
-  img_hi_precision.hi_precision = hi_precision;
+  if (hi_precision == 3)
+  {
+    img_hi_precision.hi_precision = 1;
+  }
+  else
+  {
+    img_hi_precision.hi_precision = hi_precision;
+  }
 
   if (bin > 1) // change binning
     {

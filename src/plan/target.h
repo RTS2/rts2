@@ -79,7 +79,7 @@ private:
   struct thread_list thread_l;
 
   int get_info (struct device *cam,
-		float exposure, hi_precision_t * hi_precision);
+		float exposure, hi_precision_t * img_hi_precision);
 
   virtual int runScript (struct ex_info *exinfo);	// script for each device
   virtual int get_script (struct device *camera, char *buf);
@@ -94,7 +94,13 @@ private:
 
   pthread_mutex_t script_thread_count_mutex;
   pthread_cond_t script_thread_count_cond;
+
   int script_thread_count;
+
+  pthread_mutex_t closed_loop_mutex;
+  pthread_cond_t closed_loop_cond;
+
+  hi_precision_t closed_loop_precission;
 
   int running_script_count;	// number of running scripts (not in W)
 public:
@@ -118,6 +124,17 @@ public:
 
     thread_l.next = NULL;
     thread_l.thread = 0;
+    hi_precision = 0;
+
+    // prepare closed loop precission
+
+    pthread_mutex_init (&closed_loop_mutex, NULL);
+    pthread_cond_init (&closed_loop_cond, NULL);
+
+    closed_loop_precission.ntries = 0;
+    closed_loop_precission.mutex = &closed_loop_mutex;
+    closed_loop_precission.cond = &closed_loop_cond;
+    closed_loop_precission.hi_precision = hi_precision;
   }
   int getPosition (struct ln_equ_posn *pos)
   {
@@ -127,6 +144,10 @@ public:
   {
     return -1;
   };
+  void setHiPrecission (int in_hi_precission)
+  {
+    hi_precision = in_hi_precission;
+  };
   virtual int getRST (struct ln_equ_posn *pos, struct ln_rst_time *rst,
 		      double jd)
   {
@@ -134,6 +155,9 @@ public:
   };
   int wait_for_readout_end ()
   {
+    struct timespec timeout;
+    time_t now;
+
     pthread_mutex_lock (&script_thread_count_mutex);
     while (running_script_count > 0)	// cause we will hold running_script_count lock in any case..
       {
@@ -141,6 +165,24 @@ public:
 			   &script_thread_count_mutex);
       }
     pthread_mutex_unlock (&script_thread_count_mutex);
+    if (hi_precision == 3)
+      {
+	pthread_mutex_lock (closed_loop_precission.mutex);
+	time (&now);
+	timeout.tv_sec = now + 350;
+	timeout.tv_nsec = 0;
+	while (closed_loop_precission.processed == 0)
+	  {
+	    pthread_cond_timedwait (closed_loop_precission.cond,
+				    closed_loop_precission.mutex, &timeout);
+	  }
+	printf
+	  ("closed_loop_precission->image_pos->ra: %f dec: %f closed_loop_precission.hi_precision %i\n",
+	   closed_loop_precission.image_pos.ra,
+	   closed_loop_precission.image_pos.dec,
+	   closed_loop_precission.hi_precision);
+	pthread_mutex_unlock (closed_loop_precission.mutex);
+      }
   };
   int move ();			// change position
   static void *runStart (void *exinfo);	// entry point for camera threads

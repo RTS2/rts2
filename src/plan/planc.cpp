@@ -128,7 +128,7 @@ ready_to_observe (int status)
 }
 
 int
-observe (int watch_status)
+observe (int watch_status, int hi_precission)
 {
   int i = 0;
   int tar_id = 0;
@@ -145,6 +145,7 @@ observe (int watch_status)
   plan->id = -1;
   i = generate_next (i, plan);
   last = plan->next;
+  last->setHiPrecission (hi_precission);
   free (plan);
   plan = last;
 
@@ -194,6 +195,8 @@ main (int argc, char **argv)
 
   char *horizont_file;
 
+  int hi_precission = (int) get_double_default ("hi_precission", 0);
+
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -214,6 +217,8 @@ main (int argc, char **argv)
 	{
 	 "priority", 1, 0, 'r'}
 	,
+	{
+	 "guidance", 1, 0, 'g'},
 	{
 	 "help", 0, 0, 'h'}
 	,
@@ -248,6 +253,9 @@ main (int argc, char **argv)
 	      printf ("invalid priority value: %s\n", optarg);
 	      exit (EXIT_FAILURE);
 	    }
+	  break;
+	case 'g':
+	  hi_precission = atoi (optarg);
 	  break;
 	case 'h':
 	  printf
@@ -382,7 +390,7 @@ loop:
 				    (devcli_handle_response_t) phot_handler);
       }
 
-  observe (watch_status);
+  observe (watch_status, hi_precission);
   printf ("done\n");
 
   devcli_command (telescope, NULL, "home");
