@@ -426,7 +426,9 @@ Rts2DevCameraSbig::camCoolMax ()
 int
 Rts2DevCameraSbig::camCoolHold ()
 {
-  return camCoolTemp (-5);
+  if (isnan (nightCoolTemp))
+    return camCoolTemp (-5);
+  return camCoolTemp (nightCoolTemp);
 }
 
 int

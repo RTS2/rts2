@@ -141,6 +141,8 @@ protected:
   int canDF;			// if the camera can make dark frames
   char ccdType[64];
   char serialNumber[64];
+
+  float nightCoolTemp;
 protected:
     virtual void cancelPriorityOperations ();
 
@@ -148,15 +150,16 @@ public:
     Rts2DevCamera (int argc, char **argv);
     virtual ~ Rts2DevCamera (void);
 
+  virtual int processOption (int in_opt);
   virtual int initChips ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   long checkExposures ();
   int checkReadouts ();
-  int idle ();
 
-  int setMasterState (int new_state);
+  virtual int idle ();
 
-  // callback functions for Camera alone
+  virtual int setMasterState (int new_state);
+
   virtual int ready ()
   {
     return -1;
@@ -169,6 +172,7 @@ public:
   {
     return -1;
   };
+
   virtual int camChipInfo (int chip)
   {
     return -1;
@@ -216,9 +220,9 @@ public:
   };
 
   // callback functions from camera connection
-  int ready (Rts2Conn * conn);
-  int info (Rts2Conn * conn);
-  int baseInfo (Rts2Conn * conn);
+  virtual int ready (Rts2Conn * conn);
+  virtual int info (Rts2Conn * conn);
+  virtual int baseInfo (Rts2Conn * conn);
   int camChipInfo (Rts2Conn * conn, int chip);
   int camExpose (Rts2Conn * conn, int chip, int light, float exptime);
   int camStopExpose (Rts2Conn * conn, int chip);

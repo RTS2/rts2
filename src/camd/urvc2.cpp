@@ -430,11 +430,18 @@ Rts2DevCameraUrvc2::camCoolHold ()	/* hold on that temperature */
   if (tempRegulation == CAMERA_COOL_HOLD)
     return 0;			// already cooled
 
-  if (MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
-    return -1;
+  if (isnan (nightCoolTemp))
+    {
+      if (MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
+	return -1;
 
-  ot = ccd_ad2c (qtsr.ccdThermistor);
-  ot = ((int) (ot + 5) / 5) * 5;
+      ot = ccd_ad2c (qtsr.ccdThermistor);
+      ot = ((int) (ot + 5) / 5) * 5;
+    }
+  else
+    {
+      ot = nightCoolTemp;
+    }
 
   set_fan (1);
 

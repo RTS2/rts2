@@ -9,9 +9,6 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "../utils/rts2device.h"
-#include "../utils/rts2block.h"
-
 #include "camera_cpp.h"
 #include "imghdr.h"
 
@@ -256,6 +253,11 @@ Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEV
   canDF = -1;
   ccdType[0] = '0';
   serialNumber[0] = '0';
+
+  nightCoolTemp = nan ("f");
+
+  // cooling & other options..
+  addOption ('c', "cooling_temp", 1, "default night cooling temperature");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -277,6 +279,20 @@ Rts2DevCamera::cancelPriorityOperations ()
       chips[i]->endExposure ();
       chips[i]->endReadout ();
     }
+}
+
+int
+Rts2DevCamera::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'c':
+      nightCoolTemp = atof (optarg);
+      break;
+    default:
+      return Rts2Device::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -346,6 +362,7 @@ Rts2DevCamera::idle ()
 {
   checkExposures ();
   checkReadouts ();
+  return 0;
 }
 
 int
@@ -622,19 +639,7 @@ Rts2DevConnCamera::commandAuthorized ()
 {
   int chip;
 
-  if (isCommand ("ready"))
-    {
-      return master->ready (this);
-    }
-  else if (isCommand ("info"))
-    {
-      return master->info (this);
-    }
-  else if (isCommand ("base_info"))
-    {
-      return master->baseInfo (this);
-    }
-  else if (isCommand ("chipinfo"))
+  if (isCommand ("chipinfo"))
     {
       if (paramNextChip (&chip) || !paramEnd ())
 	return -2;
