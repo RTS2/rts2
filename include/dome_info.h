@@ -4,9 +4,11 @@
 struct dome_info
 {
   char type[64];
-  int state;
   float temperature;
   float humidity;
+  int dome;
+  int power_telescope;
+  int power_cameras;
 };
 
 #endif /* __RTS_DOME_INFO__ */
