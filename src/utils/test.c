@@ -51,5 +51,6 @@ main (int argc, char **argv)
 	  get_device_double_default ("hete", "dark_frequency", 25));
 
   printf ("ret: %s\n", get_string_default ("epoch", "000"));
+  printf ("ret: %s\n", get_device_string_default ("CNF1", "script", "AA"));
   return 0;
 }

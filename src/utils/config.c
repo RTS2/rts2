@@ -36,7 +36,7 @@ free_config ()
 int
 read_config (char *filename)
 {
-#define BUF_SIZE	100
+#define BUF_SIZE	500
   char buf[BUF_SIZE];
   char *value, *name;
   struct config_entry *cfg;
@@ -47,7 +47,7 @@ read_config (char *filename)
   config = cfg =
     (struct config_entry *) malloc (sizeof (struct config_entry));
   cfg->next = NULL;
-  while (fgets (buf, 100, f))
+  while (fgets (buf, BUF_SIZE - 1, f))
     {
       char *bp = buf;
       int state = 0;
