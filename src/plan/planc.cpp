@@ -42,7 +42,7 @@
 #define COMMAND_EXPOSURE	'E'
 #define COMMAND_FILTER		'F'
 #define COMMAND_PHOTOMETER      'P'
-#define COMMAND_MOVE		'M'
+#define COMMAND_CHANGE		'C'
 #define COMMAND_WAIT            'W'
 
 struct thread_list
@@ -185,6 +185,8 @@ int
 process_precission (Target * tar, struct device *camera)
 {
   float exposure = 10;
+  struct timespec timeout;
+  time_t now;
   exposure =
     get_device_double_default (camera->name, "precission_exposure", exposure);
   if (tar->hi_precision == 0)
@@ -192,12 +194,15 @@ process_precission (Target * tar, struct device *camera)
   if (strcmp (camera->name, get_string_default ("telescope_camera", "C0")))
     {
       // not camera for astrometry
+      time (&now);
+      timeout.tv_sec = now + 3600;
+      timeout.tv_nsec = 0;
       pthread_mutex_lock (&precission_mutex);
       while (tar->hi_precision == 1)
 	{
 	  printf ("waiting for hi_precision (camera %s)\n", camera->name);
 	  fflush (stdout);
-	  pthread_cond_wait (&precission_cond, &precission_mutex);
+	  pthread_cond_timedwait (&precission_cond, &precission_mutex, &timeout);
 	}
       pthread_mutex_unlock (&precission_mutex);
     }
@@ -207,8 +212,6 @@ process_precission (Target * tar, struct device *camera)
       double ra_margin = 15, dec_margin = 15;	// in arc minutes
       int tries = 0;
       int max_tries = (int) get_double_default ("maxtries", 5);
-      time_t now;
-      struct timespec timeout;
 
       ra_margin = get_double_default ("ra_margin", ra_margin);
       dec_margin = get_double_default ("dec_margin", dec_margin);
@@ -346,12 +349,15 @@ execute_camera_script (void *exinfo)
   Target *last = ((struct ex_info *) exinfo)->last;
   int light;
   char *command, *s;
+  char *arg1, *arg2;
   float exposure;
   int filter;
   int ret;
   time_t t;
   char s_time[27];
   char obs_type_str[2];
+  struct timespec timeout;
+  time_t now;
   enum
   { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS,
       INTEGRATION_PROGRESS } exp_state;
@@ -488,16 +494,37 @@ execute_camera_script (void *exinfo)
 	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate 1 %i", filter);
 	  exp_state = INTEGRATION_PROGRESS;
 	  break;
-	case COMMAND_MOVE:
+	case COMMAND_CHANGE:
+	  // get two strings
+	  command++;
+	  s = command;
+	  while (*command && !isspace (*command))
+	  {
+             command++;
+	  }
+	  arg1 = (char *) malloc (command - s + 1);
+	  strncpy (arg1, s, command - s + 1);
+	  s = command;
+	  while (*command && !isspace (*command))
+	  {
+		  command ++;
+	  }
+	  arg2 = (char*) malloc (command - s + 1);
+	  strncpy (arg2, s, command - s + 1);
 	  // wait till exposure count reaches 0
+	  time (&now);
+	  timeout.tv_sec = now + 1000;
+	  timeout.tv_nsec = 0;
 	  pthread_mutex_lock (&exposure_count_mutex);
 	  while (exposure_count > 0)
 	    {
-	      pthread_cond_wait (&exposure_count_cond, &exposure_count_mutex);
+	      pthread_cond_timedwait (&exposure_count_cond, &exposure_count_mutex, &timeout);
 	    }
 	  pthread_mutex_unlock (&exposure_count_mutex);
 	  // now there is no exposure running, do the move
-	  devcli_command (telescope, NULL, "change 10 10");
+	  devcli_command (telescope, NULL, "change %s %s", arg1, arg2);
+	  free (arg2);
+	  free (arg1);
 	  // increase move count - unblock any COMMAND_WAIT
 	  pthread_mutex_lock (&move_count_mutex);
 	  move_count++;
@@ -505,10 +532,13 @@ execute_camera_script (void *exinfo)
 	  pthread_mutex_unlock (&move_count_mutex);
 	  break;
 	case COMMAND_WAIT:
+	  time (&now);
+	  timeout.tv_sec = now + 1000;
+	  timeout.tv_nsec = 0;
 	  pthread_mutex_lock (&move_count_mutex);
 	  while (move_count == ((struct ex_info *) exinfo)->move_count)
 	    {
-	      pthread_cond_wait (&move_count_cond, &move_count_mutex);
+	      pthread_cond_timedwait (&move_count_cond, &move_count_mutex, &timeout);
 	    }
 	  ((struct ex_info *) exinfo)->move_count = move_count;
 	  pthread_mutex_unlock (&move_count_mutex);
@@ -584,10 +614,6 @@ observe (int watch_status)
     {
       time_t t = time (NULL);
       struct device *camera;
-      struct timeval tv;
-
-      tv.tv_sec = 0;
-      tv.tv_usec = 0;
 
       if (watch_status
 	  && (devcli_server ()->statutes[0].status != SERVERD_NIGHT &&
