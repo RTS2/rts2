@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.2.2, petr@lascaux.asu.cas.cz)
+AC_INIT(rts2, 0.3.1, petr@lascaux.asu.cas.cz)
 
-AM_INIT_AUTOMAKE([gnu dist-bzip2 dist-tarZ])
+AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
 AC_PREREQ(2.50)
 
@@ -95,6 +95,17 @@ fi
 
 AC_SUBST(WWWUSER)
 
+AC_MSG_CHECKING(for date)
+DATE=`date +%Y-%m-%d`
+if test "z"$DATE = "z" ; then
+	AC_MSG_RESULT(none found)
+	DATE="unknow"
+else
+	AC_MSG_RESULT($DATE)
+fi
+
+AC_SUBST(DATE)
+
 #debug="-DDEBUG"
 debug=""
 AC_SUBST(debug)
@@ -146,6 +157,7 @@ AM_CONFIG_HEADER(include/config.h)
 AC_OUTPUT([Makefile
 	   doc/Makefile
 	   doc/dia/Makefile
+	   man/Makefile
 	   include/Makefile
 	   html/Makefile
 	   src/Makefile
@@ -161,6 +173,7 @@ AC_OUTPUT([Makefile
 	   src/grb/ibas/Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
+	   src/sql/Makefile
 	   src/sql/create_functions.sql
 	   src/sql/create_tables.sql
 	   src/sql/create_views.sql
@@ -172,4 +185,8 @@ AC_OUTPUT([Makefile
 	   src/utils/Makefile
 	   src/utils/config.h
            src/wcs/Makefile
-	   src/writers/Makefile])
+	   src/writers/Makefile
+	   man/rts2.1
+	   man/rts2.conf.5
+	   man/rts2-centrald.1
+	   man/rts2-cmon.1])

@@ -1,6 +1,6 @@
 # $Id$
 
-htmldatadir = ${datadir}/doc/html/@PACKAGE@/html
+htmldatadir = ${datadir}/doc/@PACKAGE@/html
 
 dist_htmldata_DATA =	bartdb_months.php 	\
 			chart.php 		\
