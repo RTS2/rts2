@@ -6,6 +6,20 @@
  * telescope 
     o position corections
 
+0.2.2
+===
+ * configuration files
+   o for central server & devices
+
+0.2.1
+===
+ * central server
+   o provides IP and PORT of devices
+ * devcli
+   o support device listing
+ * camd
+   o paraller readout & data sending
+
 0.2
 ===
  * client library
