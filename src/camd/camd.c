@@ -9,6 +9,7 @@
 #include <mcheck.h>
 #include <math.h>
 #include <stdarg.h>
+#include <string.h>
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,6 +32,7 @@
 
 #define DEVICE_PORT		5556	// default camera TCP/IP port
 #define DEVICE_NAME 		"C0"	// default camera name
+
 
 #define MAX_CHIPS		2
 
@@ -59,6 +61,8 @@ struct readout readouts[MAX_CHIPS];
 
 char device_name[64];
 
+char *device_file = "/dev/ccda";
+
 /* expose functions */
 #define CAMD_EXPOSE ((struct camd_expose *) arg)
 
@@ -76,7 +80,7 @@ void *
 start_expose (void *arg)
 {
   int ret;
-  camera_init ("/dev/ccda", sbig_port);
+  camera_init (device_file, sbig_port);
   if ((ret =
        camera_expose (CAMD_EXPOSE->chip, &CAMD_EXPOSE->exposure,
 		      CAMD_EXPOSE->light)) < 0)
@@ -437,7 +441,7 @@ camd_handle_command (char *command)
 
   if (strcmp (command, "ready") == 0)
     {
-      cam_call (camera_init ("/dev/ccda", sbig_port));
+      cam_call (camera_init (device_file, sbig_port));
       cam_call (camera_info (&info));
       atexit (camera_done);
     }
@@ -803,6 +807,8 @@ camd_handle_command (char *command)
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       devser_dprintf ("stopread <chip> - stop reading given chip");
       devser_dprintf ("cooltemp <temp> - cooling temperature");
+      devser_dprintf ("focus <steps> - change focus to the given steps");
+      devser_dprintf ("autofocus - try to autofocus picture");
       devser_dprintf ("filter <filter number> - set camera filter");
       devser_dprintf ("exit - exit from connection");
       devser_dprintf ("help - print, what you are reading just now");
@@ -825,7 +831,7 @@ camd_handle_status (int status, int old_status)
 {
   int ret;
 
-  if (camera_init ("/dev/ccda", sbig_port))
+  if (camera_init (device_file, sbig_port))
     return -1;
 
   switch (status & SERVERD_STATUS_MASK)
@@ -857,6 +863,7 @@ main (int argc, char **argv)
 
   char *hostname = NULL;
   int c;
+  int deamonize = 1;
 
 #ifdef FOCUSING
   char *focuser_port = NULL;
@@ -876,19 +883,21 @@ main (int argc, char **argv)
       static struct option long_option[] = {
 	{"sbig_port", 1, 0, 'l'},
 	{"port", 1, 0, 'p'},
+	{"interactive", 0, 0, 'i'},
 	{"serverd_host", 1, 0, 's'},
 	{"serverd_port", 1, 0, 'q'},
 	{"device_name", 1, 0, 'd'},
+	{"device_file", 1, 0, 'f'},
 #ifdef FOCUSING
-	{"focuser_port", 1, 0, 'f'},
+	{"focuser_port", 1, 0, 'o'},
 #endif /* FOCUSING */
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
 #ifdef FOCUSING
-      c = getopt_long (argc, argv, "l:f:p:s:q:d:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:o:p:s:q:d:f:h", long_option, NULL);
 #else
-      c = getopt_long (argc, argv, "l:p:s:q:d:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:p:s:q:d:f:h", long_option, NULL);
 #endif /* FOCUSING */
 
       if (c == -1)
@@ -907,6 +916,9 @@ main (int argc, char **argv)
 	case 'p':
 	  device_port = atoi (optarg);
 	  break;
+	case 'i':
+	  deamonize = 0;
+	  break;
 	case 's':
 	  serverd_host = optarg;
 	  break;
@@ -917,8 +929,11 @@ main (int argc, char **argv)
 	  strncpy (device_name, optarg, 64);
 	  device_name[63] = 0;
 	  break;
-#ifdef FOCUSING
 	case 'f':
+	  device_file = optarg;
+	  break;
+#ifdef FOCUSING
+	case 'o':
 	  focuser_port = optarg;
 	  break;
 #endif /* FOCUSING */
@@ -927,7 +942,7 @@ main (int argc, char **argv)
 	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd\n");
 #ifdef FOCUSING
 	  printf
-	    ("\tfocuser_port|f <dev-entry>\t\twhere focuser is connected. If not defined -> not focusing\n");
+	    ("\tfocuser_port|o <dev-entry>\t\twhere focuser is connected. If not defined -> not focusing\n");
 #endif /* FOCUSING */
 	  exit (EXIT_SUCCESS);
 	case '?':
@@ -955,7 +970,7 @@ main (int argc, char **argv)
 	readouts[c].d_height = -1;
     }
 
-  if (devdem_init (stats, 2, camd_handle_status))
+  if (devdem_init (stats, 2, camd_handle_status, deamonize))
     {
       syslog (LOG_ERR, "devdem_init: %m");
       return EXIT_FAILURE;
