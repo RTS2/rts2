@@ -64,16 +64,16 @@ phot_handler (struct param_status *params, struct phot_info *info)
   if (!strcmp (params->param_argv, "filter"))
     return param_next_integer (params, &info->filter);
   if (!strcmp (params->param_argv, "count"))
-  {
-    FILE *phot_log;
-    char tc[30];
-    phot_log = fopen ("phot_log", "a");
-    ctime_r (&t, tc);
-    tc[strlen(tc) - 1] =0;
-    ret = param_next_integer (params, &info->count);
-    fprintf (phot_log, "%s %i %i\n", tc, info->filter, info->count);
-    fclose (phot_log);
-  }
+    {
+      FILE *phot_log;
+      char tc[30];
+      phot_log = fopen ("phot_log", "a");
+      ctime_r (&t, tc);
+      tc[strlen (tc) - 1] = 0;
+      ret = param_next_integer (params, &info->count);
+      fprintf (phot_log, "%s %i %i\n", tc, info->filter, info->count);
+      fclose (phot_log);
+    }
   return ret;
 }
 
@@ -97,7 +97,8 @@ public:
   pthread_t thr;
   pthread_attr_t attrs;
 
-    DeviceWindow (char *camera_name, Window root_window, int center, float exposure);
+    DeviceWindow (char *camera_name, Window root_window, int center,
+		  float exposure);
 
    ~DeviceWindow ()
   {
@@ -119,22 +120,21 @@ public:
   {
     struct camera_info *caminfo = (struct camera_info *) &camera->info;
     int x, y, w, h;
-		devcli_command (camera, NULL, "chipinfo 0");
-		x = caminfo->chip_info[0].width / 2 - 128;
-		y = caminfo->chip_info[0].height / 2 - 128;
-		w =
-		  x + 256 <
-		  caminfo->chip_info[0].width ? 256 : 
-                        caminfo->chip_info[0].width - x;
-		h =
-		  y + 256 <
-		  caminfo->chip_info[0].height ? 256 : 
-                        caminfo->chip_info[0].height - y;
-		  
-		devcli_command (camera, NULL, "box 0 %i %i %i %i", x, y, w, h);
-		printf
-		  ("reading frame center [%i,%i:%i,%i]!!\n==============\n",
-		   x, y, x + w, y + h);
+    if (devcli_command (camera, NULL, "chipinfo 0"))
+	    return -1;
+    x = caminfo->chip_info[0].width / 2 - 128;
+    y = caminfo->chip_info[0].height / 2 - 128;
+    w =
+      x + 256 <
+      caminfo->chip_info[0].width ? 256 : caminfo->chip_info[0].width - x;
+    h =
+      y + 256 <
+      caminfo->chip_info[0].height ? 256 : caminfo->chip_info[0].height - y;
+
+    devcli_command (camera, NULL, "box 0 %i %i %i %i", x, y, w, h);
+    printf
+      ("reading frame center [%i,%i:%i,%i]!!\n==============\n",
+       x, y, x + w, y + h);
   }
 
 
@@ -200,12 +200,12 @@ public:
 	      case XK_c:
 		center_exposure ();
 		break;
-              case XK_p:
-                devcli_command_all (DEVICE_TYPE_PHOT, "integrate 5 10");
-                break;
-              case XK_o:
-                devcli_command_all (DEVICE_TYPE_PHOT, "stop");
-                break;
+	      case XK_p:
+		devcli_command_all (DEVICE_TYPE_PHOT, "integrate 5 10");
+		break;
+	      case XK_o:
+		devcli_command_all (DEVICE_TYPE_PHOT, "stop");
+		break;
 	      default:
 		// fprintf (stderr, "Unknow key pressed:%i\n", (int) ks);
 		break;
@@ -438,7 +438,8 @@ public:
 
 };
 
-DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center, float exposure)
+DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
+			    float exposure)
 {
   XSetWindowAttributes xswa;
 
@@ -471,10 +472,6 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center, f
       printf ("**** Cannot find camera\n");
       exit (EXIT_FAILURE);
     }
-  if (center)
-  {
-    center_exposure ();
-  }
   camera->data_handler_args = this;
   camera->data_handler = static_data_handler;
 
@@ -487,6 +484,11 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center, f
   CAMD_WRITE_READ ("ready");
   CAMD_WRITE_READ ("info");
   CAMD_WRITE_READ ("chipinfo 0");
+
+  if (center)
+    {
+      center_exposure ();
+    }
 
   devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			  DEVICE_PRIORITY, 0);
@@ -634,17 +636,19 @@ main (int argc, char **argv)
 
   for (i = 0; i < camera_num; i++)
     {
-      camera_window[i] = new DeviceWindow (camera_names[i], root_window, center, exposure);
+      camera_window[i] =
+	new DeviceWindow (camera_names[i], root_window, center, exposure);
     }
 
   printf ("waiting end\n");
 
   for (phot = devcli_devices (); phot; phot = phot->next)
     if (phot->type == DEVICE_TYPE_PHOT)
-    {
-       printf ("setting handler: %s\n", phot->name);
-       devcli_set_command_handler (phot, (devcli_handle_response_t) phot_handler);
-    }
+      {
+	printf ("setting handler: %s\n", phot->name);
+	devcli_set_command_handler (phot,
+				    (devcli_handle_response_t) phot_handler);
+      }
 
   for (i = 0; i < camera_num; i++)
     {
