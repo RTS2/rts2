@@ -536,7 +536,7 @@ client_authorize ()
 
   // wait for server client to unblock us..
   sb.sem_op = -1;
-  sb.sem_flg = SEM_UNDO;
+  sb.sem_flg = 0;
   if (semop (status_sem, &sb, 1))
     {
       syslog (LOG_ERR, "client_authorize semop # %i: %m", sb.sem_num);
