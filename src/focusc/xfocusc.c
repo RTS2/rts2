@@ -33,6 +33,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/keysym.h>
 
 #define PP_NEG
 
@@ -41,6 +42,8 @@
 //#define PP_MED 0.60
 #define PP_HIG 0.995
 #define PP_LOW (1 - PP_HIG)
+
+#define HISTOGRAM_LIMIT		65536
 
 #define EXPOSURE_TIME		10
 
@@ -53,9 +56,19 @@ Window window;
 GC gc = NULL;
 XGCValues gcv;
 Pixmap pixmap;
+XImage *image = NULL;
 
-
+int hist[HISTOGRAM_LIMIT];
 int depth = 0;
+
+Colormap colormap;
+XColor rgb[256];
+
+void
+redraw ()
+{
+  XDrawImageString (display, window, gc, 50, 50, "hellow", 6);
+}
 
 void *
 event_loop (void *arg)
@@ -64,12 +77,30 @@ event_loop (void *arg)
     {
       XEvent event;
       XNextEvent (display, &event);
+      KeySym ks;
 
       switch (event.type)
 	{
 	case Expose:
-	  XDrawImageString (display, window, gc, 50, 50, "hellow", 6);
+	  redraw ();
 	  break;
+	case KeyPress:
+	  ks = XLookupKeysym ((XKeyEvent *) & event, 0);
+	  switch (ks)
+	    {
+	    case XK_1:
+	      devcli_command (camera, NULL, "binning 0 1 1");
+	      break;
+	    case XK_2:
+	      devcli_command (camera, NULL, "binning 0 2 2");
+	      break;
+	    case XK_3:
+	      devcli_command (camera, NULL, "binning 0 3 3");
+	      break;
+	    default:
+	      fprintf (stderr, "Unknow key pressed:%i\n", ks);
+	      break;
+	    }
 	}
     }
 }
@@ -86,22 +117,20 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 {
   int i, j, k, width, height;
   char *data, *d, *pix_data;
-  unsigned int *im;
-  unsigned int m;
+  unsigned short *im;
+  unsigned short m;
   int ret = 0;
   ssize_t s;
   XSetWindowAttributes xswa;
-  Colormap colormap;
-  static XImage *image = NULL;
   struct imghdr *imghdr;
 
-  int low, med, hig, ds;
-  int hist[65536];
-  static XColor rgb[256];
+  int ds;
+
+  short low, med, hig;
 
   printf ("reading data socket: %i size: %i\n", sock, size);
 
-  data = (char *) malloc (size + sizeof (struct imghdr));
+  data = (char *) malloc (size * 2 + sizeof (struct imghdr));
   d = data;
 
   while ((s = devcli_read_data (sock, d, DATA_BLOCK_SIZE)) > 0)
@@ -118,9 +147,8 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 
   pix_data = data + sizeof (struct imghdr);
 
-  im = (unsigned int *) pix_data;
+  im = (unsigned short *) pix_data;
 
-  colormap = DefaultColormap (display, GrayScale);
 
   imghdr = (struct imghdr *) data;
 
@@ -134,23 +162,15 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 		      8, 0);
       image->data = (char *) malloc (image->bytes_per_line * height + 16);
 
-      // allocate colormap..
-      for (i = 0; i < 256; i++)
-	{
-	  rgb[i].red = 65536 * (1.0 - 1.0 * i / 256);
-	  rgb[i].green = 65536 * (1.0 - 1.0 * i / 256);
-	  rgb[i].blue = 65536 * (1.0 - 1.0 * i / 256);
-	  rgb[i].flags = DoRed | DoGreen | DoBlue;
-	  XAllocColor (display, colormap, rgb + i);
-	}
     }
 
   // histogram build
-  for (i = 0; i < 65536; i++)
+  for (i = 0; i < HISTOGRAM_LIMIT; i++)
     hist[i] = 0;
 
   ds = 0;
   k = 0;
+  printf ("image: %ix%i\n", height, width);
   for (j = 0; j < height; j++)
     for (i = 0; i < width; i++)
       {
@@ -161,7 +181,7 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 
   low = hig = med = 0;
   j = 0;
-  for (i = 0; i < 65536; i++)
+  for (i = 0; i < HISTOGRAM_LIMIT; i++)
     {
       j += hist[i];
       if ((!low) && (((float) j / (float) ds) > PP_LOW))
@@ -173,7 +193,8 @@ data_handler (int sock, size_t size, struct image_info *image_info)
       if ((!hig) && (((float) j / (float) ds) > PP_HIG))
 	hig = i;
     }
-  fprintf (stderr, "levels: low:%d, med:%d, hi:%d\n", low, med, hig);
+  fprintf (stderr, "levels: low:%d, med:%d, hi:%d ds: %d\n", low, med, hig,
+	   ds);
 
   for (j = 0; j < height; j++)
     for (i = 0; i < width; i++)
@@ -185,8 +206,8 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 	  XPutPixel (image, i, j, rgb[255].pixel);
 	else
 	  {
-	    //printf ("middle: %i %i %li\n", m, 256 * ((float) m - low) / (hig - low), rgb[256 * ((float) m - low) / (hig - low)].pixel);
-	    XPutPixel (image, i, j, rgb[(int) (255 * ((float) m - low) / (hig - low))].pixel);	// );
+//printf ("middle: %i %i %li\n", m, 256 * (m - low) / (hig - low), rgb[(int)256 * (m - low) / (hig - low)].pixel);
+	    XPutPixel (image, i, j, rgb[(int) (256 * (m - low) / (hig - low))].pixel);	// );
 	  }
       }
 
@@ -200,6 +221,7 @@ data_handler (int sock, size_t size, struct image_info *image_info)
   XChangeWindowAttributes (display, window, CWColormap | CWBackPixmap, &xswa);
 
   XClearWindow (display, window);
+  redraw ();
   XFlush (display);
 
 out:
@@ -245,6 +267,8 @@ main (int argc, char **argv)
   uint16_t port = SERVERD_PORT;
 
   XSetWindowAttributes xswa;
+
+  int i;
 
   char *server;
   time_t start_time;
@@ -317,6 +341,18 @@ main (int argc, char **argv)
 
   XSelectInput (display, window,
 		KeyPressMask | ButtonPressMask | ExposureMask);
+
+  colormap = DefaultColormap (display, DefaultScreen (display));
+
+  // allocate colormap..
+  for (i = 0; i < 256; i++)
+    {
+      rgb[i].red = 65536 * (1.0 * i / 256);
+      rgb[i].green = 65536 * (1.0 * i / 256);
+      rgb[i].blue = 65536 * (1.0 * i / 256);
+      rgb[i].flags = DoRed | DoGreen | DoBlue;
+      XAllocColor (display, colormap, rgb + i);
+    }
 
   XMapRaised (display, window);
 
