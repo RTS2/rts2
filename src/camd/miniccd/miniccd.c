@@ -92,7 +92,7 @@ camera_init (char *device_name, int camera_id)
       field_rows[i] = 0;
       chip_device_name = (char *) malloc (strlen (device_name) + 2);
       strcpy (chip_device_name, device_name);
-      if (i == 0 && interleave)
+      if (i == 0 && (interleave || miniccd.chips == 1))
 	{
 	  fd_chips[i] = fd_ccd;
 	}
