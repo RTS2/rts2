@@ -31,7 +31,7 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
     {
       struct ln_rst_time t_rst;
       sun_naut =
-	get_solar_rst_horizont (t_jd, observer, CIVIL_HORIZONT, &t_rst);
+	get_solar_rst_horizont (t_jd, observer, NAUTIC_HORIZONT, &t_rst);
       if (!rst_naut->rise && jd < t_rst.rise)
 	rst_naut->rise = t_rst.rise;
       if (!rst_naut->transit && jd < t_rst.transit)
