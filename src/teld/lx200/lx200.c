@@ -42,8 +42,6 @@
 // at about 10 30-bytes lines to syslog for every query). 
 // #define DEBUG_ALL_PORT_COMM
 
-double park_dec;
-
 int port = -1;
 
 //! sempahore id structure, we have two semaphores...
@@ -55,7 +53,7 @@ int semid;
 #define SEM_MOVE 	1
 
 //! telescope parking declination
-#define PARK_DEC	40
+#define PARK_DEC	50
 
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 /* union semun is defined by including <sys/sem.h> */
@@ -460,8 +458,6 @@ telescope_init (const char *device_name, int telescope_id)
   unsigned short int sem_arr[] = { 1, 1 };
   char rbuf[10];
 
-  park_dec = PARK_DEC;
-
   if (port < 0)
     port = open (device_name, O_RDWR);
   if (port < 0)
@@ -561,8 +557,8 @@ telescope_init (const char *device_name, int telescope_id)
 extern void
 telescope_done ()
 {
-  syslog (LOG_DEBUG, "lx200: telescope_done called");
   semctl (semid, 1, IPC_RMID);
+  syslog (LOG_DEBUG, "lx200: telescope_done called %i", semid);
 }
 
 /*!
@@ -582,7 +578,7 @@ telescope_info (struct telescope_info *info)
   strcpy (info->type, "LX200");
   strcpy (info->serial_number, "000001");
 
-  info->park_dec = park_dec;
+  info->park_dec = PARK_DEC;
 
   return 0;
 }
@@ -927,7 +923,7 @@ telescope_park ()
   double lst;
   if (tel_read_siderealtime (&lst) < 0)
     return -1;
-  return tel_move_to (lst * 15.0, park_dec);
+  return tel_move_to (lst * 15.0, PARK_DEC);
 }
 
 /*!
