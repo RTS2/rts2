@@ -247,7 +247,7 @@ priority_block_end ()
 }
 
 int
-priority_block_start ()
+priority_block_start (int lost_priority)
 {
   int has_priority;
 
@@ -258,6 +258,9 @@ priority_block_start ()
       return -1;
     }
   has_priority = client_id >= 0 && clients_info->priority_client == client_id;
+
+  if (lost_priority)
+	  clients_info->priority_client = -1;
 
   if (!has_priority)
     {
@@ -279,7 +282,7 @@ priority_block_start ()
 int
 devdem_priority_block_start ()
 {
-  if (priority_block_start ())
+  if (priority_block_start (0))
     {
       devser_write_command_end (DEVDEM_E_PRIORITY,
 				"you haven't priority to execute this command");
@@ -301,13 +304,11 @@ client_priority_lost ()
 {
   syslog (LOG_INFO, "calling thread cancel");
 
-  priority_block_start ();
+  priority_block_start (1);
   devser_thread_cancel_all ();
   devdem_priority_block_end ();
 
   devser_thread_wait ();
-
-  clients_info->priority_client = -1;
 
   status_unlock (client_status);
 
