@@ -172,7 +172,7 @@ filter_routine (unsigned long ptr)
     }
   dev->status |= PHOT_S_FILTERMOVE;
   init_timer (&dev->command_timer);
-  dev->command_timer.expires = jiffies + HZ / 50;
+  dev->command_timer.expires = jiffies + 2 * HZ / 50;
   dev->command_timer.function = filter_routine;
   add_timer (&dev->command_timer);
 }
@@ -375,7 +375,7 @@ process_command (struct device_struct *dev)
 	{
 	  if (dev->command_pending)
 	    {
-	      dev->status &= PHOT_S_INTEGRATION_DIS;
+	      dev->status |= PHOT_S_INTEGRATION_DIS;
 	      // cancel any running procedure, write out fake results
 	      dev->command_timer.function ((unsigned long) dev);
 	      dev->status &= ~PHOT_S_INTEGRATION_DIS;
