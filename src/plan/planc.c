@@ -267,7 +267,7 @@ execute_camera_script (void *exinfo)
 	  if (!isspace (*command))
 	    fprintf (stderr,
 		     "Error in executing - unknow command, script is: '%s'\n",
-		     command, *command);
+		     command);
 	  command++;
 	}
     }
