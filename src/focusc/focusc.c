@@ -31,7 +31,7 @@
 #include "../writers/fits.h"
 #include "status.h"
 
-#define EXPOSURE_TIME	3.0
+#define EXPOSURE_TIME	30.0
 
 float exposure_time = EXPOSURE_TIME;
 
@@ -86,7 +86,7 @@ data_handler (int sock, size_t size, struct image_info *image)
   mkpath (dirname, 0777); */
 
   if (increase_exposure)
-    asprintf (&filename, "tmp%i_%i.fits", parent_pid, increase_exposure++);
+    asprintf (&filename, "tmp%i_%04i.fits", parent_pid, increase_exposure++);
   else
     asprintf (&filename, "tmp%i.fits", parent_pid);
   strcpy (filen, filename);
@@ -207,7 +207,7 @@ main (int argc, char **argv)
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:e:i:p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "d:e:ip:h", long_option, NULL);
 
       if (c == -1)
 	break;
