@@ -81,7 +81,7 @@ struct client *shm_clients;
  * @return 0 and set pointer do device on success, -1 and set errno on error
  */
 int
-find_device (char *name, long *id, struct device **device)
+find_device (char *name, int *id, struct device **device)
 {
   int i;
   for (i = 0; i < MAX_DEVICE; i++)
@@ -111,7 +111,7 @@ int
 device_msg_snd (char *name, char *format, ...)
 {
   struct device *device;
-  long id;
+  int id;
   if (find_device (name, &id, &device))
     {
       int ret;
@@ -187,7 +187,9 @@ device_serverd_handle_command (char *command)
 	{
 	  devser_dprintf ("authorization_failed %i", client);
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
-				    "invalid authorization key: %i %i", key, shm_devices[serverd_id].authorizations[client]);
+				    "invalid authorization key: %i %i", key,
+				    shm_devices[serverd_id].
+				    authorizations[client]);
 	  shm_devices[serverd_id].authorizations[client] = 0;
 	  devser_shm_data_unlock ();
 	  return -1;
@@ -396,11 +398,12 @@ client_serverd_handle_command (char *command)
 	  // device number could change..device names don't
 	  char *dev_name;
 	  struct device *device;
+	  int dev_id;
 	  if (devser_param_test_length (1)
 	      || devser_param_next_string (&dev_name))
 	    return -1;
 	  // find device, set it authorization key
-	  if (find_device (dev_name, NULL, &device))
+	  if (find_device (dev_name, &dev_id, &device))
 	    {
 	      devser_write_command_end (DEVDEM_E_SYSTEM,
 					"cannot find device with name %s",
@@ -412,7 +415,7 @@ client_serverd_handle_command (char *command)
 	  device->authorizations[serverd_id] = key;
 	  devser_shm_data_unlock ();
 
-	  devser_dprintf ("authorization_key %i %i", serverd_id, key);
+	  devser_dprintf ("authorization_key %i %i", dev_id, key);
 	  return 0;
 	}
     }
