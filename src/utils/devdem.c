@@ -885,8 +885,7 @@ devdem_init (char **status_names, int status_num_in,
     }
 
   // writes names and null to shared memory
-  if ((int) (statutes = (struct devconn_status *) shmat (status_shm, NULL, 0))
-      < 0)
+  if ((statutes = (struct devconn_status *) shmat (status_shm, NULL, 0)) < 0)
     {
       syslog (LOG_ERR, "shmat: %m");
       return -1;
@@ -1010,15 +1009,14 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
   cmd_device_handler = in_handler;
 
   // attach shared memory with status
-  if ((int) (statutes = (struct devconn_status *) shmat (status_shm, NULL, 0))
-      < 0)
+  if ((statutes = (struct devconn_status *) shmat (status_shm, NULL, 0)) < 0)
     {
       syslog (LOG_ERR, "shmat: %m");
       return -1;
     }
 
   // attach shared memory with clients_info
-  if ((int) (clients_info = (struct client_info *) devser_shm_data_at ()) < 0)
+  if ((clients_info = (struct client_info *) devser_shm_data_at ()) < 0)
     {
       syslog (LOG_ERR, "shmat: %m");
       return -1;
