@@ -108,27 +108,6 @@
 /* Define if you have the <unistd.h> header file.  */
 #undef HAVE_UNISTD_H
 
-/* Define if you have the cfitsio library (-lcfitsio).  */
-#undef HAVE_LIBCFITSIO
-
-/* Define if you have the ecpg library (-lecpg).  */
-#undef HAVE_LIBECPG
-
-/* Define if you have the m library (-lm).  */
-#undef HAVE_LIBM
-
-/* Define if you have the ncurses library (-lncurses).  */
-#undef HAVE_LIBNCURSES
-
-/* Define if you have the nova library (-lnova).  */
-#undef HAVE_LIBNOVA
-
-/* Define if you have the pq library (-lpq).  */
-#undef HAVE_LIBPQ
-
-/* Define if you have the pthread library (-lpthread).  */
-#undef HAVE_LIBPTHREAD
-
 /* Name of package */
 #undef PACKAGE
 
