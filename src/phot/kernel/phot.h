@@ -53,5 +53,6 @@
 #define PHOT_CMD_INTEGRATE	'C'	//0x02
 #define PHOT_CMD_STOP_INTEGRATE	'D'	//0x03
 #define PHOT_CMD_MOVEFILTER	'E'	//0x04
+#define PHOT_CMD_INTEGR_ENABLED 'F'
 
 #endif /* _PHOT_H_ */

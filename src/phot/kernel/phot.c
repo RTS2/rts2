@@ -86,6 +86,7 @@ struct device_struct
   int desired_position;
   u16 integration_time;		// desired integration time
   int status;
+  int integration_enabled;	// if it's save to integrate
   struct command_list_struct *command_list;
   int command_pending;
   struct timer_list command_timer;
@@ -336,10 +337,28 @@ process_command (struct device_struct *dev)
       schedule_work (&do_command_que);
       break;
     case PHOT_CMD_MOVEFILTER:
-      del_timer_sync (&dev->command_timer);
-      dev->desired_position = intargs (&dev->command_list->command[1]);
-      dev->command_pending = 1;
-      filter_routine ((unsigned long) dev);
+      if (dev->integration_enabled)
+	{
+	  del_timer_sync (&dev->command_timer);
+	  dev->desired_position = intargs (&dev->command_list->command[1]);
+	  dev->command_pending = 1;
+	  filter_routine ((unsigned long) dev);
+	}
+      else
+	{
+	  printk (KERN_ERR "Integration disabled, move filter ignored");
+	}
+      break;
+    case PHOT_CMD_INTEGR_ENABLED:
+      dev->integration_enabled = intargs (&dev->command_list->command[1]);
+      printk (KERN_INFO "Integration enabled: %i", dev->integration_enabled);
+      if (!dev->integration_enabled)
+	{
+	  del_timer_sync (&dev->command_timer);
+	  dev->desired_position = 0;
+	  dev->command_pending = 1;
+	  filter_routine ((unsigned long) dev);
+	}
       break;
     default:
       printk (KERN_WARNING "unknow command '%c' (%x)\n",
@@ -511,8 +530,10 @@ init_module (void)
       return err;
     }
   reset (&device);
+  device.integration_enabled = 0;
   create_proc_read_entry ("phot", 0, NULL, phot_read_procmem, NULL);
   printk (KERN_INFO "Module loaded\n");
+  printk (KERN_INFO "Integration disabled\n");
   return 0;
 }
 
