@@ -48,6 +48,8 @@ Target::move ()
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
 
+      tel_target_state = TEL_OBSERVING;
+
       if (devcli_command
 	  (telescope, NULL, "move %f %f", object.ra, object.dec))
 	{
@@ -58,12 +60,14 @@ Target::move ()
     }
   else if (type == TARGET_DARK && moved == 0)
     {
-      moved = 1;
+      tel_target_state = TEL_PARKED;
+
       if (devcli_command (telescope, NULL, "park"))
 	{
 	  printf ("telescope error\n\n--------------\n");
 	  return -1;
 	}
+      moved = 1;
     }
   return 0;
 }
@@ -218,7 +222,7 @@ Target::observe (Target * last_t)
 
   // wait till end of telescope movement
   devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
-			  TEL_OBSERVING, 120);
+			  tel_target_state, 120);
 
   devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
 			      DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 60);
@@ -370,8 +374,10 @@ Target::acquire ()
       precission_count++;
 
       fflush (stdout);
+      // move is at the end & we not move for dark images, so we shall
+      // not get to parked state
       devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
-			      TEL_OBSERVING, 0);
+			      tel_target_state, 120);
 
       devcli_command (camera, NULL, "expose 0 %i %f", light, exposure);
       devcli_command (telescope, NULL, "base_info;info");
@@ -437,8 +443,9 @@ Target::acquire ()
 	  else
 	    {
 	      moved = 0;
-	      // try to synchro the scope again
-	      if (img_hi_precision.hi_precision == 1)
+	      // try to synchro the scope again..only if not dark
+	      // image
+	      if (img_hi_precision.hi_precision == 1 && type == TARGET_LIGHT)
 		move ();
 	    }
 	  img_hi_precision.ntries++;
@@ -451,7 +458,7 @@ Target::acquire ()
   if (hi_precision == 2)
     {
       devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
-			      TEL_OBSERVING, 0);
+			      tel_target_state, 300);
     }
   // try centering, if required
   if (img_hi_precision.ntries < max_tries
@@ -598,7 +605,7 @@ Target::runScript (struct ex_info *exinfo)
 					  PHOT_NOINTEGRATE, 10000);
 	    }
 	  devcli_wait_for_status (telescope, "telescope",
-				  TEL_MASK_MOVING, TEL_OBSERVING, 0);
+				  TEL_MASK_MOVING, tel_target_state, 300);
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
 	    {
@@ -672,7 +679,7 @@ Target::runScript (struct ex_info *exinfo)
 	    }
 
 	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
-				  TEL_OBSERVING, 0);
+				  tel_target_state, 300);
 	  devcli_command_all (DEVICE_TYPE_PHOT, "filter %i", filter);
 	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate %f %i", exposure,
 			      count);

@@ -7,6 +7,7 @@
 #include <time.h>
 
 #include "image_info.h"
+#include "status.h"
 
 #define MAX_READOUT_TIME		120
 #define EXPOSURE_TIMEOUT		50
@@ -106,6 +107,8 @@ private:
   int running_script_count;	// number of running scripts (not in W)
 
   int obs_id;
+
+  int tel_target_state;
 public:
     Target (struct device *tel, struct ln_lnlat_posn *obs)
   {
@@ -141,6 +144,8 @@ public:
 
     obs_id = -1;
     moved = 0;
+
+    tel_target_state = TEL_OBSERVING;
   }
   int getPosition (struct ln_equ_posn *pos)
   {
