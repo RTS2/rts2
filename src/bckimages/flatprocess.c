@@ -115,17 +115,17 @@ process_file (char *filename)
       if (verbose)
 	printf ("No CAM_NAME in %s, default will be used\n", filename);
       if (isnan (min))
-	min = get_double_default ("minflats", -INFINITY);
+	min = get_double_default ("flatmin", -INFINITY);
       if (isnan (max))
-	max = get_double_default ("maxflats", INFINITY);
+	max = get_double_default ("flatmax", INFINITY);
       status = 0;
     }
   else
     {
       if (isnan (min))
-	min = get_device_double_default (camera_name, "minflats", -INFINITY);
+	min = get_device_double_default (camera_name, "flatmin", -INFINITY);
       if (isnan (max))
-	max = get_device_double_default (camera_name, "maxflats", INFINITY);
+	max = get_device_double_default (camera_name, "flatmax", INFINITY);
     }
   if (verbose > 1)
     printf ("%s: min %f, max %f, npix: %li\n", filename, min, max, npixels);
