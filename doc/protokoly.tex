@@ -1,4 +1,4 @@
-\chapter{Pøíkazy}
+\section{Protokol}
 
 \def\comname#1#2#3{
 {\bf #1} {\it #2} #3
@@ -12,23 +12,23 @@
 {\it E:}{\bf #1} #2
 \newline}
 
-\section{Konvence}
+\subsection{Konvence}
 
 {\bf Tuène} je vysázeno jméno pøíkazu a jméno návratové hodnoty.
 
 {\it Kurzívou a v [hranatých závorkách]} jsou vysázeny parametry
 pøíkazu, a návratové hodnoty na øádce.
 
-\section{Obecné návratové hodnoty}
+\subsection{Obecné návratové hodnoty}
 
 Zaøízení vrací 0, pokud po¾adovaná operace probìhla úspì¹nì. Pokud
 pøíkaz neexistuje, nebo klient není autorizován pro provádìní daného
 pøíkazu, vrací hodnotu DEVDEM\_E\_COMMAND. Pokud je pro pøíkaz zadán
 nesprávný poèet parametrù, vrací hodnotu DEVDEM\_E\_PARAMSVAL.
 
-\section{Serverd}
+\subsection{Serverd}
 
-\subsection{Inicializaèní pøíkazy}
+\subsubsection{Inicializaèní pøíkazy}
 
 \comname{login}{[jméno u¾ivatele]}{pøihlásí u¾ivatele do systému}
 \comret{DEVDEM\_E\_COMMAND}{klient je ji¾ pøihlá¹en nebo registrován}
@@ -45,7 +45,7 @@ pou¾ívané pro dal¹í autentifikaci}
 \comret{DEVDEM\_E\_SYSTEM}{zaøízení se stejným jménem je ji¾
 zargistrováno}
 
-\subsection{Informaèní pøíkazy}
+\subsubsection{Informaèní pøíkazy}
 
 \comname{info}{}{vypí¹e informace o pøipojených zaøízeních a pøipojených klientech}
 \comvalue{user}{[id] [priorita] [*|-] [jméno u¾ivatele] [popis provádìnné èinnosti]}
@@ -75,7 +75,7 @@ závislosti na aktuálním èase a datu}
 
 \comname{off}{}{zmìní stav serveru na off - vypnuto}
 
-\section{Zaøízení - obecná komunikace}
+\subsection{Zaøízení - obecná komunikace}
 
 Pokud není klient autorizován, vrací v¹echna komunikace hodnotu
 DEVDEM\_E\_SYSTEM.
@@ -107,7 +107,7 @@ provedení odlo¾ené zmìny priority}
 \comname{blockend}{}{ukonèení bloku pro odlo¾enou zmìnu priority}
 \comret{DEVDEM\_E\_SYSTEM}{pokud spojení není v bloku}
 
-\section{Kamera}
+\subsection{Kamera}
 
 \comname{info}{}{vypí¹e informace o kameøe}
 \comvalue{type}{[typ kamery]}{}
@@ -153,7 +153,7 @@ Pøíkaz skonèí a¾ po úspì¹ném navázání spojení.
 
 \comname{cooltemp}{[temperature]}{nastaví teplotu chlazení èipu}
 
-\section{Montá¾}
+\subsection{Montá¾}
 
 \comname{set}{[RA] [DEC]}{nastaví pozici montá¾e}
 

@@ -29,19 +29,6 @@ Na ovládání kamery budeme potøebovat minimálnì jeden plnì duplexní
 komunikaèní kanál. Vyu¾ijeme nìjakého sí»ového protokolu, s~nejvìt¹í
 pravdìpodobností IP. 
 
-Komunikovat mù¾eme buïto pomocí binárnì zakódovaných zpráv, nebo
-rozhranní zalo¾eném na telnetovském (textovém) protokolu - viz rfc854.
-
-Kódované rozhranní znamená uzavøenost systému, textové rozhranní je
-mo¾ná o~tro¹ku slo¾itìj¹í implemetovat díky nutnosti dekódovat pøijaté
-pøíkazy, ale je otevøenìj¹í.
-
-Rozhodl jsem se pro textové rozhranní. Jeho výhody jsou otevøenost,
-nezávislost na architektuøe cílového poèítaèe\footnote{odpadají napøíklad
-problémy s konverzí dat mezi malými a velkými endiány} a snadné pøidávání
-dal¹ích parametrù - v pøípadì, ¾e klient nebude rozumìt odpovìdi serveru, mù¾e
-jí prostì ignorovat. Pokud bych se rozhodl pro binární protokol, musel bych
-zajistit schodnou verzi klientù a serverù.
 
 \subsection{Pøenos dat}
 

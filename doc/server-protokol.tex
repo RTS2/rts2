@@ -1,46 +1,83 @@
 \section{Protokol}
 
-Textovì orientovaný protokol vychází z protokolu POP, tak jak je popsaný v
-\cite{rfcxxx}. Bloky komunikace jsou ukonèovány znakem konce øádky, platném v
-protokolu Telnet - \\r\\n. Alternativnì mù¾e být znakem konce øádky i pouze
-znak \\n. 
+V následujícím textu je za {\bf server} oznaèován proces, který èeká na
+spojení. Jako {\bf klient} je pak oznaèován proces, který spojení otvírá.
 
-\subsection{Pøíkazy klienta}
+Je potøeba rozli¹ovat klienty pro jednotlivé èinnosti (monitoring, ..) s
+klienty v protokolu.  Proces centrálního serveru vystupuje v protokolu pouze
+jako sever. Klientské procesy vystupují v protokolu v¾dy jako klienti.
+Zaøízení vystupují pøi komunikaci se zaøízenímy jako server. Pøi komunikaci s
+centrálním server pak vystupují jako klient. A pøi komunikaci mezi zaøízenímy
+se jedno chová jako klient a druhé jako server.
 
-Pøíkazy posílá klient serveru, server na nì odpovídá. Odpovìï serveru je v¾dy
-zakonèena øádkou, zaèínající znakem '+' nebo '-' a pokraèující stavovým kódem
-slo¾eným ze tøí èíslic. Server zaène dal¹í pøíkaz pøijatý od klienta
-zpracovávat a¾ po odeslání zakonèovací øádky.
+\subsection{Formát}
 
-Pokud je prvním znakem zakonèovací øádky +, pøíkaz byl úspì¹nì vykonán. Pokud
-je tímto znakem '-', pøíkaz skonèil chybou. Podle stavového kódu lze pak
+Komunikovat mù¾eme buïto pomocí binárnì zakódovaných zpráv, nebo rozhranní
+zalo¾eném na textových zprávách.
+
+Binární komunikace je tì¾ká pro pochopení pøi pohledu zvenèí, vy¾aduje
+pou¾ívání pøesných volání. Binární komunikace je svázána s architekturou, na
+které funguje. Pøi jejím pøíjmu na jiné architektuøe je zapotøebí jí nejdøíve
+konvertovat.
+
+Textové rozhranní lze pøi pohledu zvenèí snadno pochopit. Je nároènìj¹í na
+systémové prostøedky ne¾ binární komunikace - pøená¹ejí se del¹í data, pøijaté
+pøíkazy je potøeba pøed zpracováním detekovat.
+
+Systém pou¾ívá pro pøenos pøíkazù a zpráv textové komunikace. Pro pøenos
+binárních dat (snímkù) se pou¾ívá binárního formátu.
+
+Bloky komunikace v textovém rozhranní jsou ukonèovány znaèkou konce øádky.
+Buïto se pou¾ívá znakù platných v protokolu Telnet \cite{telnet} - tedy znaku
+CR následovaného znakem LF, nebo pouze znaku LF.
+
+Jednotlivé polo¾ky øádky jsou oddìlovány nejménì jedním znakem "mezera".
+
+\subsection{Pøíkazy}
+
+Pøíkazy posílá klient serveru. První polo¾kou øádku je název pøíkazu.
+Název pøíkazu je následovan parametry.
+
+Na jedné øádce je mo¾né poslat nìkolik pøíkazù. Jako jejich oddìlovaè slou¾í
+støedník.
+
+\subsubsection{Odpovìdi}
+
+Server na pøíkazy odpovídá. Odpovìï serveru je v¾dy zakonèena øádkou,
+zaèínající znakem '+' nebo '-' a pokraèující stavovým kódem slo¾eným ze tøí
+èíslic. Server zaène dal¹í pøíkaz pøijatý od klienta zpracovávat a¾ po
+odeslání zakonèovací øádky.
+
+Pokud je prvním znakem zakonèovací øádky '+', pøíkaz byl úspì¹nì vykonán.
+Pokud je tímto znakem '-', pøíkaz skonèil chybou. Podle stavového kódu lze pak
 rozli¹it, o jakou chybu se jednalo.
 
-Pøed pøijetím zakonèovací øádky mù¾e následovat libovolné mno¾ství øádek s
-odpovìdmi. Ty nezaèínají velkým písmenem. Obvyklá forma tìchto odpovìdí je
-název odpovìdi a popis její hodnoty. Napøíklad po dotazu na pozici dalekohledu
-mù¾e dalekohled odpovìdìt: {\it ra 10}, co¾ znamená, ¾e je v rektascenzi
-nastaven na 10 stupòù.
+Øádky obsahující hodnotu zaèínají malým písmenem. Posílá je server klientovi,
+pøed tím, ne¾ oznámí ukonèení pøíkazu. První polo¾ka je jméno pøíkazu,
+následovaná hodnotami. Napøíklad po dotazu na pozici dalekohledu mù¾e
+dalekohled odpovìdìt{\it ra 10}, co¾ znamená, ¾e je v rektascenzi nastaven na
+10 stupòù.
 
-Pøíkazy jsou tvoøeny názvem pøíkazu a jeho parametry, oddìlenými mezerami.
+\subsection{Zprávy a ¾ádosti serveru}
 
-\subsection{Zprávy a pøíkazy serveru}
-
-Server posílá klientovy zprávy o zmìnách svého stavu a pøíkazy pomocí øádkù,
-zaèínajících velkým písmenem. Mohou se vyskytnou kdekoliv v komunikaci, tedy i
-v prùbìhu odpovìdi na pøíkaz. Klient jejich pøíjem nepotvrzuje.
+Øádky, které posílá server klientovy a které zaèínají velkým písmenem obsahují
+buïto zprávy, nebo ¾ádosti serveru. Mohou se vyskytovat kdykoliv v prùbìhu
+komunikace klienta se serverem. Klient jejich pøíjem nepotvrzuje.
 
 \subsubsection{Stavové zprávy}
 
 Zaèínají znakem 'S', a obsahují název stavu, jeho novou hodnotu a doplòující
-komentáø. Tyto èásti jsou oddìleny mezerou.
+komentáø.
 
 \subsubsection{Otevøení datového spojení}
 
-Po¾adavky na otevøení nového datového spojení zaèínají znakem 'D'. Poté
+®ádosti na otevøení nového datového spojení zaèínají znakem 'D'. Poté
 následuje øetìzec connect, jméno nebo IP adresa a port, na kterou se má klient
-pøipojit, a délka bloku pøená¹ených dat.
+pøipojit. Poslední je délka bloku pøená¹ených dat.
+
+Klient by se po pøijetí této ¾ádosti mìl pokusit o navázání spojení na danou
+sí»ovou adresu.
 
 \subsubsection{Zprávy}
 
-Zprávy zaèínají písmenem M, za kterým následuje text zprávy.
+Zprávy zaèínají písmenem M, za kterým následuje text zprávy. Nemají
