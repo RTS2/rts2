@@ -91,17 +91,35 @@ mylog (int i)
   return m;
 }
 
+float
+mylog_f (float i)
+{
+  float m;
+
+  return i;
+
+  m = (float) ((65535.0 / (pow (65535, GAMMA))) * pow (i, GAMMA));
+  if (m < 0)
+    m = 0;
+  if (m > 65535)
+    m = 65535;
+
+  return m;
+}
+
 int
 read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full)
 {
   fitsfile *pim = NULL;
-  int status = 0, i, j, k, m, n, w, nfound, anynull;
+  int status = 0, i, j, k, m, n, nfound, anynull;
   long naxes[2];
   long npixels, fpixel;
   float nullval;
-  unsigned short *im = 0;
+  float *im = 0, *im_full = 0;
+  char *ma = 0;
   int low, med, hig, ds;
   int hist[65536];
+  float immin = +1e20, immax = -1e20;
 
   // OPEN THE IMAGE FILE
   if (ffopen (&pim, imagen, READONLY, &status))
@@ -120,9 +138,9 @@ read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full)
     }
 
   if (x == -1)
-    x = image_width / 2;
+    x = (naxes[0] - image_width) / 2;
   if (y == -1)
-    y = image_height / 2;
+    y = (naxes[1] - image_height) / 2;
 
   *rim =
     (JSAMPLE *) malloc (image_width * image_height * sizeof (JSAMPLE) * 3);
@@ -130,30 +148,71 @@ read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full)
   npixels = naxes[0] * naxes[1];
   fpixel = 1;
   nullval = 0;
-  im = (unsigned short *) malloc (npixels * sizeof (unsigned short));
-  fits_read_img (pim, TUSHORT, fpixel, npixels, &nullval, im, &anynull,
+  im_full = (float *) malloc (npixels * sizeof (float));
+  fits_read_img (pim, TFLOAT, fpixel, npixels, &nullval, im_full, &anynull,
 		 &status);
 
   fprintf (stderr, "axes: x:%ld, y:%ld\n", naxes[0], naxes[1]);
   fflush (stdout);
 
+
+  im = (float *) malloc (npixels * sizeof (float));
+  ma = (char *) malloc (npixels * sizeof (char));
+
+  for (j = 0; j < image_height; j++)
+    for (i = 0; i < image_width; i++)
+      {
+	float ff = 0;
+	char mm = 1;
+
+	if (((j + y) >= naxes[1]) || ((j + y) < 0) || ((i + x) >= naxes[0])
+	    || ((i + x) < 0))
+	  mm = 0;
+	else
+	  ff = im_full[(j + y) * naxes[0] + i + x];
+
+	im[(image_height - j - 1) * image_width + (image_width - i - 1)] = ff;
+	ma[(image_height - j - 1) * image_width + (image_width - i - 1)] = mm;
+      }
+
+  free (im_full);
+  npixels = image_width * image_height;
+
   // histogram build
   for (i = 0; i < 65536; i++)
     hist[i] = 0;
 
+  for (i = 0; i < npixels; i++)
+    {
+      if (!ma[i])
+	continue;
+
+      if (im[i] > immax)
+	immax = im[i];
+      if (im[i] < immin)
+	immin = im[i];
+    }
+
+  for (i = 0; i < npixels; i++)
+    {
+      if (!ma[i])
+	continue;
+
+      im[i] = 65536.0 * (im[i] - immin) / (immax - immin);
+    }
+
   ds = 0;
   k = 0;
-  for (j = y; j < y + image_height; j++)
-    for (i = x; i < x + image_width; i++)
-      {
-	m = mylog (im[i + naxes[0] * j]);
+  for (i = 0; i < npixels; i++)
+    {
+      m = (int) mylog_f (im[i]);
 
-	if (m < 32768)
-	  {
-	    hist[m]++;
-	    ds++;
-	  }
-      }
+      if (m < 65536 && m >= 0)
+	{
+	  hist[m]++;
+	  ds++;
+	}
+    }
 
   low = hig = med = 0;
   j = 0;
@@ -172,46 +231,51 @@ read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full)
   fprintf (stderr, "levels: low:%d, med:%d, hi:%d\n", low, med, hig);
 
   k = 0;
-  for (j = 0; j < naxes[1] && j < npixels; j++)
-    if ((j >= y) && (j < y + image_height))
-      {
-	for (i = 0, w = 0; i < naxes[0]; i++)
+  for (i = 0; i < npixels; i++)
+    {
+      if (ma[i])
+	{
+	  m = (int) mylog_f (im[i]);
 
-	  if ((i >= x) && (i < x + image_width))
-	    {
-	      w++;
-	      m = mylog (im[i + naxes[0] * j]);
-
-	      if (m < low)
-		n = 0;
-	      else if (m > hig)
-		n = 511;
+	  if (m < low)
+	    n = 0;
+	  else if (m > hig)
+	    n = 511;
 #ifdef PP_MED
-	      else if (m < med)
-		n = 31 * ((float) im[i + naxes[0] * j] - low) / (med - low);
-	      else
-		n =
-		  32 + 480 * ((float) im[i + naxes[0] * j] - med) / (hig -
-								     med);
+	  else if (m < med)
+	    n = 31 * ((float) im[i] - low) / (med - low);
+	  else
+	    n = 32 + 480 * ((float) im[i] - med) / (hig - med);
 #else
-	      else
-		n = 511 * ((float) im[i + naxes[0] * j] - low) / (hig - low);
+	  else
+	    n = 511 * ((float) im[i] - low) / (hig - low);
 #endif
 #ifdef PP_NEG
-	      n = 511 - n;
+	  n = 511 - n;
 #endif
 #ifdef PP_BLUE
-	      (*rim)[k++] = ((n - 256) > 0) ? n - 256 : 0;
-	      (*rim)[k++] = n / 2;
-	      (*rim)[k++] = (n < 256) ? n : 255;
+	  (*rim)[k++] = ((n - 256) > 0) ? n - 256 : 0;
+	  (*rim)[k++] = n / 2;
+	  (*rim)[k++] = (n < 256) ? n : 255;
 #else
-	      (*rim)[k++] = (n < 256) ? n : 255;
-	      (*rim)[k++] = n / 2;
-	      (*rim)[k++] = ((n - 256) > 0) ? n - 256 : 0;
+	  (*rim)[k++] = (n < 256) ? n : 255;
+	  (*rim)[k++] = n / 2;
+	  (*rim)[k++] = ((n - 256) > 0) ? n - 256 : 0;
 #endif
-	    }
-	k += image_width - w;
-      }
+	}
+      else
+	{
+#define MODX 16
+	  int vv = 160;
+	  if ((!((i / image_width - i % image_width) % MODX))
+	      || (!((i / image_width + i % image_width) % MODX)))
+	    vv = 100;
+#undef MODX
+	  (*rim)[k++] = vv;
+	  (*rim)[k++] = vv;
+	  (*rim)[k++] = 160;
+	}
+    }
 
 
   if (status)
@@ -225,6 +289,8 @@ read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full)
 
   if (im)
     free (im);
+  if (ma)
+    free (ma);
 
   return status;
 do_error:
@@ -261,7 +327,7 @@ main (int argc, char **argv)
   double x, y;
   double a, d;
 
-  int c;
+  //int c;
 
 /*  while (1)
   {
@@ -308,17 +374,13 @@ main (int argc, char **argv)
 	  exit (4);
 	}
 
-
-//              x=atof(argv[3]);
-//              y=atof(argv[4]);
-
       x -= image_width / 2;
       y -= image_height / 2;
 
-      if (x < 0)
-	x = 0;
-      if (y < 0)
-	y = 0;
+//      if (x < 0)
+//      x = 0;
+//      if (y < 0)
+//      y = 0;
     }
   else if (argc != 3)
     x = y = -1;
