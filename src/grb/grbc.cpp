@@ -25,6 +25,7 @@
 
 double exposure_time;
 #define EXPOSURE_TIME_DEFAULT   120
+#define EXPOSURE_TIMEOUT	50
 
 struct grb
 {
@@ -89,7 +90,7 @@ readout ()
     get_info (&observing, telescope, camera);
   devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
 			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-			      1.1 * exposure_time + 10);
+			      1.1 * exposure_time + EXPOSURE_TIMEOUT);
   devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
   return 0;
 }

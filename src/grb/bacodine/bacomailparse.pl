@@ -60,12 +60,28 @@ if ($id && $seqn && $ra && $dec && $title)
 	my $alt = libnova::get_alt_from_equ_sidereal_time ($st, $lng, $lat, $ra, $dec);
 	if ($id && $seqn && $ra && $dec && $title)
 	{
+		my $grb_time = POSIX::strftime "%H:%M:%S %e%b", gmtime ($grb_date);
 		my $bacmail;
 		open $bacmail, "|/home/petr/rts2/src/grb/bacodine/rts2-bacmail >> /home/petr/bac_out";
 		print $bacmail "$id $seqn $ra $dec $grb_date $title\n";
 		close $bacmail;
-		#print "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_date $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
-		system "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_date $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
+#		print "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_time $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
+		system "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_time $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
+#		my $gnokii;
+#		open $gnokii, "|/usr/local/bin/gnokii --sendsms +420602105255";
+#		print $gnokii "ID:$id-$seqn\nRD:$ra $dec\nDA:$grb_time\nAZAL:" . int($az) . " " . int($alt) . "\n" . $title;
+#		close $gnokii;
+		my $smsd;
+		open $smsd, ">/var/spool/smsd/grb.$$.1";
+#		print $smsd "+420602105255\nID:$id-$seqn RD:$ra $dec DA:$grb_time AZAL:" . int($az) . " " . int($alt) . " " . $title;
+		print $smsd "+34617840945\nID:$id-$seqn RD:$ra $dec DA:$grb_time AZAL:" . int($az) . " " . int($alt) . " " . $title;
+		close $smsd;
+		open $smsd, ">/var/spool/smsd/grb.$$.3";
+		print $smsd "+34616031753\nID:$id-$seqn RD:$ra $dec DA:$grb_time AZAL:" . int($az) . " " . int($alt) . " " . $title;
+		close $smsd;
+		open $smsd, ">/var/spool/smsd/grb.$$.2";
+		print $smsd "+420737500268\nID:$id-$seqn RD:$ra $dec DA:$grb_time AZAL:" . int($az) . " " . int($alt) . " " . $title;
+		close $smsd;
 	}
 } else {
 	print "BACODINE no position\n";
