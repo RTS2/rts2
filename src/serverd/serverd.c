@@ -811,7 +811,9 @@ main (void)
       shm_devices[i].name[0] = 0;
     }
 
-  shm_info->current_state = SERVERD_OFF;
+  shm_info->current_state =
+    (strcmp (get_device_string_default ("centrald", "reboot_on", "N"), "Y") ?
+     SERVERD_OFF : 0);
   shm_info->priority_client = -1;
   shm_info->last_client = 0;
 
