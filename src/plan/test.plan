@@ -1,9 +1,9 @@
-21.04.2002 12:00:00
+22.04.2002 03:09:50
 	wf.info
 	wf.expose 0 10
-+150
++20
 	wf.readout 0
-+300
++20
 	RECEIVE.fits !moje.fits wf.data 0
 +1000
 	tel.moveto 10 20

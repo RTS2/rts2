@@ -22,7 +22,6 @@
 #include "sbig.h"
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
-#include "../writers/imghdr.h"
 #include "../status.h"
 
 #define PORT    5556
@@ -50,10 +49,12 @@ start_readout (void *arg)
   int ret;
   if ((ret = sbig_readout (arg)) < 0)
     {
-      syslog (LOG_ERR, "Error during chip %i readout: %s", ((struct sbig_readout *) arg)->ccd, sbig_show_error (ret));
+      syslog (LOG_ERR, "Error during chip %i readout: %s",
+	      ((struct sbig_readout *) arg)->ccd, sbig_show_error (ret));
       return NULL;
     }
-  syslog (LOG_INFO, "Reading chip %i finished.", ((struct sbig_readout *) arg)->ccd);
+  syslog (LOG_INFO, "Reading chip %i finished.",
+	  ((struct sbig_readout *) arg)->ccd);
   return NULL;
 }
 
@@ -175,7 +176,7 @@ camd_handle_command (char *argv, size_t argc)
       readout[chip].width = info.camera_info[chip].readout_mode[mode].width;
       readout[chip].height = info.camera_info[chip].readout_mode[mode].height;
       readout[chip].callback = complete;
-      
+
       if ((ret =
 	   pthread_create (&thread[chip], NULL, start_readout,
 			   (void *) &readout[chip])))

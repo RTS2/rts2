@@ -461,7 +461,7 @@ read_from_client ()
     return -1;
   else
     {
-      buffer[nbytes] = 0;	// mark end of message
+      endptr[nbytes] = 0;	// mark end of message
       startptr = endptr = buffer;
       while (1)
 	{
@@ -559,8 +559,8 @@ devdem_run (int port, devdem_handle_command_t in_handler)
       if (fork () == 0)
 	{
 	  // child
-	  (void) dup2 (control_fd, 0);
-	  (void) dup2 (control_fd, 1);
+	  // (void) dup2 (control_fd, 0);
+	  // (void) dup2 (control_fd, 1);
 	  close (sock);
 	  break;
 	}

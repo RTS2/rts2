@@ -25,6 +25,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <mcheck.h>
 
 #include "plancom.h"
 
@@ -90,10 +91,10 @@ process_line (char *line, int line_num)
 	  return;
 	}
       tim = strtol (line, &line, 10);
-      if (*line != ' ' || *line != 0)
+      if (!(*line == ' ' || *line == 0))
 	{
-	  printf ("Some bargage after end of seconds found. Ignoring %i\n",
-		  (int) tim);
+	  printf ("Some bargage after end of seconds found. Ignoring %i '%i'\n",
+		  (int) tim, *line);
 	}
       tim += last_time;
       wait (tim);
@@ -117,6 +118,10 @@ main (int argc, char **argv)
   char line[MAX_LINE_SIZE + 1];
   int line_num = 1;
   last_time = -1;
+
+#ifdef DEBUG
+  mtrace();
+#endif /* DEBUG */
 
   plancom_add_namespace ("tel", "lascaux", 5555);
   plancom_add_namespace ("wf", "lascaux", 5556);

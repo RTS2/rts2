@@ -183,7 +183,7 @@ plancom_process_command (char *ns_command)
 	{
 	  struct fits_receiver_data_t *rec_data;
 	  char *filename;
-	  int status;
+	  int status = 0;
 
 	  rec_data =
 	    (struct fits_receiver_data_t *)
