@@ -237,7 +237,7 @@ Rts2DevConnTelescope::commandAuthorized ()
 	return -2;
       return master->startMove (this, tar_ra, tar_dec);
     }
-  else if (isCommand ("correct"))
+  else if (isCommand ("setto"))
     {
       double set_ra;
       double set_dec;
