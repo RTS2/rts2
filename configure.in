@@ -11,19 +11,28 @@ AM_MAINTAINER_MODE
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
-#AC_PROG_RANLIB
 
 AC_PROG_LIBTOOL
 
 AC_ARG_ENABLE(focusing,
 [  --disable-focusing    Disables focusing in camd (=>camd doesn't need cfitsio to build)],
 [case "${enableval}" in
-	yes) focusing=true ;;
-	no)  focusing=false ;;
+	yes) focusing=yes ;;
+	no)  focusing=no ;;
 	*) AC_MSG_ERROR(bad value ${enableval} for --enable-focusing) ;;
-esac],[focusing=true])
+esac],[focusing=yes])
 
-AM_CONDITIONAL(FOCUSING, test x$focusing = xtrue)
+AM_CONDITIONAL(FOCUSING, test x$focusing = xyes)
+
+AC_ARG_ENABLE(x-focusc,
+[  --disable-x-focusc    Disables xfocusc)],
+[case "${enableval}" in
+	yes) xfocusc=yes ;;
+	no)  xfocusc=no ;;
+	*) AC_MSG_ERROR(bad value ${enableval} for --enable-xfocusc) ;;
+esac],[xfocusc=yes])
+
+AM_CONDITIONAL(XFOCUSC, test x$xfocusc = xyes)
 
 # Checks for libraries.
 
@@ -82,7 +91,9 @@ AC_SUBST(LIB_PTHREAD), [cat << EOF
 EOF
 exit 1])
 
-AC_PATH_XTRA
+if test "x"$xfocusc = "xyes"; then
+	AC_PATH_XTRA
+fi
 
 AC_CHECK_LIB([efence], [malloc], LIB_EFENCE="-lefence", [cat << EOF
 **** You don't have libefence library installed.
@@ -168,7 +179,6 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STAT
 AC_FUNC_STRFTIME 
 AC_FUNC_VPRINTF 
-AC_PROG_CXX
 AC_TYPE_MODE_T
 
 AC_CONFIG_SRCDIR(src)
@@ -213,3 +223,20 @@ AC_OUTPUT([Makefile
 	   man/rts2-centrald.1
 	   man/rts2-cmon.1]
 )
+
+echo "
+***************************************
+ RTS2 build configuration 
+
+  focusing      ${focusing}
+  xfocusc       ${xfocusc}
+
+***************************************
+
+Now type 'make' followed by 'make install'
+to install rts2 package.
+
+Please note, that you should do 'make clean'
+if you change any configuration option.
+
+"
