@@ -156,6 +156,7 @@ CameraMiniccdChip::startExposure (int light, float exptime, int ccdFlags)
       usedBinningHorizontal = binningHorizontal;
       usedRowBytes =
 	(chipUsedReadout->width / usedBinningHorizontal) * sizeof_pixel;
+      readoutLine = 0;
       return 0;
     }
   return -1;
@@ -172,6 +173,11 @@ CameraMiniccdChip::isExposing ()
   if (ret > 0)
     return ret;
 
+  if (readoutLine >= (chipUsedReadout->height / usedBinningVertical))
+    {
+      return 0;
+    }
+
   FD_ZERO (&set);
   FD_SET (fd_chip, &set);
   read_tout.tv_sec = read_tout.tv_usec = 0;
@@ -180,33 +186,29 @@ CameraMiniccdChip::isExposing ()
     {
       int row_bytes = usedRowBytes;
 
-      if (readoutLine < (chipUsedReadout->height / usedBinningVertical))
+      // readout some data, use them..
+      int ret;
+      if (readoutLine == 0)
+	row_bytes += CCD_MSG_IMAGE_LEN;
+      ret = read (fd_chip, dest_top, row_bytes);
+      // second try should help in case of header, which can be passed
+      // in different readout:(
+      if (ret != row_bytes)
 	{
-	  // readout some data, use them..
-	  int ret;
-	  if (readoutLine == 0)
-	    row_bytes += CCD_MSG_IMAGE_LEN;
-	  ret = read (fd_chip, dest_top, row_bytes);
-	  // second try should help in case of header, which can be passed
-	  // in different readout:(
-	  if (ret != row_bytes)
+	  int ret2;
+	  ret2 = read (fd_chip, dest_top + ret, row_bytes - ret);
+	  // that's an error
+	  if (ret2 + ret != row_bytes)
 	    {
-	      int ret2;
-	      ret2 = read (fd_chip, dest_top + ret, row_bytes - ret);
-	      // that's an error
-	      if (ret2 + ret != row_bytes)
-		{
-		  syslog (LOG_ERR,
-			  "CameraMiniccdChip::readoutOneLine cannot readout line");
-		  endReadout ();
-		  return -2;
-		}
+	      syslog (LOG_ERR,
+		      "CameraMiniccdChip::readoutOneLine cannot readout line");
+	      endReadout ();
+	      return -2;
 	    }
-	  dest_top += row_bytes;
-	  readoutLine++;
-	  return 1;
 	}
-      return 0;
+      dest_top += row_bytes;
+      readoutLine++;
+      return 1;
     }
   return 10;
 }
@@ -421,6 +423,7 @@ CameraMiniccdInterleavedChip::isExposing ()
 	{
 	  return -2;
 	}
+      slaveState = SLAVE2_EXPOSING;
     case SLAVE2_EXPOSING:
       ret = slaveChip[0]->isExposing ();
       if (ret)
@@ -567,7 +570,7 @@ Rts2DevCameraMiniccd::initChips ()
   // init master as last chip - if it's interlaced, we need info about
   // slave chips
   int ret;
-  for (int i = 0; i < chipNum; i++)
+  for (int i = 1; i < chipNum; i++)
     {
       ret = chips[i]->init ();
       if (ret)
@@ -664,7 +667,7 @@ Rts2DevCameraMiniccd::init ()
     }
 
   canDF = 0;			// starlight cameras cannot do DF
-  return Rts2DevCamera::initChips ();
+  return Rts2DevCameraMiniccd::initChips ();
 }
 
 int
