@@ -102,11 +102,6 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
   struct ln_lnlat_posn observer;
   struct ln_hrz_posn hrz;
 
-  observer.lng = get_double_default ("longtitude", 6.733);
-  observer.lat = get_double_default ("latitude", 37.1);
-
-  ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (), &hrz);
-
   if (observing.grb_id == id)
     {
       // cause I'm not interested in old updates
@@ -124,6 +119,14 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
     }
   else if (observing.grb_id < id)	// -1 count as well..get the latest
     {
+      object.ra = ra;
+      object.dec = dec;
+
+      observer.lng = get_double_default ("longtitude", 6.733);
+      observer.lat = get_double_default ("latitude", 37.1);
+
+      ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (), &hrz);
+
       if (hrz.alt >= -1)	// start observation - if not above horizont, don't care, we already observe something else
 	{
 	  pthread_mutex_lock (&observing_lock);
