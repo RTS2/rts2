@@ -3,7 +3,7 @@
 
 struct telescope_info
 {
-  char name[64];
+  char type[64];
   char serial_number[64];
   double ra;
   double dec;

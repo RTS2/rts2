@@ -29,7 +29,7 @@ struct chip_info
 
 struct camera_info
 {
-  char name[64];
+  char type[64];
   char serial_number[64];
   int chips;
   struct chip_info *chip_info;
