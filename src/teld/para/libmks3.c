@@ -791,7 +791,7 @@ MKS3RamRead (const MKS3Id id, CWORD16 startAdr, CWORD16 endAdr,
 }
 
 
-/* ************************************************************************************ */
+/* ************************************************************************* */
 CWORD16
 _MKS3DoGetVal16 (const MKS3Id id, CWORD16 valId, CWORD16 * val16)
 {

@@ -318,7 +318,8 @@ typedef struct
   CWORD16 packetLen;		/* not including end of packet byte */
   CWORD16 command;
   CWORD16 *pData;		/* pointer to entire packet, from start, initialize before processing, each CWORD16 has value for one byte */
-} packet_t;
+}
+packet_t;
 
 /* fn prototypes */
 /* shared comm functions */
@@ -400,7 +401,8 @@ typedef struct
   /* MKS3Id(CWORD16 uID=0, CWORD16 xID=0): unitId(uID), axisId(xID) {} */
   CWORD16 unitId;
   CWORD16 axisId;
-} MKS3Id;
+}
+MKS3Id;
 
 typedef struct
 {
@@ -410,7 +412,8 @@ typedef struct
   double absAccelTicksPerSecPerSec;	/* absolute value of acceleration */
   double maxSpeedTicksPerSec;	/* max. speed it can go */
   double sampleFreq;
-} MKS3ObjTrackInfo;
+}
+MKS3ObjTrackInfo;
 
 typedef struct
 {
@@ -420,7 +423,8 @@ typedef struct
   long targetVelocityTicks;
   int spaceLeft;
   int index;
-} MKS3ObjTrackStat;
+}
+MKS3ObjTrackStat;
 
 #define MKS3ConstsIndexAngleSet(id, wIndex) _MKS3DoSetVal16(id, CMD_VAL16_INDEX_ANGLE, wIndex)
 #define MKS3ConstsIndexAngleGet(id, pIndex) _MKS3DoGetVal16(id, CMD_VAL16_INDEX_ANGLE, pIndex)

@@ -17,13 +17,15 @@
 
 #include "libmks3.h"
 
-#define LONGITUDE +6.732778
-#define LATITUDE 37.1
+#define LONGITUDE -6.732778
+#define LATITUDE 37.104444
 #define ALTITUDE 30
 
 #define DEF_SLEWRATE 1080000000.0
-#define RA_SLEW_SLOWER 0.75
-#define DEC_SLEW_SLOWER 0.90
+//#define RA_SLEW_SLOWER 0.75
+#define RA_SLEW_SLOWER 1.00
+//#define DEC_SLEW_SLOWER 0.90
+#define DEC_SLEW_SLOWER 1.00
 
 #define PARK_DEC -2.079167
 #define PARK_HA -29.94128
@@ -35,9 +37,11 @@
 // pripadne <32112;32156> a <32072;32124> => -32118 (8.9216c/") podle toho, jestli se
 // to ma pricist nebo odecist, coz nevim. -m.
 
-//#define DEC_ZERO 41760.0      // DEC homing: 2 deg
-#define DEC_ZERO (2.0*DEC_CPD)	// DEC homing: 2 deg
-#define HA_ZERO (-30.0*HA_CPD)	// AFTERNOON ZERO: -30 deg
+//#define DEC_ZERO 41760.0      // DEC homing: -2.079167 deg
+#define DEC_ZERO (-0.629*DEC_CPD)	// DEC homing: -2.079167 deg
+//#define DEC_ZERO (-2.079167*DEC_CPD)  // DEC homing: -2.079167 deg
+//#define HA_ZERO (-30.0*HA_CPD)        // AFTERNOON ZERO: -30 deg
+#define HA_ZERO (-29.376*HA_CPD)	// AFTERNOON ZERO: -30 deg
 
 
 //#define DEC_ZERO -43413               // homing mark in DEC
@@ -45,18 +49,19 @@
 
 //#define DUMMY
 
-struct ln_lnlat_posn observer = {
-  +6.732778,
-  37.104444
+static struct ln_lnlat_posn observer = {
+  LONGITUDE,
+  LATITUDE
 };
 
 typedef struct
 {
   MKS3Id axis0, axis1;
   double lastra, lastdec;
-} T9;
+}
+T9;
 
-T9 *mount = NULL;
+static T9 *mount = NULL;
 
 /* some fancy functions to handle angles */
 double
@@ -175,7 +180,7 @@ double
 sid_time ()
 {
   return in360 (15 *
-		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) -
+		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
 		LONGITUDE);
 }
 
@@ -239,7 +244,7 @@ counts2sky (long ac, long dc, double *ra, double *dec, int *flip)
   *ra = _ra;
 }
 
-void
+int
 sky2counts (double ra, double dec, long *ac, long *dc)
 {
   long _dc, _ac, flip = 0;
@@ -257,7 +262,9 @@ sky2counts (double ra, double dec, long *ac, long *dc)
   ln_get_equ_prec (&aber_pos, JD, &pos);
 // Refraction 
   ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
+
   hrz.alt += ln_get_refraction (hrz.alt);
+
   ln_get_equ_from_hrz (&hrz, &observer, JD, &pos);
 
   ra = pos.ra;
@@ -284,6 +291,10 @@ sky2counts (double ra, double dec, long *ac, long *dc)
 
   *dc = _dc;
   *ac = _ac;
+
+  if (hrz.alt < 0)
+    return -1;
+  return 0;
 }
 
 void
@@ -440,7 +451,8 @@ move (double ra, double dec)
 //    struct sembuf sem_buf;
   int ret = 0;
 
-  sky2counts (ra, dec, &ac, &dc);
+  if (sky2counts (ra, dec, &ac, &dc))
+    return -1;
 
   mount->lastra = ra;
   mount->lastdec = dec;
@@ -706,8 +718,7 @@ telescope_move_to (double ra, double dec)
   fprintf (stderr, "%s\n", __FUNCTION__);
   fflush (stderr);
   optwake ();
-  move (ra, dec);
-  return 0;
+  return move (ra, dec);
 }
 
 /* obsolete (used for meade repointing) */
