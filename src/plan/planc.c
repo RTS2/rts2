@@ -275,7 +275,7 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   if (image->target_type == TARGET_LIGHT)
     db_get_darkfield (image->camera_name, image->exposure_length * 100,
-		      image->camera.ccd_temperature * 100, &dark_name);
+		      image->camera.ccd_temperature * 10, &dark_name);
 
   if (fits_write_image_info (&receiver, image, dark_name)
       || fits_close (&receiver))
@@ -321,7 +321,7 @@ data_handler (int sock, size_t size, struct image_info *image)
 
       ret = db_add_darkfield (filename, &image->exposure_time,
 			      image->exposure_length * 100,
-			      image->camera.ccd_temperature * 100,
+			      image->camera.ccd_temperature * 10,
 			      image->camera_name);
       break;
     }
