@@ -316,7 +316,7 @@ thread_wrapper (void *temp)
   if (ret == 0)
     syslog (LOG_DEBUG, "thread successfully ended");
   else
-    syslog (LOG_ERR, "thread ended, %i returned", ret);
+    syslog (LOG_ERR, "thread ended, %i returned", *(int *) ret);
 
   if (TW->freed)
     free (TW->arg);
