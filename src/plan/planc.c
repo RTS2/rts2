@@ -38,6 +38,7 @@ int camd_id, teld_id;
 
 char *dark_name = NULL;
 
+
 #define fits_call(call) if (call) fits_report_error(stderr, status);
 
 /*!
@@ -204,7 +205,7 @@ data_handler (int sock, size_t size, struct image_info *image)
 }
 
 int
-expose (int target_id, int observation_id, int npic)
+readout (struct target *plan, int npic)
 {
   devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
   for (; npic > 0; npic--)
@@ -212,54 +213,12 @@ expose (int target_id, int observation_id, int npic)
       struct image_info *info;
       union devhnd_info *devinfo;
 
-      printf ("exposure countdown %i..\n", npic);
-      if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
-				  CAM_NOTREADING, 0) ||
-	  devcli_command (camd_id, NULL, "expose 0 1 120"))
-	return -1;
       info = (struct image_info *) malloc (sizeof (struct image_info));
       info->exposure_time = time (NULL);
       info->exposure_length = 120;
-      info->target_id = target_id;
-      info->observation_id = observation_id;
-      info->target_type = TARGET_LIGHT;
-      if (devcli_command (camd_id, NULL, "info") ||
-	  devcli_getinfo (camd_id, &devinfo) ||
-	  !memcpy (&info->camera, devinfo, sizeof (struct camera_info)) ||
-	  devcli_command (teld_id, NULL, "info") ||
-	  devcli_getinfo (teld_id, &devinfo) ||
-	  !memcpy (&info->telescope, devinfo, sizeof (struct telescope_info))
-	  || devcli_image_info (camd_id, info)
-	  || devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
-				     CAM_NOEXPOSURE, 0)
-	  || devcli_command (camd_id, NULL, "readout 0"))
-	{
-	  free (info);
-	  return -1;
-	}
-      free (info);
-    }
-  return 0;
-}
-
-int
-dark (int npic)
-{
-  devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
-  for (; npic > 0; npic--)
-    {
-      struct image_info *info;
-      union devhnd_info *devinfo;
-
-      printf ("exposure countdown %i..\n", npic);
-      if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
-				  CAM_NOTREADING, 0) ||
-	  devcli_command (camd_id, NULL, "expose 0 0 120"))
-	return -1;
-      info = (struct image_info *) malloc (sizeof (struct image_info));
-      info->exposure_time = time (NULL);
-      info->exposure_length = 120;
-      info->target_type = TARGET_DARK;
+      info->target_id = plan->id;
+      info->observation_id = plan->obs_id;
+      info->target_type = plan->type;
       if (devcli_command (camd_id, NULL, "info") ||
 	  devcli_getinfo (camd_id, &devinfo) ||
 	  !memcpy (&info->camera, devinfo, sizeof (struct camera_info)) ||
@@ -283,10 +242,12 @@ int
 main (int argc, char **argv)
 {
   uint16_t port = SERVERD_PORT;
+
   char *server;
   struct target *plan, *last;
+  time_t start_time;
 
-  int c;
+  int c, i = 0;
 
 #ifdef DEBUG
   mtrace ();
@@ -334,10 +295,10 @@ main (int argc, char **argv)
   /* connect to db */
 
   if (c == db_connect ())
-  {
-	fprintf (stderr, "cannot connect to db, SQL error code: %i\n", c);
-  	exit (EXIT_FAILURE);
-  }
+    {
+      fprintf (stderr, "cannot connect to db, SQL error code: %i\n", c);
+      exit (EXIT_FAILURE);
+    }
 
   printf ("connecting to %s:%i\n", server, port);
 
@@ -383,10 +344,12 @@ main (int argc, char **argv)
 
   umask (0x002);
 
+  plan = (struct target*) malloc (sizeof (struct target));
+
   printf ("Making plan... \n");
-  fflush (stdout);
-  // make plan
-  make_plan (&plan);
+  time (&start_time);
+  start_time += 20;
+  get_next_plan (plan, SELECTOR_AIRMASS, NULL, start_time, 0);
   printf ("...plan made\n");
   fflush (stdout);
 
@@ -450,15 +413,31 @@ main (int argc, char **argv)
 
       printf ("OK\n");
 
-      if (last->type == TARGET_DARK)
+      time (&t);
+      printf ("exposure countdown %s..\n", ctime (&t));
+      t += 120;
+      printf ("readout at: %s\n", ctime (&t));
+      if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
+				  CAM_NOTREADING, 0) ||
+	  devcli_command (camd_id, NULL, "expose 0 %i 120",
+			  last->type != TARGET_DARK))
 	{
-	  dark (1);
+	  perror ("expose:");
 	}
-      else
-	{
-	  expose (last->id, last->obs_id, 1);
 
-	  db_end_observation (last->obs_id, time (NULL) - t);
+      // generate next plan entry
+      i++;
+      plan = (struct target *) malloc (sizeof (struct target));
+      get_next_plan (plan, SELECTOR_AIRMASS, last, start_time, i);
+      last->next = plan;
+      printf ("next plan #%i: id %i type %i\n", i, last->next->id,
+	      last->next->type);
+
+      readout (last, 1);
+
+      if (last->type == TARGET_LIGHT)
+	{
+	  db_end_observation (last->obs_id, time (NULL) - last->ctime);
 	}
     }
 
