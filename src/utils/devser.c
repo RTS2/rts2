@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include <sys/time.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -128,6 +129,14 @@ struct
   pthread_t thread;		//! thread
 }
 threads[MAX_THREADS];
+
+//! structure to hold info about all my childs
+struct child
+{
+  pid_t child_pid;		// ! pid of the child
+  struct child *next;
+}
+ *childrens = NULL;
 
 // hold number of active threads 
 int threads_count;
@@ -639,7 +648,8 @@ send_data_thread (void *arg)
 	{
 	  if ((ret = write (data_con->sock, data, size)) != size)
 	    {
-	      syslog (LOG_ERR, "write:%m port:%i", port);
+	      syslog (LOG_ERR, "write:%m port:%i ret:%i size:%i", port, ret,
+		      size);
 	      break;
 	    }
 	}
@@ -1357,6 +1367,12 @@ devser_on_exit ()
 	syslog (LOG_ERR, "IPC_RMID data_sem semctl: %m");
       if (msgctl (msg_id, IPC_RMID, NULL))
 	syslog (LOG_ERR, "IPC_RMID msg_id: %m");
+      while (childrens)
+	{
+	  syslog (LOG_DEBUG, "kill %i", childrens->child_pid);
+	  kill (childrens->child_pid, SIGQUIT);
+	  childrens = childrens->next;
+	}
     }
   syslog (LOG_INFO, "devser exiting");
 }
@@ -1368,15 +1384,39 @@ void
 ser_sig_exit (int sig)
 {
   syslog (LOG_INFO, "devser exiting with signal:%i", sig);
-  if (getpid () == devser_parent_pid)
+  if (getpid () == devser_parent_pid || getpid () == devser_child_pid)
     exit (0);
 }
 
 void
 ser_child_sig_exit (int sig)
 {
-  // all I need is to wait, he he
-  waitpid (-1, NULL, WNOHANG);
+  pid_t child_pid;
+  child_pid = waitpid (-1, NULL, WNOHANG);
+  if (child_pid < 0)
+    syslog (LOG_ERR, "ser_child_sig_exit waitpid: %m");
+  else
+    {
+      struct child *a_child, *prev = NULL;
+      a_child = childrens;
+      while (a_child && a_child->child_pid != child_pid)
+	{
+	  prev = a_child;
+	  a_child = a_child->next;
+	}
+      while (a_child)
+	{
+	  if (a_child->next)
+		a_child->child_pid = a_child->next->child_pid;
+	  prev = a_child;
+	  a_child = a_child->next;
+	}
+      if (prev)
+	{
+	  free (prev->next);
+	  prev->next = NULL;
+	}
+    }
 }
 
 /*!
@@ -1505,6 +1545,8 @@ devser_run (int port, devser_handle_command_t in_handler)
 {
   int sock;
   size_t size;
+  pid_t child = 0;
+
   devser_parent_pid = getpid ();
 
   if (!in_handler)
@@ -1535,7 +1577,14 @@ devser_run (int port, devser_handle_command_t in_handler)
 	    return -1;
 	}
 
-      if (fork () == 0)
+      child = fork ();
+      if (child < 0)
+	{
+	  syslog (LOG_ERR, "fork: %m");
+	  return -1;
+	}
+
+      if (child == 0)
 	{
 	  // child
 	  // (void) dup2 (control_fd, 0);
@@ -1543,12 +1592,37 @@ devser_run (int port, devser_handle_command_t in_handler)
 	  close (sock);
 	  break;
 	}
+
       // parent 
       close (control_fd);
+      {
+	struct child *an_child;
+	if (childrens == NULL)
+	  {
+	    childrens = (struct child *) malloc (sizeof (struct child));
+	    an_child = childrens;
+	  }
+	else
+	  {
+	    // find childrens tail
+	    an_child = childrens;
+	    while (an_child->next)
+	      an_child = an_child->next;
+	    an_child->next = (struct child *) malloc (sizeof (struct child));
+	    an_child = an_child->next;
+	  }
+	an_child->next = NULL;
+	an_child->child_pid = child;
+      }
     }
 
   // here starts child processing - mind of differences in ipc id's,
   // pointers,..
+  childrens = NULL;		// we don't need that
+
+  signal (SIGTERM, ser_sig_exit);
+  signal (SIGQUIT, ser_sig_exit);
+  signal (SIGINT, ser_sig_exit);
 
   server_id = -1;
 
