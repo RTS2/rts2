@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include <malloc.h>
+#include <math.h>
 #include <libnova/libnova.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -65,7 +66,7 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 }
 
 #define write_key(type, key, value, comment)\
-	if (type == TFLOAT && (isnan (value) || isinf (value))) return 0; \
+	if (type == TFLOAT && (isnan (*(value)) || isinf (*(value)))) return 0; \
 	if (fits_update_key (fptr, type, key, value, comment, &status)) \
 	{ \
 		fits_report_error (stdout, status); \
