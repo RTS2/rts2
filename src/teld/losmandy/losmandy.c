@@ -31,6 +31,7 @@
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <libnova/libnova.h>
 
 #include "../telescope.h"
 #include "../../utils/hms.h"
@@ -158,7 +159,6 @@ tel_write (char *buf, int count)
   int ret;
   syslog (LOG_DEBUG, "LX200:will write:'%s'", buf);
   ret = write (port, buf, count);
-//  printf ("ret: %i port: %i count: %i\n", ret, port, count);
   tcflush (port, TCIFLUSH);
   return ret;
 }
@@ -754,11 +754,19 @@ telescope_base_info (struct telescope_info *info)
 extern int
 telescope_info (struct telescope_info *info)
 {
+  time_t t;
+  double loc_st;
+  double ha;
   info->flip = 0;
   if (tel_read_ra (&info->ra) || tel_read_dec (&info->dec)
       || tel_read_siderealtime (&info->siderealtime)
       || tel_read_localtime (&info->localtime))
     return -1;
+  loc_st =
+    ln_range_degrees (ln_get_mean_sidereal_time
+		      (ln_get_julian_from_timet (&t)) * 15.0 + 14.95);
+  ha = ln_range_degrees (loc_st - info->ra);
+  info->flip = (ha < 180.0 ? 1 : 0);
 
   return 0;
 }
