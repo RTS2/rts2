@@ -51,7 +51,8 @@ data_handler (int sock, size_t size, struct image_info *image)
   char data[DATA_BLOCK_SIZE];
   int ret = 0;
   ssize_t s;
-  char filename[250];
+  char filen[250];
+  char *filename;
   char *dirname;
 
   gmtime_r (&image->exposure_time, &gmt);
@@ -63,17 +64,22 @@ data_handler (int sock, size_t size, struct image_info *image)
     }
 
   mkpath (dirname, 0777);
-  free (dirname);
 
-  strftime (filename, 250, "!120/%Y%m%d%H%M%S.fits", &gmt);
+  strftime (filen, 250, "%Y%m%d%H%M%S.fits", &gmt);
+  asprintf (&filename, "!%s/%s", dirname, filen);
+
+  free (dirname);
 
   printf ("filename: %s", filename);
 
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
       perror ("camc data_handler fits_init");
+      free (filename);
       return -1;
     }
+
+  free (filename);
 
   printf ("reading data socket: %i size: %i\n", sock, size);
 
