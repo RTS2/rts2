@@ -624,6 +624,7 @@ Rts2DevTelescopeGemini::init ()
   if (ret)
     return ret;
 
+  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::init open: %s", device_file);
   tel_desc = open (device_file, O_RDWR);
   if (tel_desc < 0)
     return -1;
