@@ -83,7 +83,7 @@ status_find (struct device *dev, char *status_name,
   for (i = 0; i < dev->status_num; i++)
     {
       *st = &dev->statutes[i];
-      if (!strcmp ((*st)->name, status_name))
+      if ((*st)->name && !strcmp ((*st)->name, status_name))
 	return 0;
     }
   return -1;
@@ -895,7 +895,10 @@ devcli_wait_for_status (struct device *dev, char *status_name,
 	pthread_cond_timedwait (&dev->status_cond, &dev->status_lock,
 				&abstime);
       if (errno == ETIMEDOUT && tmeout)
-	return -1;
+	{
+	  pthread_mutex_unlock (&dev->status_lock);
+	  return -1;
+	}
     }
   pthread_mutex_unlock (&dev->status_lock);
   if (dev->channel.socket == -1)
