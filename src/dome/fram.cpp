@@ -207,9 +207,14 @@ private:
   unsigned char spinac[2];
   unsigned char stav_portu[3];
 
-  int zjisti_stav_portu (unsigned char *stav);
+  int zjisti_stav_portu ();
   void zapni_pin (unsigned char c_port, unsigned char pin);
   void vypni_pin (unsigned char c_port, unsigned char pin);
+  int getState (int c_port)
+  {
+    return !!(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
+  };
+
   int isOn (int c_port);
   int handle_zasuvky (int state);
 
@@ -241,8 +246,8 @@ private:
     MOVE_CLOSE_LEFT_WAIT
   } movingState;
 public:
-    Rts2DevDomeFram (int argc, char **argv);
-    virtual ~ Rts2DevDomeFram (void);
+  Rts2DevDomeFram (int argc, char **argv);
+  virtual ~ Rts2DevDomeFram (void);
   virtual int processOption (int in_opt);
   virtual int init ();
 
@@ -263,24 +268,27 @@ public:
 };
 
 int
-Rts2DevDomeFram::zjisti_stav_portu (unsigned char *stav)
+Rts2DevDomeFram::zjisti_stav_portu ()
 {
   unsigned char t, c = STAV_PORTU | PORT_A;
+  int ret;
   write (dome_port, &c, 1);
   if (read (dome_port, &t, 1) < 1)
     syslog (LOG_ERR, "read error 0");
   else
     syslog (LOG_DEBUG, "stav: A: %x:", t);
-  read (dome_port, &stav[PORT_A], 1);
-  syslog (LOG_DEBUG, "A state: %x", stav[PORT_A]);
+  read (dome_port, &stav_portu[PORT_A], 1);
+  syslog (LOG_DEBUG, "A state: %x", stav_portu[PORT_A]);
   c = STAV_PORTU | PORT_B;
   write (dome_port, &c, 1);
   if (read (dome_port, &t, 1) < 1)
     syslog (LOG_ERR, "read error 1");
   else
     syslog (LOG_DEBUG, " B: %x:", t);
-  read (dome_port, &stav[PORT_B], 1);
-  syslog (LOG_DEBUG, "B state: %x", stav[PORT_B]);
+  ret = read (dome_port, &stav_portu[PORT_B], 1);
+  syslog (LOG_DEBUG, "B state: %x", stav_portu[PORT_B]);
+  if (ret < 0)
+    return -1;
   return 0;
 }
 
@@ -288,7 +296,7 @@ void
 Rts2DevDomeFram::zapni_pin (unsigned char port, unsigned char pin)
 {
   unsigned char c;
-  zjisti_stav_portu (stav_portu);
+  zjisti_stav_portu ();
   c = ZAPIS_NA_PORT | port;
   syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", port, pin, c);
   write (dome_port, &c, 1);
@@ -301,7 +309,7 @@ void
 Rts2DevDomeFram::vypni_pin (unsigned char port, unsigned char pin)
 {
   unsigned char c;
-  zjisti_stav_portu (stav_portu);
+  zjisti_stav_portu ();
   c = ZAPIS_NA_PORT | port;
   syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", port, pin, c);
   write (dome_port, &c, 1);
@@ -313,7 +321,7 @@ Rts2DevDomeFram::vypni_pin (unsigned char port, unsigned char pin)
 int
 Rts2DevDomeFram::isOn (int c_port)
 {
-  zjisti_stav_portu (stav_portu);
+  zjisti_stav_portu ();
   return !(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
 }
 
@@ -522,7 +530,7 @@ Rts2DevDomeFram::endClose ()
   stopMove ();
   VYP (VENTIL_ZAVIRANI_LEVY);
   VYP (VENTIL_ZAVIRANI_PRAVY);
-  zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
   return Rts2DevDome::endClose ();
 }
 
@@ -595,6 +603,8 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   dome_file = "/dev/ttyS0";
 
+  domeModel = "FRAM_FORD_2";
+
   movingState = MOVE_NONE;
 }
 
@@ -631,6 +641,14 @@ Rts2DevDomeFram::ready ()
 int
 Rts2DevDomeFram::info ()
 {
+  int ret;
+  ret = zjisti_stav_portu ();
+  if (ret)
+    return -1;
+  open1 = getState (KONCAK_OTEVRENI_PRAVY);
+  open1 = getState (KONCAK_OTEVRENI_LEVY);
+  close1 = getState (KONCAK_ZAVRENI_PRAVY);
+  close1 = getState (KONCAK_ZAVRENI_LEVY);
   return 0;
 }
 

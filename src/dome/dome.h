@@ -6,8 +6,14 @@
 
 class Rts2DevDome:public Rts2Device
 {
+protected:
+  char *domeModel;
+  int open1;
+  int open2;
+  int close1;
+  int close2;
 public:
-  Rts2DevDome (int argc, char **argv);
+    Rts2DevDome (int argc, char **argv);
   virtual int openDome ()
   {
     maskState (0, DOME_DOME_MASK, DOME_OPENING, "opening dome");

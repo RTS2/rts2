@@ -11,6 +11,11 @@ Rts2Device (argc, argv, DEVICE_TYPE_DOME, 5552, "DOME")
 {
   char *states_names[1] = { "dome" };
   setStateNames (1, states_names);
+
+  open1 = -1;
+  open2 = -1;
+  close1 = -1;
+  close2 = -1;
 }
 
 int
@@ -100,18 +105,43 @@ Rts2DevDome::ready (Rts2Conn * conn)
 {
   int ret;
   ret = ready ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
+      return -1;
+    }
+  return 0;
 }
 
 int
 Rts2DevDome::info (Rts2Conn * conn)
 {
-  return info ();
+  int ret;
+  ret = info ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
+      return -1;
+    }
+  conn->sendValue ("open_1", open1);
+  conn->sendValue ("open_2", open2);
+  conn->sendValue ("close_1", close1);
+  conn->sendValue ("close_2", close2);
+  return 0;
 }
 
 int
 Rts2DevDome::baseInfo (Rts2Conn * conn)
 {
-  return baseInfo ();
+  int ret;
+  ret = baseInfo ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
+      return -1;
+    }
+  conn->sendValue ("model", domeModel);
+  return 0;
 }
 
 int
