@@ -36,7 +36,7 @@
 #include "lx200.h"
 #include "../telescope.h"
 #include "../../utils/hms.h"
-#include "../../status.h"
+#include "status.h"
 
 double park_dec;
 
@@ -528,7 +528,7 @@ telescope_init (const char *device_name, int telescope_id)
 
       return 0;
 
-sem_high_err:
+    sem_high_err:
 
       sem_buf.sem_op = +1;
       semop (semid, &sem_buf, 1);
@@ -837,7 +837,7 @@ extern int
 telescope_correct (double ra, double dec)
 {
   struct sembuf sem_buf;
-  double ra_new, dec_new;
+  double ra_act, dec_act;
 
   sem_buf.sem_num = SEM_MOVE;
   sem_buf.sem_op = -1;
@@ -850,13 +850,13 @@ telescope_correct (double ra, double dec)
 
   sem_buf.sem_op = 1;
 
-  if (tel_read_ra (&ra) || tel_read_dec (&dec))
+  if (tel_read_ra (&ra_act) || tel_read_dec (&dec_act))
     goto err;
 
-  ra += ra_new;
-  dec += dec_new;
+  ra_act -= ra;
+  dec_act -= dec;
 
-  if (tel_set_to (ra, dec))
+  if (tel_set_to (ra_act, dec_act))
     goto err;
 
   semop (semid, &sem_buf, 1);

@@ -23,7 +23,7 @@
 #include "telescope.h"
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
-#include "../status.h"
+#include "status.h"
 
 #define SERVERD_PORT    	5557	// default serverd port
 #define SERVERD_HOST		"localhost"	// default serverd hostname
@@ -71,6 +71,13 @@ start_move (void *arg)
 }
 
 void *
+start_correction (void *arg)
+{
+  telescope_correct (RADEC->ra, RADEC->dec);
+  return NULL;
+}
+
+void *
 start_park (void *arg)
 {
   int ret;
@@ -105,6 +112,7 @@ teld_handle_command (char *command)
   if (strcmp (command, "ready") == 0)
     {
       tel_call (telescope_init ("/dev/ttyS0", 0));
+      atexit (telescope_done);
     }
   else if (strcmp (command, "set") == 0)
     {
@@ -135,6 +143,28 @@ teld_handle_command (char *command)
 			  "moving of telescope started");
       devser_thread_create (start_move, (void *) &coord, sizeof coord, NULL,
 			    client_move_cancel);
+      devdem_priority_block_end ();
+      return 0;
+    }
+  else if (strcmp (command, "correct") == 0)
+    {
+      struct radec coord;
+      if (devser_param_test_length (2))
+	return -1;
+      if (devser_param_next_hmsdec (&(coord.ra)))
+	return -1;
+      if (devser_param_next_hmsdec (&(coord.dec)))
+	return -1;
+      if (abs (coord.ra) > 5 || abs (coord.dec) > 5)
+	{
+	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "corections bigger than sane limit");
+	  return -1;
+	}
+      if (devdem_priority_block_start ())
+	return -1;
+      devser_thread_create (start_correction, (void *) &coord, sizeof coord,
+			    NULL, NULL);
       devdem_priority_block_end ();
       return 0;
     }
