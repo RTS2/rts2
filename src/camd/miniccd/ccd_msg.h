@@ -146,6 +146,18 @@ typedef unsigned short CCD_ELEM_TYPE;
 #define CCD_CCD_DAC_STRING          "DAC"
 #define CCD_CCD_COLOR_STRING        "COLOR"
 #define CCD_CCD_CAPS_STRING         "CAPS"
+
+/*
+ * CCD temp control
+ */
+#define CCD_MSG_TEMP                0x1101
+#define CCD_TEMP_FAN_INDEX          (CCD_MSG_INDEX + 1)
+#define CCD_TEMP_SET_LO_INDEX          (CCD_MSG_INDEX + 2)
+#define CCD_TEMP_SET_HI_INDEX          (CCD_MSG_INDEX + 3)
+#define CCD_MSG_TEMP_LEN            (CCD_TEMP_SET_HI_INDEX*CCD_ELEM_SIZE+CCD_ELEM_SIZE)
+
+#define CCD_TEMP_FAN_OFF            0x01
+#define CCD_TEMP_FAN_OD             0x02
 /*
  * CCD color representation.
  *  Packed colors allow individual sizes up to 16 bits.

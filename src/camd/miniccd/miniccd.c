@@ -92,14 +92,13 @@ camera_init (char *device_name, int camera_id)
       field_rows[i] = 0;
       chip_device_name = (char *) malloc (strlen (device_name) + 2);
       strcpy (chip_device_name, device_name);
-      if (i == 0 && (interleave || miniccd.chips == 1))
+      if (i == 0)
 	{
 	  fd_chips[i] = fd_ccd;
 	}
       else
 	{
-	  chip_device_name[strlen (device_name)] =
-	    i + (interleave ? '0' : '1');
+	  chip_device_name[strlen (device_name)] = i + '0';
 	  chip_device_name[strlen (device_name) + 1] = '\x0';
 	  fd_chips[i] = open (chip_device_name, O_RDWR, 0);
 	  if (fd_chips[i] < 0)
@@ -112,9 +111,10 @@ camera_init (char *device_name, int camera_id)
 	      return -1;
 	    }
 	}
-      write (fd_ccd, (char *) msgw, CCD_MSG_QUERY_LEN);
+      write (fd_chips[i], (char *) msgw, CCD_MSG_QUERY_LEN);
       if ((msg_len =
-	   read (fd_ccd, (char *) msgr, CCD_MSG_CCD_LEN)) != CCD_MSG_CCD_LEN)
+	   read (fd_chips[i], (char *) msgr,
+		 CCD_MSG_CCD_LEN)) != CCD_MSG_CCD_LEN)
 	{
 	  fprintf (stderr, "CCD message length wrong: %d\n", msg_len);
 	}
@@ -122,12 +122,11 @@ camera_init (char *device_name, int camera_id)
       minichip->height = msgr[CCD_CCD_HEIGHT_INDEX];
       if (i == 0 && interleave)
 	{
-	  minichip->height *= 2;
+	  minichip->width /= 2;
 	}
       minichip->binning_vertical = 1;
       minichip->binning_horizontal = 1;
       sizeof_pixel = (msgr[CCD_CCD_DEPTH_INDEX] + 7) / 8;
-      printf ("sizeof_pixel: %i\n", msgr[CCD_CCD_DEPTH_INDEX]);
     }
 
   miniccd.temperature_regulation = -1;
@@ -169,8 +168,6 @@ camera_expose (int chip, float *exposure, int light)
   CCD_ELEM_TYPE msg[CCD_MSG_EXP_LEN / CCD_ELEM_SIZE];
   struct chip_info *minichip = &miniccd.chip_info[chip];
   int exposure_msec = *exposure * 1000;
-  int i;
-  int real_height = minichip->height / (interleave && chip == 0 ? 2 : 1);
   fd_set set;
   /*
    * Send the capture request.
@@ -179,8 +176,9 @@ camera_expose (int chip, float *exposure, int light)
   msg[CCD_MSG_LENGTH_LO_INDEX] = CCD_MSG_EXP_LEN;
   msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
   msg[CCD_MSG_INDEX] = CCD_MSG_EXP;
-  msg[CCD_EXP_WIDTH_INDEX] = minichip->width;
-  msg[CCD_EXP_HEIGHT_INDEX] = real_height;
+  msg[CCD_EXP_WIDTH_INDEX] = minichip->width * (interleave
+						&& chip == 0 ? 2 : 1);
+  msg[CCD_EXP_HEIGHT_INDEX] = minichip->height;
   msg[CCD_EXP_XOFFSET_INDEX] = 0;
   msg[CCD_EXP_YOFFSET_INDEX] = 0;
   msg[CCD_EXP_XBIN_INDEX] = minichip->binning_horizontal;
@@ -191,28 +189,20 @@ camera_expose (int chip, float *exposure, int light)
   msg[CCD_EXP_MSEC_HI_INDEX] = exposure_msec >> 16;
   if (chip == 0 && interleave)
     {
-      write (fd_chips[1], (char *) msg, CCD_MSG_EXP_LEN);
-      sleep (3);
-      msg[CCD_EXP_FLAGS_INDEX] |= CCD_EXP_FLAGS_NOWIPE_FRAME;
-      write (fd_chips[2], (char *) msg, CCD_MSG_EXP_LEN);
+      // interleave..the other way. Don't do full exposure, do just a half, and bin it
+      write (fd_chips[chip], (char *) msg, CCD_MSG_EXP_LEN);
+      field_rows[chip] = 0;
+      FD_ZERO (&set);
+      FD_SET (fd_chips[chip], &set);
+      printf ("before select\n");
+      fflush (stdout);
+      select (fd_chips[chip] + 1, &set, NULL, NULL, NULL);
+      printf ("after select\n");
+      fflush (stdout);
+      while (dummy_camera_readout_line (chip, 0, minichip->width,
+					&_data[field_rows[chip]]) == 0);
+      field_rows[chip] = 0;
 
-      for (i = 1; i < miniccd.chips; i++)
-	{
-	  field_rows[i] = 0;
-	  FD_ZERO (&set);
-	  FD_SET (fd_chips[i], &set);
-	  printf ("before select\n");
-	  fflush (stdout);
-	  select (fd_chips[i] + 1, &set, NULL, NULL, NULL);
-	  while (field_rows[i] < real_height)
-	    {
-	      printf ("stdout: %i %i\n", i, field_rows[i]);
-	      fflush (stdout);
-	      dummy_camera_readout_line (i, 0, minichip->width,
-					 &_data[field_rows[i] * 2 + (i - 1)]);
-	    }
-	  field_rows[i] = 0;
-	}
     }
   else
     {
@@ -221,9 +211,8 @@ camera_expose (int chip, float *exposure, int light)
       FD_ZERO (&set);
       FD_SET (fd_chips[chip], &set);
       select (fd_chips[chip] + 1, &set, NULL, NULL, NULL);
-      while (field_rows[chip] < minichip->height)
-	dummy_camera_readout_line (chip, 0, minichip->width,
-				   &_data[field_rows[chip]]);
+      while (dummy_camera_readout_line (chip, 0, minichip->width,
+					&_data[field_rows[chip]]) == 0);
       field_rows[chip] = 0;
     }
   return 0;
@@ -262,10 +251,23 @@ dummy_camera_readout_line (int chip_id, short start, short length, void *data)
 {
   CCD_ELEM_TYPE *msg;
   struct chip_info *minichip = &miniccd.chip_info[chip_id];
-  int row_bytes =
-    (minichip->width / minichip->binning_horizontal) * sizeof_pixel;
+  int row_bytes;
   int msg_len;
   char *buf;
+  int ret;
+  int real_bytes;
+
+  real_bytes =
+    (minichip->width / minichip->binning_horizontal) * sizeof_pixel;
+
+  if (chip_id == 0 && interleave)
+    {
+      row_bytes = 2 * real_bytes;
+    }
+  else
+    {
+      row_bytes = real_bytes;
+    }
 
   buf = (char *) malloc (row_bytes + CCD_MSG_IMAGE_LEN);
   msg = (CCD_ELEM_TYPE *) buf;
@@ -289,20 +291,16 @@ dummy_camera_readout_line (int chip_id, short start, short length, void *data)
 	   * Validate message length.
 	   */
 	  if ((msg[CCD_MSG_LENGTH_LO_INDEX] +
-	       (msg[CCD_MSG_LENGTH_HI_INDEX] << 16)) !=
-	      (row_bytes *
-	       ((minichip->height / (interleave && chip_id == 0 ? 2 : 1)) /
-		minichip->binning_horizontal) + CCD_MSG_IMAGE_LEN))
+	       (msg[CCD_MSG_LENGTH_HI_INDEX] << 16)) != row_bytes
+	      * (minichip->height / minichip->binning_horizontal) +
+	      CCD_MSG_IMAGE_LEN)
 	    {
 	      fprintf (stderr, "Image size discrepency %i != %i!\n",
-		       row_bytes *
-		       ((minichip->height /
-			 (interleave
-			  && chip_id ==
-			  0 ? 2 : 1)) / minichip->binning_horizontal) +
-		       CCD_MSG_IMAGE_LEN,
-		       msg[CCD_MSG_LENGTH_LO_INDEX] +
-		       (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
+		       (msg[CCD_MSG_LENGTH_LO_INDEX] +
+			(msg[CCD_MSG_LENGTH_HI_INDEX] << 16)),
+		       row_bytes * (minichip->height /
+				    minichip->binning_horizontal) +
+		       CCD_MSG_IMAGE_LEN);
 	      return -1;
 	    }
 	  /*
@@ -325,18 +323,54 @@ dummy_camera_readout_line (int chip_id, short start, short length, void *data)
     }
 
   field_rows[chip_id]++;
-  if (field_rows[chip_id] >
-      minichip->height / (interleave
-			  && chip_id ==
-			  0 ? 2 : 1) / minichip->binning_horizontal)
-    field_rows[chip_id] = 0;
+  if (field_rows[chip_id] >= minichip->height / minichip->binning_horizontal)
+    {
+      field_rows[chip_id] = 0;
+      ret = 1;
+    }
+  else
+    {
+      ret = 0;
+    }
   /*
    * Move image data down to replace header.
    */
-  memcpy (data, buf + CCD_MSG_IMAGE_LEN + start, length * sizeof_pixel);
+  if (chip_id == 0 && interleave)
+    {
+      if (sizeof_pixel == 2)
+	{
+	  printf ("sizeof: 2\n");
+	  fflush (stdout);
+	  short *d = (short *) data;
+	  char *b = buf + CCD_MSG_IMAGE_LEN + start;
+	  int i;
+	  for (i = 0; i < length; i++)
+	    {
+	      *d =
+		(*((short *) (&b[i * 4])) + *((short *) (&b[i * 4 + 2]))) / 2;
+	      d++;
+	    }
+	}
+      else
+	{
+	  char *d = (char *) data;
+	  char *b = buf + CCD_MSG_IMAGE_LEN + start;
+	  int i;
+	  for (i = 0; i < length; i++)
+	    {
+	      *d =
+		(*((char *) (&b[i * 2])) + *((char *) (&b[i * 2 + 1]))) / 2;
+	      d++;
+	    }
+	}
+    }
+  else
+    {
+      memcpy (data, buf + CCD_MSG_IMAGE_LEN + start, length * sizeof_pixel);
+    }
   free (buf);
 
-  return 0;
+  return ret;
 err:
   free (buf);
   return -1;
@@ -345,24 +379,7 @@ err:
 extern int
 camera_readout_line (int chip_id, short start, short length, void *data)
 {
-  if (interleave)
-    {
-      if (chip_id == 0)
-	{
-	  memcpy (data, &_data[field_rows[chip_id]] + start,
-		  length * sizeof_pixel);
-	}
-      else
-	{
-	  memcpy (data, &_data[field_rows[chip_id] * 2 + chip_id - 1] + start,
-		  length * sizeof_pixel);
-	}
-    }
-  else
-    {
-      memcpy (data, &_data[field_rows[chip_id]] + start,
-	      length * sizeof_pixel);
-    }
+  memcpy (data, &_data[field_rows[chip_id]] + start, length * sizeof_pixel);
   field_rows[chip_id]++;
   return 0;
 }
@@ -372,7 +389,8 @@ camera_dump_line (int chip_id)
 {
   struct chip_info *minichip = &miniccd.chip_info[chip_id];
   int row_bytes =
-    (minichip->width / minichip->binning_horizontal) * sizeof_pixel;
+    (minichip->width * (interleave && chip_id == 0 ? 2 : 1) /
+     minichip->binning_horizontal) * sizeof_pixel;
   char *buf = (char *) malloc (row_bytes + CCD_MSG_IMAGE_LEN);
   if (field_rows[chip_id] == 0)
     read (fd_chips[chip_id], buf, row_bytes + CCD_MSG_IMAGE_LEN);
