@@ -253,9 +253,15 @@ clients_change_priority (time_t timeout)
 	  new_priority_max = shm_clients[i].priority;
 	}
     }
-  shm_info->priority_client = new_priority_client;
-  return devices_all_msg_snd ("M priority_change %i %i", new_priority_client,
-			      timeout);
+
+  if (shm_info->priority_client == -1 ||
+      shm_clients[shm_info->priority_client].priority > new_priority_max)
+    {
+      shm_info->priority_client = new_priority_client;
+      return devices_all_msg_snd ("M priority_change %i %i",
+				  new_priority_client, timeout);
+    }
+  return 0;
 }
 
 void *
