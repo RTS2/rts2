@@ -143,11 +143,6 @@ get_list (int tar_id)
       obs_id = ntohl (*((uint32_t *) PQgetvalue (res, i, 4)));
       count_date = ntohl (*((uint32_t *) (PQgetvalue (res, i, 1))));
       gmtime_r (&count_date, &date);
-      if (target_info && obs_id != last_obs_id)
-	{
-	  print_target_info (tar_id, &count_date);
-	  last_obs_id = obs_id;
-	}
       count_value = ntohl (*((uint32_t *) PQgetvalue (res, i, 2)));
       count_value <<= 32;
       count_value |= ntohl (*(((uint32_t *) PQgetvalue (res, i, 2)) + 1));
@@ -156,6 +151,11 @@ get_list (int tar_id)
 	{
 	  print_head (&date);
 	  next_midnight = count_date + abs ((date.tm_hour - 4) % 24) * 3600;
+	}
+      if (target_info && obs_id != last_obs_id)
+	{
+	  print_target_info (tar_id, &count_date);
+	  last_obs_id = obs_id;
 	}
       printf ("%1i%4i%3i%3i%4i.0000%10lli\n", filters[count_filter[0] - 'A'],
 	      tar_id, date.tm_hour, date.tm_min, date.tm_sec, count_value);
