@@ -7,8 +7,6 @@
  * @author petr
  */
 
-#define _GNU_SOURCE
-
 #define MAX_READOUT_TIME		120
 
 #include <errno.h>
@@ -36,6 +34,7 @@
 #include "../writers/fits.h"
 #include "status.h"
 #include "selector.h"
+#include "target.h"
 #include "../db/db.h"
 #include "../writers/process_image.h"
 
@@ -55,7 +54,7 @@ struct thread_list
 struct ex_info
 {
   struct device *camera;
-  struct target *last;
+  Target *last;
 };
 
 pthread_mutex_t exposure_count_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -85,21 +84,20 @@ status_handler (struct device *dev, char *status_name, int new_val)
 }
 
 int
-move (struct target *last)
+move (Target *last)
 {
   if ((last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
       && last->moved == 0)
     {
       struct ln_equ_posn object;
       struct ln_hrz_posn hrz;
-      object.ra = last->ra;
-      object.dec = last->dec;
+      last->getPosition(&object);
       ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (),
 			   &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
 
-      if (devcli_command (telescope, NULL, "move %f %f", last->ra, last->dec))
+      if (devcli_command (telescope, NULL, "move %f %f", object.ra, object.dec))
 	{
 	  printf ("telescope error\n\n--------------\n");
 	  return -1;
@@ -119,7 +117,7 @@ move (struct target *last)
 }
 
 int
-get_info (struct target *entry, struct device *tel, struct device *cam,
+get_info (Target *entry, struct device *tel, struct device *cam,
 	  float exposure, hi_precision_t * hi_precision)
 {
   struct image_info *info =
@@ -147,7 +145,7 @@ get_info (struct target *entry, struct device *tel, struct device *cam,
 }
 
 int
-generate_next (int i, struct target *plan)
+generate_next (int i, Target *plan)
 {
   time_t start_time;
   time (&start_time);
@@ -155,7 +153,7 @@ generate_next (int i, struct target *plan)
 
   printf ("Making plan %s", ctime (&start_time));
   if (get_next_plan
-      (plan, get_double_default ("planc_selector", SELECTOR_HETE),
+      (plan, (int) get_double_default ("planc_selector", SELECTOR_HETE),
        &start_time, i, EXPOSURE_TIME, devcli_server ()->statutes[0].status,
        observer.lng, observer.lat))
     {
@@ -173,7 +171,7 @@ generate_next (int i, struct target *plan)
  * @return 0 if I can observe futher, -1 if observation was canceled
  */
 int
-process_precission (struct target *tar, struct device *camera)
+process_precission (Target *tar, struct device *camera)
 {
   float exposure = 10;
   exposure =
@@ -197,7 +195,7 @@ process_precission (struct target *tar, struct device *camera)
       double ra_err = NAN, dec_err = NAN;	// no astrometry
       double ra_margin = 15, dec_margin = 15;	// in arc minutes
       int tries = 0;
-      int max_tries = get_double_default ("maxtries", 5);
+      int max_tries = (int) get_double_default ("maxtries", 5);
       time_t now;
       struct timespec timeout;
 
@@ -216,13 +214,15 @@ process_precission (struct target *tar, struct device *camera)
       while (tries < max_tries)
 	{
 	  int light = (precission_count % 10 == 0) ? 0 : 1;
+          struct ln_equ_posn object;
 	  if (!light)
 	    tar->type = TARGET_DARK;
 	  else
 	    tar->type = TARGET_LIGHT;
+          tar->getPosition (&object);
 	  printf
 	    ("triing to get to %f %f, %i try, %s image, %i total precission\n",
-	     tar->ra, tar->dec, tries, (light == 1) ? "light" : "dark",
+	     object.ra, object.dec, tries, (light == 1) ? "light" : "dark",
 	     precission_count);
 	  fflush (stdout);
 	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
@@ -246,11 +246,11 @@ process_precission (struct target *tar, struct device *camera)
 	      // in location parameters, passd as reference to get_info.
 	      // So I can compare that with
 	      pthread_mutex_lock (hi_precision.mutex);
-	      time (&now);
-	      timeout.tv_sec = now + 350;
-	      timeout.tv_nsec = 0;
-	      pthread_cond_timedwait (hi_precision.cond, hi_precision.mutex,
-				      &timeout);
+   	      time (&now);
+  	      timeout.tv_sec = now + 350;
+  	      timeout.tv_nsec = 0;
+  	      pthread_cond_timedwait (hi_precision.cond, hi_precision.mutex,
+  				      &timeout);
 	      printf ("hi_precision->image_pos->ra: %f dec: %f ",
 		      hi_precision.image_pos.ra, hi_precision.image_pos.dec);
 	      pthread_mutex_unlock (hi_precision.mutex);
@@ -259,9 +259,9 @@ process_precission (struct target *tar, struct device *camera)
 		  && !isnan (hi_precision.image_pos.dec))
 		{
 		  ra_err =
-		    ln_range_degrees (tar->ra - hi_precision.image_pos.ra);
+		    ln_range_degrees (object.ra - hi_precision.image_pos.ra);
 		  dec_err =
-		    ln_range_degrees (tar->dec - hi_precision.image_pos.dec);
+		    ln_range_degrees (object.dec - hi_precision.image_pos.dec);
 		}
 	      else
 		{
@@ -311,7 +311,7 @@ void *
 execute_camera_script (void *exinfo)
 {
   struct device *camera = ((struct ex_info *) exinfo)->camera;
-  struct target *last = ((struct ex_info *) exinfo)->last;
+  Target *last = ((struct ex_info *) exinfo)->last;
   int light;
   char *command, *s;
   float exposure;
@@ -463,7 +463,7 @@ observe (int watch_status)
   int i = 0;
   int tar_id = 0;
   int obs_id = -1;
-  struct target *last, *plan, *p;
+  Target *last, *plan, *p;
   int exposure;
   int light;
   struct thread_list thread_l;
@@ -471,7 +471,7 @@ observe (int watch_status)
 
   struct tm last_s;
 
-  plan = (struct target *) malloc (sizeof (struct target));
+  plan = new Target();
   plan->next = NULL;
   plan->id = -1;
   i = generate_next (i, plan);
@@ -518,10 +518,14 @@ observe (int watch_status)
 
       gmtime_r (&last_succes, &last_s);
 
+      struct ln_equ_posn object;
+
+      last->getPosition (&object);
+
       devcli_server_command (NULL,
 			     "status_txt P:_%i_obs:_%i_ra:%i_dec:%i_suc:%i:%i",
-			     last->id, last->obs_id, (int) last->ra,
-			     (int) last->dec, last_s.tm_hour, last_s.tm_min);
+			     last->id, last->obs_id, (int) object.ra,
+			     (int) object.dec, last_s.tm_hour, last_s.tm_min);
 
       printf ("OK\n");
       time (&t);
