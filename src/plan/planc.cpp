@@ -355,7 +355,7 @@ execute_camera_script (void *exinfo)
 
   while (*command)
     {
-      if (exp_state && *command && !isspace (*command))
+      if (exp_state == 1 && *command && !isspace (*command))
 	{
 	  // wait till exposure end..
 	  devcli_command (telescope, NULL, "base_info;info");
