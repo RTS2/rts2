@@ -227,37 +227,18 @@ make_plan (struct target **plan)
 	  continue;
 	}
 
-      switch (i % 9)
-	{
-	case 0:
-	case 1:
-	case 2:
-	  az = 270;
-	  break;
-	case 3:
-	case 4:
-	case 5:
-	  az = 0;
-	  break;
-	case 6:
-	case 7:
-	case 8:
-	  az = 90;
-	  break;
-	}
-
-      switch (i % 3)
-	{
-	case 0:
-	  airmass = 1;
-	  break;
-	case 1:
-	  airmass = 1.5;
-	  break;
-	case 2:
-	  airmass = 2.5;
-	  break;
-	}
+      switch (i&1)
+      {
+	      case 0:
+		      az=180.0*rand()/(RAND_MAX+1.0);
+		      airmass=1.2+(1.2*rand()/(RAND_MAX+1.0));
+		      if(az>90)az+=180;
+		      break;
+	      case 1:
+		      az=360.0*rand()/(RAND_MAX+1.0);
+		      airmass=1.0+(0.2*rand()/(RAND_MAX+1.0));
+		      break;
+      }
 
       select_next_airmass (c_start + i * 180, *plan, last, airmass, az);
       last = last->next;
