@@ -1,0 +1,7 @@
+all: bacodine.a
+
+bacodine.a: bacodine.o
+	$(AR) rvs $@ $^
+
+clean:
+	$(RM) *.a *.o
