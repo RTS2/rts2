@@ -59,8 +59,6 @@ void *
 start_move (void *arg)
 {
   int ret;
-  devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
-		      "moving of telescope started");
   if ((ret = telescope_move_to (RADEC->ra, RADEC->dec)) < 0)
     {
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
@@ -134,6 +132,8 @@ teld_handle_command (char *command)
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+		      "moving of telescope started");
       devser_thread_create (start_move, (void *) &coord, sizeof coord, NULL,
 			    client_move_cancel);
       devdem_priority_block_end ();
