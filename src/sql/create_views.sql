@@ -100,8 +100,8 @@ SELECT
 	observations.tar_id,
 	camera_name
 FROM
-	images
-	observationsWHERE
+	images,
+	observations
 WHERE
 	images.obs_id = observations.obs_id
 ORDER BY

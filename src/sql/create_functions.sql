@@ -1,10 +1,10 @@
-DROP FUNCTION obj_alt (float8, float8, float8, float8, float8);
+DROP FUNCTION obj_alt (float8, float8, float8, float8, float8) CASCADE;
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_alt (float8, float8, float8, float8, float8) 
 	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_alt' LANGUAGE 'C';
 
-DROP FUNCTION obj_az (float8, float8, float8, float8, float8);
+DROP FUNCTION obj_az (float8, float8, float8, float8, float8) CASCADE;
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_az (float8, float8, float8, float8, float8) 
