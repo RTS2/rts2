@@ -70,9 +70,11 @@ tel_cleanup (int err, void *args)
     syslog (LOG_ERR, "semctl %i IPC_RMID: %m", semid);
 }
 
-/*! Reports telescope status.
+/*!
+ * Reports telescope status.
  *
- * @param status Status to return
+ * @param status		status to return
+ * 
  * @return 0 on success, -1 & set errno otherwise
  */
 int
@@ -89,7 +91,8 @@ tel_status (int *status)
   return 0;
 }
 
-/*! Connect on given port.
+/*!
+ * Connect on given port.
  * 
  * @param devptr Pointer to device name
  * 
@@ -148,15 +151,17 @@ tel_connect (const char *devptr)
   return tcflush (port, TCIOFLUSH);
 }
 
-/*! Reads some data directly from port.
+/*! 
+ * Reads some data directly from port.
  * 
  * Log all flow as LOG_DEBUG to syslog
  * 
  * @exception EIO when there aren't data from port
  * @exception common select() exceptions
  * 
- * @param buf buffer to read in data
- * @param count how much data will be readed
+ * @param buf 		buffer to read in data
+ * @param count 	how much data will be readed
+ * 
  * @return -1 on failure, otherwise number of read data 
  */
 int
@@ -191,7 +196,8 @@ tel_read (char *buf, int count)
   return readed;
 }
 
-/*! Will read from port till it encoutered # character.
+/*! 
+ * Will read from port till it encoutered # character.
  * 
  * Read ending #, but doesn't return it.
  * 
@@ -214,12 +220,14 @@ tel_read_hash (char *buf, int count)
   return readed;
 }
 
-/*! Will write on telescope port string.
+/*! 
+ * Will write on telescope port string.
  *
  * @exception EIO, .. common write exceptions 
  * 
- * @param buf buffer to write
- * @param count count to write
+ * @param buf 		buffer to write
+ * @param count 	count to write
+ * 
  * @return -1 on failure, count otherwise
  */
 
@@ -231,16 +239,18 @@ tel_write (char *buf, int count)
 }
 
 
-/*! Combine write && read together.
+/*! 
+ * Combine write && read together.
  * 
  * Flush port to clear any gargabe.
  *
  * @exception EINVAL and other exceptions
  * 
- * @param wbuf buffer to write on port
- * @param wcount write count
- * @param rbuf buffer to read from port
- * @param rcount maximal number of characters to read
+ * @param wbuf		buffer to write on port
+ * @param wcount	write count
+ * @param rbuf		buffer to read from port
+ * @param rcount	maximal number of characters to read
+ * 
  * @return -1 and set errno on failure, rcount otherwise
  */
 
@@ -276,7 +286,8 @@ unlock:
   return tmp_rcount;
 }
 
-/*! Combine write && read_hash together.
+/*! 
+ * Combine write && read_hash together.
  *
  * @see tel_write_read for definition
  */
@@ -313,7 +324,8 @@ unlock:
   return tmp_rcount;
 }
 
-/*! Set slew rate. For completness?
+/*! 
+ * Set slew rate. For completness?
  * 
  * This functions are there IMHO mainly for historical reasons. They
  * don't have any use, since if you start move and then die, telescope
@@ -322,7 +334,8 @@ unlock:
  * commands from attached CCD, since it defines timeout, which rules
  * CCD.
  *
- * @param new_rate New rate to set. Uses RATE_<SPEED> constant.
+ * @param new_rate	new rate to set. Uses RATE_<SPEED> constant.
+ * 
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
 int
@@ -333,11 +346,13 @@ tel_set_rate (char new_rate)
   return tel_write (command, 5);
 }
 
-/*! Start slew. Again for completness?
+/*! 
+ * Start slew. Again for completness?
  * 
  * @see tel_set_rate() for speed.
  *
- * @param direction direction
+ * @param direction 	direction
+ * 
  * @return -1 on failure & set errnom, 5 (>=0) otherwise
  */
 int
@@ -348,7 +363,8 @@ tel_start_slew (char direction)
   return tel_write (command, 5) == 1 ? -1 : 0;
 }
 
-/*! Stop sleew. Again only for completness?
+/*! 
+ * Stop sleew. Again only for completness?
  * 
  * @see tel_start_slew for direction.	
  */
@@ -360,7 +376,8 @@ tel_stop_slew (char direction)
   return tel_write (command, 5) < 0 ? -1 : 0;
 }
 
-/*! Disconnect lx200.
+/*!
+ * Disconnect lx200.
  *
  * @return -1 on failure and set errno, 0 otherwise
  */
@@ -370,11 +387,13 @@ tel_disconnect (void)
   return close (port);
 }
 
-/*! Reads some value from lx200 in hms format.
+/*! 
+ * Reads some value from lx200 in hms format.
  * 
  * Utility function for all those read_ra and other.
  * 
- * @param hmsptr where hms will be stored
+ * @param hmsptr	where hms will be stored
+ * 
  * @return -1 and set errno on error, otherwise 0
  */
 int
@@ -389,9 +408,11 @@ tel_read_hms (double *hmsptr, char *command)
   return 0;
 }
 
-/*! Reads lx200 right ascenation.
+/*! 
+ * Reads lx200 right ascenation.
  * 
- * @param raptr where ra will be stored
+ * @param raptr		where ra will be stored
+ * 
  * @return -1 and set errno on error, otherwise 0
  */
 int
@@ -400,9 +421,11 @@ tel_read_ra (double *raptr)
   return tel_read_hms (raptr, "#:GR#");
 }
 
-/*! Reads LX200 declination.
+/*!
+ * Reads LX200 declination.
  * 
- * @param decptr where dec will be stored 
+ * @param decptr	where dec will be stored
+ * 
  * @return -1 and set errno on error, otherwise 0
  */
 int
@@ -411,9 +434,11 @@ tel_read_dec (double *decptr)
   return tel_read_hms (decptr, "#:GD#");
 }
 
-/*! Returns LX200 local time.
+/*! 
+ * Returns LX200 local time.
  * 
- * @param tptr where time will be stored
+ * @param tptr		where time will be stored
+ * 
  * @return -1 and errno on error, otherwise 0
  */
 int
@@ -422,9 +447,11 @@ tel_read_localtime (double *tptr)
   return tel_read_hms (tptr, "#:GL#");
 }
 
-/*! Returns LX200 sideral time.
+/*! 
+ * Returns LX200 sideral time.
  * 
- * @param tptr where time will be stored
+ * @param tptr		where time will be stored
+ * 
  * @return -1 and errno on error, otherwise 0
  */
 int
@@ -433,9 +460,11 @@ tel_read_siderealtime (double *tptr)
   return tel_read_hms (tptr, "#:GS#");
 }
 
-/*! Reads LX200 latitude.
+/*! 
+ * Reads LX200 latitude.
  * 
- * @param latptr where latitude will be stored  
+ * @param latptr	here latitude will be stored  
+ * 
  * @return -1 and errno on error, otherwise 0
  */
 int
@@ -444,9 +473,11 @@ tel_read_latitude (double *tptr)
   return tel_read_hms (tptr, "#:Gt#");
 }
 
-/*! Reads LX200 longtitude.
+/*! 
+ * Reads LX200 longtitude.
  * 
- * @param latptr where longtitude will be stored  
+ * @param latptr	where longtitude will be stored  
+ * 
  * @return -1 and errno on error, otherwise 0
  */
 int
@@ -455,12 +486,13 @@ tel_read_longtitude (double *tptr)
   return tel_read_hms (tptr, "#:Gg#");
 }
 
-/*! Repeat LX200 write,
+/*! 
+ * Repeat LX200 write.
  * 
  * Handy for setting ra and dec.
  * Meade tends to have problems with that.
  *
- * @param command command to write on port
+ * @param command	command to write on port
  */
 int
 tel_rep_write (char *command)
@@ -486,9 +518,11 @@ tel_rep_write (char *command)
   return 0;
 }
 
-/*! Set LX200 right ascenation.
+/*! 
+ * Set LX200 right ascenation.
  *
- * @param ra right ascenation to set in decimal hours
+ * @param ra		right ascenation to set in decimal hours
+ *
  * @return -1 and errno on error, otherwise 0
  */
 int
@@ -506,9 +540,11 @@ tel_write_ra (double ra)
   return tel_rep_write (command);
 }
 
-/*! Set LX200 declination.
+/*! 
+ * Set LX200 declination.
  *
- * @param dec declination to set in decimal degrees
+ * @param dec		declination to set in decimal degrees
+ * 
  * @return -1 and errno on error, otherwise 0
  */
 int
@@ -526,11 +562,13 @@ tel_write_dec (double dec)
   return tel_rep_write (command);
 }
 
-/*! Slew (=set) LX200 to new coordinates.
+/*! 
+ * Slew (=set) LX200 to new coordinates.
  *
- * @param ra new right ascenation
- * @param dec new declination
- * @exception EINVAL When telescope is below horizont, or upper limit was reached
+ * @param ra 		new right ascenation
+ * @param dec 		new declination
+ * @exception EINVAL 	when telescope is below horizont, or upper limit was reached
+ *
  * @return -1 and errno on exception, otherwise 0
  */
 int
@@ -546,19 +584,21 @@ tel_slew_to (double ra, double dec)
     return 0;
   retstr = 0;
   while (max_read > 0 && retstr != '#')
-  {
-    if (tel_read (&retstr, 1) < 0)
-      return -1;
-    max_read --;
-  }
+    {
+      if (tel_read (&retstr, 1) < 0)
+	return -1;
+      max_read--;
+    }
   errno = EINVAL;
   return -1;
 }
 
-/*! Check, if telescope match given coordinates.
+/*! 
+ * Check, if telescope match given coordinates.
  *
- * @param ra target right ascenation
- * @param dec target declination
+ * @param ra		target right ascenation
+ * @param dec		target declination
+ *
  * @return -1 and errno on exception, 0 if matched, 1 if not matched
  */
 int
@@ -574,12 +614,15 @@ tel_check_coords (double ra, double dec)
   return 0;
 }
 
-/*! Move telescope to new location, wait for completition, then send
+/*! 
+ * Move telescope to new location, wait for completition, then send
  * message.
  *
- * @param ra target right ascenation
- * @param dec target declination
+ * @param ra		target right ascenation
+ * @param dec		target declination
+ * 
  * @return -1 and errno on error, 0 otherwise
+ * 
  * @execption ETIMEDOUT when timeout occurs
  */
 int
@@ -637,11 +680,13 @@ unlock:
       return -1;
     }
 
-  syslog (LOG_DEBUG, "LX200:tel_move_to ra:%f dec:%f returns %i", ra, dec, ret);
+  syslog (LOG_DEBUG, "LX200:tel_move_to ra:%f dec:%f returns %i", ra, dec,
+	  ret);
   return ret;
 }
 
-/*! Repeat move_to 5 times, with a bit changed location.
+/*! 
+ * Repeat move_to 5 times, with a bit changed location.
  *
  * Used to uvercome LX200 error.
  *
@@ -671,14 +716,16 @@ tel_rep_move_to (double ra, double dec)
   return -1;
 }
 
-/*! Set telescope to match given coordinates
+/*! 
+ * Set telescope to match given coordinates
  *
  * This function is mainly used to tell the telescope, where it
  * actually is at the beggining of observation (remember, that lx200
  * doesn't have absolute position sensors)
  * 
- * @param ra setting right ascennation
- * @param dec setting declination
+ * @param ra		setting right ascennation
+ * @param dec		setting declination
+ * 
  * @return -1 and set errno on error, otherwise 0
  */
 int
@@ -694,9 +741,11 @@ tel_set_to (double ra, double dec)
   return tel_check_coords (ra, dec);
 }
 
-/*! Initialize telescope.
+/*! 
+ * Initialize telescope.
  * 
  * send some special commands to make initialization
+ * 
  * @return -1 and set errno on error, otherwise 0
  */
 int
@@ -725,7 +774,8 @@ tel_init ()
   return 0;
 }
 
-/*! Prove, if telescope is connected to computer.
+/*!
+ * Test, if telescope is connected to computer.
  *
  * @return -1 and errno on error, 0 if it's connected 
  */
@@ -744,7 +794,8 @@ tel_is_ready (void)
   return tel_init ();
 }
 
-/*! Park telescope to neutral location.
+/*! 
+ * Park telescope to neutral location.
  *
  * @return -1 and errno on error, 0 otherwise
  */
