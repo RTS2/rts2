@@ -12,6 +12,7 @@
 #endif /*! _GNU_SOURCE */
 
 #define MAX_READOUT_TIME		120
+#define MAX_FOCUSING_TIME		300
 #define EXPOSURE_TIMEOUT		50
 
 #include <errno.h>
@@ -134,6 +135,16 @@ phot_handler (struct param_status *params, struct phot_info *info)
 int
 move (Target * last)
 {
+  if (last->obs_type == TYPE_CALIBRATION)
+    {
+      printf ("homing..\n");
+      if (devcli_command (telescope, NULL, "home"))
+	{
+	  printf ("telescope error\n\n--------------\n");
+	  return -1;
+	}
+      last->moved = 1;
+    }
   if ((last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
       && last->moved == 0)
     {
@@ -468,16 +479,22 @@ execute_camera_script (void *exinfo)
   enum
   { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS,
     INTEGRATION_PROGRESS, CENTERING
-  } exp_state;
+  }
+  exp_state;
 
   time (&script_start);
 
   switch (last->type)
     {
     case TARGET_LIGHT:
+      light = 1;
+      if (last->obs_type == TYPE_CALIBRATION)
+	{
+	  command = "f";
+	  break;
+	}
       get_script (last, camera, com_buf);
       command = com_buf;
-      light = 1;
       ret = process_precission (last, camera);
       if (ret)
 	{
@@ -585,6 +602,12 @@ execute_camera_script (void *exinfo)
 	  printf ("exposure countdown (%s), readout at %s", camera->name,
 		  s_time);
 	  exp_state = EXPOSURE_BEGIN;
+	  break;
+	case COMMAND_FOCUSING:
+	  command++;
+	  devcli_command (camera, NULL, "focus 0");
+	  devcli_wait_for_status (camera, "img_chip", CAM_MASK_FOCUSINGS,
+				  CAM_NOFOCUSING, MAX_FOCUSING_TIME);
 	  break;
 	case COMMAND_FILTER:
 	  command++;
@@ -862,6 +885,19 @@ execute_camera_script (void *exinfo)
   return NULL;
 }
 
+// returns 1, when we are in state allowing observation
+int
+ready_to_observe (int status)
+{
+  char *autoflats;
+  autoflats = get_string_default ("autoflats", "Y");
+  if (autoflats[0] == 'Y')
+     return status == SERVERD_NIGHT
+      || status == SERVERD_DUSK
+      || status == SERVERD_DAWN;
+  return status == SERVERD_NIGHT;
+}
+
 int
 observe (int watch_status)
 {
@@ -896,9 +932,7 @@ observe (int watch_status)
       struct device *camera;
 
       if (watch_status
-	  && (devcli_server ()->statutes[0].status != SERVERD_NIGHT &&
-	      devcli_server ()->statutes[0].status != SERVERD_DUSK &&
-	      devcli_server ()->statutes[0].status != SERVERD_DAWN))
+	  && (!ready_to_observe (devcli_server ()->statutes[0].status)))
 	break;
       devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
@@ -1038,7 +1072,6 @@ observe (int watch_status)
     }
   return 0;
 }
-
 
 int
 main (int argc, char **argv)
@@ -1210,9 +1243,7 @@ loop:
   devcli_server_command (NULL, "status_txt P:waiting");
   if (watch_status)
     {
-      while (!(devcli_ser->statutes[0].status == SERVERD_NIGHT
-	       || devcli_ser->statutes[0].status == SERVERD_DUSK
-	       || devcli_ser->statutes[0].status == SERVERD_DAWN))
+      while (!ready_to_observe (devcli_ser->statutes[0].status))
 	{
 	  time_t t;
 	  time (&t);
@@ -1222,9 +1253,6 @@ loop:
 	    fprintf (stderr, "Error while moving telescope: %i\n", (int) t);
 	  else
 	    printf ("PARK ok\n");
-//        devcli_wait_for_status (devcli_ser, SERVER_STATUS,
-//                                SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK,
-//                                SERVERD_NIGHT, 10);
 	  fflush (stdout);
 	  sleep (100);
 	}
@@ -1241,6 +1269,7 @@ loop:
   observe (watch_status);
   printf ("done\n");
 
+  devcli_command (telescope, NULL, "home");
   devcli_command (telescope, NULL, "park");
 
   sleep (300);
