@@ -87,10 +87,10 @@ odsazovani je dulezite m.j. kvuli diffovani.
 
 # cvs diff | vim -
 
-Mate to pak obarvene. Diff se da po chvili vahani pochopit. Diff
-srovna stav kopie u vas s posledni verzi zapsanou v CVSku, a vypise
-vam rozdili. Dobre na zodpovezeni otazek..co jsem vsechno
-zmenil?..kdyz vam neco prestane chodit.
+Mate to pak obarvene (pokud ne, tak ve vim :set ft=diff) . Diff se da
+po chvili vahani pochopit. Diff srovna stav kopie u vas s posledni
+verzi zapsanou v CVSku, a vypise vam rozdili. Dobre na zodpovezeni
+otazek..co jsem vsechno zmenil?..kdyz vam neco prestane chodit.
 
 3) Pouzivejte doxygenovske tagy! Viz http://www.doxygen.org.
 
@@ -157,6 +157,13 @@ Tedy ne
 
 > telread
 
+Vyjimkou jsou vseobecne pouzitelne funkce, ktere nema smysl
+rozdelovat..me tady to doslo, kdyz jsem psal hmstod podle vzoru
+strtod.
+
+Zachazejte tedy s rozdelovanim dle sveho nejlepsiho vedomi a
+svedomi..a pokuste se v jednom souboru dodrzet jednu konvenci.
+
 1) Pouzivame glibc funkce, muzete pouzivat funkce dostupne pod 
 
 #define _GNU_SOURCE
@@ -178,6 +185,14 @@ linbosti. Chyby dokumentujeme pomoci tagu exception v doxygenu.
 
 Na retezcove funkce prosim pouzivejte volani stejne jako ma napriklad
 sprintf, tj. int <funkce>(char *string, atd..).
+
+3) Testy
+Pokud potrebujete neco otestovat, zalozte na to soubor test.c v
+prislusnem adresary.
+
+Dany soubour musi po zavolani projet vsechny testy, ktere do neho
+napisete, v pripade problemu skoncit assert em, v pripade
+bezproblemoveho chodu vratit 0.
 
 Snazte se hlidat si buffer overflow. 
 
