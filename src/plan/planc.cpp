@@ -534,6 +534,7 @@ execute_camera_script (void *exinfo)
 	  pthread_mutex_unlock (&move_count_mutex);
 	  break;
 	case COMMAND_WAIT:
+	  command++;
 	  time (&now);
 	  timeout.tv_sec = now + 1000;
 	  timeout.tv_nsec = 0;
