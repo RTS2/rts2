@@ -1019,7 +1019,7 @@ void *
 devser_shm_data_at ()
 {
   void *ret = shmat (data_shm, NULL, 0);
-  if ((int) ret < 0)
+  if (ret < 0)
     {
       syslog (LOG_ERR, "devser_shm_data_at shmat: %m");
       exit (EXIT_FAILURE);

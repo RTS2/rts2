@@ -675,7 +675,7 @@ devcli_server_register (const char *serv_host,
 
 // ... and log in
   if (devcli_server_command
-      (NULL, "register %s %i %s:%i", device_name, device_type, device_host,
+      (NULL, "register %s %i %s %i", device_name, device_type, device_host,
        device_port))
     {
       devcli_server_disconnect ();
