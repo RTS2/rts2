@@ -90,11 +90,12 @@ status_telescope (WINDOW * wnd, struct device *dev)
 
   st = info->siderealtime + info->longtitude / 15.0;
 
-  get_hrz_from_equ_siderealtime (&object, &observer, st, &position);
+  get_hrz_from_equ_sidereal_time (&object, &observer, st, &position);
 
   dtohms (info->ra / 15, buf);
 
-  mvwprintw (wnd, 1, 1, "R/Az: %s %+03.3f", buf, position.az);
+  mvwprintw (wnd, 1, 1, "R/Az/D: %s %+03.3f %s", buf, position.az,
+	     hrz_to_nswe (&position));
   mvwprintw (wnd, 2, 1, "D/Al: %+03.3f %+03.3f", info->dec, position.alt);
   mvwprintw (wnd, 3, 1, "Lon: %+03.3f", info->longtitude);
   mvwprintw (wnd, 4, 1, "Lat: %+03.3f", info->latitude);
@@ -156,9 +157,11 @@ status (WINDOW * wnd, struct device *dev)
   int ret;
   curs_set (0);
   status_send (dev, "ready");
-  devcli_command (dev, &ret, "ready");
-  status_send (dev, "info");
-  devcli_command (dev, &ret, "info");
+  if (!devcli_command (dev, &ret, "ready"))
+    {
+      status_send (dev, "info");
+      devcli_command (dev, &ret, "info");
+    }
   wclear (wnd);
   mvwprintw (wnd, 0, 1, "==== Name: %s ======", dev->name);
   if (ret)
@@ -312,6 +315,12 @@ main (int argc, char **argv)
       int key = wgetch (cmd_win);
       switch (key)
 	{
+	case KEY_F (2):
+	  devcli_server_command (NULL, "off");
+	  break;
+	case KEY_F (3):
+	  devcli_server_command (NULL, "on");
+	  break;
 	case KEY_F (5):
 	  status (wnd[4], devcli_server ());
 	  for (i = 0, dev = devcli_devices (); dev && i < 6;

@@ -35,7 +35,7 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
 
   EXEC SQL BEGIN DECLARE SECTION;
 
-  double jd;
+  double st;
 
   int tar_id;
 
@@ -49,8 +49,8 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
   EXEC SQL END DECLARE SECTION;
 
   printf ("C_start: %s", ctime (&c_start));
-  jd = get_julian_from_timet (&c_start);
-  printf ("jd: %f\n", jd);
+  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  printf ("st: %f\n", st);
 
   EXEC SQL BEGIN;
 
@@ -58,7 +58,7 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
 
   EXEC SQL DECLARE obs_cursor_alt CURSOR FOR
     SELECT tar_id, tar_ra, tar_dec,
-    obj_alt (tar_ra, tar_dec,:jd, -14.95, 50) AS alt FROM targets
+    obj_alt (tar_ra, tar_dec,:st, -14.95, 50) AS alt FROM targets
     WHERE (tar_lastobs is NULL) or tar_lastobs < abstime (:obs_start)
     ORDER BY alt DESC;
 
@@ -97,7 +97,7 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
 
 err:
 #ifdef DEBUG
-  printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
 }
@@ -110,7 +110,7 @@ select_next_airmass (time_t c_start, struct target *plan, struct
 
   EXEC SQL BEGIN DECLARE SECTION;
 
-  double jd;
+  double st;
 
   int tar_id;
 
@@ -130,8 +130,8 @@ select_next_airmass (time_t c_start, struct target *plan, struct
   EXEC SQL END DECLARE SECTION;
 
   printf ("c_start: %s", ctime (&c_start));
-  jd = get_julian_from_timet (&c_start);
-  printf ("jd: %f\n", jd);
+  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  printf ("st: %f\n", st);
 
 
   EXEC SQL BEGIN;
@@ -140,12 +140,12 @@ select_next_airmass (time_t c_start, struct target *plan, struct
 
   EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR
     SELECT tar_id, tar_ra, tar_dec,
-    obj_az (tar_ra, tar_dec,:jd, -14.95, 50) AS az,
-    obj_airmass (tar_ra, tar_dec,:jd, -14.95, 50) AS
-    airmass, (abs (obj_airmass (tar_ra, tar_dec,:jd,
+    obj_az (tar_ra, tar_dec,:st, -14.95, 50) AS az,
+    obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) AS
+    airmass, (abs (obj_airmass (tar_ra, tar_dec,:st,
 				-14.95,
 				50) -:t_airmass) * 180 + abs (obj_az (tar_ra,
-								      tar_dec,:jd,
+								      tar_dec,:st,
 								      -14.95,
 								      50)
 							      -:t_az)) AS rank
@@ -192,7 +192,7 @@ select_next_airmass (time_t c_start, struct target *plan, struct
 
 err:
 #ifdef DEBUG
-  printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
 }

@@ -193,12 +193,13 @@ readout ()
       if (ret == 4)
 	{
 	  int cx, cy, cw, ch;
-	  cx = (int) x;
-	  cy = camera->info.camera.chip_info[0].height - (int) y;
 	  cw = (int) w;
 	  ch = (int) h;
-	  cx -= cw / 2;
-	  cy -= ch / 2;
+	  cx = (int) x - cw / 2;
+	  cy = (int) y + ch / 2;
+
+	  cy = camera->info.camera.chip_info[0].height - (int) cy;
+
 	  printf ("get: %i,%i,%i,%i\n", cx, cy, cw, ch);
 	  devcli_command (camera, NULL, "box 0 %i %i %i %i", cx, cy, cw, ch);
 	}

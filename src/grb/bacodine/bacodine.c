@@ -1457,16 +1457,14 @@ receive_bacodine (process_grb_event_t arg)
 
 	      /* debug print */
 	      fprintf (lg, "At %s", ctime ((time_t *) & tloc));
-	      fprintf (lg, "Get %i bytes = [", bytes);
-	      fwrite ((char *) lbuf, 1, bytes, lg);
-	      fprintf (lg, "], that's");
+	      fprintf (lg, "Get %i bytes\n", bytes);
 	      fflush (lg);
 
 	      if (lbuf[PKT_TYPE] !=
 		  ((TYPE_KILL_SOCKET >> 16) | (TYPE_KILL_SOCKET << 16)))
 		write (inetsd, (char *) lbuf, bytes);
 	      t = gmtime ((time_t *) & tloc);
-	      here_sod = t->tm_hour * 3600 + t->tm_min * 60 + t->tm_sec;
+	      here_sod = t->tm_hour * 3600 + (t->tm_min) * 60 + t->tm_sec;
 
 	      /* Byte and/or word swapping may be needed on your particular
 	       * platform.  These packets were generated on a Sun4, so if the
@@ -1477,8 +1475,6 @@ receive_bacodine (process_grb_event_t arg)
 
 	      for (i = 0; i <= bytes / 4; i++)
 		{
-		  fprintf (lg, " %08lx", lbuf[i]);
-
 		  lo = lbuf[i] & 0x0000ffff;
 		  hi = (lbuf[i] >> 16) & 0x000ffff;
 
@@ -1486,8 +1482,6 @@ receive_bacodine (process_grb_event_t arg)
 		  hi = (hi >> 8) | ((hi & 0x00ff) << 8);
 
 		  lbuf[i] = (lo << 16) | hi;
-
-		  fprintf (lg, "|%08lx", lbuf[i]);
 		}
 	      fprintf (lg, "\nEND\n");
 	      fflush (lg);

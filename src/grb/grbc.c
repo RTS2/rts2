@@ -323,6 +323,11 @@ main (int argc, char **argv)
 	{
 	  pthread_cond_wait (&observing_cond, &observing_lock);
 	}
+      if (devcli_server ()->statutes[0].status != SERVERD_NIGHT)
+	{
+	  printf ("serverd not in correct state, continuiing\n");
+	  continue;
+	}
       printf ("Starting observing %i tar_id: %i\n", observing.id,
 	      observing.tar_id);
 

@@ -51,7 +51,6 @@ struct client
   char login[CLIENT_LOGIN_SIZE];
   int authorized;
   int priority;
-  int active;
   char status_txt[MAX_STATUS_TXT];
 };
 
@@ -405,8 +404,7 @@ client_serverd_handle_command (char *command)
 
 	  for (i = 0; i < MAX_CLIENT; i++)
 	    if (*shm_clients[i].login)
-	      devser_dprintf ("user %i %c %i %c %s %s", i,
-			      shm_clients[i].active ? 'A' : 'P',
+	      devser_dprintf ("user %i %i %c %s %s", i,
 			      shm_clients[i].priority,
 			      shm_info->priority_client == i ? '*' : '-',
 			      shm_clients[i].login,
@@ -464,7 +462,7 @@ client_serverd_handle_command (char *command)
 	  // priority while we are testing it
 	  devser_shm_data_lock ();
 
-	  devser_dprintf ("old_priority %i %i", serverd_id,
+	  devser_dprintf ("old_priority %i",
 			  shm_clients[serverd_id].priority);
 
 	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
@@ -480,7 +478,7 @@ client_serverd_handle_command (char *command)
 	      return -1;
 	    }
 
-	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
+	  devser_dprintf ("new_priority %i %i", shm_info->priority_client,
 			  shm_clients[shm_info->priority_client].priority);
 
 	  devser_shm_data_unlock ();
@@ -513,25 +511,9 @@ client_serverd_handle_command (char *command)
 	  devser_dprintf ("authorization_key %s %i", dev_name, key);
 	  return 0;
 	}
-      if (strcmp (command, "active") == 0)
-	{
-	  if (devser_param_test_length (0))
-	    return -1;
-
-	  shm_clients[serverd_id].active = 1;
-	  return 0;
-	}
-      if (strcmp (command, "passive") == 0)
-	{
-	  if (devser_param_test_length (0))
-	    return -1;
-
-	  shm_clients[serverd_id].active = 0;
-	  return 0;
-	}
       if (strcmp (command, "on") == 0)
 	{
-	  return serverd_change_state (-1);
+	  return serverd_change_state ((shm_info->next_event_type + 3) % 4);
 	}
       if (strcmp (command, "maintance") == 0)
 	{
