@@ -1,5 +1,5 @@
 <?
-	include "./lib/fn.php";
+	include "../lib/fn.php";
 	hlavicka ("BART - image database", "Image database", "years 2001 &amp; 2002", "ok");
 ?>
 	<p>Here you can give queries to our image database.</p>
@@ -31,8 +31,8 @@
 		<p>
 			<table border="0">
 			<tr>
-			<td width="150" align="right"><b>RA:</b>&nbsp;</td><td width="150"><input type="text" name="ra" value="10.00" size="10"></input></td>
-			<td width="50" align="right"><b>Dec:</b>&nbsp;</td><td width="150"><input type="text" name="dec" value="12.00" size="10"></input></td>
+			<td width="150" align="right"><b>RA:</b>&nbsp;</td><td width="150"><input type="text" name="ra" value="180.00" size="10"></input></td>
+			<td width="50" align="right"><b>Dec:</b>&nbsp;</td><td width="150"><input type="text" name="dec" value="45.00" size="10"></input></td>
 			</tr>
 			</table>
 		</p>

@@ -1,5 +1,5 @@
 <?
-	include "./lib/fn.php";
+	include "../lib/fn.php";
 	hlavicka ("BARTDB", "Querry results..", " ", "ok");
 
 	function s2deg ($s) {
@@ -48,12 +48,12 @@
 
 		echo "<b>From:</b> $_REQUEST[poz_od] <b>To:</b> $_REQUEST[poz_do] <br>\n";
 
-		echo "<b>Matching images:</b> " . pg_numrows ($res) . "<br>\n";
+		echo "<b>Matching images:</b> " . pg_numrows ($res) . "<br>
 
-		echo " 
-<table style='border: 1pt solid black; background: #dfdfdf' cellpadding='3' cellspacing='0'>
-	<th>
+<form action='download.php' method='post'>
+<table style='border: 1pt solid black; background: #dfdfdf' cellpadding='3' cellspacing='0'>	<th>
 		<tr>
+			<td style='background: grey'>D</td>
 			<td style='background: white'>image filename</td>
 			<td style='background: white'>date of observation</td>
 			<td style='background: white'>exp (sec) </td>
@@ -65,16 +65,29 @@
 ";
 		
 		while ($row = pg_fetch_row ($res)) {
-			echo "\t<tr>\n";
-			$last = array_pop ($row);		
+			echo "\t<tr>\n\t\t<td style='border-right: 1pt dotted darkred;'><input type='checkbox' name='$row[0]' checked></input>";
+			$last = array_pop ($row);
 			foreach ($row as $item)
 				echo "\t\t<td style='border-right: 1pt solid darkblue;'>$item</td>\n";
 			echo "\t\t<td>$last</td>\n";
 			echo "\t</tr>";
 		}
 
-		echo "</table>\n";
+		echo "</table>
 
+<hr width='0'/>
+<table>
+	<tr>
+		<td align='right'>Login:</td>
+		<td align='left'><input type='text' name='login' size=10></input></td>
+	</tr><tr>
+		<td align='right'>Password:</td>
+		<td align='left'><input type='password' name='passwd' size=10></input></td>
+	</tr>
+</table>
+<input type='submit' value='Download'></input>
+<input type='reset' value='Reset'></input>
+</form>";
 		pg_close ();
 	}
 	
