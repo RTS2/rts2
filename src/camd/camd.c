@@ -27,9 +27,9 @@
 #include "sex_interface.h"
 
 // Should be short: to beat the telescope drift because of bad tracking
-#define FOCUS_EXPOSURE 20.0
+#define FOCUS_EXPOSURE   30.0
 // Something like 20*[f-ratio]
-#define FOCUS_USTEP	200
+#define FOCUS_USTEP      80
 #endif /* FOCUSING */
 
 #ifdef MIRROR
@@ -513,6 +513,10 @@ camd_handle_command (char *command)
   else if (strcmp (command, "info") == 0)
     {
       cam_call (camera_info (&info));
+#ifdef FOCUSING
+      if (focuser_port)
+	cam_call (tcf_get_temperature (&info.air_temperature));
+#endif
       devser_dprintf ("type %s", info.type);
       devser_dprintf ("serial %10s", info.serial_number);
       devser_dprintf ("chips %i", info.chips);

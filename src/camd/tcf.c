@@ -201,6 +201,39 @@ tcf_get_pos (int *position)
 }
 
 int
+tcf_get_temperature (float *temperature)
+{
+  int fd, res;
+  char ret[] = { 0, 0, 0, 0, 0, 0, 0 };
+  char out[4];
+
+  fd = serial_init ();
+
+  if (fd < 0)
+    return -1;
+
+  res = write (fd, "FTMPRO", 6);
+
+  serial_deinit (fd);
+
+  if (res > 0)
+    {
+      out[0] = ret[2];
+      out[1] = ret[3];
+      out[2] = ret[4];
+      out[3] = ret[5];
+      out[4] = '\0';
+      *temperature = atof (out);
+      return 0;
+    }
+  else
+    {
+      *temperature = -1;
+      return -1;
+    }
+}
+
+int
 tcf_set_center ()
 {
   int fd, res;
