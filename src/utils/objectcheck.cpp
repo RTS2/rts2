@@ -37,11 +37,12 @@ ObjectCheck::load_horizont (char *horizont_file)
       return 0;
     }
 
+  inf.exceptions (ifstream::goodbit | ifstream::failbit | ifstream::eofbit | ifstream::badbit);
+  
   while (!inf.eof ())
     {
       struct ln_equ_posn *pos;
       pos = (struct ln_equ_posn *) malloc (sizeof (struct ln_equ_posn));
-      inf.exceptions (ifstream::failbit);
       try
       {
 	inf >> ra >> dec;
@@ -50,9 +51,14 @@ ObjectCheck::load_horizont (char *horizont_file)
       {
 	inf.clear ();
 	inf.ignore (20000, '\n');
-	// cerr << "Ignore bad line\n";
 	continue;
       };
+      if (!inf.good ())
+      {
+	inf.clear ();
+	inf.ignore (20000, '\n');
+	continue;
+      }
       pos->ra = ra;
       pos->dec = dec;
       horizont.push_back (*pos);
