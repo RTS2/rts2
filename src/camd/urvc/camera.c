@@ -399,7 +399,7 @@ camera_cool_hold ()		/* hold on that temperature */
     return -1;
 
   ot = ccd_ad2c (qtsr.ccdThermistor);
-  ot = ((int) (ot + 50) / 50) * 50 / 10;
+  ot = ((int) (ot + 5) / 5) * 5;
   camera_fan (1);
   return camera_cool_setpoint (ot);
 };
