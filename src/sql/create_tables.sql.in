@@ -17,8 +17,8 @@ DROP TABLE observations;
 CREATE TABLE observations (
 	tar_id		integer REFERENCES targets (tar_id),
 	obs_id		integer PRIMARY KEY,
-	obs_start	float,	-- in JD
-	obs_duration	float
+	obs_start	float8,	-- in JD
+	obs_duration	integer -- in sec	
 );
 
 DROP SEQUENCE obs_id;

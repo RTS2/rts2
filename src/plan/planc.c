@@ -27,6 +27,7 @@
 #include "../writers/fits.h"
 #include "../status.h"
 #include "selector.h"
+#include "db.h"
 
 int file = 0;
 
@@ -90,7 +91,7 @@ data_handler (int sock, size_t size, struct telescope_info *telescope,
 }
 
 int
-expose (float ra, float dec, int npic)
+expose (int npic)
 {
   devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
   for (; npic > 0; npic--)
@@ -170,6 +171,10 @@ main (int argc, char **argv)
 
   server = argv[optind++];
 
+  /* connect to db */
+
+  db_connect ();
+
   printf ("connecting to %s:%i\n", server, port);
 
   /* connect to the server */
@@ -195,8 +200,6 @@ main (int argc, char **argv)
 
   printf ("teld_id: %i\n", teld_id);
 
-  // make plan
-  make_plan (&plan);
 #define CAMD_WRITE_READ(command) if (devcli_command (camd_id, NULL, command) < 0) \
   				{ \
       		                  perror ("devcli_write_read"); \
@@ -214,9 +217,14 @@ main (int argc, char **argv)
   TELD_WRITE_READ ("ready");
   TELD_WRITE_READ ("info");
 
+  // make plan
+  make_plan (&plan);
+
   for (last = plan; last; plan = last, last = last->next, free (plan))
     {
       time_t t = time (NULL);
+      int obs_id;
+
       if (last->ctime < t)
 	{
 	  printf ("ctime %s < t %s\n", ctime (&last->ctime), ctime (&t));
@@ -225,8 +233,12 @@ main (int argc, char **argv)
 
       devcli_server_command (NULL, "priority 120");
 
+      printf ("waiting for priority\n");
+
       devcli_wait_for_status ("teld", "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
+
+      printf ("waiting end\n");
 
       if (devcli_command (teld_id, NULL, "move %f %f", last->ra, last->dec))
 	{
@@ -240,13 +252,20 @@ main (int argc, char **argv)
 	  sleep (last->ctime - t);
 	}
 
+      db_start_observation (last->id, &t, &obs_id);
+
       devcli_wait_for_status ("camd", "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
       printf ("OK\n");
 
-      expose (last->ra, last->dec, 1);
+      expose (1);
+
+      db_end_observation (obs_id, time (NULL) - t);
     }
+
   devcli_server_disconnect ();
+  db_disconnect ();
+
   return 0;
 }

@@ -49,12 +49,12 @@ select_next (time_t c_start, struct target *plan, struct target *last)
 
   EXEC SQL DECLARE obs_cursor CURSOR FOR 
   	SELECT tar_id, tar_ra, tar_dec,
-		obj_alt (tar_ra, tar_dec, :jd, 14.95, 50) AS alt FROM targets
+		obj_alt (tar_ra, tar_dec, :jd, -14.95, 50) AS alt FROM targets
 	    	WHERE NOT EXISTS (SELECT * FROM observations WHERE 
 		observations.tar_id = targets.tar_id) 
 	UNION 
 	SELECT targets.tar_id, tar_ra, tar_dec,
-		obj_alt (tar_ra, tar_dec, :jd, 14.95, 50) AS alt FROM targets, 
+		obj_alt (tar_ra, tar_dec, :jd, -14.95, 50) AS alt FROM targets, 
 		observations
 		WHERE targets.tar_id = observations.tar_id AND 
 		observations.obs_start < :jd - 0.1
@@ -108,8 +108,6 @@ make_plan (struct target **plan)
   time_t c_start;
   int i;
 
-  EXEC SQL CONNECT TO stars;
-
   c_start = time(NULL) + 20;
 
   *plan = (struct target*) malloc (sizeof (struct target));
@@ -122,8 +120,6 @@ make_plan (struct target **plan)
 	select_next (c_start + i * 240, *plan, last);
 	last = last->next;
   }
-
-  EXEC SQL DISCONNECT all;
 
   last = *plan;
   *plan = (*plan) -> next;
