@@ -523,8 +523,13 @@ telescope_init (const char *device_name, int telescope_id)
 	  if (tel_write_read ("#:P#", 4, rbuf, 4) < 0)
 	    goto sem_high_err;
 	}
+      sem_buf.sem_op = +1;
+      semop (semid, &sem_buf, 1);
+
       return 0;
-    sem_high_err:
+
+sem_high_err:
+
       sem_buf.sem_op = +1;
       semop (semid, &sem_buf, 1);
       return -1;
