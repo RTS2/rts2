@@ -90,6 +90,7 @@ start_integrate (void *arg)
   short it_t = req->time;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   phot_command (PHOT_CMD_INTEGRATE, it_t);
+  devser_dprintf ("integration  %i", it_t);
   while ((ret = read (fd, &result, 2)) != -1 && loop < req->count)
     {
       if (ret)
@@ -100,7 +101,7 @@ start_integrate (void *arg)
 	      result = 0;
 	      read (fd, &result, 2);
 	      loop++;
-	      devser_dprintf ("count %u", result);
+	      devser_dprintf ("count %u %i", result, it_t);
 	      break;
 	    case '0':
 	      result = 0;
