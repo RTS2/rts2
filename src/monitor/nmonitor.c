@@ -11,6 +11,7 @@
 
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
+#include "../utils/hms.h"
 #include "../status.h"
 
 int exit_c = 0;
@@ -18,16 +19,20 @@ int exit_c = 0;
 void
 status_telescope (WINDOW * wnd, const struct telescope_info *info)
 {
+  char buf[10];
   if (info)
     {
-      mvwprintw (wnd, 1, 1, " Ra: %+03.3f", info->ra);
+      dtohms (info->ra / 15, buf);
+      mvwprintw (wnd, 1, 1, " Ra: %8s", buf);
       mvwprintw (wnd, 2, 1, "Dec: %+03.3f", info->dec);
       mvwprintw (wnd, 3, 1, "Lon: %+03.3f", info->longtitude);
       mvwprintw (wnd, 4, 1, "Lat: %+03.3f", info->latitude);
-      mvwprintw (wnd, 5, 1, "Stm: %02.20f", info->siderealtime);
+      dtohms (info->siderealtime, buf);
+      mvwprintw (wnd, 5, 1, "Stm: %6s", buf);
     }
   else
     {
+      wclear (wnd);
       mvwprintw (wnd, 3, 1, "NOT READY");
     }
   wrefresh (wnd);
@@ -50,6 +55,7 @@ status_camera (WINDOW * wnd, const struct camera_info *info)
     }
   else
     {
+      wclear (wnd);
       mvwprintw (wnd, 3, 1, "NOT READY");
     }
   wrefresh (wnd);
@@ -188,7 +194,7 @@ main (int argc, char **argv)
 	  devcli_command (camd_id, &ret_code, "info");
 	  devcli_command (camd_id, &ret_code, "chipinfo 0");
 	  devcli_getinfo (camd_id, &info);
-	  status_camera (wnd[1], info);
+	  status_camera (wnd[1], &(info->camera));
 	}
 
       for (c = 10; c; c--)

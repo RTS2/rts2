@@ -35,8 +35,6 @@ status_camera (const struct camera_info *info)
   if (info)
     {
       printf ("name: '%s'\n", info->name);
-      printf ("[%ix%i]\n", info->chip_info[0].width,
-	      info->chip_info[0].height);
       printf ("Set: %+03.3f\n", info->temperature_setpoint);
       printf ("Air: %+03.3f\n", info->air_temperature);
       printf ("CCD: %+03.3f\n", info->ccd_temperature);
@@ -145,7 +143,6 @@ main (int argc, char **argv)
       else
 	{
 	  devcli_command (camd_id, &ret_code, "info");
-	  devcli_command (camd_id, &ret_code, "chipinfo 0");
 	  devcli_getinfo (camd_id, &info);
 	  status_camera (info);
 	}
