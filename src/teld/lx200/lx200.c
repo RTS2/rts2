@@ -185,7 +185,7 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
     goto unlock;
 
   tmp_rcount = tel_read (rbuf, rcount);
-  if (tmp_rcount > 0)
+  if (rcount > 0)
     {
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
