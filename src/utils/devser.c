@@ -610,7 +610,7 @@ send_data_thread (void *arg)
 {
 #define ID	*((int *) arg)
   struct timeval send_tout;
-  fd_set write_fds, exp_fds;
+  fd_set write_fds;
   data_conn_info_t *data_con;
   int port, ret;
   char data[DATA_BLOCK_SIZE];
@@ -630,10 +630,8 @@ send_data_thread (void *arg)
       send_tout.tv_usec = 0;
       FD_ZERO (&write_fds);
       FD_SET (data_con->sock, &write_fds);
-      FD_ZERO (&exp_fds);
-      FD_SET (data_con->sock, &exp_fds);
       if ((ret =
-	   select (FD_SETSIZE, NULL, &write_fds, &exp_fds, &send_tout)) < 0)
+	   select (FD_SETSIZE, NULL, &write_fds, NULL, &send_tout)) < 0)
 	{
 	  syslog (LOG_ERR, "select: %m port:%i", port);
 	  break;
@@ -1292,15 +1290,21 @@ read_from_client ()
   char *endptr;			// end of message
   int ret;
 
-  fd_set read_set;
+  fd_set read_set, exp_set;
 
   FD_ZERO (&read_set);
   FD_SET (control_fd, &read_set);
 
+  FD_ZERO (&exp_set);
+  FD_SET (control_fd, &exp_set);
+
   buffer = command_buffer.buf;
   endptr = command_buffer.endptr;
 
-  ret = select (FD_SETSIZE, &read_set, NULL, &read_set, NULL);
+  ret = select (FD_SETSIZE, &read_set, NULL, NULL, NULL);
+
+  if (!FD_ISSET (control_fd, &read_set))
+	  return 0;
   nbytes = read (control_fd, endptr, MAXMSG - (endptr - buffer));
   if (nbytes < 0)
     {
@@ -1325,6 +1329,7 @@ read_from_client ()
 	      syslog (LOG_DEBUG, "parsed: '%s'", startptr);
 	      if ((ret = handle_commands (startptr)) < 0)
 		return ret;
+
 	      endptr++;
 	      if (*endptr == '\n')
 		endptr++;
@@ -1384,7 +1389,7 @@ void
 ser_sig_exit (int sig)
 {
   syslog (LOG_INFO, "devser exiting with signal:%i", sig);
-  if (getpid () == devser_parent_pid || getpid () == devser_child_pid)
+  if (getpid () == devser_parent_pid) // || getpid () == devser_child_pid)
     exit (0);
 }
 
