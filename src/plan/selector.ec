@@ -4,17 +4,22 @@
  * @author petr
  */
 
+#include "selector.h"
+#include "image_info.h"
+#include "../db/db.h"
+#include "status.h"
+
 #include <malloc.h>
 #include <libnova.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "selector.h"
-#include "image_info.h"
 
 #define READOUT_TIME		75
 #define PLAN_TOLERANCE		180
 #define PLAN_DARK_TOLERANCE	1800
+
+EXEC SQL include sqlca;
 
 int
 find_plan (struct target *plan, int id, time_t c_start)
@@ -43,6 +48,7 @@ add_target (struct target *plan, int type, int id, int obs_id, double ra,
   new_plan->dec = dec;
   new_plan->ctime = obs_time;
   new_plan->tolerance = tolerance;
+  new_plan->moved = 0;
 
   while (plan->next)
     plan = plan->next;
@@ -51,48 +57,39 @@ add_target (struct target *plan, int type, int id, int obs_id, double ra,
 }
 
 int
-select_next_alt (time_t c_start, struct target *plan)
+select_next_alt (time_t c_start, struct target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
   EXEC SQL BEGIN DECLARE SECTION;
-
   double st;
-
   int tar_id;
-
   double dec;
   double ra;
-
   double alt;
-
+  float db_lon = lon;
+  float db_lat = lat;
   long int obs_start = c_start - 8640;
-
   EXEC SQL END DECLARE SECTION;
 
   printf ("C_start: %s", ctime (&c_start));
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 
+  db_lock ();
   EXEC SQL DECLARE obs_cursor_alt CURSOR FOR
     SELECT tar_id, tar_ra, tar_dec,
-    obj_alt (tar_ra, tar_dec,:st, -14.95, 50) AS alt FROM targets
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets
     WHERE (tar_lastobs is NULL) or tar_lastobs < abstime (:obs_start)
     ORDER BY alt DESC;
-
   EXEC SQL OPEN obs_cursor_alt;
-
   test_sql;
-
   while (!sqlca.sqlcode)
     {
       EXEC SQL FETCH next FROM obs_cursor_alt INTO:tar_id,:ra,:dec,:alt;
-
       if (sqlca.sqlcode)
 	break;
-
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
 	  printf ("find id: %i\n", tar_id);
@@ -103,70 +100,65 @@ select_next_alt (time_t c_start, struct target *plan)
     }
 
   EXEC SQL CLOSE obs_cursor_alt;
-
-  test_sql;
-
+  db_unlock ();
 #undef test_sql
-
   return 0;
-
 err:
+  db_unlock ();
 #ifdef DEBUG
-  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+  printf ("err select_next_alt: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
 }
 
 int
 select_next_airmass (time_t c_start, struct target *plan,
-		     double target_airmass, double az_end, double az_start)
+		     float target_airmass, float az_end, float az_start,
+		     float lon, float lat)
 {
-#define test_sql if (sqlca.sqlcode < 0) goto err
+#define test_sql if (sqlca.sqlcode != 0) goto err
 
   EXEC SQL BEGIN DECLARE SECTION;
-
   double st;
-
   int tar_id;
-
   double dec;
   double ra;
-
-  double az;
-  double airmass;
-
-  double d_az_start = az_start;
-  double d_az_end = az_end;
-  double t_airmass = target_airmass;
-
+  float az;
+  float airmass;
+  float d_az_start = az_start;
+  float d_az_end = az_end;
+  float t_airmass = target_airmass;
+  float db_lon = lon;
+  float db_lat = lat;
   int img_count;
-
   EXEC SQL END DECLARE SECTION;
 
+  db_lock ();
   printf ("c_start: %s", ctime (&c_start));
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
-  printf ("st: %f\nairmass: %f", st, t_airmass);
-
+  printf ("st: %f\nairmass: %f\n", st, t_airmass);
   EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR
     SELECT targets.tar_id, tar_ra, tar_dec,
-    obj_az (tar_ra, tar_dec,:st, -14.95, 50) AS az,
-    obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) AS
+    obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az,
+    obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS
     airmass, img_count
     FROM targets, targets_images WHERE targets.tar_id =
     targets_images.tar_id AND targets.type_id = 'S'
-    AND (abs (obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) -:t_airmass)) <
-    0.2 AND (obj_az (tar_ra, tar_dec,:st, -14.95, 50) <:d_az_end OR
-	     obj_az (tar_ra, tar_dec,:st, -14.95,
-		     50) >:d_az_start) ORDER BY img_count ASC;
+    AND (abs (obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) -:t_airmass))
+    <
+    0.2 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+	     obj_az (tar_ra,
+		     tar_dec,:st,:db_lon,:db_lat) >:d_az_start) ORDER BY
+    img_count ASC;
   EXEC SQL OPEN obs_cursor_airmass;
 
   test_sql;
-
   while (!sqlca.sqlcode)
     {
       EXEC SQL FETCH next FROM obs_cursor_airmass
 	INTO:tar_id,:ra,:dec,:az,:airmass,:img_count;
-
+      test_sql;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\t%5i\n", tar_id, ra,
 	      dec, az, airmass, img_count);
 
@@ -180,95 +172,157 @@ select_next_airmass (time_t c_start, struct target *plan,
     }
 
   EXEC SQL CLOSE obs_cursor_airmass;
-
   test_sql;
-
+  db_unlock ();
 #undef test_sql
-
   return 0;
-
 err:
 #ifdef DEBUG
-  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+  printf ("err select_next_airmass: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
 int
-select_next_grb (time_t c_start, struct target *plan)
+select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
   EXEC SQL BEGIN DECLARE SECTION;
-
   double st;
-
   int tar_id;
-
   double dec;
   double ra;
-
-  double alt;
-
+  float db_lon = lon;
+  float db_lat = lat;
+  float alt;
   long int obs_start = c_start - 8640;
-
   EXEC SQL END DECLARE SECTION;
 
+  db_lock ();
   printf ("C_start: %s", ctime (&c_start));
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
-
   EXEC SQL DECLARE obs_cursor_grb CURSOR FOR
     SELECT targets.tar_id, tar_ra, tar_dec,
-    obj_alt (tar_ra, tar_dec,:st, -14.95, 50) AS alt FROM targets, grb
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets, grb
     WHERE (type_id =
 	   'G' AND (tar_lastobs is NULL) or tar_lastobs <
 	   abstime (:obs_start)) and grb_id > 100 and obj_alt (tar_ra,
-							       tar_dec,:st,
-							       -14.95,
-							       50) >
-    20 and targets.tar_id =
+							       tar_dec,:st,:db_lon,:db_lat)
+    > 20 and targets.tar_id =
     grb.tar_id and grb_last_update >
     abstime (:obs_start - 200000) ORDER BY alt DESC;
-
   EXEC SQL OPEN obs_cursor_grb;
-
   test_sql;
-
   while (!sqlca.sqlcode)
     {
       EXEC SQL FETCH next FROM obs_cursor_grb INTO:tar_id,:ra,:dec,:alt;
-
       if (sqlca.sqlcode)
 	break;
-
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
 	  printf ("grb find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
 		      PLAN_TOLERANCE);
-
 	  EXEC SQL CLOSE obs_cursor_grb;
-
 	  test_sql;
-
+	  db_unlock ();
 	  return 0;
 	}
     }
-
   EXEC SQL CLOSE obs_cursor_grb;
-
   test_sql;
-
+  printf ("no grb found");
+  db_unlock ();
 #undef test_sql
-
   return -1;
-
 err:
+  db_unlock ();
 #ifdef DEBUG
-  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+  printf ("err select_next_grb: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  return -1;
+}
+
+
+/*!
+ * Select next observation from list of opportunity fields.
+ */
+int
+select_next_to (time_t c_start, struct target *plan, float az_end,
+		float az_start, float lon, float lat)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  double st;
+  int tar_id;
+  double ra;
+  double dec;
+  float alt;
+  int ot_imgcount;
+  int ot_minpause;
+  int ot_isnull;
+  float d_az_end = az_end;
+  float d_az_start = az_start;
+  float db_lon = lon;
+  float db_lat = lat;
+  EXEC SQL END DECLARE SECTION;
+
+  db_lock ();
+#define test_sql if (sqlca.sqlcode < 0) goto err
+  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  printf ("to st: %f\n", st);
+  EXEC SQL DECLARE obs_cursor_to CURSOR FOR
+    SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra,
+						     tar_dec,:st,:db_lon,:db_lat)
+    AS alt, ot_imgcount, EXTRACT (EPOCH FROM ot_minpause) FROM targets,
+    targets_images, ot WHERE ot.tar_id = targets.tar_id AND targets.tar_id =
+    targets_images.tar_id AND type_id = 'O' AND obj_alt (tar_ra, tar_dec,:st,
+							 :db_lon,:db_lat) >
+    10 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+	    obj_az (tar_ra, tar_dec,:st,:db_lon,
+		    :db_lat) >:d_az_start) ORDER BY ot_priority DESC,
+    img_count ASC, alt DESC, ot_imgcount ASC;
+
+  EXEC SQL OPEN obs_cursor_to;
+  test_sql;
+  while (1)
+    {
+      int last_o;
+      EXEC SQL FETCH next FROM obs_cursor_to
+	INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
+      if (sqlca.sqlcode)
+	goto err;
+      if (ot_isnull)
+	ot_minpause = 0;
+      last_o = db_last_observation (tar_id);
+      printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%i\t%i\n", tar_id, ra, dec,
+	      alt, ot_imgcount, ot_minpause);
+      if (db_last_night_images_count (tar_id) < ot_imgcount
+	  && (last_o == -1 || last_o >= ot_minpause))
+	{
+	  printf ("to find id: %i\n", tar_id);
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+		      PLAN_TOLERANCE);
+	  EXEC SQL CLOSE obs_cursor_to;
+	  db_unlock ();
+	  return 0;
+	}
+    }
+  EXEC SQL CLOSE obs_cursor_to;
+  test_sql;
+  db_unlock ();
+#undef test_sql
+  return -1;
+err:
+  db_unlock ();
+#ifdef DEBUG
+  printf ("err select_next_to: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
 }
@@ -277,9 +331,18 @@ err:
  * If needed, select next observation from list of photometry fields
  */
 int
-select_next_photometry (time_t c_start, struct target *plan)
+select_next_photometry (time_t c_start, struct target *plan, float lon,
+			float lat)
 {
-EXEC SQL BEGIN DECLARE SECTION EXEC SQL END DECLARE SECTION}
+  EXEC SQL BEGIN DECLARE SECTION;
+  EXEC SQL END DECLARE SECTION;
+#define test_sql if (sqlca.sqlcode < 0) goto err
+err:
+#ifdef DEBUG
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  return -1;
+}
 
 /*! 
  * Makes one observation plan entry.
@@ -292,35 +355,62 @@ EXEC SQL BEGIN DECLARE SECTION EXEC SQL END DECLARE SECTION}
  * @param curr_plan	plan up to date; when NULL, then it's not used
  * @param c_start	starting time
  * @param number	plan number
+ * @param state		serverd status
  */
 int
 get_next_plan (struct target *plan, int selector_type,
-	       time_t * obs_start, int number, float exposure)
+	       time_t * obs_start, int number, float exposure, int state,
+	       float lon, float lat)
 {
-  double az;
-  double airmass;
-
+  float az;
+  float airmass;
   double jd;
-
   struct ln_equ_posn moon;
   struct ln_hrz_posn moon_hrz;
   struct ln_equ_posn sun;
   struct ln_lnlat_posn observer;
 
+  int last_good_img;
+
   // check for GRB..
-  if (!select_next_grb (*obs_start, plan))
+  if (!select_next_grb (*obs_start, plan, lon, lat))
     {
       return 0;
+    }
+
+  if (state != SERVERD_NIGHT)
+    {
+      int ra =
+	get_mean_sidereal_time (get_julian_from_timet (obs_start)) * 15.0 -
+	lon + 45.0;
+      int dec = 60;
+      if (ra > 360)
+	ra -= 360.0;
+      add_target (plan, (number % 50 == 2) ? TARGET_FLAT_DARK : TARGET_FLAT,
+		  10, -1, ra, dec, *obs_start, PLAN_TOLERANCE);
+      return 0;
+    }
+
+  // check for OT
+  last_good_img = db_last_good_image ("C0");
+  printf ("last good image on C0: %i\n", last_good_img);
+  if (last_good_img >= 0 && last_good_img < 3600)
+    {
+      printf ("Trying OT\n");
+      if (!select_next_to (*obs_start, plan, 120, 230, lon, lat))
+	{
+	  return 0;
+	}
     }
 
   switch (selector_type)
     {
 
     case SELECTOR_ALTITUDE:
-      return select_next_alt (*obs_start, plan);
+      return select_next_alt (*obs_start, plan, lon, lat);
 
     case SELECTOR_AIRMASS:
-      // every 50th image will be dark..
+      // every :db_latth image will be dark..
       if (number % 50 == 1)
 	{
 	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
@@ -328,8 +418,8 @@ get_next_plan (struct target *plan, int selector_type,
 	  return 0;
 	}
 
-      observer.lng = -15;
-      observer.lat = 50;
+      observer.lng = lon;
+      observer.lat = lat;
 
       jd = get_julian_from_timet (obs_start);
 
@@ -373,12 +463,12 @@ get_next_plan (struct target *plan, int selector_type,
 	    }
 	  break;
 	}
-
-      return select_next_airmass (*obs_start, plan, airmass, 90, 270);
-      break;
+      printf ("executing select_next_airmass\n");
+      return select_next_airmass (*obs_start, plan, airmass, 90, 270, lon,
+				  lat);
 
     case SELECTOR_ANTISOLAR:
-      // every 50th image will be dark..
+      // every 50 image will be dark..
       if (number % 50 == 1)
 	{
 	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
@@ -386,8 +476,8 @@ get_next_plan (struct target *plan, int selector_type,
 	  return 0;
 	}
 
-      observer.lng = -15;
-      observer.lat = 50;
+      observer.lng = lon;
+      observer.lat = lat;
 
       jd = get_julian_from_timet (obs_start);
 
@@ -405,13 +495,14 @@ get_next_plan (struct target *plan, int selector_type,
 }
 
 int
-make_plan (struct target **plan, float exposure)
+make_plan (struct target **plan, float exposure, float lon, float lat)
 {
   struct target *last;
   time_t c_start;
   int i;
 
-  c_start = time (NULL) + 180;
+//  c_start = time (NULL) + 180;
+  c_start = time (NULL) - 4 * 3600;
 
   *plan = (struct target *) malloc (sizeof (struct target));
   (*plan)->type = TARGET_LIGHT;
@@ -421,7 +512,8 @@ make_plan (struct target **plan, float exposure)
 
   for (i = 0; i < 10; i++)
     {
-      get_next_plan (*plan, SELECTOR_AIRMASS, &c_start, i, exposure);
+      get_next_plan (*plan, SELECTOR_AIRMASS, &c_start, i, exposure,
+		     SERVERD_NIGHT, lon, lat);
       c_start += READOUT_TIME + exposure;
     }
 
