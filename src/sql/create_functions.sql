@@ -67,7 +67,7 @@ BEGIN
 	RETURN path || ''/'' || ep || ''/'' || $4 || ''/'' || tar_id || ''/'' || name || ''.fits'';
 	
 END;
-' LANGUAGE 'plpgsql';
+' LANGUAGE plpgsql;
 
 DROP FUNCTION ell_update (varchar (150), float4, float4, 
 float4, float4, float4, float4, float8, float4, float4);
