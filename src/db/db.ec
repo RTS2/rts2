@@ -189,12 +189,13 @@ err:
 }
 
 extern int
-db_add_count (int o_id, const time_t * date, float exposure, char
+db_add_count (int o_id, const time_t * date, int count, float exposure,char
 	      *filter, double ra, double dec, char *counter)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int obs_id = o_id;
   long int count_date = *date;
+  int count_value = count;
   float count_exposure = exposure;
   char *count_filter = filter;
   double count_ra = ra;
@@ -206,6 +207,7 @@ db_add_count (int o_id, const time_t * date, float exposure, char
   INTO counts (
      obs_id,
      count_date,
+     count_value,
      count_exposure,
      count_filter,
      count_ra,
@@ -215,6 +217,7 @@ db_add_count (int o_id, const time_t * date, float exposure, char
      :obs_id,
      abstime
      (:count_date),
+     :count_value,
      :count_exposure,
      :count_filter,
      :count_ra,
