@@ -118,7 +118,7 @@ measure_pp ()
 #ifdef DEBUG
   printf ("I/O cycle time: %.2f/%.2fus\n", (timer3 - timer2) / 10,
 	  (timer4 - timer3) / 10);
-#endif  
+#endif
 }
 
 extern int
@@ -127,6 +127,7 @@ camera_init (char *device_name, int camera_id)
   int uu;
   int i;
   EEPROMContents eePtr;
+  StatusResults gvr;
   QueryTemperatureStatusResults qtsr;
   PAR_ERROR ret = CE_NO_ERROR;
 
@@ -135,7 +136,7 @@ camera_init (char *device_name, int camera_id)
   if ((uu = getbaseaddr (camera_id)) == 0)
     {
       printf ("-p: parport%d not known to kernel\n", camera_id);
-      return CE_BAD_PARAMETER;
+      return -1;
     }
   baseAddress = uu;
   CameraOut (0x60, 1);
@@ -148,13 +149,14 @@ camera_init (char *device_name, int camera_id)
      printf("Found ECP...\n");
      else 
    */
-#ifdef DEBUG  
+#ifdef DEBUG
   printf ("Using SPP on 0x%x\n", baseAddress);
-#endif  
+#endif
 
   measure_pp ();
 
-  if ((ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
+  if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &gvr)) ||
+      (ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
     {
       return -1;
     }
@@ -219,12 +221,12 @@ camera_info (struct camera_info *info)
 
 
   if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &gvr)))
-    return ret;
+    return -1;
   if ((ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
-    return ret;
+    return -1;
   // get camera info
   if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
-    return ret;
+    return -1;
 
   strcpy (info->name, Cams[eePtr.model].fullName);
   strcpy (info->serial_number, eePtr.serialNumber);
@@ -243,21 +245,19 @@ camera_info (struct camera_info *info)
 extern int
 camera_fan (int fan_state)
 {
-  PAR_ERROR ret = CE_NO_ERROR;
-
   MiscellaneousControlParams ctrl;
   StatusResults sr;
 
-  if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr)))
-    return ret;
+  if ((MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr)))
+    return -1;
 
   ctrl.fanEnable = fan_state;
   ctrl.shutterCommand = 0;
   ctrl.ledState = 0;
 
-  ret = MicroCommand (MC_MISC_CONTROL, ST7_CAMERA, &ctrl, NULL);
-  // ret uz netestuju - stejne ho vracim...
-  return ret;
+  if (MicroCommand (MC_MISC_CONTROL, ST7_CAMERA, &ctrl, NULL))
+    return -1;
+  return 0;
 }
 
 extern int
@@ -324,7 +324,9 @@ camera_end_expose (int chip)
   EndExposureParams eep;
   eep.ccd = chip;
   begin_realtime ();
-  return MicroCommand (MC_END_EXPOSURE, ST7_CAMERA, &eep, NULL);
+  if (MicroCommand (MC_END_EXPOSURE, ST7_CAMERA, &eep, NULL))
+    return -1;
+  return 0;
 };
 
 extern int
@@ -354,7 +356,7 @@ camera_readout_line (int chip_id, short start, short length, void *data)
        DigitizeImagingLine (start, length, 0, bin, bin, 1, data, 0, length)))
     {
       printf ("digitize line:%i", ret);
-      return ret;
+      return -1;
     }
   fflush (stdout);
 
@@ -365,9 +367,21 @@ extern int
 camera_dump_line (int chip_id)
 {
   if (chip_id == 1)
-    return -DumpImagingLines (800, 1, 1);
+    {
+      if (DumpImagingLines (800, 1, 1))
+	{
+	  return -1;
+	}
+      return 0;
+    }
   else
-    return -DumpTrackingLines (800, 1, 1);
+    {
+      if (DumpTrackingLines (800, 1, 1))
+	{
+	  return -1;
+	}
+    }
+  return 0;
 
 };
 extern int
@@ -386,7 +400,9 @@ camera_cool_max ()		/* try to max temperature */
 
   camera_fan (1);
 
-  return -MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL);
+  if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
+    return -1;
+  return 0;
 };
 
 extern int
@@ -414,7 +430,9 @@ camera_cool_shutdown ()		/* ramp to ambient */
 
   camera_fan (0);
 
-  return -MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL);
+  if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
+    return -1;
+  return 0;
 };
 
 extern int
@@ -429,5 +447,7 @@ camera_cool_setpoint (float coolpoint)	/* set direct setpoint */
   cool.preload = 0xaf;
 
   camera_fan (1);
-  return -MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL);
+  if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
+    return -1;
+  return 0;
 };
