@@ -306,6 +306,7 @@ opthome ()
 {
   int ret;
   unsigned short stat0, stat1;
+  static int period = 0;
 //    struct sembuf sem_buf;
 
   // Lock the port for writing 
@@ -320,11 +321,14 @@ opthome ()
   if ((ret = MKS3StatusGet (mount->axis1, &stat1)))
     goto rr;
 
-  if ((!(stat0 & MOTOR_HOMED)) || (!(stat1 & MOTOR_HOMED)))
+  if ((!(stat0 & MOTOR_HOMED)) || (!(stat1 & MOTOR_HOMED)) || (period == 0))
     {
       fprintf (stderr, "para: homing needed\n");
       ret = home (mount);
     }
+
+  if ((period++) > 8)
+    period = 0;
 
 rr:
 //    sem_buf.sem_op = 1;

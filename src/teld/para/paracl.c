@@ -12,9 +12,6 @@ extern int
 telescope_init (const char *device_name, int telescope_id)
 {
   use_maps ();
-  Tctrl->power = 1;
-  sleep (2);
-  return TEL_STATUS == TEL_TIMEOUT;
 }
 
 extern void
@@ -47,6 +44,8 @@ telescope_info (struct telescope_info *info)
 
   info->axis0_counts = Tstat->axis0_counts;
   info->axis1_counts = Tstat->axis1_counts;
+
+  return 0;
 }
 
 extern int
