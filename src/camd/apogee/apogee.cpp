@@ -6,6 +6,8 @@
  * @author petr
  */
 
+#define _GNU_SOURCE
+
 #include <math.h>
 #include <string.h>
 #include <sys/types.h>
