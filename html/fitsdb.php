@@ -79,9 +79,9 @@ EOT;
 
 	function get_value ($fname, $value) {
 		if ($fname == 'tar_ra')
-			return hour2s ($value) . "($value)";
+			return hour2s ($value);
 		else if ($fname == 'tar_dec')
-			return deg2s ($value) . "($value)";
+			return deg2s ($value);
 		else if ($fname == 'tar_enabled')
 			return $value == 't' ? 'enabled' : 'disabled';
 		else return $value;

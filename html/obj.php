@@ -7,7 +7,6 @@ function get_obj ()
 		. str_replace ('+', '%20', urlencode ($_REQUEST['obj_name'])));
 	if (!$rows[2])
 	{
-		echo 'Cannot find object: "' . $_REQUEST['obj_name'] . '".<hr>';
 		return false;
 	}
 	$pompole = explode ("\t", $rows[2]);
@@ -29,11 +28,17 @@ function get_obj ()
 	if ( !$ret )
 	{
 		hlavicka ('Object search', 'Object search', ' ', 'ok');
+		
+		if ( array_key_exists ('obj_name', $_REQUEST))
+		{
+			echo '<div class=\'error\'>Cannot resolve object: "' . $_REQUEST['obj_name'] . '".</div>';
+		}
+
 		echo <<<EOF
 <b>Object search</b><br/>
 <p>Please fill in object name (e.g. M31). Object names will be resolved using 
-<a href='http://archive.eso.org/skycat/servers/sim-server'>ESO SkyCat sim-server</a>
-application gateway.</p>
+<a href='http://simbad.u-strasbg.fr/'>Simbad</a>
+application gateway (which runs on <a href='http://archive.eso.org'>archive.eso.org</a> server).</p>
 
 <form action='obj.php'>
 	<input type='text' name='obj_name'/>
