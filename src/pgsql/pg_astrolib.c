@@ -54,7 +54,7 @@ obj_alt (PG_FUNCTION_ARGS)
   observer.lng = PG_GETARG_FLOAT8 (3);
   observer.lat = PG_GETARG_FLOAT8 (4);
 
-  get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
+  ln_get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
 
   PG_RETURN_FLOAT8 (hrz.alt);
 }
@@ -79,7 +79,7 @@ obj_az (PG_FUNCTION_ARGS)
   observer.lng = PG_GETARG_FLOAT8 (3);
   observer.lat = PG_GETARG_FLOAT8 (4);
 
-  get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
+  ln_get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
 
   PG_RETURN_FLOAT8 (hrz.az);
 }
@@ -120,7 +120,7 @@ obj_airmass (PG_FUNCTION_ARGS)
   observer.lng = PG_GETARG_FLOAT8 (3);
   observer.lat = PG_GETARG_FLOAT8 (4);
 
-  get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
+  ln_get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
 
   x = AIRMASS_SCALE * sin (M_PI * hrz.alt / 180.0);
 
