@@ -75,10 +75,18 @@
 #define DOME_OPENED		0x04
 #define DOME_CLOSING		0x08
 
-#define DOME_WEATHER_MASK	0x0f
-#define DOME_WEATHER_OK		0
-#define DOME_WEATHER_BAD	1
-#define DOME_WEATHER_UNKNOW	2
+#define DOME_WEATHER_MASK	0x30
+#define DOME_WEATHER_OK		0x10
+#define DOME_WEATHER_BAD	0x20
+#define DOME_WEATHER_UNKNOW	0x30
+
+#define MIRROR_MASK		0x0f
+#define MIRROR_UNKNOW		0x00
+#define MIRROR_A		0x01
+#define MIRROR_A_B		0x02
+#define MIRROR_B		0x03
+#define MIRROR_B_A		0x04
+
 
 #define SERVERD_DAY		0
 #define SERVERD_EVENING		1
@@ -137,6 +145,10 @@
 #define DEVICE_TYPE_PHOT	7
 #define DEVIDE_TYPE_ARCH	6
 #define DEVICE_TYPE_PHOT	7
+#define DEVICE_TYPE_PLAN	8
+#define DEVICE_TYPE_GRB		9
+#define DEVICE_TYPE_FOCUS	10
+#define DEVICE_TYPE_MIRROR	11
 
 // and more to come..
 // #define DEVICE_TYPE_
