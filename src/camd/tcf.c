@@ -169,7 +169,7 @@ tcf_step_out (int num, int direction)
 int
 tcf_get_pos (int *position)
 {
-  int fd, res;
+  int fd, res, to_return;
   char ret[] = { 0, 0, 0, 0, 0, 0, 0 };
   char out[4];
 
@@ -180,32 +180,39 @@ tcf_get_pos (int *position)
 
   res = write (fd, "FPOSRO", 6);
 
-  res = read (fd, ret, 6);
-
-  serial_deinit (fd);
+  res = input_timeout (fd, 1);
 
   if (res > 0)
     {
-      out[0] = ret[2];
-      out[1] = ret[3];
-      out[2] = ret[4];
-      out[3] = ret[5];
-      *position = atoi (out);
-      return 0;
+      res = read (fd, ret, 6);
+      serial_deinit (fd);
+
+      if (res > 0)
+	{
+	  out[0] = ret[2];
+	  out[1] = ret[3];
+	  out[2] = ret[4];
+	  out[3] = ret[5];
+	  out[4] = '\0';
+	  *position = atoi (out);
+	  to_return = 0;
+	}
+      else
+	{
+	  *position = -1;
+	  to_return = -1;
+	}
     }
-  else
-    {
-      *position = -1;
-      return -1;
-    }
+  return to_return;
 }
 
 int
 tcf_get_temperature (float *temperature)
 {
-  int fd, res;
+  int fd, res, to_return;
   char ret[] = { 0, 0, 0, 0, 0, 0, 0 };
   char out[4];
+
 
   fd = serial_init ();
 
@@ -214,25 +221,31 @@ tcf_get_temperature (float *temperature)
 
   res = write (fd, "FTMPRO", 6);
 
-  res = read (fd, ret, 6);
+  res = input_timeout (fd, 3);
+
+  if (res > -1)
+    {
+      res = read (fd, ret, 6);
+
+      if (res > 0)
+	{
+	  out[0] = ret[2];
+	  out[1] = ret[3];
+	  out[2] = ret[4];
+	  out[3] = ret[5];
+	  out[4] = '\0';
+	  *temperature = atof (out);
+	  to_return = 0;
+	}
+      else
+	{
+	  *temperature = -1;
+	  to_return = -1;
+	}
+    }
 
   serial_deinit (fd);
-
-  if (res > 0)
-    {
-      out[0] = ret[2];
-      out[1] = ret[3];
-      out[2] = ret[4];
-      out[3] = ret[5];
-      out[4] = '\0';
-      *temperature = atof (out);
-      return 0;
-    }
-  else
-    {
-      *temperature = -1;
-      return -1;
-    }
+  return to_return;
 }
 
 int
