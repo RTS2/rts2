@@ -146,5 +146,5 @@ dtohms (double value, char *hptr)
 {
   int h, m, s;
   dtoints (value, &h, &m, &s);
-  return sprintf (hptr, "%+02i:%02i:%02i", h, m, s);
+  return sprintf (hptr, "%02i:%02i:%02i", h, m, s);
 }
