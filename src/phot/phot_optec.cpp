@@ -58,7 +58,7 @@ public:
 
   virtual void cancelPriorityOperations ();
 
-  virtual int setMasterState (int new_state);
+  virtual int changeMasterState (int new_state);
 };
 
 class Rts2DevConnPhot:public Rts2DevConn
@@ -74,19 +74,7 @@ public:
 int
 Rts2DevConnPhot::commandAuthorized ()
 {
-  if (isCommand ("ready"))
-    {
-      return 0;
-    }
-  else if (isCommand ("baseInfo"))
-    {
-      return 0;
-    }
-  else if (isCommand ("info"))
-    {
-      return 0;
-    }
-  else if (isCommand ("home"))
+  if (isCommand ("home"))
     {
       return master->homeFilter ();
     }
@@ -325,7 +313,7 @@ Rts2DevPhotOptec::cancelPriorityOperations ()
 }
 
 int
-Rts2DevPhotOptec::setMasterState (int new_state)
+Rts2DevPhotOptec::changeMasterState (int new_state)
 {
   switch (new_state & SERVERD_STATUS_MASK)
     {

@@ -367,7 +367,7 @@ Rts2DevCamera::idle ()
 }
 
 int
-Rts2DevCamera::setMasterState (int new_state)
+Rts2DevCamera::changeMasterState (int new_state)
 {
   switch (new_state)
     {

@@ -423,6 +423,8 @@ Rts2Block::Rts2Block (int in_argc, char **in_argv)
 
   deamonize = 1;
   signal (SIGPIPE, SIG_IGN);
+
+  masterState = 0;
 }
 
 Rts2Block::~Rts2Block (void)

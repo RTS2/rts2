@@ -6,8 +6,6 @@
 
 class Rts2DevDome:public Rts2Device
 {
-private:
-  int masterState;
 protected:
   char *domeModel;
   int sw_state;
@@ -77,7 +75,7 @@ public:
   virtual int off ();
 
   int setMasterStandby ();
-  virtual int setMasterState (int new_state);
+  virtual int changeMasterState (int new_state);
 };
 
 class Rts2DevConnDome:public Rts2DevConn

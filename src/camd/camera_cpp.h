@@ -158,7 +158,7 @@ public:
 
   virtual int idle ();
 
-  virtual int setMasterState (int new_state);
+  virtual int changeMasterState (int new_state);
 
   virtual int ready ()
   {

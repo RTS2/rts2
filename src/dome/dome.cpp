@@ -168,16 +168,15 @@ Rts2DevDome::off ()
 int
 Rts2DevDome::setMasterStandby ()
 {
-  if ((masterState & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+  if ((getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
     {
       sendMaster ("standby");
     }
 }
 
 int
-Rts2DevDome::setMasterState (int new_state)
+Rts2DevDome::changeMasterState (int new_state)
 {
-  masterState = new_state;
   observingPossible = 0;
   if (new_state & SERVERD_STANDBY_MASK == SERVERD_STANDBY)
     {

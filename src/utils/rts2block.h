@@ -57,6 +57,10 @@ public:
   Rts2Conn (int in_sock, Rts2Block * in_master);
   virtual ~ Rts2Conn (void);
   int add (fd_set * set);
+  virtual int getState (int state_num)
+  {
+    return 0;
+  }
   virtual int init ()
   {
     return -1;
@@ -187,6 +191,8 @@ class Rts2Block
   void helpOptions ();
 
   int addConnection (int in_sock);
+
+  int masterState;
 protected:
   int argc;
 
@@ -244,9 +250,18 @@ public:
 	conn->setHavePriority (1);
       }
   }
-  virtual int setMasterState (int new_state)
+  virtual int changeMasterState (int new_state)
   {
     return 0;
+  }
+  int setMasterState (int new_state)
+  {
+    masterState = new_state;
+    return changeMasterState (new_state);
+  }
+  int getMasterState ()
+  {
+    return masterState;
   }
   int connectionError (int in_sock);
 };
