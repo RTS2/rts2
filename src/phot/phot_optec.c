@@ -38,6 +38,7 @@ struct integration_request
 {
   float time;			// in sec
   int filter_loop_size;
+  int counts;
 };
 
 void
@@ -75,7 +76,7 @@ void
 clean_integrate_cancel (void *agr)
 {
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
-  devdem_status_mask (0, PHOT_MASK_INTEGRATE, 0, "Integration finished");
+  devdem_status_mask (0, PHOT_MASK_INTEGRATE, 0, "Integration interrupted");
 }
 
 void *
@@ -83,13 +84,14 @@ start_integrate (void *arg)
 {
   struct integration_request *req = (struct integration_request *) arg;
   unsigned short result;
+  int count = 0;
   int ret;
   int loop = 0;
   short it_t = req->time;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   phot_command (PHOT_CMD_RESET, 0);
   phot_command (PHOT_CMD_INTEGRATE, it_t);
-  while ((ret = read (fd, &result, 2)) != -1)
+  while ((ret = read (fd, &result, 2)) != -1 && loop < req->counts)
     {
       if (ret)
 	{
@@ -116,6 +118,8 @@ start_integrate (void *arg)
 	    }
 	}
     }
+  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  devdem_status_mask (0, PHOT_MASK_INTEGRATE, 0, "Integration finnished");
   return NULL;
 }
 
@@ -157,6 +161,8 @@ phot_handle_command (char *command)
       if (devser_param_next_float (&req.time))
 	return -1;
       if (devser_param_next_integer (&req.filter_loop_size))
+	return -1;
+      if (devser_param_next_integer (&req.counts))
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
