@@ -39,6 +39,7 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
   char *img_epoch_id = epoch_id;
   long int img_date;
   int img_new_med_id = new_med;
+  int img_id;
   int old_med_id = old_med;
   EXEC SQL END DECLARE SECTION;
   struct stat fst;
@@ -54,7 +55,7 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
 							     img_date),
     imgpath (:img_new_med_id, epoch_id, mount_name, camera_name,
 	     images.obs_id, observations.tar_id, img_date), camera_name,
-    mount_name, EXTRACT (EPOCH FROM img_date) FROM images,
+    mount_name, EXTRACT (EPOCH FROM img_date), img_id FROM images,
     observations WHERE images.obs_id =
     observations.obs_id AND epoch_id =:img_epoch_id AND med_id =:old_med_id
     ORDER BY img_date ASC;
@@ -67,8 +68,9 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
     {
       double tmp_count = 0;
       int move_files_count = 1;
+      int done = 1;
       EXEC SQL FETCH next FROM images_to_move
-	INTO:old_path,:new_path,:camera_name,:mount_name,:img_date;
+	INTO:old_path,:new_path,:camera_name,:mount_name,:img_date,:img_id;
       if (sqlca.sqlcode < 0)
 	{
 	  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
@@ -114,7 +116,7 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
 		  if (stat (*fn, &fst))
 		    {
 		      perror ("stat");
-		      continue;
+		      exit (EXIT_FAILURE);
 		    }
 		  max_size -= fst.st_size;
 		  tmp_count += fst.st_size;
@@ -142,42 +144,55 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
 	    }
 
 	  size_count += tmp_count;
-
 	  if (do_move)
 	    {
 	      char *new_dir = strdup (mvf->new_path);
 	      new_dir = dirname (new_dir);
-	      mkpath (new_dir, 0777);
+	      if (mkpath (new_dir, 0777))
+		{
+		  fprintf (stderr, "While creating path %s:", new_dir);
+		  perror ("");
+		  exit (EXIT_FAILURE);
+		}
 	      free (new_dir);
-	      EXEC SQL UPDATE images SET med_id =:img_new_med_id WHERE
-		img_date =:img_date AND camera_name =:camera_name AND
-		mount_name =:mount_name;
-	    };
+	    }
 	  img_move_count++;
 	  for (i = 0, tmvf = mvf; i < move_files_count; i++, tmvf++)
 	    {
-	      printf ("%s->%s", tmvf->old_path, tmvf->new_path);
+	      printf ("%s -> %s", tmvf->old_path, tmvf->new_path);
 	      if (do_move)
 		{
+
 		  if (mv (tmvf->old_path, tmvf->new_path))
-		    printf ("..failed\n");
+		    {
+		      done = 0;
+		      printf ("..failed\n");
+		      perror ("mv failed");
+		      exit (EXIT_FAILURE);
+		    }
 		  else
 		    printf ("..ok\n");
 		}
 	      else
 		{
+		  done = 0;
 		  printf ("..not done\n");
 		}
 	      file_move_count++;
 	      free (tmvf->old_path);
 	      free (tmvf->new_path);
 	    }
+	  if (do_move)
+	    {
+	      EXEC SQL UPDATE images SET med_id =:img_new_med_id WHERE
+		img_id =:img_id;
+	    }
 	  free (mvf);
 	}
     }
   printf
-    ("No more rows. All images were backed-up, you can delete source dirs.\n%i images (%i files) were moved (%.0f bytes of data)\n",
-     img_move_count, file_move_count, size_count);
+    ("No more rows. All images were backed-up, please check media %i dirs before removing them.\n%i images (%i files) were moved (%.0f bytes of data)\n",
+     old_med_id, img_move_count, file_move_count, size_count);
 
   EXEC SQL CLOSE images_to_move;
   EXEC SQL END;
@@ -268,7 +283,6 @@ main (int argc, char **argv)
     {
       size_str[vali] = 0;
       max_size = atof (size_str);
-      printf ("%f\n", max_size);
       switch (c)
 	{
 	case 'G':
