@@ -1,7 +1,6 @@
 # $Id$
 
-SUBDIRS =	doc	\
-		include \
+SUBDIRS =	include \
 		man	\
 		src 	\
 		html
