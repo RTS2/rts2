@@ -28,6 +28,7 @@
 #include "../utils/mv.h"
 #include "imghdr.h"
 #include "status.h"
+#include "phot_info.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -52,6 +53,28 @@ int depth;
 XColor rgb[256];
 
 Colormap colormap;
+
+int
+phot_handler (struct param_status *params, struct phot_info *info)
+{
+  time_t t;
+  time (&t);
+  int ret;
+  if (!strcmp (params->param_argv, "filter"))
+    return param_next_integer (params, &info->filter);
+  if (!strcmp (params->param_argv, "count"))
+  {
+    FILE *phot_log;
+    char tc[30];
+    phot_log = fopen ("/root/phot_log", "a");
+    ctime_r (&t, tc);
+    tc[strlen(tc) - 1] =0;
+    ret = param_next_integer (params, &info->count);
+    fprintf (phot_log, "%s %i %i\n", tc, info->filter, info->count);
+    fclose (phot_log);
+  }
+  return ret;
+}
 
 class DeviceWindow
 {
@@ -161,11 +184,17 @@ public:
 		h =
 		  y + 256 <
 		  caminfo->chip_info[0].height ? 256 : caminfo->chip_info[0].
-		  height - y;
+		  
 		devcli_command (camera, NULL, "box %i %i %i %i", x, y, w, h);
 		printf
 		  ("reading frame center [%i,%i:%i,%i]!!\n==============\n",
 		   x, y, x + w, y + h);
+              case XK_p:
+                devcli_command_all (DEVICE_TYPE_PHOT, "integrate 5 10");
+                break;
+              case XP_o:
+                devcli_command_all (DEVICE_TYPE_PHOT, "stop");
+                break;
 	      default:
 		// fprintf (stderr, "Unknow key pressed:%i\n", (int) ks);
 		break;
@@ -468,6 +497,8 @@ main (int argc, char **argv)
   Window root_window;
   XSetWindowAttributes xswa;
 
+  struct device *phot;
+
   int c = 0;
 
 #ifdef DEBUG
@@ -579,6 +610,13 @@ main (int argc, char **argv)
     }
 
   printf ("waiting end\n");
+
+  for (phot = devcli_devices (); phot; phot = phot->next)
+    if (phot->type == DEVICE_TYPE_PHOT)
+    {
+       printf ("setting handler: %s\n", phot->name);
+       devcli_set_command_handler (phot, (devcli_handle_response_t) phot_handler);
+    }
 
   for (i = 0; i < camera_num; i++)
     {
