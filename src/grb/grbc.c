@@ -25,7 +25,8 @@
 
 #include "image_info.h"
 
-double exposure_time = 60;
+double exposure_time;
+#define EXPOSURE_TIME_DEFAULT   120
 
 struct grb
 {
@@ -220,7 +221,8 @@ main (int argc, char **argv)
   observer.lng = get_double_default ("longtitude", 6.377);
   observer.lat = get_double_default ("latitude", 37.1);	// BOOTES as default
   exposure_time =
-    get_device_double_default ("grbc", "exposure_time", exposure_time);
+    get_device_double_default ("grbc", "exposure_time",
+			       EXPOSURE_TIME_DEFAULT);
 
   printf ("GRB will be observerd at longtitude %f, latitude %f\n",
 	  observer.lng, observer.lat);
