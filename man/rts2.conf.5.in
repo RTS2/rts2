@@ -5,7 +5,7 @@ Remote Telescope System 2 configuration file
 .SH DESCRIPTION
 
 This is configuration file of RTS2. It's usually located under
-@PREFIX@etc/rts2.conf.  In this file blank lines are ignored. Comments starts
+@prefix@/etc/rts2.conf.  In this file blank lines are ignored. Comments starts
 with \fB#\fP and continue to end of line.  Spaces are (unless they are in "")
 ignored.
 
@@ -46,7 +46,7 @@ The file have following common, device-unspecifics entries:
 .SS astrometry
 Specify script to launch for astrometry. String ? will be replaced with image
 name. Image name is given without full path, astrometry is launched from
-directory with that image.
+directory with that image.\fI(TODO)\fR
 
 .SS telescope_name
 Specified default telescope name for planner to use. Most probably it will be
@@ -54,13 +54,13 @@ removed in future.
 
 .SS group
 Specify group to use for storing images. If that group doesn't exists, image
-group isn't changes.  All users which run rts2 should be members of that group,
-so they will be able to create new images.
+group isn't changed.  All users which run rts2 should be members of that group,
+so they will be able to create new images.\fI(TODO)\fR
 
 .SS longtitude
 Specify site longtitude in degrees. Values west of Greenwich are positive, east
 of Greensich are negative. Value should be between -360.0 and +360.0.
-Longtitude is used mainly for centrald calculation of sun azimuth and altitude
+Longtitude is used mainly for centrald calculation of sun azimut and altitude
 for state transitions.
 
 .SS latitude
@@ -75,7 +75,9 @@ tested till now at the southern hemisphere.
 That value tell centrald, when trasition from \fBEVENING\fP to \fBDUSK\fP and
 from \fBDAWN\fP to \fBMORNING\fP occurs. It's altitude of the Sun above
 horizont. Centrald is in \fBDUSK\fP or \fBDAWN\fP state, when Sun altitude is
-below that value. Please refer to centrald states sections to learn more about
+below that value. Please refer to 
+.BR rts2-centrald (1)
+states sections to learn more about
 states.
 
 .SS night_horizont
