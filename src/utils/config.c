@@ -116,7 +116,7 @@ read_config (char *filename)
 		  if (*bp == '"')
 		    {
 		      *bp = 0;
-		      state = 5;
+		      state = 8;
 		    }
 		  else
 		    value_len++;
@@ -126,12 +126,12 @@ read_config (char *filename)
 	    }
 	}
 
-      if (state == 5)
+      if (state == 5 || state == 8)
 	{
 	  double val;
 	  char *end_val;
 	  val = strtod (value, &end_val);
-	  if (*end_val)
+	  if (*end_val || state == 8)
 	    {
 	      cfg->value = (char *) malloc (value_len + 1);
 	      strcpy (cfg->value, value);
