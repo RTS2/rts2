@@ -3,7 +3,7 @@
 #include <string.h>
 #include "../../utils/config.h"
 
-#include <libnova.h>
+#include <libnova/libnova.h>
 
 process_grb_event_t process_grb;
 
@@ -1108,7 +1108,7 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   fprintf (s, "   BURST_RA:    %7.3fd  (current)\n", ra);
   fprintf (s, "   BURST_DEC:   %+7.3fd  (current)\n", dec);
 
-  get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
   grb_date += lbuf[BURST_SOD] / 100.0;
 
 /*  if (lbuf[PKT_TYPE] == TYPE_HETE_TEST) {
@@ -1585,7 +1585,7 @@ receive_bacodine (process_grb_event_t arg)
 		  pr_xte_pca (lbuf, stdout);
 		  pr_xte_pca (lbuf, lg);
 		  break;
-/*case TYPE_XTE_ASM_ALERT: *//* Not implimented yet */
+		  /*case TYPE_XTE_ASM_ALERT: *//* Not implimented yet */
 		case TYPE_XTE_ASM_SRC:
 		  pr_xte_asm (lbuf, stdout);
 		  pr_xte_asm (lbuf, lg);
