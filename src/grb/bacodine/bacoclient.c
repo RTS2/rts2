@@ -1,6 +1,7 @@
 #include "../grbc.h"
 #include <stdlib.h>
 #include <string.h>
+#include "../../utils/config.h"
 
 #include <libnova.h>
 
@@ -531,77 +532,122 @@ brokenpipe ()
 }
 
 /*--------------------------------------------------------------------------*/
+// Login to INTA proxy
 int
-server (hostname, port, type)
-     char *hostname;		/* Machine host name */
-     int port;			/* Port number */
-     unsigned short type;	/* Type of socket connection */
+login (sock)
+     int sock;
 {
-  int sock;			/* The connected sock descriptor */
-  int sd = -1;			/* The offerred sock descriptor */
-  int temp;			/* Dummy variable */
-  int saddrlen;			/* Socket address length + 2 */
-  struct sockaddr saddr;	/* Socket structure for UNIX */
-  struct sockaddr *psaddr;	/* Pointer to sin */
-  struct sockaddr_in s_in;	/* Socket structure for inet */
-  const int so_reuseaddr = 1;
+  fd_set read_fd;
+  char *login_user = "";
+  char *login_password = "";
+  char *login_accepted = "Login Accepted\r\n";
+  char *logi;
+  struct timeval to;
+  unsigned char c;
 
+  if (*(get_device_string_default ("bacoclient", "proxy", "Y")) != 'Y')
+    return -1;
 
-  temp = 0;
-/* If the socket is for inet connection, then set up the s_in structure. */
-  if (type == AF_INET)
+  printf ("Will login throuht proxy\n");
+  login_user = get_device_string_default ("bacoclient", "user", login_user);
+  login_password =
+    get_device_string_default ("bacoclient", "password", login_password);
+  write (sock, login_user, strlen (login_user));
+  write (sock, "\r\n", 2);
+  write (sock, login_password, strlen (login_password));
+  write (sock, "\r\n", 2);
+
+  to.tv_sec = 50;
+  to.tv_usec = 0;
+
+  login_accepted =
+    get_device_string_default ("bacoclient", "proxy_end", login_accepted);
+  logi = login_accepted;
+
+  FD_ZERO (&read_fd);
+  FD_SET (sock, &read_fd);
+  while (*logi && select (FD_SETSIZE, &read_fd, NULL, NULL, &to) == 1)
     {
-      bzero ((char *) &s_in, sizeof (s_in));
-      s_in.sin_family = AF_INET;
-      s_in.sin_addr.s_addr = htonl (INADDR_ANY);
-      s_in.sin_port = htons ((unsigned short) port);
-      psaddr = (struct sockaddr *) &s_in;
-      saddrlen = sizeof (s_in);
+      while (*logi && read (sock, &c, sizeof (c)) == sizeof (c))
+	{
+	  write (1, &c, sizeof (c));
+	  if (c == *logi)
+	    {
+	      write (1, "*", 1);
+	      logi++;
+	    }
+	  else
+	    logi = login_accepted;
+	}
+    }
+  if (*logi)
+    {
+      close (sock);
+      return -1;
     }
   else
     {
-      /* If the socket is for UNIX connection, then set up the saddr structure. */
-      saddr.sa_family = AF_UNIX;
-      strcpy (saddr.sa_data, hostname);
-      psaddr = &saddr;
-      saddrlen = strlen (saddr.sa_data) + 2;
+      do
+	{
+	  read (sock, &c, sizeof (c));
+	  printf ("\nGet %d\n", c);
+	}
+      while (c == '\r' || c == '\n');
+      if (c != 0xff)
+	return -1;
+      printf ("Waiting for 0xfe\n");
+      do
+	{
+	  read (sock, &c, sizeof (c));
+	  printf ("Get %d %0x\n", c, c);
+	  write (sock, &c, sizeof (c));
+	  fflush (stdout);
+	}
+      while (c != 0xff);
+      printf ("Connected..\n");
+      fflush (stdout);
+      return 0;
     }
+}
 
-  printf ("server(): type=%i  (int)type=%i\n", type, (int) type);	/* Debug */
+/*--------------------------------------------------------------------------*/
+int
+client (hostname, port)
+     char *hostname;		/* Machine host name */
+     int port;			/* Port number */
+{
+  int sock = -1;		/* The connected sock descriptor */
+  struct sockaddr_in s_in;	/* Socket structure for inet */
+  struct hostent *host_info;
+
+  s_in.sin_family = AF_INET;
+  s_in.sin_port = htons (port);
+  if (!(host_info = gethostbyname (hostname)))
+    {
+      serr (sock, "client(): gethostbyname.");
+      printf ("hostname : %s\n", hostname);
+      return -1;
+    }
+  s_in.sin_addr = *(struct in_addr *) host_info->h_addr;
 
 /* Initiate the socket connection. */
-  if ((sd = socket ((int) type, SOCK_STREAM, IPPROTO_TCP)) < 0)
-    return (serr (sd, "server(): socket."));
-  if (setsockopt
-      (sd, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof (int)) < 0)
-    perror ("setsockopt");
-/* Bind the name to the socket. */
-  if (bind (sd, psaddr, saddrlen) == -1)
+  if ((sock = socket (PF_INET, SOCK_STREAM, 0)) < 0)
+    return (serr (sock, "server(): socket."));
+
+  while (connect (sock, (struct sockaddr *) &s_in, sizeof (s_in)) == -1 ||
+	 login (sock) == -1)
     {
-      printf ("bind() errno=%i\n", errno);
-      perror ("bind()");
-      return (serr (sd, "server(): bind."));
+      perror ("connect");
+      sleep (600);
     }
 
-  printf ("Listening..\n");
-
-/* Listen for the socket connection from the GCN machine. */
-  if (listen (sd, 5))
-    return (serr (sd, "server(): listen."));
-
-  printf ("Accepting..\n");
-
-/* Accept the socket connection from the GCN machine (the client). */
-  if ((sock = accept (sd, &saddr, &temp)) < 0)
-    return (serr (sd, "server(): accept."));
-
-  close (sd);
+  printf ("Connection goes on.\n");
+  fflush (stdout);
 
 /* Make the connection nonblocking I/O. */
-//  if (ioctl (sock, FIONBIO, &on, sizeof (on)) < 0)
-//    return (serr (sock, "server(): ioctl."));
+  fcntl (sock, F_SETFL, O_NONBLOCK);
 
-  serr (0, "server(): the server is up.");
+  serr (0, "client(): the client is up.");
   return (sock);
 }
 
@@ -1065,13 +1111,14 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
   grb_date += lbuf[BURST_SOD] / 100.0;
 
-  if (lbuf[PKT_TYPE] == TYPE_HETE_TEST)
-    {
-      process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
-		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-		   270.0, 60, &grb_date);
-    }
-  else if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+/*  if (lbuf[PKT_TYPE] == TYPE_HETE_TEST) {
+	  process_grb (
+		(lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
+	  	(lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
+		282.0, 60, &grb_date);
+  } else */
+
+  if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
     if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
       {
 	process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
@@ -1384,7 +1431,7 @@ receive_bacodine (process_grb_event_t arg)
 {
   int port;			/* Port number of the socket to connect to */
   int bytes;			/* Number of bytes read from the socket */
-  char hostname[64];		/* Machine host name */
+  char *hostname = "localhost";	/* Server host name */
   long lbuf[SIZ_PKT];		/* The packet data buffer */
   int bad_type_cnt = 0;		/* Count number of bad pkt types received */
   struct sigvec vec;		/* Signal vector structure */
@@ -1393,11 +1440,14 @@ receive_bacodine (process_grb_event_t arg)
   long lo, hi;			/* Lo and Hi portion of long */
   time_t loc_time;
   fd_set read_fd;
-  int test_num = 11;
+  int test_num = 1;
 
   process_grb = arg;
 
-  port = 5152;			/* Get the cmdline value for the port number */
+  port = 23;			/* Port to connect on */
+
+  port = get_device_double_default ("bacoclient", "port", port);
+  hostname = get_device_string_default ("bacoclient", "server", hostname);
 
   if ((lg = fopen ("socket_demo.log", "a")) == NULL)	/* Open for appending */
     {
@@ -1408,6 +1458,8 @@ receive_bacodine (process_grb_event_t arg)
 	   "\n===================== New Session ========================\n");
   time (&loc_time);
   fprintf (lg, "Started at: %s", ctime ((time_t *) & loc_time));
+  fprintf (lg, "Connecting to: %s:%i\n", hostname, port);
+  printf ("Connecting to: %s:%i\n", hostname, port);
   fprintf (lg, "%s\n", version);
   fprintf (lg, "port=%i\n", port);
   fflush (lg);
@@ -1427,7 +1479,7 @@ receive_bacodine (process_grb_event_t arg)
  *	port number is defined/initialized above, and
  *	AF_INET is for an inet connection.
  * The return value is the sock descriptor. */
-  inetsd = server (hostname, port, AF_INET);
+  inetsd = client (hostname, port);
 
 /* An infinite loop for reading the socket, echoing the packet back
  * to the GCN originator, and handling the reconnection if there is a break.
@@ -1443,7 +1495,7 @@ receive_bacodine (process_grb_event_t arg)
       /* If the sock descriptor is zero or less, the socket connection has been
        * broken and the call to server() will try to re-establish the socket. */
       if (inetsd <= 0)
-	inetsd = server (hostname, port, AF_INET);
+	inetsd = client (hostname, port);
       else
 	{
 	  /* If socket is connected, read the socket for packet; if the socket
@@ -1455,7 +1507,12 @@ receive_bacodine (process_grb_event_t arg)
 	  FD_SET (inetsd, &read_fd);
 	  // wait
 	  fflush (lg);
+	  printf ("before select\n");
+	  fflush (stdout);
 	  bytes = select (FD_SETSIZE, &read_fd, NULL, NULL, &to);
+	  printf ("after select\n");
+	  fflush (stdout);
+	  bzero ((char *) lbuf, sizeof (lbuf));
 	  if (FD_ISSET (inetsd, &read_fd)
 	      && (bytes = read (inetsd, (char *) lbuf, sizeof (lbuf))) > 0)
 	    {
@@ -1466,9 +1523,9 @@ receive_bacodine (process_grb_event_t arg)
 	       * */
 
 	      /* debug print */
-	      fprintf (lg, "At %s", ctime ((time_t *) & tloc));
-	      fprintf (lg, "Get %i bytes\n", bytes);
-	      fflush (lg);
+	      printf ("At %s", ctime ((time_t *) & tloc));
+	      printf ("Get %i bytes\n", bytes);
+	      fflush (stdout);
 
 	      if (lbuf[PKT_TYPE] !=
 		  ((TYPE_KILL_SOCKET >> 16) | (TYPE_KILL_SOCKET << 16)))
@@ -1482,9 +1539,10 @@ receive_bacodine (process_grb_event_t arg)
 	       * on your platform, you will need to rearrange the bytes in lbuf
 	       * accordingly.  Insert that code here.
 	       */
-
-	      for (i = 0; i < SIZ_PKT; i++)
+	      for (i = 0; i < bytes / 4; i++)
 		{
+		  fflush (stdout);
+		  printf ("0x%lx ", lbuf[i]);
 		  lo = lbuf[i] & 0x0000ffff;
 		  hi = (lbuf[i] >> 16) & 0x000ffff;
 
@@ -1493,6 +1551,8 @@ receive_bacodine (process_grb_event_t arg)
 
 		  lbuf[i] = (lo << 16) | hi;
 		}
+	      printf ("END");
+	      fflush (stdout);
 	      fprintf (lg, "\nEND\n");
 	      fflush (lg);
 
@@ -1504,8 +1564,8 @@ receive_bacodine (process_grb_event_t arg)
 		  last_here_sod = here_sod;
 		  last_imalive_sod = lbuf[PKT_SOD] / 100.0;
 		  chk_imalive (1, tloc);	/* Pass time of latest imalive */
-		  if (!(lbuf[PKT_SERNUM] % 100))
-		    process_grb (10, test_num++, 270.0, 60, &tloc);
+//                  if (!(lbuf[PKT_SERNUM] % 5))
+//                   process_grb (10, test_num++, 270.0, 60, &tloc);
 		  break;
 		  //case TYPE_GRB_COORDS:         /* BATSE-Original (no longer available) */
 		  //case TYPE_MAXBC:                      /* BATSE-MAXBC    (no longer available) */

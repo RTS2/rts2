@@ -21,6 +21,9 @@
 #include "../writers/fits.h"
 #include "../writers/process_image.h"
 #include "../plan/selector.h"
+#include "../utils/config.h"
+
+#include "../../config.h"
 
 #include "image_info.h"
 
@@ -152,6 +155,7 @@ main (int argc, char **argv)
   int c;
   time_t t;
   int observing_count;
+  int thread_count = 0;
 
 #ifdef DEBUG
   mtrace ();
@@ -159,8 +163,12 @@ main (int argc, char **argv)
   observing.tar_id = -1;
   observing.grb_id = -1;
 
-  observer.lat = 50;
-  observer.lng = -14.96;
+  printf ("Readign config file" CONFIG_FILE "...");
+  if (read_config (CONFIG_FILE) == -1)
+    printf ("failed, defaults will be used when apopriate.\n");
+  else
+    printf ("OK\n");
+
   /* get attrs */
   while (1)
     {
@@ -214,10 +222,36 @@ main (int argc, char **argv)
       return -1;
     }
 
-//  pthread_create (&iban_thread, NULL, receive_iban,
-//                (void *) process_grb_event);
-  pthread_create (&iban_thread, NULL, receive_bacodine,
-		  (void *) process_grb_event);
+  observer.lng = get_double_default ("longtitude", -14.95);
+  observer.lat = get_double_default ("latitude", 50);	// Ondrejov as default
+
+  printf ("GRB will be observerd at longtitude %f, latitude %f\n",
+	  observer.lng, observer.lat);
+
+  if (*(get_device_string_default ("grbc", "iban", "Y")) == 'Y')
+    {
+      printf ("Starting iban thread..");
+      pthread_create (&iban_thread, NULL, receive_iban,
+		      (void *) process_grb_event);
+      thread_count++;
+      printf ("OK\n");
+    }
+  if (*(get_device_string_default ("grbc", "bacodine", "Y")) == 'Y')
+    {
+      printf ("Starting bacodine (as server) thread...");
+      pthread_create (&iban_thread, NULL, receive_bacodine,
+		      (void *) process_grb_event);
+      thread_count++;
+      printf ("OK\n");
+    }
+  if (*(get_device_string_default ("grbc", "bacoclient", "Y")) == 'Y')
+    {
+      printf ("Starting bacodine (as server) thread...");
+      pthread_create (&iban_thread, NULL, receive_bacodine,
+		      (void *) process_grb_event);
+      thread_count++;
+      printf ("OK\n");
+    }
 
   printf ("connecting to %s:%i\n", server, port);
 
@@ -230,7 +264,7 @@ main (int argc, char **argv)
 
   devcli_device_data_handler (DEVICE_TYPE_CCD, data_handler);
 
-  telescope = devcli_find ("T0");
+  telescope = devcli_find (get_string_default ("telescope_name", "T0"));
 
   if (!telescope)
     {
@@ -248,7 +282,8 @@ main (int argc, char **argv)
       pthread_mutex_lock (&observing_lock);
       printf ("Waiting for GRB event.\n");
       fflush (stdout);
-      pthread_cond_wait (&observing_cond, &observing_lock);
+      while (observing.tar_id == -1)
+	pthread_cond_wait (&observing_cond, &observing_lock);
       if (devcli_server ()->statutes[0].status != SERVERD_NIGHT
 	  && devcli_server ()->statutes[0].status != SERVERD_DUSK
 	  && devcli_server ()->statutes[0].status != SERVERD_DAWN)
@@ -303,7 +338,7 @@ main (int argc, char **argv)
 				      0);
 
 	  printf ("OK\n");
-	  readout (&observing);
+	  readout ();
 
 	  pthread_mutex_lock (&observing_lock);
 	  get_hrz_from_equ (&observing.object, &observer,
