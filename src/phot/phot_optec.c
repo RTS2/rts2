@@ -83,7 +83,6 @@ start_integrate (void *arg)
 {
   struct integration_request *req = (struct integration_request *) arg;
   unsigned short result;
-  int count = 0;
   int ret;
   int loop = 0;
   short it_t = req->time;
@@ -152,8 +151,6 @@ phot_handle_command (char *command)
       if (devser_param_next_float (&req.time))
 	return -1;
       if (devser_param_next_integer (&req.count))
-	return -1;
-      if (devser_param_next_integer (&req.counts))
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
