@@ -1,5 +1,6 @@
 #include "../db/db.h"
 #include "selector.h"
+#include "../utils/config.h"
 
 #include <libnova.h>
 #include <stdio.h>
@@ -10,6 +11,7 @@ main (int argc, char **argv)
   struct target *plan, *last;
   char *dp;
   db_connect ();
+  read_config (CONFIG_FILE);
   db_get_darkfield ("C0", 6000, -50, &dp);
   printf ("dp: %s\n", dp);
   make_plan (&plan, 120, 6.733, 37.1);
@@ -21,8 +23,8 @@ main (int argc, char **argv)
       struct ln_hrz_posn hrz;
       object.ra = last->ra;
       object.dec = last->dec;
-      observer.lat = 50;
-      observer.lng = -15;
+      observer.lng = 6.733;
+      observer.lat = 37.1;
       get_hrz_from_equ (&object, &observer, jd, &hrz);
       if (last->id > 0)
 	printf ("%i\t%f\t%f\t%s\t%f\t%f\n", last->id, last->ra, last->dec,
