@@ -49,7 +49,7 @@ public:
 CameraUrvc2Chip::CameraUrvc2Chip (int in_chip_id, int in_width, int in_height, int in_pixelX, int in_pixelY, float in_gain) : CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
   OpenCCD (in_chip_id, &C);
-  img = (unsigned short *) malloc (C->horzImage * C->vertImage * sizeof (unsigned short));
+  img = new unsigned short int [C->horzImage * C->vertImage];
 }
 
 CameraUrvc2Chip::~CameraUrvc2Chip ()
@@ -107,8 +107,12 @@ CameraUrvc2Chip::readoutOneLine ()
     if (CCDReadout
       (img, C, 0, 0, C->vertImage, C->horzImage,
        binningVertical))
+    {
+      return -1;
+    }
     dest_top = img + (C->horzImage * C->vertImage / binningVertical);
-    return -1;
+    readoutLine = 1;
+    return 0;
   }
   if (sendLine == 0)
   {
