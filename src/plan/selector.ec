@@ -263,8 +263,7 @@ select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
   printf ("C_start: %s", ctime (&c_start));
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
-EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets, grb WHERE type_id = 'G' AND grb_id > 200 AND obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 0 and targets.tar_id = grb.tar_id and grb_last_update > abstime (:obs_start - 200000) ORDER BY alt
-    DESC;
+EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets, grb WHERE type_id = 'G' AND grb_id > 200 AND obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 0 and targets.tar_id = grb.tar_id and grb_last_update > abstime (:obs_start - 200000) ORDER BY grb_last_update DESC, alt DESC;
   EXEC SQL OPEN obs_cursor_grb;
   test_sql;
   while (!sqlca.sqlcode)
@@ -596,39 +595,6 @@ get_next_plan (struct target *plan, int selector_type,
     default:
       return -1;
     }
-}
-
-int
-make_plan (struct target **plan, float exposure, float lon, float lat)
-{
-  struct target *last;
-  time_t c_start;
-  int i;
-
-//  ECPGdebug (1, stdout);
-
-  c_start = time (NULL);
-
-  *plan = (struct target *) malloc (sizeof (struct target));
-  (*plan)->type = TARGET_LIGHT;
-  (*plan)->id = -1;
-  (*plan)->next = NULL;
-  last = *plan;
-
-  for (i = 0; i < 10; i++)
-    {
-      get_next_plan (*plan,
-		     (int) get_double_default ("planc_selector",
-					       SELECTOR_HETE), &c_start, i,
-		     exposure, SERVERD_NIGHT, lon, lat);
-      c_start += READOUT_TIME + exposure;
-    }
-
-  last = *plan;
-  *plan = (*plan)->next;
-  free (last);
-
-  return 0;
 }
 
 void
