@@ -12,7 +12,7 @@
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
 #include "../utils/hms.h"
-#include "../status.h"
+#include "status.h"
 
 int exit_c = 0;
 
@@ -181,7 +181,7 @@ main (int argc, char **argv)
       else
 	{
 	  devcli_command (teld_id, &ret_code, "info");
-	  devcli_getinfo (teld_id, &info);
+	  devcli_getinfo (teld_id, info);
 	  status_telescope (wnd[0], (struct telescope_info *) info);
 	}
 
@@ -193,7 +193,7 @@ main (int argc, char **argv)
 	{
 	  devcli_command (camd_id, &ret_code, "info");
 	  devcli_command (camd_id, &ret_code, "chipinfo 0");
-	  devcli_getinfo (camd_id, &info);
+	  devcli_getinfo (camd_id, info);
 	  status_camera (wnd[1], &(info->camera));
 	}
 

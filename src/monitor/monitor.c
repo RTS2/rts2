@@ -10,7 +10,7 @@
 
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
-#include "../status.h"
+#include "status.h"
 
 void
 status_telescope (const struct telescope_info *info)
@@ -132,7 +132,7 @@ main (int argc, char **argv)
       else
 	{
 	  devcli_command (teld_id, &ret_code, "info");
-	  devcli_getinfo (teld_id, &info);
+	  devcli_getinfo (teld_id, info);
 	  status_telescope ((struct telescope_info *) info);
 	}
 
@@ -143,8 +143,8 @@ main (int argc, char **argv)
       else
 	{
 	  devcli_command (camd_id, &ret_code, "info");
-	  devcli_getinfo (camd_id, &info);
-	  status_camera (info);
+	  devcli_getinfo (camd_id, info);
+	  status_camera ((struct camera_info *) info);
 	}
 
       for (c = 10; c; c--)
