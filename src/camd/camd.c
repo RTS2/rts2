@@ -282,12 +282,16 @@ start_focusing (void *arg)
   readout.height = x;
   readout.width = x;
 
+#ifdef MIRROR
   mirror_close ();
+#endif
 
   if (focus_expose_and_readout (exp_time, 0, &readout, img2))
     goto err;
 
+#ifdef MIRROR
   mirror_open ();
+#endif
 
   for (j = 0; j < 100;)
     {

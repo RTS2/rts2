@@ -22,7 +22,7 @@ int *field_rows = NULL;
 int ccd_dac_bits;
 int interleave = 0;
 
-char _data[800][2000];
+char _data[1200][2400];
 
 extern int
 camera_init (char *device_name, int camera_id)
