@@ -5,22 +5,48 @@
 %nodefault
 %center, size 7, font "standard", fore "white", vgap 20
 
-Midas vs IRAF
+MIDAS vs IRAF
 
-Autor: Petr Kubánek
-petr@lascaux.asu.cas.cz
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Proè pou¾ívat na zpracování snímkù standartní balíky?
+
+	funkce v balíku jsou dobøe zdokumentovány
+	kontinuita vývoje
+	více u¾ivatelù pou¾ívájících stejné funkce
+	pokud budu psát program, nezaèínám tím, ¾e si napí¹i pøekladaè assembleru, OS, pøekladaè vy¹¹ího jazyka, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %page
 
 IRAF - Image Reduction and Analytic Functions
 
-Balík, vyvíjený na NOAO (National Optical Astronomy Observatories), patøící
-AURA (Association of Universities for Research in Astronomy), ve spolupráci s
-NSF (National Science Foundation).
+Balík, vyvíjený na NOAO (National Optical Astronomy Observatories), patøící \
+AURA (Association of Universities for Research in Astronomy), ve spolupráci \
+s NSF (National Science Foundation).
 
-Stojí za vìt¹inou snímkù z Hubble Space Telescope, pou¾ívá se v
-radiooastronometrii.
+Stojí za vìt¹inou snímkù z Hubble Space Telescope.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+IRAF - editace parametrù
+
+	pøíkaz eparam
+	podobné chování jako editor vi - j, k, enter, :w[rite], :g[o], :e[dit]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+IRAF - konvence
+
+	@<soubor> - vstupní data se budou brát ze souboru
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %page
@@ -35,6 +61,7 @@ Plus/mínus:
 + iterace parametrù ze souborù - "@" konvence
 
 - na první pohled nepochopitelný systém ovládání
+- nemá vlastní prohlí¾eè snímkù, pøes XPA umí jenom 256 úrovní
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %page
@@ -43,8 +70,7 @@ ESO-Midas
 
 European South Observatory - Munich Image Data Analytic System
 
-Balík, vyvíjen v Mnichovì pro ESO. Pøeveden pod open-source. Velmi vhodný pro
-zpracování spekter???
+Balík, vyvíjen v Mnichovì pro ESO. Pøeveden pod open-source. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %page

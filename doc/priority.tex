@@ -143,6 +143,15 @@ pozorování získám urèité výsledky, dalekohled bude optimálnì vyu¾it.
 
 \dia{kill-waitblock.eps}{Èekání do ukonèení aktuálního bloku}
 
-\subsubsection{Resumé}
+\subsubsection{Závìr}
 
 Pou¾ijeme priorit. Do plánovaèe zabudujeme bloky.
+
+Mechanizmus pøedávání priorit.
+
+Zaøízení vìdí, jaký klient má u nich nejvìt¹í prioritu. Ze serveru jim
+chodí zprávy, které je informují o zmìnì priority. Pokud dojde zpráva
+o zmìnì priority na klienta s jiným identifikaèním èíslem ne¾ je
+klient který má nejvy¹¹í prioritu, zaøízení pøeru¹í právì probíhající
+pozorování, pøedá øízení novému klientu a ode¹le zpìt potvrzení o
+zmìnì priority.
