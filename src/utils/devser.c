@@ -642,15 +642,14 @@ send_data_thread (void *arg)
 	    {
 	      syslog (LOG_ERR, "devser write:%m port:%i ret:%i size:%i", port,
 		      ret, size);
-	      data_con->available = -1;
+	      devser_data_invalidate (ID);
 	      break;
 	    }
 	}
       else
 	{
 	  syslog (LOG_DEBUG, "send_data_thread bad select, ret: %i", ret);
-	  data_con->available = -1;
-	  // devser_data_invalidate (ID);
+	  devser_data_invalidate (ID);
 	  break;
 	}
       sended += size;

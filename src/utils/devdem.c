@@ -729,6 +729,9 @@ server_message_priority (struct param_status *params)
     }
   else
     {
+      syslog (LOG_DEBUG,
+	      "new_priority_client: %i, clients_info->designated: %i",
+	      new_priority_client, clients_info->designated_priority_client);
       if (new_priority_client < -1 || new_priority_client >= MAX_CLIENT)
 	{
 	  syslog (LOG_ERR, "invalid new priority client %i",
