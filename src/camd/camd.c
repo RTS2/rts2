@@ -70,7 +70,7 @@ void *
 start_expose (void *arg)
 {
   int ret;
-  camera_init ("/dev/ccd1", sbig_port);
+  camera_init ("/dev/ccda", sbig_port);
   if ((ret =
        camera_expose (CAMD_EXPOSE->chip, &CAMD_EXPOSE->exposure,
 		      CAMD_EXPOSE->light)) < 0)
@@ -199,7 +199,7 @@ camd_handle_command (char *command)
   if (strcmp (command, "ready") == 0)
     {
       int i;
-      cam_call (camera_init ("/dev/ccd1", sbig_port));
+      cam_call (camera_init ("/dev/ccda", sbig_port));
       cam_call (camera_info (&info));
       atexit (camera_done);
     }
@@ -553,7 +553,7 @@ camd_handle_status (int status, int old_status)
 {
   int ret;
 
-  if (camera_init ("/dev/ccd1", sbig_port))
+  if (camera_init ("/dev/ccda", sbig_port))
     return -1;
 
   switch (status & SERVERD_STATUS_MASK)
