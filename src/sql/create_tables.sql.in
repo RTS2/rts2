@@ -5,8 +5,9 @@ DROP TABLE targets;
 DROP TABLE epochs;
 
 CREATE TABLE epoch (
-	epo_start	timestamp;
-	epo_end		timestamp;
+	epoch_id	char(3) PRIMARY KEY,		
+	epoch_start	timestamp,
+	epoch_end	timestamp
 );
 
 CREATE TABLE targets (
@@ -86,3 +87,19 @@ CREATE TABLE mounts (
 	mount_alt	float,
 	mount_desc	varchar(100)
 );
+
+DROP VIEW observations_nights;
+
+CREATE VIEW observations_nights AS 
+	SELECT *, extract (day from (obs_start - interval '12:0:0')) AS obs_night,
+		extract (month from (obs_start - interval '12:0:0')) AS obs_month,
+		extract (year from (obs_start - interval '12:0:0')) AS obs_year
+		FROM observations;
+
+DROP VIEW images_nights;
+
+CREATE VIEW images_nights AS 
+	SELECT *, extract (day from (img_date - interval '12:0:0')) AS img_night, 
+		extract (month from (img_date - interval '12:0:0')) AS img_month,
+		extract (year from (img_date - interval '12:0:0')) AS img_year
+		FROM images;
