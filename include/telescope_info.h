@@ -7,7 +7,6 @@ struct telescope_info
   char serial_number[64];
   double ra;
   double dec;
-  int moving;
   double park_dec;
   // geographic informations
   double longtitude;

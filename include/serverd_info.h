@@ -11,6 +11,8 @@ struct device;
 
 struct client;
 
+typedef void (*response_handler_t) (struct device * dev, char *cmd);
+
 struct serverd_info
 {
   struct device *devices;
@@ -49,7 +51,8 @@ struct client
   int id;
   char login[CLIENT_LOGIN_SIZE];
   int priority;
-  int active;
+  char active;
+  char have_priority;
   char status_txt[MAX_STATUS_TXT];
   struct client *next;
 };
@@ -89,6 +92,7 @@ struct device
   pthread_mutex_t priority_lock;
   pthread_cond_t priority_cond;
   int priority;
+  response_handler_t response_handler;	//! response callback
   struct dev_channel *channel;
   devcli_handle_data_t data_handler;	//! handler to received data
   general_notifier_t status_notifier;	//! status change handler

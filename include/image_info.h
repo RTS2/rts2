@@ -6,8 +6,10 @@
 
 #include <time.h>
 
-struct image_info 
+struct image_info
 {
+  char *camera_name;
+  char *telescope_name;
   struct telescope_info telescope;
   struct camera_info camera;
   time_t exposure_time;
