@@ -242,6 +242,7 @@ public:
       idle_timeout = new_timeout;
   }
   int run ();
+  virtual void deleteConnection (Rts2Conn * conn);
   int setPriorityClient (int in_priority_client, int timeout);
   void checkPriority (Rts2Conn * conn)
   {

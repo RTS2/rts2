@@ -684,7 +684,7 @@ Rts2Block::run ()
 		{
 		  if (conn->receive (&read_set) == -1)
 		    {
-		      delete conn;
+		      deleteConnection (conn);
 		      connections[i] = NULL;
 		    }
 		}
@@ -692,6 +692,12 @@ Rts2Block::run ()
 	}
       idle ();
     }
+}
+
+void
+Rts2Block::deleteConnection (Rts2Conn * conn)
+{
+  delete conn;
 }
 
 int
