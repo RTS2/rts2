@@ -15,16 +15,12 @@ AC_PROG_MAKE_SET
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lcfitsio':
 AC_CHECK_LIB([cfitsio], [main])
-# FIXME: Replace `main' with a function in `-lecpg':
-AC_CHECK_LIB([ecpg], [main])
 # FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [main])
 # FIXME: Replace `main' with a function in `-lncurses':
 AC_CHECK_LIB([ncurses], [main])
 # FIXME: Replace `main' with a function in `-lnova':
 AC_CHECK_LIB([nova], [main])
-# FIXME: Replace `main' with a function in `-lpq':
-AC_CHECK_LIB([pq], [main])
 # FIXME: Replace `main' with a function in `-lpthread':
 AC_CHECK_LIB([pthread], [main])
 
@@ -42,6 +38,7 @@ AC_STRUCT_TM
 
 # Check for PostgreSQL
 AC_POSTGRESQL
+AC_ECPG
 
 # Checks for library functions.
 AC_FUNC_FORK
@@ -53,7 +50,9 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol])
 
 AC_OUTPUT([Makefile
-           src/Makefile])
+           src/Makefile
+	   src/plan/Makefile
+	   src/grb/Makefile])
 #                 doc/Makefile
 #                 doc/dia/Makefile
 #                 doc/doxygen/latex/Makefile
