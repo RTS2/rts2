@@ -21,6 +21,7 @@
 #include "devconn.h"
 #include "param.h"
 #include "status.h"
+#include "thread_attr.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -352,6 +353,8 @@ devser_thread_create (void *(*start_routine) (void *), void *arg,
 		      devser_thread_cleaner_t clean_cancel)
 {
   int i;
+  pthread_attr_t attrs;
+
   for (i = 0; i < MAX_THREADS; i++)
     {
       if (pthread_mutex_trylock (&threads[i].lock) == 0)
@@ -381,7 +384,8 @@ devser_thread_create (void *(*start_routine) (void *), void *arg,
 
 	  temp->clean_cancel = clean_cancel;
 
-	  errno = pthread_create (&threads[i].thread, NULL, thread_wrapper,
+	  thread_attrs_set (&attrs);
+	  errno = pthread_create (&threads[i].thread, &attrs, thread_wrapper,
 				  (void *) temp);
 	  if (errno)
 	    {
@@ -674,6 +678,7 @@ devser_data_init (size_t buffer_size, size_t data_size, int *id)
   int size;
   data_conn_info_t *data_con;	// actual data connection
   struct sockaddr_in control_socaddr;
+  pthread_attr_t attrs;
   fd_set a_set;
 
   if ((conn = next_free_conn_number ()) < 0)
@@ -760,8 +765,9 @@ devser_data_init (size_t buffer_size, size_t data_size, int *id)
 	  ntohs (data_con->their_side.sin_port), data_con->sock);
 
   *id = conn;
+  thread_attrs_set (&attrs);
   if ((errno =
-       pthread_create (&(data_con->thread), NULL, send_data_thread, id)))
+       pthread_create (&data_con->thread, &attrs, send_data_thread, id)))
     {
       syslog (LOG_ERR, "devser_data_init pthread_create: %m");
       goto err;
@@ -1437,6 +1443,7 @@ ser_child_sig_exit (int sig)
 int
 devser_set_server_id (int server_id_in, devser_handle_msg_t msg_handler_in)
 {
+  pthread_attr_t attrs;
   if (server_id == -1)
     {
       if (server_id_in < 0)
@@ -1449,7 +1456,9 @@ devser_set_server_id (int server_id_in, devser_handle_msg_t msg_handler_in)
 	}
       server_id = server_id_in;
       msg_handler = msg_handler_in;
-      if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
+
+      thread_attrs_set (&attrs);
+      if (pthread_create (&msg_thread, &attrs, msg_receive_thread, NULL) < 0)
 	{
 	  syslog (LOG_ERR, "create message thread: %m");
 	  devser_write_command_end (DEVDEM_E_SYSTEM,

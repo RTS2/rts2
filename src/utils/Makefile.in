@@ -2,18 +2,21 @@
 
 BIN=test
 
-all: devdem.a devser.a devcli.a test $(BIN)
+all: devdem.a devser.a devcli.a test devcli_exposing.a $(BIN)
 
 CFLAGS = @CFLAGS@ -I@top_srcdir@/include @debug@
 LDFLAGS = @LDFLAGS@ @LIB_M@
 
-devdem.a: devdem.o devser.o devcli.o devhnd.o hms.o param.o
+devdem.a: devdem.o devser.o devcli.o devhnd.o hms.o param.o thread_attr.o 
 	$(AR) rcsv $@ $^
 
-devser.a: devser.o hms.o param.o
+devser.a: devser.o hms.o param.o thread_attr.o
 	$(AR) rcsv $@ $^
 
-devcli.a: devcli.o devhnd.o param.o hms.o mv.o mkpath.o
+devcli.a: devcli.o devhnd.o param.o hms.o mv.o mkpath.o thread_attr.o
+	$(AR) rcsv $@ $^
+
+devcli_exposing.a: devcli.o devcli_exposing.o devhnd.o param.o hms.o mv.o mkpath.o thread_attr.o
 	$(AR) rcsv $@ $^
 
 test: hms.o mkpath.o test.o

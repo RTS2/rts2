@@ -60,7 +60,6 @@ get_client (struct client **clients, int id)
   cli->id = id;
   cli->login[0] = 0;
   cli->priority = 0;
-  cli->active = 0;
   cli->status_txt[0] = 0;
   cli->next = *clients;
   *clients = cli;
@@ -147,8 +146,7 @@ serverd_command_handler (struct param_status *params,
 	return -1;
 
       cli = get_client (&info->clients, id);
-      if (param_next_char (params, &cli->active) ||
-	  param_next_integer (params, &cli->priority) ||
+      if (param_next_integer (params, &cli->priority) ||
 	  param_next_char (params, &cli->have_priority)
 	  || param_next_string_copy (params, cli->login, CLIENT_LOGIN_SIZE))
 	return -1;
