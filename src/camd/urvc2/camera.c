@@ -1,6 +1,8 @@
 /*!
  * Alternative driver for SBIG camera.
  *
+ * rts2 interface
+ * 
  * @author mates
  */
 
@@ -41,29 +43,27 @@ union semun
 };
 #endif
 
-// space for the image
+// space for an image, readout globals
 unsigned short *img[2] = { 0, 0 }, **lin[2] =
+
+{
+0, 0};
+int readout_line[2] = { 0, 0 }, max_line[2] =
 
 {
 0, 0};
 
 int camera_filter = -1;
-
-int readout_line[2] = { 0, 0 }, max_line[2] =
-
-{
-0, 0};
 int camera_reg = -1;
 int cameraID = -1;		// default camera communicating mode
+int chips = -1;
+int is_init = 0;
 
 EEPROMContents eePtr;		// global to prevent multiple EEPROM calls
 
 int semid = -1;			// semaphore ID 
 
-int chips = -1;
 struct chip_info *ch_info = NULL;
-
-//unsigned short baseAddress = 0x378;
 
 PAR_ERROR
 print_error (PAR_ERROR e)
@@ -104,9 +104,12 @@ sem_unlock ()
 void
 get_eeprom ()
 {
+  if (!is_init)
+    return;
+
   if (camera_reg == -1)
     {
-      if (GetEEPROM (ST7_CAMERA, &eePtr) != CE_NO_ERROR)
+      if (GetEEPROM (cameraID, &eePtr) != CE_NO_ERROR)
 	{
 	  eePtr.version = 0;
 	  eePtr.model = DEFAULT_CAMERA;	// ST8 camera
@@ -138,81 +141,54 @@ init_shutter ()
 {
   MiscellaneousControlParams ctrl;
   StatusResults sr;
-  if (MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr) == CE_NO_ERROR)
+
+  if (!is_init)
+    return;
+
+  if (cameraID == ST237_CAMERA || cameraID == ST237A_CAMERA)
+    return;
+
+  if (MicroCommand (MC_STATUS, cameraID, NULL, &sr) == CE_NO_ERROR)
     {
       ctrl.fanEnable = sr.fanEnabled;
       ctrl.shutterCommand = 3;
-      ctrl.ledState = 1;
-      MicroCommand (MC_MISC_CONTROL, ST7_CAMERA, &ctrl, NULL);
+      ctrl.ledState = sr.ledStatus;
+      MicroCommand (MC_MISC_CONTROL, cameraID, &ctrl, NULL);
       sleep (2);
     }
 }
 
-extern int
-camera_init (char *device_name, int camera_id)
+int
+cond_init (char *device_name, int camera_id)
 {
   short base;
   int i;
-  union semun sem_un;
-  unsigned short int sem_arr[] = { 1 };
-  StatusResults gvr;
+  //StatusResults sr;
   QueryTemperatureStatusResults qtsr;
-  GetVersionResults st;
-  //PAR_ERROR ret = CE_NO_ERROR;
+  GetVersionResults gvr;
 
-  // init semaphores
-  if ((semid == -1)
-      && (semid = semget (CAMERA_KEY + camera_id, 1, 0644)) == -1)
-    {
-      if ((semid =
-	   semget (CAMERA_KEY + camera_id, 1, IPC_CREAT | 0644)) == -1)
-	{
-	  syslog (LOG_ERR, "semget %m");
-	  // exit (EXIT_FAILURE);
-	}
-      else
-	// we create a new semaphore
-	{
-	  sem_un.array = sem_arr;
-	  if (semctl (semid, 0, SETALL, sem_un) < 0)
-	    {
-	      syslog (LOG_ERR, "semctl init: %m");
-	      // exit (EXIT_FAILURE);
-	    }
-	}
-    }
+  if (is_init)
+    return 0;
 
   base = getbaseaddr (0);	// sbig_port...?
 
   // lock the device
   sem_lock ();
 
-  // This is a standard driver init procedure (up to measure_pp)
-  sync ();
+  // This is a standard driver init procedure 
   begin_realtime ();
   CameraInit (base);
-  //measure_pp();
 
-  if (MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &st))
+  if (MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &gvr))
     goto err;
 
-  // a bit crazy, but simple (does not reload when you
-  // change st7 to st8, but does when st7<->st237
-  if (cameraID == st.cameraID)
-    {
-      sem_unlock ();
-      return 0;
-    }
+  cameraID = gvr.cameraID;
 
-  cameraID = st.cameraID;
-
-  if (MicroCommand (MC_STATUS, cameraID, NULL, &gvr))
-    goto err;
+  //if(MicroCommand (MC_STATUS, cameraID, NULL, &sr)) goto err;
   if (MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
     goto err;
   get_eeprom ();
 
-  sem_unlock ();
 
   if (Cams[eePtr.model].hasTrack)
     chips = 2;
@@ -277,12 +253,48 @@ camera_init (char *device_name, int camera_id)
       camera_reg = CAMERA_COOL_OFF;
     }
 
+  is_init = 1;
+
+  sem_unlock ();
+
   return 0;
 
 err:
   sem_unlock ();
   errno = ENODEV;
   return -1;
+}
+
+extern int
+camera_init (char *device_name, int camera_id)
+{
+  union semun sem_un;
+  unsigned short int sem_arr[] = { 1 };
+
+  // init semaphores
+  if ((semid == -1)
+      && (semid = semget (CAMERA_KEY + camera_id, 1, 0644)) == -1)
+    {
+      if ((semid =
+	   semget (CAMERA_KEY + camera_id, 1, IPC_CREAT | 0644)) == -1)
+	{
+	  syslog (LOG_ERR, "semget %m");
+	  // exit (EXIT_FAILURE);
+	}
+      else
+	// we create a new semaphore
+	{
+	  sem_un.array = sem_arr;
+	  if (semctl (semid, 0, SETALL, sem_un) < 0)
+	    {
+	      syslog (LOG_ERR, "semctl init: %m");
+	      // exit (EXIT_FAILURE);
+	    }
+	}
+    }
+
+  return cond_init (device_name, camera_id);
+
 }
 
 extern void
@@ -297,10 +309,15 @@ camera_info (struct camera_info *info)
 {
   //PAR_ERROR ret = CE_NO_ERROR;
 
+
   StatusResults gvr;
   QueryTemperatureStatusResults qtsr;
 
+  if (!is_init)
+    return -1;
+
   sem_lock ();
+
   if (MicroCommand (MC_STATUS, cameraID, NULL, &gvr))
     goto err;
   if (MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
@@ -312,8 +329,15 @@ camera_info (struct camera_info *info)
 
   strcpy (info->type, Cams[eePtr.model].fullName);
   strcpy (info->serial_number, eePtr.serialNumber);
+
+  if (Cams[eePtr.model].hasTrack)
+    chips = 2;
+  else
+    chips = 1;
+
   info->chips = chips;
   info->chip_info = ch_info;
+//  memcpy(info->chip_info,&(ch_info[0]),sizeof(struct chip_info));
   info->temperature_regulation = camera_reg;
   info->temperature_setpoint = ccd_ad2c (qtsr.ccdSetpoint);
   info->cooling_power = (qtsr.power == 255) ? 1000 : qtsr.power * 3.906;
@@ -335,6 +359,8 @@ camera_expose (int chip, float *exposure, int light)
 {
   CAMERA *C;
   int imstate;
+  if (!is_init)
+    return -1;
 
   sem_lock ();
 
@@ -388,7 +414,11 @@ camera_end_expose (int chip)
   EndExposureParams eep;
   eep.ccd = chip;
   sem_lock ();
-  if (MicroCommand (MC_END_EXPOSURE, ST7_CAMERA, &eep, NULL))
+
+  if (!is_init)
+    return -1;
+
+  if (MicroCommand (MC_END_EXPOSURE, cameraID, &eep, NULL))
     {
       sem_unlock ();
       errno = ENODEV;
@@ -401,6 +431,8 @@ camera_end_expose (int chip)
 extern int
 camera_binning (int chip_id, int vertical, int horizontal)
 {
+  if (!is_init)
+    return -1;
   if (chip_id >= chips || chip_id < 0 || vertical < 1 || vertical > 3
       || horizontal < 1 || horizontal > 3)
     {
@@ -415,6 +447,8 @@ camera_binning (int chip_id, int vertical, int horizontal)
 extern int
 camera_dump_line (int chip_id)
 {
+  if (!is_init)
+    return -1;
   readout_line[chip_id]++;
   return 0;
 }
@@ -422,6 +456,8 @@ camera_dump_line (int chip_id)
 extern int
 camera_readout_line (int chip_id, short start, short length, void *data)
 {
+  if (!is_init)
+    return -1;
   if (readout_line[chip_id & 1] >= max_line[chip_id & 1])
     return (-1);
   // has to be locked !
@@ -435,28 +471,27 @@ camera_readout_line (int chip_id, short start, short length, void *data)
 extern int
 camera_end_readout (int chip_id)
 {
+  if (!is_init)
+    return -1;
   return 0;
 };
-
-// XXX: odsud dal OK
 
 extern int
 camera_fan (int fan_state)
 {
   MiscellaneousControlParams ctrl;
   StatusResults sr;
-  GetVersionResults st;
+  if (!is_init)
+    return -1;
 
   ctrl.fanEnable = fan_state;
   ctrl.shutterCommand = 0;
 
   sem_lock ();
-  if (MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &st))
-    goto err;
-  if ((MicroCommand (MC_STATUS, st.cameraID, NULL, &sr)))
+  if ((MicroCommand (MC_STATUS, cameraID, NULL, &sr)))
     goto err;
   ctrl.ledState = sr.ledStatus;
-  if (MicroCommand (MC_MISC_CONTROL, st.cameraID, &ctrl, NULL))
+  if (MicroCommand (MC_MISC_CONTROL, cameraID, &ctrl, NULL))
     goto err;
   sem_unlock ();
 
@@ -473,6 +508,8 @@ _camera_setcool (int reg, int setpt, int prel, int fan, int state)
 {
   MicroTemperatureRegulationParams cool;
   //GetVersionResults st;
+  if (!is_init)
+    return -1;
 
   cool.regulation = reg;
   cool.ccdSetpoint = setpt;
@@ -520,11 +557,12 @@ camera_cool_hold ()		/* hold on that temperature */
   QueryTemperatureStatusResults qtsr;
   float ot;			// optimal temperature
 
+  if (!is_init)
+    return -1;
   if (camera_reg == CAMERA_COOL_HOLD)
     return 0;			// already cooled
 
   sem_lock ();
-  //if (MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &st)) goto err;
   if (MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
     goto err;
   sem_unlock ();
@@ -547,7 +585,9 @@ extern int
 camera_set_filter (int filter)	/* set camera filter */
 {
   PulseOutParams pop;
-//  GetVersionResults st;
+
+  if (!is_init)
+    return -1;
 
   if (filter < 1 || filter > 5)
     {
@@ -560,7 +600,6 @@ camera_set_filter (int filter)	/* set camera filter */
   pop.numberPulses = 60;
 
   sem_lock ();
-//  if (MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &st)) goto err;
   if (MicroCommand (MC_PULSE, cameraID, &pop, NULL))
     goto err;
   camera_filter = filter;

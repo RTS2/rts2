@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/io.h>
 
+#include "sexi.h"
 #include "urvc.h"
 #include "fitsio.h"
 #include "tcf.h"
@@ -290,7 +291,7 @@ regr_q (double *vX, double *vZ, long i, double *rA, double *rB, double *rC)
 }
 
 
-double run_sex (char *);
+int sexi_fwhm (char *, double *);
 #define USTEP 60
 #define MAXTRIES 60
 
@@ -360,7 +361,7 @@ cmd_focus ()
       sprintf (filename, "!fo%03di.fits", filen++);
       write_fits (filename, Time, x, x, img1);
 
-      fwhm[j] = run_sex (filename + 1);
+      sexi_fwhm (filename + 1, &fwhm[j]);
       if (fwhm[j] < 0)
 	{
 	  printf ("Coadding images\n");
@@ -634,6 +635,8 @@ cmd_eeprom ()
 	      else
 		eePtr.columns[x] = 0;
 	    }
+
+	  //strcpy(eePtr.serialNumber,"819901486");
 
 	  if ((ret = PutEEPROM (st.cameraID, &eePtr)))
 	    printf ("WARNING: EEPROM writing problem...\n");
