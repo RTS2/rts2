@@ -934,8 +934,6 @@ tel_move_to (double ra, double dec)
   tel_gemini_get (130, &track);
   tel_write ("#:ONtest", 8);
   syslog (LOG_INFO, "rate: %i", track);
-  sleep (1);
-
   syslog (LOG_DEBUG, "Losmandy:tel_move_to ra:%f dec:%f returns %i", ra, dec,
 	  ret);
   return ret;
@@ -1088,13 +1086,16 @@ telescope_change (double ra, double dec)
 {
   struct telescope_info info;
   int ret;
+  int32_t track;
   if (move_lock ())
     return -1;
   telescope_info (&info);
+  syslog (LOG_INFO, "Losmandy: before-change: %f %f", info.ra, info.dec);
   if (abs (dec) < 87)
     ra = ra / cos (ln_deg_to_rad (info.dec));
+  syslog (LOG_INFO, "Losmandy: calculated ra %f dec: %f", ra, dec);
   // decide, if we make change, or move using move command
-  if (abs (ra) > 5 && abs (dec) > 5)
+  if (abs (ra) > 1 && abs (dec) > 1)
     {
       ret = tel_move_to (info.ra + ra, info.dec + dec);
     }
@@ -1103,25 +1104,38 @@ telescope_change (double ra, double dec)
       char direction;
       // center rate
       tel_set_rate (RATE_CENTER);
-      // slew speed to 20 - 5 arcmin / sec
-      tel_gemini_set (170, 20);
       if (ra != 0)
 	{
 	  // first - RA direction
-	  direction = ra > 0 ? 'e' : 'w';
-	  telescope_start_move (direction);
-	  usleep (((fabs (ra) * 60.0) / 5.0) * 1000000);
-	  telescope_stop_move (direction);
+	  if (ra > 0)
+	    {
+	      // slew speed to 1 - 0.25 arcmin / sec
+	      tel_gemini_set (170, 20);
+	      telescope_start_move ('e');
+	      usleep (((fabs (ra) * 60.0) / 5.0) * 1000000);
+	      telescope_stop_move ('e');
+	    }
+	  else
+	    {
+	      tel_gemini_set (170, 20);
+	      telescope_start_move ('w');
+	      usleep (((fabs (ra) * 60.0) / 5.0) * 1000000);
+	      telescope_stop_move ('w');
+	    }
 	}
       if (dec != 0)
 	{
 	  // second - dec direction
+	  tel_gemini_set (170, 20);
+	  // slew speed to 20 - 5 arcmin / sec
 	  direction = dec > 0 ? 'n' : 's';
 	  telescope_start_move (direction);
 	  usleep (((fabs (dec) * 60.0) / 5.0) * 1000000);
 	  telescope_stop_move (direction);
 	}
     }
+  telescope_info (&info);
+  syslog (LOG_INFO, "Losmandy: after-change: %f %f", info.ra, info.dec);
   move_unlock ();
   return ret;
 }
