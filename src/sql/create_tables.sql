@@ -157,15 +157,7 @@ CREATE TABLE users (
 	usr_tmp		integer
 );
 
-GRANT SELECT ON images TO "@WWWUSER@";
-GRANT SELECT ON counts TO "@WWWUSER@";
-GRANT SELECT ON users TO "@WWWUSER@";
-GRANT SELECT ON medias TO "@WWWUSER@";
 
-GRANT ALL ON images TO GROUP observers;
-GRANT ALL ON counts TO GROUP observers;
-GRANT ALL ON users TO GROUP observers;
-GRANT ALL ON medias TO GROUP observers;
 
 CREATE INDEX observations_tar_id ON observations (tar_id);
 
@@ -189,26 +181,5 @@ CREATE VIEW images_nights AS
 		extract (year from (img_date - interval '12:0:0')) AS img_year
 		FROM images;
 
-GRANT SELECT ON grb TO "@WWWUSER@";
-GRANT SELECT ON targets TO "@WWWUSER@";
-GRANT SELECT ON observations TO "@WWWUSER@";
-GRANT SELECT ON ot TO "@WWWUSER@";
-GRANT SELECT ON cameras TO "@WWWUSER@";
-GRANT SELECT ON mounts TO "@WWWUSER@";
-GRANT SELECT ON types TO "@WWWUSER@";
-GRANT SELECT ON medias TO "@WWWUSER@";
 
-GRANT ALL ON grb TO GROUP observers;
-GRANT ALL ON targets TO GROUP observers;
-GRANT ALL ON observations TO GROUP observers;
-GRANT ALL ON ot TO GROUP observers;
-GRANT ALL ON cameras TO GROUP observers;
-GRANT ALL ON mounts TO GROUP observers;
-GRANT ALL ON darks TO GROUP observers;
-GRANT ALL ON flats TO GROUP observers;
-GRANT ALL ON types TO GROUP observers; 
-GRANT ALL ON medias TO GROUP observers;
-GRANT SELECT,UPDATE ON obs_id TO GROUP observers;
 
-GRANT SELECT ON images_nights TO GROUP observers;
-GRANT SELECT ON observations_nights TO GROUP observers;
