@@ -14,3 +14,4 @@ rts2_teld_bridge_LDFLAGS = @LIB_NOVA@
 
 rts2_teld_ir_SOURCES = teld.cpp tpmodel.c ir.cpp
 rts2_teld_ir_LDFLAGS = @LIB_NOVA@ -lssl -lopentpl -lttcommon
+rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H

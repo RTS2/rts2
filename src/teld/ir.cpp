@@ -263,9 +263,12 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   target.ra = ra;
   target.dec = dec;
 
-  tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
-  tpl_setw ("POINTING.TARGET.DEC", dec, &status);
-  tpl_setw ("POINTING.TRACK", 4, &status);
+  status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
+  status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
+  status = tpl_setw ("POINTING.TRACK", 4, &status);
+
+  if (status)
+    return -1;
 
   timeout = 0;
   return 0;
