@@ -376,14 +376,13 @@ data_handler (int sock, size_t size, struct image_info *image, void *arg)
 
       if (strcmp
 	  (image->camera_name,
-	   get_string_default ("telescope_camera", "C0")) == 0
-	  && image->hi_precision)
+	   get_string_default ("telescope_camera", "C0")) == 0)
 	new_que->correction_mark = image->telescope.correction_mark;
       else
 	new_que->correction_mark = -1;
 
       // process imediatelly, if we require it
-      if (image->hi_precision && new_que->correction_mark >= 0)
+      if (image->hi_precision)
 	{
 	  astrometry_image (new_que);
 	  free (new_que->directory);
