@@ -2,7 +2,9 @@ DROP TABLE grb;
 
 DROP TABLE targets;
 
-DROP TABLE epochs;
+DROP TABLE epoch;
+
+DROP TABLE types;
 
 CREATE TABLE epoch (
 	epoch_id	char(3) PRIMARY KEY,		
@@ -10,9 +12,14 @@ CREATE TABLE epoch (
 	epoch_end	timestamp
 );
 
+CREATE TABLE types (
+	type_id		char PRIMARY KEY,
+	type_description varchar(200)
+);
+
 CREATE TABLE targets (
 	tar_id		integer PRIMARY KEY,
-	type_id		char REFERENCES targets(type_id),
+	type_id		char REFERENCES types(type_id),
 	tar_name	varchar(150),
 	tar_ra		float4,
 	tar_dec		float4,
@@ -20,12 +27,6 @@ CREATE TABLE targets (
 	tar_lastobs	timestamp DEFAULT NULL
 );
 
-DROP TABLE types;
-
-CREATE TABLE types (
-	type_id		char PRIMARY KEY,
-	type_description varchar(200)
-);
 
 CREATE TABLE grb (
 	tar_id		integer REFERENCES targets (tar_id),
@@ -79,6 +80,8 @@ CREATE TABLE cameras (
 	camera_name	varchar(8) PRIMARY KEY,
 	camera_description	varchar(100)
 );
+
+DROP TABLE mounts;
 
 CREATE TABLE mounts (
 	mount_name	varchar(8) PRIMARY KEY,
