@@ -8,4 +8,4 @@ include ../../make.conf
 
 LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD)
 
-serverd: serverd.o ../utils/devdem.o
+serverd: serverd.o ../utils/devdem.o ../utils/devcli.o
