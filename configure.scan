@@ -1,0 +1,44 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(src/status.h)
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+
+dnl Checks for libraries.
+dnl Replace `main' with a function in -lcfitsio:
+AC_CHECK_LIB(cfitsio, main)
+dnl Replace `main' with a function in -lecpg:
+AC_CHECK_LIB(ecpg, main)
+dnl Replace `main' with a function in -lm:
+AC_CHECK_LIB(m, main)
+dnl Replace `main' with a function in -lncurses:
+AC_CHECK_LIB(ncurses, main)
+dnl Replace `main' with a function in -lnova:
+AC_CHECK_LIB(nova, main)
+dnl Replace `main' with a function in -lpq:
+AC_CHECK_LIB(pq, main)
+dnl Replace `main' with a function in -lpthread:
+AC_CHECK_LIB(pthread, main)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(fcntl.h malloc.h sys/ioctl.h sys/time.h syslog.h unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+dnl Checks for library functions.
+AC_PROG_GCC_TRADITIONAL
+AC_TYPE_SIGNAL
+AC_CHECK_FUNCS(gettimeofday mktime select socket strdup strerror strtod strtol)
+
+AC_OUTPUT(src/teld/Makefile src/serverd/Makefile src/writers/Makefile src/camd/apogee/Makefile src/utils/Makefile src/grb/Makefile src/Makefile src/plan/Makefile Makefile doc/prezentace/Makefile src/camd/sbig/Makefile src/camc/Makefile src/camd/urvc/Makefile src/teld/lx200/Makefile src/monitor/Makefile doc/dia/Makefile src/images_util/Makefile doc/doxygen/latex/Makefile src/plan/pgsql/Makefile src/camd/Makefile)

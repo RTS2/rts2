@@ -10,8 +10,6 @@
 
 0.2.2
 ===
- * configuration files
-   o for central server & devices
  * devcli
    o recognise status messages
  * scheduler

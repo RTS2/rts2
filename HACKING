@@ -84,8 +84,10 @@ Nezapominejte updatovat ChangeLog a VERSION.
 ho projedte indentem, pokud mozno v defaultni konfiguraci. Spravne
 odsazovani je dulezite m.j. kvuli diffovani.
 
-# indent <soubor>       # soubor ulozi jako soubor~, pak ho zformatuje a
-                        # ulozi pod jeho nazvem (=> prepise puvodni)
+# indent --pmt <soubor>		# soubor ulozi jako soubor~, pak ho zformatuje a
+                        	# ulozi pod jeho nazvem (=> prepise puvodni)
+				# s --pmt nemeni datum u souboru, t.j. commit
+				# pak ukaze pouze opravdu zmenene soubory
 
 -> diffovani:
 

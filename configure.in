@@ -1,0 +1,76 @@
+# Process this file with autoconf to produce a configure script.C
+AC_INIT(rts2, 0.2.2, petr@lascaux.asu.cas.cz)
+
+AM_INIT_AUTOMAKE(rts2, 0.2.2)
+
+AC_CONFIG_SRCDIR(src)
+AM_CONFIG_HEADER(config.h)
+
+AM_MAINTAINER_MODE
+
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_MAKE_SET
+
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lcfitsio':
+AC_CHECK_LIB([cfitsio], [main])
+# FIXME: Replace `main' with a function in `-lecpg':
+AC_CHECK_LIB([ecpg], [main])
+# FIXME: Replace `main' with a function in `-lm':
+AC_CHECK_LIB([m], [main])
+# FIXME: Replace `main' with a function in `-lncurses':
+AC_CHECK_LIB([ncurses], [main])
+# FIXME: Replace `main' with a function in `-lnova':
+AC_CHECK_LIB([nova], [main])
+# FIXME: Replace `main' with a function in `-lpq':
+AC_CHECK_LIB([pq], [main])
+# FIXME: Replace `main' with a function in `-lpthread':
+AC_CHECK_LIB([pthread], [main])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS([argz.h arpa/inet.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+# Check for PostgreSQL
+AC_POSTGRESQL
+
+# Checks for library functions.
+AC_FUNC_FORK
+AC_PROG_GCC_TRADITIONAL
+AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_TYPE_SIGNAL
+AC_FUNC_STRTOD
+AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol])
+
+AC_OUTPUT([Makefile
+           src/Makefile])
+#                 doc/Makefile
+#                 doc/dia/Makefile
+#                 doc/doxygen/latex/Makefile
+#                 doc/prezentace/Makefile
+#                 src/Makefile
+#                 src/camc/Makefile
+#                 src/camd/Makefile
+#                 src/camd/apogee/Makefile
+#                 src/camd/sbig/Makefile
+#                 src/camd/urvc/Makefile
+#                 src/grb/Makefile
+#                 src/images_util/Makefile
+#                 src/monitor/Makefile
+#                 src/plan/Makefile
+#                 src/plan/pgsql/Makefile
+#                 src/serverd/Makefile
+#                 src/teld/Makefile
+#                 src/teld/lx200/Makefile
+#                 src/utils/Makefile
+#                 src/writers/Makefile])
