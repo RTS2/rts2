@@ -2,7 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
-#define MAX_CHIPS 	2	//maximal number of chips
+#define MAX_CHIPS 	1	//maximal number of chips
 
 #include <math.h>
 #include <mcheck.h>
@@ -46,6 +46,7 @@ public:
     {
 	delete dest;
     }
+  virtual int isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
 private:
@@ -58,6 +59,20 @@ CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
   dest = new long[in_width * in_height];
 };
+
+int
+CameraAndorChip::isExposing ()
+{
+  int ret;
+  ret = CameraChip::isExposing ();
+  if (ret > 0)
+    return ret;
+  int status;
+  GetStatus (&status);
+  if (status == DRV_ACQUIRING)
+    return 0;
+  return -2;
+}
 
 int
 CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
@@ -89,6 +104,10 @@ CameraAndorChip::readoutOneLine ()
       if (ret)
 	return ret;
     }
+  if (!readoutConn)
+  {
+    return -1;
+  }
   if (send_top < (char*) dest_top)
     {
       sendLine++;
@@ -98,6 +117,7 @@ CameraAndorChip::readoutOneLine ()
       return 0;
     }
   readoutConn->endConnection ();
+  readoutConn = NULL;
   readoutLine = -1;
   return -2;
 }
@@ -122,15 +142,13 @@ public:
   virtual int init ();
 
   // callback functions for Camera alone
-  virtual int camReady ();
-  virtual int camInfo ();
-  virtual int camBaseInfo ();
+  virtual int ready ();
+  virtual int info ();
+  virtual int baseInfo ();
   virtual int camChipInfo (int chip);
   virtual int camExpose (int chip, int light, float exptime);
-  virtual int camWaitExpose (int chip);
   virtual int camStopExpose (int chip);
   virtual int camBox (int chip, int x, int y, int width, int height);
-  virtual int camBinning (int chip, int x_bin, int y_bin);
   virtual int camStopRead (int chip);
   virtual int camCoolMax ();
   virtual int camCoolHold ();
@@ -189,13 +207,13 @@ Rts2DevCameraAndor::init ()
 }
 
 int
-Rts2DevCameraAndor::camReady ()
+Rts2DevCameraAndor::ready ()
 {
   return 0;
 }
 
 int
-Rts2DevCameraAndor::camInfo ()
+Rts2DevCameraAndor::info ()
 {
   int c_status;
   int iTemp;
@@ -209,7 +227,7 @@ Rts2DevCameraAndor::camInfo ()
 }
 
 int
-Rts2DevCameraAndor::camBaseInfo ()
+Rts2DevCameraAndor::baseInfo ()
 {
   sprintf (ccdType, "ANDOR");
   // get serial number
@@ -231,21 +249,6 @@ Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
 }
 
 int
-Rts2DevCameraAndor::camWaitExpose (int chip)
-{
-  int status;
-  int ret;
-  if (!(getState (chip) & CAM_EXPOSING))
-  {
-    return ret;
-  }
-  GetStatus (&status);
-  if (status == DRV_ACQUIRING)
-    return 0;
-  return -2;
-}
-
-int
 Rts2DevCameraAndor::camStopExpose (int chip)
 {
   // not supported
@@ -254,12 +257,6 @@ Rts2DevCameraAndor::camStopExpose (int chip)
 
 int
 Rts2DevCameraAndor::camBox (int chip, int x, int y, int width, int height)
-{
-  return -1;
-}
-
-int
-Rts2DevCameraAndor::camBinning (int chip, int x_bin, int y_bin)
 {
   return -1;
 }
