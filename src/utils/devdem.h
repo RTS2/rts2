@@ -15,16 +15,19 @@
 #include "devcli.h"
 #include "devser.h"
 
+typedef int (*devdem_handle_status_t) (int);
+
 int devdem_priority_block_start ();
 int devdem_priority_block_end ();
 
 int devdem_status_message (int subdevice, char *description);
 int devdem_status_mask (int subdevice, int mask, int operand, char *message);
 
-int devdem_init (char **status_names, int status_num_in);
+int devdem_init (char **status_names, int status_num_in,
+		 devdem_handle_status_t in_status_handler);
 int devdem_register (char *server_address, uint16_t server_port,
-		     char *in_device_name, int device_type,
-		     char *device_host, uint16_t device_port);
+		     char *in_device_name, int device_type, char *device_host,
+		     uint16_t device_port);
 int devdem_run (uint16_t port, devser_handle_command_t in_handler);
 
 #include "devser.h"

@@ -290,6 +290,7 @@ threads_count_decrease (void *temp)
   if (TW->freed)
     free (TW->arg);
   free (temp);
+  syslog (LOG_DEBUG, "freed temp");
 }
 
 /*! 
@@ -385,7 +386,14 @@ devser_thread_create (void *(*start_routine) (void *), void *arg,
 
 	  errno = pthread_create (&threads[i].thread, NULL, thread_wrapper,
 				  (void *) temp);
-	  return errno ? -1 : 0;
+	  if (errno)
+	    {
+	      if (temp->freed)
+		free (temp->arg);
+	      free (temp);
+	      return -1;
+	    }
+	  return 0;
 	}
     }
   syslog (LOG_WARNING, "reaches MAX_THREADS");
@@ -595,11 +603,12 @@ send_data_thread (void *arg)
 {
 #define ID	*((int *) arg)
   struct timeval send_tout;
-  fd_set write_fds;
+  fd_set write_fds, exp_fds;
   data_conn_info_t *data_con;
   int port, ret;
   char data[DATA_BLOCK_SIZE];
   size_t size;
+  size_t sended = 0;
 
   syslog (LOG_DEBUG, "Sending data thread started.");
 
@@ -607,13 +616,17 @@ send_data_thread (void *arg)
 
   port = ntohs (data_con->my_side.sin_port);
 
-  while (!data_get (ID, data, DATA_BLOCK_SIZE, &size))
+  while (sended < data_con->data_size
+	 && !data_get (ID, data, DATA_BLOCK_SIZE, &size))
     {
       send_tout.tv_sec = 9000;
       send_tout.tv_usec = 0;
       FD_ZERO (&write_fds);
       FD_SET (data_con->sock, &write_fds);
-      if ((ret = select (FD_SETSIZE, NULL, &write_fds, NULL, &send_tout)) < 0)
+      FD_ZERO (&exp_fds);
+      FD_SET (data_con->sock, &exp_fds);
+      if ((ret =
+	   select (FD_SETSIZE, NULL, &write_fds, &exp_fds, &send_tout)) < 0)
 	{
 	  syslog (LOG_ERR, "select: %m port:%i", port);
 	  break;
@@ -624,11 +637,20 @@ send_data_thread (void *arg)
 	  errno = ETIMEDOUT;
 	  break;
 	}
-      if ((ret = write (data_con->sock, data, size)) != size)
+      if (FD_ISSET (data_con->sock, &write_fds))
 	{
-	  syslog (LOG_ERR, "write:%m port:%i", port);
+	  if ((ret = write (data_con->sock, data, size)) != size)
+	    {
+	      syslog (LOG_ERR, "write:%m port:%i", port);
+	      break;
+	    }
+	}
+      else
+	{
+	  syslog (LOG_DEBUG, "send_data_thread bad select");
 	  break;
 	}
+      sended += size;
     }
   devser_data_done (ID);
   pthread_mutex_unlock (&data_con->lock);
@@ -762,6 +784,9 @@ devser_data_done (int id)
 {
   data_conn_info_t *data_con;
   data_con = &data_cons[id];
+
+  syslog (LOG_DEBUG, "devser_data_done");
+
   free (data_con->buffer);
   data_con->buffer = NULL;
 
@@ -1067,6 +1092,7 @@ devser_2devser_message (int recv_id, void *message)
 
   msg.mtype = recv_id + IPC_MSG_SHIFT;
   memcpy (msg.mtext, message, MSG_SIZE);
+
   if (msgsnd (msg_id, &msg, MSG_SIZE, 0))
     {
       syslog (LOG_ERR, "error devser_2devser_message: %m %i %li", msg_id,
@@ -1141,10 +1167,10 @@ msg_receive_thread (void *arg)
 	msgrcv (msg_id, &msg_buf, MSG_SIZE, server_id + IPC_MSG_SHIFT, 0);
       if (msg_size < 0)
 	{
-	  syslog (LOG_ERR, "devser msg_receive: %m %i %i", msg_size,
+	  syslog (LOG_ERR, "devser msg_receive: %m %i %i %i", errno, msg_size,
 		  server_id);
-	  if (errno == EIDRM)
-	    return NULL;
+	  // if (errno == EIDRM)
+	  return NULL;
 	}
       else if (msg_size != MSG_SIZE)
 	syslog (LOG_ERR, "invalid message size: %i", msg_size);
@@ -1260,20 +1286,24 @@ read_from_client ()
   char *endptr;			// end of message
   int ret;
 
+  fd_set read_set;
+
+  FD_ZERO (&read_set);
+  FD_SET (control_fd, &read_set);
+
   buffer = command_buffer.buf;
   endptr = command_buffer.endptr;
-  syslog (LOG_DEBUG, "read_from_client before read");
+
+  ret = select (FD_SETSIZE, &read_set, NULL, &read_set, NULL);
   nbytes = read (control_fd, endptr, MAXMSG - (endptr - buffer));
-  syslog (LOG_DEBUG, "read_from_client after read: %i", nbytes);
   if (nbytes < 0)
     {
       /* Read error. */
-      syslog (LOG_ERR, "read: %m");
+      syslog (LOG_ERR, "read_from_client read: %m");
       return -1;
     }
   else if (nbytes == 0)
     {
-      /* End-of-file. */
       syslog (LOG_ERR, "read 0 bytes");
       return -1;
     }
@@ -1475,8 +1505,7 @@ devser_init (size_t shm_data_size)
  * @return 0 on success, -1 and set errno on error
  */
 int
-devser_run (int port, devser_handle_command_t in_handler,
-	    int (*child_init) (void))
+devser_run (int port, devser_handle_command_t in_handler)
 {
   int sock;
   size_t size;
@@ -1552,11 +1581,6 @@ devser_run (int port, devser_handle_command_t in_handler,
       pthread_mutex_init (&threads[sock].lock, NULL);
     }
 
-  if (child_init ())
-    {
-      syslog (LOG_ERR, "devser_run child_init call error: %m");
-      exit (EXIT_FAILURE);
-    }
 
   // null threads count
   threads_count = 0;

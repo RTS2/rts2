@@ -25,8 +25,7 @@ typedef int (*devser_handle_msg_t) (char *message);
 typedef void (*devser_thread_cleaner_t) (void *arg);
 
 int devser_init (size_t shm_data_size);
-int devser_run (int port, devser_handle_command_t in_handler,
-		int (*child_init) (void));
+int devser_run (int port, devser_handle_command_t in_handler);
 int devser_dprintf (const char *format, ...);
 int devser_write_command_end (int retc, const char *msg_format, ...);
 

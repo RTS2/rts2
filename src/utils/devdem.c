@@ -74,6 +74,7 @@ struct devconn_status *statutes;
 
 //! handler functions
 devser_handle_command_t cmd_device_handler;
+devdem_handle_status_t cmd_device_status_handler;
 
 //! information about running devices; held in shared memory
 struct client_info
@@ -169,8 +170,7 @@ status_message (int subdevice, char *description)
 {
   struct devconn_status *st;
   st = &(statutes[subdevice]);
-  return devser_dprintf ("S %s %s %i %s", device_name, st->name, st->status,
-			 description);
+  return devser_dprintf ("S %s %i %s", st->name, st->status, description);
 }
 
 /*! 
@@ -312,7 +312,7 @@ client_priority_lost ()
   status_unlock (client_status);
 
   // inform client
-  devser_message ("priority lost");
+  status_message (client_status, "priority lost");
 }
 
 void
@@ -335,7 +335,7 @@ client_priority_receive ()
     }
   clients_info->priority_client = client_id;
 
-  devser_message ("priority received");
+  devser_dprintf ("S priority 1 priority received");
 }
 
 void
@@ -541,10 +541,10 @@ client_authorize ()
 				"error while setting up client");
       return -1;
     }
-  // now print what status we supported
-  devser_dprintf ("I status_num %s %i", device_name, status_num);
+  // now print what status we support
+  devser_dprintf ("I status_num %i", status_num);
   for (key = 0; key < status_num; key++)
-    devser_dprintf ("I status %s %i %s %i", device_name, key,
+    devser_dprintf ("I status %i %s %i", key,
 		    statutes[key].name, statutes[key].status);
 
   // TODO remove pid - not needed ???
@@ -705,7 +705,7 @@ server_message_priority (struct param_status *params)
     }
   else
     {
-      if (new_priority_client < 0 || new_priority_client >= MAX_CLIENT)
+      if (new_priority_client < -1 || new_priority_client >= MAX_CLIENT)
 	{
 	  syslog (LOG_ERR, "invalid new priority client %i",
 		  new_priority_client);
@@ -725,6 +725,7 @@ server_message_priority (struct param_status *params)
 	{
 	  // no current priority client => priority_client == -1
 	  // we would like to stop some client only if some is
+	  // running
 	  if (clients_info->priority_client != -1)
 	    {
 	      // send stop signal to request thread stopping
@@ -738,9 +739,12 @@ server_message_priority (struct param_status *params)
 		   "priority_lost %li", timeout))
 		return -1;
 	    }
-	  if (devser_2devser_message
-	      (new_priority_client, "priority_receive"))
-	    return -1;
+	  if (new_priority_client != -1)
+	    {
+	      if (devser_2devser_message
+		  (new_priority_client, "priority_receive"))
+		return -1;
+	    }
 	}
       else
 	{
@@ -752,13 +756,35 @@ server_message_priority (struct param_status *params)
     }
 }
 
+/*!
+ * Handle status transation - DAY, DUSK, NIGHT, DAWN and so..
+ */
+int
+server_message_status (struct param_status *params)
+{
+  int status;
+  if (param_next_integer (params, &status))
+    return -1;
+  if (cmd_device_status_handler)
+    return cmd_device_status_handler (status);
+  else
+    syslog (LOG_INFO, "status handler for device %s not set", device_name);
+  return 0;
+}
+
 int
 server_message_handler (struct param_status *params)
 {
-  char *command = params->param_argv;
+  char *command;
+  if (param_next_string (params, &command))
+    return -1;
+  syslog (LOG_DEBUG, "server_message_handler command: %s\n", command);
   if (strcmp (command, "priority") == 0
       || strcmp (command, "priority_deferred") == 0)
     return server_message_priority (params);
+
+  if (strcmp (command, "current_state") == 0)
+    return server_message_status (params);
 
   printf ("command: %s\n", command);
   fflush (stdout);
@@ -795,7 +821,8 @@ devdem_on_exit ()
  * @param status_num_in	number of status_names
  */
 int
-devdem_init (char **status_names, int status_num_in)
+devdem_init (char **status_names, int status_num_in,
+	     devdem_handle_status_t in_status_handler)
 {
   struct devconn_status *st;
   union semun sem_un;
@@ -804,6 +831,8 @@ devdem_init (char **status_names, int status_num_in)
   // first of all init devser
   if (devser_init (sizeof (struct client_info)))
     return -1;
+
+  cmd_device_status_handler = in_status_handler;
 
   clients_info = devser_shm_data_at ();
   memset (clients_info, 0, sizeof (struct client_info));
@@ -856,7 +885,7 @@ devdem_init (char **status_names, int status_num_in)
 	  return -1;
 	}
     }
-  strncpy (st->name, "priority_lock", STATUSNAME);
+  strncpy (st->name, "priority", STATUSNAME);
   st->status = 0;
   client_status = i;
   i++;
@@ -906,6 +935,8 @@ devdem_register (char *server_host, uint16_t server_port,
 		 uint16_t device_port)
 {
   struct devcli_channel_handlers handlers;
+
+
   handlers.command_handler = server_command_handler;
   handlers.message_handler = server_message_handler;
 
@@ -920,26 +951,6 @@ devdem_register (char *server_host, uint16_t server_port,
     return -1;
 
   devser_set_server_id (SERVER_CLIENT, server_handle_msg);
-  return 0;
-}
-
-int
-child_init (void)
-{
-  // attach shared memory with status
-  if ((int) (statutes = (struct devconn_status *) shmat (status_shm, NULL, 0))
-      < 0)
-    {
-      syslog (LOG_ERR, "shmat: %m");
-      return -1;
-    }
-
-  // attach shared memory with clients_info
-  if ((int) (clients_info = (struct client_info *) devser_shm_data_at ()) < 0)
-    {
-      syslog (LOG_ERR, "shmat: %m");
-      return -1;
-    }
   return 0;
 }
 
@@ -958,5 +969,21 @@ int
 devdem_run (uint16_t port, devser_handle_command_t in_handler)
 {
   cmd_device_handler = in_handler;
-  return devser_run (port, client_handle_commands, child_init);
+
+  // attach shared memory with status
+  if ((int) (statutes = (struct devconn_status *) shmat (status_shm, NULL, 0))
+      < 0)
+    {
+      syslog (LOG_ERR, "shmat: %m");
+      return -1;
+    }
+
+  // attach shared memory with clients_info
+  if ((int) (clients_info = (struct client_info *) devser_shm_data_at ()) < 0)
+    {
+      syslog (LOG_ERR, "shmat: %m");
+      return -1;
+    }
+
+  return devser_run (port, client_handle_commands);
 }
