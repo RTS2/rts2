@@ -6,6 +6,8 @@
 int db_connect (void);
 int db_disconnect (void);
 
+int db_get_media_path (int media_id, char *path, size_t path_len);
+
 int db_start_observation (int id, const time_t * start, int *obs_id);
 int db_end_observation (int tar_id, int obs_id, const time_t * end_time);
 
@@ -17,5 +19,8 @@ int db_add_darkfield (char *path, const time_t * exposure_time, int
 
 int db_get_darkfield (char *camera_name, int exposure_length,
 		      int camera_temperature, char **path);
+
+extern int db_last_good_image (char *camera_name);
+extern int db_last_observation (int tar_id);
 
 #endif /* __RTS_DB__ */

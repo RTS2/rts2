@@ -7,9 +7,10 @@
 #include "db.h"
 #include <libnova.h>
 #include <malloc.h>
+#include <pthread.h>
 #include <string.h>
 
-#define test_sql if (sqlca.sqlcode < 0) goto err
+pthread_mutex_t db_lock = PTHREAD_MUTEX_INITIALIZER;
 
 exec sql include sqlca;
 
@@ -28,6 +29,47 @@ db_disconnect (void)
 }
 
 extern int
+db_get_media_path (int media_id, char *path, size_t path_len)
+{
+#define test_sql if (sqlca.sqlcode != 0) goto err
+
+  EXEC SQL BEGIN DECLARE SECTION;
+
+  VARCHAR med_path[50];
+  int med_id = media_id;
+
+  EXEC SQL END DECLARE SECTION;
+
+  pthread_mutex_lock (&db_lock);
+
+  EXEC SQL BEGIN;
+
+  EXEC SQL SELECT med_path INTO:med_path FROM medias WHERE med_id =:med_id;
+
+  test_sql;
+
+  EXEC SQL END;
+
+  pthread_mutex_unlock (&db_lock);
+
+  strncpy (path, med_path.arr, path_len);
+  path[path_len] = '\0';
+
+  return 0;
+
+#undef test_sql
+
+err:
+  EXEC SQL END;
+  pthread_mutex_unlock (&db_lock);
+#ifdef DEBUG
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  path[0] = '\0';
+  return -1;
+}
+
+extern int
 db_start_observation (int id, const time_t * c_start, int *obs_id)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
@@ -39,6 +81,8 @@ db_start_observation (int id, const time_t * c_start, int *obs_id)
   long int obs_start = *c_start;
 
   EXEC SQL END DECLARE SECTION;
+
+  pthread_mutex_lock (&db_lock);
 
   EXEC SQL BEGIN;
 
@@ -54,10 +98,13 @@ db_start_observation (int id, const time_t * c_start, int *obs_id)
   EXEC SQL END;
 
   test_sql;
+  pthread_mutex_unlock (&db_lock);
 
   return 0;
 
 err:
+  EXEC SQL END;
+  pthread_mutex_unlock (&db_lock);
 #ifdef DEBUG
   printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
@@ -72,6 +119,8 @@ db_end_observation (int tar_id, int obs_id, const time_t * end_time)
   int o_id = obs_id;
   long int e_time = *end_time;
   EXEC SQL END DECLARE SECTION;
+
+  pthread_mutex_lock (&db_lock);
 
   EXEC SQL BEGIN;
 
@@ -88,9 +137,12 @@ db_end_observation (int tar_id, int obs_id, const time_t * end_time)
   EXEC SQL END;
 
   test_sql;
+  pthread_mutex_unlock (&db_lock);
 
   return 0;
 err:
+  EXEC SQL END;
+  pthread_mutex_unlock (&db_lock);
 #ifdef DEBUG
   printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
@@ -111,6 +163,8 @@ db_add_darkfield (char *path, const time_t * exposure_time, int
 
   EXEC SQL END DECLARE SECTION;
 
+  pthread_mutex_lock (&db_lock);
+
   EXEC SQL BEGIN;
 
   EXEC SQL INSERT INTO darks (dark_name, dark_date, dark_exposure,
@@ -121,10 +175,13 @@ db_add_darkfield (char *path, const time_t * exposure_time, int
   EXEC SQL END;
 
   test_sql;
+  pthread_mutex_unlock (&db_lock);
 
   return 0;
 
 err:
+  EXEC SQL END;
+  pthread_mutex_unlock (&db_lock);
 #ifdef DEBUG
   printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
@@ -149,6 +206,8 @@ db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
   long int grb_date = *date;
 
   EXEC SQL END DECLARE SECTION;
+
+  pthread_mutex_lock (&db_lock);
 
   EXEC SQL BEGIN;
 
@@ -207,6 +266,7 @@ db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
   EXEC SQL END;
 
   test_sql;
+  pthread_mutex_unlock (&db_lock);
 
   if (r_tar_id)
     *r_tar_id = tar_id;
@@ -214,6 +274,8 @@ db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
   return 0;
 
 err:
+  EXEC SQL END;
+  pthread_mutex_unlock (&db_lock);
 #ifdef DEBUG
   printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
@@ -235,6 +297,7 @@ db_get_darkfield (char *camera_name, int exposure_length, int
   float d_exposure_length = exposure_length;
   int d_camera_temperature = camera_temperature;
   EXEC SQL END DECLARE SECTION;
+  pthread_mutex_lock (&db_lock);
   EXEC SQL BEGIN;
   EXEC SQL DECLARE dark_cursor CURSOR FOR
     SELECT dark_name FROM darks WHERE camera_name =:d_camera_name AND
@@ -251,13 +314,79 @@ db_get_darkfield (char *camera_name, int exposure_length, int
       strcpy (*path, d_path);
       EXEC SQL CLOSE dark_cursor;
       EXEC SQL END;
+      pthread_mutex_unlock (&db_lock);
       return 0;
     }
   *path = NULL;
   EXEC SQL CLOSE dark_cursor;
   test_sql;
   EXEC SQL END;
+  pthread_mutex_unlock (&db_lock);
   return -1;
+err:
+  EXEC SQL END;
+  pthread_mutex_unlock (&db_lock);
+#ifdef DEBUG
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  return -1;
+}
+
+int
+db_last_observation (int tar_id)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int obs_tar_id = tar_id;
+  int obs_start;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL DECLARE obs_cursor_last_observation CURSOR FOR
+    SELECT MAX (EXTRACT (EPOCH FROM obs_start)) FROM observations
+    WHERE tar_id =:obs_tar_id;
+
+  EXEC SQL OPEN obs_cursor_last_observation;
+
+  EXEC SQL FETCH NEXT FROM obs_cursor_last_observation INTO:obs_start;
+
+  if (sqlca.sqlcode)
+    {
+      return -1;
+    }
+
+  return time (NULL) - obs_start;
+}
+
+// returns time to last good image in seconds, -1 if there is no good image
+// for camera
+int
+db_last_good_image (char *camera_name)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  char *i_camera_name = camera_name;
+  int i_last_date;
+  EXEC SQL END DECLARE SECTION;
+#define test_sql if (sqlca.sqlcode < 0) goto err
+
+  EXEC SQL DECLARE obs_cursor_last_good_image CURSOR FOR
+    SELECT MAX (EXTRACT (EPOCH FROM img_date)) FROM images WHERE camera_name
+    =:i_camera_name;
+  EXEC SQL OPEN obs_cursor_last_good_image;
+
+  EXEC SQL FETCH next FROM obs_cursor_last_good_image INTO:i_last_date;
+
+  if (sqlca.sqlcode)
+    {
+      EXEC SQL CLOSE obs_cursor_last_good_image;
+      printf ("No such image for %s\n", i_camera_name);
+      // no such image
+      return -1;
+    }
+
+  EXEC SQL CLOSE obs_cursor_last_good_image;
+  test_sql;
+
+  return time (NULL) - i_last_date;
+
 err:
 #ifdef DEBUG
   printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
