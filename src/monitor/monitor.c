@@ -192,9 +192,10 @@ main (int argc, char **argv)
 {
   uint16_t port = SERVERD_PORT;
   char *server;
-  char c;
+  int c;
   struct device *dev;
   time_t t;
+  char *subject = NULL;
 
 #ifdef DEBUG
   mtrace ();
@@ -203,28 +204,35 @@ main (int argc, char **argv)
   while (1)
     {
       static struct option long_option[] = {
-	{"port", 1, 0, 'p'},
+	{"mail", 1, 0, 'm'},
 	{"help", 0, 0, 'h'},
+	{"port", 1, 0, 'p'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "m:hp:", long_option, NULL);
 
       if (c == -1)
 	break;
 
       switch (c)
 	{
+	case 'h':
+	  printf ("Output status report (with optional formating)\n"
+		  " Invocation: \n"
+		  "\t%s [options] <centrald_host>\n"
+		  " Options:\n"
+		  "\t-h|--help			print that help message\n"
+		  "\t-m|--mail <subject_prefix>	print at the begining status line\n"
+		  "\t				so we can feed it to mail command\n"
+		  "\t-p|--port <port_num>		port of the server\n"
+		  " Part of rts2 package.\n", argv[0]);
+	  exit (EXIT_SUCCESS);
+	case 'm':
+	  subject = optarg;
+	  break;
 	case 'p':
 	  port = atoi (optarg);
-	  if (port < 1 || port == UINT_MAX)
-	    {
-	      printf (" Invalid port option: %s\n", optarg);
-	      exit (EXIT_FAILURE);
-	    }
 	  break;
-	case 'h':
-	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
-	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
 	default:
@@ -240,15 +248,42 @@ main (int argc, char **argv)
 
   time (&t);
 
+  c = devcli_server_login (server, port, "petr", "petr");
+
+  if (subject)
+    {
+      int failed_found = 0;	// become 1 when we founded fail device and print
+      // warning prefix
+      int ret;
+      printf ("Subject: %s %s", subject, ctime (&t));
+      if (c == -1)
+	{
+	  printf (" FATAL ERROR - cannot connect to centrald!\n.\n");
+	  exit (EXIT_FAILURE);
+	}
+      for (dev = devcli_devices (); dev; dev = dev->next)
+	{
+	  if (devcli_command (dev, &ret, "ready") == -1)
+	    {
+	      if (!failed_found)
+		{
+		  failed_found = 1;
+		  printf (" WARNING - FAILED DEVICE(s):");
+		}
+	      printf (" %s(%i)", dev->name, ret);
+	    }
+	}
+      if (!failed_found)
+	printf (" ALL OK");
+      printf ("\n Full status report follows\n");
+    }
+
   printf (" Bootes status report generated at: %s", ctime (&t));
   printf (" RTS2 " VERSION);
-
   printf (" Connecting to %s:%i\n", server, port);
-
-  /* connect to the server */
-  if (devcli_server_login (server, port, "petr", "petr") < 0)
+  if (c == -1)
     {
-      perror ("devcli_server_login");
+      printf ("Connection to centrald failed!\n");
       exit (EXIT_FAILURE);
     }
 
