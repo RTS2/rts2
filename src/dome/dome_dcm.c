@@ -46,11 +46,11 @@ dome_status (char *state, int num, int *last_num)
     }
   else if (!strcasecmp (state, "opening"))
     {
-      if (*last_num != DOME_OPENIGN)
+      if (*last_num != DOME_OPENING)
 	{
-	  devdem_status_mask (num, DOME_DOME_MASK, DOME_OPENIGN,
+	  devdem_status_mask (num, DOME_DOME_MASK, DOME_OPENING,
 			      "dome opening");
-	  *last_num = DOME_OPENIGN;
+	  *last_num = DOME_OPENING;
 	}
     }
   else if (!strcasecmp (state, "closing"))
@@ -102,7 +102,7 @@ dome_handle_command (char *command)
     {
       struct dome_info info;
       FILE *fs = fopen ("/var/log/dome", "r");
-      char weather[50], weather_inf[50], dome1[20], dome2[20];
+      char weather[50], weather_inf[50], dome1[20];
 
       if (!stat)
 	{
@@ -110,8 +110,13 @@ dome_handle_command (char *command)
 				    strerror (errno));
 	  return -1;
 	}
-      fscanf (fs, "%s %f %f %s | BOOTES-1A %s | BOOTES-1B %s", weather,
-	      &info.temperature, &info.humidity, weather_inf, dome1, dome2);
+      if (fscanf (fs, "%s %f %f %s | BOOTES-2 %s", weather,
+		  &info.temperature, &info.humidity, weather_inf, dome1) != 5)
+	{
+	  devser_write_command_end (DEVDEM_E_HW, "Scanf error");
+	  fclose (fs);
+	  return -1;
+	}
       fclose (fs);
       if (strcasecmp (weather, "WEATHER"))
 	{
@@ -136,7 +141,6 @@ dome_handle_command (char *command)
 	    }
 	}
       dome_status (dome1, 1, &dome1_last);
-      dome_status (dome2, 2, &dome2_last);
       devser_dprintf ("temperature %f", info.temperature);
       devser_dprintf ("humidity %f", info.humidity);
       ret = errno = 0;
@@ -161,7 +165,7 @@ dome_handle_command (char *command)
 int
 main (int argc, char **argv)
 {
-  char *stats[] = { "weather", "dome1", "dome2" };
+  char *stats[] = { "weather", "dome1" };
 
   char *serverd_host = SERVERD_HOST;
   uint16_t serverd_port = SERVERD_PORT;
@@ -241,7 +245,7 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  if (devdem_init (stats, 3, NULL))
+  if (devdem_init (stats, 2, NULL))
     {
       syslog (LOG_ERR, "devdem_init: %m");
       return EXIT_FAILURE;
