@@ -27,7 +27,7 @@ DROP TABLE observations;
 CREATE TABLE observations (
 	tar_id		integer REFERENCES targets (tar_id),
 	obs_id		integer PRIMARY KEY,
-	obs_start	float8,	-- in JD
+	obs_start	timestamp,
 	obs_duration	integer -- in sec	
 );
 
