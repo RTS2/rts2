@@ -72,8 +72,10 @@ Radka:
 local1.*			/var/log/rtsd
 
 A vse z local1 vam pujde do /var/log/rtsd.
-/etc/init.d/syslog restart pro nacteni novych hodnot.
-tail -f /var/log/rtsd (nejlepe jako root) pro sledovani, co to loguje.
+
+# /etc/init.d/syslog # restart pro nacteni novych hodnot.
+
+# tail -f /var/log/rtsd # (nejlepe jako root) pro sledovani, co to loguje.
   
 Viz man syslog.
 

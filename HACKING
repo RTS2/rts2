@@ -45,10 +45,11 @@ nahlasi problem, a dane misto ve vyslednem lokalnim souboru oznaci
 (pomoci >>>>> a <<<<<<, da se pak pochopit).
 
 Vsechny soubory, ktere budou mergovany, jsou pred provedenim mergovani
-zkopirovany do souboru s nazvem '.#<nazev_souboru>#.<verze>'. Z neho
-je mozne cerpat informace o lokalnim obsahu souboru.
+zkopirovany do souboru s nazvem '.#<nazev_souboru>#.<verze>'. Tudiz
+mate k dispozici vas obsah souboru pred mergovani - dobre pro reseni
+pripadnych potizi, nebo pokud zmergovani vytvori nejaky neporadek.
 
-Aktualizace kodu (umyslne az po instrukcih):
+Aktualizace kodu (umyslne az po instrukcich):
 
 # cvs update
 
@@ -62,7 +63,7 @@ Commit kodu (zaverzovani vasich zmen):
 
 # cvs commit
 
-Verzuji se pouze zmene soubory, na ne se odpali vas $EDITOR, muzete
+Verzuji se pouze zmene soubory, odpali se vas $EDITOR, muzete
 (ale opravdu by jste meli) zapsat zmeny, ktere jste provedly. Ulozite,
 pokracujete dale.
 
@@ -77,7 +78,7 @@ ho projedte indentem, pokud mozno v defaultni konfiguraci. Spravne
 odsazovani je dulezite m.j. kvuli diffovani.
 
 # indent <soubor>       # soubor ulozi jako soubor~, pak ho zformatuje a
-                        # prepise  tudiz puvodni
+                        # ulozi pod jeho nazvem (=> prepise puvodni)
 
 -> diffovani:
 
@@ -183,22 +184,23 @@ prosim:
 0	a dale .. v poradku. Vetsinou nejaky pocet vykonanych operaci.
 
 V pripade chyby nechte nastavene errno, pripadne nastavte dle sve
-linbosti. Chyby dokumentujeme pomoci tagu exception v doxygenu.
+libosti. Chyby dokumentujeme pomoci tagu exception v doxygenu.
 
 Na retezcove funkce prosim pouzivejte volani stejne jako ma napriklad
-sprintf, tj. int <funkce>(char *string, atd..).
+sprintf, tj. int <funkce>(char *string, atd..) (tj. nevracim nikdy
+ukazatel na char).
 
 3) Testy
 Pokud potrebujete neco otestovat, zalozte na to soubor test.c v
 prislusnem adresary.
 
 Dany soubour musi po zavolani projet vsechny testy, ktere do neho
-napisete, v pripade problemu skoncit assert em, v pripade
-bezproblemoveho chodu vratit 0.
+napisete, v pripade problemu skoncit assert em (viz man assert), v
+pripade bezproblemoveho chodu vratit 0.
 
 Snazte se hlidat si buffer overflow. 
 
 Az budu mit cas najit nejakou licenci, tak ji najdu. Zatim pocitejte s
-GNU licencovanim. Nejake ty hlavicky pak uz nejak pridame.
+GPL licencovanim. Nejake ty hlavicky pak uz nejak pridame.
 
 petr <petr@lascaux.asu.cas.cz>
