@@ -98,7 +98,8 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   printf ("reading finished\n");
 
-  if (fits_write_image_info (&receiver, image) || fits_close (&receiver))
+  if (fits_write_image_info (&receiver, image, NULL)
+      || fits_close (&receiver))
     {
       perror ("camc data_handler fits_write");
       return -1;
@@ -120,7 +121,7 @@ expose (int target_id, int observation_id, int npic)
       printf ("exposure countdown %i..\n", npic);
       if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
-	  devcli_command (camd_id, NULL, "expose 0 120"))
+	  devcli_command (camd_id, NULL, "expose 0 1 120"))
 	return -1;
       t = time (NULL);
       info = (struct image_info *) malloc (sizeof (struct image_info));
@@ -301,12 +302,6 @@ main (int argc, char **argv)
       		                  perror ("devcli_write_read"); \
 				  exit (EXIT_FAILURE); \
 				}
-  CAMD_WRITE_READ ("ready");
-  CAMD_WRITE_READ ("info");
-
-  TELD_WRITE_READ ("ready");
-  TELD_WRITE_READ ("info");
-
   while (1)
     {
       pthread_mutex_lock (&observing_lock);
@@ -316,6 +311,14 @@ main (int argc, char **argv)
 	}
       printf ("Starting observing %i tar_id: %i\n", observing.id,
 	      observing.tar_id);
+
+      CAMD_WRITE_READ ("ready");
+      CAMD_WRITE_READ ("info");
+
+      TELD_WRITE_READ ("ready");
+      TELD_WRITE_READ ("info");
+
+
       devcli_server_command (NULL, "priority 200");
 
       printf ("waiting for priority\n");
