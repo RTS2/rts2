@@ -16,6 +16,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <pthread.h>
+#include <getopt.h>
 
 #include <argz.h>
 
@@ -24,7 +25,13 @@
 #include "../utils/devdem.h"
 #include "../status.h"
 
-#define PORT    5555
+#define SERVERD_PORT    	5557	// default serverd port
+#define SERVERD_HOST		"localhost"	// default serverd hostname
+
+#define DEVICE_PORT		5556	// default camera TCP/IP port
+#define DEVICE_NAME 		"teld"	// default camera name
+
+#define TEL_PORT		"/dev/ttyS0"	// default telescope port
 
 // macro for telescope calls, will write error
 #define tel_call(call)   if ((ret = call) < 0) \
@@ -208,12 +215,88 @@ exit_handler ()
 }
 
 int
-main (void)
+main (int argc, char **argv)
 {
   char *stats[] = { "telescope" };
+
+  char *tel_port = TEL_PORT;
+
+  char *serverd_host = SERVERD_HOST;
+  uint16_t serverd_port = SERVERD_PORT;
+
+  char *device_name = DEVICE_NAME;
+  uint16_t device_port = DEVICE_PORT;
+
+  char *hostname = NULL;
+  int c;
+
 #ifdef DEBUG
   mtrace ();
 #endif
+
+  /* get attrs */
+  while (1)
+    {
+      static struct option long_option[] = {
+	{"tel_port", 1, 0, 'l'},
+	{"port", 1, 0, 'p'},
+	{"serverd_host", 1, 0, 's'},
+	{"serverd_port", 1, 0, 'q'},
+	{"device_name", 1, 0, 'd'},
+	{"help", 0, 0, 0},
+	{0, 0, 0, 0}
+      };
+      c = getopt_long (argc, argv, "l:p:s:q:h", long_option, NULL);
+
+      if (c == -1)
+	break;
+
+      switch (c)
+	{
+	case 'l':
+	  tel_port = optarg;
+	  break;
+	case 'p':
+	  device_port = atoi (optarg);
+	  if (device_port < 1 || device_port == UINT_MAX)
+	    {
+	      printf ("invalid device port option: %s\n", optarg);
+	      exit (EXIT_FAILURE);
+	    }
+	  break;
+	case 's':
+	  serverd_host = optarg;
+	  break;
+	case 'q':
+	  serverd_port = atoi (optarg);
+	  if (serverd_port < 1 || serverd_port == UINT_MAX)
+	    {
+	      printf ("invalid serverd port option: %s\n", optarg);
+	      exit (EXIT_FAILURE);
+	    }
+	  break;
+	case 'd':
+	  device_name = optarg;
+	  break;
+	case 0:
+	  printf
+	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd");
+	  exit (EXIT_SUCCESS);
+	case '?':
+	  break;
+	default:
+	  printf ("?? getopt returned unknow character %o ??\n", c);
+	}
+    }
+
+  if (optind != argc - 1)
+    {
+      printf ("hostname wasn't specified\n");
+      exit (EXIT_FAILURE);
+    }
+
+  hostname = argv[argc - 1];
+
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
@@ -223,8 +306,15 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
+  if (tel_connect (tel_port) < 0)
+    {
+      syslog (LOG_ERR, "tel_connect: %s", strerror (errno));
+      exit (EXIT_FAILURE);
+    }
+
   if (devdem_register
-      ("localhost", 5557, "teld", DEVICE_TYPE_MOUNT, PORT) < 0)
+      (serverd_host, serverd_port, device_name, DEVICE_TYPE_MOUNT, hostname,
+       device_port) < 0)
     {
       perror ("devser_register");
       exit (EXIT_FAILURE);
@@ -232,11 +322,5 @@ main (void)
 
   atexit (exit_handler);
 
-  if (tel_connect ("/dev/ttyS0") < 0)
-    {
-      syslog (LOG_ERR, "tel_connect: %s", strerror (errno));
-      exit (EXIT_FAILURE);
-    }
-
-  return devdem_run (PORT, teld_handle_command);
+  return devdem_run (device_port, teld_handle_command);
 }
