@@ -15,13 +15,16 @@ struct target
   double dec;
   time_t ctime;
   int tolerance;
+  int moved;
   struct target *next;
 };
 
 extern int
 get_next_plan (struct target *plan, int selector_type,
-	       time_t * obs_time, int number, float exposure);
-extern int make_plan (struct target **plan, float exposure);
+	       time_t * obs_time, int number, float exposure, int state,
+	       float lon, float lat);
+extern int make_plan (struct target **plan, float exposure, float lon,
+		      float lat);
 extern void free_plan (struct target *plan);
 
 #endif /* __RTS_SELECTOR__ */
