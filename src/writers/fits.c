@@ -5,6 +5,8 @@
  */
 
 #include <string.h>
+#include <errno.h>
+#include <malloc.h>
 
 #include "fitsio.h"
 #include "fits.h"
@@ -13,15 +15,57 @@
 #define fits_call(call) if (call) fits_report_error(stderr, status);
 
 /*!
+ * Init fits data.
+ *
+ * @param receiver 	receiver structure
+ * @param expected_size	expected data size, including header
+ * @param filename	filename to store result fits, in fitsio
+ * 			notation
+ *
+ * @return 0 on success, -1 and set errno on error
+ */
+int 
+fits_init (struct fits_receiver_data *receiver, size_t expected_size, char *filename)
+{
+   int status;
+
+   fits_clear_errmsg ();
+
+   receiver->offset = 0;
+   receiver->size = 0;
+
+   status = 0;
+ 
+   if (fits_create_file (&(receiver->ffile), filename, &status))
+   {
+     fits_report_error (stderr, status);
+     errno = EINVAL;
+     return -1;
+   }
+
+   if (expected_size <= 0)
+   {
+	   errno = EINVAL;
+	   return -1;
+   }
+   if (! (receiver->data = malloc (expected_size)))
+   {
+	   errno = ENOMEM;
+	   return -1;
+   }
+   receiver->size = expected_size;
+   return 0;
+}
+
+/*!
  * Receive callback function.
  * 
  * @param data		received data
  * @param size		size of receive data
- * @param attrs		attributes passed during call to readout init.
+ * @param receiver	holds persistent data specific informations
  *
  * @return 0 if we can continue receiving data, < 0 if we don't like to see more data.
  */
-
 int
 fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 {
