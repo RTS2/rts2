@@ -1,0 +1,18 @@
+\section{Zpracování snímkù}
+
+Pøijaté snímky je potøeba zpracovat. 
+
+Nejdøíve je potøeba je zkalibrovat, to znamená zajistit, aby namìøené hodnoty
+na rùzných místech snímku odpovídali skuteèné intenzitì dopadajícího záøení.
+Snímky se kalibrují odeètením temného snímku a vydìlením flat fieldem.
+Kalibraèní a flat snímky je vhodné poøizovat automaticky.
+
+Dále jsou na snímkách pomocí programu sextractor detekovány hvìzdy.
+Sextractor detekuje hvìzdy lokálním prahování.
+
+Pozice detekovaných hvìzd je porovnána s katalogem. Pokud je zji¹tìna schoda,
+do hlavièky snímku je pøidána WCS informace a snímek je vlo¾en do databáze
+snímkù. Jinak je snímek oznaèen ke smazání.
+
+Pro dal¹í zpracování, napøíklad skládání snímkù nebo vytváøení mozaik, je k
+dispozici balík \cite{IRAF}.

@@ -47,7 +47,19 @@ optimalizovat výkon chlazení. Tento algoritmus byl po nìkolika
 mìsících pozorování odstranìn} víme, ¾e nemá smysl teplotu èipu v
 prùbìhu noci mìnit - ka¾dá zmìna pøiná¹í více problémù ne¾ u¾itku.
 
+Aby bylo temných snímkù potøeba co nejménì, je vhodné poøizovat snímky na co
+nejmen¹ím poètu teplot. U systému BART se osvìdèily pìtistupòové kroky.
+
+\subsection{Nastavení teploty kamery}
+
 \dia{state-cooling}{Stavový diagram chlazení CCD kamery}
+
+Pøed zaèátkem pozorování je spu¹tìno chlazení na maximální výkon. V okam¾iku
+zaèátku pozorování je zji¹tìna aktuální teplota CCD èipu $ccd$, která je
+zaokrohlen smìrem nahoru k nejbli¾¹ímu stupni $step$ a na tuto teplotu je
+nastaveno chlazení. Obsluha má mo¾nost teplotu a výkon chlazení kontrolovat, a
+podle potøeby mìnit. Po skonèení pozorování nebo pøi vypnutí systému je
+chlazení vypnuto.
 
 \begin{description}
 
@@ -58,3 +70,16 @@ prùbìhu noci mìnit - ka¾dá zmìna pøiná¹í více problémù ne¾ u¾itku.
 \item[tem] chlazení se sna¾í udr¾et teplotu èipu na nastavené hodnotì.
 
 \end{description}
+
+\subsection{Dostupné informace}
+
+\begin{itemize}
+
+\item chlazení kamery - cílová teplota, procentní vyjádøení výkonu, teplota
+èipu, teplota okolí
+
+\item velikost snímaného pole
+
+\item velikost výøezu ze snímaného pole
+
+\end{itemize}

@@ -30,6 +30,17 @@ se myslí primárnì jejich vyhodnocení a vypoèítání chyby v poloze.
 Mimo to nám ¹lo pøi návrhu o maximální dìlení funkcí na podfunkce,
 a podporu tohoto dìlení ve struktuøe programu.
 
+Pøi vyèítání snímku je poèítaè, který vyèítání øídí, zatí¾en natolik,
+¾e nemá moc význam uva¾ovat nad nìjaké vá¾nìj¹í, na CPU nároènìj¹í
+analýze snímku.
+
+Proto má význam celou architekturu navhrnout tak, aby ke kameøe
+(pøípadnì kamerám) byl pøipojen poèítaè, který by slou¾il jako server
+- zpracovával po¾adavky na kameru a poskytoval odpovìdi o~jejím stavu.
+
+Je tedy vhodné mít minimálnì dvì, navzájem spojené zaøízení, z nich¾ jedno
+øídí vyèítání z kamery a druhé se stará o zpracování snímkù.
+
 Základní my¹lenka je prostá - nad spoleèným komunikaèním rozhraním
 pobì¾í malé jednoúèelové procesy, které budou vykonávat svoji
 specifickou èinnost, a budou komunikovat s ostatnímy procesy.
@@ -54,6 +65,3 @@ Nástin jejich uspoøádání, spoleènì s centrálním serverem, je v
 diagramu \ref{fig:overview}.
 
 \dia{overview}{Pøehled procesù a jejich komunikace - základní stav}
-
-Klienti komunikují s centrálním serverem a servery zaøízení, servery zaøízení
-komunikují s centrálním serverem, s klienty a mezi sebou navzájem.

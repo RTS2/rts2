@@ -1,0 +1,26 @@
+Pro komunikaci mezi jednotlivými procesy mù¾eme buïto pou¾ít existující
+sí»ové knihovny, nebo si navhrnout knihovnu a protokol vlastní.
+
+V souèasné dobì není problém sehnat za nízký finaèní obnos, nebo dokonce
+zadarmo poèítaèe s procesorem tøídy Pentium, pracujících na frekvencích kolem
+100 Mhz a vybavené nìkolik mb pamìti. Tyto poèítaèe se pøímo ideálnì hodí pro
+vyèítání kamer pøipojených na paralerní port. Jsou pro to vybaveny jak
+dostateènì rychlím procesore, tak dostaèujícím mno¾ství pamìti. Systém musí být navr¾en tak, aby bylo mo¾né tyto poèítaèe pou¾ít. 
+
+Vzhledem k malému mno¾ství pamìti nepøipadá v úvahu pou¾ít pro programování
+tìchto poèítaèù jazyk Java.
+
+Na øízení komuikace tedy není mo¾né pou¾ít jakýkoliv protokol, který vy¾aduje
+pro svùj bìh Javu.
+
+Zbývající komunikaèní knihovny jsou vìt¹inou napsány a pou¾itelné v jazyce C,
+nìkteré potøebují C++. Knihovny pou¾itelné v jazyce C++ mívají implemetaci v
+jiných jazycích, napøíklad jazyku Perl.
+
+Zkou¹el jsem pro komunikaci pou¾ít knihovnu CORBA. Pro její pou¾ití je ale
+potøeba mít pu¹tìný alespoò jeden CORBA naming server, který si usurpuje dost
+z pamìti. A ani její klienti pøíli¹ ne¹etøí pamì» poèítaèe.
+
+Nakonec jsem se rozhodl pro implemetaci vlastní komunikaèní knihovny, která
+stavìná na pro ovládání dalekohledu a bude pokud klást malé nároky na
+systémové prostøedky.

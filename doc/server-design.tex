@@ -12,7 +12,8 @@ pøipojeným klientùm.
 
 \subsubsection{Správa vláken}
 
-Pro vykonávání funkcí, které trvají del¹í dobu, se na serveru pou¾ívají 
+Pro vykonávání funkcí, které trvají del¹í dobu, se na serveru pou¾ívají
+vlákna. 
 
 \subsubsection{Pøenos dat}
 
@@ -20,13 +21,7 @@ Data vznikají na poèítaèi, ke kterému je pøipojena kamera. Odtud je
 potøeba je dostat nìkam na disk, do nìjakého prohlí¾eèe obrázkù,
 k~nìjakému zpracování.
 
-Pøi vyèítání snímku je poèítaè, který vyèítání øídí, zatí¾en natolik,
-¾e nemá moc význam uva¾ovat nad nìjaké vá¾nìj¹í, na CPU nároènìj¹í
-analýze snímku.
 
-Proto má význam celou architekturu navhrnout tak, aby ke kameøe
-(pøípadnì kamerám) byl pøipojen poèítaè, který by slou¾il jako server
-- zpracovával po¾adavky na kameru a poskytoval odpovìdi o~jejím stavu.
 
 \subsubsection{Jak ovládat zaøízení}
 
@@ -190,11 +185,44 @@ zase tak velký problém, na jeho vyøe¹ení se nabízí hned nìkolik metod:
 \end{itemize}
 
 TCP/IP sockety jsou uvedeny pouze pro úplnost. Vytváøení a udr¾ování tohoto
-typus pojení vy¾aduje nejvíce systémových prostøedkù, je výhodné pro
+typu spojení vy¾aduje nejvíce systémových prostøedkù, je výhodné pro
 komunikaci pøes sí», ale je zbyteèné pro komunikaci v rámci jednoho poèítaèe.
 
-Prostøedky IPC vypadají nejlépe. Pomocí rozli¹ení pøes typ zprávy umo¾òují
+Prostøedky IPC vypadají nejlépe. Pomocí rozMoli¹ení pøes typ zprávy umo¾òují
 doruèení zprávy pouze vybranému pøíjemci. Sdílená pamìt mù¾e slou¾it pro
 ukládání informací, ke kterým potøebují pøistupovat jednotlivá spojení -
 napøíklad o stavu zaøízení. IPC semafory lze pou¾ít na hlídání kritické sekce
 - zápisu do sdílené pamìti.
+
+\subsection{Logování}
+
+Servery logují informace pomocí syslogu. Rotace jejich logù je zaji¹tìna
+utilitou logrotate.
+
+\subsection{Modularita}
+
+Ovladaèe jednotlivých zaøízení jsou psány jako knihovny, které se pøi pøekladu
+slinkují s kódem serveru zaøízení.
+
+Jinou mo¾ností zaji¹tìní modularity je napsání ovladaèù zaøízení a jejich
+pou¾ití. Vzhledem k nároènosti této mo¾nosti a nedostatku èasu k její
+realizaci nedo¹lo.
+
+\subsection{U¾ivatelské rozhranní}
+
+U¾ivatelé mohou ovládat dalekohled prostøednictvím monitorovacího programu.
+Ten bì¾í pod konzolí.
+
+Grafické u¾ivatelské rozhranní je pro monitoring dalekohledu zbyteèné. Pro
+výbìr snímkù z datábaze slou¾í webové rozhranní.
+
+Pro prohlí¾ení snímkù staèí z Internetu stáhnout libovolný prohlí¾eè. Rozsah
+funkcí, kterými souèasné prohlí¾eèe CCD snímkù disponují by se mì v rámci
+diplomové práce nepodaøilo nikdy implementovat. Z prohlí¾eèù se nám osvìdèila
+DS9, pøípadnì evropský SkyCat.
+
+Prohlí¾eè DS9 vyniká rozhranním XPA a propojením s balíkem pro zpracování
+snímkù \cite{IRAF}.
+
+SkyCat nabízí o trochu pøíjemnìj¹í ovládání, a hlavnì mo¾nost pøekreslit pøes
+snímek pozice hvìzdných a jiných objektù uvedených v katalozích.

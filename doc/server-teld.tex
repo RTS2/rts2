@@ -1,13 +1,30 @@
 \section{teld}
 
-\subsection{Zobrazované informace}
-
 Nejdùle¾itìj¹í informací od dalekohledu je jeho poloha.
 
 Je rozumné, aby se dalekohledu posílaly absolutní souøadnice daného objektu.
 Pro výpoèet polohy, na kterou se má nastavit, pak dalekohled potøebuje znát
-místní hvìzdný èas. Ten je mo¾né zadávat ruène \footnote{v zjednodu¹eném
-pohledu 
+místní hvìzdný èas. Ten je mo¾né vypoèítat z místního èasu a zemìpisné ¹íøky.
+
+Pøi zji¹»ování polohy dalekohledu je mo¾né pou¾ít buïto relativní, nebo
+absolutní èítaèe. Relativní èítaèe jsou jednodu¾¹í a levnìj¹í, absolutní
+slo¾itìj¹í a dra¾¹í.
+
+Relativní èidla poèítají zmìnu polohu dalekohledu. Zmìnu polohy je mo¾né
+poèítat buïto pøímo z doby chodu, pøípadnì poètu cyklù motorù ovládájících
+dalekohled, nebo pøesnìji pomocí zpìtnovazební èidel, umístìných na osách
+dalekohledu. Zpìtnovazební èidla detekují zmìnu pozice pomocí rùzných
+principù, buïto optických, nebo mechanických.
+
+Relativní èidla je potøeba pøed zaèátkem pozorování nastavit. Nìkteré systémy
+motorù s èidli jsou po zapnutí schopny najít pevnou pozici, home pozici, u
+které vìdí, jaké má souøadnice. Tyto pak není potøeba nastavovat.
+
+Absolutní èidla jsou vìt¹inou øe¹ena mechanicky, napøíklad jako velmi jemný
+potenciometr.
+
+Dostupné absolutní i relativní èidla, jejich pøesnost a cena je velmi dobøe
+popsána v \cite{telcontrol}.
 
 \subsection{Stavový diagram}
 
@@ -20,3 +37,95 @@ pohledu
 \item[moving] montá¾ se pohybuje
 
 \end{description}
+
+\subsection{Korekce}
+
+Korekce jsou poèítány z pozice dalekohledu v dobì expozice a skuteèené pozice
+støedu snímkù, zji¹tìné dodateènou astrometrií. Oznaème $a$ pozici dalekohledu
+v dobì expozice, $b$ dodateènì zji¹tìnou pozici, pak zji¹tìná chyba $\delta$
+je rovna $a - b$. Pokud by jsme meli jenom jednu korekci, staèí zmìnit o tuto
+hodnotu èítaèe dalekohledu, tedy nastavit je na hodnotu $a` - \delta$, kde
+$a`$ je aktuální pozice dalekohledu v dobì aplikace chyby.
+
+Chyby jsou dopoèítávány v rùzném poøadí a jejich výpoèet trvá rùznì dlouho
+dobu. Mù¾e nastat i tato situace:
+
+\begin{itemize}
+
+\item zjistíme nastavení dalekohledu $a_1$, získáme z CCD kamery snímek $img_1$
+
+\item dalekohledem pøejedeme na novou pozici $a^2$
+
+\item zjistíme orientaci dalkohledu $a^2$, získáme snímek $img_2$
+
+\item dopoèítáme chybu $\delta_1$, zmìníme o její hodnotu èítaèe dalekohledu
+
+\item dalekohledem pøejedeme na novou pozici $a^3$
+
+\item dopoèítáme chybu $\delta_2$
+
+\end{itemize}
+
+V tomto okam¾iku je zmìnit hodnoty èítaèe o $\delta_2$ - $\delta_1$. Obecnì je
+potøeba mìnit èítaèe pro snímek $img_a$ o 
+
+$\delta_c - \sum\limits_{i=a}^{c-1} \delta_i$
+
+Tohoto cíle je v ovládání serveru dosa¾eno pomocí cyklické fronty a promìnné
+$correction\_mark$. Promìnná $correction\_mark$ neudává index snímku, je
+zvìt¹ována v¾dy o jednièku pøi zmìnì hodnoty èítaèù, hodnoty $\delta$ nejsou
+evidovány po snímkách, ale po korekcích.
+
+% Alternativní zmatenìj¹í popis:
+% 
+% Pro korekce je definován èítaè. Jeho hodnota mù¾e být pro ka¾dé spojení jiná.
+% Na zaèátku je nastaven na nulu. Aktuální hodnotu tohoto èítaèe budeme
+% oznaèovat $cm$.
+% 
+% Souèasnì s èítaèem je k dispozici cyklická fronta, která slou¾í pro ukládání
+% odchylek od poslední známé pozice. Velikost této fronty oznaèíme jako $cb$. Fronta obsahuje v¾dy korekci pro rektascensi a deklinaci, a je na zaèátku
+% inicializována na nulu.
+% 
+% Po¾adavky na korekci dalekohledu obsahují hodnotu korekèního èítaèe, $cr$.
+% Tato hodnota se rovná hodnotì korekèního èítaèe v okam¾iku poøízení informací
+% ulo¾ených ke snímku, z které se poèítají odchylky dalekohledu. Dále obsahují
+% hodnotu korekce v rektascenzi a v deklinaci. Proto¾e zpracování je stejné jako
+% pro rektascenzi, tak pro deklinaci, budeme tuto hodnotu oznaèovat $\delta$.
+% 
+% Pøi zpracování korekce se nejdøíve ovìøí, jestli její hodnota jak v
+% rektasenzi, tak v deklinaci, nepøesahuje rozumné, pøedem navolenou mez. Tento
+% test slou¾í chrání dalekohled proti ¹patnému nastavení hodnot relativních
+% senzorù, které by mìlo v nejhor¹ím pøípadì za následek znièení dalekohledu.
+% Software na vyhodnocování snímkù doká¾e najít chybu v jistém rozmezí, není
+% urèen na to, aby urèil pozici snímku na celé obloze.
+% 
+% Pokud platí: $cm - cb > cr$, je korekce pøíli¹ stará, nejsou k ní známy
+% pøedchozí korekce a korekce tedy nemù¾e být pou¾ita.
+% 
+% V opaèném pøípadì je k hodnotì korekce pøiètena hodnota obsa¾ená v korekèní
+% frontì na pozici $cr$. K polím $cr$ a¾ $cm$ je pøiètena hodnota
+% $\delta$, $cm$ je zvìt¹ena o jednièku a do fronty na pozici $cm$ je ulo¾ena
+% nula.
+% 
+% Výsledná korekce je pøedána obslu¾né rutinì dalekohledu.
+% 
+% Tímto postupem je zaji¹tìno, ¾e ka¾dá korekce bude nejdøíve opravena o hodnotu
+% korekcí, které byly aplikovány pøed ní. Platí, ¾e 
+% 
+% $\delta' = \delta - \sum\limits_{i=cr}^cm korekce[i]$
+
+\subsection{Dostupné informace}
+
+\begin{itemize}
+
+\item aktuální poloha dalekohledu - rektascenze, deklinace
+
+\item azimutální souøadnice - azimut, vý¹ka nad obzorem
+
+\item místní hvìzdný èas
+
+\item svìtový èas - UT
+
+\item zemìpisná poloha dalekohledu - zemìpisná délka, zemìpisná ¹íøka
+
+\end{itemize}
