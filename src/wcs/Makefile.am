@@ -2,6 +2,8 @@
 
 bin_PROGRAMS = rts2-fits2db rts2-f2cj
 
+bin_SCRIPTS = rts2-findimages
+
 noinst_HEADERS = logo.h
 
 rts2_fits2db_SOURCES = fits2db.c
