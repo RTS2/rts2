@@ -9,40 +9,44 @@
 #include "status.h"
 #include "config.h"
 
-#include <unistd.h>
-#include <stdio.h>
-#include <mcheck.h>
+#include <errno.h>
 #include <getopt.h>
-#include <stdlib.h>
+#include <mcheck.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <libnova.h>
 
 int line_count = 0;
 
+FILE *out;
+
 void
 eprintline ()
 {
   if (line_count % 2)
-    printf ("\n");
+    fprintf (out, "\n");
   line_count = 0;
 }
 
 void
-eprintf (char *name, char *format, ...)
+efprintf (char *name, char *format, ...)
 {
   int x;
   va_list vl;
   va_start (vl, format);
-  printf ("%15s : ", name);
-  x = vprintf (format, vl);
+  fprintf (out, "%15s : ", name);
+  x = vfprintf (out, format, vl);
   if (line_count % 2)
-    printf ("\n");
+    fprintf (out, "\n");
   else
     for (; x < 15; x++)
-      printf (" ");
+      fprintf (out, " ");
   line_count++;
   va_end (vl);
 }
@@ -53,13 +57,13 @@ status_serverd (const struct device *dev)
   struct client *cli;
   struct serverd_info *info = (struct serverd_info *) &dev->info;
   if (line_count % 2)
-    printf ("\n");
+    fprintf (out, "\n");
   line_count = 0;
   for (cli = info->clients; cli; cli = cli->next)
     {
       eprintline ();
-      eprintf ("Client", "%3i%c%s", cli->priority, cli->have_priority,
-	       cli->status_txt);
+      efprintf ("Client", "%3i%c%s", cli->priority, cli->have_priority,
+		cli->status_txt);
     }
 }
 
@@ -72,44 +76,44 @@ status_telescope (const struct device *dev)
   struct ln_hrz_posn position;
   double st;
   st = info->siderealtime + info->longtitude / 15.0;
-  eprintf ("longtitude", "%+03.3f", info->longtitude);
-  eprintf ("latitude", "%+03.3f", info->latitude);
-  eprintf ("ra", "%.3f/%c", info->ra, info->flip ? 'f' : 'n');
-  eprintf ("dec", "%+.3f", info->dec);
+  efprintf ("longtitude", "%+03.3f", info->longtitude);
+  efprintf ("latitude", "%+03.3f", info->latitude);
+  efprintf ("ra", "%.3f/%c", info->ra, info->flip ? 'f' : 'n');
+  efprintf ("dec", "%+.3f", info->dec);
   object.ra = info->ra;
   object.dec = info->dec;
   observer.lng = info->longtitude;
   observer.lat = info->latitude;
   get_hrz_from_equ_sidereal_time (&object, &observer, st, &position);
-  eprintf ("az", "%i (%s)", (int) position.az, hrz_to_nswe (&position));
-  eprintf ("alt", "%i", (int) position.alt);
-  eprintf ("axis count 0", "%f", info->axis0_counts);
-  eprintf ("axis count 1", "%f", info->axis1_counts);
-  eprintf ("siderealtime", "%f", info->siderealtime);
-  eprintf ("lst", "%f", st);
+  efprintf ("az", "%i (%s)", (int) position.az, hrz_to_nswe (&position));
+  efprintf ("alt", "%i", (int) position.alt);
+  efprintf ("axis count 0", "%f", info->axis0_counts);
+  efprintf ("axis count 1", "%f", info->axis1_counts);
+  efprintf ("siderealtime", "%f", info->siderealtime);
+  efprintf ("lst", "%f", st);
 }
 
 void
 status_camera (const struct device *dev)
 {
   struct camera_info *info = (struct camera_info *) &dev->info;
-  eprintf ("type", "%s", info->type);
-  eprintf ("SN", "%s", info->serial_number);
-  eprintf ("set temp.", "%+03.3f oC", info->temperature_setpoint);
-  eprintf ("air temp.", "%+03.3f oC", info->air_temperature);
-  eprintf ("CCD temp.", "%+03.3f", info->ccd_temperature);
-  eprintf ("cool pwr", "%03.1f %%", info->cooling_power / 10.0);
-  eprintf ("fan", info->fan ? "on" : "off");
+  efprintf ("type", "%s", info->type);
+  efprintf ("SN", "%s", info->serial_number);
+  efprintf ("set temp.", "%+03.3f oC", info->temperature_setpoint);
+  efprintf ("air temp.", "%+03.3f oC", info->air_temperature);
+  efprintf ("CCD temp.", "%+03.3f", info->ccd_temperature);
+  efprintf ("cool pwr", "%03.1f %%", info->cooling_power / 10.0);
+  efprintf ("fan", info->fan ? "on" : "off");
 }
 
 void
 status_dome (struct device *dev)
 {
   struct dome_info *info = (struct dome_info *) &dev->info;
-  eprintf ("type", "%s", info->type);
+  efprintf ("type", "%s", info->type);
   eprintline ();
-  eprintf ("temperature", "%+.2f oC", info->temperature);
-  eprintf ("humidity", "%.2f %%", info->humidity);
+  efprintf ("temperature", "%+.2f oC", info->temperature);
+  efprintf ("humidity", "%.2f %%", info->humidity);
 }
 
 void
@@ -118,73 +122,73 @@ print_device (struct device *dev)
   int ret, ret_code, i;
   line_count = 0;
   if ((ret = devcli_command (dev, &ret_code, "ready")))
-    eprintf ("ready", "%i", ret);
-  eprintf ("ready ret_c", "%i", ret_code);
+    efprintf ("ready", "%i", ret);
+  efprintf ("ready ret_c", "%i", ret_code);
   eprintline ();
   if ((ret = devcli_command (dev, &ret_code, "base_info")))
-    eprintf ("base_info", "%i", ret);
-  eprintf ("base_info ret_c", "%i", ret_code);
+    efprintf ("base_info", "%i", ret);
+  efprintf ("base_info ret_c", "%i", ret_code);
   eprintline ();
   if ((ret = devcli_command (dev, &ret_code, "info")))
-    eprintf ("info", "%i", ret);
-  eprintf ("info ret_c", "%i", ret_code);
+    efprintf ("info", "%i", ret);
+  efprintf ("info ret_c", "%i", ret_code);
   eprintline ();
   if (*dev->name)
     {
-      eprintf ("device name", "%s", dev->name);
+      efprintf ("device name", "%s", dev->name);
       eprintline ();
-      eprintf ("hostname", "%s", dev->hostname);
-      eprintf ("port", "%i", dev->port);
+      efprintf ("hostname", "%s", dev->hostname);
+      efprintf ("port", "%i", dev->port);
       eprintline ();
     }
   switch (dev->type)
     {
     case DEVICE_TYPE_MOUNT:
-      eprintf ("type", "%i (MOUNT)", dev->type);
+      efprintf ("type", "%i (MOUNT)", dev->type);
       eprintline ();
       if (ret_code == 0)
 	status_telescope (dev);
       break;
     case DEVICE_TYPE_CCD:
-      eprintf ("type", "%i (CCD)", dev->type);
+      efprintf ("type", "%i (CCD)", dev->type);
       eprintline ();
       if (ret_code == 0)
 	status_camera (dev);
       break;
     case DEVICE_TYPE_DOME:
-      eprintf ("type", "%i (DOME)", dev->type);
+      efprintf ("type", "%i (DOME)", dev->type);
       eprintline ();
       if (ret_code == 0)
 	status_dome (dev);
       break;
     case DEVICE_TYPE_SERVERD:
-      eprintf ("type", "%i (Central server)", dev->type);
+      efprintf ("type", "%i (Central server)", dev->type);
       eprintline ();
       status_serverd (dev);
       break;
     default:
-      printf ("unknow device type: %i\n", dev->type);
+      fprintf (out, "unknow device type: %i\n", dev->type);
     }
   if (ret_code != 0)
     {
       eprintline ();
-      printf ("\n      NOT CONNECTED / STATUS UNKNOW!!!\n");
+      fprintf (out, "\n      NOT CONNECTED / STATUS UNKNOW!!!\n");
     }
   line_count = 1;
-  printf ("\n");
-  eprintf ("states #", "%i", dev->status_num);
+  fprintf (out, "\n");
+  efprintf ("states #", "%i", dev->status_num);
   line_count = 0;
   for (i = 0; i < dev->status_num; i++)
     {
       struct devconn_status *st = &dev->statutes[i];
       if (*st->name)
 	{
-	  eprintf ("status", "%s", st->name);
-	  eprintf ("value", "%s (%i)", devcli_status_string (dev, st),
-		   st->status);
+	  efprintf ("status", "%s", st->name);
+	  efprintf ("value", "%s (%i)", devcli_status_string (dev, st),
+		    st->status);
 	}
     }
-  printf ("\n Device %s status end.\n", dev->name);
+  fprintf (out, "\n Device %s status end.\n", dev->name);
 }
 
 int
@@ -196,6 +200,7 @@ main (int argc, char **argv)
   struct device *dev;
   time_t t;
   char *subject = NULL;
+  char *mail_to = NULL;
 
 #ifdef DEBUG
   mtrace ();
@@ -207,9 +212,10 @@ main (int argc, char **argv)
 	{"mail", 1, 0, 'm'},
 	{"help", 0, 0, 'h'},
 	{"port", 1, 0, 'p'},
+	{"subject", 1, 0, 's'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "m:hp:", long_option, NULL);
+      c = getopt_long (argc, argv, "m:hp:s:", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -217,31 +223,34 @@ main (int argc, char **argv)
       switch (c)
 	{
 	case 'h':
-	  printf ("Output status report (with optional formating)\n"
-		  " Invocation: \n"
-		  "\t%s [options] <centrald_host>\n"
-		  " Options:\n"
-		  "\t-h|--help			print that help message\n"
-		  "\t-m|--mail <subject_prefix>	print at the begining status line\n"
-		  "\t				so we can feed it to mail command\n"
-		  "\t-p|--port <port_num>		port of the server\n"
-		  " Part of rts2 package.\n", argv[0]);
+	  fprintf (out, "Output status report (with optional formating)\n"
+		   " Invocation: \n"
+		   "\t%s [options] <centrald_host>\n"
+		   " Options:\n"
+		   "\t-h|--help			print that help message\n"
+		   "\t-m|--mail <addresses>	pass output to mail with adresses\n"
+		   "\t-p|--port <port_num>	port of the server\n"
+		   "\t-s|--subject <subject>	mail subject\n"
+		   " Part of rts2 package.\n", argv[0]);
 	  exit (EXIT_SUCCESS);
 	case 'm':
-	  subject = optarg;
+	  mail_to = optarg;
 	  break;
 	case 'p':
 	  port = atoi (optarg);
 	  break;
+	case 's':
+	  subject = optarg;
+	  break;
 	case '?':
 	  break;
 	default:
-	  printf ("?? getopt returned unknow character %o ??\n", c);
+	  fprintf (out, "?? getopt returned unknow character %o ??\n", c);
 	}
     }
   if (optind != argc - 1)
     {
-      printf ("You must pass server address\n");
+      fprintf (out, "You must pass server address\n");
       exit (EXIT_FAILURE);
     }
   server = argv[optind++];
@@ -250,58 +259,83 @@ main (int argc, char **argv)
 
   c = devcli_server_login (server, port, "petr", "petr");
 
-  if (subject)
+  if (mail_to)
     {
       int failed_found = 0;	// become 1 when we founded fail device and print
       // warning prefix
       int ret;
-      printf ("Subject: %s %s", subject, ctime (&t));
+      char mail_command[500];
+      strcpy (mail_command, "mail -s \"");
+      strcat (mail_command, subject);
       if (c == -1)
 	{
-	  printf (" FATAL ERROR - cannot connect to centrald!\n.\n");
+	  strcat (mail_command,
+		  " FATAL ERROR - cannot connect to centrald!\n.\n");
+	}
+      else
+	{
+	  for (dev = devcli_devices (); dev; dev = dev->next)
+	    {
+	      if (devcli_command (dev, &ret, "ready") == -1)
+		{
+		  char ret_code[20];
+		  if (!failed_found)
+		    {
+		      failed_found = 1;
+		      strcat (mail_command, " WARNING - FAILED DEVICE(s):");
+		    }
+		  strcat (mail_command, " ");
+		  strcat (mail_command, dev->name);
+		  sprintf (ret_code, "(%d)", ret);
+		  strcat (mail_command, ret_code);
+		}
+	    }
+	  if (!failed_found)
+	    strcat (mail_command, " ALL OK");
+	}
+      strcat (mail_command, " at ");
+      strcat (mail_command, ctime (&t));
+      mail_command[strlen (mail_command) - 1] = 0;
+      strcat (mail_command, "\" \"");
+      strcat (mail_command, mail_to);
+      strcat (mail_command, "\"");
+      out = popen (mail_command, "w");
+      if (!out)
+	{
+	  fprintf (stderr, "Error opening pipe to mail %i %s!\n", errno,
+		   strerror (errno));
 	  exit (EXIT_FAILURE);
 	}
-      for (dev = devcli_devices (); dev; dev = dev->next)
-	{
-	  if (devcli_command (dev, &ret, "ready") == -1)
-	    {
-	      if (!failed_found)
-		{
-		  failed_found = 1;
-		  printf (" WARNING - FAILED DEVICE(s):");
-		}
-	      printf (" %s(%i)", dev->name, ret);
-	    }
-	}
-      if (!failed_found)
-	printf (" ALL OK");
-      printf ("\n Full status report follows\n");
+      fprintf (out, "Full status report follows\n");
     }
 
-  printf (" Bootes status report generated at: %s", ctime (&t));
-  printf (" RTS2 " VERSION);
-  printf (" Connecting to %s:%i\n", server, port);
+  fprintf (out, " Bootes status report generated at: %s", ctime (&t));
+  fprintf (out, " RTS2 " VERSION);
+  fprintf (out, " Connecting to %s:%i\n", server, port);
   if (c == -1)
     {
-      printf ("Connection to centrald failed!\n");
+      fprintf (out, "Connection to centrald failed!\n");
       exit (EXIT_FAILURE);
     }
 
-  printf
-    ("=================================================================\n");
+  fprintf
+    (out,
+     "=================================================================\n");
 
   print_device (devcli_server ());
 
   for (dev = devcli_devices (); dev; dev = dev->next)
     {
-      printf
-	("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+      fprintf
+	(out,
+	 "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
       print_device (dev);
     }
 
   time (&t);
-  printf
-    ("==================================================================\n");
-  printf (" Status report ends at: %s", ctime (&t));
+  fprintf
+    (out,
+     "==================================================================\n");
+  fprintf (out, " Status report ends at: %s", ctime (&t));
   return 0;
 }
