@@ -1,13 +1,22 @@
 
 all: grbc
 
-include ../../make.conf
+ibas/ibas.a:
+	$(MAKE) -C ibas
 
-grbc: grbc.o db.o ../plan/db.o ../utils/devcli.a ../writers/fits.o ibas/libibas_client.a
+bacodine/bacodine.a:
+	$(MAKE) -C bacodine
+
+grbc: grbc.o ../db/db.o ../utils/devcli.a ../writers/fits.o ibas/ibas.a bacodine/bacodine.a
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 %.c: %.ec
 	@ECPG@ -o $@ $^
 
-CFLAGS += @LIBPG_CFLAGS@ -Iibas
+CFLAGS += @LIBPG_CFLAGS@ -Iibas -I@top_srcdir@/include
 LDFLAGS += @LIBS@
+
+clean:
+	$(RM) *.o
+	$(MAKE) -C bacodine clean
+	$(MAKE) -C ibas clean
