@@ -21,21 +21,21 @@
 #include "lx200.h"
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
+#include "../status.h"
 
 #define PORT    5555
-#define MAXMSG  512
 
 // macro for length test
 #define test_length(npars) if (argz_count (argv, argc) != npars + 1) { \
         devdem_write_command_end ("Unknow nmbr of params: expected %i,got %i",\
-		-301, npars, argz_count (argv, argc) ); \
+		DEVDEM_E_PARAMSNUM, npars, argz_count (argv, argc) ); \
 	return -1; \
 }
 
 // macro for telescope calls, will write error
 #define tel_call(call)   if ((ret = call) < 0) \
 {\
-	 devdem_write_command_end ("Telescope error: %s", -errno, strerror(errno));\
+	 devdem_write_command_end ("Telescope error: %s", DEVDEM_E_HW, strerror(errno));\
 	 return ret;\
 }
 
@@ -67,8 +67,8 @@ teld_handle_command (char *argv, size_t argc)
       dec = hmstod (param);
       if (isnan (ra) || isnan (dec))
 	{
-	  devdem_write_command_end ("Expected ra dec, got: %f %f", -302, ra,
-				    dec);
+	  devdem_write_command_end ("Expected ra dec, got: %f %f",
+				    DEVDEM_E_PARAMSVAL, ra, dec);
 	  ret = -1;
 	}
       else
@@ -84,8 +84,8 @@ teld_handle_command (char *argv, size_t argc)
       dec = hmstod (param);
       if (isnan (ra) || isnan (dec))
 	{
-	  devdem_write_command_end ("Expected ra dec, got: %f %f", -302, ra,
-				    dec);
+	  devdem_write_command_end ("Expected ra dec, got: %f %f",
+				    DEVDEM_E_PARAMSVAL, ra, dec);
 	  ret = -1;
 	}
       else
@@ -148,7 +148,8 @@ teld_handle_command (char *argv, size_t argc)
     }
   else
     {
-      devdem_write_command_end ("Unknow command: '%s'", -300, argv);
+      devdem_write_command_end ("Unknow command: '%s'", DEVDEM_E_COMMAND,
+				argv);
       return -1;
     }
   return ret;

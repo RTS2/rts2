@@ -19,6 +19,7 @@
 #define _GNU_SOURCE
 
 #include "devdem.h"
+#include "../status.h"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -128,7 +129,7 @@ devdem_write_command_end (char *msg_format, int retc, ...)
   vasprintf (&msg, msg_format, ap);
   va_end (ap);
 
-  ret = devdem_dprintf ("%+04i %s\n", retc, msg);
+  ret = devdem_dprintf ("%+04i %s\r\n", retc, msg);
   tmper = errno;
   free (msg);
   errno = tmper;
@@ -154,22 +155,23 @@ devdem_handle_commands (char *buffer, devdem_handle_command_t handler)
   if ((ret = argz_create_sep (buffer, ';', &argv, &argc)))
     {
       errno = ret;
-      return devdem_write_command_end (strerror (errno), -errno);
+      return devdem_write_command_end ("System: ", DEVDEM_E_SYSTEM,
+				       strerror (errno));
     }
   if (!argv)
-    return devdem_write_command_end ("Empty command", -1);
+    return devdem_write_command_end ("Empty command!", DEVDEM_E_COMMAND);
 
   while ((next_command = argz_next (argv, argc, next_command)))
     {
       if ((ret = argz_create_sep (next_command, ' ', &cargv, &cargc)))
 	{
-	  devdem_write_command_end ("Argz call error: %s", -errno,
+	  devdem_write_command_end ("Argz call error: %s", DEVDEM_E_SYSTEM,
 				    strerror (ret));
 	  goto end;
 	}
       if (!cargv)
 	{
-	  devdem_write_command_end ("Empty command!", -301);
+	  devdem_write_command_end ("Empty command!", DEVDEM_E_COMMAND);
 	  free (cargv);
 	  goto end;
 	}
@@ -303,10 +305,11 @@ send_data_thread (void *arg)
 
   if (ret)
     {
-      devdem_write_command_end ("PORT:%i %s", -errno, port, strerror (errno));
+      devdem_write_command_end ("PORT:%i %s", DEVDEM_E_SYSTEM, port,
+				strerror (errno));
     }
   else
-    devdem_write_command_end ("PORT:%i Data send", 0, port);
+    devdem_write_command_end ("PORT:%i Data send", DEVDEM_DATA, port);
   return NULL;
 }
 
@@ -337,7 +340,8 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
   if ((conn = next_free_conn_number ()) < 0)
     {
       syslog (LOG_INFO, "No new connection");
-      return devdem_write_command_end ("No new data connection", -40);
+      return devdem_write_command_end ("No new data connection",
+				       DEVDEM_E_SYSTEM);
     }
 
   data_con = &data_cons[conn];
@@ -363,7 +367,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
     }
 
   if (devdem_dprintf
-      ("connect %i %s:%i\n", conn, inet_ntoa (data_con->my_side.sin_addr),
+      ("connect %i %s:%i\r\n", conn, inet_ntoa (data_con->my_side.sin_addr),
        port) < 0)
     goto err;
 
@@ -405,7 +409,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
       errno = ret;
       return -1;
     }
-  return -3;
+  return 0;
 
 err:
   close (data_listen_sock);

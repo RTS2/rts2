@@ -22,9 +22,9 @@
 #include "sbig.h"
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
+#include "../status.h"
 
 #define PORT    5556
-#define MAXMSG  512
 
 int port;
 
@@ -54,7 +54,7 @@ start_readout (void *arg)
 // macro for length test
 #define test_length(npars) if (argz_count (argv, argc) != npars + 1) { \
         devdem_write_command_end ("Unknow nmbr of params: expected %i,got %i",\
-		-301, npars, argz_count (argv, argc) ); \
+		DEVDEM_E_PARAMSNUM, npars, argz_count (argv, argc) - 1 ); \
 	return -1; \
 }
 
@@ -64,14 +64,14 @@ start_readout (void *arg)
       chip = strtol(param, &endptr, 10); \
       if ((*endptr) || (chip < 0) || (chip >= info.nmbr_chips)) \
         {      \
-	  devdem_write_command_end ("Invalid chip: %f", -302, chip);\
+	  devdem_write_command_end ("Invalid chip: %f", DEVDEM_E_PARAMSVAL, chip);\
 	  return -1;\
 	}
 
 // Macro for camera call
 # define cam_call(call) if ((ret = call) < 0)\
 {\
-	devdem_write_command_end ("Camera erro: %s", -ret, strerror(errno));\
+	devdem_write_command_end ("Camera error: %s", DEVDEM_E_HW, sbig_show_error (ret));\
         return -1; \
 }
 
@@ -130,8 +130,8 @@ camd_handle_command (char *argv, size_t argc)
       exptime = strtof (param, NULL);
       if ((exptime <= 0) || (exptime > 330000))
 	{
-	  devdem_write_command_end ("Invalid exposure time: %f", -303,
-				    exptime);
+	  devdem_write_command_end ("Invalid exposure time: %f",
+				    DEVDEM_E_PARAMSVAL, exptime);
 	}
       else
 	{
@@ -179,7 +179,7 @@ camd_handle_command (char *argv, size_t argc)
 			   (void *) &readout[chip])))
 	{
 	  devdem_write_command_end ("While creating thread for execution: %s",
-				    -errno, strerror (errno));
+				    DEVDEM_E_SYSTEM, strerror (errno));
 	  return -1;
 	}
     }
@@ -189,8 +189,8 @@ camd_handle_command (char *argv, size_t argc)
       get_chip;
       if ((ret = pthread_cancel (thread[chip])))
 	{
-	  devdem_write_command_end ("While canceling thread: %s", -errno,
-				    strerror (errno));
+	  devdem_write_command_end ("While canceling thread: %s",
+				    DEVDEM_E_SYSTEM, strerror (errno));
 	  return -1;
 	}
     }
@@ -203,6 +203,9 @@ camd_handle_command (char *argv, size_t argc)
     {
       test_length (1);
       get_chip;
+      readout[chip].data = (void *) "test";
+      readout[chip].data_size_in_bytes = 5;
+
       ret =
 	devdem_send_data (NULL, readout[chip].data,
 			  readout[chip].data_size_in_bytes);
@@ -216,7 +219,8 @@ camd_handle_command (char *argv, size_t argc)
       cool.temperature = round (strtod (param, &endpar) * 10);
       if (endpar && !*endpar)
 	{
-	  devdem_write_command_end ("Invalit temperature: %s", -304, param);
+	  devdem_write_command_end ("Invalit temperature: %s",
+				    DEVDEM_E_PARAMSVAL, param);
 	  return -1;
 	}
       cool.regulation = 1;
@@ -246,7 +250,7 @@ camd_handle_command (char *argv, size_t argc)
     }
   else
     {
-      devdem_write_command_end ("Unknow command: %s", -300, argv);
+      devdem_write_command_end ("Unknow command: %s", DEVDEM_E_COMMAND, argv);
       return -1;
     }
 
