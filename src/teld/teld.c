@@ -218,7 +218,7 @@ teld_handle_command (char *command)
       // correction mark is local variable, so we must use the local
       // variant - not one from info!
       devser_dprintf ("correction_mark %i", correction_mark);
-      devser_dprintf ("flip", info.flip);
+      devser_dprintf ("flip %i", info.flip);
     }
   else if (strcmp (command, "park") == 0)
     {
