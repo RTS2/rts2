@@ -110,9 +110,62 @@ psát data, které klient vyèítá. Po poslání v¹ech dat datové spojení ukonèím.
 Rozhodl jsem se pro samostatné datové spojení, rozhodujícím faktorem byla
 mo¾nost posílat souèasnì data a ovládat zaøízení.
 
-Pøi vlastní implementaci jsem se inspiroval protokolem FTP, popsaném v~rfc 
+Pøi vlastní implementaci jsem se inspiroval protokolem FTP, popsaném v
+\cite{RFC959}.
 
-\subsection{deamonek}
+\subsection{Realizace}
+
+Ka¾dý server pøi startu èeká na spojení na TCP portu, na kterém je
+pøipojen. Pokud takový po¾adavek pøijde, forkne se, PID potomka
+zaznamená pro pozdìj¹í pou¾ití, a potomka zinicializuje. Potomek pak
+musí obslou¾it v¹echny do¹lé po¾adavky.
+
+Výhod tohoto øe¹ení je nìkolik:
+
+\begin{itemize}
+\item dostanu zadarmo nový, zinicializovaný adresový prostor
+\item nemohu zasahovat do adresového prostoru ostatních spojení
+\item pøípadnými chybami neovlivním ostatní spojení
+\end{itemize}
+
+Pøi jeho realizaci je potøeba zajistit komunikaci mezi centrálním
+serverem a procesy obsluhujícímy spojení. Mo¾nosti, které se nabízejí:
+
+\begin{itemize}
+\item vytvoøit nové spojení na centrální server
+\item pou¾ít pro komunikaci s centrálním serverem rodièovský proces, a
+nìjak zajistit komunikaci s rodièovským procesem
+\end{itemize}
+
+První mo¾nost je dost nevýhodná vzhledem k velkému mno¾ství dal¹ích
+spojení, které bude potøeba vytváøet a udr¾ovat v chodu - ka¾dé
+spojení na zaøízení znamená jedno spojení na zaøízení. Tedy,
+konkrétnìji, pokud budu mít k klientù a z zaøízení, budu vytváøet k*z
+spojení. To je pomìrnì dost.
+
+Druhé øe¹ení je pouze odsunutí problému o krok dále. Ale staèí mì v
+nìm zajistit komunikaci mezi rodièovským procesem a jeho potomky.
+Co¾ není zase tak velký problém, na její vyøe¹ení se mì nabízí hned
+nìkolik metod:
+
+\begin{itemize}
+\item prostøedky IPC
+\item roury
+\item unixové sockety
+\item TCP/IP sockety
+\end{itemize}
+
+TCP/IP sockety jsou uvedeny pouze pro úplnost. Celou slo¾itou
+strukturu pøeci chceme zavést proto, aby jsme nemìli pøíli¹ mnoho
+TCP/IP spojení.
+
+Prostøedky IPC vyhlí¾ejí pomìrnì zajímavì. Poskytují mnoho výhod,
+vypadají, ¾e ¹etøí sytémové prostøedky,..
+
+Zkusil jsem implementovat komunikaci prostøednictvím IPC. Chodí,
+nicménì není tím, co bych od ní oèekával. ICP je pomìrnì háklivé na
+zru¹ení v¹ech prostøedkù, adresace pomocí IPC\_PRIVATE je divná, poèet
+je omezen.
 
 \subsection{ovladaè zaøízení}
 

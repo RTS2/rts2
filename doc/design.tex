@@ -1,3 +1,58 @@
-\chapter{Design nového ovládání}
+\chapter{Design}
 
-\section{Co je na rts-1 ¹patnì}
+\section{Úvod}
+
+Pùvodní systém pro øízení dalekohledu, dále oznaèovaný jako RTS1,
+pøestával vyhovovat na¹im potøebám. Hlavní problém byl s korekcemi
+dalekohledu pomocí dodateèné fotometrie - postup by mìl vypadat takto:
+
+\begin{itemize}
+
+\item najeï na pozici x,y
+
+\item poøiï snímek hvìzdného pole
+
+\item detekuj na snímku hvìzdy
+
+\item s pomocí pøedbì¾ných souøadnic s dalekohledu urèi pøesnou
+polohu støedu snímku u,v
+
+\item vypoèti odchylku x-u,y-v
+
+\item aplikuj na pozici dalekohledu korekce uvedené vý¹e
+
+\end{itemize}
+
+V zadání je tento bod zkryt pod "on-line zpracování snímkù na jiném
+poèítaèi ne¾ na poèítaèi obsluhujícím kameru". Pod zpracováním snímkù
+se myslí primárnì jejich vyhodnocení a vypoèítání chyby v poloze.
+
+Mimo to nám ¹lo pøi návrhu o maximální dìlení funkcí na podfunkce,
+a podporu tohoto dìlení ve struktuøe programu.
+
+Základní my¹lenka je prostá - nad spoleèným komunikaèním rozhraním
+pobì¾í malé jednoúèelové procesy, které budou vykonávat svoji
+specifickou èinnost, a budou komunikovat s ostatnímy procesy.
+
+Procesy budu mít pro:
+
+\begin{itemize}
+
+\item kamery
+
+\item montá¾
+
+\item pozorování gama zábleskù
+
+\item dlouhodobá pozorování
+
+\item pøístupu na databázi
+
+\item monitoring, ruèní ovládání
+
+\end{itemize}
+
+Nástin jejich uspoøádání, spoleènì s centrálním serverem, je v
+diagramu \ref{fig:overview}.
+
+\dia{overview}{Pøehled procesù a jejich komunikace - základní stav}

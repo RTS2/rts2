@@ -25,17 +25,17 @@ automatického chlazení kamer
 \item parkování dalekohledu po skonèení pozorování
 \end{itemize}
 
-Souèasný stav nejlépe vystihuje následující diagram:
+Poslední stav nejlépe vystihuje diagram \ref{fig:rts-1-packages}.
 
-\dia{rts-1-packages}{graf závislostí rts-1}
+\dia{rts-1-packages}{Graf závislostí rts-1}
 
-Hlavním problémem souèasného kódu je jeho monoliènost. V programu
+Hlavním problémem souèasného kódu je jeho monoliènost. V~programu
 samoseboexistuje dìlení do modulù, které mívají do 1000 øádek kódu, nicménì
 toto dìlení bylo pøi implementaci nìkterých nových funkcí shledáno
 nedostaèujícím. Tímto vzniklo nìkolik cyklických závislostí mezi moduly, se
 kterými si sice Python poradí, které ale negativnì ovlivòují strukturu kódu.
 
-Z monoliènosti vyplývá i relativnì tì¾ká portace kódu na nový astronomický HW.
+Z~monoliènosti vyplývá i relativnì tì¾ká portace kódu na nový astronomický HW.
 
 Souèasné øe¹ení umo¾òuje pou¹tìt expozici na jiném poèítaèi ne¾ na poèítaèi
 øídícím pozorování, nicménì ne tak èistì, jak bychom si pøedstavovali.

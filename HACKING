@@ -12,23 +12,33 @@ set et
 
 Pokud hodlate pouzivat neco jineho, tak se ozvete.
 
+Vsechny C zdrojaky jsou pred verzovanim indentovany, takze toto
+nastaveni v soucasne dobe neni zase tak podstatne..
+
 1) Verzujte. Verzujeme na pserveru na lascaux, blizsi informace:
 
 Pro prvni checkout:
 
-# cvs -d:pserver:<login_name>@lascaux.asu.cas.cz:/usr/local/cvsroot login
+# export CVS_RSH=ssh
+# cvs -d:ext:<login_name>@lascaux.asu.cas.cz:/usr/local/cvsroot login
 
 Zadat heslo
 
-# cvs -d:pserver:<login_name>@lascaux.asu.cas.cz:/usr/local/cvsroot checkout rts2
+# cvs -d:ext:<login_name>@lascaux.asu.cas.cz:/usr/local/cvsroot checkout rts2
 
-Kde <login_name> je Vas login name na CVS serveru. Pokud login nemate,
-muzete pouzit read-only anonymous ucet s heslem anonymous.
+Kde <login_name> je Vas login name na CVS serveru. !-- anonymous
+docasne nechodi, na ssh neni tak trivialni ho udelat, musim se precist
+dokumentaci .. Pokud login nemate,
+muzete pouzit read-only anonymous ucet s heslem anonymous. --!
 
 Pockat na ukonceni
 
 CVS si do adresare CVS uklada informace o zdroji a stavu souboru.
 Takze pri dalsi praci s CVSkem uz jenom zadavate jeho prikazy.
+
+Musite ale mit nastaveny CVS_RSH=ssh, takze doporucuji radek
+export CVS_RSH=ssh
+pridat do Vaseho bashrc ci dle libosti na jine vhodne misto.
 
 Vsechny nasledujici prikazy umoznuji jako parametry nazvy souboru,
 adresar, a tak podobne. Pokud nejsou zadany, bere se aktualni
@@ -71,23 +81,13 @@ by jste meli) zapsat zmeny, ktere jste provedly. Ulozite, pokracujete dale.
 
 Snazte se psat zmeny v AJ.
 
-Snazte se na zacatek kazdeho souboru davat 
-$ Id $ (ale bez tech mezer - musim to zadat takto, jinak by to CVSko
-pochopilo a prepsalo). 
+Snazte se na zacatek kazdeho souboru davat $ Id $ (ale bez tech mezer
+- musim to zadat takto, jinak by to CVSko pochopilo a prepsalo). 
 
 Kdyz uz verzujete - pouzivejte tagy! Viz info k cvsku, pripadne radeji
 vysvetlim, jedna se o trochu slozitejsi latku a nechce se me to psat.
 
 Nezapominejte updatovat ChangeLog a VERSION.
-
-2) Pouzivejte indent! Kod si piste jak chcete, ale pred zaverzovanim
-ho projedte indentem, pokud mozno v defaultni konfiguraci. Spravne
-odsazovani je dulezite m.j. kvuli diffovani.
-
-# indent --pmt <soubor>		# soubor ulozi jako soubor~, pak ho zformatuje a
-                        	# ulozi pod jeho nazvem (=> prepise puvodni)
-				# s --pmt nemeni datum u souboru, t.j. commit
-				# pak ukaze pouze opravdu zmenene soubory
 
 -> diffovani:
 
@@ -102,7 +102,7 @@ po chvili vahani pochopit. Diff srovna stav kopie u vas s posledni
 verzi zapsanou v CVSku, a vypise vam rozdili. Dobre na zodpovezeni
 otazek..co jsem vsechno zmenil?..kdyz vam neco prestane chodit.
 
-3) Pouzivejte doxygenovske tagy! Viz http://www.doxygen.org.
+2) Pouzivejte doxygenovske tagy! Viz http://www.doxygen.org.
 
 Pozor: Ja mam radeji variantu @<tag>, prijde mi lepe viditelna.
 Doxygen ji umoznuje, jako defaultni ma ale \<tag>. Pouzivejte, co se vam
@@ -155,7 +155,7 @@ Dokumenty k projektu (idee, navrhy, ..) v cestine. Nejlepe
 spisovne. Az je bude nekdo potrebovat v AJ, tak se s nim nejak
 dohodneme.
 
-4) Updatujte ChangeLog!
+3) Updatujte ChangeLog!
 
 Podle potreby do neho piste, co jste udelali noveho pro dalsi verzi.
 ChangeLog vypada nasledovne:

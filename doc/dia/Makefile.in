@@ -1,4 +1,5 @@
-EPS = central-server-messages.eps 	\
+EPS = bootes.eps			\
+      central-server-messages.eps 	\
       client-server-direct.eps 		\
       client-server-central.eps 	\
       client-server-central-direct.eps 	\
@@ -9,6 +10,7 @@ EPS = central-server-messages.eps 	\
       kill-pre.eps 			\
       kill-waitexe.eps 			\
       kill-waitblock.eps 		\
+      overview.eps			\
       rts-1-packages.eps 		\
       vrstvy-architektura.eps 
 
@@ -16,6 +18,7 @@ all:${EPS}
 
 %.eps: %.dia
 	dia --nosplash --export=$@ $<
+	epstopdf $@
 
 clean: 
-	$(RM) *.eps *~
+	$(RM) *.eps *.pdf *~
