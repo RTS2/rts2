@@ -42,6 +42,7 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 
   receiver->offset = 0;
   receiver->size = 0;
+  receiver->header_processed = 0;
 
   status = 0;
   printf ("create '%s'\n", filename);
