@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <stdio.h>
 
@@ -24,10 +25,12 @@
 #define CMD_MIRROR_MINUS		0xC3
 #define CMD_MIRROR_GET			0xC5
 
-#define RAMP_TO			10
+#define RAMP_TO			1
 #define RAMP_STEP		1
 
 static int mirror_fd = 0;
+
+static FILE *mirr_log = NULL;
 
 //! sempahore id structure, we have two semaphores...
 int mirror_semid = -1;
@@ -50,18 +53,39 @@ command (char cmd, int arg, char *ret_cmd, int *ret_arg)
 {
   char command_buffer[3];
   int ret;
+  size_t readed;
+  int tries = 0;
+  char tc[27];
+  time_t t;
   command_buffer[0] = cmd;
   *((int *) &command_buffer[1]) = arg;
   flock (mirror_fd, LOCK_EX);
-  usleep (20);
+start:
   ret = write (mirror_fd, command_buffer, 3);
   printf ("write: %i\n", ret);
   if (ret != 3)
-    goto err;
-  ret = read (mirror_fd, command_buffer, 3);
-  printf ("read: %i\n", ret);
-  if (ret != 3)
-    goto err;
+    {
+      t = time (NULL);
+      ctime_r (&t, tc);
+      fprintf (mirr_log, "%s:write %i\n", tc, ret);
+      fflush (mirr_log);
+      goto err;
+    }
+  readed = 0;
+  while (readed != 3)
+    {
+      ret = read (mirror_fd, &command_buffer[readed], 3);
+      printf ("read: %i\n", ret);
+      if (ret <= 0)
+	{
+	  t = time (NULL);
+	  ctime_r (&t, tc);
+	  fprintf (mirr_log, "%s:read %i\n", tc, ret);
+	  fflush (mirr_log);
+	  goto err;
+	}
+      readed += ret;
+    }
   if (ret_cmd)
     *ret_cmd = command_buffer[0];
   if (ret_arg)
@@ -69,6 +93,13 @@ command (char cmd, int arg, char *ret_cmd, int *ret_arg)
   flock (mirror_fd, LOCK_UN);
   return 0;
 err:
+  tries++;
+  if (tries < 4)
+    {
+      tcflush (mirror_fd, TCIOFLUSH);
+      sleep (1);
+      goto start;
+    }
   flock (mirror_fd, LOCK_UN);
   return -1;
 }
@@ -79,6 +110,9 @@ mirror_open_dev (char *dev)
   struct termios oldtio, newtio;
   union semun sem_un;
   unsigned short int sem_arr[] = { 1 };
+
+  if (!mirr_log)
+    mirr_log = fopen ("/var/log/rts2-mirror", "a");
 
   mirror_fd = open (dev, O_RDWR);
   if (mirror_fd < 0)
@@ -108,7 +142,7 @@ mirror_open_dev (char *dev)
       newtio.c_oflag = 0;
       newtio.c_lflag = 0;
       newtio.c_cc[VMIN] = 0;
-      newtio.c_cc[VTIME] = 5;
+      newtio.c_cc[VTIME] = 40;
 
       tcflush (mirror_fd, TCIOFLUSH);
       tcsetattr (mirror_fd, TCSANOW, &newtio);
@@ -180,22 +214,19 @@ mirror_set (int steps)
 	  ret = mirror_get (&mpos);
 	  if (ret)
 	    goto err;
-	  printf ("pos: %i  target: %i\r", mpos, new_pos);
+	  printf ("pos: %i  target: %i\n", mpos, new_pos);
 	  fflush (stdout);
 	  if (mpos == new_pos)
 	    {
-	      usleep (10);
 	      break;
 	    }
-	  usleep (200);
 	}
-      usleep (500);
       steps -= move;
     }
-
   semop (mirror_semid, &sem_buf, 1);
   return 0;
 err:
+  sleep (1);
   semop (mirror_semid, &sem_buf, 1);
 
   return -1;
@@ -204,15 +235,39 @@ err:
 int
 mirror_open ()
 {
+  char tc[27];
+  time_t t;
+  int ret;
   if (!mirror_fd)
     return -1;
-  return mirror_set (170);
+  t = time (NULL);
+  ctime_r (&t, tc);
+  fprintf (mirr_log, "%s:opening\n", tc);
+  fflush (mirr_log);
+  ret = mirror_set (170);
+  t = time (NULL);
+  ctime_r (&t, tc);
+  fprintf (mirr_log, "%s:opened %i\n", tc, ret);
+  fflush (mirr_log);
+  return ret;
 }
 
 int
 mirror_close ()
 {
+  char tc[27];
+  time_t t;
+  int ret;
   if (!mirror_fd)
     return -1;
-  return mirror_set (-170);
+  t = time (NULL);
+  ctime_r (&t, tc);
+  fprintf (mirr_log, "%s:closing\n", tc);
+  fflush (mirr_log);
+  ret = mirror_set (-170);
+  t = time (NULL);
+  ctime_r (&t, tc);
+  fprintf (mirr_log, "%s:closed %i\n", tc, ret);
+  fflush (mirr_log);
+  return ret;
 }
