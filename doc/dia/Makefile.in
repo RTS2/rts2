@@ -13,6 +13,7 @@ EPS = bootes.eps			\
       kill-waitexe.eps 			\
       kill-waitblock.eps 		\
       overview.eps			\
+      overview-en.eps			\
       state-serverd.eps			\
       state-camd.eps			\
       state-cooling.eps			\
