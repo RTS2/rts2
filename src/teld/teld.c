@@ -15,6 +15,7 @@
 #include <mcheck.h>
 #include <math.h>
 #include <stdarg.h>
+#include <string.h>
 #include <pthread.h>
 #include <getopt.h>
 
@@ -306,22 +307,12 @@ main (int argc, char **argv)
 	  break;
 	case 'p':
 	  device_port = atoi (optarg);
-	  if (device_port < 1 || device_port == UINT_MAX)
-	    {
-	      printf ("invalid device port option: %s\n", optarg);
-	      exit (EXIT_FAILURE);
-	    }
 	  break;
 	case 's':
 	  serverd_host = optarg;
 	  break;
 	case 'q':
 	  serverd_port = atoi (optarg);
-	  if (serverd_port < 1 || serverd_port == UINT_MAX)
-	    {
-	      printf ("invalid serverd port option: %s\n", optarg);
-	      exit (EXIT_FAILURE);
-	    }
 	  break;
 	case 'd':
 	  device_name = optarg;
