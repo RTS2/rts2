@@ -994,9 +994,13 @@ int
 Rts2DevTelescopeGemini::startPark ()
 {
   char buf = '2';
+  int ret;
   tel_gemini_reset ();
   tel_gemini_match_time ();
-  tel_write ("#:hP#", 5);
+  ret = tel_write ("#:hP#", 5);
+  if (ret <= 0)
+    return -1;
+  return 0;
 }
 
 int save_registers[] = {
