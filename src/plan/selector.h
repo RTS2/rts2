@@ -22,8 +22,8 @@ struct target
 
 extern int
 get_next_plan (struct target *plan, int selector_type,
-	       struct target *curr_plan, time_t c_time, int number);
-     extern int make_plan (struct target **plan);
-     extern void free_plan (struct target *plan);
+	       struct target *curr_plan, time_t c_time, int number, float exposure);
+extern int make_plan (struct target **plan, float exposure);
+extern void free_plan (struct target *plan);
 
 #endif /* __RTS_SELECTOR__ */
