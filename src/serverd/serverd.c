@@ -11,6 +11,8 @@
 
 #define _GNU_SOURCE
 
+#include "riseset.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -21,8 +23,6 @@
 #include <string.h>
 #include <time.h>
 #include <arpa/inet.h>
-
-#include "riseset.h"
 
 #include "../utils/devser.h"
 #include "status.h"
@@ -51,6 +51,8 @@ struct client
   char login[CLIENT_LOGIN_SIZE];
   int authorized;
   int priority;
+  int active;
+  char status_txt[MAX_STATUS_TXT];
 };
 
 //! information about serverd stored in shared mem
@@ -115,7 +117,7 @@ clients_all_msg_snd (char *format, ...)
   va_start (ap, format);
   for (i = 0; i < MAX_CLIENT; i++)
     {
-      /* device exists */
+      /* client exists */
       if (*shm_clients[i].login)
 	{
 	  if (devser_2devser_message_va (i, format, ap))
@@ -264,15 +266,21 @@ serverd_riseset_thread (void *arg)
   syslog (LOG_DEBUG, "riseset thread start");
   while (1)
     {
+      int call_state;
+
       curr_time = time (NULL);
       devser_shm_data_lock ();
 
       next_event (&curr_time, &shm_info->next_event_type,
 		  &shm_info->next_event_time);
+      // calculate current event based on informations provided
+      // by next_event call
+      call_state = (shm_info->next_event_type + 3) % 4;
 
-      if (shm_info->current_state < SERVERD_MAINTANCE)
+      if (shm_info->current_state < SERVERD_MAINTANCE
+	  && shm_info->current_state != call_state)
 	{
-	  shm_info->current_state = (shm_info->next_event_type + 3) % 4;
+	  shm_info->current_state = call_state;
 	  devices_all_msg_snd ("S %s %i", SERVER_STATUS,
 			       shm_info->current_state);
 	  clients_all_msg_snd ("S %s %i", SERVER_STATUS,
@@ -393,31 +401,41 @@ client_serverd_handle_command (char *command)
       if (strcmp (command, "info") == 0)
 	{
 	  int i;
+	  struct device *dev;
+
 	  if (devser_param_test_length (0))
 	    return -1;
 
 	  for (i = 0; i < MAX_CLIENT; i++)
 	    if (*shm_clients[i].login)
-	      devser_dprintf ("user %i %s", i, shm_clients[i].login);
-
-	  return 0;
-	}
-      else if (strcmp (command, "devinfo") == 0)
-	{
-	  int i;
-	  struct device *dev;
-	  if (devser_param_test_length (0))
-	    return -1;
+	      devser_dprintf ("user %i %i %i %s %s", i, shm_clients[i].active,
+			      shm_clients[i].priority, shm_clients[i].login,
+			      shm_clients[i].status_txt);
 
 	  for (i = 0, dev = shm_devices; i < MAX_DEVICE; i++, dev++)
 
 	    if (*dev->name)
-	      devser_dprintf ("I device %i %s %s:%i %i", i, dev->name,
+	      devser_dprintf ("device %i %s %s:%i %i", i, dev->name,
 			      dev->hostname, dev->port, dev->type);
 	  return 0;
 	}
-      else if (strcmp (command, "priority") == 0
-	       || strcmp (command, "prioritydeferred") == 0)
+      if (strcmp (command, "status_txt") == 0)
+	{
+	  char *new_st;
+	  if (devser_param_test_length (1))
+	    return -1;
+
+	  if (devser_param_next_string (&new_st))
+	    return -1;
+
+	  strncpy (shm_clients[serverd_id].status_txt, new_st,
+		   MAX_STATUS_TXT - 1);
+	  shm_clients[serverd_id].status_txt[MAX_STATUS_TXT - 1] = 0;
+
+	  return 0;
+	}
+      if (strcmp (command, "priority") == 0
+	  || strcmp (command, "prioritydeferred") == 0)
 	{
 	  int timeout;
 	  int new_priority;
@@ -469,7 +487,7 @@ client_serverd_handle_command (char *command)
 
 	  return 0;
 	}
-      else if (strcmp (command, "key") == 0)
+      if (strcmp (command, "key") == 0)
 	{
 	  int key = random ();
 	  // device number could change..device names don't
@@ -495,15 +513,31 @@ client_serverd_handle_command (char *command)
 	  devser_dprintf ("authorization_key %s %i", dev_name, key);
 	  return 0;
 	}
-      else if (strcmp (command, "on") == 0)
+      if (strcmp (command, "active") == 0)
+	{
+	  if (devser_param_test_length (0))
+	    return -1;
+
+	  shm_clients[serverd_id].active = 1;
+	  return 0;
+	}
+      if (strcmp (command, "passive") == 0)
+	{
+	  if (devser_param_test_length (0))
+	    return -1;
+
+	  shm_clients[serverd_id].active = 0;
+	  return 0;
+	}
+      if (strcmp (command, "on") == 0)
 	{
 	  return serverd_change_state (-1);
 	}
-      else if (strcmp (command, "maintance") == 0)
+      if (strcmp (command, "maintance") == 0)
 	{
 	  return serverd_change_state (SERVERD_MAINTANCE);
 	}
-      else if (strcmp (command, "off") == 0)
+      if (strcmp (command, "off") == 0)
 	{
 	  return serverd_change_state (SERVERD_OFF);
 	}
@@ -687,6 +721,7 @@ serverd_handle_command (char *command)
 int
 main (void)
 {
+  int i;
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -704,6 +739,17 @@ main (void)
   shm_info = (struct serverd_info *) devser_shm_data_at ();
   shm_clients = shm_info->clients;
   shm_devices = shm_info->devices;
+
+  for (i = 0; i < MAX_CLIENT; i++)
+    {
+      shm_clients[i].login[0] = 0;
+      shm_clients[i].authorized = 0;
+    }
+
+  for (i = 0; i < MAX_DEVICE; i++)
+    {
+      shm_devices[i].name[0] = 0;
+    }
 
   shm_info->current_state = 0;
 
