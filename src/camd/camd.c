@@ -26,7 +26,7 @@
 
 #define DEVICE_PORT		5556	// default camera TCP/IP port
 #define DEVICE_NAME 		"camd"	// default camera name
-int sbig_port = 0;		// default sbig camera port is 2
+int sbig_port;		// default sbig camera port is 2
 
 struct camera_info info;
 
@@ -47,6 +47,8 @@ struct readout
   struct imghdr header;
 };
 struct readout readouts[2];
+
+char device_name[64];
 
 /* expose functions */
 #define CAMD_EXPOSE ((struct camd_expose *) arg)
@@ -515,7 +517,6 @@ main (int argc, char **argv)
   char *serverd_host = SERVERD_HOST;
   uint16_t serverd_port = SERVERD_PORT;
 
-  char *device_name = DEVICE_NAME;
   uint16_t device_port = DEVICE_PORT;
 
   char *hostname = NULL;
@@ -524,6 +525,10 @@ main (int argc, char **argv)
 #ifdef DEBUG
   mtrace ();
 #endif
+
+  strcpy (device_name, DEVICE_NAME);
+
+  sbig_port = 0;
 
   /* get attrs */
   while (1)
@@ -572,7 +577,7 @@ main (int argc, char **argv)
 	    }
 	  break;
 	case 'd':
-	  device_name = optarg;
+	  strcpy (device_name, optarg);
 	  break;
 	case 0:
 	  printf
