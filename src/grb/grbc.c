@@ -5,6 +5,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
+#include <string.h>
 
 #include <libnova.h>
 
@@ -15,11 +17,15 @@
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
 #include "../utils/mkpath.h"
+#include "../utils/mv.h"
 #include "../writers/fits.h"
+#include "../writers/process_image.h"
+#include "../plan/selector.h"
 
 #include "image_info.h"
 
 #define EXPOSURE_TIME		120
+#define EPOCH			"002"
 
 struct grb
 {
@@ -32,84 +38,15 @@ struct grb
 }
 observing;
 
+pthread_t image_que_thread;
+
+time_t last_succes = 0;
+
 pthread_t iban_thread;
 pthread_mutex_t observing_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t observing_cond = PTHREAD_COND_INITIALIZER;
 
 struct device *camera, *telescope;
-
-/*!
- * Handle camera data connection.
- *
- * @params sock 	socket fd.
- *
- * @return	0 on success, -1 and set errno on error.
- */
-int
-data_handler (int sock, size_t size, struct image_info *image)
-{
-  struct fits_receiver_data receiver;
-  struct tm gmt;
-  char data[DATA_BLOCK_SIZE];
-  int ret = 0;
-  ssize_t s;
-  char filen[250];
-  char *filename;
-  char *dirname;
-
-  gmtime_r (&image->exposure_time, &gmt);
-
-  if (asprintf (&dirname, "~/%i", image->target_id))
-    {
-      perror ("planc data_handler asprintf");
-      return -1;
-    }
-
-  mkpath (dirname, 0777);
-
-  strftime (filen, 250, "%Y%m%d%H%M%S.fits", &gmt);
-  asprintf (&filename, "!%s/%s", dirname, filen);
-
-  free (dirname);
-
-  printf ("filename: %s", filename);
-
-  if (fits_create (&receiver, filename) || fits_init (&receiver, size))
-    {
-      perror ("camc data_handler fits_init");
-      free (filename);
-      return -1;
-    }
-
-  free (filename);
-
-  printf ("reading data socket: %i size: %i\n", sock, size);
-
-  while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
-    {
-      if ((ret = fits_handler (data, s, &receiver)) < 0)
-	return -1;
-      if (ret == 1)
-	break;
-    }
-  if (s < 0)
-    {
-      perror ("camc data_handler");
-      return -1;
-    }
-
-  printf ("reading finished\n");
-
-  if (fits_write_image_info (&receiver, image, NULL)
-      || fits_close (&receiver))
-    {
-      perror ("camc data_handler fits_write");
-      return -1;
-    }
-
-  return 0;
-#undef receiver
-}
 
 int
 readout (struct grb *object)
@@ -117,8 +54,9 @@ readout (struct grb *object)
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
 
-  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING, TEL_STILL,
-			  0);
+  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
+			  TEL_OBSERVING, 0);
+  devcli_command (camera, NULL, "expose 0 1 %i", EXPOSURE_TIME);
 
   info->exposure_time = time (NULL);
   info->exposure_length = EXPOSURE_TIME;
@@ -145,7 +83,7 @@ readout (struct grb *object)
 }
 
 int
-process_grb_event (int id, int seqn, double ra, double dec)
+process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
 {
   struct ln_equ_posn object;
   struct ln_lnlat_posn observer;
@@ -180,9 +118,10 @@ process_grb_event (int id, int seqn, double ra, double dec)
 	  observing.id = id;
 	  observing.seqn = -1;	// filled down
 	  observing.seqn = seqn;
-	  observing.created = observing.last_update = time (NULL);
+	  observing.created = *date;
+	  observing.last_update = time (NULL);
 	  observing.object = object;
-	  db_update_grb (id, seqn, ra, dec, &observing.tar_id);
+	  db_update_grb (id, seqn, ra, dec, date, &observing.tar_id);
 	  pthread_cond_broadcast (&observing_cond);
 	  pthread_mutex_unlock (&observing_lock);
 	  return 0;
@@ -190,7 +129,7 @@ process_grb_event (int id, int seqn, double ra, double dec)
     }
 
   // just add to planer
-  return db_update_grb (id, seqn, ra, dec, NULL);
+  return db_update_grb (id, seqn, ra, dec, date, NULL);
 }
 
 int
@@ -292,7 +231,7 @@ main (int argc, char **argv)
 
   camera->data_handler = data_handler;
 
-  telescope = devcli_find ("teld");
+  telescope = devcli_find ("T1");
 
   if (!telescope)
     {
@@ -369,6 +308,8 @@ main (int argc, char **argv)
 
 	  printf ("OK\n");
 	  readout (&observing);
+
+	  pthread_create (&image_que_thread, NULL, process_images, NULL);
 
 	  pthread_mutex_lock (&observing_lock);
 	  get_hrz_from_equ (&observing.object, &observer,

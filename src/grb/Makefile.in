@@ -10,7 +10,7 @@ ibas/ibas.a:
 bacodine/bacodine.a:
 	$(MAKE) -C bacodine
 
-grbc: grbc.o ../db/db.o ../utils/devcli.a ../writers/fits.o ibas/ibas.a bacodine/bacodine.a
+grbc: grbc.o ../writers/process_image.o ../db/db.o ../utils/devcli.a ../writers/fits.o ibas/ibas.a bacodine/bacodine.a
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 %.c: %.ec

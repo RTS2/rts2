@@ -2,6 +2,7 @@
 #include "ibas_client.h"
 
 #include <netdb.h>
+#include <time.h>
 
 void *
 receive_iban (process_grb_event_t arg)
@@ -67,8 +68,26 @@ receive_iban (process_grb_event_t arg)
 	}
       else
 	{
+	  struct tm tm_time;
+	  struct IBC_UTC_TIME_STRUCT ibc_time;
+	  time_t date;
+
+	  ibc_str242utc (dl.a.grb_time, &ibc_time);
+
+	  tm_time.tm_sec = ibc_time.sec;	/* seconds */
+	  tm_time.tm_min = ibc_time.min;	/* minutes */
+	  tm_time.tm_hour = ibc_time.hour;	/* hours */
+	  tm_time.tm_mday = ibc_time.day;	/* day of the month */
+	  tm_time.tm_mon = ibc_time.month;	/* month */
+	  tm_time.tm_year = ibc_time.year;	/* year */
+	  tm_time.tm_wday = 0;	/* day of the week */
+	  tm_time.tm_yday = 0;	/* day in the year */
+	  tm_time.tm_isdst = 0;	/* daylight saving time */
+
+	  date = mktime (&tm_time);
+
 	  (process_grb_event_t *) arg (dl.ID, dl.seqnum, dl.a.grb_ra,
-				       dl.a.grb_dec);
+				       dl.a.grb_dec, &date);
 	  ibc_api_dump_alert (&dl, ibas_ip, ibas_port);
 	}
     }

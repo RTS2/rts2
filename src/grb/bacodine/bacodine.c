@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <libnova.h>
+
 process_grb_event_t process_grb;
 
 /*	socket_demo.c -- to demostrate a socket connection for a GCN site
@@ -539,7 +541,6 @@ server (hostname, port, type)
   int sd = -1;			/* The offerred sock descriptor */
   int temp;			/* Dummy variable */
   int saddrlen;			/* Socket address length + 2 */
-  char on = 1;			/* Flag for nonblocking I/O */
   struct sockaddr saddr;	/* Socket structure for UNIX */
   struct sockaddr *psaddr;	/* Pointer to sin */
   struct sockaddr_in s_in;	/* Socket structure for inet */
@@ -984,6 +985,8 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 
   double ra, dec;
 
+  time_t grb_date;
+
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
   fprintf (s, "   Type= %li,  ", lbuf[PKT_TYPE]);
   switch (lbuf[PKT_TYPE])
@@ -1059,12 +1062,22 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   fprintf (s, "   BURST_RA:    %7.3fd  (current)\n", ra);
   fprintf (s, "   BURST_DEC:   %+7.3fd  (current)\n", dec);
 
-  // if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+  get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (lbuf[PKT_TYPE] == TYPE_HETE_TEST)
+    {
+      process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
+		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
+		   150.0, 60, &grb_date);
+    }
+  else
+    // if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
   if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
     {
       process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
 		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-		   ra, dec);
+		   ra, dec, &grb_date);
     }
 
   if (lbuf[H_TRIG_FLAGS] & H_WXM_POS)	/* Flag says that WXM pos is available */
