@@ -42,6 +42,10 @@
 #define CAM_COOL_PWR		0x80
 #define CAM_COOL_TEMP		0xC0
 
+// Photomer status
+#define PHOT_MASK_INTEGRATE	0x01
+#define PHOT_NOINTEGRATE	0x00
+#define PHOT_INTEGRATE		0x01
 
 // telescope status
 #define TEL_MASK_MOVING		0x03

@@ -3,6 +3,7 @@ SUBDIRS = utils	\
 	serverd \
 	teld	\
 	camd	\
+	phot	\
 	dome	\
 	db	\
 	plan	\
