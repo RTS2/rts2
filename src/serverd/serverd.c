@@ -390,8 +390,8 @@ client_serverd_handle_command (char *command)
 	  for (i = 0, dev = shm_devices; i < MAX_DEVICE; i++, dev++)
 
 	    if (*dev->name)
-	      devser_dprintf ("I device %i %s %s:%i", i, dev->name,
-			      dev->hostname, dev->port);
+	      devser_dprintf ("I device %i %s %s:%i %i", i, dev->name,
+			      dev->hostname, dev->port, dev->type);
 	  return 0;
 	}
       else if (strcmp (command, "priority") == 0
