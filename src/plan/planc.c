@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <mcheck.h>
+#include <math.h>
 #include <getopt.h>
 
 #include "../utils/config.h"
@@ -58,6 +59,9 @@ struct ex_info
 pthread_mutex_t exposure_count_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t exposure_count_cond = PTHREAD_COND_INITIALIZER;
 int exposure_count = 0;		// number of running exposures..
+
+pthread_mutex_t precission_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t precission_cond = PTHREAD_COND_INITIALIZER;
 
 struct device *telescope;
 
@@ -115,7 +119,7 @@ move (struct target *last)
 
 int
 get_info (struct target *entry, struct device *tel, struct device *cam,
-	  float exposure)
+	  float exposure, hi_precision_t * hi_precision)
 {
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
@@ -135,6 +139,7 @@ get_info (struct target *entry, struct device *tel, struct device *cam,
     }
   memcpy (&info->camera, &cam->info, sizeof (struct camera_info));
   memcpy (&info->telescope, &tel->info, sizeof (struct telescope_info));
+  info->hi_precision = hi_precision;
   devcli_image_info (cam, info);
   free (info);
   return ret;
@@ -161,6 +166,96 @@ generate_next (int i, struct target *plan)
   printf ("...plan made\n");
   i++;
   return i;
+}
+
+/*
+ *
+ * @return 0 if I can observe futher, -1 if observation was canceled
+ */
+int
+process_precission (struct target *tar, struct device *camera)
+{
+  float exposure = 20;
+  if (tar->hi_precision == 0)
+    return 0;
+  if (strcmp (camera->name, get_string_default ("telescope_camera", "C0")))
+    {
+      // not camera for astrometry
+      pthread_mutex_lock (&precission_mutex);
+      while (tar->hi_precision == 1)
+	{
+	  printf ("waiting for hi_precision (camera %s)\n", camera->name);
+	  fflush (stdout);
+	  pthread_cond_wait (&precission_cond, &precission_mutex);
+	}
+      pthread_mutex_unlock (&precission_mutex);
+    }
+  else
+    {
+      double ra_err = 12, dec_err = 12;
+      int tries = 0;
+      hi_precision_t hi_precision;
+      pthread_mutex_t ret_mutex = PTHREAD_MUTEX_INITIALIZER;
+      pthread_cond_t ret_cond = PTHREAD_COND_INITIALIZER;
+      hi_precision.mutex = &ret_mutex;
+      hi_precision.cond = &ret_cond;
+      int max_tries = 5;
+
+      while (tries < max_tries)
+	{
+	  printf ("triing to get to %f %f, %i try\n", tar->ra, tar->dec,
+		  tries);
+	  fflush (stdout);
+	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
+				  TEL_OBSERVING, 0);
+	  devcli_command (camera, NULL, "expose 0 1 %f", exposure);
+	  devcli_command (telescope, NULL, "base_info;info");
+
+	  get_info (tar, telescope, camera, exposure, &hi_precision);
+
+	  devcli_wait_for_status (camera, "img_chip",
+				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				  1.1 * exposure + 10);
+	  devcli_command (camera, NULL, "readout 0");
+	  devcli_wait_for_status (camera, "img_chip",
+				  CAM_MASK_READING, CAM_NOTREADING,
+				  MAX_READOUT_TIME);
+	  // after finishing astrometry, I'll have telescope true location
+	  // in location parameters, passd as reference to get_info.
+	  // So I can compare that with
+	  pthread_mutex_lock (hi_precision.mutex);
+	  pthread_cond_wait (hi_precision.cond, hi_precision.mutex);
+	  printf ("hi_precision->image_pos->ra: %f dec: %f ",
+		  hi_precision.image_pos.ra, hi_precision.image_pos.dec);
+	  pthread_mutex_unlock (hi_precision.mutex);
+	  fflush (stdout);
+	  if (!isnan (hi_precision.image_pos.ra)
+	      && !isnan (hi_precision.image_pos.dec))
+	    {
+	      ra_err = ln_range_degrees (tar->ra - hi_precision.image_pos.ra);
+	      dec_err =
+		ln_range_degrees (tar->dec - hi_precision.image_pos.dec);
+	    }
+	  printf ("ra_err: %f dec_err: %f\n", ra_err, dec_err);
+	  fflush (stdout);
+	  if (ra_err < 0.75 && dec_err < 0.75)
+	    {
+	      break;
+	    }
+	  else
+	    {
+	      tar->moved = 0;
+	      // try to synchro the scope again
+	      move (tar);
+	    }
+	  tries++;
+	}
+      pthread_mutex_lock (&precission_mutex);
+      tar->hi_precision = (tries < max_tries) ? 0 : -1;
+      pthread_cond_broadcast (&precission_cond);
+      pthread_mutex_unlock (&precission_mutex);
+    }
+  return tar->hi_precision;
 }
 
 int
@@ -194,6 +289,10 @@ execute_camera_script (void *exinfo)
 
   exp_state = 0;
 
+  ret = process_precission (last, camera);
+  if (!ret)
+    return NULL;
+
   while (*command)
     {
       if (exp_state && *command && !isspace (*command))
@@ -201,7 +300,7 @@ execute_camera_script (void *exinfo)
 	  // wait till exposure end..
 	  devcli_command (telescope, NULL, "base_info;info");
 
-	  get_info (last, telescope, camera, exposure);
+	  get_info (last, telescope, camera, exposure, NULL);
 
 	  devcli_wait_for_status (camera, "img_chip",
 				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
@@ -238,7 +337,8 @@ execute_camera_script (void *exinfo)
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
 	    {
-	      fprintf (stderr, "error executing 'expose 0 %i %f', ret = %i\n",
+	      fprintf (stderr,
+		       "error executing 'expose 0 %i %f', ret = %i\n",
 		       light, exposure, ret);
 	      continue;
 	    }
@@ -277,7 +377,7 @@ execute_camera_script (void *exinfo)
     {
       devcli_command (telescope, NULL, "base_info;info");
 
-      get_info (last, telescope, camera, exposure);
+      get_info (last, telescope, camera, exposure, NULL);
 
       devcli_wait_for_status (camera, "img_chip",
 			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,

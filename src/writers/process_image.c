@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <math.h>
 #include <malloc.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -25,6 +26,7 @@ struct image_que
   char *directory;
   int correction_mark;
   char *tel_name;
+  hi_precision_t *hi_precision;
   struct image_que *previous;
 }
  *image_que;
@@ -34,6 +36,18 @@ static FILE *cor_log = NULL;
 pthread_mutex_t image_que_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t image_que_cond = PTHREAD_COND_INITIALIZER;
 
+void
+set_precision (hi_precision_t * hi_precision, double ra, double dec)
+{
+  if (!hi_precision)
+    return;
+  pthread_mutex_lock (hi_precision->mutex);
+  hi_precision->image_pos.ra = ra;
+  hi_precision->image_pos.dec = dec;
+  pthread_cond_broadcast (hi_precision->cond);
+  pthread_mutex_unlock (hi_precision->mutex);
+}
+
 int
 astrometry_image (struct image_que *actual_image)
 {
@@ -42,6 +56,8 @@ astrometry_image (struct image_que *actual_image)
   long int id;
   double ra, dec, ra_err, dec_err;
   time_t t = time (NULL);
+
+  hi_precision_t *hi_precision = actual_image->hi_precision;
 
   int ret = 0;
 
@@ -66,6 +82,7 @@ astrometry_image (struct image_que *actual_image)
     {
       perror ("popen");
       free (cmd);
+      set_precision (hi_precision, NAN, NAN);
       return -1;
     };
 
@@ -100,6 +117,7 @@ astrometry_image (struct image_que *actual_image)
     {
       // bad image, move to trash
       char *trash_name;
+      set_precision (hi_precision, NAN, NAN);
       trash_name = (char *) malloc (8 + strlen (filename));
       sprintf (trash_name, "/trash%s", actual_image->directory);
       mkpath (trash_name, 0777);
@@ -117,6 +135,7 @@ astrometry_image (struct image_que *actual_image)
 
       printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
 	      ra_err, dec_err);
+      set_precision (hi_precision, ra, dec);
 
       if (actual_image->correction_mark >= 0)
 	{
@@ -294,6 +313,7 @@ data_handler (int sock, size_t size, struct image_info *image)
       new_que->directory = dirname;
       new_que->image = filen;
       new_que->tel_name = image->telescope_name;
+      new_que->hi_precision = image->hi_precision;
 
       if (strcmp
 	  (image->camera_name,
@@ -302,11 +322,22 @@ data_handler (int sock, size_t size, struct image_info *image)
       else
 	new_que->correction_mark = -1;
 
-      pthread_mutex_lock (&image_que_mutex);
-      new_que->previous = image_que;
-      image_que = new_que;
-      pthread_cond_broadcast (&image_que_cond);
-      pthread_mutex_unlock (&image_que_mutex);
+      // process imediatelly, if we require it
+      if (image->hi_precision && new_que->correction_mark >= 0)
+	{
+	  astrometry_image (new_que);
+	  free (new_que->directory);
+	  free (new_que->image);
+	  free (new_que);
+	}
+      else
+	{
+	  pthread_mutex_lock (&image_que_mutex);
+	  new_que->previous = image_que;
+	  image_que = new_que;
+	  pthread_cond_broadcast (&image_que_cond);
+	  pthread_mutex_unlock (&image_que_mutex);
+	}
 
       ret = 0;
 

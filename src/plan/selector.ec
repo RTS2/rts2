@@ -52,6 +52,7 @@ add_target (struct target *plan, int type, int id, int obs_id, double ra,
   new_plan->ctime = obs_time;
   new_plan->tolerance = tolerance;
   new_plan->moved = 0;
+  new_plan->hi_precision = 1;
 
   while (plan->next)
     plan = plan->next;

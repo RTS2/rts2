@@ -18,6 +18,7 @@ struct target
   int tolerance;
   int moved;
   struct target *next;
+  int hi_precision;		// when 1, image will get imediately astrometry and telescope status will be updated
 };
 
 extern int
