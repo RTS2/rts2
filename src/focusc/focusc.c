@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <argz.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -32,7 +31,7 @@
 #include "../writers/fits.h"
 #include "status.h"
 
-#define EXPOSURE_TIME		15
+#define EXPOSURE_TIME		1
 
 
 struct device *camera;
@@ -64,6 +63,8 @@ data_handler (int sock, size_t size, struct image_info *image)
   char *cmd;
 
   gmtime_r (&image->exposure_time, &gmt);
+
+  return -1;
 
 /*  switch (image->target_type)
     {
