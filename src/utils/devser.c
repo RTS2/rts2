@@ -63,6 +63,8 @@ union semun
 };
 #endif
 
+//! ip of connected client
+struct sockaddr_in server_client_ip;
 
 /*! 
  * server number.
@@ -1083,6 +1085,15 @@ read_from_client ()
     }
 }
 
+/*!
+ * Return client ip
+ */
+void
+devser_get_client_ip (struct sockaddr_in *client_ip)
+{
+  memcpy (client_ip, &server_client_ip, sizeof (server_client_ip));
+}
+
 /*! 
  * On exit handler.
  */
@@ -1233,7 +1244,6 @@ devser_run (int port, devser_handle_command_t in_handler,
 	    int (*child_init) (void))
 {
   int sock;
-  struct sockaddr_in clientname;
   size_t size;
   devser_parent_pid = getpid ();
 
@@ -1256,9 +1266,9 @@ devser_run (int port, devser_handle_command_t in_handler,
 
   while (1)
     {
-      size = sizeof (clientname);
+      size = sizeof (server_client_ip);
       if ((control_fd =
-	   accept (sock, (struct sockaddr *) &clientname, &size)) < 0)
+	   accept (sock, (struct sockaddr *) &server_client_ip, &size)) < 0)
 	{
 	  syslog (LOG_ERR, "accept: %m");
 	  if (errno != EBADF)
@@ -1284,8 +1294,8 @@ devser_run (int port, devser_handle_command_t in_handler,
 
   command_buffer.endptr = command_buffer.buf;
   syslog (LOG_INFO, "server: connect from host %s, port %hd, desc:%i",
-	  inet_ntoa (clientname.sin_addr),
-	  ntohs (clientname.sin_port), control_fd);
+	  inet_ntoa (server_client_ip.sin_addr),
+	  ntohs (server_client_ip.sin_port), control_fd);
 
   devser_child_pid = getpid ();
   // initialize data_cons

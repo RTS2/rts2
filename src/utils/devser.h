@@ -46,6 +46,7 @@ void devser_shm_data_lock ();
 void devser_shm_data_unlock ();
 void devser_shm_data_dt (void *mem);
 
+void devser_get_client_ip (struct sockaddr_in *client_ip);
 int devser_set_server_id (int server_id_in,
 			  devser_handle_msg_t msg_handler_in);
 

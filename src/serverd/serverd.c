@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <arpa/inet.h>
 
 #include "../utils/devser.h"
 #include "../status.h"
@@ -317,16 +318,20 @@ client_serverd_handle_command (char *command)
       if (strcmp (command, "info") == 0)
 	{
 	  int i;
+	  struct sockaddr_in client_ip;
+	  devser_get_client_ip (&client_ip);
 	  if (devser_param_test_length (0))
 	    return -1;
 
 	  for (i = 0; i < MAX_CLIENT; i++)
-	    if (!*shm_clients[i].login)
+	    if (*shm_clients[i].login)
 	      devser_dprintf ("user %s %i", shm_clients[i].login, i);
 
 	  for (i = 0; i < MAX_DEVICE; i++)
-	    if (!*shm_devices[i].name)
-	      devser_dprintf ("device %s %i", shm_devices[i].name, i);
+	    if (*shm_devices[i].name)
+	      devser_dprintf ("device %s %i %s %hd", shm_devices[i].name, i,
+			      inet_ntoa (client_ip.sin_addr),
+			      ntohs (client_ip.sin_port));
 	  return 0;
 	}
       else if (strcmp (command, "priority") == 0
