@@ -20,7 +20,6 @@
 #include <time.h>
 
 #include "dome_info.h"
-#include "../utils/config.h"
 #include "../utils/devdem.h"
 #include "../utils/hms.h"
 #include "status.h"
@@ -199,18 +198,11 @@ main (int argc, char **argv)
   mtrace ();
 #endif
 
-  if (read_config (CONFIG_FILE) == -1)
-    {
-      fprintf (stderr,
-	       "Cannot read configuration file " CONFIG_FILE ", exiting.");
-      exit (1);
-    }
-
   /* get attrs */
   while (1)
     {
       static struct option long_option[] = {
-	{"tel_port", 1, 0, 'l'},
+	{"dome_port", 1, 0, 'f'},
 	{"port", 1, 0, 'p'},
 	{"interactive", 0, 0, 'i'},
 	{"serverd_host", 1, 0, 's'},
@@ -219,13 +211,15 @@ main (int argc, char **argv)
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "l:p:is:q:d:h", long_option, NULL);
+      c = getopt_long (argc, argv, "f:p:is:q:d:h", long_option, NULL);
 
       if (c == -1)
 	break;
 
       switch (c)
 	{
+	case 'f':
+	  dome_file = optarg;
 	case 'p':
 	  device_port = atoi (optarg);
 	  break;
@@ -262,8 +256,6 @@ main (int argc, char **argv)
 
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-  dome_file = get_device_string_default ("dome", "port", dome_file);
 
   if (dome_init (dome_file) == -1)
     {
