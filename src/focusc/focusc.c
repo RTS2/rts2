@@ -31,7 +31,7 @@
 #include "../writers/fits.h"
 #include "status.h"
 
-#define EXPOSURE_TIME		20
+#define EXPOSURE_TIME	3
 
 struct device *camera;
 
