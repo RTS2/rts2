@@ -14,19 +14,20 @@ main (int argc, char **argv)
   char line_buf[200];
   int tar_id;
   int ret;
+  int enabled;
   db_connect ();
   while (fgets (line_buf, 200, stdin))
     {
       ret =
-	sscanf (line_buf, "%i %i %lf %lf %li %as", &grb_id, &grb_seqn,
-		&grb_ra, &grb_dec, &grb_date, &grb_name);
+	sscanf (line_buf, "%i %i %lf %lf %li %i %as", &grb_id, &grb_seqn,
+		&grb_ra, &grb_dec, &grb_date, &enabled, &grb_name);
       printf ("ret %i", ret);
       fflush (stdout);
-      if (ret == 6)
+      if (ret == 7)
 	{
 	  db_update_grb (grb_id, &grb_seqn, &grb_ra, &grb_dec, &grb_date,
-			 &tar_id);
-	  printf ("tar_id: %i\n", tar_id);
+			 &tar_id, enabled);
+	  printf ("tar_id: %i\nenabled: %i\n", tar_id, enabled);
 	}
     }
   db_disconnect ();
