@@ -112,6 +112,7 @@ tel_read (char *buf, int count)
 	  errno = EIO;
 	  return -1;
 	}
+      syslog (LOG_DEBUG, "LX200: readed %c", buf[readed]);
     }
   return readed;
 }
@@ -194,7 +195,7 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
 
   tmp_rcount = tel_read (rbuf, rcount);
 
-  syslog (LOG_DEBUG, "LX200:readed %i", tmp_rcount);
+  syslog (LOG_DEBUG, "LX200:readed %i %s", tmp_rcount, rbuf);
 
 unlock:
 
@@ -393,7 +394,7 @@ tel_write_ra (double ra)
 {
   char command[14];
   int h, m, s;
-  ra = ra/15;
+  ra = ra / 15;
   if (ra < 0)
     ra = floor (ra / 24) * -24 + ra;	//normalize ra
   if (ra > 24)
@@ -448,27 +449,6 @@ telescope_init (const char *device_name, int telescope_id)
   if (port < 0)
     return -1;
 
-  if (tcgetattr (port, &tel_termios) < 0)
-    return -1;
-
-  if (cfsetospeed (&tel_termios, B9600) < 0 ||
-      cfsetispeed (&tel_termios, B9600) < 0)
-    return -1;
-
-  tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-  tel_termios.c_oflag = 0;
-  tel_termios.c_cflag =
-    ((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-  tel_termios.c_lflag = 0;
-  tel_termios.c_cc[VMIN] = 0;
-  tel_termios.c_cc[VTIME] = 5;
-
-  if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
-    {
-      syslog (LOG_ERR, "tcsetattr: %m");
-      return -1;
-    }
-
   if ((semid = semget (ftok (device_name, 0), 2, 0644)) < 0)
     {
       if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
@@ -484,11 +464,29 @@ telescope_init (const char *device_name, int telescope_id)
 	  return -1;
 	}
 
+      if (tcgetattr (port, &tel_termios) < 0)
+	return -1;
+
+      if (cfsetospeed (&tel_termios, B9600) < 0 ||
+	  cfsetispeed (&tel_termios, B9600) < 0)
+	return -1;
+
+      tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
+      tel_termios.c_oflag = 0;
+      tel_termios.c_cflag =
+	((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
+      tel_termios.c_lflag = 0;
+      tel_termios.c_cc[VMIN] = 0;
+      tel_termios.c_cc[VTIME] = 5;
+
+      if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
+	{
+	  syslog (LOG_ERR, "tcsetattr: %m");
+	  return -1;
+	}
     }
 
   syslog (LOG_DEBUG, "LX200:Initialization complete");
-
-  tcflush (port, TCIOFLUSH);
 
   // 12/24 hours trick..
   if (tel_write_read ("#:Gc#", 5, rbuf, 5) < 0)
@@ -505,19 +503,31 @@ telescope_init (const char *device_name, int telescope_id)
   if (tel_write_read ("#:Gr#", 5, rbuf, 8) < 0)
     return -1;
   if (rbuf[7] == '#')
-    {				// that could be used to distinguish between long
+    {
+      struct sembuf sem_buf;
+      sem_buf.sem_num = SEM_MOVE;
+      sem_buf.sem_op = -1;
+      sem_buf.sem_flg = SEM_UNDO;
+      if (semop (semid, &sem_buf, 1) < 0)
+	return -1;
+      // that could be used to distinguish between long
       // short mode
       // we are in short mode, set the long on
       if (tel_write_read ("#:U#", 5, rbuf, 0) < 0)
-	return -1;
+	goto sem_high_err;
       // now set low precision, e.g. we won't wait for user
       // to find a star
       strcpy (rbuf, "HIGH");
       while (strncmp ("HIGH", rbuf, 4))
 	{
 	  if (tel_write_read ("#:P#", 4, rbuf, 4) < 0)
-	    return -1;
+	    goto sem_high_err;
 	}
+      return 0;
+    sem_high_err:
+      sem_buf.sem_op = +1;
+      semop (semid, &sem_buf, 1);
+      return -1;
     }
   return 0;
 }
@@ -626,12 +636,6 @@ tel_slew_to (double ra, double dec)
   if (retstr == '0')
     return 0;
   retstr = 0;
-  while (max_read > 0 && retstr != '#')
-    {
-      if (tel_read (&retstr, 1) < 0)
-	return -1;
-      max_read--;
-    }
   errno = EINVAL;
   return -1;
 }

@@ -105,7 +105,6 @@ teld_handle_command (char *command)
   if (strcmp (command, "ready") == 0)
     {
       tel_call (telescope_init ("/dev/ttyS0", 0));
-      atexit (telescope_done);
     }
   else if (strcmp (command, "set") == 0)
     {
@@ -133,7 +132,7 @@ teld_handle_command (char *command)
       if (devdem_priority_block_start ())
 	return -1;
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
-		      "moving of telescope started");
+			  "moving of telescope started");
       devser_thread_create (start_move, (void *) &coord, sizeof coord, NULL,
 			    client_move_cancel);
       devdem_priority_block_end ();
