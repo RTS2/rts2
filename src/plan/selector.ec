@@ -117,7 +117,7 @@ select_next_alt (time_t c_start, Target *plan, float lon, float lat)
   long int obs_start = c_start - 8640;
   EXEC SQL END DECLARE SECTION;
 
-  printf ("C_start: %s", ctime (&c_start));
+  printf ("C_start alt: %s", ctime (&c_start));
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 
@@ -192,7 +192,7 @@ select_next_gps (time_t c_start, Target *plan, float lon, float lat)
   EXEC SQL END DECLARE SECTION;
   obs_start -= (long) get_device_double_default ("gps", "interval", 302400);
 
-  printf ("C_start: %s", ctime (&c_start));
+  printf ("C_start gps: %s", ctime (&c_start));
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 
@@ -365,7 +365,7 @@ select_next_grb (time_t c_start, Target *plan, float lon, float lat)
   EXEC SQL END DECLARE SECTION;
 
   db_lock ();
-  printf ("C_start: %s", ctime (&c_start));
+  printf ("C_start grb: %s", ctime (&c_start));
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT 
@@ -589,6 +589,7 @@ WHERE
 ORDER BY 
         ell_priority DESC, 
         img_count ASC;
+  test_sql;
   EXEC SQL OPEN obs_cursor_ell;
   test_sql;
   while (1)
@@ -883,6 +884,7 @@ get_next_plan (Target *plan, int selector_type,
 				  lat);
 
     default:
+      printf ("unknow selector type: %i\n", selector_type);
       return -1;
     }
 }

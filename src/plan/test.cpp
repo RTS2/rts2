@@ -78,7 +78,7 @@ main (int argc, char **argv)
 
 
   if (get_next_plan
-      (plan, (int) get_double_default ("planc_selector", SELECTOR_HETE),
+      (plan, (int) get_double_default ("planc_selector", SELECTOR_ELL),
        &t, 1, 30, SERVERD_NIGHT, observer.lng, observer.lat))
     {
       printf ("Error making plan\n");
