@@ -69,12 +69,13 @@ data_handler (int sock, size_t size, struct image_info *image)
   char filen[250];
   char *filename;
 
-  gmtime_r (&image->exposure_time, &gmt);
+  gmtime_r (&image->exposure_tv.tv_sec, &gmt);
 
   if (date_exposure)
-    asprintf (&filename, "%04i%02i%02i%02i%02i%02i.fits", exp_start.tm_year,
-	      exp_start.tm_mon, exp_start.tm_mday, exp_start.tm_hour,
-	      exp_start.tm_min, exp_start.tm_sec);
+    asprintf (&filename, "%04i%02i%02i%02i%02i%02i-%03i.fits",
+	      exp_start.tm_year, exp_start.tm_mon, exp_start.tm_mday,
+	      exp_start.tm_hour, exp_start.tm_min, exp_start.tm_sec,
+	      (int) (image->exposure_tv.tv_usec / 1000));
   else if (increase_exposure)
     asprintf (&filename, "tmp%i_%04i.fits", parent_pid, increase_exposure++);
   else
@@ -138,9 +139,10 @@ int
 readout ()
 {
   struct image_info *info;
+  struct timezone tz;
 
   info = (struct image_info *) malloc (sizeof (struct image_info));
-  info->exposure_time = time (NULL);
+  gettimeofday (&info->exposure_tv, &tz);
   info->exposure_length = exposure_time;
   info->target_id = -1;
   info->observation_id = -1;

@@ -296,11 +296,11 @@ public:
 	  }
 	else
 	  {
-	    gmtime_r (&image_info->exposure_time, &gmt);
-	    asprintf (&filename, "%s/%s%04i%02i%02i%02i%02i%02i.fits",
+	    gmtime_r (&image_info->exposure_tv.tv_sec, &gmt);
+	    asprintf (&filename, "%s/%s%04i%02i%02i%02i%02i%02i-%03i.fits",
 		      image_info->camera_name, (image_info->target_type == TARGET_DARK ? "d" : ""),
 		      gmt.tm_year + 1900, gmt.tm_mon,
-		      gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec);
+		      gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec, (int) (image_info->exposure_tv.tv_usec / 1000));
 	    strcpy (filen, filename);
 	    printf ("filename: %s\n", filename);
 	    if (fits_create (&receiver, filename)
@@ -466,9 +466,11 @@ public:
   int readout ()
   {
     struct image_info *info;
+    struct timezone tz;
 
     info = (struct image_info *) malloc (sizeof (struct image_info));
-    info->exposure_time = time (NULL);
+
+    gettimeofday (&info->exposure_tv, &tz);
     info->exposure_length = exposure_time;
     info->target_id = -1;
     info->observation_id = -1;

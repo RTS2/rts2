@@ -278,7 +278,7 @@ data_handler (int sock, size_t size, struct image_info *image, void *arg)
   char *dirname;
   char *dark_name = NULL;
 
-  gmtime_r (&image->exposure_time, &gmt);
+  gmtime_r (&image->exposure_tv.tv_sec, &gmt);
 
   printf ("camera_name : %s\n", image->camera_name);
 
@@ -405,7 +405,7 @@ data_handler (int sock, size_t size, struct image_info *image, void *arg)
     case TARGET_DARK:
       printf ("darkname: %s\n", filename);
 
-      ret = db_add_darkfield (filename, &image->exposure_time,
+      ret = db_add_darkfield (filename, &image->exposure_tv.tv_sec,
 			      image->exposure_length * 100,
 			      image->camera.ccd_temperature * 10,
 			      image->camera_name);

@@ -253,7 +253,7 @@ fits_write_image_info (struct fits_receiver_data *receiver,
   char *image_type;
 
   pthread_mutex_lock (&image_fits_mutex);
-  jd = ln_get_julian_from_timet (&info->exposure_time);
+  jd = ln_get_julian_from_timet (&info->exposure_tv.tv_sec);
   if (*info->telescope.type)
     {
       write_key_unlock (TSTRING, "TEL_NAME", info->telescope_name,
@@ -301,9 +301,11 @@ fits_write_image_info (struct fits_receiver_data *receiver,
 		    "Observation id");
   write_key_unlock (TSTRING, "OBSERVER", PACKAGE " " VERSION, "Observer");
 
-  write_key_unlock (TLONG, "SEC", &info->exposure_time,
+  write_key_unlock (TLONG, "SEC", &info->exposure_tv.tv_sec,
 		    "Camera exposure start (sec 1.1.1970)");
-  write_key_unlock (TLONG, "CTIME", &info->exposure_time,
+  write_key_unlock (TLONG, "USEC", &info->exposure_tv.tv_usec,
+		    "Camera exposure start (usec part from full second)");
+  write_key_unlock (TLONG, "CTIME", &info->exposure_tv.tv_sec,
 		    "Camera exposure start (sec 1.1.1970)");
   write_key_unlock (TDOUBLE, "JD", &jd, "Camera exposure Julian date");
 
@@ -352,12 +354,12 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 {
   memcpy (&(receiver->data[receiver->offset]), data, size);
   receiver->offset += size;
-#ifdef DEBUG
+//#ifdef DEBUG
   if (isatty (1))
     {
       printf (".");
     };
-#endif /* DEBUG */
+//#endif /* DEBUG */
   if (receiver->offset > sizeof (struct imghdr))
     {
       if (!(receiver->header_processed))	// we receive full image header

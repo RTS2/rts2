@@ -8,6 +8,7 @@
 #include <libnova/libnova.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/time.h>
 
 #define TARGET_LIGHT		1
 #define TARGET_DARK		2
@@ -32,7 +33,7 @@ struct image_info
   struct telescope_info telescope;
   struct camera_info camera;
   struct dome_info dome;
-  time_t exposure_time;
+  struct timeval exposure_tv;
   float exposure_length;
   int target_type;
   int target_id;
