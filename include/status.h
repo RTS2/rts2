@@ -104,11 +104,12 @@
 
 // device types
 #define DEVICE_TYPE_UNKNOW	0
-#define DEVICE_TYPE_MOUNT	1
-#define DEVICE_TYPE_CCD		2
-#define DEVICE_TYPE_DOME	3
-#define DEVICE_TYPE_WEATHER	4
-#define DEVIDE_TYPE_ARCH	5
+#define DEVICE_TYPE_SERVERD	1
+#define DEVICE_TYPE_MOUNT	2
+#define DEVICE_TYPE_CCD		3
+#define DEVICE_TYPE_DOME	4
+#define DEVICE_TYPE_WEATHER	5
+#define DEVIDE_TYPE_ARCH	6
 
 // and more to come..
 // #define DEVICE_TYPE_
