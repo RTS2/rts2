@@ -772,12 +772,16 @@ server_message_priority (struct param_status *params)
 		  (new_priority_client, "priority_receive"))
 		return -1;
 	    }
+	  else
+	    clients_info->priority_client = new_priority_client;
 	}
       else
 	{
 	  syslog (LOG_INFO,
-		  "same old and new priority clients, don't change it : %i",
-		  new_priority_client);
+		  "same old and new priority clients, don't change it : %i %i %i",
+		  new_priority_client,
+		  clients_info->designated_priority_client,
+		  clients_info->priority_client);
 	}
       return 0;
     }
