@@ -1069,16 +1069,15 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
     {
       process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
 		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-		   150.0, 60, &grb_date);
+		   270.0, 60, &grb_date);
     }
-  else
-    // if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
-  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
-    {
-      process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
-		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-		   ra, dec, &grb_date);
-    }
+  else if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+    if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+      {
+	process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
+		     (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
+		     ra, dec, &grb_date);
+      }
 
   if (lbuf[H_TRIG_FLAGS] & H_WXM_POS)	/* Flag says that WXM pos is available */
     fprintf (s, "   WXM position is available.\n");
@@ -1394,6 +1393,7 @@ receive_bacodine (process_grb_event_t arg)
   long lo, hi;			/* Lo and Hi portion of long */
   time_t loc_time;
   fd_set read_fd;
+  int test_num = 11;
 
   process_grb = arg;
 
@@ -1428,7 +1428,6 @@ receive_bacodine (process_grb_event_t arg)
  *	AF_INET is for an inet connection.
  * The return value is the sock descriptor. */
   inetsd = server (hostname, port, AF_INET);
-
 
 /* An infinite loop for reading the socket, echoing the packet back
  * to the GCN originator, and handling the reconnection if there is a break.
@@ -1486,7 +1485,7 @@ receive_bacodine (process_grb_event_t arg)
 	       * accordingly.  Insert that code here.
 	       */
 
-	      for (i = 0; i <= bytes / 4; i++)
+	      for (i = 0; i < sizeof (lbuf); i++)
 		{
 		  lo = lbuf[i] & 0x0000ffff;
 		  hi = (lbuf[i] >> 16) & 0x000ffff;
@@ -1507,6 +1506,8 @@ receive_bacodine (process_grb_event_t arg)
 		  last_here_sod = here_sod;
 		  last_imalive_sod = lbuf[PKT_SOD] / 100.0;
 		  chk_imalive (1, tloc);	/* Pass time of latest imalive */
+		  if (!(lbuf[PKT_SERNUM] % 20))
+		    process_grb (10, test_num++, 270.0, 60, &tloc);
 		  break;
 		  //case TYPE_GRB_COORDS:         /* BATSE-Original (no longer available) */
 		  //case TYPE_MAXBC:                      /* BATSE-MAXBC    (no longer available) */
