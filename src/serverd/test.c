@@ -83,6 +83,8 @@ main ()
   obs.lng = -15;
   obs.lat = 50;
 
+  rise_set_cal ();
+
   ev_time = 1038460770;
 
   end_time = start_time + 86500;

@@ -185,6 +185,56 @@ devices_all_msg_snd (char *format, ...)
 }
 
 int
+get_device_key ()
+{
+  int key = random ();
+  // device number could change..device names don't
+  char *dev_name;
+  struct device *device;
+  int dev_id;
+  if (devser_param_test_length (1) || devser_param_next_string (&dev_name))
+    return -1;
+  // find device, set it authorization key
+  if (find_device (dev_name, &dev_id, &device))
+    {
+      devser_write_command_end (DEVDEM_E_SYSTEM,
+				"cannot find device with name %s", dev_name);
+      return -1;
+    }
+
+  devser_shm_data_lock ();
+  device->authorizations[serverd_id] = key;
+  devser_shm_data_unlock ();
+
+  devser_dprintf ("authorization_key %s %i", dev_name, key);
+  return 0;
+}
+
+int
+get_info ()
+{
+  int i;
+  struct device *dev;
+
+  if (devser_param_test_length (0))
+    return -1;
+
+  for (i = 0; i < MAX_CLIENT; i++)
+    if (*shm_clients[i].login)
+      devser_dprintf ("user %i %i %c %s %s", i,
+		      shm_clients[i].priority,
+		      shm_info->priority_client == i ? '*' : '-',
+		      shm_clients[i].login, shm_clients[i].status_txt);
+
+  for (i = 0, dev = shm_devices; i < MAX_DEVICE; i++, dev++)
+
+    if (*dev->name)
+      devser_dprintf ("device %i %s %s:%i %i", i, dev->name,
+		      dev->hostname, dev->port, dev->type);
+  return 0;
+}
+
+int
 device_serverd_handle_command (char *command)
 {
   if (strcmp (command, "authorize") == 0)
@@ -226,6 +276,15 @@ device_serverd_handle_command (char *command)
 
       return 0;
     }
+  if (strcmp (command, "key") == 0)
+    {
+      return get_device_key ();
+    }
+  if (strcmp (command, "info") == 0)
+    {
+      return get_info ();
+    }
+
   devser_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s", command);
   return -1;
 }
@@ -284,7 +343,7 @@ serverd_riseset_thread (void *arg)
   struct ln_lnlat_posn obs;
   syslog (LOG_DEBUG, "riseset thread start");
 
-  obs.lng = -15;
+  obs.lng = -14.95;
   obs.lat = 50;
 
   while (1)
@@ -297,10 +356,11 @@ serverd_riseset_thread (void *arg)
       next_event (&obs, &curr_time, &call_state, &shm_info->next_event_type,
 		  &shm_info->next_event_time);
 
-      if (shm_info->current_state < SERVERD_MAINTANCE
+      if (shm_info->current_state != SERVERD_OFF
 	  && shm_info->current_state != call_state)
 	{
-	  shm_info->current_state = call_state;
+	  shm_info->current_state =
+	    (shm_info->current_state & SERVERD_STANDBY_MASK) | call_state;
 	  devices_all_msg_snd ("S %s %i", SERVER_STATUS,
 			       shm_info->current_state);
 	  clients_all_msg_snd ("S %s %i", SERVER_STATUS,
@@ -417,26 +477,7 @@ client_serverd_handle_command (char *command)
 
       if (strcmp (command, "info") == 0)
 	{
-	  int i;
-	  struct device *dev;
-
-	  if (devser_param_test_length (0))
-	    return -1;
-
-	  for (i = 0; i < MAX_CLIENT; i++)
-	    if (*shm_clients[i].login)
-	      devser_dprintf ("user %i %i %c %s %s", i,
-			      shm_clients[i].priority,
-			      shm_info->priority_client == i ? '*' : '-',
-			      shm_clients[i].login,
-			      shm_clients[i].status_txt);
-
-	  for (i = 0, dev = shm_devices; i < MAX_DEVICE; i++, dev++)
-
-	    if (*dev->name)
-	      devser_dprintf ("device %i %s %s:%i %i", i, dev->name,
-			      dev->hostname, dev->port, dev->type);
-	  return 0;
+	  return get_info ();
 	}
       if (strcmp (command, "status_txt") == 0)
 	{
@@ -508,37 +549,16 @@ client_serverd_handle_command (char *command)
 	}
       if (strcmp (command, "key") == 0)
 	{
-	  int key = random ();
-	  // device number could change..device names don't
-	  char *dev_name;
-	  struct device *device;
-	  int dev_id;
-	  if (devser_param_test_length (1)
-	      || devser_param_next_string (&dev_name))
-	    return -1;
-	  // find device, set it authorization key
-	  if (find_device (dev_name, &dev_id, &device))
-	    {
-	      devser_write_command_end (DEVDEM_E_SYSTEM,
-					"cannot find device with name %s",
-					dev_name);
-	      return -1;
-	    }
-
-	  devser_shm_data_lock ();
-	  device->authorizations[serverd_id] = key;
-	  devser_shm_data_unlock ();
-
-	  devser_dprintf ("authorization_key %s %i", dev_name, key);
-	  return 0;
+	  return get_device_key ();
 	}
       if (strcmp (command, "on") == 0)
 	{
-	  return serverd_change_state ((shm_info->next_event_type + 3) % 4);
+	  return serverd_change_state ((shm_info->next_event_type + 5) % 6);
 	}
-      if (strcmp (command, "maintance") == 0)
+      if (strcmp (command, "standby") == 0)
 	{
-	  return serverd_change_state (SERVERD_MAINTANCE);
+	  return serverd_change_state (SERVERD_STANDBY |
+				       ((shm_info->next_event_type + 5) % 6));
 	}
       if (strcmp (command, "off") == 0)
 	{
