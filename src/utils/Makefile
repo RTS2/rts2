@@ -1,6 +1,8 @@
 # $Id$
 
-all: devdem.a devser.a test
+BIN=test
+
+all: devdem.a devser.a test $(BIN)
 
 include ../../make.conf
 
