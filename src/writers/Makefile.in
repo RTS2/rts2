@@ -1,6 +1,6 @@
 # $Id$
 
-all: fits.o
+all: fits.o process_image.o
 
 CFLAGS = @CFLAGS@ -I@top_srcdir@/include
 LDFLAGS = @LDFLAGS@
