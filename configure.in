@@ -14,7 +14,13 @@ AC_PROG_MAKE_SET
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lm':
-AC_CHECK_LIB([m], [sqrt], LIB_M="-lm"; LIBS="-lm $LIBS"; AC_SUBST(LIB_M))
+AC_CHECK_LIB([m], [sqrt], LIB_M="-lm"; LIBS="-lm $LIBS";
+AC_SUBST(LIB_M), [cat << EOF
+**** You don't have math library.
+**** Please install one and make sure, that -lm switch
+**** works as expected.
+EOF
+exit 1])
 # FIXME: Replace `main' with a function in `-lcfitsio':
 AC_CHECK_LIB([cfitsio], [main], , [cat <<EOF
 **** You don't have cfitsio installed.
