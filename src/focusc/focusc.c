@@ -31,7 +31,7 @@
 #include "../writers/fits.h"
 #include "status.h"
 
-#define EXPOSURE_TIME	3
+#define EXPOSURE_TIME	0.02
 
 struct device *camera;
 
@@ -146,6 +146,7 @@ data_handler (int sock, size_t size, struct image_info *image)
       dark_name = (char *) malloc (strlen (filename) + 1);
       strcpy (dark_name, filename);
     } */
+  receiver.info = image;
   printf ("reading data socket: %i size: %i\n", sock, size);
 
   while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
@@ -342,7 +343,7 @@ main (int argc, char **argv)
       printf ("readout at: %s\n", ctime (&t));
       if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
-	  devcli_command (camera, NULL, "expose 0 %i %i", 1, EXPOSURE_TIME))
+	  devcli_command (camera, NULL, "expose 0 %i %f", 1, EXPOSURE_TIME))
 	{
 	  perror ("expose:");
 	}

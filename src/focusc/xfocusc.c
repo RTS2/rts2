@@ -113,6 +113,13 @@ event_loop (void *arg)
 	      if (exposure_time > 0.1)
 		exposure_time -= 0.1;
 	      break;
+	    case XK_q:
+	      exposure_time += 0.01;
+	      break;
+	    case XK_a:
+	      if (exposure_time > 0.01)
+		exposure_time -= 0.01;
+	      break;
 	    case XK_f:
 	      devcli_command (camera, NULL, "box -1 -1 -1 -1");
 	      printf ("reading FULL FRAME!!\n================");
@@ -381,7 +388,7 @@ main (int argc, char **argv)
 		   100, 0, depth, InputOutput, visual, 0, &xswa);
 
   pixmap =
-    XCreatePixmap (display, DefaultRootWindow (display), 1000, 1000, depth);
+    XCreatePixmap (display, DefaultRootWindow (display), 1200, 1200, depth);
 
   gc = XCreateGC (display, pixmap, 0, &gcv);
 
