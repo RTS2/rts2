@@ -204,11 +204,10 @@ teld_handle_command (char *command)
     {
       struct telescope_info info;
       tel_call (telescope_info (&info));
-      devser_dprintf ("name %s", info.name);
+      devser_dprintf ("type %s", info.type);
       devser_dprintf ("serial_number %s", info.serial_number);
       devser_dprintf ("ra %f", info.ra);
       devser_dprintf ("dec %f", info.dec);
-      devser_dprintf ("moving %i", info.moving);
       devser_dprintf ("park_dec %f", info.park_dec);
       devser_dprintf ("longtitude %f", info.longtitude);
       devser_dprintf ("latitude %f", info.latitude);
@@ -224,6 +223,7 @@ teld_handle_command (char *command)
 	return -1;
       devser_thread_create (start_park, NULL, 0, NULL, client_move_cancel);
       devdem_priority_block_end ();
+      return 0;
     }
   else if (strcmp (command, "help") == 0)
     {

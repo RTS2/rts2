@@ -70,20 +70,6 @@ union semun
 };
 #endif
 
-/*!
- * Reports telescope status.
- *
- * @param status		return status
- * 
- * @return 0 on success, -1 & set errno otherwise
- */
-int
-tel_status (int *status)
-{
-  *status = semctl (semid, SEM_MOVE, GETVAL) ? TEL_STILL : TEL_MOVING;
-  return 0;
-}
-
 /*! 
  * Reads some data directly from port.
  * 
@@ -593,12 +579,12 @@ telescope_info (struct telescope_info *info)
       || tel_read_localtime (&info->localtime))
     return -1;
 
-  strcpy (info->name, "LX200");
+  strcpy (info->type, "LX200");
   strcpy (info->serial_number, "000001");
 
   info->park_dec = park_dec;
 
-  return tel_status (&info->moving);
+  return 0;
 }
 
 /*! 
