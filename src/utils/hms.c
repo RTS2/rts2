@@ -118,6 +118,17 @@ dtoints (double value, int *h, int *m, int *s)
   m_fraction = (value - floor (value)) * 60;
   *m = floor (m_fraction);
   *s = round ((m_fraction - *m) * 60);
+  // unification
+  if (*s == 60)
+    {
+      *s = 0;
+      (*m)++;
+    }
+  if (*m >= 60)
+    {
+      *m -= 60;
+      (*h)++;
+    }
   return 0;
 }
 
