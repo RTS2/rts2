@@ -1,1 +1,1 @@
-SUBDIRS = utils writers serverd teld camd camd/urvc db plan grb
+SUBDIRS = utils writers serverd teld camd db plan grb
