@@ -32,6 +32,15 @@
 #include "status.h"
 
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
+
+#define PP_NEG
+
+#define GAMMA 0.995
+
+//#define PP_MED 0.60
+#define PP_HIG 0.995
+#define PP_LOW (1 - PP_HIG)
 
 #define EXPOSURE_TIME		10
 
@@ -75,14 +84,20 @@ event_loop (void *arg)
 int
 data_handler (int sock, size_t size, struct image_info *image_info)
 {
-  int i, width, height;
-  char *data, *d, *p, *pix_data, *q;
+  int i, j, k, width, height;
+  char *data, *d, *pix_data;
+  unsigned int *im;
+  unsigned int m;
   int ret = 0;
   ssize_t s;
   XSetWindowAttributes xswa;
   Colormap colormap;
   static XImage *image = NULL;
   struct imghdr *imghdr;
+
+  int low, med, hig, ds;
+  int hist[65536];
+  static XColor rgb[256];
 
   printf ("reading data socket: %i size: %i\n", sock, size);
 
@@ -103,6 +118,8 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 
   pix_data = data + sizeof (struct imghdr);
 
+  im = (unsigned int *) pix_data;
+
   colormap = DefaultColormap (display, GrayScale);
 
   imghdr = (struct imghdr *) data;
@@ -116,21 +133,64 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 	XCreateImage (display, visual, depth, ZPixmap, 0, 0, width, height,
 		      8, 0);
       image->data = (char *) malloc (image->bytes_per_line * height + 16);
+
+      // allocate colormap..
+      for (i = 0; i < 256; i++)
+	{
+	  rgb[i].red = 65536 * (1.0 - 1.0 * i / 256);
+	  rgb[i].green = 65536 * (1.0 - 1.0 * i / 256);
+	  rgb[i].blue = 65536 * (1.0 - 1.0 * i / 256);
+	  rgb[i].flags = DoRed | DoGreen | DoBlue;
+	  XAllocColor (display, colormap, rgb + i);
+	}
     }
+
+  // histogram build
+  for (i = 0; i < 65536; i++)
+    hist[i] = 0;
+
+  ds = 0;
+  k = 0;
+  for (j = 0; j < height; j++)
+    for (i = 0; i < width; i++)
+      {
+	m = im[i + width * j];
+	hist[m]++;
+	ds++;
+      }
+
+  low = hig = med = 0;
+  j = 0;
+  for (i = 0; i < 65536; i++)
+    {
+      j += hist[i];
+      if ((!low) && (((float) j / (float) ds) > PP_LOW))
+	low = i;
+#ifdef PP_MED
+      if ((!med) && (((float) j / (float) ds) > PP_MED))
+	med = i;
+#endif
+      if ((!hig) && (((float) j / (float) ds) > PP_HIG))
+	hig = i;
+    }
+  fprintf (stderr, "levels: low:%d, med:%d, hi:%d\n", low, med, hig);
+
+  for (j = 0; j < height; j++)
+    for (i = 0; i < width; i++)
+      {
+	m = im[i + j * width];
+	if (m < low)
+	  XPutPixel (image, i, j, rgb[0].pixel);
+	else if (m > hig)
+	  XPutPixel (image, i, j, rgb[255].pixel);
+	else
+	  {
+	    //printf ("middle: %i %i %li\n", m, 256 * ((float) m - low) / (hig - low), rgb[256 * ((float) m - low) / (hig - low)].pixel);
+	    XPutPixel (image, i, j, rgb[(int) (255 * ((float) m - low) / (hig - low))].pixel);	// );
+	  }
+      }
 
   XResizeWindow (display, window, width, height);
-
-  for (i = 0, p = pix_data, q = image->data; i < width * height;
-       i++, p++, q++)
-    {
-      *q = *p;
-      q++, p++;
-      *q = *p;
-      q++;
-      *q = 0;
-      q++;
-      *q = 0;
-    }
 
   XPutImage (display, pixmap, gc, image, 0, 0, 0, 0, width, height);
 
