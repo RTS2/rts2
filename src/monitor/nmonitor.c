@@ -23,6 +23,12 @@ PANEL *stdpanel;
 #define ROW_SIZE	10
 #define COL_SIZE	25
 
+#define CLR_OK		1
+#define CLR_TEXT	2
+#define CLR_PRIORITY	3
+#define CLR_WARNING	4
+#define CLR_FAILURE	5
+
 int wnd_col;
 int wnd_row;
 
@@ -50,7 +56,7 @@ status_serverd (WINDOW * wnd, struct device *dev)
   struct serverd_info *info = (struct serverd_info *) &dev->info;
   wclear (wnd);
   if (has_colors ())
-    wcolor_set (wnd, 1, NULL);
+    wcolor_set (wnd, CLR_OK, NULL);
   else
     wstandout (wnd);
   mvwprintw (wnd, 1, 1, "status: ");
@@ -64,7 +70,7 @@ status_serverd (WINDOW * wnd, struct device *dev)
       mvwprintw (wnd, 1, 13, serverd_status_string (dev->statutes[0].status));
     }
   if (has_colors ())
-    wcolor_set (wnd, 2, NULL);
+    wcolor_set (wnd, CLR_TEXT, NULL);
   else
     wstandend (wnd);
   // print info
@@ -74,12 +80,12 @@ status_serverd (WINDOW * wnd, struct device *dev)
       if (cli->have_priority == '*')
 	{
 	  if (has_colors ())
-	    wcolor_set (wnd, 3, NULL);
+	    wcolor_set (wnd, CLR_PRIORITY, NULL);
 	}
-      mvwprintw (wnd, i, 1, "%3i%c%s", cli->priority,
-		 cli->have_priority, cli->status_txt);
+      mvwprintw (wnd, i, 1, "%3i%c%*s", cli->priority,
+		 cli->have_priority, -1 * (COL_SIZE - 5), cli->status_txt);
       if (has_colors ())
-	wcolor_set (wnd, 2, NULL);
+	wcolor_set (wnd, CLR_TEXT, NULL);
     }
 }
 
@@ -188,12 +194,12 @@ status (WINDOW * wnd, struct device *dev)
     {
       status_send (dev, "info");
       devcli_command (dev, &ret, "base_info");
-      devcli_command (dev, &ret, "info");
+      ret = devcli_command (dev, &ret, "info");
     }
   wclear (wnd);
 
   if (has_colors ())
-    wcolor_set (wnd, 1, NULL);
+    wcolor_set (wnd, ret == 0 ? CLR_OK : CLR_FAILURE, NULL);
   else
     wstandout (wnd);
 
@@ -201,7 +207,7 @@ status (WINDOW * wnd, struct device *dev)
   if (ret)
     {
       if (has_colors ())
-	wcolor_set (wnd, 2, NULL);
+	wcolor_set (wnd, CLR_TEXT, NULL);
       else
 	wstandend (wnd);
       //    wclear (wnd);
@@ -211,7 +217,7 @@ status (WINDOW * wnd, struct device *dev)
   else
     {
       if (has_colors ())
-	wcolor_set (wnd, 2, NULL);
+	wcolor_set (wnd, CLR_TEXT, NULL);
       else
 	wstandend (wnd);
 
@@ -255,7 +261,9 @@ msg_box (char *message)
   int key = 0;
   WINDOW *wnd = newwin (5, COLS / 2, LINES / 2, COLS / 2 - COLS / 4);
   PANEL *msg_pan = new_panel (wnd);
+  wcolor_set (wnd, CLR_WARNING, NULL);
   box (wnd, 0, 0);
+  wcolor_set (wnd, CLR_TEXT, NULL);
   mvwprintw (wnd, 2, 2 + (COLS / 2 - strlen (message)) / 2, message);
   wrefresh (wnd);
   key = wgetch (wnd);
@@ -338,9 +346,11 @@ main (int argc, char **argv)
 
   if (has_colors ())
     {
-      init_pair (1, 2, 0);
-      init_pair (2, 7, 0);
-      init_pair (3, COLOR_BLUE, 0);
+      init_pair (CLR_OK, COLOR_GREEN, 0);
+      init_pair (CLR_TEXT, COLOR_WHITE, 0);
+      init_pair (CLR_PRIORITY, COLOR_CYAN, 0);
+      init_pair (CLR_WARNING, COLOR_RED, 0);
+      init_pair (CLR_FAILURE, COLOR_YELLOW, 0);
     }
   // prepare windows
 
