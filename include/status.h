@@ -4,8 +4,10 @@
  * @author petr
  */
 
-// Camera status
+#ifndef __RTS__STATUS__
+#define __RTS__STATUS__
 
+// Camera status
 #define CAM_MASK_EXPOSE		0x01
 
 #define CAM_NOEXPOSURE		0x00
@@ -75,3 +77,26 @@
 #define PLANCOMM_E_HOSTACCES	-102	//! no route to host and various other problems. See errno for futhre details.
 #define PLANCOMM_E_COMMAND	-103	//! invalid command
 #define PLANCOMM_E_PARAMSNUM	-104	//! invalid number of parameters to system command
+
+// maximal number of devices
+#define MAX_DEVICE		10
+
+// maximal sizes of some important strings
+#define DEVICE_NAME_SIZE	50
+#define CLIENT_LOGIN_SIZE	50
+#define CLIENT_PASSWD_SIZE	50
+#define DEVICE_URI_SIZE		80	
+
+
+// device types
+#define DEVICE_TYPE_UNKNOW	0
+#define DEVICE_TYPE_MOUNT	1
+#define DEVICE_TYPE_CCD		2
+#define DEVICE_TYPE_DOME	3
+#define DEVICE_TYPE_WEATHER	4
+#define DEVIDE_TYPE_ARCH	5
+
+// and more to come..
+// #define DEVICE_TYPE_
+
+#endif /* __RTS__STATUS__ */
