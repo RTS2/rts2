@@ -55,11 +55,12 @@ get_info (struct grb *entry, struct device *tel, struct device *cam)
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
   int ret;
+  struct timezone tz;
 
   info->camera_name = cam->name;
   printf ("info camera_name = %s\n", cam->name);
   info->telescope_name = tel->name;
-  info->exposure_time = time (NULL);
+  gettimeofday (&info->exposure_tv, &tz);
   info->exposure_length = exposure_time;
   info->target_id = entry->tar_id;
   info->observation_id = entry->obs_id;
@@ -125,7 +126,8 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
       observer.lng = get_double_default ("longtitude", 6.733);
       observer.lat = get_double_default ("latitude", 37.1);
 
-      ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (), &hrz);
+      ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (),
+			   &hrz);
 
       if (hrz.alt >= -1)	// start observation - if not above horizont, don't care, we already observe something else
 	{
