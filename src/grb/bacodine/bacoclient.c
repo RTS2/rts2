@@ -546,7 +546,7 @@ login (sock)
   unsigned char c;
 
   if (*(get_device_string_default ("bacoclient", "proxy", "Y")) != 'Y')
-    return -1;
+    return 0;
 
   printf ("Will login throuht proxy\n");
   login_user = get_device_string_default ("bacoclient", "user", login_user);

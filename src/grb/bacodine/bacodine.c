@@ -591,7 +591,7 @@ server (hostname, port, type)
     {
       printf ("bind() errno=%i\n", errno);
       perror ("bind()");
-      if (errno = 98)
+      if (errno == 98)
 	sleep (200);
       return (serr (sd, "server(): bind."));
     }
@@ -1080,7 +1080,8 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 
   if (lbuf[PKT_TYPE] == TYPE_HETE_TEST)
     {
-      process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
+      process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT %
+		    99) + 1,
 		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
 		   270.0, 60, &grb_date);
     }
