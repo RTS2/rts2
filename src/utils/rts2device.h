@@ -127,6 +127,8 @@ public:
 
 class Rts2Device:public Rts2Block
 {
+  int lockf;
+
   int statesSize;
   Rts2State **states;
   Rts2DevConnMaster *conn_master;

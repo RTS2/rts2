@@ -2,12 +2,14 @@
 #define _GNU_SOURCE
 #endif
 
+#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -444,6 +446,8 @@ Rts2Device::~Rts2Device (void)
 {
   int i;
 
+  close (lockf);
+
   for (i = 0; i < statesSize; i++)
     delete states[i];
   free (states);
@@ -521,10 +525,45 @@ int
 Rts2Device::init ()
 {
   int ret;
+  char *lock_fname;
+  FILE *lock_file;
+
+  // try to open log file..
 
   ret = Rts2Block::init ();
 
   openlog (NULL, log_option, LOG_LOCAL0);
+
+  asprintf (&lock_fname, "/var/lock/rts2_%s", device_name);
+
+  lockf = open (lock_fname, O_RDWR | O_CREAT);
+
+  if (lockf == -1)
+    {
+      syslog (LOG_ERR, "cannot open lock file %s", lock_fname);
+      return -1;
+    }
+
+  ret = flock (lockf, LOCK_EX | LOCK_NB);
+  if (ret)
+    {
+      if (errno == EWOULDBLOCK)
+	{
+	  syslog (LOG_ERR, "lock file %s owned by another process",
+		  lock_fname);
+	  return -1;
+	}
+      syslog (LOG_ERR, "cannot flock %s: %m, lock_fname");
+      return -1;
+    }
+
+  lock_file = fdopen (lockf, "w+");
+
+  free (lock_fname);
+
+  fprintf (lock_file, "%i", getpid ());
+
+  fflush (lock_file);
 
   conn_master =
     new Rts2DevConnMaster (this, device_host, getPort (), device_name,
