@@ -15,7 +15,7 @@ devdem.a: devdem.o devser.o devcli.o devhnd.o hms.o param.o
 devser.a: devser.o hms.o param.o
 	$(AR) rcsv $@ $^
 
-devcli.a: devcli.o devhnd.o param.o hms.o
+devcli.a: devcli.o devhnd.o param.o hms.o mkpath.o
 	$(AR) rcsv $@ $^
 
-test: hms.o test.o
+test: hms.o mkpath.o test.o

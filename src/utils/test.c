@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #include "hms.h"
-
+#include "mkpath.h"
 
 
 int
@@ -35,6 +35,9 @@ main (int argc, char **argv)
       assert ((round (value * 10000) == round (hmstod (hms) * 10000))
 	      && (errno == 0));
     }
+
+  assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
+  assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
 
   return 0;
 }
