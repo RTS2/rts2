@@ -51,7 +51,7 @@ while ($a = <FILE>)
 
 #print $flip . "\n";
 
-my $ra_err = + ($arr[0][2] - 160) * 0.2956 * $flip * 2;
+my $ra_err = + ($arr[0][2] - 160) * 0.2956 * $flip;
 my $dec_err = + ($arr[0][3] - 140) * 0.2853 * $flip; 
 
 
