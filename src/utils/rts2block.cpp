@@ -49,7 +49,10 @@ Rts2Conn::~Rts2Conn (void)
 int
 Rts2Conn::add (fd_set * set)
 {
-  FD_SET (sock, set);
+  if (sock >= 0)
+  {
+    FD_SET (sock, set);
+  }
 }
 
 int
@@ -81,7 +84,7 @@ Rts2Conn::receive (fd_set * set)
   // connections market for deletion
   if (conn_state == 5)
     return -1;
-  if (FD_ISSET (sock, set))
+  if ((sock >= 0) && FD_ISSET (sock, set))
     {
       if (conn_state == 1)
 	{
