@@ -806,7 +806,7 @@ FROM
 WHERE
         terestial.tar_id = targets.tar_id
 	AND type_id = :obs_type 
-	AND mod (ter_minutes_start - ter_offset, ter_minutes) > (ter_minutes - 5)
+	AND mod (:ter_minutes_start - ter_offset, ter_minutes) > (ter_minutes - 5)
 ;
   EXEC SQL OPEN obs_cursor_terestial;
   test_sql;
@@ -1076,9 +1076,13 @@ Selector::get_next_plan (Target *plan, int selector_type,
 	  break;
 	}
       printf ("executing select_next_airmass\n");
-      return select_next_airmass (*obs_start, plan, airmass, 90, 270, lon,
-				  lat);
-
+      if (!select_next_airmass (*obs_start, plan, airmass, 90, 270, lon,
+				  lat))
+	return 0;
+      // default selector - dark frame
+      add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
+      return 0;
     default:
       printf ("unknow selector type: %i\n", selector_type);
       return -1;
