@@ -34,7 +34,7 @@
 		if ($_REQUEST['tar_enabled'] === 't')
 			$tar_enabled = 'true';
 		if (array_key_exists('insert',$_REQUEST)) {
-			if (array_key_exists ('tar_id', $_REQUEST))
+			if (is_numeric ($_REQUEST['tar_id']))
 			{
 				$tar_id = $_REQUEST['tar_id'];
 			}
