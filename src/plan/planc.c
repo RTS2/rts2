@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <argz.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -34,12 +35,16 @@
 #include "selector.h"
 #include "../db/db.h"
 
-#define EXPOSURE_TIME		30
+#define EXPOSURE_TIME		60
+#define EPOCH			"002"
 
 struct device *camera, *telescope;
 
 char *dark_name = NULL;
 
+int parking = 0;		// we will park..
+
+static struct termios stored;
 
 #define fits_call(call) if (call) fits_report_error(stderr, status);
 
@@ -71,12 +76,15 @@ data_handler (int sock, size_t size, struct image_info *image)
   float ra_err;
   float dec_err;
 
+  printf ("data_handler image: %x\n", image);
+  printf ("exp_time: %i\n", image->exposure_time);
+
   gmtime_r (&image->exposure_time, &gmt);
 
   switch (image->target_type)
     {
     case TARGET_DARK:
-      if (!asprintf (&dirname, "/darks/%s/", image->camera.name))
+      if (!asprintf (&dirname, "/darks/%s/%s/", EPOCH, image->camera.name))
 	{
 	  perror ("planc data_handler asprintf");
 	  return -1;
@@ -84,7 +92,8 @@ data_handler (int sock, size_t size, struct image_info *image)
       break;
     default:
       if (!asprintf
-	  (&dirname, "/images/%s/%i/", image->camera.name, image->target_id))
+	  (&dirname, "/images/%s/%s/%05i/", EPOCH, image->camera.name,
+	   image->target_id))
 	{
 	  perror ("planc data_handler asprintf");
 	  return -1;
@@ -96,11 +105,9 @@ data_handler (int sock, size_t size, struct image_info *image)
   strftime (filen, 250, "%Y%m%d%H%M%S.fits", &gmt);
   asprintf (&filename, "%s%s", dirname, filen);
 
-  printf ("filename: %s\n", filename);
-
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
-      perror ("camc data_handler fits_init");
+      printf ("camc data_handler fits_init\n");
       ret = -1;
       goto free_filename;
     }
@@ -114,8 +121,15 @@ data_handler (int sock, size_t size, struct image_info *image)
     }
   printf ("reading data socket: %i size: %i\n", sock, size);
 
+
   while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
     {
+      if (sock < 0 || size != 3145784)
+	{
+	  printf ("socket error: %i", sock);
+	  exit (EXIT_FAILURE);
+	}
+
       if ((ret = fits_handler (data, s, &receiver)) < 0)
 	goto free_filename;
       if (ret == 1)
@@ -196,9 +210,9 @@ data_handler (int sock, size_t size, struct image_info *image)
       printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
 	      ra_err, dec_err);
 
-      if (!devcli_command (telescope, NULL, "correct %i %f %f",
-			   image->telescope.correction_mark, ra_err / 60.0,
-			   dec_err / 60.0))
+      if (devcli_command (telescope, NULL, "correct %i %f %f",
+			  image->telescope.correction_mark, ra_err / 60.0,
+			  dec_err / 60.0))
 	perror ("telescope correct");
       break;
 
@@ -226,9 +240,6 @@ readout (struct target *plan)
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
 
-  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING, TEL_STILL,
-			  0);
-
   info->exposure_time = time (NULL);
   info->exposure_length = EXPOSURE_TIME;
   info->target_id = plan->id;
@@ -247,6 +258,7 @@ readout (struct target *plan)
       free (info);
       return -1;
     }
+  printf ("after readout\n");
   free (info);
   return 0;
 }
@@ -262,7 +274,7 @@ main (int argc, char **argv)
 
   int c, i = 0;
 
-  int priority;
+  int priority = 20;
 
 #ifdef DEBUG
   mtrace ();
@@ -313,6 +325,9 @@ main (int argc, char **argv)
       printf ("You must pass server address\n");
       exit (EXIT_FAILURE);
     }
+
+  //set_keypress ();
+  //atexit (reset_keypress);
 
   server = argv[optind++];
 
@@ -396,19 +411,51 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
   printf ("...plan made\n");
-  fflush (stdout);
 
   for (last = plan; last; plan = last, last = last->next, free (plan))
     {
       time_t t = time (NULL);
+      struct timeval tv;
+      fd_set rdfs;
+
+      FD_ZERO (&rdfs);
+      FD_SET (0, &rdfs);
+
+      tv.tv_sec = 0;
+      tv.tv_usec = 0;
+
+/*      if (select (1, &rdfs, NULL, NULL, &tv))
+      {
+	char buf[20];
+	int j, count;
+	count = read (0, buf, 20);
+	for (j=0; j < count; j++)
+	{
+		if (buf[j] == 'p' || buf[j] == 'P')
+		{
+			parking = !parking;
+			break;
+		}
+		
+		printf ("key readed: %c\n", buf[j]);
+	}
+      }
+
+      printf ("after select\n"); */
 
       if (last->ctime < t)
 	{
 	  printf ("ctime %li (%s)", last->ctime, ctime (&last->ctime));
 	  printf (" < t %li (%s)", t, ctime (&t));
-	  continue;
+	  goto generate_next;
 	}
 
+/*      if (parking)
+      {
+          printf ("parking. Press p to togle parking off.\n");
+          devcli_command (telescope, NULL, "park");
+	  goto generate_next;
+      } */
 
       if (last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
 	{
@@ -448,6 +495,9 @@ main (int argc, char **argv)
       devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
+      devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
+			      TEL_STILL, 0);
+
       printf ("OK\n");
 
       time (&t);
@@ -459,12 +509,16 @@ main (int argc, char **argv)
 	  devcli_command (camera, NULL, "expose 0 %i %i",
 			  last->type != TARGET_DARK, EXPOSURE_TIME))
 	{
-	  perror ("expose:");
+	  perror ("expose");
 	}
 
+    generate_next:
       // generate next plan entry
       i++;
       plan = (struct target *) malloc (sizeof (struct target));
+
+      printf ("Making next plan..\n");
+
       get_next_plan (plan, SELECTOR_AIRMASS, last, start_time, i,
 		     EXPOSURE_TIME);
       last->next = plan;
@@ -475,7 +529,8 @@ main (int argc, char **argv)
 
       if (last->type == TARGET_LIGHT)
 	{
-	  db_end_observation (last->obs_id, time (NULL) - last->ctime);
+	  db_end_observation (last->id, last->obs_id, &last->ctime,
+			      time (NULL) - last->ctime);
 	}
     }
 
