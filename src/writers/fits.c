@@ -15,18 +15,16 @@
 /*!
  * Receive callback function.
  * 
- * @param data Received data.
- * @param size Size of receive data.
- * @param attrs Attributes passed during call to readout init.
+ * @param data		received data
+ * @param size		size of receive data
+ * @param attrs		attributes passed during call to readout init.
  *
  * @return 0 if we can continue receiving data, < 0 if we don't like to see more data.
  */
 
 int
-fits_handler (void *data, size_t size, void *attrs)
+fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 {
-  struct fits_receiver_data_t *receiver =
-    (struct fits_receiver_data_t *) attrs;
   memcpy (&(receiver->data[receiver->offset]), data, size);
   receiver->offset += size;
   printf ("[] readed: %i bytes of %i\r", receiver->offset, receiver->size);

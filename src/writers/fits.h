@@ -13,7 +13,7 @@
 /*! 
  * Structure to hold additional fits informations.
  */
-struct fits_receiver_data_t
+struct fits_receiver_data
 {
   int offset;
   size_t size;
@@ -23,6 +23,7 @@ struct fits_receiver_data_t
   pthread_t thread;
 };
 
-int fits_handler (void *data, size_t size, void *attrs);
+int fits_handler (void *data, size_t size,
+		  struct fits_receiver_data *receiver);
 
 #endif /* !__RTS_FITS__ */

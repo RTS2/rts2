@@ -1,10 +1,11 @@
 /*! 
  * Standart image header. Used for transforming image header data between
  * camera deamon and camera client.
+ *
  * $Id$
  *
  * It's quite necessary to have such a head, since condition on camera could
- * change unpredicitably after readout command was issue and client could
+ * change unpredicitably after readout command was issuedddand client could
  * therefore receiver misleading information.
  *
  * That header is in no way mean as universal header for astronomical images.
