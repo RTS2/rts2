@@ -8,5 +8,32 @@ Klient vybírá cíle pozorování z tabulky, která obsahuje seznam mo¾ných cílù
 pozorování. Vybrané pozorování nechá probìhnout, poèká na jeho dokonèení a
 vybere dal¹í vhodné pozorování.
 
+Poøadí, ve kterém jsou cíle pro systém BART vybírány, je urèeno následovnì:
+
+\begin{itemize}
+
+\item pokud existuje zpráva o gama záblesku, který je více jak 20 stupòù nad
+obzorem, a který byl aktualizován pøed ménì ne¾ tøemi dny\footnote{toto
+kritérium zaruèuje, ¾e nebudou vybírány GRB, u kterých je minimální ¹ance na
+detekci optického protìj¹ku}, je vybrán tento cíl.  Pokud je podobných cílù
+více, je vybrán ten, který je nejvý¹e nad obzorem.
+
+\item pokud existuje snímek mlad¹í ne¾ pùl hodiny s astrometrií\footnote{t.j.
+alespoò obèas jsou vidìt hvìzdy}, a existuje pøíle¾itostný cíl (ot), který je
+více jak 10 stupòù nad obzorem, není na severu\footnote{oblast pro dalekohled
+tì¾ko pøístupná, v které mù¾e dojít k zachycení kabelù a následnému znièení
+krokových motorù}, pro který existuje za poslední noc men¹í poèet snímkù, ne¾
+je minimální cíl, a který nebyl pozorován pøed men¹ím èasem, ne¾ je nejmen¹í
+rozestup, je tento vybrán.  Pokud existuje podobných cílù více, jsou vybírány
+podle rozdílné priority, poètu poøízených snímkù, vý¹ce nad obzorem a poètu
+po¾adovaných cílù.
+
+\item jinak je vybráno pole z pøehlídkových polí, které není na severu, je v
+pøedem definované vý¹ce nad obzorem, a má nejmen¹í poèet zaøazených snímkù.
+
+\end{itemize}
+
 Dále je tento klient zodpovìdný za poøizování kalibraèních snímkù v prùbìhu
 soumraku a rozbøesku.
+
+Pro jiné systémy mù¾e být algoritmus výbìru snímku definován odli¹nì. 

@@ -3,9 +3,17 @@
 \def\href#1{{\it #1}}
 
 \def\dia#1#2{
-\begin{figure}[h]
+\begin{figure}[h!]
 \begin{center}
 \scalebox{0.30}{\includegraphics{dia/#1.pdf}}
+\end{center}
+\caption{\label{fig:#1}#2}
+\end{figure}}
+
+\def\fitsdb#1#2{
+\begin{figure}[h!]
+\begin{center}
+\scalebox{0.25}{\includegraphics{fitsdb/#1.png}}
 \end{center}
 \caption{\label{fig:#1}#2}
 \end{figure}}

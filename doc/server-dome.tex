@@ -1,28 +1,47 @@
-\subsection{Kopule, støecha, meterologická stanice}
+\subsection{Kopule, støecha, meteorologická stanice}
 
 Je nutné zajistit zavøení støechy pøi ¹patném poèasí. Dalekohled je citlivý a
-drahý pøístroj, který mù¾e být povìtrnostnímy vlivy po¹kozen. Dalkohled je
-potøeba chránit zejména pøed vlhkem a nárazvým vìtrem.
+drahý pøístroj, který mù¾e být povìtrnostními vlivy po¹kozen. Dalkohled je
+potøeba chránit zejména pøed vlhkem a nárazovým vìtrem.
 
 Støechu je poøeba v pøípadì zji¹tìní nepøíznivých povìtrnostních podmínek
 zavøít. Pro zaji¹tìní nejvy¹¹í mo¾né spolehlivosti je vhodné spojit
-meterologickou stanici s ovládáním støechy do jednoho celku. Systém je pouze
-informován o zavøení støechy na pøíkaz meterologické stanice.
+meteorologickou stanici s ovládáním støechy do jednoho celku. Systém je pouze
+informován o zavøení støechy na pøíkaz meteorologické stanice.
 
-\subsubsection{Stavový diagram}
+Pro dalekohled s otoènou kopulí je potøeba zajistit natáèení kopule, a její
+parkování. Kopule se parkuje na danou pozici.
+
+\subsubsection{Stavy støechy, kouple}
+
+\dia{state-dome}{Stavový diagram støechy, kopule}
 
 \begin{description}
 
-\item[open] støecha je otevøená
+\item[roof\_open] støecha je otevøená
 
-\item[closed] støecha je zavøená
+\item[roof\_closed] støecha je zavøená
 
-\item[opening] støecha se otvírá
+\item[roof\_opening] støecha se otvírá
 
-\item[closing] støecha se zavírá
+\item[roof\_closing] støecha se zavírá
 
-\item[good\_weather] poèasí umo¾òuje pozorování
+\item[weather\_good] poèasí umo¾òuje pozorování
 
-\item[bad\_weather] poèasí neumo¾òuje pozorování
+\item[weather\_bad] poèasí neumo¾òuje pozorování
+
+\item[dome\_still] kopule se nepohybuje, je srovnána s pozicí dalkohledu
+
+\item[dome\_moving] kopule se pohybuje
+
+\item[dome\_parked] kopule je zaparkována tak, jak naøizují bezpeènostní pøedpisy
+
+\end{description}
+
+\subsubsection{Dostupné informace}
+
+\begin{description}
+
+\item pozice ¹tìrbiny
 
 \end{description}

@@ -1,6 +1,6 @@
 \subsection{Montá¾}
 
-\subsubsection{Stavovy montá¾e}
+\subsubsection{Stavy montá¾e}
 
 \dia{state-teld}{Stavový diagram montá¾e}
 
@@ -17,44 +17,80 @@
 \subsubsection{Korekce}
 
 Korekce jsou poèítány z pozice dalekohledu v dobì expozice a skuteèené pozice
-støedu snímkù, zji¹tìné dodateènou astrometrií. Oznaème $a$ pozici dalekohledu
-v dobì expozice, $b$ dodateènì zji¹tìnou pozici, pak zji¹tìná chyba $\delta$
-je rovna $a - b$. Pokud by jsme mìli jenom jednu korekci, staèí zmìnit o tuto
-hodnotu èítaèe dalekohledu, tedy nastavit je na hodnotu $a` - \delta$, kde
-$a`$ je aktuální pozice dalekohledu v dobì aplikace chyby.
+støedu snímkù, zji¹tìné dodateènou astrometrií. Oznaème $\vec{a}$ pozici
+dalekohledu v dobì expozice, $\vec{b}$ dodateènì zji¹tìnou pozici, pak zji¹tìná
+chyba $\vec{\delta}$ je rovna $\vec{a} - \vec{b}$. Pokud máme jenom jednu
+korekci, staèí zmìnit o tuto hodnotu èítaèe dalekohledu, tedy nastavit je na
+hodnotu $\vec{a`} - \vec{\delta}$, kde $\vec{a`}$ je aktuální pozice
+dalekohledu v dobì aplikace korekce.
 
-Chyby jsou dopoèítávány v rùzném poøadí a jejich výpoèet trvá rùznì dlouho
+Poøízené snímky budeme èíslovat. Èíslo snímku je v dal¹ím textu
+uvádìno v dolním indexu. Dolní index u chyby znaèí, ¾e byla spoèítána
+ze snímku, jeho¾ èíslo se rovná hodnotì dolního indexu.
+
+Korekce jsou dopoèítávány v rùzném poøadí a jejich výpoèet trvá rùznì dlouhou
 dobu. Mù¾e nastat tato situace:
 
 \begin{itemize}
 
-\item zjistíme orientaci dalekohledu $a_1$, získáme z CCD kamery snímek $img_1$
+\item zjistíme orientaci dalekohledu $\vec{a_1}$, získáme z CCD kamery snímek
+$img_1$
 
-\item dalekohledem pøejedeme na novou pozici $a_2$
+\item dalekohledem pøejedeme na novou pozici $\vec{a_2}$
 
-\item zjistíme orientaci dalkohledu $a_2$, získáme snímek $img_2$
+\item zjistíme orientaci dalkohledu $\vec{a_2}$, získáme snímek $img_2$
 
-\item dopoèítáme chybu $\delta_1$, zmìníme o její hodnotu èítaèe dalekohledu
+\item dopoèítáme chybu $\vec{\delta_1}$, zmìníme o její hodnotu èítaèe
+dalekohledu
 
-\item dalekohledem pøejedeme na novou pozici $a_3$
+\item dalekohledem pøejedeme na novou pozici $\vec{a_3}$
 
-\item dopoèítáme chybu $\delta_2$
+\item dopoèítáme chybu $\vec{\delta_2}$
 
 \end{itemize}
 
-V tomto okam¾iku je potøeba zmìnit hodnoty èítaèe o $\delta_2$ - $\delta_1$.
-Obecnì je potøeba mìnit èítaèe pro snímek $img_a$ o 
+V tomto okam¾iku je potøeba zmìnit hodnoty èítaèe o $\vec{\delta_2}$ -
+$\vec{\delta_1}$. V pøípadì, ¾e je aktuálnì exponován snímek $m$, je
+potøeba zmìnit èítaèe pøi pøíchodu korekce spoèítané ze snímku $a$ o 
 
 \begin{center}
 
-$\delta_c - \sum\limits_{i=a}^{c-1} \delta_i$
+$\vec{\delta_m} - \sum\limits_{i=a}^{m-1} \vec{\delta_i}$
 
 \end{center}
 
-Tohoto cíle je v ovládání serveru dosa¾eno pomocí cyklické fronty a promìnné
-$correction\_mark$. Promìnná $correction\_mark$ neudává index snímku, je
-zvìt¹ována v¾dy o jednièku pøi zmìnì hodnoty èítaèù, hodnoty $\delta$ nejsou
-evidovány po snímkách, ale po korekcích.
+Bylo by vhodné, aby ovládání montá¾e nemuselo být informováno o probíhající
+expozici. Úkolem montá¾e není hlídat, co kamery na ní umístnìné vykonávají.
+
+Místo obrázkù se proto pomocí globální promìnné $correction\_mark$
+èíslují korekce. Její hodnota je na poèátku nastavena na nulu. Dále je
+k dispozici pole $\delta$ délky $l$, které je na poèátku vynulováno.
+
+Pøi expozici je z ovládání montá¾e zji¹tìno èíslo poslední korekce -
+hodnota $correction\_mark$. Toto èíslo je ulo¾eno spolu s názvem
+snímku do zásobníku, ze kterého jsou snímky odebírány pro vypoèítání
+astrometrie a z ní plynoucí chyby nají¾dìní montá¾e. Korekèní èíslo je
+zji¹»ováno spolu s orientací montá¾e, která se ukládá do snímku, a z které se
+poèítá chyba nají¾dìní.
+
+Po dopoèítání chyby je její hodnota, spolu s pøiøazeným èíslem korekce
+$j$, odeslaná na ovládání montá¾e. Pokud platí, ¾e $j <
+correction\_mark - l$, je hodnota chyby ignorována a není dále
+zpracovávána. K hodnotì chyby se pøiète hodnota ulo¾ená v poli
+$\delta$ na pozici $j\ mod\ l$\footnote{operátor $mod$ znaèí zbytek po
+celoèíselném dìlení}, dostaneme tím hodnotu $\omega$. Toto je opravená
+hodnota korekce, která se ode¹le na montá¾. Od ka¾dého èlena pole
+$\delta$ odeèteme hodnotu $\omega$. Nakonec zvìt¹íme hodnotu
+$correction\_mark$ o jednièku a prvek z pole $\delta$ s indexem
+$correction\_mark\ mod\ l$ vynulujeme.
+
+Tento postup zaruèuje, ¾e v poli $\delta$ jsou uchovávány hodnoty
+korekcí chyb. Na pozici $i$ je v¾dy uchovávána hodnota korekce pro
+chybu z dal¹ího snímku poøízeného s korekèním èíslem $i$.
+
+Popsaný postup správnì opravuje hodnoty chyb o hodnoty v¹ech chyb aplikovaných
+mezi poøízením snímku a okam¾ikem ukonèení jeho zpracování.  Souèet tìchto
+hodnot je obsa¾en v poli $\delta$ pod pøíslu¹ným indexem.
 
 \subsubsection{Dostupné informace}
 
@@ -62,12 +98,14 @@ evidovány po snímkách, ale po korekcích.
 
 \item aktuální poloha dalekohledu - rektascenze, deklinace
 
-\item azimutální souøadnice - azimut, vý¹ka nad obzorem
+\item azimutové souøadnice - azimut, vý¹ka nad obzorem
 
 \item místní hvìzdný èas
 
 \item svìtový èas - UT
 
 \item zemìpisná poloha dalekohledu - zemìpisná délka, zemìpisná ¹íøka
+
+\item èíslo korekce
 
 \end{itemize}

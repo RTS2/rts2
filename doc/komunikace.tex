@@ -1,18 +1,18 @@
 \section{Cílová platforma}
 
-Cílovou platformou jsou poèítaèe zalo¾ené na procesorech i386.
+Cílovou platformou jsou poèítaèe zalo¾ené na Intelovské architektuøe x86.
 
-Pou¾ívaným operaèním systémem je GNU Linux. Pou¾ívali jsem distribuce RedHat,
+Pou¾ívaným operaèním systémem je GNU Linux. Byly zkoumány distribuce RedHat,
 Mandrake a Debian. Díky propracovanému balíkovacímu systému se jako nejlep¹í
-jeví Debian. Ten v souèasné dobì nasazujeme na v¹echny nové poèítaèe.
+jeví Debian. Ten je nasazován na v¹echny nové poèítaèe.
 
-Komunikace mezi poèítaèi bì¾í na sí»ovém protokolu TCP/IP. Dùvodem je jeho
-roz¹íøenost.
+Komunikace mezi agenty pou¾ívá sí»ový protokol TCP/IP.
 
 \section{Cílový jazyk}
 
-Vìt¹ina kódu je napsána v jazyce C, tedy bez pou¾ití objektù. Databázové
-operace jsou popsány v jazyce SQL. Webovské stránky jsou psané v jazyce PHP. Integraèní èásti kódu jsou psány v bash skriptech.
+Vìt¹ina kódu je napsána v jazyce C, tedy bez pou¾ití objektù.  Databázové
+operace jsou popsány v jazyce SQL. Webovské stránky jsou psané v jazyce PHP.
+Integraèní èásti kódu jsou psány v bash skriptech.
 
 \input{server-protokol}
 
@@ -21,9 +21,7 @@ operace jsou popsány v jazyce SQL. Webovské stránky jsou psané v jazyce PHP. Int
 Komunikaèní knihovna musí splòovat následující po¾adavky:
 
 \begin{itemize}
-\item umo¾òovat posílání zpráv
 \item umo¾òovat pøenos velkých objemù binárních dat
-\item podporovat model klient - centrální server - zaøízení
 \item klást malé nároky na systémové prostøedky
 \end{itemize}
 
@@ -47,11 +45,11 @@ pøíkazu a zpracování pøíkazu, poslání odpovìdi a zakonèovací øádky pøíkazu.
 \subsection{devcli}
 
 Slou¾í pro klientskou stranu spojení. Poskytuje funkce pro navázání komunikace
-se serverem, poslání pøíkazu na servera, zpracování a pøeètení odpovìdí ze
-serveru. Zpracovává v¹echny po¾adavky a zprávy serveru, pokytuje pøístupové
-body pro funkce pro pøíjem dat a funkce volané pøi zmìnì stavu.
+se serverem, poslání pøíkazu na server, zpracování a pøeètení odpovìdí ze
+serveru. Zpracovává v¹echny po¾adavky a zprávy serveru, poskytuje funkce pro
+pøíjem dat a funkce volané pøi zmìnì stavu.
 
-Udr¾uje komunikaci s centrálním servrem, zji¹»uje stavy a poèet zaøízení.
+Udr¾uje komunikaci s centrálním serverem, zji¹»uje stavy a poèet zaøízení.
 
 \subsection{devdem}
 
@@ -60,7 +58,7 @@ Integruje devcli a devdem. Poskytuje podporu pro zaøízení.
 \subsection{Architektura serveru}
 
 Pro ka¾dé nové spojení je vytváøen a spou¹tìn nový proces. Pro synchronizaci
-serverù a jejich vzájemnou komunikaci jsou pou¾ity prostøedky IPC.
+procesù a jejich vzájemnou komunikaci jsou pou¾ity prostøedky IPC.
 
 Pro déletrvající operace je vytváøeno nové vlákno. Vlákna jsou vytváøena
 pomocí knihovny pthread.
@@ -71,12 +69,12 @@ Pro zpracování snímkù je volán shellovský skript. Pokud se na jeho výstupu
 vyskytne øádka s údaji o skuteèné pozici snímku a velikosti chyby, je chyba
 poslána na dalekohled.
 
-Snímky se po poøízení øadí do zásobníkù, z kterého je odebírán kódem pro
-zpracování snímkù. Je garantováno, ¾e v jednom klientu pobì¾í pouze jeden
-proces pro zpracování snímkù.
+Snímek se po vyètení øadí do zásobníku, z kterého je odebírán kódem pro
+zpracování snímkù. Je zaruèeno, ¾e pro klienta pobì¾í pouze jeden proces
+pro zpracování snímkù.
 
 O detekci hvìzd se v systému BART stará program sextractor. Jeho konfiguraci
 provedl Martin Jelínek.
 
-O srovnání detekovaných hvìzd s katalogem se stará balík Opera, vyvinutý ....
+O srovnání detekovaných hvìzd s katalogem se stará balík Opera, vyvinutý v Itálii 
 a upravený Martinem Jelínkem.

@@ -10,7 +10,7 @@
 
 \item[exposing] probíhá expozice
 
-\item[data] na kameøe jsou k dispozici data, které je potøeba vyèíst
+\item[data] na kameøe jsou k dispozici data, která je potøeba vyèíst
 
 \item[reading] probíhá vyèítání dat
 
@@ -21,45 +21,44 @@
 V¹echny novìj¹í astronomické CCD kamery mají zabudované chlazení. Chlazení
 sni¾uje teplotu CCD èipu, a tím sni¾uje hodnotu temného proudu. 
 
-Temný proud (anglicky dark current) popisuje náboj, který se
-naschromá¾dí na èipu vlivem teplotních efektù - tedy i v pøípadì, kdy¾
-na èip nedopadá svìtlo. Pøi poøizování denních snímkù \footnote{= pøi
-fotografofání digitálním fotoaparátem} mù¾eme jeho efekt zanedbat -
-snímky mají krátké expozièní doby a vysoký odstup signál/¹um. Pro
-astronomické snímky, které jsou poøizovány dlouhou expozièní dobou a
-vyznaèují se malím odstupem signálu od ¹umu, je potøeba hodnotu
-temného proudu co nejvíce sní¾it. Úroveò temného proudu závisí
-na absolutní teplotì èipu, rozdíl mezi teplotou èipu a teplotou
-okolního prostøedí ji neovliòuje.
+Temný proud (anglicky dark current) je tvoøen nábojem, který se
+nashromá¾dí na èipu vlivem teplotních efektù - tedy i v pøípadì, kdy¾ na èip
+nedopadá svìtlo. Pøi poøizování denních snímkù mù¾eme jeho efekt zanedbat -
+snímky mají krátké expozièní doby a vysoký odstup signál/¹um. Pro astronomické
+snímky, které jsou poøizovány dlouhou expozièní dobou a vyznaèují se malým
+odstupem signálu od ¹umu, je potøeba hodnotu temného proudu co nejvíce sní¾it.
+Úroveò temného proudu závisí na absolutní teplotì èipu, rozdíl mezi teplotou
+èipu a teplotou okolního prostøedí ji neovliòuje.
 
 Teplotní regulace je vìt¹inou tvoøena peltiérem a ventilátorem.
 Peltiér pøená¹í teplo z malé plochy èipu na ventilátor, ventilátor pak
 zlep¹uje distribuci tepla do okolí. Teplotní regulace bývá obèas
-doplnìna o mo¾nost chladit vodu, u nejlep¹ích kamer se pou¾ívá
-chlazení zkapalnìným plynem.
+doplnìna o mo¾nost chlazení vodou, pøípadnì zkapalnìným plynem.
 
-Expozici i vyètení snímku je vhodné provádìt pøi konstatní teplotì -
-nemìní se pak úroveò temného proudu. Zmìny teploty CCD èipu v¾dy
-zaberou urèitý èas, teplota atmosféry se po západu Slunce v prùbìhu
-noci zmìní vìt¹inou pouze o nìkolik stupòù. Ze zku¹eností získaných
-pøi provozu RTS1\footnote{RTS1 obsahovalo kód, který se sna¾il
-optimalizovat výkon chlazení. Tento algoritmus byl po nìkolika
-mìsících pozorování odstranìn} víme, ¾e nemá smysl teplotu èipu v
-prùbìhu noci mìnit - ka¾dá zmìna pøiná¹í více problémù ne¾ u¾itku.
+Expozici i vyètení snímku je vhodné provádìt pøi konstantní teplotì -
+nemìní se pak úroveò temného proudu. Zmìny teploty CCD èipu trvají
+nenulový èas, teplota atmosféry se po západu Slunce v prùbìhu noci zmìní
+vìt¹inou pouze o nìkolik stupòù. Provoz RTS1 ukázal \footnote{RTS1 obsahovalo
+kód, který se sna¾il optimalizovat výkon chlazení. Tento algoritmus byl po
+nìkolika mìsících pozorování odstranìn}, ¾e nemá smysl teplotu èipu v prùbìhu
+noci mìnit.
 
-Aby bylo temných snímkù potøeba co nejménì, je vhodné poøizovat snímky na co
-nejmen¹ím poètu teplot. U systému BART se osvìdèily pìtistupòové kroky.
+Aby bylo temných snímkù potøeba co nejménì, je vhodné poøizovat snímky
+na co nejmen¹ím poètu teplot. U systému BART se osvìdèily pìtistupòové
+kroky.
 
 \subsubsection{Nastavení teploty kamery}
 
 \dia{state-cooling}{Stavový diagram chlazení CCD kamery}
 
-Pøed zaèátkem pozorování je spu¹tìno chlazení na maximální výkon. V okam¾iku
-zaèátku pozorování je zji¹tìna aktuální teplota CCD èipu $ccd$, která je
-zaokrohlen smìrem nahoru k nejbli¾¹ímu stupni $step$ a na tuto teplotu je
-nastaveno chlazení. Obsluha má mo¾nost teplotu a výkon chlazení kontrolovat, a
-podle potøeby mìnit. Po skonèení pozorování nebo pøi vypnutí systému je
-chlazení vypnuto.
+Pøed zaèátkem pozorování je spu¹tìno chlazení na maximální výkon. V
+okam¾iku zaèátku pozorování je zji¹tìna aktuální teplota CCD èipu
+$ccd$, která je zaokrouhlena smìrem nahoru k nejbli¾¹ímu stupni $step$ a na
+tuto teplotu je nastaveno chlazení. Obsluha má mo¾nost teplotu a výkon chlazení
+kontrolovat, a podle potøeby mìnit. Po skonèení pozorování nebo pøi vypnutí
+systému je chlazení vypnuto.
+
+Chlazení má tedy následující stavy:
 
 \begin{description}
 

@@ -1,4 +1,4 @@
-\chapter{Pou¾ité programy}
+\chapter{Pou¾ité prostøedky}
 
 \section{Vývojové prostøedky}
 
@@ -8,11 +8,10 @@ Makefile jsou generovány prostøednictvím balíkù Autoconfig a
 Automake. Konfiguraèní skript pro autoconfig byl vytvoøen ze skriptu
 generovaného programem autoscan, který je souèástí autoconfigu.
 
-V¹echny programy jsou verzovány v CVS. Verzování doporuèuje
-kniha \cite{telcontrol}, a mì se velmi osvìdèilo pøi soubì¾ném vývoji na
-nìkolika poèítaèích - jenom v Ondøejovì jsou u dalekohledu tøi poèítaèe,
-èásti kódu jsem psal na poèítaèi ve ©panìlsku a èásti na svém osobním
-poèítaèi.
+V¹echny programy jsou verzovány v CVS. Verzování doporuèuje kniha
+\cite{telcontrol}. Výhody verzování se ukázaly pøi soubì¾ném vývoji na více
+poèítaèích. Kodování probíhalo na tøech poèítaèích v Ondøejovì, nìkolika
+osobních poèítaèích v Praze, a na poèítaèi ve ©panìlsku.
 
 Pro generování webovských stránek jsou pou¾ity PHP skripty. Pro jejich
 správnou funkci je potøeba mít naistalovanou verzi PHP vy¹¹í ne¾ 4.3.
@@ -21,11 +20,12 @@ Skripty bì¾í pod HTTP serverem Apache.
 
 Databáze je spravována pomocí post-relaèní databáze PostgreSQL.
 
-\section{Knihovny}
+\section{Pou¾ité knihovny}
 
-Pro výpoèet astronomických souøadnic je pou¾ita knihovna libnova. V
-této knihovnì jsem opravoval nìkolik chyb a implementoval nìkolik nových
-funkcí - pøispìl jsem do ní asi sty øádky, pøesný pøehled je mo¾né získat zVSka libnovy, pøístupného i z jejích webovských stránek.
+Pro výpoèet astronomických souøadnic je pou¾ita knihovna \cite{libnova}. V této
+knihovnì jsem opravoval nìkolik chyb a implementoval nìkolik nových funkcí -
+pøispìl jsem do ní asi sty øádky, pøesný pøehled je mo¾né získat z CVS
+(verzovacího systému) libnovy, pøístupného i z jejích webovských stránek.
 
 Pro zápis a ètení snímkù do formátu fits je pou¾ita knihovna fitsio.
 Pro práci s WCS informacemi obsa¾enými v hlavièkách snímku je pou¾ita knihovna

@@ -6,7 +6,7 @@ Ondøejovì. Jedná se také o~dalekohledy Meade, kamery SBIG. Ovládání
 v~souèasné dobì, po pìtiletém vývoji, bì¾í na heterogenní síti s~OS
 Windows a Linux.
 
-Ovládání tvoøí nìkolik samostatných procesù. Jsou popsány ní¾e:
+Ovládání tvoøí nìkolik samostatných procesù. Jsou to:
 
 \begin{itemize}
 
@@ -18,7 +18,7 @@ na novou pozici, bez ohledu na právì probíhající expozice. Napsán v~jazyce C,
 bì¾í na Linuxu.
 
 \item[DCM] Dome Control Module - ovládá støechu, kontroluje stav poèasí pomocí
-meterologické vì¾e, hlásí stav støechy a poèasí pøes SMS bránu, hlásí otvírání
+meteorologické vì¾e, hlásí stav støechy a poèasí pøes SMS bránu, hlásí otvírání
 a zavírání støechy TCM. Napsán pod LabView, bì¾í na Windows 98. 
 
 \item[OTM] Optical Transient Monitor - øídí snímkování. Souèástí programu jsou
@@ -40,20 +40,22 @@ Nevýhody:
 
 \begin{itemize}
 \item neexistence jednotícího protokolu
-\item dalekohled nemù¾e kontorolovat kamery, prùmìrná doba mezi ukonèením
+\item dalekohled nemù¾e kontrolovat kamery, prùmìrná doba mezi ukonèením
 pøesunu dalekohledu a poøízením prvního snímku bude o~trochu vìt¹í ne¾ jedna
 polovina celkové doby na expozici a vyètení snímku\footnote{Po pøesunu na
 novou pozici mù¾e být kamera v~jakémkoliv stavu. V~nejlep¹ím pøípadì dokoèila
 vyètení CCD èipu a právì se chystá zahájit novou expozici, v~nejhor¹ím
 dokonèila expozici, bude vyèítat, poté poøídí temný snímek a teprve poté bude
 exponovat. Proto¾e kamery exponují v pevných intervalech, nejhor¹í pøípad trvá
-2*interval-doba expozic}
+2*interval pro poøízení jednoho snímku}
 \item nestabilita Windowsovského vyèítaèe SBIGovských kamer, daná vlastnostmi
 GUI a pomìrnì slo¾itým kódem.
 \item nemo¾nost vyèítat dvì kamery na jednom poèítaèi souèasnì, empiricky
-ovìøená - OS Windows nezvládá poøádnì pøidìlování èasu na CPU a podobné pokusy
+ovìøená - OS Windows nezvládá korektnì pøidìlování èasu na CPU a podobné pokusy
 vedou k~pádu systému. V~souèasné konfiguraci øe¹ena souèasnou expocí dvou
-kamer, a jejich následným postupným vyèítáním, druhý snímek je pak ale hroznì
+kamer, a jejich následným postupným vyèítáním, druhý snímek je velmi 
 za¹umìný.
 \item neøe¹í problémy s~ostøením kamer
+\item neumí poøizovat flat-fieldy - èasy zaèátku expozic jsou do OTM vkládány
+pomocí textového konfiguraèního souboru
 \end{itemize}

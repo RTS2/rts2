@@ -2,13 +2,20 @@
 
 \section{Kompilace}
 
-Kompilace je øízena systémem Automake. Po sta¾ení zdrojových kódu staèí
-v pøíkazové øádce zadat:
+Makefile jsou vytváøeny standartními balíky Automake a Autoconfig (pokud mo¾no
+verze rovné nebo vy¹¹í ne¾ 2.50). 
+
+Chceme-li makefile znovu vytvoøit, staèí v adresáøi rts2 zadat pøíkazy {\bf
+autoconf} a {\bf automake}. Tyto dva pøíkazy je bezpodmínìènì nutné zadat v
+kódu, sta¾eném z CVSka.
+
+Po sta¾ení zdrojového kódu staèí v pøíkazové
+øádce zadat:
 
 ./configure
 
 Konfiguraèní skript provìøí cílový systém. Jeho provádìní se ukonèí chybovou
-hlá¹kou popisující chybu v pøípadì, ¾e Vá¹ systém neobsahuje v¹echny potøebné
+hlá¹kou popisující chybu v pøípadì, ¾e systém neobsahuje v¹echny potøebné
 knihovny.
 
 Dále je potøeba pøelo¾it binární kód a nainstalovat vytvoøená data.
@@ -18,59 +25,88 @@ make
 
 make install
 
-Pro make install budete s nejvìt¹í pravdìpodobností potøebovat rootovské
-oprávnìní.
+Pro make install je vhodné mít rootovské oprávnìní.
 
-Pokud budete stahovat zdrojový kód pøímo z CVS, je potøeba pøed ./configure
-zadat
+\section{Spou¹tìní, zastavování}
 
-autoconf
-
-automake
-
-\section{Servery}
-
-Pro spu¹tìní servrù jsou k dispozici inicializaèní skripty. Ty jsou
-konfigurovány pomocí souborù umístìných v /etc/rts2.
+Pro spu¹tìní serverù slou¾í inicializaèní skript rts2, ulo¾ený v adresáøi /etc/init.d. 
+Konfigurace systému se dìje pomocí souborù umístìných v /etc/rts2.
 
 Servery je mo¾né pou¹tìt i manuálnì. Ka¾dý server spu¹tìný s parametrem -h
 vypí¹e krátkou nápovìdu.
 
-Spou¹tìní na poèítaèích pro BARTa je popsáno ve skriptu RUN.
+V¹echny binární soubory jsou obvykle instalovány do adresáøe /usr/local/bin.
+Toto umístnìní lze zmìnit nastavením argumentu prefix pøi volání configure
+skriptu.
+
+Pro pøíklad lze uvést procesy, které bì¾í u dalekohledu BART:
+
+\begin{tabular}{l|p{10cm}}
+{\bf jméno poèítaèe} & popis \\
+\hline
+{\bf lascaux}	& rts2-centrald (centrální server), rts2-planc (dlouhodobé pozorování), rts2-grbc (reakce na gama záblesky), rts2-mon \\
+{\bf c0}	& rts2-camd se jménem C0 (obsluha kamery C0, ¹irokoúhlé kamery pøichycené na dalekohledu, tato kamera slou¾í pro zpìtnou korekci chyb montá¾e), rts2-teld se jménem T1 (obsluha dalekohledu T1) \\
+{\bf c1}	& rts2-camd se jménem C1 (obsluha kamery C1, ¹irokoúhlé kamery povì¹ené na dalekohledu) \\
+{\bf cnf1}	& rts2-camd se jménem CNF1 (obsluha kamery CNF1 - kamera na hlavním dalekohledu)
+\end{tabular}
 
 \section{Monitoring}
 
 Monitorovací klient zobrazuje stav v¹ech zaøízení pøipojených na centrální
 server.
 
-Pomocí monitorovacího klientu lze zadávat pøíkazy pro provádìní funkcí na
+Pomocí monitorovacího klienta lze zadávat pøíkazy pro provádìní funkcí na
 zaøízení. Pøíkazy pro centrální server lze psát pøímo, pøíkazy pro zaøízení
 se pí¹í ve tvaru {\it [jméno zaøízení].[pøíkaz] \{parametry\}}. Jméno zaøízení
 lze zjistit z panelu s informacemi o zaøízení. Text pøíkazu se zobrazuje v
-horní øádce.
+horní øádce. Pokud nezadáme jméno zaøízení, pøíkaz je odeslán na centrální server.
 
-Nìkteré èinnosti lze vyvolat i stiskem kláves.
+K dispozici jsou tyto klávesové zkratky:
 
 \begin{description}
-\item[F2] pøevede server do stavu off
-\item[F3] pøevede server do stavu on
-\item[F5] znovuzobrazí údaje o zaøízení
-\item[F10] ukonèí monitrovací program
+\item[F2] pøevede server do stavu off, ekvivalent pøíkazu {\it off}
+\item[F3] pøevede server do stavu on, ekvivalent pøíkazu {\it on}
+\item[F5] zaktualizuje údaje o v¹ech pøipojených zaøízení, pøekreslí obrazovku 
+\item[F10] ukonèí monitorovací program
 \end{description}
 
-Monitorovací klient zobrazuje v pravém dolním rohu aktuální komunikaci.
+Monitorovací klient zobrazuje v pravém dolním rohu aktuální komunikaci mezi
+monitorovacím klientem a jednotlivými servery.
 
 \begin{figure}[ht]
 \begin{center}
-\scalebox{0.35}{\includegraphics{nmonitor.pdf}}
+\rotatebox{-90}{
+\scalebox{0.35}{\includegraphics{nmonitor.pdf}}}
 \end{center}
 \caption{\label{fig:nmonitor}Obrazovka nmonitoru}
 \end{figure}
 
-\section{Databáze snímkù}
+\section{Pøístup k databázi}
 
-Pøístup na databázi snímkù je mo¾ný pøes webovské rozhranní. Snímky z BARTa
+Pøístup k databázi je mo¾ný pøes webovské rozhraní. Snímky z BARTa
 jsou takto dostupné na {\it http://lascaux.asu.cas.cz/bartdb}.
 
-Popis jednotlivých formuláøù je zobrazován pøímo na webovských stránkách.
-Popis je k dispozici v angliètinì a v èe¹tinì.
+Pokud chceme v databázi mìnit údaje, pøípadnì stahovat existující snímky, je
+potøeba se nejdøíve pøihlásit. Pro pøihlá¹ení je potøeba znát své pøihla¹ovací
+jméno a heslo. Pøihlá¹ení je mo¾né pomocí formuláøe \ref{fig:login}. 
+
+\fitsdb{login}{Formuláø pro pøihlá¹ení}
+
+Po pøihlá¹ení je mo¾né se pøes odkaz v pravé èásti obrazovky podívat na seznam
+napozorovaných cílù \ref{fig:targets_list}:
+
+\fitsdb{targets_list}{Obrazovka s výpisem cílù pozorování}
+
+Po vybrání odkazu na konkrétní cíl se objeví formuláø \ref{fig:target_form}.
+
+\fitsdb{target_form}{Obrazovka s formuláøem pro konkrétní cíl pozorování}
+
+Mù¾eme se také podívat na pozorování.
+
+\fitsdb{observations_list}{Obrazovka s výpisem pozorování}
+
+Pøípadnì na snímky. Pokud jsme pøihlá¹eni, je mo¾né pomocí zatrhávacích
+tlaèítek urèovat, které snímky chceme stáhnout. Pøes tlaèítko download je pak
+mo¾né získat snímky ve formì tgz balíku.
+
+\fitsdb{images_list}{Obrazovka s výpisem snímkù}

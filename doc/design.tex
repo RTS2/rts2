@@ -5,66 +5,73 @@
 Dalekohled se skládá z montá¾e, optiky a detekèních pøístrojù. Nad
 dalekohledem je umístìna støecha.
 
-Úkolem montá¾e je pohybovat optickou èástí dalekohledu. Montá¾e mù¾e být vybavena èidly, které umo¾òují získat informaci o orientaci montá¾e v prostoru.
+Úkolem montá¾e je pohybovat optickou èástí dalekohledu. Montá¾ mù¾e být
+vybavena èidly, která umo¾òují získat informaci o orientaci montá¾e v prostoru.
 
-V pozorovacím systému mù¾e být více dalekohledù, vybavených vìt¹ím poètem
-detekèních pøístrojù.
+Montá¾ je vìt¹inou vybavena detekèními pøístroji. Detekèní pøístroje se
+skládají z detektoru a optické èásti. 
 
-Nejdostupnìj¹ím detekèním pøístrojem je lidské oko. Nás ale budou více zajímat
-dalekohledy vybavené CCD kameramy.
+Nejdostupnìj¹ím detektorem je lidské oko. Pro pozorování noèní oblohy jsou
+vhodnìj¹í CCD kamery - nevy¾adují pøítomnost pozorovatele u dalekohledu,
+získaná data je mo¾né archivovat a dodateènì zpracovat. 
 
 \subsection{Popis CCD kamery}
 
 CCD prvek si mù¾eme pøedstavit jako matici fotoodporù. Pøi dopadu fotonu na
 CCD prvek se jeho energie pøemìní na elektrický náboj.  Ten je poté zmìøen a
-A/D pøevodníkem pøeveden na digitální signál. Vyèítání CCD je pojem, onaèující
+A/D pøevodníkem pøeveden na digitální signál. Vyèítání CCD je pojem, oznaèující
 digitalizaci jednotlivých øádkù a jejich pøenos.
+
+Astronomické CCD kamery jsou vìt¹inou èernobílé, barevné snímky lze získat
+kombinací snímkù poøízených s pou¾itím rùzných filtrù. 
 
 CCD èipy pou¾ívané v astronomii se neli¹í od bì¾ných CCD èipù, pou¾ívaných v
 digitálních fotoaparátech. CCD kamery jsou vìt¹inou pøipojovány k poèítaèi.
-Pøipojení je realizováno buïto pøes stanartních periférií, jakými je
-napøíklad paralerní, sériový èi v poslední dobì USB port, èi pøes speciální
-kartu pøipojenou ke sbìrnici poèítaèe.
+Pøipojení je realizováno buïto pøes standartní porty, jakými je napøíklad
+paralelní, sériový, èi v poslední dobì USB port, nebo pøes speciální kartu
+pøipojenou ke sbìrnici poèítaèe.
 
-Pøi vyèítání kamery je potøeba pøenést data v øádu MB. Vyèítání a následnou
-digitalizaci je potøeba provést v co nejkrat¹ím èasovém okam¾iku. Kamery
-vìt¹inou nejsou vybaveny bufferem, data v nich obsa¾ená jsou tedy rovnou po
-digitalizaci posílány na poèítaè, který je musí pøijmout. Proto není vhodné
-pøíjem dat pøeru¹ovat.
+Pøi vyèítání kamery je potøeba pøenést data v øádu megabajtù. Vyèítání a
+následnou digitalizaci je potøeba provést v co nejkrat¹ím èasovém
+okam¾iku\footnote{Pøi del¹ím vyèítání jsou poslední vyètené øádky svìtlej¹í
+ne¾ první. Toto zesvìtlání je zpùsobeno tepelným ¹umem}. Kamery vìt¹inou
+nejsou vybaveny bufferem, data v nich obsa¾ená jsou tedy rovnou po digitalizaci
+posílány poèítaèi, který je musí pøijmout. CPU vyèítacího poèítaèe je znaènì
+vytí¾eno cykly èekajícími na data, nemù¾e tedy pøidìlit ostatním procesùm
+pøíli¹ mnoho èasu.
 
 \subsection{Popis montá¾e}
 
-Montá¾e, které nejsou vybaveny motory pro zmìnu své orientace nelze
+Montá¾e, které nejsou vybaveny motory pro zmìnu své orientace, nelze
 automatizovat.
 
 Montá¾e s motory je potøeba nejdøíve propojit s poèítaèem. Vzhledem k malému
 objemu pøená¹ených dat se vìt¹ina montá¾í pøipojuje pøes sériový port
 poèítaèe.
 
-Pøi zadávání souøadnic dalekohledu je rozumné zadávat absolutní souøadnice
-daného objektu, tedy rektascenzi a deklinaci. Pro výpoèet polohy, na kterou se
-má nastavit, pak dalekohled potøebuje znát místní hvìzdný èas. Ten je mo¾né
-vypoèítat ze svìtového èasu a zemìpisné ¹íøky.
+Pøi zadávání souøadnic je rozumné zadávat absolutní souøadnice daného objektu,
+tedy rektascenzi a deklinaci. Pro výpoèet polohy, na kterou se má nastavit,
+pak montá¾ potøebuje znát místní hvìzdný èas. Ten je mo¾né vypoèítat ze
+svìtového èasu a zemìpisné délky.
 
-Pøi zji¹»ování polohy dalekohledu je mo¾né pou¾ít buïto relativní, nebo
+Pøi zji¹»ování polohy montá¾e je mo¾né pou¾ít buïto relativní, nebo
 absolutní èítaèe. Relativní èítaèe jsou jednodu¾¹í a levnìj¹í, absolutní
 slo¾itìj¹í a dra¾¹í.
 
-Relativní èidla poèítají zmìnu polohu dalekohledu. Zmìnu polohy je mo¾né
-poèítat buïto pøímo z doby chodu, pøípadnì poètu cyklù motorù ovládájících
-dalekohled, nebo pøesnìji pomocí zpìtnovazebních èidel, umístìných na osách
-dalekohledu. Zpìtnovazební èidla detekují zmìnu pozice pomocí rùzných
-principù, buïto optických, elektronických nebo mechanických.
+Relativní èidla poèítají zmìnu polohy. Zmìnu polohy je mo¾né
+poèítat buïto pøímo z doby chodu, pøípadnì poètu cyklù ovládacích motorù, nebo
+pøesnìji pomocí zpìtnovazebních èidel, umístìných na osách montá¾e. 
+Zpìtnovazební èidla detekují zmìnu pozice opticky nebo elektromechanicky.
 
 Relativní èidla je potøeba pøed zaèátkem pozorování nastavit. Nìkteré systémy
-motorù s èidli jsou po zapnutí schopny najít pevnou pozici, home pozici, u
+motorù s èidly jsou po zapnutí schopny najít pevnou pozici, home pozici, u
 které vìdí, jaké má souøadnice. Tyto pak není potøeba nastavovat.
 
-Absolutní èidla jsou vìt¹inou øe¹ena mechanicky, napøíklad jako velmi jemný
+Absolutní èidla jsou vìt¹inou øe¹ena elektromechanicky, napøíklad jako velmi jemný
 potenciometr.
 
 Dostupné motory, absolutní i relativní èidla, jejich pøesnost a cena je velmi
-dobøe popsána v \cite{telcontrol} na stránkách 159-222.
+dobøe popsána v \cite{telcontrol} na stránkách 159 a¾ 222.
 
 \subsection{Støecha dalekohledu}
 
@@ -74,18 +81,23 @@ dalekohled v pøípadì nepøíznivého poèasí.
 Pokud se jedná o kopuli, je potøeba natáèet její ¹tìrbinu\footnote{otvor,
 kterým je vidìt ven} do smìru, který sleduje dalekohled.
 
+Støecha èi kopule jsou vìt¹inou øízeny vlastní logikou, která doká¾e s
+poèítaèem komunikovat pøes sériový port.
+
 \section{Zpracování snímkù}
 
-Poøízené snímky je potøeba zpracovat a ulo¾it.
+Poøízené snímky je potøeba ulo¾it a zpracovat.
 
-Základním zpracováním snímkù je odeètení temných snímkù a vydìlením hodnot
-hodnotami flat fieldu\footnote{k tomuto názvu bohu¾el neznám èeský ekvivalen}.
-Toto zpracování je popsáno v \cite{martinez} a \cite{ratledge}.
+Od poøízeného snímku je odeèten temný snímek. Vzniklý snímek je pak vydìlen
+hodnotami flat fieldu \footnote{èeský ekvivalent k tomuto názvu zøejmì
+neexistuje; jedná se o nesaturovaný svìtlý snímek, který se pou¾ívá pro korekci
+nelinearit jednotlivých pixelù}.  Toto zpracování je popsáno v \cite{martinez}
+a \cite{ratledge}.
 
 Dále je potøeba zjistit pøesnou polohu snímku a zaznamenat ji ve formì
 WCS\footnote{World Coordinate System, definuje zpùsob zaznamenání polohu
-referenèního bodu snímku, jeho rektascenze a deklinace, rozmìrù pixelu, rotace
-snímku a èlenù korekèního polynomu} hlavièky.
+referenèního bodu snímku, jeho rektascenze a deklinace, úhlových rozmìrù
+pixelu, rotace snímku a èlenù korekèního polynomu} hlavièky.
 
 \section{Organizace pozorování}
 
@@ -101,17 +113,16 @@ nejsou vázány na cíle pozorování.
 \section{Korekce montá¾e}
 
 Montá¾ dalekohledu z rùzných dùvodù a pøíèin nemusí najet pøesnì na místo,
-které jí bylo zadáno. U dalekohledù s pozorovately je pozorované pole
-obsluhou srovnáváno s katalogy.
+které jí bylo zadáno. U dalekohledù s pozorovateli je pozorované pole
+obsluhou srovnáváno s katalogy a pøípadná chyba opravena.
 
-U automatických dalekohledù bychom chtìli pozorovatele ze zpìtné vazby
-odstranit. Kontrolu správnosti najetí montá¾e budeme vyhodnocovat z poøízených
-snímkù.
+U automatických dalekohledù se musíme bez inteligentního pozorovatele obejít.
+Kontrolu správnosti najetí montá¾e lze provést pouze z poøízených dat.
 
 \section{Nároènost na poèítaèové vybavení}
 
 Finaèní zdroje astronomických ústavù i astronomù nejsou neomezené. Systém by
 jich tedy mìl vy¾adovat co nejménì. Lze napøíklad pou¾ít vyøazených poèítaèù,
-kterých je na trhu dostatek.
+které mají dostateèný výpoèetní výkon.
 
 Nároky na provoz a údr¾bu systému by mìly být co mo¾ná nejmen¹í.

@@ -1,4 +1,4 @@
-\section{Agenti}
+\section{Agenty}
 
 Jak je uvedeno v popisu CCD kamery, pøi vyèítání dochází ke znaènému zatí¾ení
 poèítaèe øídícího vyèítáni. Je tedy vhodné mít minimálnì dvì, navzájem spojená
@@ -6,26 +6,27 @@ zaøízení, z nich¾ jedno øídí vyèítání z kamery a druhé se stará o zpracování
 snímkù.
 
 Systém vychází z teorie agentù. Nad spoleèným komunikaèním rozhraním bì¾í malé
-jednoúèelové procesy-agenti, které vykonávají svoji specifickou èinnost, a
-komunikují s ostatnímy agenty.
+jednoúèelové procesy-agenty\footnote{agenty jsou pova¾ovány za ne¾ivotné,
+proto¾e se jedná o zaøízení} s, které vykonávají svoji specifickou èinnost, a
+komunikují s ostatními agenty.
 
 Struktura agentù odpovídá zaøízením a procesùm pøítomných u dalekohledu.
-Agenty budu mít pro:
+Je mo¾né uva¾ovat o následujících typech agentù:
 
 \begin{itemize}
 
-\item kamery
+\item agent pro ovládání kamery
 
-\item montá¾e
+\item agent pro ovládání montá¾e
 
-\item støechu spojenou s meterologickou stanicí
+\item agent pro ovládání støechy a meteorologické stanice
 
-\item pozorování
+\item agent pro øízení pozorování
 
 \end{itemize}
 
-Agenti pro pozorování budeme v dal¹ím textu oznaèovat jako {\bf klienty}. 
-Je vhodné je rozdìlit na agenty pro:
+Agenty pro øízení pozorování budou v dal¹ím textu oznaèovány jako {\bf
+klienti}. Je vhodné je rozdìlit na agenty pro:
 
 \begin{itemize}
 
@@ -33,92 +34,56 @@ Je vhodné je rozdìlit na agenty pro:
 
 \item rychlé pozorování GRB
 
-\item monitoring a zprávu systému
+\item monitoring a správu systému
 
 \end{itemize}
 
 Jako {\bf zaøízení} budeme oznaèovat agenty ovládající zaøízení, tedy agenty 
-pro kameru, montá¾ a støechu.
+pro kameru, montá¾ a støechu. 
 
-\section{Centralizované a distribuované uspoøádání}
+Klienti mohou migrovat z jednoho poèítaèe na druhý, zaøízení migrovat nemohou.
+V návrhu se pro jednoduchost s migrací nepoèítá.
+
+\section{Centrální server}
 
 Existují funkce systému, které je rozumné spravovat centrálnì. Jedná se v¾dy
-o~funkce, které by se na v¹ech zaøízení mìli chovat stejnì. Jako vhodný
-pøípad mù¾e poslou¾it autentifikace - pøi pou¾ití veøejného u¾ivatelského
-jména a~tajného hesla je vhodné zajistit, aby klientu staèil jedno u¾ivatelské
+o~funkce, které by se na v¹ech zaøízeních chovají stejnì. Jako vhodný pøíklad
+mù¾e poslou¾it autentifikace - pøi pou¾ití veøejného u¾ivatelského jména
+a~tajného hesla je vhodné zajistit, aby klientovi staèilo jedno u¾ivatelské
 jméno a jedno heslo. Dal¹ím pøíkladem mù¾e být seznam zaøízení obsa¾ených v
 systému. Tyto funkce jsou dále oznaèovány jako {\bf centrální funkce}.
 
-Funkce, které je potøeba volat na jednotlivých zaøízení, jsou oznaèovány jako
+Funkce, které je potøeba volat na jednotlivých zaøízeních, jsou oznaèovány jako
 {\bf lokální funkce}.
 
-Centrální funkce je mo¾né distribuovat na jednotlivé agenty. Je ale také mo¾né
-pro jejich volání vytvoøit nového agenta - {\bf centrální server}. 
-
-\subsection{Konfigurace bez centrálního serveru}
-
-Ka¾dé proces udr¾uje spojení se v¹emi procesy, které potøebuje ke
-svému bìhu - viz obrázek \ref{fig:client-server-direct}. 
-Na první pohled velmi jednoduché a elegantní øe¹ení.
-
-\dia{client-server-direct}{Klient bez centrálního serveru, s~pøímími spojeními na zaøízení}
-
-\subsection{Konfigurace s~centrálním serverem}
-
-Komunikace mezi procesy probíhá èásteènì pøes centrální server. Pøes nìj je
-mo¾né vést v¹echnu komunikaci, nebo pouze komunikaci týkající se centrálních
-funkcí.
-
-\subsubsection{V¹e pøes centrální server}
-
-V¹echna komunikace probíhá pøes centrální server. Centrální server urèí,
-jakému procesu jsou data urèeny, a po¹le mu je. 
-
-\dia{client-server-central}{Uspoøádání s~centrálnín serverem bez pøímého
-spojení mezi procesy}
-
-\subsubsection{Kombinace}
-
-\dia{client-server-central-direct}{Uspoøádání s~centrálním serverem s~pøímím
-spojením mezi procesy}
-
-Komunikace urèená pro centrální server je posílána na centrální server,
-komunikace mezi procesy je vedena pøímo.
-
-\subsection{Závìr}
-
-Pøi pøenosu dat z kamer na dal¹í zpracování je zbyteèné tyto data pøená¹et
-jako odpovìdi pøes centrální server. Data se pohybují v øádu MB a jejich
-pøenos na centrálním serveru by vy¾adoval zbyteènì mnoho systémových
-prostøedkù.
-
-Seznam procesù bì¾ících v systému je jednodu¾¹í udr¾ovat na centrálním
-serveru.
-
-Nejvýhodnìj¹í je tedy pou¾ít centrálního serveru s pøímým spojením mezi
-procesy.
+Centrální funkce jsou provádìny agentem - {\bf centrálním serverem}.
+Pro provádìní lokálních funkcí je pou¾ito pøímé spojení mezi agentem a
+zaøízením.
 
 \subsection{Pøíklad}
 
-Pro pøíklad je v diagramu \ref{fig:overview} popsána konfigurace Ondøejovského
-systému. Plné èáry v nìm representují komunikaèní spojen.
+Na diagramu \ref{fig:overview} je zobrazena konfigurace systému BART.
 
-\dia{overview}{Pøehled agentù - Ondøejovský dalekohled}
+\dia{overview}{Pøehled agentù - BART}
 
-\begin{description}
+Na montá¾i LX200, vyrábìné firmou Meade, jsou pøichyceny dvì CCD kamery SBIG
+typu ST8, vybavené ¹irokoúhlou optikou. Na hlavním dalekohledu je pak umístnìna
+kamera ST9. Posuvná støecha dalekohledu je ovládána ruènì.
 
-\item[teld] agent ovládajícíc dalekohled
+Systém se skládá z poèítaèe se jménem lascaux, na kterém bì¾í databázový
+server, centrální server, v¹echny agenty, které øídí pozorování (pro pøíjem
+zpráv o gamma záblescích, pro dlouhodobá pozorování), a monitoring.
 
-\item[WF1,WF2,NF] agent ovládající kamery
+Dále systém obsahuje tøi poèítaèe pro obsluhu kamer, k jednomu z nich je
+souèasnì pøipojena montá¾. Jejich jména jsou volena podle typu kamer - c0, c1
+pro ¹irokoúhlé kamery a cnf1 pro kameru umístnìnou v ohnisku dalekohledu.
 
-\item[grbc] agent pro pøíjem zpráv o GRB
+BACODINE a IBAN jsou systémy pro zasílání zpráv o gama záblesku.
 
-\item[BACODINE, IBAN] systémy posílající pozice gama záblesku
-
-\item[planc] dlouhodobá pozorování
-
-\item[monitor] monitoring, ruèní ovládání
-
-\item[focusc] ostøení kamery
-
-\end{description}
+Do systému se mù¾e pøipojit monitorovací klient z libovolného místa na
+Internetu\footnote{vnitøní sí», spojující lascaux s poèítaèi pro
+ovládání kamer, je nedostupná zvenèí - je chránìna pøed pøípadnými útoky z
+Internetu pomocí pøekladu sí»ových adres - NAT. Pro pøipojení monitorovacích,
+pøípadnì jiných klientù, je potøeba na lascaux nastavit forwarding jednotlivých
+TCP portù na poèítaèe ve vnitøní síti, a v konfiguraèních souborech kamer je
+potøeba zmìnit název poèítaèe}.

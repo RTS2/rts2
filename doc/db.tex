@@ -1,18 +1,107 @@
-\section{Databáze}
+\chapter{Databáze}
 
-Databáze obsahuje následující tabulky:
+Pøesnou strukturu datábaze - zvlá¹tì pak datové typy jednotlivých polo¾ek - je
+mo¾né nalézt v SQL skriptech, slou¾ících pro vytvoøení databáze, které jsou v
+adresáøi sql.
 
-\begin{description}
+V následujícím textu jsou primární klíèe znaèeny znaèkou $\star$. Indexované
+pole jsou pak znaèeny pomocí $\cross$.
 
-\item[targets] výpis cílù pozorování
+\subsubsection{Tabulka epoch}
 
-\item[observations] informace o prùbìhu pozorování
+\begin{tabular}{ll}
+{\bf $\star$ epoch\_id}	& identifikace epochy \\
+{\bf epoch\_start}	& zaèátek epochy \\
+{\bf epoch\_end}	& konec epochy
+\end{tabular}
 
-\item[images] informace o napozoravaných snímcích
+\subsubsection{Tabulka targets}
 
-\item[darks] informace o napozorovaných korekèních snímcích
+\begin{tabular}{ll}
+{\bf $\star$ tar\_id}	& èíslo cíle \\
+{\bf type\_id}		& typ pozorování \\
+{\bf tar\_name}		& jméno cíle \\
+{\bf tar\_ra}		& rektascenze cíle \\
+{\bf tar\_dec}		& deklinace cíle \\
+{\bf tar\_comment}	& komentáø \\
+{\bf tar\_lastobs}	& datum posledního pozorování cíle
+\end{tabular}
 
-\end{description}
+\subsubsection{Tabulka types}
+
+\begin{tabular}{ll}
+{\bf $\star$ type\_id}	& èíslo typu \\
+{\bf type\_description}	& popis
+\end{tabular}
+
+\subsubsection{Tabulka observations}
+
+\begin{tabular}{ll}
+{\bf $\cross$ tar\_id}	& èíslo cíle \\
+{\bf $\star$ obs\_id}	& èíslo pozorování \\
+{\bf obs\_start}	& datum zahájení pozorování \\
+{\bf obs\_duration}	& délka trvání pozorování \\
+{\bf obs\_imagescount}	& poèet napozorovaných snímkù
+\end{tabular}
+
+\subsubsection{Tabulka images}
+
+\begin{tabular}{ll}
+{\bf img\_name}		& jméno snímku \\
+{\bf img\_date}		& datum poøízení snímku \\
+{\bf img\_exposure}	& délka expozice \\
+{\bf img\_temperature}	& teplota CCD èipu \\
+{\bf img\_filter}	& pou¾itý filtr \\
+{\bf astrometry}	& pozice snímku \\
+{\bf $\cross$ obs\_id}	& èíslo pozorování \\
+{\bf camera\_name}	& jméno kamery \\
+{\bf mount\_name}	& jméno montá¾e \\
+{\bf epoch\_id}		& èíslo epochy \\
+{\bf media\_id}		& médium, na kterém je snímek umístnìn
+\end{tabular}
+
+\subsubsection{Tabulka darks, flats}
+
+\begin{tabular}{ll}
+{\bf dark\_name}	& jméno snímku \\
+{\bf dark\_date}	& datum poøízení snímku \\
+{\bf dark\_exposure}	& délka expozice \\
+{\bf dark\_temperature}	& teplota CCD èipu \\
+{\bf camera\_name}	& jméno kamery
+\end{tabular}
+
+\vspace{1cm}
+
+Tabulka flats obsahuje stejná pole, pouze jejich prefix je flat.
+
+\subsubsection{Tabulka cameras}
+
+\begin{tabular}{ll}
+{\bf $\star$ camera\_name}	& jméno kamery \\
+{\bf camera\_desc}		& popis kamery
+\end{tabular}
+
+\subsubsection{Tabulka mounts}
+
+\begin{tabular}{ll}
+{\bf $\star$ mount\_name}	& jméno montá¾e \\
+{\bf mount\_long}		& zemìpisná délka montá¾e \\
+{\bf mount\_lat}		& zemìpisná ¹íøka montá¾e \\
+{\bf mount\_alt}		& nadmoøská vý¹ka montá¾e \\
+{\bf mount\_desc}		& popis montá¾e
+\end{tabular}
+
+\subsubsection{Tabulka GRB}
+
+\begin{tabular}{ll}
+{\bf $\cross$ tar\_id}	& èíslo pozorování \\
+{\bf $\star$ grb\_id}	& èíslo GRB \\
+{\bf grb\_seqn}		& aktální èíslo poøadí zprávy \\
+{\bf grb\_date}		& datum pozorování GRB \\
+{\bf grb\_last\_update}	& datum poslední zmìny stavu GRB \\
+\end{tabular}
+
+\vspace{1cm}
 
 V databázi je definován u¾ivatelský typ, který slou¾í pro ukládání informace o
 poloze snímku. Je odvozen ze struktury, pou¾ívané v knihovnì libwcs. Obsahuje
@@ -22,10 +111,4 @@ výpoèet souøadnic ostatních bodù na snímku.
 
 V databázi jsou dále implementovány funkce, slou¾ící jednak k obsluze
 u¾ivatelského typu pro ukládání souøadnic snímku, a jednak k transformacím
-ekliptikálních souøadnic na horizontální, a pøípadnì výpoèet vzdu¹né hmoty.
-
-Databáze je vyu¾ívána plánovaèem, který do ní ukládá informace o
-prùbehu pozorování. Dále je vyu¾ívána pro ukládání informací o napozorovaných
-snímcích.
-
-\dia{db}{Schéma databáze}
+ekliptikálních souøadnic na horizontální, a výpoèet vzdu¹né hmoty.

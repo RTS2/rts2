@@ -1,46 +1,45 @@
 \section{Priority}
 
-Z~hlediska priorit je mo¾né v¹echny funkce, které mù¾e agent vykonávat,
-rozdìlit na dvì disjunktní mno¾iny:
+Ka¾dá funkce, která mù¾e být agentem volána, je prvkem právì jedné z
+následujících dvou mno¾in:
 
 \begin{description}
-\index{funkce!informaèní}\item[informaèní]{poskytují informace o~stavu zaøízení}
-\index{funkce!výkoné}\item[výkonné neboli exekuèní]{mìní stav zaøízení}
+\index{funkce!informaèní}\item[mno¾ina informaèních funkcí]{obsahuje funkce,
+které poskytují informace o~stavu zaøízení}
+\index{funkce!výkoné}\item[mno¾ina exekuèních funkcí]{obsahuje funkce, které
+mìní stav zaøízení}
 \end{description}
 
-Informaèní funkce mohou být volnì pøístupné, nevadí, pokud je bude
-volat více klientù najednou. Je vìcí ovladaèe zaøízení, aby správnì
-provedl volání více informaèních funkcích, pøicházejících ve stejnou dobu.
+Informaèní funkce mohou být volnì pøístupné. Více klientù je mù¾e volat ve
+stejnou dobu. Za jejich správné provedení je odpovìdný ovladaè zaøízení.
+Vykonávání informaèních funkcí trvá krátkou dobu. Nelze je pøeru¹it.
 
-Naopak exekuèní funkce nemohou být volnì pøístupné. Pøístup k~nim je tøeba
-hlídat.\footnote{nedává napøíklad moc smysl, aby jeden klient spustil na
-kameøe expozici a druhý klient jí zastavil. Stejnì tak nedává
-smysl, aby bì¾ely dvì exekuèní funkce najednou - napøíklad pøesun dalekohledu
-na pozici x,y a u,v}
+Exekuèní funkce nemohou být volnì pøístupné\footnote{napøíklad není vhodné,
+aby jeden klient pohyboval dalekohledem a druhý exponoval kamery}. Exekuèní
+funkce lze v libovolný okam¾ik pøeru¹it. 
 
-Pou¾ívá se exkluzivního pøístupu k~exekuèním funkcím - nanejvý¹e jeden klient
-mù¾e volat exekuèní funkce, ostatní klineti pøi volání exekuèní funkce obdr¾í
-chybovou zprávu, oznamující, ¾e funkci nemohou zavolat. Je pak na nich, aby se
-rozhodli, jak budou dále postupovat.
+Systém pou¾ívá exkluzivního pøístupu k~exekuèním funkcím - nanejvý¹e jeden
+klient mù¾e volat exekuèní funkce, ostatní klienti pøi volání exekuèní funkce
+obdr¾í chybovou zprávu, oznamující, ¾e funkci nemohou zavolat. Je pak na nich,
+aby se rozhodli, jak budou dále postupovat.
 
 Je tøeba zajistit výbìr klienta, který bude mít exkluzivní pøístup.
 Máme dvì mo¾nosti:
 
 \begin{enumerate}
-\item dopøedu v¹e naplánovat tak, aby takovýto klient byl v¾dy pouze
+\item pøipravit plán pozorování tak, aby klient s exkluzivním pøístupem byl v¾dy pouze
 jeden
-\item v~prùbìhu pozorování nìjakým postupem urèovat klienta
-s~exkluzivním pøístupem
+\item v~prùbìhu pozorování urèovat klienta s~exkluzivním pøístupem
 \end{enumerate}
 
-Dopøedu moc plánovat nelze - detekci gama zábleskù nelze dopøedu
-pøedpovídat. První mo¾nost tedy nelze pou¾ít.
+Detekci gama zábleskù není mo¾né pøedpovìdìt. Proto není mo¾né dopøedu
+pøipravit plán pozorování. První mo¾nost tedy nelze pou¾ít.
 
-Mechanismus na urèení vhodného klienta mù¾e vypadat napøíklad takto:
+Mechanismus na urèení vhodného klienta bude vypadat takto:
 
 \begin{itemize}
-\item ka¾dý klient vlastní èíslo, vyjadøující jak moc trvá
-na exkluzivním pøístupu - prioritu
+\item ka¾dý klient vlastní èíslo, vyjadøující jak moc trvá na exkluzivním
+pøístupu - prioritu
 \item pøi pøipojení nového klienta je jeho priorita nastavena na
 základní hodnotu 
 \item klient mù¾e svoji prioritu zvy¹ovat, nebo sni¾ovat
@@ -53,7 +52,7 @@ pøístup k exekuèním funkcím je zvolen náhodnì
 
 Je dobré si uvìdomit, ¾e poslední mo¾nost mù¾e nastat pouze v pøípadì, ¾e
 klient s nejvy¹í prioritou se buïto odpojí od systému, nebo sní¾í svoji
-prioritu pod hodnotu nìkterých jiných agentù.
+prioritu.
 
 \subsection{Mo¾nosti pøedávání priorit}
 
@@ -73,20 +72,18 @@ oèekávat, ¾e po¾adavek o~vykonání exekuèní funkce bude následovat hned za
 po¾adavkem na zmìnu prioritu. Za cenu znaèného nárùstu slo¾itosti kódu by
 systém získal nìco málo èasu. Viz diagram \ref{fig:kill-nextexe}.
 
-\dia{kill-nextexe}{Odlo¾ení ukonèení exekuèní funkce do nového volání}
+\dia{kill-nextexe}{Ukonèení exekuèní funkce odlo¾ené do nového volání}
 
 Je tedy vhodné ji¾ pøi zmìnì priority zajistit, ¾e zaøízení bude
-pøipraveno pøijímat exekuèní funkce - na zaøízení nesmí bì¾et ¾ádné
-exekuèní funkce.
+pøipraveno pøijímat exekuèní funkce - zaøízení nesmí pøi pøedávání priority
+provádìt exekuèní funkce.
 
-Jsou tøi mo¾nosti, jak po¾adavek na zmìnu priority o¹etøit:
+Je potøeba rozli¹it dva pøípady, jak bude po¾adavek na zmìnu priority o¹etøen:
 
 \begin{enumerate}
 \item okam¾itì ukonèit volání právì provádìné exekuèní funkce a zmìnit
 poøadí priorit
 \item poèkat, ukonèit exekuèní funkce, poté zmìnit poøadí priorit
-\item ignorovat po¾adavek na zmìnu priorit, poslat zpìt chybové
-hlá¹ení 
 \end{enumerate}
 
 První pøípad bude pou¾it, pokud dorazí neodkladné nové pozorování, pøípadnì
@@ -95,27 +92,16 @@ pøipustit, aby pozorování optických dosvitù gama zábleskù bylo zpo¾dìno by»
 o~nìkolik málo desítek sekund, které rozhodují o~úspìchu èi neúspìchu
 pozorování.
 
-Poslední pøípad by mohl nastat, pokud dojde pøi ukonèování aktivní exekuèní
-funkce k~chybì. Je ale otázkou, zda má význam - exekuèní funkce by mìli být
-v¾dy pøeru¹itelné. V jiných pøípadech nemá smysl po¾adavek na zmìnu priority
-odmítat.
-
-Prostøední pøípad je nejzajímavìj¹í.  Okam¾ik, kdy bude ukonèeno
-provádìní exekuèní funkce, lze samozøejmì zvolit libovolnì, ideálnì
-tak, aby v~daný okam¾ik neprobíhala ¾ádná exekuèní funkce.
-
-Motivace tohoto pøípadu spoèívá v~mo¾nosti nechat dobìhnout právì provádìné
-pozorování tak, abychom i z~pøeru¹eného pozorování získali nìjaké výsledky. Je
+Motivace druhého pøípadu spoèívá v~mo¾nosti nechat dobìhnout právì provádìné
+pozorování tak, abychom i z~pøeru¹eného pozorování získali výsledky. Je
 napøíklad ¹koda, pokud jednu sekundu pøed ukonèením vyèítání kamery získá
-exkluzivní pøístup jiný klient se zhruba stejnou prioritou - takto ztratím
-výsledek nìkolikaminutového experimentu. Pøitom by staèilo chvíly poèkat, a
-snímek bych vyèetl celý.
+exkluzivní pøístup jiný klient se zhruba stejnou prioritou - takto ztratíme
+výsledek nìkolikaminutového experimentu. Pøitom staèí s pøedáním priority
+chvíli poèkat, ne¾ bude vyèten celý snímek.
 
-Dal¹í zajímavou mo¾ností je dovyètení kamery v~prùbìhu pøesunu dalekohledu na
+Dal¹í zajímavou mo¾ností je dovyètení kamery v~prùbìhu pøesunu montá¾e na
 pozici nového cíle - s~ukonèením vyèítání mohu poèkat do okam¾iku, kdy
-dalekohled dosáhne nové pozice, pøípadnì kdy klient s~vy¹¹í prioritou zaène
-pou¾ívat na kameøe exekuèní funkce. Je ale tøeba dbát na to, aby se dalekohled
-v~prùbìhu expozice nepohyboval.
+dalekohled dosáhne nové pozice.
 
 Nabízejí se následující mo¾nosti, jak dlouho èekat:
 
@@ -136,18 +122,19 @@ znázornìno na diagramu \ref{fig:kill-waitexe}.
 \dia{kill-waitexe}{Èekání do ukonèení aktuální expozice}
 
 Lze namítnou, ¾e problém s vyèítáním naexponovaného snímku je mo¾né vyøe¹it
-pou¾itím funkce, která nejdøíve snímek naexponuje a pak teprve vyète.
-Pozorování ale mohou pro alespoò èásteènu pou¾itelnost vy¾adovat nìkolik
-snímkù v rùzných filtrech, nebo napøíklad korekèní expozice a skuteèné
-expozice.
+pou¾itím funkce, která nejdøíve snímek naexponuje a následnì vyète.
+Pozorování ale mohou pro alespoò èásteènou pou¾itelnost vy¾adovat provedení
+nìkolika funkcí, volaných na nìkolika rùzných zaøízeních. Pøíkladem mù¾e být
+poøízení druhého snímku na jiných souøadnicích, ne¾ byl poøízen první snímek.
+Pøidáním nové funkce tento pøípad nevyøe¹íme.
 
 Pouze tøetí pøípad pøiná¹í u¾itek - se zmìnou priority se èeká tak dlouho,
 dokud není dokonèena èást pozorování, z~pøeru¹ovaného pozorování máme k
 dispozici výsledky, dalekohled bude optimálnì vyu¾it.
 
 Za definování zaèátku a konce bloku je zodpovìdný klient. Definování blokù
-probíhá po zaøízeních, bloky se jednotlivých zaøízení systému nemusí
-schodovat.
+probíhá po zaøízeních, bloky se na jednotlivých zaøízeních systému nemusí
+shodovat.
 
 \dia{kill-waitblock}{Èekání do ukonèení aktuálního bloku}
 
@@ -156,18 +143,20 @@ schodovat.
 \begin{itemize}
 
 \item Pou¾ijeme priorit. Komunikace mezi klienty a zaøízeními obsahuje
-pøíkazy pro zahájní a ukonèení bloku.
+pøíkazy pro zahájení a ukonèení bloku.
 
-\item Priorita se mìní buï okam¾itì (vhodné pro GRB), nebo s èekáním do
-ukonèení bloku (vhodné pro dlouhodobý plánovaè).
+\item Priorita se mìní buï okam¾itì (vhodné pro reakci na GRB), nebo s èekáním
+do ukonèení bloku (vhodné pro dlouhodobý plánovaè).
 
 \item ®ádost o prioritu je pøedávána na centrální server, který ji distribuuje
-zaøízením. Ty pak informují klienty o splnìní ¾ádosti. 
+zaøízením. Ta pak informují klienty o splnìní ¾ádosti. 
 
 \end{itemize}
 
-Øe¹ení dovyètení kamery a souèasného zahájení pøesunu na novou pozici vypadá
-následovnì:
+\subsection{Pøíklady}
+
+Øe¹ení dokonèení vyètení kamery a souèasného zahájení pøesunu na novou pozici
+vypadá následovnì:
 
 \begin{itemize}
 
@@ -190,5 +179,69 @@ následovnì:
 \item {\it B} obdr¾í prioritu na kameøe
 
 \item {\it B} zahájí expozici na kameøe
+
+\end{itemize}
+
+V následujícím pøíkladu je popsáno pøedávání priorit mezi tøemi klienty.
+Klientem {\it col}, který poøizuje barevné snímky oblohy, pro které potøebuje
+snímek poøízený pøes tøi filtrová kola R V a I. Klientem {\it var} , který
+monitoruje promìnnou hvìzdu, pro který je tøeba nasnímat dva snímky. A klientem
+{\it grbc}, který hledá optické protìj¹ky gama záblesku, který okam¾itì po
+obdr¾ení zprávy o gama záblesku nasmìruje dalekohled na novou pozici a zaène
+pozorovat.
+
+\begin{itemize}
+
+\item prioritu má klient {\it col}
+
+\item {\it col} zahájí expozici prvního snímku ve filtru R
+
+\item {\it col} vyète první snímek
+
+\item {\it col} zahájí expozici druhého snímku ve filtru V
+
+\item o prioritu po¾ádá {\it var}
+
+\item {\it col} vyète druhý snímek
+
+\item {\it col} zahájí expozici tøetího snímku ve filtru I
+
+\item {\it col} zahájí vyèítání tøetího snímku
+
+\item {\it col} ukonèí na montá¾i blok
+
+\item {\it var} obdr¾í prioritu na montá¾i
+
+\item {\it var} zahájí pøesun montá¾e na novou pozici
+
+\item {\it col} dokonèí vyètení tøetího snímku
+
+\item {\it col} ukonèí na kameøe blok
+
+\item {\it var} obdr¾í na kameøe prioritu
+
+\item {\it var} v pøípadì, ¾e se montá¾ je¹tì stále pohybuje, poèká do ukonèení pøesunu
+
+\item {\it var} zahájí expozici prvního snímku na kameøe
+
+\item {\it var} zahájí vyèítání kamery
+
+\item {\it grbc} obdr¾í zprávu o gamma záblesku
+
+\item {\it grbc} zjistí, ¾e pozice gamma záblesku je pozorovatelná
+
+\item o prioritu po¾ádá {\it grbc}
+
+\item dojde k ukonèení vyèítání kamery
+
+\item {\it var} obdr¾í zprávu o odejmutí priority
+
+\item {\it grbc} obdr¾í na montá¾i i kameøe prioritu
+
+\item {\it grbc} zahájí pøesun montá¾e
+
+\item {\it grbc} poèká na ukonèení pøesunu montá¾e
+
+\item {\it grbc} zahájí expozici na kameøe
 
 \end{itemize}

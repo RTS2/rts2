@@ -1,37 +1,77 @@
 \chapter{Závìr}
 
-Cíle diplomové práce, vytyèené v zadání, se mì podaøilo splnit. K implementaci
-grafického rozhranní nedo¹lo, textový klient se ukázal býti lep¹ím øe¹ením. K
+Cíle diplomové práce, vytyèené v zadání, se mnì podaøilo splnit. K implementaci
+grafického rozhranní nedo¹lo, textový klient se ukázal jako lep¹í øe¹ení. K
 zobrazování snímkù je mo¾né pou¾ít dostupné zobrazovaèe, napøíklad DS9 nebo
-SkyCat. Ty rozsahem svých funkcí vysoce pøedèí v¹e, co bych byl schopen za
+SkyCat. Ty rozsahem svých funkcí vysoce pøedèí v¹e, co byl student schopen za
 omezený èas vyhrazený pro diplomovou práci naprogramovat.
 
 Zaèátek doby reakce na gama záblesk, to jest doby potøebné k pøevzetí kontroly
 nad zaøízením, je u montá¾e podstatnì krat¹í ne¾ jedna sekunda, u kamer
 dosahuje jedné sekundy.
 
-Systém ztrácí ménì jak 10\% èasu. Ovìøení je mo¾né vidìt na stránkách
-databáze. Chod systému je podstatnì stabilnìj¹í ne¾ byl chod systému RTS1. Po
-odstranìní problémù s uvolòováním IPC prostøedkù se nestalo, ¾e by systém
-bìhem noèního pozorování spadl.
+Systém ztrácí ménì jak 10\% èasu. Ovìøení je mo¾né vidìt v databázi, na stránce
+statistiky noci, do které se lze nejlépe dostat pøes roèní statistiku. Chod
+systému je podstatnì stabilnìj¹í ne¾ byl chod systému RTS1. Po odstranìní
+problémù s uvolòováním IPC prostøedkù a pøepsáním pøístupu k databázi do
+knihovny, která je reentrantní, se nestalo, ¾e by systém bìhem noèního
+pozorování spadl.
+
+Systém ukládá v¹echny potøebné informace do databáze. Ve srovnání s RTS1,
+které ukládalo informace do textových souborù, je práce s databází jednodu¾¹í.
 
 Systém øídí v souèasné dobì dalekohled BART v Ondøejovì. Na léto je
-naplánované jeho nasazení do ©panìlska na dalekohledy spadající pod BOOTES a
-na nový Ondøejovský 50cm dalekohled. Dal¹ím cílem je jeho pou¾ití pro
+naplánované jeho nasazení ve ©panìlska na dalekohledy spadající pod BOOTES a
+na nový ondøejovský 50cm dalekohled. Dal¹ím cílem je jeho pou¾ití pro
 pøipravovaný infraèervený dalekohled BOOTES-IR.
 
-Díky práci na RTS2 jsem byl schopen ovìøit si mé teoretické znalosti, nabité
-pøi studiu, v praxi. Pochopil jsem systém automake a autoconfig, prohloubil
-své znalosti v nìkolika programovacích jazycích. Netvrdím, ¾e jsem si v¾dy
-zvolil nejlepèí cestu, ze zpìtného pohledu je zøejmé, ¾e nìkteré vìci jsem mhl
-naprogramovat lépe.
+Díky práci jsem byl schopen ovìøit si své teoretické znalosti, nabyté pøi
+studiu, v praxi. Pochopil jsem systém automake a autoconfig, prohloubil své
+znalosti v nìkolika programovacích jazycích. Netvrdím, ¾e jsem si v¾dy zvolil
+nejlep¹í cestu, ze zpìtného pohledu je zøejmé, ¾e nìkteré vìci jsem mohl
+vymyslet èi naprogramovat lépe.
 
-Vývoj systému tímto neskonèil. Plánuji naimplementovat mo¾nost koordinace
-pozorování s dalekohledy umístnìnými ve ©panìlsku a vytvoøení spoleèného
-pøístupu na databázi snímkù.
+Vývoj systému tímto neskonèil. V dal¹í verzi by mìla umo¾òovat koordinaci
+pozorování mezi více dalekohledy a spoleèný pøístup do databáze snímkù.
 
-Pomìrnì dlouhá doba psaní diplomové práce byla zpùsobena mým pracovním
-vytí¾ením aktivitami nesouvysejícími s diplomovou prací.
+Souèástí systému je real-time implementací zpìtné vazby mezi poøízenými snímky
+a montá¾í. Tato zpìtná vazba je dost ojedinìlá - jediný dal¹í systém, o kterém
+je autorovi známo, ¾e tutu zpìtnou vazbu pou¾ívá, je souèasný systém na
+dalekohledu BOOTES. Pro nìj byla doprogramována Martinem Jelínkem. Systém na
+BOOTESu je ov¹em znaènì jednodu¹¹í, neprovádí monitoring objektù v rozsahu,
+který je provádìn na dalekohledu BART. Pro BART bylo ze zpìtnou vazbou tohoto
+druhu poèítáno od jeho návrhu.
 
-Pouze abych vyvrátil mo¾né pochybnosti, uvádím, ¾e ve¹kerou práci jsem
-vykonával bez finaèní èi jiné podpory ASÚ. 
+Je nutné zdùraznit, ¾e k implemetaci podobné zpìtné vazby nemohlo do pomìrnì
+nedávné doby dojít vzhledem k tìmto faktorùm:
+
+\begin{itemize}
+
+\item neexistence nebo nedostupnosti dostateènì rychlých poèítaèù
+
+\item neexistenci médií schopných uchovávat a pøistupovat k nìkolika GB dat,
+potøebných pro ulo¾ení celooblohového katalogu
+
+\item neexistence systémù s CCD kamerou a ¹irokoúhlým objektivem - velké
+dalekohledy, které mají zorné pole nìkolik málo stupòù, mají montá¾e dostateènì
+pøesné na to, aby se bez podobné korekce obe¹ly
+
+\end{itemize}
+
+Systém RTS1 byl prezentován na nìkolika astronomických konferencích, pro
+schopnost kontinuálního pozorování po nìkolik mìsícù byl velmi cenìn a byl
+jedním z mála, ne-li jediným robotickým systémem, který vydr¾el pozorovat po
+dobu dvou let. Nový systém má ¹anci na podobný výsledek navázat.
+
+Je nutné pøiznat, ¾e BART je provozován po takto dlouho dobu i díky tìmto faktorùm:
+
+\begin{itemize}
+
+\item dostupnosti lidské obsluhy pro øe¹ení pøípadných problémù
+
+\item malé finaèní nároènosti - a¾ do 1. èervence 2003 nebyl autor zamìstnancem
+ASU AV, dalekohled byl obsluhován studenty astronomie, kteøí za svoji èinnost
+pobírali minimální finaèní prostøedky. Podobný poloamatérský provoz je u malých
+dalekohledù bì¾ný. 
+
+\end{itemize}

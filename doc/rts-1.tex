@@ -8,42 +8,36 @@ splòuje základní po¾adavky, které na nìj byly v~zadání projektu kladeny:
 \begin{itemize}
 \item ovládá dalekohled a kameru
 \item umí pøijímat zprávy o~nových gama záblescích
-\item v~rozumný èas \footnote{maximálnì do pìti minut, zále¾í na prùbehu
-expozice} doká¾e pøeru¹it právì probíhající pozorování a vìnovat se pozorováni
+\item v~rozumný èas \footnote{maximálnì do pìti minut, zále¾í na prùbìhu
+expozice} doká¾e pøeru¹it právì probíhající pozorování a vìnovat se pozorování
 s~vy¹¹í prioritou 
 \item vytváøí archiv snímkù
 \item umí poøizovat automaticky temné snímky
 \end{itemize}
 
-Mimo to poskytuje dvì u¾iteèných funkcí, jeji¾ nutnost se prokázala pøi
-rutinním pozorování. Nebyly v~zadání roèníkového projektu, a byly 
-doimplementovány autorem diplomové práce po obhájení projektu. Jedná
-se o:
+Dále poskytuje dvì u¾iteèné funkce, jejich¾ nutnost se prokázala pøi rutinním
+pozorování. Nebyly v~zadání roèníkového projektu, a byly doimplementovány
+autorem diplomové práce po obhájení projektu. Jedná se o:
 
 \begin{itemize}
-\item mo¾nost automaticky zahájit pozorování pøi západu slunce, vèetnì
+\item mo¾nost automaticky zahájit pozorování pøi západu Slunce, vèetnì
 automatického chlazení kamer
 \item parkování dalekohledu po skonèení pozorování
 \end{itemize}
 
-Poslední stav nejlépe vystihuje diagram \ref{fig:rts-1-packages}.
-
 \dia{rts-1-packages}{Graf závislostí rts-1}
 
-Hlavním problémem souèasného kódu je jeho monoliènost. V~programu
-samoseboexistuje dìlení do modulù, které mívají do 1000 øádek kódu.
-Toto dìlení ale není pøíli¹ dobøe domy¹leno.  V kódu se vyskytuje
-nìkolik cyklických závislostí mezi moduly. Python si s cyklickými
-závislostmi poradí \footnote{pøed provedením ka¾dého importu si
-pøekladaè ovìøí, ¾e ji¾ nebyl importován}, v kódu by se ale nemìli
-vyskytovat.
-
-Z~monoliènosti vyplývá i relativnì tì¾ká portace kódu na nový
-astronomický HW.
+Hlavním problémem souèasného kódu je jeho monoliènost. Program
+je dìlen do modulù, které mívají do 1000 øádek kódu.  Toto dìlení ale není
+domy¹leno do v¹ech detailù, v kódu se vyskytuje nìkolik cyklických závislostí
+mezi moduly. Python si s cyklickými závislostmi poradí \footnote{pøed
+provedením ka¾dého importu si pøekladaè ovìøí, ¾e ji¾ nebyl importován}. Jejich
+výskyt èiní kód nepøehledným, zmìny se v kódu provádìjí velmi tì¾ko a není
+lehké zjistit v¹echny jejich dùsledky. 
 
 Souèasné øe¹ení RTS1 umo¾òuje pou¹tìt expozici na jiném poèítaèi ne¾
 na poèítaèi øídícím pozorování. Experimentálnì ovìøená mo¾nost spoèívá
 ve vytvoøení ssh spojení na poèítaè, ke kterému je pøipojena kamera.
 Pøes toto spojení se kamera øídí \footnote{kamery se z Pythonovkého
-kódu ovládají pomocí pøesmìrování standartního vstupu a výstupu}, data
-se ukládají buïto na lokální disk, nebo na sdílený sí»ový disk.
+kódu ovládají pomocí pøesmìrování standardního vstupu a výstupu}, data
+se ukládají buï na lokální disk, nebo na sdílený sí»ový disk.

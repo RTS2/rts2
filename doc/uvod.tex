@@ -1,96 +1,73 @@
 \chapter{Úvod}
 
-\section{Abstrakt}
+Hlavní motivací vzniku této práce bylo napsání vylep¹eného ovládacího systému
+pro dalekohled BART.
 
-Práce pojednává o ovládání astronomického dalekohledu pomocí poèítaèe.
+V úvodní kapitole jsou popsány a vysvìtleny nìkteré výrazy, pou¾ívané v dal¹ím
+textu.
 
-This work describes controlling of an astronomical telescope by computer.
+V druhé kapitole jsou popsány vlasnosti pøístrojù, které má systém ovládat.
 
-\section{Podìkování}
+Ve tøetí kapitole je obsa¾en popis problémù, a je zde navr¾eno jejich øe¹ení. 
 
-Je tì¾ké urèit, komu bych mìl podìkovat více a koho uvést na prvním místì.
-Následující seznam je neuspoøádaný a nemusí být nutnì úplný. Pokud jsem v nìm
-zapomnìl nìkoho uvést, neuèinil jsem tak úmyslnì a pøedem se mu za jeho
-neuvedení omlouvám.
+Ètvrtá kapitola obsahuje popis implementace, vysvìtluje principy uplatnìné v
+komunikaèním protokolu.
 
-Podìkovat bych chtìl vedoucímu diplomové práce, Danielovi ©»ouraèovi.  Jednak
-za jeho cenné rady a pøipomínky, jednak za jeho trpìlivost, kterou projevil
-pøi neustálém odkládání termínu zahájení èinnosti na mé pùvodní diplomové
-práci, a následnì pøi neustálém posouvání termínu dokonèení této diplomové
-práce.
+Pátá kapitola obsahuje u¾ivatelský manuál.
 
-Za cenné rady a pøipomínky patøí dík Martinovi Jelínkovi. Bez diskuzí s ním
-bych nikdy nebyl schopen domyslet v¹echny detaily. Neustále mì upozornil na
-vhodnost provádìt operace, které mì nenapadli ani v tom nejhor¹ím snu.
+V ¹esté kapitole je uvedeno srovnání s nahrazeným systémem øízení pozorování.
+Dále je zde uveden popis nìkolika dal¹ích programù pro ovládání astronomických
+programù.
 
-Dík za dùvìru pøi psaní nového kódu patøí Rennému Hudcovi. Bez nìho bych se
-navíc k dalekohledu BART vùbec nedostal a svoji diplomovou práci bych asi
-napsal na téma Pøevody dynamických UML modelù, které¾to jsem mìl pùvodnì
-zapsané.
-
-Dík za materální, jazykovou a v¹emo¾nou dal¹í podporu patøí mým rodièùm.
-
-Za objevní chyb a nedostatkù v ovládaní mohou z velké èásti studenti
-astronomie nebo zamìstanci ASÚ, kteøí s dalekohledem pozorovali. Patøí mezi nì
-Martin Topinka a Martin Nekola, jejich¾ vliv na èinnost dalekohledu bývá
-katastrofální a kteøí stojí za vìt¹inou odhalených chyb. Dále to jsou 
-Jan Torman, Ondøej Mikulá¹ík, Iveta Stoklasová, David Ondøich, Marie Hrudková
-a Libor Ba¹ta.
-
-Dík za stabilní operaèní systém a ¹irokou paletu nástrojù, bez kterých bych
-nebyl schopen ovládání dalekohledu kdy stvoøit, patøí neznámému mno¾ství
-programátorù roztrou¹ených po celém svìtì.
-
-Za programování a správu systému pro distribuci informací o zdrojích gama
-záøení patøí dík Steve Baco .. z Goddardova Space Flight Center.
-
-Grantové agentuøe AV ÈR a Evropské kosmické agentuøe pak patøí dík za granty,
-kterými je BART financován.
+Pøílohy obsahují zadání pùbodního systému pro øízení dalekohledu, popis
+dùle¾itých hlavièkových souborù, popis pou¾itých programù, èasový plán
+implementace a podrobný popis tabulek obsa¾ených v databázi. 
 
 \section{Pou¾ívání astronomických výrazù}
 
 Pro úspì¹né pøeètení a pochopení této práce je dobré mít základní znalosti
-astronomických výrazù a v astronomii pou¾ívaných pozièních systémù. Jsou
-popsány v nespoèetném mno¾ství publikací (napøíklad \cite{rts1} nebo lépe v
-\cite{pokorny}).
+astronomických výrazù a v astronomii pou¾ívaných pozièních systémù. Výklad
+tìchto pojmù není pøedmìtem této práce. Jsou popsány napøíklad v \cite{rts1}
+nebo v \cite{pokorny}.
 
 \section{Gama záblesky}
 
 Gama záøení je nejenergiètìj¹í elektromagnetické záøení. \index{Gama
-Ray Burst}Gama Ray Burst, zkrácenì \index{GRB}GRB, èesky \index{gama
-záblesky}gama záblesky jsou prudké a krátké výtrysky tohoto záøení,
-pøicházející k~nám z~vesmíru. Záblesky trvají okolo jedné sekundy.
-Gama záøení nepronikne zemskou atmosférou - gama záblesky tedy musíme
-hledat pomocí pøístrojù na dru¾icích.
+Ray Burst}{\bf G}ama {\bf R}ay {\bf B}urst, zkrácenì \index{GRB}GRB, èesky
+\index{gama záblesky}gama záblesky jsou prudké a krátké výtrysky tohoto záøení,
+pøicházející k~nám z~vesmíru. Záblesky trvají nìkolik sekund.  Gama záøení
+nepronikne zemskou atmosférou - gama záblesky tedy musíme hledat pomocí
+pøístrojù na dru¾icích.
 
-Star¹í dru¾ice (COMPTEL, ..) poskytovaly polohu zdroje gama záblesku pouze
-pøibli¾nì, s chybou velikosti nìkolika stupòù, nové (HETE, INTEGRAL, Swift)
-umí najít polohu zdroje gama záblesku pomìrnì pøesnì - chyba urèení polohy
-dosahuje nìkolika minut.
+Star¹í dru¾ice (napøíklad dru¾ice COMPTEL) poskytovaly polohu zdroje gama
+záblesku pouze pøibli¾nì, s chybou velikosti nìkolika stupòù, nové (HETE,
+INTEGRAL, Swift) umí najít polohu zdroje gama záblesku pomìrnì pøesnì - chyba
+urèení polohy dosahuje nìkolika úhlových minut.
 
 \index{GRB!optický protìj¹ek}Optickým protìj¹kem gama záblesku se
 rozumí podezøelý objekt ve smìru gama záblesku pozorovaný ve
 viditelném spektru. Optický protìj¹ek by podle teoretikù mìl být
 pozorován u zhruba poloviny gama zábleskù. Mìl by být pozorovatelný déle ne¾
 gama záblesk - urèitì minuty, mo¾ná dny. V prùmìru je detekován jeden gama
-záblesk dennì, z~rùzných dùvodù (poèasí, umístìní na neviditelné èásti oblohy,
-malá jasnost, ..) u~vìt¹iny není mo¾no dohledat jejich optické protìj¹ky.
-Optický dosvit známe u nìkolika desítek GRB, co¾ je mno¾ství nepostaèující na
-vytvoøení poøádné statistky.
+záblesk dennì. Z~rùzných dùvodù (poèasí, umístìní na neviditelné èásti oblohy,
+malá jasnost, ..) u~vìt¹iny z nich není mo¾no dohledat jejich optické
+protìj¹ky.  Optický dosvit známe u nìkolika desítek GRB. To je mno¾ství
+nedostaèující pro vytvoøení dùvìryhodné statistiky, která by potvrdila èi
+vyvrátila teoretické modely objasòující pùvod gama zábleskù.
 
 Není jasné, z~èeho gama záblesk pochází. Nìkteré z teoretických modelù
-pøedpokládají katastrofické srá¾ky následované výbuchem. Pøi srá¾ce vzniká
+pøedpokládají katastrofické srá¾ky, následované výbuchem. Pøi srá¾ce vzniká
 gama záøení, pøi výbuchu z~nárazù rozpínajících se èástic pochází optické
-záøení. Optický protìj¹ek by mìl tedy být pozorovatelný o~trochu pozdìji ne¾
-gama záblesk.  Z~extrapolace namìøených optických protìj¹kù gama zábleskù
-vyplývá, ¾e by mohl mít po krátkou dobu dostateènou jasnost na to, aby byl
-viditelný i triedrem èi malým dalekohledem.
+záøení. Optický protìj¹ek by mìl být pozorovatelný o~trochu pozdìji ne¾ gama
+záblesk.  Z~extrapolace namìøených optických protìj¹kù gama zábleskù vyplývá,
+¾e by mohl mít po krátkou dobu dostateènou jasnost, aby byl viditelný i
+triedrem èi malým dalekohledem.
 
 \section{Pozorování GRB malými dalekohledy}
 
 Proè má smysl pozorovat oblasti, ve kterých byly detekovány gama
-záblesky, malými dalekohledy, podobné tomu Ondøejovskému? Dùvody jsou
-následujcí:
+záblesky, malými dalekohledy, které jsou podobné tomu ondøejovskému? Dùvody
+jsou následujcí:
 
 \begin{itemize}
 
@@ -102,7 +79,7 @@ pravdìpodobnost úspì¹ného pozorování
 
 \end{itemize}
 
-Pro úspì¹né pozorování je potøeba splnit následující podmínky:
+Pro úspì¹né pozorování je tøeba splnit následující podmínky:
 
 \begin{itemize}
 
@@ -117,28 +94,28 @@ podmínka se stává kritickou pro pozorování v èase kolem úplòku.
 
 \end{itemize}
 
-Ka¾dý dalekohled navíc, který je v provozu, tak má svùj význam. Umo¾òuje
-rychlej¹í detekci pøípadného optického protìj¹ku, 
+Ka¾dý dalekohled navíc, který je v provozu, tak má svùj význam. Zvìt¹uje
+pravdìpodobnost rychlého zachycení objektu na souøadnicích gama záblesku. 
 
 \section{Princip detekce gama zábleskù}
 
-Gama záøení prochází pomìrnì snadno hmotou. Pokud se odrazí od
-pøedmìtu, dìje se tak v náhodném úhlu. Detektor tedy nelze stavìt
-podobnì jako dalekohled.
+Gama záøení prochází pomìrnì snadno hmotou. Pokud se odrazí od pøedmìtu, dìje
+se tak v náhodném úhlu. Nelze tedy pou¾ít konstrukce pou¾ívané pro optické
+nebo rádiové detektory.
 
 Detektory pracují na dvou principech:
 
 \begin{itemize}
 
-\item pou¾ívají møí¾ku pro vytvoøení obrazu
+\item pro vytvoøení obrazu pou¾ívají møí¾ku
 
-\item se znalosti èasu nesmìrové detekce na dvou a více bodech
+\item ze znalosti èasu nesmìrové detekce na dvou a více bodech
 dopoèítávají poluhu zdroje
 
 \end{itemize}
 
 COMPTEL a dru¾ice IPN\footnote{InterPlanetary Network, dru¾ice NASA umístnìné
-v rùzných místech sluneèní soustavy} byli vybaveny nesmìrovými detektory,
+v rùzných místech sluneèní soustavy} byly vybaveny nesmìrovými detektory,
 nové dru¾ice - HETE, Integral a Swift jsou vybaveny møí¾kovým detektorem.
 
 \section{Náhradní program}
@@ -146,20 +123,31 @@ nové dru¾ice - HETE, Integral a Swift jsou vybaveny møí¾kovým detektorem.
 Proto¾e nelze oèekávat detekci gama záblesku ka¾dou noc, je vhodné pro
 dalekohled navrhnout náhradní program. Nejvhodnìj¹í je monitoring
 nìkolika vybraných zdrojù, s poèítáním jejich pøesné fotometrie
-\footnote{fotometrie se dá jednodu¹e vysvìtlit jako mìøení jasnosti hvìzd}.
+\footnote{mìøení jasnosti hvìzd}.
 
-Fotometrii lze dìlat buï relativní, nebo absolutní. Relativní spoèívá v
-porovnávání jasnosti jedné hvìzdy oproti nìkolika referenèním hvìzdám na sérii
-snímkù poøízených stejným pøístrojem pøi pokud mo¾no stejných atmosférických
+Fotometrie se dìlí na asboslutní a relativní. Relativní spoèívá v porovnávání
+jasnosti jedné hvìzdy oproti nìkolika referenèním hvìzdám na sérii snímkù,
+poøízených stejným pøístrojem pøi pokud mo¾no stejných atmosférických
 prodmínkách. Absolutní fotometrie spoèívá v mìøení jasnosti v¹ech hvìzd na
 snímkù, vypoètením jejich pøístrojové magnitudy, ze znalosti jasnosti
 kalibraèních hvìzd dopoètením jejich absolutní magnitudy.
 
-Absolutní fotometrie je nároènìj¹í ne¾ relativní fotometrie. Na BARTovi se
-sna¾íme o absolutní fotometrii.
+Absolutní fotometrie je nároènìj¹í ne¾ relativní fotometrie. Systém je
+navr¾en tak, aby umo¾òoval poøizování snímkù jak pro absolutní, tak
+pro relativní fotometrii.
 
 \section{RTS1}
 
 Jako \index{RTS!RTS1}RTS1 je oznaèován starý systém øízení dalekohledu,
 vyvinutý v rámci roèníkového projektu studentù MFF UK.
 Zkratka \index{RTS}RTS znamená {\bf R}emote {\bf T}elescope {\bf S}ystem.
+
+\section{RTS2}
+
+Tímto názvem je oznaèována nová verze RTS, naprogramovaná autorem této
+diplomové práce.
+
+\section{BART}
+
+Zkratka BART znamená Burst Alert Robotic Telescope. Touto zkratkou je oznaèován
+ondøejovský dalekohled.
