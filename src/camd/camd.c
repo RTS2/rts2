@@ -534,13 +534,9 @@ camd_handle_status (int status, int old_status)
 {
   int ret;
 
-  printf ("new status: %i\n", status);
-
   if (camera_init ("/dev/ccd1", sbig_port))
     return -1;
 
-  printf ("init ok\n");
-  fflush (stdout);
   switch (status)
     {
     case SERVERD_DUSK:
