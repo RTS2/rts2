@@ -136,7 +136,26 @@ prosadit zmenu do doxygenu. Aby vice podporoval i neobjektove jazyky.
 
 Dokumentace piste prosim pokud mozno take v AJ.
 
+Dokumenty k projektu (idee, navrhy, ..) v cestine. Nejlepe 
+spisovne. Az je bude nekdo potrebovat v AJ, tak se s nim nejak
+dohodneme.
+
 Pravidla pro kod:
+
+0) male/velke
+
+Mala pismena jsou pro nazvy funkci, promenne, parametry.
+
+VELKA PISMENA jsou pro #define makra. Makro zastupujici funkci piseme
+malymi pismeny.
+
+Spojena slova oddelujeme _, jako napriklad:
+
+> tel_read
+
+Tedy ne
+
+> telread
 
 1) Pouzivame glibc funkce, muzete pouzivat funkce dostupne pod 
 
