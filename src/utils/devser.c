@@ -1397,17 +1397,19 @@ ser_child_sig_exit (int sig)
 	  prev = a_child;
 	  a_child = a_child->next;
 	}
-      while (a_child)
-	{
-	  if (a_child->next)
-	    a_child->child_pid = a_child->next->child_pid;
-	  prev = a_child;
-	  a_child = a_child->next;
-	}
       if (prev)
 	{
-	  free (prev->next);
-	  prev->next = NULL;
+	  if (a_child)
+	    {
+	      prev->next = a_child->next;
+	      free (a_child);
+	    }
+	}
+      else
+	{
+	  prev = childrens;
+	  childrens = childrens->next;
+	  free (prev);
 	}
     }
 }
@@ -1636,6 +1638,7 @@ devser_run (int port, devser_handle_command_t in_handler)
       pthread_cond_init (&data_cons[sock].read_cond, NULL);
 
       data_cons[sock].sock = 0;
+      data_cons[sock].buffer = NULL;
     }
 
   // initialize threads lock
