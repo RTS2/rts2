@@ -630,6 +630,7 @@ Rts2Block::idle ()
     {
       syslog (LOG_DEBUG, "Child returned: %i", ret);
     }
+  return 0;
 }
 
 int

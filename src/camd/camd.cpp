@@ -363,7 +363,7 @@ Rts2DevCamera::idle ()
 {
   checkExposures ();
   checkReadouts ();
-  return 0;
+  return Rts2Device::idle ();
 }
 
 int

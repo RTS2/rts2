@@ -250,7 +250,7 @@ Rts2DevPhotOptec::idle ()
 	  return endIntegrate ();
 	}
     }
-  return 0;
+  return Rts2Device::idle ();
 }
 
 int

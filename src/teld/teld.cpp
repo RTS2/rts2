@@ -94,7 +94,7 @@ int
 Rts2DevTelescope::idle ()
 {
   checkMoves ();
-  return 0;
+  return Rts2Device::idle ();
 }
 
 int

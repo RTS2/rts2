@@ -97,6 +97,7 @@ int
 Rts2DevDome::idle ()
 {
   checkOpening ();
+  return Rts2Device::idle ();
 }
 
 int
