@@ -96,6 +96,7 @@ get_list (int tar_id)
 {
   int nFields;
   int i;
+  int obs_id, last_obs_id = -1;
 
   time_t count_date;
   struct tm date;
@@ -107,7 +108,7 @@ get_list (int tar_id)
     "  tar_id,"
     "  MIN(count_date) as cd,"
     "  int8(AVG(count_value / count_exposure)),"
-    "  count_filter " "FROM" "  targets_counts ";
+    "  count_filter," "  obs_id " "FROM" "  targets_counts ";
   PGresult *res;
 // d d y b v u
   int filters[] = { 0, 0, 4, 2, 1, 3 };
@@ -139,12 +140,13 @@ get_list (int tar_id)
   for (i = 0; i < PQntuples (res); i++)
     {
       tar_id = ntohl (*((uint32_t *) PQgetvalue (res, i, 0)));
+      obs_id = ntohl (*((uint32_t *) PQgetvalue (res, i, 4)));
       count_date = ntohl (*((uint32_t *) (PQgetvalue (res, i, 1))));
       gmtime_r (&count_date, &date);
-      if (target_info && target_info != tar_id)
+      if (target_info && obs_id != last_obs_id)
 	{
 	  print_target_info (tar_id, &count_date);
-	  target_info = tar_id;
+	  last_obs_id = obs_id;
 	}
       count_value = ntohl (*((uint32_t *) PQgetvalue (res, i, 2)));
       count_value <<= 32;
