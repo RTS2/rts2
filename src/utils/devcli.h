@@ -40,7 +40,7 @@ extern int devcli_wait_for_status (struct device *dev, char *status_name,
 				   time_t tmeout);
 extern int devcli_wait_for_status_all (int type, char *status_name,
 				       int status_mask, int status,
-				       time_t timeout);
+				       time_t tmout);
 extern void devcli_set_general_notifier (struct device *dev,
 					 general_notifier_t notifier,
 					 void *data);

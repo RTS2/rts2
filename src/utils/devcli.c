@@ -33,6 +33,8 @@
 #include "status.h"
 #include "thread_attr.h"
 
+#define DEVICE_TIMEOUT		120	// default device timeout
+
 pid_t main_pid;
 
 //! Structure to hold parameters for read_data thread.
@@ -546,12 +548,30 @@ parse_server_response (char *buffer, struct device *dev)
   return buffer + (pos - cmd_start);
 }
 
+#define DEV ((struct device *) dev)
 void
-read_thread_finish (void *n)
+read_thread_finish (void *dev)
 {
+  struct dev_channel *channel = DEV->channel;
+  fprintf (stderr, "broken connection of device %s, exiting\n", DEV->name);
+
+  // inform clients, that we lose connection and cannot reply
+  // to their requests
+  pthread_mutex_lock (&channel->ret_lock);
+  channel->ret_code = DEVDEM_E_TIMEOUT;
+  pthread_cond_broadcast (&channel->ret_cond);
+  pthread_mutex_unlock (&channel->ret_lock);
+  // all threads waiting for status should be also notified,
+  // that something is wrong
+  pthread_mutex_lock (&DEV->status_lock);
+  DEV->channel = NULL;
+  free (channel);
+  pthread_cond_broadcast (&DEV->status_cond);
+  pthread_mutex_unlock (&DEV->status_lock);
   printf ("read finished!!!!!!!!!!!!!!!!!!!!!\n");
   fflush (stdout);
 }
+
 
 /*! 
  * Called as thread to readout channel socket. 
@@ -569,7 +589,7 @@ read_server_responses (void *dev)
   char *endptr;			// end of message
   int sock = CHANNEL->socket;
 
-  pthread_cleanup_push (read_thread_finish, NULL);
+  pthread_cleanup_push (read_thread_finish, dev);
 
   endptr = buffer;
   while (CHANNEL)
@@ -585,29 +605,13 @@ read_server_responses (void *dev)
       printf ("select return: %i\n", nbytes);
 #endif /* DEBUG */
       if (nbytes < 0)
-	{
-	  return NULL;
-	}
+	break;
       nbytes = read (sock, endptr, MAXMSG - (endptr - buffer));
-
-      if (nbytes < 0)
+      if (nbytes <= 0)
 	{
-	  struct dev_channel *ch = DEV->channel;
 	  perror ("read");
-	  DEV->channel = NULL;
-	  free (ch);
-	  return NULL;
+	  break;
 	}
-      if (nbytes == 0)
-	{
-	  struct dev_channel *ch = DEV->channel;
-	  fprintf (stderr, "broken connection on desc %i %s, exiting %i\n",
-		   sock, DEV->name, MAXMSG - (endptr - buffer));
-	  DEV->channel = NULL;
-	  free (ch);
-	  return NULL;
-	}
-
       endptr[nbytes] = 0;
 #ifdef DEBUG
       printf ("read %i bytes, buffer '%s' %i\n", nbytes, buffer,
@@ -1041,39 +1045,43 @@ devcli_wait_for_status (struct device *dev, char *status_name,
   if (status_find (dev, status_name, &st))
     return -1;
 
-  abstime.tv_sec = time (NULL) + tmeout;
+  if (tmeout)
+    abstime.tv_sec = time (NULL) + tmeout;
+  else
+    abstime.tv_sec = time (NULL) + DEVICE_TIMEOUT;
   abstime.tv_nsec = 11;
 
+  // try to reconnect devices, that were broken
+  if (!dev->channel)
+    devcli_command (dev, NULL, "ready");
+
   pthread_mutex_lock (&dev->status_lock);
-  while (status != (st->status & status_mask))
+  while (dev->channel && status != (st->status & status_mask))
     {
 #ifdef DEBUG
       printf
 	("devcli_wait_for_status on %s status: %i st->status: %i status_mask: %i timeout: %li\n",
 	 st->name, status, st->status, status_mask, tmeout);
 #endif /* DEBUG */
-      if (tmeout)
-	{
-	  errno =
-	    pthread_cond_timedwait (&dev->status_cond, &dev->status_lock,
-				    &abstime);
-	  if (errno == ETIMEDOUT)
-	    return -1;
-	}
-      else
-	pthread_cond_wait (&dev->status_cond, &dev->status_lock);
+      errno =
+	pthread_cond_timedwait (&dev->status_cond, &dev->status_lock,
+				&abstime);
+      if (errno == ETIMEDOUT && tmeout)
+	return -1;
     }
 #ifdef DEBUG
   printf ("devcli_wait_for_status: %i for status: %i mask: %i finished\n",
 	  status, st->status, status_mask);
 #endif /* DEBUG */
+  if (!dev->channel)
+    return -1;
   pthread_mutex_unlock (&dev->status_lock);
   return 0;
 }
 
 int
 devcli_wait_for_status_all (int type, char *status_name, int status_mask,
-			    int status, time_t timeout)
+			    int status, time_t tmeout)
 {
   struct device *dev = info->devices;
   int ret = 0;
@@ -1085,7 +1093,7 @@ devcli_wait_for_status_all (int type, char *status_name, int status_mask,
 	  fflush (stdout);
 	  ret |=
 	    devcli_wait_for_status (dev, status_name, status_mask, status,
-				    timeout);
+				    tmeout);
 	}
       dev = dev->next;
     }
