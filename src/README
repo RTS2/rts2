@@ -1,9 +1,0 @@
-camc		CAMera Client
-camd		CAMera Daemon
-db		DataBase access
-grb		grb receiving client
-plan		planer
-teld		TELescope Daemon
-utils		devser.c, devdem.c, hms.h, ..
-writers		writers for writing images from internal to external format;
-		support stream processing
