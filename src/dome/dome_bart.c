@@ -1,5 +1,5 @@
 /*! 
- * @file Telescope deamon.
+ * @file Dome control deamon. 
  * $Id$
  * @author petr
  */
