@@ -25,7 +25,8 @@
 /* Number of terms to be allocated */
 #define TPTERMS 30
 /* Model name/path */
-#define MODEL_PATH "/etc/rts2/bootes1b.dat"
+#define MODEL_PATH_N "/etc/rts2/b1b-n.dat"
+#define MODEL_PATH_F "/etc/rts2/b1b-f.dat"
 
 double
 in180 (double x)
@@ -101,7 +102,7 @@ struct tpterm
   double value;			// coefficient value
   double sigma;			// coefficient sigma
   void (*apply) (struct ln_equ_posn * in, struct ln_equ_posn * out,
-		 double corr, double a1, double a2);
+		 double corr, double a1, double a2, double phi);
 };
 
 struct tpmodel
@@ -163,7 +164,7 @@ r2s (double d)
 // status: OK
 void
 applyME (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	 double a1, double a2)
+	 double a1, double a2, double phi)
 {
   double h0, d0, h1, d1, M, N;
 
@@ -209,7 +210,7 @@ applyME (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: OK
 void
 applyMA (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	 double a1, double a2)
+	 double a1, double a2, double phi)
 {
   double d, h;
 
@@ -227,7 +228,7 @@ applyMA (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: OK
 void
 applyIH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	 double a1, double a2)
+	 double a1, double a2, double phi)
 {
   // Add a zero point to the hour angle
   out->ra = in180 (in->ra - corr / 3600);
@@ -239,7 +240,7 @@ applyIH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: OK
 void
 applyID (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	 double a1, double a2)
+	 double a1, double a2, double phi)
 {
   // Add a zero point to the declination
   out->dec = in180 (in->dec - corr / 3600);
@@ -251,7 +252,7 @@ applyID (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: OK
 void
 applyCH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	 double a1, double a2)
+	 double a1, double a2, double phi)
 {
   out->ra = in->ra - (corr / 3600) / cos (ln_deg_to_rad (in->dec));
   out->dec = in->dec;
@@ -261,7 +262,7 @@ applyCH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: chyba
 void
 applyNP (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	 double a1, double a2)
+	 double a1, double a2, double phi)
 {
   out->ra = in->ra - (corr / 3600) * tan (ln_deg_to_rad (in->ra));
   out->dec = in->dec;
@@ -271,7 +272,7 @@ applyNP (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: ok
 void
 applyPHH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	  double a1, double a2)
+	  double a1, double a2, double phi)
 {
   out->ra =
     in->ra -
@@ -283,7 +284,7 @@ applyPHH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: ok
 void
 applyPDD (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	  double a1, double a2)
+	  double a1, double a2, double phi)
 {
   out->dec =
     in->dec -
@@ -295,7 +296,7 @@ applyPDD (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: testing
 void
 applyA1H (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	  double a1, double a2)
+	  double a1, double a2, double phi)
 {
   out->ra = in->ra - ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * a1);
 //    ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (a1));
@@ -306,11 +307,45 @@ applyA1H (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 // status: testing
 void
 applyA1D (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
-	  double a1, double a2)
+	  double a1, double a2, double phi)
 {
   out->dec = in->dec - ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * a1);
 //    ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (a1));
   out->ra = in->ra;
+}
+
+void
+applyTF (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	 double a1, double a2, double phi)
+{
+  double d, h, f;
+  d = ln_deg_to_rad (in->dec);
+  h = ln_deg_to_rad (in->ra);
+  f = ln_deg_to_rad (phi);
+
+  out->ra = in->ra + (corr / 3600) * cos (f) * sin (h) / cos (d);
+  out->dec =
+    in->dec +
+    (corr / 3600) * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d));
+}
+
+void
+applyTX (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	 double a1, double a2, double phi)
+{
+  double d, h, f;
+  d = ln_deg_to_rad (in->dec);
+  h = ln_deg_to_rad (in->ra);
+  f = ln_deg_to_rad (phi);
+
+  out->ra =
+    in->ra +
+    (corr / 3600) * cos (f) * sin (h) / cos (d) /
+    (cos (d) * sin (f) + cos (d) * cos (h) * cos (f));
+  out->dec =
+    in->dec +
+    (corr / 3600) * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d)) /
+    (cos (d) * sin (f) + cos (d) * cos (h) * cos (f));
 }
 
 //    h -= TP_A1H / 3600 * (double) flip;
@@ -376,7 +411,7 @@ applyRefraction (struct ln_equ_posn *in, struct ln_equ_posn *out,
 struct tpa_termref
 {
   void (*apply) (struct ln_equ_posn * in, struct ln_equ_posn * out,
-		 double corr, double a1, double a2);
+		 double corr, double a1, double a2, double phi);
   char name[8];
 } termref[] =
 {
@@ -399,7 +434,11 @@ struct tpa_termref
   {
   applyA1H, "A1H"},
   {
-  applyA1D, "A1D"}
+  applyA1D, "A1D"},
+  {
+  applyTX, "TX"},
+  {
+  applyTF, "TF"}
 };
 
 int
@@ -509,7 +548,10 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
 
   Q = ln_get_apparent_sidereal_time (JD) * 360.0 / 24.0;
 
-  get_model (MODEL_PATH);
+  if (aux1 > 0.5)
+    get_model (MODEL_PATH_F);
+  else
+    get_model (MODEL_PATH_N);
 
   tel_pos->ra = mean_pos->ra;
   tel_pos->dec = mean_pos->dec;
@@ -537,13 +579,15 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
 	fprintf (stderr, "%s", model->term[i]->name);
 #endif
 
-	//    _r=tel_pos->ra; _d=tel_pos->dec;
+	_r = tel_pos->ra;
+	_d = tel_pos->dec;
 
 	model->term[i]->apply (tel_pos, tel_pos, model->term[i]->value, aux1,
-			       aux2);
+			       aux2, 37.1);
 
 	// reverse direction
-//      tel_pos->ra  = 2 * _r - tel_pos->ra; tel_pos->dec = 2 * _d - tel_pos->dec;
+	tel_pos->ra = 2 * _r - tel_pos->ra;
+	tel_pos->dec = 2 * _d - tel_pos->dec;
 
 	bonz (tel_pos);
       }
