@@ -291,3 +291,9 @@ camera_cool_setpoint (float coolpoint)
 {
 
 }
+
+extern int
+camera_set_filter (int filter)
+{
+  return 0;
+}

@@ -1,11 +1,14 @@
 # $Id$
 
-SUBDIRS = urvc
+SUBDIRS = urvc apogee
 
-bin_PROGRAMS = rts2-camd-urvc
+bin_PROGRAMS = rts2-camd-urvc rts2-camd-apogee
 
 rts2_camd_urvc_SOURCES = camd.c
 rts2_camd_urvc_LDFLAGS = urvc/liburvc.a ../utils/libdevdem.a @LIB_PTHREAD@
+
+rts2_camd_apogee_SOURCES = camd.c apogee/apogee.c
+rts2_camd_apogee_LDFLAGS = ../utils/libdevdem.a @LIB_PTHREAD@
 
 noinst_HEADERS = camera.h
 
