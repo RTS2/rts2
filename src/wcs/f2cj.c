@@ -8,6 +8,8 @@
 #include <fitsfile.h>
 #include <math.h>
 
+#include "logo.h"
+
 #define PP_NEG
 #define PP_BLUE
 
@@ -30,14 +32,11 @@ write_gray_jpeg_file (int quality)
 //  FILE * outfile;     
   JSAMPROW row_pointer[1];
   int row_stride;
+  int row_logo = 0;
 
   cinfo.err = jpeg_std_error (&jerr);
   jpeg_create_compress (&cinfo);
 
-/*  if ((outfile = fopen(filename, "wb")) == NULL) {
-    fprintf(stderr, "can't open %s\n", filename);
-    exit(1);
-  }*/
   jpeg_stdio_dest (&cinfo, stdout);
 
   // Four fields of the cinfo struct must be filled in: 
@@ -54,6 +53,14 @@ write_gray_jpeg_file (int quality)
 
   while (cinfo.next_scanline < cinfo.image_height)
     {
+      if (cinfo.image_height - cinfo.next_scanline <= logo_image.height)
+	{
+	  int i;
+	  JSAMPLE *img = &image_buffer[cinfo.next_scanline * row_stride * 3];
+	  for (i = 0; i < logo_image.width * 3; i++)
+	    img[i] &= logo_image.pixel_data[row_logo + i];
+	  row_logo += i;
+	}
       /* jpeg_write_scanlines expects an array of pointers to scanlines.
        * Here the array is only one element long, but you could pass
        * more than one scanline at a time if that's more convenient.
