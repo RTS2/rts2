@@ -15,6 +15,11 @@
 #include <math.h>
 #include <stdarg.h>
 
+#ifdef DATA_READOUT_DEBUG
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
 #include <pthread.h>
 
 #include <argz.h>
@@ -208,6 +213,19 @@ camd_handle_command (char *argv, size_t argc)
 	  devdem_write_command_end ("Data not available", DEVDEM_E_SYSTEM);
 	  return -1;
 	}
+#ifdef DATA_READOUT_DEBUG
+      {
+	int file;
+	if ((file = open ("test_data.fits", O_CREAT | O_WRONLY)) < 0)
+	  syslog (LOG_ERR, "Opening test_data.fits : %m");
+	if (write (file, readout[chip].data, readout[chip].data_size_in_bytes)
+	    < readout[chip].data_size_in_bytes)
+	  syslog (LOG_ERR, "Writing to test_data.fits : %m");
+	if (close (file) < 0)
+	  syslog (LOG_ERR, "Closing file test_data.fits : %m");
+      }
+#endif
+
       ret =
 	devdem_send_data (NULL, readout[chip].data,
 			  readout[chip].data_size_in_bytes);
