@@ -66,6 +66,7 @@
 #define DEVDEM_E_PARAMSVAL	-3	// invalid parameter(s) value
 #define DEVDEM_E_HW		-4	// some HW failure
 #define DEVDEM_E_SYSTEM		-5	// some system error
+#define DEVDEM_E_PRIORITY	-6	// error by changing priority
 
 // Client errors goes together, intersection between devdem and plancomm clients
 // must be empty.
