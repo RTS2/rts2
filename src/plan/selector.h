@@ -18,10 +18,10 @@ private:
   struct device *telescope;
   struct ln_lnlat_posn *observer;
   int find_plan (Target * plan, int id, time_t c_start);
-  Target *add_target (Target * plan, int type, int id, int obs_id, double ra,
+  Target *add_target (Target * plan, int type, int id, double ra,
 		      double dec, time_t obs_time, int tolerance,
 		      char obs_type);
-  Target *add_target_ell (Target * plan, int type, int id, int obs_id,
+  Target *add_target_ell (Target * plan, int type, int id,
 			  ln_ell_orbit * orbit, time_t obs_time,
 			  int tolerance, char obs_type);
   int select_next_alt (time_t c_start, Target * plan, float lon, float lat);
@@ -71,5 +71,8 @@ public:
 
   void free_plan (Target * plan);
 };
+
+int createTarget (Target ** in_target, int tar_id, struct device *telescope,
+		  struct ln_lnlat_posn *observer);
 
 #endif /* __RTS2_SELECTOR__ */

@@ -104,8 +104,10 @@ private:
   hi_precision_t closed_loop_precission;
 
   int running_script_count;	// number of running scripts (not in W)
+
+  int obs_id;
 public:
-    Target::Target (struct device *tel, struct ln_lnlat_posn *obs)
+    Target (struct device *tel, struct ln_lnlat_posn *obs)
   {
     printf ("tel: %p\n", tel);
     telescope = tel;
@@ -136,6 +138,9 @@ public:
     closed_loop_precission.mutex = &closed_loop_mutex;
     closed_loop_precission.cond = &closed_loop_cond;
     closed_loop_precission.hi_precision = hi_precision;
+
+    obs_id = -1;
+    moved = 0;
   }
   int getPosition (struct ln_equ_posn *pos)
   {
@@ -196,7 +201,6 @@ public:
   virtual int postprocess ();	// run in extra thread
   int type;			// light, dark, flat, flat_dark
   int id;
-  int obs_id;
   char obs_type;		// SKY_SURVEY, GBR, .. 
   time_t start_time;
   int moved;

@@ -53,7 +53,7 @@ Selector::find_plan (Target * plan, int id, time_t c_start)
 }
 
 Target *
-Selector::add_target (Target * plan, int type, int id, int obs_id, double ra,
+Selector::add_target (Target * plan, int type, int id, double ra,
 		      double dec, time_t obs_time, int tolerance,
 		      char obs_type)
 {
@@ -65,10 +65,8 @@ Selector::add_target (Target * plan, int type, int id, int obs_id, double ra,
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
-  new_plan->obs_id = obs_id;
   new_plan->start_time = obs_time;
   new_plan->tolerance = tolerance;
-  new_plan->moved = 0;
   new_plan->hi_precision = (int) get_double_default ("hi_precission", 1);
   new_plan->obs_type = obs_type;
 
@@ -79,7 +77,7 @@ Selector::add_target (Target * plan, int type, int id, int obs_id, double ra,
 }
 
 Target *
-Selector::add_target_ell (Target * plan, int type, int id, int obs_id,
+Selector::add_target_ell (Target * plan, int type, int id,
 			  ln_ell_orbit * orbit, time_t obs_time,
 			  int tolerance, char obs_type)
 {
@@ -88,10 +86,8 @@ Selector::add_target_ell (Target * plan, int type, int id, int obs_id,
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
-  new_plan->obs_id = obs_id;
   new_plan->start_time = obs_time;
   new_plan->tolerance = tolerance;
-  new_plan->moved = 0;
   new_plan->hi_precision = (int) get_double_default ("hi_precision", 1);
   new_plan->obs_type = obs_type;
 
@@ -113,7 +109,6 @@ add_target_lunar (Target *plan, int type, int id, int obs_id,
   new_plan->obs_id = obs_id;
   new_plan->ctime = obs_time;
   new_plan->tolerance = tolerance;
-  new_plan->moved = 0;
   new_plan->hi_precision = 0;
 
   while (plan->next)
@@ -165,7 +160,7 @@ Selector::select_next_alt (time_t c_start, Target * plan, float lon,
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, c_start,
 		      PLAN_TOLERANCE, type_id);
 	  break;
 	}
@@ -239,7 +234,7 @@ Selector::select_next_gps (time_t c_start, Target * plan, float lon,
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, c_start,
 		      PLAN_TOLERANCE, TYPE_GPS);
 	  EXEC SQL CLOSE obs_cursor_gps;
 	  db_unlock ();
@@ -319,7 +314,7 @@ Selector::select_next_airmass (time_t c_start, Target * plan,
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("airmass find id: %i\n", tar_id);
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, c_start,
 		      PLAN_TOLERANCE, TYPE_SKY_SURVEY);
 	  break;
 	}
@@ -389,7 +384,7 @@ Selector::select_next_grb (time_t c_start, Target * plan, float lon,
 	{
 	  printf ("grb find id: %i\n", tar_id);
 
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, c_start,
 		      PLAN_TOLERANCE, TYPE_GRB);
 	  EXEC SQL CLOSE obs_cursor_grb;
 	  test_sql;
@@ -481,7 +476,7 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("to find id: %i\n", tar_id);
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, *c_start,
 		      PLAN_TOLERANCE, TYPE_OPORTUNITY);
 	  EXEC SQL CLOSE obs_cursor_to;
 	  db_unlock ();
@@ -599,7 +594,7 @@ Selector::select_next_ell (time_t * c_start, Target * plan, float az_end,
 	// TODO: add check for telescope - find ra & dec
 	{
 	  printf ("ell find id: %i\n", tar_id);
-	  add_target_ell (plan, TARGET_LIGHT, tar_id, -1, &orbit, *c_start,
+	  add_target_ell (plan, TARGET_LIGHT, tar_id, &orbit, *c_start,
 			  PLAN_TOLERANCE, TYPE_ELLIPTICAL);
 	  EXEC SQL CLOSE obs_cursor_ell;
 	  db_unlock ();
@@ -690,7 +685,7 @@ Selector::select_next_photometry (time_t * c_start, Target * plan, float lon,
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("photometric find id: %i\n", tar_id);
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, *c_start,
 		      PLAN_TOLERANCE, obs_type);
 	  EXEC SQL CLOSE obs_cursor_photometric;
 	  db_unlock ();
@@ -769,7 +764,7 @@ Selector::select_next_terestial (time_t * c_start, Target * plan, float lon,
       if (last_o == -1 || last_o >= ot_minpause)
 	{
 	  printf ("terestial find id: %i\n", tar_id);
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, *c_start,
 		      PLAN_TOLERANCE, obs_type);
 	  EXEC SQL CLOSE obs_cursor_terestial;
 	  db_unlock ();
@@ -807,7 +802,7 @@ Selector::hete_mosaic (Target * plan, double jd, time_t * obs_start,
 	 (int) get_device_double_default ("hete", "dark_frequency",
 					  DEFAULT_DARK_FREQUENCY)) == 1)
       {
-	add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+	add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		    PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
 	return 0;
       }
@@ -817,7 +812,7 @@ Selector::hete_mosaic (Target * plan, double jd, time_t * obs_start,
       ln_get_equ_solar_coords (jd, &sun);
       sun.ra = ln_range_degrees (sun.ra - 180 - 12.5 + 25.0 * (step > 1));
       sun.dec = (-sun.dec) - (10.0 / 2) + 10 * (step % 2);
-      add_target (plan, TARGET_LIGHT, 50 + step, -1, sun.ra, sun.dec,
+      add_target (plan, TARGET_LIGHT, 50 + step, sun.ra, sun.dec,
 		  *obs_start, PLAN_TOLERANCE, TYPE_HETE);
       return 0;
     }				//continue to airmass, if not anti-solar hete
@@ -855,7 +850,7 @@ Selector::flat_field (Target * plan, time_t * obs_start, int number,
 	      (sun_alt >
 	       get_double_default ("dark_horizont",
 				   -2)) ? TARGET_FLAT_DARK : TARGET_FLAT, 10,
-	      -1, sun.ra, sun.dec, *obs_start, PLAN_TOLERANCE,
+	      sun.ra, sun.dec, *obs_start, PLAN_TOLERANCE,
 	      TYPE_TECHNICAL);
   return 0;
 }
@@ -912,7 +907,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
   {
     if (number % 3)
     {
-      add_target_lunar (plan, TARGET_LIGHT, 1201, -1, *obs_start, PLAN_TOLERANCE);
+      add_target_lunar (plan, TARGET_LIGHT, 1201, *obs_start, PLAN_TOLERANCE);
       return 0;
     }
     selector_type = SELECTOR_ELL;
@@ -925,7 +920,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
     {
       if (number % home_period == 1)
 	{
-	  add_target (plan, TARGET_LIGHT, TARGET_FOCUSING, -1, 200, 60,
+	  add_target (plan, TARGET_LIGHT, TARGET_FOCUSING, 200, 60,
 		      *obs_start, PLAN_TOLERANCE, TYPE_CALIBRATION);
 	  return 0;
 	}
@@ -942,7 +937,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
       printf ("Trying OT\n");
       if (number % dark_frequency == 1)	// get the darks..
 	{
-	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
 	  return 0;
 	}
@@ -972,7 +967,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
       // every 50 image will be dark..
       if ((number % (int) get_device_double_default ("gps", "dark_frequency", dark_frequency)) == 1)	// because of HETE 
 	{
-	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
 	  return 0;
 	}
@@ -990,7 +985,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
       // every 50 image will be dark..
       if (number % dark_frequency == 1)	// because of HETE 
 	{
-	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
 	  return 0;
 	}
@@ -1039,7 +1034,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
       if (!select_next_airmass (*obs_start, plan, airmass, 90, 270, lon, lat))
 	return 0;
       // default selector - dark frame
-      add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+      add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		  PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
       return 0;
     default:
@@ -1057,4 +1052,50 @@ Selector::free_plan (Target * plan)
   free (plan);
 
   for (; last; plan = last, last = last->next, free (plan));
+}
+
+int
+createTarget (Target **in_target, int in_tar_id, struct device *telescope, struct ln_lnlat_posn *observer)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int count = 0;
+  char type_id;
+  double ra;
+  double dec;
+  int tar_id = in_tar_id;
+  EXEC SQL END DECLARE SECTION;
+  struct ln_equ_posn object;
+  Target *n_target;
+  db_lock ();
+#define test_sql if (sqlca.sqlcode < 0) goto err
+  EXEC SQL DECLARE tar_details CURSOR FOR SELECT
+    tar_ra,
+    tar_dec,
+    type_id
+    FROM
+    targets
+    WHERE
+    tar_id = :tar_id;
+  EXEC SQL OPEN tar_details;
+  test_sql;
+  EXEC SQL FETCH next FROM tar_details INTO :ra, :dec, :type_id;
+  test_sql;
+  object.ra = ra;
+  object.dec = dec;
+  n_target = new ConstTarget (telescope, observer, &object);
+  n_target->next = NULL;
+  n_target->type = TARGET_LIGHT;
+  n_target->id = tar_id;
+  n_target->tolerance = 100;
+  n_target->hi_precision = (int) get_double_default ("hi_precision", 1);
+  n_target->obs_type = type_id;
+  *in_target = n_target;
+  EXEC SQL CLOSE tar_details;
+  db_unlock ();
+  return 0;
+#undef test_sql
+err:
+  db_unlock ();
+  *in_target = NULL;
+  return -1;
 }
