@@ -8,11 +8,11 @@ echo "Processing $1"
 # image processing
 
 
-if pwd | grep "C0"; then
+if pwd | grep "C0\|C4-F0"; then
 	#/home/mates/bin/bdark $1
-	/home/mates/bin/detect $1
-
-	PGPLOT_DIR=/home/mates/pgplot
-	DISPLAY=tcm:0
-	/home/mates/bin/past $1 /home/public/past.cfg 2>$1.past
+	/home/mates/bin/detect $1 ASC 2>> /tmp/detectlog
+#	PGPLOT_DIR=/home/mates/pgplot
+#	DISPLAY=tcm:0
+#	/home/mates/bin/past $1 /home/public/past.cfg 2>$1.past
+#	rm -f core
 fi
