@@ -13,10 +13,10 @@ planc: planc.o selector.o ../db/db.o ../writers/fits.o ../utils/devcli.a
 	$(CC) -o $@ $^ -lcfitsio -lm -lpthread -lecpg -lpq -lnova
 
 test: test.o selector.o ../db/db.o
-	$(CC) -o $@ $^ @LIBPG_CFLAGS@ -lecpg -lpq -lnova 
+	$(CC) -g -o $@ $^ @LIBPG_CFLAGS@ -lecpg -lpq -lnova 
 
 %.c: %.ec
 	@ECPG@ -o $@ $^
 
 selector.o: selector.c
-	$(CC) -I/usr/include/postgresql selector.c -c -o selector.o
+	$(CC) -g -I/usr/include/postgresql selector.c -c -o selector.o

@@ -6,6 +6,9 @@
 #define TARGET_DARK	2
 #define TARGET_FLAT	3
 
+#define SELECTOR_AIRMASS	1
+#define SELECTOR_ALTITUDE	2
+
 struct target
 {
   int type;
@@ -17,7 +20,10 @@ struct target
   struct target *next;
 };
 
-int make_plan (struct target **plan);
-void free_plan (struct target *plan);
+extern int
+get_next_plan (struct target *plan, int selector_type,
+	       struct target *curr_plan, time_t c_time, int number);
+     extern int make_plan (struct target **plan);
+     extern void free_plan (struct target *plan);
 
 #endif /* __RTS_SELECTOR__ */

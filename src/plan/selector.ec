@@ -1,8 +1,8 @@
-	/*!
-	 * @file Selector - build plan from target database.
-	 *
-	 * @author petr
-	 */
+/*!
+ * @file Selector - build plan from target database.
+ *
+ * @author petr
+ */
 
 #include <libnova.h>
 #include <stdio.h>
@@ -14,9 +14,12 @@
 int
 find_plan (struct target *plan, int id, time_t c_start)
 {
-  for (; plan; plan = plan->next)
-    if (plan->type == TARGET_LIGHT && plan->id == id && plan->ctime > c_start)
-      return 0;
+  while (plan)
+    {
+      if (plan->id == id && plan->ctime > c_start)
+	return 0;
+      plan = plan->next;
+    }
 
   return -1;
 }
@@ -71,8 +74,6 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
 	  printf ("find id: %i\n", tar_id);
-	  last->next = (struct target *) malloc (sizeof (struct target));
-	  last = last->next;
 	  last->type = TARGET_LIGHT;
 	  last->id = tar_id;
 	  last->ra = ra;
@@ -166,8 +167,6 @@ select_next_airmass (time_t c_start, struct target *plan, struct
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
 	  printf ("find id: %i\n", tar_id);
-	  last->next = (struct target *) malloc (sizeof (struct target));
-	  last = last->next;
 	  last->type = TARGET_LIGHT;
 	  last->id = tar_id;
 	  last->ra = ra;
@@ -195,6 +194,65 @@ err:
   return -1;
 }
 
+/*! 
+ * Makes one observation plan entry.
+ *
+ * Please note, that you are responsible to add plan on top of curr_plan, 
+ * if you like it.
+ * 
+ * @param plan		target plan
+ * @param sel_type	airmass or height?
+ * @param curr_plan	plan up to date; when NULL, then it's not used
+ * @param c_start	starting time
+ * @param number	plan number
+ */
+int
+get_next_plan (struct target *plan, int selector_type,
+	       struct target *curr_plan, time_t c_start, int number)
+{
+  double az;
+  double airmass;
+  switch (selector_type)
+    {
+    case SELECTOR_ALTITUDE:
+      select_next_alt (c_start + number * 180, curr_plan, plan);
+      break;
+
+    case SELECTOR_AIRMASS:
+      // every 50th image will be dark..
+      if (number % 50 == 5)
+	{
+	  plan->type = TARGET_DARK;
+	  plan->id = -1;
+	  plan->ctime = c_start + number * 180;
+	  plan->next = NULL;
+	  return 0;
+	}
+
+      switch (number & 1)
+	{
+	case 0:
+	  az = 180.0 * rand () / (RAND_MAX + 1.0);
+	  airmass = 1.2 + (1.2 * rand () / (RAND_MAX + 1.0));
+	  if (az > 90)
+	    az += 180;
+	  break;
+	case 1:
+	  az = 360.0 * rand () / (RAND_MAX + 1.0);
+	  airmass = 1.0 + (0.2 * rand () / (RAND_MAX + 1.0));
+	  break;
+	}
+
+      select_next_airmass (c_start + number * 180, curr_plan, plan, airmass,
+			   az);
+      break;
+
+    default:
+      return -1;
+    }
+  return 0;
+}
+
 int
 make_plan (struct target **plan)
 {
@@ -212,36 +270,10 @@ make_plan (struct target **plan)
 
   for (i = 0; i < 100; i++)
     {
-//      select_next_alt (c_start + i * 180, *plan, last);
-      double az;
-      double airmass;
-
-      // every 50th image will be dark..
-      if (i % 50 == 5)
-	{
-	  last->next = (struct target *) malloc (sizeof (struct target));
-	  last = last->next;
-	  last->type = TARGET_DARK;
-	  last->ctime = c_start + i * 180;
-	  last->next = NULL;
-	  continue;
-	}
-
-      switch (i&1)
-      {
-	      case 0:
-		      az=180.0*rand()/(RAND_MAX+1.0);
-		      airmass=1.2+(1.2*rand()/(RAND_MAX+1.0));
-		      if(az>90)az+=180;
-		      break;
-	      case 1:
-		      az=360.0*rand()/(RAND_MAX+1.0);
-		      airmass=1.0+(0.2*rand()/(RAND_MAX+1.0));
-		      break;
-      }
-
-      select_next_airmass (c_start + i * 180, *plan, last, airmass, az);
+      last->next = (struct target *) malloc (sizeof (struct target));
       last = last->next;
+      last->next = NULL;
+      get_next_plan (last, SELECTOR_AIRMASS, *plan, c_start, i);
     }
 
   last = *plan;
