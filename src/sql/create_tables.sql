@@ -1,3 +1,4 @@
+DROP TABLE terestial;
 DROP TABLE ell;
 DROP TABLE ot;
 DROP TABLE grb;
@@ -61,9 +62,9 @@ CREATE TABLE ell (
 
 CREATE TABLE terestial (
 	tar_id		integer REFERENCES targets (tar_id),
-	ter_minutes	integer -- observation every ter_minutes
+	ter_minutes	integer, -- observation every ter_minutes
 	ter_offset	integer -- observation offset in minutes
-)
+);
 
 DROP TABLE cameras;
 
