@@ -76,7 +76,6 @@ main (int argc, char **argv)
 
   db_connect ();
 
-
   if (get_next_plan
       (plan, (int) get_double_default ("planc_selector", SELECTOR_ELL),
        &t, 1, 30, SERVERD_NIGHT, observer.lng, observer.lat))

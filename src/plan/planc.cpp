@@ -378,20 +378,47 @@ dec_script_thread_count (void)
   return 0;
 }
 
+/**
+ * Return script for camera exposure.
+ *
+ * @param last		observing target
+ * @param camera	camera device for script
+ * @param buf		buffer for script
+ *
+ * @return 0 on success, < 0 on error
+ */
+int
+get_script (Target *last, struct device *camera, char *buf)
+{
+  char obs_type_str[2];
+  char *s;
+  int ret;
+  obs_type_str[0] = last->obs_type;
+  obs_type_str[1] = 0;
+
+  ret = db_get_script (last->id, camera->name, buf);
+  if (!ret)
+    return 0;
+
+  s = get_sub_device_string_default (camera->name, "script", obs_type_str,
+				       "E D");
+  strncpy (buf, s, MAX_COMMAND_LENGTH);
+  return 0;
+}
+
 void *
 execute_camera_script (void *exinfo)
 {
   struct device *camera = ((struct ex_info *) exinfo)->camera;
   Target *last = ((struct ex_info *) exinfo)->last;
   int light;
-  char *command, *s;
+  char com_buf[MAX_COMMAND_LENGTH], *command, *s;
   char *arg1, *arg2;
   float exposure;
   int filter, count;
   int ret;
   time_t t;
   char s_time[27];
-  char obs_type_str[2];
   struct timespec timeout;
   time_t now;
   enum
@@ -402,11 +429,8 @@ execute_camera_script (void *exinfo)
   switch (last->type)
     {
     case TARGET_LIGHT:
-      obs_type_str[0] = last->obs_type;
-      obs_type_str[1] = 0;
-      command =
-	get_sub_device_string_default (camera->name, "script", obs_type_str,
-				       "E D");
+      get_script (last, camera, com_buf);
+      command = com_buf;
       light = 1;
       ret = process_precission (last, camera);
       if (ret)
