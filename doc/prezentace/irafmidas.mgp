@@ -1,0 +1,68 @@
+%include "default.mgp"
+%default 1 bgrad
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+%nodefault
+%center, size 7, font "standard", fore "white", vgap 20
+
+Midas vs IRAF
+
+Autor: Petr Kubánek
+petr@lascaux.asu.cas.cz
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+IRAF - Image Reduction and Analytic Functions
+
+Balík, vyvíjený na NOAO (National Optical Astronomy Observatories), patøící
+AURA (Association of Universities for Research in Astronomy), ve spolupráci s
+NSF (National Science Foundation).
+
+Stojí za vìt¹inou snímkù z Hubble Space Telescope, pou¾ívá se v
+radiooastronometrii.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Plus/mínus:
+
++ na druhý pohled velmy silný systém ovládání
++ ukládání parametrù pro tasky
++ hojná dokumentace
++ hojnost taskù
++ silný vnitøní jazyk
++ iterace parametrù ze souborù - "@" konvence
+
+- na první pohled nepochopitelný systém ovládání
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+ESO-Midas
+
+European South Observatory - Munich Image Data Analytic System
+
+Balík, vyvíjen v Mnichovì pro ESO. Pøeveden pod open-source. Velmi vhodný pro
+zpracování spekter???
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Plus/mínus:
+
++ pøívìtivé u¾ivatelské rozhranní
++ dostatek dokumentace, snadná orientace v ní
++ nenároènost na systémové prostøedky
+
+- ¹patné propojení na DAOPHOT
+- tì¾kopádnost definice promìnných
+- komplikovaný a pomìrnì slabý vnitøní jazyk
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Odkazy:
+
+	http://iraf.noao.edu - IRAF
+	http://www.eso.org/midas - MIDAS
