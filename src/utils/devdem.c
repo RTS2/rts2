@@ -612,7 +612,7 @@ client_handle_commands (char *command)
  * @return 0 on success, -1 and set errno on error
  */
 int
-server_command_handler (struct param_status *params)
+server_command_handler (struct param_status *params, void *info)
 {
   if (strcmp (params->param_argv, "authorization_ok") == 0)
     {
@@ -773,7 +773,7 @@ server_message_status (struct param_status *params)
 }
 
 int
-server_message_handler (struct param_status *params)
+server_message_handler (struct param_status *params, void *info)
 {
   char *command;
   if (param_next_string (params, &command))
@@ -935,7 +935,6 @@ devdem_register (char *server_host, uint16_t server_port,
 		 uint16_t device_port)
 {
   struct devcli_channel_handlers handlers;
-
 
   handlers.command_handler = server_command_handler;
   handlers.message_handler = server_message_handler;
