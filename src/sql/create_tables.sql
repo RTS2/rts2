@@ -24,7 +24,8 @@ CREATE TABLE targets (
 	tar_name	varchar(150),
 	tar_ra		float4,
 	tar_dec		float4,
-	tar_comment	text
+	tar_comment	text,
+	tar_enabled     boolean
 );
 
 CREATE TABLE grb (

@@ -68,27 +68,15 @@ SELECT images.*, date_part('day', (timestamptz(images.img_date) - interval '12:0
 	date_part('year', (timestamptz(images.img_date) - interval '12:00')) AS img_year 
 	FROM images;
 
-GRANT SELECT ON targets_noimages TO "";
-GRANT SELECT ON targets_imgcount TO "";
-GRANT SELECT ON targets_images TO "";
-GRANT SELECT ON targets_altaz TO "";
-
-GRANT SELECT ON observations_noimages TO "";
-GRANT SELECT ON observations_imgcount TO "";
-GRANT SELECT ON observations_images TO "";
-GRANT SELECT ON observations_nights TO "";
-GRANT SELECT ON images_nights TO "";
-
-------------------------------------------------------
-
-GRANT SELECT ON targets_noimages TO GROUP observers;
-GRANT SELECT ON targets_imgcount TO GROUP observers;
-GRANT SELECT ON targets_images TO GROUP observers;
-GRANT SELECT ON targets_altaz TO GROUP observers;
-
-GRANT SELECT ON observations_noimages TO GROUP observers;
-GRANT SELECT ON observations_imgcount TO GROUP observers;
-GRANT SELECT ON observations_images TO GROUP observers;
-GRANT SELECT ON observations_nights TO GROUP observers;
-GRANT SELECT ON images_nights TO GROUP observers;
-
+CREATE VIEW targets_enabled AS
+SELECT
+        tar_id,
+        type_id,
+        tar_name,
+        tar_ra,
+        tar_dec,
+        tar_comment
+FROM
+        targets
+WHERE
+        tar_enabled = true;
