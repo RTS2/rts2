@@ -1,15 +1,15 @@
-0.3
+0.3.1
 ===
+ * configuration files
+   o for central server & devices
  * planner ????
     o language definition ????
     o threading of planner tasks
+
+0.3.0
+===
  * telescope 
     o position corections
- * configuration files
-   o for central server & devices
-
-0.2.3
-===
  * use of GNU autoconf, automake
  * grbc
  * planc
