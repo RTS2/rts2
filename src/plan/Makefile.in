@@ -1,30 +1,25 @@
 #$Id$
 
-BIN = planc
+BIN = planc test
 
 all: $(BIN)
 
 include ../../make.conf
-
-CFLAGS += -I/usr/src/cfitsio 
+ 
+CFLAGS += -I/usr/src/cfitsio -I@top_srcdir@/include -DDEBUG
 LDFLAGS += -L/usr/src/cfitsio -lcfitsio -l$(LIB_M) -l$(LIB_PTHREAD)
-
-plan: plancom.o plan.o ../utils/devcli.o ../writers/fits.o
-	$(CC) -o plan plan.o plancom.o ../utils/devcli.o ../writers/fits.o $(CFLAGS) $(LDFLAGS)
-
-plancom.o: plancom.c ../writers/fits.o
 
 planc: planc.o selector.o db.o ../writers/fits.o ../utils/devcli.a
 	$(CC) -o $@ $^ -lcfitsio -lm -lpthread -lecpg -lpq -lnova
 
-selector.c: selector.ec
-	ecpg $^
+test: test.o selector.o db.o
+	$(CC) -o $@ $^ @LIBPG_CFLAGS@ -lecpg -lpq -lnova 
+
+%.c: %.ec
+	@ECPG@ -o $@ $^
 
 selector.o: selector.c
 	$(CC) -I/usr/include/postgresql selector.c -c -o selector.o
-
-db.c: db.ec
-	ecpg $^
 
 db.o: db.c
 	$(CC) -I/usr/include/postgresql db.c -c -o db.o -DDEBUG
