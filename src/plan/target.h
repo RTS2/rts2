@@ -9,6 +9,7 @@
 #define TYPE_GPS                'P'
 #define TYPE_ELLIPTICAL         'E'
 #define TYPE_HETE               'H'
+#define TYPE_PHOTOMETRIC	'M'
 #define TYPE_TECHNICAL          'T'
 
 class Target
