@@ -534,7 +534,7 @@ Rts2Device::init ()
 
   openlog (NULL, log_option, LOG_LOCAL0);
 
-  asprintf (&lock_fname, "/var/lock/rts2_%s", device_name);
+  asprintf (&lock_fname, "/var/run/rts2_%s", device_name);
 
   lockf = open (lock_fname, O_RDWR | O_CREAT);
 
@@ -561,7 +561,7 @@ Rts2Device::init ()
 
   free (lock_fname);
 
-  fprintf (lock_file, "%i", getpid ());
+  fprintf (lock_file, "%i\n", getpid ());
 
   fflush (lock_file);
 
