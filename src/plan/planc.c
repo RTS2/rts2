@@ -34,7 +34,7 @@
 #include "selector.h"
 #include "../db/db.h"
 
-#define EXPOSURE_TIME		60
+#define EXPOSURE_TIME		30	
 
 
 int camd_id, teld_id;
@@ -215,6 +215,7 @@ data_handler (int sock, size_t size, struct image_info *image)
   free (dirname);
   return 0;
 free_filename:
+  free (dirname);
   free (filename);
   return ret;
 #undef receiver
@@ -362,7 +363,7 @@ main (int argc, char **argv)
 
   umask (0x002);
 
-  devcli_server_command (NULL, "priority 137");
+  devcli_server_command (NULL, "priority 139");
 
   printf ("waiting for priority\n");
 

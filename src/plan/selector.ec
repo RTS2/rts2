@@ -5,6 +5,7 @@
  */
 
 #include <libnova.h>
+#include <math.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -122,6 +123,7 @@ select_next_airmass (time_t c_start, struct target *plan, struct
   double airmass;
   double rank;
 
+
   long int obs_start = c_start - 8640;
 
   double t_az = target_az;
@@ -132,6 +134,7 @@ select_next_airmass (time_t c_start, struct target *plan, struct
   printf ("c_start: %s", ctime (&c_start));
   jd = get_julian_from_timet (&c_start);
   printf ("jd: %f\n", jd);
+
 
   EXEC SQL BEGIN;
 
@@ -215,6 +218,13 @@ get_next_plan (struct target *plan, int selector_type,
 {
   double az;
   double airmass;
+
+  double jd;
+
+  struct ln_equ_posn moon;
+  struct ln_hrz_posn moon_hrz;
+  struct ln_lnlat_posn observer;
+
   switch (selector_type)
     {
     case SELECTOR_ALTITUDE:
@@ -231,23 +241,52 @@ get_next_plan (struct target *plan, int selector_type,
 	  plan->next = NULL;
 	  return 0;
 	}
+	
+      observer.lng = -15;
+      observer.lat = 50;
+
+      c_start += number * (READOUT_TIME + exposure);
+
+      jd = get_julian_from_timet (&c_start);
+
+      get_lunar_equ_coords (jd, &moon, 0.01);
+      get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);
 
       switch (number & 1)
 	{
 	case 0:
-	  az = 180.0 * rand () / (RAND_MAX + 1.0);
-	  airmass = 1.2 + (1.2 * rand () / (RAND_MAX + 1.0));
-	  if (az > 90)
-	    az += 180;
+	  while (1) 
+	  {
+	    az = 180.0 * rand () / (RAND_MAX + 1.0);
+	    airmass = 1.2 + (1.2 * rand () / (RAND_MAX + 1.0));
+	    if (az > 90)
+	     az += 180;
+	    if (moon_hrz.alt < -10)
+	      break;
+	    else if (abs ((int)floor(moon_hrz.az - az) % 360) < 40)
+	        printf (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n", az, airmass, moon_hrz.az, moon_hrz.alt);
+	    else 
+		break;
+	  }
 	  break;
+
 	case 1:
-	  az = 360.0 * rand () / (RAND_MAX + 1.0);
-	  airmass = 1.0 + (0.2 * rand () / (RAND_MAX + 1.0));
+	  while (1)
+	  {
+	    az = 360.0 * rand () / (RAND_MAX + 1.0);
+	    airmass = 1.0 + (0.2 * rand () / (RAND_MAX + 1.0));
+
+	    if (moon_hrz.alt < -10)
+	      break;
+	    else if (abs ((int)floor(moon_hrz.az - az) % 360) < 40)
+	        printf (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n", az, airmass, moon_hrz.az, moon_hrz.alt);
+	    else 
+		break;
+	  }
 	  break;
 	}
 
-      return select_next_airmass (c_start +
-				  number * (READOUT_TIME + exposure),
+      return select_next_airmass (c_start,
 				  curr_plan, plan, airmass, az);
       break;
 
