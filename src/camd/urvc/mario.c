@@ -64,20 +64,7 @@ end_realtime ()
 #ifdef DEBUG
 extern int IO_LOG;		// marmicro.c
 
-/*
-unsigned char __inb(int port)
-{
-    unsigned char _v;
-    __asm__ __volatile__("inb %w1,%0":"=a"(_v):"Nd"(port));
-    return _v;
-}
-
-void __outb(int value, int port)
-{
-    __asm__ __volatile__("outb %b0,%w1"::"a"(value), "Nd"(port));
-}*/
-
-/*unsigned char
+unsigned char
 inportb (int port)
 {
   unsigned char data;
@@ -104,5 +91,19 @@ outportb (int port, int data)
 	fprintf (stderr, "%03xO%02x ", port, data);	// fflush(stdout);
     }
   return __outb (data, port);
-}*/
+}
 #endif // DEBUG
+
+/*
+unsigned char inb(int port)
+{
+    unsigned char _v;
+    __asm__ __volatile__("inb %w1,%0":"=a"(_v):"Nd"(port));
+    return _v;
+}
+
+void outb(int value, int port)
+{
+    __asm__ __volatile__("outb %b0,%w1"::"a"(value), "Nd"(port));
+}
+*/

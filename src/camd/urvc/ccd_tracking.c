@@ -4,6 +4,8 @@
 #include "mardrv.h"
 #include "ccd_macros.h"
 
+extern unsigned long lost_ticks;
+
 PAR_ERROR
 DigitizeTrackingLine (int left, int len, int readoutMode,
 		      unsigned short *dest, int subtract)

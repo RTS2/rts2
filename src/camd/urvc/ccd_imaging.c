@@ -4,13 +4,15 @@
 #include <stdio.h>
 #include <sys/io.h>
 
+unsigned long lost_ticks = 0;
+
 #include "mardrv.h"
 #include "ccd_macros.h"
 
 #ifdef DEBUG
 int IO_LOG2 = 1;
-extern int IO_LOG;
-#define RETURN(a) {return(a);}
+//extern int IO_LOG;
+#define RETURN(a) {IO_LOG2 = IO_LOG2_bak; return(a);}
 #else
 #define RETURN(a) return(a)
 #endif
@@ -22,6 +24,7 @@ extern int st7GKEnabled;
 unsigned short trackingBias = 0, imagingBias = 0;
 unsigned char *last_line1;
 unsigned short hot_count;
+
 
 //#define DO_ST5C
 //#define DO_ST237
@@ -233,6 +236,8 @@ DigitizeImagingLine (int left, int len, int right,
     fprintf (stderr, "DigitizeImagingLine\n");
 #endif
 
+  lost_ticks = 0;
+
   if (len > 0x5fa)
     len = 0x5fa;
 
@@ -245,7 +250,7 @@ DigitizeImagingLine (int left, int len, int right,
   for (i = 0; i < onVertBin; i++)
     {
       CameraOut (0x10, 9);
-      IODelay (IODELAYCONST);
+      IODelay (IODELAYCONST);	// = udelay(12);
       CameraOut (0x10, 0xa);
       IODelay (IODELAYCONST);
       CameraOut (0x10, 9);
@@ -300,6 +305,9 @@ DigitizeImagingLine (int left, int len, int right,
   // @ ECPSetMode(ECP_NORMAL);
   // A tady byl jeste nejaky kod nevim na co, mozna na dojeti radky...
   // (Ale to snad neni nutne...) - viz marccd_n.c
+#ifdef DEBUG
+  printf ("\nlost_ticks: %lu\n", lost_ticks);
+#endif /* DEBUG */
   RETURN (res);
 }
 
