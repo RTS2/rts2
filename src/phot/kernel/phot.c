@@ -130,11 +130,24 @@ add_reply (struct device_struct *dev, u16 repl, u16 param)
   wake_up_interruptible (&operation_wait);
 }
 
+void
+filter_endmove (struct device_struct *dev)
+{
+  dev->status &= ~PHOT_S_FILTERMOVE;	// clear move flag
+  add_reply (dev, '0', dev->filter_position);
+  return;
+}
+
 // handles filter movement
 void
 filter_routine (unsigned long ptr)
 {
   struct device_struct *dev = (struct device_struct *) ptr;
+  if (dev->status & PHOT_S_INTEGRATION_DIS)
+    {
+      filter_endmove (dev);
+      return;
+    }
   if (dev->filter_position < dev->desired_position)
     {
       // move stepper motor one step in direction 1
@@ -150,8 +163,7 @@ filter_routine (unsigned long ptr)
     }
   else				// filter_position == desired_position
     {
-      dev->status &= ~PHOT_S_FILTERMOVE;	// clear move flag
-      add_reply (dev, '0', dev->filter_position);
+      filter_endmove (dev);
       // process any next command
       dev->command_pending = 0;
       INIT_WORK (&do_command_que, process_command, (void *) dev);
@@ -212,6 +224,12 @@ end_integrate (unsigned long ptr)
   int i;
   int b = 0;
   int frequency = '-';
+  if (dev->status & PHOT_S_INTEGRATION_DIS)
+    {
+      add_reply (dev, '-', '-');
+      dev->status &= ~PHOT_S_INTEGRATING_ONCE;
+      return;
+    }
   for (i = 0; i < MAX_WAIT; i++)
     {
       outb (228, dev->base_port + 7);
@@ -351,10 +369,17 @@ process_command (struct device_struct *dev)
       break;
     case PHOT_CMD_INTEGR_ENABLED:
       dev->integration_enabled = intargs (&dev->command_list->command[1]);
-      printk (KERN_INFO "Integration enabled: %i\n",
-	      dev->integration_enabled);
+      printk (KERN_INFO "Integration %s\n",
+	      (dev->integration_enabled ? "enabled" : "disabled"));
       if (!dev->integration_enabled)
 	{
+	  if (dev->command_pending)
+	    {
+	      dev->status &= PHOT_S_INTEGRATION_DIS;
+	      // cancel any running procedure, write out fake results
+	      dev->command_timer.function ((unsigned long) dev);
+	      dev->status &= ~PHOT_S_INTEGRATION_DIS;
+	    }
 	  del_timer_sync (&dev->command_timer);
 	  dev->desired_position = 0;
 	  dev->command_pending = 1;
@@ -362,7 +387,7 @@ process_command (struct device_struct *dev)
 	}
       break;
     default:
-      printk (KERN_WARNING "unknow command '%c' (%x)\n",
+      printk (KERN_WARNING "Unknow command '%c' (%x)\n",
 	      dev->command_list->command[0], dev->command_list->command[0]);
       break;
     }
