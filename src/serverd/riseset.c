@@ -22,6 +22,7 @@ next_event (time_t * start_time, int *type, time_t * ev_time)
   double jd_time = get_julian_from_timet (start_time);
   double md;
   struct ln_lnlat_posn obs;
+  struct ln_equ_posn pos;
   struct ln_rst_time rst;
 
   obs.lat = 50;
@@ -29,45 +30,36 @@ next_event (time_t * start_time, int *type, time_t * ev_time)
 
   md = round (jd_time);
 
-  if (get_solar_rst (md, &obs, &rst))
+  get_equ_solar_coords (md, &pos);
+
+  if (get_object_next_rst (jd_time, &obs, &pos, &rst))
     // don't care about abs(lng)>60
     return -1;
 
-  if (jd_time <= rst.set)
+//  printf ("r: %f s: %f md: %f\n", rst.rise, rst.set, jd_time); 
+
+  if (rst.rise >= rst.set)
     {
-      if (jd_time >= rst.rise)
+      // daytime, so decide between DAWN, DAY, DUSK 
+      if (jd_time > (rst.set - DAWNDUSK_TIME))
 	{
-	  // daytime, so decide between DAWN, DAY, DUSK 
-	  if (jd_time < (rst.rise + DAWNDUSK_TIME))
-	    {
-	      *type = SERVERD_DAY;
-	      get_timet_from_julian (rst.rise + DAWNDUSK_TIME, ev_time);
-	    }
-	  else if (jd_time > (rst.set - DAWNDUSK_TIME))
-	    {
-	      *type = SERVERD_NIGHT;
-	      get_timet_from_julian (rst.set, ev_time);
-	    }
-	  else
-	    {
-	      *type = SERVERD_DUSK;
-	      get_timet_from_julian (rst.set - DAWNDUSK_TIME, ev_time);
-	    }
+	  *type = SERVERD_NIGHT;
+	  get_timet_from_julian (rst.set, ev_time);
+	}
+      else if (jd_time < (rst.rise + DAWNDUSK_TIME - 1))
+	{
+	  *type = SERVERD_DAY;
+	  get_timet_from_julian (rst.rise + DAWNDUSK_TIME - 1, ev_time);
 	}
       else
 	{
-	  *type = SERVERD_DAWN;
-	  get_timet_from_julian (rst.rise, ev_time);
+	  *type = SERVERD_DUSK;
+	  get_timet_from_julian (rst.set - DAWNDUSK_TIME, ev_time);
 	}
     }
   else
     {
       *type = SERVERD_DAWN;
-      // from next day 
-      md++;
-      if (get_solar_rst (md, &obs, &rst))
-	// don't care about abs(lng)>60
-	return -1;
 
       get_timet_from_julian (rst.rise, ev_time);
     }
