@@ -6,10 +6,7 @@ all: $(BIN)
 
 SUBDIRS = sbig urvc
 
-include ../../make.conf
-
-LDFLAGS += -O2 -l$(LIB_M) -l$(LIB_PTHREAD)
-
+LDFLAGS += -O2 -lm -lpthread
 CFLAGS += -O2 -I../../include
 
 .PHONY=clean

@@ -59,6 +59,7 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol])
 
 AC_OUTPUT([Makefile
+	   doc/Makefile
 	   doc/dia/Makefile
 	   src/Makefile
 	   src/camd/Makefile
