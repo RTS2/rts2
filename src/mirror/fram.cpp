@@ -49,6 +49,10 @@ public:
   virtual int processOption (int in_op);
   virtual int init ();
 
+  virtual int ready ();
+  virtual int baseInfo ();
+  virtual int info ();
+
   virtual int startOpen ();
   virtual int isOpened ();
 
@@ -69,7 +73,6 @@ Rts2DevMirrorFram::mirror_command (char cmd, int arg, char *ret_cmd,
   time_t t;
   command_buffer[0] = cmd;
   *((int *) &command_buffer[1]) = arg;
-  flock (mirror_fd, LOCK_EX);
 start:
   ret = write (mirror_fd, command_buffer, 3);
   if (ret != 3)
@@ -108,7 +111,6 @@ err:
       sleep (1);
       goto start;
     }
-  flock (mirror_fd, LOCK_UN);
   return -1;
 }
 
@@ -246,6 +248,25 @@ Rts2DevMirrorFram::mirror_set ()
 	}
     }
   return -1;
+}
+
+int
+Rts2DevMirrorFram::ready ()
+{
+  int pos;
+  return mirror_get (&pos);
+}
+
+int
+Rts2DevMirrorFram::baseInfo ()
+{
+  return 0;
+}
+
+int
+Rts2DevMirrorFram::info ()
+{
+  return 0;
 }
 
 int
