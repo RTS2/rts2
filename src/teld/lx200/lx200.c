@@ -73,7 +73,7 @@ tel_cleanup ()
 /*!
  * Reports telescope status.
  *
- * @param status		status to return
+ * @param status		return status
  * 
  * @return 0 on success, -1 & set errno otherwise
  */
@@ -94,7 +94,7 @@ tel_status (int *status)
 /*!
  * Connect on given port.
  * 
- * @param devptr Pointer to device name
+ * @param devptr		pointer to device name
  * 
  * @return 0 on succes, -1 & set errno otherwise
  */

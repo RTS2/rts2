@@ -210,7 +210,6 @@ exit_handler ()
 int
 main (void)
 {
-  struct devcli_channel server_channel;
   char *stats[] = { "telescope" };
 #ifdef DEBUG
   mtrace ();
@@ -224,7 +223,8 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
-  if (devdem_register (&server_channel, "teld", "localhost", 5557) < 0)
+  if (devdem_register
+      ("localhost", 5557, "teld", DEVICE_TYPE_MOUNT, PORT) < 0)
     {
       perror ("devser_register");
       exit (EXIT_FAILURE);

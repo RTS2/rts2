@@ -43,4 +43,4 @@ int tel_set_rate (char new_rate);
 //! parking declination
 extern double park_dec;
 
-#endif // __TELD_LX200__
+#endif /* __TELD_LX200__ */
