@@ -38,9 +38,13 @@
 #include "../../utils/hms.h"
 #include "status.h"
 
+// uncomment following line, if you want all port read logging (will
+// at about 10 30-bytes lines to syslog for every query). 
+// #define DEBUG_ALL_PORT_COMM
+
 double park_dec;
 
-int port;
+int port = -1;
 
 //! sempahore id structure, we have two semaphores...
 int semid;
@@ -112,7 +116,9 @@ tel_read (char *buf, int count)
 	  errno = EIO;
 	  return -1;
 	}
-      syslog (LOG_DEBUG, "LX200: readed %c", buf[readed]);
+#ifdef DEBUG_ALL_PORT_COMM
+      syslog (LOG_DEBUG, "LX200: readed '%c'", buf[readed]);
+#endif
     }
   return readed;
 }
@@ -181,6 +187,7 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
 {
   int tmp_rcount = -1;
   struct sembuf sem_buf;
+  char *buf;
 
   sem_buf.sem_num = SEM_TEL;
   sem_buf.sem_op = -1;
@@ -194,8 +201,11 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
     goto unlock;
 
   tmp_rcount = tel_read (rbuf, rcount);
-
-  syslog (LOG_DEBUG, "LX200:readed %i %s", tmp_rcount, rbuf);
+  buf = (char *) malloc (rcount + 1);
+  memcpy (buf, rbuf, rcount);
+  buf[rcount] = 0;
+  syslog (LOG_DEBUG, "LX200:readed %i %s", tmp_rcount, buf);
+  free (buf);
 
 unlock:
 
@@ -225,8 +235,10 @@ tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount)
   sem_buf.sem_op = -1;
   sem_buf.sem_flg = SEM_UNDO;
 
+  printf ("semop (%i, ..)\n", semid);
   if (semop (semid, &sem_buf, 1) < 0)
     return -1;
+  printf ("tcflusg (%i,..)\n", port);
   if (tcflush (port, TCIOFLUSH) < 0)
     goto unlock;		// we need to unlock
   if (tel_write (wbuf, wcount) < 0)
@@ -261,7 +273,7 @@ int
 tel_read_hms (double *hmsptr, char *command)
 {
   char wbuf[11];
-  if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 0)
+  if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
     return -1;
   *hmsptr = hmstod (wbuf);
   if (errno)
@@ -382,10 +394,32 @@ tel_rep_write (char *command)
   return 0;
 }
 
+/*!
+ * Normalize ra and dec,
+ *
+ * @param ra		rigth ascenation to normalize in decimal hours
+ * @param dec		rigth declination to normalize in decimal degrees
+ *
+ * @return 0
+ */
+int
+tel_normalize (double *ra, double *dec)
+{
+  if (*ra < 0)
+    *ra = floor (*ra / 24) * -24 + *ra;	//normalize ra
+  if (*ra > 360)
+    *ra = *ra - floor (*ra / 24) * 24;
+
+  if (*dec < -90)
+    *dec = floor (*dec / 90) * -90 + *dec;	//normalize dec
+  if (*dec > 90)
+    *dec = *dec - floor (*dec / 90) * 90;
+}
+
 /*! 
  * Set LX200 right ascenation.
  *
- * @param ra		right ascenation to set in decimal hours
+ * @param ra		right ascenation to set in decimal degrees
  *
  * @return -1 and errno on error, otherwise 0
  */
@@ -395,10 +429,6 @@ tel_write_ra (double ra)
   char command[14];
   int h, m, s;
   ra = ra / 15;
-  if (ra < 0)
-    ra = floor (ra / 24) * -24 + ra;	//normalize ra
-  if (ra > 24)
-    ra = ra - floor (ra / 24) * 24;
   dtoints (ra, &h, &m, &s);
   if (snprintf (command, 14, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
     return -1;
@@ -417,10 +447,6 @@ tel_write_dec (double dec)
 {
   char command[15];
   int h, m, s;
-  if (dec < 0)
-    dec = floor (dec / 90) * -90 + dec;	//normalize dec
-  if (dec > 90)
-    dec = dec - floor (dec / 90) * 90;
   dtoints (dec, &h, &m, &s);
   if (snprintf (command, 15, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) < 0)
     return -1;
@@ -444,8 +470,9 @@ telescope_init (const char *device_name, int telescope_id)
   char rbuf[10];
 
   park_dec = PARK_DEC;
-
-  port = open (device_name, O_RDWR);
+  
+  if (port < 0)
+    port = open (device_name, O_RDWR);
   if (port < 0)
     return -1;
 
@@ -500,9 +527,9 @@ telescope_init (const char *device_name, int telescope_id)
 
   // we get 12:34:4# while we're in short mode
   // and 12:34:45 while we're in long mode
-  if (tel_write_read ("#:Gr#", 5, rbuf, 8) < 0)
+  if (tel_write_read_hash ("#:Gr#", 5, rbuf, 9) < 0)
     return -1;
-  if (rbuf[7] == '#')
+  if (rbuf[7] == '\0')
     {
       struct sembuf sem_buf;
       sem_buf.sem_num = SEM_MOVE;
@@ -543,7 +570,8 @@ telescope_init (const char *device_name, int telescope_id)
 extern void
 telescope_done ()
 {
-  semctl (semid, 1, IPC_RMID);
+   syslog (LOG_DEBUG, "lx200: telescope_done called");
+//   semctl (semid, 1, IPC_RMID);
 }
 
 /*!
@@ -634,6 +662,9 @@ tel_slew_to (double ra, double dec)
 {
   char retstr;
   int max_read = 200;		// maximal read till # is encountered
+
+  tel_normalize (&ra, &dec);
+  
   if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
@@ -661,7 +692,12 @@ tel_check_coords (double ra, double dec)
     return -1;
   err_ra -= ra;
   err_dec -= dec;
-  if (fabs (err_ra) > 0.5 || fabs (err_dec) > 0.5)
+
+  err_ra = fabs (err_ra);
+  err_dec = fabs (err_dec);
+  tel_normalize (&err_ra, &err_dec);
+
+  if (err_ra > 0.5 || err_dec > 0.5)
     return -1;
   return 0;
 }
@@ -775,6 +811,9 @@ int
 tel_set_to (double ra, double dec)
 {
   char readback[101];
+  
+  tel_normalize (&ra, &dec);
+  
   if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
     return -1;
   if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
@@ -843,10 +882,10 @@ telescope_correct (double ra, double dec)
   sem_buf.sem_op = -1;
   sem_buf.sem_flg = SEM_UNDO;
 
-  syslog (LOG_INFO, "LX200:tel corect_to ra:%f dec:%f", ra, dec);
-
   if (semop (semid, &sem_buf, 1) < 0)
     return -1;
+
+  syslog (LOG_INFO, "LX200:tel corect_to ra:%f dec:%f", ra, dec);
 
   sem_buf.sem_op = 1;
 

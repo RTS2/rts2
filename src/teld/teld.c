@@ -33,6 +33,8 @@
 
 #define TEL_PORT		"/dev/ttyS0"	// default telescope port
 
+#define CORRECTION_BUF		10
+
 // macro for telescope calls, will write error
 #define tel_call(call)   if ((ret = call) < 0) \
 {\
@@ -45,6 +47,9 @@ struct radec
   double ra;
   double dec;
 };
+
+struct radec correction_buf[CORRECTION_BUF];
+int correction_mark = 0;
 
 #define RADEC 	((struct radec *) arg)
 void
@@ -112,7 +117,6 @@ teld_handle_command (char *command)
   if (strcmp (command, "ready") == 0)
     {
       tel_call (telescope_init ("/dev/ttyS0", 0));
-      atexit (telescope_done);
     }
   else if (strcmp (command, "set") == 0)
     {
@@ -149,20 +153,46 @@ teld_handle_command (char *command)
   else if (strcmp (command, "correct") == 0)
     {
       struct radec coord;
-      if (devser_param_test_length (2))
+      int correction_number;
+      int i;
+      if (devser_param_test_length (3))
+	return -1;
+      if (devser_param_next_integer (&correction_number))
 	return -1;
       if (devser_param_next_hmsdec (&(coord.ra)))
 	return -1;
       if (devser_param_next_hmsdec (&(coord.dec)))
 	return -1;
-      if (abs (coord.ra) > 5 || abs (coord.dec) > 5)
+      if (abs (coord.ra) > 5 || abs (coord.dec) > 5 || correction_number < 0 || correction_number > correction_mark)
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
 				    "corections bigger than sane limit");
 	  return -1;
 	}
+      if (correction_mark - CORRECTION_BUF > correction_number)
+      {
+	devser_write_command_end (DEVDEM_E_PARAMSVAL, "old corerction");
+	return -1;
+      }
       if (devdem_priority_block_start ())
 	return -1;
+
+      coord.ra += correction_buf[correction_mark % CORRECTION_BUF].ra;
+      coord.dec += correction_buf[correction_mark % CORRECTION_BUF].dec;
+#ifdef DEBUG
+      printf ("correction: ra %f dec %f mark %i\n", coord.ra, coord.dec, correction_mark);
+#endif /* DEBUG */
+      // update all corrections..
+      for ( i = correction_number % CORRECTION_BUF; i < correction_mark - correction_number; i++)
+      {
+	correction_buf[i % CORRECTION_BUF].ra -= coord.ra;
+	correction_buf[i % CORRECTION_BUF].dec -= coord.dec;
+      }
+
+      correction_mark++;
+      correction_buf[correction_mark % CORRECTION_BUF].ra = 0;
+      correction_buf[correction_mark % CORRECTION_BUF].dec = 0;
+
       devser_thread_create (start_correction, (void *) &coord, sizeof coord,
 			    NULL, NULL);
       devdem_priority_block_end ();
@@ -182,6 +212,9 @@ teld_handle_command (char *command)
       devser_dprintf ("latitude %f", info.latitude);
       devser_dprintf ("siderealtime %f", info.siderealtime);
       devser_dprintf ("localtime %f", info.localtime);
+      // correction mark is local variable, so we must use the local
+      // variant - not one from info!
+      devser_dprintf ("correction_mark %i", correction_mark);
     }
   else if (strcmp (command, "park") == 0)
     {
@@ -228,6 +261,13 @@ main (int argc, char **argv)
 #ifdef DEBUG
   mtrace ();
 #endif
+
+  // init correction buffer
+  for (c = 0; c < CORRECTION_BUF; c++)
+  {
+	correction_buf[c].ra = 0;
+	correction_buf[c].dec = 0;
+  }
 
   /* get attrs */
   while (1)
@@ -295,6 +335,8 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
+  atexit (telescope_done);
+  
   if (devdem_init (stats, 1, NULL))
     {
       syslog (LOG_ERR, "devdem_init: %m");
