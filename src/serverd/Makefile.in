@@ -1,6 +1,6 @@
 # $Id$
 
-BIN = serverd test
+BIN = serverd test rts2-state
 
 all: $(BIN)
 
@@ -11,7 +11,9 @@ serverd: serverd.o riseset.o ../utils/devser.a
 
 riseset.o:riseset.c
 
-test: riseset.o ../utils/config.o
+test: riseset.o test.o ../utils/config.o
+
+rts2-state: riseset.o rts2-state.o ../utils/config.o
 
 clean:
 	$(RM) *.o *~ $(BIN)
