@@ -404,8 +404,7 @@ EOT;
 				echo "<form name='test' action='$_SERVER[REQUEST_URI]'>\n<table>";
 				for ($i = 0; $i < pg_numfields($this->res); $i++) {
 					$name = pg_fieldname($this->res, $i);
-					echo "\t<tr>\n\t\t<td>" . (array_key_exists ($name, $fields_name) ? $fields_name[$name] : $name) . 
-					"\t\t</td><td>\n<input type='text' name='$name'></input>\n\t</td>\n\t</tr>\n";
+					$this->print_field ($name, "");
 				}
 				echo "</table>\n\t<input type='hidden' name='insert' value='1'></input>\n\t";
 				echo "<input type='Submit' value='OK'></input>\n</form>\n";
