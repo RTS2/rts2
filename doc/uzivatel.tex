@@ -1,4 +1,32 @@
-\chapter{U¾ivatelské rozhranní}
+\chapter{U¾ivatelský manuál}
+
+\section{Kompilace}
+
+Kompilace je øízena systémem Automake. Po sta¾ení zdrojových kódu staèí
+v pøíkazové øádce zadat:
+
+./configure
+
+Konfiguraèní skript provìøí cílový systém. Jeho provádìní se ukonèí chybovou
+hlá¹kou popisující chybu v pøípadì, ¾e Vá¹ systém neobsahuje v¹echny potøebné
+knihovny.
+
+Dále je potøeba pøelo¾it binární kód a nainstalovat vytvoøená data.
+To se dìje pomocí
+
+make
+
+make install
+
+Pro make install budete s nejvìt¹í pravdìpodobností potøebovat rootovské
+oprávnìní.
+
+Pokud budete stahovat zdrojový kód pøímo z CVS, je potøeba pøed ./configure
+zadat
+
+autoconf
+
+automake
 
 \section{Servery}
 
