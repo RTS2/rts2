@@ -221,6 +221,7 @@ main (int argc, char **argv)
 	{
 	case 'f':
 	  dome_file = optarg;
+	  break;
 	case 'p':
 	  device_port = atoi (optarg);
 	  break;

@@ -1,118 +1,209 @@
-/*! 
- * @file Dome control deamon. 
- * $Id$
- * @author petr
- */
-
 #define _GNU_SOURCE
 
 #include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <math.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <mcheck.h>
-#include <time.h>
 #include <termios.h>
-#include <syslog.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+
+#include <sys/stat.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
 
 #include "dome.h"
 
 #define BAUDRATE B9600
+#define CTENI_PORTU 0
+#define ZAPIS_NA_PORT 4
+#define STAV_PORTU 0
+#define CHYBA_NEZNAMY_PRIKAZ 0x80
+#define CHYBA_PRETECENI_TX_BUFFERU 0x81
+#define PORT_A 0
+#define PORT_B 1
+#define PORT_C 2
 
-/* Co mame k dispozici... ostatni indexy neznam... :) */
-char zasuvka[] = { 0x9, 0x8, 0x5, 0x4, 0x3 };
+#define CAS_NA_OTEVRENI 30
 
-//char zasuvka[]={0x00,0x01,0x02,0x6,0x7,0xc,0xd,0xe,0x0f,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f};
-#define STR_SMER	0xa	// 0x2a zavrit
-#define STR_MOTOR	0xb	// 0x2b zapnout
+typedef enum
+{ ZASUVKA_1, ZASUVKA_2, ZASUVKA_3, ZASUVKA_4, ZASUVKA_5, ZASUVKA_6, MOTOR,
+    SMER, SVETLO, TOPENI, KONCAK_OTEVRENI_JIH, KONCAK_ZAVRENI_JIH,
+    KONCAK_OTEVRENI_SEVER, KONCAK_ZAVRENI_SEVER, RESET_1, RESET_2 } vystupy;
 
-// Jsou trochu pomichane...
-#define ZAVRIT	0x20
-#define OTEVRIT	0x40
-#define MOTOR_ZAP	0x20
-#define MOTOR_VYP	0x40
-#define ZAS_ZAP 0x40
-#define ZAS_VYP 0x20
+struct typ_a
+{
+  unsigned char port;
+  unsigned char pin;
+} adresa[] =
+{
+  {
+  PORT_A, 1},
+  {
+  PORT_A, 2},
+  {
+  PORT_A, 4},
+  {
+  PORT_A, 8},
+  {
+  PORT_A, 16},
+  {
+  PORT_A, 32},
+  {
+  PORT_B, 1},
+  {
+  PORT_B, 2},
+  {
+  PORT_B, 4},
+  {
+  PORT_B, 8},
+  {
+  PORT_B, 16},
+  {
+  PORT_B, 32},
+  {
+  PORT_B, 64},
+  {
+  PORT_B, 128},
+  {
+  PORT_C, 1},
+  {
+PORT_C, 32},};
 
-#define DOME_SLEEP		20
-
-int dome_port = -1;
-
-#define NUM_ZAS		3
+#define NUM_ZAS		4
 
 #define OFF		0
 #define STANDBY		1
 #define OBSERVING	2
 
-// prvni zasuvka dalekohled, druha kamery, treti chlazeni
-int zasuvky_index[NUM_ZAS] = { 0, 1, 2 };
+// zasuvka c.1 kamera, c.3 kamera, c.5 montaz. c.6 topeni /Ford 21.10.04
+int zasuvky_index[NUM_ZAS] = { ZASUVKA_1, ZASUVKA_3, ZASUVKA_5, ZASUVKA_6 };
+
+enum stavy
+{ ZAS_VYP, ZAS_ZAP };
 
 // prvni index - cislo stavu (0 - off, 1 - standby, 2 - observing), druhy je stav zasuvky cislo j)
-int zasuvky_stavy[3][NUM_ZAS] = {
+enum stavy zasuvky_stavy[3][NUM_ZAS] =
+{
   // off
-  {ZAS_VYP, ZAS_VYP, ZAS_VYP},
+  {ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_VYP},
   // standby
-  {ZAS_ZAP, ZAS_ZAP, ZAS_VYP},
+  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP},
   // observnig
-  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
+  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
 static struct dome_info d_info;
 
-// Vraci to, co write: mela by vratit 1, pokud vrati 0
-// nebo -1, je neco spatne
-int
-rele (int rele, int action)
-{
-  char c;
+unsigned char spinac[2];
+unsigned char stav_portu[3];
+int dome_port;
 
-  c = rele | action;
-  usleep (5000);
-  syslog (LOG_DEBUG, "writing %x (%x|%x) to %i\n", c, rele, action,
-	  dome_port);
-  return write (dome_port, &c, 1);
+int
+zjisti_stav_portu (unsigned char *stav)
+{
+  unsigned char t, c = STAV_PORTU | PORT_A;
+  write (dome_port, &c, 1);
+  if (read (dome_port, &t, 1) < 1)
+    fprintf (stderr, "read error 0\n");
+  else
+    fprintf (stderr, "stav: A: %x:", t);
+  read (dome_port, &stav[PORT_A], 1);
+  fprintf (stderr, "%x ", stav[PORT_A]);
+  c = STAV_PORTU | PORT_B;
+  write (dome_port, &c, 1);
+  if (read (dome_port, &t, 1) < 1)
+    fprintf (stderr, "read error 1\n");
+  else
+    fprintf (stderr, " B: %x:", t);
+  read (dome_port, &stav[PORT_B], 1);
+  fprintf (stderr, "%x\n", stav[PORT_B]);
+  return 0;
+}
+
+void
+zapni_pin (unsigned char port, unsigned char pin)
+{
+  unsigned char c;
+  zjisti_stav_portu (stav_portu);
+  c = ZAPIS_NA_PORT | port;
+  fprintf (stderr, "port:%xh pin:%xh zapis: %x:", port, pin, c);
+  write (dome_port, &c, 1);
+  c = stav_portu[port] | pin;
+  fprintf (stderr, "%xh\n", c);
+  write (dome_port, &c, 1);
+}
+
+void
+vypni_pin (unsigned char port, unsigned char pin)
+{
+  unsigned char c;
+  zjisti_stav_portu (stav_portu);
+  c = ZAPIS_NA_PORT | port;
+  fprintf (stderr, "port:%xh pin:%xh zapis: %x:", port, pin, c);
+  write (dome_port, &c, 1);
+  c = stav_portu[port] & (~pin);
+  fprintf (stderr, "%xh\n", c);
+  write (dome_port, &c, 1);
+}
+
+//
+// pocká s timeoutem
+void
+cekej_port (int port)
+{
+  time_t t, act_t;
+  time (&t);
+  t += 40;			// timeout pro strechu
+  do
+    {
+      zjisti_stav_portu (stav_portu);
+      time (&act_t);
+    }
+  while ((stav_portu[adresa[port].port] & adresa[port].pin) && act_t < t);
+}
+
+#define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
+#define VYP(i) vypni_pin(adresa[i].port,adresa[i].pin)
+
+int
+otevri_strechu ()
+{
+  VYP (MOTOR);
+  sleep (1);
+  VYP (SMER);
+  sleep (1);
+  ZAP (MOTOR);
+  fprintf (stderr, "oteviram strechu\n");
+
+  cekej_port (KONCAK_OTEVRENI_JIH);
+
+  fprintf (stderr, "otevreno\n");
+  VYP (MOTOR);
+  zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  return 0;
 }
 
 int
-zavri ()
+zavri_strechu ()
 {
-  int ret = 1;
-  syslog (LOG_DEBUG, "closing");
-  if ((ret = rele (STR_SMER, ZAVRIT)) < 1)
-    return ret;
-  if ((ret = rele (STR_MOTOR, MOTOR_ZAP)) < 1)
-    return ret;
-  d_info.dome = 2;
-  sleep (DOME_SLEEP);
-  if ((ret = rele (STR_MOTOR, MOTOR_VYP)) < 1)
-    return ret;
-  ret = rele (STR_SMER, OTEVRIT);
-  d_info.dome = 0;
-  syslog (LOG_DEBUG, "closed");
-  return ret;
-}
+  VYP (MOTOR);
+  sleep (1);
+  ZAP (SMER);
+  sleep (1);
+  ZAP (MOTOR);
+  fprintf (stderr, "zaviram strechu\n");
 
-int
-otevri ()
-{
-  int ret = 1;
-  syslog (LOG_DEBUG, "opening");
-  if ((ret = rele (STR_SMER, OTEVRIT)) < 1)
-    return ret;
-  if ((ret = rele (STR_MOTOR, MOTOR_ZAP)) < 1)
-    return ret;
-  d_info.dome = 3;
-  sleep (DOME_SLEEP);
-  ret = rele (STR_MOTOR, MOTOR_VYP);
-  d_info.dome = 1;
-  syslog (LOG_DEBUG, "opened");
-  return ret;
-}
+  cekej_port (KONCAK_ZAVRENI_JIH);
 
+  fprintf (stderr, "zavreno\n");
+  VYP (MOTOR);
+  sleep (1);
+  VYP (SMER);
+  zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  return 0;
+}
 
 int
 dome_init (char *dome_file)
@@ -127,7 +218,7 @@ dome_init (char *dome_file)
   newtio.c_oflag = 0;
   newtio.c_lflag = 0;
   newtio.c_cc[VMIN] = 0;
-  newtio.c_cc[VTIME] = 0;
+  newtio.c_cc[VTIME] = 1;
 
   tcflush (dome_port, TCIOFLUSH);
   tcsetattr (dome_port, TCSANOW, &newtio);
@@ -156,7 +247,15 @@ handle_zasuvky (int state)
   for (i = 0; i < NUM_ZAS; i++)
     {
       int zasuvka_num = zasuvky_index[i];
-      rele (zasuvka[zasuvka_num], zasuvky_stavy[state][i]);
+      if (zasuvky_stavy[state][i] == ZAS_VYP)
+	{
+	  zapni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
+	}
+      else
+	{
+	  vypni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
+	}
+      sleep (1);		// doplnil Ford
     }
   return 0;
 }
@@ -171,7 +270,7 @@ dome_info (struct dome_info **info)
 int
 dome_off ()
 {
-  zavri ();
+  zavri_strechu ();
   handle_zasuvky (OFF);
   d_info.power_telescope = 0;
   d_info.power_cameras = 0;
@@ -184,7 +283,7 @@ dome_standby ()
   handle_zasuvky (STANDBY);
   d_info.power_telescope = 0;
   d_info.power_cameras = 1;
-  zavri ();
+  zavri_strechu ();
   return 0;
 }
 
@@ -194,6 +293,6 @@ dome_observing ()
   handle_zasuvky (OBSERVING);
   d_info.power_telescope = 1;
   d_info.power_cameras = 1;
-  otevri ();
+  otevri_strechu ();
   return 0;
 }

@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 #include "dome.h"
 
@@ -152,6 +153,22 @@ vypni_pin (unsigned char port, unsigned char pin)
   write (dome_port, &c, 1);
 }
 
+//
+// pocká s timeoutem
+void
+cekej_port (int port)
+{
+  time_t t, act_t;
+  time (&t);
+  t += 40;			// timeout pro strechu
+  do
+    {
+      zjisti_stav_portu (stav_portu);
+      time (&act_t);
+    }
+  while ((stav_portu[adresa[port].port] & adresa[port].pin) && act_t < t);
+}
+
 #define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
 #define VYP(i) vypni_pin(adresa[i].port,adresa[i].pin)
 
@@ -167,21 +184,18 @@ otevri_strechu ()
   fprintf (stderr, "oteviram levou strechu\n");
   ZAP (VENTIL_OTEVIRANI_LEVY);
   ZAP (VENTIL_AKTIVACNI);
-  do
-    zjisti_stav_portu (stav_portu);	//hodil by se jeste timeout
-  while (stav_portu[adresa[KONCAK_OTEVRENI_LEVY].port] &
-	 adresa[KONCAK_OTEVRENI_LEVY].pin);
-//    while((stav_portu[adresa[KONCAK_OTEVRENI_PRAVY].port]) & adresa[KONCAK_ZAVRENI_LEVY].pin);
+
+  cekej_port (KONCAK_OTEVRENI_LEVY);
+
   VYP (VENTIL_AKTIVACNI);
   VYP (VENTIL_OTEVIRANI_LEVY);
   sleep (1);
   fprintf (stderr, "oteviram pravou strechu\n");
   ZAP (VENTIL_OTEVIRANI_PRAVY);
   ZAP (VENTIL_AKTIVACNI);
-  do
-    zjisti_stav_portu (stav_portu);
-  while (stav_portu[adresa[KONCAK_OTEVRENI_PRAVY].port] &
-	 adresa[KONCAK_OTEVRENI_PRAVY].pin);
+
+  cekej_port (KONCAK_OTEVRENI_PRAVY);
+
   vypni_pin (adresa[VENTIL_AKTIVACNI].port,
 	     adresa[VENTIL_AKTIVACNI].pin | adresa[KOMPRESOR].pin);
   VYP (VENTIL_OTEVIRANI_PRAVY);
@@ -202,19 +216,17 @@ zavri_strechu ()
   fprintf (stderr, "zaviram pravou strechu\n");
   ZAP (VENTIL_ZAVIRANI_PRAVY);
   ZAP (VENTIL_AKTIVACNI);
-  do
-    zjisti_stav_portu (stav_portu);
-  while (stav_portu[adresa[KONCAK_ZAVRENI_PRAVY].port] &
-	 adresa[KONCAK_ZAVRENI_PRAVY].pin);
+
+  cekej_port (KONCAK_ZAVRENI_PRAVY);
+
   VYP (VENTIL_AKTIVACNI);
   VYP (VENTIL_ZAVIRANI_PRAVY);
   fprintf (stderr, "zaviram levou strechu\n");
   ZAP (VENTIL_ZAVIRANI_LEVY);
   ZAP (VENTIL_AKTIVACNI);
-  do
-    zjisti_stav_portu (stav_portu);
-  while (stav_portu[adresa[KONCAK_ZAVRENI_LEVY].port] &
-	 adresa[KONCAK_ZAVRENI_LEVY].pin);
+
+  cekej_port (KONCAK_ZAVRENI_LEVY);
+
   vypni_pin (adresa[VENTIL_AKTIVACNI].port,
 	     adresa[VENTIL_AKTIVACNI].pin | adresa[KOMPRESOR].pin);
   VYP (VENTIL_ZAVIRANI_LEVY);
@@ -267,13 +279,11 @@ handle_zasuvky (int state)
       int zasuvka_num = zasuvky_index[i];
       if (zasuvky_stavy[state][i] == ZAS_VYP)
 	{
-	  vypni_pin (adresa[zasuvky_index[zasuvka_num]].port,
-		     adresa[zasuvky_index[zasuvka_num]].pin);
+	  vypni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
 	}
       else
 	{
-	  zapni_pin (adresa[zasuvky_index[zasuvka_num]].port,
-		     adresa[zasuvky_index[zasuvka_num]].pin);
+	  zapni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
 	}
     }
   return 0;
