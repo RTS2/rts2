@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.3.4, petr@lascaux.asu.cas.cz)
+AC_INIT(rts2, 0.4.0, petr@lascaux.asu.cas.cz)
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
@@ -11,6 +11,9 @@ AM_MAINTAINER_MODE
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
+
+# check for lang
+AC_LANG_CPLUSPLUS
 
 AC_PROG_LIBTOOL
 
@@ -141,7 +144,6 @@ AC_SUBST(LIB_JPEG), [cat << EOF
 **** Please try to get it somewhere.
 EOF
 exit 1])
-
 
 WWWUSER="none"
 
