@@ -21,8 +21,8 @@
 #define PP_LOW (1 - PP_HIG)
 
 JSAMPLE *image_buffer;		/* Points to large array of image data */
-int image_height = 78;		// 78
-int image_width = 78;		// 78       
+int image_height = 80;		// 78
+int image_width = 80;		// 78       
 
 void
 write_gray_jpeg_file (int quality)
@@ -108,7 +108,7 @@ mylog_f (float i)
 }
 
 int
-read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full)
+read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full, int off)
 {
   fitsfile *pim = NULL;
   int status = 0, i, j, k, m, n, nfound, anynull;
@@ -266,14 +266,23 @@ read_fits_file (char *imagen, JSAMPLE ** rim, int x, int y, int full)
       else
 	{
 #define MODX 16
+	  float q = 1.1;
 	  int vv = 160;
+	  if (!off)
+	    vv += 1 + (int) (16.0 * rand () / (RAND_MAX + 1.0));;
 	  if ((!((i / image_width - i % image_width) % MODX))
 	      || (!((i / image_width + i % image_width) % MODX)))
 	    vv = 100;
 #undef MODX
-	  (*rim)[k++] = vv;
-	  (*rim)[k++] = vv;
-	  (*rim)[k++] = 160;
+	  if (!off)
+	    (*rim)[k++] = vv * (q -= 0.05);
+	  else
+	    (*rim)[k++] = 160 * (q -= 0.05);
+	  (*rim)[k++] = vv * (q -= 0.05);
+	  if (off)
+	    (*rim)[k++] = vv * (q -= 0.05);
+	  else
+	    (*rim)[k++] = 160 * (q -= 0.05);
 	}
     }
 
@@ -371,7 +380,7 @@ main (int argc, char **argv)
       if (off)
 	{
 	  fprintf (stderr, "IT'S OFF\n");
-	  exit (4);
+//        exit (4);
 	}
 
       x -= image_width / 2;
@@ -387,8 +396,11 @@ main (int argc, char **argv)
   else
     x = y = 0;
 
-  read_fits_file (argv[1], &image_buffer, x, y, argc == 3);
-  write_gray_jpeg_file (85);
+  read_fits_file (argv[1], &image_buffer, x, y, argc == 3, off);
+  if (off)
+    write_gray_jpeg_file (45);
+  else
+    write_gray_jpeg_file (85);
 
   exit (0);
 }
