@@ -34,6 +34,7 @@
 #include "status.h"
 #include "selector.h"
 #include "target.h"
+#include "phot_info.h"
 #include "../db/db.h"
 #include "../writers/process_image.h"
 
@@ -80,15 +81,31 @@ pthread_t image_que_thread;
 
 time_t last_succes = 0;
 
+int watch_status = 1;		// watch central server status
+
 int
-status_handler (struct device *dev, char *status_name, int new_val)
+phot_handler (struct param_status *params, struct phot_info *info)
 {
-  if (strcmp (status_name, "img_chip") == 0)
-    {
-      if ((dev->statutes[0].status & CAM_EXPOSING) && (new_val & CAM_DATA))
-	devcli_command (dev, NULL, "readout 0");
-    }
-  return 0;
+  time_t t;
+  time (&t);
+  int ret;
+  if (!strcmp (params->param_argv, "filter"))
+    return param_next_integer (params, &info->filter);	  
+  if (!strcmp (params->param_argv, "count"))
+  {
+    FILE *phot_log;
+    char tc[30];
+    phot_log = fopen ("phot_log", "a");
+    ctime_r (&t, tc);
+    tc[strlen(tc) - 1] =0;
+    ret = param_next_integer (params, &info->count);
+    if (telescope)
+      fprintf (phot_log, "%s %f %f %i %i %i\n", tc, telescope->info.telescope.ra, telescope->info.telescope.dec, info->filter, info->count, telescope->statutes[0].status);
+      printf ("%s %f %f %i %i %i\n", tc, telescope->info.telescope.ra, telescope->info.telescope.dec, info->filter, info->count, telescope->statutes[0].status);
+      fflush (stdout);
+    fclose (phot_log);
+  }
+  return ret;
 }
 
 int
@@ -163,7 +180,8 @@ generate_next (int i, Target * plan)
   printf ("Making plan %s", ctime (&start_time));
   if (get_next_plan
       (plan, (int) get_double_default ("planc_selector", SELECTOR_HETE),
-       &start_time, i, EXPOSURE_TIME, devcli_server ()->statutes[0].status,
+       &start_time, i, EXPOSURE_TIME,
+       watch_status ? devcli_server ()->statutes[0].status : SERVERD_NIGHT,
        observer.lng, observer.lat))
     {
       printf ("Error making plan\n");
@@ -332,7 +350,7 @@ execute_camera_script (void *exinfo)
   char *command, *s;
   char *arg1, *arg2;
   float exposure;
-  int filter;
+  int filter, count;
   int ret;
   time_t t;
   char s_time[27];
@@ -381,17 +399,28 @@ execute_camera_script (void *exinfo)
 
   while (*command)
     {
-      if (exp_state == EXPOSURE_BEGIN && *command && !isspace (*command))
+      if ((exp_state == EXPOSURE_BEGIN || exp_state == INTEGRATION_PROGRESS)
+          && *command && !isspace (*command))
 	{
 	  // wait till exposure end..
 	  devcli_command (telescope, NULL, "base_info;info");
 
 	  get_info (last, telescope, camera, exposure, NULL);
 
-	  devcli_wait_for_status (camera, "img_chip",
+	  if (exp_state == EXPOSURE_BEGIN)
+	  {
+	     devcli_wait_for_status (camera, "img_chip",
 				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
 				  (int) (1.1 * exposure + 10));
-	  exp_state = EXPOSURE_PROGRESS;
+	     exp_state = EXPOSURE_PROGRESS;
+	  }
+	  if (exp_state == INTEGRATION_PROGRESS)
+	  {
+             devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+					  PHOT_MASK_INTEGRATE,
+					  PHOT_NOINTEGRATE, 10000);
+	     exp_state = NO_EXPOSURE;
+	  }
 	}
       switch (*command)
 	{
@@ -472,9 +501,29 @@ execute_camera_script (void *exinfo)
 	      continue;
 	    }
 	  command = s;
+	  
+	  exposure = strtof (command, &s);
+	  if (s == command || (!isspace (*s) && *s))
+	    {
+	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+	      command = s;
+	      continue;
+	    }
+	  command = s;
+	  
+	  count = strtol (command, &s, 10);
+	  if (s == command || (!isspace (*s) && *s))
+	    {
+	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+	      command = s;
+	      continue;
+	    }
+	  command = s;
+
 	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 				  TEL_OBSERVING, 0);
-	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate 1 %i", filter);
+	  devcli_command_all (DEVICE_TYPE_PHOT, "filter %i", filter);
+	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate %f %i", exposure, count);
 	  exp_state = INTEGRATION_PROGRESS;
 	  break;
 	case COMMAND_CHANGE:
@@ -791,8 +840,8 @@ main (int argc, char **argv)
   char *server;
   int c = 0;
   int priority = 20;
-  int watch_status = 1;		// watch central server status
   struct device *devcli_ser = devcli_server ();
+  struct device *phot;
 
 #ifdef DEBUG
   mtrace ();
@@ -845,7 +894,9 @@ main (int argc, char **argv)
 	  break;
 	case 'h':
 	  printf
-	    ("Options:\n\tport|p <port_num>\t\tport of the server\n\tpriority|r <priority>\t\tpriority to run at\n");
+	    ("Options:\n\tport|p <port_num>\t\tport of the server\n"
+	     "\tpriority|r <priority>\t\tpriority to run at\n"
+	     "\tignore_status|i\t\t run even when you don't have priority\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -961,6 +1012,14 @@ loop:
 	  sleep (100);
 	}
     }
+
+  for (phot = devcli_devices (); phot; phot = phot->next)
+    if (phot->type == DEVICE_TYPE_PHOT)
+    {
+       printf ("setting handler: %s\n", phot->name);
+       devcli_set_command_handler (phot, (devcli_handle_response_t) phot_handler);
+    }
+
   observe (watch_status);
   printf ("done\n");
 
