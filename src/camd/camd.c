@@ -25,7 +25,7 @@
 #define SERVERD_HOST		"localhost"	// default serverd hostname
 
 #define DEVICE_PORT		5556	// default camera TCP/IP port
-#define DEVICE_NAME 		"camd"	// default camera name
+#define DEVICE_NAME 		"C0"	// default camera name
 
 #define MAX_CHIPS		2
 
@@ -196,7 +196,7 @@ camd_handle_command (char *command)
   else if (strcmp (command, "info") == 0)
     {
       cam_call (camera_info (&info));
-      devser_dprintf ("name %s", info.name);
+      devser_dprintf ("type %s", info.type);
       devser_dprintf ("serial %10s", info.serial_number);
       devser_dprintf ("chips %i", info.chips);
       devser_dprintf ("temperature_regulation %i",
@@ -267,14 +267,10 @@ camd_handle_command (char *command)
 	      devdem_status_mask (chip,
 				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
 				  "thread create error");
-
-	      devser_write_command_end (DEVDEM_E_SYSTEM,
-					"while creating thread for execution: %s",
-					strerror (errno));
-	      return -1;
 	    }
 	  devdem_priority_block_end ();
 	  /* priority block ends here */
+	  return ret;
 	}
     }
   else if (strcmp (command, "stopexpo") == 0)
@@ -394,15 +390,12 @@ camd_handle_command (char *command)
 			      CAM_NOTREADING | CAM_NODATA,
 			      "error creating readout thread");
 
-	  devser_write_command_end (DEVDEM_E_SYSTEM,
-				    "while creating thread for execution: %s",
-				    strerror (errno));
 	  devser_data_done (rd->conn_id);
 
-	  return -1;
 	}
       devdem_priority_block_end ();
       /* here ends priority block */
+      return ret;
     }
   else if (strcmp (command, "binning") == 0)
     {
@@ -625,7 +618,8 @@ main (int argc, char **argv)
 	    }
 	  break;
 	case 'd':
-	  strcpy (device_name, optarg);
+	  strncpy (device_name, optarg, 64);
+	  device_name[63] = 0;
 	  break;
 	case 0:
 	  printf
