@@ -89,7 +89,7 @@ Rts2DevDome::checkOpening ()
 	    }
 	}
     }
-  setTimeout (1000000);
+  setTimeout (10 * USEC_SEC);
   return 0;
 }
 

@@ -19,6 +19,8 @@
 #define MAX_CONN		20
 #define MAX_DATA		200
 
+#define USEC_SEC		1000000
+
 typedef enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER };
 

@@ -410,7 +410,7 @@ Rts2Block::Rts2Block (int in_argc, char **in_argv)
   argc = in_argc;
   argv = in_argv;
 
-  idle_timeout = 1000000;
+  idle_timeout = USEC_SEC * 10;
   priority_client = -1;
   openlog (NULL, LOG_PID, LOG_LOCAL0);
   for (int i = 0; i < MAX_CONN; i++)
@@ -636,8 +636,8 @@ Rts2Block::run ()
 
   while (1)
     {
-      read_tout.tv_sec = idle_timeout / 1000000;
-      read_tout.tv_usec = idle_timeout % 1000000;
+      read_tout.tv_sec = idle_timeout / USEC_SEC;
+      read_tout.tv_usec = idle_timeout % USEC_SEC;
 
       FD_ZERO (&read_set);
       for (i = 0; i < MAX_CONN; i++)

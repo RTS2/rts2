@@ -567,6 +567,7 @@ Rts2Centrald::idle ()
   struct ln_lnlat_posn obs;
 
   int call_state;
+  int old_current_state;
 
   syslog (LOG_DEBUG, "Rts2Centrald::idle");
 
@@ -577,6 +578,7 @@ Rts2Centrald::idle ()
 
   if (current_state != SERVERD_OFF && current_state != call_state)
     {
+      old_current_state = current_state;
       if ((current_state & SERVERD_STATUS_MASK) == SERVERD_MORNING
 	  && call_state == SERVERD_DAY
 	  &&
@@ -591,7 +593,10 @@ Rts2Centrald::idle ()
 	}
       syslog (LOG_DEBUG, "riseset thread sleeping %li seconds for %i",
 	      next_event_time - curr_time + 1, next_event_type);
-      sendStatusMessage (SERVER_STATUS, current_state);
+      if (current_state != old_current_state)
+	{
+	  sendStatusMessage (SERVER_STATUS, current_state);
+	}
     }
 }
 

@@ -852,7 +852,7 @@ Rts2DevTelescopeGemini::isParking ()
     {
     case '2':
     case ' ':
-      return 1000000;
+      return USEC_SEC;
     case '1':
       return -2;
     case '0':
@@ -949,14 +949,14 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	    {
 	      // slew speed to 1 - 0.25 arcmin / sec
 	      tel_gemini_set (GEM_RA_DIV, 256);
-	      sec.tv_sec = (long) ((fabs (chng_ra) * 60.0) / 5.0) * 1000000;
+	      sec.tv_sec = (long) ((fabs (chng_ra) * 60.0) / 5.0) * USEC_SEC;
 	      nanosleep (&sec, NULL);
 	      tel_gemini_set (GEM_RA_DIV, TCM_DEFAULT_RATE);
 	    }
 	  else
 	    {
 	      tel_gemini_set (GEM_RA_DIV, 65535);
-	      sec.tv_sec = (long) ((fabs (chng_ra) * 60.0) / 5.0) * 1000000;
+	      sec.tv_sec = (long) ((fabs (chng_ra) * 60.0) / 5.0) * USEC_SEC;
 	      nanosleep (&sec, NULL);
 	      tel_gemini_set (GEM_RA_DIV, TCM_DEFAULT_RATE);
 	    }
@@ -968,7 +968,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	  // slew speed to 20 - 5 arcmin / sec
 	  direction = chng_dec > 0 ? 'n' : 's';
 	  telescope_start_move (direction);
-	  sec.tv_nsec = (long) ((fabs (chng_dec) * 60.0) / 5.0) * 1000000;
+	  sec.tv_nsec = (long) ((fabs (chng_dec) * 60.0) / 5.0) * USEC_SEC;
 	  nanosleep (&sec, NULL);
 	  telescope_stop_move (direction);
 	}

@@ -63,11 +63,11 @@ CameraChip::setExposure (float exptime)
   long int f_exptime = (long int) floor (exptime);
   exposureEnd.tv_sec = tv.tv_sec + f_exptime;
   exposureEnd.tv_usec =
-    tv.tv_usec + (long int) ((exptime - f_exptime) * 1000000);
-  if (tv.tv_usec > 1000000)
+    tv.tv_usec + (long int) ((exptime - f_exptime) * USEC_SEC);
+  if (tv.tv_usec > USEC_SEC)
     {
-      exposureEnd.tv_sec += tv.tv_usec / 1000000;
-      exposureEnd.tv_usec = tv.tv_usec % 1000000;
+      exposureEnd.tv_sec += tv.tv_usec / USEC_SEC;
+      exposureEnd.tv_usec = tv.tv_usec % USEC_SEC;
     }
   return 0;
 }
@@ -91,7 +91,7 @@ CameraChip::isExposing ()
       endExposure ();
       return 0;			// exposure ended
     }
-  return (exposureEnd.tv_sec - tv.tv_sec) * 1000000 + (exposureEnd.tv_usec - tv.tv_usec);	// timeout
+  return (exposureEnd.tv_sec - tv.tv_sec) * USEC_SEC + (exposureEnd.tv_usec - tv.tv_usec);	// timeout
 }
 
 int
@@ -350,7 +350,7 @@ Rts2DevCamera::checkReadouts ()
 	}
       if (ret == -2)
 	{
-	  setTimeout (1000000);
+	  setTimeout (USEC_SEC);
 	  maskState (i, CAM_MASK_READING, CAM_NOTREADING,
 		     "chip readout ended");
 	}

@@ -350,7 +350,7 @@ Rts2DevDomeFram::zjisti_stav_portu ()
     syslog (LOG_DEBUG, " B: %x:", t);
   ret = read (dome_port, &stav_portu[PORT_B], 1);
   syslog (LOG_DEBUG, "B state: %x", stav_portu[PORT_B]);
-  if (ret < 0)
+  if (ret < 1)
     return -1;
   return 0;
 }
@@ -553,6 +553,10 @@ Rts2DevDomeFram::closeDome ()
       // closing already in progress
       return 0;
     }
+  if (zjisti_stav_portu () == -1)
+    {
+      return -1;
+    }
   if (movingState != MOVE_NONE)
     {
       stopMove ();
@@ -682,7 +686,12 @@ Rts2DevDomeFram::idle ()
     }
   else
     {
-      closeDome ();
+      int ret;
+      ret = closeDome ();
+      if (ret == -1)
+	{
+	  setTimeout (10 * USEC_SEC);
+	}
       setMasterStandby ();
     }
   return Rts2DevDome::idle ();
