@@ -19,6 +19,7 @@
 #include <getopt.h>
 #include <time.h>
 
+#include "phot_info.h"
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
 #include "kernel/phot.h"
@@ -80,7 +81,6 @@ start_integrate (void *arg)
   int it_t;
   int result;
   int ret;
-  int loop = 0;
   it_t = *((float *) arg);
 
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
@@ -91,16 +91,8 @@ start_integrate (void *arg)
 	{
 	  result = 0;
 	  read (fd, &result, 2);
-	  loop++;
-	  devser_dprintf ("count %i %i", result >> 16, ret);
-	  if (loop % 30 == 0)
-	    {
-	      int new_filter = (loop / 30) % 6;
-	      devser_dprintf ("filter %i", new_filter);
-	      phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
-	      phot_command (PHOT_CMD_INTEGRATE, it_t);
-	    }
 	}
+      devser_dprintf ("count %i %i", result >> 16, ret);
     }
   return NULL;
 }
@@ -166,20 +158,6 @@ phot_handle_command (char *command)
       devser_thread_cancel_all ();
       devdem_priority_block_end ();
       return 0;
-    }
-
-  else if (strcmp (command, "filter") == 0)
-    {
-      int new_filter;
-      if (devser_param_test_length (1))
-	return -1;
-      if (devser_param_next_integer (&new_filter))
-	return -1;
-      if (devdem_priority_block_start ())
-	return -1;
-      phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
-      devser_dprintf ("filter %i", new_filter);
-      devdem_priority_block_end ();
     }
 
   else if (strcmp (command, "help") == 0)
