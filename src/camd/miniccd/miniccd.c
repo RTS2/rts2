@@ -22,7 +22,7 @@ int *field_rows = NULL;
 
 int ccd_dac_bits;
 
-char _data[500][1000];
+char _data[800][2000];
 
 extern int
 camera_init (char *device_name, int camera_id)
@@ -69,7 +69,12 @@ camera_init (char *device_name, int camera_id)
   miniccd.chip_info =
     (struct chip_info *) malloc (sizeof (struct chip_info) * miniccd.chips);
   fd_chips = (int *) malloc (sizeof (int) * miniccd.chips);
-  strncpy (miniccd.type, "starlight xpress", CCD_CCD_NAME_LEN);
+  strncpy (miniccd.type, (char *) &msgr[CCD_CCD_NAME_INDEX],
+	   CCD_CCD_NAME_LEN / 2);
+  for (i = 0; i < CCD_CCD_NAME_LEN / 2; i++)
+    if (miniccd.type[i] == ' ')
+      miniccd.type[i] = '_';
+
   miniccd.type[CCD_CCD_NAME_LEN] = '\x0';
   for (i = 0; i < miniccd.chips; i++)
     {
