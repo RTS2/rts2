@@ -10,6 +10,7 @@
 #include "telescope_info.h"
 #include "camera_info.h"
 #include "dome_info.h"
+#include "phot_info.h"
 
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
@@ -154,6 +155,15 @@ status_dome (WINDOW * wnd, struct device *dev)
 }
 
 void
+status_phot (WINDOW * wnd, struct device *dev)
+{
+  struct phot_info *info = (struct phot_info *) &dev->info;
+  mvwprintw (wnd, 1, 1, "Count: %i", info->count);
+  mvwprintw (wnd, 2, 1, "Expos: %i", info->exposure);
+  print_status (wnd, 3, 1, dev);
+}
+
+void
 status_send (struct device *dev, char *cmd)
 {
   char *txt;
@@ -236,8 +246,12 @@ status (WINDOW * wnd, struct device *dev)
 	case DEVICE_TYPE_DOME:
 	  status_dome (wnd, dev);
 	  break;
+	case DEVICE_TYPE_PHOT:
+	  status_phot (wnd, dev);
+	  break;
 	default:
-	  mvwprintw (wnd, 3, 1, "UNKNOW TYPE: %i", dev->type);
+	  mvwprintw (wnd, 3, 1, "UNKNOW TYPE: %i %i", dev->type,
+		     DEVICE_TYPE_PHOT);
 	}
     }
   wrefresh (wnd);
