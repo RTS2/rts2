@@ -4,7 +4,8 @@
 
 #define SELECTOR_AIRMASS	1
 #define SELECTOR_ALTITUDE	2
-#define SELECTOR_ANTISOLAR	3
+#define SELECTOR_HETE		3
+#define SELECTOR_GPS		4
 
 struct target
 {
