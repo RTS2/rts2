@@ -8,6 +8,7 @@
 #include <mcheck.h>
 #include <math.h>
 #include <stdarg.h>
+#include <getopt.h>
 
 #include <argz.h>
 
@@ -18,9 +19,12 @@
 
 #include "../writers/imghdr.h"
 
-#define PORT    5556
+#define SERVERD_PORT    	5557	// default serverd port
+#define SERVERD_HOST		"localhost"	// default serverd hostname
 
-int port;
+#define DEVICE_PORT		5556	// default camera TCP/IP port
+#define DEVICE_NAME "camd"	// default camera name
+int sbig_port = 2;		// default sbig camera port is 2
 
 struct sbig_init info;
 
@@ -96,8 +100,6 @@ start_readout (void *arg)
   unsigned int y;
   int result;
   unsigned short line_buff[5000];
-
-  int file;
 
   devdem_status_mask (READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
@@ -195,11 +197,11 @@ camd_handle_command (char *command)
 
   if (strcmp (command, "ready") == 0)
     {
-      cam_call (sbig_init (port, 5, &info));
+      cam_call (sbig_init (sbig_port, 5, &info));
     }
   else if (strcmp (command, "info") == 0)
     {
-      cam_call (sbig_init (port, 5, &info));
+      cam_call (sbig_init (sbig_port, 5, &info));
       devser_dprintf ("name %s", info.camera_name);
       devser_dprintf ("type %i", info.camera_type);
       devser_dprintf ("serial %10s", info.serial_number);
@@ -360,6 +362,7 @@ camd_handle_command (char *command)
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "invalid binning: %i",
 				    new_bin);
+	  devdem_priority_block_end ();
 	  return -1;
 	}
       readouts[chip].header.binnings[0] = (unsigned int) new_bin;
@@ -456,14 +459,90 @@ end:
 }
 
 int
-main (void)
+main (int argc, char **argv)
 {
   char *stats[] = { "img_chip", "trc_chip" };
 
-  port = 3;
+  char *serverd_host = SERVERD_HOST;
+  uint16_t serverd_port = SERVERD_PORT;
+
+  char *device_name = DEVICE_NAME;
+  uint16_t device_port = DEVICE_PORT;
+
+  char *hostname = NULL;
+  int c;
+
 #ifdef DEBUG
   mtrace ();
 #endif
+
+  /* get attrs */
+  while (1)
+    {
+      static struct option long_option[] = {
+	{"sbig_port", 1, 0, 'l'},
+	{"port", 1, 0, 'p'},
+	{"serverd_host", 1, 0, 's'},
+	{"serverd_port", 1, 0, 'q'},
+	{"device_name", 1, 0, 'd'},
+	{"help", 0, 0, 0},
+	{0, 0, 0, 0}
+      };
+      c = getopt_long (argc, argv, "l:p:s:q:h", long_option, NULL);
+
+      if (c == -1)
+	break;
+
+      switch (c)
+	{
+	case 'l':
+	  sbig_port = atoi (optarg);
+	  if (sbig_port < 1 || sbig_port > 3)
+	    {
+	      printf ("invalid sbig_port option: %s\n", optarg);
+	      exit (EXIT_FAILURE);
+	    }
+	  break;
+	case 'p':
+	  device_port = atoi (optarg);
+	  if (device_port < 1 || device_port == UINT_MAX)
+	    {
+	      printf ("invalid device port option: %s\n", optarg);
+	      exit (EXIT_FAILURE);
+	    }
+	  break;
+	case 's':
+	  serverd_host = optarg;
+	  break;
+	case 'q':
+	  serverd_port = atoi (optarg);
+	  if (serverd_port < 1 || serverd_port == UINT_MAX)
+	    {
+	      printf ("invalid serverd port option: %s\n", optarg);
+	      exit (EXIT_FAILURE);
+	    }
+	  break;
+	case 'd':
+	  device_name = optarg;
+	  break;
+	case 0:
+	  printf
+	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd");
+	  exit (EXIT_SUCCESS);
+	case '?':
+	  break;
+	default:
+	  printf ("?? getopt returned unknow character %o ??\n", c);
+	}
+    }
+
+  if (optind != argc - 1)
+    {
+      printf ("hostname wasn't specified\n");
+      exit (EXIT_FAILURE);
+    }
+
+  hostname = argv[argc - 1];
 
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
@@ -474,7 +553,12 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
-  if (devdem_register ("localhost", 5557, "camd", DEVICE_TYPE_CCD, PORT) < 0)
+  syslog (LOG_DEBUG, "registering on %s:%i as %s", serverd_host, serverd_port,
+	  device_name);
+
+  if (devdem_register
+      (serverd_host, serverd_port, device_name, DEVICE_TYPE_CCD, hostname,
+       device_port) < 0)
     {
       syslog (LOG_ERR, "devdem_register: %m");
       perror ("devdem_register");
@@ -483,5 +567,5 @@ main (void)
 
   info.nmbr_chips = 2;
 
-  return devdem_run (PORT, camd_handle_command);
+  return devdem_run (device_port, camd_handle_command);
 }
