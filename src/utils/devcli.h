@@ -46,6 +46,6 @@ int devcli_server_command (int *ret_code, char *cmd, ...);
 int devcli_command (int channel_id, int *ret_code, char *cmd, ...);
 int devcli_image_info (int channel_id, struct image_info *image);
 int devcli_execute (char *line, int *ret_code);
-int devcli_getinfo (int channel_id, union devhnd_info *info);
+int devcli_getinfo (int channel_id, union devhnd_info **info);
 
 #endif // __RTS_DEVCLI__
