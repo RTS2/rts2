@@ -324,7 +324,8 @@ client_priority_lost ()
   status_unlock (client_status);
 
   // inform client
-  status_message (client_status, "priority lost");
+  devser_dprintf ("S priority 0 priority lost %i %i", client_id,
+		  client_status);
 }
 
 void
@@ -347,7 +348,8 @@ client_priority_receive ()
     }
   clients_info->priority_client = client_id;
 
-  devser_dprintf ("S priority 1 priority received %i", client_id);
+  devser_dprintf ("S priority 1 priority received %i %i", client_id,
+		  client_status);
 }
 
 void
@@ -409,7 +411,7 @@ client_block_counter_increase ()
   return -1;
 }
 
-#ifdef DEBUG
+//#ifdef DEBUG
 /*!
  * Write status of devdem.
  */
@@ -421,6 +423,7 @@ devdem_status ()
   for (i = 0; i < MAX_CLIENT; i++)
     if (clients_info->clients[i].pid)
       devser_dprintf ("client_id_pid %i %i", i, clients_info->clients[i].pid);
+  devser_dprintf ("client_id %i", client_id);
   if (pthread_mutex_trylock (&block_mutex_main) == EBUSY)
     {
       devser_dprintf ("block_main_lock locked");
@@ -433,7 +436,8 @@ devdem_status ()
   devser_dprintf ("block_counter %i", block_counter);
   return 0;
 }
-#endif /* DEBUG */
+
+//#endif /* DEBUG */
 
 /*!
  * @return 0 processed, -1 invalid message => not processed
@@ -563,7 +567,11 @@ client_authorize ()
   for (key = 0; key < status_num; key++)
     devser_dprintf ("I status %i %s %i", key,
 		    statutes[key].name, statutes[key].status);
-
+  if (clients_info->priority_client == client_id)
+    {
+      status_lock (client_status);
+      devser_dprintf ("S priority 1 priority received %i", client_id);
+    }
   // TODO remove pid - not needed ???
   clients_info->clients[client_id].pid = devser_child_pid;
   if (clients_info->priority_client == client_id)
@@ -581,10 +589,10 @@ client_handle_commands (char *command)
       devser_write_command_end (DEVDEM_E_SYSTEM, "you aren't authorized");
       return -1;
     }
-#ifdef DEBUG
+//#ifdef DEBUG
   else if (strcmp (command, "devdem_status") == 0)
     return devdem_status ();
-#endif /* DEBUG */
+//#endif /* DEBUG */
   else if (strcmp (command, "blockstart") == 0)
     {
       if (pthread_mutex_trylock (&block_mutex_main) == EBUSY)
@@ -991,9 +999,11 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
     {
       syslog (LOG_DEBUG, "autorized->null %i", client_id);
       clients_info->clients[client_id].authorized = 0;
+      clients_info->clients[client_id].pid = 0;
       devser_message_clear ();
       devser_thread_cancel_all ();
     }
+  sleep (10);
 
   return 0;
 }
