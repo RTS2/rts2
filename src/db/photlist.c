@@ -8,7 +8,10 @@
 #include <time.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <libnova/libnova.h>
+
 #include "libpq-fe.h"
+#include "../utils/config.h"
 
 PGconn *conn;
 
@@ -18,6 +21,8 @@ exit_nicely ()
   PQfinish (conn);
   exit (1);
 }
+
+struct ln_lnlat_posn observer;
 
 int night_day = 0;
 int night_month = 0;
@@ -45,14 +50,20 @@ print_head (struct tm *date)
 }
 
 void
-print_target_info (int tar_id)
+print_target_info (int tar_id, time_t * t)
 {
-  char command[200] =
-    "SELECT phot_mag1, phot_mag2, phot_index1, phot_index2 FROM phot WHERE tar_id = ";
+  char command[400] =
+    "SELECT tar_ra, tar_dec, phot_mag1, phot_mag2, phot_index1, phot_index2 FROM phot, targets WHERE targets.tar_id = phot.tar_id  AND targets.tar_id = ";
+  struct ln_equ_posn object;
+  struct ln_hrz_posn hrz;
   int i;
 
   sprintf (command, "%s %i;", command, tar_id);
   PGresult *res;
+
+  double JD;
+
+  JD = ln_get_julian_from_timet (t);
 
   res = PQexecParams (conn, command, 0, NULL, NULL, NULL, NULL, 0);
   if (PQresultStatus (res) != PGRES_TUPLES_OK)
@@ -68,7 +79,11 @@ print_target_info (int tar_id)
       return;
     }
   printf ("7%4i", tar_id);
-  for (i = 0; i < PQnfields (res); i++)
+  object.ra = atof (PQgetvalue (res, 0, 0));
+  object.dec = atof (PQgetvalue (res, 0, 1));
+  ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
+  printf (" %.4f %.4f", hrz.alt, hrz.az);
+  for (i = 2; i < PQnfields (res); i++)
     {
       printf (" %s", PQgetvalue (res, 0, i));
     }
@@ -124,13 +139,13 @@ get_list (int tar_id)
   for (i = 0; i < PQntuples (res); i++)
     {
       tar_id = ntohl (*((uint32_t *) PQgetvalue (res, i, 0)));
-      if (target_info && target_info != tar_id)
-	{
-	  print_target_info (tar_id);
-	  target_info = tar_id;
-	}
       count_date = ntohl (*((uint32_t *) (PQgetvalue (res, i, 1))));
       gmtime_r (&count_date, &date);
+      if (target_info && target_info != tar_id)
+	{
+	  print_target_info (tar_id, &count_date);
+	  target_info = tar_id;
+	}
       count_value = ntohl (*((uint32_t *) PQgetvalue (res, i, 2)));
       count_value <<= 32;
       count_value |= ntohl (*(((uint32_t *) PQgetvalue (res, i, 2)) + 1));
@@ -203,6 +218,15 @@ main (int argc, char **argv)
 	  printf ("?? getopt ret: %o\n", c);
 	}
     }
+
+  printf ("Readign config file" CONFIG_FILE "...");
+  if (read_config (CONFIG_FILE) == -1)
+    printf ("failed, defaults will be used when apopriate.\n");
+  else
+    printf ("ok\n");
+  observer.lng = get_double_default ("longtitude", 0);
+  observer.lat = get_double_default ("latitude", 0);
+  printf ("lng: %f lat: %f\n", observer.lng, observer.lat);
 
   get_list (120);
 
