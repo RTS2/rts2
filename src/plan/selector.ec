@@ -241,7 +241,7 @@ get_next_plan (struct target *plan, int selector_type,
 	  plan->next = NULL;
 	  return 0;
 	}
-	
+
       observer.lng = -15;
       observer.lat = 50;
 
@@ -255,39 +255,42 @@ get_next_plan (struct target *plan, int selector_type,
       switch (number & 1)
 	{
 	case 0:
-	  while (1) 
-	  {
-	    az = 180.0 * rand () / (RAND_MAX + 1.0);
-	    airmass = 1.2 + (1.2 * rand () / (RAND_MAX + 1.0));
-	    if (az > 90)
-	     az += 180;
-	    if (moon_hrz.alt < -10)
-	      break;
-	    else if (abs ((int)floor(moon_hrz.az - az) % 360) < 40)
-	        printf (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n", az, airmass, moon_hrz.az, moon_hrz.alt);
-	    else 
+	  while (1)
+	    {
+	      az = 180.0 * rand () / (RAND_MAX + 1.0);
+	      airmass = 1.2 + (1.2 * rand () / (RAND_MAX + 1.0));
+	      if (az > 90)
+		az += 180;
+	      if (moon_hrz.alt < -10)
 		break;
-	  }
+	      else if (abs ((int) floor (moon_hrz.az - az) % 360) < 40)
+		printf
+		  (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n",
+		   az, airmass, moon_hrz.az, moon_hrz.alt);
+	      else
+		break;
+	    }
 	  break;
 
 	case 1:
 	  while (1)
-	  {
-	    az = 360.0 * rand () / (RAND_MAX + 1.0);
-	    airmass = 1.0 + (0.2 * rand () / (RAND_MAX + 1.0));
+	    {
+	      az = 360.0 * rand () / (RAND_MAX + 1.0);
+	      airmass = 1.0 + (0.2 * rand () / (RAND_MAX + 1.0));
 
-	    if (moon_hrz.alt < -10)
-	      break;
-	    else if (abs ((int)floor(moon_hrz.az - az) % 360) < 40)
-	        printf (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n", az, airmass, moon_hrz.az, moon_hrz.alt);
-	    else 
+	      if (moon_hrz.alt < -10)
 		break;
-	  }
+	      else if (abs ((int) floor (moon_hrz.az - az) % 360) < 40)
+		printf
+		  (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n",
+		   az, airmass, moon_hrz.az, moon_hrz.alt);
+	      else
+		break;
+	    }
 	  break;
 	}
 
-      return select_next_airmass (c_start,
-				  curr_plan, plan, airmass, az);
+      return select_next_airmass (c_start, curr_plan, plan, airmass, az);
       break;
 
     default:

@@ -34,10 +34,9 @@
 #include "selector.h"
 #include "../db/db.h"
 
-#define EXPOSURE_TIME		30	
+#define EXPOSURE_TIME		30
 
-
-int camd_id, teld_id;
+struct device *camera, *telescope;
 
 char *dark_name = NULL;
 
@@ -197,7 +196,7 @@ data_handler (int sock, size_t size, struct image_info *image)
       printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
 	      ra_err, dec_err);
 
-      if (!devcli_command (teld_id, NULL, "correct %i %f %f",
+      if (!devcli_command (telescope, NULL, "correct %i %f %f",
 			   image->telescope.correction_mark, ra_err / 60.0,
 			   dec_err / 60.0))
 	perror ("telescope correct");
@@ -222,36 +221,33 @@ free_filename:
 }
 
 int
-readout (struct target *plan, int npic)
+readout (struct target *plan)
 {
-  devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
-  for (; npic > 0; npic--)
-    {
-      struct image_info *info;
-      union devhnd_info *devinfo;
+  struct image_info *info =
+    (struct image_info *) malloc (sizeof (struct image_info));
 
-      info = (struct image_info *) malloc (sizeof (struct image_info));
-      info->exposure_time = time (NULL);
-      info->exposure_length = EXPOSURE_TIME;
-      info->target_id = plan->id;
-      info->observation_id = plan->obs_id;
-      info->target_type = plan->type;
-      if (devcli_command (camd_id, NULL, "info") ||
-	  devcli_getinfo (camd_id, &devinfo) ||
-	  !memcpy (&info->camera, devinfo, sizeof (struct camera_info)) ||
-	  devcli_command (teld_id, NULL, "info") ||
-	  devcli_getinfo (teld_id, &devinfo) ||
-	  !memcpy (&info->telescope, devinfo, sizeof (struct telescope_info))
-	  || devcli_image_info (camd_id, info)
-	  || devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
-				     CAM_NOEXPOSURE, 0)
-	  || devcli_command (camd_id, NULL, "readout 0"))
-	{
-	  free (info);
-	  return -1;
-	}
+  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING, TEL_STILL,
+			  0);
+
+  info->exposure_time = time (NULL);
+  info->exposure_length = EXPOSURE_TIME;
+  info->target_id = plan->id;
+  info->observation_id = plan->obs_id;
+  info->target_type = plan->type;
+  if (devcli_command (camera, NULL, "info") ||
+      !memcpy (&info->camera, &camera->info, sizeof (struct camera_info)) ||
+      devcli_command (telescope, NULL, "info") ||
+      !memcpy (&info->telescope, &telescope->info,
+	       sizeof (struct telescope_info))
+      || devcli_image_info (camera, info)
+      || devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
+				 CAM_NOEXPOSURE, 0)
+      || devcli_command (camera, NULL, "readout 0"))
+    {
       free (info);
+      return -1;
     }
+  free (info);
   return 0;
 }
 
@@ -266,6 +262,8 @@ main (int argc, char **argv)
 
   int c, i = 0;
 
+  int priority;
+
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -274,10 +272,11 @@ main (int argc, char **argv)
     {
       static struct option long_option[] = {
 	{"port", 1, 0, 'p'},
+	{"priority", 1, 0, 'r'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "p:r:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -288,7 +287,15 @@ main (int argc, char **argv)
 	  port = atoi (optarg);
 	  if (port < 1 || port == UINT_MAX)
 	    {
-	      printf ("invalcamd_id port option: %s\n", optarg);
+	      printf ("invalid server port option: %s\n", optarg);
+	      exit (EXIT_FAILURE);
+	    }
+	  break;
+	case 'r':
+	  priority = atoi (optarg);
+	  if (priority < 1 || priority > 10000)
+	    {
+	      printf ("invalid priority value: %s\n", optarg);
 	      exit (EXIT_FAILURE);
 	    }
 	  break;
@@ -326,29 +333,31 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
-  if (devcli_connectdev (&camd_id, "camd", &data_handler) < 0)
+  camera = devcli_find ("camd");
+  if (!camera)
     {
-      perror ("devcli_connectdev camd");
+      printf
+	("**** cannot find camera!\n**** please check that it's connected and camd runs.");
       exit (EXIT_FAILURE);
     }
 
-  printf ("camd_id: %i\n", camd_id);
+  camera->data_handler = data_handler;
 
-  if (devcli_connectdev (&teld_id, "teld", NULL) < 0)
+  telescope = devcli_find ("teld");
+  if (!telescope)
     {
-      perror ("devcli_connectdev");
+      printf
+	("**** cannot find telescope!\n**** please check that it's connected and teld runs.");
       exit (EXIT_FAILURE);
     }
 
-  printf ("teld_id: %i\n", teld_id);
-
-#define CAMD_WRITE_READ(command) if (devcli_command (camd_id, NULL, command) < 0) \
+#define CAMD_WRITE_READ(command) if (devcli_command (camera, NULL, command) < 0) \
   				{ \
       		                  perror ("devcli_write_read_camd"); \
 				  return EXIT_FAILURE; \
 				}
 
-#define TELD_WRITE_READ(command) if (devcli_command (teld_id, NULL, command) < 0) \
+#define TELD_WRITE_READ(command) if (devcli_command (telescope, NULL, command) < 0) \
   				{ \
       		                  perror ("devcli_write_read_teld"); \
 				  return EXIT_FAILURE; \
@@ -363,11 +372,11 @@ main (int argc, char **argv)
 
   umask (0x002);
 
-  devcli_server_command (NULL, "priority 139");
+  devcli_server_command (NULL, "priority %i", priority);
 
   printf ("waiting for priority\n");
 
-  devcli_wait_for_status ("teld", "priority", DEVICE_MASK_PRIORITY,
+  devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			  DEVICE_PRIORITY, 0);
 
   printf ("waiting end\n");
@@ -418,7 +427,7 @@ main (int argc, char **argv)
 	  }
 
 	  if (devcli_command
-	      (teld_id, NULL, "move %f %f", last->ra, last->dec))
+	      (telescope, NULL, "move %f %f", last->ra, last->dec))
 	    {
 	      printf ("telescope error\n\n--------------\n");
 	    }
@@ -436,7 +445,7 @@ main (int argc, char **argv)
 	  db_start_observation (last->id, &t, &last->obs_id);
 	}
 
-      devcli_wait_for_status ("camd", "priority", DEVICE_MASK_PRIORITY,
+      devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
       printf ("OK\n");
@@ -445,9 +454,9 @@ main (int argc, char **argv)
       printf ("exposure countdown %s..\n", ctime (&t));
       t += EXPOSURE_TIME;
       printf ("readout at: %s\n", ctime (&t));
-      if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
+      if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
-	  devcli_command (camd_id, NULL, "expose 0 %i %i",
+	  devcli_command (camera, NULL, "expose 0 %i %i",
 			  last->type != TARGET_DARK, EXPOSURE_TIME))
 	{
 	  perror ("expose:");
@@ -462,7 +471,7 @@ main (int argc, char **argv)
       printf ("next plan #%i: id %i type %i\n", i, last->next->id,
 	      last->next->type);
 
-      readout (last, 1);
+      readout (last);
 
       if (last->type == TARGET_LIGHT)
 	{
