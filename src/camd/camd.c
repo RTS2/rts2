@@ -210,8 +210,10 @@ int
 focus_expose_and_readout (float exposure, int light, struct readout *readout,
 			  unsigned short *img)
 {
+  devser_dprintf ("focuser: starting exposure");
   if (camera_expose (readout->chip, &exposure, light))
     return -1;
+  devser_dprintf ("focuser: starting readout");
   return camera_readout (readout, img);
 }
 
@@ -248,8 +250,8 @@ start_focusing (void *arg)
   tcfret = tcf_set_manual ();
   if (tcfret < 1)
     {
-      devser_dprintf ("focuser: unable to initialize\n");
-      return NULL;
+      devser_dprintf ("focuser: unable to initialize %i\n", tcfret);
+      goto err;
     }
 
   posi[0] = 0;
@@ -895,9 +897,9 @@ main (int argc, char **argv)
 	{0, 0, 0, 0}
       };
 #ifdef FOCUSING
-      c = getopt_long (argc, argv, "l:o:p:s:q:d:f:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:o:p:is:q:d:f:h", long_option, NULL);
 #else
-      c = getopt_long (argc, argv, "l:p:s:q:d:f:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:p:is:q:d:f:h", long_option, NULL);
 #endif /* FOCUSING */
 
       if (c == -1)
@@ -935,6 +937,7 @@ main (int argc, char **argv)
 #ifdef FOCUSING
 	case 'o':
 	  focuser_port = optarg;
+	  set_focuser_port (focuser_port);
 	  break;
 #endif /* FOCUSING */
 	case 0:

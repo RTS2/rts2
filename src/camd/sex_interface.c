@@ -151,10 +151,15 @@ run_sex (char *fitsfile)
   double *xx, *yy, *F, *Q;
   double S, NN, E, tt;
 
+  int ret;
+
   write_sex_cfg ();
   asprintf (&command, "%s -c _sex.cfg %s", sex_binary, fitsfile);
-  system (command);
+  ret = system (command);
   free (command);
+
+  if (ret == 127)		// command doesn't exists
+    return nan ("0");
 
   get_result (&N, &xx, &yy, &F, &Q);
 
