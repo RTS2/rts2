@@ -28,6 +28,7 @@
 #include <mcheck.h>
 #include <getopt.h>
 
+#include "../utils/config.h"
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
 #include "../writers/fits.h"
@@ -79,6 +80,15 @@ move (struct target *last)
 	}
       last->moved = 1;
     }
+  else if (last->type == TARGET_DARK && last->moved == 0)
+    {
+      last->moved = 1;
+      if (devcli_command (telescope, NULL, "park"))
+	{
+	  printf ("telescope error\n\n--------------\n");
+	  return -1;
+	}
+    }
   return 0;
 }
 
@@ -117,10 +127,10 @@ generate_next (int i, struct target *plan)
 
   printf ("Making plan %s", ctime (&start_time));
   if (get_next_plan
-      (plan, SELECTOR_ANTISOLAR, &start_time, i, EXPOSURE_TIME,
-       devcli_server ()->statutes[0].status,
-       telescope->info.telescope.longtitude,
-       telescope->info.telescope.latitude))
+      (plan, get_double_default ("planc_selector", SELECTOR_HETE),
+       &start_time, i, EXPOSURE_TIME, devcli_server ()->statutes[0].status,
+       get_double_default ("longtitude", 0), get_double_default ("latitude",
+								 40)))
     {
       printf ("Error making plan\n");
       fflush (stdout);
@@ -150,6 +160,8 @@ observe (int watch_status)
   last = plan->next;
   free (plan);
   plan = last;
+
+  devcli_command (telescope, NULL, "info");
 
   for (; last; last = last->next, p = plan, plan = plan->next, free (p))
     {
@@ -236,15 +248,20 @@ observe (int watch_status)
       printf ("exposure countdown ..%s", ctime (&t));
       t += EXPOSURE_TIME;
       printf ("readout at: %s", ctime (&t));
-      i = generate_next (i, plan);
+      while (!last->next)
+	{
+	  printf ("Generating next plan: %p %p %p\n", plan, plan->next, last);
+	  i = generate_next (i, plan);
+	}
       printf ("next plan #%i: id %i type %i\n", i, last->next->id,
 	      last->next->type);
-      devcli_command (telescope, NULL, "info");
+      devcli_command (telescope, NULL, "base_info;info");
       for (camera = devcli_devices (); camera; camera = camera->next)
-	get_info (last, telescope, camera);
+	if (camera->type == DEVICE_TYPE_CCD)
+	  get_info (last, telescope, camera);
       devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
 				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  1.5 * exposure + 10);
+				  1.1 * exposure + 10);
       move (last->next);
       devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
     }
@@ -262,13 +279,9 @@ int
 main (int argc, char **argv)
 {
   uint16_t port = SERVERD_PORT;
-
   char *server;
-
   int c = 0;
-
   int priority = 20;
-
   int watch_status = 1;		// watch central server status
   struct device *devcli_ser = devcli_server ();
 
@@ -345,6 +358,13 @@ main (int argc, char **argv)
 
     }
 
+  printf ("Readign config file" CONFIG_FILE "...");
+  if (read_config (CONFIG_FILE) == -1)
+    printf ("failed, defaults will be used when apopriate.\n");
+  else
+    printf ("ok\n");
+  printf ("Current selector is: %i\n",
+	  (int) get_double_default ("planc_selector", SELECTOR_HETE));
 
   printf ("connecting to %s:%i\n", server, port);
 
@@ -361,7 +381,7 @@ main (int argc, char **argv)
   if (!telescope)
     {
       printf
-	("**** cannot find telescope!\n**** please check that it's connected and teld runs.");
+	("**** cannot find telescope!\n**** please check that it's connected and teld runs.\n");
       devcli_server_disconnect ();
       return 0;
     }
@@ -401,7 +421,7 @@ main (int argc, char **argv)
   devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			  DEVICE_PRIORITY, 0);
 
-  printf ("waiting end\n");
+  printf ("...waiting end\n");
 
   pthread_create (&image_que_thread, NULL, process_images, NULL);
 
@@ -413,9 +433,14 @@ loop:
 	       || devcli_ser->statutes[0].status == SERVERD_DUSK
 	       || devcli_ser->statutes[0].status == SERVERD_DAWN))
 	{
-	  printf ("waiting for night..\n");
+	  time_t t;
+	  time (&t);
+	  printf ("waiting for night..%s", ctime (&t));
 	  fflush (stdout);
-	  devcli_command (telescope, NULL, "park");
+	  if ((t = devcli_command (telescope, NULL, "park")))
+	    fprintf (stderr, "Error while moving telescope: %i", (int) t);
+	  else
+	    printf ("PARK ok\n");
 //        devcli_wait_for_status (devcli_ser, SERVER_STATUS,
 //                                SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK,
 //                                SERVERD_NIGHT, 10);
