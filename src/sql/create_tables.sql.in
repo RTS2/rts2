@@ -172,6 +172,8 @@ GRANT SELECT ON observations TO "@WWWUSER@";
 GRANT SELECT ON ot TO "@WWWUSER@";
 GRANT SELECT ON cameras TO "@WWWUSER@";
 GRANT SELECT ON mounts TO "@WWWUSER@";
+GRANT SELECT ON types TO "@WWWUSER@";
+GRANT SELECT ON medias TO "@WWWUSER@";
 
 GRANT ALL ON grb TO GROUP observers;
 GRANT ALL ON targets TO GROUP observers;
@@ -181,7 +183,8 @@ GRANT ALL ON cameras TO GROUP observers;
 GRANT ALL ON mounts TO GROUP observers;
 GRANT ALL ON darks TO GROUP observers;
 GRANT ALL ON flats TO GROUP observers;
-
+GRANT ALL ON types TO GROUP observers; 
+GRANT ALL ON medias TO GROUP observers;
 
 GRANT SELECT ON images_nights TO GROUP observers;
 GRANT SELECT ON observations_nights TO GROUP observers;
