@@ -193,6 +193,7 @@ process_precission (struct target *tar, struct device *camera)
   else
     {
       double ra_err = 12, dec_err = 12;
+      double ra_margin = 0.75, dec_margin = 0.75;
       int tries = 0;
       hi_precision_t hi_precision;
       pthread_mutex_t ret_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -238,7 +239,8 @@ process_precission (struct target *tar, struct device *camera)
 	    }
 	  printf ("ra_err: %f dec_err: %f\n", ra_err, dec_err);
 	  fflush (stdout);
-	  if (ra_err < 0.75 && dec_err < 0.75)
+	  if ((ra_err < ra_margin || ra_err > 360.0 - ra_margin)
+	      && (dec_err < dec_margin || dec_err > 360.0 - dec_margin))
 	    {
 	      break;
 	    }
@@ -290,8 +292,11 @@ execute_camera_script (void *exinfo)
   exp_state = 0;
 
   ret = process_precission (last, camera);
-  if (!ret)
-    return NULL;
+  if (ret)
+    {
+      dec_exposure_count ();
+      return NULL;
+    }
 
   while (*command)
     {
