@@ -264,6 +264,8 @@ public:
     return masterState;
   }
   int connectionError (int in_sock);
+  // status-mail related functions  
+  int sendMail (char *subject, char *text);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

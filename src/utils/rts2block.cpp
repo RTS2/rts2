@@ -757,3 +757,35 @@ Rts2Block::processOption (int in_opt)
     }
   return 0;
 }
+
+int
+Rts2Block::sendMail (char *subject, char *text)
+{
+  int ret;
+  char *cmd;
+  FILE *mailFile;
+
+  // fork so we will not inhibit calling process..
+  ret = fork ();
+  if (ret == -1)
+    {
+      syslog (LOG_ERR, "Rts2Block::sendMail fork: %m");
+      return -1;
+    }
+  if (ret != 0)
+    {
+      return 0;
+    }
+  asprintf (&cmd, "/usr/bin/mail -s '%s' 'petr@kubanek.net,prouza@fzu.cz'",
+	    subject);
+  mailFile = popen ("mail", "r");
+  if (!mailFile)
+    {
+      syslog (LOG_ERR, "Rts2Block::sendMail popen: %m");
+      exit (0);
+    }
+  fprintf (mailFile, "%s", text);
+  pclose (mailFile);
+  free (cmd);
+  exit (0);
+}
