@@ -20,7 +20,6 @@
 
 #define PORT    5556
 
-
 int port;
 
 struct sbig_init info;
@@ -42,7 +41,7 @@ complete (int ccd, float percent_complete)
 void
 clean_expose_cancel (void *arg)
 {
-  devser_status_mask (SBIG_EXPOSE->ccd,
+  devdem_status_mask (SBIG_EXPOSE->ccd,
 		      CAM_MASK_EXPOSE,
 		      CAM_NOEXPOSURE, "exposure chip canceled");
 }
@@ -52,7 +51,7 @@ void *
 start_expose (void *arg)
 {
   int ret;
-  devser_status_mask (SBIG_EXPOSE->ccd,
+  devdem_status_mask (SBIG_EXPOSE->ccd,
 		      CAM_MASK_EXPOSE, CAM_EXPOSING, "exposure chip started");
   if ((ret = sbig_expose (SBIG_EXPOSE)) < 0)
     {
@@ -61,13 +60,13 @@ start_expose (void *arg)
       syslog (LOG_ERR, "error during chip %i exposure: %s",
 	      SBIG_EXPOSE->ccd, err);
       free (err);
-      devser_status_mask (SBIG_EXPOSE->ccd,
+      devdem_status_mask (SBIG_EXPOSE->ccd,
 			  CAM_MASK_EXPOSE,
 			  CAM_NOEXPOSURE, "exposure chip error");
       return NULL;
     }
   syslog (LOG_INFO, "exposure chip %i finished.", SBIG_EXPOSE->ccd);
-  devser_status_mask (SBIG_EXPOSE->ccd,
+  devdem_status_mask (SBIG_EXPOSE->ccd,
 		      CAM_MASK_EXPOSE,
 		      CAM_NOEXPOSURE, "exposure chip finished");
   return NULL;
@@ -82,7 +81,7 @@ start_expose (void *arg)
 void
 clean_readout_cancel (void *arg)
 {
-  devser_status_mask (SBIG_READOUT->ccd,
+  devdem_status_mask (SBIG_READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_NODATA, "reading chip canceled");
 }
@@ -92,7 +91,7 @@ void *
 start_readout (void *arg)
 {
   int ret;
-  devser_status_mask (SBIG_READOUT->ccd,
+  devdem_status_mask (SBIG_READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_READING | CAM_NODATA, "reading chip started");
   if ((ret = sbig_readout (SBIG_READOUT)) < 0)
@@ -102,13 +101,13 @@ start_readout (void *arg)
       syslog (LOG_ERR, "error during chip %i readout: %s",
 	      SBIG_READOUT->ccd, err);
       free (err);
-      devser_status_mask (SBIG_READOUT->ccd,
+      devdem_status_mask (SBIG_READOUT->ccd,
 			  CAM_MASK_READING | CAM_MASK_DATA,
 			  CAM_NOTREADING | CAM_NODATA, "reading chip error");
       return NULL;
     }
   syslog (LOG_INFO, "reading chip %i finished.", SBIG_READOUT->ccd);
-  devser_status_mask (SBIG_READOUT->ccd,
+  devdem_status_mask (SBIG_READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_DATA, "reading chip finished");
   return NULL;
@@ -322,7 +321,7 @@ camd_handle_command (char *command)
       get_chip;
       for (i = 0; i < 3; i++)
 	{
-	  devser_status_message (i, "status request");
+	  devdem_status_message (i, "status request");
 	}
       devser_dprintf ("readout %f", readout_comp[chip]);
       ret = 0;
@@ -414,13 +413,20 @@ main (void)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
+  if (devdem_init (stats, 2))
+    {
+      syslog (LOG_ERR, "devdem_init: %m");
+      exit (EXIT_FAILURE);
+    }
+
   if (devdem_register (&server_channel, "camd", "localhost", 5557) < 0)
     {
+      syslog (LOG_ERR, "devdem_register: %m");
       perror ("devdem_register");
       exit (EXIT_FAILURE);
     }
 
   info.nmbr_chips = 2;
 
-  return devser_run (PORT, camd_handle_command, stats, 2, sizeof (pid_t));
+  return devdem_run (PORT, camd_handle_command);
 }
