@@ -1,4 +1,4 @@
-all: nmonitor
+all: nmonitor monitor
 
 CFLAGS = @CFLAGS@ -I@top_srcdir@/include
 LDFLAGS = @LDFLAGS@ @LIB_NCURSES@ @LIB_PTHREAD@ @LIB_M@ @LIB_NOVA@
