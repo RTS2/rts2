@@ -36,9 +36,7 @@ ObjectCheck::load_horizont (char *horizont_file)
       return 0;
     }
 
-  inf.
-    exceptions (ifstream::goodbit | ifstream::failbit | ifstream::
-		eofbit | ifstream::badbit);
+  inf.exceptions (ifstream::goodbit | ifstream::failbit | ifstream::badbit);
 
   while (!inf.eof ())
     {
