@@ -26,6 +26,7 @@ struct image_que
  *image_que;
 
 pthread_mutex_t image_que_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t image_create_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t image_que_cond = PTHREAD_COND_INITIALIZER;
 
 /*!
@@ -58,6 +59,7 @@ process_images (void *arg)
     {
       // wait for image to process
       pthread_mutex_lock (&image_que_mutex);
+      printf ("after lock");
       while (!image_que)
 	pthread_cond_wait (&image_que_cond, &image_que_mutex);
       actual_image = image_que;
@@ -108,6 +110,9 @@ process_images (void *arg)
 
       pclose (past_out);
 
+      printf ("will alloc: %i\n", strlen (actual_image->directory) +
+	      strlen (actual_image->image) + 1);
+
       filename =
 	(char *) malloc (strlen (actual_image->directory) +
 			 strlen (actual_image->image) + 1);
@@ -128,8 +133,8 @@ process_images (void *arg)
 	  printf ("mv %s -> %s", filename, trash_name);
 	  if ((ret = (mv (filename, trash_name))))
 	    perror ("rename bad image");
-	  printf ("..OK\n");
 	  free (trash_name);
+	  printf ("..OK\n");
 	}
       else
 	{
@@ -177,6 +182,7 @@ process_images (void *arg)
       free (actual_image->directory);
       free (actual_image->image);
       free (actual_image);
+      printf ("all free");
     }
 }
 
@@ -236,14 +242,15 @@ data_handler (int sock, size_t size, struct image_info *image)
   strftime (filen, 24, "%Y%m%d%H%M%S.fits", &gmt);
   filen[24] = 0;
   asprintf (&filename, "%s%s", dirname, filen);
-
+  pthread_mutex_lock (&image_create_mutex);
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
+      pthread_mutex_unlock (&image_create_mutex);
       printf ("camc data_handler fits_init\n");
       ret = -1;
       goto free_filen;
     }
-
+  pthread_mutex_unlock (&image_create_mutex);
   printf ("reading data socket: %i size: %i\n", sock, size);
 
   while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
