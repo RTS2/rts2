@@ -201,11 +201,18 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
     goto unlock;
 
   tmp_rcount = tel_read (rbuf, rcount);
-  buf = (char *) malloc (rcount + 1);
-  memcpy (buf, rbuf, rcount);
-  buf[rcount] = 0;
-  syslog (LOG_DEBUG, "LX200:readed %i %s", tmp_rcount, buf);
-  free (buf);
+  if (rcount > 0)
+    {
+      buf = (char *) malloc (rcount + 1);
+      memcpy (buf, rbuf, rcount);
+      buf[rcount] = 0;
+      syslog (LOG_DEBUG, "LX200:readed %i %s", tmp_rcount, buf);
+      free (buf);
+    }
+  else
+    {
+      syslog (LOG_DEBUG, "LX200:readed returns %i", tmp_rcount);
+    }
 
 unlock:
 
@@ -468,7 +475,7 @@ telescope_init (const char *device_name, int telescope_id)
   char rbuf[10];
 
   park_dec = PARK_DEC;
-  
+
   if (port < 0)
     port = open (device_name, O_RDWR);
   if (port < 0)
@@ -568,8 +575,8 @@ telescope_init (const char *device_name, int telescope_id)
 extern void
 telescope_done ()
 {
-   syslog (LOG_DEBUG, "lx200: telescope_done called");
-   semctl (semid, 1, IPC_RMID);
+  syslog (LOG_DEBUG, "lx200: telescope_done called");
+  semctl (semid, 1, IPC_RMID);
 }
 
 /*!
@@ -662,7 +669,7 @@ tel_slew_to (double ra, double dec)
   int max_read = 200;		// maximal read till # is encountered
 
   tel_normalize (&ra, &dec);
-  
+
   if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
@@ -809,9 +816,9 @@ int
 tel_set_to (double ra, double dec)
 {
   char readback[101];
-  
+
   tel_normalize (&ra, &dec);
-  
+
   if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
     return -1;
   if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
@@ -934,7 +941,7 @@ telescope_park ()
   double lst;
   if (tel_read_siderealtime (&lst) < 0)
     return -1;
-  return tel_move_to (lst, park_dec);
+  return tel_move_to (lst * 15.0, park_dec);
 }
 
 /*!

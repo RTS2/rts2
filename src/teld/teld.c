@@ -55,7 +55,6 @@ int correction_mark = 0;
 void
 client_move_cancel (void *arg)
 {
-  // TODO find directions to stop slew, try if it works
   telescope_stop ();
   devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
 }
@@ -163,31 +162,34 @@ teld_handle_command (char *command)
 	return -1;
       if (devser_param_next_hmsdec (&(coord.dec)))
 	return -1;
-      if (abs (coord.ra) > 5 || abs (coord.dec) > 5 || correction_number < 0 || correction_number > correction_mark)
+      if (abs (coord.ra) > 5 || abs (coord.dec) > 5 || correction_number < 0
+	  || correction_number > correction_mark)
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
 				    "corections bigger than sane limit");
 	  return -1;
 	}
       if (correction_mark - CORRECTION_BUF > correction_number)
-      {
-	devser_write_command_end (DEVDEM_E_PARAMSVAL, "old corerction");
-	return -1;
-      }
+	{
+	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "old corection");
+	  return -1;
+	}
       if (devdem_priority_block_start ())
 	return -1;
 
       coord.ra += correction_buf[correction_mark % CORRECTION_BUF].ra;
       coord.dec += correction_buf[correction_mark % CORRECTION_BUF].dec;
 #ifdef DEBUG
-      printf ("correction: ra %f dec %f mark %i\n", coord.ra, coord.dec, correction_mark);
+      printf ("correction: ra %f dec %f mark %i\n", coord.ra, coord.dec,
+	      correction_mark);
 #endif /* DEBUG */
       // update all corrections..
-      for ( i = correction_number % CORRECTION_BUF; i < correction_mark - correction_number; i++)
-      {
-	correction_buf[i % CORRECTION_BUF].ra -= coord.ra;
-	correction_buf[i % CORRECTION_BUF].dec -= coord.dec;
-      }
+      for (i = correction_number % CORRECTION_BUF;
+	   i < correction_mark - correction_number; i++)
+	{
+	  correction_buf[i % CORRECTION_BUF].ra -= coord.ra;
+	  correction_buf[i % CORRECTION_BUF].dec -= coord.dec;
+	}
 
       correction_mark++;
       correction_buf[correction_mark % CORRECTION_BUF].ra = 0;
@@ -245,9 +247,9 @@ teld_handle_command (char *command)
 void
 teld_atexit (void)
 {
-  syslog (LOG_DEBUG, "teld_atexit : %i", getpid());
-  if (getpid() == devser_parent_pid)
-	  telescope_done();
+//  printf ("[%i] teld_atexit", getpid());
+  if (getpid () == devser_parent_pid)
+    telescope_done ();
 }
 
 int
@@ -272,10 +274,10 @@ main (int argc, char **argv)
 
   // init correction buffer
   for (c = 0; c < CORRECTION_BUF; c++)
-  {
-	correction_buf[c].ra = 0;
-	correction_buf[c].dec = 0;
-  }
+    {
+      correction_buf[c].ra = 0;
+      correction_buf[c].dec = 0;
+    }
 
   /* get attrs */
   while (1)
@@ -344,7 +346,7 @@ main (int argc, char **argv)
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
   atexit (teld_atexit);
-  
+
   if (devdem_init (stats, 1, NULL))
     {
       syslog (LOG_ERR, "devdem_init: %m");
