@@ -46,7 +46,7 @@ DROP FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer
 CREATE FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer, abstime) RETURNS varchar(100) AS '
 DECLARE
 	path	varchar(50);
-	tar_id	varchar(5);
+	tar_id	varchar(10);
 	ep 	varchar(3);
 	name	varchar(14);
 	mounted boolean;
@@ -60,7 +60,11 @@ BEGIN
 		RETURN '''';
 	END IF;
 	SELECT INTO path med_path FROM medias WHERE med_id = $1;
-	tar_id:=LPAD ($6, 5, ''0'');
+	IF LENGTH($6) < 5 THEN
+	  tar_id := LPAD ($6, 5, ''0'');
+	ELSE
+	  tar_id := $6;
+	END IF;
 	name:=EXTRACT(YEAR FROM $7) || LPAD(EXTRACT(MONTH FROM $7), 2, ''0'') || LPAD(EXTRACT(DAY FROM $7), 2, ''0'') || LPAD(EXTRACT(HOUR FROM $7), 2, ''0'') || LPAD(EXTRACT(MINUTE FROM $7), 2, ''0'') || LPAD(EXTRACT(SECOND FROM $7), 2, ''0'');
 	ep:=$2;
 		
