@@ -41,6 +41,7 @@ GRANT SELECT ON counts TO "__WWWUSER__";
 GRANT SELECT ON scripts TO "__WWWUSER__";
 GRANT SELECT ON users TO "__WWWUSER__";
 GRANT SELECT ON epoch TO "__WWWUSER__";
+GRANT UPDATE ON images TO "__WWWUSER__";
 GRANT ALL ON medias TO "__WWWUSER__";
 GRANT ALL ON images TO GROUP observers;
 GRANT ALL ON counts TO GROUP observers;
