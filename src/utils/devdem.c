@@ -945,10 +945,8 @@ devdem_register (char *server_host, uint16_t server_port,
   /* connect to the server */
   if (devcli_server_register
       (server_host, server_port, device_name, device_type, device_host,
-       device_port, &handlers) < 0)
+       device_port, &handlers, server_status_notifier) < 0)
     return -1;
-
-  devcli_server_set_notifier (server_status_notifier);
 
   devser_set_server_id (SERVER_CLIENT, server_handle_msg);
   return 0;

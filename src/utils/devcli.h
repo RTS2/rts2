@@ -64,7 +64,8 @@ int devcli_server_register (const char *hostname, uint16_t port,
 			    char *device_name, int device_type,
 			    char *device_host,
 			    uint16_t device_port,
-			    struct devcli_channel_handlers *handlers);
+			    struct devcli_channel_handlers *handlers,
+			    status_notifier_t notifier);
 void devcli_server_close (struct device *dev);
 void devcli_server_disconnect ();
 struct device *devcli_devices ();
@@ -73,7 +74,6 @@ ssize_t devcli_read_data (int sock, void *data, size_t size);
 
 int devcli_wait_for_status (struct device *dev, char *status_name,
 			    int status_mask, int status, time_t tmeout);
-int devcli_server_set_notifier (status_notifier_t callback);
 int devcli_set_notifier (struct device *dev, char *status_name,
 			 status_notifier_t callback);
 int devcli_server_command (int *ret_code, char *cmd, ...);
