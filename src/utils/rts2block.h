@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <syslog.h>
 #include "status.h"
 
 #define MSG_COMMAND             0x01

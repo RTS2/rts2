@@ -61,14 +61,14 @@ Rts2Conn::acceptConn ()
   new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
   if (new_sock == -1)
     {
-      perror ("data accept");
+      syslog (LOG_DEBUG, "Rts2Conn::acceptConn data accept");
       return -1;
     }
   else
     {
       close (sock);
       sock = new_sock;
-      printf ("connection accepted\n");
+      syslog (LOG_DEBUG, "Rts2Conn::acceptConn connection accepted");
       conn_state = 0;
       return 0;
     }
@@ -107,7 +107,7 @@ Rts2Conn::receive (fd_set * set)
 	  while (*buf_top && (!isspace (*buf_top) || *buf_top == '\n')
 		 && *buf_top != '\r')
 	    buf_top++;
-	  printf ("command: %s offset: %i\n", command_start, buf_top - buf);
+	  syslog (LOG_DEBUG, "Rts2Conn::receive command: %s offset: %i", command_start, buf_top - buf);
 	  // commands should end with (at worst case) \r..
 	  if (*buf_top)
 	    {
@@ -142,7 +142,7 @@ Rts2Conn::receive (fd_set * set)
 		    }
 		  else
 		    ret = command ();
-		  printf ("[%i] command: %s ret: %i\n", getCentraldId (), buf,
+		  syslog (LOG_DEBUG, "Rts2Conn::receive [%i] command: %s ret: %i", getCentraldId (), buf,
 			  ret);
 		  if (!ret)
 		    sendCommandEnd (0, "OK");
@@ -150,19 +150,19 @@ Rts2Conn::receive (fd_set * set)
 		    sendCommandEnd (DEVDEM_E_COMMAND,
 				    "invalid parameters/invalid number of parameters");
 		  // we processed whole received string..
-		  printf ("command_end: %i\n",
+		  syslog (LOG_DEBUG, "Rts2Conn::receive command_end: %i",
 			  command_end - (buf + data_size));
 		  if (command_end == buf + data_size)
 		    {
-		      printf ("command null\n");
+		      syslog (LOG_WARNING, "Rts2Conn::receive null command");
 		      command_end = buf;
 		      buf[0] = '\0';
 		    }
 		}
 	      buf_top = command_end;
-	      printf ("buf_top: %c\n", *buf_top);
+	      syslog (LOG_DEBUG, "Rts2Conn::receive buf_top: %c", *buf_top);
 	    }
-	  printf ("Rts2Conn::command ret: %i\n", data_size);
+	  syslog (LOG_DEBUG, "Rts2Conn::command ret: %i", data_size);
 	}
       if (buf != command_start && command_end > command_start)
 	{
@@ -260,11 +260,11 @@ Rts2Conn::send (char *message)
 
   if (ret != len)
     {
-      printf ("[%i:%i] error %i sending %s\n", getCentraldId (), sock, ret,
+      syslog (LOG_ERR, "Rts2Conn::send [%i:%i] error %i sending '%s':%m", getCentraldId (), sock, ret,
 	      message);
       return -1;
     }
-  printf ("[%i:%i] send %i: %s\n", getCentraldId (), sock, ret, message);
+  syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (), sock, ret, message);
   write (sock, "\r\n", 2);
   return 0;
 }
@@ -432,11 +432,11 @@ Rts2Block::init ()
   server.sin_family = AF_INET;
   server.sin_port = htons (port);
   server.sin_addr.s_addr = htonl (INADDR_ANY);
-  printf ("binding to port: %i\n", port);
+  syslog (LOG_DEBUG, "Rts2Block::init binding to port: %i", port);
   ret = bind (sock, (struct sockaddr *) &server, sizeof (server));
   if (ret == -1)
     {
-      perror ("bind");
+      syslog (LOG_ERR, "Rts2Block::init bind %m");
       return -errno;
     }
   listen (sock, 1);
@@ -450,12 +450,12 @@ Rts2Block::addConnection (int in_sock)
     {
       if (!connections[i])
 	{
-	  printf ("add conn: %i\n", i);
+	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
 	  connections[i] = new Rts2Conn (in_sock, this);
 	  return 0;
 	}
     }
-  fprintf (stderr, "Cannot find empty connection!\n");
+  syslog (LOG_ERR, "Rts2Block::addConnection Cannot find empty connection!\n");
   return -1;
 }
 
@@ -515,7 +515,7 @@ Rts2Block::sendStatusMessage (char *state_name, int state)
 int
 Rts2Block::idle ()
 {
-  printf ("idle\n");
+  syslog (LOG_DEBUG, "Rts2Block::idle");
 }
 
 int
@@ -532,7 +532,6 @@ Rts2Block::run ()
     {
       read_tout.tv_sec = idle_timeout / 1000000;
       read_tout.tv_usec = idle_timeout % 1000000;
-      //printf ("timeout: %i\n", idle_timeout);
 
       FD_ZERO (&read_set);
       for (i = 0; i < MAX_CONN; i++)
@@ -568,13 +567,11 @@ Rts2Block::run ()
 	      conn = connections[i];
 	      if (conn)
 		{
-		  printf ("check %i\n", i);
 		  if (conn->receive (&read_set) == -1)
 		    {
 		      delete conn;
 		      connections[i] = NULL;
 		    }
-		  printf ("check end\n");
 		}
 	    }
 	}

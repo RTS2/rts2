@@ -80,7 +80,8 @@ class Rts2DevConnData:public Rts2Conn
 protected:
   int command ()
   {
-    printf ("dataconn commad\n");
+    syslog (LOG_DEBUG, "Rts2DevConnData::command badCommand %s",
+	    getCommand ());
     // there isn't any command possible on data connection
     return -1;
   };
@@ -134,6 +135,7 @@ public:
     Rts2Device (int argc, char **argv, int device_type, int default_port,
 		char *default_name);
    ~Rts2Device (void);
+  void help (void);
   int changeState (int state_num, int new_state, char *description);
   int maskState (int state_num, int state_mask, int new_state,
 		 char *description);

@@ -314,14 +314,14 @@ Rts2DevConnData::acceptConn ()
   new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
   if (new_sock == -1)
     {
-      perror ("data accept");
+      syslog (LOG_ERR, "Rts2DevConnData::acceptConn error %m");
       return -1;
     }
   else
     {
       close (sock);
       sock = new_sock;
-      printf ("connection accepted\n");
+      syslog (LOG_DEBUG, "Rts2DevConnData::acceptConn connection accepted");
       conn_state = 2;
       return 0;
     }
@@ -331,7 +331,7 @@ void
 Rts2State::setState (int new_state, char *description)
 {
   state = new_state;
-  printf ("new_state: %i desc: %s this: %p\n", new_state, description, this);
+  syslog (LOG_DEBUG, "Rts2State::setState new_state: %i desc: %s this: %p", new_state, description, this);
   master->sendStatusMessage (state_name, state);
 };
 
@@ -374,6 +374,9 @@ Rts2Device::Rts2Device (int argc, char **argv, int device_type, int default_port
   int
     deamonize = 1;
 
+  int
+    log_option = 0;
+
   /* get attrs */
   while (1)
     {
@@ -385,11 +388,12 @@ Rts2Device::Rts2Device (int argc, char **argv, int device_type, int default_port
 	{"centrald_port", 1, 0, 'q'},
 	{"device_name", 1, 0, 'd'},
 	{"device_file", 1, 0, 'f'},
+	{"log_stderr", 1, 0, 'e'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
 
-      c = getopt_long (argc, argv, "p:is:q:d:f:h", long_option, NULL);
+      c = getopt_long (argc, argv, "p:is:q:d:f:eh", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -414,16 +418,11 @@ Rts2Device::Rts2Device (int argc, char **argv, int device_type, int default_port
 	case 'f':
 	  device_file = optarg;
 	  break;
+	case 'e':
+	  log_option |= LOG_PERROR;
+	  break;
 	case 0:
-	  printf
-	    ("Options:\n"
-	     "\tport|p <port_num>                port to listen for request\n"
-	     "\tinteractive|i                    run in interactive mode, don't loose console\n"
-	     "\tcentrald_host|s <hostname>       name of computer, on which central server runs\n"
-	     "\tcentrald_port|q <port_num>       port number of central host\n"
-	     "\tdevice_name|d <device_name>      name of device\n"
-	     "\tdevice_file|f <file>             file to read device\n"
-	     "\thelp|h                           write this help\n");
+	  help ();
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -432,6 +431,8 @@ Rts2Device::Rts2Device (int argc, char **argv, int device_type, int default_port
 	}
     }
 
+  openlog (NULL, log_option, LOG_LOCAL0);
+      
   setPort (device_port);
 
   conn_master =
@@ -451,6 +452,21 @@ Rts2Device::~Rts2Device (void)
 }
 
 void
+Rts2Device::help ()
+{
+	  printf
+	    ("Options:\n"
+	     "\tport|p <port_num>                port to listen for request\n"
+	     "\tinteractive|i                    run in interactive mode, don't loose console\n"
+	     "\tcentrald_host|s <hostname>       name of computer, on which central server runs\n"
+	     "\tcentrald_port|q <port_num>       port number of central host\n"
+	     "\tdevice_name|d <device_name>      name of device\n"
+	     "\tdevice_file|f <file>             file to read device\n"
+	     "\tlog_stderr|e			 logs also to stderr (not only to syslogd)\n"
+	     "\thelp|h                           write this help\n");
+}
+
+void
 Rts2Device::setStateNames (int in_states_size, char **states_names)
 {
   if (in_states_size == 0)
@@ -458,7 +474,7 @@ Rts2Device::setStateNames (int in_states_size, char **states_names)
 
   int i;
   char *state_name = *states_names;
-  printf ("states: %i\n", in_states_size);
+  syslog (LOG_DEBUG, "Rts2Device::setStateNames states: %i\n", in_states_size);
   states = (Rts2State **) malloc (sizeof (Rts2State *) * in_states_size);
   for (i = 0; i < in_states_size; i++)
     {
@@ -479,7 +495,7 @@ int
 Rts2Device::maskState (int state_num, int state_mask, int new_state,
 		       char *description)
 {
-  printf ("state: %i state_mask: %i new_state: %i desc: %s\n", state_num,
+  syslog (LOG_DEBUG, "Rts2Device::maskState state: %i state_mask: %i new_state: %i desc: %s", state_num,
 	  state_mask, new_state, description);
   states[state_num]->maskState (state_mask, new_state, description);
 }
@@ -489,7 +505,7 @@ Rts2Device::init ()
 {
   while (connections[0]->init () < 0)
     {
-      printf ("waiting for master\n");
+      syslog (LOG_DEBUG, "Rts2Device::init waiting for master");
       sleep (60);
     }
   return Rts2Block::init ();
