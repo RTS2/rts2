@@ -469,8 +469,11 @@ flat_field (struct target *plan, time_t * obs_start, int number, float lon,
   sun_az.alt = 45 - 3 + 2 * ((number + 2) % 4);
   // ra + dec of antisun..
   get_equ_from_hrz (&sun_az, &observer, jd, &sun);
-  add_target (plan, (sun_alt > -2) ? TARGET_FLAT_DARK : TARGET_FLAT,
-	      10, -1, sun.ra, sun.dec, *obs_start, PLAN_TOLERANCE);
+  add_target (plan,
+	      (sun_alt >
+	       get_double_default ("dark_horizont",
+				   -2)) ? TARGET_FLAT_DARK : TARGET_FLAT, 10,
+	      -1, sun.ra, sun.dec, *obs_start, PLAN_TOLERANCE);
   return 0;
 }
 
