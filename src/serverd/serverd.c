@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <mcheck.h>
+#include <libnova.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -241,8 +242,21 @@ int
 clients_change_priority (time_t timeout)
 {
   int new_priority_client = -1;
-  int new_priority_max = -1;
+  int new_priority_max = 0;
   int i;
+
+  if (shm_info->priority_client >= 0
+      && *shm_clients[shm_info->priority_client].login)
+    {
+      new_priority_client = shm_info->priority_client;
+      new_priority_max = shm_clients[shm_info->priority_client].priority;
+      if (new_priority_max == -1)
+	{
+	  new_priority_client = -1;
+	  new_priority_max = 0;
+	}
+    }
+
 
   // change priority and find new client with highest priority
   for (i = 0; i < MAX_CLIENT; i++)
@@ -255,20 +269,24 @@ clients_change_priority (time_t timeout)
     }
 
   if (shm_info->priority_client == -1 ||
-      shm_clients[shm_info->priority_client].priority > new_priority_max)
+      shm_clients[shm_info->priority_client].priority < new_priority_max)
     {
       shm_info->priority_client = new_priority_client;
-      return devices_all_msg_snd ("M priority_change %i %i",
-				  new_priority_client, timeout);
     }
-  return 0;
+  return devices_all_msg_snd ("M priority_change %i %i",
+			      new_priority_client, timeout);
 }
 
 void *
 serverd_riseset_thread (void *arg)
 {
   time_t curr_time;
+  struct ln_lnlat_posn obs;
   syslog (LOG_DEBUG, "riseset thread start");
+
+  obs.lng = -15;
+  obs.lat = 50;
+
   while (1)
     {
       int call_state;
@@ -276,11 +294,8 @@ serverd_riseset_thread (void *arg)
       curr_time = time (NULL);
       devser_shm_data_lock ();
 
-      next_event (&curr_time, &shm_info->next_event_type,
+      next_event (&obs, &curr_time, &call_state, &shm_info->next_event_type,
 		  &shm_info->next_event_time);
-      // calculate current event based on informations provided
-      // by next_event call
-      call_state = (shm_info->next_event_type + 3) % 4;
 
       if (shm_info->current_state < SERVERD_MAINTANCE
 	  && shm_info->current_state != call_state)
@@ -468,8 +483,8 @@ client_serverd_handle_command (char *command)
 	  // priority while we are testing it
 	  devser_shm_data_lock ();
 
-	  devser_dprintf ("old_priority %i",
-			  shm_clients[serverd_id].priority);
+	  devser_dprintf ("old_priority %i %i",
+			  shm_clients[serverd_id].priority, serverd_id);
 
 	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
 			  shm_clients[shm_info->priority_client].priority);

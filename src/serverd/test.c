@@ -1,3 +1,4 @@
+#include <libnova.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -13,16 +14,20 @@ main ()
   time_t end_time;
   time_t ev_time;
   time_t last_event = 0;
-  int type;
+  struct ln_lnlat_posn obs;
+  int type, curr_type;
 
   mtrace ();
+
+  obs.lng = -15;
+  obs.lat = 50;
 
   ev_time = 1038460770;
 
   end_time = start_time + 86500;
   for (; start_time < end_time; start_time += 60)
     {
-      if (next_event (&start_time, &type, &ev_time))
+      if (next_event (&obs, &start_time, &curr_type, &type, &ev_time))
 	{
 	  printf ("error!!\n");
 	  return EXIT_FAILURE;

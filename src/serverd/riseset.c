@@ -10,56 +10,132 @@
 
 #include <libnova.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "riseset.h"
 #include "status.h"
 
-#define DAWNDUSK_TIME		(1.0 / 24.0) * 2.0
+#define EVEMOR_TIME		(1.0 / 24.0) * 2.0
 
 int
-next_event (time_t * start_time, int *type, time_t * ev_time)
+next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
+	   struct ln_rst_time *rst_naut, int *sun_rs)
+{
+  double t_jd = jd - 1;
+  int sun_naut;
+  rst_naut->rise = rst_naut->transit = rst_naut->set = 0;
+  rst->rise = rst->transit = rst->set = 0;
+  *sun_rs = 0;
+  // find first next day, on which nautic sunset is occuring
+  do
+    {
+      struct ln_rst_time t_rst;
+      sun_naut =
+	get_solar_rst_horizont (t_jd, observer, NAUTIC_HORIZONT, &t_rst);
+      if (!rst_naut->rise && jd < t_rst.rise)
+	rst_naut->rise = t_rst.rise;
+      if (!rst_naut->transit && jd < t_rst.transit)
+	rst_naut->transit = t_rst.transit;
+      if (!rst_naut->set && jd < t_rst.set)
+	rst_naut->set = t_rst.set;
+      if (!get_solar_rst_horizont
+	  (t_jd, observer, SOLAR_STANDART_HORIZONT, &t_rst))
+	{
+	  *sun_rs = 1;
+	  if (!rst->set && jd < t_rst.set)
+	    rst->set = t_rst.set;
+	  if (!rst->transit && jd < t_rst.transit)
+	    rst->transit = t_rst.transit;
+	  if (!rst->rise && jd < t_rst.rise)
+	    rst->rise = t_rst.rise;
+	}
+      t_jd++;
+    }
+  while (sun_naut != 0 || !rst_naut->rise || !rst_naut->transit
+	 || !rst_naut->set || ((!rst->rise || !rst->transit || !rst->set)
+			       && *sun_rs == 1));
+
+  return 0;
+}
+
+int
+next_event (struct ln_lnlat_posn *observer, time_t * start_time,
+	    int *curr_type, int *type, time_t * ev_time)
 {
   double jd_time = get_julian_from_timet (start_time);
-  double md;
-  struct ln_lnlat_posn obs;
-  struct ln_equ_posn pos;
-  struct ln_rst_time rst;
+  struct ln_rst_time rst, rst_naut;
 
-  obs.lat = 50;
-  obs.lng = -14.95;
+  int sun_rs;
 
-  md = round (jd_time);
+  next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs);
 
-  get_equ_solar_coords (md, &pos);
-
-  if (get_object_next_rst (jd_time, &obs, &pos, &rst))
-    // don't care about abs(lng)>60
-    return -1;
-
-  if (rst.rise >= rst.set)
+  // jd_time < rst_naut.rise && jd_time < rst_naut.transit && jd_time < rst_naut.set
+  if (rst_naut.rise <= rst_naut.set)
     {
-      // daytime, so decide between DAWN, DAY, DUSK 
-      if (jd_time > (rst.set - DAWNDUSK_TIME))
-	{
-	  *type = SERVERD_NIGHT;
-	  get_timet_from_julian (rst.set, ev_time);
-	}
-      else if (jd_time < (rst.rise + DAWNDUSK_TIME - 1))
-	{
-	  *type = SERVERD_DAY;
-	  get_timet_from_julian (rst.rise + DAWNDUSK_TIME - 1, ev_time);
-	}
-      else
-	{
-	  *type = SERVERD_DUSK;
-	  get_timet_from_julian (rst.set - DAWNDUSK_TIME, ev_time);
-	}
+      *curr_type = SERVERD_NIGHT;
+      *type = SERVERD_DAWN;
+      get_timet_from_julian (rst_naut.rise, ev_time);
     }
   else
     {
-      *type = SERVERD_DAWN;
+      if (sun_rs)
+	{
+	  if (rst.set < rst.rise)
+	    {
+	      if (jd_time > rst.set - EVEMOR_TIME)
+		{
+		  *curr_type = SERVERD_EVENING;
+		  *type = SERVERD_DUSK;
+		  get_timet_from_julian (rst.set, ev_time);
+		}
+	      else if (jd_time < rst.rise + EVEMOR_TIME - 1.0)
+		{
+		  *curr_type = SERVERD_MORNING;
+		  *type = SERVERD_DAY;
+		  get_timet_from_julian (rst.rise + EVEMOR_TIME - 1.0,
+					 ev_time);
+		}
+	      else
+		{
+		  *curr_type = SERVERD_DAY;
+		  *type = SERVERD_EVENING;
+		  get_timet_from_julian (rst.set - EVEMOR_TIME, ev_time);
+		}
+	    }
+	  else
+	    {
+	      if (rst_naut.rise < rst.rise)
+		{
+		  *curr_type = SERVERD_DUSK;
+		  *type = SERVERD_NIGHT;
+		  get_timet_from_julian (rst_naut.set, ev_time);
+		}
+	      else
+		{
+		  *curr_type = SERVERD_DAWN;
+		  *type = SERVERD_MORNING;
+		  get_timet_from_julian (rst.rise, ev_time);
+		}
+	    }
 
-      get_timet_from_julian (rst.rise, ev_time);
+	}
+      else
+	{
+	  // rst_naut.rise > rst_naut.set
+	  if (jd_time < rst_naut.transit)
+	    {
+	      *curr_type = SERVERD_DAWN;
+	      *type = SERVERD_DUSK;
+	      get_timet_from_julian (rst_naut.transit, ev_time);
+	    }
+	  else
+	    {
+	      *curr_type = SERVERD_DUSK;
+	      *type = SERVERD_NIGHT;
+	      get_timet_from_julian (rst_naut.set, ev_time);
+	    }
+	}
     }
+
   return 0;
 }
