@@ -1,4 +1,6 @@
 #include "../grbc.h"
+#include <stdlib.h>
+#include <string.h>
 
 process_grb_event_t process_grb;
 
@@ -308,7 +310,7 @@ char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 #define IPN_FLUE_MASK       0x00001000	/* Passed the IPN Fluence thresh */
 #define XTE_CRITERIA        0x00002000	/* Meets XTE-PCA follow-up criteria */
 #define OBS_STATUS          0x00004000	/* Won't/will obs & Didn't/did see */
-/*#define SPARE2_MASK       0x00007800	/* spare bits */
+//#define SPARE2_MASK       0x00007800  /* spare bits */
 #define NO_TRIG_MASK        0x00008000	/* BATSE is not in a triggerable mode */
 #define VER_MINOR_MASK      0x0FFF0000	/* Program Minor Version Number mask */
 #define VER_MAJOR_MASK      0xF0000000	/* Program Major Version Number mask */
@@ -430,14 +432,14 @@ char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 /* The GCN defined packet types (missing numbers are gcn-internal use only): */
 /* Types that are commented out are no longer available (eg GRO de-orbit). */
 #define	TYPE_UNDEF				0	/* This packet type is undefined */
-/*#define TYPE_GRB_COORDS		1	/* BATSE-Original Trigger coords packet */
+//#define TYPE_GRB_COORDS               1       /* BATSE-Original Trigger coords packet */
 #define	TYPE_TEST_COORDS		2	/* Test coords packet */
 #define	TYPE_IM_ALIVE			3	/* I'm_alive packet */
 #define	TYPE_KILL_SOCKET		4	/* Kill a socket connection packet */
-/*#define TYPE_MAXBC			11	/* MAXC1/BC packet */
+//#define TYPE_MAXBC                    11      /* MAXC1/BC packet */
 #define	TYPE_BRAD_COORDS		21	/* Special Test coords packet for BRADFORD */
-/*#define TYPE_GRB_FINAL		22	/* BATSE-Final coords packet */
-/*#define TYPE_HUNTS_SRC		24	/* Huntsville LOCBURST GRB coords packet */
+//#define TYPE_GRB_FINAL                22      /* BATSE-Final coords packet */
+//#define TYPE_HUNTS_SRC                24      /* Huntsville LOCBURST GRB coords packet */
 #define	TYPE_ALEXIS_SRC			25	/* ALEXIS Transient coords packet */
 #define	TYPE_XTE_PCA_ALERT		26	/* XTE-PCA ToO Scheduled packet */
 #define	TYPE_XTE_PCA_SRC		27	/* XTE-PCA GRB coords packet */
@@ -474,6 +476,39 @@ double last_imalive_sod;	/* SOD of the previous imalive packet */
 #define	FIND_WXM	1	/* Ditto; check the corners of a WXM box */
 
 /*---------------------------------------------------------------------------*/
+/* The error routine that prints the status of your socket connection. */
+int
+serr (fds, call)
+     int fds;
+     char *call;
+{
+  char t_ch[100];
+  time_t t_t;
+  struct tm t_tm;
+
+  t_t = time (NULL);
+
+  if (fds > 0)
+    if (close (fds))
+      {
+	perror ("serr(), close(): ");
+	printf ("close() problem in serr(), errno=%i\n", errno);
+      }
+  gmtime_r (&t_t, &t_tm);
+  if (strftime (t_ch, 100, "%c", &t_tm))
+    {
+      printf (t_ch);
+      fprintf (lg, t_ch);
+    }
+
+  printf (" %s\n", call);
+
+  fprintf (lg, " %s\n", call);
+  fflush (lg);
+  return (-1);
+}
+
+/*---------------------------------------------------------------------------*/
 void
 brokenpipe ()
 {
@@ -487,248 +522,10 @@ brokenpipe ()
   if (close (inetsd))
     {
       perror ("brokenpipe(), close(): ");
-      printf ("ERR: close() problem in brokenpipe(), errno=%d\n", errno);
-      fprintf (lg, "ERR: close() problem in brokenpipe(), errno=%d\n", errno);
+      printf ("ERR: close() problem in brokenpipe(), errno=%i\n", errno);
+      fprintf (lg, "ERR: close() problem in brokenpipe(), errno=%i\n", errno);
     }
   inetsd = -1;
-}
-
-/*---------------------------------------------------------------------------*/
-void *
-receive_bacodine (process_grb_event_t arg)
-{
-  int port;			/* Port number of the socket to connect to */
-  int bytes;			/* Number of bytes read from the socket */
-  char hostname[64];		/* Machine host name */
-  long lbuf[SIZ_PKT];		/* The packet data buffer */
-  int bad_type_cnt = 0;		/* Count number of bad pkt types received */
-  struct sigvec vec;		/* Signal vector structure */
-  struct tm *t;			/* Pointer to time struct of machine GMT */
-  int i;			/* Counter */
-  long lo, hi;			/* Lo and Hi portion of long */
-  time_t loc_time;
-
-  process_grb = arg;
-
-  port = 5152;			/* Get the cmdline value for the port number */
-
-  if ((lg = fopen ("socket_demo.log", "a")) == NULL)	/* Open for appending */
-    {
-      printf ("Failed to open logfile.  Exiting.\n");
-      exit (2);
-    }
-  fprintf (lg,
-	   "\n===================== New Session ========================\n");
-  time (&loc_time);
-  fprintf (lg, "Started at: %s", ctime ((time_t *) & loc_time));
-  fprintf (lg, "%s\n", version);
-  fprintf (lg, "port=%d\n", port);
-  fflush (lg);
-
-/* The following sets up the signal catcher that is used to detect when
- * the socket has been broken. */
-  vec.sv_handler = brokenpipe;
-  vec.sv_mask = sigmask (SIGPIPE);
-  vec.sv_flags = 0;
-  if (sigvec (SIGPIPE, &vec, (struct sigvec *) NULL) == -1)
-    serr (0, "Sigvec did not work for brokenpipe.\n");
-
-  bzero ((char *) lbuf, sizeof (lbuf));	/* Clears the buffer */
-
-/* Calls the subroutine to initiate the socket connection:
- *	hostname is not needed for an INET connection,
- *	port number is defined/initialized above, and
- *	AF_INET is for an inet connection.
- * The return value is the sock descriptor. */
-  inetsd = server (hostname, port, AF_INET);
-
-
-/* An infinite loop for reading the socket, echoing the packet back
- * to the GCN originator, and handling the reconnection if there is a break.
- * Also in this loop is your site/instrument-specific code (if you want). */
-  while (1)
-    {
-      /* This printf is just a "busy light" diagnostic. */
-      /* printf("while(1): inetsd=%d, bytes=%d, errno=%d, bad_type_cnt=%d\n",
-         inetsd,bytes,errno,bad_type_cnt); */
-
-      time ((time_t *) & tloc);
-
-      /* If the sock descriptor is zero or less, the socket connection has been
-       * broken and the call to server() will try to re-establish the socket. */
-      if (inetsd <= 0)
-	inetsd = server (hostname, port, AF_INET);
-      else
-	{
-	  /* If socket is connected, read the socket for packet; if the socket
-	   * does not have a packet, continue to loop.                        */
-	  if ((bytes = read (inetsd, (char *) lbuf, sizeof (lbuf))) > 0)
-	    {
-	      /* Immediately echo back the packet so GCN can monitor:
-	       * (1) the actual receipt by the site, and
-	       * (2) the roundtrip travel times.
-	       * Everything except KILL's get echo-ed back.
-	       * */
-
-	      /* debug print */
-	      fprintf (lg, "At ", ctime ((time_t *) & tloc));
-	      fprintf (lg, "Get %i bytes = [", bytes);
-	      fwrite ((char *) lbuf, 1, bytes, lg);
-	      fprintf (lg, "], that's");
-	      fflush (lg);
-
-	      if (lbuf[PKT_TYPE] !=
-		  ((TYPE_KILL_SOCKET >> 16) | (TYPE_KILL_SOCKET << 16)))
-		write (inetsd, (char *) lbuf, bytes);
-	      t = gmtime ((time_t *) & tloc);
-	      here_sod = t->tm_hour * 3600 + t->tm_min * 60 + t->tm_sec;
-
-	      /* Byte and/or word swapping may be needed on your particular
-	       * platform.  These packets were generated on a Sun4, so if the
-	       * byte ordering for long-integer storage is different than Sun4
-	       * on your platform, you will need to rearrange the bytes in lbuf
-	       * accordingly.  Insert that code here.
-	       */
-
-	      for (i = 0; i <= bytes / 4; i++)
-		{
-		  fprintf (lg, " %08lx", lbuf[i]);
-
-		  lo = lbuf[i] & 0x0000ffff;
-		  hi = (lbuf[i] >> 16) & 0x000ffff;
-
-		  lo = (lo >> 8) | ((lo & 0x00ff) << 8);
-		  hi = (hi >> 8) | ((hi & 0x00ff) << 8);
-
-		  lbuf[i] = (lo << 16) | hi;
-
-		  fprintf (lg, "|%08lx", lbuf[i]);
-		}
-	      fprintf (lg, "\nEND\n");
-	      fflush (lg);
-
-	      switch (lbuf[PKT_TYPE])
-		{
-		case TYPE_IM_ALIVE:
-		  pr_imalive (lbuf, stdout);	/* Dump pkt contents to the screen */
-		  pr_imalive (lbuf, lg);	/* Dump pkt contents to the logfile */
-		  last_here_sod = here_sod;
-		  last_imalive_sod = lbuf[PKT_SOD] / 100.0;
-		  chk_imalive (1, tloc);	/* Pass time of latest imalive */
-		  break;
-		  /*case TYPE_GRB_COORDS:         /* BATSE-Original (no longer available) */
-		  /*case TYPE_MAXBC:                      /* BATSE-MAXBC    (no longer available) */
-		  /*case TYPE_GRB_FINAL:          /* BATSE-Final    (no longer available) */
-		  /*case TYPE_HUNTS_SRC:          /* BATSE-LOCBURST (no longer available) */
-		case TYPE_TEST_COORDS:	/* Test Coordinates */
-		case TYPE_BRAD_COORDS:	/* Special Bradford Test Coords */
-		  pr_packet (lbuf, stdout);	/* Dump pkt contents to the screen */
-		  pr_packet (lbuf, lg);	/* Dump pkt contents to the logfile */
-		  break;
-		case TYPE_ALEXIS_SRC:	/* ALEXIS extreme-UV transients */
-		  pr_alexis (lbuf, stdout);
-		  pr_alexis (lbuf, lg);
-		  break;
-		case TYPE_XTE_PCA_ALERT:
-		case TYPE_XTE_PCA_SRC:
-		  pr_xte_pca (lbuf, stdout);
-		  pr_xte_pca (lbuf, lg);
-		  break;
-/*case TYPE_XTE_ASM_ALERT: *//* Not implimented yet */
-		case TYPE_XTE_ASM_SRC:
-		  pr_xte_asm (lbuf, stdout);
-		  pr_xte_asm (lbuf, lg);
-		  break;
-		case TYPE_XTE_ASM_TRANS:
-		  pr_xte_asm_trans (lbuf, stdout);
-		  pr_xte_asm_trans (lbuf, lg);
-		  break;
-		case TYPE_IPN_SEG_SRC:	/* Not really implimented yet */
-		  pr_ipn_seg (lbuf, stdout);
-		  pr_ipn_seg (lbuf, lg);
-		  break;
-		case TYPE_SAX_WFC_ALERT:
-		case TYPE_SAX_WFC_SRC:
-		  pr_sax_wfc (lbuf, stdout);
-		  pr_sax_wfc (lbuf, lg);
-		  break;
-		case TYPE_SAX_NFI_SRC:
-		  pr_sax_nfi (lbuf, stdout);
-		  pr_sax_nfi (lbuf, lg);
-		  break;
-		case TYPE_HETE_ALERT_SRC:
-		case TYPE_HETE_UPDATE_SRC:
-		case TYPE_HETE_FINAL_SRC:
-		case TYPE_HETE_GNDANA_SRC:
-		case TYPE_HETE_TEST:
-//                pr_hete (lbuf, stdout);
-		  pr_hete (lbuf, lg);
-		  break;
-		case TYPE_IPN_POS_SRC:
-		  pr_ipn_pos (lbuf, stdout);
-		  pr_ipn_pos (lbuf, lg);
-		  break;
-		case TYPE_KILL_SOCKET:	/* Signal to break connection */
-		  printf ("Got a KILL socket packet.\n");
-		  fprintf (lg, "Got a KILL socket packet.\n");
-		  pr_kill (lbuf, stdout);
-		  pr_kill (lbuf, lg);
-		  if (shutdown (inetsd, 2) == -1)
-		    {
-		      printf ("ERR: switch(): The shutdown did NOT work.\n");
-		      fprintf (lg,
-			       "ERR: switch(): The shutdown did NOT work.\n");
-		    }
-		  if (close (inetsd))
-		    {
-		      perror ("main() 1, close(): ");
-		      printf ("ERR: 1: close() problem, errno=%d\n", errno);
-		      fprintf (lg, "ERR: 1: close() problem, errno=%d\n",
-			       errno);
-		    }
-		  inetsd = -1;
-		  break;
-		default:	/* Illegal packet type received */
-		  bad_type_cnt++;
-		  printf ("ERR: Unrecognized pkt type(=%d).\n",
-			  lbuf[PKT_TYPE]);
-		  fprintf (lg, "ERR: Unrecognized pkt type(=%d).\n",
-			   lbuf[PKT_TYPE]);
-		  break;
-		}
-	    }
-	  else if ((bytes == 0) && (errno != EWOULDBLOCK))
-	    {			/* The connection is broken */
-	      printf ("bytes==0 && errno!=EWOULDBLOCK (errno=%d)\n", errno);
-	      fprintf (lg, "bytes==0 && errno!=EWOULDBLOCK (errno=%d)\n",
-		       errno);
-	      if (shutdown (inetsd, 2) == -1)
-		{
-		  printf ("ERR: elseif: The shutdown did NOT work.\n");
-		  fprintf (lg, "ERR: elseif: The shutdown did NOT work.\n");
-		}
-	      printf ("After the shutdown call; the shutdown didn't hang.\n");
-	      fprintf (lg,
-		       "After the shutdown call; the shutdown didn't hang.\n");
-	      if (close (inetsd))
-		{
-		  perror ("main() 2, close(): ");
-		  printf ("ERR: 2: close() problem, errno=%d\n", errno);
-		  fprintf (lg, "ERR: 2: close() problem, errno=%d\n", errno);
-		}
-	      inetsd = -1;
-	    }
-	}
-
-      chk_imalive (0, tloc);	/* See if the time limit has been exceeded */
-
-      /* This sleep() is ONLY for this demo program.  It should NOT be included
-       * in your site's application code as it most definitely adds up to 1 sec
-       * to the response time to the socket/packet servicing.
-       * Replace it with your instrument-specific code if you choose to use
-       * this demo program as the basis for your operations program.           */
-      sleep (1);		/* Give the CPU a rest */
-    }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -745,20 +542,20 @@ server (hostname, port, type)
   char on = 1;			/* Flag for nonblocking I/O */
   struct sockaddr saddr;	/* Socket structure for UNIX */
   struct sockaddr *psaddr;	/* Pointer to sin */
-  struct sockaddr_in sin;	/* Socket structure for inet */
+  struct sockaddr_in s_in;	/* Socket structure for inet */
   const int so_reuseaddr = 1;
 
 
   temp = 0;
-/* If the socket is for inet connection, then set up the sin structure. */
+/* If the socket is for inet connection, then set up the s_in structure. */
   if (type == AF_INET)
     {
-      bzero ((char *) &sin, sizeof (sin));
-      sin.sin_family = AF_INET;
-      sin.sin_addr.s_addr = htonl (INADDR_ANY);
-      sin.sin_port = htons ((unsigned short) port);
-      psaddr = (struct sockaddr *) &sin;
-      saddrlen = sizeof (sin);
+      bzero ((char *) &s_in, sizeof (s_in));
+      s_in.sin_family = AF_INET;
+      s_in.sin_addr.s_addr = htonl (INADDR_ANY);
+      s_in.sin_port = htons ((unsigned short) port);
+      psaddr = (struct sockaddr *) &s_in;
+      saddrlen = sizeof (s_in);
     }
   else
     {
@@ -769,7 +566,7 @@ server (hostname, port, type)
       saddrlen = strlen (saddr.sa_data) + 2;
     }
 
-  printf ("server(): type=%d  (int)type=%d\n", type, (int) type);	/* Debug */
+  printf ("server(): type=%i  (int)type=%i\n", type, (int) type);	/* Debug */
 
 /* Initiate the socket connection. */
   if ((sd = socket ((int) type, SOCK_STREAM, IPPROTO_TCP)) < 0)
@@ -780,7 +577,7 @@ server (hostname, port, type)
 /* Bind the name to the socket. */
   if (bind (sd, psaddr, saddrlen) == -1)
     {
-      printf ("bind() errno=%d\n", errno);
+      printf ("bind() errno=%i\n", errno);
       perror ("bind()");
       return (serr (sd, "server(): bind."));
     }
@@ -808,31 +605,14 @@ server (hostname, port, type)
 }
 
 /*---------------------------------------------------------------------------*/
-/* The error routine that prints the status of your socket connection. */
-int
-serr (fds, call)
-     int fds;
-     char *call;
-{
-  if (fds > 0)
-    if (close (fds))
-      {
-	perror ("serr(), close(): ");
-	printf ("close() problem in serr(), errno=%d\n", errno);
-      }
-  printf ("%s\n", call);
-  fprintf (lg, "%s\n", call);
-  fflush (lg);
-  return (-1);
-}
-
-/*---------------------------------------------------------------------------*/
+void
 pr_imalive (lbuf, s)		/* print the contents of the imalive packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
   fprintf (s,
 	   "   TM_present: %s   Triggerable: %s   PKT_SOD= %.2f    delta=%5.2f\n",
 	   (lbuf[MISC] & TM_IND_MASK) ? "Yes" : "No ",
@@ -848,16 +628,17 @@ pr_imalive (lbuf, s)		/* print the contents of the imalive packet */
 	     (lbuf[PKT_SOD] / 100.0) - last_imalive_sod);
   if ((here_sod - last_here_sod) > 62.0)
     fprintf (s,
-	     "ERR: Imalive packets arrived at greater than 60sec intervals(=%d).\n",
+	     "ERR: Imalive packets arrived at greater than 60sec intervals(=%li).\n",
 	     here_sod - last_here_sod);
   else if ((here_sod - last_here_sod) < 58.0)
     fprintf (s,
-	     "ERR: Imalive packets arrived at less than 60sec intervals(=%d).\n",
+	     "ERR: Imalive packets arrived at less than 60sec intervals(=%li).\n",
 	     here_sod - last_here_sod);
   fflush (s);			/* This flush is optional -- it's useful for debugging */
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_packet (lbuf, s)		/* print the contents of the BATSE-based or test packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
@@ -866,17 +647,18 @@ pr_packet (lbuf, s)		/* print the contents of the BATSE-based or test packet */
   static char *note_type[4] = { "Original", "n/a", "n/a", "Final" };
 
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt= %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
-  fprintf (s, "   Trig#=  %d\n", lbuf[BURST_TRIG]);
-  fprintf (s, "   TJD=    %d\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Trig#=  %li\n", lbuf[BURST_TRIG]);
+  fprintf (s, "   TJD=    %li\n", lbuf[BURST_TJD]);
   fprintf (s, "   SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
   fprintf (s, "   RA=    %7.2f [deg]\n", lbuf[BURST_RA] / 100.0);
   fprintf (s, "   Dec=   %7.2f [deg]\n", lbuf[BURST_DEC] / 100.0);
-  fprintf (s, "   Inten=  %d     Peak=%d\n", lbuf[BURST_INTEN],
+  fprintf (s, "   Inten=  %li     Peak=%li\n", lbuf[BURST_INTEN],
 	   lbuf[BURST_PEAK]);
   fprintf (s, "   Error= %6.1f [deg]\n", lbuf[BURST_ERROR] / 100.0);
   fprintf (s, "   SC_Az= %7.2f [deg]\n", lbuf[SC_AZ] / 100.0);
@@ -885,14 +667,14 @@ pr_packet (lbuf, s)		/* print the contents of the BATSE-based or test packet */
   fprintf (s, "   SC_X_Dec= %7.2f [deg]\n", lbuf[SC_X_DEC] / 100.0);
   fprintf (s, "   SC_Z_RA=  %7.2f [deg]\n", lbuf[SC_Z_RA] / 100.0);
   fprintf (s, "   SC_Z_Dec= %7.2f [deg]\n", lbuf[SC_Z_DEC] / 100.0);
-  fprintf (s, "   Trig_id= %08x\n", lbuf[TRIGGER_ID]);
-  fprintf (s, "   Misc= %08x\n", lbuf[MISC]);
+  fprintf (s, "   Trig_id= %08x\n", (int) lbuf[TRIGGER_ID]);
+  fprintf (s, "   Misc= %08x\n", (int) lbuf[MISC]);
   fprintf (s, "   E_SC_Az=  %7.2f [deg]\n", lbuf[E_SC_AZ] / 100.0);
   fprintf (s, "   E_SC_El=  %7.2f [deg]\n", lbuf[E_SC_EL] / 100.0);
-  fprintf (s, "   SC_Radius=%d [km]\n", lbuf[SC_RADIUS]);
+  fprintf (s, "   SC_Radius=%li [km]\n", lbuf[SC_RADIUS]);
   fprintf (s, "   Spares:");
   for (i = PKT_SPARE23; i <= PKT_SPARE38; i++)
-    fprintf (s, " %x", lbuf[i]);
+    fprintf (s, " %x", (int) lbuf[i]);
   fprintf (s, "\n");
   fprintf (s, "   Pkt_term: %02x %02x %02x %02x\n",
 	   *((char *) (&lbuf[PKT_TERM]) + 0),
@@ -904,25 +686,28 @@ pr_packet (lbuf, s)		/* print the contents of the BATSE-based or test packet */
 	   (lbuf[MISC] & TM_IND_MASK) ? "Yes" : "No ");
   fprintf (s, "   NoticeType: %s\n",
 	   note_type[(lbuf[MISC] & NOTICE_TYPE_MASK) >> 8]);
-  fprintf (s, "   Prog_level: %d\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
-  fprintf (s, "   Prog_version: %d.%02d\n",
+  fprintf (s, "   Prog_level: %li\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
+  fprintf (s, "   Prog_version: %li.%02li\n",
 	   (lbuf[MISC] & VER_MAJOR_MASK) >> 28,
 	   (lbuf[MISC] & VER_MINOR_MASK) >> 16);
   fflush (s);			/* This flush is optional -- it's useful for debugging */
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_kill (lbuf, s)		/* print the contents of the KILL packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt= %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=  %.2f [sec]\n", lbuf[PKT_SOD] / 100.0);
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_alexis (lbuf, s)		/* print the contents of the ALEXIS packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
@@ -934,25 +719,26 @@ pr_alexis (lbuf, s)		/* print the contents of the ALEXIS packet */
   };
 
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt= %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
-  fprintf (s, "   Ssn=    %d\n", lbuf[BURST_TRIG]);
-  fprintf (s, "   TJD=    %d\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Ssn=    %li\n", lbuf[BURST_TRIG]);
+  fprintf (s, "   TJD=    %li\n", lbuf[BURST_TJD]);
   fprintf (s, "   SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
   fprintf (s, "   RA=    %7.2f [deg]\n", lbuf[BURST_RA] / 100.0);
   fprintf (s, "   Dec=   %7.2f [deg]\n", lbuf[BURST_DEC] / 100.0);
   fprintf (s, "   Error= %6.1f [deg]\n", lbuf[BURST_ERROR] / 100.0);
   fprintf (s, "   Alpha= %.2f\n", lbuf[SC_RADIUS] / 100.0);
-  fprintf (s, "   Trig_id= %08x\n", lbuf[TRIGGER_ID]);
-  fprintf (s, "   Misc= %08x\n", lbuf[MISC]);
-  fprintf (s, "   Map_duration= %d [hrs]\n", lbuf[BURST_T_PEAK]);
-  fprintf (s, "   Telescope(=%d): %s\n", lbuf[24], tele[lbuf[24]]);
+  fprintf (s, "   Trig_id= %08x\n", (int) lbuf[TRIGGER_ID]);
+  fprintf (s, "   Misc= %08x\n", (int) lbuf[MISC]);
+  fprintf (s, "   Map_duration= %li [hrs]\n", lbuf[BURST_T_PEAK]);
+  fprintf (s, "   Telescope(=%li): %s\n", lbuf[24], tele[lbuf[24]]);
   fprintf (s, "   Spares:");
   for (i = PKT_SPARE23; i <= PKT_SPARE38; i++)
-    fprintf (s, " %x", lbuf[i]);
+    fprintf (s, " %x", (int) lbuf[i]);
   fprintf (s, "\n");
   fprintf (s, "   Pkt_term: %02x %02x %02x %02x\n",
 	   *((char *) (&lbuf[PKT_TERM]) + 0),
@@ -962,94 +748,100 @@ pr_alexis (lbuf, s)		/* print the contents of the ALEXIS packet */
 
   fprintf (s, "   TM_present: %s\n",
 	   (lbuf[MISC] & TM_IND_MASK) ? "Yes" : "No ");
-  fprintf (s, "   Prog_level: %d\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
-  fprintf (s, "   Prog_version: %d.%02d\n",
+  fprintf (s, "   Prog_level: %li\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
+  fprintf (s, "   Prog_version: %li.%02li\n",
 	   (lbuf[MISC] & VER_MAJOR_MASK) >> 28,
 	   (lbuf[MISC] & VER_MINOR_MASK) >> 16);
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_xte_pca (lbuf, s)		/* print the contents of the XTE-PCA packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt= %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
-  fprintf (s, "   Trig#=  %d\n", lbuf[BURST_TRIG]);
-  fprintf (s, "   TJD=    %d\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Trig#=  %li\n", lbuf[BURST_TRIG]);
+  fprintf (s, "   TJD=    %li\n", lbuf[BURST_TJD]);
   fprintf (s, "   SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
   if (lbuf[MISC] & OBS_STATUS)
     {
       fprintf (s, "   RA=    %7.3f [deg]\n", lbuf[BURST_RA] / 10000.0);
       fprintf (s, "   Dec=   %7.3f [deg]\n", lbuf[BURST_DEC] / 10000.0);
-      fprintf (s, "   Inten=  %d [mCrab]\n", lbuf[BURST_INTEN]);
+      fprintf (s, "   Inten=  %li [mCrab]\n", lbuf[BURST_INTEN]);
       fprintf (s, "   Error= %6.2f [deg]\n", lbuf[BURST_ERROR] / 10000.0);
-      fprintf (s, "   Trig_id= %08x\n", lbuf[TRIGGER_ID]);
-      fprintf (s, "   OBS_START_DATE= %d TJD\n", lbuf[24]);
-      fprintf (s, "   OBS_START_SOD=  %d UT\n", lbuf[25]);
+      fprintf (s, "   Trig_id= %08x\n", (int) lbuf[TRIGGER_ID]);
+      fprintf (s, "   OBS_START_DATE= %li TJD\n", lbuf[24]);
+      fprintf (s, "   OBS_START_SOD=  %li UT\n", lbuf[25]);
     }
   else
     {
       fprintf (s, "RXTE-PCA could not localize this GRB.\n");
     }
-  fprintf (s, "   Prog_level: %d\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
+  fprintf (s, "   Prog_level: %li\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_xte_asm (lbuf, s)		/* print the contents of the XTE-ASM packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt= %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
-  fprintf (s, "   Trig#=  %d\n", lbuf[BURST_TRIG]);
-  fprintf (s, "   TJD=    %d\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Trig#=  %li\n", lbuf[BURST_TRIG]);
+  fprintf (s, "   TJD=    %li\n", lbuf[BURST_TJD]);
   fprintf (s, "   SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
   if (lbuf[MISC] & OBS_STATUS)
     {
       fprintf (s, "   RA=    %7.3f [deg]\n", lbuf[BURST_RA] / 10000.0);
       fprintf (s, "   Dec=   %7.3f [deg]\n", lbuf[BURST_DEC] / 10000.0);
-      fprintf (s, "   Inten=  %d [mCrab]\n", lbuf[BURST_INTEN]);
+      fprintf (s, "   Inten=  %li [mCrab]\n", lbuf[BURST_INTEN]);
       fprintf (s, "   Error= %6.2f [deg]\n", lbuf[BURST_ERROR] / 10000.0);
-      fprintf (s, "   Trig_id= %08x\n", lbuf[TRIGGER_ID]);
-      fprintf (s, "   OBS_START_DATE= %d TJD\n", lbuf[24]);
-      fprintf (s, "   OBS_START_SOD=  %d UT\n", lbuf[25]);
+      fprintf (s, "   Trig_id= %08x\n", (int) lbuf[TRIGGER_ID]);
+      fprintf (s, "   OBS_START_DATE= %li TJD\n", lbuf[24]);
+      fprintf (s, "   OBS_START_SOD=  %li UT\n", lbuf[25]);
     }
   else
     {
       fprintf (s, "RXTE-ASM could not localize this GRB.\n");
     }
-  fprintf (s, "   Prog_level: %d\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
+  fprintf (s, "   Prog_level: %li\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
 }
 
 
 /*---------------------------------------------------------------------------*/
+void
 pr_xte_asm_trans (lbuf, s)	/* print the contents of the XTE-ASM_TRANS packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt= %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
-  fprintf (s, "   RefNum= %d\n", lbuf[BURST_TRIG]);
-  fprintf (s, "   TJD=    %d\n", lbuf[BURST_TJD]);
+  fprintf (s, "   RefNum= %li\n", lbuf[BURST_TRIG]);
+  fprintf (s, "   TJD=    %li\n", lbuf[BURST_TJD]);
   fprintf (s, "   SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
   fprintf (s, "   RA=    %7.3f [deg]\n", lbuf[BURST_RA] / 10000.0);
   fprintf (s, "   Dec=   %7.3f [deg]\n", lbuf[BURST_DEC] / 10000.0);
   fprintf (s, "   Inten=  %.1f [mCrab]\n", lbuf[BURST_INTEN] / 100.0);
   fprintf (s, "   Error= %6.2f [deg]\n", lbuf[BURST_ERROR] / 10000.0);
-  fprintf (s, "   T_Since=  %d [sec]\n", lbuf[13]);
+  fprintf (s, "   T_Since=  %li [sec]\n", lbuf[13]);
   fprintf (s, "   ChiSq1=   %.2f\n", lbuf[14] / 100.0);
   fprintf (s, "   ChiSq2=   %.2f\n", lbuf[15] / 100.0);
   fprintf (s, "   SigNoise1=   %.2f\n", lbuf[16] / 100.0);
@@ -1071,10 +863,11 @@ pr_xte_asm_trans (lbuf, s)	/* print the contents of the XTE-ASM_TRANS packet */
       fprintf (s, "   LineWidth=   %7.3f [deg]\n", lbuf[33] / 10000.0);
       fprintf (s, "   PosAngle=    %7.3f [deg]\n", lbuf[34] / 10000.0);
     }
-  fprintf (s, "   Prog_level: %d\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
+  fprintf (s, "   Prog_level: %li\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_ipn_seg (lbuf, s)		/* print the contents of the IPN SEGMENT packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
@@ -1084,28 +877,31 @@ pr_ipn_seg (lbuf, s)		/* print the contents of the IPN SEGMENT packet */
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_sax_wfc (lbuf, s)		/* print the contents of the SAX-WFC packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
 {
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt= %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   Type= %li     SN  = %li\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
-  fprintf (s, "   Trig#=  %d\n", lbuf[BURST_TRIG]);
-  fprintf (s, "   TJD=    %d\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Trig#=  %li\n", lbuf[BURST_TRIG]);
+  fprintf (s, "   TJD=    %li\n", lbuf[BURST_TJD]);
   fprintf (s, "   SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
   fprintf (s, "   RA=    %7.3f [deg]\n", lbuf[BURST_RA] / 10000.0);
   fprintf (s, "   Dec=   %7.3f [deg]\n", lbuf[BURST_DEC] / 10000.0);
-  fprintf (s, "   Inten=  %d [mCrab]\n", lbuf[BURST_INTEN]);
+  fprintf (s, "   Inten=  %li [mCrab]\n", lbuf[BURST_INTEN]);
   fprintf (s, "   Error= %6.2f [deg]\n", lbuf[BURST_ERROR] / 10000.0);
-  fprintf (s, "   Trig_id= %08x\n", lbuf[TRIGGER_ID]);
-  fprintf (s, "   Prog_level: %d\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
+  fprintf (s, "   Trig_id= %08x\n", (int) lbuf[TRIGGER_ID]);
+  fprintf (s, "   Prog_level: %li\n", (lbuf[MISC] & PROG_LEV_MASK) >> 5);
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_sax_nfi (lbuf, s)		/* print the contents of the SAX-NFI packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
@@ -1116,6 +912,7 @@ pr_sax_nfi (lbuf, s)		/* print the contents of the SAX-NFI packet */
 }
 
 /*---------------------------------------------------------------------------*/
+void
 pr_ipn_pos (lbuf, s)		/* print the contents of the IPN POSITION packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
@@ -1125,10 +922,60 @@ pr_ipn_pos (lbuf, s)		/* print the contents of the IPN POSITION packet */
 }
 
 /*---------------------------------------------------------------------------*/
+int
+hete_same (hbuf, find_which)
+     long *hbuf;		/* Ptr to 40-long packet buffer with HETE contents */
+     int find_which;		/* Which instrument box to find the center of */
+{
+  double cra[4], cdec[4];	/* Generic 4 corners locations */
+
+  switch (find_which)
+    {
+    case FIND_SXC:
+      cra[0] = (double) hbuf[H_SXC_CNR1_RA] / 10000.0;	/* All 4 in J2000 */
+      cra[1] = (double) hbuf[H_SXC_CNR2_RA] / 10000.0;
+      cra[2] = (double) hbuf[H_SXC_CNR3_RA] / 10000.0;
+      cra[3] = (double) hbuf[H_SXC_CNR4_RA] / 10000.0;
+      cdec[0] = (double) hbuf[H_SXC_CNR1_DEC] / 10000.0;	/* All 4 in J2000 */
+      cdec[1] = (double) hbuf[H_SXC_CNR2_DEC] / 10000.0;
+      cdec[2] = (double) hbuf[H_SXC_CNR3_DEC] / 10000.0;
+      cdec[3] = (double) hbuf[H_SXC_CNR4_DEC] / 10000.0;
+      break;
+
+    case FIND_WXM:
+      cra[0] = (double) hbuf[H_WXM_CNR1_RA] / 10000.0;	/* All 4 in J2000 */
+      cra[1] = (double) hbuf[H_WXM_CNR2_RA] / 10000.0;
+      cra[2] = (double) hbuf[H_WXM_CNR3_RA] / 10000.0;
+      cra[3] = (double) hbuf[H_WXM_CNR4_RA] / 10000.0;
+      cdec[0] = (double) hbuf[H_WXM_CNR1_DEC] / 10000.0;	/* All 4 in J2000 */
+      cdec[1] = (double) hbuf[H_WXM_CNR2_DEC] / 10000.0;
+      cdec[2] = (double) hbuf[H_WXM_CNR3_DEC] / 10000.0;
+      cdec[3] = (double) hbuf[H_WXM_CNR4_DEC] / 10000.0;
+      break;
+
+    default:
+      printf
+	("ERR: hete_same(): Shouldn't be able to get here; find_which=%i\n",
+	 find_which);
+      fprintf (lg,
+	       "ERR: hete_same(): Shouldn't be able to get here; find_which=%i\n",
+	       find_which);
+      return (0);
+      break;
+    }
+  if ((cra[0] == cra[1]) && (cra[0] == cra[2]) && (cra[0] == cra[3]) &&
+      (cdec[0] == cdec[1]) && (cdec[0] == cdec[2]) && (cdec[0] == cdec[3]))
+    return (1);
+  else
+    return (0);
+}
+
+/*---------------------------------------------------------------------------*/
 /* Please note that not all of the many flag bits are extracted and printed
  * in this example routine.  The important ones are shown (plus all the
  * numerical fields).  Please refer to the sock_pkt_def_doc.html on the
  * GCN web site for the full details of the contents of these flag bits.     */
+void
 pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
      long *lbuf;		/* Ptr to the newly arrived packet to print out */
      FILE *s;			/* Stream to print it to */
@@ -1136,7 +983,7 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   unsigned short max_arcsec, overall_goodness;
 
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
-  fprintf (s, "   Type= %d,  ", lbuf[PKT_TYPE]);
+  fprintf (s, "   Type= %li,  ", lbuf[PKT_TYPE]);
   switch (lbuf[PKT_TYPE])
     {
     case TYPE_HETE_ALERT_SRC:
@@ -1158,15 +1005,15 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
       printf ("Illegal");
       break;
     }
-  fprintf (s, "   SN= %d\n", lbuf[PKT_SERNUM]);
-  fprintf (s, "   Hop_cnt=    %d\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   SN= %li\n", lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=    %li\n", lbuf[PKT_HOP_CNT]);
   fprintf (s, "   PKT_SOD=     %.2f [sec]   delta=%5.2f\n",
 	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
-  fprintf (s, "   Trig#=     %d\n",
+  fprintf (s, "   Trig#=     %li\n",
 	   (lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT);
-  fprintf (s, "   Seq#=      %d\n",
+  fprintf (s, "   Seq#=      %li\n",
 	   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT);
-  fprintf (s, "   BURST_TJD=    %d\n", lbuf[BURST_TJD]);
+  fprintf (s, "   BURST_TJD=    %li\n", lbuf[BURST_TJD]);
   fprintf (s, "   BURST_SOD=  %.2f [sec]   delta=%5.2f\n",
 	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
 
@@ -1182,17 +1029,17 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   else
     fprintf (s, "Error: No trigger source!\n");
 
-  fprintf (s, "   GAMMA_CTS_S:   %d [cnts/s] ", lbuf[H_GAMMA_CTS_S]);
+  fprintf (s, "   GAMMA_CTS_S:   %li [cnts/s] ", lbuf[H_GAMMA_CTS_S]);
   fprintf (s, "on a %.3f sec timescale\n",
 	   (float) lbuf[H_GAMMA_TSCALE] / 1000.0);
-  fprintf (s, "   WXM_SIG/NOISE:  %d [sig/noise]  ", lbuf[H_WXM_S_N]);
+  fprintf (s, "   WXM_SIG/NOISE:  %li [sig/noise]  ", lbuf[H_WXM_S_N]);
   fprintf (s, "on a %.3f sec timescale\n",
 	   (float) lbuf[H_WXM_TSCALE] / 1000.0);
   if (lbuf[H_TRIG_FLAGS] & H_WXM_DATA)	/* Check for XG data and parse */
     fprintf (s, ",  Data present.\n");
   else
     fprintf (s, ",  Data NOT present.\n");
-  fprintf (s, "   SXC_CTS_S:     %d\n", lbuf[H_SXC_CTS_S]);
+  fprintf (s, "   SXC_CTS_S:     %li\n", lbuf[H_SXC_CTS_S]);
 
 
   if (lbuf[H_TRIG_FLAGS] & H_OPT_DATA)
@@ -1236,7 +1083,7 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   max_arcsec = lbuf[H_WXM_DIM_NSIG] >> 16;
   overall_goodness = lbuf[H_WXM_DIM_NSIG] & 0xffff;
   fprintf (s, "   WXM_MAX_SIZE:  %.2f [arcmin]\n", (float) max_arcsec / 60.0);
-  fprintf (s, "   WXM_LOC_SN:    %d\n", overall_goodness);
+  fprintf (s, "   WXM_LOC_SN:    %i\n", overall_goodness);
 
   if (lbuf[H_TRIG_FLAGS] & H_SXC_POS)	/* Flag says that SXC pos is available */
     fprintf (s, "   SXC position is available.\n");
@@ -1259,7 +1106,7 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   overall_goodness = lbuf[H_SXC_DIM_NSIG] & 0xffff;
   fprintf (s, "   SXC_MAX_SIZE:   %.2f [arcmin]\n",
 	   (float) max_arcsec / 60.0);
-  fprintf (s, "   SXC_LOC_SN:   %d\n", overall_goodness);
+  fprintf (s, "   SXC_LOC_SN:   %i\n", overall_goodness);
 
   if (lbuf[H_TRIG_FLAGS] & H_ART_TRIG)
     fprintf (s, "   COMMENT:   ARTIFICIAL BURST TRIGGER!\n");
@@ -1388,6 +1235,61 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 }
 
 /*---------------------------------------------------------------------------*/
+void
+e_mail_alert (which)		/* send an E_MAIL ALERT if no pkts in 600sec */
+     int which;			/* End or re-starting of imalives */
+{
+  int rtn;			/* Return value from the system() call */
+  FILE *etmp;			/* The temp email scratch file stream pointer */
+  time_t nowtime;		/* The Sun machine time this instant */
+  char *ctime ();		/* Convert the sec-since-epoch to ASCII */
+  char buf[32];			/* Tmp place for date string modifications */
+  static char cmd_str[256];	/* Place to build the system() cmd string */
+
+  time (&nowtime);		/* Get the system time for the notice timestamp */
+  strcpy (buf, ctime ((time_t *) & nowtime));
+  buf[24] = '\0';		/* Overwrite the newline with a null */
+
+  if ((etmp = fopen ("e_me_tmp", "w")) == NULL)
+    {
+      printf ("ERR: %s ESDT: Can't open scratch e_mail_alert file.\n", buf);
+      fprintf (lg, "ERR: %s ESDT: Can't open scratch e_mail_alert file.\n",
+	       buf);
+      return;
+    }
+
+  if (which)
+    fprintf (etmp, "TITLE:        socket_demo GCN NO PACKETS ALERT\n");
+  else
+    fprintf (etmp, "TITLE:        socket_demo GCN PACKETS RESUMED\n");
+  fprintf (etmp, "NOTICE_DATE:  %s ESDT\n", buf);
+
+  if (fclose (etmp))		/* Close the email file so the filesys is updated */
+    {
+      printf ("ERR: %s ESDT: Problem closing scratch email_me file.\n", buf);
+      fprintf (lg, "ERR: %s ESDT: Problem closing scratch email_me file.\n",
+	       buf);
+    }
+
+  cmd_str[0] = 0;		/* Clear string buffer before building new string */
+  if (which)
+    strcat (cmd_str, "mail -s BACO_NO_PKT_ALERT ");
+  else
+    strcat (cmd_str, "mail -s BACO_PKT_RESUMED ");
+/* NOTICE TO GCN SOCKET SITES:  Please don't forget to change these
+ * e-mail addresses to your address(es).                              */
+  strcat (cmd_str, "petr@lascaux.asu.cas.cz");
+  strcat (cmd_str, " < ");
+  strcat (cmd_str, "e_me_tmp");
+  strcat (cmd_str, " &");
+  printf ("%s\n", cmd_str);
+  fprintf (lg, "%s\n", cmd_str);
+  rtn = system (cmd_str);
+  printf ("%sSystem() rtn=%i.\n", rtn ? "ERR: " : "", rtn);
+  fprintf (lg, "%sSystem() rtn=%i.\n", rtn ? "ERR: " : "", rtn);
+}
+
+/*---------------------------------------------------------------------------*/
 /* This technique of trying to "notice" that imalives have not arrived
  * for a long period of time works only some of the time.  It depends on what
  * caused the interruption.  Some forms of broken socket connections hang
@@ -1395,6 +1297,7 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
  * gets to the point of calling this routine to check the time and
  * send a message.
  */
+void
 chk_imalive (which, ctloc)
      int which;			/* Is this an imalive timestamp or delta check call */
      time_t ctloc;		/* Imalive timestamp or current time [sec since epoch] */
@@ -1451,8 +1354,8 @@ chk_imalive (which, ctloc)
       time (&nowtime);		/* Get system time for mesg timestamp */
       strcpy (buf, ctime ((time_t *) & nowtime));
       buf[24] = '\0';		/* Overwrite the newline with a null */
-      printf ("ERR: %s ESDT: Bad imalive_state(=%d)\n", imalive_state, buf);
-      fprintf (lg, "ERR: %s ESDT: Bad imalive_state(=%d)\n", imalive_state,
+      printf ("ERR: %i ESDT: Bad imalive_state(=%s)\n", imalive_state, buf);
+      fprintf (lg, "ERR: %i ESDT: Bad imalive_state(=%s)\n", imalive_state,
 	       buf);
       imalive_state = 0;	/* Reset to the initial state */
       break;
@@ -1460,105 +1363,239 @@ chk_imalive (which, ctloc)
 }
 
 /*---------------------------------------------------------------------------*/
-e_mail_alert (which)		/* send an E_MAIL ALERT if no pkts in 600sec */
-     int which;			/* End or re-starting of imalives */
+void *
+receive_bacodine (process_grb_event_t arg)
 {
-  int rtn;			/* Return value from the system() call */
-  FILE *etmp;			/* The temp email scratch file stream pointer */
-  time_t nowtime;		/* The Sun machine time this instant */
-  char *ctime ();		/* Convert the sec-since-epoch to ASCII */
-  char buf[32];			/* Tmp place for date string modifications */
-  static char cmd_str[256];	/* Place to build the system() cmd string */
+  int port;			/* Port number of the socket to connect to */
+  int bytes;			/* Number of bytes read from the socket */
+  char hostname[64];		/* Machine host name */
+  long lbuf[SIZ_PKT];		/* The packet data buffer */
+  int bad_type_cnt = 0;		/* Count number of bad pkt types received */
+  struct sigvec vec;		/* Signal vector structure */
+  struct tm *t;			/* Pointer to time struct of machine GMT */
+  int i;			/* Counter */
+  long lo, hi;			/* Lo and Hi portion of long */
+  time_t loc_time;
 
-  time (&nowtime);		/* Get the system time for the notice timestamp */
-  strcpy (buf, ctime ((time_t *) & nowtime));
-  buf[24] = '\0';		/* Overwrite the newline with a null */
+  process_grb = arg;
 
-  if ((etmp = fopen ("e_me_tmp", "w")) == NULL)
+  port = 5152;			/* Get the cmdline value for the port number */
+
+  if ((lg = fopen ("socket_demo.log", "a")) == NULL)	/* Open for appending */
     {
-      printf ("ERR: %s ESDT: Can't open scratch e_mail_alert file.\n", buf);
-      fprintf (lg, "ERR: %s ESDT: Can't open scratch e_mail_alert file.\n",
-	       buf);
-      return;
+      printf ("Failed to open logfile.  Exiting.\n");
+      exit (2);
     }
+  fprintf (lg,
+	   "\n===================== New Session ========================\n");
+  time (&loc_time);
+  fprintf (lg, "Started at: %s", ctime ((time_t *) & loc_time));
+  fprintf (lg, "%s\n", version);
+  fprintf (lg, "port=%i\n", port);
+  fflush (lg);
 
-  if (which)
-    fprintf (etmp, "TITLE:        socket_demo GCN NO PACKETS ALERT\n");
-  else
-    fprintf (etmp, "TITLE:        socket_demo GCN PACKETS RESUMED\n");
-  fprintf (etmp, "NOTICE_DATE:  %s ESDT\n", buf);
+/* The following sets up the signal catcher that is used to detect when
+ * the socket has been broken. */
+  vec.sv_handler = brokenpipe;
+  vec.sv_mask = sigmask (SIGPIPE);
+  vec.sv_flags = 0;
+  if (sigvec (SIGPIPE, &vec, (struct sigvec *) NULL) == -1)
+    serr (0, "Sigvec did not work for brokenpipe.\n");
 
-  if (fclose (etmp))		/* Close the email file so the filesys is updated */
+  bzero ((char *) lbuf, sizeof (lbuf));	/* Clears the buffer */
+
+/* Calls the subroutine to initiate the socket connection:
+ *	hostname is not needed for an INET connection,
+ *	port number is defined/initialized above, and
+ *	AF_INET is for an inet connection.
+ * The return value is the sock descriptor. */
+  inetsd = server (hostname, port, AF_INET);
+
+
+/* An infinite loop for reading the socket, echoing the packet back
+ * to the GCN originator, and handling the reconnection if there is a break.
+ * Also in this loop is your site/instrument-specific code (if you want). */
+  while (1)
     {
-      printf ("ERR: %s ESDT: Problem closing scratch email_me file.\n", buf);
-      fprintf (lg, "ERR: %s ESDT: Problem closing scratch email_me file.\n",
-	       buf);
+      /* This printf is just a "busy light" diagnostic. */
+      //printf("while(1): inetsd=%li, bytes=%li, errno=%li, bad_type_cnt=%li\n",
+      //   inetsd,bytes,errno,bad_type_cnt);
+
+      time ((time_t *) & tloc);
+
+      /* If the sock descriptor is zero or less, the socket connection has been
+       * broken and the call to server() will try to re-establish the socket. */
+      if (inetsd <= 0)
+	inetsd = server (hostname, port, AF_INET);
+      else
+	{
+	  /* If socket is connected, read the socket for packet; if the socket
+	   * does not have a packet, continue to loop.                        */
+	  if ((bytes = read (inetsd, (char *) lbuf, sizeof (lbuf))) > 0)
+	    {
+	      /* Immediately echo back the packet so GCN can monitor:
+	       * (1) the actual receipt by the site, and
+	       * (2) the roundtrip travel times.
+	       * Everything except KILL's get echo-ed back.
+	       * */
+
+	      /* debug print */
+	      fprintf (lg, "At %s", ctime ((time_t *) & tloc));
+	      fprintf (lg, "Get %i bytes = [", bytes);
+	      fwrite ((char *) lbuf, 1, bytes, lg);
+	      fprintf (lg, "], that's");
+	      fflush (lg);
+
+	      if (lbuf[PKT_TYPE] !=
+		  ((TYPE_KILL_SOCKET >> 16) | (TYPE_KILL_SOCKET << 16)))
+		write (inetsd, (char *) lbuf, bytes);
+	      t = gmtime ((time_t *) & tloc);
+	      here_sod = t->tm_hour * 3600 + t->tm_min * 60 + t->tm_sec;
+
+	      /* Byte and/or word swapping may be needed on your particular
+	       * platform.  These packets were generated on a Sun4, so if the
+	       * byte ordering for long-integer storage is different than Sun4
+	       * on your platform, you will need to rearrange the bytes in lbuf
+	       * accordingly.  Insert that code here.
+	       */
+
+	      for (i = 0; i <= bytes / 4; i++)
+		{
+		  fprintf (lg, " %08lx", lbuf[i]);
+
+		  lo = lbuf[i] & 0x0000ffff;
+		  hi = (lbuf[i] >> 16) & 0x000ffff;
+
+		  lo = (lo >> 8) | ((lo & 0x00ff) << 8);
+		  hi = (hi >> 8) | ((hi & 0x00ff) << 8);
+
+		  lbuf[i] = (lo << 16) | hi;
+
+		  fprintf (lg, "|%08lx", lbuf[i]);
+		}
+	      fprintf (lg, "\nEND\n");
+	      fflush (lg);
+
+	      switch (lbuf[PKT_TYPE])
+		{
+		case TYPE_IM_ALIVE:
+		  pr_imalive (lbuf, stdout);	/* Dump pkt contents to the screen */
+		  pr_imalive (lbuf, lg);	/* Dump pkt contents to the logfile */
+		  last_here_sod = here_sod;
+		  last_imalive_sod = lbuf[PKT_SOD] / 100.0;
+		  chk_imalive (1, tloc);	/* Pass time of latest imalive */
+		  break;
+		  //case TYPE_GRB_COORDS:         /* BATSE-Original (no longer available) */
+		  //case TYPE_MAXBC:                      /* BATSE-MAXBC    (no longer available) */
+		  //case TYPE_GRB_FINAL:          /* BATSE-Final    (no longer available) */
+		  //case TYPE_HUNTS_SRC:          /* BATSE-LOCBURST (no longer available) */
+		case TYPE_TEST_COORDS:	/* Test Coordinates */
+		case TYPE_BRAD_COORDS:	/* Special Bradford Test Coords */
+		  pr_packet (lbuf, stdout);	/* Dump pkt contents to the screen */
+		  pr_packet (lbuf, lg);	/* Dump pkt contents to the logfile */
+		  break;
+		case TYPE_ALEXIS_SRC:	/* ALEXIS extreme-UV transients */
+		  pr_alexis (lbuf, stdout);
+		  pr_alexis (lbuf, lg);
+		  break;
+		case TYPE_XTE_PCA_ALERT:
+		case TYPE_XTE_PCA_SRC:
+		  pr_xte_pca (lbuf, stdout);
+		  pr_xte_pca (lbuf, lg);
+		  break;
+/*case TYPE_XTE_ASM_ALERT: *//* Not implimented yet */
+		case TYPE_XTE_ASM_SRC:
+		  pr_xte_asm (lbuf, stdout);
+		  pr_xte_asm (lbuf, lg);
+		  break;
+		case TYPE_XTE_ASM_TRANS:
+		  pr_xte_asm_trans (lbuf, stdout);
+		  pr_xte_asm_trans (lbuf, lg);
+		  break;
+		case TYPE_IPN_SEG_SRC:	/* Not really implimented yet */
+		  pr_ipn_seg (lbuf, stdout);
+		  pr_ipn_seg (lbuf, lg);
+		  break;
+		case TYPE_SAX_WFC_ALERT:
+		case TYPE_SAX_WFC_SRC:
+		  pr_sax_wfc (lbuf, stdout);
+		  pr_sax_wfc (lbuf, lg);
+		  break;
+		case TYPE_SAX_NFI_SRC:
+		  pr_sax_nfi (lbuf, stdout);
+		  pr_sax_nfi (lbuf, lg);
+		  break;
+		case TYPE_HETE_ALERT_SRC:
+		case TYPE_HETE_UPDATE_SRC:
+		case TYPE_HETE_FINAL_SRC:
+		case TYPE_HETE_GNDANA_SRC:
+		case TYPE_HETE_TEST:
+//                pr_hete (lbuf, stdout);
+		  pr_hete (lbuf, lg);
+		  break;
+		case TYPE_IPN_POS_SRC:
+		  pr_ipn_pos (lbuf, stdout);
+		  pr_ipn_pos (lbuf, lg);
+		  break;
+		case TYPE_KILL_SOCKET:	/* Signal to break connection */
+		  printf ("Got a KILL socket packet.\n");
+		  fprintf (lg, "Got a KILL socket packet.\n");
+		  pr_kill (lbuf, stdout);
+		  pr_kill (lbuf, lg);
+		  if (shutdown (inetsd, 2) == -1)
+		    {
+		      printf ("ERR: switch(): The shutdown did NOT work.\n");
+		      fprintf (lg,
+			       "ERR: switch(): The shutdown did NOT work.\n");
+		    }
+		  if (close (inetsd))
+		    {
+		      perror ("main() 1, close(): ");
+		      printf ("ERR: 1: close() problem, errno=%i\n", errno);
+		      fprintf (lg, "ERR: 1: close() problem, errno=%i\n",
+			       errno);
+		    }
+		  inetsd = -1;
+		  break;
+		default:	/* Illegal packet type received */
+		  bad_type_cnt++;
+		  printf ("ERR: Unrecognized pkt type(=%li).\n",
+			  lbuf[PKT_TYPE]);
+		  fprintf (lg, "ERR: Unrecognized pkt type(=%li).\n",
+			   lbuf[PKT_TYPE]);
+		  break;
+		}
+	    }
+	  else if ((bytes == 0) && (errno != EWOULDBLOCK))
+	    {			/* The connection is broken */
+	      printf ("bytes==0 && errno!=EWOULDBLOCK (errno=%i)\n", errno);
+	      fprintf (lg, "bytes==0 && errno!=EWOULDBLOCK (errno=%i)\n",
+		       errno);
+	      if (shutdown (inetsd, 2) == -1)
+		{
+		  printf ("ERR: elseif: The shutdown did NOT work.\n");
+		  fprintf (lg, "ERR: elseif: The shutdown did NOT work.\n");
+		}
+	      printf ("After the shutdown call; the shutdown didn't hang.\n");
+	      fprintf (lg,
+		       "After the shutdown call; the shutdown didn't hang.\n");
+	      if (close (inetsd))
+		{
+		  perror ("main() 2, close(): ");
+		  printf ("ERR: 2: close() problem, errno=%i\n", errno);
+		  fprintf (lg, "ERR: 2: close() problem, errno=%i\n", errno);
+		}
+	      inetsd = -1;
+	    }
+	}
+
+      chk_imalive (0, tloc);	/* See if the time limit has been exceeded */
+
+      /* This sleep() is ONLY for this demo program.  It should NOT be included
+       * in your site's application code as it most definitely adds up to 1 sec
+       * to the response time to the socket/packet servicing.
+       * Replace it with your instrument-specific code if you choose to use
+       * this demo program as the basis for your operations program.           */
+      sleep (1);		/* Give the CPU a rest */
     }
-
-  cmd_str[0] = 0;		/* Clear string buffer before building new string */
-  if (which)
-    strcat (cmd_str, "mail -s BACO_NO_PKT_ALERT ");
-  else
-    strcat (cmd_str, "mail -s BACO_PKT_RESUMED ");
-/* NOTICE TO GCN SOCKET SITES:  Please don't forget to change these
- * e-mail addresses to your address(es).                              */
-  strcat (cmd_str, "petr@lascaux.asu.cas.cz");
-  strcat (cmd_str, " < ");
-  strcat (cmd_str, "e_me_tmp");
-  strcat (cmd_str, " &");
-  printf ("%s\n", cmd_str);
-  fprintf (lg, "%s\n", cmd_str);
-  rtn = system (cmd_str);
-  printf ("%sSystem() rtn=%d.\n", rtn ? "ERR: " : "", rtn);
-  fprintf (lg, "%sSystem() rtn=%d.\n", rtn ? "ERR: " : "", rtn);
-}
-
-/*---------------------------------------------------------------------------*/
-int
-hete_same (hbuf, find_which)
-     long *hbuf;		/* Ptr to 40-long packet buffer with HETE contents */
-     int find_which;		/* Which instrument box to find the center of */
-{
-  double cra[4], cdec[4];	/* Generic 4 corners locations */
-  int same = 0;			/* Are the 4 corners the same? */
-
-  switch (find_which)
-    {
-    case FIND_SXC:
-      cra[0] = (double) hbuf[H_SXC_CNR1_RA] / 10000.0;	/* All 4 in J2000 */
-      cra[1] = (double) hbuf[H_SXC_CNR2_RA] / 10000.0;
-      cra[2] = (double) hbuf[H_SXC_CNR3_RA] / 10000.0;
-      cra[3] = (double) hbuf[H_SXC_CNR4_RA] / 10000.0;
-      cdec[0] = (double) hbuf[H_SXC_CNR1_DEC] / 10000.0;	/* All 4 in J2000 */
-      cdec[1] = (double) hbuf[H_SXC_CNR2_DEC] / 10000.0;
-      cdec[2] = (double) hbuf[H_SXC_CNR3_DEC] / 10000.0;
-      cdec[3] = (double) hbuf[H_SXC_CNR4_DEC] / 10000.0;
-      break;
-
-    case FIND_WXM:
-      cra[0] = (double) hbuf[H_WXM_CNR1_RA] / 10000.0;	/* All 4 in J2000 */
-      cra[1] = (double) hbuf[H_WXM_CNR2_RA] / 10000.0;
-      cra[2] = (double) hbuf[H_WXM_CNR3_RA] / 10000.0;
-      cra[3] = (double) hbuf[H_WXM_CNR4_RA] / 10000.0;
-      cdec[0] = (double) hbuf[H_WXM_CNR1_DEC] / 10000.0;	/* All 4 in J2000 */
-      cdec[1] = (double) hbuf[H_WXM_CNR2_DEC] / 10000.0;
-      cdec[2] = (double) hbuf[H_WXM_CNR3_DEC] / 10000.0;
-      cdec[3] = (double) hbuf[H_WXM_CNR4_DEC] / 10000.0;
-      break;
-
-    default:
-      printf
-	("ERR: hete_same(): Shouldn't be able to get here; find_which=%d\n",
-	 find_which);
-      fprintf (lg,
-	       "ERR: hete_same(): Shouldn't be able to get here; find_which=%d\n",
-	       find_which);
-      return (0);
-      break;
-    }
-  if ((cra[0] == cra[1]) && (cra[0] == cra[2]) && (cra[0] == cra[3]) &&
-      (cdec[0] == cdec[1]) && (cdec[0] == cdec[2]) && (cdec[0] == cdec[3]))
-    return (1);
-  else
-    return (0);
 }

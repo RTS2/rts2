@@ -1,5 +1,8 @@
 all: bacodine.a
 
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@
+
 bacodine.a: bacodine.o
 	$(AR) rvs $@ $^
 
