@@ -232,7 +232,7 @@ unlock:
 int
 tel_write_read (char *buf, int wcount, char *rbuf, int rcount)
 {
-  size_t ret;
+  int ret;
   ret = tel_write_read_no_reset (buf, wcount, rbuf, rcount);
   if (ret <= 0)
     {
