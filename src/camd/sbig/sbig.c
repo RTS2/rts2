@@ -9,6 +9,7 @@
 
 #include "../writers/imghdr.h"
 
+
 extern int
 sbig_init (int port, int options, struct sbig_init *init)
 {
@@ -31,16 +32,16 @@ sbig_init (int port, int options, struct sbig_init *init)
     }
   else
     in.port = port;
+
 #ifdef DEBUG
   printf ("CC_ESTABLISH_LINK...port %i\n", in.port);
-  printf ("CC_ESTABLISH_LINK...port %i\n", in.port);
+#endif
 
-  if ((result = ParDrvCommand (CC_ESTABLISH_LINK, &in, &out)) != 0)
   if ((result = ParDrvCommand (CC_ESTABLISH_LINK, &in, &out)) != 0)
     return -result;
   //else
 
-  init->camera_type = out.cameraType;
+
   init->camera_type = out.cameraType;
 
   if ((out.cameraType == ST7_CAMERA) || (out.cameraType == ST8_CAMERA)
@@ -48,10 +49,10 @@ sbig_init (int port, int options, struct sbig_init *init)
     init->nmbr_chips = 2;
   else
     init->nmbr_chips = 1;
+#ifdef DEBUG
   printf ("chips..\n");
-  printf ("chips..\n");
+#endif
 
-  for (chip = 0; chip < init->nmbr_chips; chip++)
   for (chip = 0; chip < init->nmbr_chips; chip++)
     {
       inf_par.request = chip;
@@ -89,38 +90,38 @@ ccd_c2ad (double t)
 {
   double r = 3.0 * exp (0.94390589891 * (25.0 - t) / 25.0);
   unsigned int ret = 4096.0 / (10.0 / r + 1.0);
-  if (ret > 4096)
+
   if (ret > 4096)
     ret = 4096;
+#ifdef DEBUG
   printf ("ad:%i", ret);
-  printf ("ad:%i", ret);
-  return ret;
+#endif
   return ret;
 }
-double
+
 double
 ccd_ad2c (unsigned int ad)
 {
   double r;
+#ifdef DEBUG
   printf ("ad:%i\n", ad);
-  printf ("ad:%i\n", ad);
-  if (ad == 0)
+#endif
   if (ad == 0)
     return 1000;
   r = 10.0 / (4096.0 / (double) ad - 1.0);
+#ifdef DEBUG
   printf ("r:%f\n", r);
-  printf ("r:%f\n", r);
-  return 25.0 - 25.0 * (log (r / 3.0) / 0.94390589891);
+#endif
   return 25.0 - 25.0 * (log (r / 3.0) / 0.94390589891);
 }
-double
+
 double
 ambient_ad2c (unsigned int ad)
 {
   double r;
+#ifdef DEBUG
   printf ("ad:%i\n", ad);
-  printf ("ad:%i\n", ad);
-  r = 3.0 / (4096.0 / (double) ad - 1.0);
+#endif
   r = 3.0 / (4096.0 / (double) ad - 1.0);
   return 25.0 - 45.0 * (log (r / 3.0) / 2.0529692213);
 }
@@ -239,28 +240,28 @@ extern int
 sbig_readout_line (struct sbig_readout_line *readout_line)
 {
   int result;
-  printf ("Reading line..pixelStart:%i pixelLength:%i",
+#ifdef DEBUG
   printf ("Reading line..pixelStart:%i pixelLength:%i",
 	  readout_line->pixelStart, readout_line->pixelLength);
-  result = ParDrvCommand (CC_READOUT_LINE, (ReadoutLineParams *) readout_line,
+#endif
   result = ParDrvCommand (CC_READOUT_LINE, (ReadoutLineParams *) readout_line,
 			  readout_line->data);
+
 #ifdef DEBUG
   printf ("..complete, result = %i\n", result);
-  printf ("..complete, result = %i\n", result);
-  return -result;
+#endif
   return -result;
 };
-extern int
+
 extern int
 sbig_dump_lines (struct sbig_dump_lines *dump_lines)
 {
+#ifdef DEBUG
   printf ("Dumping %i lines...\n", dump_lines->lineLength);
-  printf ("Dumping %i lines...\n", dump_lines->lineLength);
-  return -ParDrvCommand (CC_DUMP_LINES, (DumpLinesParams *) dump_lines, NULL);
+#endif
   return -ParDrvCommand (CC_DUMP_LINES, (DumpLinesParams *) dump_lines, NULL);
 };
-extern int
+
 extern int
 sbig_end_readout (unsigned int ccd)
 {
@@ -276,6 +277,8 @@ sbig_readout (struct sbig_readout *readout)
   struct sbig_readout_line line;
   unsigned int y;
   int result;
+  int size;
+  struct imghdr *header;
 
   if ((result = sbig_end_expose (readout->ccd)) != 0)
     return -result;
@@ -283,22 +286,40 @@ sbig_readout (struct sbig_readout *readout)
   if ((readout->y) > 0)
     {
       struct sbig_dump_lines dump;
-      dump.ccd = readout->ccd;
+
       dump.ccd = readout->ccd;
       dump.readoutMode = readout->binning;
+      dump.lineLength = readout->y;
 
       if ((result = sbig_dump_lines (&dump)) != 0)
 	return -result;
     }
+
+  size = sizeof (struct imghdr) +
+    sizeof (unsigned short) * readout->width * readout->height;
+  if (readout->data)
+    free (readout->data);
+
+  if ((readout->data = malloc (size)) == NULL)
+    return -1;
 
   line.ccd = readout->ccd;
   line.pixelStart = readout->x;
   line.pixelLength = readout->width;
   line.readoutMode = readout->binning;
   line.data =
-  line.data = readout->data;
+    (unsigned short *) ((char *) readout->data + sizeof (struct imghdr));
 
-  readout->data_size_in_bytes = 0;
+  readout->data_size_in_bytes = sizeof (struct imghdr);
+
+  header = (struct imghdr *) (readout->data);
+
+  header->data_type = 1;
+  header->naxes = 2;
+  header->sizes[0] = readout->width;
+  header->sizes[1] = readout->height;
+  header->binnings[0] = 1;
+  header->binnings[1] = 1;
 
   for (y = 0; y < (readout->height); y++)
     {
