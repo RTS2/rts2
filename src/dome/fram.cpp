@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <mcheck.h>
@@ -282,6 +283,10 @@ private:
   int dome_port;
   char *dome_file;
 
+  int wdc_port;
+  char *wdc_file;
+  double wdcTimeOut;
+
   unsigned char spinac[2];
   unsigned char stav_portu[3];
 
@@ -322,6 +327,13 @@ private:
   time_t lastClosing;
   int closingNum;
   int lastClosingNum;
+
+  int openWDC ();
+  int closeWDC ();
+
+  int resetWDC ();
+  int getWDCTimeOut ();
+  int setWDCTimeOut (int on, double timeout);
 
   enum
   { MOVE_NONE, MOVE_OPEN_LEFT, MOVE_OPEN_LEFT_WAIT, MOVE_OPEN_RIGHT,
@@ -429,6 +441,130 @@ Rts2DevDomeFram::checkMotorTimeout ()
     syslog (LOG_DEBUG, "timeout reached: %i state: %i", now - timeoutEnd,
 	    movingState);
   return (now >= timeoutEnd);
+}
+
+int
+Rts2DevDomeFram::openWDC ()
+{
+  struct termios oldtio, newtio;
+
+  wdc_port = open (wdc_file, O_RDWR | O_NOCTTY);
+  if (wdc_port < 0)
+    {
+      syslog (LOG_ERR, "Can't open device %s : %m", wdc_file);
+      return -1;
+    }
+  tcgetattr (wdc_port, &oldtio);
+  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+  newtio.c_iflag = IGNPAR;
+  newtio.c_oflag = 0;
+  newtio.c_lflag = 0;
+  newtio.c_cc[VMIN] = 0;
+  newtio.c_cc[VTIME] = 100;
+  tcflush (wdc_port, TCIOFLUSH);
+  tcsetattr (wdc_port, TCSANOW, &newtio);
+
+  return setWDCTimeOut (1, wdcTimeOut);
+}
+
+int
+Rts2DevDomeFram::closeWDC ()
+{
+  setWDCTimeOut (1, 120.0);
+  close (wdc_port);
+}
+
+int
+Rts2DevDomeFram::resetWDC ()
+{
+  int t;
+  char reply[128];
+
+  t = sprintf (reply, "~**\r");
+  write (wdc_port, reply, t);
+  tcflush (wdc_port, TCOFLUSH);
+  return 0;
+}
+
+int
+Rts2DevDomeFram::getWDCTimeOut ()
+{
+  int i, q, r, t;
+  char reply[128];
+
+  t = sprintf (reply, "~012\r" /*,i,q */ );
+  write (wdc_port, reply, t);
+  tcflush (wdc_port, TCOFLUSH);
+
+  q = i = t = 0;
+  do
+    {
+      r = read (wdc_port, &q, 1);
+      if (r == 1)
+	reply[i++] = q;
+      else
+	{
+	  t++;
+	  if (t > 10)
+	    break;
+	}
+    }
+  while (q > 20);
+
+  reply[i] = 0;
+
+  if (reply[0] == '!')
+    syslog (LOG_ERR, "Rts2DevDomeFram::getWDCTimeOut reply %s", reply + 1);
+
+  return 0;
+
+}
+
+int
+Rts2DevDomeFram::setWDCTimeOut (int on, double timeout)
+{
+  int i, q, r, t;
+  char reply[128];
+
+  q = (int) (timeout / 0.03);
+  if (q > 0xffff)
+    q = 0xffff;
+  if (q < 0)
+    q = 0;
+  if (on)
+    i = '1';
+  else
+    i = '0';
+
+  t = sprintf (reply, "~013%c%04X\r", i, q);
+  write (wdc_port, reply, t);
+  tcflush (wdc_port, TCOFLUSH);
+
+  q = i = t = 0;
+  do
+    {
+      r = read (wdc_port, &q, 1);
+      if (r == 1)
+	reply[i++] = q;
+      else
+	{
+	  t++;
+	  if (t > 10)
+	    break;
+	}
+    }
+  while (q > 20);
+
+  syslog (LOG_DEBUG,
+	  "Rts2DevDomeFram::setWDCTimeOut on: %i timeout: %lf q: %i", on,
+	  timeout, q);
+
+  reply[i] = 0;
+
+  if (reply[0] == '!')
+    syslog (LOG_DEBUG, "Rts2DevDomeFram::setWDCTimeOut reply: %s", reply + 1);
+
+  return 0;
 }
 
 #define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
@@ -673,6 +809,12 @@ Rts2DevDomeFram::processOption (int in_opt)
     case 'f':
       dome_file = optarg;
       break;
+    case 'w':
+      wdc_file = optarg;
+      break;
+    case 't':
+      wdcTimeOut = atof (optarg);
+      break;
     default:
       return Rts2DevDome::processOption (in_opt);
     }
@@ -710,6 +852,13 @@ Rts2DevDomeFram::init ()
 
   movingState = MOVE_NONE;
 
+  if (wdc_file)
+    {
+      ret = openWDC ();
+      if (ret)
+	return ret;
+    }
+
   for (i = 0; i < MAX_CONN; i++)
     {
       if (!connections[i])
@@ -732,6 +881,9 @@ Rts2DevDomeFram::init ()
 int
 Rts2DevDomeFram::idle ()
 {
+  // resetWDC
+  if (wdc_file)
+    resetWDC ();
   // check for weather..
   if (weatherConn->isGoodWeather ())
     {
@@ -762,7 +914,13 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
 	     argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
+  addOption ('w', "wdc_file", 1, "/dev file with watch-dog card");
+  addOption ('t', "wdc_timeout", 1, "WDC timeout (default to 30 seconds");
+
   dome_file = "/dev/ttyS0";
+  wdc_file = NULL;
+  wdc_port = -1;
+  wdcTimeOut = 30.0;
 
   domeModel = "FRAM_FORD_2";
 
@@ -777,6 +935,8 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
 
 Rts2DevDomeFram::~Rts2DevDomeFram (void)
 {
+  if (wdc_file)
+    closeWDC ();
   close (dome_port);
 }
 
@@ -872,12 +1032,23 @@ Rts2DevDomeFram::sendFramMail (char *subject)
   return ret;
 }
 
+Rts2DevDomeFram *device;
+
+void
+switchoffSignal (int sig)
+{
+  syslog (LOG_DEBUG, "switchoffSignal signale: %i", sig);
+  delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  mtrace ();
+  device = new Rts2DevDomeFram (argc, argv);
 
-  Rts2DevDomeFram *device = new Rts2DevDomeFram (argc, argv);
+  signal (SIGINT, switchoffSignal);
+  signal (SIGTERM, switchoffSignal);
 
   int ret;
   ret = device->init ();
