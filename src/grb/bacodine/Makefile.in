@@ -1,10 +1,13 @@
-all: bacodine.a
+all: bacodine.a bacmail
 
 CFLAGS = @CFLAGS@
 LDFLAGS = @LDFLAGS@
+
+bacmail: bacmail.o ../../db/db.o
+	$(CC) $(LDFLAGS) @LIB_ECPG@ -o $@ $^
 
 bacodine.a: bacodine.o
 	$(AR) rvs $@ $^
 
 clean:
-	$(RM) *.a *.o
+	$(RM) *.a *.o bacmail
