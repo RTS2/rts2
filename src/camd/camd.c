@@ -111,7 +111,17 @@ start_readout (void *arg)
   int i;
   unsigned int y;
   int result;
-  unsigned short line_buff[5000];
+  unsigned short *line_buf = NULL;
+
+  int line_size = sizeof (unsigned short) * READOUT->width;
+
+  line_buf = (unsigned short *) malloc (line_size);
+
+  if (!line_buf)
+    {
+      ret = -1;
+      goto err;
+    }
 
   if ((ret = camera_end_expose (READOUT->chip)))
     {
@@ -127,16 +137,16 @@ start_readout (void *arg)
 
   for (y = 0; y < (READOUT->height); y++)
     {
-      int line_size = 2 * READOUT->width;
       if ((result =
 	   camera_readout_line (READOUT->chip, READOUT->x, READOUT->width,
-				line_buff)) != 0)
+				line_buf)) != 0)
 	goto err;
 
-      if (devser_data_put (READOUT->conn_id, line_buff, line_size))
+      if (devser_data_put (READOUT->conn_id, line_buf, line_size))
 	goto err;
     }
 
+  free (line_buf);
   camera_end_readout (READOUT->chip);
 
   syslog (LOG_INFO, "reading chip %i finished.", READOUT->chip);
@@ -146,6 +156,7 @@ start_readout (void *arg)
   return NULL;
 
 err:
+  free (line_buf);
   devser_data_done (READOUT->conn_id);
   syslog (LOG_ERR, "error during chip %i readout", READOUT->chip);
   devdem_status_mask (READOUT->chip,
@@ -308,11 +319,6 @@ camd_handle_command (char *command)
 	  devser_param_next_integer (&rd->d_width) ||
 	  devser_param_next_integer (&rd->d_height))
 	return -1;
-
-      rd->d_x *= info.chip_info[chip].binning_vertical;
-      rd->d_y *= info.chip_info[chip].binning_horizontal;
-      rd->d_width *= info.chip_info[chip].binning_vertical;
-      rd->d_height *= info.chip_info[chip].binning_horizontal;
 
       return 0;
     }
@@ -563,9 +569,9 @@ main (int argc, char **argv)
   char *hostname = NULL;
   int c;
 
-#ifdef DEBUG
+//#ifdef DEBUG
   mtrace ();
-#endif
+//#endif
 
   strcpy (device_name, DEVICE_NAME);
 

@@ -228,7 +228,7 @@ camera_info (struct camera_info *info)
   if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
     return -1;
 
-  strcpy (info->name, Cams[eePtr.model].fullName);
+  strcpy (info->type, Cams[eePtr.model].fullName);
   strcpy (info->serial_number, eePtr.serialNumber);
   info->chips = chips;
   info->chip_info = ch_info;
