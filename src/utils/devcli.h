@@ -37,6 +37,7 @@ int devcli_server_login (const char *hostname,
 			 uint16_t port, char *login, char *password);
 int devcli_server_register (const char *hostname, uint16_t port,
 			    char *device_name, int device_type,
+			    char *device_host,
 			    uint16_t device_port,
 			    struct devcli_channel_handlers *handlers);
 void devcli_server_close (int channel_id);
