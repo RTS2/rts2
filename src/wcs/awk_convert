@@ -1,9 +1,0 @@
-#!/bin/bash
-find -name '*.fits.gz'| while read name;
-do
-	name_unziped=`echo $name | sed -e 's/\.gz//' | sed -e 's#^\./##'`
-	cp $name /tmp/imag1.fits.gz
-	gunzip /tmp/imag1.fits.gz
-	wcs2db /tmp/imag1.fits $name_unziped
-	rm -f /tmp/imag1.fits 2>/dev/null
-done

@@ -1,8 +1,0 @@
-.deps
-.libs
-Makefile
-Makefile.in
-rts2-planc
-rts2-single
-selector.cpp
-test
