@@ -75,7 +75,7 @@ main (int argc, char **argv)
   obs.lat = get_double_default ("latitude", 0);
   obs.lng = get_double_default ("longtitude", 0);
 
-  t = time (NULL);
+  time (&t);
 
   while (1)
     {
