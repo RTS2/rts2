@@ -27,12 +27,15 @@
 #include "sex_interface.h"
 #endif /* FOCUSING */
 
+#ifdef MIRROR
+#include "mirror.h"
+#endif /* MIRROR */
+
 #define SERVERD_PORT    	5557	// default serverd port
 #define SERVERD_HOST		"localhost"	// default serverd hostname
 
 #define DEVICE_PORT		5556	// default camera TCP/IP port
 #define DEVICE_NAME 		"C0"	// default camera name
-
 
 #define MAX_CHIPS		2
 
@@ -62,6 +65,14 @@ struct readout readouts[MAX_CHIPS];
 char device_name[64];
 
 char *device_file = "/dev/ccda";
+
+#ifdef MIRROR
+static char *mirror = "";
+#endif
+
+#ifdef FOCUSING
+static char *focuser_port = NULL;
+#endif
 
 /* expose functions */
 #define CAMD_EXPOSE ((struct camd_expose *) arg)
@@ -224,7 +235,7 @@ void *
 start_focusing (void *arg)
 {
   int chip = *(int *) arg;
-  float exp_time = 10.0;
+  float exp_time = 30.0;
   int x = 256;			// square size
   int tcfret;
   int j, i;
@@ -271,8 +282,12 @@ start_focusing (void *arg)
   readout.height = x;
   readout.width = x;
 
+  mirror_close ();
+
   if (focus_expose_and_readout (exp_time, 0, &readout, img2))
     goto err;
+
+  mirror_open ();
 
   for (j = 0; j < 100;)
     {
@@ -301,7 +316,7 @@ start_focusing (void *arg)
       getmeandisp (img1, x * x, &M, &Q);
       devser_dprintf ("Pixel value: %lf +/- %lf", M, Q);
 
-      sprintf (filename, "!fo_%i_%03di.fits", getpid (), filen++);
+      sprintf (filename, "!/tmp/fo_%i_%03di.fits", getpid (), filen++);
       write_fits (filename, exp_time, x, x, img1);
 
       fwhm[j] = run_sex (filename + 1);
@@ -389,6 +404,10 @@ start_focusing (void *arg)
   free (img1);
   free (img2);
   free (img3);
+  syslog (LOG_INFO, "focusing chip %i finished", chip);
+  devdem_status_mask (chip,
+		      CAM_MASK_FOCUSINGS,
+		      CAM_NOFOCUSING, "focusing finished");
   return NULL;
 
 err:
@@ -679,6 +698,38 @@ camd_handle_command (char *command)
       return ret;
     }
 #endif /* FOCUSING */
+#if MIRROR
+  else if (strcmp (command, "mirror") == 0)
+    {
+      char *dir;
+      if (!*mirror)
+	{
+	  devser_write_command_end (DEVDEM_E_SYSTEM, "mirror not configured");
+	  return -1;
+	}
+      if (devser_param_test_length (1))
+	return -1;
+      if (devser_param_next_string (&dir))
+	return -1;
+      if (strcasecmp (dir, "open") == 0)
+	ret = mirror_open ();
+      else if (strcasecmp (dir, "close") == 0)
+	ret = mirror_close ();
+      else
+	{
+	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "unknow mirror command '%s'", dir);
+	  return -1;
+	}
+      if (ret < 0)
+	{
+	  devser_write_command_end (DEVDEM_E_SYSTEM,
+				    "error during mirror operation: %i", ret);
+	  return -1;
+	}
+      return ret;
+    }
+#endif /* MIRROR */
   else if (strcmp (command, "binning") == 0)
     {
       int vertical, horizontal;
@@ -805,6 +856,9 @@ camd_handle_command (char *command)
 #ifdef FOCUSING
       devser_dprintf ("focus <chip> - try to focus image");
 #endif /* FOCUSING */
+#ifdef MIRROR
+      devser_dprintf ("mirror <open|close> - open/close mirror");
+#endif
       devser_dprintf
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       devser_dprintf ("stopread <chip> - stop reading given chip");
@@ -867,9 +921,7 @@ main (int argc, char **argv)
   int c;
   int deamonize = 1;
 
-#ifdef FOCUSING
-  char *focuser_port = NULL;
-#endif
+  int ret;
 
 #ifdef DEBUG
   mtrace ();
@@ -891,15 +943,26 @@ main (int argc, char **argv)
 	{"device_name", 1, 0, 'd'},
 	{"device_file", 1, 0, 'f'},
 #ifdef FOCUSING
-	{"focuser_port", 1, 0, 'o'},
+	{"focuser_dev", 1, 0, 'o'},
 #endif /* FOCUSING */
+#ifdef MIRROR
+	{"mirror_dev", 1, 0, 'm'},
+#endif /* MIRROR */
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
 #ifdef FOCUSING
+#ifdef MIRROR
+      c = getopt_long (argc, argv, "l:o:m:p:is:q:d:f:h", long_option, NULL);
+#else
       c = getopt_long (argc, argv, "l:o:p:is:q:d:f:h", long_option, NULL);
+#endif /* MIRROR */
+#else
+#ifdef MIRROR
+      c = getopt_long (argc, argv, "l:p:m:is:q:d:f:h", long_option, NULL);
 #else
       c = getopt_long (argc, argv, "l:p:is:q:d:f:h", long_option, NULL);
+#endif /* MIRROR */
 #endif /* FOCUSING */
 
       if (c == -1)
@@ -940,13 +1003,29 @@ main (int argc, char **argv)
 	  set_focuser_port (focuser_port);
 	  break;
 #endif /* FOCUSING */
+#ifdef MIRROR
+	case 'm':
+	  mirror = optarg;
+	  ret = mirror_open_dev (mirror);
+	  if (ret < 0)
+	    {
+	      fprintf (stderr, "cannot open mirror port\n");
+	      exit (EXIT_FAILURE);
+	    }
+	  break;
+#endif /* MIRROR */
 	case 0:
 	  printf
 	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd\n");
 #ifdef FOCUSING
 	  printf
-	    ("\tfocuser_port|o <dev-entry>\t\twhere focuser is connected. If not defined -> not focusing\n");
+	    ("\tfocuser_dev|o <dev-entry>\t\twhere focuser is connected. If not defined -> not focusing\n");
 #endif /* FOCUSING */
+#ifdef MIRROR
+	  printf
+	    ("\tmirror_port|m <dev-entry>\t\twhere mirror is connected. If not defined -> will not use mirror\n");
+#endif /* MIRROR */
+
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
