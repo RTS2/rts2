@@ -81,6 +81,7 @@ write_camera (struct fits_receiver_data *receiver,
   float rotang = 0;
   char *filter = "O";
   long flip = 1;
+  float cam_xoa, cam_yoa;	//optical axes
 
   fitsfile *fptr = receiver->ffile;
 
@@ -99,12 +100,18 @@ write_camera (struct fits_receiver_data *receiver,
 	     "Camera cooling power");
   write_key (TSTRING, "CAM_FAN", camera->fan ? "on" : "off",
 	     "Camera fan status");
-
+  write_key (TINT, "CAM_FLTR", &camera->filter, "Camera filter info");
   rotang = get_device_double_default (camera_name, "rotang", 0);
   filter = get_device_string_default (camera_name, "filter", filter);
   xplate = get_device_double_default (camera_name, "xplate", xplate);
   yplate = get_device_double_default (camera_name, "yplate", yplate);
   flip = get_device_double_default (camera_name, "flip", flip);
+
+  cam_xoa = get_device_double_default (camera_name, "cam_xao", 0);
+  cam_yoa = get_device_double_default (camera_name, "cam_yoa", 0);
+
+  write_key (TFLOAT, "CAM_XOA", &cam_xoa, "X optical axe center");
+  write_key (TFLOAT, "CAM_YOA", &cam_yoa, "Y optical axe center");
 
   write_key (TFLOAT, "XPLATE", &xplate, "X plate size");
   write_key (TFLOAT, "YPLATE", &yplate, "Y plate size");

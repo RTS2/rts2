@@ -294,7 +294,9 @@ data_handler (int sock, size_t size, struct image_info *image)
       new_que->image = filen;
       new_que->tel_name = image->telescope_name;
 
-      if (strcmp (image->camera_name, "C0") == 0)
+      if (strcmp
+	  (image->camera_name,
+	   get_string_default ("telescope_camera", "C0")) == 0)
 	new_que->correction_mark = image->telescope.correction_mark;
       else
 	new_que->correction_mark = -1;
