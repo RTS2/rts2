@@ -179,11 +179,12 @@ public:
 		y = caminfo->chip_info[0].height / 2 - 128;
 		w =
 		  x + 256 <
-		  caminfo->chip_info[0].width ? 256 : caminfo->chip_info[0].
-		  width - x;
+		  caminfo->chip_info[0].width ? 256 : 
+                        caminfo->chip_info[0].width - x;
 		h =
 		  y + 256 <
-		  caminfo->chip_info[0].height ? 256 : caminfo->chip_info[0].
+		  caminfo->chip_info[0].height ? 256 : 
+                        caminfo->chip_info[0].height - y;
 		  
 		devcli_command (camera, NULL, "box %i %i %i %i", x, y, w, h);
 		printf
@@ -192,7 +193,7 @@ public:
               case XK_p:
                 devcli_command_all (DEVICE_TYPE_PHOT, "integrate 5 10");
                 break;
-              case XP_o:
+              case XK_o:
                 devcli_command_all (DEVICE_TYPE_PHOT, "stop");
                 break;
 	      default:
