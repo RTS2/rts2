@@ -32,8 +32,6 @@
 
 int fd = 0;
 
-int filter_enabled = 0;		// if 1, filter can be changed
-
 char *phot_dev = "/dev/phot0";
 
 struct integration_request
@@ -107,6 +105,11 @@ start_integrate (void *arg)
 	      result = 0;
 	      read (fd, &result, 2);
 	      devser_dprintf ("filter %i", result);
+	      break;
+	    case '-':
+	      result = 0;
+	      devser_dprintf ("count 0 0");
+	      loop = req->count;
 	      break;
 	    }
 	}
@@ -191,10 +194,7 @@ phot_handle_command (char *command)
 	return -1;
 //      if (devdem_priority_block_start ())
 //      return -1;
-      if (!filter_enabled)
-	phot_command (PHOT_CMD_RESET, 0);
-      else
-	phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
+      phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
       devser_dprintf ("filter %i", new_filter);
 //     devdem_priority_block_end ();
       ret = errno = 0;
@@ -226,11 +226,10 @@ phot_handle_status (int status, int old_status)
   switch (status & SERVERD_STATUS_MASK)
     {
     case SERVERD_NIGHT:
-      filter_enabled = 1;
+      phot_command (PHOT_CMD_INTEGR_ENABLED, 1);
       break;
     default:			/* other - SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF, etc */
-      filter_enabled = 0;
-      phot_home_filter ();
+      phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
     }
   return 0;
 }
