@@ -1,0 +1,91 @@
+\chapter{Zadání}
+
+\subsubsection{Zdokonalení øídícího softwaru pro dalekohled BART}
+
+Navrhnìte, implementujte a zdokumentujte ovládání dalekohledu BART (Burst
+Afterglow Robotic Telescope) tak, aby umo¾òovalo:
+
+- øízení dalekohledu pomocí pøedem spoèítaného plánu, s~mo¾ností jeho
+  pøeru¹ení a pøedání øízení jinému pozorování v~pøípadì pøíjmu zprávy
+  o~novém objektu, vhodného k~okam¾itému pozorování
+
+- snadný pøenos øe¹ení na jiné kamery, pøípadnì dalekohledy
+
+- on-line zpracování snímkù na jiném poèítaèi ne¾ na poèítaèi obsluhujícím
+  kameru
+
+Na závìr porovnejte nové ovládání dalekohledu s~existujícími systémy pro
+ovládání dalekohledù.
+
+Je mo¾né vyu¾ít ovladaèe zaøízení, napsané jako èást roèníkového projektu
+obhájeného v~èervnu 2000. Ostaní kód roèníkového projektu nesmí být pou¾it.
+Dokumentace k~práci musí obsahovat výèet kódu, pøevzatého z~roèníkového
+projektu.
+
+\subsubsection{Pro úspì¹né vyøe¹ení je potøeba provést následující
+práce}
+
+- definovat rozhranní pro ovládání zaøízení a pøenos dat z~nich,
+  provést jeho vzorovou implementaci na zaøízeních, je¾ jsou
+k~dispozici na dalekohledu BART.
+
+- vymyslet a naimplementovat plánovaè, který bude øídit pozorování.
+
+- zabývat se ukládáním napozorovaných dat, jejich tøídìním a
+  zaji¹tìním jednoduchého pøístupu k~nim.
+
+- naimplementovat k~èástem, je¾ to vy¾adují, grafické u¾ivatelské
+  rozhranní.
+
+\subsubsection{Èasový plán, souèasný stav}
+
+- definice rozhranní, vzorová implementace - v~podstatì hotové, dva
+  týdny èisté práce (stavìlo se na implementaci, která je k~dispozici
+  pro dalekohled).
+
+- plánovaè - ve fázi úvah, jedna prototypová implementace, trvání od mìsíce
+  do pìti mìsícù
+
+- ukládání dat - ve fázi úvah, zále¾itost do dvou týdnù práce
+
+- GUI - není znám kvantitativní rozsah, tì¾ko se odhaduje, zále¾itost
+  od týdne po rok
+
+\subsubsection{Konzultanté}
+
+za ASU AV ÈR: \\
+Martin Jelínek (mates@lascaux.asu.cas.cz) \\
+Renné Hudec (rhudec@asu.cas.cz) \\
+Lenka ©arounová (lenka@asu.cas.cz) \\
+Jan Soldán (soldan@asu.cas.cz)
+
+\subsubsection{Literatura}
+
+Martinez/Klotz - A~practical Guide to CCD astronomy \\
+Trueblood/Genet - Telescope control, Willmann-Bell, 1997 \\
+Mgr. R.Halíø, T.Jílek, P.Kubánek, F.Krolluper, F.Kvapil - Detekce
+astronomických objektù s~promìnnou intenzitou za pomoci robotického
+teleskopu, Roèníkový projekt MFF UK, Praha, 2000 \\
+David Ratledge, The Art and Science of CCD Astronomy
+
+\subsubsection{Odkazy}
+
+\begin{description}
+\item [ http://www.telescope.org/rti/automated.html ] pøehled automatizovaných
+dalekohledù
+\item [ http://lascaux.asu.cas.cz ] dalekohled BART
+\item [ http://nova.sourceforge.net/ ] Projekt NOVA, automatické ovládání
+dalekohledu
+\item [ http://www.astro.princeton.edu/~bakos/HAT ] The Hungarian Automated
+Telescope
+\end{description}
+
+\subsubsection{Kvantitativní po¾adavky}
+
+Po zadání a seznámení se s~problémem je rozumné definovat mìøitelné
+velièiny, kterých by mìlo být dosa¾eno.
+
+- systém musí reagovat na GRB zahájením GRB pozorování do 1 sekundy
+
+- èas, kdy nebì¾í ¾ádné pozorování, nesmí pøesáhnout 10\% celkového
+pozorovacího èasu

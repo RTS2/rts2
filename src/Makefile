@@ -2,8 +2,6 @@
 
 SUBDIRS = utils writers teld camd plan
 
-include ../make.conf
-
 all:
 	for dir in $(SUBDIRS) ; do 	\
 		$(MAKE) -C $$dir;	\

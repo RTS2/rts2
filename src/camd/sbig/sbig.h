@@ -128,6 +128,7 @@ struct sbig_readout
   unsigned short *data;
   int data_size_in_bytes;
   int (*callback) (int ccd, float percent_complete);
+  int thread_id;
 };
 
 extern int sbig_readout (struct sbig_readout *);

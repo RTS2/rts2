@@ -22,10 +22,10 @@ int devdem_send_data (struct in_addr *client_addr, void *data_ptr,
 		      size_t data_size);
 int devdem_write_command_end (int retc, char *msg_format, ...);
 
-int devdem_create_thread (void *(*start_routine) (void *), void *arg,
-			  int *id);
-int devdem_cancel_thread (int id);
-int devdem_cancel_threads (void);
+int devdem_thread_create (void *(*start_routine) (void *), void *arg,
+			  size_t arg_size, int *id);
+int devdem_thread_cancel (int id);
+int devdem_thread_cancel_all (void);
 
 int devdem_status_message (int subdevice, char *description);
 int devdem_status_mask (int subdevice, int mask, int operand, char *message);

@@ -16,7 +16,7 @@ Pokud hodlate pouzivat neco jineho, tak se ozvete.
 
 Pro prvni checkout:
 
-# cvs -d:pserver:petr@lascaux.asu.cas.cz:/usr/local/cvsroot login <vas cvs login>
+# cvs -d:pserver:petr@lascaux.asu.cas.cz:/usr/local/cvsroot login
 
 Zadat heslo
 
@@ -54,18 +54,17 @@ Aktualizace kodu (umyslne az po instrukcich):
 # cvs update
 
 -> nemusite se bat, ze by vam neco zmizelo! Pokud se merguje,
-naleznete vasi starou lokalni verzi vzdy v teh .# souborech.
+naleznete vasi starou lokalni verzi vzdy v .# souborech.
 
--> update se jeste doporucuje s -d -P jako delete (soubory, ktere
-nejsou v CVSku) a Purge (prazdne adresare).
+-> update se jeste doporucuje s -d -P jako directories (bude vytvaret nove
+adresare) a Purge (prazdne adresare smaze).
 
 Commit kodu (zaverzovani vasich zmen):
 
 # cvs commit
 
-Verzuji se pouze zmene soubory, odpali se vas $EDITOR, muzete
-(ale opravdu by jste meli) zapsat zmeny, ktere jste provedly. Ulozite,
-pokracujete dale.
+Verzuji se pouze zmene soubory, na ne se odpali vas $EDITOR, muzete (ale spise
+by jste meli) zapsat zmeny, ktere jste provedly. Ulozite, pokracujete dale.
 
 Snazte se psat zmeny v AJ.
 
@@ -96,19 +95,21 @@ otazek..co jsem vsechno zmenil?..kdyz vam neco prestane chodit.
 3) Pouzivejte doxygenovske tagy! Viz http://www.doxygen.org.
 
 Pozor: Ja mam radeji variantu @<tag>, prijde mi lepe viditelna.
-Doxygen je umoznuje, jako defaultni ma \<tag>. Pouzivejte, co se vam
+Doxygen ji umoznuje, jako defaultni ma ale \<tag>. Pouzivejte, co se vam
 libi vice.
+
+POZOR: KOMENTAR, KTERY BUDE ZDOXYGENOVAN, MUSI ZACINAT '/*!'
 
 Priklad:
 
 /*! @file Driver file for LX200 telescope
-* 
-* Based on original c library for xephem writen by Ken Shouse
-* <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
-* <cguirao@eso.org>
-*
-* @author petr
-*/
+ * 
+ * Based on original c library for xephem writen by Ken Shouse
+ * <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
+ * <cguirao@eso.org>
+ *
+ * @author petr
+ */
 
 @file rika, ze se dokumentuje soubor.
 
@@ -118,18 +119,19 @@ lascaux.
 Dokumentace funkce:
 
 /*! Reads some data directly from port
-* 
-* Log all flow as LOG_DEBUG to syslog
-* 
-* @param buf buffer to read in data
-* @param count how much data will read
-* @exception EBADF EINTR EINVAL ENOMEM from select call 
-* @return -1 on failure, otherwise number of read data 
-*/
-int tel_read ( char *buf, int count )
+ * 
+ * Log all flow as LOG_DEBUG to syslog
+ * 
+ * @param buf buffer to read in data
+ * @param count how much data will read
+ * @exception EBADF EINTR EINVAL ENOMEM from select call 
+ * @return -1 on failure, otherwise number of read data 
+ */
+ 
+int 
+tel_read (char *buf, int count)
 {
 
-POZOR: KOMENTAR MUSI ZACINAT '/*!'
 
 @param, @return je snad jasny. Na dalsi tagy se nejlepe ptejte u me,
 nebo na doxygenu.
@@ -198,9 +200,40 @@ Dany soubour musi po zavolani projet vsechny testy, ktere do neho
 napisete, v pripade problemu skoncit assert em (viz man assert), v
 pripade bezproblemoveho chodu vratit 0.
 
-Snazte se hlidat si buffer overflow. 
+4) ifdef/endif
+
+K endifu vzdy do komentare piseme, k jake se vazal podmince. Priklad viz v
+debug - printech. Pokud se jedna o endif k ifndef, dame pred nazev define !
+(vykricnik).
+
+5) DEBUG - print
+
+Pro debug-listing pouzivame standartni define DEBUG. Vas debug-code, pokud se
+jedna o vec urcenou k behu na konzoli, pak bude vypadat takto:
+#ifdef DEBUG
+	printf ("Dobry den, toto je debugovaci zprava. Program se prave dostal
+	tam, kam nemel.\n");
+#endif /* DEBUG */
+
+Snazte se i zde psat uzaviraci komentar k endifu.
+
+6) typedef's
+
+Pokud pouzivate typedef, nazev typu konci _t.
+
+Snazte se hlidat si buffer overflow.
+
+Promyslejte timeouty.
+
+Myslete na malloc a free - co jednou naalokujete, musite nekde vratit.
+Osemetne zvlaste pro vlakna (napoveda: pokud neco naalokujete pred volanim
+vlakna a predavate tento pointer vlaknu, musite to uvolnit ve vlakne. Ve vlakne
+nelze dost dobre pracovat s pointry na nejake lokalni promenne, pochazejici z
+funkce volajici vlakno, jelikoz jsou po skonceni funkce uvolneny a jejich
+obsah muze byt prepsan. Volajici funkce pritom muze skoncit driv, nez se k nim
+vlakno dostane).
 
 Az budu mit cas najit nejakou licenci, tak ji najdu. Zatim pocitejte s
 GPL licencovanim. Nejake ty hlavicky pak uz nejak pridame.
 
-petr <petr@lascaux.asu.cas.cz>
+petr

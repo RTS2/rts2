@@ -31,8 +31,6 @@ struct sbig_readout readout[2];
 
 float readout_comp[2];
 
-pthread_t thread[2];
-
 int
 complete (int ccd, float percent_complete)
 {
@@ -45,17 +43,23 @@ void *
 start_expose (void *arg)
 {
   int ret;
+  devdem_status_mask (((struct sbig_expose *) arg)->ccd,
+		      CAM_MASK_EXPOSE, CAM_EXPOSING, "exposure chip started");
   if ((ret = sbig_expose (arg)) < 0)
     {
       syslog (LOG_ERR, "error during chip %i exposure: %s",
 	      ((struct sbig_expose *) arg)->ccd, sbig_show_error (ret));
+      devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+			  CAM_MASK_EXPOSE,
+			  CAM_NOEXPOSURE, "exposure chip error");
       return NULL;
     }
+
   syslog (LOG_INFO, "exposure chip %i finished.",
 	  ((struct sbig_expose *) arg)->ccd);
-  devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+  devdem_status_mask (((struct sbig_expose *) arg)->ccd,
 		      CAM_MASK_EXPOSE,
-		      CAM_NOTREADING & CAM_DATA, "exposure chip finished");
+		      CAM_NOEXPOSURE, "exposure chip finished");
   return NULL;
 }
 
@@ -64,17 +68,23 @@ void *
 start_readout (void *arg)
 {
   int ret;
+  devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+		      CAM_MASK_READING | CAM_MASK_DATA,
+		      CAM_READING | CAM_NODATA, "reading chip started");
   if ((ret = sbig_readout (arg)) < 0)
     {
       syslog (LOG_ERR, "error during chip %i readout: %s",
 	      ((struct sbig_readout *) arg)->ccd, sbig_show_error (ret));
+      devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+			  CAM_MASK_READING | CAM_MASK_DATA,
+			  CAM_NOTREADING | CAM_NODATA, "reading chip error");
       return NULL;
     }
   syslog (LOG_INFO, "reading chip %i finished.",
 	  ((struct sbig_readout *) arg)->ccd);
   devdem_status_mask (((struct sbig_readout *) arg)->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
-		      CAM_NOTREADING & CAM_DATA, "reading chip finished");
+		      CAM_NOTREADING | CAM_DATA, "reading chip finished");
   return NULL;
 }
 
@@ -156,7 +166,7 @@ camd_handle_command (char *argv, size_t argc)
       test_length (2);
       get_chip;
       param = argz_next (argv, argc, param);
-      exptime = strtof (param, NULL);
+      exptime = strtof (param, NULL) * 100;
       if ((exptime <= 0) || (exptime > 330000))
 	{
 	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
@@ -170,16 +180,14 @@ camd_handle_command (char *argv, size_t argc)
 	  expose.abg_state = 0;
 	  expose.shutter = 0;
 	  if ((ret =
-	       pthread_create (&thread[chip], NULL, start_expose,
-			       (void *) &expose)))
+	       devdem_thread_create (start_expose, (void *) &expose,
+				     sizeof (expose), NULL)) < 0)
 	    {
 	      devdem_write_command_end (DEVDEM_E_SYSTEM,
 					"while creating thread for execution: %s",
 					strerror (errno));
 	      return -1;
 	    }
-	  devdem_status_mask (chip, CAM_MASK_EXPOSE, CAM_EXPOSING,
-			      "starting exposure on chip");
 	}
     }
   else if (strcmp (argv, "stopexpo") == 0)
@@ -187,8 +195,6 @@ camd_handle_command (char *argv, size_t argc)
       test_length (1);
       get_chip;
       cam_call (sbig_end_expose (chip));
-      devdem_status_mask (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-			  "exposure was stopped");
     }
   else if (strcmp (argv, "progexpo") == 0)
     {
@@ -210,16 +216,15 @@ camd_handle_command (char *argv, size_t argc)
       readout[chip].callback = complete;
 
       if ((ret =
-	   pthread_create (&thread[chip], NULL, start_readout,
-			   (void *) &readout[chip])))
+	   devdem_thread_create (start_readout,
+				 (void *) &readout[chip],
+				 0, &readout[chip].thread_id)))
 	{
 	  devdem_write_command_end (DEVDEM_E_SYSTEM,
 				    "while creating thread for execution: %s",
 				    strerror (errno));
 	  return -1;
 	}
-      devdem_status_mask (chip, CAM_MASK_READING, CAM_READING,
-			  "reading started");
     }
   else if (strcmp (argv, "binning") == 0)
     {
@@ -242,7 +247,7 @@ camd_handle_command (char *argv, size_t argc)
     {
       test_length (1);
       get_chip;
-      if ((ret = pthread_cancel (thread[chip])))
+      if ((ret = devdem_thread_cancel (readout[chip].thread_id)) < 0)
 	{
 	  devdem_write_command_end (DEVDEM_E_SYSTEM,
 				    "while canceling thread: %s",
@@ -260,6 +265,7 @@ camd_handle_command (char *argv, size_t argc)
 	{
 	  devdem_status_message (i, "status request");
 	}
+      devdem_dprintf ("readout %f", readout_comp[chip]);
       devdem_dprintf ("readout %f", readout_comp[chip]);
       ret = 0;
     }

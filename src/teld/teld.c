@@ -41,6 +41,29 @@
 	 return ret;\
 }
 
+struct radec
+{
+  double ra;
+  double dec;
+};
+
+void *
+start_move (void *arg)
+{
+  int ret;
+  devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+		      "moving of telescope started");
+  if ((ret = tel_move_to (((struct radec *) arg)->ra, ((struct radec *) arg)->dec)) < 0)
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
+    }
+  else
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move finished");
+    }
+  return NULL;
+}
+
 
 /*! Handle teld command.
  *
@@ -78,20 +101,22 @@ teld_handle_command (char *argv, size_t argc)
     }
   else if (strcmp (argv, "move") == 0)
     {
-      double ra, dec;
+      struct radec coord;
       test_length (2);
       param = argz_next (argv, argc, argv);
-      ra = hmstod (param);
+      coord.ra = hmstod (param);
       param = argz_next (argv, argc, param);
-      dec = hmstod (param);
-      if (isnan (ra) || isnan (dec))
+      coord.dec = hmstod (param);
+      if (isnan (coord.ra) || isnan (coord.dec))
 	{
 	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
-				    "Expected ra dec, got: %f %f", ra, dec);
+				    "Expected ra dec, got: %f %f", coord.ra, coord.dec);
 	  ret = -1;
 	}
       else
-	tel_call (tel_move_to (ra, dec));
+	devdem_thread_create (start_move, (void *) &coord, sizeof (coord),
+			      NULL);
+      ret = 0;
     }
   else if (strcmp (argv, "ra") == 0)
     {
@@ -168,6 +193,7 @@ exit_handler (int err, void *args)
 int
 main (void)
 {
+  char *stats[] = { "telescope" };
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -182,5 +208,5 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
-  return devdem_run (PORT, teld_handle_command);
+  return devdem_run (PORT, teld_handle_command, stats, 1);
 }

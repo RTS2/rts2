@@ -47,7 +47,8 @@ Uvedomte si, ze piseme v podstate server.
 Logujte, logujte, logujte..jinak ty chyby nenajdeme. Klidne do
 LOG_DEBUG, pak ho vyndame. 
 
-Pri logovani je prvni pismeno velke, jedna se o vetu.
+Pri logovani piste prvni pismeno male, nejedna se vetsinou o vetu. Neukoncujte
+logovaci prikaz teckou.
 
 Logujeme pomoci syslogu. Crash course (info libc, Syslog):
 
@@ -58,10 +59,10 @@ Logujeme pomoci syslogu. Crash course (info libc, Syslog):
   openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY,
 LOG_LOCAL1); // staci jednou, logujmez zatim do LOG_LOCAL1
      
-  syslog (LOG_NOTICE, "Program started by User %d", getuid ());
-  syslog (LOG_DEBUG, "Will write:'%s'", "test");
+  syslog (LOG_NOTICE, "program started by User %d", getuid ());
+  syslog (LOG_DEBUG, "will write:'%s'", "test");
         // retezce obalujeme '', aby jsme se v tom pak vyznali
-  syslog (LOG_INFO, "A tree falls in a forest");
+  syslog (LOG_INFO, "a tree falls in a forest");
      
   closelog (); //neni potreba, vola se sam pri ukonceni.
 
@@ -69,14 +70,24 @@ Nastaveni:
 /etc/syslog.conf
 
 Radka:
-local1.*			/var/log/rtsd
+local1.*			/var/log/rts2
 
 A vse z local1 vam pujde do /var/log/rtsd.
 
-# /etc/init.d/syslog # restart pro nacteni novych hodnot.
-
-# tail -f /var/log/rtsd # (nejlepe jako root) pro sledovani, co to loguje.
+/etc/init.d/syslog restart pro nacteni novych hodnot.
+tail -f /var/log/rtsd (nejlepe jako root) pro sledovani, co to loguje.
   
 Viz man syslog.
+
+Logrotate (aby jste si logy nemuseli mazat):
+
+Na RH linuxu staci do adresare /etc/logrotate.d pridat soubor s nasledujicim
+obsahem (jmenujici se treba rts2):
+
+/var/log/rts2 {
+        rotate 4
+        compress
+        errors rtadmin@lascaux.asu.cas.cz
+}
 
 Petr

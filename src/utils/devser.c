@@ -150,7 +150,7 @@ status_lock (int subdevice)
 
   sb.sem_num = subdevice;
   sb.sem_op = -1;
-  sb.sem_flg = 0;
+  sb.sem_flg = SEM_UNDO;
   if (semop (status_sem, &sb, 1) < 0)
     {
       syslog (LOG_ERR, "semaphore -1 for subdevice %i: %m", subdevice);
@@ -181,7 +181,7 @@ status_unlock (int subdevice)
   return 0;
 }
 
-/*! Printf to descriptor, log to syslogd, adds \r\n to end message.
+/*! Printf to descriptor, log to syslogd, adds \r\n to message end.
  * 
  * @param format buffer format
  * @param ... thinks to print 
@@ -297,6 +297,7 @@ thread_wrapper (void *temp)
     ((struct thread_wrapper_temp *) temp)->
     start_routine (((struct thread_wrapper_temp *) temp)->arg);
   pthread_cleanup_pop (1);
+  free (((struct thread_wrapper_temp *) temp)->arg);
   free (temp);
   return ret;
 }
@@ -313,14 +314,17 @@ thread_wrapper (void *temp)
  * It's not good idea to use pthread or other similar calls directly from
  * deamon. You should have really solid ground for doing that. 
  *
- * @param start_routine 
- * @param arg
+ * @param start_routine
+ * @param arg argument
+ * @param arg_size size of argument; in bytes; when arg is NULL, arg_size is
+ * 	ignored
  * @param id if not NULL, returns id of thread, which can by used for 
  * 	@see pthread_cancel_thread (int)
  * @return -1 and set errno on error, 0 otherwise. 
  */
 int
-devdem_create_thread (void *(*start_routine) (void *), void *arg, int *id)
+devdem_thread_create (void *(*start_routine) (void *), void *arg,
+		      size_t arg_size, int *id)
 {
   int i;
   for (i = 0; i < MAX_THREADS; i++)
@@ -332,7 +336,17 @@ devdem_create_thread (void *(*start_routine) (void *), void *arg, int *id)
 	    malloc (sizeof (struct thread_wrapper_temp));
 	  temp->lock = &threads[i].lock;
 	  temp->start_routine = start_routine;
-	  temp->arg = arg;
+	  if (arg)
+	    {
+	      temp->arg = malloc (arg_size);
+	      memcpy (temp->arg, arg, arg_size);
+	    }
+	  else
+	    {
+	      temp->arg = NULL;
+	    }
+	  if (id)
+	    *id = i;
 	  return pthread_create (&threads[i].thread, NULL, thread_wrapper,
 				 (void *) temp);
 	}
@@ -340,6 +354,37 @@ devdem_create_thread (void *(*start_routine) (void *), void *arg, int *id)
   syslog (LOG_WARNING, "reaches MAX_THREADS");
   errno = EAGAIN;
   return -1;
+}
+
+/*! Stop given thread.
+ * 
+ * Stops thread with given id.
+ *
+ * @param id Thread id, as returned by @see devdem_thread_create.
+ * @retun -1 and set errno on error, 0 otherwise.
+ */
+int
+devdem_thread_cancel (int id)
+{
+  errno = pthread_cancel (threads[id].thread);
+  return errno ? -1 : 0;
+}
+
+/*! Stops all thread.
+ *
+ * @see devdem_thread_cancel
+ *
+ * @return always 0.
+ */
+int
+devdem_thread_cancel_all (void)
+{
+  int i;
+  for (i = 0; i < MAX_THREADS; i++)
+    {
+      pthread_cancel (threads[i].thread);
+    }
+  return 0;
 }
 
 /*! Handle devdem commands
