@@ -969,7 +969,7 @@ devcli_server_command (int *ret_code, char *cmd, ...)
   return ret;
 }
 
-int
+extern int
 devcli_command (struct device *dev, int *ret_code, char *cmd, ...)
 {
   va_list va;

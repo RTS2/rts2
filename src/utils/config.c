@@ -226,7 +226,7 @@ get_device_entry (char *device, char *name)
   return get_entry ("name");
 }
 
-int
+extern int
 get_device_string (char *device, char *name, char **val)
 {
   struct config_entry *cfg = get_device_entry (device, name);
@@ -238,7 +238,7 @@ get_device_string (char *device, char *name, char **val)
   return -1;
 }
 
-char *
+extern char *
 get_device_string_default (char *device, char *name, char *def)
 {
   char *val;
@@ -247,7 +247,7 @@ get_device_string_default (char *device, char *name, char *def)
   return val;
 }
 
-int
+extern int
 get_device_double (char *device, char *name, double *val)
 {
   struct config_entry *cfg = get_device_entry (device, name);
@@ -259,7 +259,7 @@ get_device_double (char *device, char *name, double *val)
   return -1;
 }
 
-double
+extern double
 get_device_double_default (char *device, char *name, double def)
 {
   double val;

@@ -4,7 +4,7 @@
 
 #define CONFIG_FILE	"@prefix@/etc/rts2.conf"
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -24,8 +24,8 @@ extern "C"
   extern double get_device_double_default (char *device, char *name,
 					   double def);
 
-#ifdef _cplusplus
-}
+#ifdef __cplusplus
+};
 #endif
 
 #endif				/* __RTS2_CONFIG__ */
