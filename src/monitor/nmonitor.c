@@ -8,6 +8,7 @@
 
 #include "telescope_info.h"
 #include "camera_info.h"
+#include "dome_info.h"
 
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
@@ -122,14 +123,27 @@ status_camera (WINDOW * wnd, struct device *dev)
   struct camera_info *info = (struct camera_info *) &dev->info;
   mvwprintw (wnd, 1, 1, "Typ: %s", info->type);
   mvwprintw (wnd, 2, 1, "Ser: %s", info->serial_number);
-  mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
-	     info->chip_info[0].height);
+  if (info->chip_info)
+    mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
+	       info->chip_info[0].height);
+  else
+    mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
+	       info->chip_info[0].height);
   mvwprintw (wnd, 4, 1, "S/A: %+03.1f %+03.1f oC", info->temperature_setpoint,
 	     info->air_temperature);
   mvwprintw (wnd, 5, 1, "CCD: %+03.3f oC", info->ccd_temperature);
   mvwprintw (wnd, 6, 1, "CPo: %03.1f %%", info->cooling_power / 10.0);
   mvwprintw (wnd, 7, 1, "Fan: %s", info->fan ? "on" : "off");
   print_status (wnd, 8, 1, dev);
+}
+
+void
+status_dome (WINDOW * wnd, struct device *dev)
+{
+  struct dome_info *info = (struct dome_info *) &dev->info;
+  mvwprintw (wnd, 1, 1, "Tem: %+2.2f oC", info->temperature);
+  mvwprintw (wnd, 2, 1, "Hum: %2.2f %", info->humidity);
+  print_status (wnd, 3, 1, dev);
 }
 
 void
@@ -191,6 +205,7 @@ status (WINDOW * wnd, struct device *dev)
 	wstandend (wnd);
       //    wclear (wnd);
       mvwprintw (wnd, 2, 6, "NOT READY");
+      print_status (wnd, 3, 1, dev);
     }
   else
     {
@@ -210,6 +225,9 @@ status (WINDOW * wnd, struct device *dev)
 	case DEVICE_TYPE_CCD:
 	  devcli_command (dev, NULL, "chipinfo 0");
 	  status_camera (wnd, dev);
+	  break;
+	case DEVICE_TYPE_DOME:
+	  status_dome (wnd, dev);
 	  break;
 	default:
 	  mvwprintw (wnd, 3, 1, "UNKNOW TYPE: %i", dev->type);
