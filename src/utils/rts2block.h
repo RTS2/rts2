@@ -133,7 +133,7 @@ protected:
   virtual int command ();
   virtual int message ();
   virtual int informations ();
-  virtual int statusMessages ();
+  virtual int status ();
   inline char *getCommand ()
   {
     return command_start;
@@ -181,6 +181,10 @@ public:
       {
 	conn->setHavePriority (1);
       }
+  }
+  virtual int setMasterState (int new_state)
+  {
+    return 0;
   }
 };
 

@@ -138,7 +138,7 @@ Rts2Conn::receive (fd_set * set)
 		  // status
 		  else if (isCommand ("S"))
 		    {
-		      ret = statusMessages ();
+		      ret = status ();
 		    }
 		  else
 		    ret = command ();
@@ -233,7 +233,7 @@ Rts2Conn::informations ()
 }
 
 int
-Rts2Conn::statusMessages ()
+Rts2Conn::status ()
 {
   return 0;
 }

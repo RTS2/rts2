@@ -45,7 +45,7 @@ hmstod (const char *hptr)
   double mul;			//multiplier 
 
   if (!(locptr = strdup (hptr)))
-    return -1;
+    return nan ("f");
 
   if (*locptr == '-')
     {
@@ -65,7 +65,7 @@ hmstod (const char *hptr)
       // convert test
       ret += strtod (locptr, &endptr) * mul;
       if (errno == ERANGE)
-	return ret;
+	return nan ("f");
       // we get sucessfuly to end
       if (!*endptr)
 	{

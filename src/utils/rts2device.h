@@ -10,9 +10,11 @@
 #endif
 
 #include <malloc.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <vector>
 
 #include "rts2block.h"
 
@@ -21,6 +23,8 @@
 #define RTS2_CONN_AUTH_FAILED	3
 
 #define CHECK_PRIORITY if (!havePriority ()) { sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
+
+using namespace std;
 
 class Rts2Device;
 
@@ -62,6 +66,8 @@ class Rts2DevConnMaster:public Rts2Conn
 protected:
   int command ();
   int message ();
+  int informations ();
+  int status ();
 public:
     Rts2DevConnMaster (Rts2Block * in_master, int in_device_port,
 		       char *in_device_name, int in_device_type,
@@ -124,18 +130,80 @@ public:
   };
 };
 
+class Rts2DevOption
+{
+  char short_option;
+  char *long_option;
+  int has_arg;
+  char *help_msg;
+public:
+    Rts2DevOption (char in_short_option, char *in_long_option, int in_has_arg,
+		   char *in_help_msg)
+  {
+    short_option = in_short_option;
+    long_option = in_long_option;
+    has_arg = in_has_arg;
+    help_msg = in_help_msg;
+  }
+  void help ()
+  {
+    printf ("\t-%c|--%-15s  %s\n", short_option, long_option, help_msg);
+  }
+  void getOptionChar (char **end_opt);
+  void getOptionStruct (struct option *options)
+  {
+    options->name = long_option;
+    options->has_arg = has_arg;
+    options->flag = NULL;
+    options->val = short_option;
+  }
+};
+
 class Rts2Device:public Rts2Block
 {
   int statesSize;
   Rts2State **states;
   Rts2DevConnMaster *conn_master;
+  int master_device_port;
+  char *centrald_host;
+  int centrald_port;
+  int device_port;
+  char *device_name;
+  int device_type;
+  int deamonize;
+  int log_option;
+
+  int argc;
+  char **argv;
+
+    std::vector < Rts2DevOption * >options;
+  /**
+   * Prints help message, describing all options
+   */
+  void helpOptions ();
 protected:
+    virtual void help ();
   void setStateNames (int in_states_size, char **states_names);
+  /**
+   * Process on option, when received from getopt () call.
+   * 
+   * @param in_opt  return value of getopt
+   * @return 0 on success, -1 if option wasn't processed
+   */
+  virtual int processOption (int in_opt);
+  int addOption (char in_short_option, char *in_long_option, int in_has_arg,
+		 char *in_help_msg)
+  {
+    Rts2DevOption *an_option =
+      new Rts2DevOption (in_short_option, in_long_option, in_has_arg,
+			 in_help_msg);
+      options.push_back (an_option);
+      return 0;
+  }
 public:
-    Rts2Device (int argc, char **argv, int device_type, int default_port,
-		char *default_name);
-   ~Rts2Device (void);
-  void help (void);
+    Rts2Device (int in_argc, char **in_argv, int in_device_type,
+		int default_port, char *default_name);
+  ~Rts2Device (void);
   int changeState (int state_num, int new_state, char *description);
   int maskState (int state_num, int state_mask, int new_state,
 		 char *description);

@@ -27,7 +27,6 @@ ObjectCheck::load_horizont (char *horizont_file)
   ifstream inf;
   double ra;
   double dec;
-  std::vector < struct ln_equ_posn >::iterator Iter1;
 
   inf.open (horizont_file);
 
