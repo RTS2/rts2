@@ -1327,7 +1327,7 @@ devser_on_exit ()
  * Signal handler.
  */
 void
-sig_exit (int sig)
+ser_sig_exit (int sig)
 {
   syslog (LOG_INFO, "exiting with signal:%i", sig);
   exit (0);
@@ -1392,9 +1392,9 @@ devser_init (size_t shm_data_size)
 
   /* register on_exit */
   atexit (devser_on_exit);
-  signal (SIGTERM, sig_exit);
-  signal (SIGQUIT, sig_exit);
-  signal (SIGINT, sig_exit);
+  signal (SIGTERM, ser_sig_exit);
+  signal (SIGQUIT, ser_sig_exit);
+  signal (SIGINT, ser_sig_exit);
 
   // initialize data shared memory
   if (shm_data_size > 0)
