@@ -48,6 +48,19 @@ public:
 
   virtual int idle ();
 
+  virtual int ready ()
+  {
+    return 0;
+  };
+  virtual int baseInfo ()
+  {
+    return 0;
+  };
+  virtual int info ()
+  {
+    return 0;
+  };
+
   virtual int homeFilter ();
 
   int startIntegrate (Rts2Conn * conn, float in_req_time, int in_req_count);
