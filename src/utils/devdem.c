@@ -889,14 +889,18 @@ devdem_init (char **status_names, int status_num_in)
  * @param device_name		device name as reported on central
  * 				server
  * @param device_type		device type - use predefined constants
- * @param server_address	central server address
+ * @param server_host		central server address
  * @param server_port		central server port
+ * @param device_type		device type; @see ../status.h for detail
+ * @param device_host		hostname of device computer
+ * @param device_port		port on which I will be listenig
  *
  * @return 0 on success, -1 and set errno on error
  */
 int
-devdem_register (char *server_address, uint16_t server_port,
-		 char *device_name, int device_type, uint16_t device_port)
+devdem_register (char *server_host, uint16_t server_port,
+		 char *device_name, int device_type, char *device_host,
+		 uint16_t device_port)
 {
   struct devcli_channel_handlers handlers;
   handlers.command_handler = server_command_handler;
@@ -906,8 +910,8 @@ devdem_register (char *server_address, uint16_t server_port,
 
   /* connect to the server */
   if (devcli_server_register
-      (server_address, server_port, device_name, device_type, device_port,
-       &handlers) < 0)
+      (server_host, server_port, device_name, device_type, device_host,
+       device_port, &handlers) < 0)
     return -1;
 
   devser_set_server_id (SERVER_CLIENT, server_handle_msg);
@@ -945,7 +949,7 @@ child_init (void)
  * @return 0 on success, -1 and set errno on error
  */
 int
-devdem_run (int port, devser_handle_command_t in_handler)
+devdem_run (uint16_t port, devser_handle_command_t in_handler)
 {
   cmd_device_handler = in_handler;
   return devser_run (port, client_handle_commands, child_init);
