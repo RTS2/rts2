@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <malloc.h>
 #include <libnova.h>
+#include <unistd.h>
 
 #include "fitsio.h"
 #include "fits.h"
@@ -75,7 +76,7 @@ write_camera (struct fits_receiver_data *receiver, struct camera_info *camera)
 
   fitsfile *fptr = receiver->ffile;
 
-  write_key (TSTRING, "CAMD_NAME", camera->name, "Camera name");
+  write_key (TSTRING, "CAMD_TYPE", camera->type, "Camera type");
   write_key (TSTRING, "CAMD_SERIAL", camera->serial_number,
 	     "Camera serial number");
   write_key (TFLOAT, "CAMD_SETPOINT", &camera->temperature_setpoint,
@@ -92,7 +93,7 @@ write_camera (struct fits_receiver_data *receiver, struct camera_info *camera)
   write_key (TFLOAT, "XPLATE", &xplate, "X plate size");
   write_key (TFLOAT, "YPLATE", &yplate, "Y plate size");
   write_key (TFLOAT, "ROTANG", &rotang, "Field rotation");
-  write_key (TSTRING, "FILTER", "R", "Filter used");
+  write_key (TSTRING, "FILTER", filter, "Filter used");
   write_key (TLONG, "FLIP", &flip, "Image flip");
 
   return 0;
@@ -105,12 +106,11 @@ write_telescope (struct fits_receiver_data *receiver,
   int status = 0;
   fitsfile *fptr = receiver->ffile;
 
-  write_key (TSTRING, "TELD_NAME", telescope->name, "Telescope name");
+  write_key (TSTRING, "TELD_TYPE", telescope->type, "Telescope type");
   write_key (TSTRING, "TELD_SERIAL", telescope->serial_number,
 	     "Telescope serial number");
   write_key (TDOUBLE, "RASC", &telescope->ra, "Telescope ra");
   write_key (TDOUBLE, "DECL", &telescope->dec, "Telescope dec");
-  write_key (TINT, "TELD_MOVING", &telescope->moving, "Telescope is moving");
   write_key (TDOUBLE, "TELD_LON", &telescope->longtitude,
 	     "Telescope longtitude");
   write_key (TDOUBLE, "TELD_LAT", &telescope->latitude, "Telescope latitude");
@@ -128,10 +128,16 @@ fits_write_image_info (struct fits_receiver_data *receiver,
   double jd;
   fitsfile *fptr = receiver->ffile;
 
-  if (write_camera (receiver, &info->camera) ||
-      write_telescope (receiver, &info->telescope))
-    return -1;
-
+  if (*info->telescope.type)
+    {
+      write_key (TSTRING, "TEL_NAME", info->telescope_name, "Telescope name");
+      write_telescope (receiver, &info->telescope);
+    }
+  if (*info->camera.type)
+    {
+      write_key (TSTRING, "CAM_NAME", info->camera_name, "Camera name");
+      write_camera (receiver, &info->camera);
+    }
   if (dark_name)
     write_key (TSTRING, "DARK", dark_name, "Dark image path");
 
@@ -185,8 +191,12 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 #define fits_call(call) if (call) fits_report_error(stderr, status);
   memcpy (&(receiver->data[receiver->offset]), data, size);
   receiver->offset += size;
-  printf ("[] read: %i bytes of %i\r", receiver->offset, receiver->size);
-  fflush (stdout);
+#ifdef DEBUG
+  if (isatty (1))
+    {
+      printf (".");
+    };
+#endif /* DEBUG */
   if (receiver->offset > sizeof (struct imghdr))
     {
       if (!(receiver->header_processed))	// we receive full image header
@@ -213,8 +223,7 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 		      ((receiver->data) + sizeof (struct imghdr)), &status));
 	  free (receiver->data);
 #ifdef DEBUG
-	  printf ("readed:%i bytes                                       \n",
-		  receiver->offset);
+	  printf ("readed:%i bytes\n", receiver->offset);
 #endif /* DEBUG */
 	  return 1;
 	}
