@@ -22,6 +22,5 @@ dist_htmldata_DATA =	bartdb_months.php 	\
 			radec.php		\
 			settings.php		\
 			statistics_gen.php	\
-			target_images.php	\
 			targets.php		\
 			types.php
