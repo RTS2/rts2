@@ -471,6 +471,19 @@ tel_read_localtime (double *tptr)
 }
 
 /*! 
+ * Reads losmandy longtitude.
+ * 
+ * @param latptr	where longtitude will be stored  
+ * 
+ * @return -1 and errno on error, otherwise 0
+ */
+int
+tel_read_longtitude (double *tptr)
+{
+  return tel_read_hms (tptr, "#:Gg#");
+}
+
+/*! 
  * Returns losmandy sidereal time.
  * 
  * @param tptr		where time will be stored
@@ -480,7 +493,11 @@ tel_read_localtime (double *tptr)
 int
 tel_read_siderealtime (double *tptr)
 {
-  *tptr = 0;
+  double longtitude;
+  tel_read_longtitude (&longtitude);
+  *tptr = ln_get_mean_sidereal_time
+    (ln_get_julian_from_sys ()) * 15.0 - longtitude;
+  *tptr = ln_range_degrees (*tptr) / 15.0;
   return 0;
 }
 
@@ -495,19 +512,6 @@ int
 tel_read_latitude (double *tptr)
 {
   return tel_read_hms (tptr, "#:Gt#");
-}
-
-/*! 
- * Reads losmandy longtitude.
- * 
- * @param latptr	where longtitude will be stored  
- * 
- * @return -1 and errno on error, otherwise 0
- */
-int
-tel_read_longtitude (double *tptr)
-{
-  return tel_read_hms (tptr, "#:Gg#");
 }
 
 /*! 
@@ -774,18 +778,13 @@ telescope_base_info (struct telescope_info *info)
 extern int
 telescope_info (struct telescope_info *info)
 {
-  time_t t;
-  double loc_st;
   double ha;
   info->flip = 0;
   if (tel_read_ra (&info->ra) || tel_read_dec (&info->dec)
       || tel_read_siderealtime (&info->siderealtime)
       || tel_read_localtime (&info->localtime))
     return -1;
-  loc_st =
-    ln_range_degrees (ln_get_mean_sidereal_time
-		      (ln_get_julian_from_timet (&t)) * 15.0 + 14.95);
-  ha = ln_range_degrees (loc_st - info->ra);
+  ha = ln_range_degrees (info->siderealtime * 15.0 - info->ra);
   info->flip = (ha < 180.0 ? 1 : 0);
 
   return 0;
