@@ -17,8 +17,11 @@
 WINDOW *status_win;
 WINDOW *cmd_win;
 
-#define WND_COL		3
-#define WND_ROW		2
+#define ROW_SIZE	10
+#define COL_SIZE	25
+
+int wnd_col;
+int wnd_row;
 
 int cmd_line, cmd_col;
 
@@ -230,7 +233,7 @@ status_change (struct device *dev, char *status_name, int new_state)
 int
 main (int argc, char **argv)
 {
-  WINDOW *wnd[WND_COL * WND_ROW];
+  WINDOW **wnd;
   uint16_t port = SERVERD_PORT;
   char *server;
   char c;
@@ -307,20 +310,24 @@ main (int argc, char **argv)
 
   l = LINES - 2;
 
+  wnd_row = LINES / ROW_SIZE;
+  wnd_col = COLS / COL_SIZE;
+  wnd = (WINDOW *) malloc (sizeof (WINDOW) * wnd_row * wnd_col);
+
   cmd_win = newwin (2, COLS, 0, 0);
 
   keypad (cmd_win, TRUE);
   scrollok (cmd_win, TRUE);
   idlok (cmd_win, TRUE);
 
-  for (cmd_col = 0; cmd_col < WND_COL; cmd_col++)
-    for (cmd_line = 0; cmd_line < WND_ROW; cmd_line++)
-      wnd[cmd_col * WND_ROW + cmd_line] =
-	newwin (l / WND_ROW, COLS / WND_COL, 2 + cmd_line * l / WND_ROW,
-		cmd_col * COLS / WND_COL);
+  for (cmd_col = 0; cmd_col < wnd_col; cmd_col++)
+    for (cmd_line = 0; cmd_line < wnd_row; cmd_line++)
+      wnd[cmd_col * wnd_row + cmd_line] =
+	newwin (l / wnd_row, COLS / wnd_col, 2 + cmd_line * l / wnd_row,
+		cmd_col * COLS / wnd_col);
   cmd_line = 0;
   cmd_col = 0;
-  status_win = wnd[WND_COL * WND_ROW - 1];
+  status_win = wnd[wnd_col * wnd_row - 1];
   box (status_win, 0, 0);
   scrollok (status_win, TRUE);
 
@@ -331,10 +338,10 @@ main (int argc, char **argv)
     }
 
   devcli_set_general_notifier (devcli_server (), status_change,
-			       wnd[WND_COL * WND_ROW - 2]);
-  status (wnd[WND_COL * WND_ROW - 2], devcli_server ());
+			       wnd[wnd_col * wnd_row - 2]);
+  status (wnd[wnd_col * wnd_row - 2], devcli_server ());
 
-  for (i = 0, dev = devcli_devices (); dev && i < (WND_COL - 1) * WND_ROW;
+  for (i = 0, dev = devcli_devices (); dev && i < (wnd_col - 1) * wnd_row;
        dev = dev->next, i++)
     {
       devcli_set_general_notifier (dev, status_change, wnd[i]);
@@ -356,9 +363,9 @@ main (int argc, char **argv)
 	  devcli_server_command (NULL, "on");
 	  break;
 	case KEY_F (5):
-	  status (wnd[WND_COL * WND_ROW - 2], devcli_server ());
+	  status (wnd[wnd_col * wnd_row - 2], devcli_server ());
 	  for (i = 0, dev = devcli_devices ();
-	       dev && i < (WND_COL - 1) * WND_ROW; dev = dev->next, i++)
+	       dev && i < (wnd_col - 1) * wnd_row; dev = dev->next, i++)
 	    status (wnd[i], dev);
 	  break;
 	case KEY_F (10):
