@@ -21,8 +21,8 @@ struct chip_info
   int height;
   int binning_vertical;
   int binning_horizontal;
-  int pixelX;
-  int pixelY;
+  float pixelX;
+  float pixelY;
   int image_type;		/* see above for types */
   float gain;			/* in 0.01 e / ADU */
 };
