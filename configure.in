@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.C
 AC_INIT(rts2, 0.2.2, petr@lascaux.asu.cas.cz)
 
-AM_INIT_AUTOMAKE(rts2, 0.2.2)
+AM_INIT_AUTOMAKE([gnu dist-bzip2 dist-tarZ])
 
 AC_PREREQ(2.50)
 
@@ -9,7 +9,10 @@ AM_MAINTAINER_MODE
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_MAKE_SET
+
+AM_PROG_LIBTOOL
 
 # Checks for libraries.
 
@@ -108,10 +111,20 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol])
+AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp])
+
+AC_CHECK_HEADERS([limits.h]) 
+AC_FUNC_CHOWN 
+AC_FUNC_MEMCMP
+AC_FUNC_SELECT_ARGTYPES 
+AC_FUNC_STAT
+AC_FUNC_STRFTIME 
+AC_FUNC_VPRINTF 
+AC_PROG_CXX
+AC_TYPE_MODE_T
 
 AC_CONFIG_SRCDIR(src)
-AM_CONFIG_HEADER(config.h)
+AM_CONFIG_HEADER(include/config.h)
 
 AC_OUTPUT([Makefile
 	   doc/Makefile
@@ -119,6 +132,8 @@ AC_OUTPUT([Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
+	   src/camd/sbigusb/Makefile
+	   src/camd/urvc/Makefile
 	   src/db/Makefile
 	   src/dome/Makefile
 	   src/grb/Makefile
@@ -133,6 +148,7 @@ AC_OUTPUT([Makefile
 	   src/pgsql/Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
+	   src/teld/lx200/Makefile
 	   src/utils/Makefile
 	   src/utils/config.h
            src/wcs/Makefile
