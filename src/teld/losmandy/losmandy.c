@@ -1169,9 +1169,8 @@ telescope_park ()
   char buf = '2';
   int count = 0;
   tel_gemini_reset ();
-  tel_write ("#:hP#", 5);
-  tel_gemini_set (135, 135);
   tel_gemini_match_time ();
+  tel_write ("#:hP#", 5);
   while (buf == '2' && count < 200)
     {
       sleep (1);
@@ -1179,6 +1178,7 @@ telescope_park ()
 	return -1;
       count++;
     }
+  tel_gemini_set (135, 135);
   return count == 200 ? -1 : 0;
 }
 
