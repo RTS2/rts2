@@ -173,7 +173,6 @@ param_next_ip_address (struct param_status *params, char **hostname,
 		       unsigned int *port)
 {
   char *tmp_hostname;
-  char *endptr;
   if (param_next_string (params, &tmp_hostname))
     return -1;
 
