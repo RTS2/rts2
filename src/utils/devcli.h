@@ -15,7 +15,7 @@
 #include <pthread.h>
 
 typedef int (*devcli_handle_response_t) (struct param_status * params);
-typedef int (*devcli_handle_data_t) (int socket, size_t size);
+typedef int (*devcli_handle_data_t) (int sock, size_t size);
 
 /*! 
  * Parameters for one communication channel.
@@ -45,12 +45,13 @@ void devcli_server_disconnect ();
 int devcli_connectdev (int *channel_id, const char *dev_name,
 		       struct devcli_channel_handlers *handlers);
 
-ssize_t devcli_read_data (int socket, void *data, size_t size);
+ssize_t devcli_read_data (int sock, void *data, size_t size);
 
 int devcli_wait_for_status (char *device_name, char *status_name,
 			    int status_mask, int status, time_t timeout);
 
 int devcli_server_command (int *ret_code, char *cmd, ...);
 int devcli_command (int channel_id, int *ret_code, char *cmd, ...);
+int devcli_execute (char *line, int *ret_code);
 
 #endif // __RTS_DEVCLI__
