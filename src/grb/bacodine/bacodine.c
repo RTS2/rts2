@@ -1080,7 +1080,7 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 
   if (lbuf[PKT_TYPE] == TYPE_HETE_TEST)
     {
-      process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT %
+      process_grb ((((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT) %
 		    99) + 1,
 		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
 		   270.0, 60, &grb_date);
@@ -1601,7 +1601,7 @@ receive_bacodine (process_grb_event_t arg)
 		  pr_xte_pca (lbuf, stdout);
 		  pr_xte_pca (lbuf, lg);
 		  break;
-/*case TYPE_XTE_ASM_ALERT: *//* Not implimented yet */
+		  /*case TYPE_XTE_ASM_ALERT: *//* Not implimented yet */
 		case TYPE_XTE_ASM_SRC:
 		  pr_xte_asm (lbuf, stdout);
 		  pr_xte_asm (lbuf, lg);
@@ -1639,6 +1639,7 @@ receive_bacodine (process_grb_event_t arg)
 		case TYPE_INTG_REFINED:
 		case TYPE_INTG_OFFLINE:
 		  pr_intg (lbuf, lg);
+		  break;
 		case TYPE_KILL_SOCKET:	/* Signal to break connection */
 		  printf ("Got a KILL socket packet.\n");
 		  fprintf (lg, "Got a KILL socket packet.\n");
