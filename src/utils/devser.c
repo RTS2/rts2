@@ -92,11 +92,25 @@ pid_t devser_child_pid = 0;	//! pid of child process - actual pid of main thread
 typedef struct
 {
   pthread_mutex_t lock;		//! locking mutex - we allow only one connection
-  pthread_t thread;		//! thread running that data processing
+
+  pthread_mutex_t que_lock;	//! lock for ava
+  pthread_cond_t write_cond;	//! condition for write, eg. put operation
+  pthread_cond_t read_cond;	//! condiction for read, eg. get operation
+
+  pthread_t thread;
+
   struct sockaddr_in my_side;	//! my side of connection
   struct sockaddr_in their_side;	//! the other side of connection
-  void *data_ptr;		//! pointer to data to send
+
+  void *buffer;			//! point to data buffer; needs to be malloced and freeded
+  size_t buffer_size;		//! buffer size
   size_t data_size;		//! total data size
+  size_t data_readed;		//! size of data readed
+
+  size_t available;		//! count of putted datas 
+  size_t data_write;		//! start of writing - we operate in cyclic buffer
+  size_t data_read;		//! start of reading
+
   int sock;			//! data socket
 }
 data_conn_info_t;
@@ -571,27 +585,26 @@ make_data_socket (struct sockaddr_in *server)
   return data_sock;
 }
 
+int data_get (int id, void *data, size_t data_size, size_t * size);
+
 void *
 send_data_thread (void *arg)
 {
+#define ID	*((int *) arg)
   struct timeval send_tout;
   fd_set write_fds;
   data_conn_info_t *data_con;
   int port, ret;
-  void *ready_data_ptr, *data_ptr;
-  size_t data_size;
-  size_t avail_size;
+  char data[DATA_BLOCK_SIZE];
+  size_t size;
 
   syslog (LOG_DEBUG, "Sending data thread started.");
 
-  data_con = (data_conn_info_t *) arg;
+  data_con = &data_cons[ID];
 
   port = ntohs (data_con->my_side.sin_port);
 
-  ready_data_ptr = data_ptr = data_con->data_ptr;
-  data_size = data_con->data_size;
-
-  while (ready_data_ptr - data_ptr < data_size)
+  while (!data_get (ID, data, DATA_BLOCK_SIZE, &size))
     {
       send_tout.tv_sec = 9000;
       send_tout.tv_usec = 0;
@@ -606,49 +619,36 @@ send_data_thread (void *arg)
 	{
 	  syslog (LOG_ERR, "select timeout port:%i", port);
 	  errno = ETIMEDOUT;
-	  ret = -1;
 	  break;
 	}
-      avail_size = ((ready_data_ptr + DATA_BLOCK_SIZE) <
-		    data_ptr + data_size) ? DATA_BLOCK_SIZE : data_ptr +
-	data_size - ready_data_ptr;
-      if ((ret = write (data_con->sock, ready_data_ptr, avail_size)) < 0)
+      if ((ret = write (data_con->sock, data, size)) != size)
 	{
 	  syslog (LOG_ERR, "write:%m port:%i", port);
 	  break;
 	}
       syslog (LOG_DEBUG, "on port %i[%i] write %i bytes", port,
 	      data_con->sock, ret);
-      ready_data_ptr += ret;
     }
   if (close (data_con->sock) < 0)
     syslog (LOG_ERR, "close %i: %m", data_con->sock);
 
+  devser_data_done (ID);
   pthread_mutex_unlock (&data_con->lock);
 
-  if (ret < 0)
-    syslog (LOG_ERR, "sending data on port: %i %m", port);
   return NULL;
+#undef ID
 }
 
 /*! 
- * Connect, initializes and send data to given client.
+ * Initializes connection and its data buffer.
  * 
- * Quite complex, hopefully quite clever.
- * Handles all task connected with sending data - just past it target address 
- * data to send, and don't care about rest.
- * <p>
- * It sends some messages on control channel, which client should
- * check.
- * 
- * @param in_addr Address to send data; if NULL, we will accept
- * connection request from any address.
- * @param data_ptr Data to send
- * @param data_size Data size
+ * Quite complex, hopefully quite clever. 
+ * Handles only part of tasks connected task connected with sending data.
+ *
+ * @return -1 and set errno on failure, 0 otherwise
  */
 int
-devser_send_data (struct in_addr *client_addr, void *data_ptr,
-		  size_t data_size)
+devser_data_init (size_t buffer_size, size_t data_size, int *id)
 {
   int port, ret, data_listen_sock;
   struct timeval accept_tout;
@@ -666,11 +666,25 @@ devser_send_data (struct in_addr *client_addr, void *data_ptr,
     }
 
   data_con = &data_cons[conn];
-  data_con->data_ptr = data_ptr;
   data_con->data_size = data_size;
+  data_con->data_readed = 0;
+
+  if (!(data_con->buffer = malloc (buffer_size)))
+    {
+      syslog (LOG_ERR, "devser_data_init data_con->buffer malloc: %m");
+      goto err_without_socket;
+    }
+
+  data_con->buffer_size = buffer_size;
+
+  data_con->data_read = 0;
+  data_con->data_write = 0;
+
+  data_con->available = 0;
 
   if ((data_listen_sock = make_data_socket (&data_con->my_side)) < 0)
-    return -1;
+    goto err_without_socket;
+
   port = ntohs (data_con->my_side.sin_port);
 
   if (listen (data_listen_sock, 1) < 0)
@@ -724,27 +738,214 @@ devser_send_data (struct in_addr *client_addr, void *data_ptr,
 	  port, inet_ntoa (data_con->their_side.sin_addr),
 	  ntohs (data_con->their_side.sin_port), data_con->sock);
 
-  if ((ret =
-       pthread_create (&data_con->thread, NULL, send_data_thread, data_con)))
+  if ((errno =
+       pthread_create (&(data_con->thread), NULL, send_data_thread, id)))
     {
-      errno = ret;
-      return -1;
+      syslog (LOG_ERR, "devser_data_init pthread_create: %m");
+      goto err;
     }
+
+  *id = conn;
   return 0;
 
 err:
+  data_con->sock = 0;
   close (data_listen_sock);
+err_without_socket:
+  pthread_mutex_unlock (&(data_con->lock));
   return -1;
+}
+
+void
+devser_data_done (int id)
+{
+  data_conn_info_t *data_con;
+  data_con = &data_cons[id];
+  free (data_con->buffer);
+  data_con->buffer = NULL;
+
+  close (data_con->sock);
+  data_con->sock = 0;
+}
+
+/*!
+ * Put given data amounts on data buffer.
+ *
+ * Data must be smaller than buffer size. It isn't thread safe, should
+ * be called from only one thread.
+ *
+ * @param id			data connection id
+ * @param data			data to write on que
+ * @param size			data size
+ *
+ * @return -1 and set errno on failure, 0 otherwise
+ */
+int
+devser_data_put (int id, void *data, size_t size)
+{
+  data_conn_info_t *data_con;
+  int overload;			// for cyclic buffer
+
+  data_con = &data_cons[id];
+
+  if (size > data_con->buffer_size)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+
+  if ((errno = pthread_mutex_lock (&(data_con->que_lock))))
+    {
+      syslog (LOG_ERR, "devser_data_put pthread_mutex_lock: %m");
+      return -1;
+    }
+
+  while (data_con->available > data_con->buffer_size - size)
+    {
+      pthread_cond_wait (&(data_con->write_cond), &(data_con->que_lock));
+    }
+
+  if (data_con->available == -1)
+    {
+      errno = EPIPE;
+      return -1;
+    }
+
+  overload = (data_con->data_write + size) - data_con->buffer_size;
+
+  if (overload < 0)
+    overload = 0;
+
+  memcpy (data_con->buffer + data_con->data_write, data, size - overload);
+  memcpy (data_con->buffer, data, overload);	// mostly overload = 0
+
+  data_con->available += size;
+
+  // move data_write pointer to next free data
+  if (overload)
+    data_con->data_write = overload;
+  else
+    data_con->data_write += size;
+
+  pthread_cond_signal (&(data_con->read_cond));
+  pthread_cond_signal (&(data_con->write_cond));	// if there is some other thread waiting..
+
+  pthread_mutex_unlock (&data_con->que_lock);
+
+  return 0;
+}
+
+/*!
+ * Read data from que.
+ *
+ * It isn't thread safe.  
+ *
+ * @param id			data connection id
+ * @param data			data to read from que
+ * @param max_size		maximal data size
+ * @param size			actually readed data size	
+ *
+ * @return -1 and set errno on failure, 0 otherwise
+ */
+int
+data_get (int id, void *data, size_t max_size, size_t * size)
+{
+  data_conn_info_t *data_con;
+  int overload;			// for cyclic buffer
+
+  data_con = &data_cons[id];
+
+  if (max_size > data_con->buffer_size)
+    max_size = data_con->buffer_size;
+
+  if ((errno = pthread_mutex_lock (&(data_con->que_lock))))
+    {
+      syslog (LOG_ERR, "devser_data_put pthread_mutex_lock: %m");
+      return -1;
+    }
+
+  while (data_con->available == 0)
+    {
+      pthread_cond_wait (&(data_con->read_cond), &(data_con->que_lock));
+    }
+
+  if (data_con->available == -1)
+    {
+      // invalidate que
+      errno = EPIPE;
+      return -1;
+    }
+
+  if (data_con->available < max_size)
+    max_size = data_con->available;	// min from max_size and data_con->available
+
+  overload = (data_con->data_read + max_size) - data_con->buffer_size;
+
+  if (overload < 0)
+    overload = 0;
+
+  memcpy (data, data_con->buffer + data_con->data_read, max_size - overload);
+  memcpy (data, data_con->buffer, overload);	// mostly overload = 0
+
+  data_con->available -= max_size;
+  data_con->data_readed += max_size;
+
+  *size = max_size;
+
+  // move data_read pointer
+  if (overload)
+    data_con->data_read = overload;
+  else
+    data_con->data_read += max_size;
+
+  pthread_cond_signal (&(data_con->write_cond));
+  pthread_cond_signal (&(data_con->read_cond));	// if there is some other thread waiting
+
+  pthread_mutex_unlock (&(data_con->que_lock));
+
+  if (data_con->data_readed >= data_con->data_size)
+    devser_data_done (id);
+  return 0;
+}
+
+/*!
+ * Invalidate data que.
+ *
+ * @param id		data connection id
+ *
+ * @return -1 and set errno on error, 0 otherwise 
+ */
+int
+devser_data_invalidate (int id)
+{
+  data_conn_info_t *data_con;
+  data_con = &data_cons[id];
+
+  if ((errno = pthread_mutex_lock (&(data_con->que_lock))))
+    {
+      syslog (LOG_ERR, "devser_data_invalidate data_con lock: %m");
+      return -1;
+    }
+  if (data_con->data_readed + data_con->available < data_con->data_size)
+    {
+      data_con->available = -1;
+      pthread_cond_signal (&(data_con->write_cond));
+      pthread_cond_signal (&(data_con->read_cond));	// if there is some other thread waiting
+    }
+
+  pthread_mutex_unlock (&(data_con->lock));
+
+  return 0;
 }
 
 /*!
  * Create a socket, bind it.
  *
  * Internal function.
- * @param port port number.
- * @return positive socket on success, exit on failure.
+ *
+ * @param port 		port number.
+ * @return positive 	socket on success, exit on failure.
  */
-
 int
 make_socket (uint16_t port)
 {
@@ -1033,6 +1234,18 @@ devser_param_next_hmsdec (double *ret)
 }
 
 int
+devser_param_next_ip_address (char **hostname, unsigned int *port)
+{
+  if (param_next_ip_address (command_params, hostname, port))
+    {
+      devser_write_command_end (DEVDEM_E_PARAMSVAL, "expected uri, got: %s",
+				command_params->param_processing);
+      return -1;
+    }
+  return 0;
+}
+
+int
 read_from_client ()
 {
   char *buffer;
@@ -1179,6 +1392,12 @@ devser_init (size_t shm_data_size)
 {
   union semun sem_un;
 
+  /* register on_exit */
+  atexit (devser_on_exit);
+  signal (SIGTERM, sig_exit);
+  signal (SIGQUIT, sig_exit);
+  signal (SIGINT, sig_exit);
+
   // initialize data shared memory
   if (shm_data_size > 0)
     {
@@ -1210,7 +1429,11 @@ devser_init (size_t shm_data_size)
   sem_un.val = 1;
 
   // initialize data shared memory semaphore
-  semctl (data_sem, 0, SETVAL, sem_un);
+  if (semctl (data_sem, 0, SETVAL, sem_un))
+    {
+      syslog (LOG_ERR, "data sem # 0 init: %m");
+      return -1;
+    }
 
   // initialize ipc msg que
   if ((msg_id = msgget (IPC_PRIVATE, 0644)) < 0)
@@ -1218,12 +1441,6 @@ devser_init (size_t shm_data_size)
       syslog (LOG_ERR, "devser msgget: %m");
       return -1;
     }
-
-  /* register on_exit */
-  atexit (devser_on_exit);
-  signal (SIGTERM, sig_exit);
-  signal (SIGQUIT, sig_exit);
-  signal (SIGINT, sig_exit);
 
   return 0;
 }
@@ -1235,7 +1452,7 @@ devser_init (size_t shm_data_size)
  * call handler for every command it received.
  * 
  * @param port 		port to run device deamon
- * @param in_handler 	address of command handler code
+ * @param in_handler 	reference to command handler code
  * 
  * @return 0 on success, -1 and set errno on error
  */
@@ -1298,10 +1515,17 @@ devser_run (int port, devser_handle_command_t in_handler,
 	  ntohs (server_client_ip.sin_port), control_fd);
 
   devser_child_pid = getpid ();
+
   // initialize data_cons
   for (sock = 0; sock < MAXDATACONS; sock++)
     {
       pthread_mutex_init (&data_cons[sock].lock, NULL);
+      pthread_mutex_init (&data_cons[sock].que_lock, NULL);
+
+      pthread_cond_init (&data_cons[sock].write_cond, NULL);
+      pthread_cond_init (&data_cons[sock].read_cond, NULL);
+
+      data_cons[sock].sock = 0;
     }
 
   // initialize threads lock

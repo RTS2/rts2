@@ -22,8 +22,9 @@ int devdem_status_message (int subdevice, char *description);
 int devdem_status_mask (int subdevice, int mask, int operand, char *message);
 
 int devdem_init (char **status_names, int status_num_in);
-int devdem_register (struct devcli_channel *server_channel, char *device_name,
-		     char *server_address, int server_port);
+int devdem_register (char *server_address, uint16_t server_port,
+		     char *device_name, int device_type,
+		     uint16_t device_port);
 int devdem_run (int port, devser_handle_command_t in_handler);
 
 #include "devser.h"

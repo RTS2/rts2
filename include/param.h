@@ -19,7 +19,7 @@ int param_next_time_t (struct param_status *params, time_t * ret);
 int param_next_float (struct param_status *params, float *ret);
 int param_next_hmsdec (struct param_status *params, double *ret);
 int param_next_ip_address (struct param_status *params, char **hostname,
-			   int *port);
+			   unsigned int *port);
 void param_done (struct param_status *params);
 
 #endif /* __RTS_PARAM__ */

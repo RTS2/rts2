@@ -101,8 +101,6 @@ int client_status;
 
 struct client_info *clients_info;	// mapped to shared memory
 
-struct devcli_channel *server_channel;
-
 //! block priority calls
 pthread_mutex_t priority_block = PTHREAD_MUTEX_INITIALIZER;
 
@@ -464,11 +462,9 @@ client_handle_msg (char *msg)
 int
 server_handle_msg (char *msg)
 {
-  // some message preprocessing (catchnig important system
-  // messages)
   if (strncmp (msg, "authorize", 9) == 0)
     {
-      if (devcli_command (server_channel, msg))
+      if (devcli_server_command (msg))
 	syslog (LOG_ERR, "devcli_command %s: %m", msg);
       return 0;
     }
@@ -890,37 +886,29 @@ devdem_init (char **status_names, int status_num_in)
  *
  * Return after connection is sucessfully initialized, or connection cannot be made.
  *
- * @param server_channel_in	central server channel
  * @param device_name		device name as reported on central
  * 				server
+ * @param device_type		device type - use predefined constants
  * @param server_address	central server address
  * @param server_port		central server port
  *
  * @return 0 on success, -1 and set errno on error
  */
 int
-devdem_register (struct devcli_channel *server_channel_in,
-		 char *device_name, char *server_address, int server_port)
+devdem_register (char *server_address, uint16_t server_port,
+		 char *device_name, int device_type, uint16_t device_port)
 {
-  char *cmd;
-  server_channel = server_channel_in;
-  server_channel->command_handler = server_command_handler;
-  server_channel->message_handler = server_message_handler;
+  struct devcli_channel_handlers handlers;
+  handlers.command_handler = server_command_handler;
+  handlers.message_handler = server_message_handler;
 
-  server_channel->data_handler = NULL;
+  handlers.data_handler = NULL;
 
   /* connect to the server */
-  if (devcli_connect (server_channel, server_address, server_port) < 0)
+  if (devcli_server_register
+      (server_address, server_port, device_name, device_type, device_port,
+       &handlers) < 0)
     return -1;
-
-  asprintf (&cmd, "register %s", device_name);
-
-  if (devcli_command (server_channel, cmd) < 0)
-    {
-      free (cmd);
-      return -1;
-    }
-  free (cmd);
 
   devser_set_server_id (SERVER_CLIENT, server_handle_msg);
   return 0;

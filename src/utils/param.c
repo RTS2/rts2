@@ -170,24 +170,38 @@ param_next_hmsdec (struct param_status *params, double *ret)
  */
 int
 param_next_ip_address (struct param_status *params, char **hostname,
-		       int *port)
+		       unsigned int *port)
 {
-  struct param_status *inner_params;
   char *tmp_hostname;
-  if (param_next (params))
+  char *endptr;
+  if (param_next_string (params, &tmp_hostname))
     return -1;
-  // split : parts
-  param_init (&inner_params, params->param_processing, ':');
 
-  if (param_next_string (inner_params, &tmp_hostname)
-      || param_next_integer (inner_params, port))
+  *hostname = tmp_hostname;
+  while (*tmp_hostname != 0 && *tmp_hostname != ':')
+    tmp_hostname++;
+  if (!tmp_hostname)
     {
-      param_done (inner_params);
+      errno = EINVAL;
+      return -1;
+    }
+  *tmp_hostname = 0;
+  tmp_hostname++;
+
+//  printf ("hostname: '%s' %p\n", *hostname, *hostname);
+
+  //now get the port
+  *port = strtol (tmp_hostname, &endptr, 10);
+
+//  printf ("hostname3: '%s' %p port: %i\n", *hostname, *hostname, *port);
+
+  if (*endptr || *port < 1 || *port > 65365)
+    {
+      errno = EINVAL;
       return -1;
     }
 
-  *hostname = (char *) malloc (strlen (tmp_hostname) + 1);
-  strcpy (*hostname, tmp_hostname);
-  param_done (inner_params);
+//  printf ("hostname2: '%s'\n", *hostname);
+
   return 0;
 }

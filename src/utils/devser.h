@@ -18,6 +18,8 @@
 
 #define MAX_CLIENT		10
 
+// data memory types
+
 typedef int (*devser_handle_command_t) (char *command);
 typedef int (*devser_handle_msg_t) (char *message);
 
@@ -27,9 +29,12 @@ int devser_init (size_t shm_data_size);
 int devser_run (int port, devser_handle_command_t in_handler,
 		int (*child_init) (void));
 int devser_dprintf (const char *format, ...);
-int devser_send_data (struct in_addr *client_addr, void *data_ptr,
-		      size_t data_size);
 int devser_write_command_end (int retc, const char *msg_format, ...);
+
+int devser_data_init (size_t buffer_size, size_t data_size, int *id);
+void devser_data_done (int id);
+int devser_data_put (int id, void *data, size_t size);
+int devser_data_invalidate (int id);
 
 int devser_thread_create (void *(*start_routine) (void *), void *arg,
 			  size_t arg_size, int *id,
@@ -60,6 +65,7 @@ int devser_param_next_string (char **ret);
 int devser_param_next_integer (int *ret);
 int devser_param_next_float (float *ret);
 int devser_param_next_hmsdec (double *ret);
+int devser_param_next_ip_address (char **hostname, unsigned int *port);
 
 extern pid_t devser_parent_pid;
 extern pid_t devser_child_pid;
