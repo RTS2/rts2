@@ -18,6 +18,7 @@ EPS = bootes.eps			\
       state-camd.eps			\
       state-cooling.eps			\
       state-teld.eps			\
+      state-dome.eps			\
       rts-1-packages.eps 		\
       vrstvy-architektura.eps 
 
