@@ -233,7 +233,7 @@ focus_expose_and_readout (float exposure, int light, struct readout *readout,
 			  unsigned short *img)
 {
   int ret;
-  devser_dprintf ("focuser: starting exposure");
+  devser_dprintf ("foc: expose");
 #ifdef MIRROR
   if (light)
     mirror_open ();
@@ -245,7 +245,7 @@ focus_expose_and_readout (float exposure, int light, struct readout *readout,
 #endif
   if (ret)
     return -1;
-  devser_dprintf ("focuser: starting readout");
+  devser_dprintf ("foc: readout");
   return camera_readout (readout, img);
 }
 
@@ -302,6 +302,9 @@ start_focusing (void *arg)
   readout.y = (info.chip_info[chip].width - x) / 2;
   readout.height = x;
   readout.width = x;
+
+  devser_dprintf ("readout: %i %i %i %i %i", readout.chip, readout.x,
+		  readout.y, readout.height, readout.width);
 
   if (focus_expose_and_readout (exp_time, 0, &readout, img2))
     goto err;
@@ -525,6 +528,7 @@ camd_handle_command (char *command)
       int light;
       if (devser_param_test_length (3))
 	return -1;
+      cam_call (camera_init ("/dev/ccd1", sbig_port));
       get_chip;
       if (devser_param_next_integer (&light))
 	return -1;
@@ -704,8 +708,9 @@ camd_handle_command (char *command)
 
       if ((ret =
 	   devser_thread_create (start_focusing,
-				 (void *) &focusing_chip, 0,
-				 NULL, clean_focusing_cancel)))
+				 (void *) &focusing_chip,
+				 sizeof (focusing_chip), NULL,
+				 clean_focusing_cancel)))
 	{
 	  devdem_status_mask (chip,
 			      CAM_MASK_FOCUSINGS,
