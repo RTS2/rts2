@@ -10,7 +10,7 @@ include ../../make.conf
 
 LDFLAGS += -O2 -l$(LIB_M) -l$(LIB_PTHREAD)
 
-CFLAGS += -O2
+CFLAGS += -O2 -I../../include
 
 .PHONY=clean
 

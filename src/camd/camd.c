@@ -17,9 +17,9 @@
 
 #include "camera.h"
 #include "../utils/devdem.h"
-#include "../status.h"
+#include "status.h"
 
-#include "../writers/imghdr.h"
+#include "imghdr.h"
 
 #define SERVERD_PORT    	5557	// default serverd port
 #define SERVERD_HOST		"localhost"	// default serverd hostname
@@ -219,9 +219,12 @@ camd_handle_command (char *command)
   else if (strcmp (command, "expose") == 0)
     {
       float exptime;
-      if (devser_param_test_length (2))
+      int light;
+      if (devser_param_test_length (3))
 	return -1;
       get_chip;
+      if (devser_param_next_integer (&light))
+	return -1;
       if (devser_param_next_float (&exptime))
 	return -1;
       if ((exptime <= 0) || (exptime > 330000))
@@ -235,7 +238,7 @@ camd_handle_command (char *command)
 	  struct camd_expose expose;
 	  expose.chip = chip;
 	  expose.exposure = exptime;
-	  expose.light = 1;
+	  expose.light = light;
 	  /* priority block start here */
 	  if (devdem_priority_block_start ())
 	    return -1;
