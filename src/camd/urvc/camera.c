@@ -339,21 +339,22 @@ camera_binning (int chip_id, int vertical, int horizontal)
 extern int
 camera_readout_line (int chip_id, short start, short length, void *data)
 {
-  int bin = 1, tx = 0, tw = 1536, th = 1024;
+  int bin, tw = 1536;
   PAR_ERROR ret = CE_NO_ERROR;
   EEPROMContents eePtr;
+
+  bin = ch_info[chip_id].binning_vertical;
 
   if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
     return ret;
 
   tw = Cams[eePtr.model].horzImage;
-  th = Cams[eePtr.model].vertImage;
 
   CameraOut (0x60, 1);
 //      disable();
   SetVdd (1);
   if ((ret =
-       DigitizeImagingLine (tx, tw, 0, bin + 1, bin + 1, 1, data, 0, tw)))
+       DigitizeImagingLine (start, length, 0, bin, bin, 1, data, 0, length)))
     return ret;			//goto imaging_end; // left, len, readoutMode, ptr,
 
   printf ("\rCompleted line.\n");
