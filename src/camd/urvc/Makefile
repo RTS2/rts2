@@ -1,6 +1,6 @@
 CC=gcc
 
-CFLAGS = -I$(CFITSIO) -I$(READLINE) -Wall -Wshadow -g -march=i686
+CFLAGS = -O2 -I$(CFITSIO) -I$(READLINE) -Wall -Wshadow -g -march=i686
 #-march=i586 -ggdb 
 #--pedantic
 

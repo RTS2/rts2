@@ -64,7 +64,8 @@ end_realtime ()
 #ifdef DEBUG
 extern int IO_LOG;		// marmicro.c
 
-/*unsigned char __inb(int port)
+/*
+unsigned char __inb(int port)
 {
     unsigned char _v;
     __asm__ __volatile__("inb %w1,%0":"=a"(_v):"Nd"(port));

@@ -8,7 +8,9 @@ SUBDIRS = sbig urvc
 
 include ../../make.conf
 
-LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD)
+LDFLAGS += -O2 -l$(LIB_M) -l$(LIB_PTHREAD)
+
+CFLAGS += -O2
 
 .PHONY=clean
 
