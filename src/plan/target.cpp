@@ -149,6 +149,14 @@ Target::observe (Target * last_t)
 
   devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			  DEVICE_PRIORITY, 0);
+  // wait for readouts..
+  if (last_t)
+  {
+    last_t->wait_for_readout_end ();
+  }
+  
+  move ();
+
   if (abs (start_time - t) > tolerance)
     {
       printf ("start_time %li (%s)", start_time, ctime (&start_time));
@@ -189,8 +197,6 @@ Target::observe (Target * last_t)
       time (&t);
       db_start_observation (id, &t, &obs_id);
     }
-
-  move ();
 
   // wait till end of telescope movement
   devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,

@@ -132,6 +132,16 @@ public:
   {
     return -1;
   };
+  int wait_for_readout_end ()
+  {
+    pthread_mutex_lock (&script_thread_count_mutex);
+    while (running_script_count > 0)	// cause we will hold running_script_count lock in any case..
+      {
+	pthread_cond_wait (&script_thread_count_cond,
+			   &script_thread_count_mutex);
+      }
+    pthread_mutex_unlock (&script_thread_count_mutex);
+  };
   int move ();			// change position
   static void *runStart (void *exinfo);	// entry point for camera threads
   virtual int observe (Target * last);
