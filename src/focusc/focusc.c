@@ -226,6 +226,7 @@ main (int argc, char **argv)
 	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n"
+		  "\tdate|b\t\tfilenames are UT date\n"
 		  "\texposure|e <exposure in sec>\t\texposure time in seconds\n"
 		  "\tdevice|d <device_name>\t\tdevice for which to take exposures\n"
 		  "\tinc|i\t\tincrease exposure count after every row\n"
