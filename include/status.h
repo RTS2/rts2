@@ -65,9 +65,12 @@
 #define DOME_CLOSING		0x03
 
 #define SERVERD_DAY		0
-#define SERVERD_DUSK		1
-#define SERVERD_NIGHT		2
-#define SERVERD_DAWN		3
+#define SERVERD_EVENING		1
+#define SERVERD_DUSK		2
+#define SERVERD_NIGHT		3
+#define SERVERD_DAWN		4
+#define SERVERD_MORNING		5
+
 
 #define SERVERD_MAINTANCE	10
 #define SERVERD_OFF		11
