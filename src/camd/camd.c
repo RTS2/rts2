@@ -169,7 +169,7 @@ err:
 int
 camd_handle_command (char *command)
 {
-  int ret;
+  int ret = -1;
   int chip;
 
   if (strcmp (command, "ready") == 0)
@@ -539,7 +539,7 @@ main (int argc, char **argv)
 	{
 	case 'l':
 	  sbig_port = atoi (optarg);
-	  if (sbig_port < 1 || sbig_port > 3)
+	  if (sbig_port < 0 || sbig_port > 3)
 	    {
 	      printf ("invalid sbig_port option: %s\n", optarg);
 	      exit (EXIT_FAILURE);

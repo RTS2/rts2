@@ -65,17 +65,17 @@ ambient_ad2c (unsigned int ad)
 int
 getbaseaddr (int parport_num)
 {
-
-/*  snprintf (buffer, GETBASEADDR_BUFLEN,
+  int fufu, a;
+  char buffer[400];
+  snprintf (buffer, GETBASEADDR_BUFLEN,
 	    "/proc/sys/dev/parport/parport%d/base-addr", parport_num);
 
   fufu = fopen (buffer, "r");
   if (fufu == NULL)
     return 0;
   fscanf (fufu, "%d", &a);
-  fclose (fufu);*/
-
-  return 888;
+  fclose (fufu);
+  return a;
 }
 
 void
@@ -121,19 +121,17 @@ measure_pp ()
 extern int
 camera_init (char *device_name, int camera_id)
 {
-  int tt, uu;
+  int uu;
   int i;
   EEPROMContents eePtr;
   QueryTemperatureStatusResults qtsr;
   PAR_ERROR ret = CE_NO_ERROR;
 
-  tt = camera_id;
-
   begin_realtime ();
 
-  if ((uu = getbaseaddr (tt)) == 0)
+  if ((uu = getbaseaddr (camera_id)) == 0)
     {
-      printf ("-p: parport%d not known to kernel\n", tt);
+      printf ("-p: parport%d not known to kernel\n", camera_id);
       return CE_BAD_PARAMETER;
     }
   baseAddress = uu;
