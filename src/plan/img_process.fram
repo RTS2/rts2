@@ -20,6 +20,10 @@ case $imgname in
         ;;
 esac
 
+if echo $dirname | grep "C0"; then
+	exit
+fi
+
 mv $imgname $infile
 
 echo "images
