@@ -76,9 +76,9 @@ main (int argc, char **argv)
   printf ("INSERT INTO images"
 	  "(img_id, img_date, img_exposure, img_temperature, img_filter, astrometry, "
 	  "obs_id, camera_name, mount_name, med_id, epoch_id) VALUES (nextval ('img_id'), "
-	  "%ld, %.0f, %.0f, '%s', 'NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %ld CRPIX2 %ld "
+	  "abstime (%ld), %.0f, %.0f, '%s', 'NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %ld CRPIX2 %ld "
 	  "CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f', %ld, '%s', '%s',"
-	  "0, '00T');\n", img_date, img_exposure * 100, img_temperature * 10,
+	  "0, '003');\n", img_date, img_exposure * 100, img_temperature * 10,
 	  img_filter, naxis[0], naxis[1], ctype[0], ctype[1], crpix[0],
 	  crpix[1], crval[0], crval[1], cdelt[0], cdelt[1],
 	  (crota[0] + crota[1]) / 2.0, eqin, epoch, obs_id, camera_name,

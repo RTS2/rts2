@@ -6,6 +6,7 @@
 #include <jpeglib.h>
 #include <wcs.h>
 #include <fitsfile.h>
+#include <getopt.h>
 #include <math.h>
 
 #include "logo.h"
@@ -259,6 +260,16 @@ main (int argc, char **argv)
   int off;
   double x, y;
   double a, d;
+
+  int c;
+
+/*  while (1)
+  {
+	c = getopt
+
+
+
+  } */
 
   if ((argc != 2) && (argc != 3) && (argc != 4))
     {
