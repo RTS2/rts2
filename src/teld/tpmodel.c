@@ -1,8 +1,9 @@
 /*
  * Implementation of the TPOINT modeled terms. 
  * YET IMPLEMENTED: ME,MA, IH,ID, CH,NP, PDD,PHH
+ * 	 	    A1D, A1H
  * TODO: HCES,HCEC, DCES,DCEC, FO,TF (BART)
- * 	 A1D,A1H, FLOP (BOOTES1B) 
+ * 	 	    FLOP (BOOTES1B), 
  */
 
 #include <stdio.h>
@@ -14,14 +15,17 @@
 
 #define sgn(i) ((i)<0?-1:1)
 
+#define DEBUG
+
 #ifdef TUNE
 #warning This TUNE is only a debugging option: not for regular use!
+#define DEBUG
 #endif
 
 /* Number of terms to be allocated */
 #define TPTERMS 30
 /* Model name/path */
-#define MODEL_PATH "/home/BART/tpmodel.dat"
+#define MODEL_PATH "/etc/rts2/bootes1b.dat"
 
 double
 in180 (double x)
@@ -209,7 +213,7 @@ applyMA (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 {
   double d, h;
 
-  d = in->dec - (corr / 3600) * sin (ln_deg_to_rad (in->ra));	// Polar Axis Misalignment in Azimuth
+  d = in->dec - (corr / 3600) * sin (ln_deg_to_rad (in->ra));
   h =
     in->ra +
     (corr / 3600) * cos (ln_deg_to_rad (in->ra)) *
@@ -264,6 +268,7 @@ applyNP (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 }
 
 // Step size in h (for Paramount, where it's unsure)
+// status: ok
 void
 applyPHH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	  double a1, double a2)
@@ -275,6 +280,7 @@ applyPHH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 }
 
 // Step size in \delta (for Paramount, where it's unsure)
+// status: ok
 void
 applyPDD (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	  double a1, double a2)
@@ -282,6 +288,28 @@ applyPDD (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
   out->dec =
     in->dec -
     ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (in->dec));
+  out->ra = in->ra;
+}
+
+// Aux1 to h (for Paramount, where it's unsure)
+// status: testing
+void
+applyA1H (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	  double a1, double a2)
+{
+  out->ra = in->ra - ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * a1);
+//    ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (a1));
+  out->dec = in->dec;
+}
+
+// Aux1 to in \delta (for Paramount, where it's unsure)
+// status: testing
+void
+applyA1D (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	  double a1, double a2)
+{
+  out->dec = in->dec - ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * a1);
+//    ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (a1));
   out->ra = in->ra;
 }
 
@@ -367,7 +395,11 @@ struct tpa_termref
   {
   applyPHH, "PHH"},
   {
-  applyPDD, "PDD"}
+  applyPDD, "PDD"},
+  {
+  applyA1H, "A1H"},
+  {
+  applyA1D, "A1D"}
 };
 
 int
@@ -445,17 +477,19 @@ get_model (char *filename)
 	      break;
 	    }
 	}
+      if (!model->term[i]->apply)
+	printf ("unimplemented model %s\n", model->term[i]->name);
     }
 
 
   return 0;
 }
 
-#if TUNE
+#ifdef DEBUG
 void
 bonz (struct ln_equ_posn *pos)
 {
-  printf ("[%f,%f]\n", pos->ra, pos->dec);
+  fprintf (stderr, "\t[%f,%f]\n", pos->ra, pos->dec);
 }
 #else
 #define bonz(a)
@@ -466,6 +500,7 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
 		   struct ln_equ_posn *proper_motion,	/* proper motion of the object: may be NULL */
 		   struct ln_lnlat_posn *obs,	/* observer location. if NULL: no refraction */
 		   double JD,	/* time */
+		   double aux1, double aux2,	/* auxiliary reading */
 		   struct ln_equ_posn *tel_pos	/* return: coords corrected for the model */
   )
 {
@@ -492,9 +527,26 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
 
   tel_pos->ra = in180 (Q - tel_pos->ra);	// make ha
 
+  bonz (tel_pos);
+
   for (i = 0; i < model->terms; i++)
     if (model->term[i]->apply)
-      model->term[i]->apply (tel_pos, tel_pos, model->term[i]->value, 0, 0);
+      {
+	double _r, _d;
+#ifdef DEBUG
+	fprintf (stderr, "%s", model->term[i]->name);
+#endif
+
+	//    _r=tel_pos->ra; _d=tel_pos->dec;
+
+	model->term[i]->apply (tel_pos, tel_pos, model->term[i]->value, aux1,
+			       aux2);
+
+	// reverse direction
+//      tel_pos->ra  = 2 * _r - tel_pos->ra; tel_pos->dec = 2 * _d - tel_pos->dec;
+
+	bonz (tel_pos);
+      }
 
   tel_pos->ra = in360 (Q - tel_pos->ra);	// make ra from ha
 
@@ -503,17 +555,17 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
   return ret;
 }
 
-struct ln_lnlat_posn lazy_observer = {
-//    +6.732778,
-//    37.104444
-  -14.783639,
-  +49.910556
+static struct ln_lnlat_posn lazy_observer = {
+  -6.732778,
+  37.104444
+//  -14.783639,
+//  +49.910556
 };
 
 /* lazy func: correct me there coords simply (no proper motion, now!, in place) */
 // everything in degrees */
 void
-tpoint_apply_now (double *ra, double *dec)
+tpoint_apply_now (double *ra, double *dec, double aux1, double aux2)
 {
   struct ln_equ_posn equ;
   struct ln_equ_posn mean_pos;
@@ -525,30 +577,129 @@ tpoint_apply_now (double *ra, double *dec)
 
   JD = ln_get_julian_from_sys ();
 
-  ret = tpoint_correction (&mean_pos, NULL, &lazy_observer, JD, &equ);
+
+
+  ret =
+    tpoint_correction (&mean_pos, NULL, &lazy_observer, JD, aux1, aux2, &equ);
 
   // If error happened do not modify values
   if (ret)
     return;
+
   *ra = equ.ra;
   *dec = equ.dec;
 }
 
 #ifdef TUNE
+double
+sid_time ()
+{
+  return in360 (15 *
+		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
+		lazy_observer.lng);
+}
+
+void
+f2dms (float f, char *ret, char sign)
+{
+  int d, m;
+  float s, q;
+
+  if (f < 0)
+    {
+      sign = '-';
+      f = -f;
+    }
+
+  d = (int) f;
+
+  m = (int) (60.0 * (f - (float) d));
+
+  q = (float) d + (float) m / 60.0;
+
+  s = 3600 * (f - q);
+
+  if (s >= 59.5)
+    {
+      s = 0;
+      m += 1;
+    }
+
+  if (m == 60)
+    {
+      m = 0;
+      d += 1;
+    }
+
+  printf (" %c%02d %02d %04.1f", sign, d, m, s);
+}
 
 int
 main ()
 {
-  int i;
-  double r, d = 0;
-  for (i = 0; i < 15; i++)
+  int i, j, flip, shour;
+  double JD, sidtime;
+  double r, d = 0, h;
+
+  time_t cas;
+  struct tm kk;
+
+  /* Tpoint data header */
+  time (&cas);
+  gmtime_r (&cas, &kk);
+  JD = ln_get_julian_from_sys ();
+
+
+  printf ("BOOTES: test data\n");
+  printf (":EQUAT\n");
+  printf (":NODA\n");
+
+  f2dms (lazy_observer.lat, NULL, '+');
+  printf (" %d %d %d 15 1013.6\n", kk.tm_year + 1900, kk.tm_mon + 1,
+	  kk.tm_mday);
+
+  /* some observations  */
+
+  for (j = -5; j < 10; j++)
     {
-      r = i * 24.0;
-      d = 0;
-      printf ("<%f,%f>\n", r, d);
-      tpoint_apply_now (&r, &d);
-      printf ("<%f,%f>\n\n", r, d);
+      for (i = 0; i < 15; i++)
+	{
+
+	  r = i * 24.0;
+	  d = j * 8.0;
+
+	  h = in180 (sid_time () - r);
+
+	  fprintf (stderr, "h=%f\n", h);
+
+	  if (h < 0)
+	    flip = 1;
+	  else
+	    flip = 0;
+
+	  f2dms (r / 15, NULL, ' ');
+	  f2dms (d, NULL, '+');
+
+	  printf (" 0 0 2000 ", r, d);
+
+	  ra = r;
+	  de = d tpoint_apply_now (&r, &d, (float) flip, 0);
+
+	  // reverse the direction of the correction :*)
+	  r = 2 * ra - r;
+	  d = 2 * de - d;
+
+	  f2dms (r / 15, NULL, ' ');
+	  f2dms (d, NULL, '+');
+
+	  sidtime = sid_time () / 15;
+	  shour = (int) sidtime;
+	  printf ("   %02d %05.2f %d\n", shour,
+		  (sidtime - (float) shour) * 60.0, flip);
+	}
     }
+
+  printf ("END");
 
 }
 

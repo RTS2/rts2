@@ -1182,6 +1182,12 @@ telescope_park ()
   return count == 200 ? -1 : 0;
 }
 
+extern int
+telescope_home ()
+{
+  return telescope_park ();
+}
+
 int save_registers[] = {
   120,				// manual slewing speed
   140,				// goto slewing speed

@@ -37,7 +37,7 @@
 #include "../telescope.h"
 #include "../../utils/hms.h"
 #include "status.h"
-#include "tpmodel.h"
+#include "../tpmodel.h"
 
 // uncomment following line, if you want all port read logging (will
 // at about 10 30-bytes lines to syslog for every query). 
@@ -893,7 +893,7 @@ telescope_move_to (double ra, double dec)
   int i;
 
   syslog (LOG_DEBUG, "LX200:T_move_to ra:%f dec:%f", ra, dec);
-//  tpoint_apply_now(&ra, &dec);
+//  tpoint_apply_now(&ra, &dec, 0, 0);
   syslog (LOG_DEBUG, "LX200:T_move_to (tp) ra:%f dec:%f", ra, dec);
 
   for (i = 0; i < 2; i++)
@@ -1072,6 +1072,12 @@ telescope_park ()
   //if (tel_read_siderealtime (&lst) < 0)
   //  return -1;
   return tel_move_to (lst * 15.0, PARK_DEC);
+}
+
+extern int
+telescope_home ()
+{
+  return telescope_park ();
 }
 
 /*!

@@ -82,6 +82,22 @@ start_move (void *arg)
   return NULL;
 }
 
+void *
+start_home (void *arg)
+{
+  int ret;
+  if ((ret = telescope_home ()) < 0)
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "with error");
+    }
+  else
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "home finished");
+    }
+  return NULL;
+}
+
+
 void
 client_change_cancel (void *arg)
 {
@@ -292,6 +308,22 @@ teld_handle_command (char *command)
 	{
 	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
 			      "not parking - cannot create thread");
+	}
+      devdem_priority_block_end ();
+      return ret;
+    }
+  else if (strcmp (command, "home") == 0)
+    {
+      if (devdem_priority_block_start ())
+	return -1;
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+			  "homing telescope started");
+      if ((ret =
+	   devser_thread_create (start_home, NULL, 0, NULL,
+				 client_move_cancel)) < 0)
+	{
+	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
+			      "not homed - cannot create thread");
 	}
       devdem_priority_block_end ();
       return ret;

@@ -18,6 +18,7 @@ extern int telescope_stop_move (char direction);
 extern int telescope_stop ();
 
 extern int telescope_park ();
+extern int telescope_home ();
 extern int telescope_off ();
 
 #endif /* __RTS_TELESCOPE__ */

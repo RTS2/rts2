@@ -12,6 +12,7 @@
 #include <syslog.h>
 
 #include "../telescope.h"
+#include "../tpmodel.h"
 
 #include "status.h"
 
@@ -27,8 +28,8 @@
 //#define DEC_SLEW_SLOWER 0.90
 #define DEC_SLEW_SLOWER 1.00
 
-#define PARK_DEC -2.079167
-#define PARK_HA -29.94128
+#define PARK_DEC -0.380
+#define PARK_HA -29.880
 
 /* RAW model: Tpoint models should be computed as addition to this one */
 #define DEC_CPD -20880.0	// DOUBLE - how many counts per degree...
@@ -37,11 +38,8 @@
 // pripadne <32112;32156> a <32072;32124> => -32118 (8.9216c/") podle toho, jestli se
 // to ma pricist nebo odecist, coz nevim. -m.
 
-//#define DEC_ZERO 41760.0      // DEC homing: -2.079167 deg
-#define DEC_ZERO (-0.629*DEC_CPD)	// DEC homing: -2.079167 deg
-//#define DEC_ZERO (-2.079167*DEC_CPD)  // DEC homing: -2.079167 deg
-//#define HA_ZERO (-30.0*HA_CPD)        // AFTERNOON ZERO: -30 deg
-#define HA_ZERO (-29.376*HA_CPD)	// AFTERNOON ZERO: -30 deg
+#define DEC_ZERO (-0.380*DEC_CPD)	// DEC homing: -2.079167 deg
+#define HA_ZERO (-29.880*HA_CPD)	// AFTERNOON ZERO: -30 deg
 
 
 //#define DEC_ZERO -43413               // homing mark in DEC
@@ -63,101 +61,8 @@ T9;
 
 static T9 *mount = NULL;
 
-/* some fancy functions to handle angles */
-double
-in180 (double x)
-{
-  for (; x > 180; x -= 360);
-  for (; x < -180; x += 360);
-  return x;
-}
-
-double
-in360 (double x)
-{
-  for (; x > 360; x -= 360);
-  for (; x < 0; x += 360);
-  return x;
-}
-
 #define RAD (3.1415927/180)
 
-/*
-#define TP_IH	-1213.51
-#define TP_ID	-103.20
-#define TP_NP	+406.77
-#define TP_CH	-292.55
-#define TP_ME	+210.87
-#define TP_MA	-5.14
-#define TP_PDD	+305.37
-#define	TP_PHH	+605.12
-#define	TP_A1D	-819.17
-#define	TP_A1H	-233.45
-*/
-
-#define TP_IH	-590.34		// 590/293
-#define TP_ID	+54.24		//  54/74
-#define TP_NP	+16.97		//  17/144
-#define TP_CH	-270.84		// 271/277
-#define TP_MA	+76.91		//  77/100
-#define TP_ME	-360.0		//  *** to test ***
-#define TP_PHH	+100.0		//  *** to test ***
-#define TP_PDD	+88.07		//  88/72
-#define	TP_A1D	-541.47		// 541/154
-#define	TP_A1H	-828.83		// 828/88
-
-#define PI 3.1415927
-#define DEG_TO_RAD (180/PI)
-
-void
-applyME (double h0, double d0, double *ph1, double *pd1, double ME)
-{
-  double h1, d1, M, N;
-
-  h0 = in180 (h0);
-
-  fprintf (stderr, "%f %f\n", h0, d0);
-
-  h0 /= DEG_TO_RAD;
-  d0 /= DEG_TO_RAD;
-
-  N = asin (sin (h0) * cos (d0));
-  M = asin (sin (d0) / cos (N));
-
-  if ((h0 > (PI / 2)) || (h0 < (-PI / 2)))
-    {
-      if (M > 0)
-	M = PI - M;
-      else
-	M = -PI + M;
-    }
-
-  M = M + (ME / (3600 * DEG_TO_RAD));
-
-  if (M > PI)
-    M -= 2 * PI;
-  if (M < -PI)
-    M += 2 * PI;
-
-  fprintf (stderr, "%f %f\n", DEG_TO_RAD * N, DEG_TO_RAD * M);
-
-  d1 = asin (sin (M) * cos (N));
-  h1 = asin (sin (N) / cos (d1));
-  if (M > (PI / 2))
-    h1 = PI - h1;
-  if (M < (-PI / 2))
-    h1 = -PI + h1;
-
-  if (h1 > PI)
-    h1 -= 2 * PI;
-  if (h1 < -PI)
-    h1 += 2 * PI;
-
-  *ph1 = DEG_TO_RAD * h1;
-  *pd1 = DEG_TO_RAD * d1;
-
-  fprintf (stderr, "%f %f\n", *ph1, *pd1);
-}
 
 // return sid time since homing
 double
@@ -169,6 +74,9 @@ sid_home ()
     return 0;
   if (MKS3PosCurGet (mount->axis0, &pos0))
     return 0;
+
+  printf ("%.4f\n", (double) (en0 - pos0) / HA_CPD);
+  fflush (stdout);
 
   return (double) (en0 - pos0) / HA_CPD;
 }
@@ -189,32 +97,6 @@ gethoming ()
 {
   return sid_time () - sid_home ();
 }
-
-// Use the libnova one once it works well..
-double
-ln_get_refraction (double altitude)
-{
-  double R;
-
-  //altitude = ln_deg_to_rad (altitude);
-
-  /* eq. 5.27 (Telescope Control,M.Trueblood & R.M. Genet) */
-  R = 1.02 /
-    tan (ln_deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
-
-  // for gnuplot (in degrees)
-  // R(a) = 1.02 / tan( (a + 10.3 / (a + 5.11) + 0.0019279) / 57.2958 ) / 60
-
-  /* take into account of atm press and temp */
-  //R *= ((atm_pres / 1010) * (283 / (273 + temp)));
-  R *= ((1013.6 / 1010) * (283 / (273 + 10)));
-
-  /* convert from arcminutes to degrees */
-  R /= 60.0;
-
-  return (R);
-}
-
 
 /* compute RAW trasformation (no Tpoint) */
 void
@@ -252,33 +134,43 @@ sky2counts (double ra, double dec, long *ac, long *dc)
   struct ln_equ_posn aber_pos, pos;
   struct ln_hrz_posn hrz;
 
-  pos.ra = ra;
-  pos.dec = dec;
   JD = ln_get_julian_from_sys ();
 
 // Aberation
-  ln_get_equ_aber (&pos, JD, &aber_pos);
+//  ln_get_equ_aber (&pos, JD, &aber_pos);
 // Precession
-  ln_get_equ_prec (&aber_pos, JD, &pos);
+//  ln_get_equ_prec (&aber_pos, JD, &pos);
 // Refraction 
-  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
+  //  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
+//  hrz.alt += get_refraction (hrz.alt);
+//  ln_get_equ_from_hrz (&hrz, &observer, JD, &pos);
+//  ra = pos.ra;
+//  dec = pos.dec;
 
-  hrz.alt += ln_get_refraction (hrz.alt);
-
-  ln_get_equ_from_hrz (&hrz, &observer, JD, &pos);
-
-  ra = pos.ra;
-  dec = pos.dec;
-
-  // True Hour angle
+// True Hour angle
+// first to decide the flip...
   ha = in180 (sid_time () - ra);
-  ra = in180 (gethoming () - ra);
-
 // xxx FLIP xxx
   if (ha < 0)
     flip = 1;
 
-//    apply_tpoint_model(&ra, &dec, flip);
+  pos.ra = ra;
+  pos.dec = dec;
+  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
+  printf ("<%f, %f,%f,%f>\n", ra, ha, dec, hrz.alt);
+
+  tpoint_apply_now (&ra, &dec, flip, 0);
+
+  pos.ra = ra;
+  pos.dec = dec;
+  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
+  printf ("<%f, %f,%f,%f>\n", ra, ha, dec, hrz.alt);
+
+  // now finally
+  ha = in180 (sid_time () - ra);
+  ra = in180 (gethoming () - ra);
+
+  printf ("<%f, %f,%f,%f>\n", ra, ha, dec, hrz.alt);
 
   if (flip)
     {
@@ -286,8 +178,12 @@ sky2counts (double ra, double dec, long *ac, long *dc)
       ra = 180 + ra;
     }
 
+  printf ("<%f, %f,%f,%f>\n", ra, ha, dec, hrz.alt);
+
   _dc = DEC_ZERO + (long) (DEC_CPD * dec);
   _ac = HA_ZERO + (long) (HA_CPD * ra);
+
+  printf ("<%ld, %ld>\n", _ac, _dc);
 
   *dc = _dc;
   *ac = _ac;
@@ -754,6 +650,12 @@ telescope_park ()
   fprintf (stderr, "%s\n", __FUNCTION__);
   fflush (stderr);
   return zdechni ();
+}
+
+extern int
+telescope_home ()
+{
+  return home ();
 }
 
 /* switch off the mount - switch off everything what's possible to be switched off by sw */
