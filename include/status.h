@@ -99,4 +99,7 @@
 // and more to come..
 // #define DEVICE_TYPE_
 
+// default serverd port
+#define SERVERD_PORT		5557
+
 #endif /* __RTS__STATUS__ */
