@@ -10,7 +10,6 @@ LDFLAGS = @LDFLAGS@ @LIB_M@ @LIB_NOVA@ @LIB_PTHREAD@
 serverd: serverd.o riseset.o ../utils/devser.a
 
 riseset.o:riseset.c
-	$(CC) $(CFLAGS) -c -o $@ $^ -lnova
 
 test: riseset.o
 
