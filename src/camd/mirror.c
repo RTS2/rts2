@@ -194,10 +194,17 @@ mirror_set (int steps)
     }
   while (steps > 0)
     {
-      if (steps < RAMP_TO * RAMP_STEP)
-	move -= RAMP_STEP;
-      else if (move < RAMP_TO)
-	move += RAMP_STEP;
+      if (steps > RAMP_STEP)
+	{
+	  if (steps < RAMP_TO * RAMP_STEP)
+	    move -= RAMP_STEP;
+	  else if (move < RAMP_TO)
+	    move += RAMP_STEP;
+	}
+      if (move > steps || move < 0)
+	{
+	  move = steps;
+	}
       ret = command (cmd, move, NULL, NULL);
       if (ret)
 	goto err;
@@ -214,7 +221,8 @@ mirror_set (int steps)
 	  ret = mirror_get (&mpos);
 	  if (ret)
 	    goto err;
-	  printf ("pos: %i  target: %i\n", mpos, new_pos);
+	  printf ("pos: %i  target: %i move: %i steps: %i\n", mpos, new_pos,
+		  move, steps);
 	  fflush (stdout);
 	  if (mpos == new_pos)
 	    {
