@@ -37,6 +37,10 @@ float exposure_time = EXPOSURE_TIME;
 
 int increase_exposure = 0;
 
+int date_exposure = 0;
+
+struct tm exp_start;
+
 struct device *camera;
 
 char *dark_name = NULL;
@@ -65,27 +69,11 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   gmtime_r (&image->exposure_time, &gmt);
 
-/*  switch (image->target_type)
-    {
-    case TARGET_DARK:
-      if (!asprintf (&dirname, "/darks/%s/", image->camera.name))
-	{
-	  perror ("planc data_handler asprintf");
-	  return -1;
-	}
-      break;
-    default:
-      if (!asprintf
-	  (&dirname, "/images/%s/%i/", image->camera.name, image->target_id))
-	{
-	  perror ("planc data_handler asprintf");
-	  return -1;
-	}
-    }
-
-  mkpath (dirname, 0777); */
-
-  if (increase_exposure)
+  if (date_exposure)
+    asprintf (&filename, "%04i%02i%02i%02i%02i%02i.fits", exp_start.tm_year,
+	      exp_start.tm_mon, exp_start.tm_mday, exp_start.tm_hour,
+	      exp_start.tm_min, exp_start.tm_sec);
+  else if (increase_exposure)
     asprintf (&filename, "tmp%i_%04i.fits", parent_pid, increase_exposure++);
   else
     asprintf (&filename, "tmp%i.fits", parent_pid);
@@ -203,11 +191,12 @@ main (int argc, char **argv)
 	{"device", 1, 0, 'd'},
 	{"exposure", 1, 0, 'e'},
 	{"inc", 0, 0, 'i'},
+	{"date", 0, 0, 'b'},
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:e:ip:h", long_option, NULL);
+      c = getopt_long (argc, argv, "bd:e:ip:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -222,6 +211,9 @@ main (int argc, char **argv)
 	  break;
 	case 'i':
 	  increase_exposure = 1;
+	  break;
+	case 'b':
+	  date_exposure = 1;
 	  break;
 	case 'p':
 	  port = atoi (optarg);
@@ -307,7 +299,9 @@ main (int argc, char **argv)
 	{
 	  perror ("expose:");
 	}
+      time (&t);
 
+      gmtime_r (&t, &exp_start);
 
       readout ();
     }
