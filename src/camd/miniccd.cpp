@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include <mcheck.h>
 #include "camera_cpp.h"
+#include "mirror.h"
+
 #include "miniccd/ccd_msg.h"
 #include "../utils/rts2device.h"
 
@@ -278,7 +280,7 @@ CameraMiniccdChip::stopExposure ()
   return CameraChip::stopExposure ();
 }
 
-class Rts2DevCameraMiniccd:public Rts2DevCamera
+class Rts2DevCameraMiniccd:public Rts2DevCameraMirror
 {
   int fd_ccd;
   int interleave;
@@ -305,7 +307,7 @@ public:
 };
 
 Rts2DevCameraMiniccd::Rts2DevCameraMiniccd (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraMirror (argc, argv)
 {
   fd_ccd = -1;
   interleave = 0;
