@@ -1,3 +1,5 @@
+Makefile
 *.o
 *~
+para
 teld_lx200
