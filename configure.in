@@ -13,10 +13,14 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lcfitsio':
-AC_CHECK_LIB([cfitsio], [main])
 # FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [main])
+# FIXME: Replace `main' with a function in `-lcfitsio':
+AC_CHECK_LIB([cfitsio], [main], , [cat <<EOF
+**** You don't have cfitsio installed.
+**** Please grab it from http://????.gsfc.nasa.gov
+EOF
+exit 1])
 # FIXME: Replace `main' with a function in `-lncurses':
 AC_CHECK_LIB([ncurses], [main])
 # FIXME: Replace `main' with a function in `-lnova':
@@ -63,6 +67,7 @@ AC_OUTPUT([Makefile
 	   src/plan/Makefile
 	   src/plan/pgsql/Makefile
 	   src/serverd/Makefile
+	   src/teld/Makefile
 	   src/utils/Makefile
 	   src/writers/Makefile])
 #                 doc/Makefile
