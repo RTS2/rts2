@@ -447,7 +447,7 @@ CameraMiniccdInterleavedChip::isExposing ()
       slaveState = SLAVE1_READOUT;
     case SLAVE1_READOUT:
       ret = slaveChip[1]->isExposing ();
-      if (!ret)
+      if (ret)
 	return ret;
       slaveState = SLAVE2_READOUT;
       break;
@@ -500,6 +500,7 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
     {
       return -1;
     }
+  sendLine++;
   switch (slaveState)
     {
     case SLAVE2_READOUT:
