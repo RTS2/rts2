@@ -31,13 +31,6 @@
 #define CLIENT_SERVER		1
 #define DEVICE_SERVER		2
 
-#define	DEVICE_NAME_SIZE	50
-#define CLIENT_LOGIN_SIZE	50
-#define CLIENT_PASSWD_SIZE	50
-
-// maximal number of devices
-#define MAX_DEVICE		10
-
 int port;
 
 int msgid;			// id of server message que
@@ -46,6 +39,9 @@ struct device
 {
   pid_t pid;
   char name[DEVICE_NAME_SIZE];
+  char hostname[DEVICE_URI_SIZE];
+  uint16_t port;
+  int type;
   int authorizations[MAX_CLIENT];
 };
 
@@ -302,7 +298,7 @@ client_serverd_handle_command (char *command)
 	  == 0)
 	{
 	  shm_clients[serverd_id].authorized = 1;
-	  devser_dprintf ("logged as client # %i", serverd_id);
+	  devser_dprintf ("logged_as %i", serverd_id);
 	  return 0;
 	}
       else
@@ -318,24 +314,31 @@ client_serverd_handle_command (char *command)
       if (strcmp (command, "info") == 0)
 	{
 	  int i;
-	  struct sockaddr_in client_ip;
-	  devser_get_client_ip (&client_ip);
 	  if (devser_param_test_length (0))
 	    return -1;
 
 	  for (i = 0; i < MAX_CLIENT; i++)
 	    if (*shm_clients[i].login)
-	      devser_dprintf ("user %s %i", shm_clients[i].login, i);
+	      devser_dprintf ("user %i %s", i, shm_clients[i].login);
 
-	  for (i = 0; i < MAX_DEVICE; i++)
-	    if (*shm_devices[i].name)
-	      devser_dprintf ("device %s %i %s %hd", shm_devices[i].name, i,
-			      inet_ntoa (client_ip.sin_addr),
-			      ntohs (client_ip.sin_port));
+	  return 0;
+	}
+      else if (strcmp (command, "devinfo") == 0)
+	{
+	  int i;
+	  struct device *dev;
+	  if (devser_param_test_length (0))
+	    return -1;
+
+	  for (i = 0, dev = shm_devices; i < MAX_DEVICE; i++, dev++)
+
+	    if (*dev->name)
+	      devser_dprintf ("I device %i %s %s:%i", i, dev->name,
+			      dev->hostname, dev->port);
 	  return 0;
 	}
       else if (strcmp (command, "priority") == 0
-	       || strcmp (command, "priority_deferred") == 0)
+	       || strcmp (command, "prioritydeferred") == 0)
 	{
 	  int timeout;
 	  int new_priority;
@@ -409,7 +412,7 @@ client_serverd_handle_command (char *command)
 	  device->authorizations[serverd_id] = key;
 	  devser_shm_data_unlock ();
 
-	  devser_dprintf ("authorization_key %i", key);
+	  devser_dprintf ("authorization_key %i %i", serverd_id, key);
 	  return 0;
 	}
     }
@@ -498,11 +501,18 @@ serverd_handle_command (char *command)
       if (server_type == NOT_DEFINED_SERVER)
 	{
 	  char *reg_device;
+	  int reg_type;
+	  char *hostname;
+	  unsigned int port;
 	  int i;
 
-	  if (devser_param_test_length (1))
+	  if (devser_param_test_length (3))
 	    return -1;
 	  if (devser_param_next_string (&reg_device))
+	    return -1;
+	  if (devser_param_next_integer (&reg_type))
+	    return -1;
+	  if (devser_param_next_ip_address (&hostname, &port))
 	    return -1;
 
 	  devser_shm_data_lock ();
@@ -511,6 +521,9 @@ serverd_handle_command (char *command)
 	    if (!*(shm_devices[i].name))
 	      {
 		strncpy (shm_devices[i].name, reg_device, DEVICE_NAME_SIZE);
+		strncpy (shm_devices[i].hostname, hostname, DEVICE_URI_SIZE);
+		shm_devices[i].port = port;
+		shm_devices[i].type = reg_type;
 		shm_devices[i].pid = devser_child_pid;
 		if (devser_set_server_id (i + MAX_CLIENT, serverd_handle_msg))
 		  {
