@@ -2,8 +2,16 @@ DROP TABLE grb;
 
 DROP TABLE targets;
 
+DROP TABLE epochs;
+
+CREATE TABLE epoch (
+	epo_start	timestamp;
+	epo_end		timestamp;
+);
+
 CREATE TABLE targets (
 	tar_id		integer PRIMARY KEY,
+	type_id		integer REFERENCES targets(type_id),
 	tar_name	varchar(150),
 	tar_ra		float4,
 	tar_dec		float4,
@@ -11,16 +19,20 @@ CREATE TABLE targets (
 	tar_lastobs	timestamp DEFAULT NULL
 );
 
+DROP TABLE types;
+
+CREATE TABLE types (
+	type_id		integer PRIMARY KEY,
+	type_description varchar(200)
+);
+
 CREATE TABLE grb (
-	grb_id		integer,
+	tar_id		integer REFERENCES targets (tar_id),
+	grb_id		integer PRIMARY KEY,
 	grb_seqn	integer,
 	grb_date	timestamp,
 	grb_last_update	timestamp
-) INHERITS (targets);
-
-DROP SEQUENCE darks_id;
-
-CREATE SEQUENCE darks_id;
+);
 
 DROP TABLE darks;
 
@@ -28,7 +40,18 @@ CREATE TABLE darks (
 	dark_name	varchar(250) NOT NULL,
 	dark_date	timestamp,
 	dark_exposure	integer,
-	dark_temperature integer
+	dark_temperature integer,
+	camera_name	varchar(8) REFERENCES cameras(camera_name)
+);
+
+DROP TABLE flats;
+
+CREATE TABLE flats {
+	flat_name	varchar(250) NOT NULL,
+	flat_date	timestamp,
+	flat_exposure	integer,
+	flat_temperature integer,
+	camera_name	varchar(8) REFERENCES cameras(camera_name)
 );
 
 DROP SEQUENCE tar_id;
@@ -48,3 +71,18 @@ CREATE TABLE observations (
 DROP SEQUENCE obs_id;
 
 CREATE SEQUENCE obs_id;
+
+DROP TABLE cameras;
+
+CREATE TABLE cameras (
+	camera_name	varchar(8) PRIMARY KEY,
+	camera_description	varchar(100)
+);
+
+CREATE TABLE mounts (
+	mount_name	varchar(8) PRIMARY KEY,
+	mount_long	float,
+	mount_dec	float,
+	mount_alt	float,
+	mount_desc	varchar(100)
+);
