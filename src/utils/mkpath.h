@@ -3,15 +3,15 @@
 
 #include <sys/types.h>
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  int mkpath (const char *path, mode_t mode);
+  extern int mkpath (const char *path, mode_t mode);
 
-#ifdef _cplusplus
-}
+#ifdef __cplusplus
+};
 #endif
 
-#endif				/* !__RTS_MKPATH__ */
+#endif /* !__RTS_MKPATH__ */

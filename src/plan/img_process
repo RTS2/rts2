@@ -12,6 +12,11 @@ cd $dirname
 /home/rtopera/bin/bdark $imgname >/dev/null 2>&1
 /home/rtopera/bin/detect $imgname #>/dev/null 2>&1
 /home/rtopera/bin/past $imgname |grep -v PG
+
+if pwd|grep -q CNF1; then
+/usr/local/bin/rts2-f2cj $imgname full | convert -geometry 256x256 - - > /tmp/lastimage.jpg
+fi
+
 #>/dev/null | grep -v PG
 #/home/rtopera/bin/rsol $imgname >/dev/null 2>&1
 rm $imgname.sex $imgname.salida

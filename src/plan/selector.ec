@@ -1,7 +1,7 @@
 /*!
  * @file Selector - build plan from target database.
  *
- * @author petr
+ * @author Petr Kubanek <petr@lascaux.asu.cas.cz>
  */
 
 #include "selector.h"
@@ -9,6 +9,7 @@
 #include "../db/db.h"
 #include "status.h"
 #include "../utils/config.h"
+#include "../utils/objectcheck.h"
 
 #include <malloc.h>
 #include <libnova/libnova.h>
@@ -25,7 +26,7 @@
 EXEC SQL include sqlca;
 
 int
-find_plan (Target *plan, int id, time_t c_start)
+Selector::find_plan (Target *plan, int id, time_t c_start)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int count = 0;
@@ -52,7 +53,7 @@ find_plan (Target *plan, int id, time_t c_start)
 }
 
 Target *
-add_target (Target *plan, int type, int id, int obs_id, double ra,
+Selector::add_target (Target *plan, int type, int id, int obs_id, double ra,
 	    double dec, time_t obs_time, int tolerance, char obs_type)
 {
   Target *new_plan;
@@ -77,7 +78,7 @@ add_target (Target *plan, int type, int id, int obs_id, double ra,
 }
 
 Target *
-add_target_ell (Target *plan, int type, int id, int obs_id,
+Selector::add_target_ell (Target *plan, int type, int id, int obs_id,
   ln_ell_orbit *orbit, time_t obs_time, int tolerance, char obs_type)
 {
   Target *new_plan;
@@ -98,10 +99,8 @@ add_target_ell (Target *plan, int type, int id, int obs_id,
   return new_plan;
 }
 
-
-
 int
-select_next_alt (time_t c_start, Target *plan, float lon, float lat)
+Selector::select_next_alt (time_t c_start, Target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -149,7 +148,7 @@ select_next_alt (time_t c_start, Target *plan, float lon, float lat)
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start))
+      if (find_plan (plan, tar_id, obs_start) && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
@@ -172,7 +171,7 @@ err:
 }
 
 int
-select_next_gps (time_t c_start, Target *plan, float lon, float lat)
+Selector::select_next_gps (time_t c_start, Target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -232,7 +231,7 @@ EXEC SQL DECLARE
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start))
+      if (find_plan (plan, tar_id, obs_start) && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
@@ -256,7 +255,7 @@ err:
 }
 
 int
-select_next_airmass (time_t c_start, Target *plan,
+Selector::select_next_airmass (time_t c_start, Target *plan,
 		     float target_airmass, float az_end, float az_start,
 		     float lon, float lat)
 {
@@ -321,7 +320,7 @@ ORDER BY
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\t%5i\n", tar_id, ra,
 	      dec, az, airmass, img_count);
 
-      if (find_plan (plan, tar_id, c_start - 1800))
+      if (find_plan (plan, tar_id, c_start - 1800) && checker->is_good (st, ra, dec))
 	{
 	  printf ("airmass find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
@@ -336,16 +335,16 @@ ORDER BY
 #undef test_sql
   return 0;
 err:
-#ifdef DEBUG
+//#ifdef DEBUG
   printf ("err select_next_airmass: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
-#endif /* DEBUG */
+//#endif /* DEBUG */
   db_unlock ();
   return -1;
 }
 
 int
-select_next_grb (time_t c_start, Target *plan, float lon, float lat)
+Selector::select_next_grb (time_t c_start, Target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -399,7 +398,7 @@ ORDER BY
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start))
+      if (find_plan (plan, tar_id, obs_start) && checker->is_good (st, ra, dec))
 	{
 	  printf ("grb find id: %i\n", tar_id);
 	
@@ -431,7 +430,7 @@ err:
  * Select next observation from list of opportunity fields.
  */
 int
-select_next_to (time_t *c_start, Target *plan, float az_end,
+Selector::select_next_to (time_t *c_start, Target *plan, float az_end,
 		float az_start, float lon, float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -496,7 +495,8 @@ ORDER BY
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%i\t%i\n", tar_id, ra, dec,
 	      alt, ot_imgcount, ot_minpause);
       if (db_last_night_images_count (tar_id) < ot_imgcount
-	  && (last_o == -1 || last_o >= ot_minpause))
+	  && (last_o == -1 || last_o >= ot_minpause)
+	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("to find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
@@ -524,7 +524,7 @@ err:
  * Select next observation from list of opportunity fields.
  */
 int
-select_next_ell (time_t *c_start, Target *plan, float az_end,
+Selector::select_next_ell (time_t *c_start, Target *plan, float az_end,
 		float az_start, float lon, float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -627,7 +627,9 @@ ORDER BY
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%f\t%i\n", tar_id,
       pos.ra, pos.dec,
 	      hrz.alt, ell_e, ell_minpause);
-      if (hrz.alt > 5 && (last_o == -1 || last_o >= ell_minpause))
+      if (hrz.alt > 5 
+      	&& (last_o == -1 || last_o >= ell_minpause))
+	// TODO: add check for telescope - find ra & dec
 	{
 	  printf ("ell find id: %i\n", tar_id);
 	  add_target_ell (plan, TARGET_LIGHT, tar_id, -1, &orbit, *c_start,
@@ -658,7 +660,7 @@ err:
  * If needed, select next observation from list of photometry fields
  */
 int
-select_next_photometry (time_t *c_start, Target *plan, float lon,
+Selector::select_next_photometry (time_t *c_start, Target *plan, float lon,
 			float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -720,7 +722,8 @@ ORDER BY
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%i\t%i\n", tar_id, ra, dec,
 	      alt, ot_imgcount, ot_minpause);
       if (db_last_night_images_count (tar_id) < ot_imgcount
-	  && (last_o == -1 || last_o >= ot_minpause))
+	  && (last_o == -1 || last_o >= ot_minpause)
+	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("photometric find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
@@ -748,7 +751,7 @@ err:
  * HETE field generation
  */
 int
-hete_mosaic (Target *plan, double jd, time_t * obs_start, int number)
+Selector::hete_mosaic (Target *plan, double jd, time_t * obs_start, int number)
 {
   struct ln_equ_posn sun;
   int frequency;
@@ -780,7 +783,7 @@ hete_mosaic (Target *plan, double jd, time_t * obs_start, int number)
  * Select flat field position
  */
 int
-flat_field (Target *plan, time_t * obs_start, int number, float lon,
+Selector::flat_field (Target *plan, time_t * obs_start, int number, float lon,
 	    float lat)
 {
   double jd;
@@ -826,7 +829,7 @@ flat_field (Target *plan, time_t * obs_start, int number, float lon,
  * @param state		serverd status
  */
 int
-get_next_plan (Target *plan, int selector_type,
+Selector::get_next_plan (Target *plan, int selector_type,
 	       time_t * obs_start, int number, float exposure, int state,
 	       float lon, float lat)
 {
@@ -871,6 +874,8 @@ get_next_plan (Target *plan, int selector_type,
       if (!select_next_to (obs_start, plan, 120, 230, lon, lat))
         return 0;
     }
+
+  printf ("selector_type: %i %i\n", selector_type, SELECTOR_ELL);
 
   switch (selector_type)
     {
@@ -958,7 +963,7 @@ get_next_plan (Target *plan, int selector_type,
 }
 
 void
-free_plan (Target *plan)
+Selector::free_plan (Target *plan)
 {
   Target *last;
 

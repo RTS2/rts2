@@ -56,7 +56,7 @@ create_dir (char *path, mode_t mode)
  *
  * Return 0 on sucess, -1 and set errno otherwise.
  */
-int
+extern int
 mkpath (const char *path, mode_t mode)
 {
   char *pathname, *tmp_path;

@@ -92,6 +92,8 @@ time_t last_succes = 0;
 
 int watch_status = 1;		// watch central server status
 
+Selector  *selector = NULL;
+
 int
 phot_handler (struct param_status *params, struct phot_info *info)
 {
@@ -194,7 +196,7 @@ generate_next (int i, Target * plan)
   start_time += EXPOSURE_TIME;
 
   printf ("Making plan %s", ctime (&start_time));
-  if (get_next_plan
+  if (selector->get_next_plan
       (plan, (int) get_double_default ("planc_selector", SELECTOR_HETE),
        &start_time, i, EXPOSURE_TIME,
        watch_status ? devcli_server ()->statutes[0].status : SERVERD_NIGHT,
@@ -975,6 +977,8 @@ main (int argc, char **argv)
   struct device *devcli_ser = devcli_server ();
   struct device *phot;
 
+  char *horizont_file;
+
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -1062,6 +1066,13 @@ main (int argc, char **argv)
   printf ("lng: %f lat: %f\n", observer.lng, observer.lat);
   printf ("Current selector is: %i\n",
 	  (int) get_double_default ("planc_selector", SELECTOR_HETE));
+
+  horizont_file = get_string_default ("horizont", "/etc/rts2/horizont");
+  printf ("Horizont will be read from: %s\n", horizont_file);
+
+  ObjectCheck *checker = new ObjectCheck (horizont_file);
+
+  selector = new Selector (checker);
 
   printf ("connecting to %s:%i\n", server, port);
 

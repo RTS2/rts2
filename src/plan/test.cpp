@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <libnova/libnova.h>
 #include "../utils/config.h"
+#include "../utils/objectcheck.h"
 #include "../db/db.h"
 
 void
@@ -76,15 +77,21 @@ main (int argc, char **argv)
 
   db_connect ();
 
-  if (get_next_plan
-      (plan, (int) get_double_default ("planc_selector", SELECTOR_ELL),
-       &t, 1, 30, SERVERD_NIGHT, observer.lng, observer.lat))
+  ObjectCheck *checker = new ObjectCheck ("/etc/rts2/horizont");
+  Selector *selector = new Selector (checker);
+
+  jd = get_double_default ("planc_selector", SELECTOR_ELL);
+
+  if (selector->get_next_plan
+      (plan, (int) jd,
+       &t, 0, 30, SERVERD_NIGHT, observer.lng, observer.lat))
     {
       printf ("Error making plan\n");
       fflush (stdout);
       exit (EXIT_FAILURE);
     }
   printf ("...plan made\n");
+  printf ("t->tar_id: %i\n", plan->next->id);
 
   db_disconnect ();
 

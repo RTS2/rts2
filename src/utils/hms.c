@@ -36,7 +36,7 @@
  * @exception ERANGE	when some value is out of range for float number.
  * @exception EINVAL	when format doesn't match.
  */
-double
+extern double
 hmstod (const char *hptr)
 {
   char *locptr;
@@ -100,7 +100,7 @@ hmstod (const char *hptr)
  * 
  * @return -1 and set errno on failure, 0 otherwise 
  */
-int
+extern int
 dtoints (double value, int *h, int *m, int *s)
 {
   int sign;
@@ -141,7 +141,7 @@ dtoints (double value, int *h, int *m, int *s)
  * 
  * @return -1 and set errno on error, number of writen bits otherwise
  */
-int
+extern int
 dtohms (double value, char *hptr)
 {
   int h, m, s;

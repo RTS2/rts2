@@ -2,8 +2,6 @@
 * $Id$
 * @author petr
 */
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -14,27 +12,18 @@
 #include "hms.h"
 #include "mkpath.h"
 
+#include "objectcheck.h"
+
 int
 main (int argc, char **argv)
 {
-//  char hms[60];
-//  int i;
   double value;
+  ObjectCheck  *checker;
   printf ("10.2 - %f\n", hmstod ("10.2"));
   printf ("10a58V67 - %f\n", hmstod ("10a58V67"));
 
   value = hmstod ("-11aa11:57a");
   assert (errno != 0);
-
-/*  for (i = 0; i <= 3600; i++)
-    {
-      value = -11 - i / 3600.0;
-      dtohms (value, hms);
-      printf ("%f - %s - %f - %f - %f\n ", value, hms, hmstod (hms),
-	      (value * 10000), hmstod (hms) * 10000);
-      assert ((round (value * 10000) == round (hmstod (hms) * 10000))
-	      && (errno == 0));
-    } */
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
@@ -54,5 +43,17 @@ main (int argc, char **argv)
 	  get_sub_device_string_default ("CNF1", "script", "G", "AA"));
   printf ("ret: %s\n",
 	  get_sub_device_string_default ("CNF1", "script", "S", "AA"));
+
+  checker = new ObjectCheck (get_string_default ("horizont", "/etc/rts2/horizont"));
+
+  for (value = 0; value < 360; value += 7.5)
+  {
+  	printf ("%f -20 is_good: %i\n", value, checker->is_good (0, value, -20));
+  	printf ("%f 0 is_good: %i\n", value, checker->is_good (0, value, 0));
+  	printf ("%f 80 is_good: %i\n", value, checker->is_good (0, value, 80));
+  }
+
+  delete checker;
+   
   return 0;
 }
