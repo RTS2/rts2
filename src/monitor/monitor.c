@@ -205,6 +205,7 @@ main (int argc, char **argv)
 #ifdef DEBUG
   mtrace ();
 #endif
+  out = stderr;
   /* get attrs */
   while (1)
     {
@@ -250,7 +251,7 @@ main (int argc, char **argv)
     }
   if (optind != argc - 1)
     {
-      fprintf (out, "You must pass server address\n");
+      fprintf (stderr, "You must pass server address\n");
       exit (EXIT_FAILURE);
     }
   server = argv[optind++];
@@ -302,7 +303,7 @@ main (int argc, char **argv)
       out = popen (mail_command, "w");
       if (!out)
 	{
-	  fprintf (stderr, "Error opening pipe to mail %i %s!\n", errno,
+	  fprintf (out, "Error opening pipe to mail %i %s!\n", errno,
 		   strerror (errno));
 	  exit (EXIT_FAILURE);
 	}
