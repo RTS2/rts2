@@ -359,8 +359,18 @@ serverd_riseset_thread (void *arg)
       if (shm_info->current_state != SERVERD_OFF
 	  && shm_info->current_state != call_state)
 	{
-	  shm_info->current_state =
-	    (shm_info->current_state & SERVERD_STANDBY_MASK) | call_state;
+	  if ((shm_info->current_state & SERVERD_STATUS_MASK) ==
+	      SERVERD_MORNING && call_state == SERVERD_DAY
+	      && (get_device_string_default ("centrald", "morning_off", "N"))
+	      == "Y")
+	    {
+	      shm_info->current_state = SERVERD_OFF;
+	    }
+	  else
+	    {
+	      shm_info->current_state =
+		(shm_info->current_state & SERVERD_STANDBY_MASK) | call_state;
+	    }
 	  devices_all_msg_snd ("S %s %i", SERVER_STATUS,
 			       shm_info->current_state);
 	  clients_all_msg_snd ("S %s %i", SERVER_STATUS,
@@ -788,7 +798,7 @@ main (void)
       shm_devices[i].name[0] = 0;
     }
 
-  shm_info->current_state = 0;
+  shm_info->current_state = SERVERD_OFF;
   shm_info->priority_client = -1;
   shm_info->last_client = 0;
 
