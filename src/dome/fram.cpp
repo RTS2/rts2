@@ -221,7 +221,8 @@ Rts2ConnFramWeather::receive (fd_set * set)
       statDate.tm_year -= 1900;
       statDate.tm_mon--;
       statDate.tm_sec = (int) sec_f;
-      lastWeatherStatus = mktime (&statDate);
+      //lastWeatherStatus = mktime (&statDate);
+      time (&lastWeatherStatus);
       if (strcmp (status, "watch"))
 	{
 	  // if sensors doesn't work, switch rain on
