@@ -81,14 +81,16 @@ status_telescope (WINDOW * wnd, struct device *dev)
   struct ln_hrz_posn position;
 
   struct telescope_info *info = (struct telescope_info *) &dev->info;
+  double st;
 
   object.ra = info->ra;
   object.dec = info->dec;
   observer.lat = info->latitude;
   observer.lng = info->longtitude;
 
-  get_hrz_from_equ_siderealtime (&object, &observer, info->siderealtime,
-				 &position);
+  st = info->siderealtime + info->longtitude / 15.0;
+
+  get_hrz_from_equ_siderealtime (&object, &observer, st, &position);
 
   dtohms (info->ra / 15, buf);
 
