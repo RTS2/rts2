@@ -203,9 +203,6 @@ camd_handle_command (char *argv, size_t argc)
     {
       test_length (1);
       get_chip;
-      readout[chip].data = (void *) "test";
-      readout[chip].data_size_in_bytes = 5;
-
       ret =
 	devdem_send_data (NULL, readout[chip].data,
 			  readout[chip].data_size_in_bytes);

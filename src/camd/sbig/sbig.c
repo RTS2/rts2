@@ -297,8 +297,9 @@ sbig_readout (struct sbig_readout *readout)
   line.readoutMode = readout->binning;
   line.data =
   line.data = readout->data;
-
-
+ 
+  readout->data_size_in_bytes = 0;
+  
   for (y = 0; y < (readout->height); y++)
     {
       if ((result = sbig_readout_line (&line)) != 0)
@@ -306,7 +307,7 @@ sbig_readout (struct sbig_readout *readout)
 
       line.data += line.pixelLength;
 
-      readout->data_size_in_bytes = 2 * line.pixelLength;
+      readout->data_size_in_bytes += 2 * line.pixelLength;
       readout->callback (y / (float) readout->height);
     }
 
