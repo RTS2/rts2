@@ -11,11 +11,10 @@
 #define __RTS_DEVCLI__
 
 #include "devconn.h"
+#include "devhnd.h"
 #include "param.h"
 #include <pthread.h>
-
-typedef int (*devcli_handle_response_t) (struct param_status * params);
-typedef int (*devcli_handle_data_t) (int sock, size_t size);
+#include <netinet/in.h>
 
 /*! 
  * Parameters for one communication channel.
@@ -25,13 +24,6 @@ typedef int (*devcli_handle_data_t) (int sock, size_t size);
  * handler for devdem commands returns and messages, space to hold extra 
  * parameters for such a handler, and some other usefull variables.
  */
-
-struct devcli_channel_handlers
-{
-  devcli_handle_response_t command_handler;	//! handler to handle responses
-  devcli_handle_response_t message_handler;	//! handler to asynchoronous messages
-  devcli_handle_data_t data_handler;	//! handler to ANY received data
-};
 
 int devcli_server_login (const char *hostname,
 			 uint16_t port, char *login, char *password);
@@ -43,15 +35,16 @@ int devcli_server_register (const char *hostname, uint16_t port,
 void devcli_server_close (int channel_id);
 void devcli_server_disconnect ();
 int devcli_connectdev (int *channel_id, const char *dev_name,
-		       struct devcli_channel_handlers *handlers);
+		       devcli_handle_data_t data_handler);
 
 ssize_t devcli_read_data (int sock, void *data, size_t size);
 
 int devcli_wait_for_status (char *device_name, char *status_name,
-			    int status_mask, int status, time_t timeout);
+			    int status_mask, int status, time_t tmeout);
 
 int devcli_server_command (int *ret_code, char *cmd, ...);
 int devcli_command (int channel_id, int *ret_code, char *cmd, ...);
 int devcli_execute (char *line, int *ret_code);
+int devcli_getinfo (int channel_id, union devhnd_info **info);
 
 #endif // __RTS_DEVCLI__
