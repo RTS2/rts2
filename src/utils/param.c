@@ -10,9 +10,9 @@
  * 	<li>commands ::= com | com + ';' + commands</li>
  * 	<li>com ::= name | name + ' '\+ + params</li>
  * 	<li>params ::= par | par + ' '\+ + params</li>
- * 	<li>par ::= hms | decimal | integer | string</li>
- * 	<li>hms ::= decimal + ':' + hms | decimal
- * 	<li>decimal ::= [0-9] + decimal | 
+ * 	<li>par ::= hms | float | integer | string | ip_address</li>
+ * 	<li>hms ::= float + ':' + hms | float
+ * 	<li>float ::= [0-9] + float | 
  * 	<li>integer ::= [0-9] + integer | [0-9]</li>
  * </ul>
  *
@@ -78,7 +78,7 @@ param_get_length (struct param_status *params)
 }
 
 /*!
- * Internel to read next string, and report any errors.
+ * Internal to read next string, and report any errors.
  *
  * @return 0 on succes, -1 and set errno on failure.
  */
@@ -119,6 +119,21 @@ param_next_integer (struct param_status *params, int *ret)
 }
 
 int
+param_next_time_t (struct param_status *params, time_t * ret)
+{
+  char *endptr;
+  if (param_next (params))
+    return -1;
+  *ret = strtol (params->param_processing, &endptr, 10);
+  if (*endptr)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+  return 0;
+}
+
+int
 param_next_float (struct param_status *params, float *ret)
 {
   char *endptr;
@@ -145,5 +160,34 @@ param_next_hmsdec (struct param_status *params, double *ret)
       errno = EINVAL;
       return -1;
     }
+  return 0;
+}
+
+/*!
+ *
+ * @param hostname	malloced pointer to hostname, must be freed by calling
+ * 			function.
+ */
+int
+param_next_ip_address (struct param_status *params, char **hostname,
+		       int *port)
+{
+  struct param_status *inner_params;
+  char *tmp_hostname;
+  if (param_next (params))
+    return -1;
+  // split : parts
+  param_init (&inner_params, params->param_processing, ':');
+
+  if (param_next_string (inner_params, &tmp_hostname)
+      || param_next_integer (inner_params, port))
+    {
+      param_done (inner_params);
+      return -1;
+    }
+
+  *hostname = (char *) malloc (strlen (tmp_hostname) + 1);
+  strcpy (*hostname, tmp_hostname);
+  param_done (inner_params);
   return 0;
 }
