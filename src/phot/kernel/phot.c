@@ -196,10 +196,11 @@ reset (struct device_struct *dev)
   outb (0, base_port + 1);
   outb (2, base_port + 1);
   free_command_list (dev);
+  // reset any waiting data
+  dev->buf_last_read = dev->buf_index = 0;
   // start filter move
   dev->command_pending = 1;
   filter_routine ((unsigned long) dev);
-
   printk (KERN_INFO "Reset complete\n");
 }
 
