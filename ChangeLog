@@ -14,6 +14,15 @@
  * central server
     o IPC with select
     o design
+ * authentification
+    o abstract param.h layer
+    o change of all files to that new layer
+ * deferred priority handling
+    o blockstart, blockcheck, blockend commands
+    o priority_deferred command
+    o priority timeout
+ * DEVDEM_WITH_CLIENT removed
+    o devdem.[hc], devser.[hc] could live without it
 
 0.1.1
 ===
@@ -23,7 +32,8 @@
     o priority blocks
     o thread canceling
  * DEVDEM_WITH_CLIENT macro
-    o changes in devdem.[hc] to accomodate such macro
+    o changes in devdem.[hc] to include such macro
+    o devser, devdem splitting
 
 0.1
 ===
