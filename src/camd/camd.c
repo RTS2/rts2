@@ -26,7 +26,10 @@
 
 #define DEVICE_PORT		5556	// default camera TCP/IP port
 #define DEVICE_NAME 		"camd"	// default camera name
-int sbig_port;		// default sbig camera port is 2
+
+#define MAX_CHIPS		2
+
+int sbig_port;			// default sbig camera port is 2
 
 struct camera_info info;
 
@@ -45,8 +48,9 @@ struct readout
   float complete;
   int thread_id;
   struct imghdr header;
+  int d_x, d_y, d_width, d_height;
 };
-struct readout readouts[2];
+struct readout readouts[MAX_CHIPS];
 
 char device_name[64];
 
@@ -114,6 +118,9 @@ start_readout (void *arg)
       goto err;
     }
 
+  syslog (LOG_DEBUG, "reading out: [%i,%i:%i,%i]", READOUT->x, READOUT->width,
+	  READOUT->y, READOUT->height);
+
   for (i = 0; i < READOUT->y; i++)
     if ((ret = camera_dump_line (READOUT->chip)) < 0)
       goto err;
@@ -180,6 +187,7 @@ camd_handle_command (char *command)
 
   if (strcmp (command, "ready") == 0)
     {
+      int i;
       cam_call (camera_init ("/dev/ccd1", sbig_port));
       cam_call (camera_info (&info));
       atexit (camera_done);
@@ -291,6 +299,26 @@ camd_handle_command (char *command)
       devser_write_command_end (DEVDEM_E_SYSTEM, "not supported (yet)");
       return -1;
     }
+  else if (strcmp (command, "box") == 0)
+    {
+      struct readout *rd;
+      if (devser_param_test_length (5))
+	return -1;
+      get_chip;
+      rd = &readouts[chip];
+      if (devser_param_next_integer (&rd->d_x) ||
+	  devser_param_next_integer (&rd->d_y) ||
+	  devser_param_next_integer (&rd->d_width) ||
+	  devser_param_next_integer (&rd->d_height))
+	return -1;
+
+      rd->d_x *= info.chip_info[chip].binning_vertical;
+      rd->d_y *= info.chip_info[chip].binning_horizontal;
+      rd->d_width *= info.chip_info[chip].binning_vertical;
+      rd->d_height *= info.chip_info[chip].binning_horizontal;
+
+      return 0;
+    }
   else if (strcmp (command, "readout") == 0)
     {
       size_t data_size;
@@ -307,11 +335,24 @@ camd_handle_command (char *command)
 
       rd = &readouts[chip];
       rd->chip = chip;
-      rd->x = rd->y = 0;
-      rd->width =
-	info.chip_info[chip].width / info.chip_info[chip].binning_vertical;
-      rd->height =
-	info.chip_info[chip].height / info.chip_info[chip].binning_horizontal;
+      if (rd->d_height >= 0)
+	{
+	  rd->x = rd->d_x / info.chip_info[chip].binning_vertical;
+	  rd->y = rd->d_y / info.chip_info[chip].binning_horizontal;
+	  rd->width = rd->d_width / info.chip_info[chip].binning_vertical;
+	  rd->height = rd->d_height / info.chip_info[chip].binning_horizontal;
+	}
+      else
+	{
+	  // full screen
+	  rd->x = rd->y = 0;
+	  rd->width =
+	    info.chip_info[chip].width /
+	    info.chip_info[chip].binning_vertical;
+	  rd->height =
+	    info.chip_info[chip].height /
+	    info.chip_info[chip].binning_horizontal;
+	}
 
       // set data header
       header = &(rd->header);
@@ -489,12 +530,17 @@ end:
 }
 
 int
-camd_handle_status (int status)
+camd_handle_status (int status, int old_status)
 {
   int ret;
 
+  printf ("new status: %i\n", status);
+
   if (camera_init ("/dev/ccd1", sbig_port))
     return -1;
+
+  printf ("init ok\n");
+  fflush (stdout);
   switch (status)
     {
     case SERVERD_DUSK:
@@ -601,6 +647,13 @@ main (int argc, char **argv)
 
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+  for (c = 0; c < MAX_CHIPS; c++)
+    {
+      // init d_.*s
+      readouts[c].d_x = readouts[c].d_y = readouts[c].d_width =
+	readouts[c].d_height = -1;
+    }
 
   if (devdem_init (stats, 2, camd_handle_status))
     {
