@@ -31,6 +31,7 @@
 #include "selector.h"
 #include "../db/db.h"
 
+
 int camd_id, teld_id;
 
 #define fits_call(call) if (call) fits_report_error(stderr, status);
@@ -102,7 +103,7 @@ data_handler (int sock, size_t size, struct image_info *image)
 }
 
 int
-expose (int npic)
+expose (int target_id, int observation_id, int npic)
 {
   devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
   for (; npic > 0; npic--)
@@ -117,10 +118,14 @@ expose (int npic)
 	return -1;
       t = time (NULL);
       info = (struct image_info *) malloc (sizeof (struct image_info));
+      info->exposure_time = t;
+      info->exposure_length = 120;
+      info->target_id = target_id;
+      info->observation_id = observation_id;
       if (devcli_command (camd_id, NULL, "info") ||
-	  devcli_getinfo (camd_id, &info->camera) ||
+	  devcli_getinfo (camd_id, (union devhnd_info *) &info->camera) ||
 	  devcli_command (teld_id, NULL, "info") ||
-	  devcli_getinfo (teld_id, &info->telescope) ||
+	  devcli_getinfo (teld_id, (union devhnd_info *) &info->telescope) ||
 	  devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
 				  CAM_NOEXPOSURE, 0)
 	  || devcli_image_info (camd_id, info) ||
@@ -286,7 +291,7 @@ main (int argc, char **argv)
 
       printf ("OK\n");
 
-      expose (1);
+      expose (last->id, last->obs_id, 1);
 
       db_end_observation (obs_id, time (NULL) - t);
     }
