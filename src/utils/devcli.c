@@ -44,6 +44,7 @@ struct read_data_attrs
   size_t size;
   int id;
   struct image_info image;
+  void *data_handler_args;
 };
 
 //! holds mutex and thread for running data connections
@@ -118,7 +119,8 @@ read_data_thread (void *arg)
 #define READ_DATA_ATTRS ((struct read_data_attrs*) arg)
   READ_DATA_ATTRS->data_handler (READ_DATA_ATTRS->socket,
 				 READ_DATA_ATTRS->size,
-				 &READ_DATA_ATTRS->image);
+				 &READ_DATA_ATTRS->image,
+				 READ_DATA_ATTRS->data_handler_args);
   if (close (READ_DATA_ATTRS->socket) < 0)
     {
 #ifdef DEBUG
@@ -320,6 +322,7 @@ handle_connect (struct device *dev, struct param_status *params)
   read_data_attrs->data_handler = data_handler;
   read_data_attrs->size = data_size;
   read_data_attrs->id = id;
+  read_data_attrs->data_handler_args = dev->data_handler_args;
 
   memcpy (&read_data_attrs->image, &dev->channel.handlers.image,
 	  sizeof (struct image_info));

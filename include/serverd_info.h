@@ -30,7 +30,7 @@ union devhnd_info
 typedef int (*devcli_handle_response_t) (struct param_status * params,
 					 union devhnd_info * info);
 typedef int (*devcli_handle_data_t) (int sock, size_t size,
-				     struct image_info * image);
+				     struct image_info * image, void *arg);
 
 struct devcli_channel_handlers
 {
@@ -92,6 +92,7 @@ struct device
   response_handler_t response_handler;	//! response callback
   struct dev_channel channel;
   devcli_handle_data_t data_handler;	//! handler to received data
+  void *data_handler_args;
   general_notifier_t status_notifier;	//! status change handler
   void *notifier_data;		//! notifier data
   struct device *next;
