@@ -6,6 +6,7 @@
 extern int telescope_init (const char *device_name, int telescope_id);
 extern void telescope_done ();
 
+extern int telescope_base_info (struct telescope_info *info);
 extern int telescope_info (struct telescope_info *info);
 
 extern int telescope_move_to (double ra, double dec);

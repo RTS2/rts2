@@ -574,20 +574,29 @@ telescope_done ()
  *
  */
 extern int
-telescope_info (struct telescope_info *info)
+telescope_base_info (struct telescope_info *info)
 {
-  if (tel_read_ra (&info->ra) || tel_read_dec (&info->dec) ||
-      tel_read_longtitude (&info->longtitude)
-      || tel_read_latitude (&info->latitude)
-      || tel_read_siderealtime (&info->siderealtime)
-      || tel_read_localtime (&info->localtime))
+  if (tel_read_longtitude (&info->longtitude)
+      || tel_read_latitude (&info->latitude))
     return -1;
 
   strcpy (info->type, "LX200");
   strcpy (info->serial_number, "000001");
+  info->altitude = 600;
 
   info->park_dec = PARK_DEC;
   info->flip = 0;
+
+  return 0;
+}
+
+extern int
+telescope_info (struct telescope_info *info)
+{
+  if (tel_read_ra (&info->ra) || tel_read_dec (&info->dec)
+      || tel_read_siderealtime (&info->siderealtime)
+      || tel_read_localtime (&info->localtime))
+    return -1;
 
   return 0;
 }
