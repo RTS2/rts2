@@ -8,7 +8,7 @@
 #define __RTS_DEVCONN__
 
 #define MAXMSG  		512
-#define MAXDATACONS		4
+#define MAXDATACONS		10	
 //! Data port range
 #define MINDATAPORT		5556
 #define MAXDATAPORT		5656

@@ -166,8 +166,21 @@ int
 status_message (int subdevice, char *description)
 {
   struct devconn_status *st;
+  int i;
+  char *message;
   st = &(statutes[subdevice]);
-  return devser_dprintf ("S %s %i %s", st->name, st->status, description);
+  asprintf (&message, "S %s %i %s", st->name, st->status, description);
+  if (subdevice != client_status)
+    {
+      for (i = 0; i < MAX_CLIENT; i++)
+	{
+	  if (i != client_id && clients_info->clients[i].authorized)
+	    {
+	      devser_2devser_message (i, message);
+	    }
+	}
+    }
+  return devser_dprintf (message);
 }
 
 /*! 
@@ -444,6 +457,11 @@ client_handle_msg (char *msg)
       else
 	client_priority_deferred_lost (timeout);
     }
+  else if (params->param_argv[0] == 'S')
+    {
+      // status message
+      devser_dprintf (msg);
+    }
   else
     {
       param_done (params);
@@ -717,10 +735,10 @@ server_message_priority (struct param_status *params)
       // on startup, designated_priority_client already have other
       // value, since other observation with other client_id is
       // running
-      clients_info->designated_priority_client = new_priority_client;
       // change priority only if there is such change
-      if (clients_info->priority_client != new_priority_client)
+      if (clients_info->designated_priority_client != new_priority_client)
 	{
+          clients_info->designated_priority_client = new_priority_client;
 	  // no current priority client => priority_client == -1
 	  // we would like to stop some client only if some is
 	  // running
@@ -806,6 +824,7 @@ devdem_on_exit ()
       if (clients_info->priority_client == client_id && client_id >= 0)	// we have priority and we exit => we must give up priority
 	client_priority_lost ();
       clients_info->clients[client_id].pid = 0;
+      clients_info->clients[client_id].authorized = 0;
     }
   syslog (LOG_INFO, "devdem exiting");
 }
@@ -934,8 +953,10 @@ devdem_register (char *server_host, uint16_t server_port,
 {
   struct devcli_channel_handlers handlers;
 
-  handlers.command_handler = server_command_handler;
-  handlers.message_handler = server_message_handler;
+  handlers.command_handler =
+    (devcli_handle_response_t) server_command_handler;
+  handlers.message_handler =
+    (devcli_handle_response_t) server_message_handler;
 
   handlers.data_handler = NULL;
 

@@ -1388,9 +1388,12 @@ devser_on_exit ()
 void
 ser_sig_exit (int sig)
 {
-  syslog (LOG_INFO, "devser exiting with signal:%i", sig);
-  if (getpid () == devser_parent_pid) // || getpid () == devser_child_pid)
+  printf ("[%i] devser exiting with signal:%i\n", getpid(), sig);
+  if (getpid () == devser_parent_pid || getpid () == devser_child_pid)
+  {
+    printf ("[%i] calling exit\n", getpid());
     exit (0);
+  }
 }
 
 void
