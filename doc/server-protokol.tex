@@ -11,7 +11,7 @@ Proces centrálního serveru vystupuje v protokolu pouze jako sever.
 Klientské procesy vystupují v protokolu v¾dy jako klienti.  
 
 Zaøízení vystupují pøi komunikaci se zaøízenímy jako server. Pøi komunikaci s
-centrálním server pak vystupují jako klient. A pøi komunikaci mezi zaøízenímy
+centrálním server pak vystupují jako klient. A pøi komunikaci mezi zaøízeními
 se jedno chová jako klient a druhé jako server.
 
 \subsection{Formát}
@@ -35,12 +35,12 @@ Bloky komunikace v textovém rozhranní jsou ukonèovány znaèkou konce øádky.
 Buïto se pou¾ívá znakù platnıch v protokolu Telnet \cite{telnet} - tedy znaku
 CR následovaného znakem LF, nebo pouze znaku LF.
 
-Jednotlivé polo¾ky øádky jsou oddìlovány nejménì jedním znakem mezera.
+Jednotlivé polo¾ky øádku jsou oddìlovány nejménì jedním znakem mezera.
 
 \subsection{Pøíkazy}
 
 Pøíkazy posílá klient serveru. První polo¾kou øádku je název pøíkazu.
-Název pøíkazu je následovan parametry.
+Název pøíkazu je následován parametry.
 
 Na jedné øádce je mo¾né poslat nìkolik pøíkazù. Jako jejich oddìlovaè slou¾í
 støedník.
@@ -60,8 +60,8 @@ rozli¹it, o jakou chybu se jednalo.
 vìt¹inou jako reakci na pøíkaz a tedy pøed tím, ne¾ oznámí ukonèení pøíkazu.
 První polo¾ka je jméno pøíkazu, za ní následují hodnotami. 
 
-Napøíklad po dotazu na pozici dalekohledu mù¾e dalekohled odpovìdìt{\it ra
-10}, co¾ znamená, ¾e je v rektascenzi nastaven na 10 stupòù.
+Napøíklad po dotazu na pozici montá¾e mù¾e montá¾ odpovìdìt{\it ra
+10}, co¾ znamená, ¾e je v rektascenzi nastavena na 10 stupòù.
 
 \subsection{Zprávy a ¾ádosti serveru}
 

@@ -10,11 +10,12 @@ Ovládání tvoøí nìkolik samostatných procesù. Jsou popsány ní¾e:
 
 \begin{itemize}
 
-\item[TCM] Telescope Control Module - øídí podle pøedem generovaného plánu pohyb
-dalekohledu. Dalekohledem pohybuje pouze v~okam¾iku, kdy nedochází k~¾ádné
-expozici. Pøi pøíchodu zprávy o~záblesku okam¾itì pøesouvá dalekohled na novou
-pozici, bez ohledu na právì probíhající expozice. Napsán v~jazyce C, bì¾í na
-Linuxu.
+\item[TCM] Telescope Control Module - øídí podle pøedem generovaného plánu
+pohyb dalekohledu. Dalekohledem pohybuje pouze v~okam¾iku, kdy nedochází
+k~¾ádné expozici. O expozici je informován do OTM prostøednictvím komunikace
+po TCP/IP soketu. Pøi pøíchodu zprávy o~záblesku okam¾itì pøesouvá dalekohled
+na novou pozici, bez ohledu na právì probíhající expozice. Napsán v~jazyce C,
+bì¾í na Linuxu.
 
 \item[DCM] Dome Control Module - ovládá støechu, kontroluje stav poèasí pomocí
 meterologické vì¾e, hlásí stav støechy a poèasí pøes SMS bránu, hlásí otvírání
@@ -23,7 +24,7 @@ a zavírání støechy TCM. Napsán pod LabView, bì¾í na Windows 98.
 \item[OTM] Optical Transient Monitor - øídí snímkování. Souèástí programu jsou
 funkce pro automatické poøizování a zpracování kalibraèních snímkù. V~souèasné
 dobì se pou¾ívá pouze na poøizování snímkù (jak kalibraèních, tak obyèejných),
-jejich dal¹í zpracování pou¾ití øídí linuxovská pipeline. Psán v~Borland C++
+jejich dal¹í zpracování øídí linuxovská pipeline. Psán v~Borland C++
 Builderu s~pou¾itím knihovny OWL, bì¾í na Windows 98. 
 
 \item[IAM] Image Analysis Monitor - pipeline postavená na programech z~Opery,
@@ -41,13 +42,12 @@ Nevýhody:
 \item neexistence jednotícího protokolu
 \item dalekohled nemù¾e kontorolovat kamery, prùmìrná doba mezi ukonèením
 pøesunu dalekohledu a poøízením prvního snímku bude o~trochu vìt¹í ne¾ jedna
-polovina celkové doby na expozizi a vyètení snímku \footnote{Po pøesunu na
-novou pozici mù¾e být kamera v~jakémkoliv stavu. V~nejlep¹ím pøípadì právì
-dokoèila vyètení CCD èipu a právì se chystá zahájit novou expozici,
-v~nejhor¹ím zahájila pøed chvílí expozici, bude vyèítat, poté poøídí temný
-snímek a teprve poté bude exponovat. V~pouze o~trochu ménì hor¹ím pøípadì pøed
-chvílí zahájila expozici, bude vyèítat a teprve po té exponovat. ????Pøesný
-výpoèet?????????}
+polovina celkové doby na expozici a vyètení snímku\footnote{Po pøesunu na
+novou pozici mù¾e být kamera v~jakémkoliv stavu. V~nejlep¹ím pøípadì dokoèila
+vyètení CCD èipu a právì se chystá zahájit novou expozici, v~nejhor¹ím
+dokonèila expozici, bude vyèítat, poté poøídí temný snímek a teprve poté bude
+exponovat. Proto¾e kamery exponují v pevných intervalech, nejhor¹í pøípad trvá
+2*interval-doba expozic}
 \item nestabilita Windowsovského vyèítaèe SBIGovských kamer, daná vlastnostmi
 GUI a pomìrnì slo¾itým kódem.
 \item nemo¾nost vyèítat dvì kamery na jednom poèítaèi souèasnì, empiricky
