@@ -54,6 +54,7 @@ AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove m
 
 AC_OUTPUT([Makefile
 	   src/Makefile
+	   src/camd/Makefile
 	   src/db/Makefile
 	   src/grb/Makefile
 	   src/grb/bacodine/Makefile
