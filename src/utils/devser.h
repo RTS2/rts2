@@ -13,7 +13,6 @@
 #include <netinet/in.h>
 #include <stdarg.h>
 
-#define STATUSNAME		8
 #define MSG_SIZE		50
 
 #define MAX_CLIENT		10

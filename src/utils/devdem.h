@@ -23,7 +23,7 @@ int devdem_status_mask (int subdevice, int mask, int operand, char *message);
 
 int devdem_init (char **status_names, int status_num_in);
 int devdem_register (char *server_address, uint16_t server_port,
-		     char *device_name, int device_type,
+		     char *in_device_name, int device_type,
 		     char *device_host, uint16_t device_port);
 int devdem_run (uint16_t port, devser_handle_command_t in_handler);
 

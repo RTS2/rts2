@@ -69,16 +69,8 @@ int status_shm;
 //! key to semaphore for access control to status shared memory segment
 int status_sem;
 
-//! holds status informations
-typedef struct
-{
-  char name[STATUSNAME + 1];
-  int status;
-}
-status_t;
-
 //! array holding status structures; stored in shared mem, hence just pointer
-status_t *statutes;
+struct devconn_status *statutes;
 
 //! handler functions
 devser_handle_command_t cmd_device_handler;
@@ -115,6 +107,9 @@ pthread_mutex_t block_mutex_counter = PTHREAD_MUTEX_INITIALIZER;
 
 //! condition for block count change
 pthread_cond_t block_cond_counter = PTHREAD_COND_INITIALIZER;
+
+//! device name
+char device_name[DEVICE_NAME_SIZE];
 
 #define SERVER_CLIENT		MAX_CLIENT + 1	// id of process connected to server - for messages
 
@@ -172,9 +167,10 @@ status_unlock (int sem)
 int
 status_message (int subdevice, char *description)
 {
-  status_t *st;
+  struct devconn_status *st;
   st = &(statutes[subdevice]);
-  return devser_message ("%s %i %s", st->name, st->status, description);
+  return devser_dprintf ("S %s %s %i %s", device_name, st->name, st->status,
+			 description);
 }
 
 /*! 
@@ -545,6 +541,12 @@ client_authorize ()
 				"error while setting up client");
       return -1;
     }
+  // now print what status we supported
+  devser_dprintf ("I status_num %s %i", device_name, status_num);
+  for (key = 0; key < status_num; key++)
+    devser_dprintf ("I status %s %i %s %i", device_name, key,
+		    statutes[key].name, statutes[key].status);
+
   // TODO remove pid - not needed ???
   clients_info->clients[client_id].pid = devser_child_pid;
   return 0;
@@ -800,7 +802,7 @@ devdem_on_exit ()
 int
 devdem_init (char **status_names, int status_num_in)
 {
-  status_t *st;
+  struct devconn_status *st;
   union semun sem_un;
   int i;
 
@@ -828,14 +830,16 @@ devdem_init (char **status_names, int status_num_in)
     }
   // initializes shared memory
   if ((status_shm =
-       shmget (IPC_PRIVATE, sizeof (status_t) * status_num, 0644)) < 0)
+       shmget (IPC_PRIVATE, sizeof (struct devconn_status) * status_num,
+	       0644)) < 0)
     {
       syslog (LOG_ERR, "shmget: %m");
       return -1;
     }
 
   // writes names and null to shared memory
-  if ((int) (statutes = (status_t *) shmat (status_shm, NULL, 0)) < 0)
+  if ((int) (statutes = (struct devconn_status *) shmat (status_shm, NULL, 0))
+      < 0)
     {
       syslog (LOG_ERR, "shmat: %m");
       return -1;
@@ -899,7 +903,7 @@ devdem_init (char **status_names, int status_num_in)
  */
 int
 devdem_register (char *server_host, uint16_t server_port,
-		 char *device_name, int device_type, char *device_host,
+		 char *in_device_name, int device_type, char *device_host,
 		 uint16_t device_port)
 {
   struct devcli_channel_handlers handlers;
@@ -907,6 +911,8 @@ devdem_register (char *server_host, uint16_t server_port,
   handlers.message_handler = server_message_handler;
 
   handlers.data_handler = NULL;
+
+  strncpy (device_name, in_device_name, DEVICE_NAME_SIZE);
 
   /* connect to the server */
   if (devcli_server_register
@@ -922,7 +928,8 @@ int
 child_init (void)
 {
   // attach shared memory with status
-  if ((int) (statutes = (status_t *) shmat (status_shm, NULL, 0)) < 0)
+  if ((int) (statutes = (struct devconn_status *) shmat (status_shm, NULL, 0))
+      < 0)
     {
       syslog (LOG_ERR, "shmat: %m");
       return -1;
