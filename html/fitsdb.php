@@ -54,26 +54,26 @@ EOT;
 		$d = abs ($d);
 		$h = floor ($d);
 		$ret = sprintf ("$sign%d&deg;", $h);
-		$d = fmod ($d, 1) * 60.0;
-		$ret = $ret . sprintf ("%02.0f'", $d);
+		$d = round (fmod ($d, 1) * 60.0, 3);
+		$ret = $ret . sprintf ("%02.0f'", floor($d));
 		$s = fmod ($d, 1) * 60.0;
 		return $ret . sprintf ("%02.1f''", $s);
 	}
 
-	function deg2h ($d) {
+	function hour2s ($d) {
 		$a = $d;
 		$d = $d / 15.0;
 		$h = floor ($d);
 		$ret = sprintf ("%02d:", $h);
-		$d = fmod ($d, 1) * 60.0;
-		$ret = $ret . sprintf ("%02.0f:", $d);
+		$d = round (fmod ($d, 1) * 60.0, 3);
+		$ret = $ret . sprintf ("%02.0f:", floor($d));
 		$s = fmod ($d, 1) * 60.0; 
 		return $ret . sprintf ("%02.1f", $s);
 	}
 
 	function get_value ($fname, $value) {
 		if ($fname == 'tar_ra')
-			return deg2h ($value) . "($value)";
+			return hour2s ($value) . "($value)";
 		else if ($fname == 'tar_dec')
 			return deg2s ($value) . "($value)";
 		else return $value;
@@ -380,9 +380,9 @@ EOT;
 EOT;
 	if (array_key_exists($name, $_SESSION)) {
 		if ($name == 'ra') {
-			echo deg2h($_SESSION[$name],1);
+			echo hour2s($_SESSION[$name]);
 		} else if ($name == 'dec') {
-			echo deg2s($_SESSION[$name],60);
+			echo deg2s($_SESSION[$name]);
 		} else {
 			echo $_SESSION[$name];
 		}
