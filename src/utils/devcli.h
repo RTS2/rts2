@@ -32,7 +32,7 @@ struct devcli_channel
   devcli_handle_response_t message_handler;	//! handler to asynchoronous messages
   devcli_handle_data_t data_handler;	//! handler to ANY received data
   int socket;			//! socket for connection
-  struct sockaddr *address;	//! socket address
+  struct sockaddr_in address;	//! socket address
   pthread_t read_thread;	//! read thread
   pthread_mutex_t ret_lock;	/*! 
 				 * return lock
