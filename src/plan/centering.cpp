@@ -9,6 +9,7 @@
 #include "camera_info.h"
 #include "phot_info.h"
 #include "centering.h"
+#include "median.h"
 
 #define MAX_COUNT		20
 
@@ -163,7 +164,11 @@ rts2_centering (struct device *camera, struct device *telescope)
   int step_size, up_d;
   int right, up;
   int right_move, up_move;
-  double phot_dark, phot_light;
+  int step_background;
+  double phot_dark, phot_light, phot_background;
+  double *background_array = NULL;
+  double back_max = -1;
+  int back_max_ra, back_max_dec;
 
   err_ra = 0;
   err_dec = 0;
@@ -179,14 +184,17 @@ rts2_centering (struct device *camera, struct device *telescope)
       }
   if (!phot)			// no photometer
     return 1;
+
   step = 0;
   step_size_x = 1;
   step_size_y = 1;
   step_size = step_size_x * 2 + step_size_y;
   step_ra = get_double_default ("centering_step_ra", 0.4);
   step_dec = get_double_default ("centering_step_dec", 0.4);
-  step_ra /= 60.0;
-  step_dec /= 60.0;
+  step_ra /= 60.0; // convert to degrees
+  step_dec /= 60.0; // convertm to degrees
+  step_background = (int) get_device_double_default (phot->name, "step_background", 10);
+  background_array = (double*) malloc (sizeof (double) * step_background);
   up_d = 1;
   phot_dark = phot_integrate (phot, DARK_FILTER, COUNTS);
   if (isnan (phot_dark))
@@ -194,7 +202,7 @@ rts2_centering (struct device *camera, struct device *telescope)
       ret = 1;
       goto end;
     }
-  for (total_step = 0; total_step < 1000; total_step++)
+  for (total_step = 0; total_step < 500; total_step++)
     {
       // one centering step
       right = 0;
@@ -218,7 +226,36 @@ rts2_centering (struct device *camera, struct device *telescope)
 	goto end;
       // now do the work
       phot_light = phot_integrate (phot, LIGHT_FILTER, COUNTS);
-      if (phot_light - phot_dark > get_device_double_default (phot->name, "minsn", 250))
+      // bellow backgroudn step, save for futher use..
+      if (total_step < step_background)
+      {
+	background_array[total_step] = phot_light;
+	if  (phot_light > back_max)
+	{
+	  back_max = phot_light;
+	  back_max_ra = err_ra;
+	  back_max_dec = err_dec;
+	  printf ("max_back: %f err_ra: %i err_dec: %i\n", back_max, back_max_ra, back_max_dec);
+	}
+      }
+      // calculate background, get maximum if found, proceed with maximum
+      if (total_step == step_background)
+      {
+	// calculate background
+	// median..
+	phot_background = get_median (background_array, step_background);
+	printf ("background: %f\n", phot_background);
+	if (back_max - phot_background > get_device_double_default (phot->name, "minsn", 250))
+	{
+	  // move the center
+	  phot_light = back_max;
+	  ret = next_move (back_max_ra - err_ra, back_max_dec - err_dec, telescope);
+	  if (ret)
+	    goto end;
+	}
+      }
+      if (total_step >= step_background 
+        && phot_light - phot_background > get_device_double_default (phot->name, "minsn", 250))
 	{
 	  // something found, make step aside, and recenter
 	  printf ("err_ra: %i (%f) err_dec: %i (%f)\n", err_ra,
@@ -244,16 +281,16 @@ rts2_centering (struct device *camera, struct device *telescope)
 	      next_move (-right_move, -up_move, telescope);
 	      printf ("bad idea, moved back\n");
 	    } */
-	  step_ra /= 2;
-	  step_dec /= 2;
+	  step_ra /= 2.0;
+	  step_dec /= 2.0;
 	  err_ra = 0;
 	  err_dec = 0;
 	  // find one end
-	  ret = find_center (1, 0, phot, telescope, phot_dark);
+	  ret = find_center (1, 0, phot, telescope, phot_background);
 	  if (ret)
 	    goto end;
 	  // find other end
-	  ret = find_center (0, 1, phot, telescope, phot_dark);
+	  ret = find_center (0, 1, phot, telescope, phot_background);
 	  if (ret)
 	    goto end;
 	  phot_integrate (phot, LIGHT_FILTER, COUNTS); 
@@ -283,5 +320,6 @@ rts2_centering (struct device *camera, struct device *telescope)
 end:
   if (old_handler)
     devcli_set_command_handler (phot, old_handler);
+  free (background_array);
   return ret;
 }
