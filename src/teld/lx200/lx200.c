@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
+#include <libnova.h>
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -77,6 +78,36 @@ union semun
   struct seminfo *__buf;	/* buffer for IPC_INFO */
 };
 #endif
+
+int
+move_lock ()
+{
+  struct sembuf sem_buf;
+
+  sem_buf.sem_num = SEM_MOVE;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = SEM_UNDO;
+
+  if (semop (semid, &sem_buf, 1) == -1)
+    return -1;
+  return 0;
+
+}
+
+int
+move_unlock ()
+{
+  struct sembuf sem_buf;
+
+  sem_buf.sem_num = SEM_MOVE;
+  sem_buf.sem_op = 1;
+  sem_buf.sem_flg = SEM_UNDO;
+
+  if (semop (semid, &sem_buf, 1) == -1)
+    return -1;
+  return 0;
+}
+
 
 /*! 
  * Reads some data directly from port.
@@ -416,6 +447,52 @@ tel_normalize (double *ra, double *dec)
 }
 
 /*! 
+ * Set LX200 local time.
+ *
+ * @param st		local time to be set in hours
+ *
+ * @return -1 and errno on error, otherwise 0
+ */
+
+int
+tel_write_loctime (double t)
+{
+  char command[14];
+  int h, m, s;
+  if (t < 0 || t > 24.0)
+    {
+      return -1;
+    }
+  dtoints (t, &h, &m, &s);
+  if (snprintf (command, 14, "#:SL%02d:%02d:%02d#", h, m, s) < 0)
+    return -1;
+  return tel_rep_write (command);
+}
+
+/*! 
+ * Set LX200 sidereal time.
+ *
+ * @param st		sidereal time to be set in hours
+ *
+ * @return -1 and errno on error, otherwise 0
+ */
+
+int
+tel_write_sidtime (double t)
+{
+  char command[14];
+  int h, m, s;
+  if (t < 0 || t > 24.0)
+    {
+      return -1;
+    }
+  dtoints (t, &h, &m, &s);
+  if (snprintf (command, 14, "#:SS%02d:%02d:%02d#", h, m, s) < 0)
+    return -1;
+  return tel_rep_write (command);
+}
+
+/*! 
  * Set LX200 right ascenation.
  *
  * @param ra		right ascenation to set in decimal degrees
@@ -686,6 +763,12 @@ tel_slew_to (double ra, double dec)
 
   tel_normalize (&ra, &dec);
 
+  if (dec > 70)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+
   while (count < 5)
     {
       if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
@@ -939,7 +1022,18 @@ err:
 extern int
 telescope_change (double ra, double dec)
 {
-  return -1;
+  struct telescope_info info;
+  int ret;
+
+  if (move_lock ())
+    return -1;
+
+  telescope_info (&info);
+  if (abs (dec) < 87)
+    ra = ra / cos (dec);
+  ret = tel_move_to (info.ra + ra, info.dec + dec);
+  move_unlock ();
+  return ret;
 }
 
 /*!
@@ -968,14 +1062,20 @@ telescope_stop ()
 extern int
 telescope_park ()
 {
-  double lst;
-  if (tel_read_siderealtime (&lst) < 0)
-    return -1;
+  double lst, longitude;
+
+  longitude = -4.04;
+  lst = ln_get_apparent_sidereal_time (ln_get_julian_from_sys ())
+    + longitude / 15;
+  tel_write_sidtime (lst);
+
+  //if (tel_read_siderealtime (&lst) < 0)
+  //  return -1;
   return tel_move_to (lst * 15.0, PARK_DEC);
 }
 
 /*!
- * TODO implemet it!!!!
+ * TODO implement it!!!!
  */
 extern int
 telescope_off ()
