@@ -269,6 +269,7 @@ camd_handle_command (char *command)
 			      CAM_MASK_EXPOSE | CAM_MASK_DATA,
 			      CAM_EXPOSING | CAM_NODATA,
 			      "exposure chip started");
+	  devser_dprintf ("exposure %f", exptime);
 
 	  if ((ret =
 	       devser_thread_create (start_expose, (void *) &expose,
