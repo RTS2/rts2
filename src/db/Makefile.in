@@ -1,0 +1,11 @@
+#$Id$
+
+all: db.o 
+
+db.c: db.ec
+	@ECPG@ -o $@ $^
+
+db.o: db.c
+	$(CC) @LIBPG_CFLAGS@ db.c -c -o db.o -DDEBUG
+clean:
+	$(RM) db.c db.o
