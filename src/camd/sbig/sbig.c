@@ -262,8 +262,9 @@ sbig_readout_line (struct sbig_readout_line *readout_line)
 {
   int result;
 #ifdef DEBUG
-  printf ("Reading line..pixelStart:%i pixelLength:%i",
-	  readout_line->pixelStart, readout_line->pixelLength);
+  printf ("Reading line..pixelStart:%i pixelLength:%i bin:%i",
+	  readout_line->pixelStart, readout_line->pixelLength,
+	  readout_line->readoutMode);
 #endif
   result =
     ParDrvCommand (CC_READOUT_LINE, (ReadoutLineParams *) readout_line,
