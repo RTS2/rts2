@@ -7,6 +7,10 @@
  * @author petr
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <errno.h>
 #include <libnova/libnova.h>
 #include <stdio.h>
@@ -122,7 +126,7 @@ public:
     struct camera_info *caminfo = (struct camera_info *) &camera->info;
     int x, y, w, h;
     if (devcli_command (camera, NULL, "chipinfo 0"))
-	    return -1;
+      return -1;
     x = caminfo->chip_info[0].width / 2 - 128;
     y = caminfo->chip_info[0].height / 2 - 128;
     w =
@@ -264,20 +268,30 @@ public:
     printf ("reading data socket: %i size: %i\n", sock, size);
 
     if (l_save_fits)
-    {
-        gmtime_r (&image_info->exposure_time, &gmt);
-        asprintf (&filename, "%s_%04i%02i%02i%02i%02i%02i.fits", image_info->camera_name,
-	      gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour,
-	      gmt.tm_min, gmt.tm_sec);
-	strcpy (filen, filename);
-	printf ("filename: %s\n", filename);
-        if (fits_create (&receiver, filename) || fits_init (&receiver, size))
-         {
-           perror ("camc data_handler fits_init");
-           ret = -1;
-           goto out;
-         }
-    }
+      {
+	// create path with camera name
+	if (mkpath (image_info->camera_name, 0755) != 0)
+	  {
+	    perror ("creating dir for camera");
+	    l_save_fits = 0;
+	  }
+	else
+	  {
+	    gmtime_r (&image_info->exposure_time, &gmt);
+	    asprintf (&filename, "%s/%04i%02i%02i%02i%02i%02i.fits",
+		      image_info->camera_name, gmt.tm_year, gmt.tm_mon,
+		      gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec);
+	    strcpy (filen, filename);
+	    printf ("filename: %s\n", filename);
+	    if (fits_create (&receiver, filename)
+		|| fits_init (&receiver, size))
+	      {
+		perror ("camc data_handler fits_init");
+		ret = -1;
+		goto out;
+	      }
+	  }
+      }
 
     receiver.info = image_info;
 
@@ -285,14 +299,14 @@ public:
     d = data;
 
     while ((s = devcli_read_data (sock, d, DATA_BLOCK_SIZE)) > 0)
-    {
-      if (l_save_fits)
       {
-        if ((ret = fits_handler (d, s, &receiver)) < 0)
-	  goto out;
+	if (l_save_fits)
+	  {
+	    if ((ret = fits_handler (d, s, &receiver)) < 0)
+	      goto out;
+	  }
+	d += s;
       }
-      d += s;
-    }
 
     if (s < 0)
       {
@@ -313,14 +327,15 @@ public:
     height = imghdr->sizes[1];
 
     if (l_save_fits)
-    {
-      if (fits_write_image_info (&receiver, image_info, NULL) || fits_close (&receiver))
       {
-        perror ("camc data_handler fits_write");
-        ret = -1;
-        goto out;
+	if (fits_write_image_info (&receiver, image_info, NULL)
+	    || fits_close (&receiver))
+	  {
+	    perror ("camc data_handler fits_write");
+	    ret = -1;
+	    goto out;
+	  }
       }
-    }
 
     if (!image)
       {
@@ -493,7 +508,7 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
 			    float exposure, int i_save_fits)
 {
   XSetWindowAttributes xswa;
-  XTextProperty        window_title;
+  XTextProperty window_title;
 
   gc = NULL;
   image = NULL;
@@ -698,7 +713,8 @@ main (int argc, char **argv)
   for (i = 0; i < camera_num; i++)
     {
       camera_window[i] =
-	new DeviceWindow (camera_names[i], root_window, center, exposure, save_fits);
+	new DeviceWindow (camera_names[i], root_window, center, exposure,
+			  save_fits);
     }
 
   printf ("waiting end\n");
