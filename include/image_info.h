@@ -20,6 +20,7 @@ typedef struct
   pthread_mutex_t *mutex;
   pthread_cond_t *cond;
   int hi_precision;
+  int ntries;
 } hi_precision_t;
 
 struct image_info
