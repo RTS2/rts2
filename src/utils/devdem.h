@@ -16,6 +16,9 @@
 
 #include "devcli.h"
 
+int devdem_priority_block_start ();
+int devdem_priority_block_end ();
+
 int devdem_register (struct devcli_channel *server_channel, char *device_name,
 		     char *server_address, int server_port);
 

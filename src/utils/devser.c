@@ -609,7 +609,7 @@ priority_block_start ()
  */
 
 int
-devser_priority_block_start ()
+devdem_priority_block_start ()
 {
   if (priority_block_start ())
     {
@@ -621,7 +621,7 @@ devser_priority_block_start ()
 }
 
 int
-devser_priority_block_end ()
+devdem_priority_block_end ()
 {
   priority_block_end ();
   syslog (LOG_DEBUG, "priority block ended");
@@ -1130,7 +1130,7 @@ client_priority_lost ()
 
   priority_block_start ();
   devser_thread_cancel_all ();
-  devser_priority_block_end ();
+  devdem_priority_block_end ();
 
   // wait for all threads to finish
   pthread_mutex_lock (&threads_mutex);
