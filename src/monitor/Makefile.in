@@ -1,9 +1,11 @@
 all: monitor nmonitor
 
-include ../../make.conf
-
+CFLAGS += -I@top_srcdir@/include
 LDFLAGS += -lncurses -lpthread -lm
 
 monitor: monitor.o ../utils/devcli.a
 
 nmonitor: nmonitor.o ../utils/devcli.a
+
+clean:
+	$(RM) *.o *~
