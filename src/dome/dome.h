@@ -37,10 +37,7 @@ public:
   };
   virtual int endClose ()
   {
-    if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
-      {
-	maskState (0, DOME_DOME_MASK, DOME_CLOSED, "dome closed");
-      }
+    maskState (0, DOME_DOME_MASK, DOME_CLOSED, "dome closed");
     return 0;
   };
   virtual long isClosed ()

@@ -679,14 +679,20 @@ int
 Rts2DevDomeFram::idle ()
 {
   // check for weather..
-  if (weatherConn->isGoodWeather () && observingPossible)
+  if (weatherConn->isGoodWeather ())
     {
-      openDome ();
-      sendMaster ("on");
+      if ((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	{
+	  // after centrald reply, that he switched the state, dome will
+	  // open
+	  sendMaster ("on");
+	}
     }
   else
     {
       int ret;
+      // close dome - don't thrust centrald to be running and closing
+      // it for us
       ret = closeDome ();
       if (ret == -1)
 	{
