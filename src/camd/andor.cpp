@@ -38,7 +38,7 @@ class CameraAndorChip:public CameraChip
 {
   long *dest;		// for chips..
   long *dest_top;
-  long *send_top;
+  char *send_top;
 public:
     CameraAndorChip (int in_chip_id, int in_width, int in_height,
 		    int in_pixelX, int in_pixelY, float in_gain);
@@ -61,7 +61,7 @@ int
 CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   dest_top = dest;
-  send_top = dest;
+  send_top = (char*) dest;
   return CameraChip::startReadout (dataConn, conn);
 }
 
@@ -74,6 +74,7 @@ CameraAndorChip::readoutOneLine ()
     {
       readoutLine = chipSize->height;
       GetAcquiredData (dest, chipSize->height * chipSize->width);
+      dest_top += chipSize->height * chipSize->width;
       return 0;
     }
   if (sendLine == 0)
@@ -83,12 +84,12 @@ CameraAndorChip::readoutOneLine ()
       if (ret)
 	return ret;
     }
-  if (send_top < dest_top)
+  if (send_top < (char*) dest_top)
     {
       sendLine++;
       send_top +=
 	readoutConn->send (send_top,
-			   chipSize->width);
+			   (char *) dest_top - send_top);
       return 0;
     }
   readoutConn->endConnection ();
@@ -210,6 +211,12 @@ int
 Rts2DevCameraAndor::camWaitExpose (int chip)
 {
   int status;
+  int ret;
+  ret = Rts2DevCamera::camWaitExpose (chip);
+  if (ret != -2)
+  {
+    return ret;
+  }
   GetStatus (&status);
   if (status == DRV_ACQUIRING)
     return 0;
