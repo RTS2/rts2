@@ -7,6 +7,12 @@
 	$q = new Query;
 	$q->connect ("dbname=stars");
 
+	$targets_type_from = array ( 
+		"S" => "",
+		"O" => "ot",
+		"G" => "grb"
+	);
+
 	if ($_SESSION['authorized'] && array_key_exists('tar_id', $_REQUEST) && array_key_exists('type_id', $_REQUEST)) {
 		$tar_id = intval ($_REQUEST['tar_id']);
 		if (!preg_match ('/^[A-Za-z]$/', $_REQUEST['type_id']))
@@ -28,20 +34,25 @@
 	}
 
 	if (array_key_exists('tar_id', $_SESSION) && !array_key_exists('type_id', $_REQUEST)) {
+		$target_type = $q->simple_query ("SELECT type_id FROM targets WHERE tar_id = $_SESSION[tar_id]");
 		$q->add_field ("*");
 		$q->add_from ('targets');
-		$q->add_and_where ("tar_id = $_SESSION[tar_id]");
+		$q->add_and_where ("targets.tar_id = $_SESSION[tar_id]");
+		if ($targets_type_from[$target_type]) {
+			$q->add_from ($targets_type_from[$target_type]);
+			$q->add_and_where ("targets.tar_id = $targets_type_from[$target_type].tar_id");
+		}
 		$q->do_query ();
 		$q->print_form ();
 
 		$row = pg_fetch_array ($q->res, 0);
 		echo "<img src='chart.php?ra=" . $row['tar_ra'] . "&dec=" . $row['tar_dec'] . "' alt='Sky chart'/>\n<hr>\n";
-		$img_count = simple_query ($q->con, "SELECT img_count FROM targets_images WHERE tar_id = $_SESSION[tar_id]");
+		$img_count = $q->simple_query ("SELECT img_count FROM targets_images WHERE tar_id = $_SESSION[tar_id]");
 		echo "Images: <a href='images.php'>$img_count</a>";
 		
 		if ($img_count > 0) {
-			$last_image = simple_query ($q->con, "SELECT MAX(img_date) FROM images, observations WHERE observations.obs_id = images.obs_id AND observations.tar_id = $_SESSION[tar_id]");
-			echo "<hr>\nLast image ($last_image):<br><img src='preview.php?fn=" . simple_query ($q->con, "SELECT imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, img_date) FROM images, observations WHERE images.obs_id = observations.obs_id AND observations.tar_id = $_SESSION[tar_id] AND img_date = '$last_image'") . "&full=true'/>";
+			$last_image = $q->simple_query ("SELECT MAX(img_date) FROM images, observations WHERE observations.obs_id = images.obs_id AND observations.tar_id = $_SESSION[tar_id]");
+			echo "<hr>\nLast image ($last_image):<br><img src='preview.php?fn=" . $q->simple_query ("SELECT imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, img_date) FROM images, observations WHERE images.obs_id = observations.obs_id AND observations.tar_id = $_SESSION[tar_id] AND img_date = '$last_image'") . "&full=true'/>";
 		}
 		$q->clear ();
 		$q->add_field ('observations.obs_id, observations.obs_start, observations.obs_duration, observations_images.img_count');

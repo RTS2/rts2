@@ -22,18 +22,6 @@ EOT;
 		echo "<a href='night.php?night=$n'><b>Night</b></a> from <b>" . date ("d.m.Y", $t) . " 12:00 UT</b> to <b>" . date ("d.m.Y", $t + 86400) . " 12:00 UT</b>.<br>\n";
 	}
 
-	function simple_query ($con, $query_string) {
-		$res = pg_query ($con, $query_string);
-		if (pg_num_rows($res))
-		{
-			return  pg_fetch_result ($res, 0, 0);
-		}
-		else
-		{
-			return 0;
-		}
-	}
-
 	function s2deg ($s, $mul) {
 		$i = 0;
 		$len = strlen ($s);
@@ -91,12 +79,17 @@ EOT;
 	}		
 
 	$fields_name = array (
+		'camera_name' => 'Camera name',
+		'grb_id' => "GRB #",
+		'grb_seqn' => "GRB Seq.",
+		'grb_date' => "GRB Date",
+		'grb_last_update' => "GRB last update",
 		'img_path' => "Image preview",
+		'img_count' => 'IC',
 		'img_date' => "Image date",
 		'img_exposure_sec' => "E ('')",
 		'img_temperature_deg' => "T (&deg;C)",
 		'img_filter' =>	"F",
-		'camera_name' => 'Camera name',
 		'tar_id' => 'Tar. ID',
 		'tar_name' => 'Target name',
 		'tar_comment' => 'Target comment',
@@ -105,9 +98,11 @@ EOT;
 		'obs_id' => 'Obs. ID',
 		'obs_start' => 'Observation start',
 		'obs_duration' => 'Duration',
+		'ot_imgcount' => 'Images per night',
+		'ot_minpause' => 'Minimal pause',
+		'ot_priority' => 'Priority',
 		'type_id' => 'Type id',
-		'type_description' => 'Description',
-		'img_count' => 'IC'
+		'type_description' => 'Description'
 	);
 		
 	$fields_links = array (
@@ -117,9 +112,20 @@ EOT;
 	);
 
 	$fields_writable = array (
-		'type_id' => 1, 'type_description' => 1, 
-		'tar_name' => 1 , 'tar_ra' => 1, 'tar_dec' => 1, 
-		'tar_type' => 1, 'tar_comment' => 1);
+		'grb_id' => 0,
+		'grb_seqn' => 1,
+		'grb_date' => 1,
+		'grb_last_update' => 1,
+		'ot_imgcount' => 1,
+		'ot_minpause' => 1,
+		'ot_priority' => 1,
+		'type_id' => 1, 
+		'type_description' => 1, 
+		'tar_name' => 1 , 
+		'tar_ra' => 1, 
+		'tar_dec' => 1, 
+		'tar_type' => 1, 
+		'tar_comment' => 1);
 	
 	class Query {
 		var $fields;
@@ -129,6 +135,7 @@ EOT;
 
 		var $con;
 		var $res;
+
 		function Query () {
 			$this->clear ();
 		}
@@ -138,6 +145,20 @@ EOT;
 			$this->from = "";
 			$this->where = "";
 			$this->order = "";
+		}
+
+		function simple_query ($query_string) {
+			if (!$this->con)
+				$this->connect ();
+			$res = pg_query ($this->con, $query_string);
+			if (pg_num_rows($res))
+			{
+				return  pg_fetch_result ($res, 0, 0);
+			}
+			else
+			{
+				return 0;
+			}
 		}
 
 		function add_field ($f) {
@@ -166,14 +187,14 @@ EOT;
 					$this->from . $this->where . $this->order . ";";
 			}
 
-		function connect ($dbname) {
+		function connect ($dbname = "dbname=stars") {
 			$this->con = pg_connect ($dbname);
 		}
 
-		function do_query () {
+		function do_query ($sql = "") {
 			if (!$this->con)
-				$this->connect ("dbname=stars");
-			$this->res = pg_query ($this->con, $this->build());
+				$this->connect ();
+			$this->res = pg_query ($this->con, ($sql == "") ? $this->build() : $sql);
 			return $this->res;
 		}
 
@@ -242,7 +263,9 @@ EOT;
 				for ($i = 0; $i < pg_numfields($this->res); $i++) {
 					$fname = pg_fieldname($this->res, $i);
 					echo "<td class='" . (($i % 2) ? 'odd' : "even") . "'>";
-					if ($fname == 'img_path') {
+					if ($row[$i] == "")
+						echo "und";
+					else if ($fname == 'img_path') {
 						if ($_SESSION['authorized']) {
 							echo "<input type='checkbox' name='$row[$i]' checked></input>";
 						}
@@ -405,12 +428,12 @@ EOT;
 
 	if (array_key_exists('login', $_REQUEST) && array_key_exists('password', $_REQUEST))
 	{
-		$con = pg_connect ("dbname=stars");
-		if (simple_query ($con, "SELECT COUNT(*) FROM users WHERE usr_login = '$_REQUEST[login]' and usr_passwd = '$_REQUEST[password]';"))
+		$q = new Query();
+		if ($q->simple_query ("SELECT COUNT(*) FROM users WHERE usr_login = '$_REQUEST[login]' and usr_passwd = '$_REQUEST[password]';"))
 		{
 			$_SESSION['authorized'] = 1;
 			$_SESSION['login'] = $_REQUEST['login'];
 		}
-	pg_close ();
+		$q->close ();
 	}
 ?>

@@ -32,16 +32,19 @@ echo <<<EOT
 	</li>
 	<li><a href="targets.php">Targets</a>
 		<ul class="menu">
+			<li>
 EOT;
-	$con = pg_connect ("dbname=stars");
-	$res = pg_query ("SELECT type_id, type_description FROM types");
+	$q = new Query ();
+	$res = $q->do_query ("SELECT type_id, type_description FROM types ORDER BY type_id ASC");
+	$types = array ();
 	while ($row = pg_fetch_row ($res)) {
-		echo "\t\t\t<li><a href='targets.php?type_id=$row[0]'>$row[1]</a></li>\n";
+		array_push ($types, $row[0]); 
+		echo "<a href='targets.php?type_id=$row[0]'>$row[0]</a>&nbsp;";
 	}
-	pg_close ($con);
 echo <<<EOT
+</li>
+			<li><a href="targets.php?insert=1">Insert new</a></li>
 		</ul class="menu">
-		<ul><a href="targets.php?insert=1">Insert new</a></ul>
 	</li>
 	<li>Statistics
 		<ul class="menu">
@@ -56,6 +59,15 @@ echo <<<EOT
 			<li>RA&amp;DEC</li>
 			<li>Target</li>
 			<li>Night</li>
+			<li>Targets</li>
+				<ul class="menu">
+					<li>
+EOT;
+	while ($typ = array_shift ($types))
+		echo "<a href='observations.php?type_id=$typ'>$typ</a>&nbsp;";
+echo <<<EOT
+</li>
+				</ul>
 		</ul class="menu">
 	</li>
 	<li><a href="days.php?year=2003">Year 2003</a></li>
@@ -63,11 +75,11 @@ echo <<<EOT
 	<li><a href="settings.php">Settings</a></li>
 	<li>
 EOT;
-#	pg_close ();
 	if ($_SESSION['authorized'])
 		echo "<a href='logout.php'>Logout</a>";
 	else
 		echo "<a href='login.php'>Login</a>";
+	$q->close ();
 echo <<<EOF
 </li>
 </ul>

@@ -22,13 +22,8 @@
 		$q->do_query ();
 		$q->print_table ();
 	} else {
-		$q->add_field ('observations.tar_id, observations.obs_id, observations.obs_start, observations.obs_duration, targets.tar_ra, targets.tar_dec, targets.tar_name, observations_images.img_count');
+		$q->add_field ('observations.tar_id, observations.obs_id, observations.obs_start, observations.obs_duration, targets.tar_ra, targets.tar_dec, targets.tar_name, targets.type_id, observations_images.img_count');
 		$q->add_from ('observations, targets, observations_images');
-		if (isset($_REQUEST['tar_type'])) {
-			$tar_type = $_REQUEST['tar_type'];
-			if (preg_match('/^[A-Za-z]$/', $tar_type))
-				$q->add_and_where ("tar_type = '$tar_type'");
-		}
 		if (isset($_REQUEST['night'])) {
 			$n = intval ($_REQUEST['night']);
 			if ($n) {
@@ -38,6 +33,11 @@
 		}
 		$q->add_and_where ("targets.tar_id = observations.tar_id");
 		$q->add_and_where ("observations.obs_id = observations_images.obs_id");
+		if (array_key_exists('type_id', $_REQUEST) AND preg_match('/^[A-Za-z]$/', $_REQUEST['type_id']))
+		{
+			echo 'Observations for "' . $q->simple_query ("SELECT type_description FROM types WHERE type_id = '$_REQUEST[type_id]'") . '".<br>' . "\n";
+			$q->add_and_where ("targets.type_id = '$_REQUEST[type_id]'");
+		}
 		$q->add_order ('obs_start DESC');
 		$q->do_query ();
 		$q->print_table ();

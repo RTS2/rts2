@@ -8,10 +8,10 @@
 		preg_replace ('/[^A-Za-z0-9 _\-.]/', '', $type_description);
 		if (array_key_exists ('insert', $_REQUEST))
 		{
-			simple_query ($q->con, "INSERT INTO types (type_description, type_id) VALUES ('$type_description', '$_REQUEST[type_id]');");
+			$q->simple_query ("INSERT INTO types (type_description, type_id) VALUES ('$type_description', '$_REQUEST[type_id]');");
 		}
 		else 
-			simple_query ($q->con, "UPDATE types SET type_description = '$type_description' WHERE type_id = '$_REQUEST[type_id]'");
+			$q->simple_query ("UPDATE types SET type_description = '$type_description' WHERE type_id = '$_REQUEST[type_id]'");
 	}
 
 	if (array_key_exists('type_id', $_REQUEST) && preg_match ("/^[A-Za-z]$/", $_REQUEST['type_id'])) {
