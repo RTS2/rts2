@@ -12,9 +12,6 @@
 #include "../utils/rts2device.h"
 #include "../utils/rts2block.h"
 
-#include "sbigudrv.h"
-#include "csbigcam.h"
-
 #ifdef __GNUC__
 #  if(__GNUC__ > 3 || __GNUC__ ==3)
 #	define _GNUC3_
@@ -40,11 +37,8 @@ class CameraAndorChip:public CameraChip
 public:
     CameraAndorChip (int in_chip_id, int in_width, int in_height,
 		    int in_pixelX, int in_pixelY, float in_gain);
-    ~CameraAndorChip (void)
-    {
-	delete dest;
-    }
-  virtual long isExposing ();
+    ~CameraAndorChip (void);
+    virtual long isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
 private:
@@ -55,6 +49,11 @@ CameraAndorChip::CameraAndorChip (int in_chip_id, int in_width, int in_height,
 CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
   dest = new unsigned short[in_width * in_height];
+};
+
+CameraAndorChip::~CameraAndorChip (void)
+{
+  delete dest;
 };
 
 long
@@ -119,10 +118,15 @@ CameraAndorChip::readoutOneLine ()
 
 class Rts2DevCameraAndor:public Rts2DevCamera
 {
+  int andorGain;
+  char *andorRoot;
+protected:
+  virtual void help ();
 public:
     Rts2DevCameraAndor (int argc, char **argv);
   ~Rts2DevCameraAndor (void);
 
+  virtual int proceesOption (int in_opt);
   virtual int init ();
 
   // callback functions for Camera alone
@@ -145,11 +149,44 @@ public:
 Rts2DevCameraAndor::Rts2DevCameraAndor (int argc, char **argv):
 Rts2DevCamera (argc, argv)
 {
+  andorRoot = "/root/andor/examples/common";
+  andorGain = 255;
+  addOption ('r', "root", 1, "directory with Andor detector.ini file");
+  addOption ('g', "gain", 1, "set camera gain level (0-255)");
 }
 
 Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
 {
   ShutDown ();
+}
+
+void
+Rts2DevCameraAndor::help ()
+{
+  printf ("Driver for Andor CCDs (iXon & others)\n");
+  Rts2DevCamera::help ();
+}
+
+int
+Rts2DevCameraAndor::proceesOption (int in_opt)
+{
+  switch (in_opt)
+  {
+    case 'g':
+      andorGain = atoi (optarg);
+      if (andorGain > 255 || andorGain < 0)
+      {
+	printf ("gain must be in 0-255 range\n");
+	exit (EXIT_FAILURE);
+      }
+      break;
+    case 'r':
+      andorRoot = optarg;
+      break;
+    default:
+      return Rts2DevCamera::processOption (in_opt);
+  }
+  return 0;
 }
 
 int
@@ -159,8 +196,13 @@ Rts2DevCameraAndor::init ()
   unsigned long error;
   int width;
   int height;
+  int ret;
 
-  error = Initialize ("/root/andor/examples/common");
+  ret = Rts2DevCamera::init ();
+  if (!ret)
+    return ret;
+
+  error = Initialize (andorRoot);
 
   if(error!=DRV_SUCCESS){
 	cout << "Initialisation error...exiting" << endl;
@@ -182,7 +224,7 @@ Rts2DevCameraAndor::init ()
   camSetShutter(0);
 
   SetExposureTime(5.0);
-  SetEMCCDGain (255);
+  SetEMCCDGain (andorGain);
 
   chipNum = 1;
   
@@ -191,7 +233,7 @@ Rts2DevCameraAndor::init ()
   chips[0] = cc;
   chips[1] = NULL;
 
-  return Rts2DevCamera::init ();
+  return 0;
 }
 
 int
