@@ -98,6 +98,7 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 	  fits_call (fits_write_img
 		     (receiver->ffile, TUSHORT, 1, receiver->size / 2,
 		      ((receiver->data) + sizeof (struct imghdr)), &status));
+	  free (receiver->data);
 #ifdef DEBUG
 	  printf ("readed:%i bytes                                       \n",
 		  receiver->offset);
