@@ -36,5 +36,5 @@ indent:
 		fi;				\
 	done
 
-commit: indent
-	$(CVS) commit
+commit: indent clean
+	cvs commit

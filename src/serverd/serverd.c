@@ -114,23 +114,15 @@ int
 device_msg_snd (char *name, char *format, ...)
 {
   struct device *device;
-  struct devser_msg msg;
-  if (find_device (name, &msg.mtype, &device))
+  long id;
+  if (find_device (name, &id, &device))
     {
-      char *mtext;
+      int ret;
       va_list ap;
 
       va_start (ap, format);
-      vasprintf (&mtext, format, ap);
+      ret = devser_2devser_message_va (id + MAX_CLIENT + 1, format, ap);
       va_end (ap);
-
-      strncpy (msg.mtext, mtext, MSG_SIZE);
-
-      free (mtext);
-
-      msg.mtype += MAX_CLIENT + 1;
-
-      return devser_msg_snd (&msg);
     }
   errno = ENODEV;
   return -1;
@@ -147,29 +139,22 @@ device_msg_snd (char *name, char *format, ...)
 int
 devices_msg_snd (char *format, ...)
 {
-  struct devser_msg msg;
-  char *mtext;
   va_list ap;
   int i;
 
   va_start (ap, format);
-  vasprintf (&mtext, format, ap);
-  va_end (ap);
-
-  strncpy (msg.mtext, mtext, MSG_SIZE);
-
-  free (mtext);
 
   for (i = 0; i < MAX_DEVICE; i++)
     {
       /* device exists */
       if (*shm_devices[i].name)
 	{
-	  msg.mtype = i + MAX_CLIENT + 1;
-	  if (devser_msg_snd (&msg))
+	  if (devser_2devser_message_va (i + MAX_CLIENT, format, ap))
 	    return -1;
 	}
     }
+  va_end (ap);
+
   return 0;
 }
 
@@ -458,7 +443,7 @@ serverd_handle_command (char *command)
 		strncpy (shm_clients[i].login, login, CLIENT_LOGIN_SIZE);
 		serverd_id = i;
 		shm_clients[i].pid = devser_child_pid;
-		if (devser_set_server_id (i + 1, NULL))
+		if (devser_set_server_id (i, NULL))
 		  {
 		    devser_shm_data_unlock ();
 		    return -1;
@@ -505,8 +490,7 @@ serverd_handle_command (char *command)
 	      {
 		strncpy (shm_devices[i].name, reg_device, DEVICE_NAME_SIZE);
 		shm_devices[i].pid = devser_child_pid;
-		if (devser_set_server_id
-		    (i + MAX_CLIENT + 1, serverd_handle_msg))
+		if (devser_set_server_id (i + MAX_CLIENT, serverd_handle_msg))
 		  {
 		    devser_shm_data_unlock ();
 		    return -1;

@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 
 #define STATUSNAME		8
 #define MSG_SIZE		50
@@ -21,12 +22,6 @@ typedef int (*devser_handle_command_t) (char *command);
 typedef int (*devser_handle_msg_t) (char *message);
 
 typedef void (*devser_thread_cleaner_t) (void *arg);
-
-struct devser_msg
-{
-  long mtype;
-  char mtext[MSG_SIZE];
-};
 
 int devser_init (size_t shm_data_size);
 int devser_run (int port, devser_handle_command_t in_handler,
@@ -54,8 +49,9 @@ void devser_shm_data_dt (void *mem);
 int devser_set_server_id (int server_id_in,
 			  devser_handle_msg_t msg_handler_in);
 
-int devser_msg_snd (struct devser_msg *msg);
-int devser_msg_snd_format (int type, char *format, ...);
+int devser_2devser_message (int recv_id, void *message);
+int devser_2devser_message_va (int recv_id, char *format, va_list ap);
+int devser_2devser_message_format (int recv_id, char *format, ...);
 
 int devser_param_test_length (int npars);
 

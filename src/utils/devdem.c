@@ -421,8 +421,8 @@ client_authorize ()
   clients_info->clients[new_client_id].authorized = 0;
 
   // get authorization key
-  devser_msg_snd_format (SERVER_CLIENT, "authorize %i %i", new_client_id,
-			 key);
+  devser_2devser_message_format (SERVER_CLIENT, "authorize %i %i",
+				 new_client_id, key);
 
   // wait for server client to unblock us..
   sb.sem_op = -1;
@@ -446,9 +446,9 @@ client_authorize ()
 
   client_id = new_client_id;
 
-  if (devser_set_server_id (client_id + 1, client_handle_msg))
+  if (devser_set_server_id (client_id, client_handle_msg))
     {
-      syslog (LOG_ERR, "client_authorize devser_set_server_id: %m");
+      syslog (LOG_ERR, "client_authorize devser_set_server_id");
       devser_write_command_end (DEVDEM_E_SYSTEM,
 				"error while setting up client");
       return -1;
@@ -581,7 +581,6 @@ server_message_priority (struct param_status *params)
     }
   else
     {
-      struct devser_msg msg;
       if (new_priority_client < 0 || new_priority_client >= MAX_CLIENT)
 	{
 	  syslog (LOG_ERR, "invalid new priority client %i",
@@ -606,14 +605,12 @@ server_message_priority (struct param_status *params)
 	    {
 	      // send stop signal to request thread stopping
 	      // on given device
-	      msg.mtype = clients_info->priority_client + 1;
-	      strcpy (msg.mtext, "priority_lost");
-	      if (devser_msg_snd (&msg))
+	      if (devser_2devser_message
+		  (clients_info->priority_client, "priority_lost"))
 		return -1;
 	    }
-	  msg.mtype = new_priority_client + 1;
-	  strcpy (msg.mtext, "priority_receive");
-	  if (devser_msg_snd (&msg))
+	  if (devser_2devser_message
+	      (new_priority_client, "priority_receive"))
 	    return -1;
 	}
       else
@@ -657,7 +654,7 @@ devdem_on_exit ()
     }
   else
     {
-      if (clients_info->priority_client == client_id)	// we have priority and we exit => we must give up priority
+      if (clients_info->priority_client == client_id && client_id >= 0)	// we have priority and we exit => we must give up priority
 	client_priority_lost ();
       clients_info->clients[client_id].pid = 0;
     }

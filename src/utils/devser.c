@@ -15,6 +15,8 @@
 
 #define _GNU_SOURCE
 
+#define IPC_MSG_SHIFT		1000
+
 #include "devser.h"
 #include "../status.h"
 
@@ -143,6 +145,13 @@ pthread_t msg_thread;
 
 //! parameter processing status
 struct param_status *command_params;
+
+//! devser_2dever message typ
+struct devser_msg
+{
+  long mtype;
+  char mtext[MSG_SIZE];
+};
 
 void *msg_receive_thread (void *arg);
 
@@ -838,51 +847,75 @@ devser_shm_data_dt (void *mem)
 }
 
 /*!
- * Send given IPC message.
+ * Send message to another devser server.
  *
  * @see msgsnd.
  *
- * @param msg		pointer to the message buffer to send
- *
+ * @param recv_id		id server to send
+ * @param message		message to send, at most MSG_SIZE bytes length
+ * 
  * @return 0 on success, -1 and set errno on error
  */
 int
-devser_msg_snd (struct devser_msg *msg)
+devser_2devser_message (int recv_id, void *message)
 {
-  if (msgsnd (msg_id, msg, MSG_SIZE, 0))
+  struct devser_msg msg;
+
+  msg.mtype = recv_id + IPC_MSG_SHIFT;
+  memcpy (msg.mtext, message, MSG_SIZE);
+  if (msgsnd (msg_id, &msg, MSG_SIZE, 0))
     {
-      syslog (LOG_ERR, "error devser_msg_snd: %m %i %li", msg_id, msg->mtype);
+      syslog (LOG_ERR, "error devser_2devser_message: %m %i %li", msg_id,
+	      msg.mtype);
       return -1;
     }
   // else
   return 0;
 }
 
-/*
- * Send message to give device. Use format string to format
+/*!
+ * Send message to given device. Use ap to format format string.
+ *
+ * @param recv_id	message receiver id
+ * @param format	format
+ * @param ap		va list
+ *
+ * @return 0 on success, -1 and set errno otherwise
+ */
+int
+devser_2devser_message_va (int recv_id, char *format, va_list ap)
+{
+  char *mtext;
+  int ret;
+
+  vasprintf (&mtext, format, ap);
+  ret = devser_2devser_message (recv_id, mtext);
+
+  free (mtext);
+  return ret;
+}
+
+
+/*!
+ * Send message to given device. Use format string to format
  * message.
  *
- * @param type		message type
+ * @param recv_id	message receiver id
  * @param format	message format string
  *
  * @return 0 on success, -1 and set errno otherwise
  */
 int
-devser_msg_snd_format (int type, char *format, ...)
+devser_2devser_message_format (int recv_id, char *format, ...)
 {
-  struct devser_msg msg;
-  char *mtext;
   va_list ap;
-
-  msg.mtype = type;
+  int ret;
 
   va_start (ap, format);
-  vasprintf (&mtext, format, ap);
+  ret = devser_2devser_message_va (recv_id, format, ap);
   va_end (ap);
-  strncpy (msg.mtext, mtext, MSG_SIZE);
-  free (mtext);
 
-  return devser_msg_snd (&msg);
+  return ret;
 }
 
 /*!
@@ -900,7 +933,8 @@ msg_receive_thread (void *arg)
     {
       struct devser_msg msg_buf;
       int msg_size;
-      msg_size = msgrcv (msg_id, &msg_buf, MSG_SIZE, server_id, 0);
+      msg_size =
+	msgrcv (msg_id, &msg_buf, MSG_SIZE, server_id + IPC_MSG_SHIFT, 0);
       if (msg_size < 0)
 	syslog (LOG_ERR, "devser msg_receive: %m %i %i", msg_size, server_id);
       else if (msg_size != MSG_SIZE)
@@ -1090,10 +1124,12 @@ devser_set_server_id (int server_id_in, devser_handle_msg_t msg_handler_in)
 {
   if (server_id == -1)
     {
-      if (server_id_in <= 0)
+      if (server_id_in < 0)
 	{
 	  syslog (LOG_ERR, "devser_set_server_id invalid id: %i",
 		  server_id_in);
+	  devser_write_command_end (DEVDEM_E_SYSTEM, "invalid server_id %i",
+				    server_id_in);
 	  return -1;
 	}
       server_id = server_id_in;
@@ -1101,12 +1137,15 @@ devser_set_server_id (int server_id_in, devser_handle_msg_t msg_handler_in)
       if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
 	{
 	  syslog (LOG_ERR, "create message thread: %m");
+	  devser_write_command_end (DEVDEM_E_SYSTEM,
+				    "error creating message thread");
 	  return -1;
 	}
     }
   else
     {
       syslog (LOG_ERR, "server_id already set!");
+      devser_write_command_end (DEVDEM_E_SYSTEM, "server_id already set");
       exit (EXIT_FAILURE);
     }
   syslog (LOG_DEBUG, "server_id set to %i", server_id);
