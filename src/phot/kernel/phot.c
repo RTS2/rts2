@@ -119,9 +119,11 @@ free_command_list (struct device_struct *dev)
 }
 
 void
-add_reply (struct device_struct *dev, u16 repl)
+add_reply (struct device_struct *dev, u16 repl, u16 param)
 {
   dev->buf[dev->buf_index] = repl;
+  dev->buf_index++;
+  dev->buf[dev->buf_index] = param;
   dev->buf_index++;
   dev->buf_index %= BUF_LEN;
   wake_up_interruptible (&operation_wait);
@@ -148,7 +150,7 @@ filter_routine (unsigned long ptr)
   else				// filter_position == desired_position
     {
       dev->status &= ~PHOT_S_FILTERMOVE;	// clear move flag
-      add_reply (dev, '0');
+      add_reply (dev, '0', dev->filter_position);
       // process any next command
       dev->command_pending = 0;
       INIT_WORK (&do_command_que, process_command, (void *) dev);
@@ -166,6 +168,7 @@ filter_routine (unsigned long ptr)
 void
 reset (struct device_struct *dev)
 {
+  printk (KERN_INFO "reset\n");
   // timer 0 to generate a square wave
   outb (54, base_port + 7);
   command_delay ();
@@ -218,7 +221,7 @@ end_integrate (unsigned long ptr)
     }
   if (i == MAX_WAIT)
     {
-      add_reply (dev, '-');
+      add_reply (dev, '-', '-');
       goto out;
     }
   // check if any pulses were received thus loading timer 2's counter with a valid count
@@ -230,9 +233,8 @@ end_integrate (unsigned long ptr)
       command_delay ();
       frequency += inb (dev->base_port + 6) * 256;
       frequency = 65536 - frequency;
-      add_reply (dev, 'A');
+      add_reply (dev, 'A', frequency);
     }
-  add_reply (dev, frequency);
 out:
   dev->command_pending = 0;
   dev->status &= ~PHOT_S_INTEGRATING_ONCE;	// clear any once integration
@@ -284,7 +286,7 @@ phot_read (struct file *filp, char *buf, size_t count, loff_t * f_pos)
 			    (dev->buf_index != dev->buf_last_read));
   if (down_interruptible (&dev->sem))
     return -EINTR;
-  len = (dev->buf_last_read <= dev->buf_index) ? dev->buf_index - dev->buf_last_read : BUF_LEN - dev->buf_index;	// this one is in sizeof(int)
+  len = (dev->buf_last_read < dev->buf_index) ? dev->buf_index - dev->buf_last_read : BUF_LEN - dev->buf_last_read;	// this one is in sizeof(u16i)
   len *= sizeof (u16);
   if (len > count)
     len = count - count % sizeof (u16);	// round count to sizeof(u16)
@@ -324,6 +326,8 @@ process_command (struct device_struct *dev)
       break;
     case PHOT_CMD_STOP_INTEGRATE:
       dev->status &= ~PHOT_S_INTEGRATING;
+      INIT_WORK (&do_command_que, process_command, (void *) dev);
+      schedule_work (&do_command_que);
       break;
     case PHOT_CMD_MOVEFILTER:
       dev->desired_position = intargs (&dev->command_list->command[1]);
