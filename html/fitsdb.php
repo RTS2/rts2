@@ -204,19 +204,25 @@ EOT;
 		function print_pages ($page, $pgs, $r, $limit, $count) {
 			$from = max (1, $page - 10);
 			$to_count = intval ($count/$pgs) + 1;
-			$to = min ($to_count, $page + 10);
+			$to = min ($to_count, $page + 9);
 			if ($from == 1 && $to == 1) {
 				echo "All $limit records are shown.<br>";
 			} else {
+				$url = $_SERVER[REQUEST_URI];
+				if (strstr ($url, '?'))
+					$url .= '&';
+				else
+					$url .= '?';
+					
 				if ($from != 1) 
-					echo "<a href='$_SERVER[SCRIPT_NAME]?page=" . max (1, $from - 10) . "'>&lt;&lt;</a>&nbsp;";
+					echo "<a href='$url" . "page=" . max (1, $from - 10) . "'>&lt;&lt;</a>&nbsp;";
 				for ($i = $from; $i <= $to; $i++)
 					if ($i != $page)
-						echo "<a href='$_SERVER[SCRIPT_NAME]?page=$i'>$i</a>&nbsp;";
+						echo "<a href='$url" . "page=$i'>$i</a>&nbsp;";
 					else
 						echo "$i&nbsp;";
 				if ($to != $to_count)
-					echo "<a href='$_SERVER[SCRIPT_NAME]?page=" . min ($to_count, $to + 10) . "'>&gt;&gt;</a>&nbsp;";
+					echo "<a href='$url" . "page=" . min ($to_count, $to + 10) . "'>&gt;&gt;</a>&nbsp;";
 				echo "&nbsp;&nbsp;Records from " . ($r+1) ." to $limit out of $count.<br>\n";
 			}
 		}
