@@ -208,6 +208,7 @@ GRANT ALL ON darks TO GROUP observers;
 GRANT ALL ON flats TO GROUP observers;
 GRANT ALL ON types TO GROUP observers; 
 GRANT ALL ON medias TO GROUP observers;
+GRANT SELECT,UPDATE ON obs_id TO GROUP observers;
 
 GRANT SELECT ON images_nights TO GROUP observers;
 GRANT SELECT ON observations_nights TO GROUP observers;
