@@ -29,8 +29,6 @@ struct imghdr
   int naxes;			//! Number of axess.
   long sizes[MAX_AXES];		//! Sizes in given axes.
   int binnings[MAX_AXES];	//! Binning in each axe - eg. 2 -> 1 image pixel on given axis is equal 2 ccd pixels.
-  time_t start_exposure;	//! UTC of the exposure start time.
-  int exp_time;			//! Exposure time in milliseconds.
 };
 
 #endif // __RTS_IMGHDR__
