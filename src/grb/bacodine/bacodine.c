@@ -1456,7 +1456,7 @@ chk_imalive (which, ctloc)
 }
 
 /*---------------------------------------------------------------------------*/
-void *
+extern void *
 receive_bacodine (process_grb_event_t arg)
 {
   int port;			/* Port number of the socket to connect to */
