@@ -162,7 +162,7 @@ err:
 }
 
 extern int
-db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
+db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
 	       int *r_tar_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -170,8 +170,8 @@ db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
   int grb_id = id;
   int grb_seqn;
   char tar_name[10];
-  double tar_ra = ra;
-  double tar_dec = dec;
+  double tar_ra = *ra;
+  double tar_dec = *dec;
   long int grb_date = *date;
   EXEC SQL END DECLARE SECTION;
 
@@ -187,9 +187,9 @@ db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
   if (!sqlca.sqlcode)
     {
       // observation exists, just update
-      if (grb_seqn < seqn)
+      if (grb_seqn < *seqn)
 	{
-	  grb_seqn = seqn;
+	  grb_seqn = *seqn;
 	  EXEC SQL UPDATE targets
 	    SET tar_ra =:tar_ra,
 	    tar_dec =:tar_dec WHERE targets.tar_id =:tar_id;
@@ -200,13 +200,19 @@ db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
 	    now () WHERE grb.tar_id =:tar_id;
 	  test_sql;
 	}
+      else
+	{
+	  *seqn = grb_seqn;
+	  *ra = tar_ra;
+	  *dec = tar_dec;
+	}
     }
   // insert new observation
   else
     {
       EXEC SQL SELECT nextval ('tar_id') INTO:tar_id;
       test_sql;
-      grb_seqn = seqn;
+      grb_seqn = *seqn;
       sprintf (tar_name, "GRB %5i", id);
       EXEC SQL INSERT INTO targets (tar_id, type_id, tar_name, tar_ra,
 				    tar_dec, tar_comment) VALUES (:tar_id,

@@ -14,7 +14,7 @@ int db_get_media_path (int media_id, char *path, size_t path_len);
 int db_start_observation (int id, const time_t * start, int *obs_id);
 int db_end_observation (int obs_id, const time_t * end_time);
 
-int db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
+int db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
 		   int *r_tar_id);
 
 int db_add_darkfield (char *path, const time_t * exposure_time, int
