@@ -124,7 +124,9 @@ Rts2DevTelescopeGemini::tel_read (char *buf, int count)
   for (readed = 0; readed < count; readed++)
     {
       int ret = read (tel_desc, &buf[readed], 1);
-      printf ("read_from: %i size:%i\n", tel_desc, ret);
+#ifdef DEBUG_ALL_PORT_COMM
+      syslog (LOG_DEBUG, "read_from: %i size:%i\n", tel_desc, ret);
+#endif
       if (ret <= 0)
 	{
 	  return -1;
@@ -215,7 +217,7 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
-      syslog (LOG_DEBUG, "Losmandy:readed %i %s", tmp_rcount, buf);
+      syslog (LOG_DEBUG, "Losmandy:readed %i '%s'", tmp_rcount, buf);
       free (buf);
     }
   else
@@ -318,7 +320,9 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, int val)
   buf[len] = '#';
   len++;
   buf[len] = '\0';
-  return tel_write (buf, len);
+  if (tel_write (buf, len) > 0)
+    return 0;
+  return -1;
 }
 
 
@@ -834,7 +838,9 @@ Rts2DevTelescopeGemini::endMove ()
   syslog (LOG_INFO, "rate: %i", track);
   tel_gemini_set (131, 131);
   tel_gemini_get (130, &track);
-  tel_write ("#:ONtest", 8);
+  if (tel_write ("#:ONtest", 8) > 0)
+    return 0;
+  return -1;
 }
 
 int
@@ -845,13 +851,14 @@ Rts2DevTelescopeGemini::isParking ()
   switch (buf)
     {
     case '2':
+    case ' ':
       return 1000000;
     case '1':
       return -2;
     case '0':
       syslog (LOG_ERR,
 	      "Rts2DevTelescopeGemini::isParking called without park command");
-    case '3':
+    default:
       return -1;
     }
 }
