@@ -24,6 +24,9 @@
 #include "mardrv.h"
 #include "../camera.h"
 
+#define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
+#define CAMERA_KEY	25
+
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 /* union semun is defined by including <sys/sem.h> */
 #else
@@ -43,7 +46,7 @@ EEPROMContents eePtr;		// global to prevent multiple EEPROM calls
 
 int semid = -1;			// semaphore ID 
 
-int chips = 0;
+int chips = -1;
 struct chip_info *ch_info = NULL;
 
 unsigned short baseAddress = 0x378;
@@ -180,7 +183,7 @@ get_eeprom ()
       if (GetEEPROM (ST7_CAMERA, &eePtr) != CE_NO_ERROR)
 	{
 	  eePtr.version = 0;
-	  eePtr.model = ST8_CAMERA;	// ST8 camera
+	  eePtr.model = DEFAULT_CAMERA;	// ST8 camera
 	  eePtr.abgType = 0;
 	  eePtr.badColumns = 0;
 	  eePtr.trackingOffset = 0;
@@ -235,16 +238,16 @@ camera_init (char *device_name, int camera_id)
   begin_realtime ();
 
   if ((semid == -1)
-      && (semid = semget (ftok (device_name, camera_id), 1, 0644)) == -1)
+      && (semid = semget (CAMERA_KEY + camera_id, 1, 0644)) == -1)
     {
       if ((semid =
-	   semget (ftok (device_name, camera_id), 1, IPC_CREAT | 0644)) == -1)
+	   semget (CAMERA_KEY + camera_id, 1, IPC_CREAT | 0644)) == -1)
 	{
 	  syslog (LOG_ERR, "semget %m");
 	  // exit (EXIT_FAILURE);
 	}
       else
-	// we don't create a new semaphore
+	// we create a new semaphore
 	{
 	  sem_un.array = sem_arr;
 	  if (semctl (semid, 0, SETALL, sem_un) < 0)
@@ -268,48 +271,58 @@ camera_init (char *device_name, int camera_id)
   printf ("Using SPP on 0x%x\n", baseAddress);
 #endif
   measure_pp ();
-  if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &gvr)) ||
-      (ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
+  if (chips != -1)
     {
       sem_unlock ();
-      return -1;
     }
-  // get camera info
-  get_eeprom ();
-  sem_unlock ();
-  // determine temperature regulation state
-  switch (qtsr.enabled)
-    {
-    case 0:
-      camera_reg = (qtsr.power > 250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF;
-      break;
-    case 1:
-      camera_reg = CAMERA_COOL_HOLD;
-      break;
-      break;
-    default:
-      camera_reg = CAMERA_COOL_OFF;
-    }
-
-  if (Cams[eePtr.model].hasTrack)
-    chips = 2;
   else
-    chips = 1;
-
-  ch_info = (struct chip_info *) malloc (sizeof (struct chip_info) * chips);
-
-  for (i = 0; i < chips; i++)
     {
-      ch_info[i].width = Cams[eePtr.model].horzImage;
-      ch_info[i].height = Cams[eePtr.model].vertImage;
-      ch_info[i].binning_vertical = 1;
-      ch_info[i].binning_horizontal = 1;
-      ch_info[i].pixelX = Cams[eePtr.model].pixelX;
-      ch_info[i].pixelY = Cams[eePtr.model].pixelY;
-      if (i)
-	ch_info[i].gain = eePtr.trackingGain;
+      ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &gvr)
+	|| MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr);
+      if (ret)
+	{
+	  sem_unlock ();
+	  return -1;
+	}
+
+      // get camera info
+      get_eeprom ();
+      sem_unlock ();
+      if (Cams[eePtr.model].hasTrack)
+	chips = 2;
       else
-	ch_info[i].gain = eePtr.imagingGain;
+	chips = 1;
+
+      ch_info =
+	(struct chip_info *) malloc (sizeof (struct chip_info) * chips);
+
+      for (i = 0; i < chips; i++)
+	{
+	  ch_info[i].width = Cams[eePtr.model].horzImage;
+	  ch_info[i].height = Cams[eePtr.model].vertImage;
+	  ch_info[i].binning_vertical = 1;
+	  ch_info[i].binning_horizontal = 1;
+	  ch_info[i].pixelX = Cams[eePtr.model].pixelX;
+	  ch_info[i].pixelY = Cams[eePtr.model].pixelY;
+	  if (i)
+	    ch_info[i].gain = eePtr.trackingGain;
+	  else
+	    ch_info[i].gain = eePtr.imagingGain;
+	}
+
+      // determine temperature regulation state
+      switch (qtsr.enabled)
+	{
+	case 0:
+	  camera_reg = (qtsr.power > 250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF;
+	  break;
+	case 1:
+	  camera_reg = CAMERA_COOL_HOLD;
+	  break;
+	  break;
+	default:
+	  camera_reg = CAMERA_COOL_OFF;
+	}
     }
   return 0;
 }
