@@ -156,11 +156,17 @@ class Rts2Block
   long int idle_timeout;	// in msec
   int priority_client;
 
-public:
-    Rts2Conn * connections[MAX_CONN];
+protected:
+    virtual void cancelPriorityOperations ()
+  {
 
-    Rts2Block ();
-   ~Rts2Block (void);
+  };
+
+public:
+  Rts2Conn * connections[MAX_CONN];
+
+  Rts2Block ();
+  ~Rts2Block (void);
   void setPort (int in_port);
   virtual int init ();
   virtual int addConnection (int in_sock);

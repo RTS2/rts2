@@ -18,7 +18,7 @@ int
 main (int argc, char **argv)
 {
   double value;
-  ObjectCheck  *checker;
+  ObjectCheck *checker;
   printf ("10.2 - %f\n", hmstod ("10.2"));
   printf ("10a58V67 - %f\n", hmstod ("10a58V67"));
 
@@ -44,16 +44,18 @@ main (int argc, char **argv)
   printf ("ret: %s\n",
 	  get_sub_device_string_default ("CNF1", "script", "S", "AA"));
 
-  checker = new ObjectCheck (get_string_default ("horizont", "/etc/rts2/horizont"));
+  checker =
+    new ObjectCheck (get_string_default ("horizont", "/etc/rts2/horizont"));
 
   for (value = 0; value < 360; value += 7.5)
-  {
-  	printf ("%f -20 is_good: %i\n", value, checker->is_good (0, value, -20));
-  	printf ("%f 0 is_good: %i\n", value, checker->is_good (0, value, 0));
-  	printf ("%f 80 is_good: %i\n", value, checker->is_good (0, value, 80));
-  }
+    {
+      printf ("%f -20 is_good: %i\n", value,
+	      checker->is_good (0, value, -20));
+      printf ("%f 0 is_good: %i\n", value, checker->is_good (0, value, 0));
+      printf ("%f 80 is_good: %i\n", value, checker->is_good (0, value, 80));
+    }
 
   delete checker;
-   
+
   return 0;
 }

@@ -50,9 +50,9 @@ int
 Rts2Conn::add (fd_set * set)
 {
   if (sock >= 0)
-  {
-    FD_SET (sock, set);
-  }
+    {
+      FD_SET (sock, set);
+    }
 }
 
 int
@@ -110,7 +110,8 @@ Rts2Conn::receive (fd_set * set)
 	  while (*buf_top && (!isspace (*buf_top) || *buf_top == '\n')
 		 && *buf_top != '\r')
 	    buf_top++;
-	  syslog (LOG_DEBUG, "Rts2Conn::receive command: %s offset: %i", command_start, buf_top - buf);
+	  syslog (LOG_DEBUG, "Rts2Conn::receive command: %s offset: %i",
+		  command_start, buf_top - buf);
 	  // commands should end with (at worst case) \r..
 	  if (*buf_top)
 	    {
@@ -145,8 +146,9 @@ Rts2Conn::receive (fd_set * set)
 		    }
 		  else
 		    ret = command ();
-		  syslog (LOG_DEBUG, "Rts2Conn::receive [%i] command: %s ret: %i", getCentraldId (), buf,
-			  ret);
+		  syslog (LOG_DEBUG,
+			  "Rts2Conn::receive [%i] command: %s ret: %i",
+			  getCentraldId (), buf, ret);
 		  if (!ret)
 		    sendCommandEnd (0, "OK");
 		  else if (ret == -2)
@@ -263,11 +265,12 @@ Rts2Conn::send (char *message)
 
   if (ret != len)
     {
-      syslog (LOG_ERR, "Rts2Conn::send [%i:%i] error %i sending '%s':%m", getCentraldId (), sock, ret,
-	      message);
+      syslog (LOG_ERR, "Rts2Conn::send [%i:%i] error %i sending '%s':%m",
+	      getCentraldId (), sock, ret, message);
       return -1;
     }
-  syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (), sock, ret, message);
+  syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (),
+	  sock, ret, message);
   write (sock, "\r\n", 2);
   return 0;
 }
@@ -458,7 +461,8 @@ Rts2Block::addConnection (int in_sock)
 	  return 0;
 	}
     }
-  syslog (LOG_ERR, "Rts2Block::addConnection Cannot find empty connection!\n");
+  syslog (LOG_ERR,
+	  "Rts2Block::addConnection Cannot find empty connection!\n");
   return -1;
 }
 
@@ -585,12 +589,14 @@ Rts2Block::run ()
 int
 Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 {
+  int discard_priority = -1;
   for (int i = 0; i < MAX_CONN; i++)
     {
       // discard old priority client
       if (connections[i] && connections[i]->havePriority ())
 	{
-	  connections[i]->setHavePriority (0);
+	  discard_priority = i;
+	  break;
 	}
     }
   for (int i = 0; i < MAX_CONN; i++)
@@ -598,8 +604,17 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
       if (connections[i]
 	  && connections[i]->getCentraldId () == in_priority_client)
 	{
+	  if (discard_priority != i)
+	    {
+	      cancelPriorityOperations ();
+	    }
+	  if (discard_priority >= 0)
+	    {
+	      connections[discard_priority]->setHavePriority (0);
+	    }
 	  connections[i]->setHavePriority (1);
+	  break;
 	}
     }
-  priority_client = in_priority_client; 
+  priority_client = in_priority_client;
 }
