@@ -323,8 +323,7 @@ execute_camera_script (void *exinfo)
   int ret;
   time_t t;
   char s_time[27];
-  enum
-  { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS } exp_state;
+  int exp_state;
 
   switch (last->type)
     {
@@ -356,26 +355,29 @@ execute_camera_script (void *exinfo)
       light = 0;
     }
 
-  exp_state = NO_EXPOSURE;
+  exp_state = 0;
 
   while (*command)
     {
-      if (exp_state == EXPOSURE_BEGIN && *command && !isspace (*command))
-	{
-	  // wait till exposure end..
-	  devcli_command (telescope, NULL, "base_info;info");
-
-	  get_info (last, telescope, camera, exposure, NULL);
-
-	  devcli_wait_for_status (camera, "img_chip",
-				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  1.1 * exposure + 10);
-	  exp_state = EXPOSURE_PROGRESS;
-	}
-
       switch (*command)
 	{
 	case COMMAND_EXPOSURE:
+	  if (exp_state == 1)
+	    {
+	      // wait till exposure end..
+	      devcli_command (telescope, NULL, "base_info;info");
+
+	      get_info (last, telescope, camera, exposure, NULL);
+
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				      1.1 * exposure + 10);
+	      devcli_command (camera, NULL, "readout 0");
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_READING, CAM_NOTREADING,
+				      MAX_READOUT_TIME);
+	      exp_state = 2;
+	    }
 	  command++;
 	  while (isspace (*command))
 	    command++;
@@ -391,19 +393,12 @@ execute_camera_script (void *exinfo)
 	      exposure = strtof (command, &s);
 	      if (s == command || (!isspace (*s) && *s))
 		{
-		  fprintf (stderr,
-			   "invalid arg, expecting float, get %s\n", s);
+		  fprintf (stderr, "invalid arg, expecting float, get %s\n",
+			   s);
 		  command = s;
 		  continue;
 		}
 	      command = s;
-	    }
-	  if (exp_state == EXPOSURE_PROGRESS)
-	    {
-	      devcli_command (camera, NULL, "readout 0");
-	      devcli_wait_for_status (camera, "img_chip",
-				      CAM_MASK_READING, CAM_NOTREADING,
-				      MAX_READOUT_TIME);
 	    }
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
@@ -418,7 +413,7 @@ execute_camera_script (void *exinfo)
 	  ctime_r (&t, s_time);
 	  printf ("exposure countdown (%s), readout at %s", camera->name,
 		  s_time);
-	  exp_state = EXPOSURE_BEGIN;
+	  exp_state = 1;
 	  break;
 	case COMMAND_FILTER:
 	  command++;
@@ -442,9 +437,10 @@ execute_camera_script (void *exinfo)
 	  command++;
 	}
     }
-  switch (exp_state)
+  printf ("end exp state: %i\n", exp_state);
+  fflush (stdout);
+  if (exp_state == 1)
     {
-    case EXPOSURE_BEGIN:
       devcli_command (telescope, NULL, "base_info;info");
 
       get_info (last, telescope, camera, exposure, NULL);
@@ -452,17 +448,17 @@ execute_camera_script (void *exinfo)
       devcli_wait_for_status (camera, "img_chip",
 			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
 			      1.1 * exposure + 10);
-    case EXPOSURE_PROGRESS:
       dec_exposure_count ();
       devcli_command (camera, NULL, "readout 0");
       devcli_wait_for_status (camera, "img_chip",
 			      CAM_MASK_READING, CAM_NOTREADING,
 			      MAX_READOUT_TIME);
-      break;
-    default:
+    }
+  else
+    {
       dec_exposure_count ();
     }
-  return NULL;
+  return 0;
 }
 
 int

@@ -164,8 +164,7 @@ status_phot (WINDOW * wnd, struct device *dev)
   struct phot_info *info = (struct phot_info *) &dev->info;
   mvwprintw (wnd, 1, 1, "Count: %i", info->count);
   mvwprintw (wnd, 2, 1, "Expos: %i", info->exposure);
-  mvwprintw (wnd, 3, 1, "Filtr: %i", info->filter);
-  print_status (wnd, 4, 1, dev);
+  print_status (wnd, 3, 1, dev);
 }
 
 void
