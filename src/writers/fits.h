@@ -28,7 +28,7 @@ struct fits_receiver_data
 int fits_create (struct fits_receiver_data *receiver, char *filename);
 
 int fits_write_image_info (struct fits_receiver_data *receiver,
-			   struct image_info *image);
+		       struct image_info *image, char *dark_name);
 
 int fits_init (struct fits_receiver_data *receiver, size_t expected_size);
 

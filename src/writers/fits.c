@@ -52,7 +52,7 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 }
 
 #define write_key(type, key, value, comment)\
-	if (fits_update_key (fptr, type, key, &value, comment, &status)) \
+	if (fits_update_key (fptr, type, key, value, comment, &status)) \
 	{ \
 		fits_report_error (stderr, status); \
 		errno = EINVAL; \
@@ -60,30 +60,43 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 	}
 
 int
-write_camera (struct fits_receiver_data *receiver, struct camera_info *camera)
+write_camera (struct fits_receiver_data *receiver,
+		   struct camera_info *camera)
 {
   int status = 0;
+  float xplate = 17, yplate = 17;
+  float rotang = 95.5;
+  char *filter = "R";
+  long flip = 1;
+
   fitsfile *fptr = receiver->ffile;
 
   write_key (TSTRING, "CAMD_NAME", camera->name, "Camera name");
   write_key (TSTRING, "CAMD_SERIAL", camera->serial_number,
 	     "Camera serial number");
-  write_key (TFLOAT, "CAMD_SETPOINT", camera->temperature_setpoint,
+  write_key (TFLOAT, "CAMD_SETPOINT", &camera->temperature_setpoint,
 	     "Camera regulation setpoint");
-  write_key (TFLOAT, "CAMD_CCD", camera->ccd_temperature,
+  write_key (TFLOAT, "CAMD_CCD", &camera->ccd_temperature,
 	     "Camera CCD temperature");
-  write_key (TFLOAT, "CAMD_AIR", camera->air_temperature,
+  write_key (TFLOAT, "CAMD_AIR", &camera->air_temperature,
 	     "Camera air temperature");
-  write_key (TINT, "CAMD_POWER", camera->cooling_power,
+  write_key (TINT, "CAMD_POWER", &camera->cooling_power,
 	     "Camera cooling power");
   write_key (TSTRING, "CAMD_FAN", camera->fan ? "on" : "off",
 	     "Camera fan status");
+
+  write_key (TFLOAT, "XPLATE", &xplate, "X plate size"); 
+  write_key (TFLOAT, "YPLATE", &yplate, "Y plate size"); 
+  write_key (TFLOAT, "ROTANG", &rotang, "Field rotation");
+  write_key (TSTRING, "FILTER", "R", "Filter used");
+  write_key (TLONG, "FLIP", &flip, "Image flip");
+
   return 0;
 }
 
 int
 write_telescope (struct fits_receiver_data *receiver,
-		 struct telescope_info *telescope)
+		      struct telescope_info *telescope)
 {
   int status = 0;
   fitsfile *fptr = receiver->ffile;
@@ -91,36 +104,38 @@ write_telescope (struct fits_receiver_data *receiver,
   write_key (TSTRING, "TELD_NAME", telescope->name, "Telescope name");
   write_key (TSTRING, "TELD_SERIAL", telescope->serial_number,
 	     "Telescope serial number");
-  write_key (TDOUBLE, "RASC", telescope->ra, "Telescope ra");
-  write_key (TDOUBLE, "DESC", telescope->dec, "Telescope dec");
-  write_key (TINT, "TELD_MOVING", telescope->moving, "Telescope is moving");
-  write_key (TDOUBLE, "TELD_LON", telescope->longtitude,
+  write_key (TDOUBLE, "RASC", &telescope->ra, "Telescope ra");
+  write_key (TDOUBLE, "DECL", &telescope->dec, "Telescope dec");
+  write_key (TINT, "TELD_MOVING", &telescope->moving, "Telescope is moving");
+  write_key (TDOUBLE, "TELD_LON", &telescope->longtitude,
 	     "Telescope longtitude");
-  write_key (TDOUBLE, "TELD_LAT", telescope->latitude, "Telescope latitude");
-  write_key (TDOUBLE, "TELD_SIDE", telescope->siderealtime,
+  write_key (TDOUBLE, "TELD_LAT", &telescope->latitude, "Telescope latitude");
+  write_key (TDOUBLE, "TELD_SIDE", &telescope->siderealtime,
 	     "Telescope sidereailtime");
-  write_key (TDOUBLE, "T_LOC", telescope->localtime, "Telescope localtime");
+  write_key (TDOUBLE, "T_LOC", &telescope->localtime, "Telescope localtime");
   return 0;
 }
 
 int
-fits_write_image_info (struct fits_receiver_data *receiver,
-		       struct image_info *info)
+fits_write_image_info (struct fits_receiver_data *receiver, struct image_info *info, char *dark_name)
 {
   int status = 0;
   double jd;
   fitsfile *fptr = receiver->ffile;
 
   if (write_camera (receiver, &info->camera) ||
-      write_telescope (receiver, &info->telescope))
-    return -1;
-  write_key (TLONG, "CTIME", info->exposure_time, "Camera exposure start");
+	  write_telescope (receiver, &info->telescope))
+	  return -1;
+
+  if (dark_name)
+	  write_key (TSTRING, "DARK", dark_name, "Dark image path");
+
+  write_key (TLONG, "CTIME", &info->exposure_time, "Camera exposure start");
   jd = get_julian_from_timet (&info->exposure_time);
-  write_key (TDOUBLE, "JD", jd, "Camera exposure Julian date");
-  write_key (TFLOAT, "EXPOSURE", info->exposure_length,
-	     "Camera exposure time in sec");
-  write_key (TINT, "TARGET", info->target_id, "Target id");
-  write_key (TINT, "OBSERVAT", info->observation_id, "Observation id");
+  write_key (TDOUBLE, "JD", &jd, "Camera exposure Julian date");
+  write_key (TFLOAT, "EXPOSURE", &info->exposure_length, "Camera exposure time in sec");
+  write_key (TINT, "TARGET", &info->target_id, "Target id");
+  write_key (TINT, "OBSERVAT", &info->observation_id, "Observation id");
   return 0;
 }
 
