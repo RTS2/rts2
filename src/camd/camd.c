@@ -986,6 +986,13 @@ main (int argc, char **argv)
 
   cooltemp = NAN;
 
+  for (c = 0; c < MAX_CHIPS; c++)
+    {
+      // init d_.*s
+      readouts[c].d_x = readouts[c].d_y = readouts[c].d_width =
+	readouts[c].d_height = -1;
+    }
+
   /* get attrs */
   while (1)
     {
@@ -1006,23 +1013,32 @@ main (int argc, char **argv)
 	{"mirror_dev", 1, 0, 'm'},
 #endif /* MIRROR */
 	{"cooltemp", 1, 0, 'c'},
+	{"x_def", 1, 0, 'X'},
+	{"y_def", 1, 0, 'Y'},
+	{"width_def", 1, 0, 'W'},
+	{"height_def", 1, 0, 'H'},
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
 #ifdef FOCUSING
 #ifdef MIRROR
       c =
-	getopt_long (argc, argv, "l:o:e:u:m:p:is:q:d:f:c:h", long_option,
-		     NULL);
+	getopt_long (argc, argv, "l:o:e:u:m:p:is:q:d:f:c:hX:Y:W:H:",
+		     long_option, NULL);
 #else
       c =
-	getopt_long (argc, argv, "l:o:e:u:p:is:q:d:f:c:h", long_option, NULL);
+	getopt_long (argc, argv, "l:o:e:u:p:is:q:d:f:c:hX:Y:W:H:",
+		     long_option, NULL);
 #endif /* MIRROR */
 #else
 #ifdef MIRROR
-      c = getopt_long (argc, argv, "l:p:m:is:q:d:f:c:h", long_option, NULL);
+      c =
+	getopt_long (argc, argv, "l:p:m:is:q:d:f:c:hX:Y:W:H:", long_option,
+		     NULL);
 #else
-      c = getopt_long (argc, argv, "l:p:is:q:d:f:c:h", long_option, NULL);
+      c =
+	getopt_long (argc, argv, "l:p:is:q:d:f:c:hX:Y:W:H:", long_option,
+		     NULL);
 #endif /* MIRROR */
 #endif /* FOCUSING */
 
@@ -1085,6 +1101,18 @@ main (int argc, char **argv)
 	case 'c':
 	  cooltemp = atof (optarg);
 	  break;
+	case 'X':
+	  readouts[0].d_x = atoi (optarg);
+	  break;
+	case 'Y':
+	  readouts[0].d_y = atoi (optarg);
+	  break;
+	case 'W':
+	  readouts[0].d_width = atoi (optarg);
+	  break;
+	case 'H':
+	  readouts[0].d_height = atoi (optarg);
+	  break;
 	case 0:
 	  printf
 	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd\n");
@@ -1119,13 +1147,6 @@ main (int argc, char **argv)
 
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-  for (c = 0; c < MAX_CHIPS; c++)
-    {
-      // init d_.*s
-      readouts[c].d_x = readouts[c].d_y = readouts[c].d_width =
-	readouts[c].d_height = -1;
-    }
 
   if (devdem_init (stats, 2, camd_handle_status, deamonize))
     {
