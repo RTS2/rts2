@@ -31,7 +31,11 @@
 #include "../writers/fits.h"
 #include "status.h"
 
-#define EXPOSURE_TIME	0.02
+#define EXPOSURE_TIME	3.0
+
+float exposure_time = EXPOSURE_TIME;
+
+int increase_exposure = 0;
 
 struct device *camera;
 
@@ -40,50 +44,6 @@ char *dark_name = NULL;
 pid_t parent_pid;
 
 #define fits_call(call) if (call) fits_report_error(stderr, status);
-
-int
-get_regions ()
-{
-  FILE *ds9_regs;
-
-  float x, y, w, h;
-  char buf[80];
-
-  // get regions
-  ds9_regs = popen ("xpaget ds9 regions", "r");
-  if (!ds9_regs)
-    {
-      perror ("popen xpaget ds9 regions");
-      return -1;
-    }
-
-  while (fgets (buf, 80, ds9_regs))	//, "image;box(%f,%f,%f,%f,", &x, &y, &w, &h)) != EOF)
-    {
-      int ret;
-      printf ("get: %s\n", buf);
-
-      ret = sscanf (buf, "image;box(%f,%f,%f,%f,", &x, &y, &w, &h);
-
-      if (ret == 4)
-	{
-	  int cx, cy, cw, ch;
-	  cw = (int) w;
-	  ch = (int) h;
-	  cx = (int) x - cw / 2;
-	  cy = (int) y + ch / 2;
-
-	  cy = camera->info.camera.chip_info[0].height - (int) cy;
-
-	  printf ("get: %i,%i,%i,%i\n", cx, cy, cw, ch);
-	  devcli_command (camera, NULL, "box 0 %i %i %i %i", cx, cy, cw, ch);
-	}
-      fflush (stdout);
-    }
-
-  pclose (ds9_regs);
-
-  return 0;
-}
 
 /*!
  * Handle camera data connection.
@@ -102,8 +62,6 @@ data_handler (int sock, size_t size, struct image_info *image)
   ssize_t s;
   char filen[250];
   char *filename;
-
-  char *cmd;
 
   gmtime_r (&image->exposure_time, &gmt);
 
@@ -127,7 +85,10 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   mkpath (dirname, 0777); */
 
-  asprintf (&filename, "tmp%i.fits", parent_pid);
+  if (increase_exposure)
+    asprintf (&filename, "tmp%i_%i.fits", parent_pid, increase_exposure++);
+  else
+    asprintf (&filename, "tmp%i.fits", parent_pid);
   strcpy (filen, filename);
 
   printf ("filename: %s\n", filename);
@@ -174,16 +135,6 @@ data_handler (int sock, size_t size, struct image_info *image)
       goto free_filename;
     }
 
-  get_regions ();
-
-  asprintf (&cmd, "cat '%s' | xpaset ds9 fits", filename);
-  printf ("calling '%s'\n", cmd);
-  if (system (cmd))
-    {
-      perror ("call");
-    }
-  free (cmd);
-
   free (filename);
 
   return 0;
@@ -200,7 +151,7 @@ readout ()
 
   info = (struct image_info *) malloc (sizeof (struct image_info));
   info->exposure_time = time (NULL);
-  info->exposure_length = EXPOSURE_TIME;
+  info->exposure_length = exposure_time;
   info->target_id = -1;
   info->observation_id = -1;
   info->target_type = 1;
@@ -215,8 +166,6 @@ readout ()
       free (info);
       return -1;
     }
-
-  get_regions ();
 
   if (devcli_command (camera, NULL, "readout 0"))
     {
@@ -252,11 +201,12 @@ main (int argc, char **argv)
     {
       static struct option long_option[] = {
 	{"device", 1, 0, 'd'},
+	{"exposure", 1, 0, 'e'},
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "d:e:p:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -266,11 +216,20 @@ main (int argc, char **argv)
 	case 'd':
 	  camera_name = optarg;
 	  break;
+	case 'e':
+	  exposure_time = atof (optarg);
+	  break;
+	case 'i':
+	  increase_exposure = 1;
+	  break;
 	case 'p':
 	  port = atoi (optarg);
 	  break;
 	case 'h':
-	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
+	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n"
+		  "\texposure|e <exposure in sec>\t\texposure time in seconds\n"
+		  "\tdevice|d <device_name>\t\tdevice for which to take exposures\n"
+		  "\tinc|i\t\tincrease exposure count after every row\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -339,11 +298,11 @@ main (int argc, char **argv)
 
       time (&t);
       printf ("exposure countdown %s..\n", ctime (&t));
-      t += EXPOSURE_TIME;
+      t += exposure_time;
       printf ("readout at: %s\n", ctime (&t));
       if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
-	  devcli_command (camera, NULL, "expose 0 %i %f", 1, EXPOSURE_TIME))
+	  devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
 	{
 	  perror ("expose:");
 	}
