@@ -56,8 +56,6 @@ void *
 start_expose (void *arg)
 {
   int ret;
-  devdem_status_mask (SBIG_EXPOSE->ccd,
-		      CAM_MASK_EXPOSE, CAM_EXPOSING, "exposure chip started");
   if ((ret = sbig_expose (SBIG_EXPOSE)) < 0)
     {
       char *err;
@@ -72,8 +70,8 @@ start_expose (void *arg)
     }
   syslog (LOG_INFO, "exposure chip %i finished.", SBIG_EXPOSE->ccd);
   devdem_status_mask (SBIG_EXPOSE->ccd,
-		      CAM_MASK_EXPOSE,
-		      CAM_NOEXPOSURE, "exposure chip finished");
+		      CAM_MASK_EXPOSE | CAM_MASK_DATA,
+		      CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
   return NULL;
 }
 
@@ -100,10 +98,6 @@ start_readout (void *arg)
   unsigned int y;
   int result;
   unsigned short line_buff[5000];
-
-  devdem_status_mask (READOUT->ccd,
-		      CAM_MASK_READING | CAM_MASK_DATA,
-		      CAM_READING | CAM_NODATA, "reading chip started");
 
   if ((ret = sbig_end_expose (READOUT->ccd)))
     {
@@ -143,7 +137,7 @@ start_readout (void *arg)
   syslog (LOG_INFO, "reading chip %i finished.", READOUT->ccd);
   devdem_status_mask (READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
-		      CAM_NOTREADING | CAM_DATA, "reading chip finished");
+		      CAM_NOTREADING | CAM_NODATA, "reading chip finished");
   return NULL;
 
 err:
@@ -249,16 +243,22 @@ camd_handle_command (char *command)
 	  expose.ccd = chip;
 	  expose.exposure_time = exptime;
 	  expose.abg_state = 0;
-	  expose.shutter = 0;
+	  expose.shutter = 1;
 	  /* priority block start here */
 	  if (devdem_priority_block_start ())
 	    return -1;
+
+	  devdem_status_mask (chip,
+		      CAM_MASK_EXPOSE, CAM_EXPOSING, "exposure chip started");
 
 	  if ((ret =
 	       devser_thread_create (start_expose, (void *) &expose,
 				     sizeof expose, NULL,
 				     clean_expose_cancel)) < 0)
 	    {
+	      devdem_status_mask (chip,
+		      CAM_MASK_EXPOSE, CAM_NOEXPOSURE, "thread create error");
+	      
 	      devser_write_command_end (DEVDEM_E_SYSTEM,
 					"while creating thread for execution: %s",
 					strerror (errno));
@@ -330,17 +330,29 @@ camd_handle_command (char *command)
 	return -1;
 
       if (devser_data_put (rd->conn_id, header, sizeof (*header)))
+      {
+	devser_data_done (rd->conn_id);
 	return -1;
+      }
+ 
+      devdem_status_mask (chip,
+		      CAM_MASK_READING,
+		      CAM_READING, "reading chip started");
 
       if ((ret =
 	   devser_thread_create (start_readout,
 				 (void *) rd, 0,
 				 &rd->thread_id, clean_readout_cancel)))
 	{
+	  devdem_status_mask (chip,
+		      CAM_MASK_READING | CAM_MASK_DATA,
+		      CAM_NOTREADING | CAM_NODATA, "error creating readout thread");
+
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
 				    "while creating thread for execution: %s",
 				    strerror (errno));
 	  devser_data_done (rd->conn_id);
+         
 	  return -1;
 	}
       devdem_priority_block_end ();
@@ -397,7 +409,7 @@ camd_handle_command (char *command)
       if (devser_param_test_length (1))
 	return -1;
       get_chip;
-      for (i = 0; i < 3; i++)
+      for (i = 0; i < 2; i++)
 	{
 	  devdem_status_message (i, "status request");
 	}
