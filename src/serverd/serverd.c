@@ -210,10 +210,12 @@ device_serverd_handle_command (char *command)
  * Made priority update, distribute messages to devices
  * about priority update.
  *
+ * @param timeout	time to wait for priority change.. 
+ *
  * @return 0 on success, -1 and set errno otherwise
  */
 int
-clients_change_priority ()
+clients_change_priority (time_t timeout)
 {
   int new_priority_client = shm_info->priority_client;
   int new_priority_max = -2;
@@ -229,7 +231,7 @@ clients_change_priority ()
 	}
     }
   shm_info->priority_client = new_priority_client;
-  return devices_msg_snd ("priority %i", new_priority_client);
+  return devices_msg_snd ("priority %i %i", new_priority_client, timeout);
 }
 
 /*!
@@ -264,7 +266,7 @@ serverd_exit (int status, void *arg)
     {
     case CLIENT_SERVER:
       *shm_clients[serverd_id].login = 0;
-      clients_change_priority ();
+      clients_change_priority (0);
       break;
     case DEVICE_SERVER:
       *shm_devices[serverd_id].name = 0;
@@ -327,32 +329,45 @@ client_serverd_handle_command (char *command)
 	      devser_dprintf ("device %s %i", shm_devices[i].name, i);
 	  return 0;
 	}
-      else if (strcmp (command, "priority") == 0)
+      else if (strcmp (command, "priority") == 0
+	       || strcmp (command, "priority_deferred") == 0)
 	{
-	  if (devser_param_test_length (1))
-	    return -1;
+	  int timeout;
+	  int new_priority;
+
+	  if (strcmp (command, "priority") == 0)
+	    {
+	      if (devser_param_test_length (1))
+		return -1;
+	      if (devser_param_next_integer (&new_priority))
+		return -1;
+	      timeout = 0;
+	    }
+	  else
+	    {
+	      if (devser_param_test_length (2))
+		return -1;
+	      if (devser_param_next_integer (&new_priority))
+		return -1;
+	      if (devser_param_next_integer (&timeout))
+		return -1;
+	      timeout += time (NULL);
+	    }
 
 	  // prevent others from accesing priority
 	  // since we don't wont any other process to change
 	  // priority while we are testing it
 	  devser_shm_data_lock ();
 
-	  if (serverd_id >= 0 && serverd_id < MAX_CLIENT)
-	    devser_dprintf ("old_priority %i %i", serverd_id,
-			    shm_clients[serverd_id].priority);
-	  else
-	    devser_dprintf ("old_priority %i 0", serverd_id);
+	  devser_dprintf ("old_priority %i %i", serverd_id,
+			  shm_clients[serverd_id].priority);
 
 	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
 			  shm_clients[shm_info->priority_client].priority);
 
-	  if (devser_param_next_integer (&(shm_clients[serverd_id].priority)))
-	    {
-	      devser_shm_data_unlock ();
-	      return -1;
-	    }
+	  shm_clients[serverd_id].priority = new_priority;
 
-	  if (clients_change_priority ())
+	  if (clients_change_priority (timeout))
 	    {
 	      devser_shm_data_unlock ();
 	      devser_write_command_end (DEVDEM_E_PRIORITY,
@@ -367,7 +382,7 @@ client_serverd_handle_command (char *command)
 
 	  return 0;
 	}
-      if (strcmp (command, "key") == 0)
+      else if (strcmp (command, "key") == 0)
 	{
 	  int key = random ();
 	  // device number could change..device names don't
@@ -425,6 +440,8 @@ serverd_handle_command (char *command)
 	{
 	  char *login;
 	  int i;
+
+	  srandom (time (NULL));
 
 	  if (devser_param_test_length (1))
 	    return -1;
@@ -545,7 +562,6 @@ serverd_handle_command (char *command)
 int
 main (void)
 {
-  srandom (time (NULL));
 #ifdef DEBUG
   mtrace ();
 #endif

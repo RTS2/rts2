@@ -106,6 +106,18 @@ struct devcli_channel *server_channel;
 //! block priority calls
 pthread_mutex_t priority_block = PTHREAD_MUTEX_INITIALIZER;
 
+//! block counter - for deferred priority
+int block_counter;
+
+//! block mutex - start/stop of mutex
+pthread_mutex_t block_mutex_main = PTHREAD_MUTEX_INITIALIZER;
+
+//! block mutex - defence
+pthread_mutex_t block_mutex_counter = PTHREAD_MUTEX_INITIALIZER;
+
+//! condition for block count change
+pthread_cond_t block_cond_counter = PTHREAD_COND_INITIALIZER;
+
 #define SERVER_CLIENT		MAX_CLIENT + 1	// id of process connected to server - for messages
 
 /*!
@@ -332,6 +344,65 @@ client_priority_receive ()
   devser_message ("priority received");
 }
 
+void
+client_priority_deferred_lost (time_t timeout)
+{
+  if (timeout && pthread_mutex_trylock (&block_mutex_main) == EBUSY)
+    {
+      int old_counter;
+      struct timespec abstime;
+      // we are at cancelation control block
+      pthread_mutex_lock (&block_mutex_counter);
+      old_counter = block_counter;
+
+      abstime.tv_sec = timeout;
+      abstime.tv_nsec = 0;
+
+      // wait until blockcheck or blockend is perfromed, or timeouted
+      while (block_counter == old_counter)
+	{
+	  if (pthread_cond_timedwait
+	      (&block_cond_counter, &block_mutex_counter,
+	       &abstime) == ETIMEDOUT)
+	    break;
+	}
+      pthread_mutex_unlock (&block_mutex_counter);
+      client_priority_lost ();
+    }
+  else
+    {
+      // we are NOT at cancelation control block or timeout is 0
+      client_priority_lost ();
+      pthread_mutex_unlock (&block_mutex_main);
+    }
+}
+
+/*!
+ * Increase block counter.
+ *
+ * Performs all required locking, signal counter change..
+ */
+int
+client_block_counter_increase ()
+{
+  // check for block_mutex_main lock..
+  if (pthread_mutex_trylock (&block_mutex_main) == EBUSY)
+    {
+      if (pthread_mutex_lock (&block_mutex_counter))
+	{
+	  devser_write_command_end (DEVDEM_E_SYSTEM,
+				    "counter mutex cannot be locked");
+	  return -1;
+	}
+      block_counter++;
+      pthread_cond_broadcast (&block_cond_counter);
+      pthread_mutex_unlock (&block_mutex_counter);
+      return 0;
+    }
+  devser_write_command_end (DEVDEM_E_SYSTEM, "block wasn't started");
+  return -1;
+}
+
 #ifdef DEBUG
 /*!
  * Write status of devdem.
@@ -344,6 +415,16 @@ devdem_status ()
   for (i = 0; i < MAX_CLIENT; i++)
     if (clients_info->clients[i].pid)
       devser_dprintf ("client_id_pid %i %i", i, clients_info->clients[i].pid);
+  if (pthread_mutex_trylock (&block_mutex_main) == EBUSY)
+    {
+      devser_dprintf ("block_main_lock locked");
+    }
+  else
+    {
+      devser_dprintf ("block_main_lock unlocked");
+      pthread_mutex_unlock (&block_mutex_main);
+    }
+  devser_dprintf ("block_counter %i", block_counter);
   return 0;
 }
 #endif /* DEBUG */
@@ -354,14 +435,29 @@ devdem_status ()
 int
 client_handle_msg (char *msg)
 {
-  if (strcmp (msg, "priority_receive") == 0)
+  struct param_status *params;
+  param_init (&params, msg, ' ');
+  if (strcmp (params->param_argv, "priority_receive") == 0)
     {
       client_priority_receive ();
     }
-  else if (strcmp (msg, "priority_lost") == 0)
+  else if (strcmp (params->param_argv, "priority_lost") == 0)
     {
-      client_priority_lost ();
+      time_t timeout;
+      if (param_next_time_t (params, &timeout))
+	{
+	  syslog (LOG_ERR, "client_handle_msg invalid timeout: %li error: %m",
+		  timeout);
+	}
+      else
+	client_priority_deferred_lost (timeout);
     }
+  else
+    {
+      param_done (params);
+      return -1;
+    }
+  param_done (params);
   return 0;
 }
 
@@ -416,7 +512,7 @@ client_authorize ()
 	  return -1;
 	}
     }
-  // yes, we could set it now, since it's quared by authorization
+  // yes, we could set it now, since it's guared by authorization
   // semaphore 
   clients_info->clients[new_client_id].authorized = 0;
 
@@ -472,6 +568,36 @@ client_handle_commands (char *command)
   else if (strcmp (command, "devdem_status") == 0)
     return devdem_status ();
 #endif /* DEBUG */
+  else if (strcmp (command, "blockstart") == 0)
+    {
+      if (pthread_mutex_trylock (&block_mutex_main) == EBUSY)
+	{
+	  devser_write_command_end (DEVDEM_E_SYSTEM,
+				    "instruction block already started");
+	  return -1;
+	}
+      if (pthread_mutex_lock (&block_mutex_counter))
+	{
+	  devser_write_command_end (DEVDEM_E_SYSTEM,
+				    "counter lock cannot by locked");
+	  return -1;
+	}
+      block_counter = 0;
+      pthread_mutex_unlock (&block_mutex_counter);
+      return 0;
+    }
+  else if (strcmp (command, "blockcheck") == 0)
+    {
+      return client_block_counter_increase ();
+    }
+  else if (strcmp (command, "blockend") == 0)
+    {
+      // following unlock is posible, because in cond_waited threads
+      // doesn't matter, if block_mutex_main is locked or not..
+      int ret = client_block_counter_increase ();
+      pthread_mutex_unlock (&block_mutex_main);
+      return ret;
+    }
   else if (cmd_device_handler)
     {
       return cmd_device_handler (command);
@@ -605,8 +731,13 @@ server_message_priority (struct param_status *params)
 	    {
 	      // send stop signal to request thread stopping
 	      // on given device
-	      if (devser_2devser_message
-		  (clients_info->priority_client, "priority_lost"))
+	      // don't forget to include timeout
+	      int timeout;
+	      if (param_next_integer (params, &timeout))
+		return -1;
+	      if (devser_2devser_message_format
+		  (clients_info->priority_client,
+		   "priority_lost %li", timeout))
 		return -1;
 	    }
 	  if (devser_2devser_message
@@ -627,7 +758,8 @@ int
 server_message_handler (struct param_status *params)
 {
   char *command = params->param_argv;
-  if (strcmp (command, "priority") == 0)
+  if (strcmp (command, "priority") == 0
+      || strcmp (command, "priority_deferred") == 0)
     return server_message_priority (params);
 
   printf ("command: %s\n", command);
@@ -727,7 +859,10 @@ devdem_init (char **status_names, int status_num_in)
     }
   strncpy (st->name, "priority_lock", STATUSNAME);
   st->status = 0;
-  semctl (status_sem, i, SETVAL, sem_un);
+  client_status = i;
+  i++;
+  semctl (status_sem, client_status, SETVAL, sem_un);
+
   // init authorization semaphores
   // those beast will have value 2
   sem_un.val = 2;
@@ -741,8 +876,6 @@ devdem_init (char **status_names, int status_num_in)
     }
   // don't detach shm segment, since we will need it
   // in IPC message receivers to set priority flag
-
-  client_status = status_num - 1;
 
   atexit (devdem_on_exit);
 
@@ -766,8 +899,8 @@ devdem_init (char **status_names, int status_num_in)
  * @return 0 on success, -1 and set errno on error
  */
 int
-devdem_register (struct devcli_channel *server_channel_in, char *device_name,
-		 char *server_address, int server_port)
+devdem_register (struct devcli_channel *server_channel_in,
+		 char *device_name, char *server_address, int server_port)
 {
   char *cmd;
   server_channel = server_channel_in;
@@ -823,7 +956,6 @@ child_init (void)
  * 
  * @return 0 on success, -1 and set errno on error
  */
-
 int
 devdem_run (int port, devser_handle_command_t in_handler)
 {
