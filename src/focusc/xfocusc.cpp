@@ -96,7 +96,7 @@ public:
   pthread_t thr;
   pthread_attr_t attrs;
 
-    DeviceWindow (char *camera_name, Window root_window, int center);
+    DeviceWindow (char *camera_name, Window root_window, int center, float exposure);
 
    ~DeviceWindow ()
   {
@@ -437,14 +437,14 @@ public:
 
 };
 
-DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center)
+DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center, float exposure)
 {
   XSetWindowAttributes xswa;
 
   gc = NULL;
   image = NULL;
   rgb[256];
-  exposure_time = 10.0;
+  exposure_time = exposure;
 
   window =
     XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,
@@ -514,6 +514,7 @@ main (int argc, char **argv)
   struct device *phot;
 
   int center = 0;
+  float exposure = 10.0;
 
   int c = 0;
 
@@ -529,11 +530,12 @@ main (int argc, char **argv)
       static struct option long_option[] = {
 	{"device", 1, 0, 'd'},
 	{"center", 0, 0, 'c'},
+	{"exposure", 1, 0, 'e'},
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:cp:h", long_option, NULL);
+      c = getopt_long (argc, argv, "d:ce:p:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -553,12 +555,16 @@ main (int argc, char **argv)
 	case 'c':
 	  center = 1;
 	  break;
+	case 'e':
+	  exposure = atof (optarg);
+	  break;
 	case 'p':
 	  port = atoi (optarg);
 	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n");
 	  printf ("\tcenter|c\t\tstart center exposure\n");
+	  printf ("\texposure|e\t\texposure time in seconds\n");
 	  printf ("Keys:\n"
 		  "\t1,2,3 .. binning 1x1, 2x2, 3x3\n"
 		  "\tq,a   .. increase/decrease exposure 0.01 sec\n"
@@ -627,7 +633,7 @@ main (int argc, char **argv)
 
   for (i = 0; i < camera_num; i++)
     {
-      camera_window[i] = new DeviceWindow (camera_names[i], root_window, center);
+      camera_window[i] = new DeviceWindow (camera_names[i], root_window, center, exposure);
     }
 
   printf ("waiting end\n");
