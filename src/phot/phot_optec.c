@@ -86,12 +86,26 @@ start_integrate (void *arg)
   int ret;
   int loop = 0;
   short it_t = req->time;
+  fd_set read_set;
+  struct timeval phot_timeout;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   phot_command (PHOT_CMD_INTEGRATE, it_t);
   devser_dprintf ("integration  %i", it_t);
-  while ((ret = read (fd, &result, 2)) != -1 && loop < req->count)
+  phot_timeout.tv_sec = it_t + 10;
+  phot_timeout.tv_usec = 0;
+  while (loop < req->count)
     {
-      if (ret)
+      FD_ZERO (&read_set);
+      FD_SET (fd, &read_set);
+      ret = select (FD_SETSIZE, &read_set, NULL, NULL, &phot_timeout);
+      if (!FD_ISSET (fd, &read_set))
+	{
+	  result = 0;
+	  devser_dprintf ("count 0 0");
+	  loop = req->count;
+	}
+      ret = read (fd, &result, 2);
+      if (ret != -1)
 	{
 	  switch (result)
 	    {
@@ -104,7 +118,7 @@ start_integrate (void *arg)
 	    case '0':
 	      result = 0;
 	      read (fd, &result, 2);
-	      devser_dprintf ("filter %i", result / 33);
+	      devser_dprintf ("filter_c %i", result / 33);
 	      break;
 	    case '-':
 	      result = 0;
