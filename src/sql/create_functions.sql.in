@@ -28,17 +28,17 @@ CREATE FUNCTION obj_airmass (float8, float8, float8, float8, float8)
 
 DROP FUNCTION night_num (timestamp);
 
-CREATE FUNCTION night_num (timestamp) RETURNS numeric AS 
+CREATE FUNCTION night_num (timestamp with time zone) RETURNS double precision AS 
 	'SELECT FLOOR((EXTRACT(EPOCH FROM $1) - 43200) / 86400)' LANGUAGE 'SQL';
 
-DROP FUNCTION isinwcs (float4, float4, opaque);
+DROP FUNCTION isinwcs (float4, float4, wcs);
 
-CREATE FUNCTION isinwcs (float4, float4, opaque)
+CREATE FUNCTION isinwcs (float4, float4, wcs)
   RETURNS bool AS '@PG_CONFIG_SERVER_LIBS@/pg_wcs.so', 'isinwcs' LANGUAGE 'C';
 
-DROP FUNCTION imgrange (opaque);
+DROP FUNCTION imgrange (wcs);
 
-CREATE FUNCTION imgrange (opaque)
+CREATE FUNCTION imgrange (wcs)
   RETURNS varchar AS '@PG_CONFIG_SERVER_LIBS@/pg_wcs.so', 'imgrange' LANGUAGE 'C';
 
 DROP FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer, abstime);
