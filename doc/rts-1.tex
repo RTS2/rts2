@@ -1,4 +1,4 @@
-\chapter{Souèasný stav}
+\section{RTS 1}
 
 Zadání pro roèníkový projekt je mo¾né nalézt v~pøiloze. 
 
@@ -20,10 +20,24 @@ rutinním pozorování. Vìt¹ina nebyla v~zadání roèníkového projektu, a vìt¹ina
 byla doimplementována autorem diplomové práce po obhájení projektu.
 
 \begin{itemize}
-\item mo¾nost automaticky zahájit pozorování pøi západu slunce
-\item auto parking, 
+\item mo¾nost automaticky zahájit pozorování pøi západu slunce, vèetnì
+automatického chlazení kamer
+\item parkování dalekohledu po skonèení pozorování
 \end{itemize}
 
 Souèasný stav nejlépe vystihuje následující diagram:
 
 \dia{rts-1-packages}{graf závislostí rts-1}
+
+Hlavním problémem souèasného kódu je jeho monoliènost. V programu
+samoseboexistuje dìlení do modulù, které mívají do 1000 øádek kódu, nicménì
+toto dìlení bylo pøi implementaci nìkterých nových funkcí shledáno
+nedostaèujícím. Tímto vzniklo nìkolik cyklických závislostí mezi moduly, se
+kterými si sice Python poradí, které ale negativnì ovlivòují strukturu kódu.
+
+Z monoliènosti vyplývá i relativnì tì¾ká portace kódu na nový astronomický HW.
+
+Souèasné øe¹ení umo¾òuje pou¹tìt expozici na jiném poèítaèi ne¾ na poèítaèi
+øídícím pozorování, nicménì ne tak èistì, jak bychom si pøedstavovali.
+
+
