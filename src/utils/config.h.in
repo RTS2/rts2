@@ -1,6 +1,9 @@
 #ifndef __RTS2_CONFIG__
 #define __RTS2_CONFIG__
 
+
+#define CONFIG_FILE	"@prefix@/etc/rts2.conf"
+
 #ifdef _cplusplus
 extern "C"
 {
