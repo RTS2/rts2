@@ -135,8 +135,9 @@ camera_init (char *device_name, int camera_id)
 
   if ((uu = getbaseaddr (camera_id)) == 0)
     {
-      printf ("-p: parport%d not known to kernel\n", camera_id);
-      return -1;
+      uu = 0x378;
+      //printf ("-p: parport%d not known to kernel, using default\n", camera_id);
+      //return -1;
     }
   baseAddress = uu;
   CameraOut (0x60, 1);
@@ -228,8 +229,8 @@ camera_info (struct camera_info *info)
   if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
     return -1;
 
-  strcpy (info->type, Cams[eePtr.model].fullName);
-  strcpy (info->serial_number, eePtr.serialNumber);
+  strcpy (info->type, Cams[5].fullName);
+  strcpy (info->serial_number, "99EEE");
   info->chips = chips;
   info->chip_info = ch_info;
   info->temperature_regulation = camera_reg;
@@ -276,6 +277,7 @@ camera_expose (int chip, float *exposure, int light)
 
   if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
     goto imaging_end;
+  eePtr.model = 5;
 
   sep.ccd = eep.ccd = 0;
 
@@ -284,11 +286,9 @@ camera_expose (int chip, float *exposure, int light)
 
   if ((ret =
        ClearImagingArray (Cams[eePtr.model].vertBefore +
-			  Cams[eePtr.model].vertImage +
-			  Cams[eePtr.model].vertAfter + 1,
+			  Cams[eePtr.model].vertImage + 1,
 			  Cams[eePtr.model].horzBefore +
-			  Cams[eePtr.model].horzImage +
-			  Cams[eePtr.model].horzAfter + 32, 4, 6)))
+			  Cams[eePtr.model].horzImage + 32, 4, 6)))
     goto imaging_end;		// height, times, [left]
 
   if ((ret = MicroCommand (MC_START_EXPOSURE, ST7_CAMERA, &sep, NULL)))
@@ -352,8 +352,7 @@ camera_readout_line (int chip_id, short start, short length, void *data)
   disable ();
   CameraOut (0x60, 1);
   SetVdd (1);
-  if ((ret =
-       DigitizeImagingLine (start, length, 0, bin, bin, 1, data, 0, length)))
+  if ((ret = DigitizeImagingLine (chip_id, bin, start, length, data)))
     {
       enable ();
       printf ("digitize line:%i", ret);

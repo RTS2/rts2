@@ -163,12 +163,6 @@ BlockClearPixels (int len, int readoutMode)
     bulk = len / 10;
     individual = len % 10;
 
-    /* Zda se, ze se zase jedna o deleni deseti XXX: 0x6667 = (len &
-       0xffff) * ecx; cx = ecx >> 0x10 >> 2; bulk = ecx - ((len & 0xffff)
-       >> 0xf); 0x6667 = (len & 0xffff) * ecx; cx = ecx >> 0x10 >> 2;
-       individual = (len & 0xffff) - (ecx - ((len & 0xffff) >> 0xf) << 2) + 
-       ecx + (ecx - ((len & 0xffff) >> 0xf) << 2) + ecx; */
-
     for (j = bulk; j > 0; j--)
       {
 	CAMERA_PULSE (0);
@@ -204,15 +198,26 @@ DigitizeImagingLineGK (int left, int len, int right,
 		       unsigned short *dest, int subtract, int clearWidth)
 {
   fprintf (stderr, "todo: DigitizeImagingLineGK\n");
-  return DigitizeImagingLine (left, len, right, horzBin, onVertBin,
-			      offVertBin, dest, subtract, clearWidth);
+//  return DigitizeImagingLine (left, len, right, horzBin, onVertBin,
+//                            offVertBin, dest, subtract, clearWidth);
+  return CE_BAD_CAMERA_COMMAND;
 }
 
 PAR_ERROR
-DigitizeImagingLine (int left, int len, int right,
-		     int horzBin, int onVertBin, int offVertBin,
-		     unsigned short *dest, int subtract, int clearWidth)
+DigitizeImagingLine (int chipid, int bin, int left, int len,
+		     unsigned short *dest)
+/*(int left, int len, int right,
+		int horzBin, int onVertBin, int offVertBin,
+		unsigned short *dest, int subtract, int clearWidth)*/
 {
+  // rozumne parametry:
+  // (int chipid, int bin, int left, int len, ushort *dest)
+  // chipid je reference na informace o chipu v moji strukture
+  // bin je pocet skutecnych pixelu, ktere se v jednom smeru umisti do jednoho datoveho
+  // left je levy zacatek datoveho vycteni v binu
+  // len je delka v binu
+  // dest je odkaz na pole, kam se daji ziskana data
+
   // short left, len, right, horzBin, onVertBin, offVertBin, clearWidth;
   // MY_LOGICAL subtract;
 
@@ -236,18 +241,18 @@ DigitizeImagingLine (int left, int len, int right,
     fprintf (stderr, "DigitizeImagingLine\n");
 #endif
 
-  lost_ticks = 0;
+  disable ();
+  CameraOut (0x60, 1);
+  SetVdd (1);
 
-  if (len > 0x5fa)
-    len = 0x5fa;
-
-  if ((res = BlockClearPixels (clearWidth, 0)))
-    RETURN (res);
+  // vycistit readout line (musi byt?)
+  if ((res = BlockClearPixels (Cams[chipid].horzTotal, 0)))
+    goto end_readout;
 
   CameraOut (0x30, 0);
   CameraOut (0x10, 8);
 
-  for (i = 0; i < onVertBin; i++)
+  for (i = 0; i < bin; i++)
     {
       CameraOut (0x10, 9);
       IODelay (IODELAYCONST);	// = udelay(12);
@@ -261,14 +266,14 @@ DigitizeImagingLine (int left, int len, int right,
   CameraOut (0x10, 0);
 
   if ((res = BlockClearPixels (14, 0)))
-    RETURN (res);
-//      if( (res = BlockClearPixels(left, 0)) ) RETURN(res);
-  if ((res = BlockClearPixels (2, horzBin - 1)))
-    RETURN (res);
-  if ((res = BlockClearPixels (left, horzBin - 1)))
-    RETURN (res);
+    goto end_readout;
+  //      if( (res = BlockClearPixels(left, 0)) ) RETURN(res);
+  if ((res = BlockClearPixels (2, bin - 1)))
+    goto end_readout;
+  if ((res = BlockClearPixels (left, bin - 1)))
+    goto end_readout;
 
-  switch (horzBin)
+  switch (bin)
     {
     case 2:
       CameraOut (0, 4);
@@ -290,7 +295,7 @@ DigitizeImagingLine (int left, int len, int right,
       if ((res = SPPGetPixel (&u, MAIN_CCD)))
 	{
 	  /* ECPSetMode(ECP_NORMAL); */
-	  RETURN (res);
+	  goto end_readout;
 	}
       // @ if(res = ECPGetPixel( & u)) 
       // @ { 
@@ -303,12 +308,18 @@ DigitizeImagingLine (int left, int len, int right,
     }
   WAIT_4_CAMERA ();
   // @ ECPSetMode(ECP_NORMAL);
-  // A tady byl jeste nejaky kod nevim na co, mozna na dojeti radky...
-  // (Ale to snad neni nutne...) - viz marccd_n.c
+
+  if ((res =
+       BlockClearPixels (Cams[chipid].horzTotal / bin - (left + len),
+			 bin - 1)))
+    goto end_readout;
+
+end_readout:
 #ifdef DEBUG
-  printf ("\nlost_ticks: %lu\n", lost_ticks);
-#endif /* DEBUG */
-  RETURN (res);
+  IO_LOG2 = IO_LOG2_bak;
+#endif
+  enable ();
+  return res;
 }
 
 PAR_ERROR
@@ -676,7 +687,7 @@ DigitizeRAWImagingLine (int len, unsigned short *dest)
   unsigned short u;
 
   if ((res = BlockClearPixels (len, 0)))
-    RETURN (res);
+    goto rr_end;
 
   CameraOut (0x30, 0);
   CameraOut (0x10, 8);
@@ -694,10 +705,13 @@ DigitizeRAWImagingLine (int len, unsigned short *dest)
   for (i = 0; i < len; i++)
     {
       if ((res = SPPGetPixel (&u, MAIN_CCD)))
-	RETURN (res);
+	goto rr_end;
       *dest = u;
       dest++;
     }
   WAIT_4_CAMERA ();
-  RETURN (res);
+
+rr_end:
+  enable ();
+  return res;
 }

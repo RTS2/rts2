@@ -89,10 +89,12 @@ CameraOut (unsigned char reg, int val)
 #endif
 
   outportb (baseAddress, reg + val);
-//  outportb (baseAddress, reg + val);
+  outportb (baseAddress, reg + val);
   outportb (baseAddress, reg + val + 0x80);
   outportb (baseAddress, reg + val + 0x80);
-//  outportb (baseAddress, reg + val);
+  outportb (baseAddress, reg + val + 0x80);
+  outportb (baseAddress, reg + val);
+  outportb (baseAddress, reg + val);
   outportb (baseAddress, reg + val);
 
   // Nejsem si prils jisty...
@@ -992,8 +994,9 @@ PAR_ERROR
 MicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera,
 	      void *txDataPtr, void *rxDataPtr)
 {
-  PAR_ERROR err = CE_NO_ERROR;
+  PAR_ERROR err = -1;
   int len;
+  int i;
 
 #ifdef DEBUG
   int IO_LOG_bak;
@@ -1002,11 +1005,13 @@ MicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera,
   if (IO_LOG_bak)
     fprintf (stderr, "MicroCommand(%s),", MC_names[command & 0xf]);
 #endif
-
   BuildMicroCommand (command, camera, txDataPtr, &len);
-  // active_command = command;
-  if (!(err = SendMicroBlock (CommandOutBuf, len)))
-    err = ValidateMicroResponse (command, camera, rxDataPtr, txDataPtr);
+  // active_command = commanD;
+  for (i = 0; i < 5 && err != CE_NO_ERROR; i++)
+    {
+      if (!(err = SendMicroBlock (CommandOutBuf, len)))
+	err = ValidateMicroResponse (command, camera, rxDataPtr, txDataPtr);
+    }
 
 #ifdef DEBUG
   IO_LOG = IO_LOG_bak;

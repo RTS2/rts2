@@ -7,34 +7,34 @@
 
 typedef enum
 {
-  CE_NO_ERROR,			// 0
+  CE_NO_ERROR,
   CE_CAMERA_NOT_FOUND = CE_ERROR_BASE,
   CE_EXPOSURE_IN_PROGRESS,
   CE_NO_EXPOSURE_IN_PROGRESS,
-  CE_UNKNOWN_COMMAND,		// 4
+  CE_UNKNOWN_COMMAND,
   CE_BAD_CAMERA_COMMAND,
   CE_BAD_PARAMETER,
   CE_TX_TIMEOUT,
-  CE_RX_TIMEOUT,		// 8
+  CE_RX_TIMEOUT,
   CE_NAK_RECEIVED,
   CE_CAN_RECEIVED,
   CE_UNKNOWN_RESPONSE,
-  CE_BAD_LENGTH,		// c
+  CE_BAD_LENGTH,
   CE_AD_TIMEOUT,
   CE_KBD_ESC,
   CE_CHECKSUM_ERROR,
-  CE_EEPROM_ERROR,		// 10
+  CE_EEPROM_ERROR,
   CE_SHUTTER_ERROR,
   CE_UNKNOWN_CAMERA,
   CE_DRIVER_NOT_FOUND,
-  CE_DRIVER_NOT_OPEN,		// 14
+  CE_DRIVER_NOT_OPEN,
   CE_DRIVER_NOT_CLOSED,
   CE_SHARE_ERROR,
   CE_TCE_NOT_FOUND,
-  CE_AO_ERROR,			// 18
+  CE_AO_ERROR,
   CE_ECP_ERROR,
   CE_MEMORY_ERROR,
-  CE_NEXT_ERROR			// 1b
+  CE_NEXT_ERROR
 }
 PAR_ERROR;
 
@@ -205,8 +205,8 @@ extern char CE_names[32][32], MC_names[13][32];
 typedef struct
 {
   unsigned char model;		// Model as presented in EEPROM
-  unsigned short vertBefore, vertImage, vertAfter;
-  unsigned short horzBefore, horzImage, horzAfter;
+  unsigned short vertBefore, vertImage, vertTotal;
+  unsigned short horzBefore, horzImage, horzTotal;
   unsigned short pixelY, pixelX;
   unsigned char hasTrack;
   unsigned char chipName[16];
@@ -217,33 +217,33 @@ CameraDescriptionType;
 #ifdef _PARMICRO_C
 CameraDescriptionType Cams[16] = {
   // As a tracking chip in st7/8/9 (artifical model ID)
-  {0x0, 0, 165, 0, 0, 192, 0, 1600, 1375, 0, "TC-211", "ST4"},
+  {0x0, 0, 165, 165, 0, 192, 192, 1600, 1375, 0, "TC-211", "ST4"},
 
   {0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, "?", "?"},
   {0x2, 0, 0, 0, 0, 0, 0, 0, 0, 0, "?", "?"},
 
   // Just for reference (does not have parport)
-  {0x3, 0, 242, 0, 0, 375, 0, 2700, 2300, 0, "TC-241", "ST6"},
+  {0x3, 0, 242, 242, 0, 375, 375, 2700, 2300, 0, "TC-241", "ST6"},
 
-  {0x4, 4, 512, 4, 14, 768, 12, 900, 900, 1, "KAF040x", "ST7"},
-  {0x5, 4, 1024, 4, 14, 1536, 12, 900, 900, 1, "KAF160x", "ST8"},
+  {0x4, 4, 512, 520, 14, 768, 794, 900, 900, 1, "KAF040x", "ST7"},
+  {0x5, 4, 1024, 1032, 14, 1536, 1562, 900, 900, 1, "KAF160x", "ST8"},
 
   // No readout values :(
-  {0x6, 0, 240, 0, 0, 320, 0, 1000, 1000, 0, "TC-255", "ST5C"},
+  {0x6, 0, 240, 240, 0, 320, 320, 1000, 1000, 0, "TC-255", "ST5C"},
 
   // ?
   {0x7, 0, 0, 0, 0, 0, 0, 0, 0, 0, "?", "TCE"},
 
   // ?
-  {0x8, 0, 495, 0, 0, 657, 0, 740, 740, 0, "TC-237", "ST237"},
+  {0x8, 0, 495, 495, 0, 657, 495, 740, 740, 0, "TC-237", "ST237"},
 
   // ?
   {0x9, 0, 0, 0, 0, 0, 0, 900, 900, 0, "?", "STK"},
 
-  {0xa, 4, 512, 4, 8, 512, 8, 2000, 2000, 1, "KAF0261", "ST9"},
-  {0xb, 0, 495, 0, 0, 657, 0, 740, 740, 0, "TC-237", "STV"},
-  {0xc, 0, 1472, 0, 0, 2184, 0, 680, 680, 1, "KAF320x", "ST10"},
-  {0xd, 0, 1024, 0, 0, 1024, 0, 2400, 2400, 0, "KAF1001", "ST1001"},
+  {0xa, 4, 512, 520, 8, 512, 528, 2000, 2000, 1, "KAF0261", "ST9"},
+  {0xb, 0, 495, 495, 0, 657, 657, 740, 740, 0, "TC-237", "STV"},
+  {0xc, 0, 1472, 1472, 0, 2184, 2184, 680, 680, 1, "KAF320x", "ST10"},
+  {0xd, 0, 1024, 1024, 0, 1024, 1024, 2400, 2400, 0, "KAF1001", "ST1001"},
   {0xf, 0, 0, 0, 0, 0, 0, 0, 0, 0, "?", "?"},
 };
 #else
@@ -365,8 +365,7 @@ PAR_ERROR PutEEPROM (CAMERA_TYPE, EEPROMContents *);
 
 // funkce v marccd
 PAR_ERROR DigitizeRAWImagingLine (int, unsigned short *);
-PAR_ERROR DigitizeImagingLine (int, int, int, int, int, int, unsigned short *,
-			       int, int);
+PAR_ERROR DigitizeImagingLine (int, int, int, int, unsigned short *);
 PAR_ERROR DigitizeImagingLineGK (int, int, int, int, int, int,
 				 unsigned short *, int, int);
 PAR_ERROR DigitizeTrackingLine (int, int, int, unsigned short *, int);
