@@ -388,6 +388,11 @@ Rts2DevConnData::acceptConn ()
 void
 Rts2State::setState (int new_state, char *description)
 {
+  // state was set..do not set it again
+  if (state == new_state)
+    {
+      return;
+    }
   state = new_state;
   syslog (LOG_DEBUG, "Rts2State::setState new_state: %i desc: %s this: %p",
 	  new_state, description, this);
