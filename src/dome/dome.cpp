@@ -28,8 +28,6 @@ Rts2DevDome::createConnection (int in_sock, int conn_num)
 int
 Rts2DevDome::checkOpening ()
 {
-  syslog (LOG_DEBUG, "dome opening: %i %i", getState (0),
-	  (getState (0) & DOME_DOME_MASK) == DOME_OPENING);
   if ((getState (0) & DOME_DOME_MASK) == DOME_OPENING)
     {
       long ret;
@@ -76,14 +74,14 @@ Rts2DevDome::checkOpening ()
 	}
       if (ret == -2)
 	{
-	  if (endOpen ())
+	  if (endClose ())
 	    {
-	      maskState (0, DOME_DOME_MASK, DOME_OPENED,
-			 "dome opened with error");
+	      maskState (0, DOME_DOME_MASK, DOME_CLOSED,
+			 "dome closed with error");
 	    }
 	  else
 	    {
-	      maskState (0, DOME_DOME_MASK, DOME_OPENED, "dome opened");
+	      maskState (0, DOME_DOME_MASK, DOME_CLOSED, "dome closed");
 	    }
 	}
     }

@@ -34,10 +34,10 @@
 #define FRAM_CHECK_TIMEOUT 1000
 
 // following times are in seconds!
-#define FRAM_TIME_OPEN_RIGHT	20
-#define FRAM_TIME_OPEN_LEFT	20
-#define FRAM_TIME_CLOSE_RIGHT	20
-#define FRAM_TIME_CLOSE_LEFT	20
+#define FRAM_TIME_OPEN_RIGHT	26
+#define FRAM_TIME_OPEN_LEFT	24
+#define FRAM_TIME_CLOSE_RIGHT	30
+#define FRAM_TIME_CLOSE_LEFT	25
 
 typedef enum
 { VENTIL_AKTIVACNI,
@@ -490,7 +490,7 @@ Rts2DevDomeFram::closeDome ()
     {
       closeLeft ();
     }
-  return Rts2DevDomeFram::closeDome ();
+  return Rts2DevDome::closeDome ();
 }
 
 long
