@@ -1,0 +1,13 @@
+
+all: grbc
+
+include ../../make.conf
+
+grbc: grbc.o db.o ../plan/db.o ../utils/devcli.a ../writers/fits.o ibas/libibas_client.a
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+
+%.c: %.ec
+	@ECPG@ -o $@ $^
+
+CFLAGS += @LIBPG_CFLAGS@ -Iibas
+LDFLAGS += @LIBS@
