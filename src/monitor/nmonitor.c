@@ -17,6 +17,9 @@
 WINDOW *status_win;
 WINDOW *cmd_win;
 
+#define WND_COL		3
+#define WND_ROW		2
+
 int cmd_line, cmd_col;
 
 void
@@ -27,7 +30,8 @@ print_status (WINDOW * wnd, int start_row, int col, struct device *dev)
     {
       struct devconn_status *st;
       st = &dev->statutes[i];
-      mvwprintw (wnd, start_row + i, col, "status: %s - %i", st->name,
+
+      mvwprintw (wnd, start_row + i, col, "st: %s - %i", st->name,
 		 st->status);
     }
 }
@@ -39,10 +43,24 @@ status_serverd (WINDOW * wnd, struct device *dev)
   struct client *cli;
   struct serverd_info *info = (struct serverd_info *) &dev->info;
   wclear (wnd);
+  if (has_colors ())
+    wcolor_set (wnd, 1, NULL);
+  else
+    wstandout (wnd);
   mvwprintw (wnd, 1, 1, "status: ");
-  mvwprintw (wnd, 1, 8,
-	     dev->statutes[0].status & SERVERD_STANDBY_MASK ? "S" : "O");
-  mvwprintw (wnd, 1, 10, serverd_status_string (dev->statutes[0].status));
+  if (dev->statutes[0].status == SERVERD_OFF)
+    mvwprintw (wnd, 1, 9, "Off");
+  else
+    {
+      mvwprintw (wnd, 1, 9,
+		 dev->statutes[0].
+		 status & SERVERD_STANDBY_MASK ? "STD" : "RDY");
+      mvwprintw (wnd, 1, 13, serverd_status_string (dev->statutes[0].status));
+    }
+  if (has_colors ())
+    wcolor_set (wnd, 2, NULL);
+  else
+    wstandend (wnd);
   // print info
   wmove (wnd, 2, 0);
   for (i = 2, cli = info->clients; cli; cli = cli->next, i++)
@@ -82,7 +100,7 @@ status_telescope (WINDOW * wnd, struct device *dev)
   mvwprintw (wnd, 1, 1, "Typ: %s", info->type);
   mvwprintw (wnd, 2, 1, "R+D/f: %.3f%+.3f/%c",
 	     info->ra, info->dec, info->flip ? 'f' : 'n');
-  mvwprintw (wnd, 3, 1, "Al/Az/D: %i %+i %s",
+  mvwprintw (wnd, 3, 1, "Az/Al/D: %i %+i %s",
 	     (int) position.az, (int) position.alt, hrz_to_nswe (&position));
 
   mvwprintw (wnd, 4, 1, "Lon/Lat: %+03.3f %+03.3f", info->longtitude,
@@ -151,6 +169,7 @@ status (WINDOW * wnd, struct device *dev)
   if (!devcli_command (dev, &ret, "ready"))
     {
       status_send (dev, "info");
+      devcli_command (dev, &ret, "base_info");
       devcli_command (dev, &ret, "info");
     }
   wclear (wnd);
@@ -211,7 +230,7 @@ status_change (struct device *dev, char *status_name, int new_state)
 int
 main (int argc, char **argv)
 {
-  WINDOW *wnd[6];
+  WINDOW *wnd[WND_COL * WND_ROW];
   uint16_t port = SERVERD_PORT;
   char *server;
   char c;
@@ -294,29 +313,29 @@ main (int argc, char **argv)
   scrollok (cmd_win, TRUE);
   idlok (cmd_win, TRUE);
 
+  for (cmd_col = 0; cmd_col < WND_COL; cmd_col++)
+    for (cmd_line = 0; cmd_line < WND_ROW; cmd_line++)
+      wnd[cmd_col * WND_ROW + cmd_line] =
+	newwin (l / WND_ROW, COLS / WND_COL, 2 + cmd_line * l / WND_ROW,
+		cmd_col * COLS / WND_COL);
   cmd_line = 0;
   cmd_col = 0;
-
-  wnd[0] = newwin (l / 2, COLS / 3, 2, 0);
-  wnd[1] = newwin (l / 2, COLS / 3, 2 + l / 2, 0);
-  wnd[2] = newwin (l / 2, COLS / 3, 2, COLS / 3);
-  wnd[3] = newwin (l / 2, COLS / 3, 2 + l / 2, COLS / 3);
-  wnd[4] = newwin (l / 2, COLS / 3, 2, 2 * COLS / 3);
-  wnd[5] = newwin (l / 2, COLS / 3, 2 + l / 2, 2 * COLS / 3);
-  status_win = wnd[5];
+  status_win = wnd[WND_COL * WND_ROW - 1];
   box (status_win, 0, 0);
   scrollok (status_win, TRUE);
 
-  if (!wnd[5])
+  if (!wnd[0])
     {
       printf ("ncurser not supported\n");
       goto end;
     }
 
-  devcli_set_general_notifier (devcli_server (), status_change, wnd[4]);
-  status (wnd[4], devcli_server ());
+  devcli_set_general_notifier (devcli_server (), status_change,
+			       wnd[WND_COL * WND_ROW - 2]);
+  status (wnd[WND_COL * WND_ROW - 2], devcli_server ());
 
-  for (i = 0, dev = devcli_devices (); dev && i < 5; dev = dev->next, i++)
+  for (i = 0, dev = devcli_devices (); dev && i < (WND_COL - 1) * WND_ROW;
+       dev = dev->next, i++)
     {
       devcli_set_general_notifier (dev, status_change, wnd[i]);
       status (wnd[i], dev);
@@ -337,9 +356,9 @@ main (int argc, char **argv)
 	  devcli_server_command (NULL, "on");
 	  break;
 	case KEY_F (5):
-	  status (wnd[4], devcli_server ());
-	  for (i = 0, dev = devcli_devices (); dev && i < 6;
-	       dev = dev->next, i++)
+	  status (wnd[WND_COL * WND_ROW - 2], devcli_server ());
+	  for (i = 0, dev = devcli_devices ();
+	       dev && i < (WND_COL - 1) * WND_ROW; dev = dev->next, i++)
 	    status (wnd[i], dev);
 	  break;
 	case KEY_F (10):
