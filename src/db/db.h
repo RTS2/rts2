@@ -11,4 +11,7 @@ int db_end_observation (int id, int duration);
 
 int db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id);
 
+int db_add_darkfield (char *path, const time_t * exposure_time, float
+		      exposure_length, float temp);
+
 #endif /* __RTS_PLAN_DB__ */

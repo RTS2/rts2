@@ -83,6 +83,38 @@ err:
 }
 
 extern int
+db_add_darkfield (char *path, const time_t * exposure_time, float
+		  exposure_length, float temp)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+
+  char *image_path = path;
+  float chip_temp = temp;
+  long int exp_time = *exposure_time;
+  long int exp_length = exposure_length;
+
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL BEGIN;
+
+  EXEC SQL INSERT INTO darks (dark_name, dark_date, dark_exposure,
+			      dark_temperature)
+    VALUES (:image_path,:exp_time,:exp_length,:chip_temp);
+
+  EXEC SQL END;
+
+  test_sql;
+
+  return 0;
+
+err:
+#ifdef DEBUG
+  printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  return -1;
+}
+
+extern int
 db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
