@@ -38,6 +38,8 @@ if [ "x$1" == "x-" ]; then
 	while read x; do
 		if echo $x | grep "^[0-9][0-9]" >/dev/null; then
 			find_images $x
+		elif echo $x | grep "^BAHAMY" >/dev/null; then
+			ssh -i $id_rsa $host "ping -i 60 -c 60 asm" < /dev/null
 		fi
 	done
 else
