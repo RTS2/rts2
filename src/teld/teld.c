@@ -159,6 +159,32 @@ teld_handle_command (char *command)
       devdem_priority_block_end ();
       return ret;
     }
+  else if (strcmp (command, "change") == 0)
+    {
+      struct radec coord;
+      if (devser_param_test_length (2))
+	return -1;
+      if (devser_param_next_hmsdec (&(coord.ra)))
+	return -1;
+      if (devser_param_next_hmsdec (&(coord.dec)))
+	return -1;
+      if (devdem_priority_block_start ())
+	return -1;
+      tel_call (telescope_base_info (&info));
+      coord.ra += info.ra;
+      coord.dec += info.dec;
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+			  "changing of telescope position started");
+      if ((ret =
+	   devser_thread_create (start_move, (void *) &coord, sizeof coord,
+				 NULL, client_move_cancel)) < 0)
+	{
+	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
+			      "cannot create thread");
+	}
+      devdem_priority_block_end ();
+      return ret;
+    }
   else if (strcmp (command, "correct") == 0)
     {
       struct radec coord;
@@ -276,6 +302,7 @@ teld_handle_command (char *command)
       devser_dprintf ("ready - is telescope ready to observe?");
       devser_dprintf ("set - set telescope coordinates");
       devser_dprintf ("move - move telescope");
+      devser_dprintf ("change - move telescope a bit");
       devser_dprintf ("info - telescope informations");
       devser_dprintf ("exit - exit from main loop");
       devser_dprintf ("help - print, what you are reading just now");
