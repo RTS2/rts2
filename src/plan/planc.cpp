@@ -450,6 +450,7 @@ execute_camera_script (void *exinfo)
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
 					  PHOT_NOINTEGRATE, 10000);
+	      exposure_decrease ();
 	    }
 	  exposure_increase ();
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
@@ -491,6 +492,7 @@ execute_camera_script (void *exinfo)
 	      continue;
 	    }
 	  command = s;
+	  exposure_increase ();
 	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate 1 %i", filter);
 	  exp_state = INTEGRATION_PROGRESS;
 	  break;
@@ -574,6 +576,7 @@ execute_camera_script (void *exinfo)
 				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 				  10000);
       dec_script_thread_count ();
+      exposure_decrease ();
       break;
     default:
       dec_script_thread_count ();
