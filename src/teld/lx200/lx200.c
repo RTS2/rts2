@@ -1,5 +1,8 @@
-/*! @file Driver file for LX200 telescope
+/*! 
+ * @file Driver file for LX200 telescope
+ * 
  * $Id$
+ * 
  * Based on original c library for xephem writen by Ken Shouse
  * <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
  * <cguirao@eso.org>
@@ -7,7 +10,7 @@
  * This is JUST A DRIVER, you shall to consult deamon for network
  * interface.
  *
- * Uses semaphores to control file acces.
+ * Use semaphores to control file acces.
  *
  * @author petr 
  */
@@ -31,24 +34,24 @@
 #include <sys/sem.h>
 
 #include "lx200.h"
-#include "../utils/hms.h"
-#include "../status.h"
+#include "../telescope.h"
+#include "../../utils/hms.h"
+#include "../../status.h"
 
-//! device name
-char *port_dev;
-//! port descriptor
+double park_dec;
+
 int port;
 
 //! sempahore id structure, we have two semaphores...
 int semid;
 
-//! port timeout
-#define PORT_TIME_OUT 5;
-
-//! one semaphore for direct port controll..
+//! one semaphore for direct port control..
 #define SEM_TEL 	0
-//! and second for controll of the move operation
+//! and second for control of the move operations
 #define SEM_MOVE 	1
+
+//! telescope parking declination
+#define PARK_DEC	40
 
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 /* union semun is defined by including <sys/sem.h> */
@@ -62,13 +65,6 @@ union semun
   struct seminfo *__buf;	/* buffer for IPC_INFO */
 };
 #endif
-
-void
-tel_cleanup ()
-{
-  if (semctl (semid, 1, IPC_RMID) < 0)
-    syslog (LOG_ERR, "semctl %i IPC_RMID: %m", semid);
-}
 
 /*!
  * Reports telescope status.
@@ -91,114 +87,39 @@ tel_status (int *status)
   return 0;
 }
 
-/*!
- * Connect on given port.
- * 
- * @param devptr		pointer to device name
- * 
- * @return 0 on succes, -1 & set errno otherwise
- */
-int
-tel_connect (const char *devptr)
-{
-  struct termios tel_termios;
-  union semun sem_un;
-  unsigned short int sem_arr[] = { 1, 1 };
-
-  port_dev = malloc (strlen (devptr) + 1);
-  strcpy (port_dev, devptr);
-  port = open (port_dev, O_RDWR);
-  free (port_dev);
-  if (port < 0)
-    return -1;
-
-  if (tcgetattr (port, &tel_termios) < 0)
-    return -1;
-
-  if (cfsetospeed (&tel_termios, B9600) < 0 ||
-      cfsetispeed (&tel_termios, B9600) < 0)
-    return -1;
-  tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-  tel_termios.c_oflag = 0;
-  tel_termios.c_cflag =
-    ((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-  tel_termios.c_lflag = 0;
-  tel_termios.c_cc[VMIN] = 1;
-  tel_termios.c_cc[VTIME] = 5;
-
-  if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
-    {
-      syslog (LOG_ERR, "tcsetattr: %m");
-      return -1;
-    }
-
-  if ((semid = semget (ftok (devptr, 0), 2, IPC_CREAT | 0644)) < 0)
-    {
-      syslog (LOG_ERR, "semget: %m");
-      return -1;
-    }
-
-  sem_un.array = sem_arr;
-
-  if (semctl (semid, 0, SETALL, sem_un) < 0)
-    {
-      syslog (LOG_ERR, "semctl init: %m");
-      return -1;
-    }
-
-  syslog (LOG_DEBUG, "LX200:Initialization complete");
-
-  return tcflush (port, TCIOFLUSH);
-}
-
 /*! 
  * Reads some data directly from port.
  * 
  * Log all flow as LOG_DEBUG to syslog
  * 
  * @exception EIO when there aren't data from port
- * @exception common select() exceptions
  * 
  * @param buf 		buffer to read in data
  * @param count 	how much data will be readed
  * 
  * @return -1 on failure, otherwise number of read data 
  */
+
 int
 tel_read (char *buf, int count)
 {
   int readed;
-  fd_set pfds;
-  struct timeval tv;
-
-  tv.tv_sec = PORT_TIME_OUT;
-  tv.tv_usec = 0;
 
   for (readed = 0; readed < count; readed++)
     {
-      FD_ZERO (&pfds);
-      FD_SET (port, &pfds);
-      if (select (port + 1, &pfds, NULL, NULL, &tv) == 0)
+      int ret = read (port, &buf[readed], 1);
+      if (ret == 0)
 	{
-	  syslog (LOG_DEBUG, "LX200: port timeout %m");
-	  return -1;
+	  errno = ETIMEDOUT;
+	  ret = -1;
 	}
-
-      if (FD_ISSET (port, &pfds))
+      if (ret < 0)
 	{
-	  if (read (port, &buf[readed], 1) < 0)
-	    {
-	      syslog (LOG_DEBUG, "LX200: port read error %m");
-	      return -1;
-	    }
-	  syslog (LOG_DEBUG, "readed: %c", buf[readed]);
-	}
-      else
-	{
-	  syslog (LOG_DEBUG, "LX200:Cannot retrieve data from port");
+	  syslog (LOG_DEBUG, "LX200: port read error %m");
 	  errno = EIO;
 	  return -1;
 	}
+      syslog (LOG_DEBUG, "readed: %c", buf[readed]);
     }
   return readed;
 }
@@ -246,7 +167,6 @@ tel_write (char *buf, int count)
   syslog (LOG_DEBUG, "LX200:will write:'%s'", buf);
   return write (port, buf, count);
 }
-
 
 /*! 
  * Combine write && read together.
@@ -337,88 +257,6 @@ unlock:
 }
 
 /*! 
- * Set slew rate. For completness?
- * 
- * This functions are there IMHO mainly for historical reasons. They
- * don't have any use, since if you start move and then die, telescope
- * will move forewer till it doesn't hurt itself. So it's quite
- * dangerous to use them for automatic observation. Better use quide
- * commands from attached CCD, since it defines timeout, which rules
- * CCD.
- *
- * @param new_rate	new rate to set. Uses RATE_<SPEED> constant.
- * 
- * @return -1 on failure & set errno, 5 (>=0) otherwise
- */
-int
-tel_set_rate (char new_rate)
-{
-  char command[6];
-  sprintf (command, "#:R%c#", new_rate);
-  return tel_write (command, 5);
-}
-
-/*! 
- * Start slew. Again for completness?
- * 
- * @see tel_set_rate() for speed.
- *
- * @param direction 	direction
- * 
- * @return -1 on failure & set errnom, 5 (>=0) otherwise
- */
-int
-tel_start_slew (char direction)
-{
-  char command[6];
-  sprintf (command, "#:M%c#", direction);
-  return tel_write (command, 5) == 1 ? -1 : 0;
-}
-
-/*! 
- * Stop sleew. Again only for completness?
- * 
- * @see tel_start_slew for direction.	
- */
-int
-tel_stop_slew (char direction)
-{
-  char command[6];
-  sprintf (command, "#:Q%c#", direction);
-  return tel_write (command, 5) < 0 ? -1 : 0;
-}
-
-/*!
- * Stop telescope slewing at any direction
- *
- * @return 0 on success, -1 and set errno on error
- */
-int
-tel_stop_slew_any ()
-{
-  char dirs[] = { 'e', 'w', 'n', 's' };
-  int i;
-  for (i = 0; i < 4; i++)
-    {
-      if (tel_stop_slew (dirs[i]) < 0)
-	return -1;
-    }
-  return 0;
-}
-
-
-/*!
- * Disconnect lx200.
- *
- * @return -1 on failure and set errno, 0 otherwise
- */
-int
-tel_disconnect (void)
-{
-  return close (port);
-}
-
-/*! 
  * Reads some value from lx200 in hms format.
  * 
  * Utility function for all those read_ra and other.
@@ -479,7 +317,7 @@ tel_read_localtime (double *tptr)
 }
 
 /*! 
- * Returns LX200 sideral time.
+ * Returns LX200 sidereal time.
  * 
  * @param tptr		where time will be stored
  * 
@@ -591,6 +429,183 @@ tel_write_dec (double dec)
   if (snprintf (command, 15, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) < 0)
     return -1;
   return tel_rep_write (command);
+}
+
+/*!
+ * Init telescope, connect on given port.
+ * 
+ * @param device_name		pointer to device name
+ * @param telescope_id		id of telescope, for LX200 ignored
+ * 
+ * @return 0 on succes, -1 & set errno otherwise
+ */
+extern int
+telescope_init (const char *device_name, int telescope_id)
+{
+  struct termios tel_termios;
+  union semun sem_un;
+  unsigned short int sem_arr[] = { 1, 1 };
+  char rbuf[10];
+
+  park_dec = PARK_DEC;
+
+  port = open (device_name, O_RDWR);
+  if (port < 0)
+    return -1;
+
+  if (tcgetattr (port, &tel_termios) < 0)
+    return -1;
+
+  if (cfsetospeed (&tel_termios, B9600) < 0 ||
+      cfsetispeed (&tel_termios, B9600) < 0)
+    return -1;
+
+  tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
+  tel_termios.c_oflag = 0;
+  tel_termios.c_cflag =
+    ((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
+  tel_termios.c_lflag = 0;
+  tel_termios.c_cc[VMIN] = 0;
+  tel_termios.c_cc[VTIME] = 5;
+
+  if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
+    {
+      syslog (LOG_ERR, "tcsetattr: %m");
+      return -1;
+    }
+
+  if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
+    {
+      syslog (LOG_ERR, "semget: %m");
+      return -1;
+    }
+
+  sem_un.array = sem_arr;
+
+  if (semctl (semid, 0, SETALL, sem_un) < 0)
+    {
+      syslog (LOG_ERR, "semctl init: %m");
+      return -1;
+    }
+
+  syslog (LOG_DEBUG, "LX200:Initialization complete");
+
+  tcflush (port, TCIOFLUSH);
+
+  // 12/24 hours trick..
+  if (tel_write_read ("#:Gc#", 5, rbuf, 5) < 0)
+    return -1;
+  rbuf[5] = 0;
+  if (strncmp (rbuf, "(12)#", 5) && strncmp (rbuf, "(24)#", 5))
+    {
+      errno = EIO;
+      return -1;
+    }
+
+  // we get 12:34:4# while we're in short mode
+  // and 12:34:45 while we're in long mode
+  if (tel_write_read ("#:Gr#", 5, rbuf, 8) < 0)
+    return -1;
+  if (rbuf[7] == '#')
+    {				// that could be used to distinguish between long
+      // short mode
+      // we are in short mode, set the long on
+      if (tel_write_read ("#:U#", 5, rbuf, 0) < 0)
+	return -1;
+      // now set low precision, e.g. we won't wait for user
+      // to find a star
+      strcpy (rbuf, "HIGH");
+      while (strncmp ("HIGH", rbuf, 4))
+	{
+	  if (tel_write_read ("#:P#", 4, rbuf, 4) < 0)
+	    return -1;
+	}
+    }
+  return 0;
+}
+
+/*!
+ * Detach from telescope
+ */
+extern void
+telescope_done ()
+{
+  if (semctl (semid, 1, IPC_RMID) < 0)
+    syslog (LOG_ERR, "semctl %i IPC_RMID: %m", semid);
+}
+
+/*!
+ * Reads information about telescope.
+ *
+ */
+extern int
+telescope_info (struct telescope_info *info)
+{
+  if (tel_read_ra (&info->ra) || tel_read_dec (&info->dec) ||
+      tel_read_longtitude (&info->longtitude)
+      || tel_read_latitude (&info->latitude)
+      || tel_read_siderealtime (&info->siderealtime)
+      || tel_read_localtime (&info->localtime))
+    return -1;
+
+  strcpy (info->name, "LX200");
+  strcpy (info->serial_number, "000001");
+
+  info->park_dec = park_dec;
+
+  return tel_status (&info->moving);
+}
+
+/*! 
+ * Set slew rate. For completness?
+ * 
+ * This functions are there IMHO mainly for historical reasons. They
+ * don't have any use, since if you start move and then die, telescope
+ * will move forewer till it doesn't hurt itself. So it's quite
+ * dangerous to use them for automatic observation. Better use quide
+ * commands from attached CCD, since it defines timeout, which rules
+ * CCD.
+ *
+ * @param new_rate	new rate to set. Uses RATE_<SPEED> constant.
+ * 
+ * @return -1 on failure & set errno, 5 (>=0) otherwise
+ */
+int
+tel_set_rate (char new_rate)
+{
+  char command[6];
+  sprintf (command, "#:R%c#", new_rate);
+  return tel_write (command, 5);
+}
+
+/*! 
+ * Start slew. Again for completness?
+ * 
+ * @see tel_set_rate() for speed.
+ *
+ * @param direction 	direction
+ * 
+ * @return -1 on failure & set errnom, 5 (>=0) otherwise
+ */
+int
+tel_start_slew (char direction)
+{
+  char command[6];
+  sprintf (command, "#:M%c#", direction);
+  return tel_write (command, 5) == 1 ? -1 : 0;
+}
+
+/*! 
+ * Stop sleew. Again only for completness?
+ * 
+ * @see tel_start_slew for direction.	
+ */
+int
+tel_stop_slew (char direction)
+{
+  char command[6];
+  sprintf (command, "#:Q%c#", direction);
+  return tel_write (command, 5) < 0 ? -1 : 0;
 }
 
 /*! 
@@ -719,12 +734,12 @@ unlock:
 /*! 
  * Repeat move_to 5 times, with a bit changed location.
  *
- * Used to uvercome LX200 error.
+ * Used to overcome LX200 error.
  *
  * @see tel_move_to
  */
 int
-tel_rep_move_to (double ra, double dec)
+telescope_move_to (double ra, double dec)
 {
   int i;
   for (i = 0; i < 5; i++)
@@ -747,17 +762,8 @@ tel_rep_move_to (double ra, double dec)
   return -1;
 }
 
-/*! 
- * Set telescope to match given coordinates
- *
- * This function is mainly used to tell the telescope, where it
- * actually is at the beggining of observation (remember, that lx200
- * doesn't have absolute position sensors)
- * 
- * @param ra		setting right ascennation
- * @param dec		setting declination
- * 
- * @return -1 and set errno on error, otherwise 0
+/*!
+ * Internal, set to new coordinates.
  */
 int
 tel_set_to (double ra, double dec)
@@ -773,56 +779,105 @@ tel_set_to (double ra, double dec)
 }
 
 /*! 
- * Initialize telescope.
+ * Set telescope to match given coordinates
+ *
+ * This function is mainly used to tell the telescope, where it
+ * actually is at the beggining of observation (remember, that lx200
+ * doesn't have absolute position sensors)
  * 
- * send some special commands to make initialization
+ * @param ra		setting right ascennation
+ * @param dec		setting declination
  * 
  * @return -1 and set errno on error, otherwise 0
  */
-int
-tel_init ()
+extern int
+telescope_set_to (double ra, double dec)
 {
-  char rbuf[10];
-  // we get 12:34:4# while we're in short mode
-  // and 12:34:45 while we're in long mode
-  if (tel_write_read ("#:Gr#", 5, rbuf, 8) < 0)
+  struct sembuf sem_buf;
+  sem_buf.sem_num = SEM_MOVE;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = SEM_UNDO;
+
+  syslog (LOG_INFO, "LX200:tel set_to ra:%f dec:%f", ra, dec);
+
+  if (semop (semid, &sem_buf, 1) < 0)
     return -1;
-  if (rbuf[7] == '#')
-    {				// that could be used to distinguish between long
-      // short mode
-      // we are in short mode, set the long on
-      if (tel_write_read ("#:U#", 5, rbuf, 0) < 0)
-	return -1;
-      // now set low precision, e.g. we won't wait for user
-      // to find a star
-      strcpy (rbuf, "HIGH");
-      while (strncmp ("HIGH", rbuf, 4))
-	{
-	  if (tel_write_read ("#:P#", 4, rbuf, 4) < 0)
-	    return -1;
-	}
+
+  sem_buf.sem_op = 1;
+
+  if (tel_set_to (ra, dec))
+    {
+      semop (semid, &sem_buf, 1);
+      return -1;
     }
+
+  semop (semid, &sem_buf, 1);
+
   return 0;
 }
 
 /*!
- * Test, if telescope is connected to computer.
+ * Correct telescope coordinates.
  *
- * @return -1 and errno on error, 0 if it's connected 
+ * Used for closed loop coordinates correction based on astronometry
+ * of obtained images.
+ *
+ * @param ra		ra correction
+ * @param dec		dec correction
+ *
+ * @return -1 and set errno on error, 0 otherwise.
  */
-int
-tel_is_ready (void)
+extern int
+telescope_correct (double ra, double dec)
 {
-  char rbuf[6];
-  if (tel_write_read ("#:Gc#", 5, rbuf, 5) < 0)
+  struct sembuf sem_buf;
+  double ra_new, dec_new;
+
+  sem_buf.sem_num = SEM_MOVE;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = SEM_UNDO;
+
+  syslog (LOG_INFO, "LX200:tel corect_to ra:%f dec:%f", ra, dec);
+
+  if (semop (semid, &sem_buf, 1) < 0)
     return -1;
-  rbuf[5] = 0;
-  if (strncmp (rbuf, "(12)#", 5) && strncmp (rbuf, "(24)#", 5))
+
+  sem_buf.sem_op = 1;
+
+  if (tel_read_ra (&ra) || tel_read_dec (&dec))
+    goto err;
+
+  ra += ra_new;
+  dec += dec_new;
+
+  if (tel_set_to (ra, dec))
+    goto err;
+
+  semop (semid, &sem_buf, 1);
+  return 0;
+
+err:
+  if (semop (semid, &sem_buf, 1))
+    syslog (LOG_ERR, "+1 op with %i failed", sem_buf.sem_num);
+  return -1;
+}
+
+/*!
+ * Stop telescope slewing at any direction
+ *
+ * @return 0 on success, -1 and set errno on error
+ */
+extern int
+telescope_stop ()
+{
+  char dirs[] = { 'e', 'w', 'n', 's' };
+  int i;
+  for (i = 0; i < 4; i++)
     {
-      errno = EIO;
-      return -1;
+      if (tel_stop_slew (dirs[i]) < 0)
+	return -1;
     }
-  return tel_init ();
+  return 0;
 }
 
 /*! 
@@ -830,11 +885,20 @@ tel_is_ready (void)
  *
  * @return -1 and errno on error, 0 otherwise
  */
-int
-tel_park (void)
+extern int
+telescope_park ()
 {
   double lst;
   if (tel_read_siderealtime (&lst) < 0)
     return -1;
-  return tel_move_to (lst, 40);
+  return tel_move_to (lst, park_dec);
+}
+
+/*!
+ * TODO implemet it!!!!
+ */
+extern int
+telescope_off ()
+{
+  return 0;
 }
