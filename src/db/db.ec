@@ -7,6 +7,7 @@
 #define _GNU_SOURCE
 
 #include "db.h"
+#include "../utils/config.h"
 #include <libnova/libnova.h>
 #include <malloc.h>
 #include <pthread.h>
@@ -254,12 +255,14 @@ db_add_darkfield (char *path, const time_t * exposure_time, int
   long int exp_time = *exposure_time;
   long int exp_length = exposure_length;
   char *d_camera_name = camera_name;
+  char *d_epoch;
   EXEC SQL END DECLARE SECTION;
+  d_epoch = get_string_default ("epoch", "00T");
   db_lock ();
   EXEC SQL INSERT INTO darks (dark_name, dark_date, dark_exposure,
 			      dark_temperature, epoch_id, camera_name)
     VALUES (:image_path,
-	    abstime (:exp_time),:exp_length,:chip_temp, '002',:d_camera_name);
+	    abstime (:exp_time),:exp_length,:chip_temp, :d_epoch,:d_camera_name);
   test_sql;
   db_unlock ();
   return 0;

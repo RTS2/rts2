@@ -1,9 +1,9 @@
 # $Id$
 
-bin_PROGRAMS = rts2-photlist
+#bin_PROGRAMS = rts2-photlist
 
-rts2_photlist_SOURCES = photlist.c
-rts2_photlist_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ ../utils/config.o
+#rts2_photlist_SOURCES = photlist.c
+#rts2_photlist_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ ../utils/config.o
 
 noinst_LIBRARIES = libdb.a
 libdb_a_SOURCES = db.c
@@ -21,4 +21,4 @@ noinst_PROGRAMS = test
 bin_SCRIPTS = rts2-script
 
 test_SOURCES = test.c
-test_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ libdb.a
+test_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ libdb.a ../utils/config.o
