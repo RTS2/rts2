@@ -445,9 +445,9 @@ void
 read_thread_finish (void *dev)
 {
   fprintf (stderr, "broken connection of device %s, exiting\n", DEV->name);
-
   // inform clients, that we lose connection and cannot reply
   // to their requests
+  close (DEV->channel.socket);
   DEV->channel.socket = -1;
   pthread_mutex_lock (&DEV->channel.ret_lock);
   DEV->channel.ret_code = DEVDEM_E_TIMEOUT;
