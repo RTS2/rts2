@@ -500,7 +500,7 @@ Rts2Device::processOption (int in_opt)
 	case '?':
 	  break;
 	default:
-	  printf ("?? getopt returned unknow character %o ??\n", in_opt);
+	  printf ("?? getopt returned unknow character %c %o ??\n", (char) in_opt, in_opt);
           return -1;
   }
   return 0;
