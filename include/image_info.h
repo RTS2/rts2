@@ -6,12 +6,13 @@
 
 #include <time.h>
 
-struct image_info
+struct image_info 
 {
   struct telescope_info telescope;
   struct camera_info camera;
   time_t exposure_time;
   float exposure_length;
+  int target_type;
   int target_id;
   int observation_id;
 };

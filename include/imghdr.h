@@ -21,6 +21,9 @@
 
 #include <time.h>
 
+#define STATUS_FLIP	0x01
+#define	STATUS_DARK	0x02
+
 #define MAX_AXES	5	//! Maximum number of axes we should considered.
 
 struct imghdr
@@ -29,6 +32,8 @@ struct imghdr
   int naxes;			//! Number of axess.
   long sizes[MAX_AXES];		//! Sizes in given axes.
   int binnings[MAX_AXES];	//! Binning in each axe - eg. 2 -> 1 image pixel on given axis is equal 2 ccd pixels.
+  char filter;			//! Camera filter
+  int status;			//! image status
 };
 
 #endif // __RTS_IMGHDR__
