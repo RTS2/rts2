@@ -17,6 +17,15 @@
 #include <pthread.h>
 #include <netinet/in.h>
 
+struct device;
+
+/*!
+ * Status hander for all status changes. Used only in client
+ * applications.
+ */
+typedef int (*general_notifier_t) (struct device * dev, char *status_name,
+				   int new_value);
+
 /*! 
  * Parameters for one communication channel.
  * 
@@ -25,7 +34,6 @@
  * handler for devdem commands returns and messages, space to hold extra 
  * parameters for such a handler, and some other usefull variables.
  */
-
 struct dev_channel
 {
   int socket;			//! socket for connection
@@ -55,6 +63,8 @@ struct device
   int priority;
   struct dev_channel *channel;
   devcli_handle_data_t data_handler;	//! handler to received data
+  general_notifier_t status_notifier;	//! status change handler
+  void *notifier_data;		//! notifier data
   struct device *next;
 };
 
@@ -74,6 +84,8 @@ ssize_t devcli_read_data (int sock, void *data, size_t size);
 
 int devcli_wait_for_status (struct device *dev, char *status_name,
 			    int status_mask, int status, time_t tmeout);
+void devcli_set_general_notifier (struct device *dev,
+				  general_notifier_t notifier, void *data);
 int devcli_set_notifier (struct device *dev, char *status_name,
 			 status_notifier_t callback);
 int devcli_server_command (int *ret_code, char *cmd, ...);

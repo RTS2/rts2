@@ -5,6 +5,7 @@
 
 struct supp_info devhnd_devices[] = {
   {NULL, NULL},			// DEVICE_TYPE_UNKNOW
+  {NULL, NULL},			// SERVERD
   {(devcli_handle_response_t) telescope_command_handler, (devcli_handle_response_t) telescope_message_handler},	// DEVICE_TYPE_MOUNT
   {(devcli_handle_response_t) camera_command_handler, (devcli_handle_response_t) camera_message_handler},	// DEVICE_TYPE_CCD
   {NULL, NULL}			// DEVICE_TYPE_DOME
@@ -110,8 +111,8 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
       errno = EINVAL;
       return 0;
     }
+  fprintf (stderr, "unkow command %s\n", params->param_argv);
   errno = EINVAL;
-  printf ("error by get\n");
   return -1;
 };
 
