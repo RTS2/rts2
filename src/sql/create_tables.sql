@@ -22,8 +22,8 @@ CREATE TABLE targets (
 	tar_id		integer PRIMARY KEY,
 	type_id		char REFERENCES types(type_id),
 	tar_name	varchar(150),
-	tar_ra		float4,
-	tar_dec		float4,
+	tar_ra		float8,
+	tar_dec		float8,
 	tar_comment	text,
 	tar_enabled     boolean
 );
@@ -46,17 +46,17 @@ CREATE TABLE ot (
 --- elliptical target elements; if ell_a < 0, then it's parabollic target
 CREATE TABLE ell (
         tar_id          integer REFERENCES targets (tar_id),
-        ell_a           float4,
-        ell_e           float4,
-        ell_i           float4,
-        ell_w           float4,
-        ell_omega       float4,
-        ell_n           float4,
+        ell_a           float8,
+        ell_e           float8,
+        ell_i           float8,
+        ell_w           float8,
+        ell_omega       float8,
+        ell_n           float8,
         ell_minpause    interval DEfAULT NULL,
         ell_priority    integer,
         ell_JD          float8,
-        ell_mag_1       float4,
-        ell_mag_2       float4
+        ell_mag_1       float8,
+        ell_mag_2       float8
 );
 
 DROP TABLE cameras;
@@ -70,9 +70,9 @@ DROP TABLE mounts;
 
 CREATE TABLE mounts (
 	mount_name	varchar(8) PRIMARY KEY,
-	mount_long	float,
-	mount_lat	float,
-	mount_alt	float,
+	mount_long	float8,
+	mount_lat	float8,
+	mount_alt	float8,
 	mount_desc	varchar(100)
 );
 
@@ -151,8 +151,8 @@ CREATE TABLE counts (
 	count_date	abstime NOT NULL,
 	count_exposure	float,
 	count_filter	varchar(3),
-	count_ra	float4,
-	count_dec	float4,
+	count_ra	float8,
+	count_dec	float8,
 	counter_name	varchar(8) REFERENCES counters(counter_name)
 );
 
