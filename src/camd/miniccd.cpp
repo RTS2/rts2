@@ -186,6 +186,7 @@ CameraMiniccdChip::readoutOneLine ()
     return -1;
 
   int row_bytes = usedRowBytes;
+  int send_data_size;
 
   if (readoutLine < (chipUsedReadout->height / usedBinningVertical))
     {
@@ -226,7 +227,6 @@ CameraMiniccdChip::readoutOneLine ()
     }
   if (send_top < dest_top)
     {
-      int send_data_size;
       if (sendLine == 0)
 	{
 	  // test data size & ignore data header

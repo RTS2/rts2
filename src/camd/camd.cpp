@@ -156,6 +156,7 @@ CameraChip::sendReadoutData (char *data, size_t data_size)
     }
   if (ret == -1)
     {
+      syslog (LOG_ERR, "CameraChip::sendReadoutData %m");
       endReadout ();
     }
   return ret;
