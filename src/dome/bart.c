@@ -38,7 +38,7 @@ char zasuvka[] = { 0x9, 0x8, 0x5, 0x4, 0x3 };
 #define ZAS_ZAP 0x40
 #define ZAS_VYP 0x20
 
-#define DOME_SLEEP		14
+#define DOME_SLEEP		20
 
 int dome_port = -1;
 
