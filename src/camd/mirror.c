@@ -24,6 +24,9 @@
 #define CMD_MIRROR_MINUS		0xC3
 #define CMD_MIRROR_GET			0xC5
 
+#define RAMP_TO			10
+#define RAMP_STEP		1
+
 static int mirror_fd = 0;
 
 //! sempahore id structure, we have two semaphores...
@@ -123,6 +126,7 @@ mirror_get (int *pos)
   return command (CMD_MIRROR_GET, 0, NULL, pos);
 }
 
+
 int
 mirror_set (int steps)
 {
@@ -130,6 +134,7 @@ mirror_set (int steps)
   int mpos, new_pos;
   int i;
   int cmd;
+  int move = 1;
 
   struct sembuf sem_buf;
   sem_buf.sem_num = 0;
@@ -155,8 +160,10 @@ mirror_set (int steps)
     }
   while (steps > 0)
     {
-      int move;
-      move = (steps >= 2) ? 2 : steps;
+      if (steps < RAMP_TO * RAMP_STEP)
+	move -= RAMP_STEP;
+      else if (move < RAMP_TO)
+	move += RAMP_STEP;
       ret = command (cmd, move, NULL, NULL);
       if (ret)
 	goto err;
