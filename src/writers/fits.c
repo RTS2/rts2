@@ -13,7 +13,7 @@
 #include "fitsio.h"
 #include "fits.h"
 #include "imghdr.h"
-#include "../../config.h"
+#include "config.h"
 #include "../utils/config.h"
 
 #include <pthread.h>
