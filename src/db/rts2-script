@@ -1,7 +1,8 @@
 #!/bin/bash
 
 if [ "x$1" = "x-s" ]; then
-	if [ "x$4" = "x" ]; then
+	shift;
+	if [ "x$3" = "x" ]; then
 		exit -1
 	fi
 	psql stars -c "delete from scripts where tar_id = $1 and camera_name = '$2'"
