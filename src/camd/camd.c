@@ -769,6 +769,8 @@ camd_handle_command (char *command)
 	  devdem_priority_block_end ();
 	  return -1;
 	}
+      devser_dprintf ("chip %i binning_vertical %i", chip, vertical);
+      devser_dprintf ("chip %i binning_horizontal %i", chip, horizontal);
       ret = 0;
       devdem_priority_block_end ();
       /* end of priority block */
