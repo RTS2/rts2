@@ -171,12 +171,12 @@ ListWCS (filename)
     }
 
   printf
-    ("INSERT INTO images (img_date, img_exposure, img_temperature, img_filter, astrometry, obs_id, camera_name, mount_name, med_id, epoch_id) VALUES (nextval ('obs_id'), ");
+    ("INSERT INTO images (img_id, img_date, img_exposure, img_temperature, img_filter, astrometry, obs_id, camera_name, mount_name, med_id, epoch_id) VALUES (nextval ('obs_id'), ");
   hgeti4 (header, "SEC", &ctime);
   printf ("%i, ", ctime);
   hgetr4 (header, "EXPOSURE", &exposure);
   printf ("%f, ", exposure * 100);
-  hgetr4 (header, "CAMD_CCD", &exposure);
+  hgetr4 (header, "CAM_TEMP", &exposure);
   printf ("%f, ", exposure * 10);
   hgets (header, "FILTER", 10, &filter);
   printf ("'%s', ", filter);
