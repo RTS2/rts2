@@ -12,10 +12,13 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "devcli.h"
+
 #define STATUSNAME	8
 #define MSG_SIZE	50
 
-typedef int (*devdem_handle_command_t) (char *, size_t);
+typedef int (*devdem_handle_command_t) (char *command);
+typedef void (*devdem_handle_message_t) (char *message);
 
 struct devdem_msg
 {
@@ -23,6 +26,8 @@ struct devdem_msg
   char mtext[MSG_SIZE];
 };
 
+int devdem_register (struct devcli_channel *server_channel,
+		     char *server_address, int server_port);
 int devdem_run (int port, devdem_handle_command_t in_handler,
 		char **status_names, int status_num, size_t shm_data_size);
 int devdem_dprintf (const char *format, ...);
@@ -43,8 +48,13 @@ void devdem_shm_data_lock ();
 void devdem_shm_data_unlock ();
 void devdem_shm_data_dt ();
 
-void devdem_msg_set_handler (devdem_handle_command_t handler);
+devdem_handle_message_t devdem_msg_set_handler (devdem_handle_message_t
+						handler);
 int devdem_msg_snd (struct devdem_msg *msg);
+
+int devdem_param_test_length (int npars);
+int devdem_param_next_integer (int *ret);
+int devdem_param_next_string (char **ret);
 
 extern pid_t devdem_parent_pid;
 extern pid_t devdem_child_pid;

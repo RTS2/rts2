@@ -27,6 +27,8 @@
 
 #include "devconn.h"
 
+#include "devcli.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -76,7 +78,7 @@ client_info;
 
 //! Handler functions
 devdem_handle_command_t cmd_handler;
-devdem_handle_command_t msg_handler;
+devdem_handle_message_t msg_handler;
 
 pid_t devdem_parent_pid;
 pid_t devdem_child_pid;
@@ -96,12 +98,12 @@ data_conn_info_t;
 
 data_conn_info_t data_cons[MAXDATACONS];
 
-//! Filedes of ascii control channel
+//! filedes of ascii control channel
 int control_fd;
 
 #define MAX_THREADS	30
 
-//! Thread management type
+//! threads management type
 struct
 {
   pthread_mutex_t lock;		//! lock to lock threads
@@ -109,7 +111,7 @@ struct
 }
 threads[MAX_THREADS];
 
-//! Threads management helper structure
+//! threads management helper structure
 struct thread_wrapper_temp
 {
   pthread_mutex_t *lock;
@@ -118,19 +120,19 @@ struct thread_wrapper_temp
   int freed;			//! 2 free || !2 free arg on end.
 };
 
-//! Number of status registers
+//! number of status registers
 int status_num;
 
-//! Key to shared memory segment, holding status flags.
+//! key to shared memory segment, holding status flags.
 int status_shm;
 
-//! Key to semaphore for access control to shared memory segment
+//! key to semaphore for access control to shared memory segment
 int status_sem;
 
-//! Data shared memory
+//! data shared memory
 int data_shm;
 
-//! Data semaphore to control write access
+//! data semaphore to control write access
 int data_sem;
 
 //! IPC message que identifier
@@ -139,7 +141,7 @@ int msg_id;
 //! IPC message receive thread
 pthread_t msg_thread;
 
-//! Holds status informations
+//! holds status informations
 typedef struct
 {
   char name[STATUSNAME + 1];
@@ -147,8 +149,13 @@ typedef struct
 }
 status_t;
 
-//! Array holding status structures; stored in shared mem, hence just pointer
+//! array holding status structures; stored in shared mem, hence just pointer
 status_t *statutes;
+
+//! actuall processing parameter
+char *param_argv;
+char *param_processing;
+size_t param_argc;
 
 /*! 
  * Locks given status lock.
@@ -434,43 +441,44 @@ devdem_thread_cancel_all (void)
  * <p>
  * Errors resulting from wrong command format are reported directly.
  *
- * @param buffer Buffer containing params
- * @param handler Command handler. 
+ * @param buffer	buffer containing params
  * @return -1 and set errno on network failure|exit command, otherwise 0. 
  */
 int
-devdem_handle_commands (char *buffer, devdem_handle_command_t handler)
+handle_commands (char *buffer)
 {
   char *next_command = NULL;
-  char *argv, *cargv;
-  size_t argc, cargc;
+  char *argv;
+  size_t argc;
   int ret;
-  if ((ret = argz_create_sep (buffer, ';', &argv, &argc)))
-    {
-      errno = ret;
-      return devdem_write_command_end (DEVDEM_E_SYSTEM, "System: ",
-				       strerror (errno));
-    }
+  if ((errno = argz_create_sep (buffer, ';', &argv, &argc)))
+    return devdem_write_command_end (DEVDEM_E_SYSTEM, "System: ",
+				     strerror (errno));
   if (!argv)
     return devdem_write_command_end (DEVDEM_E_COMMAND, "Empty command!");
 
   while ((next_command = argz_next (argv, argc, next_command)))
     {
-      if ((ret = argz_create_sep (next_command, ' ', &cargv, &cargc)))
+      if ((errno =
+	   argz_create_sep (next_command, ' ', &param_argv, &param_argc)))
 	{
 	  devdem_write_command_end (DEVDEM_E_SYSTEM, "Argz call error: %s",
 				    strerror (ret));
 	  goto end;
 	}
-      if (!cargv)
+      if (!param_argv)
 	{
 	  devdem_write_command_end (DEVDEM_E_COMMAND, "Empty command!");
-	  free (cargv);
+	  free (param_argv);
 	  goto end;
 	}
-      syslog (LOG_DEBUG, "Handling '%s'", next_command);
-      ret = cmd_handler (cargv, cargc);
-      free (cargv);
+      syslog (LOG_DEBUG, "handling '%s'", next_command);
+      param_processing = param_argv;
+      if (strcmp (param_argv, "exit") == 0)
+	ret = -2;
+      else
+	ret = cmd_handler (param_argv);
+      free (param_argv);
       if (ret < 0)
 	break;
     }
@@ -841,10 +849,12 @@ devdem_shm_data_dt (void *mem)
     }
 }
 
-void
-devdem_msg_set_handler (devdem_handle_command_t handler)
+devdem_handle_message_t
+devdem_msg_set_handler (devdem_handle_message_t handler)
 {
+  devdem_handle_message_t old_handler = msg_handler;
   msg_handler = handler;
+  return old_handler;
 }
 
 int
@@ -870,11 +880,11 @@ msg_receive_thread (void *arg)
 	  // testing for null - be cautios, since 
 	  // another thread could set null message
 	  // handler
-	  devdem_handle_command_t tmp_handler = msg_handler;
+	  devdem_handle_message_t tmp_handler = msg_handler;
 	  if (tmp_handler)
 	    {
 	      syslog (LOG_INFO, "msg received: %50s", msg_buf.mtext);
-	      tmp_handler (msg_buf.mtext, msg_size);
+	      tmp_handler (msg_buf.mtext);
 	    }
 	  else
 	    {
@@ -882,6 +892,48 @@ msg_receive_thread (void *arg)
 	    }
 	}
     }
+}
+
+int
+devdem_param_test_length (int npars)
+{
+  int actuall_count = argz_count (param_argv, param_argc) - 1;
+  if (actuall_count != npars)
+    {
+      devdem_write_command_end (DEVDEM_E_PARAMSNUM,
+				"bad nmbr of params: expected %i,got %i",
+				npars, actuall_count);
+      return -1;
+    }
+  return 0;
+}
+
+int
+devdem_param_next_integer (int *ret)
+{
+  char *endptr;
+  param_processing = argz_next (param_argv, param_argc, param_processing);
+  *ret = strtol (param_processing, &endptr, 10);
+  if (*endptr)
+    {
+      devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+				"invalid parameter - expected integer, got '%s'",
+				param_processing);
+      return -1;
+    }
+  return 0;
+}
+
+int
+devdem_param_next_string (char **ret)
+{
+  if ((param_processing =
+       argz_next (param_argv, param_argc, param_processing)))
+    {
+      *ret = param_processing;
+      return 0;
+    }
+  return -1;
 }
 
 int
@@ -915,7 +967,7 @@ read_from_client ()
 	    {
 	      *endptr = 0;
 	      syslog (LOG_DEBUG, "parsed: '%s'", startptr);
-	      if ((ret = devdem_handle_commands (startptr, cmd_handler)) < 0)
+	      if ((ret = handle_commands (startptr)) < 0)
 		return ret;
 	      endptr++;
 	      if (*endptr == '\n')
@@ -980,6 +1032,59 @@ sig_exit (int sig)
   exit (0);
 }
 
+/*!
+ *
+ */
+int
+server_command_handler (char *ret)
+{
+  printf ("returned: %s\n", ret);
+  fflush (stdout);
+  return 0;
+}
+
+int
+server_message_handler (char *ret)
+{
+  printf ("message: %s\n", ret);
+  fflush (stdout);
+  return 0;
+}
+
+
+/*!
+ * Make connection to central server.
+ *
+ * Fork, connect to central server, register to central server and
+ * provide hooks for central server.
+ *
+ * Exit after connection is sucessfully initialized, or connection cannot be made.
+ *
+ * @param server_channel	central server channel
+ * @param server_address	central server address
+ * @param server_port		central server port
+ *
+ * @return 0 on success, -1 and set errno on error
+ */
+int
+devdem_register (struct devcli_channel *server_channel, char *server_address,
+		 int server_port)
+{
+  server_channel->command_handler = server_command_handler;
+  server_channel->message_handler = server_message_handler;
+
+  server_channel->data_handler = NULL;
+
+  /* connect to the server */
+  if (devcli_connect (server_channel, server_address, server_port) < 0)
+    return -1;
+
+  if (devcli_command (server_channel, "register camd") < 0)
+    return -1;
+  // else
+  return 0;
+}
+
 /*! 
  * Run device daemon.
  *
@@ -993,7 +1098,7 @@ sig_exit (int sig)
  * @param shm_data_size	size for shared memory for data; =0 if shared data
  * 			memory is not required
  * 
- * @return 0 on succes, -1 and set errno on error
+ * @return 0 on success, -1 and set errno on error
  */
 int
 devdem_run (int port, devdem_handle_command_t in_handler,
