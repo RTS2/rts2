@@ -182,10 +182,8 @@ teld_handle_command (char *command)
 
       coord.ra += correction_buf[correction_mark % CORRECTION_BUF].ra;
       coord.dec += correction_buf[correction_mark % CORRECTION_BUF].dec;
-#ifdef DEBUG
-      printf ("correction: ra %f dec %f mark %i\n", coord.ra, coord.dec,
-	      correction_mark);
-#endif /* DEBUG */
+      syslog (LOG_DEBUG, "correction: ra %f dec %f mark %i\n", coord.ra,
+	      coord.dec, correction_mark);
       // update all corrections..
       for (i = correction_number % CORRECTION_BUF;
 	   i < correction_mark - correction_number; i++)
