@@ -1,6 +1,4 @@
 Makefile
 *.o
 *~
-para
-teld_lx200
-teld_para
+rts2-teld*
