@@ -65,6 +65,8 @@ pthread_cond_t precission_cond = PTHREAD_COND_INITIALIZER;
 
 struct device *telescope;
 
+struct ln_lnlat_posn observer;
+
 pthread_t image_que_thread;
 
 time_t last_succes = 0;
@@ -87,12 +89,9 @@ move (struct target *last)
       && last->moved == 0)
     {
       struct ln_equ_posn object;
-      struct ln_lnlat_posn observer;
       struct ln_hrz_posn hrz;
       object.ra = last->ra;
       object.dec = last->dec;
-      observer.lat = telescope->info.telescope.latitude;
-      observer.lng = telescope->info.telescope.longtitude;
       ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (),
 			   &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
@@ -156,8 +155,7 @@ generate_next (int i, struct target *plan)
   if (get_next_plan
       (plan, get_double_default ("planc_selector", SELECTOR_HETE),
        &start_time, i, EXPOSURE_TIME, devcli_server ()->statutes[0].status,
-       get_double_default ("longtitude", 0), get_double_default ("latitude",
-								 40)))
+       observer.lng, observer.lat))
     {
       printf ("Error making plan\n");
       fflush (stdout);
@@ -655,6 +653,9 @@ main (int argc, char **argv)
     printf ("failed, defaults will be used when apopriate.\n");
   else
     printf ("ok\n");
+  observer.lng = get_double_default ("longtitude", 0);
+  observer.lat = get_double_default ("latitude", 0);
+  printf ("lng: %f lat: %f\n", observer.lng, observer.lat);
   printf ("Current selector is: %i\n",
 	  (int) get_double_default ("planc_selector", SELECTOR_HETE));
 

@@ -107,8 +107,14 @@ write_camera (struct fits_receiver_data *receiver,
   yplate = get_device_double_default (camera_name, "yplate", yplate);
   flip = get_device_double_default (camera_name, "flip", flip);
 
-  cam_xoa = get_device_double_default (camera_name, "cam_xao", 0);
-  cam_yoa = get_device_double_default (camera_name, "cam_yoa", 0);
+  cam_xoa =
+    get_device_double_default (camera_name, "cam_xoa",
+			       ((struct imghdr *) receiver->data)->sizes[0] /
+			       2);
+  cam_yoa =
+    get_device_double_default (camera_name, "cam_yoa",
+			       ((struct imghdr *) receiver->data)->sizes[1] /
+			       2);
 
   write_key (TFLOAT, "CAM_XOA", &cam_xoa, "X optical axe center");
   write_key (TFLOAT, "CAM_YOA", &cam_yoa, "Y optical axe center");

@@ -490,6 +490,9 @@ get_next_plan (struct target *plan, int selector_type,
 
   printf ("lon: %f lat: %f\n", lon, lat);
 
+  observer.lng = lon;
+  observer.lat = lat;
+
   jd = ln_get_julian_from_timet (obs_start);
   dark_frequency =
     get_double_default ("dark_frequency", DEFAULT_DARK_FREQUENCY);
@@ -545,9 +548,6 @@ get_next_plan (struct target *plan, int selector_type,
 		      PLAN_DARK_TOLERANCE);
 	  return 0;
 	}
-
-      observer.lng = lon;
-      observer.lat = lat;
 
       ln_get_lunar_equ_coords (jd, &moon, 0.01);
       ln_get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);

@@ -135,7 +135,6 @@ astrometry_image (struct image_que *actual_image)
 
       printf ("ra: %f dec: %f ra_err: %f min dec_err: %f min\n", ra, dec,
 	      ra_err, dec_err);
-      set_precision (hi_precision, ra, dec);
 
       if (actual_image->correction_mark >= 0)
 	{
@@ -155,6 +154,8 @@ astrometry_image (struct image_que *actual_image)
 		       actual_image->tel_name);
 	    }
 	}
+
+      set_precision (hi_precision, ra, dec);
 
       // add image to db
       asprintf (&cmd,
