@@ -376,7 +376,8 @@ loop:
 	  time (&t);
 	  printf ("waiting for night..%s", ctime (&t));
 	  fflush (stdout);
-	  if ((t = devcli_command (telescope, NULL, "ready;park")))
+	  devcli_command (telescope, NULL, "ready");
+	  if ((t = devcli_command (telescope, NULL, "park")))
 	    fprintf (stderr, "Error while moving telescope: %i\n", (int) t);
 	  else
 	    printf ("PARK ok\n");
