@@ -13,7 +13,7 @@ libdevser_a_SOURCES = devdem.c devser.cpp hms.c param.c thread_attr.c config.c
 
 libdevcli_a_SOURCES = devcli.c devhnd.c param.c hms.c mv.c mkpath.c thread_attr.c config.c objectcheck.cpp
 
-librts2block_a_SOURCES = rts2block.cpp rts2device.cpp config.c rts2option.cpp rts2client.cpp
+librts2block_a_SOURCES = rts2block.cpp rts2device.cpp config.c rts2option.cpp # rts2client.cpp
 
 noinst_HEADERS = devcli.h devdem.h devser.h config.h mv.h mkpath.h devconn.h thread_attr.h hms.h \
 	rts2block.h rts2device.h rts2option.h
