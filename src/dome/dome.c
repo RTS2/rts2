@@ -31,7 +31,7 @@
 #define DEVICE_NAME		"DCM"
 #define DEVICE_PORT		5553	// default dome TCP/IP port
 
-char *dome_file = "/dev/ttyS7";
+char *dome_file = "/dev/ttyS0";
 
 void *
 observing (void *arg)
@@ -167,6 +167,7 @@ dome_handle_status (int status, int old_status)
     case SERVERD_DUSK:
     case SERVERD_DAWN:
     case SERVERD_MORNING:
+    case SERVERD_DAY:
       if (status < 10)
 	ret = dome_observing ();
       else

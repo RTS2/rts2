@@ -24,6 +24,8 @@
 #define PORT_B 1
 #define PORT_C 2
 
+#define CAS_NA_OTEVRENI 30
+
 typedef enum
 { VENTIL_AKTIVACNI,
   VENTIL_OTEVIRANI_PRAVY,
@@ -150,66 +152,74 @@ vypni_pin (unsigned char port, unsigned char pin)
   write (dome_port, &c, 1);
 }
 
+#define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
+#define VYP(i) vypni_pin(adresa[i].port,adresa[i].pin)
+
 int
 otevri_strechu ()
 {
-  zapni_pin (adresa[KOMPRESOR].port, adresa[KOMPRESOR].pin);
+  vypni_pin (adresa[VENTIL_OTEVIRANI_PRAVY].port,
+	     adresa[VENTIL_OTEVIRANI_PRAVY].
+	     pin | adresa[VENTIL_ZAVIRANI_PRAVY].
+	     pin | adresa[VENTIL_ZAVIRANI_LEVY].pin);
+  ZAP (KOMPRESOR);
   sleep (1);
-  zapni_pin (adresa[VENTIL_OTEVIRANI_LEVY].port,
-	     adresa[VENTIL_OTEVIRANI_LEVY].pin);
-  zapni_pin (adresa[VENTIL_AKTIVACNI].port, adresa[VENTIL_AKTIVACNI].pin);
+  fprintf (stderr, "oteviram levou strechu\n");
+  ZAP (VENTIL_OTEVIRANI_LEVY);
+  ZAP (VENTIL_AKTIVACNI);
   do
     zjisti_stav_portu (stav_portu);	//hodil by se jeste timeout
   while (stav_portu[adresa[KONCAK_OTEVRENI_LEVY].port] &
 	 adresa[KONCAK_OTEVRENI_LEVY].pin);
 //    while((stav_portu[adresa[KONCAK_OTEVRENI_PRAVY].port]) & adresa[KONCAK_ZAVRENI_LEVY].pin);
-  vypni_pin (adresa[VENTIL_AKTIVACNI].port, adresa[VENTIL_AKTIVACNI].pin);
-  vypni_pin (adresa[VENTIL_OTEVIRANI_LEVY].port,
-	     adresa[VENTIL_OTEVIRANI_LEVY].pin);
+  VYP (VENTIL_AKTIVACNI);
+  VYP (VENTIL_OTEVIRANI_LEVY);
   sleep (1);
-  zapni_pin (adresa[VENTIL_OTEVIRANI_PRAVY].port,
-	     adresa[VENTIL_OTEVIRANI_PRAVY].pin);
-  zapni_pin (adresa[VENTIL_AKTIVACNI].port, adresa[VENTIL_AKTIVACNI].pin);
+  fprintf (stderr, "oteviram pravou strechu\n");
+  ZAP (VENTIL_OTEVIRANI_PRAVY);
+  ZAP (VENTIL_AKTIVACNI);
   do
     zjisti_stav_portu (stav_portu);
   while (stav_portu[adresa[KONCAK_OTEVRENI_PRAVY].port] &
 	 adresa[KONCAK_OTEVRENI_PRAVY].pin);
   vypni_pin (adresa[VENTIL_AKTIVACNI].port,
 	     adresa[VENTIL_AKTIVACNI].pin | adresa[KOMPRESOR].pin);
-  vypni_pin (adresa[VENTIL_OTEVIRANI_PRAVY].port,
-	     adresa[VENTIL_OTEVIRANI_PRAVY].pin);
+  VYP (VENTIL_OTEVIRANI_PRAVY);
   zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  fprintf (stderr, "otevreno\n");
   return 0;
 }
 
 int
 zavri_strechu ()
 {
-  zapni_pin (adresa[KOMPRESOR].port, adresa[KOMPRESOR].pin);
+  vypni_pin (adresa[VENTIL_OTEVIRANI_PRAVY].port,
+	     adresa[VENTIL_OTEVIRANI_PRAVY].
+	     pin | adresa[VENTIL_ZAVIRANI_LEVY].
+	     pin | adresa[VENTIL_OTEVIRANI_LEVY].pin);
+  ZAP (KOMPRESOR);
   sleep (1);
-  zapni_pin (adresa[VENTIL_ZAVIRANI_LEVY].port,
-	     adresa[VENTIL_ZAVIRANI_LEVY].pin);
-  zapni_pin (adresa[VENTIL_AKTIVACNI].port, adresa[VENTIL_AKTIVACNI].pin);
-  do
-    zjisti_stav_portu (stav_portu);
-  while (stav_portu[adresa[KONCAK_ZAVRENI_LEVY].port] &
-	 adresa[KONCAK_ZAVRENI_LEVY].pin);
-  vypni_pin (adresa[VENTIL_AKTIVACNI].port, adresa[VENTIL_AKTIVACNI].pin);
-  vypni_pin (adresa[VENTIL_ZAVIRANI_LEVY].port,
-	     adresa[VENTIL_ZAVIRANI_LEVY].pin);
-  sleep (1);
-  zapni_pin (adresa[VENTIL_ZAVIRANI_PRAVY].port,
-	     adresa[VENTIL_ZAVIRANI_PRAVY].pin);
-  zapni_pin (adresa[VENTIL_AKTIVACNI].port, adresa[VENTIL_AKTIVACNI].pin);
+  fprintf (stderr, "zaviram pravou strechu\n");
+  ZAP (VENTIL_ZAVIRANI_PRAVY);
+  ZAP (VENTIL_AKTIVACNI);
   do
     zjisti_stav_portu (stav_portu);
   while (stav_portu[adresa[KONCAK_ZAVRENI_PRAVY].port] &
 	 adresa[KONCAK_ZAVRENI_PRAVY].pin);
+  VYP (VENTIL_AKTIVACNI);
+  VYP (VENTIL_ZAVIRANI_PRAVY);
+  fprintf (stderr, "zaviram levou strechu\n");
+  ZAP (VENTIL_ZAVIRANI_LEVY);
+  ZAP (VENTIL_AKTIVACNI);
+  do
+    zjisti_stav_portu (stav_portu);
+  while (stav_portu[adresa[KONCAK_ZAVRENI_LEVY].port] &
+	 adresa[KONCAK_ZAVRENI_LEVY].pin);
   vypni_pin (adresa[VENTIL_AKTIVACNI].port,
 	     adresa[VENTIL_AKTIVACNI].pin | adresa[KOMPRESOR].pin);
-  vypni_pin (adresa[VENTIL_ZAVIRANI_PRAVY].port,
-	     adresa[VENTIL_ZAVIRANI_PRAVY].pin);
+  VYP (VENTIL_ZAVIRANI_LEVY);
   zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  fprintf (stderr, "zavreno\n");
   return 0;
 }
 
