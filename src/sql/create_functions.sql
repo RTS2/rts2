@@ -31,9 +31,9 @@ DROP FUNCTION night_num (timestamp);
 CREATE FUNCTION night_num (timestamp with time zone) RETURNS double precision AS 
 	'SELECT FLOOR((EXTRACT(EPOCH FROM $1) - 43200) / 86400)' LANGUAGE 'SQL';
 
-DROP FUNCTION isinwcs (float4, float4, wcs);
+DROP FUNCTION isinwcs (float8, float8, wcs);
 
-CREATE FUNCTION isinwcs (float4, float4, wcs)
+CREATE FUNCTION isinwcs (float8, float8, wcs)
   RETURNS bool AS '/usr/lib/postgresql/lib/pg_wcs.so', 'isinwcs' LANGUAGE 'C';
 
 DROP FUNCTION imgrange (wcs);

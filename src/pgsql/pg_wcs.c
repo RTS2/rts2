@@ -67,7 +67,7 @@ get_next_token (char *start, char **next_start)
 {
   while (*start)
     {
-      if (isalnum (*start))
+      if (isalnum (*start) || ispunct (*start))
 	{
 	  char *ret = start;
 	  while (isalnum (*++start) || ispunct (*start));
@@ -208,8 +208,8 @@ isinwcs (PG_FUNCTION_ARGS)
   if (PG_ARGISNULL (0) || PG_ARGISNULL (1) || PG_ARGISNULL (2))
     PG_RETURN_NULL ();
 
-  ra = PG_GETARG_FLOAT4 (0);
-  dec = PG_GETARG_FLOAT4 (1);
+  ra = PG_GETARG_FLOAT8 (0);
+  dec = PG_GETARG_FLOAT8 (1);
   arg = PG_GETARG_KWCS_P (2);
 
   wcs = kwcs2wcs (arg);
