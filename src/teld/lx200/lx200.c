@@ -33,14 +33,14 @@ double park_dec;		// parking declination
 pthread_mutex_t tel_mutex = PTHREAD_MUTEX_INITIALIZER;	// lock for port access
 pthread_mutex_t mov_mutex = PTHREAD_MUTEX_INITIALIZER;	// lock for moving
 
-/* init to given port
+/* Connect on given port
  * 
  * @param devptr Pointer to device name
  * 
  * @return 0 on succes, -1 & set errno otherwise
  */
 int
-init (const char *devptr)
+connect (const char *devptr)
 {
   struct termios tel_termios;
   openlog ("LX200", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);	// open syslog
@@ -573,35 +573,58 @@ tel_set_to (ra, dec)
   return tel_check_coords (ra, dec);
 }
 
-/*
-int init(char *port)
-{
-		"""Is called after sucessfull detection of telescope to set needed values"""
-		# we get 12:34:4# while we're in short mode
-		# and 12:34:45 while we're in long mode
-		a=self._writeread("#:Gr#",8)
-		if a[7]=="#":	# could be used to distinquish between long and
-									# short mode
-			self._writeread("#:U#",0)
-		# now set low precision, e.g. we won't wait for user
-		# to find a star
-		# a="HIGH"
-		# while a=="HIGH":
-		# 	a=self._writeread("#:P#",4)
-
-int tel_is_ready():
-		"Will query if telescope present. If it's, call init routines"
-		try:
-			a=self._writeread("#:Gc#",5)
-			if a not in ('(12)#','(24)#'):
-				return 0 
-			self.init()	
-		except TelescopeError:
-			return 0
-		return 1
+/* Initialize telescope
+ * send some special commands to make initialization
+ * @return -1 and set errno on error, otherwise 0
  */
+int
+tel_init ()
+{
+  char rbuf[10];
+  // we get 12:34:4# while we're in short mode
+  // and 12:34:45 while we're in long mode
+  if (tel_write_read ("#:Gr#", 5, rbuf, 8) == -1)
+    return -1;
+  if (rbuf[7] == '#')
+    {				// that could be used to distinguish between long
+      // short mode
+      // we are in short mode, set the long on
+      if (tel_write_read ("#:U#", 5, rbuf, 0) == -1)
+	return -1;
+      // now set low precision, e.g. we won't wait for user
+      // to find a star
+      strcpy (rbuf, "HIGH");
+      while (strncmp ("HIGH", rbuf, 4))
+	{
+	  if (tel_write_read ("#:P#", 4, rbuf, 4) == -1)
+	    return -1;
+	}
+    }
+  return 0;
+}
+
+/* Prove, if telescope is connected to Computer
+ *
+ * @return -1 and errno on error, 0 if it's connected 
+ */
+int
+tel_is_ready (void)
+{
+  char rbuf[6];
+  if (tel_write_read ("#:Gc#", 5, rbuf, 5) == -1)
+    return -1;
+  rbuf[5] = 0;
+  if (strncmp (rbuf, "(12)#", 5) && strncmp (rbuf, "(24)#", 5))
+    {
+      errno = EIO;
+      return -1;
+    }
+  return tel_init ();
+}
+
+/*
 int
 park (void)
 {
   return tel_move_to (0, 40);
-}
+}*/
