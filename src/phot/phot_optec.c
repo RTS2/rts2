@@ -104,7 +104,7 @@ start_integrate (void *arg)
 	    case '0':
 	      result = 0;
 	      read (fd, &result, 2);
-	      devser_dprintf ("filter %i", result);
+	      devser_dprintf ("filter %i", result / 33);
 	      break;
 	    case '-':
 	      result = 0;
