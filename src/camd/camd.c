@@ -655,7 +655,7 @@ main (int argc, char **argv)
   if (devdem_init (stats, 2, camd_handle_status))
     {
       syslog (LOG_ERR, "devdem_init: %m");
-      exit (EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
 
   syslog (LOG_DEBUG, "registering on %s:%i as %s", serverd_host, serverd_port,
@@ -665,10 +665,12 @@ main (int argc, char **argv)
       (serverd_host, serverd_port, device_name, DEVICE_TYPE_CCD, hostname,
        device_port) < 0)
     {
+      devdem_done ();
       syslog (LOG_ERR, "devdem_register: %m");
       perror ("devdem_register");
-      exit (EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
 
-  return devdem_run (device_port, camd_handle_command);
+  devdem_run (device_port, camd_handle_command);
+  devdem_done ();
 }
