@@ -56,6 +56,8 @@ Display *display;
 Visual *visual;
 int depth;
 
+int light_image = 1;
+
 XColor rgb[256];
 
 Colormap colormap;
@@ -490,7 +492,7 @@ public:
 	printf ("exposure_time: %f\n", exposure_time);
 	if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				    CAM_NOTREADING, 0) ||
-	    devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
+	    devcli_command (camera, NULL, "expose 0 %i %f", light_image, exposure_time))
 	  {
 	    perror ("expose:");
 	  }
@@ -605,9 +607,10 @@ main (int argc, char **argv)
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{"save", 0, 0, 's'},
+	{"dark", 0, 0, 'D'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:ce:p:hs", long_option, NULL);
+      c = getopt_long (argc, argv, "d:ce:p:hsD", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -635,10 +638,12 @@ main (int argc, char **argv)
 	  break;
 	case 'h':
 	  printf ("Options:\n");
-	  printf ("\tport|p <port_num>   port of the server\n");
-	  printf ("\tcenter|c            start center exposure\n");
-	  printf ("\texposure|e          exposure time in seconds\n");
-	  printf ("\tsave|s              autosave images\n");
+	  printf ("\t--device|-d <device_name> device(s) name(s) (xfocusc accept multiple entries)\n");
+	  printf ("\t--port|-p <port_num>   port of the server\n");
+	  printf ("\t--center|-c            start center exposure\n");
+	  printf ("\t--exposure|-e          exposure time in seconds\n");
+	  printf ("\t--save|-s              autosave images\n");
+	  printf ("\t--dark|-D              take dark images (light are default)\n");
 	  printf ("Keys:\n"
 		  "\t1,2,3 .. binning 1x1, 2x2, 3x3\n"
 		  "\tq,a   .. increase/decrease exposure 0.01 sec\n"
@@ -651,6 +656,9 @@ main (int argc, char **argv)
 	  exit (EXIT_SUCCESS);
 	case 's':
 	  save_fits = 1;
+	  break;
+	case 'D':
+	  light_image = 0;
 	  break;
 	case '?':
 	  break;
