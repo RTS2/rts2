@@ -15,8 +15,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <math.h>
-#include "fitsfile.h"
-#include "wcs.h"
+#include <fitsfile.h>
+#include <wcs.h>
 
 static void usage ();
 static void ListWCS ();
@@ -112,7 +112,7 @@ main (ac, av)
     fprintf (stderr, "%s\n", RevMsg);
 
   fn = *av;
-  dn = *++av;
+  dn = *av;
 
   ListWCS (fn, dn);
 
@@ -137,9 +137,8 @@ usage ()
 }
 
 static void
-ListWCS (filename, dbfilename)
+ListWCS (filename)
      char *filename;		/* FITS or IRAF image file name */
-     char *dbfilename;
 {
   struct WorldCoor *wcs, *GetWCSFITS ();
   extern char *GetFITShead ();
@@ -149,6 +148,7 @@ ListWCS (filename, dbfilename)
 
   int ctime;
   float exposure;
+  int obs_id;
 
   wcs = GetWCSFITS (filename, verbose);
   if (nowcs (wcs))
@@ -170,20 +170,28 @@ ListWCS (filename, dbfilename)
       return;
     }
 
-  printf ("INSERT INTO images VALUES ('%s', ", dbfilename);
-  hgeti4 (header, "CTIME", &ctime);
+  printf
+    ("INSERT INTO images (img_date, img_exposure, img_temperature, img_filter, astrometry, obs_id, camera_name, mount_name, med_id, epoch_id) VALUES (nextval ('obs_id'), ");
+  hgeti4 (header, "SEC", &ctime);
   printf ("%i, ", ctime);
   hgetr4 (header, "EXPOSURE", &exposure);
-  printf ("%f, ", exposure);
-  hgetr4 (header, "TEMP", &exposure);
-  printf ("%f, ", exposure);
+  printf ("%f, ", exposure * 100);
+  hgetr4 (header, "CAMD_CCD", &exposure);
+  printf ("%f, ", exposure * 10);
   hgets (header, "FILTER", 10, &filter);
   printf ("'%s', ", filter);
   printf
-    ("'NAXIS1 %.0f NAXIS2 %.0f CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %i EPOCH %f');\n",
+    ("'NAXIS1 %.0f NAXIS2 %.0f CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %i EPOCH %f', ",
      wcs->nxpix, wcs->nypix, wcs->ctype[0], wcs->ctype[1], wcs->crpix[0],
      wcs->crpix[1], wcs->crval[0], wcs->crval[1], wcs->cdelt[0],
      wcs->cdelt[1], wcs->rot, (int) wcs->equinox, wcs->epoch);
+
+  hgeti4 (header, "OBSERVAT", &obs_id);
+  printf (" %i ,", obs_id);
+  hgets (header, "CAM_NAME", 10, &filter);
+  printf ("'%s', ", filter);
+  hgets (header, "TEL_NAME", 10, &filter);
+  printf ("'%s', 0, '002');\n ", filter);
 
   free (header);
 
