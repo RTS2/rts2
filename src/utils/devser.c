@@ -5,17 +5,10 @@
  * Implements TCP/IP server, calling hander for every command it
  * receives.
  * <p/>
- * Command string is defined as follow:
- * <ul>
- * 	<li>commands ::= com | com + ';' + commands</li>
- * 	<li>com ::= name | name + ' '\+ + params</li>
- * 	<li>params ::= par | par + ' '\+ + params</li>
- * 	<li>par ::= hms | decimal | integer</li>
- * </ul>
- * In dev server are implemented all splits - for ';' and ' '.
+ * In dev server are implemented all splitings - for ';' and ' '.
  * Code using server should not implement any splits.
  * <p/>
- * Also provides support functions - status access, thread management.
+ * Provides too some support functions - status access, thread management.
  *
  * @author petr
  */
@@ -26,10 +19,6 @@
 #include "../status.h"
 
 #include "devconn.h"
-
-#ifdef DEVDEM_WITH_CLIENT
-#include "devcli.h"
-#endif /* DEVDEM_WITH_CLIENT */
 
 #include "param.h"
 
@@ -72,42 +61,13 @@ union semun
 };
 #endif
 
-#ifdef DEVDEM_WITH_CLIENT
 
-//! client number
-int client_id = -1;
-
-//! client is authorized
-int client_authorized = 0;
-
-//! information about running devices; held in shared memory
-struct client_info
-{
-  int priority_client;		// client with maximal priority
-  int designated_priority_client;	// next priority client
-  struct
-  {
-    int authorized;
-    pid_t pid;
-  }
-  clients[MAX_CLIENT];
-};
-
-//! shm to hold client_info
-int client_shm;
-
-//! status of priorities - set || unset
-int client_status;
-
-struct client_info *clients_info;	// mapped to shared memory
-
-struct devcli_channel *server_channel;
-
-#define SERVER_CLIENT		MAX_CLIENT	// id of process connected to server - for messages
-
-#endif /* DEVDEM_WITH_CLIENT */
-
-//! shared memory for clients
+/*! 
+ * server number.
+ *
+ * Must be unique. Used mainly for IPC message mtype.
+ */
+int server_id = -1;
 
 //! structure holding information about socket buffer processing.
 struct
@@ -118,8 +78,8 @@ struct
 command_buffer;
 
 //! handler functions
-devser_handle_command_t cmd_handler;
-devser_handle_message_t msg_handler;
+devser_handle_command_t cmd_handler = NULL;
+devser_handle_msg_t msg_handler = NULL;
 
 pid_t devser_parent_pid;	//! pid of parent process - process which forks response children
 pid_t devser_child_pid;		//! pid of child process - actual pid of main thread
@@ -169,15 +129,6 @@ struct thread_wrapper_temp
   devser_thread_cleaner_t clean_cancel;
 };
 
-//! number of status registers
-int status_num;
-
-//! key to shared memory segment, holding status flags.
-int status_shm;
-
-//! key to semaphore for access control to shared memory segment
-int status_sem;
-
 //! data shared memory
 int data_shm;
 
@@ -190,76 +141,10 @@ int msg_id;
 //! IPC message receive thread
 pthread_t msg_thread;
 
-//! holds status informations
-typedef struct
-{
-  char name[STATUSNAME + 1];
-  int status;
-}
-status_t;
-
-//! array holding status structures; stored in shared mem, hence just pointer
-status_t *statutes;
-
 //! parameter processing status
 struct param_status *command_params;
 
-//! block priority calls
-pthread_mutex_t priority_block = PTHREAD_MUTEX_INITIALIZER;
-
 void *msg_receive_thread (void *arg);
-
-/*! 
- * Locks given status lock.
- *
- * @param subdevice 	subdevice index
- *
- * @return 0 on success, -1 and set errno on failure; log failure to syslog
- */
-int
-status_lock (int subdevice)
-{
-  struct sembuf sb;
-
-  if (subdevice >= status_num || subdevice < 0)
-    {
-      syslog (LOG_ERR, "invalid device number: %i", subdevice);
-      errno = EINVAL;
-      return -1;
-    }
-
-  sb.sem_num = subdevice;
-  sb.sem_op = -1;
-  sb.sem_flg = SEM_UNDO;
-  if (semop (status_sem, &sb, 1) < 0)
-    {
-      syslog (LOG_ERR, "semaphore -1 for subdevice %i: %m", subdevice);
-      return -1;
-    }
-  return 0;
-}
-
-int
-status_unlock (int subdevice)
-{
-  struct sembuf sb;
-
-  if (subdevice >= status_num || subdevice < 0)
-    {
-      errno = EINVAL;
-      return -1;
-    }
-
-  sb.sem_num = subdevice;
-  sb.sem_op = 1;
-  sb.sem_flg = SEM_UNDO;
-  if (semop (status_sem, &sb, 1) < 0)
-    {
-      syslog (LOG_ERR, "semphore +1 for subdevice %i: %m", subdevice);
-      return -1;
-    }
-  return 0;
-}
 
 /*! 
  * Printf to descriptor, log to syslogd, adds \r\n to message end.
@@ -309,43 +194,25 @@ devser_dprintf (const char *format, ...)
   syslog (LOG_DEBUG, "%i bytes ('%s') wrote to desc %i", count_with_end,
 	  msg_with_end, control_fd);
   free (msg_with_end);
+
   return 0;
 }
 
 int
-status_message (int subdevice, char *description)
+devser_message (const char *format, ...)
 {
-  status_t *st;
-  st = &(statutes[subdevice]);
-  return devser_dprintf ("M %s %i %s", st->name, st->status, description);
-}
+  int ret;
+  va_list ap;
+  char *msg;
 
-/*! 
- * Send status message through channel, log it.
- *
- * @param subdevice 	subdevice index
- * @param description 	message description, could be null
- *
- * @return -1 and set errno on error, 0 otherwise.
- */
-int
-devser_status_message (int subdevice, char *description)
-{
-  if (subdevice >= status_num || subdevice < 0)
-    {
-      errno = EINVAL;
-      syslog (LOG_ERR, "invalid subdevice in devser_status_message: %i",
-	      status_num);
-      return -1;
-    }
-  if (status_lock (subdevice) < 0)
+  va_start (ap, format);
+  if (vasprintf (&msg, format, ap) < 0)
     return -1;
-  if (status_message (subdevice, description) < 0)
-    {
-      status_unlock (subdevice);
-      return -1;
-    }
-  return status_unlock (subdevice);
+  va_end (&ap);
+
+  ret = devser_dprintf ("M %s", msg);
+  free (msg);
+  return ret;
 }
 
 /*! 
@@ -360,20 +227,21 @@ devser_status_message (int subdevice, char *description)
  * @return -1 and set errno on error, 0 otherwise
  */
 int
-devser_write_command_end (int retc, char *msg_format, ...)
+devser_write_command_end (int retc, const char *msg_format, ...)
 {
   va_list ap;
-  int ret, tmper;
+  int ret;
   char *msg;
 
   va_start (ap, msg_format);
-  vasprintf (&msg, msg_format, ap);
+
+  if (vasprintf (&msg, msg_format, ap) < 0)
+    return -1;
+
   va_end (ap);
 
   ret = devser_dprintf ("%+04i %s", retc, msg);
-  tmper = errno;
   free (msg);
-  errno = tmper;
   return ret;
 }
 
@@ -530,6 +398,18 @@ devser_thread_cancel_all (void)
   return 0;
 }
 
+int
+devser_thread_wait (void)
+{
+  // wait for all threads to finish
+  pthread_mutex_lock (&threads_mutex);
+  while (threads_count != 0)
+    pthread_cond_wait (&threads_cond, &threads_mutex);
+  pthread_mutex_unlock (&threads_mutex);
+
+  return 0;
+}
+
 #ifdef DEBUG
 /*!
  * Print information about running threads.
@@ -554,162 +434,9 @@ devser_status ()
     }
   devser_dprintf ("threads_count %i", threads_count);
 
-#ifdef DEVDEM_WITH_CLIENT
-  devser_dprintf ("client_id %i", client_id);
-  devser_dprintf ("priority_client %i", clients_info->priority_client);
-  for (i = 0; i < MAX_CLIENT; i++)
-    if (clients_info->clients[i].pid)
-      devser_dprintf ("client_id_pid %i %i", i, clients_info->clients[i].pid);
-#endif /* DEVDEM_WITH_CLIENT */
-
-  return devser_dprintf ("info finished");
+  return devser_dprintf ("server_id %i", server_id);
 }
 #endif /* DEBUG */
-
-#ifdef DEVDEM_WITH_CLIENT
-
-// priority block helper functions
-
-/*!
- * 
- * @return 1 if we have priority -> can execute power functions, 0
- * 		otherwise
- */
-void
-priority_block_end ()
-{
-  if ((errno = pthread_mutex_unlock (&priority_block)))
-    syslog (LOG_ERR,
-	    "error in devser_priority_block_end unlocking priority_block mutex: %m");
-}
-
-int
-priority_block_start ()
-{
-  int has_priority;
-
-  if ((errno = pthread_mutex_lock (&priority_block)))
-    {
-      syslog (LOG_ERR,
-	      "while locking priority_block in devser_priority_block_start: %m");
-      return -1;
-    }
-  has_priority = client_id >= 0 && clients_info->priority_client == client_id;
-
-  if (!has_priority)
-    {
-      syslog (LOG_DEBUG, "haven't priority");
-      priority_block_end ();
-      return -1;
-    }
-
-  syslog (LOG_DEBUG, "entering priority block");
-  return 0;
-}
-
-/*!
- * Start priority block.
- *
- * @return 0 on success, -1 on failure (not priority or other system
- * 	failure.) On failure write back command end.
- */
-
-int
-devdem_priority_block_start ()
-{
-  if (priority_block_start ())
-    {
-      devser_write_command_end (DEVDEM_E_PRIORITY,
-				"you haven't priority to execute this command");
-      return -1;
-    }
-  return 0;
-}
-
-int
-devdem_priority_block_end ()
-{
-  priority_block_end ();
-  syslog (LOG_DEBUG, "priority block ended");
-  return 0;
-}
-
-int
-client_authorize ()
-{
-  struct sembuf sb;
-  int new_client_id;
-  int key;
-  if (devser_param_test_length (2))
-    return -1;
-  if (devser_param_next_integer (&new_client_id)
-      || devser_param_next_integer (&key))
-    return -1;
-  if (new_client_id < 0 || new_client_id >= MAX_CLIENT)
-    {
-      devser_write_command_end (DEVDEM_E_SYSTEM, "invalid client number: %i",
-				new_client_id);
-      return -1;
-    }
-  sb.sem_num = status_num + new_client_id;
-  sb.sem_op = -2;
-  sb.sem_flg = SEM_UNDO | IPC_NOWAIT;
-
-  if (semop (status_sem, &sb, 1))
-    {
-      if (errno == EAGAIN)
-	{
-	  devser_write_command_end (DEVDEM_E_SYSTEM,
-				    "cannot lock authorize semaphore - paralel authorization");
-	  return -1;
-	}
-      else
-	{
-	  syslog (LOG_ERR,
-		  "client_authorize semop -2 (authorization lock): %m");
-	  devser_write_command_end (DEVDEM_E_SYSTEM, "invalid semctl call");
-	  return -1;
-	}
-    }
-  // yes, we could set it now, since it's quared by authorization
-  // semaphore 
-  clients_info->clients[new_client_id].authorized = 0;
-
-  // get authorization key
-  devser_msg_snd_format (SERVER_CLIENT + 1, "authorize %i %i", new_client_id,
-			 key);
-
-  // wait for server client to unblock us..
-  sb.sem_op = -1;
-  sb.sem_flg = 0;
-  if (semop (status_sem, &sb, 1))
-    {
-      syslog (LOG_ERR, "client_authorize semop # %i: %m", sb.sem_num);
-      devser_write_command_end (DEVDEM_E_SYSTEM, "error by semop call");
-      return -1;
-    }
-
-  // compare authorization key
-  if (!clients_info->clients[new_client_id].authorized)
-    {
-      devser_write_command_end (DEVDEM_E_SYSTEM, "invalid authorization key");
-      exit (0);
-    }
-
-  // if we got there, we are authorized and so we can proceed
-  client_authorized = 1;
-  client_id = new_client_id;
-  // create message thread
-  if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
-    {
-      syslog (LOG_ERR, "create message thread: %m");
-      return -1;
-    }
-  // TODO remove pid - not needed ???
-  clients_info->clients[client_id].pid = devser_child_pid;
-  return 0;
-}
-#endif /* DEVDEM_WITH_CLIENT */
 
 /*! 
  * Handle devser commands.
@@ -764,15 +491,6 @@ handle_commands (char *buffer)
       else if (strcmp (command, "devser_status") == 0)
 	ret = devser_status ();
 #endif /* DEBUG */
-#ifdef DEVDEM_WITH_CLIENT
-      else if (strcmp (command, "auth") == 0)
-	ret = client_authorize ();
-      else if (!client_authorized)
-	{
-	  devser_write_command_end (DEVDEM_E_SYSTEM, "you aren't authorized");
-	  ret = -1;
-	}
-#endif /* DEVDEM_WITH_CLIENT */
       else
 	ret = cmd_handler (command);
 
@@ -1049,37 +767,6 @@ make_socket (uint16_t port)
   return sock;
 }
 
-
-/*! 
- * Routine to perform bit "and" operation on status bits.
- *
- * @param subdevice 	subdevice to change.
- * @param mask 		<code>statutes[subdevice].status &= !mask;</code>
- * @param operand  	<code>statutes[subdevice].status |= operand;</code>
- * @param message 	optional message to transmit
- *
- * @return -1 and set errno on error, 0 otherwise
- */
-int
-devser_status_mask (int subdevice, int mask, int operand, char *message)
-{
-  if (status_lock (subdevice) < 0)
-    return -1;
-  // critical section begins
-
-  statutes[subdevice].status &= !mask;
-  statutes[subdevice].status |= operand;
-
-  if (status_message (subdevice, message) < 0)
-    {
-      status_unlock (subdevice);
-      return -1;
-    }
-
-  // critical section ends
-  return status_unlock (subdevice);
-}
-
 /*!
  * Attach shared memory data segment.
  *
@@ -1150,14 +837,6 @@ devser_shm_data_dt (void *mem)
     }
 }
 
-devser_handle_message_t
-devser_msg_set_handler (devser_handle_message_t handler)
-{
-  devser_handle_message_t old_handler = msg_handler;
-  msg_handler = handler;
-  return old_handler;
-}
-
 /*!
  * Send given IPC message.
  *
@@ -1206,56 +885,6 @@ devser_msg_snd_format (int type, char *format, ...)
   return devser_msg_snd (&msg);
 }
 
-#ifdef DEVDEM_WITH_CLIENT
-
-void
-client_priority_lost ()
-{
-  syslog (LOG_INFO, "calling thread cancel");
-
-  priority_block_start ();
-  devser_thread_cancel_all ();
-  devdem_priority_block_end ();
-
-  // wait for all threads to finish
-  pthread_mutex_lock (&threads_mutex);
-  while (threads_count != 0)
-    pthread_cond_wait (&threads_cond, &threads_mutex);
-  pthread_mutex_unlock (&threads_mutex);
-
-  clients_info->priority_client = -1;
-
-  status_unlock (client_status);
-
-  // inform client
-  devser_status_message (0, "priority lost");
-}
-
-void
-client_priority_receive ()
-{
-  status_lock (client_status);
-  if (clients_info->designated_priority_client != client_id)
-    {
-      // designated_priority_client is other than our client_id, when
-      // some observation receive priority before us, sucessfully lock 
-      // & observe. In such case we don't have any reason to persist
-      // on priority, since we already have to lose it before
-      // we authorize.
-      //
-      // client_id is initialized, since we started message receive
-      // thread after sucessfull auth.
-      syslog (LOG_INFO, "designated_priority_client != client_id => exit");
-      client_priority_lost ();
-      return;
-    }
-  clients_info->priority_client = client_id;
-
-  devser_status_message (0, "priority received");
-}
-
-#endif /* DEVDEM_WITH_CLIENT */
-
 /*!
  * Thread to receive IPC messages.
  *
@@ -1271,19 +900,9 @@ msg_receive_thread (void *arg)
     {
       struct devser_msg msg_buf;
       int msg_size;
-#ifdef DEVDEM_WITH_CLIENT
-      msg_size = msgrcv (msg_id, &msg_buf, MSG_SIZE, client_id + 1, 0);
+      msg_size = msgrcv (msg_id, &msg_buf, MSG_SIZE, server_id, 0);
       if (msg_size < 0)
-	syslog (LOG_ERR, "devser msg_receive: %m %i %i", msg_size,
-		client_id + 1);
-#else /* DEVDEM_WITH_CLIENT */
-      msg_size = msgrcv (msg_id, &msg_buf, MSG_SIZE, devser_child_pid, 0);
-      if (msg_size < 0)
-	syslog (LOG_ERR, "devser msg_receive: %m %i %i", msg_size,
-		devser_child_pid);
-#endif /* DEVDEM_WITH_CLIENT */
-      if (msg_size < 0)
-	syslog (LOG_ERR, "devser msg_receive: %m %i ", msg_size);
+	syslog (LOG_ERR, "devser msg_receive: %m %i %i", msg_size, server_id);
       else if (msg_size != MSG_SIZE)
 	syslog (LOG_ERR, "invalid message size: %i", msg_size);
       else
@@ -1291,42 +910,22 @@ msg_receive_thread (void *arg)
 	  // testing for null - be cautios, since 
 	  // another thread could set null message
 	  // handler
-	  devser_handle_message_t tmp_handler = msg_handler;
+	  devser_handle_msg_t tmp_handler = msg_handler;
 
 	  msg_buf.mtext[MSG_SIZE - 1] = 0;	// end message (otherwise buffer owerflow could result) 
-
-	  syslog (LOG_DEBUG, "received message %s", msg_buf.mtext);
-
-#ifdef DEVDEM_WITH_CLIENT
-	  // some message preprocessing (catchnig important system
-	  // messages)
-	  if (strcmp (msg_buf.mtext, "priority_receive") == 0)
-	    {
-	      client_priority_receive ();
-	      continue;
-	    }
-	  if (strcmp (msg_buf.mtext, "priority_lost") == 0)
-	    {
-	      client_priority_lost ();
-	      continue;
-	    }
-	  if (strncmp (msg_buf.mtext, "authorize", 9) == 0)
-	    {
-	      if (devcli_command (server_channel, msg_buf.mtext))
-		syslog (LOG_ERR, "devcli_command %s: %m", msg_buf.mtext);
-	      continue;
-	    }
-#endif /* DEVDEM_WITH_CLIENT */
 
 	  if (tmp_handler)
 	    {
 	      syslog (LOG_INFO, "msg received: %s, calling handler",
 		      msg_buf.mtext);
-	      tmp_handler (msg_buf.mtext);
+	      if (tmp_handler (msg_buf.mtext))
+		syslog (LOG_ERR, "uncatched msg: %s", msg_buf.mtext);
 	    }
 	  else
 	    {
-	      syslog (LOG_WARNING, "ipc message received, null msg handler");
+	      syslog (LOG_WARNING,
+		      "ipc message '%s' received, null msg handler",
+		      msg_buf.mtext);
 	    }
 	}
     }
@@ -1458,18 +1057,6 @@ devser_on_exit (int err, void *args)
 {
   if (getpid () == devser_parent_pid)
     {
-#ifdef DEVDEM_WITH_CLIENT
-      if (shmdt (statutes))
-	syslog (LOG_ERR, "shmdt: %m");
-      if ((shmdt (clients_info)))
-	syslog (LOG_ERR, "shmdt clients_info: %m");
-      if (shmctl (client_shm, IPC_RMID, NULL))
-	syslog (LOG_ERR, "IPC_RMID client_shm shmctl: %m");
-#endif /* DEVDEM_WITH_CLIENT */
-      if (shmctl (status_shm, IPC_RMID, NULL))
-	syslog (LOG_ERR, "IPC_RMID status_shm shmctl: %m");
-      if (semctl (status_sem, 1, IPC_RMID))
-	syslog (LOG_ERR, "IPC_RMID status_sem semctl: %m");
       if (shmctl (data_shm, IPC_RMID, NULL))
 	syslog (LOG_ERR, "IPC_RMID data_shm shmctl: %m");
       if (semctl (data_sem, 1, IPC_RMID))
@@ -1477,14 +1064,6 @@ devser_on_exit (int err, void *args)
       if (msgctl (msg_id, IPC_RMID, NULL))
 	syslog (LOG_ERR, "IPC_RMID msg_id: %m");
     }
-#ifdef DEVDEM_WITH_CLIENT
-  else if (getpid () == devser_child_pid)
-    {
-      if (clients_info->priority_client == client_id)	// we have priority and we exit => we must give up priority
-	client_priority_lost ();
-      clients_info->clients[client_id].pid = 0;
-    }
-#endif /* DEVDEM_WITH_CLIENT */
   syslog (LOG_INFO, "exiting");
 }
 
@@ -1498,311 +1077,57 @@ sig_exit (int sig)
   exit (0);
 }
 
-#ifdef DEVDEM_WITH_CLIENT
-
 /*!
- * Handle command responses, comming from central server
+ * Set server id, and create thread to receive IPC messages.
  *
- * @param params	parsed line 
+ * @param server_id_in		server_id
+ * @param msg_handler_in	msg handler function
  *
- * @return 0 on success, -1 and set errno on error
+ * @return 0 on sucess, -1 and set errno on failure
  */
 int
-server_command_handler (struct param_status *params)
+devser_set_server_id (int server_id_in, devser_handle_msg_t msg_handler_in)
 {
-  if (strcmp (params->param_argv, "authorization_ok") == 0)
+  if (server_id == -1)
     {
-      struct sembuf sb;
-      int auth_id;
-
-      if (param_next_integer (params, &auth_id) || auth_id < 0
-	  || auth_id >= MAX_CLIENT)
+      if (server_id_in <= 0)
 	{
-	  syslog (LOG_ERR,
-		  "server_command_handler authorization_ok invalid auth_id: %i",
-		  auth_id);
+	  syslog (LOG_ERR, "devser_set_server_id invalid id: %i",
+		  server_id_in);
 	  return -1;
 	}
-
-      clients_info->clients[auth_id].authorized = 1;
-
-      // unlock device semaphore..
-      sb.sem_num = status_num + auth_id;
-      sb.sem_op = +1;
-      sb.sem_flg = SEM_UNDO;
-      if (semop (status_sem, &sb, 1))
+      server_id = server_id_in;
+      msg_handler = msg_handler_in;
+      if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
 	{
-	  syslog (LOG_ERR, "server_command_handler semop: %m");
+	  syslog (LOG_ERR, "create message thread: %m");
 	  return -1;
 	}
-      syslog (LOG_DEBUG, "client authorized: %i", auth_id);
-    }
-  else if (strcmp (params->param_argv, "authorization_failed") == 0)
-    {
-      struct sembuf sb;
-      int auth_id;
-
-      if (param_next_integer (params, &auth_id) || auth_id < 0
-	  || auth_id >= MAX_CLIENT)
-	{
-	  syslog (LOG_ERR,
-		  "server_command_handler authorization_failed invalid auth_id: %i",
-		  auth_id);
-	  return -1;
-	}
-
-      clients_info->clients[auth_id].authorized = 0;
-
-      // unlock device semaphore..
-      sb.sem_num = status_num + auth_id;
-      sb.sem_op = +1;
-      sb.sem_flg = SEM_UNDO;
-      if (semop (status_sem, &sb, 1))
-	{
-	  syslog (LOG_ERR, "server_command_handler semop: %m");
-	  return -1;
-	}
-
-      syslog (LOG_DEBUG, "client non authorized: %i", auth_id);
     }
   else
     {
-      printf ("returned: %s\n", params->param_argv);
-      fflush (stdout);
-
-      return 0;
+      syslog (LOG_ERR, "server_id already set!");
+      exit (EXIT_FAILURE);
     }
+  syslog (LOG_DEBUG, "server_id set to %i", server_id);
   return 0;
 }
 
 /*!
- * Handle message with changing priority, comming from central server.
+ * Initalizes server, prepare it to run.
  *
- * Have to send priority_lost IPC message to currently active devser
- * (if any), wait till all threads are killed, change actual priority 
- * and send priority_receive message to new devser process.
- *
- * @param params		arguments with priority setting (as
- * 				parsed by param_init)
- *
- * @return 0 on success, -1 and set errno otherwise
- */
-int
-server_message_priority (struct param_status *params)
-{
-  int new_priority_client;
-  // get new priority client from message
-  if (param_next_integer (params, &new_priority_client))
-    {
-      syslog (LOG_ERR,
-	      "while processing priority request - invalid number: %i",
-	      new_priority_client);
-      return -1;
-    }
-  else
-    {
-      struct devser_msg msg;
-      if (new_priority_client < 0 || new_priority_client >= MAX_CLIENT)
-	{
-	  syslog (LOG_ERR, "invalid new priority client %i",
-		  new_priority_client);
-	  errno = EINVAL;
-	  return -1;
-	}
-      // For mechanism with designated priority_server
-      // see priority receive.
-      // Note that at that point, if some newly connected client is
-      // waiting on lock after receiving priority_receive IPC message
-      // on startup, designated_priority_client already have other
-      // value, since other observation with other client_id is
-      // running
-      clients_info->designated_priority_client = new_priority_client;
-      // change priority only if there is such change
-      if (clients_info->priority_client != new_priority_client)
-	{
-	  // no current priority client => priority_client == -1
-	  // we would like to stop some client only if some is
-	  if (clients_info->priority_client != -1)
-	    {
-	      // send stop signal to request thread stopping
-	      // on given device
-	      msg.mtype = clients_info->priority_client + 1;
-	      strcpy (msg.mtext, "priority_lost");
-	      if (devser_msg_snd (&msg))
-		return -1;
-	    }
-	  msg.mtype = new_priority_client + 1;
-	  strcpy (msg.mtext, "priority_receive");
-	  if (devser_msg_snd (&msg))
-	    return -1;
-	}
-      else
-	{
-	  syslog (LOG_INFO,
-		  "same old and new priority clients, don't change it : %i",
-		  new_priority_client);
-	}
-      return 0;
-    }
-}
-
-int
-server_message_handler (struct param_status *params)
-{
-  char *command = params->param_argv;
-  if (strcmp (command, "priority") == 0)
-    return server_message_priority (params);
-
-  printf ("command: %s\n", command);
-  fflush (stdout);
-  return 0;
-}
-
-/*!
- * Make connection to central server.
- *
- * Fork, connect to central server, register to central server and
- * provide hooks for central server.
- *
- * Exit after connection is sucessfully initialized, or connection cannot be made.
- *
- * @param server_channel_in	central server channel
- * @param server_address	central server address
- * @param server_port		central server port
- *
- * @return 0 on success, -1 and set errno on error
- */
-int
-devdem_register (struct devcli_channel *server_channel_in, char *device_name,
-		 char *server_address, int server_port)
-{
-  char *cmd;
-  server_channel = server_channel_in;
-  server_channel->command_handler = server_command_handler;
-  server_channel->message_handler = server_message_handler;
-
-  server_channel->data_handler = NULL;
-
-  /* connect to the server */
-  if (devcli_connect (server_channel, server_address, server_port) < 0)
-    return -1;
-
-  asprintf (&cmd, "register %s", device_name);
-
-  if (devcli_command (server_channel, cmd) < 0)
-    {
-      free (cmd);
-      return -1;
-    }
-  free (cmd);
-
-  return 0;
-}
-
-#endif /* DEVDEM_WITH_CLIENT */
-
-/*! 
- * Run device daemon.
- *
- * This function will run the device deamon on given port, and will
- * call handler for every command it received.
+ * Create all IPC stuff, init shared memory segments, set
+ * semaphores...
  * 
- * @param port 		port to run device deamon
- * @param in_handler 	address of command handler code
- * @param status_names 	names of status, which are part of process status space
- * @param status_num_in	number of status_names
  * @param shm_data_size	size for shared memory for data; =0 if shared data
  * 			memory is not required
  * 
- * @return 0 on success, -1 and set errno on error
+ * @return 0 on success, -1 and set errno on error.
  */
 int
-devser_run (int port, devser_handle_command_t in_handler,
-	    char **status_names, int status_num_in, size_t shm_data_size)
+devser_init (size_t shm_data_size)
 {
-  int sock, i;
-  struct sockaddr_in clientname;
-  size_t size;
-  status_t *st;
   union semun sem_un;
-  devser_parent_pid = getpid ();
-
-  if (!in_handler)
-    {
-      errno = EINVAL;
-      return -1;
-    }
-  cmd_handler = in_handler;
-  msg_handler = NULL;
-
-  // creates semaphore for control to status_shm
-#ifdef DEVDEM_WITH_CLIENT
-  // for client we have some two extras - priority (one semaphore -
-  // lock) and message receive lock (MAX_CLIENT semaphores)
-  status_num = status_num_in + 1;
-  if ((status_sem = semget (IPC_PRIVATE, status_num + MAX_CLIENT, 0644)) < 0)
-    // continue after #endif
-#else /* DEVDEM_WITH_CLIENT */
-  status_num = status_num_in;
-  if ((status_sem = semget (IPC_PRIVATE, status_num, 0644)) < 0)
-#endif /* DEVDEM_WITH_CLIENT */
-    {
-      syslog (LOG_ERR, "status semget: %m");
-      return -1;
-    }
-
-  // initializes shared memory
-  if ((status_shm =
-       shmget (IPC_PRIVATE, sizeof (status_t) * status_num, 0644)) < 0)
-    {
-      syslog (LOG_ERR, "shmget: %m");
-      return -1;
-    }
-
-  // writes names and null to shared memory
-  if ((int) (statutes = (status_t *) shmat (status_shm, NULL, 0)) < 0)
-    {
-      syslog (LOG_ERR, "shmat: %m");
-      return -1;
-    }
-
-  st = statutes;
-  sem_un.val = 1;
-  for (i = 0; i < status_num_in; i++, st++)
-    {
-      strncpy (st->name, status_names[i], STATUSNAME);
-      st->status = 0;
-      if (semctl (status_sem, i, SETVAL, sem_un))
-	{
-	  syslog (LOG_ERR, "status_sem # %i semctl: %m", i);
-	  return -1;
-	}
-    }
-#ifdef DEVDEM_WITH_CLIENT
-  strncpy (st->name, "priority_lock", STATUSNAME);
-  st->status = 0;
-  semctl (status_sem, i, SETVAL, sem_un);
-  // init authorization semaphores
-  // those beast will have value 2
-  sem_un.val = 2;
-  for (; i < status_num + MAX_CLIENT; i++)
-    {
-      if (semctl (status_sem, i, SETVAL, sem_un))
-	{
-	  syslog (LOG_ERR, "status_sem # %i semctl: %m", i);
-	  return -1;
-	}
-    }
-  // don't detach shm segment, since we will need it
-  // in IPC message receivers to set priority flag
-#else /* DEVDEM_WITH_CLIENT */
-  // detach status shared memory
-  if (shmdt (statutes))
-    {
-      syslog (LOG_ERR, "shmdt: %m");
-      return -1;
-    }
-#endif /* DEVDEM_WITH_CLIENT */
 
   // initialize data shared memory
   if (shm_data_size > 0)
@@ -1825,43 +1150,17 @@ devser_run (int port, devser_handle_command_t in_handler,
       data_shm = -1;
     }
 
-  // creates semaphore for control to data shm
+  // creates semaphore for guarding data_shm
   if ((data_sem = semget (IPC_PRIVATE, 1, 0644)) < 0)
     {
       syslog (LOG_ERR, "data shm semget: %m");
       return -1;
     }
 
+  sem_un.val = 1;
+
   // initialize data shared memory semaphore
   semctl (data_sem, 0, SETVAL, sem_un);
-
-#ifdef DEVDEM_WITH_CLIENT
-
-  // initializes shared memory
-  if ((client_shm =
-       shmget (IPC_PRIVATE, sizeof (struct client_info), 0644)) < 0)
-    {
-      syslog (LOG_ERR, "shmget client_shm: %m");
-      return -1;
-    }
-
-  // attach
-  if ((clients_info = (struct client_info *) shmat (client_shm, NULL, 0)) < 0)
-    {
-      syslog (LOG_ERR, "shmat clients_info: %m");
-      return -1;
-    }
-
-  client_status = status_num - 1;
-
-  // init
-  memset (clients_info, 0, sizeof (struct client_info));
-  clients_info->priority_client = -1;
-  clients_info->designated_priority_client = -1;
-  // don't detach clients_info - we will require it during
-  // IPC message processing (at this process, not at childrens)
-
-#endif /* DEVDEM_WITH_CLIENT */
 
   // initialize ipc msg que
   if ((msg_id = msgget (IPC_PRIVATE, 0644)) < 0)
@@ -1869,15 +1168,35 @@ devser_run (int port, devser_handle_command_t in_handler,
       syslog (LOG_ERR, "devser msgget: %m");
       return -1;
     }
-#ifdef DEVDEM_WITH_CLIENT
-  // create IPC message thread to receive server informations
-  client_id = SERVER_CLIENT;
-  if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
+  return 0;
+}
+
+/*! 
+ * Run server daemon.
+ *
+ * This function will run the device deamon on given port, and will
+ * call handler for every command it received.
+ * 
+ * @param port 		port to run device deamon
+ * @param in_handler 	address of command handler code
+ * 
+ * @return 0 on success, -1 and set errno on error
+ */
+int
+devser_run (int port, devser_handle_command_t in_handler,
+	    int (*child_init) (void))
+{
+  int sock;
+  struct sockaddr_in clientname;
+  size_t size;
+  devser_parent_pid = getpid ();
+
+  if (!in_handler)
     {
-      syslog (LOG_ERR, "create message thread: %m");
+      errno = EINVAL;
       return -1;
     }
-#endif /* DEVDEM_WITH_CLIENT */
+  cmd_handler = in_handler;
 
   /* register on_exit */
   on_exit (devser_on_exit, NULL);
@@ -1885,7 +1204,7 @@ devser_run (int port, devser_handle_command_t in_handler,
   signal (SIGQUIT, sig_exit);
   signal (SIGINT, sig_exit);
 
-  /* create the socket and set it up to accept connections. */
+  /* create the socket and set it up to accept connections */
   sock = make_socket (port);
   if (listen (sock, 1) < 0)
     {
@@ -1921,6 +1240,8 @@ devser_run (int port, devser_handle_command_t in_handler,
   // here starts child processing - mind of differences in ipc id's,
   // pointers,..
 
+  server_id = -1;
+
   command_buffer.endptr = command_buffer.buf;
   syslog (LOG_INFO, "server: connect from host %s, port %hd, desc:%i",
 	  inet_ntoa (clientname.sin_addr),
@@ -1939,31 +1260,11 @@ devser_run (int port, devser_handle_command_t in_handler,
       pthread_mutex_init (&threads[sock].lock, NULL);
     }
 
-  // attach shared memory with status
-  if ((int) (statutes = (status_t *) shmat (status_shm, NULL, 0)) < 0)
+  if (child_init ())
     {
-      syslog (LOG_ERR, "shmat: %m");
-      return -1;
+      syslog (LOG_ERR, "devser_run child_init call error: %m");
+      exit (EXIT_FAILURE);
     }
-
-#ifdef DEVDEM_WITH_CLIENT
-  // attach shared memory with clients_info
-  if ((int)
-      (clients_info = (struct client_info *) shmat (client_shm, NULL, 0)) < 0)
-    {
-      syslog (LOG_ERR, "shmat: %m");
-      return -1;
-    }
-#endif /* DEVDEM_WITH_CLIENT */
-
-#ifndef DEVDEM_WITH_CLIENT
-  // create message thread
-  if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
-    {
-      syslog (LOG_ERR, "create message thread: %m");
-      return -1;
-    }
-#endif /* !DEVDEM_WITH_CLIENT */
 
   // null threads count
   threads_count = 0;
@@ -1977,5 +1278,4 @@ devser_run (int port, devser_handle_command_t in_handler,
 	  exit (EXIT_FAILURE);
 	}
     }
-  exit (0);
 }

@@ -12,15 +12,19 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
-#define DEVDEM_WITH_CLIENT
-
 #include "devcli.h"
+#include "devser.h"
 
 int devdem_priority_block_start ();
 int devdem_priority_block_end ();
 
+int devdem_status_message (int subdevice, char *description);
+int devdem_status_mask (int subdevice, int mask, int operand, char *message);
+
+int devdem_init (char **status_names, int status_num_in);
 int devdem_register (struct devcli_channel *server_channel, char *device_name,
 		     char *server_address, int server_port);
+int devdem_run (int port, devser_handle_command_t in_handler);
 
 #include "devser.h"
 

@@ -18,7 +18,7 @@
 #define MAX_CLIENT		10
 
 typedef int (*devser_handle_command_t) (char *command);
-typedef void (*devser_handle_message_t) (char *message);
+typedef int (*devser_handle_msg_t) (char *message);
 
 typedef void (*devser_thread_cleaner_t) (void *arg);
 
@@ -28,12 +28,13 @@ struct devser_msg
   char mtext[MSG_SIZE];
 };
 
+int devser_init (size_t shm_data_size);
 int devser_run (int port, devser_handle_command_t in_handler,
-		char **status_names, int status_num, size_t shm_data_size);
+		int (*child_init) (void));
 int devser_dprintf (const char *format, ...);
 int devser_send_data (struct in_addr *client_addr, void *data_ptr,
 		      size_t data_size);
-int devser_write_command_end (int retc, char *msg_format, ...);
+int devser_write_command_end (int retc, const char *msg_format, ...);
 
 int devser_thread_create (void *(*start_routine) (void *), void *arg,
 			  size_t arg_size, int *id,
@@ -41,16 +42,18 @@ int devser_thread_create (void *(*start_routine) (void *), void *arg,
 int devser_thread_cancel (int id);
 int devser_thread_cancel_all (void);
 
-int devser_status_message (int subdevice, char *description);
-int devser_status_mask (int subdevice, int mask, int operand, char *message);
+int devser_thread_wait (void);
+
+int devser_message (const char *format, ...);
 
 void *devser_shm_data_at ();
 void devser_shm_data_lock ();
 void devser_shm_data_unlock ();
 void devser_shm_data_dt (void *mem);
 
-devser_handle_message_t devser_msg_set_handler (devser_handle_message_t
-						handler);
+int devser_set_server_id (int server_id_in,
+			  devser_handle_msg_t msg_handler_in);
+
 int devser_msg_snd (struct devser_msg *msg);
 int devser_msg_snd_format (int type, char *format, ...);
 

@@ -4,6 +4,17 @@
  *
  * Functions for parsing parameters. Common for both sides of
  * protocol, server as well as client.
+ * 
+ * Command string is defined as follow:
+ * <ul>
+ * 	<li>commands ::= com | com + ';' + commands</li>
+ * 	<li>com ::= name | name + ' '\+ + params</li>
+ * 	<li>params ::= par | par + ' '\+ + params</li>
+ * 	<li>par ::= hms | decimal | integer | string</li>
+ * 	<li>hms ::= decimal + ':' + hms | decimal
+ * 	<li>decimal ::= [0-9] + decimal | 
+ * 	<li>integer ::= [0-9] + integer | [0-9]</li>
+ * </ul>
  *
  * @author petr
  */
@@ -23,8 +34,6 @@ int
 param_init (struct param_status **params, char *line, char sep)
 {
   struct param_status *new_params;
-
-  *params = NULL;
 
   if (!
       (new_params =
