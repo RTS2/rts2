@@ -534,7 +534,7 @@ main (int argc, char **argv)
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "l:p:s:q:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:p:s:q:d:h", long_option, NULL);
 
       if (c == -1)
 	break;

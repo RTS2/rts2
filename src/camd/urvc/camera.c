@@ -115,8 +115,10 @@ measure_pp ()
     }
   timer4 = mSecCount ();
 
+#ifdef DEBUG
   printf ("I/O cycle time: %.2f/%.2fus\n", (timer3 - timer2) / 10,
 	  (timer4 - timer3) / 10);
+#endif  
 }
 
 extern int
@@ -146,10 +148,11 @@ camera_init (char *device_name, int camera_id)
      printf("Found ECP...\n");
      else 
    */
+#ifdef DEBUG  
   printf ("Using SPP on 0x%x\n", baseAddress);
+#endif  
 
   measure_pp ();
-
 
   if ((ret = MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr)))
     {
