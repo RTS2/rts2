@@ -6,6 +6,7 @@ EPS = bootes.eps			\
       client-server-use1.eps		\
       client-server-use2.eps		\
       client-server-use3.eps		\
+      db.eps				\
       kill-nextexe.eps 			\
       kill-pre.eps 			\
       kill-waitexe.eps 			\
