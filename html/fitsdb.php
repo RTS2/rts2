@@ -1,4 +1,4 @@
-<?
+<?php
 	session_start ();
 
 	function hlavicka ($title, $headline, $ok, $status)
@@ -79,6 +79,8 @@ EOT;
 			return hour2s ($value) . "($value)";
 		else if ($fname == 'tar_dec')
 			return deg2s ($value) . "($value)";
+		else if ($fname == 'tar_enabled')
+			return $value == 't' ? 'enabled' : 'disabled';
 		else return $value;
 	}		
 
@@ -99,6 +101,7 @@ EOT;
 		'tar_comment' => 'Target comment',
 		'tar_ra' => 'Target RA',
 		'tar_dec' => 'Target DEC',
+		'tar_enabled' => 'Target enabled',
 		'obs_id' => 'Obs. ID',
 		'obs_start' => 'Observation start',
 		'obs_duration' => 'Duration',
@@ -132,7 +135,12 @@ EOT;
 		'tar_dec' => 1, 
 		'tar_type' => 1, 
 		'tar_comment' => 1,
+		'tar_enabled' => 1,
 		'med_path' => 1
+	);
+
+	$fields_types = array (
+		'tar_enabled' => 'b'
 	);
 	
 	class Query {
@@ -153,6 +161,10 @@ EOT;
 			$this->from = "";
 			$this->where = "";
 			$this->order = "";
+		}
+
+		function error ($message) {
+			echo "<div class='error'>$message</div>\n";
 		}
 
 		function simple_query ($query_string) {
@@ -202,7 +214,13 @@ EOT;
 		function do_query ($sql = "") {
 			if (!$this->con)
 				$this->connect ();
-			$this->res = pg_query ($this->con, ($sql == "") ? $this->build() : $sql);
+			if ($sql == "")
+				$sql = $this->build ();
+			$this->res = pg_query ($this->con, $sql);
+			if ($this->res == false)
+			{
+				$this->error ("PgSQL error: " . pg_last_error ($this->con) . " [ when executing '$sql'");
+			}
 			return $this->res;
 		}
 
@@ -313,6 +331,7 @@ EOT;
 		function print_field ($name, $value) {
 			global $fields_name;
 			global $fields_writable;
+			global $fields_types;
 			echo "\t<tr>\n\t\t<td>" . (array_key_exists ($name, $fields_name) ? $fields_name[$name] : $name) . 
 			"\t\t</td><td>\n";
 			if ($_SESSION['authorized']) {
@@ -320,7 +339,19 @@ EOT;
 					echo "<input type='hidden' name='type_id_old' value='$value'></input>"; 
 					$this->print_radio_list ("types", "type_id", "type_description", $value); 
 				} elseif (array_key_exists($name, $fields_writable)) {
-					echo "<input type='text' name='$name' value='$value'></input>";
+					switch ($fields_types[$name]) {
+						case 'b':
+							echo "<input type='radio' name='$name' value='t' " . 
+								($value === 'enabled' ? 'checked' : '') . 
+								">enabled</input>\n";
+							echo "<input type='radio' name='$name' value='f' " . 
+								($value === 'disabled' ? 'checked' : '') . 
+								">disabled</input>\n";
+							break;
+						default:
+							echo "<input type='text' name='$name' value='$value'></input>";
+							break;
+					}
 				} else {
 					echo "<input type='hidden' name='$name' value='$value'>$value";
 				}

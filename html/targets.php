@@ -1,4 +1,4 @@
-<?
+<?php
 	require_once "fitsdb.php";
 	include "infos.php";
 
@@ -30,9 +30,30 @@
 		$tar_dec = s2deg($_REQUEST['tar_dec'], 1);
 		$tar_comment = $_REQUEST['tar_comment'];
 		preg_replace ('/[^A-Za-z0-9 _.\-]/', '', $tar_comment);
+		$tar_enabled = 'false';
+		if ($_REQUEST['tar_enabled'] === 't')
+			$tar_enabled = 'true';
 		if (array_key_exists('insert',$_REQUEST)) {
 			$tar_id = $q->simple_query ("SELECT nextval('tar_id');");
-			$q->do_query ("INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES ($tar_id, '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');");
+			$q->do_query ("INSERT INTO 
+				targets 
+			(
+				tar_id,
+				type_id,
+				tar_name,
+				tar_ra,
+				tar_dec,
+				tar_comment,
+				tar_enabled
+			) VALUES (
+				$tar_id,
+				'$type_id',
+				'$tar_name',
+				$tar_ra,
+				$tar_dec,
+				'$tar_comment',
+				$tar_enabled
+			);");
 			// insert defaults to ot table..
 			switch ($type_id) {
 				case 'G':
@@ -50,14 +71,28 @@
 						$grb_seqn = intval ($_REQUEST['grb_seqn']);
 						$grb_date = $_REQUEST['grb_date'];
 						preg_replace ('/[^0-9: -+]/', '', $grb_date);
-						$q->do_query ("UPDATE grb SET grb_id = $grb_id, grb_seqn = $grb_seqn, grb_date = timestamp '$grb_date' WHERE tar_id = $tar_id");
+						$q->do_query ("UPDATE 
+							grb 
+						SET 
+							grb_id = $grb_id,
+							grb_seqn = $grb_seqn,
+							grb_date = timestamp '$grb_date'
+						WHERE
+							tar_id = $tar_id");
 						break;
 					case 'O':
 						$ot_imgcount = intval ($_REQUEST['ot_imgcount']);
 						$ot_minpause = $_REQUEST['ot_minpause'];
 						preg_replace ('/[^0-9: ]/', '', $ot_minpause);
 						$ot_priority = intval ($_REQUEST['ot_priority']);
-						$q->do_query ("UPDATE ot SET ot_imgcount = $ot_imgcount, ot_minpause = interval '$ot_minpause', ot_priority = $ot_priority WHERE tar_id = $tar_id");
+						$q->do_query ("UPDATE 
+							ot
+						SET
+							ot_imgcount = $ot_imgcount,
+							ot_minpause = interval '$ot_minpause',
+							ot_priority = $ot_priority
+						WHERE
+							tar_id = $tar_id");
 						break;
 				}
 			} else {
@@ -79,7 +114,17 @@
 						break;
 				}
 			}
-			$q->do_query ("UPDATE targets SET type_id='$type_id', tar_name = '$tar_name', tar_ra = $tar_ra, tar_dec = $tar_dec, tar_comment = '$tar_comment' WHERE tar_id = $tar_id");
+			$q->do_query ("UPDATE
+					targets
+				SET
+					type_id='$type_id',
+					tar_name = '$tar_name',
+					tar_ra = $tar_ra,
+					tar_dec = $tar_dec,
+					tar_comment = '$tar_comment',
+					tar_enabled = $tar_enabled
+				WHERE
+					tar_id = $tar_id");
 		}
 	}
 
