@@ -1330,7 +1330,8 @@ void
 ser_sig_exit (int sig)
 {
   syslog (LOG_INFO, "exiting with signal:%i", sig);
-  exit (0);
+  if (getpid () == devser_parent_pid)
+    exit (0);
 }
 
 /*!
