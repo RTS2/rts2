@@ -39,36 +39,21 @@ status_serverd (WINDOW * wnd, struct device *dev)
   struct client *cli;
   struct serverd_info *info = (struct serverd_info *) &dev->info;
   wclear (wnd);
-  mvwprintw (wnd, 1, 1, "status:");
-  switch (dev->statutes[0].status)
-    {
-    case SERVERD_DAY:
-      mvwprintw (wnd, 1, 8, "Day");
-      break;
-    case SERVERD_DUSK:
-      mvwprintw (wnd, 1, 8, "Dusk");
-      break;
-    case SERVERD_NIGHT:
-      mvwprintw (wnd, 1, 8, "Night");
-      break;
-    case SERVERD_DAWN:
-      mvwprintw (wnd, 1, 8, "Dawn");
-      break;
-    case SERVERD_MAINTANCE:
-      mvwprintw (wnd, 1, 8, "Maintance");
-      break;
-    case SERVERD_OFF:
-      mvwprintw (wnd, 1, 8, "Off");
-      break;
-    default:
-      mvwprintw (wnd, 1, 8, "Unkow %i", dev->statutes[0].status);
-    }
+  mvwprintw (wnd, 1, 1, "status: ");
+  mvwprintw (wnd, 1, 8, serverd_status_string (dev->statutes[0].status));
   // print info
   wmove (wnd, 2, 0);
   for (i = 2, cli = info->clients; cli; cli = cli->next, i++)
     {
-      mvwprintw (wnd, i, 1, "%3i %c %c %s", cli->priority, cli->active,
+      if (cli->have_priority == '*')
+	{
+	  if (has_colors ())
+	    wcolor_set (wnd, 3, NULL);
+	}
+      mvwprintw (wnd, i, 1, "%3i%c%s", cli->priority,
 		 cli->have_priority, cli->status_txt);
+      if (has_colors ())
+	wcolor_set (wnd, 2, NULL);
     }
 }
 
@@ -94,14 +79,17 @@ status_telescope (WINDOW * wnd, struct device *dev)
 
   dtohms (info->ra / 15, buf);
 
-  mvwprintw (wnd, 1, 1, "R/Az/D: %s %+03.3f %s", buf, position.az,
+  mvwprintw (wnd, 1, 1, "R/Az/D: %s %+03i %s", buf, (int) position.az,
 	     hrz_to_nswe (&position));
-  mvwprintw (wnd, 2, 1, "D/Al: %+03.3f %+03.3f", info->dec, position.alt);
+  mvwprintw (wnd, 2, 1, "D/Al: %+03.3f %+03i", info->dec, (int) position.alt);
   mvwprintw (wnd, 3, 1, "Lon: %+03.3f", info->longtitude);
   mvwprintw (wnd, 4, 1, "Lat: %+03.3f", info->latitude);
   dtohms (info->siderealtime, buf);
-  mvwprintw (wnd, 5, 1, "Sid: %s", buf);
-  print_status (wnd, 6, 1, dev);
+  mvwprintw (wnd, 5, 1, "Lsid: %s", buf);
+  st = st - (int) (st / 24) * 24;
+  dtohms (st, buf);
+  mvwprintw (wnd, 6, 1, "Gsid: %s %f", buf, st);
+  print_status (wnd, 7, 1, dev);
 }
 
 void
@@ -163,14 +151,29 @@ status (WINDOW * wnd, struct device *dev)
       devcli_command (dev, &ret, "info");
     }
   wclear (wnd);
+
+  if (has_colors ())
+    wcolor_set (wnd, 1, NULL);
+  else
+    wstandout (wnd);
+
   mvwprintw (wnd, 0, 1, "==== Name: %s ======", dev->name);
   if (ret)
     {
-      wclear (wnd);
-      mvwprintw (wnd, 3, 1, "NOT READY");
+      if (has_colors ())
+	wcolor_set (wnd, 2, NULL);
+      else
+	wstandend (wnd);
+      //    wclear (wnd);
+      mvwprintw (wnd, 2, 6, "NOT READY");
     }
   else
     {
+      if (has_colors ())
+	wcolor_set (wnd, 2, NULL);
+      else
+	wstandend (wnd);
+
       switch (dev->type)
 	{
 	case DEVICE_TYPE_SERVERD:
@@ -272,6 +275,12 @@ main (int argc, char **argv)
 
   start_color ();
 
+  if (has_colors ())
+    {
+      init_pair (1, 2, 0);
+      init_pair (2, 7, 0);
+      init_pair (3, COLOR_BLUE, 0);
+    }
   // prepare windows
 
   l = LINES - 2;
