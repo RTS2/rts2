@@ -224,7 +224,7 @@ CameraMiniccdChip::isExposing ()
 	}
       dest_top += row_bytes;
       readoutLine++;
-      return readoutLine == 1 ? 2 : 1;
+      return (readoutLine == 1) ? 2 : 1;
     }
   return 10;
 }
