@@ -127,7 +127,7 @@
 #define DEVICE_TYPE_DOME	4
 #define DEVICE_TYPE_WEATHER	5
 #define DEVIDE_TYPE_ARCH	6
-#define DEVICE_TYPE_IMGP	7
+#define DEVICE_TYPE_PHOT	7
 
 // and more to come..
 // #define DEVICE_TYPE_
