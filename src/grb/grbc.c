@@ -297,13 +297,13 @@ main (int argc, char **argv)
 #define CAMD_WRITE_READ(command) if (devcli_command (camd_id, NULL, command) < 0) \
   				{ \
       		                  perror ("devcli_write_read"); \
-				  exit (EXIT_FAILURE); \
+				  continue;\
 				}
 
 #define TELD_WRITE_READ(command) if (devcli_command (teld_id, NULL, command) < 0) \
   				{ \
       		                  perror ("devcli_write_read"); \
-				  exit (EXIT_FAILURE); \
+			          continue;\
 				}
   while (1)
     {

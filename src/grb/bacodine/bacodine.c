@@ -657,7 +657,7 @@ receive_bacodine (process_grb_event_t arg)
 		case TYPE_HETE_FINAL_SRC:
 		case TYPE_HETE_GNDANA_SRC:
 		case TYPE_HETE_TEST:
-		  pr_hete (lbuf, stdout);
+//		  pr_hete (lbuf, stdout);
 		  pr_hete (lbuf, lg);
 		  break;
 		case TYPE_IPN_POS_SRC:
@@ -1204,14 +1204,14 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   fprintf (s, "   BURST_DEC:   %+7.3fd  (current)\n",
 	   lbuf[BURST_DEC] / 10000.0);
 
-  if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
-  {
+//  if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+//  {
 	  process_grb (
 		(lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
 	  	(lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
 		lbuf[BURST_RA] / 10000.0,
 		lbuf[BURST_DEC] / 10000.0);
-  }
+//  }
 
   if (lbuf[H_TRIG_FLAGS] & H_WXM_POS)	/* Flag says that WXM pos is available */
     fprintf (s, "   WXM position is available.\n");
