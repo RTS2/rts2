@@ -210,6 +210,7 @@ EOT;
 				echo "All $limit records are shown.<br>";
 			} else {
 				$url = $_SERVER['REQUEST_URI'];
+				$url = preg_replace ('/&?page=\d+/', '', $url);
 				if (strstr ($url, '?'))
 					$url .= '&';
 				else
