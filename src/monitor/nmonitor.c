@@ -20,7 +20,7 @@ WINDOW *status_win;
 WINDOW *cmd_win;
 PANEL *stdpanel;
 
-#define ROW_SIZE	10
+#define ROW_SIZE	13
 #define COL_SIZE	25
 
 #define CLR_OK		1
