@@ -303,7 +303,7 @@ send_data_thread (void *arg)
 
   pthread_mutex_unlock (&data_con->lock);
 
-  if (ret)
+  if (ret < 0)
     {
       devdem_write_command_end ("PORT:%i %s", DEVDEM_E_SYSTEM, port,
 				strerror (errno));
