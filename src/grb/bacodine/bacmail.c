@@ -20,9 +20,11 @@ main (int argc, char **argv)
       ret =
 	sscanf (line_buf, "%i %i %lf %lf %li %as", &grb_id, &grb_seqn,
 		&grb_ra, &grb_dec, &grb_date, &grb_name);
+      printf ("ret %i", ret);
+      fflush (stdout);
       if (ret == 6)
 	{
-	  db_update_grb (grb_id, grb_seqn, grb_ra, grb_dec, &grb_date,
+	  db_update_grb (grb_id, &grb_seqn, &grb_ra, &grb_dec, &grb_date,
 			 &tar_id);
 	  printf ("tar_id: %i\n", tar_id);
 	}
