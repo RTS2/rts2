@@ -170,6 +170,9 @@ int msg_id;
 //! IPC message receive thread
 pthread_t msg_thread;
 
+//! Server socket - needed to be global for exit processing
+int server_socket;
+
 //! parameter processing status
 struct param_status *command_params;
 
@@ -616,17 +619,7 @@ send_data_thread (void *arg)
       send_tout.tv_usec = 0;
       FD_ZERO (&write_fds);
       FD_SET (data_con->sock, &write_fds);
-      if ((ret = select (FD_SETSIZE, NULL, &write_fds, NULL, &send_tout)) < 0)
-	{
-	  syslog (LOG_ERR, "select: %m port:%i", port);
-	  break;
-	}
-      if (ret == 0)
-	{
-	  syslog (LOG_ERR, "select timeout port:%i", port);
-	  errno = ETIMEDOUT;
-	  break;
-	}
+      ret = select (FD_SETSIZE, NULL, &write_fds, NULL, &send_tout);
       if (FD_ISSET (data_con->sock, &write_fds))
 	{
 	  if ((ret = write (data_con->sock, data, size)) != size)
@@ -638,7 +631,9 @@ send_data_thread (void *arg)
 	}
       else
 	{
-	  syslog (LOG_DEBUG, "send_data_thread bad select");
+	  syslog (LOG_DEBUG, "send_data_thread bad select, ret: %i", ret);
+	  data_con->available = -1;
+	  // devser_data_invalidate (ID);
 	  break;
 	}
       sended += size;
@@ -767,6 +762,8 @@ err:
   close (data_listen_sock);
 err_without_socket:
   pthread_mutex_unlock (&(data_con->lock));
+  devser_write_command_end (DEVDEM_E_SYSTEM,
+			    "error on creating readout-thread");
   return -1;
 }
 
@@ -938,14 +935,16 @@ devser_data_invalidate (int id)
       syslog (LOG_ERR, "devser_data_invalidate data_con lock: %m");
       return -1;
     }
+  syslog (LOG_DEBUG, "devser_data_invalidate");
   if (data_con->data_readed + data_con->available < data_con->data_size)
     {
+      syslog (LOG_DEBUG, "devser_data_invalidate");
       data_con->available = -1;
       pthread_cond_signal (&(data_con->write_cond));
       pthread_cond_signal (&(data_con->read_cond));	// if there is some other thread waiting
     }
 
-  pthread_mutex_unlock (&(data_con->lock));
+  pthread_mutex_unlock (&(data_con->que_lock));
 
   return 0;
 }
@@ -1275,13 +1274,17 @@ read_from_client ()
   char *endptr;			// end of message
   int ret;
 
-  fd_set read_set, exp_set;
+  fd_set read_set;
 
   FD_ZERO (&read_set);
+  if (control_fd < 0)
+    {
+#ifdef DEBUG
+      printf ("control_fd: %i\n", control_fd);
+#endif /* DEBUG */
+      return -1;
+    }
   FD_SET (control_fd, &read_set);
-
-  FD_ZERO (&exp_set);
-  FD_SET (control_fd, &exp_set);
 
   buffer = command_buffer.buf;
   endptr = command_buffer.endptr;
@@ -1289,7 +1292,7 @@ read_from_client ()
   ret = select (FD_SETSIZE, &read_set, NULL, NULL, NULL);
 
   if (!FD_ISSET (control_fd, &read_set))
-    return 0;
+    return -1;
   nbytes = read (control_fd, endptr, MAXMSG - (endptr - buffer));
   if (nbytes < 0)
     {
@@ -1345,44 +1348,43 @@ devser_get_client_ip (struct sockaddr_in *client_ip)
 }
 
 /*! 
- * On exit handler.
- */
-void
-devser_on_exit ()
-{
-  if (!devser_child_pid)
-    {
-      printf ("devser removing IPC\n");
-      if (semctl (data_sem, 1, IPC_RMID))
-	{
-	  perror ("IPC_RMID data_sem semctl");
-	}
-      if (msgctl (msg_id, IPC_RMID, NULL))
-	{
-	  perror ("IPC_RMID msg_id");
-	}
-      while (childrens)
-	{
-	  printf ("kill %i\n", childrens->child_pid);
-	  kill (childrens->child_pid, SIGQUIT);
-	  childrens = childrens->next;
-	}
-    }
-  printf ("devser exiting\n");
-}
-
-/*! 
  * Signal handler.
  */
 void
-ser_sig_exit (int sig)
+ser_sig_exit_main (int sig)
 {
+#ifdef DEBUG
   printf ("[%i] devser exiting with signal:%i\n", getpid (), sig);
-  if (getpid () == devser_parent_pid || getpid () == devser_child_pid)
+#endif /* DEBUG */
+  close (server_socket);
+  while (childrens)
     {
-      printf ("[%i] calling exit\n", getpid ());
-      exit (0);
+#ifdef DEBUG
+      printf ("kill %i\n", childrens->child_pid);
+#endif /* DEBUG */
+      kill (childrens->child_pid, SIGQUIT);
+      childrens = childrens->next;
     }
+#ifdef DEBUG
+  printf ("devser removing IPC\n");
+#endif /* DEBUG */
+  if (semctl (data_sem, 1, IPC_RMID))
+    {
+      perror ("IPC_RMID data_sem semctl");
+    }
+  if (msgctl (msg_id, IPC_RMID, NULL))
+    {
+      perror ("IPC_RMID msg_id");
+    }
+}
+
+void
+ser_sig_exit_child (int sig)
+{
+#ifdef DEBUG
+  printf ("[%i] exiting with signal: %i\n", getpid (), sig);
+#endif /* DEBUG */
+  close (control_fd);
 }
 
 void
@@ -1409,7 +1411,7 @@ ser_child_sig_exit (int sig)
 	      free (a_child);
 	    }
 	}
-      else
+      else if (childrens)
 	{
 	  prev = childrens;
 	  childrens = childrens->next;
@@ -1476,10 +1478,6 @@ devser_init (size_t shm_data_size)
   union semun sem_un;
 
   /* register on_exit */
-  atexit (devser_on_exit);
-  signal (SIGTERM, ser_sig_exit);
-  signal (SIGQUIT, ser_sig_exit);
-  signal (SIGINT, ser_sig_exit);
   signal (SIGCHLD, ser_child_sig_exit);
 
   // initialize data shared memory
@@ -1542,9 +1540,13 @@ devser_init (size_t shm_data_size)
 int
 devser_run (int port, devser_handle_command_t in_handler)
 {
-  int sock;
+  int i;
   size_t size;
   pid_t child = 0;
+
+  signal (SIGTERM, ser_sig_exit_main);
+  signal (SIGQUIT, ser_sig_exit_main);
+  signal (SIGINT, ser_sig_exit_main);
 
   devser_parent_pid = getpid ();
 
@@ -1556,8 +1558,8 @@ devser_run (int port, devser_handle_command_t in_handler)
   cmd_handler = in_handler;
 
   /* create the socket and set it up to accept connections */
-  sock = make_socket (port);
-  if (listen (sock, 1) < 0)
+  server_socket = make_socket (port);
+  if (listen (server_socket, 1) < 0)
     {
       syslog (LOG_ERR, "listen: %m");
       return -1;
@@ -1569,11 +1571,11 @@ devser_run (int port, devser_handle_command_t in_handler)
     {
       size = sizeof (server_client_ip);
       if ((control_fd =
-	   accept (sock, (struct sockaddr *) &server_client_ip, &size)) < 0)
+	   accept (server_socket, (struct sockaddr *) &server_client_ip,
+		   &size)) < 0)
 	{
 	  syslog (LOG_ERR, "accept: %m");
-	  if (errno != EBADF)
-	    return -1;
+	  return -1;
 	}
 
       child = fork ();
@@ -1588,7 +1590,7 @@ devser_run (int port, devser_handle_command_t in_handler)
 	  // child
 	  // (void) dup2 (control_fd, 0);
 	  // (void) dup2 (control_fd, 1);
-	  close (sock);
+	  close (server_socket);
 	  break;
 	}
 
@@ -1619,9 +1621,7 @@ devser_run (int port, devser_handle_command_t in_handler)
   // pointers,..
   childrens = NULL;		// we don't need that
 
-  signal (SIGTERM, ser_sig_exit);
-  signal (SIGQUIT, ser_sig_exit);
-  signal (SIGINT, ser_sig_exit);
+  signal (SIGQUIT, ser_sig_exit_child);
 
   server_id = -1;
 
@@ -1633,22 +1633,22 @@ devser_run (int port, devser_handle_command_t in_handler)
   devser_child_pid = getpid ();
 
   // initialize data_cons
-  for (sock = 0; sock < MAXDATACONS; sock++)
+  for (i = 0; i < MAXDATACONS; i++)
     {
-      pthread_mutex_init (&data_cons[sock].lock, NULL);
-      pthread_mutex_init (&data_cons[sock].que_lock, NULL);
+      pthread_mutex_init (&data_cons[i].lock, NULL);
+      pthread_mutex_init (&data_cons[i].que_lock, NULL);
 
-      pthread_cond_init (&data_cons[sock].write_cond, NULL);
-      pthread_cond_init (&data_cons[sock].read_cond, NULL);
+      pthread_cond_init (&data_cons[i].write_cond, NULL);
+      pthread_cond_init (&data_cons[i].read_cond, NULL);
 
-      data_cons[sock].sock = 0;
-      data_cons[sock].buffer = NULL;
+      data_cons[i].sock = 0;
+      data_cons[i].buffer = NULL;
     }
 
   // initialize threads lock
-  for (sock = 0; sock < MAX_THREADS; sock++)
+  for (i = 0; i < MAX_THREADS; i++)
     {
-      pthread_mutex_init (&threads[sock].lock, NULL);
+      pthread_mutex_init (&threads[i].lock, NULL);
     }
 
 
@@ -1662,7 +1662,7 @@ devser_run (int port, devser_handle_command_t in_handler)
 	  close (control_fd);
 	  syslog (LOG_INFO, "connection from desc %d closed", control_fd);
 	  devser_thread_cancel_all ();
-	  exit (0);
+	  return -1;
 	}
     }
 }

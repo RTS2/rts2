@@ -791,30 +791,6 @@ server_message_handler (struct param_status *params, void *info)
 }
 
 /*!
- * On exit handler.
- */
-void
-devdem_on_exit ()
-{
-  if (!devser_child_pid)
-    {
-      if (semctl (status_sem, 1, IPC_RMID))
-	perror ("IPC_RMID status_sem semctl");
-      printf ("devdem removing end");
-    }
-  else
-    {
-      if (clients_info->priority_client == client_id && client_id >= 0)	// we have priority and we exit => we must give up priority
-	{
-	  client_priority_lost ();
-	}
-      clients_info->clients[client_id].pid = 0;
-      clients_info->clients[client_id].authorized = 0;
-    }
-  printf (LOG_INFO, "devdem exiting");
-}
-
-/*!
  * Init devdem internals.
  *
  * Calls devser_init, ..
@@ -907,8 +883,6 @@ devdem_init (char **status_names, int status_num_in,
   // don't detach shm segment, since we will need it
   // in IPC message receivers to set priority flag
 
-  atexit (devdem_on_exit);
-
   return 0;
 }
 
@@ -986,5 +960,15 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
       return -1;
     }
 
-  return devser_run (port, client_handle_commands);
+  devser_run (port, client_handle_commands);
+
+  printf ("devser_run returns\n");
+
+  if (semctl (status_sem, 1, IPC_RMID))
+    perror ("IPC_RMID status_sem semctl");
+  printf ("devdem removing end");
+#ifdef DEBUG
+  printf ("devdem exiting");
+#endif
+  return 0;
 }
