@@ -645,10 +645,10 @@ Rts2DevDomeFram::info ()
   ret = zjisti_stav_portu ();
   if (ret)
     return -1;
-  open1 = getState (KONCAK_OTEVRENI_PRAVY);
-  open1 = getState (KONCAK_OTEVRENI_LEVY);
-  close1 = getState (KONCAK_ZAVRENI_PRAVY);
-  close1 = getState (KONCAK_ZAVRENI_LEVY);
+  sw_state = getState (KONCAK_OTEVRENI_PRAVY);
+  sw_state |= (getState (KONCAK_OTEVRENI_LEVY) << 1);
+  sw_state |= (getState (KONCAK_ZAVRENI_PRAVY) << 2);
+  sw_state |= (getState (KONCAK_ZAVRENI_LEVY) << 3);
   return 0;
 }
 

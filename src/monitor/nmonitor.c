@@ -157,11 +157,9 @@ status_dome (WINDOW * wnd, struct device *dev)
   mvwprintw (wnd, 3, 1, "Hum: %2.2f %", info->humidity);
   mvwprintw (wnd, 4, 1, "Pow_tel: %i", info->power_telescope);
   mvwprintw (wnd, 5, 1, "Pow_cam: %i", info->power_cameras);
-#define is_on(val)	(val ? 'O' : 'f')
-  mvwprintw (wnd, 7, 1, "Open sw: %c %c", is_on (info->open1),
-	     is_on (info->open2));
-  mvwprintw (wnd, 6, 1, "Close s: %c %c", is_on (info->close1),
-	     is_on (info->close2));
+#define is_on(num)	((info->dome & (1 << num))? 'O' : 'f')
+  mvwprintw (wnd, 7, 1, "Open sw: %c %c", is_on (0), is_on (1));
+  mvwprintw (wnd, 6, 1, "Close s: %c %c", is_on (2), is_on (3));
 #undef is_on
   print_status (wnd, 8, 1, dev);
 }

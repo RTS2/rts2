@@ -12,10 +12,7 @@ Rts2Device (argc, argv, DEVICE_TYPE_DOME, 5552, "DOME")
   char *states_names[1] = { "dome" };
   setStateNames (1, states_names);
 
-  open1 = -1;
-  open2 = -1;
-  close1 = -1;
-  close2 = -1;
+  sw_state = -1;
 }
 
 int
@@ -123,10 +120,7 @@ Rts2DevDome::info (Rts2Conn * conn)
       conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
       return -1;
     }
-  conn->sendValue ("open_1", open1);
-  conn->sendValue ("open_2", open2);
-  conn->sendValue ("close_1", close1);
-  conn->sendValue ("close_2", close2);
+  conn->sendValue ("dome", sw_state);
   return 0;
 }
 

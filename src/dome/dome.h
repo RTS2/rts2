@@ -8,10 +8,7 @@ class Rts2DevDome:public Rts2Device
 {
 protected:
   char *domeModel;
-  int open1;
-  int open2;
-  int close1;
-  int close2;
+  int sw_state;
 
   float temperature;
   float humidity;
