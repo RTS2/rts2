@@ -4,13 +4,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <syslog.h>
-#include <signal.h>
 #include <mcheck.h>
 #include <math.h>
 #include <stdarg.h>
@@ -22,7 +16,10 @@
 #include "../utils/devdem.h"
 #include "../status.h"
 
+#include "../utils/devcli.h"	// client for connection to server
+
 #define PORT    5556
+
 
 int port;
 
@@ -42,50 +39,58 @@ complete (int ccd, float percent_complete)
 void *
 start_expose (void *arg)
 {
+#define SBIG_EXPOSE ((struct sbig_expose *) arg)
   int ret;
-  devdem_status_mask (((struct sbig_expose *) arg)->ccd,
+  devdem_status_mask (SBIG_EXPOSE->ccd,
 		      CAM_MASK_EXPOSE, CAM_EXPOSING, "exposure chip started");
-  if ((ret = sbig_expose (arg)) < 0)
+  if ((ret = sbig_expose (SBIG_EXPOSE)) < 0)
     {
+      char *err;
+      err = sbig_show_error (ret);
       syslog (LOG_ERR, "error during chip %i exposure: %s",
-	      ((struct sbig_expose *) arg)->ccd, sbig_show_error (ret));
-      devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+	      SBIG_EXPOSE->ccd, err);
+      free (err);
+      devdem_status_mask (SBIG_EXPOSE->ccd,
 			  CAM_MASK_EXPOSE,
 			  CAM_NOEXPOSURE, "exposure chip error");
       return NULL;
     }
 
-  syslog (LOG_INFO, "exposure chip %i finished.",
-	  ((struct sbig_expose *) arg)->ccd);
-  devdem_status_mask (((struct sbig_expose *) arg)->ccd,
+  syslog (LOG_INFO, "exposure chip %i finished.", SBIG_EXPOSE->ccd);
+  devdem_status_mask (SBIG_EXPOSE->ccd,
 		      CAM_MASK_EXPOSE,
 		      CAM_NOEXPOSURE, "exposure chip finished");
   return NULL;
+#undef SBIG_EXPOSE
 }
 
 // wrapper to call sbig readout in thread 
 void *
 start_readout (void *arg)
 {
+#define SBIG_READOUT ((struct sbig_readout *) arg)
   int ret;
-  devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+  devdem_status_mask (SBIG_READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_READING | CAM_NODATA, "reading chip started");
-  if ((ret = sbig_readout (arg)) < 0)
+  if ((ret = sbig_readout (SBIG_READOUT)) < 0)
     {
+      char *err;
+      err = sbig_show_error (ret);
       syslog (LOG_ERR, "error during chip %i readout: %s",
-	      ((struct sbig_readout *) arg)->ccd, sbig_show_error (ret));
-      devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+	      SBIG_READOUT->ccd, err);
+      free (err);
+      devdem_status_mask (SBIG_READOUT->ccd,
 			  CAM_MASK_READING | CAM_MASK_DATA,
 			  CAM_NOTREADING | CAM_NODATA, "reading chip error");
       return NULL;
     }
-  syslog (LOG_INFO, "reading chip %i finished.",
-	  ((struct sbig_readout *) arg)->ccd);
-  devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+  syslog (LOG_INFO, "reading chip %i finished.", SBIG_READOUT->ccd);
+  devdem_status_mask (SBIG_READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_DATA, "reading chip finished");
   return NULL;
+#undef SBIG_READOUT
 }
 
 // macro for length test
@@ -109,15 +114,18 @@ start_readout (void *arg)
 // Macro for camera call
 # define cam_call(call) if ((ret = call) < 0)\
 {\
-	devdem_write_command_end (DEVDEM_E_HW, "camera error: %s", sbig_show_error (ret));\
+	char *err; \
+	err = sbig_show_error(ret); \
+	devdem_write_command_end (DEVDEM_E_HW, "camera error: %s", err);\
+	free (err); \
         return -1; \
 }
 
 
 /*! Handle camd command.
  *
- * @param buffer buffer, containing unparsed command
- * @param fd descriptor of input/output socket
+ * @param argv arguments (argz vector - see info glibc, section Argz)
+ * @param argc arguments count
  * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
  */
 int
@@ -218,7 +226,8 @@ camd_handle_command (char *argv, size_t argc)
       if ((ret =
 	   devdem_thread_create (start_readout,
 				 (void *) &readout[chip],
-				 0, &readout[chip].thread_id)))
+				 sizeof (readout[chip]),
+				 &readout[chip].thread_id)))
 	{
 	  devdem_write_command_end (DEVDEM_E_SYSTEM,
 				    "while creating thread for execution: %s",
@@ -265,7 +274,6 @@ camd_handle_command (char *argv, size_t argc)
 	{
 	  devdem_status_message (i, "status request");
 	}
-      devdem_dprintf ("readout %f", readout_comp[chip]);
       devdem_dprintf ("readout %f", readout_comp[chip]);
       ret = 0;
     }
@@ -348,6 +356,13 @@ main (void)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  info.nmbr_chips = -1;
-  return devdem_run (PORT, camd_handle_command, stats, 2);
+  // fork for client part
+  if (fork ())
+    {
+      // parent
+      info.nmbr_chips = -1;
+      return devdem_run (PORT, camd_handle_command, stats, 2, sizeof (pid_t));
+    }
+
+  return 0;
 }

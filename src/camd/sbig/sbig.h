@@ -92,7 +92,6 @@ struct sbig_expose
   unsigned short shutter;
 };
 
-
 extern int sbig_expose (struct sbig_expose *);
 
 extern int sbig_end_expose (unsigned short);
@@ -146,6 +145,7 @@ extern int sbig_set_cooling (struct sbig_cool *);
 extern int sbig_set_ao7_deflection (int x_deflection, int y_deflection);
 
 extern int sbig_set_ao7_focus (int type);
+
 #define SBIG_AO7_FOCUS_SOFT_CENTER 4
 #define SBIG_AO7_FOCUS_HARD_CENTER  3
 #define SBIG_AO7_FOCUS_STEP_TOWARD_SCOPE 2
@@ -155,7 +155,7 @@ extern int sbig_set_ao7_focus (int type);
  *	Return Error Codes
  *
  *	These are the error codes returned by the driver
- *	function.  They are prefixed with CE_ to designate
+ *	function.  They are prefixed with SBIG_ to designate
  *	them as camera errors.
  *
  *      The return codes from the sbig_xxx() routines will

@@ -1,6 +1,8 @@
 #$Id$
 
-all: camd
+BIN = camd
+
+all: $(BIN) 
 
 include ../../make.conf
 

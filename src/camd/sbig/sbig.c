@@ -305,8 +305,8 @@ sbig_readout (struct sbig_readout *readout)
   int size;
   struct imghdr *header;
 
-  if ((result = sbig_end_expose (readout->ccd)) != 0)
-    return -result;
+  if ((result = sbig_end_expose (readout->ccd)) < 0)
+    return result;
 
   if ((readout->y) > 0)
     {
@@ -316,8 +316,8 @@ sbig_readout (struct sbig_readout *readout)
       dump.readoutMode = readout->binning;
       dump.lineLength = readout->y;
 
-      if ((result = sbig_dump_lines (&dump)) != 0)
-	return -result;
+      if ((result = sbig_dump_lines (&dump)) < 0)
+	return result;
     }
 
   size = sizeof (struct imghdr) +
@@ -349,7 +349,7 @@ sbig_readout (struct sbig_readout *readout)
   for (y = 0; y < (readout->height); y++)
     {
       if ((result = sbig_readout_line (&line)) != 0)
-	return -result;
+	return result;
 
       line.data += line.pixelLength;
 
