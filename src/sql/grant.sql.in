@@ -35,6 +35,7 @@ GRANT SELECT,UPDATE ON img_id TO GROUP observers;
 GRANT SELECT,UPDATE ON med_id TO GROUP observers;
 GRANT SELECT,UPDATE ON tar_id TO GROUP observers;
 GRANT SELECT,UPDATE ON med_id TO "__WWWUSER__";
+GRANT SELECT,UPDATE ON tar_id TO "__WWWUSER__";
 GRANT SELECT ON images_nights TO GROUP observers;
 GRANT SELECT ON observations_nights TO GROUP observers;
 GRANT SELECT ON images TO "__WWWUSER__";
