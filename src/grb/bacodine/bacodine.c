@@ -597,8 +597,8 @@ server (hostname, port, type)
   close (sd);
 
 /* Make the connection nonblocking I/O. */
-  if (ioctl (sock, FIONBIO, &on, sizeof (on)) < 0)
-    return (serr (sock, "server(): ioctl."));
+//  if (ioctl (sock, FIONBIO, &on, sizeof (on)) < 0)
+//    return (serr (sock, "server(): ioctl."));
 
   serr (0, "server(): the server is up.");
   return (sock);
@@ -982,6 +982,8 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 {
   unsigned short max_arcsec, overall_goodness;
 
+  double ra, dec;
+
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
   fprintf (s, "   Type= %li,  ", lbuf[PKT_TYPE]);
   switch (lbuf[PKT_TYPE])
@@ -1051,17 +1053,19 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
   fprintf (s, "   SC_-Z_DEC:   %4d [deg]\n",
 	   (short) (lbuf[H_POINTING] & 0xffff));
 
-  fprintf (s, "   BURST_RA:    %7.3fd  (current)\n",
-	   lbuf[BURST_RA] / 10000.0);
-  fprintf (s, "   BURST_DEC:   %+7.3fd  (current)\n",
-	   lbuf[BURST_DEC] / 10000.0);
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
 
-//  if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
-//  {
-  process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
-	       (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-	       lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0);
-//  }
+  fprintf (s, "   BURST_RA:    %7.3fd  (current)\n", ra);
+  fprintf (s, "   BURST_DEC:   %+7.3fd  (current)\n", dec);
+
+  // if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
+		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
+		   ra, dec);
+    }
 
   if (lbuf[H_TRIG_FLAGS] & H_WXM_POS)	/* Flag says that WXM pos is available */
     fprintf (s, "   WXM position is available.\n");
@@ -1376,6 +1380,7 @@ receive_bacodine (process_grb_event_t arg)
   int i;			/* Counter */
   long lo, hi;			/* Lo and Hi portion of long */
   time_t loc_time;
+  fd_set read_fd;
 
   process_grb = arg;
 
@@ -1431,7 +1436,18 @@ receive_bacodine (process_grb_event_t arg)
 	{
 	  /* If socket is connected, read the socket for packet; if the socket
 	   * does not have a packet, continue to loop.                        */
-	  if ((bytes = read (inetsd, (char *) lbuf, sizeof (lbuf))) > 0)
+	  struct timeval to;
+	  to.tv_sec = 500;
+	  to.tv_usec = 0;
+	  FD_ZERO (&read_fd);
+	  FD_SET (inetsd, &read_fd);
+	  // wait
+	  printf ("before select\n");
+	  fflush (lg);
+	  bytes = select (FD_SETSIZE, &read_fd, NULL, NULL, &to);
+	  printf ("after select\n");
+	  if (FD_ISSET (inetsd, &read_fd)
+	      && (bytes = read (inetsd, (char *) lbuf, sizeof (lbuf))) > 0)
 	    {
 	      /* Immediately echo back the packet so GCN can monitor:
 	       * (1) the actual receipt by the site, and
@@ -1566,7 +1582,7 @@ receive_bacodine (process_grb_event_t arg)
 		  break;
 		}
 	    }
-	  else if ((bytes == 0) && (errno != EWOULDBLOCK))
+	  else if ((bytes == 0))
 	    {			/* The connection is broken */
 	      printf ("bytes==0 && errno!=EWOULDBLOCK (errno=%i)\n", errno);
 	      fprintf (lg, "bytes==0 && errno!=EWOULDBLOCK (errno=%i)\n",
@@ -1596,6 +1612,7 @@ receive_bacodine (process_grb_event_t arg)
        * to the response time to the socket/packet servicing.
        * Replace it with your instrument-specific code if you choose to use
        * this demo program as the basis for your operations program.           */
-      sleep (1);		/* Give the CPU a rest */
     }
+
+  printf ("bacodine thread ends, BAD!\n");
 }
