@@ -2,29 +2,29 @@ DROP FUNCTION obj_alt (float8, float8, float8, float8, float8);
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_alt (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS '@PG_CONFIG_SERVER_LIBS@/pg_astrolib.so', 'obj_alt' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_alt' LANGUAGE 'C';
 
 DROP FUNCTION obj_az (float8, float8, float8, float8, float8);
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_az (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS '@PG_CONFIG_SERVER_LIBS@/pg_astrolib.so', 'obj_az' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_az' LANGUAGE 'C';
 
 DROP FUNCTION obj_rise (float8, float8, float8, float8);
 
 CREATE FUNCTION obj_rise (float8, float8, float8, float8)
-	RETURNS float8 AS '@PG_CONFIG_SERVER_LIBS@/pg_astrolib.so', 'obj_rise' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_rise' LANGUAGE 'C';
 
 DROP FUNCTION obj_set (float8, float8, float8, float8);
 
 CREATE FUNCTION obj_set (float8, float8, float8, float8)
-	RETURNS float8 AS '@PG_CONFIG_SERVER_LIBS@/pg_astrolib.so', 'obj_set' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_set' LANGUAGE 'C';
 
 DROP FUNCTION obj_airmass (float8, float8, float8, float8, float8);
 
 -- 			ra       dec     JD      lon     lat
 CREATE FUNCTION obj_airmass (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS '@PG_CONFIG_SERVER_LIBS@/pg_astrolib.so', 'obj_airmass' LANGUAGE 'C';
+	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_airmass' LANGUAGE 'C';
 
 DROP FUNCTION night_num (timestamp);
 
@@ -34,12 +34,12 @@ CREATE FUNCTION night_num (timestamp with time zone) RETURNS double precision AS
 DROP FUNCTION isinwcs (float4, float4, wcs);
 
 CREATE FUNCTION isinwcs (float4, float4, wcs)
-  RETURNS bool AS '@PG_CONFIG_SERVER_LIBS@/pg_wcs.so', 'isinwcs' LANGUAGE 'C';
+  RETURNS bool AS '/usr/lib/postgresql/lib/pg_wcs.so', 'isinwcs' LANGUAGE 'C';
 
 DROP FUNCTION imgrange (wcs);
 
 CREATE FUNCTION imgrange (wcs)
-  RETURNS varchar AS '@PG_CONFIG_SERVER_LIBS@/pg_wcs.so', 'imgrange' LANGUAGE 'C';
+  RETURNS varchar AS '/usr/lib/postgresql/lib/pg_wcs.so', 'imgrange' LANGUAGE 'C';
 
 DROP FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer, abstime);
 -- 			med_id  epoch    mount_name camera_name obs_id  tar_id   date

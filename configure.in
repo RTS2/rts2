@@ -187,9 +187,7 @@ AC_OUTPUT([Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
 	   src/sql/Makefile
-	   src/sql/create_functions.sql
-	   src/sql/create_tables.sql
-	   src/sql/create_views.sql
+	   src/sql/grant.sql
 	   src/pgsql/Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
