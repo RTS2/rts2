@@ -72,6 +72,14 @@ AC_SUBST(LIB_PTHREAD), [cat << EOF
 EOF
 exit 1])
 
+AC_CHECK_LIB([efence], [malloc], LIB_EFENCE="-lefence", [cat << EOF
+**** You don't have libefence library installed.
+**** Please try to get it somewhere.
+EOF
+LIB_EFENCE=""])
+
+AC_SUBST(LIB_EFENCE)
+
 AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg";
 AC_SUBST(LIB_JPEG), [cat << EOF
 **** You don't have jpeg library installed.
