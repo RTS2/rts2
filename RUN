@@ -67,8 +67,7 @@ lascaux:ps -A|grep rts2-centra
 23492 ?        00:00:00 rts2-centrald
 ..........
 
-Pokud nebezi, kill -1 1 (snad by melo fungovat pod vsemy uzivately), jelikoz
-centrald je v inittabu.
+Pokud nebezi, kill -1 1 (pod rootem), jelikoz centrald je v inittabu.
 
 b) na c0 pustit camd a teld (pod rootem):
 c0:/etc/init.d/rts2 restart
@@ -90,7 +89,7 @@ lascaux:rts2-planc
 
 Vhodna volba je uzivatel sluzba.
 
-Planovac vytvori prvni polozku planu, pote ji spusti. Dalekohled by se
+Planovac vytvori prvni polozku planu, pote ji spusti. Dalekohled se
 zacne presouvat, zacne se exponovat, snimky lezou do /images.
 
 6) na lascaux grbovac pod sluzbou nebo jinym uzivatelem s pristupem na
@@ -132,5 +131,9 @@ Pokud to nic nedela, vse restartovat a pustit na cisto - nicmene nemelo by se
 to jiz stavat. 
 
 Logy jdou do [lascaux|c0|c1|c2]:/var/log/rts2.
+
+8) Databaze
+http://lascaux.asu.cas.cz/bartdb
+Dale si uz urcite poradite.
 
 Petr Kubanek
