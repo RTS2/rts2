@@ -11,6 +11,7 @@
 #define __GNU_LIBRARY__
 
 #include "../camera.h"
+#include "status.h"
 #include "sbig.h"
 #include <string.h>
 #include <stdio.h>
@@ -45,7 +46,7 @@ camera_init (char *device_name, int camera_id)
     (struct chip_info *) malloc (init.nmbr_chips * sizeof (struct chip_info));
   sbig_modes = (int *) malloc (sizeof (int) * init.nmbr_chips);
   for (i = 0; i < init.nmbr_chips; i++)
-	  sbig_modes[i] = 0;
+    sbig_modes[i] = 0;
   // determine temperature regulation state
   switch (status.temperature_regulation)
     {
@@ -56,7 +57,7 @@ camera_init (char *device_name, int camera_id)
     case 1:
       sbig_reg = CAMERA_COOL_HOLD;
       break;
-     break;
+      break;
     default:
       sbig_reg = CAMERA_COOL_OFF;
 #ifdef DEBUG
@@ -83,7 +84,7 @@ camera_info (struct camera_info *info)
   int i;
   struct sbig_status status;
 
-  snprintf (info->name, 64, "%s fv %i", init.camera_name,
+  snprintf (info->type, 64, "%s fv %i", init.camera_name,
 	    init.firmware_version);
   strncpy (info->serial_number, init.serial_number, 64);
   info->chips = init.nmbr_chips;
@@ -175,21 +176,25 @@ camera_end_expose (int chip)
 extern int
 camera_binning (int chip_id, int vertical, int horizontal)
 {
-	int i;
-	for (i = 0; i < init.sbig_camera_info[chip_id].nmbr_readout_modes; i++)
+  int i;
+  for (i = 0; i < init.sbig_camera_info[chip_id].nmbr_readout_modes; i++)
+    {
+      int v =
+	init.sbig_camera_info[chip_id].readout_mode[0].width /
+	init.sbig_camera_info[chip_id].readout_mode[i].width;
+      int h =
+	init.sbig_camera_info[chip_id].readout_mode[0].height /
+	init.sbig_camera_info[chip_id].readout_mode[i].height;
+
+      if (v == vertical && h == horizontal)
 	{
-	      int v = init.sbig_camera_info[chip_id].readout_mode[0].width / init.sbig_camera_info[chip_id].readout_mode[i].width;
-	      int h = init.sbig_camera_info[chip_id].readout_mode[0].height / init.sbig_camera_info[chip_id].readout_mode[i].height;
-
-	      if (v == vertical && h == horizontal)
-	      {
-		      sbig_modes[chip_id] = i;
-		      return 0;
-	      }
-
+	  sbig_modes[chip_id] = i;
+	  return 0;
 	}
-	errno = EINVAL;
-	return -1;
+
+    }
+  errno = EINVAL;
+  return -1;
 
 }
 
@@ -285,7 +290,7 @@ camera_cool_shutdown ()
       errno = ENODEV;
       return -1;
     }
-  sbig_reg = CAMERA_COOL_SHUTDOWN;
+  sbig_reg = CAM_COOL_OFF;
   return 0;
 }
 
@@ -301,6 +306,6 @@ camera_cool_setpoint (float coolpoint)
       errno = ENODEV;
       return -1;
     }
-  sbig_reg = CAMERA_COOL_HOLD;
+  sbig_reg = CAM_COOL_TEMP;
   return 0;
 }
