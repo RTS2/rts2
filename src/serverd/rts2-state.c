@@ -51,7 +51,7 @@ usage ()
 	  "Program options:\n"
 	  "    -a set latitude (overwrites config file). \n"
 	  "    -c just print current state (one number) and exists\n"
-	  "    -t set time (int unix time)"
+	  "    -t set time (int unix time)\n"
 	  "    -l set longtitude (overwrites config file). Negative for east of Greenwich)\n"
 	  "    -h prints that help\n" "    -v be verbose\n");
   exit (EXIT_SUCCESS);
@@ -125,8 +125,8 @@ main (int argc, char **argv)
       printf ("%i\n", curr_type);
       break;
     default:
-      printf ("current: %i next: %i next_time: %s", curr_type, next_type,
-	      ctime (&ev_time));
+      printf ("current: %i next: %i next_time: %li %li (%s)", curr_type,
+	      next_type, t, ev_time, ctime (&ev_time));
       break;
     }
   return 0;

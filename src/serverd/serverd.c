@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <mcheck.h>
-#include <libnova.h>
+#include <libnova/ln_types.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>

@@ -8,7 +8,8 @@
 
 #define _GNU_SOURCE
 
-#include <libnova.h>
+#include <libnova/julian_day.h>
+#include <libnova/solar.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -30,18 +31,18 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
     {
       struct ln_rst_time t_rst;
       sun_naut =
-	get_solar_rst_horizont (t_jd, observer,
-				get_double_default ("night_horizont", -8),
-				&t_rst);
+	ln_get_solar_rst_horizont (t_jd, observer,
+				   get_double_default ("night_horizont", -8),
+				   &t_rst);
       if (!rst_naut->rise && jd < t_rst.rise)
 	rst_naut->rise = t_rst.rise;
       if (!rst_naut->transit && jd < t_rst.transit)
 	rst_naut->transit = t_rst.transit;
       if (!rst_naut->set && jd < t_rst.set)
 	rst_naut->set = t_rst.set;
-      if (!get_solar_rst_horizont
+      if (!ln_get_solar_rst_horizont
 	  (t_jd, observer,
-	   get_double_default ("day_horizont", SOLAR_STANDART_HORIZONT),
+	   get_double_default ("day_horizont", LN_SOLAR_STANDART_HORIZONT),
 	   &t_rst))
 	{
 	  *sun_rs = 1;
@@ -65,7 +66,7 @@ int
 next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 	    int *curr_type, int *type, time_t * ev_time)
 {
-  double jd_time = get_julian_from_timet (start_time);
+  double jd_time = ln_get_julian_from_timet (start_time);
   struct ln_rst_time rst, rst_naut;
 
   int sun_rs;
@@ -79,7 +80,7 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
     {
       *curr_type = SERVERD_NIGHT;
       *type = SERVERD_DAWN;
-      get_timet_from_julian (rst_naut.rise, ev_time);
+      ln_get_timet_from_julian (rst_naut.rise, ev_time);
     }
   else
     {
@@ -94,19 +95,20 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 		{
 		  *curr_type = SERVERD_EVENING;
 		  *type = SERVERD_DUSK;
-		  get_timet_from_julian (rst.set, ev_time);
+		  ln_get_timet_from_julian (rst.set, ev_time);
 		}
 	      else if (jd_time < rst.rise + mor_time - 1.0)
 		{
 		  *curr_type = SERVERD_MORNING;
 		  *type = SERVERD_DAY;
-		  get_timet_from_julian (rst.rise + mor_time - 1.0, ev_time);
+		  ln_get_timet_from_julian (rst.rise + mor_time - 1.0,
+					    ev_time);
 		}
 	      else
 		{
 		  *curr_type = SERVERD_DAY;
 		  *type = SERVERD_EVENING;
-		  get_timet_from_julian (rst.set - eve_time, ev_time);
+		  ln_get_timet_from_julian (rst.set - eve_time, ev_time);
 		}
 	    }
 	  else
@@ -115,13 +117,13 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 		{
 		  *curr_type = SERVERD_DUSK;
 		  *type = SERVERD_NIGHT;
-		  get_timet_from_julian (rst_naut.set, ev_time);
+		  ln_get_timet_from_julian (rst_naut.set, ev_time);
 		}
 	      else
 		{
 		  *curr_type = SERVERD_DAWN;
 		  *type = SERVERD_MORNING;
-		  get_timet_from_julian (rst.rise, ev_time);
+		  ln_get_timet_from_julian (rst.rise, ev_time);
 		}
 	    }
 
@@ -133,13 +135,13 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 	    {
 	      *curr_type = SERVERD_DAWN;
 	      *type = SERVERD_DUSK;
-	      get_timet_from_julian (rst_naut.transit, ev_time);
+	      ln_get_timet_from_julian (rst_naut.transit, ev_time);
 	    }
 	  else
 	    {
 	      *curr_type = SERVERD_DUSK;
 	      *type = SERVERD_NIGHT;
-	      get_timet_from_julian (rst_naut.set, ev_time);
+	      ln_get_timet_from_julian (rst_naut.set, ev_time);
 	    }
 	}
     }
