@@ -51,6 +51,7 @@ usage ()
 	  "Program options:\n"
 	  "    -a set latitude (overwrites config file). \n"
 	  "    -c just print current state (one number) and exists\n"
+	  "    -t set time (int unix time)"
 	  "    -l set longtitude (overwrites config file). Negative for east of Greenwich)\n"
 	  "    -h prints that help\n" "    -v be verbose\n");
   exit (EXIT_SUCCESS);
@@ -74,9 +75,11 @@ main (int argc, char **argv)
   obs.lat = get_double_default ("latitude", 0);
   obs.lng = get_double_default ("longtitude", 0);
 
+  t = time (NULL);
+
   while (1)
     {
-      c = getopt (argc, argv, "a:cl:hv");
+      c = getopt (argc, argv, "a:cl:hvt:");
       if (c == -1)
 	break;
       switch (c)
@@ -90,6 +93,14 @@ main (int argc, char **argv)
 	case 'l':
 	  obs.lng = atof (optarg);
 	  break;
+	case 't':
+	  t = atoi (optarg);
+	  if (!t)
+	    {
+	      fprintf (stderr, "Invalid time: %s\n", optarg);
+	      exit (1);
+	    }
+	  break;
 	case '?':
 	case 'h':
 	  usage ();
@@ -100,7 +111,6 @@ main (int argc, char **argv)
 	  fprintf (stderr, "Getopt returned unknow character %o\n", c);
 	}
     }
-  t = time (NULL);
   if (verbose > 0)
     printf ("Longtitude: %+f Latitude: %f Time: %s", obs.lng, obs.lat,
 	    ctime (&t));
@@ -116,7 +126,7 @@ main (int argc, char **argv)
       break;
     default:
       printf ("current: %i next: %i next_time: %s", curr_type, next_type,
-	      ctime (&t));
+	      ctime (&ev_time));
       break;
     }
   return 0;
