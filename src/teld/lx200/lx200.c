@@ -395,9 +395,9 @@ int
 tel_normalize (double *ra, double *dec)
 {
   if (*ra < 0)
-    *ra = floor (*ra / 24) * -24 + *ra;	//normalize ra
+    *ra = floor (*ra / 360) * -360 + *ra;	//normalize ra
   if (*ra > 360)
-    *ra = *ra - floor (*ra / 24) * 24;
+    *ra = *ra - floor (*ra / 360) * 360;
 
   if (*dec < -90)
     *dec = floor (*dec / 90) * -90 + *dec;	//normalize dec
@@ -417,6 +417,10 @@ tel_write_ra (double ra)
 {
   char command[14];
   int h, m, s;
+  if (ra < 0 || ra > 360.0)
+    {
+      return -1;
+    }
   ra = ra / 15;
   dtoints (ra, &h, &m, &s);
   if (snprintf (command, 14, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
@@ -436,6 +440,10 @@ tel_write_dec (double dec)
 {
   char command[15];
   int h, m, s;
+  if (dec < -90.0 || dec > 90.0)
+    {
+      return -1;
+    }
   dtoints (dec, &h, &m, &s);
   if (snprintf (command, 15, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) < 0)
     return -1;
@@ -684,7 +692,7 @@ tel_check_coords (double ra, double dec)
   err_dec = fabs (err_dec);
   tel_normalize (&err_ra, &err_dec);
 
-  if (err_ra > 0.5 || err_dec > 0.5)
+  if (err_ra > 1.0 || err_dec > 1.0)
     return -1;
   return 0;
 }
@@ -771,7 +779,7 @@ int
 telescope_move_to (double ra, double dec)
 {
   int i;
-  for (i = 0; i < 5; i++)
+  for (i = 0; i < 2; i++)
     if (!tel_move_to (ra, dec))
       {
 	return 0;		// we finished move without error
