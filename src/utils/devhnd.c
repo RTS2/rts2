@@ -1,3 +1,8 @@
+#include "camera_info.h"
+#include "telescope_info.h"
+#include "dome_info.h"
+
+
 #include "devhnd.h"
 #include <errno.h>
 #include <string.h>
@@ -193,6 +198,7 @@ telescope_command_handler (struct param_status *params,
   errno = EINVAL;
   return -1;
 };
+
 int
 camera_command_handler (struct param_status *params, struct camera_info *info)
 {
@@ -263,6 +269,21 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
   errno = EINVAL;
   return -1;
 };
+
+int
+dome_command_handler (struct param_status *params, struct dome_info *info)
+{
+#ifdef DEBUG
+  printf ("dome get response: %s\n", params->param_argv);
+#endif
+  if (!strcmp (params->param_argv, "temperature"))
+    return param_next_float (params, &info->temperature);
+  if (!strcmp (params->param_argv, "humidity"))
+    return param_next_float (params, &info->humidity);
+  errno = EINVAL;
+  return -1;
+};
+
 struct supp_info devhnd_devices[] = {
   {
    NULL, NULL}
@@ -277,6 +298,7 @@ struct supp_info devhnd_devices[] = {
    (devcli_handle_response_t) camera_command_handler, NULL}
   ,				// DEVICE_TYPE_CCD
   {
-   NULL, NULL}			// DEVICE_TYPE_DOME
+   (devcli_handle_response_t) dome_command_handler, NULL}
+  // DEVICE_TYPE_DOME
   // etc..
 };
