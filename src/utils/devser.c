@@ -425,7 +425,15 @@ devser_thread_cancel_all (void)
   int i;
   for (i = 0; i < MAX_THREADS; i++)
     {
-      pthread_cancel (threads[i].thread);
+      if (pthread_mutex_trylock (&threads[i].lock) == EBUSY)
+	{
+	  pthread_cancel (threads[i].thread);
+	  pthread_join (threads[i].thread, NULL);
+	}
+      else
+	{
+	  pthread_mutex_unlock (&threads[i].lock);
+	}
     }
   return 0;
 }
@@ -1519,14 +1527,8 @@ devser_done (void)
 #ifdef DEBUG
   printf ("devser removing IPC\n");
 #endif /* DEBUG */
-  if (semctl (data_sem, 1, IPC_RMID))
-    {
-      perror ("IPC_RMID data_sem semctl");
-    }
-  if (msgctl (msg_id, IPC_RMID, NULL))
-    {
-      perror ("IPC_RMID msg_id");
-    }
+  semctl (data_sem, 1, IPC_RMID);
+  msgctl (msg_id, IPC_RMID, NULL);
 }
 
 /*! 
@@ -1663,8 +1665,8 @@ devser_run (int port, devser_handle_command_t in_handler)
       if (read_from_client () < 0)
 	{
 	  close (control_fd);
-	  syslog (LOG_INFO, "connection from desc %d closed", control_fd);
 	  devser_thread_cancel_all ();
+	  syslog (LOG_INFO, "connection from desc %d closed", control_fd);
 	  return -1;
 	}
     }
