@@ -958,8 +958,6 @@ devdem_register (char *server_host, uint16_t server_port,
   handlers.message_handler =
     (devcli_handle_response_t) server_message_handler;
 
-  handlers.data_handler = NULL;
-
   strncpy (device_name, in_device_name, DEVICE_NAME_SIZE);
 
   /* connect to the server */

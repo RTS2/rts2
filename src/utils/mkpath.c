@@ -62,7 +62,7 @@ mkpath (const char *path, mode_t mode)
   if (!path)
     return -1;
 
-  pathname = (char *) malloc (strlen (path));
+  pathname = (char *) malloc (strlen (path) + 1);
 
   if (!pathname)
     return -1;
@@ -81,13 +81,20 @@ mkpath (const char *path, mode_t mode)
 	  *tmp_path = 0;
 
 	  if (create_dir (pathname, mode))
-	    return -1;
+	    {
+	      free (pathname);
+	      return -1;
+	    }
 	  *tmp_path = '/';
 	}
       tmp_path++;
     }
 
   if (create_dir (pathname, mode))
-    return -1;
+    {
+      free (pathname);
+      return -1;
+    }
+  free (pathname);
   return 0;
 }

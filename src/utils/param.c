@@ -65,8 +65,8 @@ param_done (struct param_status *params)
     {
       free (params->param_argv);
       params->param_argv = NULL;
+      free (params);
     }
-  free (params);
 }
 
 int
