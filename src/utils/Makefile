@@ -1,7 +1,9 @@
 # $Id$
-CC = gcc
-CFLAGS = -Wall -g
-LDFLAGS = -lm -lpthread
+
+include ../../make.conf
+
+CFLAGS += -I/usr/src/cfitsio
+LDFLAGS += -l$(LIB_M)
 
 all: devdem.o devcli.o hms.o
 
@@ -16,3 +18,5 @@ mrproper:
 indent:
 	indent *.c *.h
 
+commit:indent clean
+	$(CVS) commit

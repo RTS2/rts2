@@ -41,6 +41,7 @@ int devcli_init_channel (struct devcli_channel_t *channel,
 			 const char *hostname, uint16_t port);
 
 int devcli_write_read (struct devcli_channel_t *channel, char *message,
+		       devcli_handle_data_t handler, void *handler_arg,
 		       int *ret_code);
 int devcli_read_data (struct sockaddr *server_addr, pthread_t * thread,
 		      devcli_handle_data_t handler, void *handler_arg);
