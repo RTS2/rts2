@@ -81,9 +81,7 @@ c2:/etc/init.d/rts2 restart
 Poznamka: tento prikaz vede vetsinou k padu c1, c1 je lepsi rebootovat prikazem
 restart. Je to chyba, na jejim odstraneni se pracuje.
 
-2)
-
-d) na lascaux planovac pod sluzbou nebo jinym uzivatelem s PRISTUPEM NA
+e) na lascaux planovac pod sluzbou nebo jinym uzivatelem s PRISTUPEM NA
 POSTGRESQL a clenem skupiny rts2 (pristup rw do /images, /darks):
 lascaux:rts2-planc 
 
@@ -106,8 +104,7 @@ Ma nekolik zajimavych vlasnosti:
 - stiskem F2 prejde centralni server do stavu off
 - stiskem F3 do jednoho ze stavu standby
 - stiskem F4 do jednoho z on stavu
-- F2, F3 a F4 zatim nejsou potvrzovane, takze pozor a hlidejte si, jestli jste
-  je nezmackli omylem
+- F2, F3 a F4 jsou potvrzovane, takze se vam snad uz nebude stavat, ze je prepnete omylem.
 - stiskem ctrl+c nebo F10 se ukonci
 - nahore je mozne psat primo prikazy, ktere oddelujeme entrem.  Napriklad
   (pokud mate pripojeno zarizeni C0):
@@ -135,5 +132,6 @@ Logy jdou do [lascaux|c0|c1|c2]:/var/log/rts2.
 8) Databaze
 http://lascaux.asu.cas.cz/bartdb
 Dale si uz urcite poradite.
+Pokud touzite po loginu, zeptejte se.
 
 Petr Kubanek
