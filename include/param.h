@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #ifndef __RTS_PARAM__
 #define __RTS_PARAM__
 
