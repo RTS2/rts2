@@ -1,6 +1,6 @@
 /** 
 * @file Functions to work with hms format.
-*
+* $Id$
 * hms string is defined as follow:
 * <ul> 
 * 	<li>hms ::= decimal | decimal + [!0-9] + hms 

@@ -1,11 +1,13 @@
 /*! @file Driver file for LX200 telescope
- * 
+ * $Id$
  * Based on original c library for xephem writen by Ken Shouse
  * <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
  * <cguirao@eso.org>
  *
  * This is JUST A DRIVER, you shall to consult deamon for network
  * interface.
+ *
+ * Uses semaphores to control file acces.
  *
  * @author petr 
  */
@@ -25,6 +27,9 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
 #include "../utils/hms.h"
 //! device name
 char *port_dev;
@@ -36,10 +41,25 @@ double park_dec;
 //! port timeout
 #define PORT_TIME_OUT 5;
 
-//! lock for port access
-pthread_mutex_t tel_mutex = PTHREAD_MUTEX_INITIALIZER;
-//! lock for moving
-pthread_mutex_t mov_mutex = PTHREAD_MUTEX_INITIALIZER;
+//! sempahore id structure, we have two semaphores...
+int semid;
+//! one semaphore for direct port controll..
+#define SEM_TEL 	0
+//! and second for controll of the move operation
+#define SEM_MOVE 	1
+
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+/* union semun is defined by including <sys/sem.h> */
+#else
+/* according to X/OPEN we have to define it ourselves */
+union semun
+{
+  int val;			/* value for SETVAL */
+  struct semid_ds *buf;		/* buffer for IPC_STAT, IPC_SET */
+  unsigned short int *array;	/* array for GETALL, SETALL */
+  struct seminfo *__buf;	/* buffer for IPC_INFO */
+};
+#endif
 
 /*! Connect on given port
  * 
@@ -51,6 +71,9 @@ int
 tel_connect (const char *devptr)
 {
   struct termios tel_termios;
+  union semun sem_un;
+  unsigned short int sem_arr[] = { 1, 1 };
+
   port_dev = malloc (strlen (devptr) + 1);
   strcpy (port_dev, devptr);
   port = open (port_dev, O_RDWR);
@@ -72,7 +95,24 @@ tel_connect (const char *devptr)
   tel_termios.c_cc[VTIME] = 5;
 
   if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
-    return -1;
+    {
+      syslog (LOG_ERR, "tcsetattr: %m");
+      return -1;
+    }
+
+  if ((semid = semget (ftok (devptr, 0), 2, IPC_CREAT | 0644)) < 0)
+    {
+      syslog (LOG_ERR, "semget: %m");
+      return -1;
+    }
+
+  sem_un.array = sem_arr;
+
+  if (semctl (semid, 0, SETALL, sem_un) < 0)
+    {
+      syslog (LOG_ERR, "semop init: %m");
+      return -1;
+    }
 
   syslog (LOG_DEBUG, "LX200:Initialization complete");
 
@@ -164,7 +204,7 @@ tel_write (char *buf, int count)
 /*! Combine write && read together
  * Flush port to clear any gargabe.
  *
- * @exception EINVAL and other mutex exceptions
+ * @exception EINVAL and other exceptions
  * 
  * @param wbuf buffer to write on port
  * @param wcount write count
@@ -177,8 +217,13 @@ int
 tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
 {
   int tmp_rcount = -1;
-  int pt_ret;
-  if ((errno = pthread_mutex_lock (&tel_mutex)))
+  struct sembuf sem_buf;
+
+  sem_buf.sem_num = SEM_TEL;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = 0;
+
+  if (semop (semid, &sem_buf, 1) < 0)
     return -1;
   if (tcflush (port, TCIOFLUSH) < 0)
     goto unlock;		// we need to unlock
@@ -188,11 +233,12 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
   tmp_rcount = tel_read (rbuf, rcount);
 
 unlock:
-  if ((pt_ret = pthread_mutex_unlock (&tel_mutex)))
+
+  sem_buf.sem_op = 1;
+
+  if (semop (semid, &sem_buf, 1) < 0)
     {
-      errno = pt_ret;
-      syslog (LOG_EMERG, "LX200:Cannot unlock tel_mutex in tel_write_read:%s",
-	      strerror (errno));
+      syslog (LOG_EMERG, "LX200:Cannot perform semop in tel_write_read:%m");
       return -1;
     }
 
@@ -207,8 +253,13 @@ int
 tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount)
 {
   int tmp_rcount = -1;
-  int pt_ret;
-  if ((errno = pthread_mutex_lock (&tel_mutex)))
+  struct sembuf sem_buf;
+
+  sem_buf.sem_num = SEM_TEL;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = 0;
+
+  if (semop (semid, &sem_buf, 1) < 0)
     return -1;
   if (tcflush (port, TCIOFLUSH) < 0)
     goto unlock;		// we need to unlock
@@ -218,12 +269,13 @@ tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount)
   tmp_rcount = tel_read_hash (rbuf, rcount);
 
 unlock:
-  if ((pt_ret = pthread_mutex_unlock (&tel_mutex)))
+
+  sem_buf.sem_op = 1;
+
+  if (semop (semid, &sem_buf, 1) < 0)
     {
-      errno = pt_ret;
       syslog (LOG_EMERG,
-	      "LX200:Cannot unlock tel_mutex in tel_write_read_hash:%s",
-	      strerror (errno));
+	      "LX200:Cannot perform semop in tel_write_read_hash:%m");
       return -1;
     }
 
@@ -489,10 +541,19 @@ tel_move_to (double ra, double dec)
 {
   int timeout;
   int ret;
-  int pt_ret;
+  struct sembuf sem_buf;
+
+  sem_buf.sem_num = SEM_MOVE;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = 0;
+
   syslog (LOG_INFO, "LX200:tel move_to ra:%f dec:%f", ra, dec);
-  if ((errno = pthread_mutex_lock (&mov_mutex)))
+
+  if (semop (semid, &sem_buf, 1) < 0)
     return -1;
+
+  sem_buf.sem_op = 1;
+
   if ((ret = tel_slew_to (ra, dec)) < 0)
     {
       syslog (LOG_ERR, "LX200:Cannot move to ra:%f dec:%f, slew return %i",
@@ -508,14 +569,11 @@ tel_move_to (double ra, double dec)
 
   if (time (NULL) > timeout)
     {
-      syslog (LOG_ERR, "LX200:Timeout during moving ro ra:%f dec:%f.", ra, dec);	// mayby will be handy to add call to tel_get_ra+dec
+      syslog (LOG_ERR, "LX200:Timeout during moving to ra:%f dec:%f.", ra, dec);	// mayby will be handy to add call to tel_get_ra+dec
       // to obtain current ra and dec
-      if ((pt_ret = pthread_mutex_unlock (&mov_mutex)))
+      if (semop (semid, &sem_buf, 1) < 0)
 	{
-	  errno = pt_ret;
-	  syslog (LOG_EMERG,
-		  "LX200:Cannot unlock mov_mutex in tel_move_to:%s",
-		  strerror (errno));
+	  syslog (LOG_EMERG, "LX200:Cannot perform semop in tel_move_to:%m");
 	  return -1;
 	}
       errno = ETIMEDOUT;
@@ -528,11 +586,11 @@ tel_move_to (double ra, double dec)
   // that, so we could program checkcoords to check for precise position.  
   // Also good to wait till the things settle down.
 unlock:
-  if ((pt_ret = pthread_mutex_unlock (&mov_mutex)))
+
+  if (semop (semid, &sem_buf, 1) < 0)
     {
-      errno = pt_ret;
-      syslog (LOG_EMERG, "LX200:Cannot unlock mov_mutex in tel_move_to:%s",
-	      strerror (errno));
+      syslog (LOG_EMERG, "LX200:Cannot perform semop in tel_move_to:%m");
+      return -1;
     }
 
   syslog (LOG_DEBUG, "LX200:tel_move_to ra:%f dec:%f finished", ra, dec);

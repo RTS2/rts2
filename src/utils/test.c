@@ -1,3 +1,7 @@
+/*! @file Test file
+* $Id$
+* @author petr
+*/
 #define _GNU_SOURCE
 
 #include <stdio.h>

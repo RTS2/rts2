@@ -1,5 +1,5 @@
 /* @file Header file for LX200 telescope driver
-*
+* $Id$
 * @author petr 
 */
 

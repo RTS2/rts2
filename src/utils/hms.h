@@ -1,3 +1,7 @@
+/*! Hour, minutes, seconds manipulation
+* $Id$
+* @author petr
+*/
 #ifndef __RTS_HMS__
 #define __RTS_HMS__
 

@@ -46,7 +46,13 @@ typedef struct
 }
 servinfo;
 
-servinfo *clients[FD_SETSIZE];
+//! Information structure, for each open socket one
+servinfo client_info;
+//! Handler function
+devdem_handle_command_t handler;
+
+//! Filedes of asci control channel
+int control_fd;
 
 /*! Printf to descriptor, log to syslogd
 * 
@@ -86,9 +92,9 @@ devdem_dprintf (int fd, const char *format, ...)
 * @return -1 and set errno on error, 0 otherwise
 */
 int
-devdem_write_command_end (int fd, char *msg, int retc)
+devdem_write_command_end (char *msg, int retc)
 {
-  return devdem_dprintf (fd, "%+04i %s\n", retc, msg);
+  return devdem_dprintf (control_fd, "%+04i %s\n", retc, msg);
 }
 
 
@@ -100,7 +106,7 @@ devdem_write_command_end (int fd, char *msg, int retc)
 * failure is reported to socket. 
 */
 int
-devdem_handle_commands (char *buffer, int fd, devdem_handle_command_t handler)
+devdem_handle_commands (char *buffer, devdem_handle_command_t handler)
 {
   char *next_command = NULL;
   char *argv;
@@ -109,19 +115,20 @@ devdem_handle_commands (char *buffer, int fd, devdem_handle_command_t handler)
   if ((ret = argz_create_sep (buffer, ';', &argv, &argc)))
     {
       errno = ret;
-      return devdem_write_command_end (fd, strerror (errno), -errno);
+      return devdem_write_command_end (strerror (errno), -errno);
     }
   if (!argv)
-    return devdem_write_command_end (fd, "Empty command", -1);
+    return devdem_write_command_end ("Empty command", -1);
 
   while ((next_command = argz_next (argv, argc, next_command)))
     {
-      if (handler (next_command, fd) < 0)
+      syslog (LOG_DEBUG, "Handling '%s'", next_command);
+      if (handler (next_command, control_fd) < 0)
 	goto end;
     }
 
 end:
-  return devdem_write_command_end (fd, strerror (errno), -errno);
+  return devdem_write_command_end (strerror (errno), -errno);
 }
 
 
@@ -136,7 +143,7 @@ make_socket (uint16_t port)
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
     {
-      syslog (LOG_ERR, "socket: %s", strerror (errno));
+      syslog (LOG_ERR, "socket: %m");
       exit (EXIT_FAILURE);
     }
 
@@ -147,13 +154,13 @@ make_socket (uint16_t port)
   if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof (int))
       < 0)
     {
-      syslog (LOG_ERR, "setsockopt: %s", strerror (errno));
+      syslog (LOG_ERR, "setsockopt: %m");
       exit (EXIT_FAILURE);
     }
 
   if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0)
     {
-      syslog (LOG_ERR, "bind: %s", strerror (errno));
+      syslog (LOG_ERR, "bind: %m");
       exit (EXIT_FAILURE);
     }
 
@@ -162,7 +169,7 @@ make_socket (uint16_t port)
 
 
 int
-read_from_client (int fd, devdem_handle_command_t handler, servinfo * client)
+read_from_client ()
 {
   char *buffer;
   int nbytes;
@@ -170,13 +177,13 @@ read_from_client (int fd, devdem_handle_command_t handler, servinfo * client)
   char *endptr;			// end of message
   int ret;
 
-  buffer = client->buf;
-  endptr = client->endptr;
-  nbytes = read (fd, endptr, MAXMSG - (endptr - buffer));
+  buffer = client_info.buf;
+  endptr = client_info.endptr;
+  nbytes = read (control_fd, endptr, MAXMSG - (endptr - buffer));
   if (nbytes < 0)
     {
       /* Read error. */
-      syslog (LOG_ERR, "read: %s", strerror (errno));
+      syslog (LOG_ERR, "read: %m");
       return -1;
     }
   else if (nbytes == 0)
@@ -192,7 +199,7 @@ read_from_client (int fd, devdem_handle_command_t handler, servinfo * client)
 	    {
 	      *endptr = 0;
 	      syslog (LOG_DEBUG, "Server: got message: '%s'", buffer);
-	      if ((ret = devdem_handle_commands (startptr, fd, handler)) < 0)
+	      if ((ret = devdem_handle_commands (startptr, handler)) < 0)
 		return ret;
 	      endptr++;
 	      if (*endptr == '\n')
@@ -205,23 +212,8 @@ read_from_client (int fd, devdem_handle_command_t handler, servinfo * client)
 	      memmove (buffer, startptr, endptr - startptr + 1);
 	      endptr -= startptr - buffer;
 	      startptr = buffer;
-	      nbytes = read (fd, endptr, MAXMSG - (endptr - startptr));
-	      endptr[nbytes] = 0;	// mark end appropriatery
-	      client->endptr = endptr;
-	      if (nbytes < 0)
-		{
-		  if (errno == EAGAIN)
-		    return 0;
-		  else
-		    {
-		      /* Read error. */
-		      syslog (LOG_ERR, "read: %s", strerror (errno));
-		      return -1;
-		    }
-		}
-	      else if (nbytes == 0)
-		/* End-of-file. */
-		return 0;
+	      client_info.endptr = endptr;
+	      return 0;
 	    }
 	  else
 	    endptr++;
@@ -252,13 +244,18 @@ sig_exit (int sig)
 */
 
 int
-devdem_run (int port, devdem_handle_command_t handler)
+devdem_run (int port, devdem_handle_command_t in_handler)
 {
   int sock;
-  fd_set active_fd_set, read_fd_set;
-  int i;
   struct sockaddr_in clientname;
   size_t size;
+
+  if (!in_handler)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+  handler = in_handler;
   /* Register on_exit */
   on_exit (devdem_on_exit, NULL);
   signal (SIGTERM, sig_exit);
@@ -268,66 +265,46 @@ devdem_run (int port, devdem_handle_command_t handler)
   sock = make_socket (port);
   if (listen (sock, 1) < 0)
     {
-      syslog (LOG_ERR, "listen: %s", strerror (errno));
+      syslog (LOG_ERR, "listen: %m");
       return -1;
     }
-
-  /* Initialize the set of active sockets. */
-  FD_ZERO (&active_fd_set);
-  FD_SET (sock, &active_fd_set);
 
   syslog (LOG_INFO, "Started");
 
   while (1)
     {
-      /* Block until input arrives on one or more active sockets. */
-      read_fd_set = active_fd_set;
-      if (select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0)
+      size = sizeof (clientname);
+      if ((control_fd =
+	   accept (sock, (struct sockaddr *) &clientname, &size)) < 0)
 	{
-	  syslog (LOG_ERR, "select: %s", strerror (errno));
+	  syslog (LOG_ERR, "accept: %m");
 	  if (errno != EBADF)
 	    return -1;
 	}
 
-      /* Service all the sockets with status or input pending. */
-      for (i = 0; i < FD_SETSIZE; ++i)
-	if (FD_ISSET (i, &read_fd_set))
-	  {
-	    if (i == sock)
-	      {
-		/* Connection request on original socket. */
-		int new;
-		size = sizeof (clientname);
-		new = accept (sock, (struct sockaddr *) &clientname, &size);
-		if (new < 0)
-		  {
-		    syslog (LOG_ERR, "accept: %s", strerror (errno));
-		    return -1;
-		  }
-		if (fcntl (new, F_SETFL, O_NONBLOCK) < 0)
-		  {
-		    syslog (LOG_ERR, "fcntl: %s", strerror (errno));
-		    break;
-		  }
-		clients[new] = (servinfo *) malloc (sizeof (servinfo));
-		clients[new]->endptr = clients[new]->buf;
-		syslog (LOG_INFO,
-			"Server: connect from host %s, port %hd, desc:%i",
-			inet_ntoa (clientname.sin_addr),
-			ntohs (clientname.sin_port), new);
-		FD_SET (new, &active_fd_set);
-	      }
-	    else
-	      {
-		/* Data arriving on an already-connected socket. */
-		if (read_from_client (i, handler, clients[i]) < 0)
-		  {
-		    free (clients[i]);
-		    close (i);
-		    syslog (LOG_INFO, "Connection from desc %d closed", i);
-		    FD_CLR (i, &active_fd_set);
-		  }
-	      }
-	  }
+      if (fork () == 0)
+	{
+	  // child
+	  syslog (LOG_DEBUG, "Child:%i desc:%i", getpid (), control_fd);
+	  (void) dup2 (control_fd, 0);
+	  (void) dup2 (control_fd, 1);
+	  close (sock);
+	  break;
+	}
+      // parent 
+      close (control_fd);
+    }
+
+  client_info.endptr = client_info.buf;
+  syslog (LOG_INFO, "Server: connect from host %s, port %hd, desc:%i",
+	  inet_ntoa (clientname.sin_addr),
+	  ntohs (clientname.sin_port), control_fd);
+  while (1)
+    {
+      if (read_from_client () < 0)
+	{
+	  close (control_fd);
+	  syslog (LOG_INFO, "Connection from desc %d closed", control_fd);
+	}
     }
 }

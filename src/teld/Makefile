@@ -1,3 +1,4 @@
+# $Id$
 CC = gcc
 CFLAGS = -g -Wall
 LDFLAGS = -lm -Wall

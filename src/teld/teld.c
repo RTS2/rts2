@@ -1,14 +1,14 @@
+/*! Telescope deamon.
+* $Id$
+* @author petr
+*/
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <syslog.h>
 #include <signal.h>
 #include <mcheck.h>
@@ -44,6 +44,7 @@ teld_handle_command (char *buffer, int fd)
   size_t argc;
   int ret;
   double dval;
+  char *param;
 
   if ((ret = argz_create_sep (buffer, ' ', &argv, &argc)))
     {
@@ -63,7 +64,6 @@ teld_handle_command (char *buffer, int fd)
   if (strcmp (argv, "set") == 0)
     {
       double ra, dec;
-      char *param;
       test_length (2);
       param = argz_next (argv, argc, argv);
       ra = hmstod (param);
@@ -81,7 +81,6 @@ teld_handle_command (char *buffer, int fd)
   if (strcmp (argv, "move") == 0)
     {
       double ra, dec;
-      char *param;
       test_length (2);
       param = argz_next (argv, argc, argv);
       ra = hmstod (param);
