@@ -607,6 +607,10 @@ telescope_info (struct telescope_info *info)
       || tel_read_localtime (&info->localtime))
     return -1;
 
+  info->flip = 0;
+  info->axis0_counts = 0;
+  info->axis1_counts = 0;
+
   return 0;
 }
 
@@ -711,7 +715,7 @@ tel_check_coords (double ra, double dec)
   err_dec = fabs (err_dec);
   tel_normalize (&err_ra, &err_dec);
 
-  if (err_ra > 1.0 || err_dec > 1.0)
+  if ((err_ra > 1.0 && err_ra < 359.0) || err_dec > 1.0)
     return -1;
   return 0;
 }
