@@ -59,7 +59,7 @@ if test "z"httpd_conf = "z" ; then
 else
 	AC_MSG_RESULT($httpd_conf)
 	AC_MSG_CHECKING(for User in httpd.conf)
-	WWWUSER=`grep '^User ' $httpd_conf | sed -e "s/\(.*User *\| *$\)//"`
+	WWWUSER=`grep '^User.*$' $httpd_conf | head -n 1 | sed -e "s/\(.*User *\| *$\)//"`
 	AC_MSG_RESULT($WWWUSER)
 fi
 
