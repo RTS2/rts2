@@ -12,7 +12,7 @@ Poøizování snímkù probíhá z pohledu klienta následovnì:
 
 \item zahaj na kameøe expozici
 
-\item shromá¾di v¹echny informace, vztahující se k zaèátku expozice,
+\item zjisti v¹echny informace, vztahující se k zaèátku expozice,
 potøebná pro ulo¾ení do hlavièky snímku
 
 \item poèkej na stav kamery DATA
@@ -34,7 +34,7 @@ snímku, je vhodné mít mo¾nost se zpracováním snímkù komunikovat a¾ do
 jeho ukonèení.
 
 Pøed poøízením prvního snímku je potøeba do databáze pozorování zanést
-informaci o zaèátku pozorování nového pole, po ukoèení vyèítání
+informaci o zaèátku pozorování nového pole, po ukonèení vyèítání
 posledního snímku je tøeba zanést informace o ukonèení pozorování
 tohoto pole. V pøípadì, ¾e se podaøí snímek opatøit astrometrií, je potøeba
 ho pøidat do databáze snímkù.
@@ -53,11 +53,16 @@ Snímky, u kterıch se podaøí urèit jejich pøesnou polohu, jsou ponechávány v
 adresáøi /images. Tento adresáø je èlenìn na podadresáøe pro epochy, názvy
 detektorù a èísla polí.
 
-Napøíklad snímek umístnìnı do souboru s celou cestou
-/images/002/C0/04323/20030412230405.fits byl poøízen ve druhé epo¹e,
+Napøíklad snímek umístìnı do souboru s celou cestou
+/images/~002/~C0/~04323/~20030412230405.fits byl poøízen ve druhé epo¹e,
 detektorem C0, pro pole s èíslem 4323. Jeho expozice zaèala 12. dubna 2003 ve
 23 hodin, 4 minuty, 5 vteøin svìtového èasu.
 
-Temné snímky a flat fieldy jsou ukládány do podobné struktury jako obyèejné
-snímky. Jediná odli¹nost je v chybìjícím èísle pole. Struktura je vytváøena
-pod adresáøem /darks, respektive /flats.
+Temné snímky a flat fieldy jsou pou¾itelné pouze kolem doby svého poøízení.
+Proto jsou ukládány do struktury, která umo¾òuje snadno a rychle dohledat k
+danému datu korekèní snímek - temné snímky do adresáøe odpovídajících roku a
+mìsíci poøízení, flat fieldy do adresáøù odpovídacích roku, mìsíci, dni a dobì
+poøízení snímku. Formát názvu souboru je stejnı jako u obyèejnıch snímkù,
+obsahuje tedy datum a èas poøízení snímku. Temné snímky jsou ukládány do
+podadresáøù adresáøe /darks, flat fieldy jsou ukládány do podadresáøù adresáøe
+/flats.

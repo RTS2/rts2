@@ -6,9 +6,11 @@ pro dalekohled BART.
 V úvodní kapitole jsou popsány a vysvìtleny nìkteré výrazy, pou¾ívané v dal¹ím
 textu.
 
-V druhé kapitole jsou popsány vlasnosti pøístrojù, které má systém ovládat.
+V druhé kapitole jsou popsány vlastnosti pøístrojù, které má systém ovládat.
 
-Ve tøetí kapitole je obsa¾en popis problémù, a je zde navr¾eno jejich øe¹ení. 
+Tøetí kapitola popisuje návrh nového systému. V její první èásti je navr¾en
+algoritmus pro øe¹ení dvou problémù - pøedávání priorit a prùbì¾né korekce
+montá¾e. Její druhá èást obsahuje popis jednotlivých èástí nového systému.
 
 Ètvrtá kapitola obsahuje popis implementace, vysvìtluje principy uplatnìné v
 komunikaèním protokolu.
@@ -19,7 +21,7 @@ V ¹esté kapitole je uvedeno srovnání s nahrazeným systémem øízení pozorování.
 Dále je zde uveden popis nìkolika dal¹ích programù pro ovládání astronomických
 programù.
 
-Pøílohy obsahují zadání pùbodního systému pro øízení dalekohledu, popis
+Pøílohy obsahují zadání pùvodního systému pro øízení dalekohledu, popis
 dùle¾itých hlavièkových souborù, popis pou¾itých programù, èasový plán
 implementace a podrobný popis tabulek obsa¾ených v databázi. 
 
@@ -71,7 +73,7 @@ hmotných hvìzd - kolapsarù.
 
 Proè má smysl pozorovat oblasti, ve kterých byly detekovány gama
 záblesky, malými dalekohledy, které jsou podobné tomu ondøejovskému? Dùvody
-jsou následujcí:
+jsou následující:
 
 \begin{itemize}
 
@@ -116,12 +118,12 @@ Gama teleskopy èi pøípadnì detektory pracují na dvou principech:
 \item pro vytvoøení obrazu pou¾ívají masku 
 
 \item ze znalosti èasu nesmìrové detekce na dvou a více pozicích dopoèítávají
-poluhu zdroje
+polohu zdroje
 
 \end{itemize}
 
 COMPTON GRO a dru¾ice IPN\footnote{InterPlanetary Network, dru¾ice NASA a
-dal¹ích agentur umístnìné v rùzných místech sluneèní soustavy} byly vybaveny
+dal¹ích agentur umístìné v rùzných místech sluneèní soustavy} byly vybaveny
 nesmìrovými nebo èásteènì smìrovými detektory, nové dru¾ice - HETE, Integral a
 Swift jsou vybaveny detektorem s maskou.
 
@@ -132,12 +134,12 @@ dalekohled navrhnout náhradní program. Nejvhodnìj¹í je monitoring
 nìkolika vybraných zdrojù, s poèítáním jejich pøesné fotometrie
 \footnote{mìøení jasnosti hvìzd}.
 
-Fotometrie se dìlí na asboslutní a relativní. Relativní spoèívá v porovnávání
+Fotometrie se dìlí na absolutní a relativní. Relativní spoèívá v porovnávání
 jasnosti jedné hvìzdy oproti nìkolika referenèním hvìzdám na sérii snímkù,
 poøízených stejným pøístrojem pøi pokud mo¾no stejných atmosférických
-prodmínkách. Absolutní fotometrie spoèívá v mìøení jasnosti v¹ech hvìzd na
-snímkù, vypoètením jejich pøístrojové magnitudy, ze znalosti jasnosti
-kalibraèních hvìzd dopoètením jejich absolutní magnitudy.
+podmínkách. Absolutní fotometrie spoèívá v mìøení jasnosti v¹ech hvìzd na
+jednom snímku, vypoètením jejich pøístrojové magnitudy. Ze znalosti jasnosti
+kalibraèních hvìzd pak lze dopoèítat skuteèné magnitudy v¹ech hvìzd.
 
 Absolutní fotometrie je nároènìj¹í ne¾ relativní fotometrie. Systém je
 navr¾en tak, aby umo¾òoval poøizování snímkù jak pro absolutní, tak

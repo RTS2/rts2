@@ -44,6 +44,10 @@ pro kameru, montá¾ a støechu.
 Klienti mohou migrovat z jednoho poèítaèe na druhý, zaøízení migrovat nemohou.
 V návrhu se pro jednoduchost s migrací nepoèítá.
 
+Pro komunikaci mezi jednotlivými agenty pou¾ijeme standardní dostupné
+komunikaèní médium se známým protokolem. Umo¾níme tak pøípadné zapojení jiných
+druhù zaøízení èi klientù.
+
 \section{Centrální server}
 
 Existují funkce systému, které je rozumné spravovat centrálnì. Jedná se v¾dy
@@ -67,7 +71,7 @@ Na diagramu \ref{fig:overview} je zobrazena konfigurace systému BART.
 \dia{overview}{Pøehled agentù - BART}
 
 Na montá¾i LX200, vyrábìné firmou Meade, jsou pøichyceny dvì CCD kamery SBIG
-typu ST8, vybavené ¹irokoúhlou optikou. Na hlavním dalekohledu je pak umístnìna
+typu ST8, vybavené ¹irokoúhlou optikou. Na hlavním dalekohledu je pak umístìna
 kamera ST9. Posuvná støecha dalekohledu je ovládána ruènì.
 
 Systém se skládá z poèítaèe se jménem lascaux, na kterém bì¾í databázový
@@ -76,7 +80,7 @@ zpráv o gamma záblescích, pro dlouhodobá pozorování), a monitoring.
 
 Dále systém obsahuje tøi poèítaèe pro obsluhu kamer, k jednomu z nich je
 souèasnì pøipojena montá¾. Jejich jména jsou volena podle typu kamer - c0, c1
-pro ¹irokoúhlé kamery a cnf1 pro kameru umístnìnou v ohnisku dalekohledu.
+pro ¹irokoúhlé kamery a cnf1 pro kameru umístìnou v ohnisku dalekohledu.
 
 BACODINE a IBAN jsou systémy pro zasílání zpráv o gama záblesku.
 

@@ -15,7 +15,7 @@
 \section{Konvence}
 
 {\bf Tuènì} je vysázeno jméno pøíkazu a jméno návratové hodnoty. Návratové
-hodnoty lze nalést v souboru include/status.h.
+hodnoty lze nalézt v souboru include/status.h.
 
 {\it Kurzívou a v [hranatých závorkách]} jsou vysázeny parametry
 pøíkazu, a návratové hodnoty na øádce.
@@ -44,21 +44,21 @@ pou¾ívané pro dal¹í autentifikaci}
 
 \comname{register}{[jméno zaøízení] [typ zaøízení] [host]:[port]}{zaregistruje nové zaøízení}
 \comret{DEVDEM\_E\_SYSTEM}{zaøízení se stejným jménem je ji¾
-zargistrováno}
+zaregistrováno}
 
 \subsection{Informaèní pøíkazy}
 
 \comname{info}{}{vypí¹e informace o pøipojených zaøízeních a pøipojených klientech}
-\comvalue{user}{[id] [priorita] [*|-] [jméno u¾ivatele] [popis provádìnné èinnosti]}
+\comvalue{user}{[id] [priorita] [*|-] [jméno u¾ivatele] [popis provádìné èinnosti]}
 {informace o pøipojeném u¾ivateli - jeho èíslo, priority, zda je klientem s
-nejvy¹í prioritou èi ne, a struèný popis, o jakého klienta se jedná}
+nejvy¹¹í prioritou èi ne, a struèný popis, o jakého klienta se jedná}
 \comvalue{device}{[èíslo zaøízení] [jméno zaøízení] [host]:[port] [typ zaøízení]}
 {informace o pøipojeném zaøízení}
  
 \comname{key}{[jméno zaøízení]}{vy¾ádá si klíè pro autorizaci}
 \comvalue{authorization\_key}{[jméno zaøízení] [klíè]}{autorizaèní
 klíè pro dané zaøízení}
-\comret{DEVDEM\_E\_SYSTEM}{zaøízení neexisuje}
+\comret{DEVDEM\_E\_SYSTEM}{zaøízení neexistuje}
 
 \comname{priority}{[nová priorita]}{zmìní prioritu daného spojení}
 \comvalue{old\_priority}{[hodnota priority]}{souèasná priorita spojení}
@@ -115,11 +115,11 @@ provedení odlo¾ené zmìny priority}
 \comvalue{serial}{[sériové èíslo kamery]}{}
 \comvalue{chips}{[poèet èipù kamery]}{}
 \comvalue{temperature\_regulation}{[CAMERA\_COOL\_HOLD|CAMERA\_COOL\_MAX|CAMERA\_COOL\_OFF]}{stav
-chazení kamery}
+chlazení kamery}
 \comvalue{temperature\_setpoint}{[teplota]}{teplota, na kterou se
 kamera sna¾í chladit}
 \comvalue{air\_temperature}{[teplota]}{hodnota teplotního èidla,
-udávajícího teplotu vzducju}
+udávajícího teplotu vzduchu}
 \comvalue{ccd\_temperature}{[teplota]}{teplota CCD èipu}
 \comvalue{cooling\_power}{[promile výkonu]}{hodnota hlazení}
 \comvalue{fan}{[0|1]}{stav vìtráku kamery}
@@ -166,7 +166,7 @@ Pøíkaz skonèí a¾ po úspì¹ném navázání spojení.
 \comvalue{ra}{[RA]}{hodnota rektascenze montá¾e}
 \comvalue{dec}{[DEC]}{hodnota deklinace montá¾e}
 \comvalue{park\_dec}{[DEC]}{parkovací deklinace}
-\comvalue{longtitude}{[zemìpisná délka]}{zemìpisná délka dalkohledu}
+\comvalue{longtitude}{[zemìpisná délka]}{zemìpisná délka dalekohledu}
 \comvalue{latitude}{[zemìpisná ¹íøka]}{zemìpisná ¹íøka dalekohledu}
 \comvalue{siderealtime}{[èas]}{místní hvìzdný èas v okam¾iku
 pozorování}

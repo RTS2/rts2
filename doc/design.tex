@@ -27,14 +27,14 @@ kombinací snímkù poøízených s pou¾itím rùzných filtrù.
 
 CCD èipy pou¾ívané v astronomii se podstatnì neli¹í od bì¾ných CCD èipù,
 pou¾ívaných v digitálních fotoaparátech. CCD kamery jsou vìt¹inou pøipojovány k
-poèítaèi.  Pøipojení je realizováno buïto pøes standartní porty, jakými je
-napøíklad paralerlní, sériový, èi v poslední dobì USB port, nebo pøes speciální
+poèítaèi.  Pøipojení je realizováno buïto pøes standardní porty, jakými je
+napøíklad paralelní, sériový, èi v poslední dobì USB port, nebo pøes speciální
 kartu pøipojenou ke sbìrnici poèítaèe.
 
 Pøi vyèítání kamery je potøeba pøenést data v øádu megabajtù. Vyèítání a
 následnou digitalizaci je potøeba provést v co nejkrat¹ím èasovém
 okam¾iku\footnote{Pøi del¹ím vyèítání jsou poslední vyètené øádky svìtlej¹í
-ne¾ první. Toto zesvìtlání je zpùsobeno tepelným ¹umem}. Kamery vìt¹inou
+ne¾ první. Toto zesvìtlení je zpùsobeno tepelným ¹umem}. Kamery vìt¹inou
 nejsou vybaveny bufferem, data v nich obsa¾ená jsou tedy rovnou po digitalizaci
 posílány poèítaèi, který je musí pøijmout. CPU vyèítacího poèítaèe je znaènì
 vytí¾eno cykly èekajícími na data, nemù¾e tedy pøidìlit ostatním procesùm
@@ -118,6 +118,34 @@ obsluhou srovnáváno s katalogy a pøípadná chyba opravena.
 
 U automatických dalekohledù se musíme bez inteligentního pozorovatele obejít.
 Kontrolu správnosti najetí montá¾e lze provést pouze z poøízených dat.
+
+\section{Pøíjem zpráv o gama záblescích}
+
+Jak ji¾ bylo uvedeno, gama záblesky jsou detekovány dru¾icemi. Z nich jsou
+informace s jistým èasovým zpo¾dìním, závislém na pozici dru¾ice, pøijmuty
+pozemní sledovací stanicí. 
+
+Vìt¹ina detekcí je pak pøedávána do GSCF, NASA \footnote{Goddard Space Flight
+Center, Goddardovo støedisko pro kosmické lety, National Aeronautic and Space
+Administration, Národní úøad pro letectví a vesmír}.
+
+Z tohoto místa jsou pøevzaté, pøípadnì dopoèítané polohy zábleskù celosvìtovì
+distribuovány. Pro pøedávání poloh se pou¾ívali v¾dy prostøedky, dostupné v
+dané dobì - v sedmdesátých letech minulého století to byl dálnopis a po¹ta, v
+letech osmdesátých k nim pøibylo modemové spojení, které bylo v poslední dekádì
+minulého století vytlaèeno pøenosem zpráv pøes Internet.
+
+Zprávy je mo¾né pomocí Internetu pøijímat dvìmi protokoly - jednak pomocí
+privátního protokolu implementovaného nad TCP/IP protokolem, jednak pomocí
+e-mailu. Pøedávání zpráv pøes TCP/IP protokol je rychlej¹í, ale zaruèuje
+doruèení zprávy o gama záblesku pouze v pøípadì, ¾e spojení funguje. Pøíjem
+zpráv pomocí e-mailu je kvùli nutnosti posílat e-mail pøes nìkolik mailserverù
+pomalej¹í. Na druhou stranu garantuje doruèení zprávy o gama záblesku i v
+pøípadì, ¾e pøijímací stanice není trvale pøipojena do Internetu.
+
+Od konce roku 2002 je v èinnosti druhý systém pro zasílání zpráv o GRB.  Pøedává
+pouze zprávy o detekci na dru¾ici Integral. Pou¾ívá vlastí binární protokol
+postavený nad UDP, s pøijímacími stanicemi je spojen prostøednictvím Internetu.
 
 \section{Nároènost na poèítaèové vybavení}
 

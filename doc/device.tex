@@ -1,4 +1,4 @@
-\chapter{Rozhranní zaøízení}
+\chapter{Rozhraní zaøízení}
 \label{ap:devices}
 
 \section{Kamera}
@@ -49,13 +49,17 @@ extern int telescope_off ();
 
 \begin{verbatim}
 
-extern int dome_init (const char *device_name, int telescope_id);
+extern int dome_init (const char *device_name, int dome_id);
 extern void dome_done ();
 
-extern int dome_status (int *dome_status);
+extern int dome_info (int *dome_info);
 
 extern int dome_open ();
 extern int dome_close ();
 extern int dome_stop ();
+
+extern int dome_move_roof (float ra, float dec);
+extern int dome_park_roof ();
+extern int dome_stop_roof ();
 
 \end{verbatim}

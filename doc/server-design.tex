@@ -33,14 +33,14 @@ pak padne 1/n-tina kapacity spojení.
 	\begin{itemize}
 	\item na jednom spojení nelze souèasnì vyèítat data a posílat odpovìdi na
 	  stav zaøízení
-	\item míchání textových a binarních dat mù¾e vést ke zbyteèným problémùm
+	\item míchání textových a binárních dat mù¾e vést ke zbyteèným problémùm
 	  pro øízení pøenosu
 	\end{itemize}
 \end{itemize}
 
 \subsubsection{Varianta øídící a datové spojení}
 
-Na øídícím spojení po¹lu pøíkaz, který ma data posílat. Jedna ze stran otevøe
+Na øídícím spojení po¹lu pøíkaz, který má data posílat. Jedna ze stran otevøe
 datové spojení, druhá se k~nìmu pøipojí. Po navázání datového spojení ukonèím
 úspì¹nì volání s~po¾adavkem na data, od tohoto okam¾iku mohu øídící spojení
 znovu vyu¾ívat pro posílání dal¹ích pøíkazù. Na datové spojení zaène server
@@ -79,7 +79,7 @@ Výhod tohoto øe¹ení je nìkolik:
 \end{itemize}
 
 Pøi jeho realizaci je potøeba zajistit komunikaci mezi centrálním
-serverem a procesy obsluhujícímy spojení. Mo¾nosti, které se nabízejí:
+serverem a procesy obsluhujícími spojení. Mo¾nosti, které se nabízejí:
 
 \begin{itemize}
 \item vytvoøit nové spojení na centrální server
@@ -100,16 +100,16 @@ zase tak velký problém, na jeho vyøe¹ení se nabízí hned nìkolik metod:
 \begin{itemize}
 \item prostøedky IPC
 \item obousmìrné roury
-\item unixové sockety
-\item TCP/IP sockety
+\item unixové sokety
+\item TCP/IP sokety
 \end{itemize}
 
-TCP/IP sockety jsou uvedeny pouze pro úplnost. Vytváøení a udr¾ování tohoto
+TCP/IP sokety jsou uvedeny pouze pro úplnost. Vytváøení a udr¾ování tohoto
 typu spojení vy¾aduje nejvíce systémových prostøedkù, je výhodné pro
 komunikaci pøes sí», ale je zbyteèné pro komunikaci v rámci jednoho poèítaèe.
 
-Prostøedky IPC vypadají nejlépe. Pomocí rozMoli¹ení pøes typ zprávy umo¾òují
-doruèení zprávy pouze vybranému pøíjemci. Sdílená pamìt mù¾e slou¾it pro
+Prostøedky IPC vypadají nejlépe. Pomocí rozli¹ení pøes typ zprávy umo¾òují
+doruèení zprávy pouze vybranému pøíjemci. Sdílená pamì» mù¾e slou¾it pro
 ukládání informací, ke kterým potøebují pøistupovat jednotlivá spojení -
 napøíklad o stavu zaøízení. IPC semafory lze pou¾ít na hlídání kritické sekce
 - zápisu do sdílené pamìti.
@@ -128,20 +128,20 @@ Jinou mo¾ností zaji¹tìní modularity je napsání ovladaèù zaøízení a jejich
 pou¾ití. Vzhledem k nároènosti této mo¾nosti a nedostatku èasu k její
 realizaci nedo¹lo.
 
-\subsection{U¾ivatelské rozhranní}
+\subsection{U¾ivatelské rozhraní}
 
 U¾ivatelé mohou ovládat dalekohled prostøednictvím monitorovacího programu.
 Ten bì¾í pod konzolí.
 
-Grafické u¾ivatelské rozhranní je pro monitoring dalekohledu zbyteèné. Pro
-výbìr snímkù z datábaze slou¾í webové rozhranní.
+Grafické u¾ivatelské rozhraní je pro monitoring dalekohledu zbyteèné. Pro
+výbìr snímkù z databáze slou¾í webové rozhraní.
 
 Pro prohlí¾ení snímkù staèí z Internetu stáhnout libovolný prohlí¾eè. Rozsah
 funkcí, kterými souèasné prohlí¾eèe CCD snímkù disponují by se mì v rámci
 diplomové práce nepodaøilo nikdy implementovat. Z prohlí¾eèù se nám osvìdèila
 DS9, pøípadnì evropský SkyCat.
 
-Prohlí¾eè DS9 vyniká rozhranním XPA a propojením s balíkem pro zpracování
+Prohlí¾eè DS9 vyniká rozhraním XPA a propojením s balíkem pro zpracování
 snímkù \cite{IRAF}.
 
 SkyCat nabízí o trochu pøíjemnìj¹í ovládání, a hlavnì mo¾nost pøekreslit pøes

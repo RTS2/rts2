@@ -23,14 +23,14 @@ pou¾ívání pøesných volání. Binární komunikace je svázána s architekturou, na
 které funguje. Pøi jejím pøíjmu na jiné architektuøe je vìt¹inou zapotøebí ji
 nejdøíve konvertovat.
 
-Textové rozhranní lze pøi pohledu zvenèí snadno pochopit. Je nároènìj¹í na
+Textové rozhraní lze pøi pohledu zvenèí snadno pochopit. Je nároènìj¹í na
 systémové prostøedky ne¾ binární komunikace - jsou pøená¹ena del¹í data,
 pøijaté pøíkazy je potøeba pøed zpracováním detekovat.
 
 Systém pou¾ívá pro pøenos pøíkazù a zpráv textové komunikace. Pro pøenos
 binárních dat (snímkù) se pou¾ívá binárního formátu.
 
-Bloky komunikace v textovém rozhranní jsou ukonèovány znaèkou konce øádky.
+Bloky komunikace v textovém rozhraní jsou ukonèovány znaèkou konce øádky.
 Buïto se pou¾ívá znakù platných v protokolu Telnet \cite{telnet} - tedy znaku
 CR následovaného znakem LF, nebo pouze znaku LF.
 
@@ -113,7 +113,7 @@ uvedena velikost a formát snímku.
 \subsection{Konvence}
 
 {\bf Tuènì} je vysázeno jméno pøíkazu a jméno návratové hodnoty. Návratové
-hodnoty lze nalést v souboru include/status.h.
+hodnoty lze nalézt v souboru include/status.h.
 
 {\it Kurzívou a v [hranatých závorkách]} jsou vysázeny parametry
 pøíkazu. V [hranatých závorkách] jsou vysázeny hodnoty promìnných.
@@ -125,7 +125,7 @@ pøíkaz neexistuje, nebo klient není autorizován pro provádìní daného
 pøíkazu, vrací hodnotu DEVDEM\_E\_COMMAND. Pokud je pro pøíkaz zadán
 nesprávný poèet parametrù, vrací hodnotu DEVDEM\_E\_PARAMSVAL.
 
-\subsection{Serverd}
+\subsection{Centrální server}
 
 \subsubsection{Inicializaèní pøíkazy}
 
@@ -147,16 +147,16 @@ zaregistrováno}
 \subsubsection{Informaèní pøíkazy}
 
 \comname{info}{}{vypí¹e informace o pøipojených zaøízeních a pøipojených klientech}
-\comvalue{user}{[id] [priorita] [*|-] [jméno u¾ivatele] [popis provádìnné èinnosti]}
+\comvalue{user}{[id] [priorita] [*|-] [jméno u¾ivatele] [popis provádìné èinnosti]}
 {informace o pøipojeném klientu - jeho èíslo, priority, zda je klientem s
-nejvy¹í prioritou èi ne, a struèný popis, o jakého klienta se jedná}
+nejvy¹¹í prioritou èi ne, a struèný popis, o jakého klienta se jedná}
 \comvalue{device}{[èíslo zaøízení] [jméno zaøízení] [host]:[port] [typ zaøízení]}
 {informace o pøipojeném zaøízení}
  
 \comname{key}{[jméno zaøízení]}{vy¾ádá si klíè pro autorizaci}
 \comvalue{authorization\_key}{[jméno zaøízení] [klíè]}{autorizaèní
 klíè pro dané zaøízení}
-\comret{DEVDEM\_E\_SYSTEM}{zaøízení neexisuje}
+\comret{DEVDEM\_E\_SYSTEM}{zaøízení neexistuje}
 
 \comname{priority}{[nová priorita]}{zmìní prioritu daného spojení}
 \comvalue{old\_priority}{[hodnota priority]}{souèasná priorita spojení}
@@ -217,7 +217,7 @@ provedení odlo¾ené zmìny priority}
 \comvalue{type}{[typ kamery]}{}
 \comvalue{serial}{[sériové èíslo kamery]}{}
 \comvalue{chips}{[poèet èipù kamery]}{}
-\comvalue{temperature\_regulation}{[0 | 1 | 2]}{stav chazení kamery - chlazení vypnuto, chladím na maximální výkon, dr¾ím teplotu chlazení}
+\comvalue{temperature\_regulation}{[0 | 1 | 2]}{stav chlazení kamery - chlazení vypnuto, chladím na maximální výkon, dr¾ím teplotu chlazení}
 \comvalue{temperature\_setpoint}{[teplota]}{teplota, na kterou se
 kamera sna¾í chladit}
 \comvalue{air\_temperature}{[teplota]}{hodnota teplotního èidla,
@@ -269,7 +269,7 @@ Pøíkaz skonèí a¾ po úspì¹ném navázání spojení.
 \comvalue{ra}{[RA]}{hodnota rektascenze montá¾e}
 \comvalue{dec}{[DEC]}{hodnota deklinace montá¾e}
 \comvalue{park\_dec}{[DEC]}{parkovací deklinace}
-\comvalue{longtitude}{[zemìpisná délka]}{zemìpisná délka dalkohledu}
+\comvalue{longtitude}{[zemìpisná délka]}{zemìpisná délka dalekohledu}
 \comvalue{latitude}{[zemìpisná ¹íøka]}{zemìpisná ¹íøka dalekohledu}
 \comvalue{siderealtime}{[èas]}{místní hvìzdný èas v okam¾iku
 pozorování}

@@ -2,19 +2,19 @@
 
 \section{Vývojové prostøedky}
 
-Pro psaní ve¹kerého kódu jsem pou¾íval editor vim.
+Pro psaní ve¹kerého kódu jsem pou¾íval editor ViM.
 
 Makefile jsou generovány prostøednictvím balíkù Autoconfig a
-Automake. Konfiguraèní skript pro autoconfig byl vytvoøen ze skriptu
-generovaného programem autoscan, který je souèástí autoconfigu.
+Automake. Konfiguraèní skript pro Autoconfig byl vytvoøen ze skriptu
+generovaného programem autoscan, který je souèástí Autoconfigu.
 
 V¹echny programy jsou verzovány v CVS. Verzování doporuèuje kniha
 \cite{telcontrol}. Výhody verzování se ukázaly pøi soubì¾ném vývoji na více
-poèítaèích. Kodování probíhalo na tøech poèítaèích v Ondøejovì, nìkolika
+poèítaèích. Kódování probíhalo na tøech poèítaèích v Ondøejovì, nìkolika
 osobních poèítaèích v Praze, a na poèítaèi ve ©panìlsku.
 
-Pro generování webovských stránek jsou pou¾ity PHP skripty. Pro jejich
-správnou funkci je potøeba mít naistalovanou verzi PHP vy¹¹í ne¾ 4.3.
+Pro generování WWW stránek jsou pou¾ity PHP skripty. Pro jejich
+správnou funkci je potøeba mít nainstalovanou verzi PHP vy¹¹í ne¾ 4.3.
 
 Skripty bì¾í pod HTTP serverem Apache.
 
@@ -25,13 +25,13 @@ Databáze je spravována pomocí post-relaèní databáze PostgreSQL.
 Pro výpoèet astronomických souøadnic je pou¾ita knihovna \cite{libnova}. V této
 knihovnì bylo autorem opraveno nìkolik chyb a implementováno nìkolik nových
 funkcí.  Pøesný pøehled oprav je mo¾né získat z CVS repository libnovy,
-dostupného i pøes její webovské stránky.
+dostupného i pøes její WWW stránky.
 
 Pro zápis a ètení snímkù do formátu fits je pou¾ita knihovna fitsio.
 Pro práci s WCS informacemi obsa¾enými v hlavièkách snímku je pou¾ita knihovna
-libwsc.
+libwcs.
 
-Pro zobrazování informací na terminálu je pou¾ita knihovan ncurses.
+Pro zobrazování informací na terminálu je pou¾ita knihovna ncurses.
 
 Pro pøístup na databázi jsou pou¾ity knihovny, obsa¾ené v distribuci
 PostgreSQL.
@@ -62,7 +62,7 @@ byl té¾ zaèlenìn do kódu grbc.
 \section{Vlastní kód}
 
 V¹echen ostatní kód, tedy knihovny pro sí»ovou komunikaci, kód plánovaèe,
-centrálního serveru, serverù v¹ech zaøízení, agentù pro zpracování GRB
-po¾adavkù, monitorovací agenty, SQL skripty pro vytvoøení a pøístup do
+agenta plánovaèe, centrálního serveru, serverù v¹ech zaøízení, agentù pro
+pøíjem GRB, monitorovací agenty, SQL skripty pro vytvoøení a pøístup do
 databáze, kód PHP stránek umo¾òující pøístup do databáze, byl navr¾en a napsán
 výluènì autorem této diplomové práce.
