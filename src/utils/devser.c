@@ -1082,7 +1082,7 @@ devser_2devser_message (int recv_id, void *message)
   msg.mtype = recv_id + IPC_MSG_SHIFT;
   memcpy (msg.mtext, message, MSG_SIZE);
 
-  if (msgsnd (msg_id, &msg, MSG_SIZE, 0))
+  if (msgsnd (msg_id, &msg, MSG_SIZE, IPC_NOWAIT))
     {
       syslog (LOG_ERR, "error devser_2devser_message: %m %i %li", msg_id,
 	      msg.mtype);
