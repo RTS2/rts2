@@ -214,6 +214,8 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
       test_sql;
       grb_seqn = *seqn;
       sprintf (tar_name, "GRB %5i", id);
+      tar_ra = *ra;
+      tar_dec = *dec;
       EXEC SQL INSERT INTO targets (tar_id, type_id, tar_name, tar_ra,
 				    tar_dec, tar_comment) VALUES (:tar_id,
 								  'G',:tar_name,:tar_ra,:tar_dec,
