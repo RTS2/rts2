@@ -6,4 +6,5 @@ SUBDIRS = utils \
 	db \
 	plan \
 	grb \
-	monitor
+	monitor \
+	wcs
