@@ -9,7 +9,7 @@
 #include <getopt.h>
 #include <math.h>
 
-#include "logo.h"
+#include "bootes.h"
 
 #define PP_NEG
 #define PP_BLUE
