@@ -1,8 +1,11 @@
 #include "target.h"
+#include "selector.h"
+#include "status.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <libnova/libnova.h>
 #include "../utils/config.h"
+#include "../db/db.h"
 
 void
 print_jd (double JD, struct ln_lnlat_posn *obs)
@@ -34,6 +37,7 @@ int main (int argc, char **argv)
 {
         ParTarget *target;
         struct ln_par_orbit orbit;
+	Target *plan = new Target(); 
         time_t t;
         if (argc == 2)
                 t = atoi (argv[1]);
@@ -66,5 +70,21 @@ int main (int argc, char **argv)
                 print_rst (&rst, &observer);
                 jd++;
         }
-        return 0;
+
+	db_connect ();
+  
+
+  if (get_next_plan
+      (plan, (int) get_double_default ("planc_selector", SELECTOR_HETE),
+       &t, 1, 30, SERVERD_NIGHT,
+       observer.lng, observer.lat))
+    {
+      printf ("Error making plan\n");
+      fflush (stdout);
+      exit (EXIT_FAILURE);
+    }
+  printf ("...plan made\n");
+
+  db_disconnect();
+
 }
