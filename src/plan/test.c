@@ -9,7 +9,7 @@ main (int argc, char **argv)
 {
   struct target *plan, *last;
   db_connect ();
-  make_plan (&plan);
+  make_plan (&plan, 120);
   for (last = plan; last; last = last->next)
     {
       double jd = get_julian_from_timet (&last->ctime);
