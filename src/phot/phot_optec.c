@@ -45,7 +45,7 @@ phot_command (char command, short arg)
 {
   char cmd_buf[3];
   cmd_buf[0] = command;
-  *((int *) (&(cmd_buf[1]))) = arg;
+  *((short *) (&(cmd_buf[1]))) = arg;
   write (fd, cmd_buf, 3);
 }
 
