@@ -74,10 +74,6 @@ select_next_alt (time_t c_start, struct target *plan)
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 
-  EXEC SQL BEGIN;
-
-  test_sql;
-
   EXEC SQL DECLARE obs_cursor_alt CURSOR FOR
     SELECT tar_id, tar_ra, tar_dec,
     obj_alt (tar_ra, tar_dec,:st, -14.95, 50) AS alt FROM targets
@@ -109,8 +105,6 @@ select_next_alt (time_t c_start, struct target *plan)
   EXEC SQL CLOSE obs_cursor_alt;
 
   test_sql;
-
-  EXEC SQL END;
 
 #undef test_sql
 
@@ -153,19 +147,13 @@ select_next_airmass (time_t c_start, struct target *plan,
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
   printf ("st: %f\nairmass: %f", st, t_airmass);
 
-
-  EXEC SQL BEGIN;
-
-  test_sql;
-
   EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR
     SELECT targets.tar_id, tar_ra, tar_dec,
     obj_az (tar_ra, tar_dec,:st, -14.95, 50) AS az,
     obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) AS
     airmass, img_count
     FROM targets, targets_images WHERE targets.tar_id =
-    targets_images.
-    tar_id
+    targets_images.tar_id AND targets.type_id = 'S'
     AND (abs (obj_airmass (tar_ra, tar_dec,:st, -14.95, 50) -:t_airmass)) <
     0.2 AND (obj_az (tar_ra, tar_dec,:st, -14.95, 50) <:d_az_end OR
 	     obj_az (tar_ra, tar_dec,:st, -14.95,
@@ -194,8 +182,6 @@ select_next_airmass (time_t c_start, struct target *plan,
   EXEC SQL CLOSE obs_cursor_airmass;
 
   test_sql;
-
-  EXEC SQL END;
 
 #undef test_sql
 
@@ -232,10 +218,6 @@ select_next_grb (time_t c_start, struct target *plan)
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
 
-  EXEC SQL BEGIN;
-
-  test_sql;
-
   EXEC SQL DECLARE obs_cursor_grb CURSOR FOR
     SELECT targets.tar_id, tar_ra, tar_dec,
     obj_alt (tar_ra, tar_dec,:st, -14.95, 50) AS alt FROM targets, grb
@@ -245,7 +227,9 @@ select_next_grb (time_t c_start, struct target *plan)
 							       tar_dec,:st,
 							       -14.95,
 							       50) >
-    20 and targets.tar_id = grb.tar_id ORDER BY alt DESC;
+    20 and targets.tar_id =
+    grb.tar_id and grb_last_update >
+    abstime (:obs_start - 200000) ORDER BY alt DESC;
 
   EXEC SQL OPEN obs_cursor_grb;
 
@@ -270,7 +254,6 @@ select_next_grb (time_t c_start, struct target *plan)
 
 	  test_sql;
 
-	  EXEC SQL END;
 	  return 0;
 	}
     }
@@ -278,8 +261,6 @@ select_next_grb (time_t c_start, struct target *plan)
   EXEC SQL CLOSE obs_cursor_grb;
 
   test_sql;
-
-  EXEC SQL END;
 
 #undef test_sql
 
@@ -291,6 +272,14 @@ err:
 #endif /* DEBUG */
   return -1;
 }
+
+/*!
+ * If needed, select next observation from list of photometry fields
+ */
+int
+select_next_photometry (time_t c_start, struct target *plan)
+{
+EXEC SQL BEGIN DECLARE SECTION EXEC SQL END DECLARE SECTION}
 
 /*! 
  * Makes one observation plan entry.
@@ -432,7 +421,7 @@ make_plan (struct target **plan, float exposure)
 
   for (i = 0; i < 10; i++)
     {
-      get_next_plan (*plan, SELECTOR_ANTISOLAR, &c_start, i, exposure);
+      get_next_plan (*plan, SELECTOR_AIRMASS, &c_start, i, exposure);
       c_start += READOUT_TIME + exposure;
     }
 

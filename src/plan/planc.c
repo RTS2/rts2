@@ -437,6 +437,8 @@ main (int argc, char **argv)
 
   printf ("waiting end\n");
 
+  pthread_create (&image_que_thread, NULL, process_images, NULL);
+
 loop:
   devcli_server_command (NULL, "status_txt P:waiting");
   if (watch_status)
@@ -448,8 +450,6 @@ loop:
 	  devcli_command (telescope, NULL, "park");
 	  sleep (600);
 	}
-
-      pthread_create (&image_que_thread, NULL, process_images, NULL);
 
       observe (watch_status);
     }
