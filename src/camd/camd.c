@@ -590,7 +590,7 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  if (devdem_init (stats, 2))
+  if (devdem_init (stats, 2, camd_handle_status))
     {
       syslog (LOG_ERR, "devdem_init: %m");
       exit (EXIT_FAILURE);
@@ -608,5 +608,5 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
-  return devdem_run (device_port, camd_handle_command, camd_handle_status);
+  return devdem_run (device_port, camd_handle_command);
 }

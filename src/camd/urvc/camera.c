@@ -248,7 +248,7 @@ camera_fan (int fan_state)
   if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr)))
     return ret;
 
-  sr.fanEnabled = fan_state;
+  ctrl.fanEnable = fan_state;
   ctrl.shutterCommand = 0;
   ctrl.ledState = 0;
 
