@@ -841,6 +841,8 @@ Rts2DevDomeFram::isClosed ()
 	      break;
 	    }
 	  setMotorTimeout (FRAM_TIME_RECLOSE_RIGHT);
+	  VYP (VENTIL_AKTIVACNI);
+	  VYP (VENTIL_ZAVIRANI_PRAVY);
 	  movingState = MOVE_RECLOSE_RIGHT_WAIT;
 	  openRightMove ();
 	  break;
@@ -881,6 +883,8 @@ Rts2DevDomeFram::isClosed ()
       if (!(isOn (KONCAK_OTEVRENI_LEVY) || checkMotorTimeout ()))
 	break;
       reclosing_num++;
+      VYP (VENTIL_AKTIVACNI);
+      VYP (VENTIL_OTEVIRANI_LEVY);
       closeLeft ();
       break;
     default:
