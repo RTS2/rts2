@@ -156,6 +156,14 @@ CREATE TABLE counts (
 	counter_name	varchar(8) REFERENCES counters(counter_name)
 );
 
+DROP TABLE scripts;
+
+CREATE TABLE scripts (
+	tar_id		integer REFERENCES targets(tar_id),
+	camera_name	varchar(8) REFERENCES cameras(camera_name),
+	script		varchar (2000)
+);
+
 CREATE INDEX images_obs_id ON images (obs_id);
 
 DROP SEQUENCE img_id;

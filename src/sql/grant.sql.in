@@ -32,6 +32,7 @@ GRANT SELECT ON images_nights TO GROUP observers;
 GRANT SELECT ON observations_nights TO GROUP observers;
 GRANT SELECT ON images TO "__WWWUSER__";
 GRANT SELECT ON counts TO "__WWWUSER__";
+GRANT SELECT ON scripts TO "__WWWUSER__";
 GRANT SELECT ON users TO "__WWWUSER__";
 GRANT SELECT ON medias TO "__WWWUSER__";
 GRANT ALL ON images TO GROUP observers;
