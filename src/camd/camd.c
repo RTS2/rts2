@@ -93,19 +93,11 @@ start_readout (void *arg)
 #undef SBIG_READOUT
 }
 
-// macro for length test
-#define test_length(npars) if (argz_count (argv, argc) != npars + 1) { \
-        devdem_write_command_end (DEVDEM_E_PARAMSNUM, \
-		"bad nmbr of params: expected %i,got %i",\
-		npars, argz_count (argv, argc) - 1 ); \
-	return -1; \
-}
-
-
 // macro for chip test
 #define get_chip  param = argz_next (argv, argc, argv); \
-      chip = strtol(param, &endptr, 10); \
-      if ((*endptr) || (chip < 0) || (chip >= info.nmbr_chips)) \
+      if (devdem_param_next_integer (&chip)) \
+      	return -1; \
+      if ((chip < 0) || (chip >= info.nmbr_chips)) \
         {      \
 	  devdem_write_command_end (DEVDEM_E_PARAMSVAL, "invalid chip: %f", chip);\
 	  return -1;\
@@ -133,7 +125,6 @@ camd_handle_command (char *argv, size_t argc)
 {
   int ret;
   char *param;
-  char *endptr;
   int chip;
 
   if (strcmp (argv, "ready") == 0)
@@ -153,7 +144,8 @@ camd_handle_command (char *argv, size_t argc)
     {
       int i;
       readout_mode_t *mode;
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       get_chip;
       mode = (readout_mode_t *) (&info.camera_info[chip].readout_mode[0]);
       devdem_dprintf ("binning %i", readout[chip].binning);
@@ -171,7 +163,8 @@ camd_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "expose") == 0)
     {
       float exptime;
-      test_length (2);
+      if (devdem_param_test_length (2))
+	return -1;
       get_chip;
       param = argz_next (argv, argc, param);
       exptime = strtof (param, NULL) * 100;
@@ -200,13 +193,15 @@ camd_handle_command (char *argv, size_t argc)
     }
   else if (strcmp (argv, "stopexpo") == 0)
     {
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       get_chip;
       cam_call (sbig_end_expose (chip));
     }
   else if (strcmp (argv, "progexpo") == 0)
     {
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       get_chip;
       errno = ENOTSUP;
       ret = -1;
@@ -214,7 +209,8 @@ camd_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "readout") == 0)
     {
       int mode;
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       get_chip;
       readout[chip].ccd = chip;
       readout[chip].x = readout[chip].y = 0;
@@ -237,7 +233,8 @@ camd_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "binning") == 0)
     {
       int new_bin;
-      test_length (2);
+      if (devdem_param_test_length (2))
+	return -1;
       get_chip;
       param = argz_next (argv, argc, param);
       new_bin = strtol (param, &param, 10);
@@ -253,7 +250,8 @@ camd_handle_command (char *argv, size_t argc)
     }
   else if (strcmp (argv, "stopread") == 0)
     {
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       get_chip;
       if ((ret = devdem_thread_cancel (readout[chip].thread_id)) < 0)
 	{
@@ -267,7 +265,8 @@ camd_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "status") == 0)
     {
       int i;
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       get_chip;
       for (i = 0; i < 3; i++)
 	{
@@ -278,7 +277,8 @@ camd_handle_command (char *argv, size_t argc)
     }
   else if (strcmp (argv, "data") == 0)
     {
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       get_chip;
       if (readout[chip].data_size_in_bytes == 0)
 	{
@@ -293,7 +293,8 @@ camd_handle_command (char *argv, size_t argc)
     {
       char *endpar;
       struct sbig_cool cool;
-      test_length (1);
+      if (devdem_param_test_length (1))
+	return -1;
       param = argz_next (argv, argc, argv);
       cool.temperature = round (strtod (param, &endpar) * 10);
       if (endpar && !*endpar)
@@ -341,27 +342,12 @@ end:
 }
 
 int
-priority_command_handler (char *ret)
-{
-  printf ("returned: %s\n", ret);
-  fflush (stdout);
-  return 0;
-}
-
-int
-priority_message_handler (char *ret)
-{
-  printf ("message: %s\n", ret);
-  fflush (stdout);
-  return 0;
-}
-
-int
 main (void)
 {
   int i;
   char *stats[] = { "img_chip", "trc_chip" };
-  struct devcli_channel priority_server_channel;
+  struct devcli_channel server_channel;
+
   port = 2;
 #ifdef DEBUG
   mtrace ();
@@ -372,38 +358,13 @@ main (void)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  // fork for client part
-  if (fork ())
+  if (devdem_register (&server_channel, "localhost", 5557) < 0)
     {
-      // parent
-      info.nmbr_chips = -1;
-      return devdem_run (PORT, camd_handle_command, stats, 2, sizeof (pid_t));
-    }
-
-  // register to server
-
-  priority_server_channel.command_handler = priority_command_handler;
-  priority_server_channel.message_handler = priority_message_handler;
-
-  priority_server_channel.data_handler = NULL;
-
-  /* connect to the server */
-  if (devcli_connect (&priority_server_channel, "localhost", 5557) < 0)
-    {
-      perror ("devcli_connect");
+      perror ("devdem_register");
       exit (EXIT_FAILURE);
     }
 
-#define DEVCLI_WRITE_READ(command) if (devcli_command (&priority_server_channel, command) < 0) \
-  				{ \
-      		                  perror ("devcli_write_read"); \
-				  exit (EXIT_FAILURE); \
-				}
+  info.nmbr_chips = -1;
 
-  /* Send data to the server. */
-  /* Send data to the server. */
-  DEVCLI_WRITE_READ ("register camd");
-
-  /* wait to thread end.. */
-  pthread_join (priority_server_channel.read_thread, NULL);
+  return devdem_run (PORT, camd_handle_command, stats, 2, sizeof (pid_t));
 }
