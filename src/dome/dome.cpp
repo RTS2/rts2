@@ -28,10 +28,13 @@ Rts2DevDome::createConnection (int in_sock, int conn_num)
 int
 Rts2DevDome::checkOpening ()
 {
-  if (getState (0) & DOME_DOME_MASK == DOME_OPENING)
+  syslog (LOG_DEBUG, "dome opening: %i %i", getState (0),
+	  (getState (0) & DOME_DOME_MASK) == DOME_OPENING);
+  if ((getState (0) & DOME_DOME_MASK) == DOME_OPENING)
     {
       long ret;
       ret = isOpened ();
+      syslog (LOG_DEBUG, "isOPenede ret:%li", ret);
       if (ret >= 0)
 	{
 	  setTimeout (ret);
@@ -56,7 +59,7 @@ Rts2DevDome::checkOpening ()
 	    }
 	}
     }
-  else if (getState (0) & DOME_DOME_MASK == DOME_CLOSING)
+  else if ((getState (0) & DOME_DOME_MASK) == DOME_CLOSING)
     {
       long ret;
       ret = isClosed ();
@@ -84,6 +87,7 @@ Rts2DevDome::checkOpening ()
 	    }
 	}
     }
+  setTimeout (1000000);
   return 0;
 }
 
@@ -114,7 +118,7 @@ Rts2DevDome::baseInfo (Rts2Conn * conn)
 int
 Rts2DevDome::observing ()
 {
-  if (getState (1) & DOME_DOME_MASK != DOME_OPENED)
+  if ((getState (0) & DOME_DOME_MASK) != DOME_OPENED)
     return openDome ();
   return 0;
 }
@@ -122,7 +126,7 @@ Rts2DevDome::observing ()
 int
 Rts2DevDome::standby ()
 {
-  if (getState (1) & DOME_DOME_MASK != DOME_CLOSED)
+  if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
 }
@@ -130,7 +134,7 @@ Rts2DevDome::standby ()
 int
 Rts2DevDome::off ()
 {
-  if (getState (0) & DOME_DOME_MASK != DOME_CLOSED)
+  if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
 }
