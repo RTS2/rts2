@@ -219,7 +219,8 @@ camera_init (char *device_name, int camera_id)
 
   begin_realtime ();
 
-  if ((semid = semget (ftok (device_name, camera_id), 1, 0644)) == -1)
+  if ((semid == -1)
+      && (semid = semget (ftok (device_name, camera_id), 1, 0644)) == -1)
     {
       if ((semid =
 	   semget (ftok (device_name, camera_id), 1, IPC_CREAT | 0644)) == -1)
@@ -260,7 +261,7 @@ camera_init (char *device_name, int camera_id)
     }
   // get camera info
   get_eeprom ();
-
+  sem_unlock ();
   // determine temperature regulation state
   switch (qtsr.enabled)
     {
@@ -274,7 +275,6 @@ camera_init (char *device_name, int camera_id)
     default:
       camera_reg = CAMERA_COOL_OFF;
     }
-
   if (Cams[eePtr.model].hasTrack)
     chips = 2;
   else
@@ -295,7 +295,6 @@ camera_init (char *device_name, int camera_id)
       else
 	ch_info[i].gain = eePtr.imagingGain;
     }
-  sem_unlock ();
   return 0;
 }
 
@@ -321,6 +320,7 @@ camera_info (struct camera_info *info)
     goto err;
   // get camera info
   get_eeprom ();
+  sem_unlock ();
   strcpy (info->type, Cams[eePtr.model].fullName);
   strcpy (info->serial_number, eePtr.serialNumber);
   info->chips = chips;
@@ -331,7 +331,6 @@ camera_info (struct camera_info *info)
   info->air_temperature = ambient_ad2c (qtsr.ambientThermistor);
   info->ccd_temperature = ccd_ad2c (qtsr.ccdThermistor);
   info->fan = gvr.fanEnabled;
-  sem_unlock ();
   return 0;
 err:
   sem_unlock ();
@@ -417,6 +416,7 @@ camera_expose (int chip, float *exposure, int light)
   timer1 = 0;
   timer4 = timer = mSecCount ();
 
+  sem_lock ();
   if ((ret = DumpImagingLines (800, 4, 1)))
     goto imaging_end;		// width, len, vertBin
   if ((ret = DumpImagingLines (800 / (bin + 1), ty, bin + 1)))
@@ -557,8 +557,8 @@ camera_cool_shutdown ()		/* ramp to ambient */
   cool.ccdSetpoint = 0;
   cool.preload = 0;
   camera_reg = CAMERA_COOL_OFF;
-  camera_fan (0);
   sem_lock ();
+  camera_fan (0);
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
     {
       sem_unlock ();
@@ -578,14 +578,14 @@ camera_cool_setpoint (float coolpoint)	/* set direct setpoint */
   i = ccd_c2ad (coolpoint) + 0x7;	// zaokrohlovat a neorezavat!
   cool.ccdSetpoint = i;
   cool.preload = 0xaf;
-  camera_fan (1);
   sem_lock ();
+  camera_fan (1);
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
     {
       sem_unlock ();
       return -1;
     }
-  camera_reg = CAMERA_COOL_HOLD;
   sem_unlock ();
+  camera_reg = CAMERA_COOL_HOLD;
   return 0;
 };
