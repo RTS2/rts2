@@ -44,7 +44,7 @@ void devcli_server_disconnect ();
 int devcli_connectdev (int *channel_id, const char *dev_name,
 		       struct devcli_channel_handlers *handlers);
 
-size_t devcli_read_data (int socket, void *data, size_t size);
+ssize_t devcli_read_data (int socket, void *data, size_t size);
 
 int devcli_command (int channel_id, char *cmd, ...);
 
