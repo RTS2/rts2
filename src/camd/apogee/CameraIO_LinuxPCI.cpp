@@ -344,7 +344,7 @@ bool CCameraIO::Expose( double Duration, bool Light )
 	
 	if ( m_Rows < 1 || m_Rows > MAXROWS ) return false;
 	m_ExposureRows = m_Rows;
-	
+
 	if ( m_SkipC < 0 ) return false;
 	m_ExposureSkipC = m_SkipC;
 	

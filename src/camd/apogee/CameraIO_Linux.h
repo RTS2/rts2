@@ -25,8 +25,8 @@ enum Camera_SensorType
   Camera_SensorType_CMOS
 };
 
-const long MAXCOLUMNS = 4096;
-const long MAXROWS = 4096;
+const long MAXCOLUMNS = 4297;
+const long MAXROWS = 4297;
 const long MAXHBIN = 8;
 const long MAXVBIN = 255;
 
