@@ -41,7 +41,7 @@ Název pøíkazu je následovan parametry.
 Na jedné øádce je mo¾né poslat nìkolik pøíkazù. Jako jejich oddìlovaè slou¾í
 støedník.
 
-\subsubsection{Odpovìdi}
+\subsection{Odpovìdi}
 
 Server na pøíkazy odpovídá. Odpovìï serveru je v¾dy zakonèena øádkou,
 zaèínající znakem '+' nebo '-' a pokraèující stavovım kódem slo¾enım ze tøí
@@ -53,10 +53,10 @@ Pokud je tímto znakem '-', pøíkaz skonèil chybou. Podle stavového kódu lze pak
 rozli¹it, o jakou chybu se jednalo.
 
 Øádky obsahující hodnotu zaèínají malım písmenem. Posílá je server klientovi,
-pøed tím, ne¾ oznámí ukonèení pøíkazu. První polo¾ka je jméno pøíkazu,
-následovaná hodnotami. Napøíklad po dotazu na pozici dalekohledu mù¾e
-dalekohled odpovìdìt{\it ra 10}, co¾ znamená, ¾e je v rektascenzi nastaven na
-10 stupòù.
+vìt¹inou jako reakci na pøíkaz a tedy pøed tím, ne¾ oznámí ukonèení pøíkazu.
+První polo¾ka je jméno pøíkazu, následovaná hodnotami. Napøíklad po dotazu na
+pozici dalekohledu mù¾e dalekohled odpovìdìt{\it ra 10}, co¾ znamená, ¾e je v
+rektascenzi nastaven na 10 stupòù.
 
 \subsection{Zprávy a ¾ádosti serveru}
 
@@ -80,4 +80,9 @@ sí»ovou adresu.
 
 \subsubsection{Zprávy}
 
-Zprávy zaèínají písmenem M, za kterım následuje text zprávy. Nemají
+Zprávy zaèínají písmenem M, za kterım následuje text zprávy.
+
+\subsubsection{Informaèní zprávy}
+
+Zaèínají písmenem I. Informují klineta o zmìnì poètu a hodnotách stavu
+serveru, a o pøipojenıch klientech.

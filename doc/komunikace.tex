@@ -14,12 +14,11 @@ roz¹íøenost.
 Vìt¹ina kódu je napsána v jazyce C, tedy bez pou¾ití objektù. Databázové
 operace jsou popsány v jazyce SQL. Webovské stránky jsou psané v jazyce PHP. Integraèní èásti kódu jsou psány v bash skriptech.
 
-\section{Komunikace}
+\input{server-protokol}
 
-Pro komunikaci mezi jednotlivými procesy mù¾eme pou¾ít existující sí»ové
-knihovny, nebo si navhrnout knihovnu a protokol vlastní.
+\section{Komunikaèní knihovna}
 
-Komunikaèní knihovna musí umo¾òovat následující po¾adavky:
+Komunikaèní knihovna musí splòovat následující po¾adavky:
 
 \begin{itemize}
 \item umo¾òovat posílání zpráv
@@ -28,6 +27,32 @@ Komunikaèní knihovna musí umo¾òovat následující po¾adavky:
 \item klást malé nároky na systémové prostøedky
 \end{itemize}
 
-Proto¾e jsem nebyl schopen najít knihovnu, která by podporovala v¹echny
-po¾adavky kladené na øízení dalekohledu, rozhodl jsem se navrhnout a pou¾ít
-vlastní knihovnu.
+Systém pou¾ívá vlastní komunikaèní knihovny a s ní spojeného protokolu.
+
+\subsection{Architektura komunikaèní knihovny}
+
+Knihovna se skládá z následujících èástí:
+
+\begin{description}
+\item[devser] knihovna pro server
+\item[devcli] knihovna pro klienty
+\item[devdem] knihovna pro zaøízení
+\end{description}
+
+\subsection{devser}
+
+Slou¾í pro serverovou stranu spojení. Poskytuje funkce nutné pro pøeètení
+pøíkazu a zpracování pøíkazu, poslání odpovìdi a zakonèovací øádky pøíkazu.
+
+\subsection{devcli}
+
+Slou¾í pro klientskou stranu spojení. Poskytuje funkce pro navázání komunikace
+se serverem, poslání pøíkazu na servera, zpracování a pøeètení odpovìdí ze
+serveru. Zpracovává v¹echny po¾adavky a zprávy serveru, pokytuje pøístupové
+body pro funkce pro pøíjem dat a funkce volané pøi zmìnì stavu.
+
+Udr¾uje komunikaci s centrálním servrem, zji¹»uje stavy a poèet zaøízení.
+
+\subsection{devdem}
+
+Integruje devcli a devdem. Poskytuje podporu pro zaøízení.

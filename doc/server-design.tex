@@ -1,78 +1,11 @@
-\chapter{Design serveru}
-
-\subsubsection{Stav}
-
-Jsou k~dispozici atomické funkce pro zmìnu stavu, a funkce pro jeho
-pøeètení. Stav je umístìn ve sdílené pamìti, tudí¾ je pro v¹echny
-instance serveru v¾dy stejný. Atomicita pøístupu k~nìmu je hlídána
-pomocí semaforù.
-
-Informace o zmìnì stavu jsou ¹íøeny pomocí stavových zpráv v¹em na zaøízení
-pøipojeným klientùm.
+\section{Server}
 
 \subsubsection{Správa vláken}
 
 Pro vykonávání funkcí, které trvají del¹í dobu, se na serveru pou¾ívají
-vlákna. 
-
-\subsubsection{Pøenos dat}
-
-Data vznikají na poèítaèi, ke kterému je pøipojena kamera. Odtud je
-potøeba je dostat nìkam na disk, do nìjakého prohlí¾eèe obrázkù,
-k~nìjakému zpracování.
-
-
-
-\subsubsection{Jak ovládat zaøízení}
-
-Na ovládání kamery budeme potøebovat minimálnì jeden plnì duplexní
-komunikaèní kanál. Vyu¾ijeme nìjakého sí»ového protokolu, s~nejvìt¹í
-pravdìpodobností IP. 
-
+vlákna. V devser jsou k dispozici funkce pro jejich zprávu.
 
 \subsection{Pøenos dat}
-
-Obyèejné stavová data není problém pøekódovat do textové podoby a poslat po
-tomto rozhranní, se snímky je to trochu hor¹í - jsou to binární data ve
-velikostech v øádu megabajtù, která by bylo záhodno pøená¹et rychle a
-efektivnì.
-
-Snímky, nebo spí¹e obecnì binární data, je mo¾né pøená¹et pomocí nìkterého ze
-standartních protokolù. Data ulo¾ím do pamìti, klientovi sdìlím jejich
-umístìní a klient si je od serveru pomocí standartního protokolu vy¾ádá.
-Vhodné protokoly by byli napøíklad FTP nebo HTTP, pøípadnì zdílení diskù
-pomocí NFS nebo Samby.
-
-Druhou mo¾ností je návrh a implementace vlastního protokolu.
-
-Pøenost dat pomocí standartních protokolù neumo¾òuje jejich streaming -
-pøená¹ení èásti dat z kamery okam¾itì po vyètení èásti snímku. Tato vlasnost
-se stává dùle¾itou, pokud chceme poøizovat snímky v takzvaném driftovacím
-re¾imu, kdy je optika detekèního pøístroje zamìøena na pevné místo na obloze a
-hodinový posun montá¾e je nahrazen vyèítáním øádkù z kamery - po vyèetní
-jednoho øádku se øádky o jeden øádek posunou, a na opaèném konci èipu ne¾ z
-kterého se vyèítá vznikne nový øádek.
-
-Pøenos dat pøes standartní servery dále vy¾aduje existenci servru pro tento
-protokol na zaøízení, øídícím vyèítání kamery. Zvìt¹uje tak po¾adavky na pamìt
-na stranì serveru. V pøípadì, ¾e by jsme se rozhodli øe¹it vyèítání
-jednoduchým jednoúèelovým pøístrojem, vy¾aduje po nás implemetaci tohoto
-serveru i na daný pøístroj.
-
-Pøi pøenosu dat pøes standartní protokol je potøeba zajistit jejich smazání.
-Vzhledem k tomu, ¾e klient mù¾e kdykoliv spadnou, pøípadnì mù¾e dojít k
-pøeru¹ení spojení, není toto vhodné øe¹it vysláním pøíkazu ze strany klienta.
-
-Rozhodl jsem se tedy pro vytvoøení vlastního protokolu pro pøenos dat, který
-mì umo¾ní streaming a nebude závislý na externím serveru.
-
-Snímky, nebo spí¹e obecnì binární data, je mo¾né pøená¹et pomocí
-nìkterého ze standartních protokolù. Data ulo¾ím do pamìti,
-klientovi sdìlím jejich umístìní a klient si je od serveru pomocí
-standartního protokolu vy¾ádá. Vhodné protokoly by byli napøíklad FTP
-nebo HTTP.
-
-Snímky je ale vhodné doplnit o 
 
 Nabízejí se dvì mo¾nosti - snímky pøená¹et po stejném spojení, jako je
 øídící, nebo pro pøenos snímkù vytváøet nové spojení. Mo¾nost
