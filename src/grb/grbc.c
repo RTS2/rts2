@@ -25,7 +25,7 @@
 
 #include "image_info.h"
 
-#define EXPOSURE_TIME		60
+double exposure_time = 60;
 
 struct grb
 {
@@ -60,7 +60,7 @@ get_info (struct grb *entry, struct device *tel, struct device *cam)
   printf ("info camera_name = %s\n", cam->name);
   info->telescope_name = tel->name;
   info->exposure_time = time (NULL);
-  info->exposure_length = EXPOSURE_TIME;
+  info->exposure_length = exposure_time;
   info->target_id = entry->tar_id;
   info->observation_id = entry->obs_id;
   info->target_type = TARGET_LIGHT;
@@ -82,14 +82,14 @@ readout ()
   struct device *camera;
   devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 			  TEL_OBSERVING, 120);
-  devcli_command_all (DEVICE_TYPE_CCD, "expose 0 1 %i", EXPOSURE_TIME);
+  devcli_command_all (DEVICE_TYPE_CCD, "expose 0 1 %f", exposure_time);
 
   devcli_command (telescope, NULL, "info");
   for (camera = devcli_devices (); camera; camera = camera->next)
     get_info (&observing, telescope, camera);
   devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
 			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-			      1.1 * EXPOSURE_TIME + 10);
+			      1.1 * exposure_time + 10);
   devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
   return 0;
 }
@@ -185,11 +185,6 @@ main (int argc, char **argv)
 	{
 	case 'p':
 	  port = atoi (optarg);
-	  if (port < 1 || port == UINT_MAX)
-	    {
-	      printf ("invalid server port option: %s\n", optarg);
-	      exit (EXIT_FAILURE);
-	    }
 	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
@@ -215,14 +210,17 @@ main (int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-  if (db_connect ())
+  if ((c = db_connect ()))
     {
-      perror ("grbc db_connect");
-      return -1;
+      fprintf (stderr, "cannot connect to db, SQL error code: %i\n", c);
+      devcli_server_disconnect ();
+      return 0;
     }
 
   observer.lng = get_double_default ("longtitude", 6.377);
   observer.lat = get_double_default ("latitude", 37.1);	// BOOTES as default
+  exposure_time =
+    get_device_double_default ("grbc", "exposure_time", exposure_time);
 
   printf ("GRB will be observerd at longtitude %f, latitude %f\n",
 	  observer.lng, observer.lat);
@@ -255,22 +253,15 @@ main (int argc, char **argv)
   printf ("connecting to %s:%i\n", server, port);
 
   /* connect to the server */
-  if (devcli_server_login (server, port, "petr", "petr") < 0)
-    {
-      perror ("devcli_server_login");
-      exit (EXIT_FAILURE);
-    }
+  while (devcli_server_login (server, port, "petr", "petr") == -1)
+    perror ("devcli_server_login");
 
-  devcli_device_data_handler (DEVICE_TYPE_CCD, data_handler);
 
-  telescope = devcli_find (get_string_default ("telescope_name", "T0"));
-
-  if (!telescope)
-    {
-      printf
-	("**** telescope cannot be found.\n**** please check that's connected and teled is running.\n");
-      exit (EXIT_FAILURE);
-    }
+  while (!
+	 (telescope =
+	  devcli_find (get_string_default ("telescope_name", "T0"))))
+    printf
+      ("**** cannot find telescope!\n**** please check that it's connected and teld runs.\n");
 
   devcli_server_command (NULL, "status_txt grbc_waiting");
 
@@ -278,6 +269,7 @@ main (int argc, char **argv)
 
   while (1)
     {
+      int tar_id;
       pthread_mutex_lock (&observing_lock);
       printf ("Waiting for GRB event.\n");
       fflush (stdout);
@@ -298,6 +290,7 @@ main (int argc, char **argv)
       devcli_server_command (NULL, "info");
       devcli_command_all (DEVICE_TYPE_CCD, "ready");
       devcli_command_all (DEVICE_TYPE_CCD, "info");
+      devcli_device_data_handler (DEVICE_TYPE_CCD, data_handler);
       devcli_command (telescope, NULL, "ready");
       devcli_command (telescope, NULL, "base_info");
       devcli_command (telescope, NULL, "info");
@@ -308,7 +301,6 @@ main (int argc, char **argv)
 
       devcli_wait_for_status (telescope, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
-
       printf ("waiting end\n");
 
       time (&t);
@@ -319,11 +311,13 @@ main (int argc, char **argv)
 			&hrz);
 
       observing_count = 0;
-      while (hrz.alt > 10
+      tar_id = observing.tar_id;
+      while (hrz.alt > get_device_double_default ("grbc", "horizont", 0)
 	     && (devcli_server ()->statutes[0].status == SERVERD_NIGHT
 		 || devcli_server ()->statutes[0].status == SERVERD_DUSK
 		 || devcli_server ()->statutes[0].status == SERVERD_DAWN))
 	{
+	  time (&t);
 	  if (devcli_command
 	      (telescope, NULL, "move %f %f", observing.object.ra,
 	       observing.object.dec))
@@ -332,8 +326,15 @@ main (int argc, char **argv)
 	    }
 	  if (observing_count)
 	    devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
-					CAM_MASK_READING, CAM_NOTREADING, 0);
+					CAM_MASK_READING, CAM_NOTREADING,
+					120);
 	  observing_count++;
+	  if (tar_id != observing.tar_id)	// tar_id was changed
+	    {
+	      db_end_observation (observing.obs_id, &t);
+	      tar_id = observing.tar_id;
+	      db_start_observation (tar_id, &t, &observing.obs_id);
+	    }
 	  pthread_mutex_unlock (&observing_lock);
 
 	  devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
@@ -347,10 +348,7 @@ main (int argc, char **argv)
 	  get_hrz_from_equ (&observing.object, &observer,
 			    get_julian_from_sys (), &hrz);
 	  if (observing.grb_id < 100 && observing_count > 10)
-	    {
-	      observing.tar_id = -1;
-	      break;
-	    }
+	    break;
 	}
 
       devcli_server_command (NULL, "priority -1");
@@ -358,6 +356,8 @@ main (int argc, char **argv)
       t = time (NULL);
 
       db_end_observation (observing.obs_id, &t);
+      if (observing.tar_id == tar_id)
+	observing.tar_id = -1;
       pthread_mutex_unlock (&observing_lock);
     }
 
