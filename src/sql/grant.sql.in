@@ -1,3 +1,5 @@
+CREATE USER "@WWWUSER@";
+
 GRANT SELECT ON images TO "none";
 GRANT SELECT ON counts TO "none";
 GRANT SELECT ON users TO "none";
@@ -18,6 +20,7 @@ GRANT ALL ON grb TO GROUP observers;
 GRANT ALL ON targets TO GROUP observers;
 GRANT ALL ON observations TO GROUP observers;
 GRANT ALL ON ot TO GROUP observers;
+GRANT ALL ON ell TO GROUP observers;
 GRANT ALL ON cameras TO GROUP observers;
 GRANT ALL ON mounts TO GROUP observers;
 GRANT ALL ON darks TO GROUP observers;
@@ -39,6 +42,7 @@ GRANT SELECT ON grb TO "@WWWUSER@";
 GRANT SELECT ON targets TO "@WWWUSER@";
 GRANT SELECT ON observations TO "@WWWUSER@";
 GRANT SELECT ON ot TO "@WWWUSER@";
+GRANT SELECT ON ell TO "@WWWUSER@";
 GRANT SELECT ON cameras TO "@WWWUSER@";
 GRANT SELECT ON mounts TO "@WWWUSER@";
 GRANT SELECT ON types TO "@WWWUSER@";
