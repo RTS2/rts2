@@ -43,18 +43,16 @@ int verbose = 0;		// verbosity level
 void
 usage ()
 {
-  printf (" Observing state display tool.
-This program comes with ABSOLUTELY NO WARRANTY; for details
-see http://www.gnu.org.  This is free software, and you are welcome
-to redistribute it under certain conditions; see http://www.gnu.org
-for them.
-Program options:
-    -a set latitude (overwrites config file). 
-    -c just print current state (one number) and exists
-    -l set longtitude (overwrites config file). Negative for east of Greenwich)
-    -h prints that help
-    -v be verbose
-");
+  printf ("Observing state display tool.\n"
+	  "This program comes with ABSOLUTELY NO WARRANTY; for details\n"
+	  "see http://www.gnu.org.  This is free software, and you are welcome\n"
+	  "to redistribute it under certain conditions; see http://www.gnu.org\n"
+	  "for them.\n"
+	  "Program options:\n"
+	  "    -a set latitude (overwrites config file). \n"
+	  "    -c just print current state (one number) and exists\n"
+	  "    -l set longtitude (overwrites config file). Negative for east of Greenwich)\n"
+	  "    -h prints that help\n" "    -v be verbose\n");
   exit (EXIT_SUCCESS);
 
 }
