@@ -1098,14 +1098,40 @@ telescope_change (double ra, double dec)
 {
   struct telescope_info info;
   int ret;
-
   if (move_lock ())
     return -1;
-
-  telescope_info (&info);
-  if (abs (dec) < 87)
-    ra = ra / cos (dec);
-  ret = tel_move_to (info.ra + ra, info.dec + dec);
+  // decide, if we make change, or move using move command
+  if (abs (ra) > 5 && abs (dec) > 5)
+    {
+      telescope_info (&info);
+      if (abs (dec) < 87)
+	ra = ra / cos (dec);
+      ret = tel_move_to (info.ra + ra, info.dec + dec);
+    }
+  else
+    {
+      char direction;
+      // center rate
+      tel_set_rate ('C');
+      // slew speed to 60 - 15 arcmin / sec
+      tel_gemini_set (170, 60);
+      if (ra != 0)
+	{
+	  // first - RA direction
+	  direction = ra > 0 ? 'e' : 'w';
+	  telescope_start_move (direction);
+	  usleep (((ra / 15.0) / 60.0) * 1000);
+	  telescope_stop_move (direction);
+	}
+      if (dec != 0)
+	{
+	  // second - dec direction
+	  direction = dec > 0 ? 'n' : 's';
+	  telescope_start_move (direction);
+	  usleep (((dec / 15.0) / 60.0) * 1000);
+	  telescope_stop_move (direction);
+	}
+    }
   move_unlock ();
   return ret;
 }
