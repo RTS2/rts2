@@ -45,8 +45,6 @@
 
 #define HISTOGRAM_LIMIT		65536
 
-#define EXPOSURE_TIME		10
-
 struct device *camera;
 
 Display *display;
@@ -63,6 +61,8 @@ int depth = 0;
 
 Colormap colormap;
 XColor rgb[256];
+
+float exposure_time = 3.0;
 
 void
 redraw ()
@@ -97,11 +97,26 @@ event_loop (void *arg)
 	    case XK_3:
 	      devcli_command (camera, NULL, "binning 0 3 3");
 	      break;
+	    case XK_e:
+	      exposure_time += 1;
+	      break;
+	    case XK_d:
+	      if (exposure_time > 1)
+		exposure_time -= 1;
+	      break;
+	    case XK_w:
+	      exposure_time += 0.1;
+	      break;
+	    case XK_s:
+	      if (exposure_time > 0.1)
+		exposure_time -= 0.1;
+	      break;
 	    default:
-	      fprintf (stderr, "Unknow key pressed:%i\n", ks);
+	      // fprintf (stderr, "Unknow key pressed:%i\n", (int) ks);
 	      break;
 	    }
 	}
+      printf ("next_exposure_time: %f\n", exposure_time);
     }
 }
 
@@ -126,7 +141,7 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 
   int ds;
 
-  short low, med, hig;
+  unsigned short low, med, hig;
 
   printf ("reading data socket: %i size: %i\n", sock, size);
 
@@ -179,7 +194,7 @@ data_handler (int sock, size_t size, struct image_info *image_info)
 	ds++;
       }
 
-  low = hig = med = 0;
+  low = med = 0;
   j = 0;
   for (i = 0; i < HISTOGRAM_LIMIT; i++)
     {
@@ -193,6 +208,10 @@ data_handler (int sock, size_t size, struct image_info *image_info)
       if ((!hig) && (((float) j / (float) ds) > PP_HIG))
 	hig = i;
     }
+  if (!hig)
+    hig = 65535;
+  if (low == hig)
+    low = hig / 2 - 1;
   fprintf (stderr, "levels: low:%d, med:%d, hi:%d ds: %d\n", low, med, hig,
 	   ds);
 
@@ -236,7 +255,7 @@ readout ()
 
   info = (struct image_info *) malloc (sizeof (struct image_info));
   info->exposure_time = time (NULL);
-  info->exposure_length = EXPOSURE_TIME;
+  info->exposure_length = exposure_time;
   info->target_id = -1;
   info->observation_id = -1;
   info->target_type = 1;
@@ -411,12 +430,13 @@ main (int argc, char **argv)
       printf ("OK\n");
 
       time (&t);
-      printf ("exposure countdown %s..\n", ctime (&t));
-      t += EXPOSURE_TIME;
-      printf ("readout at: %s\n", ctime (&t));
+      printf ("exposure countdown %s..", ctime (&t));
+      t += exposure_time;
+      printf ("readout at: %s", ctime (&t));
+      printf ("exposure_time: %f\n", exposure_time);
       if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
-	  devcli_command (camera, NULL, "expose 0 %i %i", 1, EXPOSURE_TIME))
+	  devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
 	{
 	  perror ("expose:");
 	}
