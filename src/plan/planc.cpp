@@ -96,7 +96,7 @@ time_t last_succes = 0;
 
 int watch_status = 1;		// watch central server status
 
-Selector  *selector = NULL;
+Selector *selector = NULL;
 
 int
 phot_handler (struct param_status *params, struct phot_info *info)
@@ -114,8 +114,7 @@ phot_handler (struct param_status *params, struct phot_info *info)
       ctime_r (&t, tc);
       tc[strlen (tc) - 1] = 0;
       ret = param_next_integer (params, &info->count);
-      printf ("%05i %s %i %i \n", phot_obs_id, tc,
-         info->filter, info->count);
+      printf ("%05i %s %i %i \n", phot_obs_id, tc, info->filter, info->count);
       fflush (stdout);
       if (telescope)
 	{
@@ -141,11 +140,11 @@ move (Target * last)
       JD = ln_get_julian_from_sys ();
       // correction for terestial target
       if (last->obs_type == TYPE_TERESTIAL)
-      {
-	      object.ra = object.ra - ln_get_mean_sidereal_time (JD) * 15.0 - observer.lng;
-      }
-      ln_get_hrz_from_equ (&object, &observer, JD,
-			   &hrz);
+	{
+	  object.ra =
+	    object.ra - ln_get_mean_sidereal_time (JD) * 15.0 - observer.lng;
+	}
+      ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
 
@@ -385,11 +384,22 @@ process_precission (Target * tar, struct device *camera)
 	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 				  TEL_OBSERVING, 0);
 	}
-
+      // try centering, if required
+      if (hi_precision.ntries < max_tries
+	  && get_string_default ("centering_phot", NULL))
+	{
+	  int ret;
+	  ret = rts2_centering (camera, telescope);
+	  if (ret)
+	    {
+	      hi_precision.ntries = max_tries;
+	    }
+	}
       pthread_mutex_lock (&precission_mutex);
       tar->hi_precision = (hi_precision.ntries < max_tries) ? 0 : -1;	// return something usefull - tar is pointer, so it will get there
       pthread_cond_broadcast (&precission_cond);
       pthread_mutex_unlock (&precission_mutex);
+
     }
   return tar->hi_precision;
 }
@@ -747,6 +757,7 @@ execute_camera_script (void *exinfo)
 	    }
 	  exp_state = CENTERING;
 	  rts2_centering (camera, telescope);
+	  break;
 	case COMMAND_SLEEP:
 	  command++;
 	  filter = strtol (command, &s, 10);
@@ -769,13 +780,13 @@ execute_camera_script (void *exinfo)
 	  time (&t);
 
 	  while (t - script_start < filter)
-	  {
-		int sl;
-		sl = filter - (t - script_start);
-		printf ("sleeping for %i seconds\n", sl);
-		sleep (sl);
-		time (&t);
-	  }
+	    {
+	      int sl;
+	      sl = filter - (t - script_start);
+	      printf ("sleeping for %i seconds\n", sl);
+	      sleep (sl);
+	      time (&t);
+	    }
 
 	  break;
 	case COMMAND_UTC_SLEEP:
@@ -800,13 +811,13 @@ execute_camera_script (void *exinfo)
 	  time (&t);
 
 	  while (t - script_start < filter)
-	  {
-		int sl;
-		sl = filter - (t - script_start);
-		printf ("sleeping for %i seconds\n", sl);
-		sleep (sl);
-		time (&t);
-	  }
+	    {
+	      int sl;
+	      sl = filter - (t - script_start);
+	      printf ("sleeping for %i seconds\n", sl);
+	      sleep (sl);
+	      time (&t);
+	    }
 
 	  break;
 	default:
