@@ -94,6 +94,7 @@ int
 Rts2DevTelescope::idle ()
 {
   checkMoves ();
+  return 0;
 }
 
 int
@@ -213,19 +214,7 @@ Rts2DevConn (in_sock, in_master_device)
 int
 Rts2DevConnTelescope::commandAuthorized ()
 {
-  if (isCommand ("ready"))
-    {
-      return master->ready (this);
-    }
-  else if (isCommand ("info"))
-    {
-      return master->info (this);
-    }
-  else if (isCommand ("base_info"))
-    {
-      return master->baseInfo (this);
-    }
-  else if (isCommand ("exit"))
+  if (isCommand ("exit"))
     {
       close (sock);
       return -1;
