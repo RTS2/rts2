@@ -724,6 +724,8 @@ serverd_handle_command (char *command)
 	  if (shm_info->priority_client > -1)
 	    devser_dprintf ("M priority_change %i 0",
 			    shm_info->priority_client);
+	  devser_dprintf ("device %i %s %s:%i %i", i, reg_device,
+			  hostname, port, reg_type);
 	  devser_shm_data_unlock ();
 	  return 0;
 	}
