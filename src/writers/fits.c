@@ -152,7 +152,12 @@ write_telescope (struct fits_receiver_data *receiver,
 	     "Telescope sidereailtime");
   write_key (TDOUBLE, "TEL_LOC", &telescope->localtime,
 	     "Telescope localtime");
-  write_key (TFLOAT, "TEL_FLIP", &telescope->flip, "Telescope flip");
+  write_key (TINT, "TEL_FLIP", &telescope->flip, "Telescope flip");
+  write_key (TDOUBLE, "TEL_CNT0", &telescope->axis0_counts,
+	     "Telescope axis 0 counts");
+  write_key (TDOUBLE, "TEL_CNT1", &telescope->axis0_counts,
+	     "Telescope axis 1 counts");
+  return 0;
   return 0;
 }
 

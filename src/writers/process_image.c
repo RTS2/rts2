@@ -176,7 +176,6 @@ process_images (void *arg)
       free (actual_image->directory);
       free (actual_image->image);
       free (actual_image);
-      printf ("all free");
     }
 }
 
