@@ -41,7 +41,7 @@ DROP FUNCTION imgrange (opaque);
 CREATE FUNCTION imgrange (opaque)
   RETURNS varchar AS '@PG_CONFIG_SERVER_LIBS@/pg_wcs.so', 'imgrange' LANGUAGE 'C';
 
-DROP FUNCTION imgpath;
+DROP FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer, abstime);
 -- 			med_id  epoch    mount_name camera_name obs_id  tar_id   date
 CREATE FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer, abstime) RETURNS varchar(100) AS '
 DECLARE
@@ -49,12 +49,17 @@ DECLARE
 	tar_id	varchar(5);
 	ep 	varchar(3);
 	name	varchar(14);
+	mounted boolean;
 BEGIN
-	SELECT INTO path med_path FROM medias WHERE med_id = $1;
+        SELECT INTO mounted med_mounted FROM medias WHERE med_id = $1;
 	IF NOT FOUND THEN
 		RAISE EXCEPTION ''Cannot found med_id %'', $1;
 		RETURN '''';
 	END IF;
+	IF NOT mounted THEN
+		RETURN '''';
+	END IF;
+	SELECT INTO path med_path FROM medias WHERE med_id = $1;
 	tar_id:=LPAD ($6, 5, ''0'');
 	name:=EXTRACT(YEAR FROM $7) || LPAD(EXTRACT(MONTH FROM $7), 2, ''0'') || LPAD(EXTRACT(DAY FROM $7), 2, ''0'') || LPAD(EXTRACT(HOUR FROM $7), 2, ''0'') || LPAD(EXTRACT(MINUTE FROM $7), 2, ''0'') || LPAD(EXTRACT(SECOND FROM $7), 2, ''0'');
 	ep:=$2;
