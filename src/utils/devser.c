@@ -642,6 +642,7 @@ send_data_thread (void *arg)
 	    {
 	      syslog (LOG_ERR, "devser write:%m port:%i ret:%i size:%i", port,
 		      ret, size);
+	      data_con->available = -1;
 	      break;
 	    }
 	}
