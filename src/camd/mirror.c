@@ -101,7 +101,7 @@ mirror_set (int steps)
   while (steps > 0)
     {
       int move;
-      move = (steps >= 4) ? 4 : steps;
+      move = (steps >= 2) ? 2 : steps;
       ret = command (cmd, move, NULL, NULL);
       if (ret)
 	return -1;
@@ -139,7 +139,7 @@ mirror_open ()
 {
   if (!mirror_fd)
     return -1;
-  return mirror_set (200);
+  return mirror_set (170);
 }
 
 int
@@ -147,5 +147,5 @@ mirror_close ()
 {
   if (!mirror_fd)
     return -1;
-  return mirror_set (-200);
+  return mirror_set (-170);
 }
