@@ -2,7 +2,10 @@
 
 noinst_LIBRARIES = libdb.a
 
-libdb_a_SOURCES = db.c
+nodist_libdb_a_SOURCES = db.c
+
+EXTRA_DIST = db.ec
+
 AM_CFLAGS = @LIBPG_CFLAGS@
 
 %.c: %.ec

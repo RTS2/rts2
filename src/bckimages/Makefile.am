@@ -1,6 +1,10 @@
+# $Id$
+
 bin_PROGRAMS = rts2-bckimages rts2-flatprocess
 
-rts2_bckimages_SOURCES = bckimages.c
+nodist_rts2_bckimages_SOURCES = bckimages.c
+
+EXTRA_DiST = bckimages.ec
 
 rts2_flatprocess_SOURCES = flatprocess.c
 

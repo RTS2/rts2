@@ -33,7 +33,6 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
-#include "lx200.h"
 #include "../telescope.h"
 #include "../../utils/hms.h"
 #include "status.h"
@@ -41,6 +40,16 @@
 // uncomment following line, if you want all port read logging (will
 // at about 10 30-bytes lines to syslog for every query). 
 // #define DEBUG_ALL_PORT_COMM
+
+#define RATE_SLEW	'S'
+#define RATE_FIND	'M'
+#define RATE_CENTER	'C'
+#define RATE_GUIDE	'G'
+#define DIR_NORTH	'n'
+#define DIR_EAST	'e'
+#define DIR_SOUTH	's'
+#define DIR_WEST	'w'
+#define PORT_TIMEOUT	5
 
 int port = -1;
 

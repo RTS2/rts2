@@ -13,4 +13,4 @@ libdevser_a_SOURCES = devdem.c devser.c hms.c param.c thread_attr.c config.c
 
 libdevcli_a_SOURCES = devcli.c devhnd.c param.c hms.c mv.c mkpath.c thread_attr.c config.c
 
-noinst_HEADERS = devcli.h devdem.h devser.h config.h
+noinst_HEADERS = devcli.h devdem.h devser.h config.h mv.h mkpath.h devconn.h thread_attr.h hms.h

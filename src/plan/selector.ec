@@ -351,7 +351,7 @@ select_next_to (time_t c_start, struct target *plan, float az_end,
     10 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
 	    obj_az (tar_ra, tar_dec,:st,:db_lon,
 		    :db_lat) >:d_az_start) ORDER BY ot_priority DESC,
-    img_count ASC, alt DESC, ot_imgcount ASC;
+    img_count ASC, alt DESC, ot_imgcount DESC;
 
   EXEC SQL OPEN obs_cursor_to;
   test_sql;

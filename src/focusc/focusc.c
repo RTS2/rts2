@@ -196,7 +196,6 @@ int
 readout ()
 {
   struct image_info *info;
-  union devhnd_info *devinfo;
 
   info = (struct image_info *) malloc (sizeof (struct image_info));
   info->exposure_time = time (NULL);
@@ -237,7 +236,7 @@ main (int argc, char **argv)
 
   char *camera_name;
 
-  int c, i = 0;
+  int c = 0;
 
 #ifdef DEBUG
   mtrace ();
@@ -268,11 +267,6 @@ main (int argc, char **argv)
 	  break;
 	case 'p':
 	  port = atoi (optarg);
-	  if (port < 1 || port == UINT_MAX)
-	    {
-	      printf ("invalcamd_id port option: %s\n", optarg);
-	      exit (EXIT_FAILURE);
-	    }
 	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
@@ -336,7 +330,6 @@ main (int argc, char **argv)
   while (1)
     {
       time_t t = time (NULL);
-      int ret;
 
       devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);

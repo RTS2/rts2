@@ -1,10 +1,12 @@
-SUBDIRS = utils \
+SUBDIRS = utils	\
 	writers \
 	serverd \
-	teld \
-	camd \
-	db \
-	plan \
-	grb \
-	monitor \
-	wcs
+	teld	\
+	camd	\
+	db	\
+	plan	\
+	pgsql	\
+	grb	\
+	monitor	\
+	focusc	\
+	sql
