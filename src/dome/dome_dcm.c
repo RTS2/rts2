@@ -30,6 +30,49 @@
 
 #define DOME_FILE		"/var/log/dome"
 
+int dome1_last = -1, weather_last = -1, dome2_last = -1;
+
+void
+dome_status (char *state, int num, int *last_num)
+{
+  if (!strcasecmp (state, "opened"))
+    {
+      if (*last_num != DOME_OPENED)
+	{
+	  devdem_status_mask (num, DOME_DOME_MASK, DOME_OPENED,
+			      "dome opened");
+	  *last_num = DOME_OPENED;
+	}
+    }
+  else if (!strcasecmp (state, "opening"))
+    {
+      if (*last_num != DOME_OPENIGN)
+	{
+	  devdem_status_mask (num, DOME_DOME_MASK, DOME_OPENIGN,
+			      "dome opening");
+	  *last_num = DOME_OPENIGN;
+	}
+    }
+  else if (!strcasecmp (state, "closing"))
+    {
+      if (*last_num != DOME_CLOSING)
+	{
+	  devdem_status_mask (num, DOME_DOME_MASK, DOME_CLOSING,
+			      "dome closing");
+	  *last_num = DOME_CLOSING;
+	}
+    }
+  else if (!strcasecmp (state, "closed"))
+    {
+      if (*last_num != DOME_CLOSED)
+	{
+	  devdem_status_mask (num, DOME_DOME_MASK, DOME_CLOSED,
+			      "dome closed");
+	  *last_num = DOME_CLOSED;
+	}
+    }
+}
+
 /*! 
  * Handle teld command.
  *
@@ -52,8 +95,6 @@ dome_handle_command (char *command)
 	  devser_write_command_end (DEVDEM_E_HW, "Dome not ready");
 	  return -1;
 	}
-
-
       ret = errno = 0;
     }
 
@@ -61,7 +102,7 @@ dome_handle_command (char *command)
     {
       struct dome_info info;
       FILE *fs = fopen ("/var/log/dome", "r");
-      char state[50], weather[50];
+      char weather[50], weather_inf[50], dome1[20], dome2[20];
 
       if (!stat)
 	{
@@ -69,19 +110,33 @@ dome_handle_command (char *command)
 				    strerror (errno));
 	  return -1;
 	}
-      fscanf (fs, "%s %f %f %s", state, &info.temperature, &info.humidity,
-	      weather);
+      fscanf (fs, "%s %f %f %s | BOOTES-1A %s | BOOTES-1B %s", weather,
+	      &info.temperature, &info.humidity, weather_inf, dome1, dome2);
       fclose (fs);
-      if (!strcasecmp (state, "OPEN"))
-	info.state = DOME_OPENED;
-      else if (!strcasecmp (state, "CLOSE"))
-	info.state = DOME_CLOSED;
-      else if (!strcasecmp (state, "CLOSING"))
-	info.state = DOME_CLOSING;
-      else if (!strcasecmp (state, "OPENINIG"))
-	info.state = DOME_OPENIGN;
+      if (strcasecmp (weather, "WEATHER"))
+	{
+	  devser_write_command_end (DEVDEM_E_HW, "No weather", errno,
+				    strerror (errno));
+	  return -1;
+	}
+      if (!strcmp (weather_inf, "NO"))
+	{
+	  if (weather_last != 1)
+	    {
+	      devdem_status_mask (0, 0xff, 1, "good weather");
+	      weather_last = 1;
+	    }
+	}
       else
-	info.state = 0;
+	{
+	  if (weather_last != 0)
+	    {
+	      devdem_status_mask (0, 0xff, 0, "bad weather");
+	      weather_last = 0;
+	    }
+	}
+      dome_status (dome1, 1, &dome1_last);
+      dome_status (dome2, 2, &dome2_last);
       devser_dprintf ("temperature %f", info.temperature);
       devser_dprintf ("humidity %f", info.humidity);
       ret = errno = 0;
@@ -106,7 +161,7 @@ dome_handle_command (char *command)
 int
 main (int argc, char **argv)
 {
-  char *stats[] = { "dome" };
+  char *stats[] = { "weather", "dome1", "dome2" };
 
   char *serverd_host = SERVERD_HOST;
   uint16_t serverd_port = SERVERD_PORT;
@@ -186,7 +241,7 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  if (devdem_init (stats, 1, NULL))
+  if (devdem_init (stats, 3, NULL))
     {
       syslog (LOG_ERR, "devdem_init: %m");
       return EXIT_FAILURE;
