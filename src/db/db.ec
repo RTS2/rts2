@@ -107,7 +107,7 @@ db_get_script (int target, char *camera_name, char *script)
   EXEC SQL BEGIN DECLARE SECTION;
   int tar_id = target;
   char *cam_name = camera_name;
-  VARCHAR sc_script[MAX_COMMAND_LENGTH];
+  VARCHAR sc_script[2000];
   int sc_indicator;
   EXEC SQL END DECLARE SECTION;
   db_lock ();
