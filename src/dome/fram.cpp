@@ -243,6 +243,7 @@ private:
 public:
     Rts2DevDomeFram (int argc, char **argv);
     virtual ~ Rts2DevDomeFram (void);
+  virtual int processOption (int in_opt);
   virtual int init ();
 
   virtual int ready ();
@@ -523,6 +524,20 @@ Rts2DevDomeFram::endClose ()
   VYP (VENTIL_ZAVIRANI_PRAVY);
   zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
   return Rts2DevDome::endClose ();
+}
+
+int
+Rts2DevDomeFram::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'f':
+      dome_file = optarg;
+      break;
+    default:
+      return Rts2DevDome::processOption (in_opt);
+    }
+  return 0;
 }
 
 int

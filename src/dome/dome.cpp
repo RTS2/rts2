@@ -98,7 +98,8 @@ Rts2DevDome::idle ()
 int
 Rts2DevDome::ready (Rts2Conn * conn)
 {
-  return ready ();
+  int ret;
+  ret = ready ();
 }
 
 int

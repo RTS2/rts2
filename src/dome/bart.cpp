@@ -115,6 +115,8 @@ private:
 public:
     Rts2DevDomeBart (int argc, char **argv);
     virtual ~ Rts2DevDomeBart (void);
+  virtual int processOption (int in_opt);
+
   virtual int init ();
 
   virtual int ready ();
@@ -243,6 +245,20 @@ Rts2DevDomeBart::closeDome ()
   sleep (1);
   VYP (SMER);
   zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  return 0;
+}
+
+int
+Rts2DevDomeBart::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'f':
+      dome_file = optarg;
+      break;
+    default:
+      return Rts2DevDome::processOption (in_opt);
+    }
   return 0;
 }
 
