@@ -106,7 +106,7 @@ sexi_get_result (int *npoint, double **xpoint, double **ypoint,
 
   ff = fopen (SEX_CAT, "r");
   if (!ff)
-    SEXI_ERR ("get_result:cannot open " SEX_PARAM " file 4r");
+    SEXI_ERR ("get_result:cannot open " SEX_CAT " file 4r");
 
   while (!feof (ff))
     {
@@ -210,7 +210,7 @@ sexi_fwhm (char *fitsfile, double *fwhm)
 {
   char *command;
 
-  double *xx, *yy, *F, *Q;
+  double *xx = NULL, *yy = NULL, *F, *Q;
 
   int ret, n;
   double s;
@@ -232,6 +232,7 @@ sexi_fwhm (char *fitsfile, double *fwhm)
   s = sexi_sigmaclip (&n, F, Q);
 
   // get rid of that used space
+  printf ("xx %p\n", xx);
   free (xx);
   free (yy);
   free (F);

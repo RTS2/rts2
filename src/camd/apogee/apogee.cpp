@@ -5,7 +5,6 @@
  *
  * @author petr
  */
-
 #define _GNU_SOURCE
 
 #include <math.h>
@@ -18,6 +17,7 @@
 #include <errno.h>
 #include <time.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "CameraIO_Linux.h"
 
@@ -97,7 +97,7 @@ camera_info (struct camera_info *info)
   info->temperature_regulation = camera->read_CoolerMode ();
   info->temperature_setpoint = camera->read_CoolerSetPoint ();
   info->ccd_temperature = camera->read_Temperature ();
-  info->air_temperature = nan ("0");
+  info->air_temperature = NAN;
   info->cooling_power = -1;
   info->fan = 0;
   info->filter = camera->m_FilterPosition;
