@@ -313,7 +313,10 @@ thread_wrapper (void *temp)
 
   pthread_cleanup_pop (1);	// mutex unlock, threads decrease
 
-  syslog (LOG_DEBUG, "thread successfully ended");
+  if (ret == 0)
+    syslog (LOG_DEBUG, "thread successfully ended");
+  else
+    syslog (LOG_ERR, "thread ended, %i returned", ret);
 
   if (TW->freed)
     free (TW->arg);
@@ -629,9 +632,6 @@ send_data_thread (void *arg)
       syslog (LOG_DEBUG, "on port %i[%i] write %i bytes", port,
 	      data_con->sock, ret);
     }
-  if (close (data_con->sock) < 0)
-    syslog (LOG_ERR, "close %i: %m", data_con->sock);
-
   devser_data_done (ID);
   pthread_mutex_unlock (&data_con->lock);
 
@@ -817,7 +817,7 @@ devser_data_put (int id, void *data, size_t size)
     overload = 0;
 
   memcpy (data_con->buffer + data_con->data_write, data, size - overload);
-  memcpy (data_con->buffer, data, overload);	// mostly overload = 0
+  memcpy (data_con->buffer, data + size - overload, overload);	// mostly overload = 0
 
   data_con->available += size;
 
@@ -885,7 +885,7 @@ data_get (int id, void *data, size_t max_size, size_t * size)
     overload = 0;
 
   memcpy (data, data_con->buffer + data_con->data_read, max_size - overload);
-  memcpy (data, data_con->buffer, overload);	// mostly overload = 0
+  memcpy (data + max_size - overload, data_con->buffer, overload);	// mostly overload = 0
 
   data_con->available -= max_size;
   data_con->data_readed += max_size;
@@ -903,8 +903,6 @@ data_get (int id, void *data, size_t max_size, size_t * size)
 
   pthread_mutex_unlock (&(data_con->que_lock));
 
-  if (data_con->data_readed >= data_con->data_size)
-    devser_data_done (id);
   return 0;
 }
 
