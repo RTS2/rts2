@@ -1,0 +1,168 @@
+$Id$
+
+Nasledujici instrukce berte prosim jako moji snahu navrhnout system,
+jakym budu/budeme psat. Treba se ukaze, ze je uplne blby - v takovem pripade
+bych se to rad dozvedel.
+
+Instrukce, pro praci na rts2:
+
+0) Nastaveni vi a jeho klonu:
+set ts=8
+set et
+
+Pokud hodlate pouzivat neco jineho, tak se ozvete.
+
+1) Verzujte. Verzujeme na pserveru na lascaux, blizsi informace:
+
+Pro prvni checkout:
+
+# cvs -d:pserver:petr@lascaux.asu.cas.cz:/usr/local/cvsroot login <vas cvs login>
+
+Zadat heslo
+
+# cvs -d:pserver:petr@lascaux.asu.cas.cz:/usr/local/cvsroot checkout rts2
+
+Pockat na ukonceni
+
+CVS si do adresare CVS uklada informace o zdroji a stavu souboru.
+Takze pri dalsi praci s CVSkem uz jenom zadavate jeho prikazy.
+
+Vsechny nasledujici prikazy umoznuji jako parametry nazvy souboru,
+adresar, a tak podobne. Pokud nejsou zadany, bere se aktualni
+adresar.
+
+Pro aktualizaci - cvsko prepisuje soubory, ktere nebyly modifikovany.
+
+Soubory, ktere byly modifikovany, se snazi zmergovat (=spojit tak, aby
+byli pouzitelne). 
+
+Pokud nedojde k situaci, ze by byla zmenena v danem souboru jedna
+radka jak uzivatelem, tak novou verzi, zmergovani probehne bez
+problemu.
+
+Pokud byla zmenena ta sama radka jak novou verzi, tak lokalne, cvs
+nahlasi problem, a dane misto ve vyslednem lokalnim souboru oznaci
+(pomoci >>>>> a <<<<<<, da se pak pochopit).
+
+Vsechny soubory, ktere budou mergovany, jsou pred provedenim mergovani
+zkopirovany do souboru s nazvem '.#<nazev_souboru>#.<verze>'. Z neho
+je mozne cerpat informace o lokalnim obsahu souboru.
+
+Aktualizace kodu (umyslne az po instrukcih):
+
+# cvs update
+
+-> nemusite se bat, ze by vam neco zmizelo! Pokud se merguje,
+naleznete vasi starou lokalni verzi vzdy v teh .# souborech.
+
+-> update se jeste doporucuje s -d -P jako delete (soubory, ktere
+nejsou v CVSku) a Purge (prazdne adresare).
+
+Commit kodu (zaverzovani vasich zmen):
+
+# cvs commit
+
+Verzuji se pouze zmene soubory, na ne se odpali vas $EDITOR, muzete
+(ale opravdu by jste meli) zapsat zmeny, ktere jste provedly. Ulozite,
+pokracujete dale.
+
+Snazte se psat zmeny v AJ.
+
+Snazte se na zacatek kazdeho souboru davat 
+$ Id $ (ale bez tech mezer - musim to zadat takto, jinak by to CVSko
+pochopilo a prepsalo). 
+
+2) Pouzivejte indent! Kod si piste jak chcete, ale pred zaverzovanim
+ho projedte indentem, pokud mozno v defaultni konfiguraci. Spravne
+odsazovani je dulezite m.j. kvuli diffovani.
+
+# indent <soubor>       # soubor ulozi jako soubor~, pak ho zformatuje a
+                        # prepise  tudiz puvodni
+
+-> diffovani:
+
+# cvs diff 
+
+-> Ja doporucuji
+
+# cvs diff | vim -
+
+Mate to pak obarvene. Diff se da po chvili vahani pochopit. Diff
+srovna stav kopie u vas s posledni verzi zapsanou v CVSku, a vypise
+vam rozdili. Dobre na zodpovezeni otazek..co jsem vsechno
+zmenil?..kdyz vam neco prestane chodit.
+
+3) Pouzivejte doxygenovske tagy! Viz http://www.doxygen.org.
+
+Pozor: Ja mam radeji variantu @<tag>, prijde mi lepe viditelna.
+Doxygen je umoznuje, jako defaultni ma \<tag>. Pouzivejte, co se vam
+libi vice.
+
+Priklad:
+
+/* @file Driver file for LX200 telescope
+* 
+* Based on original c library for xephem writen by Ken Shouse
+* <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
+* <cguirao@eso.org>
+*
+* @author petr
+*/
+
+@file rika, ze se dokumentuje soubor.
+
+@author je vase malickost..viz soubor AUTHORS, nejlepe vas login na
+lascaux.
+
+Dokumentace funkce:
+
+/* Reads some data directly from port
+* 
+* Log all flow as LOG_DEBUG to syslog
+* 
+* @param buf buffer to read in data
+* @param count how much data will read
+* @exception EBADF EINTR EINVAL ENOMEM from select call 
+* @return -1 on failure, otherwise number of read data 
+*/
+int tel_read ( char *buf, int count )
+{
+
+@param, @return je snad jasny. Na dalsi tagy se nejlepe ptejte u me,
+nebo na doxygenu.
+
+Vim, ze @exception tag nepouzivam zrovna vzorove, budu se snazit
+prosadit zmenu do doxygenu. Aby vice podporoval i neobjektove jazyky.
+
+Dokumentace piste prosim pokud mozno take v AJ.
+
+Pravidla pro kod:
+
+1) Pouzivame glibc funkce, muzete pouzivat funkce dostupne pod 
+
+#define _GNU_SOURCE
+
+Snazte se je opravdu pouzivat, vim, ze vam muze prijit zbytecne
+hledat si je v dokumentaci, je to takova omlivana zasada
+programovani..ja sam v ni nemam moc jasno, ale pokusme se dohodnout,
+ze je budeme pouzivat. 
+
+2) Navraty:
+Pokud funkce vraci int, vyznam je stejny jako v libc funkcich, tedy
+prosim:
+
+-1	chyba
+0	a dale .. v poradku. Vetsinou nejaky pocet vykonanych operaci.
+
+V pripade chyby nechte nastavene errno, pripadne nastavte dle sve
+linbosti. Chyby dokumentujeme pomoci tagu exception v doxygenu.
+
+Na retezcove funkce prosim pouzivejte volani stejne jako ma napriklad
+sprintf, tj. int <funkce>(char *string, atd..).
+
+Snazte se hlidat si buffer overflow. 
+
+Az budu mit cas najit nejakou licenci, tak ji najdu. Zatim pocitejte s
+GNU licencovanim. Nejake ty hlavicky pak uz nejak pridame.
+
+petr <petr@lascaux.asu.cas.cz>
