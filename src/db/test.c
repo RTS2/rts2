@@ -25,7 +25,10 @@ main (int argc, char **argv)
   sq = 4;
   ra = 11.0;
   dec = 11.0;
-  db_update_grb (4, &sq, &ra, &dec, &t, &tar_id);
+  if (db_update_grb (4, &sq, &ra, &dec, &t, &tar_id, 1))
+    {
+      printf ("error in grb update!\n");
+    }
   printf ("sq: %i ra: %f dec: %f target: %i\n", sq, ra, dec, tar_id);
   free (dark_name);
 

@@ -128,7 +128,7 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
       if (hrz.alt >= -1)	// start observation - if not above horizont, don't care, we already observe something else
 	{
 	  pthread_mutex_lock (&observing_lock);
-	  db_update_grb (id, &seqn, &ra, &dec, date, &observing.tar_id);
+	  db_update_grb (id, &seqn, &ra, &dec, date, &observing.tar_id, true);
 	  observing.grb_id = id;
 	  observing.seqn = seqn;
 	  observing.created = *date;
@@ -143,7 +143,7 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
     }
 
   // just add to planer
-  return db_update_grb (id, &seqn, &ra, &dec, date, NULL);
+  return db_update_grb (id, &seqn, &ra, &dec, date, NULL, true);
 }
 
 int

@@ -23,7 +23,7 @@ extern "C"
   int db_end_observation (int obs_id, const time_t * end_time);
 
   int db_update_grb (int id, int *seqn, double *ra, double *dec,
-		     time_t * date, int *r_tar_id);
+		     time_t * date, int *r_tar_id, int enabled);
 
   int db_add_darkfield (char *path, const time_t * exposure_time, int
 			exposure_length, int temp, char *camera_name);

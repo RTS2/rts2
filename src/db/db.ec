@@ -263,7 +263,7 @@ err:
 
 extern int
 db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
-	       int *r_tar_id)
+	       int *r_tar_id, int enabled)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int tar_id;
@@ -273,6 +273,7 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
   double tar_ra;
   double tar_dec;
   long int grb_date = *date;
+  bool tar_enabled = (enabled != 0);
   EXEC SQL END DECLARE SECTION;
 
   db_lock ();
@@ -291,9 +292,14 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
 	  grb_seqn = *seqn;
 	  tar_ra = *ra;
 	  tar_dec = *dec;
-	  EXEC SQL UPDATE targets
-	    SET tar_ra =:tar_ra,
-	    tar_dec =:tar_dec WHERE targets.tar_id =:tar_id;
+	  EXEC SQL 
+	  UPDATE targets
+	    SET 
+	      tar_ra =:tar_ra,
+	      tar_dec =:tar_dec,
+	      tar_enabled =:tar_enabled
+	    WHERE 
+	      targets.tar_id =:tar_id;
 	  test_sql;
 	  EXEC SQL UPDATE grb
 	    SET grb_seqn =:grb_seqn, grb_date =
@@ -318,9 +324,9 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
       tar_ra = *ra;
       tar_dec = *dec;
       EXEC SQL INSERT INTO targets (tar_id, type_id, tar_name, tar_ra,
-				    tar_dec, tar_comment) VALUES (:tar_id,
+				    tar_dec, tar_comment, tar_enabled) VALUES (:tar_id,
 								  'G',:tar_name,:tar_ra,:tar_dec,
-								  'GRB');
+								  'GRB', true);
       test_sql;
 
       EXEC SQL INSERT INTO grb (tar_id, grb_id, grb_seqn, grb_date,
@@ -334,10 +340,10 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
     *r_tar_id = tar_id;
   return 0;
 err:
-#ifdef DEBUG
+//#ifdef DEBUG
   printf ("err db_update_grb: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
-#endif /* DEBUG */
+//#endif /* DEBUG */
   db_unlock ();
   return -1;
 }
