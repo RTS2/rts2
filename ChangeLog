@@ -5,11 +5,18 @@
     o threading of planner tasks
  * telescope 
     o position corections
+ * configuration files
+   o for central server & devices
 
 0.2.2
 ===
- * configuration files
-   o for central server & devices
+ * scheduler
+   o scheduling camera cooling
+   o scheduling astronomical events - sunset, sunrise, moonset,
+     moonrise, ..
+ * apogee camera driver
+ * telescope layered architecture
+ * test console client 
 
 0.2.1
 ===
@@ -19,6 +26,8 @@
    o support device listing
  * camd
    o paraller readout & data sending
+   o layer architecture (camera.h and like)
+ * getopt configuration
 
 0.2
 ===
