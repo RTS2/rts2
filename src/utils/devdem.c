@@ -773,14 +773,9 @@ devdem_on_exit ()
 {
   if (!devser_child_pid)
     {
-      if (shmdt (statutes))
-	syslog (LOG_ERR, "shmdt: %m");
-      if (shmctl (status_shm, IPC_RMID, NULL))
-	syslog (LOG_ERR, "IPC_RMID status_shm shmctl: %m");
       if (semctl (status_sem, 1, IPC_RMID))
 	syslog (LOG_ERR, "IPC_RMID status_sem semctl: %m");
-      if (shmdt (clients_info))
-	syslog (LOG_ERR, "shmdt clients_info: %m");
+      syslog (LOG_DEBUG, "devdem removing end");
     }
   else
     {
@@ -788,7 +783,7 @@ devdem_on_exit ()
 	client_priority_lost ();
       clients_info->clients[client_id].pid = 0;
     }
-  syslog (LOG_INFO, "exiting");
+  syslog (LOG_INFO, "devdem exiting");
 }
 
 /*!
@@ -844,6 +839,10 @@ devdem_init (char **status_names, int status_num_in)
       syslog (LOG_ERR, "shmat: %m");
       return -1;
     }
+
+  // mark status_shm to be destroyed on exit
+  if (shmctl (status_shm, IPC_RMID, NULL))
+    syslog (LOG_ERR, "IPC_RMID status_shm shmctl: %m");
 
   st = statutes;
   sem_un.val = 1;

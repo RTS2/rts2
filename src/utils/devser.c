@@ -46,6 +46,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
+#include <sys/wait.h>
 
 #include <argz.h>
 
@@ -276,15 +277,19 @@ devser_write_command_end (int retc, const char *msg_format, ...)
  * @param arg		(pthread_mutex_t *) lock to unlock
  */
 void
-threads_count_decrease (void *arg)
+threads_count_decrease (void *temp)
 {
-  pthread_mutex_unlock ((pthread_mutex_t *) arg);
+#define TW ((struct thread_wrapper_temp *) temp)	// THREAD WRAPPER
+  pthread_mutex_unlock (TW->lock);
 
   pthread_mutex_lock (&threads_mutex);
   threads_count--;
   if (threads_count == 0)
     pthread_cond_broadcast (&threads_cond);
   pthread_mutex_unlock (&threads_mutex);
+  if (TW->freed)
+    free (TW->arg);
+  free (temp);
 }
 
 /*! 
@@ -293,14 +298,13 @@ threads_count_decrease (void *arg)
 void *
 thread_wrapper (void *temp)
 {
-#define TW ((struct thread_wrapper_temp *) temp)	// THREAD WRAPPER
   void *ret;
 
   pthread_mutex_lock (&threads_mutex);
   threads_count++;
   pthread_mutex_unlock (&threads_mutex);
 
-  pthread_cleanup_push (threads_count_decrease, (void *) (TW->lock));
+  pthread_cleanup_push (threads_count_decrease, (void *) TW);
 
   if (TW->clean_cancel)
     {
@@ -312,17 +316,13 @@ thread_wrapper (void *temp)
     ret = TW->start_routine (TW->arg);
 
   pthread_cleanup_pop (1);	// mutex unlock, threads decrease
+#undef TW
 
   if (ret == 0)
     syslog (LOG_DEBUG, "thread successfully ended");
   else
     syslog (LOG_ERR, "thread ended, %i returned", *(int *) ret);
-
-  if (TW->freed)
-    free (TW->arg);
-  free (temp);
   return ret;
-#undef TW
 }
 
 /*! 
@@ -629,8 +629,6 @@ send_data_thread (void *arg)
 	  syslog (LOG_ERR, "write:%m port:%i", port);
 	  break;
 	}
-      syslog (LOG_DEBUG, "on port %i[%i] write %i bytes", port,
-	      data_con->sock, ret);
     }
   devser_data_done (ID);
   pthread_mutex_unlock (&data_con->lock);
@@ -668,6 +666,9 @@ devser_data_init (size_t buffer_size, size_t data_size, int *id)
   data_con = &data_cons[conn];
   data_con->data_size = data_size;
   data_con->data_readed = 0;
+
+  if (data_con->buffer)
+    free (data_con->buffer);
 
   if (!(data_con->buffer = malloc (buffer_size)))
     {
@@ -738,6 +739,7 @@ devser_data_init (size_t buffer_size, size_t data_size, int *id)
 	  port, inet_ntoa (data_con->their_side.sin_addr),
 	  ntohs (data_con->their_side.sin_port), data_con->sock);
 
+  *id = conn;
   if ((errno =
        pthread_create (&(data_con->thread), NULL, send_data_thread, id)))
     {
@@ -745,7 +747,6 @@ devser_data_init (size_t buffer_size, size_t data_size, int *id)
       goto err;
     }
 
-  *id = conn;
   return 0;
 
 err:
@@ -801,12 +802,11 @@ devser_data_put (int id, void *data, size_t size)
     }
 
   while (data_con->available > data_con->buffer_size - size)
-    {
-      pthread_cond_wait (&(data_con->write_cond), &(data_con->que_lock));
-    }
+    pthread_cond_wait (&data_con->write_cond, &data_con->que_lock);
 
   if (data_con->available == -1)
     {
+      pthread_mutex_unlock (&data_con->que_lock);
       errno = EPIPE;
       return -1;
     }
@@ -831,7 +831,6 @@ devser_data_put (int id, void *data, size_t size)
   pthread_cond_signal (&(data_con->write_cond));	// if there is some other thread waiting..
 
   pthread_mutex_unlock (&data_con->que_lock);
-
   return 0;
 }
 
@@ -866,12 +865,13 @@ data_get (int id, void *data, size_t max_size, size_t * size)
 
   while (data_con->available == 0)
     {
-      pthread_cond_wait (&(data_con->read_cond), &(data_con->que_lock));
+      pthread_cond_wait (&data_con->read_cond, &data_con->que_lock);
     }
 
   if (data_con->available == -1)
     {
       // invalidate que
+      pthread_mutex_unlock (&data_con->que_lock);
       errno = EPIPE;
       return -1;
     }
@@ -993,6 +993,9 @@ devser_shm_data_at ()
       syslog (LOG_ERR, "devser_shm_data_at shmat: %m");
       exit (EXIT_FAILURE);
     }
+  if (shmctl (data_shm, IPC_RMID, NULL))
+    syslog (LOG_ERR, "IPC_RMID data_shm shmctl: %m");
+
   return ret;
 }
 
@@ -1137,7 +1140,12 @@ msg_receive_thread (void *arg)
       msg_size =
 	msgrcv (msg_id, &msg_buf, MSG_SIZE, server_id + IPC_MSG_SHIFT, 0);
       if (msg_size < 0)
-	syslog (LOG_ERR, "devser msg_receive: %m %i %i", msg_size, server_id);
+	{
+	  syslog (LOG_ERR, "devser msg_receive: %m %i %i", msg_size,
+		  server_id);
+	  if (errno == EIDRM)
+	    return NULL;
+	}
       else if (msg_size != MSG_SIZE)
 	syslog (LOG_ERR, "invalid message size: %i", msg_size);
       else
@@ -1318,14 +1326,13 @@ devser_on_exit ()
 {
   if (!devser_child_pid)
     {
-      if (shmctl (data_shm, IPC_RMID, NULL))
-	syslog (LOG_ERR, "IPC_RMID data_shm shmctl: %m");
+      syslog (LOG_DEBUG, "devser removing IPC");
       if (semctl (data_sem, 1, IPC_RMID))
 	syslog (LOG_ERR, "IPC_RMID data_sem semctl: %m");
       if (msgctl (msg_id, IPC_RMID, NULL))
 	syslog (LOG_ERR, "IPC_RMID msg_id: %m");
     }
-  syslog (LOG_INFO, "exiting");
+  syslog (LOG_INFO, "devser exiting");
 }
 
 /*! 
@@ -1334,9 +1341,16 @@ devser_on_exit ()
 void
 ser_sig_exit (int sig)
 {
-  syslog (LOG_INFO, "exiting with signal:%i", sig);
+  syslog (LOG_INFO, "devser exiting with signal:%i", sig);
   if (getpid () == devser_parent_pid)
     exit (0);
+}
+
+void
+ser_child_sig_exit (int sig)
+{
+  // all I need is to wait, he he
+  waitpid (-1, NULL, WNOHANG);
 }
 
 /*!
@@ -1401,6 +1415,7 @@ devser_init (size_t shm_data_size)
   signal (SIGTERM, ser_sig_exit);
   signal (SIGQUIT, ser_sig_exit);
   signal (SIGINT, ser_sig_exit);
+  signal (SIGCHLD, ser_child_sig_exit);
 
   // initialize data shared memory
   if (shm_data_size > 0)
@@ -1415,8 +1430,7 @@ devser_init (size_t shm_data_size)
       shmdata = devser_shm_data_at ();
       // null shared segment
       memset (shmdata, 0, shm_data_size);
-      // detach shared segment
-      devser_shm_data_dt (shmdata);
+      // hey, we will detach shmdata at exit, so don't care about them now
     }
   else
     {
@@ -1553,7 +1567,7 @@ devser_run (int port, devser_handle_command_t in_handler,
 	{
 	  close (control_fd);
 	  syslog (LOG_INFO, "connection from desc %d closed", control_fd);
-	  exit (EXIT_FAILURE);
+	  exit (0);
 	}
     }
 }
