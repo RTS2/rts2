@@ -6,6 +6,7 @@
 
 #define _GNU_SOURCE
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -21,6 +22,7 @@
 #include "phot_info.h"
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
+#include "kernel/phot.h"
 #include "status.h"
 
 #define SERVERD_PORT    	5557	// default serverd port
@@ -29,121 +31,69 @@
 #define DEVICE_NAME		"PHOT"
 #define DEVICE_PORT		5559	// default camera TCP/IP port
 
-int base_address = 0x300;
 
-int initiate = 0;
+int fd = 0;
+
+char *phot_dev = "/dev/phot0";
+
+void
+phot_command (char command, int arg)
+{
+  char cmd_buf[3];
+  cmd_buf[0] = command;
+  *((int *) (&(cmd_buf[1]))) = arg;
+  write (fd, cmd_buf, 3);
+}
 
 void
 phot_init ()
 {
-  if (initiate)
+  if (fd)
     return;
-  initiate = 1;
-  iopl (3);
-  // timer 0 to generate a square wave
-  outb (54, base_address + 7);
-  sleep (1);
-  // timer 1 to operate as a digital one shot
-  outb (114, base_address + 7);
-  sleep (1);
-  // timer 2 to operate as an event counter
-  outb (176, base_address + 7);
-  sleep (1);
-  // write divide by 2 to timer 0 to generate 1kHz square wave, LSB and then MSB
-  outb (2, base_address + 4);
-  sleep (1);
-  outb (0, base_address + 4);
-  sleep (1);
-  // write 1000 to Timer 1 to generate a 1 second pulse, LSB and then MSB
-  outb (1000 % 256, base_address + 5);
-  sleep (1);
-  outb (1000 / 256, base_address + 5);
-  // set ouput port bit #0 to 0 bit #1 to 1 and bit #2 to 0
-  sleep (1);
-  outb (2, base_address + 1);
+  fd = open (phot_dev, O_RDWR);
+  if (fd == -1)
+    {
+      perror ("opening photometr\n");
+      fd = 0;
+    }
+  // reset occurs on photometer start, so there is no need to wait for
+  // reset
 }
 
 void
 phot_home_filter ()
 {
-  int i;
-  // reset stepper motor controller
-  outb (0, base_address + 1);
-  outb (2, base_address + 1);
-  // move filter rack enough steps to put slider against cover wall and stall motor
-  for (i = 0; i < 150; i++)
-    {
-      // each change takes 0.5 sec
-      sleep (1);
-      // move stepper motor one step in direction 1
-      outb (3, base_address);
-      outb (2, base_address);
-    }
+  devser_thread_cancel_all ();
+  phot_command (PHOT_CMD_RESET, 0);
 }
 
 void
 clean_integrate_cancel (void *agr)
 {
-  devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-		      "Integration canceled");
+  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE,
+		      "Integration finished");
 }
 
 void *
 start_integrate (void *arg)
 {
-  int it_t;			// integration time in 0.0001 seconds
-  int b, old_b = 0;
-  int frequency = 0;
-  iopl (3);
-  // change period in seconds to and integer times 1000
-  it_t = 1000 * *((float *) arg);
-  // write integration time to timer 1, LSB and then MSB
-  printf ("integration time:%i\n", it_t);
-  outb (it_t % 256, base_address + 5);
-  sleep (1);
-  outb (it_t / 256, base_address + 5);
+  int it_t;
+  int result;
+  int ret;
+  it_t = *((float *) arg);
 
-  // clear timer 2 counter
-  outb (255, base_address + 6);
-  sleep (1);
-  outb (255, base_address + 6);
-
-  // strobe bit 2 of 4-bit control port to initiate counting
-  outb (4, base_address);
-  sleep (1);
-  outb (0, base_address);
-
-  // wait for finish
-  sleep (1);
-
-  // value readout
-  // poll timer 1 status until bit 7 is 1 indicating that the count is disabled
-  do
+  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  phot_command (PHOT_CMD_INTEGRATE, it_t);
+  while ((ret = read (fd, &result, sizeof (int))) != -1)
     {
-      outb (228, base_address + 7);
-      sleep (1);
-      b = inb (base_address + 5);
-      if (b != old_b)
+      if (ret && result == 'A')
 	{
-	  printf ("b: %x\n", b);
-	  old_b = b;
+	  result = 0;
+	  read (fd, &result, 2);
 	}
+      devser_dprintf ("count %i %i", result >> 16, ret);
     }
-  while ((b & 128) != 128);
-  // check if any pulses were received thus loading timer 2's counter with a valid count
-  outb (232, base_address + 7);
-  b = inb (base_address + 6);
-  printf ("b: %x\n", b);
-  if ((b & 64) == 0)
-    {
-      printf ("valid frequency\n");
-      // if the counter's content is valid, read it in
-      frequency = inb (base_address + 6) + inb (base_address + 6) * 256;
-      frequency = 65536 - frequency;
-    }
-  devser_dprintf ("frequency %i\n", frequency);
-  devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-		      "Integration finished");
   return NULL;
 }
 
@@ -186,10 +136,12 @@ phot_handle_command (char *command)
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
+      devser_thread_cancel_all ();
+
       devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE,
 			  "Integration started");
       if ((ret =
-	   devser_thread_create (start_integrate, (void *) &it, sizeof it,
+	   devser_thread_create (start_integrate, (void *) &it, sizeof (it),
 				 NULL, clean_integrate_cancel)) == -1)
 	{
 	  devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
@@ -201,7 +153,6 @@ phot_handle_command (char *command)
 
   else if (strcmp (command, "help") == 0)
     {
-      devser_dprintf ("ready - is dome ready");
       devser_dprintf ("info - dome informations");
       devser_dprintf ("exit - exit from main loop");
       devser_dprintf ("help - print, what you are reading just now");
@@ -257,7 +208,7 @@ main (int argc, char **argv)
 	  device_port = atoi (optarg);
 	  break;
 	case 'p':
-	  base_address = atoi (optarg);
+	  phot_dev = optarg;
 	  break;
 	case 's':
 	  serverd_host = optarg;
@@ -302,7 +253,7 @@ main (int argc, char **argv)
     }
 
   if (devdem_register
-      (serverd_host, serverd_port, device_name, DEVICE_TYPE_UNKNOW, hostname,
+      (serverd_host, serverd_port, device_name, DEVICE_TYPE_PHOT, hostname,
        device_port) < 0)
     {
       perror ("devser_register");
