@@ -59,22 +59,25 @@ err:
 }
 
 extern int
-db_end_observation (int tar_id, int obs_id, const time_t * end_time,
-		    int duration)
+db_end_observation (int tar_id, int obs_id, const time_t * end_time)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int t_id = tar_id;
   int o_id = obs_id;
   long int e_time = *end_time;
-  int dur = duration;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL BEGIN;
 
-  EXEC SQL UPDATE observations SET obs_duration =:dur WHERE obs_id =:o_id;
+  EXEC SQL UPDATE observations SET obs_duration =
+    abstime (:e_time) - obs_start WHERE obs_id =:o_id;
+
+  test_sql;
 
   EXEC SQL UPDATE targets SET tar_lastobs =
     abstime (:e_time) WHERE tar_id =:t_id;
+
+  test_sql;
 
   EXEC SQL END;
 
@@ -82,9 +85,9 @@ db_end_observation (int tar_id, int obs_id, const time_t * end_time,
 
   return 0;
 err:
-#ifdef DEBUG
+//#ifdef DEBUG
   printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
-#endif /* DEBUG */
+//#endif /* DEBUG */
   return -1;
 }
 
