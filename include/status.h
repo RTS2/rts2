@@ -57,12 +57,17 @@
 
 // dome status
 
+#define DOME_DOME_MASK		0x0f
 #define DOME_READY		0x00
 
 #define DOME_OPENED		0x00
-#define DOME_OPENIGN		0x01
+#define DOME_OPENING		0x01
 #define DOME_CLOSED		0x02
 #define DOME_CLOSING		0x03
+
+#define DOME_WEATHER_MASK	0x0f
+#define DOME_WEATHER_OK		0
+#define DOME_WEATHER_BAD	1
 
 #define SERVERD_DAY		0
 #define SERVERD_EVENING		1
