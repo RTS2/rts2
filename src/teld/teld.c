@@ -244,14 +244,6 @@ teld_handle_command (char *command)
   return ret;
 }
 
-void
-teld_atexit (void)
-{
-//  printf ("[%i] teld_atexit", getpid());
-  if (getpid () == devser_parent_pid)
-    telescope_done ();
-}
-
 int
 main (int argc, char **argv)
 {
@@ -345,8 +337,6 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  atexit (teld_atexit);
-
   if (devdem_init (stats, 1, NULL))
     {
       syslog (LOG_ERR, "devdem_init: %m");
@@ -362,7 +352,9 @@ main (int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-  devdem_run (device_port, teld_handle_command);
-  devdem_done ();
+  if (devdem_run (device_port, teld_handle_command) == -2)
+    {
+      telescope_done ();
+    }
   return EXIT_SUCCESS;
 }

@@ -971,7 +971,10 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
       return -1;
     }
 
-  devser_run (port, client_handle_commands);
-  devdem_done ();
+  if (devser_run (port, client_handle_commands) == -2)
+    {
+      devdem_done ();
+      return -2;
+    }
   return 0;
 }

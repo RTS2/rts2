@@ -488,13 +488,17 @@ camd_handle_command (char *command)
 	return -1;
       if (devser_param_next_float (&new_temp))
 	return -1;
-
-      /* priority block starts here */
+      // we don't need priority for that
+      cam_call (camera_cool_setpoint (new_temp));
+    }
+  else if (strcmp (command, "coolshutdown") == 0)
+    {
+      if (devser_param_test_length (0))
+	return -1;
       if (devdem_priority_block_start ())
 	return -1;
-      cam_call (camera_cool_setpoint (new_temp));
+      cam_call (camera_cool_shutdown ());
       devdem_priority_block_end ();
-      /* priority block ends here */
     }
   else if (strcmp (command, "exit") == 0)
     {
@@ -513,7 +517,7 @@ camd_handle_command (char *command)
       devser_dprintf
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       devser_dprintf ("stopread <chip> - stop reading given chip");
-      devser_dprintf ("cool_temp <temp> - cooling temperature");
+      devser_dprintf ("cooltemp <temp> - cooling temperature");
       devser_dprintf ("exit - exit from connection");
       devser_dprintf ("help - print, what you are reading just now");
       ret = errno = 0;
@@ -672,6 +676,5 @@ main (int argc, char **argv)
     }
 
   devdem_run (device_port, camd_handle_command);
-  devdem_done ();
   return EXIT_SUCCESS;
 }

@@ -1556,7 +1556,7 @@ devser_run (int port, devser_handle_command_t in_handler)
   if (!in_handler)
     {
       errno = EINVAL;
-      return -1;
+      return -2;
     }
   cmd_handler = in_handler;
 
@@ -1565,7 +1565,7 @@ devser_run (int port, devser_handle_command_t in_handler)
   if (listen (server_socket, 1) < 0)
     {
       syslog (LOG_ERR, "listen: %m");
-      return -1;
+      return -2;
     }
 
   syslog (LOG_INFO, "started");
@@ -1578,7 +1578,7 @@ devser_run (int port, devser_handle_command_t in_handler)
 		   &size)) < 0)
 	{
 	  syslog (LOG_ERR, "accept: %m");
-	  return -1;
+	  return -2;
 	}
 
       child = fork ();
