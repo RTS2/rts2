@@ -697,10 +697,11 @@ WHERE
         targets.tar_id = targets_images.tar_id AND
         type_id = :obs_type AND
         obj_alt (tar_ra, tar_dec, :st, :db_lon, :db_lat) > 10
+	AND (abs (tar_ra - :st_deg) > 15.0)
 ORDER BY
+        abs (obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) - 40) ASC,
         ot_priority DESC,
         img_count ASC,
-        alt DESC,
         ot_imgcount DESC
 ;
   EXEC SQL OPEN obs_cursor_photometric;
