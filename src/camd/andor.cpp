@@ -48,6 +48,8 @@ public:
     }
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
+private:
+  void convertLongToShort (long *buf, int size);
 };
 
 CameraAndorChip::CameraAndorChip (int in_chip_id, int in_width, int in_height,
@@ -72,9 +74,12 @@ CameraAndorChip::readoutOneLine ()
     return -1;
   if (readoutLine < chipSize->height)
     {
+      int size = chipSize->height * chipSize->width;
       readoutLine = chipSize->height;
-      GetAcquiredData (dest, chipSize->height * chipSize->width);
-      dest_top += chipSize->height * chipSize->width;
+      GetAcquiredData (dest, size);
+      // convert long to shor
+      convertLongToShort (dest, size);
+      (unsigned short*) dest_top += size; 
       return 0;
     }
   if (sendLine == 0)
@@ -95,6 +100,17 @@ CameraAndorChip::readoutOneLine ()
   readoutConn->endConnection ();
   readoutLine = -1;
   return -2;
+}
+
+void
+CameraAndorChip::convertLongToShort (long *buf, int size)
+{
+  long *scr_p = buf;
+  unsigned short *dest_p = (unsigned short *) buf;
+  for (; src_p < buf + size; src_p++, dest_p++)
+  {
+	  *dest_p = (unsigned short) *src_p;
+  }
 }
 
 class Rts2DevCameraAndor:public Rts2DevCamera
