@@ -170,7 +170,9 @@ teld_handle_command (char *command)
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
-      tel_call (telescope_base_info (&info));
+      tel_call (telescope_info (&info));
+      syslog (LOG_INFO, "coor: %f %f info: %f %f", coord.ra, coord.dec,
+	      info.ra, info.dec);
       coord.ra += info.ra;
       coord.dec += info.dec;
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
