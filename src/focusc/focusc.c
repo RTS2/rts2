@@ -31,8 +31,7 @@
 #include "../writers/fits.h"
 #include "status.h"
 
-#define EXPOSURE_TIME		1
-
+#define EXPOSURE_TIME		20
 
 struct device *camera;
 
@@ -41,6 +40,50 @@ char *dark_name = NULL;
 pid_t parent_pid;
 
 #define fits_call(call) if (call) fits_report_error(stderr, status);
+
+int
+get_regions ()
+{
+  FILE *ds9_regs;
+
+  float x, y, w, h;
+  char buf[80];
+
+  // get regions
+  ds9_regs = popen ("xpaget ds9 regions", "r");
+  if (!ds9_regs)
+    {
+      perror ("popen xpaget ds9 regions");
+      return -1;
+    }
+
+  while (fgets (buf, 80, ds9_regs))	//, "image;box(%f,%f,%f,%f,", &x, &y, &w, &h)) != EOF)
+    {
+      int ret;
+      printf ("get: %s\n", buf);
+
+      ret = sscanf (buf, "image;box(%f,%f,%f,%f,", &x, &y, &w, &h);
+
+      if (ret == 4)
+	{
+	  int cx, cy, cw, ch;
+	  cw = (int) w;
+	  ch = (int) h;
+	  cx = (int) x - cw / 2;
+	  cy = (int) y + ch / 2;
+
+	  cy = camera->info.camera.chip_info[0].height - (int) cy;
+
+	  printf ("get: %i,%i,%i,%i\n", cx, cy, cw, ch);
+	  devcli_command (camera, NULL, "box 0 %i %i %i %i", cx, cy, cw, ch);
+	}
+      fflush (stdout);
+    }
+
+  pclose (ds9_regs);
+
+  return 0;
+}
 
 /*!
  * Handle camera data connection.
@@ -63,8 +106,6 @@ data_handler (int sock, size_t size, struct image_info *image)
   char *cmd;
 
   gmtime_r (&image->exposure_time, &gmt);
-
-  return -1;
 
 /*  switch (image->target_type)
     {
@@ -132,6 +173,8 @@ data_handler (int sock, size_t size, struct image_info *image)
       goto free_filename;
     }
 
+  get_regions ();
+
   asprintf (&cmd, "cat '%s' | xpaset ds9 fits", filename);
   printf ("calling '%s'\n", cmd);
   if (system (cmd))
@@ -152,10 +195,6 @@ free_filename:
 int
 readout ()
 {
-  float x, y, w, h;
-  FILE *ds9_regs;
-  char buf[80];
-
   struct image_info *info;
   union devhnd_info *devinfo;
 
@@ -177,36 +216,7 @@ readout ()
       return -1;
     }
 
-  // get regions
-  ds9_regs = popen ("xpaget ds9 regions", "r");
-  if (!ds9_regs)
-    {
-      perror ("popen xpaget ds9 regions");
-    }
-
-  while (fgets (buf, 79, ds9_regs))	//, "image;box(%f,%f,%f,%f,", &x, &y, &w, &h)) != EOF)
-    {
-      int ret;
-      printf ("get: %s\n", buf);
-
-      ret = sscanf (buf, "image;box(%f,%f,%f,%f,", &x, &y, &w, &h);
-
-      if (ret == 4)
-	{
-	  int cx, cy, cw, ch;
-	  cw = (int) w;
-	  ch = (int) h;
-	  cx = (int) x - cw / 2;
-	  cy = (int) y + ch / 2;
-
-	  cy = camera->info.camera.chip_info[0].height - (int) cy;
-
-	  printf ("get: %i,%i,%i,%i\n", cx, cy, cw, ch);
-	  devcli_command (camera, NULL, "box 0 %i %i %i %i", cx, cy, cw, ch);
-	}
-      fflush (stdout);
-    }
-
+  get_regions ();
 
   if (devcli_command (camera, NULL, "readout 0"))
     {
@@ -322,8 +332,6 @@ main (int argc, char **argv)
 
   time (&start_time);
   start_time += 20;
-
-
 
   while (1)
     {
