@@ -741,7 +741,7 @@ main (int argc, char **argv)
 
   devcli_device_data_handler (DEVICE_TYPE_CCD, data_handler);
 
-  telescope = devcli_find ("T0");
+  telescope = devcli_find (get_string_default ("telescope_name", "T0"));
   if (!telescope)
     {
       printf
