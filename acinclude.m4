@@ -47,3 +47,4 @@ AC_CHECK_LIB([ecpg], [ECPGconnect], LIB_ECPG="-lecpg"; AC_SUBST(LIB_ECPG),
 
 AC_SUBST(ECPG)
 ])
+
