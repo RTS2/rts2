@@ -331,6 +331,9 @@ main (int argc, char **argv)
 	  devcli_server_command (NULL, "off");
 	  break;
 	case KEY_F (3):
+	  devcli_server_command (NULL, "standby");
+	  break;
+	case KEY_F (4):
 	  devcli_server_command (NULL, "on");
 	  break;
 	case KEY_F (5):
