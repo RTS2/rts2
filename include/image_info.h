@@ -21,6 +21,7 @@ typedef struct
   pthread_cond_t *cond;
   int hi_precision;
   int ntries;
+  int processed;
 } hi_precision_t;
 
 struct image_info
