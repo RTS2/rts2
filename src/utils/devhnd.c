@@ -257,9 +257,9 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
       if (!strcmp (cname, "binning_horizontal"))
 	return param_next_integer (params, &cinfo->binning_horizontal);
       if (!strcmp (cname, "pixelX"))
-	return param_next_integer (params, &cinfo->pixelX);
+	return param_next_float (params, &cinfo->pixelX);
       if (!strcmp (cname, "pixelY"))
-	return param_next_integer (params, &cinfo->pixelY);
+	return param_next_float (params, &cinfo->pixelY);
       if (!strcmp (cname, "gain"))
 	return param_next_float (params, &cinfo->gain);
       errno = EINVAL;
@@ -286,8 +286,22 @@ dome_command_handler (struct param_status *params, struct dome_info *info)
     return param_next_integer (params, &info->power_telescope);
   if (!strcmp (params->param_argv, "power_cameras"))
     return param_next_integer (params, &info->power_cameras);
-  if (!strcmp (params->param_argv, "dome"))
-    return param_next_integer (params, &info->dome);
+  if (!strcmp (params->param_argv, "model"))
+    {
+      char *model;
+      int ret;
+      ret = param_next_string (params, &model);
+      strncpy (info->model, model, 64);
+      return ret;
+    }
+  if (!strcmp (params->param_argv, "open_1"))
+    return param_next_integer (params, &info->open1);
+  if (!strcmp (params->param_argv, "open_2"))
+    return param_next_integer (params, &info->open2);
+  if (!strcmp (params->param_argv, "close_1"))
+    return param_next_integer (params, &info->close2);
+  if (!strcmp (params->param_argv, "close_2"))
+    return param_next_integer (params, &info->close2);
   errno = EINVAL;
   return -1;
 };

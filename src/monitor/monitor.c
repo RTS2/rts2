@@ -111,7 +111,7 @@ void
 status_dome (struct device *dev)
 {
   struct dome_info *info = (struct dome_info *) &dev->info;
-  efprintf ("type", "%s", info->type);
+  efprintf ("model", "%s", info->model);
   eprintline ();
   efprintf ("temperature", "%+.2f oC", info->temperature);
   efprintf ("humidity", "%.2f %%", info->humidity);

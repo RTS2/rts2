@@ -234,7 +234,6 @@ write_weather (struct fits_receiver_data *receiver, struct dome_info *info)
   write_key (TSTRING, "WIND_SPD", undef, "Wind speed");
   write_key (TSTRING, "WIND_DIR", undef, "Wind direction");
   write_key (TSTRING, "HUMIDITY", undef, "Humidity");
-  write_key (TSTRING, "DOME", undef, "Dome status");
   return 0;
 }
 
@@ -263,7 +262,7 @@ fits_write_image_info (struct fits_receiver_data *receiver,
     }
   if (*info->camera.type)
     write_camera (receiver, info);
-  if (*info->dome.type)
+  if (*info->dome.model)
     {
 //     write_key_unlock (TSTRING, "DOME_NAME", info->dome_name, "Dome name");
       write_weather (receiver, &info->dome);

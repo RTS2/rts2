@@ -12,6 +12,9 @@ protected:
   int open2;
   int close1;
   int close2;
+
+  float temperature;
+  float humidity;
 public:
     Rts2DevDome (int argc, char **argv);
   virtual int openDome ()
