@@ -5,7 +5,7 @@ BIN = planc test
 all: $(BIN)
 
 CFLAGS = @CFLAGS@ @LIBPG_CFLAGS@ -I@top_srcdir@/include -DDEBUG
-LDFLAGS = @LDFLAGS@ @LIBS@
+LDFLAGS = @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_PTHREAD@ @LIB_CFITSIO@ @LIB_M@
 
 planc: planc.o selector.o ../writers/process_image.o ../db/db.o ../writers/fits.o ../utils/devcli.a
 

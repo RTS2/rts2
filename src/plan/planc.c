@@ -36,8 +36,7 @@
 #include "../db/db.h"
 #include "../writers/process_image.h"
 
-#define EXPOSURE_TIME		60
-#define EPOCH			"002"
+#define EXPOSURE_TIME		180
 
 struct device *telescope;
 
@@ -118,7 +117,7 @@ generate_next (int i, struct target *plan)
 
   printf ("Making plan %s", ctime (&start_time));
   if (get_next_plan
-      (plan, SELECTOR_AIRMASS, &start_time, i, EXPOSURE_TIME,
+      (plan, SELECTOR_ANTISOLAR, &start_time, i, EXPOSURE_TIME,
        devcli_server ()->statutes[0].status,
        telescope->info.telescope.longtitude,
        telescope->info.telescope.latitude))
@@ -271,6 +270,7 @@ main (int argc, char **argv)
   int priority = 20;
 
   int watch_status = 1;		// watch central server status
+  struct device *devcli_ser = devcli_server ();
 
 #ifdef DEBUG
   mtrace ();
@@ -409,16 +409,17 @@ loop:
   devcli_server_command (NULL, "status_txt P:waiting");
   if (watch_status)
     {
-      while (!(devcli_server ()->statutes[0].status == SERVERD_NIGHT
-	       || devcli_server ()->statutes[0].status == SERVERD_DUSK
-	       || devcli_server ()->statutes[0].status == SERVERD_DAWN))
+      while (!(devcli_ser->statutes[0].status == SERVERD_NIGHT
+	       || devcli_ser->statutes[0].status == SERVERD_DUSK
+	       || devcli_ser->statutes[0].status == SERVERD_DAWN))
 	{
 	  printf ("waiting for night..\n");
 	  fflush (stdout);
 	  devcli_command (telescope, NULL, "park");
-	  devcli_wait_for_status (devcli_server (), SERVER_STATUS,
-				  SERVERD_STATUS_MASK,
-				  SERVERD_NIGHT, 600);
+//        devcli_wait_for_status (devcli_ser, SERVER_STATUS,
+//                                SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK,
+//                                SERVERD_NIGHT, 10);
+	  sleep (100);
 	}
     }
   observe (watch_status);

@@ -8,8 +8,11 @@ int
 main (int argc, char **argv)
 {
   struct target *plan, *last;
+  char *dp;
   db_connect ();
-  make_plan (&plan, 120);
+  db_get_darkfield ("C0", 6000, -50, &dp);
+  printf ("dp: %s\n", dp);
+  make_plan (&plan, 120, 6.733, 37.1);
   for (last = plan; last; last = last->next)
     {
       double jd = get_julian_from_timet (&last->ctime);
@@ -29,5 +32,12 @@ main (int argc, char **argv)
 		ctime (&last->ctime), last->type);
     }
   free_plan (plan);
+
+  printf ("last_image C0: %i\n", db_last_good_image ("C0"));
+  printf ("last_image C1: %i\n", db_last_good_image ("C1"));
+
+  printf ("last observation 4080: %i\n", db_last_observation (4080));
+  printf ("images_night_count 1001: %i\n", db_last_night_images_count (1001));
+
   return db_disconnect ();
 }

@@ -185,6 +185,80 @@ err:
   return -1;
 }
 
+
+int
+select_next_airmass (time_t c_start, struct target *plan,
+		     float target_airmass, float az_end, float az_start,
+		     float lon, float lat)
+{
+#define test_sql if (sqlca.sqlcode != 0) goto err
+
+  EXEC SQL BEGIN DECLARE SECTION;
+  double st;
+  int tar_id;
+  double dec;
+  double ra;
+  float az;
+  float airmass;
+  float d_az_start = az_start;
+  float d_az_end = az_end;
+  float t_airmass = target_airmass;
+  float db_lon = lon;
+  float db_lat = lat;
+  int img_count;
+  EXEC SQL END DECLARE SECTION;
+
+  db_lock ();
+  printf ("c_start: %s", ctime (&c_start));
+  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  printf ("st: %f\nairmass: %f\n", st, t_airmass);
+  EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR
+    SELECT targets.tar_id, tar_ra, tar_dec,
+    obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az,
+    obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS
+    airmass, img_count
+    FROM targets, targets_images WHERE targets.tar_id =
+    targets_images.tar_id AND targets.type_id = 'S'
+    AND (abs (obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) -:t_airmass))
+    <
+    0.2 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+	     obj_az (tar_ra,
+		     tar_dec,:st,:db_lon,:db_lat) >:d_az_start) ORDER BY
+    img_count ASC;
+  EXEC SQL OPEN obs_cursor_airmass;
+
+  test_sql;
+  while (!sqlca.sqlcode)
+    {
+      EXEC SQL FETCH next FROM obs_cursor_airmass
+	INTO:tar_id,:ra,:dec,:az,:airmass,:img_count;
+      test_sql;
+      printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\t%5i\n", tar_id, ra,
+	      dec, az, airmass, img_count);
+
+      if (find_plan (plan, tar_id, c_start - 1800))
+	{
+	  printf ("airmass find id: %i\n", tar_id);
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+		      PLAN_TOLERANCE);
+	  break;
+	}
+    }
+
+  EXEC SQL CLOSE obs_cursor_airmass;
+  test_sql;
+  db_unlock ();
+#undef test_sql
+  return 0;
+err:
+#ifdef DEBUG
+  printf ("err select_next_airmass: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  db_unlock ();
+  return -1;
+}
+
 int
 select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
 {
@@ -212,7 +286,7 @@ select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
 	   'G' AND (tar_lastobs is NULL) or tar_lastobs <
 	   abstime (:obs_start)) and grb_id > 100 and obj_alt (tar_ra,
 							       tar_dec,:st,:db_lon,:db_lat)
-    > 20 and targets.tar_id =
+    > 0 and targets.tar_id =
     grb.tar_id and grb_last_update >
     abstime (:obs_start - 200000) ORDER BY alt DESC;
   EXEC SQL OPEN obs_cursor_grb;
@@ -336,12 +410,63 @@ select_next_photometry (time_t c_start, struct target *plan, float lon,
 {
   EXEC SQL BEGIN DECLARE SECTION;
   EXEC SQL END DECLARE SECTION;
+  return 0;
 #define test_sql if (sqlca.sqlcode < 0) goto err
 err:
 #ifdef DEBUG
   printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
+}
+
+/*! 
+ * HETE field generation
+ */
+int
+hete_mosaic (struct target *plan, double jd, time_t * obs_start, int number)
+{
+  struct ln_equ_posn sun;
+  if (number % 2 == 0)
+    {
+      int step = (number / 2) % 4;
+      get_equ_solar_coords (jd, &sun);
+      sun.ra = range_degrees (sun.ra - 180 - 15 + 30 * (step > 1));
+      sun.dec = (-sun.dec) - (25 / 2) + 25 * (step % 2);
+      add_target (plan, TARGET_LIGHT, 50 + step, -1, sun.ra, sun.dec,
+		  *obs_start, PLAN_TOLERANCE);
+      return 0;
+    }				//continue to airmass, if not anti-solar hete
+  return -1;
+}
+
+/*!
+ * Select flat field position
+ */
+int
+flat_field (struct target *plan, time_t * obs_start, int number, float lon,
+	    float lat)
+{
+  double jd;
+
+  struct ln_equ_posn sun;
+  struct ln_lnlat_posn observer;
+  struct ln_hrz_posn sun_az;
+
+  observer.lng = lon;
+  observer.lat = lat;
+
+  jd = get_julian_from_timet (obs_start);
+
+  get_equ_solar_coords (jd, &sun);
+  sun.ra = range_degrees (sun.ra);
+  get_hrz_from_equ (&sun, &observer, jd, &sun_az);
+  sun_az.az = range_degrees (sun_az.az + 180.0 - 3 + 2 * (number / 4));
+  sun_az.alt = sun_az.alt - 3 + 2 * ((number + 2) / 4);
+  // ra + dec of antisun..
+  get_equ_from_hrz (&sun_az, &observer, jd, &sun);
+  add_target (plan, (sun_az.alt > -2) ? TARGET_FLAT_DARK : TARGET_FLAT,
+	      10, -1, sun.ra, sun.dec, *obs_start, PLAN_TOLERANCE);
+  return 0;
 }
 
 /*! 
@@ -372,23 +497,16 @@ get_next_plan (struct target *plan, int selector_type,
 
   int last_good_img;
 
+  jd = get_julian_from_timet (obs_start);
+
   // check for GRB..
   if (!select_next_grb (*obs_start, plan, lon, lat))
-    {
-      return 0;
-    }
+    return 0;
 
   if (state != SERVERD_NIGHT)
     {
-      int ra =
-	get_mean_sidereal_time (get_julian_from_timet (obs_start)) * 15.0 -
-	lon + 45.0;
-      int dec = 60;
-      if (ra > 360)
-	ra -= 360.0;
-      add_target (plan, (number % 50 == 2) ? TARGET_FLAT_DARK : TARGET_FLAT,
-		  10, -1, ra, dec, *obs_start, PLAN_TOLERANCE);
-      return 0;
+      if (!flat_field (plan, obs_start, number, lon, lat))
+	return 0;
     }
 
   // check for OT
@@ -398,9 +516,7 @@ get_next_plan (struct target *plan, int selector_type,
     {
       printf ("Trying OT\n");
       if (!select_next_to (*obs_start, plan, 120, 230, lon, lat))
-	{
-	  return 0;
-	}
+	return 0;
     }
 
   switch (selector_type)
@@ -409,9 +525,14 @@ get_next_plan (struct target *plan, int selector_type,
     case SELECTOR_ALTITUDE:
       return select_next_alt (*obs_start, plan, lon, lat);
 
+    case SELECTOR_ANTISOLAR:
+      if (!hete_mosaic (plan, jd, obs_start, number))
+	return 0;
+      // make AIRMASS otherwise
+
     case SELECTOR_AIRMASS:
-      // every :db_latth image will be dark..
-      if (number % 50 == 1)
+      // every 50 image will be dark..
+      if (number % 50 == 1)	// because of HETE 
 	{
 	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE);
@@ -421,7 +542,6 @@ get_next_plan (struct target *plan, int selector_type,
       observer.lng = lon;
       observer.lat = lat;
 
-      jd = get_julian_from_timet (obs_start);
 
       get_lunar_equ_coords (jd, &moon, 0.01);
       get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);
@@ -467,28 +587,6 @@ get_next_plan (struct target *plan, int selector_type,
       return select_next_airmass (*obs_start, plan, airmass, 90, 270, lon,
 				  lat);
 
-    case SELECTOR_ANTISOLAR:
-      // every 50 image will be dark..
-      if (number % 50 == 1)
-	{
-	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
-		      PLAN_DARK_TOLERANCE);
-	  return 0;
-	}
-
-      observer.lng = lon;
-      observer.lat = lat;
-
-      jd = get_julian_from_timet (obs_start);
-
-      get_equ_solar_coords (jd, &sun);
-      sun.ra = range_degrees (sun.ra - 180);
-      sun.dec = -sun.dec;
-
-      add_target (plan, TARGET_LIGHT, 1000, -1, sun.ra, sun.dec, *obs_start,
-		  PLAN_TOLERANCE);
-      return 0;
-
     default:
       return -1;
     }
@@ -501,8 +599,7 @@ make_plan (struct target **plan, float exposure, float lon, float lat)
   time_t c_start;
   int i;
 
-//  c_start = time (NULL) + 180;
-  c_start = time (NULL) - 4 * 3600;
+  c_start = time (NULL);
 
   *plan = (struct target *) malloc (sizeof (struct target));
   (*plan)->type = TARGET_LIGHT;
@@ -512,7 +609,7 @@ make_plan (struct target **plan, float exposure, float lon, float lat)
 
   for (i = 0; i < 10; i++)
     {
-      get_next_plan (*plan, SELECTOR_AIRMASS, &c_start, i, exposure,
+      get_next_plan (*plan, SELECTOR_ANTISOLAR, &c_start, i, exposure,
 		     SERVERD_NIGHT, lon, lat);
       c_start += READOUT_TIME + exposure;
     }
