@@ -5,7 +5,7 @@ mo¾né nalézt v SQL skriptech, slou¾ících pro vytvoøení databáze, které jsou v
 adresáøi sql.
 
 V následujícím textu jsou primární klíèe znaèeny znaèkou $\star$. Indexované
-pole jsou pak znaèeny pomocí $\cross$.
+pole jsou pak znaèeny pomocí $\ast$.
 
 \subsubsection{Tabulka epoch}
 
@@ -37,23 +37,23 @@ pole jsou pak znaèeny pomocí $\cross$.
 \subsubsection{Tabulka observations}
 
 \begin{tabular}{ll}
-{\bf $\cross$ tar\_id}	& èíslo cíle \\
+{\bf $\ast$ tar\_id}	& èíslo cíle \\
 {\bf $\star$ obs\_id}	& èíslo pozorování \\
-{\bf obs\_start}	& datum zahájení pozorování \\
+{\bf $\ast$ obs\_start}	& datum zahájení pozorování \\
 {\bf obs\_duration}	& délka trvání pozorování \\
-{\bf obs\_imagescount}	& poèet napozorovaných snímkù
 \end{tabular}
 
 \subsubsection{Tabulka images}
 
 \begin{tabular}{ll}
+{\bf $\star$ img\_id}	& èíslo snímku \\
 {\bf img\_name}		& jméno snímku \\
-{\bf img\_date}		& datum poøízení snímku \\
+{\bf $\ast$ img\_date}	& datum poøízení snímku \\
 {\bf img\_exposure}	& délka expozice \\
 {\bf img\_temperature}	& teplota CCD èipu \\
 {\bf img\_filter}	& pou¾itý filtr \\
 {\bf astrometry}	& pozice snímku \\
-{\bf $\cross$ obs\_id}	& èíslo pozorování \\
+{\bf $\ast$ obs\_id}	& èíslo pozorování \\
 {\bf camera\_name}	& jméno kamery \\
 {\bf mount\_name}	& jméno montá¾e \\
 {\bf epoch\_id}		& èíslo epochy \\
@@ -64,7 +64,7 @@ pole jsou pak znaèeny pomocí $\cross$.
 
 \begin{tabular}{ll}
 {\bf dark\_name}	& jméno snímku \\
-{\bf dark\_date}	& datum poøízení snímku \\
+{\bf $\ast$ dark\_date}	& datum poøízení snímku \\
 {\bf dark\_exposure}	& délka expozice \\
 {\bf dark\_temperature}	& teplota CCD èipu \\
 {\bf camera\_name}	& jméno kamery
@@ -94,7 +94,7 @@ Tabulka flats obsahuje stejná pole, pouze jejich prefix je flat.
 \subsubsection{Tabulka GRB}
 
 \begin{tabular}{ll}
-{\bf $\cross$ tar\_id}	& èíslo pozorování \\
+{\bf tar\_id}		& èíslo pozorování \\
 {\bf $\star$ grb\_id}	& èíslo GRB \\
 {\bf grb\_seqn}		& aktální èíslo poøadí zprávy \\
 {\bf grb\_date}		& datum pozorování GRB \\
