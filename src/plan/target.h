@@ -1,5 +1,6 @@
 #ifndef __RTS_TARGET__
 #define __RTS_TARGET__
+#include <errno.h>
 #include <libnova/libnova.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -157,6 +158,7 @@ public:
   {
     struct timespec timeout;
     time_t now;
+    int ret;
 
     pthread_mutex_lock (&script_thread_count_mutex);
     while (running_script_count > 0)	// cause we will hold running_script_count lock in any case..
@@ -165,16 +167,18 @@ public:
 			   &script_thread_count_mutex);
       }
     pthread_mutex_unlock (&script_thread_count_mutex);
-    if (hi_precision == 3)
+    if (hi_precision == 3 && type == TARGET_LIGHT)
       {
 	pthread_mutex_lock (closed_loop_precission.mutex);
 	time (&now);
 	timeout.tv_sec = now + 350;
 	timeout.tv_nsec = 0;
-	while (closed_loop_precission.processed == 0)
+	ret = 0;
+	while (closed_loop_precission.processed == 0 && ret != ETIMEDOUT)
 	  {
-	    pthread_cond_timedwait (closed_loop_precission.cond,
-				    closed_loop_precission.mutex, &timeout);
+	    ret = pthread_cond_timedwait (closed_loop_precission.cond,
+					  closed_loop_precission.mutex,
+					  &timeout);
 	  }
 	printf
 	  ("closed_loop_precission->image_pos->ra: %f dec: %f closed_loop_precission.hi_precision %i\n",
