@@ -73,6 +73,8 @@ redraw ()
 void *
 event_loop (void *arg)
 {
+  int x, y, w, h;
+  struct camera_info *caminfo = (struct camera_info *) &camera->info;
   while (1)
     {
       XEvent event;
@@ -111,6 +113,25 @@ event_loop (void *arg)
 	      if (exposure_time > 0.1)
 		exposure_time -= 0.1;
 	      break;
+	    case XK_f:
+	      devcli_command (camera, NULL, "box -1 -1 -1 -1");
+	      printf ("reading FULL FRAME!!\n================");
+	    case XK_c:
+	      devcli_command (camera, NULL, "chipinfo 0");
+	      x = caminfo->chip_info[0].width / 2 - 128;
+	      y = caminfo->chip_info[0].height / 2 - 128;
+	      w =
+		x + 256 <
+		caminfo->chip_info[0].width ? 256 : caminfo->chip_info[0].
+		width - x;
+	      h =
+		y + 256 <
+		caminfo->chip_info[0].height ? 256 : caminfo->chip_info[0].
+		height - y;
+	      devcli_command (camera, NULL, "box %i %i %i %i", x, y, w, h);
+	      printf
+		("reading frame center [%i,%i:%i,%i]!!\n==============\n", x,
+		 y, x + w, y + h);
 	    default:
 	      // fprintf (stderr, "Unknow key pressed:%i\n", (int) ks);
 	      break;
@@ -329,6 +350,12 @@ main (int argc, char **argv)
 	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
+	  printf ("Keys:\n"
+		  "\t1,2,3 .. binning 1x1, 2x2, 3x3\n"
+		  "\tw,s   .. increase/decrease exposure 0.1 sec"
+		  "\te,d   .. increase/decrease exposure 1 sec"
+		  "\tf     .. full frame exposure\n"
+		  "\tc     .. center (256x256) exposure\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
