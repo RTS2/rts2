@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <syslog.h>
 #include <unistd.h>
 
@@ -623,7 +624,12 @@ Rts2Block::sendStatusMessage (char *state_name, int state)
 int
 Rts2Block::idle ()
 {
-  syslog (LOG_DEBUG, "Rts2Block::idle");
+  int ret;
+  ret = waitpid (-1, NULL, WNOHANG);
+  if (ret > 0)
+    {
+      syslog (LOG_DEBUG, "Child returned: %i", ret);
+    }
 }
 
 int
