@@ -21,6 +21,8 @@ struct chip_info
   int height;
   int binning_vertical;
   int binning_horizontal;
+  int pixelX;
+  int pixelY;
   int image_type;		/* see above for types */
   int gain;			/* in 0.01 e / ADU */
 };
@@ -31,7 +33,6 @@ struct camera_info
   char serial_number[64];
   int chips;
   struct chip_info *chip_info;
-  struct readout_mode *readout_mode;
   int temperature_regulation;
   float temperature_setpoint;	/* o C */
   float air_temperature;	/* o C */

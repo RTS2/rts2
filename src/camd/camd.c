@@ -62,6 +62,7 @@ void *
 start_expose (void *arg)
 {
   int ret;
+  printf ("exposure time: %f\n", CAMD_EXPOSE->exposure);
   if ((ret =
        camera_expose (CAMD_EXPOSE->chip, &CAMD_EXPOSE->exposure,
 		      CAMD_EXPOSE->light)) < 0)
@@ -206,6 +207,8 @@ camd_handle_command (char *command)
 		      info.chip_info[chip].binning_vertical);
       devser_dprintf ("binning_horizontal %i %i", chip,
 		      info.chip_info[chip].binning_horizontal);
+      devser_dprintf ("pixelX %i %i", chip, info.chip_info[chip].pixelX);
+      devser_dprintf ("pixelY %i %i", chip, info.chip_info[chip].pixelY);
       devser_dprintf ("gain %i %0.2f", chip, info.chip_info[chip].gain);
 
       ret = 0;
@@ -477,6 +480,28 @@ end:
 }
 
 int
+camd_handle_status (int status)
+{
+  int ret;
+
+  if (camera_init ("/dev/ccd1", sbig_port))
+    return -1;
+  switch (status)
+    {
+    case SERVERD_DUSK:
+      ret = camera_cool_max ();
+      break;
+    case SERVERD_NIGHT:
+      ret = camera_cool_hold ();
+      break;
+    default:			/* SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF */
+      ret = camera_cool_shutdown ();
+    }
+  camera_done ();
+  return ret;
+}
+
+int
 main (int argc, char **argv)
 {
   char *stats[] = { "img_chip", "trc_chip" };
@@ -583,5 +608,5 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
-  return devdem_run (device_port, camd_handle_command);
+  return devdem_run (device_port, camd_handle_command, camd_handle_status);
 }
