@@ -70,10 +70,62 @@ DROP TABLE observations;
 
 CREATE TABLE observations (
 	tar_id		integer REFERENCES targets (tar_id),
-	obs_id		integer PRIMARY KEY,
+	obs_id		integer PRIMARY KEY NOT NULL,
 	obs_start	timestamp,
-	obs_duration	interval,
+	obs_duration	interval
 );
+
+DROP TABLE medias;
+
+CREATE TABLE medias (
+	med_id		integer PRIMARY KEY NOT NULL,
+	med_path	varchar(50),
+	med_mounted	boolean DEfAULT TRUE NOT NULL
+);
+
+DROP TABLE images;
+
+CREATE TABLE images (
+	img_id		integer PRIMARY KEY NOT NULL,
+	obs_id		integer REFERENCES observations(obs_id),
+	img_date	abstime NOT NULL,
+	img_exposure	integer,
+	img_temperature	integer,
+	img_filter	varchar(3),
+	/* astrometry */
+	astrometry	wcs,
+	epoch_id	char(3) NOT NULL REFERENCES epoch(epoch_id),
+	med_id		integer NOT NULL REFERENCES medias(med_id),
+	
+	camera_name	varchar(8) REFERENCES cameras(camera_name),
+	mount_name	varchar(8) REFERENCES mounts(mount_name)
+);
+
+CREATE INDEX images_obs_id ON images (obs_id);
+
+DROP SEQUENCE img_id;
+
+CREATE SEQUENCE img_id;
+
+DROP SEQUENCE med_id;
+
+CREATE SEQUENCE med_id;
+
+DROP TABLE users;
+
+CREATE TABLE users (
+	usr_login	varchar(25) NOT NULL,
+	usr_passwd	varchar(25) NOT NULL,
+	usr_tmp		integer
+);
+
+GRANT SELECT ON images TO "@WWWUSER@";
+GRANT SELECT ON users TO "@WWWUSER@";
+GRANT SELECT ON medias TO "@WWWUSER@";
+
+GRANT ALL ON images TO GROUP observers;
+GRANT ALL ON users TO GROUP observers;
+GRANT ALL ON medias TO GROUP observers;
 
 CREATE INDEX observations_tar_id ON observations (tar_id);
 
