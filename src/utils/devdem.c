@@ -347,7 +347,7 @@ client_priority_receive ()
     }
   clients_info->priority_client = client_id;
 
-  devser_dprintf ("S priority 1 priority received");
+  devser_dprintf ("S priority 1 priority received %i", client_id);
 }
 
 void
