@@ -111,6 +111,9 @@ phot_handler (struct param_status *params, struct phot_info *info)
       ctime_r (&t, tc);
       tc[strlen (tc) - 1] = 0;
       ret = param_next_integer (params, &info->count);
+      printf ("%05i %s %i %i \n", phot_obs_id, tc,
+         info->filter, info->count);
+      fflush (stdout);
       if (telescope)
 	{
 	  db_add_count (phot_obs_id, &t, info->count, info->integration,
@@ -118,10 +121,6 @@ phot_handler (struct param_status *params, struct phot_info *info)
 			telescope->info.telescope.ra,
 			telescope->info.telescope.dec, "PHOT0");
 	}
-      printf ("%05i %s %f %f %i %i %i\n", phot_obs_id, tc,
-	      telescope->info.telescope.ra, telescope->info.telescope.dec,
-	      info->filter, info->count, telescope->statutes[0].status);
-      fflush (stdout);
     }
   return ret;
 }
