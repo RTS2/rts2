@@ -30,6 +30,7 @@ command (char cmd, int arg, char *ret_cmd, int *ret_arg)
   int ret;
   command_buffer[0] = cmd;
   *((int *) &command_buffer[1]) = arg;
+  usleep (20);
   ret = write (mirror_fd, command_buffer, 3);
   printf ("write: %i\n", ret);
   if (ret != 3)
@@ -82,31 +83,54 @@ mirror_set (int steps)
   int ret;
   int mpos, new_pos;
   int i;
+  int cmd;
 
   ret = mirror_get (&mpos);
   if (ret)
     return -1;
   printf ("step: %i\n", steps);
   if (steps > 0)
-    ret = command (CMD_MIRROR_PLUS, steps, NULL, NULL);
-  else
-    ret = command (CMD_MIRROR_MINUS, -steps, NULL, NULL);
-  if (ret)
-    return -1;
-  new_pos = mpos + steps;
-  for (i = 0; i < 7; i++)
     {
-      ret = mirror_get (&mpos);
+      cmd = CMD_MIRROR_PLUS;
+    }
+  else
+    {
+      cmd = CMD_MIRROR_MINUS;
+      steps = -steps;
+    }
+  while (steps > 0)
+    {
+      int move;
+      move = (steps >= 4) ? 4 : steps;
+      ret = command (cmd, move, NULL, NULL);
       if (ret)
 	return -1;
-      printf ("pos: %i  target: %i\n", mpos, new_pos);
-      fflush (stdout);
-      if (mpos == new_pos)
+      if (cmd == CMD_MIRROR_PLUS)
 	{
-	  return 0;
+	  new_pos = mpos + move;
 	}
-      sleep (1);
+      else
+	{
+	  new_pos = mpos - move;
+	}
+      for (i = 0; i < 7; i++)
+	{
+	  ret = mirror_get (&mpos);
+	  if (ret)
+	    return -1;
+	  printf ("pos: %i  target: %i\r", mpos, new_pos);
+	  fflush (stdout);
+	  if (mpos == new_pos)
+	    {
+	      usleep (10);
+	      break;
+	    }
+	  usleep (200);
+	}
+      usleep (500);
+      steps -= move;
     }
+
   return -1;
 }
 
@@ -115,7 +139,7 @@ mirror_open ()
 {
   if (!mirror_fd)
     return -1;
-  return mirror_set (2000);
+  return mirror_set (200);
 }
 
 int
@@ -123,5 +147,5 @@ mirror_close ()
 {
   if (!mirror_fd)
     return -1;
-  return mirror_set (-2000);
+  return mirror_set (-200);
 }
