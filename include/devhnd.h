@@ -14,14 +14,17 @@ union devhnd_info
 
 typedef int (*devcli_handle_response_t) (struct param_status * params,
 					 union devhnd_info * devhnd_info);
-typedef int (*devcli_handle_data_t) (int sock, size_t size, void *data);
+typedef int (*devcli_handle_data_t) (int sock, size_t size,
+				     struct telescope_info * telescope,
+				     struct camera_info * camera);
 
 struct devcli_channel_handlers
 {
   devcli_handle_response_t command_handler;	//! handler to handle responses
   devcli_handle_response_t message_handler;	//! handler to asynchoronous messages
-  devcli_handle_data_t data_handler;		//! handler to ANY received data
-  void *data;					//! data about data
+  devcli_handle_data_t data_handler;	//! handler to ANY received data
+  struct telescope_info telescope;	//! data about data
+  struct camera_info camera;
 };
 
 struct supp_info
