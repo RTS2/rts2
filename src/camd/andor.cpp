@@ -34,8 +34,8 @@
 
 class CameraAndorChip:public CameraChip
 {
-  long *dest;		// for chips..
-  long *dest_top;
+  unsigned short *dest;		// for chips..
+  unsigned short *dest_top;
   char *send_top;
 public:
     CameraAndorChip (int in_chip_id, int in_width, int in_height,
@@ -48,14 +48,13 @@ public:
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
 private:
-  void convertLongToShort (long *buf, int size);
 };
 
 CameraAndorChip::CameraAndorChip (int in_chip_id, int in_width, int in_height,
 				int in_pixelX, int in_pixelY, float in_gain):
 CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
-  dest = new long[in_width * in_height];
+  dest = new unsigned short[in_width * in_height];
 };
 
 long
@@ -89,10 +88,8 @@ CameraAndorChip::readoutOneLine ()
     {
       int size = chipSize->height * chipSize->width;
       readoutLine = chipSize->height;
-      GetAcquiredData (dest, size);
-      // convert long to shor
-      convertLongToShort (dest, size);
-      (unsigned short*) dest_top += size; 
+      GetAcquiredData16 (dest, size);
+      dest_top += size; 
       return 0;
     }
   if (sendLine == 0)
@@ -118,17 +115,6 @@ CameraAndorChip::readoutOneLine ()
   readoutConn = NULL;
   readoutLine = -1;
   return -2;
-}
-
-void
-CameraAndorChip::convertLongToShort (long *buf, int size)
-{
-  long *src_p = buf;
-  unsigned short *dest_p = (unsigned short *) buf;
-  for (; src_p < buf + size; src_p++, dest_p++)
-  {
-	  *dest_p = (unsigned short) *src_p;
-  }
 }
 
 class Rts2DevCameraAndor:public Rts2DevCamera
