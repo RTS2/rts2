@@ -44,6 +44,8 @@
 #define COMMAND_EXPOSURE	'E'
 #define COMMAND_FILTER		'F'
 
+static int precission_count = 0;
+
 struct thread_list
 {
   pthread_t thread;
@@ -195,6 +197,8 @@ process_precission (struct target *tar, struct device *camera)
       double ra_err = NAN, dec_err = NAN;	// no astrometry
       double ra_margin = 15, dec_margin = 15;	// in arc minutes
       int tries = 0;
+      int max_tries = get_double_default ("maxtries", 5);
+
       ra_margin = get_double_default ("ra_margin", ra_margin);
       dec_margin = get_double_default ("dec_margin", dec_margin);
       ra_margin = ra_margin / 60.0;
@@ -204,18 +208,25 @@ process_precission (struct target *tar, struct device *camera)
       pthread_cond_t ret_cond = PTHREAD_COND_INITIALIZER;
       hi_precision.mutex = &ret_mutex;
       hi_precision.cond = &ret_cond;
-      int max_tries = get_double_default ("maxtries", 5);
 
       devcli_command (camera, NULL, "binning 0 2 2");
 
       while (tries < max_tries)
 	{
-	  printf ("triing to get to %f %f, %i try\n", tar->ra, tar->dec,
-		  tries);
+	  int light = (precission_count % 10 == 0) ? 0 : 1;
+	  if (!light)
+	    tar->type = TARGET_DARK;
+	  else
+	    tar->type = TARGET_LIGHT;
+	  printf
+	    ("triing to get to %f %f, %i try, %s image, %i total precission\n",
+	     tar->ra, tar->dec, tries, (light == 1) ? "light" : "dark",
+	     precission_count);
 	  fflush (stdout);
 	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 				  TEL_OBSERVING, 0);
-	  devcli_command (camera, NULL, "expose 0 1 %f", exposure);
+
+	  devcli_command (camera, NULL, "expose 0 %i %f", light, exposure);
 	  devcli_command (telescope, NULL, "base_info;info");
 
 	  get_info (tar, telescope, camera, exposure, &hi_precision);
@@ -227,42 +238,47 @@ process_precission (struct target *tar, struct device *camera)
 	  devcli_wait_for_status (camera, "img_chip",
 				  CAM_MASK_READING, CAM_NOTREADING,
 				  MAX_READOUT_TIME);
-	  // after finishing astrometry, I'll have telescope true location
-	  // in location parameters, passd as reference to get_info.
-	  // So I can compare that with
-	  pthread_mutex_lock (hi_precision.mutex);
-	  pthread_cond_wait (hi_precision.cond, hi_precision.mutex);
-	  printf ("hi_precision->image_pos->ra: %f dec: %f ",
-		  hi_precision.image_pos.ra, hi_precision.image_pos.dec);
-	  pthread_mutex_unlock (hi_precision.mutex);
-	  fflush (stdout);
-	  if (!isnan (hi_precision.image_pos.ra)
-	      && !isnan (hi_precision.image_pos.dec))
+	  if (light)
 	    {
-	      ra_err = ln_range_degrees (tar->ra - hi_precision.image_pos.ra);
-	      dec_err =
-		ln_range_degrees (tar->dec - hi_precision.image_pos.dec);
+	      // after finishing astrometry, I'll have telescope true location
+	      // in location parameters, passd as reference to get_info.
+	      // So I can compare that with
+	      pthread_mutex_lock (hi_precision.mutex);
+	      pthread_cond_wait (hi_precision.cond, hi_precision.mutex);
+	      printf ("hi_precision->image_pos->ra: %f dec: %f ",
+		      hi_precision.image_pos.ra, hi_precision.image_pos.dec);
+	      pthread_mutex_unlock (hi_precision.mutex);
+	      fflush (stdout);
+	      if (!isnan (hi_precision.image_pos.ra)
+		  && !isnan (hi_precision.image_pos.dec))
+		{
+		  ra_err =
+		    ln_range_degrees (tar->ra - hi_precision.image_pos.ra);
+		  dec_err =
+		    ln_range_degrees (tar->dec - hi_precision.image_pos.dec);
+		}
+	      else
+		{
+		  // not astrometry, get us out of here
+		  tries = max_tries;
+		  break;
+		}
+	      printf ("ra_err: %f dec_err: %f\n", ra_err, dec_err);
+	      fflush (stdout);
+	      if ((ra_err < ra_margin || ra_err > 360.0 - ra_margin)
+		  && (dec_err < dec_margin || dec_err > 360.0 - dec_margin))
+		{
+		  break;
+		}
+	      else
+		{
+		  tar->moved = 0;
+		  // try to synchro the scope again
+		  move (tar);
+		}
+	      tries++;
 	    }
-	  else
-	    {
-	      // not astrometry, get us out of here
-	      tries = max_tries;
-	      break;
-	    }
-	  printf ("ra_err: %f dec_err: %f\n", ra_err, dec_err);
-	  fflush (stdout);
-	  if ((ra_err < ra_margin || ra_err > 360.0 - ra_margin)
-	      && (dec_err < dec_margin || dec_err > 360.0 - dec_margin))
-	    {
-	      break;
-	    }
-	  else
-	    {
-	      tar->moved = 0;
-	      // try to synchro the scope again
-	      move (tar);
-	    }
-	  tries++;
+	  precission_count++;
 	}
       devcli_command (camera, NULL, "binning 0 1 1");
       pthread_mutex_lock (&precission_mutex);
@@ -357,7 +373,9 @@ execute_camera_script (void *exinfo)
 	    command++;
 	  if (*command == 'D')
 	    {
-	      exposure = EXPOSURE_TIME;
+	      exposure =
+		get_device_double_default (camera->name, "defexp",
+					   EXPOSURE_TIME);
 	      command++;
 	    }
 	  else
