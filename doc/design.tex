@@ -1,67 +1,105 @@
-\chapter{Design}
+\chapter{Specifikace}
 
-\section{Obecné teze}
+\section{Popis dalekohledu}
 
-Pùvodní systém pro øízení dalekohledu, dále oznaèovaný jako RTS1,
-pøestával vyhovovat na¹im potøebám. Hlavní problém byl s korekcemi
-dalekohledu pomocí dodateèné fotometrie - postup by mìl vypadat takto:
+Dalekohled se skládá z montá¾e, optiky a detekèních pøístrojù. Úkolem montá¾e
+je pohybovat optickou èástí dalekohledu. Montá¾e mù¾e být vybavena èidly,
+které umo¾òují získat informaci o orientaci montá¾e v prostoru.
 
-\begin{itemize}
+Nejdostupnìj¹ím detekèním pøístrojem je lidské oko. Nás ale budou více zajímat
+dalekohledy vybavené CCD kameramy.
 
-\item najeï na pozici x,y
+\subsection{Popis CCD kamery}
 
-\item poøiï snímek hvìzdného pole
+CCD prvek si mù¾eme pøedstavit jako matici fotoodporù. Pøi dopadu fotonu na
+CCD prvek se jeho energie pøemìní na elektrický náboj.  Ten je poté zmìøen a
+A/D pøevodníkem pøeveden na digitální signál. Vyèítání CCD je pojem, onaèující
+digitalizaci jednotlivých øádkù a jejich pøenos.
 
-\item detekuj na snímku hvìzdy
+CCD èipy pou¾ívané v astronomii se li¹í od bì¾ných CCD èipù, pou¾ívaných v
+digitálních fotoaparátech. CCD kamery jsou vìt¹inou pøipojovány k poèítaèi.
+Pøipojení je realizováno buïto pøes stanartních periférií, jakými je
+napøíklad paralerní, sériový èi v poslední dobì USB port, èi pøes speciální
+kartu pøipojenou ke sbìrnici poèítaèe.
 
-\item s pomocí pøedbì¾ných souøadnic s dalekohledu urèi pøesnou
-polohu støedu snímku u,v
+Pøi vyèítání kamery je potøeba pøenést data v øádu MB. Vyèítání a následnou
+digitalizaci je potøeba provést v co nejkrat¹ím èasovém okam¾iku. Kamery
+vìt¹inou nejsou vybaveny bufferem, data v nich obsa¾ená jsou tedy rovnou po
+digitalizaci posílány na poèítaè, který je musí pøijmout. Proto není vhodné
+pøíjem dat pøeru¹ovat.
 
-\item vypoèti odchylku x-u,y-v
+\subsection{Popis montá¾e}
 
-\item aplikuj na pozici dalekohledu korekce uvedené vý¹e
+Nejdùle¾itìj¹í informací od dalekohledu je jeho poloha.
 
-\end{itemize}
+Je rozumné, aby se dalekohledu posílaly absolutní souøadnice daného objektu.
+Pro výpoèet polohy, na kterou se má nastavit, pak dalekohled potøebuje znát
+místní hvìzdný èas. Ten je mo¾né vypoèítat z místního èasu a zemìpisné ¹íøky.
 
-V zadání je tento bod zkryt pod "on-line zpracování snímkù na jiném
-poèítaèi ne¾ na poèítaèi obsluhujícím kameru". Pod zpracováním snímkù
-se myslí primárnì jejich vyhodnocení a vypoèítání chyby v poloze.
+Pøi zji¹»ování polohy dalekohledu je mo¾né pou¾ít buïto relativní, nebo
+absolutní èítaèe. Relativní èítaèe jsou jednodu¾¹í a levnìj¹í, absolutní
+slo¾itìj¹í a dra¾¹í.
 
-Mimo to nám ¹lo pøi návrhu o maximální dìlení funkcí na podfunkce,
-a podporu tohoto dìlení ve struktuøe programu.
+Relativní èidla poèítají zmìnu polohu dalekohledu. Zmìnu polohy je mo¾né
+poèítat buïto pøímo z doby chodu, pøípadnì poètu cyklù motorù ovládájících
+dalekohled, nebo pøesnìji pomocí zpìtnovazební èidel, umístìných na osách
+dalekohledu. Zpìtnovazební èidla detekují zmìnu pozice pomocí rùzných
+principù, buïto optických, nebo mechanických.
 
-Pøi vyèítání snímku je poèítaè, který vyèítání øídí, zatí¾en natolik,
-¾e nemá moc význam uva¾ovat nad nìjaké vá¾nìj¹í, na CPU nároènìj¹í
-analýze snímku.
+Relativní èidla je potøeba pøed zaèátkem pozorování nastavit. Nìkteré systémy
+motorù s èidli jsou po zapnutí schopny najít pevnou pozici, home pozici, u
+které vìdí, jaké má souøadnice. Tyto pak není potøeba nastavovat.
 
-Proto má význam celou architekturu navhrnout tak, aby ke kameøe
-(pøípadnì kamerám) byl pøipojen poèítaè, který by slou¾il jako server
-- zpracovával po¾adavky na kameru a poskytoval odpovìdi o~jejím stavu.
+Absolutní èidla jsou vìt¹inou øe¹ena mechanicky, napøíklad jako velmi jemný
+potenciometr.
 
-Je tedy vhodné mít minimálnì dvì, navzájem spojené zaøízení, z nich¾ jedno
-øídí vyèítání z kamery a druhé se stará o zpracování snímkù.
+Dostupné absolutní i relativní èidla, jejich pøesnost a cena je velmi dobøe
+popsána v \cite{telcontrol}.
 
-Základní my¹lenka je prostá - nad spoleèným komunikaèním rozhraním
-pobì¾í malé jednoúèelové procesy, které budou vykonávat svoji
-specifickou èinnost, a budou komunikovat s ostatnímy procesy.
+\subsection{Støecha dalekohledu}
 
-Procesy budu mít pro:
+Nad dalekohledem se nachází støecha èi kopule. Jejím úkolem je chránit
+dalekohled v pøípadì nepøíznivého poèasí. 
 
-\begin{itemize}
+V pozorovacím systému mù¾e být více dalekohledù, vybavených vìt¹ím poètem
+detekèních pøístrojù.
 
-\item kamery
+\section{Zpracování snímkù}
 
-\item montá¾
+Pøijaté snímky je potøeba zpracovat a ulo¾it.
 
-\item pozorování gama zábleskù
+Základním zpracováním snímkù je odeètení temných snímkù a vydìlením hodnot
+hodnotami na flat fieldu. Toto zpracování je popsáno v \cite[martinez] a
+\cite[ratledge].
 
-\item dlouhodobá pozorování
+Dále je potøeba zjistit pøesnou polohu snímku a doplnit ho o World Coordinate
+System - WCS - hlavièku.
 
-\item monitoring, manuální ovládání
+\section{Organizace pozorování}
 
-\end{itemize}
+V systému je udr¾ován seznam mo¾ných cílù pozorování. U ka¾dého cíle je
+evidováno, kolikrát byl pozorován a s jakým výsledkem. 
 
-Nástin jejich uspoøádání, spoleènì s centrálním serverem, je v
-diagramu \ref{fig:overview}.
+U ka¾dého snímku je evidováno, jestli se jedná o obyèejný nebo korekèní
+snímek a okolnosti jeho vzniku.
 
-\dia{overview}{Pøehled procesù a jejich komunikace - základní stav}
+Obyèejné snímky jsou spojeny s konrétním cílem pozorování. Korekèní snímky
+nejsou vázány na cíle pozorování.
+
+\section{Korekce montá¾e}
+
+Montá¾ dalekohledu z rùzných dùvodù a pøíèin nemusí najet pøesnì na místo,
+které jí bylo zadáno. U dalekohledù s pozorovately je pozorované pole
+obsluhou srovnáváno s katalogy.
+
+U automatických dalekohledù bychom chtìli pozorovatele ze zpìtné vazby
+odstranit. Kontrolu správnosti najetí montá¾e budeme vyhodnocovat z poøízených
+snímkù.
+
+\section{Nároènost na poèítaèové vybavení}
+
+Finaèní zdroje astronomických ústavù i astronomù nejsou neomezené. Systém by
+jich tedy mìl vy¾adovat co nejménì. Lze napøíklad pou¾ít vyøazených poèítaèù,
+kterých je na trhu dostatek.
+
+Nároky na provoz a údr¾bu systému by mìly být co mo¾ná nejmen¹í.

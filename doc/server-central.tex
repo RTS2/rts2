@@ -1,45 +1,127 @@
-\section{Distribuce funkcí}
+\section{Agenti}
 
-Ka¾dé pozorovací stanovi¹tì sestává vìt¹inou z~více ovladatelných
-èástí - kamer, montá¾e, støechy. Jak jsme nastínily v~kapitole
-o~designu, pro ka¾dé zaøízení napí¹eme damon, který ho bude ovládat.
+Jak je uvedeno v popisu CCD kamery, pøi vyèítání dochází ke znaènému zatí¾ení
+poèítaèe øídícího vyèítáni. Je tedy vhodné mít minimálnì dvì, navzájem spojená
+zaøízení, z nich¾ jedno øídí vyèítání z kamery a druhé se stará o zpracování
+snímkù.
 
-Existují funkce, které je rozumné spravovat centrálnì. Jedná se v¾dy
-o~funkce, které by se na v¹ech zaøízením mìli chovat stejnì. Jako
-vhodný pøípad mù¾e poslou¾it autentifikace - pøi pou¾ití veøejného
-u¾ivatelského jména a~tajného hesla je vhodné zajistit, aby klientu
-staèil jedno u¾ivatelské jméno a jedno heslo.
+Systém vychází z teorie agentù. Nad spoleèným komunikaèním rozhraním bì¾í malé
+jednoúèelové procesy, které vykonávají svoji specifickou èinnost, a komunikují
+s ostatnímy procesy.
+
+Struktura procesù odpovídá zaøízením a procesùm pøítomných u dalekohledu.
+Procesy budu mít pro:
+
+\begin{itemize}
+
+\item kamery
+
+\item montá¾e
+
+\item støechu spojenou s meterologickou stanicí
+
+\item pozorování
+
+\end{itemize}
+
+Procesy pro pozorování je vhodné rozdìlit na procesy pro:
+
+\begin{itemize}
+
+\item dlouhodbé pozorování
+
+\item rychlé pozorování GRB
+
+\item monitoring a zprávu systému
+
+\end{itemize}
+
+Tyto procesy budeme v dal¹ímm textu oznaèovat jako {\bf klienty}. Jako {\bf
+zaøízení} budeme oznaèovat procesy ovládající zaøízení, tedy procesy pro
+kameru, montá¾ a støechu.
+
+\section{Rozdìlení funkcí}
+
+Existují funkce systému, které je rozumné spravovat centrálnì. Jedná se v¾dy
+o~funkce, které by se na v¹ech zaøízení mìli chovat stejnì. Jako vhodný
+pøípad mù¾e poslou¾it autentifikace - pøi pou¾ití veøejného u¾ivatelského
+jména a~tajného hesla je vhodné zajistit, aby klientu staèil jedno u¾ivatelské
+jméno a jedno heslo. Dal¹ím pøíkladem mù¾e být seznam zaøízení obsa¾ených v
+systému. Tyto funkce jsou dále oznaèovány jako centrální funkce.
+
+Funkce, které je potøeba volat na jednotlivých zaøízení, jsou oznaèovány jako
+lokální funkce.
+
+Centrální funkce by bylo vhodné na jednom procesu. Je mo¾né uva¾ovat o dal¹ím
+procesu - centrálním serveru. 
+
+V následujících navrhneme jednotlivé mo¾nosti. Na závìr vyberemu jednu, kterou
+budeme dále pou¾ívat.
 
 \subsection{Bez centrálního serveru}
 
-Ka¾dé klient udr¾uje spojení se v¹emi zaøízeními, které potøebuje ke
-svému provozu - viz obrázek \ref{fig:client-server-direct}. Na první
-pohled velmi jednoduché a elegantní øe¹ení.
+Ka¾dé proces udr¾uje spojení se v¹emi procesy, které potøebuje ke
+svému bìhu - viz obrázek \ref{fig:client-server-direct}. 
+Na první pohled velmi jednoduché a elegantní øe¹ení.
 
 \dia{client-server-direct}{Klient bez centrálního serveru, s~pøímími spojeními na zaøízení}
 
 \subsection{S~centrálním serverem}
 
-Mezi klienty a zaøízením le¾í centrální server. Pøes nìj probíhá jistý
-díl komunikace mezi zaøízením a serverem.
+Komunikace mezi procesy probíhá èásteènì pøes centrální server. Pøes nìj je
+mo¾né vést v¹echnu komunikaci, nebo pouze komunikaci týkající se centrálních
+funkcí.
 
 \subsubsection{V¹e pøes centrální server}
 
-V¹echny funkce probíhají pøes centrální server. Centrální server urèí,
-jakému zaøízení jsou urèeny, a po¹le mu je.
+V¹echna komunikace probíhá pøes centrální server. Centrální server urèí,
+jakému procesu jsou data urèeny, a po¹le mu je. 
 
-\dia{client-server-central}{Klient s~centrálnín serverem bez pøímého
-spojení}
+\dia{client-server-central}{Uspoøádañí s~centrálnín serverem bez pøímého
+spojení mezi procesy}
 
-\subsubsection{Centrální funkce pøes centrální server, lokální funkce}
+\subsubsection{Kombinace}
 
-\dia{client-server-central-direct}{klient s~centrálním serverem s~pøímím
-spojením mezi daemony}
+\dia{client-server-central-direct}{Uspoøádání s~centrálním serverem s~pøímím
+spojením mezi procesy}
 
-Centrální funkce na centrální server, ten distribuuje informace na
-zaøízení. 
+Komunikace urèená pro centrální server je posílána na centrální server,
+komunikace mezi procesy je vedena pøímo.
 
 \subsection{Závìr}
 
-Rozhodl jsem se pro pou¾ití varianty s centrálním serverem. Hlavním
-dùvodem jsou výhody pøi implementaci centrálních funkcí.
+Pøi pøenosu dat z kamer na dal¹í zpracování je zbyteèné tyto data pøená¹et
+jako odpovìdi pøes centrální server. Data se pohybují v øádu MB a jejich
+pøenos na centrálním serveru by vy¾adoval zbyteènì mnoho systémových
+prostøedkù.
+
+Seznam procesù bì¾ících v systému je jednodu¾¹í udr¾ovat na centrálním
+serveru.
+
+Nejvýhodnìj¹í je tedy pou¾ít centrálního serveru s pøímým spojením mezi
+procesy.
+
+\subsection{Pøíklad}
+
+Pro pøíklad je v diagramu \ref{fig:overview} uveden stav, který popisuje
+konfiguraci systému Ondøejovského dalekohledu. 
+
+\dia{overview}{Pøehled procesù a jejich komunikace - Ondøejovský dalekohled}
+
+\begin{description}
+
+\item[teld] proces ovládajícíc dalekohled
+
+\item[WF1,WF2,NF] procesy ovládající kamery
+
+\item[grbc] proces pro pøíjem zpráv o GRB
+
+\item[BACODINE, IBAN] systémy posílající pozice gama záblesku
+
+\item[planc] dlouhodobé pozorování
+
+\item[monitor] monitoring, ruèní ovládání
+
+\item[focusc] ostøení kamery
+
+\end{description}
