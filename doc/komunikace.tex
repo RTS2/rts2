@@ -7,7 +7,7 @@ Mandrake a Debian. Díky propracovanému balíkovacímu systému se jako nejlep¹í
 jeví Debian. Ten v souèasné dobì nasazujeme na v¹echny nové poèítaèe.
 
 Komunikace mezi poèítaèi bì¾í na sí»ovém protokolu TCP/IP. Dùvodem je jeho
-roz¹íøenost. 
+roz¹íøenost.
 
 \section{Cílový jazyk}
 
@@ -56,3 +56,27 @@ Udr¾uje komunikaci s centrálním servrem, zji¹»uje stavy a poèet zaøízení.
 \subsection{devdem}
 
 Integruje devcli a devdem. Poskytuje podporu pro zaøízení.
+
+\subsection{Architektura serveru}
+
+Pro ka¾dé nové spojení je vytváøen a spou¹tìn nový proces. Pro synchronizaci
+serverù a jejich vzájemnou komunikaci jsou pou¾ity prostøedky IPC.
+
+Pro déletrvající operace je vytváøeno nové vlákno. Vlákna jsou vytváøena
+pomocí knihovny pthread.
+
+\section{Zpracování snímku}
+
+Pro zpracování snímkù je volán shellovský skript. Pokud se na jeho výstupu
+vyskytne øádka s údaji o skuteèné pozici snímku a velikosti chyby, je chyba
+poslána na dalekohled.
+
+Snímky se po poøízení øadí do zásobníkù, z kterého je odebírán kódem pro
+zpracování snímkù. Je garantováno, ¾e v jednom klientu pobì¾í pouze jeden
+proces pro zpracování snímkù.
+
+O detekci hvìzd se v systému BART stará program sextractor. Jeho konfiguraci
+provedl Martin Jelínek.
+
+O srovnání detekovaných hvìzd s katalogem se stará balík Opera, vyvinutý ....
+a upravený Martinem Jelínkem.

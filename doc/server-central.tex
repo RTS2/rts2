@@ -6,11 +6,11 @@ zaøízení, z nich¾ jedno øídí vyèítání z kamery a druhé se stará o zpracování
 snímkù.
 
 Systém vychází z teorie agentù. Nad spoleèným komunikaèním rozhraním bì¾í malé
-jednoúèelové procesy, které vykonávají svoji specifickou èinnost, a komunikují
-s ostatnímy procesy.
+jednoúèelové procesy-agenti, které vykonávají svoji specifickou èinnost, a
+komunikují s ostatnímy agenty.
 
-Struktura procesù odpovídá zaøízením a procesùm pøítomných u dalekohledu.
-Procesy budu mít pro:
+Struktura agentù odpovídá zaøízením a procesùm pøítomných u dalekohledu.
+Agenty budu mít pro:
 
 \begin{itemize}
 
@@ -24,12 +24,12 @@ Procesy budu mít pro:
 
 \end{itemize}
 
-Procesy pro pozorování budeme v dal¹ím textu oznaèovat jako {\bf klienty}. 
-Je vhodné je rozdìlit na procesy pro:
+Agenti pro pozorování budeme v dal¹ím textu oznaèovat jako {\bf klienty}. 
+Je vhodné je rozdìlit na agenty pro:
 
 \begin{itemize}
 
-\item dlouhodbé pozorování
+\item dlouhodobé pozorování
 
 \item rychlé pozorování GRB
 
@@ -37,10 +37,10 @@ Je vhodné je rozdìlit na procesy pro:
 
 \end{itemize}
 
-Jako {\bf zaøízení} budeme oznaèovat procesy ovládající zaøízení, tedy procesy 
+Jako {\bf zaøízení} budeme oznaèovat agenty ovládající zaøízení, tedy agenty 
 pro kameru, montá¾ a støechu.
 
-\section{Rozdìlení funkcí}
+\section{Centralizované a distribuované uspoøádání}
 
 Existují funkce systému, které je rozumné spravovat centrálnì. Jedná se v¾dy
 o~funkce, které by se na v¹ech zaøízení mìli chovat stejnì. Jako vhodný
@@ -52,12 +52,10 @@ systému. Tyto funkce jsou dále oznaèovány jako {\bf centrální funkce}.
 Funkce, které je potøeba volat na jednotlivých zaøízení, jsou oznaèovány jako
 {\bf lokální funkce}.
 
-Centrální funkce by bylo vhodné na jednom procesu. Je mo¾né uva¾ovat o dal¹ím
-procesu - {\bf centrálním serveru}. 
+Centrální funkce je mo¾né distribuovat na jednotlivé agenty. Je ale také mo¾né
+pro jejich volání vytvoøit nového agenta - {\bf centrálním serveru}. 
 
-V následujícím textu prodiskutujeme jednotlivé mo¾nosti. 
-
-\subsection{Bez centrálního serveru}
+\subsection{Konfigurace bez centrálního serveru}
 
 Ka¾dé proces udr¾uje spojení se v¹emi procesy, které potøebuje ke
 svému bìhu - viz obrázek \ref{fig:client-server-direct}. 
@@ -65,7 +63,7 @@ Na první pohled velmi jednoduché a elegantní øe¹ení.
 
 \dia{client-server-direct}{Klient bez centrálního serveru, s~pøímími spojeními na zaøízení}
 
-\subsection{S~centrálním serverem}
+\subsection{Konfigurace s~centrálním serverem}
 
 Komunikace mezi procesy probíhá èásteènì pøes centrální server. Pøes nìj je
 mo¾né vést v¹echnu komunikaci, nebo pouze komunikaci týkající se centrálních
@@ -102,18 +100,18 @@ procesy.
 
 \subsection{Pøíklad}
 
-Pro pøíklad je v diagramu \ref{fig:overview} uveden stav, který popisuje
-konfiguraci systému Ondøejovského dalekohledu. 
+Pro pøíklad je v diagramu \ref{fig:overview} popsána konfigurace Ondøejovského
+systému. Plné èáry v nìm representují komunikaèní spojen.
 
-\dia{overview}{Pøehled procesù a jejich komunikace - Ondøejovský dalekohled}
+\dia{overview}{Pøehled agentù - Ondøejovský dalekohled}
 
 \begin{description}
 
-\item[teld] proces ovládajícíc dalekohled
+\item[teld] agent ovládajícíc dalekohled
 
-\item[WF1,WF2,NF] procesy ovládající kamery
+\item[WF1,WF2,NF] agent ovládající kamery
 
-\item[grbc] proces pro pøíjem zpráv o GRB
+\item[grbc] agent pro pøíjem zpráv o GRB
 
 \item[BACODINE, IBAN] systémy posílající pozice gama záblesku
 
