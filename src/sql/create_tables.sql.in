@@ -4,6 +4,9 @@ DROP TABLE targets;
 DROP TABLE epoch;
 DROP TABLE types;
 
+CREATE GROUP "observers";
+CREATE USER "@WWWUSER@";
+
 CREATE TABLE epoch (
 	epoch_id	char(3) PRIMARY KEY,		
 	epoch_start	timestamp,
@@ -37,6 +40,30 @@ CREATE TABLE ot (
 	ot_imgcount	integer,
 	ot_minpause	interval DEFAULT NULL,
 	ot_priority	integer
+);
+
+DROP TABLE cameras;
+
+CREATE TABLE cameras (
+	camera_name	varchar(8) PRIMARY KEY,
+	camera_description	varchar(100)
+);
+
+DROP TABLE mounts;
+
+CREATE TABLE mounts (
+	mount_name	varchar(8) PRIMARY KEY,
+	mount_long	float,
+	mount_lat	float,
+	mount_alt	float,
+	mount_desc	varchar(100)
+);
+
+DROP TABLE counters;
+
+CREATE TABLE counters ( 
+	counter_name	varchar(8) PRIMARY KEY,
+	mount_name	varchar(8) REFERENCES mounts(mount_name)
 );
 
 DROP TABLE darks;
@@ -100,6 +127,18 @@ CREATE TABLE images (
 	mount_name	varchar(8) REFERENCES mounts(mount_name)
 );
 
+DROP TABLE counts;
+
+CREATE TABLE counts ( 
+	obs_id		integer REFERENCES observations(obs_id),
+	count_date	abstime NOT NULL,
+	count_exposure	float,
+	count_filter	varchar(3),
+	count_ra	float4,
+	count_dec	float4,
+	counter_name	varchar(8) REFERENCES counters(counter_name)
+);
+
 CREATE INDEX images_obs_id ON images (obs_id);
 
 DROP SEQUENCE img_id;
@@ -119,10 +158,12 @@ CREATE TABLE users (
 );
 
 GRANT SELECT ON images TO "@WWWUSER@";
+GRANT SELECT ON counts TO "@WWWUSER@";
 GRANT SELECT ON users TO "@WWWUSER@";
 GRANT SELECT ON medias TO "@WWWUSER@";
 
 GRANT ALL ON images TO GROUP observers;
+GRANT ALL ON counts TO GROUP observers;
 GRANT ALL ON users TO GROUP observers;
 GRANT ALL ON medias TO GROUP observers;
 
@@ -131,23 +172,6 @@ CREATE INDEX observations_tar_id ON observations (tar_id);
 DROP SEQUENCE obs_id;
 
 CREATE SEQUENCE obs_id;
-
-DROP TABLE cameras;
-
-CREATE TABLE cameras (
-	camera_name	varchar(8) PRIMARY KEY,
-	camera_description	varchar(100)
-);
-
-DROP TABLE mounts;
-
-CREATE TABLE mounts (
-	mount_name	varchar(8) PRIMARY KEY,
-	mount_long	float,
-	mount_lat	float,
-	mount_alt	float,
-	mount_desc	varchar(100)
-);
 
 DROP VIEW observations_nights;
 
