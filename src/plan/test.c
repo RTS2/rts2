@@ -1,4 +1,4 @@
-#include "db.h"
+#include "../db/db.h"
 #include "selector.h"
 
 #include <libnova.h>
@@ -25,5 +25,5 @@ main (int argc, char **argv)
 	      ctime (&last->ctime), hrz.alt, hrz.az);
     }
   free_plan (plan);
-  db_disconnect ();
+  return db_disconnect ();
 }
