@@ -688,9 +688,7 @@ server_command_handler (struct param_status *params, void *info)
     }
   else
     {
-      printf ("returned: %s\n", params->param_argv);
-      fflush (stdout);
-
+      syslog (LOG_DEBUG, "returned: %s\n", params->param_argv);
       return 0;
     }
   return 0;
@@ -785,8 +783,6 @@ server_message_handler (struct param_status *params, void *info)
       || strcmp (command, "priority_deferred") == 0)
     return server_message_priority (params);
 
-  printf ("command: %s\n", command);
-  fflush (stdout);
   return 0;
 }
 
@@ -962,11 +958,8 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
 
   devser_run (port, client_handle_commands);
 
-  printf ("devser_run returns\n");
-
   if (semctl (status_sem, 1, IPC_RMID))
     perror ("IPC_RMID status_sem semctl");
-  printf ("devdem removing end");
 #ifdef DEBUG
   printf ("devdem exiting");
 #endif
