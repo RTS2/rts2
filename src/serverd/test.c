@@ -131,6 +131,7 @@ main (int argc, char **argv)
 	      exit (1);
 
 	    }
+	  break;
 	case 't':
 	  ev_time = atoi (optarg);
 	  if (!ev_time)
