@@ -53,6 +53,8 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
   fn[0] = '!';
 
   fits_call (fits_create_file (&receiver->ffile, fn, &status));
+  free (fn);
+  printf ("after fits create_file\n");
   fptr = receiver->ffile;
   return 0;
 }
@@ -66,11 +68,12 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 	}
 
 int
-write_camera (struct fits_receiver_data *receiver, struct camera_info *camera)
+write_camera (struct fits_receiver_data *receiver,
+	      struct camera_info *camera, char *camera_name, int mount_flip)
 {
   int status = 0;
   float xplate = 17, yplate = 17;
-  float rotang = 95.5;
+  float rotang = 90.7;
   char *filter = "R";
   long flip = 1;
 
@@ -90,8 +93,26 @@ write_camera (struct fits_receiver_data *receiver, struct camera_info *camera)
   write_key (TSTRING, "CAMD_FAN", camera->fan ? "on" : "off",
 	     "Camera fan status");
 
+  if (!strcmp (camera_name, "CNF1"))
+    {
+      rotang = 0;
+      filter = "V";
+      xplate = 2.57;
+      yplate = 2.57;
+    }
+  if (!strcmp (camera_name, "C1"))
+    {
+      rotang = 270.0;
+      filter = "I";
+    }
   write_key (TFLOAT, "XPLATE", &xplate, "X plate size");
   write_key (TFLOAT, "YPLATE", &yplate, "Y plate size");
+  if (mount_flip)
+    {
+      rotang += 180.0;
+      if (rotang > 360.0)
+	rotang -= 360.0;
+    }
   write_key (TFLOAT, "ROTANG", &rotang, "Field rotation");
   write_key (TSTRING, "FILTER", filter, "Filter used");
   write_key (TLONG, "FLIP", &flip, "Image flip");
@@ -136,7 +157,8 @@ fits_write_image_info (struct fits_receiver_data *receiver,
   if (*info->camera.type)
     {
       write_key (TSTRING, "CAM_NAME", info->camera_name, "Camera name");
-      write_camera (receiver, &info->camera);
+      write_camera (receiver, &info->camera, info->camera_name,
+		    info->telescope.flip);
     }
   if (dark_name)
     write_key (TSTRING, "DARK", dark_name, "Dark image path");

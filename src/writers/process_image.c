@@ -42,12 +42,17 @@ process_images (void *arg)
 
   long int id;
   double ra, dec, ra_err, dec_err;
+  time_t t = time (NULL);
 
   int ret = 0;
 
   FILE *past_out;
+  FILE *cor_log;
 
   image_que = NULL;
+
+  cor_log = fopen ("/home/petr/tel_move_log", "a");
+  fprintf (cor_log, "===== new log %s", ctime (&t));
 
   while (1)
     {
@@ -68,7 +73,7 @@ process_images (void *arg)
 	}
 
       // call image processing script
-      asprintf (&cmd, "/home/petr/rts2/src/plan/img_process %s",
+      asprintf (&cmd, "/home/petr/rts2/src/plan/img_process %s 2>/dev/null",
 		actual_image->image);
       printf ("\ncalling %s.", cmd);
 
@@ -105,10 +110,9 @@ process_images (void *arg)
 
       filename =
 	(char *) malloc (strlen (actual_image->directory) +
-			 strlen (actual_image->image) + 2);
+			 strlen (actual_image->image) + 1);
 
       strcpy (filename, actual_image->directory);
-      strcat (filename, "/");
       strcat (filename, actual_image->image);
 
       if (ret == EOF)
@@ -116,9 +120,8 @@ process_images (void *arg)
 	  // bad image, move to trash
 	  char *trash_name;
 	  trash_name = (char *) malloc (8 + strlen (filename));
-	  sprintf (trash_name, "/trash/%s", actual_image->directory);
+	  sprintf (trash_name, "/trash%s", actual_image->directory);
 	  mkpath (trash_name, 0777);
-	  strcat (trash_name, "/");
 	  strcat (trash_name, actual_image->image);
 
 	  printf ("%s scanf error, invalid line\n", filename);
@@ -138,6 +141,9 @@ process_images (void *arg)
 
 	  if (actual_image->correction_mark >= 0)
 	    {
+	      fprintf (cor_log, "%s %f %f %f %f\n", actual_image->image, ra,
+		       dec, ra_err, dec_err);
+	      fflush (cor_log);
 	      if ((tel = devcli_find (actual_image->tel_name)))
 		{
 		  if (devcli_command (tel, NULL, "correct %i %f %f",
@@ -196,24 +202,31 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   gmtime_r (&image->exposure_time, &gmt);
 
+  printf ("camera_name : %s\n", image->camera_name);
+
   switch (image->target_type)
     {
     case TARGET_DARK:
-      if (!asprintf (&dirname, "/darks/%s/%s/", EPOCH, image->camera_name))
-	{
-	  perror ("planc data_handler asprintf");
-	  return -1;
-	}
+      asprintf (&dirname, "/darks/%s/%s/%04i/%02i/", EPOCH,
+		image->camera_name, gmt.tm_year + 1900, gmt.tm_mon + 1);
+      break;
+
+    case TARGET_FLAT:
+      asprintf (&dirname, "/flats/%s/%s/%04i/%02i/%02i/", EPOCH,
+		image->camera_name, gmt.tm_year + 1900, gmt.tm_mon + 1,
+		gmt.tm_mday);
+      break;
+
+    case TARGET_FLAT_DARK:
+      asprintf (&dirname, "/flats/%s/%s/%04i/%02i/%02i/darks/", EPOCH,
+		image->camera_name, gmt.tm_year + 1900, gmt.tm_mon + 1,
+		gmt.tm_mday);
       break;
 
     default:
-      if (!asprintf
-	  (&dirname, "/images/%s/%s/%05i/", EPOCH, image->camera_name,
-	   image->target_id))
-	{
-	  perror ("planc data_handler asprintf");
-	  return -1;
-	}
+      asprintf
+	(&dirname, "/images/%s/%s/%05i/", EPOCH, image->camera_name,
+	 image->target_id);
     }
 
   mkpath (dirname, 0777);
@@ -235,7 +248,7 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
     {
-      if (sock < 0 || size != 3145784)
+      if (s < 0)
 	{
 	  printf ("socket error: %i", sock);
 	  goto close_fits;
@@ -296,9 +309,6 @@ data_handler (int sock, size_t size, struct image_info *image)
       ret = 0;
 
       goto free_filename;
-
-      break;
-
     case TARGET_DARK:
       printf ("darkname: %s\n", filename);
 
@@ -308,10 +318,15 @@ data_handler (int sock, size_t size, struct image_info *image)
 			      image->camera_name);
       printf ("after db_add_darkfield\n");
       fflush (stdout);
+      goto free_filen;
 
-      goto free_filename;
+    case TARGET_FLAT:
+      printf ("flatname: %s\n", filename);
+      goto free_filen;
 
-      break;
+    case TARGET_FLAT_DARK:
+      printf ("dark flatname: %s\n", filename);
+      goto free_filen;
     }
 
 close_fits:
