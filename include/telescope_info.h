@@ -13,7 +13,7 @@ struct telescope_info
   double latitude;
   float altitude;
   // time information
-  double siderealtime;
+  double siderealtime;		// LOCAL sidereal time!!
   double localtime;
   int correction_mark;
   int flip;
