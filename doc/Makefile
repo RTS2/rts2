@@ -1,16 +1,13 @@
-all: dia diplomka.pdf article_spain.pdf
+all: diplomka.pdf
 
-%.pdf: %.dvi
-	dvipdf $<
-	$(RM) $<
+diplomka.pdf: diplomka.dvi
+	dvipdf $?
 
-%.dvi: %.tex 
-	cslatex $<
-	makeindex $<
-	cslatex $<
-
-dia:	
+diplomka.dvi: *.tex 
 	$(MAKE) -C dia
+	cslatex diplomka.tex
+	makeindex diplomka.idx
+	cslatex diplomka.tex
 
 clean:
 	$(RM) *.aux *.idx *.dvi *.pdf *~ *.log *.ind *.ilg
