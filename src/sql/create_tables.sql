@@ -29,6 +29,17 @@ CREATE TABLE targets (
 	tar_enabled     boolean
 );
 
+CREATE TABLE phot (
+	tar_id		integer REFERENCES targets (tar_id),
+	phot_type	integer,
+	phot_epoch	integer,
+	phot_mag1	float4,
+	phot_mag2	float4,
+	phot_index1	float4,
+	phot_index2	float4,
+	phot_sao_num	int8
+);
+
 CREATE TABLE grb (
 	tar_id		integer REFERENCES targets (tar_id),
 	grb_id		integer PRIMARY KEY,
