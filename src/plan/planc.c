@@ -118,8 +118,9 @@ generate_next (int i, struct target *plan)
 {
   time_t start_time;
   time (&start_time);
+  start_time += EXPOSURE_TIME;
 
-  printf ("Making plan %li... \n", start_time);
+  printf ("Making plan %s", ctime (&start_time));
   if (get_next_plan (plan, SELECTOR_AIRMASS, &start_time, i, EXPOSURE_TIME))
     {
       printf ("Error making plan\n");
@@ -134,7 +135,7 @@ int
 observe (int watch_status)
 {
   int i = 0;
-  struct target *last, *plan;
+  struct target *last, *plan, *p;
 
   struct tm last_s;
 
@@ -146,7 +147,7 @@ observe (int watch_status)
   free (plan);
   plan = last;
 
-  for (; last; plan = last, last = last->next, free (plan))
+  for (; last; last = last->next, p = plan, plan = plan->next, free (p))
     {
       time_t t = time (NULL);
       struct timeval tv;
@@ -208,9 +209,6 @@ observe (int watch_status)
       printf ("OK\n");
 
       time (&t);
-      printf ("exposure countdown %s", ctime (&t));
-      t += EXPOSURE_TIME;
-      printf ("readout at: %s", ctime (&t));
       if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
 	  devcli_command (camera, NULL, "expose 0 %i %i",
@@ -228,6 +226,9 @@ observe (int watch_status)
 	  perror ("expose wf2");
 	}
 #endif
+      printf ("exposure countdown ..%s", ctime (&t));
+      t += EXPOSURE_TIME;
+      printf ("readout at: %s", ctime (&t));
 
       i = generate_next (i, plan);
 
@@ -252,8 +253,6 @@ observe (int watch_status)
 #ifdef USE_WF2
       devcli_command (wf2, NULL, "readout 0");
 #endif
-
-      printf ("after readout\n");
 
       if (last->type == TARGET_LIGHT)
 	{
