@@ -62,16 +62,16 @@
 // dome status
 
 #define DOME_DOME_MASK		0x0f
-#define DOME_READY		0x00
 
-#define DOME_OPENED		0x00
-#define DOME_OPENING		0x01
-#define DOME_CLOSED		0x02
-#define DOME_CLOSING		0x03
+#define DOME_UNKNOW		0x00
+#define DOME_OFF		0x01
+#define DOME_STANDBY		0x02
+#define DOME_OBSERVING		0x04
 
 #define DOME_WEATHER_MASK	0x0f
 #define DOME_WEATHER_OK		0
 #define DOME_WEATHER_BAD	1
+#define DOME_WEATHER_UNKNOW	2
 
 #define SERVERD_DAY		0
 #define SERVERD_EVENING		1
@@ -126,6 +126,8 @@
 #define DEVICE_TYPE_CCD		3
 #define DEVICE_TYPE_DOME	4
 #define DEVICE_TYPE_WEATHER	5
+#define DEVICE_TYPE_ARCH	6
+#define DEVICE_TYPE_PHOT	7
 #define DEVIDE_TYPE_ARCH	6
 #define DEVICE_TYPE_PHOT	7
 
