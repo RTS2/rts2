@@ -13,8 +13,8 @@
 #include "devconn.h"
 #include <pthread.h>
 
-typedef int (*devcli_handle_response_t) (char *);
-typedef int (*devcli_handle_data_t) (int socket);
+typedef int (*devcli_handle_response_t) (char *response);
+typedef int (*devcli_handle_data_t) (int socket, size_t size);
 
 /*! 
  * Parameters for one communication channel.
