@@ -189,7 +189,7 @@ camd_handle_command (char *argv, size_t argc)
 	  expose.shutter = 0;
 	  if ((ret =
 	       devdem_thread_create (start_expose, (void *) &expose,
-				     sizeof (expose), NULL)) < 0)
+				     sizeof expose, NULL)) < 0)
 	    {
 	      devdem_write_command_end (DEVDEM_E_SYSTEM,
 					"while creating thread for execution: %s",
@@ -225,8 +225,7 @@ camd_handle_command (char *argv, size_t argc)
 
       if ((ret =
 	   devdem_thread_create (start_readout,
-				 (void *) &readout[chip],
-				 sizeof (readout[chip]),
+				 (void *) &readout[chip], 0,
 				 &readout[chip].thread_id)))
 	{
 	  devdem_write_command_end (DEVDEM_E_SYSTEM,
@@ -342,10 +341,27 @@ end:
 }
 
 int
+priority_command_handler (char *ret)
+{
+  printf ("returned: %s\n", ret);
+  fflush (stdout);
+  return 0;
+}
+
+int
+priority_message_handler (char *ret)
+{
+  printf ("message: %s\n", ret);
+  fflush (stdout);
+  return 0;
+}
+
+int
 main (void)
 {
   int i;
   char *stats[] = { "img_chip", "trc_chip" };
+  struct devcli_channel priority_server_channel;
   port = 2;
 #ifdef DEBUG
   mtrace ();
@@ -364,5 +380,30 @@ main (void)
       return devdem_run (PORT, camd_handle_command, stats, 2, sizeof (pid_t));
     }
 
-  return 0;
+  // register to server
+
+  priority_server_channel.command_handler = priority_command_handler;
+  priority_server_channel.message_handler = priority_message_handler;
+
+  priority_server_channel.data_handler = NULL;
+
+  /* connect to the server */
+  if (devcli_connect (&priority_server_channel, "localhost", 5557) < 0)
+    {
+      perror ("devcli_connect");
+      exit (EXIT_FAILURE);
+    }
+
+#define DEVCLI_WRITE_READ(command) if (devcli_command (&priority_server_channel, command) < 0) \
+  				{ \
+      		                  perror ("devcli_write_read"); \
+				  exit (EXIT_FAILURE); \
+				}
+
+  /* Send data to the server. */
+  /* Send data to the server. */
+  DEVCLI_WRITE_READ ("register camd");
+
+  /* wait to thread end.. */
+  pthread_join (priority_server_channel.read_thread, NULL);
 }
