@@ -1,0 +1,47 @@
+#include "target.h"
+#include <stdio.h>
+
+ConstTarget::ConstTarget (struct ln_equ_posn *in_pos)
+{
+  position = *in_pos;
+}
+
+int ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  printf ("getPos: %f %f\n", position.ra, position.dec);
+  *pos = position;
+  return 0;
+}
+
+EllTarget::EllTarget (struct ln_ell_orbit *in_orbit)
+{
+  orbit = *in_orbit;
+}
+
+int EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  if (orbit.e < 0.0)
+  {
+          struct ln_par_orbit par_orbit;
+          par_orbit.q = orbit.a;
+          par_orbit.i = orbit.i;
+          par_orbit.w = orbit.w;
+          par_orbit.omega = orbit.omega;
+          par_orbit.JD = orbit.JD;
+          ln_get_par_body_equ_coords (JD, &par_orbit, pos);
+          return 0;
+  }
+  ln_get_ell_body_equ_coords (JD, &orbit, pos);
+  return 0;
+}
+
+ParTarget::ParTarget (struct ln_par_orbit *in_orbit)
+{
+  orbit = *in_orbit;
+}
+
+int ParTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  ln_get_par_body_equ_coords (JD, &orbit, pos);
+  return 0;
+}
