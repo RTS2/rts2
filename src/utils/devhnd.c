@@ -300,6 +300,8 @@ phot_command_handler (struct param_status *params, struct phot_info *info)
 #endif
   if (!strcmp (params->param_argv, "count"))
     return param_next_integer (params, &info->count);
+  if (!strcmp (params->param_argv, "integration"))
+    return param_next_integer (params, &info->integration);
   if (!strcmp (params->param_argv, "filter"))
     return param_next_integer (params, &info->filter);
   errno = EINVAL;
