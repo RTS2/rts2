@@ -193,10 +193,11 @@ Rts2DevDome::changeMasterState (int new_state)
     }
   switch (new_state)
     {
-    case SERVERD_DUSK:
     case SERVERD_NIGHT:
-    case SERVERD_DAWN:
       return observing ();
+    case SERVERD_DUSK:
+    case SERVERD_DAWN:
+      return standby ();
     default:
       return off ();
     }
