@@ -3,8 +3,7 @@ AC_INIT(rts2, 0.2.2, petr@lascaux.asu.cas.cz)
 
 AM_INIT_AUTOMAKE(rts2, 0.2.2)
 
-AC_CONFIG_SRCDIR(src)
-AM_CONFIG_HEADER(config.h)
+AC_PREREQ(2.50)
 
 AM_MAINTAINER_MODE
 
@@ -26,6 +25,13 @@ AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio";
 LIBS="-lcfitsio $LIBS"; AC_SUBST(LIB_CFITSIO), [cat <<EOF
 **** You don't have cfitsio installed.
 **** Please grab it from http://????.gsfc.nasa.gov
+EOF
+exit 1])
+
+AC_CHECK_LIB([wcs], [wcs2pix], LIB_WCS="-lwcs"; 
+LIBS="-lwcs $LIBS"; AC_SUBST(LIB_WCS), [cat <<EOF
+**** You don't have libwcs installed.
+**** Please grab it from http://????
 EOF
 exit 1])
 
@@ -100,23 +106,31 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol])
 
+AC_CONFIG_SRCDIR(src)
+AM_CONFIG_HEADER(config.h)
+
 AC_OUTPUT([Makefile
 	   doc/Makefile
 	   doc/dia/Makefile
 	   src/Makefile
 	   src/camd/Makefile
 	   src/db/Makefile
+	   src/dome/Makefile
 	   src/grb/Makefile
 	   src/grb/bacodine/Makefile
 	   src/grb/ibas/Makefile
 	   src/imgd/Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
-	   src/plan/sql/create_tables.sql
-	   src/plan/pgsql/Makefile
+	   src/sql/create_functions.sql
+	   src/sql/create_tables.sql
+	   src/sql/create_views.sql
+	   src/pgsql/Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
 	   src/utils/Makefile
+	   src/utils/config.h
+           src/wcs/Makefile
 	   src/writers/Makefile])
 #                 doc/Makefile
 #                 doc/dia/Makefile
