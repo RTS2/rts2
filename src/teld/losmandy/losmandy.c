@@ -51,6 +51,8 @@
 #define DIR_WEST	'w'
 #define PORT_TIMEOUT	5
 
+#define TCM_DEFAULT_RATE	32768
+
 int port = -1;
 
 //! sempahore id structure, we have two semaphores...
@@ -180,7 +182,7 @@ int tel_gemini_reset (void);
  * @return -1 and set errno on failure, rcount otherwise
  */
 int
-tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
+tel_write_read_no_reset (char *wbuf, int wcount, char *rbuf, int rcount)
 {
   int tmp_rcount = -1;
   struct sembuf sem_buf;
@@ -223,11 +225,22 @@ unlock:
 	      "Losmandy:Cannot perform semop in tel_write_read:%m");
       return -1;
     }
-  if (tmp_rcount <= 0)
-    // restart gemini - booting
-    tel_gemini_reset ();
 
   return tmp_rcount;
+}
+
+int
+tel_write_read (char *buf, int wcount, char *rbuf, int rcount)
+{
+  size_t ret;
+  ret = tel_write_read_no_reset (buf, wcount, rbuf, rcount);
+  if (ret <= 0)
+    {
+      // try rebooting
+      tel_gemini_reset ();
+      ret = tel_write_read_no_reset (buf, wcount, rbuf, rcount);
+    }
+  return ret;
 }
 
 /*! 
@@ -1090,9 +1103,9 @@ err:
 extern int
 telescope_change (double ra, double dec)
 {
+#define GEM_RA_DIV  411		// value for Gemini RA div
   struct telescope_info info;
   int ret;
-  int32_t track;
   if (move_lock ())
     return -1;
   telescope_info (&info);
@@ -1116,17 +1129,15 @@ telescope_change (double ra, double dec)
 	  if (ra > 0)
 	    {
 	      // slew speed to 1 - 0.25 arcmin / sec
-	      tel_gemini_set (170, 20);
-	      telescope_start_move ('e');
+	      tel_gemini_set (GEM_RA_DIV, 20);
 	      usleep (((fabs (ra) * 60.0) / 5.0) * 1000000);
-	      telescope_stop_move ('e');
+	      tel_gemini_set (GEM_RA_DIV, TCM_DEFAULT_RATE);
 	    }
 	  else
 	    {
-	      tel_gemini_set (170, 20);
-	      telescope_start_move ('w');
+	      tel_gemini_set (GEM_RA_DIV, 65500);
 	      usleep (((fabs (ra) * 60.0) / 5.0) * 1000000);
-	      telescope_stop_move ('w');
+	      tel_gemini_set (GEM_RA_DIV, TCM_DEFAULT_RATE);
 	    }
 	}
       if (dec != 0)
