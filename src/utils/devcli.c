@@ -710,6 +710,7 @@ struct device *
 devcli_find (const char *device_name)
 {
   struct device *devices = info->devices;
+  devcli_server_command (NULL, "info");
   while (devices)
     {
       if (!strcmp (devices->name, device_name))

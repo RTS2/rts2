@@ -936,10 +936,13 @@ devdem_register (char *server_host, uint16_t server_port,
   strncpy (device_name, in_device_name, DEVICE_NAME_SIZE);
 
   /* connect to the server */
-  if (devcli_server_register
-      (server_host, server_port, device_name, device_type, device_host,
-       device_port, &handlers, server_status_notifier) < 0)
-    return -1;
+  while (devcli_server_register
+	 (server_host, server_port, device_name, device_type, device_host,
+	  device_port, &handlers, server_status_notifier) == -1)
+    {
+      syslog (LOG_INFO, "Cannot find central server");
+      sleep (20);
+    }
 
   devser_set_server_id (SERVER_CLIENT, server_handle_msg);
   return 0;
