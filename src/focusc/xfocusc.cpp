@@ -66,7 +66,7 @@ phot_handler (struct param_status *params, struct phot_info *info)
   {
     FILE *phot_log;
     char tc[30];
-    phot_log = fopen ("/root/phot_log", "a");
+    phot_log = fopen ("phot_log", "a");
     ctime_r (&t, tc);
     tc[strlen(tc) - 1] =0;
     ret = param_next_integer (params, &info->count);
@@ -444,7 +444,7 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center)
   gc = NULL;
   image = NULL;
   rgb[256];
-  exposure_time = 3.0;
+  exposure_time = 10.0;
 
   window =
     XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,

@@ -1,6 +1,6 @@
 # $Id$
 
-bin_PROGRAMS = rts2-focusc ${RTS2_XFOCUSC}
+bin_PROGRAMS = rts2-focusc rts2-xfocusc
 EXTRA_PROGRAMS = rts2-xfocusc
 
 rts2_xfocusc_SOURCES = xfocusc.cpp
