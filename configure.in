@@ -51,8 +51,14 @@ AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove m
 
 AC_OUTPUT([Makefile
            src/Makefile
+	   src/db/Makefile
+	   src/grb/Makefile
+	   src/grb/bacodine/Makefile
+	   src/grb/ibas/Makefile
+	   src/monitor/Makefile
 	   src/plan/Makefile
-	   src/grb/Makefile])
+	   src/utils/Makefile
+	   src/writers/Makefile])
 #                 doc/Makefile
 #                 doc/dia/Makefile
 #                 doc/doxygen/latex/Makefile
@@ -71,5 +77,3 @@ AC_OUTPUT([Makefile
 #                 src/serverd/Makefile
 #                 src/teld/Makefile
 #                 src/teld/lx200/Makefile
-#                 src/utils/Makefile
-#                 src/writers/Makefile])
