@@ -807,7 +807,6 @@ int
 telescope_start_move (char direction)
 {
   char command[6];
-  tel_set_rate (RATE_FIND);
   sprintf (command, "#:M%c#", direction);
   return tel_write (command, 5) == 1 ? -1 : 0;
 }
@@ -1091,27 +1090,27 @@ telescope_change (double ra, double dec)
   int ret;
   if (move_lock ())
     return -1;
+  telescope_info (&info);
+  if (abs (dec) < 87)
+    ra = ra / cos (ln_deg_to_rad (info.dec));
   // decide, if we make change, or move using move command
   if (abs (ra) > 5 && abs (dec) > 5)
     {
-      telescope_info (&info);
-      if (abs (dec) < 87)
-	ra = ra / cos (dec);
       ret = tel_move_to (info.ra + ra, info.dec + dec);
     }
   else
     {
       char direction;
       // center rate
-      tel_set_rate ('C');
-      // slew speed to 60 - 15 arcmin / sec
-      tel_gemini_set (170, 60);
+      tel_set_rate (RATE_CENTER);
+      // slew speed to 20 - 5 arcmin / sec
+      tel_gemini_set (170, 20);
       if (ra != 0)
 	{
 	  // first - RA direction
 	  direction = ra > 0 ? 'e' : 'w';
 	  telescope_start_move (direction);
-	  usleep (((ra / 15.0) / 60.0) * 1000);
+	  usleep (((fabs (ra) * 60.0) / 5.0) * 1000000);
 	  telescope_stop_move (direction);
 	}
       if (dec != 0)
@@ -1119,7 +1118,7 @@ telescope_change (double ra, double dec)
 	  // second - dec direction
 	  direction = dec > 0 ? 'n' : 's';
 	  telescope_start_move (direction);
-	  usleep (((dec / 15.0) / 60.0) * 1000);
+	  usleep (((fabs (dec) * 60.0) / 5.0) * 1000000);
 	  telescope_stop_move (direction);
 	}
     }
