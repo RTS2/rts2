@@ -442,6 +442,7 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
 			    float exposure)
 {
   XSetWindowAttributes xswa;
+  XTextProperty        window_title;
 
   gc = NULL;
   image = NULL;
@@ -451,12 +452,8 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
   window =
     XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,
 		   100, 0, depth, InputOutput, visual, 0, &xswa);
-//  window =
-//   XCreateWindow (display, root_window, 0, 0, 100,
-//                 100, 0, depth, InputOutput, visual, 0, &xswa);
 
   pixmap = XCreatePixmap (display, window, 1200, 1200, depth);
-
 
   gc = XCreateGC (display, pixmap, 0, &gcv);
 
@@ -492,6 +489,8 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
 
   devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			  DEVICE_PRIORITY, 0);
+  XStringListToTextProperty (&camera_name, 1, &window_title);
+  XSetWMName (display, window, &window_title);
 }
 
 
