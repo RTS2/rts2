@@ -227,11 +227,15 @@ camera_init (char *device_name, int camera_id)
 	  syslog (LOG_ERR, "semget %m");
 	  // exit (EXIT_FAILURE);
 	}
-      sem_un.array = sem_arr;
-      if (semctl (semid, 0, SETALL, sem_un) < 0)
+      else
+	// we don't create a new semaphore
 	{
-	  syslog (LOG_ERR, "semctl init: %m");
-	  // exit (EXIT_FAILURE);
+	  sem_un.array = sem_arr;
+	  if (semctl (semid, 0, SETALL, sem_un) < 0)
+	    {
+	      syslog (LOG_ERR, "semctl init: %m");
+	      // exit (EXIT_FAILURE);
+	    }
 	}
     }
   sem_lock ();
@@ -329,7 +333,8 @@ camera_info (struct camera_info *info)
   info->fan = gvr.fanEnabled;
   sem_unlock ();
   return 0;
-err:sem_unlock ();
+err:
+  sem_unlock ();
   return -1;
 }
 
@@ -349,7 +354,8 @@ camera_fan (int fan_state)
     goto err;
   sem_unlock ();
   return 0;
-err:sem_unlock ();
+err:
+  sem_unlock ();
   return -1;
 }
 
@@ -493,7 +499,7 @@ camera_dump_line (int chip_id)
   sem_unlock ();
   return 0;
 err:
-  sem_lock ();
+  sem_unlock ();
   return 0;
 };
 
