@@ -1103,6 +1103,8 @@ telescope_change (double ra, double dec)
     return -1;
 
   telescope_info (&info);
+  if (abs (dec) < 87)
+    ra = ra / cos (dec);
   ret = tel_move_to (info.ra + ra, info.dec + dec);
   move_unlock ();
   return ret;
