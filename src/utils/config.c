@@ -243,7 +243,7 @@ get_device_string_default (char *device, char *name, char *def)
 {
   char *val;
   if (get_device_string (device, name, &val) == -1)
-    return def;
+    return get_string_default (name, def);
   return val;
 }
 
@@ -264,6 +264,6 @@ get_device_double_default (char *device, char *name, double def)
 {
   double val;
   if (get_device_double (device, name, &val) == -1)
-    return def;
+    return get_double_default (name, def);
   return val;
 }
