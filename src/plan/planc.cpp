@@ -43,8 +43,7 @@
 #define COMMAND_FILTER		'F'
 #define COMMAND_PHOTOMETER      'P'
 #define COMMAND_MOVE		'M'
-
-static int precission_count = 0;
+#define COMMAND_WAIT            'W'
 
 struct thread_list
 {
@@ -56,18 +55,24 @@ struct ex_info
 {
   struct device *camera;
   Target *last;
+  int move_count;
 };
 
 pthread_mutex_t script_thread_count_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t script_thread_count_cond = PTHREAD_COND_INITIALIZER;
-int script_thread_count = 0;		// number of running scripts...
-
-pthread_mutex_t precission_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t precission_cond = PTHREAD_COND_INITIALIZER;
+static int script_thread_count = 0;	// number of running scripts...
 
 pthread_mutex_t exposure_count_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t exposure_count_cond = PTHREAD_COND_INITIALIZER;
-int exposure_count = 0;         // number of running scripts...
+static int exposure_count = 0;	// number of running exposures 
+
+pthread_mutex_t move_count_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t move_count_cond = PTHREAD_COND_INITIALIZER;
+static int move_count = 0;	// number of running exposures 
+
+pthread_mutex_t precission_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t precission_cond = PTHREAD_COND_INITIALIZER;
+static int precission_count = 0;
 
 struct device *telescope;
 
@@ -348,14 +353,17 @@ execute_camera_script (void *exinfo)
   char s_time[27];
   char obs_type_str[2];
   enum
-  { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS, INTEGRATION_PROGRESS } exp_state;
+  { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS,
+      INTEGRATION_PROGRESS } exp_state;
 
   switch (last->type)
     {
     case TARGET_LIGHT:
       obs_type_str[0] = last->obs_type;
       obs_type_str[1] = 0;
-      command = get_sub_device_string_default (camera->name, "script", obs_type_str, "E D");
+      command =
+	get_sub_device_string_default (camera->name, "script", obs_type_str,
+				       "E D");
       light = 1;
       ret = process_precission (last, camera);
       if (ret)
@@ -431,10 +439,12 @@ execute_camera_script (void *exinfo)
 				      CAM_MASK_READING, CAM_NOTREADING,
 				      MAX_READOUT_TIME);
 	    }
-          else if (exp_state == INTEGRATION_PROGRESS)
-            {
-              devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, 10000);
-            }
+	  else if (exp_state == INTEGRATION_PROGRESS)
+	    {
+	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+					  PHOT_MASK_INTEGRATE,
+					  PHOT_NOINTEGRATE, 10000);
+	    }
 	  exposure_increase ();
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
@@ -465,19 +475,44 @@ execute_camera_script (void *exinfo)
 	  if (ret)
 	    fprintf (stderr, "error executing 'filter %i'", filter);
 	  break;
-        case COMMAND_PHOTOMETER:
-          command++;
-          filter = strtol (command, &s, 10);
-          if (s == command || (!isspace (*s) && *s))
-          {
-              fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
-              command = s;
-              continue;
-          }
-          command = s;
-          devcli_command_all (DEVICE_TYPE_PHOT, "integrate 1 %i", filter);
-          exp_state = INTEGRATION_PROGRESS;
-          break;
+	case COMMAND_PHOTOMETER:
+	  command++;
+	  filter = strtol (command, &s, 10);
+	  if (s == command || (!isspace (*s) && *s))
+	    {
+	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+	      command = s;
+	      continue;
+	    }
+	  command = s;
+	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate 1 %i", filter);
+	  exp_state = INTEGRATION_PROGRESS;
+	  break;
+	case COMMAND_MOVE:
+	  // wait till exposure count reaches 0
+	  pthread_mutex_lock (&exposure_count_mutex);
+	  while (exposure_count > 0)
+	    {
+	      pthread_cond_wait (&exposure_count_cond, &exposure_count_mutex);
+	    }
+	  pthread_mutex_unlock (&exposure_count_mutex);
+	  // now there is no exposure running, do the move
+	  devcli_command (telescope, NULL, "change 10 10");
+	  // increase move count - unblock any COMMAND_WAIT
+	  pthread_mutex_lock (&move_count_mutex);
+	  move_count++;
+	  pthread_cond_broadcast (&move_count_cond);
+	  pthread_mutex_unlock (&move_count_mutex);
+	  break;
+	case COMMAND_WAIT:
+	  pthread_mutex_lock (&move_count_mutex);
+	  while (move_count == ((struct ex_info *) exinfo)->move_count)
+	    {
+	      pthread_cond_wait (&move_count_cond, &move_count_mutex);
+	    }
+	  ((struct ex_info *) exinfo)->move_count = move_count;
+	  pthread_mutex_unlock (&move_count_mutex);
+	  break;
 	default:
 	  if (!isspace (*command))
 	    fprintf (stderr,
@@ -505,12 +540,15 @@ execute_camera_script (void *exinfo)
 			      MAX_READOUT_TIME);
       break;
     case INTEGRATION_PROGRESS:
-      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, 10000);
+      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
+				  10000);
       dec_script_thread_count ();
       break;
     default:
       dec_script_thread_count ();
     }
+  free (exinfo);
   return NULL;
 }
 
@@ -525,6 +563,8 @@ observe (int watch_status)
   int light;
   struct thread_list thread_l;
   struct thread_list *tl_top;
+
+  int start_move_count;
 
   struct tm last_s;
 
@@ -637,6 +677,10 @@ observe (int watch_status)
       exposure_count = 0;
       pthread_mutex_unlock (&exposure_count_mutex);
 
+      pthread_mutex_lock (&move_count_mutex);
+      start_move_count = move_count;
+      pthread_mutex_unlock (&move_count_mutex);
+
       for (camera = devcli_devices (); camera; camera = camera->next)
 	if (camera->type == DEVICE_TYPE_CCD)
 	  {
@@ -649,6 +693,7 @@ observe (int watch_status)
 
 	    exinfo->camera = camera;
 	    exinfo->last = last;
+	    exinfo->move_count = start_move_count;
 
 	    // execute per camera script
 	    if (!pthread_create
@@ -671,7 +716,8 @@ observe (int watch_status)
       pthread_mutex_lock (&script_thread_count_mutex);
       while (script_thread_count > 0)
 	{
-	  pthread_cond_wait (&script_thread_count_cond, &script_thread_count_mutex);
+	  pthread_cond_wait (&script_thread_count_cond,
+			     &script_thread_count_mutex);
 	}
       pthread_mutex_unlock (&script_thread_count_mutex);
       move (last->next);

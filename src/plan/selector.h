@@ -1,18 +1,17 @@
-#ifndef __RTS_SELECTOR__
-#define __RTS_SELECTOR__
+#ifndef __RTS2_SELECTOR__
+#define __RTS2_SELECTOR__
 #include "target.h"
 #include <time.h>
-
-#define SELECTOR_AIRMASS	1
-#define SELECTOR_ALTITUDE	2
-#define SELECTOR_HETE		3
-#define SELECTOR_GPS		4
-#define SELECTOR_ELL            5	// prefer things with ell target
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+  typedef enum
+  { SELECTOR_AIRMASS, SELECTOR_ALTITUDE, SELECTOR_HETE,
+    SELECTOR_GPS, SELECTOR_ELL
+  } selector_t;
 
   extern int
     get_next_plan (Target * plan, int selector_type,
@@ -24,4 +23,4 @@ extern "C"
 };
 #endif
 
-#endif /* __RTS_SELECTOR__ */
+#endif /* __RTS2_SELECTOR__ */

@@ -129,7 +129,7 @@ select_next_alt (time_t c_start, Target *plan, float lon, float lat)
         type_id,
         obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt 
     FROM
-        targets
+        targets_enabled targets
     WHERE
         (tar_lastobs is NULL) OR
         tar_lastobs < abstime (:obs_start)
@@ -204,7 +204,7 @@ EXEC SQL DECLARE
                 tar_dec,
                 obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt
         FROM 
-                targets 
+                targets_enabled targets
         WHERE 
                 targets.type_id = :obs_type 
                 AND NOT EXISTS (SELECT * 
@@ -293,7 +293,7 @@ EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR SELECT
         obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS airmass,
         img_count 
 FROM
-        targets,
+        targets_enabled targets,
         targets_images 
 WHERE 
         targets.tar_id = targets_images.tar_id AND 
@@ -374,7 +374,7 @@ EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT
         tar_dec, 
         obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt 
 FROM 
-        targets, 
+        targets_enabled targets, 
         grb
 WHERE
         type_id = :obs_type AND 
@@ -467,7 +467,7 @@ EXEC SQL DECLARE obs_cursor_to CURSOR FOR SELECT
         ot_imgcount,
         EXTRACT (EPOCH FROM ot_minpause)
 FROM
-        targets,
+        targets_enabled targets,
         targets_images,
         ot
 WHERE
@@ -576,7 +576,7 @@ EXEC SQL DECLARE obs_cursor_ell CURSOR FOR SELECT
         ell_n,
         ell_JD 
 FROM 
-        targets,
+        targets_enabled targets,
         targets_images,
         ell 
 WHERE
