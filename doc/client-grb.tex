@@ -1,21 +1,21 @@
-\section{Distribuce zpráv o pozorování gama zábleskù}
+\subsection{Klient pro pozorování GRB}
 
-V¹echny pozorování gama zábleskù jsou posílány na \ref{gcn}, odkud
-jsou dále distribuovány. GCN umo¾òuje posílat zprávy na email, pager
-(zkrácená varianta emailu), nebo pøes vyhrazený TCP/IP socket.
+Tento klient se stará o rychlé pozorování GRB. Vìt¹inu èasu pouze èeká na
+pøijetí zprávy o GRB.
 
-Pokud pøijímáme data pøes socket, doba jejich pøíjmu závisí na stavu spojení z
-Ondøejova na poèítaè GCN. Vìt¹inou se pohybuje do 1 sekundy.
+Po pøijetí souøadnic záblesku ulo¾í jeho souøadnice do databáze cílù. Dále
+zjistí, zda je místo záblesku pozorovatelné pozorovatelné èi nikoliv.
 
-Pøíjem dat pøes email trvá o trochu déle, prùmìrný èas se pohybuje
-kolem 30 vteøin. Zdr¾ení je zpùsobeno zpracováním emailu na po¹tovních
-servrech.
+Pokud toto místo pozorovatelné není, pokraèuje v èekání na dal¹í GRB. Za
+provedení opo¾dìného pozorování GRB je zodpovìdný klient pro øízení
+dlouhodobého pozorování.
 
-Data pøijímaná pøes socket nejsou opakována. Pokud spojení nefunguje v dobì,
-kdy dojde ke gama záblesku, pøes socket se o nìj nedozvíme. Proto je vhodné
-zvá¾it mo¾nost pøíjmu dat pøes email jako zálohu socketového spojení - email
-dorazí, by» s èasovým zpo¾dìním, i pøi krátkodobém výpadku snímku.
+Pokud je GRB pozorovatelný, zmìní svoji prioritu na nastavenou úrovenì, poèká
+na potvrzení zmìny priority od montá¾e, zahájí pøesun montá¾e, poèká na
+potvrzení zmìny priority od kamery a zahájí na kameøe standartním postupem
+expozici. 
 
-Tì¾ko lze øíci, jak dlouho po gama záblesku má smysl danou oblast pozorovat.
-Lze uva¾ovat o jednom dnu.
-
+Po poøízení pøedem daného poètu snímkù sní¾í svoji prioritu na pùvodní úroveò
+a èeká na dal¹í zprávy o GRB. Znovu je vìcí plánovaèe pro dlouhodobá
+pozorování zajistit pozorování místa s GRB po del¹í dobì. Toto pozorování je
+nutné pro relativní fotometrii pohasínajícího OT.

@@ -117,7 +117,7 @@ dalekohled dosáhne nové pozice, pøípadnì kdy klient s~vy¹¹í prioritou zaène
 pou¾ívat na kameøe exekuèní funkce. Je ale tøeba dbát na to, aby se dalekohled
 v~prùbìhu expozice nepohyboval.
 
-Máme následující mo¾nosti, jak dlouho èekat:
+Nabízejí se následující mo¾nosti, jak dlouho èekat:
 
 \begin{enumerate}
 \item pøedem danou dobu
@@ -125,14 +125,13 @@ Máme následující mo¾nosti, jak dlouho èekat:
 \item poèkat na dokonèení probíhajícího bloku exekuèních funkcí
 \end{enumerate}
 
-První øe¹ení nepøiná¹í, hlavnì ve srovnání s~dal¹ími, ¾ádné výhody. V
-náhodných pøípadech se podaøí pozorovaní dokonèit, v ostatních pouze ztratíme
-èas.
+První øe¹ení nepøiná¹í ¾ádné výhody. V náhodných pøípadech se podaøí
+pozorovaní dokonèit, v ostatních pouze ztratíme èas.
 
-Druhý pøípad mù¾e také vést ke ztrátì èasu - napøíklad tím, expozice dobìhne,
-nezíská systém ¾ádný pou¾itelný výsledek, jeliko¾ naexponovaný snímek nebude
-vyèten - zabrání v~tom pøítomnost klientu s~vy¹¹í prioritu. Toto je znázornìno
-na diagramu \ref{fig:kill-waitexe}.
+Druhý pøípad mù¾e také vést ke ztrátì èasu - napøíklad tím, ¾e expozice
+dobìhne, nezíská systém ¾ádný pou¾itelný výsledek, jeliko¾ naexponovaný snímek
+nebude vyèten - zabrání v~tom pøítomnost klientu s~vy¹¹í prioritu. Toto je
+znázornìno na diagramu \ref{fig:kill-waitexe}.
 
 \dia{kill-waitexe}{Èekání do ukonèení aktuální expozice}
 
@@ -144,7 +143,11 @@ expozice.
 
 Pouze tøetí pøípad pøiná¹í u¾itek - se zmìnou priority se èeká tak dlouho,
 dokud není dokonèena èást pozorování, z~pøeru¹ovaného pozorování máme k
-dispozici výsledky, dalekohled bude optimálnì vyu¾it. 
+dispozici výsledky, dalekohled bude optimálnì vyu¾it.
+
+Za definování zaèátku a konce bloku je zodpovìdný klient. Definování blokù
+probíhá po zaøízeních, bloky se jednotlivých zaøízení systému nemusí
+schodovat.
 
 \dia{kill-waitblock}{Èekání do ukonèení aktuálního bloku}
 
@@ -152,18 +155,19 @@ dispozici výsledky, dalekohled bude optimálnì vyu¾it.
 
 \begin{itemize}
 
-\item Pou¾ijeme priorit. Komunikace mezi klienty a zaøízenímy obsahuje
+\item Pou¾ijeme priorit. Komunikace mezi klienty a zaøízeními obsahuje
 pøíkazy pro zahájní a ukonèení bloku.
 
-\item Priorita se mìní buïto okam¾itì (vhodné pro GRB), nebo s
-èekáním do ukonèení bloku (vhodné pro dlouhodobý plánovaè).
+\item Priorita se mìní buï okam¾itì (vhodné pro GRB), nebo s èekáním do
+ukonèení bloku (vhodné pro dlouhodobý plánovaè).
 
 \item ®ádost o prioritu je pøedávána na centrální server, který ji distribuuje
-zaøízením. Ty pak informují klienty o splnìní ¾ádosti. Bloky jsou pøedávány pøímo na zaøízení.
+zaøízením. Ty pak informují klienty o splnìní ¾ádosti. 
 
 \end{itemize}
 
-Øe¹ení problému dovyètení kamery a souèasného zahájení pøesunu na novou pozici lze pak øe¹it následovnì:
+Øe¹ení dovyètení kamery a souèasného zahájení pøesunu na novou pozici vypadá
+následovnì:
 
 \begin{itemize}
 
