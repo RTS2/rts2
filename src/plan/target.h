@@ -213,6 +213,17 @@ public:
 		      double jd);
 };
 
+class TargetFocusing:public ConstTarget
+{
+private:
+  virtual int get_script (struct device *camera, char *buf);
+public:
+    TargetFocusing (struct device *tel, struct ln_lnlat_posn *obs,
+		    struct ln_equ_posn *in_pos):ConstTarget (tel, obs, in_pos)
+  {
+  };
+};
+
 class EllTarget:public Target
 {
 private:

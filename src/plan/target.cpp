@@ -25,10 +25,10 @@ Target::move ()
     {
       printf ("homing..\n");
       if (devcli_command (telescope, NULL, "home"))
-        {
-          printf ("telescope error\n\n--------------------\n");
+	{
+	  printf ("telescope error\n\n--------------------\n");
 	  return -1;
-        }
+	}
       moved = 1;
     }
   else if ((type == TARGET_LIGHT || type == TARGET_FLAT) && moved == 0)
@@ -98,13 +98,13 @@ Target::get_info (struct device *cam,
     info->hi_precision = &closed_loop_precission;
   }
   else
-  {	
-    info->hi_precision = img_hi_precision;
-  }
+    {
+      info->hi_precision = img_hi_precision;
+    }
   if (info->hi_precision)
-  {
-    info->hi_precision->processed = 0;
-  }
+    {
+      info->hi_precision->processed = 0;
+    }
   devcli_image_info (cam, info);
   free (info);
   return ret;
@@ -167,10 +167,10 @@ Target::observe (Target * last_t)
 			  DEVICE_PRIORITY, 0);
   // wait for readouts..
   if (last_t)
-  {
-    last_t->wait_for_readout_end ();
-  }
-  
+    {
+      last_t->wait_for_readout_end ();
+    }
+
   move ();
 
   if (abs (start_time - t) > tolerance)
@@ -251,7 +251,8 @@ Target::observe (Target * last_t)
 	exinfo->move_count = start_move_count;
 
 	// execute per camera script
-	printf ("ex: %p %p %p %p\n", exinfo, exinfo->last, this, this->telescope);
+	printf ("ex: %p %p %p %p\n", exinfo, exinfo->last, this,
+		this->telescope);
 	if (!pthread_create (&tl_top->thread, NULL, runStart, exinfo))
 	  // increase exposure count list
 	  script_thread_count++;
@@ -307,7 +308,8 @@ Target::acquire ()
   if (hi_precision == 0 || hi_precision == 3)
     return 0;
 
-  camera = devcli_find (get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA));
+  camera =
+    devcli_find (get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA));
 
   if (!camera)
     return 0;
@@ -323,7 +325,7 @@ Target::acquire ()
 
   ra_margin = get_double_default ("ra_margin", ra_margin);
   dec_margin = get_double_default ("dec_margin", dec_margin);
-  ra_margin = ra_margin / 60.0; // margin is in minutes, we need degree!!
+  ra_margin = ra_margin / 60.0;	// margin is in minutes, we need degree!!
   dec_margin = dec_margin / 60.0;
 
   pthread_mutex_t ret_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -331,15 +333,15 @@ Target::acquire ()
   img_hi_precision.mutex = &ret_mutex;
   img_hi_precision.cond = &ret_cond;
   if (hi_precision == 3)
-  {
-    img_hi_precision.hi_precision = 1;
-  }
+    {
+      img_hi_precision.hi_precision = 1;
+    }
   else
-  {
-    img_hi_precision.hi_precision = hi_precision;
-  }
+    {
+      img_hi_precision.hi_precision = hi_precision;
+    }
 
-  if (bin > 1) // change binning
+  if (bin > 1)			// change binning
     {
       devcli_command (camera, NULL, "binning 0 %i %i", bin, bin);
     }
@@ -390,8 +392,8 @@ Target::acquire ()
 	  time (&now);
 	  timeout.tv_sec = now + 350;
 	  timeout.tv_nsec = 0;
-	  pthread_cond_timedwait (img_hi_precision.cond, img_hi_precision.mutex,
-				  &timeout);
+	  pthread_cond_timedwait (img_hi_precision.cond,
+				  img_hi_precision.mutex, &timeout);
 	  printf
 	    ("img_hi_precision->image_pos->ra: %f dec: %f img_hi_precision.hi_precision %i\n",
 	     img_hi_precision.image_pos.ra, img_hi_precision.image_pos.dec,
@@ -405,7 +407,8 @@ Target::acquire ()
 		{
 		case 1:
 		  ra_err =
-		    ln_range_degrees (object.ra - img_hi_precision.image_pos.ra);
+		    ln_range_degrees (object.ra -
+				      img_hi_precision.image_pos.ra);
 		  dec_err =
 		    ln_range_degrees (object.dec -
 				      img_hi_precision.image_pos.dec);
@@ -478,7 +481,7 @@ Target::postprocess ()
 void *
 Target::runStart (void *thisp)
 {
-  struct ex_info *exinfo = (struct ex_info*) thisp;
+  struct ex_info *exinfo = (struct ex_info *) thisp;
   printf ("ex: %p %p %p\n", exinfo, exinfo->last, exinfo->last->telescope);
   exinfo->last->runScript (exinfo);
 }
@@ -872,3 +875,10 @@ Target::runScript (struct ex_info *exinfo)
   return 0;
 }
 
+int
+TargetFocusing::get_script (struct device *camera, char *buf)
+{
+  buf[0] = COMMAND_FOCUSING;
+  buf[1] = 0;
+  return 0;
+}
