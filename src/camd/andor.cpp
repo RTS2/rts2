@@ -146,6 +146,7 @@ Rts2DevCamera (argc, argv)
 
 Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
 {
+  ShutDown ();
 }
 
 int
@@ -174,6 +175,9 @@ Rts2DevCameraAndor::init ()
   //Get Detector dimensions
   GetDetector(&width, &height);
 
+  //Initialize Shutter
+  SetShutter(1,0,50,50);
+
   chipNum = 1;
   
   cc =
@@ -193,11 +197,14 @@ Rts2DevCameraAndor::camReady ()
 int
 Rts2DevCameraAndor::camInfo ()
 {
-  tempAir = 10;
-  tempSet = -10;
+  int c_status;
+  int iTemp;
+  c_status = GetTemperature (&iTemp);
+  tempCCD = (int) iTemp;
+  tempAir = nan ("f");
+  tempSet = nan ("f");
   coolingPower = (int) (50 * 1000);
-  tempCCD = -15;
-  tempRegulation = 1;
+  tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
   return 0;
 }
 
@@ -254,7 +261,7 @@ Rts2DevCameraAndor::camBox (int chip, int x, int y, int width, int height)
 int
 Rts2DevCameraAndor::camBinning (int chip, int x_bin, int y_bin)
 {
-  return 0;
+  return -1;
 }
 
 int
@@ -272,19 +279,24 @@ Rts2DevCameraAndor::camCoolMax ()
 int
 Rts2DevCameraAndor::camCoolHold ()
 {
-  return -1;
+  CoolerON ();
+  SetTemperature (-10);
+  return 0;
 }
 
 int
 Rts2DevCameraAndor::camCoolTemp (float new_temp)
 {
-  return -1;
+  CoolerON();
+  SetTemperature ((int) new_temp);
+  return 0;
 }
 
 int
 Rts2DevCameraAndor::camCoolShutdown ()
 {
-  return -1;
+  CoolerOFF ();
+  return 0;
 }
 
 int
