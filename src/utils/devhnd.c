@@ -206,6 +206,8 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
     return param_next_string_copy (params, info->type, 64);
   if (!strcmp (params->param_argv, "serial"))
     return param_next_string_copy (params, info->serial_number, 64);
+  if (!strcmp (params->param_argv, "exposure"))
+    return param_next_float (params, &info->exposure);
   if (!strcmp (params->param_argv, "chips"))
     {
       int new_chips;
@@ -233,6 +235,8 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
     return param_next_integer (params, &info->cooling_power);
   if (!strcmp (params->param_argv, "fan"))
     return param_next_integer (params, &info->fan);
+  if (!strcmp (params->param_argv, "filter"))
+    return param_next_integer (params, &info->filter);
   if (!strcmp (params->param_argv, "chip"))
     {
       int chip_n;
@@ -276,6 +280,12 @@ dome_command_handler (struct param_status *params, struct dome_info *info)
     return param_next_float (params, &info->temperature);
   if (!strcmp (params->param_argv, "humidity"))
     return param_next_float (params, &info->humidity);
+  if (!strcmp (params->param_argv, "power_telescope"))
+    return param_next_integer (params, &info->power_telescope);
+  if (!strcmp (params->param_argv, "power_cameras"))
+    return param_next_integer (params, &info->power_cameras);
+  if (!strcmp (params->param_argv, "dome"))
+    return param_next_integer (params, &info->dome);
   errno = EINVAL;
   return -1;
 };
