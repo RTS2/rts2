@@ -18,7 +18,7 @@ AC_LANG_CPLUSPLUS
 AC_PROG_LIBTOOL
 
 AC_ARG_ENABLE(focusing,
-[  --disable-focusing    Disables focusing in camd (=>camd doesn't need cfitsio to build)],
+[  --disable-focusing      disables focusing in camd (=>camd doesn't need cfitsio to build)],
 [case "${enableval}" in
 	yes) focusing=yes ;;
 	no)  focusing=no ;;
@@ -28,7 +28,7 @@ esac],[focusing=yes])
 AM_CONDITIONAL(FOCUSING, test x$focusing = xyes)
 
 AC_ARG_ENABLE(mirror,
-[  --disable-mirror    Disables mirror code in camd (=>camd is a bit smaller)],
+[  --disable-mirror        disables mirror code in camd (=>camd is a bit smaller)],
 [case "${enableval}" in
 	yes) mirror=yes ;;
 	no)  mirror=no ;;
@@ -38,7 +38,7 @@ esac],[mirror=yes])
 AM_CONDITIONAL(MIRROR, test x$mirror = xyes)
 
 AC_ARG_WITH(x-focusc,
-[  --without-x-focusc    Disables xfocusc)],
+[  --without-x-focusc      disables xfocusc],
 [case "${withval}" in
 	yes) xfocusc=yes ;;
 	no)  xfocusc=no ;;
@@ -48,7 +48,7 @@ esac],[xfocusc=yes])
 AM_CONDITIONAL(XFOCUSC, test x$xfocusc = xyes)
 
 AC_ARG_WITH(pgsql,
-[  --without-pgsql     Don't build pgsql dependent clients   )],
+[  --without-pgsql         don't build pgsql dependent clients],
 [case "${withval}" in
 	yes) psql=yes ;;
 	no)  psql=no ;;
@@ -56,14 +56,46 @@ AC_ARG_WITH(pgsql,
 esac],[psql=yes])
 
 AC_ARG_WITH(libnova,
-[  --without-libnova     Don't build libnova dependent programs   )],
+[  --without-libnova       don't build libnova dependent programs],
 [case "${withval}" in
 	yes) libnova=yes ;;
 	no)  libnova=no ;;
-	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
+	*) AC_MSG_ERROR(bad value ${withval} for --without-libnova) ;;
 esac],[libnova=yes])
 
 AM_CONDITIONAL(LIBNOVA, test x$libnova = xyes)
+
+AC_ARG_WITH(wcs,
+[  --without-wcs           don't build WCS dependent programs],
+[case "${withval}" in
+	yes) wcs=yes ;;
+	no)  wcs=no ;;
+	*) AC_MSG_ERROR(bad value ${withval} for --without-wcs) ;;
+esac],[wcs=yes])
+
+AC_ARG_WITH(sbig,
+[  --with-sbig             path to SBIG USB CCD driver, build SBIG USB CCD driver],
+SBIG="${withval}";
+LIB_SBIG="-L${SBIG} -lsbigudrv $SBIG/csbigcam.o $SBIG/csbigimg.o";
+INC_SBIG="-I${SBIG}",
+[SBIG=no])
+
+AM_CONDITIONAL(SBIG, test x$SBIG != xno)
+AC_SUBST(SBIG)
+AC_SUBST(LIB_SBIG)
+AC_SUBST(INC_SBIG)
+
+AC_ARG_WITH(andor,
+[  --with-andor            path to Andor CCD driver, build Andor CCD driver],
+ANDOR="${withval}";
+LIB_ANDOR="-L${ANDOR} -landor-shared-gcc3";
+INC_ANDOR="-I${ANDOR}",
+[ANDOR=no])
+
+AM_CONDITIONAL(ANDOR, test x$ANDOR != xno)
+AC_SUBST(ANDOR)
+AC_SUBST(LIB_ANDOR)
+AC_SUBST(INC_ANDOR)
 
 # Checks for libraries.
 
@@ -82,8 +114,9 @@ AC_SUBST(LIB_CFITSIO), [cat <<EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([wcs], [wcs2pix], LIB_WCS="-lwcs"; 
-AC_SUBST(LIB_WCS), [cat <<EOF
+if test "x${wcs}" = "xyes"; then
+	AC_CHECK_LIB([wcs], [wcs2pix], LIB_WCS="-lwcs"; 
+	AC_SUBST(LIB_WCS), [cat <<EOF
 **** You don't have libwcs installed.
 **** You can download one from
 **** http://tdc-www.harvard.edu/software/wcstools/.
@@ -91,7 +124,9 @@ AC_SUBST(LIB_WCS), [cat <<EOF
 **** that library. You have to put headers and lib* files from
 **** libwcs directory somewhere, where I can acces them
 EOF
-exit 1])
+	exit 1])
+	AC_SUBST([WCS_SUBDIRS], ['writers planc grbc focusc'])
+fi
 
 AC_CHECK_LIB([ncurses], [mvwprintw], LIB_NCURSES="-lncurses";
 AC_SUBST(LIB_NCURSES), [cat << EOF
@@ -230,7 +265,7 @@ AC_OUTPUT([Makefile
 	   src/camd/Makefile
 	   src/camd/miniccd/Makefile
 	   src/camd/sbigusb/Makefile
-	   src/camd/urvc/Makefile
+	   src/camd/urvc2/Makefile
 	   src/db/Makefile
 	   src/dome/Makefile
 	   src/focusc/Makefile
@@ -265,6 +300,10 @@ echo "
   xfocusc       ${xfocusc}
   psql		${psql}
   libnova	${libnova}
+
+CCD's:
+  sbig		${SBIG}
+  andor         ${ANDOR}
 
 ***************************************
 
