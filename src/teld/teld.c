@@ -33,8 +33,6 @@
 	 return ret;\
 }
 
-struct devcli_channel server_channel;
-
 struct radec
 {
   double ra;
@@ -48,22 +46,22 @@ client_move_cancel (void *arg)
   // TODO find directions to stop slew, try if it works
   // tel_stop_slew ("R");
   // tel_stop_slew ("D");
-  devser_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
+  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
 }
 
 void *
 start_move (void *arg)
 {
   int ret;
-  devser_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+  devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 		      "moving of telescope started");
   if ((ret = tel_move_to (RADEC->ra, RADEC->dec)) < 0)
     {
-      devser_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
     }
   else
     {
-      devser_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move finished");
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move finished");
     }
   return NULL;
 }
@@ -196,12 +194,19 @@ exit_handler (int err, void *args)
 int
 main (void)
 {
+  struct devcli_channel server_channel;
   char *stats[] = { "telescope" };
 #ifdef DEBUG
   mtrace ();
 #endif
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+  if (devdem_init (stats, 1))
+    {
+      syslog (LOG_ERR, "devdem_init: %m");
+      exit (EXIT_FAILURE);
+    }
 
   if (devdem_register (&server_channel, "teld", "localhost", 5557) < 0)
     {
@@ -217,5 +222,5 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
-  return devser_run (PORT, teld_handle_command, stats, 1, 0);
+  return devdem_run (PORT, teld_handle_command);
 }
