@@ -509,8 +509,9 @@ main (int argc, char **argv)
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n");
 	  printf ("Keys:\n"
 		  "\t1,2,3 .. binning 1x1, 2x2, 3x3\n"
-		  "\tw,s   .. increase/decrease exposure 0.1 sec"
-		  "\te,d   .. increase/decrease exposure 1 sec"
+		  "\tq,a   .. increase/decrease exposure 0.01 sec\n"
+		  "\tw,s   .. increase/decrease exposure 0.1 sec\n"
+		  "\te,d   .. increase/decrease exposure 1 sec\n"
 		  "\tf     .. full frame exposure\n"
 		  "\tc     .. center (256x256) exposure\n");
 	  exit (EXIT_SUCCESS);
