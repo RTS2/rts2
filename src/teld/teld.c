@@ -33,11 +33,23 @@
 	 return ret;\
 }
 
+struct devcli_channel server_channel;
+
 struct radec
 {
   double ra;
   double dec;
 };
+
+#define RADEC 	((struct radec *) arg)
+void
+client_move_cancel (void *arg)
+{
+  // TODO find directions to stop slew, try if it works
+  // tel_stop_slew ("R");
+  // tel_stop_slew ("D");
+  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
+}
 
 void *
 start_move (void *arg)
@@ -45,9 +57,7 @@ start_move (void *arg)
   int ret;
   devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 		      "moving of telescope started");
-  if ((ret =
-       tel_move_to (((struct radec *) arg)->ra,
-		    ((struct radec *) arg)->dec)) < 0)
+  if ((ret = tel_move_to (RADEC->ra, RADEC->dec)) < 0)
     {
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
     }
@@ -58,6 +68,7 @@ start_move (void *arg)
   return NULL;
 }
 
+#undef RADEC
 
 /*! 
  * Handle teld command.
@@ -86,7 +97,10 @@ teld_handle_command (char *command)
 	return -1;
       if (devdem_param_next_hmsdec (&dec))
 	return -1;
+      if (devdem_priority_block_start ())
+	return -1;
       tel_call (tel_set_to (ra, dec));
+      devdem_priority_block_end ();
     }
   else if (strcmp (command, "move") == 0)
     {
@@ -97,8 +111,12 @@ teld_handle_command (char *command)
 	return -1;
       if (devdem_param_next_hmsdec (&(coord.dec)))
 	return -1;
-      devdem_thread_create (start_move, (void *) &coord, sizeof coord, NULL);
-      ret = 0;
+      if (devdem_priority_block_start ())
+	return -1;
+      devdem_thread_create (start_move, (void *) &coord, sizeof coord, NULL,
+			    client_move_cancel);
+      devdem_priority_block_end ();
+      return 0;
     }
   else if (strcmp (command, "ra") == 0)
     {
@@ -112,7 +130,10 @@ teld_handle_command (char *command)
     }
   else if (strcmp (command, "park") == 0)
     {
+      if (devdem_priority_block_start ())
+	return -1;
       tel_call (tel_park ());
+      devdem_priority_block_end ();
     }
 // extended functions
   else if (strcmp (command, "lon") == 0)
@@ -181,6 +202,12 @@ main (void)
 #endif
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+  if (devdem_register (&server_channel, "teld", "localhost", 5557) < 0)
+    {
+      perror ("devdem_register");
+      exit (EXIT_FAILURE);
+    }
 
   on_exit (exit_handler, NULL);
 
