@@ -10,6 +10,7 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
+#include <libnova.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,12 +25,11 @@
 
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
+#include "../utils/mkpath.h"
 #include "../writers/fits.h"
-#include "../status.h"
+#include "status.h"
 #include "selector.h"
-#include "db.h"
-
-int file = 0;
+#include "../db/db.h"
 
 int camd_id, teld_id;
 
@@ -38,20 +38,34 @@ int camd_id, teld_id;
 /*!
  * Handle camera data connection.
  *
- * @params socket 	socket fd.
+ * @params sock 	socket fd.
  *
  * @return	0 on success, -1 and set errno on error.
  */
 int
-data_handler (int sock, size_t size, struct telescope_info *telescope,
-	      struct camera_info *camera, double exposure, time_t * exp_start)
+data_handler (int sock, size_t size, struct image_info *image)
 {
   struct fits_receiver_data receiver;
+  struct tm gmt;
   char data[DATA_BLOCK_SIZE];
   int ret = 0;
   ssize_t s;
-  char *filename;
-  asprintf (&filename, "!test%04i.fits", file++);
+  char filename[250];
+  char *dirname;
+
+  gmtime_r (&image->exposure_time, &gmt);
+
+  if (asprintf (&dirname, "~/%i", image->target_id))
+    {
+      perror ("planc data_handler asprintf");
+      return -1;
+    }
+
+  mkpath (dirname, 0777);
+  free (dirname);
+
+  strftime (filename, 250, "!120/%Y%m%d%H%M%S.fits", &gmt);
+
   printf ("filename: %s", filename);
 
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
@@ -59,7 +73,6 @@ data_handler (int sock, size_t size, struct telescope_info *telescope,
       perror ("camc data_handler fits_init");
       return -1;
     }
-  free (filename);
 
   printf ("reading data socket: %i size: %i\n", sock, size);
 
@@ -78,11 +91,9 @@ data_handler (int sock, size_t size, struct telescope_info *telescope,
 
   printf ("reading finished\n");
 
-  if (fits_write_telescope (&receiver, telescope)
-      || fits_write_camera (&receiver, camera, exposure, exp_start)
-      || fits_close (&receiver))
+  if (fits_write_image_info (&receiver, image) || fits_close (&receiver))
     {
-      perror ("camc data_handler fits_init");
+      perror ("camc data_handler fits_write");
       return -1;
     }
 
@@ -96,7 +107,7 @@ expose (int npic)
   devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
   for (; npic > 0; npic--)
     {
-      union devhnd_info *info;
+      struct image_info *info;
       time_t t;
 
       printf ("exposure countdown %i..\n", npic);
@@ -105,16 +116,19 @@ expose (int npic)
 	  devcli_command (camd_id, NULL, "expose 0 120"))
 	return -1;
       t = time (NULL);
+      info = (struct image_info *) malloc (sizeof (struct image_info));
       if (devcli_command (camd_id, NULL, "info") ||
-	  devcli_getinfo (camd_id, &info) ||
-	  devcli_set_readout_camera (camd_id, &info->camera, 120.0, &t) ||
+	  devcli_getinfo (camd_id, &info->camera) ||
 	  devcli_command (teld_id, NULL, "info") ||
-	  devcli_getinfo (teld_id, &info) ||
-	  devcli_set_readout_telescope (camd_id, &info->telescope) ||
+	  devcli_getinfo (teld_id, &info->telescope) ||
 	  devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
 				  CAM_NOEXPOSURE, 0)
-	  || devcli_command (camd_id, NULL, "readout 0"))
-	return -1;
+	  || devcli_image_info (camd_id, info) ||
+	  devcli_command (camd_id, NULL, "readout 0"))
+	{
+	  free (info);
+	  return -1;
+	}
     }
   return 0;
 }
@@ -186,7 +200,7 @@ main (int argc, char **argv)
 
   if (devcli_connectdev (&camd_id, "camd", &data_handler) < 0)
     {
-      perror ("devcli_connectdev");
+      perror ("devcli_connectdev camd");
       exit (EXIT_FAILURE);
     }
 
@@ -227,7 +241,8 @@ main (int argc, char **argv)
 
       if (last->ctime < t)
 	{
-	  printf ("ctime %s < t %s\n", ctime (&last->ctime), ctime (&t));
+	  printf ("ctime %li (%s)", last->ctime, ctime (&last->ctime));
+	  printf (" < t %li (%s)", t, ctime (&t));
 	  continue;
 	}
 
@@ -240,6 +255,18 @@ main (int argc, char **argv)
 
       printf ("waiting end\n");
 
+      {
+	struct ln_equ_posn object;
+	struct ln_lnlat_posn observer;
+	struct ln_hrz_posn hrz;
+	object.ra = last->ra;
+	object.dec = last->dec;
+	observer.lat = 50;
+	observer.lng = -15;
+	get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
+	printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
+	printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
+      }
       if (devcli_command (teld_id, NULL, "move %f %f", last->ra, last->dec))
 	{
 	  printf ("telescope error\n\n--------------\n");
