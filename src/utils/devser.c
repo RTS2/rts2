@@ -1162,8 +1162,8 @@ msg_receive_thread (void *arg)
 	{
 	  syslog (LOG_ERR, "devser msg_receive: %m %i %i %i", errno, msg_size,
 		  server_id);
-	  // if (errno == EIDRM)
-	  return NULL;
+	  if (errno == EIDRM)
+	    return NULL;
 	}
       else if (msg_size != MSG_SIZE)
 	syslog (LOG_ERR, "invalid message size: %i", msg_size);
@@ -1190,6 +1190,24 @@ msg_receive_thread (void *arg)
 		      msg_buf.mtext);
 	    }
 	}
+    }
+}
+
+/*!
+ * Clear message que.
+ *
+ * Designed to be called on exit of given client
+ */
+
+void
+devser_message_clear ()
+{
+  struct devser_msg msg_buf;
+  while (msgrcv
+	 (msg_id, &msg_buf, MSG_SIZE, server_id + IPC_MSG_SHIFT,
+	  IPC_NOWAIT) != -1)
+    {
+      syslog (LOG_DEBUG, "message readout: %s", msg_buf.mtext);
     }
 }
 
@@ -1284,9 +1302,7 @@ read_from_client ()
   FD_ZERO (&read_set);
   if (control_fd < 0)
     {
-#ifdef DEBUG
-      printf ("control_fd: %i\n", control_fd);
-#endif /* DEBUG */
+      syslog (LOG_DEBUG, "control_fd: %i\n", control_fd);
       return -1;
     }
   FD_SET (control_fd, &read_set);

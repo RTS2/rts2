@@ -35,6 +35,7 @@ get_device (struct device **devices, const char *device_name)
   dev->name[0] = 0;
   dev->statutes = NULL;
   dev->priority = 0;
+  dev->response_handler = NULL;
   pthread_mutex_init (&dev->status_lock, NULL);
   pthread_cond_init (&dev->status_cond, NULL);
   pthread_mutex_init (&dev->priority_lock, NULL);
@@ -146,8 +147,9 @@ serverd_command_handler (struct param_status *params,
 	return -1;
 
       cli = get_client (&info->clients, id);
-      if (param_next_integer (params, &cli->active) ||
-	  param_next_integer (params, &cli->priority)
+      if (param_next_char (params, &cli->active) ||
+	  param_next_integer (params, &cli->priority) ||
+	  param_next_char (params, &cli->have_priority)
 	  || param_next_string_copy (params, cli->login, CLIENT_LOGIN_SIZE))
 	return -1;
 
@@ -202,11 +204,17 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
     return param_next_string_copy (params, info->serial_number, 64);
   if (!strcmp (params->param_argv, "chips"))
     {
-      if (param_next_integer (params, &info->chips))
+      int new_chips;
+      if (param_next_integer (params, &new_chips))
 	return -1;
-      free (info->chip_info);
-      info->chip_info =
-	(struct chip_info *) malloc (info->chips * sizeof (struct chip_info));
+      if (info->chips != new_chips)
+	{
+	  free (info->chip_info);
+	  info->chip_info =
+	    (struct chip_info *) malloc (new_chips *
+					 sizeof (struct chip_info));
+	  info->chips = new_chips;
+	}
       return 0;
     }
   if (!strcmp (params->param_argv, "temperature_regulation"))

@@ -741,7 +741,9 @@ server_message_priority (struct param_status *params)
 	  // no current priority client => priority_client == -1
 	  // we would like to stop some client only if some is
 	  // running
-	  if (clients_info->priority_client != -1)
+	  if (clients_info->priority_client > -1
+	      && clients_info->clients[clients_info->priority_client].
+	      authorized)
 	    {
 	      // send stop signal to request thread stopping
 	      // on given device
@@ -754,7 +756,8 @@ server_message_priority (struct param_status *params)
 		   "priority_lost %li", timeout))
 		return -1;
 	    }
-	  if (new_priority_client != -1)
+	  if (new_priority_client != -1
+	      && clients_info->clients[new_priority_client].authorized)
 	    {
 	      if (devser_2devser_message
 		  (new_priority_client, "priority_receive"))
@@ -954,6 +957,7 @@ devdem_done (void)
 int
 devdem_run (uint16_t port, devser_handle_command_t in_handler)
 {
+  int ret;
   cmd_device_handler = in_handler;
 
   // attach shared memory with status
@@ -971,10 +975,21 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
       return -1;
     }
 
-  if (devser_run (port, client_handle_commands) == -2)
+  ret = devser_run (port, client_handle_commands);
+
+
+  if (ret == -2)
     {
       devdem_done ();
       return -2;
     }
+
+  if (client_id >= 0)
+    {
+      syslog (LOG_DEBUG, "autorized->null %i", client_id);
+      clients_info->clients[client_id].authorized = 0;
+      devser_message_clear ();
+    }
+
   return 0;
 }

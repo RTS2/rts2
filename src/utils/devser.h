@@ -44,6 +44,7 @@ int devser_thread_cancel_all (void);
 int devser_thread_wait (void);
 
 int devser_message (const char *format, ...);
+void devser_message_clear ();
 
 void *devser_shm_data_at ();
 void devser_shm_data_lock ();
