@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+
 #include "../utils/config.h"
 #include "../utils/devcli.h"
 #include "../utils/mkpath.h"
