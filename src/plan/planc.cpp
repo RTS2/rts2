@@ -93,21 +93,25 @@ phot_handler (struct param_status *params, struct phot_info *info)
   time (&t);
   int ret;
   if (!strcmp (params->param_argv, "filter"))
-    return param_next_integer (params, &info->filter);	  
+    return param_next_integer (params, &info->filter);
   if (!strcmp (params->param_argv, "count"))
-  {
-    FILE *phot_log;
-    char tc[30];
-    phot_log = fopen ("phot_log", "a");
-    ctime_r (&t, tc);
-    tc[strlen(tc) - 1] =0;
-    ret = param_next_integer (params, &info->count);
-    if (telescope)
-      fprintf (phot_log, "%05i %s %f %f %i %i %i\n", phot_target_id, tc, telescope->info.telescope.ra, telescope->info.telescope.dec, info->filter, info->count, telescope->statutes[0].status);
-      printf ("%05i %s %f %f %i %i %i\n", phot_target_id, tc, telescope->info.telescope.ra, telescope->info.telescope.dec, info->filter, info->count, telescope->statutes[0].status);
+    {
+      FILE *phot_log;
+      char tc[30];
+      phot_log = fopen ("phot_log", "a");
+      ctime_r (&t, tc);
+      tc[strlen (tc) - 1] = 0;
+      ret = param_next_integer (params, &info->count);
+      if (telescope)
+	fprintf (phot_log, "%05i %s %f %f %i %i %i\n", phot_target_id, tc,
+		 telescope->info.telescope.ra, telescope->info.telescope.dec,
+		 info->filter, info->count, telescope->statutes[0].status);
+      printf ("%05i %s %f %f %i %i %i\n", phot_target_id, tc,
+	      telescope->info.telescope.ra, telescope->info.telescope.dec,
+	      info->filter, info->count, telescope->statutes[0].status);
       fflush (stdout);
-    fclose (phot_log);
-  }
+      fclose (phot_log);
+    }
   return ret;
 }
 
@@ -224,7 +228,8 @@ process_precission (Target * tar, struct device *camera)
 	{
 	  printf ("waiting for hi_precision (camera %s)\n", camera->name);
 	  fflush (stdout);
-	  pthread_cond_timedwait (&precission_cond, &precission_mutex, &timeout);
+	  pthread_cond_timedwait (&precission_cond, &precission_mutex,
+				  &timeout);
 	}
       pthread_mutex_unlock (&precission_mutex);
     }
@@ -239,7 +244,7 @@ process_precission (Target * tar, struct device *camera)
       dec_margin = get_double_default ("dec_margin", dec_margin);
       ra_margin = ra_margin / 60.0;
       dec_margin = dec_margin / 60.0;
-      
+
       hi_precision_t hi_precision;
 
       pthread_mutex_t ret_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -249,18 +254,18 @@ process_precission (Target * tar, struct device *camera)
       hi_precision.hi_precision = tar->hi_precision;
 
       if (bin > 1)
-      {
-        devcli_command (camera, NULL, "binning 0 %i %i", bin);
-      }
+	{
+	  devcli_command (camera, NULL, "binning 0 %i %i", bin, bin);
+	}
 
       while (tries < max_tries)
 	{
 	  int light = 1;
 	  struct ln_equ_posn object;
-	  if (((struct camera_info*) (&(camera->info)))->can_df)
-	  {
-	    light = (precission_count % 10 == 0) ? 0 : 1;
-	  }
+	  if (((struct camera_info *) (&(camera->info)))->can_df)
+	    {
+	      light = (precission_count % 10 == 0) ? 0 : 1;
+	    }
 	  if (!light)
 	    tar->type = TARGET_DARK;
 	  else
@@ -269,7 +274,8 @@ process_precission (Target * tar, struct device *camera)
 	  printf
 	    ("triing to get to %f %f, %i try, %s image, %i total precission, can_df: %i\n",
 	     object.ra, object.dec, tries, (light == 1) ? "light" : "dark",
-	     precission_count, ((struct camera_info*) (&(camera->info)))->can_df);
+	     precission_count,
+	     ((struct camera_info *) (&(camera->info)))->can_df);
 
 	  precission_count++;
 
@@ -300,26 +306,30 @@ process_precission (Target * tar, struct device *camera)
 	      timeout.tv_nsec = 0;
 	      pthread_cond_timedwait (hi_precision.cond, hi_precision.mutex,
 				      &timeout);
-	      printf ("hi_precision->image_pos->ra: %f dec: %f hi_precision.hi_precision %i\n",
-		      hi_precision.image_pos.ra, hi_precision.image_pos.dec,
-		      hi_precision.hi_precision);
+	      printf
+		("hi_precision->image_pos->ra: %f dec: %f hi_precision.hi_precision %i\n",
+		 hi_precision.image_pos.ra, hi_precision.image_pos.dec,
+		 hi_precision.hi_precision);
 	      pthread_mutex_unlock (hi_precision.mutex);
 	      fflush (stdout);
 	      if (!isnan (hi_precision.image_pos.ra)
-		  && !isnan (hi_precision.image_pos.dec)) 
+		  && !isnan (hi_precision.image_pos.dec))
 		{
 		  switch (hi_precision.hi_precision)
-		  {
-	            case 1:
-    		      ra_err =
-  		        ln_range_degrees (object.ra - hi_precision.image_pos.ra);
+		    {
+		    case 1:
+		      ra_err =
+			ln_range_degrees (object.ra -
+					  hi_precision.image_pos.ra);
 		      dec_err =
-		        ln_range_degrees (object.dec -
-				      hi_precision.image_pos.dec);
+			ln_range_degrees (object.dec -
+					  hi_precision.image_pos.dec);
+		      break;
 		    case 2:
-    		      ra_err = fabs (hi_precision.image_pos.ra);
-		      dec_err = fabs (hi_precision.image_pos.dec);
-		  }
+		      ra_err = (fabs (hi_precision.image_pos.ra)) / 60.0;
+		      dec_err = (fabs (hi_precision.image_pos.dec)) / 60.0;
+		      break;
+		    }
 		}
 	      else
 		{
@@ -344,9 +354,9 @@ process_precission (Target * tar, struct device *camera)
 	    }
 	}
       if (bin > 1)
-      {
-        devcli_command (camera, NULL, "binning 0 1 1");
-      }
+	{
+	  devcli_command (camera, NULL, "binning 0 1 1");
+	}
       pthread_mutex_lock (&precission_mutex);
       tar->hi_precision = (tries < max_tries) ? 0 : -1;
       pthread_cond_broadcast (&precission_cond);
@@ -386,7 +396,8 @@ execute_camera_script (void *exinfo)
   time_t now;
   enum
   { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS,
-      INTEGRATION_PROGRESS } exp_state;
+    INTEGRATION_PROGRESS
+  } exp_state;
 
   switch (last->type)
     {
@@ -427,7 +438,7 @@ execute_camera_script (void *exinfo)
   while (*command)
     {
       if ((exp_state == EXPOSURE_BEGIN || exp_state == INTEGRATION_PROGRESS)
-          && *command && !isspace (*command))
+	  && *command && !isspace (*command))
 	{
 	  // wait till exposure end..
 	  devcli_command (telescope, NULL, "base_info;info");
@@ -435,19 +446,19 @@ execute_camera_script (void *exinfo)
 	  get_info (last, telescope, camera, exposure, NULL);
 
 	  if (exp_state == EXPOSURE_BEGIN)
-	  {
-	     devcli_wait_for_status (camera, "img_chip",
-				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  (int) (1.1 * exposure + 10));
-	     exp_state = EXPOSURE_PROGRESS;
-	  }
+	    {
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				      (int) (1.1 * exposure + 10));
+	      exp_state = EXPOSURE_PROGRESS;
+	    }
 	  if (exp_state == INTEGRATION_PROGRESS)
-	  {
-             devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+	    {
+	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
 					  PHOT_NOINTEGRATE, 10000);
-	     exp_state = NO_EXPOSURE;
-	  }
+	      exp_state = NO_EXPOSURE;
+	    }
 	}
       switch (*command)
 	{
@@ -562,7 +573,8 @@ execute_camera_script (void *exinfo)
 	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 				  TEL_OBSERVING, 0);
 	  devcli_command_all (DEVICE_TYPE_PHOT, "filter %i", filter);
-	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate %f %i", exposure, count);
+	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate %f %i", exposure,
+			      count);
 	  exp_state = INTEGRATION_PROGRESS;
 	  break;
 	case COMMAND_CHANGE:
@@ -570,28 +582,29 @@ execute_camera_script (void *exinfo)
 	  command++;
 	  s = command;
 	  while (*command && !isspace (*command))
-	  {
-             command++;
-	  }
+	    {
+	      command++;
+	    }
 	  arg1 = (char *) malloc (command - s + 1);
 	  strncpy (arg1, s, command - s + 1);
 	  s = command;
 	  while (*command && !isspace (*command))
-	  {
-		  command ++;
-	  }
-	  arg2 = (char*) malloc (command - s + 1);
+	    {
+	      command++;
+	    }
+	  arg2 = (char *) malloc (command - s + 1);
 	  strncpy (arg2, s, command - s + 1);
-	 
+
 	  // wait till exposure count reaches 0 - no other thread do
 	  // the exposure..
 	  time (&now);
 	  timeout.tv_sec = now + 1000;
 	  timeout.tv_nsec = 0;
 	  pthread_mutex_lock (&script_thread_count_mutex);
-	  while (running_script_count > 1) // cause we will hold running_script_count lock in any case..
+	  while (running_script_count > 1)	// cause we will hold running_script_count lock in any case..
 	    {
-	      pthread_cond_timedwait (&script_thread_count_cond, &script_thread_count_mutex, &timeout);
+	      pthread_cond_timedwait (&script_thread_count_cond,
+				      &script_thread_count_mutex, &timeout);
 	    }
 	  pthread_mutex_unlock (&script_thread_count_mutex);
 
@@ -599,12 +612,12 @@ execute_camera_script (void *exinfo)
 	  // because there is forced readout before every command,
 	  // just in case we integrate, let's finish
 	  if (exp_state == INTEGRATION_PROGRESS)
-	  {
+	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
-				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-				  10000);
-	  }
-	  
+					  PHOT_MASK_INTEGRATE,
+					  PHOT_NOINTEGRATE, 10000);
+	    }
+
 	  // now there is no exposure running, do the move
 	  devcli_command (telescope, NULL, "change %s %s", arg1, arg2);
 	  free (arg2);
@@ -621,18 +634,18 @@ execute_camera_script (void *exinfo)
 
 	  // if we integrate, wait for integration end..
 	  if (exp_state == INTEGRATION_PROGRESS)
-	  {
+	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
-				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-				  10000);
-	  }
+					  PHOT_MASK_INTEGRATE,
+					  PHOT_NOINTEGRATE, 10000);
+	    }
 
 	  // inform, that we entered wait..
 	  pthread_mutex_lock (&script_thread_count_mutex);
 	  running_script_count--;
 	  pthread_cond_broadcast (&script_thread_count_cond);
 	  pthread_mutex_unlock (&script_thread_count_mutex);
-	
+
 	  time (&now);
 	  timeout.tv_sec = now + 1000;
 	  timeout.tv_nsec = 0;
@@ -644,7 +657,8 @@ execute_camera_script (void *exinfo)
 	  pthread_mutex_lock (&move_count_mutex);
 	  while (move_count == ((struct ex_info *) exinfo)->move_count)
 	    {
-	      pthread_cond_timedwait (&move_count_cond, &move_count_mutex, &timeout);
+	      pthread_cond_timedwait (&move_count_cond, &move_count_mutex,
+				      &timeout);
 	    }
 	  // we moved in that thread..
 	  ((struct ex_info *) exinfo)->move_count = move_count;
@@ -1055,10 +1069,11 @@ loop:
 
   for (phot = devcli_devices (); phot; phot = phot->next)
     if (phot->type == DEVICE_TYPE_PHOT)
-    {
-       printf ("setting handler: %s\n", phot->name);
-       devcli_set_command_handler (phot, (devcli_handle_response_t) phot_handler);
-    }
+      {
+	printf ("setting handler: %s\n", phot->name);
+	devcli_set_command_handler (phot,
+				    (devcli_handle_response_t) phot_handler);
+      }
 
   observe (watch_status);
   printf ("done\n");

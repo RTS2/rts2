@@ -472,6 +472,8 @@ WHERE
         targets.tar_id = targets_images.tar_id AND
         type_id = :obs_type AND
         obj_alt (tar_ra, tar_dec, :st, :db_lon, :db_lat) > 10
+        AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+           obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) >:d_az_start)
 ORDER BY
         ot_priority DESC,
         img_count ASC,
@@ -479,9 +481,6 @@ ORDER BY
         ot_imgcount DESC
 ;
   EXEC SQL OPEN obs_cursor_to;
-//    10 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
-//	    obj_az (tar_ra, tar_dec,:st,:db_lon,
-//		    :db_lat) >:d_az_start) ORDER BY ot_priority DESC,
   test_sql;
   while (1)
     {
