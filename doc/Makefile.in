@@ -1,0 +1,20 @@
+all: dia diplomka.pdf article_spain.pdf
+
+%.pdf: %.dvi
+	dvipdf $<
+	$(RM) $<
+
+%.dvi: %.tex 
+	cslatex $<
+	makeindex $<
+	cslatex $<
+
+dia:	
+	$(MAKE) -C dia
+
+clean:
+	$(RM) *.aux *.idx *.dvi *.pdf *~ *.log *.ind *.ilg
+	$(MAKE) -C dia clean
+
+vlna:
+	vlna *.tex
