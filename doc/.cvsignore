@@ -6,6 +6,7 @@
 *.ps
 *.asc
 Makefile
+Makefile.in
 diplomka.ilg
 diplomka.ind
 diplomka.lof
