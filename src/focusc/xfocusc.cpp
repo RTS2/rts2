@@ -299,7 +299,7 @@ public:
 	    gmtime_r (&image_info->exposure_tv.tv_sec, &gmt);
 	    asprintf (&filename, "%s/%s%04i%02i%02i%02i%02i%02i-%03i.fits",
 		      image_info->camera_name, (image_info->target_type == TARGET_DARK ? "d" : ""),
-		      gmt.tm_year + 1900, gmt.tm_mon,
+		      gmt.tm_year + 1900, gmt.tm_mon + 1,
 		      gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec, (int) (image_info->exposure_tv.tv_usec / 1000));
 	    strcpy (filen, filename);
 	    printf ("filename: %s\n", filename);

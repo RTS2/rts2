@@ -73,9 +73,9 @@ data_handler (int sock, size_t size, struct image_info *image)
 
   if (date_exposure)
     asprintf (&filename, "%04i%02i%02i%02i%02i%02i-%03i.fits",
-	      exp_start.tm_year, exp_start.tm_mon, exp_start.tm_mday,
-	      exp_start.tm_hour, exp_start.tm_min, exp_start.tm_sec,
-	      (int) (image->exposure_tv.tv_usec / 1000));
+	      exp_start.tm_year + 1900, exp_start.tm_mon + 1,
+	      exp_start.tm_mday, exp_start.tm_hour, exp_start.tm_min,
+	      exp_start.tm_sec, (int) (image->exposure_tv.tv_usec / 1000));
   else if (increase_exposure)
     asprintf (&filename, "tmp%i_%04i.fits", parent_pid, increase_exposure++);
   else
