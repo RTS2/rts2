@@ -28,10 +28,13 @@ EOT;
 		$res = '';
 		$sign = 1;
 		for ($i = 0; $i < $len && (($c = $s[$i]) <= '9' && $c >= '0') || $c == '+' || $c == '-' || $c == '.'; $i++)
+		{
+			if ($c == '-')
+				$sign = -1;
 			$res .= $c;
+		}
 		if ($i == $len)
 			return floatval($res);
-		$sign = $res < 0 ? -1 : 1;
 		$res = abs ($res);
 		$out = $mul * $res;
 		$mul = $mul / 60.0;
