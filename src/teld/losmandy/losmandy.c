@@ -106,12 +106,12 @@ tel_read (char *buf, int count)
 	}
       if (ret < 0)
 	{
-	  syslog (LOG_DEBUG, "LX200: port read error %m");
+	  syslog (LOG_DEBUG, "Losmandy: port read error %m");
 	  errno = EIO;
 	  return -1;
 	}
 #ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "LX200: readed '%c'", buf[readed]);
+      syslog (LOG_DEBUG, "Losmandy: readed '%c'", buf[readed]);
 #endif
     }
   return readed;
@@ -139,7 +139,7 @@ tel_read_hash (char *buf, int count)
     }
   if (buf[readed] == '#')
     buf[readed] = 0;
-  syslog (LOG_DEBUG, "LX200:Hash-readed:'%s'", buf);
+  syslog (LOG_DEBUG, "Losmandy:Hash-readed:'%s'", buf);
   return readed;
 }
 
@@ -157,7 +157,7 @@ int
 tel_write (char *buf, int count)
 {
   int ret;
-  syslog (LOG_DEBUG, "LX200:will write:'%s'", buf);
+  syslog (LOG_DEBUG, "Losmandy:will write:'%s'", buf);
   ret = write (port, buf, count);
   tcflush (port, TCIFLUSH);
   return ret;
@@ -202,12 +202,12 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
-      syslog (LOG_DEBUG, "LX200:readed %i %s", tmp_rcount, buf);
+      syslog (LOG_DEBUG, "Losmandy:readed %i %s", tmp_rcount, buf);
       free (buf);
     }
   else
     {
-      syslog (LOG_DEBUG, "LX200:readed returns %i", tmp_rcount);
+      syslog (LOG_DEBUG, "Losmandy:readed returns %i", tmp_rcount);
     }
 
 unlock:
@@ -216,7 +216,8 @@ unlock:
 
   if (semop (semid, &sem_buf, 1) < 0)
     {
-      syslog (LOG_EMERG, "LX200:Cannot perform semop in tel_write_read:%m");
+      syslog (LOG_EMERG,
+	      "Losmandy:Cannot perform semop in tel_write_read:%m");
       return -1;
     }
 
@@ -254,7 +255,7 @@ unlock:
   if (semop (semid, &sem_buf, 1) < 0)
     {
       syslog (LOG_EMERG,
-	      "LX200:Cannot perform semop in tel_write_read_hash:%m");
+	      "Losmandy:Cannot perform semop in tel_write_read_hash:%m");
       return -1;
     }
 
@@ -425,7 +426,7 @@ tel_read_ra (double *raptr)
 }
 
 /*!
- * Reads LX200 declination.
+ * Reads losmandy declination.
  * 
  * @param decptr	where dec will be stored
  * 
@@ -438,7 +439,7 @@ tel_read_dec (double *decptr)
 }
 
 /*! 
- * Returns LX200 local time.
+ * Returns losmandy local time.
  * 
  * @param tptr		where time will be stored
  * 
@@ -451,7 +452,7 @@ tel_read_localtime (double *tptr)
 }
 
 /*! 
- * Returns LX200 sidereal time.
+ * Returns losmandy sidereal time.
  * 
  * @param tptr		where time will be stored
  * 
@@ -465,7 +466,7 @@ tel_read_siderealtime (double *tptr)
 }
 
 /*! 
- * Reads LX200 latitude.
+ * Reads losmandy latitude.
  * 
  * @param latptr	here latitude will be stored  
  * 
@@ -478,7 +479,7 @@ tel_read_latitude (double *tptr)
 }
 
 /*! 
- * Reads LX200 longtitude.
+ * Reads losmandy longtitude.
  * 
  * @param latptr	where longtitude will be stored  
  * 
@@ -491,7 +492,7 @@ tel_read_longtitude (double *tptr)
 }
 
 /*! 
- * Repeat LX200 write.
+ * Repeat losmandy write.
  * 
  * Handy for setting ra and dec.
  * Meade tends to have problems with that.
@@ -510,12 +511,12 @@ tel_rep_write (char *command)
       if (retstr == '1')
 	break;
       sleep (1);
-      syslog (LOG_DEBUG, "LX200:tel_rep_write - for %i time.", count);
+      syslog (LOG_DEBUG, "Losmandy:tel_rep_write - for %i time.", count);
     }
   if (count == 200)
     {
       syslog (LOG_ERR,
-	      "LX200:tel_rep_write unsucessful due to incorrect return.");
+	      "Losmandy:tel_rep_write unsucessful due to incorrect return.");
       errno = EIO;
       return -1;
     }
@@ -545,7 +546,7 @@ tel_normalize (double *ra, double *dec)
 }
 
 /*! 
- * Set LX200 right ascenation.
+ * Set losmandy right ascenation.
  *
  * @param ra		right ascenation to set in decimal degrees
  *
@@ -569,7 +570,7 @@ tel_write_ra (double ra)
 }
 
 /*! 
- * Set LX200 declination.
+ * Set losmandy declination.
  *
  * @param dec		declination to set in decimal degrees
  * 
@@ -594,7 +595,7 @@ tel_write_dec (double dec)
  * Init telescope, connect on given port.
  * 
  * @param device_name		pointer to device name
- * @param telescope_id		id of telescope, for LX200 ignored
+ * @param telescope_id		id of telescope, for losmandy ignored
  * 
  * @return 0 on succes, -1 & set errno otherwise
  */
@@ -639,7 +640,7 @@ telescope_init (const char *device_name, int telescope_id)
 	((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
       tel_termios.c_lflag = 0;
       tel_termios.c_cc[VMIN] = 0;
-      tel_termios.c_cc[VTIME] = 5;
+      tel_termios.c_cc[VTIME] = 15;
 
       if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
 	{
@@ -650,7 +651,7 @@ telescope_init (const char *device_name, int telescope_id)
       tel_gemini_reset ();
     }
 
-  syslog (LOG_DEBUG, "LX200:Initialization complete");
+  syslog (LOG_DEBUG, "Losmandy:Initialization complete");
 
   // 12/24 hours trick..
   if (tel_write_read ("#:Gc#", 5, rbuf, 5) < 0)
@@ -825,7 +826,7 @@ telescope_stop_move (char direction)
 }
 
 /*! 
- * Slew (=set) LX200 to new coordinates.
+ * Slew (=set) losmandy to new coordinates.
  *
  * @param ra 		new right ascenation
  * @param dec 		new declination
@@ -865,6 +866,36 @@ tel_is_still (void)
   return !!(status & 8);
 }
 
+int
+move_lock ()
+{
+  struct sembuf sem_buf;
+
+  sem_buf.sem_num = SEM_MOVE;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = SEM_UNDO;
+
+  if (semop (semid, &sem_buf, 1) == -1)
+    return -1;
+  return 0;
+
+}
+
+int
+move_unlock ()
+{
+  struct sembuf sem_buf;
+
+  sem_buf.sem_num = SEM_MOVE;
+  sem_buf.sem_op = 1;
+  sem_buf.sem_flg = SEM_UNDO;
+
+  if (semop (semid, &sem_buf, 1) == -1)
+    return -1;
+  return 0;
+}
+
+
 /*! 
  * Move telescope to new location, wait for completition, then send
  * message.
@@ -881,23 +912,11 @@ tel_move_to (double ra, double dec)
 {
   int timeout;
   int ret, track;
-  struct sembuf sem_buf;
 
-  sem_buf.sem_num = SEM_MOVE;
-  sem_buf.sem_op = -1;
-  sem_buf.sem_flg = SEM_UNDO;
-
-  syslog (LOG_INFO, "LX200:tel move_to ra:%f dec:%f", ra, dec);
-
-  if (semop (semid, &sem_buf, 1) == -1)
-    return -1;
-
-  sem_buf.sem_op = 1;
+  syslog (LOG_INFO, "Losmandy:tel move_to ra:%f dec:%f", ra, dec);
 
   if ((ret = tel_slew_to (ra, dec)) < 0)
-    {
-      goto unlock;
-    }
+    return -1;
   timeout = time (NULL) + 100;	// it's quite reasonably to hope that call will not fail
   while ((time (NULL) <= timeout) && (tel_is_still ()))
     sleep (2);
@@ -907,13 +926,8 @@ tel_move_to (double ra, double dec)
 
   if (time (NULL) > timeout)
     {
-      syslog (LOG_ERR, "LX200:Timeout during moving to ra:%f dec:%f.", ra, dec);	// mayby will be handy to add call to tel_get_ra+dec
+      syslog (LOG_ERR, "Losmandy:Timeout during moving to ra:%f dec:%f.", ra, dec);	// mayby will be handy to add call to tel_get_ra+dec
       // to obtain current ra and dec
-      if (semop (semid, &sem_buf, 1) == -1)
-	{
-	  syslog (LOG_EMERG, "LX200:Cannot perform semop in tel_move_to:%m");
-	  return -1;
-	}
       errno = ETIMEDOUT;
       return -1;
     }
@@ -929,15 +943,9 @@ tel_move_to (double ra, double dec)
   // newer gets to precise position, it just get to something about 
   // that, so we could program checkcoords to check for precise position.  
   // Also good to wait till the things settle down.
-unlock:
 
-  if (semop (semid, &sem_buf, 1) < 0)
-    {
-      syslog (LOG_EMERG, "LX200:Cannot perform semop in tel_move_to:%m");
-      return -1;
-    }
 
-  syslog (LOG_DEBUG, "LX200:tel_move_to ra:%f dec:%f returns %i", ra, dec,
+  syslog (LOG_DEBUG, "Losmandy:tel_move_to ra:%f dec:%f returns %i", ra, dec,
 	  ret);
   return ret;
 }
@@ -945,7 +953,7 @@ unlock:
 /*! 
  * Repeat move_to 5 times, with a bit changed location.
  *
- * Used to overcome LX200 error.
+ * Used to overcome losmandy error.
  *
  * @see tel_move_to
  */
@@ -953,24 +961,35 @@ int
 telescope_move_to (double ra, double dec)
 {
   int i;
+  int ret;
+
+  if (move_lock ())
+    return -1;
+
   for (i = 0; i < 2; i++)
     if (!tel_move_to (ra, dec))
       {
-	return 0;		// we finished move without error
+	ret = 0;		// we finished move without error
+	goto unlock;
       }
     else
       {
 	if (errno != ETIMEDOUT)
 	  {
-	    return -1;		// some error occured
+	    ret = -1;		// some error occured
+	    goto unlock;
 	  }
 	// when we have ETIMEDOUT, let's try again.
 	ra = ra + i * 0.05;	// magic value, most often helps
       }
   // when we got so far, something realy wrong must happen
-  syslog (LOG_EMERG, "LX200:Too much timeouts during moving to ra:%f dec:%f",
-	  ra, dec);
-  return -1;
+  syslog (LOG_EMERG,
+	  "Losmandy:Too much timeouts during moving to ra:%f dec:%f", ra,
+	  dec);
+unlock:
+  if (move_unlock ())
+    syslog (LOG_ERR, "while unlocking move_lock : %m");
+  return ret;
 }
 
 /*!
@@ -1010,7 +1029,7 @@ telescope_set_to (double ra, double dec)
   sem_buf.sem_op = -1;
   sem_buf.sem_flg = SEM_UNDO;
 
-  syslog (LOG_INFO, "LX200:tel set_to ra:%f dec:%f", ra, dec);
+  syslog (LOG_INFO, "Losmandy:tel set_to ra:%f dec:%f", ra, dec);
 
   if (semop (semid, &sem_buf, 1) == -1)
     return -1;
@@ -1052,7 +1071,7 @@ telescope_correct (double ra, double dec)
   if (semop (semid, &sem_buf, 1) == -1)
     return -1;
 
-  syslog (LOG_INFO, "LX200:tel corect_to ra:%f dec:%f", ra, dec);
+  syslog (LOG_INFO, "Losmandy:tel corect_to ra:%f dec:%f", ra, dec);
 
   sem_buf.sem_op = 1;
 
@@ -1072,6 +1091,21 @@ err:
   if (semop (semid, &sem_buf, 1))
     syslog (LOG_ERR, "+1 op with %i failed", sem_buf.sem_num);
   return -1;
+}
+
+extern int
+telescope_change (double ra, double dec)
+{
+  struct telescope_info info;
+  int ret;
+
+  if (move_lock ())
+    return -1;
+
+  telescope_info (&info);
+  ret = tel_move_to (info.ra + ra, info.dec + dec);
+  move_unlock ();
+  return ret;
 }
 
 /*!

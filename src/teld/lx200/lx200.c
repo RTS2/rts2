@@ -936,6 +936,12 @@ err:
   return -1;
 }
 
+extern int
+telescope_change (double ra, double dec)
+{
+  return -1;
+}
+
 /*!
  * Stop telescope slewing at any direction
  *

@@ -66,6 +66,7 @@ client_move_cancel (void *arg)
   devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "move canceled");
 }
 
+
 void *
 start_move (void *arg)
 {
@@ -77,6 +78,29 @@ start_move (void *arg)
   else
     {
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "move finished");
+    }
+  return NULL;
+}
+
+void
+client_change_cancel (void *arg)
+{
+  telescope_stop ();
+  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "change canceled");
+}
+
+void *
+start_change (void *arg)
+{
+  int ret;
+  if ((ret = telescope_change (RADEC->ra, RADEC->dec)) < 0)
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING, "with error");
+    }
+  else
+    {
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
+			  "change finished");
     }
   return NULL;
 }
@@ -170,16 +194,11 @@ teld_handle_command (char *command)
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
-      tel_call (telescope_info (&info));
-      syslog (LOG_INFO, "coor: %f %f info: %f %f", coord.ra, coord.dec,
-	      info.ra, info.dec);
-      coord.ra += info.ra;
-      coord.dec += info.dec;
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 			  "changing of telescope position started");
       if ((ret =
-	   devser_thread_create (start_move, (void *) &coord, sizeof coord,
-				 NULL, client_move_cancel)) < 0)
+	   devser_thread_create (start_change, (void *) &coord, sizeof coord,
+				 NULL, client_change_cancel)) < 0)
 	{
 	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
 			      "cannot create thread");

@@ -618,6 +618,12 @@ telescope_correct (double ra, double dec)
 }
 
 extern int
+telescope_change (double ra, double dec)
+{
+  return 0;
+}
+
+extern int
 telescope_stop ()
 {
 
