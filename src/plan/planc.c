@@ -37,7 +37,7 @@
 #include "../db/db.h"
 #include "../writers/process_image.h"
 
-#define EXPOSURE_TIME		180
+#define EXPOSURE_TIME		30
 
 struct device *telescope;
 
@@ -167,7 +167,7 @@ observe (int watch_status)
     {
       time_t t = time (NULL);
       struct timeval tv;
-      struct device *camera = devcli_find ("C0");
+      struct device *camera = devcli_find ("C1");
       fd_set rdfs;
 
       FD_ZERO (&rdfs);
@@ -226,7 +226,7 @@ observe (int watch_status)
 	    t = camera->statutes[0].last_update;
 	  else
 	    time (&t);
-	  db_end_observation (obs_id, &camera->statutes[0].last_update);
+	  db_end_observation (obs_id, &t);
 	  obs_id = -1;
 	}
 
