@@ -268,6 +268,7 @@ serverd_riseset_thread (void *arg)
 
       next_event (&curr_time, &shm_info->next_event_type,
 		  &shm_info->next_event_time);
+
       if (shm_info->current_state < SERVERD_MAINTANCE)
 	{
 	  shm_info->current_state = (shm_info->next_event_type + 3) % 4;
@@ -278,8 +279,8 @@ serverd_riseset_thread (void *arg)
       devser_shm_data_unlock ();
 
       syslog (LOG_DEBUG, "riseset thread sleeping %li seconds",
-	      shm_info->next_event_time - curr_time);
-      sleep (shm_info->next_event_time - curr_time);
+	      shm_info->next_event_time - curr_time + 1);
+      sleep (shm_info->next_event_time - curr_time + 1);
     }
 }
 
