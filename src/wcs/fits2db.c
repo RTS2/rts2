@@ -27,6 +27,7 @@ main (int argc, char **argv)
   char img_filter[11];
   long naxis[2];
   char **ctype;
+  long crpix[2];
   double crval[2];
   double cdelt[2];
   double crota[2];
@@ -64,6 +65,7 @@ main (int argc, char **argv)
   ctype[1] = (char *) malloc (9);
   read_strings ("CTYPE", 1, 2, ctype);
   read_doubles ("CRVAL", 1, 2, crval);
+  read_longs ("CRPIX", 1, 2, crpix);
   read_doubles ("CDELT", 1, 2, cdelt);
   read_doubles ("CROTA", 1, 2, crota);
   read_double ("EQUINOX", &eqin);
@@ -73,12 +75,12 @@ main (int argc, char **argv)
   read_string ("TEL_NAME", mount_name);
   printf ("INSERT INTO images"
 	  "(img_id, img_date, img_exposure, img_temperature, img_filter, astrometry, "
-	  "obs_id, camera_name, mount_name, med_id, epoch_id) VALUES (nextval ('obs_id'), "
-	  "%ld, %.0f, %.0f, '%s', 'NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
+	  "obs_id, camera_name, mount_name, med_id, epoch_id) VALUES (nextval ('img_id'), "
+	  "%ld, %.0f, %.0f, '%s', 'NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %ld CRPIX2 %ld "
 	  "CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f', %ld, '%s', '%s',"
 	  "0, '00T');\n", img_date, img_temperature * 10, img_exposure * 100,
-	  img_filter, naxis[0], naxis[1], ctype[0], ctype[1], crval[0],
-	  crval[1], crval[0], crval[1], cdelt[0], cdelt[1],
+	  img_filter, naxis[0], naxis[1], ctype[0], ctype[1], crpix[0],
+	  crpix[1], crval[0], crval[1], cdelt[0], cdelt[1],
 	  (crota[0] + crota[1]) / 2.0, eqin, epoch, obs_id, camera_name,
 	  mount_name);
 err:
