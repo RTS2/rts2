@@ -17,6 +17,18 @@ CREATE TABLE grb (
 	grb_last_update	timestamp
 ) INHERITS (targets);
 
+DROP SEQUENCE darks_id;
+
+CREATE SEQUENCE darks_id;
+
+DROP TABLE darks;
+
+CREATE TABLE darks (
+	dark_name	varchar(250) NOT NULL,
+	dark_date	timestamp,
+	dark_exposure	integer,
+	dark_temperature integer
+);
 
 DROP SEQUENCE tar_id;
 
