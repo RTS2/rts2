@@ -379,7 +379,7 @@ Target::acquire ()
       devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 			      tel_target_state, 120);
 
-      devcli_command (camera, NULL, "base_info", light, exposure);
+      devcli_command (camera, NULL, "base_info");
       devcli_command (camera, NULL, "expose 0 %i %f", light, exposure);
       devcli_command (telescope, NULL, "base_info");
       devcli_command (telescope, NULL, "info");
@@ -609,7 +609,7 @@ Target::runScript (struct ex_info *exinfo)
 	    }
 	  devcli_wait_for_status (telescope, "telescope",
 				  TEL_MASK_MOVING, tel_target_state, 300);
-	  devcli_command (camera, &ret, "base_info", light, exposure);
+	  devcli_command (camera, &ret, "base_info");
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
 	    {
