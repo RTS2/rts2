@@ -145,6 +145,18 @@ Dokumenty k projektu (idee, navrhy, ..) v cestine. Nejlepe
 spisovne. Az je bude nekdo potrebovat v AJ, tak se s nim nejak
 dohodneme.
 
+4) Updatujte ChangeLog!
+
+Podle potreby do neho piste, co jste udelali noveho pro dalsi verzi.
+ChangeLog vypada nasledovne:
+
+x.y.z					<= verze
+=====					<= oddeleni
+ * priority handling			<= hlavni bod
+    o added main server			<= podbod..
+
+ChangeLog commitujte spolu s kodem.
+
 Pravidla pro kod:
 
 0) male/velke
@@ -167,7 +179,7 @@ rozdelovat..me tady to doslo, kdyz jsem psal hmstod podle vzoru
 strtod.
 
 Zachazejte tedy s rozdelovanim dle sveho nejlepsiho vedomi a
-svedomi..a pokuste se v jednom souboru dodrzet jednu konvenci.
+svedomi. Snad to tak bude v poradku.
 
 1) Pouzivame glibc funkce, muzete pouzivat funkce dostupne pod 
 
