@@ -24,6 +24,9 @@ AC_CHECK_LIB([nova], [main])
 # FIXME: Replace `main' with a function in `-lpthread':
 AC_CHECK_LIB([pthread], [main])
 
+#debug="-DDEBUG"
+#AC_SUBSET(debug)
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
