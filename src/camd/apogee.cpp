@@ -173,7 +173,7 @@ CameraApogeeChip::readoutOneLine ()
     }
   if (!readoutConn)
     {
-      return -1;
+      return -3;
     }
   if (send_top < (char *) dest_top)
     {
