@@ -1,6 +1,17 @@
 /*! @file Device daemon skeleton code.
+* $Id$
 * Implements simple TCP/IP server, calling hander for every command it
 * receives.
+*
+* Command string is defined as follow:
+* <ul>
+* 	<li>commands ::= com | com + ';' + commands
+* 	<li>com ::= name + ' '\+ + params
+* 	<li>params ::= '' | par + ' '\+ + params
+* 	<li>par ::= hms | decimal | integer
+* </ul>
+* In dev demon is implemented only split for ';', all other splits
+* must be implemented in a device driver handler routine.
 *
 * @author petr
 */
@@ -22,11 +33,20 @@
 #include <mcheck.h>
 #include <math.h>
 #include <stdarg.h>
+#include <fcntl.h>
 
 #include <argz.h>
 
 #define MAXMSG  512
 
+typedef struct
+{
+  char buf[MAXMSG + 1];
+  char *endptr;
+}
+servinfo;
+
+servinfo *clients[FD_SETSIZE];
 
 /*! Printf to descriptor, log to syslogd
 * 
@@ -141,35 +161,70 @@ make_socket (uint16_t port)
 }
 
 
-read_from_client (int fd, devdem_handle_command_t handler)
+int
 read_from_client (int fd, devdem_handle_command_t handler, servinfo * client)
-  char buffer[MAXMSG];
+{
   char *buffer;
+  int nbytes;
+  char *startptr;		// start of message
+  char *endptr;			// end of message
+  int ret;
 
-  nbytes = read (fd, buffer, MAXMSG);
+  buffer = client->buf;
+  endptr = client->endptr;
   nbytes = read (fd, endptr, MAXMSG - (endptr - buffer));
   if (nbytes < 0)
     {
       /* Read error. */
       syslog (LOG_ERR, "read: %s", strerror (errno));
-      //exit (EXIT_FAILURE);
       return -1;
     }
   else if (nbytes == 0)
     /* End-of-file. */
     return -1;
   else
-      /* Data read. */
-      if (buffer[nbytes - 1] == '\n')
+    {
+      buffer[nbytes] = 0;	// mark end of message
+      startptr = endptr = buffer;
+      while (1)
 	{
-	  buffer[nbytes - 2] = 0;
-	}
-      else
-	{
-	  buffer[nbytes - 1] = 0;
+	  if (*endptr == '\r')
+	    {
+	      *endptr = 0;
+	      syslog (LOG_DEBUG, "Server: got message: '%s'", buffer);
+	      if ((ret = devdem_handle_commands (startptr, fd, handler)) < 0)
+		return ret;
+	      endptr++;
+	      if (*endptr == '\n')
+		endptr++;
+	      startptr = endptr;
+	    }
+	  else if (!*endptr)	// we reach end of message, let's see, if there are some
+	    // other bits out there
+	    {
+	      memmove (buffer, startptr, endptr - startptr + 1);
+	      endptr -= startptr - buffer;
+	      startptr = buffer;
+	      nbytes = read (fd, endptr, MAXMSG - (endptr - startptr));
+	      endptr[nbytes] = 0;	// mark end appropriatery
+	      client->endptr = endptr;
+	      if (nbytes < 0)
+		{
+		  if (errno == EAGAIN)
+		    return 0;
+		  else
+		    {
+		      /* Read error. */
+		      syslog (LOG_ERR, "read: %s", strerror (errno));
+		      return -1;
+		    }
+		}
+	      else if (nbytes == 0)
+		/* End-of-file. */
+		return 0;
+	    }
+	  else
 	    endptr++;
-      syslog (LOG_DEBUG, "Server: got message: '%s'\n", buffer);
-      return devdem_handle_commands (buffer, fd, handler);
 	}
     }
 }
@@ -248,6 +303,13 @@ devdem_run (int port, devdem_handle_command_t handler)
 		  {
 		    syslog (LOG_ERR, "accept: %s", strerror (errno));
 		    return -1;
+		  }
+		if (fcntl (new, F_SETFL, O_NONBLOCK) < 0)
+		  {
+		    syslog (LOG_ERR, "fcntl: %s", strerror (errno));
+		    break;
+		  }
+		clients[new] = (servinfo *) malloc (sizeof (servinfo));
 		clients[new]->endptr = clients[new]->buf;
 		syslog (LOG_INFO,
 			"Server: connect from host %s, port %hd, desc:%i",
@@ -257,8 +319,9 @@ devdem_run (int port, devdem_handle_command_t handler)
 	      }
 	    else
 	      {
-		if (read_from_client (i, handler) < 0)
+		/* Data arriving on an already-connected socket. */
 		if (read_from_client (i, handler, clients[i]) < 0)
+		  {
 		    free (clients[i]);
 		    close (i);
 		    syslog (LOG_INFO, "Connection from desc %d closed", i);
