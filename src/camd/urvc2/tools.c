@@ -18,7 +18,7 @@ getbaseaddr (int parport_num)
 
   fufu = fopen (buffer, "r");
   if (fufu == NULL)
-    return 0;
+    return 888;
   fscanf (fufu, "%d", &a);
   fclose (fufu);
 

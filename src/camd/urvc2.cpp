@@ -160,10 +160,7 @@ public:
 
   int init ();
   int ready ();
-  int baseInfo ()
-  {
-    return 0;
-  }
+  int baseInfo ();
   int info ();
   int camChipInfo (int chip)
   {
@@ -283,6 +280,11 @@ Rts2DevCameraUrvc2::init ()
   //StatusResults sr;
   QueryTemperatureStatusResults qtsr;
   GetVersionResults gvr;
+  int ret;
+
+  ret = Rts2DevCamera::init ();
+  if (ret)
+    return ret;
 
   base = getbaseaddr (0);	// sbig_port...?
 
@@ -344,7 +346,7 @@ Rts2DevCameraUrvc2::init ()
 
   syslog (LOG_DEBUG, "init return %i", Cams[eePtr.model].horzImage);
 
-  return Rts2DevCamera::init ();
+  return 0;
 }
 
 int
@@ -353,6 +355,19 @@ Rts2DevCameraUrvc2::ready ()
   StatusResults gvr;
   if (MicroCommand (MC_STATUS, cameraID, NULL, &gvr))
     return -1;
+  return 0;
+}
+
+int
+Rts2DevCameraUrvc2::baseInfo ()
+{
+  StatusResults gvr;
+  if (MicroCommand (MC_STATUS, cameraID, NULL, &gvr))
+    return -1;
+
+  strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
+  strcpy (serialNumber, (char *) eePtr.serialNumber);
+
   return 0;
 }
 
@@ -367,10 +382,6 @@ Rts2DevCameraUrvc2::info ()
   if (MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
     return -1;
 
-  strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
-  strcpy (serialNumber, (char *) eePtr.serialNumber);
-
-//  memcpy(info->chip_info,&(ch_info[0]),sizeof(struct chip_info));
   tempSet = ccd_ad2c (qtsr.ccdSetpoint);
   coolingPower = (int) ((qtsr.power == 255) ? 1000 : qtsr.power * 3.906);
   tempAir = ambient_ad2c (qtsr.ambientThermistor);
