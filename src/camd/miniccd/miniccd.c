@@ -135,6 +135,7 @@ camera_init (char *device_name, int camera_id)
   miniccd.ccd_temperature = 0;
   miniccd.cooling_power = 0;
   ccd_dac_bits = msgr[CCD_CCD_DAC_INDEX];
+  miniccd.can_df = 0;		// starlight cameras cannot do DF
   return (0);
 }
 
@@ -194,11 +195,7 @@ camera_expose (int chip, float *exposure, int light)
       field_rows[chip] = 0;
       FD_ZERO (&set);
       FD_SET (fd_chips[chip], &set);
-      printf ("before select\n");
-      fflush (stdout);
       select (fd_chips[chip] + 1, &set, NULL, NULL, NULL);
-      printf ("after select\n");
-      fflush (stdout);
       while (dummy_camera_readout_line (chip, 0, minichip->width,
 					&_data[field_rows[chip]]) == 0);
       field_rows[chip] = 0;
@@ -339,15 +336,14 @@ dummy_camera_readout_line (int chip_id, short start, short length, void *data)
     {
       if (sizeof_pixel == 2)
 	{
-	  printf ("sizeof: 2\n");
-	  fflush (stdout);
 	  short *d = (short *) data;
 	  char *b = buf + CCD_MSG_IMAGE_LEN + start;
 	  int i;
 	  for (i = 0; i < length; i++)
 	    {
 	      *d =
-		(*((short *) (&b[i * 4])) + *((short *) (&b[i * 4 + 2]))) / 2;
+		*((short *) (&b[i * 4])) / 2 +
+		*((short *) (&b[i * 4 + 2])) / 2;
 	      d++;
 	    }
 	}
@@ -359,7 +355,7 @@ dummy_camera_readout_line (int chip_id, short start, short length, void *data)
 	  for (i = 0; i < length; i++)
 	    {
 	      *d =
-		(*((char *) (&b[i * 2])) + *((char *) (&b[i * 2 + 1]))) / 2;
+		*((char *) (&b[i * 2])) / 2 + *((char *) (&b[i * 2 + 1])) / 2;
 	      d++;
 	    }
 	}
