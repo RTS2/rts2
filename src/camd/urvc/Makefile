@@ -1,6 +1,6 @@
 CC=gcc
 
-CFLAGS = -O2 -I$(CFITSIO) -I$(READLINE) -Wall -Wshadow -g -march=i686
+CFLAGS = -O3 -I$(CFITSIO) -I$(READLINE) -Wall -Wshadow -g -march=i586 -I../../../include #-DDEBUG
 #-march=i586 -ggdb 
 #--pedantic
 
