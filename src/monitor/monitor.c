@@ -89,8 +89,9 @@ status_telescope (const struct device *dev)
   efprintf ("alt", "%i", (int) position.alt);
   efprintf ("axis count 0", "%f", info->axis0_counts);
   efprintf ("axis count 1", "%f", info->axis1_counts);
-  efprintf ("siderealtime", "%f", info->siderealtime);
-  efprintf ("lst", "%f", st);
+  efprintf ("lst", "%f", info->siderealtime);
+  st = st - (int) (st / 24) * 24;
+  efprintf ("gst", "%f", st);
 }
 
 void
