@@ -1,3 +1,11 @@
+0.4.0
+===
+ * database change - float8 instead of float4 for ra/dec in targets table
+ * planner - scripting, threading
+ * per-device scripting
+ * introduced C++ code, depends on stdlibc++
+ * fotometer support
+
 0.3.6
 ===
  * optec focuser and focusing support
@@ -26,9 +34,7 @@
  
 0.3.0
 ===
- * planner ????
-    o language definition ????
-    o threading of planner tasks
+ * planner 
  * telescope 
     o position corections
  * use of GNU autoconf, automake
