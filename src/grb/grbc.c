@@ -125,6 +125,8 @@ readout (struct grb *object)
   info->target_id = object->tar_id;
   info->observation_id = object->id;
   info->target_type = -1;
+  info->camera_name = camera->name;
+  info->telescope_name = telescope->name;
   if (devcli_command (camera, NULL, "info") ||
       !memcpy (&info->camera, &camera->info, sizeof (struct camera_info)) ||
       devcli_command (telescope, NULL, "info") ||
@@ -244,13 +246,20 @@ main (int argc, char **argv)
 	  printf ("?? getopt returned unknow character %o ??\n", c);
 	}
     }
-  if (optind != argc - 1)
-    {
-      printf ("You must pass server address\n");
-      exit (EXIT_FAILURE);
-    }
 
-  server = argv[optind++];
+  if (optind == argc)
+    {
+      server = "localhost";
+    }
+  else if (optind == argc - 1)
+    {
+      server = argv[optind++];
+    }
+  else
+    {
+      printf ("Only one extra parameter - server name - is allowed");
+      return EXIT_FAILURE;
+    }
 
   if (db_connect ())
     {
@@ -272,7 +281,7 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
-  camera = devcli_find ("camd");
+  camera = devcli_find ("C0");
 
   if (!camera)
     {
@@ -292,6 +301,8 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
+  devcli_server_command (NULL, "status_txt grbc_waiting");
+
 #define CAMD_WRITE_READ(command) if (devcli_command (camera, NULL, command) < 0) \
   				{ \
       		                  perror ("devcli_write_read"); \
@@ -306,6 +317,8 @@ main (int argc, char **argv)
   while (1)
     {
       pthread_mutex_lock (&observing_lock);
+      printf ("Waiting for GRB event.\n");
+      fflush (stdout);
       while (observing.id == -1)
 	{
 	  pthread_cond_wait (&observing_cond, &observing_lock);
@@ -357,8 +370,10 @@ main (int argc, char **argv)
 			    get_julian_from_sys (), &hrz);
 	}
 
+      t = time (NULL);
+
       pthread_mutex_unlock (&observing_lock);
-      db_end_observation (observing.tar_id, obs_id, &hrz, time (NULL) - t);
+      db_end_observation (observing.tar_id, obs_id, &t);
     }
 
   db_disconnect ();
