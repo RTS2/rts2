@@ -44,6 +44,7 @@ set_precision (hi_precision_t * hi_precision, double ra, double dec)
   pthread_mutex_lock (hi_precision->mutex);
   hi_precision->image_pos.ra = ra;
   hi_precision->image_pos.dec = dec;
+  hi_precision->processed = 1;
   pthread_cond_broadcast (hi_precision->cond);
   pthread_mutex_unlock (hi_precision->mutex);
 }
