@@ -330,7 +330,7 @@ main (int argc, char **argv)
 
   wnd_row = LINES / ROW_SIZE;
   wnd_col = COLS / COL_SIZE;
-  wnd = (WINDOW *) malloc (sizeof (WINDOW) * wnd_row * wnd_col);
+  wnd = (WINDOW **) malloc (sizeof (WINDOW) * wnd_row * wnd_col);
 
   cmd_win = newwin (2, COLS, 0, 0);
 
