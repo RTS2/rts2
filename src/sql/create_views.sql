@@ -8,6 +8,7 @@ DROP VIEW observations_noimages;
 DROP VIEW observations_nights;
 DROP VIEW images_nights;
 DROP VIEW targets_counts;
+DROP VIEW images_path;
 
 CREATE VIEW targets_noimages AS 
 SELECT targets.tar_id, 0 AS img_count 
@@ -85,3 +86,23 @@ WHERE
     AND observations.obs_id = counts.obs_id
 ORDER BY
 	count_date DESC;
+
+CREATE VIEW images_path AS
+SELECT
+	img_id,
+	imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, img_date) as img_path,
+	img_date,
+	round(img_exposure/100.0,2) as img_exposure_sec,
+	round(img_temperature/10.0,2) as img_temperature_deg,
+	img_filter,
+	imgrange (astrometry) as img_range,
+	images.obs_id,
+	observations.tar_id,
+	camera_name
+FROM
+	images
+	observationsWHERE
+WHERE
+	images.obs_id = observations.obs_id
+ORDER BY
+	img_id;
