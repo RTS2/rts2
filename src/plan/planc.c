@@ -168,6 +168,8 @@ dec_exposure_count (void)
 {
   pthread_mutex_lock (&exposure_count_mutex);
   exposure_count--;
+  printf ("new exposure count: %i\n", exposure_count);
+  fflush (stdout);
   pthread_cond_broadcast (&exposure_count_cond);
   pthread_mutex_unlock (&exposure_count_mutex);
   return 0;
@@ -194,7 +196,7 @@ execute_camera_script (void *exinfo)
 
   while (*command)
     {
-      if (exp_state && !isspace (*command))
+      if (exp_state && *command && !isspace (*command))
 	{
 	  // wait till exposure end..
 	  devcli_command (telescope, NULL, "base_info;info");
@@ -264,32 +266,31 @@ execute_camera_script (void *exinfo)
 	default:
 	  if (!isspace (*command))
 	    fprintf (stderr,
-		     "Error in executing - unknow command, script is: %s\n",
-		     command);
+		     "Error in executing - unknow command, script is: '%s'\n",
+		     command, *command);
+	  command++;
 	}
-      command++;
     }
-  if (exp_state)
+  printf ("end exp state: %i\n", exp_state);
+  fflush (stdout);
+  if (exp_state == 1)
     {
-      if (exp_state == 1)
-	{
-	  devcli_command (telescope, NULL, "base_info;info");
+      devcli_command (telescope, NULL, "base_info;info");
 
-	  get_info (last, telescope, camera, exposure);
+      get_info (last, telescope, camera, exposure);
 
-	  devcli_wait_for_status (camera, "img_chip",
-				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  1.1 * exposure + 10);
-	  dec_exposure_count ();
-	  devcli_command_all (DEVICE_TYPE_CCD, "readout 0");
-	  devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip",
-				      CAM_MASK_READING, CAM_NOTREADING,
-				      MAX_READOUT_TIME);
-	}
-      else
-	{
-	  dec_exposure_count ();
-	}
+      devcli_wait_for_status (camera, "img_chip",
+			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+			      1.1 * exposure + 10);
+      dec_exposure_count ();
+      devcli_command (camera, NULL, "readout 0");
+      devcli_wait_for_status (camera, "img_chip",
+			      CAM_MASK_READING, CAM_NOTREADING,
+			      MAX_READOUT_TIME);
+    }
+  else
+    {
+      dec_exposure_count ();
     }
   return 0;
 }
@@ -400,7 +401,7 @@ observe (int watch_status)
 			      TEL_OBSERVING, 0);
 
       devcli_wait_for_status_all (DEVICE_TYPE_CCD, "priority",
-				  DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 0);
+				  DEVICE_MASK_PRIORITY, DEVICE_PRIORITY, 60);
 
       // execute exposition scripts
       tl_top = &thread_l;
@@ -446,6 +447,7 @@ observe (int watch_status)
 	{
 	  pthread_cond_wait (&exposure_count_cond, &exposure_count_mutex);
 	}
+      pthread_mutex_unlock (&exposure_count_mutex);
       move (last->next);
     }
 
