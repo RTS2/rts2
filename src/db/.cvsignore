@@ -1,8 +1,0 @@
-.deps
-.libs
-rts2-photlist
-Makefile
-Makefile.in
-db.c
-photlist.c
-test
