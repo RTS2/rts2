@@ -39,6 +39,8 @@ int increase_exposure = 0;
 
 int date_exposure = 0;
 
+int sec_mod = 0;
+
 struct tm exp_start;
 
 struct device *camera;
@@ -192,11 +194,12 @@ main (int argc, char **argv)
 	{"exposure", 1, 0, 'e'},
 	{"inc", 0, 0, 'i'},
 	{"date", 0, 0, 'b'},
+	{"secmod", 1, 0, 's'},
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "bd:e:ip:h", long_option, NULL);
+      c = getopt_long (argc, argv, "bd:e:is:p:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -217,6 +220,9 @@ main (int argc, char **argv)
 	  break;
 	case 'p':
 	  port = atoi (optarg);
+	  break;
+	case 's':
+	  sec_mod = atoi (optarg);
 	  break;
 	case 'h':
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n"
@@ -283,19 +289,39 @@ main (int argc, char **argv)
   while (1)
     {
       time_t t = time (NULL);
+      int sleep_sec;
+      int day_sec;
 
       devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
       printf ("OK\n");
 
+
       time (&t);
       printf ("exposure countdown %s..\n", ctime (&t));
       t += exposure_time;
       printf ("readout at: %s\n", ctime (&t));
       if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
-				  CAM_NOTREADING, 0) ||
-	  devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
+				  CAM_NOTREADING, 0))
+	{
+	  perror ("waiting for readout end:");
+	}
+      time (&t);
+      gmtime_r (&t, &exp_start);
+
+      if (sec_mod > 0)
+	{
+	  day_sec =
+	    exp_start.tm_hour * 3600 + exp_start.tm_min * 60 +
+	    exp_start.tm_sec;
+	  sleep_sec = day_sec % sec_mod;
+	  printf ("sleeping for %i sec..\n", day_sec);
+	  sleep (sleep_sec);
+	  printf ("sleeping ends..\n");
+	}
+
+      if (devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
 	{
 	  perror ("expose:");
 	}
