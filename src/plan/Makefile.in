@@ -9,7 +9,7 @@ LDFLAGS = @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_PTHREAD@ @LIB_CFITSI
 
 planc: planc.o selector.o ../writers/process_image.o ../db/db.o ../writers/fits.o ../utils/devcli.a
 
-test: test.o selector.o ../db/db.o
+test: test.o selector.o ../db/db.o ../utils/config.o
 
 %.c: %.ec
 	@ECPG@ -o $@ $^
