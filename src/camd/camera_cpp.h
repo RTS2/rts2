@@ -135,6 +135,11 @@ public:
   }
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   void setReadoutConn (Rts2DevConnData * dataConn);
+  void deleteConnection (Rts2Conn * conn)
+  {
+    if (conn == readoutConn)
+      readoutConn = NULL;
+  }
   virtual int endReadout ();
   void clearReadout ();
   virtual int sendFirstLine ();
@@ -175,6 +180,13 @@ public:
   int checkReadouts ();
 
   virtual int idle ();
+
+  virtual void deleteConnection (Rts2Conn * conn)
+  {
+    for (int i = 0; i < chipNum; i++)
+      chips[i]->deleteConnection (conn);
+    Rts2Device::deleteConnection (conn);
+  }
 
   virtual int changeMasterState (int new_state);
 

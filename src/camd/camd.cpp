@@ -142,6 +142,11 @@ int
 CameraChip::sendReadoutData (char *data, size_t data_size)
 {
   int ret;
+  if (!readoutConn)
+    {
+      endReadout ();
+      return -1;
+    }
   ret = readoutConn->send (data, data_size);
   if ((ret == 0 && data_size > 0) || ret == -2)
     {
