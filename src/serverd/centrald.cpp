@@ -52,22 +52,25 @@ class Rts2Centrald:public Rts2Block
 protected:
   int changeState (int new_state);
   int idle ();
-public:
-    Rts2Centrald (int in_port);
 
+  virtual int processOption (int in_opt);
+public:
+    Rts2Centrald (int in_argc, char **in_argv);
+
+  int init ();
   int changePriority (time_t timeout);
 
   int changeStateOn ()
   {
-    changeState ((next_event_type + 5) % 6);
+    return changeState ((next_event_type + 5) % 6);
   };
   int changeStateStandby ()
   {
-    changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6));
+    return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6));
   };
   int changeStateOff ()
   {
-    changeState (SERVERD_OFF);
+    return changeState (SERVERD_OFF);
   };
   inline int getState ()
   {
@@ -78,7 +81,7 @@ public:
     return priority_client;
   };
 
-  int addConnection (int in_sock);
+  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
 };
 
 class Rts2ConnCentrald:public Rts2Conn
@@ -102,7 +105,7 @@ private:
 public:
     Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 		      int in_centrald_id);
-   ~Rts2ConnCentrald (void);
+    virtual ~ Rts2ConnCentrald (void);
   int sendInfo (Rts2Conn * conn);
 };
 
@@ -320,8 +323,7 @@ Rts2ConnCentrald::commandClient ()
 	  status_txt[MAX_STATUS_TXT - 1] = 0;
 	  return 0;
 	}
-      if (isCommand ("priority")
-	  || isCommand ("prioritydeferred"))
+      if (isCommand ("priority") || isCommand ("prioritydeferred"))
 	{
 	  int timeout;
 	  int new_priority;
@@ -464,32 +466,43 @@ Rts2ConnCentrald::command ()
   return 0;
 }
 
-Rts2Centrald::Rts2Centrald (int in_port):Rts2Block ()
+Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
+	   in_argv)
 {
-  setPort (in_port);
   observer.lng = get_double_default ("longtitude", 0);
   observer.lat = get_double_default ("latitude", 0);
   current_state =
     (strcmp (get_device_string_default ("centrald", "reboot_on", "N"), "Y") ?
      SERVERD_OFF : 0);
+
+  addOption ('p', "port", 1, "port on which centrald will listen");
 }
 
 int
-Rts2Centrald::addConnection (int in_sock)
+Rts2Centrald::processOption (int in_opt)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
+  switch (in_opt)
     {
-      if (!connections[i])
-	{
-	  syslog (LOG_DEBUG, "Rts2Centrald::addConnection add conn: %i %i", i, in_sock);
-	  connections[i] = new Rts2ConnCentrald (in_sock, this, i);
-	  syslog (LOG_DEBUG, "Rts2Centrald::addConnection %p %p", connections[i], connections[i]->buf);
-	  return 0;
-	}
+    case 'p':
+      setPort (atoi (optarg));
+      break;
+    default:
+      return Rts2Block::processOption (in_opt);
     }
-  syslog (LOG_ERR, "Rts2Centrald::addConnection Cannot find empty connection!\n");
-  return -1;
+  return 0;
+}
+
+int
+Rts2Centrald::init ()
+{
+  setPort (PORT);
+  return Rts2Block::init ();
+}
+
+Rts2Conn *
+Rts2Centrald::createConnection (int in_sock, int conn_num)
+{
+  return new Rts2ConnCentrald (in_sock, this, conn_num);
 }
 
 /*!
@@ -517,7 +530,7 @@ Rts2Centrald::changePriority (time_t timeout)
   int new_priority_max = 0;
   int i;
 
-  if (priority_client >= 0)	// old priority client
+  if (priority_client >= 0 && connections[priority_client])	// old priority client
     {
       new_priority_client = priority_client;
       new_priority_max = connections[priority_client]->getPriority ();
@@ -527,7 +540,8 @@ Rts2Centrald::changePriority (time_t timeout)
     {
       Rts2Conn *conn = connections[i];
       if (conn)
-	syslog (LOG_DEBUG, "Rts2Centrald::changePriority priorit: %i, %i", i, conn->getPriority ());
+	syslog (LOG_DEBUG, "Rts2Centrald::changePriority priorit: %i, %i", i,
+		conn->getPriority ());
       if (conn && conn->getPriority () > new_priority_max)
 	{
 	  new_priority_client = i;
@@ -535,15 +549,15 @@ Rts2Centrald::changePriority (time_t timeout)
 	}
     }
 
-      if (priority_client >= 0 && connections[priority_client])
-	connections[priority_client]->setHavePriority (0);
+  if (priority_client >= 0)
+    connections[priority_client]->setHavePriority (0);
 
-      priority_client = new_priority_client;
+  priority_client = new_priority_client;
 
-      if (priority_client >= 0)
-	connections[priority_client]->setHavePriority (1);
+  if (priority_client >= 0)
+    connections[priority_client]->setHavePriority (1);
 
-      return sendMessage ("priority_change", priority_client, timeout);
+  return sendMessage ("priority_change", priority_client, timeout);
 }
 
 int
@@ -584,18 +598,18 @@ Rts2Centrald::idle ()
 
 
 int
-main (int argc, char *argv)
+main (int argc, char **argv)
 {
   int i;
   Rts2Centrald *centrald;
   mtrace ();
-  openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+  openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
   if (read_config (CONFIG_FILE) == -1)
     syslog (LOG_ERR,
 	    "Cannot open config file " CONFIG_FILE ", defaults will be used");
   else
     syslog (LOG_INFO, "Config readed from " CONFIG_FILE);
-  centrald = new Rts2Centrald (PORT);
+  centrald = new Rts2Centrald (argc, argv);
   centrald->init ();
   centrald->run ();
 
