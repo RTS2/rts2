@@ -55,7 +55,7 @@ echo <<<EOT
 			<li>Year statistics</li>
 		</ul class="menu">
 	</li>
-	<li><a href="observations.php">Observations</a></li>
+	<li><a href="observations.php?obs_id=&tar_id=">Observations</a></li>
 		<ul class="menu">
 			<li>RA&amp;DEC</li>
 			<li>Target</li>
