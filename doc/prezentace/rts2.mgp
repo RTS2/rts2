@@ -1,0 +1,208 @@
+%include "default.mgp"
+%default 1 bgrad
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+%nodefault
+%center, size 7, font "standard", fore "white", vgap 20
+
+RTS 2
+
+nový systém pro BART
+
+Autor: Petr Kubánek
+petr@lascaux.asu.cas.cz
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Proè nový systém?
+
+%vgap 20
+
+%size 15
+
+	proto¾e souèasný nám nevyhovuje
+	proto¾e mám pocit, ¾e se dá ovládání vyøe¹it lépe
+
+Motto:
+
+%vgap 20
+
+rts2 = rts XP (eXPerience)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Nevyhovující èásti:
+
+	Sestøelování pozorování - mù¾e trvat a¾ dvì minuty, co¾ je pro GRB pøíli¹ dlouho
+	Øízení pozorování - systém priorit je ponìkud nejasný, není mo¾né rozumnì psát celonoèní pozorovací skripty
+	Implementace v pythonu - Python je skvìlí na rychlé prototypování, pro øídící systém se ale nehodí:
+		run-time hlá¹ení chyb
+		relativnì pomalý
+		struktura kódu (tab indentace, nejasné definice,..)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Nové zadání
+
+Navrhnìte, implementujte a zdokumentujte ovládání dalekohledu BART (Burst
+Afterglow Robotic Telescope) tak, aby umo¾òovalo:
+
+	øízení dalekohledu pomocí pøedem spoèítaného plánu, s mo¾ností jeho \
+pøeru¹ení a pøedání øízení jinému pozorování v pøípadì pøíjmu zprávy \
+o novém objektu, vhodného k okam¾itému pozorování
+
+	snadný pøenos øe¹ení na jiné kamery, pøípadnì dalekohledy
+
+	on-line zpracování snímkù na jiném poèítaèi ne¾ na poèítaèi obsluhujícím\
+kameru
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Na závìr porovnejte nové ovládání dalekohledu s existujícími systémy pro
+ovládání dalekohledù.
+
+Je mo¾né vyu¾ít ovladaèe zaøízení, napsané jako èást roèníkového projektu
+obhájeného v èervnu 2000. Ostaní kód roèníkového projektu nebude pou¾it.
+Dokumentace k práci musí obsahovat výèet kódu, pøevzatého z roèníkového
+projektu.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Pro úspì¹né vyøe¹ení je potøeba provést následující práce:
+
+	definovat rozhranní pro ovládání zaøízení a pøenos dat z nich, \
+provést jeho vzorovou implementaci na zaøízeních, je¾ jsou k \
+dispozici na dalekohledu BART.
+
+	vymyslet a naimplementovat plánovaè, který bude øídit pozorování.
+
+	zabývat se ukládáním napozorovaných dat, jejich tøídìním a \
+zaji¹tìním jednoduchého pøístupu k nim.
+
+	naimplementovat k èástem, je¾ to vy¾adují, grafické u¾ivatelské \
+rozhranní.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Konzultanté:
+
+	Martin Jelínek (mates@lascaux.asu.cas.cz)
+	Renné Hudec (rhudec@asu.cas.cz)
+	Lenka ©arounová (lenka@asu.cas.cz)
+	Jan Soldán (soldan@asu.cas.cz)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Literatura:
+
+	Martinez/Klotz - A practical Guide to CCD astronomy
+	Trueblood/Genet - Telescope control, Willmann-Bell, 1997
+	Mgr. R.Halíø, T.Jílek, P.Kubánek, F.Krolluper, F.Kvapil - Detekce astronomických objektù s promìnnou intenzitou za pomoci robotického teleskopu, Roèníkový projekt MFF UK, Praha, 2000
+	David Ratledge, The Art and Science of CCD Astronomy
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Odkazy:
+	http://www.telescope.org/rti/automated.html - pøehled automatizovaných dalekohledù 
+	http://lascaux.asu.cas.cz - dalekohled BART
+	http://nova.sourceforge.net/ - Projekt NOVA, automatické ovládání dalekohledu
+	http://www.astro.princeton.edu/~bakos/HAT - The Hungarian Automated Telescope 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Postupy:
+	od poèátku verzování v CVSku (rts1 mìlo být pùvodnì verzováno v jakémsi systému, podporujícím binární soubory, na konci jsme ale pøe¹li na CVSko)
+	lep¹í návrh - na rozdíl od rts1 mám jak¾ tak¾ pøedstavu, co chci, rts1 byl prototyp se v¹ím co k tomu patøí
+	dùraz na bezpeènost - rts1 má mnoho zneu¾itelných bezpeènostních dìr
+	open source vývoj - mo¾nost pro kohokoliv se pøidat
+	vývoj v Céèku s pou¾itím GNU knihoven, kompilace pod gcc, Makefile (èasem asi autoconf+automake skripty)
+	dokumentace od zaèátku v LaTeXu, diagramy v dia
+	neobjektové programování - paradigma OOP nahrazena:
+		dìdiènost - v podstatì není potøeba
+		polymorfismus - zaji¹»uje komunikaèní protokol
+		uzavøenost - vhodným návrhem
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - core:
+	centrální server
+		seznam zaøízení
+		autentifikace u¾ivatelù
+		pøidìlování priorit
+	devdem - deamon zaøízení
+		autorizace u¾ivatelù pøes centrální server
+		ovládání zaøízení
+		správa vláken pro déletrvající operace
+		
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - protokol:
+	textovì orientovaný, inspirovaný RFC854 (telnet)
+	klient-server, klient inicializuje spojení, server ho akceptuje
+	klient posílá pøíkazy, server na nì odpovídá, odpovìd je ukonèena chybovým kódem
+	server posílá zprávy o zmìnì stavu zaøízení - zaèínají "M "
+	datový protokol - pro asynchronní pøenos dat, inspirovaný RFC959 (FTP), klient inicializuje datové spojení, zvlá¹tní pøíkazy "D ", binární 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - priority:
+	slou¾í k urèování, který klient bude manipulovat se zaøízením
+	exekuèní (mìnící stav zaøízení) a informaèní (nemìnící stav zaøízení) funkce
+	v ka¾dý èasový okam¾ik má na jednotlivém zaøízení nejvy¹¹í prioritu pouze jeden klient
+	mo¾nost okam¾itého odjímání priority s pøechodem zaøízení do bezpeèného stavu (zastavní pøesunu dalekohledu, vyèítání, expozice, ...)
+	mo¾nost odejmutí priority se zdr¾ením (nepreemtivní?) s nutným souhlasem klienta, který prioritu aktuálnì vlastní
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - server:
+	procesy
+		jednotlivá spojení
+		komunikace mezi procesy pomocí IPC (semafory, sdílená pamì», zprávy)
+	vlákna
+		jednotlivé déletrvající operace (poslání dat, vyèítání kamery, pøesun dalekohledu)
+		pomocná vlákna (IPC zprávy a select,..)
+		komunikace pomocí mutexù, globálních promìnných, pthread_cond (= zakuklené mutexy)
+
+Toto rozdìlení znemo¾nuje pou¾ití signálù.
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Idee - klient
+	jeden proces
+	má spojení na v¹echny zaøízení, které pou¾ívá
+	pokud chce provádìt více operací najednou (napøíklad vyèítání kamery a pøesun zaøízení), spou¹tí si pro ka¾dou nové vlákno, synchronizace na konci pomocí pthread_join
+	call-back funkce pro pøíjem výsledkù pøíkazu, zpráv a dat od serveru
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Idee - klientský skriptovací jazyk
+	definice LR(1) gramatiky, pou¾ití Bisonu na generování interpretra
+	jednoduchá práce s èasem, vlákny, ...
+	tøi fáze:
+		inicializace - není potøeba mít prioritu, vyjmenování potøebných zaøízení, podmínek na spu¹tìní, priority
+		bìh - nutná priorita, vlastní pozorování
+		úklid - stahování dat
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Co potøebujeme umìt
+	ostøení CCD kamer
+	hlídání teploty
+	monitorování celého systému
+	pointace (pokud mo¾no u¾ v ovladaèi zaøízení)
