@@ -67,9 +67,9 @@ struct client
 struct dev_channel
 {
   int socket;			//! socket for connection
+  pthread_mutex_t channel_socket_lock;	//! lock for channel access 
   struct sockaddr_in address;	//! socket address
   pthread_t read_thread;	//! read thread
-  pthread_mutex_t used;		//! when locked, that channel is used
   pthread_mutex_t ret_lock;	//! return lock, for ret_cond
   pthread_cond_t ret_cond;	//! used to signal command return
   int ret_code;			//! to store last return code
@@ -88,11 +88,9 @@ struct device
   struct devconn_status *statutes;	//! holds status informations
   pthread_mutex_t status_lock;	//! lock status change informations
   pthread_cond_t status_cond;	//! signalize status change
-  pthread_mutex_t priority_lock;
-  pthread_cond_t priority_cond;
   int priority;
   response_handler_t response_handler;	//! response callback
-  struct dev_channel *channel;
+  struct dev_channel channel;
   devcli_handle_data_t data_handler;	//! handler to received data
   general_notifier_t status_notifier;	//! status change handler
   void *notifier_data;		//! notifier data
