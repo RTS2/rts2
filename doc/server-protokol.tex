@@ -1,0 +1,46 @@
+\section{Protokol}
+
+Textovì orientovanı protokol vychází z protokolu POP, tak jak je popsanı v
+\cite{rfcxxx}. Bloky komunikace jsou ukonèovány znakem konce øádky, platném v
+protokolu Telnet - \\r\\n. Alternativnì mù¾e bıt znakem konce øádky i pouze
+znak \\n. 
+
+\subsection{Pøíkazy klienta}
+
+Pøíkazy posílá klient serveru, server na nì odpovídá. Odpovìï serveru je v¾dy
+zakonèena øádkou, zaèínající znakem '+' nebo '-' a pokraèující stavovım kódem
+slo¾enım ze tøí èíslic. Server zaène dal¹í pøíkaz pøijatı od klienta
+zpracovávat a¾ po odeslání zakonèovací øádky.
+
+Pokud je prvním znakem zakonèovací øádky +, pøíkaz byl úspì¹nì vykonán. Pokud
+je tímto znakem '-', pøíkaz skonèil chybou. Podle stavového kódu lze pak
+rozli¹it, o jakou chybu se jednalo.
+
+Pøed pøijetím zakonèovací øádky mù¾e následovat libovolné mno¾ství øádek s
+odpovìdmi. Ty nezaèínají velkım písmenem. Obvyklá forma tìchto odpovìdí je
+název odpovìdi a popis její hodnoty. Napøíklad po dotazu na pozici dalekohledu
+mù¾e dalekohled odpovìdìt: {\it ra 10}, co¾ znamená, ¾e je v rektascenzi
+nastaven na 10 stupòù.
+
+Pøíkazy jsou tvoøeny názvem pøíkazu a jeho parametry, oddìlenımi mezerami.
+
+\subsection{Zprávy a pøíkazy serveru}
+
+Server posílá klientovy zprávy o zmìnách svého stavu a pøíkazy pomocí øádkù,
+zaèínajících velkım písmenem. Mohou se vyskytnou kdekoliv v komunikaci, tedy i
+v prùbìhu odpovìdi na pøíkaz. Klient jejich pøíjem nepotvrzuje.
+
+\subsubsection{Stavové zprávy}
+
+Zaèínají znakem 'S', a obsahují název stavu, jeho novou hodnotu a doplòující
+komentáø. Tyto èásti jsou oddìleny mezerou.
+
+\subsubsection{Otevøení datového spojení}
+
+Po¾adavky na otevøení nového datového spojení zaèínají znakem 'D'. Poté
+následuje øetìzec connect, jméno nebo IP adresa a port, na kterou se má klient
+pøipojit, a délka bloku pøená¹enıch dat.
+
+\subsubsection{Zprávy}
+
+Zprávy zaèínají písmenem M, za kterım následuje text zprávy.

@@ -1,0 +1,40 @@
+Stavy
+
+jsou v src/status.h
+
+V¹eobecnì nepova¾ujeme posílání pøíkazù a èekání na odpovìï z nich za
+nìjaký speciální stav, toto je vìcí vnitøní implementace knihovny.
+
+Stavy jsou øe¹eny jako bitová maska. Jejich nastavování je vìcí
+knihovny, nejsou pøístupné pomocí promìnné, ale pomocí volání funkce,
+která vrací nulu v pøípadì úspìchu a kód chyby v ostatních pøípadech,
+stav je vracen v návratové promìnné. 
+
+Pro dalekohled:
+
+Pro kamery:
+
+
+
+\subsection{serverd}
+
+DAY
+DUSK
+NIGHT
+DAWN
+MAINTANCE
+OFF
+
+
+\subsection{camd}
+NOEXPOSURE
+EXPOSING
+NODATA
+DATA
+NOTREADING
+READOUT
+COOLMAX
+COOLOFF
+COOLSHUTINGDOWN
+
+

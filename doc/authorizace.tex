@@ -1,0 +1,66 @@
+\section{Autorizace a autentifikace}
+
+Autorizací se rozumí ovìøení práv u¾ivatele pro vykonávání jednotlivých
+operací. Autentifikace je pak prokázání jeho toto¾nosti.
+
+Systém musí být navr¾en tak, aby byl bezpeèný. Kvùli monitoringu je vhodné,
+aby byl dostupný z internetu, pøíjem informací o gama záblescích pak
+dostupnost z Internetu vy¾aduje.
+
+V systému jsou dva druhy spojení - jedno vede mezi centrálním serverem a
+zaøízeními, druhé mezi klienty a zaøízeními pøípadnì centrálním serverem.
+Klienti se mohou pøipojovat z libovolného místa na Internetu. Kvùli
+zabezpeèení proti útokùm zvenèí je vhodné, aby bylo toto spojení kodované.
+
+Dal¹ím dùvodem pro kódování je umístìní nìkterých dalekohledù na
+polovojenských stanicích\footnote{napøíklad BOOTES-1 je umístìna na stanici
+spravované ¹panìlskou organizací INTA, kde se provádí jak civilní, tak
+vojenský výzkum a spojení do Internetu je kvùli vojenské èásti znaènì
+omezeno}.
+
+Zabezpeèení nevy¾aduje spojení mezi centrálním serverem a zaøízeními, proto¾e
+toto spojení vede pouze po sítích patøících k danému dalekohledu. Ty lze
+pova¾ovat za bezpeèné.
+
+Klient se po pøipojení autentifikuje pomocí kombinace veøejného klíèe a
+soukromého hesla na centrálním serveru. Po pøipojení se zaène toto spojení
+kódovat, tedy lze pøedpokládat, ¾e rozkódování jeho obsahu bude pro
+pøípadného útoèníka buïto nemo¾né, nebo bude vy¾adaovat urèitý èas.
+
+Pokud chce klient pøistupovat na zaøízení, vy¾ádá si u centrálního serveru
+autorizaèní klíè. To je náhodné èíslo generované na centrálním serveru. Toto
+èíslo pak po¹le, opìt po ji¾ zabezpeèeném spojení, zaøízení. To si jeho
+pravost ovìøí u centrálního serveru a podle výsledku povolí, nebo zaká¾e
+pøístup.
+
+Autorizaèní klíè má èasovì omezenou platnost. Pøípadnému útoèníkovi zabere
+jeho zji¹tìní díky zabezpeèení protokolu urèitý èas. Nebude tedy schopen se
+vydávat za klienta, jeho¾ komunikaci s centrálním serverem rozlu¹til, proto¾e
+spojení nebude schopen roz¹ifrovat døíve, ne¾ vypr¹í platnost klíèe. 
+
+Jedinou nadìjí útoèníka je pak ze znalosti algortitmu generování klíèe urèovat
+dal¹í a zkou¹et se pøipojovat na daná zaøízení. Tomuto útoku se dá bránit
+jedinì dostateènì kvalitním generátorem klíèù. 
+
+\section{Pøipojení zaøízení umístìných za firewallem}
+
+Je mo¾né, ¾e vnitøní sí», na které komunikují zaøízení s centrálním
+dalekohledem, bude provozována na privátních IP adresách a tudí¾ nedostupná z
+Internetu. Spojení na Internet je pak mo¾né pøes router, který podporuje
+Network Address Translating - NAT.
+
+Je vhodné, aby se i v tomoto pøípadì dal zajistit monitoring a pøípadné
+ovládání zaøízení.
+
+Jedna mo¾nost, jak toto zajistit, je zpøístupnit centrální server, a v¹echny
+po¾adavky na zaøízení a jejich odpovìdi posílat pøes nìj. Toto øe¹ení pøiná¹í
+ale zbyteènou re¾ii a zbyteènì vede a¾ do aplikaèní vrstvy pøíslu¹ného
+sí»ového protokolu.
+
+O mnohem výhodnìj¹í je zajistit pøeklad urèitého rozsahu komunikace z
+routeru spravujícího NAT do vnitøních adres a opaènì. Sí»ová rozhranní
+zaøízení se pak ocitnou v demiliratizované zónì, která bude sice pøipojená k
+vnitøní síti, ale bude pøístupná z venèí. Tento pøeklad se dìje ji¾ na
+transportní úrovni, nevy¾aduje tedy ¾ádné programování na aplikaèní úrovni a
+vy¾aduje pro provedení men¹í poèt operací. Vìt¹inou bývá pøímo souèástí NATu,
+napøíklad u iptables z Linuxového kernelu 2.4.x tomu tak je.

@@ -1,7 +1,5 @@
 \chapter{Pøíkazy}
 
-% jméno pøíkazu - {pøíkaz}{parametry}{popis}
-
 \def\comname#1#2#3{
 {\bf #1} {\it #2} #3
 \newline}
@@ -50,8 +48,9 @@ zargistrováno}
 \subsection{Informaèní pøíkazy}
 
 \comname{info}{}{vypí¹e informace o pøipojených zaøízeních a pøipojených klientech}
-\comvalue{user}{[id] [P|A] [priorita] [*|-] [jméno u¾ivatele] [popis provádìnné èinnosti]}
-{informace o pøipojeném u¾ivateli}
+\comvalue{user}{[id] [priorita] [*|-] [jméno u¾ivatele] [popis provádìnné èinnosti]}
+{informace o pøipojeném u¾ivateli - jeho èíslo, priority, zda je klientem s
+nejvy¹í prioritou èi ne, a struèný popis, o jakého klienta se jedná}
 \comvalue{device}{[èíslo zaøízení] [jméno zaøízení] [host]:[port] [typ zaøízení]}
 {informace o pøipojeném zaøízení}
  
@@ -175,3 +174,109 @@ pozorování}
 korekce}
 
 \comname{park}{}{zaparkuje dalekohled}
+
+\section{Pøíklad komunikace}
+
+Máme jedno zaøízení, které se jmenuje C0 a je CCD kamerou. K tomuto zaøízení
+se pøipojuje jeden klient, který je chce provádìt ostøení kamery. Po svém
+pøipojení se pokusí získat prioritu, zmìní teplotu chlazení kamery a provede
+expozici následující vyètením získaného snímku.
+
+Jméno u¾ivatele je petr, jeho heslo je 123456.
+
+Kamera je umístìna na poèítaèi se jménem c0, její server bì¾í na portu 5556.
+Datové porty zaèínají portem 5557.
+
+V následujícím pøíkladì znaèí {\bf k} klienta, {\bf S} centrální server a {\bf
+C0} kameru. Komunikace a je její smìr je urèen pomocí =>. 
+
+\def\conn#1#2#3{
+{\bf #1} => {\bf #2} - #3
+\newline
+}
+
+Napøíklad:
+
+\conn{k}{S}{command 1}
+
+znamená text "command 1" poslaný klientem centrálnímu serveru.
+
+\conn{C0}{S}{register C0 3 c0:5556}
+\conn{S}{C0}{I status\_num 1}
+\conn{S}{C0}{I status 0 server\_st 2}
+Centrální server zdìlil kameøe, ¾e má jeden stav, jeho jméno je server\_st a
+jeho hodnota je rovná 1.
+\conn{S}{C0}{+000 Success}
+
+\conn{k}{S}{login petr}
+\conn{S}{k}{+000 Success}
+\conn{k}{S}{password 123456}
+\conn{S}{k}{logged\_as 0}
+\conn{S}{k}{I status\_num 1}
+\conn{S}{k}{I status 0 server\_st 2}
+\conn{S}{k}{+000 Success}
+
+\conn{k}{S}{info}
+\conn{S}{k}{user 0 petr -1 -}
+\conn{S}{k}{device 0 C0 c0:5556 3}
+\conn{S}{k}{+000 Success}
+Je pøipojen jeden u¾ivatel - to je na¹e spojení, a jedno zaøízení - c0.
+
+\conn{k}{S}{key C0}
+\conn{S}{k}{authorization\_key 23456}
+\conn{S}{k}{+000 Success}
+
+Klient po¾ádal o autorizaèní klíè.
+
+\conn{k}{C0}{auth 0 23456}
+\conn{C0}{S}{authtorize 0 23456}
+\conn{S}{C0}{authorization\_ok 0}
+\conn{S}{C0}{+000 Success}
+
+Server potvrdil pravost klíèe pro klienta.
+
+\conn{C0}{k}{I status\_num 3}
+\conn{C0}{k}{I status 0 img\_chip 0}
+\conn{C0}{k}{I status 1 trc\_chip 0}
+\conn{C0}{k}{I status 2 priority 0}
+\conn{C0}{k}{+000 Success}
+
+Klient byl autorizován, kamera mu zdìlila poèet, názvy a hodnoty stavù.
+
+\conn{k}{C0}{ready}
+\conn{C0}{k}{+000 Success}
+
+\conn{k}{C0}{info}
+\conn{C0}{k}{type ST8}
+\conn{C0}{k}{serial  819901486}
+\conn{C0}{k}{chips 2}
+\conn{C0}{k}{temperature\_regulation 0}
+\conn{C0}{k}{temperature\_setpoint 1000.0}
+\conn{C0}{k}{air\_temperature 17.39}
+\conn{C0}{k}{ccd\_temperature 13.51}
+\conn{C0}{k}{cooling\_power 0}
+\conn{C0}{k}{fan 0}
+\conn{C0}{k}{+000 Success}
+
+\conn{k}{C0}{cooltemp -10}
+\conn{C0}{k}{+000 Success}
+
+\conn{k}{C0}{expose 0 1 120}
+\conn{C0}{k}{S img\_chip 1 exposure chip started}
+\conn{C0}{k}{+000 Success}
+
+\conn{C0}{k}{S img\_chip 4 exposure chip finished}
+
+\conn{k}{C0}{readout 0}
+\conn{C0}{k}{D connect 8 C0:5565 3145784}
+
+Klient vytvoøí datové spojení a zaène na nìm pøijímat data. Data budou dlouhá
+3145784 bytù.
+
+\conn{C0}{k}{S img\_chip 2 reading chip started}
+\conn{C0}{k}{+000 Success}
+
+\conn{C0}{k}{S img\_chip 0 reading chip finished}
+
+Server odeslal poslední data, klient musí pøeèíst v¹echny data z datového
+spojení a porovnat je s délkou dat, kterou obdr¾el na zaèátku spojení.

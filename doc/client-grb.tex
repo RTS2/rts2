@@ -1,0 +1,21 @@
+\section{Distribuce zpráv o pozorování gama zábleskù}
+
+V¹echny pozorování gama zábleskù jsou posílány na \ref{gcn}, odkud
+jsou dále distribuovány. GCN umo¾òuje posílat zprávy na email, pager
+(zkrácená varianta emailu), nebo pøes vyhrazený TCP/IP socket.
+
+Pokud pøijímáme data pøes socket, doba jejich pøíjmu závisí na stavu spojení z
+Ondøejova na poèítaè GCN. Vìt¹inou se pohybuje do 1 sekundy.
+
+Pøíjem dat pøes email trvá o trochu déle, prùmìrný èas se pohybuje
+kolem 30 vteøin. Zdr¾ení je zpùsobeno zpracováním emailu na po¹tovních
+servrech.
+
+Data pøijímaná pøes socket nejsou opakována. Pokud spojení nefunguje v dobì,
+kdy dojde ke gama záblesku, pøes socket se o nìj nedozvíme. Proto je vhodné
+zvá¾it mo¾nost pøíjmu dat pøes email jako zálohu socketového spojení - email
+dorazí, by» s èasovým zpo¾dìním, i pøi krátkodobém výpadku snímku.
+
+Tì¾ko lze øíci, jak dlouho po gama záblesku má smysl danou oblast pozorovat.
+Lze uva¾ovat o jednom dnu.
+

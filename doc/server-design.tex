@@ -1,14 +1,5 @@
 \chapter{Design serveru}
 
-\section{Velký obraz}
-
-\section{Komponenty}
-
-\subsection{devdem.c}
-
-Knihovna devdem poskytuje základní funkce, nutné pro {\bf dev}ice {\bf
-daem}on.
-
 \subsubsection{Stav}
 
 Jsou k~dispozici atomické funkce pro zmìnu stavu, a funkce pro jeho
@@ -16,9 +7,12 @@ pøeètení. Stav je umístìn ve sdílené pamìti, tudí¾ je pro v¹echny
 instance serveru v¾dy stejný. Atomicita pøístupu k~nìmu je hlídána
 pomocí semaforù.
 
+Informace o zmìnì stavu jsou ¹íøeny pomocí stavových zpráv v¹em na zaøízení
+pøipojeným klientùm.
+
 \subsubsection{Správa vláken}
 
-Pro vykonávání funkcí, které trvají del¹í dobu
+Pro vykonávání funkcí, které trvají del¹í dobu, se na serveru pou¾ívají 
 
 \subsubsection{Pøenos dat}
 
@@ -34,7 +28,7 @@ Proto má význam celou architekturu navhrnout tak, aby ke kameøe
 (pøípadnì kamerám) byl pøipojen poèítaè, který by slou¾il jako server
 - zpracovával po¾adavky na kameru a poskytoval odpovìdi o~jejím stavu.
 
-\subsubsection{Jak ovládat kamery (zaøízení)}
+\subsubsection{Jak ovládat zaøízení}
 
 Na ovládání kamery budeme potøebovat minimálnì jeden plnì duplexní
 komunikaèní kanál. Vyu¾ijeme nìjakého sí»ového protokolu, s~nejvìt¹í
@@ -47,14 +41,48 @@ Kódované rozhranní znamená uzavøenost systému, textové rozhranní je
 mo¾ná o~tro¹ku slo¾itìj¹í implemetovat díky nutnosti dekódovat pøijaté
 pøíkazy, ale je otevøenìj¹í.
 
-Rozhodl jsem se pro textové rozhranní. Jeho výhody jsou otevøenost a
-nezávislost na architektuøe cílového poèítaèe \footnote{odpadají
-napøíklad problémy s konverzí dat mezi malými a velkými endiány}.
+Rozhodl jsem se pro textové rozhranní. Jeho výhody jsou otevøenost,
+nezávislost na architektuøe cílového poèítaèe\footnote{odpadají napøíklad
+problémy s konverzí dat mezi malými a velkými endiány} a snadné pøidávání
+dal¹ích parametrù - v pøípadì, ¾e klient nebude rozumìt odpovìdi serveru, mù¾e
+jí prostì ignorovat. Pokud bych se rozhodl pro binární protokol, musel bych
+zajistit schodnou verzi klientù a serverù.
 
-Obyèejné stavová data není problém pøekódovat do textové podoby a
-poslat po tomto rozhranní, se snímky je to trochu hor¹í - jsou to
-pomernì veliká binární data, která by bylo záhodno pøená¹et rychle a
+\subsection{Pøenos dat}
+
+Obyèejné stavová data není problém pøekódovat do textové podoby a poslat po
+tomto rozhranní, se snímky je to trochu hor¹í - jsou to binární data ve
+velikostech v øádu megabajtù, která by bylo záhodno pøená¹et rychle a
 efektivnì.
+
+Snímky, nebo spí¹e obecnì binární data, je mo¾né pøená¹et pomocí nìkterého ze
+standartních protokolù. Data ulo¾ím do pamìti, klientovi sdìlím jejich
+umístìní a klient si je od serveru pomocí standartního protokolu vy¾ádá.
+Vhodné protokoly by byli napøíklad FTP nebo HTTP, pøípadnì zdílení diskù
+pomocí NFS nebo Samby.
+
+Druhou mo¾ností je návrh a implementace vlastního protokolu.
+
+Pøenost dat pomocí standartních protokolù neumo¾òuje jejich streaming -
+pøená¹ení èásti dat z kamery okam¾itì po vyètení èásti snímku. Tato vlasnost
+se stává dùle¾itou, pokud chceme poøizovat snímky v takzvaném driftovacím
+re¾imu, kdy je optika detekèního pøístroje zamìøena na pevné místo na obloze a
+hodinový posun montá¾e je nahrazen vyèítáním øádkù z kamery - po vyèetní
+jednoho øádku se øádky o jeden øádek posunou, a na opaèném konci èipu ne¾ z
+kterého se vyèítá vznikne nový øádek.
+
+Pøenos dat pøes standartní servery dále vy¾aduje existenci servru pro tento
+protokol na zaøízení, øídícím vyèítání kamery. Zvìt¹uje tak po¾adavky na pamìt
+na stranì serveru. V pøípadì, ¾e by jsme se rozhodli øe¹it vyèítání
+jednoduchým jednoúèelovým pøístrojem, vy¾aduje po nás implemetaci tohoto
+serveru i na daný pøístroj.
+
+Pøi pøenosu dat pøes standartní protokol je potøeba zajistit jejich smazání.
+Vzhledem k tomu, ¾e klient mù¾e kdykoliv spadnou, pøípadnì mù¾e dojít k
+pøeru¹ení spojení, není toto vhodné øe¹it vysláním pøíkazu ze strany klienta.
+
+Rozhodl jsem se tedy pro vytvoøení vlastního protokolu pro pøenos dat, který
+mì umo¾ní streaming a nebude závislý na externím serveru.
 
 Snímky, nebo spí¹e obecnì binární data, je mo¾né pøená¹et pomocí
 nìkterého ze standartních protokolù. Data ulo¾ím do pamìti,
@@ -71,14 +99,14 @@ podobné spojení navazovat, pou¾ívat, udr¾ovat a ukonèovat.
 
 \subsubsection{Varianta jedno spojení}
 
-Na spojení po¹lu po po¾adavku klienta ze serveru data, a umo¾ním
-klientovi detekovat jejich konec (napadají mì tøi mo¾nosti - speciální
-hodnotou, napøíklad 0, kterou budu pokud se bude jednat o~skuteènou
-hodnotu uvozovat escape znakem - napøíklad 1, a 1 budu v¾dy zapisovat
-jako dvì jednièky za sebou; napsat na zaèátku spojení klientovy délku
-posílaných dat; nebo data kódovat a pøená¹et ve znacích 127-255,
-spodní ponechat pro textové odpovìdi serveru - na re¾ii obìduji 1/8
-kapacity).
+Na spojení po¹le server po po¾adavku klienta data. Data budou zakonèena
+speciální hodnotou, o které bude známo, ¾e se jinde ne¾ na konci pøenosu
+nevyskytuje. Pøípadnì server vy¹le na zaèátku spojení informaci o velikosti
+pøená¹ených dat. Tím bude zaruèeno, ¾e klient pozná, kdy data skonèily, a
+pøepne se zpìt do re¾imu pøijímajícím odpovìdi. Dal¹í mo¾ností je vyhradit
+èást dat pro stavové informace - napøíklad do ka¾dého n-tého bitu napsat
+jednièku nebo 0 podle toho, jestli spojení skonèilo nebo ne. Na re¾ii spojení
+pak padne 1/n-tina kapacity spojení.
 
 \begin{itemize}
 \item{Výhody}
@@ -141,35 +169,32 @@ serverem a procesy obsluhujícímy spojení. Mo¾nosti, které se nabízejí:
 \begin{itemize}
 \item vytvoøit nové spojení na centrální server
 \item pou¾ít pro komunikaci s centrálním serverem rodièovský proces, a
-nìjak zajistit komunikaci s rodièovským procesem
+zajistit komunikaci s rodièovským procesem
 \end{itemize}
 
 První mo¾nost je dost nevýhodná vzhledem k velkému mno¾ství dal¹ích
 spojení, které bude potøeba vytváøet a udr¾ovat v chodu - ka¾dé
 spojení na zaøízení znamená jedno spojení na zaøízení. Tedy,
 konkrétnìji, pokud budu mít k klientù a z zaøízení, budu vytváøet k*z
-spojení. To je pomìrnì dost.
+spojení.
 
 Druhé øe¹ení je pouze odsunutí problému o krok dále. Ale staèí mì v
-nìm zajistit komunikaci mezi rodièovským procesem a jeho potomky.
-Co¾ není zase tak velký problém, na její vyøe¹ení se mì nabízí hned
-nìkolik metod:
+nìm zajistit komunikaci mezi rodièovským procesem a jeho potomky.  Co¾ není
+zase tak velký problém, na jeho vyøe¹ení se nabízí hned nìkolik metod:
 
 \begin{itemize}
 \item prostøedky IPC
-\item roury
+\item obousmìrné roury
 \item unixové sockety
 \item TCP/IP sockety
 \end{itemize}
 
-TCP/IP sockety jsou uvedeny pouze pro úplnost. Celou slo¾itou
-strukturu pøeci chceme zavést proto, aby jsme nemìli pøíli¹ mnoho
-TCP/IP spojení.
+TCP/IP sockety jsou uvedeny pouze pro úplnost. Vytváøení a udr¾ování tohoto
+typus pojení vy¾aduje nejvíce systémových prostøedkù, je výhodné pro
+komunikaci pøes sí», ale je zbyteèné pro komunikaci v rámci jednoho poèítaèe.
 
-Prostøedky IPC vyhlí¾ejí pomìrnì zajímavì. Poskytují mnoho výhod,
-vypadají, ¾e ¹etøí sytémové prostøedky,..
-
-
-\subsection{ovladaè zaøízení}
-
-
+Prostøedky IPC vypadají nejlépe. Pomocí rozli¹ení pøes typ zprávy umo¾òují
+doruèení zprávy pouze vybranému pøíjemci. Sdílená pamìt mù¾e slou¾it pro
+ukládání informací, ke kterým potøebují pøistupovat jednotlivá spojení -
+napøíklad o stavu zaøízení. IPC semafory lze pou¾ít na hlídání kritické sekce
+- zápisu do sdílené pamìti.
