@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <mcheck.h>
 #include "camera_cpp.h"
-#include "mirror.h"
 
 #include "miniccd/ccd_msg.h"
 #include "../utils/rts2device.h"
@@ -547,7 +546,7 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
  *
  ****************************************************************/
 
-class Rts2DevCameraMiniccd:public Rts2DevCameraMirror
+class Rts2DevCameraMiniccd:public Rts2DevCamera
 {
   int fd_ccd;
   int interleave;
@@ -575,7 +574,7 @@ public:
 };
 
 Rts2DevCameraMiniccd::Rts2DevCameraMiniccd (int argc, char **argv):
-Rts2DevCameraMirror (argc, argv)
+Rts2DevCamera (argc, argv)
 {
   fd_ccd = -1;
   interleave = 0;
@@ -598,7 +597,7 @@ Rts2DevCameraMiniccd::processOption (int in_opt)
       device_file = optarg;
       break;
     default:
-      return Rts2DevCameraMirror::processOption (in_opt);
+      return Rts2DevCamera::processOption (in_opt);
     }
   return 0;
 }
@@ -626,7 +625,7 @@ Rts2DevCameraMiniccd::init ()
   CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
   CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 
-  ret = Rts2DevCameraMirror::init ();
+  ret = Rts2DevCamera::init ();
   if (ret)
     return ret;
 

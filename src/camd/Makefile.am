@@ -4,7 +4,7 @@ SUBDIRS = urvc2
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee
 
-noinst_HEADERS = camera_cpp.h mirror.h
+noinst_HEADERS = camera_cpp.h
 
 LDADD = ../utils/librts2block.a
 
@@ -24,7 +24,7 @@ rts2_camd_andor_LDFLAGS = @LIB_ANDOR@ @LIB_M@ @LIB_PTHREAD@
 rts2_camd_andor_CXXFLAGS = @INC_ANDOR@
 endif
 
-rts2_camd_miniccd_SOURCES = camd.cpp mirror.cpp miniccd.cpp
+rts2_camd_miniccd_SOURCES = camd.cpp miniccd.cpp
 
 rts2_camd_urvc2_SOURCES = camd.cpp urvc2.cpp
 rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
