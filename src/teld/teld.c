@@ -29,7 +29,7 @@
 // macro for telescope calls, will write error
 #define tel_call(call)   if ((ret = call) < 0) \
 {\
-	 devdem_write_command_end (DEVDEM_E_HW, "Telescope error: %s", strerror(errno));\
+	 devser_write_command_end (DEVDEM_E_HW, "Telescope error: %s", strerror(errno));\
 	 return ret;\
 }
 
@@ -48,22 +48,22 @@ client_move_cancel (void *arg)
   // TODO find directions to stop slew, try if it works
   // tel_stop_slew ("R");
   // tel_stop_slew ("D");
-  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
+  devser_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move canceled");
 }
 
 void *
 start_move (void *arg)
 {
   int ret;
-  devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+  devser_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 		      "moving of telescope started");
   if ((ret = tel_move_to (RADEC->ra, RADEC->dec)) < 0)
     {
-      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
+      devser_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
     }
   else
     {
-      devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move finished");
+      devser_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "move finished");
     }
   return NULL;
 }
@@ -91,11 +91,11 @@ teld_handle_command (char *command)
   else if (strcmp (command, "set") == 0)
     {
       double ra, dec;
-      if (devdem_param_test_length (2))
+      if (devser_param_test_length (2))
 	return -1;
-      if (devdem_param_next_hmsdec (&ra))
+      if (devser_param_next_hmsdec (&ra))
 	return -1;
-      if (devdem_param_next_hmsdec (&dec))
+      if (devser_param_next_hmsdec (&dec))
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
@@ -105,15 +105,15 @@ teld_handle_command (char *command)
   else if (strcmp (command, "move") == 0)
     {
       struct radec coord;
-      if (devdem_param_test_length (2))
+      if (devser_param_test_length (2))
 	return -1;
-      if (devdem_param_next_hmsdec (&(coord.ra)))
+      if (devser_param_next_hmsdec (&(coord.ra)))
 	return -1;
-      if (devdem_param_next_hmsdec (&(coord.dec)))
+      if (devser_param_next_hmsdec (&(coord.dec)))
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
-      devdem_thread_create (start_move, (void *) &coord, sizeof coord, NULL,
+      devser_thread_create (start_move, (void *) &coord, sizeof coord, NULL,
 			    client_move_cancel);
       devdem_priority_block_end ();
       return 0;
@@ -121,12 +121,12 @@ teld_handle_command (char *command)
   else if (strcmp (command, "ra") == 0)
     {
       tel_call (tel_read_ra (&dval));
-      devdem_dprintf ("ra %f", dval);
+      devser_dprintf ("ra %f", dval);
     }
   else if (strcmp (command, "dec") == 0)
     {
       tel_call (tel_read_dec (&dval));
-      devdem_dprintf ("dec %f", dval);
+      devser_dprintf ("dec %f", dval);
     }
   else if (strcmp (command, "park") == 0)
     {
@@ -139,22 +139,22 @@ teld_handle_command (char *command)
   else if (strcmp (command, "lon") == 0)
     {
       tel_call (tel_read_longtitude (&dval));
-      devdem_dprintf ("dec %f", dval);
+      devser_dprintf ("dec %f", dval);
     }
   else if (strcmp (command, "lat") == 0)
     {
       tel_call (tel_read_latitude (&dval));
-      devdem_dprintf ("dec %f", dval);
+      devser_dprintf ("dec %f", dval);
     }
   else if (strcmp (command, "lst") == 0)
     {
       tel_call (tel_read_siderealtime (&dval));
-      devdem_dprintf ("dec %f", dval);
+      devser_dprintf ("dec %f", dval);
     }
   else if (strcmp (command, "loct") == 0)
     {
       tel_call (tel_read_localtime (&dval));
-      devdem_dprintf ("dec %f", dval);
+      devser_dprintf ("dec %f", dval);
     }
   else if (strcmp (command, "exit") == 0)
     {
@@ -162,23 +162,23 @@ teld_handle_command (char *command)
     }
   else if (strcmp (command, "help") == 0)
     {
-      devdem_dprintf ("ready - is telescope ready to observe?");
-      devdem_dprintf ("set - set telescope coordinates");
-      devdem_dprintf ("move - move telescope");
-      devdem_dprintf ("ra - telescope right ascenation");
-      devdem_dprintf ("dec - telescope declination");
-      devdem_dprintf ("park - park telescope");
-      devdem_dprintf ("lon - telescope longtitude");
-      devdem_dprintf ("lat - telescope latitude");
-      devdem_dprintf ("lst - telescope local sidereal time");
-      devdem_dprintf ("loct - telescope local time");
-      devdem_dprintf ("exit - exit from main loop");
-      devdem_dprintf ("help - print, what you are reading just now");
+      devser_dprintf ("ready - is telescope ready to observe?");
+      devser_dprintf ("set - set telescope coordinates");
+      devser_dprintf ("move - move telescope");
+      devser_dprintf ("ra - telescope right ascenation");
+      devser_dprintf ("dec - telescope declination");
+      devser_dprintf ("park - park telescope");
+      devser_dprintf ("lon - telescope longtitude");
+      devser_dprintf ("lat - telescope latitude");
+      devser_dprintf ("lst - telescope local sidereal time");
+      devser_dprintf ("loct - telescope local time");
+      devser_dprintf ("exit - exit from main loop");
+      devser_dprintf ("help - print, what you are reading just now");
       ret = errno = 0;
     }
   else
     {
-      devdem_write_command_end (DEVDEM_E_COMMAND, "Unknow command: '%s'",
+      devser_write_command_end (DEVDEM_E_COMMAND, "Unknow command: '%s'",
 				command);
       return -1;
     }
@@ -188,7 +188,7 @@ teld_handle_command (char *command)
 void
 exit_handler (int err, void *args)
 {
-  if (getpid () == devdem_parent_pid)
+  if (getpid () == devser_parent_pid)
     tel_cleanup (err, args);
   syslog (LOG_INFO, "Exit");
 }
@@ -205,7 +205,7 @@ main (void)
 
   if (devdem_register (&server_channel, "teld", "localhost", 5557) < 0)
     {
-      perror ("devdem_register");
+      perror ("devser_register");
       exit (EXIT_FAILURE);
     }
 
@@ -217,5 +217,5 @@ main (void)
       exit (EXIT_FAILURE);
     }
 
-  return devdem_run (PORT, teld_handle_command, stats, 1, 0);
+  return devser_run (PORT, teld_handle_command, stats, 1, 0);
 }
