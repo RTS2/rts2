@@ -142,9 +142,9 @@ teld_handle_command (char *command)
 	return -1;
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 			  "moving of telescope started");
-      if (ret =
-	  devser_thread_create (start_move, (void *) &coord, sizeof coord,
-				NULL, client_move_cancel) < 0)
+      if ((ret =
+	   devser_thread_create (start_move, (void *) &coord, sizeof coord,
+				 NULL, client_move_cancel)) < 0)
 	{
 	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
 			      "cannot create thread");
@@ -202,23 +202,25 @@ teld_handle_command (char *command)
       devdem_priority_block_end ();
       return ret;
     }
+  else if (strcmp (command, "base_info") == 0)
+    {
+      struct telescope_info info;
+      tel_call (telescope_base_info (&info));
+      devser_dprintf
+	("type %s\nserial_number %s\nlongtitude %f\nlatitude %f\naltitude %f\npark_dec %f",
+	 info.type, info.serial_number, info.longtitude, info.latitude,
+	 info.altitude, info.park_dec);
+    }
   else if (strcmp (command, "info") == 0)
     {
       struct telescope_info info;
       tel_call (telescope_info (&info));
-      devser_dprintf ("type %s", info.type);
-      devser_dprintf ("serial_number %s", info.serial_number);
-      devser_dprintf ("ra %f", info.ra);
-      devser_dprintf ("dec %f", info.dec);
-      devser_dprintf ("park_dec %f", info.park_dec);
-      devser_dprintf ("longtitude %f", info.longtitude);
-      devser_dprintf ("latitude %f", info.latitude);
-      devser_dprintf ("siderealtime %f", info.siderealtime);
-      devser_dprintf ("localtime %f", info.localtime);
       // correction mark is local variable, so we must use the local
       // variant - not one from info!
-      devser_dprintf ("correction_mark %i", correction_mark);
-      devser_dprintf ("flip %i", info.flip);
+      devser_dprintf
+	("ra %f\ndec %f\nsiderealtime %f\nlocaltime %f\ncorrection_mark %i\nflip %i\naxis0_counts %f\naxis1_counts %f",
+	 info.ra, info.dec, info.siderealtime, info.localtime,
+	 correction_mark, info.flip, info.axis0_counts, info.axis1_counts);
     }
   else if (strcmp (command, "park") == 0)
     {
@@ -226,9 +228,9 @@ teld_handle_command (char *command)
 	return -1;
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 			  "parking telescope started");
-      if (ret =
-	  devser_thread_create (start_park, NULL, 0, NULL,
-				client_move_cancel) < 0)
+      if ((ret =
+	   devser_thread_create (start_park, NULL, 0, NULL,
+				 client_move_cancel)) < 0)
 	{
 	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_OBSERVING,
 			      "not parking - cannot create thread");
