@@ -34,7 +34,14 @@
 		if ($_REQUEST['tar_enabled'] === 't')
 			$tar_enabled = 'true';
 		if (array_key_exists('insert',$_REQUEST)) {
-			$tar_id = $q->simple_query ("SELECT nextval('tar_id');");
+			if (array_key_exists ('tar_id', $_REQUEST))
+			{
+				$tar_id = $_REQUEST['tar_id'];
+			}
+			else
+			{
+				$tar_id = $q->simple_query ("SELECT nextval('tar_id');");
+			}
 			$q->do_query ("INSERT INTO 
 				targets 
 			(
