@@ -1,4 +1,6 @@
+.deps
+.libs
 Makefile
-log
-serverd
+Makefile.in
+rts2-centrald
 test

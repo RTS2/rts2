@@ -7,7 +7,7 @@
 #include "../utils/devconn.h"
 #include "../utils/devcli.h"
 #include "status.h"
-#include "../../config.h"
+#include "config.h"
 
 #include <unistd.h>
 #include <stdio.h>

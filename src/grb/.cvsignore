@@ -1,4 +1,8 @@
+.deps
+.libs
+Makefile
+Makefile.in
+rts2-grbc
 *~
 *.log
-Makefile
-grbc
+

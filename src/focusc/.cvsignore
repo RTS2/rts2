@@ -1,4 +1,6 @@
+.deps
 Makefile
+Makefile.in
 *.fits
-focusc
-*~~
+rts2-focusc
+*~

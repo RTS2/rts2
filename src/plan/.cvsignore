@@ -1,4 +1,7 @@
+.deps
+.libs
 Makefile
-planc
+Makefile.in
+rts2-planc
 selector.c
 test

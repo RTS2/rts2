@@ -1,3 +1,6 @@
+.deps
+.libs
 Makefile
-monitor
-nmonitor
+Makefile.in
+rts2-mon
+rts2-cmon

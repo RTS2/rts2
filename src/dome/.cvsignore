@@ -1,2 +1,4 @@
+.deps
 Makefile
-dome_dcm
+Makefile.in
+rts2-dome*

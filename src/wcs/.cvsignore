@@ -1,2 +1,6 @@
+.deps
+.libs
 Makefile
-wcs2db
+Makefile.in
+rts2-wcs2db
+rts2-f2cj

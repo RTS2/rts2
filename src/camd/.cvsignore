@@ -1,7 +1,8 @@
+.deps
+.libs
 Makefile
+Makefile.in
 *.o
 *~
 core*
-camd_apogee
-camd_urvc
-camd_sbig
+rts2-camd*
