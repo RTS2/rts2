@@ -392,11 +392,12 @@ void *
 thread_wrapper (void *temp)
 {
 #define TW ((struct thread_wrapper_temp *) temp)	// THREAD WRAPPER
+  void *ret;
+
   pthread_mutex_lock (&threads_mutex);
   threads_count++;
   pthread_mutex_unlock (&threads_mutex);
 
-  void *ret;
   pthread_cleanup_push (threads_count_decrease, (void *) (TW->lock));
 
   if (TW->clean_cancel)
