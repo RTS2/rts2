@@ -162,8 +162,7 @@ process_images (void *arg)
 
 	  // add image to db
 	  asprintf (&cmd,
-		    "cd /images && /home/petr/fitsdb/wcs/wcs2db %s|psql stars",
-		    filename + 8);
+		    "cd /images && rts2-fits2db %s|psql stars", filename + 8);
 
 	  if (system (cmd))
 	    {
@@ -200,7 +199,7 @@ data_handler (int sock, size_t size, struct image_info *image)
   char *filen;
   char *filename;
   char *dirname;
-  char *dark_name;
+  char *dark_name = NULL;
 
   gmtime_r (&image->exposure_time, &gmt);
 
@@ -339,5 +338,4 @@ free_filen:
 free_filename:
   free (filename);
   return ret;
-#undef receiver
 }
