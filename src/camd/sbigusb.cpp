@@ -143,7 +143,7 @@ public:
   virtual int baseInfo ();
   virtual int camChipInfo (int chip);
   virtual int camExpose (int chip, int light, float exptime);
-  virtual int camWaitExpose (int chip);
+  virtual long camWaitExpose (int chip);
   virtual int camStopExpose (int chip);
   virtual int camBox (int chip, int x, int y, int width, int height);
   virtual int camStopRead (int chip);
@@ -295,17 +295,17 @@ Rts2DevCameraSbig::camExpose (int chip, int light, float exptime)
   return checkSbigHw (ret);
 }
 
-int
+long
 Rts2DevCameraSbig::camWaitExpose (int chip)
 {
-  int ret;
+  long ret;
   ret = Rts2DevCamera::camWaitExpose (chip);
   if (ret == -2)
     {
       camStopExpose (chip);	// SBIG devices are strange, there is same command for wait and stop
       return -2;
     }
-  return -1;
+  return ret;
 }
 
 int
