@@ -58,7 +58,7 @@ AC_SUBST(LIB_PANEL), [cat <<EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([nova], [get_ln_version], LIB_NOVA="-lnova"; 
+AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
 AC_SUBST(LIB_NOVA), [cat << EOF
 **** You don't have libnova library.
 **** Please get one from http://libnova.sourceforge.net.
@@ -72,13 +72,7 @@ AC_SUBST(LIB_PTHREAD), [cat << EOF
 EOF
 exit 1])
 
-AC_PATH_X
-#AC_CHECK_LIB([X11], [XCloseDisplay], LIB_X11="-lX11";
-#AC_SUBST(LIB_X11), [cat << EOF
-#**** You don't have X11 library installed.
-#**** Please try to get it somewhere.
-#EOF
-#exit 1])
+AC_PATH_XTRA
 
 AC_CHECK_LIB([efence], [malloc], LIB_EFENCE="-lefence", [cat << EOF
 **** You don't have libefence library installed.
