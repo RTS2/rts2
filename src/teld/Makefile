@@ -1,6 +1,6 @@
 # $Id$
 
-BIN = teld
+BIN = teld_lx200
 
 all: $(BIN)
 
@@ -8,4 +8,8 @@ include ../../make.conf
 
 LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD)
 
-teld: teld.o lx200.o ../utils/devdem.a
+lx200/lx200.a: telescope.h lx200/Makefile lx200/lx200.c
+	$(MAKE) -C lx200
+
+teld_lx200: teld.c lx200/lx200.a ../utils/devdem.a
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)	
