@@ -41,9 +41,10 @@ EOT;
 		array_push ($types, $row[0]); 
 		echo "<a href='targets.php?type_id=$row[0]'>$row[0]</a>&nbsp;";
 	}
+echo "</li>\n"
+if ($_SESSION['authorized'])
+echo "			<li><a href='targets.php?insert=1'>Insert new</a></li>\n";
 echo <<<EOT
-</li>
-			<li><a href="targets.php?insert=1">Insert new</a></li>
 		</ul class="menu">
 	</li>
 	<li>Statistics
@@ -73,9 +74,14 @@ echo <<<EOT
 	<li><a href="days.php?year=2003">Year 2003</a></li>
 	<li><a href="types.php">Observations types</a></li>
 	<li><a href="medias.php">Medias table</a></li>
+EOT
+if ($_SESSION['authorized'])
+echo <<<EOT
 	<ul class="menu">
 		<li><a href="medias.php?insert=1">Insert new</a></li>
 	</ul>
+EOT
+echo <<<EOT
 	<li><a href="settings.php">Settings</a></li>
 	<li>
 EOT;
