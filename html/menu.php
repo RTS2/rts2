@@ -41,6 +41,7 @@ EOT;
 	pg_close ($con);
 echo <<<EOT
 		</ul class="menu">
+		<ul><a href="targets.php?insert=1">Insert new</a></ul>
 	</li>
 	<li>Statistics
 		<ul class="menu">
@@ -50,7 +51,7 @@ echo <<<EOT
 			<li>Year statistics</li>
 		</ul class="menu">
 	</li>
-	<li><a href="observations.php?obs_id=&tar_id=">Observations</a></li>
+	<li><a href="observations.php">Observations</a></li>
 		<ul class="menu">
 			<li>RA&amp;DEC</li>
 			<li>Target</li>

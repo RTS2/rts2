@@ -17,8 +17,11 @@
 	}
 
 	function table_end ($wday) {
-		for ($i = $wday; $i < 8; $i++) {
-			echo "\t\t<td>-</td>\n";	
+	        if ($wday > 1)
+		{
+			for ($i = $wday; $i < 8; $i++) {
+				echo "\t\t<td>-</td>\n";	
+			}
 		}
 		echo "\t</tr>\n</table>\n";
 	}

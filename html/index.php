@@ -1,6 +1,6 @@
 <?
 	require_once "fitsdb.php";
-	
+
 	hlavicka ("BARTDB - main page", "BARTBD - entry page", "", "ok");
 ?>
 	<p>Welcome to BART DB main page. Please use menu on right to navigate throught pictures.

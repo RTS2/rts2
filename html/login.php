@@ -3,7 +3,7 @@
 
 	hlavicka ("BARTDB login", "BARTDB login", "", "ok");
 ?>
-	<form action="index.php" method="post">
+	<form action="index.php">
 		<table>
 			<tr>
 				<td valign="left">Login:</td>

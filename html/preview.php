@@ -4,12 +4,14 @@
 	$fn = escapeshellarg ("$_REQUEST[fn]");
 	$ra = "";
 	$dec = "";
+#	$f2cj = "/home/mates/rtopera/f2cj";
+	$f2cj = "/home/petr/rts2/html/f2cj";
 	if (array_key_exists('full', $_REQUEST))
-		$cmd = "/home/rtopera/src/f2cj $fn full";
+		$cmd = "$f2cj $fn full";
 	else if (array_key_exists('ra', $_SESSION) && array_key_exists('dec', $_SESSION))
-		$cmd = "/home/rtopera/src/f2cj $fn $_SESSION[ra] $_SESSION[dec]";
+		$cmd = "$f2cj $fn $_SESSION[ra] $_SESSION[dec]";
 	else
-		$cmd = "/home/rtopera/src/f2cj $fn";
+		$cmd = "$f2cj $fn";
 
 	$ret = popen ("$cmd", "r");
 	$bit = fread ($ret, 1000);

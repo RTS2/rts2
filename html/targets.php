@@ -16,15 +16,15 @@
 		}
 		$type_id = $_REQUEST['type_id'];
 		$tar_name = $_REQUEST['tar_name'];
-		preg_replace ('/[^A-Za-z0-9 _-.]/', '', $tar_name);
-		
-		$tar_ra = floatval ($_REQUEST['tar_ra']);
-		$tar_dec = floatval ($_REQUEST['tar_dec']);
-		
+		preg_replace ('/[^A-Za-z0-9 _\-.]/', '', $tar_name);
+		$tar_ra = s2deg($_REQUEST['tar_ra'], 15);
+		$tar_dec = s2deg($_REQUEST['tar_dec'], 1);
 		$tar_comment = $_REQUEST['tar_comment'];
-		preg_replace ('/[^A-Za-z0-9 _.-]/', '', $tar_comment);
-
-		pg_query ($q->con, "UPDATE targets SET type_id='$type_id', tar_name = '$tar_name', tar_ra = $tar_ra, tar_dec = $tar_dec, tar_comment = '$tar_comment' WHERE tar_id = $tar_id");
+		preg_replace ('/[^A-Za-z0-9 _.\-]/', '', $tar_comment);
+		if (array_key_exists('insert',$_REQUEST))
+			pg_query ($q->con, "INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES (nextval('tar_id'), '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');");
+		else
+			pg_query ($q->con, "UPDATE targets SET type_id='$type_id', tar_name = '$tar_name', tar_ra = $tar_ra, tar_dec = $tar_dec, tar_comment = '$tar_comment' WHERE tar_id = $tar_id");
 	}
 
 	if (array_key_exists('tar_id', $_SESSION) && !array_key_exists('type_id', $_REQUEST)) {
@@ -51,6 +51,11 @@
 		$q->add_order ('obs_start DESC');
 		$q->do_query ();
 		$q->print_table ();
+	} else if (array_key_exists ('insert', $_REQUEST)) {
+		$q->add_field ("*");
+		$q->add_from ("targets");
+		$q->do_query ();
+		$q->print_form_insert ();
 	} else {
 		$q->add_field ('targets.*, targets_images.img_count');
 		$q->add_from ('targets, targets_images');
@@ -63,8 +68,6 @@
 					$q->add_field ('grb.*');
 					$q->add_from ('grb');
 					$q->add_and_where ('grb.tar_id = targets.tar_id');
-					$q->order = "";
-					$q->add_order ('grb_id desc');
 					break;
 				case 'O':
 					$q->add_field ('ot.*');
