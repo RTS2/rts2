@@ -333,7 +333,7 @@ tel_gemini_set (int id, int val)
  * @return -1 and set errno on error, otherwise 0
  */
 int
-tel_gemini_get (int id, int *val)
+tel_gemini_get (int id, int32_t * val)
 {
   char buf[9], *ptr, checksum;
   int len, ret;
@@ -356,7 +356,7 @@ tel_gemini_get (int id, int *val)
       errno = ENODEV;
       return -1;
     }
-  *val = atoi (buf);
+  *val = atol (buf);
   return 0;
 }
 
@@ -719,7 +719,7 @@ telescope_done ()
 extern int
 telescope_base_info (struct telescope_info *info)
 {
-  int type;
+  int32_t type;
   if (tel_read_longtitude (&info->longtitude)
       || tel_read_latitude (&info->latitude))
     return -1;
@@ -860,7 +860,7 @@ tel_slew_to (double ra, double dec)
 int
 tel_is_still (void)
 {
-  int status;
+  int32_t status;
   if (tel_gemini_get (99, &status) < 0)
     return -1;
   return !!(status & 8);
@@ -911,7 +911,8 @@ int
 tel_move_to (double ra, double dec)
 {
   int timeout;
-  int ret, track;
+  int ret;
+  int32_t track;
 
   syslog (LOG_INFO, "Losmandy:tel move_to ra:%f dec:%f", ra, dec);
 
@@ -920,9 +921,6 @@ tel_move_to (double ra, double dec)
   timeout = time (NULL) + 100;	// it's quite reasonably to hope that call will not fail
   while ((time (NULL) <= timeout) && (tel_is_still ()))
     sleep (2);
-  // wait for a bit, telescope get confused?? when you check for ra 
-  // and dec often and sometime doesn't move to required location
-  // this is still just a theory, which waits for final proof
 
   if (time (NULL) > timeout)
     {
@@ -938,12 +936,6 @@ tel_move_to (double ra, double dec)
   tel_write ("#:ONtest", 8);
   syslog (LOG_INFO, "rate: %i", track);
   sleep (1);
-  // need to sleep a while, waiting for final precise adjustement 
-  // of the scope, which could be checked by checkcoords - the scope 
-  // newer gets to precise position, it just get to something about 
-  // that, so we could program checkcoords to check for precise position.  
-  // Also good to wait till the things settle down.
-
 
   syslog (LOG_DEBUG, "Losmandy:tel_move_to ra:%f dec:%f returns %i", ra, dec,
 	  ret);
@@ -1013,8 +1005,7 @@ tel_set_to (double ra, double dec)
  * Set telescope to match given coordinates
  *
  * This function is mainly used to tell the telescope, where it
- * actually is at the beggining of observation (remember, that lx200
- * doesn't have absolute position sensors)
+ * actually is at the beggining of observation
  * 
  * @param ra		setting right ascennation
  * @param dec		setting declination
@@ -1176,6 +1167,49 @@ telescope_park ()
       count++;
     }
   return count == 200 ? -1 : 0;
+}
+
+int save_registers[] = {
+  120,				// manual slewing speed
+  140,				// goto slewing speed
+  150,				// guiding speed
+  170,				// centering speed
+  200,				// TVC stepout
+  201,				// modeling parameter A (polar axis misalignment in azimuth) in seconds of arc
+  202,				// modeling parameter E (polar axis misalignment in elevation) in seconds of arc
+  203,				// modeling parameter NP (axes non-perpendiculiraty at the pole) in seconds of arc
+  204,				// modeling parameter NE (axes non-perpendiculiraty at the Equator) in seconds of arc
+  205,				// modeling parameter IH (index error in hour angle) in seconds of arc
+  206,				// modeling parameter ID (index error in declination) in seconds of arc
+  207,				// modeling parameter FR (mirror flop/gear play in RE) in seconds of arc
+  208,				// modeling parameter FD (mirror flop/gear play in declination) in seconds of arc
+  209,				// modeling paremeter CF (counterweight & RA axis flexure) in seconds of arc
+  211, -1
+};				// modeling parameter TF (tube flexure) in seconds of arc
+
+extern int
+telescope_save ()
+{
+  int *reg = save_registers;
+  int32_t val;
+  FILE *config_file;
+
+  config_file = fopen (".losmandy.ini", "w");
+
+  while (*reg >= 0)
+    {
+      tel_gemini_get (*reg, &val);
+      fprintf (config_file, "%i:%i\n", *reg, val);
+    }
+  fclose (config_file);
+  return 0;
+}
+
+extern int
+telescope_load ()
+{
+
+  return 0;
 }
 
 /*!
