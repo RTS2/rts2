@@ -530,8 +530,8 @@ Rts2Block::run ()
 
   while (1)
     {
-      read_tout.tv_sec = idle_timeout / 100000;
-      read_tout.tv_usec = idle_timeout % 100000;
+      read_tout.tv_sec = idle_timeout / 1000000;
+      read_tout.tv_usec = idle_timeout % 1000000;
       //printf ("timeout: %i\n", idle_timeout);
 
       FD_ZERO (&read_set);
