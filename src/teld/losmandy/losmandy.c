@@ -595,7 +595,7 @@ tel_write_dec (double dec)
 extern int
 telescope_init (const char *device_name, int telescope_id)
 {
-  struct termios tel_termios;
+  struct termios newtio;
   union semun sem_un;
   unsigned short int sem_arr[] = { 1, 1 };
   char rbuf[10];
@@ -619,27 +619,16 @@ telescope_init (const char *device_name, int telescope_id)
 	  syslog (LOG_ERR, "semctl init: %m");
 	  return -1;
 	}
+      newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
+      newtio.c_iflag = IGNPAR;
+      newtio.c_oflag = 0;
+      newtio.c_lflag = 0;
+      newtio.c_cc[VMIN] = 0;
+      newtio.c_cc[VTIME] = 5;
 
-      if (tcgetattr (port, &tel_termios) < 0)
-	return -1;
+      tcflush (port, TCIOFLUSH);
+      tcsetattr (port, TCSANOW, &newtio);
 
-      if (cfsetospeed (&tel_termios, B9600) < 0 ||
-	  cfsetispeed (&tel_termios, B9600) < 0)
-	return -1;
-
-      tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-      tel_termios.c_oflag = 0;
-      tel_termios.c_cflag =
-	((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-      tel_termios.c_lflag = 0;
-      tel_termios.c_cc[VMIN] = 0;
-      tel_termios.c_cc[VTIME] = 5;
-
-      if (tcsetattr (port, TCSANOW, &tel_termios) < 0)
-	{
-	  syslog (LOG_ERR, "tcsetattr: %m");
-	  return -1;
-	}
       tel_gemini_reset ();
     }
 
