@@ -129,7 +129,7 @@ get_refraction (double altitude, double atm_pres, double temp)
 
   /* eq. 5.27 (Telescope Control,M.Trueblood & R.M. Genet) */
   R = 1.02 /
-      tan (deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
+    tan (deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
 
   // for gnuplot (in degrees)
   // R(a) = 1.02 / tan( (a + 10.3 / (a + 5.11) + 0.0019279) / 57.2958 ) / 60
@@ -161,15 +161,14 @@ ha_dec (struct ln_equ_posn *mean_position,
   double refraction;
 
   printf
-      ("\n\033[31mInside the conversion function:\n===============================\033[m\n");
+    ("\n\033[31mInside the conversion function:\n===============================\033[m\n");
   // Transform from catalogue position (J2000 ???) to apparent position
   proper_motion.ra = 0;
   proper_motion.dec = 0;
   get_apparent_posn (mean_position, &proper_motion, JD, app_position);	// Second argument should be proper motion but we ignore it
   printf ("\033[34mcat: %f %f\033[m\n", mean_position->ra,
 	  mean_position->dec);
-  printf ("\033[34mapp: %f %f\033[m\n", app_position->ra,
-	  app_position->dec);
+  printf ("\033[34mapp: %f %f\033[m\n", app_position->ra, app_position->dec);
   // Transform to horizontal coordinates
   get_hrz_from_equ (app_position, observer, JD, &h_app_position);
   printf ("\033[34mhor: %f %f\033[m\n", h_app_position.az,
@@ -186,8 +185,7 @@ ha_dec (struct ln_equ_posn *mean_position,
 	    refraction * 60);
   // Convertion to equatorial
   get_equ_from_hrz (&h_app_position, observer, JD, app_position);
-  printf ("\033[34mcor: %f %f\033[m\n", app_position->ra,
-	  app_position->dec);
+  printf ("\033[34mcor: %f %f\033[m\n", app_position->ra, app_position->dec);
 
   // Convertion to ha_dec
   //get_hd_from_equ (&app_position, observer, JD,apparent_position);
@@ -508,8 +506,7 @@ telescope_init (const char *device_name, int telescope_id)
 
   if ((semid = semget (ftok (device_name, 0), 2, 0644)) < 0)
     {
-      if ((semid =
-	   semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
+      if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
 	{
 	  syslog (LOG_ERR, "semget: %m");
 	  return -1;
@@ -624,6 +621,18 @@ extern int
 telescope_stop ()
 {
 
+  return 0;
+}
+
+extern int
+telescope_start_move (char direction)
+{
+  return 0;
+}
+
+extern int
+telescope_stop_move (char direction)
+{
   return 0;
 }
 

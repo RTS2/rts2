@@ -36,6 +36,7 @@
 #include "../telescope.h"
 #include "../../utils/hms.h"
 #include "status.h"
+#include "tpmodel.h"
 
 // uncomment following line, if you want all port read logging (will
 // at about 10 30-bytes lines to syslog for every query). 
@@ -515,6 +516,7 @@ telescope_init (const char *device_name, int telescope_id)
 	  syslog (LOG_ERR, "tcsetattr: %m");
 	  return -1;
 	}
+      syslog (LOG_DEBUG, "LX200: Port init complete");
     }
 
   syslog (LOG_DEBUG, "LX200:Initialization complete");
@@ -802,6 +804,11 @@ int
 telescope_move_to (double ra, double dec)
 {
   int i;
+
+  syslog (LOG_DEBUG, "LX200:T_move_to ra:%f dec:%f", ra, dec);
+  tpoint_apply_now (&ra, &dec);
+  syslog (LOG_DEBUG, "LX200:T_move_to (tp) ra:%f dec:%f", ra, dec);
+
   for (i = 0; i < 2; i++)
     if (!tel_move_to (ra, dec))
       {
