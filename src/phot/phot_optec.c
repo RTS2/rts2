@@ -151,11 +151,21 @@ phot_handle_command (char *command)
       return ret;
     }
 
+  else if (strcmp (command, "stop") == 0)
+    {
+      if (devdem_priority_block_start ())
+	return -1;
+      devser_thread_cancel_all ();
+      devdem_priority_block_end ();
+      return 0;
+    }
+
   else if (strcmp (command, "help") == 0)
     {
       devser_dprintf ("info - dome informations");
       devser_dprintf ("exit - exit from main loop");
       devser_dprintf ("help - print, what you are reading just now");
+      devser_dprintf ("stop - stop any running integration");
       ret = errno = 0;
     }
   else
