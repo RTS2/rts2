@@ -349,15 +349,17 @@ camera_readout_line (int chip_id, short start, short length, void *data)
   PAR_ERROR ret = CE_NO_ERROR;
   int bin = ch_info[chip_id].binning_vertical;
 
+  disable ();
   CameraOut (0x60, 1);
-//      disable();
   SetVdd (1);
   if ((ret =
        DigitizeImagingLine (start, length, 0, bin, bin, 1, data, 0, length)))
     {
+      enable ();
       printf ("digitize line:%i", ret);
       return -1;
     }
+  enable ();
 #ifdef DEBUG
   printf ("get line\n");
 #endif /* DEBUG */
