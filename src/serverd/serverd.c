@@ -361,8 +361,9 @@ serverd_riseset_thread (void *arg)
 	{
 	  if ((shm_info->current_state & SERVERD_STATUS_MASK) ==
 	      SERVERD_MORNING && call_state == SERVERD_DAY
-	      && (get_device_string_default ("centrald", "morning_off", "N"))
-	      == "Y")
+	      &&
+	      !strcmp (get_device_string_default
+		       ("centrald", "morning_off", "N"), "Y"))
 	    {
 	      shm_info->current_state = SERVERD_OFF;
 	    }
