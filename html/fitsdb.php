@@ -43,13 +43,15 @@ EOT;
 		$res = '';
 		for ($i++; $i < $len; $i++) {
 			$c = $s[$i];
-			if (($c > '9' || $c < '0') && $c != '.') {
+			if ($res > '' && ($c > '9' || $c < '0') && $c != '.') {
 				$out += floatval($res) * $mul;
 				$mul /= 60.0;
 				$res = '';
 			}
-			else
+			elseif ($c == '.' || ($c > '0' && $c < '9'))
+			{
 				$res .= $c;
+			}
 		}
 		return $sign * ($out + floatval($res) * $mul);
 	}
