@@ -173,7 +173,7 @@ tel_read (char *buf, int count)
     {
       FD_ZERO (&pfds);
       FD_SET (port, &pfds);
-      if (select (port + 1, &pfds, NULL, NULL, &tv) == 1)
+      if (select (port + 1, &pfds, NULL, NULL, &tv) == 0)
 	return -1;
 
       if (FD_ISSET (port, &pfds))
@@ -202,10 +202,12 @@ tel_read_hash (char *buf, int count)
   int readed;
   buf[0] = 0;
 
-  for (readed = 0; readed < count && buf[readed] != '#'; readed++)
+  for (readed = 0; readed < count; readed++)
     {
       if (tel_read (&buf[readed], 1) < 0)
 	return -1;
+      if (buf[readed] == '#')
+	break;
     }
   if (buf[readed] == '#')
     buf[readed] = 0;
@@ -256,9 +258,6 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
     return -1;
   if (tcflush (port, TCIOFLUSH) < 0)
     goto unlock;		// we need to unlock
-  if (tel_write (wbuf, wcount) < 0)
-    goto unlock;
-
   if (tel_write (wbuf, wcount) < 0)
     goto unlock;
 
@@ -485,14 +484,14 @@ tel_rep_write (char *command)
 int
 tel_write_ra (double ra)
 {
-  char command[14];
+  char command[15];
   int h, m, s;
   if (ra < 0)
     ra = floor (ra / 24) * -24 + ra;	//normalize ra
   if (ra > 24)
     ra = ra - floor (ra / 24) * 24;
   dtoints (ra, &h, &m, &s);
-  if (snprintf (command, 13, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
+  if (snprintf (command, 14, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
     return -1;
   return tel_rep_write (command);
 }
@@ -504,14 +503,14 @@ tel_write_ra (double ra)
 int
 tel_write_dec (double dec)
 {
-  char command[15];
+  char command[16];
   int h, m, s;
   if (dec < 0)
     dec = floor (dec / 90) * -90 + dec;	//normalize dec
   if (dec > 90)
     dec = dec - floor (dec / 90) * 90;
   dtoints (dec, &h, &m, &s);
-  if (snprintf (command, 14, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) < 0)
+  if (snprintf (command, 15, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) < 0)
     return -1;
   return tel_rep_write (command);
 }
@@ -593,7 +592,7 @@ tel_move_to (double ra, double dec)
       goto unlock;
     }
   timeout = time (NULL) + 100;	// it's quite reasonably to hope that call will not fail
-  while ((time (NULL) <= timeout) && (!tel_check_coords (ra, dec)))
+  while ((time (NULL) <= timeout) && (tel_check_coords (ra, dec)))
     sleep (2);
   // wait for a bit, telescope get confused?? when you check for ra 
   // and dec often and sometime doesn't move to required location
@@ -677,7 +676,7 @@ tel_set_to (double ra, double dec)
     return -1;
   // since we are carring operation critical for next movements of telescope, 
   // we are obliged to check its correctness 
-  return tel_check_coords (ra, dec);
+  return -tel_check_coords (ra, dec);
 }
 
 /*! Initialize telescope

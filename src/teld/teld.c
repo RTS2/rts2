@@ -134,8 +134,8 @@ teld_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "help") == 0)
     {
       devdem_dprintf ("ready - is telescope ready to observe?\n");
-      devdem_dprintf ("set - set telescope coordinates\n");
-      devdem_dprintf ("move - move telescope\n");
+      devdem_dprintf ("set <ra> <dec> - set telescope coordinates\n");
+      devdem_dprintf ("move <ra> <dec> - move telescope\n");
       devdem_dprintf ("ra - telescope right ascenation\n");
       devdem_dprintf ("dec - telescope declination\n");
       devdem_dprintf ("park - park telescope\n");
