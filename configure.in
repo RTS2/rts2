@@ -220,9 +220,6 @@ AC_CONFIG_SRCDIR(src)
 AM_CONFIG_HEADER(include/config.h)
 
 AC_OUTPUT([Makefile
-	   doc/Makefile
-	   doc/dia/Makefile
-	   doc/fitsdb/Makefile
 	   man/Makefile
 	   include/Makefile
 	   html/Makefile
