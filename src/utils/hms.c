@@ -3,7 +3,7 @@
 *
 * hms string is defined as follow:
 * <ul> 
-* 	<li>hms ::= decimal | decimal + ':' + hms 
+* 	<li>hms ::= decimal | decimal + [!0-9] + hms 
 * 	<li>decimal ::= unsigneddec | sign + unsigneddec
 * 	<li>sign ::= '+' | '-'
 * 	<li>unsigneddec ::= integer | integer + '.' + integer
@@ -13,7 +13,7 @@
 * Arbitary number of : could be included, but 2 are reasonable
 * maximum.
 *
-* @author skub
+* @author petr 
 */
 
 #define _GNU_SOURCE
@@ -22,25 +22,31 @@
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>
+#include <string.h>
 
 /** Convert hms (hour:minutes:seconds) string to its double 
 * representation.
 * 
 * @param hptr Pointer to string to convert
-* @return Float value of hms, if fails set errno to E
+* @return Float value of hms, if fails set errno to error and returns
+* NAN 
 * @exception ERANGE  When some value is out of range for float number.
 * @exception EINVAL  When format doesn't match.
 */
 double
 hmstod (const char *hptr)
 {
+  char *locptr;
   char *endptr;
   double ret;			//to store return value
-  double mul;			//multiplier
+  double mul;			//multiplier 
 
-  if (*hptr == '-')
+  if (!(locptr = strdup (hptr)))
+    return -1;
+
+  if (*locptr == '-')
     {
-      hptr++;
+      locptr++;
       mul = -1;
     }
   else
@@ -48,54 +54,77 @@ hmstod (const char *hptr)
       mul = 1;
     }
 
-  endptr = hptr;
+  endptr = locptr;
   ret = 0;
 
   while (*endptr)
     {
       // convert test
-      ret += strtod (hptr, &endptr) * mul;
-      if ((errno == ERANGE) || (!*endptr))
+      ret += strtod (locptr, &endptr) * mul;
+      if (errno == ERANGE)
+	return ret;
+      // we get sucessfuly to end
+      if (!*endptr)
 	{
+	  errno = 0;
 	  return ret;
 	}
+
       // if we have error in translating first string..
-      if ((hptr == endptr) || (*endptr != ':'))
+      if (locptr == endptr)
 	{
 	  errno = EINVAL;
-	  return 0;
+	  return NAN;
 	}
 
       mul /= 60;
-      hptr = endptr + 1;
+      locptr = endptr + 1;
     }
 
+  errno = 0;
   return ret;
 }
 
-/* Opposite to hmstod.
+/* Gives h, m and s values from double.
 *
 * @see hmstod
 * @param value Value to convert
-* @param hptr 
+* @param h Set to hours
+* @param m Set to minutes
+* @param s Set to seconds
+* @return -1 and set errno on failure, 0 otherwise 
 */
-
 int
-dtohms (double value, char *hptr)
+dtoints (double value, int *h, int *m, int *s)
 {
-  char sign;
-  double m;
+  int sign;
+  double m_fraction;
   if (value < 0)
     {
       value = -value;
-      sign = '-';
+      sign = -1;
     }
   else
     {
-      sign = '+';
+      sign = 1;
     }
-  m = (value - floor (value)) * 60;
+  *h = floor (value) * sign;
+  m_fraction = (value - floor (value)) * 60;
+  *m = floor (m_fraction);
+  *s = round ((m_fraction - *m) * 60);
+  return 0;
+}
 
-  return sprintf (hptr, "%c%02.0f:%02.0f:%05.02f", sign, floor (value),
-		  floor (m), (m - floor (m)) * 60);
+/* Opposite to hmstod.
+* @see hmstod
+* @param value Value to convert
+* @param hptr  Should be allocated to minimal 10 characters
+* @return -1 and set errno on error, number of writen bits otherwise
+*/
+int
+dtohms (double value, char *hptr)
+{
+  int h, m, s;
+  dtoints (value, &h, &m, &s);
+  return sprintf (hptr, "%+02i:%02i:%02i", h, m, s);
 }

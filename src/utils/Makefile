@@ -1,8 +1,8 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 LDFLAGS = -lm
 
-all: test
+all: test devdem.o
 
 test: hms.o test.o
 
