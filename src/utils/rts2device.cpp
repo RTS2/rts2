@@ -181,6 +181,7 @@ Rts2DevConnMaster::command ()
 	  if (auth_conn->getCentraldId () != auth_id)
 	    return -1;
 	  auth_conn->authorizationOK ();
+	  auth_conn = NULL;
 	  return -1;
 	}
       return 0;
@@ -194,7 +195,8 @@ Rts2DevConnMaster::command ()
 	    return -1;
 	  if (auth_conn->getCentraldId () != auth_id)
 	    return -1;
-	  auth_conn->authorizationOK ();
+	  auth_conn->authorizationFailed ();
+	  auth_conn = NULL;
 	  return -1;
 	}
       return 0;

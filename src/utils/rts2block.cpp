@@ -104,7 +104,8 @@ Rts2Conn::receive (fd_set * set)
 	    buf_top++;
 	  command_start = buf_top;
 	  // find command end..
-	  while (*buf_top && (!isspace (*buf_top) || *buf_top == '\n') && *buf_top != '\r')
+	  while (*buf_top && (!isspace (*buf_top) || *buf_top == '\n')
+		 && *buf_top != '\r')
 	    buf_top++;
 	  printf ("command: %s offset: %i\n", command_start, buf_top - buf);
 	  // commands should end with (at worst case) \r..
@@ -121,13 +122,23 @@ Rts2Conn::receive (fd_set * set)
 		  *buf_top = '\0';
 		  buf_top++;
 		  if (*buf_top == '\n')
-                    buf_top++;
+		    buf_top++;
 		  if (*command_end == '\n')
-			  command_end++;
+		    command_end++;
 		  // messages..
 		  if (isCommand ("M"))
 		    {
 		      ret = message ();
+		    }
+		  // informations..
+		  else if (isCommand ("I"))
+		    {
+		      ret = informations ();
+		    }
+		  // status
+		  else if (isCommand ("S"))
+		    {
+		      ret = statusMessages ();
 		    }
 		  else
 		    ret = command ();
@@ -139,25 +150,26 @@ Rts2Conn::receive (fd_set * set)
 		    sendCommandEnd (DEVDEM_E_COMMAND,
 				    "invalid parameters/invalid number of parameters");
 		  // we processed whole received string..
-		  printf ("command_end: %i\n", command_end - (buf+data_size));
+		  printf ("command_end: %i\n",
+			  command_end - (buf + data_size));
 		  if (command_end == buf + data_size)
-		  {
-		     printf ("command null\n");
-		     command_end = buf;
-		     buf[0] = '\0';
-		  }
+		    {
+		      printf ("command null\n");
+		      command_end = buf;
+		      buf[0] = '\0';
+		    }
 		}
-              buf_top = command_end;
+	      buf_top = command_end;
 	      printf ("buf_top: %c\n", *buf_top);
 	    }
 	  printf ("Rts2Conn::command ret: %i\n", data_size);
 	}
       if (buf != command_start && command_end > command_start)
-      {
+	{
 	  memmove (buf, command_start, (command_end - command_start + 1));
 	  // move buffer to the end..
 	  buf_top -= command_start - buf;
-      }
+	}
     }
   return data_size;
 }
@@ -188,6 +200,13 @@ Rts2Conn::getAddress (char *addrBuf, int buf_size)
   addrBuf[buf_size - 1] = '0';
 }
 
+void
+Rts2Conn::setCentraldId (int in_centrald_id)
+{
+  centrald_id = in_centrald_id;
+  master->checkPriority (this);
+};
+
 int
 Rts2Conn::sendPriorityInfo (int number)
 {
@@ -205,6 +224,18 @@ Rts2Conn::command ()
 //  send (buf);
   sendCommandEnd (-4, "Unknow command");
   return -4;
+}
+
+int
+Rts2Conn::informations ()
+{
+  return 0;
+}
+
+int
+Rts2Conn::statusMessages ()
+{
+  return 0;
 }
 
 int
@@ -364,6 +395,7 @@ Rts2Conn::paramNextFloat (float *num)
 Rts2Block::Rts2Block ()
 {
   idle_timeout = 1000000;
+  priority_client = -1;
   openlog (NULL, LOG_PID, LOG_LOCAL0);
   for (int i = 0; i < MAX_CONN; i++)
     {
@@ -551,7 +583,7 @@ Rts2Block::run ()
 }
 
 int
-Rts2Block::setPriorityClient (int priority_client, int timeout)
+Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 {
   for (int i = 0; i < MAX_CONN; i++)
     {
@@ -564,9 +596,10 @@ Rts2Block::setPriorityClient (int priority_client, int timeout)
   for (int i = 0; i < MAX_CONN; i++)
     {
       if (connections[i]
-	  && connections[i]->getCentraldId () == priority_client)
+	  && connections[i]->getCentraldId () == in_priority_client)
 	{
 	  connections[i]->setHavePriority (1);
 	}
     }
+  priority_client = in_priority_client; 
 }

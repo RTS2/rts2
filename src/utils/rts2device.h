@@ -20,6 +20,8 @@
 #define RTS2_CONN_AUTH_OK	2
 #define RTS2_CONN_AUTH_FAILED	3
 
+#define CHECK_PRIORITY if (!havePriority ()) { sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
+
 class Rts2Device;
 
 class Rts2DevConn:public Rts2Conn

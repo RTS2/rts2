@@ -118,10 +118,7 @@ public:
   {
     return centrald_id;
   };
-  void setCentraldId (int in_centrald_id)
-  {
-    centrald_id = in_centrald_id;
-  };
+  void setCentraldId (int in_centrald_id);
   int sendPriorityInfo (int number);
   int endConnection ()
   {
@@ -134,6 +131,8 @@ public:
 protected:
   virtual int command ();
   virtual int message ();
+  virtual int informations ();
+  virtual int statusMessages ();
   inline char *getCommand ()
   {
     return command_start;
@@ -154,6 +153,7 @@ class Rts2Block
   int sock;
   int port;
   long int idle_timeout;	// in msec
+  int priority_client;
 
 public:
     Rts2Conn * connections[MAX_CONN];
@@ -173,7 +173,14 @@ public:
     idle_timeout = new_timeout;
   }
   int run ();
-  int setPriorityClient (int priority_client, int timeout);
+  int setPriorityClient (int in_priority_client, int timeout);
+  void checkPriority (Rts2Conn * conn)
+  {
+    if (conn->getCentraldId () == priority_client)
+      {
+	conn->setHavePriority (1);
+      }
+  }
 };
 
 #endif /*! __RTS2_NETBLOCK__ */
