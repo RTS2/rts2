@@ -58,6 +58,8 @@ time_t last_succes = 0;
 
 int watch_status = 1;		// watch central server status
 
+int ignore_astro = 0;
+
 Selector *selector = NULL;
 
 int
@@ -101,7 +103,7 @@ generate_next (int i, Target * plan)
       (plan, (int) get_double_default ("planc_selector", SELECTOR_HETE),
        &start_time, i, EXPOSURE_TIME,
        watch_status ? devcli_server ()->statutes[0].status : SERVERD_NIGHT,
-       observer.lng, observer.lat))
+       observer.lng, observer.lat, ignore_astro))
     {
       printf ("Error making plan\n");
       fflush (stdout);
@@ -201,6 +203,9 @@ main (int argc, char **argv)
     {
       static struct option long_option[] = {
 	{
+	 "ignore_astro", 0, 0, 'a'}
+	,
+	{
 	 "ignore_status", 0, 0, 'i'}
 	,
 	{
@@ -215,13 +220,16 @@ main (int argc, char **argv)
 	{
 	 0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "ip:r:h", long_option, NULL);
+      c = getopt_long (argc, argv, "aip:r:h", long_option, NULL);
 
       if (c == -1)
 	break;
 
       switch (c)
 	{
+	case 'a':
+	  ignore_astro = 1;
+	  break;
 	case 'i':
 	  watch_status = 0;
 	  break;

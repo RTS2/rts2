@@ -67,7 +67,7 @@ public:
 
   int get_next_plan (Target * plan, int selector_type,
 		     time_t * obs_time, int number, float exposure, int state,
-		     float lon, float lat);
+		     float lon, float lat, int ignore_astro);
 
   void free_plan (Target * plan);
 };

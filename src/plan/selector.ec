@@ -872,11 +872,12 @@ Selector::flat_field (Target * plan, time_t * obs_start, int number,
  * @param c_start	starting time
  * @param number	plan number
  * @param state		serverd status
+ * @param ignore_astro  take OT even when no astrometry was achieved
  */
 int
 Selector::get_next_plan (Target * plan, int selector_type,
 			 time_t * obs_start, int number, float exposure,
-			 int state, float lon, float lat)
+			 int state, float lon, float lat, int ignore_astro)
 {
   float az;
   float airmass;
@@ -936,13 +937,19 @@ Selector::get_next_plan (Target * plan, int selector_type,
   printf ("last good image on %s: %i\n",
 	  get_string_default ("telescope_camera", "C0"), last_good_img);
 
-  if (last_good_img >= 0 && last_good_img < 3600)
+  if ((last_good_img >= 0 && last_good_img < 3600) || ignore_astro)
     {
       printf ("Trying OT\n");
+      if (number % dark_frequency == 1)	// get the darks..
+	{
+	  add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
+		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
+	  return 0;
+	}
       if (selector_type == SELECTOR_ELL
-	  && !select_next_ell (obs_start, plan, 120, 230, lon, lat))
+	  && !select_next_ell (obs_start, plan, 360, 0, lon, lat))
 	return 0;
-      if (!select_next_to (obs_start, plan, 120, 230, lon, lat))
+      if (!select_next_to (obs_start, plan, 360, 0, lon, lat))
 	return 0;
     }
 
