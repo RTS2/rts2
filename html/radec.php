@@ -2,7 +2,7 @@
 	include "fn.php";
 	include "fitsdb.php";
 
-	hlavicka ("BARTDB", "Ra &amp; dec settings", " ", "ok");
+	hlavicka ("dec settings", "Ra &amp; dec settings", " ", "ok");
 ?>
 
 <form action="images.php" method="post">

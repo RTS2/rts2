@@ -1,6 +1,6 @@
 <?php
 	require_once "fitsdb.php";
-	hlavicka ("BARTDB", "Types details", " ", "ok");
+	hlavicka ("Types details", "Types details", " ", "ok");
 	$q = new Query;
 	$q->connect ("dbname=stars");
 	if (array_key_exists('type_description', $_REQUEST) && array_key_exists('type_id', $_REQUEST) && preg_match ('/^[A-Za-z]$/', $_REQUEST['type_id'])) {

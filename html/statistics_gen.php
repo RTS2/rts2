@@ -2,7 +2,7 @@
 	require_once "libnova.php";
 	require_once "fitsdb.php";
 	
-	hlavicka ("BART - statistika", "BART - statistika snímkù", "", "ok");
+	hlavicka ("statisc", "image statistics", "", "ok");
 
 //	bindTextDomain ($myPage, "./locale");
 	

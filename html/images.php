@@ -1,7 +1,7 @@
 <?php
 	require_once "fitsdb.php";
 
-	hlavicka ("BARTDB Images", "Images", " ", "ok");
+	hlavicka ("Images", "Images", " ", "ok");
 
 	echo "<form action='images.php'>\n<table>\n";
 		display_settings ('ra');

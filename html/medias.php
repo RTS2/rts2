@@ -1,7 +1,7 @@
 <?php
 	require_once "fitsdb.php";
 	$q = new Query;
-	hlavicka ("BOOTES DB", "Medias", " ", "ok");
+	hlavicka ("Medias", "Medias", " ", "ok");
 	if ($_SESSION['authorized'] && array_key_exists ('med_path', $_REQUEST)) {
 		$med_id = -1;
 		if (array_key_exists ('med_id', $_REQUEST))

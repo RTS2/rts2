@@ -2,7 +2,7 @@
 	require_once "fn.php";
 	require_once "fitsdb.php";
 
-	hlavicka ("BARTDB - main page", "BARTBD - entry page", "", "ok");
+	hlavicka ("main page", "entry page", "", "ok");
 ?>
 	<p>Welcome to BART DB main page. Please use menu on right to navigate throught pictures.
 	Particulary please fill-in <a href="settings.php">settings</a> for your output customization.</p>

@@ -1,7 +1,7 @@
 <?php
 	$ra = escapeshellarg (round($_REQUEST["ra"]/15.0,2));
 	$dec = escapeshellarg (round($_REQUEST["dec"],2));
-	$cmd = "cd /home/petr/starchart && echo 'hoj' && ./starpng -b -m 12 -s 40.0 -r $ra -d $dec -l 12";
+	$cmd = "cd /home/petr/starchart && ./starpng -b -m 12 -s 40.0 -r $ra -d $dec -l 12";
 
 	$ret = popen ("$cmd", "r");
 	$bit = fread ($ret, 1000);

@@ -1,7 +1,7 @@
 <?php
 	require_once "fitsdb.php";
 
-	hlavicka ("BARTDB login", "BARTDB login", "", "ok");
+	hlavicka ("login", "login", "", "ok");
 ?>
 	<form action="index.php">
 		<table>

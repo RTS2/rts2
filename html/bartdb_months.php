@@ -1,6 +1,6 @@
 <?php
 	include "fn.php";
-	hlavicka ("BARTDB", "Querry results..", " ", "ok");
+	hlavicka ("Results", "Querry results..", " ", "ok");
 
 	function s2deg ($s) {
 		$i = 0;

@@ -2,7 +2,7 @@
 	require_once "fitsdb.php";
 	include "infos.php";
 
-	hlavicka ("BARTDB", "Targets details", " ", "ok");
+	hlavicka ("Targets details", "Targets details", " ", "ok");
 
 	$q = new Query;
 	$q->connect ("dbname=stars");

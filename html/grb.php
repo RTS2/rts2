@@ -3,7 +3,7 @@
 	include "libnova.php";
 	include "simple_query.php";
 
-	hlavicka ("BARTDB", "Seznam GRB", " ", "ok");
+	hlavicka ("GRB List", "GRB List", " ", "ok");
 
 	function print_hm ($val)
 	{

@@ -1,10 +1,12 @@
 <?php
 	session_start ();
 
+	include "config.php";
+
 	function hlavicka ($title, $headline, $ok, $status)
 	{
 		include "menu.php";
-		head ($title);
+		head (NAME . ' - ' . $title);
 	}
 
 	function konec ()

@@ -1,6 +1,6 @@
 <?php
 	include "fn.php";
-	hlavicka ("BARTDB", "Seznam GRB", " ", "ok");
+	hlavicka ("GRB list", "GRB list", " ", "ok");
 
 	$query_string = "SELECT * FROM targets
 	ORDER BY tar_id";

@@ -1,7 +1,7 @@
 <?php
 	require_once "fitsdb.php";
 
-	hlavicka ("BARTDB Settings", "BARTDB Settings", "", "ok");
+	hlavicka ("Settings", "Settings", "", "ok");
 
 ?>
 	<form action="settings.php" method="get">
