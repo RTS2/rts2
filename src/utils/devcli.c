@@ -11,7 +11,6 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -140,20 +139,11 @@ call_notifiers (void *arg)
 #define ST	((struct status_message_processing*) arg)->status
   if (ST->notifier)
     {
-#ifdef DEBUG
-      printf ("calling notifier: %x\n", (int) ST->notifier);
-#endif
       ST->notifier (STATUS_VAL, ST->status);
     }
 
   if (DEV->status_notifier)
-    {
-#ifdef DEBUG
-      printf ("calling status_notifier: %p\n", DEV->status_notifier);
-#endif
-
-      DEV->status_notifier (DEV, ST->name, STATUS_VAL);
-    }
+    DEV->status_notifier (DEV, ST->name, STATUS_VAL);
 #undef ST
 #undef DEV
   free (arg);
@@ -205,9 +195,6 @@ handle_device_info (struct device *dev, struct param_status *params)
   int i;
   if (param_next_string (params, &str))
     return -1;
-#ifdef DEBUG
-  printf ("I command: '%s'\n", str);
-#endif /* DEBUG */
   // that one comes just from serverd
   // that comes from device
   if (!strcmp (str, "status_num"))
@@ -215,9 +202,6 @@ handle_device_info (struct device *dev, struct param_status *params)
       if (param_get_length (params) != 2 || param_next_integer (params, &i))
 	return -1;
       dev->status_num = i;
-#ifdef DEBUG
-      printf ("name %s status_num %i\n", dev->name, dev->status_num);
-#endif
       free (dev->statutes);
       dev->statutes =
 	(struct devconn_status *) malloc (sizeof (struct devconn_status) *
@@ -240,9 +224,6 @@ handle_device_info (struct device *dev, struct param_status *params)
       strncpy (st->name, str, STATUSNAME);
       st->name[STATUSNAME] = 0;
       proces_status_change (dev, st, state, 0);
-#ifdef DEBUG
-      printf ("name %s status %s val %i\n", dev->name, st->name, st->status);
-#endif
     }
 
   return 0;
@@ -264,24 +245,10 @@ handle_device_status (struct device *dev, struct param_status *params)
 
   if (param_next_string (params, &status_name)
       || param_next_integer (params, &status_val))
-    {
-#ifdef DEBUG
-      printf ("status param error %s %i\n\n", status_name, status_val);
-#endif
-      return -1;
-    }
-#ifdef DEBUG
-  printf ("device: %s status: %s new_val: %i\n", dev->name, status_name,
-	  status_val);
-#endif /* DEBUG */
+    return -1;
 
   if (status_find (dev, status_name, &st))
-    {
-#ifdef DEBUG
-      printf ("cannot find status\n");
-#endif /* DEBUG */
-      return -1;
-    }
+    return -1;
   proces_status_change (dev, st, status_val, 1);
   return 0;
 }
@@ -313,25 +280,13 @@ handle_connect (struct device *dev, struct param_status *params)
   data_handler = dev->data_handler;
 
   if (!data_handler)
-    {
-      // handler is null, return error
-#ifdef DEBUG
-      printf ("Null data handler!\n");
-#endif /* DEBUG */
-      errno = EINVAL;
-      return -1;
-    }
+    // handler is null, return error
+    return -1;
   if (param_next_string (params, &str))
     return -1;
-#ifdef DEBUG
-  printf ("devcli handle_connect command: %s\n", str);
-#endif
 
   if (param_next_integer (params, &id))
     return -1;
-#ifdef DEBUG
-  printf ("connection number:%i\n", id);
-#endif
   id = 0;
   while (id < MAXDATACONS)
     {
@@ -341,22 +296,12 @@ handle_connect (struct device *dev, struct param_status *params)
     }
 
   if (id == MAXDATACONS)
-    {
-#ifdef DEBUG
-      printf ("no more free data connection\n");
-#endif /* DEBUG */
-      return -1;
-    }
+    return -1;
 
   if (param_next_ip_address (params, &hostname, &port))
     goto err;
   if (param_next_integer (params, &data_size))
     goto err;
-
-#ifdef DEBUG
-  printf ("address: %s, port: %i, data_size: %i\n", hostname, port,
-	  data_size);
-#endif /* DEBUG */
 
   if (init_sockaddr (&serverdata, hostname, port) < 0)
     goto err;
@@ -378,9 +323,6 @@ handle_connect (struct device *dev, struct param_status *params)
 
   memcpy (&read_data_attrs->image, &dev->channel.handlers.image,
 	  sizeof (struct image_info));
-#ifdef DEBUG
-  printf ("creating data reading thread\n");
-#endif /* DEBUG */
 
   thread_attrs_set (&attrs);
 
@@ -411,26 +353,13 @@ handle_special (struct device *dev, char *cmd_start)
   struct param_status *params;
   int ret = -1;
   if (param_init (&params, cmd_start, ' '))
-    {
-#ifdef DEBUG
-      printf ("error: invalid message? errno no. %i", errno);
-#endif /* DEBUG */
-      ret = -1;
-    }
+    ret = -1;
   // messages - starts with M
   else if (*cmd_start == 'M')
     if (dev->channel.handlers.message_handler)
-      {
-	ret = dev->channel.handlers.message_handler (params, &dev->info);
-      }
+      ret = dev->channel.handlers.message_handler (params, &dev->info);
     else
-      {
-#ifdef DEBUG
-	printf ("error: message_handler not set!\n");
-#endif
-	errno = ENOENT;
-	ret = -1;
-      }
+      ret = -1;
   // device information - starts with I 
   else if (*cmd_start == 'I')
     ret = handle_device_info (dev, params);
@@ -466,9 +395,6 @@ parse_server_response (char *buffer, struct device *dev)
       if (*pos == '\r' || *pos == '\n')
 	{
 	  *pos = 0;		// end of message
-#ifdef DEBUG
-	  printf ("parsing: '%s'\n", cmd_start);
-#endif /* DEBUG */
 	  if (dev->response_handler)
 	    dev->response_handler (dev, cmd_start);
 	  // parse response
@@ -486,46 +412,20 @@ parse_server_response (char *buffer, struct device *dev)
 		  pthread_cond_broadcast (&dev->channel.ret_cond);
 		  pthread_mutex_unlock (&dev->channel.ret_lock);
 		}
-	      else
-		{
-#ifdef DEBUG
-		  printf ("error - ret_code length: message %s", cmd_start);
-#endif
-		}
 	    }
 	  else if (cmd_start[1] == ' ')
-	    {
-	      if (handle_special (dev, cmd_start))
-		{
-#ifdef DEBUG
-		  printf ("error handlig '%s', errno: %i\n", cmd_start,
-			  errno);
-#endif /* DEBUG */
-		}
-	    }
+	    handle_special (dev, cmd_start);
 	  // all other stuff - commands
 	  else if (*cmd_start)
 	    {
 	      if (dev->channel.handlers.command_handler)
 		{
 		  struct param_status *params;
-		  if (param_init (&params, cmd_start, ' '))
-		    {
-#ifdef DEBUG
-		      printf ("error: invalid message? errno no. %i", errno);
-#endif /* DEBUG */
-		    }
-		  else
-		    {
-		      dev->channel.handlers.command_handler (params,
-							     &dev->info);
-		    }
+		  if (!param_init (&params, cmd_start, ' '))
+		    dev->channel.handlers.command_handler (params,
+							   &dev->info);
 		  param_done (params);
 		}
-#ifdef DEBUG
-	      else
-		printf ("error: command_handler not set!\n");
-#endif
 	    }
 	  if (pos[1] == '\n')
 	    pos++;
@@ -585,14 +485,8 @@ read_server_responses (void *dev)
     {
       fd_set read_set;
       FD_ZERO (&read_set);
-#ifdef DEBUG
-      printf ("desc: %i\n", sock);
-#endif /* DEBUG */
       FD_SET (sock, &read_set);
       nbytes = select (FD_SETSIZE, &read_set, NULL, NULL, NULL);
-#ifdef DEBUG
-      printf ("select return: %i\n", nbytes);
-#endif /* DEBUG */
       if (nbytes < 0)
 	break;
       nbytes = read (sock, endptr, MAXMSG - (endptr - buffer));
@@ -602,18 +496,9 @@ read_server_responses (void *dev)
 	  break;
 	}
       endptr[nbytes] = 0;
-#ifdef DEBUG
-      printf ("read %i bytes, buffer '%s' %i\n", nbytes, buffer,
-	      endptr - buffer);
-      fflush (stdout);
-#endif /* DEBUG */
       endptr = parse_server_response (buffer, DEV);
     }
 #undef DEV
-#ifdef DEBUG
-  printf ("reading thread exit\n");
-  fflush (stdout);
-#endif /* DEBUG */
   pthread_cleanup_pop (1);	// execute it
   return NULL;
 }
@@ -658,17 +543,17 @@ dev_connect (struct device *dev, const char *hostname, uint16_t port)
   pthread_attr_t attrs;
   pthread_t a_thread;
 
-  if (dev->channel.socket > 0)
+  if (dev->channel.socket != -1)
     return 0;			// already connected
   memset (&dev->info, 0, sizeof (dev->info));
   if (init_sockaddr (&dev->channel.address, hostname, port) < 0)
     return -1;
   if ((dev->channel.socket = socket (PF_INET, SOCK_STREAM, 0)) < 0)
-    return -1;
+    goto err;
   if (connect
       (dev->channel.socket, (struct sockaddr *) &dev->channel.address,
        sizeof (dev->channel.address)) < 0)
-    return -1;
+    goto err;
 
   pthread_mutex_init (&dev->channel.ret_lock, NULL);
   pthread_cond_init (&dev->channel.ret_cond, NULL);
@@ -680,8 +565,11 @@ dev_connect (struct device *dev, const char *hostname, uint16_t port)
   // run thread to dispatch command returns & messages
   if (pthread_create
       (&a_thread, &attrs, read_server_responses, (void *) dev) != 0)
-    return -1;
+    goto err;
   return 0;
+err:
+  dev->channel.socket = -1;
+  return -1;
 }
 
 /*!
@@ -691,9 +579,6 @@ dev_connect (struct device *dev, const char *hostname, uint16_t port)
 void
 dev_sig_exit (int sig)
 {
-#ifdef DEBUG
-  printf ("devcli[%i] exiting with signal %i\n", getpid (), sig);
-#endif /* DEBUG */
   devcli_server_disconnect ();
 }
 
@@ -705,9 +590,6 @@ dev_sig_exit (int sig)
 void
 devcli_server_disconnect ()
 {
-#ifdef DEBUG
-  printf ("devcli_server_disconnect called\n");
-#endif
   for (; info->devices; info->devices = info->devices->next)
     {
       devcli_server_close (info->devices);
@@ -853,6 +735,7 @@ dev_connectdev (struct device *dev)
       && dev_connect (dev, dev->hostname, dev->port))
     return -1;
 
+  // we don't need to authorize on serverd - code in serverd_login takes care of that
   if (dev->type == DEVICE_TYPE_SERVERD)
     return 0;
 
@@ -940,9 +823,6 @@ dev_command_va (struct device *dev, int *ret_code, char *cmd, va_list va)
   vasprintf (&message, cmd, va);
   pthread_mutex_lock (&dev->channel.ret_lock);
   dev->channel.ret_code = INT_MIN;
-#ifdef DEBUG
-  printf ("channel_socket: %i writing: '%s'\n", dev->channel.socket, message);
-#endif
   ret = write_to_server (dev->channel.socket, message);
   free (message);
 
@@ -1008,21 +888,12 @@ devcli_wait_for_status (struct device *dev, char *status_name,
   pthread_mutex_lock (&dev->status_lock);
   while (dev->channel.socket != -1 && status != (st->status & status_mask))
     {
-#ifdef DEBUG
-      printf
-	("devcli_wait_for_status on %s status: %i st->status: %i status_mask: %i timeout: %li\n",
-	 st->name, status, st->status, status_mask, tmeout);
-#endif /* DEBUG */
       errno =
 	pthread_cond_timedwait (&dev->status_cond, &dev->status_lock,
 				&abstime);
       if (errno == ETIMEDOUT && tmeout)
 	return -1;
     }
-#ifdef DEBUG
-  printf ("devcli_wait_for_status: %i for status: %i mask: %i finished\n",
-	  status, st->status, status_mask);
-#endif /* DEBUG */
   pthread_mutex_unlock (&dev->status_lock);
   if (dev->channel.socket == -1)
     return -1;
@@ -1064,12 +935,7 @@ devcli_set_notifier (struct device *dev, char *status_name,
 {
   struct devconn_status *st;
   if (status_find (dev, status_name, &st))
-    {
-#ifdef DEBUG
-      printf ("setting notifier - no status\n");
-#endif
-      return -1;
-    }
+    return -1;
 
   st->notifier = callback;
   return 0;
