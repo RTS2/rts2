@@ -96,12 +96,12 @@ teld_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "ra") == 0)
     {
       tel_call (tel_read_ra (&dval));
-      devdem_dprintf ("ra %f\n", dval);
+      devdem_dprintf ("ra %f", dval);
     }
   else if (strcmp (argv, "dec") == 0)
     {
       tel_call (tel_read_dec (&dval));
-      devdem_dprintf ("dec %f\n", dval);
+      devdem_dprintf ("dec %f", dval);
     }
   else if (strcmp (argv, "park") == 0)
     {
@@ -111,22 +111,22 @@ teld_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "lon") == 0)
     {
       tel_call (tel_read_longtitude (&dval));
-      devdem_dprintf ("dec %f\n", dval);
+      devdem_dprintf ("dec %f", dval);
     }
   else if (strcmp (argv, "lat") == 0)
     {
       tel_call (tel_read_latitude (&dval));
-      devdem_dprintf ("dec %f\n", dval);
+      devdem_dprintf ("dec %f", dval);
     }
   else if (strcmp (argv, "lst") == 0)
     {
       tel_call (tel_read_siderealtime (&dval));
-      devdem_dprintf ("dec %f\n", dval);
+      devdem_dprintf ("dec %f", dval);
     }
   else if (strcmp (argv, "loct") == 0)
     {
       tel_call (tel_read_localtime (&dval));
-      devdem_dprintf ("dec %f\n", dval);
+      devdem_dprintf ("dec %f", dval);
     }
   else if (strcmp (argv, "exit") == 0)
     {
@@ -134,18 +134,18 @@ teld_handle_command (char *argv, size_t argc)
     }
   else if (strcmp (argv, "help") == 0)
     {
-      devdem_dprintf ("ready - is telescope ready to observe?\n");
-      devdem_dprintf ("set - set telescope coordinates\n");
-      devdem_dprintf ("move - move telescope\n");
-      devdem_dprintf ("ra - telescope right ascenation\n");
-      devdem_dprintf ("dec - telescope declination\n");
-      devdem_dprintf ("park - park telescope\n");
-      devdem_dprintf ("lon - telescope longtitude\n");
-      devdem_dprintf ("lat - telescope latitude\n");
-      devdem_dprintf ("lst - telescope local sidereal time\n");
-      devdem_dprintf ("loct - telescope local time\n");
-      devdem_dprintf ("exit - exit from main loop\n");
-      devdem_dprintf ("help - print, what you are reading just now\n");
+      devdem_dprintf ("ready - is telescope ready to observe?");
+      devdem_dprintf ("set - set telescope coordinates");
+      devdem_dprintf ("move - move telescope");
+      devdem_dprintf ("ra - telescope right ascenation");
+      devdem_dprintf ("dec - telescope declination");
+      devdem_dprintf ("park - park telescope");
+      devdem_dprintf ("lon - telescope longtitude");
+      devdem_dprintf ("lat - telescope latitude");
+      devdem_dprintf ("lst - telescope local sidereal time");
+      devdem_dprintf ("loct - telescope local time");
+      devdem_dprintf ("exit - exit from main loop");
+      devdem_dprintf ("help - print, what you are reading just now");
       ret = errno = 0;
     }
   else

@@ -1,7 +1,7 @@
-22.04.2002 03:09:50
+01.05.2002 14:10:50
 	wf.info
 	wf.expose 0 10
-+20
++15
 	wf.readout 0
 +20
 	RECEIVE.fits !moje.fits wf.data 0

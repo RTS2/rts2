@@ -93,8 +93,9 @@ process_line (char *line, int line_num)
       tim = strtol (line, &line, 10);
       if (!(*line == ' ' || *line == 0))
 	{
-	  printf ("Some bargage after end of seconds found. Ignoring %i '%i'\n",
-		  (int) tim, *line);
+	  printf
+	    ("Some bargage after end of seconds found. Ignoring %i '%i'\n",
+	     (int) tim, *line);
 	}
       tim += last_time;
       wait (tim);
@@ -120,7 +121,7 @@ main (int argc, char **argv)
   last_time = -1;
 
 #ifdef DEBUG
-  mtrace();
+  mtrace ();
 #endif /* DEBUG */
 
   plancom_add_namespace ("tel", "lascaux", 5555);

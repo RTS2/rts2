@@ -39,10 +39,10 @@ fits_handler (void *data, size_t size, void *attrs)
 	  status = 0;
 #ifdef DEBUG
 	  printf ("naxes: %i image size: %li x %li                    \n",
-#endif /* DEBUG */
 		  ((struct imghdr *) receiver->data)->naxes,
 		  ((struct imghdr *) receiver->data)->sizes[0],
 		  ((struct imghdr *) receiver->data)->sizes[1]);
+#endif /* DEBUG */
 	  fits_call (fits_create_img
 		     (receiver->ffile, USHORT_IMG, 2,
 		      ((struct imghdr *) receiver->data)->sizes, &status));
@@ -58,7 +58,7 @@ fits_handler (void *data, size_t size, void *attrs)
 #ifdef DEBUG
 	  printf ("readed:%i bytes                        \n",
 		  receiver->offset);
-#endif /* DEBUG */	  
+#endif /* DEBUG */
 	  fits_call (fits_close_file (receiver->ffile, &status));
 	}
     }

@@ -1,0 +1,8 @@
+camc		CAMera Client
+camd		CAMera Daemon
+plan		planer
+teld		TELescope Daemon
+telc		TELescope Client
+utils		devdem.c, hms.h, ..
+writers		Writers for writing images from internal to external format;
+		support stream processing

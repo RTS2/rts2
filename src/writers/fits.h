@@ -8,10 +8,11 @@
 #define __RTS_FITS__
 
 #include <fitsio.h>
+#include <pthread.h>
 
 /*! 
  * Structure to hold additional fits informations.
- */ 
+ */
 struct fits_receiver_data_t
 {
   int offset;

@@ -6,13 +6,13 @@
  *
  * Command string is defined as follow:
  * <ul>
- * 	<li>commands ::= com | com + ';' + commands
- * 	<li>com ::= name + ' '\+ + params
- * 	<li>params ::= '' | par + ' '\+ + params
- * 	<li>par ::= hms | decimal | integer
+ * 	<li>commands ::= com | com + ';' + commands</li>
+ * 	<li>com ::= name | name + ' '\+ + params</li>
+ * 	<li>params ::= par | par + ' '\+ + params</li>
+ * 	<li>par ::= hms | decimal | integer</li>
  * </ul>
- * In dev demon is implemented only split for ';', all other splits
- * must be implemented in a device driver handler routine.
+ * In dev deamon are implemented all splits - for ';' and ' '.
+ * Device deamon should not implement any splits.
  *
  * @author petr
  */
@@ -39,19 +39,35 @@
 #include <fcntl.h>
 #include <pthread.h>
 
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
+
 #include <argz.h>
 
 #include "devconn.h"
 
-typedef struct
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+/* union semun is defined by including <sys/sem.h> */
+#else
+/* according to X/OPEN we have to define it ourselves */
+union semun
+{
+  int val;			/* value for SETVAL */
+  struct semid_ds *buf;		/* buffer for IPC_STAT, IPC_SET */
+  unsigned short int *array;	/* array for GETALL, SETALL */
+  struct seminfo *__buf;	/* buffer for IPC_INFO */
+};
+#endif
+
+//! Structure holding information about socket buffer processing.
+struct
 {
   char buf[MAXMSG + 1];
   char *endptr;
 }
-servinfo_t;
+client_info;
 
-//! Information structure, for each open socket one
-servinfo_t client_info;
 //! Handler function
 devdem_handle_command_t handler;
 
@@ -72,12 +88,80 @@ data_conn_info_t;
 
 data_conn_info_t data_cons[MAXDATACONS];
 
-//! Filedes of asci control channel
+//! Filedes of ascii control channel
 int control_fd;
 
-/*! Printf to descriptor, log to syslogd
+//! Number of status registers
+int status_num;
+
+//! Key to shared memory segment, holding status flags.
+int status_shm;
+
+//! Key to semaphore for access control to shared memory segment
+int status_sem;
+
+//! Holds status informations
+typedef struct
+{
+  char name[STATUSNAME + 1];
+  int status;
+}
+status_t;
+
+//! Array holding status structures; stored in shared mem, hence just pointer
+status_t *statutes;
+
+/*! Locks given status lock.
+ *
+ * @param subdevice subdevice index
+ * @return 0 on success, -1 and set errno on failure; log failure to syslog
+ */
+int
+status_lock (int subdevice)
+{
+  struct sembuf sb;
+
+  if (subdevice >= status_num || subdevice < 0)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+
+  sb.sem_num = subdevice;
+  sb.sem_op = -1;
+  sb.sem_flg = 0;
+  if (semop (status_sem, &sb, 1) < 0)
+    {
+      syslog (LOG_ERR, "semaphore -1 for subdevice %i: %m", subdevice);
+      return -1;
+    }
+  return 0;
+}
+
+int
+status_unlock (int subdevice)
+{
+  struct sembuf sb;
+
+  if (subdevice >= status_num || subdevice < 0)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+
+  sb.sem_num = subdevice;
+  sb.sem_op = 1;
+  sb.sem_flg = 0;
+  if (semop (status_sem, &sb, 1) < 0)
+    {
+      syslog (LOG_ERR, "semphore +1 for subdevice %i: %m", subdevice);
+      return -1;
+    }
+  return 0;
+}
+
+/*! Printf to descriptor, log to syslogd, adds \r\n to end message.
  * 
- * @param fd file descriptor
  * @param format buffer format
  * @param ... thinks to print 
  * @return -1 and set errno on error, 0 otherwise
@@ -87,29 +171,75 @@ devdem_dprintf (const char *format, ...)
 {
   int ret;
   va_list ap;
-  char *msg;
-  int count;
+  char *msg, *msg_with_end;
+  int count, count_with_end;
 
   va_start (ap, format);
   vasprintf (&msg, format, ap);
   va_end (ap);
 
   count = strlen (msg);
-  syslog (LOG_DEBUG, "Writing '%s' to desc %i", msg, control_fd);
-  if ((ret = write (control_fd, msg, count)) != count)
+  count_with_end = count + 3;
+  msg_with_end = (char *) malloc (count_with_end);
+  if (memcpy (msg_with_end, msg, count) < 0)
     {
-      syslog (LOG_ERR, "devdem_write: ret:%i count:%i desc:%i", ret, count,
-	      control_fd);
-      free (msg);
+      syslog (LOG_ERR, "memcpy in dprintf: %m");
       return -1;
     }
   free (msg);
+  // now msg is used as help pointer!!!
+  msg = msg_with_end + count;
+  *msg = '\r';
+  msg++;
+  *msg = '\n';
+  msg++;
+  *msg = 0;
+
+  syslog (LOG_DEBUG, "writing '%*s' to desc %i", count_with_end, msg_with_end,
+	  control_fd);
+  if ((ret =
+       write (control_fd, msg_with_end, count_with_end)) != count_with_end)
+    {
+      syslog (LOG_ERR, "devdem_write: ret:%i count:%i desc:%i", ret,
+	      count_with_end, control_fd);
+      free (msg_with_end);
+      return -1;
+    }
+  free (msg_with_end);
   return 0;
+}
+
+int
+status_message (int subdevice, char *description)
+{
+  status_t *st;
+  st = &((statutes)[subdevice]);
+  return devdem_dprintf ("M %s %i %s", st->name, st->status, description);
+}
+
+/*! Send status message acrros channel, log it.
+ *
+ * @param subdevice subdevice index. 
+ * @param description message description, could be null.
+ * @return -1 and set errno on error, 0 otherwise.
+ */
+int
+devdem_status_message (int subdevice, char *description)
+{
+  if (subdevice >= status_num || subdevice < 0)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+  if (status_lock (subdevice) < 0)
+    return -1;
+  if (status_message (subdevice, description) < 0)
+    return -1;
+  return status_unlock (subdevice);
 }
 
 /*! Write ending message to fd.
  * 
- * @param fd file descriptor to write in
  * @param retc return code
  * @param msg_format message to write
  * @param 
@@ -126,7 +256,7 @@ devdem_write_command_end (int retc, char *msg_format, ...)
   vasprintf (&msg, msg_format, ap);
   va_end (ap);
 
-  ret = devdem_dprintf ("%+04i %s\r\n", retc, msg);
+  ret = devdem_dprintf ("%+04i %s", retc, msg);
   tmper = errno;
   free (msg);
   errno = tmper;
@@ -136,10 +266,13 @@ devdem_write_command_end (int retc, char *msg_format, ...)
 
 /*! Handle devdem commands
  *
- * It's solely responsibility of handler to report any errror.
+ * It's solely responsibility of handler to report any errror,
+ * which occures during command processing.
+ * <p>
+ * Errors resulting from wrong command format are reported directly.
  *
  * @param buffer Buffer containing params
- * @param fd Socket file descriptor
+ * @param handler Command handler. 
  * @return -1 and set errno on network failure|exit command, otherwise 0. 
  */
 int
@@ -196,7 +329,6 @@ end:
  *
  * @return >=0 on succes, -1 and set errno on failure
  */
-
 int
 next_free_conn_number ()
 {
@@ -296,15 +428,15 @@ send_data_thread (void *arg)
   pthread_mutex_unlock (&data_con->lock);
 
   if (ret < 0)
-    syslog (LOG_ERR, "Sending data on port: %i %m", port);
+    syslog (LOG_ERR, "sending data on port: %i %m", port);
   return NULL;
 }
 
 /*! Connect, initializes and send data to given client
  * Quite complex, hopefully quite clever.
- * Handles all task connected with sending data - just past it your
- * address, data to send, and don't care about rest.
- *
+ * Handles all task connected with sending data - just past it target address 
+ * data to send, and don't care about rest.
+ * <p>
  * It sends some messages on control channel, which client should
  * check.
  * 
@@ -327,9 +459,9 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
 
   if ((conn = next_free_conn_number ()) < 0)
     {
-      syslog (LOG_INFO, "No new connection");
+      syslog (LOG_INFO, "no new data connection");
       return devdem_write_command_end (DEVDEM_E_SYSTEM,
-				       "No new data connection");
+				       "no new data connection");
     }
 
   data_con = &data_cons[conn];
@@ -355,7 +487,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
     }
 
   if (devdem_dprintf
-      ("connect %i %s:%i %i\r\n", conn,
+      ("connect %i %s:%i %i", conn,
        inet_ntoa (control_socaddr.sin_addr), port, data_size) < 0)
     goto err;
 
@@ -364,7 +496,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
   accept_tout.tv_sec = 500;
   accept_tout.tv_usec = 0;
 
-  syslog (LOG_DEBUG, "Waiting for connection on port %i", port);
+  syslog (LOG_DEBUG, "waiting for connection on port %i", port);
   if ((ret = select (FD_SETSIZE, &a_set, NULL, NULL, &accept_tout)) < 0)
     {
       syslog (LOG_ERR, "select: %m");
@@ -387,7 +519,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
     }
 
   close (data_listen_sock);
-  syslog (LOG_INFO, "Connection on port %i from %s:%i accepted desc %i",
+  syslog (LOG_INFO, "connection on port %i from %s:%i accepted desc %i",
 	  port, inet_ntoa (data_con->their_side.sin_addr),
 	  ntohs (data_con->their_side.sin_port), data_con->sock);
 
@@ -437,6 +569,31 @@ make_socket (uint16_t port)
   return sock;
 }
 
+
+/*! Routine to perform bit "and" operation on status bits.
+ *
+ * @param subdevice subdevice to change.
+ * @param mask <code>(*statutes)[subdevice].status &= !mask;</code>
+ * @param operand  <code>(*statutes)[subdevice].status |= operand;</code>
+ * @param message optional message to transmit
+ * @return -1 and set errno on error, 0 otherwise
+ */
+int
+devdem_status_mask (int subdevice, int mask, int operand, char *message)
+{
+  if (status_lock (subdevice) < 0)
+    return -1;
+  // critical section begins
+
+  (statutes)[subdevice].status &= !mask;
+  (statutes)[subdevice].status |= operand;
+
+  if (status_message (subdevice, message) < 0)
+    return -1;
+
+  // critical section ends
+  return status_unlock (subdevice);
+}
 
 int
 read_from_client ()
@@ -496,7 +653,7 @@ read_from_client ()
 void
 devdem_on_exit (int err, void *args)
 {
-  syslog (LOG_INFO, "Exiting");
+  syslog (LOG_INFO, "exiting");
 }
 
 /*! Signal handler
@@ -504,7 +661,16 @@ devdem_on_exit (int err, void *args)
 void
 sig_exit (int sig)
 {
-  syslog (LOG_INFO, "Exiting with signal:%d", sig);
+  union semun sem_un;
+  syslog (LOG_INFO, "exiting with signal:%d", sig);
+  if (shmctl (status_shm, IPC_RMID, NULL) < 0)
+    {
+      syslog (LOG_ERR, "shmctl: %m");
+    }
+  if (semctl (status_sem, status_num, IPC_RMID, sem_un) < 0)
+    {
+      syslog (LOG_ERR, "semctl: %m");
+    }
   exit (0);
 }
 
@@ -512,16 +678,21 @@ sig_exit (int sig)
  * This function will run the device deamon on given port, and will
  * call handler for every command it received.
  * 
- * @param port Port to run device deamon
- * @param handler Address of handler code
+ * @param port port to run device deamon
+ * @param handler address of handler code
+ * @param status_names names of status, which are part of process status space
+ * 
  * @return 0 on succes, -1 and set errno on error
  */
 int
-devdem_run (int port, devdem_handle_command_t in_handler)
+devdem_run (int port, devdem_handle_command_t in_handler,
+	    char **status_names, int status_num_in)
 {
-  int sock;
+  int sock, i;
   struct sockaddr_in clientname;
   size_t size;
+  status_t *st;
+  union semun sem_un;
   devdem_parent_pid = getpid ();
 
   if (!in_handler)
@@ -530,6 +701,44 @@ devdem_run (int port, devdem_handle_command_t in_handler)
       return -1;
     }
   handler = in_handler;
+  status_num = status_num_in;
+  // Creates semaphore for control to shm
+  if ((status_sem = semget (IPC_PRIVATE, status_num, 0644)) < 0)
+    {
+      syslog (LOG_ERR, "semget: %m");
+      return -1;
+    }
+
+  // Initializes shared memory
+  if ((status_shm =
+       shmget (IPC_PRIVATE, sizeof (status_t) * status_num, 0644)) < 0)
+    {
+      syslog (LOG_ERR, "shmget: %m");
+      return -1;
+    }
+  // writes names and null to shared memory
+  if ((int) (statutes = (status_t *) shmat (status_shm, NULL, 0)) < 0)
+    {
+      syslog (LOG_ERR, "shmat: %m");
+      return -1;
+    }
+
+
+  st = statutes;
+  sem_un.val = 1;
+  for (i = 0; i < status_num; i++, st++)
+    {
+      strncpy (st->name, status_names[i], STATUSNAME + 1);
+      st->status = 0;
+      semctl (status_sem, i, SETVAL, sem_un);
+    }
+
+  if (shmdt (statutes) < 0)
+    {
+      syslog (LOG_ERR, "shmdt: %m");
+      return -1;
+    }
+
   /* Register on_exit */
   on_exit (devdem_on_exit, NULL);
   signal (SIGTERM, sig_exit);
@@ -543,7 +752,7 @@ devdem_run (int port, devdem_handle_command_t in_handler)
       return -1;
     }
 
-  syslog (LOG_INFO, "Started");
+  syslog (LOG_INFO, "started");
 
   while (1)
     {
@@ -568,7 +777,7 @@ devdem_run (int port, devdem_handle_command_t in_handler)
       close (control_fd);
     }
   client_info.endptr = client_info.buf;
-  syslog (LOG_INFO, "Server: connect from host %s, port %hd, desc:%i",
+  syslog (LOG_INFO, "server: connect from host %s, port %hd, desc:%i",
 	  inet_ntoa (clientname.sin_addr),
 	  ntohs (clientname.sin_port), control_fd);
   // initialize data_cons
@@ -576,12 +785,19 @@ devdem_run (int port, devdem_handle_command_t in_handler)
     {
       pthread_mutex_init (&data_cons[sock].lock, NULL);
     }
+
+  if ((int) (statutes = (status_t *) shmat (status_shm, NULL, 0)) < 0)
+    {
+      syslog (LOG_ERR, "shmat: %m");
+      return -1;
+    }
+
   while (1)
     {
       if (read_from_client () < 0)
 	{
 	  close (control_fd);
-	  syslog (LOG_INFO, "Connection from desc %d closed", control_fd);
+	  syslog (LOG_INFO, "connection from desc %d closed", control_fd);
 	  exit (EXIT_FAILURE);
 	}
     }
