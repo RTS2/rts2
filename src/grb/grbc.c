@@ -71,6 +71,7 @@ get_info (struct grb *entry, struct device *tel, struct device *cam)
     }
   memcpy (&info->camera, &cam->info, sizeof (struct camera_info));
   memcpy (&info->telescope, &tel->info, sizeof (struct telescope_info));
+  info->hi_precision = NULL;
   devcli_image_info (cam, info);
   free (info);
   return ret;
