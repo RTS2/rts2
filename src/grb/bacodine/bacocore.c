@@ -3,6 +3,7 @@
 #include "bacodine.h"
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <libnova/libnova.h>
 
@@ -153,6 +154,21 @@ process_grb_event_t process_grb;
  *		pr_sax_wfc()	// Print the contents of SAX-WFC packets
  *		pr_ipn()		// Print the contents of IPN packets
  *		pr_hete()		// Print the contents of HETE packets
+ *		pr_intg()		// Print the contents of INTEGRAL packets
+ *		pr_milagro()        // Print the contents of MILAGRO packets
+ *		pr_swift_bat_alert()   // Print the contents of Swift-BAT ALERT pkts
+ *		pr_swift_bat_pos_ack() // Print the contents of Swift-BAT Position_Ack pkts
+ *		pr_swift_bat_pos_nack()// Print the contents of Swift-BAT Position_Nack pkts
+ *		pr_swift_fom_2obs()    // Print the contents of Swift-FOM 2Observe pkts
+ *		pr_swift_sc_2slew()    // Print the contents of Swift-SC 2Slew pkts
+ *		pr_swift_xrt_pos_ack() // Print the contents of Swift-XRT Position_Ack pkts
+ *		pr_swift_xrt_pos_nack()// Print the contents of Swift-XRT Position_Nack pkts
+ *		pr_swift_xrt_spec()    // Print the contents of Swift-XRT Spectrum pkts
+ *		pr_swift_xrt_image()   // Print the contents of Swift-XRT Image pkts
+ *		pr_swift_xrt_lc()      // Print the contents of Swift-XRT LightCurve pkts
+ *		pr_swift_uvot_dburst() // Print the contents of Swift-UVOT DarkBurst pkts
+ *		pr_swift_uvot_fchart() // Print the contents of Swift-UVOT FindingChart pkts
+ *		pr_swift_uvot_pos()    // Print the contents of Swift-UVOT Position_Ack pkts
  *		chk_imalive()	// Check and report an absence of Imalive packets rcvd
  *		e_mail_alert()	// Send e-mail when no Imalive packets
  *		hete_same()		// Are the four corners the same position?
@@ -438,6 +454,14 @@ char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 /* INTEGRAL test */
 #define I_TEST		0x80000000	/* INTEGRAL test burst */
 
+// The Swift-based packet word definitions:
+#define BURST_URL     22	// Location of the start of the URL string in the pkt
+
+// SWIFT word and bit mask and shift definitions:
+#define S_TRIGNUM_MASK	0x00ffffff	// Trigger number in low bits
+#define S_TRIGNUM_SHIFT	0	// Trigger number in low bits
+#define S_SEGNUM_MASK	0x000000ff	// Observation Segment number in upper bits
+#define S_SEGNUM_SHIFT	24	// Observation Segment number in upper bits
 
 /* The GCN defined packet types (missing numbers are gcn-internal use only): */
 /* Types that are commented out are no longer available (eg GRO de-orbit). */
@@ -475,6 +499,33 @@ char *version = "socket_demo     Ver: 3.10   22 Aug 01";
 #define TYPE_INTG_WAKEUP		53
 #define TYPE_INTG_REFINED		54
 #define TYPE_INTG_OFFLINE		55
+
+#define TYPE_MILAGRO_POS_SRC        58	// MILAGRO Position message
+#define TYPE_KONUS_LC_SRC           59	// KONUS Lightcurve message
+#define TYPE_SWIFT_BAT_GRB_ALERT_SRC     60	// SWIFT BAT GRB ALERT message
+#define TYPE_SWIFT_BAT_GRB_POS_ACK_SRC   61	// SWIFT BAT GRB Position Acknowledge message
+#define TYPE_SWIFT_BAT_GRB_POS_NACK_SRC  62	// SWIFT BAT GRB Position NOT Acknowledge message
+#define TYPE_SWIFT_BAT_GRB_LC_SRC        63	// SWIFT BAT GRB Lightcurve message
+#define TYPE_SWIFT_SCALEDMAP_SRC         64	// SWIFT BAT Scaled Map message
+#define TYPE_SWIFT_FOM_2OBSAT_SRC        65	// SWIFT BAT FOM to Observe message
+#define TYPE_SWIFT_FOSC_2OBSAT_SRC       66	// SWIFT BAT S/C to Slew message
+#define TYPE_SWIFT_XRT_POSITION_SRC      67	// SWIFT XRT Position message
+#define TYPE_SWIFT_XRT_SPECTRUM_SRC      68	// SWIFT XRT Spectrum message
+#define TYPE_SWIFT_XRT_IMAGE_SRC         69	// SWIFT XRT Image message (aka postage stamp)
+#define TYPE_SWIFT_XRT_LC_SRC            70	// SWIFT XRT Lightcurve message (aka Prompt)
+#define TYPE_SWIFT_XRT_CENTROID_SRC      71	// SWIFT XRT Position NOT Ack message (Centroid Error)
+#define TYPE_SWIFT_UVOT_DBURST_SRC       72	// SWIFT UVOT DarkBurst message (aka Neighbor)
+#define TYPE_SWIFT_UVOT_FCHART_SRC       73	// SWIFT UVOT Finding Chart message
+#define TYPE_SWIFT_FULL_DATA_INIT_SRC    74	// SWIFT Full Data Set Initial message
+#define TYPE_SWIFT_FULL_DATA_UPDATE_SRC  75	// SWIFT Full Data Set Updated message
+#define TYPE_SWIFT_BAT_GRB_LC_PROC_SRC   76	// SWIFT BAT GRB Lightcurve processed message
+#define TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC 77	// SWIFT XRT Spectrum processed message
+#define TYPE_SWIFT_XRT_IMAGE_PROC_SRC    78	// SWIFT XRT Image processed message
+#define TYPE_SWIFT_UVOT_DBURST_PROC_SRC  79	// SWIFT UVOT DarkBurst processed mesg (aka Neighbor)
+#define TYPE_SWIFT_UVOT_FCHART_PROC_SRC  80	// SWIFT UVOT Finding Chart processed message
+#define TYPE_SWIFT_UVOT_POS_SRC          81	// SWIFT UVOT Position message
+#define TYPE_SWIFT_BAT_GRB_POS_TEST      82	// SWIFT BAT GRB Position Test message
+#define TYPE_SWIFT_POINTDIR_SRC          83	// SWIFT Pointing Direction message
 
 /* A few global variables for the socket_demo program: */
 int inetsd;			/* Socket descriptor */
@@ -919,7 +970,7 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 {
   unsigned short max_arcsec, overall_goodness;
 
-  double ra, dec;
+  double ra = -100, dec = -91;
 
   time_t grb_date;
 
@@ -1240,7 +1291,7 @@ pr_intg (lbuf, s)		/* print the contents of the INTEGRAL-based packet */
 		   20, (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
 		   ra, dec, &grb_date);
     }
-  else if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
+  else if (!lbuf[PKT_TYPE] && I_TEST)
     if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
       {
 	process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT)
@@ -1248,6 +1299,836 @@ pr_intg (lbuf, s)		/* print the contents of the INTEGRAL-based packet */
 		     (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT, ra,
 		     dec, &grb_date);
       }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_milagro (lbuf, s)		/* print the contents of a MILAGRO Position packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li,   ", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  switch (lbuf[MISC] & 0x0F)
+    {
+    case 1:
+      fprintf (s, "Short\n");
+      break;
+    case 2:
+      fprintf (s, "Medium(TBD)\n");
+      break;
+    case 3:
+      fprintf (s, "Long(TBD)\n");
+      break;
+    default:
+      fprintf (s, "Illegal\n");
+      break;
+    }
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%5.2f\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  fprintf (s, "   Trig#=  %li,  Subnum= %li\n", lbuf[BURST_TRIG],
+	   (lbuf[MISC] >> 24) & 0xFF);
+  fprintf (s, "   TJD=    %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=  %.2f [sec]   delta=%5.2f\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=    %7.2f [deg]\n", lbuf[BURST_RA] / 10000.0);
+  fprintf (s, "   Dec=   %7.2f [deg]\n", lbuf[BURST_DEC] / 10000.0);
+  fprintf (s, "   Error= %.2f [deg, radius, statistical only]\n",
+	   (float) lbuf[BURST_ERROR] / 10000.0);
+  fprintf (s, "   Inten= %li [events]\n", lbuf[BURST_INTEN]);
+  fprintf (s, "   Bkg=   %.2f [events]\n", lbuf[10] / 10000.0);
+  fprintf (s, "   Duration=%.2f [sec]\n", lbuf[13] / 100.0);
+  fprintf (s, "   Signif=%6.2e\n",
+	   pow ((double) 10.0, (double) -1.0 * lbuf[12] / 100.0));
+  fprintf (s, "   Annual_rate= %.2f [estimated occurances/year]\n",
+	   lbuf[14] / 100.0);
+  fprintf (s, "   Zenith= %.2f [deg]\n", lbuf[15] / 100.0);
+  if (lbuf[TRIGGER_ID] & 0x00000001)
+    fprintf (s, "   Possible GRB.\n");
+  if (lbuf[TRIGGER_ID] & 0x00000002)
+    fprintf (s, "   Definite GRB.\n");
+  if (lbuf[TRIGGER_ID] & (0x01 << 15))
+    fprintf (s, "   Definately not a GRB.\n");
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_bat_alert (lbuf, s)	/* print the contents of a Swift-BAT Alert packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-BAT Alert\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=   %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=   %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=     %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=       %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=       %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   Trig_Index=%li\n", lbuf[17]);
+  fprintf (s, "   Signif=    %.2f [sigma]\n", lbuf[21] / 100.0);
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_bat_pos_ack (lbuf, s)	/* print the contents of a Swift-BAT Pos_Ack packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int i;
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-BAT Pos_Ack\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD= %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=   %d  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=     %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=     %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=      %7.2f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=     %7.2f [deg] (J2000)\n", dec);
+  fprintf (s, "   Error=   %.2f [arcmin, radius, statistical only]\n",
+	   (float) 60.0 * lbuf[BURST_ERROR] / 10000.0);
+  fprintf (s, "   Inten=   %li [cnts]\n", lbuf[BURST_INTEN]);
+  fprintf (s, "   Peak=    %li [cnts]\n", lbuf[BURST_PEAK]);
+  fprintf (s, "   Int_Time=%.3f [sec]\n", lbuf[14] / 250.0);	// convert 4msec_ticks to sec
+  fprintf (s, "   Phi=     %6.2f [deg]\n", lbuf[12] / 100.0);
+  fprintf (s, "   Theta=   %6.2f [deg]\n", lbuf[13] / 100.0);
+  fprintf (s, "   Trig_Index=   %li\n", lbuf[17]);
+  fprintf (s, "   Soln_Status=  0x%lx\n", lbuf[18]);
+  fprintf (s, "   Rate_Signif=  %.2f [sigma]\n", lbuf[21] / 100.0);	// signif of peak in FFT image
+  fprintf (s, "   Image_Signif= %.2f [sigma]\n", lbuf[20] / 100.0);	// signif of the rate trigger
+  fprintf (s, "   Bkg_Inten=    %li [cnts]\n", lbuf[22]);
+  fprintf (s, "   Bkg_Time=     %.2f [sec]   delta=%.2f [sec]\n",
+	   (double) lbuf[23] / 100.0,
+	   lbuf[BURST_SOD] / 100.0 - lbuf[23] / 100.0);
+  fprintf (s, "   Bkg_Dur=      %.2f [sec]\n", lbuf[24] / 100.0);	// Still whole seconds
+  fprintf (s, "   Merit_Vals= ");
+  for (i = 0; i < 10; i++)
+    fprintf (s, " %d ", *(((char *) (lbuf + 36)) + i));
+  fprintf (s, "\n");
+  if (lbuf[TRIGGER_ID] & 0x00000010)
+    fprintf (s, "   This is an image trigger.\n");
+  else
+    fprintf (s, "   This is a rate trigger.\n");
+  if (lbuf[TRIGGER_ID] & 0x00000001)
+    fprintf (s, "   A point_source was found.\n");
+  else
+    fprintf (s, "   A point_source was not found.\n");
+  if (lbuf[TRIGGER_ID] & 0x00000008)
+    fprintf (s, "   This matches a source in the on-board catalog.\n");
+  else
+    fprintf (s,
+	     "   This does not match any source in the on-board catalog.\n");
+  if (lbuf[TRIGGER_ID] & 0x00000002)
+    fprintf (s, "   This is a GRB.\n");
+  else
+    fprintf (s, "   This is a not GRB.\n");
+  if (lbuf[TRIGGER_ID] & 0x00000004)
+    fprintf (s, "   This is an interesting source.\n");
+  if (lbuf[MISC] & 0x20000000)
+    fprintf (s,
+	     "   This is a reconstructed Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_bat_pos_nack (lbuf, s)	/* print the contents of a Swift-BAT Pos_Nack packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int i;
+  int id, segnum;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-BAT Pos_Nack\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD= %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=   %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=     %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=     %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   Trig_Index=   %li\n", lbuf[17]);
+  fprintf (s, "   Soln_Status=  0x%lx\n", lbuf[18]);
+//fprintf(s,"   Rate_Signif=  %.2f [sigma]\n", lbuf[21]/100.0);  // Always zero's
+//fprintf(s,"   Image_Signif= %.2f [sigma]\n", lbuf[20]/100.0);
+//fprintf(s,"   Bkg_Inten=    %li [cnts]\n", lbuf[22]);
+//fprintf(s,"   Bkg_Time=     %.2f [sec]\n",(double)lbuf[23]/100.0);
+//fprintf(s,"   Bkg_Dur=      %.2f [sec]\n",lbuf[24]/100);
+  fprintf (s, "   Merit_Vals= ");
+  for (i = 0; i < 10; i++)
+    fprintf (s, " %d ", *(((char *) (lbuf + 36)) + i));
+  fprintf (s, "\n");
+  if (lbuf[TRIGGER_ID] & 0x00000001)
+    {
+      fprintf (s, "   A point_source was found.\n");
+      fprintf (s, "   ERR: a BAT_POS_NACK with the Pt-Src flag bit set!\n");
+    }
+  else
+    fprintf (s, "   A point_source was not found.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_bat_lc (lbuf, s)	/* print the contents of a Swift-BAT LightCurve packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-BAT LightCurve\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=    %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=    %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=      %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=        %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=        %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=         %7.2f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=        %7.2f [deg] (J2000)\n", dec);
+  fprintf (s, "   Trig_Index= %li\n", lbuf[17]);
+  fprintf (s, "   Phi=        %6.2f [deg]\n", lbuf[12] / 100.0);
+  fprintf (s, "   Theta=      %6.2f [deg]\n", lbuf[13] / 100.0);
+  fprintf (s, "   Delta_T=    %.2f [sec]\n", lbuf[14] / 100.0);	// of the 3rd/final packet
+  fprintf (s, "   URL=        %s\n", (char *) (&lbuf[BURST_URL]));
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_fom_2obs (lbuf, s)	/* print the contents of a Swift-FOM 2Observe packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift FOM2Observe\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=     %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=     %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=       %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=         %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=         %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   Trig_Index=  %li\n", lbuf[17]);
+  fprintf (s, "   Rate_Signif= %.2f [sigma]\n", lbuf[21] / 100.0);
+  fprintf (s, "   Flags=       0x%lx\n", lbuf[18]);
+  fprintf (s, "   Merit=       %.2f\n", lbuf[38] / 100.0);
+  if (lbuf[18] & 0x1)
+    fprintf (s,
+	     "   This was of sufficient merit to become the new Automated Target.\n");
+  else
+    fprintf (s,
+	     "   This was NOT of sufficient merit to become the new Automated Target.\n");
+  if (lbuf[18] & 0x2)
+    fprintf (s, "   FOM will request to observe.\n");
+  else
+    fprintf (s, "   FOM will NOT request to observe.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_sc_2slew (lbuf, s)	/* print the contents of a Swift-FOM 2Slew packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift SC2Slew\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=    %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=    %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=      %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=        %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=        %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=       %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=      %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Roll=     %9.4f [deg] (J2000)\n", lbuf[9] / 10000.0);
+  fprintf (s, "   Trig_Index= %li\n", lbuf[17]);
+  fprintf (s, "   Rate_Signif=%.2f [sigma]\n", lbuf[21] / 100.0);
+  fprintf (s, "   Slew_Query= %li\n", lbuf[18]);
+  fprintf (s, "   Wait_Time=  %.2f [sec]\n", lbuf[13] / 100.0);
+  fprintf (s, "   Obs_Time=   %.2f [sec]\n", lbuf[14] / 100.0);
+  fprintf (s, "   Inst_Modes: BAT: %li   XRT: %li   UVOT: %li\n", lbuf[22],
+	   lbuf[23], lbuf[24]);
+  fprintf (s, "   Merit=      %.2f\n", lbuf[38] / 100.0);
+  if (lbuf[18] == 0)		// The SC reply
+    fprintf (s, "   SC will slew to this target.\n");
+  else if (lbuf[18] == 1)
+    fprintf (s, "   SC will NOT slew to this target; Sun constraint.\n");
+  else if (lbuf[18] == 2)
+    fprintf (s,
+	     "   SC will NOT slew to this target; Earth_limb constraint.\n");
+  else if (lbuf[18] == 3)
+    fprintf (s, "   SC will NOT slew to this target; Moon constraint.\n");
+  else if (lbuf[18] == 4)
+    fprintf (s,
+	     "   SC will NOT slew to this target; Ram_vector constraint.\n");
+  else if (lbuf[18] == 5)
+    fprintf (s,
+	     "   SC will NOT slew to this target; Invalid slew_request parameter value.\n");
+  else
+    fprintf (s, "   Unknown reply_code.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_xrt_pos_ack (lbuf, s)	/* print the contents of a Swift-XRT Pos_Ack packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-XRT Pos_Ack\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=  %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=    %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=      %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=      %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=       %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=      %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Error=    %.1f [arcsec, radius, statistical only]\n",
+	   (float) 3600.0 * lbuf[BURST_ERROR] / 10000.0);
+  fprintf (s, "   Flux=     %.2f [arb]\n", lbuf[BURST_INTEN] / 100.0);	//this are arbitrary units
+  fprintf (s, "   Signif=   %.2f [sigma]\n", lbuf[21] / 100.0);	// sqrt(num_pixels_w_photons)
+  fprintf (s, "   TAM[0]=   %7.2f\n", lbuf[12] / 100.0);
+  fprintf (s, "   TAM[1]=   %7.2f\n", lbuf[13] / 100.0);
+  fprintf (s, "   TAM[2]=   %7.2f\n", lbuf[14] / 100.0);
+  fprintf (s, "   TAM[3]=   %7.2f\n", lbuf[15] / 100.0);
+  fprintf (s, "   Amplifier=%li\n", (lbuf[17] >> 8) & 0xFF);
+  fprintf (s, "   Waveform= %li\n", lbuf[17] & 0xFF);
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_xrt_pos_nack (lbuf, s)	/* print the contents of a Swift-XRT Pos_Nack packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-XRT Pos_Nack\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=  %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=    %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=      %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=      %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   Bore_RA=  %9.4f [deg] (J2000)\n", lbuf[BURST_RA] / 10000.0);
+  fprintf (s, "   Bore_Dec= %9.4f [deg] (J2000)\n",
+	   lbuf[BURST_DEC] / 10000.0);
+  fprintf (s, "   Counts=   %li    Min_needed= %li\n", lbuf[BURST_INTEN],
+	   lbuf[10]);
+  fprintf (s, "   StdD=     %.2f   Max_StdDev_for_Good=%.2f  [arcsec]\n",
+	   3600.0 * lbuf[11] / 10000.0, 3600.0 * lbuf[12] / 10000.0);
+  fprintf (s, "   Ph2_iter= %li    Max_iter_allowed= %li\n", lbuf[16],
+	   lbuf[17]);
+  fprintf (s, "   Err_Code= %li\n", lbuf[18]);
+  fprintf (s, "           = 1 = No source found in the image.\n");
+  fprintf (s,
+	   "           = 2 = Algorithm did not converge; too many interations.\n");
+  fprintf (s, "           = 3 = Standard deviation too large.\n");
+  fprintf (s, "           = 0xFFFF = General error.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_xrt_spec (lbuf, s)	/* print the contents of a Swift-XRT Spectrum packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+  float delta;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-XRT Spectrum\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=    %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=    %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=      %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   Bore_RA=    %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Bore_Dec=   %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Start_TJD=  %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Start_SOD=  %.2f [sec]\n", lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   Stop_TJD=   %li\n", lbuf[10]);
+  fprintf (s, "   Stop_SOD=   %.2f [sec]\n", lbuf[11] / 100.0);
+  delta = lbuf[BURST_SOD] / 100.0 - lbuf[11] / 100.0;
+  if (delta < 0.0)
+    delta += 86400.0;		// Handle UT_midnight rollover
+  fprintf (s, "   Stop_Start= %.2f [sec]\n", delta);
+  fprintf (s, "   LiveTime=   %.2f [sec]\n", lbuf[9] / 100.0);
+  fprintf (s, "   Mode=       %li\n", lbuf[12]);
+  fprintf (s, "   Waveform=   %li\n", lbuf[13]);
+  fprintf (s, "   bias=       %li\n", lbuf[14]);
+  fprintf (s, "   URL=        %s\n", (char *) (&lbuf[BURST_URL]));
+  if (lbuf[21] == 1)
+    fprintf (s,
+	     "   This spectrum accumulation was terminated by the 'Time' condition.\n");
+  else if (lbuf[21] == 2)
+    fprintf (s,
+	     "   This spectrum accumulation was terminated by the 'Snapshot End' condition.\n");
+  else if (lbuf[21] == 3)
+    fprintf (s,
+	     "   This spectrum accumulation was terminated by the 'SAA Entry' condition.\n");
+  else if (lbuf[21] == 4)
+    fprintf (s,
+	     "   This spectrum accumulation was terminated by the 'LRPD-to-WT Transition' condition.\n");
+  else if (lbuf[21] == 5)
+    fprintf (s,
+	     "   This spectrum accumulation was terminated by the 'WT-to-LRorPC Transition' condition.\n");
+  else
+    fprintf (s,
+	     "   WARNING: This spectrum accumulation has an unrecognized termination condition.\n");
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_xrt_image (lbuf, s)	/* print the contents of a Swift-XRT Image packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-XRT Image\n", lbuf[PKT_TYPE],
+	   lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=    %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=    %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=      %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   Start_TJD=  %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Start_SOD=  %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=         %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=        %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Error=      %.1f [arcsec]\n", 3600.0 * lbuf[11] / 10000.0);
+  fprintf (s, "   Counts=     %li\n", lbuf[BURST_INTEN]);
+  fprintf (s, "   Centroid_X= %.2f\n", lbuf[12] / 100.0);
+  fprintf (s, "   Centroid_Y= %.2f\n", lbuf[13] / 100.0);
+  fprintf (s, "   Raw_X=      %li\n", lbuf[14]);
+  fprintf (s, "   Raw_Y=      %li\n", lbuf[15]);
+  fprintf (s, "   Roll=       %.4f [deg]\n", lbuf[16] / 10000.0);
+  fprintf (s, "   ExpoTime=   %.2f [sec]\n", lbuf[18] / 100.0);
+  fprintf (s, "   Gain=       %li\n", (lbuf[17] >> 16) & 0xFF);
+  fprintf (s, "   Mode=       %li\n", (lbuf[17] >> 8) & 0xFF);
+  fprintf (s, "   Waveform=   %li\n", (lbuf[17]) & 0xFF);
+  fprintf (s, "   GRB_Pos_in_XRT_Y= %.4f\n", lbuf[20] / 100.0);
+  fprintf (s, "   GRB_Pos_in_XRT_Z= %.4f\n", lbuf[21] / 100.0);
+  fprintf (s, "   URL=        %s\n", (char *) (&lbuf[BURST_URL]));
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_xrt_lc (lbuf, s)	/* print the contents of a Swift-XRT LightCurve packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+  float delta;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-XRT LightCurve\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=    %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=    %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=      %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   Bore_RA=    %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Bore_Dec=   %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Start_TJD=  %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Start_SOD=  %.2f [sec]\n", lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   Stop_TJD=   %li\n", lbuf[10]);
+  fprintf (s, "   Stop_SOD=   %.2f [sec]\n", lbuf[11] / 100.0);
+  delta = lbuf[BURST_SOD] / 100.0 - lbuf[11] / 100.0;
+  if (delta < 0.0)
+    delta += 86400.0;		// Handle UT_midnight rollover
+  fprintf (s, "   Stop_Start= %.2f [sec]\n", delta);
+  fprintf (s, "   N_Bins=     %li\n", lbuf[20]);
+  fprintf (s, "   Term_cond=  %li\n", lbuf[21]);
+  fprintf (s, "            =  0 = Normal (100 bins).\n");
+  fprintf (s, "            =  1 = Terminated by time (1-99 bins).\n");
+  fprintf (s, "            =  2 = Terminated by Snapshot (1-99 bins).\n");
+  fprintf (s,
+	   "            =  3 = Terminated by entering the SAA (1-99 bins).\n");
+  fprintf (s, "   URL=        %s\n", (char *) (&lbuf[BURST_URL]));
+  if (lbuf[21] == 1)
+    fprintf (s,
+	     "   This Lightcurve was terminated by the 'Time' condition.\n");
+  else if (lbuf[21] == 2)
+    fprintf (s,
+	     "   This Lightcurve was terminated by the 'Snapshot End' condition.\n");
+  else if (lbuf[21] == 3)
+    fprintf (s,
+	     "   This Lightcurve was terminated by the 'SAA Entry' condition.\n");
+  else
+    fprintf (s,
+	     "   WARNING: This Lightcurve has an unrecognized termination condition.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_uvot_dburst (lbuf, s)	/* print the contents of a Swift-UVOT DarkBurst packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-UVOT DarkBurst\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=  %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=    %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   Start_TJD=%li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Start_SOD=%.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=       %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=      %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Roll=     %.4f [deg]\n", lbuf[9] / 10000.0);
+  fprintf (s, "   filter=   %li\n", lbuf[10]);
+  fprintf (s, "   expo_id=  %li\n", lbuf[11]);
+  fprintf (s, "   x_offset= %li\n", lbuf[12]);
+  fprintf (s, "   y_offset= %li\n", lbuf[13]);
+  fprintf (s, "   width=    %li\n", lbuf[14]);
+  fprintf (s, "   height=   %li\n", lbuf[15]);
+  fprintf (s, "   x_grb_pos=%li\n", lbuf[16] & 0xFFFF);
+  fprintf (s, "   y_grb_pos=%li\n", (lbuf[16] >> 16) & 0xFFFF);
+  fprintf (s, "   n_frames= %li\n", lbuf[17]);
+  fprintf (s, "   swl=      %li\n", lbuf[18] & 0x000F);
+  fprintf (s, "   lwl=      %li\n", (lbuf[18] >> 16) & 0x000F);
+  fprintf (s, "   URL=      %s\n", (char *) (&lbuf[BURST_URL]));
+  if (lbuf[MISC] & (0x1 << 28))
+    fprintf (s, "   The GRB Position came from the XRT Position Command.\n");
+  else
+    fprintf (s,
+	     "   The GRB Position came from the Window Position in the Mode Command.\n");
+  if (lbuf[MISC] & 0x10000000)
+    fprintf (s,
+	     "   The source of the GRB Position came from the XRT Position command.\n");
+  else
+    fprintf (s,
+	     "   The source of the GRB Position came from the Window Position in the Mode command.\n");
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_uvot_fchart (lbuf, s)	/* print the contents of a Swift-UVOT FindingChart packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-UVOT FindingChart\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt=  %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD=  %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=    %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   Start_TJD=%li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   Start_SOD=%.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=       %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=      %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Roll=     %7.4f [deg]\n", lbuf[9] / 10000.0);
+  fprintf (s, "   Filter=   %li\n", lbuf[10]);
+  fprintf (s, "   bkg_mean= %li\n", lbuf[11]);
+  fprintf (s, "   x_max=    %li\n", lbuf[12]);
+  fprintf (s, "   y_max=    %li\n", lbuf[13]);
+  fprintf (s, "   n_star=   %li\n", lbuf[14]);
+  fprintf (s, "   x_offset= %li\n", lbuf[15]);
+  fprintf (s, "   y_offset= %li\n", lbuf[16]);
+  fprintf (s, "   det_thresh=   %li\n", lbuf[17]);
+  fprintf (s, "   photo_thresh= %li\n", lbuf[18]);
+  fprintf (s, "   URL=      %s\n", (char *) (&lbuf[BURST_URL]));
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+void
+pr_swift_uvot_pos (lbuf, s)	/* print the contents of a Swift-UVOT Pos packet */
+     long *lbuf;		/* Ptr to the newly arrived packet to print out */
+     FILE *s;			/* Stream to print it to */
+{
+  int id, segnum;
+
+  double ra, dec;
+  time_t grb_date;
+
+  ra = lbuf[BURST_RA] / 10000.0;
+  dec = lbuf[BURST_DEC] / 10000.0;
+
+  fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
+  fprintf (s, "   Type= %li   SN= %li    Swift-UVOT Pos_Ack\n",
+	   lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
+  fprintf (s, "   Hop_cnt= %li\n", lbuf[PKT_HOP_CNT]);
+  fprintf (s, "   PKT_SOD= %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[PKT_SOD] / 100.0, here_sod - lbuf[PKT_SOD] / 100.0);
+  id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
+  segnum = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
+  fprintf (s, "   Trig#=   %d,  Subnum= %d\n", id, segnum);
+  fprintf (s, "   TJD=     %li\n", lbuf[BURST_TJD]);
+  fprintf (s, "   SOD=     %.2f [sec]   delta=%.2f [sec]\n",
+	   lbuf[BURST_SOD] / 100.0, here_sod - lbuf[BURST_SOD] / 100.0);
+  fprintf (s, "   RA=      %9.4f [deg] (J2000)\n", ra);
+  fprintf (s, "   Dec=     %9.4f [deg] (J2000)\n", dec);
+  fprintf (s, "   Error=   %.1f [arcsec, radius, statistical only]\n",
+	   (float) 3600.0 * lbuf[BURST_ERROR] / 10000.0);
+  fprintf (s, "   Mag=     %.2f\n", lbuf[BURST_INTEN] / 100.0);	//confirm this!!!!!!!!!!!!!!!
+  if (lbuf[MISC] & 0x40000000)
+    fprintf (s,
+	     "   This is a ground-generated Notice -- not flight-generated.\n");
+  else
+    fprintf (s,
+	     "   ERR: Bit not set -- this UVOT_Pos Notice can only ever be generated on the ground.\n");
+  if (lbuf[MISC] & 0x80000000)
+    fprintf (s,
+	     "   This Notice was received with 1 (or more) CRC errors -- values are suspect.\n");
+
+  ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
+  grb_date += lbuf[BURST_SOD] / 100.0;
+
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
+    {
+      process_grb (id, segnum, ra, dec, &grb_date);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1576,6 +2457,77 @@ receive_bacodine (void *arg)
 		case TYPE_INTG_REFINED:
 		case TYPE_INTG_OFFLINE:
 		  pr_intg (lbuf, lg);
+		  break;
+		case TYPE_MILAGRO_POS_SRC:	// 58  // MILAGRO Position message
+		  pr_milagro (lbuf, stdout);
+		  pr_milagro (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_BAT_GRB_ALERT_SRC:	// 60  // SWIFT BAT GRB ALERT message
+		  pr_swift_bat_alert (lbuf, stdout);
+		  pr_swift_bat_alert (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:	// 61  // SWIFT BAT GRB Position Acknowledge message
+		  pr_swift_bat_pos_ack (lbuf, stdout);
+		  pr_swift_bat_pos_ack (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:	// 62  // SWIFT BAT GRB Position NOT Ack mesg
+		  pr_swift_bat_pos_nack (lbuf, stdout);
+		  pr_swift_bat_pos_nack (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_BAT_GRB_LC_SRC:	// 63  // SWIFT BAT GRB Lightcurve message
+		  pr_swift_bat_lc (lbuf, stdout);
+		  pr_swift_bat_lc (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_SCALEDMAP_SRC:	// 64  // SWIFT BAT Scaled Map message
+		  printf
+		    ("WARN: Should not be able to get a BAT Scaled Map.\n");
+		  fprintf (lg,
+			   "WARN: Should not be able to get a BAT Scaled Map.\n");
+		  break;
+		case TYPE_SWIFT_FOM_2OBSAT_SRC:	// 65  // SWIFT BAT FOM to Observe message
+		  pr_swift_fom_2obs (lbuf, stdout);
+		  pr_swift_fom_2obs (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_FOSC_2OBSAT_SRC:	// 66  // SWIFT BAT S/C to Slew message
+		  pr_swift_sc_2slew (lbuf, stdout);
+		  pr_swift_sc_2slew (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_XRT_POSITION_SRC:	// 67  // SWIFT XRT Position message
+		  pr_swift_xrt_pos_ack (lbuf, stdout);
+		  pr_swift_xrt_pos_ack (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_XRT_SPECTRUM_SRC:	// 68  // SWIFT XRT Spectrum message
+		  pr_swift_xrt_spec (lbuf, stdout);
+		  pr_swift_xrt_spec (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_XRT_IMAGE_SRC:	// 69  // SWIFT XRT Image message
+		  pr_swift_xrt_image (lbuf, stdout);
+		  pr_swift_xrt_image (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_XRT_LC_SRC:	// 70  // SWIFT XRT Lightcurve message (aka Prompt)
+		  pr_swift_xrt_lc (lbuf, stdout);
+		  pr_swift_xrt_lc (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_XRT_CENTROID_SRC:	// 71  // SWIFT XRT Pos Nackmessage (Centroid Error )
+		  pr_swift_xrt_pos_nack (lbuf, stdout);
+		  pr_swift_xrt_pos_nack (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_UVOT_DBURST_SRC:	// 72  // SWIFT UVOT DarkBurst message (aka Neighbor)
+		  pr_swift_uvot_dburst (lbuf, stdout);
+		  pr_swift_uvot_dburst (lbuf, lg);
+		  break;
+		case TYPE_SWIFT_UVOT_FCHART_SRC:	// 73  // SWIFT UVOT Finding Chart message
+		  pr_swift_uvot_fchart (lbuf, stdout);
+		  pr_swift_uvot_fchart (lbuf, lg);
+		  break;
+
+		  // The 'processed' Swift versions (type=76-80) are essentially identical
+		  // to the 'raw' Swift versions, 63,68,69,72,73, respectively,
+		  // so they will not be duplicated here in this switch().
+
+		case TYPE_SWIFT_UVOT_POS_SRC:	// 81  // SWIFT UVOT Position message
+		  pr_swift_uvot_pos (lbuf, stdout);
+		  pr_swift_uvot_pos (lbuf, lg);
 		  break;
 		case TYPE_KILL_SOCKET:	/* Signal to break connection */
 		  printf ("Got a KILL socket packet.\n");
