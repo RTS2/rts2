@@ -114,8 +114,9 @@ astrometry_image (struct image_que *actual_image)
       // call image processing script
       asprintf (&cmd,
 		get_string_default ("img_max",
-				    "/home/petr/rts2/src/plan/img_max %s/%s 2>/dev/null"),
-		actual_image->directory, actual_image->image);
+				    "/home/petr/rts2/src/plan/img_max %s/%s %i 2>/dev/null"),
+		actual_image->directory, actual_image->image,
+		hi_precision->ntries);
       printf ("\ncalling %s.", cmd);
 
       // try it with past..
@@ -187,10 +188,20 @@ astrometry_image (struct image_que *actual_image)
 	  fflush (cor_log);
 	  if ((tel = devcli_find (actual_image->tel_name)))
 	    {
-	      if (devcli_command (tel, NULL, "correct %i %f %f",
-				  actual_image->correction_mark,
-				  ra_err / 60.0, dec_err / 60.0))
-		perror ("telescope correct");
+	      if (hi_precision && hi_precision->hi_precision == 2)
+		{
+		  if (devcli_command (tel, NULL, "change %f %f",
+				      ra_err / 60.0, dec_err / 60.0))
+		    perror ("telescope change");
+
+		}
+	      else
+		{
+		  if (devcli_command (tel, NULL, "correct %i %f %f",
+				      actual_image->correction_mark,
+				      ra_err / 60.0, dec_err / 60.0))
+		    perror ("telescope correct");
+		}
 	    }
 	  else
 	    {
