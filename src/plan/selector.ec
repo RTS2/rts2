@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 #define READOUT_TIME		75
-#define PLAN_TOLERANCE		350
+#define PLAN_TOLERANCE	        500	
 #define PLAN_DARK_TOLERANCE	1800
 
 #define DEFAULT_DARK_FREQUENCY	50	// every n image will be dark
@@ -25,7 +25,7 @@
 EXEC SQL include sqlca;
 
 int
-find_plan (struct target *plan, int id, time_t c_start)
+find_plan (Target *plan, int id, time_t c_start)
 {
   while (plan)
     {
@@ -37,18 +37,19 @@ find_plan (struct target *plan, int id, time_t c_start)
   return -1;
 }
 
-struct target *
-add_target (struct target *plan, int type, int id, int obs_id, double ra,
+Target *
+add_target (Target *plan, int type, int id, int obs_id, double ra,
 	    double dec, time_t obs_time, int tolerance)
 {
-  struct target *new_plan;
-  new_plan = (struct target *) malloc (sizeof (struct target));
+  Target *new_plan;
+  struct ln_equ_posn object;
+  object.ra = ra;
+  object.dec = dec;
+  new_plan = new ConstTarget(&object);
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
   new_plan->obs_id = obs_id;
-  new_plan->ra = ra;
-  new_plan->dec = dec;
   new_plan->ctime = obs_time;
   new_plan->tolerance = tolerance;
   new_plan->moved = 0;
@@ -60,8 +61,31 @@ add_target (struct target *plan, int type, int id, int obs_id, double ra,
   return new_plan;
 }
 
+Target *
+add_target_ell (Target *plan, int type, int id, int obs_id,
+  ln_ell_orbit *orbit, time_t obs_time, int tolerance)
+{
+  Target *new_plan;
+  new_plan = new EllTarget(orbit);
+  new_plan->next = NULL;
+  new_plan->type = type;
+  new_plan->id = id;
+  new_plan->obs_id = obs_id;
+  new_plan->ctime = obs_time;
+  new_plan->tolerance = tolerance;
+  new_plan->moved = 0;
+  new_plan->hi_precision = 1;
+
+  while (plan->next)
+    plan = plan->next;
+  plan->next = new_plan;
+  return new_plan;
+}
+
+
+
 int
-select_next_alt (time_t c_start, struct target *plan, float lon, float lat)
+select_next_alt (time_t c_start, Target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -117,7 +141,7 @@ err:
 }
 
 int
-select_next_gps (time_t c_start, struct target *plan, float lon, float lat)
+select_next_gps (time_t c_start, Target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -131,7 +155,7 @@ select_next_gps (time_t c_start, struct target *plan, float lon, float lat)
   float db_lat = lat;
   long int obs_start = c_start;
   EXEC SQL END DECLARE SECTION;
-  obs_start -= get_device_double_default ("gps", "interval", 302400);
+  obs_start -= (long) get_device_double_default ("gps", "interval", 302400);
 
   printf ("C_start: %s", ctime (&c_start));
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
@@ -174,7 +198,7 @@ err:
 }
 
 int
-select_next_airmass (time_t c_start, struct target *plan,
+select_next_airmass (time_t c_start, Target *plan,
 		     float target_airmass, float az_end, float az_start,
 		     float lon, float lat)
 {
@@ -244,7 +268,7 @@ err:
 }
 
 int
-select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
+select_next_grb (time_t c_start, Target *plan, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -304,7 +328,7 @@ err:
  * Select next observation from list of opportunity fields.
  */
 int
-select_next_to (time_t c_start, struct target *plan, float az_end,
+select_next_to (time_t *c_start, Target *plan, float az_end,
 		float az_start, float lon, float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -325,7 +349,7 @@ select_next_to (time_t c_start, struct target *plan, float az_end,
 
   db_lock ();
 #define test_sql if (sqlca.sqlcode < 0) goto err
-  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
+  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (c_start));
   st_deg = 15.0 * st;
   printf ("to st: %f\n", st);
 EXEC SQL DECLARE obs_cursor_to CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt, ot_imgcount, EXTRACT (EPOCH FROM ot_minpause) FROM targets, targets_images, ot WHERE ot.tar_id = targets.tar_id AND targets.tar_id = targets_images.tar_id AND type_id = 'O' AND obj_alt (tar_ra, tar_dec,:st,
@@ -353,7 +377,7 @@ EXEC SQL DECLARE obs_cursor_to CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec
 	  && (last_o == -1 || last_o >= ot_minpause))
 	{
 	  printf ("to find id: %i\n", tar_id);
-	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
 		      PLAN_TOLERANCE);
 	  EXEC SQL CLOSE obs_cursor_to;
 	  db_unlock ();
@@ -375,10 +399,112 @@ err:
 }
 
 /*!
+ * Select next observation from list of opportunity fields.
+ */
+int
+select_next_ell (time_t *c_start, Target *plan, float az_end,
+		float az_start, float lon, float lat)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  double st;
+  double st_deg;
+  int tar_id;
+  int ell_minpause;
+  int ell_isnull;
+  float db_lon = lon;
+  float db_lat = lat;
+  double ell_a;
+  double ell_e;
+  double ell_i;
+  double ell_w;
+  double ell_omega;
+  double ell_n;
+  double ell_JD;
+  EXEC SQL END DECLARE SECTION;
+  struct ln_ell_orbit orbit;
+  struct ln_equ_posn pos;
+  struct ln_lnlat_posn obs;
+  struct ln_hrz_posn hrz;
+  double JD;
+
+  db_lock ();
+#define test_sql if (sqlca.sqlcode < 0) goto err
+  JD = ln_get_julian_from_timet (c_start);
+  st = ln_get_mean_sidereal_time (JD);
+  st_deg = 15.0 * st;
+  printf ("ell to st: %f\n", st);
+EXEC SQL DECLARE obs_cursor_ell CURSOR FOR 
+SELECT targets.tar_id, EXTRACT (EPOCH FROM ell_minpause), ell_a, ell_e, ell_i, ell_w, 
+  ell_omega, ell_n, ell_JD 
+FROM targets, targets_images, ell 
+WHERE ell.tar_id = targets.tar_id AND targets.tar_id = targets_images.tar_id AND type_id = 'P' 
+ORDER BY ell_priority DESC, img_count ASC;
+
+  EXEC SQL OPEN obs_cursor_ell;
+  test_sql;
+  while (1)
+    {
+      int last_o;
+      EXEC SQL FETCH next FROM obs_cursor_ell
+	INTO :tar_id, :ell_minpause:ell_isnull, :ell_a,
+          :ell_e, :ell_i, :ell_w, :ell_omega, :ell_n, :ell_JD;
+      if (sqlca.sqlcode)
+	goto err;
+      if (ell_isnull)
+	ell_minpause = 1800;
+      last_o = db_last_observation (tar_id);
+      orbit.a = ell_a;
+      orbit.e = ell_e;
+      orbit.i = ell_i;
+      orbit.w = ell_w;
+      orbit.omega = ell_omega;
+      orbit.n = ell_n;
+      orbit.JD = ell_JD;
+      struct EllTarget *target;
+
+      target = new EllTarget (&orbit);
+      target->getPosition (&pos, JD);
+
+      obs.lng = lon;
+      obs.lat = lat;
+
+      ln_get_hrz_from_equ (&pos, &obs, JD, &hrz);
+
+      printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%f\t%i\n", tar_id,
+      pos.ra, pos.dec,
+	      hrz.alt, ell_e, ell_minpause);
+      if (hrz.alt > 3 && (last_o == -1 || last_o >= ell_minpause))
+	{
+	  printf ("ell find id: %i\n", tar_id);
+	  add_target_ell (plan, TARGET_LIGHT, tar_id, -1, &orbit, *c_start,
+		      PLAN_TOLERANCE);
+	  EXEC SQL CLOSE obs_cursor_to;
+	  db_unlock ();
+          delete target;
+	  return 0;
+	}
+      delete target;
+    }
+  EXEC SQL CLOSE obs_cursor_to;
+  test_sql;
+  db_unlock ();
+#undef test_sql
+  return -1;
+err:
+  db_unlock ();
+//#ifdef DEBUG
+  printf ("err select_next_to: %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
+//#endif /* DEBUG */
+  return -1;
+}
+
+
+/*!
  * If needed, select next observation from list of photometry fields
  */
 int
-select_next_photometry (time_t c_start, struct target *plan, float lon,
+select_next_photometry (time_t c_start, Target *plan, float lon,
 			float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -396,7 +522,7 @@ err:
  * HETE field generation
  */
 int
-hete_mosaic (struct target *plan, double jd, time_t * obs_start, int number)
+hete_mosaic (Target *plan, double jd, time_t * obs_start, int number)
 {
   struct ln_equ_posn sun;
   int frequency;
@@ -428,7 +554,7 @@ hete_mosaic (struct target *plan, double jd, time_t * obs_start, int number)
  * Select flat field position
  */
 int
-flat_field (struct target *plan, time_t * obs_start, int number, float lon,
+flat_field (Target *plan, time_t * obs_start, int number, float lon,
 	    float lat)
 {
   double jd;
@@ -473,7 +599,7 @@ flat_field (struct target *plan, time_t * obs_start, int number, float lon,
  * @param state		serverd status
  */
 int
-get_next_plan (struct target *plan, int selector_type,
+get_next_plan (Target *plan, int selector_type,
 	       time_t * obs_start, int number, float exposure, int state,
 	       float lon, float lat)
 {
@@ -494,7 +620,7 @@ get_next_plan (struct target *plan, int selector_type,
 
   jd = ln_get_julian_from_timet (obs_start);
   dark_frequency =
-    get_double_default ("dark_frequency", DEFAULT_DARK_FREQUENCY);
+    (int) get_double_default ("dark_frequency", DEFAULT_DARK_FREQUENCY);
 
   // check for GRB..
   if (!select_next_grb (*obs_start, plan, lon, lat))
@@ -512,13 +638,14 @@ get_next_plan (struct target *plan, int selector_type,
   if (last_good_img >= 0 && last_good_img < 3600)
     {
       printf ("Trying OT\n");
-      if (!select_next_to (*obs_start, plan, 120, 230, lon, lat))
+      if (selector_type == SELECTOR_ELL && !select_next_ell (obs_start, plan, 120, 230, lon, lat))
+        return 0;
+      if (!select_next_to (obs_start, plan, 120, 230, lon, lat))
 	return 0;
     }
 
   switch (selector_type)
     {
-
     case SELECTOR_ALTITUDE:
       return select_next_alt (*obs_start, plan, lon, lat);
 
@@ -539,6 +666,7 @@ get_next_plan (struct target *plan, int selector_type,
       if (!hete_mosaic (plan, jd, obs_start, number))
 	return 0;
 
+    case SELECTOR_ELL:
     case SELECTOR_AIRMASS:
       // every 50 image will be dark..
       if (number % dark_frequency == 1)	// because of HETE 
@@ -598,9 +726,9 @@ get_next_plan (struct target *plan, int selector_type,
 }
 
 void
-free_plan (struct target *plan)
+free_plan (Target *plan)
 {
-  struct target *last;
+  Target *last;
 
   last = plan->next;
   free (plan);

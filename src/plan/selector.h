@@ -1,32 +1,27 @@
 #ifndef __RTS_SELECTOR__
 #define __RTS_SELECTOR__
+#include "target.h"
 #include <time.h>
 
 #define SELECTOR_AIRMASS	1
 #define SELECTOR_ALTITUDE	2
 #define SELECTOR_HETE		3
 #define SELECTOR_GPS		4
+#define SELECTOR_ELL            5	// prefer things with ell target
 
-struct target
+#ifdef __cplusplus
+extern "C"
 {
-  int type;
-  int id;
-  int obs_id;
-  double ra;
-  double dec;
-  time_t ctime;
-  int tolerance;
-  int moved;
-  struct target *next;
-  int hi_precision;		// when 1, image will get imediately astrometry and telescope status will be updated
-};
+#endif
 
-extern int
-get_next_plan (struct target *plan, int selector_type,
-	       time_t * obs_time, int number, float exposure, int state,
-	       float lon, float lat);
-extern int make_plan (struct target **plan, float exposure, float lon,
-		      float lat);
-extern void free_plan (struct target *plan);
+  extern int
+    get_next_plan (Target * plan, int selector_type,
+		   time_t * obs_time, int number, float exposure, int state,
+		   float lon, float lat);
+  extern void free_plan (Target * plan);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* __RTS_SELECTOR__ */
