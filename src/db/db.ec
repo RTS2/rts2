@@ -7,8 +7,11 @@
 #include "db.h"
 #include <libnova.h>
 #include <malloc.h>
+#include <string.h>
 
 #define test_sql if (sqlca.sqlcode < 0) goto err
+
+exec sql include sqlca;
 
 extern int
 db_connect (void)
