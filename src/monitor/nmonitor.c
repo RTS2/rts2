@@ -175,6 +175,12 @@ status_phot (WINDOW * wnd, struct device *dev)
 }
 
 void
+status_mirror (WINDOW * wnd, struct device *dev)
+{
+  print_status (wnd, 1, 1, dev);
+}
+
+void
 status_send (struct device *dev, char *cmd)
 {
   char *txt;
@@ -266,6 +272,8 @@ status (WINDOW * wnd, struct device *dev, bool requery)
 	case DEVICE_TYPE_PHOT:
 	  status_phot (wnd, dev);
 	  break;
+	case DEVICE_TYPE_MIRROR:
+	  status_mirror (wnd, dev);
 	default:
 	  mvwprintw (wnd, 3, 1, "UNKNOW TYPE: %i %i", dev->type,
 		     DEVICE_TYPE_PHOT);
