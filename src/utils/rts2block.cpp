@@ -661,7 +661,7 @@ Rts2Block::run ()
 		accept (sock, (struct sockaddr *) &other_side, &addr_size);
 	      if (client == -1)
 		{
-		  perror ("client accept");
+		  syslog (LOG_DEBUG, "client accept: %m %i", sock);
 		}
 	      else
 		{

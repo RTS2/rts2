@@ -63,7 +63,7 @@ Rts2DevConn::command ()
 	  sendCommandEnd (DEVDEM_E_HW, "device error");
 	  return -1;
 	}
-      return 0;
+      return ret;
     }
   if (isCommand ("auth"))
     {
