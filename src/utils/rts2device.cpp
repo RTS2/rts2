@@ -402,9 +402,10 @@ Rts2State::setState (int new_state, char *description)
 void
 Rts2State::maskState (int state_mask, int new_state, char *description)
 {
-  state &= !state_mask;
-  state |= new_state;
-  setState (state, description);
+  int masked_state = state;
+  masked_state &= !state_mask;
+  masked_state |= new_state;
+  setState (masked_state, description);
 }
 
 int
