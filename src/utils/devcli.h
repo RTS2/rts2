@@ -38,6 +38,9 @@ extern ssize_t devcli_read_data (int sock, void *data, size_t size);
 extern int devcli_wait_for_status (struct device *dev, char *status_name,
 				   int status_mask, int status,
 				   time_t tmeout);
+extern int devcli_wait_for_status_all (int type, char *status_name,
+				       int status_mask, int status,
+				       time_t timeout);
 extern void devcli_set_general_notifier (struct device *dev,
 					 general_notifier_t notifier,
 					 void *data);
@@ -45,6 +48,9 @@ extern int devcli_set_notifier (struct device *dev, char *status_name,
 				status_notifier_t callback);
 extern int devcli_server_command (int *ret_code, char *cmd, ...);
 extern int devcli_command (struct device *dev, int *ret_code, char *cmd, ...);
+extern int devcli_command_all (int device_type, char *cmd, ...);
+extern int devcli_device_data_handler (int type,
+				       devcli_handle_data_t handler);
 extern int devcli_image_info (struct device *dev, struct image_info *image);
 extern int devcli_execute (char *line, int *ret_code);
 
