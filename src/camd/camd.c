@@ -340,7 +340,7 @@ camd_handle_command (char *command)
 	devser_send_data (NULL, readout[chip].data,
 			  readout[chip].data_size_in_bytes);
     }
-  else if (strcmp (command, "cool_temp") == 0)
+  else if (strcmp (command, "cooltemp") == 0)
     {
       struct sbig_cool cool;
       float new_temp;
