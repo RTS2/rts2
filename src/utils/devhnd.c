@@ -1,6 +1,7 @@
 #include "camera_info.h"
 #include "telescope_info.h"
 #include "dome_info.h"
+#include "phot_info.h"
 
 
 #include "devhnd.h"
@@ -279,6 +280,18 @@ dome_command_handler (struct param_status *params, struct dome_info *info)
   return -1;
 };
 
+int
+phot_command_handler (struct param_status *params, struct phot_info *info)
+{
+#ifdef DEBUG
+  printf ("phot get response: %s\n", params->param_argv);
+#endif
+  if (!strcmp (params->param_argv, "count"))
+    return param_next_integer (params, &info->count);
+  errno = EINVAL;
+  return -1;
+};
+
 struct supp_info devhnd_devices[] = {
   {
    NULL, NULL}
@@ -302,7 +315,7 @@ struct supp_info devhnd_devices[] = {
    NULL, NULL}
   ,				// DEVICE_TYPE_ARCH
   {
-   NULL, NULL}
+   (devcli_handle_response_t) phot_command_handler, NULL}
   // DEVICE_TYPE_PHOT
 
   // etc..
