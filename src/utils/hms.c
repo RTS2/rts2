@@ -1,20 +1,20 @@
-/** 
-* @file Functions to work with hms format.
-* $Id$
-* hms string is defined as follow:
-* <ul> 
-* 	<li>hms ::= decimal | decimal + [!0-9] + hms 
-* 	<li>decimal ::= unsigneddec | sign + unsigneddec
-* 	<li>sign ::= '+' | '-'
-* 	<li>unsigneddec ::= integer | integer + '.' + integer
-* 	<li>integer ::= [0-9] | [0-9] + integer
-* </ul>
-*
-* Arbitary number of : could be included, but 2 are reasonable
-* maximum.
-*
-* @author petr 
-*/
+/*!
+ * @file Functions to work with hms format.
+ * $Id$
+ * hms string is defined as follow:
+ * <ul> 
+ * 	<li>hms ::= decimal | decimal + [!0-9] + hms 
+ * 	<li>decimal ::= unsigneddec | sign + unsigneddec
+ * 	<li>sign ::= '+' | '-'
+ * 	<li>unsigneddec ::= integer | integer + '.' + integer
+ * 	<li>integer ::= [0-9] | [0-9] + integer
+ * </ul>
+ *
+ * Arbitary number of : could be included, but 2 are reasonable
+ * maximum.
+ *
+ * @author petr 
+ */
 
 #define _GNU_SOURCE
 
@@ -24,15 +24,18 @@
 #include <math.h>
 #include <string.h>
 
-/** Convert hms (hour:minutes:seconds) string to its double 
-* representation.
-* 
-* @param hptr Pointer to string to convert
-* @return Float value of hms, if fails set errno to error and returns
-* NAN 
-* @exception ERANGE  When some value is out of range for float number.
-* @exception EINVAL  When format doesn't match.
-*/
+/*!
+ * Convert hms (hour:minutes:seconds) string to its double 
+ * representation.
+ * 
+ * @param hptr		pointer to string to convert
+ * 
+ * @return float value of hms, if fails set errno to error and returns
+ * NAN 
+ * 
+ * @exception ERANGE	when some value is out of range for float number.
+ * @exception EINVAL	when format doesn't match.
+ */
 double
 hmstod (const char *hptr)
 {
@@ -85,15 +88,18 @@ hmstod (const char *hptr)
   return ret;
 }
 
-/** Gives h, m and s values from double.
-*
-* @see hmstod
-* @param value Value to convert
-* @param h Set to hours
-* @param m Set to minutes
-* @param s Set to seconds
-* @return -1 and set errno on failure, 0 otherwise 
-*/
+/*!
+ * Gives h, m and s values from double.
+ *
+ * @see hmstod
+ * 
+ * @param value		value to convert
+ * @param h		set to hours
+ * @param m		set to minutes
+ * @param s		set to seconds
+ * 
+ * @return -1 and set errno on failure, 0 otherwise 
+ */
 int
 dtoints (double value, int *h, int *m, int *s)
 {
@@ -115,12 +121,15 @@ dtoints (double value, int *h, int *m, int *s)
   return 0;
 }
 
-/** Opposite to hmstod.
-* @see hmstod
-* @param value Value to convert
-* @param hptr  Should be allocated to minimal 10 characters
-* @return -1 and set errno on error, number of writen bits otherwise
-*/
+/*!
+ * Opposite to hmstod.
+ * 
+ * @see hmstod
+ * @param value		value to convert
+ * @param hptr		should be allocated to minimal 10 characters
+ * 
+ * @return -1 and set errno on error, number of writen bits otherwise
+ */
 int
 dtohms (double value, char *hptr)
 {
