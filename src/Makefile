@@ -1,5 +1,7 @@
 #$Id$
-SUBDIRS = utils teld camd camc
+
+SUBDIRS = utils writers teld camd plan
+
 all:
 	for dir in $(SUBDIRS) ; do 	\
 		$(MAKE) -C $$dir;	\
@@ -23,4 +25,4 @@ indent:
 	done
 
 commit: indent
-	cvs commit
+	$(CVS) commit
