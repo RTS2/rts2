@@ -1,6 +1,6 @@
 #$Id$
 
-SUBDIRS = utils writers serverd teld camd plan
+SUBDIRS = utils writers serverd teld camd camd/urvc plan 
 
 all:
 	for dir in $(SUBDIRS) ; do 		\
