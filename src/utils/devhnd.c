@@ -180,12 +180,16 @@ telescope_command_handler (struct param_status *params,
     return param_next_double (params, &info->longtitude);
   if (!strcmp (params->param_argv, "latitude"))
     return param_next_double (params, &info->latitude);
+  if (!strcmp (params->param_argv, "altitude"))
+    return param_next_float (params, &info->altitude);
   if (!strcmp (params->param_argv, "siderealtime"))
     return param_next_double (params, &info->siderealtime);
   if (!strcmp (params->param_argv, "localtime"))
     return param_next_double (params, &info->localtime);
   if (!strcmp (params->param_argv, "correction_mark"))
     return param_next_integer (params, &info->correction_mark);
+  if (!strcmp (params->param_argv, "flip"))
+    return param_next_integer (params, &info->flip);
   errno = EINVAL;
   return -1;
 };
