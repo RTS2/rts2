@@ -49,5 +49,6 @@ int devcli_getinfo (int channel_id, union devhnd_info **info);
 int devcli_set_readout_telescope (int channel_id,
 				  const struct telescope_info *telescope);
 int devcli_set_readout_camera (int channel_id,
-			       const struct camera_info *camera);
+			       const struct camera_info *camera,
+			       double exposure, time_t * exp_time);
 #endif // __RTS_DEVCLI__

@@ -16,7 +16,8 @@ typedef int (*devcli_handle_response_t) (struct param_status * params,
 					 union devhnd_info * devhnd_info);
 typedef int (*devcli_handle_data_t) (int sock, size_t size,
 				     struct telescope_info * telescope,
-				     struct camera_info * camera);
+				     struct camera_info * camera,
+				     double exposure, time_t * exp_start);
 
 struct devcli_channel_handlers
 {
@@ -25,6 +26,8 @@ struct devcli_channel_handlers
   devcli_handle_data_t data_handler;	//! handler to ANY received data
   struct telescope_info telescope;	//! data about data
   struct camera_info camera;
+  double exposure;
+  time_t exp_start;
 };
 
 struct supp_info
