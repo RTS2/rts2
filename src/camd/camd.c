@@ -156,11 +156,12 @@ start_readout (void *arg)
   return NULL;
 
 err:
-  free (line_buf);
-  devser_data_done (READOUT->conn_id);
   syslog (LOG_ERR, "error during chip %i readout", READOUT->chip);
   devdem_status_mask (READOUT->chip,
-		      CAM_MASK_READING, CAM_NOTREADING, "reading chip error");
+		      CAM_MASK_READING | CAM_MASK_DATA,
+		      CAM_NOTREADING | CAM_NODATA, "reading chip error");
+  free (line_buf);
+  devser_data_done (READOUT->conn_id);
   return NULL;
 }
 
@@ -542,10 +543,12 @@ camd_handle_status (int status, int old_status)
 
   switch (status)
     {
-    case SERVERD_DUSK:
+    case SERVERD_EVENING:
       ret = camera_cool_max ();
       break;
     case SERVERD_NIGHT:
+    case SERVERD_DUSK:
+    case SERVERD_DAWN:
       ret = camera_cool_hold ();
       break;
     default:			/* SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF */
