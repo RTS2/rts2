@@ -541,7 +541,7 @@ camd_handle_status (int status, int old_status)
   if (camera_init ("/dev/ccd1", sbig_port))
     return -1;
 
-  switch (status)
+  switch (status & SERVERD_STATUS_MASK)
     {
     case SERVERD_EVENING:
       ret = camera_cool_max ();
