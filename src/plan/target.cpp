@@ -38,6 +38,7 @@ int EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
   {
           struct ln_hyp_orbit hyp_orbit;
           hyp_orbit.q = orbit.a;
+	  hyp_orbit.e = orbit.e;
           hyp_orbit.i = orbit.i;
           hyp_orbit.w = orbit.w;
           hyp_orbit.omega = orbit.omega;

@@ -454,7 +454,7 @@ SELECT targets.tar_id, EXTRACT (EPOCH FROM ell_minpause), ell_a, ell_e, ell_i, e
   ell_omega, ell_n, ell_JD 
 FROM targets, targets_images, ell 
 WHERE ell.tar_id = targets.tar_id AND targets.tar_id = targets_images.tar_id AND type_id = 'P'
-AND ell.ell_priority > 0 AND ell.ell_mag_1 < :min_m AND ell_e <= 1.0
+AND ell.ell_priority > 0 AND ell.ell_mag_1 < :min_m
 ORDER BY ell_priority DESC, img_count ASC;
 
   EXEC SQL OPEN obs_cursor_ell;

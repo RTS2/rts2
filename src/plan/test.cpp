@@ -45,10 +45,10 @@ int main (int argc, char **argv)
                 time (&t);
         double jd = ln_get_julian_from_timet (&t);
 	read_config (CONFIG_FILE);
-        orbit.q = 0.16749;
-        orbit.w = 333.298;
-        orbit.omega = 222.992;
-        orbit.i = 64.118;
+        orbit.q = 0.16752;
+        orbit.w = 332.7622;
+        orbit.omega = 222.8061;
+        orbit.i = 63.1662;
         orbit.JD = 2453112.629;
         target = new ParTarget (&orbit);
         struct ln_equ_posn pos;
