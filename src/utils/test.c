@@ -42,16 +42,14 @@ main (int argc, char **argv)
   printf ("ret %i\n", read_config ("/usr/local/etc/rts2.conf"));
 
   printf ("ret %f\n", get_double_default ("longtitude", 1));
-  printf ("value: %f %s\n", value, loc);
   printf ("ret %f\n", get_double_default ("latitude", 1));
-  printf ("value: %f %s\n", value, loc);
-  get_device_string ("C0", "name", &loc);
   printf ("C0.rotang: %f\n", get_device_double_default ("C0", "rotang", 10));
-  printf ("ret: %s %s\n", loc,
-	  get_device_string_default ("C1", "name", "moje"));
+  printf ("ret: %s\n", get_device_string_default ("C1", "name", "moje"));
   printf ("ret: %f\n", get_double_default ("day_horizont", 25));
   printf ("ret: %f\n", get_double_default ("night_horizont", 25));
   printf ("ret: %f\n",
 	  get_device_double_default ("hete", "dark_frequency", 25));
+
+  printf ("ret: %s\n", get_string_default ("epoch", "000"));
   return 0;
 }

@@ -131,7 +131,7 @@ read_config (char *filename)
 	  double val;
 	  char *end_val;
 	  val = strtod (value, &end_val);
-	  if (end_val == value)
+	  if (*end_val)
 	    {
 	      cfg->value = (char *) malloc (value_len + 1);
 	      strcpy (cfg->value, value);
