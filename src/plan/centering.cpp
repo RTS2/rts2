@@ -12,8 +12,8 @@
 
 #define MAX_COUNT		20
 
-#define DARK_FILTER		1
-#define LIGHT_FILTER		3
+#define DARK_FILTER		0
+#define LIGHT_FILTER		2
 #define COUNTS			3
 
 struct count_info
@@ -111,16 +111,17 @@ find_center_real (int *step, int par_x, int par_y, struct device *phot, struct d
   int ret, ret2;
   double phot_actual, last_phot;
   last_phot = phot_integrate (phot, LIGHT_FILTER, COUNTS);
-  for ( *step = 0; *step < MAX_MOVE; *step = *step + 1)
+  for ( *step = 0; *step < MAX_MOVE;)
   {
-    phot_actual = phot_integrate (phot, LIGHT_FILTER, COUNTS);
-    if (phot_actual / last_phot < 0.75 || phot_actual - phot_dark < 250)
-    {
-      break;
-    }
     ret = next_move (dir * par_x, dir * par_y, telescope);
     if (ret)
       break;
+    *step = *step + 1;
+    phot_actual = phot_integrate (phot, LIGHT_FILTER, COUNTS);
+    if (phot_actual / last_phot < 0.75 || phot_actual - phot_dark < get_device_double_default (phot->name, "minsn", 250))
+    {
+      break;
+    }
   }
   dir *= -1;
   // return back..
@@ -141,7 +142,10 @@ find_center (int par_x, int par_y, struct device *phot, struct device *telescope
     return -1;
   ret_1 = (step_1 - step_2) / 2;
   // move to center
-  return next_move (par_x * ret_1, par_y * ret_2, telescope);
+  ret_2 = next_move (par_x * ret_1, par_y * ret_1, telescope);
+  printf ("center centering err_ra: %i (%f) err_dec: %i (%f)\n", err_ra,
+    err_ra * step_ra, err_dec, err_dec * step_dec);
+  return ret_2;
 }
 
 /**
@@ -214,7 +218,7 @@ rts2_centering (struct device *camera, struct device *telescope)
 	goto end;
       // now do the work
       phot_light = phot_integrate (phot, LIGHT_FILTER, COUNTS);
-      if (phot_light - phot_dark > 250)
+      if (phot_light - phot_dark > get_device_double_default (phot->name, "minsn", 250))
 	{
 	  // something found, make step aside, and recenter
 	  printf ("err_ra: %i (%f) err_dec: %i (%f)\n", err_ra,
@@ -229,18 +233,21 @@ rts2_centering (struct device *camera, struct device *telescope)
 	    }
 	  step_ra /= 2.0;
 	  step_dec /= 2.0;
-	  ret = next_move (right_move, up_move, telescope);
+/* ret = next_move (right_move, up_move, telescope);
 	  if (ret)
 	    goto end;
 	  // find center
 	  phot_light = phot_integrate (phot, LIGHT_FILTER, COUNTS);
-	  if (phot_light - phot_dark < 250)
+	  if (phot_light - phot_dark < get_device_double_default (phot->name, "minsn", 250))
 	    {
-	      ret = 3;
-	      goto end;
-	    }
+              // bad idea, move back
+	      next_move (-right_move, -up_move, telescope);
+	      printf ("bad idea, moved back\n");
+	    } */
 	  step_ra /= 2;
 	  step_dec /= 2;
+	  err_ra = 0;
+	  err_dec = 0;
 	  // find one end
 	  ret = find_center (1, 0, phot, telescope, phot_dark);
 	  if (ret)
@@ -249,6 +256,7 @@ rts2_centering (struct device *camera, struct device *telescope)
 	  ret = find_center (0, 1, phot, telescope, phot_dark);
 	  if (ret)
 	    goto end;
+	  phot_integrate (phot, LIGHT_FILTER, COUNTS); 
 	  ret = 0;
 	  goto end;
 	}
