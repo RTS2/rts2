@@ -251,7 +251,7 @@ Rts2ConnCentrald::commandDevice ()
     }
   if (isCommand ("S"))
     {
-      printf ("Status command\n");
+      syslog (LOG_DEBUG, "Rts2ConnCentrald::commandDevice Status command");
       return 0;
     }
   return -1;
@@ -482,13 +482,13 @@ Rts2Centrald::addConnection (int in_sock)
     {
       if (!connections[i])
 	{
-	  printf ("add conn: %i %i\n", i, in_sock);
+	  syslog (LOG_DEBUG, "Rts2Centrald::addConnection add conn: %i %i", i, in_sock);
 	  connections[i] = new Rts2ConnCentrald (in_sock, this, i);
-	  printf ("%p %p\n", connections[i], connections[i]->buf);
+	  syslog (LOG_DEBUG, "Rts2Centrald::addConnection %p %p", connections[i], connections[i]->buf);
 	  return 0;
 	}
     }
-  fprintf (stderr, "Cannot find empty connection!\n");
+  syslog (LOG_ERR, "Rts2Centrald::addConnection Cannot find empty connection!\n");
   return -1;
 }
 
@@ -527,7 +527,7 @@ Rts2Centrald::changePriority (time_t timeout)
     {
       Rts2Conn *conn = connections[i];
       if (conn)
-	printf ("priorit: %i, %i\n", i, conn->getPriority ());
+	syslog (LOG_DEBUG, "Rts2Centrald::changePriority priorit: %i, %i", i, conn->getPriority ());
       if (conn && conn->getPriority () > new_priority_max)
 	{
 	  new_priority_client = i;
@@ -553,6 +553,8 @@ Rts2Centrald::idle ()
   struct ln_lnlat_posn obs;
 
   int call_state;
+
+  syslog (LOG_DEBUG, "Rts2Centrald::idle");
 
   curr_time = time (NULL);
 

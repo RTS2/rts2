@@ -224,7 +224,7 @@ Rts2DevCamera::addConnection (int in_sock)
     {
       if (!connections[i])
 	{
-	  printf ("add conn: %i\n", i);
+	  syslog (LOG_DEBUG, "Rts2DevCamera::addConnection %i", i);
 	  connections[i] = new Rts2DevConnCamera (in_sock, this);
 	  return 0;
 	}
@@ -244,7 +244,7 @@ Rts2DevCamera::checkExposures ()
 	ret = camWaitExpose (i);
 	if (ret >= 0)
 	{
-		printf ("timeout: %li\n", ret);
+		syslog (LOG_DEBUG, "Rts2DevCamera::checkExposures timeout: %li", ret);
 		setTimeout (ret);
 	}
 	if (ret == -2)
@@ -403,7 +403,7 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
     {
       if (!connections[i])
 	{
-	  printf ("add data conn: data_conn\n");
+	  syslog (LOG_DEBUG, "Rts2DevCamera::camReadout add data %i data_conn", i);
 	  connections[i] = data_conn;
 	  break;
 	}

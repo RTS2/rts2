@@ -183,7 +183,6 @@ Rts2DevCameraAndor::init ()
   SetExposureTime(5.0);
 
   chipNum = 1;
-  printf ("chipNum init:: %i\n", chipNum);
   
   cc =
     new CameraAndorChip (0, width, height, 10, 10, 1);
@@ -231,7 +230,6 @@ int
 Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
 {
   SetExposureTime (exptime);
-  printf ("exptime: %f\n", exptime);
   StartAcquisition();
   return 0;
 }
@@ -301,8 +299,8 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      fprintf (stderr, "Cannot initialize camera - exiting!\n");
-      exit (0);
+      syslog (LOG_ERR, "Cannot initialize Andor camera - exiting!");
+      exit (1);
     }
   device->run ();
   delete device;

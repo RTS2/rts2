@@ -359,7 +359,7 @@ Rts2DevCameraSbig::camCoolTemp (float new_temp)
   SetTemperatureRegulationParams temp;
   PAR_ERROR ret;
   temp.regulation = REGULATION_ON;
-  printf ("setTemp: %f\n", new_temp);
+  syslog (LOG_DEBUG, "Rts2DevCameraSbig::camCoolTemp setTemp: %f", new_temp);
   temp.ccdSetpoint = ccd_c2ad (new_temp);
   ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
   return checkSbigHw (ret);
@@ -394,8 +394,8 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      fprintf (stderr, "Cannot initialize camera - exiting!\n");
-      exit (0);
+      syslog (LOG_ERR, "Cannot initialize sbigusb camera - exiting!\n");
+      exit (1);
     }
   device->run ();
   delete device;
