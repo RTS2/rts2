@@ -72,7 +72,7 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 {
   memcpy (&(receiver->data[receiver->offset]), data, size);
   receiver->offset += size;
-  printf ("[] readed: %i bytes of %i\r", receiver->offset, receiver->size);
+  printf ("[] read: %i bytes of %i\r", receiver->offset, receiver->size);
   fflush (stdout);
   if (receiver->offset > sizeof (struct imghdr))
     {
