@@ -40,7 +40,7 @@ main (int argc, char **argv)
 {
   ParTarget *target;
   struct ln_par_orbit orbit;
-  Target *plan = new Target ();
+  Target *plan = new Target (NULL, NULL);
   double values[200];
   time_t t;
   if (argc == 2)
@@ -54,7 +54,7 @@ main (int argc, char **argv)
   orbit.omega = 222.8061;
   orbit.i = 63.1662;
   orbit.JD = 2453112.629;
-  target = new ParTarget (&orbit);
+  target = new ParTarget (NULL, NULL, &orbit);
   struct ln_equ_posn pos;
   printf ("Date: %s\n", ctime (&t));
   target->getPosition (&pos, jd);
@@ -80,7 +80,7 @@ main (int argc, char **argv)
   db_connect ();
 
   ObjectCheck *checker = new ObjectCheck ("/etc/rts2/horizont");
-  Selector *selector = new Selector (checker);
+  Selector *selector = new Selector (checker, NULL, &observer);
 
   jd = get_double_default ("planc_selector", SELECTOR_ELL);
 

@@ -35,7 +35,7 @@ Selector::find_plan (Target * plan, int id, time_t c_start)
   EXEC SQL END DECLARE SECTION;
   while (plan)
     {
-      if (plan->id == id && plan->ctime > c_start)
+      if (plan->id == id && plan->start_time > c_start)
 	return 0;
       plan = plan->next;
     }
@@ -61,12 +61,12 @@ Selector::add_target (Target * plan, int type, int id, int obs_id, double ra,
   struct ln_equ_posn object;
   object.ra = ra;
   object.dec = dec;
-  new_plan = new ConstTarget (&object);
+  new_plan = new ConstTarget(telescope, observer, &object);
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
   new_plan->obs_id = obs_id;
-  new_plan->ctime = obs_time;
+  new_plan->start_time = obs_time;
   new_plan->tolerance = tolerance;
   new_plan->moved = 0;
   new_plan->hi_precision = (int) get_double_default ("hi_precission", 1);
@@ -84,12 +84,12 @@ Selector::add_target_ell (Target * plan, int type, int id, int obs_id,
 			  int tolerance, char obs_type)
 {
   Target *new_plan;
-  new_plan = new EllTarget (orbit);
+  new_plan = new EllTarget(telescope, observer, orbit);
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
   new_plan->obs_id = obs_id;
-  new_plan->ctime = obs_time;
+  new_plan->start_time = obs_time;
   new_plan->tolerance = tolerance;
   new_plan->moved = 0;
   new_plan->hi_precision = (int) get_double_default ("hi_precision", 1);
@@ -106,7 +106,7 @@ add_target_lunar (Target *plan, int type, int id, int obs_id,
   time_t obs_time, int tolerance)
 {
   Target *new_plan;
-  new_plan = new LunarTarget();
+  new_plan = new LunarTarget(telescope, observer);
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
@@ -585,7 +585,7 @@ Selector::select_next_ell (time_t * c_start, Target * plan, float az_end,
       orbit.JD = ell_JD;
       struct EllTarget *target;
 
-      target = new EllTarget (&orbit);
+      target = new EllTarget (telescope, observer, &orbit);
       target->getPosition (&pos, JD);
 
       obs.lng = lon;

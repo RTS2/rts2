@@ -15,6 +15,8 @@ class Selector
 {
 private:
   ObjectCheck * checker;
+  struct device *telescope;
+  struct ln_lnlat_posn *observer;
   int find_plan (Target * plan, int id, time_t c_start);
   Target *add_target (Target * plan, int type, int id, int obs_id, double ra,
 		      double dec, time_t obs_time, int tolerance,
@@ -50,10 +52,14 @@ private:
   int hete_mosaic (Target * plan, double jd, time_t * obs_start, int number);
 
 public:
-    Selector (ObjectCheck * check)
+    Selector (ObjectCheck * check, struct device *tel,
+	      struct ln_lnlat_posn *obs)
   {
-    this->checker = check;
+    checker = check;
+    telescope = tel;
+    observer = obs;
   };
+
   ~Selector (void)
   {
 

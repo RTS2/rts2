@@ -40,6 +40,7 @@ quicksort (double *values, int left, int right)
       quicksort (values, left, pivotNewIndex - 1);
       quicksort (values, pivotNewIndex + 1, right);
     }
+  return 0;
 }
 
 // can change values order, return median value
@@ -47,7 +48,6 @@ double
 get_median (double *values, int size)
 {
   // sort
-  int i;
   quicksort (values, 0, size - 1);
   // get median
   if (size % 2 == 1)
