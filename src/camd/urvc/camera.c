@@ -204,6 +204,21 @@ get_eeprom ()
     }
 }
 
+void
+init_shutter ()
+{
+  MiscellaneousControlParams ctrl;
+  StatusResults sr;
+  if (MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr) == CE_NO_ERROR)
+    {
+      ctrl.fanEnable = sr.fanEnabled;
+      ctrl.shutterCommand = 3;
+      ctrl.ledState = 1;
+      MicroCommand (MC_MISC_CONTROL, ST7_CAMERA, &ctrl, NULL);
+      sleep (2);
+    }
+}
+
 extern int
 camera_init (char *device_name, int camera_id)
 {
@@ -363,9 +378,6 @@ extern int
 camera_expose (int chip, float *exposure, int light)
 {
   PAR_ERROR ret = CE_NO_ERROR;
-#ifdef INIT_SHUTTER
-  MiscellaneousControlParams ctrl;
-#endif /* INIT_SHUTTER */
   StartExposureParams sep;
   EndExposureParams eep;
   StatusResults sr;
@@ -386,16 +398,13 @@ camera_expose (int chip, float *exposure, int light)
 			  Cams[eePtr.model].horzBefore +
 			  Cams[eePtr.model].horzImage + 32, 4, 6)))
     goto imaging_end;		// height, times, [left]
+
 #ifdef INIT_SHUTTER
-  if (MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr) == CE_NO_ERROR)
-    {
-      ctrl.fanEnable = sr.fanEnabled;
-      ctrl.shutterCommand = 3;
-      ctrl.ledState = 1;
-      MicroCommand (MC_MISC_CONTROL, ST7_CAMERA, &ctrl, NULL);
-      sleep (2);
-    }
-#endif /* INIT_SHUTTER */
+  init_shutter ();
+#else
+  if (!light)			// init shutter only for dark images
+    init_shutter ();
+#endif
 
   if ((ret = MicroCommand (MC_START_EXPOSURE, ST7_CAMERA, &sep, NULL)))
     goto imaging_end;
