@@ -306,8 +306,8 @@ main (int argc, char **argv)
   char *hostname = NULL;
   int c;
 
-  observer.latitude = 0;
-  observer.longtitude = 0;
+  observer.lat = 0;
+  observer.lng = 0;
 
 #ifdef DEBUG
   mtrace ();
@@ -331,7 +331,7 @@ main (int argc, char **argv)
 	{"device_name", 1, 0, 'd'},
 	{"only_n_corrections", 1, 0, 'n'},
 	{"longtitude", 1, 0, 'o'},
-	{"latitude", 1, 0, 'a'}
+	{"latitude", 1, 0, 'a'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
@@ -358,17 +358,17 @@ main (int argc, char **argv)
 	  device_name = optarg;
 	  break;
 	case 'o':
-	  observer.longtitude = atof (optarg);
+	  observer.lng = atof (optarg);
 	  break;
 	case 'a':
-	  observer.latitude = atof (optarg);
+	  observer.lat = atof (optarg);
 	  break;
 	case 0:
-	  printf ("Options:
-	tserverd_port|p <port_num>	port of the serverd
-	only_n_corrections|n <number>	apply only n corrections
-	longtitude|o <float>		site longtitude (East-West)
-	latitude|a <float>		site latitude (Nort-South)\n");
+	  printf ("Options:\n"
+		  "\ttserverd_port|p <port_num>	port of the serverd"
+		  "\tonly_n_corrections|n <number>	apply only n corrections"
+		  "\tlongtitude|o <float>		site longtitude (East-West)"
+		  "\tlatitude|a <float>		site latitude (Nort-South)\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
