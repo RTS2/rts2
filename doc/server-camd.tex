@@ -1,0 +1,60 @@
+\section{camd}
+
+\subsection{Stavový diagram}
+
+\dia{state-camd}{Stavový diagram CCD kamery}
+
+\begin{description}
+
+\item[noexposure] na daném èipu neprobíhá ¾ádná expozice
+
+\item[exposing] probíhá expozice
+
+\item[data] na kameøe jsou k dispozici data, které je potøeba vyèíst
+
+\item[reading] probíhá vyèítání dat
+
+\end{description}
+
+\subsection{Chlazení kamery}
+
+V¹echny novìj¹í astronomické CCD kamery mají zabudované chlazení. Chlazení
+sni¾uje teplotu CCD èipu, a tím sni¾uje hodnotu temného proudu. 
+
+Temný proud (anglicky dark current) popisuje náboj, který se
+naschromá¾dí na èipu vlivem teplotních efektù - tedy i v pøípadì, kdy¾
+na èip nedopadá svìtlo. Pøi poøizování denních snímkù \footnote{= pøi
+fotografofání digitálním fotoaparátem} mù¾eme jeho efekt zanedbat -
+snímky mají krátké expozièní doby a vysoký odstup signál/¹um. Pro
+astronomické snímky, které jsou poøizovány dlouhou expozièní dobou a
+vyznaèují se malím odstupem signálu od ¹umu, je potøeba hodnotu
+temného proudu co nejvíce sní¾it. Úroveò temného proudu závisí
+na absolutní teplotì èipu, rozdíl mezi teplotou èipu a teplotou
+okolního prostøedí ji neovliòuje.
+
+Teplotní regulace je vìt¹inou tvoøena peltiérem a ventilátorem.
+Peltiér pøená¹í teplo z malé plochy èipu na ventilátor, ventilátor pak
+zlep¹uje distribuci tepla do okolí. Teplotní regulace bývá obèas
+doplnìna o mo¾nost chladit vodu, u nejlep¹ích kamer se pou¾ívá
+chlazení zkapalnìným plynem.
+
+Expozici i vyètení snímku je vhodné provádìt pøi konstatní teplotì -
+nemìní se pak úroveò temného proudu. Zmìny teploty CCD èipu v¾dy
+zaberou urèitý èas, teplota atmosféry se po západu Slunce v prùbìhu
+noci zmìní vìt¹inou pouze o nìkolik stupòù. Ze zku¹eností získaných
+pøi provozu RTS1\footnote{RTS1 obsahovalo kód, který se sna¾il
+optimalizovat výkon chlazení. Tento algoritmus byl po nìkolika
+mìsících pozorování odstranìn} víme, ¾e nemá smysl teplotu èipu v
+prùbìhu noci mìnit - ka¾dá zmìna pøiná¹í více problémù ne¾ u¾itku.
+
+\dia{state-cooling}{Stavový diagram chlazení CCD kamery}
+
+\begin{description}
+
+\item[shutdown] chlazení je vypnuto
+
+\item[max] chlazení bì¾í na maximální hodnotu, ventilátor bì¾í
+
+\item[tem] chlazení se sna¾í udr¾et teplotu èipu na nastavené hodnotì.
+
+\end{description}

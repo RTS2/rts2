@@ -1,0 +1,413 @@
+<?xml version="1.0"?>
+<diagram xmlns:dia="http://www.lysator.liu.se/~alla/dia/">
+  <diagramdata>
+    <attribute name="background">
+      <color val="#ffffff"/>
+    </attribute>
+    <attribute name="paper">
+      <composite type="paper">
+        <attribute name="name">
+          <string>#A4#</string>
+        </attribute>
+        <attribute name="tmargin">
+          <real val="2.82"/>
+        </attribute>
+        <attribute name="bmargin">
+          <real val="2.82"/>
+        </attribute>
+        <attribute name="lmargin">
+          <real val="2.82"/>
+        </attribute>
+        <attribute name="rmargin">
+          <real val="2.82"/>
+        </attribute>
+        <attribute name="is_portrait">
+          <boolean val="true"/>
+        </attribute>
+        <attribute name="scaling">
+          <real val="1"/>
+        </attribute>
+        <attribute name="fitto">
+          <boolean val="false"/>
+        </attribute>
+      </composite>
+    </attribute>
+  </diagramdata>
+  <layer name="Background" visible="true">
+    <object type="UML - Object" version="0" id="O0">
+      <attribute name="obj_pos">
+        <point val="7.35,6.65"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="7.3,6.6;11.9451,8.5"/>
+      </attribute>
+      <attribute name="elem_corner">
+        <point val="7.35,6.65"/>
+      </attribute>
+      <attribute name="elem_width">
+        <real val="4.54512"/>
+      </attribute>
+      <attribute name="elem_height">
+        <real val="1.8"/>
+      </attribute>
+      <attribute name="text">
+        <composite type="text">
+          <attribute name="string">
+            <string>#shutdown#</string>
+          </attribute>
+          <attribute name="font">
+            <font name="Helvetica"/>
+          </attribute>
+          <attribute name="height">
+            <real val="0.8"/>
+          </attribute>
+          <attribute name="pos">
+            <point val="9.62256,7.79"/>
+          </attribute>
+          <attribute name="color">
+            <color val="#000000"/>
+          </attribute>
+          <attribute name="alignment">
+            <enum val="1"/>
+          </attribute>
+        </composite>
+      </attribute>
+      <attribute name="stereotype">
+        <string/>
+      </attribute>
+      <attribute name="exstate">
+        <string/>
+      </attribute>
+      <attribute name="attrib">
+        <composite type="text">
+          <attribute name="string">
+            <string>##</string>
+          </attribute>
+          <attribute name="font">
+            <font name="Helvetica"/>
+          </attribute>
+          <attribute name="height">
+            <real val="0.8"/>
+          </attribute>
+          <attribute name="pos">
+            <point val="0,0"/>
+          </attribute>
+          <attribute name="color">
+            <color val="#000000"/>
+          </attribute>
+          <attribute name="alignment">
+            <enum val="0"/>
+          </attribute>
+        </composite>
+      </attribute>
+      <attribute name="is_active">
+        <boolean val="false"/>
+      </attribute>
+      <attribute name="show_attribs">
+        <boolean val="false"/>
+      </attribute>
+      <attribute name="multiple">
+        <boolean val="false"/>
+      </attribute>
+    </object>
+    <object type="UML - Object" version="0" id="O1">
+      <attribute name="obj_pos">
+        <point val="4.2,12.2"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="4.15,12.15;6.92864,14.05"/>
+      </attribute>
+      <attribute name="elem_corner">
+        <point val="4.2,12.2"/>
+      </attribute>
+      <attribute name="elem_width">
+        <real val="2.67864"/>
+      </attribute>
+      <attribute name="elem_height">
+        <real val="1.8"/>
+      </attribute>
+      <attribute name="text">
+        <composite type="text">
+          <attribute name="string">
+            <string>#max#</string>
+          </attribute>
+          <attribute name="font">
+            <font name="Helvetica"/>
+          </attribute>
+          <attribute name="height">
+            <real val="0.8"/>
+          </attribute>
+          <attribute name="pos">
+            <point val="5.53932,13.34"/>
+          </attribute>
+          <attribute name="color">
+            <color val="#000000"/>
+          </attribute>
+          <attribute name="alignment">
+            <enum val="1"/>
+          </attribute>
+        </composite>
+      </attribute>
+      <attribute name="stereotype">
+        <string/>
+      </attribute>
+      <attribute name="exstate">
+        <string/>
+      </attribute>
+      <attribute name="attrib">
+        <composite type="text">
+          <attribute name="string">
+            <string>##</string>
+          </attribute>
+          <attribute name="font">
+            <font name="Helvetica"/>
+          </attribute>
+          <attribute name="height">
+            <real val="0.8"/>
+          </attribute>
+          <attribute name="pos">
+            <point val="0,0"/>
+          </attribute>
+          <attribute name="color">
+            <color val="#000000"/>
+          </attribute>
+          <attribute name="alignment">
+            <enum val="0"/>
+          </attribute>
+        </composite>
+      </attribute>
+      <attribute name="is_active">
+        <boolean val="false"/>
+      </attribute>
+      <attribute name="show_attribs">
+        <boolean val="false"/>
+      </attribute>
+      <attribute name="multiple">
+        <boolean val="false"/>
+      </attribute>
+    </object>
+    <object type="UML - Object" version="0" id="O2">
+      <attribute name="obj_pos">
+        <point val="12.9,12.25"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="12.85,12.2;15.8953,14.1"/>
+      </attribute>
+      <attribute name="elem_corner">
+        <point val="12.9,12.25"/>
+      </attribute>
+      <attribute name="elem_width">
+        <real val="2.94528"/>
+      </attribute>
+      <attribute name="elem_height">
+        <real val="1.8"/>
+      </attribute>
+      <attribute name="text">
+        <composite type="text">
+          <attribute name="string">
+            <string>#temp#</string>
+          </attribute>
+          <attribute name="font">
+            <font name="Helvetica"/>
+          </attribute>
+          <attribute name="height">
+            <real val="0.8"/>
+          </attribute>
+          <attribute name="pos">
+            <point val="14.3726,13.39"/>
+          </attribute>
+          <attribute name="color">
+            <color val="#000000"/>
+          </attribute>
+          <attribute name="alignment">
+            <enum val="1"/>
+          </attribute>
+        </composite>
+      </attribute>
+      <attribute name="stereotype">
+        <string/>
+      </attribute>
+      <attribute name="exstate">
+        <string/>
+      </attribute>
+      <attribute name="attrib">
+        <composite type="text">
+          <attribute name="string">
+            <string>##</string>
+          </attribute>
+          <attribute name="font">
+            <font name="Helvetica"/>
+          </attribute>
+          <attribute name="height">
+            <real val="0.8"/>
+          </attribute>
+          <attribute name="pos">
+            <point val="0,0"/>
+          </attribute>
+          <attribute name="color">
+            <color val="#000000"/>
+          </attribute>
+          <attribute name="alignment">
+            <enum val="0"/>
+          </attribute>
+        </composite>
+      </attribute>
+      <attribute name="is_active">
+        <boolean val="false"/>
+      </attribute>
+      <attribute name="show_attribs">
+        <boolean val="false"/>
+      </attribute>
+      <attribute name="multiple">
+        <boolean val="false"/>
+      </attribute>
+    </object>
+    <object type="UML - Message" version="0" id="O3">
+      <attribute name="obj_pos">
+        <point val="7.35,8.45"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="4.68932,7.6;10.1286,13.05"/>
+      </attribute>
+      <attribute name="conn_endpoints">
+        <point val="7.35,8.45"/>
+        <point val="5.53932,12.2"/>
+      </attribute>
+      <attribute name="text">
+        <string>#max#</string>
+      </attribute>
+      <attribute name="text_pos">
+        <point val="7.6,10.575"/>
+      </attribute>
+      <attribute name="type">
+        <int val="0"/>
+      </attribute>
+      <connections>
+        <connection handle="0" to="O0" connection="5"/>
+        <connection handle="1" to="O1" connection="1"/>
+      </connections>
+    </object>
+    <object type="UML - Message" version="0" id="O4">
+      <attribute name="obj_pos">
+        <point val="11.8951,8.45"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="11.0451,7.6;15,13.0573"/>
+      </attribute>
+      <attribute name="conn_endpoints">
+        <point val="11.8951,8.45"/>
+        <point val="14.15,12.2073"/>
+      </attribute>
+      <attribute name="text">
+        <string>#temp#</string>
+      </attribute>
+      <attribute name="text_pos">
+        <point val="12.1863,11.0573"/>
+      </attribute>
+      <attribute name="type">
+        <int val="0"/>
+      </attribute>
+      <connections>
+        <connection handle="0" to="O0" connection="7"/>
+      </connections>
+    </object>
+    <object type="UML - Message" version="0" id="O5">
+      <attribute name="obj_pos">
+        <point val="15.3,12.1573"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="11.0451,5.8;20.0677,13.0073"/>
+      </attribute>
+      <attribute name="conn_endpoints">
+        <point val="15.3,12.1573"/>
+        <point val="11.8951,6.65"/>
+      </attribute>
+      <attribute name="text">
+        <string>#shutdown#</string>
+      </attribute>
+      <attribute name="text_pos">
+        <point val="15.6726,9.50364"/>
+      </attribute>
+      <attribute name="type">
+        <int val="0"/>
+      </attribute>
+      <connections>
+        <connection handle="1" to="O0" connection="2"/>
+      </connections>
+    </object>
+    <object type="UML - Message" version="0" id="O6">
+      <attribute name="obj_pos">
+        <point val="6.87864,13.1"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="6.02864,11.2173;13.75,14"/>
+      </attribute>
+      <attribute name="conn_endpoints">
+        <point val="6.87864,13.1"/>
+        <point val="12.9,13.15"/>
+      </attribute>
+      <attribute name="text">
+        <string>#temp#</string>
+      </attribute>
+      <attribute name="text_pos">
+        <point val="9.75,12.7073"/>
+      </attribute>
+      <attribute name="type">
+        <int val="0"/>
+      </attribute>
+      <connections>
+        <connection handle="0" to="O1" connection="4"/>
+        <connection handle="1" to="O2" connection="3"/>
+      </connections>
+    </object>
+    <object type="UML - Message" version="0" id="O7">
+      <attribute name="obj_pos">
+        <point val="12.9,14.05"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="6.02864,13.15;13.75,15.8173"/>
+      </attribute>
+      <attribute name="conn_endpoints">
+        <point val="12.9,14.05"/>
+        <point val="6.87864,14"/>
+      </attribute>
+      <attribute name="text">
+        <string>#max#</string>
+      </attribute>
+      <attribute name="text_pos">
+        <point val="9.95,14.8073"/>
+      </attribute>
+      <attribute name="type">
+        <int val="0"/>
+      </attribute>
+      <connections>
+        <connection handle="0" to="O2" connection="5"/>
+        <connection handle="1" to="O1" connection="7"/>
+      </connections>
+    </object>
+    <object type="UML - Message" version="0" id="O8">
+      <attribute name="obj_pos">
+        <point val="4.55,12.2073"/>
+      </attribute>
+      <attribute name="obj_bb">
+        <rectangle val="3.3,5.8;8.54512,13.0573"/>
+      </attribute>
+      <attribute name="conn_endpoints">
+        <point val="4.55,12.2073"/>
+        <point val="7.35,6.65"/>
+      </attribute>
+      <attribute name="text">
+        <string>#shutdown#</string>
+      </attribute>
+      <attribute name="text_pos">
+        <point val="4.15,9.20923"/>
+      </attribute>
+      <attribute name="type">
+        <int val="0"/>
+      </attribute>
+      <connections>
+        <connection handle="1" to="O0" connection="0"/>
+      </connections>
+    </object>
+  </layer>
+</diagram>

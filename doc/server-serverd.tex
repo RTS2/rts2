@@ -1,0 +1,32 @@
+\section{Centrální server}
+
+\subsection{Stavový diagram}
+
+\dia{state-serverd}{Stavový diagram centrálního serveru}
+
+\begin{description}
+
+\item[on] oznaèení pro mno¾inu stavù, ve kterých je systém v normálním
+provozu.
+
+\item[off] stav, ve kterém je celý systém vypnutý. Dùvodem pro vypnutí mù¾e
+být napøíklad nepøíznivé poèasí, pøípadnì technické problémy.
+
+\item[day] den. Proto¾e dalekohled je urèen pro astronomické pozorování,
+nebì¾í ¾ádné úlohy. Lze pouze uva¾ovat o provádìní výpoèetnì nároèných úkolù
+souvisejících se zpracováním dat z minulých pozorování.
+
+\item[dusk] systém se pøipravuje na pozorování. Pøechod do tohoto stavu slou¾í
+jako informace pro zaøízení, aby se pøipravila k pozorování. Napøíklad zapne
+se chlazení kamer, v pøípadì jasného poèasí se otevøe støecha. Stav zaèíná v
+pevnì danou dobu pøed pøechodem do stavu night.
+
+\item[night] systém je plnì pøipraven na pozorování. Pozoruje se. Stav trvá od
+západu po východ Slunce. V tomto stavu nutnì nemusí být temné nebe, stav pouze
+øíká, ¾e Slunce ji¾ není vidìt. Tento stav nabere ohledy na astronomický
+soumrak - s moderní CCD technikou lze pozorovat ji¾ chvíli po západu Slunce,
+tak¾e pro pozorování GRB má význam napøíklad i pozorování tìsnì po západu
+Slunce.
+
+\item[dawn] stav pro ukonèení pozorování. Lze uva¾ovat napøíklad o poøizování
+korekèních snímkù, apod. Trvá od konce stavu night po pevnì urèenou dobu.

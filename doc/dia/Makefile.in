@@ -11,6 +11,9 @@ EPS = bootes.eps			\
       kill-waitexe.eps 			\
       kill-waitblock.eps 		\
       overview.eps			\
+      state-serverd.eps			\
+      state-camd.eps			\
+      state-teld.eps			\
       rts-1-packages.eps 		\
       vrstvy-architektura.eps 
 
