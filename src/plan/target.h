@@ -3,6 +3,14 @@
 #include <libnova/libnova.h>
 #include <time.h>
 
+#define TYPE_OPORTUNITY         'O'
+#define TYPE_GRB                'G'
+#define TYPE_SKY_SURVEY         'S'
+#define TYPE_GPS                'P'
+#define TYPE_ELLIPTICAL         'E'
+#define TYPE_HETE               'H'
+#define TYPE_TECHNICAL          'T'
+
 class Target
 {
 public:
@@ -19,14 +27,15 @@ public:
   {
     return -1;
   };
-  int type;
+  int type;			// light, dark, flat, flat_dark
   int id;
   int obs_id;
+  char obs_type;		// SKY_SURVEY, GBR, .. 
   time_t ctime;
   int tolerance;
   int moved;
-  Target *next;
   int hi_precision;		// when 1, image will get imediately astrometry and telescope status will be updated
+  Target *next;
 };
 
 class ConstTarget:public Target

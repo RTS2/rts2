@@ -23,7 +23,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <mcheck.h>
 #include <math.h>
 #include <getopt.h>
@@ -43,6 +42,7 @@
 #define COMMAND_EXPOSURE	'E'
 #define COMMAND_FILTER		'F'
 #define COMMAND_PHOTOMETER      'P'
+#define COMMAND_MOVE		'M'
 
 static int precission_count = 0;
 
@@ -58,12 +58,16 @@ struct ex_info
   Target *last;
 };
 
-pthread_mutex_t exposure_count_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t exposure_count_cond = PTHREAD_COND_INITIALIZER;
-int exposure_count = 0;		// number of running exposures..
+pthread_mutex_t script_thread_count_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t script_thread_count_cond = PTHREAD_COND_INITIALIZER;
+int script_thread_count = 0;		// number of running scripts...
 
 pthread_mutex_t precission_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t precission_cond = PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t exposure_count_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t exposure_count_cond = PTHREAD_COND_INITIALIZER;
+int exposure_count = 0;         // number of running scripts...
 
 struct device *telescope;
 
@@ -240,7 +244,7 @@ process_precission (Target * tar, struct device *camera)
 
 	  devcli_wait_for_status (camera, "img_chip",
 				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  1.1 * exposure + 10);
+				  (long int) (1.1 * exposure + 10));
 	  devcli_command (camera, NULL, "readout 0");
 	  devcli_wait_for_status (camera, "img_chip",
 				  CAM_MASK_READING, CAM_NOTREADING,
@@ -301,15 +305,33 @@ process_precission (Target * tar, struct device *camera)
 }
 
 int
-dec_exposure_count (void)
+dec_script_thread_count (void)
+{
+  pthread_mutex_lock (&script_thread_count_mutex);
+  script_thread_count--;
+  printf ("new script thread count: %i\n", script_thread_count);
+  fflush (stdout);
+  pthread_cond_broadcast (&script_thread_count_cond);
+  pthread_mutex_unlock (&script_thread_count_mutex);
+  return 0;
+}
+
+void
+exposure_increase ()
+{
+  pthread_mutex_lock (&exposure_count_mutex);
+  exposure_count++;
+  pthread_cond_broadcast (&exposure_count_cond);
+  pthread_mutex_unlock (&exposure_count_mutex);
+}
+
+void
+exposure_decrease ()
 {
   pthread_mutex_lock (&exposure_count_mutex);
   exposure_count--;
-  printf ("new exposure count: %i\n", exposure_count);
-  fflush (stdout);
   pthread_cond_broadcast (&exposure_count_cond);
   pthread_mutex_unlock (&exposure_count_mutex);
-  return 0;
 }
 
 void *
@@ -324,18 +346,21 @@ execute_camera_script (void *exinfo)
   int ret;
   time_t t;
   char s_time[27];
+  char obs_type_str[2];
   enum
   { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS, INTEGRATION_PROGRESS } exp_state;
 
   switch (last->type)
     {
     case TARGET_LIGHT:
-      command = get_device_string_default (camera->name, "script", "E D");
+      obs_type_str[0] = last->obs_type;
+      obs_type_str[1] = 0;
+      command = get_sub_device_string_default (camera->name, "script", obs_type_str, "E D");
       light = 1;
       ret = process_precission (last, camera);
       if (ret)
 	{
-	  dec_exposure_count ();
+	  dec_script_thread_count ();
 	  return NULL;
 	}
       break;
@@ -370,7 +395,7 @@ execute_camera_script (void *exinfo)
 
 	  devcli_wait_for_status (camera, "img_chip",
 				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  1.1 * exposure + 10);
+				  (int) (1.1 * exposure + 10));
 	  exp_state = EXPOSURE_PROGRESS;
 	}
       switch (*command)
@@ -401,6 +426,7 @@ execute_camera_script (void *exinfo)
 	  if (exp_state == EXPOSURE_PROGRESS)
 	    {
 	      devcli_command (camera, NULL, "readout 0");
+	      exposure_decrease ();
 	      devcli_wait_for_status (camera, "img_chip",
 				      CAM_MASK_READING, CAM_NOTREADING,
 				      MAX_READOUT_TIME);
@@ -409,6 +435,7 @@ execute_camera_script (void *exinfo)
             {
               devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, 10000);
             }
+	  exposure_increase ();
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
 	    {
@@ -418,7 +445,7 @@ execute_camera_script (void *exinfo)
 	      continue;
 	    }
 	  time (&t);
-	  t += exposure;
+	  t += (int) exposure;
 	  ctime_r (&t, s_time);
 	  printf ("exposure countdown (%s), readout at %s", camera->name,
 		  s_time);
@@ -468,20 +495,21 @@ execute_camera_script (void *exinfo)
 
       devcli_wait_for_status (camera, "img_chip",
 			      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-			      1.1 * exposure + 10);
+			      (int) (1.1 * exposure + 10));
     case EXPOSURE_PROGRESS:
-      dec_exposure_count ();
+      dec_script_thread_count ();
       devcli_command (camera, NULL, "readout 0");
+      exposure_decrease ();
       devcli_wait_for_status (camera, "img_chip",
 			      CAM_MASK_READING, CAM_NOTREADING,
 			      MAX_READOUT_TIME);
       break;
     case INTEGRATION_PROGRESS:
       devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, 10000);
-      dec_exposure_count ();
+      dec_script_thread_count ();
       break;
     default:
-      dec_exposure_count ();
+      dec_script_thread_count ();
     }
   return NULL;
 }
@@ -603,7 +631,11 @@ observe (int watch_status)
       thread_l.thread = 0;
       thread_l.next = NULL;
 
+      pthread_mutex_lock (&script_thread_count_mutex);
+
       pthread_mutex_lock (&exposure_count_mutex);
+      exposure_count = 0;
+      pthread_mutex_unlock (&exposure_count_mutex);
 
       for (camera = devcli_devices (); camera; camera = camera->next)
 	if (camera->type == DEVICE_TYPE_CCD)
@@ -623,11 +655,10 @@ observe (int watch_status)
 		(&tl_top->thread, NULL, execute_camera_script,
 		 (void *) exinfo))
 	      // increase exposure count list
-	      exposure_count++;
-
+	      script_thread_count++;
 	  }
 
-      pthread_mutex_unlock (&exposure_count_mutex);
+      pthread_mutex_unlock (&script_thread_count_mutex);
 
       while (!last->next)
 	{
@@ -637,12 +668,12 @@ observe (int watch_status)
       printf ("next plan #%i: id %i type %i\n", i, last->next->id,
 	      last->next->type);
       // test, if there is none pending exposure
-      pthread_mutex_lock (&exposure_count_mutex);
-      while (exposure_count > 0)
+      pthread_mutex_lock (&script_thread_count_mutex);
+      while (script_thread_count > 0)
 	{
-	  pthread_cond_wait (&exposure_count_cond, &exposure_count_mutex);
+	  pthread_cond_wait (&script_thread_count_cond, &script_thread_count_mutex);
 	}
-      pthread_mutex_unlock (&exposure_count_mutex);
+      pthread_mutex_unlock (&script_thread_count_mutex);
       move (last->next);
     }
 
