@@ -253,7 +253,8 @@ clients_change_priority (time_t timeout)
 	}
     }
   shm_info->priority_client = new_priority_client;
-  return devices_all_msg_snd ("priority %i %i", new_priority_client, timeout);
+  return devices_all_msg_snd ("M priority_change %i %i", new_priority_client,
+			      timeout);
 }
 
 void *
@@ -272,14 +273,17 @@ serverd_riseset_thread (void *arg)
       if (shm_info->current_state < SERVERD_MAINTANCE)
 	{
 	  shm_info->current_state = (shm_info->next_event_type + 3) % 4;
-	  devices_all_msg_snd ("current_state %i", shm_info->current_state);
-	  clients_all_msg_snd ("I current_state %i", shm_info->current_state);
+	  devices_all_msg_snd ("S %s %i", SERVER_STATUS,
+			       shm_info->current_state);
+	  clients_all_msg_snd ("S %s %i", SERVER_STATUS,
+			       shm_info->current_state);
 	}
 
       devser_shm_data_unlock ();
 
-      syslog (LOG_DEBUG, "riseset thread sleeping %li seconds",
-	      shm_info->next_event_time - curr_time + 1);
+      syslog (LOG_DEBUG, "riseset thread sleeping %li seconds for %i",
+	      shm_info->next_event_time - curr_time + 1,
+	      shm_info->next_event_type);
       sleep (shm_info->next_event_time - curr_time + 1);
     }
 }
@@ -324,14 +328,28 @@ int
 serverd_change_state (int new_state)
 {
   devser_shm_data_lock ();
-  if (new_state == -1)
-    shm_info->current_state = (shm_info->next_event_type + 3) % 4;
-  else
-    shm_info->current_state = new_state;
-  devices_all_msg_snd ("current_state %i", shm_info->current_state);
-  clients_all_msg_snd ("I current_state %i", shm_info->current_state);
+  shm_info->current_state = new_state;
+  devices_all_msg_snd ("S %s %i", SERVER_STATUS, shm_info->current_state);
+  clients_all_msg_snd ("S %s %i", SERVER_STATUS, shm_info->current_state);
   devser_shm_data_unlock ();
   return 0;
+}
+
+/*!
+ * Print standart status header.
+ *
+ * It needs to be called after establishing of every new connection.
+ */
+int
+serverd_status_info ()
+{
+  int ret;
+  if ((ret = devser_dprintf ("I status_num 1")))
+    return ret;
+  ret =
+    devser_dprintf ("I status 0 %s %i", SERVER_STATUS,
+		    shm_info->current_state);
+  return ret;
 }
 
 int
@@ -354,9 +372,7 @@ client_serverd_handle_command (char *command)
 	{
 	  shm_clients[serverd_id].authorized = 1;
 	  devser_dprintf ("logged_as %i", serverd_id);
-	  devser_shm_data_lock ();
-	  devser_dprintf ("I current_state %i", shm_info->current_state);
-	  devser_shm_data_unlock ();
+	  serverd_status_info ();
 	  return 0;
 	}
       else
@@ -369,6 +385,11 @@ client_serverd_handle_command (char *command)
     }
   if (shm_clients[serverd_id].authorized)
     {
+      if (strcmp (command, "ready") == 0)
+	{
+	  return 0;
+	}
+
       if (strcmp (command, "info") == 0)
 	{
 	  int i;
@@ -512,8 +533,9 @@ serverd_client_handle_msg (char *message)
 int
 serverd_device_handle_msg (char *message)
 {
-  return devser_message (message);
+  return devser_dprintf (message);
 }
+
 
 /*! 
  * Handle serverd commands.
@@ -637,7 +659,7 @@ serverd_handle_command (char *command)
 
 	  server_type = DEVICE_SERVER;
 	  on_exit (serverd_exit, NULL);
-	  devser_message ("current_state %i", shm_info->current_state);
+	  serverd_status_info ();
 	  devser_shm_data_unlock ();
 
 	  return 0;
