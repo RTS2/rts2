@@ -64,7 +64,7 @@ WWWUSER="none"
 
 AC_MSG_CHECKING(for httpd.conf)
 httpd_conf=`find /etc /usr/local/etc -name httpd.conf 2>/dev/null`
-if test "z"httpd_conf = "z" ; then
+if test "z"$httpd_conf = "z" ; then
 	AC_MSG_RESULT(none found)
 else
 	AC_MSG_RESULT($httpd_conf)
