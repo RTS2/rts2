@@ -1,6 +1,8 @@
 # $Id$
 
-all: teld
+BIN = teld
+
+all: $(BIN)
 
 include ../../make.conf
 
