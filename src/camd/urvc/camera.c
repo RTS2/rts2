@@ -331,7 +331,7 @@ extern void
 camera_done ()
 {
   free (ch_info);
-  chips = 0;
+  chips = -1;
 }
 
 extern int
@@ -405,19 +405,18 @@ camera_expose (int chip, float *exposure, int light)
   sep.ccd = eep.ccd = 0;
   sep.exposureTime = (int) *exposure * 100;
   sep.openShutter = light;
-  if ((ret =
-       ClearImagingArray (Cams[eePtr.model].vertBefore +
-			  Cams[eePtr.model].vertImage + 1,
-			  Cams[eePtr.model].horzBefore +
-			  Cams[eePtr.model].horzImage + 32, 4, 6)))
-    goto imaging_end;		// height, times, [left]
-
 #ifdef INIT_SHUTTER
   init_shutter ();
 #else
   if (!light)			// init shutter only for dark images
     init_shutter ();
 #endif
+  if ((ret =
+       ClearImagingArray (Cams[eePtr.model].vertBefore +
+			  Cams[eePtr.model].vertImage + 1,
+			  Cams[eePtr.model].horzBefore +
+			  Cams[eePtr.model].horzImage + 32, 4, 6)))
+    goto imaging_end;		// height, times, [left]
 
   if ((ret = MicroCommand (MC_START_EXPOSURE, ST7_CAMERA, &sep, NULL)))
     goto imaging_end;
