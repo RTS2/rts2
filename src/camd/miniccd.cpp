@@ -224,7 +224,7 @@ CameraMiniccdChip::isExposing ()
 	}
       dest_top += row_bytes;
       readoutLine++;
-      return 1;
+      return readoutLine == 1 ? 2 : 1;
     }
   return 10;
 }
@@ -335,6 +335,7 @@ class CameraMiniccdInterleavedChip:public CameraChip
   } slaveState;
   CameraMiniccdChip *slaveChip[2];
   long firstReadoutTime;
+  struct timeval slave1ReadoutStart;
   struct timeval slave2ExposureStart;
   int chip1_light;
   float chip1_exptime;
@@ -450,8 +451,17 @@ CameraMiniccdInterleavedChip::isExposing ()
       slaveState = SLAVE2_EXPOSING;
     case SLAVE2_EXPOSING:
       ret = slaveChip[0]->isExposing ();
+      if (ret == 2)
+	{
+	  gettimeofday (&slave1ReadoutStart, NULL);
+	  ret = 1;
+	}
       if (ret)
 	return ret;
+      // calculate firstReadoutTime
+      gettimeofday (&now, NULL);
+      firstReadoutTime = (now.tv_sec - slave1ReadoutStart.tv_sec) * USEC_SEC +
+	(now.tv_usec - slave1ReadoutStart.tv_usec);
       slaveState = SLAVE1_READOUT;
     case SLAVE1_READOUT:
       ret = slaveChip[1]->isExposing ();
