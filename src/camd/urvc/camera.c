@@ -65,7 +65,8 @@ ambient_ad2c (unsigned int ad)
 int
 getbaseaddr (int parport_num)
 {
-  int fufu, a;
+  FILE *fufu;
+  int a;
   char buffer[400];
   snprintf (buffer, GETBASEADDR_BUFLEN,
 	    "/proc/sys/dev/parport/parport%d/base-addr", parport_num);
@@ -114,7 +115,7 @@ measure_pp ()
     }
   timer4 = mSecCount ();
 
-  printf ("I/O cycle time: %.2lf/%.2lfus\n", (timer3 - timer2) / 10,
+  printf ("I/O cycle time: %.2f/%.2fus\n", (timer3 - timer2) / 10,
 	  (timer4 - timer3) / 10);
 }
 
@@ -319,7 +320,7 @@ camera_end_expose (int chip)
 {
   EndExposureParams eep;
   eep.ccd = chip;
-  begin_realtime();
+  begin_realtime ();
   return MicroCommand (MC_END_EXPOSURE, ST7_CAMERA, &eep, NULL);
 };
 
@@ -341,19 +342,19 @@ extern int
 camera_readout_line (int chip_id, short start, short length, void *data)
 {
   PAR_ERROR ret = CE_NO_ERROR;
-  int bin = ch_info[chip_id].binning_vertical - 1;
+  int bin = ch_info[chip_id].binning_vertical;
 
   CameraOut (0x60, 1);
 //      disable();
   SetVdd (1);
   if ((ret =
        DigitizeImagingLine (start, length, 0, bin, bin, 1, data, 0, length)))
-  {
-    printf ("digitize line:%i", ret); 
-    return ret;
-  }
+    {
+      printf ("digitize line:%i", ret);
+      return ret;
+    }
   fflush (stdout);
-    
+
   return 0;
 };
 
