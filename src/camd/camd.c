@@ -12,8 +12,7 @@
 
 #include <argz.h>
 
-#include "sbig.h"
-#include "../utils/hms.h"
+#include "camera.h"
 #include "../utils/devdem.h"
 #include "../status.h"
 
@@ -23,16 +22,23 @@
 #define SERVERD_HOST		"localhost"	// default serverd hostname
 
 #define DEVICE_PORT		5556	// default camera TCP/IP port
-#define DEVICE_NAME "camd"	// default camera name
+#define DEVICE_NAME 		"camd"	// default camera name
 int sbig_port = 2;		// default sbig camera port is 2
 
-struct sbig_init info;
+struct camera_info info;
+
+struct camd_expose
+{
+  int chip;
+  float exposure;
+  int light;
+};
 
 struct readout
 {
   int conn_id;			// data connection
   int x, y, width, height;	// image offset and size
-  int ccd;
+  int chip;
   float complete;
   int thread_id;
   struct imghdr header;
@@ -40,13 +46,13 @@ struct readout
 struct readout readouts[2];
 
 /* expose functions */
-#define SBIG_EXPOSE ((struct sbig_expose *) arg)
+#define CAMD_EXPOSE ((struct camd_expose *) arg)
 
 // expose cleanup functions
 void
 clean_expose_cancel (void *arg)
 {
-  devdem_status_mask (SBIG_EXPOSE->ccd,
+  devdem_status_mask (CAMD_EXPOSE->chip,
 		      CAM_MASK_EXPOSE,
 		      CAM_NOEXPOSURE, "exposure chip canceled");
 }
@@ -56,20 +62,18 @@ void *
 start_expose (void *arg)
 {
   int ret;
-  if ((ret = sbig_expose (SBIG_EXPOSE)) < 0)
+  if ((ret =
+       camera_expose (CAMD_EXPOSE->chip, &CAMD_EXPOSE->exposure,
+		      CAMD_EXPOSE->light)) < 0)
     {
-      char *err;
-      err = sbig_show_error (ret);
-      syslog (LOG_ERR, "error during chip %i exposure: %s",
-	      SBIG_EXPOSE->ccd, err);
-      free (err);
-      devdem_status_mask (SBIG_EXPOSE->ccd,
+      syslog (LOG_ERR, "error during chip %i exposure", CAMD_EXPOSE->chip);
+      devdem_status_mask (CAMD_EXPOSE->chip,
 			  CAM_MASK_EXPOSE,
 			  CAM_NOEXPOSURE, "exposure chip error");
       return NULL;
     }
-  syslog (LOG_INFO, "exposure chip %i finished.", SBIG_EXPOSE->ccd);
-  devdem_status_mask (SBIG_EXPOSE->ccd,
+  syslog (LOG_INFO, "exposure chip %i finished.", CAMD_EXPOSE->chip);
+  devdem_status_mask (CAMD_EXPOSE->chip,
 		      CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		      CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
   return NULL;
@@ -84,7 +88,7 @@ start_expose (void *arg)
 void
 clean_readout_cancel (void *arg)
 {
-  devdem_status_mask (READOUT->ccd,
+  devdem_status_mask (READOUT->chip,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_NODATA, "reading chip canceled");
 }
@@ -94,48 +98,35 @@ void *
 start_readout (void *arg)
 {
   int ret;
-  struct sbig_readout_line line;
+  int i;
   unsigned int y;
   int result;
   unsigned short line_buff[5000];
 
-  if ((ret = sbig_end_expose (READOUT->ccd)))
+  if ((ret = camera_end_expose (READOUT->chip)))
     {
       goto err;
     }
 
-  if ((READOUT->y) > 0)
-    {
-      struct sbig_dump_lines dump;
-
-      dump.ccd = READOUT->ccd;
-      dump.readoutMode = READOUT->header.binnings[1];
-      dump.lineLength = READOUT->y;
-
-      if ((ret = sbig_dump_lines (&dump)) < 0)
-	goto err;
-    }
-
-  line.ccd = READOUT->ccd;
-  line.pixelStart = READOUT->x;
-  line.pixelLength = READOUT->width;
-  // TODO probrat s matesem vycitani a jeho binningy
-  line.readoutMode = 0;		//READOUT->header.binnings[0];
-  line.data = line_buff;
+  for (i = 0; i < READOUT->y; i++)
+    if ((ret = camera_dump_line (READOUT->chip)) < 0)
+      goto err;
 
   for (y = 0; y < (READOUT->height); y++)
     {
-      int line_size = 2 * line.pixelLength;
-      if ((result = sbig_readout_line (&line)) != 0)
+      int line_size = 2 * READOUT->width;
+      if ((result =
+	   camera_readout_line (READOUT->chip, READOUT->x, READOUT->width,
+				line_buff)) != 0)
 	goto err;
 
       devser_data_put (READOUT->conn_id, line_buff, line_size);
     }
 
-  sbig_end_readout (READOUT->ccd);
+  camera_end_readout (READOUT->chip);
 
-  syslog (LOG_INFO, "reading chip %i finished.", READOUT->ccd);
-  devdem_status_mask (READOUT->ccd,
+  syslog (LOG_INFO, "reading chip %i finished.", READOUT->chip);
+  devdem_status_mask (READOUT->chip,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING | CAM_NODATA, "reading chip finished");
   return NULL;
@@ -143,11 +134,8 @@ start_readout (void *arg)
 err:
   devser_data_done (READOUT->conn_id);
   {
-    char *err;
-    err = sbig_show_error (ret);
-    syslog (LOG_ERR, "error during chip %i readout: %s", READOUT->ccd, err);
-    free (err);
-    devdem_status_mask (READOUT->ccd,
+    syslog (LOG_ERR, "error during chip %i readout", READOUT->chip);
+    devdem_status_mask (READOUT->chip,
 			CAM_MASK_READING | CAM_MASK_DATA,
 			CAM_NOTREADING | CAM_NODATA, "reading chip error");
     return NULL;
@@ -160,7 +148,7 @@ err:
 #define get_chip  \
       if (devser_param_next_integer (&chip)) \
       	return -1; \
-      if ((chip < 0) || (chip >= info.nmbr_chips)) \
+      if ((chip < 0) || (chip >= info.chips)) \
 	{      \
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "invalid chip: %i", chip);\
 	  return -1;\
@@ -169,10 +157,7 @@ err:
 // Macro for camera call
 # define cam_call(call) if ((ret = call) < 0)\
 {\
-	char *err; \
-	err = sbig_show_error(ret); \
-	devser_write_command_end (DEVDEM_E_HW, "camera error: %s", err);\
-	free (err); \
+	devser_write_command_end (DEVDEM_E_HW, "camera error!");\
         return -1; \
 }
 
@@ -191,35 +176,38 @@ camd_handle_command (char *command)
 
   if (strcmp (command, "ready") == 0)
     {
-      cam_call (sbig_init (sbig_port, 5, &info));
+      cam_call (camera_init ("/dev/ccd1", sbig_port));
+      atexit (camera_done);
     }
   else if (strcmp (command, "info") == 0)
     {
-      cam_call (sbig_init (sbig_port, 5, &info));
-      devser_dprintf ("name %s", info.camera_name);
-      devser_dprintf ("type %i", info.camera_type);
+      cam_call (camera_info (&info));
+      devser_dprintf ("name %s", info.name);
       devser_dprintf ("serial %10s", info.serial_number);
-      devser_dprintf ("abg %i", info.imaging_abg_type);
-      devser_dprintf ("chips %i", info.nmbr_chips);
+      devser_dprintf ("chips %i", info.chips);
+      devser_dprintf ("temperature_regulation %i",
+		      info.temperature_regulation);
+      devser_dprintf ("temperature_setpoint %0.02f",
+		      info.temperature_setpoint);
+      devser_dprintf ("air_temperature %0.02f", info.air_temperature);
+      devser_dprintf ("ccd_temperature %0.02f", info.ccd_temperature);
+      devser_dprintf ("cooling_power %4i", (int) info.cooling_power);
     }
   else if (strcmp (command, "chipinfo") == 0)
     {
-      int i;
-      readout_mode_t *mode;
       if (devser_param_test_length (1))
 	return -1;
       get_chip;
-      mode = (readout_mode_t *) (&info.camera_info[chip].readout_mode[0]);
-      devser_dprintf ("binning %i", readouts[chip].header.binnings[0]);
-      devser_dprintf ("readout_modes %i",
-		      info.camera_info[chip].nmbr_readout_modes);
-      for (i = 0; i < info.camera_info[chip].nmbr_readout_modes; i++)
-	{
-	  devser_dprintf ("mode %i %i %i %i %i %i", mode->mode, mode->width,
-			  mode->height, mode->gain, mode->pixel_width,
-			  mode->pixel_height);
-	  mode++;
-	}
+      cam_call (camera_info (&info));
+
+      devser_dprintf ("width %i %i", chip, info.chip_info[chip].width);
+      devser_dprintf ("heigth %i %i", chip, info.chip_info[chip].height);
+      devser_dprintf ("binning_vertical %i %i", chip,
+		      info.chip_info[chip].binning_vertical);
+      devser_dprintf ("binning_horizontal %i %i", chip,
+		      info.chip_info[chip].binning_horizontal);
+      devser_dprintf ("gain %i %0.2f", chip, info.chip_info[chip].gain);
+
       ret = 0;
     }
   else if (strcmp (command, "expose") == 0)
@@ -230,7 +218,6 @@ camd_handle_command (char *command)
       get_chip;
       if (devser_param_next_float (&exptime))
 	return -1;
-      exptime = exptime * 100;	// convert to sbig required milliseconds
       if ((exptime <= 0) || (exptime > 330000))
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
@@ -239,17 +226,18 @@ camd_handle_command (char *command)
 	}
       else
 	{
-	  struct sbig_expose expose;
-	  expose.ccd = chip;
-	  expose.exposure_time = exptime;
-	  expose.abg_state = 0;
-	  expose.shutter = 1;
+	  struct camd_expose expose;
+	  expose.chip = chip;
+	  expose.exposure = exptime;
+	  expose.light = 1;
 	  /* priority block start here */
 	  if (devdem_priority_block_start ())
 	    return -1;
 
 	  devdem_status_mask (chip,
-		      CAM_MASK_EXPOSE, CAM_EXPOSING, "exposure chip started");
+			      CAM_MASK_EXPOSE | CAM_MASK_DATA,
+			      CAM_EXPOSING | CAM_NODATA,
+			      "exposure chip started");
 
 	  if ((ret =
 	       devser_thread_create (start_expose, (void *) &expose,
@@ -257,8 +245,9 @@ camd_handle_command (char *command)
 				     clean_expose_cancel)) < 0)
 	    {
 	      devdem_status_mask (chip,
-		      CAM_MASK_EXPOSE, CAM_NOEXPOSURE, "thread create error");
-	      
+				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				  "thread create error");
+
 	      devser_write_command_end (DEVDEM_E_SYSTEM,
 					"while creating thread for execution: %s",
 					strerror (errno));
@@ -277,7 +266,7 @@ camd_handle_command (char *command)
       /* priority block starts here */
       if (devdem_priority_block_start ())
 	return -1;
-      cam_call (sbig_end_expose (chip));
+      cam_call (camera_end_expose (chip));
       devdem_priority_block_end ();
       /* priority block stops here */
 
@@ -306,10 +295,12 @@ camd_handle_command (char *command)
       get_chip;
 
       rd = &readouts[chip];
-      rd->ccd = chip;
+      rd->chip = chip;
       rd->x = rd->y = 0;
-      rd->width = info.camera_info[chip].readout_mode[0].width;
-      rd->height = info.camera_info[chip].readout_mode[0].height;
+      rd->width =
+	info.chip_info[chip].width / info.chip_info[chip].binning_vertical;
+      rd->height =
+	info.chip_info[chip].height / info.chip_info[chip].binning_horizontal;
 
       // set data header
       header = &(rd->header);
@@ -330,14 +321,14 @@ camd_handle_command (char *command)
 	return -1;
 
       if (devser_data_put (rd->conn_id, header, sizeof (*header)))
-      {
-	devser_data_done (rd->conn_id);
-	return -1;
-      }
- 
+	{
+	  devser_data_done (rd->conn_id);
+	  return -1;
+	}
+
       devdem_status_mask (chip,
-		      CAM_MASK_READING,
-		      CAM_READING, "reading chip started");
+			  CAM_MASK_READING,
+			  CAM_READING, "reading chip started");
 
       if ((ret =
 	   devser_thread_create (start_readout,
@@ -345,14 +336,15 @@ camd_handle_command (char *command)
 				 &rd->thread_id, clean_readout_cancel)))
 	{
 	  devdem_status_mask (chip,
-		      CAM_MASK_READING | CAM_MASK_DATA,
-		      CAM_NOTREADING | CAM_NODATA, "error creating readout thread");
+			      CAM_MASK_READING | CAM_MASK_DATA,
+			      CAM_NOTREADING | CAM_NODATA,
+			      "error creating readout thread");
 
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
 				    "while creating thread for execution: %s",
 				    strerror (errno));
 	  devser_data_done (rd->conn_id);
-         
+
 	  return -1;
 	}
       devdem_priority_block_end ();
@@ -360,25 +352,25 @@ camd_handle_command (char *command)
     }
   else if (strcmp (command, "binning") == 0)
     {
-      int new_bin;
-      if (devser_param_test_length (2))
+      int vertical, horizontal;
+      if (devser_param_test_length (3))
 	return -1;
       /* priority block start */
       if (devdem_priority_block_start ())
 	return -1;
       get_chip;
-      if (devser_param_next_integer (&new_bin))
+      if (devser_param_next_integer (&vertical)
+	  || devser_param_next_integer (&horizontal))
 	return -1;
 
-      if (new_bin < 0 || new_bin >= info.camera_info[chip].nmbr_readout_modes)
+      if (camera_binning (chip, vertical, horizontal))
 	{
-	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "invalid binning: %i",
-				    new_bin);
+	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "invalid binning: %ix%i", vertical,
+				    horizontal);
 	  devdem_priority_block_end ();
 	  return -1;
 	}
-      readouts[chip].header.binnings[0] = (unsigned int) new_bin;
-      readouts[chip].header.binnings[1] = (unsigned int) new_bin;
       ret = 0;
       devdem_priority_block_end ();
       /* end of priority block */
@@ -416,23 +408,37 @@ camd_handle_command (char *command)
       devser_dprintf ("readout %f", readouts[chip].complete);
       ret = 0;
     }
+  else if (strcmp (command, "coolmax") == 0)
+    {
+      if (devser_param_test_length (0))
+	return -1;
+      if (devdem_priority_block_start ())
+	return -1;
+      cam_call (camera_cool_max ());
+      devdem_priority_block_end ();
+    }
+  else if (strcmp (command, "coolhold") == 0)
+    {
+      if (devser_param_test_length (0))
+	return -1;
+      if (devdem_priority_block_start ())
+	return -1;
+      cam_call (camera_cool_hold ());
+      devdem_priority_block_end ();
+    }
   else if (strcmp (command, "cooltemp") == 0)
     {
-      struct sbig_cool cool;
       float new_temp;
 
       if (devser_param_test_length (1))
 	return -1;
       if (devser_param_next_float (&new_temp))
 	return -1;
-      cool.temperature = round (new_temp * 10);	// convert to sbig 1/10 o C
-
-      cool.regulation = 1;
 
       /* priority block starts here */
       if (devdem_priority_block_start ())
 	return -1;
-      cam_call (sbig_set_cooling (&cool));
+      cam_call (camera_cool_setpoint (new_temp));
       devdem_priority_block_end ();
       /* priority block ends here */
     }
@@ -576,8 +582,6 @@ main (int argc, char **argv)
       perror ("devdem_register");
       exit (EXIT_FAILURE);
     }
-
-  info.nmbr_chips = 2;
 
   return devdem_run (device_port, camd_handle_command);
 }

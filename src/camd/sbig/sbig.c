@@ -8,7 +8,7 @@
 
 #include <math.h>
 
-extern int
+int
 sbig_init (int port, int options, struct sbig_init *init)
 {
   EstablishLinkParams in;
@@ -37,8 +37,6 @@ sbig_init (int port, int options, struct sbig_init *init)
 
   if ((result = ParDrvCommand (CC_ESTABLISH_LINK, &in, &out)) != 0)
     return -result;
-  //else
-
 
   init->camera_type = out.cameraType;
 
@@ -60,8 +58,8 @@ sbig_init (int port, int options, struct sbig_init *init)
       // else
       init->firmware_version = inf_res0.firmwareVersion;
       strcpy (init->camera_name, inf_res0.name);
-      init->camera_info[chip].nmbr_readout_modes = inf_res0.readoutModes;
-      memcpy (init->camera_info[chip].readout_mode,
+      init->sbig_camera_info[chip].nmbr_readout_modes = inf_res0.readoutModes;
+      memcpy (init->sbig_camera_info[chip].readout_mode,
 	      inf_res0.readoutInfo,
 	      sizeof (inf_res0.readoutInfo[0]) * inf_res0.readoutModes);
     }
@@ -80,6 +78,7 @@ sbig_init (int port, int options, struct sbig_init *init)
       init->imaging_abg_type = inf_res2.imagingABG;
       strcpy (init->serial_number, inf_res2.serialNumber);
     }
+
   return 0;
 }
 
@@ -124,7 +123,7 @@ ambient_ad2c (unsigned int ad)
   return 25.0 - 45.0 * (log (r / 3.0) / 2.0529692213);
 }
 
-extern int
+int
 sbig_get_status (struct sbig_status *status)
 {
   QueryCommandStatusParams in;
@@ -183,19 +182,19 @@ sbig_get_status (struct sbig_status *status)
   return 0;
 }
 
-extern int
+int
 sbig_control (struct sbig_control *control)
 {
   return -ParDrvCommand (CC_MISCELLANEOUS_CONTROL, control, NULL);
 };
 
-extern int
+int
 sbig_pulse (struct sbig_pulse *pulse)
 {
   return -ParDrvCommand (CC_PULSE_OUT, pulse, NULL);
 };
 
-extern int
+int
 sbig_activate_relay (struct sbig_relay *relay)
 {
   return -ParDrvCommand (CC_ACTIVATE_RELAY, relay, NULL);
@@ -214,7 +213,7 @@ sbig_start_expose (struct sbig_expose *expose)
   return -ParDrvCommand (CC_START_EXPOSURE, &in, NULL);
 };
 
-extern int
+int
 sbig_expose (struct sbig_expose *expose)
 {
 #define MAX_WAIT_COUNT  100
@@ -243,7 +242,7 @@ sbig_expose (struct sbig_expose *expose)
   return 0;
 }
 
-extern int
+int
 sbig_end_expose (unsigned short ccd)
 {
   EndExposureParams in;
@@ -251,13 +250,13 @@ sbig_end_expose (unsigned short ccd)
   return -ParDrvCommand (CC_END_EXPOSURE, &in, NULL);
 }
 
-extern int
+int
 sbig_update_clock ()
 {
   return -ParDrvCommand (CC_UPDATE_CLOCK, NULL, NULL);
 }
 
-extern int
+int
 sbig_readout_line (struct sbig_readout_line *readout_line)
 {
   int result;
@@ -276,7 +275,7 @@ sbig_readout_line (struct sbig_readout_line *readout_line)
   return -result;
 };
 
-extern int
+int
 sbig_dump_lines (struct sbig_dump_lines *dump_lines)
 {
 #ifdef DEBUG
@@ -285,7 +284,7 @@ sbig_dump_lines (struct sbig_dump_lines *dump_lines)
   return -ParDrvCommand (CC_DUMP_LINES, (DumpLinesParams *) dump_lines, NULL);
 };
 
-extern int
+int
 sbig_end_readout (unsigned int ccd)
 {
   EndReadoutParams in;
@@ -294,7 +293,7 @@ sbig_end_readout (unsigned int ccd)
   return -ParDrvCommand (CC_END_READOUT, &in, NULL);
 };
 
-extern int
+int
 sbig_set_cooling (struct sbig_cool *cool)
 {
   int result;
@@ -311,13 +310,13 @@ sbig_set_cooling (struct sbig_cool *cool)
   return 0;
 };
 
-extern int
+int
 sbig_set_ao7_deflection (int x_deflection, int y_deflection)
 {
   return 0;
 };
 
-extern int
+int
 sbig_set_ao7_focus (int type)
 {
   return 0;

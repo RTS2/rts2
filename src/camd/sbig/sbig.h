@@ -27,12 +27,12 @@ struct sbig_init
   char camera_name[64];
   CAMERA_TYPE camera_type;
   unsigned int nmbr_chips;
-  struct camera_info
+  struct sbig_camera_info
   {
     unsigned int nmbr_readout_modes;
     readout_mode_t readout_mode[20];
   }
-  camera_info[2];
+  sbig_camera_info[2];
   int ST5_AD_size;
   int ST5_filter_type;
 };
