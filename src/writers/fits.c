@@ -35,6 +35,7 @@ int
 fits_create (struct fits_receiver_data *receiver, char *filename)
 {
   int status;
+  char *fn;
   fitsfile *fptr;
 
   fits_clear_errmsg ();
@@ -46,7 +47,11 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
   status = 0;
   printf ("create '%s'\n", filename);
 
-  fits_call (fits_create_file (&receiver->ffile, filename, &status));
+  fn = (char *) malloc (strlen (filename) + 2);
+  strcpy (fn + 1, filename);
+  fn[0] = '!';
+
+  fits_call (fits_create_file (&receiver->ffile, fn, &status));
   fptr = receiver->ffile;
   return 0;
 }
@@ -60,8 +65,7 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 	}
 
 int
-write_camera (struct fits_receiver_data *receiver,
-		   struct camera_info *camera)
+write_camera (struct fits_receiver_data *receiver, struct camera_info *camera)
 {
   int status = 0;
   float xplate = 17, yplate = 17;
@@ -85,8 +89,8 @@ write_camera (struct fits_receiver_data *receiver,
   write_key (TSTRING, "CAMD_FAN", camera->fan ? "on" : "off",
 	     "Camera fan status");
 
-  write_key (TFLOAT, "XPLATE", &xplate, "X plate size"); 
-  write_key (TFLOAT, "YPLATE", &yplate, "Y plate size"); 
+  write_key (TFLOAT, "XPLATE", &xplate, "X plate size");
+  write_key (TFLOAT, "YPLATE", &yplate, "Y plate size");
   write_key (TFLOAT, "ROTANG", &rotang, "Field rotation");
   write_key (TSTRING, "FILTER", "R", "Filter used");
   write_key (TLONG, "FLIP", &flip, "Image flip");
@@ -96,7 +100,7 @@ write_camera (struct fits_receiver_data *receiver,
 
 int
 write_telescope (struct fits_receiver_data *receiver,
-		      struct telescope_info *telescope)
+		 struct telescope_info *telescope)
 {
   int status = 0;
   fitsfile *fptr = receiver->ffile;
@@ -117,23 +121,25 @@ write_telescope (struct fits_receiver_data *receiver,
 }
 
 int
-fits_write_image_info (struct fits_receiver_data *receiver, struct image_info *info, char *dark_name)
+fits_write_image_info (struct fits_receiver_data *receiver,
+		       struct image_info *info, char *dark_name)
 {
   int status = 0;
   double jd;
   fitsfile *fptr = receiver->ffile;
 
   if (write_camera (receiver, &info->camera) ||
-	  write_telescope (receiver, &info->telescope))
-	  return -1;
+      write_telescope (receiver, &info->telescope))
+    return -1;
 
   if (dark_name)
-	  write_key (TSTRING, "DARK", dark_name, "Dark image path");
+    write_key (TSTRING, "DARK", dark_name, "Dark image path");
 
   write_key (TLONG, "CTIME", &info->exposure_time, "Camera exposure start");
   jd = get_julian_from_timet (&info->exposure_time);
   write_key (TDOUBLE, "JD", &jd, "Camera exposure Julian date");
-  write_key (TFLOAT, "EXPOSURE", &info->exposure_length, "Camera exposure time in sec");
+  write_key (TFLOAT, "EXPOSURE", &info->exposure_length,
+	     "Camera exposure time in sec");
   write_key (TINT, "TARGET", &info->target_id, "Target id");
   write_key (TINT, "OBSERVAT", &info->observation_id, "Observation id");
   return 0;
