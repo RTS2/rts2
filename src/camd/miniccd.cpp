@@ -124,6 +124,11 @@ CameraMiniccdChip::startExposure (int light, float exptime)
   send_top = _data;
   dest_top = _data;
 
+  if (!chipUsedReadout)
+    {
+      chipUsedReadout = chipReadout;
+    }
+
   msg[CCD_MSG_HEADER_INDEX] = CCD_MSG_HEADER;
   msg[CCD_MSG_LENGTH_LO_INDEX] = CCD_MSG_EXP_LEN;
   msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
@@ -224,7 +229,7 @@ CameraMiniccdChip::readoutOneLine ()
 	{
 	  // test data size & ignore data header
 	  CCD_ELEM_TYPE *msg = (CCD_ELEM_TYPE *) _data;
-	  if (msg[CCD_MSG_INDEX] != CCD_MSG_INDEX)
+	  if (msg[CCD_MSG_INDEX] != CCD_MSG_IMAGE)
 	    {
 	      syslog (LOG_ERR,
 		      "CameraMiniccdChip::readoutOneLine wrong image message");
@@ -247,7 +252,7 @@ CameraMiniccdChip::readoutOneLine ()
 	  send_top += CCD_MSG_IMAGE_LEN;
 	}
       sendLine++;
-      send_data_size += sendReadoutData (send_top, dest_top - send_top);
+      send_data_size = sendReadoutData (send_top, dest_top - send_top);
       if (send_data_size < 0)
 	return -2;
 
@@ -288,6 +293,10 @@ public:
   virtual int ready ();
   virtual int info ();
   virtual int baseInfo ();
+  virtual int camChipInfo (int chip)
+  {
+    return !(fd_ccd != -1);
+  }
   virtual int camCoolMax ();
   virtual int camCoolHold ();
   virtual int camCoolTemp (float new_temp);
@@ -333,7 +342,7 @@ Rts2DevCameraMiniccd::init ()
   CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 
   ret = Rts2DevCamera::init ();
-  if (!ret)
+  if (ret)
     return ret;
 
   fd_ccd = open (device_file, O_RDWR);
@@ -387,7 +396,7 @@ Rts2DevCameraMiniccd::init ()
 
   ccdType[CCD_CCD_NAME_LEN] = '\x0';
 
-  chips[i] = new CameraMiniccdChip (0, fd_ccd, interleave);
+  chips[0] = new CameraMiniccdChip (0, fd_ccd, interleave);
 
   for (i = 1; i < chipNum; i++)
     {
@@ -406,7 +415,7 @@ Rts2DevCameraMiniccd::init ()
 int
 Rts2DevCameraMiniccd::ready ()
 {
-  return (fd_ccd != -1);
+  return !(fd_ccd != -1);
 }
 
 int
