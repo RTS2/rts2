@@ -318,8 +318,7 @@ typedef struct
   CWORD16 packetLen;		/* not including end of packet byte */
   CWORD16 command;
   CWORD16 *pData;		/* pointer to entire packet, from start, initialize before processing, each CWORD16 has value for one byte */
-}
-packet_t;
+} packet_t;
 
 /* fn prototypes */
 /* shared comm functions */
@@ -401,8 +400,7 @@ typedef struct
   /* MKS3Id(CWORD16 uID=0, CWORD16 xID=0): unitId(uID), axisId(xID) {} */
   CWORD16 unitId;
   CWORD16 axisId;
-}
-MKS3Id;
+} MKS3Id;
 
 typedef struct
 {
@@ -412,8 +410,7 @@ typedef struct
   double absAccelTicksPerSecPerSec;	/* absolute value of acceleration */
   double maxSpeedTicksPerSec;	/* max. speed it can go */
   double sampleFreq;
-}
-MKS3ObjTrackInfo;
+} MKS3ObjTrackInfo;
 
 typedef struct
 {
@@ -423,8 +420,7 @@ typedef struct
   long targetVelocityTicks;
   int spaceLeft;
   int index;
-}
-MKS3ObjTrackStat;
+} MKS3ObjTrackStat;
 
 #define MKS3ConstsIndexAngleSet(id, wIndex) _MKS3DoSetVal16(id, CMD_VAL16_INDEX_ANGLE, wIndex)
 #define MKS3ConstsIndexAngleGet(id, pIndex) _MKS3DoGetVal16(id, CMD_VAL16_INDEX_ANGLE, pIndex)
@@ -502,11 +498,11 @@ CWORD16 _MKS3DoGetVal32 (const MKS3Id id, CWORD16 valId,
 			 unsigned long *val32);
 CWORD16 _MKS3DoSetVal32 (const MKS3Id id, CWORD16 valId, CWORD32 val32);
 CWORD16 MKS3StatusGet (const MKS3Id id, CWORD16 * pStat);
-CWORD16 MKS3VersionGet (const MKS3Id id, CWORD16 * pMajor,
-			CWORD16 * pMinor, CWORD16 * pBuild);
+CWORD16 MKS3VersionGet (const MKS3Id id, CWORD16 * pMajor, CWORD16 * pMinor,
+			CWORD16 * pBuild);
 CWORD16 MKS3FlashErase (const MKS3Id id, CWORD16 address);
-CWORD16 MKS3FlashProgram (const MKS3Id id, CWORD16 startAdr,
-			  CWORD16 endAdr, CWORD16 * data);
+CWORD16 MKS3FlashProgram (const MKS3Id id, CWORD16 startAdr, CWORD16 endAdr,
+			  CWORD16 * data);
 CWORD16 MKS3FlashRead (const MKS3Id id, CWORD16 startAdr, CWORD16 endAdr,
 		       CWORD16 * data);
 CWORD16 MKS3coff16download (const MKS3Id id, const char *coffName);
@@ -539,9 +535,8 @@ CWORD16 MKS3DiagAngleSet (const MKS3Id id, CWORD16 angle);
 CWORD16 MKS3DiagModeLeave (const MKS3Id id);
 CWORD16 MKS3ObjTrackInit (const MKS3Id id, MKS3ObjTrackInfo * pTrackInfo);
 CWORD16 MKS3ObjTrackPointAdd (const MKS3Id id,
-			      MKS3ObjTrackInfo * pTrackInfo,
-			      double timeSec, long position,
-			      MKS3ObjTrackStat * pAddStat);
+			      MKS3ObjTrackInfo * pTrackInfo, double timeSec,
+			      long position, MKS3ObjTrackStat * pAddStat);
 CWORD16 MKS3ObjTrackEnd (const MKS3Id id);
 CWORD16 MKS3PosVelTimeGet (const MKS3Id id, long *pPos, long *pVel,
 			   long *pTime, long *pIndex);

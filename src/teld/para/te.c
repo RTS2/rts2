@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
@@ -154,54 +154,6 @@ applyME (double h0, double d0, double *ph1, double *pd1, double ME)
   fprintf (stderr, "%f %f\n", *ph1, *pd1);
 }
 
-int
-apply_tpoint_model (double *ph, double *pd, int flip)
-{
-  double d, h;
-
-  d = *pd;
-  h = in180 (*ph);
-
-#define rh (3.1415927*(in180(*ph))/180)
-#define rd (3.1415927*(*pd)/180)
-
-// *** The Basic Equatoreal Mount Terms ***
-//printf("r=%f, d=%f\n",h,d);
-//    h -= TP_IH / 3600;                // Index Error in Hour Angle 
-//    d -= TP_ID / 3600;                // Index Error in Declination
-//    h -= (TP_NP / 3600) * tan(rd);    // HA/Dec Non-perpendicularity
-//    h -= (TP_CH / 3600) / cos(rd);    // East-West Collimation Error
-
-  applyME (h, d, &h, &d, TP_ME);
-
-//d -= (TP_ME/3600) * cos(rh);  // Polar Axis Misalignment in Elevation
-//h -= (TP_ME/3600) * sin(rh) * tan(rd);
-//    d -= (TP_MA / 3600) * sin(rh);    // Polar Axis Misalignment in Azimuth
-//    h += (TP_MA / 3600) * cos(rh) * tan(rd);
-
-// *** imperfectly known step size ***
-  fprintf (stderr, "cos(%f)=%f %f %f cos(%f)=%f\n", h,
-	   cos (3.1415927 * h / 180), d, rd, rh, cos (rh));
-
-//    h -= (TP_PHH/3600) * rh;
-//    d -= (TP_PDD / 3600) * rd;
-//printf("r=%f, d=%f\n",h,d);
-
-// Influence of FLIP
-//    h -= TP_A1H / 3600 * (double) flip;
-//    d -= TP_A1D / 3600 * (double) flip;
-//printf("r=%f, d=%f\n",h,d);
-
-  *ph = h;
-  *pd = d;
-
-  return 1;
-}
-
-#undef rh
-#undef rd
-
-
 // return sid time since homing
 double
 sid_home ()
@@ -218,11 +170,12 @@ sid_home ()
 
 // *** return siderial time in degrees ***
 // once libnova will use struct timeval in
-// get_julian_from_sys, this will be completely OK
+// ln_ln_get_julian_from_sys, this will be completely OK
 double
 sid_time ()
 {
-  return in360 (15 * get_apparent_sidereal_time (get_julian_from_sys ()) -
+  return in360 (15 *
+		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) -
 		LONGITUDE);
 }
 
@@ -234,15 +187,15 @@ gethoming ()
 
 // Use the libnova one once it works well..
 double
-get_refraction (double altitude)
+ln_get_refraction (double altitude)
 {
   double R;
 
-  //altitude = deg_to_rad (altitude);
+  //altitude = ln_deg_to_rad (altitude);
 
   /* eq. 5.27 (Telescope Control,M.Trueblood & R.M. Genet) */
   R = 1.02 /
-    tan (deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
+    tan (ln_deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
 
   // for gnuplot (in degrees)
   // R(a) = 1.02 / tan( (a + 10.3 / (a + 5.11) + 0.0019279) / 57.2958 ) / 60
@@ -296,16 +249,16 @@ sky2counts (double ra, double dec, long *ac, long *dc)
 
   pos.ra = ra;
   pos.dec = dec;
-  JD = get_julian_from_sys ();
+  JD = ln_get_julian_from_sys ();
 
 // Aberation
-  get_equ_aber (&pos, JD, &aber_pos);
+  ln_get_equ_aber (&pos, JD, &aber_pos);
 // Precession
-  get_equ_prec (&aber_pos, JD, &pos);
+  ln_get_equ_prec (&aber_pos, JD, &pos);
 // Refraction 
-  get_hrz_from_equ (&pos, &observer, JD, &hrz);
-  hrz.alt += get_refraction (hrz.alt);
-  get_equ_from_hrz (&hrz, &observer, JD, &pos);
+  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
+  hrz.alt += ln_get_refraction (hrz.alt);
+  ln_get_equ_from_hrz (&hrz, &observer, JD, &pos);
 
   ra = pos.ra;
   dec = pos.dec;
@@ -318,7 +271,7 @@ sky2counts (double ra, double dec, long *ac, long *dc)
   if (ha < 0)
     flip = 1;
 
-  apply_tpoint_model (&ra, &dec, flip);
+//    apply_tpoint_model(&ra, &dec, flip);
 
   if (flip)
     {
@@ -799,4 +752,22 @@ telescope_off ()
   fprintf (stderr, "%s\n", __FUNCTION__);
   fflush (stderr);
   return zdechni ();
+}
+
+extern int
+telescope_change (double ra, double dec)
+{
+  return 0;
+}
+
+extern int
+telescope_start_move (char a)
+{
+  return 0;
+}
+
+extern int
+telescope_stop_move (char a)
+{
+  return 0;
 }

@@ -7,6 +7,11 @@
 #include <unistd.h>
 #include <ctype.h>
 
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
+#include <syslog.h>
+
 #define debugCharOut(c) fprintf(stderr,"%c",c)
 #define debugByteOut(c) fprintf(stderr,"%02X",c)
 #define debugWordOut(c) fprintf(stderr,"%04X",c)
@@ -15,6 +20,25 @@
 
 int hComm;
 int _comstat = 2;
+
+int semid;
+
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+/* union semun is defined by including <sys/sem.h> */
+#else
+/* according to X/OPEN we have to define it ourselves */
+union semun
+{
+  int val;			/* value for SETVAL */
+  struct semid_ds *buf;		/* buffer for IPC_STAT, IPC_SET */
+  unsigned short int *array;	/* array for GETALL, SETALL */
+  struct seminfo *__buf;	/* buffer for IPC_INFO */
+};
+#endif
+
+// A single semaphore for read/write acess to the port
+#define SEM_PORT	0
+#define SEM_TEL		1
 
 /* mks3comm.c*/
 CWORD16
@@ -99,15 +123,15 @@ commGetPacket (CWORD16 * packetBuff, CWORD16 * pReadLen, CWORD16 maxLen)
     {
       charIn = commGetChar (200);
 
-/*    debugByteOut(charIn); */
+//    debugByteOut(charIn); 
       if (charIn & 0x100)
 	{
-/*	    debugCharOut('T');*/
+//          debugCharOut('T');
 	  return COMM_TIMEOUT;
 	}
       if (charIn & 0x200)
 	{
-/*	    debugCharOut('E');*/
+//          debugCharOut('E');
 	  return COMM_COMMERROR;
 	}
       if (maybeEnd && (charIn != COMM_ENDPACKET))
@@ -115,7 +139,7 @@ commGetPacket (CWORD16 * packetBuff, CWORD16 * pReadLen, CWORD16 maxLen)
 	  if (charIn != COMM_ENDPACKET2)
 	    return COMM_BADCHAR;
 	  *pReadLen = packetLen;
-/*	    debugCharOut('P');*/
+//          debugCharOut('P');
 	  return COMM_OKPACKET;
 	}
 
@@ -123,7 +147,7 @@ commGetPacket (CWORD16 * packetBuff, CWORD16 * pReadLen, CWORD16 maxLen)
 	       || (maybeEnd && (charIn == COMM_ENDPACKET)))
 	{
 
-/*      debugCharOut('C'); */
+//      debugCharOut('C'); 
 	  maybeEnd = 0;
 	  packetBuff[packetLen] = charIn;
 	  packetLen++;
@@ -132,7 +156,7 @@ commGetPacket (CWORD16 * packetBuff, CWORD16 * pReadLen, CWORD16 maxLen)
       else if (!maybeEnd)
 	{
 
-/*       debugCharOut('M'); */
+//       debugCharOut('M'); 
 	  maybeEnd = 1;
 	}
     }
@@ -148,6 +172,25 @@ unsigned long mksCommWord;
 CWORD16
 commInit (char *port)
 {
+  union semun sem_un;
+  unsigned short int sem_arr[] = { 1, 1 };
+
+  if ((semid = semget (ftok (port, 0), 2, 0644)) < 0)
+    {
+      if ((semid = semget (ftok (port, 0), 2, IPC_CREAT | 0644)) < 0)
+	{
+	  syslog (LOG_ERR, "semget: %m");
+	  return -1;
+	}
+      sem_un.array = sem_arr;
+
+      if (semctl (semid, 0, SETALL, sem_un) < 0)
+	{
+	  syslog (LOG_ERR, "semctl init: %m");
+	  return -1;
+	}
+    }
+
 
   hComm = open (port, O_RDWR);
 
@@ -176,6 +219,13 @@ commInit (char *port)
   /*  bStat=BuildCommDCB("baud=38400 parity=N data=8 stop=1 xon=off odsr=off octs=off dtr=off rts=off idsr=off", &theDCB); */
 
   return MKS_OK;
+}
+
+void
+commFree ()
+{
+  semctl (semid, 1, IPC_RMID);
+  close (hComm);
 }
 
 CWORD16
@@ -274,8 +324,7 @@ makeProgramPacket (packet_t * pPack, CWORD16 start, CWORD16 end,
   unsigned len = end - start + 1;
   unsigned bIndex = 0;
   unsigned wIndex = 0;
-  pPack->packetLen =
-      COMM_OVERHEADLEN + CMD_FLASH_WRITE_DATA_OFFSET + 2 * len;
+  pPack->packetLen = COMM_OVERHEADLEN + CMD_FLASH_WRITE_DATA_OFFSET + 2 * len;
   pPack->command = CMD_FLASH_WRITE;
   pPack->pData[COMM_HEADERLEN + 0] = PACKLO (start);
   pPack->pData[COMM_HEADERLEN + 1] = PACKHI (start);
@@ -296,8 +345,7 @@ makeProgramBytePacket (packet_t * pPack, CWORD16 start, CWORD16 end,
 {
   unsigned len = end - start + 1;
   unsigned bIndex = 0;
-  pPack->packetLen =
-      COMM_OVERHEADLEN + CMD_FLASH_WRITE_DATA_OFFSET + 2 * len;
+  pPack->packetLen = COMM_OVERHEADLEN + CMD_FLASH_WRITE_DATA_OFFSET + 2 * len;
   pPack->command = CMD_FLASH_WRITE;
   pPack->pData[COMM_HEADERLEN + 0] = PACKLO (start);
   pPack->pData[COMM_HEADERLEN + 1] = PACKHI (start);
@@ -328,8 +376,7 @@ makeRamWritePacket (packet_t * pPack, CWORD16 start,
   unsigned len = end - start + 1;
   unsigned bIndex = 0;
   unsigned wIndex = 0;
-  pPack->packetLen =
-      COMM_OVERHEADLEN + CMD_RAM_WRITE_DATA_OFFSET + 2 * len;
+  pPack->packetLen = COMM_OVERHEADLEN + CMD_RAM_WRITE_DATA_OFFSET + 2 * len;
   pPack->command = CMD_RAM_WRITE;
   pPack->pData[COMM_HEADERLEN + 0] = PACKLO (start);
   pPack->pData[COMM_HEADERLEN + 1] = PACKHI (start);
@@ -414,7 +461,8 @@ XCpacket (packet_t * pPack, packet_t * pRespPacket)
 
   /*PurgeComm(hComm, /-*PURGE_RXCLEAR  == *-/ 0); */
   stat = commSendPack (pPack);
-/*    printf("send stat=%d\n", stat);*/
+  if (stat != COMM_OKPACKET)
+    return stat;
 /*    debugStrOut("send stat=");*/
 /*    debugWordOut(stat);*/
 /*    debugStrOut("\n");*/
@@ -433,28 +481,26 @@ XCpacket (packet_t * pPack, packet_t * pRespPacket)
   if (stat == COMM_OKPACKET)
     {
       stat = commDecodePacket (pPack->pData, len, pRespPacket);
-/*      printf("decode stat=%d\n", stat);*/
-      if (pRespPacket->command == CMD_ACK)
-	{
-/*          printf("Ack\n");*/
-	}
-      else if (pRespPacket->command == CMD_NACK)
-	{
-	  stat = PACKETUINT (pRespPacket->pData, COMM_HEADERLEN);
-	  printf ("Nack: stat=%d\n", stat);
-	}
 
-      else
+      if (pRespPacket->command != CMD_ACK)
 	{
-	  fprintf (stderr, "packet command: %d\n", pRespPacket->command);
-	  stat = COMM_COMMERROR;
+	  if (pRespPacket->command == CMD_NACK)
+	    {
+	      stat = PACKETUINT (pRespPacket->pData, COMM_HEADERLEN);
+	      fprintf (stderr, "Nack: stat=%d\n", stat);
+	    }
+	  else
+	    {
+	      fprintf (stderr, "packet command: %d\n", pRespPacket->command);
+	      stat = COMM_COMMERROR;
+	    }
 	}
     }
-
 //    else fprintf(stderr,"packet receive error: %d\n", stat);
 
   if (stat == COMM_OKPACKET)
     stat = MKS_OK;
+
   return stat;
 }
 
@@ -463,43 +509,82 @@ XCpacket (packet_t * pPack, packet_t * pRespPacket)
 size_t
 _MKS3PacketInit (packet_t * pPack, CWORD16 * pBuff, const MKS3Id Id)
 {
-  static size_t sequenceNum = 0;
-  /*char messBuff[512]; */
-
-/*  EnterCriticalSection(&_MKSCritSection);*/
   pPack->unitId = Id.unitId;
   pPack->axisId = Id.axisId;
-  pPack->sequenceNum = sequenceNum;
+  pPack->sequenceNum = 0;
   pPack->pData = pBuff;
-  sequenceNum++;
-  sequenceNum &= 0xFF;
 
-/*  LeaveCriticalSection(&_MKSCritSection);*/
-/*    sprintf(messBuff, "Tx sequence num=%d\n", pPack->sequenceNum);
-    debugStrOut(messBuff); */
-  return pPack->sequenceNum;
+  return 0;
 }
 
 int
-_MKSXCpacket (packet_t * pPack, packet_t * pRespPacket)
+_MKSXCpacket (packet_t * pPack, packet_t * pRespPacket, size_t * SeqNo)
 {
-/*  EnterCriticalSection(&_MKSCritSection);*/
-  int stat = XCpacket (pPack, pRespPacket);
+  static size_t sequenceNum = 0;
+  int stat;
+  struct sembuf sem_buf;
 
-  if (stat == MKS_OK && _comstat != 1)
+  /*  EnterCriticalSection(&_MKSCritSection); */
+  sem_buf.sem_num = SEM_PORT;
+  sem_buf.sem_op = -1;
+  sem_buf.sem_flg = SEM_UNDO;
+  if (semop (semid, &sem_buf, 1) < 0)
+    return -1;
+
+  *SeqNo = pPack->sequenceNum = sequenceNum;
+  sequenceNum++;
+  sequenceNum &= 0xFF;
+
+  /* Go on */
+  stat = XCpacket (pPack, pRespPacket);
+
+  /* if the connection was lost */
+  if ((stat != COMM_OKPACKET) && (_comstat == 1))
     {
-      printf ("XCpacket: connection reached\n");
-      fflush (stdout);
+      fprintf (stderr, "XCpacket: connection lost or unavailable (%d,%d)\n",
+	       stat, _comstat);
+      fflush (stderr);
+      _comstat = 0;
+      goto rr;
+    }
+
+  if ((stat == COMM_OKPACKET) && _comstat != 1)
+    {
+      fprintf (stderr, "XCpacket: connection reached\n");
+      fflush (stderr);
       _comstat = 1;
     }
-  if (stat != MKS_OK && _comstat != 0)
+
+  /* Decode error */
+  switch (stat)
     {
-      printf ("XCpacket: connection lost or unavailable\n");
-      fflush (stdout);
-      _comstat = 0;
+    case MOTOR_OK:
+      fprintf (stderr, "MOTOR_OK");
+      break;
+    case MOTOR_OVERCURRENT:
+      fprintf (stderr, "MOTOR_OVERCURRENT");
+      break;
+    case MOTOR_POSERRORLIM:
+      fprintf (stderr, "MOTOR_POSERRORLIM");
+      break;
+    case MOTOR_STILL_ON:
+      fprintf (stderr, "MOTOR_STILL_ON");
+      break;
+    case MOTOR_NOT_ON:
+      fprintf (stderr, "MOTOR_NOT_ON");
+      break;
+    case MOTOR_STILL_MOVING:
+      fprintf (stderr, "MOTOR_STILL_MOVING");
+      break;
     }
 
-/*  LeaveCriticalSection(&_MKSCritSection);*/
+  fflush (stderr);
+
+rr:
+  /*  LeaveCriticalSection(&_MKSCritSection); */
+  sem_buf.sem_op = 1;
+  semop (semid, &sem_buf, 1);
+
   return stat;
 }
 
@@ -548,7 +633,7 @@ MKS3StatusGet (const MKS3Id id, CWORD16 * pStat)
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeStatPack (&TxPacket);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -566,7 +651,7 @@ MKS3VersionGet (const MKS3Id id, CWORD16 * pMajor,
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeVersionPack (&TxPacket);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -586,7 +671,7 @@ MKS3MotorOff (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_MOTOR_OFF;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -603,7 +688,7 @@ MKS3MotorOn (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_MOTOR_ON;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -619,7 +704,7 @@ MKS3FlashErase (const MKS3Id id, CWORD16 address)
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeErasePack (&TxPacket, address);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -636,7 +721,7 @@ MKS3FlashProgram (const MKS3Id id, CWORD16 startAdr,
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeProgramPacket (&TxPacket, startAdr, endAdr, pData);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -655,7 +740,7 @@ MKS3FlashRead (const MKS3Id id, CWORD16 startAdr, CWORD16 endAdr,
   size_t seqNum;
   seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeFlashReadPacket (&TxPacket, startAdr, endAdr);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -676,7 +761,7 @@ MKS3RamWrite (const MKS3Id id, CWORD16 startAdr, CWORD16 endAdr,
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeRamWritePacket (&TxPacket, startAdr, endAdr, pData);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -694,7 +779,7 @@ MKS3RamRead (const MKS3Id id, CWORD16 startAdr, CWORD16 endAdr,
   int xx;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeRamReadPacket (&TxPacket, startAdr, endAdr);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -716,7 +801,7 @@ _MKS3DoGetVal16 (const MKS3Id id, CWORD16 valId, CWORD16 * val16)
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeGetVal16Pack (&TxPacket, valId);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -733,7 +818,7 @@ _MKS3DoSetVal16 (const MKS3Id id, CWORD16 valId, CWORD16 val16)
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeSetVal16Pack (&TxPacket, valId, val16);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -749,7 +834,7 @@ _MKS3DoGetVal32 (const MKS3Id id, CWORD16 valId, unsigned long *val32)
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeGetVal32Pack (&TxPacket, valId);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -766,7 +851,7 @@ _MKS3DoSetVal32 (const MKS3Id id, CWORD16 valId, CWORD32 val32)
   CWORD16 stat;
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   makeSetVal32Pack (&TxPacket, valId, val32);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -783,7 +868,7 @@ MKS3PosAbort (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_DO_ABORT;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -800,7 +885,7 @@ MKS3ConstsUnitIdGet (const MKS3Id id, CWORD16 * pwId)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_GET_ID;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -823,7 +908,7 @@ MKS3ConstsUnitIdSet (const MKS3Id id, CWORD16 wId)
   TxPacket.command = CMD_SET_UNIT_ID;
   TxPacket.pData[COMM_HEADERLEN + 0] = PACKLO (wId);
   TxPacket.pData[COMM_HEADERLEN + 1] = PACKHI (wId);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -840,7 +925,7 @@ MKS3ConstsStore (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_STORE_CONSTANTS;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -857,7 +942,7 @@ MKS3ConstsReload (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_RELOAD_CONSTANTS;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -875,7 +960,7 @@ MKS3MotorIndexFind (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_START_INDEX;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -913,8 +998,8 @@ MKS3MotorVoltageGet (const MKS3Id id, long *pSumVoltage, long *pCount)
 				  (unsigned long *) pSumVoltage);
   if (stat == MKS_OK)
     stat =
-	_MKS3DoGetVal32 (id, CMD_VAL32_SUM_VOLTAGE_COUNT,
-			 (unsigned long *) pCount);
+      _MKS3DoGetVal32 (id, CMD_VAL32_SUM_VOLTAGE_COUNT,
+		       (unsigned long *) pCount);
   return stat;
 }
 
@@ -928,7 +1013,7 @@ MKS3HomeStart (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_START_HOME;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -951,7 +1036,7 @@ MKS3Home (const MKS3Id id, long offset)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_START_HOME;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -972,9 +1057,9 @@ MKS3PECTableSet (const MKS3Id id, CWORD16 * data)
   for (rr = 0; rr < ratio; rr++)
     {
       stat =
-	  MKS3FlashProgram (id, PEC_STORAGE_ADDR + index,
-			    PEC_STORAGE_ADDR + index + PEC_REV_COUNT - 1,
-			    data + index);
+	MKS3FlashProgram (id, PEC_STORAGE_ADDR + index,
+			  PEC_STORAGE_ADDR + index + PEC_REV_COUNT - 1,
+			  data + index);
       if (stat != MKS_OK)
 	return stat;
       index += PEC_REV_COUNT;
@@ -996,9 +1081,9 @@ MKS3PECTableGet (const MKS3Id id, CWORD16 * data)
   for (rr = 0; rr < ratio; rr++)
     {
       stat =
-	  MKS3FlashRead (id, PEC_STORAGE_ADDR + index,
-			 PEC_STORAGE_ADDR + index + PEC_REV_COUNT - 1,
-			 data + index);
+	MKS3FlashRead (id, PEC_STORAGE_ADDR + index,
+		       PEC_STORAGE_ADDR + index + PEC_REV_COUNT - 1,
+		       data + index);
       if (stat != MKS_OK)
 	return stat;
       index += PEC_REV_COUNT;
@@ -1017,8 +1102,8 @@ MKS3UserSpaceWrite (const MKS3Id id, CWORD16 startAdr,
   if (startAdr > 16383)
     return COMM_BADVALCODE;
   stat =
-      MKS3FlashProgram (id, USER_FLASH_SECTOR + startAdr,
-			USER_FLASH_SECTOR + endAdr, pData);
+    MKS3FlashProgram (id, USER_FLASH_SECTOR + startAdr,
+		      USER_FLASH_SECTOR + endAdr, pData);
   if (stat != MKS_OK)
     return stat;
   return MKS_OK;
@@ -1034,8 +1119,8 @@ MKS3UserSpaceRead (const MKS3Id id, CWORD16 startAdr,
   if (startAdr > 16383)
     return COMM_BADVALCODE;
   stat =
-      MKS3FlashRead (id, USER_FLASH_SECTOR + startAdr,
-		     USER_FLASH_SECTOR + endAdr, pData);
+    MKS3FlashRead (id, USER_FLASH_SECTOR + startAdr,
+		   USER_FLASH_SECTOR + endAdr, pData);
   if (stat != MKS_OK)
     return stat;
   return MKS_OK;
@@ -1053,7 +1138,7 @@ MKS3ObjTrackInit (const MKS3Id id, MKS3ObjTrackInfo * pTrackInfo)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_OBJ_TRACK_INIT;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -1063,10 +1148,9 @@ MKS3ObjTrackInit (const MKS3Id id, MKS3ObjTrackInfo * pTrackInfo)
   clockRate = RxPacket.pData[COMM_HEADERLEN + 10];
   pTrackInfo->sampleFreq = clockRate * 1000000 / interruptPeriod;
   pTrackInfo->absAccelTicksPerSecPerSec =
-      sampAccel * pTrackInfo->sampleFreq * pTrackInfo->sampleFreq /
-      (1 << 25);
+    sampAccel * pTrackInfo->sampleFreq * pTrackInfo->sampleFreq / (1 << 25);
   pTrackInfo->maxSpeedTicksPerSec =
-      maxSpeedTicks * pTrackInfo->sampleFreq / (1 << 25);
+    maxSpeedTicks * pTrackInfo->sampleFreq / (1 << 25);
   pTrackInfo->prevVelocityTicksPerSec = 0;
   pTrackInfo->prevPointTimeTicks = 0;
   stat = MKS3PosTargetGet (id, &pTrackInfo->prevPointPos);
@@ -1084,8 +1168,8 @@ _MKS3PosVel (double initVel, double finalVel, double absAccel,
     accelTime = deltaT;
   *pReachedVel = actAccel * accelTime + initVel;
   *pReachedDeltaPos =
-      (long) (-0.5 * actAccel * accelTime * accelTime +
-	      (actAccel * accelTime + initVel) * deltaT);
+    (long) (-0.5 * actAccel * accelTime * accelTime +
+	    (actAccel * accelTime + initVel) * deltaT);
 }
 
 /* calc final position and velocity in continuous units, return true if it can actually reach final pos */
@@ -1098,8 +1182,8 @@ _MKS3FinalPosVelCalc (double initVel, double absAccel, double maxSpeed,
   double actAccel = (initVel * endTimeSec < endPos) ? absAccel : -absAccel;
   double accelTime, finalVel;
   double discrim =
-      actAccel * actAccel * endTimeSec * endTimeSec +
-      2.0 * actAccel * (initVel * endTimeSec - endPos);
+    actAccel * actAccel * endTimeSec * endTimeSec +
+    2.0 * actAccel * (initVel * endTimeSec - endPos);
   if (discrim < 0)
     {				/* acceleration-limited, can't actually reach desired target pos, so see where we will go instead */
       bCanReach = 0;
@@ -1121,8 +1205,8 @@ _MKS3FinalPosVelCalc (double initVel, double absAccel, double maxSpeed,
     }
   if (!bCanReach)		/* compute where it really will go */
     endPos =
-	(long) (-0.5 * actAccel * accelTime * accelTime +
-		(actAccel * accelTime + initVel) * endTimeSec);
+      (long) (-0.5 * actAccel * accelTime * accelTime +
+	      (actAccel * accelTime + initVel) * endTimeSec);
   *pFinalVel = finalVel;
   *pFinalPos = endPos;
   return bCanReach;
@@ -1160,7 +1244,7 @@ MKS3ObjTrackPointAdd (const MKS3Id id,
   pAddStat->targetVelocityTicks = 0;
   pAddStat->index = -1;
   deltaTsec =
-      timeSec - pTrackInfo->prevPointTimeTicks / pTrackInfo->sampleFreq;
+    timeSec - pTrackInfo->prevPointTimeTicks / pTrackInfo->sampleFreq;
   if (deltaTsec <= 0)
     {
       pAddStat->status = OBJ_TRACK_STAT_BAD_ORDER;
@@ -1168,11 +1252,11 @@ MKS3ObjTrackPointAdd (const MKS3Id id,
     }
   deltaPos = positionTicks - pTrackInfo->prevPointPos;
   canReach =
-      _MKS3FinalPosVelCalc (pTrackInfo->prevVelocityTicksPerSec,
-			    pTrackInfo->absAccelTicksPerSecPerSec,
-			    pTrackInfo->maxSpeedTicksPerSec, deltaTsec,
-			    deltaPos, &finalVelTicksPerSec,
-			    &actualFinalDeltaPos);
+    _MKS3FinalPosVelCalc (pTrackInfo->prevVelocityTicksPerSec,
+			  pTrackInfo->absAccelTicksPerSecPerSec,
+			  pTrackInfo->maxSpeedTicksPerSec, deltaTsec,
+			  deltaPos, &finalVelTicksPerSec,
+			  &actualFinalDeltaPos);
   actualFinalPos = pTrackInfo->prevPointPos + actualFinalDeltaPos;
   curTimeTicks = (CWORD32) (timeSec * pTrackInfo->sampleFreq);
   seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
@@ -1181,15 +1265,14 @@ MKS3ObjTrackPointAdd (const MKS3Id id,
   addCWORD32 (&TxPacket, 0, pTrackInfo->prevPointTimeTicks);
   addCWORD32 (&TxPacket, 4, curTimeTicks);
   targetCreepVelocity =
-      (long) (finalVelTicksPerSec * (1 << 25) / pTrackInfo->sampleFreq);
+    (long) (finalVelTicksPerSec * (1 << 25) / pTrackInfo->sampleFreq);
   addCWORD32 (&TxPacket, 8, targetCreepVelocity);
   addCWORD32 (&TxPacket, 12, actualFinalPos);
   sprintf (bigBuff,
 	   "MKS3ObjTrackPointAdd: adding: prevTimeTicks=%ld, curTimeTicks=%d, targVelTicks=%ld\n",
-	   pTrackInfo->prevPointTimeTicks, curTimeTicks,
-	   targetCreepVelocity);
-  printf (bigBuff);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+	   pTrackInfo->prevPointTimeTicks, curTimeTicks, targetCreepVelocity);
+  fprintf (stderr, bigBuff);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -1199,24 +1282,23 @@ MKS3ObjTrackPointAdd (const MKS3Id id,
   actualStartTimeTicks = PACKETULONG (RxPacket.pData, COMM_HEADERLEN + 3);
   actualStartPos = PACKETULONG (RxPacket.pData, COMM_HEADERLEN + 7);
   actualStartVelocityTicks =
-      PACKETULONG (RxPacket.pData, COMM_HEADERLEN + 11);
+    PACKETULONG (RxPacket.pData, COMM_HEADERLEN + 11);
   sprintf (bigBuff,
 	   "MKS3ObjTrackPointAdd: returned stat=%d, buffSpace=%d, index=%d, actual time ticks=%ld, actual vel=%ld\n",
 	   pointStat, buffSpace, addedIndex, actualStartTimeTicks,
 	   actualStartVelocityTicks);
-  printf (bigBuff);
+  fprintf (stderr, bigBuff);
   actualAddedTimeSec = actualStartTimeTicks / pTrackInfo->sampleFreq;
   if (pointStat == OBJ_TRACK_STAT_ADDED_LATE)
     {				/* need to recompute where it really will be based on actual start time, pos, & velocity. */
       double deltaTsec = timeSec - actualAddedTimeSec;
       double actualPrevVelocity =
-	  actualStartVelocityTicks * pTrackInfo->sampleFreq / (1 << 25);
+	actualStartVelocityTicks * pTrackInfo->sampleFreq / (1 << 25);
       _MKS3PosVel (actualPrevVelocity, finalVelTicksPerSec,
 		   pTrackInfo->absAccelTicksPerSecPerSec, deltaTsec,
 		   &actualFinalDeltaPos, &finalVelTicksPerSec);
       targetCreepVelocity =
-	  (long) (finalVelTicksPerSec * (1 << 25) /
-		  pTrackInfo->sampleFreq);
+	(long) (finalVelTicksPerSec * (1 << 25) / pTrackInfo->sampleFreq);
       actualFinalPos = actualStartPos + actualFinalDeltaPos;
     }
   if (pointStat == OBJ_TRACK_STAT_ADDED_LATE
@@ -1248,7 +1330,7 @@ MKS3ObjTrackEnd (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_OBJ_TRACK_END;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -1266,15 +1348,14 @@ MKS3PosVelTimeGet (const MKS3Id id, long *pPos, long *pVel,
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_GET_POS_VEL_TIME;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
   *pTime = PACKETULONG (RxPacket.pData, COMM_HEADERLEN);
   *pPos = PACKETULONG (RxPacket.pData, COMM_HEADERLEN + 4);
   *pVel = PACKETULONG (RxPacket.pData, COMM_HEADERLEN + 8);
-  *pIndex =
-      (signed short) (PACKETUINT (RxPacket.pData, COMM_HEADERLEN + 12));
+  *pIndex = (signed short) (PACKETUINT (RxPacket.pData, COMM_HEADERLEN + 12));
   return MKS_OK;
 }
 
@@ -1290,7 +1371,7 @@ MKS3DiagModeEnter (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_DIAGS_MODE_ENTER;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -1309,7 +1390,7 @@ MKS3DiagCurrentSet (const MKS3Id id, CWORD16 current)
   TxPacket.command = CMD_DIAGS_CURRENT_SET;
   TxPacket.pData[COMM_HEADERLEN + 0] = PACKLO (current);
   TxPacket.pData[COMM_HEADERLEN + 1] = PACKHI (current);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -1328,7 +1409,7 @@ MKS3DiagAngleSet (const MKS3Id id, CWORD16 angle)
   TxPacket.command = CMD_DIAGS_ANGLE_SET;
   TxPacket.pData[COMM_HEADERLEN + 0] = PACKLO (angle);
   TxPacket.pData[COMM_HEADERLEN + 1] = PACKHI (angle);
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
@@ -1345,7 +1426,7 @@ MKS3DiagModeLeave (const MKS3Id id)
   size_t seqNum = _MKS3PacketInit (&TxPacket, pBuff, id);
   TxPacket.packetLen = COMM_OVERHEADLEN;
   TxPacket.command = CMD_DIAGS_MODE_LEAVE;
-  stat = _MKSXCpacket (&TxPacket, &RxPacket);
+  stat = _MKSXCpacket (&TxPacket, &RxPacket, &seqNum);
   stat = _MKS3PacketCheck (&RxPacket, id, seqNum, stat);
   if (stat != MKS_OK)
     return stat;
