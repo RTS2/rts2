@@ -48,4 +48,6 @@ extern int devcli_command (struct device *dev, int *ret_code, char *cmd, ...);
 extern int devcli_image_info (struct device *dev, struct image_info *image);
 extern int devcli_execute (char *line, int *ret_code);
 
+extern char *serverd_status_string (int status);
+
 #endif // __RTS_DEVCLI__
