@@ -6,6 +6,9 @@
 
 #include "db.h"
 #include <libnova.h>
+#include <malloc.h>
+
+#define test_sql if (sqlca.sqlcode < 0) goto err
 
 extern int
 db_connect (void)
@@ -53,7 +56,7 @@ db_start_observation (int id, const time_t * c_start, int *obs_id)
 
 err:
 #ifdef DEBUG
-  printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
 }
@@ -85,9 +88,9 @@ db_end_observation (int tar_id, int obs_id, const time_t * end_time)
 
   return 0;
 err:
-//#ifdef DEBUG
-  printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
-//#endif /* DEBUG */
+#ifdef DEBUG
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
   return -1;
 }
 
@@ -118,7 +121,7 @@ db_add_darkfield (char *path, const time_t * exposure_time, float
 
 err:
 #ifdef DEBUG
-  printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
 }
@@ -126,8 +129,6 @@ err:
 extern int
 db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
 {
-#define test_sql if (sqlca.sqlcode < 0) goto err
-
   EXEC SQL BEGIN DECLARE SECTION;
 
   int tar_id;
@@ -146,7 +147,8 @@ db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
   test_sql;
 
   EXEC SQL DECLARE tar_cursor CURSOR FOR
-    SELECT tar_id, grb_seqn FROM grb WHERE grb_id =:grb_id;
+    SELECT targets.tar_id, grb_seqn FROM targets, grb WHERE targets.tar_id =
+    grb.tar_id AND grb_id =:grb_id;
 
   test_sql;
 
@@ -154,15 +156,21 @@ db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
 
   EXEC SQL FETCH next FROM tar_cursor INTO:tar_id,:grb_seqn;
 
+  test_sql;
+
   if (!sqlca.sqlcode)
     {
       // observation exists, just update
       if (grb_seqn < seqn)
 	{
 	  grb_seqn = seqn;
+	  EXEC SQL UPDATE targets
+	    SET tar_ra =:tar_ra,
+	    tar_dec =:tar_dec WHERE targets.tar_id =:tar_id;
+	  test_sql;
 	  EXEC SQL UPDATE grb
-	    SET grb_seqn =:grb_seqn, tar_ra =:tar_ra,
-	    tar_dec =:tar_dec, grb_last_update = now ()WHERE tar_id =:tar_id;
+	    SET grb_seqn =:grb_seqn, grb_last_update =
+	    now ()WHERE grb.tar_id =:tar_id;
 	  test_sql;
 	}
     }
@@ -173,11 +181,15 @@ db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
       test_sql;
       grb_seqn = seqn;
       sprintf (tar_name, "GRB %5i", id);
-      EXEC SQL INSERT INTO grb (tar_id, tar_name, tar_ra, tar_dec,
-				tar_comment, grb_id, grb_seqn, grb_date,
+      EXEC SQL INSERT INTO targets (tar_id, type_id, tar_name, tar_ra,
+				    tar_dec, tar_comment) VALUES (:tar_id,
+								  'G',:tar_name,:tar_ra,:tar_dec,
+								  'GRB');
+      test_sql;
+
+      EXEC SQL INSERT INTO grb (tar_id, grb_id, grb_seqn, grb_date,
 				grb_last_update)
-	VALUES (:tar_id,:tar_name,:tar_ra,:tar_dec, 'GRB',:grb_id,:grb_seqn,
-		now (), now ());
+	VALUES (:tar_id,:grb_id,:grb_seqn, now (), now ());
       test_sql;
     }
 
@@ -192,6 +204,51 @@ db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
 
   return 0;
 
+err:
+#ifdef DEBUG
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  return -1;
+}
+
+/*!
+ * Get last dark from database
+ *
+ * @return set *path (malloc) and retuns 0 when dark is founded, -1 otherwise
+ */
+int
+db_get_darkfield (char *camera_name, float exposure_length, int
+		  camera_temperature, char **path)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  char d_path[250];
+  char *d_camera_name = camera_name;
+  float d_exposure_length = exposure_length;
+  int d_camera_temperature = camera_temperature;
+  EXEC SQL END DECLARE SECTION;
+  if (*path)
+    free (path);
+  EXEC SQL BEGIN;
+  EXEC SQL DECLARE dark_cursor CURSOR FOR
+    SELECT dark_name FROM darks WHERE camera_name =:d_camera_name AND
+    dark_exposure =:d_exposure_length AND abs (dark_temperature
+					       -:d_camera_temperature) <
+    25 ORDER BY dark_date DESC;
+  test_sql;
+  EXEC SQL OPEN dark_cursor;
+  EXEC SQL FETCH next FROM dark_cursor INTO:d_path;
+  if (!sqlca.sqlcode)
+    {
+      *path = (char *) malloc (strlen (d_path) + 1);
+      strcpy (*path, d_path);
+      EXEC SQL CLOSE dark_cursor;
+      EXEC SQL END;
+      return 0;
+    }
+  *path = NULL;
+  EXEC SQL CLOSE dark_cursor;
+  EXEC SQL END;
+  return -1;
 err:
 #ifdef DEBUG
   printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
