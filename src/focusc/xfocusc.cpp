@@ -89,7 +89,7 @@ class DeviceWindow
 private:
   int save_fits;
   int autodark;
-  int img_num; // image number with same parameters (exposure time, binning etc..
+  int img_num;			// image number with same parameters (exposure time, binning etc..
   unsigned short *dark_image;
 public:
   struct device *camera;
@@ -222,7 +222,7 @@ public:
 		center_exposure ();
 		break;
 	      case XK_p:
-		devcli_command_all (DEVICE_TYPE_PHOT, "integrate 5 10");
+		devcli_command_all (DEVICE_TYPE_PHOT, "integrate 10 1800");
 		break;
 	      case XK_o:
 		devcli_command_all (DEVICE_TYPE_PHOT, "stop");
@@ -298,9 +298,11 @@ public:
 	  {
 	    gmtime_r (&image_info->exposure_tv.tv_sec, &gmt);
 	    asprintf (&filename, "%s/%s%04i%02i%02i%02i%02i%02i-%03i.fits",
-		      image_info->camera_name, (image_info->target_type == TARGET_DARK ? "d" : ""),
-		      gmt.tm_year + 1900, gmt.tm_mon + 1,
-		      gmt.tm_mday, gmt.tm_hour, gmt.tm_min, gmt.tm_sec, (int) (image_info->exposure_tv.tv_usec / 1000));
+		      image_info->camera_name,
+		      (image_info->target_type == TARGET_DARK ? "d" : ""),
+		      gmt.tm_year + 1900, gmt.tm_mon + 1, gmt.tm_mday,
+		      gmt.tm_hour, gmt.tm_min, gmt.tm_sec,
+		      (int) (image_info->exposure_tv.tv_usec / 1000));
 	    strcpy (filen, filename);
 	    printf ("filename: %s\n", filename);
 	    if (fits_create (&receiver, filename)
@@ -347,14 +349,15 @@ public:
     height = imghdr->sizes[1];
 
     if (image_info->target_type == TARGET_DARK)
-    {
-      delete dark_image;
-      // unfortunatelly we have to copy data..as we have in pix_data
-      // data with image header, and later we will have no way how to
-      // free them (if we loose their pointer)
-      dark_image = new unsigned short[width * height];
-      memcpy ((char *) dark_image, pix_data, width * height * sizeof (unsigned short));
-    }
+      {
+	delete dark_image;
+	// unfortunatelly we have to copy data..as we have in pix_data
+	// data with image header, and later we will have no way how to
+	// free them (if we loose their pointer)
+	dark_image = new unsigned short[width * height];
+	memcpy ((char *) dark_image, pix_data,
+		width * height * sizeof (unsigned short));
+      }
 
     if (l_save_fits)
       {
@@ -386,19 +389,19 @@ public:
 
     im_ptr = im;
     dark_ptr = dark_image;
-    
+
     for (j = 0; j < height; j++)
       for (i = 0; i < width; i++)
 	{
 	  if (dark_ptr)
-	  {
-	    // substract dark image
-	    if (*dark_ptr < *im_ptr)
-	      *im_ptr -= *dark_ptr;
-	    else
-	      *im_ptr = 0;
-            dark_ptr++;
-	  }
+	    {
+	      // substract dark image
+	      if (*dark_ptr < *im_ptr)
+		*im_ptr -= *dark_ptr;
+	      else
+		*im_ptr = 0;
+	      dark_ptr++;
+	    }
 	  hist[*im_ptr]++;
 	  im_ptr++;
 	}
@@ -425,7 +428,7 @@ public:
 	     ds);
 
     im_ptr = im;
-    
+
     for (j = 0; j < height; j++)
       for (i = 0; i < width; i++)
 	{
@@ -474,7 +477,7 @@ public:
     info->exposure_length = exposure_time;
     info->target_id = -1;
     info->observation_id = -1;
-    info->target_type = (isLight () ? TARGET_LIGHT : TARGET_DARK);
+    info->target_type = (isLight ()? TARGET_LIGHT : TARGET_DARK);
     info->camera_name = camera->name;
     printf ("waiting for camera\n");
     fflush (stdout);
@@ -538,7 +541,8 @@ public:
 	printf ("exposure_time: %f\n", exposure_time);
 	if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
 				    CAM_NOTREADING, 0) ||
-	    devcli_command (camera, NULL, "expose 0 %i %f", (isLight () ? 1 : 0), exposure_time))
+	    devcli_command (camera, NULL, "expose 0 %i %f",
+			    (isLight ()? 1 : 0), exposure_time))
 	  {
 	    perror ("expose:");
 	  }
@@ -549,7 +553,7 @@ public:
 	fflush (stdout);
       }
   }
-  
+
   int isLight (void)
   {
     return !(autodark && img_num == 0);
@@ -574,7 +578,7 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
   image = NULL;
   rgb[256];
   exposure_time = exposure;
-  
+
   save_fits = i_save_fits;
   autodark = i_autodark;
   img_num = 0;
@@ -597,7 +601,7 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
 
   if (!camera)
     {
-      printf ("**** Cannot find camera\n");
+      printf ("**** Cannot find camera '%s'\n", camera_name);
       exit (EXIT_FAILURE);
     }
   camera->data_handler_args = this;
@@ -701,7 +705,8 @@ main (int argc, char **argv)
 	  break;
 	case 'h':
 	  printf ("Options:\n");
-	  printf ("\t--device|-d <device_name> device(s) name(s) (xfocusc accept multiple entries)\n");
+	  printf
+	    ("\t--device|-d <device_name> device(s) name(s) (xfocusc accept multiple entries)\n");
 	  printf ("\t--port|-p <port_num>   port of the server\n");
 	  printf ("\t--center|-c            start center exposure\n");
 	  printf ("\t--exposure|-e          exposure time in seconds\n");
@@ -717,8 +722,8 @@ main (int argc, char **argv)
 		  "\ty     .. save fits file\n"
 		  "\tu     .. don't save fits file\n");
 	  printf ("Examples:\n"
-	          "\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1\n"
-	          "\trts2-xfocusc -d C2 -a -e 10    .. takes 10 sec exposures on device C2. Takes darks and use them\n");
+		  "\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1\n"
+		  "\trts2-xfocusc -d C2 -a -e 10    .. takes 10 sec exposures on device C2. Takes darks and use them\n");
 	  exit (EXIT_SUCCESS);
 	case 's':
 	  save_fits = 1;
