@@ -85,8 +85,6 @@ void *
 start_park (void *arg)
 {
   int ret;
-  devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
-		      "parking telescope started");
   if ((ret = telescope_park ()) < 0)
     {
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
@@ -144,10 +142,15 @@ teld_handle_command (char *command)
 	return -1;
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 			  "moving of telescope started");
-      devser_thread_create (start_move, (void *) &coord, sizeof coord, NULL,
-			    client_move_cancel);
+      if (ret =
+	  devser_thread_create (start_move, (void *) &coord, sizeof coord,
+				NULL, client_move_cancel) < 0)
+	{
+	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL,
+			      "cannot create thread");
+	}
       devdem_priority_block_end ();
-      return 0;
+      return ret;
     }
   else if (strcmp (command, "correct") == 0)
     {
@@ -195,10 +198,11 @@ teld_handle_command (char *command)
       correction_buf[correction_mark % CORRECTION_BUF].ra = 0;
       correction_buf[correction_mark % CORRECTION_BUF].dec = 0;
 
-      devser_thread_create (start_correction, (void *) &coord, sizeof coord,
-			    NULL, NULL);
+      ret =
+	devser_thread_create (start_correction, (void *) &coord, sizeof coord,
+			      NULL, NULL);
       devdem_priority_block_end ();
-      return 0;
+      return ret;
     }
   else if (strcmp (command, "info") == 0)
     {
@@ -221,9 +225,17 @@ teld_handle_command (char *command)
     {
       if (devdem_priority_block_start ())
 	return -1;
-      devser_thread_create (start_park, NULL, 0, NULL, client_move_cancel);
+      devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
+			  "parking telescope started");
+      if (ret =
+	  devser_thread_create (start_park, NULL, 0, NULL,
+				client_move_cancel) < 0)
+	{
+	  devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL,
+			      "not parking - cannot create thread");
+	}
       devdem_priority_block_end ();
-      return 0;
+      return ret;
     }
   else if (strcmp (command, "help") == 0)
     {
@@ -342,6 +354,8 @@ main (int argc, char **argv)
       syslog (LOG_ERR, "devdem_init: %m");
       return EXIT_FAILURE;
     }
+
+  telescope_init ("/dev/ttyS0", 0);
 
   if (devdem_register
       (serverd_host, serverd_port, device_name, DEVICE_TYPE_MOUNT, hostname,
