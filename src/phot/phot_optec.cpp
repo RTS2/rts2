@@ -48,6 +48,13 @@ public:
 
   virtual int idle ();
 
+  virtual void deleteConnection (Rts2Conn * conn)
+  {
+    if (integrateConn == conn)
+      integrateConn = NULL;
+    Rts2Block::deleteConnection (conn);
+  }
+
   virtual int ready ()
   {
     return 0;
@@ -221,6 +228,8 @@ Rts2DevPhotOptec::idle ()
 		case 'A':
 		  result = 0;
 		  ret = read (fd, &result, 2);
+		  if (!integrateConn)
+		    return endIntegrate ();
 		  req_count--;
 		  integrateConn->sendValue ("count", result, req_time);
 		  setTimeout (req_time_usec);
@@ -228,11 +237,15 @@ Rts2DevPhotOptec::idle ()
 		case '0':
 		  result = 0;
 		  ret = read (fd, &result, 2);
+		  if (!integrateConn)
+		    return endIntegrate ();
 		  integrateConn->sendValue ("filter_c", result / 33);
 		  setTimeout (1000);
 		  break;
 		case '-':
 		  result = 0;
+		  if (!integrateConn)
+		    return endIntegrate ();
 		  integrateConn->send ("count 0 0");
 		  req_count = 0;
 		  break;
@@ -293,6 +306,7 @@ Rts2DevPhotOptec::endIntegrate ()
   req_count = 0;
   maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 	     "Integration finished");
+  integrateConn = NULL;
   return phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
 }
 
