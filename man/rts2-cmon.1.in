@@ -1,0 +1,114 @@
+.pc
+.TH rts2\-cmon 1 "@DATE@" "RTS2 @VERSION@" "Remote Telescope System 2 stream monitoring"
+.SH NAME
+\fBrts2\-cmon\fP \- RTS2 stream monitoring
+.SH SYNOPSIS
+\fBrts2-cmon\fP [\fB\-h\fP\|[\fB\-m\fP \fIsubject\fP\fB\-p\fP \fIport\fP]] \fIserver_address\fP
+.br
+\fBrts2-cmon\fP [\fB\-\-help\fP\|[\fB\-\-mail\fP \fIsubject\fP\fB\-\-port\fP \fIport\fP]] \fIserver_address\fP
+.SH DESCRIPTION
+
+\fBrts2\-cmon\fP is used for stream reporting of RTS2 status. Such stream can
+be passed for example to \fBmail\fP(1) command to send it as email to all users
+willing to receive it.
+
+\fBrts2\-cmon\fP prints informations from centrald, including number connected
+clients with their names and text describing their current state.
+
+Then it will print status of all connected devices.
+
+.SH OPTIONS
+
+.SS \-h, \-\-help
+Print short help message.
+
+.SS \-m suject, \-\-mail subject
+Prints following line as first status line:
+
+.RS
+.B Subject: subject date subject_string
+.RE
+
+Where \fBsubject\fP is argument, \fBdate\fP is system date and
+\fIsubject_string\fP is one of following:
+
+.TS
+tab (@);
+l l.
+\fBALL OK\fR@to our best knowledge, everything is fine.
+\fBWARNING \- FAILED DEVICE(s):\fR \fIlist\fR@T{
+there are some problems in the system
+T}
+\fBFATAL ERROR \-\fR \fItext\fR@T{
+there are serious problems within system and system cannot respond.
+T}
+.TE
+
+When \fBALL OK\fP appears, email receiver isn't require to take any special
+action. The system is most probably running in stable conditions and there are
+no problems with it.
+
+If \fBWARNING \- FAILED DEVICE(s):\fR appears, he or she should consult status
+informations in the list to see, if imediate action is necessary. It's
+recomended that he or she ssh to RTS2 main computer and check RTS2 status with
+\fBrts2\-mon\fR as soon as possible. 
+
+In \fIlist\fR are names of all devices, which failed.  \fBrts2\-cmon\fP sends
+\fBready\fP command to every single device. Device should respond with \fB+000
+Success\fP. If device doesn't respond, there is problem with communication
+between device and it's servicing program meaning that device is most probably
+disconnected, or between \fBrts2\-cmon\fP and device servicing program, or
+between device servicing program and \fBrs2\-centrald\fP. \fBrts2\-cmon\fR runs
+futher tests, based on device type and central server state. They are describes
+in \fBDEVICE TESTS\fP section.
+
+If email receiver gets \fBFATAL ERROR \-\fP, he or she should take immediate
+action to see what's wrong with the system. Most probably he or she will ssh to
+telescope main computer and run \fBrts2\-mon\fP(1) to see if system is really
+not runnig or there was just a problem in communication between
+\fBrts2\-cmon\fP and \fBrts2\-centrald\fP.
+
+After \fBFATAL ERROR \-\fP \fItext\fR describes cause of such problems. Now it
+can only be \fbcannot connect to centrald!\fR, which means that
+\fBrts2\-cmon\fR was unable to contact \fBrts2\-centrald\fR.
+
+.SH "DEVICE TESTS"
+
+In following text, subsection headers refer to device type, bold
+state names in text refers to centrald states.
+
+.SS CCD
+If central server state is \fBDAY\fP or \fBMORNING\fP, \fBrts2\-cmon\fP check
+if ccd cooling fan is off and cooling power is equall 100%.
+
+If central server state is \fBDUSK\fR, \fBNIGHT\fR or \fBDAWN\fR,
+\fBrts2\-cmon\fR check if camera cooling fan is on, and cooling power is above
+50%.
+
+If central server state is \fBEVENING\fR, \fBrts2\-cmon\fR check if camera cooling
+fan is on an it's cooling power is set to 100%.
+
+.SS MOUNT
+If central server state is one from \fBMORNING\fP, \fBDAY\fP or \fBEVENING\fP,
+\fBrts2\-cmon\fP check if mount ra is reported to be on south with 15'
+tolerance, and mount dec is at park_dec, as reported by mount.
+
+If central server state is one from \fBDUSK\fP, \fBNIGHT\fP or \fBDAWN\fP,
+\fBrts2\-cmon\fP check if telescope reports that it points above horizont.
+
+.SS DOME
+If central server state is one of \fBMORNING\fP, \fBDAY\fP or \fBEVENING\fP,
+\fBrts2\-cmon\fP check if dome is reported to be closed.
+
+If central server state is one from \fBDUSK\fP, \fBNIGHT\fP or \fBDAWN\fP,
+\fBrts2\-cmon\fP check if dome reports good weather. If it does, it check
+if dome is opened, otherwise it check if dome is closed.
+
+.SH FORMAT
+
+.SH SEE\ ALSO
+
+.SH BUGS
+Some minor are still knows. But please send bugs reports to author.
+.SH AUTHOR
+Petr Kubanek \fB<petr at lascaux dot asu dot cas dot cz>
