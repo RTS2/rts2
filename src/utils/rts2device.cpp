@@ -1,3 +1,7 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
