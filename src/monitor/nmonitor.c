@@ -64,6 +64,7 @@ status_camera (WINDOW * wnd, const struct camera_info *info)
 void
 ex_func (void)
 {
+  printf ("exit_c: %i", exit_c);
   if (!exit_c)
     endwin ();
   exit_c++;
@@ -76,7 +77,7 @@ main (int argc, char **argv)
   uint16_t port = SERVERD_PORT;
   char *server;
   char c;
-  int camd_id, teld_id;
+  int camd_id, camd_id1, teld_id;
   int ret_code;
   union devhnd_info *info;
 
@@ -102,7 +103,7 @@ main (int argc, char **argv)
 	  port = atoi (optarg);
 	  if (port < 1 || port == UINT_MAX)
 	    {
-	      printf ("invalcamd_id port option: %s\n", optarg);
+	      printf ("inval camd_id port option: %s\n", optarg);
 	      exit (EXIT_FAILURE);
 	    }
 	  break;
@@ -139,6 +140,16 @@ main (int argc, char **argv)
     }
 
   printf ("camd_id: %i\n", camd_id);
+
+  if (devcli_connectdev (&camd_id1, "WF2", NULL) < 0)
+    {
+      perror ("devcli_connectdev");
+      exit (EXIT_FAILURE);
+    }
+
+
+  printf ("camd_id1: %i\n", camd_id1);
+
 
   if (devcli_connectdev (&teld_id, "teld", NULL) < 0)
     {
@@ -181,8 +192,8 @@ main (int argc, char **argv)
       else
 	{
 	  devcli_command (teld_id, &ret_code, "info");
-	  devcli_getinfo (teld_id, info);
-	  status_telescope (wnd[0], (struct telescope_info *) info);
+	  devcli_getinfo (teld_id, &info);
+	  status_telescope (wnd[0], &info->telescope);
 	}
 
       if (devcli_command (camd_id, &ret_code, "ready"))
@@ -193,9 +204,22 @@ main (int argc, char **argv)
 	{
 	  devcli_command (camd_id, &ret_code, "info");
 	  devcli_command (camd_id, &ret_code, "chipinfo 0");
-	  devcli_getinfo (camd_id, info);
-	  status_camera (wnd[1], &(info->camera));
+	  devcli_getinfo (camd_id, &info);
+	  status_camera (wnd[1], &info->camera);
 	}
+
+      if (devcli_command (camd_id1, &ret_code, "ready"))
+	{
+	  status_camera (wnd[3], NULL);
+	}
+      else
+	{
+	  devcli_command (camd_id1, &ret_code, "info");
+	  devcli_command (camd_id1, &ret_code, "chipinfo 0");
+	  devcli_getinfo (camd_id1, &info);
+	  status_camera (wnd[3], &info->camera);
+	}
+
 
       for (c = 10; c; c--)
 	{
