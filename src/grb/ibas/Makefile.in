@@ -1,0 +1,10 @@
+CFLAGS		= -g -I. -Wall -D_REENTRANT -DIBC_ARCH_LINUX_GCC
+LDFLAGS		= -g -I. -Wall -D_REENTRANT -DIBC_ARCH_LINUX_GCC
+
+all: ibas.a
+
+ibas.a: ibas.o ibas_client_api.o ibas_client_support.o ibas_client_time.o
+	$(AR) rvs $@ $^
+
+clean:
+	$(RM) *.a *.o
