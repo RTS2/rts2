@@ -1,3 +1,12 @@
+0.5.0
+===
+ * rts2block.cpp, rts2device.cpp - new communication library
+ * rewrite all drivers to new library
+ * more c++, particulary in planner (src/plan)
+ * SBIG USB support, SBIG LPT over urvc2
+ * OpenTLC (BOOTES-IR) support
+ * conditionals Makefile.am's, --with-xxx etc. configure.in
+
 0.4.0
 ===
  * database change - float8 instead of float4 for ra/dec in targets table

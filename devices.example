@@ -1,0 +1,6 @@
+#RTS2 devices configuration
+#device	type	device_name	options
+#example:
+#teld	gemini	T0	-f /dev/ttyS6
+camd	miniccd	C0	-f /dev/ccda
+teld	gemini	T0	-f /dev/ttyS4
