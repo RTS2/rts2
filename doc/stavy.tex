@@ -1,34 +1,10 @@
-Stavy
+\section{Stavy zaøízení}
 
-jsou v src/status.h
+Ka¾dé zaøízení a centrální server má pole stavù. Stav je bitová maska. Podle
+stavu zaøízení lze rozpoznat, jestli server provádí dlouhotrvající funkce.
+Zmìna stavu je distribuována na v¹echny pøipojené procesy, mimo centrálního
+serveru.
 
-V¹eobecnì nepova¾ujeme posílání pøíkazù a èekání na odpovìï z nich za
-nìjaký speciální stav, toto je vìcí vnitøní implementace knihovny.
-
-Stavy jsou øe¹eny jako bitová maska. Jejich nastavování je vìcí
-knihovny, nejsou pøístupné pomocí promìnné, ale pomocí volání funkce,
-která vrací nulu v pøípadì úspìchu a kód chyby v ostatních pøípadech,
-stav je vracen v návratové promìnné. 
-
-\subsection{serverd}
-
-DAY
-DUSK
-NIGHT
-DAWN
-MAINTANCE
-OFF
-
-
-\subsection{camd}
-NOEXPOSURE
-EXPOSING
-NODATA
-DATA
-NOTREADING
-READOUT
-COOLMAX
-COOLOFF
-COOLSHUTINGDOWN
-
-
+Zaøízení mají navíc jeden speciální stav. Ten urèuje, jestli má klient
+pøístup k exekuèním funkcím na daném zaøízení. Zmìna tohoto stavu je
+oznamována pouze procesùm, kterých se zmìna týká.

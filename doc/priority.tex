@@ -47,7 +47,7 @@ základní hodnotu
 \item klient s~nejvy¹¹í prioritou má pøístup k~exekuèním funkcím
 \item pøístup k exekuèním funkcím nelze získat zvý¹ením priority na stejnou
 hodnotu, jako má aktuální klient s pøístupem k exekuèním funkcím
-\item pokud má dva nebo více klientù stejnou prioritu, klient, který má
+\item pokud má více klientù stejnou, nejvy¹¹í prioritu, klient, který získá
 pøístup k exekuèním funkcím je zvolen náhodnì
 \end{itemize}
 
@@ -163,20 +163,28 @@ zaøízením. Ty pak informují klienty o splnìní ¾ádosti. Bloky jsou pøedávány pøím
 
 \end{itemize}
 
-Problém dovyètení kamery a souzahájení pøesunu na novou pozici lze pak vyøe¹it
-následovnì:
+Øe¹ení problému dovyètení kamery a souèasného zahájení pøesunu na novou pozici lze pak øe¹it následovnì:
 
 \begin{itemize}
 
-\item kamera zahájí vyèítání
+\item prioritu má klient {\it A}
 
-\item montá¾ ukonèí blok, priorita tak získá nový klient
+\item {\it A} po¾ádá kameru o zahájení vyèítání 
 
-\item nový klient provede pøesun montá¾e na novou pozici a bude èekat do
-okam¾iku získání priority na kameøe
+\item {\it A} ukonèí na montá¾i blok
 
-\item kamera ukonèí vyèítání, ukonèí blok, pøedá prioritu
+\item o prioritu po¾ádá klient {\it B}
 
-\item nový klient zahájí vyèítání kamery
+\item {\it B} obdr¾í prioritu na montá¾i
+
+\item {\it B} provede pøesun montá¾e na novou pozici
+
+\item kamera ukonèí vyèítání
+
+\item {\it A} ukonèí na kameøe blok
+
+\item {\it B} obdr¾í prioritu na kameøe
+
+\item {\it B} zahájí expozici na kameøe
 
 \end{itemize}

@@ -1,6 +1,8 @@
-\section{Ovládání montá¾e}
+\subsection{Montá¾}
 
-\subsection{Stavový diagram}
+\subsubsection{Stavovy montá¾e}
+
+\dia{state-teld}{Stavový diagram montá¾e}
 
 \begin{description}
 
@@ -12,7 +14,7 @@
 
 \end{description}
 
-\subsection{Korekce}
+\subsubsection{Korekce}
 
 Korekce jsou poèítány z pozice dalekohledu v dobì expozice a skuteèené pozice
 støedu snímkù, zji¹tìné dodateènou astrometrií. Oznaème $a$ pozici dalekohledu
@@ -28,22 +30,22 @@ dobu. Mù¾e nastat i tato situace:
 
 \item zjistíme nastavení dalekohledu $a_1$, získáme z CCD kamery snímek $img_1$
 
-\item dalekohledem pøejedeme na novou pozici $a^2$
+\item dalekohledem pøejedeme na novou pozici $a_2$
 
-\item zjistíme orientaci dalkohledu $a^2$, získáme snímek $img_2$
+\item zjistíme orientaci dalkohledu $a_2$, získáme snímek $img_2$
 
 \item dopoèítáme chybu $\delta_1$, zmìníme o její hodnotu èítaèe dalekohledu
 
-\item dalekohledem pøejedeme na novou pozici $a^3$
+\item dalekohledem pøejedeme na novou pozici $a_3$
 
 \item dopoèítáme chybu $\delta_2$
 
 \end{itemize}
 
-V tomto okam¾iku je zmìnit hodnoty èítaèe o $\delta_2$ - $\delta_1$. Obecnì je
-potøeba mìnit èítaèe pro snímek $img_a$ o 
+V tomto okam¾iku je potøeba zmìnit hodnoty èítaèe o $\delta_2$ - $\delta_1$.
+Obecnì je potøeba mìnit èítaèe pro snímek $img_a$ o 
 
-$\delta_c - \sum\limits_{i=a}^{c-1} \delta_i$
+{\center $\delta_c - \sum\limits_{i=a}^{c-1} \delta_i$}
 
 Tohoto cíle je v ovládání serveru dosa¾eno pomocí cyklické fronty a promìnné
 $correction\_mark$. Promìnná $correction\_mark$ neudává index snímku, je
@@ -88,7 +90,7 @@ evidovány po snímkách, ale po korekcích.
 % 
 % $\delta' = \delta - \sum\limits_{i=cr}^cm korekce[i]$
 
-\subsection{Dostupné informace}
+\subsubsection{Dostupné informace}
 
 \begin{itemize}
 
