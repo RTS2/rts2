@@ -170,6 +170,7 @@ camera_expose (int chip, float *exposure, int light)
   struct chip_info *minichip = &miniccd.chip_info[chip];
   int exposure_msec = *exposure * 1000;
   int i;
+  int real_height = minichip->height / (interleave && chip == 0 ? 2 : 1);
   fd_set set;
   /*
    * Send the capture request.
@@ -179,7 +180,7 @@ camera_expose (int chip, float *exposure, int light)
   msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
   msg[CCD_MSG_INDEX] = CCD_MSG_EXP;
   msg[CCD_EXP_WIDTH_INDEX] = minichip->width;
-  msg[CCD_EXP_HEIGHT_INDEX] = minichip->height;
+  msg[CCD_EXP_HEIGHT_INDEX] = real_height;
   msg[CCD_EXP_XOFFSET_INDEX] = 0;
   msg[CCD_EXP_YOFFSET_INDEX] = 0;
   msg[CCD_EXP_XBIN_INDEX] = minichip->binning_horizontal;
@@ -200,10 +201,16 @@ camera_expose (int chip, float *exposure, int light)
 	  field_rows[i] = 0;
 	  FD_ZERO (&set);
 	  FD_SET (fd_chips[i], &set);
+	  printf ("before select\n");
+	  fflush (stdout);
 	  select (fd_chips[i] + 1, &set, NULL, NULL, NULL);
-	  while (field_rows[i] < minichip->height)
-	    dummy_camera_readout_line (i, 0, minichip->width,
-				       &_data[field_rows[i] * 2 + (i - 1)]);
+	  while (field_rows[i] < real_height)
+	    {
+	      printf ("stdout: %i %i\n", i, field_rows[i]);
+	      fflush (stdout);
+	      dummy_camera_readout_line (i, 0, minichip->width,
+					 &_data[field_rows[i] * 2 + (i - 1)]);
+	    }
 	  field_rows[i] = 0;
 	}
     }
@@ -283,10 +290,19 @@ dummy_camera_readout_line (int chip_id, short start, short length, void *data)
 	   */
 	  if ((msg[CCD_MSG_LENGTH_LO_INDEX] +
 	       (msg[CCD_MSG_LENGTH_HI_INDEX] << 16)) !=
-	      (row_bytes * (minichip->height / minichip->binning_horizontal) +
-	       CCD_MSG_IMAGE_LEN))
+	      (row_bytes *
+	       ((minichip->height / (interleave && chip_id == 0 ? 2 : 1)) /
+		minichip->binning_horizontal) + CCD_MSG_IMAGE_LEN))
 	    {
-	      fprintf (stderr, "Image size discrepency!\n");
+	      fprintf (stderr, "Image size discrepency %i != %i!\n",
+		       row_bytes *
+		       ((minichip->height /
+			 (interleave
+			  && chip_id ==
+			  0 ? 2 : 1)) / minichip->binning_horizontal) +
+		       CCD_MSG_IMAGE_LEN,
+		       msg[CCD_MSG_LENGTH_LO_INDEX] +
+		       (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
 	      return -1;
 	    }
 	  /*
@@ -309,7 +325,10 @@ dummy_camera_readout_line (int chip_id, short start, short length, void *data)
     }
 
   field_rows[chip_id]++;
-  if (field_rows[chip_id] > minichip->height / minichip->binning_horizontal)
+  if (field_rows[chip_id] >
+      minichip->height / (interleave
+			  && chip_id ==
+			  0 ? 2 : 1) / minichip->binning_horizontal)
     field_rows[chip_id] = 0;
   /*
    * Move image data down to replace header.
