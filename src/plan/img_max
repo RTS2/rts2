@@ -10,6 +10,8 @@ unless (open (FILE,"<${file}.sex"))
   open FILE, "<${file}.sex" or die "Cannot open sextrator file!";
 }
 
+
+
 my @arr;
 
 while (my $in = <FILE>)
@@ -21,8 +23,12 @@ while (my $in = <FILE>)
 
 @arr = sort {$b->[6] <=> $a->[6]} @arr;
 
-my $ra_err = ($arr[0][2] - 150) * 60 / 290; 
-my $dec_err = ($arr[0][3] - 150) * 60 / 376;
+#my $ra_err = ($arr[0][2] - 188) * 60 / 376;
+#my $dec_err = ($arr[0][3] - 145) * 60 / 290; 
+#
+my $ra_err = + ($arr[0][2] - 160) * 0.2956;
+my $dec_err = + ($arr[0][3] - 140) * 0.2853; 
+
 
 printf ("%4.4f %4.4f %i", $ra_err, $dec_err, ($arr[0][6]) % 10000);
 printf (" (%4.4f,%4.4f)\n", $ra_err, $dec_err);
