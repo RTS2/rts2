@@ -4,8 +4,12 @@ V následujícím textu je za {\bf server} oznaèován proces, který èeká na
 spojení. Jako {\bf klient} je pak oznaèován proces, který spojení otvírá.
 
 Je potøeba rozli¹ovat klienty pro jednotlivé èinnosti (monitoring, ..) s
-klienty v protokolu.  Proces centrálního serveru vystupuje v protokolu pouze
-jako sever. Klientské procesy vystupují v protokolu v¾dy jako klienti.
+klienty v protokolu.  
+
+Proces centrálního serveru vystupuje v protokolu pouze jako sever. 
+
+Klientské procesy vystupují v protokolu v¾dy jako klienti.  
+
 Zaøízení vystupují pøi komunikaci se zaøízenímy jako server. Pøi komunikaci s
 centrálním server pak vystupují jako klient. A pøi komunikaci mezi zaøízenímy
 se jedno chová jako klient a druhé jako server.
@@ -31,7 +35,7 @@ Bloky komunikace v textovém rozhranní jsou ukonèovány znaèkou konce øádky.
 Buïto se pou¾ívá znakù platných v protokolu Telnet \cite{telnet} - tedy znaku
 CR následovaného znakem LF, nebo pouze znaku LF.
 
-Jednotlivé polo¾ky øádky jsou oddìlovány nejménì jedním znakem "mezera".
+Jednotlivé polo¾ky øádky jsou oddìlovány nejménì jedním znakem mezera.
 
 \subsection{Pøíkazy}
 
@@ -54,9 +58,10 @@ rozli¹it, o jakou chybu se jednalo.
 
 Øádky obsahující hodnotu zaèínají malým písmenem. Posílá je server klientovi,
 vìt¹inou jako reakci na pøíkaz a tedy pøed tím, ne¾ oznámí ukonèení pøíkazu.
-První polo¾ka je jméno pøíkazu, následovaná hodnotami. Napøíklad po dotazu na
-pozici dalekohledu mù¾e dalekohled odpovìdìt{\it ra 10}, co¾ znamená, ¾e je v
-rektascenzi nastaven na 10 stupòù.
+První polo¾ka je jméno pøíkazu, za ní následují hodnotami. 
+
+Napøíklad po dotazu na pozici dalekohledu mù¾e dalekohled odpovìdìt{\it ra
+10}, co¾ znamená, ¾e je v rektascenzi nastaven na 10 stupòù.
 
 \subsection{Zprávy a ¾ádosti serveru}
 
