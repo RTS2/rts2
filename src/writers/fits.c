@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 #include <malloc.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <unistd.h>
 
 #include "fitsio.h"
@@ -110,9 +110,9 @@ write_camera (struct fits_receiver_data *receiver,
   write_key (TFLOAT, "YPLATE", &yplate, "Y plate size");
   if (mount_flip)
     rotang =
-      range_degrees (rotang +
-		     get_device_double_default (camera_name, "mount_rotang",
-						180.0));
+      ln_range_degrees (rotang +
+			get_device_double_default (camera_name,
+						   "mount_rotang", 180.0));
   write_key (TFLOAT, "ROTANG", &rotang, "Field rotation");
   write_key (TSTRING, "FILTER", filter, "Filter used");
   write_key (TLONG, "FLIP", &flip, "Image flip");
@@ -133,7 +133,7 @@ write_telescope (struct fits_receiver_data *receiver,
   tel.dec = telescope->dec;
   observer.lat = telescope->latitude;
   observer.lng = telescope->longtitude;
-  get_hrz_from_equ (&tel, &observer, jd, &hrz);
+  ln_get_hrz_from_equ (&tel, &observer, jd, &hrz);
 
   write_key (TSTRING, "TEL_TYPE", telescope->type, "Telescope type");
   write_key (TSTRING, "TEL_SRLN", telescope->serial_number,
@@ -193,7 +193,7 @@ fits_write_image_info (struct fits_receiver_data *receiver,
   char *image_type;
 
   pthread_mutex_lock (&image_fits_mutex);
-  jd = get_julian_from_timet (&info->exposure_time);
+  jd = ln_get_julian_from_timet (&info->exposure_time);
   if (*info->telescope.type)
     {
       write_key_unlock (TSTRING, "TEL_NAME", info->telescope_name,

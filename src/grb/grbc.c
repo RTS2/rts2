@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <libnova.h>
+#include <libnova/libnova.h>
 
 #include "../db/db.h"
 #include "ibas/ibas.h"
@@ -104,7 +104,7 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
   observer.lng = get_double_default ("longtitude", 6.733);
   observer.lat = get_double_default ("latitude", 37.1);
 
-  get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
+  ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (), &hrz);
 
   if (observing.grb_id == id)
     {
@@ -307,8 +307,8 @@ main (int argc, char **argv)
 
       db_start_observation (observing.tar_id, &t, &observing.obs_id);
 
-      get_hrz_from_equ (&observing.object, &observer, get_julian_from_sys (),
-			&hrz);
+      ln_get_hrz_from_equ (&observing.object, &observer,
+			   ln_get_julian_from_sys (), &hrz);
 
       observing_count = 0;
       tar_id = observing.tar_id;
@@ -345,8 +345,8 @@ main (int argc, char **argv)
 	  readout ();
 
 	  pthread_mutex_lock (&observing_lock);
-	  get_hrz_from_equ (&observing.object, &observer,
-			    get_julian_from_sys (), &hrz);
+	  ln_get_hrz_from_equ (&observing.object, &observer,
+			       ln_get_julian_from_sys (), &hrz);
 	  if (observing.grb_id < 100 && observing_count > 10)
 	    break;
 	}

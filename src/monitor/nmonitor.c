@@ -1,6 +1,6 @@
 #include <curses.h>
 #include <mcheck.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <getopt.h>
 #include <panel.h>
 #include <stdlib.h>
@@ -108,13 +108,14 @@ status_telescope (WINDOW * wnd, struct device *dev)
 
   st = info->siderealtime + info->longtitude / 15.0;
 
-  get_hrz_from_equ_sidereal_time (&object, &observer, st, &position);
+  ln_get_hrz_from_equ_sidereal_time (&object, &observer, st, &position);
 
   mvwprintw (wnd, 1, 1, "Typ: %s", info->type);
   mvwprintw (wnd, 2, 1, "R+D/f: %.3f%+.3f/%c",
 	     info->ra, info->dec, info->flip ? 'f' : 'n');
   mvwprintw (wnd, 3, 1, "Az/Al/D: %i %+i %s",
-	     (int) position.az, (int) position.alt, hrz_to_nswe (&position));
+	     (int) position.az, (int) position.alt,
+	     ln_hrz_to_nswe (&position));
 
   mvwprintw (wnd, 4, 1, "Lon/Lat: %+03.3f %+03.3f", info->longtitude,
 	     info->latitude);

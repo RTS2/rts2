@@ -20,7 +20,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <libnova.h>
+#include <libnova/libnova.h>
 
 int line_count = 0;
 
@@ -84,8 +84,8 @@ status_telescope (const struct device *dev)
   object.dec = info->dec;
   observer.lng = info->longtitude;
   observer.lat = info->latitude;
-  get_hrz_from_equ_sidereal_time (&object, &observer, st, &position);
-  efprintf ("az", "%i (%s)", (int) position.az, hrz_to_nswe (&position));
+  ln_get_hrz_from_equ_sidereal_time (&object, &observer, st, &position);
+  efprintf ("az", "%i (%s)", (int) position.az, ln_hrz_to_nswe (&position));
   efprintf ("alt", "%i", (int) position.alt);
   efprintf ("axis count 0", "%f", info->axis0_counts);
   efprintf ("axis count 1", "%f", info->axis1_counts);
