@@ -20,17 +20,18 @@
 #include <syslog.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "../utils/hms.c"
 
-char *port_dev;	// device name
-int port;		// port descriptor
-double park_dec;	// parking declination
+char *port_dev;			// device name
+int port;			// port descriptor
+double park_dec;		// parking declination
 
 #define PORT_TIME_OUT 5;	// port timeout
 
-pthread_mutex_t &tel_mutex;	// lock for port access
-pthread_mutex_t &mov_mutex;	// lock for moving
+pthread_mutex_t tel_mutex = PTHREAD_MUTEX_INITIALIZER;	// lock for port access
+pthread_mutex_t mov_mutex = PTHREAD_MUTEX_INITIALIZER;	// lock for moving
 
 /* init to given port
  * 
@@ -38,38 +39,37 @@ pthread_mutex_t &mov_mutex;	// lock for moving
  * 
  * @return 0 on succes, -1 & set errno otherwise
  */
-int init(const char *devptr)
+int
+init (const char *devptr)
 {
   struct termios tel_termios;
-  openlog( "LX200", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1 );	// open syslog
-  port_dev = malloc( strlen( devptr ) + 1 );
-  strcpy( port_dev, devptr );
-  port = open( port_dev, O_RDWR );
-  if ( open == -1 ) 
-	  return -1;
+  openlog ("LX200", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);	// open syslog
+  port_dev = malloc (strlen (devptr) + 1);
+  strcpy (port_dev, devptr);
+  port = open (port_dev, O_RDWR);
+  if (port == -1)
+    return -1;
 
-  tel_mutex = PTHREAD_MUTEX_INITIALIZER;
-  mov_mutex = PTHREAD_MUTEX_INITIALIZER;
+  if (tcgetattr (port, &tel_termios) == -1)
+    return -1;
 
-  if ( tcgetattr (port, &tel_termios ) == -1 )
-	 return -1;
-  
-  if ( cfsetospeed( &tel_termios, B9600) == -1 ||
-		  cfsetispeed( &tel_termios, B9600) == -1 )
-	  return -1;
+  if (cfsetospeed (&tel_termios, B9600) == -1 ||
+      cfsetispeed (&tel_termios, B9600) == -1)
+    return -1;
   tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
   tel_termios.c_oflag = 0;
-  tel_termios.c_cflag = ( tel_termios.c_cflag & ~(TERMIOS.CSIZE) | TERMIOS.CS8 ) & ~(TERMIOS.PARENB | TERMIOS.PARODD);
-  tel_termiso.c_lflag = 0;
+  tel_termios.c_cflag =
+    ((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
+  tel_termios.c_lflag = 0;
   tel_termios.c_cc[VMIN] = 1;
   tel_termios.c_cc[VTIME] = 5;
 
-  if ( tcsetattr (port, TCSANOW, &tel_termios) == -1 )
+  if (tcsetattr (port, TCSANOW, &tel_termios) == -1)
     return -1;
 
-  syslog (LOG_DEBUG, "Initialization complete" );
+  syslog (LOG_DEBUG, "Initialization complete");
 
-  return tcflush( port, TCIOFLUSH);
+  return tcflush (port, TCIOFLUSH);
 }
 
 /* Reads some data directly from port
@@ -83,32 +83,35 @@ int init(const char *devptr)
  * @param count how much data will be readed
  * @return -1 on failure, otherwise number of read data 
  */
-int tel_read( char *buf, int count )
+int
+tel_read (char *buf, int count)
 {
   int readed;
   fd_set pfds;
   struct timeval tv;
 
-  tv.sec = PORT_TIME_OUT;
-  tv.usec = 0;
-  
-  for (readed = 0 ; readed < count ; readed++ )
-  {
-    FD_ZERO( &pfds );
-    FD_SET( port, &pfds );
-    if ( select(port + 1, &pfds, NULL ,NULL , &tv) == 1)
-      return -1;
+  tv.tv_sec = PORT_TIME_OUT;
+  tv.tv_usec = 0;
 
-    if (FD_ISSET( port, &pfds) ) {
-      if ( read( port, &buf[readed], 1) == -1 )
-        return -1;
+  for (readed = 0; readed < count; readed++)
+    {
+      FD_ZERO (&pfds);
+      FD_SET (port, &pfds);
+      if (select (port + 1, &pfds, NULL, NULL, &tv) == 1)
+	return -1;
+
+      if (FD_ISSET (port, &pfds))
+	{
+	  if (read (port, &buf[readed], 1) == -1)
+	    return -1;
+	}
+      else
+	{
+	  syslog (LOG_DEBUG, "Cannot retrieve data from port");
+	  errno = EIO;
+	  return -1;
+	}
     }
-    else {
-      syslog (LOG_DEBUG, "Cannot retrieve data from port" );
-      errno = EIO; 
-      return -1;
-    }
-  }
   return readed;
 }
 
@@ -118,18 +121,20 @@ int tel_read( char *buf, int count )
  * @see tel_read() for description
  */
 
-int tel_read_hash( char *buf, int count ) {
+int
+tel_read_hash (char *buf, int count)
+{
   int readed;
   buf[0] = 0;
-  
-  for (readed = 0 ; readed < count && buf[readed] != '#' ;
-   readed++) {
-    if ( tel_read( &buf[readed], 1 ) == -1 )
-      return -1;
-  }
-  if ( buf[readed] == '#' )
+
+  for (readed = 0; readed < count && buf[readed] != '#'; readed++)
+    {
+      if (tel_read (&buf[readed], 1) == -1)
+	return -1;
+    }
+  if (buf[readed] == '#')
     buf[readed] = 0;
-  syslog (LOG_DEBUG, "Hash-readed:'%s'", buf );
+  syslog (LOG_DEBUG, "Hash-readed:'%s'", buf);
   return readed;
 }
 
@@ -142,11 +147,13 @@ int tel_read_hash( char *buf, int count ) {
  * @return -1 on failure, count otherwise
  */
 
-int tel_write( char *buf, int count ) {
-  syslog( LOG_DEBUG, "will write:'%s'", buf);
-  return write(port, buf, count); 
+int
+tel_write (char *buf, int count)
+{
+  syslog (LOG_DEBUG, "will write:'%s'", buf);
+  return write (port, buf, count);
 }
-	
+
 
 /* Combine write && read together
  * Flush port to clear any gargabe.
@@ -160,22 +167,26 @@ int tel_write( char *buf, int count ) {
  * @return -1 and set errno on failure, rcount otherwise
  */
 
-int tel_write_read( char *wbuf, int wcount, char *rbuf, int rcount) {
+int
+tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
+{
   int tmp_rcount = -1;
-  if ( !( errno = pthread_mutex_lock (&tel_mutex) ) )
+  if (!(errno = pthread_mutex_lock (&tel_mutex)))
     return -1;
-  if ( tcflush(port, TCIOFLUSH) == -1)
-    goto unlock; // we need to unlock
-  if ( tel_write(wbuf, wcount) == -1 )
+  if (tcflush (port, TCIOFLUSH) == -1)
+    goto unlock;		// we need to unlock
+  if (tel_write (wbuf, wcount) == -1)
     goto unlock;
-  
-  tmp_rcount = tel_read( rbuf, rcount );
+
+  tmp_rcount = tel_read (rbuf, rcount);
 
 unlock:
-  if ( !( errno = pthread_mutex_unlock (&tel_mutex) ) ) {
-    syslog( LOG_EMERG, "Cannot unlock tel_mutex in tel_write_read:%s", strerror);
-    return -1;
-  }
+  if (!(errno = pthread_mutex_unlock (&tel_mutex)))
+    {
+      syslog (LOG_EMERG, "Cannot unlock tel_mutex in tel_write_read:%s",
+	      strerror (errno));
+      return -1;
+    }
 
   return tmp_rcount;
 }
@@ -185,22 +196,26 @@ unlock:
  * @see tel_write_read for definition
  */
 
-int tel_write_read_hash( char *wbuf, int rcount, char *wbuf, int rcount ) {
+int
+tel_write_read_hash (char *rbuf, int rcount, char *wbuf, int wcount)
+{
   int tmp_rcount = -1;
-  if ( !( errno = pthread_mutex_lock (&tel_mutex) ) )
+  if (!(errno = pthread_mutex_lock (&tel_mutex)))
     return -1;
-  if ( tcflush(port, TCIOFLUSH) == -1)
-    goto unlock; // we need to unlock
-  if ( tel_write(wbuf, wcount) == -1 )
+  if (tcflush (port, TCIOFLUSH) == -1)
+    goto unlock;		// we need to unlock
+  if (tel_write (wbuf, wcount) == -1)
     goto unlock;
-  
-  tmp_rcount = tel_read_hash( rbuf, rcount );
+
+  tmp_rcount = tel_read_hash (rbuf, rcount);
 
 unlock:
-  if ( !( errno = pthread_mutex_unlock (&tel_mutex) ) ) {
-    syslog( LOG_EMERG, "Cannot unlock tel_mutex in tel_write_read_hash:%s", strerror);
-    return -1;
-  }
+  if (!(errno = pthread_mutex_unlock (&tel_mutex)))
+    {
+      syslog (LOG_EMERG, "Cannot unlock tel_mutex in tel_write_read_hash:%s",
+	      strerror (errno));
+      return -1;
+    }
 
   return tmp_rcount;
 }
@@ -217,10 +232,12 @@ unlock:
  * @param new_rate New rate to set. Uses RATE_<SPEED> constant.
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
-int tel_set_rate( char new_rate) {
+int
+tel_set_rate (char new_rate)
+{
   char command[6];
-  sprintf( command, "#:R%c#", new_rate );
-  return tel_write( command, 5);
+  sprintf (command, "#:R%c#", new_rate);
+  return tel_write (command, 5);
 }
 
 /* Start slew. Again for completness?
@@ -229,28 +246,34 @@ int tel_set_rate( char new_rate) {
  * @param direction direction
  * @return -1 on failure & set errnom, 5 (>=0) otherwise
  */
-int tel_start_slew( char direction) {
+int
+tel_start_slew (char direction)
+{
   char command[6];
-  sprintf( command, "#:M%c#", direction );
-  tel_write(command ,5);
+  sprintf (command, "#:M%c#", direction);
+  return tel_write (command, 5) == 1 ? -1 : 0;
 }
 
 /* Stop sleew. Again only for completness?
  * 
  * @see tel_start_slew for direction.	
  */
-int tel_stop_slew( char direction ) {
+int
+tel_stop_slew (char direction)
+{
   char command[6];
-  sprintf( command, "#:Q%c#", direction );
-  tel_write(command ,5);
+  sprintf (command, "#:Q%c#", direction);
+  return tel_write (command, 5) == -1 ? -1 : 0;
 }
 
 /* Disconnect lx200.
  *
  * @return -1 on failure and set errno, 0 otherwise
  */
-int tel_disconnect(void) {
- return close(port);
+int
+tel_disconnect (void)
+{
+  return close (port);
 }
 
 /* Reads some value from lx200 in hms format
@@ -259,11 +282,13 @@ int tel_disconnect(void) {
  * @param hmsptr where hms will be stored
  * @return -1 and set errno on error, otherwise 0
  */
-int tel_read_hms(double *hmsptr, char *command) {
+int
+tel_read_hms (double *hmsptr, char *command)
+{
   char wbuf[11];
-  if ( tel_write_read_hash(command, strlen(command), wbuf, 10) == -1)
+  if (tel_write_read_hash (command, strlen (command), wbuf, 10) == -1)
     return -1;
-  *raptr = hmstod(wbuf);
+  *hmsptr = hmstod (wbuf);
   if (errno)
     return -1;
   return 0;
@@ -273,56 +298,60 @@ int tel_read_hms(double *hmsptr, char *command) {
  * @param raptr where ra will be stored
  * @return -1 and set errno on error, otherwise 0
  */
-int tel_read_ra(double *raptr) {
-  return tel_read_hms(decptr, "#:GR#");
+int
+tel_read_ra (double *raptr)
+{
+  return tel_read_hms (raptr, "#:GR#");
 }
 
 /* Reads LX200 declination.
  * @param decptr where dec will be stored 
  * @return -1 and set errno on error, otherwise 0
  */
-int tel_read_dec(double *decptr) {
-  return tel_read_hms(decptr, "#:GD#");
+int
+tel_read_dec (double *decptr)
+{
+  return tel_read_hms (decptr, "#:GD#");
 }
 
 /* Returns LX200 local time.
  * @param tptr where time will be stored
  * @return -1 and errno on error, otherwise 0
  */
-int tel_read_localtime(double *tptr) {
-  return tel_read_hms(decptr, "#:GL#");
-}
-
-/* Returns LX200 local time.
- * @param tptr where time will be strored
- * @return -1 and errno on error, otherwise 0
- */
-int tel_read_localtime(double *tptr) {
-  return tel_read_hms(decptr, "#:GL#");
+int
+tel_read_localtime (double *tptr)
+{
+  return tel_read_hms (tptr, "#:GL#");
 }
 
 /* Returns LX200 sideral time.
  * @param tptr where time will be stored
  * @return -1 and errno on error, otherwise 0
  */
-int tel_read_sideraltime(double *tptr) {
-  return tel_read_hms(decptr, "#:GS#");
+int
+tel_read_sideraltime (double *tptr)
+{
+  return tel_read_hms (tptr, "#:GS#");
 }
 
 /* Reads LX200 latitude.
  * @param latptr where latitude will be stored  
  * @return -1 and errno on error, otherwise 0
  */
-int tel_read_latitude(double *tptr) {
-  return tel_read_hms(decptr, "#:Gt#");
+int
+tel_read_latitude (double *tptr)
+{
+  return tel_read_hms (tptr, "#:Gt#");
 }
 
 /* Reads LX200 longtitude.
  * @param latptr where longtitude will be stored  
  * @return -1 and errno on error, otherwise 0
  */
-int tel_read_longtitude(double *tptr) {
-  return tel_read_hms(decptr, "#:Gg#");
+int
+tel_read_longtitude (double *tptr)
+{
+  return tel_read_hms (tptr, "#:Gg#");
 }
 
 /* Repeat LX200 write
@@ -331,22 +360,26 @@ int tel_read_longtitude(double *tptr) {
  *
  * @param command command to write on port
  */
-int tel_rep_write(command) {
+int
+tel_rep_write (char *command)
+{
   int count;
   char retstr;
-  for (count = 0; count < 200; count++) {
-    if ( tel_write_read(command, strlen(command), &retstr, 1) == -1 )
+  for (count = 0; count < 200; count++)
+    {
+      if (tel_write_read (command, strlen (command), &retstr, 1) == -1)
+	return -1;
+      if (retstr == '1')
+	break;
+      sleep (1);
+      syslog (LOG_DEBUG, "tel_rep_write - for %i time.", count);
+    }
+  if (count == 200)
+    {
+      syslog (LOG_ERR, "tel_rep_write unsucessful due to incorrect return.");
+      errno = EIO;
       return -1;
-    if ( retstr == '1')
-      break;
-    sleep(1);
-    syslog( LOG_DEBUG, "tel_rep_write - for %i time.", count);
-  }
-  if ( count == 200 ) {
-    syslog( LOG_ERR, "tel_rep_write unsucessful due to incorrect return.");
-    errno = EIO;
-    return -1;
-  }
+    }
   return 0;
 }
 
@@ -354,62 +387,68 @@ int tel_rep_write(command) {
  * @param ra right ascenation to set in decimal hours
  * @return -1 and errno on error, otherwise 0
  */
-int tel_write_ra(double ra) {
+int
+tel_write_ra (double ra)
+{
   char command[14];
-  int h,m,s;
-  if ( ra<0) 
-    ra = floor( ra/24 ) * -24 + ra; //normalize ra
-  if ( ra>24 )
-    ra = ra - floor (ra/24) * 24;
-  h = floor(ra);
-  m = floor((ra-h)*60);
-  s = floor((ra-h-m/60)*3600);  
-  if ( snprintf( command, 13, "#:Sr%02d:%02d:%02d#", h, m ,s) == -1)
+  int h, m, s;
+  if (ra < 0)
+    ra = floor (ra / 24) * -24 + ra;	//normalize ra
+  if (ra > 24)
+    ra = ra - floor (ra / 24) * 24;
+  h = floor (ra);
+  m = floor ((ra - h) * 60);
+  s = floor ((ra - h - m / 60) * 3600);
+  if (snprintf (command, 13, "#:Sr%02d:%02d:%02d#", h, m, s) == -1)
     return -1;
-  return tel_rep_write(command);
+  return tel_rep_write (command);
 }
 
 /* Set LX200 declination
  * @param dec declination to set in decimal degrees
  * @return -1 and errno on error, otherwise 0
  */
-int tel_write_dec(double dec) {
+int
+tel_write_dec (double dec)
+{
   char command[15];
-  int h,m,s;
-  if ( ra<0 ) 
-    ra = floor( ra/90 ) * -90 + ra; //normalize dec
-  if ( ra>90 )
-    ra = ra - floor (ra/90) * 90;
-  h = floor(dec);
-  m = floor((dec-h)*60);
-  s = floor((dec-h-m/60)*3600);
-  if ( snprintf( command, 14, "#:Sd%+02d\xdf%02d:%02d#", h, m ,s) == -1)
+  int h, m, s;
+  if (dec < 0)
+    dec = floor (dec / 90) * -90 + dec;	//normalize dec
+  if (dec > 90)
+    dec = dec - floor (dec / 90) * 90;
+  h = floor (dec);
+  m = floor ((dec - h) * 60);
+  s = floor ((dec - h - m / 60) * 3600);
+  if (snprintf (command, 14, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) == -1)
     return -1;
-  return tel_rep_write(command);
-} 
+  return tel_rep_write (command);
+}
 
-/* Move LX200 to new coordinates
+/* Slew (=set) LX200 to new coordinates
  * @param ra new right ascenation
  * @param dec new declination
  * @exception EINVAL When telescope is below horizont, or upper limit was reached
  * @return -1 and errno on exception, otherwise 0
  */
-int tel_move_to(ra, dec) {
+int
+tel_slew_to (ra, dec)
+{
   char retstr;
-  int max_read = 200;  // maximal read till # is encountered
-  if (tel_write_ra(ra) == -1 || tel_write_dec(dec) == -1)
+  int max_read = 200;		// maximal read till # is encountered
+  if (tel_write_ra (ra) == -1 || tel_write_dec (dec) == -1)
     return -1;
-  if (tel_write_read("#:MS#", 5, &retstr, 1) == -1) 
+  if (tel_write_read ("#:MS#", 5, &retstr, 1) == -1)
     return -1;
-  if ( retstr == '0' ) 
+  if (retstr == '0')
     return 0;
   retstr = 0;
-  while ( max_read > 0 && retstr !='#' ) 
-    if ( tel_read(&retstr, 1) == -1 )
+  while (max_read > 0 && retstr != '#')
+    if (tel_read (&retstr, 1) == -1)
       return -1;
   errno = EINVAL;
   return -1;
-
+}
 
 /* Check, if telescope match given coordinates
  *
@@ -417,71 +456,124 @@ int tel_move_to(ra, dec) {
  * @param dec target declination
  * @return -1 and errno on exception, 0 if matched, 1 if not matched
  */
-int tel_check_coords(ra, dec) {
+int
+tel_check_coords (ra, dec)
+{
   double err_ra, err_dec;
-  if ( (tel_read_ra(&err_ra) == -1) || (tel_read_dec(&err_dec) == -1) )
+  if ((tel_read_ra (&err_ra) == -1) || (tel_read_dec (&err_dec) == -1))
     return -1;
   err_ra -= ra;
   err_dec -= dec;
-  if (fabs(err_ra) > 0.05 or fabs(err_dec) > 0.5) 
-    return 1; 
+  if (fabs (err_ra) > 0.05 || fabs (err_dec) > 0.5)
+    return 1;
   return 0;
 }
-	def _moveto(self,newRA,newDec):
-		"Internal, will moto to new RA and dec"
-		self._moving_lock.acquire()
-		try:
-			i=self.slewtocoords(newRA,newDec)
-			if (i):
-				rtlog.log('telescope','Invalid movement: RA:'+str(newRA)+' DEC:'+str(newDec))
-				raise TelescopeInvalidMovement
-				return i
-			self.silence=1
-			timeout=time.time()+100 # timeout, wait 100 seconds to reach target
-			while (time.time()<timeout) and (not(self.checkcoords(newRA,newDec))):
-				# wait for a bit, telescope get confused?? when you check for ra and dec often and sometime doesn't move to required location
-				# this is just a theory, which has to be proven
-				time.sleep(2)
-				self.silence=0
-			if time.time()>timeout:
-				msg="Timeout during moving to ra="+str(newRA)+" dec="+str(newDec)+". Actual ra="+str(self.getra())+" dec="+str(self.getdec())
-				self._log("telescope",msg)
-				raise TelescopeTimeout,msg
-		finally:
-			self._moving_lock.release()
-			
-		# need to sleep a while, waiting for final precise adjustement of the scope, which could be checked by checkcoords - the scope newer gets to precise position, it just get to something about that, so we could program checkcoords to check for precise position.  
-		time.sleep(5)
-		return 0
 
-	def moveto(self,newRA,newDec):
-		"""Will move to and wait for completition
-		Returns 0: error
-						1: succeded"""
-		self._log("telescope","moveto: RA:"+str(newRA)+" Dec:"+str(newDec))
-		for i in range(0,5):
-			try:
-				self._moveto(newRA+i*0.05,newDec)
-				self._log("telescope","moveto finished")
-				return 1 
-			except TelescopeInvalidMovement:
-				return 0
-			except TelescopeTimeout:
-				self._log("telescope",str(i)+". timeout during moveto "+str(newRA)+" "+str(newDec))
+/* Move telescope to new location, wait for completition, then send
+ * message.
+ *
+ * @param ra target right ascenation
+ * @param dec target declination
+ * @return -1 and errno on error, 0 otherwise
+ * @execption ETIMEDOUT when timeout occurs
+ */
+int
+tel_move_to (ra, dec)
+{
+  int timeout;
+  int ret;
+  syslog (LOG_INFO, "tel move_to ra:%d dec:%d", ra, dec);
+  if (pthread_mutex_lock (&mov_mutex) == -1)
+    return -1;
+  if (!(ret = tel_slew_to (ra, dec)))
+    {
+      syslog (LOG_ERR, "Cannot move to ra:%d dec:%d, slew return %i", ra, dec,
+	      ret);
+      goto unlock;
+    }
+  timeout = time (NULL) + 100;	// it's quite reasonably to hope that call will not fail
+  while ((time (NULL) <= timeout) && (!tel_check_coords (ra, dec)))
+    sleep (2);
+  // wait for a bit, telescope get confused?? when you check for ra 
+  // and dec often and sometime doesn't move to required location
+  // this is still just a theory, which waits for final proof
 
-		msg="Too much timeouts during moving to ra="+str(newRA)+" dec="+str(newDec)+". Actual ra="+str(self.getra())+" dec="+str(self.getdec()+", exiting")
-		self._log("telescope",msg)
-		raise TelescopeError,msg	
-	
-	def setto(self,ra,dec):
-		"Will set ra and dec) to given values"
-		self._setra(ra)
-		self._setdec(dec)
-		a=self._writereadhash("#:CM#",100)
-		if not(self.checkcoords(ra,dec)):
-			raise TelescopeError,"Ra and dec not set!! Ra="+str(ra)+" Dec="+str(dec)
-		
-	
+  if (time (NULL) > timeout)
+    {
+      syslog (LOG_ERR, "Timeout during moving ro ra:%d dec:%d.", ra, dec);	// mayby will be handy to add call to tel_get_ra+dec
+      // to obtain current ra and dec
+      if (pthread_mutex_unlock (&mov_mutex) == -1)
+	syslog (LOG_EMERG, "Cannot unlock mov_mutex in tel_move_to:%s",
+		strerror (errno));
+      errno = ETIMEDOUT;
+      return -1;
+    }
+  sleep (5);
+  // need to sleep a while, waiting for final precise adjustement 
+  // of the scope, which could be checked by checkcoords - the scope 
+  // newer gets to precise position, it just get to something about 
+  // that, so we could program checkcoords to check for precise position.  
+  // Also good to wait till the things settle down.
+unlock:
+  if ((ret = pthread_mutex_unlock (&mov_mutex)) == -1)
+    syslog (LOG_EMERG, "Cannot unlock mov_mutex in tel_move_to:%s",
+	    strerror (errno));
+  syslog (LOG_DEBUG, "tel_move_to ra:%d dec:%d finished", ra, dec);
+  return ret;
+}
+
+/* Repeat move_to 5 times, with a bit changed location.
+ * Used to uvercome LX200 error.
+ *
+ * @see tel_move_to
+ */
+int
+tel_rep_move_to (double ra, double dec)
+{
+  int i;
+  for (i = 0; i < 5; i++)
+    if (!tel_move_to (ra, dec))
+      {
+	return 0;		// we finished move without error
+      }
+    else
+      {
+	if (errno != ETIMEDOUT)
+	  {
+	    return -1;		// some error occured
+	  }
+	// when we have ETIMEDOUT, let's try again.
+	ra = ra + i * 0.05;	// magic value, most often helps
+      }
+  // when we got so far, something realy wrong must happen
+  syslog (LOG_EMERG, "Too much timeouts during moving to ra:%f dec:%f", ra,
+	  dec);
+  return -1;
+}
+
+/* Set telescope to match given coordinates
+ * This function is mainly used to tell the telescope, where it
+ * actually is at the beggining of observation (remember, that lx200
+ * doesn't have absolute position sensors)
+ * 
+ * @param ra setting right ascennation
+ * @param dec setting declination
+ * @return -1 and set errno on error, otherwise 0
+ */
+int
+tel_set_to (ra, dec)
+{
+  char readback[101];
+  if ((tel_write_ra (ra) == -1) || (tel_write_dec (dec) == -1))
+    return -1;
+  if (tel_write_read_hash ("#:CM#", 5, readback, 100) == -1)
+    return -1;
+  // since we are carring operation critical for next movements of telescope, 
+  // we are obliged to check its correctness 
+  return tel_check_coords (ra, dec);
+}
+
+/*
 int init(char *port)
 {
 		"""Is called after sucessfull detection of telescope to set needed values"""
@@ -497,7 +589,7 @@ int init(char *port)
 		# while a=="HIGH":
 		# 	a=self._writeread("#:P#",4)
 
-	def is_ready(self):
+int tel_is_ready():
 		"Will query if telescope present. If it's, call init routines"
 		try:
 			a=self._writeread("#:Gc#",5)
@@ -507,8 +599,9 @@ int init(char *port)
 		except TelescopeError:
 			return 0
 		return 1
-
-int park(void)
+ */
+int
+park (void)
 {
-	return moveto(0,park_dec);
+  return tel_move_to (0, 40);
 }
