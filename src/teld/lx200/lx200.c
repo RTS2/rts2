@@ -45,7 +45,7 @@
 int port = -1;
 
 //! sempahore id structure, we have two semaphores...
-int semid;
+int semid = -1;
 
 //! one semaphore for direct port control..
 #define SEM_TEL 	0
@@ -53,7 +53,7 @@ int semid;
 #define SEM_MOVE 	1
 
 //! telescope parking declination
-#define PARK_DEC	50
+#define PARK_DEC	0
 
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 /* union semun is defined by including <sys/sem.h> */
@@ -391,7 +391,7 @@ tel_rep_write (char *command)
  *
  * @return 0
  */
-int
+void
 tel_normalize (double *ra, double *dec)
 {
   if (*ra < 0)
@@ -471,9 +471,9 @@ telescope_init (const char *device_name, int telescope_id)
   if (port < 0)
     return -1;
 
-  if ((semid = semget (ftok (device_name, 0), 2, 0644)) < 0)
+  if ((semid = semget (ftok (device_name, 0), 2, 0644)) == -1)
     {
-      if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
+      if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) == -1)
 	{
 	  syslog (LOG_ERR, "semget: %m");
 	  return -1;
@@ -530,7 +530,7 @@ telescope_init (const char *device_name, int telescope_id)
       sem_buf.sem_num = SEM_MOVE;
       sem_buf.sem_op = -1;
       sem_buf.sem_flg = SEM_UNDO;
-      if (semop (semid, &sem_buf, 1) < 0)
+      if (semop (semid, &sem_buf, 1) == -1)
 	return -1;
       // that could be used to distinguish between long
       // short mode
@@ -666,7 +666,6 @@ int
 tel_slew_to (double ra, double dec)
 {
   char retstr;
-  int max_read = 200;		// maximal read till # is encountered
 
   tel_normalize (&ra, &dec);
 
@@ -731,7 +730,7 @@ tel_move_to (double ra, double dec)
 
   syslog (LOG_INFO, "LX200:tel move_to ra:%f dec:%f", ra, dec);
 
-  if (semop (semid, &sem_buf, 1) < 0)
+  if (semop (semid, &sem_buf, 1) == -1)
     return -1;
 
   sem_buf.sem_op = 1;
@@ -751,7 +750,7 @@ tel_move_to (double ra, double dec)
     {
       syslog (LOG_ERR, "LX200:Timeout during moving to ra:%f dec:%f.", ra, dec);	// mayby will be handy to add call to tel_get_ra+dec
       // to obtain current ra and dec
-      if (semop (semid, &sem_buf, 1) < 0)
+      if (semop (semid, &sem_buf, 1) == -1)
 	{
 	  syslog (LOG_EMERG, "LX200:Cannot perform semop in tel_move_to:%m");
 	  return -1;
@@ -850,7 +849,7 @@ telescope_set_to (double ra, double dec)
 
   syslog (LOG_INFO, "LX200:tel set_to ra:%f dec:%f", ra, dec);
 
-  if (semop (semid, &sem_buf, 1) < 0)
+  if (semop (semid, &sem_buf, 1) == -1)
     return -1;
 
   sem_buf.sem_op = 1;
@@ -887,7 +886,7 @@ telescope_correct (double ra, double dec)
   sem_buf.sem_op = -1;
   sem_buf.sem_flg = SEM_UNDO;
 
-  if (semop (semid, &sem_buf, 1) < 0)
+  if (semop (semid, &sem_buf, 1) == -1)
     return -1;
 
   syslog (LOG_INFO, "LX200:tel corect_to ra:%f dec:%f", ra, dec);

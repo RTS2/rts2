@@ -3,4 +3,5 @@
 Makefile
 Makefile.in
 rts2-centrald
+rts2-state
 test

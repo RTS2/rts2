@@ -168,10 +168,14 @@ teld_handle_command (char *command)
 	  || correction_number > correction_mark)
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
-				    "corections bigger than sane limit");
+				    "corections bigger then sane limit");
+	  syslog (LOG_INFO, "correction bigger then sane limit: %f %f",
+		  coord.ra, coord.dec);
 	  return -1;
 	}
 //      if (correction_mark < 2 && correction_mark - CORRECTION_BUF > correction_number)
+      syslog (LOG_INFO, "correction: ra %f dec %f mark %i\n", coord.ra,
+	      coord.dec, correction_mark);
       if (correction_mark - CORRECTION_BUF > correction_number)
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "old corection");
@@ -182,8 +186,6 @@ teld_handle_command (char *command)
 
       coord.ra += correction_buf[correction_number % CORRECTION_BUF].ra;
       coord.dec += correction_buf[correction_number % CORRECTION_BUF].dec;
-      syslog (LOG_INFO, "correction: ra %f dec %f mark %i\n", coord.ra,
-	      coord.dec, correction_mark);
       // update all corrections..
       for (i = 0; i < CORRECTION_BUF; i++)
 	{
