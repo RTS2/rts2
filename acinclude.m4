@@ -7,12 +7,12 @@ if test -z "$PG_CONFIG" ; then
 fi
 
 if test "$PG_CONFIG" = "no" ; then
-    echo "*** You must install PostgreSQL and pg_config. If pg_config is not"
-    echo "*** in PATH. Try to setup PG_CONFIG variable"
+    AC_MSG_ERROR(You must install PostgreSQL and pg_config. If pg_config is not in PATH, try to setup PG_CONFIG variable.)
 fi
 
-# FIXME: Replace `main' with a function in `-lpq':
-AC_CHECK_LIB([pq], [main])
+AC_CHECK_LIB([pq], [main], LIB_PQ="-lpq"; LIBS="-lpq $LIBS"; AC_SUBST(LIB_PQ), 
+AC_MSG_ERROR(You haven't pq library. Please obtain and install postgresql devel package.)
+)
 
 PG_CONFIG_LIBS=`$PG_CONFIG --libdir`
 PG_CONFIG_INCLUDES=`$PG_CONFIG --includedir`
@@ -41,9 +41,9 @@ if test "$ECPG" = "no" -o ! -x $ECPG ; then
     echo "*** in PATH, try to setup ECPG variable. ecpg is ussually in"
     echo "*** Postgresql-devel package."
 fi
+AC_CHECK_LIB([ecpg], [ECPGconnect], LIB_ECPG="-lecpg"; LIBS="-lecpg $LIBS"; AC_SUBST(LIB_ECPG),
+AC_MSG_ERROR(You haven't ecpg library. Please install libecpg-dev package."))
 
-# FIXME: Replace `main' with a function in `-lecpg':
-AC_CHECK_LIB([ecpg], [main])
 
 AC_SUBST(ECPG)
 ])
