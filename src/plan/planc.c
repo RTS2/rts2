@@ -37,7 +37,7 @@
 #include "../db/db.h"
 #include "../writers/process_image.h"
 
-#define EXPOSURE_TIME		30
+#define EXPOSURE_TIME		60
 
 struct device *telescope;
 
@@ -222,7 +222,7 @@ observe (int watch_status)
 
       if (obs_id >= 0 && last->id != tar_id)
 	{
-	  if (camera)
+	  if (camera && camera->statutes)
 	    t = camera->statutes[0].last_update;
 	  else
 	    time (&t);
@@ -403,7 +403,7 @@ main (int argc, char **argv)
     }
   if (devcli_command (telescope, NULL, "ready;info") < 0)
     {
-      perror ("devcli_write_read_camd telescope");
+      perror ("devcli_write_read telescope");
       return EXIT_FAILURE;
     }
 
@@ -437,13 +437,14 @@ loop:
 	  time (&t);
 	  printf ("waiting for night..%s", ctime (&t));
 	  fflush (stdout);
-	  if ((t = devcli_command (telescope, NULL, "park")))
-	    fprintf (stderr, "Error while moving telescope: %i", (int) t);
+	  if ((t = devcli_command (telescope, NULL, "ready;park")))
+	    fprintf (stderr, "Error while moving telescope: %i\n", (int) t);
 	  else
 	    printf ("PARK ok\n");
 //        devcli_wait_for_status (devcli_ser, SERVER_STATUS,
 //                                SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK,
 //                                SERVERD_NIGHT, 10);
+	  fflush (stdout);
 	  sleep (100);
 	}
     }
