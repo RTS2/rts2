@@ -27,6 +27,7 @@
 #include "../utils/devconn.h"
 #include "../utils/mkpath.h"
 #include "../utils/mv.h"
+#include "../writers/fits.h"
 #include "imghdr.h"
 #include "status.h"
 #include "phot_info.h"
@@ -79,6 +80,8 @@ phot_handler (struct param_status *params, struct phot_info *info)
 
 class DeviceWindow
 {
+private:
+  int save_fits;
 public:
   struct device *camera;
 
@@ -91,14 +94,13 @@ public:
 
   int hist[HISTOGRAM_LIMIT];
 
-
   float exposure_time;
 
   pthread_t thr;
   pthread_attr_t attrs;
 
     DeviceWindow (char *camera_name, Window root_window, int center,
-		  float exposure);
+		  float exposure, int i_save_fits);
 
    ~DeviceWindow ()
   {
@@ -113,7 +115,6 @@ public:
   static void *static_event_loop (void *arg)
   {
     return ((DeviceWindow *) arg)->event_loop (NULL);
-
   }
 
   int center_exposure (void)
@@ -206,6 +207,14 @@ public:
 	      case XK_o:
 		devcli_command_all (DEVICE_TYPE_PHOT, "stop");
 		break;
+	      case XK_y:
+		save_fits = 1;
+		printf ("Will write fits from %s\n", camera->name);
+		break;
+	      case XK_u:
+		save_fits = 0;
+		printf ("Don't write fits from %s\n", camera->name);
+		break;
 	      default:
 		// fprintf (stderr, "Unknow key pressed:%i\n", (int) ks);
 		break;
@@ -233,25 +242,57 @@ public:
   int data_handler (int sock, size_t size, struct image_info *image_info)
   {
     int i, j, k, width, height;
-    char *data, *d, *pix_data;
+    struct fits_receiver_data receiver;
+    struct tm gmt;
+    char *data = NULL, *d, *pix_data;
     unsigned short *im;
     unsigned short m;
     int ret = 0;
     ssize_t s;
+    int l_save_fits;
     XSetWindowAttributes xswa;
     struct imghdr *imghdr;
+    char *filename = NULL;
+    char filen[250];
 
     int ds;
+
+    l_save_fits = save_fits;
 
     unsigned short low, med, hig;
 
     printf ("reading data socket: %i size: %i\n", sock, size);
 
+    if (l_save_fits)
+    {
+        gmtime_r (&image_info->exposure_time, &gmt);
+        asprintf (&filename, "%s_%04i%02i%02i%02i%02i%02i.fits", image_info->camera_name,
+	      gmt.tm_year, gmt.tm_mon, gmt.tm_mday, gmt.tm_hour,
+	      gmt.tm_min, gmt.tm_sec);
+	strcpy (filen, filename);
+	printf ("filename: %s\n", filename);
+        if (fits_create (&receiver, filename) || fits_init (&receiver, size))
+         {
+           perror ("camc data_handler fits_init");
+           ret = -1;
+           goto out;
+         }
+    }
+
+    receiver.info = image_info;
+
     data = (char *) malloc (size * 2 + sizeof (struct imghdr));
     d = data;
 
     while ((s = devcli_read_data (sock, d, DATA_BLOCK_SIZE)) > 0)
+    {
+      if (l_save_fits)
+      {
+        if ((ret = fits_handler (d, s, &receiver)) < 0)
+	  goto out;
+      }
       d += s;
+    }
 
     if (s < 0)
       {
@@ -266,11 +307,20 @@ public:
 
     im = (unsigned short *) pix_data;
 
-
     imghdr = (struct imghdr *) data;
 
     width = imghdr->sizes[0];
     height = imghdr->sizes[1];
+
+    if (l_save_fits)
+    {
+      if (fits_write_image_info (&receiver, image_info, NULL) || fits_close (&receiver))
+      {
+        perror ("camc data_handler fits_write");
+        ret = -1;
+        goto out;
+      }
+    }
 
     if (!image)
       {
@@ -348,6 +398,7 @@ public:
 
   out:
     free (data);
+    free (filename);
     return ret;
   };
 
@@ -439,7 +490,7 @@ public:
 };
 
 DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
-			    float exposure)
+			    float exposure, int i_save_fits)
 {
   XSetWindowAttributes xswa;
   XTextProperty        window_title;
@@ -448,6 +499,8 @@ DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
   image = NULL;
   rgb[256];
   exposure_time = exposure;
+
+  save_fits = i_save_fits;
 
   window =
     XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,
@@ -517,6 +570,7 @@ main (int argc, char **argv)
 
   int center = 0;
   float exposure = 10.0;
+  int save_fits = 0;
 
   int c = 0;
 
@@ -535,9 +589,10 @@ main (int argc, char **argv)
 	{"exposure", 1, 0, 'e'},
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
+	{"save", 0, 0, 's'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:ce:p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "d:ce:p:hs", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -564,17 +619,24 @@ main (int argc, char **argv)
 	  port = atoi (optarg);
 	  break;
 	case 'h':
-	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n");
-	  printf ("\tcenter|c\t\tstart center exposure\n");
-	  printf ("\texposure|e\t\texposure time in seconds\n");
+	  printf ("Options:\n");
+	  printf ("\tport|p <port_num>   port of the server\n");
+	  printf ("\tcenter|c            start center exposure\n");
+	  printf ("\texposure|e          exposure time in seconds\n");
+	  printf ("\tsave|s              autosave images\n");
 	  printf ("Keys:\n"
 		  "\t1,2,3 .. binning 1x1, 2x2, 3x3\n"
 		  "\tq,a   .. increase/decrease exposure 0.01 sec\n"
 		  "\tw,s   .. increase/decrease exposure 0.1 sec\n"
 		  "\te,d   .. increase/decrease exposure 1 sec\n"
 		  "\tf     .. full frame exposure\n"
-		  "\tc     .. center (256x256) exposure\n");
+		  "\tc     .. center (256x256) exposure\n"
+		  "\ty     .. save fits file\n"
+		  "\tu     .. don't save fits file\n");
 	  exit (EXIT_SUCCESS);
+	case 's':
+	  save_fits = 1;
+	  break;
 	case '?':
 	  break;
 	default:
@@ -636,7 +698,7 @@ main (int argc, char **argv)
   for (i = 0; i < camera_num; i++)
     {
       camera_window[i] =
-	new DeviceWindow (camera_names[i], root_window, center, exposure);
+	new DeviceWindow (camera_names[i], root_window, center, exposure, save_fits);
     }
 
   printf ("waiting end\n");
