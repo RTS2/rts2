@@ -195,6 +195,10 @@ telescope_command_handler (struct param_status *params,
     return param_next_integer (params, &info->correction_mark);
   if (!strcmp (params->param_argv, "flip"))
     return param_next_integer (params, &info->flip);
+  if (!strcmp (params->param_argv, "axis0_counts"))
+    return param_next_double (params, &info->axis0_counts);
+  if (!strcmp (params->param_argv, "axis1_counts"))
+    return param_next_double (params, &info->axis1_counts);
   errno = EINVAL;
   return -1;
 };
