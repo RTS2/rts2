@@ -13,6 +13,7 @@ EPS = bootes.eps			\
       overview.eps			\
       state-serverd.eps			\
       state-camd.eps			\
+      state-cooling.eps			\
       state-teld.eps			\
       rts-1-packages.eps 		\
       vrstvy-architektura.eps 
