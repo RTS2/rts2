@@ -1,11 +1,16 @@
 # $Id$
 
-BIN = serverd
+BIN = serverd test
 
 all: $(BIN)
 
 include ../../make.conf
 
-LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD)
+LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD) -lnova
 
-serverd: serverd.o ../utils/devser.a
+serverd: serverd.o riseset.o ../utils/devser.a
+
+riseset.o:riseset.c
+	$(CC) $(CFLAGS) -c -o $@ $^ -lnova
+
+test: riseset.o

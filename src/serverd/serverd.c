@@ -22,6 +22,8 @@
 #include <time.h>
 #include <arpa/inet.h>
 
+#include "riseset.h"
+
 #include "../utils/devser.h"
 #include "../status.h"
 
@@ -57,6 +59,11 @@ struct client
 struct serverd_info
 {
   int priority_client;
+
+  int current_state;
+
+  int next_event_type;
+  time_t next_event_time;
 
   struct device devices[MAX_DEVICE];
   struct client clients[MAX_CLIENT];
@@ -97,6 +104,31 @@ find_device (char *name, int *id, struct device **device)
 }
 
 /*!
+ * Send IPC message to all clients.
+ *
+ * @param format	message format
+ * @param ...		format arguments
+ */
+int
+clients_all_msg_snd (char *format, ...)
+{
+  va_list ap;
+  int i;
+  va_start (ap, format);
+  for (i = 0; i < MAX_CLIENT; i++)
+    {
+      /* device exists */
+      if (*shm_clients[i].login)
+	{
+	  if (devser_2devser_message_va (i, format, ap))
+	    return -1;
+	}
+    }
+  va_end (ap);
+  return 0;
+}
+
+/*!
  * Send IPC message to one device.
  *
  * @param name		device name
@@ -134,13 +166,11 @@ device_msg_snd (char *name, char *format, ...)
  * @return 0 on success, -1 and set errno on any error
  */
 int
-devices_msg_snd (char *format, ...)
+devices_all_msg_snd (char *format, ...)
 {
   va_list ap;
   int i;
-
   va_start (ap, format);
-
   for (i = 0; i < MAX_DEVICE; i++)
     {
       /* device exists */
@@ -151,18 +181,13 @@ devices_msg_snd (char *format, ...)
 	}
     }
   va_end (ap);
-
   return 0;
 }
 
 int
 device_serverd_handle_command (char *command)
 {
-  if (strcmp (command, "priority_set") == 0)
-    {
-      // TODO  is it really needed???
-    }
-  else if (strcmp (command, "authorize") == 0)
+  if (strcmp (command, "authorize") == 0)
     {
       int client;
       int key;
@@ -216,7 +241,7 @@ device_serverd_handle_command (char *command)
 int
 clients_change_priority (time_t timeout)
 {
-  int new_priority_client = shm_info->priority_client;
+  int new_priority_client = -1;
   int new_priority_max = -2;
   int i;
 
@@ -230,22 +255,34 @@ clients_change_priority (time_t timeout)
 	}
     }
   shm_info->priority_client = new_priority_client;
-  return devices_msg_snd ("priority %i %i", new_priority_client, timeout);
+  return devices_all_msg_snd ("priority %i %i", new_priority_client, timeout);
 }
 
-/*!
- * Attach shared memory segments.
- */
-int
-serverd_init ()
+void *
+serverd_riseset_thread (void *arg)
 {
-  if (!shm_info)
+  time_t curr_time;
+  syslog (LOG_DEBUG, "riseset thread start");
+  while (1)
     {
-      shm_info = (struct serverd_info *) devser_shm_data_at ();
-      shm_clients = shm_info->clients;
-      shm_devices = shm_info->devices;
+      curr_time = time (NULL);
+      devser_shm_data_lock ();
+
+      next_event (&curr_time, &shm_info->next_event_type,
+		  &shm_info->next_event_time);
+      if (shm_info->current_state < SERVERD_MAINTANCE)
+	{
+	  shm_info->current_state = (shm_info->next_event_type + 3) % 4;
+	  devices_all_msg_snd ("current_state %i", shm_info->current_state);
+	  clients_all_msg_snd ("I current_state %i", shm_info->current_state);
+	}
+
+      devser_shm_data_unlock ();
+
+      syslog (LOG_DEBUG, "riseset thread sleeping %li seconds",
+	      shm_info->next_event_time - curr_time);
+      sleep (shm_info->next_event_time - curr_time);
     }
-  return 0;
 }
 
 /*!
@@ -281,6 +318,23 @@ serverd_exit (int status, void *arg)
   devser_shm_data_unlock ();
 }
 
+/*!
+ * @param new_state		new state, if -1 -> 3
+ */
+int
+serverd_change_state (int new_state)
+{
+  devser_shm_data_lock ();
+  if (new_state == -1)
+    shm_info->current_state = (shm_info->next_event_type + 3) % 4;
+  else
+    shm_info->current_state = new_state;
+  devices_all_msg_snd ("current_state %i", shm_info->current_state);
+  clients_all_msg_snd ("I current_state %i", shm_info->current_state);
+  devser_shm_data_unlock ();
+  return 0;
+}
+
 int
 client_serverd_handle_command (char *command)
 {
@@ -301,6 +355,9 @@ client_serverd_handle_command (char *command)
 	{
 	  shm_clients[serverd_id].authorized = 1;
 	  devser_dprintf ("logged_as %i", serverd_id);
+	  devser_shm_data_lock ();
+	  devser_dprintf ("I current_state %i", shm_info->current_state);
+	  devser_shm_data_unlock ();
 	  return 0;
 	}
       else
@@ -365,7 +422,7 @@ client_serverd_handle_command (char *command)
 	    }
 
 	  // prevent others from accesing priority
-	  // since we don't wont any other process to change
+	  // since we don't want any other process to change
 	  // priority while we are testing it
 	  devser_shm_data_lock ();
 
@@ -415,8 +472,20 @@ client_serverd_handle_command (char *command)
 	  device->authorizations[serverd_id] = key;
 	  devser_shm_data_unlock ();
 
-	  devser_dprintf ("authorization_key %i %i", dev_id, key);
+	  devser_dprintf ("authorization_key %s %i", dev_name, key);
 	  return 0;
+	}
+      else if (strcmp (command, "on") == 0)
+	{
+	  return serverd_change_state (-1);
+	}
+      else if (strcmp (command, "maintance") == 0)
+	{
+	  return serverd_change_state (SERVERD_MAINTANCE);
+	}
+      else if (strcmp (command, "off") == 0)
+	{
+	  return serverd_change_state (SERVERD_OFF);
 	}
     }
   devser_write_command_end (DEVDEM_E_COMMAND,
@@ -431,7 +500,18 @@ client_serverd_handle_command (char *command)
  * @param message	string message
  */
 int
-serverd_handle_msg (char *message)
+serverd_client_handle_msg (char *message)
+{
+  return devser_dprintf (message);
+}
+
+/*!
+ * Handle receiving of IPC message.
+ *
+ * @param message	string message
+ */
+int
+serverd_device_handle_msg (char *message)
 {
   return devser_message (message);
 }
@@ -471,7 +551,7 @@ serverd_handle_command (char *command)
 		strncpy (shm_clients[i].login, login, CLIENT_LOGIN_SIZE);
 		serverd_id = i;
 		shm_clients[i].pid = devser_child_pid;
-		if (devser_set_server_id (i, NULL))
+		if (devser_set_server_id (i, serverd_client_handle_msg))
 		  {
 		    devser_shm_data_unlock ();
 		    return -1;
@@ -528,7 +608,8 @@ serverd_handle_command (char *command)
 		shm_devices[i].port = port;
 		shm_devices[i].type = reg_type;
 		shm_devices[i].pid = devser_child_pid;
-		if (devser_set_server_id (i + MAX_CLIENT, serverd_handle_msg))
+		if (devser_set_server_id
+		    (i + MAX_CLIENT, serverd_device_handle_msg))
 		  {
 		    devser_shm_data_unlock ();
 		    return -1;
@@ -546,17 +627,20 @@ serverd_handle_command (char *command)
 		return -1;
 	      }
 
-	  devser_shm_data_unlock ();
 
 	  if (i == MAX_DEVICE)
 	    {
 	      devser_write_command_end (DEVDEM_E_SYSTEM,
 					"cannot allocate new device - not enough resources");
+	      devser_shm_data_unlock ();
 	      return -1;
 	    }
 
 	  server_type = DEVICE_SERVER;
 	  on_exit (serverd_exit, NULL);
+	  devser_message ("current_state %i", shm_info->current_state);
+	  devser_shm_data_unlock ();
+
 	  return 0;
 	}
       else
@@ -579,7 +663,6 @@ serverd_handle_command (char *command)
   return 0;
 }
 
-
 int
 main (void)
 {
@@ -596,5 +679,14 @@ main (void)
       syslog (LOG_ERR, "error in devser_init: %m");
       return -1;
     }
-  return devser_run (PORT, serverd_handle_command, serverd_init);
+
+  shm_info = (struct serverd_info *) devser_shm_data_at ();
+  shm_clients = shm_info->clients;
+  shm_devices = shm_info->devices;
+
+  shm_info->current_state = 0;
+
+  devser_thread_create (serverd_riseset_thread, NULL, 0, NULL, NULL);
+
+  return devser_run (PORT, serverd_handle_command);
 }
