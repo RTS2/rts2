@@ -46,6 +46,7 @@
 #define COMMAND_PHOTOMETER      'P'
 #define COMMAND_CHANGE		'C'
 #define COMMAND_WAIT            'W'
+#define COMMAND_SLEEP		'S'
 
 struct thread_list
 {
@@ -426,6 +427,7 @@ execute_camera_script (void *exinfo)
   int filter, count;
   int ret;
   time_t t;
+  time_t script_start;
   char s_time[27];
   struct timespec timeout;
   time_t now;
@@ -433,6 +435,8 @@ execute_camera_script (void *exinfo)
   { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS,
     INTEGRATION_PROGRESS
   } exp_state;
+
+  time (&script_start);
 
   switch (last->type)
     {
@@ -702,6 +706,38 @@ execute_camera_script (void *exinfo)
 	  pthread_mutex_lock (&script_thread_count_mutex);
 	  running_script_count++;
 	  pthread_mutex_unlock (&script_thread_count_mutex);
+
+	  break;
+	case COMMAND_SLEEP:
+
+	  command++;
+	  filter = strtol (command, &s, 10);
+	  if (s == command || (!isspace (*s) && *s))
+	    {
+	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+	      command = s;
+	      continue;
+	    }
+	  command = s;
+	  if (exp_state == EXPOSURE_PROGRESS)
+	    {
+	      devcli_command (camera, NULL, "readout 0");
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_READING, CAM_NOTREADING,
+				      MAX_READOUT_TIME);
+	      exp_state = NO_EXPOSURE;
+	    }
+
+	  time (&t);
+
+	  while (t - script_start < filter)
+	  {
+		int sl;
+		sl = filter - (t - script_start);
+		printf ("sleeping for %i seconds\n", sl);
+		sleep (sl);
+		time (&t);
+	  }
 
 	  break;
 	default:
