@@ -214,6 +214,8 @@ tcf_get_temperature (float *temperature)
 
   res = write (fd, "FTMPRO", 6);
 
+  res = read (fd, ret, 6);
+
   serial_deinit (fd);
 
   if (res > 0)
