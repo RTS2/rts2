@@ -1,0 +1,7 @@
+Makefile
+*.o
+*~
+core*
+camd_apogee
+camd_urvc
+camd_sbig
