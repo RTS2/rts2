@@ -1,7 +1,6 @@
 DROP VIEW targets_images;
 DROP VIEW targets_noimages;
 DROP VIEW targets_imgcount;
-DROP VIEW targets_altaz;
 DROP VIEW targets_enabled;
 DROP VIEW observations_images;
 DROP VIEW observations_imgcount;
@@ -30,15 +29,6 @@ SELECT tar_id, img_count
 	FROM targets_imgcount 
 UNION SELECT tar_id, img_count 
 	FROM targets_noimages;
-
-CREATE VIEW targets_altaz AS
-SELECT targets.*, 
-	obj_alt (tar_ra, tar_dec, 240000, mount_long, mount_lat)
-	AS alt, 
-	obj_az (tar_ra, tar_dec, 240000, mount_long, mount_lat) 
-	AS az
-	FROM mounts, targets
-	WHERE mount_name = 'T1';
 
 CREATE VIEW observations_noimages AS 
 SELECT observations.obs_id, 0 AS img_count 
