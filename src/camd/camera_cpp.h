@@ -7,7 +7,7 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
-#define MAX_CHIPS 2
+#define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
 class ChipSubset
@@ -54,19 +54,30 @@ protected:
   ChipSubset *chipSize;
   ChipSubset *chipReadout;
   ChipSubset *chipUsedReadout;
+
+  float pixelX;
+  float pixelY;
+
   int binningVertical;
   int binningHorizontal;
   int usedBinningVertical;
   int usedBinningHorizontal;
-  int pixelX;
-  int pixelY;
   float gain;
   int sendReadoutData (char *data, size_t data_size);
 public:
     CameraChip (int in_chip_id);
-    CameraChip (int in_chip_id, int in_width, int in_height, int in_pixelX,
-		int in_pixelY, float in_gain);
-   ~CameraChip (void);
+    CameraChip (int in_chip_id, int in_width, int in_height, float in_pixelX,
+		float in_pixelY, float in_gain);
+    virtual ~ CameraChip (void);
+  void setSize (int in_width, int in_height, int in_x, int in_y)
+  {
+    chipSize = new ChipSubset (in_x, in_y, in_width, in_height);
+    chipReadout = new ChipSubset (in_x, in_y, in_width, in_height);
+  }
+  virtual int init ()
+  {
+    return 0;
+  }
   int send (Rts2Conn * conn);
   virtual int setBinning (int in_vert, int in_hori)
   {
@@ -101,7 +112,11 @@ public:
   }
   int setExposure (float exptime);
   virtual long isExposing ();
-  int endExposure ();
+  virtual int endExposure ();
+  virtual int stopExposure ()
+  {
+    return endExposure ();
+  }
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int endReadout ();
   virtual int sendFirstLine ();
@@ -126,12 +141,15 @@ protected:
   int canDF;			// if the camera can make dark frames
   char ccdType[64];
   char serialNumber[64];
+protected:
+    virtual void cancelPriorityOperations ();
+
 public:
     Rts2DevCamera (int argc, char **argv);
-   ~Rts2DevCamera ();
+    virtual ~ Rts2DevCamera (void);
 
-  int init ();
-  int addConnection (int in_sock);
+  virtual int initChips ();
+  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   long checkExposures ();
   int checkReadouts ();
   int idle ();
@@ -162,7 +180,7 @@ public:
   virtual long camWaitExpose (int chip);
   virtual int camStopExpose (int chip)
   {
-    return -1;
+    return chips[chip]->stopExposure ();
   };
   virtual int camBox (int chip, int x, int y, int width, int height)
   {
