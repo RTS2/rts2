@@ -11,7 +11,7 @@ serverd: serverd.o riseset.o ../utils/devser.a
 
 riseset.o:riseset.c
 
-test: riseset.o
+test: riseset.o ../utils/config.o
 
 clean:
 	$(RM) *.o *~ $(BIN)

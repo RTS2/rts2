@@ -14,8 +14,7 @@
 
 #include "riseset.h"
 #include "status.h"
-
-#define EVEMOR_TIME		(1.0 / 24.0) * 2.0
+#include "../utils/config.h"
 
 int
 next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
@@ -31,7 +30,9 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
     {
       struct ln_rst_time t_rst;
       sun_naut =
-	get_solar_rst_horizont (t_jd, observer, NAUTIC_HORIZONT, &t_rst);
+	get_solar_rst_horizont (t_jd, observer,
+				get_double_default ("night_horizont", -8),
+				&t_rst);
       if (!rst_naut->rise && jd < t_rst.rise)
 	rst_naut->rise = t_rst.rise;
       if (!rst_naut->transit && jd < t_rst.transit)
@@ -39,7 +40,9 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
       if (!rst_naut->set && jd < t_rst.set)
 	rst_naut->set = t_rst.set;
       if (!get_solar_rst_horizont
-	  (t_jd, observer, SOLAR_STANDART_HORIZONT, &t_rst))
+	  (t_jd, observer,
+	   get_double_default ("day_horizont", SOLAR_STANDART_HORIZONT),
+	   &t_rst))
 	{
 	  *sun_rs = 1;
 	  if (!rst->set && jd < t_rst.set)
@@ -66,6 +69,8 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
   struct ln_rst_time rst, rst_naut;
 
   int sun_rs;
+  double eve_time = 7200;	// seconds
+  double mor_time = 1800;	// seconds
 
   next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs);
 
@@ -82,24 +87,26 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 	{
 	  if (rst.set < rst.rise)
 	    {
-	      if (jd_time > rst.set - EVEMOR_TIME)
+	      eve_time = get_double_default ("evening_time", eve_time) / 86400.0;	// get from config, convert to defaults
+	      mor_time =
+		get_double_default ("morning_time", mor_time) / 86400.0;
+	      if (jd_time > rst.set - eve_time)
 		{
 		  *curr_type = SERVERD_EVENING;
 		  *type = SERVERD_DUSK;
 		  get_timet_from_julian (rst.set, ev_time);
 		}
-	      else if (jd_time < rst.rise + EVEMOR_TIME - 1.0)
+	      else if (jd_time < rst.rise + mor_time - 1.0)
 		{
 		  *curr_type = SERVERD_MORNING;
 		  *type = SERVERD_DAY;
-		  get_timet_from_julian (rst.rise + EVEMOR_TIME - 1.0,
-					 ev_time);
+		  get_timet_from_julian (rst.rise + mor_time - 1.0, ev_time);
 		}
 	      else
 		{
 		  *curr_type = SERVERD_DAY;
 		  *type = SERVERD_EVENING;
-		  get_timet_from_julian (rst.set - EVEMOR_TIME, ev_time);
+		  get_timet_from_julian (rst.set - eve_time, ev_time);
 		}
 	    }
 	  else
