@@ -25,7 +25,7 @@
 
 #include "image_info.h"
 
-#define EXPOSURE_TIME		20
+#define EXPOSURE_TIME		60
 
 struct grb
 {
@@ -346,6 +346,11 @@ main (int argc, char **argv)
 	  pthread_mutex_lock (&observing_lock);
 	  get_hrz_from_equ (&observing.object, &observer,
 			    get_julian_from_sys (), &hrz);
+	  if (observing.grb_id < 100 && observing_count > 10)
+	    {
+	      observing.tar_id = -1;
+	      break;
+	    }
 	}
 
       devcli_server_command (NULL, "priority -1");

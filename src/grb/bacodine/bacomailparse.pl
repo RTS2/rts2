@@ -61,11 +61,11 @@ if ($id && $seqn && $ra && $dec && $title)
 	if ($id && $seqn && $ra && $dec && $title)
 	{
 		my $bacmail;
-		open $bacmail, "|/home/petr/rts2/src/grb/bacodine/bacmail";
+		open $bacmail, "|/home/petr/rts2/src/grb/bacodine/rts2-bacmail >> /home/petr/bac_out";
 		print $bacmail "$id $seqn $ra $dec $grb_date $title\n";
 		close $bacmail;
-		print "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_date $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
-		#system "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_date $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
+		#print "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_date $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
+		system "mail kvasar\@mujoskar.cz petr -s '$id $seqn $ra $dec $grb_date $title R$r T$t S$s AZ" . int($az). " ALT" . int($alt) . "'";
 	}
 } else {
 	print "BACODINE no position\n";
