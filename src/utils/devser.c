@@ -235,7 +235,7 @@ devdem_run (int port, devdem_handle_command_t handler)
 	}
 
       /* Service all the sockets with status or input pending. */
-	 if (FD_ISSET (i, &read_fd_set))
+      for (i = 0; i < FD_SETSIZE; ++i)
 	if (FD_ISSET (i, &read_fd_set))
 	  {
 	    if (i == sock)

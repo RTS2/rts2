@@ -100,7 +100,7 @@ libi vice.
 
 Priklad:
 
-/* @file Driver file for LX200 telescope
+/*! @file Driver file for LX200 telescope
 * 
 * Based on original c library for xephem writen by Ken Shouse
 * <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
@@ -116,7 +116,7 @@ lascaux.
 
 Dokumentace funkce:
 
-/* Reads some data directly from port
+/*! Reads some data directly from port
 * 
 * Log all flow as LOG_DEBUG to syslog
 * 
@@ -127,6 +127,8 @@ Dokumentace funkce:
 */
 int tel_read ( char *buf, int count )
 {
+
+POZOR: KOMENTAR MUSI ZACINAT '/*!'
 
 @param, @return je snad jasny. Na dalsi tagy se nejlepe ptejte u me,
 nebo na doxygenu.

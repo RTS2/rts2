@@ -54,11 +54,11 @@ teld_handle_command (char *buffer, int fd)
     return 0;
   if (strcmp (argv, "ready") == 0)
     {
-      if ((ret = tel_is_ready()) >= 0) 
-          devdem_dprintf(fd, "ready 1");
+      if ((ret = tel_is_ready ()) >= 0)
+	devdem_dprintf (fd, "ready 1");
       else
-          devdem_dprintf(fd, "ready 0");
-      goto end;  
+	devdem_dprintf (fd, "ready 0");
+      goto end;
     }
   if (strcmp (argv, "set") == 0)
     {
@@ -75,7 +75,7 @@ teld_handle_command (char *buffer, int fd)
 	  ret = -1;
 	}
       else
-	  ret = tel_set_to (ra, dec);
+	ret = tel_set_to (ra, dec);
       goto end;
     }
   if (strcmp (argv, "move") == 0)
@@ -93,74 +93,74 @@ teld_handle_command (char *buffer, int fd)
 	  ret = -1;
 	}
       else
-	  ret = tel_move_to (ra, dec);
+	ret = tel_move_to (ra, dec);
       goto end;
     }
   if (strcmp (argv, "ra") == 0)
     {
-      if ((ret = tel_read_ra(&dval)) >= 0) 
-          devdem_dprintf(fd, "ra %f\n", dval);
-      goto end;  
+      if ((ret = tel_read_ra (&dval)) >= 0)
+	devdem_dprintf (fd, "ra %f\n", dval);
+      goto end;
     }
   if (strcmp (argv, "dec") == 0)
     {
-      if ((ret = tel_read_dec(&dval)) >= 0) 
-          devdem_dprintf(fd, "dec %f\n", dval);
-      goto end;  
+      if ((ret = tel_read_dec (&dval)) >= 0)
+	devdem_dprintf (fd, "dec %f\n", dval);
+      goto end;
     }
   if (strcmp (argv, "park") == 0)
     {
-      ret = tel_park(); 
-      goto end;  
+      ret = tel_park ();
+      goto end;
     }
 // extended functions
   if (strcmp (argv, "lon") == 0)
     {
-      if ((ret = tel_read_longtitude(&dval)) >= 0) 
-          devdem_dprintf(fd, "dec %f\n", dval);
-      goto end;  
+      if ((ret = tel_read_longtitude (&dval)) >= 0)
+	devdem_dprintf (fd, "dec %f\n", dval);
+      goto end;
     }
   if (strcmp (argv, "lat") == 0)
     {
-      if ((ret = tel_read_latitude(&dval)) >= 0) 
-          devdem_dprintf(fd, "dec %f\n", dval);
-      goto end;  
+      if ((ret = tel_read_latitude (&dval)) >= 0)
+	devdem_dprintf (fd, "dec %f\n", dval);
+      goto end;
     }
   if (strcmp (argv, "lst") == 0)
     {
-      if ((ret = tel_read_siderealtime(&dval)) >= 0) 
-          devdem_dprintf(fd, "dec %f\n", dval);
-      goto end;  
+      if ((ret = tel_read_siderealtime (&dval)) >= 0)
+	devdem_dprintf (fd, "dec %f\n", dval);
+      goto end;
     }
   if (strcmp (argv, "loct") == 0)
     {
-      if ((ret = tel_read_localtime(&dval)) >= 0) 
-          devdem_dprintf(fd, "dec %f\n", dval);
-      goto end;  
+      if ((ret = tel_read_localtime (&dval)) >= 0)
+	devdem_dprintf (fd, "dec %f\n", dval);
+      goto end;
     }
   if (strcmp (argv, "exit") == 0)
     {
-     close(fd);
-     ret = -2;
-     goto end;  
+      close (fd);
+      ret = -2;
+      goto end;
     }
   if (strcmp (argv, "help") == 0)
-  {
-     devdem_dprintf (fd, "ready - is telescope ready to observe?\n");
-     devdem_dprintf (fd, "set - set telescope coordinates\n");
-     devdem_dprintf (fd, "move - move telescope\n");
-     devdem_dprintf (fd, "ra - telescope right ascenation\n");
-     devdem_dprintf (fd, "dec - telescope declination\n");
-     devdem_dprintf (fd, "park - park telescope\n");
-     devdem_dprintf (fd, "lon - telescope longtitude\n");
-     devdem_dprintf (fd, "lat - telescope latitude\n");
-     devdem_dprintf (fd, "lst - telescope local sidereal time\n");
-     devdem_dprintf (fd, "loct - telescope local time\n");
-     devdem_dprintf (fd, "exit - exit from main loop\n");
-     devdem_dprintf (fd, "help - print, what you are reading just now\n");
-     ret = errno = 0;
-     goto end;
-  }
+    {
+      devdem_dprintf (fd, "ready - is telescope ready to observe?\n");
+      devdem_dprintf (fd, "set - set telescope coordinates\n");
+      devdem_dprintf (fd, "move - move telescope\n");
+      devdem_dprintf (fd, "ra - telescope right ascenation\n");
+      devdem_dprintf (fd, "dec - telescope declination\n");
+      devdem_dprintf (fd, "park - park telescope\n");
+      devdem_dprintf (fd, "lon - telescope longtitude\n");
+      devdem_dprintf (fd, "lat - telescope latitude\n");
+      devdem_dprintf (fd, "lst - telescope local sidereal time\n");
+      devdem_dprintf (fd, "loct - telescope local time\n");
+      devdem_dprintf (fd, "exit - exit from main loop\n");
+      devdem_dprintf (fd, "help - print, what you are reading just now\n");
+      ret = errno = 0;
+      goto end;
+    }
   ret = -1;
   errno = EINVAL;
 end:
