@@ -171,10 +171,10 @@ dome_info (struct dome_info **info)
 int
 dome_off ()
 {
+  zavri ();
   handle_zasuvky (OFF);
   d_info.power_telescope = 0;
   d_info.power_cameras = 0;
-  zavri ();
   return 0;
 }
 

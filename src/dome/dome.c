@@ -32,7 +32,7 @@
 #define DEVICE_NAME		"DCM"
 #define DEVICE_PORT		5553	// default dome TCP/IP port
 
-char *dome_file = "/dev/ttyS0";
+char *dome_file = "/dev/ttyS7";
 
 void *
 observing (void *arg)
@@ -106,8 +106,6 @@ dome_handle_command (char *command)
     }
   else if (strcmp (command, "observing") == 0)
     {
-//      if (devdem_priority_block_start ())
-//      return -1;
       devdem_status_mask (0, DOME_DOME_MASK, DOME_OBSERVING,
 			  "switching dome to observing");
       if ((ret = devser_thread_create (observing, NULL, 0, NULL, NULL)) < 0)
@@ -115,13 +113,10 @@ dome_handle_command (char *command)
 	  devdem_status_mask (0, DOME_DOME_MASK, DOME_UNKNOW,
 			      "not observing - cannot create thread");
 	}
-//      devdem_priority_block_end ();
-//      return ret;
+      return ret;
     }
   else if (strcmp (command, "standby") == 0)
     {
-//      if (devdem_priority_block_start ())
-//      return -1;
       devdem_status_mask (0, DOME_DOME_MASK, DOME_STANDBY,
 			  "switching dome to standby");
       if ((ret = devser_thread_create (standby, NULL, 0, NULL, NULL)) < 0)
@@ -129,13 +124,10 @@ dome_handle_command (char *command)
 	  devdem_status_mask (0, DOME_DOME_MASK, DOME_UNKNOW,
 			      "not standby - cannot create thread");
 	}
-//      devdem_priority_block_end ();
-//      return ret;
+      return ret;
     }
   else if (strcmp (command, "off") == 0)
     {
-//      if (devdem_priority_block_start ())
-//      return -1;
       devdem_status_mask (0, DOME_DOME_MASK, DOME_OFF,
 			  "switching dome to off");
       if ((ret = devser_thread_create (off, NULL, 0, NULL, NULL)) < 0)
@@ -143,8 +135,7 @@ dome_handle_command (char *command)
 	  devdem_status_mask (0, DOME_DOME_MASK, DOME_UNKNOW,
 			      "not off - cannot create thread");
 	}
-//      devdem_priority_block_end ();
-//      return ret;
+      return ret;
     }
 
   else if (strcmp (command, "help") == 0)
@@ -176,11 +167,13 @@ dome_handle_status (int status, int old_status)
     case SERVERD_NIGHT:
     case SERVERD_DUSK:
     case SERVERD_DAWN:
+    case SERVERD_MORNING:
       if (status < 10)
 	ret = dome_observing ();
       else
 	ret = dome_standby ();
       break;
+
     default:			/* SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF */
       ret = dome_off ();
     }
