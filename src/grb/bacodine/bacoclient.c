@@ -60,34 +60,34 @@ wait_loop:
   FD_SET (sock, &read_fd);
 
   printf ("Waiting..\n");
-  while ((*logi) && select (FD_SETSIZE, &read_fd, NULL, NULL, &to) == 1)
+  while ((*logi) && select (FD_SETSIZE, &read_fd, NULL, NULL, &to) == 1
+	 && read (sock, &c, sizeof (c)) == sizeof (c))
     {
-      while (*logi && read (sock, &c, sizeof (c)) == sizeof (c))
+      write (1, &c, sizeof (c));
+      if (!go_for)
 	{
-	  write (1, &c, sizeof (c));
-	  if (!go_for)
+	  if (c == *login_accepted)
 	    {
-	      if (c == *login_accepted)
-		{
-		  go_for = 1;
-		  logi = login_accepted;
-		}
-	      else if (c == *login_proxy_user)
-		{
-		  go_for = 2;
-		  logi = login_proxy_user;
-		}
+	      go_for = 1;
+	      logi = login_accepted;
 	    }
-	  if (c == *logi)
+	  else if (c == *login_proxy_user)
 	    {
-	      write (1, "*", 1);
-	      logi++;
-	    }
-	  else
-	    {
-	      go_for = 0;
+	      go_for = 2;
+	      logi = login_proxy_user;
 	    }
 	}
+      if (c == *logi)
+	{
+	  write (1, "*", 1);
+	  logi++;
+	}
+      else
+	{
+	  go_for = 0;
+	}
+      FD_ZERO (&read_fd);
+      FD_SET (sock, &read_fd);
     }
 
   if (go_for == 1 && !*logi)
@@ -107,21 +107,21 @@ wait_loop:
   logi = login_proxy_pass;
 
   printf ("Waiting..\n");
-  while ((*logi) && select (FD_SETSIZE, &read_fd, NULL, NULL, &to) == 1)
+  while ((*logi) && select (FD_SETSIZE, &read_fd, NULL, NULL, &to) == 1
+	 && read (sock, &c, sizeof (c)) == sizeof (c))
     {
-      while (*logi && read (sock, &c, sizeof (c)) == sizeof (c))
+      write (1, &c, sizeof (c));
+      if (c == *logi)
 	{
-	  write (1, &c, sizeof (c));
-	  if (c == *logi)
-	    {
-	      write (1, "*", 1);
-	      logi++;
-	    }
-	  else
-	    {
-	      logi = login_proxy_pass;
-	    }
+	  write (1, "*", 1);
+	  logi++;
 	}
+      else
+	{
+	  logi = login_proxy_pass;
+	}
+      FD_ZERO (&read_fd);
+      FD_SET (sock, &read_fd);
     }
 
   if (*logi)
