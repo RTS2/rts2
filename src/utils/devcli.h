@@ -40,6 +40,7 @@ int devcli_server_register (const char *hostname, uint16_t port,
 			    uint16_t device_port,
 			    struct devcli_channel_handlers *handlers);
 void devcli_server_close (int channel_id);
+void devcli_server_disconnect ();
 int devcli_connectdev (int *channel_id, const char *dev_name,
 		       struct devcli_channel_handlers *handlers);
 
