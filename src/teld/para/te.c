@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-#include <libnova/libnova.h>
+#include <libnova.h>
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
@@ -21,123 +21,235 @@
 #define LATITUDE 37.1
 #define ALTITUDE 30
 
-#define PARK_DEC 90		//LATITUDE
+#define DEF_SLEWRATE 1080000000.0
+#define RA_SLEW_SLOWER 0.75
+#define DEC_SLEW_SLOWER 0.90
 
-#define DEC_CPD -20921.9688	// model result
-//#define DEC_CPD -20880.0      // DOUBLE - how many counts per degree... seems to be fixed and nice
-//#define DEC_ZERO -4286                // LONG - PUVODNI
+#define PARK_DEC -2.079167
+#define PARK_HA -29.94128
 
-// Measured: 2.0791667
-#define DEC_ZERO -43413		// LONG - where is the homing mark. Not sure, needs precising
+/* RAW model: Tpoint models should be computed as addition to this one */
+#define DEC_CPD -20880.0	// DOUBLE - how many counts per degree...
+#define HA_CPD -32000.0		// 8.9 counts per arcsecond
+// Podle dvou ruznych modelu je to bud <-31845;-31888>, nebo <-31876;-31928>, => -31882
+// pripadne <32112;32156> a <32072;32124> => -32118 (8.9216c/") podle toho, jestli se
+// to ma pricist nebo odecist, coz nevim. -m.
 
-#define HA_CPD -32195.52	// model result
-//#define HA_CPD -32000.0               // 8.9 counts per arcsecond
-//#define HA_CPD -32040.0               // 8.9 counts per arcsecond
-//#define HA_ZERO 963615                // AFTERNOON ZERO  PUVODNI
-//#define HA_ZERO 949866                // AFTERNOON ZERO (The other is HA_ZERO + HA_CPD * 360)
+//#define DEC_ZERO 41760.0      // DEC homing: 2 deg
+#define DEC_ZERO (2.0*DEC_CPD)	// DEC homing: 2 deg
+#define HA_ZERO (-30.0*HA_CPD)	// AFTERNOON ZERO: -30 deg
 
-// Measured: 29.9039
-#define HA_ZERO 958121		// AFTERNOON ZERO (The other is HA_ZERO + HA_CPD * 360)
 
-//double ln_get_julian_from_sys();
+//#define DEC_ZERO -43413               // homing mark in DEC
+//#define HA_ZERO 958121                // AFTERNOON ZERO (The other is HA_ZERO + HA_CPD * 360)
 
 //#define DUMMY
+
+struct ln_lnlat_posn observer = {
+  +6.732778,
+  37.104444
+};
 
 typedef struct
 {
   MKS3Id axis0, axis1;
   double lastra, lastdec;
-}
-T9;
+} T9;
 
 T9 *mount = NULL;
 
-double stime_home;
-
-int semid;
-
-#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
-/* union semun is defined by including <sys/sem.h> */
-#else
-/* according to X/OPEN we have to define it ourselves */
-union semun
+/* some fancy functions to handle angles */
+double
+in180 (double x)
 {
-  int val;			/* value for SETVAL */
-  struct semid_ds *buf;		/* buffer for IPC_STAT, IPC_SET */
-  unsigned short int *array;	/* array for GETALL, SETALL */
-  struct seminfo *__buf;	/* buffer for IPC_INFO */
-};
-#endif
-
-//! one semaphore for direct port control..
-#define SEM_TEL 	0
-//! and second for control of the move operations
-#define SEM_MOVE 	1
-
-void
-in180 (double *x)
-{
-  for (; *x > 180; *x -= 360);
-  for (; *x < -180; *x += 360);
+  for (; x > 180; x -= 360);
+  for (; x < -180; x += 360);
+  return x;
 }
 
-void
-in360 (double *x)
+double
+in360 (double x)
 {
-  for (; *x > 360; *x -= 360);
-  for (; *x < 0; *x += 360);
+  for (; x > 360; x -= 360);
+  for (; x < 0; x += 360);
+  return x;
 }
+
+#define RAD (3.1415927/180)
+
+/*
+#define TP_IH	-1213.51
+#define TP_ID	-103.20
+#define TP_NP	+406.77
+#define TP_CH	-292.55
+#define TP_ME	+210.87
+#define TP_MA	-5.14
+#define TP_PDD	+305.37
+#define	TP_PHH	+605.12
+#define	TP_A1D	-819.17
+#define	TP_A1H	-233.45
+*/
+
+#define TP_IH	-590.34		// 590/293
+#define TP_ID	+54.24		//  54/74
+#define TP_NP	+16.97		//  17/144
+#define TP_CH	-270.84		// 271/277
+#define TP_MA	+76.91		//  77/100
+#define TP_ME	-360.0		//  *** to test ***
+#define TP_PHH	+100.0		//  *** to test ***
+#define TP_PDD	+88.07		//  88/72
+#define	TP_A1D	-541.47		// 541/154
+#define	TP_A1H	-828.83		// 828/88
+
+#define PI 3.1415927
+#define DEG_TO_RAD (180/PI)
+
+void
+applyME (double h0, double d0, double *ph1, double *pd1, double ME)
+{
+  double h1, d1, M, N;
+
+  h0 = in180 (h0);
+
+  fprintf (stderr, "%f %f\n", h0, d0);
+
+  h0 /= DEG_TO_RAD;
+  d0 /= DEG_TO_RAD;
+
+  N = asin (sin (h0) * cos (d0));
+  M = asin (sin (d0) / cos (N));
+
+  if ((h0 > (PI / 2)) || (h0 < (-PI / 2)))
+    {
+      if (M > 0)
+	M = PI - M;
+      else
+	M = -PI + M;
+    }
+
+  M = M + (ME / (3600 * DEG_TO_RAD));
+
+  if (M > PI)
+    M -= 2 * PI;
+  if (M < -PI)
+    M += 2 * PI;
+
+  fprintf (stderr, "%f %f\n", DEG_TO_RAD * N, DEG_TO_RAD * M);
+
+  d1 = asin (sin (M) * cos (N));
+  h1 = asin (sin (N) / cos (d1));
+  if (M > (PI / 2))
+    h1 = PI - h1;
+  if (M < (-PI / 2))
+    h1 = -PI + h1;
+
+  if (h1 > PI)
+    h1 -= 2 * PI;
+  if (h1 < -PI)
+    h1 += 2 * PI;
+
+  *ph1 = DEG_TO_RAD * h1;
+  *pd1 = DEG_TO_RAD * d1;
+
+  fprintf (stderr, "%f %f\n", *ph1, *pd1);
+}
+
+int
+apply_tpoint_model (double *ph, double *pd, int flip)
+{
+  double d, h;
+
+  d = *pd;
+  h = in180 (*ph);
+
+#define rh (3.1415927*(in180(*ph))/180)
+#define rd (3.1415927*(*pd)/180)
+
+// *** The Basic Equatoreal Mount Terms ***
+//printf("r=%f, d=%f\n",h,d);
+//    h -= TP_IH / 3600;                // Index Error in Hour Angle 
+//    d -= TP_ID / 3600;                // Index Error in Declination
+//    h -= (TP_NP / 3600) * tan(rd);    // HA/Dec Non-perpendicularity
+//    h -= (TP_CH / 3600) / cos(rd);    // East-West Collimation Error
+
+  applyME (h, d, &h, &d, TP_ME);
+
+//d -= (TP_ME/3600) * cos(rh);  // Polar Axis Misalignment in Elevation
+//h -= (TP_ME/3600) * sin(rh) * tan(rd);
+//    d -= (TP_MA / 3600) * sin(rh);    // Polar Axis Misalignment in Azimuth
+//    h += (TP_MA / 3600) * cos(rh) * tan(rd);
+
+// *** imperfectly known step size ***
+  fprintf (stderr, "cos(%f)=%f %f %f cos(%f)=%f\n", h,
+	   cos (3.1415927 * h / 180), d, rd, rh, cos (rh));
+
+//    h -= (TP_PHH/3600) * rh;
+//    d -= (TP_PDD / 3600) * rd;
+//printf("r=%f, d=%f\n",h,d);
+
+// Influence of FLIP
+//    h -= TP_A1H / 3600 * (double) flip;
+//    d -= TP_A1D / 3600 * (double) flip;
+//printf("r=%f, d=%f\n",h,d);
+
+  *ph = h;
+  *pd = d;
+
+  return 1;
+}
+
+#undef rh
+#undef rd
+
 
 // return sid time since homing
 double
-sid_home (MKS3Id axis0)
+sid_home ()
 {
   long pos0, en0;
-  double ret;
 
-  MKS3PosEncoderGet (axis0, &en0);
-  MKS3PosCurGet (axis0, &pos0);
+  if (MKS3PosEncoderGet (mount->axis0, &en0))
+    return 0;
+  if (MKS3PosCurGet (mount->axis0, &pos0))
+    return 0;
 
-  //    s = sid_time() - stime_home;
-  //        stime_home = sid_time() - sid_home(axis0);
-  ret = (double) (pos0 - en0) / 32000.0;
-
-  printf ("sid_home() = %f; ", ret);
-  return ret;
+  return (double) (en0 - pos0) / HA_CPD;
 }
 
-// return siderial time in degrees
+// *** return siderial time in degrees ***
+// once libnova will use struct timeval in
+// get_julian_from_sys, this will be completely OK
 double
 sid_time ()
 {
-  double s;
-
-  s =
-    15 * ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) -
-    LONGITUDE;
-  printf ("sid_time() = %f ", s);
-
-  in360 (&s);
-
-  return s;
+  return in360 (15 * get_apparent_sidereal_time (get_julian_from_sys ()) -
+		LONGITUDE);
 }
 
 double
-ln_get_refraction (double altitude, double atm_pres, double temp)
+gethoming ()
+{
+  return sid_time () - sid_home ();
+}
+
+// Use the libnova one once it works well..
+double
+get_refraction (double altitude)
 {
   double R;
 
-  //altitude = ln_deg_to_rad (altitude);
+  //altitude = deg_to_rad (altitude);
 
   /* eq. 5.27 (Telescope Control,M.Trueblood & R.M. Genet) */
   R = 1.02 /
-    tan (ln_deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
+    tan (deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
 
   // for gnuplot (in degrees)
   // R(a) = 1.02 / tan( (a + 10.3 / (a + 5.11) + 0.0019279) / 57.2958 ) / 60
 
   /* take into account of atm press and temp */
-  R *= ((atm_pres / 1010) * (283 / (273 + temp)));
+  //R *= ((atm_pres / 1010) * (283 / (273 + temp)));
+  R *= ((1013.6 / 1010) * (283 / (273 + 10)));
 
   /* convert from arcminutes to degrees */
   R /= 60.0;
@@ -145,79 +257,8 @@ ln_get_refraction (double altitude, double atm_pres, double temp)
   return (R);
 }
 
-void
-ha_dec (struct ln_equ_posn *mean_position,
-	struct ln_equ_posn *app_position, double JD, double atm_pres,
-	double temp, struct ln_lnlat_posn *observer)
-{
-  // struct ln_equ_posn *mean_position     ==> The mean equatorial position in the catalog (libnova)
-  // struct ha_dec_pos  *apparent_position ==> The apparent equatorial position (libnova)
-  // double JD                             ==> Julian date
-  // double atm_pres                       ==> Atmospheric pressure in mbar
-  // double temp                           ==> Temperature in ºC
-  // struct ln_lnlat_posn *observer        ==> Observer coordinates
 
-  struct ln_equ_posn proper_motion;
-  struct ln_hrz_posn h_app_position;
-//  struct ha_dec_pos hd_app_position;
-  double refraction;
-
-  printf
-    ("\n\033[31mInside the conversion function:\n===============================\033[m\n");
-  // Transform from catalogue position (J2000 ???) to apparent position
-  proper_motion.ra = 0;
-  proper_motion.dec = 0;
-  ln_get_apparent_posn (mean_position, &proper_motion, JD, app_position);	// Second argument should be proper motion but we ignore it
-  printf ("\033[34mcat: %f %f\033[m\n", mean_position->ra,
-	  mean_position->dec);
-  printf ("\033[34mapp: %f %f\033[m\n", app_position->ra, app_position->dec);
-  // Transform to horizontal coordinates
-  ln_get_hrz_from_equ (app_position, observer, JD, &h_app_position);
-  printf ("\033[34mhor: %f %f\033[m\n", h_app_position.az,
-	  h_app_position.alt);
-  // Correction for refraction
-  refraction = ln_get_refraction (h_app_position.alt, atm_pres, temp);
-  h_app_position.alt = h_app_position.alt + refraction;
-  refraction *= 60;
-  if (refraction > 2)
-    printf ("\033[34mThe atmospheric refraction is: \033[m%f\'\n",
-	    refraction);
-  else
-    printf ("\033[34mThe atmospheric refraction is: \033[m%f\"\n",
-	    refraction * 60);
-  // Convertion to equatorial
-  ln_get_equ_from_hrz (&h_app_position, observer, JD, app_position);
-  printf ("\033[34mcor: %f %f\033[m\n", app_position->ra, app_position->dec);
-
-  // Convertion to ha_dec
-  //ln_get_hd_from_equ (&app_position, observer, JD,apparent_position);
-
-
-
-}				// ha_dec
-
-void
-astrometric_corr (double *ra, double *dec, double atm_pres, double temp)
-{
-  double JD;
-  struct ln_lnlat_posn observer;	//==> Observer coordinates
-  struct ln_equ_posn mean_position;	//==> The mean equatorial position in the catalog (libnova)
-  struct ln_equ_posn app_position;	//==> The apparent equatorial position (libnova)
-
-  JD = ln_get_julian_from_sys ();
-
-  observer.lat = 37.1;
-  observer.lng = +6.732778;
-
-  mean_position.ra = *ra;
-  mean_position.dec = *dec;
-
-  ha_dec (&mean_position, &app_position, JD, atm_pres, temp, &observer);
-
-  *ra = app_position.ra;
-  *dec = app_position.dec;
-}
-
+/* compute RAW trasformation (no Tpoint) */
 void
 counts2sky (long ac, long dc, double *ra, double *dec, int *flip)
 {
@@ -226,7 +267,7 @@ counts2sky (long ac, long dc, double *ra, double *dec, int *flip)
   // Base transform to raw RA, DEC    
   _dec = (double) (dc - DEC_ZERO) / DEC_CPD;
   _ra = (double) (ac - HA_ZERO) / HA_CPD;
-  _ra = -_ra + stime_home;
+  _ra = -_ra + gethoming ();
 
   // Flip
   if (_dec > 90)
@@ -238,8 +279,8 @@ counts2sky (long ac, long dc, double *ra, double *dec, int *flip)
   else
     *flip = 0;
 
-  in180 (&_dec);
-  in360 (&_ra);
+  _dec = in180 (_dec);
+  _ra = in360 (_ra);
 
   *dec = _dec;
   *ra = _ra;
@@ -248,40 +289,45 @@ counts2sky (long ac, long dc, double *ra, double *dec, int *flip)
 void
 sky2counts (double ra, double dec, long *ac, long *dc)
 {
-  long _dc, _ac;
-  double ha;
+  long _dc, _ac, flip = 0;
+  double ha, JD;
+  struct ln_equ_posn aber_pos, pos;
+  struct ln_hrz_posn hrz;
 
-//    printf("---\n");
-//    astrometric_corr(&ra, &dec, 1013.6, 15.0);
-  printf ("---\n");
+  pos.ra = ra;
+  pos.dec = dec;
+  JD = get_julian_from_sys ();
+
+// Aberation
+  get_equ_aber (&pos, JD, &aber_pos);
+// Precession
+  get_equ_prec (&aber_pos, JD, &pos);
+// Refraction 
+  get_hrz_from_equ (&pos, &observer, JD, &hrz);
+  hrz.alt += get_refraction (hrz.alt);
+  get_equ_from_hrz (&hrz, &observer, JD, &pos);
+
+  ra = pos.ra;
+  dec = pos.dec;
 
   // True Hour angle
-  ha = sid_time () - ra;
+  ha = in180 (sid_time () - ra);
+  ra = in180 (gethoming () - ra);
 
-  printf ("Ha: %f ", ha);
-  in180 (&ha);
-
-  ra = stime_home - ra;
-  in180 (&ra);
-
-  printf ("(ra: %f) ", ra);
-
+// xxx FLIP xxx
   if (ha < 0)
+    flip = 1;
+
+  apply_tpoint_model (&ra, &dec, flip);
+
+  if (flip)
     {
       dec = 180 - dec;
       ra = 180 + ra;
-
-      printf ("FLIP ");
     }
-  else
-    printf ("NEFLIP ");
-
-
-  printf ("ra: %f ", ra);
 
   _dc = DEC_ZERO + (long) (DEC_CPD * dec);
   _ac = HA_ZERO + (long) (HA_CPD * ra);
-  printf ("ac: %ld ", _ac);
 
   *dc = _dc;
   *ac = _ac;
@@ -291,128 +337,277 @@ void
 display_status (long status, int color)
 {
   if (status & MOTOR_HOMING)
-    printf ("\033[%dmHOMING\033[m ", 30 + color);
+    printf ("\033[%dmHOG\033[m ", 30 + color);
   //if(status&MOTOR_SERVO)printf("\033[31mMOTOR_SERVO\033[m ");
   if (status & MOTOR_INDEXING)
     printf ("\033[%dmIDX\033[m ", 30 + color);
   if (status & MOTOR_SLEWING)
-    printf ("\033[%dmSLEW\033[m ", 30 + color);
+    printf ("\033[%dmSLW\033[m ", 30 + color);
   if (!(status & MOTOR_HOMED))
-    printf ("\033[%dmNOT_HOMED\033[m ", 30 + color);
+    printf ("\033[%dm!HO\033[m ", 30 + color);
   if (status & MOTOR_JOYSTICKING)
     printf ("\033[%dmJOY\033[m ", 30 + color);
   if (status & MOTOR_OFF)
     printf ("\033[%dmOFF\033[m ", 30 + color);
 }
 
+int
+getradec (double *ra, double *dec, int *flip)
+{
+  long pos0, pos1;
+  int ret = 0;
+
+  if ((ret = MKS3PosCurGet (mount->axis0, &pos0)))
+    goto rr;
+  if ((ret = MKS3PosCurGet (mount->axis1, &pos1)))
+    goto rr;
+
+  counts2sky (pos0, pos1, ra, dec, flip);
+
+rr:
+  if (ret)
+    fprintf (stderr, "Error:%d\n", ret);
+  return ret;
+}
+
 void
 statuswatch (MKS3Id axis0, MKS3Id axis1)
 {
+//#ifdef S_WATCH
   long pos0, pos1;
   unsigned short stat0, stat1;
-  //double ra, dec;
-  //int flip;
-
-  struct sembuf sem_buf;
-
-  sem_buf.sem_num = SEM_TEL;
-  sem_buf.sem_op = -1;
-  sem_buf.sem_flg = SEM_UNDO;
-
-  semop (semid, &sem_buf, 1);
+  double ra, dec;
+  int flip;
 
   MKS3StatusGet (axis0, &stat0);
   MKS3StatusGet (axis1, &stat1);
 
   MKS3PosCurGet (axis0, &pos0);
   MKS3PosCurGet (axis1, &pos1);
+  counts2sky (pos0, pos1, &ra, &dec, &flip);
 
-  sem_buf.sem_op = 1;
+  printf ("\033[31mPos: %ld (%fd)\033[m ", pos0, ra);
+  printf ("\033[32mPos: %ld (%fd)\033[m ", pos1, dec);
 
-  semop (semid, &sem_buf, 1);
-
-  //counts2sky(pos0, pos1, &ra, &dec, &flip);
-
-  // printf("\033[31mPos: %ld (%fd)\033[m ", pos0, ra);
-  // printf("\033[32mPos: %ld (%fd)\033[m ", pos1, dec);
-
-  // display_status(stat0, 1);
-  // display_status(stat1, 2);
+  display_status (stat0, 1);
+  display_status (stat1, 2);
 
 
-  // printf("                      \r");
-  // fflush(stdout);
+  printf ("                      \r");
+  fflush (stdout);
+//#endif
 }
 
-void
-move (T9 * mount, double ra, double dec)
+
+/* Call to home the mount: let the mount find it's position mark and reinitialize the counters */
+/* should be called whenever the status flags do not show MOTOR_HOMED, as most probably the mount has been restarted */
+
+int
+home ()
 {
-  long pos0, pos1;
+  int i, q, ret = 0;
+  unsigned short stat0, stat1;
+//    struct sembuf sem_buf;
+
+//    sem_buf.sem_num = SEM_MOVE;
+//    sem_buf.sem_op = -1;
+//    sem_buf.sem_flg = SEM_UNDO;
+//    if (semop (semid, &sem_buf, 1) < 0)
+//          return -1;
+
+  if ((ret = MKS3Home (mount->axis0, 0)))
+    goto rr;
+  if ((ret = MKS3Home (mount->axis1, 0)))
+    goto rr;
+
+  for (i = 0, q = 1;; i++)
+    {
+      statuswatch (mount->axis0, mount->axis1);
+
+      if ((ret = MKS3StatusGet (mount->axis1, &stat1)))
+	goto rr;
+      if ((ret = MKS3StatusGet (mount->axis0, &stat0)))
+	goto rr;
+
+      if ((stat0 & MOTOR_HOMED) && (stat1 & MOTOR_HOMED))
+	break;
+      usleep (100000);
+    }
+
+rr:
+//    sem_buf.sem_op = 1;
+//    semop (semid, &sem_buf, 1);
+
+  return ret;
+}
+
+int
+opthome ()
+{
+  int ret;
+  unsigned short stat0, stat1;
+//    struct sembuf sem_buf;
+
+  // Lock the port for writing 
+//    sem_buf.sem_num = SEM_MOVE;
+//    sem_buf.sem_flg = SEM_UNDO;
+//    sem_buf.sem_op = -1;
+//    if (semop (semid, &sem_buf, 1) < 0) return -1;
+
+
+  if ((ret = MKS3StatusGet (mount->axis0, &stat0)))
+    goto rr;
+  if ((ret = MKS3StatusGet (mount->axis1, &stat1)))
+    goto rr;
+
+  if ((!(stat0 & MOTOR_HOMED)) || (!(stat1 & MOTOR_HOMED)))
+    {
+      fprintf (stderr, "para: homing needed\n");
+      ret = home (mount);
+    }
+
+rr:
+//    sem_buf.sem_op = 1;
+//    semop (semid, &sem_buf, 1);
+  if (ret)
+    fprintf (stderr, "%s: mks_error: %d\n", __FUNCTION__, ret);
+  return ret;
+}
+
+/* basic GoTo call */
+
+/* should apply all the corrections needed to get the telescope on a desired
+ * object, i.e. astrometry, refraction, mount modeling */
+
+int
+move (double ra, double dec)
+{
   long ac, dc;
   unsigned short stat0, stat1;
-  struct sembuf sem_buf;
+//    struct sembuf sem_buf;
+  int ret = 0;
 
   sky2counts (ra, dec, &ac, &dc);
-  //counts2sky(ac, dc, &ra, &dec);
-  //printf("ra: %f, dec: %f;\n", ra, dec);
 
   mount->lastra = ra;
   mount->lastdec = dec;
 
-  sem_buf.sem_num = SEM_MOVE;
-  sem_buf.sem_op = -1;
-  sem_buf.sem_flg = SEM_UNDO;
+  if ((ret = opthome ()))
+    return ret;
 
-  if (semop (semid, &sem_buf, 1) < 0)
-    return;
+  // Lock the port for writing 
+//    sem_buf.sem_num = SEM_MOVE;
+//    sem_buf.sem_flg = SEM_UNDO;
+//    sem_buf.sem_op = -1;
+//    if (semop (semid, &sem_buf, 1) < 0) return -1;
 
-  MKS3PosTargetSet (mount->axis1, dc);
-  MKS3PosTargetSet (mount->axis0, ac);
+  // Set up the speed of the mount 
+  if ((ret =
+       MKS3RateSlewSet (mount->axis0,
+			(unsigned long) (DEF_SLEWRATE * RA_SLEW_SLOWER))))
+    goto rr;
+  if ((ret =
+       MKS3RateSlewSet (mount->axis1,
+			(unsigned long) (DEF_SLEWRATE * DEC_SLEW_SLOWER))))
+    goto rr;;
 
+  // Send it to a requested position
+  if ((ret = MKS3PosTargetSet (mount->axis1, dc)))
+    goto rr;
+  if ((ret = MKS3PosTargetSet (mount->axis0, ac)))
+    goto rr;
+
+  // wait to finish the slew
   for (;;)
     {
-      struct sembuf sem_buf_write;
+      //struct sembuf sem_buf_write;
 
-      sem_buf_write.sem_num = SEM_TEL;
-      sem_buf_write.sem_op = -1;
-      sem_buf_write.sem_flg = SEM_UNDO;
+      // Lock the mount for reading
+      //sem_buf_write.sem_num = SEM_TEL;
+      //sem_buf_write.sem_flg = SEM_UNDO;
+      //sem_buf_write.sem_op = -1;
 
-      if (semop (semid, &sem_buf_write, 1) < 0)
-	break;
+      //if (semop (semid, &sem_buf_write, 1) < 0)
+      //      break;
 
-      MKS3StatusGet (mount->axis0, &stat0);
-      MKS3StatusGet (mount->axis1, &stat1);
-      MKS3PosCurGet (mount->axis0, &pos0);
-      MKS3PosCurGet (mount->axis1, &pos1);
+      if ((ret = MKS3StatusGet (mount->axis0, &stat0)))
+	goto rr;
+      if ((ret = MKS3StatusGet (mount->axis1, &stat1)))
+	goto rr;
 
-      sem_buf_write.sem_op = 1;
-
-      semop (semid, &sem_buf_write, 1);
-
-      //counts2sky(pos0, pos1, &ra, &dec, &flip);
-
-//      printf("\033[31mPos: %ld (%fd)\033[m ", pos0, ra);
-//      printf("\033[32mPos: %ld (%fd)\033[m ", pos1, dec);
-//      printf("                      \r");
-//      fflush(stdout);
+      // Unlock
+      //sem_buf_write.sem_op = 1;
+      //semop(semid, &sem_buf_write, 1);
 
       if ((stat1 & MOTOR_SLEWING) || (stat0 & MOTOR_SLEWING))
 	usleep (100000);
       else
 	break;
     }
-  sem_buf.sem_op = 1;
-  semop (semid, &sem_buf, 1);
-//    printf("\n");
+
+  // Unlock    
+rr:
+//    sem_buf.sem_op = 1;
+//    semop (semid, &sem_buf, 1);
+  return ret;
 }
 
-T9 *
-init (char *device)
+int
+optwake ()
 {
+  int ret = 0;
   unsigned short stat0, stat1;
-  T9 *mount;
-  int i, q;
-  time_t t1;
+
+  if ((ret = MKS3StatusGet (mount->axis0, &stat0)))
+    goto rr;
+  if ((ret = MKS3StatusGet (mount->axis1, &stat1)))
+    goto rr;
+
+  // Try both axes without GoTo's, not really the best solution, but...
+  if (stat0 & MOTOR_OFF)
+    ret = MKS3MotorOn (mount->axis0);
+  if (stat1 & MOTOR_OFF)
+    ret = MKS3MotorOn (mount->axis1);
+
+rr:
+  return ret;
+}
+
+int
+zdechni ()
+{
+  int ret = 0;
+  unsigned short stat0, stat1;
+
+  if ((ret = MKS3StatusGet (mount->axis0, &stat0)))
+    goto rr;
+  if ((ret = MKS3StatusGet (mount->axis1, &stat1)))
+    goto rr;
+
+  if ((!(stat0 & MOTOR_OFF)) || (!(stat1 & MOTOR_OFF)))
+    {
+      if ((ret = move (sid_time () + PARK_HA, PARK_DEC)))
+	goto rr;
+      ret = MKS3MotorOff (mount->axis0);
+      ret = MKS3MotorOff (mount->axis1);
+    }
+
+rr:
+  return ret;
+}
+
+/* ******************************************
+*  EXPORTED FUNCTIONS..
+*  ******************************************/
+
+/* Open device...
+*/
+
+int
+init (const char *device)
+{
+//    T9 *mount;
+  int ret;
 
   mount = (T9 *) malloc (sizeof (T9));
 
@@ -424,89 +619,25 @@ init (char *device)
 
 // A co kdyz je teleskop vypnuty! - MKS3Init vraci MKS_OK, jinak kod chyby...
 
+  fprintf (stderr, "init: %s\n", device);
+
   MKS3Init (device);
 
-  MKS3StatusGet (mount->axis0, &stat0);
-  if (!(stat0 & MOTOR_HOMED))
-    MKS3Home (mount->axis0, 0);
+  // If needed, perform homing
+  ret = opthome ();
 
-  MKS3StatusGet (mount->axis1, &stat1);
-  if (!(stat1 & MOTOR_HOMED))
-    MKS3Home (mount->axis1, 0);
-
-  for (i = 0, q = 1;; i++)
-    {
-      statuswatch (mount->axis0, mount->axis1);
-
-      MKS3StatusGet (mount->axis1, &stat1);
-      MKS3StatusGet (mount->axis0, &stat0);
-
-      if ((stat0 & MOTOR_HOMED) && (stat1 & MOTOR_HOMED))
-	break;
-      usleep (100000);
-    }
-
-  // Wait for full second    
-  printf ("Waiting for tick...");
-  fflush (stdout);
-  for (t1 = time (NULL); t1 == time (NULL););
-  printf ("got it\n");
-  stime_home = sid_time () - sid_home (mount->axis0);
-  printf ("stime_home=%f\n", stime_home);
-  fflush (stdout);
-
-  return mount;
+  return ret;
 }
 
-/*
-void
-home (T9 *mount)
-{
-    unsigned short stat0, stat1;
-    int i, q;
-    struct sembuf sem_buf;
-
-    //    if (!(stat0 & MOTOR_HOMED))
-    MKS3Home(mount->axis0, 0);
-
-    //    if (!(stat1 & MOTOR_HOMED))
-    MKS3Home(mount->axis1, 0);
-
-	for (i = 0, q = 1;; i++) {
-		statuswatch(mount->axis0, mount->axis1);
-
-		sem_buf.sem_num = SEM_TEL;
-		sem_buf.sem_op = -1;
-		sem_buf.sem_flg = SEM_UNDO;
-
-		if (semop (semid, &sem_buf, 1))
-			continue;
-
-		MKS3StatusGet(mount->axis1, &stat1);
-		MKS3StatusGet(mount->axis0, &stat0);
-
-		sem_buf.sem_op = 1;
-		semop (semid, &sem_buf, 1); 
-
-		if ((stat0 & MOTOR_HOMED) && (q)) {
-		    q = 0;
-		    stime_home = sid_time();
-		}
-	
-		if ((stat0 & MOTOR_HOMED) && (stat1 & MOTOR_HOMED))
-		    break;
-		usleep(100000);
-	    }
-}
-*/
+/* Init the telescope - mainly init the comm. protocol and locks */
 
 extern int
 telescope_init (const char *device_name, int telescope_id)
 {
-  union semun sem_un;
-  unsigned short int sem_arr[] = { 1, 1 };
+//  union semun sem_un;
+//  unsigned short int sem_arr[] = { 1, 1 };
 
-  if ((semid = semget (ftok (device_name, 0), 2, 0644)) < 0)
+/*  if ((semid = semget (ftok (device_name, 0), 2, 0644)) < 0)
     {
       if ((semid = semget (ftok (device_name, 0), 2, IPC_CREAT | 0644)) < 0)
 	{
@@ -520,30 +651,37 @@ telescope_init (const char *device_name, int telescope_id)
 	  syslog (LOG_ERR, "semctl init: %m");
 	  return -1;
 	}
-
-      mount = init ("/dev/ttyS0");
+*/
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
+  init (device_name);
 //      home (mount);
-      return 0;
-    }
-  if (!mount)
-    mount = init ("/dev/ttyS0");
+  return 0;
+//     }
+//    if (!mount)
+//      init (device_name);
 
   return 0;
 }
 
+/* shut down the telescope driver */
 extern void
 telescope_done ()
 {
-  semctl (semid, 1, IPC_RMID);
-  syslog (LOG_DEBUG, "para: telescope_done called %i", semid);
-  printf ("done..?\n");
-  fflush (stdout);
+//      semctl (semid, 1, IPC_RMID);
+//      syslog (LOG_DEBUG, "para: telescope_done called %i", semid);
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
+  commFree ();
   free (mount);
 }
 
+/* info request handlers */
 extern int
 telescope_base_info (struct telescope_info *info)
 {
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
   strcpy (info->type, "PARAMOUNT_TC-300");
   strcpy (info->serial_number, "0007");
   info->park_dec = PARK_DEC;
@@ -561,13 +699,20 @@ telescope_info (struct telescope_info *info)
   double ra, dec;
   int noreply = 0, flip;
 
-  struct sembuf sem_buf;
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
+//    struct sembuf sem_buf;
 
-  sem_buf.sem_num = SEM_TEL;
-  sem_buf.sem_op = -1;
-  sem_buf.sem_flg = SEM_UNDO;
+  //printf("Getting the port to take the info\n"); fflush(stdout);
+//    sem_buf.sem_num = SEM_TEL;
+//    sem_buf.sem_op = -1;
+//    sem_buf.sem_flg = SEM_UNDO;
 
-  semop (semid, &sem_buf, 1);
+//    semop (semid, &sem_buf, 1);
+
+  //printf("Getting info\n"); fflush(stdout);
+
+  //statuswatch(mount->axis0, mount->axis1);
 
   if (MKS_OK != MKS3StatusGet (mount->axis0, &stat0))
     noreply = 1;
@@ -579,9 +724,10 @@ telescope_info (struct telescope_info *info)
   if (MKS_OK != MKS3PosCurGet (mount->axis1, &pos1))
     noreply = 1;
 
-  sem_buf.sem_op = 1;
+  //printf("Info taken, releasing the port\n"); fflush(stdout);
+//    sem_buf.sem_op = 1;
 
-  semop (semid, &sem_buf, 1);
+//    semop (semid, &sem_buf, 1);
 
   counts2sky (pos0, pos1, &ra, &dec, &flip);
 
@@ -600,114 +746,57 @@ telescope_info (struct telescope_info *info)
   return 0;
 }
 
+/* GoTo driver call */
 extern int
 telescope_move_to (double ra, double dec)
 {
-  move (mount, ra, dec);
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
+  optwake ();
+  move (ra, dec);
   return 0;
 }
 
+/* obsolete (used for meade repointing) */
 extern int
 telescope_set_to (double ra, double dec)
 {
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
   return 0;
 }
 
+/* obsolete */
 extern int
 telescope_correct (double ra, double dec)
 {
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
   return 0;
 }
 
-extern int
-telescope_change (double ra, double dec)
-{
-  return 0;
-}
-
+/* stop the telescope movement - do not really know why */
 extern int
 telescope_stop ()
 {
-
-  return 0;
-}
-
-extern int
-telescope_start_move (char direction)
-{
-  return 0;
-}
-
-extern int
-telescope_stop_move (char direction)
-{
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
   return 0;
 }
 
 extern int
 telescope_park ()
 {
-  move (mount, sid_time () - 30, PARK_DEC);
-  return 0;
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
+  return zdechni ();
 }
 
+/* switch off the mount - switch off everything what's possible to be switched off by sw */
 extern int
 telescope_off ()
 {
-  return 0;
+  fprintf (stderr, "%s\n", __FUNCTION__);
+  fflush (stderr);
+  return zdechni ();
 }
-
-/*    long i;
-
-    mount = init("/dev/ttyS0");
-
-    ////homingjd = ln_get_julian_from_sys();
-
-    //move(mount, 81.600792, 7.1465722); // GRB 030509 Center
-//    move(mount, 81.6460, 7.1492); // GRB 030509 Center
-
-    for(;1<0;)
-    {
-	    double ra, ram, ras, dec, dem, des;
-
-    printf("\ncoords, [hh mm ss dd mm ss]:");
-    scanf("%lf %lf %lf %lf %lf %lf", &ra, &ram, &ras, &dec, &dem, &des );
-    printf("%f %f %f %f %f %f\n", ra, ram, ras, dec, dem, des );
-
-    ra=15*(ra+ram/60+ras/3600);
-    dec=dec+dem/60+des/3600;
-
-    printf("move to %f %f\n", ra, dec);
-    
-    move(mount, ra, dec);
-
-    for (i = 0;i<60; i++) {
-	sid_time();
-	statuswatch(mount->axis0, mount->axis1);
-	usleep(100000);
-    }
-    
-    }
-    
-    
-   move(mount, 213.9153, 19.18241); // Arcturus
-   getchar();
-   move(mount, 148.9, 69.0666);	// M81
-    
-
-    sleep(400);
-    move(mount, 208.67116, 18.397717);	// Mufrid
-    move(mount, 177.26491, 14.890283); // Denebola
-    move(mount, 152.09296, 11.967207); // Regulus
-    move(mount, 213.9153, 19.18241); // Arcturus
-    move(mount, 114.82549, 5.224993); // Procyon
-    move(mount, 279.23474, 38.783692); // Vega
-
-    for (i = 0;; i++) {
-	sid_time();
-	statuswatch(mount->axis0, mount->axis1);
-	usleep(100000);
-    }
-
-    return 0;
-} */
