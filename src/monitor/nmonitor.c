@@ -16,6 +16,9 @@
 int exit_c = 0;
 
 WINDOW *status_win;
+WINDOW *cmd_win;
+
+int cmd_line, cmd_col;
 
 void
 print_status (WINDOW * wnd, int start_row, int col, struct device *dev)
@@ -33,6 +36,9 @@ print_status (WINDOW * wnd, int start_row, int col, struct device *dev)
 void
 status_serverd (WINDOW * wnd, struct device *dev)
 {
+  int i;
+  struct client *cli;
+  struct serverd_info *info = (struct serverd_info *) &dev->info;
   mvwprintw (wnd, 1, 1, "status:");
   switch (dev->statutes[0].status)
     {
@@ -56,6 +62,12 @@ status_serverd (WINDOW * wnd, struct device *dev)
       break;
     default:
       mvwprintw (wnd, 1, 8, "Unkow %i", dev->statutes[0].status);
+    }
+  // print info
+  wmove (wnd, 2, 0);
+  for (i = 2, cli = info->clients; cli; cli = cli->next, i++)
+    {
+      mvwprintw (wnd, i, 1, "%3i %s", cli->priority, cli->status_txt);
     }
 }
 
@@ -81,24 +93,26 @@ status_camera (WINDOW * wnd, struct device *dev)
   mvwprintw (wnd, 2, 1, "Ser: %s", info->serial_number);
   mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
 	     info->chip_info[0].height);
-  mvwprintw (wnd, 4, 1, "Set: %+03.3f oC", info->temperature_setpoint);
-  mvwprintw (wnd, 5, 1, "Air: %+03.3f oC", info->air_temperature);
-  mvwprintw (wnd, 6, 1, "CCD: %+03.3f oC", info->ccd_temperature);
-  mvwprintw (wnd, 7, 1, "CPo: %03.1f %%", info->cooling_power / 10.0);
-  mvwprintw (wnd, 8, 1, "Fan: %s", info->fan ? "on" : "off");
-  print_status (wnd, 9, 1, dev);
+  mvwprintw (wnd, 4, 1, "S/A: %+03.1f %+03.1f oC", info->temperature_setpoint,
+	     info->air_temperature);
+  mvwprintw (wnd, 5, 1, "CCD: %+03.3f oC", info->ccd_temperature);
+  mvwprintw (wnd, 6, 1, "CPo: %03.1f %%", info->cooling_power / 10.0);
+  mvwprintw (wnd, 7, 1, "Fan: %s", info->fan ? "on" : "off");
+  print_status (wnd, 8, 1, dev);
 }
 
 void
 status (WINDOW * wnd, struct device *dev)
 {
   int ret;
+  curs_set (0);
   mvwprintw (status_win, 4, 1, "ready..%s    ", dev->name);
   wrefresh (status_win);
   devcli_command (dev, &ret, "ready");
   mvwprintw (status_win, 4, 1, "info..%s   ", dev->name);
   wrefresh (status_win);
   devcli_command (dev, &ret, "info");
+  wclear (wnd);
   mvwprintw (wnd, 0, 1, "==== Name: %s ======", dev->name);
   if (ret)
     {
@@ -124,14 +138,14 @@ status (WINDOW * wnd, struct device *dev)
 	}
     }
   wrefresh (wnd);
+  wmove (cmd_win, cmd_line, cmd_col);
+  wrefresh (cmd_win);
+  curs_set (1);
 }
 
 int
 status_change (struct device *dev, char *status_name, int new_state)
 {
-  mvwprintw (status_win, 3, 1, "Updating....%s %i", status_name, new_state);
-  wrefresh (status_win);
-  //wprintw (dev->notifier_data, "Updatig...");
   status ((WINDOW *) dev->notifier_data, dev);
   return 0;
 }
@@ -154,6 +168,10 @@ main (int argc, char **argv)
   char c;
   int i;
   struct device *dev;
+#define BUF_LEN		60
+  char buf[BUF_LEN];
+
+  int l;
 
 #ifdef DEBUG
   mtrace ();
@@ -219,21 +237,27 @@ main (int argc, char **argv)
 
   start_color ();
 
-//  curs_set (0);
-
-/*  signal (SIGQUIT, sig_exit);
-  signal (SIGINT, sig_exit);
-  signal (SIGTERM, sig_exit); */
-
   atexit (ex_func);
 
   // prepare windows
-  wnd[0] = newwin (LINES / 2, COLS / 3, 0, 0);
-  wnd[1] = newwin (LINES / 2, COLS / 3, LINES / 2, 0);
-  wnd[2] = newwin (LINES / 2, COLS / 3, 0, COLS / 3);
-  wnd[3] = newwin (LINES / 2, COLS / 3, LINES / 2, COLS / 3);
-  wnd[4] = newwin (LINES / 2, COLS / 3, 0, 2 * COLS / 3);
-  wnd[5] = newwin (LINES / 2, COLS / 3, LINES / 2, 2 * COLS / 3);
+
+  l = LINES - 2;
+
+  cmd_win = newwin (2, COLS, 0, 0);
+
+  keypad (cmd_win, true);
+  scrollok (cmd_win, true);
+  idlok (cmd_win, true);
+
+  cmd_line = 0;
+  cmd_col = 0;
+
+  wnd[0] = newwin (l / 2, COLS / 3, 2, 0);
+  wnd[1] = newwin (l / 2, COLS / 3, 2 + l / 2, 0);
+  wnd[2] = newwin (l / 2, COLS / 3, 2, COLS / 3);
+  wnd[3] = newwin (l / 2, COLS / 3, 2 + l / 2, COLS / 3);
+  wnd[4] = newwin (l / 2, COLS / 3, 2, 2 * COLS / 3);
+  wnd[5] = newwin (l / 2, COLS / 3, 2 + l / 2, 2 * COLS / 3);
   status_win = wnd[5];
 
   if (!wnd[5])
@@ -242,7 +266,10 @@ main (int argc, char **argv)
       goto end;
     }
 
-  for (i = 0, dev = devcli_devices (); dev && i < 6; dev = dev->next, i++)
+  devcli_set_general_notifier (devcli_server (), status_change, wnd[4]);
+  status (wnd[4], devcli_server ());
+
+  for (i = 0, dev = devcli_devices (); dev && i < 5; dev = dev->next, i++)
     {
       devcli_set_general_notifier (dev, status_change, wnd[i]);
       status (wnd[i], dev);
@@ -250,14 +277,60 @@ main (int argc, char **argv)
 
   while (1)
     {
-      int key = wgetch (wnd[5]);
-      mvwprintw (wnd[5], 1, 1, "pressed: %i", key);
+      int key = wgetch (cmd_win);
       switch (key)
 	{
-	case 32:
+	case KEY_F (5):
+	  status (wnd[4], devcli_server ());
 	  for (i = 0, dev = devcli_devices (); dev && i < 6;
 	       dev = dev->next, i++)
 	    status (wnd[i], dev);
+	  break;
+	case KEY_F (10):
+	  goto end;
+	  break;
+	case KEY_BACKSPACE:
+	  if (cmd_col > 0)
+	    {
+	      cmd_col--;
+	      wmove (cmd_win, cmd_line, cmd_col);
+	      wdelch (cmd_win);
+	      wrefresh (cmd_win);
+	    }
+	  else
+	    {
+	      beep ();
+	    }
+	  break;
+	case KEY_ENTER:
+	case '\n':
+	  beep ();
+	  wclear (cmd_win);
+	  buf[cmd_col] = 0;
+	  mvwprintw (cmd_win, 1, 1, "executing: %s", buf);
+	  wrefresh (cmd_win);
+	  if (devcli_execute (buf, &i))
+	    {
+	      wprintw (cmd_win, " no such device");
+	    }
+	  else
+	    {
+	      wprintw (cmd_win, " return code: %i", i);
+	    }
+	  cmd_col = 0;
+	  wmove (cmd_win, 0, 0);
+	  wrefresh (cmd_win);
+	  break;
+	default:
+	  if (cmd_line >= BUF_LEN)
+	    {
+	      beep ();
+	    }
+	  else
+	    {
+	      buf[cmd_col++] = key;
+	      wechochar (cmd_win, key);
+	    }
 	}
     }
 
