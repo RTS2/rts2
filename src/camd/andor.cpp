@@ -124,6 +124,8 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 {
   int andorGain;
   char *andorRoot;
+
+  int camSetShutter (int shut_control);
 protected:
     virtual void help ();
 public:
@@ -147,7 +149,6 @@ public:
   virtual int camCoolTemp (float new_temp);
   virtual int camCoolShutdown ();
   virtual int camFilter (int new_filter);
-  int camSetShutter (int shut_control);
 };
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int argc, char **argv):
