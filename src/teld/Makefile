@@ -1,7 +1,9 @@
 # $Id$
-CC = gcc
-CFLAGS = -g -Wall -DDEBUG
-LDFLAGS = -lm -lpthread -Wall 
+
+include ../../make.conf
+
+LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD)
+
 all: teld
 
 clean: 
