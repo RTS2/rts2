@@ -24,8 +24,8 @@ next_event (time_t * start_time, int *type, time_t * ev_time)
   struct ln_lnlat_posn obs;
   struct ln_rst_time rst;
 
-  obs.lat = 37;
-  obs.lng = 6;
+  obs.lat = 50;
+  obs.lng = -14.95;
 
   md = round (jd_time);
 
