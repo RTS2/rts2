@@ -232,7 +232,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
       if (rain != 0 || windspeed > FRAM_MAX_PEAK_WINDSPEED)
 	{
 	  master->closeDome ();
-	  master->sendMaster ("standby");
+	  master->setMasterStandby ();
 	}
       // ack message
       ret =
@@ -683,7 +683,7 @@ Rts2DevDomeFram::idle ()
   else
     {
       closeDome ();
-      sendMaster ("standby");
+      setMasterStandby ();
     }
   return Rts2DevDome::idle ();
 }

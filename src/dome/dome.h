@@ -6,6 +6,8 @@
 
 class Rts2DevDome:public Rts2Device
 {
+private:
+  int masterState;
 protected:
   char *domeModel;
   int sw_state;
@@ -70,6 +72,14 @@ public:
   virtual int observing ();
   virtual int standby ();
   virtual int off ();
+
+  int setMasterStandby ()
+  {
+    if ((masterState & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+      {
+	sendMaster ("standby");
+      }
+  }
 
   virtual int setMasterState (int new_state);
 };

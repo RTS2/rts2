@@ -168,6 +168,7 @@ Rts2DevDome::off ()
 int
 Rts2DevDome::setMasterState (int new_state)
 {
+  masterState = new_state;
   observingPossible = 0;
   if (new_state & SERVERD_STANDBY_MASK == SERVERD_STANDBY)
     {
