@@ -99,7 +99,7 @@
 #define DEVICE_NAME_SIZE	50
 #define CLIENT_LOGIN_SIZE	50
 #define CLIENT_PASSWD_SIZE	50
-#define DEVICE_URI_SIZE		80	
+#define DEVICE_URI_SIZE		80
 
 
 // device types
@@ -115,5 +115,8 @@
 
 // default serverd port
 #define SERVERD_PORT		5557
+
+// name of the default server status
+#define SERVER_STATUS		"server_status"
 
 #endif /* __RTS__STATUS__ */
