@@ -977,7 +977,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
 	  return 0;
 	}
 
-      if (number % (int) get_device_double_default ("gps", "frequency", 2)
+      if ((number % (int) get_device_double_default ("gps", "frequency", 2)) == 0
 	  && !select_next_gps (*obs_start, plan, lon, lat))
 	return 0;
 

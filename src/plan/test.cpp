@@ -86,7 +86,7 @@ main (int argc, char **argv)
 
   if (selector->get_next_plan
       (plan, (int) jd,
-       &t, 0, 30, SERVERD_NIGHT, observer.lng, observer.lat, 1))
+       &t, 2, 30, SERVERD_NIGHT, observer.lng, observer.lat, 1))
     {
       printf ("Error making plan\n");
       fflush (stdout);
