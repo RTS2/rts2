@@ -78,6 +78,7 @@ astrometry_image (struct image_que *actual_image)
 	    actual_image->directory, actual_image->image);
   printf ("\ncalling %s.", cmd);
 
+  // try it with past..
   if (!(past_out = popen (cmd, "r")))
     {
       perror ("popen");
@@ -107,6 +108,49 @@ astrometry_image (struct image_que *actual_image)
   while (!(ret == EOF || ret == 5));
 
   pclose (past_out);
+
+  if (ret == EOF && hi_precision && hi_precision->hi_precision == 2)
+    {
+      // call image processing script
+      asprintf (&cmd,
+		get_string_default ("img_max",
+				    "/home/petr/rts2/src/plan/img_max %s/%s 2>/dev/null"),
+		actual_image->directory, actual_image->image);
+      printf ("\ncalling %s.", cmd);
+
+      // try it with past..
+      if (!(past_out = popen (cmd, "r")))
+	{
+	  perror ("popen");
+	  free (cmd);
+	  set_precision (hi_precision, NAN, NAN);
+	  return -1;
+	};
+
+      free (cmd);
+
+      printf ("OK\n");
+
+      do
+	{
+	  char strs[200];
+	  if (!fgets (strs, 200, past_out))
+	    {
+	      ret = EOF;
+	      break;
+	    }
+
+	  strs[199] = 0;
+
+	  ret = sscanf
+	    (strs, "%lf %lf %li (%lf,%lf)", &ra_err, &dec_err, &id, &ra,
+	     &dec);
+	}
+      while (!(ret == EOF || ret == 5));
+
+      pclose (past_out);
+    }
+
   filename =
     (char *) malloc (strlen (actual_image->directory) +
 		     strlen (actual_image->image) + 1);
@@ -321,7 +365,8 @@ data_handler (int sock, size_t size, struct image_info *image, void *arg)
 
       if (strcmp
 	  (image->camera_name,
-	   get_string_default ("telescope_camera", "C0")) == 0)
+	   get_string_default ("telescope_camera", "C0")) == 0
+	  && image->hi_precision)
 	new_que->correction_mark = image->telescope.correction_mark;
       else
 	new_que->correction_mark = -1;
