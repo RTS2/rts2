@@ -97,6 +97,8 @@ start_readout (void *arg)
   int result;
   unsigned short line_buff[5000];
 
+  int file;
+
   devdem_status_mask (READOUT->ccd,
 		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_READING | CAM_NODATA, "reading chip started");
@@ -121,7 +123,8 @@ start_readout (void *arg)
   line.ccd = READOUT->ccd;
   line.pixelStart = READOUT->x;
   line.pixelLength = READOUT->width;
-  line.readoutMode = READOUT->header.binnings[0];
+  // TODO probrat s matesem vycitani a jeho binningy
+  line.readoutMode = 0;		//READOUT->header.binnings[0];
   line.data = line_buff;
 
   for (y = 0; y < (READOUT->height); y++)
@@ -162,7 +165,7 @@ err:
       if (devser_param_next_integer (&chip)) \
       	return -1; \
       if ((chip < 0) || (chip >= info.nmbr_chips)) \
-        {      \
+	{      \
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "invalid chip: %i", chip);\
 	  return -1;\
 	}
@@ -320,8 +323,12 @@ camd_handle_command (char *command)
 	sizeof (unsigned short) * rd->width * rd->height;
 
       // open data connection
-      devser_data_init (20 * sizeof (unsigned short) * rd->width, data_size,
-			&(rd->conn_id));
+      if (devser_data_init
+	  (2 * sizeof (unsigned short) * rd->width, data_size, &rd->conn_id))
+	return -1;
+
+      if (devser_data_put (rd->conn_id, header, sizeof (*header)))
+	return -1;
 
       if ((ret =
 	   devser_thread_create (start_readout,
@@ -431,8 +438,6 @@ camd_handle_command (char *command)
       devser_dprintf
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       devser_dprintf ("stopread <chip> - stop reading given chip");
-      devser_dprintf
-	("data <chip> - establish data connection on given port and address");
       devser_dprintf ("cool_temp <temp> - cooling temperature");
       devser_dprintf ("exit - exit from connection");
       devser_dprintf ("help - print, what you are reading just now");
@@ -455,7 +460,7 @@ main (void)
 {
   char *stats[] = { "img_chip", "trc_chip" };
 
-  port = 2;
+  port = 3;
 #ifdef DEBUG
   mtrace ();
 #endif
