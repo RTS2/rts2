@@ -168,10 +168,7 @@ CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   char *msg;
   char address[200];
-  readoutConn = dataConn;
-  readoutLine = 0;
-  sendLine = 0;
-  send_readout_data_failed = 0;
+  setReadoutConn (dataConn);
   dataConn->getAddress ((char *) &address, 200);
   if (!chipUsedReadout)
     {
@@ -189,11 +186,19 @@ CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   return 0;
 }
 
+void
+CameraChip::setReadoutConn (Rts2DevConnData * dataConn)
+{
+  readoutConn = dataConn;
+  readoutLine = 0;
+  sendLine = 0;
+  send_readout_data_failed = 0;
+}
+
 int
 CameraChip::endReadout ()
 {
-  readoutLine = -1;
-  sendLine = -1;
+  clearReadout ();
   if (readoutConn)
     {
       readoutConn->endConnection ();
@@ -202,6 +207,13 @@ CameraChip::endReadout ()
   delete chipUsedReadout;
   chipUsedReadout = NULL;
   return 0;
+}
+
+void
+CameraChip::clearReadout ()
+{
+  readoutLine = -1;
+  sendLine = -1;
 }
 
 int
@@ -456,6 +468,13 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
       maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
       chips[chip]->setExposure (exptime);
+      // call us to check for exposures..
+      long new_timeout;
+      new_timeout = camWaitExpose (chip);
+      if (new_timeout >= 0)
+	{
+	  setTimeout (new_timeout);
+	}
       return 0;
     }
   conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");

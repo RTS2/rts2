@@ -28,6 +28,14 @@ public:
     width = copy->width;
     height = copy->height;
   }
+  int getWidth ()
+  {
+    return width;
+  }
+  int getHeight ()
+  {
+    return height;
+  }
 };
 
 /**
@@ -74,6 +82,14 @@ public:
     chipSize = new ChipSubset (in_x, in_y, in_width, in_height);
     chipReadout = new ChipSubset (in_x, in_y, in_width, in_height);
   }
+  int getWidth ()
+  {
+    return chipSize->getWidth ();
+  }
+  int getHeight ()
+  {
+    return chipSize->getHeight ();
+  }
   virtual int init ()
   {
     return 0;
@@ -118,7 +134,9 @@ public:
     return endExposure ();
   }
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
+  void setReadoutConn (Rts2DevConnData * dataConn);
   virtual int endReadout ();
+  void clearReadout ();
   virtual int sendFirstLine ();
   virtual int readoutOneLine ();
 };

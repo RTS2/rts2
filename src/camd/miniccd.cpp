@@ -19,7 +19,6 @@ class CameraMiniccdChip:public CameraChip
   char *send_top;
   char *dest_top;
 
-  int interleaved;
   int ccd_dac_bits;
 
   int usedRowBytes;
@@ -27,23 +26,31 @@ class CameraMiniccdChip:public CameraChip
   CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
   CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 public:
-    CameraMiniccdChip (int in_chip_id, int in_fd_chip, int in_interleaved);
+    CameraMiniccdChip (int in_chip_id, int in_fd_chip);
     CameraMiniccdChip (int in_chip_id, char *chip_dev);
     virtual ~ CameraMiniccdChip (void);
   virtual int init ();
-  virtual int startExposure (int light, float exptime);
+  virtual int startExposure (int light, float exptime)
+  {
+    return startExposure (light, exptime, 0);
+  }
+  int startExposure (int ligth, float exptime, int ccdFlags);
   virtual long isExposing ();
   virtual int stopExposure ();
   virtual int readoutOneLine ();
+  int sendLineData ();
+
+  int getSizeOfPixel ()
+  {
+    return sizeof_pixel;
+  }
 };
 
-CameraMiniccdChip::CameraMiniccdChip (int in_chip_id, int in_fd_chip,
-				      int in_interleaved):
+CameraMiniccdChip::CameraMiniccdChip (int in_chip_id, int in_fd_chip):
 CameraChip (in_chip_id)
 {
   device_name = NULL;
   fd_chip = in_fd_chip;
-  interleaved = in_interleaved;
   _data = NULL;
 }
 
@@ -52,7 +59,6 @@ CameraChip (in_chip_id)
 {
   device_name = chip_dev;
   fd_chip = -1;
-  interleaved = 0;
   _data = NULL;
 }
 
@@ -112,7 +118,7 @@ CameraMiniccdChip::init ()
 }
 
 int
-CameraMiniccdChip::startExposure (int light, float exptime)
+CameraMiniccdChip::startExposure (int light, float exptime, int ccdFlags)
 {
   CCD_ELEM_TYPE msg[CCD_MSG_EXP_LEN / CCD_ELEM_SIZE];
   int exposure_msec = (int) (exptime * 1000);
@@ -126,6 +132,8 @@ CameraMiniccdChip::startExposure (int light, float exptime)
       chipUsedReadout = chipReadout;
     }
 
+  ccdFlags |= light ? 0 : CCD_EXP_FLAGS_NOOPEN_SHUTTER;
+
   msg[CCD_MSG_HEADER_INDEX] = CCD_MSG_HEADER;
   msg[CCD_MSG_LENGTH_LO_INDEX] = CCD_MSG_EXP_LEN;
   msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
@@ -137,7 +145,7 @@ CameraMiniccdChip::startExposure (int light, float exptime)
   msg[CCD_EXP_XBIN_INDEX] = usedBinningHorizontal;
   msg[CCD_EXP_YBIN_INDEX] = usedBinningVertical;
   msg[CCD_EXP_DAC_INDEX] = ccd_dac_bits;
-  msg[CCD_EXP_FLAGS_INDEX] = light ? 0 : CCD_EXP_FLAGS_NOOPEN_SHUTTER;
+  msg[CCD_EXP_FLAGS_INDEX] = ccdFlags;
   msg[CCD_EXP_MSEC_LO_INDEX] = exposure_msec & 0xFFFF;
   msg[CCD_EXP_MSEC_HI_INDEX] = exposure_msec >> 16;
   ret = write (fd_chip, (char *) msg, CCD_MSG_EXP_LEN);
@@ -169,49 +177,50 @@ CameraMiniccdChip::isExposing ()
   read_tout.tv_sec = read_tout.tv_usec = 0;
   select (fd_chip + 1, &set, NULL, NULL, &read_tout);
   if (FD_ISSET (fd_chip, &set))
-    return 0;
-  // no data recoverd (yet); TODO fix it!!!
-  return 1;
+    {
+      int row_bytes = usedRowBytes;
+
+      if (readoutLine < (chipUsedReadout->height / usedBinningVertical))
+	{
+	  // readout some data, use them..
+	  int ret;
+	  if (readoutLine == 0)
+	    row_bytes += CCD_MSG_IMAGE_LEN;
+	  ret = read (fd_chip, dest_top, row_bytes);
+	  // second try should help in case of header, which can be passed
+	  // in different readout:(
+	  if (ret != row_bytes)
+	    {
+	      int ret2;
+	      ret2 = read (fd_chip, dest_top + ret, row_bytes - ret);
+	      // that's an error
+	      if (ret2 + ret != row_bytes)
+		{
+		  syslog (LOG_ERR,
+			  "CameraMiniccdChip::readoutOneLine cannot readout line");
+		  endReadout ();
+		  return -2;
+		}
+	    }
+	  dest_top += row_bytes;
+	  readoutLine++;
+	  return 1;
+	}
+      return 0;
+    }
+  return 10;
 }
 
 int
 CameraMiniccdChip::readoutOneLine ()
 {
+  int ret;
+
   if (readoutLine < 0)
     return -1;
 
-  int row_bytes = usedRowBytes;
-  int send_data_size;
-
-  if (readoutLine < (chipUsedReadout->height / usedBinningVertical))
-    {
-      // readout some data, use them..
-      int ret;
-      if (readoutLine == 0)
-	row_bytes += CCD_MSG_IMAGE_LEN;
-      ret = read (fd_chip, dest_top, row_bytes);
-      // second try should help in case of header, which can be passed
-      // in different readout:(
-      if (ret != row_bytes)
-	{
-	  int ret2;
-	  ret2 = read (fd_chip, dest_top + ret, row_bytes - ret);
-	  // that's an error
-	  if (ret2 + ret != row_bytes)
-	    {
-	      syslog (LOG_ERR,
-		      "CameraMiniccdChip::readoutOneLine cannot readout line");
-	      endReadout ();
-	      return -2;
-	    }
-	}
-      dest_top += row_bytes;
-      readoutLine++;
-      return 0;
-    }
   if (sendLine == 0)
     {
-      int ret;
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;
@@ -220,44 +229,54 @@ CameraMiniccdChip::readoutOneLine ()
     {
       return -1;
     }
-  if (send_top < dest_top)
+
+  ret = sendLineData ();
+  if (ret == -2)
+    endReadout ();
+  return ret;
+}
+
+int
+CameraMiniccdChip::sendLineData ()
+{
+  int send_data_size;
+
+  if (send_top >= dest_top)
     {
-      if (sendLine == 0)
-	{
-	  // test data size & ignore data header
-	  CCD_ELEM_TYPE *msg = (CCD_ELEM_TYPE *) _data;
-	  if (msg[CCD_MSG_INDEX] != CCD_MSG_IMAGE)
-	    {
-	      syslog (LOG_ERR,
-		      "CameraMiniccdChip::readoutOneLine wrong image message");
-	      endReadout ();
-	      return -2;
-	    }
-	  if (msg[CCD_MSG_LENGTH_LO_INDEX] +
-	      (msg[CCD_MSG_LENGTH_HI_INDEX] << 16) !=
-	      ((chipUsedReadout->height / usedBinningVertical) *
-	       usedRowBytes) + CCD_MSG_IMAGE_LEN)
-	    {
-	      syslog (LOG_ERR,
-		      "CameraMiniccdChip::readoutOneLine wrong size %i",
-		      msg[CCD_MSG_LENGTH_LO_INDEX] +
-		      (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
-	      endReadout ();
-	      return -2;
-	    }
-
-	  send_top += CCD_MSG_IMAGE_LEN;
-	}
-      sendLine++;
-      send_data_size = sendReadoutData (send_top, dest_top - send_top);
-      if (send_data_size < 0)
-	return -2;
-
-      send_top += send_data_size;
-      return 0;
+      return -2;
     }
-  endReadout ();
-  return -2;
+
+  if (sendLine == 0)
+    {
+      // test data size & ignore data header
+      CCD_ELEM_TYPE *msg = (CCD_ELEM_TYPE *) _data;
+      if (msg[CCD_MSG_INDEX] != CCD_MSG_IMAGE)
+	{
+	  syslog (LOG_ERR,
+		  "CameraMiniccdChip::readoutOneLine wrong image message");
+	  return -2;
+	}
+      if (msg[CCD_MSG_LENGTH_LO_INDEX] +
+	  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16) !=
+	  ((chipUsedReadout->height / usedBinningVertical) *
+	   usedRowBytes) + CCD_MSG_IMAGE_LEN)
+	{
+	  syslog (LOG_ERR,
+		  "CameraMiniccdChip::readoutOneLine wrong size %i",
+		  msg[CCD_MSG_LENGTH_LO_INDEX] +
+		  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
+	  return -2;
+	}
+
+      send_top += CCD_MSG_IMAGE_LEN;
+    }
+  sendLine++;
+  send_data_size = sendReadoutData (send_top, dest_top - send_top);
+  if (send_data_size < 0)
+    return -2;
+
+  send_top += send_data_size;
+  return 0;
 }
 
 int
@@ -274,6 +293,216 @@ CameraMiniccdChip::stopExposure ()
   write (fd_chip, (char *) msg, CCD_MSG_ABORT_LEN);
   return CameraChip::stopExposure ();
 }
+
+/**************************************************************
+ *
+ * This class is used for interleaved chip readout.
+ * It combines two chips together..
+ *
+ **************************************************************/
+
+class CameraMiniccdInterleavedChip:public CameraChip
+{
+  enum
+  { NO_ACTION, SLAVE1_EXPOSING, SLAVE2_EXPOSING, SLAVE1_READOUT,
+      SLAVE2_READOUT, SLAVE2_DATA } slaveState;
+  CameraMiniccdChip *slaveChip[2];
+  long firstReadoutTime;
+  struct timeval slave2ExposureStart;
+  int chip1_light;
+  float chip1_exptime;
+public:
+    CameraMiniccdInterleavedChip (int in_chip_id, int in_fd_chip,
+				  CameraMiniccdChip * in_chip1,
+				  CameraMiniccdChip * in_chip2);
+    virtual ~ CameraMiniccdInterleavedChip (void);
+  virtual int init ();
+  virtual int startExposure (int light, float exptime);
+  virtual long isExposing ();
+  virtual int stopExposure ();
+  virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
+  virtual int endReadout ();
+  virtual int readoutOneLine ();
+};
+
+CameraMiniccdInterleavedChip::CameraMiniccdInterleavedChip (int in_chip_id,
+							    int in_fd_chip,
+							    CameraMiniccdChip
+							    * in_chip1,
+							    CameraMiniccdChip
+							    * in_chip2):
+CameraChip (in_chip_id)
+{
+  slaveChip[0] = in_chip1;
+  slaveChip[1] = in_chip2;
+  firstReadoutTime = 3 * USEC_SEC;	// default readout is expected to last 3 sec..
+  slaveState = NO_ACTION;
+}
+
+CameraMiniccdInterleavedChip::~CameraMiniccdInterleavedChip (void)
+{
+
+}
+
+int
+CameraMiniccdInterleavedChip::init ()
+{
+  int in_width;
+  int in_height;
+
+  int sizeof_pixel;
+
+  in_width = slaveChip[0]->getWidth ();
+
+  if (in_width != slaveChip[1]->getWidth ())
+    {
+      syslog (LOG_ERR, "CameraMiniccdInterleavedChip::init not same width");
+      return -1;
+    }
+
+  sizeof_pixel = slaveChip[0]->getSizeOfPixel ();
+
+  if (sizeof_pixel != slaveChip[1]->getSizeOfPixel ())
+    {
+      syslog (LOG_ERR,
+	      "CameraMiniccdInterleavedChip::init not same sizeof pixel");
+      return -1;
+    }
+
+  in_height = slaveChip[0]->getHeight () + slaveChip[1]->getHeight ();
+
+  setSize (in_width, in_height, 0, 0);
+
+  return 0;
+}
+
+int
+CameraMiniccdInterleavedChip::startExposure (int light, float exptime)
+{
+  int ret;
+
+  gettimeofday (&slave2ExposureStart, NULL);
+
+  ret = slaveChip[0]->startExposure (light, exptime);
+  if (ret)
+    return -1;
+
+  slave2ExposureStart.tv_usec += firstReadoutTime;
+
+  slave2ExposureStart.tv_sec += slave2ExposureStart.tv_usec / USEC_SEC;
+  slave2ExposureStart.tv_usec %= USEC_SEC;
+
+  slaveState = SLAVE1_EXPOSING;
+
+  chip1_light = light;
+  chip1_exptime = exptime;
+
+  return 0;
+}
+
+long
+CameraMiniccdInterleavedChip::isExposing ()
+{
+  struct timeval now;
+  long ret;
+
+  switch (slaveState)
+    {
+    case SLAVE1_EXPOSING:
+      gettimeofday (&now, NULL);
+      if (timercmp (&now, &slave2ExposureStart, <))
+	return (now.tv_sec - slave2ExposureStart.tv_sec) * USEC_SEC +
+	  (now.tv_usec - slave2ExposureStart.tv_usec);
+      ret =
+	slaveChip[1]->startExposure (chip1_light, chip1_exptime,
+				     CCD_EXP_FLAGS_NOWIPE_FRAME);
+      if (ret)
+	{
+	  return -2;
+	}
+    case SLAVE2_EXPOSING:
+      ret = slaveChip[0]->isExposing ();
+      if (ret)
+	return ret;
+      slaveState = SLAVE1_READOUT;
+    case SLAVE1_READOUT:
+      ret = slaveChip[1]->isExposing ();
+      if (!ret)
+	return ret;
+      slaveState = SLAVE2_READOUT;
+      break;
+    default:
+      return CameraChip::isExposing ();
+    }
+}
+
+int
+CameraMiniccdInterleavedChip::stopExposure ()
+{
+  return slaveChip[0]->stopExposure () | slaveChip[1]->stopExposure ();
+}
+
+int
+CameraMiniccdInterleavedChip::startReadout (Rts2DevConnData * dataConn,
+					    Rts2Conn * conn)
+{
+  slaveChip[0]->setReadoutConn (dataConn);
+  slaveChip[1]->setReadoutConn (dataConn);
+  return CameraChip::startReadout (dataConn, conn);
+}
+
+int
+CameraMiniccdInterleavedChip::endReadout ()
+{
+  slaveChip[0]->clearReadout ();
+  slaveChip[1]->clearReadout ();
+  return CameraChip::endReadout ();
+}
+
+int
+CameraMiniccdInterleavedChip::readoutOneLine ()
+{
+  if (readoutLine < 0)
+    return -1;
+
+  int send_data_size;
+  int ret;
+
+  if (sendLine == 0)
+    {
+      int ret;
+      ret = CameraChip::sendFirstLine ();
+      if (ret)
+	return ret;
+    }
+
+  if (!readoutConn)
+    {
+      return -1;
+    }
+  switch (slaveState)
+    {
+    case SLAVE2_READOUT:
+      ret = slaveChip[0]->sendLineData ();
+      if (ret != -2)
+	return ret;
+      slaveState = SLAVE2_DATA;
+    case SLAVE2_DATA:
+      ret = slaveChip[1]->sendLineData ();
+      if (ret != -2)
+	return ret;
+    default:
+      slaveState = NO_ACTION;
+    }
+  endReadout ();
+  return -2;
+}
+
+/****************************************************************
+ *
+ * Camera main class
+ *
+ ****************************************************************/
 
 class Rts2DevCameraMiniccd:public Rts2DevCameraMirror
 {
@@ -325,7 +554,7 @@ Rts2DevCameraMiniccd::processOption (int in_opt)
       device_file = optarg;
       break;
     default:
-      return Rts2DevCamera::processOption (in_opt);
+      return Rts2DevCameraMirror::processOption (in_opt);
     }
   return 0;
 }
@@ -393,7 +622,7 @@ Rts2DevCameraMiniccd::init ()
 
   ccdType[CCD_CCD_NAME_LEN] = '\x0';
 
-  chips[0] = new CameraMiniccdChip (0, fd_ccd, interleave);
+  CameraMiniccdChip *miniChips[2];
 
   for (i = 1; i < chipNum; i++)
     {
@@ -402,7 +631,19 @@ Rts2DevCameraMiniccd::init ()
       strcpy (chip_device_name, device_file);
       chip_device_name[strlen (device_file)] = i + '0';
       chip_device_name[strlen (device_file) + 1] = '\x0';
-      chips[i] = new CameraMiniccdChip (i, chip_device_name);
+      miniChips[i - 1] = new CameraMiniccdChip (i, chip_device_name);
+      chips[i] = miniChips[i - 1];
+    }
+
+  if (interleave)
+    {
+      chips[0] =
+	new CameraMiniccdInterleavedChip (0, fd_ccd, miniChips[0],
+					  miniChips[1]);
+    }
+  else
+    {
+      chips[0] = new CameraMiniccdChip (0, fd_ccd);
     }
 
   canDF = 0;			// starlight cameras cannot do DF
