@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -430,6 +431,25 @@ Rts2Device::Rts2Device (int argc, char **argv, int device_type, int default_port
 	  printf ("?? getopt returned unknow character %o ??\n", c);
 	}
     }
+
+  if (deamonize)
+  {
+    int ret = fork ();
+    if (ret < 0)
+    {
+      syslog (LOG_ERR, "Rts2Device::Rts2Device deamonize fork %m");
+      exit (2);
+    }
+    if (ret)
+      exit (0);
+    close (0);
+    close (1);
+    close (2);
+    int f = open ("/dev/null", O_RDWR);
+    dup (f);
+    dup (f);
+    dup (f);
+  }
 
   openlog (NULL, log_option, LOG_LOCAL0);
       
