@@ -44,8 +44,8 @@ print_status (WINDOW * wnd, int start_row, int col, struct device *dev)
       struct devconn_status *st;
       st = &dev->statutes[i];
 
-      mvwprintw (wnd, start_row + i, col, "st: %s - %i", st->name,
-		 st->status);
+      mvwprintw (wnd, start_row + i, col, "%s: %s(%i)", st->name,
+		 devcli_status_string (dev, st), st->status);
     }
 }
 

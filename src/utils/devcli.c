@@ -1085,9 +1085,9 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
       switch (st->status)
 	{
 	case 1:
-	  return "have it";
+	  return "have";
 	default:
-	  return "don't have it";
+	  return "don't";
 	}
     }
 
@@ -1117,11 +1117,11 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
       switch (st->status)
 	{
 	case CAM_EXPOSING:
-	  return "exposing";
+	  return "exp";
 	case CAM_DATA:
 	  return "data";
 	case CAM_READING:
-	  return "reading";
+	  return "read";
 	case CAM_NOEXPOSURE:
 	  return "idle";
 	}
@@ -1130,11 +1130,11 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
       switch (st->status)
 	{
 	case TEL_MOVING:
-	  return "moving";
+	  return "move";
 	case TEL_OBSERVING:
-	  return "observing";
+	  return "obs";
 	case TEL_PARKED:
-	  return "parked";
+	  return "park";
 	}
     case DEVICE_TYPE_DOME:
       if (!strcmp (st->name, "weather"))
@@ -1151,14 +1151,14 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
 	{
 	  switch (st->status)
 	    {
-	    case DOME_OPENED:
-	      return "open";
-	    case DOME_OPENING:
-	      return "opening";
-	    case DOME_CLOSING:
-	      return "closing";
-	    case DOME_CLOSED:
-	      return "closed";
+	    case DOME_UNKNOW:
+	      return "unknow";
+	    case DOME_OFF:
+	      return "off";
+	    case DOME_STANDBY:
+	      return "standby";
+	    case DOME_OBSERVING:
+	      return "observing";
 	    }
 	}
       break;
