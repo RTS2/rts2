@@ -294,6 +294,16 @@ struct supp_info devhnd_devices[] = {
   ,				// DEVICE_TYPE_CCD
   {
    (devcli_handle_response_t) dome_command_handler, NULL}
-  // DEVICE_TYPE_DOME
+  ,				// DEVICE_TYPE_DOME
+  {
+   NULL, NULL}
+  ,				// DEVICE_TYPE_WEATHER
+  {
+   NULL, NULL}
+  ,				// DEVICE_TYPE_ARCH
+  {
+   NULL, NULL}
+  // DEVICE_TYPE_PHOT
+
   // etc..
 };

@@ -28,6 +28,10 @@ extern int devcli_server_register (const char *hostname, uint16_t port,
 				   uint16_t device_port,
 				   struct devcli_channel_handlers *handlers,
 				   status_notifier_t notifier);
+extern devcli_handle_response_t devcli_set_command_handler (struct device
+							    *dev,
+							    devcli_handle_response_t
+							    command_handler);
 extern void devcli_server_close (struct device *dev);
 extern void devcli_server_disconnect ();
 extern struct device *devcli_server ();
