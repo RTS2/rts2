@@ -53,7 +53,9 @@ start_move (void *arg)
   int ret;
   devdem_status_mask (0, TEL_MASK_MOVING, TEL_MOVING,
 		      "moving of telescope started");
-  if ((ret = tel_move_to (((struct radec *) arg)->ra, ((struct radec *) arg)->dec)) < 0)
+  if ((ret =
+       tel_move_to (((struct radec *) arg)->ra,
+		    ((struct radec *) arg)->dec)) < 0)
     {
       devdem_status_mask (0, TEL_MASK_MOVING, TEL_STILL, "with error");
     }
@@ -110,11 +112,12 @@ teld_handle_command (char *argv, size_t argc)
       if (isnan (coord.ra) || isnan (coord.dec))
 	{
 	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
-				    "Expected ra dec, got: %f %f", coord.ra, coord.dec);
+				    "Expected ra dec, got: %f %f", coord.ra,
+				    coord.dec);
 	  ret = -1;
 	}
       else
-	devdem_thread_create (start_move, (void *) &coord, sizeof (coord),
+	devdem_thread_create (start_move, (void *) &coord, sizeof coord,
 			      NULL);
       ret = 0;
     }
