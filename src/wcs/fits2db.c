@@ -1,6 +1,11 @@
+#define __GNU_SOURCE
+
 #include <fitsio.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "../utils/config.h"
 
 #define test_nval(name,count)	if (count != nval) { fprintf (stderr, "Invalid number of values in %s (expecting %i, got %i)\n",\
 				name, count, nval); goto err; }
@@ -37,7 +42,42 @@ main (int argc, char **argv)
   char camera_name[10];
   char mount_name[10];
 
+  char *obs_epoch;
+
   int nval;
+
+  int c;
+
+  read_config (CONFIG_FILE);
+
+  obs_epoch = get_string_default ("epoch", "00T");
+
+  /* get attrs */
+  while (1)
+    {
+      static struct option long_option[] = {
+	{"epoch", 1, 0, 'e'},
+	{"help", 0, 0, 'h'}
+      };
+
+      c = getopt_long (argc, argv, "e:h", long_option, NULL);
+
+      if (c == -1)
+	break;
+      switch (c)
+	{
+	case 'e':
+	  obs_epoch = optarg;
+	  break;
+	case 'h':
+	  printf
+	    ("Options:\n\tepoch|e <epoch>\t\tobservation epoch\n"
+	     "\t\t(that one will be written to the database; it overwrites configuration options)\n"
+	     "\thelp|h\t\t\tprint that help\n");
+	  exit (0);
+
+	}
+    }
 
   status = 0;
   if (argc == 1)
@@ -97,15 +137,24 @@ main (int argc, char **argv)
 	  "\t'%s',\n"
 	  "\t'%s',\n"
 	  "\t0,\n"
-	  "\t'00T'\n"
+	  "\t'%s'\n"
 	  ");\n",
 	  img_date,
 	  img_exposure * 100,
 	  img_temperature * 10,
 	  img_filter,
-	  naxis[0], naxis[1], ctype[0], ctype[1], crpix[0], crpix[1],
-	  crval[0], crval[1], cdelt[0], cdelt[1], (crota[0] + crota[1]) / 2.0,
-	  eqin, epoch, obs_id, camera_name, mount_name);
+	  naxis[0],
+	  naxis[1],
+	  ctype[0],
+	  ctype[1],
+	  crpix[0],
+	  crpix[1],
+	  crval[0],
+	  crval[1],
+	  cdelt[0],
+	  cdelt[1],
+	  (crota[0] + crota[1]) / 2.0,
+	  eqin, epoch, obs_id, camera_name, mount_name, obs_epoch);
 err:
   if (status)
     fits_report_error (stderr, status);
