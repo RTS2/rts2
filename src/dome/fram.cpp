@@ -431,17 +431,19 @@ Rts2DevDomeFram::openDome ()
       openRight ();
     }
 
+  setTimeout (10);
   return Rts2DevDome::openDome ();
 }
 
 long
 Rts2DevDomeFram::isOpened ()
 {
+  syslog (LOG_DEBUG, "isOpened %i", movingState);
   switch (movingState)
     {
     case MOVE_OPEN_LEFT_WAIT:
       // check for timeout..
-      if (!(checkMotorTimeout () || isOn (KONCAK_OTEVRENI_LEVY)))
+      if (!(isOn (KONCAK_OTEVRENI_LEVY) || checkMotorTimeout ()))
 	// go to end return..
 	break;
       // follow on..
@@ -449,7 +451,7 @@ Rts2DevDomeFram::isOpened ()
       openRight ();
       break;
     case MOVE_OPEN_RIGHT_WAIT:
-      if (!(checkMotorTimeout () || isOn (KONCAK_OTEVRENI_PRAVY)))
+      if (!(isOn (KONCAK_OTEVRENI_PRAVY) || checkMotorTimeout ()))
 	break;
     default:
       return -2;
@@ -497,14 +499,14 @@ Rts2DevDomeFram::isClosed ()
   switch (movingState)
     {
     case MOVE_CLOSE_RIGHT_WAIT:
-      if (!(checkMotorTimeout () || isOn (KONCAK_ZAVRENI_PRAVY)))
+      if (!(isOn (KONCAK_ZAVRENI_PRAVY) || checkMotorTimeout ()))
 	break;
       // close dome..
     case MOVE_CLOSE_LEFT:
       closeRight ();
       break;
     case MOVE_CLOSE_LEFT_WAIT:
-      if (!(checkMotorTimeout () || isOn (KONCAK_ZAVRENI_LEVY)))
+      if (!(isOn (KONCAK_ZAVRENI_LEVY) || checkMotorTimeout ()))
 	break;
     default:
       return -2;
