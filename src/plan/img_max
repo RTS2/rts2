@@ -1,5 +1,12 @@
 #!/usr/bin/perl -w
 
+# Script for positionig of the mount to the bightest star.
+# $Id$
+#
+# Used, when astrometry doesn't work.
+#
+# Petr Kubanek <petr@lascaux.asu.cas.cz>
+
 use strict;
 
 my $file = $ARGV[0];
@@ -9,8 +16,6 @@ unless (open (FILE,"<${file}.sex"))
   system "/home/rtopera/bin/detect $file";
   open FILE, "<${file}.sex" or die "Cannot open sextrator file!";
 }
-
-
 
 my @arr;
 
@@ -25,9 +30,29 @@ while (my $in = <FILE>)
 
 #my $ra_err = ($arr[0][2] - 188) * 60 / 376;
 #my $dec_err = ($arr[0][3] - 145) * 60 / 290; 
-#
-my $ra_err = + ($arr[0][2] - 160) * 0.2956;
-my $dec_err = + ($arr[0][3] - 140) * 0.2853; 
+
+open FILE, "<${file}" or die "Cannot open fits file $file";
+
+my $flip = 0;
+
+while ($a = <FILE>)
+{
+  # we need there fixed FLIP    =, since FITS uses that format
+  if ($a =~ /FLIP    = *(\d)/)
+  {
+    $flip = $1;
+    if ($flip == 0)
+    {
+      $flip = -1;
+    }
+    last;
+  }
+}
+
+#print $flip . "\n";
+
+my $ra_err = + ($arr[0][2] - 160) * 0.2956 * $flip * 2;
+my $dec_err = + ($arr[0][3] - 140) * 0.2853 * $flip; 
 
 
 printf ("%4.4f %4.4f %i", $ra_err, $dec_err, ($arr[0][6]) % 10000);
