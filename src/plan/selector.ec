@@ -18,7 +18,7 @@
 #include <stdlib.h>
 
 #define READOUT_TIME		75
-#define PLAN_TOLERANCE	        500	
+#define PLAN_TOLERANCE	        500
 #define PLAN_DARK_TOLERANCE	1800
 
 #define DEFAULT_DARK_FREQUENCY	50	// every n image will be dark
@@ -26,7 +26,7 @@
 EXEC SQL include sqlca;
 
 int
-Selector::find_plan (Target *plan, int id, time_t c_start)
+Selector::find_plan (Target * plan, int id, time_t c_start)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int count = 0;
@@ -40,27 +40,28 @@ Selector::find_plan (Target *plan, int id, time_t c_start)
       plan = plan->next;
     }
   EXEC SQL DECLARE find_plan CURSOR FOR
-    SELECT count(*) FROM observations 
-      WHERE tar_id = :tar_id AND obs_start > abstime(:obs_start);
+    SELECT count (*) FROM observations
+    WHERE tar_id =:tar_id AND obs_start > abstime (:obs_start);
   EXEC SQL OPEN find_plan;
-  EXEC SQL FETCH next FROM find_plan INTO :count;
+  EXEC SQL FETCH next FROM find_plan INTO:count;
   printf ("obs_count: %i obs_start: %i\n", count, obs_start);
   EXEC SQL CLOSE find_plan;
   if (count > 0)
     return 0;
-   
+
   return -1;
 }
 
 Target *
-Selector::add_target (Target *plan, int type, int id, int obs_id, double ra,
-	    double dec, time_t obs_time, int tolerance, char obs_type)
+Selector::add_target (Target * plan, int type, int id, int obs_id, double ra,
+		      double dec, time_t obs_time, int tolerance,
+		      char obs_type)
 {
   Target *new_plan;
   struct ln_equ_posn object;
   object.ra = ra;
   object.dec = dec;
-  new_plan = new ConstTarget(&object);
+  new_plan = new ConstTarget (&object);
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
@@ -78,11 +79,12 @@ Selector::add_target (Target *plan, int type, int id, int obs_id, double ra,
 }
 
 Target *
-Selector::add_target_ell (Target *plan, int type, int id, int obs_id,
-  ln_ell_orbit *orbit, time_t obs_time, int tolerance, char obs_type)
+Selector::add_target_ell (Target * plan, int type, int id, int obs_id,
+			  ln_ell_orbit * orbit, time_t obs_time,
+			  int tolerance, char obs_type)
 {
   Target *new_plan;
-  new_plan = new EllTarget(orbit);
+  new_plan = new EllTarget (orbit);
   new_plan->next = NULL;
   new_plan->type = type;
   new_plan->id = id;
@@ -121,7 +123,8 @@ add_target_lunar (Target *plan, int type, int id, int obs_id,
 }*/
 
 int
-Selector::select_next_alt (time_t c_start, Target *plan, float lon, float lat)
+Selector::select_next_alt (time_t c_start, Target * plan, float lon,
+			   float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -142,34 +145,24 @@ Selector::select_next_alt (time_t c_start, Target *plan, float lon, float lat)
   printf ("st: %f\n", st);
 
   db_lock ();
-  EXEC SQL DECLARE obs_cursor_alt CURSOR FOR SELECT 
-        tar_id,
-        tar_ra,
-        tar_dec,
-        type_id,
-        obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt 
-    FROM
-        targets_enabled targets
-    ORDER BY 
-        alt DESC;
+  EXEC SQL DECLARE obs_cursor_alt CURSOR FOR SELECT
+    tar_id,
+    tar_ra,
+    tar_dec,
+    type_id,
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt
+    FROM targets_enabled targets ORDER BY alt DESC;
   EXEC SQL OPEN obs_cursor_alt;
   test_sql;
   while (!sqlca.sqlcode)
     {
-      EXEC SQL FETCH next 
-        FROM 
-                obs_cursor_alt
-        INTO
-                :tar_id,
-                :ra,
-                :dec,
-                :type_id,
-                :alt
-        ;
+      EXEC SQL FETCH next
+	FROM obs_cursor_alt INTO:tar_id,:ra,:dec,:type_id,:alt;
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start) && checker->is_good (st, ra, dec))
+      if (find_plan (plan, tar_id, obs_start)
+	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
@@ -192,7 +185,8 @@ err:
 }
 
 int
-Selector::select_next_gps (time_t c_start, Target *plan, float lon, float lat)
+Selector::select_next_gps (time_t c_start, Target * plan, float lon,
+			   float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -214,45 +208,35 @@ Selector::select_next_gps (time_t c_start, Target *plan, float lon, float lat)
   printf ("st: %f\n", st);
 
   db_lock ();
-EXEC SQL DECLARE 
-        obs_cursor_gps CURSOR FOR SELECT 
-                targets.tar_id,
-                tar_ra,
-                tar_dec,
-                obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt
-        FROM 
-                targets_enabled targets
-        WHERE 
-                targets.type_id = :obs_type 
-                AND NOT EXISTS (SELECT * 
-                        FROM 
-                                observations
-                        WHERE 
-                                observations.tar_id = targets.tar_id AND 
-                                observations.obs_start >:obs_start) AND
-                obj_alt (tar_ra,tar_dec,:st,:db_lon,:db_lat) > 10 
-        ORDER BY 
-                tar_dec ASC,
-                alt DESC
-        ;
+  EXEC SQL DECLARE
+    obs_cursor_gps CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt
+    FROM
+    targets_enabled targets
+    WHERE
+    targets.type_id =:obs_type
+    AND NOT EXISTS (SELECT *
+		    FROM
+		    observations
+		    WHERE
+		    observations.tar_id = targets.tar_id AND
+		    observations.obs_start >:obs_start) AND
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 10
+    ORDER BY tar_dec ASC, alt DESC;
   EXEC SQL OPEN obs_cursor_gps;
   test_sql;
   printf ("\ttar_id\tra\tdec\talt\n");
   while (!sqlca.sqlcode)
     {
-      EXEC SQL FETCH next 
-        FROM
-                obs_cursor_gps
-        INTO
-                :tar_id,
-                :ra,
-                :dec,
-                :alt
-        ;
+      EXEC SQL FETCH next FROM obs_cursor_gps INTO:tar_id,:ra,:dec,:alt;
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start) && checker->is_good (st, ra, dec))
+      if (find_plan (plan, tar_id, obs_start)
+	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
@@ -276,9 +260,9 @@ err:
 }
 
 int
-Selector::select_next_airmass (time_t c_start, Target *plan,
-		     float target_airmass, float az_end, float az_start,
-		     float lon, float lat)
+Selector::select_next_airmass (time_t c_start, Target * plan,
+			       float target_airmass, float az_end,
+			       float az_start, float lon, float lat)
 {
 #define test_sql if (sqlca.sqlcode != 0) goto err
 
@@ -302,46 +286,37 @@ Selector::select_next_airmass (time_t c_start, Target *plan,
   printf ("c_start: %s", ctime (&c_start));
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\nairmass: %f\n", st, t_airmass);
-EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR SELECT 
-        targets.tar_id,
-        tar_ra,
-        tar_dec,
-        obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az,
-        obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS airmass,
-        img_count 
-FROM
-        targets_enabled targets,
-        targets_images 
-WHERE 
-        targets.tar_id = targets_images.tar_id AND 
-        targets.type_id = :obs_type AND 
-        (abs (obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) - :t_airmass)) < 0.2 AND 
-        (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) < :d_az_end OR 
-                obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) >:d_az_start) 
-ORDER BY
-        img_count ASC
-;
+  EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az,
+    obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS airmass,
+    img_count
+    FROM
+    targets_enabled targets,
+    targets_images
+    WHERE
+    targets.tar_id = targets_images.tar_id AND
+    targets.type_id =:obs_type AND
+    (abs (obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) -:t_airmass)) <
+    0.2 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+	     obj_az (tar_ra,
+		     tar_dec,:st,:db_lon,:db_lat) >:d_az_start) ORDER BY
+    img_count ASC;
   EXEC SQL OPEN obs_cursor_airmass;
 
   test_sql;
   while (!sqlca.sqlcode)
     {
-      EXEC SQL FETCH next 
-        FROM
-                obs_cursor_airmass
-	INTO
-                :tar_id,
-                :ra,
-                :dec,
-                :az,
-                :airmass,
-                :img_count
-        ;
+      EXEC SQL FETCH next
+	FROM obs_cursor_airmass INTO:tar_id,:ra,:dec,:az,:airmass,:img_count;
       test_sql;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\t%5i\n", tar_id, ra,
 	      dec, az, airmass, img_count);
 
-      if (find_plan (plan, tar_id, c_start - 1800) && checker->is_good (st, ra, dec))
+      if (find_plan (plan, tar_id, c_start - 1800)
+	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("airmass find id: %i\n", tar_id);
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
@@ -365,7 +340,8 @@ err:
 }
 
 int
-Selector::select_next_grb (time_t c_start, Target *plan, float lon, float lat)
+Selector::select_next_grb (time_t c_start, Target * plan, float lon,
+			   float lat)
 {
 #define test_sql if (sqlca.sqlcode < 0) goto err
 
@@ -385,44 +361,34 @@ Selector::select_next_grb (time_t c_start, Target *plan, float lon, float lat)
   printf ("C_start grb: %s", ctime (&c_start));
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
-EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT 
-        targets.tar_id,
-        tar_ra,
-        tar_dec, 
-        obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt 
-FROM 
-        targets_enabled targets, 
-        grb
-WHERE
-        type_id = :obs_type AND 
-        grb_id > 200 AND 
-        obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 0 AND 
-        targets.tar_id = grb.tar_id AND
-        grb_last_update > abstime (:obs_start - 200000)
-ORDER BY
-        grb_last_update DESC,
-        alt DESC
-;
+  EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt
+    FROM
+    targets_enabled targets,
+    grb
+    WHERE
+    type_id =:obs_type AND
+    grb_id > 200 AND
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 0 AND
+    targets.tar_id = grb.tar_id AND
+    grb_last_update > abstime (:obs_start - 200000)
+    ORDER BY grb_last_update DESC, alt DESC;
   EXEC SQL OPEN obs_cursor_grb;
   test_sql;
   while (!sqlca.sqlcode)
     {
-      EXEC SQL FETCH next
-        FROM
-                obs_cursor_grb
-        INTO
-                :tar_id,
-                :ra,
-                :dec,
-                :alt
-        ;
+      EXEC SQL FETCH next FROM obs_cursor_grb INTO:tar_id,:ra,:dec,:alt;
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start) && checker->is_good (st, ra, dec))
+      if (find_plan (plan, tar_id, obs_start)
+	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("grb find id: %i\n", tar_id);
-	
+
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
 		      PLAN_TOLERANCE, TYPE_GRB);
 	  EXEC SQL CLOSE obs_cursor_grb;
@@ -451,8 +417,8 @@ err:
  * Select next observation from list of opportunity fields.
  */
 int
-Selector::select_next_to (time_t *c_start, Target *plan, float az_end,
-		float az_start, float lon, float lat)
+Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
+			  float az_start, float lon, float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   double st;
@@ -476,30 +442,25 @@ Selector::select_next_to (time_t *c_start, Target *plan, float az_end,
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (c_start));
   st_deg = 15.0 * st;
   printf ("to st: %f\n", st);
-EXEC SQL DECLARE obs_cursor_to CURSOR FOR SELECT
-        targets.tar_id,
-        tar_ra,
-        tar_dec,
-        obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
-        ot_imgcount,
-        EXTRACT (EPOCH FROM ot_minpause)
-FROM
-        targets_enabled targets,
-        targets_images,
-        ot
-WHERE
-        ot.tar_id = targets.tar_id AND
-        targets.tar_id = targets_images.tar_id AND
-        type_id = :obs_type AND
-        obj_alt (tar_ra, tar_dec, :st, :db_lon, :db_lat) > 10
-        AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
-           obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) >:d_az_start)
-ORDER BY
-        ot_priority DESC,
-        img_count ASC,
-        alt DESC,
-        ot_imgcount DESC
-;
+  EXEC SQL DECLARE obs_cursor_to CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
+    ot_imgcount,
+    EXTRACT (EPOCH FROM ot_minpause)
+    FROM
+    targets_enabled targets,
+    targets_images,
+    ot
+    WHERE
+    ot.tar_id = targets.tar_id AND
+    targets.tar_id = targets_images.tar_id AND
+    type_id =:obs_type AND
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 10
+    AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+	 obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) >:d_az_start)
+    ORDER BY ot_priority DESC, img_count ASC, alt DESC, ot_imgcount DESC;
   EXEC SQL OPEN obs_cursor_to;
   test_sql;
   while (1)
@@ -545,8 +506,8 @@ err:
  * Select next observation from list of opportunity fields.
  */
 int
-Selector::select_next_ell (time_t *c_start, Target *plan, float az_end,
-		float az_start, float lon, float lat)
+Selector::select_next_ell (time_t * c_start, Target * plan, float az_end,
+			   float az_start, float lon, float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   double st;
@@ -563,7 +524,7 @@ Selector::select_next_ell (time_t *c_start, Target *plan, float az_end,
   double ell_omega;
   double ell_n;
   double ell_JD;
-  double min_m;		// minimal magnitude
+  double min_m;			// minimal magnitude
   char obs_type = TYPE_ELLIPTICAL;
   EXEC SQL END DECLARE SECTION;
   struct ln_ell_orbit orbit;
@@ -579,50 +540,37 @@ Selector::select_next_ell (time_t *c_start, Target *plan, float az_end,
   st_deg = 15.0 * st;
   printf ("ell to st: %f\n", st);
   min_m = get_double_default ("min_mag", 13);
-EXEC SQL DECLARE obs_cursor_ell CURSOR FOR SELECT 
-        targets.tar_id, 
-        EXTRACT (EPOCH FROM ell_minpause),
-        ell_a,
-        ell_e,
-        ell_i,
-        ell_w,
-        ell_omega,
-        ell_n,
-        ell_JD 
-FROM 
-        targets_enabled targets,
-        targets_images,
-        ell 
-WHERE
-        ell.tar_id = targets.tar_id AND 
-        targets.tar_id = targets_images.tar_id AND 
-        type_id = :obs_type AND 
-        ell.ell_priority > 0 AND 
-        ell.ell_mag_1 < :min_m AND 
-        ell_e <= 1.0
-ORDER BY 
-        ell_priority DESC, 
-        img_count ASC;
+  EXEC SQL DECLARE obs_cursor_ell CURSOR FOR SELECT
+    targets.tar_id,
+    EXTRACT (EPOCH FROM ell_minpause),
+    ell_a,
+    ell_e,
+    ell_i,
+    ell_w,
+    ell_omega,
+    ell_n,
+    ell_JD
+    FROM
+    targets_enabled targets,
+    targets_images,
+    ell
+    WHERE
+    ell.tar_id = targets.tar_id AND
+    targets.tar_id = targets_images.tar_id AND
+    type_id =:obs_type AND
+    ell.ell_priority > 0 AND
+    ell.ell_mag_1 <:min_m AND
+    ell_e <= 1.0 ORDER BY ell_priority DESC, img_count ASC;
   test_sql;
   EXEC SQL OPEN obs_cursor_ell;
   test_sql;
   while (1)
     {
       int last_o;
-      EXEC SQL FETCH next 
-        FROM
-                obs_cursor_ell
-	INTO
-                :tar_id,
-                :ell_minpause:ell_isnull,
-                :ell_a,
-                :ell_e,
-                :ell_i,
-                :ell_w,
-                :ell_omega,
-                :ell_n,
-                :ell_JD
-        ;
+      EXEC SQL FETCH next
+	FROM
+	obs_cursor_ell
+	INTO:tar_id,:ell_minpause:ell_isnull,:ell_a,:ell_e,:ell_i,:ell_w,:ell_omega,:ell_n,:ell_JD;
       if (sqlca.sqlcode)
 	goto err;
       if (ell_isnull)
@@ -646,18 +594,16 @@ ORDER BY
       ln_get_hrz_from_equ (&pos, &obs, JD, &hrz);
 
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%f\t%i\n", tar_id,
-      pos.ra, pos.dec,
-	      hrz.alt, ell_e, ell_minpause);
-      if (hrz.alt > 5 
-      	&& (last_o == -1 || last_o >= ell_minpause))
+	      pos.ra, pos.dec, hrz.alt, ell_e, ell_minpause);
+      if (hrz.alt > 5 && (last_o == -1 || last_o >= ell_minpause))
 	// TODO: add check for telescope - find ra & dec
 	{
 	  printf ("ell find id: %i\n", tar_id);
 	  add_target_ell (plan, TARGET_LIGHT, tar_id, -1, &orbit, *c_start,
-		      PLAN_TOLERANCE, TYPE_ELLIPTICAL);
+			  PLAN_TOLERANCE, TYPE_ELLIPTICAL);
 	  EXEC SQL CLOSE obs_cursor_ell;
 	  db_unlock ();
-          delete target;
+	  delete target;
 	  return 0;
 	}
       delete target;
@@ -681,8 +627,8 @@ err:
  * If needed, select next observation from list of photometry fields
  */
 int
-Selector::select_next_photometry (time_t *c_start, Target *plan, float lon,
-			float lat)
+Selector::select_next_photometry (time_t * c_start, Target * plan, float lon,
+				  float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   double st;
@@ -704,29 +650,26 @@ Selector::select_next_photometry (time_t *c_start, Target *plan, float lon,
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (c_start));
   st_deg = 15.0 * st;
   printf ("photometric st: %f\n", st);
-EXEC SQL DECLARE obs_cursor_photometric CURSOR FOR SELECT
-        targets.tar_id,
-        tar_ra,
-        tar_dec,
-        obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
-        ot_imgcount,
-        EXTRACT (EPOCH FROM ot_minpause)
-FROM
-        targets_enabled targets,
-        targets_images,
-        ot
-WHERE
-        ot.tar_id = targets.tar_id AND
-        targets.tar_id = targets_images.tar_id AND
-        type_id = :obs_type AND
-        obj_alt (tar_ra, tar_dec, :st, :db_lon, :db_lat) > 10
-	AND (abs (tar_ra - :st_deg) > 15.0)
-ORDER BY
-        abs (obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) - 40) ASC,
-        ot_priority DESC,
-        img_count ASC,
-        ot_imgcount DESC
-;
+  EXEC SQL DECLARE obs_cursor_photometric CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
+    ot_imgcount,
+    EXTRACT (EPOCH FROM ot_minpause)
+    FROM
+    targets_enabled targets,
+    targets_images,
+    ot
+    WHERE
+    ot.tar_id = targets.tar_id AND
+    targets.tar_id = targets_images.tar_id AND
+    type_id =:obs_type AND
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 10
+    AND (abs (tar_ra -:st_deg) > 15.0)
+    ORDER BY
+    abs (obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) - 40) ASC,
+    ot_priority DESC, img_count ASC, ot_imgcount DESC;
   EXEC SQL OPEN obs_cursor_photometric;
   test_sql;
   while (1)
@@ -772,8 +715,8 @@ err:
  * If needed, select next observation from list of terrestial targets 
  */
 int
-Selector::select_next_terestial (time_t *c_start, Target *plan, float lon,
-			float lat)
+Selector::select_next_terestial (time_t * c_start, Target * plan, float lon,
+				 float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int tar_id;
@@ -794,42 +737,35 @@ Selector::select_next_terestial (time_t *c_start, Target *plan, float lon,
 
   db_lock ();
 #define test_sql if (sqlca.sqlcode < 0) goto err
-EXEC SQL DECLARE obs_cursor_terestial CURSOR FOR SELECT
-        targets.tar_id,
-        tar_ra,
-        tar_dec,
-	ter_minutes,
-	ter_offset
-FROM
-        targets_enabled targets,
-        terestial
-WHERE
-        terestial.tar_id = targets.tar_id
-	AND type_id = :obs_type 
-	AND mod (:ter_minutes_start - ter_offset, ter_minutes) > (ter_minutes - 5)
-;
+  EXEC SQL DECLARE obs_cursor_terestial CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    ter_minutes,
+    ter_offset
+    FROM
+    targets_enabled targets,
+    terestial
+    WHERE
+    terestial.tar_id = targets.tar_id
+    AND type_id =:obs_type
+    AND mod (:ter_minutes_start - ter_offset,
+	     ter_minutes) > (ter_minutes - 5);
   EXEC SQL OPEN obs_cursor_terestial;
   test_sql;
   while (1)
     {
       int last_o;
       sqlca.sqlcode = 0;
-      EXEC SQL FETCH 
-      	next
-      FROM
-        obs_cursor_terestial
-      INTO
-        :tar_id,
-	:ra,
-	:dec,
-	:ter_minutes,
-	:ter_offset;
+      EXEC SQL FETCH
+	next
+	FROM
+	obs_cursor_terestial INTO:tar_id,:ra,:dec,:ter_minutes,:ter_offset;
       if (sqlca.sqlcode)
 	goto err;
       last_o = db_last_observation (tar_id);
       ot_minpause = 500;
-      printf ("%8i\t%+03.3f\t%+03.3f\t%i\n", tar_id, ra, dec,
-	      ot_minpause);
+      printf ("%8i\t%+03.3f\t%+03.3f\t%i\n", tar_id, ra, dec, ot_minpause);
       if (last_o == -1 || last_o >= ot_minpause)
 	{
 	  printf ("terestial find id: %i\n", tar_id);
@@ -859,7 +795,8 @@ err:
  * HETE field generation
  */
 int
-Selector::hete_mosaic (Target *plan, double jd, time_t * obs_start, int number)
+Selector::hete_mosaic (Target * plan, double jd, time_t * obs_start,
+		       int number)
 {
   struct ln_equ_posn sun;
   int frequency;
@@ -891,8 +828,8 @@ Selector::hete_mosaic (Target *plan, double jd, time_t * obs_start, int number)
  * Select flat field position
  */
 int
-Selector::flat_field (Target *plan, time_t * obs_start, int number, float lon,
-	    float lat)
+Selector::flat_field (Target * plan, time_t * obs_start, int number,
+		      float lon, float lat)
 {
   double jd;
 
@@ -919,7 +856,7 @@ Selector::flat_field (Target *plan, time_t * obs_start, int number, float lon,
 	       get_double_default ("dark_horizont",
 				   -2)) ? TARGET_FLAT_DARK : TARGET_FLAT, 10,
 	      -1, sun.ra, sun.dec, *obs_start, PLAN_TOLERANCE,
-              TYPE_TECHNICAL);
+	      TYPE_TECHNICAL);
   return 0;
 }
 
@@ -937,9 +874,9 @@ Selector::flat_field (Target *plan, time_t * obs_start, int number, float lon,
  * @param state		serverd status
  */
 int
-Selector::get_next_plan (Target *plan, int selector_type,
-	       time_t * obs_start, int number, float exposure, int state,
-	       float lon, float lat)
+Selector::get_next_plan (Target * plan, int selector_type,
+			 time_t * obs_start, int number, float exposure,
+			 int state, float lon, float lat)
 {
   float az;
   float airmass;
@@ -980,17 +917,33 @@ Selector::get_next_plan (Target *plan, int selector_type,
     selector_type = SELECTOR_ELL;
   } */
 
+  // home & focusing..
+
+  int home_period = (int) get_double_default ("calibration_frequency", 0);
+  if (home_period > 0)
+    {
+      if (number % home_period == 1)
+	{
+	  add_target (plan, TARGET_LIGHT, TARGET_FOCUSING, -1, 200, 60,
+		      *obs_start, PLAN_TOLERANCE, TYPE_CALIBRATION);
+	  return 0;
+	}
+    }
+
   // check for OT
-  last_good_img = db_last_good_image (get_string_default ("telescope_camera", "C0"));
-  printf ("last good image on %s: %i\n", get_string_default ("telescope_camera" ,"C0"), last_good_img);
-  
+  last_good_img =
+    db_last_good_image (get_string_default ("telescope_camera", "C0"));
+  printf ("last good image on %s: %i\n",
+	  get_string_default ("telescope_camera", "C0"), last_good_img);
+
   if (last_good_img >= 0 && last_good_img < 3600)
     {
       printf ("Trying OT\n");
-      if (selector_type == SELECTOR_ELL && !select_next_ell (obs_start, plan, 120, 230, lon, lat))
-        return 0;
+      if (selector_type == SELECTOR_ELL
+	  && !select_next_ell (obs_start, plan, 120, 230, lon, lat))
+	return 0;
       if (!select_next_to (obs_start, plan, 120, 230, lon, lat))
-        return 0;
+	return 0;
     }
 
   // check for terestial targets
@@ -1006,7 +959,7 @@ Selector::get_next_plan (Target *plan, int selector_type,
       return select_next_alt (*obs_start, plan, lon, lat);
     case SELECTOR_PHOTOMETRY:
       if (!select_next_photometry (obs_start, plan, lon, lat))
-        return 0;
+	return 0;
 
     case SELECTOR_GPS:
       // every 50 image will be dark..
@@ -1076,12 +1029,11 @@ Selector::get_next_plan (Target *plan, int selector_type,
 	  break;
 	}
       printf ("executing select_next_airmass\n");
-      if (!select_next_airmass (*obs_start, plan, airmass, 90, 270, lon,
-				  lat))
+      if (!select_next_airmass (*obs_start, plan, airmass, 90, 270, lon, lat))
 	return 0;
       // default selector - dark frame
       add_target (plan, TARGET_DARK, -1, -1, 0, 0, *obs_start,
-		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
+		  PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
       return 0;
     default:
       printf ("unknow selector type: %i\n", selector_type);
@@ -1090,7 +1042,7 @@ Selector::get_next_plan (Target *plan, int selector_type,
 }
 
 void
-Selector::free_plan (Target *plan)
+Selector::free_plan (Target * plan)
 {
   Target *last;
 

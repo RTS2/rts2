@@ -14,6 +14,8 @@
 #define TYPE_TERESTIAL		'T'
 #define TYPE_CALIBRATION	'c'
 
+#define TARGET_FOCUSING		11
+
 class Target
 {
 public:

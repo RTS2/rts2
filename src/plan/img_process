@@ -20,4 +20,3 @@ fi
 #>/dev/null | grep -v PG
 #/home/rtopera/bin/rsol $imgname >/dev/null 2>&1
 rm $imgname.sex $imgname.salida
-

@@ -68,7 +68,7 @@ main (int argc, char **argv)
   observer.lat = get_double_default ("latitude", 0);
   struct ln_hrz_posn hrz;
   ln_get_hrz_from_equ (&pos, &observer, jd, &hrz);
-/*  printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
+  printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
   for (int i = 0; i < 5; i++)
     {
       struct ln_rst_time rst;
@@ -93,7 +93,7 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
   printf ("...plan made\n");
-  printf ("t->tar_id: %i\n", plan->next->id); */
+  printf ("t->tar_id: %i\n", plan->next->id);
 
   srandom (time (NULL));
 
