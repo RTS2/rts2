@@ -1,0 +1,47 @@
+<html>
+<head>
+	<title>Vysledky dotazu..</title>
+</head>
+<body>
+<p>
+<?
+	function process () {
+		$query_string = "SELECT * FROM images WHERE img_date >= '$_REQUEST[poz_od]' and img_date <= '$_REQUEST[poz_do]' and isinwcs (" . intval ($_REQUEST["ra"]) . ", " . intval ($_REQUEST["dec"]) . ", astrometry);";
+
+		echo "query=string: $query_string<br>\n";
+	
+		$con = pg_connect ("dbname=stars");
+	
+		$res = pg_query ($con, $query_string);
+
+		echo "rows fethed: " . pg_numrows ($res) . "<br>\n";
+
+		echo "<table>\n";
+
+		while ($row = pg_fetch_row ($res)) {
+			echo "\t<tr>\n";
+			foreach ($row as $item)
+				echo "\t\t<td>$item</td>\n";
+			echo "\t</tr>";
+		}
+
+		echo "</table>";
+
+		pg_close ();
+	}
+	
+	echo "<b>ra:</b> $_REQUEST[ra] <b>dec:</b> $_REQUEST[dec] <br/>\n";
+
+	// overeni parametru
+	$datum_match = "/\d{2,4}-\d{1,2}-\d{1,2}/";
+	if (! (preg_match ($datum_match, $_REQUEST[poz_od]) and preg_match ($datum_match, $_REQUEST[poz_do]))) {
+		// spatne zadane datum, nahlas to a skonci, at se to pak nedela neplechu v dotazu..
+		echo "Spatny format data, musite ho zadat ve formatu YYYY-MM-DD.</br>";
+	}
+	else {
+		process ();
+	}
+?>
+</p>
+</body>
+</html>

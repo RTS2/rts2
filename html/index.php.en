@@ -1,0 +1,21 @@
+<html>
+<head>
+	<title>Jednoduchy a hnusny (TM) formular</title>
+</head>
+<body>
+	<form action="bartdb.php">
+		<h1>Datum pozorovani</h1>
+		<input type="text" name="poz_od" value="2000-01-01"></input>
+		&nbsp;-&nbsp;
+		<input type="text" name="poz_do" value="2032-01-01"></input>
+		
+		<h1>Souradnice</h1>
+		<h2>RA</h2>
+		<input type="text" name="ra" value="10.00"></input><i>poznamka: ve stupnich</i>
+		<h2>Dec</h2>
+		<input type="text" name="dec" value="12.00"></input><i>poznamka: opet ve stupnich</i>
+		<p/>
+		<input type="submit" value="Dotazuj se.."></input>
+	</form>
+</body>
+</html>
