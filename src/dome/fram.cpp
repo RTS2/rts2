@@ -58,8 +58,9 @@
 
 // how long after weather was bad can weather be good again; in
 // seconds
-#define FRAM_BAD_WEATHER_TIMEOUT  7200
-#define FRAM_CONN_TIMEOUT	  600
+#define FRAM_BAD_WEATHER_TIMEOUT   7200
+#define FRAM_BAD_WINDSPEED_TIMEOUT 600
+#define FRAM_CONN_TIMEOUT	   600
 
 // how many times to try to reclose dome
 #define FRAM_RECLOSING_MAX	3
@@ -159,6 +160,8 @@ private:
   time_t lastBadWeather;
   time_t nextGoodWeather;
 
+  void setWeatherTimeout (time_t wait_time);
+
 protected:
 
 public:
@@ -179,6 +182,16 @@ Rts2Conn (in_master)
   lastWeatherStatus = 0;
   time (&lastBadWeather);
   nextGoodWeather = lastBadWeather + FRAM_CONN_TIMEOUT;
+}
+
+void
+Rts2ConnFramWeather::setWeatherTimeout (time_t wait_time)
+{
+  time_t next;
+  time (&next);
+  next += wait_time;
+  if (next > nextGoodWeather)
+    nextGoodWeather = next;
 }
 
 int
@@ -257,7 +270,10 @@ Rts2ConnFramWeather::receive (fd_set * set)
       if (rain != 0 || windspeed > FRAM_MAX_PEAK_WINDSPEED)
 	{
 	  time (&lastBadWeather);
-	  nextGoodWeather = lastBadWeather + FRAM_BAD_WEATHER_TIMEOUT;
+	  if (rain == 0 && windspeed > FRAM_MAX_WINDSPEED)
+	    setWeatherTimeout (FRAM_BAD_WINDSPEED_TIMEOUT);
+	  else
+	    setWeatherTimeout (FRAM_BAD_WEATHER_TIMEOUT);
 	  master->closeDome ();
 	  master->setMasterStandby ();
 	}
@@ -276,10 +292,7 @@ Rts2ConnFramWeather::isGoodWeather ()
   // if no conenction, set nextGoodWeather appopritery
   if (now - lastWeatherStatus > FRAM_WEATHER_TIMEOUT)
     {
-      if (now + FRAM_CONN_TIMEOUT > nextGoodWeather)
-	{
-	  nextGoodWeather = now + FRAM_CONN_TIMEOUT;
-	}
+      setWeatherTimeout (FRAM_CONN_TIMEOUT);
       return 0;
     }
   if (windspeed > FRAM_MAX_WINDSPEED || rain != 0 || (nextGoodWeather > now))

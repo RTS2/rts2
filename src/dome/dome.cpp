@@ -137,7 +137,7 @@ Rts2DevDome::baseInfo (Rts2Conn * conn)
       conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
       return -1;
     }
-  conn->sendValue ("model", domeModel);
+  conn->sendValue ("type", domeModel);
   return 0;
 }
 
