@@ -64,9 +64,9 @@ union semun
 #endif
 
 void
-tel_cleanup (int err, void *args)
+tel_cleanup ()
 {
-  if (semctl (semid, 0, IPC_RMID, 0) < 0)
+  if (semctl (semid, 1, IPC_RMID) < 0)
     syslog (LOG_ERR, "semctl %i IPC_RMID: %m", semid);
 }
 
@@ -178,13 +178,20 @@ tel_read (char *buf, int count)
     {
       FD_ZERO (&pfds);
       FD_SET (port, &pfds);
-      if (select (port + 1, &pfds, NULL, NULL, &tv) == 1)
-	return -1;
+      if (select (port + 1, &pfds, NULL, NULL, &tv) == 0)
+	{
+	  syslog (LOG_DEBUG, "LX200: port timeout %m");
+	  return -1;
+	}
 
       if (FD_ISSET (port, &pfds))
 	{
 	  if (read (port, &buf[readed], 1) < 0)
-	    return -1;
+	    {
+	      syslog (LOG_DEBUG, "LX200: port read error %m");
+	      return -1;
+	    }
+	  syslog (LOG_DEBUG, "readed: %c", buf[readed]);
 	}
       else
 	{
@@ -209,10 +216,12 @@ tel_read_hash (char *buf, int count)
   int readed;
   buf[0] = 0;
 
-  for (readed = 0; readed < count && buf[readed] != '#'; readed++)
+  for (readed = 0; readed < count; readed++)
     {
       if (tel_read (&buf[readed], 1) < 0)
 	return -1;
+      if (buf[readed] == '#')
+	break;
     }
   if (buf[readed] == '#')
     buf[readed] = 0;
@@ -234,7 +243,7 @@ tel_read_hash (char *buf, int count)
 int
 tel_write (char *buf, int count)
 {
-  syslog (LOG_DEBUG, "LX200:Will write:'%s'", buf);
+  syslog (LOG_DEBUG, "LX200:will write:'%s'", buf);
   return write (port, buf, count);
 }
 
@@ -262,7 +271,7 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
 
   sem_buf.sem_num = SEM_TEL;
   sem_buf.sem_op = -1;
-  sem_buf.sem_flg = 0;
+  sem_buf.sem_flg = SEM_UNDO;
 
   if (semop (semid, &sem_buf, 1) < 0)
     return -1;
@@ -271,7 +280,10 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
   if (tel_write (wbuf, wcount) < 0)
     goto unlock;
 
+  syslog (LOG_DEBUG, "LX200:will read %i", rcount);
   tmp_rcount = tel_read (rbuf, rcount);
+
+  syslog (LOG_DEBUG, "LX200:will read %i %m", tmp_rcount);
 
 unlock:
 
@@ -299,7 +311,7 @@ tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount)
 
   sem_buf.sem_num = SEM_TEL;
   sem_buf.sem_op = -1;
-  sem_buf.sem_flg = 0;
+  sem_buf.sem_flg = SEM_UNDO;
 
   if (semop (semid, &sem_buf, 1) < 0)
     return -1;
@@ -375,6 +387,25 @@ tel_stop_slew (char direction)
   sprintf (command, "#:Q%c#", direction);
   return tel_write (command, 5) < 0 ? -1 : 0;
 }
+
+/*!
+ * Stop telescope slewing at any direction
+ *
+ * @return 0 on success, -1 and set errno on error
+ */
+int
+tel_stop_slew_any ()
+{
+  char dirs[] = { 'e', 'w', 'n', 's' };
+  int i;
+  for (i = 0; i < 4; i++)
+    {
+      if (tel_stop_slew (dirs[i]) < 0)
+	return -1;
+    }
+  return 0;
+}
+
 
 /*!
  * Disconnect lx200.
@@ -535,7 +566,7 @@ tel_write_ra (double ra)
   if (ra > 24)
     ra = ra - floor (ra / 24) * 24;
   dtoints (ra, &h, &m, &s);
-  if (snprintf (command, 13, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
+  if (snprintf (command, 14, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
     return -1;
   return tel_rep_write (command);
 }
@@ -557,7 +588,7 @@ tel_write_dec (double dec)
   if (dec > 90)
     dec = dec - floor (dec / 90) * 90;
   dtoints (dec, &h, &m, &s);
-  if (snprintf (command, 14, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) < 0)
+  if (snprintf (command, 15, "#:Sd%+02d\xdf%02d:%02d#", h, m, s) < 0)
     return -1;
   return tel_rep_write (command);
 }
@@ -634,7 +665,7 @@ tel_move_to (double ra, double dec)
 
   sem_buf.sem_num = SEM_MOVE;
   sem_buf.sem_op = -1;
-  sem_buf.sem_flg = 0;
+  sem_buf.sem_flg = SEM_UNDO;
 
   syslog (LOG_INFO, "LX200:tel move_to ra:%f dec:%f", ra, dec);
 

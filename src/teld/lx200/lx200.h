@@ -19,7 +19,7 @@
 // basic functions
 int tel_status (int *status);
 int tel_connect (const char *devptr);
-void tel_cleanup (int err, void *args);
+void tel_cleanup ();
 int tel_is_ready (void);
 int tel_set_to (double ra, double dec);
 int tel_move_to (double ra, double dec);
@@ -36,6 +36,7 @@ int tel_disconnect (void);
 
 // slew functions
 int tel_stop_slew (char direction);
+int tel_stop_slew_any ();
 int tel_start_slew (char direction);
 int tel_set_rate (char new_rate);
 
