@@ -1,7 +1,11 @@
 #ifndef __RTS2_BLOCK__
 #define __RTS2_BLOCK__
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "status.h"
 
 #define MSG_COMMAND             0x01
@@ -14,24 +18,46 @@
 typedef enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER };
 
+class Rts2Block;
+
 class Rts2Conn
 {
-  int sock;
-  int data_size;
   conn_type_t type;
   char name[DEVICE_NAME_SIZE];	// name of device/client this connection goes to
   int key;
   int priority;			// priority - number
   int have_priority;		// priority - flag if we have priority
   int centrald_id;		// id of connection on central server
+  in_addr addr;
+  int port;			// local port & connection
+  virtual int connectionError ()
+  {
+    return -1;
+  }
 protected:
+    Rts2Block * master;
+  char *command_start;
+  int sock;
+  int conn_state;
+public:
   char buf[MAX_DATA + 1];
   char *buf_top;
-public:
-    Rts2Conn (int in_sock);
+
+  Rts2Conn (Rts2Block * in_master);
+  Rts2Conn (int in_sock, Rts2Block * in_master);
+  ~Rts2Conn (void);
   int add (fd_set * set);
-  int send (char *message, ...);
-  int sendCommandEnd (int num, char *message, ...);
+  virtual int init ()
+  {
+    return -1;
+  };
+  virtual int send (char *message);
+  int sendValue (char *name, int value);
+  int sendValue (char *name, int val1, int val2);
+  int sendValue (char *name, char *value);
+  int sendValue (char *name, double value);
+  int sendCommandEnd (int num, char *message);
+  int acceptConn ();
   int receive (fd_set * set);
   conn_type_t getType ()
   {
@@ -40,6 +66,17 @@ public:
   void setType (conn_type_t in_type)
   {
     type = in_type;
+  }
+  int getName (struct sockaddr_in *addr);
+  void setAddress (struct in_addr *in_address);
+  void setPort (int in_port)
+  {
+    port = in_port;
+  }
+  void getAddress (char *addrBuf, int buf_size);
+  int getLocalPort ()
+  {
+    return port;
   }
   const char *getName ()
   {
@@ -63,6 +100,10 @@ public:
   };
   void setHavePriority (int in_have_priority)
   {
+    if (in_have_priority)
+      send ("S priority 1 priority received");
+    else
+      send ("S priority 0 priority lost");
     have_priority = in_have_priority;
   };
   int getPriority ()
@@ -81,17 +122,31 @@ public:
   {
     centrald_id = in_centrald_id;
   };
+  int sendPriorityInfo (int number);
+  int endConnection ()
+  {
+    conn_state = 5;		// mark for deleting..
+  }
   virtual int sendInfo (Rts2Conn * conn)
   {
     return -1;
-  };
-private:
-  virtual int command ();
+  }
 protected:
+  virtual int command ();
+  virtual int message ();
+  inline char *getCommand ()
+  {
+    return command_start;
+  }
+  inline int isCommand (const char *cmd)
+  {
+    return !strcmp (cmd, getCommand ());
+  }
   int paramEnd ();
   int paramNextString (char **str);
   int paramNextInteger (int *num);
   int paramNextDouble (double *num);
+  int paramNextFloat (float *num);
 };
 
 class Rts2Block
@@ -103,14 +158,22 @@ class Rts2Block
 public:
     Rts2Conn * connections[MAX_CONN];
 
-    Rts2Block (int in_port);
+    Rts2Block ();
    ~Rts2Block (void);
-  int init ();
+  void setPort (int in_port);
+  virtual int init ();
   virtual int addConnection (int in_sock);
   Rts2Conn *findName (char *in_name);
-  int sendMessage (char *format, ...);
+  virtual int sendStatusMessage (char *state_name, int state);
+  virtual int sendMessage (char *message);
+  virtual int sendMessage (char *message, int val1, int val2);
   virtual int idle ();
+  int setTimeout (long int new_timeout)
+  {
+    idle_timeout = new_timeout;
+  }
   int run ();
+  int setPriorityClient (int priority_client, int timeout);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

@@ -15,15 +15,35 @@
 
 #include "rts2block.h"
 
-Rts2Conn::Rts2Conn (int in_sock)
+Rts2Conn::Rts2Conn (Rts2Block * in_master)
 {
-  sock = in_sock;
+  sock = -1;
+  master = in_master;
   buf_top = buf;
   *name = '\0';
   priority = -1;
   have_priority = 0;
   centrald_id = -1;
+  conn_state = 0;
   type = NOT_DEFINED_SERVER;
+}
+
+Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master)
+{
+  sock = in_sock;
+  master = in_master;
+  buf_top = buf;
+  *name = '\0';
+  priority = -1;
+  have_priority = 0;
+  centrald_id = -1;
+  conn_state = 0;
+  type = NOT_DEFINED_SERVER;
+}
+
+Rts2Conn::~Rts2Conn (void)
+{
+  close (sock);
 }
 
 int
@@ -33,84 +53,248 @@ Rts2Conn::add (fd_set * set)
 }
 
 int
+Rts2Conn::acceptConn ()
+{
+  int new_sock;
+  struct sockaddr_in other_side;
+  socklen_t addr_size = sizeof (struct sockaddr_in);
+  new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
+  if (new_sock == -1)
+    {
+      perror ("data accept");
+      return -1;
+    }
+  else
+    {
+      close (sock);
+      sock = new_sock;
+      printf ("connection accepted\n");
+      conn_state = 0;
+      return 0;
+    }
+}
+
+int
 Rts2Conn::receive (fd_set * set)
 {
+  int data_size = 0;
+  // connections market for deletion
+  if (conn_state == 5)
+    return -1;
   if (FD_ISSET (sock, set))
     {
+      if (conn_state == 1)
+	{
+	  return acceptConn ();
+	}
       int ret;
       char *command_end;
       data_size = read (sock, buf_top, MAX_DATA - (buf_top - buf));
       if (!data_size)
-	return -1;
+	return connectionError ();
       buf_top[data_size] = '\0';
+      // put old data size into account..
+      data_size = (buf_top - buf) + data_size;
       buf_top = buf;
-      syslog (LOG_DEBUG, "command: %s", buf);
-      while (*buf_top && !isspace (*buf_top) && *buf_top != '\r')
-	buf_top++;
-      if (*buf_top)
+      command_start = buf_top;
+      command_end = buf_top;
+      while (*buf_top)
 	{
-	  command_end = buf_top;
-	  while (*command_end && *command_end != '\r')
-		  command_end ++;
-	  if (*command_end == '\r')
-	  {
-	    *command_end = '\0';
-	    *buf_top = '\0';
+	  while (isspace (*buf_top))
 	    buf_top++;
-	    if (*buf_top == '\n')
-	      *buf_top = '\0';
-	    printf ("[%i] command: %s\n", getCentraldId (), buf);
-            ret = command ();
-            if (!ret)
-     	      sendCommandEnd (0, "OK");
-            else if (ret == -2)
-	      sendCommandEnd (DEVDEM_E_COMMAND,
-			"invalid parameters/invalid number of parameters");
-	    buf_top = buf;
-	  }
-	  else 
-	  {
-            buf_top = buf + data_size;
-	  }
+	  command_start = buf_top;
+	  // find command end..
+	  while (*buf_top && (!isspace (*buf_top) || *buf_top == '\n') && *buf_top != '\r')
+	    buf_top++;
+	  printf ("command: %s offset: %i\n", command_start, buf_top - buf);
+	  // commands should end with (at worst case) \r..
+	  if (*buf_top)
+	    {
+	      // find command parameters end
+	      command_end = buf_top;
+	      while (*command_end && *command_end != '\r')
+		command_end++;
+	      if (*command_end == '\r')
+		{
+		  *command_end = '\0';
+		  command_end++;
+		  *buf_top = '\0';
+		  buf_top++;
+		  if (*buf_top == '\n')
+                    buf_top++;
+		  if (*command_end == '\n')
+			  command_end++;
+		  // messages..
+		  if (isCommand ("M"))
+		    {
+		      ret = message ();
+		    }
+		  else
+		    ret = command ();
+		  printf ("[%i] command: %s ret: %i\n", getCentraldId (), buf,
+			  ret);
+		  if (!ret)
+		    sendCommandEnd (0, "OK");
+		  else if (ret == -2)
+		    sendCommandEnd (DEVDEM_E_COMMAND,
+				    "invalid parameters/invalid number of parameters");
+		  // we processed whole received string..
+		  printf ("command_end: %i\n", command_end - (buf+data_size));
+		  if (command_end == buf + data_size)
+		  {
+		     printf ("command null\n");
+		     command_end = buf;
+		     buf[0] = '\0';
+		  }
+		}
+              buf_top = command_end;
+	      printf ("buf_top: %c\n", *buf_top);
+	    }
+	  printf ("Rts2Conn::command ret: %i\n", data_size);
 	}
+      if (buf != command_start && command_end > command_start)
+      {
+	  memmove (buf, command_start, (command_end - command_start + 1));
+	  // move buffer to the end..
+	  buf_top -= command_start - buf;
+      }
     }
   return data_size;
 }
 
 int
-Rts2Conn::command ()
+Rts2Conn::getName (struct sockaddr_in *addr)
 {
-  send ("%s", buf);
+  // get our address and pass it to data conn
+  socklen_t size;
+  size = sizeof (struct sockaddr_in);
+
+  return getsockname (sock, (struct sockaddr *) addr, &size);
+}
+
+void
+Rts2Conn::setAddress (struct in_addr *in_address)
+{
+  addr = *in_address;
+}
+
+void
+Rts2Conn::getAddress (char *addrBuf, int buf_size)
+{
+  char *addr_s;
+  int ret;
+  addr_s = inet_ntoa (addr);
+  strncpy (addrBuf, addr_s, buf_size);
+  addrBuf[buf_size - 1] = '0';
 }
 
 int
-Rts2Conn::send (char *message, ...)
+Rts2Conn::sendPriorityInfo (int number)
 {
-  va_list va;
   char *msg;
-  int len;
-
-  va_start (va, message);
-  len = vasprintf (&msg, message, va);
-  va_end (va);
-  write (sock, msg, len);
-  printf ("[%i] send: %s\n", getCentraldId(), msg);
+  int ret;
+  asprintf (&msg, "I status %i priority", number);
+  ret = sendValue (msg, havePriority ());
   free (msg);
+  return ret;
+}
+
+int
+Rts2Conn::command ()
+{
+//  send (buf);
+  sendCommandEnd (-4, "Unknow command");
+  return -4;
+}
+
+int
+Rts2Conn::message ()
+{
+  // we don't want any messages yet..
+  return -1;
+}
+
+int
+Rts2Conn::send (char *message)
+{
+  int len;
+  int ret;
+
+  if (sock == -1)
+    return -1;
+
+  len = strlen (message);
+
+  ret = write (sock, message, len);
+
+  if (ret != len)
+    {
+      printf ("[%i:%i] error %i sending %s\n", getCentraldId (), sock, ret,
+	      message);
+      return -1;
+    }
+  printf ("[%i:%i] send %i: %s\n", getCentraldId (), sock, ret, message);
   write (sock, "\r\n", 2);
   return 0;
 }
 
 int
-Rts2Conn::sendCommandEnd (int num, char *message, ...)
+Rts2Conn::sendValue (char *name, int value)
 {
-  va_list va;
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "%s %i", name, value);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Conn::sendValue (char *name, int val1, int val2)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "%s %i %i", name, val1, val2);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Conn::sendValue (char *name, char *value)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "%s %s", name, value);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Conn::sendValue (char *name, double value)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "%s %0.2f", name, value);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Conn::sendCommandEnd (int num, char *message)
+{
   char *msg;
 
-  va_start (va, message);
-  vasprintf (&msg, message, va);
-  va_end (va);
-  send ("%+04i %s", num, msg);
+  asprintf (&msg, "%+04i %s", num, message);
+  send (msg);
   free (msg);
+
   return 0;
 }
 
@@ -162,11 +346,23 @@ Rts2Conn::paramNextDouble (double *num)
   if (*num_end)
     return -1;
   return 0;
-};
+}
 
-Rts2Block::Rts2Block (int in_port)
+int
+Rts2Conn::paramNextFloat (float *num)
 {
-  port = in_port;
+  char *str_num;
+  char *num_end;
+  if (paramNextString (&str_num))
+    return -1;
+  *num = strtof (str_num, &num_end);
+  if (*num_end)
+    return -1;
+  return 0;
+}
+
+Rts2Block::Rts2Block ()
+{
   idle_timeout = 1000000;
   openlog (NULL, LOG_PID, LOG_LOCAL0);
   for (int i = 0; i < MAX_CONN; i++)
@@ -178,6 +374,12 @@ Rts2Block::Rts2Block (int in_port)
 Rts2Block::~Rts2Block (void)
 {
   close (sock);
+}
+
+void
+Rts2Block::setPort (int in_port)
+{
+  port = in_port;
 }
 
 int
@@ -209,7 +411,7 @@ Rts2Block::init ()
 }
 
 int
-Rts2Block::addConnection (int sock)
+Rts2Block::addConnection (int in_sock)
 {
   int i;
   for (i = 0; i < MAX_CONN; i++)
@@ -217,7 +419,7 @@ Rts2Block::addConnection (int sock)
       if (!connections[i])
 	{
 	  printf ("add conn: %i\n", i);
-	  connections[i] = new Rts2Conn (sock);
+	  connections[i] = new Rts2Conn (in_sock, this);
 	  return 0;
 	}
     }
@@ -240,25 +442,42 @@ Rts2Block::findName (char *in_name)
 }
 
 int
-Rts2Block::sendMessage (char *format, ...)
+Rts2Block::sendMessage (char *message)
 {
   int i;
-  char *msg;
-  va_list va;
-
-  va_start (va, format);
-  vasprintf (&msg, format, va);
-  va_end (va);
   for (i = 0; i < MAX_CONN; i++)
     {
       Rts2Conn *conn = connections[i];
       if (conn)
 	{
-	  conn->send ("%s", msg);
+	  conn->send (message);
 	}
     }
-  free (msg);
   return 0;
+}
+
+int
+Rts2Block::sendMessage (char *message, int val1, int val2)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "M %s %i %i", message, val1, val2);
+  ret = sendMessage (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Block::sendStatusMessage (char *state_name, int state)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "S %s %i", state_name, state);
+  ret = sendMessage (msg);
+  free (msg);
+  return ret;
 }
 
 int
@@ -281,7 +500,7 @@ Rts2Block::run ()
     {
       read_tout.tv_sec = idle_timeout / 100000;
       read_tout.tv_usec = idle_timeout % 100000;
-      printf ("timeout: %i\n", idle_timeout);
+      //printf ("timeout: %i\n", idle_timeout);
 
       FD_ZERO (&read_set);
       for (i = 0; i < MAX_CONN; i++)
@@ -296,6 +515,7 @@ Rts2Block::run ()
       ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
       if (ret)
 	{
+	  // accept connection on master
 	  if (FD_ISSET (sock, &read_set))
 	    {
 	      struct sockaddr_in other_side;
@@ -316,11 +536,13 @@ Rts2Block::run ()
 	      conn = connections[i];
 	      if (conn)
 		{
+		  printf ("check %i\n", i);
 		  if (conn->receive (&read_set) == -1)
 		    {
 		      delete conn;
 		      connections[i] = NULL;
 		    }
+		  printf ("check end\n");
 		}
 	    }
 	}
@@ -328,13 +550,23 @@ Rts2Block::run ()
     }
 }
 
-/*
 int
-main (int argc, char **argv)
+Rts2Block::setPriorityClient (int priority_client, int timeout)
 {
-  class Rts2Block *block = new Rts2Block (5554);
-  block->init ();
-  block->run ();
-  delete block;
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      // discard old priority client
+      if (connections[i] && connections[i]->havePriority ())
+	{
+	  connections[i]->setHavePriority (0);
+	}
+    }
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      if (connections[i]
+	  && connections[i]->getCentraldId () == priority_client)
+	{
+	  connections[i]->setHavePriority (1);
+	}
+    }
 }
-*/
