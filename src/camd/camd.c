@@ -364,8 +364,8 @@ camd_handle_command (char *command)
       header->naxes = 2;
       header->sizes[0] = rd->width;
       header->sizes[1] = rd->height;
-      header->binnings[0] = 1;
-      header->binnings[1] = 1;
+      header->binnings[0] = info.chip_info[chip].binning_vertical;
+      header->binnings[1] = info.chip_info[chip].binning_horizontal;
       header->status = STATUS_FLIP;
 
       data_size =
