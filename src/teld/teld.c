@@ -183,7 +183,7 @@ teld_handle_command (char *command)
 
       coord.ra += correction_buf[correction_number % CORRECTION_BUF].ra;
       coord.dec += correction_buf[correction_number % CORRECTION_BUF].dec;
-      syslog (LOG_DEBUG, "correction: ra %f dec %f mark %i\n", coord.ra,
+      syslog (LOG_INFO, "correction: ra %f dec %f mark %i\n", coord.ra,
 	      coord.dec, correction_mark);
       // update all corrections..
       for (i = 0; i < CORRECTION_BUF; i++)
@@ -218,6 +218,7 @@ teld_handle_command (char *command)
       // correction mark is local variable, so we must use the local
       // variant - not one from info!
       devser_dprintf ("correction_mark %i", correction_mark);
+      devser_dprintf ("flip", info.flip);
     }
   else if (strcmp (command, "park") == 0)
     {

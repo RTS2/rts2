@@ -587,6 +587,7 @@ telescope_info (struct telescope_info *info)
   strcpy (info->serial_number, "000001");
 
   info->park_dec = PARK_DEC;
+  info->flip = 0;
 
   return 0;
 }
