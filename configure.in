@@ -11,9 +11,9 @@ AM_MAINTAINER_MODE
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
+#AC_PROG_RANLIB
 
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 
 # Checks for libraries.
 
@@ -71,6 +71,14 @@ AC_SUBST(LIB_PTHREAD), [cat << EOF
 **** Please try to get it somewhere.
 EOF
 exit 1])
+
+AC_PATH_X
+#AC_CHECK_LIB([X11], [XCloseDisplay], LIB_X11="-lX11";
+#AC_SUBST(LIB_X11), [cat << EOF
+#**** You don't have X11 library installed.
+#**** Please try to get it somewhere.
+#EOF
+#exit 1])
 
 AC_CHECK_LIB([efence], [malloc], LIB_EFENCE="-lefence", [cat << EOF
 **** You don't have libefence library installed.
@@ -172,6 +180,7 @@ AC_OUTPUT([Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
+	   src/camd/miniccd/Makefile
 	   src/camd/sbigusb/Makefile
 	   src/camd/urvc/Makefile
 	   src/db/Makefile
@@ -191,6 +200,7 @@ AC_OUTPUT([Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
 	   src/teld/lx200/Makefile
+	   src/teld/losmandy/Makefile
 	   src/teld/para/Makefile
 	   src/utils/Makefile
 	   src/utils/config.h
