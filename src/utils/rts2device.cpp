@@ -318,7 +318,7 @@ int
 Rts2DevConnData::send (char *data, size_t data_size)
 {
   if (conn_state != 0)
-    return -1;
+    return -2;
   return write (sock, data, data_size);
 }
 
@@ -393,7 +393,7 @@ Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, int def
   ()
 {
   /* put defaults to variables..*/
-  device_port = default_port;
+  master_device_port = default_port;
   device_name = default_name;
   centrald_host = "localhost";
   centrald_port = 5557;
