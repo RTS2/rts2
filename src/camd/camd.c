@@ -191,6 +191,7 @@ camd_handle_command (char *command)
       devser_dprintf ("air_temperature %0.02f", info.air_temperature);
       devser_dprintf ("ccd_temperature %0.02f", info.ccd_temperature);
       devser_dprintf ("cooling_power %4i", (int) info.cooling_power);
+      devser_dprintf ("fan %i", info.fan);
     }
   else if (strcmp (command, "chipinfo") == 0)
     {
@@ -199,15 +200,15 @@ camd_handle_command (char *command)
       get_chip;
       cam_call (camera_info (&info));
 
-      devser_dprintf ("width %i %i", chip, info.chip_info[chip].width);
-      devser_dprintf ("heigth %i %i", chip, info.chip_info[chip].height);
-      devser_dprintf ("binning_vertical %i %i", chip,
+      devser_dprintf ("chip %i width %i", chip, info.chip_info[chip].width);
+      devser_dprintf ("chip %i heigth %i", chip, info.chip_info[chip].height);
+      devser_dprintf ("chip %i binning_vertical %i", chip,
 		      info.chip_info[chip].binning_vertical);
-      devser_dprintf ("binning_horizontal %i %i", chip,
+      devser_dprintf ("chip %i binning_horizontal %i", chip,
 		      info.chip_info[chip].binning_horizontal);
-      devser_dprintf ("pixelX %i %i", chip, info.chip_info[chip].pixelX);
-      devser_dprintf ("pixelY %i %i", chip, info.chip_info[chip].pixelY);
-      devser_dprintf ("gain %i %0.2f", chip, info.chip_info[chip].gain);
+      devser_dprintf ("chip %i pixelX %i", chip, info.chip_info[chip].pixelX);
+      devser_dprintf ("chip %i pixelY %i", chip, info.chip_info[chip].pixelY);
+      devser_dprintf ("chip %i gain %0.2f", chip, info.chip_info[chip].gain);
 
       ret = 0;
     }
