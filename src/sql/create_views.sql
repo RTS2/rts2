@@ -8,6 +8,7 @@ DROP VIEW observations_imgcount;
 DROP VIEW observations_noimages;
 DROP VIEW observations_nights;
 DROP VIEW images_nights;
+DROP VIEW targets_counts;
 
 CREATE VIEW targets_noimages AS 
 SELECT targets.tar_id, 0 AS img_count 
@@ -82,3 +83,15 @@ FROM
         targets
 WHERE
         tar_enabled = true;
+
+CREATE VIEW targets_counts AS
+SELECT
+        targets.tar_id,
+	counts.*
+FROM
+        targets, counts, observations
+WHERE
+        targets.tar_id = observations.tar_id
+    AND observations.obs_id = counts.obs_id
+ORDER BY
+	count_date DESC;
