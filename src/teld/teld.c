@@ -14,6 +14,7 @@
 #include <mcheck.h>
 #include <math.h>
 #include <stdarg.h>
+#include <pthread.h>
 
 #include <argz.h>
 
@@ -26,42 +27,37 @@
 
 // macro for length test
 #define test_length(npars) if (argz_count (argv, argc) != npars + 1) { \
-        ret = -1; \
-	errno = EINVAL; \
-	goto end; \
+        devdem_write_command_end ("Unknow nmbr of params: expected %i,got %i",\
+		-301, npars, argz_count (argv, argc) ); \
+	return -1; \
 }
+
+// macro for telescope calls, will write error
+#define tel_call(call)   if ((ret = call) < 0) \
+{\
+	 devdem_write_command_end ("Telescope error: %s", -errno, strerror(errno));\
+	 return ret;\
+}
+
 
 /*! Handle teld command.
 *
 * @param buffer buffer, containing unparsed command
-* @param fd descriptor of input/output socket
-* @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
+* @return -2 on exit, -1 and set errno on HW failure, 0 when command
+* was successfully performed
 */
 int
-teld_handle_command (char *buffer, int fd)
+teld_handle_command (char *argv, size_t argc)
 {
-  char *argv;
-  size_t argc;
   int ret;
   double dval;
   char *param;
 
-  if ((ret = argz_create_sep (buffer, ' ', &argv, &argc)))
-    {
-      errno = ret;
-      return -1;
-    }
-  if (!argv)
-    return 0;
   if (strcmp (argv, "ready") == 0)
     {
-      if ((ret = tel_is_ready ()) >= 0)
-	devdem_dprintf (fd, "ready 1");
-      else
-	devdem_dprintf (fd, "ready 0");
-      goto end;
+      tel_call (tel_is_ready ());
     }
-  if (strcmp (argv, "set") == 0)
+  else if (strcmp (argv, "set") == 0)
     {
       double ra, dec;
       test_length (2);
@@ -71,14 +67,14 @@ teld_handle_command (char *buffer, int fd)
       dec = hmstod (param);
       if (isnan (ra) || isnan (dec))
 	{
-	  errno = EINVAL;
+	  devdem_write_command_end ("Expected ra dec, got: %f %f", -302, ra,
+				    dec);
 	  ret = -1;
 	}
       else
-	ret = tel_set_to (ra, dec);
-      goto end;
+	tel_call (tel_set_to (ra, dec));
     }
-  if (strcmp (argv, "move") == 0)
+  else if (strcmp (argv, "move") == 0)
     {
       double ra, dec;
       test_length (2);
@@ -88,83 +84,82 @@ teld_handle_command (char *buffer, int fd)
       dec = hmstod (param);
       if (isnan (ra) || isnan (dec))
 	{
-	  errno = EINVAL;
+	  devdem_write_command_end ("Expected ra dec, got: %f %f", -302, ra,
+				    dec);
 	  ret = -1;
 	}
       else
-	ret = tel_move_to (ra, dec);
-      goto end;
+	tel_call (tel_move_to (ra, dec));
     }
-  if (strcmp (argv, "ra") == 0)
+  else if (strcmp (argv, "ra") == 0)
     {
-      if ((ret = tel_read_ra (&dval)) >= 0)
-	devdem_dprintf (fd, "ra %f\n", dval);
-      goto end;
+      tel_call (tel_read_ra (&dval));
+      devdem_dprintf ("ra %f\n", dval);
     }
-  if (strcmp (argv, "dec") == 0)
+  else if (strcmp (argv, "dec") == 0)
     {
-      if ((ret = tel_read_dec (&dval)) >= 0)
-	devdem_dprintf (fd, "dec %f\n", dval);
-      goto end;
+      tel_call (tel_read_dec (&dval));
+      devdem_dprintf ("dec %f\n", dval);
     }
-  if (strcmp (argv, "park") == 0)
+  else if (strcmp (argv, "park") == 0)
     {
-      ret = tel_park ();
-      goto end;
+      tel_call (tel_park ());
     }
 // extended functions
-  if (strcmp (argv, "lon") == 0)
+  else if (strcmp (argv, "lon") == 0)
     {
-      if ((ret = tel_read_longtitude (&dval)) >= 0)
-	devdem_dprintf (fd, "dec %f\n", dval);
-      goto end;
+      tel_call (tel_read_longtitude (&dval));
+      devdem_dprintf ("dec %f\n", dval);
     }
-  if (strcmp (argv, "lat") == 0)
+  else if (strcmp (argv, "lat") == 0)
     {
-      if ((ret = tel_read_latitude (&dval)) >= 0)
-	devdem_dprintf (fd, "dec %f\n", dval);
-      goto end;
+      tel_call (tel_read_latitude (&dval));
+      devdem_dprintf ("dec %f\n", dval);
     }
-  if (strcmp (argv, "lst") == 0)
+  else if (strcmp (argv, "lst") == 0)
     {
-      if ((ret = tel_read_siderealtime (&dval)) >= 0)
-	devdem_dprintf (fd, "dec %f\n", dval);
-      goto end;
+      tel_call (tel_read_siderealtime (&dval));
+      devdem_dprintf ("dec %f\n", dval);
     }
-  if (strcmp (argv, "loct") == 0)
+  else if (strcmp (argv, "loct") == 0)
     {
-      if ((ret = tel_read_localtime (&dval)) >= 0)
-	devdem_dprintf (fd, "dec %f\n", dval);
-      goto end;
+      tel_call (tel_read_localtime (&dval));
+      devdem_dprintf ("dec %f\n", dval);
     }
-  if (strcmp (argv, "exit") == 0)
+  else if (strcmp (argv, "exit") == 0)
     {
-      close (fd);
-      ret = -2;
-      goto end;
+      return -2;
     }
-  if (strcmp (argv, "help") == 0)
+  else if (strcmp (argv, "help") == 0)
     {
-      devdem_dprintf (fd, "ready - is telescope ready to observe?\n");
-      devdem_dprintf (fd, "set - set telescope coordinates\n");
-      devdem_dprintf (fd, "move - move telescope\n");
-      devdem_dprintf (fd, "ra - telescope right ascenation\n");
-      devdem_dprintf (fd, "dec - telescope declination\n");
-      devdem_dprintf (fd, "park - park telescope\n");
-      devdem_dprintf (fd, "lon - telescope longtitude\n");
-      devdem_dprintf (fd, "lat - telescope latitude\n");
-      devdem_dprintf (fd, "lst - telescope local sidereal time\n");
-      devdem_dprintf (fd, "loct - telescope local time\n");
-      devdem_dprintf (fd, "exit - exit from main loop\n");
-      devdem_dprintf (fd, "help - print, what you are reading just now\n");
+      devdem_dprintf ("ready - is telescope ready to observe?\n");
+      devdem_dprintf ("set - set telescope coordinates\n");
+      devdem_dprintf ("move - move telescope\n");
+      devdem_dprintf ("ra - telescope right ascenation\n");
+      devdem_dprintf ("dec - telescope declination\n");
+      devdem_dprintf ("park - park telescope\n");
+      devdem_dprintf ("lon - telescope longtitude\n");
+      devdem_dprintf ("lat - telescope latitude\n");
+      devdem_dprintf ("lst - telescope local sidereal time\n");
+      devdem_dprintf ("loct - telescope local time\n");
+      devdem_dprintf ("exit - exit from main loop\n");
+      devdem_dprintf ("help - print, what you are reading just now\n");
       ret = errno = 0;
-      goto end;
     }
-  ret = -1;
-  errno = EINVAL;
-end:
-  free (argv);
+  else
+    {
+      devdem_write_command_end ("Unknow command: '%s'", -300, argv);
+      return -1;
+    }
   return ret;
+}
+
+void
+exit_handler (int err, void *args)
+{
+  if (getpid () == devdem_parent_pid)
+    tel_cleanup (err, args);
+  syslog (LOG_INFO, "Exit");
 }
 
 int
@@ -176,10 +171,13 @@ main (void)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
+  on_exit (exit_handler, NULL);
+
   if (tel_connect ("/dev/ttyS0") < 0)
     {
       syslog (LOG_ERR, "tel_connect: %s", strerror (errno));
       exit (EXIT_FAILURE);
     }
+
   return devdem_run (PORT, teld_handle_command);
 }

@@ -1,14 +1,17 @@
 # $Id$
 CC = gcc
 CFLAGS = -Wall -g
-LDFLAGS = -lm
+LDFLAGS = -lm -lpthread
 
 all: test devdem.o
 
 test: hms.o test.o
 
 clean: 
-	rm -rf *.o test *~
+	$(RM) *.o *~ 
+
+mrproper:
+	$(RM) *.o *~ test
 
 indent:
 	indent *.c *.h

@@ -1,7 +1,19 @@
+#$Id$
+SUBDIRS = utils teld camd
 all:
-	cd utils && $(MAKE)
-	cd teld && $(MAKE)
+	for dir in $(SUBDIRS) ; do 	\
+		$(MAKE) -C $$dir;	\
+	done
 
 clean:
-	cd utils && $(MAKE) clean
-	cd teld && $(MAKE) clean
+	for dir in $(SUBDIRS) ; do 	\
+		$(MAKE) -C $$dir clean;	\
+	done
+
+indent:
+	for dir in $(SUBDIRS) ; do 	\
+		$(MAKE) -C $$dir indent;	\
+	done
+
+commit: indent
+	cvs commit

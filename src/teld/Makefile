@@ -1,11 +1,14 @@
 # $Id$
 CC = gcc
-CFLAGS = -g -Wall
-LDFLAGS = -lm -Wall
-all: lx200.o teld
+CFLAGS = -g -Wall -DDEBUG
+LDFLAGS = -lm -lpthread -Wall 
+all: teld
 
 clean: 
-	$(RM) -rf *.o *~ teld core
+	$(RM) *.o *~ core
+
+mrproper:
+	$(RM) *.o *~ core teld
 
 indent:
 	indent *.h *.c

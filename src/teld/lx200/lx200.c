@@ -16,9 +16,9 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#include <time.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <syslog.h>
 #include <termios.h>
 #include <unistd.h>
@@ -30,19 +30,20 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
+#include "lx200.h"
 #include "../utils/hms.h"
+
 //! device name
 char *port_dev;
 //! port descriptor
 int port;
-//! parking declination
-double park_dec;
+
+//! sempahore id structure, we have two semaphores...
+int semid;
 
 //! port timeout
 #define PORT_TIME_OUT 5;
 
-//! sempahore id structure, we have two semaphores...
-int semid;
 //! one semaphore for direct port controll..
 #define SEM_TEL 	0
 //! and second for controll of the move operation
@@ -60,6 +61,13 @@ union semun
   struct seminfo *__buf;	/* buffer for IPC_INFO */
 };
 #endif
+
+void
+tel_cleanup (int err, void *args)
+{
+  if (semctl (semid, 0, IPC_RMID, 0) < 0)
+    syslog (LOG_ERR, "semctl %i IPC_RMID: %m", semid);
+}
 
 /*! Connect on given port
  * 

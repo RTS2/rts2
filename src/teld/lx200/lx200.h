@@ -18,6 +18,7 @@
 
 // basic functions
 int tel_connect (const char *devptr);
+void tel_cleanup (int err, void *args);
 int tel_is_ready (void);
 int tel_set_to (double ra, double dec);
 int tel_move_to (double ra, double dec);
@@ -37,8 +38,7 @@ int tel_stop_slew (char direction);
 int tel_start_slew (char direction);
 int tel_set_rate (char new_rate);
 
-extern pthread_mutex_t mov_mutex;
-extern pthread_mutex_t tel_mutex;
+//! parking declination
 extern double park_dec;
 
 #endif // __TELD_LX200__
