@@ -180,7 +180,7 @@ Rts2DevTelescopeIr::init ()
 
   if (!ir_ip || !ir_port)
     {
-      fprintf (stderr, "Invalid port or IP address\n");
+      fprintf (stderr, "Invalid port or IP address of mount controller PC\n");
       return -1;
     }
 
@@ -188,11 +188,11 @@ Rts2DevTelescopeIr::init ()
 
   syslog (LOG_DEBUG,
 	  "Status: ConnID = %i, connected: %s, authenticated %s, Welcome Message = %s",
-	  tplc.ConnID (), (tplc.IsConnected ()? "yes" : "no"),
-	  (tplc.IsAuth ()? "yes" : "no"), tplc.WelcomeMessage ().c_str ());
+	  tplc->ConnID (), (tplc->IsConnected ()? "yes" : "no"),
+	  (tplc->IsAuth ()? "yes" : "no"), tplc->WelcomeMessage ().c_str ());
 
   // are we connected ?
-  if (!tplc.IsAuth () || !tplc.IsConnected ())
+  if (!tplc->IsAuth () || !tplc->IsConnected ())
     {
       syslog (LOG_ERR, "Connection to server failed");
       return -1;
@@ -203,7 +203,7 @@ Rts2DevTelescopeIr::init ()
 int
 Rts2DevTelescopeIr::ready ()
 {
-  return !tplc.IsConnected ();
+  return !tplc->IsConnected ();
 }
 
 int
@@ -227,19 +227,25 @@ int
 Rts2DevTelescopeIr::info ()
 {
   double zd;
-  int status;
+  int status = 0;
 
-  if (!(tplc.IsAuth () && tplc.IsConnected ()))
+  if (!(tplc->IsAuth () && tplc->IsConnected ()))
     return -1;
 
-  tpl_get ("POINTING.CURRENT.RA", telRa, &status);
+  status = tpl_get ("POINTING.CURRENT.RA", telRa, &status);
+  if (status)
+    return -1;
   telRa *= 15.0;
-  tpl_get ("POINTING.CURRENT.DEC", telDec, &status);
+  status = tpl_get ("POINTING.CURRENT.DEC", telDec, &status);
+  if (status)
+    return -1;
 
   telSiderealTime = get_loc_sid_time ();
   telLocalTime = 0;
 
-  tpl_get (&tplc, "ZD.REALPOS", zd, &status);
+  status = tpl_get ("ZD.REALPOS", zd, &status);
+  if (status)
+    return -1;
 
   telFlip = (zd < 0);
 
@@ -252,7 +258,7 @@ Rts2DevTelescopeIr::info ()
 int
 Rts2DevTelescopeIr::startMove (double ra, double dec)
 {
-  int status;
+  int status = 0;
 
   target.ra = ra;
   target.dec = dec;
@@ -274,7 +280,7 @@ Rts2DevTelescopeIr::isMoving ()
   timeout++;
 
   // finish due to error
-  if (timeout > 200)
+  if (timeout > 20000)
     {
       return -1;
     }
