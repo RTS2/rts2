@@ -1,0 +1,13 @@
+#$Id$
+
+BIN = focusc 
+
+all: $(BIN)
+
+CFLAGS = @CFLAGS@ -I@top_srcdir@/include
+LDFLAGS = @LDFLAGS@ @LIB_CFITSIO@ @LIB_M@ @LIB_PTHREAD@ @LIB_NOVA@
+
+focusc: focusc.o ../writers/fits.o ../utils/devcli.a
+
+clean:
+	$(RM) *~ *.o $(BIN) *.fits
