@@ -198,6 +198,8 @@ process_precission (struct target *tar, struct device *camera)
       double ra_margin = 15, dec_margin = 15;	// in arc minutes
       int tries = 0;
       int max_tries = get_double_default ("maxtries", 5);
+      time_t now;
+      struct timespec timeout;
 
       ra_margin = get_double_default ("ra_margin", ra_margin);
       dec_margin = get_double_default ("dec_margin", dec_margin);
@@ -244,7 +246,11 @@ process_precission (struct target *tar, struct device *camera)
 	      // in location parameters, passd as reference to get_info.
 	      // So I can compare that with
 	      pthread_mutex_lock (hi_precision.mutex);
-	      pthread_cond_wait (hi_precision.cond, hi_precision.mutex);
+	      time (&now);
+	      timeout.tv_sec = now + 350;
+	      timeout.tv_nsec = 0;
+	      pthread_cond_timedwait (hi_precision.cond, hi_precision.mutex,
+				      &timeout);
 	      printf ("hi_precision->image_pos->ra: %f dec: %f ",
 		      hi_precision.image_pos.ra, hi_precision.image_pos.dec);
 	      pthread_mutex_unlock (hi_precision.mutex);
