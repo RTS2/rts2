@@ -9,6 +9,8 @@
 
 #define _GNU_SOURCE
 
+#define USE_WF2
+
 #include <errno.h>
 #include <libnova.h>
 #include <stdio.h>
@@ -35,7 +37,7 @@
 #include "selector.h"
 #include "../db/db.h"
 
-#define EXPOSURE_TIME		120
+#define EXPOSURE_TIME		60
 #define EPOCH			"002"
 
 struct device *camera, *telescope;
@@ -43,8 +45,6 @@ struct device *camera, *telescope;
 struct device *wf2;
 #endif
 struct target *plan;
-
-char *dark_name = NULL;
 
 struct image_que
 {
@@ -124,8 +124,6 @@ process_images (struct device *tel)
 	    }
 
 	  strs[199] = 0;
-
-	  printf ("get: %s\n", strs);
 
 	  ret = sscanf
 	    (strs, "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
@@ -211,6 +209,7 @@ data_handler (int sock, size_t size, struct image_info *image)
   char *filen;
   char *filename;
   char *dirname;
+  char *dark_name;
 
   gmtime_r (&image->exposure_time, &gmt);
 
@@ -223,6 +222,7 @@ data_handler (int sock, size_t size, struct image_info *image)
 	  return -1;
 	}
       break;
+
     default:
       if (!asprintf
 	  (&dirname, "/images/%s/%s/%05i/", EPOCH, image->camera_name,
@@ -248,26 +248,18 @@ data_handler (int sock, size_t size, struct image_info *image)
       goto free_filen;
     }
 
-  if (image->target_type == TARGET_DARK)
-    {
-      if (dark_name)
-	free (dark_name);
-      dark_name = (char *) malloc (strlen (filename) + 1);
-      strcpy (dark_name, filename);
-    }
   printf ("reading data socket: %i size: %i\n", sock, size);
-
 
   while ((s = devcli_read_data (sock, data, DATA_BLOCK_SIZE)) > 0)
     {
       if (sock < 0 || size != 3145784)
 	{
 	  printf ("socket error: %i", sock);
-	  exit (EXIT_FAILURE);
+	  goto close_fits;
 	}
 
       if ((ret = fits_handler (data, s, &receiver)) < 0)
-	goto free_filen;
+	goto close_fits;
       if (ret == 1)
 	break;
     }
@@ -276,18 +268,25 @@ data_handler (int sock, size_t size, struct image_info *image)
     {
       perror ("camc data_handler");
       ret = -1;
-      goto free_filen;
+      goto close_fits;
     }
 
   printf ("reading finished\n");
+
+  if (image->target_type == TARGET_LIGHT)
+    db_get_darkfield (image->camera_name, image->exposure_length * 100,
+		      image->camera.ccd_temperature * 100, &dark_name);
 
   if (fits_write_image_info (&receiver, image, dark_name)
       || fits_close (&receiver))
     {
       perror ("camc data_handler fits_write");
       ret = -1;
-      goto free_filen;
+      free (dark_name);
+      goto close_fits;
     }
+
+  free (dark_name);
 
   switch (image->target_type)
     {
@@ -318,13 +317,17 @@ data_handler (int sock, size_t size, struct image_info *image)
       break;
 
     case TARGET_DARK:
-      printf ("darkname: %s\n", dark_name);
+      printf ("darkname: %s\n", filename);
 
-      ret = db_add_darkfield (dark_name, &image->exposure_time,
-			      image->exposure_length,
-			      image->camera.ccd_temperature * 10);
+      ret = db_add_darkfield (filename, &image->exposure_time,
+			      image->exposure_length * 100,
+			      image->camera.ccd_temperature * 100,
+			      image->camera_name);
       break;
     }
+
+close_fits:
+  fits_close (&receiver);
 
 free_filen:
   free (filen);
@@ -471,7 +474,7 @@ observe (int watch_status)
       devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 
-#if USE_WF2
+#ifdef USE_WF2
       devcli_wait_for_status (wf2, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
 #endif
@@ -492,7 +495,7 @@ observe (int watch_status)
 	  perror ("expose camera");
 	}
 
-#if USE_WF2
+#ifdef USE_WF2
       if (devcli_wait_for_status (wf2, "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
 	  devcli_command (wf2, NULL, "expose 0 %i %i",
@@ -518,13 +521,13 @@ observe (int watch_status)
 	      last->next->type);
 
       get_info (last, telescope, camera);
-#if USE_WF2
+#ifdef USE_WF2
       get_info (last, telescope, wf2);
 #endif
 
       devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
 			      CAM_NOEXPOSURE, 0);
-#if USE_WF2
+#ifdef USE_WF2
       devcli_wait_for_status (wf2, "img_chip", CAM_MASK_EXPOSE,
 			      CAM_NOEXPOSURE, 0);
 #endif
@@ -532,7 +535,7 @@ observe (int watch_status)
       move (last->next);
 
       devcli_command (camera, NULL, "readout 0");
-#if USE_WF2
+#ifdef USE_WF2
       devcli_command (wf2, NULL, "readout 0");
 #endif
 
@@ -634,14 +637,6 @@ main (int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-  if (watch_status && devcli_server ()->statutes[0].status != SERVERD_NIGHT)
-    {
-      printf ("**** serverd in invalid state: %i, should be in %i\n",
-	      devcli_server ()->statutes[0].status, SERVERD_NIGHT);
-      devcli_server_disconnect ();
-      return EXIT_FAILURE;
-    }
-
   camera = devcli_find ("C0");
   if (!camera)
     {
@@ -653,7 +648,7 @@ main (int argc, char **argv)
 
   camera->data_handler = data_handler;
 
-#if USE_WF2
+#ifdef USE_WF2
   wf2 = devcli_find ("C1");
   if (!wf2)
     {
@@ -666,7 +661,7 @@ main (int argc, char **argv)
   wf2->data_handler = data_handler;
 #endif
 
-  telescope = devcli_find ("teld");
+  telescope = devcli_find ("T1");
   if (!telescope)
     {
       printf
@@ -690,7 +685,7 @@ main (int argc, char **argv)
 				  return EXIT_FAILURE; \
 				}
 
-#if USE_WF2
+#ifdef USE_WF2
 #define WF2_WRITE_READ(command) if (devcli_command (wf2, NULL, command) < 0) \
   				{ \
       		                  perror ("devcli_write_read_camd"); \
@@ -706,7 +701,7 @@ main (int argc, char **argv)
   CAMD_WRITE_READ ("ready");
   CAMD_WRITE_READ ("info");
 
-#if USE_WF2
+#ifdef USE_WF2
   WF2_WRITE_READ ("ready");
   WF2_WRITE_READ ("info");
 #endif
@@ -729,11 +724,15 @@ main (int argc, char **argv)
 
   printf ("waiting end\n");
 
+loop:
+  devcli_server_command (NULL, "status_txt P:waiting");
   if (watch_status)
     {
       while (devcli_server ()->statutes[0].status != SERVERD_NIGHT)
 	{
 	  printf ("wating for night..\n");
+	  fflush (stdout);
+	  devcli_command (telescope, NULL, "park");
 	  sleep (60);
 	}
 
@@ -745,7 +744,10 @@ main (int argc, char **argv)
 
   printf ("done\n");
 
-  devcli_command (telescope, NULL, "park");
+  sleep (300);
+
+  if (watch_status)
+    goto loop;
 
   devcli_server_disconnect ();
   db_disconnect ();

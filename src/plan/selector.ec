@@ -4,10 +4,10 @@
  * @author petr
  */
 
+#include <malloc.h>
 #include <libnova.h>
 #include <math.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include "selector.h"
 
@@ -69,6 +69,9 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
   while (!sqlca.sqlcode)
     {
       EXEC SQL FETCH next FROM obs_cursor_alt INTO:tar_id,:ra,:dec,:alt;
+
+      if (sqlca.sqlcode)
+	break;
 
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
 
@@ -169,7 +172,7 @@ select_next_airmass (time_t c_start, struct target *plan, struct
 
       if (find_plan (plan, tar_id, c_start - 1800))
 	{
-	  printf ("find id: %i\n", tar_id);
+	  printf ("airmass find id: %i\n", tar_id);
 	  last->type = TARGET_LIGHT;
 	  last->id = tar_id;
 	  last->ra = ra;
@@ -189,6 +192,94 @@ select_next_airmass (time_t c_start, struct target *plan, struct
 #undef test_sql
 
   return 0;
+
+err:
+#ifdef DEBUG
+  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+#endif /* DEBUG */
+  return -1;
+}
+
+int
+select_next_grb (time_t c_start, struct target *plan, struct target *last)
+{
+#define test_sql if (sqlca.sqlcode < 0) goto err
+
+  EXEC SQL BEGIN DECLARE SECTION;
+
+  double st;
+
+  int tar_id;
+
+  double dec;
+  double ra;
+
+  double alt;
+
+  long int obs_start = c_start - 8640;
+
+  EXEC SQL END DECLARE SECTION;
+
+  printf ("C_start: %s", ctime (&c_start));
+  st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  printf ("st: %f\n", st);
+
+  EXEC SQL BEGIN;
+
+  test_sql;
+
+  EXEC SQL DECLARE obs_cursor_grb CURSOR FOR
+    SELECT targets.tar_id, tar_ra, tar_dec,
+    obj_alt (tar_ra, tar_dec,:st, -14.95, 50) AS alt FROM targets, grb
+    WHERE (type_id =
+	   'G' AND (tar_lastobs is NULL) or tar_lastobs <
+	   abstime (:obs_start)) and grb_id > 100 and obj_alt (tar_ra,
+							       tar_dec,:st,
+							       -14.95,
+							       50) >
+    20 and targets.tar_id = grb.tar_id ORDER BY alt DESC;
+
+  EXEC SQL OPEN obs_cursor_grb;
+
+  test_sql;
+
+  while (!sqlca.sqlcode)
+    {
+      EXEC SQL FETCH next FROM obs_cursor_grb INTO:tar_id,:ra,:dec,:alt;
+
+      if (sqlca.sqlcode)
+	break;
+
+      printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
+
+      if (find_plan (plan, tar_id, c_start - 1800))
+	{
+	  printf ("grb find id: %i\n", tar_id);
+	  last->type = TARGET_LIGHT;
+	  last->id = tar_id;
+	  last->ra = ra;
+	  last->dec = dec;
+	  last->ctime = c_start;
+	  last->next = NULL;
+
+	  EXEC SQL CLOSE obs_cursor_grb;
+
+	  test_sql;
+
+	  EXEC SQL END;
+	  return 0;
+	}
+    }
+
+  EXEC SQL CLOSE obs_cursor_grb;
+
+  test_sql;
+
+  EXEC SQL END;
+
+#undef test_sql
+
+  return -1;
 
 err:
 #ifdef DEBUG
@@ -223,13 +314,21 @@ get_next_plan (struct target *plan, int selector_type,
   struct ln_hrz_posn moon_hrz;
   struct ln_lnlat_posn observer;
 
+  time_t obs_start = c_start + number * (READOUT_TIME + exposure);
+
+  if (!select_next_grb (obs_start, curr_plan, plan))
+    {
+      return 0;
+    }
+
   switch (selector_type)
     {
+
     case SELECTOR_ALTITUDE:
-      return select_next_alt (c_start + number * (READOUT_TIME +
-						  exposure), curr_plan, plan);
+      return select_next_alt (obs_start, curr_plan, plan);
 
     case SELECTOR_AIRMASS:
+      // check for GRB..
       // every 50th image will be dark..
       if (number % 50 == 5)
 	{
@@ -288,7 +387,7 @@ get_next_plan (struct target *plan, int selector_type,
 	  break;
 	}
 
-      return select_next_airmass (c_start, curr_plan, plan, airmass, az);
+      return select_next_airmass (obs_start, curr_plan, plan, airmass, az);
       break;
 
     default:
@@ -311,7 +410,7 @@ make_plan (struct target **plan, float exposure)
   (*plan)->next = NULL;
   last = *plan;
 
-  for (i = 0; i < 100; i++)
+  for (i = 0; i < 10; i++)
     {
       last->next = (struct target *) malloc (sizeof (struct target));
       last = last->next;
