@@ -6,9 +6,10 @@
 
 #include <time.h>
 
-#define TARGET_LIGHT	1
-#define TARGET_DARK	2
-#define TARGET_FLAT	3
+#define TARGET_LIGHT		1
+#define TARGET_DARK		2
+#define TARGET_FLAT		3
+#define TARGET_FLAT_DARK	4
 
 struct image_info
 {
