@@ -307,6 +307,7 @@ thread_wrapper (void *temp)
     {
       pthread_cleanup_push (TW->clean_cancel, TW->arg);
       ret = TW->start_routine (TW->arg);
+      syslog (LOG_DEBUG, "thread returns..");
       pthread_cleanup_pop (0);	// of course don't execute that one, end already takes care of it
     }
   else
@@ -359,14 +360,14 @@ devser_thread_create (void *(*start_routine) (void *), void *arg,
 	    (struct thread_wrapper_temp *)
 	    malloc (sizeof (struct thread_wrapper_temp));
 	  if (!temp)
-	    return -1;
+	    goto err;
 
 	  temp->lock = &threads[i].lock;
 	  temp->start_routine = start_routine;
 	  if (arg_size)
 	    {
 	      if (!(temp->arg = malloc (arg_size)))
-		return -1;
+		goto err;
 	      memcpy (temp->arg, arg, arg_size);
 	      temp->freed = 1;
 	    }
@@ -387,13 +388,15 @@ devser_thread_create (void *(*start_routine) (void *), void *arg,
 	      if (temp->freed)
 		free (temp->arg);
 	      free (temp);
-	      return -1;
+	      goto err;
 	    }
 	  return 0;
 	}
     }
   syslog (LOG_WARNING, "reaches MAX_THREADS");
   errno = EAGAIN;
+err:
+  devser_write_command_end (DEVDEM_E_SYSTEM, "cannot create thread");
   return -1;
 }
 
@@ -427,6 +430,7 @@ devser_thread_cancel_all (void)
     {
       if (pthread_mutex_trylock (&threads[i].lock) == EBUSY)
 	{
+	  syslog (LOG_DEBUG, "waiting for thread %i", i);
 	  pthread_cancel (threads[i].thread);
 	  pthread_join (threads[i].thread, NULL);
 	}
