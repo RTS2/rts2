@@ -1,0 +1,20 @@
+#!/bin/bash
+
+echo "Subject: $1 images for one date from " `date`
+
+echo <<EOF
+Images
+=======================================================================================
+EOF
+
+psql stars -c "select img_id, camera_name, obs_id, img_date, img_exposure, img_temperature, img_filter, imgrange (astrometry) from images where now() - img_date < '1 day' order by img_date desc;"
+
+echo <<EOF
+=======================================================================================
+Observations
+=======================================================================================
+EOF
+
+psql stars -c "select * from observations where now () - obs_start < '1 day' order by obs_start desc;"
+
+echo "Report finished at " `date`

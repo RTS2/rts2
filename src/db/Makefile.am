@@ -18,7 +18,7 @@ AM_CFLAGS = @LIBPG_CFLAGS@
 
 noinst_PROGRAMS = test
 
-bin_SCRIPTS = rts2-script
+bin_SCRIPTS = rts2-script rts2-lastnightreport
 
 test_SOURCES = test.c
 test_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ libdb.a ../utils/config.o
