@@ -145,7 +145,7 @@ fits_write_image_info (struct fits_receiver_data *receiver,
   jd = get_julian_from_timet (&info->exposure_time);
   write_key (TDOUBLE, "JD", &jd, "Camera exposure Julian date");
   write_key (TFLOAT, "EXPOSURE", &info->exposure_length,
-	     "Camera exposure time in sec");
+	     "Camera exposure time in msec");
   write_key (TINT, "TARGET", &info->target_id, "Target id");
   write_key (TINT, "OBSERVAT", &info->observation_id, "Observation id");
   return 0;
@@ -211,12 +211,17 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 #endif /* DEBUG */
 	  if (((struct imghdr *) receiver->data)->naxes > 0
 	      && ((struct imghdr *) receiver->data)->naxes < 5)
-	    fits_call (fits_create_img
-		       (receiver->ffile, USHORT_IMG, 2,
-			((struct imghdr *) receiver->data)->sizes, &status));
+	    {
+	      fits_call (fits_create_img
+			 (receiver->ffile, USHORT_IMG, 2,
+			  ((struct imghdr *) receiver->data)->sizes,
+			  &status));
+	    }
 	  else
-	    printf ("bad naxes: %i\n",
-		    ((struct imghdr *) receiver->data)->naxes);
+	    {
+	      printf ("bad naxes: %i\n",
+		      ((struct imghdr *) receiver->data)->naxes);
+	    }
 	  receiver->header_processed = 1;
 	}
       if (receiver->offset == receiver->size)
