@@ -75,6 +75,7 @@ public:
   virtual int stopIntegrate ();
 
   virtual int moveFilter (Rts2Conn * conn, int new_filter);
+  virtual int enableFilter (Rts2Conn * conn);
 
   virtual void cancelPriorityOperations ();
 
@@ -123,7 +124,13 @@ Rts2DevConnPhot::commandAuthorized ()
 	return -2;
 //    CHECK_PRIORITY;
       return master->moveFilter (this, new_filter);
-      return 0;
+    }
+  else if (isCommand ("enable"))
+    {
+      if (!paramEnd ())
+	return -2;
+      CHECK_PRIORITY;
+      return master->enableFilter (this);
     }
   else if (isCommand ("help"))
     {
@@ -131,6 +138,7 @@ Rts2DevConnPhot::commandAuthorized ()
       send ("exit - exit from main loop");
       send ("help - print, what you are reading just now");
       send ("integrate <time> <count> - start integration");
+      send ("enable - enable filter movements");
       send ("stop - stop any running integration");
       return 0;
     }
@@ -327,6 +335,16 @@ Rts2DevPhotOptec::moveFilter (Rts2Conn * conn, int new_filter)
   if (ret)
     return -1;
   conn->sendValue ("filter", new_filter);
+  return 0;
+}
+
+int
+Rts2DevPhotOptec::enableFilter (Rts2Conn * conn)
+{
+  int ret;
+  ret = phot_command (PHOT_CMD_INTEGR_ENABLED, 1);
+  if (ret)
+    return -1;
   return 0;
 }
 
