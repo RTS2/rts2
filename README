@@ -1,0 +1,46 @@
+$Id$
+
+Tento soubor je tady pro to, aby popsal zakladni architektru systemu.
+
+Pro styl prace konzultujte HACKING, pro instalaci INSTAL.
+
+rts2 - nova verze dalekohledu
+
+Zalozena na mrakach pythonskych skriptu, rts, slouzicich k ovladani
+LX200 a sbig kamer na Ondrejove.
+
+Proc nova verze?
+
+- vice sitova
+- psana v c cecku
+- slozitejsi
+- s vetsimi moznostmi
+
+Zaklad - navrh.
+
+deamonek = v podstate driver na dane zarizeni. Maly deamon, ktery sedi
+a umi ovladat dane zarizeni. 
+
+Ovlada se textove, nejdrive prosim napiste verzi pro stdin/stdout aby
+se to dalo rozumne debugovat, pak to ositujeme.
+
+rozhrani=textove. Prikaz vyvolava odpoved, ktera konci retezcem
+
++<cislo> popis 
+
+v pripade uspesneho vykonani, jinak
+
+-<cislo> popis 
+
+v pripade chyby (zaklad = pop3 protokol).
+
+Nad deamonky bdi deamon - centralni pristupovy bod k tomu vsemu. Ten
+ovlada zamykani (prideluje jednotliva zarizeni jednotlivim pripojenym
+uzivatelum), uzivatele vidi jenom jeho, na obycejne zarizeni nemaji
+pristup -> jednotne misto pro autentifikaci, ostatni zarizeni muzeme
+vhodne zafirewallovat.
+
+Zatim porad badame, rozhranni asi dost podobne ovladani IRAFu, aby
+jste meli predstavu.
+
+Petr
