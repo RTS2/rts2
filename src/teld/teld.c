@@ -29,7 +29,7 @@
 #define SERVERD_HOST		"localhost"	// default serverd hostname
 
 #define DEVICE_PORT		5555	// default camera TCP/IP port
-#define DEVICE_NAME 		"teld"	// default camera name
+#define DEVICE_NAME 		"T1"	// default camera name
 
 #define TEL_PORT		"/dev/ttyS0"	// default telescope port
 
@@ -172,6 +172,7 @@ teld_handle_command (char *command)
 				    "corections bigger than sane limit");
 	  return -1;
 	}
+//      if (correction_mark < 2 && correction_mark - CORRECTION_BUF > correction_number)
       if (correction_mark - CORRECTION_BUF > correction_number)
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "old corection");
@@ -180,16 +181,15 @@ teld_handle_command (char *command)
       if (devdem_priority_block_start ())
 	return -1;
 
-      coord.ra += correction_buf[correction_mark % CORRECTION_BUF].ra;
-      coord.dec += correction_buf[correction_mark % CORRECTION_BUF].dec;
+      coord.ra += correction_buf[correction_number % CORRECTION_BUF].ra;
+      coord.dec += correction_buf[correction_number % CORRECTION_BUF].dec;
       syslog (LOG_DEBUG, "correction: ra %f dec %f mark %i\n", coord.ra,
 	      coord.dec, correction_mark);
       // update all corrections..
-      for (i = correction_number % CORRECTION_BUF;
-	   i < correction_mark - correction_number; i++)
+      for (i = 0; i < CORRECTION_BUF; i++)
 	{
-	  correction_buf[i % CORRECTION_BUF].ra -= coord.ra;
-	  correction_buf[i % CORRECTION_BUF].dec -= coord.dec;
+	  correction_buf[i].ra -= coord.ra;
+	  correction_buf[i].dec -= coord.dec;
 	}
 
       correction_mark++;
