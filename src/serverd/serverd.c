@@ -26,7 +26,7 @@
 #include <arpa/inet.h>
 
 #include "../utils/devser.h"
-#include "../utils/location.h"
+#include "../utils/config.h"
 #include "status.h"
 
 #define PORT	5557
@@ -306,18 +306,17 @@ clients_change_priority (time_t timeout)
   int new_priority_max = 0;
   int i;
 
-  if (shm_info->priority_client >= 0
-      && *shm_clients[shm_info->priority_client].login)
+  if (shm_info->priority_client >= 0)
     {
-      new_priority_client = shm_info->priority_client;
-      new_priority_max = shm_clients[shm_info->priority_client].priority;
-      if (new_priority_max == -1)
+      if (*shm_clients[shm_info->priority_client].login
+	  && shm_clients[shm_info->priority_client].priority != -1)
 	{
-	  new_priority_client = -1;
-	  new_priority_max = 0;
+	  new_priority_client = shm_info->priority_client;
+	  new_priority_max = shm_clients[shm_info->priority_client].priority;
 	}
+      else
+	shm_info->priority_client = -1;
     }
-
   // change priority and find new client with highest priority
   for (i = 0; i < MAX_CLIENT; i++)
     {
@@ -334,7 +333,7 @@ clients_change_priority (time_t timeout)
       shm_info->priority_client = new_priority_client;
     }
   return devices_all_msg_snd ("M priority_change %i %i",
-			      new_priority_client, timeout);
+			      shm_info->priority_client, timeout);
 }
 
 void *
@@ -344,8 +343,8 @@ serverd_riseset_thread (void *arg)
   struct ln_lnlat_posn obs;
   syslog (LOG_DEBUG, "riseset thread start");
 
-  obs.lng = get_longtitude ();
-  obs.lat = get_latititude ();
+  obs.lng = get_double_default ("longtitude", -14.95);
+  obs.lat = get_double_default ("latitude", 50);
 
   while (1)
     {
@@ -529,7 +528,9 @@ client_serverd_handle_command (char *command)
 			  shm_clients[serverd_id].priority, serverd_id);
 
 	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
-			  shm_clients[shm_info->priority_client].priority);
+			  shm_info->priority_client >=
+			  0 ? shm_clients[shm_info->priority_client].
+			  priority : 0);
 
 	  shm_clients[serverd_id].priority = new_priority;
 
@@ -542,7 +543,9 @@ client_serverd_handle_command (char *command)
 	    }
 
 	  devser_dprintf ("new_priority %i %i", shm_info->priority_client,
-			  shm_clients[shm_info->priority_client].priority);
+			  shm_info->priority_client >=
+			  0 ? shm_clients[shm_info->priority_client].
+			  priority : 0);
 
 	  devser_shm_data_unlock ();
 
@@ -718,8 +721,10 @@ serverd_handle_command (char *command)
 
 	  server_type = DEVICE_SERVER;
 	  serverd_status_info ();
+	  if (shm_info->priority_client > -1)
+	    devser_dprintf ("M priority_change %i 0",
+			    shm_info->priority_client);
 	  devser_shm_data_unlock ();
-
 	  return 0;
 	}
       else
@@ -754,10 +759,17 @@ main (void)
   shm_devices = NULL;
 
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-  if (devser_init (sizeof (struct serverd_info)))
+  if (devser_init (sizeof (struct serverd_info)) == -1)
     {
       syslog (LOG_ERR, "error in devser_init: %m");
       return -1;
+    }
+
+  if (read_config (CONFIG_FILE) == -1)
+    {
+      syslog (LOG_ERR,
+	      "Cannot open config file " CONFIG_FILE
+	      ", defaults will be used");
     }
 
   shm_info = (struct serverd_info *) devser_shm_data_at ();
