@@ -826,6 +826,7 @@ child_init (void)
 int
 devdem_run (int port, devser_handle_command_t in_handler)
 {
+  on_exit (devdem_on_exit, NULL);
   cmd_device_handler = in_handler;
   return devser_run (port, client_handle_commands, child_init);
 }
