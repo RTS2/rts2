@@ -50,7 +50,7 @@ public:
     interleavedReadout = 0;
     return CameraChip::endReadout ();
   }
-  int sendLineData ();
+  int sendLineData (int numLines = -1);
 
   int getSizeOfPixel ()
   {
@@ -255,7 +255,7 @@ CameraMiniccdChip::readoutOneLine ()
 }
 
 int
-CameraMiniccdChip::sendLineData ()
+CameraMiniccdChip::sendLineData (int numLines)
 {
   int send_data_size;
 
@@ -289,7 +289,15 @@ CameraMiniccdChip::sendLineData ()
       send_top += CCD_MSG_IMAGE_LEN;
     }
   sendLine++;
-  send_data_size = sendReadoutData (send_top, dest_top - send_top);
+  if (numLines == -1)
+    {
+      send_data_size = sendReadoutData (send_top, dest_top - send_top);
+    }
+  else
+    {
+      // assume that connection will not fail..
+      send_data_size = sendReadoutData (send_top, numLines * usedRowBytes);
+    }
   if (send_data_size < 0)
     return -2;
 
@@ -500,16 +508,16 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
     {
       return -1;
     }
-  sendLine++;
   switch (slaveState)
     {
     case SLAVE2_READOUT:
-      ret = slaveChip[0]->sendLineData ();
+      ret = slaveChip[sendLine % 2]->sendLineData (1);
+      sendLine++;
       if (ret != -2)
 	return ret;
       slaveState = SLAVE2_DATA;
     case SLAVE2_DATA:
-      ret = slaveChip[1]->sendLineData ();
+      ret = slaveChip[1]->sendLineData (1);
       if (ret != -2)
 	return ret;
     default:
