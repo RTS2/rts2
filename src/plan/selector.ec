@@ -37,6 +37,8 @@ select_next (time_t c_start, struct target *plan, struct target *last)
 
   double alt;
 
+  long int obs_start = c_start - 8640;
+
   EXEC SQL END DECLARE SECTION;
 
   printf ("c_start: %s", ctime (&c_start));
@@ -51,13 +53,8 @@ select_next (time_t c_start, struct target *plan, struct target *last)
   	SELECT tar_id, tar_ra, tar_dec,
 		obj_alt (tar_ra, tar_dec, :jd, -14.95, 50) AS alt FROM targets
 	    	WHERE NOT EXISTS (SELECT * FROM observations WHERE 
-		observations.tar_id = targets.tar_id) 
-	UNION 
-	SELECT targets.tar_id, tar_ra, tar_dec,
-		obj_alt (tar_ra, tar_dec, :jd, -14.95, 50) AS alt FROM targets, 
-		observations
-		WHERE targets.tar_id = observations.tar_id AND 
-		observations.obs_start < :jd - 0.1
+		observations.tar_id = targets.tar_id and 
+		observations.obs_start > abstime (:obs_start))
 	ORDER BY alt DESC;
 
   EXEC SQL OPEN obs_cursor;
@@ -117,7 +114,7 @@ make_plan (struct target **plan)
 
   for (i = 0; i < 100; i++)
   {
-	select_next (c_start + i * 240, *plan, last);
+	select_next (c_start + i * 180, *plan, last);
 	last = last->next;
   }
 
@@ -138,13 +135,3 @@ free_plan (struct target *plan)
 
   for ( ; last; plan = last, last = last->next, free(plan));
 }
-/*
-int
-main (int argc, char **argv)
-{
-  struct target *plan, *last;
-  make_plan (&plan);
-  for (last = plan; last; last = last->next)
-  	printf ("%i\t%f\t%f\t%s", last->id, last->ra, last->dec, ctime (&last->ctime));
-  free_plan (plan);
-}*/
