@@ -6,8 +6,7 @@ zaøízení, z nich¾ jedno øídí vyèítání z kamery a druhé se stará o zpracování
 snímkù.
 
 Systém vychází z teorie agentù. Nad spoleèným komunikaèním rozhraním bì¾í malé
-jednoúèelové procesy-agenty\footnote{agenty jsou pova¾ovány za ne¾ivotné,
-proto¾e se jedná o zaøízení} s, které vykonávají svoji specifickou èinnost, a
+jednoúèelové procesy-agenty, které vykonávají svoji specifickou èinnost a
 komunikují s ostatními agenty.
 
 Struktura agentù odpovídá zaøízením a procesùm pøítomných u dalekohledu.
@@ -57,7 +56,7 @@ hesla je vhodné zajistit, aby klientovi staèilo jedno u¾ivatelské jméno a jedno
 heslo. Dal¹ím pøíkladem mù¾e být seznam zaøízení obsa¾ených v systému. Tyto
 funkce jsou dále oznaèovány jako {\bf centrální funkce}.
 
-Funkce, které je potøeba volat na jednotlivých zaøízeních, jsou oznaèovány jako
+Funkce, které je tøeba volat na jednotlivých zaøízeních, jsou oznaèovány jako
 {\bf lokální funkce}.
 
 Centrální funkce jsou provádìny agentem - {\bf centrálním serverem}.
@@ -76,7 +75,7 @@ kamera ST9. Posuvná støecha dalekohledu je ovládána ruènì.
 
 Systém se skládá z poèítaèe se jménem lascaux, na kterém bì¾í databázový
 server, centrální server, v¹echny agenty, které øídí pozorování (pro pøíjem
-zpráv o gamma záblescích, pro dlouhodobá pozorování), a monitoring.
+zpráv o gamma záblescích, pro dlouhodobá pozorování) a monitoring.
 
 Dále systém obsahuje tøi poèítaèe pro obsluhu kamer, k jednomu z nich je
 souèasnì pøipojena montá¾. Jejich jména jsou volena podle typu kamer - c0, c1
@@ -88,6 +87,6 @@ Do systému se mù¾e pøipojit monitorovací klient z libovolného místa na
 Internetu\footnote{vnitøní sí», spojující lascaux s poèítaèi pro
 ovládání kamer, je nedostupná zvenèí - je chránìna pøed pøípadnými útoky z
 Internetu pomocí pøekladu sí»ových adres - NAT. Pro pøipojení monitorovacích,
-pøípadnì jiných klientù, je potøeba na lascaux nastavit forwarding jednotlivých
-TCP portù na poèítaèe ve vnitøní síti, a v konfiguraèních souborech kamer je
-potøeba zmìnit název poèítaèe}.
+pøípadnì jiných klientù, je tøeba na lascaux nastavit forwarding jednotlivých
+TCP portù na poèítaèe ve vnitøní síti a v konfiguraèních souborech kamer je
+tøeba zmìnit název poèítaèe}.

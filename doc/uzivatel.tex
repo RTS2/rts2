@@ -18,7 +18,7 @@ Konfiguraèní skript provìøí cílový systém. Jeho provádìní se ukonèí chybovou
 hlá¹kou popisující chybu v pøípadì, ¾e systém neobsahuje v¹echny potøebné
 knihovny.
 
-Dále je potøeba pøelo¾it binární kód a nainstalovat vytvoøená data.
+Dále je tøeba pøelo¾it binární kód a nainstalovat vytvoøená data.
 To se dìje pomocí
 
 {\bf make}
@@ -29,13 +29,14 @@ Pro make install je vhodné mít rootovské oprávnìní.
 
 \section{Spou¹tìní, zastavování}
 
-Pro spu¹tìní serverù slou¾í inicializaèní skript rts2, ulo¾ený v adresáøi /etc/init.d. 
-Konfigurace systému se dìje pomocí souborù umístìných v /etc/rts2.
+Pro spu¹tìní serverù slou¾í inicializaèní skript rts2, ulo¾ený v adresáøi
+{\it /etc/init.d}.  Konfigurace systému se dìje pomocí souborù umístìných v adresáøi
+{\it /etc/rts2}.
 
 Servery je mo¾né pou¹tìt i manuálnì. Ka¾dý server spu¹tìný s parametrem -h
 vypí¹e krátkou nápovìdu.
 
-V¹echny binární soubory jsou obvykle instalovány do adresáøe /usr/local/bin.
+V¹echny binární soubory jsou obvykle instalovány do adresáøe {\it /usr/local/bin}.
 Toto umístnìní lze zmìnit nastavením argumentu prefix pøi volání configure
 skriptu.
 
@@ -67,7 +68,7 @@ K dispozici jsou tyto klávesové zkratky:
 \item[F2] pøevede server do stavu off, ekvivalent pøíkazu {\it off}
 \item[F3] pøevede server do stavu standby, ekvivalent pøíkazu {\it standby}
 \item[F4] pøevede server do stavu on, ekvivalent pøíkazu {\it on}
-\item[F5] zaktualizuje údaje o v¹ech pøipojených zaøízení, pøekreslí obrazovku 
+\item[F5] zaktualizuje údaje o v¹ech pøipojených zaøízeních, pøekreslí obrazovku 
 \item[F10] ukonèí monitorovací program
 \end{description}
 
@@ -84,11 +85,11 @@ monitorovacím klientem a jednotlivými servery.
 
 \section{Pøístup k databázi}
 
-Pøístup k databázi je mo¾ný pøes WWW rozhraní. Snímky z BARTa
-jsou takto dostupné na {\it http://lascaux.asu.cas.cz/bartdb}.
+Pøístup k databázi je mo¾ný pøes WWW rozhraní. Snímky z dalekohledu BART jsou
+takto dostupné na {\it http://lascaux.asu.cas.cz/bartdb}.
 
 Pokud chceme v databázi mìnit údaje, pøípadnì stahovat existující snímky, je
-potøeba se nejdøíve pøihlásit. Pro pøihlá¹ení je potøeba znát své pøihla¹ovací
+tøeba se nejdøíve pøihlásit. Pro pøihlá¹ení je tøeba znát své pøihla¹ovací
 jméno a heslo. Pøihlá¹ení je mo¾né pomocí formuláøe \ref{fig:login}. 
 
 \fitsdb{login}{Formuláø pro pøihlá¹ení}

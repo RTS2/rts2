@@ -39,7 +39,7 @@ obsahuje tabulky {\bf ot} pro pøíle¾itostné cíle ({\it opportunity targets}) a
 \item[cameras, mounts] pomocné tabulky pro evidenci konfigurace zaøízení
 
 \item[medias] pomocná tabulka pro ukládání informací o médiích, urèených pro
-archivování snímkù, informací o tom, jestli je daná cestì dostupná
+archivování snímkù
 
 \end{description}
 
@@ -48,9 +48,9 @@ databáze je navr¾ena kolem vazby mezi tabulkami targets, observations a images.
 
 \dia{db-overview}{Diagram závislostí databáze}
 
-Databáze je vyu¾ívána plánovaèem, který z tabulky targets a pøípadnì dal¹ích
-provázaných tabulek ète údaje o mo¾ných cílech pozorování, a ukládá do ní
-informace o prùbìhu pozorování. Klient pro pøíjem zpráv o GRB do databáze
-ukládá údaje o obdr¾eném GRB.
+Databáze je vyu¾ívána plánovaèem, který z tabulky {\bf targets} a pøípadnì
+dal¹ích provázaných tabulek ète údaje o mo¾ných cílech pozorování a ukládá do
+ní informace o prùbìhu pozorování. Klient pro pøíjem zpráv o GRB ukládá pøijaté
+údaje do databáze.
 
 Dále je vyu¾ívána pro ukládání informací o napozorovaných snímcích.

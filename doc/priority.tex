@@ -4,7 +4,7 @@ Ka¾dá funkce, která mù¾e být agentem volána, je prvkem právì jedné z
 následujících dvou mno¾in:
 
 \begin{description}
-\index{funkce!informaèní}\item[mno¾ina informaèních funkcí]{obsahuje funkce,
+\index{funkce!informaèní}\item[mno¾ina informaèních funkcí]{obsahuje funkce, 
 které poskytují informace o~stavu zaøízení}
 \index{funkce!výkoné}\item[mno¾ina exekuèních funkcí]{obsahuje funkce, které
 mìní stav zaøízení}
@@ -18,7 +18,7 @@ Exekuèní funkce nemohou být volnì pøístupné\footnote{napøíklad není vhodné,
 aby jeden klient pohyboval dalekohledem a druhý exponoval kamery}. Exekuèní
 funkce lze v libovolný okam¾ik pøeru¹it. 
 
-Systém pou¾ívá exkluzivního pøístupu k~exekuèním funkcím - nanejvý¹e jeden
+Systém pou¾ívá exkluzivní pøístup k~exekuèním funkcím - nanejvý¹e jeden
 klient mù¾e volat exekuèní funkce, ostatní klienti pøi volání exekuèní funkce
 obdr¾í chybovou zprávu, oznamující, ¾e funkci nemohou zavolat. Je pak na nich,
 aby se rozhodli, jak budou dále postupovat.
@@ -74,11 +74,11 @@ systém získal nìco málo èasu. Viz diagram \ref{fig:kill-nextexe}.
 
 \dia{kill-nextexe}{Ukonèení exekuèní funkce odlo¾ené do nového volání}
 
-Je tedy vhodné ji¾ pøi zmìnì priority zajistit, ¾e zaøízení bude pøipraveno
+Je tedy vhodné ji¾ pøi zmìnì priority zajistit, aby zaøízení bylo pøipraveno
 pøijímat exekuèní funkce - zaøízení nesmí pøi pøedávání priority provádìt
 exekuèní funkce.
 
-Je potøeba rozli¹it dva pøípady, jak po¾adavek na zmìnu priority o¹etøit:
+Je tøeba rozli¹it dva pøípady, jak po¾adavek na zmìnu priority o¹etøit:
 
 \begin{enumerate}
 \item okam¾itì ukonèit volání právì provádìné exekuèní funkce a zmìnit
@@ -93,11 +93,11 @@ o~nìkolik málo desítek sekund, které rozhodují o~úspìchu èi neúspìchu
 pozorování.
 
 Motivace druhého pøípadu spoèívá v~mo¾nosti nechat dobìhnout právì provádìné
-pozorování tak, abychom i z~pøeru¹eného pozorování získali výsledky. Je
-napøíklad ¹koda, pokud jednu sekundu pøed ukonèením vyèítání kamery získá
-exkluzivní pøístup jiný klient se zhruba stejnou prioritou - takto ztratíme
-výsledek nìkolikaminutového experimentu. Pøitom staèí s pøedáním priority
-chvíli poèkat, ne¾ bude vyèten celý snímek.
+pozorování tak, abychom i z~pøeru¹eného pozorování získali výsledky. Pokud
+napøíklad jednu sekundu pøed ukonèením vyèítání kamery získá exkluzivní pøístup
+jiný klient se zhruba stejnou prioritou, ztratíme výsledek nìkolikaminutového
+experimentu. Pøitom staèí s pøedáním priority chvíli poèkat, ne¾ bude vyèten
+celý snímek.
 
 Dal¹í zajímavou mo¾ností je dovyètení kamery v~prùbìhu pøesunu montá¾e na
 pozici nového cíle - s~ukonèením vyèítání mohu poèkat do okam¾iku, kdy
@@ -116,17 +116,17 @@ pozorovaní dokonèit, v ostatních pouze ztratíme èas.
 
 Druhý pøípad mù¾e také vést ke ztrátì èasu - napøíklad tím, ¾e expozice
 dobìhne, nezíská systém ¾ádný pou¾itelný výsledek, jeliko¾ naexponovaný snímek
-nebude vyèten - zabrání v~tom pøítomnost klientu s~vy¹¹í prioritu. Toto je
+nebude vyèten - zabrání tomu pøítomnost klienta s~vy¹¹í prioritu. Toto je
 znázornìno na diagramu \ref{fig:kill-waitexe}.
 
 \dia{kill-waitexe}{Èekání do ukonèení aktuální expozice}
 
 Lze namítnou, ¾e problém s vyèítáním naexponovaného snímku je mo¾né vyøe¹it
 pou¾itím funkce, která nejdøíve snímek naexponuje a následnì vyète.
-Pozorování ale mohou pro alespoò èásteènou pou¾itelnost vy¾adovat provedení
-nìkolika funkcí, volaných na nìkolika rùzných zaøízeních. Pøíkladem mù¾e být
-poøízení druhého snímku na jiných souøadnicích, ne¾ byl poøízen první snímek.
-Pøidáním nové funkce tento pøípad nevyøe¹íme.
+Pozorování ale mohou pro èásteènou pou¾itelnost vy¾adovat provedení nìkolika
+funkcí, volaných na nìkolika rùzných zaøízeních. Pøíkladem mù¾e být poøízení
+druhého snímku na jiných souøadnicích, ne¾ byl poøízen první snímek.  Pøidáním
+nové funkce tento pøípad nevyøe¹íme.
 
 Pouze tøetí pøípad pøiná¹í u¾itek - se zmìnou priority se èeká tak dlouho,
 dokud není dokonèena èást pozorování, z~pøeru¹ovaného pozorování máme k
@@ -184,7 +184,7 @@ vypadá následovnì:
 
 V následujícím pøíkladu je popsáno pøedávání priorit mezi tøemi klienty.
 Klientem {\it col}, který poøizuje barevné snímky oblohy, pro které potøebuje
-snímek poøízený pøes tøi filtrová kola R V a I. Klientem {\it var} , který
+snímek poøízený pøes tøi filtry R, V a I. Klientem {\it var} , který
 monitoruje promìnnou hvìzdu, pro který je tøeba nasnímat dva snímky. A klientem
 {\it grbc}, který hledá optické protìj¹ky gama záblesku, který okam¾itì po
 obdr¾ení zprávy o gama záblesku nasmìruje dalekohled na novou pozici a zaène

@@ -1,6 +1,6 @@
 \subsection{Poøizování snímkù}
 
-Pøi poøizování snímkù je odpovìdností klienta si k nim opatøit potøebné
+Pøi poøizování snímkù je odpovìdností klienta opatøit si k nim potøebné
 informace, které ulo¾í do hlavièky snímku. Jedná se zejména o pozici
 dalekohledu v dobì poøízení snímku.
 
@@ -8,12 +8,12 @@ Poøizování snímkù probíhá z pohledu klienta následovnì:
 
 \begin{itemize}
 
-\item poèkej na stav montá¾e TRACKING a stav kamery NOEXPOSURE
+\item poèkej na stav montá¾e OBSERVING a stav kamery NOEXPOSURE
 
 \item zahaj na kameøe expozici
 
 \item zjisti v¹echny informace, vztahující se k zaèátku expozice,
-potøebná pro ulo¾ení do hlavièky snímku
+potøebné pro ulo¾ení do hlavièky snímku
 
 \item poèkej na stav kamery DATA
 
@@ -28,16 +28,14 @@ s dalekohledem
 
 \end{itemize}
 
-Zpracování snímku vìt¹inou pobì¾í i po zahájení dal¹í expozice.
-Proto¾e nám toto zpracování poskytne údaje o chybì v urèení pozice
-snímku, je vhodné mít mo¾nost se zpracováním snímkù komunikovat a¾ do
-jeho ukonèení.
+Zpracování snímku vìt¹inou pobì¾í i po zahájení dal¹í expozice.  Proto¾e nám
+toto zpracování poskytne údaje o chybì v urèení pozice snímku, je vhodné mít
+mo¾nost se zpracováním snímkù komunikovat a¾ do jeho ukonèení.
 
-Pøed poøízením prvního snímku je potøeba do databáze pozorování zanést
-informaci o zaèátku pozorování nového pole, po ukonèení vyèítání
-posledního snímku je tøeba zanést informace o ukonèení pozorování
-tohoto pole. V pøípadì, ¾e se podaøí snímek opatøit astrometrií, je potøeba
-ho pøidat do databáze snímkù.
+Pøed poøízením prvního snímku je tøeba do databáze pozorování zanést informaci
+o zaèátku pozorování nového pole, po ukonèení vyèítání posledního snímku je
+tøeba zanést informace o ukonèení pozorování tohoto pole. V pøípadì, ¾e se
+podaøí snímek opatøit astrometrií, je tøeba ho pøidat do databáze snímkù.
 
 \subsection{Ukládání snímkù}
 
@@ -46,7 +44,7 @@ odpovídá svìtovému èasu zahájení expozice - YYYY vyjadøuje roky, MM mìsíce, DD
 dny, hh hodiny, mm minuty a ss sekundy.
 
 Snímky, u kterých se nepodaøí dodateèným zpracováním urèit jejich pøesné
-souøadnice, jsou ukládány do podadresáøe v adresáøi /trash, odpovídajícímu
+souøadnice, jsou ukládány do podadresáøe v adresáøi /trash, který odpovídá
 názvu kamery.
 
 Snímky, u kterých se podaøí urèit jejich pøesnou polohu, jsou ponechávány v

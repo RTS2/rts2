@@ -10,7 +10,7 @@
 
 \item[exposing] probíhá expozice
 
-\item[data] na kameøe jsou k dispozici data, která je potøeba vyèíst
+\item[data] na kameøe jsou k dispozici data, která je tøeba vyèíst
 
 \item[reading] probíhá vyèítání dat
 
@@ -19,13 +19,13 @@
 \subsubsection{Chlazení kamer}
 
 V¹echny novìj¹í astronomické CCD kamery mají zabudované chlazení. Chlazení
-sni¾uje teplotu CCD èipu, a tím sni¾uje hodnotu temného proudu. 
+sni¾uje teplotu CCD èipu a tím sni¾uje hodnotu temného proudu. 
 
 Temný proud je tvoøen nábojem, který se nashromá¾dí na èipu vlivem teplotních
 efektù - tedy i v pøípadì, kdy¾ na èip nedopadá svìtlo. Pøi poøizování denních
 snímkù mù¾eme jeho efekt zanedbat - snímky mají krátké expozièní doby a vysoký
 odstup signál/¹um. Pro astronomické snímky, které jsou poøizovány dlouhou
-expozièní dobou a vyznaèují se malým odstupem signálu od ¹umu, je potøeba
+expozièní dobou a vyznaèují se malým odstupem signálu od ¹umu, je tøeba
 hodnotu temného proudu co nejvíce sní¾it. Úroveò temného proudu závisí na
 absolutní teplotì èipu, rozdíl mezi teplotou èipu a teplotou okolního
 prostøedí ji neovlivòuje.
@@ -49,8 +49,9 @@ snímky nemají lineární prùbìh pozadí - prostøedek snímku má hodnoty temného
 proudu vy¹¹í ne¾ okraje pole. Tato nelinearita je zpùsobena rozdílnou teplotou
 okraje a støedu CCD èipu.
 
-Aby bylo temných snímkù potøeba co nejménì, je vhodné poøizovat snímky na co
-nejmen¹ím poètu teplot. U systému BART se osvìdèily pìtistupòové kroky.
+Aby bylo temných snímkù tøeba co nejménì, je vhodné poøizovat snímky na co
+nejmen¹ím poètu teplot. U systému BART se pøi chlazení osvìdèily pìtistupòové
+teplotní kroky.
 
 \subsubsection{Nastavení teploty kamery}
 
@@ -60,7 +61,7 @@ Pøed zaèátkem pozorování je spu¹tìno chlazení na maximální výkon. V
 okam¾iku zaèátku pozorování je zji¹tìna aktuální teplota CCD èipu
 $ccd$, která je zaokrouhlena smìrem nahoru k nejbli¾¹ímu stupni $step$ a na
 tuto teplotu je nastaveno chlazení. Obsluha má mo¾nost teplotu a výkon chlazení
-kontrolovat, a podle potøeby mìnit. Po skonèení pozorování nebo pøi vypnutí
+kontrolovat a podle potøeby mìnit. Po skonèení pozorování nebo pøi vypnutí
 systému je chlazení vypnuto.
 
 Chlazení má tedy následující stavy:

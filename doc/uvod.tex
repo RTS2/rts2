@@ -1,6 +1,6 @@
 \chapter{Úvod}
 
-Hlavní motivací vzniku této práce bylo napsání vylep¹eného ovládacího systému
+Hlavní motivací vzniku této práce bylo vytvoøení vylep¹eného ovládacího systému
 pro dalekohled BART.
 
 V úvodní kapitole jsou popsány a vysvìtleny nìkteré výrazy, pou¾ívané v dal¹ím
@@ -23,20 +23,21 @@ programù.
 
 Pøílohy obsahují zadání pùvodního systému pro øízení dalekohledu, popis
 dùle¾itých hlavièkových souborù, popis pou¾itých programù, èasový plán
-implementace a podrobný popis tabulek obsa¾ených v databázi. 
+implementace a podrobný popis tabulek obsa¾ených v databázi.
+
+Souèástí práce je disketa se zdrojovým kódem. 
 
 \section{Pou¾ívání astronomických výrazù}
 
-Pro úspì¹né pøeètení a pochopení této práce je dobré mít základní znalosti
-astronomických výrazù a v astronomii pou¾ívaných pozièních systémù. Výklad
-tìchto pojmù není pøedmìtem této práce. Jsou popsány napøíklad v \cite{rts1}
-nebo v \cite{pokorny}.
+Pøi zpracování této práce jsem se nemohl vyhnout odborným astronomickým výrazùm
+a v astronomii pou¾ívaným pozièním systémùm. Výklad tìchto pojmù není pøedmìtem
+této práce. Jsou popsány napøíklad v \cite{rts1} nebo v \cite{pokorny}.
 
 \section{Gama záblesky}
 
 Gama záøení je nejenergiètìj¹í elektromagnetické záøení. \index{Gama
 Ray Burst}{\bf G}ama {\bf R}ay {\bf B}urst, zkrácenì \index{GRB}GRB, èesky
-\index{gama záblesky}gama záblesky jsou prudké a krátké výtrysky tohoto záøení,
+\index{gama záblesky}gama záblesky, jsou prudké a krátké výtrysky tohoto záøení,
 pøicházející k~nám z~vesmíru. Záblesky trvají od nìkolika milisekund po nìkolik
 tisíc sekund.  Gama záøení nepronikne zemskou atmosférou - gama záblesky tedy
 musíme hledat pomocí pøístrojù na dru¾icích.
@@ -50,13 +51,12 @@ urèení polohy dosahuje maximálnì nìkolika desítek úhlových minut.
 podezøelý objekt ve smìru gama záblesku pozorovaný ve viditelném spektru.
 Optický protìj¹ek je podle souèasné pozorovací statistiky pozorován u zhruba
 poloviny gama zábleskù. Je pozorovatelný déle ne¾ gama záblesk - po dobu
-nìkolika dnù a¾ nìkolika mìsícù.  dny. V prùmìru je detekován jeden gama
-záblesk dennì. Z~rùzných dùvodù (poèasí, umístìní na neviditelné èásti oblohy,
-malá jasnost, ..) u~vìt¹iny z nich není mo¾no dohledat jejich optické
-protìj¹ky.  Optický dosvit známe u nìkolika desítek GRB. To je mno¾ství
-nedostaèující pro vytvoøení dùvìryhodné statistiky, která by definitivnì
-potvrdila èi vyvrátila ve¹keré teoretické modely objasòující pùvod gama
-zábleskù.
+nìkolika dnù a¾ nìkolika mìsícù. V prùmìru je detekován jeden gama záblesk
+dennì. Z~rùzných dùvodù (poèasí, umístìní na neviditelné èásti oblohy, malá
+jasnost, ...) u~vìt¹iny z nich není mo¾no dohledat jejich optické protìj¹ky.
+Optický dosvit známe u nìkolika desítek GRB. To je mno¾ství nedostaèující pro
+vytvoøení dùvìryhodné statistiky, která by definitivnì potvrdila èi vyvrátila
+teoretické modely vysvìtlující pùvod gama zábleskù.
 
 Není jasné, jaké jevy produkují záblesky krat¹í ne¾ 2 sekundy. Nìkteré z
 teoretických modelù pøedpokládají katastrofické srá¾ky, následované výbuchem.
@@ -66,18 +66,18 @@ pozdìji ne¾ gama záblesk.  Z~extrapolace namìøených optických protìj¹kù gama
 zábleskù vyplývá, ¾e by mohl mít po krátkou dobu dostateènou jasnost, aby byl
 viditelný i triedrem èi malým dalekohledem.
 
-Jasnìj¹í je situace u GRB del¹ích ne¾ 2 sekundy - jsou zøejmì projevy zániku
+Jasnìj¹í je situace u GRB del¹ích ne¾ 2 sekundy - jsou to zøejmì projevy zániku
 hmotných hvìzd - kolapsarù.
 
 \section{Pozorování GRB malými dalekohledy}
 
-Proè má smysl pozorovat oblasti, ve kterých byly detekovány gama
-záblesky, malými dalekohledy, které jsou podobné tomu ondøejovskému? Dùvody
-jsou následující:
+Proè má smysl pozorovat oblasti, ve kterých byly detekovány gama záblesky
+malými dalekohledy, které jsou podobné tomu ondøejovskému? Dùvody jsou
+následující:
 
 \begin{itemize}
 
-\item velké dalekohledy pozorují podle pøedem daného plánu, nemají moc
+\item velké dalekohledy pozorují podle pøedem daného plánu, a nemají moc
 volnosti pro pøípadné pøeru¹ení pozorování
 \item malé dalekohledy jsou levné, lze jich tedy postavit více a
 pozorovat z více míst. Pozorováním z více míst se zvý¹í
@@ -89,17 +89,17 @@ Pro úspì¹né pozorování je tøeba splnit následující podmínky:
 
 \begin{itemize}
 
-\item na pozorovacím stanovi¹ti musí být jasno a noc, objekt musí být ihned nad
+\item na pozorovacím stanovi¹ti musí být jasno a noc, objekt se musí nacházet nad
 obzorem
 
 \item pole, které se pozoruje, nesmí být v blízkosti Mìsíce; tato
-podmínka se stává kritickou pro pozorování v èase kolem úplòku.
+podmínka se stává kritickou pro pozorování v èase kolem úplòku
 
 \item dalekohled musí být správnì ustaven
 
 \item celý systém musí správnì pøijmout údaje o poloze GRB z pozemního
-støediska, zpracovávajícího údaje z dru¾ic, správnì reagovat a pozorování
-provést
+støediska zpracovávajícího údaje z dru¾ic, a musí správnì reagovat a provést
+pozorování
 
 \end{itemize}
 
@@ -138,7 +138,7 @@ Fotometrie se dìlí na absolutní a relativní. Relativní spoèívá v porovnávání
 jasnosti jedné hvìzdy oproti nìkolika referenèním hvìzdám na sérii snímkù,
 poøízených stejným pøístrojem pøi pokud mo¾no stejných atmosférických
 podmínkách. Absolutní fotometrie spoèívá v mìøení jasnosti v¹ech hvìzd na
-jednom snímku, vypoètením jejich pøístrojové magnitudy. Ze znalosti jasnosti
+jednom snímku a vypoètením jejich pøístrojové magnitudy. Ze znalosti jasnosti
 kalibraèních hvìzd pak lze dopoèítat skuteèné magnitudy v¹ech hvìzd.
 
 Absolutní fotometrie je nároènìj¹í ne¾ relativní fotometrie. Systém je

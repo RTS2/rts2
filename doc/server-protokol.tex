@@ -1,18 +1,16 @@
-\section{Protokol}
+\section{Komunikaèní protokol}
 
 V následujícím textu je za {\bf server} oznaèován proces, který èeká na
 spojení. Jako {\bf klient} je pak oznaèován proces, který spojení otvírá.
 
-Je potøeba rozli¹ovat klienty pro jednotlivé èinnosti (monitoring, ..) s
-klienty v protokolu.  
-
 Proces centrálního serveru vystupuje v protokolu pouze jako sever. 
 
-Klientské procesy vystupují v protokolu v¾dy jako klienty. Zaøízení, na které
+Klientské procesy vystupují v protokolu v¾dy jako klienti. Zaøízení, na které
 se pøipojují, jsou servery. 
 
-Zaøízení vystupují pøi komunikaci s centrálním server jako klient. Pøi
-komunikaci mezi zaøízeními se jedno chová jako klient a druhé jako server.
+Zaøízení vystupují pøi komunikaci s centrálním serverem jako klient. Pøi
+komunikaci mezi zaøízeními se jedno zaøízení chová jako klient a druhé jako
+server.
 
 \subsection{Formát}
 
@@ -25,7 +23,7 @@ nejdøíve konvertovat.
 
 Textové rozhraní lze pøi pohledu zvenèí snadno pochopit. Je nároènìj¹í na
 systémové prostøedky ne¾ binární komunikace - jsou pøená¹ena del¹í data,
-pøijaté pøíkazy je potøeba pøed zpracováním detekovat.
+pøijaté pøíkazy je tøeba pøed zpracováním detekovat.
 
 Systém pou¾ívá pro pøenos pøíkazù a zpráv textové komunikace. Pro pøenos
 binárních dat (snímkù) se pou¾ívá binárního formátu.
@@ -64,13 +62,13 @@ Napøíklad po dotazu na pozici montá¾e mù¾e montá¾ odpovìdìt {\it ra
 
 \subsection{Zprávy a ¾ádosti serveru}
 
-Øádky, které posílá server klientovi a které zaèínají velkým písmenem obsahují
-buïto zprávy, nebo ¾ádosti serveru. Mohou se vyskytovat kdykoliv v prùbìhu
+Øádky, které posílá server klientovi a které zaèínají velkým písmenem, obsahují
+buïto zprávy nebo ¾ádosti serveru. Mohou se vyskytovat kdykoliv v prùbìhu
 komunikace klienta se serverem. Klient jejich pøíjem nepotvrzuje.
 
 \subsubsection{Stavové zprávy}
 
-Zaèínají znakem 'S', a obsahují název stavu, jeho novou hodnotu a doplòující
+Zaèínají znakem 'S', obsahují název stavu, jeho novou hodnotu a doplòující
 komentáø.
 
 \subsubsection{Otevøení datového spojení}
@@ -88,8 +86,8 @@ Zprávy zaèínají písmenem M, za kterým následuje text zprávy.
 
 \subsubsection{Informaèní zprávy}
 
-Zaèínají písmenem I. Informují klienta o zmìnì hodnot stavu serveru, a o
-pøipojených klientech.
+Zaèínají písmenem I. Po navázání spojení informují klienta o poètu a jménech
+stavù serveru.
 
 \subsection{Pøenos snímkù}
 
@@ -194,7 +192,7 @@ autorizaci}
 {informace o stavu zaøízení}
 \comret{DEVDEM\_E\_SYSTEM}{pokud autorizace neprobìhla}
 
-\comname{ready}{}{zjistí, jestli je zaøízení pøipojeno. Je mo¾né volat
+\comname{ready}{}{zjistí, zda je zaøízení pøipojeno. Je mo¾né volat
 opakovanì.}
 
 \comname{help}{}{vypí¹e nápovìdu}
@@ -282,7 +280,7 @@ korekce}
 \section{Pøíklad komunikace}
 
 Máme jedno zaøízení, které se jmenuje C0 a je CCD kamerou. K tomuto zaøízení
-se pøipojuje jeden klient, který je chce provádìt ostøení kamery. Po svém
+se pøipojuje jeden klient, který chce provádìt ostøení kamery. Po svém
 pøipojení se pokusí získat prioritu, zmìní teplotu chlazení kamery a provede
 expozici následovanou vyètením získaného snímku.
 

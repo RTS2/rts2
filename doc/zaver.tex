@@ -1,10 +1,10 @@
 \chapter{Závìr}
 
-Cíle diplomové práce, vytyèené v zadání, se mnì podaøilo splnit. K implementaci
-grafického rozhraní nedo¹lo, textový klient se ukázal jako lep¹í øe¹ení. K
-zobrazování snímkù je mo¾né pou¾ít dostupné zobrazovaèe, napøíklad DS9 nebo
-SkyCat. Ty rozsahem svých funkcí vysoce pøedèí v¹e, co byl student schopen za
-omezený èas vyhrazený pro diplomovou práci naprogramovat.
+Cíle diplomové práce, vytyèené v zadání, se mi podaøilo splnit. K implementaci
+grafického rozhraní nedo¹lo, textový klient kombinovaný s WWW rozhraním se
+ukázal jako lep¹í øe¹ení. K zobrazování snímkù je mo¾né pou¾ít dostupné
+zobrazovaèe, napøíklad DS9 nebo SkyCat. Ty rozsahem svých funkcí vysoce pøedèí
+v¹e, co bylo mo¾né za omezený èas vyhrazený pro diplomovou práci naprogramovat.
 
 Zaèátek doby reakce na gama záblesk, to jest doby potøebné k pøevzetí kontroly
 nad zaøízením, je u montá¾e podstatnì krat¹í ne¾ jedna sekunda, u kamer
@@ -12,13 +12,10 @@ dosahuje jedné sekundy.
 
 Systém ztrácí ménì jak 10\% èasu. Ovìøení je mo¾né vidìt v databázi, na stránce
 statistiky noci, do které se lze nejlépe dostat pøes roèní statistiku. Chod
-systému je podstatnì stabilnìj¹í ne¾ byl chod systému RTS1. Po odstranìní
-problémù s uvolòováním IPC prostøedkù a pøepsáním pøístupu k databázi do
-knihovny, která je reentrantní, se nestalo, ¾e by systém bìhem noèního
-pozorování spadl.
+systému je podstatnì stabilnìj¹í ne¾ byl chod systému RTS1. 
 
-Systém ukládá v¹echny potøebné informace do databáze. Ve srovnání s RTS1,
-které ukládalo informace do textových souborù, je práce s databází jednodu¹¹í.
+Systém ukládá v¹echny potøebné informace do databáze. Ve srovnání s RTS1, které
+ukládalo informace do textových souborù, je práce s databází jednodu¹¹í.
 
 Systém øídí v souèasné dobì dalekohled BART v Ondøejovì. Na léto je
 naplánované jeho nasazení ve ©panìlska na dalekohledy spadající pod BOOTES a
@@ -27,20 +24,18 @@ pøipravovaný infraèervený dalekohled BOOTES-IR.
 
 Díky práci jsem byl schopen ovìøit si své teoretické znalosti, nabyté pøi
 studiu, v praxi. Pochopil jsem systém automake a autoconfig, prohloubil své
-znalosti v nìkolika programovacích jazycích. Netvrdím, ¾e jsem si v¾dy zvolil
-nejlep¹í cestu, ze zpìtného pohledu je zøejmé, ¾e nìkteré vìci jsem mohl
-vymyslet èi naprogramovat lépe.
+znalosti v nìkolika programovacích jazycích. 
 
-Vývoj systému tímto neskonèil. V dal¹í verzi by mìla umo¾òovat koordinaci
+Vývoj systému tímto neskonèil. V dal¹í verzi by mìl umo¾òovat koordinaci
 pozorování mezi více dalekohledy a spoleèný pøístup do databáze snímkù.
 
-Souèástí systému je real-time implementací zpìtné vazby mezi poøízenými snímky
-a montá¾í. Tato zpìtná vazba je dost ojedinìlá - jediný dal¹í systém, o kterém
-je autorovi známo, ¾e tuto zpìtnou vazbu pou¾ívá, je souèasný systém na
-dalekohledu BOOTES. Pro nìj byla doprogramována Martinem Jelínkem. Systém na
-BOOTESu je ov¹em znaènì jednodu¹¹í, neprovádí monitoring objektù v rozsahu,
-který je provádìn na dalekohledu BART. Pro BART bylo ze zpìtnou vazbou tohoto
-druhu poèítáno od jeho návrhu.
+Souèástí systému je implementace zpìtné vazby mezi poøízenými snímky a montá¾í.
+Tato zpìtná vazba je dost ojedinìlá - jediný dal¹í systém, o kterém je autorovi
+známo, ¾e tuto zpìtnou vazbu pou¾ívá, je souèasný systém na dalekohledu BOOTES.
+Pro nìj byla doprogramována Martinem Jelínkem. Systém na BOOTESu je ov¹em
+znaènì jednodu¹¹í, neprovádí monitoring objektù v rozsahu, který je provádìn na
+dalekohledu BART. Pro BART bylo ze zpìtnou vazbou tohoto druhu poèítáno od jeho
+návrhu.
 
 Je nutné zdùraznit, ¾e k implementaci podobné zpìtné vazby nemohlo do pomìrnì
 nedávné doby dojít vzhledem k tìmto faktorùm:

@@ -1,4 +1,4 @@
-all: dia diplomka.pdf article_spain.pdf
+all: dia diplomka.pdf # article_spain.pdf
 
 %.pdf: %.dvi
 	dvipdf $<
@@ -13,7 +13,7 @@ dia:
 	$(MAKE) -C dia
 
 clean:
-	$(RM) *.aux *.idx *.dvi *.pdf *~ *.log *.ind *.ilg
+	$(RM) *.aux *.idx *.dvi diplomka.pdf *~ *.log *.ind *.ilg
 	$(MAKE) -C dia clean
 
 vlna:

@@ -31,8 +31,8 @@ poèítaèi.  Pøipojení je realizováno buïto pøes standardní porty, jakými je
 napøíklad paralelní, sériový, èi v poslední dobì USB port, nebo pøes speciální
 kartu pøipojenou ke sbìrnici poèítaèe.
 
-Pøi vyèítání kamery je potøeba pøenést data v øádu megabajtù. Vyèítání a
-následnou digitalizaci je potøeba provést v co nejkrat¹ím èasovém
+Pøi vyèítání kamery je tøeba pøenést data v øádu megabajtù. Vyèítání a
+následnou digitalizaci je tøeba provést v co nejkrat¹ím èasovém
 okam¾iku\footnote{Pøi del¹ím vyèítání jsou poslední vyètené øádky svìtlej¹í
 ne¾ první. Toto zesvìtlení je zpùsobeno tepelným ¹umem}. Kamery vìt¹inou
 nejsou vybaveny bufferem, data v nich obsa¾ená jsou tedy rovnou po digitalizaci
@@ -45,7 +45,7 @@ pøíli¹ mnoho èasu.
 Montá¾e, které nejsou vybaveny motory pro zmìnu své orientace, nelze
 automatizovat.
 
-Montá¾e s motory je potøeba nejdøíve propojit s poèítaèem. Vzhledem k malému
+Montá¾e s motory je tøeba nejdøíve propojit s poèítaèem. Vzhledem k malému
 objemu pøená¹ených dat se vìt¹ina montá¾í pøipojuje pøes sériový port poèítaèe.
 
 Pøi zadávání souøadnic je rozumné zadávat absolutní souøadnice daného objektu,
@@ -59,13 +59,13 @@ dra¾¹í.
 
 Relativní èidla poèítají zmìnu polohy. Zmìnu polohy je mo¾né poèítat buïto
 pøímo z doby chodu, pøípadnì poètu cyklù ovládacích motorù, nebo pøesnìji
-pomocí zpìtnovazebních èidel, umístìných na osách montá¾e.  Zpìtnovazební èidla
-detekují zmìnu pozice opticky nebo elektromechanicky.
+pomocí zpìtnovazebních èidel, umístìných na osách montá¾e. Zpìtnovazební èidla
+detekují zmìnu pozice opticky, nebo elektromechanicky.
 
-Relativní èidla je potøeba pøed zaèátkem pozorování nastavit. Nìkteré systémy
+Relativní èidla je tøeba pøed zaèátkem pozorování nastavit. Nìkteré systémy
 motorù s èidly jsou po zapnutí schopny najít pevnou pozici, oznaèovanou
 vìt¹inou jako home pozici, u které vìdí, jaké má souøadnice. Tyto pak není
-potøeba nastavovat.
+tøeba nastavovat.
 
 Absolutní èidla jsou vìt¹inou øe¹ena elektromechanicky, napøíklad jako velmi jemný
 potenciometr.
@@ -78,7 +78,7 @@ dobøe popsána v \cite{telcontrol} na stránkách 159 a¾ 222.
 Nad dalekohledem se nachází støecha èi kopule. Jejím úkolem je chránit
 dalekohled v pøípadì nepøíznivého poèasí.
 
-Pokud se jedná o kopuli, je potøeba natáèet její ¹tìrbinu\footnote{otvor,
+Pokud se jedná o kopuli, je tøeba natáèet její ¹tìrbinu\footnote{otvor,
 kterým je vidìt ven} do smìru, který sleduje dalekohled.
 
 Støecha èi kopule jsou vìt¹inou øízeny vlastní logikou, která doká¾e s
@@ -86,7 +86,7 @@ poèítaèem komunikovat pøes sériový port.
 
 \section{Zpracování snímkù}
 
-Poøízené snímky je potøeba ulo¾it a zpracovat.
+Poøízené snímky je tøeba ulo¾it a zpracovat.
 
 Od poøízeného snímku je odeèten temný snímek. Vzniklý snímek je pak vydìlen
 hodnotami flat fieldu \footnote{èeský ekvivalent k tomuto názvu zøejmì
@@ -94,8 +94,8 @@ neexistuje; jedná se o nesaturovaný svìtlý snímek, který se pou¾ívá pro korekci
 nelinearit jednotlivých pixelù}.  Toto zpracování je popsáno v \cite{martinez}
 a \cite{ratledge}.
 
-Dále je potøeba zjistit pøesnou polohu snímku a zaznamenat ji ve formì
-WCS\footnote{World Coordinate System, definuje zpùsob zaznamenání polohu
+Dále je tøeba zjistit pøesnou polohu snímku a zaznamenat ji ve formì
+WCS\footnote{World Coordinate System, definuje zpùsob zaznamenání polohy
 referenèního bodu snímku, jeho rektascenze a deklinace, úhlových rozmìrù
 pixelu, rotace snímku a èlenù korekèního polynomu} hlavièky.
 
@@ -104,8 +104,8 @@ pixelu, rotace snímku a èlenù korekèního polynomu} hlavièky.
 V systému je udr¾ován seznam mo¾ných cílù pozorování. U ka¾dého cíle je
 evidováno, kolikrát byl pozorován a s jakým výsledkem. 
 
-U ka¾dého snímku je evidováno, jestli se jedná o obyèejný nebo korekèní
-snímek a okolnosti jeho vzniku.
+U ka¾dého snímku je evidováno, zda se jedná o obyèejný, nebo korekèní snímek a
+okolnosti jeho vzniku.
 
 Obyèejné snímky jsou spojeny s konkrétním cílem pozorování. Korekèní snímky
 nejsou vázány na cíle pozorování.
@@ -143,9 +143,10 @@ zpráv pomocí e-mailu je kvùli nutnosti posílat e-mail pøes nìkolik mailserverù
 pomalej¹í. Na druhou stranu garantuje doruèení zprávy o gama záblesku i v
 pøípadì, ¾e pøijímací stanice není trvale pøipojena do Internetu.
 
-Od konce roku 2002 je v èinnosti druhý systém pro zasílání zpráv o GRB.  Pøedává
-pouze zprávy o detekci na dru¾ici Integral. Pou¾ívá vlastí binární protokol
-postavený nad UDP, s pøijímacími stanicemi je spojen prostøednictvím Internetu.
+Od konce roku 2002 je v èinnosti druhý systém pro zasílání zpráv o GRB.
+Pøedává pouze zprávy o detekci na dru¾ici Integral. Pou¾ívá vlastní binární
+protokol postavený nad UDP, s pøijímacími stanicemi je spojen prostøednictvím
+Internetu.
 
 \section{Nároènost na poèítaèové vybavení}
 
