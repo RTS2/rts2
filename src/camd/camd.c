@@ -20,6 +20,12 @@
 
 #include "imghdr.h"
 
+#ifdef FOCUSING
+#include "focusing.h"
+#include "tcf.h"
+#include "sex_interface.h"
+#endif /* FOCUSING */
+
 #define SERVERD_PORT    	5557	// default serverd port
 #define SERVERD_HOST		"localhost"	// default serverd hostname
 
@@ -167,6 +173,238 @@ err:
 
 #undef READOUT
 
+#ifdef FOCUSING
+
+/**
+ * Read from camera whole image
+ *
+ * @param struct readout *	readout info
+ * @param unsigned short *	bufer for readout; must be malloced
+ * @return	<0 on error, 0 otherwise
+ */
+int
+camera_readout (struct readout *readout, unsigned short *img)
+{
+  int y;
+  for (y = 0; y < readout->y; y++)
+    if (camera_dump_line (readout->chip) < 0)
+      return -1;
+
+  for (y = 0; y < readout->height; y++)
+    {
+      if (camera_readout_line (readout->chip, readout->x, readout->width,
+			       img) < 0)
+	return -1;
+      img += readout->width;
+    }
+
+  camera_end_readout (readout->chip);
+  return 0;
+}
+
+int
+focus_expose_and_readout (float exposure, int light, struct readout *readout,
+			  unsigned short *img)
+{
+  if (camera_expose (readout->chip, &exposure, light))
+    return -1;
+  return camera_readout (readout, img);
+}
+
+#define USTEP			60
+#define MAXTRIES		60
+
+void *
+start_focusing (void *arg)
+{
+  int chip = *(int *) arg;
+  float exp_time = 10.0;
+  int x = 256;			// square size
+  int tcfret;
+  int j, i;
+
+  unsigned short *img1 = NULL;
+  unsigned short *img2 = NULL;
+  unsigned short *img3 = NULL;
+  struct readout readout;
+
+  double fwhm[MAXTRIES];
+  double posi[MAXTRIES];
+
+  double M = 0, Q = 0;
+
+  int add = 0;
+  char filename[64];
+
+  static int filen = 1;
+
+  double A, B, C = 0, min = 0;
+  double pp;			// position change on focuser
+
+  tcfret = tcf_set_manual ();
+  if (tcfret < 1)
+    {
+      devser_dprintf ("focuser: unable to initialize\n");
+      return NULL;
+    }
+
+  posi[0] = 0;
+
+  // limit x size
+  x = (x > info.chip_info[chip].height) ? info.chip_info[chip].height : x;
+  x = (x > info.chip_info[chip].width) ? info.chip_info[chip].width : x;
+
+  // Make space for the image
+  img1 = (unsigned short *) malloc (x * x * sizeof (unsigned short));
+  img2 = (unsigned short *) malloc (x * x * sizeof (unsigned short));
+  img3 = (unsigned short *) malloc (x * x * sizeof (unsigned short));
+
+  readout.chip = chip;
+  readout.x = (info.chip_info[chip].height - x) / 2;
+  readout.y = (info.chip_info[chip].width - x) / 2;
+  readout.height = x;
+  readout.width = x;
+
+  if (focus_expose_and_readout (exp_time, 0, &readout, img2))
+    goto err;
+
+  for (j = 0; j < 100;)
+    {
+      // save previous image if needed
+      if (add)
+	{
+	  i = x * x;
+	  while (i--)
+	    img3[i] = img1[i];
+	}
+
+      if (focus_expose_and_readout (exp_time, 1, &readout, img1))
+	goto err;
+      i = x * x;
+      while (i--)
+	img1[i] = (img2[i] > img1[i]) ? 0 : img1[i] - img2[i];	// dark substract
+
+      // add previous image if requested
+      if (add)
+	{
+	  i = x * x;
+	  while (i--)
+	    img1[i] += img3[i];
+	}
+
+      getmeandisp (img1, x * x, &M, &Q);
+      devser_dprintf ("Pixel value: %lf +/- %lf", M, Q);
+
+      sprintf (filename, "!fo_%i_%03di.fits", getpid (), filen++);
+      write_fits (filename, exp_time, x, x, img1);
+
+      fwhm[j] = run_sex (filename + 1);
+      if (fwhm[j] < 0)
+	{
+	  devser_dprintf ("coadding images");
+	  add = 1;
+	}
+      else
+	{
+	  add = 0;		// enough stars:= reset adding
+	  switch (j)
+	    {
+	    case 0:		// setup first step
+	      pp = USTEP;
+	      break;
+	    case 1:
+	      // it was worse before
+	      if (fwhm[0] > fwhm[1])
+		pp = USTEP;
+	      // it was better
+	      else
+		pp = -2 * USTEP;
+	      break;
+
+	    case 2:
+	      if (fwhm[0] > fwhm[1])	// x10 1x0 10x
+		{
+		  if (fwhm[2] > fwhm[0])
+		    pp = (posi[1] + posi[0]) / 2;	// 102 
+		  else
+		    pp = (posi[1] + posi[2]) / 2;	// 120 210
+		}
+	      else		// 0x1 x01 01x
+		{
+		  if (fwhm[2] > fwhm[1])
+		    pp = (posi[1] + posi[0]) / 2;	// 012
+		  else
+		    pp = (posi[2] + posi[0]) / 2;	// 201 021
+
+		}
+	      pp = pp - posi[2];
+	      break;
+	    default:		// We have 3 values, we may start fitting...
+
+	      //if(j>2)
+	      regr_q (posi, fwhm, j + 1, &A, &B, &C);
+	      /*else
+	         {
+	         A=( (fwhm[0]-fwhm[1])/(posi[0]-posi[1]) - 
+	         (fwhm[0]-fwhm[2])/(posi[0]-posi[2]))
+	         /(posi[1]-posi[2]);
+	         B=( (fwhm[1]-fwhm[1])/(posi[0]-posi[1]) - 
+	         A*(posi[0]+posi[1]));
+	         } */
+
+	      min = -B / (2 * A);
+
+	      // ted jsem na pos[j], chci se dostat na min, pokud
+	      // fabs(min-pos[j])<3*USTEP
+
+	      pp = min - posi[j];
+	      if (pp > 3 * USTEP)
+		pp = 3 * USTEP;
+	      if (pp < (-3 * USTEP))
+		pp = -3 * USTEP;
+
+	      break;
+
+	    }
+
+	  devser_dprintf ("%02d: posi:%f, fwhm:%f -> min=%f, pp=%f", j,
+			  posi[j], fwhm[j], min, pp);
+
+	  if (j > 6 && pp < 1.0)
+	    break;
+
+	  posi[j + 1] = posi[j] + pp;
+
+	  tcfret = tcf_step_out ((pp > 0) ? pp : -pp, (pp > 0) ? 1 : -1);
+	  j++;
+	}
+    }
+
+  free (img1);
+  free (img2);
+  free (img3);
+  return NULL;
+
+err:
+  syslog (LOG_ERR, "error during chip %i focusing", chip);
+  devdem_status_mask (chip,
+		      CAM_MASK_FOCUSINGS,
+		      CAM_NOFOCUSING, "focusing chip error");
+  return NULL;
+}
+
+// focus cleanup functions 
+void
+clean_focusing_cancel (void *arg)
+{
+  devdem_status_mask (*(int *) arg,
+		      CAM_MASK_FOCUSINGS,
+		      CAM_NOFOCUSING, "focusing chip canceled");
+}
+
+#endif /* FOCUSING */
+
+
 // macro for chip test
 #define get_chip  \
       if (devser_param_next_integer (&chip)) \
@@ -199,7 +437,6 @@ camd_handle_command (char *command)
 
   if (strcmp (command, "ready") == 0)
     {
-      int i;
       cam_call (camera_init ("/dev/ccda", sbig_port));
       cam_call (camera_info (&info));
       atexit (camera_done);
@@ -405,6 +642,37 @@ camd_handle_command (char *command)
       /* here ends priority block */
       return ret;
     }
+#ifdef FOCUSING
+  else if (strcmp (command, "focus") == 0)
+    {
+      int focusing_chip;
+
+      if (devser_param_test_length (1))
+	return -1;
+      /* priority block start */
+      if (devdem_priority_block_start ())
+	return -1;
+      get_chip;
+
+      devdem_status_mask (chip,
+			  CAM_MASK_FOCUSINGS,
+			  CAM_FOCUSING, "focusing chip started");
+      focusing_chip = chip;
+
+      if ((ret =
+	   devser_thread_create (start_focusing,
+				 (void *) &focusing_chip, 0,
+				 NULL, clean_focusing_cancel)))
+	{
+	  devdem_status_mask (chip,
+			      CAM_MASK_FOCUSINGS,
+			      CAM_NOFOCUSING,
+			      "error creating focusing thread");
+	}
+      devdem_priority_block_end ();
+      return ret;
+    }
+#endif /* FOCUSING */
   else if (strcmp (command, "binning") == 0)
     {
       int vertical, horizontal;
@@ -528,6 +796,9 @@ camd_handle_command (char *command)
       devser_dprintf ("stopexpo <chip> - stop exposition on given chip");
       devser_dprintf ("progexpo <chip> - query exposition progress");
       devser_dprintf ("readout <chip> - start reading given chip");
+#ifdef FOCUSING
+      devser_dprintf ("focus <chip> - try to focus image");
+#endif /* FOCUSING */
       devser_dprintf
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       devser_dprintf ("stopread <chip> - stop reading given chip");
@@ -587,6 +858,10 @@ main (int argc, char **argv)
   char *hostname = NULL;
   int c;
 
+#ifdef FOCUSING
+  char *focuser_port = NULL;
+#endif
+
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -604,10 +879,17 @@ main (int argc, char **argv)
 	{"serverd_host", 1, 0, 's'},
 	{"serverd_port", 1, 0, 'q'},
 	{"device_name", 1, 0, 'd'},
+#ifdef FOCUSING
+	{"focuser_port", 1, 0, 'f'},
+#endif /* FOCUSING */
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
+#ifdef FOCUSING
+      c = getopt_long (argc, argv, "l:f:p:s:q:d:h", long_option, NULL);
+#else
       c = getopt_long (argc, argv, "l:p:s:q:d:h", long_option, NULL);
+#endif /* FOCUSING */
 
       if (c == -1)
 	break;
@@ -635,9 +917,18 @@ main (int argc, char **argv)
 	  strncpy (device_name, optarg, 64);
 	  device_name[63] = 0;
 	  break;
+#ifdef FOCUSING
+	case 'f':
+	  focuser_port = optarg;
+	  break;
+#endif /* FOCUSING */
 	case 0:
 	  printf
-	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd");
+	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd\n");
+#ifdef FOCUSING
+	  printf
+	    ("\tfocuser_port|f <dev-entry>\t\twhere focuser is connected. If not defined -> not focusing\n");
+#endif /* FOCUSING */
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;

@@ -15,6 +15,16 @@ AC_PROG_MAKE_SET
 
 AC_PROG_LIBTOOL
 
+AC_ARG_ENABLE(focusing,
+[  --disable-focusing    Disables focusing in camd (=>camd doesn't need cfitsio to build)],
+[case "${enableval}" in
+	yes) focusing=true ;;
+	no)  focusing=false ;;
+	*) AC_MSG_ERROR(bad value ${enableval} for --enable-focusing) ;;
+esac],[focusing=true])
+
+AM_CONDITIONAL(FOCUSING, test x$focusing = xtrue)
+
 # Checks for libraries.
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -201,4 +211,5 @@ AC_OUTPUT([Makefile
 	   man/rts2.1
 	   man/rts2.conf.5
 	   man/rts2-centrald.1
-	   man/rts2-cmon.1])
+	   man/rts2-cmon.1]
+)
