@@ -287,9 +287,9 @@ main (int argc, char **argv)
 
   cmd_win = newwin (2, COLS, 0, 0);
 
-  keypad (cmd_win, true);
-  scrollok (cmd_win, true);
-  idlok (cmd_win, true);
+  keypad (cmd_win, TRUE);
+  scrollok (cmd_win, TRUE);
+  idlok (cmd_win, TRUE);
 
   cmd_line = 0;
   cmd_col = 0;
@@ -302,7 +302,7 @@ main (int argc, char **argv)
   wnd[5] = newwin (l / 2, COLS / 3, 2 + l / 2, 2 * COLS / 3);
   status_win = wnd[5];
   box (status_win, 0, 0);
-  scrollok (status_win, true);
+  scrollok (status_win, TRUE);
 
   if (!wnd[5])
     {
