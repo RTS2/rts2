@@ -24,7 +24,6 @@ pole jsou pak znaèeny pomocí $\ast$.
 {\bf tar\_ra}		& rektascenze cíle \\
 {\bf tar\_dec}		& deklinace cíle \\
 {\bf tar\_comment}	& komentáø \\
-{\bf tar\_lastobs}	& datum posledního pozorování cíle
 \end{tabular}
 
 \subsubsection{Tabulka types}
@@ -91,7 +90,7 @@ Tabulka flats obsahuje stejná pole, pouze jejich prefix je flat.
 {\bf mount\_desc}		& popis montá¾e
 \end{tabular}
 
-\subsubsection{Tabulka GRB}
+\subsubsection{Tabulka grb}
 
 \begin{tabular}{ll}
 {\bf tar\_id}		& èíslo pozorování \\
@@ -99,6 +98,23 @@ Tabulka flats obsahuje stejná pole, pouze jejich prefix je flat.
 {\bf grb\_seqn}		& aktální èíslo poøadí zprávy \\
 {\bf grb\_date}		& datum pozorování GRB \\
 {\bf grb\_last\_update}	& datum poslední zmìny stavu GRB \\
+\end{tabular}
+
+\subsection{Tabulka ot}
+
+\begin{tabular}{ll}
+{\bf tar\_id}		& èíslo pozorování \\
+{\bf ot\_imgcount}	& poèet snímkù po¾adovaných za jednu noc \\
+{\bf ot\_minpause}	& minimální rozestup mezi snímky \\
+{\bf ot\_priority}	& priorita pozorování \\
+\end{tabular}
+
+\subsubsection{Tabulka medias}
+
+\begin{tabular}{ll}
+{\bf $\star$med\_id}	& identifikaèní èíslo média \\
+{\bf med\_path}		& cesta, na které je médium namontováno \\
+{\bf med\_mounted}	& logická hodnota, urèující, jestli je dané médium namontováno
 \end{tabular}
 
 \vspace{1cm}

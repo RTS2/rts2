@@ -1,4 +1,4 @@
-\chapter{Pou¾ité prostøedky}
+\chapter{Pou¾ité prostøedky, pøevzatý kód}
 
 \section{Vývojové prostøedky}
 
@@ -23,9 +23,9 @@ Databáze je spravována pomocí post-relaèní databáze PostgreSQL.
 \section{Pou¾ité knihovny}
 
 Pro výpoèet astronomických souøadnic je pou¾ita knihovna \cite{libnova}. V této
-knihovnì jsem opravoval nìkolik chyb a implementoval nìkolik nových funkcí -
-pøispìl jsem do ní asi sty øádky, pøesný pøehled je mo¾né získat z CVS
-(verzovacího systému) libnovy, pøístupného i z jejích webovských stránek.
+knihovnì bylo autorem opraveno nìkolik chyb a implementováno nìkolik nových
+funkcí.  Pøesný pøehled oprav je mo¾né získat z CVS repository libnovy,
+dostupného i pøes její webovské stránky.
 
 Pro zápis a ètení snímkù do formátu fits je pou¾ita knihovna fitsio.
 Pro práci s WCS informacemi obsa¾enými v hlavièkách snímku je pou¾ita knihovna
@@ -35,3 +35,34 @@ Pro zobrazování informací na terminálu je pou¾ita knihovan ncurses.
 
 Pro pøístup na databázi jsou pou¾ity knihovny, obsa¾ené v distribuci
 PostgreSQL.
+
+\section{Pøevzatý a pou¾itý kód, integrovaný pøímo do RTS2}
+
+Z kódu systému RTS1 byl pøevzat kód pro øízení montá¾e LX200. Pro RTS1 byl
+tento kód autorem pøepsaný ze zdrojového kódu pluginu do programu XEphem,
+napsaném v jazyce C do jazyka Python. Pro potøeby RTS2 byl autorem znovu mírnì
+upraven a pøepsán zpìt do jazyka C.
+
+Od magistra Martina Jelínka z Ondøejovské observatoøe pochází knihovna pro
+ovládání CCD kamer firmy SBIG, knihovna pro ovládání montá¾e Paramount,
+portovaná ze zdrojových kódù urèených pro OS Windows do kódu pøelo¾itelného na
+Linuxu. Od Martina Jelínka a kolegù ze ©panìlska pochází té¾ balík pro
+astronometrii, autor této diplomové práce pøispìl malou mìrou k jeho stabilitì
+opravením chyby v knihovnì libwcs.
+
+Od Scotta Barthelmy, Michaela Robbinse (oba pracují v Goddardovì støedisku
+øízení vesmírných letù NASA) a Jamesa Kuypera (zamìstnance University of
+Michigan) pochází klient pro pøíjem GRB ¾ádostí, autorem této diplomové práce
+modifikovaného a zaèlenìného do kódu grbc.
+
+Od zamìstnancù ISDC\footnote{Integral Science Data Center} pochází kód klienta
+pro pøíjem UDP paketù s informacemi o GRB detekovaných dru¾icí Integral, který
+byl té¾ zaèlenìn do kódu grbc.
+
+\section{Vlastní kód}
+
+V¹echen ostatní kód, tedy knihovny pro sí»ovou komunikaci, kód plánovaèe,
+centrálního serveru, serverù v¹ech zaøízení, agentù pro zpracování GRB
+po¾adavkù, monitorovací agenty, SQL skripty pro vytvoøení a pøístup do
+databáze, kód PHP stránek umo¾òující pøístup do databáze, byl navr¾en a napsán
+výluènì autorem této diplomové práce.

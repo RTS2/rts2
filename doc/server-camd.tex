@@ -27,29 +27,30 @@ snímkù mù¾eme jeho efekt zanedbat - snímky mají krátké expozièní doby a vysoký
 odstup signál/¹um. Pro astronomické snímky, které jsou poøizovány dlouhou
 expozièní dobou a vyznaèují se malým odstupem signálu od ¹umu, je potøeba
 hodnotu temného proudu co nejvíce sní¾it. Úroveò temného proudu závisí na
-absolutní teplotì èipu, rozdíl mezi teplotou èipu a teplotou okolního prostøedí
-ji neovliòuje.
+absolutní teplotì èipu, rozdíl mezi teplotou èipu a teplotou okolního
+prostøedí ji neovliòuje.
 
-Teplotní regulace je vìt¹inou tvoøena peltiérem a ventilátorem.
-Peltiér pøená¹í teplo z malé plochy èipu na ventilátor, ventilátor pak
-zlep¹uje distribuci tepla do okolí. Teplotní regulace bývá obèas
-doplnìna o mo¾nost chlazení vodou, pøípadnì zkapalnìným plynem.
+Teplotní regulace je vìt¹inou tvoøena peltiérem a ventilátorem.  Peltiér
+pøená¹í teplo z malé plochy èipu na ventilátor, ventilátor pak zlep¹uje
+distribuci tepla do okolí. Teplotní regulace bývá obèas doplnìna o mo¾nost
+chlazení vodou, pøípadnì zkapalnìným plynem.
 
-Expozici i vyètení snímku je vhodné provádìt pøi konstantní teplotì - nemìní se
-pak úroveò temného proudu. Zmìny teploty CCD èipu trvají nenulový èas, teplota
-atmosféry se po západu Slunce v prùbìhu noci zmìní vìt¹inou pouze o nìkolik
-stupòù. Po ka¾dé zmìnì teploty je tøeba vyèkat, ne¾ se dostateènì prochladí
-celý CCD èip. Snímky, poøízené v dobì, kdy dochází ke zmìnì teploty CCD èipu,
-nemají lineární lineární lineární 
+Expozici i vyètení snímku je vhodné provádìt pøi konstantní teplotì - nemìní
+se pak úroveò temného proudu. Zmìny teploty CCD èipu trvají nenulový èas,
+teplota atmosféry se po západu Slunce v prùbìhu noci zmìní vìt¹inou pouze o
+nìkolik stupòù. Po ka¾dé zmìnì teploty je tøeba vyèkat, ne¾ se dostateènì
+prochladí celý CCD èip.
 
+Provoz RTS1 ukázal, ¾e nemá smysl teplotu èipu v prùbìhu noci mìnit.  Systém
+pùvodnì obsahoval kód, který se sna¾il optimalizovat cílovou teplotu chlazení
+èipu tak, aby se pøíkon chlazení dr¾el v rozmezí doporuèovaného výrobcem èipu.
+Pøi zpìtné kontrole snímkù poøízených v prùbìhu zmìny teploty se ukázalo, ¾e
+snímky nemají lineární prùbìh pozadí - prostøedek snímku má hodnoty temného
+proudu vy¹¹í ne¾ okraje pole. Tato nelinerita je zpùsobena rozdílnou teplotou
+okraje a støedu CCD èipu.
 
-Provoz RTS1 ukázal\footnote{RTS1 obsahovalo kód, který se
-sna¾il optimalizovat výkon chlazení. Tento algoritmus byl po nìkolika mìsících
-pozorování odstranìn}, ¾e nemá smysl teplotu èipu v prùbìhu noci mìnit.
-
-Aby bylo temných snímkù potøeba co nejménì, je vhodné poøizovat snímky
-na co nejmen¹ím poètu teplot. U systému BART se osvìdèily pìtistupòové
-kroky.
+Aby bylo temných snímkù potøeba co nejménì, je vhodné poøizovat snímky na co
+nejmen¹ím poètu teplot. U systému BART se osvìdèily pìtistupòové kroky.
 
 \subsubsection{Nastavení teploty kamery}
 
