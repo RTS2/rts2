@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include "selector.h"
 
+#define READOUT_TIME	75
+
 
 int
 find_plan (struct target *plan, int id, time_t c_start)
@@ -208,15 +210,16 @@ err:
  */
 int
 get_next_plan (struct target *plan, int selector_type,
-	       struct target *curr_plan, time_t c_start, int number)
+	       struct target *curr_plan, time_t c_start, int number,
+	       float exposure)
 {
   double az;
   double airmass;
   switch (selector_type)
     {
     case SELECTOR_ALTITUDE:
-      select_next_alt (c_start + number * 180, curr_plan, plan);
-      break;
+      return select_next_alt (c_start + number * (READOUT_TIME +
+						  exposure), curr_plan, plan);
 
     case SELECTOR_AIRMASS:
       // every 50th image will be dark..
@@ -224,7 +227,7 @@ get_next_plan (struct target *plan, int selector_type,
 	{
 	  plan->type = TARGET_DARK;
 	  plan->id = -1;
-	  plan->ctime = c_start + number * 180;
+	  plan->ctime = c_start + number * (READOUT_TIME + exposure);
 	  plan->next = NULL;
 	  return 0;
 	}
@@ -243,18 +246,18 @@ get_next_plan (struct target *plan, int selector_type,
 	  break;
 	}
 
-      select_next_airmass (c_start + number * 180, curr_plan, plan, airmass,
-			   az);
+      return select_next_airmass (c_start +
+				  number * (READOUT_TIME + exposure),
+				  curr_plan, plan, airmass, az);
       break;
 
     default:
       return -1;
     }
-  return 0;
 }
 
 int
-make_plan (struct target **plan)
+make_plan (struct target **plan, float exposure)
 {
   struct target *last;
   time_t c_start;
@@ -273,7 +276,7 @@ make_plan (struct target **plan)
       last->next = (struct target *) malloc (sizeof (struct target));
       last = last->next;
       last->next = NULL;
-      get_next_plan (last, SELECTOR_AIRMASS, *plan, c_start, i);
+      get_next_plan (last, SELECTOR_AIRMASS, *plan, c_start, i, exposure);
     }
 
   last = *plan;
