@@ -45,6 +45,17 @@
 #define FRAM_MAX_WINDSPEED      50
 #define FRAM_MAX_PEAK_WINDSPEED 50
 
+// try to close dome again after n second
+#define FRAM_TIME_CLOSING_RETRY	200
+
+// if closing fails for n times, do not close again; send warning
+// e-mail
+#define FRAM_MAX_CLOSING_RETRY  3
+
+// how long after weather was bad can weather be good again; in
+// seconds
+#define FRAM_BAD_WEATHER_TIMEOUT  600
+
 typedef enum
 { VENTIL_AKTIVACNI,
   VENTIL_OTEVIRANI_PRAVY,
@@ -137,6 +148,7 @@ private:
   int rain;
   float windspeed;
   time_t lastWeatherStatus;
+  time_t lastBadWeather;
 
 protected:
 
@@ -154,6 +166,9 @@ Rts2Conn (in_master)
 {
   master = in_master;
   weather_port = in_weather_port;
+
+  lastWeatherStatus = 0;
+  time (&lastBadWeather);
 }
 
 int
@@ -232,6 +247,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	      windspeed, rain, lastWeatherStatus, status);
       if (rain != 0 || windspeed > FRAM_MAX_PEAK_WINDSPEED)
 	{
+	  time (&lastBadWeather);
 	  master->closeDome ();
 	  master->setMasterStandby ();
 	}
@@ -248,7 +264,8 @@ Rts2ConnFramWeather::isGoodWeather ()
   time_t now;
   time (&now);
   if (windspeed > FRAM_MAX_WINDSPEED || rain != 0
-      || (now - lastWeatherStatus > FRAM_WEATHER_TIMEOUT))
+      || (now - lastWeatherStatus > FRAM_WEATHER_TIMEOUT)
+      || (lastBadWeather + FRAM_BAD_WEATHER_TIMEOUT > now))
     return 0;
   return 1;
 }
@@ -301,6 +318,9 @@ private:
    */
 
   int checkMotorTimeout ();
+
+  time_t lastClosing;
+  int closingNum;
 
   enum
   { MOVE_NONE, MOVE_OPEN_LEFT, MOVE_OPEN_LEFT_WAIT, MOVE_OPEN_RIGHT,
@@ -486,6 +506,10 @@ Rts2DevDomeFram::openDome ()
     return -1;
   if (!weatherConn->isGoodWeather ())
     return -1;
+
+  lastClosing = 0;
+  closingNum = 0;
+
   if (isOn (KONCAK_OTEVRENI_LEVY) && isOn (KONCAK_OTEVRENI_LEVY))
     {
       return endOpen ();
@@ -546,6 +570,7 @@ Rts2DevDomeFram::endOpen ()
 int
 Rts2DevDomeFram::closeDome ()
 {
+  time_t now;
   if (movingState == MOVE_CLOSE_RIGHT
       || movingState == MOVE_CLOSE_RIGHT_WAIT
       || movingState == MOVE_CLOSE_LEFT
@@ -564,6 +589,17 @@ Rts2DevDomeFram::closeDome ()
     }
   if (isOn (KONCAK_ZAVRENI_PRAVY) && isOn (KONCAK_ZAVRENI_LEVY))
     return endClose ();
+  time (&now);
+  if (lastClosing + FRAM_TIME_CLOSING_RETRY > now)
+    {
+      syslog (LOG_WARNING, "closeDome ignored - closing timeout not reached");
+      return -1;
+    }
+  if (closingNum > FRAM_MAX_CLOSING_RETRY)
+    {
+      syslog (LOG_WARNING,
+	      "max closing reatry reached, do not try closing again");
+    }
 
   vypni_pin (adresa[VENTIL_OTEVIRANI_PRAVY].port,
 	     adresa[VENTIL_OTEVIRANI_PRAVY].pin
@@ -577,6 +613,7 @@ Rts2DevDomeFram::closeDome ()
     {
       closeLeft ();
     }
+  closingNum++;
   return Rts2DevDome::closeDome ();
 }
 
@@ -609,6 +646,7 @@ Rts2DevDomeFram::endClose ()
   VYP (VENTIL_ZAVIRANI_LEVY);
   VYP (VENTIL_ZAVIRANI_PRAVY);
   zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  time (&lastClosing);
   return Rts2DevDome::endClose ();
 }
 
@@ -682,7 +720,10 @@ Rts2DevDomeFram::idle ()
   // check for weather..
   if (weatherConn->isGoodWeather ())
     {
-      if ((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+      time_t now;
+      time (&now);
+      if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	  && (getState (0) & DOME_DOME_MASK == DOME_CLOSED))
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open
@@ -715,6 +756,9 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
   movingState = MOVE_NONE;
 
   weatherConn = NULL;
+
+  lastClosing = 0;
+  closingNum = 0;
 }
 
 Rts2DevDomeFram::~Rts2DevDomeFram (void)
