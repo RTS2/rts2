@@ -1,5 +1,7 @@
 camc		CAMera Client
 camd		CAMera Daemon
+clilib		client libraries & headers
+grb		grb receiving client - now IBAS
 plan		planer
 teld		TELescope Daemon
 utils		devser.c, devdem.c, hms.h, ..
