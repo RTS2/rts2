@@ -21,8 +21,7 @@ CREATE TABLE targets (
 	tar_name	varchar(150),
 	tar_ra		float4,
 	tar_dec		float4,
-	tar_comment	text,
-	tar_lastobs	timestamp DEFAULT NULL
+	tar_comment	text
 );
 
 CREATE TABLE grb (
