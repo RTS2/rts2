@@ -124,6 +124,7 @@ generate_next (int i, struct target *plan)
        telescope->info.telescope.latitude))
     {
       printf ("Error making plan\n");
+      fflush (stdout);
       exit (EXIT_FAILURE);
     }
   printf ("...plan made\n");
@@ -380,7 +381,7 @@ main (int argc, char **argv)
       perror ("devcli_write_read_camd camera");
       return EXIT_FAILURE;
     }
-  if (devcli_command (telescope, NULL, "ready;base_info;info") < 0)
+  if (devcli_command (telescope, NULL, "ready;info") < 0)
     {
       perror ("devcli_write_read_camd telescope");
       return EXIT_FAILURE;
@@ -415,7 +416,9 @@ loop:
 	  printf ("waiting for night..\n");
 	  fflush (stdout);
 	  devcli_command (telescope, NULL, "park");
-	  sleep (600);
+	  devcli_wait_for_status (devcli_server (), SERVER_STATUS,
+				  SERVERD_STATUS_MASK,
+				  SERVERD_NIGHT, 600);
 	}
     }
   observe (watch_status);
