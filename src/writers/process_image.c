@@ -210,7 +210,7 @@ process_images (void *arg)
  * @return      0 on success, -1 and set errno on error.
  */
 int
-data_handler (int sock, size_t size, struct image_info *image)
+data_handler (int sock, size_t size, struct image_info *image, void *arg)
 {
   struct fits_receiver_data receiver;
   struct tm gmt;

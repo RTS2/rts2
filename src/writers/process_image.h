@@ -9,7 +9,8 @@ extern "C"
 #include "image_info.h"
 
   void *process_images (void *);
-  int data_handler (int sock, size_t size, struct image_info *image);
+  int data_handler (int sock, size_t size, struct image_info *image,
+		    void *args);
 
 #ifdef __cplusplus
 };
