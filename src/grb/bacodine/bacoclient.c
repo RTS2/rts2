@@ -158,15 +158,17 @@ open_conn (hostname, port)
     }
   s_in.sin_addr = *(struct in_addr *) host_info->h_addr;
 
-/* Initiate the socket connection. */
-  if ((sock = socket (PF_INET, SOCK_STREAM, 0)) < 0)
-    return (serr (sock, "server(): socket."));
-
-  while (connect (sock, (struct sockaddr *) &s_in, sizeof (s_in)) == -1 ||
-	 login (sock) == -1)
+  while (1)
     {
+      /* Initiate the socket connection. */
+      if ((sock = socket (PF_INET, SOCK_STREAM, 0)) < 0)
+	return (serr (sock, "server(): socket."));
+      if (connect (sock, (struct sockaddr *) &s_in, sizeof (s_in)) != -1 &&
+	  login (sock) != -1)
+	break;
       perror ("connect");
       sleep (600);
+      close (sock);
     }
 
   printf ("Connection goes on.\n");
