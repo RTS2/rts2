@@ -25,9 +25,10 @@ echo <<<EOT
 		<ul class="menu">
 			<li><a href="images.php">RA&amp;DEC</a></li>
 			<li><a href="images.php?ra=&dec=">Target</a></li>
+			<li><a href="obj.php">Object search</a></li>
 			<li>Night</li>
-			<li>Camera
-			<li>Mount
+			<li>Camera</li>
+			<li>Mount</li>
 		</ul class="menu">
 	</li>
 	<li><a href="targets.php?tar_id=&obs_id=">Targets</a>
