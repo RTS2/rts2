@@ -17,6 +17,8 @@ struct telescope_info
   double localtime;
   int correction_mark;
   int flip;
+  double axis0_counts;
+  double axis1_counts;
 };
 
 #endif /* __RTS_TELESCOPE_INFO__ */
