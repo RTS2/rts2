@@ -92,7 +92,8 @@ struct sbig_expose
   unsigned short shutter;
 };
 
-extern int sbig_start_expose (struct sbig_expose *);
+
+extern int sbig_expose (struct sbig_expose *);
 
 extern int sbig_end_expose (unsigned short);
 

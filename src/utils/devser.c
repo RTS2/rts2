@@ -1,9 +1,10 @@
 /*! 
  * @file Device daemon skeleton code.
+ * 
  * $Id$
- * Implements simple TCP/IP server, calling hander for every command it
+ * Implements TCP/IP server, calling hander for every command it
  * receives.
- *
+ * <p/>
  * Command string is defined as follow:
  * <ul>
  * 	<li>commands ::= com | com + ';' + commands</li>
@@ -13,6 +14,8 @@
  * </ul>
  * In dev deamon are implemented all splits - for ';' and ' '.
  * Device deamon should not implement any splits.
+ * <p/>
+ * Also provides support functions - status access, thread management.
  *
  * @author petr
  */
@@ -90,6 +93,24 @@ data_conn_info_t data_cons[MAXDATACONS];
 
 //! Filedes of ascii control channel
 int control_fd;
+
+#define MAX_THREADS	30
+
+//! Thread management type
+struct
+{
+  pthread_mutex_t lock;		//! lock to lock threads
+  pthread_t thread;		//! thread
+}
+threads[MAX_THREADS];
+
+//! Threads management helper structure
+struct thread_wrapper_temp
+{
+  pthread_mutex_t *lock;
+  void *arg;
+  void *(*start_routine) (void *);
+};
 
 //! Number of status registers
 int status_num;
@@ -263,6 +284,63 @@ devdem_write_command_end (int retc, char *msg_format, ...)
   return ret;
 }
 
+/*! Internall call.
+ *
+ */
+void *
+thread_wrapper (void *temp)
+{
+  void *ret;
+  struct thread_wrapper_temp *arg = (struct thread_wrapper_temp *) temp;
+  pthread_cleanup_push (pthread_mutex_unlock, (void *) (arg->lock));
+  ret =
+    ((struct thread_wrapper_temp *) temp)->
+    start_routine (((struct thread_wrapper_temp *) temp)->arg);
+  pthread_cleanup_pop (1);
+  free (temp);
+  return ret;
+}
+
+/*! Start new thread
+ * 
+ * Inspired by pthread_create LinuxThread calls, add some important things
+ * for thread management.
+ *
+ * All deamons are required to use this function to start new thread for
+ * paraller processing of methods, which have to terminate when control over
+ * device is seized by other network connection.
+ *
+ * It's not good idea to use pthread or other similar calls directly from
+ * deamon. You should have really solid ground for doing that. 
+ *
+ * @param start_routine 
+ * @param arg
+ * @param id if not NULL, returns id of thread, which can by used for 
+ * 	@see pthread_cancel_thread (int)
+ * @return -1 and set errno on error, 0 otherwise. 
+ */
+int
+devdem_create_thread (void *(*start_routine) (void *), void *arg, int *id)
+{
+  int i;
+  for (i = 0; i < MAX_THREADS; i++)
+    {
+      if (pthread_mutex_trylock (&threads[i].lock) == 0)
+	{
+	  struct thread_wrapper_temp *temp =
+	    (struct thread_wrapper_temp *)
+	    malloc (sizeof (struct thread_wrapper_temp));
+	  temp->lock = &threads[i].lock;
+	  temp->start_routine = start_routine;
+	  temp->arg = arg;
+	  return pthread_create (&threads[i].thread, NULL, thread_wrapper,
+				 (void *) temp);
+	}
+    }
+  syslog (LOG_WARNING, "reaches MAX_THREADS");
+  errno = EAGAIN;
+  return -1;
+}
 
 /*! Handle devdem commands
  *
@@ -784,6 +862,12 @@ devdem_run (int port, devdem_handle_command_t in_handler,
   for (sock = 0; sock < MAXDATACONS; sock++)
     {
       pthread_mutex_init (&data_cons[sock].lock, NULL);
+    }
+
+  // initialize threads lock
+  for (sock = 0; sock < MAX_THREADS; sock++)
+    {
+      pthread_mutex_init (&threads[sock].lock, NULL);
     }
 
   if ((int) (statutes = (status_t *) shmat (status_shm, NULL, 0)) < 0)

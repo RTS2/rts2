@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <malloc.h>
+#include <unistd.h>
 
 #include <math.h>
 
@@ -203,7 +204,7 @@ sbig_activate_relay (struct sbig_relay *relay)
   return -ParDrvCommand (CC_ACTIVATE_RELAY, relay, NULL);
 };
 
-extern int
+int
 sbig_start_expose (struct sbig_expose *expose)
 {
   StartExposureParams in;
@@ -215,6 +216,35 @@ sbig_start_expose (struct sbig_expose *expose)
 
   return -ParDrvCommand (CC_START_EXPOSURE, &in, NULL);
 };
+
+extern int
+sbig_expose (struct sbig_expose *expose)
+{
+#define MAX_WAIT_COUNT  100
+  struct sbig_status status;
+  int i, ret = 0;
+  if ((ret = sbig_start_expose (expose)) < 0)
+    return ret;
+  usleep (expose->exposure_time * 10000);
+  for (i = 0; i < MAX_WAIT_COUNT; i++)
+    {
+      if ((ret = sbig_get_status (&status)) < 0)
+	return ret;
+
+      if (expose->ccd == 0)
+	{
+	  if (status.imaging_ccd_status != 2)
+	    break;
+	}
+      else if (status.tracking_ccd_status != 2)
+	break;
+
+      usleep (50000);
+      if (i == MAX_WAIT_COUNT)
+	return -1;
+    }
+  return 0;
+}
 
 extern int
 sbig_end_expose (unsigned short ccd)
@@ -231,12 +261,6 @@ sbig_update_clock ()
 }
 
 extern int
-sbig_expose (struct sbig_expose *expose)
-{
-  return sbig_start_expose (expose);
-};
-
-extern int
 sbig_readout_line (struct sbig_readout_line *readout_line)
 {
   int result;
@@ -244,8 +268,9 @@ sbig_readout_line (struct sbig_readout_line *readout_line)
   printf ("Reading line..pixelStart:%i pixelLength:%i",
 	  readout_line->pixelStart, readout_line->pixelLength);
 #endif
-  result = ParDrvCommand (CC_READOUT_LINE, (ReadoutLineParams *) readout_line,
-			  readout_line->data);
+  result =
+    ParDrvCommand (CC_READOUT_LINE, (ReadoutLineParams *) readout_line,
+		   readout_line->data);
 
 #ifdef DEBUG
   printf ("..complete, result = %i\n", result);

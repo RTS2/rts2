@@ -15,8 +15,6 @@
 #include <math.h>
 #include <stdarg.h>
 
-#include <pthread.h>
-
 #include <argz.h>
 
 #include "sbig.h"
@@ -42,6 +40,25 @@ complete (int ccd, float percent_complete)
   return 1;
 }
 
+// wrapper to call sbig expose in thread, test for results
+void *
+start_expose (void *arg)
+{
+  int ret;
+  if ((ret = sbig_expose (arg)) < 0)
+    {
+      syslog (LOG_ERR, "error during chip %i exposure: %s",
+	      ((struct sbig_expose *) arg)->ccd, sbig_show_error (ret));
+      return NULL;
+    }
+  syslog (LOG_INFO, "exposure chip %i finished.",
+	  ((struct sbig_expose *) arg)->ccd);
+  devdem_status_mask (((struct sbig_readout *) arg)->ccd,
+		      CAM_MASK_EXPOSE,
+		      CAM_NOTREADING & CAM_DATA, "exposure chip finished");
+  return NULL;
+}
+
 // wrapper to call sbig readout in thread 
 void *
 start_readout (void *arg)
@@ -56,7 +73,7 @@ start_readout (void *arg)
   syslog (LOG_INFO, "reading chip %i finished.",
 	  ((struct sbig_readout *) arg)->ccd);
   devdem_status_mask (((struct sbig_readout *) arg)->ccd,
-		      !CAM_MASK_READING & !CAM_MASK_DATA,
+		      CAM_MASK_READING | CAM_MASK_DATA,
 		      CAM_NOTREADING & CAM_DATA, "reading chip finished");
   return NULL;
 }
@@ -88,11 +105,11 @@ start_readout (void *arg)
 
 
 /*! Handle camd command.
-*
-* @param buffer buffer, containing unparsed command
-* @param fd descriptor of input/output socket
-* @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
-*/
+ *
+ * @param buffer buffer, containing unparsed command
+ * @param fd descriptor of input/output socket
+ * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
+ */
 int
 camd_handle_command (char *argv, size_t argc)
 {
@@ -152,7 +169,15 @@ camd_handle_command (char *argv, size_t argc)
 	  expose.exposure_time = exptime;
 	  expose.abg_state = 0;
 	  expose.shutter = 0;
-	  cam_call (sbig_start_expose (&expose));
+	  if ((ret =
+	       pthread_create (&thread[chip], NULL, start_expose,
+			       (void *) &expose)))
+	    {
+	      devdem_write_command_end (DEVDEM_E_SYSTEM,
+					"while creating thread for execution: %s",
+					strerror (errno));
+	      return -1;
+	    }
 	  devdem_status_mask (chip, CAM_MASK_EXPOSE, CAM_EXPOSING,
 			      "starting exposure on chip");
 	}
