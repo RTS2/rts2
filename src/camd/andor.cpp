@@ -132,7 +132,7 @@ public:
     Rts2DevCameraAndor (int argc, char **argv);
    ~Rts2DevCameraAndor (void);
 
-  virtual int proceesOption (int in_opt);
+  virtual int processOption (int in_opt);
   virtual int init ();
 
   // callback functions for Camera alone
@@ -173,7 +173,7 @@ Rts2DevCameraAndor::help ()
 }
 
 int
-Rts2DevCameraAndor::proceesOption (int in_opt)
+Rts2DevCameraAndor::processOption (int in_opt)
 {
   switch (in_opt)
     {
