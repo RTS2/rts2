@@ -42,16 +42,17 @@ int camd_id, teld_id;
  * @return	0 on success, -1 and set errno on error.
  */
 int
-data_handler (int sock, size_t size, struct telescope_info *telescope, struct camera_info *camera)
+data_handler (int sock, size_t size, struct telescope_info *telescope,
+	      struct camera_info *camera, double exposure, time_t * exp_start)
 {
   struct fits_receiver_data receiver;
   char data[DATA_BLOCK_SIZE];
   int ret = 0;
   ssize_t s;
   char *filename;
-  asprintf (&filename, "!test%04i.fits", file++); 
+  asprintf (&filename, "!test%04i.fits", file++);
   printf ("filename: %s", filename);
-  
+
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
       perror ("camc data_handler fits_init");
@@ -75,8 +76,10 @@ data_handler (int sock, size_t size, struct telescope_info *telescope, struct ca
     }
 
   printf ("reading finished\n");
- 
-  if (fits_write_telescope (&receiver, telescope) || fits_write_camera (&receiver, camera, 120, &ret) || fits_close (&receiver))
+
+  if (fits_write_telescope (&receiver, telescope)
+      || fits_write_camera (&receiver, camera, exposure, exp_start)
+      || fits_close (&receiver))
     {
       perror ("camc data_handler fits_init");
       return -1;
@@ -94,27 +97,25 @@ expose (float ra, float dec, int npic)
     {
       union devhnd_info *info;
       time_t t;
-      
+
       printf ("exposure countdown %i..\n", npic);
-      if (
-          devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
-                                     CAM_NOTREADING, 0) ||
-	  devcli_command (camd_id, NULL, "expose 0 5"))
-	      return -1;
+      if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
+				  CAM_NOTREADING, 0) ||
+	  devcli_command (camd_id, NULL, "expose 0 120"))
+	return -1;
       t = time (NULL);
-      if (
-          devcli_command (camd_id, NULL, "info") ||
-          devcli_getinfo (camd_id, &info) ||
-          devcli_set_readout_camera (camd_id, &info->camera) ||
-          devcli_command (teld_id, NULL, "info") ||
-          devcli_getinfo (teld_id, &info) ||
-          devcli_set_readout_telescope (camd_id, &info->telescope) ||
-          devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
-                                  CAM_NOEXPOSURE, 0)
-          || devcli_command (camd_id, NULL, "readout 0"))
-        return -1;
+      if (devcli_command (camd_id, NULL, "info") ||
+	  devcli_getinfo (camd_id, &info) ||
+	  devcli_set_readout_camera (camd_id, &info->camera, 120.0, &t) ||
+	  devcli_command (teld_id, NULL, "info") ||
+	  devcli_getinfo (teld_id, &info) ||
+	  devcli_set_readout_telescope (camd_id, &info->telescope) ||
+	  devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
+				  CAM_NOEXPOSURE, 0)
+	  || devcli_command (camd_id, NULL, "readout 0"))
+	return -1;
     }
-   return 0;
+  return 0;
 }
 
 int
@@ -214,37 +215,38 @@ main (int argc, char **argv)
   TELD_WRITE_READ ("info");
 
   for (last = plan; last; plan = last, last = last->next, free (plan))
-  {
-    time_t t = time (NULL);
-    if (last->ctime < t)
     {
-	    printf ("ctime %s < t %s\n", ctime (&last->ctime), ctime (&t));
-	    continue;
+      time_t t = time (NULL);
+      if (last->ctime < t)
+	{
+	  printf ("ctime %s < t %s\n", ctime (&last->ctime), ctime (&t));
+	  continue;
+	}
+
+      devcli_server_command (NULL, "priority 120");
+
+      devcli_wait_for_status ("teld", "priority", DEVICE_MASK_PRIORITY,
+			      DEVICE_PRIORITY, 0);
+
+      if (devcli_command (teld_id, NULL, "move %f %f", last->ra, last->dec))
+	{
+	  printf ("telescope error\n\n--------------\n");
+	}
+
+      while ((t = time (NULL)) < last->ctime)
+	{
+	  printf ("sleeping for %li sec, till %s\n", last->ctime - t,
+		  ctime (&last->ctime));
+	  sleep (last->ctime - t);
+	}
+
+      devcli_wait_for_status ("camd", "priority", DEVICE_MASK_PRIORITY,
+			      DEVICE_PRIORITY, 0);
+
+      printf ("OK\n");
+
+      expose (last->ra, last->dec, 1);
     }
-
-    devcli_server_command (NULL, "priority 120");
-
-    devcli_wait_for_status ("teld", "priority", DEVICE_MASK_PRIORITY, DEVICE_PRIORITY,
- 			  0);
-
-    if (devcli_command (teld_id, NULL, "move %f %f", last->ra, last->dec))
-    {
-	    printf ("telescope error\n\n--------------\n");
-    }
-
-    while ((t = time (NULL)) < last->ctime)
-    {
-	    printf ("sleeping for %li sec, till %s\n", last->ctime - t, ctime (&last->ctime));
-	    sleep (last->ctime - t);
-    }
-
-    devcli_wait_for_status ("camd", "priority", DEVICE_MASK_PRIORITY, DEVICE_PRIORITY,
- 			  0);
- 
-    printf ("OK\n");
-
-    expose (last->ra, last->dec, 1);
-  }
   devcli_server_disconnect ();
   return 0;
 }
