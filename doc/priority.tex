@@ -1,0 +1,127 @@
+\subsection{Priority}
+
+Z~hlediska priorit je mo¾né v¹echny funkce, které mù¾e zaøízení vykonávat, na
+dvì disjunktní mno¾iny:
+
+\begin{description}
+\index{funkce!informaèní@}\item[informaèní]{poskytují informace o~stavu zaøízení}
+\index{funkce!výkoné@}\item[výkoné neboli exekuèní]{mìní stav zaøízení}
+\end{description}
+
+Informaèní funkce mohou být volnì pøístupné, nevadí, pokud je bude
+volat více klientù najednou. Je vìcí ovladaèe zaøízení, aby správnì
+vykonal více volání informaèních funkcích, pøicházejících ve stejnou
+dobu.
+
+Naopak exekuèní funkce nemohou být volnì pøístupné. Pøístup k~nim je
+potøeba hlídat.\footnote{nedává napøíklad moc smysl, aby jeden klientský
+proces spustil na kameøe expozici a druhý proces jí zastavil} Stejnì
+tak nedává smysl, aby bì¾eli dvì exekuèní funkce najednou.
+\footnote{napøíklad pøesun dalekohledu na pozici x,y a u,v}
+
+Nejenodu¹¹í je pou¾ít exkluzivního pøístupu k~exekuèním funkcím -
+pouze jeden klient mù¾e volat exkluzivní funkce, ostatní klienti pøi
+volání exkluzivní funkce obdr¾í chybovou zprávu, oznamující, ¾e funkci
+nemohou zavolat. Je pak na nich, aby se rozhodli, jak budou dále
+postupovat.
+
+Je potøeba zajistit výbìr klienta, který bude mít exkluzivní pøístup.
+Máme dvì mo¾nosti:
+
+\begin{enumerate}
+\item dopøedu v¹e naplánovat tak, aby takovýto klient mohl být pouze
+jeden
+\item pou¾ít nìjaký druh priorit \footnote{prioritu pou¾ívám
+intuitivnì, zatím ji nedefinuju  - TODO ?, pøípadnì ji definovat dále
+v~textu}
+\end{enumerate}
+
+Dopøedu plánovat moc nelze - detekci gama zábleskù nelze dopøedu
+pøedpovídat, je ale potøeba je ihned pozorovat.
+
+Pou¾ití priorit mù¾e vypadat takto: klient obdr¾í pøi pøipojení na
+zaøízení základní prioritu, kterou mù¾e kdykoliv zvy¹ovat nebo
+sni¾ovat. Klient s~nejvy¹¹í prioritou má garantovaný exkluzivní
+pøístup k~exekuèním funkcím, ostatní obdr¾í pøi volání exekuèní funkce
+chybovou hlá¹ku. V~pøípadì, kdy více klientù bude mít nejvy¹¹í
+prioritu, klienta s~právem pro exkluzivní pøistup nìjak vybereme.
+
+K~zaøízení se mouhou hlásit a nastavovat svoji prioritu noví klienti,
+pøipojení klienti mohou svoji prioritu mìnit, exekuèní funkce mohou trvat
+del¹í dobu \footnote{typickým pøíkladem je pøesun dalekohledu}. Bude tedy
+docházet k~situacím, kdy na zaøízení pro jednoho klienta bì¾í exekuèní funkce,
+zatímco druhý klient ¾ádá o~zmìnu priority, po jejím¾ provedení by se
+stal klientem s~nejvy¹¹í prioritou - viz následující diagram:
+
+\dia{kill-pre.eps}
+
+Pøi zmìnì priorit je nutné brát ohled na to, ¾e klient ¾ádající
+o~vy¹¹í prioritu ne¾ souèasný aktivní klient se zøejmì chystá vykonávat
+exekuèní funkce - jinak by o~zmìnu priority ne¾ádal. Je tedy vhodné
+ji¾ pøi zmìnì priority zajistit, ¾e zaøízení bude pøipraveno pøijímat
+exekuèní funkce - na zaøízení nesmí bì¾et ¾ádné exekuèní funkce.
+
+Máme tøi mo¾nosti, jak po¾adavek na zmìnu priority v~tomto pøípadì
+o¹etøit:
+
+\begin{enumerate}
+\item okam¾itì ukonèit volání právì provádìné exekuèní funkce a zmìnit
+poøadí priorit
+\item zmìnit poøadí priorit, odlo¾it ukonèení provádìné exekuèní
+funkce 
+\item ignorovat po¾adavek na zmìnu priorit, poslat zpìt chybové
+hlá¹ení 
+\end{enumerate}
+
+První pøípad bude pou¾it, pokud dorazí neodkladné nové pozorování,
+pøípadnì bude potøeba uskuteènit nìjaké periodické mìøení opravdu
+v~daný èas - tì¾ko lze pøipustit, aby pozorování optických dosvitù gama
+zábleskù bylo zpo¾dìno by» o~nìkolik málo desítek sekund, které
+rozhodují o~úspìchu èi neúspìchu pozorování.
+
+Tøetí pøípad nastane, pokud dojde pøi ukonèování aktivní exekuèní
+funkce k~chybì. Je ale otázkou, zda má význam - exekuèní funkce by
+mìli býti v¾dy pøeru¹itelné.
+
+Druhý pøípad je nejzajímavìj¹í. Okam¾ik, kdy bude ukonèeno provádìní
+exekuèní funkce, lze samozøejmì zvolit libovolnì, napøíklad náhodnì.
+
+Motivace implemetace tohoto pøípadu spoèívá v~mo¾nosti nechat
+dobìhnout právì provádìné pozorování tak, abych mìl i z~pøeru¹eného
+pozorování nìjaké výsledky. Je napøíklad ¹koda, pokud jednu sekundu
+pøed ukonèením vyèítání kamery získá exkluzivní pøístup jiný klient se
+zhruba stejnou prioritou \footnote{tím je mysleno ne GRB} - takto
+ztratím výsledky nìkolika minutového experimentu, pøesto¾e by staèilo
+právì tu jednu sekundu poèkat na ukonèení vyèítání kamery.
+
+Dal¹í mo¾ností je vyèítání kamery v~prùbìhu pøesunu dalekohledu na
+nové pozorování - s~ukonèením vyèítání mohu poèkat do okam¾iku, kdy
+dalekohled dosáhne nové pozice, pøípadnì kdy¾ nový klient zahájí
+pozorování. Je ale tøeba dbát na to, aby se dalekohled nepohyboval
+v~prùbehu expozice. 
+
+\begin{enumerate}
+\item pøijmout po¾adavek na zmìnu priority, probíhající exekuèní
+funkci ukonèit a¾ v~okam¾iku, kdy klient s~vy¹¹í prioritou po¾ádá
+o~vykonání exekuèní funkce
+\item poèkat na dokonèení probíhající exekuèní funkce
+\item poèkat na dokonèení probíhajícího bloku exekuèních funkcí
+\end{enumerate}
+
+Nemá smysl èekat s~ukonèením aktivní exekuèní funkce do okam¾iku, kdy
+klient s~vy¹¹í prioritou po¾ádá o~vykonání exekuèní funkce - je
+rozumné oèekávat, ¾e po¾adavek o~vykonání exekuèní funkce bude
+následovat hned za po¾adavkem na zmìnu prioritu. Za cenu znaèného
+nárustu slo¾itosti kódu bych získal nìco málo èasu. Viz následující
+diagram:
+
+\dia{kill-nextexe.eps}
+
+Druhý pøípad nemá moc význam - tím, ¾e nechám dobìhnout expozici, nic
+nezískám, jeliko¾ exponovaný snímek nevyètu - zabrání mì v~tom
+pøítomnost klientu s~vy¹¹í prioriotu.
+
+Tøetí pøípad pak bude pou¾it, pokud je rozumné nechat dobìhnout
+stávající pozorování - mù¾e být kombinován s~nìjakou formou timeoutu
+
+

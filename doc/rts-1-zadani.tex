@@ -1,0 +1,135 @@
+\chapter{Zadání projektu}
+
+Název:
+ Detekce astronomických objektù s~promìnnou intenzitou za pomoci robotického teleskopu
+
+\begin{enumerate}
+
+\item Úèastnící projektu
+
+\begin{itemize}
+\item Vedoucí:	Mgr. Radim Halíø, halir@ms.mff.cuni.cz
+
+\item Konzultanti:
+		\newcommand\theitemi{}
+		\begin{itemize}
+			\item	RNDr. René Hudec, ASU AV ÈR Ondøejov, rhudec@asu.cas.cz
+			\item Dr. Ing. Jan Soldán, ASU AV ÈR Ondøejov, jsoldan@asu.cas.cz
+			\item Bc. Lenka ©arounová, ASU AV ÈR Ondøejov, lenkas@asu.cas.cz
+		\end{itemize}	
+
+\item Øe¹itelé:
+	\begin{itemize}
+		\item Tomá¹ Jílek, tjil6236@ss1000.ms.mff.cuni.cz
+		\item	Petr Kubánek, pkub6315@ss1000.ms.mff.cuni.cz
+		\item Filip Krolupper, fkro6306@ss1000.ms.mff.cuni.cz
+		\item Franti¹ek Kvapil, fkva7312@ss1000.ms.mff.cuni.cz
+	\end{itemize}	
+
+\item Týmová adresa: rtt@ss1000.ms.mff.cuni.cz
+\end{itemize}
+
+
+\item Vypsání projektu:
+zimní + letní semestr 1999/2000
+
+
+\item Zadání:
+Navrhnìte a naimplementujte software pro vyhledávání optických protìj¹kù gama
+zábleskù. Na vstupu je zpráva z~mezinárodního centra sledující pomocí dru¾ic
+umístìných na obì¾né dráze gama záblesky. Na výstupu z~programu je odpovìï,
+zda se v~cílové oblasti vyskytuje èi nevyskytuje objekt podezøelý z~toho, ¾e
+by mohl být pozùstatkem gama záblesku a jeho pøípadné souøadnice a magnituda.
+K~problému patøí té¾ evidence napozorovaných dat, pøístup k~nim a dal¹í
+"rozumné" úkoly.
+
+
+\item Základní èásti projektu
+\begin{itemize}
+\item komunikace s~robotickým teleskopem (nastavení, sejmutí snímku, zji¹tìní
+   stavu, atd.)
+\item plánovaè pozorování vèetnì zpracování mailù z~dru¾ic detekujících gama
+  záblesky
+\item evidence provedených pozorování 
+\item zpracování snímkù vèetnì automatické detekce zajímavých objektù
+  (pøedzpracování snímkù pomocí prùmìrování a flatfield/darkfield korekcí,
+  radiometrická a geometrické kalibrace, hledání objektù s~promìnnou
+  intenzitou)
+\item (volitelnì) analýza získaných dat: získání souøadnic objektù, astrometrie,
+  fotometrie, ...
+\end{itemize}
+
+\item Po¾adavky na realizaci
+\begin{itemize}
+	\item platforma UNIX se snahou o~platformní nezávislost snaha vyu¾ít dostupné SW prostøedky:
+  \item SW pro ovládání teleskopu (od Jan Soldána, komunikace pomocí emailu)
+  \item skriptovací jazyky Python resp. Perl (napø. pro plánovaè)
+  \item numerické systémy Matlab/Ocstave/Scilab (zpracování snímkù)
+  \item "low-level" programování v~C
+  \item dokumentace v~systému TeX, pravdìpodobnì anglicky
+	\item souèástí projektu bude i øe¹ení relevantních teoretických problémù.
+	\item Pøípadné výsledky by mìly být publikovány ve formì odborných èlánkù.
+\end{itemize}	
+
+
+\item Poznámky k~realizaci (od Petra Kubánka)
+
+Pøi psaní programu se budeme maximálnì sna¾it pou¾ívat ji¾ existující software.
+Podobné operace jako budeme potøebovat my se dìlají pøi pozorování planetek èi
+promìnných dvojhvìzd. 
+
+Pozorovací pøistroj budeme ovládat pomocí nìjakého pomìrnì jednoduchého
+rozhraní, na vstupu zadáme souøadnice a zaøízení, kterým budeme snímkovat,
+jako výstup obdr¾íme poøízený snímek èi informace o~tom, ¾e snímek nebyl
+poøízen a dùvod proè k~tomu do¹lo. Ovladaè na pøístroje dá k~dispozici
+Ondøejovská observatoø.
+
+Plánovaè si napí¹eme vlastní. Mìl by umìt následující:
+\begin{itemize}
+   \item vstup ruèní, automatický (zpráva ze støediska vyhodnocující informace
+     z~dru¾ic) a generovaný (dalekohled by se mìl sám úkolovat)
+   \item výpis naplánovaných akcí
+\end{itemize}	 
+
+Z~evidence by mìlo být jasné, kdy se co napozorovalo a s~jakým výsledkem.
+Také by se mìlo evidovat, odkud se braly informace o~pozorovaných objektech
+a jaké po¾adavky na pozorování do systému vstoupily.
+
+Pøedzpracování poøízeného snímku zahrnuje dvì základní operace - darkfield a
+flatfield korekci. Jimi se odstraòují vady CCD èipu. Dále pøipadá v~úvahu
+zaostøování, odstranìní vlivu atmosféry a podobnì.
+
+Podezøelé objekty se dají vyhledávat buïto podle zmìny jasnosti (magnituty)
+na dvou snímcích poøízených nìkolik minut po sobì, nebo srovnáváním se
+star¹ími snímky pøípadnì s~katalogy a hledáním nových objektù.
+
+Databáze poøízených snímkù by mìla umo¾òovat vyhledávání a zobrazovaní
+poøízených snímkù podle rùzného kritéria, operace se snímkem a podobnì.
+
+
+\item Dodatek: gama záblesky a jejich optické protìj¹ky
+
+Gama záøení je nejenergiètìj¹í elektromagnetické záøení. Gama záblesky jsou
+prudké a krátké výtrysky tohoto záøení, pøicházející k~nám z~vesmíru. Záblesky
+trvají okolo jedné sekundy. Jeliko¾ od gama záøení je Zemì odstínìna, musíme
+gama záblesky hledat pomocí pøístrojù na dru¾icích. V~pøípadì úspì¹né detekce
+známe pouze pøibli¾nou polohu zdroje záblesku, rozmìry podezøelé oblasti se
+pohybují ve stupních (pro srovnání - mìsíc v~úplòku = pùl stupnì).
+
+Optickým protìj¹kem gama záblesku se rozumí podezøelý objekt ve smìru gama
+záblesku pozorovaný ve viditelném spektru. Optický protìj¹ek je pozorován u
+zhruba poloviny pøesnì lokalizovaných zdrojù gama zábleskù. Mìl by být
+pozorovatelný déle ne¾ gama záblesk - urèitì minuty, mo¾ná dny. Za jeden den
+je detekován prùmìrnì jeden gama záblesk, z~rùzných dùvodù (poèasí, umístìní
+na neviditelné èásti oblohy, malá jasnost, ..) u~vìt¹iny není mo¾no dohledat
+optický protìj¹ek - zatím se jich podaøilo dohledat pouze nìkolik.
+
+Není jasné, z~èeho gama záblesk pochází - existuje zhruba 200 teoretických
+modelù. Nìkteré z~nich vychází z~nìjaké katastrofické srá¾ky následované
+výbuchem. Pøi srá¾ce vzniká gama záøení, pøi výbuchu z~nárazù rozpínajících se
+èástic pochází optické záøení. Optický protìj¹ek by mìl tedy být pozorovatelný
+o~trochu pozdìji ne¾ gama záblesk. Z~extrapolace namìøených optických
+protìj¹kù gama zábleskù vyplývá, ¾e by mohl mít po krátkou dobu dostateènou
+jasnost na to, aby byl viditelný i triedrem èi malým astronomickým pøístrojem.
+
+\end{enumerate}

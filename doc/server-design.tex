@@ -1,0 +1,117 @@
+\chapter{Design serveru}
+
+\section{Velký obraz}
+
+\section{Komponenty}
+
+\subsection{devdem.c}
+
+Knihovna devdem poskytuje základní funkce, nutné pro {\bf dev}ice {\bf
+deam}on.
+
+\subsubsection{Stav}
+
+Jsou k~dispozici atomické funkce pro zmìnu stavu, a funkce pro jeho
+pøeètení. Stav je umístìn ve sdílené pamìti, tudí¾ je pro v¹echny
+instance serveru v¾dy stejný. Atomicita pøístupu k~nìmu je hlídána
+pomocí semaforù.
+
+\subsubsection{Správa vláken}
+
+Pro vykonávání funkcí, které trvají del¹í dobu
+
+\subsubsection{Pøenos dat}
+
+Data vznikají na poèítaèi, ke kterému je pøipojena kamera. Odtud je
+potøeba je dostat nìkam na disk, do nìjakého prohlí¾eèe obrázkù,
+k~nìjakému zpracování.
+
+Pøi vyèítání snímku je poèítaè, který vyèítání øídí, zatí¾en natolik,
+¾e nemá moc význam uva¾ovat nad nìjaké vá¾nìj¹í, na CPU nároènìj¹í
+analýze snímku.
+
+Proto má význam celou architekturu navhrnout tak, aby ke kameøe
+(pøípadnì kamerám) byl pøipojen poèítaè, který by slou¾il jako server
+- zpracovával po¾adavky na kameru a poskytoval odpovìdi o~jejím stavu.
+
+\subsubsection{Jak ovládat kamery (zaøízení)}
+
+Na ovládání kamery budeme potøebovat minimálnì jeden plnì duplexní
+komunikaèní kanál. Vyu¾ijeme nìjakého sí»ového protokolu, s~nejvìt¹í
+pravdìpodobností IP. 
+
+Komunikovat mù¾eme buïto pomocí binárnì zakódovaných zpráv, nebo
+rozhranní zalo¾eném na telnetovském (textovém) protokolu - viz rfc854.
+
+Kódované rozhranní znamená uzavøenost systému, textové rozhranní je
+mo¾ná o~tro¹ku slo¾itìj¹í implemetovat díky nutnosti dekódovat pøijaté
+pøíkazy, ale je otevøenìj¹í.
+
+Rozhodl jsem se pro textové rozhranní, jeliko¾ se mì na nìm líbí jeho
+otevøenost.
+
+Obyèejné stavová data není problém pøekódovat do textové podoby a
+poslat po tomto rozhranní, se snímky je to trochu hor¹í - jsou to
+pomernì veliká binární data, která by bylo záhodno pøená¹et rychle a
+efektivnì.
+
+Nabízejí se dvì mo¾nosti - snímky pøená¹et po stejném spojení, jako je
+øídící, nebo pro pøenos snímkù vytváøet nové spojení. Mo¾nost
+vytváøet nové spojení se je¹tì rozpadá na nìkolik variant podle toho, jak
+podobné spojení navazovat, pou¾ívat, udr¾ovat a ukonèovat.
+
+\subsubsection{Varianta jedno spojení}
+
+Na spojení po¹lu po po¾adavku klienta ze serveru data, a umo¾ním
+klientovi detekovat jejich konec (napadají mì tøi mo¾nosti - speciální
+hodnotou, napøíklad 0, kterou budu pokud se bude jednat o~skuteènou
+hodnotu uvozovat escape znakem - napøíklad 1, a 1 budu v¾dy zapisovat
+jako dvì jednièky za sebou; napsat na zaèátku spojení klientovy délku
+posílaných dat; nebo data kódovat a pøená¹et ve znacích 127-255,
+spodní ponechat pro textové odpovìdi serveru - na re¾ii obìduji 1/8
+kapacity).
+
+\begin{itemize}
+\item{Výhody}
+	\begin{itemize}
+	\item jednoduché na implementaci, jak na klientovi, tak na serveru
+	\item nenároèné
+	\end{itemize}
+\item{Nevýhody}
+	\begin{itemize}
+	\item na jednom spojení nelze souèasnì vyèítat data a posílat odpovìdi na
+	  stav zaøízení
+	\item míchání textových a binarních dat mù¾e vést ke zbyteèným problémùm
+	  pro øízení pøenosu
+	\end{itemize}
+\end{itemize}
+
+\subsubsection{Varianta øídící a datové spojení}
+
+Na øídícím spojení po¹lu pøíkaz, který ma data posílat. Jedna ze stran otevøe
+datové spojení, druhá se k~nìmu pøipojí. Po navázání datového spojení ukonèím
+úspì¹nì volání s~po¾adavkem na data, od tohoto okam¾iku mohu øídící spojení
+znovu vyu¾ívat pro posílání dal¹ích pøíkazù. Na datové spojení zaène server
+psát data, které klient vyèítá. Po poslání v¹ech dat datové spojení ukonèím.
+
+\begin{itemize}
+\item{Výhody}
+	\begin{itemize}
+	\item mo¾nost souèasnì ovládat zaøízení a pøijímat data
+	\end{itemize}
+\item{Nevýhody}
+	\begin{itemize}
+	\item nároèné na implementaci
+	\end{itemize}
+\end{itemize}
+
+Rozhodl jsem se pro samostatné datové spojení, rozhodujícím faktorem byla
+mo¾nost posílat souèasnì data a ovládat zaøízení.
+
+Pøi vlastní implementaci jsem se inspiroval protokolem FTP, popsaném v~rfc 
+
+\subsection{deamonek}
+
+\subsection{ovladaè zaøízení}
+
+
