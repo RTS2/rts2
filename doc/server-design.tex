@@ -2,8 +2,6 @@
 
 \section{Velký obraz}
 
-
-
 \section{Komponenty}
 
 \subsection{devdem.c}
@@ -49,13 +47,22 @@ Kódované rozhranní znamená uzavøenost systému, textové rozhranní je
 mo¾ná o~tro¹ku slo¾itìj¹í implemetovat díky nutnosti dekódovat pøijaté
 pøíkazy, ale je otevøenìj¹í.
 
-Rozhodl jsem se pro textové rozhranní, jeliko¾ se mì na nìm líbí jeho
-otevøenost.
+Rozhodl jsem se pro textové rozhranní. Jeho výhody jsou otevøenost a
+nezávislost na architektuøe cílového poèítaèe \footnote{odpadají
+napøíklad problémy s konverzí dat mezi malými a velkými endiány}.
 
 Obyèejné stavová data není problém pøekódovat do textové podoby a
 poslat po tomto rozhranní, se snímky je to trochu hor¹í - jsou to
 pomernì veliká binární data, která by bylo záhodno pøená¹et rychle a
 efektivnì.
+
+Snímky, nebo spí¹e obecnì binární data, je mo¾né pøená¹et pomocí
+nìkterého ze standartních protokolù. Data ulo¾ím do pamìti,
+klientovi sdìlím jejich umístìní a klient si je od serveru pomocí
+standartního protokolu vy¾ádá. Vhodné protokoly by byli napøíklad FTP
+nebo HTTP.
+
+Snímky je ale vhodné doplnit o 
 
 Nabízejí se dvì mo¾nosti - snímky pøená¹et po stejném spojení, jako je
 øídící, nebo pro pøenos snímkù vytváøet nové spojení. Mo¾nost
@@ -162,10 +169,6 @@ TCP/IP spojení.
 Prostøedky IPC vyhlí¾ejí pomìrnì zajímavì. Poskytují mnoho výhod,
 vypadají, ¾e ¹etøí sytémové prostøedky,..
 
-Zkusil jsem implementovat komunikaci prostøednictvím IPC. Chodí,
-nicménì není tím, co bych od ní oèekával. ICP je pomìrnì háklivé na
-zru¹ení v¹ech prostøedkù, adresace pomocí IPC\_PRIVATE je divná, poèet
-je omezen.
 
 \subsection{ovladaè zaøízení}
 

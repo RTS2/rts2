@@ -10,32 +10,52 @@ Gama záøení je nejenergiètìj¹í elektromagnetické záøení. \index{Gama
 Ray Burst}Gama Ray Burst, zkrácenì \index{GRB}GRB, èesky \index{gama
 záblesky}gama záblesky jsou prudké a krátké výtrysky tohoto záøení,
 pøicházející k~nám z~vesmíru. Záblesky trvají okolo jedné sekundy.
-Jeliko¾ od gama záøení je Zemì odstínìna, musíme gama záblesky hledat
-pomocí pøístrojù na dru¾icích. V~pøípadì úspì¹né detekce známe pouze
-pøibli¾nou polohu zdroje záblesku, rozmìry podezøelé oblasti se
-pohybují ve stupních (pro srovnání - mìsíc v~úplòku = pùl stupnì).
+Gama záøení nepronikne zemskou atmosférou - gama záblesky tedy musíme
+hledat pomocí pøístrojù na dru¾icích.
 
-Optickým protìj¹kem gama záblesku se rozumí podezøelý objekt ve smìru gama
-záblesku pozorovaný ve viditelném spektru. Optický protìj¹ek je pozorován u
-zhruba poloviny pøesnì lokalizovaných zdrojù gama zábleskù. Mìl by být
-pozorovatelný déle ne¾ gama záblesk - urèitì minuty, mo¾ná dny. Za jeden den
-je detekován prùmìrnì jeden gama záblesk, z~rùzných dùvodù (poèasí, umístìní
-na neviditelné èásti oblohy, malá jasnost, ..) u~vìt¹iny není mo¾no dohledat
-optický protìj¹ek - zatím se jich podaøilo dohledat pouze nìkolik.
+Star¹í dru¾ice (\ref{COMPTEL}, ..) poskytovali polohu zdroje Gama
+záblesku pouze pøibli¾nì, s chybou velikosti nìkolika stupòù, nové
+(\ref{HETE}, \ref{INTEGRAL}, \ref{Swift}) umí najít polohu zdroje Gama
+záblesku pomìrnì pøesnì - chyba dosahuje velikosti nìkolika minut.
+
+\index{GRB!optický protìj¹ek}Optickým protìj¹kem gama záblesku se
+rozumí podezøelý objekt ve smìru gama záblesku pozorovaný ve
+viditelném spektru. Optický protìj¹ek by podle teoretikù mìl být
+pozorován u zhruba poloviny gama zábleskù. Mìl by být pozorovatelný
+déle ne¾ gama záblesk - urèitì minuty, mo¾ná dny. Za jeden den je
+detekován prùmìrnì jeden gama záblesk, z~rùzných dùvodù (poèasí,
+umístìní na neviditelné èásti oblohy, malá jasnost, ..) u~vìt¹iny není
+mo¾no dohledat jejich optické protìj¹ky. Optický dosvit známe u nìkolika
+desítek GRB, co¾ je mno¾ství nepostaèující na vytvoøení poøádné
+statistky.
 
 Není jasné, z~èeho gama záblesk pochází - existuje zhruba 200 teoretických
-modelù. Nìkteré z~nich vychází z~nìjaké katastrofické srá¾ky následované
-výbuchem. Pøi srá¾ce vzniká gama záøení, pøi výbuchu z~nárazù rozpínajících se
-èástic pochází optické záøení. Optický protìj¹ek by mìl tedy být pozorovatelný
-o~trochu pozdìji ne¾ gama záblesk. Z~extrapolace namìøených optických
-protìj¹kù gama zábleskù vyplývá, ¾e by mohl mít po krátkou dobu dostateènou
-jasnost na to, aby byl viditelný i triedrem èi malým astronomickým pøístrojem.
+modelù. Nìkteré z~nich pøedpokládají katastrofické srá¾ky následované
+výbuchem. Pøi srá¾ce vzniká gama záøení, pøi výbuchu z~nárazù
+rozpínajících se èástic pochází optické záøení. Optický protìj¹ek by
+mìl tedy být pozorovatelný o~trochu pozdìji ne¾ gama záblesk.
+Z~extrapolace namìøených optických protìj¹kù gama zábleskù vyplývá, ¾e
+by mohl mít po krátkou dobu dostateènou jasnost na to, aby byl
+viditelný i triedrem èi malým dalekohledem.
+
+\section{Distribuce zpráv o pozorování gama zábleskù}
+
+V¹echny pozorování gama zábleskù jsou posílány na \ref{gcn}, odkud
+jsou dále distribuovány. GCN umo¾òuje posílat zprávy na email, pager
+(zkrácená varianta emailu), nebo pøes vyhrazený TCP/IP socket.
+
+Pokud pøijímáme data pøes Internet, doba jejich pøíjmu závisí na stavu
+spojení z Ondøejova na poèítaè GCN. Vìt¹inou se pohybuje do 1 sekundy.
+
+Pøíjem dat pøes email trvá o trochu déle, prùmìrný èas se pohybuje
+kolem 30 vteøin. Zdr¾ení je samozøejmì zpùsobeno zpracováním emailu
+na po¹tovních servrech.
 
 \section{Pozorování GRB malými dalekohledy}
 
 Proè má smysl pozorovat oblasti, ve kterých byly detekovány gama
-záblesky, malými dalekohledy\footnote{dalekohledy s malým rozmìrem
-optiky, obvykle do jednoho metru}? Dùvody jsou následujcí:
+záblesky, dalekohledy rozmìrovì podobnými tomu Ondøejovskému? Dùvody
+jsou následujcí:
 
 \begin{itemize}
 
@@ -43,20 +63,20 @@ optiky, obvykle do jednoho metru}? Dùvody jsou následujcí:
 volnosti pro pøípadné pøeru¹ení pozorování
 \item malé dalekohledy jsou levné, lze jich tedy postavit více a
 pozorovat z více míst. Pozorováním z více míst se zvý¹í
-pravdìpodobnost úspì¹ného pozorování. 
-
+pravdìpodobnost úspì¹ného pozorování
 
 \end{itemize}
 
-Pro úspì¹né pozorování je zapotøebí splnit následující podmínky:
+Pro úspì¹né pozorování je potøeba splnit následující podmínky:
 
 \begin{itemize}
 
 \item na pozorovacím stanovi¹ti musí být jasno a noc
 
-\item místo pozorování nesmí být stínìno planety
+\item pole, které se pozoruje, nesmí být v blízkosti mìsíce; tato
+podmínka se stává kritickou pro pozorování v èase kolem úplòku.
 
-\item dalekohled musí býts správnì ustaven
+\item dalekohled musí být správnì ustaven
 
 \item celý systém musí reagovat správnì a pozorování provést
 
@@ -64,14 +84,45 @@ Pro úspì¹né pozorování je zapotøebí splnit následující podmínky:
 
 \section{Princip detekce gama zábleskù}
 
-\section{Jak èasto k nám pøicházejí gama záblesky}
+Gama záøezní prochází pomìrnì snadno hmotou. Pokud se odrazí od
+pøedmìtu, dìje se tak v náhodném úhlu. Detektor tedy nelze stavìt
+podobnì jako dalekohled.
+
+Detektory pracují na dvou principech:
+
+\begin{itemize}
+
+\item pou¾ívají møí¾ku pro vytvoøení obrazu
+
+\item se znalosti èasu nesmìrové detekce na dvou a více bodech
+dopoèítávají poluhu zdroje
+
+\end{itemize}
+
+\ref{COMPTEL} a dru¾ice \ref{IPN} byli vybaveny nesmìrovými detektory, nové
+dru¾ice - \ref{HETE}, \ref{Integrla} a \ref{Swift} jsou vybaveny
+møí¾kovým detektorem.
 
 \section{Náhradní program}
 
+Proto¾e nelze oèekávat detekci gama záblesku ka¾dou noc, je vhodné pro
+dalekohled navrhnout náhradní program. Nejvhodnìj¹í je monitoring
+nìkolika vybraných zdrojù, s poèítáním jejich pøesné fotometrie
+\footnote{Fotometrie mìøí jasnost hvìzd}.
+
+Fotometrii lze dìlat buïto relativní, nebo absolutní. Relativní
+spoèívá v porovnávání jasnosti jedné hvìzdy na nìkolika snímcích
+poøízených stejným pøístrojem pøi pokud mo¾no stejných atmosférických
+prodmínkách. Absolutní fotometrie spoèívá v mìøení jasnosti v¹ech
+hvìzd na snímù, vypoètením jejich pøístrojové magnitudy, ze znalosti
+jasnosti kalibraèních hvìzd dopoètením jejich absolutní magnitudy.
+
+Absolutní fotometrie je nároènìj¹í ne¾ relativní fotometrie, její
+pøínos je vìt¹í. Na BARTovi se sna¾íme o absolutní fotometrii.
+
 \section{RTS1}
 
-Jako RTS1 je oznaèován starý systém øízení dalekohledu, vyvinutý v
-rámci roèníkového projektu studentù MFF UK\ref{rts1}. Zkratka RTS
-znamená {\bf R}emote {\bf T}elescope {\bf S}ystem. Jako RTS1 je oznaèován
-program, který byl vyvinut pøi projektu. Jeho zcela pøepsaná verze,
-vyvinutá pro diplomovou práci,je oznaèována jako RTS2.
+Jako \index{RTS!RTS1}RTS1 je oznaèován starý systém øízení dalekohledu,
+vyvinutý v rámci roèníkového projektu studentù MFF UK\ref{rts1}.
+Zkratka \index{RTS} znamená {\bf R}emote {\bf T}elescope {\bf S}ystem
+\ref{rts1}.

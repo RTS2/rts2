@@ -1,105 +1,177 @@
-\section{Protokoly}
+\chapter{Pøíkazy}
 
-\subsection{Serverd}
+% jméno pøíkazu - {pøíkaz}{parametry}{popis}
 
-\begin{description}
+\def\comname#1#2#3{
+{\bf #1} {\it #2} #3
+\newline}
 
-\item{login}
+\def\comvalue#1#2#3{
+{\it #1} { #2} #3
+\newline}
 
-\item{password}
+\def\comret#1#2{
+{\it E:}{\bf #1} #2
+\newline}
 
-\item{key}
+\section{Konvence}
 
-\item{register}
+{\bf Tuène} je vysázeno jméno pøíkazu a jméno návratové hodnoty.
 
-\item{priority}
+{\it Kurzívou a v [hranatých závorkách]} jsou vysázeny parametry
+pøíkazu, a návratové hodnoty na øádce.
 
-\item{prioritydeferred}
+\section{Obecné návratové hodnoty}
 
-\item{info}
+Zaøízení vrací 0, pokud po¾adovaná operace probìhla úspì¹nì. Pokud
+pøíkaz neexistuje, nebo klient není autorizován pro provádìní daného
+pøíkazu, vrací hodnotu DEVDEM\_E\_COMMAND. Pokud je pro pøíkaz zadán
+nesprávný poèet parametrù, vrací hodnotu DEVDEM\_E\_PARAMSVAL.
 
-\end{description}
+\section{Serverd}
 
-\subsection{Devdem}
+\subsection{Inicializaèní pøíkazy}
 
-\begin{description}
+\comname{login}{[jméno u¾ivatele]}{pøihlásí u¾ivatele do systému}
+\comret{DEVDEM\_E\_COMMAND}{klient je ji¾ pøihlá¹en nebo registrován}
+\comret{DEVDEM\_E\_SYSTEM}{není mo¾né pøihlásit dal¹ího u¾ivatele}
 
-\item{auth}
+\comname{password}{[heslo]}{po¹le heslo u¾ivatele}
+\comvalue{logged\_as}{[èíslo spojení]}{èíslo spojení na stranì serveru,
+pou¾ívané pro dal¹í autentifikaci}
+\comvalue{I status\_num}{[poèet stavù]}{}
+\comvalue{I status}{[èíslo stavu] [název stavu] [souèasná hodnota stavu]}{}
+\comret{DEVDEM\_E\_SYSTEM}{heslo neodpovídá}
 
-\item{ready}
+\comname{register}{[jméno zaøízení] [typ zaøízení] [host]:[port]}{zaregistruje nové zaøízení}
+\comret{DEVDEM\_E\_SYSTEM}{zaøízení se stejným jménem je ji¾
+zargistrováno}
 
-\item{help}
+\subsection{Informaèní pøíkazy}
 
-\item{exit}
+\comname{info}{}{vypí¹e informace o pøipojených zaøízeních a pøipojených klientech}
+\comvalue{user}{[id] [P|A] [priorita] [*|-] [jméno u¾ivatele] [popis provádìnné èinnosti]}
+{informace o pøipojeném u¾ivateli}
+\comvalue{device}{[èíslo zaøízení] [jméno zaøízení] [host]:[port] [typ zaøízení]}
+{informace o pøipojeném zaøízení}
+ 
+\comname{key}{[jméno zaøízení]}{vy¾ádá si klíè pro autorizaci}
+\comvalue{authorization\_key}{[jméno zaøízení] [klíè]}{autorizaèní
+klíè pro dané zaøízení}
+\comret{DEVDEM\_E\_SYSTEM}{zaøízení neexisuje}
 
-\item{blockstart}
+\comname{priority}{[nová priorita]}{zmìní prioritu daného spojení}
+\comvalue{old\_priority}{[hodnota priority]}{souèasná priorita spojení}
+\comvalue{actual\_priority}{[èíslo spojení dr¾ícího prioritu]
+[hodnota jeho priority]}{spojení s nejvìt¹í prioritou}
+{new\_priority}{[èíslo spojení dr¾ící prioritu] [hodnota priority]}
+{spojení s prioritou po provedení zmìny}
+\comret{DEVDEM\_E\_PRIORITY}{pokud zmìna priority nemohla probìhnout}
 
-\item{blockcheck}
+\comname{prioritydeferred}{[nová priorita]}{provede zmìnu odlo¾enou
+zmìnu priroty}
 
-\item{blockend}
+\comname{on}{}{zmìní stav serveru na jeden z operaèních stavù, v
+závislosti na aktuálním èase a datu}
 
-\end{description}
+\comname{off}{}{zmìní stav serveru na off - vypnuto}
 
-\subsection{Kamera}
+\section{Zaøízení - obecná komunikace}
 
-\begin{description}
+Pokud není klient autorizován, vrací v¹echna komunikace hodnotu
+DEVDEM\_E\_SYSTEM.
 
-\item{info}
+Pokud dojde pøi vykonávání pøíkazu k chybì v komunikaci se zaøízením,
+vrací se hodnota DEVDEM\_E\_HW.
 
-\item{chipinfo <chip>}
+\comname{auth}{[èíslo spojení] [autentifikaèní klíè]}{provede
+autorizaci}
+\comvalue{I status\_num}{[poèet stavù]}{}
+\comvalue{I status}{[èíslo stavu] [jméno stavu] [hodnota stavu]}{}
+{informace o stavu zaøízení}{}
+\comret{DEVDEM\_E\_SYSTEM}{pokud autorizace neprobìhla}
 
-\item{expose <chip> <exposure\_time>}
+\comname{ready}{}{zjistí, jestli je zaøízení pøipojeno. Je mo¾né volat
+opakovanì.}
 
-\item{stopexpo <chip>}
+\comname{help}{}{vypí¹e nápovìdu}
 
-\item{progexpo <chip>}
+\comname{exit}{}{ukonèí spojení}
 
-\item{binning <chip> <vbin> <hbin>}
+\comname{blockstart}{}{informuje zaøízení o zaèátku bloku, nutné pro
+provedení odlo¾ené zmìny priority}
+\comret{DEVDEM\_E\_SYSTEM}{pokud je spojení ji¾ v bloku}
 
-\item{readout <chip>}
+\comname{blockcheck}{}{odlo¾ená zmìna priority je mo¾ná}
+\comret{DEVDEM\_E\_SYSTEM}{pokud není spojení v bloku}
 
-\item{stopread <chip>}
+\comname{blockend}{}{ukonèení bloku pro odlo¾enou zmìnu priority}
+\comret{DEVDEM\_E\_SYSTEM}{pokud spojení není v bloku}
 
-\item{progread <chip>}
+\section{Kamera}
 
-\item{data <chip>}
+\comname{info}{}{vypí¹e informace o kameøe}
+\comvalue{type}{[typ kamery]}{}
+\comvalue{serial}{[sériové èíslo kamery]}{}
+\comvalue{chips}{[poèet èipù kamery]}{}
+\comvalue{temperature\_regulation}{[CAMERA\_COOL\_HOLD|CAMERA\_COOL\_MAX|CAMERA\_COOL\_OFF]}{stav
+chazení kamery}
+\comvalue{temperature\_setpoint}{[teplota]}{teplota, na kterou se
+kamera sna¾í chladit}
+\comvalue{air\_temperature}{[teplota]}{hodnota teplotního èidla,
+udávajícího teplotu vzducju}
+\comvalue{ccd\_temperature}{[teplota]}{teplota CCD èipu}
+\comvalue{cooling\_power}{[promile výkonu]}{hodnota hlazení}
+\comvalue{fan}{[0|1]}{stav vìtráku kamery}
 
-\item{cooltemp <chip> <temperature>}
+\comname{chipinfo}{[èíslo èipu]}{vrací informace o daném èipu}
+\comvalue{chip [èíslo èipu] width}{[¹íøka]}{¹íøka èipu}
+\comvalue{chip [èíslo èipu] height}{[vý¹ka]}{vý¹ka èipu}
+\comvalue{chip [èíslo èipu] binning\_vertical}{[vertikální binning]}{}
+\comvalue{chip [èíslo èipu] binning\_horizontal}{[horizontální
+binning]}{}
+\comvalue{chip [èíslo èipu] pixelX}{[rozmìr pixelu v X smìru]}{}
+\comvalue{chip [èíslo èipu] pixelY}{[rozmìr pixelu v Y smìru]}{}
+\comvalue{chip [èíslo èipu] gain}{[zisk v e/ADU]}{}
 
-\item{coolpower <chip> <temperature>}
+\comname{expose}{[èíslo èipu] [svìtlý/tmavý snímek] [expozièní
+èas]}{zahájí na daném èipu expozici}
 
-\end{description}
+\comname{stopexpo}{[èíslo èipu]}{ukonèí expozici}
 
-\subsection{Montá¾}
+% \comname{progexpo}{[èíslo èipu]}{vrací informace o probíhající
+% expozici}
 
-\begin{description}
+\comname{binning}{[èíslo èipu] [vertikální binning] [horizontální
+binning]}{zmìní binning èipu}
 
-\item{set}
+\comname{readout}{[èíslo èipu]}{zahájí vyèítaní èipu}
+\comvalue{D connect}{[èíslo spojení] [host]:[port] [velikost dat]}
+{informace o nutnosti navázat datové spojení na daný port}
+Pøíkaz skonèí a¾ po úspì¹ném navázání spojení.
 
-\item{move}
+\comname{stopread}{[èíslo èipu]}{ukonèí vyèítání daného èipu}
 
-\item{ra}
+\comname{cooltemp}{[temperature]}{nastaví teplotu chlazení èipu}
 
-\item{dec}
+\section{Montá¾}
 
-\item{park}
+\comname{set}{[RA] [DEC]}{nastaví pozici montá¾e}
 
-\item{lon}
+\comname{move}{[RA] [DEC]}{zahájí pøesun montá¾e na novou pozici}
 
-\item{lat}
+\comname{info}{}{vypí¹e informace o montá¾i}
+\comvalue{type}{[typ dalekohledu]}{}
+\comvalue{serial\_number}{[sériové èíslo montá¾e]}
+\comvalue{ra}{[RA]}{hodnota rektascenze montá¾e}
+\comvalue{dec}{[DEC]}{hodnota deklinace montá¾e}
+\comvalue{park\_dec}{[DEC]}{parkovací deklinace}
+\comvalue{longtitude}{[zemìpisná délka]}{zemìpisná délka dalkohledu}
+\comvalue{latitude}{[zemìpisná ¹íøka]}{zemìpisná ¹íøka dalekohledu}
+\comvalue{siderealtime}{[èas]}{místní hvìzdný èas v okam¾iku
+pozorování}
+\comvalue{localtime}{[èas]}{obèanský èas v místì pozorování}
+\comvalue{correction\_mark}{[èíslo korekce]}{èíslo poslední probìhnuté
+korekce}
 
-\item{lst}
-
-\item{loct}
-
-\end{description}
-
-\subsection{Debug}
-
-\begin{description}
-
-\item{devser\_info}
-
-\item{devdem\_info}
-
-\end{description}
+\comname{park}{}{zaparkuje dalekohled}

@@ -30,14 +30,18 @@ Poslední stav nejlépe vystihuje diagram \ref{fig:rts-1-packages}.
 \dia{rts-1-packages}{Graf závislostí rts-1}
 
 Hlavním problémem souèasného kódu je jeho monoliènost. V~programu
-samoseboexistuje dìlení do modulù, které mívají do 1000 øádek kódu, nicménì
-toto dìlení bylo pøi implementaci nìkterých nových funkcí shledáno
-nedostaèujícím. Tímto vzniklo nìkolik cyklických závislostí mezi moduly, se
-kterými si sice Python poradí, které ale negativnì ovlivòují strukturu kódu.
+samoseboexistuje dìlení do modulù, které mívají do 1000 øádek kódu.
+Toto dìlení ale není pøíli¹ dobøe domy¹leno.  V kódu se vyskytuje
+nìkolik cyklických závislostí mezi moduly. Python si s cyklickými
+závislostmi poradí \footnote{pøed provedením ka¾dého importu si
+pøekladaè ovìøí, ¾e ji¾ nebyl importován}, v kódu by se ale nemìli
+vyskytovat.
 
 Z~monoliènosti vyplývá i relativnì tì¾ká portace kódu na nový astronomický HW.
 
-Souèasné øe¹ení umo¾òuje pou¹tìt expozici na jiném poèítaèi ne¾ na poèítaèi
-øídícím pozorování, nicménì ne tak èistì, jak bychom si pøedstavovali.
-
-
+Souèasné øe¹ení umo¾òuje pou¹tìt expozici na jiném poèítaèi ne¾ na
+poèítaèi øídícím pozorování. Experimentálnì ovìøená mo¾nost spoèívá ve
+vytvoøení ssh spojení na poèítaè, ke kterému je pøipojena kamera. Pøes
+toto spojení se kamera øídí \footnote{kamery se z Pythonovkého kódu
+ovládají pomocí pøesmìrování standartního vstupu a výstupu}, data
+se ukládají buïto na lokální disk, nebo na sdílený sí»ový disk.

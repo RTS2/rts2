@@ -5,7 +5,7 @@ all: dia diplomka.pdf article_spain.pdf
 	$(RM) $<
 
 %.dvi: %.tex 
-	cslatex $<
+	pdfcslatex $<
 	makeindex $<
 	cslatex $<
 
