@@ -204,7 +204,7 @@ Rts2DevCameraAndor::init ()
   int ret;
 
   ret = Rts2DevCamera::init ();
-  if (!ret)
+  if (ret)
     return ret;
 
   error = Initialize (andorRoot);
