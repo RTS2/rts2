@@ -4,57 +4,75 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define RANTL 16
+//#define RANTL 16
 
-char *sex_binary = "sex";
+#define SEX_CFG "/tmp/_sex.cfg"
+#define SEX_PARAM "/tmp/_sex.param"
+#define SEX_CAT "/tmp/_sex.cat"
+#define SEX_BIN "sex"
 
-void
-write_sex_cfg ()
+#define SEXI_TEXT_SIZE 256
+char sexi_text[SEXI_TEXT_SIZE];
+#define SEXI_ERR(txt) \
+	{\
+		snprintf(sexi_text,SEXI_TEXT_SIZE,"sexi %s",txt); \
+		return -1;\
+	}
+#define SEXI_MSG(txt) \
+	{\
+		snprintf(sexi_text,SEXI_TEXT_SIZE,"sexi %s",txt); \
+	}
+
+int
+sexi_write_sex_cfg ()
 {
   FILE *cfg;
   FILE *param;
 
-  cfg = fopen ("_sex.cfg", "w");
+  cfg = fopen ("/tmp/_sex.cfg", "w");
+  if (!cfg)
+    SEXI_ERR ("write_sex_config:cannot open " SEX_CFG " file 4w");
 
-  fprintf (cfg, "CATALOG_NAME\t%s\n", "_sex.cat");
-  fprintf (cfg, "CATALOG_TYPE\tASCII_HEAD\n");
-  fprintf (cfg, "PARAMETERS_NAME\t_sex.param\n");
-  fprintf (cfg, "DETECT_TYPE\tCCD\n");
-  fprintf (cfg, "DETECT_MINAREA\t%d\n", 5);
-  fprintf (cfg, "DETECT_THRESH\t%.1f\n", 3.0);
-  fprintf (cfg, "ANALYSIS_THRESH\t%.1f\n", 3.0);
-  fprintf (cfg, "FILTER\tN\n");
-  fprintf (cfg, "FILTER_NAME\tdefault.conv\n");
-  fprintf (cfg, "DEBLEND_NTHRESH\t32\n");
-  fprintf (cfg, "DEBLEND_MINCONT\t0.005\n");
-  fprintf (cfg, "CLEAN\tY\n");
-  fprintf (cfg, "CLEAN_PARAM\t1.0\n");
-  fprintf (cfg, "MASK_TYPE\tCORRECT\n");
-  fprintf (cfg, "PHOT_APERTURES\t5\n");
-  fprintf (cfg, "PHOT_AUTOPARAMS\t2.5, 3.5\n");
-  fprintf (cfg, "SATUR_LEVEL\t50000.0\n");
-  fprintf (cfg, "MAG_ZEROPOINT\t0.0\n");
-  fprintf (cfg, "MAG_GAMMA\t4.0\n");
-  fprintf (cfg, "GAIN\t2.8\n");
-  fprintf (cfg, "PIXEL_SCALE\t1.0\n");
-  fprintf (cfg, "SEEING_FWHM\t1.2\n");
-  fprintf (cfg, "STARNNW_NAME\tdefault.nnw\n");
-  fprintf (cfg, "BACK_SIZE\t64\n");
-  fprintf (cfg, "BACK_FILTERSIZE\t3\n");
-  fprintf (cfg, "MEMORY_OBJSTACK\t2000\n");
-  fprintf (cfg, "MEMORY_PIXSTACK\t100000\n");
-  fprintf (cfg, "MEMORY_BUFSIZE\t1024\n");
-  //fprintf(cfg,"VERBOSE_TYPE\tNORMAL\n");
-  fprintf (cfg, "VERBOSE_TYPE\tQUIET\n");
-
+  fprintf (cfg,
+	   "CATALOG_NAME\t" SEX_CAT "\n"
+	   "CATALOG_TYPE\tASCII_HEAD\n"
+	   "PARAMETERS_NAME\t" SEX_PARAM "\n"
+	   "DETECT_TYPE\tCCD\n"
+	   "DETECT_MINAREA\t5\n"
+	   "DETECT_THRESH\t3.0\n"
+	   "ANALYSIS_THRESH\t3.0\n"
+	   "FILTER\tN\n"
+	   "FILTER_NAME\t/tmp/default.conv\n"
+	   "DEBLEND_NTHRESH\t32\n"
+	   "DEBLEND_MINCONT\t0.005\n"
+	   "CLEAN\tY\n"
+	   "CLEAN_PARAM\t1.0\n"
+	   "MASK_TYPE\tCORRECT\n"
+	   "PHOT_APERTURES\t5\n"
+	   "PHOT_AUTOPARAMS\t2.5, 3.5\n"
+	   "SATUR_LEVEL\t50000.0\n"
+	   "MAG_ZEROPOINT\t0.0\n"
+	   "MAG_GAMMA\t4.0\n"
+	   "GAIN\t2.8\n"
+	   "PIXEL_SCALE\t1.0\n"
+	   "SEEING_FWHM\t1.2\n"
+	   "STARNNW_NAME\t/tmp/default.nnw\n"
+	   "BACK_SIZE\t64\n"
+	   "BACK_FILTERSIZE\t3\n"
+	   "MEMORY_OBJSTACK\t2000\n"
+	   "MEMORY_PIXSTACK\t100000\n" "MEMORY_BUFSIZE\t1024\n"
+	   // "VERBOSE_TYPE\tNORMAL\n"
+	   "VERBOSE_TYPE\tQUIET\n");
   fclose (cfg);
 
-  param = fopen ("_sex.param", "w");
-  fprintf (param, "X_IMAGE\n");
-  fprintf (param, "Y_IMAGE\n");
-  fprintf (param, "FLUX_AUTO\n");
-  fprintf (param, "FWHM_IMAGE\n");
+  param = fopen (SEX_PARAM, "w");
+  if (!param)
+    SEXI_ERR ("write_sex_config:cannot open " SEX_PARAM " file 4w");
+
+  fprintf (param, "X_IMAGE\n" "Y_IMAGE\n" "FLUX_AUTO\n" "FWHM_IMAGE\n");
   fclose (param);
+
+  return 0;
 }
 
 struct stardata
@@ -78,22 +96,17 @@ sdcompare (x1, x2)
 #define AAMOUNT 128
 
 int
-get_result (int *npoint, double **xpoint, double **ypoint, double **flujo,
-	    double **fwhm)
+sexi_get_result (int *npoint, double **xpoint, double **ypoint,
+		 double **flujo, double **fwhm)
 {
   int a = 0, b = 0;
-  char buf[BUFLEN], *sex;
+  char buf[BUFLEN];
   struct stardata *f = NULL;
   FILE *ff;
 
-  sex = "_sex.cat";
-
-  // pokud pouzijes tohle, odkomentuj free na konci rutiny
-  //asprintf(&sex, "%s.sex", arg);
-
-  if (NULL == (ff = fopen (sex, "r")))
-    return -1;
-//              fatal(254, "Can't open %s\n", sex);
+  ff = fopen (SEX_CAT, "r");
+  if (!ff)
+    SEXI_ERR ("get_result:cannot open " SEX_PARAM " file 4r");
 
   while (!feof (ff))
     {
@@ -133,35 +146,22 @@ get_result (int *npoint, double **xpoint, double **ypoint, double **flujo,
       (*fwhm)[b] = f[b].fwhm;
     }
 
-  //free(sex);
   free (f);
 
   *npoint = a;
-  fprintf (stderr, "%s: %d records\n", sex, a);
-  fflush (stderr);
-  return a;
+
+  return 0;
 }
 
+// for anyone who may want to reuse this: it's a nasty hack, read 
+// it carefully before using: if modifes F[] as a "clipper"
 double
-run_sex (char *fitsfile)
+sexi_sigmaclip (int *nvalues, double *F, double *Q)
 {
-  char *command;
-
   int N, j, x;
-  double *xx, *yy, *F, *Q;
   double S, NN, E, tt;
 
-  int ret;
-
-  write_sex_cfg ();
-  asprintf (&command, "%s -c _sex.cfg %s", sex_binary, fitsfile);
-  ret = system (command);
-  free (command);
-
-  if (ret == 127)		// command doesn't exists
-    return nan ("0");
-
-  get_result (&N, &xx, &yy, &F, &Q);
+  N = *nvalues;
 
   do
     {
@@ -201,10 +201,59 @@ run_sex (char *fitsfile)
     }
   while (j);
 
+  *nvalues = N;
+  return S;
+}
+
+int
+sexi_fwhm (char *fitsfile, double *fwhm)
+{
+  char *command;
+
+  double *xx, *yy, *F, *Q;
+
+  int ret, n;
+  double s;
+
+  if (((ret = sexi_write_sex_cfg ())))
+    return ret;
+
+  asprintf (&command, SEX_BIN " -c " SEX_CFG " %s", fitsfile);
+  ret = system (command);
+  free (command);
+
+  if (ret == 127)		// command doesn't exist
+    SEXI_ERR ("run_sex: can't run " SEX_BIN);
+
+  if (((ret = sexi_get_result (&n, &xx, &yy, &F, &Q))))
+    return ret;
+
+  // perform some sigma-clipping to smoothen the result
+  s = sexi_sigmaclip (&n, F, Q);
+
+  // get rid of that used space
+  free (xx);
+  free (yy);
+  free (F);
+  free (Q);
 
   // Min star count
-  if (N > 10)
-    return S;
+  if (n < 10)
+    {
+      SEXI_MSG ("run_sex: <10*s");
+
+      *fwhm = 0;
+    }
   else
-    return -1.0;
+    {
+      // reusing char *command;
+      asprintf (&command, "run_sex: FWHM=%f,n=%d\n", s, n);
+      SEXI_MSG (command);
+      free (command);
+
+      // finally store the result
+      *fwhm = s;
+    }
+
+  return 0;
 }

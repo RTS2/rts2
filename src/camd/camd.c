@@ -25,6 +25,9 @@
 #include "focusing.h"
 #include "tcf.h"
 #include "sex_interface.h"
+
+// Should be short: to beat the telescope drift because of bad tracking
+#define FOCUS_EXPOSURE 10.0
 #endif /* FOCUSING */
 
 #ifdef MIRROR
@@ -249,17 +252,17 @@ focus_expose_and_readout (float exposure, int light, struct readout *readout,
   return camera_readout (readout, img);
 }
 
-#define USTEP			60
-#define MAXTRIES		60
+#define USTEP			200
+#define MAXTRIES		200
 
 void *
 start_focusing (void *arg)
 {
   int chip = *(int *) arg;
-  float exp_time = 30.0;
+  float exp_time = FOCUS_EXPOSURE;
   int x = 256;			// square size
   int tcfret;
-  int j, i;
+  int j, i, r;
 
   unsigned short *img1 = NULL;
   unsigned short *img2 = NULL;
@@ -339,7 +342,12 @@ start_focusing (void *arg)
       sprintf (filename, "!/tmp/fo_%i_%03di.fits", getpid (), filen++);
       write_fits (filename, exp_time, x, x, img1);
 
-      fwhm[j] = run_sex (filename + 1);
+      r = sexi_fwhm (filename + 1, &fwhm[j]);
+      devser_dprintf ("%s", sexi_text);
+
+      if (r)
+	goto err;
+
       if (fwhm[j] < 0)
 	{
 	  devser_dprintf ("coadding images");
@@ -431,6 +439,10 @@ start_focusing (void *arg)
   return NULL;
 
 err:
+  free (img1);
+  free (img2);
+  free (img3);
+
   syslog (LOG_ERR, "error during chip %i focusing", chip);
   devdem_status_mask (chip,
 		      CAM_MASK_FOCUSINGS,
