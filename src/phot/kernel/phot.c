@@ -217,16 +217,17 @@ end_integrate (unsigned long ptr)
       command_delay ();
       b = inb (dev->base_port + 5);
       if ((b & 128) == 128)
-	break;
+	goto got_it;
       command_delay ();
     }
-  if (i == MAX_WAIT)
-    {
-      add_reply (dev, '-', '-');
-      goto out;
-    }
+  add_reply (dev, '-', '-');
+  goto out;
+
+got_it:
   // check if any pulses were received thus loading timer 2's counter with a valid count
+  command_delay ();
   outb (232, dev->base_port + 7);
+  command_delay ();
   b = inb (dev->base_port + 6);
   if ((b & 64) == 0)
     {
@@ -235,6 +236,10 @@ end_integrate (unsigned long ptr)
       frequency += inb (dev->base_port + 6) * 256;
       frequency = 65536 - frequency;
       add_reply (dev, 'A', frequency);
+    }
+  else
+    {
+      add_reply (dev, '-', b);
     }
 out:
   dev->command_pending = 0;
