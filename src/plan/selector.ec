@@ -473,7 +473,7 @@ ORDER BY ell_priority DESC, img_count ASC;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%f\t%i\n", tar_id,
       pos.ra, pos.dec,
 	      hrz.alt, ell_e, ell_minpause);
-      if (hrz.alt > 3 && (last_o == -1 || last_o >= ell_minpause))
+      if (hrz.alt > 5 && (last_o == -1 || last_o >= ell_minpause))
 	{
 	  printf ("ell find id: %i\n", tar_id);
 	  add_target_ell (plan, TARGET_LIGHT, tar_id, -1, &orbit, *c_start,
@@ -633,8 +633,8 @@ get_next_plan (Target *plan, int selector_type,
     }
 
   // check for OT
-  last_good_img = db_last_good_image ("C0");
-  printf ("last good image on C0: %i\n", last_good_img);
+  last_good_img = db_last_good_image (get_string_default ("telescope_camera", "C0"));
+  printf ("last good image on %s: %i\n", get_string_default ("telescope_camera" ,"C0"), last_good_img);
   if (last_good_img >= 0 && last_good_img < 3600)
     {
       printf ("Trying OT\n");

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <libnova/libnova.h>
+#include "../utils/config.h"
 
 void
 print_jd (double JD, struct ln_lnlat_posn *obs)
@@ -39,6 +40,7 @@ int main (int argc, char **argv)
         else
                 time (&t);
         double jd = ln_get_julian_from_timet (&t);
+	read_config (CONFIG_FILE);
         orbit.q = 0.16749;
         orbit.w = 333.298;
         orbit.omega = 222.992;
@@ -48,10 +50,12 @@ int main (int argc, char **argv)
         struct ln_equ_posn pos;
         printf ("Date: %s\n", ctime (&t));
         target->getPosition (&pos, jd);
+	printf ("gsid: %f\n", ln_get_mean_sidereal_time (jd));
+	printf ("lsid: %f\n", ln_get_mean_sidereal_time (jd) - get_double_default ("longtitude", 0) / 15.0);
         printf ("RA: %f DEC: %f\n", pos.ra, pos.dec);
         struct ln_lnlat_posn observer;
-        observer.lng = -14;
-        observer.lat = 50;
+        observer.lng = get_double_default ("longtitude", 0);
+        observer.lat = get_double_default ("latitude", 0);
         struct ln_hrz_posn hrz;
         ln_get_hrz_from_equ (&pos, &observer, jd, &hrz);
         printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
