@@ -766,11 +766,10 @@ main (void)
     }
 
   if (read_config (CONFIG_FILE) == -1)
-    {
-      syslog (LOG_ERR,
-	      "Cannot open config file " CONFIG_FILE
-	      ", defaults will be used");
-    }
+    syslog (LOG_ERR,
+	    "Cannot open config file " CONFIG_FILE ", defaults will be used");
+  else
+    syslog (LOG_INFO, "Config readed from " CONFIG_FILE);
 
   shm_info = (struct serverd_info *) devser_shm_data_at ();
   shm_clients = shm_info->clients;
