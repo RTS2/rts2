@@ -83,7 +83,7 @@ CameraChip::setExposure (float exptime)
  * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure
  */
 int
-CameraChip::checkExposure ()
+CameraChip::isExposing ()
 {
   struct timeval tv;
   if (exposureEnd.tv_sec == 0 && exposureEnd.tv_usec == 0)
@@ -96,7 +96,7 @@ CameraChip::checkExposure ()
       endExposure ();
       return 0;			// exposure ended
     }
-  return -1;
+  return tv.tv_sec - exposureEnd.tv_sec + (tv.tv_usec - exposureEnd.tv_usec) / 100000;	// timeout
 }
 
 int
@@ -201,6 +201,16 @@ Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEV
   setStateNames (MAX_CHIPS, states_names);
 }
 
+Rts2DevCamera::~Rts2DevCamera ()
+{
+  int i;
+  for (i = 0; i < chipNum; i++)
+  {
+    delete chips[i];
+    chips[i] = NULL;
+  }
+}
+
 int
 Rts2DevCamera::init ()
 {
@@ -230,13 +240,16 @@ Rts2DevCamera::checkExposures ()
   int ret;
   for (int i = 0; i < chipNum; i++)
     {
-      // try to end exposure
-      ret = camWaitExpose (i);
-      if (ret >= 0)
-	      setTimeout (ret);
-      if (ret == -2)
-      maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		 CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
+      if (getState (i) & CAM_EXPOSING)
+      {
+	// try to end exposure
+	ret = camWaitExpose (i);
+	if (ret >= 0)
+		setTimeout (ret);
+	if (ret == -2)
+	maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+		   CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
+      }
     }
 }
 
@@ -268,10 +281,10 @@ Rts2DevCamera::idle ()
 }
 
 int
-Rts2DevCamera::camReady (Rts2Conn * conn)
+Rts2DevCamera::ready (Rts2Conn * conn)
 {
   int ret;
-  ret = camReady ();
+  ret = ready ();
   if (ret)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
@@ -281,10 +294,10 @@ Rts2DevCamera::camReady (Rts2Conn * conn)
 }
 
 int
-Rts2DevCamera::camInfo (Rts2Conn * conn)
+Rts2DevCamera::info (Rts2Conn * conn)
 {
   int ret;
-  ret = camInfo ();
+  ret = info ();
   if (ret)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
@@ -301,10 +314,10 @@ Rts2DevCamera::camInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevCamera::camBaseInfo (Rts2Conn * conn)
+Rts2DevCamera::baseInfo (Rts2Conn * conn)
 {
   int ret;
-  ret = camBaseInfo ();
+  ret = baseInfo ();
   if (ret)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
@@ -334,17 +347,15 @@ int
 Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 {
   int ret;
-  struct timeval tv;
 
-  maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA, CAM_EXPOSING | CAM_NODATA,
-	     "exposure chip started");
   ret = camExpose (chip, light, exptime);
   if (!ret)
     {
+      maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA, CAM_EXPOSING | CAM_NODATA,
+	     "exposure chip started");
       chips[chip]->setExposure (exptime);
       return 0;
     }
-  maskState (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE, "exposure error");
   conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
   return -1;
 }
@@ -352,17 +363,15 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 int
 Rts2DevCamera::camWaitExpose (int chip)
 {
-  if (chips[chip]->checkExposure () == 0)
-    {
-      return -2;
-    }
-  return -1;
+  int ret;
+  ret = chips[chip]->isExposing ();
+  return (ret == 0 ? -2 : ret);
 }
 
 int
 Rts2DevCamera::camStopExpose (Rts2Conn * conn, int chip)
 {
-  if (chips[chip]->checkExposure () >= 0)
+  if (chips[chip]->isExposing () >= 0)
     {
       maskState (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE, "exposure canceled");
       chips[chip]->endExposure ();
@@ -433,7 +442,13 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 int
 Rts2DevCamera::camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin)
 {
-
+  int ret;
+  ret = chips[chip]->setBinning (x_bin, y_bin);
+  if (ret)
+  {
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot set requested binning");
+  }
+  return ret;
 }
 
 int
@@ -500,90 +515,21 @@ Rts2DevConnCamera::commandAuthorized ()
 
   if (isCommand ("ready"))
     {
-      return master->camReady (this);
+      return master->ready (this);
     }
   else if (isCommand ("info"))
     {
-      return master->camInfo (this);
+      return master->info (this);
     }
   else if (isCommand ("base_info"))
     {
-      return master->camBaseInfo (this);
+      return master->baseInfo (this);
     }
   else if (isCommand ("chipinfo"))
     {
       if (paramNextChip (&chip) || !paramEnd ())
 	return -2;
       return master->camChipInfo (this, chip);
-    }
-  else if (isCommand ("expose"))
-    {
-      float exptime;
-      int light;
-      if (paramNextChip (&chip)
-	  || paramNextInteger (&light)
-	  || paramNextFloat (&exptime) || !paramEnd ())
-	return -2;
-      return master->camExpose (this, chip, light, exptime);
-    }
-  else if (isCommand ("stopexpo"))
-    {
-      if (paramNextChip (&chip) || !paramEnd ())
-	return -2;
-      return master->camStopExpose (this, chip);
-    }
-  else if (isCommand ("box"))
-    {
-      int x, y, w, h;
-      if (paramNextChip (&chip)
-	  || paramNextInteger (&x)
-	  || paramNextInteger (&y)
-	  || paramNextInteger (&w) || paramNextInteger (&h) || !paramEnd ())
-	return -2;
-      return master->camBox (this, chip, x, y, w, h);
-    }
-  else if (isCommand ("readout"))
-    {
-      if (paramNextChip (&chip) || !paramEnd ())
-	return -2;
-      return master->camReadout (this, chip);
-    }
-  else if (isCommand ("binning"))
-    {
-      int vertical, horizontal;
-      if (paramNextChip (&chip)
-	  || paramNextInteger (&vertical)
-	  || paramNextInteger (&horizontal) || !paramEnd ())
-	return -2;
-      return master->camBinning (this, chip, vertical, horizontal);
-    }
-  else if (isCommand ("stopread"))
-    {
-      if (paramNextChip (&chip) || !paramEnd ())
-	return -2;
-      return master->camStopRead (this, chip);
-    }
-  else if (isCommand ("coolmax"))
-    {
-      return master->camCoolMax (this);
-    }
-  else if (isCommand ("coolhold"))
-    {
-      return master->camCoolHold (this);
-    }
-  else if (isCommand ("cooltemp"))
-    {
-      float new_temp;
-      if (paramNextFloat (&new_temp) || !paramEnd ())
-	return -2;
-      return master->camCoolTemp (this, new_temp);
-    }
-  else if (isCommand ("filter"))
-    {
-      int new_filter;
-      if (paramNextInteger (&new_filter) || !paramEnd ())
-	return -2;
-      return master->camFilter (this, new_filter);
     }
   else if (isCommand ("exit"))
     {
@@ -612,6 +558,87 @@ Rts2DevConnCamera::commandAuthorized ()
       send ("help - print, what you are reading just now");
       return 0;
     }
-  sendCommandEnd (DEVDEM_E_COMMAND, "camd unknow command");
-  return -1;
+  // commands which requires priority
+  // priority test must come after command string test,
+  // otherwise we will be unable to answer DEVDEM_E_PRIORITY
+  else if (isCommand ("expose"))
+    {
+      float exptime;
+      int light;
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip)
+	  || paramNextInteger (&light)
+	  || paramNextFloat (&exptime) || !paramEnd ())
+	return -2;
+      return master->camExpose (this, chip, light, exptime);
+    }
+  else if (isCommand ("stopexpo"))
+    {
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip) || !paramEnd ())
+	return -2;
+      return master->camStopExpose (this, chip);
+    }
+  else if (isCommand ("box"))
+    {
+      int x, y, w, h;
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip)
+	  || paramNextInteger (&x)
+	  || paramNextInteger (&y)
+	  || paramNextInteger (&w) || paramNextInteger (&h) || !paramEnd ())
+	return -2;
+      return master->camBox (this, chip, x, y, w, h);
+    }
+  else if (isCommand ("readout"))
+    {
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip) || !paramEnd ())
+	return -2;
+      return master->camReadout (this, chip);
+    }
+  else if (isCommand ("binning"))
+    {
+      int vertical, horizontal;
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip)
+	  || paramNextInteger (&vertical)
+	  || paramNextInteger (&horizontal) || !paramEnd ())
+	return -2;
+      return master->camBinning (this, chip, vertical, horizontal);
+    }
+  else if (isCommand ("stopread"))
+    {
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip) || !paramEnd ())
+	return -2;
+      return master->camStopRead (this, chip);
+    }
+  else if (isCommand ("coolmax"))
+    {
+      CHECK_PRIORITY;
+      return master->camCoolMax (this);
+    }
+  else if (isCommand ("coolhold"))
+    {
+      CHECK_PRIORITY;
+      return master->camCoolHold (this);
+    }
+  else if (isCommand ("cooltemp"))
+    {
+      float new_temp;
+      CHECK_PRIORITY;
+      if (paramNextFloat (&new_temp) || !paramEnd ())
+	return -2;
+      return master->camCoolTemp (this, new_temp);
+    }
+  else if (isCommand ("filter"))
+    {
+      int new_filter;
+      CHECK_PRIORITY;
+      if (paramNextInteger (&new_filter) || !paramEnd ())
+	return -2;
+      return master->camFilter (this, new_filter);
+    }
+  return Rts2DevConn::commandAuthorized ();
 }
