@@ -1,5 +1,4 @@
 #define _MICRO_C
-
 #define ST237_SUPPORT
 
 #include <sys/time.h>

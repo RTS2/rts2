@@ -8,6 +8,7 @@
 #include "../utils/rts2device.h"
 
 #define MAX_CHIPS 2
+#define MAX_DATA_RETRY 100
 
 class ChipSubset
 {
@@ -19,6 +20,13 @@ public:
     y = in_y;
     width = in_width;
     height = in_height;
+  }
+  ChipSubset (const ChipSubset * copy)
+  {
+    x = copy->x;
+    y = copy->y;
+    width = copy->width;
+    height = copy->height;
   }
 };
 
@@ -34,7 +42,9 @@ class CameraChip
 private:
   int sendChip (Rts2Conn * conn, char *name, int value);
   int sendChip (Rts2Conn * conn, char *name, float value);
-public:
+  int send_readout_data_failed;
+
+protected:
   int chipId;
   struct timeval exposureEnd;
   int readoutLine;
@@ -43,12 +53,16 @@ public:
 
   ChipSubset *chipSize;
   ChipSubset *chipReadout;
+  ChipSubset *chipUsedReadout;
   int binningVertical;
   int binningHorizontal;
+  int usedBinningVertical;
+  int usedBinningHorizontal;
   int pixelX;
   int pixelY;
   float gain;
-
+  int sendReadoutData (char *data, size_t data_size);
+public:
     CameraChip (int in_chip_id);
     CameraChip (int in_chip_id, int in_width, int in_height, int in_pixelX,
 		int in_pixelY, float in_gain);
@@ -60,6 +74,27 @@ public:
     binningHorizontal = in_hori;
     return 0;
   }
+  int box (int in_x, int in_y, int in_width, int in_height)
+  {
+    // tests for -1 -> full size
+    if (in_x == -1)
+      in_x = chipSize->x;
+    if (in_y == -1)
+      in_y = chipSize->y;
+    if (in_width == -1)
+      in_width = chipSize->width;
+    if (in_height == -1)
+      in_height = chipSize->height;
+    if (in_x < chipSize->x || in_y < chipSize->y
+	|| ((in_x - chipSize->x) + in_width) > chipSize->width
+	|| ((in_y - chipSize->y) + in_height) > chipSize->height)
+      return -1;
+    chipReadout->x = in_x;
+    chipReadout->y = in_y;
+    chipReadout->width = in_width;
+    chipReadout->height = in_height;
+    return 0;
+  }
   virtual int startExposure (int light, float exptime)
   {
     return -1;
@@ -68,6 +103,7 @@ public:
   virtual long isExposing ();
   int endExposure ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
+  virtual int endReadout ();
   virtual int sendFirstLine ();
   virtual int readoutOneLine ();
 };
@@ -99,6 +135,8 @@ public:
   long checkExposures ();
   int checkReadouts ();
   int idle ();
+
+  int setMasterState (int new_state);
 
   // callback functions for Camera alone
   virtual int ready ()
@@ -136,7 +174,7 @@ public:
   };
   virtual int camStopRead (int chip)
   {
-    return -1;
+    return chips[chip]->endReadout ();
   };
   virtual int camCoolMax ()
   {

@@ -28,28 +28,32 @@
 
 #define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
 
-class CameraUrvc2Chip: public CameraChip
+class CameraUrvc2Chip:public CameraChip
 {
   CAMERA *C;
   unsigned short *img;
   unsigned short *dest_top;
   char *send_top;
 public:
-  CameraUrvc2Chip (int in_chip_id, int in_width, int in_height, int in_pixelX, int in_pixelY, float in_gain);
-  ~CameraUrvc2Chip ();
+    CameraUrvc2Chip (int in_chip_id, int in_width, int in_height,
+		     int in_pixelX, int in_pixelY, float in_gain);
+   ~CameraUrvc2Chip ();
 
   virtual int setBinning (int in_vert, int in_hori);
 
   virtual int startExposure (int light, float exptime);
   virtual long isExposing ();
-  virtual int startReadout (Rts2DevConnData *dataConn, Rts2Conn *conn);
+  virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
 };
 
-CameraUrvc2Chip::CameraUrvc2Chip (int in_chip_id, int in_width, int in_height, int in_pixelX, int in_pixelY, float in_gain) : CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
+CameraUrvc2Chip::CameraUrvc2Chip (int in_chip_id, int in_width, int in_height,
+				  int in_pixelX, int in_pixelY,
+				  float in_gain):
+CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
   OpenCCD (in_chip_id, &C);
-  img = new unsigned short int [C->horzImage * C->vertImage];
+  img = new unsigned short int[C->horzImage * C->vertImage];
 }
 
 CameraUrvc2Chip::~CameraUrvc2Chip ()
@@ -61,9 +65,8 @@ CameraUrvc2Chip::~CameraUrvc2Chip ()
 int
 CameraUrvc2Chip::setBinning (int in_vert, int in_hori)
 {
-  if (in_vert < 1 || in_vert > 3
-      || in_hori < 1 || in_hori > 3)
-      return -1;
+  if (in_vert < 1 || in_vert > 3 || in_hori < 1 || in_hori > 3)
+    return -1;
   return CameraChip::setBinning (in_vert, in_hori);
 };
 
@@ -74,7 +77,7 @@ CameraUrvc2Chip::startExposure (int light, float exptime)
 }
 
 int
-CameraUrvc2Chip::startReadout (Rts2DevConnData *dataConn, Rts2Conn *conn)
+CameraUrvc2Chip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   dest_top = img;
   send_top = (char *) img;
@@ -91,9 +94,9 @@ CameraUrvc2Chip::isExposing ()
   int imstate;
   imstate = CCDImagingState (C);
   if (imstate)
-  {
-    return 100;  // recheck in 100 msec
-  }
+    {
+      return 100;		// recheck in 100 msec
+    }
   return -2;
 }
 
@@ -103,39 +106,40 @@ CameraUrvc2Chip::readoutOneLine ()
   if (readoutLine < 0)
     return -1;
   if (!readoutLine)
-  {
-    if (CCDReadout
-      (img, C, 0, 0, C->vertImage, C->horzImage,
-       binningVertical))
+    {
+      if (CCDReadout
+	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width, chipReadout->height, binningVertical))
+	{
+	  return -1;
+	}
+      dest_top = img + (chipReadout->width * chipReadout->height / binningVertical);
+      readoutLine = 1;
+      return 0;
+    }
+  if (sendLine == 0)
+    {
+      int ret;
+      ret = CameraChip::sendFirstLine ();
+      if (ret)
+	return ret;
+    }
+  if (!readoutConn)
     {
       return -1;
     }
-    dest_top = img + (C->horzImage * C->vertImage / binningVertical);
-    readoutLine = 1;
-    return 0;
-  }
-  if (sendLine == 0)
-  {
-    int ret;
-    ret = CameraChip::sendFirstLine ();
-    if (ret)
-      return ret;
-  }
-  if (!readoutConn)
-  {
-    return -1;
-  }
   if (send_top < (char *) dest_top)
-  {
+    {
+      int send_data_size;
       sendLine++;
-      send_top +=
-	readoutConn->send (send_top,
-			   (char *) dest_top - send_top);
+      send_data_size +=
+	sendReadoutData (send_top, (char *) dest_top - send_top);
+      if (send_data_size < 0)
+	return -2;
+
+      send_top += send_data_size;
       return 0;
-  }
-  readoutConn->endConnection ();
-  readoutConn = NULL;
-  readoutLine = -1;
+    }
+  endReadout ();
   return -2;
 }
 
@@ -145,14 +149,14 @@ class Rts2DevCameraUrvc2:public Rts2DevCamera
 private:
   EEPROMContents eePtr;		// global to prevent multiple EEPROM calls
   CAMERA_TYPE cameraID;
-  
+
   void get_eeprom ();
   void init_shutter ();
   int set_fan (int fan_state);
   int setcool (int reg, int setpt, int prel, int fan, int state);
 
 public:
-  Rts2DevCameraUrvc2 (int argc, char **argv);
+    Rts2DevCameraUrvc2 (int argc, char **argv);
 
   int init ();
   int ready ();
@@ -193,7 +197,7 @@ Rts2DevCameraUrvc2::get_eeprom ()
 	  eePtr.imagingOffset = 0;
 	  eePtr.imagingGain = 560;
 	  bzero (eePtr.columns, 4);
-	  strcpy ((char *)eePtr.serialNumber, "EEEE");
+	  strcpy ((char *) eePtr.serialNumber, "EEEE");
 	}
       else
 	{
@@ -264,7 +268,8 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int fan, int state)
   return 0;
 }
 
-Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int argc, char **argv): Rts2DevCamera (argc, argv)
+Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int argc, char **argv):Rts2DevCamera (argc,
+	       argv)
 {
   cameraID = DEFAULT_CAMERA;
   tempRegulation = -1;
@@ -288,18 +293,18 @@ Rts2DevCameraUrvc2::init ()
   syslog (LOG_DEBUG, "::init");
 
   if (i = MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &gvr))
-  {
-    syslog (LOG_DEBUG, "GET_VERSION ret: %i", i);
-    return -1;
-  }
+    {
+      syslog (LOG_DEBUG, "GET_VERSION ret: %i", i);
+      return -1;
+    }
 
   cameraID = (CAMERA_TYPE) gvr.cameraID;
 
   if (i = MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
-  {
-    syslog (LOG_DEBUG, "TEMP_STATUS ret: %i", i);
-    return -1;
-  }
+    {
+      syslog (LOG_DEBUG, "TEMP_STATUS ret: %i", i);
+      return -1;
+    }
 
   syslog (LOG_DEBUG, "get eeprom");
 
@@ -313,8 +318,12 @@ Rts2DevCameraUrvc2::init ()
   for (i = 0; i < chipNum; i++)
     {
       syslog (LOG_DEBUG, "new CameraUrvc2Chip %i", i);
-      chips[i] = new CameraUrvc2Chip (i, Cams[eePtr.model].horzImage, Cams[eePtr.model].vertImage, Cams[eePtr.model].pixelX,
-        Cams[eePtr.model].pixelY, (i ? eePtr.trackingGain : eePtr.imagingGain));
+      chips[i] =
+	new CameraUrvc2Chip (i, Cams[eePtr.model].horzImage,
+			     Cams[eePtr.model].vertImage,
+			     Cams[eePtr.model].pixelX,
+			     Cams[eePtr.model].pixelY,
+			     (i ? eePtr.trackingGain : eePtr.imagingGain));
     }
 
   // determine temperature regulation state
@@ -391,18 +400,18 @@ Rts2DevCameraUrvc2::camStopExpose (int chip)
 
   if (MicroCommand (MC_END_EXPOSURE, cameraID, &eep, NULL))
     return -1;
-  
+
   return 0;
 };
 
 int
-Rts2DevCameraUrvc2::camCoolMax ()		/* try to max temperature */
+Rts2DevCameraUrvc2::camCoolMax ()	/* try to max temperature */
 {
   return setcool (2, 255, 0, FAN_ON, CAMERA_COOL_MAX);
 }
 
 int
-Rts2DevCameraUrvc2::camCoolHold ()		/* hold on that temperature */
+Rts2DevCameraUrvc2::camCoolHold ()	/* hold on that temperature */
 {
   QueryTemperatureStatusResults qtsr;
   float ot;			// optimal temperature
@@ -430,7 +439,7 @@ Rts2DevCameraUrvc2::camCoolTemp (float coolpoint)	/* set direct setpoint */
 }
 
 int
-Rts2DevCameraUrvc2::camCoolShutdown ()		/* ramp to ambient */
+Rts2DevCameraUrvc2::camCoolShutdown ()	/* ramp to ambient */
 {
   return setcool (0, 0, 0, FAN_OFF, CAMERA_COOL_OFF);
 }

@@ -21,7 +21,7 @@
 #ifdef _GNUC3_
 #  include <iostream>
 #  include <fstream>
-   using namespace std;
+using namespace std;
 #else
 #  include <iostream.h>
 #  include <fstream.h>
@@ -36,16 +36,17 @@ class CameraAndorChip:public CameraChip
   char *send_top;
 public:
     CameraAndorChip (int in_chip_id, int in_width, int in_height,
-		    int in_pixelX, int in_pixelY, float in_gain);
-    ~CameraAndorChip (void);
-    virtual long isExposing ();
+		     int in_pixelX, int in_pixelY, float in_gain);
+   ~CameraAndorChip (void);
+  virtual long isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
 private:
 };
 
 CameraAndorChip::CameraAndorChip (int in_chip_id, int in_width, int in_height,
-				int in_pixelX, int in_pixelY, float in_gain):
+				  int in_pixelX, int in_pixelY,
+				  float in_gain):
 CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
   dest = new unsigned short[in_width * in_height];
@@ -63,6 +64,7 @@ CameraAndorChip::isExposing ()
   ret = CameraChip::isExposing ();
   if (ret > 0)
     return ret;
+
   int status;
   GetStatus (&status);
   if (status == DRV_ACQUIRING)
@@ -74,7 +76,7 @@ int
 CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   dest_top = dest;
-  send_top = (char*) dest;
+  send_top = (char *) dest;
   return CameraChip::startReadout (dataConn, conn);
 }
 
@@ -88,7 +90,7 @@ CameraAndorChip::readoutOneLine ()
       int size = chipSize->height * chipSize->width;
       readoutLine = chipSize->height;
       GetAcquiredData16 (dest, size);
-      dest_top += size; 
+      dest_top += size;
       return 0;
     }
   if (sendLine == 0)
@@ -99,20 +101,22 @@ CameraAndorChip::readoutOneLine ()
 	return ret;
     }
   if (!readoutConn)
-  {
-    return -1;
-  }
-  if (send_top < (char*) dest_top)
     {
+      return -1;
+    }
+  if (send_top < (char *) dest_top)
+    {
+      int send_data_size;
       sendLine++;
-      send_top +=
-	readoutConn->send (send_top,
-			   (char *) dest_top - send_top);
+      send_data_size =
+	sendReadoutData (send_top, (char *) dest_top - send_top);
+      if (send_data_size < 0)
+	return -2;
+
+      send_top += send_data_size;
       return 0;
     }
-  readoutConn->endConnection ();
-  readoutConn = NULL;
-  readoutLine = -1;
+  endReadout ();
   return -2;
 }
 
@@ -121,10 +125,10 @@ class Rts2DevCameraAndor:public Rts2DevCamera
   int andorGain;
   char *andorRoot;
 protected:
-  virtual void help ();
+    virtual void help ();
 public:
     Rts2DevCameraAndor (int argc, char **argv);
-  ~Rts2DevCameraAndor (void);
+   ~Rts2DevCameraAndor (void);
 
   virtual int proceesOption (int in_opt);
   virtual int init ();
@@ -171,21 +175,21 @@ int
 Rts2DevCameraAndor::proceesOption (int in_opt)
 {
   switch (in_opt)
-  {
+    {
     case 'g':
       andorGain = atoi (optarg);
       if (andorGain > 255 || andorGain < 0)
-      {
-	printf ("gain must be in 0-255 range\n");
-	exit (EXIT_FAILURE);
-      }
+	{
+	  printf ("gain must be in 0-255 range\n");
+	  exit (EXIT_FAILURE);
+	}
       break;
     case 'r':
       andorRoot = optarg;
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
-  }
+    }
   return 0;
 }
 
@@ -204,32 +208,32 @@ Rts2DevCameraAndor::init ()
 
   error = Initialize (andorRoot);
 
-  if(error!=DRV_SUCCESS){
-	cout << "Initialisation error...exiting" << endl;
-	return -1;
-  }
+  if (error != DRV_SUCCESS)
+    {
+      cout << "Initialisation error...exiting" << endl;
+      return -1;
+    }
 
-  sleep(2); //sleep to allow initialization to complete
-  
+  sleep (2);			//sleep to allow initialization to complete
+
   //Set Read Mode to --Image--
-  SetReadMode(4);
-  
+  SetReadMode (4);
+
   //Set Acquisition mode to --Single scan--
-  SetAcquisitionMode(1);
+  SetAcquisitionMode (1);
 
   //Get Detector dimensions
-  GetDetector(&width, &height);
+  GetDetector (&width, &height);
 
   //Initialize Shutter
-  camSetShutter(0);
+  camSetShutter (0);
 
-  SetExposureTime(5.0);
+  SetExposureTime (5.0);
   SetEMCCDGain (andorGain);
 
   chipNum = 1;
-  
-  cc =
-    new CameraAndorChip (0, width, height, 10, 10, 1);
+
+  cc = new CameraAndorChip (0, width, height, 10, 10, 1);
   chips[0] = cc;
   chips[1] = NULL;
 
@@ -275,7 +279,7 @@ Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
 {
   SetExposureTime (exptime);
   camSetShutter (light == 1 ? 0 : 2);
-  StartAcquisition();
+  StartAcquisition ();
   return 0;
 }
 
@@ -315,7 +319,7 @@ Rts2DevCameraAndor::camCoolHold ()
 int
 Rts2DevCameraAndor::camCoolTemp (float new_temp)
 {
-  CoolerON();
+  CoolerON ();
   SetTemperature ((int) new_temp);
   return 0;
 }

@@ -2,7 +2,6 @@
 #define _GNU_SOURCE
 #endif
 
-#include <getopt.h>
 #include <mcheck.h>
 #include <math.h>
 #include <stdio.h>
@@ -141,6 +140,30 @@ CameraChip::send (Rts2Conn * conn)
   sendChip (conn, "gain", gain);
 }
 
+int 
+CameraChip::sendReadoutData (char *data, size_t data_size)
+  {
+    int ret;
+    ret = readoutConn->send (data, data_size);
+    if ((ret == 0 && data_size > 0) || ret == -2)
+    {
+      if (send_readout_data_failed++ > MAX_DATA_RETRY)
+      {
+	ret = -1;
+      }
+    }
+    else
+    {
+      send_readout_data_failed = 0;
+    }
+    if (ret == -1)
+    {
+      endReadout ();
+    }
+    return ret;
+  }
+
+
 int
 CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
@@ -149,13 +172,32 @@ CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   readoutConn = dataConn;
   readoutLine = 0;
   sendLine = 0;
+  send_readout_data_failed = 0;
   dataConn->getAddress ((char *) &address, 200);
+  chipUsedReadout = new ChipSubset (chipReadout);
+  usedBinningVertical = binningVertical;
+  usedBinningHorizontal = binningHorizontal;
   asprintf (&msg, "D connect %i %s:%i %i", chipId, address,
 	    dataConn->getLocalPort (),
-	    chipReadout->width * chipReadout->height *
-	    sizeof (unsigned short) + sizeof (imghdr));
+	    (chipUsedReadout->width / usedBinningHorizontal) 
+	    * (chipUsedReadout->height / usedBinningVertical) 
+	    * sizeof (unsigned short) + sizeof (imghdr));
   conn->send (msg);
   free (msg);
+  return 0;
+}
+
+int
+CameraChip::endReadout ()
+{
+  readoutLine = -1;
+  sendLine = -1;
+  if (readoutConn)
+  {
+    readoutConn->endConnection ();
+    readoutConn = NULL;
+  }
+  delete chipUsedReadout;
   return 0;
 }
 
@@ -167,18 +209,20 @@ CameraChip::sendFirstLine ()
       struct imghdr header;
       header.data_type = 1;
       header.naxes = 2;
-      header.sizes[0] = chipReadout->width;
-      header.sizes[1] = chipReadout->height;
-      header.binnings[0] = binningHorizontal;
-      header.binnings[1] = binningVertical;
+      header.sizes[0] = chipReadout->width / usedBinningHorizontal;
+      header.sizes[1] = chipReadout->height / usedBinningVertical;
+      header.binnings[0] = usedBinningHorizontal;
+      header.binnings[1] = usedBinningVertical;
       header.status = STATUS_FLIP;
       int ret;
-      ret = readoutConn->send ((char *) &header, sizeof (imghdr));
-      if (ret < 0)
-	return 100;		// TODO some better timeout handling
+      ret = sendReadoutData ((char *) &header, sizeof (imghdr));
+      if (ret == -1)
+	return -2;
+      if (ret == -2)
+	return 100;		// not yet connected, wait for connection..
       return 0;
     }
-  return -1;
+  return -2;
 }
 
 int
@@ -197,6 +241,16 @@ Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEV
   for (i = 0; i < MAX_CHIPS; i++)
     chips[i] = NULL;
   setStateNames (MAX_CHIPS, states_names);
+  tempAir = nan ("f");
+  tempCCD = nan ("f");
+  tempSet = nan ("f");
+  tempRegulation = -1;
+  coolingPower = -1;
+  fan = -1;
+  filter = -1;
+  canDF = -1;
+  ccdType[0] = '0';
+  serialNumber[0] = '0';
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -279,6 +333,20 @@ Rts2DevCamera::idle ()
 {
   checkExposures ();
   checkReadouts ();
+}
+
+int
+Rts2DevCamera::setMasterState (int new_state)
+{
+  switch (new_state)
+  {
+    case SERVERD_NIGHT:
+      return camCoolHold ();
+    case SERVERD_DUSK:
+      return camCoolMax ();
+    default:
+      return camCoolShutdown ();
+  }
 }
 
 int
@@ -384,7 +452,12 @@ int
 Rts2DevCamera::camBox (Rts2Conn * conn, int chip, int x, int y, int width,
 		       int height)
 {
-
+  int ret;
+  ret = chips[chip]->box (x, y, width, height);
+  if (!ret)
+    return ret;
+  conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, "invalid box size");
+  return ret;
 }
 
 int
@@ -446,40 +519,57 @@ Rts2DevCamera::camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin)
   int ret;
   ret = chips[chip]->setBinning (x_bin, y_bin);
   if (ret)
-  {
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot set requested binning");
-  }
   return ret;
 }
 
 int
 Rts2DevCamera::camStopRead (Rts2Conn * conn, int chip)
 {
-
+  int ret;
+  ret = camStopRead (chip);
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot end readout");
+  return ret;
 }
 
 int
 Rts2DevCamera::camCoolMax (Rts2Conn * conn)
 {
-  return camCoolMax ();
+  int ret = camCoolMax ();
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot set cooling mode to cool max");
+  return ret;
 }
 
 int
 Rts2DevCamera::camCoolHold (Rts2Conn * conn)
 {
-  return camCoolHold ();
+  int ret;
+  ret = camCoolHold ();
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot set cooling mode to cool max");
+  return ret;
 }
 
 int
 Rts2DevCamera::camCoolTemp (Rts2Conn * conn, float new_temp)
 {
-  return camCoolTemp (new_temp);
+  int ret;
+  ret = camCoolTemp (new_temp);
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot set cooling temp to requested temperature");
+  return ret;
 }
 
 int
 Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
 {
-  return camCoolShutdown ();
+  int ret;
+  ret = camCoolShutdown ();
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot shutdown camera cooling system");
+  return ret;
 }
 
 int

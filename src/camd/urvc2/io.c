@@ -7,6 +7,7 @@
  * Martin Jelinek, January-March 2002
  */
 
+#ifndef _IO_C
 #define _IO_C
 //#define DEBUG
 
@@ -249,3 +250,5 @@ IODelay (short i)
   for (; i > 0; i--)
     inportb (baseAddress);
 }
+
+#endif

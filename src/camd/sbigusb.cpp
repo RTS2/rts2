@@ -47,15 +47,28 @@ ambient_ad2c (unsigned int ad)
 
 class CameraSbigChip:public CameraChip
 {
+  GetCCDInfoResults0 chip_info;
   ReadoutLineParams rlp;
   unsigned short *dest;		// for chips..
   unsigned short *dest_top;
   char *send_top;
+  int sbig_readout_mode;
 public:
     CameraSbigChip (int in_chip_id, int in_width, int in_height,
 		    int in_pixelX, int in_pixelY, float in_gain);
-    ~CameraSbigChip ();
+   ~CameraSbigChip ();
+  virtual int setBinning (int in_vert, int in_hori)
+  {
+    if (in_vert != in_hori || in_vert < 1 || in_vert > 3)
+      return -1;
+    // use only modes 0, 1, 2, which equals to binning 1x1, 2x2, 3x3
+    // it doesn't seems that Sbig offers more binning :(
+    sbig_readout_mode = in_vert - 1;
+    return CameraChip::setBinning (in_vert, in_hori);
+  }
+  virtual long isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
+  virtual int endReadout ();
   virtual int readoutOneLine ();
 };
 
@@ -63,26 +76,72 @@ CameraSbigChip::CameraSbigChip (int in_chip_id, int in_width, int in_height,
 				int in_pixelX, int in_pixelY, float in_gain):
 CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
-  int size = in_width * in_height *
-			       sizeof (unsigned short);
-  dest =
-    (unsigned short *) malloc (size);
+  dest = new unsigned short[in_width * in_height];
+  GetCCDInfoParams req;
+  req.request = (chipId == 0 ? CCD_INFO_IMAGING : CCD_INFO_TRACKING);
+  sbig_readout_mode = 0;
+  SBIGUnivDrvCommand (CC_GET_CCD_INFO, &req, &chip_info);
 };
 
 CameraSbigChip::~CameraSbigChip ()
 {
-  free (dest);
+  delete dest;
+}
+
+long
+CameraSbigChip::isExposing ()
+{
+  long ret;
+  ret = CameraChip::isExposing ();
+  if (ret > 0)
+    return ret;
+
+  QueryCommandStatusParams qcsp;
+  QueryCommandStatusResults qcsr;
+
+  int complete = FALSE;
+
+  qcsp.command = CC_START_EXPOSURE;
+  if (SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) ==
+      CE_NO_ERROR)
+    {
+      //            if ( m_eActiveCCD == CCD_IMAGING )
+      complete = (qcsr.status & 0x03) != 0x02;
+      //            else
+      //                    complete = (qcsr.status & 0x0C) != 0x08;
+    }
+  if (complete)
+    return -2;
+  return 0;
 }
 
 int
 CameraSbigChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
-  rlp.ccd = CCD_IMAGING;
-  rlp.pixelStart = 0;
-  rlp.pixelLength = chipSize->width;
+  int ret = CameraChip::startReadout (dataConn, conn);
+  StartReadoutParams srp;
+  srp.ccd = chipId;
+  srp.left = srp.top = 0;
+  srp.height = chipReadout->height;
+  srp.width = chipReadout->width;
+  srp.readoutMode = sbig_readout_mode;
+  SBIGUnivDrvCommand (CC_START_READOUT, &srp, NULL);
+  rlp.ccd = chipId;
+  rlp.pixelStart = chipUsedReadout->x / usedBinningVertical;
+  rlp.pixelLength = chipUsedReadout->width / usedBinningVertical;
+  rlp.readoutMode = sbig_readout_mode;
   dest_top = dest;
-  send_top = (char*) dest;
-  return CameraChip::startReadout (dataConn, conn);
+  send_top = (char *) dest;
+  return ret;
+}
+
+int
+CameraSbigChip::endReadout ()
+{
+  EndReadoutParams erp;
+  erp.ccd = chipId;
+  SBIGUnivDrvCommand (CC_END_READOUT, &erp, NULL);
+  return CameraChip::endReadout ();
 }
 
 int
@@ -90,11 +149,20 @@ CameraSbigChip::readoutOneLine ()
 {
   if (readoutLine < 0)
     return -1;
-  if (readoutLine < chipSize->height)
+  if (readoutLine < (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
-      readoutLine++;
+      if (readoutLine < chipUsedReadout->y)
+	{
+	  DumpLinesParams dlp;
+	  dlp.ccd = chipId;
+	  dlp.lineLength = ((chipUsedReadout->y - readoutLine) / usedBinningVertical);
+	  dlp.readoutMode = sbig_readout_mode;
+	  SBIGUnivDrvCommand (CC_DUMP_LINES, &dlp, NULL);
+	  readoutLine = chipReadout->y;
+	}
       SBIGUnivDrvCommand (CC_READOUT_LINE, &rlp, dest_top);
       dest_top += rlp.pixelLength;
+      readoutLine++;
       return 0;
     }
   if (sendLine == 0)
@@ -105,20 +173,22 @@ CameraSbigChip::readoutOneLine ()
 	return ret;
     }
   if (!readoutConn)
-  {
-    return -1;
-  }
+    {
+      return -1;
+    }
   if (send_top < (char *) dest_top)
     {
+      int send_data_size;
       sendLine++;
-      send_top +=
-	readoutConn->send (send_top,
-			   (char *) dest_top - send_top);
+      send_data_size =
+	sendReadoutData (send_top, (char *) dest_top - send_top);
+      if (send_data_size < 0)
+	return -2;
+
+      send_top += send_data_size;
       return 0;
     }
-  readoutConn->endConnection ();
-  readoutConn = NULL;
-  readoutLine = -1;
+  endReadout ();
   return -2;
 }
 
@@ -160,7 +230,7 @@ Rts2DevCamera (argc, argv)
   pcam = NULL;
 }
 
-Rts2DevCameraSbig::~Rts2DevCameraSbig () 
+Rts2DevCameraSbig::~Rts2DevCameraSbig ()
 {
   delete pcam;
 }
@@ -186,6 +256,7 @@ Rts2DevCameraSbig::init ()
   // init chips
   GetCCDInfoParams req;
   GetCCDInfoResults0 res;
+
   CameraSbigChip *cc;
   PAR_ERROR ret;
 
@@ -302,7 +373,7 @@ Rts2DevCameraSbig::camWaitExpose (int chip)
   ret = Rts2DevCamera::camWaitExpose (chip);
   if (ret == -2)
     {
-      camStopExpose (chip);	// SBIG devices are strange, there is same command for wait and stop
+      camStopExpose (chip);	// SBIG devices are strange, there is same command for forced stop and normal stop
       return -2;
     }
   return ret;
