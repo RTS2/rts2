@@ -51,6 +51,8 @@ main (int argc, char **argv)
 
   printf ("ret: %s\n", get_string_default ("epoch", "000"));
   printf ("ret: %s\n",
-	  get_sub_device_string_default ("CNF1", "script", "airmass", "AA"));
+	  get_sub_device_string_default ("CNF1", "script", "G", "AA"));
+  printf ("ret: %s\n",
+	  get_sub_device_string_default ("CNF1", "script", "S", "AA"));
   return 0;
 }
