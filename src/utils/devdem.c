@@ -989,6 +989,7 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
       syslog (LOG_DEBUG, "autorized->null %i", client_id);
       clients_info->clients[client_id].authorized = 0;
       devser_message_clear ();
+      devser_thread_cancel_all ();
     }
 
   return 0;
