@@ -36,8 +36,6 @@ next_event (time_t * start_time, int *type, time_t * ev_time)
     // don't care about abs(lng)>60
     return -1;
 
-//  printf ("r: %f s: %f md: %f\n", rst.rise, rst.set, jd_time); 
-
   if (rst.rise >= rst.set)
     {
       // daytime, so decide between DAWN, DAY, DUSK 

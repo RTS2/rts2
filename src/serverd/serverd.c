@@ -242,7 +242,7 @@ int
 clients_change_priority (time_t timeout)
 {
   int new_priority_client = -1;
-  int new_priority_max = -2;
+  int new_priority_max = -1;
   int i;
 
   // change priority and find new client with highest priority
@@ -301,11 +301,9 @@ serverd_riseset_thread (void *arg)
  *
  * Delete client|device login|name, updates priorities, detach shared
  * memory.
- *
- * @see on_exit(3)
  */
 void
-serverd_exit (int status, void *arg)
+serverd_exit (void)
 {
   devser_shm_data_lock ();
 
@@ -325,7 +323,6 @@ serverd_exit (int status, void *arg)
       syslog (LOG_DEBUG, "exit of unknow type server %i", server_type);
     }
 
-  devser_shm_data_dt (shm_info);
   devser_shm_data_unlock ();
 }
 
@@ -408,8 +405,11 @@ client_serverd_handle_command (char *command)
 
 	  for (i = 0; i < MAX_CLIENT; i++)
 	    if (*shm_clients[i].login)
-	      devser_dprintf ("user %i %i %i %s %s", i, shm_clients[i].active,
-			      shm_clients[i].priority, shm_clients[i].login,
+	      devser_dprintf ("user %i %c %i %c %s %s", i,
+			      shm_clients[i].active ? 'A' : 'P',
+			      shm_clients[i].priority,
+			      shm_info->priority_client == i ? '*' : '-',
+			      shm_clients[i].login,
 			      shm_clients[i].status_txt);
 
 	  for (i = 0, dev = shm_devices; i < MAX_DEVICE; i++, dev++)
@@ -603,6 +603,7 @@ serverd_handle_command (char *command)
 	      {
 		shm_clients[i].authorized = 0;
 		shm_clients[i].priority = -1;
+		shm_clients[i].status_txt[0] = 0;
 		strncpy (shm_clients[i].login, login, CLIENT_LOGIN_SIZE);
 		serverd_id = i;
 		shm_clients[i].pid = devser_child_pid;
@@ -624,7 +625,6 @@ serverd_handle_command (char *command)
 	    }
 
 	  server_type = CLIENT_SERVER;
-	  on_exit (serverd_exit, NULL);
 	  return 0;
 	}
       else
@@ -692,7 +692,6 @@ serverd_handle_command (char *command)
 	    }
 
 	  server_type = DEVICE_SERVER;
-	  on_exit (serverd_exit, NULL);
 	  serverd_status_info ();
 	  devser_shm_data_unlock ();
 
@@ -752,8 +751,13 @@ main (void)
     }
 
   shm_info->current_state = 0;
+  shm_info->priority_client = -1;
 
   devser_thread_create (serverd_riseset_thread, NULL, 0, NULL, NULL);
 
-  return devser_run (PORT, serverd_handle_command);
+  devser_run (PORT, serverd_handle_command);
+
+  serverd_exit ();
+
+  return 0;
 }

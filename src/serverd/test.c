@@ -25,7 +25,7 @@ main ()
       if (next_event (&start_time, &type, &ev_time))
 	{
 	  printf ("error!!\n");
-	  exit (1);
+	  return EXIT_FAILURE;
 	}
 
       if (last_event != ev_time)
