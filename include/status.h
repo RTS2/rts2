@@ -7,6 +7,12 @@
 #ifndef __RTS__STATUS__
 #define __RTS__STATUS__
 
+// device priority
+#define DEVICE_NOPRIORITY	0
+#define DEVICE_PRIORITY		1
+
+#define DEVICE_MASK_PRIORITY	1
+
 // Camera status
 #define CAM_MASK_EXPOSE		0x01
 
@@ -56,6 +62,14 @@
 #define DOME_OPENIGN		0x01
 #define DOME_CLOSED		0x02
 #define DOME_CLOSING		0x03
+
+#define SERVERD_DAY		0
+#define SERVERD_DUSK		1
+#define SERVERD_NIGHT		2
+#define SERVERD_DAWN		3
+
+#define SERVERD_MAINTANCE	10
+#define SERVERD_OFF		11
 
 // to send data
 
