@@ -39,14 +39,14 @@ EOT;
 		for ($i++; $i < $len; $i++) {
 			$c = $s[$i];
 			if (($c > '9' || $c < '0') && $c != '.') {
-				$out += floatval($res) * floatval($mul);
+				$out += floatval($res) * $mul;
 				$mul /= 60.0;
 				$res = '';
 			}
 			else
 				$res .= $c;
 		}
-		return $sign * ($out + $res * $mul);
+		return $sign * ($out + floatval($res) * $mul);
 	}
 
 	function deg2s ($d) {
@@ -210,7 +210,7 @@ EOT;
 			} else {
 				if ($from != 1) 
 					echo "<a href='$_SERVER[SCRIPT_NAME]?page=" . max (1, $from - 10) . "'>&lt;&lt;</a>&nbsp;";
-				for ($i = $from; $i < $to; $i++)
+				for ($i = $from; $i <= $to; $i++)
 					if ($i != $page)
 						echo "<a href='$_SERVER[SCRIPT_NAME]?page=$i'>$i</a>&nbsp;";
 					else
