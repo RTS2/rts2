@@ -26,6 +26,7 @@ isdir (const char *path)
 int
 create_dir (char *path, mode_t mode)
 {
+  umask (0002);
   if (mkdir (path, mode))
     {
       switch (errno)
