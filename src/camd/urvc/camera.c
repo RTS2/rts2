@@ -275,6 +275,7 @@ camera_init (char *device_name, int camera_id)
     default:
       camera_reg = CAMERA_COOL_OFF;
     }
+
   if (Cams[eePtr.model].hasTrack)
     chips = 2;
   else
@@ -398,8 +399,8 @@ camera_expose (int chip, float *exposure, int light)
 
   if ((ret = MicroCommand (MC_START_EXPOSURE, ST7_CAMERA, &sep, NULL)))
     goto imaging_end;
-
   sem_unlock ();
+
   // wait for completing exp
   do
     {
@@ -544,8 +545,8 @@ camera_cool_hold ()		/* hold on that temperature */
     }
   ot = ccd_ad2c (qtsr.ccdThermistor);
   ot = ((int) (ot + 5) / 5) * 5;
-  camera_fan (1);
   sem_unlock ();
+  camera_fan (1);
   return camera_cool_setpoint (ot);
 };
 
@@ -557,8 +558,8 @@ camera_cool_shutdown ()		/* ramp to ambient */
   cool.ccdSetpoint = 0;
   cool.preload = 0;
   camera_reg = CAMERA_COOL_OFF;
-  sem_lock ();
   camera_fan (0);
+  sem_lock ();
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
     {
       sem_unlock ();
@@ -578,14 +579,14 @@ camera_cool_setpoint (float coolpoint)	/* set direct setpoint */
   i = ccd_c2ad (coolpoint) + 0x7;	// zaokrohlovat a neorezavat!
   cool.ccdSetpoint = i;
   cool.preload = 0xaf;
-  sem_lock ();
   camera_fan (1);
+  sem_lock ();
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
     {
       sem_unlock ();
       return -1;
     }
-  sem_unlock ();
   camera_reg = CAMERA_COOL_HOLD;
+  sem_unlock ();
   return 0;
 };
