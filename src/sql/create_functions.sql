@@ -106,16 +106,53 @@ BEGIN
          ELSE
                 SELECT INTO new_tar_id nextval (''tar_id''); 
                 
-                INSERT INTO targets (tar_id, type_id, tar_name,
-                tar_ra, tar_dec, tar_comment)
-                VALUES (new_tar_id, ''P'', name, 0, 0, name);
+                INSERT INTO targets (
+			tar_id,
+			type_id,
+			tar_name,
+                	tar_ra,
+			tar_dec,
+			tar_comment,
+			tar_enabled
+		)
+                VALUES (
+			new_tar_id,
+			''E'',
+			name,
+			0,
+			0,
+			name,
+			false
+		);
                 
-                INSERT INTO ell (tar_id, ell_a, ell_e, ell_i, ell_w,
-                  ell_omega, ell_n, ell_minpause, ell_priority,
-                  ell_JD, ell_mag_1, ell_mag_2)
-                VALUES (new_tar_id, in_ell_a, in_ell_e, in_ell_i,
-                in_ell_w, in_ell_omega, in_ell_n, ''10 minutes'', -1,
-                in_ell_JD, in_ell_mag_1, in_ell_mag_2);
+                INSERT INTO ell (
+			tar_id,
+			ell_a,
+			ell_e,
+			ell_i,
+			ell_w,
+			ell_omega,
+			ell_n,
+			ell_minpause,
+			ell_priority,
+                  	ell_JD,
+			ell_mag_1,
+			ell_mag_2
+		)
+                VALUES (
+			new_tar_id,
+			in_ell_a,
+			in_ell_e,
+			in_ell_i,
+                	in_ell_w,
+			in_ell_omega,
+			in_ell_n,
+			''10 minutes'',
+			-1,
+			in_ell_JD,
+			in_ell_mag_1,
+			in_ell_mag_2
+		);
          END IF;
          RETURN 1;
 END;
