@@ -27,13 +27,27 @@ EXEC SQL include sqlca;
 int
 find_plan (Target *plan, int id, time_t c_start)
 {
+  EXEC SQL BEGIN DECLARE SECTION;
+  int count = 0;
+  int tar_id = id;
+  long int obs_start = c_start;
+  EXEC SQL END DECLARE SECTION;
   while (plan)
     {
       if (plan->id == id && plan->ctime > c_start)
 	return 0;
       plan = plan->next;
     }
-
+  EXEC SQL DECLARE find_plan CURSOR FOR
+    SELECT count(*) FROM observations 
+      WHERE tar_id = :tar_id AND obs_start > abstime(:obs_start);
+  EXEC SQL OPEN find_plan;
+  EXEC SQL FETCH next FROM find_plan INTO :count;
+  printf ("obs_count: %i obs_start: %i\n", count, obs_start);
+  EXEC SQL CLOSE find_plan;
+  if (count > 0)
+    return 0;
+   
   return -1;
 }
 
@@ -420,6 +434,7 @@ select_next_ell (time_t *c_start, Target *plan, float az_end,
   double ell_omega;
   double ell_n;
   double ell_JD;
+  double min_m;		// minimal magnitude
   EXEC SQL END DECLARE SECTION;
   struct ln_ell_orbit orbit;
   struct ln_equ_posn pos;
@@ -433,11 +448,13 @@ select_next_ell (time_t *c_start, Target *plan, float az_end,
   st = ln_get_mean_sidereal_time (JD);
   st_deg = 15.0 * st;
   printf ("ell to st: %f\n", st);
+  min_m = get_double_default ("min_mag", 13);
 EXEC SQL DECLARE obs_cursor_ell CURSOR FOR 
 SELECT targets.tar_id, EXTRACT (EPOCH FROM ell_minpause), ell_a, ell_e, ell_i, ell_w, 
   ell_omega, ell_n, ell_JD 
 FROM targets, targets_images, ell 
-WHERE ell.tar_id = targets.tar_id AND targets.tar_id = targets_images.tar_id AND type_id = 'P' 
+WHERE ell.tar_id = targets.tar_id AND targets.tar_id = targets_images.tar_id AND type_id = 'P'
+AND ell.ell_priority > 0 AND ell.ell_mag_1 < :min_m AND ell_e <= 1.0
 ORDER BY ell_priority DESC, img_count ASC;
 
   EXEC SQL OPEN obs_cursor_ell;
@@ -635,6 +652,7 @@ get_next_plan (Target *plan, int selector_type,
   // check for OT
   last_good_img = db_last_good_image (get_string_default ("telescope_camera", "C0"));
   printf ("last good image on %s: %i\n", get_string_default ("telescope_camera" ,"C0"), last_good_img);
+  
   if (last_good_img >= 0 && last_good_img < 3600)
     {
       printf ("Trying OT\n");
@@ -690,7 +708,7 @@ get_next_plan (Target *plan, int selector_type,
 		az += 180;
 	      if (moon_hrz.alt < -10)
 		break;
-	      else if (abs ((int) floor (moon_hrz.az - az) % 360) < 40)
+	      else if (abs ((int) floor (moon_hrz.az - az) % 360) < 90)
 		printf
 		  (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n",
 		   az, airmass, moon_hrz.az, moon_hrz.alt);
@@ -707,7 +725,7 @@ get_next_plan (Target *plan, int selector_type,
 
 	      if (moon_hrz.alt < -10)
 		break;
-	      else if (abs ((int) floor (moon_hrz.az - az) % 360) < 40)
+	      else if (abs ((int) floor (moon_hrz.az - az) % 360) < 90)
 		printf
 		  (" skipping az: %f airmass: %f moon_az: %f moon_alt: %f\n",
 		   az, airmass, moon_hrz.az, moon_hrz.alt);

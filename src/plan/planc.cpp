@@ -84,20 +84,21 @@ status_handler (struct device *dev, char *status_name, int new_val)
 }
 
 int
-move (Target *last)
+move (Target * last)
 {
   if ((last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
       && last->moved == 0)
     {
       struct ln_equ_posn object;
       struct ln_hrz_posn hrz;
-      last->getPosition(&object);
+      last->getPosition (&object);
       ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (),
 			   &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
 
-      if (devcli_command (telescope, NULL, "move %f %f", object.ra, object.dec))
+      if (devcli_command
+	  (telescope, NULL, "move %f %f", object.ra, object.dec))
 	{
 	  printf ("telescope error\n\n--------------\n");
 	  return -1;
@@ -117,7 +118,7 @@ move (Target *last)
 }
 
 int
-get_info (Target *entry, struct device *tel, struct device *cam,
+get_info (Target * entry, struct device *tel, struct device *cam,
 	  float exposure, hi_precision_t * hi_precision)
 {
   struct image_info *info =
@@ -145,7 +146,7 @@ get_info (Target *entry, struct device *tel, struct device *cam,
 }
 
 int
-generate_next (int i, Target *plan)
+generate_next (int i, Target * plan)
 {
   time_t start_time;
   time (&start_time);
@@ -171,7 +172,7 @@ generate_next (int i, Target *plan)
  * @return 0 if I can observe futher, -1 if observation was canceled
  */
 int
-process_precission (Target *tar, struct device *camera)
+process_precission (Target * tar, struct device *camera)
 {
   float exposure = 10;
   exposure =
@@ -214,16 +215,19 @@ process_precission (Target *tar, struct device *camera)
       while (tries < max_tries)
 	{
 	  int light = (precission_count % 10 == 0) ? 0 : 1;
-          struct ln_equ_posn object;
+	  struct ln_equ_posn object;
 	  if (!light)
 	    tar->type = TARGET_DARK;
 	  else
 	    tar->type = TARGET_LIGHT;
-          tar->getPosition (&object);
+	  tar->getPosition (&object);
 	  printf
 	    ("triing to get to %f %f, %i try, %s image, %i total precission\n",
 	     object.ra, object.dec, tries, (light == 1) ? "light" : "dark",
 	     precission_count);
+
+	  precission_count++;
+
 	  fflush (stdout);
 	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 				  TEL_OBSERVING, 0);
@@ -246,11 +250,11 @@ process_precission (Target *tar, struct device *camera)
 	      // in location parameters, passd as reference to get_info.
 	      // So I can compare that with
 	      pthread_mutex_lock (hi_precision.mutex);
-   	      time (&now);
-  	      timeout.tv_sec = now + 350;
-  	      timeout.tv_nsec = 0;
-  	      pthread_cond_timedwait (hi_precision.cond, hi_precision.mutex,
-  				      &timeout);
+	      time (&now);
+	      timeout.tv_sec = now + 350;
+	      timeout.tv_nsec = 0;
+	      pthread_cond_timedwait (hi_precision.cond, hi_precision.mutex,
+				      &timeout);
 	      printf ("hi_precision->image_pos->ra: %f dec: %f ",
 		      hi_precision.image_pos.ra, hi_precision.image_pos.dec);
 	      pthread_mutex_unlock (hi_precision.mutex);
@@ -261,7 +265,8 @@ process_precission (Target *tar, struct device *camera)
 		  ra_err =
 		    ln_range_degrees (object.ra - hi_precision.image_pos.ra);
 		  dec_err =
-		    ln_range_degrees (object.dec - hi_precision.image_pos.dec);
+		    ln_range_degrees (object.dec -
+				      hi_precision.image_pos.dec);
 		}
 	      else
 		{
@@ -284,7 +289,6 @@ process_precission (Target *tar, struct device *camera)
 		}
 	      tries++;
 	    }
-	  precission_count++;
 	}
       devcli_command (camera, NULL, "binning 0 1 1");
       pthread_mutex_lock (&precission_mutex);
@@ -355,25 +359,25 @@ execute_camera_script (void *exinfo)
 
   while (*command)
     {
-      if (exp_state == 1 && *command && !isspace (*command))
-	{
-	  // wait till exposure end..
-	  devcli_command (telescope, NULL, "base_info;info");
-
-	  get_info (last, telescope, camera, exposure, NULL);
-
-	  devcli_wait_for_status (camera, "img_chip",
-				  CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
-				  1.1 * exposure + 10);
-	  devcli_command (camera, NULL, "readout 0");
-	  devcli_wait_for_status (camera, "img_chip",
-				  CAM_MASK_READING, CAM_NOTREADING,
-				  MAX_READOUT_TIME);
-	  exp_state = 2;
-	}
       switch (*command)
 	{
 	case COMMAND_EXPOSURE:
+	  if (exp_state == 1)
+	    {
+	      // wait till exposure end..
+	      devcli_command (telescope, NULL, "base_info;info");
+
+	      get_info (last, telescope, camera, exposure, NULL);
+
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+				      1.1 * exposure + 10);
+	      devcli_command (camera, NULL, "readout 0");
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_READING, CAM_NOTREADING,
+				      MAX_READOUT_TIME);
+	      exp_state = 2;
+	    }
 	  command++;
 	  while (isspace (*command))
 	    command++;
@@ -471,7 +475,7 @@ observe (int watch_status)
 
   struct tm last_s;
 
-  plan = new Target();
+  plan = new Target ();
   plan->next = NULL;
   plan->id = -1;
   i = generate_next (i, plan);
