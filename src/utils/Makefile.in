@@ -17,3 +17,6 @@ devcli.a: devcli.o devhnd.o param.o hms.o mkpath.o
 	$(AR) rcsv $@ $^
 
 test: hms.o mkpath.o test.o
+
+clean:
+	$(RM) *.o *.a *~
