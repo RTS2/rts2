@@ -242,6 +242,14 @@ teld_handle_command (char *command)
   return ret;
 }
 
+void
+teld_atexit (void)
+{
+  syslog (LOG_DEBUG, "teld_atexit : %i", getpid());
+  if (getpid() == devser_parent_pid)
+	  telescope_done();
+}
+
 int
 main (int argc, char **argv)
 {
@@ -335,7 +343,7 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  atexit (telescope_done);
+  atexit (teld_atexit);
   
   if (devdem_init (stats, 1, NULL))
     {

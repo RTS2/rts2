@@ -235,10 +235,8 @@ tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount)
   sem_buf.sem_op = -1;
   sem_buf.sem_flg = SEM_UNDO;
 
-  printf ("semop (%i, ..)\n", semid);
   if (semop (semid, &sem_buf, 1) < 0)
     return -1;
-  printf ("tcflusg (%i,..)\n", port);
   if (tcflush (port, TCIOFLUSH) < 0)
     goto unlock;		// we need to unlock
   if (tel_write (wbuf, wcount) < 0)
@@ -571,7 +569,7 @@ extern void
 telescope_done ()
 {
    syslog (LOG_DEBUG, "lx200: telescope_done called");
-//   semctl (semid, 1, IPC_RMID);
+   semctl (semid, 1, IPC_RMID);
 }
 
 /*!
