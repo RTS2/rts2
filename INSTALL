@@ -1,3 +1,34 @@
+Please skip to "Basic Installation" if you are not performing
+installation from CVS.
+
+Note 2: make usually doesn't work right from rts2 dir, unless you are
+in X and have recent version of Dia..you should change to src subdir,
+and then type make followed as root by make install.things will be
+more easier that way.
+
+Instalation from CVS
+====================
+
+   You should take all actions which are required to install an
+autoconf & automake based project. Namely, you should make those
+steps:
+   
+   Run aclocal, preferably aclocal-1.6 or newer {aclocal-1.6 is then
+name of script) to produce acinclude.m4 from aclocal.m4.
+   
+   Run automake --add-missing, preferably automake-1.6 or newer (same
+as to aclocal apply to automake) to produce Makefile.in from
+Makefile.am. 
+
+   Run autoconf, preferably autoconf2.50 or newer, to produce
+configure from configure.in.
+   
+   Run autoheade, preferably autoheader2.50 or newer, to produce
+config.h.in in include subdir.
+
+   You should end with running ./configure, thus proceeding as
+described bellow.
+
 Basic Installation
 ==================
 
