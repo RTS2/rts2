@@ -1,16 +1,16 @@
-# $Id$
+SUBDIRS = 
 
-SUBDIRS = lx200 losmandy para
+bin_PROGRAMS = rts2-teld-gemini rts2-teld-bridge rts2-teld-ir
 
-bin_PROGRAMS = rts2-teld-lx200  rts2-teld-losmandy #rts2-teld-para
+noinst_HEADERS = telescope.h maps.h
 
-noinst_HEADERS = telescope.h
+LDADD = ../utils/librts2block.a ../utils/hms.o @LIB_M@
 
-rts2_teld_lx200_SOURCES = teld.c tpmodel.c
-rts2_teld_lx200_LDFLAGS = @LIB_M@ @LIB_PTHREAD@ @LIB_NOVA@ lx200/liblx200.a ../utils/libdevdem.a
+rts2_teld_gemini_SOURCES = teld.cpp tpmodel.c gemini.cpp
+rts2_teld_gemini_LDFLAGS = @LIB_NOVA@
 
-rts2_teld_losmandy_SOURCES = teld.c tpmodel.c
-rts2_teld_losmandy_LDFLAGS = @LIB_M@ @LIB_PTHREAD@ @LIB_NOVA@ losmandy/liblosmandy.a ../utils/libdevdem.a
+rts2_teld_bridge_SOURCES = teld.cpp tpmodel.c bridge.cpp
+rts2_teld_bridge_LDFLAGS = @LIB_NOVA@
 
-#rts2_teld_para_SOURCES = teld.c tpmodel.c
-#rts2_teld_para_LDFLAGS = @LIB_NOVA@ @LIB_M@ @LIB_PTHREAD@ para/libmks3.o para/te.o ../utils/libdevdem.a
+rts2_teld_ir_SOURCES = teld.cpp tpmodel.c ir.cpp
+rts2_teld_ir_LDFLAGS = @LIB_NOVA@ -lssl -lopentpl -lttcommon

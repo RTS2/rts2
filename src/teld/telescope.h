@@ -1,24 +1,105 @@
-#ifndef __RTS_TELESCOPE__
-#define __RTS_TELESCOPE__
+#ifndef __RTS2_TELD_CPP__
+#define __RTS2_TELD_CPP__
 
-#include "telescope_info.h"
+#include <sys/time.h>
+#include <time.h>
 
-extern int telescope_init (const char *device_name, int telescope_id);
-extern void telescope_done ();
+#include "../utils/rts2block.h"
+#include "../utils/rts2device.h"
 
-extern int telescope_base_info (struct telescope_info *info);
-extern int telescope_info (struct telescope_info *info);
+class Rts2DevTelescope:public Rts2Device
+{
+protected:
+  char *device_file;
+  char telType[64];
+  char telSerialNumber[64];
+  double telRa;
+  double telDec;
+  double telSiderealTime;
+  double telLocalTime;
+  int telFlip;
+  double telAxis[2];
+  double telLongtitude;
+  double telLatitude;
+  double telAltitude;
+  double telParkDec;
+  virtual int isMoving ()
+  {
+    return -2;
+  }
+  virtual int isParking ()
+  {
+    return -2;
+  }
+public:
+  Rts2DevTelescope (int argc, char **argv);
+  virtual int init ();
+  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  int checkMoves ();
+  virtual int idle ();
 
-extern int telescope_move_to (double ra, double dec);
-extern int telescope_set_to (double ra, double dec);
-extern int telescope_correct (double ra, double dec);
-extern int telescope_change (double ra, double dec);
-extern int telescope_start_move (char direction);
-extern int telescope_stop_move (char direction);
-extern int telescope_stop ();
+  // callback functions for Camera alone
+  virtual int ready ()
+  {
+    return -1;
+  };
+  virtual int info ()
+  {
+    return -1;
+  };
+  virtual int baseInfo ()
+  {
+    return -1;
+  };
+  virtual int startMove (double tar_ra, double tar_dec)
+  {
+    return -1;
+  };
+  virtual int endMove ()
+  {
+    return -1;
+  }
+  virtual int setTo (double set_ra, double set_dec)
+  {
+    return -1;
+  }
+  virtual int correct (double cor_ra, double cor_dec)
+  {
+    return -1;
+  }
+  virtual int startPark ()
+  {
+    return -1;
+  }
+  virtual int endPark ()
+  {
+    return -1;
+  }
+  virtual int change (double chng_ra, double chng_dec)
+  {
+    return -1;
+  }
 
-extern int telescope_park ();
-extern int telescope_home ();
-extern int telescope_off ();
+  // callback functions from telescope connection
+  int ready (Rts2Conn * conn);
+  int info (Rts2Conn * conn);
+  int baseInfo (Rts2Conn * conn);
 
-#endif /* __RTS_TELESCOPE__ */
+  int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
+  int setTo (Rts2Conn * conn, double set_ra, double set_dec);
+  int correct (Rts2Conn * conn, double cor_ra, double cor_dec);
+  int startPark (Rts2Conn * conn);
+  int change (Rts2Conn * conn, double chng_ra, double chng_dec);
+};
+
+class Rts2DevConnTelescope:public Rts2DevConn
+{
+private:
+  Rts2DevTelescope * master;
+protected:
+  virtual int commandAuthorized ();
+public:
+    Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device);
+};
+
+#endif /* !__RTS2_TELD_CPP__ */

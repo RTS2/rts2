@@ -37,10 +37,11 @@ public:
   virtual int info ();
   virtual int startMove (double tar_ra, double tar_dec);
   virtual int isMoving ();
-  virtual int isParked ();
   virtual int endMove ();
+  virtual int startPark ();
+  virtual int isParking ();
+  virtual int endPark ();
   virtual int stop ();
-  virtual int park ();
 };
 
 Rts2DevTelescopeBridge::Rts2DevTelescopeBridge (int argc, char **argv):
@@ -142,6 +143,8 @@ Rts2DevTelescopeBridge::startMove (double ra, double dec)
   Tctrl->dec = dec;
 
   timeout = 0;
+
+  return 0;
 }
 
 int
@@ -157,7 +160,6 @@ Rts2DevTelescopeBridge::isMoving ()
     {
       return 1000000;
     }
-  timeout++;
   // bridge 20 sec timeout
   if (timeout < 20)
     {
@@ -167,14 +169,29 @@ Rts2DevTelescopeBridge::isMoving ()
 }
 
 int
-Rts2DevTelescopeBridge::isParked ()
+Rts2DevTelescopeBridge::endMove ()
+{
+  return 0;
+}
+
+int
+Rts2DevTelescopeBridge::startPark ()
+{
+  Tctrl->ra = get_loc_sid_time () - 30;
+  Tctrl->dec = Tstat->dec;
+  return 0;
+}
+
+int
+Rts2DevTelescopeBridge::isParking ()
 {
   return isMoving ();
 }
 
 int
-Rts2DevTelescopeBridge::endMove ()
+Rts2DevTelescopeBridge::endPark ()
 {
+  Tctrl->power = 0;
   return 0;
 }
 
@@ -187,16 +204,6 @@ Rts2DevTelescopeBridge::stop ()
   Tctrl->dec = telDec;
 
   timeout = 201;
-}
-
-int
-Rts2DevTelescopeBridge::park ()
-{
-  int ret;
-  Tctrl->ra = get_loc_sid_time () - 30;
-  Tctrl->dec = Tstat->dec;
-  Tctrl->power = 0;
-  return ret;
 }
 
 int

@@ -82,21 +82,22 @@ private:
   int telescope_stop_move (char direction);
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
-   ~Rts2DevTelescopeGemini (void);
-  int processOption (int in_opt);
-  int init ();
-  int ready ();
-  int baseInfo ();
-  int info ();
-  int startMove (double tar_ra, double tar_dec);
-  int isMoving ();
-  int isParked ();
-  int endMove ();
-  int setTo (double set_ra, double set_dec);
-  int correct (double cor_ra, double cor_dec);
-  int change (double chng_ra, double chng_dec);
-  int stop ();
-  int park ();
+    virtual ~ Rts2DevTelescopeGemini (void);
+  virtual int processOption (int in_opt);
+  virtual int init ();
+  virtual int ready ();
+  virtual int baseInfo ();
+  virtual int info ();
+  virtual int startMove (double tar_ra, double tar_dec);
+  virtual int isMoving ();
+  virtual int endMove ();
+  virtual int startPark ();
+  virtual int isParking ();
+  virtual int endPark ();
+  virtual int setTo (double set_ra, double set_dec);
+  virtual int correct (double cor_ra, double cor_dec);
+  virtual int change (double chng_ra, double chng_dec);
+  virtual int stop ();
 
   int save ();
   int load ();
@@ -304,7 +305,7 @@ Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
  * @param id	id to set
  * @param val	value to set
  *
- * @return -1 and set errno on error, otherwise 0
+ * @return -1 on error, otherwise 0
  */
 int
 Rts2DevTelescopeGemini::tel_gemini_set (int id, int val)
@@ -812,7 +813,7 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 /*! 
  * Check, if telescope is still moving
  *
- * @return -1 on error, 0 if telescope isn't moving, 1 if telescope is moving
+ * @return -1 on error, 0 if telescope isn't moving, 100 if telescope is moving
  */
 int
 Rts2DevTelescopeGemini::isMoving ()
@@ -826,17 +827,6 @@ Rts2DevTelescopeGemini::isMoving ()
 }
 
 int
-Rts2DevTelescopeGemini::isParked ()
-{
-  char buf = '2';
-  int ret;
-  ret = tel_write_read ("#:h?#", 5, &buf, 1);
-  if (buf != '2')
-    return -2;
-  return ret;
-}
-
-int
 Rts2DevTelescopeGemini::endMove ()
 {
   int32_t track;
@@ -846,6 +836,33 @@ Rts2DevTelescopeGemini::endMove ()
   tel_gemini_get (130, &track);
   tel_write ("#:ONtest", 8);
 }
+
+int
+Rts2DevTelescopeGemini::isParking ()
+{
+  char buf = '3';
+  tel_write_read ("#:h?#", 5, &buf, 1);
+  switch (buf)
+    {
+    case '2':
+      return 1000000;
+    case '1':
+      return -2;
+    case '0':
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeGemini::isParking called without park command");
+    case '3':
+      return -1;
+    }
+}
+
+int
+Rts2DevTelescopeGemini::endPark ()
+{
+  return tel_gemini_set (135, 135);
+}
+
+
 
 /*! 
  * Set telescope to match given coordinates
@@ -974,16 +991,12 @@ Rts2DevTelescopeGemini::stop ()
  * @return -1 and errno on error, 0 otherwise
  */
 int
-Rts2DevTelescopeGemini::park ()
+Rts2DevTelescopeGemini::startPark ()
 {
   char buf = '2';
-  int count = 0;
   tel_gemini_reset ();
   tel_gemini_match_time ();
   tel_write ("#:hP#", 5);
-  if (tel_write_read ("#:h?#", 5, &buf, 1) != 1)
-    return -1;
-  count++;
 }
 
 int save_registers[] = {

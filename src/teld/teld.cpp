@@ -45,7 +45,7 @@ Rts2DevTelescope::createConnection (int in_sock, int conn_num)
 int
 Rts2DevTelescope::checkMoves ()
 {
-  if ((getState (0) & TEL_MASK_MOVING) != TEL_OBSERVING)
+  if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
     {
       int ret;
       ret = isMoving ();
@@ -64,6 +64,27 @@ Rts2DevTelescope::checkMoves ()
 	  else
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		       "move finished without error");
+	}
+    }
+  if ((getState (0) & TEL_MASK_MOVING) == TEL_PARKING)
+    {
+      int ret;
+      ret = isParking ();
+      if (ret >= 0)
+	setTimeout (ret);
+      if (ret == -1)
+	{
+	  maskState (0, TEL_MASK_MOVING, TEL_PARKED,
+		     "park command finished with error");
+	}
+      if (ret == -2)
+	{
+	  if (endPark ())
+	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,
+		       "park command finished with error");
+	  else
+	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,
+		       "park command finished without error");
 	}
     }
   return 0;
@@ -160,14 +181,14 @@ Rts2DevTelescope::correct (Rts2Conn * conn, double cor_ra, double cor_dec)
 }
 
 int
-Rts2DevTelescope::park (Rts2Conn * conn)
+Rts2DevTelescope::startPark (Rts2Conn * conn)
 {
   int ret;
-  ret = park ();
+  ret = startPark ();
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
   else
-    maskState (0, TEL_MASK_MOVING, TEL_MOVING, "parking started");
+    maskState (0, TEL_MASK_MOVING, TEL_PARKING, "parking started");
   return ret;
 }
 
@@ -252,7 +273,7 @@ Rts2DevConnTelescope::commandAuthorized ()
       CHECK_PRIORITY;
       if (!paramEnd ())
 	return -2;
-      return master->park (this);
+      return master->startPark (this);
     }
   else if (isCommand ("change"))
     {
