@@ -2,6 +2,6 @@
 
 noinst_LIBRARIES = libpara.a
 
-noinst_HEADERS = libmks3.h
+noinst_HEADERS = maps.h
 
-libpara_a_SOURCES = libmks3.c te.c
+libpara_a_SOURCES = maps.c paracl.c
