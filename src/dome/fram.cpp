@@ -349,6 +349,8 @@ public:
   virtual int observing ();
   virtual int standby ();
   virtual int off ();
+
+  int sendFramMail (char *subject);
 };
 
 int
@@ -564,6 +566,7 @@ Rts2DevDomeFram::endOpen ()
   stopMove ();
   VYP (VENTIL_OTEVIRANI_PRAVY);
   VYP (VENTIL_OTEVIRANI_LEVY);
+  sendFramMail ("FRAM dome opened");
   return Rts2DevDome::endOpen ();
 }
 
@@ -595,16 +598,20 @@ Rts2DevDomeFram::closeDome ()
       syslog (LOG_WARNING, "closeDome ignored - closing timeout not reached");
       return -1;
     }
-  if (closingNum > FRAM_MAX_CLOSING_RETRY)
-    {
-      syslog (LOG_WARNING,
-	      "max closing reatry reached, do not try closing again");
-    }
 
   vypni_pin (adresa[VENTIL_OTEVIRANI_PRAVY].port,
 	     adresa[VENTIL_OTEVIRANI_PRAVY].pin
 	     | adresa[VENTIL_ZAVIRANI_LEVY].pin
 	     | adresa[VENTIL_OTEVIRANI_LEVY].pin);
+
+  if (closingNum > FRAM_MAX_CLOSING_RETRY)
+    {
+      syslog (LOG_WARNING,
+	      "max closing reatry reached, do not try closing again");
+      sendFramMail ("FRAM WARNING - !!max closing retry reached!!");
+      return -1;
+    }
+
   if (!isOn (KONCAK_ZAVRENI_PRAVY))
     {
       closeRight ();
@@ -647,6 +654,7 @@ Rts2DevDomeFram::endClose ()
   VYP (VENTIL_ZAVIRANI_PRAVY);
   zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
   time (&lastClosing);
+  sendFramMail ("FRAM dome closed");
   return Rts2DevDome::endClose ();
 }
 
@@ -720,10 +728,8 @@ Rts2DevDomeFram::idle ()
   // check for weather..
   if (weatherConn->isGoodWeather ())
     {
-      time_t now;
-      time (&now);
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-	  && (getState (0) & DOME_DOME_MASK == DOME_CLOSED))
+	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open
@@ -833,6 +839,26 @@ Rts2DevDomeFram::observing ()
   //handle_zasuvky (OBSERVING);
   openDome ();
   return 0;
+}
+
+int
+Rts2DevDomeFram::sendFramMail (char *subject)
+{
+  char *openText;
+  int ret;
+  asprintf (&openText, "%s.\n"
+	    "End switched status:\n"
+	    "KONCAK_ZAVRENI_PRAVY:%i  KONCAK_ZAVRENI_LEVY:%i\n"
+	    "KONCAK_OTEVRENI_PRAVY:%i KONCAK_OTEVRENI_PRAVY:%i\n"
+	    "Weather::isGoodWeather %i\n",
+	    "closingNum: %i lastClosing: %s\n",
+	    subject,
+	    isOn (KONCAK_ZAVRENI_PRAVY), isOn (KONCAK_ZAVRENI_LEVY),
+	    isOn (KONCAK_OTEVRENI_PRAVY), isOn (KONCAK_OTEVRENI_LEVY),
+	    weatherConn->isGoodWeather (), closingNum, ctime (&lastClosing));
+  ret = sendMail (subject, openText);
+  free (openText);
+  return ret;
 }
 
 int
