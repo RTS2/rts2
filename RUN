@@ -3,50 +3,72 @@ RTS 2 - jak na to.
 Dodrzujte prosim zadane uzivatele, jinak je vice nez pravdepodobne, ze
 se nedopracujete k funkcnimu rts2!!
 
+Vsechny binarky se od 4.srpna 2003 instaluji do /usr/local/bin, t.j. je mate v
+ceste. Muzete se potkat se spatnym nastavenim prav do databaze pro svoji osobu,
+v tom pripade je potreba se mnou domluvit jejich nastaveni (pripadne muzete
+nekoho, kdo ma prava vytvaret uzivatele pro postgres, ukecat, aby udelal
+createuser <vas_login>, psql stars, alter group observers add <vas_login> a
+nekoho, kdo zna rootovske heslo, aby vas pridal do grupy rts2)
+
 Pokud neco nebude fungovat:
 - nepropadejte panice:)
 - zkuste me zavolat (staci prozvonit), pokud nejsem primo na
  Ondrejove, vetsinou neni problem se pripojit a pomoci s poustenim
 
-1) Spustne nmonitor
-lascaux:/home/petr/rts2/src/monitor/nmonitor
+1) Spustne rts2-mon 
+lascaux:rts2-mon
 
-Musi zobrazovat udaje o zarizenich C1, C0, T1 a poctu pripojenych klientech.
+Musi zobrazovat udaje o zarizenich C1, C0, CNF1, T1 a poctu pripojenych klientech.
 Pokud pise u nejakeho zarizeni NOT READY, a vy jsi jste jisty tim, za zarizeni
 je pripojeno k dalekohledu, zkuste restart popsany v kroku 2. Restart provedte
 v pripade, ze nejake zarizeni nebezi (samosebou se muzete omezit na kus, ktery
 vam nebezi)
 
-Obrazovka nmonitoru by mela vypadat nasledovne:
+Obrazovka rts2-mon by mela vypadat nasledovne:
+                                                         
+ ==== Name: CNF1 ======     ==== Name: T0 ======               
+ Typ: ST9                   Typ: LX200                  status: RDY Night
+ Ser: 910009253             R+D/f: 356.242+43.492/n      -1-nmonitor
+ Siz: [512x512]             Az/Al/D: 262 +57 NEE         -1-nmonitor
+ S/A: -4.8 +28.1 oC         Lon/Lat: +345.383 +49.90     -1-grbc_waiting
+ CCD: -4.820 oC            0Lsid: 308.192 (20:32:46)     20*P:_1017_obs:_-1_ra:3
+ CPo: 71.4 %                Gsid: 293.575 (19:34:18)   5 -1-nmonitor:0:0
+ Fan: on                    st: telescope - 1                                     
+ st: img_chip - 0           st: priority - 0                                      
+ st: trc_chip - 0                                                                 
+ st: priority - 0                                                                 
+ ==== Name: C1 ======       ==== Name: C0 ======       > T0.ready
+ Typ: ST8                   Typ: ST8                   : authorization_key T0 27
+ Ser: 99EEE                 Ser: 819                   7391300
+ Siz: [1536x1024]           Siz: [1536x1024]           : +000 Success
+ S/A: -4.8 +28.1 oC         S/A: -9.8 +23.6 oC         > T0.info
+ CCD: -5.230 oC             CCD: -10.200 oC            > C0.ready
+ CPo: 78.5 %                CPo: 85.1 %                : authorization_key C0 41
+ Fan: on                    Fan: on                    5230847
+ st: img_chip - 2           st: img_chip - 2           : +000 Success
+ st: trc_chip - 0           st: trc_chip - 0           > C0.info                  
+ st: priority - 0           st: priority - 0    
 
+Jeji presne rozvrzeni zavisi na poradi startu devicu, rozlozeni sloupcu a radku
+zavisi na velikosti vaseho terminalu, stav jednodlivych zarizeni zavisi na tom,
+jak jsou startovana. 
 
- ==== Name: C1 ======      ==== Name: C0 ======
- Typ: ST8                  Typ: ST8                   status:Night
- Ser: 819503145            Ser: 819901486              -1-nmonitor
- Siz: [1536x1024]          Siz: [1536x1024]            -1-grbc_waiting
- S/A: -9.8 +23.6 oC        S/A: -14.8 +18.8 oC         20*
- CCD: -9.790 oC            CCD: -15.230 oC             -1-nmonitor
- CPo: 81.6 %               CPo: 89.8 %
- Fan: on                   Fan: on
- status: img_chip - 0      status: img_chip - 0
- status: trc_chip - 0      status: trc_chip - 0
- status: priority - 0      status: priority - 0
- ==== Name: T1 ======                                > T1.ready
- R/Az/D: 09:32:54 +14 S                              : authorization_key T1 184
- D/Al: -0.022 +39                                    0247282
- Lon: +345.383                                       : +000 Success
- Lat: +49.900                                        > T1.info
- Lsid: 10:17:57                                      > C0.ready
- Gsid: 09:19:29 9.324723                             : authorization_key C0 103
- status: telescope - 0                               1591306
- status: priority - 0                                : +000 Success
-                                                     > C0.info
+status: musi ukazovat RDY, aby se vubec pozorovalo! Na to, aby se delali
+snimky, musi ukazovat neco z RDY Dawn, RDY Night nebo RDY Dusk. RDY znamena
+ready, mame jeste stav standby a off. Jejich prepinani viz nize u popisu
+monitoru. status je urcovan centralnim serverem, pocita se ze souradnic, ktere
+zadate v konfiguracnim souboru.
+
 2) Pokud neco nebezi (v podstate dost vyjimecny pripad)
 
-a) na lascaux spustit centralni server pod libovolnym uzivatelem 
-(doporucena sluzba) - 
+a) presvedcit se, ze bezi na lascaux rts2-centrald (centralni server):
+lascaux:ps -A|grep rts2-centra
+23491 ?        00:00:00 rts2-centrald
+23492 ?        00:00:00 rts2-centrald
+..........
 
-lascaux:/home/petr/rts2/src/serverd/serverd
+Pokud nebezi, kill -1 1 (snad by melo fungovat pod vsemy uzivately), jelikoz
+centrald je v inittabu.
 
 b) na c0 pustit camd a teld (pod rootem):
 c0:/etc/init.d/rts2 restart
@@ -54,13 +76,17 @@ c0:/etc/init.d/rts2 restart
 c) na c1 spustit camd (pod rootem):
 c1:/etc/init.d/rts2 restart
 
-Poznamka: tento prikaz vede vetsinou k padu c1, c1 je lepsi rebootovat prikazem restart. Je to chyba, na jejim odstraneni se pracuje.
+d) na c2 spustit camd (pod rootem):
+c2:/etc/init.d/rts2 restart
+
+Poznamka: tento prikaz vede vetsinou k padu c1, c1 je lepsi rebootovat prikazem
+restart. Je to chyba, na jejim odstraneni se pracuje.
 
 2)
 
 d) na lascaux planovac pod sluzbou nebo jinym uzivatelem s PRISTUPEM NA
 POSTGRESQL a clenem skupiny rts2 (pristup rw do /images, /darks):
-lascaux:/home/petr/rts2/src/plan/planc 
+lascaux:rts2-planc 
 
 Vhodna volba je uzivatel sluzba.
 
@@ -69,20 +95,23 @@ zacne presouvat, zacne se exponovat, snimky lezou do /images.
 
 6) na lascaux grbovac pod sluzbou nebo jinym uzivatelem s pristupem na
 postgresql a clenem skupiny rts2:
-lascaux:/home/petr/rts2/src/grb/grbc
+lascaux:rts2-grbc
 
 7) monitoring
 pousti se pomoci
-lascaux:/home/petr/rts2/src/monitor/nmonitor
+lascaux:rts2-mon
 
 Ma nekolik zajimavych vlasnosti:
 
 - aktualizuje se pri zmene stavu nebo pri stisku F5
-- stiskem F2 prejde centralni server do stavu off, stiskem F3 do stavu
-  on (jednoho ze stavu Day|Dusk|Night|Down)
+- stiskem F2 prejde centralni server do stavu off
+- stiskem F3 do jednoho ze stavu standby
+- stiskem F4 do jednoho z on stavu
+- F2, F3 a F4 zatim nejsou potvrzovane, takze pozor a hlidejte si, jestli jste
+  je nezmackli omylem
 - stiskem ctrl+c nebo F10 se ukonci
-- nahore je mozne psat primo prikazy, ktere oddelujeme entrem.
-  Napriklad (pokud mate pripojeno zarizeni C0):
+- nahore je mozne psat primo prikazy, ktere oddelujeme entrem.  Napriklad
+  (pokud mate pripojeno zarizeni C0):
 
   C0.cooltemp -20
 
@@ -94,12 +123,14 @@ Ma nekolik zajimavych vlasnosti:
   V pravem dolnim rohu se zobrazuji vysledky techto cinnosti
   (komunikace klient-server).
 
-Pokud to nic nedela, vse restartovat a pustit na cisto - nicmene
-nemelo by se to jiz stavat. 
+Pokud nemate radi ncurses:
+lascaux:rts2-cmon localhost
 
-Logy jdou do [lascaux|c0|c1]:/var/log/rts2.
+Odjinud nez z lascaux vam monitor nebude kvuli NAT fungovat.
 
-grbovac by mel __teoreticky__ zvladat INTEGRAL a HETE, prakticky to
-zatim nebylo overene (HETE by melo chodit).
+Pokud to nic nedela, vse restartovat a pustit na cisto - nicmene nemelo by se
+to jiz stavat. 
+
+Logy jdou do [lascaux|c0|c1|c2]:/var/log/rts2.
 
 Petr Kubanek
