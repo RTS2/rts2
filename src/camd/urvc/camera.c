@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/io.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include "mardrv.h"
 #include "../camera.h"
@@ -297,6 +298,7 @@ camera_expose (int chip, float *exposure, int light)
       if ((ret = MicroCommand (MC_STATUS, ST7_CAMERA, NULL, &sr)))
 	goto imaging_end;
 //      usleep(100000);
+      pthread_testcancel ();
       TimerDelay (100000);
     }
   while (sr.imagingState);
@@ -319,6 +321,7 @@ camera_end_expose (int chip)
 {
   EndExposureParams eep;
   eep.ccd = chip;
+  begin_realtime();
   return MicroCommand (MC_END_EXPOSURE, ST7_CAMERA, &eep, NULL);
 };
 
@@ -339,26 +342,20 @@ camera_binning (int chip_id, int vertical, int horizontal)
 extern int
 camera_readout_line (int chip_id, short start, short length, void *data)
 {
-  int bin, tw = 1536;
   PAR_ERROR ret = CE_NO_ERROR;
-  EEPROMContents eePtr;
-
-  bin = ch_info[chip_id].binning_vertical;
-
-  if ((ret = GetEEPROM (ST7_CAMERA, &eePtr)))
-    return ret;
-
-  tw = Cams[eePtr.model].horzImage;
+  int bin = ch_info[chip_id].binning_vertical - 1;
 
   CameraOut (0x60, 1);
 //      disable();
   SetVdd (1);
   if ((ret =
        DigitizeImagingLine (start, length, 0, bin, bin, 1, data, 0, length)))
-    return ret;			//goto imaging_end; // left, len, readoutMode, ptr,
-
-  printf ("\rCompleted line.\n");
-
+  {
+    printf ("digitize line:%i", ret); 
+    return ret;
+  }
+  fflush (stdout);
+    
   return 0;
 };
 

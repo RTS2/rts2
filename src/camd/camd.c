@@ -120,7 +120,6 @@ start_readout (void *arg)
 	   camera_readout_line (READOUT->chip, READOUT->x, READOUT->width,
 				line_buff)) != 0)
 	goto err;
-
       devser_data_put (READOUT->conn_id, line_buff, line_size);
     }
 
@@ -134,13 +133,11 @@ start_readout (void *arg)
 
 err:
   devser_data_done (READOUT->conn_id);
-  {
-    syslog (LOG_ERR, "error during chip %i readout", READOUT->chip);
-    devdem_status_mask (READOUT->chip,
-			CAM_MASK_READING | CAM_MASK_DATA,
-			CAM_NOTREADING | CAM_NODATA, "reading chip error");
-    return NULL;
-  }
+  syslog (LOG_ERR, "error during chip %i readout", READOUT->chip);
+  devdem_status_mask (READOUT->chip,
+		CAM_MASK_READING | CAM_MASK_DATA,
+		CAM_NOTREADING | CAM_NODATA, "reading chip error");
+  return NULL;
 }
 
 #undef READOUT
@@ -178,6 +175,7 @@ camd_handle_command (char *command)
   if (strcmp (command, "ready") == 0)
     {
       cam_call (camera_init ("/dev/ccd1", sbig_port));
+      cam_call (camera_info (&info));
       atexit (camera_done);
     }
   else if (strcmp (command, "info") == 0)
