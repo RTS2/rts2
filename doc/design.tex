@@ -2,9 +2,13 @@
 
 \section{Popis dalekohledu}
 
-Dalekohled se skládá z montá¾e, optiky a detekèních pøístrojù. Úkolem montá¾e
-je pohybovat optickou èástí dalekohledu. Montá¾e mù¾e být vybavena èidly,
-které umo¾òují získat informaci o orientaci montá¾e v prostoru.
+Dalekohled se skládá z montá¾e, optiky a detekèních pøístrojù. Nad
+dalekohledem je umístìna støecha.
+
+Úkolem montá¾e je pohybovat optickou èástí dalekohledu. Montá¾e mù¾e být vybavena èidly, které umo¾òují získat informaci o orientaci montá¾e v prostoru.
+
+V pozorovacím systému mù¾e být více dalekohledù, vybavených vìt¹ím poètem
+detekèních pøístrojù.
 
 Nejdostupnìj¹ím detekèním pøístrojem je lidské oko. Nás ale budou více zajímat
 dalekohledy vybavené CCD kameramy.
@@ -30,11 +34,17 @@ pøíjem dat pøeru¹ovat.
 
 \subsection{Popis montá¾e}
 
-Nejdùle¾itìj¹í informací od dalekohledu je jeho poloha.
+Montá¾e, které nejsou vybaveny motory pro zmìnu své orientace nelze
+automatizovat.
 
-Je rozumné, aby se dalekohledu posílaly absolutní souøadnice daného objektu.
-Pro výpoèet polohy, na kterou se má nastavit, pak dalekohled potøebuje znát
-místní hvìzdný èas. Ten je mo¾né vypoèítat z místního èasu a zemìpisné ¹íøky.
+Montá¾e s motory je potøeba nejdøíve propojit s poèítaèem. Vzhledem k malému
+objemu pøená¹ených dat se vìt¹ina montá¾í pøipojuje pøes sériový port
+poèítaèe.
+
+Pøi zadávání souøadnic dalekohledu je rozumné zadávat absolutní souøadnice
+daného objektu, tedy rektascenzi a deklinaci. Pro výpoèet polohy, na kterou se
+má nastavit, pak dalekohled potøebuje znát místní hvìzdný èas. Ten je mo¾né
+vypoèítat ze svìtového èasu a zemìpisné ¹íøky.
 
 Pøi zji¹»ování polohy dalekohledu je mo¾né pou¾ít buïto relativní, nebo
 absolutní èítaèe. Relativní èítaèe jsou jednodu¾¹í a levnìj¹í, absolutní
@@ -42,9 +52,9 @@ slo¾itìj¹í a dra¾¹í.
 
 Relativní èidla poèítají zmìnu polohu dalekohledu. Zmìnu polohy je mo¾né
 poèítat buïto pøímo z doby chodu, pøípadnì poètu cyklù motorù ovládájících
-dalekohled, nebo pøesnìji pomocí zpìtnovazební èidel, umístìných na osách
+dalekohled, nebo pøesnìji pomocí zpìtnovazebních èidel, umístìných na osách
 dalekohledu. Zpìtnovazební èidla detekují zmìnu pozice pomocí rùzných
-principù, buïto optických, nebo mechanických.
+principù, buïto optických, elektronických nebo mechanických.
 
 Relativní èidla je potøeba pøed zaèátkem pozorování nastavit. Nìkteré systémy
 motorù s èidli jsou po zapnutí schopny najít pevnou pozici, home pozici, u
@@ -53,27 +63,29 @@ které vìdí, jaké má souøadnice. Tyto pak není potøeba nastavovat.
 Absolutní èidla jsou vìt¹inou øe¹ena mechanicky, napøíklad jako velmi jemný
 potenciometr.
 
-Dostupné absolutní i relativní èidla, jejich pøesnost a cena je velmi dobøe
-popsána v \cite{telcontrol}.
+Dostupné motory, absolutní i relativní èidla, jejich pøesnost a cena je velmi
+dobøe popsána v \cite{telcontrol} na stránkách 159-222.
 
 \subsection{Støecha dalekohledu}
 
 Nad dalekohledem se nachází støecha èi kopule. Jejím úkolem je chránit
-dalekohled v pøípadì nepøíznivého poèasí. 
+dalekohled v pøípadì nepøíznivého poèasí.
 
-V pozorovacím systému mù¾e být více dalekohledù, vybavených vìt¹ím poètem
-detekèních pøístrojù.
+Pokud se jedná o kopuli, je potøeba natáèet její ¹tìrbinu\footnote{otvor,
+kterým je vidìt ven} do smìru, který sleduje dalekohled.
 
 \section{Zpracování snímkù}
 
-Pøijaté snímky je potøeba zpracovat a ulo¾it.
+Poøízené snímky je potøeba zpracovat a ulo¾it.
 
 Základním zpracováním snímkù je odeètení temných snímkù a vydìlením hodnot
-hodnotami na flat fieldu. Toto zpracování je popsáno v \cite[martinez] a
-\cite[ratledge].
+hodnotami flat fieldu\footnote{k tomuto názvu bohu¾el neznám èeský ekvivalen}.
+Toto zpracování je popsáno v \cite[martinez] na stránkách a \cite[ratledge].
 
-Dále je potøeba zjistit pøesnou polohu snímku a doplnit ho o World Coordinate
-System - WCS - hlavièku.
+Dále je potøeba zjistit pøesnou polohu snímku a zaznamenat ji ve formì
+WCS\footnote{World Coordinate System, definuje zpùsob zaznamenání polohu
+referenèního bodu snímku, jeho rektascenze a deklinace, rozmìrù pixelu, rotace
+snímku a èlenù korekèního polynomu} hlavièky.
 
 \section{Organizace pozorování}
 
@@ -83,7 +95,7 @@ evidováno, kolikrát byl pozorován a s jakým výsledkem.
 U ka¾dého snímku je evidováno, jestli se jedná o obyèejný nebo korekèní
 snímek a okolnosti jeho vzniku.
 
-Obyèejné snímky jsou spojeny s konrétním cílem pozorování. Korekèní snímky
+Obyèejné snímky jsou spojeny s konkrétním cílem pozorování. Korekèní snímky
 nejsou vázány na cíle pozorování.
 
 \section{Korekce montá¾e}
