@@ -1,3 +1,5 @@
+DROP TABLE grb;
+
 DROP TABLE targets;
 
 CREATE TABLE targets (
@@ -7,6 +9,14 @@ CREATE TABLE targets (
 	tar_dec		float4,
 	tar_comment	text
 );
+
+CREATE TABLE grb (
+	grb_id		integer,
+	grb_seqn	integer,
+	grb_date	timestamp,
+	grb_last_update	timestamp
+) INHERITS (targets);
+
 
 DROP SEQUENCE tar_id;
 
