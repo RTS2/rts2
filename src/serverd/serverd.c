@@ -352,11 +352,11 @@ client_serverd_handle_command (char *command)
 	  // priority while we are testing it
 	  devser_shm_data_lock ();
 
-	  if (serverd_id > 0 && serverd_id <= MAX_CLIENT)
-	    devser_dprintf ("old_priority %i %i", serverd_id - 1,
-			    shm_clients[serverd_id - 1].priority);
+	  if (serverd_id >= 0 && serverd_id < MAX_CLIENT)
+	    devser_dprintf ("old_priority %i %i", serverd_id,
+			    shm_clients[serverd_id].priority);
 	  else
-	    devser_dprintf ("old_priority %i 0", serverd_id - 1);
+	    devser_dprintf ("old_priority %i 0", serverd_id);
 
 	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
 			  shm_clients[shm_info->priority_client].priority);
@@ -376,7 +376,7 @@ client_serverd_handle_command (char *command)
 	    }
 
 	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
-			  shm_clients[serverd_id].priority);
+			  shm_clients[shm_info->priority_client].priority);
 
 	  devser_shm_data_unlock ();
 
