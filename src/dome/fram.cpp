@@ -358,7 +358,7 @@ Rts2DevDomeFram::openRight ()
   // otevri pravou strechu
   movingState = MOVE_OPEN_RIGHT;
   VYP (VENTIL_AKTIVACNI);
-  VYP (VENTIL_OTEVIRANI_PRAVY);
+  VYP (VENTIL_OTEVIRANI_LEVY);
   ZAP (KOMPRESOR);
   sleep (1);
   syslog (LOG_DEBUG, "opening right door");
@@ -496,6 +496,7 @@ Rts2DevDomeFram::closeDome ()
 long
 Rts2DevDomeFram::isClosed ()
 {
+  syslog (LOG_DEBUG, "isClosed %i", movingState);
   switch (movingState)
     {
     case MOVE_CLOSE_RIGHT_WAIT:
@@ -503,7 +504,7 @@ Rts2DevDomeFram::isClosed ()
 	break;
       // close dome..
     case MOVE_CLOSE_LEFT:
-      closeRight ();
+      closeLeft ();
       break;
     case MOVE_CLOSE_LEFT_WAIT:
       if (!(isOn (KONCAK_ZAVRENI_LEVY) || checkMotorTimeout ()))
