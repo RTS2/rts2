@@ -853,16 +853,17 @@ Rts2DevDomeFram::sendFramMail (char *subject)
 {
   char *openText;
   int ret;
-  asprintf (&openText, "%s.\n",
+  asprintf (&openText, "%s.\n"
 	    "End switched status:\n"
 	    "KONCAK_ZAVRENI_PRAVY:%i  KONCAK_ZAVRENI_LEVY:%i\n"
 	    "KONCAK_OTEVRENI_PRAVY:%i KONCAK_OTEVRENI_PRAVY:%i\n"
 	    "Weather::isGoodWeather %i\n"
-	    "closingNum: %i lastClosing: %s\n",
+	    "closingNum: %i lastClosing: %s",
 	    subject,
 	    isOn (KONCAK_ZAVRENI_PRAVY), isOn (KONCAK_ZAVRENI_LEVY),
 	    isOn (KONCAK_OTEVRENI_PRAVY), isOn (KONCAK_OTEVRENI_LEVY),
-	    weatherConn->isGoodWeather (), closingNum, ctime (&lastClosing));
+	    (weatherConn ? weatherConn->isGoodWeather () : -2), closingNum,
+	    ctime (&lastClosing));
   ret = sendMail (subject, openText);
   free (openText);
   return ret;
@@ -877,6 +878,7 @@ main (int argc, char **argv)
 
   int ret;
   ret = device->init ();
+  device->sendFramMail ("test");
   if (ret)
     {
       fprintf (stderr, "Cannot initialize dome - exiting!\n");
