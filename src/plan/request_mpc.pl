@@ -63,6 +63,10 @@ while (my $row = shift @res_arr)
   my $a = $hodn[4];
   my $e = $hodn[5];
   my $w = $hodn[6];
+  if ($e < 1.0)
+  {
+    $a = $a / (1 - $e);
+  }
   my $omega = $hodn[7];
   my $i = $hodn[8];
   if ($hodn[9] =~ /^\d+$/)
