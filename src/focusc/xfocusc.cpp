@@ -49,8 +49,13 @@ Display *display;
 Visual *visual;
 int depth;
 
-union DeviceWindow
+XColor rgb[256];
+
+Colormap colormap;
+
+class DeviceWindow
 {
+public:
   struct device *camera;
 
   Window window;
@@ -62,17 +67,15 @@ union DeviceWindow
 
   int hist[HISTOGRAM_LIMIT];
 
-  Colormap colormap;
-  XColor rgb[256];
 
   float exposure_time;
 
   pthread_t thr;
   pthread_attr_t attrs;
 
-    DeviceWindow (char *camera_name);
+    DeviceWindow (char *camera_name, Window root_window);
 
-  ~DeviceWindow ()
+   ~DeviceWindow ()
   {
     XUnmapWindow (display, window);
   };
@@ -84,7 +87,7 @@ union DeviceWindow
 
   static void *static_event_loop (void *arg)
   {
-    return ((DeviceWindow *)arg)->event_loop(NULL);
+    return ((DeviceWindow *) arg)->event_loop (NULL);
 
   }
 
@@ -95,8 +98,15 @@ union DeviceWindow
     while (1)
       {
 	XEvent event;
+
+	printf ("waiting for event\n", event.type);
+	fflush (stdout);
+
 	XNextEvent (display, &event);
 	KeySym ks;
+
+	printf ("XEvent %i\n", event.type);
+	fflush (stdout);
 
 	switch (event.type)
 	  {
@@ -108,13 +118,13 @@ union DeviceWindow
 	    switch (ks)
 	      {
 	      case XK_1:
-		devcli_command (camera, NULL, "binning 0 1 1");
+		devcli_command (this->camera, NULL, "binning 0 1 1");
 		break;
 	      case XK_2:
-		devcli_command (camera, NULL, "binning 0 2 2");
+		devcli_command (this->camera, NULL, "binning 0 2 2");
 		break;
 	      case XK_3:
-		devcli_command (camera, NULL, "binning 0 3 3");
+		devcli_command (this->camera, NULL, "binning 0 3 3");
 		break;
 	      case XK_e:
 		exposure_time += 1;
@@ -165,9 +175,12 @@ union DeviceWindow
       }
   };
 
-  static int static_data_handler (int sock, size_t size, struct image_info *image_info, void *arg)
+  static int static_data_handler (int sock, size_t size,
+				  struct image_info *image_info, void *arg)
   {
-    return ((DeviceWindow*) arg)->data_handler (sock, size, image_info);
+    printf ("data handler");
+    fflush (stdout);
+    return ((DeviceWindow *) arg)->data_handler (sock, size, image_info);
   }
 
   /*!
@@ -309,6 +322,8 @@ union DeviceWindow
     info->observation_id = -1;
     info->target_type = 1;
     info->camera_name = camera->name;
+    printf ("waiting for camera\n");
+    fflush (stdout);
     if (devcli_command (camera, NULL, "info") ||
 	!memcpy (&info->camera, &camera->info, sizeof (struct camera_info)) ||
 	!memset (&info->telescope, 0, sizeof (struct telescope_info)) ||
@@ -316,105 +331,108 @@ union DeviceWindow
 	|| devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
 				   CAM_NOEXPOSURE, 0))
       {
+	printf ("wait with error\n");
+	fflush (stdout);
 	free (info);
 	return -1;
       }
+    printf ("wait for readout\n");
+    fflush (stdout);
 
     if (devcli_command (camera, NULL, "readout 0"))
       {
+	printf ("reading commond err\n");
+	fflush (stdout);
 	free (info);
 	return -1;
       }
     free (info);
+    printf ("reading out\n");
+    fflush (stdout);
     return 0;
   };
 
-  static void * run (void *arg)
+  static void *run (void *arg)
   {
-     ((DeviceWindow *)arg)->expose_loop ();
+
+    ((DeviceWindow *) arg)->expose_loop ();
   }
 
   void expose_loop ()
   {
+    time_t start_time;
 
-  time_t start_time;
+    time (&start_time);
+    start_time += 20;
 
-  time (&start_time);
-  start_time += 20;
+    pthread_attr_init (&attrs);
+    pthread_create (&thr, &attrs, static_event_loop, this);
 
-  while (1)
-    {
-      time_t t = time (NULL);
+    while (1)
+      {
+	time_t t = time (NULL);
 
-      devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
-			      DEVICE_PRIORITY, 0);
+	devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
+				DEVICE_PRIORITY, 0);
 
-      printf ("OK\n");
+	printf ("OK\n");
 
-      time (&t);
-      printf ("exposure countdown %s..", ctime (&t));
-      t += (long int)exposure_time;
-      printf ("readout at: %s", ctime (&t));
-      printf ("exposure_time: %f\n", exposure_time);
-      if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
-				  CAM_NOTREADING, 0) ||
-	  devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
-	{
-	  perror ("expose:");
-	}
-
-
-      readout ();
-    }
+	time (&t);
+	printf ("exposure countdown %s..", ctime (&t));
+	t += (long int) exposure_time;
+	printf ("readout at: %s", ctime (&t));
+	printf ("exposure_time: %f\n", exposure_time);
+	if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
+				    CAM_NOTREADING, 0) ||
+	    devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
+	  {
+	    perror ("expose:");
+	  }
+	printf ("startign readout\n");
+	fflush (stdout);
+	readout ();
+	printf ("after readout\n");
+	fflush (stdout);
+      }
   }
 
 };
 
-DeviceWindow::DeviceWindow (char *camera_name)
-  {
-    XSetWindowAttributes xswa;
+DeviceWindow::DeviceWindow (char *camera_name, Window root_window)
+{
+  XSetWindowAttributes xswa;
 
-      gc = NULL;
-      image = NULL;
-      depth = 0;
-      rgb[256];
-      exposure_time = 3.0;
+  gc = NULL;
+  image = NULL;
+  rgb[256];
+  exposure_time = 3.0;
 
-      window =
-      XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,
-		     100, 0, depth, InputOutput, visual, 0, &xswa);
+  window =
+    XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,
+		   100, 0, depth, InputOutput, visual, 0, &xswa);
+//  window =
+//   XCreateWindow (display, root_window, 0, 0, 100,
+//                 100, 0, depth, InputOutput, visual, 0, &xswa);
 
-      pixmap =
-      XCreatePixmap (display, DefaultRootWindow (display), 1200, 1200, depth);
+  pixmap = XCreatePixmap (display, window, 1200, 1200, depth);
 
-      gc = XCreateGC (display, pixmap, 0, &gcv);
 
-      XSelectInput (display, window,
-		    KeyPressMask | ButtonPressMask | ExposureMask);
+  gc = XCreateGC (display, pixmap, 0, &gcv);
 
-      colormap = DefaultColormap (display, DefaultScreen (display));
+  XSelectInput (display, window,
+		KeyPressMask | ButtonPressMask | ExposureMask);
 
-    // allocate colormap..
-    for (int i = 0; i < 256; i++)
-      {
-	rgb[i].red = 65536 * (short unsigned int) (1.0 * i / 256);
-	rgb[i].green = 65536 * (short unsigned int) (1.0 * i / 256);
-	rgb[i].blue = 65536 * (short unsigned int) (1.0 * i / 256);
-	rgb[i].flags = DoRed | DoGreen | DoBlue;
-	XAllocColor (display, colormap, rgb + i);
-      }
+  XMapRaised (display, window);
 
-    XMapRaised (display, window);
+  camera = devcli_find (camera_name);
 
-    camera = devcli_find (camera_name);
-    camera->data_handler_args = this;
-    camera->data_handler = static_data_handler;
-
-    if (!camera)
-      {
-	printf ("**** Cannot find camera\n");
-	exit (EXIT_FAILURE);
-      }
+  if (!camera)
+    {
+      printf ("**** Cannot find camera\n");
+      exit (EXIT_FAILURE);
+    }
+  camera->data_handler_args = this;
+  camera->data_handler = static_data_handler;
 
 #define CAMD_WRITE_READ(command) if (devcli_command (camera, NULL, command) < 0) \
   				{ \
@@ -422,16 +440,13 @@ DeviceWindow::DeviceWindow (char *camera_name)
 				  return; \
 				}
 
-    CAMD_WRITE_READ ("ready");
-    CAMD_WRITE_READ ("info");
-    CAMD_WRITE_READ ("chipinfo 0");
+  CAMD_WRITE_READ ("ready");
+  CAMD_WRITE_READ ("info");
+  CAMD_WRITE_READ ("chipinfo 0");
 
-    devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
-			    DEVICE_PRIORITY, 0);
-
-    pthread_attr_init (&attrs);
-    pthread_create (&thr, &attrs, static_event_loop, this);
-  };
+  devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
+			  DEVICE_PRIORITY, 0);
+}
 
 
 int
@@ -449,6 +464,9 @@ main (int argc, char **argv)
 
   pthread_t camera_thr[MAX_DEVICES];
   pthread_attr_t attrs;
+
+  Window root_window;
+  XSetWindowAttributes xswa;
 
   int c = 0;
 
@@ -512,8 +530,34 @@ main (int argc, char **argv)
 
   display = XOpenDisplay (NULL);
 
+  if (!display)
+    {
+      printf ("null display\n");
+      exit (1);
+    }
+
   depth = DefaultDepth (display, DefaultScreen (display));
   visual = DefaultVisual (display, DefaultScreen (display));
+
+  colormap = DefaultColormap (display, DefaultScreen (display));
+
+  printf ("Window created.\n");
+
+  // allocate colormap..
+  for (int i = 0; i < 256; i++)
+    {
+      rgb[i].red = 65536 * (1.0 * i / 256);
+      rgb[i].green = 65536 * (1.0 * i / 256);
+      rgb[i].blue = 65536 * (1.0 * i / 256);
+      rgb[i].flags = DoRed | DoGreen | DoBlue;
+
+
+      XAllocColor (display, colormap, rgb + i);
+    }
+
+//  root_window =
+//    XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,
+//                 100, 0, depth, InputOutput, visual, 0, &xswa);
 
   printf ("connecting to %s:%i\n", server, port);
 
@@ -529,23 +573,26 @@ main (int argc, char **argv)
   printf ("waiting for priority\n");
 
   for (i = 0; i < camera_num; i++)
-  {
-    camera_window[i] = new DeviceWindow(camera_names[i]);
-  }
+    {
+      camera_window[i] = new DeviceWindow (camera_names[i], root_window);
+    }
 
   printf ("waiting end\n");
 
   for (i = 0; i < camera_num; i++)
-  {
-    camera_window[i] = new DeviceWindow(camera_names[i]);
-    pthread_attr_init (&attrs);
-    pthread_create (&(camera_thr[i]), &attrs, DeviceWindow::run, (void *) camera_window[i]);
-  }
+    {
+      pthread_attr_init (&attrs);
+      pthread_create (&(camera_thr[i]), &attrs, DeviceWindow::run,
+		      (void *) camera_window[i]);
+    }
 
   for (i = 0; i < camera_num; i++)
-  {
-    pthread_join (camera_thr[i], NULL);
-  }
+    {
+      pthread_join (camera_thr[i], NULL);
+    }
+
+  printf ("joind sucessfull\n");
+  fflush (stdout);
 
   devcli_server_disconnect ();
 
