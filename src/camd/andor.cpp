@@ -36,8 +36,8 @@ class CameraAndorChip:public CameraChip
   char *send_top;
 public:
     CameraAndorChip (int in_chip_id, int in_width, int in_height,
-		     int in_pixelX, int in_pixelY, float in_gain);
-   ~CameraAndorChip (void);
+		     float in_pixelX, float in_pixelY, float in_gain);
+    virtual ~ CameraAndorChip (void);
   virtual long isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
@@ -45,7 +45,7 @@ private:
 };
 
 CameraAndorChip::CameraAndorChip (int in_chip_id, int in_width, int in_height,
-				  int in_pixelX, int in_pixelY,
+				  float in_pixelX, float in_pixelY,
 				  float in_gain):
 CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
@@ -130,7 +130,7 @@ protected:
     virtual void help ();
 public:
     Rts2DevCameraAndor (int argc, char **argv);
-   ~Rts2DevCameraAndor (void);
+    virtual ~ Rts2DevCameraAndor (void);
 
   virtual int processOption (int in_opt);
   virtual int init ();
@@ -238,7 +238,7 @@ Rts2DevCameraAndor::init ()
   chips[0] = cc;
   chips[1] = NULL;
 
-  return 0;
+  return Rts2DevCamera::initChips ();
 }
 
 int
