@@ -1,6 +1,6 @@
 #$Id$
 
-BIN = camd_sbig camd_urvc
+BIN = camd_sbig camd_urvc camd_apogee
 
 all: $(BIN) 
 
@@ -9,6 +9,8 @@ SUBDIRS = sbig urvc
 include ../../make.conf
 
 LDFLAGS += -l$(LIB_M) -l$(LIB_PTHREAD)
+
+.PHONY=clean
 
 clean:
 	$(RM) $(TOCLEAN) $(BIN)
@@ -24,3 +26,6 @@ camd_sbig: camd.o sbig/camera.o sbig/sbig.o sbig/pardrv.aa ../utils/devdem.a
 
 camd_urvc: camd.o urvc/marmicro.o urvc/mario.o urvc/marecp.o urvc/ccd_imaging.o urvc/ccd_tracking.o urvc/camera.o ../utils/devdem.a
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS) 
+
+camd_apogee: camd.o apogee/apogee.o ../utils/devdem.a
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
