@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -12,8 +13,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
-#include <argz.h>
 
 #include "camera.h"
 #include "../utils/devdem.h"
@@ -499,6 +498,19 @@ camd_handle_command (char *command)
       cam_call (camera_cool_shutdown ());
       devdem_priority_block_end ();
     }
+  else if (strcmp (command, "filter") == 0)
+    {
+      int filter;
+      if (devser_param_test_length (1))
+	return -1;
+      if (devser_param_next_integer (&filter))
+	return -1;
+
+      if (devdem_priority_block_start ())
+	return -1;
+      cam_call (camera_set_filter (filter));
+      devdem_priority_block_end ();
+    }
   else if (strcmp (command, "exit") == 0)
     {
       return -2;
@@ -517,6 +529,7 @@ camd_handle_command (char *command)
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       devser_dprintf ("stopread <chip> - stop reading given chip");
       devser_dprintf ("cooltemp <temp> - cooling temperature");
+      devser_dprintf ("filter <filter number> - set camera filter");
       devser_dprintf ("exit - exit from connection");
       devser_dprintf ("help - print, what you are reading just now");
       ret = errno = 0;
@@ -571,9 +584,9 @@ main (int argc, char **argv)
   char *hostname = NULL;
   int c;
 
-//#ifdef DEBUG
+#ifdef DEBUG
   mtrace ();
-//#endif
+#endif
 
   strcpy (device_name, DEVICE_NAME);
 

@@ -24,5 +24,6 @@ extern int camera_cool_max ();	/* try to max temperature */
 extern int camera_cool_hold ();	/* hold on that temperature */
 extern int camera_cool_shutdown ();	/* ramp to ambient */
 extern int camera_cool_setpoint (float coolpoint);	/* set direct setpoint */
+extern int camera_set_filter (int filter);	/* set filter */
 
 #endif /* __RTS_CAMERA__ */

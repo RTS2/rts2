@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = urvc sbigusb
+SUBDIRS = urvc
 
 bin_PROGRAMS = rts2-camd-urvc
 

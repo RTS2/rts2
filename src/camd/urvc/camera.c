@@ -611,3 +611,28 @@ camera_cool_setpoint (float coolpoint)	/* set direct setpoint */
   sem_unlock ();
   return 0;
 };
+
+extern int
+camera_set_filter (int filter)	/* set camera filter */
+{
+  PulseOutParams pop;
+
+  sem_lock ();
+  if (filter < 1 || filter > 5)
+    {
+      errno = EINVAL;
+      return -1;
+    }
+  pop.pulsePeriod = 18270;
+  pop.pulseWidth = 500 + 300 * (filter - 1);
+  pop.numberPulses = 60;
+
+  if (MicroCommand (MC_PULSE, ST7_CAMERA, &pop, NULL))
+    {
+      sem_unlock ();
+      errno = ENODEV;
+      return -1;
+    }
+  sem_unlock ();
+  return 0;
+}
