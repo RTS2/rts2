@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <getopt.h>
 #include <mcheck.h>
 #include <pthread.h>
@@ -356,7 +358,7 @@ main (int argc, char **argv)
 	}
 
       pthread_mutex_unlock (&observing_lock);
-      db_end_observation (obs_id, time (NULL) - t);
+      db_end_observation (observing.tar_id, obs_id, &hrz, time (NULL) - t);
     }
 
   db_disconnect ();

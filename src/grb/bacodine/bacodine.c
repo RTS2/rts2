@@ -506,6 +506,7 @@ receive_bacodine (process_grb_event_t arg)
   struct tm *t;			/* Pointer to time struct of machine GMT */
   int i;			/* Counter */
   long lo, hi;			/* Lo and Hi portion of long */
+  time_t loc_time;
 
   process_grb = arg;
 
@@ -518,6 +519,8 @@ receive_bacodine (process_grb_event_t arg)
     }
   fprintf (lg,
 	   "\n===================== New Session ========================\n");
+  time (&loc_time);
+  fprintf (lg, "Started at: %s", ctime ((time_t *) & loc_time));
   fprintf (lg, "%s\n", version);
   fprintf (lg, "port=%d\n", port);
   fflush (lg);
@@ -568,6 +571,7 @@ receive_bacodine (process_grb_event_t arg)
 	       * */
 
 	      /* debug print */
+	      fprintf (lg, "At ", ctime ((time_t *) & tloc));
 	      fprintf (lg, "Get %i bytes = [", bytes);
 	      fwrite ((char *) lbuf, 1, bytes, lg);
 	      fprintf (lg, "], that's");
@@ -657,7 +661,7 @@ receive_bacodine (process_grb_event_t arg)
 		case TYPE_HETE_FINAL_SRC:
 		case TYPE_HETE_GNDANA_SRC:
 		case TYPE_HETE_TEST:
-//		  pr_hete (lbuf, stdout);
+//                pr_hete (lbuf, stdout);
 		  pr_hete (lbuf, lg);
 		  break;
 		case TYPE_IPN_POS_SRC:
@@ -926,7 +930,8 @@ pr_alexis (lbuf, s)		/* print the contents of the ALEXIS packet */
   int i;			/* Loop var */
   static char tele[7][16] =
     { "n/a", "1A, 93eV", "1B, 70eV", "2A, 93eV", "2B, 66eV", "3A, 70eV",
-"3B, 66eV" };
+    "3B, 66eV"
+  };
 
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
   fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);
@@ -1206,11 +1211,9 @@ pr_hete (lbuf, s)		/* print the contents of the HETE-based packet */
 
 //  if (lbuf[PKT_TYPE] != TYPE_HETE_TEST)
 //  {
-	  process_grb (
-		(lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
-	  	(lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-		lbuf[BURST_RA] / 10000.0,
-		lbuf[BURST_DEC] / 10000.0);
+  process_grb ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT,
+	       (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
+	       lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0);
 //  }
 
   if (lbuf[H_TRIG_FLAGS] & H_WXM_POS)	/* Flag says that WXM pos is available */
