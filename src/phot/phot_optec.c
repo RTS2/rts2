@@ -31,24 +31,54 @@
 
 int base_address = 0x300;
 
+int initiate = 0;
+
 void
 phot_init ()
 {
+  if (initiate)
+    return;
+  initiate = 1;
   iopl (3);
   // timer 0 to generate a square wave
   outb (54, base_address + 7);
+  sleep (1);
   // timer 1 to operate as a digital one shot
   outb (114, base_address + 7);
+  sleep (1);
   // timer 2 to operate as an event counter
   outb (176, base_address + 7);
+  sleep (1);
   // write divide by 2 to timer 0 to generate 1kHz square wave, LSB and then MSB
   outb (2, base_address + 4);
+  sleep (1);
   outb (0, base_address + 4);
+  sleep (1);
   // write 1000 to Timer 1 to generate a 1 second pulse, LSB and then MSB
   outb (1000 % 256, base_address + 5);
+  sleep (1);
   outb (1000 / 256, base_address + 5);
   // set ouput port bit #0 to 0 bit #1 to 1 and bit #2 to 0
+  sleep (1);
   outb (2, base_address + 1);
+}
+
+void
+phot_home_filter ()
+{
+  int i;
+  // reset stepper motor controller
+  outb (0, base_address + 1);
+  outb (2, base_address + 1);
+  // move filter rack enough steps to put slider against cover wall and stall motor
+  for (i = 0; i < 150; i++)
+    {
+      // each change takes 0.5 sec
+      sleep (1);
+      // move stepper motor one step in direction 1
+      outb (3, base_address);
+      outb (2, base_address);
+    }
 }
 
 void
@@ -62,25 +92,51 @@ void *
 start_integrate (void *arg)
 {
   int it_t;			// integration time in 0.0001 seconds
+  int b, old_b = 0;
   int frequency = 0;
+  iopl (3);
   // change period in seconds to and integer times 1000
   it_t = 1000 * *((float *) arg);
   // write integration time to timer 1, LSB and then MSB
+  printf ("integration time:%i\n", it_t);
   outb (it_t % 256, base_address + 5);
+  sleep (1);
   outb (it_t / 256, base_address + 5);
 
+  // clear timer 2 counter
+  outb (255, base_address + 6);
+  sleep (1);
+  outb (255, base_address + 6);
+
+  // strobe bit 2 of 4-bit control port to initiate counting
+  outb (4, base_address);
+  sleep (1);
+  outb (0, base_address);
+
   // wait for finish
-  sleep (*((float *) arg));
+  sleep (1);
 
   // value readout
-  // poll timer 1 status until bit 7 is 1 indicating that the cound is disabled
+  // poll timer 1 status until bit 7 is 1 indicating that the count is disabled
   do
-    outb (228, base_address + 7);
-  while ((inb (base_address + 5) & 128) != 128);
+    {
+      outb (228, base_address + 7);
+      sleep (1);
+      b = inb (base_address + 5);
+      if (b != old_b)
+	{
+	  printf ("b: %x\n", b);
+	  old_b = b;
+	}
+    }
+  while ((b & 128) != 128);
   // check if any pulses were received thus loading timer 2's counter with a valid count
   outb (232, base_address + 7);
-  if ((inb (base_address + 6) & 64) == 0)
+  b = inb (base_address + 6);
+  printf ("b: %x\n", b);
+  if ((b & 64) == 0)
     {
+      printf ("valid frequency\n");
       // if the counter's content is valid, read it in
       frequency = inb (base_address + 6) + inb (base_address + 6) * 256;
       frequency = 65536 - frequency;
@@ -115,7 +171,13 @@ phot_handle_command (char *command)
       phot_init ();
       ret = errno = 0;
     }
-  else if (strcmp (command, "integrate"))
+  else if (strcmp (command, "home") == 0)
+    {
+      phot_init ();
+      phot_home_filter ();
+      ret = errno = 0;
+    }
+  else if (strcmp (command, "integrate") == 0)
     {
       float it;			// integration time in seconds
       if (devser_param_test_length (1))
@@ -240,7 +302,7 @@ main (int argc, char **argv)
     }
 
   if (devdem_register
-      (serverd_host, serverd_port, device_name, DEVICE_TYPE_DOME, hostname,
+      (serverd_host, serverd_port, device_name, DEVICE_TYPE_UNKNOW, hostname,
        device_port) < 0)
     {
       perror ("devser_register");
