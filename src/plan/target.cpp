@@ -24,7 +24,7 @@ EllTarget::EllTarget (struct ln_ell_orbit *in_orbit)
 
 int EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
-  if (orbit.e < 0.0)
+  if (orbit.e == 1.0)
   {
           struct ln_par_orbit par_orbit;
           par_orbit.q = orbit.a;
@@ -33,6 +33,16 @@ int EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
           par_orbit.omega = orbit.omega;
           par_orbit.JD = orbit.JD;
           ln_get_par_body_equ_coords (JD, &par_orbit, pos);
+          return 0;
+  } else if (orbit.e > 1.0)
+  {
+          struct ln_hyp_orbit hyp_orbit;
+          hyp_orbit.q = orbit.a;
+          hyp_orbit.i = orbit.i;
+          hyp_orbit.w = orbit.w;
+          hyp_orbit.omega = orbit.omega;
+          hyp_orbit.JD = orbit.JD;
+          ln_get_hyp_body_equ_coords (JD, &hyp_orbit, pos);
           return 0;
   }
   ln_get_ell_body_equ_coords (JD, &orbit, pos);
