@@ -52,6 +52,8 @@ struct radec correction_buf[CORRECTION_BUF];
 
 struct ln_lnlat_posn observer;
 
+struct telescope_info info;
+
 int correction_mark = 0;
 
 int only_n_corrections = 0;
@@ -215,7 +217,6 @@ teld_handle_command (char *command)
     }
   else if (strcmp (command, "base_info") == 0)
     {
-      struct telescope_info info;
       tel_call (telescope_base_info (&info));
       devser_dprintf
 	("type %s\nserial_number %s\nlongtitude %f\nlatitude %f\naltitude %f\npark_dec %f",
@@ -224,7 +225,6 @@ teld_handle_command (char *command)
     }
   else if (strcmp (command, "info") == 0)
     {
-      struct telescope_info info;
       tel_call (telescope_info (&info));
       // correction mark is local variable, so we must use the local
       // variant - not one from info!
@@ -305,6 +305,7 @@ main (int argc, char **argv)
 
   char *hostname = NULL;
   int c;
+  int deamonize = 1;
 
   observer.lat = 0;
   observer.lng = 0;
@@ -326,6 +327,7 @@ main (int argc, char **argv)
       static struct option long_option[] = {
 	{"tel_port", 1, 0, 'l'},
 	{"port", 1, 0, 'p'},
+	{"deamonize", 0, 0, 'i'},
 	{"serverd_host", 1, 0, 's'},
 	{"serverd_port", 1, 0, 'q'},
 	{"device_name", 1, 0, 'd'},
@@ -347,6 +349,9 @@ main (int argc, char **argv)
 	  break;
 	case 'p':
 	  device_port = atoi (optarg);
+	  break;
+	case 'i':
+	  deamonize = 0;
 	  break;
 	case 's':
 	  serverd_host = optarg;
@@ -388,13 +393,13 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  if (devdem_init (stats, 1, NULL))
+  if (devdem_init (stats, 1, NULL, deamonize))
     {
       syslog (LOG_ERR, "devdem_init: %m");
       return EXIT_FAILURE;
     }
 
-  telescope_init ("/dev/ttyS0", 0);
+  telescope_init (tel_port, 0);
 
   if (devdem_register
       (serverd_host, serverd_port, device_name, DEVICE_TYPE_MOUNT, hostname,

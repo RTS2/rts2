@@ -28,7 +28,7 @@ extern "C"
 			  char *message);
 
   int devdem_init (char **status_names, int status_num_in,
-		   status_notifier_t server_notifier);
+		   status_notifier_t server_notifier, int deamonize);
   int devdem_register (char *server_address, uint16_t server_port,
 		       char *in_device_name, int device_type,
 		       char *device_host, uint16_t device_port);

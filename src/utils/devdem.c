@@ -22,6 +22,10 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -813,16 +817,41 @@ server_message_handler (struct param_status *params, void *info)
  * 
  * @param status_names 	names of status, which are part of process status space
  * @param status_num_in	number of status_names
+ * @param deamonize	1 if I will run on background
  */
 int
 devdem_init (char **status_names, int status_num_in,
-	     status_notifier_t server_notifier)
+	     status_notifier_t server_notifier, int deamonize)
 {
   struct devconn_status *st;
   union semun sem_un;
   int i;
+  int ret;
+  int f;
 
-  // first of all init devser
+  // first of all deamonize..
+  if (deamonize)
+    {
+      ret = fork ();
+      if (ret < 0)
+	{
+	  perror ("forking");
+	  exit (errno);
+	}
+      if (ret)
+	{
+	  exit (0);
+	}
+      close (0);
+      close (1);
+      close (2);
+      f = open ("/dev/null", O_RDWR);
+      dup (f);
+      dup (f);
+      dup (f);
+    }
+
+  // then init devser
   if (devser_init (sizeof (struct client_info)))
     return -1;
 
@@ -996,7 +1025,6 @@ devdem_run (uint16_t port, devser_handle_command_t in_handler)
     }
 
   ret = devser_run (port, client_handle_commands);
-
 
   if (ret == -2)
     {
