@@ -1,40 +1,32 @@
 # $Id$
 
-SUBDIRS = miniccd urvc
+SUBDIRS = urvc2
 
-bin_PROGRAMS = rts2-camd-urvc rts2-camd-apogee rts2-camd-miniccd
+bin_PROGRAMS = rts2-camd-sbigusb rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee
 
-if FOCUSING
+noinst_HEADERS = camera_cpp.h
 
-rts2_camd_miniccd_SOURCES = camd.c focusing.c tcf.c sex_interface.c mirror.c
-rts2_camd_miniccd_LDFLAGS = miniccd/libminiccd.a ../utils/libdevdem.a @LIB_PTHREAD@ @LIB_CFITSIO@
-rts2_camd_miniccd_CFLAGS = -DFOCUSING -DMIRROR
+LDADD = ../utils/librts2block.a
 
-rts2_camd_urvc_SOURCES = camd.c focusing.c tcf.c sex_interface.c mirror.c
-rts2_camd_urvc_LDFLAGS = urvc/liburvc.a ../utils/libdevdem.a @LIB_PTHREAD@ @LIB_CFITSIO@
-rts2_camd_urvc_CFLAGS = -DFOCUSING -DMIRROR
+AM_CXXFLAGS = -I/home/petr/sbig
 
-rts2_camd_apogee_SOURCES = camd.c apogee/apogee.cpp apogee/CameraIO_LinuxPCI.cpp focusing.c tcf.c sex_interface.c mirror.c
-rts2_camd_apogee_LDFLAGS = ../utils/libdevdem.a @LIB_PTHREAD@ @LIB_CFITSIO@
-rts2_camd_apogee_CFLAGS = -DFOCUSING -DMIRROR
-
-else
-
-rts2_camd_miniccd_SOURCES = camd.c
-rts2_camd_miniccd_LDFLAGS = miniccd/libminiccd.a ../utils/libdevdem.a @LIB_PTHREAD@
-
-rts2_camd_urvc_SOURCES = camd.c
-rts2_camd_urvc_LDFLAGS = urvc/liburvc.a ../utils/libdevdem.a @LIB_PTHREAD@
-
-rts2_camd_apogee_SOURCES = camd.c apogee/apogee.cpp apogee/CameraIO_LinuxPCI.cpp
-rts2_camd_apogee_LDFLAGS = ../utils/libdevdem.a @LIB_PTHREAD@
-
+if SBIG
+bin_PROGRAMS += rts2-camd-sbigusb
+rts2_camd_sbigusb_SOURCES = camd.cpp sbigusb.cpp
+rts2_camd_sbigusb_LDFLAGS = @LIB_SBIG@
+rts2_camd_sbigusb_CXXFLAGS = @INC_SBIG@
 endif
 
-noinst_HEADERS = camera.h
+if ANDOR 
+bin_PROGRAMS += rts2-camd-andor
+rts2_camd_andor_SOURCES = camd.cpp andor.cpp
+rts2_camd_andor_LDFLAGS = @LIB_ANDOR@ @LIB_M@ @LIB_PTHREAD@
+rts2_camd_andor_CXXFLAGS = @INC_ANDOR@
+endif
 
-#CC = $(CXX)
+rts2_camd_miniccd_SOURCES = camd.cpp miniccd.cpp
 
-#rts2_camd_sbigusb_SOURCES = camd.c
-#rst2_camd_sbigusb_CFLAGS = -I/home/petr/sbig/include
-#rts2_camd_sbigusb_LDFLAGS = ../utils/libdevdem.a sbigusb/libsbigusb.a /home/petr/sbig/lib/libsbig.a 
+rts2_camd_urvc2_SOURCES = camd.cpp urvc2.cpp
+rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
+
+rts2_camd_apogee_SOURCES = camd.cpp apogee.cpp apogee/CameraIO_LinuxPCI.cpp
