@@ -167,6 +167,10 @@ public:
   virtual int idle ();
   int authorize (Rts2DevConn * conn);
   int sendStatusInfo (Rts2DevConn * conn);
+  int sendMaster (char *msg)
+  {
+    return conn_master->send (msg);
+  }
 };
 
 #endif /* !__RTS2_DEVICE__ */

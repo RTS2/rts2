@@ -39,9 +39,10 @@ class Rts2Conn
     sock = -1;
     return -1;
   }
+  int acceptConn ();
 
 protected:
-    Rts2Block * master;
+  Rts2Block * master;
   char *command_start;
   int sock;
   int conn_state;
@@ -64,8 +65,7 @@ public:
   int sendValue (char *name, char *value);
   int sendValue (char *name, double value);
   int sendCommandEnd (int num, char *message);
-  int acceptConn ();
-  int receive (fd_set * set);
+  virtual int receive (fd_set * set);
   conn_type_t getType ()
   {
     return type;

@@ -45,7 +45,8 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master)
 
 Rts2Conn::~Rts2Conn (void)
 {
-  close (sock);
+  if (sock >= 0)
+    close (sock);
 }
 
 int
