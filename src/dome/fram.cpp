@@ -44,7 +44,7 @@
 #define FRAM_TIME_RECLOSE_LEFT  5
 
 // how long we will keep lastWeatherStatus as actual (in second)
-#define FRAM_WEATHER_TIMEOUT	60
+#define FRAM_WEATHER_TIMEOUT	40
 // should be in 0-99 range, as 99 is maximum value which station can measure
 #define FRAM_MAX_WINDSPEED      50
 #define FRAM_MAX_PEAK_WINDSPEED 50
@@ -230,7 +230,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
       // parse weather info
       ret =
 	sscanf (buf,
-		"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%f status=%s",
+		"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%fZ status=%s",
 		&windspeed, &rain, &statDate.tm_year, &statDate.tm_mon,
 		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
 		&sec_f, status);
@@ -260,7 +260,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	}
       // ack message
       ret =
-	sendto (sock, "ack", 3, 0, (struct sockaddr *) &from, sizeof (from));
+	sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));
     }
   return data_size;
 }
