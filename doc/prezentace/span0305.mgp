@@ -1,0 +1,156 @@
+%include "default.mgp"
+%default 1 bgrad
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+%center
+
+Image acqusition software for BOOTES IR
+
+%vgap 20
+
+Mgr. Martin Jelinek
+Petr Kubanek
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+What we can offer?
+
+- experience with BART telescope
+- database types for astrometry
+- astronomical database functions
+- CVS (version control) and related software engeneering stuff
+- libnova (open source astronomical routines library)
+
+####################################################################
+%page
+
+RTS2 - overview
+
+RTS2 is designed to be hardware independent. 
+For communication it uses text oriented protocol. 
+Data (= images) are transfered via separate socket 
+in binary format.
+
+RTS2 is written in pure C. For each connection is 
+created new process. Processes communicate within 
+each other throught IPC (Unix Inter Process
+Communication).
+
+RTS2 is working at Ondrejov from early February.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+RTS2 - parts
+
+RTS2 consists of following parts:
+
+- serverd  - central server, register clients 
+             and devices, provides information about 
+- planc    - plan server, select next targets from 
+             database
+- grbc     - server for rapid respons to GRB events, 
+             receive both IBAN (Integral) and GCN 
+	     packet throught dedicated Internet connections
+- nmonitor - monitoring, manual control of cameras
+
+Under development are clients for manual control.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+RTS2 - database access
+
+For database access is used PHP based web site. Images 
+database could be accessed at http://lascaux.asu.cas.cz/bartdb.
+
+In development are pages for observation statistics, and 
+direct planner control.
+
+RTS2 programs accessed database via embedded SQL.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+RTS2 - target selection
+
+In selector, which is part of planc client, are 
+selected next targets. Current observation schema 
+included regulary taken dark images.
+
+Observerd are preselected fields at given altitudes. 
+
+Goal is to have maximum number of good images from 
+all fields.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+RTS2 - long-term field selection
+
+Possible targets are targets, which were not 
+observed within given time (for which there is 
+no obervation report). Targets must be on given 
+altitude. They are sorted by number of images.
+
+Entry with lowest number of images is examined. If 
+it isn't in plan already, it is prove that it is 
+not too close to moon (other criteria could be 
+easily added).
+
+If it doesn't pass criteria, next field is 
+examined. Otherwise new plan entry is created 
+and filled with its location.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%page
+
+RTS2 - image archive
+
+Images header are stored to database, which is used for fast information
+retrival.
+
+Good images are stored in /images directory, calibration in /darks and /flats,
+bad in /trash.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+RTS2 - image path
+
+Image path is following:
+
+/images/002/C1/04012/20030415201246.fits
+
+Where
+
+- 002 is for epoch (it could be ussed to split image archive to more medias)
+- C1 is camera name (taken from device name)
+- 04012 is field number
+- 20030415201246 is image date and time (UT)
+- .fits is standart ending
+
+Images are stored uncompressed, however gz or other FITSIO supported compression
+could be made (but IRAF lack compressed images support..).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+RTS2 - image processing
+
+Images are qued in image processing que (=>newest images are processed as
+first). Astrometry package (based on Opera) is run to images, positions errors
+are obtained from astrometry and are propagated back to mount. Images on which 
+Opera crashed are moved to /trash directory.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+RTS2 - advanced image processing
+
+For advanced image processing, like color composited images, we use IRAF package 
+(http://iraf.noao.edu). 
+
+%page
+Conclusions
