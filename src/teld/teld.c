@@ -350,7 +350,7 @@ main (int argc, char **argv)
   if (devdem_init (stats, 1, NULL))
     {
       syslog (LOG_ERR, "devdem_init: %m");
-      exit (EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
 
   if (devdem_register
@@ -358,8 +358,11 @@ main (int argc, char **argv)
        device_port) < 0)
     {
       perror ("devser_register");
-      exit (EXIT_FAILURE);
+      devdem_done ();
+      return EXIT_FAILURE;
     }
 
-  return devdem_run (device_port, teld_handle_command);
+  devdem_run (device_port, teld_handle_command);
+  devdem_done ();
+  return EXIT_SUCCESS;
 }
