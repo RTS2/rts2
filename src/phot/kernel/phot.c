@@ -346,12 +346,13 @@ process_command (struct device_struct *dev)
 	}
       else
 	{
-	  printk (KERN_ERR "Integration disabled, move filter ignored");
+	  printk (KERN_ERR "Integration disabled, move filter ignored\n");
 	}
       break;
     case PHOT_CMD_INTEGR_ENABLED:
       dev->integration_enabled = intargs (&dev->command_list->command[1]);
-      printk (KERN_INFO "Integration enabled: %i", dev->integration_enabled);
+      printk (KERN_INFO "Integration enabled: %i\n",
+	      dev->integration_enabled);
       if (!dev->integration_enabled)
 	{
 	  del_timer_sync (&dev->command_timer);
