@@ -17,8 +17,8 @@
 int
 main (int argc, char **argv)
 {
-  char hms[60];
-  int i;
+//  char hms[60];
+//  int i;
   double value;
   char *loc;
   printf ("10.2 - %f\n", hmstod ("10.2"));
@@ -39,7 +39,7 @@ main (int argc, char **argv)
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
-  printf ("ret %i\n", read_config ("bootes"));
+  printf ("ret %i\n", read_config ("/usr/local/etc/rts2.conf"));
 
   printf ("ret %i\n", get_double ("longtitude", &value));
   get_string ("location", &loc);
@@ -47,5 +47,7 @@ main (int argc, char **argv)
   get_device_string ("C0", "name", &loc);
   printf ("ret: %s %s\n", loc,
 	  get_device_string_default ("C1", "name", "moje"));
+  printf ("ret: %f\n", get_double_default ("day_horizont", 25));
+  printf ("ret: %f\n", get_double_default ("night_horizont", 25));
   return 0;
 }
