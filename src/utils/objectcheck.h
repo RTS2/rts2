@@ -22,8 +22,8 @@ public:
   /**
    * Check, if that target can be observerd.
    *
-   * @param st		local sidereal time of the observation
-   * @param ra		target ra
+   * @param st		local sidereal time of the observation in hours (0-24)
+   * @param ra		target ra in deg (0-360)
    * @param dec		target dec
    * @param hardness	how many limits to ignore (Moon distance etc.)
    * 

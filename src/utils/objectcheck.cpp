@@ -88,7 +88,7 @@ ObjectCheck::is_good (double st, double ra, double dec, int hardness)
 {
   std::vector < struct ln_equ_posn >::iterator Iter1;
 
-  double ha = (ra - st);	// normalize
+  double ha = (ra - st * 15.0);	// normalize
   ha /= 15;			// convert to hours
 
   if (ha < 0)

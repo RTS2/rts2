@@ -7,7 +7,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <syslog.h>
+#include <vector>
 #include "status.h"
+
+#include "rts2option.h"
 
 #define MSG_COMMAND             0x01
 #define MSG_REPLY               0x02
@@ -33,20 +36,23 @@ class Rts2Conn
   int port;			// local port & connection
   virtual int connectionError ()
   {
+    sock = -1;
     return -1;
   }
+
 protected:
     Rts2Block * master;
   char *command_start;
   int sock;
   int conn_state;
+
 public:
   char buf[MAX_DATA + 1];
   char *buf_top;
 
   Rts2Conn (Rts2Block * in_master);
   Rts2Conn (int in_sock, Rts2Block * in_master);
-  ~Rts2Conn (void);
+  virtual ~ Rts2Conn (void);
   int add (fd_set * set);
   virtual int init ()
   {
@@ -129,11 +135,16 @@ public:
   {
     return -1;
   }
+
 protected:
   virtual int command ();
   virtual int message ();
   virtual int informations ();
   virtual int status ();
+  int commandReturn ()
+  {
+    return -1;
+  }
   inline char *getCommand ()
   {
     return command_start;
@@ -141,6 +152,10 @@ protected:
   inline int isCommand (const char *cmd)
   {
     return !strcmp (cmd, getCommand ());
+  }
+  inline int isCommandReturn ()
+  {
+    return (*(getCommand ()) == '+' || *(getCommand ()) == '-');
   }
   int paramEnd ();
   int paramNextString (char **str);
@@ -156,8 +171,36 @@ class Rts2Block
   long int idle_timeout;	// in msec
   int priority_client;
 
+  // program options
+
+  int deamonize;
+
+  int argc;
+  char **argv;
+
+    std::vector < Rts2Option * >options;
+
+  /**
+   * Prints help message, describing all options
+   */
+  void helpOptions ();
+
+  int addConnection (int in_sock);
 protected:
-    virtual void cancelPriorityOperations ()
+    virtual void help ();
+
+  virtual int processOption (int in_opt);
+  int addOption (char in_short_option, char *in_long_option, int in_has_arg,
+		 char *in_help_msg)
+  {
+    Rts2Option *an_option =
+      new Rts2Option (in_short_option, in_long_option, in_has_arg,
+		      in_help_msg);
+      options.push_back (an_option);
+      return 0;
+  }
+
+  virtual void cancelPriorityOperations ()
   {
 
   };
@@ -165,11 +208,16 @@ protected:
 public:
   Rts2Conn * connections[MAX_CONN];
 
-  Rts2Block ();
-  ~Rts2Block (void);
+  Rts2Block (int in_argc, char **in_argv);
+  virtual ~ Rts2Block (void);
   void setPort (int in_port);
+  int getPort (void);
   virtual int init ();
-  virtual int addConnection (int in_sock);
+  /**
+   * Used to create new connection - so childrens can
+   * create childrens of Rts2Conn
+   */
+  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   Rts2Conn *findName (char *in_name);
   virtual int sendStatusMessage (char *state_name, int state);
   virtual int sendMessage (char *message);
@@ -192,6 +240,7 @@ public:
   {
     return 0;
   }
+  int connectionError (int in_sock);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

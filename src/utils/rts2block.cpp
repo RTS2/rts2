@@ -4,7 +4,9 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -93,7 +95,7 @@ Rts2Conn::receive (fd_set * set)
       int ret;
       char *command_end;
       data_size = read (sock, buf_top, MAX_DATA - (buf_top - buf));
-      if (!data_size)
+      if (data_size <= 0)
 	return connectionError ();
       buf_top[data_size] = '\0';
       // put old data size into account..
@@ -143,6 +145,10 @@ Rts2Conn::receive (fd_set * set)
 		  else if (isCommand ("S"))
 		    {
 		      ret = status ();
+		    }
+		  else if (isCommandReturn ())
+		    {
+		      ret = commandReturn ();
 		    }
 		  else
 		    ret = command ();
@@ -398,8 +404,11 @@ Rts2Conn::paramNextFloat (float *num)
   return 0;
 }
 
-Rts2Block::Rts2Block ()
+Rts2Block::Rts2Block (int in_argc, char **in_argv)
 {
+  argc = in_argc;
+  argv = in_argv;
+
   idle_timeout = 1000000;
   priority_client = -1;
   openlog (NULL, LOG_PID, LOG_LOCAL0);
@@ -407,11 +416,25 @@ Rts2Block::Rts2Block ()
     {
       connections[i] = NULL;
     }
+  addOption ('h', "help", 0, "write this help");
+  addOption ('i', "interactive", 0,
+	     "run in interactive mode, don't loose console");
+
+  deamonize = 1;
+  signal (SIGPIPE, SIG_IGN);
 }
 
 Rts2Block::~Rts2Block (void)
 {
+  std::vector < Rts2Option * >::iterator opt_iter;
+
   close (sock);
+
+  for (opt_iter - options.begin (); opt_iter != options.end (); opt_iter++)
+    {
+      delete (*opt_iter);
+    }
+  options.clear ();
 }
 
 void
@@ -421,8 +444,77 @@ Rts2Block::setPort (int in_port)
 }
 
 int
+Rts2Block::getPort (void)
+{
+  return port;
+}
+
+int
 Rts2Block::init ()
 {
+  int c;
+
+  std::vector < Rts2Option * >::iterator opt_iter;
+
+  Rts2Option *opt;
+
+  struct option *long_option, *an_option;
+
+  long_option =
+    (struct option *) malloc (sizeof (struct option) * (options.size () + 1));
+
+  char *opt_char = (char *) malloc (options.size () * 2 + 1);
+
+  char *end_opt = opt_char;
+
+  an_option = long_option;
+
+  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
+    {
+      opt = (*opt_iter);
+      opt->getOptionStruct (an_option);
+      opt->getOptionChar (&end_opt);
+      an_option++;
+    }
+
+  *end_opt = '\0';
+
+  an_option->name = NULL;
+  an_option->has_arg = 0;
+  an_option->flag = NULL;
+  an_option->val = 0;
+
+  /* get attrs */
+  while (1)
+    {
+      c = getopt_long (argc, argv, opt_char, long_option, NULL);
+
+      if (c == -1)
+	break;
+
+      processOption (c);
+
+    }
+
+  if (deamonize)
+    {
+      int ret = fork ();
+      if (ret < 0)
+	{
+	  perror ("Rts2Block::Rts2Device deamonize fork");
+	  exit (2);
+	}
+      if (ret)
+	exit (0);
+      close (0);
+      close (1);
+      close (2);
+      int f = open ("/dev/null", O_RDWR);
+      dup (f);
+      dup (f);
+      dup (f);
+    }
+
   int ret;
   socklen_t client_len;
   sock = socket (PF_INET, SOCK_STREAM, 0);
@@ -448,6 +540,12 @@ Rts2Block::init ()
   listen (sock, 1);
 }
 
+Rts2Conn *
+Rts2Block::createConnection (int in_sock, int conn_num)
+{
+  return new Rts2Conn (in_sock, this);
+}
+
 int
 Rts2Block::addConnection (int in_sock)
 {
@@ -457,7 +555,7 @@ Rts2Block::addConnection (int in_sock)
       if (!connections[i])
 	{
 	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
-	  connections[i] = new Rts2Conn (in_sock, this);
+	  connections[i] = createConnection (in_sock, i);
 	  return 0;
 	}
     }
@@ -617,4 +715,42 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	}
     }
   priority_client = in_priority_client;
+}
+
+void
+Rts2Block::helpOptions ()
+{
+  std::vector < Rts2Option * >::iterator opt_iter;
+  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
+    {
+      (*opt_iter)->help ();
+    }
+}
+
+void
+Rts2Block::help ()
+{
+  printf ("Options:\n");
+  helpOptions ();
+}
+
+int
+Rts2Block::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'i':
+      deamonize = 0;
+      break;
+    case 'h':
+    case 0:
+      help ();
+      exit (EXIT_SUCCESS);
+    case '?':
+      break;
+    default:
+      printf ("Unknow option: %c (%i)\n", in_opt, in_opt);
+      exit (EXIT_FAILURE);
+    }
+  return 0;
 }

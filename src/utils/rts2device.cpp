@@ -380,82 +380,39 @@ Rts2State::sendInfo (Rts2Conn * conn, int state_num)
   return ret;
 }
 
-void
-Rts2DevOption::getOptionChar (char **end_opt)
-{
-  **end_opt = short_option;
-  (*end_opt)++;
-  if (has_arg)
-    {
-      **end_opt = ':';
-      (*end_opt)++;
-    }
-}
-
-Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type,
-			int default_port, char *default_name):
-Rts2Block ()
+Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, int default_port, char *default_name):
+Rts2Block (in_argc, in_argv)
 {
   /* put defaults to variables.. */
-  master_device_port = default_port;
+  setPort (default_port);
   device_name = default_name;
   centrald_host = "localhost";
   centrald_port = 5557;
-  deamonize = 1;
   log_option = 0;
 
   statesSize = 0;
   states = NULL;
 
-  argc = in_argc;
-  argv = in_argv;
   device_type = in_device_type;
 
   // now add options..
   addOption ('p', "port", 1, "port to listen for request");
-  addOption ('i', "interactive", 0,
-	     "run in interactive mode, don't loose console");
   addOption ('s', "centrald_host", 1,
 	     "name of computer, on which central server runs");
   addOption ('q', "centrald_port", 1, "port number of central host");
   addOption ('d', "device_name", 1, "name of device");
   addOption ('e', "log_stderr", 0,
 	     "logs also to stderr (not only to syslogd)");
-  addOption ('h', "help", 0, "write this help");
 }
 
 Rts2Device::~Rts2Device (void)
 {
   int i;
-  std::vector < Rts2DevOption * >::iterator opt_iter;
 
   for (i = 0; i < statesSize; i++)
     delete states[i];
   free (states);
   states = NULL;
-
-  for (opt_iter - options.begin (); opt_iter != options.end (); opt_iter++)
-    {
-      delete (*opt_iter);
-    }
-  options.clear ();
-}
-
-void
-Rts2Device::helpOptions ()
-{
-  std::vector < Rts2DevOption * >::iterator opt_iter;
-  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
-    {
-      (*opt_iter)->help ();
-    }
-}
-
-void
-Rts2Device::help ()
-{
-  printf ("Options:\n");
-  helpOptions ();
 }
 
 void
@@ -483,10 +440,9 @@ Rts2Device::processOption (int in_opt)
   switch (in_opt)
     {
     case 'p':
-      master_device_port = atoi (optarg);
-      break;
-    case 'i':
-      deamonize = 0;
+      int a_port;
+      a_port = atoi (optarg);
+      setPort (a_port);
       break;
     case 's':
       centrald_host = optarg;
@@ -500,16 +456,8 @@ Rts2Device::processOption (int in_opt)
     case 'e':
       log_option |= LOG_PERROR;
       break;
-    case 'h':
-    case 0:
-      help ();
-      exit (EXIT_SUCCESS);
-    case '?':
-      break;
     default:
-      printf ("?? getopt returned unknow character %c %o ??\n", (char) in_opt,
-	      in_opt);
-      return -1;
+      return Rts2Block::processOption (in_opt);
     }
   return 0;
 }
@@ -534,75 +482,14 @@ Rts2Device::maskState (int state_num, int state_mask, int new_state,
 int
 Rts2Device::init ()
 {
-  int c;
+  int ret;
 
-  std::vector < Rts2DevOption * >::iterator opt_iter;
-
-  Rts2DevOption *opt;
-
-  struct option *long_option, *an_option;
-
-  long_option =
-    (struct option *) malloc (sizeof (struct option) * (options.size () + 1));
-
-  char *opt_char = (char *) malloc (options.size () * 2 + 1);
-
-  char *end_opt = opt_char;
-
-  an_option = long_option;
-
-  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
-    {
-      opt = (*opt_iter);
-      opt->getOptionStruct (an_option);
-      opt->getOptionChar (&end_opt);
-      an_option++;
-    }
-
-  *end_opt = '\0';
-
-  an_option->name = NULL;
-  an_option->has_arg = 0;
-  an_option->flag = NULL;
-  an_option->val = 0;
-
-  /* get attrs */
-  while (1)
-    {
-      c = getopt_long (argc, argv, opt_char, long_option, NULL);
-
-      if (c == -1)
-	break;
-
-      processOption (c);
-
-    }
-
-  if (deamonize)
-    {
-      int ret = fork ();
-      if (ret < 0)
-	{
-	  syslog (LOG_ERR, "Rts2Device::Rts2Device deamonize fork %m");
-	  exit (2);
-	}
-      if (ret)
-	exit (0);
-      close (0);
-      close (1);
-      close (2);
-      int f = open ("/dev/null", O_RDWR);
-      dup (f);
-      dup (f);
-      dup (f);
-    }
+  ret = Rts2Block::init ();
 
   openlog (NULL, log_option, LOG_LOCAL0);
 
-  setPort (master_device_port);
-
   conn_master =
-    new Rts2DevConnMaster (this, master_device_port, device_name, device_type,
+    new Rts2DevConnMaster (this, getPort (), device_name, device_type,
 			   centrald_host, centrald_port);
   connections[0] = conn_master;
 
@@ -611,7 +498,7 @@ Rts2Device::init ()
       syslog (LOG_DEBUG, "Rts2Device::init waiting for master");
       sleep (60);
     }
-  return Rts2Block::init ();
+  return ret;
 }
 
 int
