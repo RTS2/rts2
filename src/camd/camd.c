@@ -79,6 +79,7 @@ start_expose (void *arg)
       devdem_status_mask (CAMD_EXPOSE->chip,
 			  CAM_MASK_EXPOSE,
 			  CAM_NOEXPOSURE, "exposure chip error");
+
       return NULL;
     }
   syslog (LOG_INFO, "exposure chip %i finished.", CAMD_EXPOSE->chip);
