@@ -33,6 +33,7 @@ struct camera_info
   char serial_number[64];
   int chips;
   struct chip_info *chip_info;
+  float exposure;		/* actual image exposure length */
   int temperature_regulation;
   float temperature_setpoint;	/* o C */
   float air_temperature;	/* o C */
