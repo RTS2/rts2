@@ -90,6 +90,10 @@ astrometry_image (struct image_que *actual_image)
   while (!(ret == EOF || ret == 5));
 
   pclose (past_out);
+  filename =
+    (char *) malloc (strlen (actual_image->directory) +
+		     strlen (actual_image->image) + 1);
+  strcpy (filename, actual_image->directory);
   strcat (filename, actual_image->image);
 
   if (ret == EOF)
