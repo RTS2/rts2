@@ -10,7 +10,8 @@ LDFLAGS = @LDFLAGS@ @LIBS@
 lx200/lx200.a: telescope.h lx200/Makefile lx200/lx200.c
 	$(MAKE) -C lx200
 
-teld_lx200: teld.c lx200/lx200.a ../utils/devdem.a
+teld_lx200: teld.o lx200/lx200.a ../utils/devdem.a
+	$(CC) -o $@ $^ $(LIBS) $(LDFLAGS) 
 
 clean:
 	$(RM) *.o *.a *~ $(BIN)
