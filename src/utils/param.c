@@ -186,22 +186,13 @@ param_next_ip_address (struct param_status *params, char **hostname,
       return -1;
     }
   *tmp_hostname = 0;
-  tmp_hostname++;
-
-//  printf ("hostname: '%s' %p\n", *hostname, *hostname);
 
   //now get the port
-  *port = strtol (tmp_hostname, &endptr, 10);
-
-//  printf ("hostname3: '%s' %p port: %i\n", *hostname, *hostname, *port);
-
-  if (*endptr || *port < 1 || *port > 65365)
+  if (param_next_integer (params, port) || *port < 1 || *port > 65536)
     {
       errno = EINVAL;
       return -1;
     }
-
-//  printf ("hostname2: '%s'\n", *hostname);
 
   return 0;
 }
