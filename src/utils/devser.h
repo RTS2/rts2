@@ -12,13 +12,31 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
-#include "devcli.h"
+#define STATUSNAME		8
+#define MSG_SIZE		50
 
-#define STATUSNAME	8
-#define MSG_SIZE	50
+
+// TODO - move that define to Makefile
+#define DEVDEM_WITH_CLIENT
+
+#ifdef DEVDEM_WITH_CLIENT
+
+#include "devcli.h"
+// maximal number of clients
+#define MAX_CLIENT		10
+
+int devdem_priority_block_start ();
+int devdem_priority_block_end ();
+
+int devdem_register (struct devcli_channel *server_channel, char *device_name,
+		     char *server_address, int server_port);
+
+#endif /* DEVDEM_WITH_CLIENT */
 
 typedef int (*devdem_handle_command_t) (char *command);
 typedef void (*devdem_handle_message_t) (char *message);
+
+typedef void (*devdem_thread_cleaner_t) (void *arg);
 
 struct devdem_msg
 {
@@ -26,8 +44,6 @@ struct devdem_msg
   char mtext[MSG_SIZE];
 };
 
-int devdem_register (struct devcli_channel *server_channel,
-		     char *server_address, int server_port);
 int devdem_run (int port, devdem_handle_command_t in_handler,
 		char **status_names, int status_num, size_t shm_data_size);
 int devdem_dprintf (const char *format, ...);
@@ -36,7 +52,8 @@ int devdem_send_data (struct in_addr *client_addr, void *data_ptr,
 int devdem_write_command_end (int retc, char *msg_format, ...);
 
 int devdem_thread_create (void *(*start_routine) (void *), void *arg,
-			  size_t arg_size, int *id);
+			  size_t arg_size, int *id,
+			  devdem_thread_cleaner_t clean_cancel);
 int devdem_thread_cancel (int id);
 int devdem_thread_cancel_all (void);
 
@@ -46,15 +63,18 @@ int devdem_status_mask (int subdevice, int mask, int operand, char *message);
 void *devdem_shm_data_at ();
 void devdem_shm_data_lock ();
 void devdem_shm_data_unlock ();
-void devdem_shm_data_dt ();
+void devdem_shm_data_dt (void *mem);
 
 devdem_handle_message_t devdem_msg_set_handler (devdem_handle_message_t
 						handler);
 int devdem_msg_snd (struct devdem_msg *msg);
 
 int devdem_param_test_length (int npars);
-int devdem_param_next_integer (int *ret);
+
 int devdem_param_next_string (char **ret);
+int devdem_param_next_integer (int *ret);
+int devdem_param_next_float (float *ret);
+int devdem_param_next_hmsdec (double *ret);
 
 extern pid_t devdem_parent_pid;
 extern pid_t devdem_child_pid;
