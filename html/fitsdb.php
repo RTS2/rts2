@@ -102,17 +102,19 @@ EOT;
 		'ot_minpause' => 'Minimal pause',
 		'ot_priority' => 'Priority',
 		'type_id' => 'Type id',
-		'type_description' => 'Description'
+		'type_description' => 'Description',
+		'med_id' => 'Media ID',
+		'med_path' => 'Media path'
 	);
 		
 	$fields_links = array (
 		'tar_id' => "targets.php?tar_id=",
 		'obs_id' => "observations.php?obs_id=",
-		'type_id' => "types.php?type_id="
+		'type_id' => "types.php?type_id=",
+		'med_id' => "medias.php?med_id="
 	);
 
 	$fields_writable = array (
-		'grb_id' => 0,
 		'grb_seqn' => 1,
 		'grb_date' => 1,
 		'grb_last_update' => 1,
@@ -125,7 +127,8 @@ EOT;
 		'tar_ra' => 1, 
 		'tar_dec' => 1, 
 		'tar_type' => 1, 
-		'tar_comment' => 1);
+		'tar_comment' => 1,
+		'med_path' => 1);
 	
 	class Query {
 		var $fields;

@@ -28,9 +28,9 @@
 		$tar_comment = $_REQUEST['tar_comment'];
 		preg_replace ('/[^A-Za-z0-9 _.\-]/', '', $tar_comment);
 		if (array_key_exists('insert',$_REQUEST))
-			pg_query ($q->con, "INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES (nextval('tar_id'), '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');");
+			$q->do_query ("INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES (nextval('tar_id'), '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');");
 		else
-			pg_query ($q->con, "UPDATE targets SET type_id='$type_id', tar_name = '$tar_name', tar_ra = $tar_ra, tar_dec = $tar_dec, tar_comment = '$tar_comment' WHERE tar_id = $tar_id");
+			$q->do_query ("UPDATE targets SET type_id='$type_id', tar_name = '$tar_name', tar_ra = $tar_ra, tar_dec = $tar_dec, tar_comment = '$tar_comment' WHERE tar_id = $tar_id");
 	}
 
 	if (array_key_exists('tar_id', $_SESSION) && !array_key_exists('type_id', $_REQUEST)) {

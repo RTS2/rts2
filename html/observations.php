@@ -4,8 +4,6 @@
 
 	hlavicka ("BARTDB Observations", "Observations details", " ", "ok");
 	$q = new Query;
-	$q->connect ("dbname=stars");
-
 	if (array_key_exists('obs_id', $_SESSION)) {
 		$q->add_field ('observations.tar_id, observations.obs_id, observations.obs_start, observations.obs_duration, targets.tar_ra, targets.tar_dec, targets.tar_name, observations_images.img_count');
 		$q->add_from ("observations, targets, observations_images");

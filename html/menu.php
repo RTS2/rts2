@@ -72,6 +72,10 @@ echo <<<EOT
 	</li>
 	<li><a href="days.php?year=2003">Year 2003</a></li>
 	<li><a href="types.php">Observations types</a></li>
+	<li><a href="medias.php">Medias table</a></li>
+	<ul class="menu">
+		<li><a href="medias.php?insert=1">Insert new</a></li>
+	</ul>
 	<li><a href="settings.php">Settings</a></li>
 	<li>
 EOT;
