@@ -39,12 +39,9 @@
 #define EPOCH			"002"
 
 struct device *camera, *telescope;
+struct target *plan;
 
 char *dark_name = NULL;
-
-int parking = 0;		// we will park..
-
-static struct termios stored;
 
 #define fits_call(call) if (call) fits_report_error(stderr, status);
 
@@ -75,9 +72,6 @@ data_handler (int sock, size_t size, struct image_info *image)
   float dec;
   float ra_err;
   float dec_err;
-
-  printf ("data_handler image: %x\n", image);
-  printf ("exp_time: %i\n", image->exposure_time);
 
   gmtime_r (&image->exposure_time, &gmt);
 
@@ -234,26 +228,32 @@ free_filename:
 #undef receiver
 }
 
+void
+plan_clean (void)
+{
+  free_plan (plan);
+}
+
 int
-readout (struct target *plan)
+get_info (struct target *entry)
 {
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
 
   info->exposure_time = time (NULL);
   info->exposure_length = EXPOSURE_TIME;
-  info->target_id = plan->id;
-  info->observation_id = plan->obs_id;
-  info->target_type = plan->type;
+  info->target_id = entry->id;
+  info->observation_id = entry->obs_id;
+  info->target_type = entry->type;
   if (devcli_command (camera, NULL, "info") ||
       !memcpy (&info->camera, &camera->info, sizeof (struct camera_info)) ||
       devcli_command (telescope, NULL, "info") ||
       !memcpy (&info->telescope, &telescope->info,
 	       sizeof (struct telescope_info))
-      || devcli_image_info (camera, info)
-      || devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
-				 CAM_NOEXPOSURE, 0)
-      || devcli_command (camera, NULL, "readout 0"))
+      || devcli_image_info (camera, info) ||
+      devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
+			      CAM_NOEXPOSURE, 0))
+
     {
       free (info);
       return -1;
@@ -264,12 +264,45 @@ readout (struct target *plan)
 }
 
 int
+readout ()
+{
+  return devcli_command (camera, NULL, "readout 0");
+}
+
+int
+move (struct target *last)
+{
+  if (last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
+    {
+      {
+	struct ln_equ_posn object;
+	struct ln_lnlat_posn observer;
+	struct ln_hrz_posn hrz;
+	object.ra = last->ra;
+	object.dec = last->dec;
+	observer.lat = 50;
+	observer.lng = -15;
+	get_hrz_from_equ (&object, &observer, get_julian_from_sys (), &hrz);
+	printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
+	printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
+      }
+
+      if (devcli_command (telescope, NULL, "move %f %f", last->ra, last->dec))
+	{
+	  printf ("telescope error\n\n--------------\n");
+	  return -1;
+	}
+    }
+  return 0;
+}
+
+int
 main (int argc, char **argv)
 {
   uint16_t port = SERVERD_PORT;
 
   char *server;
-  struct target *plan, *last;
+  struct target *last;
   time_t start_time;
 
   int c, i = 0;
@@ -326,8 +359,7 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
-  //set_keypress ();
-  //atexit (reset_keypress);
+  atexit (plan_clean);
 
   server = argv[optind++];
 
@@ -402,7 +434,6 @@ main (int argc, char **argv)
   time (&start_time);
   start_time += 20;
 
-
   printf ("Making plan %li... \n", start_time);
   if (get_next_plan
       (plan, SELECTOR_AIRMASS, NULL, start_time, 0, EXPOSURE_TIME))
@@ -443,6 +474,9 @@ main (int argc, char **argv)
 
       printf ("after select\n"); */
 
+      if (devcli_server ()->statutes[0].status != SERVERD_NIGHT)
+	break;
+
       if (last->ctime < t)
 	{
 	  printf ("ctime %li (%s)", last->ctime, ctime (&last->ctime));
@@ -450,35 +484,7 @@ main (int argc, char **argv)
 	  goto generate_next;
 	}
 
-/*      if (parking)
-      {
-          printf ("parking. Press p to togle parking off.\n");
-          devcli_command (telescope, NULL, "park");
-	  goto generate_next;
-      } */
-
-      if (last->type == TARGET_LIGHT || last->type == TARGET_FLAT)
-	{
-	  {
-	    struct ln_equ_posn object;
-	    struct ln_lnlat_posn observer;
-	    struct ln_hrz_posn hrz;
-	    object.ra = last->ra;
-	    object.dec = last->dec;
-	    observer.lat = 50;
-	    observer.lng = -15;
-	    get_hrz_from_equ (&object, &observer, get_julian_from_sys (),
-			      &hrz);
-	    printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
-	    printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
-	  }
-
-	  if (devcli_command
-	      (telescope, NULL, "move %f %f", last->ra, last->dec))
-	    {
-	      printf ("telescope error\n\n--------------\n");
-	    }
-	}
+      move (last);
 
       while ((t = time (NULL)) < last->ctime)
 	{
@@ -491,6 +497,11 @@ main (int argc, char **argv)
 	{
 	  db_start_observation (last->id, &t, &last->obs_id);
 	}
+
+      devcli_server_command (NULL,
+			     "status_txt planc_id:_%i_obs:_%i_ra:%i_dec:%i",
+			     last->id, last->obs_id, (int) last->ra,
+			     (int) last->dec);
 
       devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
 			      DEVICE_PRIORITY, 0);
@@ -515,6 +526,8 @@ main (int argc, char **argv)
     generate_next:
       // generate next plan entry
       i++;
+
+
       plan = (struct target *) malloc (sizeof (struct target));
 
       printf ("Making next plan..\n");
@@ -525,7 +538,11 @@ main (int argc, char **argv)
       printf ("next plan #%i: id %i type %i\n", i, last->next->id,
 	      last->next->type);
 
-      readout (last);
+      get_info (last);
+
+      move (last->next);
+
+      readout ();
 
       if (last->type == TARGET_LIGHT)
 	{
@@ -533,6 +550,10 @@ main (int argc, char **argv)
 			      time (NULL) - last->ctime);
 	}
     }
+
+  printf ("done");
+
+  devcli_command (telescope, NULL, "park");
 
   devcli_server_disconnect ();
   db_disconnect ();

@@ -59,9 +59,7 @@ select_next_alt (time_t c_start, struct target *plan, struct target *last)
   EXEC SQL DECLARE obs_cursor_alt CURSOR FOR
     SELECT tar_id, tar_ra, tar_dec,
     obj_alt (tar_ra, tar_dec,:jd, -14.95, 50) AS alt FROM targets
-    WHERE NOT EXISTS (SELECT * FROM observations WHERE
-		      observations.tar_id = targets.tar_id and
-		      observations.obs_start > abstime (:obs_start))
+    WHERE (tar_lastobs is NULL) or tar_lastobs < abstime (:obs_start)
     ORDER BY alt DESC;
 
   EXEC SQL OPEN obs_cursor_alt;
