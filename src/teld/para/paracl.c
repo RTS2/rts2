@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include <libnova/libnova.h>
+
 #include "../telescope.h"
 #include "maps.c"
 
@@ -12,6 +14,7 @@ extern int
 telescope_init (const char *device_name, int telescope_id)
 {
   use_maps ();
+  return 0;
 }
 
 extern void
@@ -33,12 +36,20 @@ telescope_base_info (struct telescope_info *info)
   return 0;
 }
 
+double
+get_loc_sid_time ()
+{
+  return 15 * ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
+    Tstat->longtitude;
+}
+
 extern int
 telescope_info (struct telescope_info *info)
 {
   info->ra = Tstat->ra;
   info->dec = Tstat->dec;
-  info->siderealtime = Tstat->siderealtime;
+
+  info->siderealtime = get_loc_sid_time ();
   info->localtime = Tstat->localtime;
   info->flip = Tstat->flip;
 
@@ -52,6 +63,7 @@ extern int
 telescope_move_to (double ra, double dec)
 {
   int timeout = 0;
+  Tctrl->power = 1;
   Tctrl->ra = ra;
   Tctrl->dec = dec;
   sleep (2);
@@ -104,7 +116,10 @@ telescope_stop ()
 extern int
 telescope_park ()
 {
-  return telescope_move_to (Tstat->ra, Tstat->dec);
+  int ret;
+  ret = telescope_move_to (get_loc_sid_time () - 30, Tstat->dec);
+  Tctrl->power = 0;
+  return ret;
 }
 extern int
 telescope_home ()
