@@ -73,8 +73,7 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 	}
 
 int
-write_camera (struct fits_receiver_data *receiver,
-	      struct camera_info *camera, char *camera_name, int mount_flip)
+write_camera (struct fits_receiver_data *receiver, struct image_info *info)
 {
   int status = 0;
   float xplate = 1, yplate = 1;
@@ -82,6 +81,10 @@ write_camera (struct fits_receiver_data *receiver,
   char *filter = "O";
   long flip = 1;
   float cam_xoa, cam_yoa;	//optical axes
+  struct camera_info *camera = &info->camera;
+  char *camera_name;
+
+  camera_name = info->camera_name;
 
   fitsfile *fptr = receiver->ffile;
 
@@ -103,25 +106,25 @@ write_camera (struct fits_receiver_data *receiver,
   write_key (TINT, "CAM_FLTR", &camera->filter, "Camera filter info");
   rotang = get_device_double_default (camera_name, "rotang", 0);
   filter = get_device_string_default (camera_name, "filter", filter);
-  xplate = get_device_double_default (camera_name, "xplate", xplate);
-  yplate = get_device_double_default (camera_name, "yplate", yplate);
+  xplate = get_device_double_default (camera_name, "xplate", xplate) *
+    info->binnings[0];
+  yplate = get_device_double_default (camera_name, "yplate", yplate) *
+    info->binnings[1];
   flip = get_device_double_default (camera_name, "flip", flip);
 
   cam_xoa =
     get_device_double_default (camera_name, "cam_xoa",
-			       ((struct imghdr *) receiver->data)->sizes[0] /
-			       2);
+			       300) / info->binnings[0];
   cam_yoa =
     get_device_double_default (camera_name, "cam_yoa",
-			       ((struct imghdr *) receiver->data)->sizes[1] /
-			       2);
+			       300) / info->binnings[1];
 
   write_key (TFLOAT, "CAM_XOA", &cam_xoa, "X optical axe center");
   write_key (TFLOAT, "CAM_YOA", &cam_yoa, "Y optical axe center");
 
   write_key (TFLOAT, "XPLATE", &xplate, "X plate size");
   write_key (TFLOAT, "YPLATE", &yplate, "Y plate size");
-  if (mount_flip)
+  if (info->telescope.flip)
     rotang =
       ln_range_degrees (rotang +
 			get_device_double_default (camera_name,
@@ -214,8 +217,7 @@ fits_write_image_info (struct fits_receiver_data *receiver,
       write_telescope (receiver, &info->telescope, jd);
     }
   if (*info->camera.type)
-    write_camera (receiver, &info->camera, info->camera_name,
-		  info->telescope.flip);
+    write_camera (receiver, info);
   if (*info->dome.type)
     {
 //     write_key_unlock (TSTRING, "DOME_NAME", info->dome_name, "Dome name");
@@ -333,6 +335,10 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 		      (receiver->ffile, USHORT_IMG, 2,
 		       ((struct imghdr *) receiver->data)->sizes, &status))
 		    fits_report_error (stdout, status);
+		  receiver->info->binnings[0] =
+		    ((struct imghdr *) receiver->data)->binnings[0];
+		  receiver->info->binnings[1] =
+		    ((struct imghdr *) receiver->data)->binnings[1];
 		}
 	      else
 		{
@@ -354,8 +360,8 @@ fits_handler (void *data, size_t size, struct fits_receiver_data *receiver)
 	  pthread_mutex_lock (&image_fits_mutex);
 	  if (fits_write_img
 	      (receiver->ffile, TUSHORT, 1, receiver->size / 2,
-	       ((receiver->data) + sizeof (struct imghdr)), &status));
-	  fits_report_error (stdout, status);
+	       ((receiver->data) + sizeof (struct imghdr)), &status))
+	    fits_report_error (stdout, status);
 	  pthread_mutex_unlock (&image_fits_mutex);
 	  free (receiver->data);
 #ifdef DEBUG

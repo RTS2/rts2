@@ -173,7 +173,9 @@ generate_next (int i, struct target *plan)
 int
 process_precission (struct target *tar, struct device *camera)
 {
-  float exposure = 20;
+  float exposure = 10;
+  exposure =
+    get_device_double_default (camera->name, "precission_exposure", exposure);
   if (tar->hi_precision == 0)
     return 0;
   if (strcmp (camera->name, get_string_default ("telescope_camera", "C0")))
@@ -190,15 +192,21 @@ process_precission (struct target *tar, struct device *camera)
     }
   else
     {
-      double ra_err = 12, dec_err = 12;
-      double ra_margin = 0.75, dec_margin = 0.75;
+      double ra_err = NAN, dec_err = NAN;	// no astrometry
+      double ra_margin = 15, dec_margin = 15;	// in arc minutes
       int tries = 0;
+      ra_margin = get_double_default ("ra_margin", ra_margin);
+      dec_margin = get_double_default ("dec_margin", dec_margin);
+      ra_margin = ra_margin / 60.0;
+      dec_margin = dec_margin / 60.0;
       hi_precision_t hi_precision;
       pthread_mutex_t ret_mutex = PTHREAD_MUTEX_INITIALIZER;
       pthread_cond_t ret_cond = PTHREAD_COND_INITIALIZER;
       hi_precision.mutex = &ret_mutex;
       hi_precision.cond = &ret_cond;
-      int max_tries = 5;
+      int max_tries = get_double_default ("maxtries", 5);
+
+      devcli_command (camera, NULL, "binning 0 2 2");
 
       while (tries < max_tries)
 	{
@@ -235,6 +243,12 @@ process_precission (struct target *tar, struct device *camera)
 	      dec_err =
 		ln_range_degrees (tar->dec - hi_precision.image_pos.dec);
 	    }
+	  else
+	    {
+	      // not astrometry, get us out of here
+	      tries = max_tries;
+	      break;
+	    }
 	  printf ("ra_err: %f dec_err: %f\n", ra_err, dec_err);
 	  fflush (stdout);
 	  if ((ra_err < ra_margin || ra_err > 360.0 - ra_margin)
@@ -250,6 +264,7 @@ process_precission (struct target *tar, struct device *camera)
 	    }
 	  tries++;
 	}
+      devcli_command (camera, NULL, "binning 0 1 1");
       pthread_mutex_lock (&precission_mutex);
       tar->hi_precision = (tries < max_tries) ? 0 : -1;
       pthread_cond_broadcast (&precission_cond);
@@ -284,17 +299,37 @@ execute_camera_script (void *exinfo)
   char s_time[27];
   int exp_state;
 
-  light = last->type == TARGET_LIGHT;
-  command = get_device_string_default (camera->name, "script", "E D");
+  switch (last->type)
+    {
+    case TARGET_LIGHT:
+      command = get_device_string_default (camera->name, "script", "E D");
+      light = 1;
+      ret = process_precission (last, camera);
+      if (ret)
+	{
+	  dec_exposure_count ();
+	  return NULL;
+	}
+      break;
+    case TARGET_DARK:
+      command = "E D";
+      light = 0;
+      break;
+    case TARGET_FLAT:
+      command = "E 1";
+      light = 1;
+      break;
+    case TARGET_FLAT_DARK:
+      command = "E 1";
+      light = 0;
+      break;
+    default:
+      printf ("Unknow target type: %i\n", last->type);
+      command = "E 1";
+      light = 0;
+    }
 
   exp_state = 0;
-
-  ret = process_precission (last, camera);
-  if (ret)
-    {
-      dec_exposure_count ();
-      return NULL;
-    }
 
   while (*command)
     {

@@ -205,9 +205,9 @@ process_images (void *arg)
 /*!
  * Handle camera data connection.
  *
- * @params sock 	socket fd.
+ * @params sock         socket fd.
  *
- * @return	0 on success, -1 and set errno on error.
+ * @return      0 on success, -1 and set errno on error.
  */
 int
 data_handler (int sock, size_t size, struct image_info *image)
@@ -258,6 +258,9 @@ data_handler (int sock, size_t size, struct image_info *image)
   strftime (filen, 24, "%Y%m%d%H%M%S.fits", &gmt);
   filen[24] = 0;
   asprintf (&filename, "%s%s", dirname, filen);
+  receiver.info = image;
+  image->binnings[0] = 1;
+  image->binnings[1] = 1;
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
       printf ("camc data_handler fits_init\n");
@@ -367,6 +370,7 @@ close_fits:
   fits_close (&receiver);
 
 free_filen:
+  set_precision (image->hi_precision, NAN, NAN);
   free (filen);
   free (dirname);
 

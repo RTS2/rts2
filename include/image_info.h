@@ -39,6 +39,8 @@ struct image_info
   // correction will be aplied right after image
   // acqusition, image will not go to any que for
   // processing
+  int binnings[22];
+  // axes binnings
 };
 
 #endif /* __RTS_IMAGE_INFO__ */
