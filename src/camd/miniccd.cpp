@@ -100,11 +100,6 @@ CameraMiniccdChip::init ()
   in_width = msgr[CCD_CCD_WIDTH_INDEX];
   in_height = msgr[CCD_CCD_HEIGHT_INDEX];
 
-  if (interleaved)
-    {
-      in_width /= 2;
-    }
-
   sizeof_pixel = (msgr[CCD_CCD_DEPTH_INDEX] + 7) / 8;
 
   setSize (in_width, in_height, 0, 0);
@@ -135,7 +130,7 @@ CameraMiniccdChip::startExposure (int light, float exptime)
   msg[CCD_MSG_LENGTH_LO_INDEX] = CCD_MSG_EXP_LEN;
   msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
   msg[CCD_MSG_INDEX] = CCD_MSG_EXP;
-  msg[CCD_EXP_WIDTH_INDEX] = chipUsedReadout->width * (interleaved ? 2 : 1);
+  msg[CCD_EXP_WIDTH_INDEX] = chipUsedReadout->width;
   msg[CCD_EXP_HEIGHT_INDEX] = chipUsedReadout->height;
   msg[CCD_EXP_XOFFSET_INDEX] = chipUsedReadout->x;
   msg[CCD_EXP_YOFFSET_INDEX] = chipUsedReadout->y;
@@ -435,7 +430,7 @@ Rts2DevCameraMiniccd::info ()
 int
 Rts2DevCameraMiniccd::camCoolMax ()
 {
-  CCD_ELEM_TYPE msg[CCD_MSG_TEMP_LEN / CCD_ELEM_SIZE];
+/*  CCD_ELEM_TYPE msg[CCD_MSG_TEMP_LEN / CCD_ELEM_SIZE];
 
   msg[CCD_MSG_HEADER_INDEX] = CCD_MSG_HEADER;
   msg[CCD_MSG_LENGTH_LO_INDEX] = CCD_MSG_TEMP_LEN;
@@ -444,7 +439,7 @@ Rts2DevCameraMiniccd::camCoolMax ()
   msg[CCD_TEMP_SET_HI_INDEX] = 0;
   msg[CCD_TEMP_SET_LO_INDEX] = 0;
   write (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
-  read (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
+  read (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);*/
   return 0;
 }
 
