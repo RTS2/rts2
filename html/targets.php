@@ -28,7 +28,10 @@
 		$tar_comment = $_REQUEST['tar_comment'];
 		preg_replace ('/[^A-Za-z0-9 _.\-]/', '', $tar_comment);
 		if (array_key_exists('insert',$_REQUEST))
+		{
 			$q->do_query ("INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES (nextval('tar_id'), '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');");
+			echo "INSERT INTO targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment) VALUES (nextval('tar_id'), '$type_id', '$tar_name', $tar_ra, $tar_dec, '$tar_comment');";
+		}
 		else
 			$q->do_query ("UPDATE targets SET type_id='$type_id', tar_name = '$tar_name', tar_ra = $tar_ra, tar_dec = $tar_dec, tar_comment = '$tar_comment' WHERE tar_id = $tar_id");
 	}
@@ -52,7 +55,7 @@
 		
 		if ($img_count > 0) {
 			$last_image = $q->simple_query ("SELECT MAX(img_date) FROM images, observations WHERE observations.obs_id = images.obs_id AND observations.tar_id = $_SESSION[tar_id]");
-			echo "<hr>\nLast image ($last_image):<br><img src='preview.php?fn=" . $q->simple_query ("SELECT imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, img_date) FROM images, observations WHERE images.obs_id = observations.obs_id AND observations.tar_id = $_SESSION[tar_id] AND img_date = '$last_image'") . "&full=true'/>";
+			echo "<hr>\nLast image ($last_image):<br><img src='preview.php?fn=" . $q->simple_query ("SELECT imgpath (med_id, epoch_id, mount_name, camera_name, images.obs_id, tar_id, img_date) FROM images, observations WHERE images.obs_id = observations.obs_id AND observations.tar_id = $_SESSION[tar_id] AND img_date = '$last_image'") . "&full=true'/>\n<p>\n";
 		}
 		$q->clear ();
 		$q->add_field ('observations.obs_id, observations.obs_start, observations.obs_duration, observations_images.img_count');
