@@ -1449,7 +1449,7 @@ receive_bacodine (process_grb_event_t arg)
   port = get_device_double_default ("bacoclient", "port", port);
   hostname = get_device_string_default ("bacoclient", "server", hostname);
 
-  if ((lg = fopen ("socket_demo.log", "a")) == NULL)	/* Open for appending */
+  if ((lg = fopen ("/home/petr/socket_demo.log", "a")) == NULL)	/* Open for appending */
     {
       printf ("Failed to open logfile.  Exiting.\n");
       exit (2);
