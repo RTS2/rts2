@@ -321,6 +321,7 @@ private:
 
   time_t lastClosing;
   int closingNum;
+  int lastClosingNum;
 
   enum
   { MOVE_NONE, MOVE_OPEN_LEFT, MOVE_OPEN_LEFT_WAIT, MOVE_OPEN_RIGHT,
@@ -511,6 +512,7 @@ Rts2DevDomeFram::openDome ()
 
   lastClosing = 0;
   closingNum = 0;
+  lastClosingNum = -1;
 
   if (isOn (KONCAK_OTEVRENI_LEVY) && isOn (KONCAK_OTEVRENI_LEVY))
     {
@@ -654,7 +656,11 @@ Rts2DevDomeFram::endClose ()
   VYP (VENTIL_ZAVIRANI_PRAVY);
   zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
   time (&lastClosing);
-  sendFramMail ("FRAM dome closed");
+  if (closingNum != lastClosingNum)
+    {
+      sendFramMail ("FRAM dome closed");
+      lastClosingNum = closingNum;
+    }
   return Rts2DevDome::endClose ();
 }
 
@@ -765,6 +771,7 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
 
   lastClosing = 0;
   closingNum = 0;
+  lastClosingNum = -1;
 }
 
 Rts2DevDomeFram::~Rts2DevDomeFram (void)
@@ -846,11 +853,11 @@ Rts2DevDomeFram::sendFramMail (char *subject)
 {
   char *openText;
   int ret;
-  asprintf (&openText, "%s.\n"
+  asprintf (&openText, "%s.\n",
 	    "End switched status:\n"
 	    "KONCAK_ZAVRENI_PRAVY:%i  KONCAK_ZAVRENI_LEVY:%i\n"
 	    "KONCAK_OTEVRENI_PRAVY:%i KONCAK_OTEVRENI_PRAVY:%i\n"
-	    "Weather::isGoodWeather %i\n",
+	    "Weather::isGoodWeather %i\n"
 	    "closingNum: %i lastClosing: %s\n",
 	    subject,
 	    isOn (KONCAK_ZAVRENI_PRAVY), isOn (KONCAK_ZAVRENI_LEVY),
