@@ -68,3 +68,55 @@ BEGIN
 	
 END;
 ' LANGUAGE 'plpgsql';
+
+DROP FUNCTION ell_update (varchar (150), float4, float4, 
+float4, float4, float4, float4, float8, float4, float4);
+
+CREATE FUNCTION ell_update (varchar (150), float4, float4, 
+float4, float4, float4, float4, float8, float4, float4) 
+RETURNS integer AS '
+DECLARE
+        name ALIAS FOR $1;
+        in_ell_a ALIAS FOR $2;
+        in_ell_e ALIAS FOR $3;
+        in_ell_i ALIAS FOR $4;
+        in_ell_w ALIAS FOR $5;
+        in_ell_omega ALIAS FOR $6;
+        in_ell_n ALIAS FOR $7;
+        in_ell_jd ALIAS FOR $8;
+        in_ell_mag_1 ALIAS FOR $9;
+        in_ell_mag_2 ALIAS FOR $10;
+        new_tar_id integer;
+BEGIN
+        IF EXISTS (SELECT * FROM targets WHERE tar_name = name) THEN
+                SELECT INTO new_tar_id tar_id FROM targets WHERE 
+                        tar_name = name;
+                UPDATE ell SET
+                        ell_a = in_ell_a,
+                        ell_e = in_ell_e,
+                        ell_i = in_ell_i,
+                        ell_w = in_ell_w,
+                        ell_omega = in_ell_omega,
+                        ell_n = in_ell_n,
+                        ell_jd = in_ell_jd,
+                        ell_mag_1 = in_ell_mag_1,
+                        ell_mag_2 = in_ell_mag_2
+                WHERE
+                        tar_id = new_tar_id;
+         ELSE
+                SELECT INTO new_tar_id nextval (''tar_id''); 
+                
+                INSERT INTO targets (tar_id, type_id, tar_name,
+                tar_ra, tar_dec, tar_comment)
+                VALUES (new_tar_id, ''P'', name, 0, 0, name);
+                
+                INSERT INTO ell (tar_id, ell_a, ell_e, ell_i, ell_w,
+                  ell_omega, ell_n, ell_minpause, ell_priority,
+                  ell_JD, ell_mag_1, ell_mag_2)
+                VALUES (new_tar_id, in_ell_a, in_ell_e, in_ell_i,
+                in_ell_w, in_ell_omega, in_ell_n, ''10 minutes'', -1,
+                in_ell_JD, in_ell_mag_1, in_ell_mag_2);
+         END IF;
+         RETURN 1;
+END;
+' LANGUAGE plpgsql;

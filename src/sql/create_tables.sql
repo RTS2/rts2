@@ -53,7 +53,9 @@ CREATE TABLE ell (
         ell_n           float4,
         ell_minpause    interval DEfAULT NULL,
         ell_priority    integer,
-        ell_JD          float8
+        ell_JD          float8,
+        ell_mag_1       float4,
+        ell_mag_2       float4
 );
 
 DROP TABLE cameras;
