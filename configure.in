@@ -70,7 +70,7 @@ exit 1])
 
 AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
 AC_SUBST(LIB_NOVA), [cat << EOF
-**** You don't have libnova library.
+**** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
 exit 1])
