@@ -187,7 +187,7 @@ device_serverd_handle_command (char *command)
 	{
 	  devser_dprintf ("authorization_failed %i", client);
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
-				    "invalid authorization key");
+				    "invalid authorization key: %i %i", key, shm_devices[serverd_id].authorizations[client]);
 	  shm_devices[serverd_id].authorizations[client] = 0;
 	  devser_shm_data_unlock ();
 	  return -1;
