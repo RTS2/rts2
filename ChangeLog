@@ -1,12 +1,19 @@
 0.3
 ===
- * planner
-    o language definition
+ * planner ????
+    o language definition ????
     o threading of planner tasks
  * telescope 
     o position corections
  * configuration files
    o for central server & devices
+
+0.2.3
+===
+ * use of GNU autoconf, automake
+ * grbc
+ * planc
+ * maintance - added more than needed .cvsignore files and more
 
 0.2.2
 ===
@@ -16,9 +23,9 @@
    o scheduling camera cooling
    o scheduling astronomical events - sunset, sunrise, moonset,
      moonrise, ..
- * apogee camera driver
+ * apogee camera driver - beta level
  * telescope layered architecture
- * test console client 
+ * monitor 
 
 0.2.1
 ===
