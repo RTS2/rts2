@@ -200,6 +200,7 @@ main (int argc, char **argv)
 
   char *hostname = NULL;
   int c;
+  int deamonize = 1;
 
 #ifdef DEBUG
   mtrace ();
@@ -218,13 +219,14 @@ main (int argc, char **argv)
       static struct option long_option[] = {
 	{"tel_port", 1, 0, 'l'},
 	{"port", 1, 0, 'p'},
+	{"interactive", 0, 0, 'i'},
 	{"serverd_host", 1, 0, 's'},
 	{"serverd_port", 1, 0, 'q'},
 	{"device_name", 1, 0, 'd'},
 	{"help", 0, 0, 0},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "l:p:s:q:d:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:p:is:q:d:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -242,6 +244,9 @@ main (int argc, char **argv)
 	  break;
 	case 'd':
 	  device_name = optarg;
+	  break;
+	case 'i':
+	  deamonize = 0;
 	  break;
 	case 0:
 	  printf
@@ -275,7 +280,7 @@ main (int argc, char **argv)
     }
 
 
-  if (devdem_init (stats, 2, dome_handle_status))
+  if (devdem_init (stats, 2, dome_handle_status, deamonize))
     {
       syslog (LOG_ERR, "devdem_init: %m");
       return EXIT_FAILURE;
