@@ -363,6 +363,7 @@ camera_info (struct camera_info *info)
   info->ccd_temperature = ccd_ad2c (qtsr.ccdThermistor);
   info->fan = gvr.fanEnabled;
   info->filter = camera_filter;
+  info->can_df = 1;
   return 0;
 err:
   sem_unlock ();

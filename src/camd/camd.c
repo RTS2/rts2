@@ -92,15 +92,26 @@ start_expose (void *arg)
 {
   int ret;
   camera_init (device_file, sbig_port);
-  if ((ret =
-       camera_expose (CAMD_EXPOSE->chip, &CAMD_EXPOSE->exposure,
-		      CAMD_EXPOSE->light)) < 0)
+
+#ifdef MIRROR
+  if (CAMD_EXPOSE->light)
+    mirror_open ();
+#endif
+
+  ret =
+    camera_expose (CAMD_EXPOSE->chip, &CAMD_EXPOSE->exposure,
+		   CAMD_EXPOSE->light);
+#ifdef MIRROR
+  if (CAMD_EXPOSE->light)
+    mirror_close ();
+#endif
+
+  if (ret < 0)
     {
       syslog (LOG_ERR, "error during chip %i exposure", CAMD_EXPOSE->chip);
       devdem_status_mask (CAMD_EXPOSE->chip,
 			  CAM_MASK_EXPOSE,
 			  CAM_NOEXPOSURE, "exposure chip error");
-
       return NULL;
     }
   syslog (LOG_INFO, "exposure chip %i finished.", CAMD_EXPOSE->chip);
@@ -221,8 +232,18 @@ int
 focus_expose_and_readout (float exposure, int light, struct readout *readout,
 			  unsigned short *img)
 {
+  int ret;
   devser_dprintf ("focuser: starting exposure");
-  if (camera_expose (readout->chip, &exposure, light))
+#ifdef MIRROR
+  if (light)
+    mirror_open ();
+#endif
+  ret = camera_expose (readout->chip, &exposure, light);
+#ifdef MIRROR
+  if (light)
+    mirror_close ();
+#endif
+  if (ret)
     return -1;
   devser_dprintf ("focuser: starting readout");
   return camera_readout (readout, img);
@@ -282,16 +303,8 @@ start_focusing (void *arg)
   readout.height = x;
   readout.width = x;
 
-#ifdef MIRROR
-  mirror_close ();
-#endif
-
   if (focus_expose_and_readout (exp_time, 0, &readout, img2))
     goto err;
-
-#ifdef MIRROR
-  mirror_open ();
-#endif
 
   for (j = 0; j < 100;)
     {
@@ -485,6 +498,7 @@ camd_handle_command (char *command)
       devser_dprintf ("cooling_power %4i", (int) info.cooling_power);
       devser_dprintf ("fan %i", info.fan);
       devser_dprintf ("filter %i", info.filter);
+      devser_dprintf ("can_df %i", info.can_df || (*mirror != 0));
     }
   else if (strcmp (command, "chipinfo") == 0)
     {
@@ -1011,6 +1025,7 @@ main (int argc, char **argv)
 	case 'm':
 	  mirror = optarg;
 	  ret = mirror_open_dev (mirror);
+	  mirror_close ();
 	  if (ret < 0)
 	    {
 	      fprintf (stderr, "cannot open mirror port\n");

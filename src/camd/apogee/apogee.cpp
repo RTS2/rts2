@@ -72,6 +72,7 @@ camera_info (struct camera_info *info)
         info->cooling_power = -1;
         info->fan = 0;
         info->filter = camera->m_FilterPosition;
+	info->can_df = 1;
         return 0;
 }
 

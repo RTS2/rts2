@@ -41,6 +41,7 @@ struct camera_info
   int cooling_power;		/* 0 - 1000, -1 for unknow */
   int fan;
   int filter;			/* filter number */
+  int can_df;			/* can the camera do DF? */
 };
 
 #endif /* __RTS_CAMERA_INFO__ */
