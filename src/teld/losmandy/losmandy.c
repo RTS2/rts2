@@ -163,6 +163,8 @@ tel_write (char *buf, int count)
   return ret;
 }
 
+int tel_gemini_reset (void);
+
 /*! 
  * Combine write && read together.
  * 
@@ -190,6 +192,7 @@ tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount)
 
   if (semop (semid, &sem_buf, 1) < 0)
     return -1;
+
   if (tcflush (port, TCIOFLUSH) < 0)
     goto unlock;		// we need to unlock
   if (tel_write (wbuf, wcount) < 0)
@@ -220,6 +223,9 @@ unlock:
 	      "Losmandy:Cannot perform semop in tel_write_read:%m");
       return -1;
     }
+  if (tmp_rcount <= 0)
+    // restart gemini - booting
+    tel_gemini_reset ();
 
   return tmp_rcount;
 }
