@@ -26,3 +26,5 @@ DROP FUNCTION obj_airmass (float8, float8, float8, float8, float8);
 CREATE FUNCTION obj_airmass (float8, float8, float8, float8, float8) 
 	RETURNS float8 AS 'pg_astrolib', 'obj_airmass' LANGUAGE 'C';
 
+CREATE OR REPLACE FUNCTION night_num (timestamp) RETURNS integer AS 
+	'SELECT ROUND(EXTRACT(EPOCH FROM $1) / 86400)' LANGUAGE 'SQL';
