@@ -99,14 +99,3 @@ mirror_get ()
   read (focus_fd, command_buffer, 3);
   return *((int *) &command_buffer[1]);
 }
-
-int
-main (int argc, char **argv)
-{
-  focus_open ();
-  printf ("focuse_get: %i\n", focus_get ());
-  printf ("mirror_get: %i\n", mirror_get ());
-  mirror_set (10);
-  focus_set (10);
-  return 0;
-}
