@@ -38,7 +38,10 @@
 #define FRAM_TIME_OPEN_RIGHT	26
 #define FRAM_TIME_OPEN_LEFT	24
 #define FRAM_TIME_CLOSE_RIGHT	30
-#define FRAM_TIME_CLOSE_LEFT	25
+#define FRAM_TIME_CLOSE_LEFT	28
+
+#define FRAM_TIME_RECLOSE_RIGHT 5
+#define FRAM_TIME_RECLOSE_LEFT  5
 
 // how long we will keep lastWeatherStatus as actual (in second)
 #define FRAM_WEATHER_TIMEOUT	60
@@ -56,6 +59,9 @@
 // how long after weather was bad can weather be good again; in
 // seconds
 #define FRAM_BAD_WEATHER_TIMEOUT  600
+
+// how many times to try to reclose dome
+#define FRAM_RECLOSING_MAX	3
 
 typedef enum
 { VENTIL_AKTIVACNI,
@@ -287,6 +293,8 @@ private:
   char *wdc_file;
   double wdcTimeOut;
 
+  int reclosing_num;
+
   unsigned char spinac[2];
   unsigned char stav_portu[3];
 
@@ -302,6 +310,24 @@ private:
 
   int isOn (int c_port);
   int handle_zasuvky (int state);
+
+  /**
+   * 
+   * Handles move commands without changing our state.
+   *
+   */
+
+  int openLeftMove ();
+  int openRightMove ();
+
+  int closeRightMove ();
+  int closeLeftMove ();
+
+  /**
+   * 
+   * Add state handling for basic operations..
+   *
+   */
 
   int openLeft ();
   int openRight ();
@@ -339,7 +365,8 @@ private:
   { MOVE_NONE, MOVE_OPEN_LEFT, MOVE_OPEN_LEFT_WAIT, MOVE_OPEN_RIGHT,
     MOVE_OPEN_RIGHT_WAIT,
     MOVE_CLOSE_RIGHT, MOVE_CLOSE_RIGHT_WAIT, MOVE_CLOSE_LEFT,
-    MOVE_CLOSE_LEFT_WAIT
+    MOVE_CLOSE_LEFT_WAIT,
+    MOVE_RECLOSE_RIGHT_WAIT, MOVE_RECLOSE_LEFT_WAIT
   } movingState;
 public:
   Rts2DevDomeFram (int argc, char **argv);
@@ -571,14 +598,59 @@ Rts2DevDomeFram::setWDCTimeOut (int on, double timeout)
 #define VYP(i) vypni_pin(adresa[i].port,adresa[i].pin)
 
 int
-Rts2DevDomeFram::openLeft ()
+Rts2DevDomeFram::openLeftMove ()
 {
-  movingState = MOVE_OPEN_LEFT;
   ZAP (KOMPRESOR);
   sleep (1);
   syslog (LOG_DEBUG, "opening left door");
   ZAP (VENTIL_OTEVIRANI_LEVY);
   ZAP (VENTIL_AKTIVACNI);
+  return 0;
+}
+
+int
+Rts2DevDomeFram::openRightMove ()
+{
+  VYP (VENTIL_AKTIVACNI);
+  VYP (VENTIL_OTEVIRANI_LEVY);
+  ZAP (KOMPRESOR);
+  sleep (1);
+  syslog (LOG_DEBUG, "opening right door");
+  ZAP (VENTIL_OTEVIRANI_PRAVY);
+  ZAP (VENTIL_AKTIVACNI);
+  return 0;
+}
+
+int
+Rts2DevDomeFram::closeRightMove ()
+{
+  ZAP (KOMPRESOR);
+  sleep (1);
+  syslog (LOG_DEBUG, "closing right door");
+  ZAP (VENTIL_ZAVIRANI_PRAVY);
+  ZAP (VENTIL_AKTIVACNI);
+  return 0;
+}
+
+int
+Rts2DevDomeFram::closeLeftMove ()
+{
+  VYP (VENTIL_AKTIVACNI);
+  VYP (VENTIL_ZAVIRANI_PRAVY);
+  ZAP (KOMPRESOR);
+  sleep (1);
+  syslog (LOG_DEBUG, "closing left door");
+  ZAP (VENTIL_ZAVIRANI_LEVY);
+  ZAP (VENTIL_AKTIVACNI);
+  return 0;
+}
+
+
+int
+Rts2DevDomeFram::openLeft ()
+{
+  movingState = MOVE_OPEN_LEFT;
+  openLeftMove ();
   movingState = MOVE_OPEN_LEFT_WAIT;
   setMotorTimeout (FRAM_TIME_OPEN_LEFT);
   return 0;
@@ -589,13 +661,7 @@ Rts2DevDomeFram::openRight ()
 {
   // otevri pravou strechu
   movingState = MOVE_OPEN_RIGHT;
-  VYP (VENTIL_AKTIVACNI);
-  VYP (VENTIL_OTEVIRANI_LEVY);
-  ZAP (KOMPRESOR);
-  sleep (1);
-  syslog (LOG_DEBUG, "opening right door");
-  ZAP (VENTIL_OTEVIRANI_PRAVY);
-  ZAP (VENTIL_AKTIVACNI);
+  openRightMove ();
   movingState = MOVE_OPEN_RIGHT_WAIT;
   setMotorTimeout (FRAM_TIME_OPEN_RIGHT);
   return 0;
@@ -604,11 +670,7 @@ Rts2DevDomeFram::openRight ()
 int
 Rts2DevDomeFram::closeRight ()
 {
-  ZAP (KOMPRESOR);
-  sleep (1);
-  syslog (LOG_DEBUG, "closing right door");
-  ZAP (VENTIL_ZAVIRANI_PRAVY);
-  ZAP (VENTIL_AKTIVACNI);
+  closeRightMove ();
   movingState = MOVE_CLOSE_RIGHT_WAIT;
   setMotorTimeout (FRAM_TIME_CLOSE_RIGHT);
   return 0;
@@ -617,13 +679,7 @@ Rts2DevDomeFram::closeRight ()
 int
 Rts2DevDomeFram::closeLeft ()
 {
-  VYP (VENTIL_AKTIVACNI);
-  VYP (VENTIL_ZAVIRANI_PRAVY);
-  ZAP (KOMPRESOR);
-  sleep (1);
-  syslog (LOG_DEBUG, "closing left door");
-  ZAP (VENTIL_ZAVIRANI_LEVY);
-  ZAP (VENTIL_AKTIVACNI);
+  closeLeftMove ();
   movingState = MOVE_CLOSE_LEFT_WAIT;
   setMotorTimeout (FRAM_TIME_CLOSE_LEFT);
   return 0;
@@ -649,6 +705,8 @@ Rts2DevDomeFram::openDome ()
   lastClosing = 0;
   closingNum = 0;
   lastClosingNum = -1;
+
+  tcflush (dome_port, TCIOFLUSH);
 
   if (isOn (KONCAK_OTEVRENI_LEVY) && isOn (KONCAK_OTEVRENI_LEVY))
     {
@@ -721,6 +779,9 @@ Rts2DevDomeFram::closeDome ()
       // closing already in progress
       return 0;
     }
+
+  tcflush (dome_port, TCIOFLUSH);
+
   if (zjisti_stav_portu () == -1)
     {
       return -1;
@@ -746,7 +807,7 @@ Rts2DevDomeFram::closeDome ()
   if (closingNum > FRAM_MAX_CLOSING_RETRY)
     {
       syslog (LOG_WARNING,
-	      "max closing reatry reached, do not try closing again");
+	      "max closing retry reached, do not try closing again");
       sendFramMail ("FRAM WARNING - !!max closing retry reached!!");
       return -1;
     }
@@ -760,6 +821,7 @@ Rts2DevDomeFram::closeDome ()
       closeLeft ();
     }
   closingNum++;
+  reclosing_num = 0;
   return Rts2DevDome::closeDome ();
 }
 
@@ -770,15 +832,57 @@ Rts2DevDomeFram::isClosed ()
   switch (movingState)
     {
     case MOVE_CLOSE_RIGHT_WAIT:
-      if (!(isOn (KONCAK_ZAVRENI_PRAVY) || checkMotorTimeout ()))
+      if (checkMotorTimeout ())
+	{
+	  if (reclosing_num >= FRAM_RECLOSING_MAX)
+	    {
+	      // reclosing number exceeded, move to next door
+	      movingState = MOVE_CLOSE_LEFT;
+	      break;
+	    }
+	  setMotorTimeout (FRAM_TIME_RECLOSE_RIGHT);
+	  movingState = MOVE_RECLOSE_RIGHT_WAIT;
+	  openRightMove ();
+	  break;
+	}
+      if (!(isOn (KONCAK_ZAVRENI_PRAVY)))
 	break;
       // close dome..
     case MOVE_CLOSE_LEFT:
       closeLeft ();
       break;
     case MOVE_CLOSE_LEFT_WAIT:
-      if (!(isOn (KONCAK_ZAVRENI_LEVY) || checkMotorTimeout ()))
+      if (checkMotorTimeout ())
+	{
+	  if (reclosing_num >= FRAM_RECLOSING_MAX)
+	    {
+	      return -2;
+	    }
+	  // reclose left..
+	  setMotorTimeout (FRAM_TIME_RECLOSE_LEFT);
+	  VYP (VENTIL_AKTIVACNI);
+	  VYP (VENTIL_ZAVIRANI_LEVY);
+	  movingState = MOVE_RECLOSE_LEFT_WAIT;
+	  openLeftMove ();
+	  break;
+	}
+      if (!(isOn (KONCAK_ZAVRENI_LEVY)))
 	break;
+      return -2;
+    case MOVE_RECLOSE_RIGHT_WAIT:
+      if (!(isOn (KONCAK_OTEVRENI_PRAVY) || checkMotorTimeout ()))
+	break;
+      reclosing_num++;
+      VYP (VENTIL_AKTIVACNI);
+      VYP (VENTIL_OTEVIRANI_PRAVY);
+      closeRight ();
+      break;
+    case MOVE_RECLOSE_LEFT_WAIT:
+      if (!(isOn (KONCAK_OTEVRENI_LEVY) || checkMotorTimeout ()))
+	break;
+      reclosing_num++;
+      closeLeft ();
+      break;
     default:
       return -2;
     }
