@@ -126,7 +126,7 @@ struct sbig_readout
   unsigned short width, height;
   unsigned short *data;
   int data_size_in_bytes;
-  int (*callback) (float percent_complete);
+  int (*callback) (int ccd, float percent_complete);
 };
 
 extern int sbig_readout (struct sbig_readout *);

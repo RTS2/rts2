@@ -308,8 +308,10 @@ sbig_readout (struct sbig_readout *readout)
       line.data += line.pixelLength;
 
       readout->data_size_in_bytes += 2 * line.pixelLength;
-      readout->callback (y / (float) readout->height);
+      readout->callback (readout->ccd, y / (float) (readout->height - 1));
     }
+
+  readout->callback (readout->ccd, 1);
 
   return sbig_end_readout (readout->ccd);
 };

@@ -14,6 +14,3 @@ mrproper:
 
 indent:
 	indent *.c *h
-
-commit: indent clean
-	cvs commit

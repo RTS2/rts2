@@ -1,5 +1,5 @@
 #$Id$
-SUBDIRS = utils teld camd
+SUBDIRS = utils teld camd camc
 all:
 	for dir in $(SUBDIRS) ; do 	\
 		$(MAKE) -C $$dir;	\
@@ -8,6 +8,12 @@ all:
 clean:
 	for dir in $(SUBDIRS) ; do 	\
 		$(MAKE) -C $$dir clean;	\
+	done
+	$(RM) *~ core
+
+mrproper:
+	for dir in $(SUBDIRS) ; do 	\
+		$(MAKE) -C $$dir mrproper;	\
 	done
 	$(RM) *~ core
 

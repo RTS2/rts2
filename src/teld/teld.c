@@ -1,8 +1,8 @@
 /*! 
-* @file Telescope deamon.
-* $Id$
-* @author petr
-*/
+ * @file Telescope deamon.
+ * $Id$
+ * @author petr
+ */
 
 #define _GNU_SOURCE
 
@@ -28,25 +28,26 @@
 
 // macro for length test
 #define test_length(npars) if (argz_count (argv, argc) != npars + 1) { \
-        devdem_write_command_end ("Unknow nmbr of params: expected %i,got %i",\
-		DEVDEM_E_PARAMSNUM, npars, argz_count (argv, argc) ); \
+        devdem_write_command_end (DEVDEM_E_PARAMSNUM,\
+		"Unknow nmbr of params: expected %i,got %i",\
+		npars, argz_count (argv, argc) ); \
 	return -1; \
 }
 
 // macro for telescope calls, will write error
 #define tel_call(call)   if ((ret = call) < 0) \
 {\
-	 devdem_write_command_end ("Telescope error: %s", DEVDEM_E_HW, strerror(errno));\
+	 devdem_write_command_end (DEVDEM_E_HW, "Telescope error: %s", strerror(errno));\
 	 return ret;\
 }
 
 
 /*! Handle teld command.
-*
-* @param buffer buffer, containing unparsed command
-* @return -2 on exit, -1 and set errno on HW failure, 0 when command
-* was successfully performed
-*/
+ *
+ * @param buffer buffer, containing unparsed command
+ * @return -2 on exit, -1 and set errno on HW failure, 0 when command
+ * was successfully performed
+ */
 int
 teld_handle_command (char *argv, size_t argc)
 {
@@ -68,8 +69,8 @@ teld_handle_command (char *argv, size_t argc)
       dec = hmstod (param);
       if (isnan (ra) || isnan (dec))
 	{
-	  devdem_write_command_end ("Expected ra dec, got: %f %f",
-				    DEVDEM_E_PARAMSVAL, ra, dec);
+	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "Expected ra dec, got: %f %f", ra, dec);
 	  ret = -1;
 	}
       else
@@ -85,8 +86,8 @@ teld_handle_command (char *argv, size_t argc)
       dec = hmstod (param);
       if (isnan (ra) || isnan (dec))
 	{
-	  devdem_write_command_end ("Expected ra dec, got: %f %f",
-				    DEVDEM_E_PARAMSVAL, ra, dec);
+	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "Expected ra dec, got: %f %f", ra, dec);
 	  ret = -1;
 	}
       else
@@ -134,8 +135,8 @@ teld_handle_command (char *argv, size_t argc)
   else if (strcmp (argv, "help") == 0)
     {
       devdem_dprintf ("ready - is telescope ready to observe?\n");
-      devdem_dprintf ("set <ra> <dec> - set telescope coordinates\n");
-      devdem_dprintf ("move <ra> <dec> - move telescope\n");
+      devdem_dprintf ("set - set telescope coordinates\n");
+      devdem_dprintf ("move - move telescope\n");
       devdem_dprintf ("ra - telescope right ascenation\n");
       devdem_dprintf ("dec - telescope declination\n");
       devdem_dprintf ("park - park telescope\n");
@@ -149,7 +150,7 @@ teld_handle_command (char *argv, size_t argc)
     }
   else
     {
-      devdem_write_command_end ("Unknow command: '%s'", DEVDEM_E_COMMAND,
+      devdem_write_command_end (DEVDEM_E_COMMAND, "Unknow command: '%s'",
 				argv);
       return -1;
     }

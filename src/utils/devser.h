@@ -14,7 +14,7 @@
 typedef int (*devdem_handle_command_t) (char *, size_t);
 
 int devdem_run (int port, devdem_handle_command_t handler);
-int devdem_write_command_end (char *msg_format, int retc, ...);
+int devdem_write_command_end (int retc, char *msg_format, ...);
 int devdem_dprintf (const char *format, ...);
 int devdem_send_data (struct in_addr *client_addr, void *data_ptr,
 		      size_t data_size);

@@ -15,11 +15,6 @@
 #include <math.h>
 #include <stdarg.h>
 
-#ifdef DATA_READOUT_DEBUG
-#include <sys/stat.h>
-#include <fcntl.h>
-#endif
-
 #include <pthread.h>
 
 #include <argz.h>
@@ -36,14 +31,14 @@ int port;
 struct sbig_init info;
 struct sbig_readout readout[2];
 
-float comp;
+float readout_comp[2];
 
 pthread_t thread[2];
 
 int
-complete (float percent_complete)
+complete (int ccd, float percent_complete)
 {
-  comp = percent_complete;
+  readout_comp[ccd] = percent_complete;
   return 1;
 }
 
@@ -58,8 +53,9 @@ start_readout (void *arg)
 
 // macro for length test
 #define test_length(npars) if (argz_count (argv, argc) != npars + 1) { \
-        devdem_write_command_end ("Unknow nmbr of params: expected %i,got %i",\
-		DEVDEM_E_PARAMSNUM, npars, argz_count (argv, argc) - 1 ); \
+        devdem_write_command_end (DEVDEM_E_PARAMSNUM, \
+		"Unknow nmbr of params: expected %i,got %i",\
+		npars, argz_count (argv, argc) - 1 ); \
 	return -1; \
 }
 
@@ -69,14 +65,14 @@ start_readout (void *arg)
       chip = strtol(param, &endptr, 10); \
       if ((*endptr) || (chip < 0) || (chip >= info.nmbr_chips)) \
         {      \
-	  devdem_write_command_end ("Invalid chip: %f", DEVDEM_E_PARAMSVAL, chip);\
+	  devdem_write_command_end (DEVDEM_E_PARAMSVAL, "Invalid chip: %f", chip);\
 	  return -1;\
 	}
 
 // Macro for camera call
 # define cam_call(call) if ((ret = call) < 0)\
 {\
-	devdem_write_command_end ("Camera error: %s", DEVDEM_E_HW, sbig_show_error (ret));\
+	devdem_write_command_end (DEVDEM_E_HW, "Camera error: %s", sbig_show_error (ret));\
         return -1; \
 }
 
@@ -135,8 +131,8 @@ camd_handle_command (char *argv, size_t argc)
       exptime = strtof (param, NULL);
       if ((exptime <= 0) || (exptime > 330000))
 	{
-	  devdem_write_command_end ("Invalid exposure time: %f",
-				    DEVDEM_E_PARAMSVAL, exptime);
+	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "Invalid exposure time: %f", exptime);
 	}
       else
 	{
@@ -183,8 +179,9 @@ camd_handle_command (char *argv, size_t argc)
 	   pthread_create (&thread[chip], NULL, start_readout,
 			   (void *) &readout[chip])))
 	{
-	  devdem_write_command_end ("While creating thread for execution: %s",
-				    DEVDEM_E_SYSTEM, strerror (errno));
+	  devdem_write_command_end (DEVDEM_E_SYSTEM,
+				    "While creating thread for execution: %s",
+				    strerror (errno));
 	  return -1;
 	}
     }
@@ -194,14 +191,18 @@ camd_handle_command (char *argv, size_t argc)
       get_chip;
       if ((ret = pthread_cancel (thread[chip])))
 	{
-	  devdem_write_command_end ("While canceling thread: %s",
-				    DEVDEM_E_SYSTEM, strerror (errno));
+	  devdem_write_command_end (DEVDEM_E_SYSTEM,
+				    "While canceling thread: %s",
+				    strerror (errno));
 	  return -1;
 	}
+      readout_comp[chip] = -1;
     }
   else if (strcmp (argv, "status") == 0)
     {
-      devdem_dprintf ("readout %f\n", comp);
+      test_length (1);
+      get_chip;
+      devdem_dprintf ("readout %f\n", readout_comp[chip]);
       ret = 0;
     }
   else if (strcmp (argv, "data") == 0)
@@ -210,27 +211,14 @@ camd_handle_command (char *argv, size_t argc)
       get_chip;
       if (readout[chip].data_size_in_bytes == 0)
 	{
-	  devdem_write_command_end ("Data not available", DEVDEM_E_SYSTEM);
+	  devdem_write_command_end (DEVDEM_E_SYSTEM, "Data not available");
 	  return -1;
 	}
-#ifdef DATA_READOUT_DEBUG
-      {
-	int file;
-	if ((file = open ("test_data.fits", O_CREAT | O_WRONLY)) < 0)
-	  syslog (LOG_ERR, "Opening test_data.fits : %m");
-	if (write (file, readout[chip].data, readout[chip].data_size_in_bytes)
-	    < readout[chip].data_size_in_bytes)
-	  syslog (LOG_ERR, "Writing to test_data.fits : %m");
-	if (close (file) < 0)
-	  syslog (LOG_ERR, "Closing file test_data.fits : %m");
-      }
-#endif
-
       ret =
 	devdem_send_data (NULL, readout[chip].data,
 			  readout[chip].data_size_in_bytes);
     }
-  else if (strcmp (argv, "temp_cool") == 0)
+  else if (strcmp (argv, "cool_temp") == 0)
     {
       char *endpar;
       struct sbig_cool cool;
@@ -239,8 +227,8 @@ camd_handle_command (char *argv, size_t argc)
       cool.temperature = round (strtod (param, &endpar) * 10);
       if (endpar && !*endpar)
 	{
-	  devdem_write_command_end ("Invalid temperature: %s",
-				    DEVDEM_E_PARAMSVAL, param);
+	  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "Invalid temperature: %s", param);
 	  return -1;
 	}
       cool.regulation = 1;
@@ -254,15 +242,16 @@ camd_handle_command (char *argv, size_t argc)
     {
       devdem_dprintf ("ready - is camera ready?\n");
       devdem_dprintf ("info - information about camera\n");
-      devdem_dprintf ("chipinfo - information about chip\n");
-      devdem_dprintf ("expose - start exposition on given chip\n");
-      devdem_dprintf ("stopexpo - stop exposition on given chip\n");
-      devdem_dprintf ("progexpo - query exposition progress\n");
-      devdem_dprintf ("readout - start reading given chip\n");
-      devdem_dprintf ("stopread - stop reading given chip\n");
+      devdem_dprintf ("chipinfo <chip> - information about chip\n");
       devdem_dprintf
-	("data - establish data connection on given port and address\n");
-      devdem_dprintf ("temp_cool - cooling temperature\n");
+	("expose <chip> <exposure> - start exposition on given chip\n");
+      devdem_dprintf ("stopexpo <chip> - stop exposition on given chip\n");
+      devdem_dprintf ("progexpo <chip> - query exposition progress\n");
+      devdem_dprintf ("readout <chip> - start reading given chip\n");
+      devdem_dprintf ("stopread <chip> - stop reading given chip\n");
+      devdem_dprintf
+	("data <chip> - establish data connection on given port and address\n");
+      devdem_dprintf ("cool_temp <temp> - cooling temperature\n");
       devdem_dprintf ("exit - exit from connection\n");
       devdem_dprintf ("help - print, what you are reading just now\n");
       ret = errno = 0;
@@ -270,7 +259,7 @@ camd_handle_command (char *argv, size_t argc)
     }
   else
     {
-      devdem_write_command_end ("Unknow command: %s", DEVDEM_E_COMMAND, argv);
+      devdem_write_command_end (DEVDEM_E_COMMAND, "Unknow command: %s", argv);
       return -1;
     }
 

@@ -46,6 +46,7 @@
 //! Data port range
 #define MINDATAPORT	5556
 #define MAXDATAPORT	5656
+#define SEND_SIZE	1000
 
 typedef struct
 {
@@ -80,12 +81,12 @@ data_conn_info_t data_cons[MAXDATACONS];
 int control_fd;
 
 /*! Printf to descriptor, log to syslogd
-* 
-* @param fd file descriptor
-* @param format buffer format
-* @param ... thinks to print 
-* @return -1 and set errno on error, 0 otherwise
-*/
+ * 
+ * @param fd file descriptor
+ * @param format buffer format
+ * @param ... thinks to print 
+ * @return -1 and set errno on error, 0 otherwise
+ */
 int
 devdem_dprintf (const char *format, ...)
 {
@@ -112,21 +113,21 @@ devdem_dprintf (const char *format, ...)
 }
 
 /*! Write ending message to fd.
-* 
-* @param fd file descriptor to write in
-* @param msg_format message to write
-* @param retc return code
-* @param 
-* @return -1 and set errno on error, 0 otherwise
-*/
+ * 
+ * @param fd file descriptor to write in
+ * @param retc return code
+ * @param msg_format message to write
+ * @param 
+ * @return -1 and set errno on error, 0 otherwise
+ */
 int
-devdem_write_command_end (char *msg_format, int retc, ...)
+devdem_write_command_end (int retc, char *msg_format, ...)
 {
   va_list ap;
   int ret, tmper;
   char *msg;
 
-  va_start (ap, retc);
+  va_start (ap, msg_format);
   vasprintf (&msg, msg_format, ap);
   va_end (ap);
 
@@ -139,13 +140,13 @@ devdem_write_command_end (char *msg_format, int retc, ...)
 
 
 /*! Handle devdem commands
-*
-* It's solely responsibility of handler to report any errror.
-*
-* @param buffer Buffer containing params
-* @param fd Socket file descriptor
-* @return -1 and set errno on network failure|exit command, otherwise 0. 
-*/
+ *
+ * It's solely responsibility of handler to report any errror.
+ *
+ * @param buffer Buffer containing params
+ * @param fd Socket file descriptor
+ * @return -1 and set errno on network failure|exit command, otherwise 0. 
+ */
 int
 devdem_handle_commands (char *buffer, devdem_handle_command_t handler)
 {
@@ -156,23 +157,23 @@ devdem_handle_commands (char *buffer, devdem_handle_command_t handler)
   if ((ret = argz_create_sep (buffer, ';', &argv, &argc)))
     {
       errno = ret;
-      return devdem_write_command_end ("System: ", DEVDEM_E_SYSTEM,
+      return devdem_write_command_end (DEVDEM_E_SYSTEM, "System: ",
 				       strerror (errno));
     }
   if (!argv)
-    return devdem_write_command_end ("Empty command!", DEVDEM_E_COMMAND);
+    return devdem_write_command_end (DEVDEM_E_COMMAND, "Empty command!");
 
   while ((next_command = argz_next (argv, argc, next_command)))
     {
       if ((ret = argz_create_sep (next_command, ' ', &cargv, &cargc)))
 	{
-	  devdem_write_command_end ("Argz call error: %s", DEVDEM_E_SYSTEM,
+	  devdem_write_command_end (DEVDEM_E_SYSTEM, "Argz call error: %s",
 				    strerror (ret));
 	  goto end;
 	}
       if (!cargv)
 	{
-	  devdem_write_command_end ("Empty command!", DEVDEM_E_COMMAND);
+	  devdem_write_command_end (DEVDEM_E_COMMAND, "Empty command!");
 	  free (cargv);
 	  goto end;
 	}
@@ -192,14 +193,14 @@ end:
       return -1;
     }
   if (!ret)
-    devdem_write_command_end ("Success", 0);
+    devdem_write_command_end (0, "Success");
   return 0;
 }
 
 /*! Get next free connection
-*
-* @return >=0 on succes, -1 and set errno on failure
-*/
+ *
+ * @return >=0 on succes, -1 and set errno on failure
+ */
 
 int
 next_free_conn_number ()
@@ -288,8 +289,8 @@ send_data_thread (void *arg)
 	  ret = -1;
 	  break;
 	}
-      avail_size = ((ready_data_ptr + 100) <
-		    data_ptr + data_size) ? 100 : data_ptr + data_size -
+      avail_size = ((ready_data_ptr + SEND_SIZE) <
+		    data_ptr + data_size) ? SEND_SIZE : data_ptr + data_size -
 	ready_data_ptr;
       if ((ret = write (data_con->sock, ready_data_ptr, avail_size)) < 0)
 	{
@@ -306,27 +307,27 @@ send_data_thread (void *arg)
 
   if (ret < 0)
     {
-      devdem_write_command_end ("PORT:%i %s", DEVDEM_E_SYSTEM, port,
+      devdem_write_command_end (DEVDEM_E_SYSTEM, "PORT:%i %s", port,
 				strerror (errno));
     }
   else
-    devdem_write_command_end ("PORT:%i Data send", DEVDEM_DATA, port);
+    devdem_write_command_end (DEVDEM_DATA, "PORT:%i Data send", port);
   return NULL;
 }
 
 /*! Connect, initializes and send data to given client
-* Quite complex, hopefully quite clever.
-* Handles all task connected with sending data - just past it your
-* address, data to send, and don't care about rest.
-*
-* It sends some messages on control channel, which client should
-* check.
-* 
-* @param in_addr Address to send data; if NULL, we will accept
-* connection request from any address.
-* @param data_ptr Data to send
-* @param data_size Data size
-*/
+ * Quite complex, hopefully quite clever.
+ * Handles all task connected with sending data - just past it your
+ * address, data to send, and don't care about rest.
+ *
+ * It sends some messages on control channel, which client should
+ * check.
+ * 
+ * @param in_addr Address to send data; if NULL, we will accept
+ * connection request from any address.
+ * @param data_ptr Data to send
+ * @param data_size Data size
+ */
 int
 devdem_send_data (struct in_addr *client_addr, void *data_ptr,
 		  size_t data_size)
@@ -341,8 +342,8 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
   if ((conn = next_free_conn_number ()) < 0)
     {
       syslog (LOG_INFO, "No new connection");
-      return devdem_write_command_end ("No new data connection",
-				       DEVDEM_E_SYSTEM);
+      return devdem_write_command_end (DEVDEM_E_SYSTEM,
+				       "No new data connection");
     }
 
   data_con = &data_cons[conn];
@@ -505,7 +506,7 @@ read_from_client ()
 }
 
 /*! On exit handler
-*/
+ */
 void
 devdem_on_exit (int err, void *args)
 {
@@ -513,7 +514,7 @@ devdem_on_exit (int err, void *args)
 }
 
 /*! Signal handler
-*/
+ */
 void
 sig_exit (int sig)
 {
@@ -522,13 +523,13 @@ sig_exit (int sig)
 }
 
 /*! Run device daemon
-* This function will run the device deamon on given port, and will
-* call handler for every command it received.
-* 
-* @param port Port to run device deamon
-* @param handler Address of handler code
-* @return 0 on succes, -1 and set errno on error
-*/
+ * This function will run the device deamon on given port, and will
+ * call handler for every command it received.
+ * 
+ * @param port Port to run device deamon
+ * @param handler Address of handler code
+ * @return 0 on succes, -1 and set errno on error
+ */
 int
 devdem_run (int port, devdem_handle_command_t in_handler)
 {
