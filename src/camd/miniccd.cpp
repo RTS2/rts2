@@ -36,8 +36,12 @@ public:
   {
     return startExposure (light, exptime, ccdFlags, 1);
   }
-  virtual int startExposure (int ligth, float exptime, int ccdFlags =
-			     0, int in_interleaved = 0);
+  virtual int startExposure (int light, float exptime)
+  {
+    return startExposure (light, exptime, 0, 0);
+  }
+  int startExposure (int ligth, float exptime, int ccdFlags,
+		     int in_interleaved);
   void setInterleavedReadout ()
   {
     interleavedReadout = 1;
