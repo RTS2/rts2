@@ -22,7 +22,7 @@ usage ()
 	  "    -a set latitude (overwrites config file). \n"
 	  "    -n number of days to calculate summary. \n"
 	  "    -t set time (int unix time)\n"
-	  "    -l set longtitude (overwrites config file). Negative for east of Greenwich)\n"
+	  "    -l set longtitude (overwrites config file). Positive for east of Greenwich - acording to IAU)\n"
 	  "    -h prints this help\n");
   exit (EXIT_SUCCESS);
 
