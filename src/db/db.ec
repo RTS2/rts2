@@ -129,7 +129,8 @@ err:
 }
 
 extern int
-db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
+db_update_grb (int id, int seqn, double ra, double dec, time_t * date,
+	       int *r_tar_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
 
@@ -141,6 +142,8 @@ db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
 
   double tar_ra = ra;
   double tar_dec = dec;
+
+  long int grb_date = *date;
 
   EXEC SQL END DECLARE SECTION;
 
@@ -171,8 +174,9 @@ db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
 	    tar_dec =:tar_dec WHERE targets.tar_id =:tar_id;
 	  test_sql;
 	  EXEC SQL UPDATE grb
-	    SET grb_seqn =:grb_seqn, grb_last_update =
-	    now ()WHERE grb.tar_id =:tar_id;
+	    SET grb_seqn =:grb_seqn, grb_date =
+	    abstime (:grb_date), grb_last_update =
+	    now () WHERE grb.tar_id =:tar_id;
 	  test_sql;
 	}
     }
@@ -191,7 +195,7 @@ db_update_grb (int id, int seqn, double ra, double dec, int *r_tar_id)
 
       EXEC SQL INSERT INTO grb (tar_id, grb_id, grb_seqn, grb_date,
 				grb_last_update)
-	VALUES (:tar_id,:grb_id,:grb_seqn, now (), now ());
+	VALUES (:tar_id,:grb_id,:grb_seqn, abstime (:grb_date), now ());
       test_sql;
     }
 
