@@ -98,7 +98,8 @@ camera_init (char *device_name, int camera_id)
 	}
       else
 	{
-	  chip_device_name[strlen (device_name)] = i + '0';
+	  chip_device_name[strlen (device_name)] =
+	    i + (interleave ? '0' : '1');
 	  chip_device_name[strlen (device_name) + 1] = '\x0';
 	  fd_chips[i] = open (chip_device_name, O_RDWR, 0);
 	  if (fd_chips[i] < 0)
