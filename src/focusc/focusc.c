@@ -202,11 +202,12 @@ main (int argc, char **argv)
       static struct option long_option[] = {
 	{"device", 1, 0, 'd'},
 	{"exposure", 1, 0, 'e'},
+	{"inc", 0, 0, 'i'},
 	{"port", 1, 0, 'p'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "d:e:p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "d:e:i:p:h", long_option, NULL);
 
       if (c == -1)
 	break;
