@@ -18,6 +18,7 @@ extern int
 db_disconnect (void)
 {
   EXEC SQL DISCONNECT all;
+  return 0;
 }
 
 extern int
@@ -58,16 +59,22 @@ err:
 }
 
 extern int
-db_end_observation (int id, int duration)
+db_end_observation (int tar_id, int obs_id, const time_t * end_time,
+		    int duration)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int obs_id = id;
+  int t_id = tar_id;
+  int o_id = obs_id;
+  long int e_time = *end_time;
   int dur = duration;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL BEGIN;
 
-  EXEC SQL UPDATE observations SET obs_duration =:dur WHERE obs_id =:obs_id;
+  EXEC SQL UPDATE observations SET obs_duration =:dur WHERE obs_id =:o_id;
+
+  EXEC SQL UPDATE targets SET tar_lastobs =
+    abstime (:e_time) WHERE tar_id =:t_id;
 
   EXEC SQL END;
 
@@ -79,7 +86,6 @@ err:
   printf ("err: %i %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
   return -1;
-
 }
 
 extern int
@@ -99,7 +105,7 @@ db_add_darkfield (char *path, const time_t * exposure_time, float
 
   EXEC SQL INSERT INTO darks (dark_name, dark_date, dark_exposure,
 			      dark_temperature)
-    VALUES (:image_path,:exp_time,:exp_length,:chip_temp);
+    VALUES (:image_path, abstime (:exp_time),:exp_length,:chip_temp);
 
   EXEC SQL END;
 
