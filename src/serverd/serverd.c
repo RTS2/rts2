@@ -25,7 +25,7 @@
 #include "riseset.h"
 
 #include "../utils/devser.h"
-#include "../status.h"
+#include "status.h"
 
 #define PORT	5557
 

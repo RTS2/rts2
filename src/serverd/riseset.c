@@ -12,7 +12,7 @@
 #include <math.h>
 
 #include "riseset.h"
-#include "../status.h"
+#include "status.h"
 
 #define DAWNDUSK_TIME		(1.0 / 24.0) * 2.0
 
