@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
@@ -44,11 +44,11 @@ get_refraction (double altitude)
 {
   double R;
 
-  //altitude = deg_to_rad (altitude);
+  //altitude = ln_deg_to_rad (altitude);
 
   /* eq. 5.27 (Telescope Control,M.Trueblood & R.M. Genet) */
   R = 1.02 /
-    tan (deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
+    tan (ln_deg_to_rad (altitude + 10.3 / (altitude + 5.11) + 0.0019279));
 
   // for gnuplot (in degrees)
   // R(a) = 1.02 / tan( (a + 10.3 / (a + 5.11) + 0.0019279) / 57.2958 ) / 60
@@ -163,8 +163,8 @@ applyME (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 {
   double h0, d0, h1, d1, M, N;
 
-  h0 = deg_to_rad (in180 (in->ra));
-  d0 = deg_to_rad (in180 (in->dec));
+  h0 = ln_deg_to_rad (in180 (in->ra));
+  d0 = ln_deg_to_rad (in180 (in->dec));
 
   N = asin (sin (h0) * cos (d0));
   M = asin (sin (d0) / cos (N));
@@ -177,7 +177,7 @@ applyME (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	M = -M_PI + M;
     }
 
-  M = M - deg_to_rad (corr / 3600);
+  M = M - ln_deg_to_rad (corr / 3600);
 
   if (M > M_PI)
     M -= 2 * M_PI;
@@ -197,8 +197,8 @@ applyME (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
   if (h1 < -M_PI)
     h1 += 2 * M_PI;
 
-  out->ra = rad_to_deg (h1);
-  out->dec = rad_to_deg (d1);
+  out->ra = ln_rad_to_deg (h1);
+  out->dec = ln_rad_to_deg (d1);
 }
 
 // Polar Axis Misalignment in Azimuth
@@ -209,10 +209,11 @@ applyMA (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 {
   double d, h;
 
-  d = in->dec - (corr / 3600) * sin (deg_to_rad (in->ra));	// Polar Axis Misalignment in Azimuth
+  d = in->dec - (corr / 3600) * sin (ln_deg_to_rad (in->ra));	// Polar Axis Misalignment in Azimuth
   h =
     in->ra +
-    (corr / 3600) * cos (deg_to_rad (in->ra)) * tan (deg_to_rad (in->dec));
+    (corr / 3600) * cos (ln_deg_to_rad (in->ra)) *
+    tan (ln_deg_to_rad (in->dec));
 
   out->ra = h;
   out->dec = d;
@@ -248,7 +249,7 @@ void
 applyCH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	 double a1, double a2)
 {
-  out->ra = in->ra - (corr / 3600) / cos (deg_to_rad (in->dec));
+  out->ra = in->ra - (corr / 3600) / cos (ln_deg_to_rad (in->dec));
   out->dec = in->dec;
 }
 
@@ -258,7 +259,7 @@ void
 applyNP (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	 double a1, double a2)
 {
-  out->ra = in->ra - (corr / 3600) * tan (deg_to_rad (in->ra));
+  out->ra = in->ra - (corr / 3600) * tan (ln_deg_to_rad (in->ra));
   out->dec = in->dec;
 }
 
@@ -268,7 +269,8 @@ applyPHH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	  double a1, double a2)
 {
   out->ra =
-    in->ra - rad_to_deg (deg_to_rad (corr / 3600) * deg_to_rad (in->ra));
+    in->ra -
+    ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (in->ra));
   out->dec = in->dec;
 }
 
@@ -278,7 +280,8 @@ applyPDD (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	  double a1, double a2)
 {
   out->dec =
-    in->dec - rad_to_deg (deg_to_rad (corr / 3600) * deg_to_rad (in->dec));
+    in->dec -
+    ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (in->dec));
   out->ra = in->ra;
 }
 
@@ -291,7 +294,7 @@ applyProperMotion (struct ln_equ_posn *in, struct ln_equ_posn *out,
 {
   struct ln_equ_posn result;
 
-  get_equ_pm (in, pm, JD, &result);
+  ln_get_equ_pm (in, pm, JD, &result);
 
   out->ra = result.ra;
   out->dec = result.dec;
@@ -302,7 +305,7 @@ applyAberation (struct ln_equ_posn *in, struct ln_equ_posn *out, double JD)
 {
   struct ln_equ_posn result;
 
-  get_equ_aber (in, JD, &result);
+  ln_get_equ_aber (in, JD, &result);
 
   out->ra = result.ra;
   out->dec = result.dec;
@@ -314,7 +317,7 @@ applyPrecession (struct ln_equ_posn *in, struct ln_equ_posn *out, double JD)
 {
   struct ln_equ_posn result;
 
-  get_equ_prec (in, JD, &result);
+  ln_get_equ_prec (in, JD, &result);
 
   out->ra = result.ra;
   out->dec = result.dec;
@@ -328,12 +331,12 @@ applyRefraction (struct ln_equ_posn *in, struct ln_equ_posn *out,
   struct ln_hrz_posn hrz;
   double ref;
 
-  get_hrz_from_equ (in, obs, JD, &hrz);
+  ln_get_hrz_from_equ (in, obs, JD, &hrz);
 
   ref = get_refraction (hrz.alt);	//, 1010.0, 10.0);
 
   hrz.alt += ref;
-  get_equ_from_hrz (&hrz, obs, JD, &result);
+  ln_get_equ_from_hrz (&hrz, obs, JD, &result);
 
   result.ra = in360 (result.ra);
   result.dec = in180 (result.dec);
@@ -469,7 +472,7 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
   int i, ret = 0;
   double Q;
 
-  Q = get_apparent_sidereal_time (JD) * 360.0 / 24.0;
+  Q = ln_get_apparent_sidereal_time (JD) * 360.0 / 24.0;
 
   get_model (MODEL_PATH);
 
@@ -520,7 +523,7 @@ tpoint_apply_now (double *ra, double *dec)
   mean_pos.ra = *ra;
   mean_pos.dec = *dec;
 
-  JD = get_julian_from_sys ();
+  JD = ln_get_julian_from_sys ();
 
   ret = tpoint_correction (&mean_pos, NULL, &lazy_observer, JD, &equ);
 
