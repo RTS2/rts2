@@ -2,7 +2,7 @@
 
 noinst_LIBRARIES = libdb.a
 
-nodist_libdb_a_SOURCES = db.c
+libdb_a_SOURCES = db.c
 
 noinst_HEADERS = db.h
 
