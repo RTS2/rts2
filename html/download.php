@@ -1,4 +1,5 @@
-<?php
+<?
+	$max_img_count = 100;
 	include "fitsdb.php";
 	if (!$_SESSION['authorized']) {
 		hlavicka ("Bad login", "Bad login", '', "error");
@@ -17,12 +18,12 @@
 			$count++;	
 		}
 	}
-	if ($count > 10)
+	if ($count > $max_img_count)
 	{
-		hlavicka ("More then 10 images requested", "More then 10 images", "", "ok");
-		echo "Please select only up to 10 images. We have to
+		hlavicka ("More then $max_img_count images requested", "More then $max_img_count images", "", "ok");
+		echo "Please select only up to $max_img_count images. We have to
 create some temporary files to pack your images, so we
-cannot ship more then 10 images on one request. When
+cannot ship more then $max_img_count images on one request. When
 you need more data, please don't hesitate to contact
 	us. <p> <a href='mailto:rtteam@lascaux.asu.cas.cz>rtteam@lascaux.asu.cas.cz</a>";
 		konec ();

@@ -58,6 +58,7 @@ function image_table ()
 		display_settings ('camera_name');
 		display_settings ('mount_name');
 		display_settings ('tar_id');
+		display_settings ('obs_id');
 	echo "<td><input type='submit' value='Change'></input></td></tr></table>\n</form>";
 
 
