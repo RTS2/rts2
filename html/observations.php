@@ -17,6 +17,7 @@
 		$q->from = 'images, observations';
 		$q->add_and_where ("observations.obs_id = images.obs_id");
 		$q->add_and_where ("observations.obs_id = $_SESSION[obs_id]");
+		$q->add_order ('img_date DESC');
 		$q->do_query ();
 		$q->print_table ();
 	} else {

@@ -79,6 +79,7 @@
 					$q->add_field ('grb.*');
 					$q->add_from ('grb');
 					$q->add_and_where ('grb.tar_id = targets.tar_id');
+					$q->add_order ('grb_id DESC');
 					break;
 				case 'O':
 					$q->add_field ('ot.*');

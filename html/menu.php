@@ -57,6 +57,7 @@ echo <<<EOT
 	</li>
 	<li><a href="observations.php?obs_id=&tar_id=">Observations</a></li>
 		<ul class="menu">
+			<li><a href="observations.php">By settings</a></li>
 			<li>RA&amp;DEC</li>
 			<li>Target</li>
 			<li>Night</li>
