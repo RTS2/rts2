@@ -11,4 +11,4 @@ bckimages: ../db/db.o ../utils/mkpath.o ../utils/mv.o bckimages.o
 	/usr/bin/ecpg -o $@ $^
 
 clean:
-	$(RM) *.o bckimages
+	$(RM) *.o bckimages *~
