@@ -118,6 +118,8 @@ expose (int target_id, int observation_id, int npic)
       struct image_info *info;
       time_t t;
 
+      union devhnd_info *devinfo;
+
       printf ("exposure countdown %i..\n", npic);
       if (devcli_wait_for_status ("camd", "img_chip", CAM_MASK_READING,
 				  CAM_NOTREADING, 0) ||
@@ -130,9 +132,11 @@ expose (int target_id, int observation_id, int npic)
       info->target_id = target_id;
       info->observation_id = observation_id;
       if (devcli_command (camd_id, NULL, "info") ||
-	  devcli_getinfo (camd_id, (union devhnd_info *) &info->camera) ||
+	  devcli_getinfo (camd_id, &devinfo) ||
+	  !memcpy (&info->camera, devinfo, sizeof (struct camera_info)) ||
 	  devcli_command (teld_id, NULL, "info") ||
-	  devcli_getinfo (teld_id, (union devhnd_info *) &info->telescope) ||
+	  devcli_getinfo (teld_id, &devinfo) ||
+	  !memcpy (&info->telescope, devinfo, sizeof (struct telescope_info)) ||
 	  devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
 				  CAM_NOEXPOSURE, 0)
 	  || devcli_image_info (camd_id, info) ||
