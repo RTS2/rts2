@@ -46,13 +46,14 @@ extern unsigned short pp_ospeed;	// default let be 1.25 us
 #endif
 
 #if 1
-// For standard parallel port
+// For standard parallel port (how SBIG does it)
 #define _CAMERA_PULSE(a);	\
 	outportb(baseAddress, 0x38 | a);\
 	outportb(baseAddress, 0xb8 | a);\
+	outportb(baseAddress, 0xb8 | a);\
 	outportb(baseAddress, 0x38 | a);\
 	outportb(baseAddress, 0x30 | a);\
-	outportb(baseAddress, 0x30 | a);\
+	outportb(baseAddress, 0xb0 | a);\
 	outportb(baseAddress, 0xb0 | a);\
 	outportb(baseAddress, 0x30 | a);
 #endif

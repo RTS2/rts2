@@ -1,121 +1,25 @@
-#define _PARMICRO_C
-//#define DEBUG
+#define _MICRO_C
+
+#define ST237_SUPPORT
 
 #include <sys/time.h>
 #include <sys/io.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "mardrv.h"
-
-//void ECPSetMode(int);                 // z parccd.h
-//extern unsigned short baseAddress;    // z pardrv.h
+#include "urvc.h"
 
 unsigned char CommandOutBuf[50];	// kde se VYRABEJI mikroprikazy
 unsigned char CommandInBuf[50];	// kam se PRIJIMAJI mikroodpovedi
-//unsigned char active_command;         // taky to nekde chteji...
 unsigned char control_out;	// moje promenna, kterou uz nikdo nepouziva
 unsigned char imaging_clocks_out = 0;	// moje promenna, pouziva ji i parccd 
 unsigned char romMSNtoID = 4;	// ?
 
 int IO_LOG = 1;
 
-void
-DisableLPTInterrupts (int base)
-{
-#ifdef DEBUG
-  if (IO_LOG)
-    fprintf (stderr, "DisableLPTInterrupts: base=%x\n", base);
-#endif
-  outportb ((base + 2), 0xe);
-  ECPSetMode (ECP_NORMAL);
-}
-
-void
-ForceMicroIdle ()
-{
-  unsigned long t0 = 0;
-
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-#endif
-  CameraOut (0x30, 0);
-  t0 = TickCount ();
-
-  // 2 tiky jsou 110ms, to neni zadny microidle! - resim jinak
-  // while(1)
-  // if(TickCount() - t0 > 2) break;
-  usleep (100000);
-
-#ifdef DEBUG
-  IO_LOG = IO_LOG_bak;
-  if (IO_LOG)
-    fprintf (stderr, "uD- ");
-#endif
-
-}
-
-unsigned char
-CameraIn (unsigned char reg)
-{
-  unsigned char val;
-
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-#endif
-
-  outportb (baseAddress, reg);
-  val = inportb (baseAddress + 1) >> 3;
-
-#ifdef DEBUG
-  IO_LOG = IO_LOG_bak;
-  if (IO_LOG)
-    fprintf (stderr, "%02X<%02X ", reg, val);
-#endif
-
-  return val;
-}
-
-void
-CameraOut (unsigned char reg, int val)
-{
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-#endif
-
-  outportb (baseAddress, reg + val);
-  outportb (baseAddress, reg + val + 0x80);
-  outportb (baseAddress, reg + val + 0x80);
-  outportb (baseAddress, reg + val);
-
-  // Nejsem si prils jisty...
-  if (reg == 0x10)
-    imaging_clocks_out = val;
-  if (reg == 0x30)
-    control_out = val;
-
-#ifdef DEBUG
-  IO_LOG = IO_LOG_bak;
-  if (IO_LOG)
-    fprintf (stderr, "%02X>%02X ", reg, val);
-#endif
-}
-
 int
 MicroStat ()
 {
   unsigned char val;
-
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-#endif
 
   CameraOut (0x30, (control_out | 2) & 0xff);
   val = CameraIn (0x30);
@@ -123,12 +27,6 @@ MicroStat ()
     val = val & 0x10;
   else
     val = !(val & 0x10);
-
-#ifdef DEBUG
-  IO_LOG = IO_LOG_bak;
-  if (IO_LOG)
-    fprintf (stderr, "uS%c ", val ? 'y' : 'n');
-#endif
 
   return val;
 }
@@ -138,23 +36,11 @@ MicroIn (MY_LOGICAL ackIt)
 {
   unsigned char val;
 
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-#endif
-
   CameraOut (0x30, (control_out | 2));
   val = CameraIn (0x30) & 0xf;
 
   if (ackIt)
     CameraOut (0x30, (control_out ^ 1));
-
-#ifdef DEBUG
-  IO_LOG = IO_LOG_bak;
-  if (IO_LOG)
-    fprintf (stderr, "uI%x\n", val);
-#endif
 
   return val;
 }
@@ -162,56 +48,15 @@ MicroIn (MY_LOGICAL ackIt)
 void
 MicroOut (int val)
 {
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-#endif
-
   CameraOut (0x20, val);
   CameraOut (0x30, (control_out ^ 1));
-
-#ifdef DEBUG
-  IO_LOG = IO_LOG_bak;
-  if (IO_LOG)
-    fprintf (stderr, "uO%x ", val);
-#endif
-
 }
 
-// Pocet milisekund od 1.1.1970 :)
-double
-mSecCount ()
-{
-  struct timeval tv;
-
-  gettimeofday (&tv, 0);
-  return ((double) tv.tv_sec * 1000.0 + (double) tv.tv_usec / 1000.0);
-}
-
+// Tiky stareho XT, 18.3x za sekundu 
 unsigned long
 TickCount ()
 {
-  // Tiky stareho XT, 18.3x za sekundu 
   return (unsigned long) (mSecCount () / 54.64);
-}
-
-void
-RelayClick ()
-{
-#ifdef DEBUG
-  fprintf (stderr, "RelayClick:  baseAddress=%x", baseAddress);
-#endif
-  putc ('\a', stdout);
-  fflush (stdout);
-}
-
-void
-TimerDelay (unsigned long delay)
-{
-  end_realtime ();
-  usleep (delay);
-  begin_realtime ();
 }
 
 PAR_ERROR
@@ -287,7 +132,8 @@ ValGetMicroBlock (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr)
       cmp_len = 2;
       break;
     case MC_STATUS:
-      if ((camera == 6) || (camera == 8))
+      if ((camera == ST5C_CAMERA) || (camera == ST237_CAMERA)
+	  || (camera == ST237A_CAMERA))
 	cmp_len = 4;
       else
 	cmp_len = 6;
@@ -432,8 +278,11 @@ ValGetMicroBlock (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr)
 
 	sr->imagingState = u & 3;
 
+//              printf("CAMERA:%d\n", camera);
+
 #if defined(ST5C_SUPPORT) || defined(ST237_SUPPORT)
-	if ((camera == ST5C_CAMERA) || (camera == ST237_CAMERA))
+	if ((camera == ST5C_CAMERA) || (camera == ST237_CAMERA)
+	    || (camera == ST237A_CAMERA))
 	  {
 	    sr->trackingState = 0;
 	    sr->shutterStatus = 0;
@@ -442,7 +291,7 @@ ValGetMicroBlock (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr)
 	    sr->xMinusActive = (u1 >> 1) & 1;
 	    sr->yPlusActive = (u1 >> 2) & 1;
 	    sr->yMinusActive = (u1 >> 3) & 1;
-	    if (camera == ST237_CAMERA)
+	    if ((camera == ST237_CAMERA) || (camera == ST237A_CAMERA))
 	      sr->fanEnabled = (u1 >> 4) & 1;
 	    else
 	      sr->fanEnabled = 0;
@@ -582,9 +431,9 @@ ValidateMicroResponse (MICRO_COMMAND command, CAMERA_TYPE camera,
 	  break;
 
 	arp = (ActivateRelayParams *) txDataPtr;
-	if ((arp->tXPlus != 0) || (arp->tXMinus != 0)
-	    || (arp->tYPlus != 0) || (arp->tYMinus != 0))
-	  RelayClick ();
+	//if((arp->tXPlus != 0) || (arp->tXMinus != 0)
+	//   || (arp->tYPlus != 0) || (arp->tYMinus != 0))
+	//    RelayClick();
 	break;
 
       case MC_TEMP_STATUS:
@@ -706,15 +555,20 @@ BuildMicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr,
 
       case MC_END_EXPOSURE:
 
-	len = 2;		// Delka = 2
-	*(p++) = len / 2;	// p[3]=delka/2=1
+	if (camera == ST237_CAMERA || camera == ST237A_CAMERA)
+	  {
+	    len = 0;
+	  }
+	else
+	  {
+	    len = 2;
+	    *(p++) = len / 2;
 
-	eep = (EndExposureParams *) dataPtr;	// do eep vstupni
-	// parametr
-	*(p++) = 0;		// p[+1]=0
-	*(p++) = eep->ccd & 1;	// p[+2]=(*eep)&1; // = 0 nebo 1
-
-	break;			// goto L08050400; // return ----------- 3
+	    eep = (EndExposureParams *) dataPtr;
+	    *(p++) = 0;
+	    *(p++) = eep->ccd & 1;
+	  }
+	break;
 
       case MC_REGULATE_TEMP:
 
@@ -743,7 +597,7 @@ BuildMicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr,
 	*(p++) = u & 0xf;
 	break;
 
-      case MC_REGULATE_TEMP2:	// XXX Neni to jisty...
+      case MC_REGULATE_TEMP2:
 
 	len = 6;
 	*(p++) = len >> 1;
@@ -764,7 +618,7 @@ BuildMicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr,
 
 	break;
 
-      case MC_RELAY:
+      case MC_RELAY:		// Never tested
 
 	len = 10;
 	*(p++) = len / 2;
@@ -822,48 +676,37 @@ BuildMicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr,
 	  u = 0xff;
 	*(p++) = (u >> 4) & 0xf;
 	*(p++) = u & 0xf;
-/*
-		if(pop->pulseWidth == 0)
-		{
-		    *(p++) = 0;
-		    *(p++) = 0;
-		    *(p++) = 0;
-		    *(p++) = 0;
-		    if(pop->pulsePeriod > 7)
-			u = 7;
-		}
-		else
-		{
-		    if(pop->pulsePeriod <= 9)
-			pop->pulsePeriod = 1;
-		    else
-			pop->pulseWidth = pop->pulsePeriod - 8;
 
-		    u = pop->pulseWidth;
-*/
-	u = pop->pulseWidth - 9;
-	*(p++) = (u >> 12) & 0xf;
-	*(p++) = (u >> 8) & 0xf;
-	*(p++) = (u >> 4) & 0xf;
-	*(p++) = u & 0xf;
-/*
-		    if(pop->pulseWidth >= pop->pulsePeriod)
-			u = 0;
-		    else if((u - pop->pulsePeriod) > 0x25)
-			u = 0;
-		}
+	if (pop->pulseWidth == 0)
+	  {
+	    *(p++) = 0;
+	    *(p++) = 0;
+	    *(p++) = 0;
+	    *(p++) = 0;
+	    *(p++) = 0;
+	    *(p++) = 0;
+	    *(p++) = 0;
+	    u = (pop->pulsePeriod > 7) ? 7 : pop->pulsePeriod;
+	    *(p++) = u;
+	  }
+	else
+	  {
+	    u = pop->pulseWidth - 9;
+	    *(p++) = (u >> 12) & 0xf;
+	    *(p++) = (u >> 8) & 0xf;
+	    *(p++) = (u >> 4) & 0xf;
+	    *(p++) = u & 0xf;
 
-		u -= pop->pulsePeriod + 37;
-*/
-	u = pop->pulsePeriod - u - 38;
-	*(p++) = (u >> 12) & 0xf;
-	*(p++) = (u >> 8) & 0xf;
-	*(p++) = (u >> 4) & 0xf;
-	*(p++) = u & 0xf;
+	    u = pop->pulsePeriod - u - 38;
+	    *(p++) = (u >> 12) & 0xf;
+	    *(p++) = (u >> 8) & 0xf;
+	    *(p++) = (u >> 4) & 0xf;
+	    *(p++) = u & 0xf;
+	  }
 
 	break;
 
-      case MC_EEPROM:		// dukaz: nazev struktury
+      case MC_EEPROM:
 
 	len = 4;
 	*(p++) = len / 2;
@@ -878,7 +721,7 @@ BuildMicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr,
 	*(p++) = u & 0xf;
 	break;
 
-      case MC_MISC_CONTROL:	// dukaz: nazev struktury
+      case MC_MISC_CONTROL:
 
 	len = 2;
 	*(p++) = len / 2;
@@ -902,6 +745,7 @@ BuildMicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr,
 #endif
 #ifdef ST237_SUPPORT
 	  case ST237_CAMERA:
+	  case ST237A_CAMERA:
 	    if (mcp->fanEnable)
 	      flags = 0x10;
 	    else
@@ -918,7 +762,7 @@ BuildMicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera, void *dataPtr,
 	*(p++) = flags & 0xf;
 	break;
 
-      case MC_CONTROL_CCD:	// XXX kandidat...
+      case MC_CONTROL_CCD:
 
 	len = 4;
 	*(p++) = len / 2;
@@ -990,30 +834,13 @@ PAR_ERROR
 MicroCommand (MICRO_COMMAND command, CAMERA_TYPE camera,
 	      void *txDataPtr, void *rxDataPtr)
 {
-  PAR_ERROR err = -1;
+  PAR_ERROR err = CE_NO_ERROR;
   int len;
-  int i;
 
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-  if (IO_LOG_bak)
-    fprintf (stderr, "MicroCommand(%s),", MC_names[command & 0xf]);
-#endif
   BuildMicroCommand (command, camera, txDataPtr, &len);
-  // active_command = commanD;
-  for (i = 0; i < 5 && err != CE_NO_ERROR; i++)
-    {
-      if (!(err = SendMicroBlock (CommandOutBuf, len)))
-	err = ValidateMicroResponse (command, camera, rxDataPtr, txDataPtr);
-    }
 
-#ifdef DEBUG
-  IO_LOG = IO_LOG_bak;
-  if (IO_LOG)
-    fprintf (stderr, "err=%x\n", err);
-#endif
+  if (!(err = SendMicroBlock (CommandOutBuf, len)))
+    err = ValidateMicroResponse (command, camera, rxDataPtr, txDataPtr);
 
   return err;
 }
@@ -1061,19 +888,29 @@ GetEEPROM (CAMERA_TYPE camera, EEPROMContents * eePtr)
   unsigned short cs;
   MY_LOGICAL init = 0;
 
-#ifdef DEBUG
-  int IO_LOG_bak;
-  IO_LOG_bak = IO_LOG;
-  IO_LOG = 0;
-  if (IO_LOG_bak)
-    fprintf (stderr, "GetEEPROM\n");
-#endif
+  if (camera == ST237A_CAMERA)
+    {
+      eePtr->version = 1;
+      eePtr->model = 8;
+      eePtr->abgType = 0;
+      eePtr->badColumns = 0;
+      eePtr->trackingOffset = 0;
+      eePtr->trackingGain = 0;
+      eePtr->imagingOffset = 0;
+      eePtr->imagingGain = 560;
+      eePtr->columns[0] = 0;
+      eePtr->columns[1] = 0;
+      eePtr->columns[2] = 0;
+      eePtr->columns[3] = 0;
+      eePtr->serialNumber[0] = 0x2d;
+      eePtr->serialNumber[1] = 0;
+      eePtr->checksum = CalculateEEPROMChecksum (eePtr);
+      return res;
+    }
 
   p = (unsigned char *) eePtr;
-  eep.write = 0;		// ZAPIS VYPNOUT
+  eep.write = 0;		// WRITE OFF
   eep.data = 0;
-  // obsah=0 (asi nema smysl, ale je dobre to naplnit... at nelitaji po
-  // parportu neinicializovane promenne...)
 
   for (i = 0; i <= 0x1f; i++)
     {

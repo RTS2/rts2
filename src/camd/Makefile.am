@@ -1,8 +1,8 @@
 # $Id$
 
-SUBDIRS = miniccd urvc
+SUBDIRS = miniccd urvc urvc2
 
-bin_PROGRAMS = rts2-camd-urvc rts2-camd-apogee rts2-camd-miniccd
+bin_PROGRAMS = rts2-camd-urvc rts2-camd-apogee rts2-camd-miniccd rts2-camd-urvc2
 
 if FOCUSING
 
@@ -13,6 +13,10 @@ rts2_camd_miniccd_CFLAGS = -DFOCUSING -DMIRROR
 rts2_camd_urvc_SOURCES = camd.c focusing.c tcf.c sex_interface.c mirror.c
 rts2_camd_urvc_LDFLAGS = urvc/liburvc.a ../utils/libdevdem.a @LIB_PTHREAD@ @LIB_CFITSIO@
 rts2_camd_urvc_CFLAGS = -DFOCUSING -DMIRROR
+
+rts2_camd_urvc2_SOURCES = camd.c focusing.c tcf.c sex_interface.c mirror.c
+rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a ../utils/libdevdem.a @LIB_PTHREAD@ @LIB_CFITSIO@
+rts2_camd_urvc2_CFLAGS = -DFOCUSING -DMIRROR
 
 rts2_camd_apogee_SOURCES = camd.c apogee/apogee.cpp apogee/CameraIO_LinuxPCI.cpp focusing.c tcf.c sex_interface.c mirror.c
 rts2_camd_apogee_LDFLAGS = ../utils/libdevdem.a @LIB_PTHREAD@ @LIB_CFITSIO@
@@ -25,6 +29,9 @@ rts2_camd_miniccd_LDFLAGS = miniccd/libminiccd.a ../utils/libdevdem.a @LIB_PTHRE
 
 rts2_camd_urvc_SOURCES = camd.c
 rts2_camd_urvc_LDFLAGS = urvc/liburvc.a ../utils/libdevdem.a @LIB_PTHREAD@
+
+rts2_camd_urvc2_SOURCES = camd.c
+rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a ../utils/libdevdem.a @LIB_PTHREAD@
 
 rts2_camd_apogee_SOURCES = camd.c apogee/apogee.cpp apogee/CameraIO_LinuxPCI.cpp
 rts2_camd_apogee_LDFLAGS = ../utils/libdevdem.a @LIB_PTHREAD@
