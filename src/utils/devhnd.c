@@ -166,16 +166,14 @@ telescope_command_handler (struct param_status *params,
 #ifdef DEBUG
   printf ("telescope get response: %s\n", params->param_argv);
 #endif
-  if (!strcmp (params->param_argv, "name"))
-    return param_next_string_copy (params, info->name, 64);
+  if (!strcmp (params->param_argv, "type"))
+    return param_next_string_copy (params, info->type, 64);
   if (!strcmp (params->param_argv, "serial"))
     return param_next_string_copy (params, info->serial_number, 64);
   if (!strcmp (params->param_argv, "ra"))
     return param_next_double (params, &info->ra);
   if (!strcmp (params->param_argv, "dec"))
     return param_next_double (params, &info->dec);
-  if (!strcmp (params->param_argv, "moving"))
-    return param_next_integer (params, &info->moving);
   if (!strcmp (params->param_argv, "park_dec"))
     return param_next_double (params, &info->park_dec);
   if (!strcmp (params->param_argv, "longtitude"))
@@ -198,8 +196,8 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
   printf ("camera get response: %s %p '%f'\n",
 	  params->param_argv, info, info->ccd_temperature);
 #endif
-  if (!strcmp (params->param_argv, "name"))
-    return param_next_string_copy (params, info->name, 64);
+  if (!strcmp (params->param_argv, "type"))
+    return param_next_string_copy (params, info->type, 64);
   if (!strcmp (params->param_argv, "serial"))
     return param_next_string_copy (params, info->serial_number, 64);
   if (!strcmp (params->param_argv, "chips"))
