@@ -889,9 +889,7 @@ data_get (int id, void *data, size_t max_size, size_t * size)
     }
 
   while (data_con->available == 0)
-    {
-      pthread_cond_wait (&data_con->read_cond, &data_con->que_lock);
-    }
+    pthread_cond_wait (&data_con->read_cond, &data_con->que_lock);
 
   if (data_con->available == -1)
     {
