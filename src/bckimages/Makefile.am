@@ -4,7 +4,7 @@ bin_PROGRAMS = rts2-bckimages rts2-flatprocess
 
 nodist_rts2_bckimages_SOURCES = bckimages.c
 
-EXTRA_DiST = bckimages.ec
+EXTRA_DIST = bckimages.ec
 
 rts2_flatprocess_SOURCES = flatprocess.c
 

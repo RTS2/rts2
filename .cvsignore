@@ -12,3 +12,5 @@ missing
 libtool
 stamp-h
 autom4te*
+rts2-*.tar.gz
+rts2-*.tar.bz2

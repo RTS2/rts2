@@ -1,6 +1,9 @@
+# $Id$
 
 SUBDIRS =	doc	\
 		include \
 		man	\
 		src 	\
-		html	
+		html
+
+EXTRA_DIST = rts2.conf
