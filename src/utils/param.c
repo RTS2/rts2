@@ -150,6 +150,22 @@ param_next_float (struct param_status *params, float *ret)
 }
 
 int
+param_next_double (struct param_status *params, double *ret)
+{
+  char *endptr;
+  if (param_next (params))
+    return -1;
+  *ret = strtod (params->param_processing, &endptr);
+  if (*endptr)
+    {
+      if (errno != ERANGE)
+	errno = EINVAL;
+      return -1;
+    }
+  return 0;
+}
+
+int
 param_next_hmsdec (struct param_status *params, double *ret)
 {
   if (param_next (params))

@@ -3,6 +3,8 @@
 #ifndef __RTS_PARAM__
 #define __RTS_PARAM__
 
+#include <stdlib.h>
+
 struct param_status
 {
   char *param_processing;
@@ -17,6 +19,7 @@ int param_next_string (struct param_status *params, char **ret);
 int param_next_integer (struct param_status *params, int *ret);
 int param_next_time_t (struct param_status *params, time_t * ret);
 int param_next_float (struct param_status *params, float *ret);
+int param_next_double (struct param_status *params, double *ret);
 int param_next_hmsdec (struct param_status *params, double *ret);
 int param_next_ip_address (struct param_status *params, char **hostname,
 			   unsigned int *port);
