@@ -7,6 +7,8 @@ test_LDFLAGS = config.o hms.o mkpath.o
 
 noinst_LIBRARIES = libdevdem.a libdevser.a libdevcli.a
 
+LDFLAGS = @LIB_PTHREAD@
+
 libdevdem_a_SOURCES = devdem.c devser.c devcli.c devhnd.c hms.c param.c thread_attr.c config.c
 
 libdevser_a_SOURCES = devdem.c devser.c hms.c param.c thread_attr.c config.c
