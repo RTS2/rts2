@@ -228,7 +228,8 @@ main (int argc, char **argv)
 	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n"
 		  "\texposure|e <exposure in sec>\t\texposure time in seconds\n"
 		  "\tdevice|d <device_name>\t\tdevice for which to take exposures\n"
-		  "\tinc|i\t\tincrease exposure count after every row\n");
+		  "\tinc|i\t\tincrease exposure count after every row\n"
+		  "\tsecmod|s\t\texposure every UT second\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -315,8 +316,8 @@ main (int argc, char **argv)
 	  day_sec =
 	    exp_start.tm_hour * 3600 + exp_start.tm_min * 60 +
 	    exp_start.tm_sec;
-	  sleep_sec = day_sec % sec_mod;
-	  printf ("sleeping for %i sec..\n", day_sec);
+	  sleep_sec = sec_mod - day_sec % sec_mod;
+	  printf ("sleeping for %i sec..\n", sleep_sec);
 	  sleep (sleep_sec);
 	  printf ("sleeping ends..\n");
 	}
