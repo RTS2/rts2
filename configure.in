@@ -174,7 +174,6 @@ AC_OUTPUT([Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
-	   src/camd/apogee/Makefile
 	   src/camd/miniccd/Makefile
 	   src/camd/sbigusb/Makefile
 	   src/camd/urvc/Makefile
