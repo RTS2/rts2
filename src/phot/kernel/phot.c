@@ -61,7 +61,7 @@ MODULE_PARM_DESC (base_port, "The base I/O port (default 0x300)");
 
 #define BUF_LEN			128	// circular write buffer len
 #define PHOT_COMMAND_LEN	3	// command maximal lenght
-#define intargs(f)	(*(int*)f)
+#define intargs(f)	(*(u16*)f)
 
 // command request gets stored to that list
 struct command_list_struct
@@ -74,11 +74,12 @@ struct command_list_struct
 struct device_struct
 {
   int base_port;
-  int buf[BUF_LEN];		// buffer to write data to be read
+  u16 buf[BUF_LEN];		// buffer to write data to be read
   int buf_index;		// buffer index
   int buf_last_read;		// buffer last read index
   int filter_position;
   int desired_position;
+  u16 integration_time;		// desired integration time
   int status;
   struct command_list_struct *command_list;
   int command_pending;
@@ -112,8 +113,9 @@ free_command_list (struct device_struct *dev)
 }
 
 void
-add_reply (struct device_struct *dev, int repl)
+add_reply (struct device_struct *dev, u16 repl)
 {
+  printk (KERN_INFO "Adding %i\n", repl);
   dev->buf[dev->buf_index] = repl;
   dev->buf_index++;
   dev->buf_index %= BUF_LEN;
@@ -147,7 +149,7 @@ filter_routine (unsigned long ptr)
       process_command (dev);
       return;
     }
-  dev->status = PHOT_S_FILTERMOVE;
+  dev->status |= PHOT_S_FILTERMOVE;
   init_timer (&dev->command_timer);
   dev->command_timer.expires = jiffies + HZ / 2;	// half seconds steps
   dev->command_timer.function = filter_routine;
@@ -226,19 +228,19 @@ end_integrate (unsigned long ptr)
   add_reply (dev, frequency);
 out:
   dev->command_pending = 0;
+  dev->status &= ~PHOT_S_INTEGRATING_ONCE;	// clear any once integration
   process_command (dev);
 }
 
 // start integration
 void
-start_integrate (struct device_struct *dev)
+start_integrate (struct device_struct *dev, int once)
 {
-  int it_t = intargs (&dev->command_list->command[1]);
-  printk (KERN_INFO "will integrate for %i sec\n", it_t);
+  printk (KERN_INFO "will integrate for %i sec\n", dev->integration_time);
 
-  outb (it_t % 256, dev->base_port + 5);
+  outb (dev->integration_time % 256, dev->base_port + 5);
   command_delay ();
-  outb (it_t / 256, dev->base_port + 5);
+  outb (dev->integration_time / 256, dev->base_port + 5);
 
   // clear timer 2 counter
   outb (255, dev->base_port + 6);
@@ -251,8 +253,12 @@ start_integrate (struct device_struct *dev)
   outb (0, dev->base_port);
   // que timer readout
   init_timer (&dev->command_timer);
-  dev->command_timer.expires = jiffies + HZ * it_t + 1;
+  dev->command_timer.expires = jiffies + HZ * dev->integration_time;
   dev->command_timer.function = end_integrate;
+  if (once)
+    dev->status |= PHOT_S_INTEGRATING_ONCE;
+  else
+    dev->status |= PHOT_S_INTEGRATING;
   dev->command_pending = 1;
   add_timer (&dev->command_timer);
 }
@@ -271,16 +277,16 @@ phot_read (struct file *filp, char *buf, size_t count, loff_t * f_pos)
   if (down_interruptible (&dev->sem))
     return -EINTR;
   len = (dev->buf_last_read <= dev->buf_index) ? dev->buf_index - dev->buf_last_read : BUF_LEN - dev->buf_index;	// this one is in sizeof(int)
-  len *= sizeof (int);
+  len *= sizeof (u16);
   if (len > count)
-    len = count - count % sizeof (int);	// round count to sizeof(int)
+    len = count - count % sizeof (u16);	// round count to sizeof(u16)
   if (copy_to_user (buf, dev->buf + dev->buf_last_read, len))
     {
       ret = -EFAULT;
       goto out;
     }
   *f_pos += len;
-  dev->buf_last_read += len / sizeof (int);
+  dev->buf_last_read += len / sizeof (u16);
   dev->buf_last_read %= BUF_LEN;
   ret = len;
 out:
@@ -300,8 +306,16 @@ process_command (struct device_struct *dev)
     case PHOT_CMD_RESET:
       reset (dev);
       break;
+    case PHOT_CMD_INTEGRATE_ONCE:
+      dev->integration_time = intargs (&dev->command_list->command[1]);
+      start_integrate (dev, 1);
+      break;
     case PHOT_CMD_INTEGRATE:
-      start_integrate (dev);
+      dev->integration_time = intargs (&dev->command_list->command[1]);
+      start_integrate (dev, 0);
+      break;
+    case PHOT_CMD_STOP_INTEGRATE:
+      dev->status &= ~PHOT_S_INTEGRATING;
       break;
     case PHOT_CMD_MOVEFILTER:
       dev->desired_position = intargs (&dev->command_list->command[1]);
@@ -321,6 +335,11 @@ process_command (struct device_struct *dev)
       dev->command_list = next;
     }
 out:
+  if ((!dev->command_pending) && (dev->status & PHOT_S_INTEGRATING))
+    {
+      // if integrating bit is set and no command is pending, start integrating
+      start_integrate (dev, 0);
+    }
   up (&dev->sem_list);
 }
 
@@ -422,6 +441,11 @@ phot_read_procmem (char *buf, char **start, off_t offset, int count, int *eof,
 	     "photometer name: Optec Photometer\nsem: %i\nsem_filter: %i\ncommand_pending: %i\n",
 	     sem_getcount (&device.sem), sem_getcount (&device.sem_list),
 	     device.command_pending);
+  len +=
+    sprintf (buf + len,
+	     "integration_time: %i filter_position: %i desired_position: %i\n",
+	     device.integration_time, device.filter_position,
+	     device.desired_position);
   down (&device.sem_list);
   while (next)
     {
@@ -431,7 +455,7 @@ phot_read_procmem (char *buf, char **start, off_t offset, int count, int *eof,
       next = next->next;
     }
   up (&device.sem_list);
-  len += sprintf (buf + len, "done\n");
+  len += sprintf (buf + len, "status: %i\n", device.status);
   *eof = 1;
   return len;
 }
