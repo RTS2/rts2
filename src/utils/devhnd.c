@@ -237,6 +237,8 @@ camera_command_handler (struct param_status *params, struct camera_info *info)
     return param_next_integer (params, &info->fan);
   if (!strcmp (params->param_argv, "filter"))
     return param_next_integer (params, &info->filter);
+  if (!strcmp (params->param_argv, "can_df"))
+    return param_next_integer (params, &info->can_df);
   if (!strcmp (params->param_argv, "chip"))
     {
       int chip_n;
