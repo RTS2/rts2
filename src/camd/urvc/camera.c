@@ -406,6 +406,7 @@ camera_cool_max ()		/* try to max temperature */
 
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
     return -1;
+  camera_reg = CAMERA_COOL_MAX;
   return 0;
 };
 
@@ -414,6 +415,9 @@ camera_cool_hold ()		/* hold on that temperature */
 {
   QueryTemperatureStatusResults qtsr;
   float ot;			// optimal temperature
+
+  if (camera_reg == CAMERA_COOL_HOLD)
+    return 0;			// already cooled
 
   if (MicroCommand (MC_TEMP_STATUS, ST7_CAMERA, NULL, &qtsr))
     return -1;
@@ -431,6 +435,7 @@ camera_cool_shutdown ()		/* ramp to ambient */
   cool.regulation = 0;
   cool.ccdSetpoint = 0;
   cool.preload = 0;
+  camera_reg = CAMERA_COOL_OFF;
 
   camera_fan (0);
 
@@ -453,5 +458,6 @@ camera_cool_setpoint (float coolpoint)	/* set direct setpoint */
   camera_fan (1);
   if (MicroCommand (MC_REGULATE_TEMP, ST7_CAMERA, &cool, NULL))
     return -1;
+  camera_reg = CAMERA_COOL_HOLD;
   return 0;
 };
