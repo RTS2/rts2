@@ -20,43 +20,55 @@ void
 status_telescope (WINDOW * wnd, const struct telescope_info *info)
 {
   char buf[10];
-  if (info)
-    {
-      dtohms (info->ra / 15, buf);
-      mvwprintw (wnd, 1, 1, " Ra: %8s", buf);
-      mvwprintw (wnd, 2, 1, "Dec: %+03.3f", info->dec);
-      mvwprintw (wnd, 3, 1, "Lon: %+03.3f", info->longtitude);
-      mvwprintw (wnd, 4, 1, "Lat: %+03.3f", info->latitude);
-      dtohms (info->siderealtime, buf);
-      mvwprintw (wnd, 5, 1, "Stm: %6s", buf);
-    }
-  else
-    {
-      wclear (wnd);
-      mvwprintw (wnd, 3, 1, "NOT READY");
-    }
-  wrefresh (wnd);
+  dtohms (info->ra / 15, buf);
+  mvwprintw (wnd, 1, 1, " Ra: %8s", buf);
+  mvwprintw (wnd, 2, 1, "Dec: %+03.3f", info->dec);
+  mvwprintw (wnd, 3, 1, "Lon: %+03.3f", info->longtitude);
+  mvwprintw (wnd, 4, 1, "Lat: %+03.3f", info->latitude);
+  dtohms (info->siderealtime, buf);
+  mvwprintw (wnd, 5, 1, "Stm: %6s", buf);
 }
 
 void
 status_camera (WINDOW * wnd, const struct camera_info *info)
 {
-  if (info)
-    {
-      mvwprintw (wnd, 1, 1, "Typ: %s", info->name);
-      mvwprintw (wnd, 2, 1, "Ser: %s", info->serial_number);
-      mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
-		 info->chip_info[0].height);
-      mvwprintw (wnd, 4, 1, "Set: %+03.3f oC", info->temperature_setpoint);
-      mvwprintw (wnd, 5, 1, "Air: %+03.3f oC", info->air_temperature);
-      mvwprintw (wnd, 6, 1, "CCD: %+03.3f oC", info->ccd_temperature);
-      mvwprintw (wnd, 7, 1, "CPo: %03.1f %%", info->cooling_power / 10.0);
-      mvwprintw (wnd, 8, 1, "Fan: %s", info->fan ? "on" : "off");
-    }
-  else
+  mvwprintw (wnd, 1, 1, "Typ: %s", info->name);
+  mvwprintw (wnd, 2, 1, "Ser: %s", info->serial_number);
+  mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
+	     info->chip_info[0].height);
+  mvwprintw (wnd, 4, 1, "Set: %+03.3f oC", info->temperature_setpoint);
+  mvwprintw (wnd, 5, 1, "Air: %+03.3f oC", info->air_temperature);
+  mvwprintw (wnd, 6, 1, "CCD: %+03.3f oC", info->ccd_temperature);
+  mvwprintw (wnd, 7, 1, "CPo: %03.1f %%", info->cooling_power / 10.0);
+  mvwprintw (wnd, 8, 1, "Fan: %s", info->fan ? "on" : "off");
+}
+
+void
+status (WINDOW * wnd, struct device *dev)
+{
+  int ret;
+  devcli_command (dev, &ret, "ready");
+  devcli_command (dev, &ret, "info");
+  mvwprintw (wnd, 0, 1, "==== Name: %s ======", dev->name);
+  if (ret)
     {
       wclear (wnd);
       mvwprintw (wnd, 3, 1, "NOT READY");
+    }
+  else
+    {
+      switch (dev->type)
+	{
+	case DEVICE_TYPE_MOUNT:
+	  status_telescope (wnd, (struct telescope_info *) (&dev->info));
+	  break;
+	case DEVICE_TYPE_CCD:
+	  devcli_command (dev, NULL, "chipinfo 0");
+	  status_camera (wnd, (struct camera_info *) &dev->info);
+	  break;
+	default:
+	  mvwprintw (wnd, 3, 1, "UNKNOW TYPE: %i", dev->type);
+	}
     }
   wrefresh (wnd);
 }
@@ -77,13 +89,10 @@ main (int argc, char **argv)
   uint16_t port = SERVERD_PORT;
   char *server;
   char c;
-  int camd_id, camd_id1, teld_id;
   int ret_code;
-  union devhnd_info *info;
 
-#ifdef DEBUG
   mtrace ();
-#endif
+
   /* get attrs */
   while (1)
     {
@@ -133,37 +142,13 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
-  if (devcli_connectdev (&camd_id, "camd", NULL) < 0)
-    {
-      perror ("devcli_connectdev");
-      exit (EXIT_FAILURE);
-    }
-
-  printf ("camd_id: %i\n", camd_id);
-
-  if (devcli_connectdev (&camd_id1, "WF2", NULL) < 0)
-    {
-      perror ("devcli_connectdev");
-      exit (EXIT_FAILURE);
-    }
-
-
-  printf ("camd_id1: %i\n", camd_id1);
-
-
-  if (devcli_connectdev (&teld_id, "teld", NULL) < 0)
-    {
-      perror ("devcli_connectdev");
-      exit (EXIT_FAILURE);
-    }
-
-  printf ("teld_id: %i\n---------------\n", teld_id);
-
   if (!initscr ())
     {
       printf ("ncurses not supported!");
       exit (EXIT_FAILURE);
     }
+
+  start_color ();
 
 /*  signal (SIGQUIT, sig_exit);
   signal (SIGINT, sig_exit);
@@ -183,48 +168,23 @@ main (int argc, char **argv)
       exit (EXIT_FAILURE);
     }
 
+  printf ("ncurses end\n");
+
   while (1)
     {
-      if (devcli_command (teld_id, &ret_code, "ready"))
-	{
-	  status_telescope (wnd[0], NULL);
-	}
-      else
-	{
-	  devcli_command (teld_id, &ret_code, "info");
-	  devcli_getinfo (teld_id, &info);
-	  status_telescope (wnd[0], &info->telescope);
-	}
+      int i;
+      struct device *dev;
 
-      if (devcli_command (camd_id, &ret_code, "ready"))
+      for (i = 0, dev = devcli_devices (); dev && i < 3; dev = dev->next, i++)
 	{
-	  status_camera (wnd[1], NULL);
+	  status (wnd[i], dev);
 	}
-      else
-	{
-	  devcli_command (camd_id, &ret_code, "info");
-	  devcli_command (camd_id, &ret_code, "chipinfo 0");
-	  devcli_getinfo (camd_id, &info);
-	  status_camera (wnd[1], &info->camera);
-	}
-
-      if (devcli_command (camd_id1, &ret_code, "ready"))
-	{
-	  status_camera (wnd[3], NULL);
-	}
-      else
-	{
-	  devcli_command (camd_id1, &ret_code, "info");
-	  devcli_command (camd_id1, &ret_code, "chipinfo 0");
-	  devcli_getinfo (camd_id1, &info);
-	  status_camera (wnd[3], &info->camera);
-	}
-
 
       for (c = 10; c; c--)
 	{
-	  mvwprintw (wnd[2], 1, 1, "next update in %02i seconds", c);
-	  wrefresh (wnd[2]);
+	  //wclear (wnd[3]);
+	  mvwprintw (wnd[3], 1, 1, "next update in %02i seconds", c);
+	  wrefresh (wnd[3]);
 	  sleep (1);
 	}
     }

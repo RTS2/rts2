@@ -1,7 +1,7 @@
-all: monitor nmonitor
+all: nmonitor
 
-CFLAGS += -g -I@top_srcdir@/include
-LDFLAGS += -lncurses -lpthread -lm
+CFLAGS = -g -I@top_srcdir@/include
+LDFLAGS = -lncurses -lpthread -lm
 
 monitor: monitor.o ../utils/devcli.a
 
