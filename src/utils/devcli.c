@@ -1152,7 +1152,7 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
 	}
       else if (!strncmp (st->name, "dome", 4))
 	{
-	  switch (st->status)
+/*	  switch (st->status)
 	    {
 	    case DOME_UNKNOW:
 	      return "unknow";
@@ -1162,7 +1162,7 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
 	      return "standby";
 	    case DOME_OBSERVING:
 	      return "observing";
-	    }
+	    }*/
 	}
       break;
     }
