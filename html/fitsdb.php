@@ -332,7 +332,7 @@ EOT;
 			}
 		}
 
-		function print_field ($name, $value) {
+		function print_field ($name, $value, $insert = false) {
 			global $fields_name;
 			global $fields_writable;
 			global $fields_types;
@@ -342,7 +342,7 @@ EOT;
 				if ($name == "type_id") {
 					echo "<input type='hidden' name='type_id_old' value='$value'></input>"; 
 					$this->print_radio_list ("types", "type_id", "type_description", $value); 
-				} elseif (array_key_exists($name, $fields_writable)) {
+				} elseif ($insert || array_key_exists($name, $fields_writable)) {
 					switch ($fields_types[$name]) {
 						case 'b':
 							echo "<input type='radio' name='$name' value='t' " . 
@@ -404,7 +404,7 @@ EOT;
 				echo "<form name='test' action='$_SERVER[REQUEST_URI]'>\n<table>";
 				for ($i = 0; $i < pg_numfields($this->res); $i++) {
 					$name = pg_fieldname($this->res, $i);
-					$this->print_field ($name, "");
+					$this->print_field ($name, "", true);
 				}
 				echo "</table>\n\t<input type='hidden' name='insert' value='1'></input>\n\t";
 				echo "<input type='Submit' value='OK'></input>\n</form>\n";
