@@ -133,6 +133,7 @@ CREATE TABLE observations (
 	tar_id		integer REFERENCES targets (tar_id),
 	obs_id		integer PRIMARY KEY NOT NULL,
 	obs_start	timestamp,
+	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
 	obs_duration	interval
 );
 
@@ -159,7 +160,8 @@ CREATE TABLE images (
 	med_id		integer NOT NULL REFERENCES medias(med_id),
 	
 	camera_name	varchar(8) REFERENCES cameras(camera_name),
-	mount_name	varchar(8) REFERENCES mounts(mount_name)
+	mount_name	varchar(8) REFERENCES mounts(mount_name),
+	delete_flag	boolean	NOT NULL DEFAULT TRUE
 );
 
 DROP TABLE counts;

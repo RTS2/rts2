@@ -43,15 +43,13 @@ EOT;
 		$res = '';
 		for ($i++; $i < $len; $i++) {
 			$c = $s[$i];
-			if ($res > '' && ($c > '9' || $c < '0') && $c != '.') {
+			if (($c > '9' || $c < '0') && $c != '.') {
 				$out += floatval($res) * $mul;
 				$mul /= 60.0;
 				$res = '';
 			}
-			elseif ($c == '.' || ($c > '0' && $c < '9'))
-			{
+			else
 				$res .= $c;
-			}
 		}
 		return $sign * ($out + floatval($res) * $mul);
 	}
@@ -119,10 +117,11 @@ EOT;
 	);
 		
 	$fields_links = array (
-		'tar_id' => "targets.php?tar_id=",
-		'obs_id' => "observations.php?obs_id=",
-		'type_id' => "types.php?type_id=",
-		'med_id' => "medias.php?med_id="
+		'tar_id' => 'targets.php?tar_id=',
+		'obs_id' => 'observations.php?obs_id=',
+		'type_id' => 'types.php?type_id=',
+		'med_id' => 'medias.php?med_id=',
+		'img_id' => 'images.php?img_id='
 	);
 
 	$fields_writable = array (
@@ -428,7 +427,7 @@ EOT;
 	array ('ra' => "Ra:", 'dec' => "Dec:", 'tar_id' => "Target id:",
 		'obs_id' => "Observation id:", 'date_from' => 'Date from:',
 		'date_to' => 'Date to:', 'page_size' => 'Page size:', 'camera_name' => 'Camera:',
-		'mount_name' => 'Mount');
+		'mount_name' => 'Mount', 'img_id' => 'Image ID');
 
 	$settinngs_size = 
 	array ('ra' => 9, 'dec' => 11, 'tar_id' => 5,
