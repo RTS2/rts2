@@ -67,7 +67,7 @@ add_target (Target *plan, int type, int id, int obs_id, double ra,
   new_plan->ctime = obs_time;
   new_plan->tolerance = tolerance;
   new_plan->moved = 0;
-  new_plan->hi_precision = 1;
+  new_plan->hi_precision = (int) get_double_default ("hi_precission", 1);
   new_plan->obs_type = obs_type;
 
   while (plan->next)
@@ -89,7 +89,7 @@ add_target_ell (Target *plan, int type, int id, int obs_id,
   new_plan->ctime = obs_time;
   new_plan->tolerance = tolerance;
   new_plan->moved = 0;
-  new_plan->hi_precision = 1;
+  new_plan->hi_precision = (int) get_double_default ("hi_precision", 1);
   new_plan->obs_type = obs_type;
 
   while (plan->next)
@@ -130,9 +130,6 @@ select_next_alt (time_t c_start, Target *plan, float lon, float lat)
         obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt 
     FROM
         targets_enabled targets
-    WHERE
-        (tar_lastobs is NULL) OR
-        tar_lastobs < abstime (:obs_start)
     ORDER BY 
         alt DESC;
   EXEC SQL OPEN obs_cursor_alt;
@@ -405,7 +402,7 @@ ORDER BY
       if (find_plan (plan, tar_id, obs_start))
 	{
 	  printf ("grb find id: %i\n", tar_id);
-
+	
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
 		      PLAN_TOLERANCE, TYPE_GRB);
 	  EXEC SQL CLOSE obs_cursor_grb;
@@ -474,11 +471,7 @@ WHERE
         ot.tar_id = targets.tar_id AND
         targets.tar_id = targets_images.tar_id AND
         type_id = :obs_type AND
-        obj_alt (tar_ra, tar_dec, :st, :db_lon, :db_lat) > 10 AND 
-        not ((:st_deg - tar_ra > 9.0 * 15.0 AND
-                :st_deg - tar_ra < 15.0 * 15.0) OR 
-             (:st_deg - tar_ra < -9.0 * 15.0 AND
-                :st_deg - tar_ra > -15.0 * 15.0))
+        obj_alt (tar_ra, tar_dec, :st, :db_lon, :db_lat) > 10
 ORDER BY
         ot_priority DESC,
         img_count ASC,
@@ -487,12 +480,13 @@ ORDER BY
 ;
   EXEC SQL OPEN obs_cursor_to;
 //    10 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
-//          obj_az (tar_ra, tar_dec,:st,:db_lon,
-//                  :db_lat) >:d_az_start) ORDER BY ot_priority DESC,
+//	    obj_az (tar_ra, tar_dec,:st,:db_lon,
+//		    :db_lat) >:d_az_start) ORDER BY ot_priority DESC,
   test_sql;
   while (1)
     {
       int last_o;
+      sqlca.sqlcode = 0;
       EXEC SQL FETCH next FROM obs_cursor_to
 	INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
       if (sqlca.sqlcode)
@@ -519,11 +513,11 @@ ORDER BY
 #undef test_sql
   return -1;
 err:
-  db_unlock ();
-#ifdef DEBUG
-  printf ("err select_next_to: %li %s\n", sqlca.sqlcode,
+//#ifdef DEBUG
+  printf ("err select_next_to : %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
-#endif /* DEBUG */
+//#endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
@@ -639,14 +633,14 @@ ORDER BY
 	  printf ("ell find id: %i\n", tar_id);
 	  add_target_ell (plan, TARGET_LIGHT, tar_id, -1, &orbit, *c_start,
 		      PLAN_TOLERANCE, TYPE_ELLIPTICAL);
-	  EXEC SQL CLOSE obs_cursor_to;
+	  EXEC SQL CLOSE obs_cursor_ell;
 	  db_unlock ();
           delete target;
 	  return 0;
 	}
       delete target;
     }
-  EXEC SQL CLOSE obs_cursor_to;
+  EXEC SQL CLOSE obs_cursor_ell;
   test_sql;
   db_unlock ();
 #undef test_sql
@@ -665,17 +659,88 @@ err:
  * If needed, select next observation from list of photometry fields
  */
 int
-select_next_photometry (time_t c_start, Target *plan, float lon,
+select_next_photometry (time_t *c_start, Target *plan, float lon,
 			float lat)
 {
   EXEC SQL BEGIN DECLARE SECTION;
+  double st;
+  double st_deg;
+  int tar_id;
+  double ra;
+  double dec;
+  float alt;
+  int ot_imgcount;
+  int ot_minpause;
+  int ot_isnull;
+  float db_lon = lon;
+  float db_lat = lat;
+  char obs_type = TYPE_PHOTOMETRIC;
   EXEC SQL END DECLARE SECTION;
-  return 0;
+
+  db_lock ();
 #define test_sql if (sqlca.sqlcode < 0) goto err
+  st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (c_start));
+  st_deg = 15.0 * st;
+  printf ("photometric st: %f\n", st);
+EXEC SQL DECLARE obs_cursor_photometric CURSOR FOR SELECT
+        targets.tar_id,
+        tar_ra,
+        tar_dec,
+        obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
+        ot_imgcount,
+        EXTRACT (EPOCH FROM ot_minpause)
+FROM
+        targets_enabled targets,
+        targets_images,
+        ot
+WHERE
+        ot.tar_id = targets.tar_id AND
+        targets.tar_id = targets_images.tar_id AND
+        type_id = :obs_type AND
+        obj_alt (tar_ra, tar_dec, :st, :db_lon, :db_lat) > 10
+ORDER BY
+        ot_priority DESC,
+        img_count ASC,
+        alt DESC,
+        ot_imgcount DESC
+;
+  EXEC SQL OPEN obs_cursor_photometric;
+  test_sql;
+  while (1)
+    {
+      int last_o;
+      sqlca.sqlcode = 0;
+      EXEC SQL FETCH next FROM obs_cursor_photometric
+	INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
+      if (sqlca.sqlcode)
+	goto err;
+      if (ot_isnull)
+	ot_minpause = 1800;
+      last_o = db_last_observation (tar_id);
+      printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%i\t%i\n", tar_id, ra, dec,
+	      alt, ot_imgcount, ot_minpause);
+      if (db_last_night_images_count (tar_id) < ot_imgcount
+	  && (last_o == -1 || last_o >= ot_minpause))
+	{
+	  printf ("photometric find id: %i\n", tar_id);
+	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, *c_start,
+		      PLAN_TOLERANCE, TYPE_OPORTUNITY);
+	  EXEC SQL CLOSE obs_cursor_photometric;
+	  db_unlock ();
+	  return 0;
+	}
+    }
+  EXEC SQL CLOSE obs_cursor_photometric;
+  test_sql;
+  db_unlock ();
+#undef test_sql
+  return -1;
 err:
-#ifdef DEBUG
-  printf ("err: %li %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
-#endif /* DEBUG */
+//#ifdef DEBUG
+  printf ("err select_next_photometric : %li %s\n", sqlca.sqlcode,
+	  sqlca.sqlerrm.sqlerrmc);
+//#endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
@@ -804,13 +869,16 @@ get_next_plan (Target *plan, int selector_type,
       if (selector_type == SELECTOR_ELL && !select_next_ell (obs_start, plan, 120, 230, lon, lat))
         return 0;
       if (!select_next_to (obs_start, plan, 120, 230, lon, lat))
-	return 0;
+        return 0;
     }
 
   switch (selector_type)
     {
     case SELECTOR_ALTITUDE:
       return select_next_alt (*obs_start, plan, lon, lat);
+    case SELECTOR_PHOTOMETRY:
+      if (!select_next_photometry (obs_start, plan, lon, lat))
+        return 0;
 
     case SELECTOR_GPS:
       // every 50 image will be dark..

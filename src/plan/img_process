@@ -9,10 +9,10 @@ cd $dirname
 
 # image processing
 
-/home/rtopera/src/setdark $imgname
-/home/rtopera/bin/setflat $imgname
-/home/rtopera/bin/detect $imgname
-/home/rtopera/bin/past $imgname 2>/dev/null
+/home/rtopera/bin/bdark $imgname >/dev/null 2>&1
+/home/rtopera/bin/detect $imgname #>/dev/null 2>&1
+/home/rtopera/bin/past $imgname |grep -v PG
+#>/dev/null | grep -v PG
 #/home/rtopera/bin/rsol $imgname >/dev/null 2>&1
 rm $imgname.sex $imgname.salida
 

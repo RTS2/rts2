@@ -1,0 +1,33 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+my $file = $ARGV[0];
+
+unless (open (FILE,"<${file}.sex"))
+{
+  system "/home/rtopera/bin/detect $file";
+  open FILE, "<${file}.sex" or die "Cannot open sextrator file!";
+}
+
+my @arr;
+
+while (my $in = <FILE>)
+{
+  next if ($in =~ /^#/);
+  my @a = split (/\s+/, $in);
+  push @arr, [@a]
+}
+
+@arr = sort {$b->[6] <=> $a->[6]} @arr;
+
+my $ra_err = ($arr[0][2] - 150) * 60 / 290; 
+my $dec_err = ($arr[0][3] - 150) * 60 / 376;
+
+printf ("%4.4f %4.4f %i", $ra_err, $dec_err, ($arr[0][6]) % 10000);
+printf (" (%4.4f,%4.4f)\n", $ra_err, $dec_err);
+
+#foreach my $a (@arr)
+#{
+#  print $a->[1] . " " . $a->[6] . "\n";
+#}
