@@ -30,11 +30,21 @@
 	$res = $q->do_query ();
 	if (($row = pg_fetch_row ($res)) and ($row[0] > 0)) {
 		echo "Total of <a href='observations.php?night=$n'>$row[0]</a> <b>observations</b> from $row[1] to $row[2]<br>\n";
-		echo "<b>Observations duration</b> - min: $row[3] avg: $row[4] max: $row[5]<br>\n";
-		printf ("<b>Total observation time</b> $row[6] out of $row[7] sec, %.2f %% of time used<br>\n", 100 * $row[6]/$row[7]);
-	} else {
-		echo "Cannot find any observation.<br>\n";
-	}
+			echo "<b>Observations duration</b> - min: $row[3] avg: $row[4] max: $row[5]<br>\n";
+			printf ("<b>Total observation time</b> $row[6] out of $row[7] sec, %.2f %% of time used<br>\n", 100 * $row[6]/$row[7]);
+			printf ("<hr><b>List of all observations</b><br>\n");
+			$q->clear ();
+			$q->add_field ('observations.tar_id, observations.obs_id, observations.obs_start, observations.obs_duration, targets.tar_ra, targets.tar_dec, targets.tar_name, targets.type_id, observations_images.img_count');
+			$q->add_from ('observations, targets, observations_images');
+			$q->add_and_where ("night_num (obs_start) = $n");
+			$q->add_and_where ("targets.tar_id = observations.tar_id");
+			$q->add_and_where ("observations.obs_id = observations_images.obs_id");
+			$q->add_order ('obs_start DESC');
+			$q->do_query ();
+			$q->print_table ();
+		} else {
+			echo "Cannot find any observation.<br>\n";
+		}
 	$q->close ();
 	konec ();
 ?>
