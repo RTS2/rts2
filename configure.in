@@ -16,22 +16,26 @@ AC_PROG_MAKE_SET
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm"; LIBS="-lm $LIBS";
 AC_SUBST(LIB_M), [cat << EOF
 **** You don't have math library.
-**** Please install one and make sure, that -lm switch
-**** works as expected.
+**** Please install one and make sure, that it is available. 
 EOF
 exit 1])
 
 AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
 LIBS="-lcfitsio $LIBS"; AC_SUBST(LIB_CFITSIO), [cat <<EOF
 **** You don't have cfitsio installed.
-**** Please grab it from http://????.gsfc.nasa.gov
+**** Please download one from 
+**** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
 EOF
 exit 1])
 
 AC_CHECK_LIB([wcs], [wcs2pix], LIB_WCS="-lwcs"; 
 LIBS="-lwcs $LIBS"; AC_SUBST(LIB_WCS), [cat <<EOF
 **** You don't have libwcs installed.
-**** Please grab it from http://????
+**** You can download one from
+**** http://tdc-www.harvard.edu/software/wcstools/.
+**** Please note that there is no standart procedure to install
+**** that library. You have to put headers and lib* files from
+**** libwcs directory somewhere, where I can acces them
 EOF
 exit 1])
 
@@ -113,6 +117,7 @@ AC_OUTPUT([Makefile
 	   doc/Makefile
 	   doc/dia/Makefile
 	   src/Makefile
+	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/db/Makefile
 	   src/dome/Makefile
