@@ -32,7 +32,6 @@ get_device (struct device **devices, const char *device_name)
 
   dev = (struct device *) malloc (sizeof (struct device));
   // new device initialization
-  dev->channel = NULL;
   dev->data_handler = NULL;
   dev->status_notifier = NULL;
   dev->notifier_data = NULL;
@@ -43,8 +42,7 @@ get_device (struct device **devices, const char *device_name)
   dev->response_handler = NULL;
   pthread_mutex_init (&dev->status_lock, NULL);
   pthread_cond_init (&dev->status_cond, NULL);
-  pthread_mutex_init (&dev->priority_lock, NULL);
-  pthread_cond_init (&dev->priority_cond, NULL);
+  dev->channel.socket = -1;
   *devices = dev;
   return dev;
 }
@@ -123,9 +121,6 @@ serverd_command_handler (struct param_status *params,
   if (!strcmp (params->param_argv, "device"))
     {
       int i;
-#ifdef DEBUG
-      printf ("handling device %i\n", param_get_length (params));
-#endif
       if (param_get_length (params) != 4 || param_next_integer (params, &i)
 	  || param_next_string (params, &str))
 	return -1;
@@ -136,10 +131,6 @@ serverd_command_handler (struct param_status *params,
 	  || param_next_integer (params, &dev->type))
 	return -1;
       strncpy (dev->hostname, str, DEVICE_URI_SIZE);
-#ifdef DEBUG
-      printf ("id %i name %s host %s port %i type: %i\n", i, dev->name,
-	      dev->hostname, dev->port, dev->type);
-#endif
       return 0;
     }
   if (!strcmp (params->param_argv, "user"))

@@ -307,7 +307,6 @@ handle_connect (struct device *dev, struct param_status *params)
   char *hostname;
   size_t data_size;
   char *str;
-  struct dev_channel *channel = dev->channel;
   pthread_attr_t attrs;
   devcli_handle_data_t data_handler;
 
@@ -377,10 +376,8 @@ handle_connect (struct device *dev, struct param_status *params)
   read_data_attrs->size = data_size;
   read_data_attrs->id = id;
 
-
-  memcpy (&read_data_attrs->image, &channel->handlers.image,
+  memcpy (&read_data_attrs->image, &dev->channel.handlers.image,
 	  sizeof (struct image_info));
-
 #ifdef DEBUG
   printf ("creating data reading thread\n");
 #endif /* DEBUG */
@@ -422,9 +419,9 @@ handle_special (struct device *dev, char *cmd_start)
     }
   // messages - starts with M
   else if (*cmd_start == 'M')
-    if (dev->channel->handlers.message_handler)
+    if (dev->channel.handlers.message_handler)
       {
-	ret = dev->channel->handlers.message_handler (params, &dev->info);
+	ret = dev->channel.handlers.message_handler (params, &dev->info);
       }
     else
       {
@@ -443,7 +440,6 @@ handle_special (struct device *dev, char *cmd_start)
   // data commands - starts with D
   else if (*cmd_start == 'D')
     ret = handle_connect (dev, params);
-
   param_done (params);
   return ret;
 }
@@ -465,7 +461,6 @@ parse_server_response (char *buffer, struct device *dev)
 {
   char *pos = buffer;
   char *cmd_start = buffer;
-  struct dev_channel *channel = dev->channel;
   while (*pos)
     {
       if (*pos == '\r' || *pos == '\n')
@@ -486,14 +481,10 @@ parse_server_response (char *buffer, struct device *dev)
 	      // length must be = 3, e.g only +nnn <something> is valid as response
 	      if (ret_end - cmd_start == 4)
 		{
-		  pthread_mutex_lock (&channel->ret_lock);
-		  channel->ret_code = ret_code;
-		  pthread_cond_broadcast (&channel->ret_cond);
-		  pthread_mutex_unlock (&channel->ret_lock);
-#ifdef DEBUG
-		  printf ("unlocking %p %p..\n", &channel->ret_lock,
-			  &channel->ret_cond);
-#endif
+		  pthread_mutex_lock (&dev->channel.ret_lock);
+		  dev->channel.ret_code = ret_code;
+		  pthread_cond_broadcast (&dev->channel.ret_cond);
+		  pthread_mutex_unlock (&dev->channel.ret_lock);
 		}
 	      else
 		{
@@ -515,7 +506,7 @@ parse_server_response (char *buffer, struct device *dev)
 	  // all other stuff - commands
 	  else if (*cmd_start)
 	    {
-	      if (channel->handlers.command_handler)
+	      if (dev->channel.handlers.command_handler)
 		{
 		  struct param_status *params;
 		  if (param_init (&params, cmd_start, ' '))
@@ -526,7 +517,8 @@ parse_server_response (char *buffer, struct device *dev)
 		    }
 		  else
 		    {
-		      channel->handlers.command_handler (params, &dev->info);
+		      dev->channel.handlers.command_handler (params,
+							     &dev->info);
 		    }
 		  param_done (params);
 		}
@@ -552,24 +544,22 @@ parse_server_response (char *buffer, struct device *dev)
 void
 read_thread_finish (void *dev)
 {
-  struct dev_channel *channel = DEV->channel;
   fprintf (stderr, "broken connection of device %s, exiting\n", DEV->name);
 
   // inform clients, that we lose connection and cannot reply
   // to their requests
-  pthread_mutex_lock (&channel->ret_lock);
-  channel->ret_code = DEVDEM_E_TIMEOUT;
-  pthread_cond_broadcast (&channel->ret_cond);
-  pthread_mutex_unlock (&channel->ret_lock);
+  DEV->channel.socket = -1;
+  pthread_mutex_lock (&DEV->channel.ret_lock);
+  DEV->channel.ret_code = DEVDEM_E_TIMEOUT;
+  pthread_cond_broadcast (&DEV->channel.ret_cond);
+  pthread_mutex_unlock (&DEV->channel.ret_lock);
   // all threads waiting for status should be also notified,
   // that something is wrong
   pthread_mutex_lock (&DEV->status_lock);
-  DEV->channel = NULL;
-  free (channel);
   pthread_cond_broadcast (&DEV->status_cond);
   pthread_mutex_unlock (&DEV->status_lock);
-  printf ("read finished!!!!!!!!!!!!!!!!!!!!!\n");
-  fflush (stdout);
+  fprintf (stderr, "read finished!\n");
+  fflush (stderr);
 }
 
 
@@ -583,16 +573,15 @@ void *
 read_server_responses (void *dev)
 {
 #define DEV ((struct device *) dev)
-#define CHANNEL		DEV->channel
   char buffer[MAXMSG];
   int nbytes;
   char *endptr;			// end of message
-  int sock = CHANNEL->socket;
+  int sock;
 
+  sock = DEV->channel.socket;
   pthread_cleanup_push (read_thread_finish, dev);
-
   endptr = buffer;
-  while (CHANNEL)
+  while (DEV->channel.socket == sock)
     {
       fd_set read_set;
       FD_ZERO (&read_set);
@@ -620,7 +609,6 @@ read_server_responses (void *dev)
 #endif /* DEBUG */
       endptr = parse_server_response (buffer, DEV);
     }
-#undef CHANNEL
 #undef DEV
 #ifdef DEBUG
   printf ("reading thread exit\n");
@@ -644,12 +632,10 @@ dev_init ()
 
   server_device.type = DEVICE_TYPE_SERVERD;
 
-  server_device.channel =
-    (struct dev_channel *) malloc (sizeof (struct dev_channel));
-
-  server_device.channel->handlers.command_handler = NULL;
-  server_device.channel->handlers.message_handler = NULL;
+  server_device.channel.handlers.command_handler = NULL;
+  server_device.channel.handlers.message_handler = NULL;
   server_device.data_handler = NULL;
+  server_device.channel.socket = -1;
   return 0;
 }
 
@@ -669,26 +655,23 @@ int
 dev_connect (struct device *dev, const char *hostname, uint16_t port)
 {
   int i;
-  struct dev_channel *channel = dev->channel;
   pthread_attr_t attrs;
   pthread_t a_thread;
 
+  if (dev->channel.socket > 0)
+    return 0;			// already connected
   memset (&dev->info, 0, sizeof (dev->info));
-
-  if (init_sockaddr (&channel->address, hostname, port) < 0)
+  if (init_sockaddr (&dev->channel.address, hostname, port) < 0)
     return -1;
-
-  if ((channel->socket = socket (PF_INET, SOCK_STREAM, 0)) < 0)
+  if ((dev->channel.socket = socket (PF_INET, SOCK_STREAM, 0)) < 0)
     return -1;
-
   if (connect
-      (channel->socket, (struct sockaddr *) &channel->address,
-       sizeof (channel->address)) < 0)
+      (dev->channel.socket, (struct sockaddr *) &dev->channel.address,
+       sizeof (dev->channel.address)) < 0)
     return -1;
 
-  pthread_mutex_init (&channel->ret_lock, NULL);
-  pthread_cond_init (&channel->ret_cond, NULL);
-
+  pthread_mutex_init (&dev->channel.ret_lock, NULL);
+  pthread_cond_init (&dev->channel.ret_cond, NULL);
   for (i = 0; i < MAXDATACONS; i++)
     pthread_mutex_init (&data_threads[i].mutex, NULL);
 
@@ -696,13 +679,8 @@ dev_connect (struct device *dev, const char *hostname, uint16_t port)
 
   // run thread to dispatch command returns & messages
   if (pthread_create
-      (&a_thread, &attrs, read_server_responses, (void *) dev) < 0)
+      (&a_thread, &attrs, read_server_responses, (void *) dev) != 0)
     return -1;
-
-#ifdef DEBUG
-  printf ("\nInit socket: %i host:%s:%i\n", channel->socket, hostname, port);
-#endif /* DEBUG */
-
   return 0;
 }
 
@@ -754,11 +732,10 @@ devcli_server_login (const char *hostname,
   if (dev_init ())
     return -1;
 
-  server_device.channel->handlers.command_handler =
+  server_device.channel.handlers.command_handler =
     devhnd_devices[DEVICE_TYPE_SERVERD].command_handler;
-  server_device.channel->handlers.message_handler =
+  server_device.channel.handlers.message_handler =
     devhnd_devices[DEVICE_TYPE_SERVERD].message_handler;
-
   // now we could initiate connection ...
   if (dev_connect (&server_device, hostname, port))
     return -1;
@@ -796,9 +773,10 @@ devcli_server_register (const char *serv_host,
 {
   if (dev_init ())
     return -1;
+
 // init handlers..
   if (handlers)
-    server_device.channel->handlers = *handlers;
+    server_device.channel.handlers = *handlers;
 
 // now we could initiate connection ...
   if (dev_connect (&server_device, serv_host, serv_port))
@@ -827,16 +805,9 @@ devcli_server_register (const char *serv_host,
 void
 devcli_server_close (struct device *dev)
 {
-  if (dev->channel)
-    {
-      close (dev->channel->socket);
-#ifdef DEBUG
-      printf ("channel %s closed\n", dev->name);
-#endif
-      free (dev->statutes);
-      free (dev->channel);
-      dev->channel = NULL;
-    }
+  close (dev->channel.socket);
+  free (dev->statutes);
+  dev->channel.socket = -1;
 }
 
 struct device *
@@ -876,13 +847,14 @@ devcli_find (const char *device_name)
 int
 dev_connectdev (struct device *dev)
 {
-  struct dev_channel *channel;
   int ret_code;
 
-  channel = dev->channel;
-
-  if (dev_connect (dev, dev->hostname, dev->port))
+  if (dev->channel.socket == -1
+      && dev_connect (dev, dev->hostname, dev->port))
     return -1;
+
+  if (dev->type == DEVICE_TYPE_SERVERD)
+    return 0;
 
   // authentificate to the device
   devcli_server_command (NULL, "key %s", dev->name);
@@ -891,11 +863,10 @@ dev_connectdev (struct device *dev)
       (dev, &ret_code, "auth %i %i", info->id, dev->key) || ret_code < 0)
     return -1;
 
-  channel->handlers.command_handler =
+  dev->channel.handlers.command_handler =
     devhnd_devices[dev->type].command_handler;
-  channel->handlers.message_handler =
+  dev->channel.handlers.message_handler =
     devhnd_devices[dev->type].message_handler;
-
   return 0;
 }
 
@@ -945,14 +916,11 @@ devcli_read_data (int sock, void *data, size_t size)
 	}
       break;
     }
-#ifdef DEBUG
-  printf ("\ndevcli_read_data end     ret: %i\n", ret);
-#endif
   return -1;
 }
 
 /*! 
-* Sends command.
+* Sends command. It expect, that dev->channel.socket is connected.
 *
 * @param channel
 * @param ret_code		command return code	
@@ -967,16 +935,15 @@ dev_command_va (struct device *dev, int *ret_code, char *cmd, va_list va)
   char *message = NULL;
   int ret;
   struct timespec abstime;
-  struct dev_channel *channel = dev->channel;
   sigset_t sigs, old_sigs;
 
   vasprintf (&message, cmd, va);
-  pthread_mutex_lock (&channel->ret_lock);
-  channel->ret_code = INT_MIN;
+  pthread_mutex_lock (&dev->channel.ret_lock);
+  dev->channel.ret_code = INT_MIN;
 #ifdef DEBUG
-  printf ("channel_socket: %i writing: '%s'\n", channel->socket, message);
+  printf ("channel_socket: %i writing: '%s'\n", dev->channel.socket, message);
 #endif
-  ret = write_to_server (channel->socket, message);
+  ret = write_to_server (dev->channel.socket, message);
   free (message);
 
   if (ret < 0)
@@ -985,37 +952,20 @@ dev_command_va (struct device *dev, int *ret_code, char *cmd, va_list va)
   sigemptyset (&sigs);
   pthread_sigmask (SIG_SETMASK, &sigs, &old_sigs);
 
-#ifdef DEBUG
-  printf ("waiting on %p %p..\n", &channel->ret_lock, &channel->ret_cond);
-#endif
   abstime.tv_sec = time (NULL) + 60;
   abstime.tv_nsec = 0;
   ret = 0;
-  while (channel->ret_code == INT_MIN && ret != ETIMEDOUT)
+  while (dev->channel.ret_code == INT_MIN && ret != ETIMEDOUT)
     ret =
-      pthread_cond_timedwait (&channel->ret_cond, &channel->ret_lock,
+      pthread_cond_timedwait (&dev->channel.ret_cond, &dev->channel.ret_lock,
 			      &abstime);
-
-  if (ret == ETIMEDOUT)
-    {
-      if (ret_code)
-	*ret_code = DEVDEM_E_TIMEOUT;
-      dev->channel = NULL;
-    }
-#ifdef DEBUG
-  printf ("end %p %p..\n", &channel->ret_lock, &channel->ret_cond);
-#endif
-
   pthread_sigmask (SIG_SETMASK, &old_sigs, &sigs);
 
   if (ret_code)
-    *ret_code = channel->ret_code;
-  if (channel->ret_code < 0)
+    *ret_code = dev->channel.ret_code;
+  if (dev->channel.ret_code < 0)
     ret = -1;
-  pthread_mutex_unlock (&channel->ret_lock);
-//   if (dev->channel == NULL)
-//      free (channel);
-
+  pthread_mutex_unlock (&dev->channel.ret_lock);
   return ret;
 }
 
@@ -1052,11 +1002,11 @@ devcli_wait_for_status (struct device *dev, char *status_name,
   abstime.tv_nsec = 11;
 
   // try to reconnect devices, that were broken
-  if (!dev->channel)
+  if (dev->channel.socket == -1)
     devcli_command (dev, NULL, "ready");
 
   pthread_mutex_lock (&dev->status_lock);
-  while (dev->channel && status != (st->status & status_mask))
+  while (dev->channel.socket != -1 && status != (st->status & status_mask))
     {
 #ifdef DEBUG
       printf
@@ -1073,9 +1023,9 @@ devcli_wait_for_status (struct device *dev, char *status_name,
   printf ("devcli_wait_for_status: %i for status: %i mask: %i finished\n",
 	  status, st->status, status_mask);
 #endif /* DEBUG */
-  if (!dev->channel)
-    return -1;
   pthread_mutex_unlock (&dev->status_lock);
+  if (dev->channel.socket == -1)
+    return -1;
   return 0;
 }
 
@@ -1143,16 +1093,8 @@ devcli_command (struct device *dev, int *ret_code, char *cmd, ...)
   va_list va;
   int ret;
 
-  if (!dev->channel)
-    {
-      dev->channel =
-	(struct dev_channel *) malloc (sizeof (struct dev_channel));
-      if (dev_connectdev (dev) == -1)
-	{
-	  dev->channel = NULL;
-	  return -1;
-	}
-    }
+  if (dev->channel.socket == -1 && dev_connectdev (dev) == -1)
+    return -1;
 
   va_start (va, cmd);
   ret = dev_command_va (dev, ret_code, cmd, va);
@@ -1173,16 +1115,8 @@ devcli_command_all (int device_type, char *cmd, ...)
     {
       if (dev->type == device_type)
 	{
-	  if (!dev->channel)
-	    {
-	      dev->channel =
-		(struct dev_channel *) malloc (sizeof (struct dev_channel));
-	      if (dev_connectdev (dev) == -1)
-		{
-		  dev->channel = NULL;
-		  continue;
-		}
-	    }
+	  if (dev->channel.socket == -1 && dev_connectdev (dev) == -1)
+	    continue;
 	  printf ("ret: %s %i\n", dev->name, ret);
 	  fflush (stdout);
 	  ret |= dev_command_va (dev, NULL, cmd, va);
@@ -1197,7 +1131,6 @@ devcli_device_data_handler (int device_type, devcli_handle_data_t handler)
 {
   struct device *devices = info->devices;
   int ret = 0;
-
   while (devices)
     {
       if (devices->type == device_type)
@@ -1211,10 +1144,11 @@ int
 devcli_image_info (struct device *dev, struct image_info *image)
 {
   printf ("get image info for:%s\n", image->camera_name);
-  memcpy (&dev->channel->handlers.image, image, sizeof (struct image_info));
+  memcpy (&dev->channel.handlers.image, image, sizeof (struct image_info));
   return 0;
 };
 
+// mainly just for monitor
 int
 devcli_execute (char *line, int *ret_code)
 {
@@ -1230,12 +1164,10 @@ devcli_execute (char *line, int *ret_code)
       sep++;
       if ((dev = devcli_find (line)))
 	return devcli_command (dev, ret_code, sep);
-#ifdef DEBUG
-      printf ("no device for %s", line);
-#endif
       errno = ENOENT;
       return -1;
     }
+  // default-> send it to central server
   return devcli_server_command (ret_code, line);
 }
 
