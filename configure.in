@@ -13,7 +13,7 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lm':
+
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm"; LIBS="-lm $LIBS";
 AC_SUBST(LIB_M), [cat << EOF
 **** You don't have math library.
@@ -21,23 +21,44 @@ AC_SUBST(LIB_M), [cat << EOF
 **** works as expected.
 EOF
 exit 1])
-# FIXME: Replace `main' with a function in `-lcfitsio':
-AC_CHECK_LIB([cfitsio], [main], , [cat <<EOF
+
+AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
+LIBS="-lcfitsio $LIBS"; AC_SUBST(LIB_CFITSIO), [cat <<EOF
 **** You don't have cfitsio installed.
 **** Please grab it from http://????.gsfc.nasa.gov
 EOF
 exit 1])
-# FIXME: Replace `main' with a function in `-lncurses':
-AC_CHECK_LIB([ncurses], [main])
-# FIXME: Replace `main' with a function in `-lnova':
-AC_CHECK_LIB([nova], [get_ln_version])
-# FIXME: Replace `main' with a function in `-lpthread':
+
+AC_CHECK_LIB([ncurses], [mvwprintw], LIB_NCURSES="-lncurses";
+LIBS="-lncurses $LIBS"; AC_SUBST(LIB_NCURSES), [cat << EOF
+**** You don't have ncurser libraries.
+**** Please install ncursers (you need devel package as well)
+EOF
+exit 1])
+
+AC_CHECK_LIB([nova], [get_ln_version], LIB_NOVA="-lnova"; 
+LIBS="-lnova $LIBS"; AC_SUBST(LIB_NOVA), [cat << EOF
+**** You don't have libnova library.
+**** Please get one from http://libnova.sourceforge.net.
+EOF
+exit 1])
+
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
-LIBS="-lpthread $LIBS"; AC_SUBST(LIB_PTHREAD))
+LIBS="-lpthread $LIBS"; AC_SUBST(LIB_PTHREAD), [cat << EOF
+**** You don't have pthread library installed.
+**** Please try to get it somewhere.
+EOF
+exit 1])
 
 #debug="-DDEBUG"
 debug=""
 AC_SUBST(debug)
+
+CFLAGS="-Wall -Wshadow -g"
+AC_SUBST(CFLAGS)
+
+LDFLAGS=""
+AC_SUBST(LDFLAGS)
 
 # Checks for header files.
 AC_HEADER_STDC
