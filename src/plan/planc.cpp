@@ -121,9 +121,8 @@ ready_to_observe (int status)
   char *autoflats;
   autoflats = get_string_default ("autoflats", "Y");
   if (autoflats[0] == 'Y')
-     return status == SERVERD_NIGHT
-      || status == SERVERD_DUSK
-      || status == SERVERD_DAWN;
+    return status == SERVERD_NIGHT
+      || status == SERVERD_DUSK || status == SERVERD_DAWN;
   return status == SERVERD_NIGHT;
 }
 
@@ -262,8 +261,12 @@ main (int argc, char **argv)
 	    ("Options:\n"
 	     "\tport|p <port_num>       port of the server\n"
 	     "\tpriority|r <priority>   priority to run at\n"
-	     "\tignore_status|i         run even when you don't have priority\n"
-	     "\tguidance|g              guidance type - overwrite hi_precission from config\n");
+	     "\tignore_status|i         run even when its day (don't care about rts2-centrald state\n"
+	     "\tguidance|g              guidance type - overwrite hi_precission from config\n"
+	     "\tignore_astro|a          ignore astrometry - select OT and other beasts even when we\n"
+	     "\t                        don't have any image with astrometry\n"
+	     "\tguidance|g		overwrites hi_precission from rts2.conf\n");
+
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;

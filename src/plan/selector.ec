@@ -1065,6 +1065,10 @@ createTarget (Target **in_target, int in_tar_id, struct device *telescope, struc
   int tar_id = in_tar_id;
   EXEC SQL END DECLARE SECTION;
   struct ln_equ_posn object;
+  time_t now;
+
+  time (&now);
+
   Target *n_target;
   db_lock ();
 #define test_sql if (sqlca.sqlcode < 0) goto err
@@ -1086,6 +1090,7 @@ createTarget (Target **in_target, int in_tar_id, struct device *telescope, struc
   n_target->next = NULL;
   n_target->type = TARGET_LIGHT;
   n_target->id = tar_id;
+  n_target->start_time = now;
   n_target->tolerance = 100;
   n_target->hi_precision = (int) get_double_default ("hi_precision", 1);
   n_target->obs_type = type_id;

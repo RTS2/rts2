@@ -58,7 +58,7 @@ time_t last_succes = 0;
 
 int watch_status = 1;		// watch central server status
 
-int target_id = -1; 
+int target_id = -1;
 
 int
 phot_handler (struct param_status *params, struct phot_info *info)
@@ -90,12 +90,12 @@ phot_handler (struct param_status *params, struct phot_info *info)
 }
 
 int
-generate_next (int i, Target * plan)
+generate_next (Target * plan)
 {
   while (plan->next)
     plan = plan->next;
 
-  return createTarget (&plan->next, 1000, telescope, &observer);
+  return createTarget (&plan->next, target_id, telescope, &observer);
 }
 
 // returns 1, when we are in state allowing observation
@@ -105,14 +105,13 @@ ready_to_observe (int status)
   char *autoflats;
   autoflats = get_string_default ("autoflats", "Y");
   if (autoflats[0] == 'Y')
-     return status == SERVERD_NIGHT
-      || status == SERVERD_DUSK
-      || status == SERVERD_DAWN;
+    return status == SERVERD_NIGHT
+      || status == SERVERD_DUSK || status == SERVERD_DAWN;
   return status == SERVERD_NIGHT;
 }
 
 int
-observe (int watch_status, int hi_precission)
+observe (int hi_precission)
 {
   int i = 0;
   int tar_id = 0;
@@ -122,12 +121,16 @@ observe (int watch_status, int hi_precission)
   int light;
   int start_move_count;
 
+  int ret;
+
   struct tm last_s;
 
   plan = new Target (telescope, &observer);
   plan->next = NULL;
   plan->id = -1;
-  i = generate_next (i, plan);
+  ret = generate_next (plan);
+  if (!ret)
+    return ret;
   last = plan->next;
   last->setHiPrecission (hi_precission);
   free (plan);
@@ -140,20 +143,8 @@ observe (int watch_status, int hi_precission)
       time_t t = time (NULL);
       struct device *camera;
 
-      if (watch_status
-	  && (!ready_to_observe (devcli_server ()->statutes[0].status)))
-	break;
-
       // call next observation
       last->observe (p);
-
-      while (!last->next)
-	{
-	  printf ("Generating next plan: %p %p %p\n", next, plan->next, last);
-	  i = generate_next (i, plan);
-	}
-      next = last->next;
-      printf ("next plan #%i: id %i type %i\n", i, next->id, next->type);
     }
 
   if (obs_id >= 0)
@@ -235,13 +226,17 @@ main (int argc, char **argv)
 	case 'g':
 	  hi_precission = atoi (optarg);
 	  break;
+	case 't':
+	  target_id = atoi (optarg);
+	  break;
 	case 'h':
 	  printf
 	    ("Options:\n"
 	     "\tport|p <port_num>       port of the server\n"
 	     "\tpriority|r <priority>   priority to run at\n"
 	     "\tignore_status|i         run even when you don't have priority\n"
-	     "\tguidance|g              guidance type - overwrite hi_precission from config\n");
+	     "\tguidance|g              guidance type - overwrite hi_precission from config\n"
+	     "\ttarget_id|t		target_id of observation we would like to observe\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -261,7 +256,12 @@ main (int argc, char **argv)
     {
       printf ("**** only legal parameter is server name\n");
       return EXIT_FAILURE;
+    }
 
+  if (target_id <= 0)
+    {
+      printf ("**** you have to specify target id\n");
+      return EXIT_FAILURE;
     }
 
   printf ("Readign config file" CONFIG_FILE "...");
@@ -364,7 +364,7 @@ loop:
 				    (devcli_handle_response_t) phot_handler);
       }
 
-  observe (watch_status, hi_precission);
+  observe (hi_precission);
   printf ("done\n");
 
   devcli_command (telescope, NULL, "home");

@@ -74,12 +74,13 @@ Target::get_info (struct device *cam,
 {
   struct image_info *info =
     (struct image_info *) malloc (sizeof (struct image_info));
+  struct timezone tz;
   int ret;
 
   info->camera_name = cam->name;
   printf ("info camera_name = %s\n", cam->name);
   info->telescope_name = telescope->name;
-  info->exposure_time = time (NULL);
+  gettimeofday (&info->exposure_tv, &tz);
   info->exposure_length = exposure;
   info->target_id = id;
   info->observation_id = obs_id;
@@ -90,13 +91,14 @@ Target::get_info (struct device *cam,
     }
   memcpy (&info->camera, &cam->info, sizeof (struct camera_info));
   memcpy (&info->telescope, &telescope->info, sizeof (struct telescope_info));
-  if (!img_hi_precision && hi_precision == 3 
-	&& !strcmp (cam->name, get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA))
-	&& type == TARGET_LIGHT)
-  {
-    closed_loop_precission.hi_precision = 1;
-    info->hi_precision = &closed_loop_precission;
-  }
+  if (!img_hi_precision && hi_precision == 3
+      && !strcmp (cam->name,
+		  get_string_default ("telescope_camera", DEFAULT_TEL_CAMERA))
+      && type == TARGET_LIGHT)
+    {
+      closed_loop_precission.hi_precision = 1;
+      info->hi_precision = &closed_loop_precission;
+    }
   else
     {
       info->hi_precision = img_hi_precision;
