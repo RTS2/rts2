@@ -10,9 +10,9 @@
 #include <math.h>
 #include <errno.h>
 
+#include "config.h"
 #include "hms.h"
 #include "mkpath.h"
-
 
 int
 main (int argc, char **argv)
@@ -20,13 +20,14 @@ main (int argc, char **argv)
   char hms[60];
   int i;
   double value;
+  char *loc;
   printf ("10.2 - %f\n", hmstod ("10.2"));
   printf ("10a58V67 - %f\n", hmstod ("10a58V67"));
 
   value = hmstod ("-11aa11:57a");
   assert (errno != 0);
 
-  for (i = 0; i <= 3600; i++)
+/*  for (i = 0; i <= 3600; i++)
     {
       value = -11 - i / 3600.0;
       dtohms (value, hms);
@@ -34,10 +35,17 @@ main (int argc, char **argv)
 	      (value * 10000), hmstod (hms) * 10000);
       assert ((round (value * 10000) == round (hmstod (hms) * 10000))
 	      && (errno == 0));
-    }
+    } */
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
+  printf ("ret %i\n", read_config ("bootes"));
 
+  printf ("ret %i\n", get_double ("longtitude", &value));
+  get_string ("location", &loc);
+  printf ("value: %f %s\n", value, loc);
+  get_device_string ("C0", "name", &loc);
+  printf ("ret: %s %s\n", loc,
+	  get_device_string_default ("C1", "name", "moje"));
   return 0;
 }

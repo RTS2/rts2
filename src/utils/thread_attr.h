@@ -3,6 +3,15 @@
 
 #include <pthread.h>
 
-void thread_attrs_set (pthread_attr_t * attrs);
+#ifdef _cplusplus
+extern "C"
+{
+#endif
 
-#endif /* __RTS2_PTHREAD_ATTRS__ */
+  void thread_attrs_set (pthread_attr_t * attrs);
+
+#ifdef _cplusplus
+}
+#endif
+
+#endif				/* __RTS2_PTHREAD_ATTRS__ */
