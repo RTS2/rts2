@@ -134,7 +134,7 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
 	  if (max_size < 0)
 	    {
 	      printf
-		("End after moving %i images (%i files, %.0f bytes), size exceeded.\n",
+		("Finished after moving %i images (%i files, %.0f bytes), size exceeded.\n",
 		 img_move_count, file_move_count, size_count);
 	      EXEC SQL CLOSE images_to_move;
 	      EXEC SQL END;
@@ -176,7 +176,7 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
 	}
     }
   printf
-    ("Last table row sucessfully fetched.\n%i images (%i files) were moved (%.0f bytes of data)\n",
+    ("No more rows. All images were backed-up, you can delete source dirs.\n%i images (%i files) were moved (%.0f bytes of data)\n",
      img_move_count, file_move_count, size_count);
 
   EXEC SQL CLOSE images_to_move;
