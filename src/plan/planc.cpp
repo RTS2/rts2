@@ -62,9 +62,7 @@ pthread_mutex_t script_thread_count_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t script_thread_count_cond = PTHREAD_COND_INITIALIZER;
 static int script_thread_count = 0;	// number of running scripts...
 
-pthread_mutex_t exposure_count_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t exposure_count_cond = PTHREAD_COND_INITIALIZER;
-static int exposure_count = 0;	// number of running exposures 
+static int running_script_count = 0;	// number of running scripts (not in W)
 
 pthread_mutex_t move_count_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t move_count_cond = PTHREAD_COND_INITIALIZER;
@@ -317,29 +315,12 @@ dec_script_thread_count (void)
 {
   pthread_mutex_lock (&script_thread_count_mutex);
   script_thread_count--;
+  running_script_count--;
   printf ("new script thread count: %i\n", script_thread_count);
   fflush (stdout);
   pthread_cond_broadcast (&script_thread_count_cond);
   pthread_mutex_unlock (&script_thread_count_mutex);
   return 0;
-}
-
-void
-exposure_increase ()
-{
-  pthread_mutex_lock (&exposure_count_mutex);
-  exposure_count++;
-  pthread_cond_broadcast (&exposure_count_cond);
-  pthread_mutex_unlock (&exposure_count_mutex);
-}
-
-void
-exposure_decrease ()
-{
-  pthread_mutex_lock (&exposure_count_mutex);
-  exposure_count--;
-  pthread_cond_broadcast (&exposure_count_cond);
-  pthread_mutex_unlock (&exposure_count_mutex);
 }
 
 void *
@@ -440,7 +421,6 @@ execute_camera_script (void *exinfo)
 	  if (exp_state == EXPOSURE_PROGRESS)
 	    {
 	      devcli_command (camera, NULL, "readout 0");
-	      exposure_decrease ();
 	      devcli_wait_for_status (camera, "img_chip",
 				      CAM_MASK_READING, CAM_NOTREADING,
 				      MAX_READOUT_TIME);
@@ -450,9 +430,9 @@ execute_camera_script (void *exinfo)
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
 					  PHOT_NOINTEGRATE, 10000);
-	      exposure_decrease ();
 	    }
-	  exposure_increase ();
+	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
+				  TEL_OBSERVING, 0);
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
 	    {
@@ -492,7 +472,8 @@ execute_camera_script (void *exinfo)
 	      continue;
 	    }
 	  command = s;
-	  exposure_increase ();
+	  devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
+				  TEL_OBSERVING, 0);
 	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate 1 %i", filter);
 	  exp_state = INTEGRATION_PROGRESS;
 	  break;
@@ -513,20 +494,34 @@ execute_camera_script (void *exinfo)
 	  }
 	  arg2 = (char*) malloc (command - s + 1);
 	  strncpy (arg2, s, command - s + 1);
-	  // wait till exposure count reaches 0
+	 
+	  // wait till exposure count reaches 0 - no other thread do
+	  // the exposure..
 	  time (&now);
 	  timeout.tv_sec = now + 1000;
 	  timeout.tv_nsec = 0;
-	  pthread_mutex_lock (&exposure_count_mutex);
-	  while (exposure_count > 0)
+	  pthread_mutex_lock (&script_thread_count_mutex);
+	  while (running_script_count > 1) // cause we will hold running_script_count lock in any case..
 	    {
-	      pthread_cond_timedwait (&exposure_count_cond, &exposure_count_mutex, &timeout);
+	      pthread_cond_timedwait (&script_thread_count_cond, &script_thread_count_mutex, &timeout);
 	    }
-	  pthread_mutex_unlock (&exposure_count_mutex);
+	  pthread_mutex_unlock (&script_thread_count_mutex);
+
+	  // we cannot imagine anything, 
+	  // because there is forced readout before every command,
+	  // just in case we integrate, let's finish
+	  if (exp_state == INTEGRATION_PROGRESS)
+	  {
+	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
+				  10000);
+	  }
+	  
 	  // now there is no exposure running, do the move
 	  devcli_command (telescope, NULL, "change %s %s", arg1, arg2);
 	  free (arg2);
 	  free (arg1);
+
 	  // increase move count - unblock any COMMAND_WAIT
 	  pthread_mutex_lock (&move_count_mutex);
 	  move_count++;
@@ -535,16 +530,43 @@ execute_camera_script (void *exinfo)
 	  break;
 	case COMMAND_WAIT:
 	  command++;
+
+	  // if we integrate, wait for integration end..
+	  if (exp_state == INTEGRATION_PROGRESS)
+	  {
+	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
+				  10000);
+	  }
+
+	  // inform, that we entered wait..
+	  pthread_mutex_lock (&script_thread_count_mutex);
+	  running_script_count--;
+	  pthread_cond_broadcast (&script_thread_count_cond);
+	  pthread_mutex_unlock (&script_thread_count_mutex);
+	
 	  time (&now);
 	  timeout.tv_sec = now + 1000;
 	  timeout.tv_nsec = 0;
+
+	  // wait for change to complete (can be also 
+	  // running_script_count == 1, but that one is be better
+	  // approach - no one can quarantee, that move will start
+	  // before we will start the exposure
 	  pthread_mutex_lock (&move_count_mutex);
 	  while (move_count == ((struct ex_info *) exinfo)->move_count)
 	    {
 	      pthread_cond_timedwait (&move_count_cond, &move_count_mutex, &timeout);
 	    }
+	  // we moved in that thread..
 	  ((struct ex_info *) exinfo)->move_count = move_count;
 	  pthread_mutex_unlock (&move_count_mutex);
+
+	  // and get back hold of the running_script_count
+	  pthread_mutex_lock (&script_thread_count_mutex);
+	  running_script_count++;
+	  pthread_mutex_unlock (&script_thread_count_mutex);
+
 	  break;
 	default:
 	  if (!isspace (*command))
@@ -567,7 +589,6 @@ execute_camera_script (void *exinfo)
     case EXPOSURE_PROGRESS:
       dec_script_thread_count ();
       devcli_command (camera, NULL, "readout 0");
-      exposure_decrease ();
       devcli_wait_for_status (camera, "img_chip",
 			      CAM_MASK_READING, CAM_NOTREADING,
 			      MAX_READOUT_TIME);
@@ -577,7 +598,6 @@ execute_camera_script (void *exinfo)
 				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 				  10000);
       dec_script_thread_count ();
-      exposure_decrease ();
       break;
     default:
       dec_script_thread_count ();
@@ -661,9 +681,12 @@ observe (int watch_status)
       light = !(last->type == TARGET_DARK || last->type == TARGET_FLAT_DARK);
 
       // wait for thread end..
-      if (thread_l.next)
-	for (tl_top = thread_l.next; tl_top; tl_top = tl_top->next)
+      for (tl_top = thread_l.next; thread_l.next; tl_top = thread_l.next)
+	{
 	  pthread_join (tl_top->thread, NULL);
+	  thread_l.next = tl_top->next;
+	  free (tl_top);
+	}
 
       if (obs_id >= 0 && last->id != tar_id)
 	{
@@ -703,9 +726,7 @@ observe (int watch_status)
 
       pthread_mutex_lock (&script_thread_count_mutex);
 
-      pthread_mutex_lock (&exposure_count_mutex);
-      exposure_count = 0;
-      pthread_mutex_unlock (&exposure_count_mutex);
+      running_script_count = 0;
 
       pthread_mutex_lock (&move_count_mutex);
       start_move_count = move_count;
@@ -732,7 +753,7 @@ observe (int watch_status)
 	      // increase exposure count list
 	      script_thread_count++;
 	  }
-
+      running_script_count = script_thread_count;
       pthread_mutex_unlock (&script_thread_count_mutex);
 
       while (!last->next)
