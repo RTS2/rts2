@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 #define READOUT_TIME		75
-#define PLAN_TOLERANCE		180
+#define PLAN_TOLERANCE		350
 #define PLAN_DARK_TOLERANCE	1800
 
 #define DEFAULT_DARK_FREQUENCY	50	// every n image will be dark
@@ -137,16 +137,10 @@ select_next_gps (time_t c_start, struct target *plan, float lon, float lat)
   printf ("st: %f\n", st);
 
   db_lock ();
-  EXEC SQL DECLARE obs_cursor_gps CURSOR FOR
-    SELECT targets.tar_id, tar_ra, tar_dec,
-    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt
-    FROM targets
-    WHERE targets.type_id =
-    'P' AND NOT EXISTS (SELECT * FROM observations WHERE observations.tar_id =
-			targets.tar_id AND observations.
-			obs_start >:obs_start) AND obj_alt (tar_ra,
-							    tar_dec,:st,:db_lon,:db_lat)
-    > 10 ORDER BY tar_dec ASC, alt DESC;
+EXEC SQL DECLARE obs_cursor_gps CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets WHERE targets.type_id = 'P' AND NOT EXISTS (SELECT * FROM observations WHERE observations.tar_id = targets.tar_id AND observations.obs_start >:obs_start) AND
+    obj_alt
+    (tar_ra,
+tar_dec,: st,: db_lon,:db_lat) > 10 ORDER BY tar_dec ASC, alt DESC;
   EXEC SQL OPEN obs_cursor_gps;
   test_sql;
   printf ("\ttar_id\tra\tdec\talt\n");
@@ -205,19 +199,9 @@ select_next_airmass (time_t c_start, struct target *plan,
   printf ("c_start: %s", ctime (&c_start));
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
   printf ("st: %f\nairmass: %f\n", st, t_airmass);
-  EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR
-    SELECT targets.tar_id, tar_ra, tar_dec,
-    obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az,
-    obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS
-    airmass, img_count
-    FROM targets, targets_images WHERE targets.tar_id =
-    targets_images.tar_id AND targets.type_id = 'S'
-    AND (abs (obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) -:t_airmass))
-    <
-    0.2 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
-	     obj_az (tar_ra,
-		     tar_dec,:st,:db_lon,:db_lat) >:d_az_start) ORDER BY
-    img_count ASC;
+EXEC SQL DECLARE obs_cursor_airmass CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS az, obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS airmass, img_count FROM targets, targets_images WHERE targets.tar_id = targets_images.tar_id AND targets.type_id = 'S' AND (abs (obj_airmass (tar_ra, tar_dec,: st,: db_lon,: db_lat) -: t_airmass)) < 0.2 AND (obj_az (tar_ra, tar_dec,: st,: db_lon,: db_lat) <: d_az_end OR obj_az (tar_ra, tar_dec,: st,: db_lon,: db_lat) >:d_az_start) ORDER BY
+    img_count
+    ASC;
   EXEC SQL OPEN obs_cursor_airmass;
 
   test_sql;
@@ -272,14 +256,8 @@ select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
   printf ("C_start: %s", ctime (&c_start));
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
   printf ("st: %f\n", st);
-  EXEC SQL DECLARE obs_cursor_grb CURSOR FOR
-    SELECT targets.tar_id, tar_ra, tar_dec,
-    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets, grb
-    WHERE type_id =
-    'G' AND grb_id > 100 AND obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat)
-    > 0 and targets.tar_id =
-    grb.tar_id and grb_last_update >
-    abstime (:obs_start - 200000) ORDER BY alt DESC;
+EXEC SQL DECLARE obs_cursor_grb CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt FROM targets, grb WHERE type_id = 'G' AND grb_id > 200 AND obj_alt (tar_ra, tar_dec,: st,: db_lon,: db_lat) > 0 and targets.tar_id = grb.tar_id and grb_last_update > abstime (:obs_start - 200000) ORDER BY alt
+    DESC;
   EXEC SQL OPEN obs_cursor_grb;
   test_sql;
   while (!sqlca.sqlcode)
@@ -291,6 +269,7 @@ select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
       if (find_plan (plan, tar_id, obs_start))
 	{
 	  printf ("grb find id: %i\n", tar_id);
+
 	  add_target (plan, TARGET_LIGHT, tar_id, -1, ra, dec, c_start,
 		      PLAN_TOLERANCE);
 	  EXEC SQL CLOSE obs_cursor_grb;
@@ -301,7 +280,7 @@ select_next_grb (time_t c_start, struct target *plan, float lon, float lat)
     }
   EXEC SQL CLOSE obs_cursor_grb;
   test_sql;
-  printf ("no grb found");
+  printf ("no grb found\n");
   db_unlock ();
 #undef test_sql
   return -1;
@@ -324,6 +303,7 @@ select_next_to (time_t c_start, struct target *plan, float az_end,
 {
   EXEC SQL BEGIN DECLARE SECTION;
   double st;
+  double st_deg;
   int tar_id;
   double ra;
   double dec;
@@ -340,20 +320,16 @@ select_next_to (time_t c_start, struct target *plan, float az_end,
   db_lock ();
 #define test_sql if (sqlca.sqlcode < 0) goto err
   st = get_mean_sidereal_time (get_julian_from_timet (&c_start));
+  st_deg = 15.0 * st;
   printf ("to st: %f\n", st);
-  EXEC SQL DECLARE obs_cursor_to CURSOR FOR
-    SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra,
-						     tar_dec,:st,:db_lon,:db_lat)
-    AS alt, ot_imgcount, EXTRACT (EPOCH FROM ot_minpause) FROM targets,
-    targets_images, ot WHERE ot.tar_id = targets.tar_id AND targets.tar_id =
-    targets_images.tar_id AND type_id = 'O' AND obj_alt (tar_ra, tar_dec,:st,
-							 :db_lon,:db_lat) >
-    10 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
-	    obj_az (tar_ra, tar_dec,:st,:db_lon,
-		    :db_lat) >:d_az_start) ORDER BY ot_priority DESC,
-    img_count ASC, alt DESC, ot_imgcount DESC;
-
+EXEC SQL DECLARE obs_cursor_to CURSOR FOR SELECT targets.tar_id, tar_ra, tar_dec, obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt, ot_imgcount, EXTRACT (EPOCH FROM ot_minpause) FROM targets, targets_images, ot WHERE ot.tar_id = targets.tar_id AND targets.tar_id = targets_images.tar_id AND type_id = 'O' AND obj_alt (tar_ra, tar_dec,:st,
+: db_lon,: db_lat) > 10 AND not ((: st_deg - tar_ra > 9.0 * 15.0 AND: st_deg - tar_ra < 15.0 * 15.0) OR (: st_deg - tar_ra < -9.0 * 15.0 AND:																							    st_deg - tar_ra > -15.0 * 15.0)) ORDER BY ot_priority DESC,
+    img_count ASC, alt DESC,
+    ot_imgcount DESC;
   EXEC SQL OPEN obs_cursor_to;
+//    10 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+//          obj_az (tar_ra, tar_dec,:st,:db_lon,
+//                  :db_lat) >:d_az_start) ORDER BY ot_priority DESC,
   test_sql;
   while (1)
     {
@@ -363,7 +339,7 @@ select_next_to (time_t c_start, struct target *plan, float az_end,
       if (sqlca.sqlcode)
 	goto err;
       if (ot_isnull)
-	ot_minpause = 0;
+	ot_minpause = 1800;
       last_o = db_last_observation (tar_id);
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%i\t%i\n", tar_id, ra, dec,
 	      alt, ot_imgcount, ot_minpause);
@@ -622,7 +598,7 @@ make_plan (struct target **plan, float exposure, float lon, float lat)
   time_t c_start;
   int i;
 
-  //ECPGdebug (1, stdout);
+//  ECPGdebug (1, stdout);
 
   c_start = time (NULL);
 
