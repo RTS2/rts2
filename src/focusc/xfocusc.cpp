@@ -296,7 +296,7 @@ public:
 	  ds++;
 	}
 
-    low = med = 0;
+    low = med = hig = 0;
     j = 0;
     for (i = 0; i < HISTOGRAM_LIMIT; i++)
       {
