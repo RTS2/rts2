@@ -105,7 +105,7 @@ CameraAndorChip::readoutOneLine ()
 void
 CameraAndorChip::convertLongToShort (long *buf, int size)
 {
-  long *scr_p = buf;
+  long *src_p = buf;
   unsigned short *dest_p = (unsigned short *) buf;
   for (; src_p < buf + size; src_p++, dest_p++)
   {
@@ -228,8 +228,7 @@ Rts2DevCameraAndor::camWaitExpose (int chip)
 {
   int status;
   int ret;
-  ret = Rts2DevCamera::camWaitExpose (chip);
-  if (ret != -2)
+  if (!(getState (chip) & CAM_EXPOSING))
   {
     return ret;
   }
