@@ -74,11 +74,11 @@ db_get_media_path (int media_id, char *path, size_t path_len)
   return 0;
 #undef test_sql
 err:
-  db_unlock ();
 #ifdef DEBUG
   printf ("err db_get_media_path: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   path[0] = '\0';
   return -1;
 }
@@ -98,16 +98,15 @@ db_start_observation (int id, const time_t * c_start, int *obs_id)
   *obs_id = obs;
   EXEC SQL INSERT INTO observations (tar_id, obs_id, obs_start) VALUES
     (:tar_id,:obs, abstime (:obs_start));
-  EXEC SQL END;
   test_sql;
   db_unlock ();
   return 0;
 err:
-  db_unlock ();
 #ifdef DEBUG
   printf ("err db_start_observation: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
@@ -125,11 +124,11 @@ db_end_observation (int obs_id, const time_t * end_time)
   db_unlock ();
   return 0;
 err:
-  db_unlock ();
 #ifdef DEBUG
   printf ("err db_end_observation: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
@@ -153,11 +152,11 @@ db_add_darkfield (char *path, const time_t * exposure_time, int
   db_unlock ();
   return 0;
 err:
-  db_unlock ();
 #ifdef DEBUG
   printf ("err db_add_darkfield: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
@@ -170,19 +169,18 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
   int grb_id = id;
   int grb_seqn;
   char tar_name[10];
-  double tar_ra = *ra;
-  double tar_dec = *dec;
+  double tar_ra;
+  double tar_dec;
   long int grb_date = *date;
   EXEC SQL END DECLARE SECTION;
 
   db_lock ();
-  EXEC SQL BEGIN;
   EXEC SQL DECLARE tar_cursor CURSOR FOR
-    SELECT targets.tar_id, grb_seqn FROM targets, grb WHERE targets.tar_id =
-    grb.tar_id AND grb_id =:grb_id;
+    SELECT targets.tar_id, tar_ra, tar_dec, grb_seqn FROM targets,
+    grb WHERE targets.tar_id = grb.tar_id AND grb_id =:grb_id;
   test_sql;
   EXEC SQL OPEN tar_cursor;
-  EXEC SQL FETCH next FROM tar_cursor INTO:tar_id,:grb_seqn;
+  EXEC SQL FETCH next FROM tar_cursor INTO:tar_id,:tar_ra,:tar_dec,:grb_seqn;
   test_sql;
   if (!sqlca.sqlcode)
     {
@@ -190,6 +188,8 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
       if (grb_seqn < *seqn)
 	{
 	  grb_seqn = *seqn;
+	  tar_ra = *ra;
+	  tar_dec = *dec;
 	  EXEC SQL UPDATE targets
 	    SET tar_ra =:tar_ra,
 	    tar_dec =:tar_dec WHERE targets.tar_id =:tar_id;
@@ -226,18 +226,16 @@ db_update_grb (int id, int *seqn, double *ra, double *dec, time_t * date,
       test_sql;
     }
   EXEC SQL CLOSE tar_cursor;
-  EXEC SQL END;
   db_unlock ();
   if (r_tar_id)
     *r_tar_id = tar_id;
   return 0;
 err:
-  EXEC SQL END;
-  db_unlock ();
 #ifdef DEBUG
   printf ("err db_update_grb: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
@@ -280,11 +278,11 @@ db_get_darkfield (char *camera_name, int exposure_length, int
   db_unlock ();
   return -1;
 err:
-  db_unlock ();
 #ifdef DEBUG
   printf ("err db_get_darkfield: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
 
@@ -359,10 +357,10 @@ db_last_good_image (char *camera_name)
 
   return time (NULL) - i_last_date;
 err:
-  db_unlock ();
 #ifdef DEBUG
   printf ("err db_last_good_image: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
 #endif /* DEBUG */
+  db_unlock ();
   return -1;
 }
