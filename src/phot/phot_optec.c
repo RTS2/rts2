@@ -30,13 +30,18 @@
 #define DEVICE_NAME		"PHOT"
 #define DEVICE_PORT		5559	// default camera TCP/IP port
 
-
 int fd = 0;
 
 char *phot_dev = "/dev/phot0";
 
+struct integration_request
+{
+  float time;			// in sec
+  int filter_loop_size;
+};
+
 void
-phot_command (char command, int arg)
+phot_command (char command, short arg)
 {
   char cmd_buf[3];
   cmd_buf[0] = command;
@@ -70,35 +75,43 @@ void
 clean_integrate_cancel (void *agr)
 {
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
-  devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE,
-		      "Integration finished");
+  devdem_status_mask (0, PHOT_MASK_INTEGRATE, 0, "Integration finished");
 }
 
 void *
 start_integrate (void *arg)
 {
-  int it_t;
-  int result;
+  struct integration_request *req = (struct integration_request *) arg;
+  unsigned short result;
   int ret;
   int loop = 0;
-  it_t = *((float *) arg);
-
+  short it_t = req->time;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   phot_command (PHOT_CMD_INTEGRATE, it_t);
-  while ((ret = read (fd, &result, sizeof (int))) != -1)
+  while ((ret = read (fd, &result, 2)) != -1)
     {
-      if (ret && result == 'A')
+      if (ret)
 	{
-	  result = 0;
-	  read (fd, &result, 2);
-	  loop++;
-	  devser_dprintf ("count %i %i", result >> 16, ret);
-	  if (loop % 30 == 0)
+	  switch (result)
 	    {
-	      int new_filter = (loop / 30) % 6;
-	      devser_dprintf ("filter %i", new_filter);
-	      phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
-	      phot_command (PHOT_CMD_INTEGRATE, it_t);
+	    case 'A':
+	      result = 0;
+	      read (fd, &result, 2);
+	      loop++;
+	      devser_dprintf ("count %u", result);
+	      if (loop % req->filter_loop_size == 0)
+		{
+		  int new_filter = (loop / req->filter_loop_size) % 6;
+		  phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
+		  phot_command (PHOT_CMD_INTEGRATE, it_t);
+		  break;
+		}
+	      break;
+	    case '0':
+	      result = 0;
+	      read (fd, &result, 2);
+	      devser_dprintf ("filter %i", result);
+	      break;
 	    }
 	}
     }
@@ -137,19 +150,22 @@ phot_handle_command (char *command)
     }
   else if (strcmp (command, "integrate") == 0)
     {
-      float it;			// integration time in seconds
-      if (devser_param_test_length (1))
+      struct integration_request req;
+      if (devser_param_test_length (2))
 	return -1;
-      if (devser_param_next_float (&it))
+      if (devser_param_next_float (&req.time))
+	return -1;
+      if (devser_param_next_integer (&req.filter_loop_size))
 	return -1;
       if (devdem_priority_block_start ())
 	return -1;
       devser_thread_cancel_all ();
 
+      phot_init ();
       devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE,
 			  "Integration started");
       if ((ret =
-	   devser_thread_create (start_integrate, (void *) &it, sizeof (it),
+	   devser_thread_create (start_integrate, (void *) &req, sizeof (req),
 				 NULL, clean_integrate_cancel)) == -1)
 	{
 	  devdem_status_mask (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
@@ -184,9 +200,10 @@ phot_handle_command (char *command)
 
   else if (strcmp (command, "help") == 0)
     {
-      devser_dprintf ("info - dome informations");
+      devser_dprintf ("info - phot informations");
       devser_dprintf ("exit - exit from main loop");
       devser_dprintf ("help - print, what you are reading just now");
+      devser_dprintf ("integrate <time> <loop_size> - start integration");
       devser_dprintf ("stop - stop any running integration");
       ret = errno = 0;
     }

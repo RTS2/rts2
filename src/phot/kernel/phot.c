@@ -309,7 +309,9 @@ process_command (struct device_struct *dev)
 {
   struct command_list_struct *next;
   down (&dev->sem_list);
-  if (!dev->command_list || dev->command_pending)
+  if (!dev->command_list
+      || (dev->command_pending
+	  && dev->command_list->command[0] != PHOT_CMD_MOVEFILTER))
     goto out;
   switch (dev->command_list->command[0])
     {
@@ -330,6 +332,7 @@ process_command (struct device_struct *dev)
       schedule_work (&do_command_que);
       break;
     case PHOT_CMD_MOVEFILTER:
+      del_timer_sync (&dev->command_timer);
       dev->desired_position = intargs (&dev->command_list->command[1]);
       dev->command_pending = 1;
       filter_routine ((unsigned long) dev);
