@@ -7,6 +7,8 @@ extern "C"
 #endif
 
   extern void *receive_bacodine (void *arg);
+  extern int open_conn (char *hostname, int port);
+  extern int open_server (char *hostname, int port);
 
 #ifdef __cplusplus
 };
