@@ -1060,3 +1060,92 @@ serverd_status_string (int status)
       return "Unknow";
     }
 }
+
+extern char *
+devcli_status_string (struct device *dev, struct devconn_status *st)
+{
+  if (!strcmp (st->name, "priority"))
+    {
+      switch (st->status)
+	{
+	case 1:
+	  return "have it";
+	default:
+	  return "don't have it";
+	}
+    }
+
+  switch (dev->type)
+    {
+    case DEVICE_TYPE_SERVERD:
+      if ((st->status & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	return "standby";
+      switch (st->status & SERVERD_STATUS_MASK)
+	{
+	case SERVERD_DAY:
+	  return "day";
+	case SERVERD_EVENING:
+	  return "evening";
+	case SERVERD_DUSK:
+	  return "dusk";
+	case SERVERD_NIGHT:
+	  return "night";
+	case SERVERD_DAWN:
+	  return "dawn";
+	case SERVERD_MORNING:
+	  return "morning";
+	case SERVERD_OFF:
+	  return "off";
+	}
+    case DEVICE_TYPE_CCD:
+      switch (st->status)
+	{
+	case CAM_EXPOSING:
+	  return "exposing";
+	case CAM_DATA:
+	  return "data";
+	case CAM_READING:
+	  return "reading";
+	case CAM_NOEXPOSURE:
+	  return "idle";
+	}
+      break;
+    case DEVICE_TYPE_MOUNT:
+      switch (st->status)
+	{
+	case TEL_MOVING:
+	  return "moving";
+	case TEL_OBSERVING:
+	  return "observing";
+	case TEL_PARKED:
+	  return "parked";
+	}
+    case DEVICE_TYPE_DOME:
+      if (!strcmp (st->name, "weather"))
+	{
+	  switch (st->status)
+	    {
+	    case DOME_WEATHER_OK:
+	      return "good";
+	    case DOME_WEATHER_BAD:
+	      return "bad";
+	    }
+	}
+      else if (!strncmp (st->name, "dome", 4))
+	{
+	  switch (st->status)
+	    {
+	    case DOME_OPENED:
+	      return "open";
+	    case DOME_OPENING:
+	      return "opening";
+	    case DOME_CLOSING:
+	      return "closing";
+	    case DOME_CLOSED:
+	      return "closed";
+	    }
+	}
+      break;
+    }
+  return "unknow";
+}

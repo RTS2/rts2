@@ -103,6 +103,16 @@ status_camera (const struct device *dev)
 }
 
 void
+status_dome (struct device *dev)
+{
+  struct dome_info *info = (struct dome_info *) &dev->info;
+  eprintf ("type", "%s", info->type);
+  eprintline ();
+  eprintf ("temperature", "%+.2f oC", info->temperature);
+  eprintf ("humidity", "%.2f %%", info->humidity);
+}
+
+void
 print_device (struct device *dev)
 {
   int ret, ret_code, i;
@@ -132,12 +142,20 @@ print_device (struct device *dev)
     case DEVICE_TYPE_MOUNT:
       eprintf ("type", "%i (MOUNT)", dev->type);
       eprintline ();
-      status_telescope (dev);
+      if (ret_code == 0)
+	status_telescope (dev);
       break;
     case DEVICE_TYPE_CCD:
       eprintf ("type", "%i (CCD)", dev->type);
       eprintline ();
-      status_camera (dev);
+      if (ret_code == 0)
+	status_camera (dev);
+      break;
+    case DEVICE_TYPE_DOME:
+      eprintf ("type", "%i (DOME)", dev->type);
+      eprintline ();
+      if (ret_code == 0)
+	status_dome (dev);
       break;
     case DEVICE_TYPE_SERVERD:
       eprintf ("type", "%i (Central server)", dev->type);
@@ -146,6 +164,11 @@ print_device (struct device *dev)
       break;
     default:
       printf ("unknow device type: %i\n", dev->type);
+    }
+  if (ret_code != 0)
+    {
+      eprintline ();
+      printf ("\n      NOT CONNECTED / STATUS UNKNOW!!!\n");
     }
   line_count = 1;
   printf ("\n");
@@ -157,7 +180,8 @@ print_device (struct device *dev)
       if (*st->name)
 	{
 	  eprintf ("status", "%s", st->name);
-	  eprintf ("value", "%i", st->status);
+	  eprintf ("value", "%s (%i)", devcli_status_string (dev, st),
+		   st->status);
 	}
     }
   printf ("\n Device %s status end.\n", dev->name);

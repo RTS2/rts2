@@ -54,6 +54,9 @@ extern int devcli_device_data_handler (int type,
 extern int devcli_image_info (struct device *dev, struct image_info *image);
 extern int devcli_execute (char *line, int *ret_code);
 
+extern char *devcli_status_string (struct device *dev,
+				   struct devconn_status *st);
+
 extern char *serverd_status_string (int status);
 
 #endif // __RTS_DEVCLI__
