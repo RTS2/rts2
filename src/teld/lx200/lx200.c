@@ -682,16 +682,20 @@ int
 tel_slew_to (double ra, double dec)
 {
   char retstr;
+  int count = 0;
 
   tel_normalize (&ra, &dec);
 
-  if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
-    return -1;
-  if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
-    return -1;
-  if (retstr == '0')
-    return 0;
-  retstr = 0;
+  while (count < 5)
+    {
+      if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
+	continue;
+      if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
+	continue;
+      if (retstr == '0')
+	return 0;
+      count++;
+    }
   errno = EINVAL;
   return -1;
 }
@@ -806,7 +810,7 @@ telescope_move_to (double ra, double dec)
   int i;
 
   syslog (LOG_DEBUG, "LX200:T_move_to ra:%f dec:%f", ra, dec);
-  tpoint_apply_now (&ra, &dec);
+//  tpoint_apply_now(&ra, &dec);
   syslog (LOG_DEBUG, "LX200:T_move_to (tp) ra:%f dec:%f", ra, dec);
 
   for (i = 0; i < 2; i++)
