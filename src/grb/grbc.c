@@ -1,20 +1,22 @@
 #include <getopt.h>
 #include <mcheck.h>
-#include <netdb.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <time.h>
 
 #include <libnova.h>
 
-#include "db.h"
-#include "ibas_client.h"
-#include "../plan/db.h"
-#include "../status.h"
+#include "../db/db.h"
+#include "ibas/ibas.h"
+#include "bacodine/bacodine.h"
+#include "../db.h"
+#include "status.h"
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
 #include "../utils/mkpath.h"
 #include "../writers/fits.h"
+
+#include "image_info.h"
 
 struct grb
 {
@@ -42,29 +44,42 @@ int teld_id;
  * @return	0 on success, -1 and set errno on error.
  */
 int
-data_handler (int sock, size_t size, struct telescope_info *telescope,
-	      struct camera_info *camera, double exposure, time_t * exp_start)
+data_handler (int sock, size_t size, struct image_info *image)
 {
   struct fits_receiver_data receiver;
   struct tm gmt;
   char data[DATA_BLOCK_SIZE];
   int ret = 0;
   ssize_t s;
-  char filename[250];
+  char filen[250];
+  char *filename;
+  char *dirname;
 
-  gmtime_r (exp_start, &gmt);
+  gmtime_r (&image->exposure_time, &gmt);
 
-  mkpath ("120", 0777);
+  if (asprintf (&dirname, "~/%i", image->target_id))
+    {
+      perror ("planc data_handler asprintf");
+      return -1;
+    }
 
-  strftime (filename, 250, "!120/%Y%m%d%H%M%S.fits", &gmt);
+  mkpath (dirname, 0777);
+
+  strftime (filen, 250, "%Y%m%d%H%M%S.fits", &gmt);
+  asprintf (&filename, "!%s/%s", dirname, filen);
+
+  free (dirname);
 
   printf ("filename: %s", filename);
 
   if (fits_create (&receiver, filename) || fits_init (&receiver, size))
     {
       perror ("camc data_handler fits_init");
+      free (filename);
       return -1;
     }
+
+  free (filename);
 
   printf ("reading data socket: %i size: %i\n", sock, size);
 
@@ -83,11 +98,9 @@ data_handler (int sock, size_t size, struct telescope_info *telescope,
 
   printf ("reading finished\n");
 
-  if (fits_write_telescope (&receiver, telescope)
-      || fits_write_camera (&receiver, camera, exposure, exp_start)
-      || fits_close (&receiver))
+  if (fits_write_image_info (&receiver, image) || fits_close (&receiver))
     {
-      perror ("camc data_handler fits_init");
+      perror ("camc data_handler fits_write");
       return -1;
     }
 
@@ -96,12 +109,12 @@ data_handler (int sock, size_t size, struct telescope_info *telescope,
 }
 
 int
-expose (int npic)
+expose (int target_id, int observation_id, int npic)
 {
   devcli_wait_for_status ("teld", "telescope", TEL_MASK_MOVING, TEL_STILL, 0);
   for (; npic > 0; npic--)
     {
-      union devhnd_info *info;
+      struct image_info *info;
       time_t t;
 
       printf ("exposure countdown %i..\n", npic);
@@ -110,16 +123,23 @@ expose (int npic)
 	  devcli_command (camd_id, NULL, "expose 0 120"))
 	return -1;
       t = time (NULL);
+      info = (struct image_info *) malloc (sizeof (struct image_info));
+      info->exposure_time = t;
+      info->exposure_length = 120;
+      info->target_id = target_id;
+      info->observation_id = observation_id;
       if (devcli_command (camd_id, NULL, "info") ||
-	  devcli_getinfo (camd_id, &info) ||
-	  devcli_set_readout_camera (camd_id, &info->camera, 120.0, &t) ||
+	  devcli_getinfo (camd_id, (union devhnd_info *) &info->camera) ||
 	  devcli_command (teld_id, NULL, "info") ||
-	  devcli_getinfo (teld_id, &info) ||
-	  devcli_set_readout_telescope (camd_id, &info->telescope) ||
+	  devcli_getinfo (teld_id, (union devhnd_info *) &info->telescope) ||
 	  devcli_wait_for_status ("camd", "img_chip", CAM_MASK_EXPOSE,
 				  CAM_NOEXPOSURE, 0)
-	  || devcli_command (camd_id, NULL, "readout 0"))
-	return -1;
+	  || devcli_image_info (camd_id, info) ||
+	  devcli_command (camd_id, NULL, "readout 0"))
+	{
+	  free (info);
+	  return -1;
+	}
     }
   return 0;
 }
@@ -171,82 +191,6 @@ process_grb_event (int id, int seqn, double ra, double dec)
 
   // just add to planer
   return db_update_grb (id, seqn, ra, dec, NULL);
-}
-
-void *
-receive_iban (void *arg)
-{
-  int ibas_ip, ibas_port, i4[4], my_port, r, pingseq, ping_signalled;
-  char c_tmp, **p, *sysprg, syscmd[9999];
-  char buft1[IBAS_ALERT_TIME_SIZE + 1];
-  char buft2[IBAS_ALERT_TIME_SIZE + 1];
-  char buft3[IBAS_ALERT_TIME_SIZE + 1];
-  char buft4[IBAS_ALERT_COMMENT_SIZE + 1];
-  struct hostent *hp;
-  struct sigaction sa;
-  struct in_addr in;
-  IBC_DL dl;
-
-  if (NULL != (hp = gethostbyname ("129.194.67.222")))
-    {
-      p = hp->h_addr_list;
-      if (NULL != p)
-	if (0 != *p)
-	  {
-	    memcpy (&in.s_addr, *p, sizeof (in.s_addr));
-	    ibas_ip = ntohl (in.s_addr);
-	  }
-    }
-
-  ibas_port = 1966;
-  my_port = 1944;
-
-  if (IBC_OK !=
-      (r = ibc_api_init (ibas_ip, ibas_port, my_port, &ping_signalled)))
-    {
-      printf ("ibc_api_init() failed, error code = %d\n", r);
-      exit (r);
-    }
-
-  pingseq = 0;
-
-  for (;;)
-    {
-      r = ibc_api_listen (&dl);
-      if (IBC_SIGNALLED == r)
-	{
-	  r = ibc_api_send_ping (pingseq);
-	  if (IBC_OK != r)
-	    {
-	      printf
-		("WARNING: ibc_api_send_ping() failed, error code = %d\n", r);
-	    }
-	  else
-	    {
-	      printf ("PING_QUERY: packet sent out: seqnum = %d\n", pingseq);
-	    }
-	  pingseq++;
-	  continue;
-	}
-      if (IBC_AGAIN == r)	/* only possible in NONBLOCK mode */
-	{
-	  ibc_sleep_msec (100, NULL);
-	  continue;
-	}
-      if (IBC_OK != r)
-	break;			/* ctrl-C breaks out of this loop */
-
-      if (IBAS_ALERT_TEST_FLAG_R_PING & dl.a.test_flag)
-	{
-	  ibc_api_dump_ping_reply (&dl, ibas_ip, ibas_port);
-	}
-      else
-	{
-          process_grb_event (dl.ID, dl.seqnum, dl.a.grb_ra, dl.a.grb_dec);
-	  ibc_api_dump_alert (&dl, ibas_ip, ibas_port);
-	}
-    }
-  return ibc_api_shutdown ();
 }
 
 int
@@ -316,7 +260,10 @@ main (int argc, char **argv)
       return -1;
     }
 
-  pthread_create (&iban_thread, NULL, receive_iban, NULL);
+  pthread_create (&iban_thread, NULL, receive_iban,
+		  (void *) process_grb_event);
+  pthread_create (&iban_thread, NULL, receive_bacodine,
+		  (void *) process_grb_event);
 
   printf ("connecting to %s:%i\n", server, port);
 
@@ -399,7 +346,7 @@ main (int argc, char **argv)
 				  DEVICE_PRIORITY, 0);
 
 	  printf ("OK\n");
-	  expose (1);
+	  expose (observing.tar_id, obs_id, 1);
 
 	  pthread_mutex_lock (&observing_lock);
 	  get_hrz_from_equ (&observing.object, &observer,
