@@ -184,8 +184,8 @@
 				case 'G':
 					$q->add_field ('grb.*');
 					$q->add_from ('grb');
+					$q->add_order ('grb.grb_date desc');
 					$q->add_and_where ('grb.tar_id = targets.tar_id');
-					$q->add_order ('grb_id DESC');
 					break;
 				case 'O':
 					$q->add_field ('ot.*');
@@ -195,8 +195,7 @@
 			}
 		}
 		$q->add_and_where ('targets.tar_id = targets_images.tar_id');
-		$q->add_order ('tar_enabled desc');
-		$q->add_order ('img_count DESC');
+		$q->add_order ('targets.tar_id desc');
 		$q->do_query ();
 		$q->print_table();
 	}
