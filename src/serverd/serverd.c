@@ -236,6 +236,20 @@ get_info ()
   return 0;
 }
 
+/*!
+ * @param new_state		new state, if -1 -> 3
+ */
+int
+serverd_change_state (int new_state)
+{
+  devser_shm_data_lock ();
+  shm_info->current_state = new_state;
+  devices_all_msg_snd ("S %s %i", SERVER_STATUS, shm_info->current_state);
+  clients_all_msg_snd ("S %s %i", SERVER_STATUS, shm_info->current_state);
+  devser_shm_data_unlock ();
+  return 0;
+}
+
 int
 device_serverd_handle_command (char *command)
 {
@@ -286,7 +300,19 @@ device_serverd_handle_command (char *command)
     {
       return get_info ();
     }
-
+  if (strcmp (command, "on") == 0)
+    {
+      return serverd_change_state ((shm_info->next_event_type + 5) % 6);
+    }
+  if (strcmp (command, "standby") == 0)
+    {
+      return serverd_change_state (SERVERD_STANDBY |
+				   ((shm_info->next_event_type + 5) % 6));
+    }
+  if (strcmp (command, "off") == 0)
+    {
+      return serverd_change_state (SERVERD_OFF);
+    }
   devser_write_command_end (DEVDEM_E_COMMAND, "unknow command: %s", command);
   return -1;
 }
@@ -415,20 +441,6 @@ serverd_exit (void)
     }
 
   devser_shm_data_unlock ();
-}
-
-/*!
- * @param new_state		new state, if -1 -> 3
- */
-int
-serverd_change_state (int new_state)
-{
-  devser_shm_data_lock ();
-  shm_info->current_state = new_state;
-  devices_all_msg_snd ("S %s %i", SERVER_STATUS, shm_info->current_state);
-  clients_all_msg_snd ("S %s %i", SERVER_STATUS, shm_info->current_state);
-  devser_shm_data_unlock ();
-  return 0;
 }
 
 /*!
