@@ -16,11 +16,14 @@ Pokud hodlate pouzivat neco jineho, tak se ozvete.
 
 Pro prvni checkout:
 
-# cvs -d:pserver:petr@lascaux.asu.cas.cz:/usr/local/cvsroot login
+# cvs -d:pserver:<login_name>@lascaux.asu.cas.cz:/usr/local/cvsroot login
 
 Zadat heslo
 
-# cvs -d:pserver:petr@lascaux.asu.cas.cz:/usr/local/cvsroot checkout rts2
+# cvs -d:pserver:<login_name>@lascaux.asu.cas.cz:/usr/local/cvsroot checkout rts2
+
+Kde <login_name> je Vas login name na CVS serveru. Pokud login nemate,
+muzete pouzit read-only anonymous ucet s heslem anonymous.
 
 Pockat na ukonceni
 
@@ -71,6 +74,11 @@ Snazte se psat zmeny v AJ.
 Snazte se na zacatek kazdeho souboru davat 
 $ Id $ (ale bez tech mezer - musim to zadat takto, jinak by to CVSko
 pochopilo a prepsalo). 
+
+Kdyz uz verzujete - pouzivejte tagy! Viz info k cvsku, pripadne radeji
+vysvetlim, jedna se o trochu slozitejsi latku a nechce se me to psat.
+
+Nezapominejte updatovat ChangeLog a VERSION.
 
 2) Pouzivejte indent! Kod si piste jak chcete, ale pred zaverzovanim
 ho projedte indentem, pokud mozno v defaultni konfiguraci. Spravne
