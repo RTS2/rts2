@@ -11,6 +11,7 @@ struct telescope_info
   // geographic informations
   double longtitude;
   double latitude;
+  float altitude;
   // time information
   double siderealtime;
   double localtime;
