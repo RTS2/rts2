@@ -43,4 +43,27 @@ vhodne zafirewallovat.
 Zatim porad badame, rozhranni asi dost podobne ovladani IRAFu, aby
 jste meli predstavu.
 
+LOGOVANI - DULEZITE!!!!!!!!!!!!!!!
+
+Uvedomte si, ze piseme v podstate server.
+
+Logujte, logujte, logujte..jinak ty chyby nenajdeme. Klidne do
+LOG_DEBUG, pak ho vyndame. 
+
+Logujeme pomoci syslogu. Crash course (info libc, Syslog):
+
+ #include <syslog.h>
+   
+  // setlogmask (LOG_UPTO (LOG_NOTICE)); tady to zatim nepotrebujeme
+
+  openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY,
+LOG_LOCAL1); // staci jednou
+     
+  syslog (LOG_NOTICE, "Program started by User %d", getuid ());
+  syslog (LOG_INFO, "A tree falls in a forest");
+     
+  closelog (); //neni potreba, vola se sam pri ukonceni.
+
+Viz man syslog.
+
 Petr
