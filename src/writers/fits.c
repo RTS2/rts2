@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <libnova/libnova.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "fitsio.h"
 #include "fits.h"
@@ -83,6 +84,10 @@ write_camera (struct fits_receiver_data *receiver, struct image_info *info)
   float cam_xoa, cam_yoa;	//optical axes
   struct camera_info *camera = &info->camera;
   char *camera_name;
+  char filter_name[20];
+  char *c, *start = NULL;
+  int i = 0;
+  int last_space = 1;
 
   camera_name = info->camera_name;
 
@@ -130,7 +135,46 @@ write_camera (struct fits_receiver_data *receiver, struct image_info *info)
 			get_device_double_default (camera_name,
 						   "mount_rotang", 180.0));
   write_key (TFLOAT, "ROTANG", &rotang, "Field rotation");
-  write_key (TSTRING, "FILTER", filter, "Filter used");
+
+  c = filter;
+
+  if (camera->filter < 0)
+    {
+      filter_name[0] = filter[0];
+    }
+  else
+    {
+
+      filter_name[0] = 0;
+
+      while (*c)
+	{
+	  if (isspace (*c))
+	    {
+	      if (!last_space)
+		{
+		  if (start)
+		    break;
+		  i++;
+		}
+	      last_space = 1;
+	    }
+	  else
+	    {
+	      last_space = 0;
+	      if (!start && i == camera->filter)
+		start = c;
+	    }
+	  if (start && c - start < 19)
+	    {
+	      filter_name[c - start] = *c;
+	    }
+	  c++;
+	}
+    }
+  filter_name[1] = 0;
+
+  write_key (TSTRING, "FILTER", filter_name, "Filter used");
   write_key (TLONG, "FLIP", &flip, "Image flip");
   return 0;
 }
