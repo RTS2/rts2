@@ -117,14 +117,16 @@ status_telescope (WINDOW * wnd, struct device *dev)
 	     (int) position.az, (int) position.alt,
 	     ln_hrz_to_nswe (&position));
 
-  mvwprintw (wnd, 4, 1, "Lon/Lat: %+03.3f %+03.3f", info->longtitude,
+  mvwprintw (wnd, 4, 1, "x/y: %.0f %.0f", info->axis0_counts,
+	     info->axis1_counts);
+  mvwprintw (wnd, 5, 1, "Lon/Lat: %+03.3f %+03.3f", info->longtitude,
 	     info->latitude);
   dtohms (info->siderealtime, buf);
-  mvwprintw (wnd, 5, 1, "Lsid: %.3f (%s)", 15.0 * info->siderealtime, buf);
+  mvwprintw (wnd, 6, 1, "Lsid: %.3f (%s)", 15.0 * info->siderealtime, buf);
   st = st - (int) (st / 24) * 24;
   dtohms (st, buf);
-  mvwprintw (wnd, 6, 1, "Gsid: %.3f (%s)", 15.0 * st, buf);
-  print_status (wnd, 7, 1, dev);
+  mvwprintw (wnd, 7, 1, "Gsid: %.3f (%s)", 15.0 * st, buf);
+  print_status (wnd, 8, 1, dev);
 }
 
 void
