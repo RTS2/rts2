@@ -2,7 +2,5 @@
 .libs
 Makefile
 Makefile.in
-*.o
-*~
 core*
 rts2-camd*
