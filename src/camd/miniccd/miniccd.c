@@ -22,12 +22,18 @@ int *field_rows = NULL;
 int ccd_dac_bits;
 int interleave = 0;
 
+int exp_loadtime = 3;
+
 char _data[1200][2400];
+
+extern int camera_expose (int chip, float *exposure, int light);
 
 extern int
 camera_init (char *device_name, int camera_id)
 {
   int msg_len, i;
+  int start, stop;
+  struct timeval now;
   CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE],
     msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 
@@ -406,6 +412,16 @@ camera_end_readout (int chip_id)
 extern int
 camera_cool_max ()
 {
+  CCD_ELEM_TYPE msg[CCD_MSG_TEMP_LEN / CCD_ELEM_SIZE];
+
+  msg[CCD_MSG_HEADER_INDEX] = CCD_MSG_HEADER;
+  msg[CCD_MSG_LENGTH_LO_INDEX] = CCD_MSG_TEMP_LEN;
+  msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
+  msg[CCD_MSG_INDEX] = CCD_MSG_TEMP;
+  msg[CCD_TEMP_SET_HI_INDEX] = 0;
+  msg[CCD_TEMP_SET_LO_INDEX] = 0;
+  write (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
+  read (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
   return 0;
 }
 
