@@ -237,10 +237,6 @@ got_it:
       frequency = 65536 - frequency;
       add_reply (dev, 'A', frequency);
     }
-  else
-    {
-      add_reply (dev, '-', b);
-    }
 out:
   dev->command_pending = 0;
   dev->status &= ~PHOT_S_INTEGRATING_ONCE;	// clear any once integration
@@ -334,6 +330,8 @@ process_command (struct device_struct *dev)
       break;
     case PHOT_CMD_STOP_INTEGRATE:
       dev->status &= ~PHOT_S_INTEGRATING;
+      // reset any waiting data
+      dev->buf_last_read = dev->buf_index = 0;
       INIT_WORK (&do_command_que, process_command, (void *) dev);
       schedule_work (&do_command_que);
       break;

@@ -28,7 +28,7 @@
 #define SERVERD_HOST		"localhost"	// default serverd hostname
 
 #define DEVICE_NAME		"PHOT"
-#define DEVICE_PORT		5559	// default camera TCP/IP port
+#define DEVICE_PORT		5559	// default photometer TCP/IP port
 
 int fd = 0;
 
@@ -37,8 +37,7 @@ char *phot_dev = "/dev/phot0";
 struct integration_request
 {
   float time;			// in sec
-  int filter_loop_size;
-  int counts;
+  int count;			// number of integrations
 };
 
 void
@@ -89,9 +88,8 @@ start_integrate (void *arg)
   int loop = 0;
   short it_t = req->time;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
-  phot_command (PHOT_CMD_RESET, 0);
   phot_command (PHOT_CMD_INTEGRATE, it_t);
-  while ((ret = read (fd, &result, 2)) != -1 && loop < req->counts)
+  while ((ret = read (fd, &result, 2)) != -1 && loop < req->count)
     {
       if (ret)
 	{
@@ -102,13 +100,6 @@ start_integrate (void *arg)
 	      read (fd, &result, 2);
 	      loop++;
 	      devser_dprintf ("count %u", result);
-	      if (loop % req->filter_loop_size == 0)
-		{
-		  int new_filter = (loop / req->filter_loop_size) % 6;
-		  phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
-		  phot_command (PHOT_CMD_INTEGRATE, it_t);
-		  break;
-		}
 	      break;
 	    case '0':
 	      result = 0;
@@ -160,7 +151,7 @@ phot_handle_command (char *command)
 	return -1;
       if (devser_param_next_float (&req.time))
 	return -1;
-      if (devser_param_next_integer (&req.filter_loop_size))
+      if (devser_param_next_integer (&req.count))
 	return -1;
       if (devser_param_next_integer (&req.counts))
 	return -1;
@@ -211,7 +202,7 @@ phot_handle_command (char *command)
       devser_dprintf ("info - phot informations");
       devser_dprintf ("exit - exit from main loop");
       devser_dprintf ("help - print, what you are reading just now");
-      devser_dprintf ("integrate <time> <loop_size> - start integration");
+      devser_dprintf ("integrate <time> <count> - start integration");
       devser_dprintf ("stop - stop any running integration");
       ret = errno = 0;
     }
