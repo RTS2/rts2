@@ -9,10 +9,10 @@ include ../../make.conf
 CFLAGS += -I/usr/src/cfitsio -I@top_srcdir@/include -DDEBUG
 LDFLAGS += -L/usr/src/cfitsio -lcfitsio -l$(LIB_M) -l$(LIB_PTHREAD)
 
-planc: planc.o selector.o db.o ../writers/fits.o ../utils/devcli.a
+planc: planc.o selector.o ../db/db.o ../writers/fits.o ../utils/devcli.a
 	$(CC) -o $@ $^ -lcfitsio -lm -lpthread -lecpg -lpq -lnova
 
-test: test.o selector.o db.o
+test: test.o selector.o ../db/db.o
 	$(CC) -o $@ $^ @LIBPG_CFLAGS@ -lecpg -lpq -lnova 
 
 %.c: %.ec
@@ -20,6 +20,3 @@ test: test.o selector.o db.o
 
 selector.o: selector.c
 	$(CC) -I/usr/include/postgresql selector.c -c -o selector.o
-
-db.o: db.c
-	$(CC) -I/usr/include/postgresql db.c -c -o db.o -DDEBUG
