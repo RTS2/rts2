@@ -143,6 +143,5 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 	    }
 	}
     }
-
   return 0;
 }

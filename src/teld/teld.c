@@ -18,8 +18,6 @@
 #include <pthread.h>
 #include <getopt.h>
 
-#include <argz.h>
-
 #include "telescope.h"
 #include "../utils/hms.h"
 #include "../utils/devdem.h"

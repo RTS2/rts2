@@ -1,9 +1,11 @@
 #$Id$
 
 CFLAGS = @CFLAGS@ @LIBPG_CFLAGS@
-LDFLAGS = @LDFLAGS@ @LIBPG_LIBS@
+LDFLAGS = @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@
 
-all: db.o 
+all: db.o test
+
+test: test.o db.o
 
 db.c: db.ec
 	@ECPG@ -o $@ $^

@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "riseset.h"
+#include "../utils/config.h"
 
 #include <mcheck.h>
 
@@ -40,8 +41,11 @@ rise_set_cal ()
   int i;
   struct ln_rst_time rst;
 
-  obs.lat = 50;
-  obs.lng = -15;
+  obs.lat = get_double_default ("latitude", 0);
+  obs.lng = get_double_default ("longtitude", 0);
+
+  printf ("Calculating for longtitude %+3.2f, latitude %2.2f\n", obs.lng,
+	  obs.lat);
 
   for (i = 0; i < 5; i++, JD += 0.5)
     {
@@ -80,8 +84,10 @@ main ()
 
   mtrace ();
 
-  obs.lng = -15;
-  obs.lat = 50;
+  read_config (CONFIG_FILE);
+
+  obs.lat = get_double_default ("latitude", 0);
+  obs.lng = get_double_default ("longtitude", 0);
 
   rise_set_cal ();
 
