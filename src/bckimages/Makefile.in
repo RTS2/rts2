@@ -1,0 +1,14 @@
+# ${Id}
+
+CFLAGS = @CFLAGS@ @LIBPG_CFLAGS@ -I@top_srcdir@/include -DDEBUG
+LDFLAGS = @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@
+
+all: bckimages
+
+bckimages: ../db/db.o ../utils/mkpath.o ../utils/mv.o bckimages.o
+
+%.c: %.ec
+	/usr/bin/ecpg -o $@ $^
+
+clean:
+	$(RM) *.o bckimages
