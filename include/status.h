@@ -118,6 +118,8 @@
 #define SERVERD_PORT		5557
 
 // name of the default server status
-#define SERVER_STATUS		"server_status"
+#define SERVER_STATUS		"server_st"
+
+#define MAX_STATUS_TXT		60
 
 #endif /* __RTS__STATUS__ */
