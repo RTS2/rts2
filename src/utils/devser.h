@@ -5,8 +5,8 @@
  * @author petr
  */
 
-#ifndef __RTS_DEVDEM__
-#define __RTS_DEVDEM__
+#ifndef __RTS_DEVSER__
+#define __RTS_DEVSER__
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -15,68 +15,52 @@
 #define STATUSNAME		8
 #define MSG_SIZE		50
 
-
-// TODO - move that define to Makefile
-#define DEVDEM_WITH_CLIENT
-
-#ifdef DEVDEM_WITH_CLIENT
-
-#include "devcli.h"
-// maximal number of clients
 #define MAX_CLIENT		10
 
-int devdem_priority_block_start ();
-int devdem_priority_block_end ();
+typedef int (*devser_handle_command_t) (char *command);
+typedef void (*devser_handle_message_t) (char *message);
 
-int devdem_register (struct devcli_channel *server_channel, char *device_name,
-		     char *server_address, int server_port);
+typedef void (*devser_thread_cleaner_t) (void *arg);
 
-#endif /* DEVDEM_WITH_CLIENT */
-
-typedef int (*devdem_handle_command_t) (char *command);
-typedef void (*devdem_handle_message_t) (char *message);
-
-typedef void (*devdem_thread_cleaner_t) (void *arg);
-
-struct devdem_msg
+struct devser_msg
 {
   long mtype;
   char mtext[MSG_SIZE];
 };
 
-int devdem_run (int port, devdem_handle_command_t in_handler,
+int devser_run (int port, devser_handle_command_t in_handler,
 		char **status_names, int status_num, size_t shm_data_size);
-int devdem_dprintf (const char *format, ...);
-int devdem_send_data (struct in_addr *client_addr, void *data_ptr,
+int devser_dprintf (const char *format, ...);
+int devser_send_data (struct in_addr *client_addr, void *data_ptr,
 		      size_t data_size);
-int devdem_write_command_end (int retc, char *msg_format, ...);
+int devser_write_command_end (int retc, char *msg_format, ...);
 
-int devdem_thread_create (void *(*start_routine) (void *), void *arg,
+int devser_thread_create (void *(*start_routine) (void *), void *arg,
 			  size_t arg_size, int *id,
-			  devdem_thread_cleaner_t clean_cancel);
-int devdem_thread_cancel (int id);
-int devdem_thread_cancel_all (void);
+			  devser_thread_cleaner_t clean_cancel);
+int devser_thread_cancel (int id);
+int devser_thread_cancel_all (void);
 
-int devdem_status_message (int subdevice, char *description);
-int devdem_status_mask (int subdevice, int mask, int operand, char *message);
+int devser_status_message (int subdevice, char *description);
+int devser_status_mask (int subdevice, int mask, int operand, char *message);
 
-void *devdem_shm_data_at ();
-void devdem_shm_data_lock ();
-void devdem_shm_data_unlock ();
-void devdem_shm_data_dt (void *mem);
+void *devser_shm_data_at ();
+void devser_shm_data_lock ();
+void devser_shm_data_unlock ();
+void devser_shm_data_dt (void *mem);
 
-devdem_handle_message_t devdem_msg_set_handler (devdem_handle_message_t
+devser_handle_message_t devser_msg_set_handler (devser_handle_message_t
 						handler);
-int devdem_msg_snd (struct devdem_msg *msg);
+int devser_msg_snd (struct devser_msg *msg);
 
-int devdem_param_test_length (int npars);
+int devser_param_test_length (int npars);
 
-int devdem_param_next_string (char **ret);
-int devdem_param_next_integer (int *ret);
-int devdem_param_next_float (float *ret);
-int devdem_param_next_hmsdec (double *ret);
+int devser_param_next_string (char **ret);
+int devser_param_next_integer (int *ret);
+int devser_param_next_float (float *ret);
+int devser_param_next_hmsdec (double *ret);
 
-extern pid_t devdem_parent_pid;
-extern pid_t devdem_child_pid;
+extern pid_t devser_parent_pid;
+extern pid_t devser_child_pid;
 
-#endif /* !__RTS_DEVDEM__ */
+#endif /* !__RTS_DEVSER__ */

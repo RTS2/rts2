@@ -22,7 +22,7 @@
 
 #define _GNU_SOURCE
 
-#include "devdem.h"
+#include "devser.h"
 #include "../status.h"
 
 #include "devconn.h"
@@ -109,11 +109,11 @@ struct
 command_buffer;
 
 //! Handler functions
-devdem_handle_command_t cmd_handler;
-devdem_handle_message_t msg_handler;
+devser_handle_command_t cmd_handler;
+devser_handle_message_t msg_handler;
 
-pid_t devdem_parent_pid;	//! pid of parent process - process which forks response children
-pid_t devdem_child_pid;		//! pid of child process - actual pid of main thread
+pid_t devser_parent_pid;	//! pid of parent process - process which forks response children
+pid_t devser_child_pid;		//! pid of child process - actual pid of main thread
 
 //! Struct for data connection
 typedef struct
@@ -157,7 +157,7 @@ struct thread_wrapper_temp
   void *arg;
   void *(*start_routine) (void *);
   int freed;			//! 2 free || !2 free arg on end.
-  devdem_thread_cleaner_t clean_cancel;
+  devser_thread_cleaner_t clean_cancel;
 };
 
 //! number of status registers
@@ -199,6 +199,8 @@ size_t param_argc;
 
 //! block priority calls
 pthread_mutex_t priority_block = PTHREAD_MUTEX_INITIALIZER;
+
+void *msg_receive_thread (void *arg);
 
 /*! 
  * Locks given status lock.
@@ -243,7 +245,7 @@ status_unlock (int subdevice)
 
   sb.sem_num = subdevice;
   sb.sem_op = 1;
-  sb.sem_flg = 0;
+  sb.sem_flg = SEM_UNDO;
   if (semop (status_sem, &sb, 1) < 0)
     {
       syslog (LOG_ERR, "semphore +1 for subdevice %i: %m", subdevice);
@@ -260,7 +262,7 @@ status_unlock (int subdevice)
  * @return -1 and set errno on error, 0 otherwise
  */
 int
-devdem_dprintf (const char *format, ...)
+devser_dprintf (const char *format, ...)
 {
   int ret;
   va_list ap;
@@ -292,7 +294,7 @@ devdem_dprintf (const char *format, ...)
        write (control_fd, msg_with_end, count_with_end)) != count_with_end)
     {
       syslog (LOG_ERR,
-	      "devdem_write: ret:%i count:%i desc:%i error:%m msg_with_end:%s",
+	      "devser_write: ret:%i count:%i desc:%i error:%m msg_with_end:%s",
 	      ret, count_with_end, control_fd, msg_with_end);
       free (msg_with_end);
       return -1;
@@ -308,7 +310,7 @@ status_message (int subdevice, char *description)
 {
   status_t *st;
   st = &(statutes[subdevice]);
-  return devdem_dprintf ("M %s %i %s", st->name, st->status, description);
+  return devser_dprintf ("M %s %i %s", st->name, st->status, description);
 }
 
 /*! 
@@ -320,12 +322,12 @@ status_message (int subdevice, char *description)
  * @return -1 and set errno on error, 0 otherwise.
  */
 int
-devdem_status_message (int subdevice, char *description)
+devser_status_message (int subdevice, char *description)
 {
   if (subdevice >= status_num || subdevice < 0)
     {
       errno = EINVAL;
-      syslog (LOG_ERR, "invalid subdevice in devdem_status_message: %i",
+      syslog (LOG_ERR, "invalid subdevice in devser_status_message: %i",
 	      status_num);
       return -1;
     }
@@ -351,7 +353,7 @@ devdem_status_message (int subdevice, char *description)
  * @return -1 and set errno on error, 0 otherwise
  */
 int
-devdem_write_command_end (int retc, char *msg_format, ...)
+devser_write_command_end (int retc, char *msg_format, ...)
 {
   va_list ap;
   int ret, tmper;
@@ -361,7 +363,7 @@ devdem_write_command_end (int retc, char *msg_format, ...)
   vasprintf (&msg, msg_format, ap);
   va_end (ap);
 
-  ret = devdem_dprintf ("%+04i %s", retc, msg);
+  ret = devser_dprintf ("%+04i %s", retc, msg);
   tmper = errno;
   free (msg);
   errno = tmper;
@@ -444,9 +446,9 @@ thread_wrapper (void *temp)
  * @return -1 and set errno on error, 0 otherwise. 
  */
 int
-devdem_thread_create (void *(*start_routine) (void *), void *arg,
+devser_thread_create (void *(*start_routine) (void *), void *arg,
 		      size_t arg_size, int *id,
-		      devdem_thread_cleaner_t clean_cancel)
+		      devser_thread_cleaner_t clean_cancel)
 {
   int i;
   for (i = 0; i < MAX_THREADS; i++)
@@ -493,11 +495,11 @@ devdem_thread_create (void *(*start_routine) (void *), void *arg,
  * 
  * Stops thread with given id.
  *
- * @param id Thread id, as returned by @see devdem_thread_create.
+ * @param id Thread id, as returned by @see devser_thread_create.
  * @retun -1 and set errno on error, 0 otherwise.
  */
 int
-devdem_thread_cancel (int id)
+devser_thread_cancel (int id)
 {
   errno = pthread_cancel (threads[id].thread);
   return errno ? -1 : 0;
@@ -506,12 +508,12 @@ devdem_thread_cancel (int id)
 /*! 
  * Stop all threads.
  *
- * @see devdem_thread_cancel
+ * @see devser_thread_cancel
  *
  * @return always 0.
  */
 int
-devdem_thread_cancel_all (void)
+devser_thread_cancel_all (void)
 {
   int i;
   for (i = 0; i < MAX_THREADS; i++)
@@ -527,34 +529,34 @@ devdem_thread_cancel_all (void)
  *
  */
 int
-devdem_status ()
+devser_status ()
 {
   int i;
   for (i = 0; i < MAX_THREADS; i++)
     {
       if ((errno = pthread_mutex_trylock (&threads[i].lock)))
 	if ((errno = EBUSY))
-	  devdem_dprintf ("thread %i mutex is locked", i);
+	  devser_dprintf ("thread %i mutex is locked", i);
 	else
-	  devdem_dprintf ("thread %i error pthread_mutex_trylock %i",
+	  devser_dprintf ("thread %i error pthread_mutex_trylock %i",
 			  i, errno);
       else
 	{
 	  pthread_mutex_unlock (&threads[i].lock);
-	  devdem_dprintf ("thread %i unlocked", i);
+	  devser_dprintf ("thread %i unlocked", i);
 	}
     }
-  devdem_dprintf ("threads_count %i", threads_count);
+  devser_dprintf ("threads_count %i", threads_count);
 
 #ifdef DEVDEM_WITH_CLIENT
-  devdem_dprintf ("client_id %i", client_id);
-  devdem_dprintf ("priority_client %i", clients_info->priority_client);
+  devser_dprintf ("client_id %i", client_id);
+  devser_dprintf ("priority_client %i", clients_info->priority_client);
   for (i = 0; i < MAX_CLIENT; i++)
     if (clients_info->clients[i].pid)
-      devdem_dprintf ("client_id_pid %i %i", i, clients_info->clients[i].pid);
+      devser_dprintf ("client_id_pid %i %i", i, clients_info->clients[i].pid);
 #endif /* DEVDEM_WITH_CLIENT */
 
-  return devdem_dprintf ("info finished");
+  return devser_dprintf ("info finished");
 }
 #endif /* DEBUG */
 
@@ -572,7 +574,7 @@ priority_block_end ()
 {
   if ((errno = pthread_mutex_unlock (&priority_block)))
     syslog (LOG_ERR,
-	    "error in devdem_priority_block_end unlocking priority_block mutex: %m");
+	    "error in devser_priority_block_end unlocking priority_block mutex: %m");
 }
 
 int
@@ -583,7 +585,7 @@ priority_block_start ()
   if ((errno = pthread_mutex_lock (&priority_block)))
     {
       syslog (LOG_ERR,
-	      "while locking priority_block in devdem_priority_block_start: %m");
+	      "while locking priority_block in devser_priority_block_start: %m");
       return -1;
     }
   has_priority = client_id >= 0 && clients_info->priority_client == client_id;
@@ -607,11 +609,11 @@ priority_block_start ()
  */
 
 int
-devdem_priority_block_start ()
+devser_priority_block_start ()
 {
   if (priority_block_start ())
     {
-      devdem_write_command_end (DEVDEM_E_PRIORITY,
+      devser_write_command_end (DEVDEM_E_PRIORITY,
 				"you haven't priority to execute that command");
       return -1;
     }
@@ -619,7 +621,7 @@ devdem_priority_block_start ()
 }
 
 int
-devdem_priority_block_end ()
+devser_priority_block_end ()
 {
   priority_block_end ();
   syslog (LOG_DEBUG, "priority block ended");
@@ -629,23 +631,31 @@ devdem_priority_block_end ()
 int
 client_authorize ()
 {
-  if (devdem_param_test_length (1))
+  if (devser_param_test_length (1))
     return -1;
-  if (devdem_param_next_integer (&client_id))
+  if (devser_param_next_integer (&client_id))
     return -1;
   if (client_id < 0 || client_id >= MAX_CLIENT)
     {
-      devdem_write_command_end (DEVDEM_E_SYSTEM, "invalid client number: %i",
+      devser_write_command_end (DEVDEM_E_SYSTEM, "invalid client number: %i",
 				client_id);
       return -1;
     }
-  clients_info->clients[client_id].pid = devdem_child_pid;
+
+  // create message thread
+  if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
+    {
+      syslog (LOG_ERR, "create message thread: %m");
+      return -1;
+    }
+
+  clients_info->clients[client_id].pid = devser_child_pid;
   return 0;
 }
 #endif /* DEVDEM_WITH_CLIENT */
 
 /*! 
- * Handle devdem commands.
+ * Handle devser commands.
  *
  * It's solely responsibility of handler to report any errror,
  * which occures during command processing.
@@ -663,24 +673,24 @@ handle_commands (char *buffer)
   size_t argc;
   int ret;
   if ((errno = argz_create_sep (buffer, ';', &argv, &argc)))
-    return devdem_write_command_end (DEVDEM_E_SYSTEM, "System: ",
+    return devser_write_command_end (DEVDEM_E_SYSTEM, "System: ",
 				     strerror (errno));
   if (!argv)
-    return devdem_write_command_end (DEVDEM_E_COMMAND, "empty command!");
+    return devser_write_command_end (DEVDEM_E_COMMAND, "empty command!");
 
   while ((next_command = argz_next (argv, argc, next_command)))
     {
       if ((errno =
 	   argz_create_sep (next_command, ' ', &param_argv, &param_argc)))
 	{
-	  devdem_write_command_end (DEVDEM_E_SYSTEM, "argz call error: %s",
+	  devser_write_command_end (DEVDEM_E_SYSTEM, "argz call error: %s",
 				    strerror (errno));
 	  ret = -1;
 	  goto end;
 	}
       if (!param_argv)
 	{
-	  devdem_write_command_end (DEVDEM_E_COMMAND, "empty command!");
+	  devser_write_command_end (DEVDEM_E_COMMAND, "empty command!");
 	  free (param_argv);
 	  ret = -1;
 	  goto end;
@@ -690,8 +700,8 @@ handle_commands (char *buffer)
       if (strcmp (param_argv, "exit") == 0)
 	ret = -2;
 #ifdef DEBUG
-      else if (strcmp (param_argv, "devdem_status") == 0)
-	ret = devdem_status ();
+      else if (strcmp (param_argv, "devser_status") == 0)
+	ret = devser_status ();
 #endif /* DEBUG */
 #ifdef DEVDEM_WITH_CLIENT
       else if (strcmp (param_argv, "auth") == 0)
@@ -713,7 +723,7 @@ end:
       return -1;
     }
   if (!ret)
-    devdem_write_command_end (0, "Success");
+    devser_write_command_end (0, "Success");
   return 0;
 }
 
@@ -841,7 +851,7 @@ send_data_thread (void *arg)
  * @param data_size Data size
  */
 int
-devdem_send_data (struct in_addr *client_addr, void *data_ptr,
+devser_send_data (struct in_addr *client_addr, void *data_ptr,
 		  size_t data_size)
 {
   int port, ret, data_listen_sock;
@@ -855,7 +865,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
   if ((conn = next_free_conn_number ()) < 0)
     {
       syslog (LOG_INFO, "no new data connection");
-      return devdem_write_command_end (DEVDEM_E_SYSTEM,
+      return devser_write_command_end (DEVDEM_E_SYSTEM,
 				       "no new data connection");
     }
 
@@ -881,7 +891,7 @@ devdem_send_data (struct in_addr *client_addr, void *data_ptr,
       goto err;
     }
 
-  if (devdem_dprintf
+  if (devser_dprintf
       ("D connect %i %s:%i %i", conn,
        inet_ntoa (control_socaddr.sin_addr), port, data_size) < 0)
     goto err;
@@ -984,7 +994,7 @@ make_socket (uint16_t port)
  * @return -1 and set errno on error, 0 otherwise
  */
 int
-devdem_status_mask (int subdevice, int mask, int operand, char *message)
+devser_status_mask (int subdevice, int mask, int operand, char *message)
 {
   if (status_lock (subdevice) < 0)
     return -1;
@@ -1006,17 +1016,17 @@ devdem_status_mask (int subdevice, int mask, int operand, char *message)
 /*!
  * Attach shared memory data segment.
  *
- * It's size is specified in call to @see devdem_run. Exit on any error.
+ * It's size is specified in call to @see devser_run. Exit on any error.
  *
  * @return	pointer to shared data
  */
 void *
-devdem_shm_data_at ()
+devser_shm_data_at ()
 {
   void *ret = shmat (data_shm, NULL, 0);
   if ((int) ret < 0)
     {
-      syslog (LOG_ERR, "devdem_shm_data_at shmat: %m");
+      syslog (LOG_ERR, "devser_shm_data_at shmat: %m");
       exit (EXIT_FAILURE);
     }
   return ret;
@@ -1026,16 +1036,16 @@ devdem_shm_data_at ()
  * Lock semaphore for shared data access.
  */
 void
-devdem_shm_data_lock ()
+devser_shm_data_lock ()
 {
   struct sembuf sb;
 
   sb.sem_num = 0;
   sb.sem_op = -1;
-  sb.sem_flg = 0;
+  sb.sem_flg = SEM_UNDO;
   if (semop (data_sem, &sb, 1) < 0)
     {
-      syslog (LOG_ERR, "devdem_shm_data_lock semphore -1: %m");
+      syslog (LOG_ERR, "devser_shm_data_lock semphore -1: %m");
       exit (EXIT_FAILURE);
     }
 }
@@ -1044,16 +1054,16 @@ devdem_shm_data_lock ()
  * Unlock semaphore for shared data access.
  */
 void
-devdem_shm_data_unlock ()
+devser_shm_data_unlock ()
 {
   struct sembuf sb;
 
   sb.sem_num = 0;
   sb.sem_op = +1;
-  sb.sem_flg = 0;
+  sb.sem_flg = SEM_UNDO;
   if (semop (data_sem, &sb, 1) < 0)
     {
-      syslog (LOG_ERR, "devdem_shm_data_unlock +1: %m");
+      syslog (LOG_ERR, "devser_shm_data_unlock +1: %m");
       exit (EXIT_FAILURE);
     }
 }
@@ -1064,19 +1074,19 @@ devdem_shm_data_unlock ()
  * Exit on any error.
  */
 void
-devdem_shm_data_dt (void *mem)
+devser_shm_data_dt (void *mem)
 {
   if (shmdt (mem) < 0)
     {
-      syslog (LOG_ERR, "devdem_shm_data_dt: %m");
+      syslog (LOG_ERR, "devser_shm_data_dt: %m");
       exit (EXIT_FAILURE);
     }
 }
 
-devdem_handle_message_t
-devdem_msg_set_handler (devdem_handle_message_t handler)
+devser_handle_message_t
+devser_msg_set_handler (devser_handle_message_t handler)
 {
-  devdem_handle_message_t old_handler = msg_handler;
+  devser_handle_message_t old_handler = msg_handler;
   msg_handler = handler;
   return old_handler;
 }
@@ -1091,11 +1101,11 @@ devdem_msg_set_handler (devdem_handle_message_t handler)
  * @return 0 on success, -1 and set errno on error
  */
 int
-devdem_msg_snd (struct devdem_msg *msg)
+devser_msg_snd (struct devser_msg *msg)
 {
   if (msgsnd (msg_id, msg, MSG_SIZE, 0))
     {
-      syslog (LOG_ERR, "error devdem_msg_snd: %m");
+      syslog (LOG_ERR, "error devser_msg_snd: %m %i %i", msg_id, msg->mtype);
       return -1;
     }
   // else
@@ -1110,7 +1120,7 @@ client_priority_receive ()
 
   clients_info->priority_client = client_id;
 
-  devdem_status_message (0, "priority received");
+  devser_status_message (0, "priority received");
 }
 
 void
@@ -1119,8 +1129,8 @@ client_priority_lost ()
   syslog (LOG_INFO, "calling thread cancel");
 
   priority_block_start ();
-  devdem_thread_cancel_all ();
-  devdem_priority_block_end ();
+  devser_thread_cancel_all ();
+  devser_priority_block_end ();
 
   // wait for all threads to finish
   pthread_mutex_lock (&threads_mutex);
@@ -1133,7 +1143,7 @@ client_priority_lost ()
   status_unlock (client_status);
 
   // inform client
-  devdem_status_message (0, "priority lost");
+  devser_status_message (0, "priority lost");
 }
 
 
@@ -1142,7 +1152,7 @@ client_priority_lost ()
 /*!
  * Thread to receive IPC messages.
  *
- * @see devdem_thread_create
+ * @see devser_thread_create
  *
  * React to some specified messages (priority_lost, priority_receive,
  * ..).
@@ -1152,11 +1162,15 @@ msg_receive_thread (void *arg)
 {
   while (1)
     {
-      struct devdem_msg msg_buf;
+      struct devser_msg msg_buf;
       int msg_size;
-      msg_size = msgrcv (msg_id, &msg_buf, MSG_SIZE, devdem_child_pid, 0);
+#ifdef DEVDEM_WITH_CLIENT
+      msg_size = msgrcv (msg_id, &msg_buf, MSG_SIZE, client_id + 1, 0);
+#else /* DEVDEM_WITH_CLIENT */
+      msg_size = msgrcv (msg_id, &msg_buf, MSG_SIZE, devser_child_pid, 0);
+#endif /* DEVDEM_WITH_CLINT */
       if (msg_size < 0)
-	syslog (LOG_ERR, "devdem msg_receive: %m");
+	syslog (LOG_ERR, "devser msg_receive: %m");
       else if (msg_size != MSG_SIZE)
 	syslog (LOG_ERR, "invalid message size: %i", msg_size);
       else
@@ -1164,7 +1178,7 @@ msg_receive_thread (void *arg)
 	  // testing for null - be cautios, since 
 	  // another thread could set null message
 	  // handler
-	  devdem_handle_message_t tmp_handler = msg_handler;
+	  devser_handle_message_t tmp_handler = msg_handler;
 
 	  msg_buf.mtext[MSG_SIZE - 1] = 0;	// end message (otherwise buffer owerflow could result) 
 
@@ -1201,12 +1215,12 @@ msg_receive_thread (void *arg)
 }
 
 int
-devdem_param_test_length (int npars)
+devser_param_test_length (int npars)
 {
   int actuall_count = argz_count (param_argv, param_argc) - 1;
   if (actuall_count != npars)
     {
-      devdem_write_command_end (DEVDEM_E_PARAMSNUM,
+      devser_write_command_end (DEVDEM_E_PARAMSNUM,
 				"bad nmbr of params: expected %i,got %i",
 				npars, actuall_count);
       return -1;
@@ -1226,14 +1240,14 @@ param_next ()
        argz_next (param_argv, param_argc, param_processing)))
     return 0;
 
-  devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+  devser_write_command_end (DEVDEM_E_PARAMSVAL,
 			    "invalid parameter - got error by argz_next, errno '%i'",
 			    errno);
   return -1;
 }
 
 int
-devdem_param_next_string (char **ret)
+devser_param_next_string (char **ret)
 {
   if (param_next ())
     return -1;
@@ -1243,7 +1257,7 @@ devdem_param_next_string (char **ret)
 }
 
 int
-devdem_param_next_integer (int *ret)
+devser_param_next_integer (int *ret)
 {
   char *endptr;
   if (param_next ())
@@ -1251,7 +1265,7 @@ devdem_param_next_integer (int *ret)
   *ret = strtol (param_processing, &endptr, 10);
   if (*endptr)
     {
-      devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+      devser_write_command_end (DEVDEM_E_PARAMSVAL,
 				"invalid parameter - expected integer, got '%s'",
 				param_processing);
       return -1;
@@ -1260,7 +1274,7 @@ devdem_param_next_integer (int *ret)
 }
 
 int
-devdem_param_next_float (float *ret)
+devser_param_next_float (float *ret)
 {
   char *endptr;
   if (param_next ())
@@ -1268,7 +1282,7 @@ devdem_param_next_float (float *ret)
   *ret = strtof (param_processing, &endptr);
   if (*endptr)
     {
-      devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+      devser_write_command_end (DEVDEM_E_PARAMSVAL,
 				"invalid parameter - expected integer, got '%s'",
 				param_processing);
       return -1;
@@ -1277,14 +1291,14 @@ devdem_param_next_float (float *ret)
 }
 
 int
-devdem_param_next_hmsdec (double *ret)
+devser_param_next_hmsdec (double *ret)
 {
   if (param_next ())
     return -1;
   *ret = hmstod (param_processing);
   if (isnan (*ret))
     {
-      devdem_write_command_end (DEVDEM_E_PARAMSVAL,
+      devser_write_command_end (DEVDEM_E_PARAMSVAL,
 				"expected hms string, got: %s",
 				param_processing);
       return -1;
@@ -1349,9 +1363,9 @@ read_from_client ()
  * On exit handler.
  */
 void
-devdem_on_exit (int err, void *args)
+devser_on_exit (int err, void *args)
 {
-  if (getpid () == devdem_parent_pid)
+  if (getpid () == devser_parent_pid)
     {
 #ifdef DEVDEM_WITH_CLIENT
       if (shmdt (statutes))
@@ -1373,7 +1387,7 @@ devdem_on_exit (int err, void *args)
 	syslog (LOG_ERR, "IPC_RMID msg_id: %m");
     }
 #ifdef DEVDEM_WITH_CLIENT
-  else if (getpid () == devdem_child_pid)
+  else if (getpid () == devser_child_pid)
     {
       if (clients_info->priority_client == client_id)	// we have priority and we exit => we must give up priority
 	client_priority_lost ();
@@ -1409,9 +1423,9 @@ server_command_handler (char *ret)
 /*!
  * Handle message with changing priority, comming from central server.
  *
- * Have to send priority_lost IPC message to currently active devdem
+ * Have to send priority_lost IPC message to currently active devser
  * (if any), wait till all threads are killed, change actual priority 
- * and send priority_receive message to new devdem process.
+ * and send priority_receive message to new devser process.
  *
  * @param priority		string with priority setting (as
  * 				received from the served)
@@ -1431,7 +1445,7 @@ server_message_handle_priority (char *priority)
   new_priority_client = strtol (priority, &int_end, 10);
   if (!*int_end || *int_end == ' ')
     {
-      struct devdem_msg msg;
+      struct devser_msg msg;
       if (new_priority_client < 0 || new_priority_client >= MAX_CLIENT)
 	{
 	  syslog (LOG_ERR, "invalid new priority client %i",
@@ -1448,15 +1462,14 @@ server_message_handle_priority (char *priority)
 	    {
 	      // send stop signal to request thread stopping
 	      // on given device
-	      msg.mtype =
-		clients_info->clients[clients_info->priority_client].pid;
+	      msg.mtype = clients_info->priority_client + 1;
 	      strcpy (msg.mtext, "priority_lost");
-	      if (devdem_msg_snd (&msg))
+	      if (devser_msg_snd (&msg))
 		return -1;
 	    }
-	  msg.mtype = clients_info->clients[new_priority_client].pid;
+	  msg.mtype = new_priority_client + 1;
 	  strcpy (msg.mtext, "priority_receive");
-	  if (devdem_msg_snd (&msg))
+	  if (devser_msg_snd (&msg))
 	    return -1;
 	}
       else
@@ -1545,7 +1558,7 @@ devdem_register (struct devcli_channel *server_channel, char *device_name,
  * @return 0 on success, -1 and set errno on error
  */
 int
-devdem_run (int port, devdem_handle_command_t in_handler,
+devser_run (int port, devser_handle_command_t in_handler,
 	    char **status_names, int status_num_in, size_t shm_data_size)
 {
   int sock, i;
@@ -1553,7 +1566,7 @@ devdem_run (int port, devdem_handle_command_t in_handler,
   size_t size;
   status_t *st;
   union semun sem_un;
-  devdem_parent_pid = getpid ();
+  devser_parent_pid = getpid ();
 
   if (!in_handler)
     {
@@ -1627,11 +1640,11 @@ devdem_run (int port, devdem_handle_command_t in_handler,
 	  return -1;
 	}
       // attach shared segment
-      shmdata = devdem_shm_data_at ();
+      shmdata = devser_shm_data_at ();
       // null shared segment
       memset (shmdata, 0, shm_data_size);
       // detach shared segment
-      devdem_shm_data_dt (shmdata);
+      devser_shm_data_dt (shmdata);
     }
   else
     {
@@ -1678,12 +1691,12 @@ devdem_run (int port, devdem_handle_command_t in_handler,
   // initialize ipc msg que
   if ((msg_id = msgget (IPC_PRIVATE, 0644)) < 0)
     {
-      syslog (LOG_ERR, "devdem msgget: %m");
+      syslog (LOG_ERR, "devser msgget: %m");
       return -1;
     }
 
   /* register on_exit */
-  on_exit (devdem_on_exit, NULL);
+  on_exit (devser_on_exit, NULL);
   signal (SIGTERM, sig_exit);
   signal (SIGQUIT, sig_exit);
   signal (SIGINT, sig_exit);
@@ -1729,7 +1742,7 @@ devdem_run (int port, devdem_handle_command_t in_handler,
 	  inet_ntoa (clientname.sin_addr),
 	  ntohs (clientname.sin_port), control_fd);
 
-  devdem_child_pid = getpid ();
+  devser_child_pid = getpid ();
   // initialize data_cons
   for (sock = 0; sock < MAXDATACONS; sock++)
     {
@@ -1759,12 +1772,14 @@ devdem_run (int port, devdem_handle_command_t in_handler,
     }
 #endif /* DEVDEM_WITH_CLIENT */
 
+#ifndef DEVDEM_WITH_CLIENT
   // create message thread
   if (pthread_create (&msg_thread, NULL, msg_receive_thread, NULL) < 0)
     {
       syslog (LOG_ERR, "create message thread: %m");
       return -1;
     }
+#endif /* !DEVDEM_WITH_CLIENT */
 
   // null threads count
   threads_count = 0;
