@@ -12,7 +12,7 @@ LDFLAGS = -O2 @LDFLAGS@ @LIB_M@ @LIB_PTHREAD@
 .PHONY=clean
 
 clean:
-	$(RM) $(TOCLEAN) $(BIN)
+	$(RM) *.o *~ $(BIN)
 	for x in $(SUBDIRS); do			\
 		make -C $$x clean;		\
 	done
