@@ -16,7 +16,8 @@
 #include "../db/db.h"
 #include "process_image.h"
 
-#define EPOCH			"002"
+#define EPOCH_DEF			"000"
+#define EPOCH		get_string_default ("epoch", EPOCH_DEF)
 
 struct image_que
 {
