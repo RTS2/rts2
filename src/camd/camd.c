@@ -77,6 +77,8 @@ static char *mirror = "";
 
 #ifdef FOCUSING
 static char *focuser_port = NULL;
+static float focuser_exposure = FOCUS_EXPOSURE;
+static int focuser_ustep = FOCUS_USTEP;
 #endif
 
 /* expose functions */
@@ -260,7 +262,7 @@ void *
 start_focusing (void *arg)
 {
   int chip = *(int *) arg;
-  float exp_time = FOCUS_EXPOSURE;
+  float exp_time = focuser_exposure;
   int x = 256;			// square size
   int tcfret;
   int j, i, r;
@@ -360,15 +362,15 @@ start_focusing (void *arg)
 	  switch (j)
 	    {
 	    case 0:		// setup first step
-	      pp = FOCUS_USTEP;
+	      pp = focuser_ustep;
 	      break;
 	    case 1:
 	      // it was worse before
 	      if (fwhm[0] > fwhm[1])
-		pp = FOCUS_USTEP;
+		pp = focuser_ustep;
 	      // it was better
 	      else
-		pp = -2 * FOCUS_USTEP;
+		pp = -2 * focuser_ustep;
 	      break;
 
 	    case 2:
@@ -405,13 +407,13 @@ start_focusing (void *arg)
 	      min = -B / (2 * A);
 
 	      // ted jsem na pos[j], chci se dostat na min, pokud
-	      // fabs(min-pos[j])<3*FOCUS_USTEP
+	      // fabs(min-pos[j])<3*focuser_ustep
 
 	      pp = min - posi[j];
-	      if (pp > 3 * FOCUS_USTEP)
-		pp = 3 * FOCUS_USTEP;
-	      if (pp < (-3 * FOCUS_USTEP))
-		pp = -3 * FOCUS_USTEP;
+	      if (pp > 3 * focuser_ustep)
+		pp = 3 * focuser_ustep;
+	      if (pp < (-3 * focuser_ustep))
+		pp = -3 * focuser_ustep;
 
 	      break;
 
@@ -982,6 +984,8 @@ main (int argc, char **argv)
 	{"device_file", 1, 0, 'f'},
 #ifdef FOCUSING
 	{"focuser_dev", 1, 0, 'o'},
+	{"focuser_exp", 1, 0, 'e'},
+	{"focuser_ustep", 1, 0, 'u'},
 #endif /* FOCUSING */
 #ifdef MIRROR
 	{"mirror_dev", 1, 0, 'm'},
@@ -991,9 +995,10 @@ main (int argc, char **argv)
       };
 #ifdef FOCUSING
 #ifdef MIRROR
-      c = getopt_long (argc, argv, "l:o:m:p:is:q:d:f:h", long_option, NULL);
+      c =
+	getopt_long (argc, argv, "l:o:e:u:m:p:is:q:d:f:h", long_option, NULL);
 #else
-      c = getopt_long (argc, argv, "l:o:p:is:q:d:f:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:o:e:u:p:is:q:d:f:h", long_option, NULL);
 #endif /* MIRROR */
 #else
 #ifdef MIRROR
@@ -1040,6 +1045,12 @@ main (int argc, char **argv)
 	  focuser_port = optarg;
 	  set_focuser_port (focuser_port);
 	  break;
+	case 'e':
+	  focuser_exposure = atof (optarg);
+	  break;
+	case 'u':
+	  focuser_ustep = atof (optarg);
+	  break;
 #endif /* FOCUSING */
 #ifdef MIRROR
 	case 'm':
@@ -1059,6 +1070,10 @@ main (int argc, char **argv)
 #ifdef FOCUSING
 	  printf
 	    ("\tfocuser_dev|o <dev-entry>\t\twhere focuser is connected. If not defined -> not focusing\n");
+	  printf
+	    ("\tfocuser_exp|e <exposure>\t\tdefault focusing exposure time\n");
+	  printf
+	    ("\tfocuser_ustep|u <exposure>\t\tdefault focusing steps (steps performed at first iteration)\n");
 #endif /* FOCUSING */
 #ifdef MIRROR
 	  printf
