@@ -67,7 +67,7 @@ struct serverd_info
 
 //! global server type
 int server_type = NOT_DEFINED_SERVER;
-int server_id = -1;
+int serverd_id = -1;
 
 //! pointers to shared memory
 struct serverd_info *shm_info;
@@ -78,18 +78,21 @@ struct client *shm_clients;
  * Find one device.
  * 
  * @param name		device name
+ * @param id		device id; if NULL, device id is not returned
  * @param device	device
  *
  * @return 0 and set pointer do device on success, -1 and set errno on error
  */
 int
-find_device (char *name, struct device **device)
+find_device (char *name, long *id, struct device **device)
 {
   int i;
   for (i = 0; i < MAX_DEVICE; i++)
     if (strcmp (shm_devices[i].name, name) == 0)
       {
 	*device = &shm_devices[i];
+	if (id)
+	  *id = i;
 	return 0;
       }
   errno = ENODEV;
@@ -97,7 +100,7 @@ find_device (char *name, struct device **device)
 }
 
 /*!
- * Send message to one device.
+ * Send IPC message to one device.
  *
  * @param name		device name
  * @param format	message format
@@ -107,14 +110,13 @@ find_device (char *name, struct device **device)
  *
  * @return 0 on success, -1 on error, set errno
  */
-
 int
-device_message_send (char *name, char *format, ...)
+device_msg_snd (char *name, char *format, ...)
 {
   struct device *device;
-  if (find_device (name, &device))
+  struct devser_msg msg;
+  if (find_device (name, &msg.mtype, &device))
     {
-      struct devser_msg msg;
       char *mtext;
       va_list ap;
 
@@ -123,9 +125,10 @@ device_message_send (char *name, char *format, ...)
       va_end (ap);
 
       strncpy (msg.mtext, mtext, MSG_SIZE);
-      msg.mtype = device->pid;
 
       free (mtext);
+
+      msg.mtype += MAX_CLIENT + 1;
 
       return devser_msg_snd (&msg);
     }
@@ -134,7 +137,7 @@ device_message_send (char *name, char *format, ...)
 }
 
 /*!
- * Send messsage to all registered devices.
+ * Send IPC messsages to all registered devices.
  *
  * @param format	message format
  * @param ...		format arguments
@@ -142,7 +145,7 @@ device_message_send (char *name, char *format, ...)
  * @return 0 on success, -1 and set errno on any error
  */
 int
-devices_message_send (char *format, ...)
+devices_msg_snd (char *format, ...)
 {
   struct devser_msg msg;
   char *mtext;
@@ -162,7 +165,7 @@ devices_message_send (char *format, ...)
       /* device exists */
       if (*shm_devices[i].name)
 	{
-	  msg.mtype = shm_devices[i].pid;
+	  msg.mtype = i + MAX_CLIENT + 1;
 	  if (devser_msg_snd (&msg))
 	    return -1;
 	}
@@ -175,7 +178,7 @@ device_serverd_handle_command (char *command)
 {
   if (strcmp (command, "priority_set") == 0)
     {
-
+      // TODO  is it really needed???
     }
   else if (strcmp (command, "authorize") == 0)
     {
@@ -188,7 +191,7 @@ device_serverd_handle_command (char *command)
 	return -1;
 
       devser_shm_data_lock ();
-      if (shm_devices[server_id].authorizations[client] == 0)
+      if (shm_devices[serverd_id].authorizations[client] == 0)
 	{
 	  devser_dprintf ("authorization_failed %i", client);
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
@@ -198,16 +201,16 @@ device_serverd_handle_command (char *command)
 	  return -1;
 	}
 
-      if (shm_devices[server_id].authorizations[client] != key)
+      if (shm_devices[serverd_id].authorizations[client] != key)
 	{
 	  devser_dprintf ("authorization_failed %i", client);
 	  devser_write_command_end (DEVDEM_E_SYSTEM,
 				    "invalid authorization key");
-	  shm_devices[server_id].authorizations[client] = 0;
+	  shm_devices[serverd_id].authorizations[client] = 0;
 	  devser_shm_data_unlock ();
 	  return -1;
 	}
-      shm_devices[server_id].authorizations[client] = 0;
+      shm_devices[serverd_id].authorizations[client] = 0;
       devser_shm_data_unlock ();
 
       devser_dprintf ("authorization_ok %i", client);
@@ -241,13 +244,13 @@ clients_change_priority ()
 	}
     }
   shm_info->priority_client = new_priority_client;
-  return devices_message_send ("priority %i", new_priority_client);
+  return devices_msg_snd ("priority %i", new_priority_client);
 }
 
 /*!
  * Attach shared memory segments.
  */
-void
+int
 serverd_init ()
 {
   if (!shm_info)
@@ -256,6 +259,7 @@ serverd_init ()
       shm_clients = shm_info->clients;
       shm_devices = shm_info->devices;
     }
+  return 0;
 }
 
 /*!
@@ -274,11 +278,11 @@ serverd_exit (int status, void *arg)
   switch (server_type)
     {
     case CLIENT_SERVER:
-      *shm_clients[server_id].login = 0;
+      *shm_clients[serverd_id].login = 0;
       clients_change_priority ();
       break;
     case DEVICE_SERVER:
-      *shm_devices[server_id].name = 0;
+      *shm_devices[serverd_id].name = 0;
       break;
     default:
       // I'm not expecting that one to occur, since we
@@ -306,11 +310,11 @@ client_serverd_handle_command (char *command)
        *
        * TODO some more complicated code would be necessary */
 
-      if (strncmp (passwd, shm_clients[server_id].login, CLIENT_LOGIN_SIZE)
+      if (strncmp (passwd, shm_clients[serverd_id].login, CLIENT_LOGIN_SIZE)
 	  == 0)
 	{
-	  shm_clients[server_id].authorized = 1;
-	  devser_dprintf ("logged as client # %i", server_id);
+	  shm_clients[serverd_id].authorized = 1;
+	  devser_dprintf ("logged as client # %i", serverd_id);
 	  return 0;
 	}
       else
@@ -321,7 +325,7 @@ client_serverd_handle_command (char *command)
 	  return -1;
 	}
     }
-  if (shm_clients[server_id].authorized)
+  if (shm_clients[serverd_id].authorized)
     {
       if (strcmp (command, "info") == 0)
 	{
@@ -340,31 +344,42 @@ client_serverd_handle_command (char *command)
 	}
       else if (strcmp (command, "priority") == 0)
 	{
+	  if (devser_param_test_length (1))
+	    return -1;
+
 	  // prevent others from accesing priority
 	  // since we don't wont any other process to change
 	  // priority while we are testing it
 	  devser_shm_data_lock ();
 
-	  if (devser_param_test_length (1))
-	    return -1;
+	  if (serverd_id > 0 && serverd_id <= MAX_CLIENT)
+	    devser_dprintf ("old_priority %i %i", serverd_id - 1,
+			    shm_clients[serverd_id - 1].priority);
+	  else
+	    devser_dprintf ("old_priority %i 0", serverd_id - 1);
 
-	  devser_dprintf ("old_priority %i %i", shm_info->priority_client,
-			  shm_clients[server_id].priority);
+	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
+			  shm_clients[shm_info->priority_client].priority);
 
-	  if (devser_param_next_integer (&(shm_clients[server_id].priority)))
-	    return -1;
+	  if (devser_param_next_integer (&(shm_clients[serverd_id].priority)))
+	    {
+	      devser_shm_data_unlock ();
+	      return -1;
+	    }
 
 	  if (clients_change_priority ())
 	    {
+	      devser_shm_data_unlock ();
 	      devser_write_command_end (DEVDEM_E_PRIORITY,
 					"error when processing priority request");
 	      return -1;
 	    }
 
-	  devser_dprintf ("new_priority %i %i", shm_info->priority_client,
-			  shm_clients[server_id].priority);
+	  devser_dprintf ("actual_priority %i %i", shm_info->priority_client,
+			  shm_clients[serverd_id].priority);
 
 	  devser_shm_data_unlock ();
+
 	  return 0;
 	}
       if (strcmp (command, "key") == 0)
@@ -377,7 +392,7 @@ client_serverd_handle_command (char *command)
 	      || devser_param_next_string (&dev_name))
 	    return -1;
 	  // find device, set it authorization key
-	  if (find_device (dev_name, &device))
+	  if (find_device (dev_name, NULL, &device))
 	    {
 	      devser_write_command_end (DEVDEM_E_SYSTEM,
 					"cannot find device with name %s",
@@ -386,7 +401,7 @@ client_serverd_handle_command (char *command)
 	    }
 
 	  devser_shm_data_lock ();
-	  device->authorizations[server_id] = key;
+	  device->authorizations[serverd_id] = key;
 	  devser_shm_data_unlock ();
 
 	  devser_dprintf ("authorization_key %i", key);
@@ -400,16 +415,15 @@ client_serverd_handle_command (char *command)
 }
 
 /*!
- * Handle receiving of message.
+ * Handle receiving of IPC message.
  *
  * @param message	string message
  */
-void
+int
 serverd_handle_msg (char *message)
 {
-  devser_status_message (0, message);
+  return devser_message (message);
 }
-
 
 /*! 
  * Handle serverd commands.
@@ -427,8 +441,6 @@ serverd_handle_command (char *command)
 	  char *login;
 	  int i;
 
-	  serverd_init ();
-
 	  if (devser_param_test_length (1))
 	    return -1;
 
@@ -444,7 +456,13 @@ serverd_handle_command (char *command)
 		shm_clients[i].authorized = 0;
 		shm_clients[i].priority = -1;
 		strncpy (shm_clients[i].login, login, CLIENT_LOGIN_SIZE);
-		server_id = i;
+		serverd_id = i;
+		shm_clients[i].pid = devser_child_pid;
+		if (devser_set_server_id (i + 1, NULL))
+		  {
+		    devser_shm_data_unlock ();
+		    return -1;
+		  }
 		break;
 	      }
 
@@ -475,8 +493,6 @@ serverd_handle_command (char *command)
 	  char *reg_device;
 	  int i;
 
-	  serverd_init ();
-
 	  if (devser_param_test_length (1))
 	    return -1;
 	  if (devser_param_next_string (&reg_device))
@@ -489,8 +505,13 @@ serverd_handle_command (char *command)
 	      {
 		strncpy (shm_devices[i].name, reg_device, DEVICE_NAME_SIZE);
 		shm_devices[i].pid = devser_child_pid;
-		devser_msg_set_handler (serverd_handle_msg);
-		server_id = i;
+		if (devser_set_server_id
+		    (i + MAX_CLIENT + 1, serverd_handle_msg))
+		  {
+		    devser_shm_data_unlock ();
+		    return -1;
+		  }
+		serverd_id = i;
 		break;
 	      }
 	    else if (strcmp (shm_devices[i].name, reg_device) == 0)
@@ -541,7 +562,6 @@ int
 main (void)
 {
   srandom (time (NULL));
-  char *stats[] = { "status" };
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -550,6 +570,10 @@ main (void)
   shm_devices = NULL;
 
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-  return devser_run (PORT, serverd_handle_command, stats, 1,
-		     sizeof (struct serverd_info));
+  if (devser_init (sizeof (struct serverd_info)))
+    {
+      syslog (LOG_ERR, "error in devser_init: %m");
+      return -1;
+    }
+  return devser_run (PORT, serverd_handle_command, serverd_init);
 }
