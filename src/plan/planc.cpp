@@ -42,6 +42,7 @@
 
 #define COMMAND_EXPOSURE	'E'
 #define COMMAND_FILTER		'F'
+#define COMMAND_PHOTOMETER      'P'
 
 static int precission_count = 0;
 
@@ -324,7 +325,7 @@ execute_camera_script (void *exinfo)
   time_t t;
   char s_time[27];
   enum
-  { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS } exp_state;
+  { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS, INTEGRATION_PROGRESS } exp_state;
 
   switch (last->type)
     {
@@ -372,7 +373,6 @@ execute_camera_script (void *exinfo)
 				  1.1 * exposure + 10);
 	  exp_state = EXPOSURE_PROGRESS;
 	}
-
       switch (*command)
 	{
 	case COMMAND_EXPOSURE:
@@ -405,6 +405,10 @@ execute_camera_script (void *exinfo)
 				      CAM_MASK_READING, CAM_NOTREADING,
 				      MAX_READOUT_TIME);
 	    }
+          else if (exp_state == INTEGRATION_PROGRESS)
+            {
+              devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, 10000);
+            }
 	  devcli_command (camera, &ret, "expose 0 %i %f", light, exposure);
 	  if (ret)
 	    {
@@ -434,6 +438,19 @@ execute_camera_script (void *exinfo)
 	  if (ret)
 	    fprintf (stderr, "error executing 'filter %i'", filter);
 	  break;
+        case COMMAND_PHOTOMETER:
+          command++;
+          filter = strtol (command, &s, 10);
+          if (s == command || (!isspace (*s) && *s))
+          {
+              fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+              command = s;
+              continue;
+          }
+          command = s;
+          devcli_command_all (DEVICE_TYPE_PHOT, "integrate 1 %i", filter);
+          exp_state = INTEGRATION_PROGRESS;
+          break;
 	default:
 	  if (!isspace (*command))
 	    fprintf (stderr,
@@ -458,6 +475,10 @@ execute_camera_script (void *exinfo)
       devcli_wait_for_status (camera, "img_chip",
 			      CAM_MASK_READING, CAM_NOTREADING,
 			      MAX_READOUT_TIME);
+      break;
+    case INTEGRATION_PROGRESS:
+      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, 10000);
+      dec_exposure_count ();
       break;
     default:
       dec_exposure_count ();
