@@ -28,6 +28,8 @@
 
 // Should be short: to beat the telescope drift because of bad tracking
 #define FOCUS_EXPOSURE 10.0
+// Something like 20*[f-ratio]
+#define FOCUS_USTEP	200
 #endif /* FOCUSING */
 
 #ifdef MIRROR
@@ -252,7 +254,6 @@ focus_expose_and_readout (float exposure, int light, struct readout *readout,
   return camera_readout (readout, img);
 }
 
-#define USTEP			200
 #define MAXTRIES		200
 
 void *
@@ -359,15 +360,15 @@ start_focusing (void *arg)
 	  switch (j)
 	    {
 	    case 0:		// setup first step
-	      pp = USTEP;
+	      pp = FOCUS_USTEP;
 	      break;
 	    case 1:
 	      // it was worse before
 	      if (fwhm[0] > fwhm[1])
-		pp = USTEP;
+		pp = FOCUS_USTEP;
 	      // it was better
 	      else
-		pp = -2 * USTEP;
+		pp = -2 * FOCUS_USTEP;
 	      break;
 
 	    case 2:
@@ -404,13 +405,13 @@ start_focusing (void *arg)
 	      min = -B / (2 * A);
 
 	      // ted jsem na pos[j], chci se dostat na min, pokud
-	      // fabs(min-pos[j])<3*USTEP
+	      // fabs(min-pos[j])<3*FOCUS_USTEP
 
 	      pp = min - posi[j];
-	      if (pp > 3 * USTEP)
-		pp = 3 * USTEP;
-	      if (pp < (-3 * USTEP))
-		pp = -3 * USTEP;
+	      if (pp > 3 * FOCUS_USTEP)
+		pp = 3 * FOCUS_USTEP;
+	      if (pp < (-3 * FOCUS_USTEP))
+		pp = -3 * FOCUS_USTEP;
 
 	      break;
 
