@@ -11,9 +11,10 @@
 #define __RTS_DEVCLI__
 
 #include "devconn.h"
+#include "param.h"
 #include <pthread.h>
 
-typedef int (*devcli_handle_response_t) (char *response);
+typedef int (*devcli_handle_response_t) (struct param_status * params);
 typedef int (*devcli_handle_data_t) (int socket, size_t size);
 
 /*! 
@@ -36,7 +37,7 @@ struct devcli_channel
   pthread_mutex_t ret_lock;	/*! 
 				 * return lock
 				 * <ul>
-				 *      <li>locked</li> waitin for ret 
+				 *      <li>locked</li> waiting for ret 
 				 *      <li>unlocked</li> not used ret
 				 *                      received
 				 * </ul>

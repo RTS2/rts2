@@ -52,6 +52,7 @@ void devser_shm_data_dt (void *mem);
 devser_handle_message_t devser_msg_set_handler (devser_handle_message_t
 						handler);
 int devser_msg_snd (struct devser_msg *msg);
+int devser_msg_snd_format (int type, char *format, ...);
 
 int devser_param_test_length (int npars);
 
