@@ -4,6 +4,8 @@
  * @author petr
  */
 
+#include <sys/time.h>
+
 #ifndef __RTS_DEVCONN__
 #define __RTS_DEVCONN__
 
@@ -28,6 +30,7 @@ struct devconn_status
   char name[STATUSNAME + 1];
   int status;
   status_notifier_t notifier;	//! hook to do something, when status is changed
+  time_t last_update;
 };
 
 #endif // __RTS_DEVCONN__

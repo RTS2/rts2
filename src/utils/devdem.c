@@ -566,6 +566,8 @@ client_authorize ()
 
   // TODO remove pid - not needed ???
   clients_info->clients[client_id].pid = devser_child_pid;
+  if (clients_info->priority_client == client_id)
+    devser_dprintf ("S priority 1 priority received %i", client_id);
   return 0;
 }
 
@@ -689,7 +691,8 @@ server_command_handler (struct param_status *params, void *info)
   else
     {
       syslog (LOG_DEBUG, "returned: %s\n", params->param_argv);
-      return 0;
+      return devhnd_devices[DEVICE_TYPE_SERVERD].command_handler (params,
+								  info);
     }
   return 0;
 }
