@@ -41,12 +41,7 @@
 
 #include <argz.h>
 
-#define MAXMSG  512
-#define MAXDATACONS	4
-//! Data port range
-#define MINDATAPORT	5556
-#define MAXDATAPORT	5656
-#define SEND_SIZE	1000
+#include "devconn.h"
 
 typedef struct
 {
@@ -283,9 +278,9 @@ send_data_thread (void *arg)
 	  ret = -1;
 	  break;
 	}
-      avail_size = ((ready_data_ptr + SEND_SIZE) <
-		    data_ptr + data_size) ? SEND_SIZE : data_ptr + data_size -
-	ready_data_ptr;
+      avail_size = ((ready_data_ptr + DATA_BLOCK_SIZE) <
+		    data_ptr + data_size) ? DATA_BLOCK_SIZE : data_ptr +
+	data_size - ready_data_ptr;
       if ((ret = write (data_con->sock, ready_data_ptr, avail_size)) < 0)
 	{
 	  syslog (LOG_ERR, "write:%m port:%i", port);
