@@ -622,7 +622,7 @@ Rts2DevCameraMiniccd::init ()
   CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
   CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 
-  ret = Rts2DevCamera::init ();
+  ret = Rts2DevCameraMirror::init ();
   if (ret)
     return ret;
 
