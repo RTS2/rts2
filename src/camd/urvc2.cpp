@@ -9,8 +9,6 @@
 #define _GNU_SOURCE
 #endif
 
-#define MAX_CHIPS       2
-
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -37,7 +35,7 @@ class CameraUrvc2Chip:public CameraChip
 public:
     CameraUrvc2Chip (int in_chip_id, int in_width, int in_height,
 		     int in_pixelX, int in_pixelY, float in_gain);
-   ~CameraUrvc2Chip ();
+    virtual ~ CameraUrvc2Chip ();
 
   virtual int setBinning (int in_vert, int in_hori);
 
@@ -108,11 +106,13 @@ CameraUrvc2Chip::readoutOneLine ()
   if (!readoutLine)
     {
       if (CCDReadout
-	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width, chipReadout->height, binningVertical))
+	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width,
+	   chipReadout->height, binningVertical))
 	{
 	  return -1;
 	}
-      dest_top = img + (chipReadout->width * chipReadout->height / binningVertical);
+      dest_top =
+	img + (chipReadout->width * chipReadout->height / binningVertical);
       readoutLine = 1;
       return 0;
     }
