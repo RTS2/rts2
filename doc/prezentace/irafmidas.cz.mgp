@@ -1,0 +1,94 @@
+%include "default.mgp"
+%default 1 bgrad
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+%nodefault
+%center, size 7, font "standard", fore "white", vgap 20
+
+MIDAS vs IRAF
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Proc pouzivat na zpracovani snimku standartni baliky?
+
+	funkce v baliku jsou dobre zdokumentovany
+	kontinuita vyvoje
+	vice uzivatelu pouzivajicich stejne funkce
+	pokud budu psat program, nezacinam tim, ze si napisi prekladac assembleru, OS, prekladac vyssiho jazyka, ...
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+IRAF - Image Reduction and Analytic Functions
+
+Balik, vyvijeny na NOAO (National Optical Astronomy Observatories), patrici \
+AURA (Association of Universities for Research in Astronomy), ve spolupraci \
+s NSF (National Science Foundation).
+
+Stoji za vetsinou snimku z Hubble Space Telescope.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+IRAF - editace parametru
+
+	prikaz eparam
+	podobne chovani jako editor vi - j, k, enter, :w[rite], :g[o], :e[dit]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+IRAF - konvence
+
+	@<soubor> - vstupni data se budou brat ze souboru
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Plus/minus:
+
++ na druhy pohled velmy silny system ovladani
++ ukladani parametru pro tasky
++ hojna dokumentace
++ hojnost tasku
++ silny vnitrni jazyk
++ iterace parametru ze souboru - "@" konvence
+
+- na prvni pohled nepochopitelny system ovladani
+- nema vlastni prohlizec snimku, pres XPA umi jenom 256 urovni
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+ESO-Midas
+
+European South Observatory - Munich Image Data Analytic System
+
+Balik, vyvijen v Mnichove pro ESO. Preveden pod open-source. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Plus/minus:
+
++ privetive uzivatelske rozhranni
++ dostatek dokumentace, snadna orientace v ni
++ nenarocnost na systemove prostredky
+
+- spatne propojeni na DAOPHOT
+- tezkopadnost definice promennych
+- komplikovany a pomerne slaby vnitrni jazyk
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Odkazy:
+
+	http://iraf.noao.edu - IRAF
+	http://www.eso.org/midas - MIDAS

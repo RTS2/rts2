@@ -1,0 +1,258 @@
+%include "default.mgp"
+%default 1 bgrad
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+%nodefault
+%center, size 7, font "standard", fore "white", vgap 20
+
+RTS 2
+
+novy system pro BART
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Proc novy system?
+
+%vgap 20
+
+%size 15
+
+	protoze soucasny nam nevyhovuje
+	protoze mam pocit, ze se da ovladani vyresit lepe
+
+Motto:
+
+%vgap 20
+
+rts2 = rts XP (eXPerience)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Nevyhovujici casti
+
+	sestrelovani pozorovani - muze trvat az dve minuty, coz je pro GRB prilis dlouho
+	rizeni pozorovani - system priorit je ponekud nejasny, neni mozne rozumne psat celonocni pozorovaci skripty
+	implementace v Pythonu - Python je skveli na rychle prototypovani, pro ridici system se ale nehodi:
+		run-time hlaseni chyb
+		struktura kodu (tab indentace, nejasne definice,..)
+		velice zravy (RAM, ...)
+	neexistence rozumneho GUI
+	neurcite deleni funkci, caste (pseudo)cyklicke zavisloti
+	neexistence jineho funkcniho rozhranni nez WWW 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Nove zadani
+
+Navrhnete, implementujte a zdokumentujte ovladani dalekohledu BART (Burst \
+Afterglow Robotic Telescope) tak, aby umoznovalo:
+
+	rizeni dalekohledu pomoci predem spocitaneho planu, s moznosti jeho \
+preruseni a predani rizeni jinemu pozorovani v pripade prijmu zpravy \
+o novem objektu, vhodneho k okamzitemu pozorovani
+	snadny prenos reseni na jine kamery, pripadne dalekohledy
+	on-line zpracovani snimku na jinem pocitaci nez na pocitaci obsluhujicim\
+kameru
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Zadani...
+
+Na zaver porovnejte nove ovladani dalekohledu s existujicimi systemy pro \
+ovladani dalekohledu.
+
+Je mozne vyuzit ovladace zarizeni, napsane jako cast rocnikoveho projektu \
+obhajeneho v cervnu 2000. Ostani kod rocnikoveho projektu nebude pouzit. \
+Dokumentace k praci musi obsahovat vycet kodu, prevzateho z rocnikoveho \
+projektu.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Zadani...
+
+Pro uspesne vyreseni je potreba provest nasledujici prace:
+
+	definovat rozhranni pro ovladani zarizeni a prenos dat z nich, \
+provest jeho vzorovou implementaci na zarizenich, jez jsou k \
+dispozici na dalekohledu BART.
+	vymyslet a naimplementovat planovac, ktery bude ridit pozorovani.
+	zabyvat se ukladanim napozorovanych dat, jejich tridenim a \
+zajistenim jednoducheho pristupu k nim.
+	naimplementovat k castem, jez to vyzaduji, graficke uzivatelske \
+rozhranni.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Literatura:
+
+	Martinez/Klotz - A practical Guide to CCD astronomy
+	Trueblood/Genet - Telescope control, Willmann-Bell, 1997
+	Mgr. R.Halir, T.Jilek, P.Kubanek, F.Krolluper, F.Kvapil - Detekce astronomickych objektu s promennou intenzitou za pomoci robotickeho teleskopu, Rocnikovy projekt MFF UK, Praha, 2000
+	David Ratledge, The Art and Science of CCD Astronomy
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Odkazy:
+
+	http://www.telescope.org/rti/automated.html - prehled automatizovanych dalekohledu 
+	http://lascaux.asu.cas.cz - dalekohled BART
+	http://nova.sourceforge.net/ - Projekt NOVA, automaticke ovladani dalekohledu
+	http://www.astro.princeton.edu/~bakos/HAT - The Hungarian Automated Telescope 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Postupy
+
+	od pocatku verzovani v CVSku (rts1 melo byt puvodne verzovano v jakemsi systemu, podporujicim binarni soubory, na konci jsme ale presli na CVSko)
+	lepsi navrh - na rozdil od rts1 mam jakz takz predstavu, co chci, rts1 byl prototyp se vsim co k tomu patri
+	duraz na bezpecnost - rts1 ma mnoho zneuzitelnych bezpecnostnich der
+	open source vyvoj - moznost pro kohokoliv se pridat
+	dokumentace primo v kodu pomoci doxygenu (ala JavaDoc)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Postupy...
+
+	vyvoj v Cecku s pouzitim GNU knihoven, kompilace pod gcc, Makefile (casem asi autoconf+automake skripty)
+	dokumentace od zacatku v LaTeXu, diagramy v dia
+	neobjektove programovani - paradigma OOP nahrazena:
+		dedicnost - v podstate neni potreba, resi ji vhodne pouziti knihoven
+		polymorfismus - zajistuje komunikacni protokol
+		uzavrenost - vhodnym navrhem
+	dokumentace v cestine, komentare v kodu v anglictine
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - core:
+
+	centralni server
+		seznam zarizeni
+		autentifikace uzivatelu
+		pridelovani priorit
+
+
+	devdem - deamon zarizeni
+		autorizace uzivatelu pres centralni server
+		ovladani zarizeni
+		sprava vlaken pro deletrvajici operace
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - protokol:
+
+	textove orientovany, inspirovany RFC854 (telnet)
+	klient-server, klient inicializuje spojeni, server ho akceptuje
+	klient posila prikazy, server na ne odpovida, odpoved je ukoncena chybovym kodem
+	server posila zpravy o zmene stavu zarizeni - zacinaji "M "
+	datovy protokol - pro asynchronni prenos dat, inspirovany RFC959 (FTP), klient inicializuje datove spojeni, zvlastni prikazy "D ", binarni 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - priority:
+
+	slouzi k urceni, ktery klient bude manipulovat se zarizenim
+	exekucni (menici stav zarizeni) a informacni (nemenici stav zarizeni) funkce
+	v kazdy casovy okamzik ma na jednotlivem zarizeni nejvyssi prioritu pouze jeden klient
+	moznost okamziteho odjimani priority s prechodem zarizeni do bezpecneho stavu (zastaveni presunu dalekohledu, vycitani, expozice, ...)
+	moznost odejmuti priority se zdrzenim (nepreemtivni?) s nutnym souhlasem klienta, ktery prioritu aktualne vlastni
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Principy - server:
+
+	procesy
+		jednotliva spojeni
+		komunikace mezi procesy pomoci IPC (semafory, sdilena pamet, zpravy)
+	vlakna
+		jednotlive deletrvajici operace (poslani dat, vycitani kamery, presun dalekohledu)
+		pomocna vlakna (IPC zpravy a select,..)
+		komunikace pomoci mutexu, globalnich promennych, pthread_cond (= zakuklene mutexy)
+
+Toto rozdeleni znemoznuje pouziti signalu.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Idee - klient
+
+	jeden proces
+	ma spojeni na vsechny servery, ktere pouziva
+	pokud chce provadet vice operaci najednou (napriklad vycitani dvou kamey a presun zarizeni), spousti si pro kazdou nove vlakno, synchronizace na konci pomoci pthread_join
+	call-back funkce pro prijem vysledku prikazu, zprav a dat od serveru
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Idee - klientsky skriptovaci jazyk
+
+	definice LR(1) gramatiky, pouziti Bisonu na generovani interpretra
+	jednoducha prace s casem, vlakny, ...
+	tri faze:
+		inicializace - neni potreba mit prioritu, vyjmenovani potrebnych zarizeni, podminek na spusteni, priority
+		beh - nutna priorita, vlastni pozorovani
+		uklid - stahovani dat
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Idee - priklad klientskeho skriptovaciho jazyka
+
+%size 3 
+
+09.10.2002 21:17:50				# pevny cas
+  wf.info					# wf info funkce
+  wf.expose 0 10  				# exponuj na wf, cip 0
+  WAIT.wf chip0 CAM_NOEXPOSURE	# pockej, dokud nebudu exponovat 
+  wf.readout 0				# zahaj vycitani wf, cip 0
+  RECEIVE.fits !img.fits wf.data 0 	 	# zahaj prenost dat z wf
+  tel.moveto 10 20 				# zahaj presun na novou pozici
+  WAIT.tel status TEL_STILL		# pockej na ukonceni presunu
+  WAIT.wf chip0 CAM_NOTREADING	# pockej na ukonceni vycitani dat
++300					# ..za 300 vterin po 09.10.2002 21:17:50...
+  wf.expose 0 10				# zahaj expozici
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Idee - ukladani snimku
+
+	s nejvetsi pravdepodobnosti extra zarizeni - pristup do databaze
+	ukladani nezpracovanych snimku, moznost nove korekce snimku
+	pokud mozno existence katalogu hvezd a jejich jasnosti
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Co potrebujeme umet
+
+	ostreni CCD kamer
+	hlidani teploty
+	monitorovani celeho systemu
+	pointace (pokud mozno uz v ovladaci zarizeni)
+	zpracovani snimku
+	astrometrii, fotometrii snimku
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%page
+
+Zaverem
+
+	rts2 bude, az bude
+	v soucasne dobe je funkcni, skoro hotovy core, vyreseny:
+		autorizace
+		autentifikace
+		priority
+	snaha psat cisty kod, indentace, dokumentace, ..
