@@ -71,9 +71,12 @@
 #define SERVERD_DAWN		4
 #define SERVERD_MORNING		5
 
-
-#define SERVERD_MAINTANCE	10
 #define SERVERD_OFF		11
+
+#define SERVERD_STATUS_MASK	0x0f
+#define SERVERD_STANDBY_MASK	0x30
+
+#define SERVERD_STANDBY		0x10
 
 // to send data
 
@@ -114,6 +117,7 @@
 #define DEVICE_TYPE_DOME	4
 #define DEVICE_TYPE_WEATHER	5
 #define DEVIDE_TYPE_ARCH	6
+#define DEVICE_TYPE_IMGP	7
 
 // and more to come..
 // #define DEVICE_TYPE_

@@ -40,7 +40,9 @@ status_serverd (WINDOW * wnd, struct device *dev)
   struct serverd_info *info = (struct serverd_info *) &dev->info;
   wclear (wnd);
   mvwprintw (wnd, 1, 1, "status: ");
-  mvwprintw (wnd, 1, 8, serverd_status_string (dev->statutes[0].status));
+  mvwprintw (wnd, 1, 8,
+	     dev->statutes[0].status & SERVERD_STANDBY_MASK ? "S" : "O");
+  mvwprintw (wnd, 1, 10, serverd_status_string (dev->statutes[0].status));
   // print info
   wmove (wnd, 2, 0);
   for (i = 2, cli = info->clients; cli; cli = cli->next, i++)
@@ -77,18 +79,19 @@ status_telescope (WINDOW * wnd, struct device *dev)
 
   get_hrz_from_equ_sidereal_time (&object, &observer, st, &position);
 
-  dtohms (info->ra / 15, buf);
+  mvwprintw (wnd, 1, 1, "Typ: %s", info->type);
+  mvwprintw (wnd, 2, 1, "R+D/f: %.3f%+.3f/%c",
+	     info->ra, info->dec, info->flip ? 'f' : 'n');
+  mvwprintw (wnd, 3, 1, "Al/Az/D: %i %+i %s",
+	     (int) position.az, (int) position.alt, hrz_to_nswe (&position));
 
-  mvwprintw (wnd, 1, 1, "R/Az/D: %s %+03i %s", buf, (int) position.az,
-	     hrz_to_nswe (&position));
-  mvwprintw (wnd, 2, 1, "D/Al: %+03.3f %+03i", info->dec, (int) position.alt);
-  mvwprintw (wnd, 3, 1, "Lon: %+03.3f", info->longtitude);
-  mvwprintw (wnd, 4, 1, "Lat: %+03.3f", info->latitude);
+  mvwprintw (wnd, 4, 1, "Lon/Lat: %+03.3f %+03.3f", info->longtitude,
+	     info->latitude);
   dtohms (info->siderealtime, buf);
-  mvwprintw (wnd, 5, 1, "Lsid: %s", buf);
+  mvwprintw (wnd, 5, 1, "Lsid: %.3f (%s)", 15.0 * info->siderealtime, buf);
   st = st - (int) (st / 24) * 24;
   dtohms (st, buf);
-  mvwprintw (wnd, 6, 1, "Gsid: %s %f", buf, st);
+  mvwprintw (wnd, 6, 1, "Gsid: %.3f (%s)", 15.0 * st, buf);
   print_status (wnd, 7, 1, dev);
 }
 
