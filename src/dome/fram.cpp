@@ -568,6 +568,7 @@ Rts2DevDomeFram::endOpen ()
   stopMove ();
   VYP (VENTIL_OTEVIRANI_PRAVY);
   VYP (VENTIL_OTEVIRANI_LEVY);
+  zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
   sendFramMail ("FRAM dome opened");
   return Rts2DevDome::endOpen ();
 }
