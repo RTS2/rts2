@@ -33,8 +33,6 @@
 #define CLIENT_SERVER		1
 #define DEVICE_SERVER		2
 
-int port;
-
 int msgid;			// id of server message que
 
 struct device
