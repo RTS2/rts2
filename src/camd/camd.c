@@ -321,6 +321,7 @@ camd_handle_command (char *command)
       header->sizes[1] = rd->height;
       header->binnings[0] = 1;
       header->binnings[1] = 1;
+      header->status = STATUS_FLIP;
 
       data_size =
 	sizeof (struct imghdr) +
