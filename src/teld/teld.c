@@ -266,7 +266,7 @@ main (int argc, char **argv)
   // open syslog
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-  if (devdem_init (stats, 1))
+  if (devdem_init (stats, 1, NULL))
     {
       syslog (LOG_ERR, "devdem_init: %m");
       exit (EXIT_FAILURE);
