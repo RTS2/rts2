@@ -305,7 +305,8 @@ class CameraMiniccdInterleavedChip:public CameraChip
 {
   enum
   { NO_ACTION, SLAVE1_EXPOSING, SLAVE2_EXPOSING, SLAVE1_READOUT,
-      SLAVE2_READOUT, SLAVE2_DATA } slaveState;
+    SLAVE2_READOUT, SLAVE2_DATA
+  } slaveState;
   CameraMiniccdChip *slaveChip[2];
   long firstReadoutTime;
   struct timeval slave2ExposureStart;
@@ -514,6 +515,7 @@ public:
     virtual ~ Rts2DevCameraMiniccd (void);
 
   virtual int processOption (int in_opt);
+  virtual int initChips ();
   virtual int init ();
 
   virtual int ready ();
@@ -558,6 +560,21 @@ Rts2DevCameraMiniccd::processOption (int in_opt)
     }
   return 0;
 }
+
+int
+Rts2DevCameraMiniccd::initChips ()
+{
+  // init master as last chip - if it's interlaced, we need info about
+  // slave chips
+  int ret;
+  for (int i = 0; i < chipNum; i++)
+    {
+      ret = chips[i]->init ();
+      if (ret)
+	return ret;
+    }
+  return chips[0]->init ();
+};
 
 int
 Rts2DevCameraMiniccd::init ()
