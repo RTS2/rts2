@@ -27,7 +27,7 @@ EOT;
 		$len = strlen ($s);
 		$res = '';
 		$sign = 1;
-		for ($i = 0; $i < $len && (($c = $s[$i]) <= '9' && $c >= '0') || $c == '+' || $c == '-'; $i++)
+		for ($i = 0; $i < $len && (($c = $s[$i]) <= '9' && $c >= '0') || $c == '+' || $c == '-' || $c == '.'; $i++)
 			$res .= $c;
 		if ($i == $len)
 			return floatval($res);
@@ -38,7 +38,7 @@ EOT;
 		$res = '';
 		for ($i++; $i < $len; $i++) {
 			$c = $s[$i];
-			if ($c > '9' || $c < '0') {
+			if (($c > '9' || $c < '0') && $c != '.') {
 				$out += floatval($res) * floatval($mul);
 				$mul /= 60.0;
 				$res = '';
@@ -52,21 +52,21 @@ EOT;
 	function deg2s ($d) {
 		$sign = $d <= 0 ? '-' : '+';
 		$d = abs ($d);
-		$h = intval($d);
+		$h = floor ($d);
 		$ret = sprintf ("$sign%d&deg;", $h);
-		$d = ($d - $h) * 60;
+		$d = fmod ($d, 1) * 60.0;
 		$ret = $ret . sprintf ("%02.0f'", $d);
-		$s = $d - floor ($d);
+		$s = fmod ($d, 1) * 60.0;
 		return $ret . sprintf ("%02.1f''", $s);
 	}
 
 	function deg2h ($d) {
 		$d = $d / 15.0;
-		$h = floor($d);
+		$h = floor ($d);
 		$ret = sprintf ("%02d:", $h);
-		$d = ($d - $h) * 60.0;
-		$ret = $ret . sprintf ("%02.0f:", $d);
-		$s = $d - floor ($d); // to correct problems with displying it
+		$d = fmod ($d, 1) * 60.0;
+		$ret = $ret . sprintf ("%02.0f:", floor($d));
+		$s = fmod ($d, 1) * 60.0; // to correct problems with displying it
 		return $ret . sprintf ("%02.1f", $s);
 	}
 
