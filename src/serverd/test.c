@@ -99,7 +99,7 @@ main (int argc, char **argv)
   time_t last_event = 0;
   struct ln_lnlat_posn obs;
   int type, curr_type;
-  int ndays;
+  int ndays = 5;
   int c;
 
   mtrace ();
