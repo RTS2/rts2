@@ -23,6 +23,7 @@
 #include "../utils/hms.h"
 #include "../utils/devdem.h"
 #include "status.h"
+#include "libnova.h"
 
 #define SERVERD_PORT    	5557	// default serverd port
 #define SERVERD_HOST		"localhost"	// default serverd hostname
@@ -48,7 +49,12 @@ struct radec
 };
 
 struct radec correction_buf[CORRECTION_BUF];
+
+struct ln_lnlat_posn observer;
+
 int correction_mark = 0;
+
+int only_n_corrections = 0;
 
 #define RADEC 	((struct radec *) arg)
 void
@@ -173,9 +179,13 @@ teld_handle_command (char *command)
 		  coord.ra, coord.dec);
 	  return -1;
 	}
-//      if (correction_mark < 2 && correction_mark - CORRECTION_BUF > correction_number)
-      syslog (LOG_INFO, "correction: ra %f dec %f mark %i\n", coord.ra,
-	      coord.dec, correction_mark);
+      // apply only n corrections
+      if (only_n_corrections && correction_mark > only_n_corrections)
+	{
+	  devser_write_command_end (DEVDEM_E_PARAMSVAL,
+				    "not apply - correction to hight");
+	  return -1;
+	}
       if (correction_mark - CORRECTION_BUF > correction_number)
 	{
 	  devser_write_command_end (DEVDEM_E_PARAMSVAL, "old corection");
@@ -296,6 +306,9 @@ main (int argc, char **argv)
   char *hostname = NULL;
   int c;
 
+  observer.latitude = 0;
+  observer.longtitude = 0;
+
 #ifdef DEBUG
   mtrace ();
 #endif
@@ -316,10 +329,13 @@ main (int argc, char **argv)
 	{"serverd_host", 1, 0, 's'},
 	{"serverd_port", 1, 0, 'q'},
 	{"device_name", 1, 0, 'd'},
-	{"help", 0, 0, 0},
+	{"only_n_corrections", 1, 0, 'n'},
+	{"longtitude", 1, 0, 'o'},
+	{"latitude", 1, 0, 'a'}
+	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "l:p:s:q:d:h", long_option, NULL);
+      c = getopt_long (argc, argv, "l:p:s:q:d:n:o:a:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -341,9 +357,18 @@ main (int argc, char **argv)
 	case 'd':
 	  device_name = optarg;
 	  break;
+	case 'o':
+	  observer.longtitude = atof (optarg);
+	  break;
+	case 'a':
+	  observer.latitude = atof (optarg);
+	  break;
 	case 0:
-	  printf
-	    ("Options:\n\tserverd_port|p <port_num>\t\tport of the serverd");
+	  printf ("Options:
+	tserverd_port|p <port_num>	port of the serverd
+	only_n_corrections|n <number>	apply only n corrections
+	longtitude|o <float>		site longtitude (East-West)
+	latitude|a <float>		site latitude (Nort-South)\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
