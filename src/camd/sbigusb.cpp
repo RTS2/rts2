@@ -2,8 +2,6 @@
 #define _GNU_SOURCE
 #endif
 
-#define MAX_CHIPS 	2	//maximal number of chips
-
 #include <math.h>
 #include <mcheck.h>
 #include <stdio.h>
@@ -55,8 +53,8 @@ class CameraSbigChip:public CameraChip
   int sbig_readout_mode;
 public:
     CameraSbigChip (int in_chip_id, int in_width, int in_height,
-		    int in_pixelX, int in_pixelY, float in_gain);
-   ~CameraSbigChip ();
+		    float in_pixelX, float in_pixelY, float in_gain);
+    virtual ~ CameraSbigChip ();
   virtual int setBinning (int in_vert, int in_hori)
   {
     if (in_vert != in_hori || in_vert < 1 || in_vert > 3)
@@ -73,7 +71,8 @@ public:
 };
 
 CameraSbigChip::CameraSbigChip (int in_chip_id, int in_width, int in_height,
-				int in_pixelX, int in_pixelY, float in_gain):
+				float in_pixelX, float in_pixelY,
+				float in_gain):
 CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
 {
   dest = new unsigned short[in_width * in_height];
@@ -105,10 +104,10 @@ CameraSbigChip::isExposing ()
   if (SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) ==
       CE_NO_ERROR)
     {
-      //            if ( m_eActiveCCD == CCD_IMAGING )
-      complete = (qcsr.status & 0x03) != 0x02;
-      //            else
-      //                    complete = (qcsr.status & 0x0C) != 0x08;
+      if (chipId == 0)
+	complete = (qcsr.status & 0x03) != 0x02;
+      else
+	complete = (qcsr.status & 0x0C) != 0x08;
     }
   if (complete)
     return -2;
@@ -149,13 +148,15 @@ CameraSbigChip::readoutOneLine ()
 {
   if (readoutLine < 0)
     return -1;
-  if (readoutLine < (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
+  if (readoutLine <
+      (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
       if (readoutLine < chipUsedReadout->y)
 	{
 	  DumpLinesParams dlp;
 	  dlp.ccd = chipId;
-	  dlp.lineLength = ((chipUsedReadout->y - readoutLine) / usedBinningVertical);
+	  dlp.lineLength =
+	    ((chipUsedReadout->y - readoutLine) / usedBinningVertical);
 	  dlp.readoutMode = sbig_readout_mode;
 	  SBIGUnivDrvCommand (CC_DUMP_LINES, &dlp, NULL);
 	  readoutLine = chipReadout->y;
@@ -203,7 +204,7 @@ class Rts2DevCameraSbig:public Rts2DevCamera
   }
 public:
     Rts2DevCameraSbig (int argc, char **argv);
-  ~Rts2DevCameraSbig ();
+  virtual ~ Rts2DevCameraSbig ();
 
   virtual int init ();
 
@@ -238,6 +239,10 @@ Rts2DevCameraSbig::~Rts2DevCameraSbig ()
 int
 Rts2DevCameraSbig::init ()
 {
+  int ret_c_init;
+  ret_c_init = Rts2DevCamera::init ();
+  if (ret_c_init)
+    return ret_c_init;
   pcam = new CSBIGCam (DEV_USB);
   if (pcam->GetError () != CE_NO_ERROR)
     {
@@ -288,7 +293,7 @@ Rts2DevCameraSbig::init ()
 			res.readoutInfo[0].gain);
   chips[1] = cc;
 
-  return Rts2DevCamera::init ();
+  return Rts2DevCamera::initChips ();
 }
 
 int
