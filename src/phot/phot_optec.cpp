@@ -35,6 +35,8 @@ private:
   short req_time;
   int req_count;
 
+  int filter;
+
   Rts2Conn *integrateConn;
 
   virtual int startIntegrate (float in_req_time, int in_req_count);
@@ -82,6 +84,8 @@ public:
   virtual void cancelPriorityOperations ();
 
   virtual int changeMasterState (int new_state);
+
+  virtual int info (Rts2Conn * conn);
 };
 
 class Rts2DevConnPhot:public Rts2DevConn
@@ -247,9 +251,10 @@ Rts2DevPhotOptec::idle ()
 		case '0':
 		  result = 0;
 		  ret = read (fd, &result, 2);
+		  filter = result / FILTER_STEP;
 		  if (!integrateConn)
 		    return endIntegrate ();
-		  integrateConn->sendValue ("filter_c", result / FILTER_STEP);
+		  integrateConn->sendValue ("filter", filter);
 		  setTimeout (1000);
 		  break;
 		case '-':
@@ -279,6 +284,7 @@ Rts2DevPhotOptec::idle ()
 int
 Rts2DevPhotOptec::homeFilter ()
 {
+  filter = 0;
   return phot_command (PHOT_CMD_RESET, 0);
 }
 
@@ -336,6 +342,7 @@ Rts2DevPhotOptec::moveFilter (Rts2Conn * conn, int new_filter)
   ret = phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
   if (ret)
     return -1;
+  filter = new_filter;
   conn->sendValue ("filter", new_filter);
   return 0;
 }
@@ -371,6 +378,19 @@ Rts2DevPhotOptec::changeMasterState (int new_state)
       phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
     }
   return 0;
+}
+
+int
+Rts2DevPhotOptec::info (Rts2Conn * conn)
+{
+  int ret;
+  ret = info ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
+      return -1;
+    }
+  conn->sendValue ("filter", filter);
 }
 
 int
