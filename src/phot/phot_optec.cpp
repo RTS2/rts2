@@ -7,6 +7,8 @@
 #define _GNU_SOURCE
 #endif
 
+#define FILTER_STEP  33
+
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/io.h>
@@ -247,7 +249,7 @@ Rts2DevPhotOptec::idle ()
 		  ret = read (fd, &result, 2);
 		  if (!integrateConn)
 		    return endIntegrate ();
-		  integrateConn->sendValue ("filter_c", result / 33);
+		  integrateConn->sendValue ("filter_c", result / FILTER_STEP);
 		  setTimeout (1000);
 		  break;
 		case '-':
@@ -331,7 +333,7 @@ int
 Rts2DevPhotOptec::moveFilter (Rts2Conn * conn, int new_filter)
 {
   int ret;
-  ret = phot_command (PHOT_CMD_MOVEFILTER, new_filter * 33);
+  ret = phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
   if (ret)
     return -1;
   conn->sendValue ("filter", new_filter);
