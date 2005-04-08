@@ -569,8 +569,6 @@ Rts2Centrald::idle ()
   int call_state;
   int old_current_state;
 
-  syslog (LOG_DEBUG, "Rts2Centrald::idle");
-
   curr_time = time (NULL);
 
   next_event (&observer, &curr_time, &call_state, &next_event_type,
