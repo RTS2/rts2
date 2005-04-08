@@ -6,9 +6,10 @@
 #include "../utils/config.h"
 
 #include <getopt.h>
-#include <libnova.h>
+#include <libnova/libnova.h>
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
 
 EXEC SQL include sqlca;
 
@@ -59,8 +60,6 @@ getInfo (int tar_id, struct ln_lnlat_posn *pos, double JD)
     cout << "Target " << tar_id << " is circumpolar\n";
     return 0;
   }
-
-  cout << "Target " << tar_id << " is circumpolar\n";
 
   printDate ("Rise:", rst.rise);
   printDate ("Transit:", rst.transit);
