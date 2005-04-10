@@ -2,7 +2,7 @@
 #include "telescope_info.h"
 #include "dome_info.h"
 #include "phot_info.h"
-
+#include "focuser_info.h"
 
 #include "devhnd.h"
 #include <errno.h>
@@ -316,6 +316,26 @@ phot_command_handler (struct param_status *params, struct phot_info *info)
   return -1;
 };
 
+int
+focuser_command_handler (struct param_status *params,
+			 struct focuser_info *info)
+{
+#ifdef DEBUG
+
+  printf ("focuser get response: %s\n", params->param_argv);
+#endif
+  if (!strcmp (params->param_argv, "camera"))
+    return param_next_string_copy (params, &info->camera, 20);
+  if (!strcmp (params->param_argv, "type"))
+    return param_next_string_copy (params, &info->type, 20);
+  if (!strcmp (params->param_argv, "pos"))
+    return param_next_integer (params, &info->pos);
+  if (!strcmp (params->param_argv, "temp"))
+    return param_next_float (params, &info->temp);
+  errno = EINVAL;
+  return -1;
+};
+
 struct supp_info devhnd_devices[] = {
   {
    NULL, NULL}
@@ -340,7 +360,19 @@ struct supp_info devhnd_devices[] = {
   ,				// DEVICE_TYPE_ARCH
   {
    (devcli_handle_response_t) phot_command_handler, NULL}
-  // DEVICE_TYPE_PHOT
-
+  // DEVICE_TYPE_PHOT  
+  ,
+  {
+   NULL, NULL}
+  ,
+  // DEVICE_TYPE_PLAN
+  {
+   NULL, NULL}
+  // DEVICE_TYPE_GRB
+  ,
+  {
+   (devcli_handle_response_t) focuser_command_handler, NULL}
+  // DEVICE_TYPE_FOCUS
+  // 
   // etc..
 };

@@ -52,6 +52,11 @@
 #define PHOT_NOINTEGRATE	0x00
 #define PHOT_INTEGRATE		0x01
 
+// focuser status
+#define FOC_MASK_FOCUSING	0x01
+#define FOC_SLEEPING		0x00
+#define FOC_FOCUSING		0x01
+
 // telescope status
 #define TEL_MASK_MOVING		0x07
 

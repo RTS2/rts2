@@ -1167,6 +1167,30 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
 	    }
 	}
       break;
+    case DEVICE_TYPE_MIRROR:
+      switch (st->status)
+	{
+	case MIRROR_UNKNOW:
+	  return "unknow";
+	case MIRROR_A:
+	  return "A";
+	case MIRROR_A_B:
+	  return "A->B";
+	case MIRROR_B:
+	  return "B";
+	case MIRROR_B_A:
+	  return "B->A";
+	}
+      break;
+    case DEVICE_TYPE_FOCUS:
+      switch (st->status)
+	{
+	case FOC_FOCUSING:
+	  return "focusing";
+	case FOC_SLEEPING:
+	  return "sleeping";
+	}
+      break;
     }
   return "unknow";
 }
