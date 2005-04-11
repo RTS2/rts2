@@ -38,7 +38,6 @@ function rts2-stop
 
 case "$1" in
 	start)
-		rts2-start
 		;;
 	stop)
 		rts2-stop

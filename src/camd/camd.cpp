@@ -294,7 +294,7 @@ Rts2DevCamera::cancelPriorityOperations ()
   int i;
   for (i = 0; i < chipNum; i++)
     {
-      chips[i]->stopExposure ();
+      chips[i]->endExposure ();
       chips[i]->endReadout ();
     }
 }
