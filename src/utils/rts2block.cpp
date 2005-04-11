@@ -17,6 +17,11 @@
 #include <unistd.h>
 
 #include "rts2block.h"
+#include "rts2command.h"
+#include "rts2client.h"
+#include "rts2dataconn.h"
+
+#include "imghdr.h"
 
 Rts2Conn::Rts2Conn (Rts2Block * in_master)
 {
@@ -27,8 +32,12 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master)
   priority = -1;
   have_priority = 0;
   centrald_id = -1;
-  conn_state = 0;
+  conn_state = CONN_UNKNOW;
   type = NOT_DEFINED_SERVER;
+  runningCommand = NULL;
+  for (int i = 0; i < MAX_STATE; i++)
+    serverState[i] = NULL;
+  otherDevice = NULL;
 }
 
 Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master)
@@ -40,14 +49,22 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master)
   priority = -1;
   have_priority = 0;
   centrald_id = -1;
-  conn_state = 0;
+  conn_state = CONN_CONNECTED;
   type = NOT_DEFINED_SERVER;
+  runningCommand = NULL;
+  for (int i = 0; i < MAX_STATE; i++)
+    serverState[i] = NULL;
+  otherDevice = NULL;
 }
 
 Rts2Conn::~Rts2Conn (void)
 {
   if (sock >= 0)
     close (sock);
+  for (int i = 0; i < MAX_STATE; i++)
+    if (serverState[i])
+      delete serverState[i];
+  delete otherDevice;
 }
 
 int
@@ -76,8 +93,59 @@ Rts2Conn::acceptConn ()
       close (sock);
       sock = new_sock;
       syslog (LOG_DEBUG, "Rts2Conn::acceptConn connection accepted");
-      conn_state = 0;
+      conn_state = CONN_CONNECTED;
       return 0;
+    }
+}
+
+int
+Rts2Conn::setState (int in_state_num, char *in_state_name, int in_value)
+{
+  if (!serverState[in_state_num])
+    serverState[in_state_num] = new Rts2ServerState (in_state_name);
+  serverState[in_state_num]->value = in_value;
+  if (otherDevice)
+    otherDevice->stateChanged (serverState[in_state_num]);
+  return 0;
+}
+
+int
+Rts2Conn::setState (char *in_state_name, int in_value)
+{
+  for (int i = 0; i < MAX_STATE; i++)
+    {
+      Rts2ServerState *state;
+      state = serverState[i];
+      if (state && !strcmp (state->name, in_state_name))
+	{
+	  state->value = in_value;
+	  if (otherDevice)
+	    otherDevice->stateChanged (state);
+	  return 0;
+	}
+    }
+  return -1;
+}
+
+void
+Rts2Conn::setOtherType (int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_MOUNT:
+      otherDevice = new Rts2DevClientTelescope (this);
+      break;
+    case DEVICE_TYPE_CCD:
+      otherDevice = new Rts2DevClientCamera (this);
+      break;
+    case DEVICE_TYPE_DOME:
+      otherDevice = new Rts2DevClientDome (this);
+      break;
+    case DEVICE_TYPE_PHOT:
+      otherDevice = new Rts2DevClientPhot (this);
+      break;
+    default:
+      otherDevice = new Rts2DevClient (this);
     }
 }
 
@@ -86,11 +154,11 @@ Rts2Conn::receive (fd_set * set)
 {
   int data_size = 0;
   // connections market for deletion
-  if (conn_state == 5)
+  if (conn_state == CONN_DELETE)
     return -1;
   if ((sock >= 0) && FD_ISSET (sock, set))
     {
-      if (conn_state == 1)
+      if (conn_state == CONN_CONNECTING)
 	{
 	  return acceptConn ();
 	}
@@ -188,7 +256,7 @@ Rts2Conn::receive (fd_set * set)
 }
 
 int
-Rts2Conn::getName (struct sockaddr_in *addr)
+Rts2Conn::getOurAddress (struct sockaddr_in *addr)
 {
   // get our address and pass it to data conn
   socklen_t size;
@@ -213,12 +281,18 @@ Rts2Conn::getAddress (char *addrBuf, int buf_size)
   addrBuf[buf_size - 1] = '0';
 }
 
+int
+Rts2Conn::havePriority ()
+{
+  return have_priority || master->grantPriority (this);
+}
+
 void
 Rts2Conn::setCentraldId (int in_centrald_id)
 {
   centrald_id = in_centrald_id;
   master->checkPriority (this);
-};
+}
 
 int
 Rts2Conn::sendPriorityInfo (int number)
@@ -232,9 +306,95 @@ Rts2Conn::sendPriorityInfo (int number)
 }
 
 int
+Rts2Conn::queCommand (Rts2Command * command)
+{
+  command->setConnection (this);
+  if (runningCommand || conn_state != CONN_CONNECTED)
+    {
+      commandQue.push_back (command);
+      return 0;
+    }
+  delete runningCommand;
+  runningCommand = command;
+  return command->send ();
+}
+
+int
+Rts2Conn::queSend (Rts2Command * command)
+{
+  command->setConnection (this);
+  if (runningCommand)
+    commandQue.push_front (runningCommand);
+  runningCommand = command;
+  return runningCommand->send ();
+}
+
+// high-level commands, used to pass variables etc..
+int
 Rts2Conn::command ()
 {
-//  send (buf);
+  if (isCommand ("device"))
+    {
+      int p_centraldId;
+      char *p_name;
+      char *p_host;
+      int p_port;
+      int p_device_type;
+      if (paramNextInteger (&p_centraldId)
+	  || paramNextString (&p_name)
+	  || paramNextString (&p_host)
+	  || paramNextInteger (&p_port)
+	  || paramNextInteger (&p_device_type) || !paramEnd ())
+	return -2;
+      master->addAddress (p_name, p_host, p_port, p_device_type);
+      return -1;
+    }
+  if (isCommand ("user"))
+    {
+      int p_centraldId;
+      int p_priority;
+      char *p_priority_have;
+      char *p_login;
+      char *p_status_txt = NULL;
+      if (paramNextInteger (&p_centraldId)
+	  || paramNextInteger (&p_priority)
+	  || paramNextString (&p_priority_have)
+	  || paramNextString (&p_login)
+	  || paramNextStringNull (&p_status_txt))
+	return -2;
+      master->addUser (p_centraldId, p_priority, (*p_priority_have == '*'),
+		       p_login, p_status_txt);
+      return -1;
+    }
+  if (isCommand ("D"))
+    {
+      char *p_command;
+      if (paramNextString (&p_command))
+	return -2;
+      if (!strcmp (p_command, "connect"))
+	{
+	  int p_chip_id;
+	  char *p_hostname;
+	  int p_port;
+	  int p_size;
+	  if (paramNextInteger (&p_chip_id)
+	      || paramNextString (&p_hostname)
+	      || paramNextInteger (&p_port)
+	      || paramNextInteger (&p_size) || !paramEnd ())
+	    return -2;
+	  master->addDataConnection (this, p_hostname, p_port, p_size);
+	  return -1;
+	}
+      return -2;
+    }
+  // try otherDevice
+  if (otherDevice)
+    {
+      int ret;
+      ret = otherDevice->command ();
+      if (ret == -1)
+	return ret;
+    }
   sendCommandEnd (-4, "Unknow command");
   return -4;
 }
@@ -242,13 +402,61 @@ Rts2Conn::command ()
 int
 Rts2Conn::informations ()
 {
-  return 0;
+  char *sub_command;
+  int stat_num;
+  char *state_name;
+  int value;
+  if (paramNextString (&sub_command)
+      || paramNextInteger (&stat_num)
+      || paramNextString (&state_name)
+      || paramNextInteger (&value) || !paramEnd ())
+    return -2;
+  // set initial state & name
+  setState (stat_num, state_name, value);
+  return -1;
 }
 
 int
 Rts2Conn::status ()
 {
-  return 0;
+  char *stat_name;
+  int value;
+  char *stat_text;
+  if (paramNextString (&stat_name)
+      || paramNextInteger (&value) || paramNextStringNull (&stat_text))
+    return -2;
+  setState (stat_name, value);
+  return -1;
+}
+
+int
+Rts2Conn::commandReturn ()
+{
+  int ret;
+  // ignore (for the moment) retuns recieved without command
+  if (!runningCommand)
+    {
+      return -1;
+    }
+  ret = runningCommand->commandReturn (atoi (getCommand ()));
+  switch (ret)
+    {
+    case RTS2_COMMAND_REQUE:
+      break;
+    case -1:
+      // pop next command
+      if (commandQue.size () > 0)
+	{
+	  runningCommand = *(commandQue.begin ());
+	  commandQue.erase (commandQue.begin ());
+	  break;
+	}
+      runningCommand = NULL;
+      break;
+    }
+  if (runningCommand)
+    runningCommand->send ();
+  return -1;
 }
 
 int
@@ -368,6 +576,16 @@ Rts2Conn::paramNextString (char **str)
 }
 
 int
+Rts2Conn::paramNextStringNull (char **str)
+{
+  int ret;
+  ret = paramNextString (str);
+  if (ret)
+    return !paramEnd ();
+  return ret;
+}
+
+int
 Rts2Conn::paramNextInteger (int *num)
 {
   char *str_num;
@@ -406,6 +624,26 @@ Rts2Conn::paramNextFloat (float *num)
   return 0;
 }
 
+void
+Rts2Conn::dataReceived (Rts2ClientTCPDataConn * dataConn)
+{
+  // calculate mean..
+  double mean = 0;
+  unsigned short *pixel = dataConn->getData ();
+  unsigned short *top = dataConn->getTop ();
+  while (pixel < top)
+    {
+      mean += *pixel;
+      pixel++;
+    }
+  mean /= dataConn->getSize ();
+  syslog (LOG_DEBUG, "Rts2Conn::dataReceived mean: %f", mean);
+  if (otherDevice)
+    {
+      otherDevice->dataReceived (dataConn);
+    }
+}
+
 Rts2Block::Rts2Block (int in_argc, char **in_argv)
 {
   argc = in_argc;
@@ -418,11 +656,13 @@ Rts2Block::Rts2Block (int in_argc, char **in_argv)
     {
       connections[i] = NULL;
     }
+  addOption ('M', "mail-to", 1, "send report mails to this adresses");
   addOption ('h', "help", 0, "write this help");
   addOption ('i', "interactive", 0,
 	     "run in interactive mode, don't loose console");
 
   deamonize = 1;
+  mailAddress = NULL;
   signal (SIGPIPE, SIG_IGN);
 
   masterState = 0;
@@ -434,7 +674,7 @@ Rts2Block::~Rts2Block (void)
 
   close (sock);
 
-  for (opt_iter - options.begin (); opt_iter != options.end (); opt_iter++)
+  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
     {
       delete (*opt_iter);
     }
@@ -550,6 +790,18 @@ Rts2Block::createConnection (int in_sock, int conn_num)
   return new Rts2Conn (in_sock, this);
 }
 
+Rts2Conn *
+Rts2Block::addDataConnection (Rts2Conn * owner_conn, char *in_hostname,
+			      int in_port, int in_size)
+{
+  Rts2Conn *conn;
+  conn =
+    new Rts2ClientTCPDataConn (this, owner_conn, in_hostname, in_port,
+			       in_size);
+  addConnection (conn);
+  return conn;
+}
+
 int
 Rts2Block::addConnection (int in_sock)
 {
@@ -560,6 +812,24 @@ Rts2Block::addConnection (int in_sock)
 	{
 	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
 	  connections[i] = createConnection (in_sock, i);
+	  return 0;
+	}
+    }
+  syslog (LOG_ERR,
+	  "Rts2Block::addConnection Cannot find empty connection!\n");
+  return -1;
+}
+
+int
+Rts2Block::addConnection (Rts2Conn * conn)
+{
+  int i;
+  for (i = 0; i < MAX_CONN; i++)
+    {
+      if (!connections[i])
+	{
+	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
+	  connections[i] = conn;
 	  return 0;
 	}
     }
@@ -579,6 +849,8 @@ Rts2Block::findName (char *in_name)
 	if (!strcmp (conn->getName (), in_name))
 	  return conn;
     }
+  // if connection not found, try to look to list of available
+  // connections
   return NULL;
 }
 
@@ -625,10 +897,17 @@ int
 Rts2Block::idle ()
 {
   int ret;
+  Rts2Conn *conn;
   ret = waitpid (-1, NULL, WNOHANG);
   if (ret > 0)
     {
       syslog (LOG_DEBUG, "Child returned: %i", ret);
+    }
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      conn = connections[i];
+      if (conn)
+	conn->idle ();
     }
   return 0;
 }
@@ -643,7 +922,9 @@ Rts2Block::run ()
   fd_set read_set;
   int i;
 
-  while (1)
+  end_loop = 0;
+
+  while (!end_loop)
     {
       read_tout.tv_sec = idle_timeout / USEC_SEC;
       read_tout.tv_usec = idle_timeout % USEC_SEC;
@@ -690,7 +971,9 @@ Rts2Block::run ()
 		}
 	    }
 	}
-      idle ();
+      ret = idle ();
+      if (ret == -1)
+	break;
     }
 }
 
@@ -758,6 +1041,9 @@ Rts2Block::processOption (int in_opt)
     case 'i':
       deamonize = 0;
       break;
+    case 'M':
+      mailAddress = optarg;
+      break;
     case 'h':
     case 0:
       help ();
@@ -778,6 +1064,10 @@ Rts2Block::sendMail (char *subject, char *text)
   char *cmd;
   FILE *mailFile;
 
+  // no mail will be send
+  if (!mailAddress)
+    return 0;
+
   // fork so we will not inhibit calling process..
   ret = fork ();
   if (ret == -1)
@@ -789,8 +1079,7 @@ Rts2Block::sendMail (char *subject, char *text)
     {
       return 0;
     }
-  asprintf (&cmd, "/usr/bin/mail -s '%s' 'petr@kubanek.net,prouza@fzu.cz'",
-	    subject);
+  asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, mailAddress);
   mailFile = popen (cmd, "w");
   if (!mailFile)
     {
@@ -801,4 +1090,160 @@ Rts2Block::sendMail (char *subject, char *text)
   pclose (mailFile);
   free (cmd);
   exit (0);
+}
+
+Rts2Address *
+Rts2Block::findAddress (char *blockName)
+{
+  std::list < Rts2Address * >::iterator addr_iter;
+
+  for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
+       addr_iter++)
+    {
+      Rts2Address *addr = (*addr_iter);
+      if (addr->isAddress (blockName))
+	{
+	  return addr;
+	}
+    }
+  return NULL;
+}
+
+void
+Rts2Block::addAddress (const char *p_name, const char *p_host, int p_port,
+		       int p_device_type)
+{
+  int ret;
+  std::list < Rts2Address * >::iterator addr_iter;
+  for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
+       addr_iter++)
+    {
+      ret = (*addr_iter)->update (p_name, p_host, p_port, p_device_type);
+      if (!ret)
+	return;
+    }
+  addAddress (new Rts2Address (p_name, p_host, p_port, p_device_type));
+}
+
+int
+Rts2Block::addAddress (Rts2Address * in_addr)
+{
+  Rts2Conn *conn;
+  blockAddress.push_back (in_addr);
+  // recheck all connections waiting for our address
+  conn = getOpenConnection (in_addr->getName ());
+  if (conn)
+    conn->addressAdded (in_addr);
+  return 0;
+}
+
+void
+Rts2Block::addUser (int p_centraldId, int p_priority, char p_priority_have,
+		    const char *p_login, const char *p_status_txt)
+{
+  int ret;
+  std::list < Rts2User * >::iterator user_iter;
+  for (user_iter = blockUsers.begin (); user_iter != blockUsers.end ();
+       user_iter++)
+    {
+      ret =
+	(*user_iter)->update (p_centraldId, p_priority, p_priority_have,
+			      p_login, p_status_txt);
+      if (!ret)
+	return;
+    }
+  addUser (new
+	   Rts2User (p_centraldId, p_priority, p_priority_have, p_login,
+		     p_status_txt));
+}
+
+int
+Rts2Block::addUser (Rts2User * in_user)
+{
+  blockUsers.push_back (in_user);
+}
+
+Rts2Conn *
+Rts2Block::getOpenConnection (char *deviceName)
+{
+  Rts2Conn *conn;
+
+  // try to find active connection..
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      conn = connections[i];
+      if (!conn)
+	continue;
+      if (conn->isName (deviceName))
+	return conn;
+    }
+  return NULL;
+}
+
+Rts2Conn *
+Rts2Block::getConnection (char *deviceName)
+{
+  Rts2Conn *conn;
+  Rts2Address *devAddr;
+
+  conn = getOpenConnection (deviceName);
+  if (conn)
+    return conn;
+
+  devAddr = findAddress (deviceName);
+
+  if (!devAddr)
+    {
+      syslog (LOG_ERR,
+	      "Cannot find device with name '%s', creating new connection",
+	      deviceName);
+      conn = createClientConnection (deviceName);
+      addConnection (conn);
+      return conn;
+    }
+
+  // open connection to given address..
+  conn = createClientConnection (devAddr);
+  addConnection (conn);
+  return conn;
+}
+
+int
+Rts2Block::queAll (Rts2Command * command)
+{
+  // go throught all adresses
+  std::list < Rts2Address * >::iterator addr_iter;
+  Rts2Conn *conn;
+
+  for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
+       addr_iter++)
+    {
+      conn = getConnection ((*addr_iter)->getName ());
+      conn->queCommand (command);
+    }
+  return 0;
+}
+
+int
+Rts2Block::queAll (char *text)
+{
+  return queAll (new Rts2Command (this, text));
+}
+
+int
+Rts2Block::allQuesEmpty ()
+{
+  int ret;
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	{
+	  ret = conn->queEmpty ();
+	  if (!ret)
+	    return ret;
+	}
+    }
+  return ret;
 }

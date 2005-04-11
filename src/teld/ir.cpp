@@ -34,6 +34,9 @@ private:
   int ir_port;
   Client *tplc;
   int timeout;
+  float cover;
+  enum
+  { OPEN, OPENING, CLOSING, CLOSED } cover_state;
 
   struct ln_equ_posn target;
 
@@ -45,6 +48,9 @@ private:
 					  int *status);
 
   double get_loc_sid_time ();
+
+  virtual int coverClose ();
+  virtual int coverOpen ();
 
 public:
     Rts2DevTelescopeIr (int argc, char **argv);
@@ -61,6 +67,8 @@ public:
   virtual int isParking ();
   virtual int endPark ();
   virtual int stop ();
+  virtual int changeMasterState (int new_state);
+  virtual int idle ();
 };
 
 template < typename T > int
@@ -134,6 +142,29 @@ Rts2DevTelescopeIr::tpl_setw (const char *name, T val, int *status)
   return *status;
 }
 
+int
+Rts2DevTelescopeIr::coverClose ()
+{
+  int status = 0;
+  if (cover_state = CLOSED)
+    return 0;
+  status = tpl_set ("COVER.TARGETPOS", 0, &status);
+  status = tpl_set ("COVER.POWER", 1, &status);
+  cover_state = CLOSING;
+  return status;
+}
+
+int
+Rts2DevTelescopeIr::coverOpen ()
+{
+  int status = 0;
+  if (cover_state == OPENED)
+    return 0;
+  status = tpl_set ("COVER.TARGETPOS", 1, &status);
+  status = tpl_set ("COVER.POWER", 1, &status);
+  cover_state = OPENING;
+  return status;
+}
 
 Rts2DevTelescopeIr::Rts2DevTelescopeIr (int argc, char **argv):Rts2DevTelescope (argc,
 		  argv)
@@ -146,6 +177,9 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int argc, char **argv):Rts2DevTelescope 
 
   strcpy (telType, "BOOTES_IR");
   strcpy (telSerialNumber, "001");
+
+  cover = 0;
+  cover_state = CLOSED;
 }
 
 Rts2DevTelescopeIr::~Rts2DevTelescopeIr (void)
@@ -174,6 +208,7 @@ int
 Rts2DevTelescopeIr::init ()
 {
   int ret;
+  int status = 0;
   ret = Rts2DevTelescope::init ();
   if (ret)
     return ret;
@@ -197,6 +232,13 @@ Rts2DevTelescopeIr::init ()
       syslog (LOG_ERR, "Connection to server failed");
       return -1;
     }
+  tpl_get ("COVER.REALPOS", cover, &status);
+  if (cover == 0)
+    cover_state = CLOSED;
+  else if (cover == 1)
+    cover_state = OPENED;
+  else
+    cover_state = CLOSING;
   return 0;
 }
 
@@ -331,6 +373,58 @@ Rts2DevTelescopeIr::stop ()
   info ();
   startMove (telRa, telDec);
   return 0;
+}
+
+int
+Rts2DevConnTelescope::commandAuthorized ()
+{
+  if (isCommand ("cover"))
+    {
+
+    }
+return Rts2}
+
+int
+Rts2DevTelescopeIr::changeMasterState (int new_state)
+{
+  switch (new_state)
+    {
+    case SERVERD_NIGHT:
+      return coverOpen ();
+    default:
+      return coverClose ();
+    }
+  return 0;
+}
+
+int
+Rts2DevTelescopeIr::idle ()
+{
+  int status;
+  switch (cover_state)
+    {
+    case OPENING:
+      tpl_get ("COVER.REALPOS", cover, &state);
+      if (cover == 1.0)
+	{
+	  tpl_set ("COVER.POWER", 0, &state);
+	  cover_state = OPENED;
+	  break;
+	}
+      setTimeout (USEC_SEC);
+      break;
+    case CLOSING:
+      tpl_get ("COVER.REALPOS", cover, &state);
+      if (cover == 0.0)
+	{
+	  tpl_set ("COVER.POWER", 0, &state);
+	  cover_state = OPENED;
+	  break;
+	}
+      setTimeout (USEC_SEC);
+      break;
+    }
+  return Rts2DevTelescope::idle ();
 }
 
 int

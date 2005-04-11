@@ -27,7 +27,6 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   telLongtitude = nan ("f");
   telLatitude = nan ("f");
   telAltitude = nan ("f");
-  telParkDec = nan ("f");
 }
 
 int
@@ -145,7 +144,6 @@ Rts2DevTelescope::baseInfo (Rts2Conn * conn)
   conn->sendValue ("longtitude", telLongtitude);
   conn->sendValue ("latitude", telLatitude);
   conn->sendValue ("altitude", telAltitude);
-  conn->sendValue ("park_dec", telParkDec);
   return 0;
 }
 

@@ -42,9 +42,6 @@
 
 #define TCM_DEFAULT_RATE	32768
 
-//! telescope parking declination
-#define PARK_DEC	0
-
 class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
 private:
@@ -719,8 +716,6 @@ Rts2DevTelescopeGemini::baseInfo ()
   strcpy (telSerialNumber, "000001");
   telAltitude = 600;
 
-  telParkDec = PARK_DEC;
-
   return 0;
 }
 
@@ -916,8 +911,16 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
   if (tel_read_ra () || tel_read_dec ())
     return -1;
 
+  // do not change if we are too close to poles
+  if (fabs (dec_act) > 85)
+    return -1;
+
   ra_act -= telRa;
   dec_act -= telDec;
+
+  // do not change if we are too close to poles
+  if (fabs (dec_act) > 85)
+    return -1;
 
   return setTo (ra_act, dec_act);
 }

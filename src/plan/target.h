@@ -9,6 +9,8 @@
 #include "image_info.h"
 #include "status.h"
 
+#include "../utils/objectcheck.h"
+
 #define MAX_READOUT_TIME		120
 #define EXPOSURE_TIMEOUT		50
 
@@ -76,15 +78,11 @@ struct ex_info
 class Target
 {
 private:
-  struct device *telescope;
-  struct ln_lnlat_posn *observer;
   struct thread_list thread_l;
 
   int get_info (struct device *cam,
 		float exposure, hi_precision_t * img_hi_precision);
 
-  virtual int runScript (struct ex_info *exinfo);	// script for each device
-  virtual int get_script (struct device *camera, char *buf);
   int dec_script_thread_count (void);
   int join_script_thread ();
 
@@ -109,44 +107,23 @@ private:
   int obs_id;
 
   int tel_target_state;
+protected:
+  int target_id;
+
+  struct device *telescope;
+  struct ln_lnlat_posn *observer;
+
+  virtual int runScript (struct ex_info *exinfo);	// script for each device
+  virtual int get_script (struct device *camera, char *buf);
+
+  // print nice formated log strings
+  void logMsg (const char *message);
+  void logMsg (const char *message, int num);
+  void logMsg (const char *message, long num);
+  void logMsg (const char *message, double num);
+  void logMsg (const char *message, const char *val);
 public:
-    Target (struct device *tel, struct ln_lnlat_posn *obs)
-  {
-    printf ("tel: %p\n", tel);
-    telescope = tel;
-    observer = obs;
-
-    pthread_mutex_init (&move_count_mutex, NULL);
-    pthread_cond_init (&move_count_cond, NULL);
-    move_count = 0;		// number of es 
-
-    precission_count = 0;
-
-    pthread_mutex_init (&script_thread_count_mutex, NULL);
-    pthread_cond_init (&script_thread_count_cond, NULL);
-    script_thread_count = 0;	// number of running scripts...
-
-    running_script_count = 0;	// number of running scripts (not in W)
-
-    thread_l.next = NULL;
-    thread_l.thread = 0;
-    hi_precision = 0;
-
-    // prepare closed loop precission
-
-    pthread_mutex_init (&closed_loop_mutex, NULL);
-    pthread_cond_init (&closed_loop_cond, NULL);
-
-    closed_loop_precission.ntries = 0;
-    closed_loop_precission.mutex = &closed_loop_mutex;
-    closed_loop_precission.cond = &closed_loop_cond;
-    closed_loop_precission.hi_precision = hi_precision;
-
-    obs_id = -1;
-    moved = 0;
-
-    tel_target_state = TEL_OBSERVING;
-  }
+    Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
   int getPosition (struct ln_equ_posn *pos)
   {
     return getPosition (pos, ln_get_julian_from_sys ());
@@ -159,8 +136,7 @@ public:
   {
     hi_precision = in_hi_precission;
   };
-  virtual int getRST (struct ln_equ_posn *pos, struct ln_rst_time *rst,
-		      double jd)
+  virtual int getRST (struct ln_rst_time *rst, double jd)
   {
     return -1;
   };
@@ -204,14 +180,15 @@ public:
   virtual int acquire ();	// one extra thread
   virtual int run ();		// start per device threads
   virtual int postprocess ();	// run in extra thread
+  virtual int considerForObserving (ObjectCheck * checker, double lst);	// return 0, when target can be observed, otherwise modify tar_bonus..
+  virtual int dropBonus ();
+  virtual int changePriority (int pri_change, double validJD);
   int type;			// light, dark, flat, flat_dark
-  int id;
   char obs_type;		// SKY_SURVEY, GBR, .. 
   time_t start_time;
   int moved;
   int tolerance;
   int hi_precision;		// when 1, image will get imediate astrometry and telescope status will be updated
-  Target *next;
 };
 
 class ConstTarget:public Target
@@ -219,20 +196,19 @@ class ConstTarget:public Target
 private:
   struct ln_equ_posn position;
 public:
-    ConstTarget (struct device *tel, struct ln_lnlat_posn *obs,
-		 struct ln_equ_posn *in_pos);
+    ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
-		      double jd);
+  virtual int getRST (struct ln_rst_time *rst, double jd);
 };
 
 class TargetFocusing:public ConstTarget
 {
-private:
+protected:
   virtual int get_script (struct device *camera, char *buf);
 public:
-    TargetFocusing (struct device *tel, struct ln_lnlat_posn *obs,
-		    struct ln_equ_posn *in_pos):ConstTarget (tel, obs, in_pos)
+    TargetFocusing (int in_tar_id,
+		    struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id,
+							       in_obs)
   {
   };
 };
@@ -242,32 +218,28 @@ class EllTarget:public Target
 private:
   struct ln_ell_orbit orbit;
 public:
-    EllTarget (struct device *tel, struct ln_lnlat_posn *obs,
-	       struct ln_ell_orbit *in_orbit);
+    EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
-		      double jd);
-};
-
-class ParTarget:public Target
-{
-private:
-  struct ln_par_orbit orbit;
-public:
-    ParTarget (struct device *tel, struct ln_lnlat_posn *obs,
-	       struct ln_par_orbit *in_orbit);
-  virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
-		      double jd);
+  virtual int getRST (struct ln_rst_time *rst, double jd);
 };
 
 class LunarTarget:public Target
 {
 public:
-  LunarTarget (struct device *tel, struct ln_lnlat_posn *obs);
+  LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
-		      double jd);
+  virtual int getRST (struct ln_rst_time *rst, double jd);
+};
+
+class TargetGRB:public ConstTarget
+{
+protected:
+//  virtual int get_script (struct device *camera, char *buf);
+public:
+  TargetGRB (int in_tar_id,
+	     struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+  {
+  };
 };
 
 #endif /*! __RTS_TARGET__ */

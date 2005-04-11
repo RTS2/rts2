@@ -40,6 +40,8 @@
 #define HOST_NAME_MAX		255
 #endif
 
+class Rts2ConnCentrald;
+
 class Rts2Centrald:public Rts2Block
 {
   int priority_client;
@@ -54,8 +56,20 @@ protected:
   int idle ();
 
   virtual int processOption (int in_opt);
+
+  // those callbacks are now empty; they can be use in future
+  // to link two centrald to enable cooperative observation
+  virtual Rts2Conn *createClientConnection (char *in_deviceName)
+  {
+    return NULL;
+  }
+  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
+  {
+    return NULL;
+  }
+
 public:
-    Rts2Centrald (int in_argc, char **in_argv);
+  Rts2Centrald (int in_argc, char **in_argv);
 
   int init ();
   int changePriority (time_t timeout);
@@ -63,25 +77,26 @@ public:
   int changeStateOn ()
   {
     return changeState ((next_event_type + 5) % 6);
-  };
+  }
   int changeStateStandby ()
   {
     return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6));
-  };
+  }
   int changeStateOff ()
   {
     return changeState (SERVERD_OFF);
-  };
+  }
   inline int getState ()
   {
     return current_state;
-  };
+  }
   inline int getPriorityClient ()
   {
     return priority_client;
-  };
+  }
 
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  void connAdded (Rts2ConnCentrald * added);
 };
 
 class Rts2ConnCentrald:public Rts2Conn
@@ -191,7 +206,7 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
       free (msg);
       break;
     case DEVICE_SERVER:
-      asprintf (&msg, "device %i %s %s:%i %i",
+      asprintf (&msg, "device %i %s %s %i %i",
 		getCentraldId (), getName (), hostname, port, device_type);
       ret = conn->send (msg);
       free (msg);
@@ -211,6 +226,11 @@ Rts2ConnCentrald::commandDevice ()
 	  || paramNextInteger (&key) || !paramEnd ())
 	return -2;
 
+      if (client >= MAX_CONN || client < 0)
+	{
+	  return -2;
+	}
+
       if (master->connections[client]->getKey () == 0)
 	{
 	  sendValue ("authorization_failed", client);
@@ -229,6 +249,7 @@ Rts2ConnCentrald::commandDevice ()
       master->connections[client]->setKey (0);
 
       sendValue ("authorization_ok", client);
+      sendInfo ();
 
       return 0;
     }
@@ -403,6 +424,7 @@ Rts2ConnCentrald::command ()
 	  strncpy (login, in_login, CLIENT_LOGIN_SIZE);
 
 	  setType (CLIENT_SERVER);
+	  master->connAdded (this);
 	  return 0;
 	}
       else
@@ -441,11 +463,12 @@ Rts2ConnCentrald::command ()
 	  if (master->getPriorityClient () > -1)
 	    sendValue ("M priority_change", master->getPriorityClient (), 0);
 
-	  asprintf (&msg, "device %i %s %s:%i %i",
+	  asprintf (&msg, "device %i %s %s %i %i",
 		    master->getPriorityClient (), reg_device, hostname, port,
 		    device_type);
 	  ret = send (msg);
 	  free (msg);
+	  master->connAdded (this);
 	  return ret;
 	}
       else
@@ -503,6 +526,18 @@ Rts2Conn *
 Rts2Centrald::createConnection (int in_sock, int conn_num)
 {
   return new Rts2ConnCentrald (in_sock, this, conn_num);
+}
+
+void
+Rts2Centrald::connAdded (Rts2ConnCentrald * added)
+{
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	added->sendInfo (conn);
+    }
 }
 
 /*!
@@ -568,8 +603,6 @@ Rts2Centrald::idle ()
 
   int call_state;
   int old_current_state;
-
-  syslog (LOG_DEBUG, "Rts2Centrald::idle");
 
   curr_time = time (NULL);
 

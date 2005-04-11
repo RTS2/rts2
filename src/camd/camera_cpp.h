@@ -144,10 +144,13 @@ public:
   void clearReadout ();
   virtual int sendFirstLine ();
   virtual int readoutOneLine ();
+  virtual void cancelPriorityOperations ();
 };
 
 class Rts2DevCamera:public Rts2Device
 {
+private:
+  char *focuserDevice;
 protected:
   char *device_file;
   // camera chips
@@ -166,8 +169,7 @@ protected:
   char serialNumber[64];
 
   float nightCoolTemp;
-protected:
-    virtual void cancelPriorityOperations ();
+  virtual void cancelPriorityOperations ();
 
 public:
     Rts2DevCamera (int argc, char **argv);
@@ -265,6 +267,16 @@ public:
   int camCoolTemp (Rts2Conn * conn, float new_temp);
   int camCoolShutdown (Rts2Conn * conn);
   int camFilter (Rts2Conn * conn, int new_filter);
+
+  virtual int grantPriority (Rts2Conn * conn)
+  {
+    if (focuserDevice)
+      {
+	if (conn->isName (focuserDevice))
+	  return 1;
+      }
+    return Rts2Device::grantPriority (conn);
+  }
 };
 
 class Rts2DevConnCamera:public Rts2DevConn

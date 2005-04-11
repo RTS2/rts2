@@ -2,7 +2,7 @@
  * @file Plan test client
  * $Id$
  *
- * Planner client.
+ * Performs only one observation of given target.
  *
  * @author petr
  */

@@ -17,14 +17,142 @@
 
 #include "status.h"
 #include "rts2device.h"
+#include "rts2command.h"
 
 #define MINDATAPORT		5556
 #define MAXDATAPORT		5656
 
+Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Block * in_master, char *in_name):
+Rts2Conn (in_master)
+{
+  setName (in_name);
+  conn_state = CONN_RESOLVING_DEVICE;
+  address = NULL;
+}
+
+Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Block * in_master, Rts2Address * in_addr):Rts2Conn
+  (in_master)
+{
+  conn_state = CONN_CONNECTING;
+  setName (in_addr->getName ());
+  setAddress (in_addr);
+  init ();
+}
+
+Rts2Dev2DevConn::~Rts2Dev2DevConn (void)
+{
+}
+
+int
+Rts2Dev2DevConn::init ()
+{
+  int ret;
+  struct addrinfo *device_addr;
+  if (!address)
+    return -1;
+
+  ret = address->getSockaddr (&device_addr);
+
+  if (ret)
+    return ret;
+  sock =
+    socket (device_addr->ai_family, device_addr->ai_socktype,
+	    device_addr->ai_protocol);
+  if (sock == -1)
+    {
+      return -1;
+    }
+  ret = fcntl (sock, F_SETFL, O_NONBLOCK);
+  if (ret == -1)
+    {
+      return -1;
+    }
+  ret = connect (sock, device_addr->ai_addr, device_addr->ai_addrlen);
+  freeaddrinfo (device_addr);
+  if (ret == -1)
+    {
+      if (errno = EINPROGRESS)
+	{
+	  conn_state = CONN_CONNECTING;
+	  return 0;
+	}
+      return -1;
+    }
+  connAuth ();
+  return 0;
+}
+
+int
+Rts2Dev2DevConn::idle ()
+{
+  switch (conn_state)
+    {
+    case CONN_CONNECTING:
+      int err;
+      int ret;
+      socklen_t len = sizeof (err);
+
+      ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
+      if (ret)
+	{
+	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %m");
+	  conn_state = CONN_DELETE;
+	  break;
+	}
+      if (err)
+	{
+	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %s",
+		  strerror (err));
+	  conn_state = CONN_DELETE;
+	  break;
+	}
+      connAuth ();
+      break;
+    }
+  return Rts2Conn::idle ();
+}
+
+void
+Rts2Dev2DevConn::setAddress (Rts2Address * in_addr)
+{
+  address = in_addr;
+  setOtherType (address->getType ());
+}
+
+void
+Rts2Dev2DevConn::addressAdded (Rts2Address * in_addr)
+{
+  if (isName (in_addr->getName ()))
+    {
+      setAddress (in_addr);
+      init ();
+    }
+}
+
+void
+Rts2Dev2DevConn::connAuth ()
+{
+  master->getCentraldConn ()->
+    queCommand (new Rts2CommandAuthorize (master, getName ()));
+  conn_state = CONN_AUTH_PENDING;
+}
+
+void
+Rts2Dev2DevConn::setKey (int in_key)
+{
+  Rts2Conn::setKey (in_key);
+  if (conn_state == CONN_AUTH_PENDING)
+    {
+      // que to begining, send command
+      // kill all runinng commands
+      queSend (new Rts2CommandSendKey (master, in_key));
+    }
+}
+
 int
 Rts2DevConn::connectionError ()
 {
-  if (conn_state == RTS2_CONN_AUTH_PENDING)
+  if (conn_state == CONN_AUTH_PENDING)
     master->authorize (NULL);	// cancel pendig authorization
   return -1;
 }
@@ -81,17 +209,23 @@ Rts2DevConn::command ()
 			  "cannot authorize; try again later");
 	  return -1;
 	}
-      conn_state = RTS2_CONN_AUTH_PENDING;
+      conn_state = CONN_AUTH_PENDING;
       return -1;
     }
   sendCommandEnd (DEVDEM_E_COMMAND, "buf");
   return -1;
 }
 
+Rts2DevConn::Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
+	  in_master)
+{
+  master = in_master;
+}
+
 int
 Rts2DevConn::add (fd_set * set)
 {
-  if (conn_state == RTS2_CONN_AUTH_PENDING)
+  if (conn_state == CONN_AUTH_PENDING)
     return 0;
   return Rts2Conn::add (set);
 }
@@ -99,7 +233,7 @@ Rts2DevConn::add (fd_set * set)
 int
 Rts2DevConn::authorizationOK ()
 {
-  conn_state = RTS2_CONN_AUTH_OK;
+  conn_state = CONN_AUTH_OK;
   master->sendStatusInfo (this);
   sendCommandEnd (0, "OK authorized");
   return 0;
@@ -108,7 +242,7 @@ Rts2DevConn::authorizationOK ()
 int
 Rts2DevConn::authorizationFailed ()
 {
-  conn_state = RTS2_CONN_AUTH_FAILED;
+  conn_state = CONN_AUTH_FAILED;
   sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
   return 0;
 }
@@ -339,7 +473,7 @@ Rts2DevConnData::init ()
 
   setPort (test_port);
 
-  conn_state = 1;
+  conn_state = CONN_CONNECTING;
   return 0;
 }
 
@@ -352,7 +486,7 @@ Rts2DevConnData::send (char *message)
 int
 Rts2DevConnData::send (char *data, size_t data_size)
 {
-  if (conn_state != 0)
+  if (conn_state != CONN_CONNECTED)
     return -2;
   return write (sock, data, data_size);
 }
@@ -380,7 +514,7 @@ Rts2DevConnData::acceptConn ()
       close (sock);
       sock = new_sock;
       syslog (LOG_DEBUG, "Rts2DevConnData::acceptConn connection accepted");
-      conn_state = 2;
+      conn_state = CONN_CONNECTED;
       return 0;
     }
 }
@@ -508,6 +642,18 @@ Rts2Device::processOption (int in_opt)
       return Rts2Block::processOption (in_opt);
     }
   return 0;
+}
+
+Rts2Conn *
+Rts2Device::createClientConnection (char *in_device_name)
+{
+  return new Rts2Dev2DevConn (this, in_device_name);
+}
+
+Rts2Conn *
+Rts2Device::createClientConnection (Rts2Address * in_addres)
+{
+  return new Rts2Dev2DevConn (this, in_addres);
 }
 
 int

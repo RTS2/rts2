@@ -37,6 +37,7 @@ extern "C"
   extern int db_last_good_image (char *camera_name);
   extern int db_last_observation (int tar_id);
   extern int db_last_night_images_count (int tar_id);
+  extern int db_set_state (int obs_id, int new_state);
 
 #ifdef __cplusplus
 };

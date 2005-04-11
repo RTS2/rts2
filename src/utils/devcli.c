@@ -300,7 +300,9 @@ handle_connect (struct device *dev, struct param_status *params)
   if (id == MAXDATACONS)
     return -1;
 
-  if (param_next_ip_address (params, &hostname, &port))
+  if (param_next_string (params, &hostname))
+    goto err;
+  if (param_next_integer (params, &port))
     goto err;
   if (param_next_integer (params, &data_size))
     goto err;
@@ -1165,6 +1167,21 @@ devcli_status_string (struct device *dev, struct devconn_status *st)
 	    case DOME_CLOSING:
 	      return "closing";
 	    }
+	}
+      break;
+    case DEVICE_TYPE_MIRROR:
+      switch (st->status)
+	{
+	case MIRROR_UNKNOW:
+	  return "unknow";
+	case MIRROR_A:
+	  return "A";
+	case MIRROR_A_B:
+	  return "A->B";
+	case MIRROR_B:
+	  return "B";
+	case MIRROR_B_A:
+	  return "B->A";
 	}
       break;
     }

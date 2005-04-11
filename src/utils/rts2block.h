@@ -8,23 +8,59 @@
 #include <sys/socket.h>
 #include <syslog.h>
 #include <vector>
+#include <list>
 #include "status.h"
 
 #include "rts2option.h"
+#include "rts2address.h"
+#include "rts2user.h"
+#include "rts2devclient.h"
 
 #define MSG_COMMAND             0x01
-#define MSG_REPLY               0x02
+#define MSG_REPLY
 #define MSG_DATA                0x04
 
 #define MAX_CONN		20
 #define MAX_DATA		200
+
+#define MAX_STATE		5
 
 #define USEC_SEC		1000000
 
 typedef enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER };
 
+typedef enum
+{ CONN_UNKNOW, CONN_RESOLVING_DEVICE, CONN_CONNECTING,
+  CONN_CONNECTED, CONN_BROKEN, CONN_DELETE, CONN_AUTH_PENDING,
+  CONN_AUTH_OK, CONN_AUTH_FAILED
+} conn_state_t;
+
 class Rts2Block;
+
+class Rts2Command;
+
+class Rts2ClientTCPDataConn;
+
+class Rts2ServerState
+{
+public:
+  char *name;
+  int value;
+    Rts2ServerState (char *in_name)
+  {
+    name = new char[strlen (in_name) + 1];
+      strcpy (name, in_name);
+  }
+   ~Rts2ServerState (void)
+  {
+    delete name;
+  }
+  int isName (const char *in_name)
+  {
+    return !strcmp (name, in_name);
+  }
+};
 
 class Rts2Conn
 {
@@ -38,19 +74,33 @@ class Rts2Conn
   int port;			// local port & connection
   virtual int connectionError ()
   {
+    conn_state = CONN_BROKEN;
     sock = -1;
     return -1;
   }
   int acceptConn ();
 
+  std::list < Rts2Command * >commandQue;
+  Rts2Command *runningCommand;
+
 protected:
-  Rts2Block * master;
+  Rts2ServerState * serverState[MAX_STATE];
+
+  Rts2Block *master;
   char *command_start;
   int sock;
-  int conn_state;
+
+  conn_state_t conn_state;
+
+  virtual int setState (int in_state_num, char *in_state_name, int in_value);
+  virtual int setState (char *in_state_name, int in_value);
+
+  virtual void setOtherType (int other_device_type);
+
+  Rts2DevClient *otherDevice;
 
 public:
-  char buf[MAX_DATA + 1];
+  char buf[MAX_DATA + 2];
   char *buf_top;
 
   Rts2Conn (Rts2Block * in_master);
@@ -64,7 +114,15 @@ public:
   virtual int init ()
   {
     return -1;
-  };
+  }
+  virtual int idle ()
+  {
+    return -1;
+  }
+  inline int isCommand (const char *cmd)
+  {
+    return !strcmp (cmd, getCommand ());
+  }
   virtual int send (char *message);
   int sendValue (char *name, int value);
   int sendValue (char *name, int val1, int val2);
@@ -80,7 +138,7 @@ public:
   {
     type = in_type;
   }
-  int getName (struct sockaddr_in *addr);
+  int getOurAddress (struct sockaddr_in *addr);
   void setAddress (struct in_addr *in_address);
   void setPort (int in_port)
   {
@@ -95,22 +153,24 @@ public:
   {
     return name;
   };
+  int isName (const char *in_name)
+  {
+    return (!strcmp (getName (), in_name));
+  }
   void setName (char *in_name)
   {
     strncpy (name, in_name, DEVICE_NAME_SIZE);
-  };
+    name[DEVICE_NAME_SIZE - 1] = '\0';
+  }
   int getKey ()
   {
     return key;
   };
-  void setKey (int in_key)
+  virtual void setKey (int in_key)
   {
     key = in_key;
-  };
-  int havePriority ()
-  {
-    return have_priority;
-  };
+  }
+  int havePriority ();
   void setHavePriority (int in_have_priority)
   {
     if (in_have_priority)
@@ -135,39 +195,57 @@ public:
   int sendPriorityInfo (int number);
   int endConnection ()
   {
-    conn_state = 5;		// mark for deleting..
+    conn_state = CONN_DELETE;	// mark for deleting..
   }
   virtual int sendInfo (Rts2Conn * conn)
   {
     return -1;
   }
 
+  int queCommand (Rts2Command * command);
+  int queSend (Rts2Command * command);
+  virtual int commandReturn (Rts2Command * command, int status)
+  {
+    return 0;
+  }
+  int queEmpty ()
+  {
+    return (runningCommand == NULL && commandQue.size () == 0);
+  }
+
+  virtual void addressAdded (Rts2Address * in_addr)
+  {
+  }
+
+  void setConnState (conn_state_t new_conn_state)
+  {
+    conn_state = new_conn_state;
+  }
+
+  int paramEnd ();
+  int paramNextString (char **str);
+  int paramNextStringNull (char **str);
+  int paramNextInteger (int *num);
+  int paramNextDouble (double *num);
+  int paramNextFloat (float *num);
+
+  // called when some data were sucessfully received
+  virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
+
 protected:
   virtual int command ();
   virtual int message ();
   virtual int informations ();
   virtual int status ();
-  int commandReturn ()
-  {
-    return -1;
-  }
+  int commandReturn ();
   inline char *getCommand ()
   {
     return command_start;
-  }
-  inline int isCommand (const char *cmd)
-  {
-    return !strcmp (cmd, getCommand ());
   }
   inline int isCommandReturn ()
   {
     return (*(getCommand ()) == '+' || *(getCommand ()) == '-');
   }
-  int paramEnd ();
-  int paramNextString (char **str);
-  int paramNextInteger (int *num);
-  int paramNextDouble (double *num);
-  int paramNextFloat (float *num);
 };
 
 class Rts2Block
@@ -176,14 +254,18 @@ class Rts2Block
   int port;
   long int idle_timeout;	// in msec
   int priority_client;
+  int end_loop;
 
   // program options
 
-  int deamonize;
+  char *mailAddress;
 
   char **argv;
 
     std::vector < Rts2Option * >options;
+
+    std::list < Rts2Address * >blockAddress;
+    std::list < Rts2User * >blockUsers;
 
   /**
    * Prints help message, describing all options
@@ -191,10 +273,16 @@ class Rts2Block
   void helpOptions ();
 
   int addConnection (int in_sock);
-
   int masterState;
+
 protected:
   int argc;
+
+  int deamonize;
+
+  int addConnection (Rts2Conn * conn);
+  virtual Rts2Conn *createClientConnection (char *in_deviceName) = 0;
+  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
 
   virtual void help ();
 
@@ -212,7 +300,7 @@ protected:
   virtual void cancelPriorityOperations ()
   {
 
-  };
+  }
 
 public:
   Rts2Conn * connections[MAX_CONN];
@@ -222,11 +310,14 @@ public:
   void setPort (int in_port);
   int getPort (void);
   virtual int init ();
+
   /**
    * Used to create new connection - so childrens can
    * create childrens of Rts2Conn
    */
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  Rts2Conn *addDataConnection (Rts2Conn * in_conn, char *in_hostname,
+			       int in_port, int in_size);
   Rts2Conn *findName (char *in_name);
   virtual int sendStatusMessage (char *state_name, int state);
   virtual int sendMessage (char *message);
@@ -240,6 +331,10 @@ public:
   {
     if (new_timeout < idle_timeout)
       idle_timeout = new_timeout;
+  }
+  int endRunLoop ()
+  {
+    end_loop = 1;
   }
   int run ();
   virtual void deleteConnection (Rts2Conn * conn);
@@ -267,6 +362,50 @@ public:
   int connectionError (int in_sock);
   // status-mail related functions  
   int sendMail (char *subject, char *text);
+  Rts2Address *findAddress (char *blockName);
+
+  /***
+   * Address list related functions.
+   **/
+  void addAddress (const char *p_name, const char *p_host, int p_port,
+		   int p_device_type);
+  virtual int addAddress (Rts2Address * in_addr);
+  void addUser (int p_centraldId, int p_priority, char p_priority_have,
+		const char *p_login, const char *p_status_txt);
+  int addUser (Rts2User * in_user);
+
+  Rts2Conn *getOpenConnection (char *deviceName);
+
+  /***************************************************************
+   *
+   * Return connection to given device.
+   * 
+   * Create and return new connection if if device name isn't found
+   * among connections, but is in address list.
+   *
+   * Cann return 'fake' client connection, which will not resolve 
+   * to device name (even after 'info' call on master device).
+   * For every command enqued to fake devices error handler will be
+   * runned.
+   *
+   ***************************************************************/
+  Rts2Conn *getConnection (char *deviceName);
+
+  virtual Rts2Conn *getCentraldConn ()
+  {
+    return NULL;
+  }
+
+  int queAll (Rts2Command * command);
+  int queAll (char *text);
+
+  int allQuesEmpty ();
+
+  // enables to grant priority for special device links
+  virtual int grantPriority (Rts2Conn * conn)
+  {
+    return 0;
+  }
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

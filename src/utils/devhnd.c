@@ -122,13 +122,14 @@ serverd_command_handler (struct param_status *params,
   if (!strcmp (params->param_argv, "device"))
     {
       int i;
-      if (param_get_length (params) != 4 || param_next_integer (params, &i)
+      if (param_get_length (params) != 5 || param_next_integer (params, &i)
 	  || param_next_string (params, &str))
 	return -1;
       dev = get_device (&info->devices, str);
 
       strncpy (dev->name, str, DEVICE_NAME_SIZE);
-      if (param_next_ip_address (params, &str, &dev->port)
+      if (param_next_string (params, &str)
+	  || param_next_integer (params, &dev->port)
 	  || param_next_integer (params, &dev->type))
 	return -1;
       strncpy (dev->hostname, str, DEVICE_URI_SIZE);

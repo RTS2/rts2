@@ -11,9 +11,12 @@ libdevdem_a_SOURCES = devdem.c devser.cpp devcli.c devhnd.c hms.c param.c thread
 
 libdevser_a_SOURCES = devdem.c devser.cpp hms.c param.c thread_attr.c config.c
 
-libdevcli_a_SOURCES = devcli.c devhnd.c param.c hms.c mv.c mkpath.c thread_attr.c config.c objectcheck.cpp
+libdevcli_a_SOURCES = devcli.c devhnd.c param.c hms.c mkpath.c thread_attr.c config.c objectcheck.cpp
 
-librts2block_a_SOURCES = rts2block.cpp rts2device.cpp config.c rts2option.cpp # rts2client.cpp
+librts2block_a_SOURCES = rts2block.cpp rts2device.cpp config.c rts2option.cpp \
+	rts2address.cpp rts2user.cpp rts2client.cpp rts2command.cpp rts2value.cpp \
+	rts2devclient.cpp rts2dataconn.cpp
 
-noinst_HEADERS = devcli.h devdem.h devser.h config.h mv.h mkpath.h devconn.h thread_attr.h hms.h \
-	rts2block.h rts2device.h rts2option.h
+noinst_HEADERS = devcli.h devdem.h devser.h config.h mkpath.h devconn.h thread_attr.h hms.h \
+	rts2block.h rts2device.h rts2option.h rts2address.h rts2user.h rts2client.h rts2command.h rts2value.h \
+	rts2devclient.h rts2dataconn.h

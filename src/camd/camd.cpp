@@ -181,7 +181,7 @@ CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
       usedBinningVertical = binningVertical;
       usedBinningHorizontal = binningHorizontal;
     }
-  asprintf (&msg, "D connect %i %s:%i %i", chipId, address,
+  asprintf (&msg, "D connect %i %s %i %i", chipId, address,
 	    dataConn->getLocalPort (),
 	    (chipUsedReadout->width / usedBinningHorizontal)
 	    * (chipUsedReadout->height / usedBinningVertical)
@@ -251,13 +251,21 @@ CameraChip::readoutOneLine ()
   return -1;
 }
 
-Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_CCD, 5554,
-	    "C0")
+void
+CameraChip::cancelPriorityOperations ()
 {
-  int
-    i;
-  char *
-  states_names[MAX_CHIPS] = { "img_chip", "trc_chip", "intr_chip" };
+  stopExposure ();
+  endReadout ();
+  chipUsedReadout = NULL;
+  usedBinningVertical = 1;
+  usedBinningHorizontal = 1;
+}
+
+Rts2DevCamera::Rts2DevCamera (int argc, char **argv):
+Rts2Device (argc, argv, DEVICE_TYPE_CCD, 5554, "C0")
+{
+  int i;
+  char *states_names[MAX_CHIPS] = { "img_chip", "trc_chip", "intr_chip" };
   for (i = 0; i < MAX_CHIPS; i++)
     chips[i] = NULL;
   setStateNames (MAX_CHIPS, states_names);
@@ -273,9 +281,12 @@ Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEV
   serialNumber[0] = '0';
 
   nightCoolTemp = nan ("f");
+  focuserDevice = NULL;
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
+  addOption ('F', "focuser", 1,
+	     "name of focuser device, which will be granted to do exposures without priority");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -294,8 +305,7 @@ Rts2DevCamera::cancelPriorityOperations ()
   int i;
   for (i = 0; i < chipNum; i++)
     {
-      chips[i]->endExposure ();
-      chips[i]->endReadout ();
+      chips[i]->cancelPriorityOperations ();
     }
 }
 
@@ -306,6 +316,9 @@ Rts2DevCamera::processOption (int in_opt)
     {
     case 'c':
       nightCoolTemp = atof (optarg);
+      break;
+    case 'F':
+      focuserDevice = optarg;
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -549,7 +562,7 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 
   struct sockaddr_in our_addr;
 
-  if (conn->getName (&our_addr) < 0)
+  if (conn->getOurAddress (&our_addr) < 0)
     {
       delete data_conn;
       conn->sendCommandEnd (DEVDEM_E_SYSTEM, "cannot get our address");

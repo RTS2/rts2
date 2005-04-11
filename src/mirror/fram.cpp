@@ -81,7 +81,7 @@ start:
       ctime_r (&t, tc);
       fprintf (mirr_log, "%s:write %i\n", tc, ret);
       fflush (mirr_log);
-      goto err;
+      return -1;
     }
   readed = 0;
   while (readed != 3)
@@ -93,7 +93,7 @@ start:
 	  ctime_r (&t, tc);
 	  fprintf (mirr_log, "%s:read %i\n", tc, ret);
 	  fflush (mirr_log);
-	  goto err;
+	  return -1;
 	}
       readed += ret;
     }
@@ -103,15 +103,6 @@ start:
     *ret_arg = *((int *) &command_buffer[1]);
   flock (mirror_fd, LOCK_UN);
   return 0;
-err:
-  tries++;
-  if (tries < 4)
-    {
-      tcflush (mirror_fd, TCIOFLUSH);
-      sleep (1);
-      goto start;
-    }
-  return -1;
 }
 
 Rts2DevMirrorFram::Rts2DevMirrorFram (int argc, char **argv):Rts2DevMirror (argc,
@@ -183,7 +174,7 @@ Rts2DevMirrorFram::init ()
 	      mirror_dev);
     }
 
-  return 0;
+  return startClose ();
 }
 
 int

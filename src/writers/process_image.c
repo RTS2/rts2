@@ -12,7 +12,6 @@
 #include "../utils/config.h"
 #include "../utils/devcli.h"
 #include "../utils/mkpath.h"
-#include "../utils/mv.h"
 #include "../writers/fits.h"
 #include "../db/db.h"
 #include "process_image.h"
@@ -171,7 +170,7 @@ astrometry_image (struct image_que *actual_image)
 
       printf ("%s scanf error, invalid line\n", filename);
       printf ("mv %s -> %s", filename, trash_name);
-      if ((ret = (mv (filename, trash_name))))
+      if ((ret = (rename (filename, trash_name))))
 	perror ("rename bad image");
       free (trash_name);
       printf ("..OK\n");

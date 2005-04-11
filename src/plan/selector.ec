@@ -26,19 +26,13 @@
 EXEC SQL include sqlca;
 
 int
-Selector::find_plan (Target * plan, int id, time_t c_start)
+Selector::find_plan (int id, time_t c_start)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int count = 0;
   int tar_id = id;
   long int obs_start = c_start;
   EXEC SQL END DECLARE SECTION;
-  while (plan)
-    {
-      if (plan->id == id && plan->start_time > c_start)
-	return 0;
-      plan = plan->next;
-    }
   EXEC SQL DECLARE find_plan CURSOR FOR
     SELECT count (*) FROM observations
     WHERE tar_id =:tar_id AND obs_start > abstime (:obs_start);
@@ -156,7 +150,7 @@ Selector::select_next_alt (time_t c_start, Target * plan, float lon,
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start)
+      if (find_plan (tar_id, obs_start)
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
@@ -230,7 +224,7 @@ Selector::select_next_gps (time_t c_start, Target * plan, float lon,
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start)
+      if (find_plan (tar_id, obs_start)
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("find id: %i\n", tar_id);
@@ -310,7 +304,7 @@ Selector::select_next_airmass (time_t c_start, Target * plan,
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%+03.3f\t%5i\n", tar_id, ra,
 	      dec, az, airmass, img_count);
 
-      if (find_plan (plan, tar_id, c_start - 1800)
+      if (find_plan (tar_id, c_start - 1800)
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("airmass find id: %i\n", tar_id);
@@ -379,7 +373,7 @@ Selector::select_next_grb (time_t c_start, Target * plan, float lon,
       if (sqlca.sqlcode)
 	break;
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\n", tar_id, ra, dec, alt);
-      if (find_plan (plan, tar_id, obs_start)
+      if (find_plan (tar_id, obs_start)
 	  && checker->is_good (st, ra, dec))
 	{
 	  printf ("grb find id: %i\n", tar_id);

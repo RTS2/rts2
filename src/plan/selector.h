@@ -17,7 +17,7 @@ private:
   ObjectCheck * checker;
   struct device *telescope;
   struct ln_lnlat_posn *observer;
-  int find_plan (Target * plan, int id, time_t c_start);
+  int find_plan (int id, time_t c_start);
   Target *add_target (Target * plan, int type, int id, double ra,
 		      double dec, time_t obs_time, int tolerance,
 		      char obs_type);

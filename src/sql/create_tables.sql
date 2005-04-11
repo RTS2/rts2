@@ -26,7 +26,14 @@ CREATE TABLE targets (
 	tar_ra		float8,
 	tar_dec		float8,
 	tar_comment	text,
-	tar_enabled     boolean
+	tar_enabled     boolean,
+	-- priority bonus for target
+	tar_priority    integer,
+	-- here start site dependent part - that depends highly on
+	-- local object visibility
+	tar_bonus       integer,
+	-- how long will bonus last
+	tar_bonus_time  timestamp
 );
 
 CREATE TABLE phot (

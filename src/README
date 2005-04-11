@@ -1,10 +1,11 @@
-camd		CAMera Daemon
+camd		CAMera Daemons
 db		DataBase access
 dome		Dome (roof) control
 grb		grb receiving client
 plan		planer
 monitor		Monitoring client
-teld		TELescope Daemon
-utils		devser.c, devdem.c, hms.h, ..
+teld		TELescope Daemons
+utils		rts2block.cpp, rts2device.cpp, devser.c, devdem.c, hms.h, ..
 writers		writers for writing images from internal to external format;
 		support stream processing
+phot		Photocounters daemon

@@ -209,6 +209,12 @@ CameraMiniccdChip::isExposing ()
       int ret;
       if (readoutLine == 0)
 	row_bytes += CCD_MSG_IMAGE_LEN;
+      FD_ZERO (&set);
+      FD_SET (fd_chip, &set);
+      read_tout.tv_sec = read_tout.tv_usec = 0;
+      select (fd_chip + 1, &set, NULL, NULL, &read_tout);
+      if (!FD_ISSET (fd_chip, &set))
+	return 0;
       ret = read (fd_chip, dest_top, row_bytes);
       // second try should help in case of header, which can be passed
       // in different readout:(

@@ -98,7 +98,6 @@ device;				//static, so 0 filled
 unsigned int major_number = 254;
 
 #define command_delay() udelay (10)
-#define FILTER_STEP		33	// how many microstep to take for full filter step
 
 // this que will be waked up, when some data are available
 DECLARE_WAIT_QUEUE_HEAD (operation_wait);

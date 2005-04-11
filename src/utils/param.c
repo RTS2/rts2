@@ -203,36 +203,3 @@ param_next_hmsdec (struct param_status *params, double *ret)
     }
   return 0;
 }
-
-/*!
- *
- * @param hostname	malloced pointer to hostname, must be freed by calling
- * 			function.
- */
-int
-param_next_ip_address (struct param_status *params, char **hostname,
-		       unsigned int *port)
-{
-  char *tmp_hostname;
-  if (param_next_string (params, &tmp_hostname))
-    return -1;
-
-  *hostname = tmp_hostname;
-  while (*tmp_hostname != 0 && *tmp_hostname != ':')
-    tmp_hostname++;
-  if (!tmp_hostname)
-    {
-      errno = EINVAL;
-      return -1;
-    }
-  *tmp_hostname = 0;
-
-  //now get the port
-  if (param_next_integer (params, port) || *port < 1 || *port > 65536)
-    {
-      errno = EINVAL;
-      return -1;
-    }
-
-  return 0;
-}

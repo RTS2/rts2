@@ -487,3 +487,22 @@ err:
   db_unlock ();
   return -1;
 }
+
+int
+db_set_state (int obs_id, int new_state)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int i_obs_id = obs_id;
+  int i_new_state = new_state;
+  EXEC SQL END DECLARE SECTION;
+  db_lock ();
+  EXEC SQL
+    UPDATE
+      observations
+    SET
+      obs_state = :i_new_state
+    WHERE
+      obs_id = :i_obs_id;
+  db_unlock ();
+  return !!(sqlca.sqlcode);
+}

@@ -18,15 +18,28 @@
 
 #include "rts2block.h"
 
-#define RTS2_CONN_AUTH_PENDING	1
-#define RTS2_CONN_AUTH_OK	2
-#define RTS2_CONN_AUTH_FAILED	3
-
 #define CHECK_PRIORITY if (!havePriority ()) { sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
 
-using namespace std;
-
 class Rts2Device;
+
+class Rts2Dev2DevConn:public Rts2Conn
+{
+private:
+  Rts2Address * address;
+public:
+  Rts2Dev2DevConn (Rts2Block * in_master, char *in_name);
+    Rts2Dev2DevConn (Rts2Block * in_master, Rts2Address * in_addr);
+    virtual ~ Rts2Dev2DevConn (void);
+
+  virtual int init ();
+  virtual int idle ();
+
+  virtual void setAddress (Rts2Address * in_addr);
+  virtual void addressAdded (Rts2Address * in_addr);
+  void connAuth ();
+
+  virtual void setKey (int in_key);
+};
 
 class Rts2DevConn:public Rts2Conn
 {
@@ -36,12 +49,7 @@ protected:
     virtual int commandAuthorized ();
   int command ();
 public:
-    Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
-								(Rts2Block *)
-								in_master)
-  {
-    master = in_master;
-  };
+    Rts2DevConn (int in_sock, Rts2Device * in_master);
   int add (fd_set * set);
   int authorizationOK ();
   int authorizationFailed ();
@@ -151,6 +159,9 @@ protected:
    * @return 0 on success, -1 if option wasn't processed
    */
   virtual int processOption (int in_opt);
+
+  virtual Rts2Conn *createClientConnection (char *in_deviceName);
+  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
 		int default_port, char *default_name);
@@ -179,6 +190,11 @@ public:
   virtual int ready (Rts2Conn * conn);
   virtual int info (Rts2Conn * conn);
   virtual int baseInfo (Rts2Conn * conn);
+
+  virtual Rts2Conn *getCentraldConn ()
+  {
+    return conn_master;
+  };
 };
 
 #endif /* !__RTS2_DEVICE__ */

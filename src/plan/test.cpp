@@ -38,8 +38,8 @@ print_rst (struct ln_rst_time *rst, struct ln_lnlat_posn *obs)
 int
 main (int argc, char **argv)
 {
-  ParTarget *target;
-  struct ln_par_orbit orbit;
+  EllTarget *target;
+  struct ln_ell_orbit orbit;
   Target *plan = new Target (NULL, NULL);
   double values[200];
   time_t t;
@@ -49,12 +49,13 @@ main (int argc, char **argv)
     time (&t);
   double jd = ln_get_julian_from_timet (&t);
   read_config (CONFIG_FILE);
-  orbit.q = 0.16752;
+  orbit.e = 1.0;
+  orbit.a = 0.16752;
   orbit.w = 332.7622;
   orbit.omega = 222.8061;
   orbit.i = 63.1662;
   orbit.JD = 2453112.629;
-  target = new ParTarget (NULL, NULL, &orbit);
+  target = new EllTarget (NULL, NULL, &orbit);
   struct ln_equ_posn pos;
   printf ("Date: %s\n", ctime (&t));
   target->getPosition (&pos, jd);
@@ -99,9 +100,9 @@ main (int argc, char **argv)
 
   // test median & quicksort algo..
   for (int i = 0; i < 199; i++)
-  {
-    values[i] = random () / 200;
-  }
+    {
+      values[i] = random () / 200;
+    }
 
   printf ("median: %f\n", get_median (values, 199));
 
