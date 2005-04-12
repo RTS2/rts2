@@ -48,6 +48,10 @@ public:
   {
     return (unsigned short *) (data + receivedSize);
   }
+  struct imghdr *getImageHeader ()
+  {
+    return (struct imghdr *) data;
+  }
 };
 
 #endif /* !__RTS2_DATACONN__ */

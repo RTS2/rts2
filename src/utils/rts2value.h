@@ -15,6 +15,8 @@ class Rts2Value
 {
 private:
   char *valueName;
+protected:
+  char buf[100];
 public:
     Rts2Value (char *in_val_name);
   int isValue (char *in_val_name)
@@ -28,9 +30,17 @@ public:
   virtual int setValue (Rts2Conn * connection)
   {
   }
-  virtual void getValue (char *buf[])
+  virtual char *getValue ()
   {
-    *buf = "<unknow>";
+    return "<unknow>";
+  }
+  virtual double getValueDouble ()
+  {
+    return nan ("f");
+  }
+  virtual int getValueInteger ()
+  {
+    return 0;
   }
 };
 
@@ -45,7 +55,7 @@ public:
     delete value;
   }
   virtual int setValue (Rts2Conn * connection);
-  virtual void getValue (char *buf[]);
+  virtual char *getValue ();
 };
 
 class Rts2ValueInteger:public Rts2Value
@@ -55,7 +65,7 @@ private:
 public:
     Rts2ValueInteger (char *in_val_name);
   virtual int setValue (Rts2Conn * connection);
-  virtual void getValue (char *buf[]);
+  virtual char *getValue ();
 };
 
 class Rts2ValueDouble:public Rts2Value
@@ -65,7 +75,7 @@ private:
 public:
     Rts2ValueDouble (char *in_val_name);
   virtual int setValue (Rts2Conn * connection);
-  virtual void getValue (char *buf[]);
+  virtual char *getValue ();
 };
 
 

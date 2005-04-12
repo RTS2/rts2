@@ -7,7 +7,7 @@
 #include "rts2block.h"
 #include "rts2devclient.h"
 
-Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection)
+Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
 {
   connection = in_connection;
   processedBaseInfo = NOT_PROCESED;
@@ -19,6 +19,18 @@ void
 Rts2DevClient::addValue (Rts2Value * value)
 {
   values.push_back (value);
+}
+
+char *
+Rts2DevClient::getValue (char *value_name)
+{
+  std::vector < Rts2Value * >::iterator val_iter;
+  for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
+    {
+
+
+    }
+  return NULL;
 }
 
 int

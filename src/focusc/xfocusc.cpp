@@ -13,7 +13,8 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 
-#include <libnova/libnova.h>
+#include <pthread.h>
+
 #include <math.h>
 
 #include <iostream>
@@ -26,6 +27,7 @@
 #include "../utils/rts2dataconn.h"
 
 #include "status.h"
+#include "imghdr.h"
 
 #define PP_NEG
 
@@ -36,6 +38,13 @@
 #define PP_LOW (1 - PP_HIG)
 
 #define HISTOGRAM_LIMIT		65536
+
+// events types
+#define EVENT_START_EXPOSURE	1
+#define EVENT_STOP_EXPOSURE	2
+
+#define EVENT_INTEGRATE_START   3
+#define EVENT_INTEGRATE_STOP    4
 
 class Rts2xfocus:public Rts2Client
 {
@@ -69,6 +78,28 @@ public:
   {
     return defExposure;
   }
+
+  Display *getDisplay ()
+  {
+    return display;
+  }
+  int getDepth ()
+  {
+    return depth;
+  }
+  Visual *getVisual ()
+  {
+    return visual;
+  }
+
+  XColor *getRGB (int i)
+  {
+    return &rgb[i];
+  }
+  Colormap *getColormap ()
+  {
+    return &colormap;
+  }
 };
 
 class Rts2xfocusConn:public Rts2ConnClient
@@ -92,11 +123,55 @@ private:
   int exposureLight;
   int exposureChip;
   int exposureEnabled;
+  int isExposing;
   void queExposure ();
 
   Rts2xfocus *master;
+
+  pthread_t XeventThread;
+
+  // X11 stuff
+  Window window;
+  GC gc;
+  XGCValues gvc;
+  Pixmap pixmap;
+  XImage *image;
+  XSetWindowAttributes xswa;
+
+  void buildWindow ();
+  void redraw ();
+  // thread entry function..
+  void XeventLoop ();
+  static void *staticXEventLoop (void *arg)
+  {
+    ((Rts2xfocusCamera *) arg)->XeventLoop ();
+    return NULL;
+  }
+
+  int histogram[HISTOGRAM_LIMIT];
+
 public:
-    Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus * in_master);
+  Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus * in_master);
+  virtual ~ Rts2xfocusCamera (void)
+  {
+    pthread_cancel (XeventThread);
+    pthread_join (XeventThread, NULL);
+  }
+
+  virtual void postEvent (Rts2Event * event)
+  {
+    switch (event->getType ())
+      {
+      case EVENT_START_EXPOSURE:
+	exposureEnabled = 1;
+	queExposure ();
+	break;
+      case EVENT_STOP_EXPOSURE:
+	exposureEnabled = 0;
+	break;
+      }
+    Rts2DevClientCamera::postEvent (event);
+  }
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual void stateChanged (Rts2ServerState * state);
@@ -123,25 +198,217 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus *
   exposureTime = master->defaultExpousure ();
   exposureLight = 1;
   exposureChip = 0;
+  exposureEnabled = 0;
+  isExposing = 0;
   // build window etc..
+  buildWindow ();
 }
 
 void
 Rts2xfocusCamera::queExposure ()
 {
-  if (!exposureEnabled)
+  if (isExposing || !exposureEnabled)
     return;
   char *text;
   asprintf (&text, "expose 0 %i %f", exposureLight, exposureTime);
   connection->queCommand (new Rts2Command (master, text));
   free (text);
-  exposureEnabled = 0;
+}
+
+void
+Rts2xfocusCamera::buildWindow ()
+{
+  XTextProperty window_title;
+  char *cameraName;
+
+  window =
+    XCreateWindow (master->getDisplay (),
+		   DefaultRootWindow (master->getDisplay ()), 0, 0, 100, 100,
+		   0, master->getDepth (), InputOutput, master->getVisual (),
+		   0, &xswa);
+  pixmap =
+    XCreatePixmap (master->getDisplay (), window, 1200, 1200,
+		   master->getDepth ());
+
+  gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
+  XSelectInput (master->getDisplay (), window,
+		KeyPressMask | ButtonPressMask | ExposureMask);
+  XMapRaised (master->getDisplay (), window);
+
+  cameraName = new char[strlen (connection->getName ()) + 1];
+  strcpy (cameraName, connection->getName ());
+
+  XStringListToTextProperty (&cameraName, 1, &window_title);
+  XSetWMName (master->getDisplay (), window, &window_title);
+
+  pthread_create (&XeventThread, NULL, staticXEventLoop, this);
+}
+
+void
+Rts2xfocusCamera::redraw ()
+{
+  // do some line-drawing etc..
+}
+
+void
+Rts2xfocusCamera::XeventLoop ()
+{
+  XEvent event;
+  KeySym ks;
+
+  while (1)
+    {
+      XWindowEvent (master->getDisplay (), window,
+		    KeyPressMask | ButtonPressMask | ExposureMask, &event);
+      switch (event.type)
+	{
+	case Expose:
+	  redraw ();
+	  break;
+	case KeyPress:
+	  ks = XLookupKeysym ((XKeyEvent *) & event, 0);
+	  switch (ks)
+	    {
+	    case XK_1:
+	      break;
+	    case XK_2:
+	      break;
+	    case XK_3:
+	      break;
+	    case XK_e:
+	      exposureTime += 1;
+	      break;
+	    case XK_d:
+	      if (exposureTime > 1)
+		exposureTime -= 1;
+	      break;
+	    case XK_w:
+	      exposureTime += 0.1;
+	      break;
+	    case XK_s:
+	      if (exposureTime > 0.1)
+		exposureTime -= 0.1;
+	      break;
+	    case XK_q:
+	      exposureTime += 0.01;
+	      break;
+	    case XK_a:
+	      if (exposureTime > 0.01)
+		exposureTime -= 0.01;
+	      break;
+	    case XK_f:
+	      connection->
+		queCommand (new Rts2Command (master, "box 0 -1 -1 -1 -1"));
+	      break;
+	    case XK_c:
+	      break;
+	    case XK_p:
+	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_START));
+	      break;
+	    case XK_o:
+	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_STOP));
+	      break;
+	    case XK_y:
+	      break;
+	    case XK_u:
+	      break;
+	    default:
+	      break;
+	    }
+	  break;
+	}
+    }
 }
 
 void
 Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 {
+  struct imghdr *header;
+  int width, height;
+  int dataSize;
+  int i, j, k;
+  unsigned short *im_ptr;
+  unsigned short low, med, hig;
 
+  header = dataConn->getImageHeader ();
+  width = header->sizes[0];
+  height = header->sizes[1];
+  // draw window with image..
+  if (!image)
+    {
+      image =
+	XCreateImage (master->getDisplay (), master->getVisual (),
+		      master->getDepth (), ZPixmap, 0, 0, width, height, 8,
+		      0);
+      image->data = new char[image->bytes_per_line * height * 16];
+    }
+
+  // build histogram
+  memset (histogram, 0, sizeof (int) * HISTOGRAM_LIMIT);
+  dataSize = height * width;
+  k = 0;
+  im_ptr = dataConn->getData ();
+  for (i = 0; i < height; i++)
+    for (j = 0; j < width; j++)
+      {
+	histogram[*im_ptr]++;
+	im_ptr++;
+      }
+
+  low = med = hig = 0;
+  j = 0;
+  for (i = 0; i < HISTOGRAM_LIMIT; i++)
+    {
+      j += histogram[i];
+      if ((!low) && (((float) j / (float) dataSize) > PP_LOW))
+	low = i;
+#ifdef PP_MED
+      if ((!med) && (((float) j / (float) dataSize) > PP_MED))
+	med = i;
+#endif
+      if ((!hig) && (((float) j / (float) dataSize) > PP_HIG))
+	hig = i;
+    }
+  if (!hig)
+    hig = 65536;
+  if (low == hig)
+    low = hig / 2 - 1;
+
+  im_ptr = dataConn->getData ();
+
+  for (j = 0; j < height; j++)
+    for (i = 0; i < width; i++)
+      {
+	unsigned short val;
+	val = *im_ptr;
+	im_ptr++;
+	if (val < low)
+	  XPutPixel (image, i, j, master->getRGB (0)->pixel);
+	else if (val > hig)
+	  XPutPixel (image, i, j, master->getRGB (255)->pixel);
+	else
+	  {
+	    XPutPixel (image, i, j,
+		       master->
+		       getRGB ((int) (256 * (val - low) / (hig - low)))->
+		       pixel);
+	  }
+      }
+
+  XResizeWindow (master->getDisplay (), window, width, height);
+
+  XPutImage (master->getDisplay (), pixmap, gc, image, 0, 0, 0, 0, width,
+	     height);
+
+  xswa.colormap = *(master->getColormap ());
+  xswa.background_pixmap = pixmap;
+
+  XChangeWindowAttributes (master->getDisplay (), window,
+			   CWColormap | CWBackPixmap, &xswa);
+
+  XClearWindow (master->getDisplay (), window);
+  redraw ();
+  XFlush (master->getDisplay ());
 }
 
 void
@@ -151,24 +418,30 @@ Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
   if (state->isName ("priority"))
     {
       if (state->value == 1)
-	queExposure ();
+	{
+	  exposureEnabled = 1;
+	  queExposure ();
+	}
       else
 	exposureEnabled = 0;
     }
   else if (state->isName ("img_chip"))
     {
       int stateVal;
-      std::cout << "New state:" << state->value << std::endl;
       stateVal =
 	state->value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA);
       if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NODATA))
 	{
 	  queExposure ();
 	}
-      if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA))
+      else if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA))
 	{
-	  exposureEnabled = 1;
+	  isExposing = 0;
 	  connection->queCommand (new Rts2Command (master, "readout 0"));
+	}
+      else
+	{
+	  isExposing = (stateVal & CAM_EXPOSING);
 	}
     }
 }
@@ -288,6 +561,7 @@ Rts2xfocus::run ()
     {
       Rts2Conn *conn;
       conn = getConnection ((*cam_iter));
+      conn->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
     }
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 200"));
   return Rts2Client::run ();

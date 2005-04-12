@@ -19,4 +19,4 @@ librts2block_a_SOURCES = rts2block.cpp rts2device.cpp config.c rts2option.cpp \
 
 noinst_HEADERS = devcli.h devdem.h devser.h config.h mkpath.h devconn.h thread_attr.h hms.h \
 	rts2block.h rts2device.h rts2option.h rts2address.h rts2user.h rts2client.h rts2command.h rts2value.h \
-	rts2devclient.h rts2dataconn.h
+	rts2devclient.h rts2dataconn.h rts2event.h

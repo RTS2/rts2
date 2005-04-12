@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "rts2object.h"
 #include "rts2block.h"
 #include "rts2value.h"
 
@@ -19,7 +20,7 @@ class Rts2ServerState;
  * 
  *************************************/
 
-class Rts2DevClient
+class Rts2DevClient:public Rts2Object
 {
 protected:
   Rts2Conn * connection;
@@ -28,6 +29,7 @@ protected:
 public:
     Rts2DevClient (Rts2Conn * in_connection);
   void addValue (Rts2Value * value);
+  char *getValue (char *value_name);
 
   int command ();
 

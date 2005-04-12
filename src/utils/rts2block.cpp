@@ -23,7 +23,7 @@
 
 #include "imghdr.h"
 
-Rts2Conn::Rts2Conn (Rts2Block * in_master)
+Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {
   sock = -1;
   master = in_master;
@@ -40,7 +40,8 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master)
   otherDevice = NULL;
 }
 
-Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master)
+Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):
+Rts2Object ()
 {
   sock = in_sock;
   master = in_master;
@@ -65,6 +66,7 @@ Rts2Conn::~Rts2Conn (void)
     if (serverState[i])
       delete serverState[i];
   delete otherDevice;
+  queClear ();
 }
 
 int
@@ -327,6 +329,20 @@ Rts2Conn::queSend (Rts2Command * command)
     commandQue.push_front (runningCommand);
   runningCommand = command;
   return runningCommand->send ();
+}
+
+void
+Rts2Conn::queClear ()
+{
+  std::list < Rts2Command * >::iterator que_iter;
+  for (que_iter = commandQue.begin (); que_iter != commandQue.end ();
+       que_iter++)
+    {
+      Rts2Command *command;
+      command = (*que_iter);
+      delete command;
+    }
+  commandQue.clear ();
 }
 
 // high-level commands, used to pass variables etc..
@@ -644,7 +660,8 @@ Rts2Conn::dataReceived (Rts2ClientTCPDataConn * dataConn)
     }
 }
 
-Rts2Block::Rts2Block (int in_argc, char **in_argv)
+Rts2Block::Rts2Block (int in_argc, char **in_argv):
+Rts2Object ()
 {
   argc = in_argc;
   argv = in_argv;

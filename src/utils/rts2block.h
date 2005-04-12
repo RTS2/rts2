@@ -11,6 +11,8 @@
 #include <list>
 #include "status.h"
 
+#include "rts2event.h"
+#include "rts2object.h"
 #include "rts2option.h"
 #include "rts2address.h"
 #include "rts2user.h"
@@ -62,7 +64,7 @@ public:
   }
 };
 
-class Rts2Conn
+class Rts2Conn:public Rts2Object
 {
   conn_type_t type;
   char name[DEVICE_NAME_SIZE];	// name of device/client this connection goes to
@@ -106,6 +108,14 @@ public:
   Rts2Conn (Rts2Block * in_master);
   Rts2Conn (int in_sock, Rts2Block * in_master);
   virtual ~ Rts2Conn (void);
+
+  virtual void postEvent (Rts2Event * event)
+  {
+    if (otherDevice)
+      otherDevice->postEvent (event);
+    Rts2Object::postEvent (event);
+  }
+
   int add (fd_set * set);
   virtual int getState (int state_num)
   {
@@ -212,6 +222,7 @@ public:
   {
     return (runningCommand == NULL && commandQue.size () == 0);
   }
+  void queClear ();
 
   virtual void addressAdded (Rts2Address * in_addr)
   {
@@ -248,7 +259,7 @@ protected:
   }
 };
 
-class Rts2Block
+class Rts2Block:public Rts2Object
 {
   int sock;
   int port;

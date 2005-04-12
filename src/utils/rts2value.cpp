@@ -19,17 +19,17 @@ Rts2Value (in_val_name)
   value = NULL;
 }
 
-void
-Rts2ValueString::getValue (char *buf[])
+char *
+Rts2ValueString::getValue ()
 {
   if (!value)
     {
-      *buf = NULL;
+      return NULL;
     }
   else
     {
-      *buf = new char[strlen (value) + 1];
-      strcpy (*buf, value);
+      strcpy (buf, value);
+      return buf;
     }
 }
 
@@ -50,11 +50,11 @@ Rts2ValueInteger::Rts2ValueInteger (char *in_val_name):Rts2Value (in_val_name)
   value = 0;
 }
 
-void
-Rts2ValueInteger::getValue (char *buf[])
+char *
+Rts2ValueInteger::getValue ()
 {
-  *buf = new char[20];
-  sprintf (*buf, "%i", value);
+  sprintf (buf, "%i", value);
+  return buf;
 }
 
 int
@@ -73,11 +73,11 @@ Rts2ValueDouble::Rts2ValueDouble (char *in_val_name):Rts2Value (in_val_name)
   value = nan ("f");
 }
 
-void
-Rts2ValueDouble::getValue (char *buf[])
+char *
+Rts2ValueDouble::getValue ()
 {
-  *buf = new char[20];
-  sprintf (*buf, "%lf", value);
+  sprintf (buf, "%lf", value);
+  return buf;
 }
 
 int
