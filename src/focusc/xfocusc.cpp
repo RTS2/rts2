@@ -120,7 +120,7 @@ class Rts2xfocusCamera:public Rts2DevClientCamera
 {
 private:
   float exposureTime;
-  int exposureLight;
+  exposureType exposureT;
   int exposureChip;
   int exposureEnabled;
   int isExposing;
@@ -196,7 +196,7 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus *
   master = in_master;
 
   exposureTime = master->defaultExpousure ();
-  exposureLight = 1;
+  exposureT = EXP_LIGHT;
   exposureChip = 0;
   exposureEnabled = 0;
   isExposing = 0;
@@ -209,10 +209,8 @@ Rts2xfocusCamera::queExposure ()
 {
   if (isExposing || !exposureEnabled)
     return;
-  char *text;
-  asprintf (&text, "expose 0 %i %f", exposureLight, exposureTime);
-  connection->queCommand (new Rts2Command (master, text));
-  free (text);
+  connection->
+    queCommand (new Rts2CommandExposure (master, exposureT, exposureTime));
 }
 
 void
@@ -270,10 +268,13 @@ Rts2xfocusCamera::XeventLoop ()
 	  switch (ks)
 	    {
 	    case XK_1:
+	      connection->queCommand (new Rts2CommandBinning (master, 1, 1));
 	      break;
 	    case XK_2:
+	      connection->queCommand (new Rts2CommandBinning (master, 2, 2));
 	      break;
 	    case XK_3:
+	      connection->queCommand (new Rts2CommandBinning (master, 3, 3));
 	      break;
 	    case XK_e:
 	      exposureTime += 1;
@@ -301,6 +302,7 @@ Rts2xfocusCamera::XeventLoop ()
 		queCommand (new Rts2Command (master, "box 0 -1 -1 -1 -1"));
 	      break;
 	    case XK_c:
+	      connection->queCommand (new Rts2Command (master, "center"));
 	      break;
 	    case XK_p:
 	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_START));

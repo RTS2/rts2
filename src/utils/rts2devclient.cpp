@@ -21,16 +21,48 @@ Rts2DevClient::addValue (Rts2Value * value)
   values.push_back (value);
 }
 
-char *
+Rts2Value *
 Rts2DevClient::getValue (char *value_name)
 {
   std::vector < Rts2Value * >::iterator val_iter;
   for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
     {
-
-
+      Rts2Value *val;
+      val = (*val_iter);
+      if (val->isValue (value_name))
+	return val;
     }
   return NULL;
+}
+
+char *
+Rts2DevClient::getValueChar (char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val)
+    return val->getValue ();
+  return NULL;
+}
+
+double
+Rts2DevClient::getValueDouble (char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val)
+    return val->getValueDouble ();
+  return nan ("f");
+}
+
+int
+Rts2DevClient::getValueInteger (char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val)
+    return val->getValueInteger ();
+  return -1;
 }
 
 int
@@ -76,10 +108,33 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
   addValue (new Rts2ValueDouble ("axis1_counts"));
 }
 
+void
+Rts2DevClientTelescope::getEqu (struct ln_equ_posn *tel)
+{
+  tel->ra = getValueDouble ("ra");
+  tel->dec = getValueDouble ("dec");
+}
+
+void
+Rts2DevClientTelescope::getObs (struct ln_lnlat_posn *obs)
+{
+  obs->lng = getValueDouble ("longtitude");
+  obs->lat = getValueDouble ("latitude");
+}
+
 Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
   addValue (new Rts2ValueInteger ("dome"));
+  addValue (new Rts2ValueDouble ("temperature"));
+  addValue (new Rts2ValueDouble ("humidity"));
+  addValue (new Rts2ValueInteger ("power_telescope"));
+  addValue (new Rts2ValueInteger ("power_cameras"));
+  addValue (new Rts2ValueTime ("next_open"));
+  addValue (new Rts2ValueTime ("last_status"));
+  addValue (new Rts2ValueInteger ("rain"));
+  addValue (new Rts2ValueDouble ("windspeed"));
+  addValue (new Rts2ValueDouble ("observingPossible"));
 }
 
 Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient

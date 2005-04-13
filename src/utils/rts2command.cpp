@@ -94,3 +94,41 @@ Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, const char *d
   setCommand (command);
   free (command);
 }
+
+/**************************************************************
+ *
+ * Rts2 device commands
+ * 
+ *************************************************************/
+
+Rts2CommandBinning::Rts2CommandBinning (Rts2Block * in_master, int binning_v,
+					int binning_h):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "binning %i %i", binning_v, binning_h);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master,
+					  exposureType exp_type,
+					  float exp_time):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "exposure 0 %i %f", (exp_type == EXP_LIGHT ? 1 : 0),
+	    exp_time);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, double ra,
+				  double dec):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "move %lf %lf", ra, dec);
+  setCommand (command);
+  free (command);
+}

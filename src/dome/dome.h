@@ -12,6 +12,11 @@ protected:
 
   float temperature;
   float humidity;
+  int power_telescope;
+  int power_cameras;
+  time_t nextOpen;
+  int rain;
+  float windspeed;
 
   int observingPossible;
 public:

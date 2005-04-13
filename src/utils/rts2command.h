@@ -5,6 +5,9 @@
 
 #define RTS2_COMMAND_REQUE	-5
 
+typedef enum
+{ EXP_LIGHT, EXP_DARK } exposureType;
+
 class Rts2Command
 {
 protected:
@@ -67,6 +70,27 @@ class Rts2CommandAuthorize:public Rts2Command
 {
 public:
   Rts2CommandAuthorize (Rts2Block * in_master, const char *device_name);
+};
+
+// devices commands
+
+class Rts2CommandBinning:public Rts2Command
+{
+public:
+  Rts2CommandBinning (Rts2Block * in_master, int binning_v, int binning_h);
+};
+
+class Rts2CommandExposure:public Rts2Command
+{
+public:
+  Rts2CommandExposure (Rts2Block * in_master, exposureType exp_type,
+		       float exp_time);
+};
+
+class Rts2CommandMove:public Rts2Command
+{
+public:
+  Rts2CommandMove (Rts2Block * in_master, double ra, double dec);
 };
 
 #endif /* !__RTS2_COMMAND__ */

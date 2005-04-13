@@ -37,11 +37,11 @@ Rts2CMonitorConnection::printStatus ()
     {
       Rts2Value *val = (*val_iter);
       char *buf;
-      val->getValue (&buf);
+      buf = val->getValue ();
       cout << fixed << setprecision (2);
       if (buf)
-	cout << val->getName () << " = " << setw (8) << buf << endl;
-      delete buf;
+	cout << setw (15) << val->
+	  getName () << " = " << setw (8) << buf << endl;
     }
 }
 

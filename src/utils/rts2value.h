@@ -2,6 +2,8 @@
 #define __RTS2_VALUE__
 
 #include <string.h>
+#include <math.h>
+#include <time.h>
 
 class Rts2Conn;
 
@@ -30,7 +32,7 @@ public:
   virtual int setValue (Rts2Conn * connection)
   {
   }
-  virtual char *getValue ()
+  virtual char *getValue (int width = 0, int precision = 0)
   {
     return "<unknow>";
   }
@@ -40,7 +42,7 @@ public:
   }
   virtual int getValueInteger ()
   {
-    return 0;
+    return -1;
   }
 };
 
@@ -55,7 +57,7 @@ public:
     delete value;
   }
   virtual int setValue (Rts2Conn * connection);
-  virtual char *getValue ();
+  virtual char *getValue (int width = 0, int precision = 0);
 };
 
 class Rts2ValueInteger:public Rts2Value
@@ -65,7 +67,33 @@ private:
 public:
     Rts2ValueInteger (char *in_val_name);
   virtual int setValue (Rts2Conn * connection);
-  virtual char *getValue ();
+  virtual char *getValue (int width = 0, int precision = 0);
+  virtual double getValueDouble ()
+  {
+    return value;
+  }
+  virtual int getValueInteger ()
+  {
+    return value;
+  }
+};
+
+class Rts2ValueTime:public Rts2Value
+{
+private:
+  time_t value;
+public:
+  Rts2ValueTime (char *in_val_name);
+  virtual int setValue (Rts2Conn * connection);
+  virtual char *getValue (int width = 0, int precision = 0);
+  virtual double getValueDouble ()
+  {
+    return value;
+  }
+  virtual int getValueInteger ()
+  {
+    return (int) value;
+  }
 };
 
 class Rts2ValueDouble:public Rts2Value
@@ -75,7 +103,15 @@ private:
 public:
     Rts2ValueDouble (char *in_val_name);
   virtual int setValue (Rts2Conn * connection);
-  virtual char *getValue ();
+  virtual char *getValue (int width = 0, int precision = 0);
+  virtual double getValueDouble ()
+  {
+    return value;
+  }
+  virtual int getValueInteger ()
+  {
+    return (int) value;
+  }
 };
 
 

@@ -530,6 +530,16 @@ Rts2DevCamera::camBox (Rts2Conn * conn, int chip, int x, int y, int width,
 }
 
 int
+Rts2DevCamera::camCenter (Rts2Conn * conn, int chip)
+{
+  int ret;
+  ret = chips[chip]->center ();
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, "cannot set box size");
+  return ret;
+}
+
+int
 Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 {
   int ret;
@@ -740,6 +750,13 @@ Rts2DevConnCamera::commandAuthorized ()
 	  || paramNextInteger (&w) || paramNextInteger (&h) || !paramEnd ())
 	return -2;
       return master->camBox (this, chip, x, y, w, h);
+    }
+  else if (isCommand ("center"))
+    {
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip) || !paramEnd ())
+	return -2;
+      return master->camCenter (this, chip);
     }
   else if (isCommand ("readout"))
     {

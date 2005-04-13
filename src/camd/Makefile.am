@@ -8,8 +8,6 @@ noinst_HEADERS = camera_cpp.h
 
 LDADD = ../utils/librts2block.a
 
-AM_CXXFLAGS = -I/home/petr/sbig
-
 if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
 rts2_camd_sbigusb_SOURCES = camd.cpp sbigusb.cpp

@@ -122,6 +122,11 @@ public:
     chipReadout->height = in_height;
     return 0;
   }
+  int center ()
+  {
+    return box (chipSize->width / 2 - 128, chipSize->height / 2 - 128, 256,
+		256);
+  }
   virtual int startExposure (int light, float exptime)
   {
     return -1;
@@ -195,61 +200,57 @@ public:
   virtual int ready ()
   {
     return -1;
-  };
+  }
   virtual int info ()
   {
     return -1;
-  };
+  }
   virtual int baseInfo ()
   {
     return -1;
-  };
+  }
 
   virtual int camChipInfo (int chip)
   {
     return -1;
-  };
+  }
   virtual int camExpose (int chip, int light, float exptime)
   {
     return chips[chip]->startExposure (light, exptime);
-  };
+  }
   virtual long camWaitExpose (int chip);
   virtual int camStopExpose (int chip)
   {
     return chips[chip]->stopExposure ();
-  };
-  virtual int camBox (int chip, int x, int y, int width, int height)
-  {
-    return -1;
-  };
+  }
   virtual int camReadout (int chip)
   {
     return -1;
-  };
+  }
   virtual int camStopRead (int chip)
   {
     return chips[chip]->endReadout ();
-  };
+  }
   virtual int camCoolMax ()
   {
     return -1;
-  };
+  }
   virtual int camCoolHold ()
   {
     return -1;
-  };
+  }
   virtual int camCoolTemp (float new_temp)
   {
     return -1;
-  };
+  }
   virtual int camCoolShutdown ()
   {
     return -1;
-  };
+  }
   virtual int camFilter (int new_filter)
   {
     return -1;
-  };
+  }
 
   // callback functions from camera connection
   virtual int ready (Rts2Conn * conn);
@@ -259,6 +260,7 @@ public:
   int camExpose (Rts2Conn * conn, int chip, int light, float exptime);
   int camStopExpose (Rts2Conn * conn, int chip);
   int camBox (Rts2Conn * conn, int chip, int x, int y, int width, int height);
+  int camCenter (Rts2Conn * conn, int chip);
   int camReadout (Rts2Conn * conn, int chip);
   int camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin);
   int camStopRead (Rts2Conn * conn, int chip);

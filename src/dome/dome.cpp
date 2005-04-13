@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
+#include <math.h>
+
 #include "status.h"
 
 #include "dome.h"
@@ -13,6 +15,13 @@ Rts2Device (argc, argv, DEVICE_TYPE_DOME, 5552, "DOME")
   setStateNames (1, states_names);
 
   sw_state = -1;
+  temperature = nan ("f");
+  humidity = nan ("f");
+  power_telescope = 0;
+  power_cameras = 0;
+  nextOpen = -1;
+  rain = 1;
+  windspeed = nan ("f");
 
   observingPossible = 0;
 }
@@ -124,6 +133,14 @@ Rts2DevDome::info (Rts2Conn * conn)
       return -1;
     }
   conn->sendValue ("dome", sw_state);
+  conn->sendValue ("temperature", temperature);
+  conn->sendValue ("humidity", humidity);
+  conn->sendValue ("power_telescope", power_telescope);
+  conn->sendValue ("power_cameras", power_cameras);
+  conn->sendValueTime ("next_open", &nextOpen);
+  conn->sendValue ("rain", rain);
+  conn->sendValue ("windspeed", windspeed);
+  conn->sendValue ("observingPossible", observingPossible);
   return 0;
 }
 

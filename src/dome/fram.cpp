@@ -170,10 +170,22 @@ public:
   virtual int receive (fd_set * set);
   // return 1 if weather is favourable to open dome..
   virtual int isGoodWeather ();
+
+  int getRain ()
+  {
+    return rain;
+  }
+  float getWindspeed ()
+  {
+    return windspeed;
+  }
+  time_t getNextOpen ()
+  {
+    return nextGoodWeather;
+  }
 };
 
-Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port,
-					  Rts2DevDome * in_master):
+Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port, Rts2DevDome * in_master):
 Rts2Conn (in_master)
 {
   master = in_master;
@@ -1108,6 +1120,9 @@ Rts2DevDomeFram::info ()
   sw_state |= (getPortState (KONCAK_OTEVRENI_LEVY) << 1);
   sw_state |= (getPortState (KONCAK_ZAVRENI_PRAVY) << 2);
   sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
+  rain = weatherConn->getRain ();
+  windspeed = weatherConn->getWindspeed ();
+  nextOpen = weatherConn->getNextOpen ();
   return 0;
 }
 

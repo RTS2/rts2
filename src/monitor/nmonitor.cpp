@@ -33,12 +33,17 @@
 
 #define CMD_BUF_LEN    100
 
+#define EVENT_PRINT    RTS2_LOCAL_EVENT + 1
+
 class Rts2CNMonConn:public Rts2ConnClient
 {
 private:
   int nrow;
   WINDOW *window;
   int printStatus ();
+protected:
+    virtual void setOtherType (int other_device_type);
+  virtual void print ();
 
 public:
     Rts2CNMonConn (Rts2Block * in_master,
@@ -59,10 +64,12 @@ public:
     if (hasWindow ())
       delwin (window);
     window = in_window;
-    print ();
   }
 
-  int print ();
+  WINDOW *getWindow ()
+  {
+    return window;
+  }
 
   virtual int commandReturn (Rts2Command * command, int status)
   {
@@ -70,6 +77,163 @@ public:
     return 0;
   }
 };
+
+class Rts2NMTelescope:public Rts2DevClientTelescope
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMTelescope (Rts2CNMonConn *
+		     in_connection):Rts2DevClientTelescope (in_connection)
+  {
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    WINDOW *window;
+    switch (event->getType ())
+      {
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2NMTelescope::postEvent (event);
+  }
+};
+
+void
+Rts2NMTelescope::print (WINDOW * wnd)
+{
+  struct ln_hrz_posn altaz;
+  struct ln_hms hms;
+  double gst, lst;
+
+  struct ln_equ_posn tel;
+  struct ln_lnlat_posn obs;
+  double st;
+
+  getEqu (&tel);
+  getObs (&obs);
+
+  gst = getValueDouble ("siderealtime") + getValueDouble ("longtitude");
+  gst = ln_range_degrees (gst);
+
+  st = gst / 15.0;
+
+  ln_get_hrz_from_equ_sidereal_time (&tel, &obs, st, &altaz);
+
+  mvwprintw (wnd, 1, 1, "Typ: %s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "R+D/f: %.3f%+.3f/%c",
+	     getValueDouble ("ra"), getValueDouble ("dec"),
+	     getValueDouble ("flip") ? 'f' : 'n');
+  mvwprintw (wnd, 3, 1, "Az/Al/D: %03.0f %+02.0f %s", altaz.az, altaz.alt,
+	     ln_hrz_to_nswe (&altaz));
+
+  mvwprintw (wnd, 4, 1, "x/y: %.0f %.0f", getValueDouble ("axis0_counts"),
+	     getValueDouble ("axis1_counts"));
+  mvwprintw (wnd, 5, 1, "Lon/Lat: %+03.3f %+03.3f",
+	     getValueDouble ("longtitude"), getValueDouble ("latitude"));
+
+  lst = getValueDouble ("siderealtime");
+  ln_rad_to_hms (ln_deg_to_rad (lst), &hms);
+  mvwprintw (wnd, 6, 1, "Lsid: %.3f (%02f:%02f:%02.1f)",
+	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
+	     hms.seconds);
+
+  ln_rad_to_hms (ln_deg_to_rad (gst), &hms);
+  mvwprintw (wnd, 7, 1, "Gsid: %.3f (%02f:%02f:%02.1f)", gst, hms.hours,
+	     hms.minutes, hms.seconds);
+}
+
+class Rts2NMCamera:public Rts2DevClientCamera
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMCamera (Rts2CNMonConn *
+		  in_connection):Rts2DevClientCamera (in_connection)
+  {
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    switch (event->getType ())
+      {
+	WINDOW *window;
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientCamera::postEvent (event);
+  }
+};
+
+void
+Rts2NMCamera::print (WINDOW * wnd)
+{
+  mvwprintw (wnd, 1, 1, "Typ: %s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "Ser: %s", getValueChar ("serial"));
+/*  if (info->chip_info)
+    mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
+	       info->chip_info[0].height);
+  else
+    mvwprintw (wnd, 3, 1, "Siz: Unknow"); */
+  mvwprintw (wnd, 4, 1, "S/A: %+03.1f %+03.1f oC",
+	     getValueDouble ("temperature_setpoint"),
+	     getValueDouble ("air_temperature"));
+  mvwprintw (wnd, 5, 1, "CCD: %+03.3f oC",
+	     getValueDouble ("ccd_temperature"));
+  mvwprintw (wnd, 6, 1, "CPo: %03.1f %%",
+	     getValueDouble ("cooling_power") / 10.0);
+  mvwprintw (wnd, 7, 1, "Fan: %s", getValueDouble ("fan") ? "on " : "off");
+}
+
+class Rts2NMDome:public Rts2DevClientDome
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMDome (Rts2CNMonConn *
+		in_connection):Rts2DevClientDome (in_connection)
+  {
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    switch (event->getType ())
+      {
+	WINDOW *window;
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientDome::postEvent (event);
+  }
+};
+
+void
+Rts2NMDome::print (WINDOW * wnd)
+{
+  int dome = getValueInteger ("dome");
+  mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueChar ("temperature"));
+  mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueChar ("humidity"));
+  mvwprintw (wnd, 4, 1, "Pow_tel: %i", getValueInteger ("power_telescope"));
+  mvwprintw (wnd, 5, 1, "Pow_cam: %i", getValueInteger ("power_cameras"));
+#define is_on(num)	((dome & (1 << num))? 'O' : 'f')
+  mvwprintw (wnd, 7, 1, "Open sw: %c %c", is_on (0), is_on (1));
+  mvwprintw (wnd, 6, 1, "Close s: %c %c", is_on (2), is_on (3));
+#undef is_on
+}
 
 int
 Rts2CNMonConn::printStatus ()
@@ -79,14 +243,30 @@ Rts2CNMonConn::printStatus ()
       Rts2ServerState *state = serverState[i];
       if (state)
 	{
-	  mvwprintw (window, nrow, 0, "%s : %i", state->name, state->value);
+	  mvwprintw (window, nrow, 0, "%10s: %i", state->name, state->value);
 	  nrow++;
 	}
     }
   return 0;
 }
 
-int
+void
+Rts2CNMonConn::setOtherType (int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_MOUNT:
+      otherDevice = new Rts2NMTelescope (this);
+      break;
+    case DEVICE_TYPE_CCD:
+      otherDevice = new Rts2NMCamera (this);
+      break;
+    default:
+      Rts2ConnClient::setOtherType (other_device_type);
+    }
+}
+
+void
 Rts2CNMonConn::print ()
 {
   int ret;
@@ -110,20 +290,10 @@ Rts2CNMonConn::print ()
   else
     {
       // print values
-      std::vector < Rts2Value * >::iterator val_iter;
-      for (val_iter = otherDevice->values.begin ();
-	   val_iter != otherDevice->values.end (); val_iter++, nrow++)
-	{
-	  Rts2Value *val = (*val_iter);
-	  char *buf;
-	  val->getValue (&buf);
-	  mvwprintw (window, nrow, 0, " %s : %s", val->getName (), buf);
-	  delete buf;
-	}
+      otherDevice->postEvent (new Rts2Event (EVENT_PRINT));
     }
-  ret = printStatus ();
+  // ret = printStatus ();
   wrefresh (window);
-  return ret;
 }
 
 /*******************************************************

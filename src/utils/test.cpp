@@ -9,7 +9,6 @@
 #include <errno.h>
 
 #include "config.h"
-#include "hms.h"
 #include "mkpath.h"
 
 #include "objectcheck.h"
@@ -19,11 +18,6 @@ main (int argc, char **argv)
 {
   double value;
   ObjectCheck *checker;
-  printf ("10.2 - %f\n", hmstod ("10.2"));
-  printf ("10a58V67 - %f\n", hmstod ("10a58V67"));
-
-  value = hmstod ("-11aa11:57a");
-  assert (errno != 0);
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);

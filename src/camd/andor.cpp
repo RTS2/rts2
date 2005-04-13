@@ -142,7 +142,6 @@ public:
   virtual int camChipInfo (int chip);
   virtual int camExpose (int chip, int light, float exptime);
   virtual int camStopExpose (int chip);
-  virtual int camBox (int chip, int x, int y, int width, int height);
   virtual int camStopRead (int chip);
   virtual int camCoolMax ();
   virtual int camCoolHold ();
@@ -288,12 +287,6 @@ int
 Rts2DevCameraAndor::camStopExpose (int chip)
 {
   // not supported
-  return -1;
-}
-
-int
-Rts2DevCameraAndor::camBox (int chip, int x, int y, int width, int height)
-{
   return -1;
 }
 

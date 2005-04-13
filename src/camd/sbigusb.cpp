@@ -216,7 +216,6 @@ public:
   virtual int camExpose (int chip, int light, float exptime);
   virtual long camWaitExpose (int chip);
   virtual int camStopExpose (int chip);
-  virtual int camBox (int chip, int x, int y, int width, int height);
   virtual int camStopRead (int chip);
   virtual int camCoolMax ();
   virtual int camCoolHold ();
@@ -330,7 +329,7 @@ Rts2DevCameraSbig::baseInfo ()
   pcam->GetDriverInfo (DRIVER_STD, gccdir0);
   if (pcam->GetError () != CE_NO_ERROR)
     return -1;
-  sprintf (ccdType, "SBIG %i", pcam->GetCameraType ());
+  sprintf (ccdType, "SBIG_%i", pcam->GetCameraType ());
   // get serial number
 
   GetCCDInfoParams req;
@@ -398,12 +397,6 @@ Rts2DevCameraSbig::camStopExpose (int chip)
 
   ret = pcam->SBIGUnivDrvCommand (CC_END_EXPOSURE, &eep, NULL);
   return checkSbigHw (ret);
-}
-
-int
-Rts2DevCameraSbig::camBox (int chip, int x, int y, int width, int height)
-{
-  return -1;
 }
 
 int

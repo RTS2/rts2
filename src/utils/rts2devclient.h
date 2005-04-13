@@ -1,6 +1,7 @@
 #ifndef __RTS2_DEVCLIENT__
 #define __RTS2_DEVCLIENT__
 
+#include <libnova/libnova.h>
 #include <vector>
 
 #include "rts2object.h"
@@ -26,10 +27,13 @@ protected:
   Rts2Conn * connection;
   enum
   { NOT_PROCESED, PROCESED } processedBaseInfo;
+  Rts2Value *getValue (char *value_name);
 public:
     Rts2DevClient (Rts2Conn * in_connection);
   void addValue (Rts2Value * value);
-  char *getValue (char *value_name);
+  char *getValueChar (char *value_name);
+  double getValueDouble (char *value_name);
+  int getValueInteger (char *value_name);
 
   int command ();
 
@@ -62,8 +66,12 @@ public:
 
 class Rts2DevClientTelescope:public Rts2DevClient
 {
+protected:
+  void getEqu (struct ln_equ_posn *tel);
+  void getObs (struct ln_lnlat_posn *obs);
+
 public:
-  Rts2DevClientTelescope (Rts2Conn * in_connection);
+    Rts2DevClientTelescope (Rts2Conn * in_connection);
 
 };
 
