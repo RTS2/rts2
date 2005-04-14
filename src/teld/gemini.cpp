@@ -46,6 +46,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
 private:
   char *device_file_io;
+  char *geminiConfig;
   int tel_desc;
   // utility I/O functions
   int tel_read (char *buf, int count);
@@ -98,7 +99,7 @@ public:
   virtual int change (double chng_ra, double chng_dec);
   virtual int stop ();
   virtual int saveModel ();
-  int load ();
+  virtual int loadModel ();
 };
 
 /*! 
@@ -311,14 +312,19 @@ int
 Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
 {
   int len;
-  char buf[20];
-  len = sprintf (buf, ">%i:%10s", id, in_buf);
+  char *buf;
+  int ret;
+  len = strlen (in_buf);
+  buf = (char *) malloc (len + 10);
+  len = sprintf (buf, ">%i:%s", id, in_buf);
   buf[len] = tel_gemini_checksum (buf);
   len++;
   buf[len] = '#';
   len++;
   buf[len] = '\0';
-  if (tel_write (buf, len) > 0)
+  ret = tel_write (buf, len);
+  free (buf);
+  if (ret == len)
     return 0;
   return -1;
 }
@@ -643,8 +649,10 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
 		  argv)
 {
   device_file = "/dev/ttyS0";
+  geminiConfig = "/etc/rts2/gemini.ini";
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+  addOption ('c', "config_file", 1, "config file (with model parameters)");
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -659,6 +667,9 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
     {
     case 'f':
       device_file = optarg;
+      break;
+    case 'c':
+      geminiConfig = optarg;
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -1075,7 +1086,7 @@ Rts2DevTelescopeGemini::startPark ()
   return 0;
 }
 
-int save_registers[] = {
+static int save_registers[] = {
   0,				// mount type
   120,				// manual slewing speed
   140,				// goto slewing speed
@@ -1104,7 +1115,14 @@ Rts2DevTelescopeGemini::saveModel ()
   char buf[10];
   FILE *config_file;
 
-  config_file = fopen ("/etc/rts2/gemini.ini", "w");
+  config_file = fopen (geminiConfig, "w");
+  if (!config_file)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeGemini::saveModel cannot open file '%s' : %m",
+	      geminiConfig);
+      return -1;
+    }
 
   while (*reg >= 0)
     {
@@ -1125,8 +1143,49 @@ Rts2DevTelescopeGemini::saveModel ()
 }
 
 extern int
-Rts2DevTelescopeGemini::load ()
+Rts2DevTelescopeGemini::loadModel ()
 {
+  int *reg = save_registers;
+  FILE *config_file;
+  char *line;
+  size_t numchar;
+  int id;
+  int ret;
+
+  config_file = fopen (geminiConfig, "r");
+  if (!config_file)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeGemini::loadModel cannot open file '%s' : %m",
+	      geminiConfig);
+      return -1;
+    }
+
+  numchar = 100;
+  line = (char *) malloc (numchar);
+
+  while (getline (&line, &numchar, config_file) != -1)
+    {
+      char *buf;
+      ret = sscanf (line, "%i:%as", &id, &buf);
+      if (ret == 2)
+	{
+	  ret = tel_gemini_setch (id, buf);
+	  if (ret)
+	    syslog (LOG_ERR,
+		    "Rts2DevTelescopeGemini::loadModel setch return: %i on '%s'",
+		    ret, buf);
+	  free (buf);
+	}
+      else
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevTelescopeGemini::loadModel invalid line: '%s'",
+		  line);
+	}
+    }
+  free (line);
+
   return 0;
 }
 

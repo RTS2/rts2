@@ -212,11 +212,22 @@ Rts2DevTelescope::saveModel (Rts2Conn * conn)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot save model");
     }
+  return ret;
 }
 
-Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock,
-					    Rts2DevTelescope *
-					    in_master_device):
+int
+Rts2DevTelescope::loadModel (Rts2Conn * conn)
+{
+  int ret;
+  ret = loadModel ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot load model");
+    }
+  return ret;
+}
+
+Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
   master = in_master_device;
@@ -288,6 +299,10 @@ Rts2DevConnTelescope::commandAuthorized ()
   else if (isCommand ("save_model"))
     {
       return master->saveModel (this);
+    }
+  else if (isCommand ("load_model"))
+    {
+      return master->loadModel (this);
     }
   return Rts2DevConn::commandAuthorized ();
 }
