@@ -79,6 +79,10 @@ public:
   {
     return -1;
   }
+  virtual int saveModel ()
+  {
+    return -1;
+  }
 
   // callback functions from telescope connection
   int ready (Rts2Conn * conn);
@@ -90,6 +94,7 @@ public:
   int correct (Rts2Conn * conn, double cor_ra, double cor_dec);
   int startPark (Rts2Conn * conn);
   int change (Rts2Conn * conn, double chng_ra, double chng_dec);
+  int saveModel (Rts2Conn * conn);
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn

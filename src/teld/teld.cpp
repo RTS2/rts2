@@ -27,7 +27,6 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   telLongtitude = nan ("f");
   telLatitude = nan ("f");
   telAltitude = nan ("f");
-  telParkDec = nan ("f");
 }
 
 int
@@ -145,7 +144,6 @@ Rts2DevTelescope::baseInfo (Rts2Conn * conn)
   conn->sendValue ("longtitude", telLongtitude);
   conn->sendValue ("latitude", telLatitude);
   conn->sendValue ("altitude", telAltitude);
-  conn->sendValue ("park_dec", telParkDec);
   return 0;
 }
 
@@ -205,7 +203,20 @@ Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
   return ret;
 }
 
-Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device):
+int
+Rts2DevTelescope::saveModel (Rts2Conn * conn)
+{
+  int ret;
+  ret = saveModel ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot save model");
+    }
+}
+
+Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock,
+					    Rts2DevTelescope *
+					    in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
   master = in_master_device;
@@ -273,6 +284,10 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  || !paramEnd ())
 	return -2;
       return master->change (this, chng_ra, chng_dec);
+    }
+  else if (isCommand ("save_model"))
+    {
+      return master->saveModel (this);
     }
   return Rts2DevConn::commandAuthorized ();
 }

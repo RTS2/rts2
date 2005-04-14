@@ -42,9 +42,6 @@
 
 #define TCM_DEFAULT_RATE	32768
 
-//! telescope parking declination
-#define PARK_DEC	0
-
 class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
 private:
@@ -61,7 +58,9 @@ private:
   int tel_read_hms (double *hmsptr, char *command);
   char tel_gemini_checksum (const char *buf);
   // higher level I/O functions
-  int tel_gemini_set (int id, int val);
+  int tel_gemini_getch (int id, char *in_buf);
+  int tel_gemini_setch (int id, char *in_buf);
+  int tel_gemini_set (int id, int32_t val);
   int tel_gemini_get (int id, int32_t * val);
   int tel_gemini_reset ();
   int tel_gemini_match_time ();
@@ -98,8 +97,7 @@ public:
   virtual int correct (double cor_ra, double cor_dec);
   virtual int change (double chng_ra, double chng_dec);
   virtual int stop ();
-
-  int save ();
+  virtual int saveModel ();
   int load ();
 };
 
@@ -305,12 +303,36 @@ Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
  * Write command to set gemini local parameters
  *
  * @param id	id to set
+ * @param buf	value to set (char buffer; should be 15 char long)
+ *
+ * @return -1 on error, otherwise 0
+ */
+int
+Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
+{
+  int len;
+  char buf[20];
+  len = sprintf (buf, ">%i:%10s", id, in_buf);
+  buf[len] = tel_gemini_checksum (buf);
+  len++;
+  buf[len] = '#';
+  len++;
+  buf[len] = '\0';
+  if (tel_write (buf, len) > 0)
+    return 0;
+  return -1;
+}
+
+/*!
+ * Write command to set gemini local parameters
+ *
+ * @param id	id to set
  * @param val	value to set
  *
  * @return -1 on error, otherwise 0
  */
 int
-Rts2DevTelescopeGemini::tel_gemini_set (int id, int val)
+Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
 {
   char buf[15];
   int len;
@@ -325,6 +347,41 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, int val)
   return -1;
 }
 
+/*!
+ * Read gemini local parameters
+ *
+ * @param id	id to get
+ * @param buf	pointer where to store result (char[15] buf)
+ *
+ * @return -1 and set errno on error, otherwise 0
+ */
+int
+Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
+{
+  char *ptr, checksum;
+  int len, ret;
+  len = sprintf (buf, "<%i:", id);
+  buf[len] = tel_gemini_checksum (buf);
+  len++;
+  buf[len] = '#';
+  len++;
+  buf[len] = '\0';
+  ret = tel_write_read_hash (buf, len, buf, 8);
+  if (ret < 0)
+    return ret;
+  for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');
+       ptr++);
+  checksum = *ptr;
+  *ptr = '\0';
+  if (tel_gemini_checksum (buf) != checksum)
+    {
+      syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
+	      tel_gemini_checksum (buf), checksum);
+      *buf = '\0';
+      return -1;
+    }
+  return 0;
+}
 
 /*!
  * Read gemini local parameters
@@ -348,7 +405,8 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t * val)
   ret = tel_write_read_hash (buf, len, buf, 8);
   if (ret < 0)
     return ret;
-  for (ptr = buf; *ptr && *ptr >= '0' && *ptr <= '9'; ptr++);
+  for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');
+       ptr++);
   checksum = *ptr;
   *ptr = '\0';
   if (tel_gemini_checksum (buf) != checksum)
@@ -719,8 +777,6 @@ Rts2DevTelescopeGemini::baseInfo ()
   strcpy (telSerialNumber, "000001");
   telAltitude = 600;
 
-  telParkDec = PARK_DEC;
-
   return 0;
 }
 
@@ -916,8 +972,16 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
   if (tel_read_ra () || tel_read_dec ())
     return -1;
 
+  // do not change if we are too close to poles
+  if (fabs (dec_act) > 85)
+    return -1;
+
   ra_act -= telRa;
   dec_act -= telDec;
+
+  // do not change if we are too close to poles
+  if (fabs (dec_act) > 85)
+    return -1;
 
   return setTo (ra_act, dec_act);
 }
@@ -1012,6 +1076,7 @@ Rts2DevTelescopeGemini::startPark ()
 }
 
 int save_registers[] = {
+  0,				// mount type
   120,				// manual slewing speed
   140,				// goto slewing speed
   150,				// guiding speed
@@ -1026,22 +1091,34 @@ int save_registers[] = {
   207,				// modeling parameter FR (mirror flop/gear play in RE) in seconds of arc
   208,				// modeling parameter FD (mirror flop/gear play in declination) in seconds of arc
   209,				// modeling paremeter CF (counterweight & RA axis flexure) in seconds of arc
-  211, -1
-};				// modeling parameter TF (tube flexure) in seconds of arc
+  211,				// modeling parameter TF (tube flexure) in seconds of arc 
+  411,				// RA track divisor 
+  412,				// DEC tracking divisor
+  -1
+};
 
 int
-Rts2DevTelescopeGemini::save ()
+Rts2DevTelescopeGemini::saveModel ()
 {
   int *reg = save_registers;
-  int32_t val;
+  char buf[10];
   FILE *config_file;
 
-  config_file = fopen (".losmandy.ini", "w");
+  config_file = fopen ("/etc/rts2/gemini.ini", "w");
 
   while (*reg >= 0)
     {
-      tel_gemini_get (*reg, &val);
-      fprintf (config_file, "%i:%i\n", *reg, val);
+      int ret;
+      ret = tel_gemini_getch (*reg, buf);
+      if (ret)
+	{
+	  fprintf (config_file, "%i:error", *reg);
+	}
+      else
+	{
+	  fprintf (config_file, "%i:%s\n", *reg, buf);
+	}
+      reg++;
     }
   fclose (config_file);
   return 0;
