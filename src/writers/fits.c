@@ -70,8 +70,6 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 	if (fits_update_key (fptr, type, key, value, comment, &status)) \
 	{ \
 		fits_report_error (stdout, status); \
-		errno = EINVAL; \
-		return -1; \
 	}
 
 int
