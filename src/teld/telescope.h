@@ -31,6 +31,7 @@ protected:
   {
     return -2;
   }
+  int move_fixed;
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int init ();
@@ -42,20 +43,28 @@ public:
   virtual int ready ()
   {
     return -1;
-  };
+  }
   virtual int info ()
   {
     return -1;
-  };
+  }
   virtual int baseInfo ()
   {
     return -1;
-  };
+  }
   virtual int startMove (double tar_ra, double tar_dec)
   {
     return -1;
-  };
+  }
   virtual int endMove ()
+  {
+    return -1;
+  }
+  virtual int startMoveFixed (double tar_ha, double tar_dec)
+  {
+    return -1;
+  }
+  virtual int endMoveFixed ()
   {
     return -1;
   }
@@ -87,6 +96,14 @@ public:
   {
     return -1;
   }
+  virtual int stopWorm ()
+  {
+    return -1;
+  }
+  virtual int startWorm ()
+  {
+    return -1;
+  }
 
   // callback functions from telescope connection
   int ready (Rts2Conn * conn);
@@ -94,12 +111,15 @@ public:
   int baseInfo (Rts2Conn * conn);
 
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
+  int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
   int correct (Rts2Conn * conn, double cor_ra, double cor_dec);
   int startPark (Rts2Conn * conn);
   int change (Rts2Conn * conn, double chng_ra, double chng_dec);
   int saveModel (Rts2Conn * conn);
   int loadModel (Rts2Conn * conn);
+  int stopWorm (Rts2Conn * conn);
+  int startWorm (Rts2Conn * conn);
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn

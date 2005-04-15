@@ -27,6 +27,7 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   telLongtitude = nan ("f");
   telLatitude = nan ("f");
   telAltitude = nan ("f");
+  move_fixed = 0;
 }
 
 int
@@ -57,7 +58,11 @@ Rts2DevTelescope::checkMoves ()
 	}
       if (ret == -2)
 	{
-	  if (endMove ())
+	  if (move_fixed)
+	    ret = endMoveFixed ();
+	  else
+	    ret = endMove ();
+	  if (ret)
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		       "move finished with error");
 	  else
@@ -155,7 +160,26 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
   else
-    maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+    {
+      move_fixed = 0;
+      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+    }
+  return ret;
+}
+
+int
+Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
+				  double tar_dec)
+{
+  int ret;
+  ret = startMoveFixed (tar_ha, tar_dec);
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
+  else
+    {
+      move_fixed = 1;
+      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+    }
   return ret;
 }
 
@@ -227,6 +251,30 @@ Rts2DevTelescope::loadModel (Rts2Conn * conn)
   return ret;
 }
 
+int
+Rts2DevTelescope::stopWorm (Rts2Conn * conn)
+{
+  int ret;
+  ret = stopWorm ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot stop worm");
+    }
+  return ret;
+}
+
+int
+Rts2DevTelescope::startWorm (Rts2Conn * conn)
+{
+  int ret;
+  ret = startWorm ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot start worm");
+    }
+  return ret;
+}
+
 Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
@@ -258,6 +306,16 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  || !paramEnd ())
 	return -2;
       return master->startMove (this, tar_ra, tar_dec);
+    }
+  else if (isCommand ("fixed"))
+    {
+      double tar_ha;
+      double tar_dec;
+      CHECK_PRIORITY;
+      if (paramNextDouble (&tar_ha) || paramNextDouble (&tar_dec)
+	  || !paramEnd ())
+	return -2;
+      return master->startMoveFixed (this, tar_ha, tar_dec);
     }
   else if (isCommand ("setto"))
     {
@@ -303,6 +361,14 @@ Rts2DevConnTelescope::commandAuthorized ()
   else if (isCommand ("load_model"))
     {
       return master->loadModel (this);
+    }
+  else if (isCommand ("worm_stop"))
+    {
+      return master->stopWorm (this);
+    }
+  else if (isCommand ("worm_start"))
+    {
+      return master->startWorm (this);
     }
   return Rts2DevConn::commandAuthorized ();
 }

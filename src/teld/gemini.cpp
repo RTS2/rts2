@@ -91,6 +91,8 @@ public:
   virtual int startMove (double tar_ra, double tar_dec);
   virtual int isMoving ();
   virtual int endMove ();
+  virtual int startMoveFixed (double tar_ha, double tar_dec);
+  virtual int endMoveFixed ();
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();
@@ -100,6 +102,8 @@ public:
   virtual int stop ();
   virtual int saveModel ();
   virtual int loadModel ();
+  virtual int stopWorm ();
+  virtual int startWorm ();
 };
 
 /*! 
@@ -912,6 +916,43 @@ Rts2DevTelescopeGemini::endMove ()
 }
 
 int
+Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
+{
+  double tar_ra;
+  double st;
+  char retstr;
+
+  // compute ra
+  tel_read_siderealtime ();
+
+  tar_ra = telSiderealTime * 15.0 + tar_ha;
+
+  tel_normalize (&tar_ra, &tar_dec);
+
+  stopWorm ();
+
+  if ((tel_write_ra (tar_ra) < 0) || (tel_write_dec (tar_dec) < 0))
+    return -1;
+  if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
+    return -1;
+  if (retstr == '0')
+    return 0;
+  return -1;
+}
+
+int
+Rts2DevTelescopeGemini::endMoveFixed ()
+{
+  int32_t track;
+  stopWorm ();
+  tel_gemini_get (130, &track);
+  syslog (LOG_DEBUG, "endMoveFixed track: %i", track);
+  if (tel_write ("#:ONfixed", 8) > 0)
+    return 0;
+  return -1;
+}
+
+int
 Rts2DevTelescopeGemini::isParking ()
 {
   char buf = '3';
@@ -1187,6 +1228,18 @@ Rts2DevTelescopeGemini::loadModel ()
   free (line);
 
   return 0;
+}
+
+int
+Rts2DevTelescopeGemini::stopWorm ()
+{
+  return tel_gemini_set (135, 135);
+}
+
+int
+Rts2DevTelescopeGemini::startWorm ()
+{
+  return tel_gemini_set (131, 131);
 }
 
 int
