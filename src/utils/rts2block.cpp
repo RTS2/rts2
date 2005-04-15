@@ -325,7 +325,7 @@ Rts2Conn::sendValue (char *name, double value)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %0.2f", name, value);
+  asprintf (&msg, "%s %f", name, value);
   ret = send (msg);
   free (msg);
   return ret;
