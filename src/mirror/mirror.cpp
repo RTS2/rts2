@@ -30,7 +30,7 @@ Rts2DevMirror::idle ()
 {
   int ret;
   ret = Rts2Device::idle ();
-  switch (getState (0) & MIRROR_MASK)
+  switch (getState (0) & (MIRROR_MASK | MIRROR_MASK_MOVE))
     {
     case MIRROR_A_B:
       ret = isOpened ();
