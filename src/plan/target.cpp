@@ -38,23 +38,29 @@ Target::move ()
       double JD;
       getPosition (&object);
       JD = ln_get_julian_from_sys ();
-      // correction for terestial target
-      if (obs_type == TYPE_TERESTIAL)
-	{
-	  object.ra =
-	    object.ra - ln_get_mean_sidereal_time (JD) * 15.0 - observer->lng;
-	}
       ln_get_hrz_from_equ (&object, observer, JD, &hrz);
       printf ("Ra: %f Dec: %f\n", object.ra, object.dec);
       printf ("Alt: %f Az: %f\n", hrz.alt, hrz.az);
 
       tel_target_state = TEL_OBSERVING;
 
-      if (devcli_command
-	  (telescope, NULL, "move %f %f", object.ra, object.dec))
+      if (type = TYPE_TERESTIAL)
 	{
-	  printf ("telescope error\n\n--------------\n");
-	  return -1;
+	  if (devcli_command
+	      (telescope, NULL, "fixed %f %f", object.ra, object.dec))
+	    {
+	      printf ("telescope error\n\n--------------\n");
+	      return -1;
+	    }
+	}
+      else
+	{
+	  if (devcli_command
+	      (telescope, NULL, "move %f %f", object.ra, object.dec))
+	    {
+	      printf ("telescope error\n\n--------------\n");
+	      return -1;
+	    }
 	}
       moved = 1;
     }

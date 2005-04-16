@@ -111,12 +111,12 @@ ready_to_observe (int status)
 }
 
 int
-observe (int hi_precission)
+observe (int hi_precission, int obs_number)
 {
   int i = 0;
   int tar_id = 0;
   int obs_id = -1;
-  Target *last, *plan, *p, *next;
+  Target *last, *plan, *p = NULL, *next;
   int exposure;
   int light;
   int start_move_count;
@@ -142,7 +142,14 @@ observe (int hi_precission)
   struct device *camera;
 
   // call next observation
-  last->observe (p);
+  while (obs_number > 0)
+    {
+      last->observe (p);
+
+      obs_number++;
+
+      p = last;
+    }
 
   if (obs_id >= 0)
     {
@@ -166,6 +173,7 @@ main (int argc, char **argv)
   int priority = 20;
   struct device *devcli_ser = devcli_server ();
   struct device *phot;
+  int obs_number = 1;
 
   char *horizont_file;
 
@@ -196,9 +204,11 @@ main (int argc, char **argv)
 	 "help", 0, 0, 'h'}
 	,
 	{
+	 "number", 1, 0, 'n'},
+	{
 	 0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "aip:r:g:t:h", long_option, NULL);
+      c = getopt_long (argc, argv, "aip:r:g:t:n:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -230,6 +240,9 @@ main (int argc, char **argv)
 	case 't':
 	  target_id = atoi (optarg);
 	  break;
+	case 'n':
+	  obs_number = atoi (optarg);
+	  break;
 	case 'h':
 	  printf
 	    ("Options:\n"
@@ -237,7 +250,8 @@ main (int argc, char **argv)
 	     "\tpriority|r <priority>   priority to run at\n"
 	     "\tignore_status|i         run even when you don't have priority\n"
 	     "\tguidance|g              guidance type - overwrite hi_precission from config\n"
-	     "\ttarget_id|t		target_id of observation we would like to observe\n");
+	     "\ttarget_id|t		target_id of observation we would like to observe\n"
+	     "\tnumber|n		number of observations\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -365,7 +379,7 @@ loop:
 				    (devcli_handle_response_t) phot_handler);
       }
 
-  observe (hi_precission);
+  observe (hi_precission, obs_number);
 
   sleep (1);
 
