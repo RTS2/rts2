@@ -35,6 +35,7 @@
 #define COMMAND_UTC_SLEEP	'U'
 #define COMMAND_CENTERING	'c'
 #define	COMMAND_FOCUSING	'f'
+#define COMMAND_MIRROR		'M'
 
 #define TARGET_FOCUSING		11
 

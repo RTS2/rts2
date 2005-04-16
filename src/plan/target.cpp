@@ -506,6 +506,7 @@ Target::runScript (struct ex_info *exinfo)
   char *arg1, *arg2;
   float exposure;
   int filter, count;
+  char mirror_pos;
   int ret;
   time_t t;
   time_t script_start;
@@ -792,6 +793,34 @@ Target::runScript (struct ex_info *exinfo)
 	    }
 	  exp_state = CENTERING;
 	  rts2_centering (camera, telescope);
+	  break;
+	case COMMAND_MIRROR:
+	  command++;
+	  mirror_pos = *command;
+	  if (!(mirror_pos == 'A' || mirror_pos == 'B'))
+	    {
+	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
+	      command = s;
+	      continue;
+	    }
+	  command = s;
+	  if (exp_state == EXPOSURE_PROGRESS)
+	    {
+	      devcli_command (camera, NULL, "readout 0");
+	      devcli_wait_for_status (camera, "img_chip",
+				      CAM_MASK_READING, CAM_NOTREADING,
+				      MAX_READOUT_TIME);
+	      exp_state = NO_EXPOSURE;
+	    }
+	  if (exp_state == INTEGRATION_PROGRESS)
+	    {
+	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
+					  PHOT_MASK_INTEGRATE,
+					  PHOT_NOINTEGRATE, 100);
+	    }
+	  devcli_command_all (DEVICE_TYPE_MIRROR, "set %c", mirror_pos);
+	  devcli_wait_for_status_all (DEVICE_TYPE_MIRROR, "mirror",
+				      MIRROR_MASK_MOVE, MIRROR_NOTMOVE, 30);
 	  break;
 	case COMMAND_SLEEP:
 	  command++;
