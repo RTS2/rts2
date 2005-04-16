@@ -44,7 +44,7 @@ Target::move ()
 
       tel_target_state = TEL_OBSERVING;
 
-      if (type = TYPE_TERESTIAL)
+      if (type == TYPE_TERESTIAL)
 	{
 	  if (devcli_command
 	      (telescope, NULL, "fixed %f %f", object.ra, object.dec))
