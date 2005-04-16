@@ -80,6 +80,12 @@ private:
   int tel_set_rate (char new_rate);
   int telescope_start_move (char direction);
   int telescope_stop_move (char direction);
+
+  double fixed_ha;
+  double fixed_dec;
+  int fixed_ntries;
+
+  int startMoveFixedReal ();
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -92,6 +98,7 @@ public:
   virtual int isMoving ();
   virtual int endMove ();
   virtual int startMoveFixed (double tar_ha, double tar_dec);
+  virtual int isMovingFixed ();
   virtual int endMoveFixed ();
   virtual int startPark ();
   virtual int isParking ();
@@ -916,28 +923,74 @@ Rts2DevTelescopeGemini::endMove ()
 }
 
 int
-Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
+Rts2DevTelescopeGemini::startMoveFixedReal ()
 {
   double tar_ra;
-  double st;
   char retstr;
 
   // compute ra
   tel_read_siderealtime ();
 
-  tar_ra = telSiderealTime * 15.0 + tar_ha;
+  tar_ra = telSiderealTime * 15.0 + fixed_ha;
 
-  tel_normalize (&tar_ra, &tar_dec);
+  tel_normalize (&tar_ra, &fixed_dec);
 
   stopWorm ();
 
-  if ((tel_write_ra (tar_ra) < 0) || (tel_write_dec (tar_dec) < 0))
+  if ((tel_write_ra (tar_ra) < 0) || (tel_write_dec (fixed_dec) < 0))
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
     return -1;
   if (retstr == '0')
-    return 0;
+    {
+      fixed_ntries++;
+      return 0;
+    }
   return -1;
+}
+
+int
+Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
+{
+  double tar_ra;
+  fixed_ha = tar_ha;
+  fixed_dec = tar_dec;
+  fixed_ntries = 0;
+
+  return startMoveFixedReal ();
+}
+
+int
+Rts2DevTelescopeGemini::isMovingFixed ()
+{
+  int ret;
+  ret = isMovingFixed ();
+  // move ended
+  if (ret == -2 && fixed_ntries < 3)
+    {
+      struct ln_equ_posn pos1, pos2;
+      double sep;
+      // check that we reach destination..
+      info ();
+      pos1.ra = fixed_ha + telSiderealTime * 15.0;
+      pos1.dec = fixed_dec;
+
+      pos2.ra = telRa;
+      pos2.dec = telDec;
+      sep = ln_get_angular_separation (&pos1, &pos2);
+      if (sep > 15 / 60 / 4)	// 15 seconds..
+	{
+	  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::isMovingFixed sep: %f",
+		  sep);
+	  // reque move..
+	  ret = startMoveFixedReal ();
+	  if (ret)		// end in case of error
+	    return -2;
+	  return USEC_SEC;
+	}
+      return ret;
+    }
+  return ret;
 }
 
 int

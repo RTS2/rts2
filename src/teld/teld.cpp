@@ -50,7 +50,10 @@ Rts2DevTelescope::checkMoves ()
   if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
     {
       int ret;
-      ret = isMoving ();
+      if (move_fixed)
+	ret = isMovingFixed ();
+      else
+	ret = isMoving ();
       if (ret >= 0)
 	setTimeout (ret);
       if (ret == -1)

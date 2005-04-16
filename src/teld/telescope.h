@@ -25,6 +25,10 @@ protected:
   double telLatitude;
   double telAltitude;
   double telParkDec;
+  virtual int isMovingFixed ()
+  {
+    return isMoving ();
+  }
   virtual int isMoving ()
   {
     return -2;
