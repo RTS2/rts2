@@ -215,7 +215,8 @@ astrometry_image (struct image_que *actual_image)
 
       // add image to db
       asprintf (&cmd,
-		"cd /images && rts2-fits2db %s|psql stars", filename + 8);
+		"cd /images && /usr/local/bin/rts2-fits2db %s|psql stars",
+		filename + 8);
 
       if (system (cmd))
 	{
