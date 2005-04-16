@@ -46,7 +46,7 @@ Rts2DevMirror::idle ()
       return ret;
     }
   // set timeouts..
-  setTimeoutMin (1000);
+  setTimeoutMin (100000);
 }
 
 Rts2Conn *
@@ -125,13 +125,13 @@ Rts2DevConnMirror::commandAuthorized ()
 	  (strcasecmp (str_dir, "A") && strcasecmp (str_dir, "B")))
 	return -2;
       if (!strcasecmp (str_dir, "A"))
-	if (getState (0) != MIRROR_A)
-	  ret = master->startOpen ();
+	if ((getState (0) & MIRROR_MASK) != MIRROR_A)
+	  ret = master->startClose ();
 	else
 	  ret = -1;
       else if (!strcasecmp (str_dir, "B"))
-	if (getState (0) != MIRROR_B)
-	  ret = master->startClose ();
+	if ((getState (0) & MIRROR_MASK) != MIRROR_B)
+	  ret = master->startOpen ();
 	else
 	  ret = -1;
       if (ret)
