@@ -116,5 +116,30 @@ Rts2DevConnMirror::commandAuthorized ()
 	}
       return 0;
     }
+  if (isCommand ("set"))
+    {
+      char *str_dir;
+      int ret = 0;
+      CHECK_PRIORITY;
+      if (paramNextString (&str_dir) || !paramEnd () ||
+	  (strcasecmp (str_dir, "A") && strcasecmp (str_dir, "B")))
+	return -2;
+      if (!strcasecmp (str_dir, "A"))
+	if (getState (0) != MIRROR_A)
+	  ret = master->startOpen ();
+	else
+	  ret = -1;
+      else if (!strcasecmp (str_dir, "B"))
+	if (getState (0) != MIRROR_B)
+	  ret = master->startClose ();
+	else
+	  ret = -1;
+      if (ret)
+	{
+	  sendCommandEnd (DEVDEM_E_HW, "cannot open/close mirror");
+	  return -1;
+	}
+      return 0;
+    }
   return Rts2DevConn::commandAuthorized ();
 }
