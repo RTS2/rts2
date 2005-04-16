@@ -85,7 +85,7 @@
 #define DOME_WEATHER_BAD	0x20
 #define DOME_WEATHER_UNKNOW	0x30
 
-#define MIRROR_MASK		0x0f
+#define MIRROR_MASK		0x1f
 #define MIRROR_MASK_MOVE	0x10
 #define MIRROR_MOVE		0x10
 #define MIRROR_NOTMOVE		0x00
