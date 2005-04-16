@@ -9,6 +9,8 @@
 
 class Rts2DevTelescope:public Rts2Device
 {
+private:
+  Rts2Conn * move_connection;
 protected:
   char *device_file;
   char telType[64];
@@ -38,6 +40,11 @@ public:
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   int checkMoves ();
   virtual int idle ();
+  virtual void deleteConnection (Rts2Conn * in_conn)
+  {
+    if (in_conn == move_connection)
+      move_connection = NULL;
+  }
 
   // callback functions for Camera alone
   virtual int ready ()

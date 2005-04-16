@@ -28,6 +28,8 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   telLatitude = nan ("f");
   telAltitude = nan ("f");
   move_fixed = 0;
+
+  move_connection = NULL;
 }
 
 int
@@ -53,8 +55,11 @@ Rts2DevTelescope::checkMoves ()
 	setTimeout (ret);
       if (ret == -1)
 	{
+	  if (move_connection)
+	    info (move_connection);
 	  maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		     "move finished with error");
+	  move_connection = NULL;
 	}
       if (ret == -2)
 	{
@@ -62,12 +67,15 @@ Rts2DevTelescope::checkMoves ()
 	    ret = endMoveFixed ();
 	  else
 	    ret = endMove ();
+	  if (move_connection)
+	    info (move_connection);
 	  if (ret)
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		       "move finished with error");
 	  else
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		       "move finished without error");
+	  move_connection = NULL;
 	}
     }
   if ((getState (0) & TEL_MASK_MOVING) == TEL_PARKING)
@@ -163,6 +171,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     {
       move_fixed = 0;
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      move_connection = conn;
     }
   return ret;
 }
@@ -179,6 +188,7 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
     {
       move_fixed = 1;
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      move_connection = conn;
     }
   return ret;
 }
