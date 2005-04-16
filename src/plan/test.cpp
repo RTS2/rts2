@@ -16,7 +16,7 @@ print_jd (double JD, struct ln_lnlat_posn *obs)
   struct ln_equ_posn posn;
   struct ln_hrz_posn hrz;
 
-  ln_get_equ_solar_coords (JD, &posn);
+  ln_get_solar_equ_coords (JD, &posn);
   ln_get_hrz_from_equ (&posn, obs, JD, &hrz);
 
   ln_get_date (JD, &date);
@@ -99,9 +99,9 @@ main (int argc, char **argv)
 
   // test median & quicksort algo..
   for (int i = 0; i < 199; i++)
-  {
-    values[i] = random () / 200;
-  }
+    {
+      values[i] = random () / 200;
+    }
 
   printf ("median: %f\n", get_median (values, 199));
 

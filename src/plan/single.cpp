@@ -366,6 +366,14 @@ loop:
       }
 
   observe (hi_precission);
+
+  sleep (1);
+
+  devcli_wait_for_status_all (DEVICE_TYPE_CCD, "img_chip", CAM_MASK_READING,
+			      CAM_NOTREADING, MAX_READOUT_TIME);
+
+  sleep (10);
+
   printf ("done\n");
 
   devcli_server_disconnect ();

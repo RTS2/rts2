@@ -425,6 +425,7 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
   int ot_imgcount;
   int ot_minpause;
   int ot_isnull;
+  int ot_isnull_imgc;
   float d_az_end = az_end;
   float d_az_start = az_start;
   float db_lon = lon;
@@ -488,7 +489,7 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
       {
         case 0:
           EXEC SQL FETCH next FROM obs_cursor_to
-  	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
+  	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount:ot_isnull_imgc,:ot_minpause:ot_isnull;
 	  if (sqlca.sqlcode < 0)
 	    goto err;
           if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -497,13 +498,15 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
 	  EXEC SQL OPEN obs_cursor_to_all;
 	case 1:
 	  EXEC SQL FETCH next FROM obs_cursor_to_all
-	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
+	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount:ot_isnull_imgc,:ot_minpause:ot_isnull;
 	  if (sqlca.sqlcode)
 	    goto err;
 	  break;
       }  
       if (ot_isnull)
 	ot_minpause = 1800;
+      if (ot_isnull_imgc)
+        ot_imgcount = 100;
       last_o = db_last_observation (tar_id);
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%i\t%i\n", tar_id, ra, dec,
 	      alt, ot_imgcount, ot_minpause);
@@ -895,7 +898,7 @@ Selector::hete_mosaic (Target * plan, double jd, time_t * obs_start,
   if ((number % frequency) == 0)
     {
       int step = (number / frequency) % 4;
-      ln_get_equ_solar_coords (jd, &sun);
+      ln_get_solar_equ_coords (jd, &sun);
       sun.ra = ln_range_degrees (sun.ra - 180 - 12.5 + 25.0 * (step > 1));
       sun.dec = (-sun.dec) - (10.0 / 2) + 10 * (step % 2);
       add_target (plan, TARGET_LIGHT, 50 + step, sun.ra, sun.dec,
@@ -924,7 +927,7 @@ Selector::flat_field (Target * plan, time_t * obs_start, int number,
 
   jd = ln_get_julian_from_timet (obs_start);
 
-  ln_get_equ_solar_coords (jd, &sun);
+  ln_get_solar_equ_coords (jd, &sun);
   sun.ra = ln_range_degrees (sun.ra);
   ln_get_hrz_from_equ (&sun, &observer, jd, &sun_az);
   sun_az.az = ln_range_degrees (sun_az.az + 180.0 - 3 + 2 * (number % 4));
@@ -1076,7 +1079,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
 	  return 0;
 	}
 
-      ln_get_lunar_equ_coords (jd, &moon, 0.01);
+      ln_get_lunar_equ_coords (jd, &moon);
       ln_get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);
 
       switch (number & 1)

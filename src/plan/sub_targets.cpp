@@ -2,7 +2,8 @@
 #include "target.h"
 
 // ConstTarget
-ConstTarget::ConstTarget (struct device * tel, struct ln_lnlat_posn * obs, struct ln_equ_posn * in_pos):
+ConstTarget::ConstTarget (struct device *tel, struct ln_lnlat_posn *obs,
+			  struct ln_equ_posn *in_pos):
 Target (tel, obs)
 {
   position = *in_pos;
@@ -96,7 +97,7 @@ LunarTarget::LunarTarget (struct device * tel, struct ln_lnlat_posn * obs):Targe
 int
 LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
-  ln_get_lunar_equ_coords (JD, pos, 0);
+  ln_get_lunar_equ_coords (JD, pos);
   return 0;
 }
 
