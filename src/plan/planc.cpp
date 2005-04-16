@@ -131,7 +131,6 @@ observe (int watch_status, int hi_precission)
 {
   int i = 0;
   int tar_id = 0;
-  int obs_id = -1;
   Target *last, *plan, *p, *next;
   int exposure;
   int light;
@@ -161,6 +160,7 @@ observe (int watch_status, int hi_precission)
 
       // call next observation
       last->observe (p);
+      phot_obs_id = last->getObsId ();
 
       while (!last->next)
 	{
@@ -171,11 +171,11 @@ observe (int watch_status, int hi_precission)
       printf ("next plan #%i: id %i type %i\n", i, next->id, next->type);
     }
 
-  if (obs_id >= 0)
+  if (phot_obs_id >= 0)
     {
       time_t t;
       time (&t);
-      db_end_observation (obs_id, &t);
+      db_end_observation (phot_obs_id, &t);
     }
 
   free (plan);

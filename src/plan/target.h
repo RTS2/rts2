@@ -147,6 +147,10 @@ public:
 
     tel_target_state = TEL_OBSERVING;
   }
+  int getObsId ()
+  {
+    return obs_id;
+  }
   int getPosition (struct ln_equ_posn *pos)
   {
     return getPosition (pos, ln_get_julian_from_sys ());

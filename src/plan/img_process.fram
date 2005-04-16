@@ -20,7 +20,7 @@ case $imgname in
         ;;
 esac
 
-if echo $dirname | grep "C0"; then
+if echo $dirname | grep "C1"; then
 	exit
 fi
 
