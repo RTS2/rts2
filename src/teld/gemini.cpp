@@ -18,7 +18,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <math.h>
-#include <mcheck.h>
 
 #include <libnova/libnova.h>
 
@@ -884,6 +883,8 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 
   tel_normalize (&tar_ra, &tar_dec);
 
+  startWorm ();
+
   if ((tel_write_ra (tar_ra) < 0) || (tel_write_dec (tar_dec) < 0))
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
@@ -964,7 +965,7 @@ int
 Rts2DevTelescopeGemini::isMovingFixed ()
 {
   int ret;
-  ret = isMovingFixed ();
+  ret = isMoving ();
   // move ended
   if (ret == -2 && fixed_ntries < 3)
     {
@@ -980,8 +981,9 @@ Rts2DevTelescopeGemini::isMovingFixed ()
       sep = ln_get_angular_separation (&pos1, &pos2);
       if (sep > 15 / 60 / 4)	// 15 seconds..
 	{
-	  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::isMovingFixed sep: %f",
-		  sep);
+	  syslog (LOG_DEBUG,
+		  "Rts2DevTelescopeGemini::isMovingFixed sep: %f arcsec",
+		  sep * 3600);
 	  // reque move..
 	  ret = startMoveFixedReal ();
 	  if (ret)		// end in case of error
@@ -1073,6 +1075,8 @@ int
 Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
 {
   double ra_act, dec_act;
+
+  return -1;
 
   if (tel_read_ra () || tel_read_dec ())
     return -1;
@@ -1298,8 +1302,6 @@ Rts2DevTelescopeGemini::startWorm ()
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevTelescopeGemini *device = new Rts2DevTelescopeGemini (argc, argv);
 
   int ret;
