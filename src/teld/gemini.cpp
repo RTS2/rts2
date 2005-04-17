@@ -1055,7 +1055,7 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
 
   if ((tel_write_ra (set_ra) < 0) || (tel_write_dec (set_dec) < 0))
     return -1;
-  if (tel_write_read_hash ("#:CMcorrect#", 5, readback, 100) < 0)
+  if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
     return -1;
   return 0;
 }
