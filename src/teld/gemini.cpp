@@ -1076,8 +1076,6 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
 {
   double ra_act, dec_act;
 
-  return -1;
-
   if (tel_read_ra () || tel_read_dec ())
     return -1;
 
