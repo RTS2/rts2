@@ -255,6 +255,11 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	  if (!ret)
 	    numCorr++;
 	}
+      else
+	{
+	  // change scope
+	  ret = change (cor_ra, cor_dec);
+	}
     }
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform correction");
@@ -397,7 +402,8 @@ Rts2DevConnTelescope::commandAuthorized ()
       CHECK_PRIORITY;
       if (paramNextInteger (&cor_mark)
 	  || paramNextDouble (&cor_ra)
-	  || paramNextDouble (&cor_dec) || !paramEnd ())
+	  || paramNextDouble (&cor_dec)
+	  || !paramEnd () || fabs (cor_ra) > 5 || fabs (cor_dec) > 5)
 	return -2;
       return master->correct (this, cor_mark, cor_ra, cor_dec);
     }
