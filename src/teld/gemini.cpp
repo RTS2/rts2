@@ -1104,49 +1104,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   if (fabs (chng_dec) < 87)
     chng_ra = chng_dec / cos (ln_deg_to_rad (telDec));
   // decide, if we make change, or move using move command
-  if (fabs (chng_ra) > 1 && fabs (chng_dec) > 1)
-    {
-      ret = startMove (telRa + chng_ra, telDec + chng_dec);
-    }
-  else
-    {
-      char direction;
-      struct timespec sec;
-      sec.tv_sec = 0;
-      sec.tv_nsec = 0;
-      // center rate
-      tel_set_rate (RATE_CENTER);
-      if (chng_ra != 0)
-	{
-	  // first - RA direction
-	  if (chng_ra > 0)
-	    {
-	      // slew speed to 1 - 0.25 arcmin / sec
-	      tel_gemini_set (GEM_RA_DIV, 256);
-	      sec.tv_sec = (long) ((fabs (chng_ra) * 60.0) / 5.0) * USEC_SEC;
-	      nanosleep (&sec, NULL);
-	      tel_gemini_set (GEM_RA_DIV, TCM_DEFAULT_RATE);
-	    }
-	  else
-	    {
-	      tel_gemini_set (GEM_RA_DIV, 65535);
-	      sec.tv_sec = (long) ((fabs (chng_ra) * 60.0) / 5.0) * USEC_SEC;
-	      nanosleep (&sec, NULL);
-	      tel_gemini_set (GEM_RA_DIV, TCM_DEFAULT_RATE);
-	    }
-	}
-      if (chng_dec != 0)
-	{
-	  // second - dec direction
-	  tel_gemini_set (170, 20);
-	  // slew speed to 20 - 5 arcmin / sec
-	  direction = chng_dec > 0 ? 'n' : 's';
-	  telescope_start_move (direction);
-	  sec.tv_nsec = (long) ((fabs (chng_dec) * 60.0) / 5.0) * USEC_SEC;
-	  nanosleep (&sec, NULL);
-	  telescope_stop_move (direction);
-	}
-    }
+  ret = startMove (telRa + chng_ra, telDec + chng_dec);
   return info ();
 }
 

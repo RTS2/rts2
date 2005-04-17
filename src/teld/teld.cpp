@@ -30,6 +30,27 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   move_fixed = 0;
 
   move_connection = NULL;
+  moveMark = 0;
+  numCorr = 0;
+
+  addOption ('n', "max_corr_num", 1,
+	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
+
+  maxCorrNum = 1;
+}
+
+int
+Rts2DevTelescope::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'n':
+      maxCorrNum = atoi (optarg);
+      break;
+    default:
+      return Rts2Device::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -113,6 +134,17 @@ Rts2DevTelescope::idle ()
 }
 
 int
+Rts2DevTelescope::changeMasterState (int new_state)
+{
+  if (new_state != SERVERD_NIGHT
+      && new_state != (SERVERD_NIGHT | SERVERD_STANDBY))
+    {
+      moveMark = 0;
+      numCorr = 0;
+    }
+}
+
+int
 Rts2DevTelescope::ready (Rts2Conn * conn)
 {
   int ret;
@@ -142,6 +174,7 @@ Rts2DevTelescope::info (Rts2Conn * conn)
   conn->sendValue ("flip", telFlip);
   conn->sendValue ("axis0_counts", telAxis[0]);
   conn->sendValue ("axis1_counts", telAxis[1]);
+  conn->sendValue ("correction_mark", moveMark);
   return 0;
 }
 
@@ -173,6 +206,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
   else
     {
       move_fixed = 0;
+      moveMark++;
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
       move_connection = conn;
     }
@@ -190,6 +224,7 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
   else
     {
       move_fixed = 1;
+      moveMark++;
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
       move_connection = conn;
     }
@@ -207,10 +242,20 @@ Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 }
 
 int
-Rts2DevTelescope::correct (Rts2Conn * conn, double cor_ra, double cor_dec)
+Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
+			   double cor_dec)
 {
-  int ret;
-  ret = correct (cor_ra, cor_dec);
+  int ret = -1;
+  // not moved yet
+  if (moveMark == cor_mark)
+    {
+      if (numCorr < maxCorrNum || maxCorrNum < 0)
+	{
+	  ret = correct (cor_ra, cor_dec);
+	  if (!ret)
+	    numCorr++;
+	}
+    }
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform correction");
   return ret;
@@ -224,7 +269,11 @@ Rts2DevTelescope::startPark (Rts2Conn * conn)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
   else
-    maskState (0, TEL_MASK_MOVING, TEL_PARKING, "parking started");
+    {
+      move_fixed = 0;
+      moveMark++;
+      maskState (0, TEL_MASK_MOVING, TEL_PARKING, "parking started");
+    }
   return ret;
 }
 
@@ -342,13 +391,15 @@ Rts2DevConnTelescope::commandAuthorized ()
     }
   else if (isCommand ("correct"))
     {
+      int cor_mark;
       double cor_ra;
       double cor_dec;
       CHECK_PRIORITY;
-      if (paramNextDouble (&cor_ra) || paramNextDouble (&cor_dec)
-	  || !paramEnd ())
+      if (paramNextInteger (&cor_mark)
+	  || paramNextDouble (&cor_ra)
+	  || paramNextDouble (&cor_dec) || !paramEnd ())
 	return -2;
-      return master->correct (this, cor_ra, cor_dec);
+      return master->correct (this, cor_mark, cor_ra, cor_dec);
     }
   else if (isCommand ("park"))
     {

@@ -11,6 +11,9 @@ class Rts2DevTelescope:public Rts2Device
 {
 private:
   Rts2Conn * move_connection;
+  int moveMark;
+  int numCorr;
+  int maxCorrNum;
 protected:
   char *device_file;
   char telType[64];
@@ -40,10 +43,12 @@ protected:
   int move_fixed;
 public:
   Rts2DevTelescope (int argc, char **argv);
+  virtual int processOption (int in_opt);
   virtual int init ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   int checkMoves ();
   virtual int idle ();
+  virtual int changeMasterState (int new_state);
   virtual void deleteConnection (Rts2Conn * in_conn)
   {
     if (in_conn == move_connection)
@@ -124,7 +129,7 @@ public:
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
-  int correct (Rts2Conn * conn, double cor_ra, double cor_dec);
+  int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec);
   int startPark (Rts2Conn * conn);
   int change (Rts2Conn * conn, double chng_ra, double chng_dec);
   int saveModel (Rts2Conn * conn);
