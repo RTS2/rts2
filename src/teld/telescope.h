@@ -18,6 +18,10 @@ private:
   double locCorRa;
   double locCorDec;
   int locCorNum;
+
+  int knowPosition;
+  double lastRa;
+  double lastDec;
 protected:
   char *device_file;
   char telType[64];

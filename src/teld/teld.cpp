@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
+#include <libnova/libnova.h>
 
 #include "../utils/rts2device.h"
 #include "../utils/rts2block.h"
@@ -33,11 +34,15 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   moveMark = 0;
   numCorr = 0;
   locCorNum = -1;
+  locCorRa = 0;
+  locCorDec = 0;
 
   addOption ('n', "max_corr_num", 1,
 	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
 
   maxCorrNum = 1;
+
+  knowPosition = 0;
 }
 
 int
@@ -85,6 +90,7 @@ Rts2DevTelescope::checkMoves ()
 	  maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		     "move finished with error");
 	  move_connection = NULL;
+	  knowPosition = 0;
 	}
       if (ret == -2)
 	{
@@ -95,8 +101,11 @@ Rts2DevTelescope::checkMoves ()
 	  if (move_connection)
 	    info (move_connection);
 	  if (ret)
-	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
-		       "move finished with error");
+	    {
+	      maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
+			 "move finished with error");
+	      knowPosition = 0;
+	    }
 	  else
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		       "move finished without error");
@@ -143,6 +152,9 @@ Rts2DevTelescope::changeMasterState (int new_state)
       moveMark = 0;
       numCorr = 0;
       locCorNum = -1;
+      locCorRa = 0;
+      locCorDec = 0;
+      knowPosition = 0;
     }
 }
 
@@ -169,8 +181,18 @@ Rts2DevTelescope::info (Rts2Conn * conn)
       conn->sendCommandEnd (DEVDEM_E_HW, "telescope not ready");
       return -1;
     }
-  conn->sendValue ("ra", telRa);
-  conn->sendValue ("dec", telDec);
+  if (knowPosition)
+    {
+      conn->sendValue ("ra", lastRa);
+      conn->sendValue ("dec", lastDec);
+      conn->sendValue ("ra_tel", telRa);
+      conn->sendValue ("dec_tel", telDec);
+    }
+  else
+    {
+      conn->sendValue ("ra", telRa);
+      conn->sendValue ("dec", telDec);
+    }
   conn->sendValue ("siderealtime", telSiderealTime);
   conn->sendValue ("localtime", telLocalTime);
   conn->sendValue ("flip", telFlip);
@@ -202,12 +224,49 @@ int
 Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 {
   int ret;
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
+	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
+	  locCorDec);
+  if (knowPosition)
+    {
+      struct ln_equ_posn pos_last;
+      struct ln_equ_posn pos_wanted;
+      double sep;
+      pos_last.ra = lastRa;
+      pos_last.dec = lastDec;
+      pos_wanted.ra = tar_ra;
+      pos_wanted.dec = tar_dec;
+      sep = ln_get_angular_separation (&pos_last, &pos_wanted);
+      syslog (LOG_DEBUG, "Rts2DevTelescope::startMove sep: %f", sep);
+      if (sep > 2)
+	{
+	  knowPosition = 0;
+	}
+      lastRa = tar_ra;
+      lastDec = tar_dec;
+    }
+  // we received correction for last move..
   if (locCorNum == moveMark)
     {
       tar_ra += locCorRa;
       tar_dec += locCorDec;
-      locCorNum = -1;
+      // if we don't move too far from last correction
+      if (knowPosition)
+	{
+	  locCorNum++;
+	}
+      else
+	{
+	  locCorNum = -1;
+	  locCorRa = 0;
+	  locCorDec = 0;
+	}
     }
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::startMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
+	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
+	  locCorDec);
   ret = startMove (tar_ra, tar_dec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
@@ -254,6 +313,9 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 			   double cor_dec)
 {
   int ret = -1;
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
+	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
   // not moved yet
   if (moveMark == cor_mark)
     {
@@ -266,11 +328,39 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       else
 	{
 	  // change scope
-	  locCorNum = moveMark;
-	  locCorRa = cor_ra;
-	  locCorDec = cor_dec;
+	  if (locCorNum == moveMark)
+	    {
+	      locCorRa += cor_ra;
+	      locCorDec += cor_dec;
+	    }
+	  else
+	    {
+	      locCorNum = moveMark;
+	      locCorRa = cor_ra;
+	      locCorDec = cor_dec;
+	    }
+	}
+      if (fabs (locCorRa) < 2 && fabs (locCorRa) < 2)
+	{
+	  knowPosition = 1;
+	}
+      else
+	{
+	  locCorNum = -1;
+	  locCorRa = 0;
+	  locCorDec = 0;
 	}
     }
+  else
+    {
+      // discards changes - astrometry was too late
+      locCorNum = -1;
+      locCorRa = 0;
+      locCorDec = 0;
+    }
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
+	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform correction");
   return ret;
