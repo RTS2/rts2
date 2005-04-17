@@ -14,6 +14,10 @@ private:
   int moveMark;
   int numCorr;
   int maxCorrNum;
+
+  double locCorRa;
+  double locCorDec;
+  int locCorNum;
 protected:
   char *device_file;
   char telType[64];

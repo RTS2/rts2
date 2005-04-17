@@ -32,6 +32,7 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   move_connection = NULL;
   moveMark = 0;
   numCorr = 0;
+  locCorNum = -1;
 
   addOption ('n', "max_corr_num", 1,
 	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
@@ -141,6 +142,7 @@ Rts2DevTelescope::changeMasterState (int new_state)
     {
       moveMark = 0;
       numCorr = 0;
+      locCorNum = -1;
     }
 }
 
@@ -200,6 +202,12 @@ int
 Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 {
   int ret;
+  if (locCorNum == moveMark)
+    {
+      tar_ra += locCorRa;
+      tar_dec += locCorDec;
+      locCorNum = -1;
+    }
   ret = startMove (tar_ra, tar_dec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
@@ -258,7 +266,9 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       else
 	{
 	  // change scope
-	  ret = change (cor_ra, cor_dec);
+	  locCorNum = moveMark;
+	  locCorRa = cor_ra;
+	  locCorDec = cor_dec;
 	}
     }
   if (ret)
