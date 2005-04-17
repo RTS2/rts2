@@ -2292,7 +2292,7 @@ receive_bacodine (void *arg)
   time_t loc_time;
   fd_set read_fd;
 
-  process_grb = (process_grb_event_t *) arg;
+  process_grb = (process_grb_event_t) arg;
 
   if ((lg = fopen ("/home/petr/socket_demo.log", "a")) == NULL)	/* Open for appending */
     {
@@ -2398,9 +2398,9 @@ receive_bacodine (void *arg)
 		  last_here_sod = here_sod;
 		  last_imalive_sod = lbuf[PKT_SOD] / 100.0;
 		  chk_imalive (1, tloc);	/* Pass time of latest imalive */
-//                if (!(lbuf[PKT_SERNUM] % 100))
-//                  process_grb (10, test_num++, 270.0, 60, &tloc);
-		  break;
+		  // if (lbuf[PKT_SERNUM] % 100 == 25)
+		  //   process_grb (10, 1, 88, 22, &tloc);
+		  //   break;
 		  //case TYPE_GRB_COORDS:         /* BATSE-Original (no longer available) */
 		  //case TYPE_MAXBC:                      /* BATSE-MAXBC    (no longer available) */
 		  //case TYPE_GRB_FINAL:          /* BATSE-Final    (no longer available) */
