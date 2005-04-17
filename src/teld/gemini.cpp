@@ -1055,7 +1055,7 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
 
   if ((tel_write_ra (set_ra) < 0) || (tel_write_dec (set_dec) < 0))
     return -1;
-  if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
+  if (tel_write_read_hash ("#:CMcorrect#", 5, readback, 100) < 0)
     return -1;
   return 0;
 }
@@ -1074,23 +1074,21 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
 int
 Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
 {
-  double ra_act, dec_act;
-
   if (tel_read_ra () || tel_read_dec ())
     return -1;
 
   // do not change if we are too close to poles
-  if (fabs (dec_act) > 85)
+  if (fabs (telDec) > 85)
     return -1;
 
-  ra_act -= telRa;
-  dec_act -= telDec;
+  telRa -= cor_ra;
+  telDec -= cor_dec;
 
   // do not change if we are too close to poles
-  if (fabs (dec_act) > 85)
+  if (fabs (telDec) > 85)
     return -1;
 
-  return setTo (ra_act, dec_act);
+  return setTo (telRa, telDec);
 }
 
 int
