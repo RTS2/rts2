@@ -802,14 +802,22 @@ Target::runScript (struct ex_info *exinfo)
 	  break;
 	case COMMAND_MIRROR:
 	  command++;
+	  while (*command && isspace (*command))
+	    {
+	      command++;
+	    }
 	  mirror_pos = *command;
+	  command++;
+	  while (*command && !isspace (*command))
+	    {
+	      command++;
+	    }
 	  if (!(mirror_pos == 'A' || mirror_pos == 'B'))
 	    {
 	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
 	      command = s;
 	      continue;
 	    }
-	  command = s;
 	  if (exp_state == EXPOSURE_PROGRESS)
 	    {
 	      devcli_command (camera, NULL, "readout 0");
