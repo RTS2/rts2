@@ -95,6 +95,7 @@ Target::get_info (struct device *cam,
   info->target_id = id;
   info->observation_id = obs_id;
   info->target_type = type;
+  info->obs_type = obs_type;
   if ((ret = devcli_command (cam, NULL, "info")))
     {
       printf ("camera info error\n");
@@ -247,9 +248,15 @@ Target::observe (Target * last_t)
   start_move_count = move_count;
   pthread_mutex_unlock (&move_count_mutex);
 
-  ret = acquire ();
-  if (ret)
-    return -1;
+  // acquire only for know types..
+  if (type == TARGET_LIGHT
+      && (obs_type == TYPE_OPORTUNITY
+	  || obs_type == TYPE_PHOTOMETRIC || obs_type == TYPE_ELLIPTICAL))
+    {
+      ret = acquire ();
+      if (ret)
+	return -1;
+    }
 
   for (camera = devcli_devices (); camera; camera = camera->next)
     if (camera->type == DEVICE_TYPE_CCD)

@@ -70,6 +70,7 @@ get_info (struct grb *entry, struct device *tel, struct device *cam)
   info->target_id = entry->tar_id;
   info->observation_id = entry->obs_id;
   info->target_type = TARGET_LIGHT;
+  info->obs_type = 'G';
   if ((ret = devcli_command (cam, NULL, "info")))
     {
       printf ("camera info error\n");

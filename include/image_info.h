@@ -38,6 +38,7 @@ struct image_info
   int target_type;
   int target_id;
   int observation_id;
+  int obs_type;
   hi_precision_t *hi_precision;
   // image will be use for feedback to telescope; astrometry and
   // correction will be aplied right after image

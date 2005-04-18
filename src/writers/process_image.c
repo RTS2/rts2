@@ -368,6 +368,9 @@ data_handler (int sock, size_t size, struct image_info *image, void *arg)
     {
       struct image_que *new_que;
     case TARGET_LIGHT:
+      if (image->obs_type == 'T')
+	goto free_filename;
+
       printf ("putting %s to que\n", filename);
 
       new_que = (struct image_que *) malloc (sizeof (struct image_que));
