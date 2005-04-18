@@ -329,6 +329,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	}
       else
 	{
+	  ret = 0;
 	  // change scope
 	  if (locCorNum == moveMark)
 	    {
