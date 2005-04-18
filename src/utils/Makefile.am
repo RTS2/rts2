@@ -3,7 +3,7 @@
 noinst_PROGRAMS = test
 
 test_SOURCES = test.cpp objectcheck.cpp
-test_LDFLAGS = config.o hms.o mkpath.o
+test_LDFLAGS = config.o hms.o mkpath.o @LIB_NOVA@
 
 noinst_LIBRARIES = libdevdem.a libdevser.a libdevcli.a librts2block.a
 
