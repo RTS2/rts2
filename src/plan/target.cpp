@@ -481,7 +481,8 @@ Target::acquire ()
     }
   // try centering, if required
   if (img_hi_precision.ntries < max_tries
-      && get_string_default ("centering_phot", NULL))
+      && get_string_default ("centering_phot", NULL)
+      && obs_type == TYPE_PHOTOMETRIC)
     {
       int ret;
       ret = rts2_centering (camera, telescope);
