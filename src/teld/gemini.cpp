@@ -648,9 +648,11 @@ int
 Rts2DevTelescopeGemini::tel_write_dec (double dec)
 {
   char command[15];
-  int h, m, s;
-  dtoints (dec, &h, &m, &s);
-  if (snprintf (command, 15, "#:Sd%+02d*%02d:%02d#", h, m, s) < 0)
+  struct ln_dms dh;
+  ln_deg_to_dms (dec, &dh);
+  if (snprintf
+      (command, 15, "#:Sd%+02d*%02d:%02.0f#", dh.degrees, dh.minutes,
+       dh.seconds) < 0)
     return -1;
   return tel_rep_write (command);
 }
