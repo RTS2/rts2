@@ -448,6 +448,18 @@ Rts2DevTelescope::startWorm (Rts2Conn * conn)
   return ret;
 }
 
+int
+Rts2DevTelescope::resetMount (Rts2Conn * conn)
+{
+  int ret;
+  ret = resetMount ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot reset");
+    }
+  return ret;
+}
+
 Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
@@ -545,6 +557,10 @@ Rts2DevConnTelescope::commandAuthorized ()
   else if (isCommand ("worm_start"))
     {
       return master->startWorm (this);
+    }
+  else if (isCommand ("reset"))
+    {
+      return master->resetMount (this);
     }
   return Rts2DevConn::commandAuthorized ();
 }

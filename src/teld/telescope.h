@@ -128,6 +128,10 @@ public:
   {
     return -1;
   }
+  virtual int resetMount ()
+  {
+    return -1;
+  }
 
   // callback functions from telescope connection
   int ready (Rts2Conn * conn);
@@ -144,6 +148,7 @@ public:
   int loadModel (Rts2Conn * conn);
   int stopWorm (Rts2Conn * conn);
   int startWorm (Rts2Conn * conn);
+  int resetMount (Rts2Conn * conn);
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn

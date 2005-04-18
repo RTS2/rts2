@@ -110,6 +110,7 @@ public:
   virtual int loadModel ();
   virtual int stopWorm ();
   virtual int startWorm ();
+  virtual int resetMount ();
 };
 
 /*! 
@@ -1259,6 +1260,12 @@ int
 Rts2DevTelescopeGemini::startWorm ()
 {
   return tel_gemini_set (131, 131);
+}
+
+int
+Rts2DevTelescopeGemini::resetMount ()
+{
+  return tel_gemini_set (65535, 65535);
 }
 
 int
