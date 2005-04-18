@@ -255,7 +255,11 @@ Target::observe (Target * last_t)
     {
       ret = acquire ();
       if (ret)
-	return -1;
+	{
+	  pthread_cond_broadcast (&script_thread_count_cond);
+	  pthread_mutex_unlock (&script_thread_count_mutex);
+	  return -1;
+	}
     }
 
   for (camera = devcli_devices (); camera; camera = camera->next)
