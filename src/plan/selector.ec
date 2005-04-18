@@ -884,12 +884,13 @@ Selector::hete_mosaic (Target * plan, double jd, time_t * obs_start,
 {
   struct ln_equ_posn sun;
   int frequency;
+  int dark_frequency;
   frequency = (int) get_device_double_default ("hete", "frequency", 1);
   if (frequency <= 1)
     // check for darks
-    if ((number %
-	 (int) get_device_double_default ("hete", "dark_frequency",
-					  DEFAULT_DARK_FREQUENCY)) == 1)
+    dark_frequency = (int) get_device_double_default ("hete",
+    "dark_frequency", DEFAULT_DARK_FREQUENCY);
+    if (dark_frequency > 0  && (number % dark_frequency) == 1)
       {
 	add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		    PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
@@ -1024,7 +1025,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
   if ((last_good_img >= 0 && last_good_img < 3600) || ignore_astro)
     {
       printf ("Trying OT\n");
-      if (number % dark_frequency == 1)	// get the darks..
+      if (dark_frequency > 0 && number % dark_frequency == 1)	// get the darks..
 	{
 	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
@@ -1054,7 +1055,10 @@ Selector::get_next_plan (Target * plan, int selector_type,
 
     case SELECTOR_GPS:
       // every 50 image will be dark..
-      if ((number % (int) get_device_double_default ("gps", "dark_frequency", dark_frequency)) == 1)	// because of HETE 
+      int gps_dark_frequency;
+      gps_dark_frequency = (int) get_device_double_default ("gps",
+      "dark_frequency", dark_frequency);
+      if (gps_dark_frequency > 0 && (number % gps_dark_frequency) == 1)	// because of HETE 
 	{
 	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
@@ -1072,7 +1076,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
     case SELECTOR_ELL:
     case SELECTOR_AIRMASS:
       // every 50 image will be dark..
-      if (number % dark_frequency == 1)	// because of HETE 
+      if (dark_frequency > 0 && number % dark_frequency == 1)	// because of HETE 
 	{
 	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
