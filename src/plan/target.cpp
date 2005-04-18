@@ -172,6 +172,7 @@ Target::observe (Target * last_t)
   struct thread_list *tl_top;
   struct device *camera;
   time_t t;
+  int ret;
 
   time (&t);
 
@@ -246,7 +247,9 @@ Target::observe (Target * last_t)
   start_move_count = move_count;
   pthread_mutex_unlock (&move_count_mutex);
 
-  acquire ();
+  ret = acquire ();
+  if (ret)
+    return -1;
 
   for (camera = devcli_devices (); camera; camera = camera->next)
     if (camera->type == DEVICE_TYPE_CCD)
@@ -271,6 +274,7 @@ Target::observe (Target * last_t)
       }
   running_script_count = script_thread_count;
   pthread_mutex_unlock (&script_thread_count_mutex);
+  return 0;
 }
 
 /**
