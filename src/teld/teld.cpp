@@ -293,6 +293,7 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
       move_fixed = 1;
       moveMark++;
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      knowPosition = 0;
       move_connection = conn;
     }
   return ret;

@@ -1103,14 +1103,80 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
 int
 Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 {
-#define GEM_RA_DIV  411		// value for Gemini RA div
+  int32_t track;
+  int64_t u_sleep;
   int ret;
   info ();
+  syslog (LOG_INFO, "Rts2DevTelescopeGemini::change before: ra %f dec %f",
+	  telRa, telDec);
   if (fabs (chng_dec) < 87)
-    chng_ra = chng_dec / cos (ln_deg_to_rad (telDec));
+    chng_ra = chng_ra / cos (ln_deg_to_rad (chng_dec));
+  syslog (LOG_INFO, "Losmandy: calculated ra %f dec: %f", chng_ra, chng_dec);
   // decide, if we make change, or move using move command
-  ret = startMove (telRa + chng_ra, telDec + chng_dec);
-  return info ();
+  if (fabs (chng_ra) > 1 && fabs (chng_dec) > 1)
+    {
+      int c = 0;
+      ret = startMove (telRa + chng_ra, telDec + chng_dec);
+      if (ret)
+	return ret;
+      while ((ret = isMoving ()) > 0 && c < 200)
+	{
+	  usleep (ret);
+	  c++;
+	}
+      // move ewait ended .. log results
+      syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change move: %i c: %i", ret,
+	      c);
+    }
+  else
+    {
+      char direction;
+      // center rate
+      tel_set_rate (RATE_CENTER);
+      if (chng_ra != 0)
+	{
+	  // first - RA direction
+	  if (chng_ra > 0)
+	    {
+	      // slew speed to 1 - 0.50 arcmin / sec
+	      u_sleep =
+		(uint64_t) (((fabs (chng_ra) * 60.0) * 2.0) * USEC_SEC +
+			    USEC_SEC / 10.0);
+	      tel_gemini_set (170, 1);
+	      telescope_start_move ('e');
+	      usleep (u_sleep);
+	      ret = telescope_stop_move ('e');
+	      syslog (LOG_INFO, "u_sleep: %li", u_sleep);
+	    }
+	  else
+	    {
+	      // slew speed to 20 - 5 arcmin / sec
+	      u_sleep =
+		(uint64_t) (((fabs (chng_dec) * 60.0) / 5.0) * USEC_SEC);
+	      tel_gemini_set (170, 20);
+	      telescope_start_move ('w');
+	      usleep (u_sleep);
+	      ret = telescope_stop_move ('w');
+	      syslog (LOG_INFO, "u_sleep: %li", u_sleep);
+	    }
+	}
+      if (chng_dec != 0)
+	{
+	  // second - dec direction
+	  tel_gemini_set (170, 20);
+	  // slew speed to 20 - 5 arcmin / sec
+	  direction = chng_dec > 0 ? 'n' : 's';
+	  u_sleep = (uint64_t) ((fabs (chng_dec) * 60.0) / 5.0 * USEC_SEC);
+	  telescope_start_move (direction);
+	  usleep (u_sleep);
+	  ret = telescope_stop_move (direction);
+	  syslog (LOG_INFO, "u_sleep: %li", u_sleep);
+	}
+    }
+  info ();
+  syslog (LOG_INFO, "Rts2DevTelescopeGemini::change after-change: %f %f",
+	  telRa, telDec);
+  return ret;
 }
 
 /*!
