@@ -344,7 +344,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	      locCorDec = cor_dec;
 	    }
 	}
-      if (fabs (locCorRa) < 2 && fabs (locCorRa) < 2)
+      if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
 	{
 	  knowPosition = 1;
 	  info ();

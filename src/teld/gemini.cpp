@@ -858,7 +858,7 @@ int
 Rts2DevTelescopeGemini::telescope_start_move (char direction)
 {
   char command[6];
-  tel_set_rate (RATE_SLEW);
+  tel_set_rate (RATE_FIND);
   sprintf (command, "#:M%c#", direction);
   return tel_write (command, 5) == 1 ? -1 : 0;
 }
@@ -915,7 +915,7 @@ Rts2DevTelescopeGemini::isMoving ()
   if (tel_gemini_get (99, &status) < 0)
     return -1;
   if (status & 8)
-    return 100;
+    return USEC_SEC / 10;
   return -2;
 }
 
@@ -1205,8 +1205,8 @@ Rts2DevTelescopeGemini::startPark ()
 {
   char buf = '2';
   int ret;
-  tel_gemini_reset ();
-  tel_gemini_match_time ();
+  if (getMasterState () != SERVERD_NIGHT)
+    tel_gemini_match_time ();
   ret = tel_write ("#:hP#", 5);
   if (ret <= 0)
     return -1;
