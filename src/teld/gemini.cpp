@@ -80,6 +80,8 @@ private:
   int telescope_start_move (char direction);
   int telescope_stop_move (char direction);
 
+  int geminiInit ();
+
   double fixed_ha;
   double fixed_dec;
   int fixed_ntries;
@@ -272,6 +274,11 @@ Rts2DevTelescopeGemini::tel_write_read_hash (char *wbuf, int wcount,
     return -1;
 
   tmp_rcount = tel_read_hash (rbuf, rcount);
+  if (tmp_rcount < 0)
+    {
+      tel_gemini_reset ();
+      return -1;
+    }
 
   return tmp_rcount;
 }
@@ -447,7 +454,18 @@ int
 Rts2DevTelescopeGemini::tel_gemini_reset ()
 {
   char rbuf[3];
-  tel_write_read_hash ("\x06", 1, rbuf, 2);
+  int tmp_rcount = -1;
+
+  // write_read_hash
+  if (tcflush (tel_desc, TCIOFLUSH) < 0)
+    return -1;
+
+  if (tel_write ("\x06", 1) < 0)
+    return -1;
+
+  if (tel_read_hash (rbuf, 2) < 1)
+    return -1;
+
   if (*rbuf == 'b')		// booting phase, select warm reboot
     return tel_write ("bR#", 3);
   return 0;
@@ -700,44 +718,10 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
   return 0;
 }
 
-/*!
- * Init telescope, connect on given port.
- * 
- * @return 0 on succes, -1 & set errno otherwise
- */
 int
-Rts2DevTelescopeGemini::init ()
+Rts2DevTelescopeGemini::geminiInit ()
 {
-  struct termios tel_termios;
   char rbuf[10];
-  int ret;
-
-  ret = Rts2DevTelescope::init ();
-  if (ret)
-    return ret;
-
-  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::init open: %s", device_file);
-  tel_desc = open (device_file, O_RDWR);
-  if (tel_desc < 0)
-    return -1;
-
-  if (tcgetattr (tel_desc, &tel_termios) < 0)
-    return -1;
-
-  if (cfsetospeed (&tel_termios, B9600) < 0 ||
-      cfsetispeed (&tel_termios, B9600) < 0)
-    return -1;
-
-  tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-  tel_termios.c_oflag = 0;
-  tel_termios.c_cflag =
-    ((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-  tel_termios.c_lflag = 0;
-  tel_termios.c_cc[VMIN] = 0;
-  tel_termios.c_cc[VTIME] = 15;
-
-  if (tcsetattr (tel_desc, TCSANOW, &tel_termios) < 0)
-    return -1;
 
   tel_gemini_reset ();
 
@@ -768,6 +752,60 @@ Rts2DevTelescopeGemini::init ()
 	    return -1;
 	}
     }
+  return 0;
+}
+
+/*!
+ * Init telescope, connect on given port.
+ * 
+ * @return 0 on succes, -1 & set errno otherwise
+ */
+int
+Rts2DevTelescopeGemini::init ()
+{
+  struct termios tel_termios;
+  char rbuf[10];
+  int ret;
+
+  ret = Rts2DevTelescope::init ();
+  if (ret)
+    return ret;
+
+  while (1)
+    {
+      syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::init open: %s",
+	      device_file);
+
+      tel_desc = open (device_file, O_RDWR);
+      if (tel_desc < 0)
+	return -1;
+
+      if (tcgetattr (tel_desc, &tel_termios) < 0)
+	return -1;
+
+      if (cfsetospeed (&tel_termios, B9600) < 0 ||
+	  cfsetispeed (&tel_termios, B9600) < 0)
+	return -1;
+
+      tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
+      tel_termios.c_oflag = 0;
+      tel_termios.c_cflag =
+	((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
+      tel_termios.c_lflag = 0;
+      tel_termios.c_cc[VMIN] = 0;
+      tel_termios.c_cc[VTIME] = 15;
+
+      if (tcsetattr (tel_desc, TCSANOW, &tel_termios) < 0)
+	return -1;
+
+      ret = geminiInit ();
+      if (!ret)
+	return ret;
+
+      close (tel_desc);		// try again
+      sleep (60);
+    }
+
   return 0;
 }
 
@@ -1349,8 +1387,8 @@ main (int argc, char **argv)
       ret = device->init ();
       if (ret)
 	{
-	  syslog (LOG_DEBUG, "cannot find telescope, waiting 60 seconds");
-	  sleep (60);
+	  fprintf (stderr, "Cannot find telescope, exiting\n");
+	  exit (1);
 	}
     }
   device->run ();
