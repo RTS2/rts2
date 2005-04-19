@@ -348,8 +348,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	{
 	  knowPosition = 1;
 	  info ();
-	  lastRa += telRa + locCorRa;
-	  lastDec += telDec + locCorDec;
+	  lastRa = telRa + locCorRa;
+	  lastDec = telDec + locCorDec;
 	}
       else
 	{
