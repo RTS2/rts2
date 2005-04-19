@@ -226,7 +226,7 @@ end_integrate (unsigned long ptr)
   int frequency = '-';
   if (dev->status & PHOT_S_INTEGRATION_DIS)
     {
-      add_reply (dev, '-', '-');
+      add_reply (dev, '-', 'D');
       dev->status &= ~PHOT_S_INTEGRATING_ONCE;
       return;
     }
