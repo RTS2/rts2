@@ -10,6 +10,7 @@
 #include "status.h"
 
 #define MAX_READOUT_TIME		120
+#define PHOT_TIMEOUT			10
 #define EXPOSURE_TIMEOUT		50
 
 #define EXPOSURE_TIME		60

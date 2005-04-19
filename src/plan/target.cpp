@@ -588,7 +588,9 @@ Target::runScript (struct ex_info *exinfo)
 	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
-					  PHOT_NOINTEGRATE, 10000);
+					  PHOT_NOINTEGRATE,
+					  count * (int) exposure +
+					  PHOT_TIMEOUT);
 	      exp_state = NO_EXPOSURE;
 	    }
 	}
@@ -628,7 +630,9 @@ Target::runScript (struct ex_info *exinfo)
 	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
-					  PHOT_NOINTEGRATE, 10000);
+					  PHOT_NOINTEGRATE,
+					  count * (int) exposure +
+					  PHOT_TIMEOUT);
 	    }
 	  devcli_wait_for_status (telescope, "telescope",
 				  TEL_MASK_MOVING, tel_target_state, 300);
@@ -748,7 +752,9 @@ Target::runScript (struct ex_info *exinfo)
 	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
-					  PHOT_NOINTEGRATE, 100);
+					  PHOT_NOINTEGRATE,
+					  count * (int) exposure +
+					  PHOT_TIMEOUT);
 	    }
 
 	  // now there is no exposure running, do the move
@@ -768,7 +774,9 @@ Target::runScript (struct ex_info *exinfo)
 	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
-					  PHOT_NOINTEGRATE, 10000);
+					  PHOT_NOINTEGRATE,
+					  count * (int) exposure +
+					  PHOT_TIMEOUT);
 	    }
 
 	  // inform, that we entered wait..
@@ -811,7 +819,9 @@ Target::runScript (struct ex_info *exinfo)
 	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
-					  PHOT_NOINTEGRATE, 10000);
+					  PHOT_NOINTEGRATE,
+					  count * (int) exposure +
+					  PHOT_TIMEOUT);
 	    }
 	  exp_state = CENTERING;
 	  rts2_centering (camera, telescope);
@@ -846,7 +856,9 @@ Target::runScript (struct ex_info *exinfo)
 	    {
 	      devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 					  PHOT_MASK_INTEGRATE,
-					  PHOT_NOINTEGRATE, 100);
+					  PHOT_NOINTEGRATE,
+					  count * (int) exposure +
+					  PHOT_TIMEOUT);
 	    }
 	  devcli_command_all (DEVICE_TYPE_MIRROR, "set %c", mirror_pos);
 	  devcli_wait_for_status_all (DEVICE_TYPE_MIRROR, "mirror",
@@ -938,7 +950,7 @@ Target::runScript (struct ex_info *exinfo)
     case INTEGRATION_PROGRESS:
       devcli_wait_for_status_all (DEVICE_TYPE_PHOT, "phot",
 				  PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-				  10000);
+				  count * (int) exposure + PHOT_TIMEOUT);
       dec_script_thread_count ();
       break;
     default:

@@ -90,7 +90,7 @@ phot_integrate (struct device *phot, int filter, int count)
   devcli_command (phot, NULL, "filter %i", filter);
   devcli_command (phot, NULL, "integrate 1 %i", count);
   devcli_wait_for_status (phot, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-			  100);
+			  11);
   for (i = 0; i < last_count; i++)
     {
       if (counts[i].filter == filter)
@@ -112,24 +112,28 @@ phot_integrate (struct device *phot, int filter, int count)
  * @return 0 if proceed without error, non-zero otherwise
  */
 int
-find_center_real (int *step, int par_x, int par_y, struct device *phot, struct device *telescope, double phot_dark, int dir)
+find_center_real (int *step, int par_x, int par_y, struct device *phot,
+		  struct device *telescope, double phot_dark, int dir)
 {
 #define MAX_MOVE 	20
   int ret, ret2;
   double phot_actual, last_phot;
   last_phot = phot_integrate (phot, LIGHT_FILTER, COUNTS);
-  for ( *step = 0; *step < MAX_MOVE;)
-  {
-    ret = next_move (dir * par_x, dir * par_y, telescope);
-    if (ret)
-      break;
-    *step = *step + 1;
-    phot_actual = phot_integrate (phot, LIGHT_FILTER, COUNTS);
-    if (phot_actual / last_phot < 0.75 || phot_actual - phot_dark < get_device_double_default (phot->name, "minsn", 250))
+  for (*step = 0; *step < MAX_MOVE;)
     {
-      break;
+      ret = next_move (dir * par_x, dir * par_y, telescope);
+      if (ret)
+	break;
+      *step = *step + 1;
+      phot_actual = phot_integrate (phot, LIGHT_FILTER, COUNTS);
+      if (phot_actual / last_phot < 0.75
+	  || phot_actual - phot_dark < get_device_double_default (phot->name,
+								  "minsn",
+								  250))
+	{
+	  break;
+	}
     }
-  }
   dir *= -1;
   // return back..
   ret2 = next_move (dir * par_x * *step, dir * par_y * *step, telescope);
@@ -137,21 +141,24 @@ find_center_real (int *step, int par_x, int par_y, struct device *phot, struct d
 }
 
 int
-find_center (int par_x, int par_y, struct device *phot, struct device *telescope, double phot_dark)
+find_center (int par_x, int par_y, struct device *phot,
+	     struct device *telescope, double phot_dark)
 {
   int i;
   int step_1, step_2;
   int ret_1, ret_2;
   // move to one end;
-  ret_1 = find_center_real (&step_1, par_x, par_y, phot, telescope, phot_dark, 1);
-  ret_2 = find_center_real (&step_2, par_x, par_y, phot, telescope, phot_dark, -1);
+  ret_1 =
+    find_center_real (&step_1, par_x, par_y, phot, telescope, phot_dark, 1);
+  ret_2 =
+    find_center_real (&step_2, par_x, par_y, phot, telescope, phot_dark, -1);
   if (ret_1 || ret_2)
     return -1;
   ret_1 = (step_1 - step_2) / 2;
   // move to center
   ret_2 = next_move (par_x * ret_1, par_y * ret_1, telescope);
   printf ("center centering err_ra: %i (%f) err_dec: %i (%f)\n", err_ra,
-    err_ra * step_ra, err_dec, err_dec * step_dec);
+	  err_ra * step_ra, err_dec, err_dec * step_dec);
   return ret_2;
 }
 
@@ -197,10 +204,11 @@ rts2_centering (struct device *camera, struct device *telescope)
   step_size = step_size_x * 2 + step_size_y;
   step_ra = get_double_default ("centering_step_ra", 0.4);
   step_dec = get_double_default ("centering_step_dec", 0.4);
-  step_ra /= 60.0; // convert to degrees
-  step_dec /= 60.0; // convertm to degrees
-  step_background = (int) get_device_double_default (phot->name, "step_background", 10);
-  background_array = (double*) malloc (sizeof (double) * step_background);
+  step_ra /= 60.0;		// convert to degrees
+  step_dec /= 60.0;		// convertm to degrees
+  step_background =
+    (int) get_device_double_default (phot->name, "step_background", 10);
+  background_array = (double *) malloc (sizeof (double) * step_background);
   up_d = 1;
   phot_dark = phot_integrate (phot, DARK_FILTER, COUNTS);
   if (isnan (phot_dark))
@@ -234,34 +242,39 @@ rts2_centering (struct device *camera, struct device *telescope)
       phot_light = phot_integrate (phot, LIGHT_FILTER, COUNTS);
       // bellow backgroudn step, save for futher use..
       if (total_step < step_background)
-      {
-	background_array[total_step] = phot_light;
-	if  (phot_light > back_max)
 	{
-	  back_max = phot_light;
-	  back_max_ra = err_ra;
-	  back_max_dec = err_dec;
-	  printf ("max_back: %f err_ra: %i err_dec: %i\n", back_max, back_max_ra, back_max_dec);
+	  background_array[total_step] = phot_light;
+	  if (phot_light > back_max)
+	    {
+	      back_max = phot_light;
+	      back_max_ra = err_ra;
+	      back_max_dec = err_dec;
+	      printf ("max_back: %f err_ra: %i err_dec: %i\n", back_max,
+		      back_max_ra, back_max_dec);
+	    }
 	}
-      }
       // calculate background, get maximum if found, proceed with maximum
       if (total_step == step_background)
-      {
-	// calculate background
-	// median..
-	phot_background = get_median (background_array, step_background);
-	printf ("background: %f\n", phot_background);
-	if (back_max - phot_background > get_device_double_default (phot->name, "minsn", 250))
 	{
-	  // move the center
-	  phot_light = back_max;
-	  ret = next_move (back_max_ra - err_ra, back_max_dec - err_dec, telescope);
-	  if (ret)
-	    goto end;
+	  // calculate background
+	  // median..
+	  phot_background = get_median (background_array, step_background);
+	  printf ("background: %f\n", phot_background);
+	  if (back_max - phot_background >
+	      get_device_double_default (phot->name, "minsn", 250))
+	    {
+	      // move the center
+	      phot_light = back_max;
+	      ret =
+		next_move (back_max_ra - err_ra, back_max_dec - err_dec,
+			   telescope);
+	      if (ret)
+		goto end;
+	    }
 	}
-      }
-      if (total_step >= step_background 
-        && phot_light - phot_background > get_device_double_default (phot->name, "minsn", 250))
+      if (total_step >= step_background
+	  && phot_light - phot_background >
+	  get_device_double_default (phot->name, "minsn", 250))
 	{
 	  // something found, make step aside, and recenter
 	  printf ("err_ra: %i (%f) err_dec: %i (%f)\n", err_ra,
@@ -299,7 +312,7 @@ rts2_centering (struct device *camera, struct device *telescope)
 	  ret = find_center (0, 1, phot, telescope, phot_background);
 	  if (ret)
 	    goto end;
-	  phot_integrate (phot, LIGHT_FILTER, COUNTS); 
+	  phot_integrate (phot, LIGHT_FILTER, COUNTS);
 	  ret = 0;
 	  goto end;
 	}
