@@ -734,8 +734,8 @@ Rts2DevTelescopeGemini::geminiInit ()
 
   // we get 12:34:4# while we're in short mode
   // and 12:34:45 while we're in long mode
-  //if (tel_write_read_hash ("#:Gr#", 5, rbuf, 9) < 0)
-  //  return -1;
+  if (tel_write_read_hash ("#:GR#", 5, rbuf, 9) < 0)
+    return -1;
   if (rbuf[7] == '\0')
     {
       // that could be used to distinguish between long
@@ -743,14 +743,6 @@ Rts2DevTelescopeGemini::geminiInit ()
       // we are in short mode, set the long on
       if (tel_write_read ("#:U#", 5, rbuf, 0) < 0)
 	return -1;
-      // now set low precision, e.g. we won't wait for user
-      // to find a star
-      strcpy (rbuf, "HIGH");
-      while (strncmp ("HIGH", rbuf, 4))
-	{
-	  if (tel_write_read ("#:P#", 4, rbuf, 4) < 0)
-	    return -1;
-	}
     }
   return 0;
 }
