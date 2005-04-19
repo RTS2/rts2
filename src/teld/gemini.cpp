@@ -164,7 +164,11 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
   for (readed = 0; readed < count; readed++)
     {
       if (tel_read (&buf[readed], 1) < 0)
-	return -1;
+	{
+	  buf[readed] = 0;
+	  syslog (LOG_DEBUG, "Losmandy: Hash-read error:'%s'", buf);
+	  return -1;
+	}
       if (buf[readed] == '#')
 	break;
     }
@@ -1339,12 +1343,15 @@ main (int argc, char **argv)
 {
   Rts2DevTelescopeGemini *device = new Rts2DevTelescopeGemini (argc, argv);
 
-  int ret;
-  ret = device->init ();
-  if (ret)
+  int ret = -1;
+  while (ret)
     {
-      fprintf (stderr, "Cannot initialize telescope - exiting!\n");
-      exit (0);
+      ret = device->init ();
+      if (ret)
+	{
+	  syslog (LOG_DEBUG, "cannot find telescope, waiting 60 seconds");
+	  sleep (60);
+	}
     }
   device->run ();
   delete device;
