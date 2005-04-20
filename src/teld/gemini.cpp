@@ -113,6 +113,8 @@ public:
   virtual int stopWorm ();
   virtual int startWorm ();
   virtual int resetMount ();
+  virtual int startDir (char *dir);
+  virtual int stopDir (char *dir);
 };
 
 /*! 
@@ -1366,6 +1368,35 @@ int
 Rts2DevTelescopeGemini::resetMount ()
 {
   return tel_gemini_set (65535, 65535);
+}
+
+int
+Rts2DevTelescopeGemini::startDir (char *dir)
+{
+  switch (*dir)
+    {
+    case DIR_EAST:
+    case DIR_WEST:
+    case DIR_NORTH:
+    case DIR_SOUTH:
+      tel_set_rate (RATE_FIND);
+      return telescope_start_move (*dir);
+    }
+  return -2;
+}
+
+int
+Rts2DevTelescopeGemini::stopDir (char *dir)
+{
+  switch (*dir)
+    {
+    case DIR_EAST:
+    case DIR_WEST:
+    case DIR_NORTH:
+    case DIR_SOUTH:
+      return telescope_stop_move (*dir);
+    }
+  return -2;
 }
 
 int

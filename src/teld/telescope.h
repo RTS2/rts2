@@ -49,6 +49,10 @@ protected:
     return -2;
   }
   int move_fixed;
+  virtual void cancelPriorityOperations ()
+  {
+    stopMove ();
+  }
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int processOption (int in_opt);
@@ -81,6 +85,10 @@ public:
     return -1;
   }
   virtual int endMove ()
+  {
+    return -1;
+  }
+  virtual int stopMove ()
   {
     return -1;
   }
@@ -129,6 +137,15 @@ public:
     return -1;
   }
   virtual int resetMount ()
+  {
+    return -1;
+  }
+
+  virtual int startDir (char *dir)
+  {
+    return -1;
+  }
+  virtual int stopDir (char *dir)
   {
     return -1;
   }

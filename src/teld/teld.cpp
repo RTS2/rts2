@@ -563,5 +563,19 @@ Rts2DevConnTelescope::commandAuthorized ()
     {
       return master->resetMount (this);
     }
+  else if (isCommand ("start_dir"))
+    {
+      char *dir;
+      if (paramNextString (&dir) || !paramEnd ())
+	return -2;
+      return master->startDir (dir);
+    }
+  else if (isCommand ("stop_dir"))
+    {
+      char *dir;
+      if (paramNextString (&dir) || !paramEnd ())
+	return -2;
+      return master->stopDir (dir);
+    }
   return Rts2DevConn::commandAuthorized ();
 }
