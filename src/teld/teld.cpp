@@ -43,6 +43,8 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   maxCorrNum = 1;
 
   knowPosition = 0;
+
+  nextReset = RESET_RESTART;
 }
 
 int
@@ -450,10 +452,10 @@ Rts2DevTelescope::startWorm (Rts2Conn * conn)
 }
 
 int
-Rts2DevTelescope::resetMount (Rts2Conn * conn)
+Rts2DevTelescope::resetMount (Rts2Conn * conn, resetStates reset_state)
 {
   int ret;
-  ret = resetMount ();
+  ret = resetMount (reset_state);
   if (ret)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot reset");
@@ -561,7 +563,28 @@ Rts2DevConnTelescope::commandAuthorized ()
     }
   else if (isCommand ("reset"))
     {
-      return master->resetMount (this);
+      char *param;
+      resetStates reset_state;
+      CHECK_PRIORITY;
+      if (paramEnd ())
+	{
+	  reset_state = RESET_RESTART;
+	}
+      else
+	{
+	  if (paramNextString (&param) || !paramEnd ())
+	    return -2;
+	  // switch param cases
+	  if (!strcmp (param, "restart"))
+	    reset_state = RESET_RESTART;
+	  else if (!strcmp (param, "warm_start"))
+	    reset_state = RESET_WARM_START;
+	  else if (!strcmp (param, "cold_start"))
+	    reset_state = RESET_COLD_START;
+	  else
+	    return -2;
+	}
+      return master->resetMount (this, reset_state);
     }
   else if (isCommand ("start_dir"))
     {

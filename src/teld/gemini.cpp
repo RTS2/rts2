@@ -87,6 +87,12 @@ private:
   int fixed_ntries;
 
   int startMoveFixedReal ();
+
+  int forcedReparking;		// used to count reparking, when move fails
+  double lastMoveRa;
+  double lastMoveDec;
+
+  int tel_start_move ();
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -112,7 +118,7 @@ public:
   virtual int loadModel ();
   virtual int stopWorm ();
   virtual int startWorm ();
-  virtual int resetMount ();
+  virtual int resetMount (resetStates reset_state);
   virtual int startDir (char *dir);
   virtual int stopDir (char *dir);
 };
@@ -469,8 +475,22 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
     return -1;
 
   if (*rbuf == 'b')		// booting phase, select warm reboot
-    return tel_write ("bR#", 3);
-  return 0;
+    {
+      switch (nextReset)
+	{
+	case RESET_RESTART:
+	  tel_write ("bR#", 3);
+	  break;
+	case RESET_WARM_START:
+	  tel_write ("bW#", 3);
+	  break;
+	case RESET_COLD_START:
+	  tel_write ("bC#", 3);
+	  break;
+	}
+      nextReset = RESET_RESTART;
+    }
+  return -1;
 }
 
 /*!
@@ -912,6 +932,20 @@ Rts2DevTelescopeGemini::telescope_stop_move (char direction)
   return tel_write (command, 5) < 0 ? -1 : 0;
 }
 
+int
+Rts2DevTelescopeGemini::tel_start_move ()
+{
+  char retstr;
+
+  if ((tel_write_ra (lastMoveRa) < 0) || (tel_write_dec (lastMoveDec) < 0))
+    return -1;
+  if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
+    return -1;
+  if (retstr == '0')
+    return 0;
+  return -1;
+}
+
 /*! 
  * Move telescope to new location, wait for completition, then send
  * message.
@@ -924,19 +958,16 @@ Rts2DevTelescopeGemini::telescope_stop_move (char direction)
 int
 Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 {
-  char retstr;
-
   tel_normalize (&tar_ra, &tar_dec);
 
   startWorm ();
 
-  if ((tel_write_ra (tar_ra) < 0) || (tel_write_dec (tar_dec) < 0))
-    return -1;
-  if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
-    return -1;
-  if (retstr == '0')
-    return 0;
-  return -1;
+  lastMoveRa = tar_ra;
+  lastMoveDec = tar_dec;
+
+  forcedReparking = 0;
+
+  return tel_start_move ();
 }
 
 /*! 
@@ -949,7 +980,38 @@ Rts2DevTelescopeGemini::isMoving ()
 {
   int32_t status;
   if (tel_gemini_get (99, &status) < 0)
-    return -1;
+    {
+      if (forcedReparking < 6)
+	{
+	  if (forcedReparking % 2 == 0)
+	    {
+	      startPark ();
+	      forcedReparking++;
+	    }
+	  else
+	    {
+	      int ret;
+	      ret = isParking ();
+	      switch (ret)
+		{
+		case -1:
+		  forcedReparking++;
+		  break;
+		case -2:
+		  // parked, let's move us to location where we belong
+		  tel_start_move ();
+		  break;
+		}
+	    }
+	  return USEC_SEC;
+	}
+      else
+	{
+	  stopWorm ();
+	  resetMount (RESET_RESTART);
+	  return -1;
+	}
+    }
   if (status & 8)
     return USEC_SEC / 10;
   return -2;
@@ -1075,7 +1137,7 @@ Rts2DevTelescopeGemini::isParking ()
 int
 Rts2DevTelescopeGemini::endPark ()
 {
-  return tel_gemini_set (135, 135);
+  return stopWorm ();
 }
 
 
@@ -1365,9 +1427,13 @@ Rts2DevTelescopeGemini::startWorm ()
 }
 
 int
-Rts2DevTelescopeGemini::resetMount ()
+Rts2DevTelescopeGemini::resetMount (resetStates reset_mount)
 {
-  return tel_gemini_set (65535, 65535);
+  int ret;
+  ret = tel_gemini_set (65535, 65535);
+  if (ret)
+    return ret;
+  return Rts2DevTelescope::resetMount (reset_mount);
 }
 
 int

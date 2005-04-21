@@ -7,6 +7,13 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+// types of reset
+// acquired from 
+
+typedef enum
+{ RESET_RESTART, RESET_WARM_START, RESET_COLD_START }
+resetStates;
+
 class Rts2DevTelescope:public Rts2Device
 {
 private:
@@ -53,6 +60,7 @@ protected:
   {
     stopMove ();
   }
+  resetStates nextReset;
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int processOption (int in_opt);
@@ -136,9 +144,10 @@ public:
   {
     return -1;
   }
-  virtual int resetMount ()
+  virtual int resetMount (resetStates reset_state)
   {
-    return -1;
+    nextReset = reset_state;
+    return 0;
   }
 
   virtual int startDir (char *dir)
@@ -165,7 +174,7 @@ public:
   int loadModel (Rts2Conn * conn);
   int stopWorm (Rts2Conn * conn);
   int startWorm (Rts2Conn * conn);
-  int resetMount (Rts2Conn * conn);
+  int resetMount (Rts2Conn * conn, resetStates reset_state);
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn
