@@ -110,6 +110,20 @@ AC_SUBST(OPENTPL)
 AC_SUBST(LIB_OPENTPL)
 AC_SUBST(INC_OPENTPL)
 
+# check for paramount library 
+AC_ARG_WITH(paralib,
+[  --with-paralib          path to Paramount library, build Paramount driver],
+PARALIB="${withval}";
+LIB_PARA="${PARALIB}/libmks3.o";
+INC_PARA="-I${PARALIB}",
+[PARALIB=no])
+
+AM_CONDITIONAL(PARALIB, test x$PARALIB != xno)
+AC_SUBST(PARALIB)
+AC_SUBST(LIB_PARA)
+AC_SUBST(INC_PARA)
+
+
 # Checks for libraries.
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -318,6 +332,7 @@ CCD's:
 
 MOUNT's:
   opentpl       ${OPENTPL}
+  paralib       ${PARALIB}
 
 ***************************************
 
