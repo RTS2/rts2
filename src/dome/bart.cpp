@@ -16,6 +16,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "status.h"
 #include "dome.h"
 
 #define BAUDRATE B9600
@@ -107,14 +108,19 @@ private:
   unsigned char spinac[2];
   unsigned char stav_portu[3];
 
-  int zjisti_stav_portu (unsigned char *stav);
+  int zjisti_stav_portu ();
   void zapni_pin (unsigned char c_port, unsigned char pin);
   void vypni_pin (unsigned char c_port, unsigned char pin);
-  void cekej_port (int c_port);
+  int getPortState (int c_port)
+  {
+    return !!(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
+  };
+
+  int isOn (int c_port);
   int handle_zasuvky (int state);
 public:
-    Rts2DevDomeBart (int argc, char **argv);
-    virtual ~ Rts2DevDomeBart (void);
+  Rts2DevDomeBart (int argc, char **argv);
+  virtual ~ Rts2DevDomeBart (void);
   virtual int processOption (int in_opt);
 
   virtual int init ();
@@ -124,11 +130,17 @@ public:
   virtual int info ();
 
   virtual int openDome ();
+  virtual long isOpened ();
+  virtual int endOpen ();
   virtual int closeDome ();
+  virtual long isClosed ();
+  virtual int endClose ();
 
   virtual int observing ();
   virtual int standby ();
   virtual int off ();
+
+  virtual int changeMasterState (int new_state);
 };
 
 Rts2DevDomeBart::Rts2DevDomeBart (int argc, char **argv):
@@ -136,6 +148,8 @@ Rts2DevDome (argc, argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   dome_file = "/dev/ttyS0";
+
+  domeModel = "BART_FORD_2";
 }
 
 Rts2DevDomeBart::~Rts2DevDomeBart (void)
@@ -144,24 +158,27 @@ Rts2DevDomeBart::~Rts2DevDomeBart (void)
 }
 
 int
-Rts2DevDomeBart::zjisti_stav_portu (unsigned char *stav)
+Rts2DevDomeBart::zjisti_stav_portu ()
 {
   unsigned char t, c = STAV_PORTU | PORT_A;
+  int ret;
   write (dome_port, &c, 1);
   if (read (dome_port, &t, 1) < 1)
-    fprintf (stderr, "read error 0\n");
+    syslog (LOG_ERR, "read error 0");
   else
-    fprintf (stderr, "stav: A: %x:", t);
-  read (dome_port, &stav[PORT_A], 1);
-  fprintf (stderr, "%x ", stav[PORT_A]);
+    syslog (LOG_DEBUG, "stav: A: %x:", t);
+  read (dome_port, &stav_portu[PORT_A], 1);
+  syslog (LOG_DEBUG, "A state: %x", stav_portu[PORT_A]);
   c = STAV_PORTU | PORT_B;
   write (dome_port, &c, 1);
   if (read (dome_port, &t, 1) < 1)
-    fprintf (stderr, "read error 1\n");
+    syslog (LOG_ERR, "read error 1");
   else
-    fprintf (stderr, " B: %x:", t);
-  read (dome_port, &stav[PORT_B], 1);
-  fprintf (stderr, "%x\n", stav[PORT_B]);
+    syslog (LOG_DEBUG, " B: %x:", t);
+  ret = read (dome_port, &stav_portu[PORT_B], 1);
+  syslog (LOG_DEBUG, "B state: %x", stav_portu[PORT_B]);
+  if (ret < 1)
+    return -1;
   return 0;
 }
 
@@ -169,12 +186,12 @@ void
 Rts2DevDomeBart::zapni_pin (unsigned char c_port, unsigned char pin)
 {
   unsigned char c;
-  zjisti_stav_portu (stav_portu);
+  zjisti_stav_portu ();
   c = ZAPIS_NA_PORT | c_port;
-  fprintf (stderr, "port:%xh pin:%xh zapis: %x:", c_port, pin, c);
+  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", c_port, pin, c);
   write (dome_port, &c, 1);
   c = stav_portu[c_port] | pin;
-  fprintf (stderr, "%xh\n", c);
+  syslog (LOG_DEBUG, "zapni_pin: %xh", c);
   write (dome_port, &c, 1);
 }
 
@@ -182,29 +199,20 @@ void
 Rts2DevDomeBart::vypni_pin (unsigned char c_port, unsigned char pin)
 {
   unsigned char c;
-  zjisti_stav_portu (stav_portu);
+  zjisti_stav_portu ();
   c = ZAPIS_NA_PORT | c_port;
-  fprintf (stderr, "port:%xh pin:%xh zapis: %x:", c_port, pin, c);
+  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", c_port, pin, c);
   write (dome_port, &c, 1);
   c = stav_portu[c_port] & (~pin);
-  fprintf (stderr, "%xh\n", c);
+  syslog (LOG_DEBUG, "%xh", c);
   write (dome_port, &c, 1);
 }
 
-//
-// pocká s timeoutem
-void
-Rts2DevDomeBart::cekej_port (int c_port)
+int
+Rts2DevDomeBart::isOn (int c_port)
 {
-  time_t t, act_t;
-  time (&t);
-  t += 40;			// timeout pro strechu
-  do
-    {
-      zjisti_stav_portu (stav_portu);
-      time (&act_t);
-    }
-  while ((stav_portu[adresa[c_port].port] & adresa[c_port].pin) && act_t < t);
+  zjisti_stav_portu ();
+  return !(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
 }
 
 #define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
@@ -218,14 +226,28 @@ Rts2DevDomeBart::openDome ()
   VYP (SMER);
   sleep (1);
   ZAP (MOTOR);
-  fprintf (stderr, "oteviram strechu\n");
+  syslog (LOG_DEBUG, "oteviram strechu");
+  return Rts2DevDome::openDome ();
+}
 
-  cekej_port (KONCAK_OTEVRENI_JIH);
+long
+Rts2DevDomeBart::isOpened ()
+{
+  int ret;
+  ret = zjisti_stav_portu ();
+  if (ret)
+    return ret;
+  if (isOn (KONCAK_OTEVRENI_JIH))
+    return USEC_SEC;
+  return -2;
+}
 
-  fprintf (stderr, "otevreno\n");
+int
+Rts2DevDomeBart::endOpen ()
+{
   VYP (MOTOR);
-  zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
-  return 0;
+  zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  return Rts2DevDome::endOpen ();
 }
 
 int
@@ -236,16 +258,31 @@ Rts2DevDomeBart::closeDome ()
   ZAP (SMER);
   sleep (1);
   ZAP (MOTOR);
-  fprintf (stderr, "zaviram strechu\n");
+  syslog (LOG_DEBUG, "zaviram strechu");
 
-  cekej_port (KONCAK_ZAVRENI_JIH);
+  return Rts2DevDome::closeDome ();
+}
 
-  fprintf (stderr, "zavreno\n");
+long
+Rts2DevDomeBart::isClosed ()
+{
+  int ret;
+  ret = zjisti_stav_portu ();
+  if (ret)
+    return ret;
+  if (isOn (KONCAK_ZAVRENI_JIH))
+    return USEC_SEC;
+  return -2;
+}
+
+int
+Rts2DevDomeBart::endClose ()
+{
   VYP (MOTOR);
   sleep (1);
   VYP (SMER);
-  zjisti_stav_portu (stav_portu);	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
-  return 0;
+  zjisti_stav_portu ();
+  return Rts2DevDome::endClose ();
 }
 
 int
@@ -320,6 +357,14 @@ Rts2DevDomeBart::ready ()
 int
 Rts2DevDomeBart::info ()
 {
+  int ret;
+  ret = zjisti_stav_portu ();
+  if (ret)
+    return -1;
+  sw_state = getPortState (KONCAK_OTEVRENI_JIH);
+  sw_state |= (getPortState (KONCAK_OTEVRENI_SEVER) << 1);
+  sw_state |= (getPortState (KONCAK_ZAVRENI_JIH) << 2);
+  sw_state |= (getPortState (KONCAK_ZAVRENI_SEVER) << 3);
   return 0;
 }
 
@@ -352,6 +397,39 @@ Rts2DevDomeBart::observing ()
   openDome ();
   return 0;
 }
+
+int
+Rts2DevDomeBart::changeMasterState (int new_state)
+{
+  observingPossible = 0;
+  if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+    {
+      switch (new_state & SERVERD_STATUS_MASK)
+	{
+	case SERVERD_EVENING:
+	case SERVERD_MORNING:
+	case SERVERD_DUSK:
+	case SERVERD_NIGHT:
+	case SERVERD_DAWN:
+	  return standby ();
+	default:
+	  return off ();
+	}
+    }
+  switch (new_state)
+    {
+    case SERVERD_NIGHT:
+    case SERVERD_DUSK:
+    case SERVERD_DAWN:
+      return observing ();
+    case SERVERD_EVENING:
+    case SERVERD_MORNING:
+      return standby ();
+    default:
+      return off ();
+    }
+}
+
 
 int
 main (int argc, char **argv)
