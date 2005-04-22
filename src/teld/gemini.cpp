@@ -83,7 +83,6 @@ private:
   int geminiInit ();
 
   double fixed_ha;
-  double fixed_dec;
   int fixed_ntries;
 
   int startMoveFixedReal ();
@@ -994,13 +993,11 @@ Rts2DevTelescopeGemini::isMoving ()
 	      ret = isParking ();
 	      switch (ret)
 		{
-		case -1:
-		  forcedReparking++;
-		  break;
 		case -2:
 		  // parked, let's move us to location where we belong
 		  tel_start_move ();
-		  break;
+		case -1:
+		  forcedReparking++;
 		}
 	    }
 	  return USEC_SEC;
@@ -1033,28 +1030,22 @@ Rts2DevTelescopeGemini::endMove ()
 int
 Rts2DevTelescopeGemini::startMoveFixedReal ()
 {
-  double tar_ra;
   char retstr;
+  int ret;
 
   // compute ra
   tel_read_siderealtime ();
 
-  tar_ra = telSiderealTime * 15.0 + fixed_ha;
+  lastMoveRa = telSiderealTime * 15.0 + fixed_ha;
 
-  tel_normalize (&tar_ra, &fixed_dec);
+  tel_normalize (&lastMoveRa, &lastMoveDec);
 
   stopWorm ();
 
-  if ((tel_write_ra (tar_ra) < 0) || (tel_write_dec (fixed_dec) < 0))
-    return -1;
-  if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
-    return -1;
-  if (retstr == '0')
-    {
-      fixed_ntries++;
-      return 0;
-    }
-  return -1;
+  ret = tel_start_move ();
+  if (!ret)
+    fixed_ntries++;
+  return ret;
 }
 
 int
@@ -1062,7 +1053,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 {
   double tar_ra;
   fixed_ha = tar_ha;
-  fixed_dec = tar_dec;
+  lastMoveDec = tar_dec;
   fixed_ntries = 0;
 
   return startMoveFixedReal ();
@@ -1081,7 +1072,7 @@ Rts2DevTelescopeGemini::isMovingFixed ()
       // check that we reach destination..
       info ();
       pos1.ra = fixed_ha + telSiderealTime * 15.0;
-      pos1.dec = fixed_dec;
+      pos1.dec = lastMoveDec;
 
       pos2.ra = telRa;
       pos2.dec = telDec;
@@ -1471,14 +1462,11 @@ main (int argc, char **argv)
   Rts2DevTelescopeGemini *device = new Rts2DevTelescopeGemini (argc, argv);
 
   int ret = -1;
-  while (ret)
+  ret = device->init ();
+  if (ret)
     {
-      ret = device->init ();
-      if (ret)
-	{
-	  fprintf (stderr, "Cannot find telescope, exiting\n");
-	  exit (1);
-	}
+      fprintf (stderr, "Cannot find telescope, exiting\n");
+      exit (1);
     }
   device->run ();
   delete device;
