@@ -19,11 +19,13 @@ extern "C"
 			 /* observer location. if NULL: no refraction */
 			 double JD,	/* time      */
 			 double aux1, double aux2,	/* auxiliary reading */
-			 struct ln_equ_posn *tel_pos
+			 struct ln_equ_posn *tel_pos,
 			 /* return: coords corrected for the model */
+			 int back	/* reverse the correction? */
     );
 
-  void tpoint_apply_now (double *ra, double *dec, double aux1, double aux2);
+  void tpoint_apply_now (double *ra, double *dec, double aux1, double aux2,
+			 int rev);
 
 #ifdef __cplusplus
 };
