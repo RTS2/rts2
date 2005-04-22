@@ -38,6 +38,8 @@ class Rts2Conn
   int port;			// local port & connection
   virtual int connectionError ()
   {
+    if (sock)
+      close (sock);
     sock = -1;
     return -1;
   }
