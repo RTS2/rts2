@@ -1066,6 +1066,7 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
 
 Rts2DevDomeFram::~Rts2DevDomeFram (void)
 {
+  stopMove ();
   if (wdc_file)
     closeWDC ();
   close (dome_port);
