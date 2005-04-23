@@ -871,7 +871,8 @@ Rts2DevTelescopeGemini::idle ()
 		case -2:
 		  // parked, let's move us to location where we belong
 		  forcedReparking = 0;
-		  tel_start_move ();
+		  if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
+		    tel_start_move ();
 		case -1:
 		  forcedReparking++;
 		}
