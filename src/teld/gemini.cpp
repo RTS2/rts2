@@ -873,8 +873,10 @@ Rts2DevTelescopeGemini::idle ()
 		  forcedReparking = 0;
 		  if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
 		    tel_start_move ();
+		  break;
 		case -1:
 		  forcedReparking++;
+		  break;
 		}
 	    }
 	  if (forcedReparking > 0)
