@@ -76,14 +76,15 @@ struct typ_a
   {
 PORT_C, 32}};
 
-#define NUM_ZAS		4
+#define NUM_ZAS		5
 
 #define OFF		0
 #define STANDBY		1
 #define OBSERVING	2
 
 // zasuvka c.1 kamera, c.3 kamera, c.5 montaz. c.6 topeni /Ford 21.10.04
-int zasuvky_index[NUM_ZAS] = { ZASUVKA_1, ZASUVKA_3, ZASUVKA_5, ZASUVKA_6 };
+int zasuvky_index[NUM_ZAS] =
+  { ZASUVKA_1, ZASUVKA_2, ZASUVKA_3, ZASUVKA_5, ZASUVKA_6 };
 
 enum stavy
 { ZAS_VYP, ZAS_ZAP };
@@ -92,11 +93,11 @@ enum stavy
 enum stavy zasuvky_stavy[3][NUM_ZAS] =
 {
   // off
-  {ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_VYP},
+  {ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_VYP},
   // standby
-  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP},
+  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP},
   // observnig
-  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
+  {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
 class Rts2DevDomeBart:public Rts2DevDome
@@ -221,6 +222,8 @@ Rts2DevDomeBart::isOn (int c_port)
 int
 Rts2DevDomeBart::openDome ()
 {
+  if (!isOn (KONCAK_OTEVRENI_JIH))
+    return endOpen ();
   VYP (MOTOR);
   sleep (1);
   VYP (SMER);
@@ -253,6 +256,8 @@ Rts2DevDomeBart::endOpen ()
 int
 Rts2DevDomeBart::closeDome ()
 {
+  if (!isOn (KONCAK_ZAVRENI_JIH))
+    return endClose ();
   VYP (MOTOR);
   sleep (1);
   ZAP (SMER);
@@ -418,11 +423,11 @@ Rts2DevDomeBart::changeMasterState (int new_state)
     }
   switch (new_state)
     {
+    case SERVERD_EVENING:
     case SERVERD_NIGHT:
     case SERVERD_DUSK:
     case SERVERD_DAWN:
       return observing ();
-    case SERVERD_EVENING:
     case SERVERD_MORNING:
       return standby ();
     default:
