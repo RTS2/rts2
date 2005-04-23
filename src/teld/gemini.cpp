@@ -109,8 +109,10 @@ public:
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();
+  int setTo (double set_ra, double set_dec, int appendModel);
   virtual int setTo (double set_ra, double set_dec);
-  virtual int correct (double cor_ra, double cor_dec);
+  virtual int correct (double cor_ra, double cor_dec, double real_ra,
+		       double real_dec);
   virtual int change (double chng_ra, double chng_dec);
   virtual int stop ();
   virtual int saveModel ();
@@ -1145,7 +1147,7 @@ Rts2DevTelescopeGemini::endPark ()
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
+Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec, int appendModel)
 {
   char readback[101];
 
@@ -1153,9 +1155,24 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
 
   if ((tel_write_ra (set_ra) < 0) || (tel_write_dec (set_dec) < 0))
     return -1;
-  if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
-    return -1;
+
+  if (appendModel)
+    {
+      if (tel_write_read_hash ("#:Cm#", 5, readback, 100) < 0)
+	return -1;
+    }
+  else
+    {
+      if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
+	return -1;
+    }
   return 0;
+}
+
+int
+Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
+{
+  return setTo (set_ra, set_dec, 0);
 }
 
 /*!
@@ -1167,11 +1184,21 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
  * @param ra		ra correction
  * @param dec		dec correction
  *
+ * This routine can be called from teld.cpp only when we haven't moved
+ * from last location. However, we recalculate angular separation and
+ * check if we are closer then 5 degrees to be 100% sure we will not
+ * load mess to the telescope.
+ *
  * @return -1 and set errno on error, 0 otherwise.
  */
 int
-Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
+Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
+				 double real_ra, double real_dec)
 {
+  struct ln_equ_posn pos1;
+  struct ln_equ_posn pos2;
+  double sep;
+
   if (tel_read_ra () || tel_read_dec ())
     return -1;
 
@@ -1186,7 +1213,17 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec)
   if (fabs (telDec) > 85)
     return -1;
 
-  return setTo (telRa, telDec);
+  pos1.ra = telRa;
+  pos1.dec = telDec;
+  pos2.ra = real_ra;
+  pos2.dec = real_dec;
+
+  sep = ln_get_angular_separation (&pos1, &pos2);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::correct separation: %f", sep);
+  if (sep > 5)
+    return -1;
+
+  return setTo (real_ra, real_dec, getNumCorr () < 2 ? 0 : 1);
 }
 
 int

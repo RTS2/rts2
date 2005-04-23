@@ -313,7 +313,7 @@ Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 
 int
 Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
-			   double cor_dec)
+			   double cor_dec, double real_ra, double real_dec)
 {
   int ret = -1;
   syslog (LOG_DEBUG,
@@ -324,7 +324,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
     {
       if (numCorr < maxCorrNum || maxCorrNum < 0)
 	{
-	  ret = correct (cor_ra, cor_dec);
+	  ret = correct (cor_ra, cor_dec, real_ra, real_dec);
 	  if (!ret)
 	    numCorr++;
 	  locCorRa = 0;
@@ -520,13 +520,18 @@ Rts2DevConnTelescope::commandAuthorized ()
       int cor_mark;
       double cor_ra;
       double cor_dec;
+      double real_ra;
+      double real_dec;
       CHECK_PRIORITY;
       if (paramNextInteger (&cor_mark)
 	  || paramNextDouble (&cor_ra)
 	  || paramNextDouble (&cor_dec)
+	  || paramNextDouble (&real_ra)
+	  || paramNextDouble (&real_dec)
 	  || !paramEnd () || fabs (cor_ra) > 5 || fabs (cor_dec) > 5)
 	return -2;
-      return master->correct (this, cor_mark, cor_ra, cor_dec);
+      return master->correct (this, cor_mark, cor_ra, cor_dec, real_ra,
+			      real_dec);
     }
   else if (isCommand ("park"))
     {

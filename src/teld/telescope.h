@@ -61,6 +61,11 @@ protected:
     stopMove ();
   }
   resetStates nextReset;
+
+  int getNumCorr ()
+  {
+    return numCorr;
+  }
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int processOption (int in_opt);
@@ -112,7 +117,8 @@ public:
   {
     return -1;
   }
-  virtual int correct (double cor_ra, double cor_dec)
+  virtual int correct (double cor_ra, double cor_dec, double real_ra,
+		       double real_dec)
   {
     return -1;
   }
@@ -167,7 +173,8 @@ public:
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
-  int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec);
+  int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec,
+	       double real_ra, double real_dec);
   int startPark (Rts2Conn * conn);
   int change (Rts2Conn * conn, double chng_ra, double chng_dec);
   int saveModel (Rts2Conn * conn);

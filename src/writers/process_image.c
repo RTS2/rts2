@@ -198,9 +198,9 @@ astrometry_image (struct image_que *actual_image)
 		}
 	      else
 		{
-		  if (devcli_command (tel, NULL, "correct %i %f %f",
+		  if (devcli_command (tel, NULL, "correct %i %f %f %f %f",
 				      actual_image->correction_mark,
-				      ra_err / 60.0, dec_err / 60.0))
+				      ra_err / 60.0, dec_err / 60.0, ra, dec))
 		    perror ("telescope correct");
 		}
 	    }
