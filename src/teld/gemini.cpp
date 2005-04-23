@@ -1378,6 +1378,8 @@ Rts2DevTelescopeGemini::startPark ()
 {
   char buf = '2';
   int ret;
+  if (telMotorState != TEL_OK)
+    return -1;
   if (getMasterState () != SERVERD_NIGHT)
     tel_gemini_match_time ();
   ret = tel_write ("#:hP#", 5);
