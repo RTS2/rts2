@@ -92,11 +92,16 @@ private:
   double lastMoveDec;
 
   int tel_start_move ();
+
+  enum
+  { TEL_OK, TEL_BLOCKED_RESET, TEL_BLOCKED_PARKING } telMotorState;
+  int32_t lastMotorState;
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
   virtual int processOption (int in_opt);
   virtual int init ();
+  virtual int idle ();
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
@@ -490,6 +495,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 	  break;
 	}
       nextReset = RESET_RESTART;
+      setTimeout (USEC_SEC);
     }
   return -1;
 }
@@ -717,6 +723,9 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
   addOption ('c', "config_file", 1, "config file (with model parameters)");
+
+  lastMotorState = 0;
+  telMotorState = TEL_OK;
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -822,6 +831,62 @@ Rts2DevTelescopeGemini::init ()
     }
 
   return 0;
+}
+
+int
+Rts2DevTelescopeGemini::idle ()
+{
+  int ret;
+  ret = tel_gemini_get (99, &lastMotorState);
+  if (telMotorState == TEL_OK
+      && ((ret && (getState (0) & TEL_MASK_MOVING) == TEL_MASK_MOVING)
+	  || (lastMotorState & 16)))
+    {
+      resetMount (RESET_RESTART);
+      telMotorState = TEL_BLOCKED_RESET;
+    }
+  else if (!ret && telMotorState == TEL_BLOCKED_RESET)
+    {
+      // we get telescope back from reset state
+      telMotorState = TEL_BLOCKED_PARKING;
+    }
+  if (telMotorState == TEL_BLOCKED_PARKING)
+    {
+      if (forcedReparking < 10)
+	{
+	  // ignore for the moment tel state, pretends, that everything
+	  // is OK
+	  telMotorState = TEL_OK;
+	  if (forcedReparking % 2 == 0)
+	    {
+	      startPark ();
+	      forcedReparking++;
+	    }
+	  else
+	    {
+	      int ret;
+	      ret = isParking ();
+	      switch (ret)
+		{
+		case -2:
+		  // parked, let's move us to location where we belong
+		  forcedReparking = 0;
+		  tel_start_move ();
+		case -1:
+		  forcedReparking++;
+		}
+	    }
+	  if (forcedReparking > 0)
+	    telMotorState = TEL_BLOCKED_PARKING;
+	  setTimeout (USEC_SEC);
+	}
+      else
+	{
+	  stopWorm ();
+	  ret = -1;
+	}
+    }
+  return Rts2DevTelescope::idle ();
 }
 
 int
@@ -979,39 +1044,9 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 int
 Rts2DevTelescopeGemini::isMoving ()
 {
-  int32_t status;
-  if (tel_gemini_get (99, &status) < 0)
-    {
-      if (forcedReparking < 6)
-	{
-	  if (forcedReparking % 2 == 0)
-	    {
-	      startPark ();
-	      forcedReparking++;
-	    }
-	  else
-	    {
-	      int ret;
-	      ret = isParking ();
-	      switch (ret)
-		{
-		case -2:
-		  // parked, let's move us to location where we belong
-		  tel_start_move ();
-		case -1:
-		  forcedReparking++;
-		}
-	    }
-	  return USEC_SEC;
-	}
-      else
-	{
-	  stopWorm ();
-	  resetMount (RESET_RESTART);
-	  return -1;
-	}
-    }
-  if (status & 8)
+  if (telMotorState != TEL_OK)
+    return USEC_SEC;
+  if (lastMotorState & 8)
     return USEC_SEC / 10;
   return -2;
 }
@@ -1111,6 +1146,8 @@ int
 Rts2DevTelescopeGemini::isParking ()
 {
   char buf = '3';
+  if (telMotorState != TEL_OK)
+    return USEC_SEC;
   tel_write_read ("#:h?#", 5, &buf, 1);
   switch (buf)
     {
@@ -1198,6 +1235,7 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
   struct ln_equ_posn pos1;
   struct ln_equ_posn pos2;
   double sep;
+  int ret;
 
   if (tel_read_ra () || tel_read_dec ())
     return -1;
@@ -1223,7 +1261,13 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
   if (sep > 5)
     return -1;
 
-  return setTo (real_ra, real_dec, getNumCorr () < 2 ? 0 : 1);
+  ret = setTo (real_ra, real_dec, getNumCorr () < 2 ? 0 : 1);
+  if (ret)
+    {
+      // mount correction failed - do local one
+
+    }
+  return ret;
 }
 
 int
