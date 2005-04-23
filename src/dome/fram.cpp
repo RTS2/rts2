@@ -253,6 +253,8 @@ Rts2ConnFramWeather::receive (fd_set * set)
       if (ret != 9)
 	{
 	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
+	  rain = 1;
+	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
 	  return data_size;
 	}
       statDate.tm_isdst = 0;
