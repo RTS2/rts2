@@ -98,6 +98,8 @@ private:
   { TEL_OK, TEL_BLOCKED_RESET, TEL_BLOCKED_PARKING }
   telMotorState;
   int32_t lastMotorState;
+
+  int infoCount;
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -731,6 +733,7 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
 
   lastMotorState = 0;
   telMotorState = TEL_OK;
+  infoCount = 0;
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -843,6 +846,12 @@ Rts2DevTelescopeGemini::idle ()
 {
   int ret;
   ret = tel_gemini_get (99, &lastMotorState);
+  // if moving, not on limits & need info..
+  if ((lastMotorState & 8) && (!(lastMotorState & 16)) && infoCount % 25 == 0)
+    {
+      info ();
+    }
+  infoCount++;
   if (telMotorState == TEL_OK
       && ((ret && (getState (0) & TEL_MASK_MOVING) == TEL_MASK_MOVING)
 	  || (lastMotorState & 16)))
