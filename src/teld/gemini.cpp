@@ -7,6 +7,7 @@
  * @author petr 
  */
 
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
@@ -94,7 +95,8 @@ private:
   int tel_start_move ();
 
   enum
-  { TEL_OK, TEL_BLOCKED_RESET, TEL_BLOCKED_PARKING } telMotorState;
+  { TEL_OK, TEL_BLOCKED_RESET, TEL_BLOCKED_PARKING }
+  telMotorState;
   int32_t lastMotorState;
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
@@ -530,6 +532,10 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
     {
       return -1;
     }
+  // read blanck
+  ret = tel_read_hash (buf, 26);
+  if (ret)
+    return ret;
   syslog (LOG_INFO, "GEMINI: time match");
   return 0;
 }
@@ -1150,6 +1156,8 @@ Rts2DevTelescopeGemini::isParking ()
   char buf = '3';
   if (telMotorState != TEL_OK)
     return USEC_SEC;
+  if (lastMotorState & 8)
+    return USEC_SEC;
   tel_write_read ("#:h?#", 5, &buf, 1);
   switch (buf)
     {
@@ -1169,6 +1177,9 @@ Rts2DevTelescopeGemini::isParking ()
 int
 Rts2DevTelescopeGemini::endPark ()
 {
+  if (getMasterState () != SERVERD_NIGHT)
+    tel_gemini_match_time ();
+  setTimeout (USEC_SEC * 10);
   return stopWorm ();
 }
 
@@ -1379,8 +1390,6 @@ Rts2DevTelescopeGemini::startPark ()
   int ret;
   if (telMotorState != TEL_OK)
     return -1;
-  if (getMasterState () != SERVERD_NIGHT)
-    tel_gemini_match_time ();
   ret = tel_write ("#:hP#", 5);
   if (ret <= 0)
     return -1;
