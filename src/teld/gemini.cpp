@@ -188,8 +188,7 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
       if (buf[readed] == '#')
 	break;
     }
-  if (buf[readed] == '#')
-    buf[readed] = 0;
+  buf[readed] = 0;
   syslog (LOG_DEBUG, "Losmandy:Hash-readed:'%s'", buf);
   return readed;
 }
