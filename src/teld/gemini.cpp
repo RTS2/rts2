@@ -112,6 +112,7 @@ public:
   virtual int startMove (double tar_ra, double tar_dec);
   virtual int isMoving ();
   virtual int endMove ();
+  virtual int stopMove ();
   virtual int startMoveFixed (double tar_ha, double tar_dec);
   virtual int isMovingFixed ();
   virtual int endMoveFixed ();
@@ -1020,6 +1021,9 @@ Rts2DevTelescopeGemini::tel_start_move ()
 {
   char retstr;
 
+  // stop any pending movement
+  stopMove ();
+
   if ((tel_write_ra (lastMoveRa) < 0) || (tel_write_dec (lastMoveDec) < 0))
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
@@ -1079,6 +1083,18 @@ Rts2DevTelescopeGemini::endMove ()
   if (tel_write ("#:ONtest", 8) > 0)
     return 0;
   return -1;
+}
+
+int
+Rts2DevTelescopeGemini::stopMove ()
+{
+  tel_gemini_get (99, &lastMotorState);
+  if (lastMotorState >= 8)
+    {
+      lastMotorState -= 8;
+      return tel_gemini_set (99, lastMotorState);
+    }
+  return 0;
 }
 
 int
@@ -1399,6 +1415,9 @@ Rts2DevTelescopeGemini::startPark ()
   int ret;
   if (telMotorState != TEL_OK)
     return -1;
+
+  stopMove ();
+
   ret = tel_write ("#:hP#", 5);
   if (ret <= 0)
     return -1;
