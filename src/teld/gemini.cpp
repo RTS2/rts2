@@ -515,7 +515,6 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
   char buf[55];
   int ret;
   char rep;
-  tel_write ("#:SB8#", 6);
   t = time (NULL);
   gmtime_r (&t, &ts);
   // set time
@@ -1080,7 +1079,7 @@ Rts2DevTelescopeGemini::endMove ()
   syslog (LOG_INFO, "rate: %i", track);
   tel_gemini_set (131, 131);
   tel_gemini_get (130, &track);
-  if (tel_write ("#:ONtest", 8) > 0)
+  if (tel_write ("#:ONtest#", 9) > 0)
     return 0;
   return -1;
 }
@@ -1089,9 +1088,10 @@ int
 Rts2DevTelescopeGemini::stopMove ()
 {
   tel_gemini_get (99, &lastMotorState);
-  if (lastMotorState >= 8)
+  tel_write ("#:Q#", 4);
+  if (lastMotorState & 8)
     {
-      lastMotorState -= 8;
+      lastMotorState &= ~8;
       return tel_gemini_set (99, lastMotorState);
     }
   return 0;
@@ -1170,7 +1170,7 @@ Rts2DevTelescopeGemini::endMoveFixed ()
   stopWorm ();
   tel_gemini_get (130, &track);
   syslog (LOG_DEBUG, "endMoveFixed track: %i", track);
-  if (tel_write ("#:ONfixed", 8) > 0)
+  if (tel_write ("#:ONfixed#", 10) > 0)
     return 0;
   return -1;
 }
