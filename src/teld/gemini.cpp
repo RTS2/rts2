@@ -188,6 +188,7 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
 	{
 	  buf[readed] = 0;
 	  syslog (LOG_DEBUG, "Losmandy: Hash-read error:'%s'", buf);
+	  tcflush (tel_desc, TCIOFLUSH);
 	  return -1;
 	}
       if (buf[readed] == '#')
@@ -214,7 +215,6 @@ Rts2DevTelescopeGemini::tel_write (char *buf, int count)
   int ret;
   syslog (LOG_DEBUG, "Losmandy:will write:'%s'", buf);
   ret = write (tel_desc, buf, count);
-  tcflush (tel_desc, TCIFLUSH);
   return ret;
 }
 
@@ -239,8 +239,8 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
   int tmp_rcount = -1;
   char *buf;
 
-  if (tcflush (tel_desc, TCIOFLUSH) < 0)
-    return -1;
+//  if (tcflush (tel_desc, TCIOFLUSH) < 0)
+//    return -1;
   if (tel_write (wbuf, wcount) < 0)
     return -1;
 
@@ -286,8 +286,8 @@ Rts2DevTelescopeGemini::tel_write_read_hash (char *wbuf, int wcount,
 {
   int tmp_rcount = -1;
 
-  if (tcflush (tel_desc, TCIOFLUSH) < 0)
-    return -1;
+//  if (tcflush (tel_desc, TCIOFLUSH) < 0)
+//    return -1;
   if (tel_write (wbuf, wcount) < 0)
     return -1;
 
@@ -332,10 +332,10 @@ Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, char *command)
 char
 Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
 {
-  char checksum = 0;
+  unsigned char checksum = 0;
   for (; *buf; buf++)
     checksum ^= *buf;
-  checksum &= ~128;		// modulo 128
+  checksum %= 128;		// modulo 128
   checksum += 64;
   return checksum;
 }
@@ -845,6 +845,8 @@ int
 Rts2DevTelescopeGemini::idle ()
 {
   int ret;
+  int32_t worm;
+  tel_gemini_get (130, &worm);
   ret = tel_gemini_get (99, &lastMotorState);
   // if moving, not on limits & need info..
   if ((lastMotorState & 8) && (!(lastMotorState & 16)) && infoCount % 25 == 0)
@@ -1077,7 +1079,7 @@ Rts2DevTelescopeGemini::endMove ()
   int32_t track;
   tel_gemini_get (130, &track);
   syslog (LOG_INFO, "rate: %i", track);
-  tel_gemini_set (131, 131);
+  tel_gemini_set (131, 1);
   tel_gemini_get (130, &track);
   if (tel_write ("#:ONtest#", 9) > 0)
     return 0;
@@ -1530,13 +1532,13 @@ Rts2DevTelescopeGemini::loadModel ()
 int
 Rts2DevTelescopeGemini::stopWorm ()
 {
-  return tel_gemini_set (135, 135);
+  return tel_gemini_set (135, 1);
 }
 
 int
 Rts2DevTelescopeGemini::startWorm ()
 {
-  return tel_gemini_set (131, 131);
+  return tel_gemini_set (131, 1);
 }
 
 int
