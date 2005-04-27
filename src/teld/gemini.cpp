@@ -999,7 +999,7 @@ int
 Rts2DevTelescopeGemini::telescope_start_move (char direction)
 {
   char command[6];
-  tel_set_rate (RATE_FIND);
+  tel_set_rate (RATE_CENTER);
   sprintf (command, "#:M%c#", direction);
   return tel_write (command, 5) == 1 ? -1 : 0;
 }
