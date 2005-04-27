@@ -1021,6 +1021,7 @@ int
 Rts2DevTelescopeGemini::tel_start_move ()
 {
   char retstr;
+  char buf[55];
 
   // stop any pending movement
   stopMove ();
@@ -1031,6 +1032,8 @@ Rts2DevTelescopeGemini::tel_start_move ()
     return -1;
   if (retstr == '0')
     return 0;
+  // otherwise read reply..
+  tel_read_hash (buf, 53);
   return -1;
 }
 
