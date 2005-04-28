@@ -461,6 +461,7 @@ public:
 
   out:
     free (data);
+    data = NULL;
     free (filename);
     img_num++;
     return ret;
