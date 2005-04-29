@@ -984,7 +984,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
 	  return 0;
 	}
 
-      ln_get_lunar_equ_coords (jd, &moon, 0.01);
+      ln_get_lunar_equ_coords (jd, &moon);
       ln_get_hrz_from_equ (&moon, &observer, jd, &moon_hrz);
 
       switch (number & 1)

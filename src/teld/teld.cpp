@@ -173,6 +173,10 @@ int
 Rts2DevTelescope::correct (Rts2Conn * conn, double cor_ra, double cor_dec)
 {
   int ret;
+  if (abs (cor_ra) > 5 || abs (cor_dec) > 5)
+    {
+
+    }
   ret = correct (cor_ra, cor_dec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform correction");
@@ -199,6 +203,30 @@ Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
   if (ret)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot change");
+    }
+  return ret;
+}
+
+int
+Rts2DevTelescope::saveModel (Rts2Conn * conn)
+{
+  int ret;
+  ret = saveModel ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot save model");
+    }
+  return ret;
+}
+
+int
+Rts2DevTelescope::loadModel (Rts2Conn * conn)
+{
+  int ret;
+  ret = loadModel ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot load model");
     }
   return ret;
 }
@@ -271,6 +299,10 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  || !paramEnd ())
 	return -2;
       return master->change (this, chng_ra, chng_dec);
+    }
+  else if (isCommand ("save_model"))
+    {
+      return master->saveModel (this);
     }
   return Rts2DevConn::commandAuthorized ();
 }

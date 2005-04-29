@@ -9,27 +9,45 @@
 #include <fitsio.h>
 
 #include "imghdr.h"
+#include "../utils/rts2dataconn.h"
 
 class Rts2Image
 {
 private:
   unsigned short *data;
-  char *filename;
-  fitsfile ffile;
+  fitsfile *ffile;
   int fits_status;
   int flags;
+  int targetId;
+  int obsId;
 public:
   // create image
     Rts2Image (char *in_filename, struct timeval *exposureStart);
+    Rts2Image (int epochId, int targetId, int obsId,
+	       struct timeval *exposureStart);
   // open image from disk..
     Rts2Image (char *in_filename);
     virtual ~ Rts2Image (void);
 
-  void setValue (char *name, int value, char *comment);
-  void setValue (char *name, double value, char *comment);
-  void setValue (char *name, char *value, char *comment);
+  int setValue (char *name, int value, char *comment);
+  int setValue (char *name, long value, char *comment);
+  int setValue (char *name, double value, char *comment);
+  int setValue (char *name, const char *value, char *comment);
 
-  void writeImgHeader (struct imghdr *im_h);
+  int writeImgHeader (struct imghdr *im_h);
+  int writeDate (Rts2ClientTCPDataConn * dataConn);
+
+  inline int fitsStatusValue (char *valname)
+  {
+    int ret = 0;
+    if (fits_status)
+      {
+	ret = -1;
+	fits_report_error (stdout, fits_status);
+      }
+    fits_status = 0;
+    return ret;
+  }
 };
 
 #endif /* !__RTS2_IMAGE__ */

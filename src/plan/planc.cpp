@@ -88,8 +88,8 @@ ready_to_observe (int status)
 int
 main (int argc, char **argv)
 {
-  Rts2Plan *plan = new Rts2Plan ();
-  plan->init (argc, argv);
+  Rts2Plan *plan = new Rts2Plan (argc, argv);
+  plan->init ();
   plan->run ();
   delete plan;
   return 0;

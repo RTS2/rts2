@@ -233,7 +233,7 @@ CameraChip::sendFirstLine ()
       header.sizes[1] = chipReadout->height / usedBinningVertical;
       header.binnings[0] = usedBinningHorizontal;
       header.binnings[1] = usedBinningVertical;
-      header.status = STATUS_FLIP;
+      header.shutter = SHUTTER_SYNCHRO;
       int ret;
       ret = sendReadoutData ((char *) &header, sizeof (imghdr));
       if (ret == -1)
@@ -380,6 +380,7 @@ Rts2DevCamera::checkReadouts ()
       if (ret == -2
 	  || (ret == -3 && (getState (i) & CAM_MASK_READING) == CAM_READING))
 	{
+	  chips[i]->endReadout ();
 	  setTimeout (USEC_SEC);
 	  maskState (i, CAM_MASK_READING, CAM_NOTREADING,
 		     "chip readout ended");

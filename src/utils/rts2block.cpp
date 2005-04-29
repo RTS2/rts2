@@ -78,6 +78,20 @@ Rts2Conn::add (fd_set * set)
     }
 }
 
+void
+Rts2Conn::postEvent (Rts2Event * event)
+{
+  if (otherDevice)
+    otherDevice->postEvent (new Rts2Event (event));
+  Rts2Object::postEvent (event);
+}
+
+void
+Rts2Conn::postMaster (Rts2Event * event)
+{
+  master->postEvent (event);
+}
+
 int
 Rts2Conn::acceptConn ()
 {
@@ -811,6 +825,22 @@ Rts2Block::init ()
       return -errno;
     }
   listen (sock, 1);
+}
+
+void
+Rts2Block::postEvent (Rts2Event * event)
+{
+  // send to all connections
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	{
+	  conn->postEvent (new Rts2Event (event));
+	}
+    }
+  return Rts2Object::postEvent (event);
 }
 
 Rts2Conn *

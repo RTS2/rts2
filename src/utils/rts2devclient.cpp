@@ -100,7 +100,7 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
   addValue (new Rts2ValueDouble ("latitude"));
   addValue (new Rts2ValueDouble ("altitude"));
   addValue (new Rts2ValueDouble ("ra"));
-  addValue (new Rts2ValueDouble ("dev"));
+  addValue (new Rts2ValueDouble ("dec"));
   addValue (new Rts2ValueDouble ("siderealtime"));
   addValue (new Rts2ValueDouble ("localtime"));
   addValue (new Rts2ValueInteger ("flip"));
@@ -142,4 +142,10 @@ Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient
 {
   addValue (new Rts2ValueDouble ("filter"));
   addValue (new Rts2ValueDouble ("filter_c"));
+}
+
+Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
+  (in_connection)
+{
+  addValue (new Rts2ValueInteger ("position"));
 }

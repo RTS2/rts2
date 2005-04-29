@@ -55,16 +55,6 @@ AC_ARG_WITH(pgsql,
 	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
 esac],[psql=yes])
 
-AC_ARG_WITH(libnova,
-[  --without-libnova       don't build libnova dependent programs],
-[case "${withval}" in
-	yes) libnova=yes ;;
-	no)  libnova=no ;;
-	*) AC_MSG_ERROR(bad value ${withval} for --without-libnova) ;;
-esac],[libnova=yes])
-
-AM_CONDITIONAL(LIBNOVA, test x$libnova = xyes)
-
 AC_ARG_WITH(wcs,
 [  --without-wcs           don't build WCS dependent programs],
 [case "${withval}" in
@@ -156,15 +146,13 @@ AC_SUBST(LIB_PANEL), [cat <<EOF
 EOF
 exit 1])
 
-if test "x${libnova}" = "xyes"; then
-	AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
-	AC_SUBST(LIB_NOVA), [cat << EOF
+AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
+AC_SUBST(LIB_NOVA), [cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
-	exit 1])
-	AC_SUBST([LIBNOVA_SUBDIRS], ['teld monitor writers focusc serverd'])
-fi
+exit 1])
+AC_SUBST([LIBNOVA_SUBDIRS], ['teld monitor writers focusc serverd'])
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
 AC_SUBST(LIB_PTHREAD), [cat << EOF

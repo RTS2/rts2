@@ -1,7 +1,7 @@
 # $Id$
 
-noinst_LIBRARIES = librts2fits.a
+noinst_LIBRARIES = librts2image.a
 
-noinst_HEADERS = fits.h process_image.h
+noinst_HEADERS = rts2image.h rts2devcliimg.h
 
-librts2fits_a_SOURCES = fits.c process_image.c
+librts2image_a_SOURCES = rts2image.cpp rts2devcliimg.cpp

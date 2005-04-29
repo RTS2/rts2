@@ -274,7 +274,7 @@ LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs):Target (
 int
 LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
-  ln_get_lunar_equ_coords (JD, pos, 0);
+  ln_get_lunar_equ_coords (JD, pos);
   return 0;
 }
 

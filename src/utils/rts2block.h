@@ -44,6 +44,8 @@ class Rts2Command;
 
 class Rts2ClientTCPDataConn;
 
+class Rts2DevClient;
+
 class Rts2ServerState
 {
 public:
@@ -77,6 +79,7 @@ class Rts2Conn:public Rts2Object
   virtual int connectionError ()
   {
     conn_state = CONN_BROKEN;
+    close (sock);
     sock = -1;
     return -1;
   }
@@ -109,12 +112,7 @@ public:
   Rts2Conn (int in_sock, Rts2Block * in_master);
   virtual ~ Rts2Conn (void);
 
-  virtual void postEvent (Rts2Event * event)
-  {
-    if (otherDevice)
-      otherDevice->postEvent (event);
-    Rts2Object::postEvent (event);
-  }
+  virtual void postEvent (Rts2Event * event);
 
   int add (fd_set * set);
   virtual int getState (int state_num)
@@ -125,6 +123,7 @@ public:
   {
     return -1;
   }
+  void postMaster (Rts2Event * event);
   virtual int idle ()
   {
     return -1;
@@ -322,6 +321,8 @@ public:
   void setPort (int in_port);
   int getPort (void);
   virtual int init ();
+
+  virtual void postEvent (Rts2Event * event);
 
   /**
    * Used to create new connection - so childrens can

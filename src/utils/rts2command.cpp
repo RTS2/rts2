@@ -117,7 +117,7 @@ Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master,
 Rts2Command (in_master)
 {
   char *command;
-  asprintf (&command, "exposure 0 %i %f", (exp_type == EXP_LIGHT ? 1 : 0),
+  asprintf (&command, "expose 0 %i %f", (exp_type == EXP_LIGHT ? 1 : 0),
 	    exp_time);
   setCommand (command);
   free (command);

@@ -26,6 +26,9 @@
 #include "../utils/rts2client.h"
 #include "../utils/rts2dataconn.h"
 
+#include "../writers/rts2image.h"
+#include "../writers/rts2devcliimg.h"
+
 #include "status.h"
 #include "imghdr.h"
 
@@ -116,7 +119,7 @@ public:
   }
 };
 
-class Rts2xfocusCamera:public Rts2DevClientCamera
+class Rts2xfocusCamera:public Rts2DevClientCameraImage
 {
 private:
   float exposureTime;
@@ -137,6 +140,8 @@ private:
   Pixmap pixmap;
   XImage *image;
   XSetWindowAttributes xswa;
+
+  int saveImage;
 
   void buildWindow ();
   void redraw ();
@@ -190,7 +195,7 @@ Rts2xfocusConn::setOtherType (int other_device_type)
     }
 }
 
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus * in_master):Rts2DevClientCamera
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraImage
   (in_connection)
 {
   master = in_master;
@@ -311,8 +316,10 @@ Rts2xfocusCamera::XeventLoop ()
 	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_STOP));
 	      break;
 	    case XK_y:
+	      saveImage = 1;
 	      break;
 	    case XK_u:
+	      saveImage = 0;
 	      break;
 	    default:
 	      break;
@@ -331,6 +338,9 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
   int i, j, k;
   unsigned short *im_ptr;
   unsigned short low, med, hig;
+
+  // get to upper classes as well
+  Rts2DevClientCameraImage::dataReceived (dataConn);
 
   header = dataConn->getImageHeader ();
   width = header->sizes[0];
@@ -417,6 +427,7 @@ void
 Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
 {
   char *text;
+  Rts2DevClientCameraImage::stateChanged (state);
   if (state->isName ("priority"))
     {
       if (state->value == 1)

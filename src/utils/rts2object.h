@@ -21,7 +21,8 @@ public:
   virtual ~ Rts2Object (void)
   {
   }
-  virtual void postEvent (Rts2Event * event)
+
+  void postEvent (Rts2Event * event)
   {
     // discard event..
     delete event;

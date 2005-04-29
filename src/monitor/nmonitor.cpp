@@ -21,6 +21,9 @@
 #include "../utils/rts2client.h"
 #include "../utils/rts2command.h"
 
+#include "../writers/rts2image.h"
+#include "../writers/rts2devcliimg.h"
+
 #define LINE_SIZE	13
 #define COL_SIZE	25
 
@@ -78,14 +81,15 @@ public:
   }
 };
 
-class Rts2NMTelescope:public Rts2DevClientTelescope
+class Rts2NMTelescope:public Rts2DevClientTelescopeImage
 {
 private:
   Rts2CNMonConn * connection;
   void print (WINDOW * wnd);
 public:
     Rts2NMTelescope (Rts2CNMonConn *
-		     in_connection):Rts2DevClientTelescope (in_connection)
+		     in_connection):Rts2DevClientTelescopeImage
+    (in_connection)
   {
     connection = in_connection;
   }
@@ -379,22 +383,25 @@ Rts2Client (argc, argv)
 {
   statusWindow = NULL;
   commandWindow = NULL;
-  connCols = 0;
+  connCols = -1;
   connLines = 0;
   cmd_col = 0;
 }
 
 Rts2NMonitor::~Rts2NMonitor (void)
 {
-  delwin (statusWindow);
-  delwin (commandWindow);
+  if (connCols >= 0)
+    {
+      delwin (statusWindow);
+      delwin (commandWindow);
 
-  erase ();
-  refresh ();
+      erase ();
+      refresh ();
 
-  nocbreak ();
-  echo ();
-  endwin ();
+      nocbreak ();
+      echo ();
+      endwin ();
+    }
 }
 
 int

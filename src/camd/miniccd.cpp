@@ -283,6 +283,12 @@ CameraMiniccdChip::sendLineData (int numLines)
 		  "CameraMiniccdChip::readoutOneLine wrong image message");
 	  return -2;
 	}
+      if (!chipUsedReadout)
+	{
+	  syslog (LOG_ERR,
+		  "CameraMiniccdChip::readoutOneLine not chipUsedReadout");
+	  return -2;
+	}
       if (msg[CCD_MSG_LENGTH_LO_INDEX] +
 	  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16) !=
 	  ((chipUsedReadout->height / usedBinningVertical) *

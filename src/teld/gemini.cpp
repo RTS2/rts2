@@ -46,6 +46,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
 private:
   char *device_file_io;
+  char *geminiConfig;
   int tel_desc;
   // utility I/O functions
   int tel_read (char *buf, int count);
@@ -58,7 +59,9 @@ private:
   int tel_read_hms (double *hmsptr, char *command);
   char tel_gemini_checksum (const char *buf);
   // higher level I/O functions
-  int tel_gemini_set (int id, int val);
+  int tel_gemini_getch (int id, char *in_buf);
+  int tel_gemini_setch (int id, char *in_buf);
+  int tel_gemini_set (int id, int32_t val);
   int tel_gemini_get (int id, int32_t * val);
   int tel_gemini_reset ();
   int tel_gemini_match_time ();
@@ -95,9 +98,8 @@ public:
   virtual int correct (double cor_ra, double cor_dec);
   virtual int change (double chng_ra, double chng_dec);
   virtual int stop ();
-
-  int save ();
-  int load ();
+  virtual int saveModel ();
+  virtual int loadModel ();
 };
 
 /*! 
@@ -302,12 +304,36 @@ Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
  * Write command to set gemini local parameters
  *
  * @param id	id to set
+ * @param buf	value to set (char buffer; should be 15 char long)
+ *
+ * @return -1 on error, otherwise 0
+ */
+int
+Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
+{
+  int len;
+  char buf[20];
+  len = sprintf (buf, ">%i:%10s", id, in_buf);
+  buf[len] = tel_gemini_checksum (buf);
+  len++;
+  buf[len] = '#';
+  len++;
+  buf[len] = '\0';
+  if (tel_write (buf, len) > 0)
+    return 0;
+  return -1;
+}
+
+/*!
+ * Write command to set gemini local parameters
+ *
+ * @param id	id to set
  * @param val	value to set
  *
  * @return -1 on error, otherwise 0
  */
 int
-Rts2DevTelescopeGemini::tel_gemini_set (int id, int val)
+Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
 {
   char buf[15];
   int len;
@@ -322,6 +348,41 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, int val)
   return -1;
 }
 
+/*!
+ * Read gemini local parameters
+ *
+ * @param id	id to get
+ * @param buf	pointer where to store result (char[15] buf)
+ *
+ * @return -1 and set errno on error, otherwise 0
+ */
+int
+Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
+{
+  char *ptr, checksum;
+  int len, ret;
+  len = sprintf (buf, "<%i:", id);
+  buf[len] = tel_gemini_checksum (buf);
+  len++;
+  buf[len] = '#';
+  len++;
+  buf[len] = '\0';
+  ret = tel_write_read_hash (buf, len, buf, 8);
+  if (ret < 0)
+    return ret;
+  for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');
+       ptr++);
+  checksum = *ptr;
+  *ptr = '\0';
+  if (tel_gemini_checksum (buf) != checksum)
+    {
+      syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
+	      tel_gemini_checksum (buf), checksum);
+      *buf = '\0';
+      return -1;
+    }
+  return 0;
+}
 
 /*!
  * Read gemini local parameters
@@ -345,7 +406,8 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t * val)
   ret = tel_write_read_hash (buf, len, buf, 8);
   if (ret < 0)
     return ret;
-  for (ptr = buf; *ptr && *ptr >= '0' && *ptr <= '9'; ptr++);
+  for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');
+       ptr++);
   checksum = *ptr;
   *ptr = '\0';
   if (tel_gemini_checksum (buf) != checksum)
@@ -582,8 +644,10 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
 		  argv)
 {
   device_file = "/dev/ttyS0";
+  geminiConfig = "/etc/rts2/gemini.ini";
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+  addOption ('c', "config_file", 1, "config file (with model parameters)");
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -598,6 +662,9 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
     {
     case 'f':
       device_file = optarg;
+      break;
+    case 'c':
+      geminiConfig = optarg;
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -1014,7 +1081,8 @@ Rts2DevTelescopeGemini::startPark ()
   return 0;
 }
 
-int save_registers[] = {
+static int save_registers[] = {
+  0,				// mount type
   120,				// manual slewing speed
   140,				// goto slewing speed
   150,				// guiding speed
@@ -1029,30 +1097,80 @@ int save_registers[] = {
   207,				// modeling parameter FR (mirror flop/gear play in RE) in seconds of arc
   208,				// modeling parameter FD (mirror flop/gear play in declination) in seconds of arc
   209,				// modeling paremeter CF (counterweight & RA axis flexure) in seconds of arc
-  211, -1
-};				// modeling parameter TF (tube flexure) in seconds of arc
+  211,				// modeling parameter TF (tube flexure) in seconds of arc 
+  411,				// RA track divisor 
+  412,				// DEC tracking divisor
+  -1
+};
 
 int
-Rts2DevTelescopeGemini::save ()
+Rts2DevTelescopeGemini::saveModel ()
 {
   int *reg = save_registers;
-  int32_t val;
+  char buf[10];
   FILE *config_file;
 
-  config_file = fopen (".losmandy.ini", "w");
+  config_file = fopen (geminiConfig, "w");
+  if (!config_file)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeGemini::saveModel cannot open file '%s' : %m",
+	      geminiConfig);
+      return -1;
+    }
 
   while (*reg >= 0)
     {
-      tel_gemini_get (*reg, &val);
-      fprintf (config_file, "%i:%i\n", *reg, val);
+      int ret;
+      ret = tel_gemini_getch (*reg, buf);
+      if (ret)
+	{
+	  fprintf (config_file, "%i:error", *reg);
+	}
+      else
+	{
+	  fprintf (config_file, "%i:%s\n", *reg, buf);
+	}
+      reg++;
     }
   fclose (config_file);
   return 0;
 }
 
 extern int
-Rts2DevTelescopeGemini::load ()
+Rts2DevTelescopeGemini::loadModel ()
 {
+  int *reg = save_registers;
+  FILE *config_file;
+  char *line;
+  int numchar;
+  int id;
+  int ret;
+
+  config_file = fopen (geminiConfig, "r");
+  if (!config_file)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeGemini::loadModel cannot open file '%s' : %m",
+	      geminiConfig);
+      return -1;
+    }
+
+  numchar = 100;
+  line = (char *) malloc (numchar);
+
+  while (getline (&line, &numchar, config_file) != -1)
+    {
+      char *buf;
+      ret = sscanf (line, "%i:%a", &id, &buf);
+      if (ret == 2)
+	{
+	  tel_gemini_setch (id, buf);
+	}
+      free (buf);
+    }
+  free (line);
+
   return 0;
 }
 

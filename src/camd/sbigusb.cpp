@@ -189,7 +189,6 @@ CameraSbigChip::readoutOneLine ()
       send_top += send_data_size;
       return 0;
     }
-  endReadout ();
   return -2;
 }
 

@@ -14,9 +14,8 @@ CREATE VIEW targets_noimages AS
 SELECT targets.tar_id, 0 AS img_count 
 	FROM targets 
 	WHERE (NOT (EXISTS 
-		(SELECT * FROM images, observations 
-			WHERE ((observations.tar_id = targets.tar_id) AND 
-			(observations.obs_id = images.obs_id)))));
+		(SELECT * FROM targets_imgcount
+			WHERE targets_imgcount.tar_id =	targets.tar_id)));
 
 CREATE VIEW targets_imgcount AS
 SELECT targets.tar_id, count(*) AS img_count
