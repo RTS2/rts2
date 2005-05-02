@@ -489,7 +489,7 @@ Target::acquire ()
       && obs_type == TYPE_PHOTOMETRIC)
     {
       int ret;
-      ret = rts2_centering (camera, telescope);
+      ret = rts2_centering (camera, telescope, obs_type);
       if (ret)
 	{
 	  img_hi_precision.ntries = max_tries;
@@ -824,7 +824,7 @@ Target::runScript (struct ex_info *exinfo)
 					  PHOT_TIMEOUT);
 	    }
 	  exp_state = CENTERING;
-	  rts2_centering (camera, telescope);
+	  rts2_centering (camera, telescope, obs_type);
 	  break;
 	case COMMAND_MIRROR:
 	  command++;
