@@ -834,7 +834,7 @@ Selector::select_next_terestial (time_t * c_start, Target * plan, float lon,
     terestial.tar_id = targets.tar_id
     AND type_id =:obs_type
     AND mod (:ter_minutes_start - ter_offset,
-	     ter_minutes) > (ter_minutes - 5);
+	     ter_minutes) > (ter_minutes - 65);
   EXEC SQL OPEN obs_cursor_terestial;
   test_sql;
   while (1)
@@ -848,7 +848,7 @@ Selector::select_next_terestial (time_t * c_start, Target * plan, float lon,
       if (sqlca.sqlcode)
 	goto err;
       last_o = db_last_observation (tar_id);
-      ot_minpause = 500;
+      ot_minpause = 3600;
       printf ("%8i\t%+03.3f\t%+03.3f\t%i\n", tar_id, ra, dec, ot_minpause);
       if (last_o == -1 || last_o >= ot_minpause)
 	{

@@ -82,11 +82,11 @@ main (int argc, char **argv)
   ObjectCheck *checker = new ObjectCheck ("/etc/rts2/horizont");
   Selector *selector = new Selector (checker, NULL, &observer);
 
-  jd = get_double_default ("planc_selector", SELECTOR_ELL);
+  jd = get_double_default ("planc_selector", SELECTOR_PHOTOMETRY);
 
   if (selector->get_next_plan
       (plan, (int) jd,
-       &t, 2, 30, SERVERD_NIGHT, observer.lng, observer.lat, 1))
+       &t, 2, 30, SERVERD_NIGHT, observer.lng, observer.lat, 0))
     {
       printf ("Error making plan\n");
       fflush (stdout);

@@ -90,7 +90,7 @@ phot_integrate (struct device *phot, int filter, int count)
   devcli_command (phot, NULL, "filter %i", filter);
   devcli_command (phot, NULL, "integrate 1 %i", count);
   devcli_wait_for_status (phot, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-			  11);
+			  25);
   for (i = 0; i < last_count; i++)
     {
       if (counts[i].filter == filter)

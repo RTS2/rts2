@@ -44,7 +44,7 @@ Target::move ()
 
       tel_target_state = TEL_OBSERVING;
 
-      if (type == TYPE_TERESTIAL)
+      if (obs_type == TYPE_TERESTIAL)
 	{
 	  if (devcli_command
 	      (telescope, NULL, "fixed %f %f", object.ra, object.dec))
@@ -840,8 +840,9 @@ Target::runScript (struct ex_info *exinfo)
 	    }
 	  if (!(mirror_pos == 'A' || mirror_pos == 'B'))
 	    {
-	      fprintf (stderr, "invalid arg, expecting int, get %s\n", s);
-	      command = s;
+	      fprintf (stderr, "invalid arg, expecting int, get %c\n",
+		       mirror_pos);
+	      command++;
 	      continue;
 	    }
 	  if (exp_state == EXPOSURE_PROGRESS)
