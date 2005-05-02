@@ -1285,20 +1285,13 @@ pr_intg (lbuf, s)		/* print the contents of the INTEGRAL-based packet */
   ln_get_timet_from_julian (lbuf[BURST_TJD] + 2440000.5, &grb_date);
   grb_date += lbuf[BURST_SOD] / 100.0;
 
-  if (lbuf[I_TEST_MPOS] && I_TEST)
+  if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
     {
-      process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT) %
-		   20, (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT,
-		   ra, dec, &grb_date);
+      process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT)
+		   + 100,
+		   (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT, ra,
+		   dec, &grb_date);
     }
-  else if (!lbuf[PKT_TYPE] && I_TEST)
-    if (ra >= 0 && ra <= 361.0 && dec >= -91 && dec <= 91)
-      {
-	process_grb (((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT)
-		     + 100,
-		     (lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT, ra,
-		     dec, &grb_date);
-      }
 }
 
 /*---------------------------------------------------------------------------*/
