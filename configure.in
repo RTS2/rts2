@@ -47,6 +47,16 @@ esac],[xfocusc=yes])
 
 AM_CONDITIONAL(XFOCUSC, test x$xfocusc = xyes)
 
+AC_ARG_WITH(libnova,
+[  --without-libnova       don't build libnova dependent programs],
+[case "${withval}" in
+	yes) libnova=yes ;;
+	no)  libnova=no ;;
+	*) AC_MSG_ERROR(bad value ${withval} for --without-libnova) ;;
+esac],[libnova=yes])
+
+AM_CONDITIONAL(LIBNOVA, test x$libnova = xyes)
+
 AC_ARG_WITH(pgsql,
 [  --without-pgsql         don't build pgsql dependent clients],
 [case "${withval}" in
@@ -152,7 +162,7 @@ AC_SUBST(LIB_NOVA), [cat << EOF
 **** Please get one from http://libnova.sourceforge.net.
 EOF
 exit 1])
-AC_SUBST([LIBNOVA_SUBDIRS], ['teld monitor writers focusc serverd'])
+AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
 AC_SUBST(LIB_PTHREAD), [cat << EOF
@@ -243,7 +253,7 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow])
 
 AC_CHECK_HEADERS([limits.h]) 
 AC_FUNC_CHOWN 

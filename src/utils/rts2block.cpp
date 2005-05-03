@@ -29,6 +29,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
   master = in_master;
   buf_top = buf;
   *name = '\0';
+  key = 0;
   priority = -1;
   have_priority = 0;
   centrald_id = -1;
@@ -119,10 +120,7 @@ Rts2Conn::setState (int in_state_num, char *in_state_name, int in_value)
 {
   if (!serverState[in_state_num])
     serverState[in_state_num] = new Rts2ServerState (in_state_name);
-  serverState[in_state_num]->value = in_value;
-  if (otherDevice)
-    otherDevice->stateChanged (serverState[in_state_num]);
-  return 0;
+  return setState (in_state_name, in_value);
 }
 
 int
@@ -184,6 +182,8 @@ Rts2Conn::receive (fd_set * set)
       if (data_size <= 0)
 	return connectionError ();
       buf_top[data_size] = '\0';
+      syslog (LOG_DEBUG, "Rts2Conn::receive reas: %s full_buf: %s size: %i",
+	      buf_top, buf, data_size);
       // put old data size into account..
       data_size = (buf_top - buf) + data_size;
       buf_top = buf;
@@ -198,13 +198,11 @@ Rts2Conn::receive (fd_set * set)
 	  while (*buf_top && (!isspace (*buf_top) || *buf_top == '\n')
 		 && *buf_top != '\r')
 	    buf_top++;
-	  syslog (LOG_DEBUG, "Rts2Conn::receive command: %s offset: %i",
-		  command_start, buf_top - buf);
+	  command_end = buf_top;
 	  // commands should end with (at worst case) \r..
 	  if (*buf_top)
 	    {
 	      // find command parameters end
-	      command_end = buf_top;
 	      while (*command_end && *command_end != '\r')
 		command_end++;
 	      if (*command_end == '\r')
@@ -248,7 +246,7 @@ Rts2Conn::receive (fd_set * set)
 				    "invalid parameters/invalid number of parameters");
 		  // we processed whole received string..
 		  syslog (LOG_DEBUG, "Rts2Conn::receive command_end: %i",
-			  command_end - (buf + data_size));
+			  command_end - buf);
 		  if (command_end == buf + data_size)
 		    {
 		      syslog (LOG_WARNING, "Rts2Conn::receive null command");
@@ -257,9 +255,7 @@ Rts2Conn::receive (fd_set * set)
 		    }
 		}
 	      buf_top = command_end;
-	      syslog (LOG_DEBUG, "Rts2Conn::receive buf_top: %c", *buf_top);
 	    }
-	  syslog (LOG_DEBUG, "Rts2Conn::command ret: %i", data_size);
 	}
       if (buf != command_start && command_end > command_start)
 	{
@@ -1063,10 +1059,8 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	  if (discard_priority != i)
 	    {
 	      cancelPriorityOperations ();
-	    }
-	  if (discard_priority >= 0)
-	    {
-	      connections[discard_priority]->setHavePriority (0);
+	      if (discard_priority >= 0)
+		connections[discard_priority]->setHavePriority (0);
 	    }
 	  connections[i]->setHavePriority (1);
 	  break;
@@ -1277,9 +1271,11 @@ Rts2Block::queAll (Rts2Command * command)
   for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
        addr_iter++)
     {
+      Rts2Command *newCommand = new Rts2Command (command);
       conn = getConnection ((*addr_iter)->getName ());
-      conn->queCommand (command);
+      conn->queCommand (newCommand);
     }
+  delete command;
   return 0;
 }
 

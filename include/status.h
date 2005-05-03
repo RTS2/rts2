@@ -87,7 +87,6 @@
 #define MIRROR_B		0x03
 #define MIRROR_B_A		0x04
 
-
 #define SERVERD_DAY		0
 #define SERVERD_EVENING		1
 #define SERVERD_DUSK		2
@@ -101,6 +100,14 @@
 #define SERVERD_STANDBY_MASK	0x30
 
 #define SERVERD_STANDBY		0x10
+
+// "executor" and related states..
+#define EXEC_STATE_MASK		0x0f
+#define EXEC_IDLE		0x00
+#define EXEC_MOVE		0x01
+#define EXEC_ACQUIRE		0x02
+#define EXEC_OBSERVE		0x03
+#define EXEC_LASTREAD		0x04
 
 // to send data
 
@@ -149,6 +156,8 @@
 #define DEVICE_TYPE_GRB		9
 #define DEVICE_TYPE_FOCUS	10
 #define DEVICE_TYPE_MIRROR	11
+
+#define DEVICE_TYPE_EXECUTOR    20
 
 // and more to come..
 // #define DEVICE_TYPE_

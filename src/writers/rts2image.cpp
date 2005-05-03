@@ -7,20 +7,20 @@
 #include "rts2image.h"
 #include "imghdr.h"
 
-Rts2Image::Rts2Image (char *in_filename, struct timeval *exposureStart)
+Rts2Image::Rts2Image (char *in_filename, const struct timeval *exposureStart)
 {
   createImage (in_filename, exposureStart);
 }
 
 Rts2Image::Rts2Image (int epochId, int targetId, int obsId,
-		      struct timeval *exposureStart)
+		      const struct timeval *exposureStart)
 {
   struct imghdr *im_h;
   long naxes = 1;
   char *filename;
   struct tm *expT;
 
-  expT = gmtime (exposureStart->tv_sec);
+  expT = gmtime (&exposureStart->tv_sec);
   asprintf (&filename, "/images/%03i/%05i/%04i%02i%02i%02i%02i%02i-%4i",
 	    epochId, targetId, expT->tm_year + 1900, expT->tm_mon + 1,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -33,7 +33,7 @@ Rts2Image::Rts2Image (char *in_filename)
 {
   struct timeval tm;
   gettimeofday (&tm, NULL);
-  createImage (filename, &tm);
+  createImage (in_filename, &tm);
 }
 
 Rts2Image::~Rts2Image (void)
@@ -45,9 +45,11 @@ Rts2Image::~Rts2Image (void)
 }
 
 void
-Rts2Image::createImage (char *in_filename, struct timeval *exposureStart)
+Rts2Image::createImage (char *in_filename,
+			const struct timeval *exposureStart)
 {
   long naxes = 1;
+  time_t t = exposureStart->tv_sec;
 
   fits_status = 0;
   flags = IMAGE_NOT_SAVE;
@@ -62,8 +64,7 @@ Rts2Image::createImage (char *in_filename, struct timeval *exposureStart)
   setValue ("CTIME", exposureStart->tv_sec,
 	    "exposure start (seconds since 1.1.1970)");
   setValue ("USEC", exposureStart->tv_usec, "exposure start micro seconds");
-  setValue ("JD", ln_get_julian_from_timet (&exposureStart->tv_sec),
-	    "exposure JD");
+  setValue ("JD", ln_get_julian_from_timet (&t), "exposure JD");
 }
 
 int

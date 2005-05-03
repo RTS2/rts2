@@ -4,6 +4,7 @@
 #include "../utils/rts2object.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2dataconn.h"
+#include "../utils/rts2command.h"
 
 #include "rts2image.h"
 
@@ -16,16 +17,27 @@
 
 class Rts2DevClientCameraImage:public Rts2DevClientCamera
 {
+private:
+  int isExposing;
 protected:
   // we have to allocate that field as soon as we get the knowledge of
   // camera chip numbers..
-  Rts2Image * images;
+    Rts2Image * images;
   int chipNumbers;
   int activeTargetId;
+  int saveImage;
+
+  float exposureTime;
+  exposureType exposureT;
+  int exposureChip;
+  int exposureEnabled;
+
+  void queExposure ();
 public:
     Rts2DevClientCameraImage (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
+  virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void stateChanged (Rts2ServerState * state);
 };
 

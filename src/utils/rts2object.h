@@ -22,7 +22,7 @@ public:
   {
   }
 
-  void postEvent (Rts2Event * event)
+  virtual void postEvent (Rts2Event * event)
   {
     // discard event..
     delete event;

@@ -163,7 +163,7 @@ Rts2ConnCentrald::sendDeviceKey ()
       return -1;
     }
   setKey (key);
-  asprintf (&msg, "authorization_key %s %i", dev_name, key);
+  asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
   send (msg);
   free (msg);
   return 0;
@@ -584,14 +584,16 @@ Rts2Centrald::changePriority (time_t timeout)
 	}
     }
 
-  if (priority_client >= 0 && connections[priority_client])
-    connections[priority_client]->setHavePriority (0);
+  if (priority_client != new_priority_client)
+    {
+      if (priority_client >= 0 && connections[priority_client])
+	connections[priority_client]->setHavePriority (0);
 
-  priority_client = new_priority_client;
+      priority_client = new_priority_client;
 
-  if (priority_client >= 0 && connections[priority_client])
-    connections[priority_client]->setHavePriority (1);
-
+      if (priority_client >= 0 && connections[priority_client])
+	connections[priority_client]->setHavePriority (1);
+    }
   return sendMessage ("priority_change", priority_client, timeout);
 }
 

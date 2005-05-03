@@ -233,6 +233,7 @@ CameraChip::sendFirstLine ()
       header.sizes[1] = chipReadout->height / usedBinningVertical;
       header.binnings[0] = usedBinningHorizontal;
       header.binnings[1] = usedBinningVertical;
+      strcpy (header.filter, "UNK");
       header.shutter = SHUTTER_SYNCHRO;
       int ret;
       ret = sendReadoutData ((char *) &header, sizeof (imghdr));
@@ -480,9 +481,12 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 {
   int ret;
 
+  info (conn);
+
   ret = camExpose (chip, light, exptime);
   if (!ret)
     {
+      conn->sendValue ("exposure", exptime);
       maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
       chips[chip]->setExposure (exptime);

@@ -17,7 +17,13 @@ protected:
 public:
     Rts2Command (Rts2Block * in_owner);
     Rts2Command (Rts2Block * in_owner, char *in_text);
-    virtual ~ Rts2Command (void);
+    Rts2Command (Rts2Command * in_command)
+  {
+    owner = in_command->owner;
+    connection = in_command->connection;
+    setCommand (in_command->getText ());
+  }
+  virtual ~ Rts2Command (void);
   int setCommand (char *in_text);
   void setConnection (Rts2Conn * conn)
   {
@@ -85,6 +91,12 @@ class Rts2CommandExposure:public Rts2Command
 public:
   Rts2CommandExposure (Rts2Block * in_master, exposureType exp_type,
 		       float exp_time);
+};
+
+class Rts2CommandFilter:public Rts2Command
+{
+public:
+  Rts2CommandFilter (Rts2Block * in_master, int filter);
 };
 
 class Rts2CommandMove:public Rts2Command

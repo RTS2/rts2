@@ -102,10 +102,10 @@ public:
 
 };
 
-/*class Rts2DevClientPlanc : public Rts2DevClient
+class Rts2DevClientExecutor:public Rts2DevClient
 {
 public:
-  Rts
-};*/
+  Rts2DevClientExecutor (Rts2Conn * in_connection);
+};
 
 #endif /* !__RTS2_DEVCLIENT__ */

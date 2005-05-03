@@ -23,8 +23,8 @@
 #include <libnova/libnova.h>
 
 #include "telescope.h"
-#include "../utils/hms.h"
 #include "status.h"
+#include "../utils/hms.h"
 
 // uncomment following line, if you want all port read logging (will
 // at about 10 30-bytes lines to syslog for every query). 
@@ -1143,7 +1143,7 @@ Rts2DevTelescopeGemini::loadModel ()
   int *reg = save_registers;
   FILE *config_file;
   char *line;
-  int numchar;
+  size_t numchar;
   int id;
   int ret;
 

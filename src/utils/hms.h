@@ -11,7 +11,6 @@ extern "C"
 #endif
 
   extern double hmstod (const char *hptr);
-  extern int dtohms (double value, char *hptr);
   extern int dtoints (double value, int *h, int *m, int *s);
 
 #ifdef __cplusplus

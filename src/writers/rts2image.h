@@ -20,11 +20,12 @@ private:
   int flags;
   int targetId;
   int obsId;
+  void createImage (char *filename, const struct timeval *exposureStart);
 public:
   // create image
-    Rts2Image (char *in_filename, struct timeval *exposureStart);
+    Rts2Image (char *in_filename, const struct timeval *exposureStart);
     Rts2Image (int epochId, int targetId, int obsId,
-	       struct timeval *exposureStart);
+	       const struct timeval *exposureStart);
   // open image from disk..
     Rts2Image (char *in_filename);
     virtual ~ Rts2Image (void);

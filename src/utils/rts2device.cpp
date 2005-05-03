@@ -160,7 +160,6 @@ Rts2DevConn::connectionError ()
 int
 Rts2DevConn::commandAuthorized ()
 {
-  char *msg;
   if (isCommand ("ready"))
     {
       return master->ready (this);
@@ -173,9 +172,7 @@ Rts2DevConn::commandAuthorized ()
     {
       return master->baseInfo (this);
     }
-  asprintf (&msg, "devcon unknow command:'%s'", buf);
-  sendCommandEnd (DEVDEM_E_SYSTEM, msg);
-  free (msg);
+  sendCommandEnd (DEVDEM_E_SYSTEM, "devcon unknow command");
   return -1;
 }
 
@@ -212,8 +209,7 @@ Rts2DevConn::command ()
       conn_state = CONN_AUTH_PENDING;
       return -1;
     }
-  sendCommandEnd (DEVDEM_E_COMMAND, "buf");
-  return -1;
+  return Rts2Conn::command ();
 }
 
 Rts2DevConn::Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
@@ -242,6 +238,7 @@ Rts2DevConn::authorizationOK ()
 int
 Rts2DevConn::authorizationFailed ()
 {
+  setCentraldId (-1);
   conn_state = CONN_AUTH_FAILED;
   sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
   return 0;

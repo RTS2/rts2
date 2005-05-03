@@ -41,7 +41,7 @@
 class Rts2CNMonConn:public Rts2ConnClient
 {
 private:
-  int nrow;
+  int statusBegin;
   WINDOW *window;
   int printStatus ();
 protected:
@@ -53,6 +53,7 @@ public:
 		   char *in_name):Rts2ConnClient (in_master, in_name)
   {
     window = NULL;
+    statusBegin = 1;
   }
   virtual ~ Rts2CNMonConn (void)
   {
@@ -77,7 +78,22 @@ public:
   virtual int commandReturn (Rts2Command * command, int status)
   {
     print ();
+    wrefresh (window);
     return 0;
+  }
+
+  virtual int setState (char *in_state_name, int in_value)
+  {
+    int ret;
+    ret = Rts2ConnClient::setState (in_state_name, in_value);
+    printStatus ();
+    wrefresh (window);
+    return ret;
+  }
+
+  void setStatusBegin (int in_status_begin)
+  {
+    statusBegin = in_status_begin;
   }
 };
 
@@ -91,6 +107,7 @@ public:
 		     in_connection):Rts2DevClientTelescopeImage
     (in_connection)
   {
+    in_connection->setStatusBegin (8);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -130,7 +147,7 @@ Rts2NMTelescope::print (WINDOW * wnd)
   ln_get_hrz_from_equ_sidereal_time (&tel, &obs, st, &altaz);
 
   mvwprintw (wnd, 1, 1, "Typ: %s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "R+D/f: %.3f%+.3f/%c",
+  mvwprintw (wnd, 2, 1, "R+D/f: %7.3f%+6.3f/%c",
 	     getValueDouble ("ra"), getValueDouble ("dec"),
 	     getValueDouble ("flip") ? 'f' : 'n');
   mvwprintw (wnd, 3, 1, "Az/Al/D: %03.0f %+02.0f %s", altaz.az, altaz.alt,
@@ -161,6 +178,7 @@ public:
     Rts2NMCamera (Rts2CNMonConn *
 		  in_connection):Rts2DevClientCamera (in_connection)
   {
+    in_connection->setStatusBegin (8);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -188,12 +206,12 @@ Rts2NMCamera::print (WINDOW * wnd)
 	       info->chip_info[0].height);
   else
     mvwprintw (wnd, 3, 1, "Siz: Unknow"); */
-  mvwprintw (wnd, 4, 1, "S/A: %+03.1f %+03.1f oC",
+  mvwprintw (wnd, 4, 1, "S/A: %+05.1f %+05.1f oC",
 	     getValueDouble ("temperature_setpoint"),
 	     getValueDouble ("air_temperature"));
-  mvwprintw (wnd, 5, 1, "CCD: %+03.3f oC",
+  mvwprintw (wnd, 5, 1, "CCD: %+05.1f oC",
 	     getValueDouble ("ccd_temperature"));
-  mvwprintw (wnd, 6, 1, "CPo: %03.1f %%",
+  mvwprintw (wnd, 6, 1, "CPo: %04.1f %%",
 	     getValueDouble ("cooling_power") / 10.0);
   mvwprintw (wnd, 7, 1, "Fan: %s", getValueDouble ("fan") ? "on " : "off");
 }
@@ -207,6 +225,7 @@ public:
     Rts2NMDome (Rts2CNMonConn *
 		in_connection):Rts2DevClientDome (in_connection)
   {
+    in_connection->setStatusBegin (8);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -234,14 +253,51 @@ Rts2NMDome::print (WINDOW * wnd)
   mvwprintw (wnd, 4, 1, "Pow_tel: %i", getValueInteger ("power_telescope"));
   mvwprintw (wnd, 5, 1, "Pow_cam: %i", getValueInteger ("power_cameras"));
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
-  mvwprintw (wnd, 7, 1, "Open sw: %c %c", is_on (0), is_on (1));
-  mvwprintw (wnd, 6, 1, "Close s: %c %c", is_on (2), is_on (3));
+  mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
+  mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
 #undef is_on
 }
+
+class Rts2NMExecutor:public Rts2DevClientExecutor
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMExecutor (Rts2CNMonConn *
+		    in_connection):Rts2DevClientExecutor (in_connection)
+  {
+    in_connection->setStatusBegin (3);
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    switch (event->getType ())
+      {
+	WINDOW *window;
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientExecutor::postEvent (event);
+  }
+};
+
+void
+Rts2NMExecutor::print (WINDOW * wnd)
+{
+  mvwprintw (wnd, 1, 1, "Curr: %i", getValueInteger ("current"));
+  mvwprintw (wnd, 2, 1, "Next: %i", getValueInteger ("next"));
+}
+
 
 int
 Rts2CNMonConn::printStatus ()
 {
+  int nrow;
+  nrow = statusBegin;
   for (int i = 0; i < MAX_STATE; i++)
     {
       Rts2ServerState *state = serverState[i];
@@ -265,6 +321,12 @@ Rts2CNMonConn::setOtherType (int other_device_type)
     case DEVICE_TYPE_CCD:
       otherDevice = new Rts2NMCamera (this);
       break;
+    case DEVICE_TYPE_DOME:
+      otherDevice = new Rts2NMDome (this);
+      break;
+    case DEVICE_TYPE_EXECUTOR:
+      otherDevice = new Rts2NMExecutor (this);
+      break;
     default:
       Rts2ConnClient::setOtherType (other_device_type);
     }
@@ -286,7 +348,6 @@ Rts2CNMonConn::print ()
   else
     wstandend (window);
 
-  nrow = 1;
   if (!otherDevice)
     {
       mvwprintw (window, 1, 0, "  UNKNOW DEV");
@@ -296,7 +357,7 @@ Rts2CNMonConn::print ()
       // print values
       otherDevice->postEvent (new Rts2Event (EVENT_PRINT));
     }
-  // ret = printStatus ();
+  ret = printStatus ();
   wrefresh (window);
 }
 
@@ -317,33 +378,67 @@ private:
   int connLines;
   int cmd_col;
   char cmd_buf[CMD_BUF_LEN];
-protected:
+
+  void executeCommand ();
   void relocatesWindows ();
   void processConnection (Rts2CNMonConn * conn);
-  virtual Rts2ConnClient *createClientConnection (char *in_deviceName)
-  {
-    Rts2CNMonConn *conn;
-      conn = new Rts2CNMonConn (this, in_deviceName);
-      processConnection (conn);
-      return conn;
-  }
-
-public:
-    Rts2NMonitor (int argc, char **argv);
-  virtual ~ Rts2NMonitor (void);
 
   int paintWindows ();
   int repaint ();
 
+  int messageBox (char *message);
+
+  void refreshCommandWindow ()
+  {
+    mvwprintw (commandWindow, 0, 0, "%-*s", COLS, cmd_buf);
+    wrefresh (commandWindow);
+    repaint ();
+  }
+
+protected:
+    virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
+  {
+    Rts2CNMonConn *conn;
+    conn = new Rts2CNMonConn (this, in_deviceName);
+    processConnection (conn);
+    return conn;
+  }
+
+public:
+  Rts2NMonitor (int argc, char **argv);
+  virtual ~ Rts2NMonitor (void);
+
   virtual int init ();
   virtual int idle ();
 
-  void processKey (int key);
-
   virtual int addAddress (Rts2Address * in_addr);
 
-  int messageBox (char *message);
+  void processKey (int key);
 };
+
+void
+Rts2NMonitor::executeCommand ()
+{
+  char *cmd_sep;
+  Rts2Conn *cmd_conn;
+  // try to parse..
+  cmd_sep = index (cmd_buf, '.');
+  if (cmd_sep)
+    {
+      *cmd_sep = '\0';
+      cmd_sep++;
+      cmd_conn = getConnection (cmd_buf);
+    }
+  else
+    {
+      cmd_conn = getCentraldConn ();
+      cmd_sep = cmd_buf;
+    }
+  cmd_conn->queCommand (new Rts2Command (this, cmd_sep));
+  cmd_col = 0;
+  cmd_buf[0] = '\0';
+  refreshCommandWindow ();
+}
 
 void
 Rts2NMonitor::relocatesWindows ()
@@ -512,16 +607,15 @@ Rts2NMonitor::processKey (int key)
       if (cmd_col > 0)
 	{
 	  cmd_col--;
-	  wmove (commandWindow, 0, cmd_col + 1);
-	  wdelch (commandWindow);
-	  wrefresh (commandWindow);
+	  cmd_buf[cmd_col] = '\0';
+	  refreshCommandWindow ();
 	  break;
 	}
       beep ();
       break;
     case KEY_ENTER:
     case '\n':
-
+      executeCommand ();
       break;
     default:
       if (cmd_col >= CMD_BUF_LEN)
@@ -530,7 +624,8 @@ Rts2NMonitor::processKey (int key)
 	  break;
 	}
       cmd_buf[cmd_col++] = key;
-      wechochar (commandWindow, key);
+      cmd_buf[cmd_col] = '\0';
+      refreshCommandWindow ();
       break;
     }
 }

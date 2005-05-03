@@ -430,8 +430,6 @@ Rts2DevTelescopeIr::idle ()
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevTelescopeIr *device = new Rts2DevTelescopeIr (argc, argv);
 
   int ret;

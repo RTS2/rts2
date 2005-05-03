@@ -43,11 +43,11 @@
 #define HISTOGRAM_LIMIT		65536
 
 // events types
-#define EVENT_START_EXPOSURE	1
-#define EVENT_STOP_EXPOSURE	2
+#define EVENT_START_EXPOSURE	1000
+#define EVENT_STOP_EXPOSURE	1001
 
-#define EVENT_INTEGRATE_START   3
-#define EVENT_INTEGRATE_STOP    4
+#define EVENT_INTEGRATE_START   1002
+#define EVENT_INTEGRATE_STOP    1003
 
 class Rts2xfocus:public Rts2Client
 {
@@ -122,14 +122,7 @@ public:
 class Rts2xfocusCamera:public Rts2DevClientCameraImage
 {
 private:
-  float exposureTime;
-  exposureType exposureT;
-  int exposureChip;
-  int exposureEnabled;
-  int isExposing;
-  void queExposure ();
-
-  Rts2xfocus *master;
+  Rts2xfocus * master;
 
   pthread_t XeventThread;
 
@@ -140,8 +133,6 @@ private:
   Pixmap pixmap;
   XImage *image;
   XSetWindowAttributes xswa;
-
-  int saveImage;
 
   void buildWindow ();
   void redraw ();
@@ -175,7 +166,7 @@ public:
 	exposureEnabled = 0;
 	break;
       }
-    Rts2DevClientCamera::postEvent (event);
+    Rts2DevClientCameraImage::postEvent (event);
   }
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
@@ -201,21 +192,8 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus *
   master = in_master;
 
   exposureTime = master->defaultExpousure ();
-  exposureT = EXP_LIGHT;
-  exposureChip = 0;
-  exposureEnabled = 0;
-  isExposing = 0;
   // build window etc..
   buildWindow ();
-}
-
-void
-Rts2xfocusCamera::queExposure ()
-{
-  if (isExposing || !exposureEnabled)
-    return;
-  connection->
-    queCommand (new Rts2CommandExposure (master, exposureT, exposureTime));
 }
 
 void
@@ -426,36 +404,19 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 void
 Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
 {
-  char *text;
   Rts2DevClientCameraImage::stateChanged (state);
   if (state->isName ("priority"))
     {
       if (state->value == 1)
 	{
-	  exposureEnabled = 1;
-	  queExposure ();
+	  if (!exposureEnabled)
+	    {
+	      exposureEnabled = 1;
+	      queExposure ();
+	    }
 	}
       else
 	exposureEnabled = 0;
-    }
-  else if (state->isName ("img_chip"))
-    {
-      int stateVal;
-      stateVal =
-	state->value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA);
-      if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NODATA))
-	{
-	  queExposure ();
-	}
-      else if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA))
-	{
-	  isExposing = 0;
-	  connection->queCommand (new Rts2Command (master, "readout 0"));
-	}
-      else
-	{
-	  isExposing = (stateVal & CAM_EXPOSING);
-	}
     }
 }
 
@@ -576,7 +537,7 @@ Rts2xfocus::run ()
       conn = getConnection ((*cam_iter));
       conn->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
     }
-  getCentraldConn ()->queCommand (new Rts2Command (this, "priority 200"));
+  getCentraldConn ()->queCommand (new Rts2Command (this, "priority 137"));
   return Rts2Client::run ();
 }
 

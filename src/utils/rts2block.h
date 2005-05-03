@@ -68,6 +68,10 @@ public:
 
 class Rts2Conn:public Rts2Object
 {
+private:
+  char buf[MAX_DATA + 2];
+  char *buf_top;
+
   conn_type_t type;
   char name[DEVICE_NAME_SIZE];	// name of device/client this connection goes to
   int key;
@@ -97,7 +101,7 @@ protected:
 
   conn_state_t conn_state;
 
-  virtual int setState (int in_state_num, char *in_state_name, int in_value);
+  int setState (int in_state_num, char *in_state_name, int in_value);
   virtual int setState (char *in_state_name, int in_value);
 
   virtual void setOtherType (int other_device_type);
@@ -105,9 +109,6 @@ protected:
   Rts2DevClient *otherDevice;
 
 public:
-  char buf[MAX_DATA + 2];
-  char *buf_top;
-
   Rts2Conn (Rts2Block * in_master);
   Rts2Conn (int in_sock, Rts2Block * in_master);
   virtual ~ Rts2Conn (void);
@@ -178,7 +179,8 @@ public:
   };
   virtual void setKey (int in_key)
   {
-    key = in_key;
+    if (key == 0)
+      key = in_key;
   }
   int havePriority ();
   void setHavePriority (int in_have_priority)
@@ -243,6 +245,10 @@ public:
   // called when some data were sucessfully received
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
 
+  Rts2Block *getMaster ()
+  {
+    return master;
+  }
 protected:
   virtual int command ();
   virtual int message ();

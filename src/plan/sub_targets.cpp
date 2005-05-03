@@ -116,7 +116,7 @@ Target (in_tar_id, in_obs)
 
   if (sqlca.sqlcode)
     {
-      throw sqlca.sqlcode;
+      throw & sqlca;
     }
   position.ra = ra;
   position.dec = dec;
@@ -217,9 +217,7 @@ EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn * in_obs):Target (in_t
 #line 83 "sub_targets.ec"
 
   if (sqlca.sqlcode)
-    throw
-      sqlca.
-      sqlcode;
+    throw & sqlca;
   orbit.a = ell_a;
   orbit.e = ell_e;
   orbit.i = ell_i;
@@ -265,6 +263,14 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
   return ln_get_ell_body_rst (JD, observer, &orbit, rst);
 }
 
+int
+FocusingTarget::getScript (const char *device_name, char *buf)
+{
+  buf[0] = COMMAND_FOCUSING;
+  buf[1] = 0;
+  return 0;
+}
+
 // will pickup the Moon
 LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs):Target (in_tar_id,
 	in_obs)
@@ -282,4 +288,70 @@ int
 LunarTarget::getRST (struct ln_rst_time *rst, double JD)
 {
   return ln_get_lunar_rst (JD, observer, rst);
+}
+
+int
+LunarTarget::getScript (const char *deviceName, char *buf)
+{
+  strcpy (buf, "E 1");
+  return 0;
+}
+
+TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn * in_obs):
+ConstTarget (in_tar_id, in_obs)
+{
+  /* exec sql begin declare section */
+
+
+
+
+#line 168 "sub_targets.ec"
+  long db_grb_date;
+
+#line 169 "sub_targets.ec"
+  long db_grb_last_update;
+
+#line 170 "sub_targets.ec"
+  int db_tar_id = in_tar_id;
+/* exec sql end declare section */
+#line 171 "sub_targets.ec"
+
+
+  {
+    ECPGdo (__LINE__, 0, 1, NULL,
+	    "select  extract( EPOCH from grb_date  ) , extract( EPOCH from grb_last_update  )  from grb where tar_id  =  ?  ",
+	    ECPGt_int, &(db_tar_id), (long) 1, (long) 1, sizeof (int),
+	    ECPGt_NO_INDICATOR, NULL, 0L, 0L, 0L, ECPGt_EOIT, ECPGt_long,
+	    &(db_grb_date), (long) 1, (long) 1, sizeof (long),
+	    ECPGt_NO_INDICATOR, NULL, 0L, 0L, 0L, ECPGt_long,
+	    &(db_grb_last_update), (long) 1, (long) 1, sizeof (long),
+	    ECPGt_NO_INDICATOR, NULL, 0L, 0L, 0L, ECPGt_EORT);
+  }
+#line 182 "sub_targets.ec"
+
+  if (sqlca.sqlcode)
+    throw & sqlca;
+  grbDate = db_grb_date;
+  lastUpdate = db_grb_last_update;
+}
+
+int
+TargetGRB::getScript (const char *deviceName, char *buf)
+{
+  time_t now;
+  time (&now);
+  // switch based on time after burst..
+  if (now - grbDate < 1000)
+    {
+      strcpy (buf, "E 10 E 20 E 30 E 40");
+    }
+  else if (now - grbDate < 10000)
+    {
+      strcpy (buf, "E 100 E 200");
+    }
+  else
+    {
+      strcpy (buf, "E 300");
+    }
+  return 0;
 }

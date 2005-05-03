@@ -123,6 +123,15 @@ Rts2Command (in_master)
   free (command);
 }
 
+Rts2CommandFilter::Rts2CommandFilter (Rts2Block * in_master, int filter):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "filter %i", filter);
+  setCommand (command);
+  free (command);
+}
+
 Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, double ra,
 				  double dec):
 Rts2Command (in_master)
