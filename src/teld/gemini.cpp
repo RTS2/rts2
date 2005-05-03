@@ -423,6 +423,7 @@ Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
     {
       syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
 	      tel_gemini_checksum (buf), checksum);
+      tcflush (tel_desc, TCIOFLUSH);
       *buf = '\0';
       return -1;
     }
@@ -459,6 +460,7 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t * val)
     {
       syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
 	      tel_gemini_checksum (buf), checksum);
+      tcflush (tel_desc, TCIOFLUSH);
       return -1;
     }
   *val = atol (buf);
