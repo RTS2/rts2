@@ -3,7 +3,6 @@
 #endif
 
 #include <fcntl.h>
-#include <mcheck.h>
 #include "camera_cpp.h"
 
 #include "miniccd/ccd_msg.h"
@@ -781,8 +780,6 @@ Rts2DevCameraMiniccd::camFilter (int filter)
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevCameraMiniccd *device = new Rts2DevCameraMiniccd (argc, argv);
 
   int ret;

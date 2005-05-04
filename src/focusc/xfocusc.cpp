@@ -171,6 +171,10 @@ public:
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual void stateChanged (Rts2ServerState * state);
+  virtual Rts2Image *createImage (const struct timeval *expStart)
+  {
+    return new Rts2Image ("test.fits", expStart);
+  }
 };
 
 void

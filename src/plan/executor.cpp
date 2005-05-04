@@ -121,7 +121,7 @@ Rts2Executor::info (Rts2Conn * conn)
     }
   if (nextTarget)
     {
-      conn->sendValue ("next", currentTarget->getTargetID ());
+      conn->sendValue ("next", nextTarget->getTargetID ());
     }
   else
     {

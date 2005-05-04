@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
 noinst_HEADERS = camera_cpp.h
 
@@ -28,3 +28,5 @@ rts2_camd_urvc2_SOURCES = camd.cpp urvc2.cpp
 rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
 
 rts2_camd_apogee_SOURCES = camd.cpp apogee.cpp apogee/CameraIO_LinuxPCI.cpp
+
+rts2_camd_dummy_SOURCES = camd.cpp dummy.cpp 

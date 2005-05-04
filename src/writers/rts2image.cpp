@@ -58,6 +58,7 @@ Rts2Image::createImage (char *in_filename,
   fits_create_img (ffile, USHORT_IMG, 1, &naxes, &fits_status);
   if (fits_status)
     {
+      ffile = NULL;
       return;
     }
   // write exposure
@@ -70,6 +71,8 @@ Rts2Image::createImage (char *in_filename,
 int
 Rts2Image::setValue (char *name, int value, char *comment)
 {
+  if (!ffile)
+    return 0;
   fits_update_key (ffile, TINT, name, &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -77,6 +80,8 @@ Rts2Image::setValue (char *name, int value, char *comment)
 int
 Rts2Image::setValue (char *name, long value, char *comment)
 {
+  if (!ffile)
+    return 0;
   fits_update_key (ffile, TLONG, name, &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -84,6 +89,8 @@ Rts2Image::setValue (char *name, long value, char *comment)
 int
 Rts2Image::setValue (char *name, double value, char *comment)
 {
+  if (!ffile)
+    return 0;
   fits_update_key (ffile, TDOUBLE, name, &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -91,19 +98,18 @@ Rts2Image::setValue (char *name, double value, char *comment)
 int
 Rts2Image::setValue (char *name, const char *value, char *comment)
 {
+  if (!ffile)
+    return 0;
   fits_update_key (ffile, TSTRING, name, (void *) value, comment,
 		   &fits_status);
   return fitsStatusValue (name);
 }
 
-/**void
-Rts2Image::createFilename (struct timeval *exposureStart)
-{
-}*/
-
 int
 Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
+  if (!ffile)
+    return 0;
   setValue ("X", im_h->x, "detector X coordinate");
   setValue ("Y", im_h->y, "detector Y coordinate");
   setValue ("BINN_V", im_h->binnings[0], "X axis binning");
@@ -118,6 +124,9 @@ int
 Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 {
   struct imghdr *im_h;
+
+  if (!ffile)
+    return 0;
 
   im_h = dataConn->getImageHeader ();
   // we have to copy data to FITS anyway, so let's do it right now..

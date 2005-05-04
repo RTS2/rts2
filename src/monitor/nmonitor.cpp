@@ -121,7 +121,7 @@ public:
 	  print (window);
 	break;
       }
-    Rts2NMTelescope::postEvent (event);
+    Rts2DevClientTelescopeImage::postEvent (event);
   }
 };
 
@@ -138,6 +138,9 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   getEqu (&tel);
   getObs (&obs);
+
+  altaz.az = nan ("f");
+  altaz.alt = nan ("f");
 
   gst = getValueDouble ("siderealtime") + getValueDouble ("longtitude");
   gst = ln_range_degrees (gst);
@@ -160,12 +163,12 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   lst = getValueDouble ("siderealtime");
   ln_rad_to_hms (ln_deg_to_rad (lst), &hms);
-  mvwprintw (wnd, 6, 1, "Lsid: %.3f (%02f:%02f:%02.1f)",
+  mvwprintw (wnd, 6, 1, "Lsid: %.3f (%02i:%02i:%02.1f)",
 	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
 	     hms.seconds);
 
   ln_rad_to_hms (ln_deg_to_rad (gst), &hms);
-  mvwprintw (wnd, 7, 1, "Gsid: %.3f (%02f:%02f:%02.1f)", gst, hms.hours,
+  mvwprintw (wnd, 7, 1, "Gsid: %.3f (%02i:%02i:%02.1f)", gst, hms.hours,
 	     hms.minutes, hms.seconds);
 }
 

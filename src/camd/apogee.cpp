@@ -11,7 +11,6 @@
 #endif /* !_GNU_SOURCE */
 
 #include <math.h>
-#include <mcheck.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -380,8 +379,6 @@ Rts2DevCameraApogee::camFilter (int new_filter)
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevCameraApogee *device = new Rts2DevCameraApogee (argc, argv);
 
   int ret;

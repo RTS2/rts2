@@ -3,7 +3,6 @@
 #endif
 
 #include <math.h>
-#include <mcheck.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -456,8 +455,6 @@ Rts2DevCameraSbig::camFilter (int new_filter)
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevCameraSbig *device = new Rts2DevCameraSbig (argc, argv);
 
   int ret;

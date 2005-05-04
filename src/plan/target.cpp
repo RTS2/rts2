@@ -122,7 +122,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   observer = in_obs;
 
   obs_id = -1;
-  target_id = -1;
+  target_id = in_tar_id;
 }
 
 int
@@ -361,6 +361,12 @@ createTarget (int in_tar_id, struct ln_lnlat_posn * in_obs)
 #line 232 "target.ec"
 
 
+  {
+    ECPGconnect (__LINE__, 0, "stars", NULL, NULL, NULL, 0);
+  }
+#line 234 "target.ec"
+
+
   try
   {
     {
@@ -371,7 +377,7 @@ createTarget (int in_tar_id, struct ln_lnlat_posn * in_obs)
 	      &(db_type_id), (long) 1, (long) 1, 1 * sizeof (char),
 	      ECPGt_NO_INDICATOR, NULL, 0L, 0L, 0L, ECPGt_EORT);
     }
-#line 244 "target.ec"
+#line 246 "target.ec"
 
 
     if (sqlca.sqlcode)

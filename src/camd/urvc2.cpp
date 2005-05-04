@@ -17,7 +17,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/io.h>
-#include <mcheck.h>
 
 #include "urvc2/urvc.h"
 #include "camera_cpp.h"
@@ -487,8 +486,6 @@ Rts2DevCameraUrvc2::camFilter (int new_filter)	/* set camera filter */
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevCameraUrvc2 *device = new Rts2DevCameraUrvc2 (argc, argv);
 
   int ret;
