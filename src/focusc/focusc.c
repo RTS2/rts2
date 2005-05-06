@@ -47,6 +47,8 @@ struct device *camera;
 
 char *dark_name = NULL;
 
+int light = 1;
+
 pid_t parent_pid;
 
 #define fits_call(call) if (call) fits_report_error(stderr, status);
@@ -194,6 +196,7 @@ main (int argc, char **argv)
     {
       static struct option long_option[] = {
 	{"device", 1, 0, 'd'},
+	{"dark", 0, 0, 'D'},
 	{"exposure", 1, 0, 'e'},
 	{"inc", 0, 0, 'i'},
 	{"date", 0, 0, 'b'},
@@ -202,7 +205,7 @@ main (int argc, char **argv)
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "bd:e:is:p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "bd:De:is:p:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -211,6 +214,9 @@ main (int argc, char **argv)
 	{
 	case 'd':
 	  camera_name = optarg;
+	  break;
+	case 'D':
+	  light = 0;
 	  break;
 	case 'e':
 	  exposure_time = atof (optarg);
@@ -233,7 +239,8 @@ main (int argc, char **argv)
 		  "\texposure|e <exposure in sec>\t\texposure time in seconds\n"
 		  "\tdevice|d <device_name>\t\tdevice for which to take exposures\n"
 		  "\tinc|i\t\tincrease exposure count after every row\n"
-		  "\tsecmod|s\t\texposure every UT second\n");
+		  "\tsecmod|s\t\texposure every UT second\n"
+		  "\tdark|D\t\ttake dark images\n");
 	  exit (EXIT_SUCCESS);
 	case '?':
 	  break;
@@ -327,7 +334,8 @@ main (int argc, char **argv)
 	  printf ("sleeping ends..\n");
 	}
 
-      if (devcli_command (camera, NULL, "expose 0 %i %f", 1, exposure_time))
+      if (devcli_command
+	  (camera, NULL, "expose 0 %i %f", light, exposure_time))
 	{
 	  perror ("expose:");
 	}
