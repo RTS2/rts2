@@ -860,6 +860,7 @@ Rts2DevTelescopeGemini::idle ()
       && ((ret && (getState (0) & TEL_MASK_MOVING) == TEL_MASK_MOVING)
 	  || (lastMotorState & 16)))
     {
+      stopMove ();
       resetMount (RESET_RESTART);
       telMotorState = TEL_BLOCKED_RESET;
     }
