@@ -234,7 +234,7 @@ Target::getScript (const char *device_name, char *buf)
     return 0;
 
   s = get_sub_device_string_default (device_name, "script", obs_type_str,
-				     "E D");
+				     "E 10");
   strncpy (buf, s, MAX_COMMAND_LENGTH);
   return 0;
 }

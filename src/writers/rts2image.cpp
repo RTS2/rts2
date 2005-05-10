@@ -7,6 +7,8 @@
 #include "rts2image.h"
 #include "imghdr.h"
 
+#include "../utils/mkpath.h"
+
 Rts2Image::Rts2Image (char *in_filename, const struct timeval *exposureStart)
 {
   createImage (in_filename, exposureStart);
@@ -21,9 +23,9 @@ Rts2Image::Rts2Image (int epochId, int targetId, int obsId,
   struct tm *expT;
 
   expT = gmtime (&exposureStart->tv_sec);
-  asprintf (&filename, "/images/%03i/%05i/%04i%02i%02i%02i%02i%02i-%4i",
+  asprintf (&filename, "/images/%03i/%05i/%04i%02i%02i%02i%02i%02i-%04i",
 	    epochId, targetId, expT->tm_year + 1900, expT->tm_mon + 1,
-	    expT->tm_hour, expT->tm_min, expT->tm_sec,
+	    expT->tm_mday, expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart->tv_usec / 1000);
 
   createImage (filename, exposureStart);
@@ -50,10 +52,14 @@ Rts2Image::createImage (char *in_filename,
 {
   long naxes = 1;
   time_t t = exposureStart->tv_sec;
+  int ret;
 
   fits_status = 0;
   flags = IMAGE_NOT_SAVE;
-  // make filename
+  // make path for us..
+  ret = mkpath (in_filename, 777);
+  if (ret)
+    return;
   fits_create_file (&ffile, in_filename, &fits_status);
   fits_create_img (ffile, USHORT_IMG, 1, &naxes, &fits_status);
   if (fits_status)
@@ -61,6 +67,7 @@ Rts2Image::createImage (char *in_filename,
       ffile = NULL;
       return;
     }
+  flags = IMAGE_SAVE;
   // write exposure
   setValue ("CTIME", exposureStart->tv_sec,
 	    "exposure start (seconds since 1.1.1970)");

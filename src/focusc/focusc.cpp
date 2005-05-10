@@ -36,12 +36,13 @@ private:
   float defExposure;
 protected:
     virtual void help ();
-  virtual Rts2ConnClient *createClientConnection (char *in_deviceName);
-
 public:
     Rts2focusc (int argc, char **argv);
 
   virtual int processOption (int in_opt);
+
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
 
   virtual int run ();
 
@@ -51,24 +52,10 @@ public:
   }
 };
 
-class Rts2focuscConn:public Rts2ConnClient
-{
-private:
-  Rts2focusc * master;
-protected:
-  virtual void setOtherType (int other_device_type);
-public:
-    Rts2focuscConn (Rts2focusc * in_master,
-		    char *in_name):Rts2ConnClient (in_master, in_name)
-  {
-    master = in_master;
-  }
-};
-
 class Rts2focuscCamera:public Rts2DevClientCameraImage
 {
 public:
-  Rts2focuscCamera (Rts2focuscConn * in_connection, Rts2focusc * in_master);
+  Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master);
 
   virtual void postEvent (Rts2Event * event)
   {
@@ -97,15 +84,8 @@ Rts2focusc::help ()
     << std::endl;
 }
 
-Rts2ConnClient *
-Rts2focusc::createClientConnection (char *in_deviceName)
-{
-  Rts2focuscConn *conn;
-  conn = new Rts2focuscConn (this, in_deviceName);
-  return conn;
-}
-
-Rts2focusc::Rts2focusc (int argc, char **argv):Rts2Client (argc, argv)
+Rts2focusc::Rts2focusc (int argc, char **argv):
+Rts2Client (argc, argv)
 {
 
   addOption ('d', "device", 1,
@@ -135,6 +115,18 @@ Rts2focusc::processOption (int in_opt)
   return 0;
 }
 
+Rts2DevClient *
+Rts2focusc::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_CCD:
+      return new Rts2focuscCamera (conn, this);
+    default:
+      return Rts2Client::createOtherType (conn, other_device_type);
+    }
+}
+
 int
 Rts2focusc::run ()
 {
@@ -151,20 +143,7 @@ Rts2focusc::run ()
   return Rts2Client::run ();
 }
 
-void
-Rts2focuscConn::setOtherType (int other_device_type)
-{
-  switch (other_device_type)
-    {
-    case DEVICE_TYPE_CCD:
-      otherDevice = new Rts2focuscCamera (this, master);
-      break;
-    default:
-      Rts2ConnClient::setOtherType (other_device_type);
-    }
-}
-
-Rts2focuscCamera::Rts2focuscCamera (Rts2focuscConn * in_connection, Rts2focusc * in_master):Rts2DevClientCameraImage
+Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master):Rts2DevClientCameraImage
   (in_connection)
 {
   exposureTime = in_master->getDefaultExposure ();

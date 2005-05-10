@@ -48,10 +48,6 @@ public:
       }
     return -2;
   }
-  virtual int endReadout ()
-  {
-    return 0;
-  }
 };
 
 class Rts2DevCameraDummy:public Rts2DevCamera

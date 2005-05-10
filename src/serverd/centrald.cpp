@@ -22,7 +22,6 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <malloc.h>
-#include <mcheck.h>
 #include <libnova/libnova.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -114,6 +113,7 @@ private:
   int commandDevice ();
   int commandClient ();
   // command handling functions
+  int priorityCommand ();
   int sendDeviceKey ();
   int sendInfo ();
   int sendStatusInfo ();
@@ -142,6 +142,44 @@ Rts2ConnCentrald::~Rts2ConnCentrald (void)
 {
   setPriority (-1);
   master->changePriority (0);
+}
+
+int
+Rts2ConnCentrald::priorityCommand ()
+{
+  int timeout;
+  int new_priority;
+
+  if (isCommand ("priority"))
+    {
+      if (paramNextInteger (&new_priority) || !paramEnd ())
+	return -1;
+      timeout = 0;
+    }
+  else
+    {
+      if (paramNextInteger (&new_priority) ||
+	  paramNextInteger (&timeout) || !paramEnd ())
+	return -1;
+      timeout += time (NULL);
+    }
+
+  sendValue ("old_priority", getPriority (), getCentraldId ());
+
+  sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
+
+  setPriority (new_priority);
+
+  if (master->changePriority (timeout))
+    {
+      sendCommandEnd (DEVDEM_E_PRIORITY,
+		      "error when processing priority request");
+      return -1;
+    }
+
+  sendValue ("new_priority", master->getPriorityClient (), getPriority ());
+
+  return 0;
 }
 
 int
@@ -265,6 +303,10 @@ Rts2ConnCentrald::commandDevice ()
     {
       return master->changeStateOn ();
     }
+  if (isCommand ("priority") || isCommand ("prioritydeferred"))
+    {
+      return priorityCommand ();
+    }
   if (isCommand ("standby"))
     {
       return master->changeStateStandby ();
@@ -346,41 +388,7 @@ Rts2ConnCentrald::commandClient ()
 	}
       if (isCommand ("priority") || isCommand ("prioritydeferred"))
 	{
-	  int timeout;
-	  int new_priority;
-
-	  if (isCommand ("priority"))
-	    {
-	      if (paramNextInteger (&new_priority) || !paramEnd ())
-		return -1;
-	      timeout = 0;
-	    }
-	  else
-	    {
-	      if (paramNextInteger (&new_priority) ||
-		  paramNextInteger (&timeout) || !paramEnd ())
-		return -1;
-	      timeout += time (NULL);
-	    }
-
-	  sendValue ("old_priority", getPriority (), getCentraldId ());
-
-	  sendValue ("actual_priority", master->getPriorityClient (),
-		     getPriority ());
-
-	  setPriority (new_priority);
-
-	  if (master->changePriority (timeout))
-	    {
-	      sendCommandEnd (DEVDEM_E_PRIORITY,
-			      "error when processing priority request");
-	      return -1;
-	    }
-
-	  sendValue ("new_priority", master->getPriorityClient (),
-		     getPriority ());
-
-	  return 0;
+	  return priorityCommand ();
 	}
       if (isCommand ("key"))
 	{
@@ -468,7 +476,9 @@ Rts2ConnCentrald::command ()
 		    device_type);
 	  ret = send (msg);
 	  free (msg);
+	  sendValue ("registered_as", getCentraldId ());
 	  master->connAdded (this);
+	  sendInfo ();
 	  return ret;
 	}
       else
@@ -635,14 +645,11 @@ Rts2Centrald::idle ()
     }
 }
 
-
-
 int
 main (int argc, char **argv)
 {
   int i;
   Rts2Centrald *centrald;
-  mtrace ();
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
   if (read_config (CONFIG_FILE) == -1)
     syslog (LOG_ERR,

@@ -366,6 +366,27 @@ Rts2DevConnMaster::command ()
 	}
       return 0;
     }
+  if (isCommand ("authorization_key"))
+    {
+      char *p_device_name;
+      int p_key;
+      Rts2Conn *conn;
+      if (paramNextString (&p_device_name)
+	  || paramNextInteger (&p_key) || !paramEnd ())
+	return -2;
+      conn = master->getConnection (p_device_name);
+      if (conn)
+	conn->setKey (p_key);
+      return -1;
+    }
+  if (isCommand ("registered_as"))
+    {
+      int clientId;
+      if (paramNextInteger (&clientId) || !paramEnd ())
+	return -2;
+      setCentraldId (clientId);
+      return -1;
+    }
   return Rts2Conn::command ();
 }
 
@@ -641,7 +662,7 @@ Rts2Device::processOption (int in_opt)
   return 0;
 }
 
-Rts2Conn *
+Rts2Dev2DevConn *
 Rts2Device::createClientConnection (char *in_device_name)
 {
   return new Rts2Dev2DevConn (this, in_device_name);
@@ -650,6 +671,8 @@ Rts2Device::createClientConnection (char *in_device_name)
 Rts2Conn *
 Rts2Device::createClientConnection (Rts2Address * in_addres)
 {
+  if (in_addres->isAddress (device_name))
+    return NULL;
   return new Rts2Dev2DevConn (this, in_addres);
 }
 

@@ -35,7 +35,7 @@ public:
 		   char new_device[DEVICE_NAME_SIZE]);
   int isLastCommand (void)
   {
-    return !!(*cmdBufTop);
+    return !(*cmdBufTop);
   }
 };
 

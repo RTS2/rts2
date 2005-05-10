@@ -160,7 +160,7 @@ protected:
    */
   virtual int processOption (int in_opt);
 
-  virtual Rts2Conn *createClientConnection (char *in_deviceName);
+  virtual Rts2Dev2DevConn *createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,

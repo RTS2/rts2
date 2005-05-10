@@ -18,7 +18,7 @@ Rts2Script::nextElement ()
     cmdBufTop++;
   if (*cmdBufTop)
     {
-      cmdBufTop = '\0';
+      *cmdBufTop = '\0';
       cmdBufTop++;
     }
   return elementStart;

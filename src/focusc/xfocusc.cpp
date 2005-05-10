@@ -54,7 +54,6 @@ class Rts2xfocus:public Rts2Client
 private:
   XColor rgb[256];
   Colormap colormap;
-
     std::vector < char *>cameraNames;
   float defExposure;
   char *displayName;
@@ -66,13 +65,15 @@ private:
 
 protected:
     virtual void help ();
-  virtual Rts2ConnClient *createClientConnection (char *in_deviceName);
 
 public:
     Rts2xfocus (int argc, char **argv);
     virtual ~ Rts2xfocus (void);
 
   virtual int processOption (int in_opt);
+
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
 
   virtual int init ();
   virtual int run ();
@@ -105,20 +106,6 @@ public:
   }
 };
 
-class Rts2xfocusConn:public Rts2ConnClient
-{
-private:
-  Rts2xfocus * master;
-protected:
-  virtual void setOtherType (int other_device_type);
-public:
-    Rts2xfocusConn (Rts2xfocus * in_master,
-		    char *in_name):Rts2ConnClient (in_master, in_name)
-  {
-    master = in_master;
-  }
-};
-
 class Rts2xfocusCamera:public Rts2DevClientCameraImage
 {
 private:
@@ -147,7 +134,7 @@ private:
   int histogram[HISTOGRAM_LIMIT];
 
 public:
-  Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus * in_master);
+  Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
   virtual ~ Rts2xfocusCamera (void)
   {
     pthread_cancel (XeventThread);
@@ -177,20 +164,7 @@ public:
   }
 };
 
-void
-Rts2xfocusConn::setOtherType (int other_device_type)
-{
-  switch (other_device_type)
-    {
-    case DEVICE_TYPE_CCD:
-      otherDevice = new Rts2xfocusCamera (this, master);
-      break;
-    default:
-      Rts2ConnClient::setOtherType (other_device_type);
-    }
-}
-
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2xfocusConn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraImage
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraImage
   (in_connection)
 {
   master = in_master;
@@ -465,14 +439,6 @@ Rts2xfocus::help ()
     << std::endl;
 }
 
-Rts2ConnClient *
-Rts2xfocus::createClientConnection (char *in_deviceName)
-{
-  Rts2xfocusConn *conn;
-  conn = new Rts2xfocusConn (this, in_deviceName);
-  return conn;
-}
-
 int
 Rts2xfocus::processOption (int in_opt)
 {
@@ -527,6 +493,18 @@ Rts2xfocus::init ()
       XAllocColor (display, colormap, rgb + i);
     }
   return 0;
+}
+
+Rts2DevClient *
+Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_CCD:
+      return new Rts2xfocusCamera (conn, this);
+    default:
+      return Rts2Client::createOtherType (conn, other_device_type);
+    }
 }
 
 int

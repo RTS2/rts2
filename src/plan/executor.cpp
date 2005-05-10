@@ -2,6 +2,8 @@
 #include "target.h"
 #include "rts2execcli.h"
 
+#include <vector>
+
 class Rts2Executor;
 
 class Rts2ConnExecutor:public Rts2DevConn
@@ -12,7 +14,6 @@ protected:
   virtual int commandAuthorized ();
 public:
     Rts2ConnExecutor (int in_sock, Rts2Executor * in_master);
-  void setOtherType (int other_device_type);
 };
 
 class Rts2Executor:public Rts2Device
@@ -23,16 +24,25 @@ private:
   void switchTarget ();
   struct ln_lnlat_posn *observer;
 
+  int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
+    std::vector < Target * >targetsQue;
+
 public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
   virtual int init ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
+
+  virtual void postEvent (Rts2Event * event);
+
   virtual int idle ();
 
   virtual int info (Rts2Conn * conn);
 
   int setNext (int nextId);
+  void queTarget (Target * in_target);
 };
 
 int
@@ -54,22 +64,6 @@ Rts2ConnExecutor::Rts2ConnExecutor (int in_sock, Rts2Executor * in_master):Rts2D
   master = in_master;
 }
 
-void
-Rts2ConnExecutor::setOtherType (int other_device_type)
-{
-  switch (other_device_type)
-    {
-    case DEVICE_TYPE_MOUNT:
-      otherDevice = new Rts2DevClientTelescopeExec (this);
-      break;
-    case DEVICE_TYPE_CCD:
-      otherDevice = new Rts2DevClientCameraExec (this);
-      break;
-    default:
-      Rts2Conn::setOtherType (other_device_type);
-    }
-}
-
 Rts2Executor::Rts2Executor (int argc, char **argv):
 Rts2Device (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
 {
@@ -77,6 +71,7 @@ Rts2Device (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
   currentTarget = NULL;
   nextTarget = NULL;
   setStateNames (1, states_names);
+  scriptCount = -1;
 }
 
 Rts2Executor::~Rts2Executor (void)
@@ -100,6 +95,41 @@ Rts2Conn *
 Rts2Executor::createConnection (int in_sock, int conn_num)
 {
   return new Rts2ConnExecutor (in_sock, this);
+}
+
+Rts2DevClient *
+Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_MOUNT:
+      return new Rts2DevClientTelescopeExec (conn);
+    case DEVICE_TYPE_CCD:
+      return new Rts2DevClientCameraExec (conn);
+    default:
+      return Rts2Device::createOtherType (conn, other_device_type);
+    }
+}
+
+void
+Rts2Executor::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_SCRIPT_STARTED:
+      if (scriptCount < 0)
+	// start observation in DB??
+	scriptCount = 1;
+      else
+	scriptCount++;
+      break;
+    case EVENT_LAST_READOUT:
+      scriptCount--;
+      if (scriptCount == 0)
+	switchTarget ();
+      break;
+    }
+  Rts2Device::postEvent (event);
 }
 
 int
@@ -140,6 +170,18 @@ Rts2Executor::setNext (int nextId)
       delete nextTarget;
     }
   nextTarget = createTarget (nextId, observer);
+  if (!currentTarget)
+    switchTarget ();
+  else
+    {
+      for (int i = 0; i < MAX_CONN; i++)
+	{
+	  Rts2Conn *conn;
+	  conn = connections[i];
+	  if (conn)
+	    info (conn);
+	}
+    }
   return 0;
 }
 
@@ -149,11 +191,28 @@ Rts2Executor::switchTarget ()
   if (nextTarget)
     {
       // go to post-process
-      //queTarget (currentTarget);
+      if (currentTarget)
+	queTarget (currentTarget);
       currentTarget = nextTarget;
       nextTarget = NULL;
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	info (conn);
+    }
+}
+
+void
+Rts2Executor::queTarget (Target * in_target)
+{
+  int ret;
+  ret = in_target->postprocess ();
+  if (!ret)
+    targetsQue.push_back (in_target);
 }
 
 Rts2Executor *executor;

@@ -104,7 +104,7 @@ protected:
   int setState (int in_state_num, char *in_state_name, int in_value);
   virtual int setState (char *in_state_name, int in_value);
 
-  virtual void setOtherType (int other_device_type);
+  void setOtherType (int other_device_type);
 
   Rts2DevClient *otherDevice;
 
@@ -292,6 +292,8 @@ class Rts2Block:public Rts2Object
   int addConnection (int in_sock);
   int masterState;
 
+  int addAllNewConnections;
+
 protected:
   int argc;
 
@@ -389,6 +391,8 @@ public:
   void addAddress (const char *p_name, const char *p_host, int p_port,
 		   int p_device_type);
   virtual int addAddress (Rts2Address * in_addr);
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
   void addUser (int p_centraldId, int p_priority, char p_priority_have,
 		const char *p_login, const char *p_status_txt);
   int addUser (Rts2User * in_user);

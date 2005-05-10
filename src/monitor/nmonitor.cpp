@@ -45,8 +45,7 @@ private:
   WINDOW *window;
   int printStatus ();
 protected:
-    virtual void setOtherType (int other_device_type);
-  virtual void print ();
+    virtual void print ();
 
 public:
     Rts2CNMonConn (Rts2Block * in_master,
@@ -291,8 +290,8 @@ public:
 void
 Rts2NMExecutor::print (WINDOW * wnd)
 {
-  mvwprintw (wnd, 1, 1, "Curr: %i", getValueInteger ("current"));
-  mvwprintw (wnd, 2, 1, "Next: %i", getValueInteger ("next"));
+  mvwprintw (wnd, 1, 1, "Curr: %-5i", getValueInteger ("current"));
+  mvwprintw (wnd, 2, 1, "Next: %-5i", getValueInteger ("next"));
 }
 
 
@@ -311,28 +310,6 @@ Rts2CNMonConn::printStatus ()
 	}
     }
   return 0;
-}
-
-void
-Rts2CNMonConn::setOtherType (int other_device_type)
-{
-  switch (other_device_type)
-    {
-    case DEVICE_TYPE_MOUNT:
-      otherDevice = new Rts2NMTelescope (this);
-      break;
-    case DEVICE_TYPE_CCD:
-      otherDevice = new Rts2NMCamera (this);
-      break;
-    case DEVICE_TYPE_DOME:
-      otherDevice = new Rts2NMDome (this);
-      break;
-    case DEVICE_TYPE_EXECUTOR:
-      otherDevice = new Rts2NMExecutor (this);
-      break;
-    default:
-      Rts2ConnClient::setOtherType (other_device_type);
-    }
 }
 
 void
@@ -413,6 +390,9 @@ public:
 
   virtual int init ();
   virtual int idle ();
+
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
 
   virtual int addAddress (Rts2Address * in_addr);
 
@@ -581,6 +561,24 @@ Rts2NMonitor::idle ()
   repaint ();
   setTimeout (USEC_SEC);
   return Rts2Client::idle ();
+}
+
+Rts2DevClient *
+Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_MOUNT:
+      return new Rts2NMTelescope ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_CCD:
+      return new Rts2NMCamera ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_DOME:
+      return new Rts2NMDome ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_EXECUTOR:
+      return new Rts2NMExecutor ((Rts2CNMonConn *) conn);
+    default:
+      return Rts2Client::createOtherType (conn, other_device_type);
+    }
 }
 
 void

@@ -48,6 +48,7 @@ Rts2Object ()
   master = in_master;
   buf_top = buf;
   *name = '\0';
+  key = 0;
   priority = -1;
   have_priority = 0;
   centrald_id = -1;
@@ -144,23 +145,7 @@ Rts2Conn::setState (char *in_state_name, int in_value)
 void
 Rts2Conn::setOtherType (int other_device_type)
 {
-  switch (other_device_type)
-    {
-    case DEVICE_TYPE_MOUNT:
-      otherDevice = new Rts2DevClientTelescope (this);
-      break;
-    case DEVICE_TYPE_CCD:
-      otherDevice = new Rts2DevClientCamera (this);
-      break;
-    case DEVICE_TYPE_DOME:
-      otherDevice = new Rts2DevClientDome (this);
-      break;
-    case DEVICE_TYPE_PHOT:
-      otherDevice = new Rts2DevClientPhot (this);
-      break;
-    default:
-      otherDevice = new Rts2DevClient (this);
-    }
+  otherDevice = master->createOtherType (this, other_device_type);
 }
 
 int
@@ -705,6 +690,8 @@ Rts2Object ()
   signal (SIGPIPE, SIG_IGN);
 
   masterState = 0;
+
+  addAllNewConnections = 1;
 }
 
 Rts2Block::~Rts2Block (void)
@@ -1187,7 +1174,31 @@ Rts2Block::addAddress (Rts2Address * in_addr)
   conn = getOpenConnection (in_addr->getName ());
   if (conn)
     conn->addressAdded (in_addr);
+  else if (addAllNewConnections)
+    {
+      conn = createClientConnection (in_addr);
+      if (conn)
+	addConnection (conn);
+    }
   return 0;
+}
+
+Rts2DevClient *
+Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_MOUNT:
+      return new Rts2DevClientTelescope (conn);
+    case DEVICE_TYPE_CCD:
+      return new Rts2DevClientCamera (conn);
+    case DEVICE_TYPE_DOME:
+      return new Rts2DevClientDome (conn);
+    case DEVICE_TYPE_PHOT:
+      return new Rts2DevClientPhot (conn);
+    default:
+      return new Rts2DevClient (conn);
+    }
 }
 
 void
