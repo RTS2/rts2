@@ -110,7 +110,8 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
   struct ln_lnlat_posn observer;
   struct ln_hrz_posn hrz;
 
-  printf ("processing event : %i curr: %i\n", id, observing.grb_id);
+  printf ("processing event : %i curr: %i\n date: %li curr_date: %li", id,
+	  observing.grb_id, *date, observing.created);
 
   if (observing.grb_id == id)
     {
@@ -120,6 +121,7 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
 	  printf ("update detected: %i seq: %i\n", observing.seqn, seqn);
 	  pthread_mutex_lock (&observing_lock);
 	  observing.seqn = seqn;
+	  observing.created = *date;
 	  observing.last_update = time (NULL);
 	  object.ra = ra;
 	  object.dec = dec;
@@ -128,7 +130,7 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
 	  pthread_mutex_unlock (&observing_lock);
 	}
     }
-  else if (observing.grb_id < id)	// -1 count as well..get the latest
+  else if (observing.grb_id == -1 || (observing.grb_id != -1 && observing.created < *date))	// newer GRB..
     {
       double JD;
 
