@@ -139,7 +139,8 @@ DROP TABLE observations;
 CREATE TABLE observations (
 	tar_id		integer REFERENCES targets (tar_id),
 	obs_id		integer PRIMARY KEY NOT NULL,
-	obs_start	timestamp,
+	obs_slew	timestamp,  -- start of slew
+	obs_start	timestamp,  -- start of observation
 	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
 	obs_duration	interval
 );

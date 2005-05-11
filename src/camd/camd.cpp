@@ -427,15 +427,8 @@ Rts2DevCamera::ready (Rts2Conn * conn)
 }
 
 int
-Rts2DevCamera::info (Rts2Conn * conn)
+Rts2DevCamera::sendInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
-      return -1;
-    }
   conn->sendValue ("temperature_regulation", tempRegulation);
   conn->sendValue ("temperature_setpoint", tempSet);
   conn->sendValue ("air_temperature", tempAir);
@@ -481,7 +474,7 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 {
   int ret;
 
-  info (conn);
+  Rts2Device::info (conn);
 
   ret = camExpose (chip, light, exptime);
   if (!ret)

@@ -68,7 +68,7 @@ public:
 
   virtual int ready (Rts2Conn * conn);
   virtual int baseInfo (Rts2Conn * conn);
-  virtual int info (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn);
 };
 
 class Rts2DevConnMirror:public Rts2DevConn

@@ -188,7 +188,12 @@ public:
   virtual int baseInfo ();
 
   virtual int ready (Rts2Conn * conn);
-  virtual int info (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn)
+  {
+    return 0;
+  }
+  int info (Rts2Conn * conn);
+  int infoAll ();
   virtual int baseInfo (Rts2Conn * conn);
 
   virtual Rts2Conn *getCentraldConn ()

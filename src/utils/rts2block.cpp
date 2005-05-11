@@ -943,7 +943,7 @@ Rts2Block::idle ()
   ret = waitpid (-1, NULL, WNOHANG);
   if (ret > 0)
     {
-      syslog (LOG_DEBUG, "Child returned: %i", ret);
+      childReturned (ret);
     }
   for (int i = 0; i < MAX_CONN; i++)
     {
@@ -1095,6 +1095,12 @@ Rts2Block::processOption (int in_opt)
       exit (EXIT_FAILURE);
     }
   return 0;
+}
+
+void
+Rts2Block::childReturned (int child_pid)
+{
+  syslog (LOG_DEBUG, "child returned: %i", child_pid);
 }
 
 int

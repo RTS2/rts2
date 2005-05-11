@@ -109,6 +109,9 @@
 #define EXEC_OBSERVE		0x03
 #define EXEC_LASTREAD		0x04
 
+#define IMGPROC_IDLE		0x00
+#define IMGPROC_RUN		0x00
+
 // to send data
 
 #define DEVDEM_DATA		0x80
@@ -158,6 +161,7 @@
 #define DEVICE_TYPE_MIRROR	11
 
 #define DEVICE_TYPE_EXECUTOR    20
+#define DEVICE_TYPE_IMGPROC	21
 
 // and more to come..
 // #define DEVICE_TYPE_

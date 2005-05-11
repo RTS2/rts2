@@ -33,6 +33,7 @@ mkpath (const char *path, mode_t mode)
 	{
 	  if (errno != EEXIST)
 	    break;
+	  ret = 0;
 	}
     }
   free (cp_path);

@@ -85,7 +85,7 @@ public:
 
   virtual int changeMasterState (int new_state);
 
-  virtual int info (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn);
 };
 
 class Rts2DevConnPhot:public Rts2DevConn
@@ -381,15 +381,8 @@ Rts2DevPhotOptec::changeMasterState (int new_state)
 }
 
 int
-Rts2DevPhotOptec::info (Rts2Conn * conn)
+Rts2DevPhotOptec::sendInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
-      return -1;
-    }
   conn->sendValue ("filter", filter);
 }
 

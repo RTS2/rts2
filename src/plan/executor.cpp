@@ -26,10 +26,15 @@ private:
 
   int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
     std::vector < Target * >targetsQue;
+protected:
+    virtual int info ()
+  {
+    return 0;
+  }
 
 public:
     Rts2Executor (int argc, char **argv);
-    virtual ~ Rts2Executor (void);
+  virtual ~ Rts2Executor (void);
   virtual int init ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
@@ -39,7 +44,7 @@ public:
 
   virtual int idle ();
 
-  virtual int info (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn);
 
   int setNext (int nextId);
   void queTarget (Target * in_target);
@@ -139,7 +144,7 @@ Rts2Executor::idle ()
 }
 
 int
-Rts2Executor::info (Rts2Conn * conn)
+Rts2Executor::sendInfo (Rts2Conn * conn)
 {
   if (currentTarget)
     {
@@ -173,15 +178,7 @@ Rts2Executor::setNext (int nextId)
   if (!currentTarget)
     switchTarget ();
   else
-    {
-      for (int i = 0; i < MAX_CONN; i++)
-	{
-	  Rts2Conn *conn;
-	  conn = connections[i];
-	  if (conn)
-	    info (conn);
-	}
-    }
+    infoAll ();
   return 0;
 }
 
@@ -197,13 +194,7 @@ Rts2Executor::switchTarget ()
       nextTarget = NULL;
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-  for (int i = 0; i < MAX_CONN; i++)
-    {
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
-	info (conn);
-    }
+  infoAll ();
 }
 
 void

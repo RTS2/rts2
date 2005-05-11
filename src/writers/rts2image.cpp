@@ -23,7 +23,7 @@ Rts2Image::Rts2Image (int epochId, int targetId, int obsId,
   struct tm *expT;
 
   expT = gmtime (&exposureStart->tv_sec);
-  asprintf (&filename, "/images/%03i/%05i/%04i%02i%02i%02i%02i%02i-%04i",
+  asprintf (&filename, "/images/%03i/%05i/%04i%02i%02i%02i%02i%02i-%04i.fits",
 	    epochId, targetId, expT->tm_year + 1900, expT->tm_mon + 1,
 	    expT->tm_mday, expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart->tv_usec / 1000);
@@ -56,15 +56,16 @@ Rts2Image::createImage (char *in_filename,
 
   fits_status = 0;
   flags = IMAGE_NOT_SAVE;
+  ffile = NULL;
+
   // make path for us..
-  ret = mkpath (in_filename, 777);
+  ret = mkpath (in_filename, 0777);
   if (ret)
     return;
   fits_create_file (&ffile, in_filename, &fits_status);
   fits_create_img (ffile, USHORT_IMG, 1, &naxes, &fits_status);
   if (fits_status)
     {
-      ffile = NULL;
       return;
     }
   flags = IMAGE_SAVE;

@@ -110,15 +110,8 @@ Rts2DevTelescope::ready (Rts2Conn * conn)
 }
 
 int
-Rts2DevTelescope::info (Rts2Conn * conn)
+Rts2DevTelescope::sendInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "telescope not ready");
-      return -1;
-    }
   conn->sendValue ("ra", telRa);
   conn->sendValue ("dec", telDec);
   conn->sendValue ("siderealtime", telSiderealTime);
@@ -156,6 +149,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
   else
     maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+  sendInfo (conn);
   return ret;
 }
 

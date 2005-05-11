@@ -69,7 +69,7 @@ Rts2DevMirror::ready (Rts2Conn * conn)
 }
 
 int
-Rts2DevMirror::info (Rts2Conn * conn)
+Rts2DevMirror::sendInfo (Rts2Conn * conn)
 {
   int ret;
   ret = info ();

@@ -123,15 +123,8 @@ Rts2DevDome::ready (Rts2Conn * conn)
 }
 
 int
-Rts2DevDome::info (Rts2Conn * conn)
+Rts2DevDome::sendInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
-      return -1;
-    }
   conn->sendValue ("dome", sw_state);
   conn->sendValue ("temperature", temperature);
   conn->sendValue ("humidity", humidity);

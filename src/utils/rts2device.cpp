@@ -823,7 +823,25 @@ Rts2Device::info (Rts2Conn * conn)
       conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
       return -1;
     }
-  return 0;
+  return sendInfo (conn);
+}
+
+int
+Rts2Device::infoAll ()
+{
+  Rts2Conn *conn;
+  int ret;
+  ret = info ();
+  if (ret)
+    return -1;
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      conn = connections[i];
+      if (conn)
+	{
+	  info (conn);
+	}
+    }
 }
 
 int

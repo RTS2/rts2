@@ -321,6 +321,8 @@ protected:
 
   }
 
+  virtual void childReturned (int child_pid);
+
 public:
   Rts2Conn * connections[MAX_CONN];
 
