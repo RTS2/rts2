@@ -188,6 +188,10 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
 	{
 	  buf[readed] = 0;
 	  syslog (LOG_DEBUG, "Losmandy: Hash-read error:'%s'", buf);
+	  // we get something, let's wait a bit for all data to
+	  // flow-in so we can really flush them
+	  if (*buf)
+	    sleep (5);
 	  tcflush (tel_desc, TCIOFLUSH);
 	  return -1;
 	}
@@ -423,6 +427,8 @@ Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
     {
       syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
 	      tel_gemini_checksum (buf), checksum);
+      if (*buf)
+	sleep (5);
       tcflush (tel_desc, TCIOFLUSH);
       *buf = '\0';
       return -1;
@@ -473,7 +479,7 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t * val)
 int
 Rts2DevTelescopeGemini::tel_gemini_reset ()
 {
-  char rbuf[3];
+  char rbuf[50];
   int tmp_rcount = -1;
 
   // write_read_hash
@@ -483,7 +489,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
   if (tel_write ("\x06", 1) < 0)
     return -1;
 
-  if (tel_read_hash (rbuf, 2) < 1)
+  if (tel_read_hash (rbuf, 47) < 1)
     return -1;
 
   if (*rbuf == 'b')		// booting phase, select warm reboot
@@ -502,6 +508,12 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 	}
       nextReset = RESET_RESTART;
       setTimeout (USEC_SEC);
+    }
+  else if (*rbuf != 'G')
+    {
+      // something is wrong, reset all comm
+      sleep (10);
+      tcflush (tel_desc, TCIOFLUSH);
     }
   return -1;
 }
@@ -1245,8 +1257,18 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec, int appendModel)
     }
   else
     {
+      int32_t v205;
+      int32_t v206;
+      int32_t v205_new;
+      int32_t v206_new;
+      tel_gemini_get (205, &v205);
+      tel_gemini_get (206, &v206);
       if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
 	return -1;
+      tel_gemini_get (205, &v205_new);
+      tel_gemini_get (206, &v206_new);
+      tel_gemini_set (205, v205);
+      tel_gemini_set (206, v206);
     }
   return 0;
 }
@@ -1328,7 +1350,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
     chng_ra = chng_ra / cos (ln_deg_to_rad (chng_dec));
   syslog (LOG_INFO, "Losmandy: calculated ra %f dec: %f", chng_ra, chng_dec);
   // decide, if we make change, or move using move command
-  if (fabs (chng_ra) > 1 && fabs (chng_dec) > 1)
+  if (fabs (chng_ra) > 1 / 60.0 && fabs (chng_dec) > 1 / 60.0)
     {
       int c = 0;
       ret = startMove (telRa + chng_ra, telDec + chng_dec);
