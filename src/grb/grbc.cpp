@@ -130,7 +130,7 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
 	  pthread_mutex_unlock (&observing_lock);
 	}
     }
-  else if (observing.grb_id == -1 || (observing.grb_id != -1 && observing.created < *date))	// newer GRB..
+  else if (observing.grb_id == -1 || (observing.grb_id != -1 && observing.created < *date && id > TEST_BURST_RANGE))	// newer GRB..
     {
       double JD;
 
