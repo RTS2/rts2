@@ -100,12 +100,14 @@ private:
   int32_t lastMotorState;
 
   int infoCount;
+  int matchCount;
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
+  virtual int changeMasterState (int new_state);
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
@@ -180,9 +182,10 @@ int
 Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
 {
   int readed;
+  int retr = 0;
   buf[0] = 0;
 
-  for (readed = 0; readed < count; readed++)
+  for (readed = 0; readed < count;)
     {
       if (tel_read (&buf[readed], 1) < 0)
 	{
@@ -193,10 +196,21 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
 	  if (*buf)
 	    sleep (5);
 	  tcflush (tel_desc, TCIOFLUSH);
-	  return -1;
+	  // try to read something in case we flush partialy full
+	  // buffer; sometimes something hang somewhere, and to keep
+	  // communication going, we need to be sure to read as much
+	  // as possible..
+	  if (*buf && retr < 2)
+	    retr++;
+	  else
+	    return -1;
 	}
-      if (buf[readed] == '#')
-	break;
+      else
+	{
+	  if (buf[readed] == '#')
+	    break;
+	  readed++;
+	}
     }
   buf[readed] = 0;
   syslog (LOG_DEBUG, "Losmandy:Hash-readed:'%s'", buf);
@@ -531,6 +545,8 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
   char buf[55];
   int ret;
   char rep;
+  if (matchCount)
+    return 0;
   t = time (NULL);
   gmtime_r (&t, &ts);
   // set time
@@ -555,6 +571,7 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
   if (ret)
     return ret;
   syslog (LOG_INFO, "GEMINI: time match");
+  matchCount = 1;
   return 0;
 }
 
@@ -750,6 +767,7 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
   lastMotorState = 0;
   telMotorState = TEL_OK;
   infoCount = 0;
+  matchCount = 0;
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -923,6 +941,13 @@ Rts2DevTelescopeGemini::idle ()
 	}
     }
   return Rts2DevTelescope::idle ();
+}
+
+int
+Rts2DevTelescopeGemini::changeMasterState (int new_state)
+{
+  matchCount = 0;
+  return Rts2DevTelescope::changeMasterState (new_state);
 }
 
 int
