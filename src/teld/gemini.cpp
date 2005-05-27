@@ -569,9 +569,11 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
   // read blanck
   ret = tel_read_hash (buf, 26);
   if (ret)
-    return ret;
+    {
+      matchCount = 1;
+      return ret;
+    }
   syslog (LOG_INFO, "GEMINI: time match");
-  matchCount = 1;
   return 0;
 }
 
