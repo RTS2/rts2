@@ -1139,7 +1139,8 @@ int
 Rts2DevDomeFram::observing ()
 {
   //handle_zasuvky (OBSERVING);
-  openDome ();
+  if ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED)
+    return openDome ();
   return 0;
 }
 
