@@ -8,34 +8,54 @@
 #include "imghdr.h"
 
 #include "../utils/mkpath.h"
+#include "../utils/config.h"
 
-Rts2Image::Rts2Image (char *in_filename, const struct timeval *exposureStart)
+Rts2Image::Rts2Image (char *in_filename,
+		      const struct timeval *in_exposureStart)
 {
-  createImage (in_filename, exposureStart);
+  createImage (in_filename);
+  exposureStart = *in_exposureStart;
+  writeExposureStart ();
 }
 
-Rts2Image::Rts2Image (int epochId, int targetId, int obsId,
-		      const struct timeval *exposureStart)
+Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
+		      Rts2DevClientCamera * camera, int in_obsId,
+		      const struct timeval *in_exposureStart)
 {
   struct imghdr *im_h;
   long naxes = 1;
   char *filename;
   struct tm *expT;
 
-  expT = gmtime (&exposureStart->tv_sec);
-  asprintf (&filename, "/images/%03i/%05i/%04i%02i%02i%02i%02i%02i-%04i.fits",
-	    epochId, targetId, expT->tm_year + 1900, expT->tm_mon + 1,
-	    expT->tm_mday, expT->tm_hour, expT->tm_min, expT->tm_sec,
-	    exposureStart->tv_usec / 1000);
+  targetId = in_targetId;
+  obsId = in_obsId;
+  exposureStart = *in_exposureStart;
 
-  createImage (filename, exposureStart);
+  expT = gmtime (&exposureStart.tv_sec);
+  asprintf (&filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    getImageBase (in_epoch_id), camera->getName (),
+	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
+	    expT->tm_hour, expT->tm_min, expT->tm_sec,
+	    exposureStart.tv_usec / 1000);
+
+  createImage (filename);
+
+  writeExposureStart ();
+
+  setValue ("TARGET", targetId, "target id");
+  setValue ("OBSID", obsId, "observation id");
+  setValue ("EPOCH", in_epoch_id, "image epoch of observation");
+  setValue ("PROCES", 0, "no processing done");
 }
 
 Rts2Image::Rts2Image (char *in_filename)
 {
-  struct timeval tm;
-  gettimeofday (&tm, NULL);
-  createImage (in_filename, &tm);
+  createImage (in_filename);
+  // get info..
+  getValue ("TARGET", targetId, NULL);
+  getValue ("OBSID", obsId, NULL);
+  getValue ("CTIME", exposureStart.tv_sec, NULL);
+  getValue ("USEC", exposureStart.tv_usec, NULL);
 }
 
 Rts2Image::~Rts2Image (void)
@@ -47,11 +67,9 @@ Rts2Image::~Rts2Image (void)
 }
 
 void
-Rts2Image::createImage (char *in_filename,
-			const struct timeval *exposureStart)
+Rts2Image::createImage (char *in_filename)
 {
   long naxes = 1;
-  time_t t = exposureStart->tv_sec;
   int ret;
 
   fits_status = 0;
@@ -69,10 +87,15 @@ Rts2Image::createImage (char *in_filename,
       return;
     }
   flags = IMAGE_SAVE;
-  // write exposure
-  setValue ("CTIME", exposureStart->tv_sec,
+}
+
+void
+Rts2Image::writeExposureStart ()
+{
+  time_t t = exposureStart.tv_sec;
+  setValue ("CTIME", exposureStart.tv_sec,
 	    "exposure start (seconds since 1.1.1970)");
-  setValue ("USEC", exposureStart->tv_usec, "exposure start micro seconds");
+  setValue ("USEC", exposureStart.tv_usec, "exposure start micro seconds");
   setValue ("JD", ln_get_julian_from_timet (&t), "exposure JD");
 }
 
@@ -80,7 +103,7 @@ int
 Rts2Image::setValue (char *name, int value, char *comment)
 {
   if (!ffile)
-    return 0;
+    return -1;
   fits_update_key (ffile, TINT, name, &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -89,7 +112,7 @@ int
 Rts2Image::setValue (char *name, long value, char *comment)
 {
   if (!ffile)
-    return 0;
+    return -1;
   fits_update_key (ffile, TLONG, name, &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -98,7 +121,7 @@ int
 Rts2Image::setValue (char *name, double value, char *comment)
 {
   if (!ffile)
-    return 0;
+    return -1;
   fits_update_key (ffile, TDOUBLE, name, &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -107,9 +130,47 @@ int
 Rts2Image::setValue (char *name, const char *value, char *comment)
 {
   if (!ffile)
-    return 0;
+    return -1;
   fits_update_key (ffile, TSTRING, name, (void *) value, comment,
 		   &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValue (char *name, int &value, char *comment)
+{
+  if (!ffile)
+    return -1;
+  fits_read_key (ffile, TINT, name, (void *) &value, comment, &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValue (char *name, long &value, char *comment)
+{
+  if (!ffile)
+    return -1;
+  fits_read_key (ffile, TLONG, name, (void *) &value, comment, &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValue (char *name, double &value, char *comment)
+{
+  if (!ffile)
+    return -1;
+  fits_read_key (ffile, TDOUBLE, name, (void *) &value, comment,
+		 &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValue (char *name, char *value, char *comment)
+{
+  if (!ffile)
+    return -1;
+  fits_read_key (ffile, TSTRING, name, (void *) &value, comment,
+		 &fits_status);
   return fitsStatusValue (name);
 }
 

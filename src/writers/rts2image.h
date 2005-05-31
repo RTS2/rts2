@@ -10,6 +10,7 @@
 
 #include "imghdr.h"
 #include "../utils/rts2dataconn.h"
+#include "../utils/rts2devclient.h"
 
 class Rts2Image
 {
@@ -20,12 +21,15 @@ private:
   int flags;
   int targetId;
   int obsId;
-  void createImage (char *filename, const struct timeval *exposureStart);
+  struct timeval exposureStart;
+  void createImage (char *filename);
+  void writeExposureStart ();
 public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
-    Rts2Image (int epochId, int targetId, int obsId,
-	       const struct timeval *exposureStart);
+  // create image in que
+    Rts2Image (int in_epoch_id, int in_targetId, Rts2DevClientCamera * camera,
+	       int in_obsId, const struct timeval *exposureStart);
   // open image from disk..
     Rts2Image (char *in_filename);
     virtual ~ Rts2Image (void);
@@ -34,6 +38,11 @@ public:
   int setValue (char *name, long value, char *comment);
   int setValue (char *name, double value, char *comment);
   int setValue (char *name, const char *value, char *comment);
+
+  int getValue (char *name, int &value, char *comment = NULL);
+  int getValue (char *name, long &value, char *comment = NULL);
+  int getValue (char *name, double &value, char *comment = NULL);
+  int getValue (char *name, char *value, char *comment = NULL);
 
   int writeImgHeader (struct imghdr *im_h);
   int writeDate (Rts2ClientTCPDataConn * dataConn);
