@@ -614,8 +614,12 @@ Rts2DevCameraMiniccd::initChips ()
       ret = chips[i]->init ();
       if (ret)
 	return ret;
+      if (defBinning != 1)
+	chips[i]->setBinning (defBinning, defBinning);
     }
-  return chips[0]->init ();
+  ret = chips[0]->init ();
+  chips[0]->setBinning (defBinning, defBinning);
+  return ret;
 };
 
 int
