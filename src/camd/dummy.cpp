@@ -40,6 +40,10 @@ public:
       {
 	char *data;
 	data = new char[2 * (chipUsedReadout->width - chipUsedReadout->x)];
+	for (int i = 0; i < 2 * chipUsedReadout->width; i++)
+	  {
+	    data[i] = i;
+	  }
 	readoutLine++;
 	sendLine++;
 	sendReadoutData (data,

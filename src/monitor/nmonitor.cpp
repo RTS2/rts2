@@ -294,6 +294,40 @@ Rts2NMExecutor::print (WINDOW * wnd)
   mvwprintw (wnd, 2, 1, "Next: %-5i", getValueInteger ("next"));
 }
 
+class Rts2NMImgproc:public Rts2DevClientImgproc
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMImgproc (Rts2CNMonConn *
+		   in_connection):Rts2DevClientImgproc (in_connection)
+  {
+    in_connection->setStatusBegin (2);
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    switch (event->getType ())
+      {
+	WINDOW *window;
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientImgproc::postEvent (event);
+  }
+};
+
+void
+Rts2NMImgproc::print (WINDOW * wnd)
+{
+  mvwprintw (wnd, 1, 1, "Que : %-5i", getValueInteger ("que_size"));
+}
+
+// here begins nmonitor common part
 
 int
 Rts2CNMonConn::printStatus ()
@@ -576,6 +610,8 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2NMDome ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_EXECUTOR:
       return new Rts2NMExecutor ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_IMGPROC:
+      return new Rts2NMImgproc ((Rts2CNMonConn *) conn);
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }

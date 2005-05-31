@@ -46,6 +46,8 @@ public:
   virtual void stateChanged (Rts2ServerState * state)
   {
   }
+
+  const char *getName ();
 };
 
 /**************************************
@@ -106,6 +108,12 @@ class Rts2DevClientExecutor:public Rts2DevClient
 {
 public:
   Rts2DevClientExecutor (Rts2Conn * in_connection);
+};
+
+class Rts2DevClientImgproc:public Rts2DevClient
+{
+public:
+  Rts2DevClientImgproc (Rts2Conn * in_connection);
 };
 
 #endif /* !__RTS2_DEVCLIENT__ */

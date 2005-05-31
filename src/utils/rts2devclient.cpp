@@ -79,6 +79,13 @@ Rts2DevClient::command ()
   return -1;
 }
 
+const char *
+Rts2DevClient::getName ()
+{
+  return connection->getName ();
+}
+
+
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
@@ -157,4 +164,10 @@ Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevC
 {
   addValue (new Rts2ValueInteger ("current"));
   addValue (new Rts2ValueInteger ("next"));
+}
+
+Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * in_connection):Rts2DevClient
+  (in_connection)
+{
+  addValue (new Rts2ValueInteger ("que_size"));
 }

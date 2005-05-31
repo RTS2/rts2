@@ -149,6 +149,57 @@ Rts2Conn::setOtherType (int other_device_type)
 }
 
 int
+Rts2Conn::processLine ()
+{
+  // starting at command_start, we have complete line, which was
+  // received
+  int ret;
+
+  // find command parameters end
+  command_buf_top = command_start;
+
+  while (*command_buf_top && !isspace (*command_buf_top))
+    command_buf_top++;
+  // mark command end..
+  if (*command_buf_top)
+    {
+      *command_buf_top = '\0';
+      command_buf_top++;
+    }
+  // messages..
+  if (isCommand ("M"))
+    {
+      ret = message ();
+    }
+  // informations..
+  else if (isCommand ("I"))
+    {
+      ret = informations ();
+    }
+  // status
+  else if (isCommand ("S"))
+    {
+      ret = status ();
+    }
+  else if (isCommandReturn ())
+    {
+      ret = commandReturn ();
+    }
+  else
+    {
+      ret = command ();
+    }
+  syslog (LOG_DEBUG, "Rts2Conn::processLine [%i] command: %s ret: %i",
+	  getCentraldId (), getCommand (), ret);
+  if (!ret)
+    sendCommandEnd (0, "OK");
+  else if (ret == -2)
+    sendCommandEnd (DEVDEM_E_COMMAND,
+		    "invalid parameters/invalid number of parameters");
+  return ret;
+}
+
+int
 Rts2Conn::receive (fd_set * set)
 {
   int data_size = 0;
@@ -162,7 +213,6 @@ Rts2Conn::receive (fd_set * set)
 	  return acceptConn ();
 	}
       int ret;
-      char *command_end;
       data_size = read (sock, buf_top, MAX_DATA - (buf_top - buf));
       if (data_size <= 0)
 	return connectionError ();
@@ -170,81 +220,34 @@ Rts2Conn::receive (fd_set * set)
       syslog (LOG_DEBUG, "Rts2Conn::receive reas: %s full_buf: %s size: %i",
 	      buf_top, buf, data_size);
       // put old data size into account..
-      data_size = (buf_top - buf) + data_size;
+      data_size += buf_top - buf;
       buf_top = buf;
-      command_start = buf_top;
-      command_end = buf_top;
+      command_start = buf;
       while (*buf_top)
 	{
-	  while (isspace (*buf_top))
+	  while (isspace (*buf_top) || (*buf_top && *buf_top == '\n'))
 	    buf_top++;
 	  command_start = buf_top;
 	  // find command end..
-	  while (*buf_top && (!isspace (*buf_top) || *buf_top == '\n')
-		 && *buf_top != '\r')
+	  while (*buf_top && *buf_top != '\n' && *buf_top != '\r')
 	    buf_top++;
-	  command_end = buf_top;
-	  // commands should end with (at worst case) \r..
-	  if (*buf_top)
+
+	  // tr "\r\n" "\n\n", so we can deal more easily with it..
+	  if (*buf_top == '\r' && *(buf_top + 1) == '\n')
+	    *buf_top = '\n';
+
+	  if (*buf_top == '\n')
 	    {
-	      // find command parameters end
-	      while (*command_end && *command_end != '\r')
-		command_end++;
-	      if (*command_end == '\r')
-		{
-		  *command_end = '\0';
-		  command_end++;
-		  *buf_top = '\0';
-		  buf_top++;
-		  if (*buf_top == '\n')
-		    buf_top++;
-		  if (*command_end == '\n')
-		    command_end++;
-		  // messages..
-		  if (isCommand ("M"))
-		    {
-		      ret = message ();
-		    }
-		  // informations..
-		  else if (isCommand ("I"))
-		    {
-		      ret = informations ();
-		    }
-		  // status
-		  else if (isCommand ("S"))
-		    {
-		      ret = status ();
-		    }
-		  else if (isCommandReturn ())
-		    {
-		      ret = commandReturn ();
-		    }
-		  else
-		    ret = command ();
-		  syslog (LOG_DEBUG,
-			  "Rts2Conn::receive [%i] command: %s ret: %i",
-			  getCentraldId (), buf, ret);
-		  if (!ret)
-		    sendCommandEnd (0, "OK");
-		  else if (ret == -2)
-		    sendCommandEnd (DEVDEM_E_COMMAND,
-				    "invalid parameters/invalid number of parameters");
-		  // we processed whole received string..
-		  syslog (LOG_DEBUG, "Rts2Conn::receive command_end: %i",
-			  command_end - buf);
-		  if (command_end == buf + data_size)
-		    {
-		      syslog (LOG_WARNING, "Rts2Conn::receive null command");
-		      command_end = buf;
-		      buf[0] = '\0';
-		    }
-		}
-	      buf_top = command_end;
+	      // mark end of line..
+	      *buf_top = '\0';
+	      buf_top++;
+	      processLine ();
+	      command_start = buf_top;
 	    }
 	}
-      if (buf != command_start && command_end > command_start)
+      if (buf != command_start)
 	{
-	  memmove (buf, command_start, (command_end - command_start + 1));
+	  memmove (buf, command_start, (buf_top - command_start + 1));
 	  // move buffer to the end..
 	  buf_top -= command_start - buf;
 	}
@@ -544,7 +547,7 @@ Rts2Conn::sendValue (char *name, double value)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %0.2f", name, value);
+  asprintf (&msg, "%s %f", name, value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -577,23 +580,23 @@ Rts2Conn::sendCommandEnd (int num, char *message)
 int
 Rts2Conn::paramEnd ()
 {
-  return !*buf_top;
+  return !*command_buf_top;
 }
 
 int
 Rts2Conn::paramNextString (char **str)
 {
-  while (isspace (*buf_top))
-    buf_top++;
-  *str = buf_top;
-  if (!*buf_top)
+  while (isspace (*command_buf_top))
+    command_buf_top++;
+  *str = command_buf_top;
+  if (!*command_buf_top)
     return -1;
-  while (!isspace (*buf_top) && *buf_top)
-    buf_top++;
-  if (*buf_top)
+  while (!isspace (*command_buf_top) && *command_buf_top)
+    command_buf_top++;
+  if (*command_buf_top)
     {
-      *buf_top = '\0';
-      buf_top++;
+      *command_buf_top = '\0';
+      command_buf_top++;
     }
   return 0;
 }
@@ -1098,9 +1101,18 @@ Rts2Block::processOption (int in_opt)
 }
 
 void
-Rts2Block::childReturned (int child_pid)
+Rts2Block::childReturned (pid_t child_pid)
 {
   syslog (LOG_DEBUG, "child returned: %i", child_pid);
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	{
+	  conn->childReturned (child_pid);
+	}
+    }
 }
 
 int

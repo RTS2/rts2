@@ -163,7 +163,7 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
 	      if (do_move)
 		{
 
-		  if (mv (tmvf->old_path, tmvf->new_path))
+		  if (rename (tmvf->old_path, tmvf->new_path))
 		    {
 		      done = 0;
 		      printf ("..failed\n");

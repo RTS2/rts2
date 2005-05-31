@@ -71,6 +71,7 @@ class Rts2Conn:public Rts2Object
 private:
   char buf[MAX_DATA + 2];
   char *buf_top;
+  char *command_buf_top;
 
   conn_type_t type;
   char name[DEVICE_NAME_SIZE];	// name of device/client this connection goes to
@@ -140,6 +141,7 @@ public:
   int sendValue (char *name, double value);
   int sendValueTime (char *name, time_t * value);
   int sendCommandEnd (int num, char *message);
+  virtual int processLine ();
   virtual int receive (fd_set * set);
   conn_type_t getType ()
   {
@@ -249,6 +251,10 @@ public:
   {
     return master;
   }
+
+  virtual void childReturned (pid_t child_pid)
+  {
+  }
 protected:
   virtual int command ();
   virtual int message ();
@@ -321,7 +327,7 @@ protected:
 
   }
 
-  virtual void childReturned (int child_pid);
+  virtual void childReturned (pid_t child_pid);
 
 public:
   Rts2Conn * connections[MAX_CONN];

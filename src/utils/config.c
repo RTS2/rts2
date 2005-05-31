@@ -341,3 +341,9 @@ get_sub_device_double_default (const char *device, const char *name,
     return def;
   return val;
 }
+
+extern const char *
+getImageBase (int epoch_id)
+{
+  return "/images/001";
+}

@@ -37,6 +37,7 @@ extern "C"
   extern double get_sub_device_double_default (const char *device,
 					       const char *name,
 					       const char *sub, double def);
+  extern const char *getImageBase (int epoch_id);
 
 #ifdef __cplusplus
 };
