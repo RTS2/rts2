@@ -290,22 +290,6 @@ CameraMiniccdChip::sendLineData (int numLines)
 	  return -2;
 	}
       send_top += CCD_MSG_IMAGE_LEN;
-      // filter 32 bit peaks
-      unsigned short *filter_top = (unsigned short *) send_top;
-      unsigned short last_val = *filter_top;
-      filter_top++;
-      unsigned short curr_val = *filter_top;
-      filter_top++;
-      unsigned short next_val;
-      while (filter_top < (unsigned short *) dest_top)
-	{
-	  next_val = *filter_top;
-	  if (curr_val - last_val > 400 && curr_val - next_val > 400)
-	    *(filter_top - 1) = (last_val + next_val) / 2;
-	  last_val = curr_val;
-	  curr_val = next_val;
-	  filter_top++;
-	}
     }
   sendLine++;
   if (numLines == -1)
