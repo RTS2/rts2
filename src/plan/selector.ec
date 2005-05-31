@@ -467,8 +467,8 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
     tar_ra,
     tar_dec,
     obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
-    EXTRACT (EPOCH FROM ot_minpause),
-    ot_imgcount
+    ot_imgcount,
+    EXTRACT (EPOCH FROM ot_minpause)
     FROM
     targets_enabled targets,
     ot

@@ -89,10 +89,15 @@ phot_integrate (struct device *phot, int filter, int count)
 {
   int i, j = 0;
   double total = 0;
+  time_t now;
   devcli_command (phot, NULL, "filter %i", filter);
   devcli_command (phot, NULL, "integrate 1 %i", count);
+  time (&now);
+  printf ("integrate send: %s\n", ctime (&now));
   devcli_wait_for_status (phot, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 			  25);
+  time (&now);
+  printf ("integrate wait end: %s\n", ctime (&now));
   for (i = 0; i < last_count; i++)
     {
       if (counts[i].filter == filter)
