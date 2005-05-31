@@ -534,6 +534,7 @@ Target::runScript (struct ex_info *exinfo)
   time_t script_start;
   char s_time[27];
   struct timespec timeout;
+  int integrate_count = 0;
   time_t now;
   enum
   { NO_EXPOSURE, EXPOSURE_BEGIN, EXPOSURE_PROGRESS,
@@ -715,6 +716,7 @@ Target::runScript (struct ex_info *exinfo)
 	  devcli_command_all (DEVICE_TYPE_PHOT, "integrate %f %i", exposure,
 			      count);
 	  exp_state = INTEGRATION_PROGRESS;
+	  integrate_count++;
 	  break;
 	case COMMAND_CHANGE:
 	  // get two strings
@@ -957,6 +959,8 @@ Target::runScript (struct ex_info *exinfo)
     default:
       dec_script_thread_count ();
     }
+  if (integrate_count)
+    devcli_command_all (DEVICE_TYPE_PHOT, "filter 0");
   free (exinfo);
   return 0;
 }
