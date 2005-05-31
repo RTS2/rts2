@@ -72,7 +72,8 @@ Rts2Image *
 Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
   if (currentTarget)
-    return new Rts2Image (1, currentTarget->getTargetID (), 1, expStart);
+    return new Rts2Image (1, currentTarget->getTargetID (), this, 1,
+			  expStart);
   return new Rts2Image ("img.fits", expStart);
 }
 

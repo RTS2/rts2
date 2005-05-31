@@ -4,52 +4,38 @@
 
 #include "../utils/rts2device.h"
 #include "status.h"
+#include "rts2connimgprocess.h"
 
-#include <iostreams>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <unistd.h>
+#include <iostream>
 #include <stdio.h>
 
-/*
- * This class expect that images are stored in CENTRAL repository,
- * accesible throught NFS/other network sharing to all machines on
- * which imgproc runs.
- *
- * Hence passing full image path will be sufficient for finding it.
- */
-class Image
-{
-
-}
-
-/*
- * "Connection" which reads output of image processor
- */
-class Rts2ConnImgProcess:public Rts2Conn
-{
-  FILE *pfile;
-  Rts2Conn *reqConn;
-
-public:
-    Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * reqConn);
-    virtual ~ Rts2ConnImgProcess (void);
-
-  virtual int receive (fd_set * set);
-}
+class Rts2ImageProc;
 
 class Rts2DevConnImage:public Rts2DevConn
 {
+private:
+  Rts2ImageProc * master;
 protected:
   virtual int commandAuthorized ();
 public:
-    Rts2DevConnImage (int in_sock, Rts2Block * in_master);
+    Rts2DevConnImage (int in_sock, Rts2ImageProc * in_master);
 };
 
 class Rts2ImageProc:public Rts2Device
 {
 private:
-  std::vector < ImageQue * >imagesQue;
+  std::list < Rts2ConnImgProcess * >imagesQue;
+  Rts2ConnImgProcess *runningImage;
 public:
-  Rts2ImageProc (int argc, char **argv);
+    Rts2ImageProc (int argc, char **argv);
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+
+  virtual int idle ();
 
   virtual int ready ()
   {
@@ -60,66 +46,64 @@ public:
   virtual int baseInfo ();
 
   virtual int sendInfo (Rts2Conn * conn);
+
+  virtual void deleteConnection (Rts2Conn * conn);
+
+  int queImage (Rts2Conn * conn, const char *in_path);
+  int doImage (Rts2Conn * conn, const char *in_path);
+  void changeRunning (Rts2ConnImgProcess * newImage);
 };
 
-Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master):Rts2Conn
-  (in_master)
+Rts2DevConnImage::Rts2DevConnImage (int in_sock, Rts2ImageProc * in_master):
+Rts2DevConn (in_sock, in_master)
 {
-  pfile = popen ();
-  if (!pfile)
-    return;
-  sock = fileno (pfile);
-}
-
-Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
-{
-  fclose (pfile);
-  sock = -1;
+  master = in_master;
 }
 
 int
-Rts2ConnImgProcess::receive (fd_set * set)
+Rts2DevConnImage::commandAuthorized ()
 {
-  if (conn_state == CONN_DELETE)
-    return -1;
-  if ((sock >= 0) && FD_ISSET (sock, set))
+  if (isCommand ("que_image"))
     {
-      int ret;
-      long id;
-      double ra, dec, ra_err, dec_err;
-      ret =
-	fscanf (pfile, "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
-		&dec_err);
-      if (ret == EOF)
-	{
-	  conn_state = CONN_DELETE;
-	  return -1;
-	}
-      if (ret == 5 & reqConn)
-	{
-	  reqConn->sendValue ("img_ra", ra);
-	  reqConn->sendValue ("img_dec", dec);
-	  reqConn->sendValue ("img_ra_err", ra_err);
-	  reqConn->sendValue ("img_dec_err", dec_err);
-	}
-      return 1;
+      char *in_imageName;
+      if (paramNextString (&in_imageName) || !paramEnd ())
+	return -2;
+      return master->queImage (this, in_imageName);
     }
+  if (isCommand ("do_image"))
+    {
+      char *in_imageName;
+      if (paramNextString (&in_imageName) || !paramEnd ())
+	return -2;
+      return master->doImage (this, in_imageName);
+    }
+  return Rts2DevConn::commandAuthorized ();
 }
 
-Rts2DevConnImage::Rts2DevConnImage (int in_sock, Rts2Block * in_master):Rts2DevConn (in_sock,
-	     in_master)
+Rts2ImageProc::Rts2ImageProc (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_IMGPROC, 5561,
+	    "IMGP")
 {
-}
-
-Rts2ImageProc::Rts2ImageProc (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_IMGPROC, 5561, "IMGP")
-{
+  runningImage = NULL;
 }
 
 Rts2Conn *
 Rts2ImageProc::createConnection (int in_sock, int conn_num)
 {
-  return new Rts2ConnImage (in_sock);
+  return new Rts2DevConnImage (in_sock, this);
+}
+
+int
+Rts2ImageProc::idle ()
+{
+  std::list < Rts2ConnImgProcess * >::iterator img_iter;
+  if (!runningImage && imagesQue.size () != 0)
+    {
+      img_iter = imagesQue.begin ();
+      Rts2ConnImgProcess *newImage = *img_iter;
+      imagesQue.erase (img_iter);
+      changeRunning (newImage);
+    }
+  return Rts2Device::idle ();
 }
 
 int
@@ -137,7 +121,83 @@ Rts2ImageProc::baseInfo ()
 int
 Rts2ImageProc::sendInfo (Rts2Conn * conn)
 {
-  // sendValue ( // send size of que
+  conn->sendValue ("que_size", (int) imagesQue.size ());
+}
+
+void
+Rts2ImageProc::deleteConnection (Rts2Conn * conn)
+{
+  std::list < Rts2ConnImgProcess * >::iterator img_iter;
+  for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();
+       img_iter++)
+    {
+      (*img_iter)->deleteConnection (conn);
+      if (*img_iter == conn)
+	{
+	  imagesQue.erase (img_iter);
+	}
+    }
+  if (conn == runningImage)
+    {
+      // que next image
+      runningImage = NULL;
+      img_iter = imagesQue.begin ();
+      if (img_iter != imagesQue.end ())
+	{
+	  imagesQue.erase (img_iter);
+	  changeRunning (*img_iter);
+	}
+    }
+  Rts2Device::deleteConnection (conn);
+}
+
+void
+Rts2ImageProc::changeRunning (Rts2ConnImgProcess * newImage)
+{
+  int ret;
+  if (runningImage)
+    {
+      runningImage->stop ();
+      imagesQue.push_front (runningImage);
+    }
+  runningImage = newImage;
+  ret = runningImage->run ();
+  if (ret < 0)
+    {
+      delete runningImage;
+      runningImage = NULL;
+      return;
+    }
+  else if (ret == 0)
+    {
+      addConnection (runningImage);
+    }
+}
+
+int
+Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
+{
+  Rts2ConnImgProcess *newImage;
+  newImage = new Rts2ConnImgProcess (this, conn, in_path);
+  if (runningImage)
+    {
+      imagesQue.push_back (newImage);
+      sendInfo (conn);
+      return 0;
+    }
+  changeRunning (newImage);
+  sendInfo (conn);
+  return 0;
+}
+
+int
+Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
+{
+  Rts2ConnImgProcess *newImage;
+  newImage = new Rts2ConnImgProcess (this, conn, in_path);
+  changeRunning (newImage);
+  sendInfo (conn);
+  return 0;
 }
 
 Rts2ImageProc *imgproc;
@@ -146,7 +206,7 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  imgproc = new (argc, argv);
+  imgproc = new Rts2ImageProc (argc, argv);
   ret = imgproc->init ();
   if (ret)
     {
