@@ -273,9 +273,11 @@ Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEV
   serialNumber[0] = '0';
 
   nightCoolTemp = nan ("f");
+  defBinning = 1;
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
+  addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -307,6 +309,9 @@ Rts2DevCamera::processOption (int in_opt)
     case 'c':
       nightCoolTemp = atof (optarg);
       break;
+    case 'b':
+      defBinning = atoi (optarg);
+      break;
     default:
       return Rts2Device::processOption (in_opt);
     }
@@ -322,6 +327,8 @@ Rts2DevCamera::initChips ()
       ret = chips[i]->init ();
       if (ret)
 	return ret;
+      if (defBinning != 1)
+	chips[i]->setBinning (defBinning, defBinning);
     }
   return 0;
 }

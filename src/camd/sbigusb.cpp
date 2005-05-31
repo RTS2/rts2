@@ -286,7 +286,7 @@ Rts2DevCameraSbig::init ()
       return -1;
     }
   cc =
-    new CameraSbigChip (0, res.readoutInfo[0].width,
+    new CameraSbigChip (1, res.readoutInfo[0].width,
 			res.readoutInfo[0].height / 2,
 			res.readoutInfo[0].pixelWidth,
 			res.readoutInfo[0].pixelHeight,

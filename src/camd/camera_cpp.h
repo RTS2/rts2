@@ -168,6 +168,7 @@ protected:
   float nightCoolTemp;
 protected:
     virtual void cancelPriorityOperations ();
+  int defBinning;
 
 public:
     Rts2DevCamera (int argc, char **argv);

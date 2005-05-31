@@ -155,27 +155,32 @@ private:
   int set_fan (int fan_state);
   int setcool (int reg, int setpt, int prel, int fan, int state);
 
+  int ad_temp;
 public:
     Rts2DevCameraUrvc2 (int argc, char **argv);
 
-  int init ();
-  int ready ();
-  int baseInfo ();
-  int info ();
-  int camChipInfo (int chip)
+  virtual int init ();
+  virtual int ready ();
+  virtual int baseInfo ();
+  virtual int info ();
+  virtual int camChipInfo (int chip)
   {
     return 0;
   }
-  int camExpose (int chip, int light, float exptime);
+  virtual int camExpose (int chip, int light, float exptime);
 
-  int camStopExpose (int chip);
+  virtual int camStopExpose (int chip);
 
-  int camCoolMax ();
-  int camCoolHold ();
-  int camCoolTemp (float coolpoint);
-  int camCoolShutdown ();
+  virtual int camCoolMax ();
+  virtual int camCoolHold ();
+  int camCoolTemp ()
+  {
+    return setcool (1, ad_temp, 0xaf, FAN_ON, CAMERA_COOL_HOLD);
+  }
+  virtual int camCoolTemp (float coolpoint);
+  virtual int camCoolShutdown ();
 
-  int camFilter (int new_filter);
+  virtual int camFilter (int new_filter);
 };
 
 void
@@ -339,7 +344,6 @@ Rts2DevCameraUrvc2::init ()
     case 1:
       tempRegulation = CAMERA_COOL_HOLD;
       break;
-      break;
     default:
       tempRegulation = CAMERA_COOL_OFF;
     }
@@ -451,9 +455,8 @@ Rts2DevCameraUrvc2::camCoolHold ()	/* hold on that temperature */
 int
 Rts2DevCameraUrvc2::camCoolTemp (float coolpoint)	/* set direct setpoint */
 {
-  int i;
-  i = ccd_c2ad (coolpoint) + 0x7;	// zaokrohlovat a neorezavat!
-  return setcool (1, i, 0xaf, FAN_ON, CAMERA_COOL_HOLD);
+  ad_temp = ccd_c2ad (coolpoint) + 0x7;	// zaokrohlovat a neorezavat!
+  camCoolTemp ();
 }
 
 int
