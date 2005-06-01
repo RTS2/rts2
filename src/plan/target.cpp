@@ -18,6 +18,8 @@
 #include <time.h>
 #include <unistd.h>
 
+static int good_count = 0;
+
 int
 Target::move ()
 {
@@ -118,6 +120,7 @@ Target::get_info (struct device *cam,
     {
       info->hi_precision->processed = 0;
     }
+  info->good_count = good_count;
   devcli_image_info (cam, info);
   free (info);
   return ret;
@@ -260,6 +263,7 @@ Target::observe (Target * last_t)
 	  pthread_mutex_unlock (&script_thread_count_mutex);
 	  return -1;
 	}
+      good_count++;
     }
 
   for (camera = devcli_devices (); camera; camera = camera->next)

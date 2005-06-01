@@ -45,7 +45,10 @@ struct image_info
   // acqusition, image will not go to any que for
   // processing
   int binnings[22];
-  // axes binnings
+  // axes binning
+  int good_count;
+  // number of observation with images.. (which went past centering
+  // step)
 };
 
 #endif /* __RTS_IMAGE_INFO__ */

@@ -18,12 +18,17 @@ int
 main (int argc, char **argv)
 {
   double value;
+  char buf[20];
+  int h, m, s;
   ObjectCheck *checker;
   printf ("10.2 - %f\n", hmstod ("10.2"));
   printf ("10a58V67 - %f\n", hmstod ("10a58V67"));
 
   value = hmstod ("-11aa11:57a");
   assert (errno != 0);
+
+  dtoints (-0.530240, &h, &m, &s);
+  printf ("hms: %+i:%i:%i\n", h, m, s);
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
