@@ -75,7 +75,6 @@ private:
   void tel_normalize (double *ra, double *dec);
   int tel_write_ra (double ra);
   int tel_write_dec (double dec);
-  int tel_set_to (double ra, double dec);
 
   int tel_set_rate (char new_rate);
   int telescope_start_move (char direction);
@@ -126,7 +125,6 @@ public:
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec);
   virtual int change (double chng_ra, double chng_dec);
-  virtual int stop ();
   virtual int saveModel ();
   virtual int loadModel ();
   virtual int stopWorm ();
@@ -770,6 +768,7 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
   telMotorState = TEL_OK;
   infoCount = 0;
   matchCount = 0;
+  tel_desc = -1;
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -1441,22 +1440,6 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   syslog (LOG_INFO, "Rts2DevTelescopeGemini::change after-change: %f %f",
 	  telRa, telDec);
   return ret;
-}
-
-/*!
- * Stop telescope slewing at any direction
- *
- * @return 0 on success, -1 and set errno on error
- */
-int
-Rts2DevTelescopeGemini::stop ()
-{
-  char dirs[] = { 'e', 'w', 'n', 's' };
-  int i;
-  for (i = 0; i < 4; i++)
-    if (telescope_stop_move (dirs[i]) < 0)
-      return -1;
-  return 0;
 }
 
 /*! 

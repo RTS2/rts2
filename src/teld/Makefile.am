@@ -1,6 +1,6 @@
 SUBDIRS = 
 
-bin_PROGRAMS = rts2-teld-gemini rts2-teld-bridge
+bin_PROGRAMS = rts2-teld-gemini rts2-teld-bridge rts2-teld-mm2
 
 noinst_HEADERS = telescope.h maps.h
 
@@ -11,6 +11,9 @@ rts2_teld_gemini_LDFLAGS = @LIB_NOVA@
 
 rts2_teld_bridge_SOURCES = teld.cpp tpmodel.c bridge.cpp
 rts2_teld_bridge_LDFLAGS = @LIB_NOVA@
+
+rts2_teld_mm2_SOURCES = teld.cpp mm2.cpp
+rts2_teld_mm2_LDFLAGS = @LIB_NOVA@
 
 if OPENTPL
 bin_PROGRAMS += rts2-teld-ir
