@@ -4,14 +4,10 @@
 
 #include <errno.h>
 #include <string.h>
-#include <fcntl.h>
 #include <math.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <libnova/libnova.h>
-#include <mcheck.h>
 
 #include "status.h"
 #include "telescope.h"
@@ -71,11 +67,11 @@ Rts2DevTelescopeIr::tpl_get (const char *name, T & val, int *status)
   if (!*status)
     {
       Request & r = tplc->Get (name, false);
-      cstatus = r.Wait ();
+      cstatus = r.Wait (USEC_SEC);
 
       if (cstatus != TPLC_OK)
 	{
-	  printf (" error %i\n", cstatus);
+	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_get error %i\n", cstatus);
 	  *status = 1;
 	}
 
@@ -106,7 +102,7 @@ Rts2DevTelescopeIr::tpl_set (const char *name, T val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  printf (" error %i\n", cstatus);
+	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_set error %i\n", cstatus);
 	  *status = 1;
 	}
       //r.Dispose();
@@ -122,11 +118,12 @@ Rts2DevTelescopeIr::tpl_setw (const char *name, T val, int *status)
   if (!*status)
     {
       Request & r = tplc->Set (name, Value (val), false);	// change to set...?
-      cstatus = r.Wait ();
+      cstatus = r.Wait (USEC_SEC);
 
       if (cstatus != TPLC_OK)
 	{
-	  printf (" error %i\n", cstatus);
+	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_setw error %i\n",
+		  cstatus);
 	  *status = 1;
 	}
       r.Dispose ();
@@ -337,9 +334,10 @@ Rts2DevTelescopeIr::startPark ()
 {
   int status = 0;
   // Park to south+zenith
+  status = tpl_setw ("POINTING.TRACK", 0, &status);
+  usleep (100000);		//0.1s
   status = tpl_setw ("AZ.TARGETPOS", 0, &status);
   status = tpl_setw ("ZD.TARGETPOS", 0, &status);
-  status = tpl_setw ("POINTING.TRACK", 0, &status);
 
   if (status)
     return -1;
@@ -369,8 +367,6 @@ Rts2DevTelescopeIr::stop ()
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevTelescopeIr *device = new Rts2DevTelescopeIr (argc, argv);
 
   int ret;
