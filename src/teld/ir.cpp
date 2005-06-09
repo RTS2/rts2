@@ -226,8 +226,9 @@ Rts2DevTelescopeIr::get_loc_sid_time ()
 int
 Rts2DevTelescopeIr::info ()
 {
-  double zd;
+  double zd, az;
   int status = 0;
+  int track = 0;
 
   if (!(tplc->IsAuth () && tplc->IsConnected ()))
     return -1;
@@ -239,18 +240,42 @@ Rts2DevTelescopeIr::info ()
   status = tpl_get ("POINTING.CURRENT.DEC", telDec, &status);
   if (status)
     return -1;
+  status = tpl_get ("POINTING.TRACK", track, &status);
+  if (status)
+    return -1;
 
   telSiderealTime = get_loc_sid_time ();
   telLocalTime = 0;
 
   status = tpl_get ("ZD.REALPOS", zd, &status);
+  status = tpl_get ("AZ.REALPOS", az, &status);
+
+  if (!track)
+    {
+      // telRA, telDec are invalid: compute them from ZD/AZ
+      struct ln_hrz_posn hrz;
+      struct ln_lnlat_posn observer;
+      struct ln_equ_posn curr;
+      hrz.az = az;
+      hrz.alt = 90 - zd;
+      observer.lng = telLongtitude;
+      observer.lat = telLatitude;
+      ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
+      telRa = curr.ra;
+      telDec = curr.dec;
+      telFlip = 0;
+    }
+  else
+    {
+      telFlip = (zd < 0);
+    }
+
   if (status)
     return -1;
 
-  telFlip = (zd < 0);
 
-  telAxis[0] = nan ("f");
-  telAxis[1] = nan ("f");
+  telAxis[0] = az;
+  telAxis[1] = zd;
 
   return 0;
 }
@@ -310,13 +335,21 @@ Rts2DevTelescopeIr::endMove ()
 int
 Rts2DevTelescopeIr::startPark ()
 {
-  return startMove (get_loc_sid_time () - 30, 40);
+  int status = 0;
+  // Park to south+zenith
+  status = tpl_setw ("AZ.TARGETPOS", 0, &status);
+  status = tpl_setw ("ZD.TARGETPOS", 0, &status);
+  status = tpl_setw ("POINTING.TRACK", 0, &status);
+
+  if (status)
+    return -1;
+  return 0;
 }
 
 int
 Rts2DevTelescopeIr::isParking ()
 {
-  return isMoving ();
+  return -2;
 }
 
 int
