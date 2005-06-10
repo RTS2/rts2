@@ -32,11 +32,13 @@ main (int argc, char **argv)
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
-  printf ("ret %i\n", read_config ("/usr/local/etc/rts2.conf"));
+  printf ("ret %i\n", read_config ("/etc/rts2/rts2.conf"));
 
   printf ("ret %f\n", get_double_default ("longtitude", 1));
   printf ("ret %f\n", get_double_default ("latitude", 1));
   printf ("C0.rotang: %f\n", get_device_double_default ("C0", "rotang", 10));
+  printf ("C0.rotang: %f\n",
+	  get_device_double_default ("sbig", "rotang", 10));
   printf ("ret: %s\n", get_device_string_default ("C1", "name", "moje"));
   printf ("ret: %f\n", get_double_default ("day_horizont", 25));
   printf ("ret: %f\n", get_double_default ("night_horizont", 25));
@@ -48,6 +50,9 @@ main (int argc, char **argv)
 	  get_sub_device_string_default ("CNF1", "script", "G", "AA"));
   printf ("ret: %s\n",
 	  get_sub_device_string_default ("CNF1", "script", "S", "AA"));
+
+  printf ("ret exposure_time: %f\n",
+	  get_device_double_default ("grbc", "exposure_time", 120));
 
   checker =
     new ObjectCheck (get_string_default ("horizont", "/etc/rts2/horizont"));
