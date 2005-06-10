@@ -313,7 +313,7 @@ int
 Rts2DevCameraAndor::camCoolHold ()
 {
   CoolerON ();
-  SetTemperature (-10);
+  SetTemperature (-70);
   return 0;
 }
 
@@ -329,6 +329,7 @@ int
 Rts2DevCameraAndor::camCoolShutdown ()
 {
   CoolerOFF ();
+  SetTemperature (+70);
   return 0;
 }
 

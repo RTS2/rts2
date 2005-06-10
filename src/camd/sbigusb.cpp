@@ -330,7 +330,7 @@ Rts2DevCameraSbig::baseInfo ()
   pcam->GetDriverInfo (DRIVER_STD, gccdir0);
   if (pcam->GetError () != CE_NO_ERROR)
     return -1;
-  sprintf (ccdType, "SBIG %i", pcam->GetCameraType ());
+  sprintf (ccdType, "SBIG_%i", pcam->GetCameraType ());
   // get serial number
 
   GetCCDInfoParams req;
@@ -341,7 +341,8 @@ Rts2DevCameraSbig::baseInfo ()
   ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &req, &res);
   if (ret != CE_NO_ERROR)
     return -1;
-  strncpy (serialNumber, res.serialNumber, 10);
+  //strncpy (serialNumber, res.serialNumber, 10);
+  strncpy (serialNumber, "007", 10);
   canDF = 1;
   return 0;
 }
