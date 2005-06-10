@@ -384,6 +384,7 @@ Rts2DevTelescopeMM2::tel_read_siderealtime ()
   telSiderealTime = ln_get_mean_sidereal_time
     (ln_get_julian_from_sys ()) * 15.0 - telLongtitude;
   telSiderealTime = ln_range_degrees (telSiderealTime) / 15.0;
+  return 0;
 }
 
 /*! 
@@ -571,6 +572,7 @@ Rts2DevTelescopeMM2::idle ()
 	  next_togle = now + 2;
 	  togle_state = TOGLE_2;
 	}
+      setTimeout (10000);
       break;
     case TOGLE_2:
       if (now > next_togle)
@@ -580,6 +582,7 @@ Rts2DevTelescopeMM2::idle ()
 	  else
 	    togle_state = NOT_TOGLING;
 	}
+      setTimeout (10000);
       break;
     }
 
@@ -930,9 +933,6 @@ Rts2DevTelescopeMM2::isMoving ()
 int
 Rts2DevTelescopeMM2::endMove ()
 {
-// TEST 
-// TURN OFF TRACKING AFTER MOVE
-  toggle_mode (2);
   return 0;
 }
 
