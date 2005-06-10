@@ -68,6 +68,7 @@ CameraApogeeChip::init ()
   gain = camera->m_Gain;
 
   dest = new unsigned short[chipSize->width * chipSize->height];
+  return 0;
 }
 
 int
@@ -141,6 +142,8 @@ CameraApogeeChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 int
 CameraApogeeChip::readoutOneLine ()
 {
+  int ret;
+
   if (readoutLine < 0)
     return -1;
 
@@ -161,12 +164,17 @@ CameraApogeeChip::readoutOneLine ()
       while (status == Camera_Status_Downloading);
       readoutLine++;
       short length = chipUsedReadout->width / usedBinningHorizontal;
-      camera->GetLine (dest_top, length);
+      ret = camera->GetLine (dest_top, length);
+      dest_top += chipUsedReadout->width / usedBinningHorizontal;
       return 0;
     }
   if (sendLine == 0)
     {
       int ret;
+      int fd = open ("/root/tmp", O_WRONLY | O_CREAT);
+      printf ("l: %i", (char *) dest_top - send_top);
+      write (fd, send_top, ((char *) dest_top - send_top));
+      close (fd);
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;
@@ -308,7 +316,11 @@ Rts2DevCameraApogee::init ()
 int
 Rts2DevCameraApogee::ready ()
 {
-  return camera->read_Present ();
+  int ret;
+  ret = camera->read_Present ();
+  if (!ret)
+    return -1;
+  return 0;
 }
 
 int
@@ -317,6 +329,7 @@ Rts2DevCameraApogee::baseInfo ()
   strcpy (ccdType, "Apogee ");
   strncat (ccdType, camera->m_Sensor, 10);
   strcpy (serialNumber, "007");
+  return 0;
 }
 
 int
