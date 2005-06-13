@@ -57,7 +57,7 @@
 #define HOME_RA		37.9542
 #define HOME_DEC	87.3075
 
-// hard-coded LOT & LAT
+// hard-coded LONGTITUDE & LATITUDE
 #define TEL_LONG 	-6.239166667
 #define TEL_LAT		53.3155555555
 
@@ -345,7 +345,6 @@ Rts2DevTelescopeMM2::tel_read_dec ()
  * TEMPORARY
  * MY EDIT MM2 local time
  *
- * Hardcode local time and return 0
  */
 int
 Rts2DevTelescopeMM2::tel_read_localtime ()
@@ -373,16 +372,15 @@ Rts2DevTelescopeMM2::tel_read_localtime ()
  * TEMPORARY
  * MY EDIT MM2 sidereal time
  *
- * Hardcode sidereal time and return 0
- * Dynostar doesn't suptel_desc reading Sidereal time, 
+ * Dynostar doesn't support reading Sidereal time, 
  * so read sidereal time from system
  */
 int
 Rts2DevTelescopeMM2::tel_read_siderealtime ()
 {
   tel_read_longtitude ();
-  telSiderealTime = ln_get_mean_sidereal_time
-    (ln_get_julian_from_sys ()) * 15.0 - telLongtitude;
+  telSiderealTime = (ln_get_mean_sidereal_time
+		     (ln_get_julian_from_sys ()) * 15.0) + telLongtitude;
   telSiderealTime = ln_range_degrees (telSiderealTime) / 15.0;
   return 0;
 }
@@ -392,9 +390,6 @@ Rts2DevTelescopeMM2::tel_read_siderealtime ()
  * 
  * @return -1 on error, otherwise 0
  *
- * MY EDIT MM2 latitude
- *
- * Hardcode latitude and return 0
  */
 int
 Rts2DevTelescopeMM2::tel_read_latitude ()
@@ -407,9 +402,6 @@ Rts2DevTelescopeMM2::tel_read_latitude ()
  * 
  * @return -1 on error, otherwise 0
  *
- * MY EDIT MM2 longtitude
- *
- * Hardcode longtitude and return 0
  */
 int
 Rts2DevTelescopeMM2::tel_read_longtitude ()
