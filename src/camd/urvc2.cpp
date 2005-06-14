@@ -415,7 +415,9 @@ Rts2DevCameraUrvc2::init ()
 
   syslog (LOG_DEBUG, "init return %i", Cams[eePtr.model].horzImage);
 
-  return 0;
+  filter = new Rts2FilterUrvc2 (this);
+
+  return Rts2DevCameraUrvc2::initChips ();
 }
 
 int
