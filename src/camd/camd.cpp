@@ -267,7 +267,7 @@ Rts2DevCamera::Rts2DevCamera (int argc, char **argv):Rts2Device (argc, argv, DEV
   tempRegulation = -1;
   coolingPower = -1;
   fan = -1;
-  filter = -1;
+  filter = NULL;
   canDF = -1;
   ccdType[0] = '0';
   serialNumber[0] = '0';
@@ -329,6 +329,15 @@ Rts2DevCamera::initChips ()
 	return ret;
       if (defBinning != 1)
 	chips[i]->setBinning (defBinning, defBinning);
+    }
+  // init filter
+  if (filter)
+    {
+      ret = filter->init ();
+      if (ret)
+	{
+	  return ret;
+	}
     }
   return 0;
 }
@@ -394,12 +403,14 @@ Rts2DevCamera::changeMasterState (int new_state)
 {
   switch (new_state)
     {
+    case SERVERD_EVENING | SERVERD_STANDBY:
+    case SERVERD_EVENING:
+      return camCoolMax ();
+    case SERVERD_DUSK | SERVERD_STANDBY:
+    case SERVERD_DUSK:
     case SERVERD_NIGHT | SERVERD_STANDBY:
     case SERVERD_NIGHT:
       return camCoolHold ();
-    case SERVERD_DUSK | SERVERD_STANDBY:
-    case SERVERD_DUSK:
-      return camCoolMax ();
     default:
       return camCoolShutdown ();
     }
@@ -434,7 +445,10 @@ Rts2DevCamera::info (Rts2Conn * conn)
   conn->sendValue ("ccd_temperature", tempCCD);
   conn->sendValue ("cooling_power", coolingPower);
   conn->sendValue ("fan", fan);
-  conn->sendValue ("filter", filter);
+  if (filter)
+    conn->sendValue ("filter", filter->getFilterNum ());
+  else
+    conn->sendValue ("filter", -1);
   return 0;
 }
 
@@ -641,11 +655,22 @@ Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
 int
 Rts2DevCamera::camFilter (Rts2Conn * conn, int new_filter)
 {
-
+  int ret;
+  if (!filter)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have filter wheel");
+      return -1;
+    }
+  ret = filter->setFilterNum (new_filter);
+  info (conn);
+  if (ret == -1)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera set filter failed");
+    }
+  return ret;
 }
 
-Rts2DevConnCamera::Rts2DevConnCamera (int in_sock,
-				      Rts2DevCamera * in_master_device):
+Rts2DevConnCamera::Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
   master = in_master_device;

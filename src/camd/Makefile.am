@@ -4,7 +4,7 @@ SUBDIRS = urvc2
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee
 
-noinst_HEADERS = camera_cpp.h
+noinst_HEADERS = camera_cpp.h filter.h
 
 LDADD = ../utils/librts2block.a
 
@@ -12,7 +12,7 @@ AM_CXXFLAGS = -I/home/petr/sbig
 
 if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
-rts2_camd_sbigusb_SOURCES = camd.cpp sbigusb.cpp
+rts2_camd_sbigusb_SOURCES = camd.cpp filter.cpp sbigusb.cpp
 rts2_camd_sbigusb_LDFLAGS = @LIB_SBIG@
 rts2_camd_sbigusb_CXXFLAGS = @INC_SBIG@
 endif
@@ -26,7 +26,7 @@ endif
 
 rts2_camd_miniccd_SOURCES = camd.cpp miniccd.cpp
 
-rts2_camd_urvc2_SOURCES = camd.cpp urvc2.cpp
+rts2_camd_urvc2_SOURCES = camd.cpp filter.cpp urvc2.cpp
 rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
 
-rts2_camd_apogee_SOURCES = camd.cpp apogee.cpp apogee/CameraIO_LinuxPCI.cpp
+rts2_camd_apogee_SOURCES = camd.cpp filter.cpp filter_ifw.cpp apogee.cpp apogee/CameraIO_LinuxPCI.cpp

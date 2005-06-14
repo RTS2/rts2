@@ -7,6 +7,8 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+#include "filter.h"
+
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
@@ -160,14 +162,15 @@ protected:
   int tempRegulation;
   int coolingPower;
   int fan;
-  int filter;
   int canDF;			// if the camera can make dark frames
   char ccdType[64];
   char serialNumber[64];
 
+  Rts2Filter *filter;
+
   float nightCoolTemp;
-protected:
-    virtual void cancelPriorityOperations ();
+
+  virtual void cancelPriorityOperations ();
   int defBinning;
 
 public:

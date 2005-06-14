@@ -23,6 +23,7 @@
 #include "camera_cpp.h"
 
 #include "camera_info.h"
+#include "filter.h"
 
 #define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
 
@@ -181,7 +182,71 @@ public:
   virtual int camCoolShutdown ();
 
   virtual int camFilter (int new_filter);
+  CAMERA_TYPE getCameraID (void)
+  {
+    return cameraID;
+  }
 };
+
+/*!
+ * Filter class for URVC2 based camera.
+ * It needs it as there is now filter is an extra object.
+ */
+
+class Rts2FilterUrvc2:public Rts2Filter
+{
+  Rts2DevCameraUrvc2 *camera;
+  int filter;
+public:
+    Rts2FilterUrvc2 (Rts2DevCameraUrvc2 * in_camera);
+    virtual ~ Rts2FilterUrvc2 (void);
+  virtual int init (void);
+  virtual int getFilterNum (void);
+  virtual int setFilterNum (int new_filter);
+};
+
+Rts2FilterUrvc2::Rts2FilterUrvc2 (Rts2DevCameraUrvc2 * in_camera):Rts2Filter ()
+{
+  camera = in_camera;
+}
+
+Rts2FilterUrvc2::~Rts2FilterUrvc2 (void)
+{
+  setFilterNum (1);
+}
+
+int
+Rts2FilterUrvc2::init ()
+{
+  setFilterNum (1);
+}
+
+int
+Rts2FilterUrvc2::getFilterNum (void)
+{
+  return filter;
+}
+
+int
+Rts2FilterUrvc2::setFilterNum (int new_filter)
+{
+  PulseOutParams pop;
+
+  if (new_filter < 1 || new_filter > 5)
+    {
+      return -1;
+    }
+
+  pop.pulsePeriod = 18270;
+  pop.pulseWidth = 500 + 300 * (new_filter - 1);
+  pop.numberPulses = 60;
+
+  if (MicroCommand (MC_PULSE, camera->getCameraID (), &pop, NULL))
+    return -1;
+  filter = new_filter;
+
+  return 0;
+}
 
 void
 Rts2DevCameraUrvc2::get_eeprom ()
@@ -469,22 +534,6 @@ Rts2DevCameraUrvc2::camCoolShutdown ()	/* ramp to ambient */
 int
 Rts2DevCameraUrvc2::camFilter (int new_filter)	/* set camera filter */
 {
-  PulseOutParams pop;
-
-  if (new_filter < 1 || new_filter > 5)
-    {
-      return -1;
-    }
-
-  pop.pulsePeriod = 18270;
-  pop.pulseWidth = 500 + 300 * (new_filter - 1);
-  pop.numberPulses = 60;
-
-  if (MicroCommand (MC_PULSE, cameraID, &pop, NULL))
-    return -1;
-  filter = new_filter;
-
-  return 0;
 }
 
 int

@@ -106,7 +106,8 @@ Rts2FilterIfw::init (void)
   /* get current serial port configuration */
   if (tcgetattr (dev_port, &options) < 0)
     {
-      syslog (LOG_ERR, "error reading serial port configuration: %m");
+      syslog (LOG_ERR,
+	      "Rts2FilterIfw::init error reading serial port configuration: %m");
       return -1;
     }
 
@@ -116,7 +117,7 @@ Rts2FilterIfw::init (void)
   if (cfsetospeed (&options, B19200) < 0
       || cfsetispeed (&options, B19200) < 0)
     {
-      syslog (LOG_ERR, "error setting baud rate: %m");
+      syslog (LOG_ERR, "Rts2FilterIfw::init error setting baud rate: %m");
       return -1;
     }
 
@@ -134,8 +135,8 @@ Rts2FilterIfw::init (void)
   options.c_cflag &= ~CSIZE;
   options.c_cflag |= CS8;
 
-  /* set timeout  to 25.5 seconds */
-  options.c_cc[VTIME] = 255;
+  /* set timeout  to 10 seconds */
+  options.c_cc[VTIME] = 80;
   options.c_cc[VMIN] = 0;
 
   /*
@@ -153,11 +154,13 @@ Rts2FilterIfw::init (void)
   /* Check for correct response from filter wheel */
   if (strcmp (filter_buff, "!\n\r"))
     {
-      syslog (LOG_DEBUG, "FILTER WHEEL ERROR: %s", filter_buff);
+      syslog (LOG_DEBUG, "Rts2FilterIfw::init FILTER WHEEL ERROR: %s",
+	      filter_buff);
       tcflush (dev_port, TCIFLUSH);
       return -1;
     }
-  syslog (LOG_DEBUG, "Filter wheel initialised: %s", filter_buff);
+  syslog (LOG_DEBUG, "Rts2FilterIfw::init Filter wheel initialised: %s",
+	  filter_buff);
   tcflush (dev_port, TCIFLUSH);
   return 0;
 }
@@ -202,7 +205,8 @@ Rts2FilterIfw::setFilterNum (int new_filter)
 
   if (new_filter > 5 || new_filter < 1)
     {
-      syslog (LOG_ERR, "bad filter number: %i", new_filter);
+      syslog (LOG_ERR, "Rts2FilterIfw::setFilterNum bad filter number: %i",
+	      new_filter);
       return -1;
     }
 
@@ -216,14 +220,16 @@ Rts2FilterIfw::setFilterNum (int new_filter)
 
   if (strcmp (filter_buff, "*\n\r"))
     {
-      syslog (LOG_ERR, "FILTER WHEEL ERROR: %s", filter_buff);
+      syslog (LOG_ERR, "Rts2FilterIfw::setFilterNum FILTER WHEEL ERROR: %s",
+	      filter_buff);
       error_number = tcflush (dev_port, TCIFLUSH);
     }
   else
     {
-      syslog (LOG_DEBUG, "Set filter: %s\n", filter_buff);
-      tcflush (dev_port, TCIFLUSH);
+      syslog (LOG_DEBUG, "Rts2FilterIfw::setFilterNum Set filter: %s\n",
+	      filter_buff);
     }
+  tcflush (dev_port, TCIFLUSH);
 
-  return (0);
+  return 0;
 }

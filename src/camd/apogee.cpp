@@ -31,6 +31,7 @@
 #include "apogee/CameraIO_Linux.h"
 
 #include "camera_cpp.h"
+#include "filter_ifw.h"
 
 // Error codes returned from config_load
 const int CCD_OPEN_NOERR = 0;	// No error detected
@@ -164,22 +165,6 @@ CameraApogeeChip::readoutOneLine ()
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
-/*      if (readoutLine < chipUsedReadout->y)
-	{
-	  camera->Flush (chipUsedReadout->y);
-	  readoutLine = chipUsedReadout->y;
-	}
-      Camera_Status status;
-      camera->DigitizeLine ();
-      do
-	{
-	  status = camera->read_Status ();
-	}
-      while (status == Camera_Status_Downloading);
-      readoutLine++;
-      short length = chipUsedReadout->width / usedBinningHorizontal;
-      ret = camera->GetLine (dest_top, length);
-      dest_top += chipUsedReadout->width / usedBinningHorizontal;*/
       bool status;
       short int width, height;
       width = chipUsedReadout->width;
@@ -188,8 +173,7 @@ CameraApogeeChip::readoutOneLine ()
       if (!status)
 	return -1;
       dest_top += width * height;
-      readoutLine = chipUsedReadout->height;
-      //return 0;
+      readoutLine = chipUsedReadout->height + chipUsedReadout->y;
     }
   if (sendLine == 0)
     {
@@ -233,7 +217,6 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 {
   CCameraIO *camera;
   int device_id;
-
   char *cfgname;
   int config_load (short BaseAddress, short RegOffset);
   bool CfgGet (FILE * inifp, char *inisect, char *iniparm, char *retbuff,
@@ -254,7 +237,6 @@ public:
   virtual int camCoolHold ();
   virtual int camCoolTemp (float new_temp);
   virtual int camCoolShutdown ();
-  virtual int camFilter (int new_filter);
 };
 
 //-------------------------------------------------------------
@@ -429,8 +411,8 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 	  (inifp, "system", "reg_offset", retbuf, sizeof (retbuf), &plen))
 	{
 	  unsigned short val = strtol (retbuf, NULL, 0);
-	  if (val >= 0x0 && val <= 0xF0)
-	    camera->m_RegisterOffset = val & 0xF0;
+//        if (val >= 0x0 && val <= 0xF0)
+//          camera->m_RegisterOffset = val & 0xF0;
 	}
     }
   else
@@ -810,26 +792,12 @@ Rts2DevCamera (argc, argv)
 	     "device ID (ussualy 0, which is also default)");
   addOption ('c', "config_name", 1,
 	     "device ini config file (default to /etc/rts2/apogee.ini");
+  addOption ('I', "IFW wheel port", 1,
+	     "dev entry for IFW (Optec) filter wheel, if camera is equiped with such");
   device_id = 0;
   cfgname = "/etc/rts2/apogee.ini";
 
   camera = NULL;
-/* new CCameraIO ();
-  camera->m_Rows = AP_Rows;
-  camera->m_Columns = AP_Columns;
-  camera->m_ImgRows = AP_ImgRows;
-  camera->m_ImgColumns = AP_ImgCols;
-  camera->m_BIC = AP_BIC;
-  camera->m_BIR = AP_BIR;
-  camera->m_SkipC = AP_SkipC;
-  camera->m_SkipR = AP_SkipR;
-  camera->m_HFlush = AP_HFlush;
-  camera->m_VFlush = AP_VFlush;
-
-  // temperature constants
-  camera->m_TempControl = AP_Control;
-  camera->m_TempCalibration = AP_Cal;
-  camera->m_TempScale = AP_Scale; */
 
   fan = 0;
   canDF = 1;
@@ -850,6 +818,9 @@ Rts2DevCameraApogee::processOption (int in_opt)
       break;
     case 'c':
       cfgname = optarg;
+      break;
+    case 'I':
+      filter = new Rts2FilterIfw (optarg);
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -912,7 +883,7 @@ Rts2DevCameraApogee::info ()
   tempCCD = camera->read_Temperature ();
   tempAir = nan ("f");
   coolingPower = 5000;
-  filter = camera->m_FilterPosition;
+  // filter = camera->m_FilterPosition;
   return 0;
 }
 
@@ -950,14 +921,6 @@ Rts2DevCameraApogee::camCoolTemp (float new_temp)
 {
   camera->write_CoolerSetPoint (new_temp);
   camera->write_CoolerMode (Camera_CoolerMode_On);
-  return 0;
-}
-
-int
-Rts2DevCameraApogee::camFilter (int new_filter)
-{
-  camera->FilterSet (new_filter);
-  filter = new_filter;
   return 0;
 }
 
