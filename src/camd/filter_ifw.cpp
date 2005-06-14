@@ -152,7 +152,7 @@ Rts2FilterIfw::init (void)
   readPort (4);
 
   /* Check for correct response from filter wheel */
-  if (strcmp (filter_buff, "!\n\r"))
+  if (filter_buff[0] != '!')
     {
       syslog (LOG_DEBUG, "Rts2FilterIfw::init FILTER WHEEL ERROR: %s",
 	      filter_buff);
@@ -180,7 +180,7 @@ Rts2FilterIfw::getFilterNum (void)
 
   readPort (4);
 
-  if (!strcmp (filter_buff, "ER\n\r"))
+  if (strstr (filter_buff, "ER"))
     {
       syslog (LOG_DEBUG, "Rts2FilterIfw::getFilterNum FILTER WHEEL ERROR: %s",
 	      filter_buff);
@@ -198,10 +198,7 @@ int
 Rts2FilterIfw::setFilterNum (int new_filter)
 {
   char set_filter[] = "WGOTOx\r";
-  int n;
-  int error_number;
-
-  filter_buff[4] = 0;
+  int ret;
 
   if (new_filter > 5 || new_filter < 1)
     {
@@ -212,24 +209,25 @@ Rts2FilterIfw::setFilterNum (int new_filter)
 
   set_filter[5] = (char) new_filter + '0';
 
-  n = writePort (set_filter, 7);
-  if (n == -1)
+  ret = writePort (set_filter, 7);
+  if (ret == -1)
     return -1;
 
   readPort (4);
 
-  if (strcmp (filter_buff, "*\n\r"))
+  if (filter_buff[0] != '*')
     {
       syslog (LOG_ERR, "Rts2FilterIfw::setFilterNum FILTER WHEEL ERROR: %s",
 	      filter_buff);
-      error_number = tcflush (dev_port, TCIFLUSH);
+      ret = -1;
     }
   else
     {
       syslog (LOG_DEBUG, "Rts2FilterIfw::setFilterNum Set filter: %s\n",
 	      filter_buff);
+      ret = 0;
     }
   tcflush (dev_port, TCIFLUSH);
 
-  return 0;
+  return ret;
 }
