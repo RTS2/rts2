@@ -151,13 +151,13 @@ filter_routine (unsigned long ptr)
   if (dev->filter_position < dev->desired_position)
     {
       // move stepper motor one step in direction 1
-      outb (3, base_port);
+      outb (1, base_port);
       outb (2, base_port);
       dev->filter_position++;
     }
   else if (dev->filter_position > dev->desired_position)
     {
-      outb (1, base_port);
+      outb (3, base_port);
       outb (2, base_port);
       dev->filter_position--;
     }
@@ -172,7 +172,7 @@ filter_routine (unsigned long ptr)
     }
   dev->status |= PHOT_S_FILTERMOVE;
   init_timer (&dev->command_timer);
-  dev->command_timer.expires = jiffies + 2 * HZ / 50;
+  dev->command_timer.expires = jiffies + HZ / 25;
   dev->command_timer.function = filter_routine;
   add_timer (&dev->command_timer);
 }
@@ -203,7 +203,7 @@ reset (struct device_struct *dev)
   // set ouput port bit #0 to 0 bit #1 to 1 and bit #2 to 0
   command_delay ();
   outb (2, base_port + 1);
-  device.filter_position = 200;
+  device.filter_position = 400;
   device.desired_position = 0;
   // reset stepper motor controller
   outb (0, base_port + 1);
