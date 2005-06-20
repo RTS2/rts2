@@ -233,36 +233,34 @@ Rts2DevPhotOptec::idle ()
       if (req_count > 0)
 	{
 	  int ret;
-	  unsigned short result;
-	  ret = read (fd, &result, 2);
+	  unsigned short result[2];
+	  ret = read (fd, &result[0], 2);
+	  result[1] = 0;
+	  ret = read (fd, &result[1], 2);
+	  if (!integrateConn)
+	    return endIntegrate ();
 	  if (ret == 2)
 	    {
-	      switch (result)
+	      switch (result[0])
 		{
 		case 'A':
-		  result = 0;
-		  ret = read (fd, &result, 2);
-		  if (!integrateConn)
-		    return endIntegrate ();
+		case 'B':
 		  req_count--;
-		  integrateConn->sendValue ("count", result, req_time);
+		  if (result[0] == 'B')
+		    integrateConn->sendValue ("count_ov", result[1],
+					      req_time);
+		  else
+		    integrateConn->sendValue ("count", result[1], req_time);
 		  setTimeout (req_time_usec);
 		  break;
 		case '0':
-		  result = 0;
-		  ret = read (fd, &result, 2);
-		  filter = result / FILTER_STEP;
-		  if (!integrateConn)
-		    return endIntegrate ();
+		  filter = result[1] / FILTER_STEP;
 		  integrateConn->sendValue ("filter", filter);
 		  setTimeout (1000);
 		  break;
 		case '-':
-		  result = 0;
-		  if (!integrateConn)
-		    return endIntegrate ();
 		  integrateConn->send ("count 0 0");
-		  req_count = 0;
+		  endIntegrate ();
 		  break;
 		}
 	    }
@@ -274,7 +272,7 @@ Rts2DevPhotOptec::idle ()
 	}
       if (req_count <= 0)
 	{
-	  setTimeout (1000000);
+	  setTimeout (USEC_SEC);
 	  return endIntegrate ();
 	}
     }
@@ -291,8 +289,7 @@ Rts2DevPhotOptec::homeFilter ()
 int
 Rts2DevPhotOptec::startIntegrate (float in_req_time, int in_req_count)
 {
-  req_time_usec = ((int) in_req_time) * 1000000;
-  req_time = (short) in_req_time;
+  req_time = (short) (in_req_time * 1000);
   req_count = in_req_count;
 
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
@@ -310,7 +307,7 @@ Rts2DevPhotOptec::startIntegrate (Rts2Conn * conn, float in_req_time,
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot start integration");
       return -1;
     }
-  conn->sendValue ("integration", req_time);
+  conn->sendValue ("integration", req_time / 1000.0);
   integrateConn = conn;
   maskState (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "Integration started");
   return 0;

@@ -84,12 +84,14 @@ struct device_struct
   int buf_last_read;		// buffer last read index
   int filter_position;
   int desired_position;
-  u16 integration_time;		// desired integration time
+  u16 integration_time;		// desired integration time in msec (sec * 1000)
   int status;
   int integration_enabled;	// if it's save to integrate
   struct command_list_struct *command_list;
   int command_pending;
   struct timer_list command_timer;
+  struct timer_list check_timer;
+  int ov_count;
   struct semaphore sem_list;
   struct semaphore sem;
 }
@@ -104,7 +106,7 @@ unsigned int major_number = 254;
 DECLARE_WAIT_QUEUE_HEAD (operation_wait);
 
 
-void process_command (struct device_struct *dev);
+void process_command (void *arg);
 
 void
 free_command_list (struct device_struct *dev)
@@ -177,6 +179,31 @@ filter_routine (unsigned long ptr)
   add_timer (&dev->command_timer);
 }
 
+// check counter 1 for OV signs
+void
+check_routine (unsigned long ptr)
+{
+  struct device_struct *dev = (struct device_struct *) ptr;
+  int frequency;
+  // read out photometer counter
+  frequency = inb (dev->base_port + 6);
+  command_delay ();
+  frequency += inb (dev->base_port + 6) * 256;
+  frequency = 65536 - frequency;
+  if (frequency > 50000)
+    {
+      printk (KERN_WARNING "counter value exceeded, reseting counter\n");
+      // clear timer 2 counter
+      outb (255, dev->base_port + 6);
+      command_delay ();
+      outb (255, dev->base_port + 6);
+      dev->ov_count++;
+    }
+  init_timer (&dev->check_timer);
+  // check after 20 msec
+  dev->check_timer.expires = jiffies + HZ / 50;
+  add_timer (&dev->check_timer);
+}
 
 void
 reset (struct device_struct *dev)
@@ -254,7 +281,11 @@ got_it:
       command_delay ();
       frequency += inb (dev->base_port + 6) * 256;
       frequency = 65536 - frequency;
-      add_reply (dev, 'A', frequency);
+      // if OV was detected..
+      if (dev->ov_count)
+	add_reply (dev, 'B', frequency);
+      else
+	add_reply (dev, 'A', frequency);
     }
 out:
   dev->command_pending = 0;
@@ -267,7 +298,7 @@ out:
 void
 start_integrate (struct device_struct *dev, int once)
 {
-  int actper = dev->integration_time * 1000;
+  int actper = dev->integration_time;
 
   outb (actper % 256, dev->base_port + 5);
   command_delay ();
@@ -284,13 +315,14 @@ start_integrate (struct device_struct *dev, int once)
   outb (0, dev->base_port);
   // que timer readout
   init_timer (&dev->command_timer);
-  dev->command_timer.expires = jiffies + HZ * dev->integration_time;
+  dev->command_timer.expires = jiffies + HZ * (dev->integration_time / 1000);
   dev->command_timer.function = end_integrate;
   if (once)
     dev->status |= PHOT_S_INTEGRATING_ONCE;
   else
     dev->status |= PHOT_S_INTEGRATING;
   dev->command_pending = 1;
+  dev->ov_count = 0;
   add_timer (&dev->command_timer);
 }
 
@@ -326,8 +358,9 @@ out:
 }
 
 void
-process_command (struct device_struct *dev)
+process_command (void *arg)
 {
+  struct device_struct *dev = (struct device_struct *) arg;
   struct command_list_struct *next;
   down (&dev->sem_list);
   if (!dev->command_list
@@ -515,9 +548,10 @@ phot_read_procmem (char *buf, char **start, off_t offset, int count, int *eof,
 #endif
   len +=
     sprintf (buf + len,
-	     "integration_time: %i filter_position: %i desired_position: %i\n",
+	     "integration_time: %i msec filter_position: %i desired_position: %i\n",
 	     device.integration_time, device.filter_position,
 	     device.desired_position);
+  len += sprintf (buf + len, "ov_count: %i\n", device.ov_count);
   down (&device.sem_list);
   while (next)
     {
@@ -547,6 +581,8 @@ init_module (void)
   request_region (device.base_port, PORTS_LEN, "Optec Photometer");
 #endif
   device.command_timer.data = (unsigned long) &device;
+  device.check_timer.data = (unsigned long) &device;
+  device.check_timer.function = check_routine;
   sema_init (&device.sem_list, 1);
   sema_init (&device.sem, 1);
   err = register_chrdev (major_number, "phot", &phot_fops);
