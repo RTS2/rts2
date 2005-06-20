@@ -200,6 +200,7 @@ class Rts2DevCameraSbig:public Rts2DevCamera
   {
     if (ret == CE_NO_ERROR)
       return 0;
+    syslog (LOG_ERR, "Rts2DevCameraSbig::checkSbigHw ret: %i", ret);
     return -1;
   }
 public:
