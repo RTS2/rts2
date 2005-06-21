@@ -19,11 +19,16 @@ private:
   fitsfile *ffile;
   int fits_status;
   int flags;
+  int epochId;
   int targetId;
   int obsId;
+  char *cameraName;
+  char *imageName;
   struct timeval exposureStart;
-  void createImage (char *filename);
-  void writeExposureStart ();
+  void setImageName (char *in_filename);
+  int createImage (char *in_filename);
+  int openImage (char *in_filename);
+  int writeExposureStart ();
 public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
@@ -33,6 +38,13 @@ public:
   // open image from disk..
     Rts2Image (char *in_filename);
     virtual ~ Rts2Image (void);
+
+  int toQue ();
+  int toAcquisition ();
+  int toArchive ();
+  int toTrash ();
+
+  int renameImage (char *new_filename);
 
   int setValue (char *name, int value, char *comment);
   int setValue (char *name, long value, char *comment);
@@ -53,10 +65,18 @@ public:
     if (fits_status)
       {
 	ret = -1;
-	fits_report_error (stdout, fits_status);
+	fprintf (stderr, "error when setting value '%s'\n", valname);
+	fits_report_error (stderr, fits_status);
       }
     fits_status = 0;
     return ret;
+  }
+
+  int saveImage ();
+
+  char *getImageName ()
+  {
+    return imageName;
   }
 };
 

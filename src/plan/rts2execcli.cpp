@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
+#include <limits.h>
+
 #include "rts2execcli.h"
 #include "target.h"
 #include "../utils/rts2command.h"
@@ -75,6 +77,37 @@ Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
     return new Rts2Image (1, currentTarget->getTargetID (), this, 1,
 			  expStart);
   return new Rts2Image ("img.fits", expStart);
+}
+
+void
+Rts2DevClientCameraExec::processImage (Rts2Image * image)
+{
+  // find image processor with lowest que number..
+  int lovestValue = INT_MAX;
+  Rts2Conn *minConn = NULL;
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Value *que_size;
+      Rts2Conn *conn;
+      conn = connection->getMaster ()->connections[i];
+      if (conn)
+	{
+	  que_size = conn->getValue ("que_size");
+	  if (que_size)
+	    {
+	      if (que_size->getValueInteger () >= 0
+		  && que_size->getValueInteger () < lovestValue)
+		{
+		  minConn = conn;
+		  lovestValue = que_size->getValueInteger ();
+		}
+	    }
+	}
+    }
+  if (!minConn)
+    return;
+  minConn->
+    queCommand (new Rts2CommandQueImage (connection->getMaster (), image));
 }
 
 void

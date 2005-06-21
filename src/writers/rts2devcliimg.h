@@ -38,6 +38,7 @@ public:
   virtual void postEvent (Rts2Event * event);
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual Rts2Image *createImage (const struct timeval *expStart);
+  virtual void processImage (Rts2Image * image);
   virtual void stateChanged (Rts2ServerState * state);
 };
 
@@ -60,6 +61,12 @@ class Rts2DevClientFocusImage:public Rts2DevClientFocus
 public:
   Rts2DevClientFocusImage (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
+};
+
+class Rts2CommandQueImage:public Rts2Command
+{
+public:
+  Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image);
 };
 
 #endif /* !__RTS2_DEVCLIENT_IMG__ */

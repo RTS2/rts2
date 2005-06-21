@@ -27,10 +27,10 @@ protected:
   Rts2Conn * connection;
   enum
   { NOT_PROCESED, PROCESED } processedBaseInfo;
-  Rts2Value *getValue (char *value_name);
 public:
     Rts2DevClient (Rts2Conn * in_connection);
   void addValue (Rts2Value * value);
+  Rts2Value *getValue (char *value_name);
   char *getValueChar (char *value_name);
   double getValueDouble (char *value_name);
   int getValueInteger (char *value_name);

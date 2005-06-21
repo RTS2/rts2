@@ -172,6 +172,7 @@ Rts2ImageProc::changeRunning (Rts2ConnImgProcess * newImage)
     {
       addConnection (runningImage);
     }
+  infoAll ();
 }
 
 int
@@ -186,7 +187,7 @@ Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
       return 0;
     }
   changeRunning (newImage);
-  sendInfo (conn);
+  infoAll ();
   return 0;
 }
 
@@ -196,7 +197,7 @@ Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
   Rts2ConnImgProcess *newImage;
   newImage = new Rts2ConnImgProcess (this, conn, in_path);
   changeRunning (newImage);
-  sendInfo (conn);
+  infoAll ();
   return 0;
 }
 

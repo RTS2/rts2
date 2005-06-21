@@ -21,6 +21,7 @@ public:
   virtual void postEvent (Rts2Event * event);
   void nextCommand ();
   virtual Rts2Image *createImage (const struct timeval *expStart);
+  virtual void processImage (Rts2Image * image);
   virtual void stateChanged (Rts2ServerState * state);
 };
 

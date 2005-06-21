@@ -670,6 +670,16 @@ Rts2Conn::dataReceived (Rts2ClientTCPDataConn * dataConn)
     }
 }
 
+Rts2Value *
+Rts2Conn::getValue (char *value_name)
+{
+  if (otherDevice)
+    {
+      return otherDevice->getValue (value_name);
+    }
+  return NULL;
+}
+
 Rts2Block::Rts2Block (int in_argc, char **in_argv):
 Rts2Object ()
 {
@@ -1214,6 +1224,8 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2DevClientDome (conn);
     case DEVICE_TYPE_PHOT:
       return new Rts2DevClientPhot (conn);
+    case DEVICE_TYPE_IMGPROC:
+      return new Rts2DevClientImgproc (conn);
     default:
       return new Rts2DevClient (conn);
     }

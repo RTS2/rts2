@@ -52,11 +52,13 @@ Rts2DevTelescope::checkMoves ()
 	setTimeout (ret);
       if (ret == -1)
 	{
+	  infoAll ();
 	  maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		     "move finished with error");
 	}
       if (ret == -2)
 	{
+	  infoAll ();
 	  if (endMove ())
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		       "move finished with error");
@@ -73,11 +75,13 @@ Rts2DevTelescope::checkMoves ()
 	setTimeout (ret);
       if (ret == -1)
 	{
+	  infoAll ();
 	  maskState (0, TEL_MASK_MOVING, TEL_PARKED,
 		     "park command finished with error");
 	}
       if (ret == -2)
 	{
+	  infoAll ();
 	  if (endPark ())
 	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,
 		       "park command finished with error");
@@ -149,7 +153,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
   else
     maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
-  sendInfo (conn);
+  infoAll ();
   return ret;
 }
 
@@ -167,7 +171,7 @@ int
 Rts2DevTelescope::correct (Rts2Conn * conn, double cor_ra, double cor_dec)
 {
   int ret;
-  if (abs (cor_ra) > 5 || abs (cor_dec) > 5)
+  if (fabs (cor_ra) > 5 || fabs (cor_dec) > 5)
     {
 
     }

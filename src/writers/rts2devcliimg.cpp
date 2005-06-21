@@ -51,6 +51,10 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
     {
       if (saveImage)
 	images->writeDate (dataConn);
+      // save us to the disk..
+      images->saveImage ();
+      // do basic processing
+      processImage (images);
       delete images;
       images = NULL;
     }
@@ -64,6 +68,11 @@ Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
   gmtime_r (&expStart->tv_sec, &expT);
   strftime (fn, 20, "%H%M%S.fits", &expT);
   return new Rts2Image (fn, expStart);
+}
+
+void
+Rts2DevClientCameraImage::processImage (Rts2Image * image)
+{
 }
 
 void
@@ -96,8 +105,6 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
 	    postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, images));
 	  images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
 			    "CCD temperature");
-	  images->setValue ("CCD_NAME", connection->getName (),
-			    "camera name");
 	  images->setValue ("EXPOSURE", exposureTime, "exposure time");
 	}
     }
@@ -162,4 +169,14 @@ void
 Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 {
   Rts2DevClientFocus::postEvent (event);
+}
+
+Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command
+  (in_owner)
+{
+  char *
+    command;
+  asprintf (&command, "que_image %s", image->getImageName ());
+  setCommand (command);
+  free (command);
 }

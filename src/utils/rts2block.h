@@ -17,6 +17,7 @@
 #include "rts2address.h"
 #include "rts2user.h"
 #include "rts2devclient.h"
+#include "rts2value.h"
 
 #define MSG_COMMAND             0x01
 #define MSG_REPLY
@@ -211,6 +212,7 @@ public:
   {
     conn_state = CONN_DELETE;	// mark for deleting..
   }
+
   virtual int sendInfo (Rts2Conn * conn)
   {
     return -1;
@@ -255,6 +257,8 @@ public:
   virtual void childReturned (pid_t child_pid)
   {
   }
+
+  Rts2Value *getValue (char *value_name);
 protected:
   virtual int command ();
   virtual int message ();
