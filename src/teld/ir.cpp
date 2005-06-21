@@ -47,6 +47,7 @@ public:
     virtual ~ Rts2DevTelescopeIr (void);
   virtual int processOption (int in_opt);
   virtual int init ();
+  virtual int idle ();
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
@@ -97,15 +98,6 @@ Rts2DevTelescopeIr::tpl_set (const char *name, T val, int *status)
   if (!*status)
     {
       tplc->Set (name, Value (val), true);	// change to set...?
-      //Request &r = tplc->Set(name, Value(val), false ); // change to set...?
-      //cstatus = r.Wait();
-
-      if (cstatus != TPLC_OK)
-	{
-	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_set error %i\n", cstatus);
-	  *status = 1;
-	}
-      //r.Dispose();
     }
   return *status;
 }
@@ -118,7 +110,7 @@ Rts2DevTelescopeIr::tpl_setw (const char *name, T val, int *status)
   if (!*status)
     {
       Request & r = tplc->Set (name, Value (val), false);	// change to set...?
-      cstatus = r.Wait (USEC_SEC);
+      cstatus = r.Wait ();
 
       if (cstatus != TPLC_OK)
 	{
@@ -198,6 +190,27 @@ Rts2DevTelescopeIr::init ()
 }
 
 int
+Rts2DevTelescopeIr::idle ()
+{
+  // check for errors..
+  int status = 0;
+  int listCount;
+
+  status = tpl_get ("CABINET.STATUS.LIST_COUNT", listCount, &status);
+  if (status == 0 && listCount > 0)
+    {
+      // print errors to log & ends..
+      std::string list;
+      status = tpl_get ("CABINET.STATUS.LIST", list, &status);
+      if (status == 0)
+	syslog (LOG_ERR, "Telescope errors: %s", list.c_str ());
+      listCount = 1;
+      tpl_set ("CABINET.STATUS.CLEAR", 1, &status);
+    }
+  return Rts2DevTelescope::idle ();
+}
+
+int
 Rts2DevTelescopeIr::ready ()
 {
   return !tplc->IsConnected ();
@@ -206,18 +219,22 @@ Rts2DevTelescopeIr::ready ()
 int
 Rts2DevTelescopeIr::baseInfo ()
 {
+  std::string serial;
+  int status = 0;
+
   telLongtitude = LONGITUDE;
   telLatitude = LATITUDE;
   telAltitude = ALTITUDE;
-  telParkDec = 0;
+  tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
+  strncpy (telSerialNumber, serial.c_str (), 64);
   return 0;
 }
 
 double
 Rts2DevTelescopeIr::get_loc_sid_time ()
 {
-  return 15 * ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
-    LONGITUDE;
+  return ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
+    telLongtitude / 15.0;
 }
 
 int
@@ -287,7 +304,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 
   status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
-  status = tpl_setw ("POINTING.TRACK", 4, &status);
+  status = tpl_set ("POINTING.TRACK", 4, &status);
 
   if (status)
     return -1;
@@ -334,7 +351,7 @@ Rts2DevTelescopeIr::startPark ()
 {
   int status = 0;
   // Park to south+zenith
-  status = tpl_setw ("POINTING.TRACK", 0, &status);
+  status = tpl_set ("POINTING.TRACK", 0, &status);
   usleep (100000);		//0.1s
   status = tpl_setw ("AZ.TARGETPOS", 0, &status);
   status = tpl_setw ("ZD.TARGETPOS", 0, &status);
