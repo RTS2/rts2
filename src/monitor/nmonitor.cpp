@@ -474,7 +474,7 @@ Rts2NMonitor::relocatesWindows ()
       if (!conn->hasWindow ())
 	{
 	  connWin =
-	    newwin (LINES / 2, COLS / 4, 1 + LINES / 4 * (win_num / 4),
+	    newwin (LINES / 2, COLS / 4, 1 + LINES / 4 * ((win_num - 1) / 4),
 		    COLS / 4 * ((win_num - 1) % 4));
 	  conn->setWindow (connWin);
 	}
