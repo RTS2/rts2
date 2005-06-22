@@ -123,6 +123,18 @@ AC_SUBST(PARALIB)
 AC_SUBST(LIB_PARA)
 AC_SUBST(INC_PARA)
 
+# check for PCI8255
+AC_ARG_WITH(pci8255,
+[  --with-pic8255          path to PCI8255 sources, build Dublin dome],
+PCI8255="${withval}";
+LIB_PCI8255="-L${PCI8255}";
+INC_PCI8255="-I${PCI8255}",
+[PCI8255=no])
+
+AM_CONDITIONAL(PCI8255, test x$PCI8255 != xno)
+AC_SUBST(PCI8255)
+AC_SUBST(LIB_PCI8255)
+AC_SUBST(INC_PCI8255)
 
 # Checks for libraries.
 
