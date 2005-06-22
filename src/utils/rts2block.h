@@ -70,6 +70,7 @@ public:
   virtual int send (char *message);
   int sendValue (char *name, int value);
   int sendValue (char *name, int val1, int val2);
+  int sendValue (char *name, int val1, double val2);
   int sendValue (char *name, char *value);
   int sendValue (char *name, double value);
   int sendCommandEnd (int num, char *message);
