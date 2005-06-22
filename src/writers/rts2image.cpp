@@ -244,10 +244,12 @@ Rts2Image::renameImage (char *new_filename)
   if (strcmp (new_filename, imageName))
     {
       saveImage ();
+      ret = mkpath (new_filename, 0777);
+      if (ret)
+	return ret;
       ret = rename (imageName, new_filename);
       if (!ret)
 	{
-	  delete imageName;
 	  openImage (new_filename);
 	}
     }
@@ -336,8 +338,7 @@ Rts2Image::getValue (char *name, char *value, char *comment)
 {
   if (!ffile)
     return -1;
-  fits_read_key (ffile, TSTRING, name, (void *) &value, comment,
-		 &fits_status);
+  fits_read_key (ffile, TSTRING, name, (void *) value, comment, &fits_status);
   return fitsStatusValue (name);
 }
 
@@ -346,10 +347,10 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
   if (!ffile)
     return 0;
-  setValue ("X", im_h->x, "detector X coordinate");
-  setValue ("Y", im_h->y, "detector Y coordinate");
-  setValue ("BINN_V", im_h->binnings[0], "X axis binning");
-  setValue ("BINN_H", im_h->binnings[1], "Y axis binning");
+  setValue ("X", im_h->x, "image beginning - detector X coordinate");
+  setValue ("Y", im_h->y, "image beginning - detector Y coordinate");
+  setValue ("BIN_V", im_h->binnings[0], "X axis binning");
+  setValue ("BIN_H", im_h->binnings[1], "Y axis binning");
   setValue ("FILTER", im_h->filter, "filter used for image");
   setValue ("SHUTTER", im_h->shutter,
 	    "shutter state (1 - open, 2 - closed, 3 - synchro)");

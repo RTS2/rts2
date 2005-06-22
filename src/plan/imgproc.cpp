@@ -121,7 +121,8 @@ Rts2ImageProc::baseInfo ()
 int
 Rts2ImageProc::sendInfo (Rts2Conn * conn)
 {
-  conn->sendValue ("que_size", (int) imagesQue.size ());
+  conn->sendValue ("que_size",
+		   (int) imagesQue.size () + (runningImage ? 1 : 0));
 }
 
 void
