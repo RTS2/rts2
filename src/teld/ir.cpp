@@ -173,7 +173,7 @@ Rts2DevTelescopeIr::init ()
       return -1;
     }
 
-  tplc = new Client (ir_ip, ir_port, 2000);
+  tplc = new Client (ir_ip, ir_port);
 
   syslog (LOG_DEBUG,
 	  "Status: ConnID = %i, connected: %s, authenticated %s, Welcome Message = %s",
@@ -200,11 +200,42 @@ Rts2DevTelescopeIr::idle ()
   if (status == 0 && listCount > 0)
     {
       // print errors to log & ends..
+      string::size_type pos = 1;
+      string::size_type lastpos = 1;
       std::string list;
       status = tpl_get ("CABINET.STATUS.LIST", list, &status);
       if (status == 0)
-	syslog (LOG_ERR, "Telescope errors: %s", list.c_str ());
-      listCount = 1;
+	syslog (LOG_ERR, "Rts2DevTelescopeIr::idle Telescope errors: %s",
+		list.c_str ());
+      // decode errors
+      while (true)
+	{
+	  int errn;
+	  char *txt;
+	  std::string desc;
+	  if (lastpos > list.size ())
+	    break;
+	  pos = list.find (',', lastpos);
+	  if (pos == string::npos)
+	    pos = list.find ('"', lastpos);
+	  if (pos == string::npos)
+	    break;		// we reach string end..
+	  errn = atoi (list.substr (lastpos, pos).c_str ());
+	  asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errn & 0x00ffffff);
+	  status = 0;
+	  status = tpl_get (txt, desc, &status);
+	  if (status)
+	    syslog (LOG_ERR,
+		    "Rts2DevTelescopeIr::idle Telescope getting error: %s sev:%x err:%x",
+		    list.substr (lastpos, pos).c_str (),
+		    errn & 0xff000000, errn & 0x00ffffff);
+	  else
+	    syslog (LOG_DEBUG,
+		    "Rts2DevTelescopeIr::idle Telescope sev: %x err: %x desc: %s",
+		    errn & 0xff000000, errn & 0x00ffffff, desc.c_str ());
+	  lastpos = pos + 1;
+	  free (txt);
+	}
       tpl_set ("CABINET.STATUS.CLEAR", 1, &status);
     }
   return Rts2DevTelescope::idle ();
