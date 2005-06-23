@@ -348,13 +348,17 @@ Rts2DevTelescopeIr::checkErrors ()
     }
   // clean from list old errors..
   time (&now);
-  for (errIter = errorcodes.begin (); errIter != errorcodes.end (); errIter++)
+  for (errIter = errorcodes.begin (); errIter != errorcodes.end ();)
     {
       errt = *errIter;
       if (errt->clean (now))
 	{
-	  errorcodes.erase (errIter);
+	  errIter = errorcodes.erase (errIter);
 	  delete errt;
+	}
+      else
+	{
+	  errIter++;
 	}
     }
 }
@@ -416,19 +420,19 @@ Rts2DevTelescopeIr::checkPower ()
 		  status);
 	  return;
 	}
-    }
-  while (power_state == 0.5)
-    {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeIr::checkPower waiting for power up");
-      sleep (5);
-      status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
-      if (status)
+      while (power_state == 0.5)
 	{
-	  syslog (LOG_ERR,
-		  "Rts2DevTelescopeIr::checkPower power_state ret: %i",
-		  status);
-	  return;
+	  syslog (LOG_DEBUG,
+		  "Rts2DevTelescopeIr::checkPower waiting for power up");
+	  sleep (5);
+	  status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
+	  if (status)
+	    {
+	      syslog (LOG_ERR,
+		      "Rts2DevTelescopeIr::checkPower power_state ret: %i",
+		      status);
+	      return;
+	    }
 	}
     }
   while (true)
