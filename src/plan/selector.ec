@@ -284,9 +284,9 @@ Selector::select_next_airmass (time_t c_start, Target * plan,
     img_count
     FROM
     targets_enabled targets,
-    targets_images
+    targets_imgcount
     WHERE
-    targets.tar_id = targets_images.tar_id AND
+    targets.tar_id = targets_imgcount.tar_id AND
     targets.type_id =:obs_type AND
     (abs (obj_airmass (tar_ra, tar_dec,:st,:db_lon,:db_lat) -:t_airmass)) <
     0.2 AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
@@ -419,11 +419,15 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
   int ot_imgcount;
   int ot_minpause;
   int ot_isnull;
+  int ot_isnull_imgc;
   float d_az_end = az_end;
   float d_az_start = az_start;
   float db_lon = lon;
   float db_lat = lat;
   char obs_type = TYPE_OPORTUNITY;
+
+  int sql_state; // whenewer we use _all or only ot with images
+  
   EXEC SQL END DECLARE SECTION;
 
   db_lock ();
@@ -440,28 +444,63 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
     EXTRACT (EPOCH FROM ot_minpause)
     FROM
     targets_enabled targets,
-    targets_images,
+    targets_imgcount,
     ot
     WHERE
     ot.tar_id = targets.tar_id AND
-    targets.tar_id = targets_images.tar_id AND
+    targets.tar_id = targets_imgcount.tar_id AND
     type_id =:obs_type AND
     obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 10
     AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
 	 obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) >:d_az_start)
     ORDER BY ot_priority DESC, img_count ASC, alt DESC, ot_imgcount DESC;
   EXEC SQL OPEN obs_cursor_to;
+
+  EXEC SQL DECLARE obs_cursor_to_all CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
+    ot_imgcount,
+    EXTRACT (EPOCH FROM ot_minpause)
+    FROM
+    targets_enabled targets,
+    ot
+    WHERE
+    ot.tar_id = targets.tar_id AND
+    type_id =:obs_type AND
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 10
+    AND (obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) <:d_az_end OR
+	 obj_az (tar_ra, tar_dec,:st,:db_lon,:db_lat) >:d_az_start)
+    ORDER BY ot_priority DESC, alt DESC, ot_imgcount DESC;
   test_sql;
+  sql_state = 0;
   while (1)
     {
       int last_o;
       sqlca.sqlcode = 0;
-      EXEC SQL FETCH next FROM obs_cursor_to
-	INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
-      if (sqlca.sqlcode)
-	goto err;
+      switch (sql_state)
+      {
+        case 0:
+          EXEC SQL FETCH next FROM obs_cursor_to
+  	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount:ot_isnull_imgc,:ot_minpause:ot_isnull;
+	  if (sqlca.sqlcode < 0)
+	    goto err;
+          if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	    break;
+	  sql_state = 1;
+	  EXEC SQL OPEN obs_cursor_to_all;
+	case 1:
+	  EXEC SQL FETCH next FROM obs_cursor_to_all
+	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount:ot_isnull_imgc,:ot_minpause:ot_isnull;
+	  if (sqlca.sqlcode)
+	    goto err;
+	  break;
+      }  
       if (ot_isnull)
 	ot_minpause = 1800;
+      if (ot_isnull_imgc)
+        ot_imgcount = 100;
       last_o = db_last_observation (tar_id);
       printf ("%8i\t%+03.3f\t%+03.3f\t%+03.3f\t%i\t%i\n", tar_id, ra, dec,
 	      alt, ot_imgcount, ot_minpause);
@@ -473,11 +512,19 @@ Selector::select_next_to (time_t * c_start, Target * plan, float az_end,
 	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, *c_start,
 		      PLAN_TOLERANCE, TYPE_OPORTUNITY);
 	  EXEC SQL CLOSE obs_cursor_to;
+	  if (sql_state == 1)
+	  {
+	    EXEC SQL CLOSE obs_cursor_to;
+	  }
 	  db_unlock ();
 	  return 0;
 	}
     }
   EXEC SQL CLOSE obs_cursor_to;
+  if (sql_state == 1)
+  {
+    EXEC SQL CLOSE obs_cursor_to_all;
+  }
   test_sql;
   db_unlock ();
 #undef test_sql
@@ -634,6 +681,8 @@ Selector::select_next_photometry (time_t * c_start, Target * plan, float lon,
   char obs_type = TYPE_PHOTOMETRIC;
   EXEC SQL END DECLARE SECTION;
 
+  int sql_state = 0;
+
   db_lock ();
 #define test_sql if (sqlca.sqlcode < 0) goto err
   st = ln_get_mean_sidereal_time (ln_get_julian_from_timet (c_start));
@@ -648,11 +697,11 @@ Selector::select_next_photometry (time_t * c_start, Target * plan, float lon,
     EXTRACT (EPOCH FROM ot_minpause)
     FROM
     targets_enabled targets,
-    targets_images,
+    targets_imgcount,
     ot
     WHERE
     ot.tar_id = targets.tar_id AND
-    targets.tar_id = targets_images.tar_id AND
+    targets.tar_id = targets_imgcount.tar_id AND
     type_id =:obs_type AND
     obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 10
     AND (abs (tar_ra -:st_deg) > 15.0)
@@ -660,15 +709,47 @@ Selector::select_next_photometry (time_t * c_start, Target * plan, float lon,
     abs (obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) - 40) ASC,
     ot_priority DESC, img_count ASC, ot_imgcount DESC;
   EXEC SQL OPEN obs_cursor_photometric;
+  EXEC SQL DECLARE obs_cursor_photometric_all CURSOR FOR SELECT
+    targets.tar_id,
+    tar_ra,
+    tar_dec,
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) AS alt,
+    ot_imgcount,
+    EXTRACT (EPOCH FROM ot_minpause)
+    FROM
+    targets_enabled targets,
+    ot
+    WHERE
+    ot.tar_id = targets.tar_id AND
+    type_id =:obs_type AND
+    obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) > 10
+    AND (abs (tar_ra -:st_deg) > 15.0)
+    ORDER BY
+    abs (obj_alt (tar_ra, tar_dec,:st,:db_lon,:db_lat) - 40) ASC,
+    ot_priority DESC, ot_imgcount DESC;
   test_sql;
   while (1)
     {
       int last_o;
       sqlca.sqlcode = 0;
-      EXEC SQL FETCH next FROM obs_cursor_photometric
-	INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
-      if (sqlca.sqlcode)
-	goto err;
+      switch (sql_state)
+      {
+        case 0:
+	  EXEC SQL FETCH next FROM obs_cursor_photometric
+	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
+	  if (sqlca.sqlcode < 0)
+	    goto err;
+	  if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	    break;
+	  sql_state = 1;
+	  EXEC SQL OPEN obs_cursor_photometric_all;
+	case 1:
+	  EXEC SQL FETCH next FROM obs_cursor_photometric_all
+	    INTO:tar_id,:ra,:dec,:alt,:ot_imgcount,:ot_minpause:ot_isnull;
+	  if (sqlca.sqlcode)
+	    goto err;
+	  break;
+      }
       if (ot_isnull)
 	ot_minpause = 1800;
       last_o = db_last_observation (tar_id);
@@ -682,11 +763,19 @@ Selector::select_next_photometry (time_t * c_start, Target * plan, float lon,
 	  add_target (plan, TARGET_LIGHT, tar_id, ra, dec, *c_start,
 		      PLAN_TOLERANCE, obs_type);
 	  EXEC SQL CLOSE obs_cursor_photometric;
+	  if (sql_state == 1)
+	  {
+            EXEC SQL CLOSE obs_cursor_photometric_all;
+	  }
 	  db_unlock ();
 	  return 0;
 	}
     }
   EXEC SQL CLOSE obs_cursor_photometric;
+  if (sql_state == 1)
+  {
+    EXEC SQL CLOSE obs_cursor_photometric_all;
+  }
   test_sql;
   db_unlock ();
 #undef test_sql
@@ -739,7 +828,7 @@ Selector::select_next_terestial (time_t * c_start, Target * plan, float lon,
     terestial.tar_id = targets.tar_id
     AND type_id =:obs_type
     AND mod (:ter_minutes_start - ter_offset,
-	     ter_minutes) > (ter_minutes - 5);
+	     ter_minutes) > (ter_minutes - 65);
   EXEC SQL OPEN obs_cursor_terestial;
   test_sql;
   while (1)
@@ -753,7 +842,7 @@ Selector::select_next_terestial (time_t * c_start, Target * plan, float lon,
       if (sqlca.sqlcode)
 	goto err;
       last_o = db_last_observation (tar_id);
-      ot_minpause = 500;
+      ot_minpause = 3600;
       printf ("%8i\t%+03.3f\t%+03.3f\t%i\n", tar_id, ra, dec, ot_minpause);
       if (last_o == -1 || last_o >= ot_minpause)
 	{
@@ -789,12 +878,13 @@ Selector::hete_mosaic (Target * plan, double jd, time_t * obs_start,
 {
   struct ln_equ_posn sun;
   int frequency;
+  int dark_frequency;
   frequency = (int) get_device_double_default ("hete", "frequency", 1);
   if (frequency <= 1)
     // check for darks
-    if ((number %
-	 (int) get_device_double_default ("hete", "dark_frequency",
-					  DEFAULT_DARK_FREQUENCY)) == 1)
+    dark_frequency = (int) get_device_double_default ("hete",
+    "dark_frequency", DEFAULT_DARK_FREQUENCY);
+    if (dark_frequency > 0  && (number % dark_frequency) == 1)
       {
 	add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		    PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
@@ -803,7 +893,7 @@ Selector::hete_mosaic (Target * plan, double jd, time_t * obs_start,
   if ((number % frequency) == 0)
     {
       int step = (number / frequency) % 4;
-      ln_get_equ_solar_coords (jd, &sun);
+      ln_get_solar_equ_coords (jd, &sun);
       sun.ra = ln_range_degrees (sun.ra - 180 - 12.5 + 25.0 * (step > 1));
       sun.dec = (-sun.dec) - (10.0 / 2) + 10 * (step % 2);
       add_target (plan, TARGET_LIGHT, 50 + step, sun.ra, sun.dec,
@@ -832,7 +922,7 @@ Selector::flat_field (Target * plan, time_t * obs_start, int number,
 
   jd = ln_get_julian_from_timet (obs_start);
 
-  ln_get_equ_solar_coords (jd, &sun);
+  ln_get_solar_equ_coords (jd, &sun);
   sun.ra = ln_range_degrees (sun.ra);
   ln_get_hrz_from_equ (&sun, &observer, jd, &sun_az);
   sun_az.az = ln_range_degrees (sun_az.az + 180.0 - 3 + 2 * (number % 4));
@@ -929,7 +1019,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
   if ((last_good_img >= 0 && last_good_img < 3600) || ignore_astro)
     {
       printf ("Trying OT\n");
-      if (number % dark_frequency == 1)	// get the darks..
+      if (dark_frequency > 0 && number % dark_frequency == 1)	// get the darks..
 	{
 	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
@@ -959,7 +1049,10 @@ Selector::get_next_plan (Target * plan, int selector_type,
 
     case SELECTOR_GPS:
       // every 50 image will be dark..
-      if ((number % (int) get_device_double_default ("gps", "dark_frequency", dark_frequency)) == 1)	// because of HETE 
+      int gps_dark_frequency;
+      gps_dark_frequency = (int) get_device_double_default ("gps",
+      "dark_frequency", dark_frequency);
+      if (gps_dark_frequency > 0 && (number % gps_dark_frequency) == 1)	// because of HETE 
 	{
 	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
@@ -977,7 +1070,7 @@ Selector::get_next_plan (Target * plan, int selector_type,
     case SELECTOR_ELL:
     case SELECTOR_AIRMASS:
       // every 50 image will be dark..
-      if (number % dark_frequency == 1)	// because of HETE 
+      if (dark_frequency > 0 && number % dark_frequency == 1)	// because of HETE 
 	{
 	  add_target (plan, TARGET_DARK, -1, 0, 0, *obs_start,
 		      PLAN_DARK_TOLERANCE, TYPE_TECHNICAL);
@@ -1046,6 +1139,12 @@ Selector::free_plan (Target * plan)
   free (plan);
 
   for (; last; plan = last, last = last->next, free (plan));
+}
+
+int
+Selector::get_obs_id ()
+{
+
 }
 
 int

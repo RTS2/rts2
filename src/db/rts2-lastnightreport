@@ -7,7 +7,7 @@ Images
 =======================================================================================
 EOF
 
-psql stars -c "select img_id, camera_name, obs_id, img_date, img_exposure, img_temperature, img_filter, imgrange (astrometry) from images where now() - img_date < '1 day' order by img_date desc;"
+psql stars -c "select tar_id, img_id, camera_name, images.obs_id, img_date, img_exposure, img_temperature, img_filter, imgrange (astrometry) from images, observations where now() - img_date < '1 day' and images.obs_id = observations.obs_id order by img_date desc;"
 
 echo <<EOF
 =======================================================================================

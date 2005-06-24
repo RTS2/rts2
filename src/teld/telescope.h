@@ -7,8 +7,28 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+// types of reset
+// acquired from 
+
+typedef enum
+{ RESET_RESTART, RESET_WARM_START, RESET_COLD_START }
+resetStates;
+
 class Rts2DevTelescope:public Rts2Device
 {
+private:
+  Rts2Conn * move_connection;
+  int moveMark;
+  int numCorr;
+  int maxCorrNum;
+
+  double locCorRa;
+  double locCorDec;
+  int locCorNum;
+
+  int knowPosition;
+  double lastRa;
+  double lastDec;
 protected:
   char *device_file;
   char telType[64];
@@ -23,6 +43,10 @@ protected:
   double telLatitude;
   double telAltitude;
   double telParkDec;
+  virtual int isMovingFixed ()
+  {
+    return isMoving ();
+  }
   virtual int isMoving ()
   {
     return -2;
@@ -31,31 +55,61 @@ protected:
   {
     return -2;
   }
+  int move_fixed;
+  virtual void cancelPriorityOperations ()
+  {
+    stopMove ();
+  }
+  resetStates nextReset;
+
+  int getNumCorr ()
+  {
+    return numCorr;
+  }
 public:
   Rts2DevTelescope (int argc, char **argv);
+  virtual int processOption (int in_opt);
   virtual int init ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   int checkMoves ();
   virtual int idle ();
+  virtual int changeMasterState (int new_state);
+  virtual void deleteConnection (Rts2Conn * in_conn)
+  {
+    if (in_conn == move_connection)
+      move_connection = NULL;
+  }
 
   // callback functions for Camera alone
   virtual int ready ()
   {
     return -1;
-  };
+  }
   virtual int info ()
   {
     return -1;
-  };
+  }
   virtual int baseInfo ()
   {
     return -1;
-  };
+  }
   virtual int startMove (double tar_ra, double tar_dec)
   {
     return -1;
-  };
+  }
   virtual int endMove ()
+  {
+    return -1;
+  }
+  virtual int stopMove ()
+  {
+    return -1;
+  }
+  virtual int startMoveFixed (double tar_ha, double tar_dec)
+  {
+    return -1;
+  }
+  virtual int endMoveFixed ()
   {
     return -1;
   }
@@ -63,7 +117,8 @@ public:
   {
     return -1;
   }
-  virtual int correct (double cor_ra, double cor_dec)
+  virtual int correct (double cor_ra, double cor_dec, double real_ra,
+		       double real_dec)
   {
     return -1;
   }
@@ -87,6 +142,28 @@ public:
   {
     return -1;
   }
+  virtual int stopWorm ()
+  {
+    return -1;
+  }
+  virtual int startWorm ()
+  {
+    return -1;
+  }
+  virtual int resetMount (resetStates reset_state)
+  {
+    nextReset = reset_state;
+    return 0;
+  }
+
+  virtual int startDir (char *dir)
+  {
+    return -1;
+  }
+  virtual int stopDir (char *dir)
+  {
+    return -1;
+  }
 
   // callback functions from telescope connection
   virtual int ready (Rts2Conn * conn);
@@ -94,12 +171,18 @@ public:
   virtual int baseInfo (Rts2Conn * conn);
 
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
+  int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
-  int correct (Rts2Conn * conn, double cor_ra, double cor_dec);
+  int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec,
+	       double real_ra, double real_dec);
   int startPark (Rts2Conn * conn);
   int change (Rts2Conn * conn, double chng_ra, double chng_dec);
   int saveModel (Rts2Conn * conn);
   int loadModel (Rts2Conn * conn);
+  int stopWorm (Rts2Conn * conn);
+  int startWorm (Rts2Conn * conn);
+  int resetMount (Rts2Conn * conn, resetStates reset_state);
+  virtual int grantPriority (Rts2Conn * conn);
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn

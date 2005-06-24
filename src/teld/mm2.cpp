@@ -54,9 +54,10 @@
 #define MOTORS_ON	1
 #define MOTORS_OFF	-1
 
-#define HOME_DEC	87
+#define HOME_RA		37.9542
+#define HOME_DEC	87.3075
 
-// hard-coded LONGTITUDE & LATITUDE
+// hard-coded LOT & LAT
 #define TEL_LONG 	-6.239166667
 #define TEL_LAT		53.3155555555
 
@@ -70,9 +71,13 @@ private:
   double lastMoveRa, lastMoveDec;
 
   enum
-  { NOTMOVE, MOVE_HOME, MOVE_REAL }
-  move_state;
+  { NOT_TOGLING, TOGLE_1, TOGLE_2 } togle_state;
+  enum
+  { NOTMOVE, MOVE_HOME, MOVE_REAL } move_state;
   time_t move_timeout;
+
+  time_t next_togle;
+  int togle_count;
 
   // low-level functions..
   int tel_read (char *buf, int count);
@@ -106,12 +111,11 @@ private:
 
   void toggle_mode (int in_togle_count);
   void set_move_timeout (time_t plus_time);
-
-  double homeHA;
 public:
     Rts2DevTelescopeMM2 (int argc, char **argv);
     virtual ~ Rts2DevTelescopeMM2 (void);
   virtual int processOption (int in_opt);
+  virtual int idle ();
   virtual int init ();
   virtual int ready ();
   virtual int baseInfo ();
@@ -341,6 +345,7 @@ Rts2DevTelescopeMM2::tel_read_dec ()
  * TEMPORARY
  * MY EDIT MM2 local time
  *
+ * Hardcode local time and return 0
  */
 int
 Rts2DevTelescopeMM2::tel_read_localtime ()
@@ -368,17 +373,17 @@ Rts2DevTelescopeMM2::tel_read_localtime ()
  * TEMPORARY
  * MY EDIT MM2 sidereal time
  *
- * Dynostar doesn't support reading Sidereal time, 
+ * Hardcode sidereal time and return 0
+ * Dynostar doesn't suptel_desc reading Sidereal time, 
  * so read sidereal time from system
  */
 int
 Rts2DevTelescopeMM2::tel_read_siderealtime ()
 {
   tel_read_longtitude ();
-  telSiderealTime = (ln_get_mean_sidereal_time
-		     (ln_get_julian_from_sys ()) * 15.0) + telLongtitude;
+  telSiderealTime = ln_get_mean_sidereal_time
+    (ln_get_julian_from_sys ()) * 15.0 - telLongtitude;
   telSiderealTime = ln_range_degrees (telSiderealTime) / 15.0;
-  return 0;
 }
 
 /*! 
@@ -386,6 +391,9 @@ Rts2DevTelescopeMM2::tel_read_siderealtime ()
  * 
  * @return -1 on error, otherwise 0
  *
+ * MY EDIT MM2 latitude
+ *
+ * Hardcode latitude and return 0
  */
 int
 Rts2DevTelescopeMM2::tel_read_latitude ()
@@ -398,6 +406,9 @@ Rts2DevTelescopeMM2::tel_read_latitude ()
  * 
  * @return -1 on error, otherwise 0
  *
+ * MY EDIT MM2 longtitude
+ *
+ * Hardcode longtitude and return 0
  */
 int
 Rts2DevTelescopeMM2::tel_read_longtitude ()
@@ -516,6 +527,9 @@ Rts2DevTelescopeMM2::Rts2DevTelescopeMM2 (int argc, char **argv):Rts2DevTelescop
 
   move_state = NOTMOVE;
 
+  togle_state = NOT_TOGLING;
+  togle_count = 0;
+
   telLongtitude = TEL_LONG;
   telLatitude = TEL_LAT;
 }
@@ -536,6 +550,40 @@ Rts2DevTelescopeMM2::processOption (int in_opt)
     default:
       return Rts2DevTelescope::processOption (in_opt);
     }
+}
+
+int
+Rts2DevTelescopeMM2::idle ()
+{
+  time_t now;
+  time (&now);
+
+  int status;
+
+  switch (togle_state)
+    {
+    case TOGLE_1:
+      if (now > next_togle)
+	{
+	  // DTR low 
+	  status &= ~TIOCM_DTR;
+	  ioctl (tel_desc, TIOCMSET, &status);
+	  next_togle = now + 2;
+	  togle_state = TOGLE_2;
+	}
+      break;
+    case TOGLE_2:
+      if (now > next_togle)
+	{
+	  if (togle_count > 1)
+	    toggle_mode (togle_count - 1);
+	  else
+	    togle_state = NOT_TOGLING;
+	}
+      break;
+    }
+
+  return Rts2DevTelescope::idle ();
 }
 
 /*!
@@ -706,10 +754,7 @@ Rts2DevTelescopeMM2::tel_slew_to (double ra, double dec)
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
     return -1;
   if (retstr == '0')
-    {
-      set_move_timeout (100);
-      return 0;
-    }
+    return 0;
 
   return -1;
 }
@@ -790,27 +835,21 @@ void
 Rts2DevTelescopeMM2::toggle_mode (int in_togle_count)
 {
   int status;
-  for (int i = 0; i < in_togle_count; i++)
-    {
-      // get current state of control signals 
-      ioctl (tel_desc, TIOCMGET, &status);
 
-      // DTR high
-      status |= TIOCM_DTR;
-      ioctl (tel_desc, TIOCMSET, &status);
+// get current state of control signals 
+  ioctl (tel_desc, TIOCMGET, &status);
 
-      // get current state of control signals 
-      ioctl (tel_desc, TIOCMGET, &status);
+// DTR high
+  status |= TIOCM_DTR;
+  ioctl (tel_desc, TIOCMSET, &status);
 
-      sleep (4);
+// get current state of control signals 
+  ioctl (tel_desc, TIOCMGET, &status);
 
-      // DTR low 
-      status &= ~TIOCM_DTR;
-      ioctl (tel_desc, TIOCMSET, &status);
+  togle_state = TOGLE_1;
 
-      sleep (2);
-      syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::toggle_mode toggle ends");
-    }
+  next_togle = time (NULL) + 4;
+  togle_count = in_togle_count;
 }
 
 void
@@ -829,10 +868,7 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
 
   stopMove ();
 
-  tel_read_siderealtime ();
-  homeHA = telSiderealTime * 15.0 + 90;
-
-  ret = tel_slew_to (homeHA, HOME_DEC);
+  ret = tel_slew_to (HOME_RA, HOME_DEC);
 
   if (ret)
     {
@@ -841,6 +877,7 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
     }
 
   move_state = MOVE_HOME;
+  set_move_timeout (100);
   lastMoveRa = tar_ra;
   lastMoveDec = tar_dec;
   return 0;
@@ -854,7 +891,7 @@ Rts2DevTelescopeMM2::isMoving ()
   switch (move_state)
     {
     case MOVE_HOME:
-      ret = tel_check_coords (homeHA, HOME_DEC);
+      ret = tel_check_coords (HOME_RA, HOME_DEC);
       switch (ret)
 	{
 	case -1:
@@ -868,6 +905,7 @@ Rts2DevTelescopeMM2::isMoving ()
 	  if (ret)
 	    return -1;
 	  move_state = MOVE_REAL;
+	  set_move_timeout (100);
 	  return USEC_SEC / 10;
 	}
       break;
@@ -892,8 +930,9 @@ Rts2DevTelescopeMM2::isMoving ()
 int
 Rts2DevTelescopeMM2::endMove ()
 {
-  // wait for mount to settle down after move
-  sleep (2);
+// TEST 
+// TURN OFF TRACKING AFTER MOVE
+  toggle_mode (2);
   return 0;
 }
 
@@ -970,35 +1009,20 @@ Rts2DevTelescopeMM2::correct (double cor_ra, double cor_dec, double real_ra,
 int
 Rts2DevTelescopeMM2::startPark ()
 {
-  int ret;
-  tel_read_siderealtime ();
-  homeHA = telSiderealTime * 15.0 + 90;
-
-  ret = tel_slew_to (homeHA, HOME_DEC);
-
-  return ret;
+// turn off tracking    
+  toggle_mode (1);
+  return 0;
 }
 
 int
 Rts2DevTelescopeMM2::isParking ()
 {
-  int ret;
-
-  ret = tel_check_coords (homeHA, HOME_DEC);
-  switch (ret)
-    {
-    case -1:
-      return -1;
-    case 0:
-      return USEC_SEC / 10;
-    }
   return -2;
 }
 
 int
 Rts2DevTelescopeMM2::endPark ()
 {
-  toggle_mode (2);
   return 0;
 }
 

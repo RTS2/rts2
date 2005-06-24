@@ -29,7 +29,7 @@
 #include "centering.h"
 
 char *phot_filters[] = {
-  "A", "B", "C", "D", "E", "F"
+  "D", "u", "v", "b", "y", "U", "1", "2", "3", "4"
 };
 
 struct device *telescope;

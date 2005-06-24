@@ -28,6 +28,7 @@ private:
   struct T9_stat *Tstat;
   double get_loc_sid_time ();
   int timeout;
+  time_t startTime;
 public:
     Rts2DevTelescopeBridge (int argc, char **argv);
     virtual ~ Rts2DevTelescopeBridge (void);
@@ -50,6 +51,7 @@ Rts2DevTelescope (argc, argv)
   _Tctrl_handle = -1;
   _Tstat_handle = -1;
   timeout = 0;
+  startTime = 0;
 }
 
 Rts2DevTelescopeBridge::~Rts2DevTelescopeBridge (void)
@@ -138,11 +140,12 @@ int
 Rts2DevTelescopeBridge::startMove (double ra, double dec)
 {
   int timeout = 0;
-  Tctrl->power = 1;
+  Tctrl->power = 0;		//changed
   Tctrl->ra = ra;
   Tctrl->dec = dec;
 
   timeout = 0;
+  time (&startTime);
 
   return 0;
 }
@@ -150,6 +153,10 @@ Rts2DevTelescopeBridge::startMove (double ra, double dec)
 int
 Rts2DevTelescopeBridge::isMoving ()
 {
+  time_t now;
+  time (&now);
+  if (now - startTime < 3)
+    return USEC_SEC;
   timeout++;
   // finish due to error
   if (timeout > 200)
@@ -179,6 +186,7 @@ Rts2DevTelescopeBridge::startPark ()
 {
   Tctrl->ra = get_loc_sid_time () - 30;
   Tctrl->dec = Tstat->dec;
+  time (&startTime);
   return 0;
 }
 
@@ -191,7 +199,7 @@ Rts2DevTelescopeBridge::isParking ()
 int
 Rts2DevTelescopeBridge::endPark ()
 {
-  Tctrl->power = 0;
+  Tctrl->power = 1;		//changed
   return 0;
 }
 
@@ -199,7 +207,7 @@ int
 Rts2DevTelescopeBridge::stop ()
 {
   // should do the work
-  Tctrl->power = 1;
+  Tctrl->power = 0;		//changed
   Tctrl->ra = telRa;
   Tctrl->dec = telDec;
 

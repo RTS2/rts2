@@ -174,7 +174,9 @@ protected:
   char serialNumber[64];
 
   float nightCoolTemp;
-  virtual void cancelPriorityOperations ();
+protected:
+    virtual void cancelPriorityOperations ();
+  int defBinning;
 
 public:
     Rts2DevCamera (int argc, char **argv);

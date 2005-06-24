@@ -85,7 +85,8 @@ private:
   virtual int connectionError ()
   {
     conn_state = CONN_BROKEN;
-    close (sock);
+    if (sock)
+      close (sock);
     sock = -1;
     return -1;
   }
@@ -109,6 +110,7 @@ protected:
   void setOtherType (int other_device_type);
 
   Rts2DevClient *otherDevice;
+  int otherType;
 
 public:
   Rts2Conn (Rts2Block * in_master);
@@ -138,8 +140,10 @@ public:
   virtual int send (char *message);
   int sendValue (char *name, int value);
   int sendValue (char *name, int val1, int val2);
+  int sendValue (char *name, int val1, double val2);
   int sendValue (char *name, char *value);
   int sendValue (char *name, double value);
+  int sendValue (char *name, char *val1, int val2);
   int sendValueTime (char *name, time_t * value);
   int sendCommandEnd (int num, char *message);
   virtual int processLine ();
@@ -234,7 +238,7 @@ public:
   {
   }
 
-  void setConnState (conn_state_t new_conn_state)
+  virtual void setConnState (conn_state_t new_conn_state)
   {
     conn_state = new_conn_state;
   }
@@ -259,6 +263,8 @@ public:
   }
 
   Rts2Value *getValue (char *value_name);
+
+  int getOtherType ();
 protected:
   virtual int command ();
   virtual int message ();

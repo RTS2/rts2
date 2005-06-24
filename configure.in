@@ -110,6 +110,32 @@ AC_SUBST(OPENTPL)
 AC_SUBST(LIB_OPENTPL)
 AC_SUBST(INC_OPENTPL)
 
+# check for paramount library 
+AC_ARG_WITH(paralib,
+[  --with-paralib          path to Paramount library, build Paramount driver],
+PARALIB="${withval}";
+LIB_PARA="${PARALIB}/libmks3.o";
+INC_PARA="-I${PARALIB}",
+[PARALIB=no])
+
+AM_CONDITIONAL(PARALIB, test x$PARALIB != xno)
+AC_SUBST(PARALIB)
+AC_SUBST(LIB_PARA)
+AC_SUBST(INC_PARA)
+
+# check for PCI8255
+AC_ARG_WITH(pci8255,
+[  --with-pic8255          path to PCI8255 sources, build Dublin dome],
+PCI8255="${withval}";
+LIB_PCI8255="-L${PCI8255}";
+INC_PCI8255="-I${PCI8255}",
+[PCI8255=no])
+
+AM_CONDITIONAL(PCI8255, test x$PCI8255 != xno)
+AC_SUBST(PCI8255)
+AC_SUBST(LIB_PCI8255)
+AC_SUBST(INC_PCI8255)
+
 # Checks for libraries.
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -243,7 +269,7 @@ if test "x${libnova}" = "xyes" -a "x${psql}" = "xyes"; then
 	# Check for PostgreSQL
 	AC_POSTGRESQL
 	AC_ECPG
-	AC_SUBST([PSQL_SUBDIRS],['db plan pgsql grb bckimages sql'])
+	AC_SUBST([PSQL_SUBDIRS],['db plan pgsql bckimages sql'])
 fi
 
 # Checks for library functions.
@@ -316,6 +342,7 @@ CCD's:
 
 MOUNT's:
   opentpl       ${OPENTPL}
+  paralib       ${PARALIB}
 
 ***************************************
 

@@ -129,7 +129,7 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
 }
 
 int
-FocusingTarget::getScript (char *device_name, char *buf)
+FocusingTarget::getScript (const char *device_name, char *buf)
 {
   buf[0] = COMMAND_FOCUSING;
   buf[1] = 0;
@@ -155,7 +155,7 @@ LunarTarget::getRST (struct ln_rst_time *rst, double JD)
 }
 
 int
-LunarTarget::getScript (char *deviceName, char *buf)
+LunarTarget::getScript (const char *deviceName, char *buf)
 {
   strcpy (buf, "E 1");
   return 0;
@@ -187,7 +187,7 @@ ConstTarget (in_tar_id, in_obs)
 }
 
 int
-TargetGRB::getScript (char *deviceName, char *buf)
+TargetGRB::getScript (const char *deviceName, char *buf)
 {
   time_t now;
   time (&now);

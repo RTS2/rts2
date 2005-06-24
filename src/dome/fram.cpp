@@ -265,6 +265,8 @@ Rts2ConnFramWeather::receive (fd_set * set)
       if (ret != 9)
 	{
 	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
+	  rain = 1;
+	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
 	  return data_size;
 	}
       statDate.tm_isdst = 0;
@@ -1078,6 +1080,7 @@ Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
 
 Rts2DevDomeFram::~Rts2DevDomeFram (void)
 {
+  stopMove ();
   if (wdc_file)
     closeWDC ();
   stopMove ();
@@ -1152,7 +1155,8 @@ int
 Rts2DevDomeFram::observing ()
 {
   //handle_zasuvky (OBSERVING);
-  openDome ();
+  if ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED)
+    return openDome ();
   return 0;
 }
 

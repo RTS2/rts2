@@ -105,4 +105,11 @@ public:
   Rts2CommandMove (Rts2Block * in_master, double ra, double dec);
 };
 
+class Rts2CommandCorrect:public Rts2Command
+{
+public:
+  Rts2CommandCorrect (Rts2Block * in_master, int corr_mark, double ra,
+		      double dec, double ra_err, double dec_err);
+};
+
 #endif /* !__RTS2_COMMAND__ */

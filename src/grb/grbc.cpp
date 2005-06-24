@@ -23,6 +23,8 @@
 
 #include "image_info.h"
 
+#include "grbc.h"
+
 double exposure_time;
 #define EXPOSURE_TIME_DEFAULT   120
 #define EXPOSURE_TIMEOUT	50
@@ -42,6 +44,9 @@ observing;
 pthread_t image_que_thread;
 
 time_t last_succes = 0;
+
+static int test_burst_timeout = 0;
+static int test_burst_id = 10;
 
 pthread_t iban_thread;
 pthread_mutex_t observing_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -65,6 +70,7 @@ get_info (struct grb *entry, struct device *tel, struct device *cam)
   info->target_id = entry->tar_id;
   info->observation_id = entry->obs_id;
   info->target_type = TARGET_LIGHT;
+  info->obs_type = 'G';
   if ((ret = devcli_command (cam, NULL, "info")))
     {
       printf ("camera info error\n");
@@ -84,6 +90,7 @@ readout ()
   struct device *camera;
   devcli_wait_for_status (telescope, "telescope", TEL_MASK_MOVING,
 			  TEL_OBSERVING, 120);
+  devcli_command_all (DEVICE_TYPE_CCD, "base_info");
   devcli_command_all (DEVICE_TYPE_CCD, "expose 0 1 %f", exposure_time);
 
   devcli_command (telescope, NULL, "info");
@@ -103,13 +110,18 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
   struct ln_lnlat_posn observer;
   struct ln_hrz_posn hrz;
 
+  printf ("processing event : %i curr: %i\n date: %li curr_date: %li", id,
+	  observing.grb_id, *date, observing.created);
+
   if (observing.grb_id == id)
     {
       // cause I'm not interested in old updates
       if (observing.seqn < seqn)
 	{
+	  printf ("update detected: %i seq: %i\n", observing.seqn, seqn);
 	  pthread_mutex_lock (&observing_lock);
 	  observing.seqn = seqn;
+	  observing.created = *date;
 	  observing.last_update = time (NULL);
 	  object.ra = ra;
 	  object.dec = dec;
@@ -118,16 +130,21 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
 	  pthread_mutex_unlock (&observing_lock);
 	}
     }
-  else if (observing.grb_id < id)	// -1 count as well..get the latest
+  else if (observing.grb_id == -1 || (observing.grb_id != -1 && observing.created < *date && id > TEST_BURST_RANGE))	// newer GRB..
     {
+      double JD;
+
       object.ra = ra;
       object.dec = dec;
 
       observer.lng = get_double_default ("longtitude", 6.733);
       observer.lat = get_double_default ("latitude", 37.1);
 
-      ln_get_hrz_from_equ (&object, &observer, ln_get_julian_from_sys (),
-			   &hrz);
+      JD = ln_get_julian_from_sys ();
+
+      ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
+
+      printf ("JD: %lf alt:%lf\n", JD, hrz.alt);
 
       if (hrz.alt >= -1)	// start observation - if not above horizont, don't care, we already observe something else
 	{
@@ -148,6 +165,21 @@ process_grb_event (int id, int seqn, double ra, double dec, time_t * date)
 
   // just add to planer
   return db_update_grb (id, &seqn, &ra, &dec, date, NULL, true);
+}
+
+extern void *
+receive_test (void *arg)
+{
+  process_grb_event_t pro_grb;
+  time_t tloc;
+
+  pro_grb = (process_grb_event_t) arg;
+  while (1)
+    {
+      sleep (test_burst_timeout);
+      time (&tloc);
+      pro_grb (test_burst_id, 1, 88, 22, &tloc);
+    }
 }
 
 int
@@ -179,10 +211,12 @@ main (int argc, char **argv)
     {
       static struct option long_option[] = {
 	{"port", 1, 0, 'p'},
+	{"test_burst_timeout", 1, 0, 't'},
+	{"test_burst_id", 1, 0, 'T'},
 	{"help", 0, 0, 'h'},
 	{0, 0, 0, 0}
       };
-      c = getopt_long (argc, argv, "p:h", long_option, NULL);
+      c = getopt_long (argc, argv, "p:t:T:h", long_option, NULL);
 
       if (c == -1)
 	break;
@@ -193,8 +227,17 @@ main (int argc, char **argv)
 	  port = atoi (optarg);
 	  break;
 	case 'h':
-	  printf ("Options:\n\tport|p <port_num>\t\tport of the server");
+	  printf ("Options:\n\tport|p <port_num>\t\tport of the server\n");
+	  printf
+	    ("\ttest_burst_timeout|t <n>\t\ttest burst every <n> seconds\n");
+	  printf ("\ttest_burst_id|T <n>\t\ttest burst ID, default to 10\n");
 	  exit (EXIT_SUCCESS);
+	case 't':
+	  test_burst_timeout = atoi (optarg);
+	  break;
+	case 'T':
+	  test_burst_id = atoi (optarg);
+	  break;
 	case '?':
 	  break;
 	default:
@@ -250,8 +293,16 @@ main (int argc, char **argv)
     }
   if (*(get_device_string_default ("grbc", "bacoclient", "Y")) == 'Y')
     {
-      printf ("Starting bacodine (as server) thread...");
+      printf ("Starting bacodine (as client) thread...");
       pthread_create (&iban_thread, NULL, receive_bacodine,
+		      (void *) process_grb_event);
+      thread_count++;
+      printf ("OK\n");
+    }
+  if (test_burst_timeout > 0)
+    {
+      printf ("starting test thread...");
+      pthread_create (&iban_thread, NULL, receive_test,
 		      (void *) process_grb_event);
       thread_count++;
       printf ("OK\n");

@@ -22,17 +22,19 @@
 #define MINDATAPORT		5556
 #define MAXDATAPORT		5656
 
-Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Block * in_master, char *in_name):
+Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Device * in_master, char *in_name):
 Rts2Conn (in_master)
 {
+  master = in_master;
   setName (in_name);
   conn_state = CONN_RESOLVING_DEVICE;
   address = NULL;
 }
 
-Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Block * in_master, Rts2Address * in_addr):Rts2Conn
+Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Device * in_master, Rts2Address * in_addr):Rts2Conn
   (in_master)
 {
+  master = in_master;
   conn_state = CONN_CONNECTING;
   setName (in_addr->getName ());
   setAddress (in_addr);
@@ -149,6 +151,15 @@ Rts2Dev2DevConn::setKey (int in_key)
     }
 }
 
+void
+Rts2Dev2DevConn::setConnState (conn_state_t new_conn_state)
+{
+  if (new_conn_state == CONN_CONNECTED)
+    sendValue ("this_device", master->getDeviceName (),
+	       master->getDeviceType ());
+  Rts2Conn::setConnState (new_conn_state);
+}
+
 int
 Rts2DevConn::connectionError ()
 {
@@ -171,6 +182,17 @@ Rts2DevConn::commandAuthorized ()
   else if (isCommand ("base_info"))
     {
       return master->baseInfo (this);
+    }
+  else if (isCommand ("this_device"))
+    {
+      char *deviceName;
+      int deviceType;
+      if (paramNextString (&deviceName)
+	  || paramNextInteger (&deviceType) || !paramEnd ())
+	return -2;
+      setName (deviceName);
+      setOtherType (deviceType);
+      return -1;
     }
   sendCommandEnd (DEVDEM_E_SYSTEM, "devcon unknow command");
   return -1;

@@ -520,6 +520,7 @@ get_model (char *filename)
 	printf ("unimplemented model %s\n", model->term[i]->name);
     }
 
+  fclose (mf);
 
   return 0;
 }
@@ -540,11 +541,13 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
 		   struct ln_lnlat_posn *obs,	/* observer location. if NULL: no refraction */
 		   double JD,	/* time */
 		   double aux1, double aux2,	/* auxiliary reading */
-		   struct ln_equ_posn *tel_pos	/* return: coords corrected for the model */
+		   struct ln_equ_posn *tel_pos,	/* return: coords corrected for the model */
+		   int back	/* reverse the correction? */
   )
 {
   int i, ret = 0;
   double Q;
+  double _r, _d;
 
   Q = ln_get_apparent_sidereal_time (JD) * 360.0 / 24.0;
 
@@ -553,31 +556,42 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
   else
     get_model (MODEL_PATH_N);
 
+
   tel_pos->ra = mean_pos->ra;
   tel_pos->dec = mean_pos->dec;
 
-  bonz (tel_pos);
+//  bonz (tel_pos);
+
+  _r = tel_pos->ra;
+  _d = tel_pos->dec;
 
   if (proper_motion)		/* pm may be omitted */
     applyProperMotion (tel_pos, tel_pos, proper_motion, JD);
   applyAberation (tel_pos, tel_pos, JD);
   applyPrecession (tel_pos, tel_pos, JD);
   if (obs)
-    applyRefraction (tel_pos, tel_pos, obs, JD);
+    {
+      applyRefraction (tel_pos, tel_pos, obs, JD);
+    }
 
-  bonz (tel_pos);
+  if (back)
+    {
+      tel_pos->ra = 2 * _r - tel_pos->ra;
+      tel_pos->dec = 2 * _d - tel_pos->dec;
+    }
+
+//     bonz (tel_pos);
 
   tel_pos->ra = in180 (Q - tel_pos->ra);	// make ha
 
-  bonz (tel_pos);
+//     bonz (tel_pos);
 
   for (i = 0; i < model->terms; i++)
     if (model->term[i]->apply)
       {
-	double _r, _d;
-#ifdef DEBUG
-	fprintf (stderr, "%s", model->term[i]->name);
-#endif
+//#ifdef DEBUG
+//      fprintf(stderr,"%s", model->term[i]->name);
+//#endif
 
 	_r = tel_pos->ra;
 	_d = tel_pos->dec;
@@ -586,15 +600,18 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
 			       aux2, 37.1);
 
 	// reverse direction
-	tel_pos->ra = 2 * _r - tel_pos->ra;
-	tel_pos->dec = 2 * _d - tel_pos->dec;
+	if (!back)
+	  {
+	    tel_pos->ra = 2 * _r - tel_pos->ra;
+	    tel_pos->dec = 2 * _d - tel_pos->dec;
+	  }
 
-	bonz (tel_pos);
+//      bonz (tel_pos);
       }
 
   tel_pos->ra = in360 (Q - tel_pos->ra);	// make ra from ha
 
-  bonz (tel_pos);
+//  bonz (tel_pos);
 
   return ret;
 }
@@ -609,22 +626,23 @@ static struct ln_lnlat_posn lazy_observer = {
 /* lazy func: correct me there coords simply (no proper motion, now!, in place) */
 // everything in degrees */
 void
-tpoint_apply_now (double *ra, double *dec, double aux1, double aux2)
+tpoint_apply_now (double *ra, double *dec, double aux1, double aux2, int rev)
 {
   struct ln_equ_posn equ;
   struct ln_equ_posn mean_pos;
   double JD;
   int ret = 0;
 
+  printf ("[%d]", rev);
+
   mean_pos.ra = *ra;
   mean_pos.dec = *dec;
 
   JD = ln_get_julian_from_sys ();
 
-
-
   ret =
-    tpoint_correction (&mean_pos, NULL, &lazy_observer, JD, aux1, aux2, &equ);
+    tpoint_correction (&mean_pos, NULL, &lazy_observer, JD, aux1, aux2, &equ,
+		       rev);
 
   // If error happened do not modify values
   if (ret)
@@ -727,7 +745,7 @@ main ()
 	  printf (" 0 0 2000 ", r, d);
 
 	  ra = r;
-	  de = d tpoint_apply_now (&r, &d, (float) flip, 0);
+	  de = d tpoint_apply_now (&r, &d, (float) flip, 0, 0);
 
 	  // reverse the direction of the correction :*)
 	  r = 2 * ra - r;

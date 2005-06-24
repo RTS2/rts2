@@ -1,7 +1,6 @@
 # $Id$
 
 bin_PROGRAMS = rts2-executor rts2-imgproc
-
 noinst_HEADERS = target.h rts2execcli.h rts2script.h rts2connimgprocess.h
 
 rts2_executor_SOURCES = executor.cpp target.cpp sub_targets.cpp rts2execcli.cpp rts2script.cpp

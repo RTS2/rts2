@@ -197,9 +197,9 @@ astrometry_image (struct image_que *actual_image)
 		}
 	      else
 		{
-		  if (devcli_command (tel, NULL, "correct %i %f %f",
+		  if (devcli_command (tel, NULL, "correct %i %f %f %f %f",
 				      actual_image->correction_mark,
-				      ra_err / 60.0, dec_err / 60.0))
+				      ra_err / 60.0, dec_err / 60.0, ra, dec))
 		    perror ("telescope correct");
 		}
 	    }
@@ -214,7 +214,8 @@ astrometry_image (struct image_que *actual_image)
 
       // add image to db
       asprintf (&cmd,
-		"cd /images && rts2-fits2db %s|psql stars", filename + 8);
+		"cd /images && /usr/local/bin/rts2-fits2db %s|psql stars",
+		filename + 8);
 
       if (system (cmd))
 	{
@@ -366,6 +367,9 @@ data_handler (int sock, size_t size, struct image_info *image, void *arg)
     {
       struct image_que *new_que;
     case TARGET_LIGHT:
+      if (image->obs_type == 'T')
+	goto free_filename;
+
       printf ("putting %s to que\n", filename);
 
       new_que = (struct image_que *) malloc (sizeof (struct image_que));

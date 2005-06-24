@@ -3,6 +3,8 @@
 
 #include <time.h>
 
+#define TEST_BURST_RANGE 100
+
 #ifdef __cplusplus
 extern "C"
 {

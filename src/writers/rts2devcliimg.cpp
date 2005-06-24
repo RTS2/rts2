@@ -127,6 +127,8 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setValue ("TEL_NAME", connection->getName (),
 		       "name of telescope");
       image->setValue ("TEL_TYPE", getValueChar ("type"), "telescope type");
+      image->setValue ("TEL_MARK", getValueInteger ("correction_mark"),
+		       "mark used for telescope corretion");
       image->setValue ("RA", getValueDouble ("ra"), "telescope RA");
       image->setValue ("DEC", getValueDouble ("dec"), "telescope DEC");
       break;

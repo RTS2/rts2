@@ -283,11 +283,13 @@ Rts2Device (argc, argv, DEVICE_TYPE_CCD, 5554, "C0")
 
   nightCoolTemp = nan ("f");
   focuserDevice = NULL;
+  defBinning = 1;
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
   addOption ('F', "focuser", 1,
 	     "name of focuser device, which will be granted to do exposures without priority");
+  addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -321,6 +323,9 @@ Rts2DevCamera::processOption (int in_opt)
     case 'F':
       focuserDevice = optarg;
       break;
+    case 'b':
+      defBinning = atoi (optarg);
+      break;
     default:
       return Rts2Device::processOption (in_opt);
     }
@@ -336,6 +341,8 @@ Rts2DevCamera::initChips ()
       ret = chips[i]->init ();
       if (ret)
 	return ret;
+      if (defBinning != 1)
+	chips[i]->setBinning (defBinning, defBinning);
     }
   return 0;
 }

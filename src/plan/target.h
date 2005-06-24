@@ -10,6 +10,7 @@
 #include "../utils/objectcheck.h"
 
 #define MAX_READOUT_TIME		120
+#define PHOT_TIMEOUT			10
 #define EXPOSURE_TIMEOUT		50
 
 #define MAX_COMMAND_LENGTH              2000
@@ -35,6 +36,7 @@
 #define COMMAND_UTC_SLEEP	'U'
 #define COMMAND_CENTERING	'c'
 #define	COMMAND_FOCUSING	'f'
+#define COMMAND_MIRROR		'M'
 
 #define TARGET_FOCUSING		11
 

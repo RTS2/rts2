@@ -90,7 +90,7 @@ wait_loop:
       FD_SET (sock, &read_fd);
     }
 
-  if (go_for == 1 && !*logi)
+  if (go_for == 0 || go_for == 1 && !*logi)
     return 0;
 
   if (*logi)

@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include <libnova/libnova.h>
+#include <libnova/utility.h>
 #include "objectcheck.h"
 
 using namespace std;
@@ -87,10 +88,8 @@ ObjectCheck::is_good (double st, double ra, double dec, int hardness)
   std::vector < struct ln_equ_posn >::iterator Iter1;
 
   double ha = (ra - st * 15.0);	// normalize
-  ha /= 15;			// convert to hours
-
-  if (ha < 0)
-    ha = 24 - ha;
+  ha = ln_range_degrees (ha);
+  ha /= 15.0;
 
   double last_ra = 0, last_dec = 0;
 

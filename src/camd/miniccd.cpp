@@ -191,7 +191,8 @@ CameraMiniccdChip::isExposing ()
   if (ret > 0)
     return ret;
 
-  if (readoutLine >= (chipUsedReadout->height / usedBinningVertical))
+  if (!chipUsedReadout
+      || readoutLine >= (chipUsedReadout->height / usedBinningVertical))
     {
       return 0;
     }
@@ -267,7 +268,7 @@ CameraMiniccdChip::sendLineData (int numLines)
 {
   int send_data_size;
 
-  if (send_top >= dest_top)
+  if (send_top >= dest_top || !_data)
     {
       return -2;
     }
@@ -299,7 +300,6 @@ CameraMiniccdChip::sendLineData (int numLines)
 		  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
 	  return -2;
 	}
-
       send_top += CCD_MSG_IMAGE_LEN;
     }
   sendLine++;
@@ -322,6 +322,7 @@ CameraMiniccdChip::sendLineData (int numLines)
 int
 CameraMiniccdChip::stopExposure ()
 {
+  chipUsedReadout = NULL;
   CCD_ELEM_TYPE msg[CCD_MSG_ABORT_LEN / CCD_ELEM_SIZE];
   /*
    * Send the abort request.
@@ -530,7 +531,7 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
 
   if (!readoutConn)
     {
-      return -1;
+      return -3;
     }
   switch (slaveState)
     {
@@ -624,8 +625,12 @@ Rts2DevCameraMiniccd::initChips ()
       ret = chips[i]->init ();
       if (ret)
 	return ret;
+      if (defBinning != 1)
+	chips[i]->setBinning (defBinning, defBinning);
     }
-  return chips[0]->init ();
+  ret = chips[0]->init ();
+  chips[0]->setBinning (defBinning, defBinning);
+  return ret;
 };
 
 int

@@ -21,6 +21,62 @@
 
 pthread_mutex_t image_fits_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/*
+ * Calculate spiral position.
+ */
+void
+spiral (int total_step, int *step_x, int *step_y)
+{
+  int i;
+  int right, up;
+  int step;
+  int step_size_x;
+  int step_size_y;
+  int step_size;
+  int up_d;
+
+  step = 0;
+
+  *step_x = 0;
+  *step_y = 0;
+
+  step_size_x = 1;
+  step_size_y = 1;
+  step_size = step_size_x * 2 + step_size_y;
+
+  up_d = 1;
+
+  for (i = 0; i < total_step; i++)
+    {
+      right = 0;
+      up = 0;
+      if (step < step_size_x)
+	{
+	  up = 1;
+	}
+      else if (step < step_size_x + step_size_y)
+	{
+	  right = 1;
+	}
+      else
+	{
+	  up = -1;
+	}
+      *step_x += up_d * right;
+      *step_y += up_d * up;
+      step++;
+      if (step == step_size)
+	{
+	  up_d *= -1;
+	  if (up_d == 1)
+	    step_size_x++;
+	  step_size_y++;
+	  step_size = step_size_x * 2 + step_size_y;
+	  step = 0;
+	}
+    }
+}
+
 /*!
  * Init fits data.
  *
@@ -66,13 +122,12 @@ fits_create (struct fits_receiver_data *receiver, char *filename)
 }
 
 #define write_key(type, key, value, comment)\
-	if (type == TFLOAT && (isnan (*(value)) || isinf (*(value)))) return 0; \
+	if (!(type == TFLOAT && (isnan (*(value)) || isinf (*(value))))) {; \
+	status = 0; \
 	if (fits_update_key (fptr, type, key, value, comment, &status)) \
 	{ \
 		fits_report_error (stdout, status); \
-		errno = EINVAL; \
-		return -1; \
-	}
+	}}
 
 int
 write_camera (struct fits_receiver_data *receiver, struct image_info *info)
@@ -89,6 +144,10 @@ write_camera (struct fits_receiver_data *receiver, struct image_info *info)
   char *c, *start = NULL;
   int i = 0;
   int last_space = 1;
+
+  int step_x, step_y;
+
+  double step_ra, step_dec;
 
   fitsfile *fptr = receiver->ffile;
 
@@ -124,6 +183,16 @@ write_camera (struct fits_receiver_data *receiver, struct image_info *info)
   cam_yoa =
     get_device_double_default (camera_name, "cam_yoa",
 			       300) / info->binnings[1];
+
+  spiral (info->good_count %
+	  ((int) get_double_default ("centering_max_step", 20)), &step_x,
+	  &step_y);
+
+  step_ra = get_double_default ("centering_pix_ra", 20);
+  step_dec = get_double_default ("centering_pix_dec", 20);
+
+  cam_xoa += step_x * step_ra;
+  cam_yoa += step_y * step_dec;
 
   write_key (TFLOAT, "CAM_XOA", &cam_xoa, "X optical axe center");
   write_key (TFLOAT, "CAM_YOA", &cam_yoa, "Y optical axe center");

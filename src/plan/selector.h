@@ -70,6 +70,7 @@ public:
 		     float lon, float lat, int ignore_astro);
 
   void free_plan (Target * plan);
+  int get_obs_id ();
 };
 
 int createTarget (Target ** in_target, int tar_id, struct device *telescope,

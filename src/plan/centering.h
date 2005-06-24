@@ -4,6 +4,7 @@
 #include "../utils/devcli.h"
 #include "../utils/devconn.h"
 
-int rts2_centering (struct device *camera, struct device *telescope);
+int rts2_centering (struct device *camera, struct device *telescope,
+		    char obs_type);
 
 #endif /* __RTS2_CENTERING__ */

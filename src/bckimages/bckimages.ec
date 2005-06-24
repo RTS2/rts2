@@ -2,7 +2,6 @@
 
 #include "../db/db.h"
 #include "../utils/mkpath.h"
-#include "../utils/mv.h"
 
 #include <ctype.h>
 #include <getopt.h>

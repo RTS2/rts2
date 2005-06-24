@@ -38,13 +38,17 @@ struct image_info
   int target_type;
   int target_id;
   int observation_id;
+  int obs_type;
   hi_precision_t *hi_precision;
   // image will be use for feedback to telescope; astrometry and
   // correction will be aplied right after image
   // acqusition, image will not go to any que for
   // processing
   int binnings[22];
-  // axes binnings
+  // axes binning
+  int good_count;
+  // number of observation with images.. (which went past centering
+  // step)
 };
 
 #endif /* __RTS_IMAGE_INFO__ */

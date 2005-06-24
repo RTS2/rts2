@@ -39,6 +39,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
   for (int i = 0; i < MAX_STATE; i++)
     serverState[i] = NULL;
   otherDevice = NULL;
+  otherType = -1;
 }
 
 Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):
@@ -58,6 +59,7 @@ Rts2Object ()
   for (int i = 0; i < MAX_STATE; i++)
     serverState[i] = NULL;
   otherDevice = NULL;
+  otherType = -1;
 }
 
 Rts2Conn::~Rts2Conn (void)
@@ -145,7 +147,18 @@ Rts2Conn::setState (char *in_state_name, int in_value)
 void
 Rts2Conn::setOtherType (int other_device_type)
 {
+  if (otherDevice)
+    delete otherDevice;
   otherDevice = master->createOtherType (this, other_device_type);
+  otherType = other_device_type;
+}
+
+int
+Rts2Conn::getOtherType ()
+{
+  if (otherDevice)
+    return otherType;
+  return -1;
 }
 
 int
@@ -530,6 +543,18 @@ Rts2Conn::sendValue (char *name, int val1, int val2)
 }
 
 int
+Rts2Conn::sendValue (char *name, int val1, double val2)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "%s %i %f", name, val1, val2);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
 Rts2Conn::sendValue (char *name, char *value)
 {
   char *msg;
@@ -548,6 +573,18 @@ Rts2Conn::sendValue (char *name, double value)
   int ret;
 
   asprintf (&msg, "%s %f", name, value);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Conn::sendValue (char *name, char *val1, int val2)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "%s %s %i", name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;

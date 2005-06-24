@@ -73,6 +73,7 @@ Rts2DevMirrorFram::mirror_command (char cmd, int arg, char *ret_cmd,
   time_t t;
   command_buffer[0] = cmd;
   *((int *) &command_buffer[1]) = arg;
+  syslog (LOG_DEBUG, "cmd %i arg %i", cmd, arg);
 start:
   ret = write (mirror_fd, command_buffer, 3);
   if (ret != 3)
@@ -97,6 +98,8 @@ start:
 	}
       readed += ret;
     }
+  syslog (LOG_DEBUG, "ret_cmd : %i ret_arg: %i", command_buffer[0],
+	  command_buffer[1]);
   if (ret_cmd)
     *ret_cmd = command_buffer[0];
   if (ret_arg)
@@ -165,7 +168,7 @@ Rts2DevMirrorFram::init ()
       newtio.c_oflag = 0;
       newtio.c_lflag = 0;
       newtio.c_cc[VMIN] = 0;
-      newtio.c_cc[VTIME] = 40;
+      newtio.c_cc[VTIME] = 4;
 
       tcflush (mirror_fd, TCIOFLUSH);
       tcsetattr (mirror_fd, TCSANOW, &newtio);

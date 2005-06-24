@@ -52,6 +52,11 @@
 #define PHOT_NOINTEGRATE	0x00
 #define PHOT_INTEGRATE		0x01
 
+// focuser status
+#define FOC_MASK_FOCUSING	0x01
+#define FOC_SLEEPING		0x00
+#define FOC_FOCUSING		0x01
+
 // telescope status
 #define TEL_MASK_MOVING		0x07
 
@@ -80,12 +85,15 @@
 #define DOME_WEATHER_BAD	0x20
 #define DOME_WEATHER_UNKNOW	0x30
 
-#define MIRROR_MASK		0x0f
+#define MIRROR_MASK		0x1f
+#define MIRROR_MASK_MOVE	0x10
+#define MIRROR_MOVE		0x10
+#define MIRROR_NOTMOVE		0x00
 #define MIRROR_UNKNOW		0x00
 #define MIRROR_A		0x01
-#define MIRROR_A_B		0x02
+#define MIRROR_A_B		0x12
 #define MIRROR_B		0x03
-#define MIRROR_B_A		0x04
+#define MIRROR_B_A		0x14
 
 #define SERVERD_DAY		0
 #define SERVERD_EVENING		1

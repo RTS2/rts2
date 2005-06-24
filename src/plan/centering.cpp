@@ -14,13 +14,15 @@
 #include "../utils/config.h"
 #include "camera_info.h"
 #include "phot_info.h"
+#include "target.h"
 #include "centering.h"
 #include "median.h"
 
 #define MAX_COUNT		20
 
 #define DARK_FILTER		0
-#define LIGHT_FILTER		2
+#define LIGHT_FILTER		4
+#define TER_FILTER		5
 #define COUNTS			3
 
 struct count_info
@@ -87,10 +89,15 @@ phot_integrate (struct device *phot, int filter, int count)
 {
   int i, j = 0;
   double total = 0;
+  time_t now;
   devcli_command (phot, NULL, "filter %i", filter);
   devcli_command (phot, NULL, "integrate 1 %i", count);
+  time (&now);
+  printf ("integrate send: %s\n", ctime (&now));
   devcli_wait_for_status (phot, "phot", PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-			  100);
+			  25);
+  time (&now);
+  printf ("integrate wait end: %s\n", ctime (&now));
   for (i = 0; i < last_count; i++)
     {
       if (counts[i].filter == filter)
@@ -167,7 +174,8 @@ find_center (int par_x, int par_y, struct device *phot,
  * @return 0 on sucess (centered), !0 otherwise
  */
 int
-rts2_centering (struct device *camera, struct device *telescope)
+rts2_centering (struct device *camera, struct device *telescope,
+		char obs_type)
 {
   struct device *phot = NULL;
   char *phot_name = get_string_default ("centering_phot", NULL);
@@ -182,6 +190,7 @@ rts2_centering (struct device *camera, struct device *telescope)
   double *background_array = NULL;
   double back_max = -1;
   int back_max_ra, back_max_dec;
+  int filter = (obs_type == TYPE_TERESTIAL ? TER_FILTER : LIGHT_FILTER);
 
   err_ra = 0;
   err_dec = 0;
@@ -239,7 +248,7 @@ rts2_centering (struct device *camera, struct device *telescope)
       if (ret)
 	goto end;
       // now do the work
-      phot_light = phot_integrate (phot, LIGHT_FILTER, COUNTS);
+      phot_light = phot_integrate (phot, filter, COUNTS);
       // bellow backgroudn step, save for futher use..
       if (total_step < step_background)
 	{
@@ -293,7 +302,7 @@ rts2_centering (struct device *camera, struct device *telescope)
 	  if (ret)
 	    goto end;
 	  // find center
-	  phot_light = phot_integrate (phot, LIGHT_FILTER, COUNTS);
+	  phot_light = phot_integrate (phot, filter, COUNTS);
 	  if (phot_light - phot_dark < get_device_double_default (phot->name, "minsn", 250))
 	    {
               // bad idea, move back
@@ -305,11 +314,11 @@ rts2_centering (struct device *camera, struct device *telescope)
 	  err_ra = 0;
 	  err_dec = 0;
 	  // find one end
-	  ret = find_center (1, 0, phot, telescope, phot_background);
+	  ret = find_center (1, 0, phot, telescope, phot_background, filter);
 	  if (ret)
 	    goto end;
 	  // find other end
-	  ret = find_center (0, 1, phot, telescope, phot_background);
+	  ret = find_center (0, 1, phot, telescope, phot_background, filter);
 	  if (ret)
 	    goto end;
 	  phot_integrate (phot, LIGHT_FILTER, COUNTS);

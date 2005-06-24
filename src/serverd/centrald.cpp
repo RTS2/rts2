@@ -269,6 +269,10 @@ Rts2ConnCentrald::commandDevice ()
 	  return -2;
 	}
 
+      // client wanished when we processed data..
+      if (master->connections[client] == NULL)
+	return -1;
+
       if (master->connections[client]->getKey () == 0)
 	{
 	  sendValue ("authorization_failed", client);

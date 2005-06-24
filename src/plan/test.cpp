@@ -16,7 +16,7 @@ print_jd (double JD, struct ln_lnlat_posn *obs)
   struct ln_equ_posn posn;
   struct ln_hrz_posn hrz;
 
-  ln_get_equ_solar_coords (JD, &posn);
+  ln_get_solar_equ_coords (JD, &posn);
   ln_get_hrz_from_equ (&posn, obs, JD, &hrz);
 
   ln_get_date (JD, &date);
@@ -83,11 +83,11 @@ main (int argc, char **argv)
   ObjectCheck *checker = new ObjectCheck ("/etc/rts2/horizont");
   Selector *selector = new Selector (checker, NULL, &observer);
 
-  jd = get_double_default ("planc_selector", SELECTOR_ELL);
+  jd = get_double_default ("planc_selector", SELECTOR_PHOTOMETRY);
 
   if (selector->get_next_plan
       (plan, (int) jd,
-       &t, 2, 30, SERVERD_NIGHT, observer.lng, observer.lat, 1))
+       &t, 2, 30, SERVERD_NIGHT, observer.lng, observer.lat, 0))
     {
       printf ("Error making plan\n");
       fflush (stdout);

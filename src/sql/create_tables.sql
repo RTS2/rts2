@@ -195,6 +195,8 @@ CREATE TABLE scripts (
 
 CREATE INDEX images_obs_id ON images (obs_id);
 
+CREATE INDEX counts_obs_id ON counts (obs_id);
+
 DROP SEQUENCE img_id;
 
 CREATE SEQUENCE img_id;

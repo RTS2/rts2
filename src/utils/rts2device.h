@@ -26,9 +26,10 @@ class Rts2Dev2DevConn:public Rts2Conn
 {
 private:
   Rts2Address * address;
+  Rts2Device *master;
 public:
-  Rts2Dev2DevConn (Rts2Block * in_master, char *in_name);
-    Rts2Dev2DevConn (Rts2Block * in_master, Rts2Address * in_addr);
+    Rts2Dev2DevConn (Rts2Device * in_master, char *in_name);
+    Rts2Dev2DevConn (Rts2Device * in_master, Rts2Address * in_addr);
     virtual ~ Rts2Dev2DevConn (void);
 
   virtual int init ();
@@ -39,6 +40,7 @@ public:
   void connAuth ();
 
   virtual void setKey (int in_key);
+  virtual void setConnState (conn_state_t new_conn_state);
 };
 
 class Rts2DevConn:public Rts2Conn
@@ -199,6 +201,14 @@ public:
   virtual Rts2Conn *getCentraldConn ()
   {
     return conn_master;
+  };
+  char *getDeviceName ()
+  {
+    return device_name;
+  };
+  int getDeviceType ()
+  {
+    return device_type;
   };
 };
 

@@ -17,6 +17,7 @@ int
 main (int argc, char **argv)
 {
   double value;
+  char buf[20];
   ObjectCheck *checker;
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
