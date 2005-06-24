@@ -438,7 +438,7 @@ Rts2ConnCentrald::command ()
 	    }
 
 	  setName (reg_device);
-	  strncpy (hostname, in_hostname, DEVICE_URI_SIZE);
+	  strncpy (hostname, in_hostname, HOST_NAME_MAX);
 
 	  setType (DEVICE_SERVER);
 	  sendStatusInfo ();
