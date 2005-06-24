@@ -203,8 +203,9 @@ class Rts2DevCameraSbig:public Rts2DevCamera
     syslog (LOG_ERR, "Rts2DevCameraSbig::checkSbigHw ret: %i", ret);
     return -1;
   }
+  int fanState (int newFanState);
 public:
-    Rts2DevCameraSbig (int argc, char **argv);
+  Rts2DevCameraSbig (int argc, char **argv);
   virtual ~ Rts2DevCameraSbig ();
 
   virtual int init ();
@@ -310,16 +311,21 @@ int
 Rts2DevCameraSbig::info ()
 {
   MY_LOGICAL enabled;
-  double amb, ccd, set, per;
-  if (pcam->QueryTemperatureStatus (enabled, amb, set, per) != CE_NO_ERROR)
+  QueryTemperatureStatusResults qtsr;
+  QueryCommandStatusParams qcsp;
+  QueryCommandStatusResults qcsr;
+  if (pcam->SBIGUnivDrvCommand (CC_QUERY_TEMPERATURE_STATUS, NULL, &qtsr) !=
+      CE_NO_ERROR)
     return -1;
-  fan = enabled;
-  tempAir = amb;
-  tempSet = set;
-  coolingPower = (int) (per * 1000);
-  if (pcam->GetCCDTemperature (ccd) != CE_NO_ERROR)
+  qcsp.command = CC_MISCELLANEOUS_CONTROL;
+  if (pcam->SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) !=
+      CE_NO_ERROR)
     return -1;
-  tempCCD = ccd;
+  fan = qcsr.status & 0x100;
+  tempAir = pcam->ADToDegreesC (qtsr.ambientThermistor, FALSE);
+  tempSet = pcam->ADToDegreesC (qtsr.ccdSetpoint, TRUE);
+  coolingPower = (int) ((qtsr.power / 255.0) * 1000);
+  tempCCD = pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE);
   tempRegulation = 1;
   return 0;
 }
@@ -415,12 +421,26 @@ Rts2DevCameraSbig::camStopRead (int chip)
 }
 
 int
+Rts2DevCameraSbig::fanState (int newFanState)
+{
+  PAR_ERROR ret;
+  MiscellaneousControlParams mcp;
+  mcp.fanEnable = newFanState;
+  mcp.shutterCommand = 0;
+  mcp.ledState = 0;
+  ret = pcam->SBIGUnivDrvCommand (CC_MISCELLANEOUS_CONTROL, &mcp, NULL);
+  return checkSbigHw (ret);
+}
+
+int
 Rts2DevCameraSbig::camCoolMax ()
 {
   SetTemperatureRegulationParams temp;
   PAR_ERROR ret;
   temp.regulation = REGULATION_OVERRIDE;
   temp.ccdSetpoint = 255;
+  if (fanState (TRUE))
+    return -1;
   ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
   return checkSbigHw (ret);
 }
@@ -428,9 +448,17 @@ Rts2DevCameraSbig::camCoolMax ()
 int
 Rts2DevCameraSbig::camCoolHold ()
 {
+  int ret;
+  ret = fanState (TRUE);
+  if (ret)
+    return -1;
   if (isnan (nightCoolTemp))
-    return camCoolTemp (-5);
-  return camCoolTemp (nightCoolTemp);
+    ret = camCoolTemp (-5);
+  else
+    ret = camCoolTemp (nightCoolTemp);
+  if (ret)
+    return -1;
+  return fanState (TRUE);
 }
 
 int
@@ -440,6 +468,8 @@ Rts2DevCameraSbig::camCoolTemp (float new_temp)
   PAR_ERROR ret;
   temp.regulation = REGULATION_ON;
   syslog (LOG_DEBUG, "Rts2DevCameraSbig::camCoolTemp setTemp: %f", new_temp);
+  if (fanState (TRUE))
+    return -1;
   temp.ccdSetpoint = ccd_c2ad (new_temp);
   ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
   return checkSbigHw (ret);
@@ -452,8 +482,10 @@ Rts2DevCameraSbig::camCoolShutdown ()
   PAR_ERROR ret;
   temp.regulation = REGULATION_OFF;
   temp.ccdSetpoint = 0;
+  if (fanState (FALSE))
+    return -1;
   ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
-  return checkSbigHw (ret);
+  return (checkSbigHw (ret));
 }
 
 int
