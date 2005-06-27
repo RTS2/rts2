@@ -608,6 +608,7 @@ cleanup_module (void)
 {
   release_region (device.base_port, PORTS_LEN);
   del_timer_sync (&device.command_timer);
+  del_timer_sync (&device.check_timer);
   unregister_chrdev (major_number, "phot");
   free_command_list (&device);
   remove_proc_entry ("phot", NULL);
