@@ -596,6 +596,10 @@ init_module (void)
   create_proc_read_entry ("phot", 0, NULL, phot_read_procmem, NULL);
   printk (KERN_INFO "Module loaded\n");
   printk (KERN_INFO "Integration disabled\n");
+  init_timer (&device.check_timer);
+  // check after 20 msec
+  device.check_timer.expires = jiffies + HZ / 50;
+  add_timer (&device.check_timer);
   return 0;
 }
 
