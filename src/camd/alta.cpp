@@ -11,6 +11,7 @@
 #endif
 
 #include <math.h>
+#include <signal.h>
 
 #include "camera_cpp.h"
 #include "ApnCamera.h"
@@ -101,7 +102,7 @@ CameraChipAlta::endExposure ()
 int
 CameraChipAlta::stopExposure ()
 {
-  alta->ResetSystem ();
+  alta->StopExposure (false);
   return CameraChip::stopExposure ();
 }
 
@@ -177,6 +178,7 @@ private:
   CApnCamera * alta;
 public:
   Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv);
+  virtual ~ Rts2DevCameraAlta (void);
   virtual int init ();
 
   virtual int ready ();
@@ -184,12 +186,23 @@ public:
   virtual int baseInfo ();
 
   virtual int camChipInfo (int chip);
+
+  virtual int camCoolMax ();
+  virtual int camCoolHold ();
+  virtual int camCoolTemp (float new_temp);
+  virtual int camCoolShutdown ();
 };
 
 Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv):
 Rts2DevCamera (argc, argv)
 {
   alta = NULL;
+}
+
+Rts2DevCameraAlta::~Rts2DevCameraAlta (void)
+{
+  if (alta)
+    delete alta;
 }
 
 int
@@ -230,13 +243,20 @@ Rts2DevCameraAlta::ready ()
 int
 Rts2DevCameraAlta::baseInfo ()
 {
+  strcpy (ccdType, "Alta ");
+  strncat (ccdType, alta->m_CameraModel, 10);
+  sprintf (serialNumber, "%i", alta->m_CameraId);
   return 0;
 }
 
 int
 Rts2DevCameraAlta::info ()
 {
+  tempRegulation = alta->read_CoolerEnable ();
+  tempSet = alta->read_CoolerSetPoint ();
   tempCCD = alta->read_TempCCD ();
+  tempAir = alta->read_TempHeatsink ();
+  fan = alta->read_FanMode () == Apn_FanMode_Low ? 0 : 1;
   return 0;
 }
 
@@ -247,11 +267,59 @@ Rts2DevCameraAlta::camChipInfo (int chip)
 }
 
 int
+Rts2DevCameraAlta::camCoolMax ()
+{
+  alta->write_CoolerEnable (true);
+  alta->write_FanMode (Apn_FanMode_High);
+  alta->write_CoolerSetPoint (-100);
+  return 0;
+}
+
+int
+Rts2DevCameraAlta::camCoolHold ()
+{
+  alta->write_CoolerEnable (true);
+  alta->write_FanMode (Apn_FanMode_High);
+  return 0;
+}
+
+int
+Rts2DevCameraAlta::camCoolTemp (float new_temp)
+{
+  alta->write_CoolerEnable (true);
+  alta->write_FanMode (Apn_FanMode_High);
+  alta->write_CoolerSetPoint (new_temp);
+  return 0;
+}
+
+int
+Rts2DevCameraAlta::camCoolShutdown ()
+{
+  alta->write_CoolerEnable (false);
+  alta->write_FanMode (Apn_FanMode_Low);
+  alta->write_CoolerSetPoint (100);
+  return 0;
+}
+
+Rts2DevCameraAlta *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+}
+
+int
 main (int argc, char **argv)
 {
-  Rts2DevCameraAlta *device = new Rts2DevCameraAlta (argc, argv);
-
   int ret;
+
+  device = new Rts2DevCameraAlta (argc, argv);
+
+  signal (SIGINT, killSignal);
+  signal (SIGTERM, killSignal);
+
   ret = device->init ();
   if (ret)
     {
