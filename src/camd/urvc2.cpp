@@ -549,7 +549,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      fprintf (stderr, "Cannot initialize camera - exiting!\n");
+      fprintf (stderr, "Cannot initialize camera - exiting!");
       exit (0);
     }
   device->run ();

@@ -782,7 +782,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize miniccd camera - exiting!\n");
+      syslog (LOG_ERR, "Cannot initialize miniccd camera - exiting!");
       exit (1);
     }
   device->run ();

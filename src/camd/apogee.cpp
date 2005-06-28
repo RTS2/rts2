@@ -11,7 +11,6 @@
 #endif /* !_GNU_SOURCE */
 
 #include <math.h>
-#include <mcheck.h>
 #include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -178,10 +177,6 @@ CameraApogeeChip::readoutOneLine ()
   if (sendLine == 0)
     {
       int ret;
-      int fd = open ("/root/tmp", O_WRONLY | O_CREAT);
-      printf ("l: %i", (char *) dest_top - send_top);
-      write (fd, send_top, ((char *) dest_top - send_top));
-      close (fd);
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;
@@ -883,7 +878,6 @@ Rts2DevCameraApogee::info ()
   tempCCD = camera->read_Temperature ();
   tempAir = nan ("f");
   coolingPower = 5000;
-  // filter = camera->m_FilterPosition;
   return 0;
 }
 
@@ -927,15 +921,13 @@ Rts2DevCameraApogee::camCoolTemp (float new_temp)
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevCameraApogee *device = new Rts2DevCameraApogee (argc, argv);
 
   int ret;
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize apogee camera - exiting!\n");
+      syslog (LOG_ERR, "Cannot initialize apogee camera - exiting!");
       exit (1);
     }
   device->run ();
