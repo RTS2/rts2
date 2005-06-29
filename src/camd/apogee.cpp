@@ -170,7 +170,7 @@ CameraApogeeChip::readoutOneLine ()
       height = chipUsedReadout->height;
       status = camera->GetImage (dest_top, width, height);
       if (!status)
-	return -1;
+	return -3;
       dest_top += width * height;
       readoutLine = chipUsedReadout->height + chipUsedReadout->y;
     }
