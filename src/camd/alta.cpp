@@ -60,6 +60,7 @@ CameraChipAlta::setBinning (int in_vert, int in_hori)
 {
   alta->m_RoiBinningH = in_vert;
   alta->m_RoiBinningV = in_hori;
+  return 0;
 }
 
 int
@@ -89,6 +90,8 @@ CameraChipAlta::isExposing ()
 
   if (status != Apn_Status_ImageReady)
     return 2000000;
+  if (status == -1)
+    return -1;
   // exposure has ended.. 
   return -2;
 }
@@ -102,7 +105,8 @@ CameraChipAlta::endExposure ()
 int
 CameraChipAlta::stopExposure ()
 {
-  alta->StopExposure (false);
+  // we need to digitize image:(
+  alta->StopExposure (true);
   return CameraChip::stopExposure ();
 }
 
@@ -111,6 +115,11 @@ CameraChipAlta::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   int ret;
   ret = CameraChip::startReadout (dataConn, conn);
+  // set region of intereset..
+  alta->m_RoiStartX = chipUsedReadout->x;
+  alta->m_RoiStartY = chipUsedReadout->y;
+  alta->m_RoiPixelsH = chipUsedReadout->width;
+  alta->m_RoiPixelsV = chipUsedReadout->height;
   dest_top = dest;
   send_top = (char *) dest;
   return ret;
@@ -120,9 +129,6 @@ int
 CameraChipAlta::readoutOneLine ()
 {
   int ret;
-
-  if (readoutLine < 0)
-    return -1;
 
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
@@ -134,7 +140,7 @@ CameraChipAlta::readoutOneLine ()
       unsigned long count;
       status = alta->GetImageData (dest_top, width, height, count);
       if (!status)
-	return -1;
+	return -3;
       dest_top += width * height;
       readoutLine = chipUsedReadout->height + chipUsedReadout->y;
     }
@@ -168,7 +174,15 @@ CameraChipAlta::readoutOneLine ()
 int
 CameraChipAlta::endReadout ()
 {
-  alta->ResetSystem ();
+  if (!readoutConn)
+    {
+      short unsigned int dat[chipSize->width];
+      unsigned long count;
+      unsigned short width, height;
+      width = chipSize->width;
+      height = 1;
+      alta->GetImageData (dat, width, height, count);
+    }
   return CameraChip::endReadout ();
 }
 
@@ -308,6 +322,7 @@ killSignal (int sig)
 {
   if (device)
     delete device;
+  exit (0);
 }
 
 int
