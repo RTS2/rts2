@@ -375,13 +375,15 @@ Rts2DevCamera::checkReadouts ()
   int ret;
   for (int i = 0; i < chipNum; i++)
     {
+      if ((getState (i) & CAM_MASK_READING) != CAM_READING)
+	continue;
       ret = chips[i]->readoutOneLine ();
       if (ret >= 0)
 	{
 	  setTimeout (ret);
 	}
-      if (ret == -2
-	  || (ret == -3 && (getState (i) & CAM_MASK_READING) == CAM_READING))
+      // change back state..
+      else
 	{
 	  setTimeout (USEC_SEC);
 	  maskState (i, CAM_MASK_READING, CAM_NOTREADING,

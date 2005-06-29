@@ -140,7 +140,10 @@ public:
   void deleteConnection (Rts2Conn * conn)
   {
     if (conn == readoutConn)
-      readoutConn = NULL;
+      {
+	readoutConn = NULL;
+	endReadout ();
+      }
   }
   virtual int endReadout ();
   void clearReadout ();
