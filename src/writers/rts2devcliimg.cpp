@@ -124,13 +124,14 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
     case EVENT_WRITE_TO_IMAGE:
       Rts2Image * image;
       image = (Rts2Image *) event->getArg ();
-      image->setValue ("TEL_NAME", connection->getName (),
-		       "name of telescope");
-      image->setValue ("TEL_TYPE", getValueChar ("type"), "telescope type");
-      image->setValue ("TEL_MARK", getValueInteger ("correction_mark"),
-		       "mark used for telescope corretion");
-      image->setValue ("RA", getValueDouble ("ra"), "telescope RA");
-      image->setValue ("DEC", getValueDouble ("dec"), "telescope DEC");
+      image->setMountName (connection->getName ());
+      image->setValue ("MOUNT_TYPE", getValueChar ("type"),
+		       "mount telescope");
+      image->setValue ("MOUNT_MARK", getValueInteger ("correction_mark"),
+		       "mark used for mount corretion");
+      image->setValue ("RA", getValueDouble ("ra"), "mount RA");
+      image->setValue ("DEC", getValueDouble ("dec"), "mount DEC");
+      image->setValue ("FLIP", getValueInteger ("flip"), "mount flip");
       break;
     }
 

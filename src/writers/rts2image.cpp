@@ -16,6 +16,7 @@ Rts2Image::Rts2Image (char *in_filename,
   imageName = NULL;
   ffile = NULL;
   cameraName = NULL;
+  mountName = NULL;
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -24,7 +25,7 @@ Rts2Image::Rts2Image (char *in_filename,
 
 Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
 		      Rts2DevClientCamera * camera, int in_obsId,
-		      const struct timeval *in_exposureStart)
+		      const struct timeval *in_exposureStart, int in_imgId)
 {
   struct imghdr *im_h;
   long naxes = 1;
@@ -37,6 +38,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   epochId = in_epoch_id;
   targetId = in_targetId;
   obsId = in_obsId;
+  imgId = in_imgId;
   exposureStart = *in_exposureStart;
 
   expT = gmtime (&exposureStart.tv_sec);
@@ -52,14 +54,17 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
 
   writeExposureStart ();
 
-  setValue ("EPOCH", epochId, "image epoch of observation");
+  setValue ("EPOCH_ID", epochId, "image epoch ID of observation");
   setValue ("TARGET", targetId, "target id");
   setValue ("OBSID", obsId, "observation id");
+  setValue ("IMGID", imgId, "image id");
   setValue ("PROCES", 0, "no processing done");
 
   cameraName = new char[DEVICE_NAME_SIZE + 1];
   setValue ("CCD_NAME", camera->getName (), "camera name");
   strcpy (cameraName, camera->getName ());
+
+  mountName = NULL;
 }
 
 Rts2Image::Rts2Image (char *in_filename)
@@ -69,13 +74,15 @@ Rts2Image::Rts2Image (char *in_filename)
 
   openImage (in_filename);
   // get info..
-  getValue ("EPOCH", epochId);
+  getValue ("EPOCH_ID", epochId);
   getValue ("TARGET", targetId);
   getValue ("OBSID", obsId);
   getValue ("CTIME", exposureStart.tv_sec);
   getValue ("USEC", exposureStart.tv_usec);
   cameraName = new char[DEVICE_NAME_SIZE + 1];
   getValue ("CCD_NAME", cameraName);
+  mountName = new char[DEVICE_NAME_SIZE + 1];
+  getValue ("MOUNT_NAME", mountName);
 }
 
 Rts2Image::~Rts2Image (void)
@@ -85,6 +92,8 @@ Rts2Image::~Rts2Image (void)
     delete imageName;
   if (cameraName)
     delete cameraName;
+  if (mountName)
+    delete mountName;
 }
 
 void
@@ -343,6 +352,50 @@ Rts2Image::getValue (char *name, char *value, char *comment)
 }
 
 int
+Rts2Image::getValues (char *name, int *values, int num, int nstart)
+{
+  if (!ffile)
+    return -1;
+  int nfound;
+  fits_read_keys_log (ffile, name, nstart, num, values, &nfound,
+		      &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValues (char *name, long *values, int num, int nstart)
+{
+  if (!ffile)
+    return -1;
+  int nfound;
+  fits_read_keys_lng (ffile, name, nstart, num, values, &nfound,
+		      &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValues (char *name, double *values, int num, int nstart)
+{
+  if (!ffile)
+    return -1;
+  int nfound;
+  fits_read_keys_dbl (ffile, name, nstart, num, values, &nfound,
+		      &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValues (char *name, char **values, int num, int nstart)
+{
+  if (!ffile)
+    return -1;
+  int nfound;
+  fits_read_keys_str (ffile, name, nstart, num, values, &nfound,
+		      &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
 Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
   if (!ffile)
@@ -385,4 +438,14 @@ Rts2Image::saveImage ()
       fits_close_file (ffile, &fits_status);
     }
   ffile = NULL;
+}
+
+void
+Rts2Image::setMountName (const char *in_mountName)
+{
+  if (mountName)
+    delete mountName;
+  mountName = new char[strlen (in_mountName) + 1];
+  strcpy (mountName, in_mountName);
+  setValue ("MOUNT_NAME", mountName, "name of mount");
 }

@@ -26,15 +26,10 @@ private:
 
   int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
     std::vector < Target * >targetsQue;
-protected:
-    virtual int info ()
-  {
-    return 0;
-  }
 
 public:
     Rts2Executor (int argc, char **argv);
-  virtual ~ Rts2Executor (void);
+    virtual ~ Rts2Executor (void);
   virtual int init ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
@@ -44,6 +39,18 @@ public:
 
   virtual int idle ();
 
+  virtual int ready ()
+  {
+    return 0;
+  }
+  virtual int baseInfo ()
+  {
+    return 0;
+  }
+  virtual int info ()
+  {
+    return 0;
+  }
   virtual int sendInfo (Rts2Conn * conn);
 
   int setNext (int nextId);
@@ -149,10 +156,12 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
   if (currentTarget)
     {
       conn->sendValue ("current", currentTarget->getTargetID ());
+      conn->sendValue ("obsid", currentTarget->getObsId ());
     }
   else
     {
       conn->send ("current -1");
+      conn->send ("obsid -1");
     }
   if (nextTarget)
     {

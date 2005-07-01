@@ -269,7 +269,7 @@ public:
     Rts2NMExecutor (Rts2CNMonConn *
 		    in_connection):Rts2DevClientExecutor (in_connection)
   {
-    in_connection->setStatusBegin (3);
+    in_connection->setStatusBegin (4);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -292,6 +292,7 @@ Rts2NMExecutor::print (WINDOW * wnd)
 {
   mvwprintw (wnd, 1, 1, "Curr: %-5i", getValueInteger ("current"));
   mvwprintw (wnd, 2, 1, "Next: %-5i", getValueInteger ("next"));
+  mvwprintw (wnd, 3, 1, "ObsI: %5i", getValueInteger ("obsid"));
 }
 
 class Rts2NMImgproc:public Rts2DevClientImgproc
@@ -429,6 +430,11 @@ public:
 					  int other_device_type);
 
   virtual int addAddress (Rts2Address * in_addr);
+
+  int resize ()
+  {
+    return repaint ();
+  }
 
   void processKey (int key);
 };
@@ -716,6 +722,16 @@ sigExit (int sig)
   exit (0);
 }
 
+sighandler_t old_Winch;
+
+void
+sigWinch (int sig)
+{
+//  monitor->resize ();
+  if (old_Winch)
+    old_Winch (sig);
+}
+
 void *
 inputThread (void *arg)
 {
@@ -738,6 +754,7 @@ main (int argc, char **argv)
 
   signal (SIGINT, sigExit);
   signal (SIGTERM, sigExit);
+  old_Winch = signal (SIGWINCH, sigWinch);
 
   ret = monitor->init ();
   if (ret)

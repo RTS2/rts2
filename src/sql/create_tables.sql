@@ -9,7 +9,7 @@ DROP TABLE types;
 CREATE GROUP "observers";
 
 CREATE TABLE epoch (
-	epoch_id	char(3) PRIMARY KEY,		
+	epoch_id	integer PRIMARY KEY,		
 	epoch_start	timestamp,
 	epoch_end	timestamp
 );
@@ -115,7 +115,7 @@ CREATE TABLE darks (
 	dark_date	timestamp,
 	dark_exposure	integer,
 	dark_temperature integer,
-	epoch_id	char(3) NOT NULL REFERENCES epoch(epoch_id),
+	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name)
 );
 
@@ -126,7 +126,7 @@ CREATE TABLE flats (
 	flat_date	timestamp,
 	flat_exposure	integer,
 	flat_temperature integer,
-	epoch_id	char(3) NOT NULL REFERENCES epoch(epoch_id),
+	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name)
 );
 
@@ -142,7 +142,7 @@ CREATE TABLE observations (
 	obs_slew	timestamp,  -- start of slew
 	obs_start	timestamp,  -- start of observation
 	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
-	obs_duration	interval
+	obs_end		timestamp
 );
 
 DROP TABLE medias;
@@ -156,20 +156,30 @@ CREATE TABLE medias (
 DROP TABLE images;
 
 CREATE TABLE images (
-	img_id		integer PRIMARY KEY NOT NULL,
+	img_id		integer NOT NULL,
 	obs_id		integer REFERENCES observations(obs_id),
-	img_date	abstime NOT NULL,
+	-- A - image used for acquistion
+	-- S - science image (not acqusition)
+	obs_subtype	char(1),
+	img_date	timestamp NOT NULL,
+	img_usec	integer NOT NULL,
 	img_exposure	integer,
 	img_temperature	integer,
 	img_filter	varchar(3),
 	/* astrometry */
 	astrometry	wcs,
-	epoch_id	char(3) NOT NULL REFERENCES epoch(epoch_id),
+	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	med_id		integer NOT NULL REFERENCES medias(med_id),
 	
 	camera_name	varchar(8) REFERENCES cameras(camera_name),
 	mount_name	varchar(8) REFERENCES mounts(mount_name),
-	delete_flag	boolean	NOT NULL DEFAULT TRUE
+	delete_flag	boolean	NOT NULL DEFAULT TRUE,
+	process_bitfield	integer NOT NULL default 0,
+	-- processed, with darks, get astrometry etc..
+	-- bit 0 - astrometry not/OK
+	-- bit 1 - dark image substracted
+	-- bit 2 - flatfield correction
+CONSTRAINT images_prim_key PRIMARY KEY (obs_id, img_id)
 );
 
 DROP TABLE counts;

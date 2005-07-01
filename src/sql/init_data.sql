@@ -8,3 +8,7 @@ H	HETE FOV
 t	technical observation
 T	terrestial (fixed ra+dec) target
 \.
+
+COPY epoch FROM stdin;
+1	abstime(0)	NULL
+\.

@@ -63,9 +63,11 @@ class Target
 {
 private:
   int obs_id;
+  int img_id;
 
   int type;			// light, dark, flat, flat_dark
   char obs_type;		// SKY_SURVEY, GBR, .. 
+
   int getDBScript (int target, const char *camera_name, char *script);
 protected:
   int target_id;
@@ -77,8 +79,11 @@ protected:
   void logMsg (const char *message, long num);
   void logMsg (const char *message, double num);
   void logMsg (const char *message, const char *val);
+  void logMsgDb (const char *message);
 public:
     Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    virtual ~ Target (void);
+
   virtual int getScript (const char *device_name, char *buf);
   int getPosition (struct ln_equ_posn *pos)
   {
@@ -93,18 +98,30 @@ public:
   {
     return target_id;
   }
+  int getObsId ()
+  {
+    return obs_id;
+  }
   virtual int getRST (struct ln_rst_time *rst, double jd)
   {
     return -1;
   }
+  virtual int startObservation ();
+  virtual int endObservation ();
+
   virtual int move ();
   virtual int acquire ();
   virtual int observe ();
-  virtual int postprocess ();	// fork & run
+  virtual int postprocess ();
   // scheduler functions
   virtual int considerForObserving (ObjectCheck * checker, double lst);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
   virtual int changePriority (int pri_change, double validJD);
+
+  virtual int getNextImgId ()
+  {
+    return ++img_id;
+  }
 };
 
 class ConstTarget:public Target

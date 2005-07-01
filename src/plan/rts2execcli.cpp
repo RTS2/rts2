@@ -5,6 +5,7 @@
 #include <limits.h>
 
 #include "rts2execcli.h"
+#include "../writers/rts2imagedb.h"
 #include "target.h"
 #include "../utils/rts2command.h"
 
@@ -74,8 +75,9 @@ Rts2Image *
 Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
   if (currentTarget)
-    return new Rts2Image (1, currentTarget->getTargetID (), this, 1,
-			  expStart);
+    return new Rts2ImageDb (1, currentTarget->getTargetID (), this,
+			    currentTarget->getObsId (), expStart,
+			    currentTarget->getNextImgId ());
   return new Rts2Image ("img.fits", expStart);
 }
 
@@ -155,6 +157,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	    queCommand (new
 			Rts2CommandMove (connection->getMaster (), coord.ra,
 					 coord.dec));
+	  currentTarget->startObservation ();
 	}
       break;
     }

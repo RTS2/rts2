@@ -115,6 +115,7 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
   addValue (new Rts2ValueInteger ("flip"));
   addValue (new Rts2ValueDouble ("axis0_counts"));
   addValue (new Rts2ValueDouble ("axis1_counts"));
+  addValue (new Rts2ValueInteger ("correction_mark"));
 }
 
 void
@@ -164,6 +165,7 @@ Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevC
 {
   addValue (new Rts2ValueInteger ("current"));
   addValue (new Rts2ValueInteger ("next"));
+  addValue (new Rts2ValueInteger ("obsid"));
 }
 
 Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * in_connection):Rts2DevClient

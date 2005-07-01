@@ -39,12 +39,84 @@ Target::logMsg (const char *message, const char *val)
   printf ("%s %s\n", message, val);
 }
 
+void
+Target::logMsgDb (const char *message)
+{
+  printf ("SQL error: %i %s (at %s)\n", sqlca.sqlcode, sqlca.sqlerrm, message);
+}
+
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   observer = in_obs;
 
   obs_id = -1;
+  img_id = 0;
   target_id = in_tar_id;
+}
+
+Target::~Target (void)
+{
+  endObservation ();
+}
+
+int
+Target::startObservation ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_tar_id = target_id;
+  int d_obs_id;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    nextval ('obs_id')
+  INTO
+    :d_obs_id;
+  EXEC SQL
+  INSERT INTO
+    observations
+  (
+    tar_id,
+    obs_id,
+    obs_start
+  )
+  VALUES
+  (
+    :d_tar_id,
+    :d_obs_id,
+    now ()
+  );
+  EXEC SQL COMMIT;
+  if (sqlca.sqlcode != 0)
+  {
+    logMsgDb ("cannot insert observation start to db");
+    return -1;
+  }
+  obs_id = d_obs_id;
+  return 0;
+}
+
+int
+Target::endObservation ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_obs_id = obs_id;
+  EXEC SQL END DECLARE SECTION;
+  if (obs_id > 0)
+  {
+    EXEC SQL
+    UPDATE
+      observations
+    SET
+      obs_stop = now ()
+    WHERE
+      obs_id = :d_obs_id;
+    EXEC SQL COMMIT;
+    if (sqlca.sqlcode != 0)
+    {
+      logMsgDb ("cannot end obseravtion");
+    }
+  }
 }
 
 int

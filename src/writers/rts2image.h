@@ -19,22 +19,26 @@ private:
   fitsfile *ffile;
   int fits_status;
   int flags;
-  int epochId;
-  int targetId;
-  int obsId;
-  char *cameraName;
-  char *imageName;
   struct timeval exposureStart;
   void setImageName (char *in_filename);
   int createImage (char *in_filename);
   int openImage (char *in_filename);
   int writeExposureStart ();
+protected:
+  int epochId;
+  int targetId;
+  int obsId;
+  int imgId;
+  char *cameraName;
+  char *mountName;
+  char *imageName;
 public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
   // create image in que
     Rts2Image (int in_epoch_id, int in_targetId, Rts2DevClientCamera * camera,
-	       int in_obsId, const struct timeval *exposureStart);
+	       int in_obsId, const struct timeval *exposureStart,
+	       int in_imgId);
   // open image from disk..
     Rts2Image (char *in_filename);
     virtual ~ Rts2Image (void);
@@ -56,6 +60,11 @@ public:
   int getValue (char *name, double &value, char *comment = NULL);
   int getValue (char *name, char *value, char *comment = NULL);
 
+  int getValues (char *name, int *values, int num, int nstart = 1);
+  int getValues (char *name, long *values, int num, int nstart = 1);
+  int getValues (char *name, double *values, int num, int nstart = 1);
+  int getValues (char *name, char **values, int num, int nstart = 1);
+
   int writeImgHeader (struct imghdr *im_h);
   int writeDate (Rts2ClientTCPDataConn * dataConn);
 
@@ -72,11 +81,23 @@ public:
     return ret;
   }
 
-  int saveImage ();
+  virtual int saveImage ();
 
   char *getImageName ()
   {
     return imageName;
+  }
+
+  void setMountName (const char *in_mountName);
+
+  long getExposureSec ()
+  {
+    return exposureStart.tv_sec;
+  }
+
+  long getExposureUsec ()
+  {
+    return exposureStart.tv_usec;
   }
 };
 
