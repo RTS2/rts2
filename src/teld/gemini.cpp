@@ -269,11 +269,10 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
       buf[rcount] = 0;
       syslog (LOG_DEBUG, "Losmandy:readed %i '%s'", tmp_rcount, buf);
       free (buf);
+      return 0;
     }
-  else
-    {
-      syslog (LOG_DEBUG, "Losmandy:readed returns %i", tmp_rcount);
-    }
+  syslog (LOG_DEBUG, "Losmandy:readed returns %i", tmp_rcount);
+  return -1;
 }
 
 int
