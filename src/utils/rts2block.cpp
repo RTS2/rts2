@@ -591,6 +591,20 @@ Rts2Conn::sendValue (char *name, char *val1, int val2)
 }
 
 int
+Rts2Conn::sendValue (char *name, int val1, int val2, double val3, double val4,
+		     double val5, double val6)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "%s %i %i %f %f %f %f", name, val1, val2, val3, val4, val5,
+	    val6);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
 Rts2Conn::sendValueTime (char *name, time_t * value)
 {
   char *msg;

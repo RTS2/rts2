@@ -99,6 +99,12 @@ public:
   Rts2CommandFilter (Rts2Block * in_master, int filter);
 };
 
+class Rts2CommandCenter:public Rts2Command
+{
+public:
+  Rts2CommandCenter (Rts2Block * in_master, int chip, int width, int height);
+};
+
 class Rts2CommandMove:public Rts2Command
 {
 public:

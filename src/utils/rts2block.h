@@ -144,6 +144,8 @@ public:
   int sendValue (char *name, char *value);
   int sendValue (char *name, double value);
   int sendValue (char *name, char *val1, int val2);
+  int sendValue (char *name, int val1, int val2, double val3, double val4,
+		 double val5, double val6);
   int sendValueTime (char *name, time_t * value);
   int sendCommandEnd (int num, char *message);
   virtual int processLine ();

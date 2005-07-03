@@ -106,7 +106,7 @@ Rts2CommandBinning::Rts2CommandBinning (Rts2Block * in_master, int binning_v,
 Rts2Command (in_master)
 {
   char *command;
-  asprintf (&command, "binning %i %i", binning_v, binning_h);
+  asprintf (&command, "binning 0 %i %i", binning_v, binning_h);
   setCommand (command);
   free (command);
 }
@@ -128,6 +128,16 @@ Rts2Command (in_master)
 {
   char *command;
   asprintf (&command, "filter %i", filter);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandCenter::Rts2CommandCenter (Rts2Block * in_master, int chip, int width = -1, int height = -1):Rts2Command
+  (in_master)
+{
+  char *
+    command;
+  asprintf (&command, "center %i %i %i", chip, width, height);
   setCommand (command);
   free (command);
 }
