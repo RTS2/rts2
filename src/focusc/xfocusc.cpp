@@ -57,11 +57,15 @@ private:
     std::vector < char *>cameraNames;
   float defExposure;
   char *displayName;
+  int defCenter;
 
   // X11 stuff
   Display *display;
   Visual *visual;
   int depth;
+
+  int centerHeight;
+  int centerWidth;
 
 protected:
     virtual void help ();
@@ -162,6 +166,7 @@ public:
   {
     return new Rts2Image ("test.fits", expStart);
   }
+  void center (int centerWidth, int centerHeight);
 };
 
 Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraImage
@@ -263,7 +268,7 @@ Rts2xfocusCamera::XeventLoop ()
 		queCommand (new Rts2Command (master, "box 0 -1 -1 -1 -1"));
 	      break;
 	    case XK_c:
-	      connection->queCommand (new Rts2Command (master, "center"));
+	      connection->queCommand (new Rts2Command (master, "center 0"));
 	      break;
 	    case XK_p:
 	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_START));
@@ -308,7 +313,7 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 	XCreateImage (master->getDisplay (), master->getVisual (),
 		      master->getDepth (), ZPixmap, 0, 0, width, height, 8,
 		      0);
-      image->data = new char[image->bytes_per_line * height * 16];
+      image->data = new char[image->bytes_per_line * height];
     }
 
   // build histogram
@@ -398,11 +403,22 @@ Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
     }
 }
 
+void
+Rts2xfocusCamera::center (int centerWidth, int centerHeight)
+{
+  connection->
+    queCommand (new Rts2CommandCenter (master, 0, centerWidth, centerHeight));
+}
+
 Rts2xfocus::Rts2xfocus (int argc, char **argv):
 Rts2Client (argc, argv)
 {
   defExposure = 10;
   displayName = NULL;
+  defCenter = 0;
+
+  centerWidth = -1;
+  centerHeight = -1;
 
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
@@ -410,6 +426,9 @@ Rts2Client (argc, argv)
   addOption ('s', "save", 1, "save filenames (default don't save");
   addOption ('a', "autodark", 1, "take and use dark frame");
   addOption ('x', "display", 1, "name of X display");
+  addOption ('c', "center", 0, "takes only center images");
+  addOption ('w', "width", 1, "center width");
+  addOption ('h', "height", 1, "center height");
 }
 
 Rts2xfocus::~Rts2xfocus (void)
@@ -452,6 +471,15 @@ Rts2xfocus::processOption (int in_opt)
       break;
     case 'x':
       displayName = optarg;
+      break;
+    case 'c':
+      defCenter = 1;
+      break;
+    case 'w':
+      centerWidth = atoi (optarg);
+      break;
+    case 'h':
+      centerHeight = atoi (optarg);
       break;
     default:
       return Rts2Client::processOption (in_opt);
@@ -501,7 +529,13 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
   switch (other_device_type)
     {
     case DEVICE_TYPE_CCD:
-      return new Rts2xfocusCamera (conn, this);
+      Rts2xfocusCamera * cam;
+      cam = new Rts2xfocusCamera (conn, this);
+      if (defCenter)
+	{
+	  cam->center (centerWidth, centerHeight);
+	}
+      return cam;
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }
