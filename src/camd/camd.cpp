@@ -55,6 +55,33 @@ CameraChip::~CameraChip (void)
 }
 
 int
+CameraChip::center (int in_w, int in_h)
+{
+  int x, y, w, h;
+  if (in_w > 0 && chipSize->width > in_w)
+    {
+      w = in_w;
+      x = chipSize->width / 2 - w / 2;
+    }
+  else
+    {
+      w = chipSize->width / 2;
+      x = chipSize->width / 4;
+    }
+  if (in_h > 0 && chipSize->height > in_h)
+    {
+      h = in_h;
+      y = chipSize->height / 2 - h / 2;
+    }
+  else
+    {
+      h = chipSize->height / 2;
+      y = chipSize->height / 4;
+    }
+  return box (x, y, w, h);
+}
+
+int
 CameraChip::setExposure (float exptime)
 {
   struct timeval tv;
@@ -535,10 +562,10 @@ Rts2DevCamera::camBox (Rts2Conn * conn, int chip, int x, int y, int width,
 }
 
 int
-Rts2DevCamera::camCenter (Rts2Conn * conn, int chip)
+Rts2DevCamera::camCenter (Rts2Conn * conn, int chip, int in_h, int in_w)
 {
   int ret;
-  ret = chips[chip]->center ();
+  ret = chips[chip]->center (in_h, in_w);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, "cannot set box size");
   return ret;
@@ -759,9 +786,20 @@ Rts2DevConnCamera::commandAuthorized ()
   else if (isCommand ("center"))
     {
       CHECK_PRIORITY;
-      if (paramNextChip (&chip) || !paramEnd ())
+      if (paramNextChip (&chip))
 	return -2;
-      return master->camCenter (this, chip);
+      int w, h;
+      if (paramEnd ())
+	{
+	  w = -1;
+	  h = -1;
+	}
+      else
+	{
+	  if (paramNextInteger (&w) || paramNextInteger (&h) || !paramEnd ())
+	    return -2;
+	}
+      return master->camCenter (this, chip, w, h);
     }
   else if (isCommand ("readout"))
     {

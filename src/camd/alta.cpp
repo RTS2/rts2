@@ -130,6 +130,9 @@ CameraChipAlta::readoutOneLine ()
 {
   int ret;
 
+  if (readoutLine < 0)
+    return -1;
+
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
@@ -174,15 +177,7 @@ CameraChipAlta::readoutOneLine ()
 int
 CameraChipAlta::endReadout ()
 {
-  if (!readoutConn)
-    {
-      short unsigned int dat[chipSize->width];
-      unsigned long count;
-      unsigned short width, height;
-      width = chipSize->width;
-      height = 1;
-      alta->GetImageData (dat, width, height, count);
-    }
+  // reset system??
   return CameraChip::endReadout ();
 }
 

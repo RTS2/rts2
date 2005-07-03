@@ -122,11 +122,7 @@ public:
     chipReadout->height = in_height;
     return 0;
   }
-  int center ()
-  {
-    return box (chipSize->width / 2 - 128, chipSize->height / 2 - 128, 256,
-		256);
-  }
+  int center (int in_w, int in_h);
   virtual int startExposure (int light, float exptime)
   {
     return -1;
@@ -262,7 +258,7 @@ public:
   int camExpose (Rts2Conn * conn, int chip, int light, float exptime);
   int camStopExpose (Rts2Conn * conn, int chip);
   int camBox (Rts2Conn * conn, int chip, int x, int y, int width, int height);
-  int camCenter (Rts2Conn * conn, int chip);
+  int camCenter (Rts2Conn * conn, int chip, int in_w, int in_h);
   int camReadout (Rts2Conn * conn, int chip);
   int camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin);
   int camStopRead (Rts2Conn * conn, int chip);

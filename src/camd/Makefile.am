@@ -30,3 +30,10 @@ rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
 rts2_camd_apogee_SOURCES = camd.cpp apogee.cpp apogee/CameraIO_LinuxPCI.cpp
 
 rts2_camd_dummy_SOURCES = camd.cpp dummy.cpp 
+
+if ALTA
+bin_PROGRAMS += rts2-camd-alta
+rts2_camd_alta_SOURCES = camd.cpp alta.cpp alta/ApnCamera_Linux.cpp
+rts2_camd_alta_LDFLAGS = @LIB_ALTA@ @LIB_M@
+rts2_camd_alta_CXXFLAGS = @INC_ALTA@
+endif
