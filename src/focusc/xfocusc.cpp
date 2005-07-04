@@ -427,8 +427,8 @@ Rts2Client (argc, argv)
   addOption ('a', "autodark", 1, "take and use dark frame");
   addOption ('x', "display", 1, "name of X display");
   addOption ('c', "center", 0, "takes only center images");
-  addOption ('w', "width", 1, "center width");
-  addOption ('h', "height", 1, "center height");
+  addOption ('W', "width", 1, "center width");
+  addOption ('H', "height", 1, "center height");
 }
 
 Rts2xfocus::~Rts2xfocus (void)
@@ -475,10 +475,10 @@ Rts2xfocus::processOption (int in_opt)
     case 'c':
       defCenter = 1;
       break;
-    case 'w':
+    case 'W':
       centerWidth = atoi (optarg);
       break;
-    case 'h':
+    case 'H':
       centerHeight = atoi (optarg);
       break;
     default:
