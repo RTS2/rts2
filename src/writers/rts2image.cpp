@@ -424,9 +424,14 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     {
       return -1;
     }
-  fits_resize_img (ffile, TUSHORT, im_h->naxes, im_h->sizes, &fits_status);
-  fits_write_img (ffile, TUSHORT, 1, dataConn->getSize () / 2,
+  fits_resize_img (ffile, USHORT_IMG, im_h->naxes, im_h->sizes, &fits_status);
+  fits_write_img (ffile, USHORT_IMG, 1, dataConn->getSize () / 2,
 		  dataConn->getData (), &fits_status);
+  if (fits_status)
+    {
+      fits_report_error (stderr, fits_status);
+      return -1;
+    }
   return writeImgHeader (im_h);
 }
 

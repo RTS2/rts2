@@ -99,6 +99,21 @@ public:
   {
     return exposureStart.tv_usec;
   }
+
+  int getTargetId ()
+  {
+    return targetId;
+  }
+
+  int getObsId ()
+  {
+    return obsId;
+  }
+
+  int getImgId ()
+  {
+    return imgId;
+  }
 };
 
 #endif /* !__RTS2_IMAGE__ */
