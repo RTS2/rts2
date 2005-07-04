@@ -148,8 +148,8 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   ln_get_hrz_from_equ_sidereal_time (&tel, &obs, st, &altaz);
 
-  mvwprintw (wnd, 1, 1, "Typ: %s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "R+D/f: %7.3f%+6.3f/%c",
+  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
 	     getValueDouble ("ra"), getValueDouble ("dec"),
 	     getValueDouble ("flip") ? 'f' : 'n');
   mvwprintw (wnd, 3, 1, "Az/Al/D: %03.0f %+02.0f %s", altaz.az, altaz.alt,
@@ -162,12 +162,12 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   lst = getValueDouble ("siderealtime");
   ln_rad_to_hms (ln_deg_to_rad (lst), &hms);
-  mvwprintw (wnd, 6, 1, "Lsid: %.3f (%02i:%02i:%02.1f)",
+  mvwprintw (wnd, 6, 1, "Lsid: %07.3f (%02i:%02i:%02.1f)",
 	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
 	     hms.seconds);
 
   ln_rad_to_hms (ln_deg_to_rad (gst), &hms);
-  mvwprintw (wnd, 7, 1, "Gsid: %.3f (%02i:%02i:%02.1f)", gst, hms.hours,
+  mvwprintw (wnd, 7, 1, "Gsid: %07.3f (%02i:%02i:%02.1f)", gst, hms.hours,
 	     hms.minutes, hms.seconds);
 }
 
@@ -201,8 +201,8 @@ public:
 void
 Rts2NMCamera::print (WINDOW * wnd)
 {
-  mvwprintw (wnd, 1, 1, "Typ: %s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Ser: %s", getValueChar ("serial"));
+  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
 /*  if (info->chip_info)
     mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
 	       info->chip_info[0].height);
