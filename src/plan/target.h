@@ -70,6 +70,8 @@ private:
 
   int getDBScript (int target, const char *camera_name, char *script);
 protected:
+  int bonus;			// tar_priority + tar_bonus
+
   int target_id;
   struct ln_lnlat_posn *observer;
 
@@ -116,6 +118,10 @@ public:
   // scheduler functions
   virtual int considerForObserving (ObjectCheck * checker, double lst);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
+  virtual int getBonus ()
+  {
+    return bonus;
+  }
   virtual int changePriority (int pri_change, double validJD);
 
   virtual int getNextImgId ()

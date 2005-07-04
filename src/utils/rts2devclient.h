@@ -35,7 +35,7 @@ public:
   double getValueDouble (char *value_name);
   int getValueInteger (char *value_name);
 
-  int command ();
+  virtual int command ();
 
     std::vector < Rts2Value * >values;
 
@@ -74,7 +74,10 @@ protected:
 
 public:
     Rts2DevClientTelescope (Rts2Conn * in_connection);
-
+  /*! gets calledn when move finished without success */
+  virtual void moveFailed (int status)
+  {
+  }
 };
 
 class Rts2DevClientDome:public Rts2DevClient
@@ -114,6 +117,7 @@ class Rts2DevClientImgproc:public Rts2DevClient
 {
 public:
   Rts2DevClientImgproc (Rts2Conn * in_connection);
+  virtual int command ();
 };
 
 #endif /* !__RTS2_DEVCLIENT__ */

@@ -173,3 +173,29 @@ Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * in_connection):Rts2DevCli
 {
   addValue (new Rts2ValueInteger ("que_size"));
 }
+
+int
+Rts2DevClientImgproc::command ()
+{
+  // image ready value
+  if (connection->isCommand ("finished_ok"))
+    {
+      int tar_id;
+      int img_id;
+      double ra;
+      double dec;
+      double ra_err;
+      double dec_err;
+      if (connection->paramNextInteger (&tar_id)
+	  || connection->paramNextInteger (&img_id)
+	  || connection->paramNextDouble (&ra)
+	  || connection->paramNextDouble (&dec)
+	  || connection->paramNextDouble (&ra_err)
+	  || connection->paramNextDouble (&dec_err)
+	  || !connection->paramEnd ())
+	return -3;
+      connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+      return -1;
+    }
+  return Rts2DevClient::command ();
+}

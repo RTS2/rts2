@@ -3,6 +3,7 @@
 #include "rts2execcli.h"
 
 #include <vector>
+#include <signal.h>
 
 class Rts2Executor;
 
@@ -88,7 +89,10 @@ Rts2Device (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
 
 Rts2Executor::~Rts2Executor (void)
 {
-
+  if (currentTarget)
+    delete currentTarget;
+  if (nextTarget)
+    delete nextTarget;
 }
 
 int
@@ -130,7 +134,6 @@ Rts2Executor::postEvent (Rts2Event * event)
     {
     case EVENT_SCRIPT_STARTED:
       if (scriptCount < 0)
-	// start observation in DB??
 	scriptCount = 1;
       else
 	scriptCount++;
@@ -180,6 +183,7 @@ Rts2Executor::setNext (int nextId)
   if (nextTarget)
     {
       if (nextTarget->getTargetID () == nextId)
+	// we observe the same target..
 	return 0;
       delete nextTarget;
     }
@@ -217,11 +221,21 @@ Rts2Executor::queTarget (Target * in_target)
 
 Rts2Executor *executor;
 
+void
+killSignal (int sig)
+{
+  if (executor)
+    delete executor;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
   int ret;
   executor = new Rts2Executor (argc, argv);
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
   ret = executor->init ();
   if (ret)
     {

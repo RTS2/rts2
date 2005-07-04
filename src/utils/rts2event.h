@@ -5,6 +5,7 @@
 #define EVENT_WRITE_TO_IMAGE	2
 #define EVENT_SET_TARGET	3
 #define EVENT_OBSERVE           4
+#define EVENT_IMAGE_OK		5
 
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000

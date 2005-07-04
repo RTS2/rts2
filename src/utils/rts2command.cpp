@@ -142,7 +142,8 @@ Rts2CommandCenter::Rts2CommandCenter (Rts2Block * in_master, int chip, int width
   free (command);
 }
 
-Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, double ra,
+Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master,
+				  Rts2DevClientTelescope * in_tel, double ra,
 				  double dec):
 Rts2Command (in_master)
 {
@@ -150,11 +151,17 @@ Rts2Command (in_master)
   asprintf (&command, "move %lf %lf", ra, dec);
   setCommand (command);
   free (command);
+  tel = in_tel;
 }
 
-Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * in_master, int corr_mark,
-					double ra, double dec, double ra_err,
-					double dec_err):
+int
+Rts2CommandMove::commandReturnFailed (int status)
+{
+  tel->moveFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
+Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * in_master, int corr_mark, double ra, double dec, double ra_err, double dec_err):
 Rts2Command (in_master)
 {
   char *command;

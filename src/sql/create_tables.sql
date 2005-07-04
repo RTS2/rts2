@@ -26,7 +26,7 @@ CREATE TABLE targets (
 	tar_ra		float8,
 	tar_dec		float8,
 	tar_comment	text,
-	tar_enabled     boolean,
+	tar_enabled     boolean NOT NULL DEFAULT true,
 	-- priority bonus for target
 	tar_priority    integer,
 	-- here start site dependent part - that depends highly on
@@ -118,6 +118,14 @@ CREATE TABLE darks (
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name)
 );
+
+CREATE INDEX darks_all ON darks (dark_exposure, dark_temperature, dark_date);
+
+CREATE INDEX darks_dates ON darks (dark_date);
+
+CREATE INDEX darks_exposures ON darks (dark_date);
+
+CREATE INDEX darks_temperature ON darks (dark_temperature);
 
 DROP TABLE flats;
 

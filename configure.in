@@ -97,6 +97,28 @@ AC_SUBST(ANDOR)
 AC_SUBST(LIB_ANDOR)
 AC_SUBST(INC_ANDOR)
 
+# for Alta we need special library:(
+AC_ARG_WITH(alta,
+[  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
+# checks for libusb-config
+AC_CHECK_PROG(LIBUSB_CONFIG, libusb-config, yes, no)
+if test "$LIBUSB_CONFIG" = "yes"; then
+ LIBUSB_LDFLAGS=`libusb-config --libs`
+ LIBUSB_CFLAGS=`libusb-config --cflags`
+ LIBUSB_VERSION=`libusb-config --version`
+else
+ AC_MSG_ERROR([libusb not found!])
+fi
+ALTA="${withval}";
+LIB_ALTA="${ALTA}/ApnCamera.o ${ALTA}/ApnCamera_USB.o ${ALTA}/ApogeeUsbLinux.o ${ALTA}/ApnCamData*.o ${ALTA}/ApnCamTable.o ${LIBUSB_LDFLAGS}";
+INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${LIBUSB_CFLAGS}",
+[ALTA=no])
+
+AM_CONDITIONAL(ALTA, test x$ALTA != xno)
+AC_SUBST(ALTA)
+AC_SUBST(LIB_ALTA)
+AC_SUBST(INC_ALTA)
+
 # check for OPENTPL
 AC_ARG_WITH(opentpl,
 [  --with-opentpl          path to OPEN TPL mount driver, build IR driver],

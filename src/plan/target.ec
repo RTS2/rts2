@@ -52,6 +52,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   obs_id = -1;
   img_id = 0;
   target_id = in_tar_id;
+  bonus = -1;
 }
 
 Target::~Target (void)
@@ -66,6 +67,9 @@ Target::startObservation ()
   int d_tar_id = target_id;
   int d_obs_id;
   EXEC SQL END DECLARE SECTION;
+
+  if (obs_id > 0) // we already observe that target
+    return 0;
 
   EXEC SQL
   SELECT

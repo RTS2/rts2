@@ -35,5 +35,4 @@ public:
   virtual void stateChanged (Rts2ServerState * state);
 };
 
-
 #endif /*! __RTS2_EXECCLI__ */

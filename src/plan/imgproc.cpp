@@ -33,6 +33,7 @@ private:
   Rts2ConnImgProcess *runningImage;
 public:
     Rts2ImageProc (int argc, char **argv);
+    virtual ~ Rts2ImageProc (void);
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
 
   virtual int idle ();
@@ -84,6 +85,12 @@ Rts2ImageProc::Rts2ImageProc (int argc, char **argv):Rts2Device (argc, argv, DEV
 	    "IMGP")
 {
   runningImage = NULL;
+}
+
+Rts2ImageProc::~Rts2ImageProc (void)
+{
+  if (runningImage)
+    delete runningImage;
 }
 
 Rts2Conn *

@@ -38,8 +38,8 @@ public:
   {
     return text;
   }
-  virtual int commandReturnFailed (int status);
   virtual int commandReturnOK ();
+  virtual int commandReturnFailed (int status);
 };
 
 class Rts2CentraldCommand:public Rts2Command
@@ -107,8 +107,11 @@ public:
 
 class Rts2CommandMove:public Rts2Command
 {
+  Rts2DevClientTelescope *tel;
 public:
-  Rts2CommandMove (Rts2Block * in_master, double ra, double dec);
+    Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel,
+		     double ra, double dec);
+  virtual int commandReturnFailed (int status);
 };
 
 class Rts2CommandCorrect:public Rts2Command

@@ -155,8 +155,8 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	  currentTarget->getPosition (&coord);
 	  connection->
 	    queCommand (new
-			Rts2CommandMove (connection->getMaster (), coord.ra,
-					 coord.dec));
+			Rts2CommandMove (connection->getMaster (), this,
+					 coord.ra, coord.dec));
 	  currentTarget->startObservation ();
 	}
       break;
