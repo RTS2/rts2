@@ -34,6 +34,7 @@ class Rts2focusc:public Rts2Client
 private:
   std::vector < char *>cameraNames;
   float defExposure;
+  exposureType exposureT;
 protected:
     virtual void help ();
 public:
@@ -50,12 +51,22 @@ public:
   {
     return defExposure;
   }
+
+  exposureType getExposureType ();
 };
 
 class Rts2focuscCamera:public Rts2DevClientCameraImage
 {
+private:
+  Rts2focusc * master;
+protected:
+  virtual void queExposure ()
+  {
+    exposureT = master->getExposureType ();
+    Rts2DevClientCameraImage::queExposure ();
+  }
 public:
-  Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master);
+    Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master);
 
   virtual void postEvent (Rts2Event * event)
   {
@@ -65,7 +76,8 @@ public:
 	exposureEnabled = 1;
 	queExposure ();
 	break;
-	case EVENT_STOP_EXPOSURE:exposureEnabled = 0;
+      case EVENT_STOP_EXPOSURE:
+	exposureEnabled = 0;
 	break;
       }
     Rts2DevClientCameraImage::postEvent (event);
@@ -91,11 +103,11 @@ Rts2Client (argc, argv)
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
   addOption ('e', "exposure", 1, "exposure (defults to 10 sec)");
-//  addOption ('D', "date", 1, "stamp with date");
-//  addOption ('s', "secmod", 1, "exposure every UT sec");
-  addOption ('I', "inc", 0, "add number of exposures");
+  addOption ('s', "secmod", 1, "exposure every UT sec");
+  addOption ('D', "dark", 0, "create dark images");
 
   defExposure = 10.0;
+  exposureT = EXP_LIGHT;
 }
 
 int
@@ -109,6 +121,9 @@ Rts2focusc::processOption (int in_opt)
     case 'e':
       defExposure = atof (optarg);
       break;
+    case 'D':
+      exposureT = EXP_DARK;
+      break;
     default:
       return Rts2Client::processOption (in_opt);
     }
@@ -118,10 +133,23 @@ Rts2focusc::processOption (int in_opt)
 Rts2DevClient *
 Rts2focusc::createOtherType (Rts2Conn * conn, int other_device_type)
 {
+  std::vector < char *>::iterator cam_iter;
   switch (other_device_type)
     {
     case DEVICE_TYPE_CCD:
-      return new Rts2focuscCamera (conn, this);
+      Rts2focuscCamera * cam;
+      cam = new Rts2focuscCamera (conn, this);
+      // post exposure event..if name agree
+      for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();
+	   cam_iter++)
+	{
+	  if (!strcmp (*cam_iter, conn->getName ()))
+	    {
+	      printf ("Get conn: %p\n", conn);
+	      cam->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
+	    }
+	}
+      return cam;
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }
@@ -130,42 +158,27 @@ Rts2focusc::createOtherType (Rts2Conn * conn, int other_device_type)
 int
 Rts2focusc::run ()
 {
-  // find camera names..
-  std::vector < char *>::iterator cam_iter;
-  for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();
-       cam_iter++)
-    {
-      Rts2Conn *conn;
-      conn = getConnection ((*cam_iter));
-      conn->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
-    }
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 136"));
   return Rts2Client::run ();
+}
+
+exposureType
+Rts2focusc::getExposureType ()
+{
+  return exposureT;
 }
 
 Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master):Rts2DevClientCameraImage
   (in_connection)
 {
   exposureTime = in_master->getDefaultExposure ();
+  master = in_master;
 }
 
 void
 Rts2focuscCamera::stateChanged (Rts2ServerState * state)
 {
   Rts2DevClientCameraImage::stateChanged (state);
-  if (state->isName ("priority"))
-    {
-      if (state->value == 1)
-	{
-	  if (!exposureEnabled)
-	    {
-	      exposureEnabled = 1;
-	      queExposure ();
-	    }
-	}
-      else
-	exposureEnabled = 0;
-    }
   if (state->isName ("img_chip"))
     {
       std::cout << connection->getName () << " state: " << state->
