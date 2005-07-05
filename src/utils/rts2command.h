@@ -121,4 +121,10 @@ public:
 		      double dec, double ra_err, double dec_err);
 };
 
+class Rts2CommandExecNext:public Rts2Command
+{
+public:
+  Rts2CommandExecNext (Rts2Block * in_master, int next_id);
+};
+
 #endif /* !__RTS2_COMMAND__ */

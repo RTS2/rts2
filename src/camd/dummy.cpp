@@ -69,6 +69,8 @@ public:
   }
   virtual int baseInfo ()
   {
+    strcpy (ccdType, "Dummy");
+    strcpy (serialNumber, "1");
     return 0;
   }
   virtual int info ()

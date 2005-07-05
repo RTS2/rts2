@@ -10,5 +10,5 @@ T	terrestial (fixed ra+dec) target
 \.
 
 COPY epoch FROM stdin;
-1	abstime(0)	NULL
+1	'1-1-1970'	'1-1-2032'
 \.

@@ -170,3 +170,12 @@ Rts2Command (in_master)
   setCommand (command);
   free (command);
 }
+
+Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * in_master, int next_id):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "next %i", next_id);
+  setCommand (command);
+  free (command);
+}

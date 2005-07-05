@@ -417,6 +417,14 @@ public:
 		const char *p_login, const char *p_status_txt);
   int addUser (Rts2User * in_user);
 
+  /***************************************************************
+   * 
+   * Return established connection to device with given name.
+   *
+   * Returns connection to device with deviceName. Device must be know to system.
+   *
+   ***************************************************************/
+
   Rts2Conn *getOpenConnection (char *deviceName);
 
   /***************************************************************

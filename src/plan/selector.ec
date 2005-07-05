@@ -10,6 +10,7 @@
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2device.h"
 #include "../utils/rts2event.h"
+#include "../utils/rts2command.h"
 #include "../utils/objectcheck.h"
 #include "status.h"
 #include "target.h"
@@ -32,7 +33,9 @@ public:
   Rts2Selector (int argc, char **argv);
     virtual ~ Rts2Selector (void);
   virtual void postEvent (Rts2Event *event);
+  int updateNext ();
   int selectNext (); // return next observation..
+  virtual int changeMasterState (int new_state);
 };
 
 Rts2Selector::Rts2Selector (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_SELECTOR, 5562,
@@ -63,10 +66,28 @@ Rts2Selector::postEvent (Rts2Event *event)
   switch (event->getType ())
   {
     case EVENT_IMAGE_OK:
-      selectNext ();
+      updateNext ();
       break;
   }
   Rts2Device::postEvent (event);
+}
+
+int
+Rts2Selector::updateNext ()
+{
+  int next_id;
+  Rts2Conn * exec;
+  next_id = selectNext ();
+  if (next_id > 0)
+  {
+    exec = getOpenConnection ("EXEC");
+    if (exec)
+    {
+      exec->queCommand (new Rts2CommandExecNext (this, next_id));
+    }
+    return 0;
+  }
+  return -1;
 }
 
 int
@@ -88,6 +109,7 @@ Rts2Selector::selectNext ()
       return selectDarks ();
       break;
   }
+  return -1; // we don't have any target to take observation..
 }
 
 void
@@ -184,6 +206,12 @@ int
 Rts2Selector::selectDarks ()
 {
 
+}
+
+int
+Rts2Selector::changeMasterState (int new_state)
+{
+  return updateNext ();
 }
 
 Rts2Selector *selector;
