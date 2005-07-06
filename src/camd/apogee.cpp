@@ -794,7 +794,7 @@ Rts2DevCamera (argc, argv)
 
   camera = NULL;
 
-  fan = 0;
+  fan = 1;
   canDF = 1;
 }
 
@@ -863,7 +863,7 @@ Rts2DevCameraApogee::ready ()
 int
 Rts2DevCameraApogee::baseInfo ()
 {
-  strcpy (ccdType, "Apogee ");
+  strcpy (ccdType, "Apogee_");
   strncat (ccdType, camera->m_Sensor, 10);
   strcpy (serialNumber, "007");
   return 0;
