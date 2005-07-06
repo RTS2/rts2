@@ -9,10 +9,16 @@
 
 EXEC SQL include sqlca;
 
+double
+Rts2ConnGrb::getPktSod ()
+{
+  return lbuf[PKT_SOD]/100.0;
+}
+
 int
 Rts2ConnGrb::pr_imalive ()
 {
-  syslog (LOG_DEBUG, "Rts2ConnGrb::pr_imalive last packet SN=%d delta=%5.2f last_delta=%.1f",
+  syslog (LOG_DEBUG, "Rts2ConnGrb::pr_imalive last packet SN=%f delta=%5.2f last_delta=%.1f",
     getPktSod (), here_sod - getPktSod (), getPktSod () - last_imalive_sod);
   last_imalive_sod = getPktSod ();
   return 0;

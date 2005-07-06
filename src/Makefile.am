@@ -7,5 +7,6 @@ SUBDIRS = \
 	focusd  \
 	mirror  \
 	wcs \
+	utilsdb \
 	${LIBNOVA_SUBDIRS} \
 	${PSQL_SUBDIRS}

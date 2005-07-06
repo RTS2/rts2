@@ -1116,6 +1116,8 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	{
 	  if (discard_priority != i)
 	    {
+	      syslog (LOG_DEBUG, "cancelPriorityOperations %i %i",
+		      discard_priority, i);
 	      cancelPriorityOperations ();
 	      if (discard_priority >= 0)
 		connections[discard_priority]->setHavePriority (0);

@@ -17,10 +17,7 @@ private:
   double last_imalive_sod;	// SOD of the previous imalive packet
 
   // utility functions..
-  double getPktSod ()
-  {
-    return lbuf[PKT_SOD] / 100.0;
-  };
+  double getPktSod ();
 
   double getJDfromTJD (long TJD, double SOD)
   {

@@ -283,7 +283,7 @@ if test "x${libnova}" = "xyes" -a "x${psql}" = "xyes"; then
 	# Check for PostgreSQL
 	AC_POSTGRESQL
 	AC_ECPG
-	AC_SUBST([PSQL_SUBDIRS],['db plan pgsql bckimages sql'])
+	AC_SUBST([PSQL_SUBDIRS],['utilsdb plan pgsql bckimages sql'])
 fi
 
 # Checks for library functions.
@@ -334,6 +334,7 @@ AC_OUTPUT([Makefile
 	   src/utils/Makefile
            src/wcs/Makefile
 	   src/writers/Makefile
+	   src/utilsdb/Makefile
 	   man/rts2.1
 	   man/rts2.conf.5
 	   man/rts2-centrald.1
@@ -353,6 +354,7 @@ echo "
 CCD's:
   sbig		${SBIG}
   andor         ${ANDOR}
+  alta          ${ALTA}
 
 MOUNT's:
   opentpl       ${OPENTPL}
