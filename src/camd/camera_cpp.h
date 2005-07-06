@@ -51,6 +51,7 @@ private:
   int sendChip (Rts2Conn * conn, char *name, int value);
   int sendChip (Rts2Conn * conn, char *name, float value);
   int send_readout_data_failed;
+  int shutter_state;
 
 protected:
   int chipId;
@@ -127,7 +128,7 @@ public:
   {
     return -1;
   }
-  int setExposure (float exptime);
+  int setExposure (float exptime, int in_shutter_state);
   virtual long isExposing ();
   virtual int endExposure ();
   virtual int stopExposure ()

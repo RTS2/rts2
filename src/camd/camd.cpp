@@ -28,6 +28,7 @@ CameraChip::CameraChip (int in_chip_id)
   pixelY = nan ("f");
   readoutLine = -1;
   sendLine = -1;
+  shutter_state = -1;
 }
 
 CameraChip::CameraChip (int in_chip_id, int in_width, int in_height,
@@ -46,6 +47,7 @@ CameraChip::CameraChip (int in_chip_id, int in_width, int in_height,
   gain = in_gain;
   readoutLine = -1;
   sendLine = -1;
+  shutter_state = -1;
 }
 
 CameraChip::~CameraChip (void)
@@ -82,7 +84,7 @@ CameraChip::center (int in_w, int in_h)
 }
 
 int
-CameraChip::setExposure (float exptime)
+CameraChip::setExposure (float exptime, int in_shutter_state)
 {
   struct timeval tv;
   gettimeofday (&tv, NULL);
@@ -96,6 +98,7 @@ CameraChip::setExposure (float exptime)
       exposureEnd.tv_sec += tv.tv_usec / USEC_SEC;
       exposureEnd.tv_usec = tv.tv_usec % USEC_SEC;
     }
+  shutter_state = in_shutter_state;
   return 0;
 }
 
@@ -260,8 +263,10 @@ CameraChip::sendFirstLine ()
       header.sizes[1] = chipReadout->height / usedBinningVertical;
       header.binnings[0] = usedBinningHorizontal;
       header.binnings[1] = usedBinningVertical;
+      header.x = chipReadout->x;
+      header.y = chipReadout->y;
       strcpy (header.filter, "UNK");
-      header.shutter = SHUTTER_SYNCHRO;
+      header.shutter = shutter_state;
       int ret;
       ret = sendReadoutData ((char *) &header, sizeof (imghdr));
       if (ret == -1)
@@ -516,7 +521,8 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
       conn->sendValue ("exposure", exptime);
       maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
-      chips[chip]->setExposure (exptime);
+      chips[chip]->setExposure (exptime,
+				light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
       // call us to check for exposures..
       long new_timeout;
       new_timeout = camWaitExpose (chip);
