@@ -2,6 +2,7 @@ DROP TABLE terestial;
 DROP TABLE ell;
 DROP TABLE ot;
 DROP TABLE grb;
+DROP TABLE swift;
 DROP TABLE targets;
 DROP TABLE epoch;
 DROP TABLE types;
@@ -50,9 +51,32 @@ CREATE TABLE phot (
 CREATE TABLE grb (
 	tar_id		integer REFERENCES targets (tar_id),
 	grb_id		integer PRIMARY KEY,
+	grb_type	integer, -- type of first notice which create that log entry
 	grb_seqn	integer,
 	grb_date	timestamp,
 	grb_last_update	timestamp
+);
+
+-- history of GRB processing
+
+CREATE TABLE grb_hist (
+	grb_hist_id	integer PRIMARY KEY,
+	grb_hist_type	integer, -- type of first notice which create that log entry
+	grb_hist_seqn	integer,
+	grb_hist_date	timestamp,
+	grb_hist_update	timestamp
+);
+
+CREATE TABLE swift (
+	swift_id	integer PRIMARY KEY,
+	swift_ra	float8,
+	swift_dec	float8,
+	swift_roll	float8,
+        swift_received	timestamp,
+	swift_time	timestamp,
+        swift_name      varchar[70],
+        swift_obstime   float,
+	swift_merit	float
 );
 
 CREATE TABLE ot (
@@ -141,6 +165,10 @@ CREATE TABLE flats (
 DROP SEQUENCE tar_id;
 
 CREATE SEQUENCE tar_id;
+
+DROP SEQUENCE swift_id;
+
+CREATE SEQUENCE swift_id;
 
 DROP TABLE observations;
 

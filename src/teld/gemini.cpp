@@ -818,6 +818,7 @@ Rts2DevTelescopeGemini::geminiInit ()
       if (tel_write_read ("#:U#", 5, rbuf, 0) < 0)
 	return -1;
     }
+  tel_write_read_hash ("#:Ml#", 5, rbuf, 1);
   return 0;
 }
 
@@ -1075,6 +1076,8 @@ Rts2DevTelescopeGemini::tel_start_move ()
     return 0;
   // otherwise read reply..
   tel_read_hash (buf, 53);
+  if (retstr == '3')		// manual control..
+    return 0;
   return -1;
 }
 
@@ -1125,6 +1128,7 @@ Rts2DevTelescopeGemini::endMove ()
   syslog (LOG_INFO, "rate: %i", track);
   tel_gemini_set (131, 1);
   tel_gemini_get (130, &track);
+  setTimeout (USEC_SEC);
   if (tel_write ("#:ONtest#", 9) > 0)
     return 0;
   return -1;
@@ -1216,6 +1220,7 @@ Rts2DevTelescopeGemini::endMoveFixed ()
   stopWorm ();
   tel_gemini_get (130, &track);
   syslog (LOG_DEBUG, "endMoveFixed track: %i", track);
+  setTimeout (USEC_SEC);
   if (tel_write ("#:ONfixed#", 10) > 0)
     return 0;
   return -1;

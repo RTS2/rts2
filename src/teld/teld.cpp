@@ -31,6 +31,8 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   move_fixed = 0;
 
   move_connection = NULL;
+  moveInfoCount = 0;
+  moveInfoMax = 100;
   moveMark = 0;
   numCorr = 0;
   locCorNum = -1;
@@ -94,15 +96,13 @@ Rts2DevTelescope::checkMoves ()
 	  move_connection = NULL;
 	  knowPosition = 0;
 	}
-      if (ret == -2)
+      else if (ret == -2)
 	{
 	  infoAll ();
 	  if (move_fixed)
 	    ret = endMoveFixed ();
 	  else
 	    ret = endMove ();
-	  if (move_connection)
-	    sendInfo (move_connection);
 	  if (ret)
 	    {
 	      maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
@@ -112,7 +112,28 @@ Rts2DevTelescope::checkMoves ()
 	  else
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
 		       "move finished without error");
+	  if (move_connection)
+	    {
+	      sendInfo (move_connection);
+	      if (ret)
+		move_connection->sendCommandEnd (DEVDEM_E_HW,
+						 "move finished with error");
+	      else
+		move_connection->sendCommandEnd (0, "OK");
+	    }
 	  move_connection = NULL;
+	}
+      else
+	{
+	  if (moveInfoCount == moveInfoMax)
+	    {
+	      sendInfo (move_connection);
+	      moveInfoCount = 0;
+	    }
+	  else
+	    {
+	      moveInfoCount++;
+	    }
 	}
     }
   if ((getState (0) & TEL_MASK_MOVING) == TEL_PARKING)
@@ -127,15 +148,37 @@ Rts2DevTelescope::checkMoves ()
 	  maskState (0, TEL_MASK_MOVING, TEL_PARKED,
 		     "park command finished with error");
 	}
-      if (ret == -2)
+      else if (ret == -2)
 	{
 	  infoAll ();
-	  if (endPark ())
+	  ret = endPark ();
+	  if (ret)
 	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,
 		       "park command finished with error");
 	  else
 	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,
 		       "park command finished without error");
+	  if (move_connection)
+	    {
+	      sendInfo (move_connection);
+	      if (ret)
+		move_connection->sendCommandEnd (DEVDEM_E_HW,
+						 "move finished with error");
+	      else
+		move_connection->sendCommandEnd (0, "OK");
+	    }
+	}
+      else
+	{
+	  if (moveInfoCount == moveInfoMax)
+	    {
+	      sendInfo (move_connection);
+	      moveInfoCount = 0;
+	    }
+	  else
+	    {
+	      moveInfoCount++;
+	    }
 	}
     }
   return 0;
@@ -161,6 +204,12 @@ Rts2DevTelescope::changeMasterState (int new_state)
       locCorDec = 0;
       knowPosition = 0;
     }
+  // park us during day..
+  if (new_state == SERVERD_DAY
+      || new_state == SERVERD_DAY | SERVERD_STANDBY
+      || new_state == SERVERD_OFF)
+    startPark (NULL);
+  return 0;
 }
 
 int
@@ -272,6 +321,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 	  "Rts2DevTelescope::startMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
 	  locCorDec);
+  moveInfoCount = 0;
   ret = startMove (tar_ra, tar_dec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
@@ -281,6 +331,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       moveMark++;
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
       move_connection = conn;
+      ret = -1;			// we will issue OK/failed at the end of move operation
     }
   infoAll ();
   return ret;
@@ -385,7 +436,10 @@ Rts2DevTelescope::startPark (Rts2Conn * conn)
   int ret;
   ret = startPark ();
   if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
+    {
+      if (conn)
+	conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
+    }
   else
     {
       move_fixed = 0;

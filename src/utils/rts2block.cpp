@@ -871,7 +871,14 @@ Rts2Block::init ()
       syslog (LOG_ERR, "Rts2Block::init bind %m");
       return -errno;
     }
-  listen (sock, 1);
+  ret = listen (sock, 1);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2Block::init cannot accept: %m");
+      close (sock);
+      sock = -1;
+      return -1;
+    }
 }
 
 void

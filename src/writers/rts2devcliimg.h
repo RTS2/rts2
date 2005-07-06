@@ -32,7 +32,7 @@ protected:
   int exposureChip;
   int exposureEnabled;
 
-  void queExposure ();
+  virtual void queExposure ();
 public:
     Rts2DevClientCameraImage (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);

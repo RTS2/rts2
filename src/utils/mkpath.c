@@ -15,7 +15,7 @@ mkpath (const char *path, mode_t mode)
 {
   char *cp_path;
   char *start, *end;
-  int ret;
+  int ret = 0;
   cp_path = strdup (path);
   start = cp_path;
   while (1)

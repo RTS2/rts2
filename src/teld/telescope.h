@@ -18,6 +18,8 @@ class Rts2DevTelescope:public Rts2Device
 {
 private:
   Rts2Conn * move_connection;
+  int moveInfoCount;
+  int moveInfoMax;
   int moveMark;
   int numCorr;
   int maxCorrNum;
