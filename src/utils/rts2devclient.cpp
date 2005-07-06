@@ -199,3 +199,12 @@ Rts2DevClientImgproc::command ()
     }
   return Rts2DevClient::command ();
 }
+
+Rts2DevClientGrb::Rts2DevClientGrb (Rts2Conn * in_connection):Rts2DevClient
+  (in_connection)
+{
+  addValue (new Rts2ValueInteger ("last_packet"));
+  addValue (new Rts2ValueDouble ("delta"));
+  addValue (new Rts2ValueString ("last_target"));
+  addValue (new Rts2ValueDouble ("last_target_time"));
+}

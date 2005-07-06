@@ -328,6 +328,41 @@ Rts2NMImgproc::print (WINDOW * wnd)
   mvwprintw (wnd, 1, 1, "Que : %-5i", getValueInteger ("que_size"));
 }
 
+class Rts2NMGrb:public Rts2DevClientGrb
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMGrb (Rts2CNMonConn * in_connection):Rts2DevClientGrb (in_connection)
+  {
+    in_connection->setStatusBegin (5);
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    switch (event->getType ())
+      {
+	WINDOW *window;
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientGrb::postEvent (event);
+  }
+};
+
+void
+Rts2NMGrb::print (WINDOW * wnd)
+{
+  mvwprintw (wnd, 1, 1, "L Pac: %-5i", getValueInteger ("last_packet"));
+  mvwprintw (wnd, 2, 1, "Delta: %-5i", getValueDouble ("delta"));
+  mvwprintw (wnd, 3, 1, "L Tar: %5", getValueChar ("last_target"));
+  mvwprintw (wnd, 3, 1, "LTime: %5f", getValueDouble ("last_target_time"));
+}
+
 // here begins nmonitor common part
 
 int
@@ -618,6 +653,8 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2NMExecutor ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_IMGPROC:
       return new Rts2NMImgproc ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_GRB:
+      return new Rts2NMGrb ((Rts2CNMonConn *) conn);
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }

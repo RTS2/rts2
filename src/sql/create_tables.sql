@@ -74,7 +74,7 @@ CREATE TABLE swift (
 	swift_roll	float8,
         swift_received	timestamp,
 	swift_time	timestamp,
-        swift_name      varchar[70],
+        swift_name      varchar(70),
         swift_obstime   float,
 	swift_merit	float
 );

@@ -120,4 +120,10 @@ public:
   virtual int command ();
 };
 
+class Rts2DevClientGrb:public Rts2DevClient
+{
+public:
+  Rts2DevClientGrb (Rts2Conn * in_connection);
+};
+
 #endif /* !__RTS2_DEVCLIENT__ */

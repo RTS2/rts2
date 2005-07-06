@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -18,8 +19,9 @@ Rts2ConnGrb::getPktSod ()
 int
 Rts2ConnGrb::pr_imalive ()
 {
+  deltaValue = here_sod - getPktSod ();
   syslog (LOG_DEBUG, "Rts2ConnGrb::pr_imalive last packet SN=%f delta=%5.2f last_delta=%.1f",
-    getPktSod (), here_sod - getPktSod (), getPktSod () - last_imalive_sod);
+    getPktSod (), deltaValue, getPktSod () - last_imalive_sod);
   last_imalive_sod = getPktSod ();
   return 0;
 }
@@ -53,7 +55,7 @@ Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t,
   double d_swift_dec = dec;
   double d_swift_roll = roll;
   int d_swift_time = (int) *t;
-  int d_swift_received = (int) last_packet;
+  int d_swift_received = (int) last_packet.tv_sec;
   float d_swift_obstime = obstime;
   varchar d_swift_name[70];
   float d_swift_merit = merit;
@@ -88,7 +90,7 @@ Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t,
   );
   if (sqlca.sqlcode != 0)
   {
-    syslog (LOG_ERR, "Rts2ConnGrb cannot update swift: %s", sqlca.sqlerrm.sqlerrmc);
+    syslog (LOG_ERR, "Rts2ConnGrb cannot insert swift: %s", sqlca.sqlerrm.sqlerrmc);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -101,13 +103,20 @@ Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, Rts2Device *in
   gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
   strcpy (gcn_hostname, in_gcn_hostname);
   gcn_port = in_gcn_port;
-  last_packet = 0;
+  last_packet.tv_sec = 0;
+  last_packet.tv_usec = 0;
   last_imalive_sod = -1;
+
+  deltaValue = 0;
+  last_target = NULL;
+  last_target_time = -1;
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
 {
   delete gcn_hostname;
+  if (last_target)
+    delete last_target;
 }
 
 int
@@ -195,7 +204,7 @@ Rts2ConnGrb::receive (fd_set *set)
     short *sp;			// Ptr to a short; used for the swapping
     short pl, ph;			// Low part & high part
     ret = read (sock, (char*) nbuf, sizeof (nbuf));
-    time (&last_packet);
+    gettimeofday (&last_packet, NULL);
     if (ret < 0)
     {
       conn_state = CONN_DELETE;
@@ -216,8 +225,8 @@ Rts2ConnGrb::receive (fd_set *set)
         sp[2*i] = ph;
 	sp[2*i + 1] = pl;
       }
-    t = gmtime (&last_packet);
-    here_sod = t->tm_hour*3600 + t->tm_min*60 + t->tm_sec;
+    t = gmtime (&last_packet.tv_sec);
+    here_sod = t->tm_hour*3600 + t->tm_min*60 + t->tm_sec + last_packet.tv_usec / USEC_SEC;
 
     // switch based on packet content
     switch (lbuf[PKT_TYPE])
@@ -243,4 +252,37 @@ Rts2ConnGrb::receive (fd_set *set)
     }
   }
   return ret;
+}
+
+int
+Rts2ConnGrb::lastPacket ()
+{
+  return last_packet.tv_sec;
+}
+
+double
+Rts2ConnGrb::delta ()
+{
+  return deltaValue;
+}
+
+char*
+Rts2ConnGrb::lastTarget ()
+{
+  return last_target;
+}
+
+void
+Rts2ConnGrb::setLastTarget (char *in_last_target)
+{
+  if (last_target)
+    delete last_target;
+  last_target = new char[strlen (in_last_target) + 1];
+  strcpy (last_target, in_last_target);
+}
+
+int
+Rts2ConnGrb::lastTargetTime ()
+{
+  return last_target_time;
 }

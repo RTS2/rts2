@@ -12,16 +12,20 @@ class Rts2ConnGrb:public Rts2Conn
 private:
   long lbuf[SIZ_PKT];		// local buffer - swaped for Linux 
   long nbuf[SIZ_PKT];		// network buffer
-  time_t last_packet;
-  long here_sod;		// machine SOD (seconds after 0 GMT)
+  struct timeval last_packet;
+  double here_sod;		// machine SOD (seconds after 0 GMT)
   double last_imalive_sod;	// SOD of the previous imalive packet
+
+  double deltaValue;
+  char *last_target;
+  int last_target_time;
 
   // utility functions..
   double getPktSod ();
 
   double getJDfromTJD (long TJD, double SOD)
   {
-    return TJD + 2440000.5 + SOD;
+    return TJD + 2440000.5 + SOD / 86400.0;
   }
   // process various messages..
   int pr_imalive ();
@@ -40,6 +44,12 @@ public:
   virtual int idle ();
   virtual int init ();
   virtual int receive (fd_set * set);
+
+  int lastPacket ();
+  double delta ();
+  char *lastTarget ();
+  void setLastTarget (char *in_last_target);
+  int lastTargetTime ();
 };
 
 #endif /* !__RTS2_GRBCONN__ */
