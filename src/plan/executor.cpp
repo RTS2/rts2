@@ -216,6 +216,7 @@ void
 Rts2Executor::queTarget (Target * in_target)
 {
   int ret;
+  in_target->endObservation ();
   ret = in_target->postprocess ();
   if (!ret)
     targetsQue.push_back (in_target);
