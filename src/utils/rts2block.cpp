@@ -1284,8 +1284,15 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2DevClientDome (conn);
     case DEVICE_TYPE_PHOT:
       return new Rts2DevClientPhot (conn);
+    case DEVICE_TYPE_EXECUTOR:
+      return new Rts2DevClientExecutor (conn);
     case DEVICE_TYPE_IMGPROC:
       return new Rts2DevClientImgproc (conn);
+    case DEVICE_TYPE_SELECTOR:
+      return new Rts2DevClientSelector (conn);
+    case DEVICE_TYPE_GRB:
+      return new Rts2DevClientGrb (conn);
+
     default:
       return new Rts2DevClient (conn);
     }

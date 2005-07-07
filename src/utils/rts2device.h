@@ -49,7 +49,7 @@ class Rts2DevConn:public Rts2Conn
   virtual int connectionError ();
 protected:
     virtual int commandAuthorized ();
-  int command ();
+  virtual int command ();
 public:
     Rts2DevConn (int in_sock, Rts2Device * in_master);
   int add (fd_set * set);
@@ -168,6 +168,7 @@ public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
 		int default_port, char *default_name);
     virtual ~ Rts2Device (void);
+  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   int changeState (int state_num, int new_state, char *description);
   int maskState (int state_num, int state_mask, int new_state,
 		 char *description);

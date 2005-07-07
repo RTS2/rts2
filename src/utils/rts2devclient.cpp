@@ -168,6 +168,11 @@ Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevC
   addValue (new Rts2ValueInteger ("obsid"));
 }
 
+Rts2DevClientSelector::Rts2DevClientSelector (Rts2Conn * in_connection):Rts2DevClient
+  (in_connection)
+{
+}
+
 Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {

@@ -634,6 +634,12 @@ Rts2Device::~Rts2Device (void)
   states = NULL;
 }
 
+Rts2Conn *
+Rts2Device::createConnection (int in_sock, int conn_num)
+{
+  return new Rts2DevConn (in_sock, this);
+}
+
 void
 Rts2Device::setStateNames (int in_states_size, char **states_names)
 {

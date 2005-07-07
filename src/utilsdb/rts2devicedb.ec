@@ -13,9 +13,9 @@ EXEC SQL include sqlca;
 Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
    int default_port, char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_port, default_name)
 {
-  connectString = NULL;
+  connectString = "stars"; // defualt DB
 
-  addOption ('b', "database", 1, "connect string to PSQL database");
+  addOption ('b', "database", 1, "connect string to PSQL database (default to stars)");
 }
 
 Rts2DeviceDb::~Rts2DeviceDb (void)
@@ -52,7 +52,7 @@ Rts2DeviceDb::init ()
   ret = Rts2Device::init ();
   if (ret)
     return ret;
-
+  
   conn_str = connectString;
 
   EXEC SQL CONNECT TO :conn_str;

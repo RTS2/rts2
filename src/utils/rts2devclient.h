@@ -113,6 +113,12 @@ public:
   Rts2DevClientExecutor (Rts2Conn * in_connection);
 };
 
+class Rts2DevClientSelector:public Rts2DevClient
+{
+public:
+  Rts2DevClientSelector (Rts2Conn * in_connection);
+};
+
 class Rts2DevClientImgproc:public Rts2DevClient
 {
 public:

@@ -178,6 +178,8 @@ CREATE TABLE observations (
 	obs_id		integer PRIMARY KEY NOT NULL,
 	obs_ra		float8,
 	obs_dec		float8,
+	obs_alt		float,
+	obs_az		float,
 	obs_slew	timestamp,  -- start of slew
 	obs_start	timestamp,  -- start of observation
 	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...

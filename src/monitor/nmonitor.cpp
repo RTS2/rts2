@@ -357,10 +357,13 @@ public:
 void
 Rts2NMGrb::print (WINDOW * wnd)
 {
-  mvwprintw (wnd, 1, 1, "L Pac: %-5i", getValueInteger ("last_packet"));
+  time_t now;
+  time (&now);
+  mvwprintw (wnd, 1, 1, "L Pac: %-7.2f s",
+	     getValueDouble ("last_packet") - now);
   mvwprintw (wnd, 2, 1, "Delta: %-5i", getValueDouble ("delta"));
   mvwprintw (wnd, 3, 1, "L Tar: %5", getValueChar ("last_target"));
-  mvwprintw (wnd, 3, 1, "LTime: %5f", getValueDouble ("last_target_time"));
+  mvwprintw (wnd, 4, 1, "LTime: %5f", getValueDouble ("last_target_time"));
 }
 
 // here begins nmonitor common part
@@ -391,6 +394,7 @@ Rts2CNMonConn::print ()
   else
     wstandout (window);
 
+  wclear (window);
   mvwprintw (window, 0, 0, "== %-10s ==", getName ());
 
   if (has_colors ())

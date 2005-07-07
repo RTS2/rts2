@@ -123,14 +123,26 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
     {
     case EVENT_WRITE_TO_IMAGE:
       Rts2Image * image;
+      struct ln_equ_posn object;
+      struct ln_lnlat_posn obs;
+      struct ln_hrz_posn hrz;
+      double siderealtime;
       image = (Rts2Image *) event->getArg ();
       image->setMountName (connection->getName ());
       image->setValue ("MOUNT_TYPE", getValueChar ("type"),
 		       "mount telescope");
       image->setValue ("MOUNT_MARK", getValueInteger ("correction_mark"),
 		       "mark used for mount corretion");
-      image->setValue ("RA", getValueDouble ("ra"), "mount RA");
-      image->setValue ("DEC", getValueDouble ("dec"), "mount DEC");
+      getEqu (&object);
+      getObs (&obs);
+      image->setValue ("RA", object.ra, "mount RA");
+      image->setValue ("DEC", object.dec, "mount DEC");
+      image->setValue ("LONG", obs.lng, "mount longtitude");
+      image->setValue ("LAT", obs.lat, "mount latitude");
+      siderealtime = getValueDouble ("sidereal_time");
+      ln_get_hrz_from_equ_sidereal_time (&object, &obs, siderealtime, &hrz);
+      image->setValue ("ALT", hrz.alt, "mount altitude");
+      image->setValue ("AZ", hrz.az, "mount azimut");
       image->setValue ("FLIP", getValueInteger ("flip"), "mount flip");
       break;
     }
