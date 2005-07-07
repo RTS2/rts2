@@ -4,6 +4,7 @@ DROP TABLE ot;
 DROP TABLE grb;
 DROP TABLE swift_observation;
 DROP TABLE swift;
+DROP TABLE integral;
 DROP TABLE targets;
 DROP TABLE epoch;
 DROP TABLE types;
@@ -78,6 +79,14 @@ CREATE TABLE swift (
         swift_name      varchar(70),
         swift_obstime   float,
 	swift_merit	float
+);
+
+CREATE TABLE integral (
+	integral_id	integer PRIMARY KEY,
+	integral_ra	float8 NOT NULL,
+	integral_dec	float8 NOT NULL,
+	integral_received	timestamp NOT NULL,
+	integral_time	timestamp
 );
 
 CREATE TABLE ot (
@@ -167,9 +176,9 @@ DROP SEQUENCE tar_id;
 
 CREATE SEQUENCE tar_id;
 
-DROP SEQUENCE swift_id;
+DROP SEQUENCE point_id;
 
-CREATE SEQUENCE swift_id;
+CREATE SEQUENCE point_id;
 
 DROP TABLE observations;
 

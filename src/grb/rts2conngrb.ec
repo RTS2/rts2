@@ -47,6 +47,18 @@ Rts2ConnGrb::pr_swift_point ()
 }
 
 int
+Rts2ConnGrb::pr_integral_point ()
+{
+  double ra;
+  double dec;
+  time_t t;
+  ra = lbuf[14]/10000.0;
+  dec = lbuf[14]/10000.0;
+  ln_get_timet_from_julian (getJDfromTJD (lbuf[5], lbuf[6]/100.0), &t);
+  return addIntegralPoint (ra, dec, &t);
+}
+
+int
 Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t, 
   char * name, float obstime, float merit)
 {
@@ -78,7 +90,7 @@ Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t,
     swift_obstime,
     swift_merit
   ) VALUES (
-    nextval ('swift_id'),
+    nextval ('point_id'),
     :d_swift_ra,
     :d_swift_dec,
     :d_swift_roll,
@@ -87,6 +99,42 @@ Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t,
     :d_swift_name,
     :d_swift_obstime,
     :d_swift_merit
+  );
+  if (sqlca.sqlcode != 0)
+  {
+    syslog (LOG_ERR, "Rts2ConnGrb cannot insert swift: %s", sqlca.sqlerrm.sqlerrmc);
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL COMMIT;
+  return 0;
+}
+
+int
+Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  double d_integral_ra = ra;
+  double d_integral_dec = dec;
+  int d_integral_time = (int) *t;
+  int d_integral_received = (int) last_packet.tv_sec;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  INSERT INTO
+    integral
+  (
+    integral_id,
+    integral_ra,
+    integral_dec,
+    integral_time,
+    integral_received
+  ) VALUES (
+    nextval ('point_id'),
+    :d_integral_ra,
+    :d_integral_dec,
+    abstime (:d_integral_time),
+    abstime (:d_integral_received)
   );
   if (sqlca.sqlcode != 0)
   {
@@ -234,6 +282,9 @@ Rts2ConnGrb::receive (fd_set *set)
       case TYPE_IM_ALIVE:
         pr_imalive ();
         break;
+      case TYPE_INTEGRAL_POINTDIR_SRC:
+        pr_integral_point ();
+	break;
       case TYPE_SWIFT_POINTDIR_SRC:         // 83  // Swift Pointing Direction
 	pr_swift_point();
 	break;

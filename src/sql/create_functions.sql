@@ -41,9 +41,9 @@ DROP FUNCTION imgrange (wcs);
 CREATE FUNCTION imgrange (wcs)
   RETURNS varchar AS '/usr/lib/postgresql/lib/pg_wcs.so', 'imgrange' LANGUAGE 'C';
 
-DROP FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer, abstime);
+DROP FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime);
 -- 			med_id  epoch    mount_name camera_name obs_id  tar_id   date
-CREATE FUNCTION imgpath(integer, char(3), varchar(8), varchar(8), integer, integer, abstime) RETURNS varchar(100) AS '
+CREATE FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime) RETURNS varchar(100) AS '
 DECLARE
 	path	varchar(50);
 	tar_id	varchar(10);
@@ -66,7 +66,7 @@ BEGIN
 	  tar_id := $6;
 	END IF;
 	name:=EXTRACT(YEAR FROM $7) || LPAD(EXTRACT(MONTH FROM $7), 2, ''0'') || LPAD(EXTRACT(DAY FROM $7), 2, ''0'') || LPAD(EXTRACT(HOUR FROM $7), 2, ''0'') || LPAD(EXTRACT(MINUTE FROM $7), 2, ''0'') || LPAD(EXTRACT(SECOND FROM $7), 2, ''0'');
-	ep:=$2;
+	ep := LPAD ($2, 3, ''0'');
 		
 	RETURN path || ''/'' || ep || ''/'' || $4 || ''/'' || tar_id || ''/'' || name || ''.fits'';
 	

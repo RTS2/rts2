@@ -30,10 +30,12 @@ private:
   // process various messages..
   int pr_imalive ();
   int pr_swift_point ();	// swift pointing.
+  int pr_integral_point ();	// integral pointing
 
   // GRB db stuff
   int addSwiftPoint (double ra, double dec, double roll, const time_t * t,
 		     char *name, float obstime, float merit);
+  int addIntegralPoint (double ra, double dec, const time_t * t);
 
   int gcn_port;
   char *gcn_hostname;
