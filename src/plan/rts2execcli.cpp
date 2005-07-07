@@ -152,6 +152,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
       currentTarget = (Target *) event->getArg ();
       if (currentTarget)
 	{
+	  currentTarget->beforeMove ();
 	  currentTarget->getPosition (&coord);
 	  connection->
 	    queCommand (new

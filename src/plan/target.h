@@ -27,6 +27,12 @@
 #define TYPE_TERESTIAL		'T'
 #define TYPE_CALIBRATION	'c'
 
+#define TYPE_SWIFT_FOV		'W'
+#define TYPE_INTEGRAL_FOV	'I'
+
+#define TYPE_DARK		'd'
+#define TYPE_FLAT		'f'
+
 #define COMMAND_EXPOSURE	"E"
 #define COMMAND_FILTER		"F"
 #define COMMAND_PHOTOMETER      'P'
@@ -96,6 +102,12 @@ public:
   {
     return -1;
   }
+  int getAltAz (struct ln_hrz_posn *hrz)
+  {
+    return getAltAz (hrz, ln_get_julian_from_sys ());
+  }
+  virtual int getAltAz (struct ln_hrz_posn *hrz, double JD);
+
   int getTargetID ()
   {
     return target_id;
@@ -108,10 +120,10 @@ public:
   {
     return -1;
   }
-  virtual int startObservation ();
+  virtual int startObservation ();	// return 1 if observation is already in progress, 0 if observation started, -1 on error
   virtual int endObservation ();
 
-  virtual int move ();
+  virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
   virtual int acquire ();
   virtual int observe ();
   virtual int postprocess ();
@@ -180,6 +192,24 @@ protected:
     virtual int getScript (const char *deviceName, char *buf);
 public:
     TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs);
+};
+
+/**
+ * Swift Field of View - generate observations on Swift Field of View, based on
+ * data received from GCN
+ *
+ */
+class TargetSwiftFOV:public Target
+{
+private:
+  int swiftId;
+  struct ln_equ_posn swiftFovCenter;
+public:
+    TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  int findPointing ();		// find Swift pointing for observation
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int startObservation ();
+  virtual int beforeMove ();
 };
 
 // load target from DB

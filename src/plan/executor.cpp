@@ -23,7 +23,7 @@ private:
   Target * currentTarget;
   Target *nextTarget;
   void switchTarget ();
-  struct ln_lnlat_posn *observer;
+  struct ln_lnlat_posn observer;
 
   int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
     std::vector < Target * >targetsQue;
@@ -104,6 +104,8 @@ Rts2Executor::init ()
     return ret;
   // set priority..
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 20"));
+  observer.lng = -6.7341;
+  observer.lat = 37.1041;
   return 0;
 }
 
@@ -187,7 +189,7 @@ Rts2Executor::setNext (int nextId)
 	return 0;
       delete nextTarget;
     }
-  nextTarget = createTarget (nextId, observer);
+  nextTarget = createTarget (nextId, &observer);
   if (!currentTarget)
     switchTarget ();
   else

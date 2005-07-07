@@ -2,6 +2,7 @@ DROP TABLE terestial;
 DROP TABLE ell;
 DROP TABLE ot;
 DROP TABLE grb;
+DROP TABLE swift_observation;
 DROP TABLE swift;
 DROP TABLE targets;
 DROP TABLE epoch;
@@ -69,10 +70,10 @@ CREATE TABLE grb_hist (
 
 CREATE TABLE swift (
 	swift_id	integer PRIMARY KEY,
-	swift_ra	float8,
-	swift_dec	float8,
+	swift_ra	float8 NOT NULL,
+	swift_dec	float8 NOT NULL,
 	swift_roll	float8,
-        swift_received	timestamp,
+        swift_received	timestamp NOT NULL,
 	swift_time	timestamp,
         swift_name      varchar(70),
         swift_obstime   float,
@@ -175,10 +176,18 @@ DROP TABLE observations;
 CREATE TABLE observations (
 	tar_id		integer REFERENCES targets (tar_id),
 	obs_id		integer PRIMARY KEY NOT NULL,
+	obs_ra		float8,
+	obs_dec		float8,
 	obs_slew	timestamp,  -- start of slew
 	obs_start	timestamp,  -- start of observation
 	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
 	obs_end		timestamp
+);
+
+CREATE TABLE swift_observation (
+        swift_id        integer NOT NULL REFERENCES swift (swift_id),
+	obs_id		integer NOT NULL REFERENCES observations (obs_id),
+CONSTRAINT swift_obs_prim_key PRIMARY KEY (swift_id, obs_id)
 );
 
 DROP TABLE medias;
@@ -202,6 +211,8 @@ CREATE TABLE images (
 	img_exposure	integer,
 	img_temperature	integer,
 	img_filter	varchar(3),
+	img_alt		float,
+	img_az		float,
 	/* astrometry */
 	astrometry	wcs,
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),

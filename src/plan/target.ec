@@ -69,7 +69,7 @@ Target::startObservation ()
   EXEC SQL END DECLARE SECTION;
 
   if (obs_id > 0) // we already observe that target
-    return 0;
+    return 1;
 
   EXEC SQL
   SELECT
@@ -116,15 +116,18 @@ Target::endObservation ()
     WHERE
       obs_id = :d_obs_id;
     EXEC SQL COMMIT;
+    obs_id = -1;
     if (sqlca.sqlcode != 0)
     {
       logMsgDb ("cannot end obseravtion");
+      return -1;
     }
   }
+  return 0;
 }
 
 int
-Target::move ()
+Target::beforeMove ()
 {
   return 0;
 }
@@ -214,6 +217,19 @@ Target::getScript (const char *device_name, char *buf)
   s = get_sub_device_string_default (device_name, "script", obs_type_str,
 				     "E 10");
   strncpy (buf, s, MAX_COMMAND_LENGTH);
+  return 0;
+}
+
+int
+Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
+{
+  int ret;
+  struct ln_equ_posn object;
+
+  ret = getPosition (&object, JD);
+  if (ret)
+    return ret;
+  ln_get_hrz_from_equ (&object, observer, JD, hrz);
   return 0;
 }
 
@@ -331,6 +347,8 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 	return new EllTarget (in_tar_id, in_obs);
       case TYPE_GRB:
         return new TargetGRB (in_tar_id, in_obs);
+      case TYPE_SWIFT_FOV:
+        return new TargetSwiftFOV (in_tar_id, in_obs);
       default:
         return new ConstTarget (in_tar_id, in_obs);
     }
