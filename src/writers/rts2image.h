@@ -24,6 +24,7 @@ private:
   int createImage (char *in_filename);
   int openImage (char *in_filename);
   int writeExposureStart ();
+  char *getImageBase (int in_epoch_id);
 protected:
   int epochId;
   int targetId;

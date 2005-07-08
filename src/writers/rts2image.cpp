@@ -8,7 +8,6 @@
 #include "imghdr.h"
 
 #include "../utils/mkpath.h"
-#include "../utils/config.h"
 
 Rts2Image::Rts2Image (char *in_filename,
 		      const struct timeval *in_exposureStart)
@@ -275,6 +274,14 @@ Rts2Image::writeExposureStart ()
   setValue ("USEC", exposureStart.tv_usec, "exposure start micro seconds");
   setValue ("JD", ln_get_julian_from_timet (&t), "exposure JD");
   return 0;
+}
+
+char *
+Rts2Image::getImageBase (int in_epoch_id)
+{
+  static char buf[6];
+  sprintf (buf, "%05i", in_epoch_id);
+  return buf;
 }
 
 int

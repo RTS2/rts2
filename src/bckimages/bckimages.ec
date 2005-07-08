@@ -44,6 +44,9 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
   struct stat fst;
   struct move_files *mvf, *tmvf;
   char *new_path_str, *old_path_str;
+
+  EXEC SQL CONNECT TO stars;
+  
   EXEC SQL BEGIN;
   EXEC SQL DECLARE images_to_move CURSOR FOR SELECT imgpath (med_id, epoch_id,
 							     mount_name,
@@ -195,6 +198,7 @@ move_images (char *epoch_id, int old_med, int new_med, double max_size)
 
   EXEC SQL CLOSE images_to_move;
   EXEC SQL END;
+  EXEC SQL DISCONNECT;
   return 0;
 }
 
@@ -317,8 +321,6 @@ main (int argc, char **argv)
       fprintf (stderr, "Medias ids must be different!\n");
       exit (EXIT_FAILURE);
     }
-  db_connect ();
   move_images (epoch_name, old_med, new_med, max_size);
-  db_disconnect ();
   return 0;
 }

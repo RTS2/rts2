@@ -30,7 +30,7 @@
 #include <arpa/inet.h>
 
 #include "../utils/rts2block.h"
-#include "../utils/config.h"
+#include "../utils/rts2config.h"
 #include "status.h"
 
 #define PORT	5557
@@ -49,6 +49,8 @@ class Rts2Centrald:public Rts2Block
   int next_event_type;
   time_t next_event_time;
   struct ln_lnlat_posn observer;
+
+  int morning_off;
 
 protected:
   int changeState (int new_state);
@@ -506,11 +508,17 @@ Rts2ConnCentrald::command ()
 Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
 	   in_argv)
 {
-  observer.lng = get_double_default ("longtitude", 0);
-  observer.lat = get_double_default ("latitude", 0);
+  Rts2Config *
+    config = Rts2Config::instance ();
+  config->loadFile ();
+  config->getDouble ("observatory", "longtitude", observer.lng);
+  config->getDouble ("observatory", "latitude", observer.lat);
   current_state =
-    (strcmp (get_device_string_default ("centrald", "reboot_on", "N"), "Y") ?
-     SERVERD_OFF : 0);
+    config->getBoolen ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
+
+  morning_off = config->getBoolen ("centrald", "morning_off");
+  delete
+    config;
 
   addOption ('p', "port", 1, "port on which centrald will listen");
 }
@@ -629,10 +637,7 @@ Rts2Centrald::idle ()
     {
       old_current_state = current_state;
       if ((current_state & SERVERD_STATUS_MASK) == SERVERD_MORNING
-	  && call_state == SERVERD_DAY
-	  &&
-	  !strcmp (get_device_string_default
-		   ("centrald", "morning_off", "N"), "Y"))
+	  && call_state == SERVERD_DAY && morning_off)
 	{
 	  current_state = SERVERD_OFF;
 	}
@@ -655,11 +660,6 @@ main (int argc, char **argv)
   int i;
   Rts2Centrald *centrald;
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
-  if (read_config (CONFIG_FILE) == -1)
-    syslog (LOG_ERR,
-	    "Cannot open config file " CONFIG_FILE ", defaults will be used");
-  else
-    syslog (LOG_INFO, "Config readed from " CONFIG_FILE);
   centrald = new Rts2Centrald (argc, argv);
   centrald->init ();
   centrald->run ();

@@ -1,6 +1,8 @@
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
-#include "../utils/config.h"
+#include "../utils/rts2config.h"
 #include <fitsio.h>
 
 #include <dirent.h>
@@ -12,6 +14,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+Rts2Config *config;
 
 int verbose = 0;
 int do_unlink = 1;
@@ -115,17 +119,29 @@ process_file (char *filename)
       if (verbose)
 	printf ("No CAM_NAME in %s, default will be used\n", filename);
       if (isnan (min))
-	min = get_double_default ("flatmin", -INFINITY);
+	{
+	  if (config->getDouble ("flatprocess", "min", min))
+	    min = -INFINITY;
+	}
       if (isnan (max))
-	max = get_double_default ("flatmax", INFINITY);
+	{
+	  if (config->getDouble ("flatprocess", "max", max))
+	    max = INFINITY;
+	}
       status = 0;
     }
   else
     {
       if (isnan (min))
-	min = get_device_double_default (camera_name, "flatmin", -INFINITY);
+	{
+	  if (config->getDouble (camera_name, "flatmin", min))
+	    min = -INFINITY;
+	}
       if (isnan (max))
-	max = get_device_double_default (camera_name, "flatmax", INFINITY);
+	{
+	  if (config->getDouble (camera_name, "flatmax", max))
+	    max = INFINITY;
+	}
     }
   if (verbose > 1)
     printf ("%s: min %f, max %f, npix: %li\n", filename, min, max, npixels);
@@ -166,10 +182,6 @@ main (int argc, char **argv)
 {
   int c;
   struct stat st;
-
-  if (read_config (CONFIG_FILE) == -1)
-    fprintf (stderr, "Cannot open config file " CONFIG_FILE
-	     ", defaults will be used.\n");
 
   max = NAN;
   min = NAN;
@@ -237,6 +249,10 @@ main (int argc, char **argv)
       fprintf (stderr, "No file specified!\n");
       exit (EXIT_FAILURE);
     }
+
+  config = Rts2Config::instance ();
+  config->loadFile ();
+
   for (argv = &argv[optind++]; *argv; argv++)
     {
       if (stat (*argv, &st) == -1)

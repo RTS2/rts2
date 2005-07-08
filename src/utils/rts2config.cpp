@@ -9,6 +9,9 @@
 #include <syslog.h>
 #include <string.h>
 
+Rts2Config *
+  Rts2Config::pInstance = NULL;
+
 Rts2Config::Rts2Config ()
 {
   fp = NULL;
@@ -20,9 +23,20 @@ Rts2Config::~Rts2Config ()
     fclose (fp);
 }
 
+Rts2Config *
+Rts2Config::instance ()
+{
+  if (!pInstance)
+    pInstance = new Rts2Config ();
+  return pInstance;
+}
+
 int
 Rts2Config::loadFile (char *filename)
 {
+  if (!filename)
+    // default
+    filename = "/etc/rts2/rts2.ini";
   fp = fopen (filename, "r");
   if (fp == NULL)
     {
@@ -166,5 +180,20 @@ Rts2Config::getDouble (char *section, char *param, double &value)
       value = 0;
       return -1;
     }
+  return 0;
+}
+
+int
+Rts2Config::getBoolen (char *section, char *param)
+{
+  char valbuf[100];
+  char *retv;
+  int ret;
+  ret = getString (section, param, valbuf, 100);
+  if (ret)
+    return 0;
+  if (strcasecmp (valbuf, "y") == 0
+      || strcasecmp (valbuf, "yes") == 0 || strcasecmp (valbuf, "true") == 0)
+    return 1;
   return 0;
 }

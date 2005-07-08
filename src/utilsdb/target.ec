@@ -3,7 +3,6 @@
 #endif
 
 #include "target.h"
-#include "../utils/config.h"
 
 #include <syslog.h>
 
@@ -236,8 +235,7 @@ Target::getScript (const char *device_name, char *buf)
   if (!ret)
     return 0;
 
-  s = get_sub_device_string_default (device_name, "script", obs_type_str,
-				     "E 10");
+  s = "E 10";
   strncpy (buf, s, MAX_COMMAND_LENGTH);
   return 0;
 }
@@ -344,8 +342,6 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
   int db_tar_id = in_tar_id;
   char db_type_id;
   EXEC SQL END DECLARE SECTION;
-
-  EXEC SQL CONNECT TO stars;
 
   try
   {

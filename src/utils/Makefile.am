@@ -7,7 +7,7 @@ test_LDFLAGS = hms.o @LIB_NOVA@ librts2block.a
 
 noinst_LIBRARIES = librts2block.a
 
-librts2block_a_SOURCES = rts2block.cpp rts2device.cpp config.c rts2option.cpp \
+librts2block_a_SOURCES = rts2block.cpp rts2device.cpp rts2option.cpp \
 	rts2address.cpp rts2user.cpp rts2client.cpp rts2command.cpp rts2value.cpp \
 	rts2devclient.cpp rts2dataconn.cpp hms.c mkpath.c rts2config.cpp
 

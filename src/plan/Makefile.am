@@ -13,7 +13,7 @@ rts2_imgproc_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ 
 
 rts2_selector_SOURCES = selector.cpp
 rts2_selector_CXXFLAGS = @LIBPG_CFLAGS@
-rts2_selector_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a ../utils/objectcheck.o ../utils/config.o
+rts2_selector_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a ../utils/objectcheck.o 
 
 EXTRA_DIST = rts2execcli.h selector.ec
 

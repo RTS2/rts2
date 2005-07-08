@@ -3,7 +3,7 @@
 #endif
 
 #include "rts2devcliimg.h"
-#include "../utils/config.h"
+#include "../utils/rts2config.h"
 
 Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rts2DevClientCamera
   (in_connection)
