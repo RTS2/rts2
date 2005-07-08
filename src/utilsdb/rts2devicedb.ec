@@ -13,7 +13,7 @@ EXEC SQL include sqlca;
 Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
    int default_port, char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_port, default_name)
 {
-  connectString = "stars"; // defualt DB
+  connectString = NULL; // defualt DB
   configFile = NULL;
 
   addOption ('b', "database", 1, "connect string to PSQL database (default to stars)");
@@ -50,7 +50,7 @@ Rts2DeviceDb::init ()
 {
   int ret;
   EXEC SQL BEGIN DECLARE SECTION;
-  char *conn_str;
+  char conn_str[200];
   EXEC SQL END DECLARE SECTION;
   // try to connect to DB
 
@@ -67,12 +67,20 @@ Rts2DeviceDb::init ()
   if (ret)
     return ret;
   
-  conn_str = connectString;
+  if (connectString)
+  {
+    strncpy (conn_str, connectString, 200);
+  }
+  else
+  {
+    config->getString ("database", "name", conn_str, 200);
+  }
+  conn_str[199] = '\0';
 
   EXEC SQL CONNECT TO :conn_str;
   if (sqlca.sqlcode != 0)
   {
-    syslog (LOG_ERR, "Rts2DeviceDb::init Cannot connect to DB: %s", sqlca.sqlerrm.sqlerrmc); 
+    syslog (LOG_ERR, "Rts2DeviceDb::init Cannot connect to DB %s: %s", conn_str, sqlca.sqlerrm.sqlerrmc); 
     return -1;
   }
 

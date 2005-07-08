@@ -135,6 +135,83 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
 }
 
 int
+DarkTarget::defaultDark (const char *deviceName, char *buf)
+{
+  strcpy (buf, "E 11");
+  return 0;
+}
+
+int
+DarkTarget::getScript (const char *deviceName, char *buf)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  VARCHAR d_camera_name[DEVICE_NAME_SIZE];
+  float d_img_exposure;
+  int d_dark_count;
+  EXEC SQL END DECLARE SECTION;
+
+  strncpy (d_camera_name.arr, deviceName, DEVICE_NAME_SIZE);
+  d_camera_name.len = strlen (deviceName);
+  // find which dark image we should optimally take..
+
+  EXEC SQL DECLARE dark_target CURSOR FOR
+    SELECT
+      img_exposure,
+      (SELECT
+        count (*)
+      FROM
+        darks
+      WHERE
+          darks.camera_name = images.camera_name
+        AND now () - dark_date < '1 day') AS dark_count
+    FROM
+      images
+    WHERE
+        images.camera_name = :d_camera_name
+      AND now () - img_date < '1 day'
+    GROUP BY
+        img_exposure,
+        images.camera_name
+    ORDER BY
+      dark_count DESC,
+      img_exposure DESC;
+  EXEC SQL OPEN dark_target;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("DarkTarget::getScript cannot open cursor dark_target, get default 10 sec darks");
+    EXEC SQL CLOSE dark_target;
+    return defaultDark (deviceName, buf);
+  }
+  EXEC SQL FETCH next FROM dark_target INTO
+    :d_img_exposure,
+    :d_dark_count;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("DarkTarget::getScript cannot get entry for darks, get default 10 sec darks");
+    EXEC SQL CLOSE dark_target;
+    return defaultDark (deviceName, buf);
+  }
+  // we found (finnaly) dark..let's make the script
+  sprintf (buf, "D %f", d_img_exposure);
+  EXEC SQL CLOSE dark_target;
+  return 0;
+}
+
+DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
+{
+}
+
+int
+FlatTarget::getScript (const char *deviceName, char *buf)
+{
+  strcpy (buf, "E 1");
+}
+
+FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
+{
+}
+
+int
 FocusingTarget::getScript (const char *device_name, char *buf)
 {
   buf[0] = COMMAND_FOCUSING;

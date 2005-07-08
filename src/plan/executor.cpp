@@ -99,7 +99,7 @@ int
 Rts2Executor::init ()
 {
   int ret;
-  ret = Rts2Device::init ();
+  ret = Rts2DeviceDb::init ();
   if (ret)
     return ret;
   // set priority..

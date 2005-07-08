@@ -94,6 +94,15 @@ Rts2Script::nextCommand (Rts2Block * in_master, Rts2Command ** new_command,
       *new_command = new Rts2CommandExposure (in_master, EXP_LIGHT, exp_time);
       return 0;
     }
+  else if (!strcmp (commandStart, COMMAND_DARK))
+    {
+      float exp_time;
+      ret = getNextParamFloat (&exp_time);
+      if (ret)
+	return -1;
+      *new_command = new Rts2CommandExposure (in_master, EXP_DARK, exp_time);
+      return 0;
+    }
   else if (!strcmp (commandStart, COMMAND_FILTER))
     {
       int filter;

@@ -102,6 +102,8 @@ Rts2Selector::selectNext ()
       return selectNextNight ();
       break;
     case SERVERD_DUSK:
+      return selectDarks ();
+      break;
     case SERVERD_DAWN:
       return selectFlats ();
       break;
@@ -199,13 +201,13 @@ Rts2Selector::selectNextNight ()
 int
 Rts2Selector::selectFlats ()
 {
-
+  return TARGET_FLAT;
 }
 
 int
 Rts2Selector::selectDarks ()
 {
-
+  return TARGET_DARK;
 }
 
 int

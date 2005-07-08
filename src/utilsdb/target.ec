@@ -47,6 +47,7 @@ Target::logMsgDb (const char *message)
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   observer = in_obs;
+  selected = 0;
 
   obs_id = -1;
   img_id = 0;
@@ -73,10 +74,12 @@ Target::startObservation (struct ln_equ_posn *position)
 
   struct ln_hrz_posn hrz;
 
+  getPosition (position);
+  selected++;
+
   if (obs_id > 0) // we already observe that target
     return 1;
 
-  getPosition (position);
   d_obs_ra = position->ra;
   d_obs_dec = position->dec;
   ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);
@@ -361,6 +364,13 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
     // get more informations about target..
     switch (db_type_id)
     {
+      // calibration targets..
+      case TYPE_DARK:
+        return new DarkTarget (in_tar_id, in_obs);
+      case TYPE_FLAT:
+        return new FlatTarget (in_tar_id, in_obs);
+      case TYPE_FOCUSING:
+        return new FocusingTarget (in_tar_id, in_obs);
       case TYPE_ELLIPTICAL:
 	return new EllTarget (in_tar_id, in_obs);
       case TYPE_GRB:

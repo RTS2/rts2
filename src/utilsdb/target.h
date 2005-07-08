@@ -8,6 +8,7 @@
 #include "status.h"
 
 #include "../utils/objectcheck.h"
+#include "../utils/rts2device.h"
 
 #define MAX_READOUT_TIME		120
 #define PHOT_TIMEOUT			10
@@ -32,8 +33,10 @@
 
 #define TYPE_DARK		'd'
 #define TYPE_FLAT		'f'
+#define TYPE_FOCUSING		'o'
 
 #define COMMAND_EXPOSURE	"E"
+#define COMMAND_DARK		"D"
 #define COMMAND_FILTER		"F"
 #define COMMAND_PHOTOMETER      'P'
 #define COMMAND_CHANGE		'C'
@@ -44,7 +47,12 @@
 #define	COMMAND_FOCUSING	'f'
 #define COMMAND_MIRROR		'M'
 
-#define TARGET_FOCUSING		11
+#define TARGET_DARK		1
+#define TARGET_FLAT		2
+#define TARGET_FOCUSING		3
+
+#define TARGET_SWIFT_FOV	10
+#define TARGET_INTEGRAL_FOV	11
 
 /**
  * Class for one observation.
@@ -73,6 +81,7 @@ private:
 
   int type;			// light, dark, flat, flat_dark
   char obs_type;		// SKY_SURVEY, GBR, .. 
+  int selected;			// how many times startObservation was called
 
   int getDBScript (int target, const char *camera_name, char *script);
 protected:
@@ -140,6 +149,11 @@ public:
   {
     return ++img_id;
   }
+
+  int getSelected ()
+  {
+    return selected;
+  }
 };
 
 class ConstTarget:public Target
@@ -160,6 +174,24 @@ public:
     EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
+};
+
+class DarkTarget:public Target
+{
+private:
+  int defaultDark (const char *deviceName, char *buf);
+protected:
+    virtual int getScript (const char *deviceName, char *buf);
+public:
+    DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+};
+
+class FlatTarget:public ConstTarget
+{
+protected:
+  virtual int getScript (const char *deviceName, char *buf);
+public:
+    FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 };
 
 class FocusingTarget:public ConstTarget
