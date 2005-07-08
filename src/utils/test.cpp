@@ -8,39 +8,45 @@
 #include <math.h>
 #include <errno.h>
 
-#include "config.h"
 #include "mkpath.h"
 
 #include "objectcheck.h"
+#include "rts2config.h"
 
 int
 main (int argc, char **argv)
 {
   double value;
+  int i_value;
+
   char buf[20];
   ObjectCheck *checker;
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
-  printf ("ret %i\n", read_config ("/usr/local/etc/rts2.conf"));
 
-  printf ("ret %f\n", get_double_default ("longtitude", 1));
-  printf ("ret %f\n", get_double_default ("latitude", 1));
-  printf ("C0.rotang: %f\n", get_device_double_default ("C0", "rotang", 10));
-  printf ("ret: %s\n", get_device_string_default ("C1", "name", "moje"));
-  printf ("ret: %f\n", get_double_default ("day_horizont", 25));
-  printf ("ret: %f\n", get_double_default ("night_horizont", 25));
-  printf ("ret: %f\n",
-	  get_device_double_default ("hete", "dark_frequency", 25));
+  Rts2Config *conf = new Rts2Config ();
 
-  printf ("ret: %s\n", get_string_default ("epoch", "000"));
-  printf ("ret: %s\n",
-	  get_sub_device_string_default ("CNF1", "script", "G", "AA"));
-  printf ("ret: %s\n",
-	  get_sub_device_string_default ("CNF1", "script", "S", "AA"));
+  printf ("ret %i\n", conf->loadFile ("test.ini"));
+  printf ("ret %i ", conf->getDouble ("observation", "longtitude", value));
+  printf ("val %f\n", value);
+  printf ("ret %i ", conf->getDouble ("observation", "latitude", value));
+  printf ("val %f\n", value);
+  printf ("C0.rotang: %i ", conf->getDouble ("C0", "rotang", value));
+  printf ("val %f\n", value);
+  printf ("ret: %i ", conf->getString ("C1", "name", buf, 20));
+  printf ("val %s\n", buf);
+  printf ("ret: %i ", conf->getDouble ("centrald", "day_horizont", value));
+  printf ("val %f\n", value);
+  printf ("ret: %i ", conf->getDouble ("centrald", "night_horizont", value));
+  printf ("val %f\n", value);
+  printf ("ret: %i ", conf->getInteger ("hete", "dark_frequency", i_value));
+  printf ("val %i\n", i_value);
 
-  checker =
-    new ObjectCheck (get_string_default ("horizont", "/etc/rts2/horizont"));
+  printf ("ret: %i ", conf->getString ("CNF1", "script", buf, 20));
+  printf ("val %s\n", buf);
+  printf ("ret: %i ", conf->getString ("observation", "horizont", buf, 20));
+  checker = new ObjectCheck (buf);
 
   for (value = 0; value < 360; value += 7.5)
     {
@@ -51,6 +57,7 @@ main (int argc, char **argv)
     }
 
   delete checker;
+  delete conf;
 
   return 0;
 }

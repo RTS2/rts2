@@ -120,7 +120,7 @@ public:
   {
     return -1;
   }
-  virtual int startObservation ();	// return 1 if observation is already in progress, 0 if observation started, -1 on error
+  virtual int startObservation (struct ln_equ_posn *position);	// return 1 if observation is already in progress, 0 if observation started, -1 on error
   virtual int endObservation ();
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
@@ -208,7 +208,7 @@ public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
   int findPointing ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int startObservation ();
+  virtual int startObservation (struct ln_equ_posn *position);
   virtual int beforeMove ();
 };
 

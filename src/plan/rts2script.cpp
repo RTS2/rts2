@@ -3,7 +3,7 @@
 #endif
 
 #include "rts2script.h"
-#include "target.h"
+#include "../utilsdb/target.h"
 #include <string.h>
 #include <ctype.h>
 

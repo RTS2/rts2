@@ -139,7 +139,7 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setValue ("DEC", object.dec, "mount DEC");
       image->setValue ("LONG", obs.lng, "mount longtitude");
       image->setValue ("LAT", obs.lat, "mount latitude");
-      siderealtime = getValueDouble ("sidereal_time");
+      siderealtime = getValueDouble ("siderealtime") / 15.0;
       ln_get_hrz_from_equ_sidereal_time (&object, &obs, siderealtime, &hrz);
       image->setValue ("ALT", hrz.alt, "mount altitude");
       image->setValue ("AZ", hrz.az, "mount azimut");

@@ -147,6 +147,7 @@ Rts2NMTelescope::print (WINDOW * wnd)
   st = gst / 15.0;
 
   ln_get_hrz_from_equ_sidereal_time (&tel, &obs, st, &altaz);
+  ln_get_hrz_from_equ (&tel, &obs, ln_get_julian_from_sys (), &altaz);
 
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
@@ -394,7 +395,7 @@ Rts2CNMonConn::print ()
   else
     wstandout (window);
 
-  wclear (window);
+  werase (window);
   mvwprintw (window, 0, 0, "== %-10s ==", getName ());
 
   if (has_colors ())
@@ -519,7 +520,7 @@ Rts2NMonitor::relocatesWindows ()
       if (!conn->hasWindow ())
 	{
 	  connWin =
-	    newwin (LINES / 2, COLS / 4, 1 + LINES / 4 * ((win_num - 1) / 4),
+	    newwin (LINES / 4, COLS / 4, 1 + LINES / 4 * ((win_num - 1) / 4),
 		    COLS / 4 * ((win_num - 1) % 4));
 	  conn->setWindow (connWin);
 	}

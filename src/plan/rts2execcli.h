@@ -1,10 +1,10 @@
 #ifndef __RTS2_EXECCLI__
 #define __RTS2_EXECCLI__
 
-#include "target.h"
 #include "rts2script.h"
 #include "../writers/rts2devcliimg.h"
 #include "../utils/rts2event.h"
+#include "../utilsdb/target.h"
 
 #define EVENT_SCRIPT_STARTED   RTS2_LOCAL_EVENT+50
 #define EVENT_LAST_READOUT     RTS2_LOCAL_EVENT+51

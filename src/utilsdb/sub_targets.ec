@@ -273,12 +273,14 @@ TargetSwiftFOV::findPointing ()
     testEqu.ra = d_swift_ra;
     testEqu.dec = d_swift_dec;
     ln_get_hrz_from_equ (&testEqu, observer, JD, &testHrz);
-    if (testHrz.alt > -30)
+    if (testHrz.alt > 0)
     {
       if (testHrz.alt < 30)
+      {
         testHrz.alt = 30;
       // get equ coordinates we will observe..
-      ln_get_equ_from_hrz (&testHrz, observer, JD, &testEqu);
+        ln_get_equ_from_hrz (&testHrz, observer, JD, &testEqu);
+      }	
       swiftFovCenter.ra = testEqu.ra;
       swiftFovCenter.dec = testEqu.dec;
       swiftId = d_swift_id;
@@ -299,7 +301,7 @@ TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-TargetSwiftFOV::startObservation ()
+TargetSwiftFOV::startObservation (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
@@ -307,7 +309,7 @@ TargetSwiftFOV::startObservation ()
   EXEC SQL END DECLARE SECTION;
   int ret;
   
-  ret = Target::startObservation ();
+  ret = Target::startObservation (position);
   if (ret)
     return ret;
 

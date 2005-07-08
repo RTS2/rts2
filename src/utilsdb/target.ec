@@ -42,7 +42,7 @@ Target::logMsg (const char *message, const char *val)
 void
 Target::logMsgDb (const char *message)
 {
-  printf ("SQL error: %i %s (at %s)\n", sqlca.sqlcode, sqlca.sqlerrm, message);
+  printf ("SQL error: %i %s (at %s)\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
 }
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
@@ -61,15 +61,28 @@ Target::~Target (void)
 }
 
 int
-Target::startObservation ()
+Target::startObservation (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_tar_id = target_id;
   int d_obs_id;
+  double d_obs_ra;
+  double d_obs_dec;
+  float d_obs_alt;
+  float d_obs_az;
   EXEC SQL END DECLARE SECTION;
+
+  struct ln_hrz_posn hrz;
 
   if (obs_id > 0) // we already observe that target
     return 1;
+
+  getPosition (position);
+  d_obs_ra = position->ra;
+  d_obs_dec = position->dec;
+  ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);
+  d_obs_alt = hrz.alt;
+  d_obs_az = hrz.az;
 
   EXEC SQL
   SELECT
@@ -82,13 +95,21 @@ Target::startObservation ()
   (
     tar_id,
     obs_id,
-    obs_start
+    obs_start,
+    obs_ra,
+    obs_dec,
+    obs_alt,
+    obs_az
   )
   VALUES
   (
     :d_tar_id,
     :d_obs_id,
-    now ()
+    now (),
+    :d_obs_ra,
+    :d_obs_dec,
+    :d_obs_alt,
+    :d_obs_az
   );
   EXEC SQL COMMIT;
   if (sqlca.sqlcode != 0)
@@ -112,16 +133,17 @@ Target::endObservation ()
     UPDATE
       observations
     SET
-      obs_stop = now ()
+      obs_end = now ()
     WHERE
       obs_id = :d_obs_id;
-    EXEC SQL COMMIT;
     obs_id = -1;
     if (sqlca.sqlcode != 0)
     {
-      logMsgDb ("cannot end obseravtion");
+      EXEC SQL ROLLBACK;
+      logMsgDb ("cannot end observation");
       return -1;
     }
+    EXEC SQL COMMIT;
   }
   return 0;
 }

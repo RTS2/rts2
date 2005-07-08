@@ -12,8 +12,8 @@
 #include "../utils/rts2event.h"
 #include "../utils/rts2command.h"
 #include "../utils/objectcheck.h"
+#include "../utilsdb/target.h"
 #include "status.h"
-#include "target.h"
 
 #include <signal.h>
 #include <libnova/libnova.h>

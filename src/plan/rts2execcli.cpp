@@ -6,7 +6,7 @@
 
 #include "rts2execcli.h"
 #include "../writers/rts2imagedb.h"
-#include "target.h"
+#include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
 
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2DevClientCameraImage
@@ -60,6 +60,12 @@ Rts2DevClientCameraExec::nextCommand ()
     {
       delete script;
       script = NULL;
+      if (exposureEnabled)
+	{
+	  connection->getMaster ()->
+	    postEvent (new Rts2Event (EVENT_LAST_READOUT));
+	  exposureEnabled = 0;
+	}
       connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
       return;
@@ -152,13 +158,11 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
       currentTarget = (Target *) event->getArg ();
       if (currentTarget)
 	{
-	  currentTarget->beforeMove ();
-	  currentTarget->getPosition (&coord);
+	  currentTarget->startObservation (&coord);
 	  connection->
 	    queCommand (new
 			Rts2CommandMove (connection->getMaster (), this,
 					 coord.ra, coord.dec));
-	  currentTarget->startObservation ();
 	}
       break;
     }

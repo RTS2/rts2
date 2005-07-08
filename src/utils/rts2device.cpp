@@ -202,7 +202,7 @@ int
 Rts2DevConn::command ()
 {
   int ret;
-  if (getCentraldId () != -1)	// authorized and running
+  if (getCentraldId () != -1 && conn_state == CONN_AUTH_OK)	// authorized and running
     {
       ret = commandAuthorized ();
       if (ret == DEVDEM_E_HW)
@@ -253,6 +253,8 @@ Rts2DevConn::authorizationOK ()
 {
   conn_state = CONN_AUTH_OK;
   master->sendStatusInfo (this);
+  master->baseInfo (this);
+  master->info (this);
   sendCommandEnd (0, "OK authorized");
   return 0;
 }
