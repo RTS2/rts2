@@ -21,6 +21,7 @@ Rts2Config::~Rts2Config ()
 {
   if (fp)
     fclose (fp);
+  fp = NULL;
 }
 
 Rts2Config *
@@ -37,12 +38,19 @@ Rts2Config::loadFile (char *filename)
   if (!filename)
     // default
     filename = "/etc/rts2/rts2.ini";
+  if (fp)
+    fclose (fp);
   fp = fopen (filename, "r");
   if (fp == NULL)
     {
       syslog (LOG_ERR, "Rts2Config::loadFile cannot open '%s'", filename);
       return -1;
     }
+  // get some commonly used values
+  observer.lat = 0;
+  observer.lng = 0;
+  getDouble ("observatory", "longtitude", observer.lng);
+  getDouble ("observatory", "latitude", observer.lat);
   return 0;
 }
 
@@ -196,4 +204,10 @@ Rts2Config::getBoolen (char *section, char *param)
       || strcasecmp (valbuf, "yes") == 0 || strcasecmp (valbuf, "true") == 0)
     return 1;
   return 0;
+}
+
+struct ln_lnlat_posn *
+Rts2Config::getObserver ()
+{
+  return &observer;
 }

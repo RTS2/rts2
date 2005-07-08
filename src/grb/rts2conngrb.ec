@@ -102,7 +102,7 @@ Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t,
   );
   if (sqlca.sqlcode != 0)
   {
-    syslog (LOG_ERR, "Rts2ConnGrb cannot insert integral: %s", sqlca.sqlerrm.sqlerrmc);
+    syslog (LOG_ERR, "Rts2ConnGrb cannot insert swift: %s", sqlca.sqlerrm.sqlerrmc);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -138,7 +138,7 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
   );
   if (sqlca.sqlcode != 0)
   {
-    syslog (LOG_ERR, "Rts2ConnGrb cannot insert swift: %s", sqlca.sqlerrm.sqlerrmc);
+    syslog (LOG_ERR, "Rts2ConnGrb cannot insert integral: %s", sqlca.sqlerrm.sqlerrmc);
     EXEC SQL ROLLBACK;
     return -1;
   }

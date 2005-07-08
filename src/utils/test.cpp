@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <math.h>
 #include <errno.h>
+#include <libnova/libnova.h>
 
 #include "mkpath.h"
 
@@ -28,10 +28,11 @@ main (int argc, char **argv)
   Rts2Config *conf = new Rts2Config ();
 
   printf ("ret %i\n", conf->loadFile ("test.ini"));
-  printf ("ret %i ", conf->getDouble ("observation", "longtitude", value));
-  printf ("val %f\n", value);
-  printf ("ret %i ", conf->getDouble ("observation", "latitude", value));
-  printf ("val %f\n", value);
+
+  struct ln_lnlat_posn *observer;
+  observer = conf->getObserver ();
+  printf ("long %f\n", observer->lng);
+  printf ("lat %f\n", observer->lat);
   printf ("C0.rotang: %i ", conf->getDouble ("C0", "rotang", value));
   printf ("val %f\n", value);
   printf ("ret: %i ", conf->getString ("C1", "name", buf, 20));

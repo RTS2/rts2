@@ -1,4 +1,4 @@
-#include "../utils/rts2device.h"
+#include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
 #include "rts2execcli.h"
 
@@ -17,16 +17,16 @@ public:
     Rts2ConnExecutor (int in_sock, Rts2Executor * in_master);
 };
 
-class Rts2Executor:public Rts2Device
+class Rts2Executor:public Rts2DeviceDb
 {
 private:
   Target * currentTarget;
   Target *nextTarget;
   void switchTarget ();
-  struct ln_lnlat_posn observer;
 
   int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
     std::vector < Target * >targetsQue;
+  struct ln_lnlat_posn *observer;
 
 public:
     Rts2Executor (int argc, char **argv);
@@ -78,7 +78,7 @@ Rts2ConnExecutor::Rts2ConnExecutor (int in_sock, Rts2Executor * in_master):Rts2D
 }
 
 Rts2Executor::Rts2Executor (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
+Rts2DeviceDb (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
 {
   char *states_names[1] = { "executor" };
   currentTarget = NULL;
@@ -104,8 +104,9 @@ Rts2Executor::init ()
     return ret;
   // set priority..
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 20"));
-  observer.lng = -6.7341;
-  observer.lat = 37.1041;
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+  observer = config->getObserver ();
   return 0;
 }
 
@@ -189,7 +190,7 @@ Rts2Executor::setNext (int nextId)
 	return 0;
       delete nextTarget;
     }
-  nextTarget = createTarget (nextId, &observer);
+  nextTarget = createTarget (nextId, observer);
   if (!currentTarget)
     switchTarget ();
   else

@@ -48,7 +48,7 @@ class Rts2Centrald:public Rts2Block
 
   int next_event_type;
   time_t next_event_time;
-  struct ln_lnlat_posn observer;
+  struct ln_lnlat_posn *observer;
 
   int morning_off;
 
@@ -511,14 +511,12 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
   Rts2Config *
     config = Rts2Config::instance ();
   config->loadFile ();
-  config->getDouble ("observatory", "longtitude", observer.lng);
-  config->getDouble ("observatory", "latitude", observer.lat);
+  observer = config->getObserver ();
+
   current_state =
     config->getBoolen ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
 
   morning_off = config->getBoolen ("centrald", "morning_off");
-  delete
-    config;
 
   addOption ('p', "port", 1, "port on which centrald will listen");
 }
@@ -630,7 +628,7 @@ Rts2Centrald::idle ()
 
   curr_time = time (NULL);
 
-  next_event (&observer, &curr_time, &call_state, &next_event_type,
+  next_event (observer, &curr_time, &call_state, &next_event_type,
 	      &next_event_time);
 
   if (current_state != SERVERD_OFF && current_state != call_state)

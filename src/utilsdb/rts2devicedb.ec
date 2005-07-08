@@ -14,8 +14,10 @@ Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
    int default_port, char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_port, default_name)
 {
   connectString = "stars"; // defualt DB
+  configFile = NULL;
 
   addOption ('b', "database", 1, "connect string to PSQL database (default to stars)");
+  addOption ('c', "config", 1, "configuration file");
 }
 
 Rts2DeviceDb::~Rts2DeviceDb (void)
@@ -34,6 +36,9 @@ Rts2DeviceDb::processOption (int in_opt)
       connectString = new char[strlen (optarg) + 1];
       strcpy (connectString, optarg);
       break;
+    case 'c':
+      configFile = optarg;
+      break;
     default:
       return Rts2Device::processOption (in_opt);
   }
@@ -49,7 +54,16 @@ Rts2DeviceDb::init ()
   EXEC SQL END DECLARE SECTION;
   // try to connect to DB
 
+  Rts2Config *config;
+
   ret = Rts2Device::init ();
+  if (ret)
+    return ret;
+
+  // load config.
+
+  config = Rts2Config::instance ();
+  ret = config->loadFile (configFile);
   if (ret)
     return ret;
   

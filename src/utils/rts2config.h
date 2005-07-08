@@ -7,12 +7,16 @@
  */
 
 #include <stdio.h>
+#include <libnova/libnova.h>
 
 class Rts2Config
 {
 private:
   FILE * fp;
   static Rts2Config *pInstance;
+
+  struct ln_lnlat_posn observer;
+
 public:
     Rts2Config ();
     virtual ~ Rts2Config (void);
@@ -22,6 +26,9 @@ public:
   int getInteger (char *section, char *param, int &value);
   int getDouble (char *section, char *param, double &value);
   int getBoolen (char *section, char *param);
+
+  // some special functions..
+  struct ln_lnlat_posn *getObserver ();
 };
 
 #endif /*! __RTS2_CONFIG__ */
