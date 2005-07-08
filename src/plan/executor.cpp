@@ -177,6 +177,7 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
     {
       conn->send ("next -1");
     }
+  conn->sendValue ("script_count", scriptCount);
   return 0;
 }
 

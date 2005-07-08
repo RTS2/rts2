@@ -199,6 +199,24 @@ DarkTarget::getScript (const char *deviceName, char *buf)
 
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
 {
+  currPos.ra = 0;
+  currPos.dec = 0;
+}
+
+int
+DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  *pos = currPos;
+  return 0;
+}
+
+int
+DarkTarget::startObservation (struct ln_equ_posn *position)
+{
+  currPos.ra = position->ra;
+  currPos.dec = position->dec;
+  Target::startObservation (position);
+  return OBS_DONT_MOVE;
 }
 
 int

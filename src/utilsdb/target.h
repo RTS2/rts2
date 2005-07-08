@@ -54,6 +54,8 @@
 #define TARGET_SWIFT_FOV	10
 #define TARGET_INTEGRAL_FOV	11
 
+#define OBS_DONT_MOVE		2
+
 /**
  * Class for one observation.
  *
@@ -129,7 +131,9 @@ public:
   {
     return -1;
   }
-  virtual int startObservation (struct ln_equ_posn *position);	// return 1 if observation is already in progress, 0 if observation started, -1 on error
+  virtual int startObservation (struct ln_equ_posn *position);
+  // return 1 if observation is already in progress, 0 if observation started, -1 on error
+  // 2 if we don't need to move
   virtual int endObservation ();
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
@@ -179,11 +183,14 @@ public:
 class DarkTarget:public Target
 {
 private:
+  struct ln_equ_posn currPos;
   int defaultDark (const char *deviceName, char *buf);
 protected:
     virtual int getScript (const char *deviceName, char *buf);
 public:
     DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int startObservation (struct ln_equ_posn *position);
 };
 
 class FlatTarget:public ConstTarget
