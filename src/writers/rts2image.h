@@ -33,6 +33,9 @@ protected:
   char *cameraName;
   char *mountName;
   char *imageName;
+  enum
+  { IMGTYPE_UNKNOW, IMGTYPE_DARK, IMGTYPE_FLAT, IMGTYPE_OBJECT, IMGTYPE_ZERO,
+      IMGTYPE_COMP } imageType;
 public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
@@ -55,11 +58,13 @@ public:
   int setValue (char *name, long value, char *comment);
   int setValue (char *name, double value, char *comment);
   int setValue (char *name, const char *value, char *comment);
+  int setValueImageType (int shutter_state);
 
   int getValue (char *name, int &value, char *comment = NULL);
   int getValue (char *name, long &value, char *comment = NULL);
   int getValue (char *name, double &value, char *comment = NULL);
   int getValue (char *name, char *value, char *comment = NULL);
+  int getValueImageType ();
 
   int getValues (char *name, int *values, int num, int nstart = 1);
   int getValues (char *name, long *values, int num, int nstart = 1);

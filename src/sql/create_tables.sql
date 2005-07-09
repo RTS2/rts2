@@ -158,8 +158,8 @@ DROP TABLE darks;
 CREATE TABLE darks (
 	dark_name	varchar(250) NOT NULL,
 	dark_date	timestamp,
-	dark_exposure	integer,
-	dark_temperature integer,
+	dark_exposure	float,
+	dark_temperature float,
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name)
 );

@@ -8,6 +8,7 @@
 #include "imghdr.h"
 
 #include "../utils/mkpath.h"
+#include "../utilsdb/target.h"
 
 Rts2Image::Rts2Image (char *in_filename,
 		      const struct timeval *in_exposureStart)
@@ -82,6 +83,7 @@ Rts2Image::Rts2Image (char *in_filename)
   getValue ("CCD_NAME", cameraName);
   mountName = new char[DEVICE_NAME_SIZE + 1];
   getValue ("MOUNT_NAME", mountName);
+  getValueImageType ();
 }
 
 Rts2Image::~Rts2Image (void)
@@ -113,6 +115,7 @@ Rts2Image::createImage (char *in_filename)
 
   fits_status = 0;
   flags = IMAGE_NOT_SAVE;
+  imageType = IMGTYPE_UNKNOW;
   ffile = NULL;
 
   // make path for us..
@@ -323,6 +326,63 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
 }
 
 int
+Rts2Image::setValueImageType (int shutter_state)
+{
+  char *imgTypeText;
+  // guess image type..
+  switch (getTargetId ())
+    {
+    case TARGET_DARK:
+      imageType = IMGTYPE_DARK;
+      break;
+    case TARGET_FLAT:
+      switch (shutter_state)
+	{
+	case 1:
+	  imageType = IMGTYPE_FLAT;
+	  break;
+	case 2:
+	  imageType = IMGTYPE_DARK;
+	  break;
+	}
+    default:
+      switch (shutter_state)
+	{
+	case 1:
+	case 3:
+	  imageType = IMGTYPE_OBJECT;
+	  break;
+	case 2:
+	  imageType = IMGTYPE_DARK;
+	  break;
+	}
+    }
+  switch (imageType)
+    {
+    case IMGTYPE_DARK:
+      imgTypeText = "dark";
+      break;
+    case IMGTYPE_FLAT:
+      imgTypeText = "flat";
+      break;
+    case IMGTYPE_OBJECT:
+      imgTypeText = "object";
+      break;
+    case IMGTYPE_ZERO:
+      imgTypeText = "zero";
+      break;
+    case IMGTYPE_COMP:
+      imgTypeText = "comp";
+      break;
+    case IMGTYPE_UNKNOW:
+    default:
+      imgTypeText = "unknow";
+      break;
+    }
+  return setValue ("IMAGETYPE", imgTypeText, "IRAF based image type");
+}
+
+int
 Rts2Image::getValue (char *name, int &value, char *comment)
 {
   if (!ffile)
@@ -357,6 +417,30 @@ Rts2Image::getValue (char *name, char *value, char *comment)
     return -1;
   fits_read_key (ffile, TSTRING, name, (void *) value, comment, &fits_status);
   return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValueImageType ()
+{
+  int ret;
+  char value[20];
+  ret = getValue ("IMAGETYPE", value);
+  if (ret)
+    return ret;
+  // switch based on IMAGETYPE
+  if (!strcasecmp (value, "dark"))
+    imageType = IMGTYPE_DARK;
+  else if (!strcasecmp (value, "flat"))
+    imageType = IMGTYPE_FLAT;
+  else if (!strcasecmp (value, "object"))
+    imageType = IMGTYPE_OBJECT;
+  else if (!strcasecmp (value, "zero"))
+    imageType = IMGTYPE_ZERO;
+  else if (!strcasecmp (value, "comp"))
+    imageType = IMGTYPE_COMP;
+  else
+    imageType = IMGTYPE_UNKNOW;
+  return 0;
 }
 
 int
@@ -415,6 +499,7 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
   setValue ("FILTER", im_h->filter, "filter used for image");
   setValue ("SHUTTER", im_h->shutter,
 	    "shutter state (1 - open, 2 - closed, 3 - synchro)");
+  setValueImageType (im_h->shutter);
   return 0;
 }
 
