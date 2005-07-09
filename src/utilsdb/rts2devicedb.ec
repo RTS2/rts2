@@ -10,6 +10,12 @@
 
 EXEC SQL include sqlca;
 
+int
+Rts2DeviceDb::willConnect (Rts2Address * in_addr)
+{
+  return 1;
+}
+
 Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
    int default_port, char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_port, default_name)
 {

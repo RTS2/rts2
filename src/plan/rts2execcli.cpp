@@ -20,13 +20,6 @@ Rts2DevClientCameraExec::postLastReadout ()
     }
 }
 
-void
-Rts2DevClientCameraExec::queExposure ()
-{
-  sendLastReadout = 0;
-  Rts2DevClientCameraImage::queExposure ();
-}
-
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2DevClientCameraImage
   (in_connection)
 {
@@ -60,7 +53,9 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
       exposureCount = 1;
       connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
-      nextCommand ();
+      if (connection->getState (0) == 0)
+	nextCommand ();
+      // otherwise we post command after end of camera readout
       break;
     }
   Rts2DevClientCameraImage::postEvent (event);
@@ -86,6 +81,7 @@ Rts2DevClientCameraExec::nextCommand ()
     }
   if (!strcmp (new_device, connection->getName ()))
     {
+      sendLastReadout = 0;
       connection->queCommand (nextComd);
     }
   // else change control to other device...somehow
@@ -145,10 +141,13 @@ Rts2DevClientCameraExec::stateChanged (Rts2ServerState * state)
 	      postLastReadout ();
 	    }
 	}
-      if ((state->value & (CAM_MASK_EXPOSE | CAM_MASK_READING)) ==
-	  (CAM_NOEXPOSURE | CAM_NOTREADING))
+      if ((state->
+	   value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA)) ==
+	  (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NODATA))
 	{
 	  nextCommand ();
+	  // we don't want stateChange in camera to react to that..
+	  return;
 	}
     }
   Rts2DevClientCameraImage::stateChanged (state);

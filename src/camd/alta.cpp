@@ -91,7 +91,7 @@ CameraChipAlta::isExposing ()
   if (status < 0)
     return -2;
   if (status != Apn_Status_ImageReady)
-    return 2000000;
+    return 200;
   // exposure has ended.. 
   return -2;
 }

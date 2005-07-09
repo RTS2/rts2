@@ -124,7 +124,7 @@ CameraApogeeChip::isExposing ()
   status = camera->read_Status ();
 
   if (status != Camera_Status_ImageReady)
-    return 2000000;
+    return 200;
   // exposure has ended.. 
   return -2;
 }
@@ -169,6 +169,8 @@ CameraApogeeChip::readoutOneLine ()
       width = chipUsedReadout->width;
       height = chipUsedReadout->height;
       status = camera->GetImage (dest_top, width, height);
+      syslog (LOG_DEBUG, "CameraApogeeChip::readoutOneLine status: %i",
+	      status);
       if (!status)
 	return -3;
       dest_top += width * height;

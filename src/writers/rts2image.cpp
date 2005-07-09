@@ -121,6 +121,7 @@ Rts2Image::createImage (char *in_filename)
     return -1;
   fits_create_file (&ffile, in_filename, &fits_status);
   fits_create_img (ffile, USHORT_IMG, 1, &naxes, &fits_status);
+  syslog (LOG_DEBUG, "Rts2Image::createImage %p %s", this, in_filename);
   if (fits_status)
     {
       fits_report_error (stderr, fits_status);

@@ -754,8 +754,6 @@ Rts2Object ()
   signal (SIGPIPE, SIG_IGN);
 
   masterState = 0;
-
-  addAllNewConnections = 1;
 }
 
 Rts2Block::~Rts2Block (void)
@@ -1186,6 +1184,12 @@ Rts2Block::childReturned (pid_t child_pid)
 }
 
 int
+Rts2Block::willConnect (Rts2Address * in_addr)
+{
+  return 0;
+}
+
+int
 Rts2Block::sendMail (char *subject, char *text)
 {
   int ret;
@@ -1262,7 +1266,7 @@ Rts2Block::addAddress (Rts2Address * in_addr)
   conn = getOpenConnection (in_addr->getName ());
   if (conn)
     conn->addressAdded (in_addr);
-  else if (addAllNewConnections)
+  else if (willConnect (in_addr))
     {
       conn = createClientConnection (in_addr);
       if (conn)

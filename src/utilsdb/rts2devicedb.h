@@ -8,6 +8,8 @@ class Rts2DeviceDb:public Rts2Device
 {
   char *connectString;
   char *configFile;
+protected:
+    virtual int willConnect (Rts2Address * in_addr);
 public:
     Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
 		  int default_port, char *default_name);

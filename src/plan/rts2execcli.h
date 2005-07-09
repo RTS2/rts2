@@ -17,7 +17,6 @@ private:
   Target *currentTarget;
   Rts2Script *script;
   void postLastReadout ();
-  virtual void queExposure ();
 public:
     Rts2DevClientCameraExec (Rts2Conn * in_connection);
     virtual ~ Rts2DevClientCameraExec (void);

@@ -94,6 +94,8 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
       int stateVal;
       stateVal =
 	state->value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA);
+      syslog (LOG_DEBUG, "Rts2DevClientCamera::stateChanged stateVal %i",
+	      stateVal);
       if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NODATA))
 	{
 	  queExposure ();
@@ -101,6 +103,9 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
       else if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA))
 	{
 	  isExposing = 0;
+	  syslog (LOG_DEBUG,
+		  "Rts2DevClientCamera::stateChanged que Readout: %i %i",
+		  stateVal, (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA));
 	  connection->
 	    queCommand (new
 			Rts2Command (connection->getMaster (), "readout 0"));

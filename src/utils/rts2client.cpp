@@ -157,6 +157,12 @@ Rts2Client::createClientConnection (Rts2Address * in_addr)
   return conn;
 }
 
+int
+Rts2Client::willConnect (Rts2Address * in_addr)
+{
+  return 1;
+}
+
 Rts2Client::Rts2Client (int argc, char **argv):Rts2Block (argc, argv)
 {
   central_host = "localhost";

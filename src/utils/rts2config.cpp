@@ -66,9 +66,12 @@ Rts2Config::getString (const char *section, const char *param, char *buf,
   int ret;
   int len;
 
-  rewind (fp);
-
   *buf = '\0';
+
+  if (!fp)
+    return 0;
+
+  rewind (fp);
 
   getsect = 0;
   while (fgets (tbuf, BUF_SIZE, fp) != NULL)

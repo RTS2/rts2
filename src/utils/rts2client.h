@@ -93,7 +93,7 @@ private:
 protected:
     virtual Rts2ConnClient * createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
-
+  virtual int willConnect (Rts2Address * in_addr);
 public:
     Rts2Client (int argc, char **argv);
     virtual ~ Rts2Client (void);

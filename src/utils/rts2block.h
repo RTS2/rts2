@@ -122,7 +122,11 @@ public:
   int add (fd_set * set);
   virtual int getState (int state_num)
   {
-    return 0;
+    if (state_num < 0 || state_num >= MAX_STATE)
+      return -1;
+    if (serverState[state_num])
+      return serverState[state_num]->value;
+    return -1;
   }
   virtual int init ()
   {
@@ -310,8 +314,6 @@ class Rts2Block:public Rts2Object
   int addConnection (int in_sock);
   int masterState;
 
-  int addAllNewConnections;
-
 protected:
   int argc;
 
@@ -340,7 +342,7 @@ protected:
   }
 
   virtual void childReturned (pid_t child_pid);
-
+  virtual int willConnect (Rts2Address * in_addr);	// determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
 public:
   Rts2Conn * connections[MAX_CONN];
 
