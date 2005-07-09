@@ -109,7 +109,8 @@ int
 Rts2ImageDb::updateDarkDB ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  VARCHAR d_dark_name[250];
+  int d_img_id = imgId;
+  int d_obs_id = obsId;
   int d_dark_date = getExposureSec ();
   double d_dark_exposure;
   double d_dark_temperature;
@@ -120,14 +121,6 @@ Rts2ImageDb::updateDarkDB ()
   getValue ("CCD_TEMP", d_dark_temperature);
   getValue ("EXPOSURE", d_dark_exposure);
 
-  strncpy (d_dark_name.arr, imageName, 250);
-  d_dark_name.len = strlen (imageName);
-  if (d_dark_name.len >= 250)
-  {
-    d_dark_name.arr[249] = '\0';
-    d_dark_name.len = 250;
-  }
-
   strncpy (d_camera_name.arr, cameraName, 8);
   d_camera_name.len = strlen (cameraName);
 
@@ -135,14 +128,16 @@ Rts2ImageDb::updateDarkDB ()
   INSERT INTO
     darks
   (
-    dark_name,
+    img_id,
+    obs_id,
     dark_date,
     dark_exposure,
     dark_temperature,
     epoch_id,
     camera_name
   ) VALUES (
-    :d_dark_name,
+    :d_img_id,
+    :d_obs_id,
     abstime (:d_dark_date),
     :d_dark_exposure,
     :d_dark_temperature,

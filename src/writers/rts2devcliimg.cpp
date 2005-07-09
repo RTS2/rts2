@@ -155,14 +155,13 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       double siderealtime;
       image = (Rts2Image *) event->getArg ();
       image->setMountName (connection->getName ());
-      image->setValue ("MOUNT_TYPE", getValueChar ("type"),
-		       "mount telescope");
-      image->setValue ("MOUNT_MARK", getValueInteger ("correction_mark"),
+      image->setValue ("MNT_TYPE", getValueChar ("type"), "mount telescope");
+      image->setValue ("MNT_MARK", getValueInteger ("correction_mark"),
 		       "mark used for mount corretion");
       getEqu (&object);
       getObs (&obs);
-      image->setValue ("RA", object.ra, "mount RA");
-      image->setValue ("DEC", object.dec, "mount DEC");
+      image->setValue ("RASC", object.ra, "mount RA");
+      image->setValue ("DECL", object.dec, "mount DEC");
       image->setValue ("LONG", obs.lng, "mount longtitude");
       image->setValue ("LAT", obs.lat, "mount latitude");
       siderealtime = getValueDouble ("siderealtime") / 15.0;

@@ -156,12 +156,14 @@ CREATE TABLE counters (
 DROP TABLE darks;
 
 CREATE TABLE darks (
-	dark_name	varchar(250) NOT NULL,
+	obs_id		integer REFERENCES observations(obs_id),
+	img_id		integer NOT NULL,
 	dark_date	timestamp,
 	dark_exposure	float,
 	dark_temperature float,
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
-	camera_name	varchar(8) REFERENCES cameras(camera_name)
+	camera_name	varchar(8) REFERENCES cameras(camera_name),
+CONSTRAINT darks_prim_key PRIMARY KEY (obs_id, img_id)
 );
 
 CREATE INDEX darks_all ON darks (dark_exposure, dark_temperature, dark_date);
@@ -181,6 +183,7 @@ CREATE TABLE flats (
 	flat_temperature integer,
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name)
+CONSTRAINT flats_prim_key PRIMARY KEY (flat_date, camera_name)
 );
 
 DROP SEQUENCE tar_id;
@@ -223,8 +226,8 @@ CREATE TABLE medias (
 DROP TABLE images;
 
 CREATE TABLE images (
-	img_id		integer NOT NULL,
 	obs_id		integer REFERENCES observations(obs_id),
+	img_id		integer NOT NULL,
 	-- A - image used for acquistion
 	-- S - science image (not acqusition)
 	obs_subtype	char(1),

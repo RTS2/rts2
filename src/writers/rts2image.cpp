@@ -82,7 +82,7 @@ Rts2Image::Rts2Image (char *in_filename)
   cameraName = new char[DEVICE_NAME_SIZE + 1];
   getValue ("CCD_NAME", cameraName);
   mountName = new char[DEVICE_NAME_SIZE + 1];
-  getValue ("MOUNT_NAME", mountName);
+  getValue ("MNT_NAME", mountName);
   getValueImageType ();
 }
 
@@ -213,12 +213,48 @@ Rts2Image::toArchive ()
 
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/archive/%05i/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    "%s/archive/%05i/%s/object/%04i%02i%02i%02i%02i%02i-%04i.fits",
 	    getImageBase (epochId), targetId, cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);
 
+  ret = renameImage (new_filename);
+
+  free (new_filename);
+  return ret;
+}
+
+// move to dark images area..
+int
+Rts2Image::toDark ()
+{
+  char *new_filename;
+  int ret = 0;
+  struct tm *expT;
+
+  if (!imageName)
+    return -1;
+
+  expT = gmtime (&exposureStart.tv_sec);
+  if (getTargetId () == TARGET_DARK)
+    {
+      asprintf (&new_filename,
+		"%s/darks/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+		getImageBase (epochId), cameraName,
+		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
+		expT->tm_hour, expT->tm_min, expT->tm_sec,
+		exposureStart.tv_usec / 1000);
+    }
+  else
+    {
+      asprintf (&new_filename,
+		"%s/archive/%05i/%s/darks/%04i%02i%02i%02i%02i%02i-%04i.fits",
+		getImageBase (epochId), targetId, cameraName,
+		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
+		expT->tm_hour, expT->tm_min, expT->tm_sec,
+		exposureStart.tv_usec / 1000);
+    }
   ret = renameImage (new_filename);
 
   free (new_filename);
@@ -379,7 +415,7 @@ Rts2Image::setValueImageType (int shutter_state)
       imgTypeText = "unknow";
       break;
     }
-  return setValue ("IMAGETYPE", imgTypeText, "IRAF based image type");
+  return setValue ("IMAGETYP", imgTypeText, "IRAF based image type");
 }
 
 int
@@ -424,7 +460,7 @@ Rts2Image::getValueImageType ()
 {
   int ret;
   char value[20];
-  ret = getValue ("IMAGETYPE", value);
+  ret = getValue ("IMAGETYP", value);
   if (ret)
     return ret;
   // switch based on IMAGETYPE
@@ -500,6 +536,11 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
   setValue ("SHUTTER", im_h->shutter,
 	    "shutter state (1 - open, 2 - closed, 3 - synchro)");
   setValueImageType (im_h->shutter);
+  // dark images don't need to wait till imgprocess will pick them up for reprocessing
+  if (imageType == IMGTYPE_DARK)
+    {
+      return toDark ();
+    }
   return 0;
 }
 
@@ -545,5 +586,5 @@ Rts2Image::setMountName (const char *in_mountName)
     delete mountName;
   mountName = new char[strlen (in_mountName) + 1];
   strcpy (mountName, in_mountName);
-  setValue ("MOUNT_NAME", mountName, "name of mount");
+  setValue ("MNT_NAME", mountName, "name of mount");
 }

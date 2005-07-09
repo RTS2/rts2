@@ -35,7 +35,8 @@ protected:
   char *imageName;
   enum
   { IMGTYPE_UNKNOW, IMGTYPE_DARK, IMGTYPE_FLAT, IMGTYPE_OBJECT, IMGTYPE_ZERO,
-      IMGTYPE_COMP } imageType;
+    IMGTYPE_COMP
+  } imageType;
 public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
@@ -50,6 +51,7 @@ public:
   int toQue ();
   int toAcquisition ();
   int toArchive ();
+  int toDark ();
   int toTrash ();
 
   int renameImage (char *new_filename);
