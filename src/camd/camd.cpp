@@ -402,6 +402,10 @@ Rts2DevCamera::checkExposures ()
 	  if (ret == -2)
 	    maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		       CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
+	  if (ret == -1)
+	    maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+		       CAM_NOEXPOSURE | CAM_NODATA,
+		       "exposure chip finished with error");
 	}
     }
 }

@@ -1,6 +1,7 @@
 DROP TABLE terestial;
 DROP TABLE ell;
 DROP TABLE ot;
+DROP TABLE grb_gcn;
 DROP TABLE grb;
 DROP TABLE swift_observation;
 DROP TABLE swift;
@@ -52,22 +53,32 @@ CREATE TABLE phot (
 
 CREATE TABLE grb (
 	tar_id		integer REFERENCES targets (tar_id),
-	grb_id		integer PRIMARY KEY,
-	grb_type	integer, -- type of first notice which create that log entry
+	grb_id		integer NOT NULL,
+	grb_seqn	integer NOT NULL,
+	grb_type	integer NOT NULL, -- type of first notice which create that log entry
 	grb_seqn	integer,
+	grb_ra		float8,
+	grb_dec		float8,
+	grb_is_grb	boolean NOT NULL DEFAULT TO true,
 	grb_date	timestamp,
-	grb_last_update	timestamp
+	grb_last_update	timestamp,
+	grb_errorbox	float,
+CONSTRAINT grb_primary_key PRIMARY KEY (grb_id, grb_seqn, grb_type)
 );
 
--- history of GRB processing
+-- holds GCN packets for retrieved alerts, so we get for each burst
+-- every information GCN sends to the world
 
-CREATE TABLE grb_hist (
-	grb_hist_id	integer PRIMARY KEY,
-	grb_hist_type	integer, -- type of first notice which create that log entry
-	grb_hist_seqn	integer,
-	grb_hist_date	timestamp,
-	grb_hist_update	timestamp
+CREATE TABLE grb_gcn (
+	grb_id		integer REFERENCES grb (grb_id),
+	grb_seqn	integer REFERENCES grb (grb_seqn),
+	grb_type	integer REFERENCES grb (grb_type),
+	packet		long[40]
 );
+
+CREATE INDEX grb_gcn_prim ON grb_gcn (grb_id, grb_seqn, grb_type);
+
+-- swift pointing
 
 CREATE TABLE swift (
 	swift_id	integer PRIMARY KEY,

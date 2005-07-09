@@ -55,7 +55,8 @@ Rts2Config::loadFile (char *filename)
 }
 
 int
-Rts2Config::getString (char *section, char *param, char *buf, int bufl)
+Rts2Config::getString (const char *section, const char *param, char *buf,
+		       int bufl)
 {
 #define BUF_SIZE 256
   int getsect;
@@ -156,7 +157,7 @@ Rts2Config::getString (char *section, char *param, char *buf, int bufl)
 }
 
 int
-Rts2Config::getInteger (char *section, char *param, int &value)
+Rts2Config::getInteger (const char *section, const char *param, int &value)
 {
   char valbuf[100];
   char *retv;
@@ -174,7 +175,7 @@ Rts2Config::getInteger (char *section, char *param, int &value)
 }
 
 int
-Rts2Config::getDouble (char *section, char *param, double &value)
+Rts2Config::getDouble (const char *section, const char *param, double &value)
 {
   char valbuf[100];
   char *retv;
@@ -192,7 +193,7 @@ Rts2Config::getDouble (char *section, char *param, double &value)
 }
 
 int
-Rts2Config::getBoolen (char *section, char *param)
+Rts2Config::getBoolean (const char *section, const char *param)
 {
   char valbuf[100];
   char *retv;

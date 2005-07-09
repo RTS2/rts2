@@ -280,7 +280,7 @@ char *
 Rts2Image::getImageBase (int in_epoch_id)
 {
   static char buf[6];
-  sprintf (buf, "%05i", in_epoch_id);
+  sprintf (buf, "/images/%03i", in_epoch_id);
   return buf;
 }
 

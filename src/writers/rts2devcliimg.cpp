@@ -15,16 +15,27 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   exposureTime = 1.0;
   exposureT = EXP_LIGHT;
   exposureChip = 0;
-  exposureEnabled = 0;
+  exposureCount = 0;
 
   isExposing = 0;
+
+  Rts2Config *
+    config;
+  config = Rts2Config::instance ();
+
+  config->getDouble (connection->getName (), "xplate", xplate);
+  config->getDouble (connection->getName (), "yplate", yplate);
+  config->getDouble (connection->getName (), "xoa", xoa);
+  config->getDouble (connection->getName (), "yoa", yoa);
 }
 
 void
 Rts2DevClientCameraImage::queExposure ()
 {
-  if (isExposing || !exposureEnabled)
+  if (isExposing || !exposureCount)
     return;
+  if (exposureCount > 0)
+    exposureCount--;
   connection->
     queCommand (new
 		Rts2CommandExposure (connection->getMaster (), exposureT,
@@ -106,6 +117,16 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
 	  images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
 			    "CCD temperature");
 	  images->setValue ("EXPOSURE", exposureTime, "exposure time");
+	  images->setValue ("CAM_FAN", getValueInteger ("fan"),
+			    "fan on (1) / off (0)");
+	  images->setValue ("XPLATE", xplate,
+			    "xplate (scale in X axis; divide by binning (BIN_H)!)");
+	  images->setValue ("YPLATE", yplate,
+			    "yplate (scale in Y axis; divide by binning (BIN_V)!)");
+	  images->setValue ("CAM_XOA", xoa,
+			    "center in X axis (divide by binning (BIN_H)!)");
+	  images->setValue ("CAM_YOA", yoa,
+			    "center in Y axis (divide by binning (BIN_V)!)");
 	}
     }
   Rts2DevClientCamera::stateChanged (state);

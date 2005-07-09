@@ -9,11 +9,30 @@
 #include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
 
+void
+Rts2DevClientCameraExec::postLastReadout ()
+{
+  if (!sendLastReadout)
+    {
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_LAST_READOUT));
+      sendLastReadout = 1;
+    }
+}
+
+void
+Rts2DevClientCameraExec::queExposure ()
+{
+  sendLastReadout = 0;
+  Rts2DevClientCameraImage::queExposure ();
+}
+
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2DevClientCameraImage
   (in_connection)
 {
   currentTarget = NULL;
   script = NULL;
+  sendLastReadout = -1;
 }
 
 Rts2DevClientCameraExec::~Rts2DevClientCameraExec (void)
@@ -38,7 +57,7 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	delete script;
       currentTarget->getScript (connection->getName (), scriptBuf);
       script = new Rts2Script (scriptBuf, connection->getName ());
-      exposureEnabled = 1;
+      exposureCount = 1;
       connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
       nextCommand ();
@@ -60,12 +79,7 @@ Rts2DevClientCameraExec::nextCommand ()
     {
       delete script;
       script = NULL;
-      if (exposureEnabled)
-	{
-	  connection->getMaster ()->
-	    postEvent (new Rts2Event (EVENT_LAST_READOUT));
-	  exposureEnabled = 0;
-	}
+      postLastReadout ();
       connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
       return;
@@ -126,11 +140,9 @@ Rts2DevClientCameraExec::stateChanged (Rts2ServerState * state)
       if ((state->value & (CAM_MASK_EXPOSE | CAM_MASK_DATA)) ==
 	  (CAM_NOEXPOSURE | CAM_DATA))
 	{
-	  if (script && script->isLastCommand ())
+	  if (!script || (script && script->isLastCommand ()))
 	    {
-	      connection->getMaster ()->
-		postEvent (new Rts2Event (EVENT_LAST_READOUT));
-	      exposureEnabled = 0;
+	      postLastReadout ();
 	    }
 	}
       if ((state->value & (CAM_MASK_EXPOSE | CAM_MASK_READING)) ==

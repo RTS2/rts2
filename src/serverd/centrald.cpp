@@ -514,9 +514,9 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
   observer = config->getObserver ();
 
   current_state =
-    config->getBoolen ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
+    config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
 
-  morning_off = config->getBoolen ("centrald", "morning_off");
+  morning_off = config->getBoolean ("centrald", "morning_off");
 
   addOption ('p', "port", 1, "port on which centrald will listen");
 }

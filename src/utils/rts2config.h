@@ -22,10 +22,10 @@ public:
     virtual ~ Rts2Config (void);
   static Rts2Config *instance ();
   int loadFile (char *filename = NULL);
-  int getString (char *section, char *param, char *buf, int bufl);
-  int getInteger (char *section, char *param, int &value);
-  int getDouble (char *section, char *param, double &value);
-  int getBoolen (char *section, char *param);
+  int getString (const char *section, const char *param, char *buf, int bufl);
+  int getInteger (const char *section, const char *param, int &value);
+  int getDouble (const char *section, const char *param, double &value);
+  int getBoolean (const char *section, const char *param);
 
   // some special functions..
   struct ln_lnlat_posn *getObserver ();

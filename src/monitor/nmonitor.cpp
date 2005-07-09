@@ -141,10 +141,11 @@ Rts2NMTelescope::print (WINDOW * wnd)
   altaz.az = nan ("f");
   altaz.alt = nan ("f");
 
-  gst = getValueDouble ("siderealtime") + getValueDouble ("longtitude");
+  gst =
+    getValueDouble ("siderealtime") + getValueDouble ("longtitude") / 15.0;
   gst = ln_range_degrees (gst);
 
-  st = gst / 15.0;
+  st = gst;
 
   ln_get_hrz_from_equ_sidereal_time (&tel, &obs, st, &altaz);
   ln_get_hrz_from_equ (&tel, &obs, ln_get_julian_from_sys (), &altaz);
@@ -161,13 +162,13 @@ Rts2NMTelescope::print (WINDOW * wnd)
   mvwprintw (wnd, 5, 1, "Lon/Lat: %+03.3f %+03.3f",
 	     getValueDouble ("longtitude"), getValueDouble ("latitude"));
 
-  lst = getValueDouble ("siderealtime");
+  lst = getValueDouble ("siderealtime") * 15.0;
   ln_rad_to_hms (ln_deg_to_rad (lst), &hms);
   mvwprintw (wnd, 6, 1, "Lsid: %07.3f (%02i:%02i:%02.1f)",
 	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
 	     hms.seconds);
 
-  ln_rad_to_hms (ln_deg_to_rad (gst), &hms);
+  ln_rad_to_hms (ln_deg_to_rad (gst * 15.0), &hms);
   mvwprintw (wnd, 7, 1, "Gsid: %07.3f (%02i:%02i:%02.1f)", gst, hms.hours,
 	     hms.minutes, hms.seconds);
 }

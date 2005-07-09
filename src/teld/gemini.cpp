@@ -626,7 +626,12 @@ Rts2DevTelescopeGemini::tel_read_localtime ()
 int
 Rts2DevTelescopeGemini::tel_read_longtitude ()
 {
-  return tel_read_hms (&telLongtitude, "#:Gg#");
+  int ret;
+  ret = tel_read_hms (&telLongtitude, "#:Gg#");
+  if (ret)
+    return ret;
+  telLongtitude = -1 * telLongtitude;
+  return ret;
 }
 
 /*! 

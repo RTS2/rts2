@@ -150,11 +150,11 @@ public:
     switch (event->getType ())
       {
       case EVENT_START_EXPOSURE:
-	exposureEnabled = 1;
+	exposureCount = -1;
 	queExposure ();
 	break;
       case EVENT_STOP_EXPOSURE:
-	exposureEnabled = 0;
+	exposureCount = 0;
 	break;
       }
     Rts2DevClientCameraImage::postEvent (event);
@@ -392,14 +392,14 @@ Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
     {
       if (state->value == 1)
 	{
-	  if (!exposureEnabled)
+	  if (!exposureCount)
 	    {
-	      exposureEnabled = 1;
+	      exposureCount = 1;
 	      queExposure ();
 	    }
 	}
       else
-	exposureEnabled = 0;
+	exposureCount = 0;
     }
 }
 

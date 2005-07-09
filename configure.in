@@ -283,7 +283,7 @@ if test "x${libnova}" = "xyes" -a "x${psql}" = "xyes"; then
 	# Check for PostgreSQL
 	AC_POSTGRESQL
 	AC_ECPG
-	AC_SUBST([PSQL_SUBDIRS],['utilsdb plan pgsql bckimages sql'])
+	AC_SUBST([PSQL_SUBDIRS],['utilsdb plan grb pgsql bckimages sql'])
 fi
 
 # Checks for library functions.

@@ -73,11 +73,11 @@ public:
     switch (event->getType ())
       {
       case EVENT_START_EXPOSURE:
-	exposureEnabled = 1;
+	exposureCount = -1;
 	queExposure ();
 	break;
       case EVENT_STOP_EXPOSURE:
-	exposureEnabled = 0;
+	exposureCount = 0;
 	break;
       }
     Rts2DevClientCameraImage::postEvent (event);
@@ -162,8 +162,7 @@ Rts2focusc::run ()
   return Rts2Client::run ();
 }
 
-exposureType
-Rts2focusc::getExposureType ()
+exposureType Rts2focusc::getExposureType ()
 {
   return exposureT;
 }

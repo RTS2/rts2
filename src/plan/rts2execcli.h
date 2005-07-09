@@ -13,8 +13,11 @@
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
 {
 private:
-  Target * currentTarget;
+  int sendLastReadout;
+  Target *currentTarget;
   Rts2Script *script;
+  void postLastReadout ();
+  virtual void queExposure ();
 public:
     Rts2DevClientCameraExec (Rts2Conn * in_connection);
     virtual ~ Rts2DevClientCameraExec (void);

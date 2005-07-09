@@ -27,10 +27,16 @@ protected:
   int activeTargetId;
   int saveImage;
 
+  // some camera characteristics..
+  double xplate;
+  double yplate;
+  double xoa;
+  double yoa;
+
   float exposureTime;
   exposureType exposureT;
   int exposureChip;
-  int exposureEnabled;
+  int exposureCount;		// -1 means exposure forewer
 
   virtual void queExposure ();
 public:

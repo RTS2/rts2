@@ -59,6 +59,18 @@ Rts2ConnGrb::pr_integral_point ()
 }
 
 int
+Rts2ConnGrb::pr_swift_with_radec ()
+{
+
+}
+
+int
+Rts2ConnGrb::pr_swift_without_radec ()
+{
+
+}
+
+int
 Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t, 
   char * name, float obstime, float merit)
 {
@@ -146,8 +158,9 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
   return 0;
 }
 
-Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, Rts2Device *in_master):Rts2Conn (in_master)
+Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, Rts2DevGrb *in_master):Rts2Conn (in_master)
 {
+  master = in_master;
   gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
   strcpy (gcn_hostname, in_gcn_hostname);
   gcn_port = in_gcn_port;
@@ -287,6 +300,34 @@ Rts2ConnGrb::receive (fd_set *set)
 	break;
       case TYPE_SWIFT_POINTDIR_SRC:         // 83  // Swift Pointing Direction
 	pr_swift_point();
+	break;
+      case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
+      case TYPE_SWIFT_BAT_GRB_LC_SRC:
+      case TYPE_SWIFT_FOM_2OBSAT_SRC:
+      case TYPE_SWIFT_FOSC_2OBSAT_SRC:
+      case TYPE_SWIFT_XRT_POSITION_SRC:
+      case TYPE_SWIFT_XRT_SPECTRUM_SRC:
+      case TYPE_SWIFT_XRT_IMAGE_SRC:
+      case TYPE_SWIFT_XRT_LC_SRC:
+      case TYPE_SWIFT_UVOT_FCHART_SRC:
+      // processed messages
+      case TYPE_SWIFT_BAT_GRB_LC_PROC_SRC:
+      case TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC:
+      case TYPE_SWIFT_XRT_IMAGE_PROC_SRC:
+      case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
+      case TYPE_SWIFT_UVOT_POS_SRC:
+      // transient
+      case TYPE_SWIFT_BAT_TRANS:
+        pr_swift_with_radec ();
+	break;
+      case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
+      case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
+      case TYPE_SWIFT_SCALEDMAP_SRC:
+      case TYPE_SWIFT_XRT_CENTROID_SRC:
+      case TYPE_SWIFT_UVOT_DBURST_SRC:
+      // processed messages
+      case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
+        pr_swift_without_radec ();
 	break;
       case TYPE_KILL_SOCKET:
         shutdown (sock, SHUT_RDWR);

@@ -132,6 +132,12 @@ Rts2DevClientTelescope::getObs (struct ln_lnlat_posn *obs)
   obs->lat = getValueDouble ("latitude");
 }
 
+double
+Rts2DevClientTelescope::getLocalSiderealDeg ()
+{
+  return getValueDouble ("siderealtime") * 15.0;
+}
+
 Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {

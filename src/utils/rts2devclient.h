@@ -71,6 +71,7 @@ class Rts2DevClientTelescope:public Rts2DevClient
 protected:
   void getEqu (struct ln_equ_posn *tel);
   void getObs (struct ln_lnlat_posn *obs);
+  double getLocalSiderealDeg ();
 
 public:
     Rts2DevClientTelescope (Rts2Conn * in_connection);

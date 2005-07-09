@@ -8,7 +8,7 @@
  */
 
 #include "../utils/rts2devclient.h"
-#include "../utils/rts2device.h"
+#include "../utilsdb/rts2devicedb.h"
 #include "../utils/rts2event.h"
 #include "../utils/rts2command.h"
 #include "../utils/objectcheck.h"
@@ -18,7 +18,7 @@
 #include <signal.h>
 #include <libnova/libnova.h>
 
-class Rts2Selector:public Rts2Device
+class Rts2Selector:public Rts2DeviceDb
 {
 private:
   std::list < Target *> possibleTargets;
@@ -28,23 +28,22 @@ private:
   int selectFlats ();
   int selectDarks ();
   ObjectCheck *checker;
-  struct ln_lnlat_posn observer;
+  struct ln_lnlat_posn *observer;
 public:
   Rts2Selector (int argc, char **argv);
     virtual ~ Rts2Selector (void);
+  virtual int init ();
   virtual void postEvent (Rts2Event *event);
   int updateNext ();
   int selectNext (); // return next observation..
   virtual int changeMasterState (int new_state);
 };
 
-Rts2Selector::Rts2Selector (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_SELECTOR, 5562,
+Rts2Selector::Rts2Selector (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, 5562,
 	    "SEL")
 {
   // add read config..when we will get config
   checker = new ObjectCheck ("/etc/rts2/horizont");
-  observer.lng = 0;
-  observer.lat = 0;
 }
 
 Rts2Selector::~Rts2Selector (void)
@@ -58,6 +57,19 @@ Rts2Selector::~Rts2Selector (void)
   }
   possibleTargets.clear ();
   delete checker;
+}
+
+int
+Rts2Selector::init ()
+{
+  int ret;
+  ret = Rts2DeviceDb::init ();
+  if (ret)
+    return ret;
+
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+  observer = config->getObserver ();
 }
 
 void
@@ -132,7 +144,7 @@ Rts2Selector::considerTarget (int consider_tar_id)
     }
   }
   // add us..
-  newTar = createTarget (consider_tar_id, &observer);
+  newTar = createTarget (consider_tar_id, observer);
   ret = newTar->considerForObserving (checker, ln_get_julian_from_sys ());
   if (ret)
     return;

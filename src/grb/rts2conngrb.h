@@ -6,10 +6,15 @@
 #include "../utils/rts2client.h"
 
 #include "grbconst.h"
+#include "grbd.h"
+
+class Rts2DevGrb;
 
 class Rts2ConnGrb:public Rts2Conn
 {
 private:
+  Rts2DevGrb * master;
+
   long lbuf[SIZ_PKT];		// local buffer - swaped for Linux 
   long nbuf[SIZ_PKT];		// network buffer
   struct timeval last_packet;
@@ -31,6 +36,9 @@ private:
   int pr_imalive ();
   int pr_swift_point ();	// swift pointing.
   int pr_integral_point ();	// integral pointing
+  // burst messages
+  int pr_swift_with_radec ();
+  int pr_swift_without_radec ();
 
   // GRB db stuff
   int addSwiftPoint (double ra, double dec, double roll, const time_t * t,
@@ -41,7 +49,7 @@ private:
   char *gcn_hostname;
 public:
   Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port,
-	       Rts2Device * in_master);
+	       Rts2DevGrb * in_master);
   virtual ~ Rts2ConnGrb (void);
   virtual int idle ();
   virtual int init ();
