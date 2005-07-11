@@ -77,6 +77,7 @@ Rts2Image::Rts2Image (char *in_filename)
   getValue ("EPOCH_ID", epochId);
   getValue ("TARGET", targetId);
   getValue ("OBSID", obsId);
+  getValue ("IMGID", imgId);
   getValue ("CTIME", exposureStart.tv_sec);
   getValue ("USEC", exposureStart.tv_usec);
   cameraName = new char[DEVICE_NAME_SIZE + 1];
@@ -141,7 +142,7 @@ Rts2Image::openImage (char *in_filename)
 {
   fits_status = 0;
 
-  fits_open_file (&ffile, in_filename, READWRITE, &fits_status);
+  fits_open_diskfile (&ffile, in_filename, READWRITE, &fits_status);
   if (fits_status)
     {
       fits_report_error (stderr, fits_status);
