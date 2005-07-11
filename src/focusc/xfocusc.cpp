@@ -151,6 +151,8 @@ public:
       {
       case EVENT_START_EXPOSURE:
 	exposureCount = -1;
+	// build window etc..
+	buildWindow ();
 	queExposure ();
 	break;
       case EVENT_STOP_EXPOSURE:
@@ -177,8 +179,6 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_ma
   window = 0L;
 
   exposureTime = master->defaultExpousure ();
-  // build window etc..
-  buildWindow ();
 }
 
 void
