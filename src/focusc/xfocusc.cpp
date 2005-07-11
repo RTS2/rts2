@@ -174,6 +174,8 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_ma
 {
   master = in_master;
 
+  window = 0L;
+
   exposureTime = master->defaultExpousure ();
   // build window etc..
   buildWindow ();
@@ -184,6 +186,9 @@ Rts2xfocusCamera::buildWindow ()
 {
   XTextProperty window_title;
   char *cameraName;
+
+  if (!exposureCount)
+    return;
 
   window =
     XCreateWindow (master->getDisplay (),
@@ -392,9 +397,8 @@ Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
     {
       if (state->value == 1)
 	{
-	  if (!exposureCount)
+	  if (exposureCount)
 	    {
-	      exposureCount = 1;
 	      queExposure ();
 	    }
 	}
@@ -526,6 +530,7 @@ Rts2xfocus::init ()
 Rts2DevClient *
 Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
 {
+  std::vector < char *>::iterator cam_iter;
   switch (other_device_type)
     {
     case DEVICE_TYPE_CCD:
@@ -534,6 +539,16 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
       if (defCenter)
 	{
 	  cam->center (centerWidth, centerHeight);
+	}
+      // post exposure event..if name agree
+      for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();
+	   cam_iter++)
+	{
+	  if (!strcmp (*cam_iter, conn->getName ()))
+	    {
+	      printf ("Get conn: %p\n", conn);
+	      cam->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
+	    }
 	}
       return cam;
     default:
@@ -545,14 +560,6 @@ int
 Rts2xfocus::run ()
 {
   // find camera names..
-  std::vector < char *>::iterator cam_iter;
-  for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();
-       cam_iter++)
-    {
-      Rts2Conn *conn;
-      conn = getConnection ((*cam_iter));
-      conn->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
-    }
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 137"));
   return Rts2Client::run ();
 }
