@@ -169,6 +169,8 @@ CameraApogeeChip::readoutOneLine ()
       short int width, height;
       width = chipUsedReadout->width;
       height = chipUsedReadout->height;
+      camera->m_ExposureStartX = chipUsedReadout->x;
+      camera->m_ExposureStartY = chipUsedReadout->y;
       status = camera->GetImage (dest_top, width, height);
       syslog (LOG_DEBUG, "CameraApogeeChip::readoutOneLine status: %i",
 	      status);
