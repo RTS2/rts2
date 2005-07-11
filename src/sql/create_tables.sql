@@ -70,9 +70,9 @@ CONSTRAINT grb_primary_key PRIMARY KEY (grb_id, grb_seqn, grb_type)
 -- every information GCN sends to the world
 
 CREATE TABLE grb_gcn (
-	grb_id		integer REFERENCES grb (grb_id),
-	grb_seqn	integer REFERENCES grb (grb_seqn),
-	grb_type	integer REFERENCES grb (grb_type),
+	grb_id		integer,
+	grb_seqn	integer,
+	grb_type	integer,
 	grb_update	timestamp,
 	grb_update_usec	integer,
 	packet		long[40]
