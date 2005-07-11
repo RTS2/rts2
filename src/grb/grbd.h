@@ -10,9 +10,12 @@ class Rts2DevGrb:public Rts2DeviceDb
 {
 private:
   Rts2ConnGrb * gcncnn;
+  char *gcn_host;
+  int gcn_port;
 public:
-  Rts2DevGrb (int argc, char **argv);
+    Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();
+  virtual int processOption (int in_opt);
   virtual int init ();
 
   virtual int ready ()

@@ -39,7 +39,7 @@ Rts2ValueString::setValue (Rts2Conn * connection)
   char *new_value;
   if (connection->paramNextString (&new_value) || !connection->paramEnd ())
     return -3;
-  delete value;
+  delete[]value;
   value = new char[strlen (new_value) + 1];
   strcpy (value, new_value);
   return -1;

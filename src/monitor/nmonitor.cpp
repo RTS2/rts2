@@ -56,7 +56,12 @@ public:
   }
   virtual ~ Rts2CNMonConn (void)
   {
-    delwin (window);
+    if (window)
+      {
+	wclear (window);
+	wrefresh (window);
+	delwin (window);
+      }
   }
   int hasWindow ()
   {
@@ -466,6 +471,7 @@ public:
 
   virtual int init ();
   virtual int idle ();
+  virtual int deleteConnection (Rts2Conn * conn);
 
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
@@ -642,6 +648,27 @@ Rts2NMonitor::idle ()
   repaint ();
   setTimeout (USEC_SEC);
   return Rts2Client::idle ();
+}
+
+int
+Rts2NMonitor::deleteConnection (Rts2Conn * conn)
+{
+  // try to find us among clientConnections
+  std::vector < Rts2CNMonConn * >::iterator conn_iter;
+  Rts2CNMonConn *tmp_conn;
+
+  // allocate window for our connection
+  for (conn_iter = clientConnections.begin ();
+       conn_iter != clientConnections.end (); conn_iter++)
+    {
+      tmp_conn = (*conn_iter);
+      if (tmp_conn == conn)
+	{
+	  clientConnections.erase (conn_iter);
+	  break;
+	}
+    }
+  return Rts2Client::deleteConnection (conn);
 }
 
 Rts2DevClient *

@@ -8,6 +8,7 @@
  */
 
 #include <ctype.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
@@ -1632,10 +1633,23 @@ Rts2DevTelescopeGemini::stopDir (char *dir)
   return -2;
 }
 
+Rts2DevTelescopeGemini *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeGemini *device = new Rts2DevTelescopeGemini (argc, argv);
+  device = new Rts2DevTelescopeGemini (argc, argv);
+
+  signal (SIGINT, killSignal);
+  signal (SIGTERM, killSignal);
 
   int ret = -1;
   ret = device->init ();

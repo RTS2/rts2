@@ -11,12 +11,12 @@
 
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <mcheck.h>
 #include <time.h>
 
 #include "../utils/rts2device.h"
@@ -52,11 +52,11 @@ public:
 
   virtual int idle ();
 
-  virtual void deleteConnection (Rts2Conn * conn)
+  virtual int deleteConnection (Rts2Conn * conn)
   {
     if (integrateConn == conn)
       integrateConn = NULL;
-    Rts2Block::deleteConnection (conn);
+    return Rts2Device::deleteConnection (conn);
   }
 
   virtual int ready ()
@@ -383,12 +383,23 @@ Rts2DevPhotOptec::sendInfo (Rts2Conn * conn)
   conn->sendValue ("filter", filter);
 }
 
+Rts2DevPhotOptec *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  mtrace ();
+  device = new Rts2DevPhotOptec (argc, argv);
 
-  Rts2DevPhotOptec *device = new Rts2DevPhotOptec (argc, argv);
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

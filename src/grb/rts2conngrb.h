@@ -56,12 +56,15 @@ private:
 
   int gcn_port;
   char *gcn_hostname;
+
+  time_t nextTime;
 public:
   Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port,
 	       Rts2DevGrb * in_master);
   virtual ~ Rts2ConnGrb (void);
   virtual int idle ();
   virtual int init ();
+  virtual int connectionsBreak ();
   virtual int receive (fd_set * set);
 
   int lastPacket ();

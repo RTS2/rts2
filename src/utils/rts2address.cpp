@@ -33,7 +33,7 @@ Rts2Address::update (const char *in_name, const char *new_host, int new_port,
 {
   if (!isAddress (in_name))
     return -1;
-  delete host;
+  delete[]host;
   host = new char[strlen (new_host) + 1];
   strcpy (host, new_host);
   port = new_port;

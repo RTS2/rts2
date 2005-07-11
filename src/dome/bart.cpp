@@ -2,12 +2,12 @@
 #define _GNU_SOURCE
 #endif
 
-#include <mcheck.h>
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <signal.h>
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -436,12 +436,23 @@ Rts2DevDomeBart::changeMasterState (int new_state)
 }
 
 
+Rts2DevDomeBart *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  mtrace ();
+  device = new Rts2DevDomeBart (argc, argv);
 
-  Rts2DevDomeBart *device = new Rts2DevDomeBart (argc, argv);
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

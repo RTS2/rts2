@@ -18,6 +18,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#include <signal.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1055,10 +1056,20 @@ Rts2DevTelescopeMM2::stopDir (char *dir)
   return -2;
 }
 
+Rts2DevTelescopeMM2 *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeMM2 *device = new Rts2DevTelescopeMM2 (argc, argv);
+  device = new Rts2DevTelescopeMM2 (argc, argv);
 
   int ret = -1;
   ret = device->init ();

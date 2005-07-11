@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include "camera_cpp.h"
 #include "../utils/rts2device.h"
@@ -452,10 +453,23 @@ Rts2DevCameraSbig::camFilter (int new_filter)
 
 }
 
+Rts2DevCameraSbig *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraSbig *device = new Rts2DevCameraSbig (argc, argv);
+  device = new Rts2DevCameraSbig (argc, argv);
+
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

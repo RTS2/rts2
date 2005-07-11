@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
+#include <signal.h>
+
 #include "camera_cpp.h"
 
 class CameraDummyChip:public CameraChip
@@ -83,10 +85,23 @@ public:
   }
 };
 
+Rts2DevCameraDummy *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraDummy *device = new Rts2DevCameraDummy (argc, argv);
+  device = new Rts2DevCameraDummy (argc, argv);
+
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

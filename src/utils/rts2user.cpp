@@ -21,7 +21,7 @@ Rts2User::Rts2User (int in_centralId, int in_priority, char in_priority_have,
 
 Rts2User::~Rts2User (void)
 {
-  delete status_txt;
+  delete[]status_txt;
 }
 
 int
@@ -34,7 +34,7 @@ Rts2User::update (int in_centralId, int new_priority, char new_priority_have,
   havePriority = new_priority_have;
   strncpy (login, new_login, DEVICE_NAME_SIZE);
   login[DEVICE_NAME_SIZE - 1] = '\0';
-  delete status_txt;
+  delete[]status_txt;
   status_txt = new char[strlen (new_status_txt) + 1];
   strcpy (status_txt, new_status_txt);
   return 0;

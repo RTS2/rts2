@@ -73,6 +73,8 @@ CREATE TABLE grb_gcn (
 	grb_id		integer REFERENCES grb (grb_id),
 	grb_seqn	integer REFERENCES grb (grb_seqn),
 	grb_type	integer REFERENCES grb (grb_type),
+	grb_update	timestamp,
+	grb_update_usec	integer,
 	packet		long[40]
 );
 
@@ -188,7 +190,11 @@ CONSTRAINT flats_prim_key PRIMARY KEY (flat_date, camera_name)
 
 DROP SEQUENCE tar_id;
 
-CREATE SEQUENCE tar_id;
+CREATE SEQUENCE tar_id START WITH 1000;
+
+DROP SEQUENCE grb_tar_id;
+
+CREATE SEQUENCE grb_tar_id START WITH 50000;
 
 DROP SEQUENCE point_id;
 

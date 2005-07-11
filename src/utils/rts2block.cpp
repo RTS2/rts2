@@ -40,6 +40,11 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
     serverState[i] = NULL;
   otherDevice = NULL;
   otherType = -1;
+
+  time (&lastGoodSend);
+  time (&lastData);
+
+  connectionTimeout = 300;	// 5 minutes timeout
 }
 
 Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):
@@ -60,6 +65,11 @@ Rts2Object ()
     serverState[i] = NULL;
   otherDevice = NULL;
   otherType = -1;
+
+  time (&lastGoodSend);
+  time (&lastData);
+
+  connectionTimeout = 150;	// 5 minutes timeout (150 + 150)
 }
 
 Rts2Conn::~Rts2Conn (void)
@@ -94,6 +104,18 @@ void
 Rts2Conn::postMaster (Rts2Event * event)
 {
   master->postEvent (event);
+}
+
+int
+Rts2Conn::idle ()
+{
+  time_t now;
+  time (&now);
+  if (now > lastData + connectionTimeout
+      || now > lastGoodSend + connectionTimeout)
+    send ("T ready");
+  if (now > lastData + connectionTimeout * 2)
+    endConnection ();
 }
 
 int
@@ -194,6 +216,23 @@ Rts2Conn::processLine ()
     {
       ret = status ();
     }
+  // technical - to keep connection working
+  else if (isCommand ("T"))
+    {
+      char *msg;
+      if (paramNextString (&msg) || !paramEnd ())
+	return -1;
+      if (!strcmp (msg, "ready"))
+	{
+	  send ("T OK");
+	  return -1;
+	}
+      if (!strcmp (msg, "OK"))
+	{
+	  return -1;
+	}
+      return -2;
+    }
   else if (isCommandReturn ())
     {
       ret = commandReturn ();
@@ -221,6 +260,7 @@ Rts2Conn::receive (fd_set * set)
     return -1;
   if ((sock >= 0) && FD_ISSET (sock, set))
     {
+      time (&lastData);
       if (conn_state == CONN_CONNECTING)
 	{
 	  return acceptConn ();
@@ -515,6 +555,7 @@ Rts2Conn::send (char *message)
   syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (),
 	  sock, ret, message);
   write (sock, "\r\n", 2);
+  time (&lastGoodSend);
   return 0;
 }
 
@@ -1076,8 +1117,10 @@ Rts2Block::run ()
 		{
 		  if (conn->receive (&read_set) == -1)
 		    {
-		      deleteConnection (conn);
-		      connections[i] = NULL;
+		      ret = deleteConnection (conn);
+		      // delete connection only when it really requested to be deleted..
+		      if (!ret)
+			connections[i] = NULL;
 		    }
 		}
 	    }
@@ -1088,10 +1131,16 @@ Rts2Block::run ()
     }
 }
 
-void
+int
 Rts2Block::deleteConnection (Rts2Conn * conn)
 {
-  delete conn;
+  int ret;
+  ret = conn->connectionsBreak ();
+  if (!ret)
+    {
+      delete conn;
+    }
+  return ret;
 }
 
 int

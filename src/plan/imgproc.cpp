@@ -48,7 +48,7 @@ public:
 
   virtual int sendInfo (Rts2Conn * conn);
 
-  virtual void deleteConnection (Rts2Conn * conn);
+  virtual int deleteConnection (Rts2Conn * conn);
 
   int queImage (Rts2Conn * conn, const char *in_path);
   int doImage (Rts2Conn * conn, const char *in_path);
@@ -144,7 +144,7 @@ Rts2ImageProc::sendInfo (Rts2Conn * conn)
 		   (int) imagesQue.size () + (runningImage ? 1 : 0));
 }
 
-void
+int
 Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 {
   std::list < Rts2ConnImgProcess * >::iterator img_iter;
@@ -168,7 +168,7 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 	  changeRunning (*img_iter);
 	}
     }
-  Rts2Device::deleteConnection (conn);
+  return Rts2DeviceDb::deleteConnection (conn);
 }
 
 void
@@ -223,11 +223,23 @@ Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
 
 Rts2ImageProc *imgproc;
 
+void
+killSignal (int sig)
+{
+  if (imgproc)
+    delete imgproc;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
   int ret;
   imgproc = new Rts2ImageProc (argc, argv);
+
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
+
   ret = imgproc->init ();
   if (ret)
     {

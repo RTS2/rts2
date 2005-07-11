@@ -11,6 +11,7 @@
 #endif /* !_GNU_SOURCE */
 
 #include <math.h>
+#include <signal.h>
 #include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -920,12 +921,25 @@ Rts2DevCameraApogee::camCoolTemp (float new_temp)
   return 0;
 }
 
+Rts2DevCameraApogee *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraApogee *device = new Rts2DevCameraApogee (argc, argv);
-
   int ret;
+  device = new Rts2DevCameraApogee (argc, argv);
+
+  signal (SIGINT, killSignal);
+  signal (SIGTERM, killSignal);
+
   ret = device->init ();
   if (ret)
     {

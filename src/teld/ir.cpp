@@ -3,6 +3,7 @@
 #endif
 
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 #include <fcntl.h>
 #include <math.h>
@@ -11,7 +12,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libnova/libnova.h>
-#include <mcheck.h>
 
 #include "status.h"
 #include "telescope.h"
@@ -427,10 +427,23 @@ Rts2DevTelescopeIr::idle ()
   return Rts2DevTelescope::idle ();
 }
 
+Rts2DevTelescopeIr *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeIr *device = new Rts2DevTelescopeIr (argc, argv);
+  device = new Rts2DevTelescopeIr (argc, argv);
+
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

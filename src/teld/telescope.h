@@ -76,10 +76,11 @@ public:
   int checkMoves ();
   virtual int idle ();
   virtual int changeMasterState (int new_state);
-  virtual void deleteConnection (Rts2Conn * in_conn)
+  virtual int deleteConnection (Rts2Conn * in_conn)
   {
     if (in_conn == move_connection)
       move_connection = NULL;
+    return Rts2Device::deleteConnection (in_conn);
   }
 
   // callback functions for Camera alone

@@ -59,7 +59,7 @@ public:
   }
    ~Rts2ServerState (void)
   {
-    delete name;
+    delete[]name;
   }
   int isName (const char *in_name)
   {
@@ -85,7 +85,7 @@ private:
   virtual int connectionError ()
   {
     conn_state = CONN_BROKEN;
-    if (sock)
+    if (sock >= 0)
       close (sock);
     sock = -1;
     return -1;
@@ -94,6 +94,13 @@ private:
 
   std::list < Rts2Command * >commandQue;
   Rts2Command *runningCommand;
+
+  // used for monitoring of connection state..
+  time_t lastGoodSend;
+  time_t lastData;
+
+  // connectionTimeout in seconds
+  int connectionTimeout;
 
 protected:
   Rts2ServerState * serverState[MAX_STATE];
@@ -133,9 +140,10 @@ public:
     return -1;
   }
   void postMaster (Rts2Event * event);
-  virtual int idle ()
+  virtual int idle ();
+  virtual int connectionsBreak ()	// returns !0 if we want to keep connection running
   {
-    return -1;
+    return 0;
   }
   inline int isCommand (const char *cmd)
   {
@@ -380,7 +388,7 @@ public:
     end_loop = 1;
   }
   int run ();
-  virtual void deleteConnection (Rts2Conn * conn);
+  virtual int deleteConnection (Rts2Conn * conn);
   int setPriorityClient (int in_priority_client, int timeout);
   void checkPriority (Rts2Conn * conn)
   {

@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
+#include <signal.h>
+
 #include "telescope.h"
 
 /*!
@@ -92,10 +94,23 @@ public:
   }
 };
 
+Rts2DevTelescopeDummy *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeDummy *device = new Rts2DevTelescopeDummy (argc, argv);
+  device = new Rts2DevTelescopeDummy (argc, argv);
+
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

@@ -3,6 +3,7 @@
 #endif
 
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -214,12 +215,25 @@ Rts2DevTelescopeBridge::stop ()
   timeout = 201;
 }
 
+Rts2DevTelescopeBridge *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
   mtrace ();
 
-  Rts2DevTelescopeBridge *device = new Rts2DevTelescopeBridge (argc, argv);
+  device = new Rts2DevTelescopeBridge (argc, argv);
+
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

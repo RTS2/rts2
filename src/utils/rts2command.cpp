@@ -31,7 +31,7 @@ Rts2Command::setCommand (char *in_text)
 
 Rts2Command::~Rts2Command (void)
 {
-  delete text;
+  delete[]text;
 }
 
 int

@@ -514,27 +514,40 @@ Rts2ConnGrb::~Rts2ConnGrb (void)
 int
 Rts2ConnGrb::idle ()
 {
+  int ret;
+  int err;
+  socklen_t len = sizeof (err);
+
   switch (conn_state)
     {
     case CONN_CONNECTING:
-      int err;
-      int ret;
-      socklen_t len = sizeof (err);
-
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %m");
-          conn_state = CONN_DELETE;
+	  connectionsBreak ();
           break;
         }
       if (err)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %s",
                   strerror (err));
-          conn_state = CONN_DELETE;
+	  connectionsBreak ();
           break;
         }
+      conn_state = CONN_CONNECTED;
+      break;
+    case CONN_BROKEN:
+      time_t now;
+      time (&now);
+      if (now < nextTime)
+        break;
+      ret = init ();
+      if (ret)
+      {
+        time (&nextTime);
+	nextTime += 600;
+      }
       break;
     }
   return Rts2Conn::idle ();
@@ -572,7 +585,6 @@ Rts2ConnGrb::init ()
   freeaddrinfo (info);
   if (ret == -1)
     {
-     
       if (errno = EINPROGRESS)
         {
           conn_state = CONN_CONNECTING;
@@ -580,7 +592,25 @@ Rts2ConnGrb::init ()
         }
       return -1;
     }
+  conn_state = CONN_CONNECTED;
   return 0;
+}
+
+int
+Rts2ConnGrb::connectionsBreak ()
+{
+  if (sock > 0)
+  {
+    close (sock);
+    sock = -1;
+  }
+  if (conn_state != CONN_BROKEN)
+  {
+    time (&nextTime);
+    nextTime += 600;
+    conn_state = CONN_BROKEN;
+  }
+  return -1;
 }
 
 int
@@ -588,8 +618,12 @@ Rts2ConnGrb::receive (fd_set *set)
 {
   int ret = 0;
   struct tm *t;
-  if (conn_state == CONN_DELETE)
+  if (conn_state != CONN_CONNECTED)
+  {
+    if (conn_state != CONN_BROKEN)
+      connectionsBreak ();
     return -1;
+  }
   if (sock >= 0 && FD_ISSET (sock, set))
   {
     // translate packages to linux..
@@ -599,7 +633,7 @@ Rts2ConnGrb::receive (fd_set *set)
     gettimeofday (&last_packet, NULL);
     if (ret < 0)
     {
-      conn_state = CONN_DELETE;
+      connectionsBreak ();
       return -1;
     }
     /* Immediately echo back the packet so GCN can monitor:
@@ -661,13 +695,7 @@ Rts2ConnGrb::receive (fd_set *set)
         pr_swift_without_radec ();
 	break;
       case TYPE_KILL_SOCKET:
-        shutdown (sock, SHUT_RDWR);
-	close (sock);
-	conn_state = CONN_CONNECTING;
-	do
-	{
-          ret = init ();
-	} while (ret != 0);
+        connectionsBreak ();
         break;
       default:
         syslog (LOG_ERR, "Rts2ConnGrb::receive unknow packet type: %d", lbuf[PKT_TYPE]);
