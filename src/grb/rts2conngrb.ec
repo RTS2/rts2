@@ -68,6 +68,70 @@ Rts2ConnGrb::pr_integral_point ()
 }
 
 int
+Rts2ConnGrb::pr_hete ()
+{
+  int grb_id;
+  int grb_seqn;
+  int grb_type;
+  double grb_ra;
+  double grb_dec;
+  int grb_is_grb = 1;
+  time_t grb_date;
+  float grb_errorbox;
+
+  grb_id = ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT);
+  grb_seqn = ((lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT);
+  grb_type = lbuf[PKT_TYPE];
+
+  grb_ra = lbuf[BURST_RA] / 10000.0;
+  grb_dec = lbuf[BURST_DEC] / 10000.0;
+
+  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+
+  grb_errorbox = (lbuf[H_WXM_DIM_NSIG] >> 16) / 60.0;
+
+  if (!do_hete_test
+    && (grb_type == TYPE_HETE_TEST 
+      || (lbuf[H_TRIG_FLAGS] & H_ART_TRIG)
+    )
+  )
+    return 0;
+
+  if ((lbuf[H_TRIG_FLAGS] & H_DEF_NOT_GRB)
+    || (lbuf[H_TRIG_FLAGS] & H_DEF_SGR)
+    || (lbuf[H_TRIG_FLAGS] & H_DEF_XRB))
+    grb_is_grb = 0;
+  
+  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_errorbox);
+}
+
+int
+Rts2ConnGrb::pr_integral ()
+{
+  int grb_id;
+  int grb_seqn;
+  int grb_type;
+  double grb_ra;
+  double grb_dec;
+  int grb_is_grb = 1;
+  time_t grb_date;
+  float grb_errorbox;
+
+  grb_id = (lbuf[BURST_TRIG] & I_TRIGNUM_MASK) >> I_TRIGNUM_SHIFT;
+  grb_seqn = (lbuf[BURST_TRIG] & I_SEQNUM_MASK) >> I_SEQNUM_SHIFT;
+  grb_type = lbuf[PKT_TYPE];
+
+  grb_ra = lbuf[BURST_RA]/10000.0;
+  grb_dec = lbuf[BURST_DEC]/10000.0;
+
+  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+
+  grb_errorbox = (float) lbuf[BURST_ERROR]/60.0;
+
+  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_errorbox);
+}
+
+int
 Rts2ConnGrb::pr_swift_with_radec ()
 {
   int grb_id;
@@ -489,7 +553,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
   }
 }
 
-Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, Rts2DevGrb *in_master):Rts2Conn (in_master)
+Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, Rts2DevGrb *in_master):Rts2Conn (in_master)
 {
   master = in_master;
   gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
@@ -502,6 +566,8 @@ Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, Rts2DevGrb *in
   deltaValue = 0;
   last_target = NULL;
   last_target_time = -1;
+
+  do_hete_test = in_do_hete_test;
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
@@ -660,12 +726,26 @@ Rts2ConnGrb::receive (fd_set *set)
       case TYPE_IM_ALIVE:
         pr_imalive ();
         break;
+      // pondtirs messages with history..
       case TYPE_INTEGRAL_POINTDIR_SRC:
         pr_integral_point ();
 	break;
       case TYPE_SWIFT_POINTDIR_SRC:         // 83  // Swift Pointing Direction
 	pr_swift_point();
 	break;
+      // hete, integral & swift GRB observations
+      case TYPE_HETE_ALERT_SRC:
+      case TYPE_HETE_UPDATE_SRC:
+      case TYPE_HETE_FINAL_SRC:
+      case TYPE_HETE_GNDANA_SRC:
+      case TYPE_HETE_TEST:
+         pr_hete ();
+	 break;
+      case TYPE_INTEGRAL_WAKEUP_SRC:
+      case TYPE_INTEGRAL_REFINED_SRC:
+      case TYPE_INTEGRAL_OFFLINE_SRC:
+         pr_integral ();
+	 break;
       case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
       case TYPE_SWIFT_BAT_GRB_LC_SRC:
       case TYPE_SWIFT_FOM_2OBSAT_SRC:

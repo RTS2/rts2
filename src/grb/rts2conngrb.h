@@ -40,6 +40,8 @@ private:
   int pr_swift_point ();	// swift pointing.
   int pr_integral_point ();	// integral pointing
   // burst messages
+  int pr_hete ();
+  int pr_integral ();
   int pr_swift_with_radec ();
   int pr_swift_without_radec ();
 
@@ -56,10 +58,11 @@ private:
 
   int gcn_port;
   char *gcn_hostname;
+  int do_hete_test;
 
   time_t nextTime;
 public:
-  Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port,
+  Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test,
 	       Rts2DevGrb * in_master);
   virtual ~ Rts2ConnGrb (void);
   virtual int idle ();

@@ -24,9 +24,12 @@ Rts2DeviceDb (argc, argv, DEVICE_TYPE_GRB, 5563, "GRB")
   gcncnn = NULL;
   gcn_host = NULL;
   gcn_port = -1;
+  do_hete_test = 0;
 
   addOption ('S', "gcn_host", 1, "GCN host name");
   addOption ('P', "gcn_port", 1, "GCN port");
+  addOption ('T', "test", 0,
+	     "process test notices (default to off - don't process them)");
 }
 
 Rts2DevGrb::~Rts2DevGrb (void)
@@ -46,6 +49,9 @@ Rts2DevGrb::processOption (int in_opt)
       break;
     case 'P':
       gcn_port = atoi (optarg);
+      break;
+    case 'T':
+      do_hete_test = 1;
       break;
     default:
       return Rts2DeviceDb::processOption (in_opt);
@@ -83,7 +89,7 @@ Rts2DevGrb::init ()
     }
 
   // add connection..
-  gcncnn = new Rts2ConnGrb (gcn_host, gcn_port, this);
+  gcncnn = new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, this);
   // wait till grb connection init..
   while (1)
     {

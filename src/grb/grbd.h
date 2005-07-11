@@ -12,6 +12,7 @@ private:
   Rts2ConnGrb * gcncnn;
   char *gcn_host;
   int gcn_port;
+  int do_hete_test;
 public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();
