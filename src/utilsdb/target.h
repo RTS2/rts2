@@ -87,7 +87,7 @@ private:
 
   int getDBScript (int target, const char *camera_name, char *script);
 protected:
-  int bonus;			// tar_priority + tar_bonus
+  float bonus;			// tar_priority + tar_bonus
 
   int target_id;
   struct ln_lnlat_posn *observer;
@@ -143,7 +143,7 @@ public:
   // scheduler functions
   virtual int considerForObserving (ObjectCheck * checker, double lst);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
-  virtual int getBonus ()
+  virtual float getBonus ()
   {
     return bonus;
   }
@@ -158,12 +158,17 @@ public:
   {
     return selected;
   }
+
+  int getNumObs (time_t * start_time, time_t * end_time);
 };
 
 class ConstTarget:public Target
 {
 private:
   struct ln_equ_posn position;
+protected:
+  float tar_priority;
+  float tar_bonus;
 public:
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
@@ -249,6 +254,13 @@ public:
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startObservation (struct ln_equ_posn *position);
   virtual int beforeMove ();
+};
+
+class TargetGps:public ConstTarget
+{
+public:
+  TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual float getBonus ();
 };
 
 // load target from DB

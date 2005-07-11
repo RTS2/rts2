@@ -2,7 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include "../utils/rts2device.h"
+#include "../utilsdb/rts2devicedb.h"
 #include "status.h"
 #include "rts2connimgprocess.h"
 
@@ -26,7 +26,7 @@ public:
     Rts2DevConnImage (int in_sock, Rts2ImageProc * in_master);
 };
 
-class Rts2ImageProc:public Rts2Device
+class Rts2ImageProc:public Rts2DeviceDb
 {
 private:
   std::list < Rts2ConnImgProcess * >imagesQue;
@@ -36,8 +36,8 @@ public:
     virtual ~ Rts2ImageProc (void);
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
 
+  virtual int init ();
   virtual int idle ();
-
   virtual int ready ()
   {
     return 0;
@@ -81,8 +81,8 @@ Rts2DevConnImage::commandAuthorized ()
   return Rts2DevConn::commandAuthorized ();
 }
 
-Rts2ImageProc::Rts2ImageProc (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_IMGPROC, 5561,
-	    "IMGP")
+Rts2ImageProc::Rts2ImageProc (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_IMGPROC, 5561,
+	      "IMGP")
 {
   runningImage = NULL;
 }
@@ -97,6 +97,18 @@ Rts2Conn *
 Rts2ImageProc::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnImage (in_sock, this);
+}
+
+int
+Rts2ImageProc::init ()
+{
+  int ret;
+  ret = Rts2DeviceDb::init ();
+
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+
+  return ret;
 }
 
 int

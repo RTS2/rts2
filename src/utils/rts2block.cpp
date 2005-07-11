@@ -950,7 +950,7 @@ Rts2Block::addConnection (Rts2Conn * conn)
 }
 
 Rts2Conn *
-Rts2Block::findName (char *in_name)
+Rts2Block::findName (const char *in_name)
 {
   int i;
   for (i = 0; i < MAX_CONN; i++)

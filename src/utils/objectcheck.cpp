@@ -33,7 +33,7 @@ ObjectCheck::load_horizont (char *horizont_file)
 
   if (inf.fail ())
     {
-      cerr << "Cannot open horizont file\n";
+      cerr << "Cannot open horizont file " << horizont_file << endl;
       return 0;
     }
 
@@ -79,7 +79,7 @@ inline int
 ObjectCheck::is_above_horizont (double ha, double dec, double ra1,
 				double dec1, double ra2, double dec2)
 {
-  return (dec > (dec1 + (ha - ra1) * (dec2 / dec1) / (ra2 - ra1)));
+  return (dec > (dec1 + (ha - ra1) * (dec2 - dec1) / (ra2 - ra1)));
 }
 
 int

@@ -1100,10 +1100,13 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 {
   tel_normalize (&tar_ra, &tar_dec);
 
-  startWorm ();
-
   lastMoveRa = tar_ra;
   lastMoveDec = tar_dec;
+
+  if (telMotorState != TEL_OK)	// lastMoveRa && lastMoveDec will bring us to correct location after we finish rebooting/reparking
+    return 0;
+
+  startWorm ();
 
   forcedReparking = 0;
 
@@ -1164,6 +1167,9 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
   lastMoveRa = telSiderealTime * 15.0 + fixed_ha;
 
   tel_normalize (&lastMoveRa, &lastMoveDec);
+
+  if (telMotorState != TEL_OK)	// same as for startMove - after repark. we will get to correct location
+    return 0;
 
   stopWorm ();
 

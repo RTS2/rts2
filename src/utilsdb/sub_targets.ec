@@ -8,16 +8,24 @@ ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
 Target (in_tar_id, in_obs)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double ra;
-  double dec;
+  double d_ra;
+  double d_dec;
+  float d_tar_priority;
+  float d_tar_bonus;
   int db_tar_id = in_tar_id;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
   SELECT 
-    tar_ra, tar_dec 
+    tar_ra,
+    tar_dec,
+    tar_priority,
+    tar_bonus
   INTO
-    :ra, :dec
+    :d_ra,
+    :d_dec,
+    :d_tar_priority,
+    :d_tar_bonus
   FROM
     targets
   WHERE
@@ -26,8 +34,11 @@ Target (in_tar_id, in_obs)
   {
     throw &sqlca;
   }
-  position.ra = ra;
-  position.dec = dec;
+  position.ra = d_ra;
+  position.dec = d_dec;
+  tar_priority = d_tar_priority;
+  tar_bonus = d_tar_bonus;
+  bonus = tar_priority + tar_bonus;
 }
 
 int
@@ -437,4 +448,24 @@ TargetSwiftFOV::beforeMove ()
   findPointing ();
   if (oldSwiftId != swiftId)
     endObservation ();  // startObservation will be called after move suceeded and will write new observation..
+}
+
+TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
+{
+}
+
+float
+TargetGps::getBonus ()
+{
+  // get our altitude..
+  struct ln_hrz_posn hrz;
+  int numobs;
+  time_t now;
+  time_t start_t;
+  getAltAz (&hrz);
+  // get number of observations in last 24 hours..
+  time (&now);
+  start_t = now - 86400;
+  numobs = getNumObs (&start_t, &now);
+  return ConstTarget::getBonus () + hrz.alt - numobs * 10;
 }

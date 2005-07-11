@@ -143,12 +143,11 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   gst =
     getValueDouble ("siderealtime") + getValueDouble ("longtitude") / 15.0;
-  gst = ln_range_degrees (gst);
+  gst = ln_range_degrees (gst * 15.0) / 15.0;
 
   st = gst;
 
   ln_get_hrz_from_equ_sidereal_time (&tel, &obs, st, &altaz);
-  ln_get_hrz_from_equ (&tel, &obs, ln_get_julian_from_sys (), &altaz);
 
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",

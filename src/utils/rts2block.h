@@ -361,7 +361,7 @@ public:
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   Rts2Conn *addDataConnection (Rts2Conn * in_conn, char *in_hostname,
 			       int in_port, int in_size);
-  Rts2Conn *findName (char *in_name);
+  Rts2Conn *findName (const char *in_name);
   virtual int sendStatusMessage (char *state_name, int state);
   virtual int sendMessage (char *message);
   virtual int sendMessage (char *message, int val1, int val2);

@@ -27,6 +27,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   config->getDouble (connection->getName (), "yplate", yplate);
   config->getDouble (connection->getName (), "xoa", xoa);
   config->getDouble (connection->getName (), "yoa", yoa);
+  config->getInteger (connection->getName (), "flip", flip);
 }
 
 void
@@ -132,6 +133,8 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
 			    "center in X axis (divide by binning (BIN_H)!)");
 	  images->setValue ("CAM_YOA", yoa,
 			    "center in Y axis (divide by binning (BIN_V)!)");
+	  images->setValue ("FLIP", flip,
+			    "camera flip (since most astrometry devices works as mirrors");
 	}
     }
   Rts2DevClientCamera::stateChanged (state);
@@ -164,11 +167,11 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setValue ("DECL", object.dec, "mount DEC");
       image->setValue ("LONG", obs.lng, "mount longtitude");
       image->setValue ("LAT", obs.lat, "mount latitude");
-      siderealtime = getValueDouble ("siderealtime") / 15.0;
+      siderealtime = getValueDouble ("siderealtime");
       ln_get_hrz_from_equ_sidereal_time (&object, &obs, siderealtime, &hrz);
       image->setValue ("ALT", hrz.alt, "mount altitude");
       image->setValue ("AZ", hrz.az, "mount azimut");
-      image->setValue ("FLIP", getValueInteger ("flip"), "mount flip");
+      image->setValue ("MNT_FLIP", getValueInteger ("flip"), "mount flip");
       break;
     }
 

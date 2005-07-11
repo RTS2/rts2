@@ -98,6 +98,11 @@ public:
 
   void setMountName (const char *in_mountName);
 
+  const char *getMountName ()
+  {
+    return mountName;
+  }
+
   long getExposureSec ()
   {
     return exposureStart.tv_sec;

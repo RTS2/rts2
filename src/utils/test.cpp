@@ -46,15 +46,15 @@ main (int argc, char **argv)
 
   printf ("ret: %i ", conf->getString ("CNF1", "script", buf, 20));
   printf ("val %s\n", buf);
-  printf ("ret: %i ", conf->getString ("observation", "horizont", buf, 20));
+  printf ("ret: %i ", conf->getString ("observatory", "horizont", buf, 20));
   checker = new ObjectCheck (buf);
 
   for (value = 0; value < 360; value += 7.5)
     {
       printf ("%f -20 is_good: %i\n", value,
 	      checker->is_good (0, value, -20));
-      printf ("%f 0 is_good: %i\n", value, checker->is_good (0, value, 0));
-      printf ("%f 80 is_good: %i\n", value, checker->is_good (0, value, 80));
+      printf ("%f 0 is_good: %i\n", value, checker->is_good (18, value, 0));
+      printf ("%f 30 is_good: %i\n", value, checker->is_good (18, value, 30));
     }
 
   delete checker;

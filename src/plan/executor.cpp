@@ -22,15 +22,19 @@ class Rts2Executor:public Rts2DeviceDb
 private:
   Target * currentTarget;
   Target *nextTarget;
+  void doSwitch ();
   void switchTarget ();
 
   int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
     std::vector < Target * >targetsQue;
   struct ln_lnlat_posn *observer;
 
+  int ignoreDay;
+
 public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
+  virtual int processOption (int in_opt);
   virtual int init ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
@@ -85,6 +89,9 @@ Rts2DeviceDb (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
   nextTarget = NULL;
   setStateNames (1, states_names);
   scriptCount = -1;
+
+  addOption ('I', "ignore_day", 0, "observe even during daytime");
+  ignoreDay = 0;
 }
 
 Rts2Executor::~Rts2Executor (void)
@@ -93,6 +100,20 @@ Rts2Executor::~Rts2Executor (void)
     delete currentTarget;
   if (nextTarget)
     delete nextTarget;
+}
+
+int
+Rts2Executor::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'I':
+      ignoreDay = 1;
+      break;
+    default:
+      return Rts2DeviceDb::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -126,7 +147,7 @@ Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_CCD:
       return new Rts2DevClientCameraExec (conn);
     default:
-      return Rts2Device::createOtherType (conn, other_device_type);
+      return Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
 }
 
@@ -200,7 +221,7 @@ Rts2Executor::setNext (int nextId)
 }
 
 void
-Rts2Executor::switchTarget ()
+Rts2Executor::doSwitch ()
 {
   if (nextTarget)
     {
@@ -211,6 +232,34 @@ Rts2Executor::switchTarget ()
       nextTarget = NULL;
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+}
+
+void
+Rts2Executor::switchTarget ()
+{
+  if (ignoreDay)
+    {
+      doSwitch ();
+    }
+  else
+    {
+      // we will not observe during daytime..
+      switch (getMasterState ())
+	{
+	case SERVERD_EVENING:
+	case SERVERD_DUSK:
+	case SERVERD_NIGHT:
+	case SERVERD_DAWN:
+	case SERVERD_MORNING:
+	  doSwitch ();
+	  break;
+	default:
+	  if (currentTarget)
+	    queTarget (currentTarget);
+	  currentTarget = NULL;
+	  nextTarget = NULL;
+	}
+    }
   infoAll ();
 }
 

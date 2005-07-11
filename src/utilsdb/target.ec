@@ -141,8 +141,8 @@ Target::endObservation ()
     obs_id = -1;
     if (sqlca.sqlcode != 0)
     {
-      EXEC SQL ROLLBACK;
       logMsgDb ("cannot end observation");
+      EXEC SQL ROLLBACK;
       return -1;
     }
     EXEC SQL COMMIT;
@@ -273,19 +273,21 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
   // horizont constrain..
   struct ln_equ_posn curr_position;
   double gst = ln_get_mean_sidereal_time (JD);
+  int ret;
   if (getPosition (&curr_position, JD))
   {
     changePriority (-100, JD + 1);
     return -1;
   }
-  if (!checker->is_good (gst, curr_position.ra, curr_position.dec))
+  ret = checker->is_good (gst, curr_position.ra, curr_position.dec);
+  if (!ret)
   {
     struct ln_rst_time rst;
-    int ret;
     ret = getRST (&rst, JD);
     if (ret == -1)
     {
       // object doesn't rise, let's hope tomorrow it will rise
+      syslog (LOG_DEBUG, "Target::considerForObserving tar %i don't rise", getTargetID ());
       changePriority (-100, JD + 1);
       return -1;
     }
@@ -293,9 +295,12 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
     // will hapens in 10 minutes 
     if (rst.rise < JD)
     {
+      // object doesn't rise, let's hope tomorrow it will rise
+      syslog (LOG_DEBUG, "Target::considerForObserving %i will rise tommorow: %f", getTargetID (), rst.rise);
       changePriority (-100, JD + 1.0/8640.0);
       return -1;
     }
+    syslog (LOG_DEBUG, "Target::considerForObserving %i will rise at: %f", getTargetID (), rst.rise);
     changePriority (-100, rst.rise);
     return -1;
   }
@@ -312,10 +317,19 @@ Target::dropBonus ()
 
   EXEC SQL UPDATE 
     targets 
-  SET tar_bonus = NULL, tar_bonus_time = NULL
-  WHERE tar_id = :db_tar_id;
-
-  return !!sqlca.sqlcode;
+  SET
+    tar_bonus = NULL,
+    tar_bonus_time = NULL
+  WHERE
+    tar_id = :db_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("Target::dropBonus");
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL COMMIT;
+  return 0;
 }
 
 int
@@ -333,10 +347,40 @@ Target::changePriority (int pri_change, double validJD)
     tar_bonus = tar_bonus + :db_priority_change,
     tar_bonus_time = abstime(:db_next_t)
   WHERE
-    tar_id = db_tar_id;
-  if (!sqlca.sqlcode)
+    tar_id = :db_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("Target::changePriority");
+    EXEC SQL ROLLBACK;
     return -1;
+  }
+  EXEC SQL COMMIT;
   return 0;
+}
+
+int
+Target::getNumObs (time_t *start_time, time_t *end_time)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_start_time = (int) *start_time;
+  int d_end_time = (int) *end_time;
+  int d_count;
+  int d_tar_id = getTargetID ();
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    count (*)
+  INTO
+    :d_count
+  FROM
+    observations
+  WHERE
+      tar_id = :d_tar_id
+    AND obs_start >= abstime (:d_start_time)
+    AND obs_end <= abstime (:d_end_time); 
+
+  return d_count;
 }
 
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
@@ -377,6 +421,8 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
         return new TargetGRB (in_tar_id, in_obs);
       case TYPE_SWIFT_FOV:
         return new TargetSwiftFOV (in_tar_id, in_obs);
+      case TYPE_GPS:
+        return new TargetGps (in_tar_id, in_obs);
       default:
         return new ConstTarget (in_tar_id, in_obs);
     }

@@ -82,11 +82,12 @@ Rts2ImageDb::updateObjectDB ()
   {
     printf ("Cannot insert new image, triing update (error: %i %s)\n",
     sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+    EXEC SQL ROLLBACK;
     EXEC SQL
     UPDATE
       images
     SET
-      img_date = :d_img_date,
+      img_date = abstime (:d_img_date),
       img_usec = :d_img_usec,
       epoch_id = :d_epoch_id,
       med_id   = :d_med_id
@@ -185,20 +186,23 @@ Rts2ImageDb::updateAstrometry ()
   VARCHAR s_astrometry[2000];
   EXEC SQL END DECLARE SECTION;
 
-  double naxis[2];
-  char ctype[9][2];
+  long naxis[2];
+  char *ctype[2];
   double crpix[2];
   double crval[2];
   double cdelt[2];
-  double crota;
+  double crota[2];
   double equinox;
   double epoch;
   int ret;
 
+  ctype[0] = (char *) malloc (9);
+  ctype[1] = (char *) malloc (9);
+
   ret = getValues ("NAXIS", naxis, 2);
   if (ret)
     return -1;
-  ret = getValues ("CTYPE", (char **) ctype, 2);
+  ret = getValues ("CTYPE", (char **) &ctype, 2);
   if (ret)
     return -1;
   ret = getValues ("CRPIX", crpix, 2);
@@ -210,7 +214,7 @@ Rts2ImageDb::updateAstrometry ()
   ret = getValues ("CDELT", cdelt, 2);
   if (ret)
     return -1;
-  ret = getValue ("CROTA", crota);
+  ret = getValues ("CROTA", crota, 2);
   if (ret)
     return -1;
   ret = getValue ("EQUINOX", equinox);
@@ -221,10 +225,10 @@ Rts2ImageDb::updateAstrometry ()
     return -1;
 
   snprintf (s_astrometry.arr, 2000,
-    "NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %ld CRPIX2 %ld "
+    "NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
     "CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f",
     naxis[0], naxis[1], ctype[0], ctype[1], crpix[0], crpix[1],
-    crval[0], crval[1], cdelt[0], cdelt[1], crota, equinox, epoch);
+    crval[0], crval[1], cdelt[0], cdelt[1], crota[0], equinox, epoch);
   s_astrometry.len = strlen (s_astrometry.arr);
 
   EXEC SQL UPDATE
