@@ -28,6 +28,9 @@ private:
   // utility functions..
   double getPktSod ();
 
+  void getTimeTfromTJD (long TJD, double SOD, time_t * in_time, int *usec =
+			NULL);
+
   double getJDfromTJD (long TJD, double SOD)
   {
     return TJD + 2440000.5 + SOD / 86400.0;
@@ -44,6 +47,12 @@ private:
   int addSwiftPoint (double ra, double dec, double roll, const time_t * t,
 		     char *name, float obstime, float merit);
   int addIntegralPoint (double ra, double dec, const time_t * t);
+
+  void getGrbBound (int grb_type, int &grb_start, int &grb_end);
+  int addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
+		   double grb_dec, bool grb_is_grb, time_t * grb_date,
+		   float grb_errorbox);
+  int addGcnRaw (int grb_id, int grb_seqn, int grb_type);
 
   int gcn_port;
   char *gcn_hostname;
