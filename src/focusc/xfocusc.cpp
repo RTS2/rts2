@@ -32,6 +32,8 @@
 #include "status.h"
 #include "imghdr.h"
 
+#include <limits.h>
+
 #define PP_NEG
 
 #define GAMMA 0.995
@@ -257,7 +259,7 @@ Rts2xfocusCamera::redraw ()
   int len;
   static XPoint points[5];
   int xc, yc;
-  ret = XSetForeground (master->getDisplay (), gc, 255);
+  XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
   // draw lines on surrounding
   int w = pixmapWidth / 7;
   int h = pixmapHeight / 7;
@@ -472,7 +474,7 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 	  {
 	    XPutPixel (image, i, j,
 		       master->
-		       getRGB ((int) (256 * (val - low) / (hig - low)))->
+		       getRGB ((int) (255 * (val - low) / (hig - low)))->
 		       pixel);
 	  }
       }
@@ -630,11 +632,11 @@ Rts2xfocus::init ()
 
       ret = XAllocColor (display, colormap, rgb + i);
     }
-  rgb[256].red = 65536;
+  rgb[256].red = USHRT_MAX;
   rgb[256].green = 0;
   rgb[256].blue = 0;
   rgb[256].flags = DoRed | DoGreen | DoBlue;
-  ret = XAllocColor (display, colormap, rgb + 256);
+  ret = XAllocColor (display, colormap, &rgb[256]);
   return 0;
 }
 
