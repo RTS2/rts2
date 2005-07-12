@@ -58,9 +58,11 @@ protected:
     return -2;
   }
   int move_fixed;
+  virtual int processOption (int in_opt);
   virtual void cancelPriorityOperations ()
   {
     stopMove ();
+    Rts2Device::cancelPriorityOperations ();
   }
   resetStates nextReset;
 
@@ -70,7 +72,6 @@ protected:
   }
 public:
   Rts2DevTelescope (int argc, char **argv);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   int checkMoves ();

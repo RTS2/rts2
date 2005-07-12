@@ -274,8 +274,8 @@ Rts2Image::toTrash ()
 
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/trash/%05i/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
-	    getImageBase (epochId), targetId, cameraName,
+	    "%s/trash/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    getImageBase (epochId), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);

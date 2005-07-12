@@ -148,6 +148,7 @@ private:
   int histogram[HISTOGRAM_LIMIT];
 
   unsigned short low, med, hig;
+  double average;
   struct imghdr *lastHeader;
 
 public:
@@ -201,6 +202,10 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_ma
   exposureTime = master->defaultExpousure ();
 
   lastHeader = NULL;
+
+  average = 0;
+
+  low = med = hig = 0;
 }
 
 void
@@ -272,7 +277,9 @@ Rts2xfocusCamera::redraw ()
 	     pixmapWidth - w, pixmapHeight - h);
   XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4,
 		  pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
-  len = asprintf (&stringBuf, "L: %f M: %f H: %f", low, med, hig);
+  len =
+    asprintf (&stringBuf, "L: %f M: %f H: %f Avg: %f", low, med, hig,
+	      average);
   XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
 	       stringBuf, len);
   free (stringBuf);
@@ -417,6 +424,9 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
       windowHeight = pixmapHeight;
       rebuildWindow ();
     }
+  std::
+    cout << "Get data : [" << pixmapWidth << "x" << pixmapHeight << "]" <<
+    std::endl;
   // draw window with image..
   if (!image)
     {
@@ -432,12 +442,16 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
   dataSize = pixmapHeight * pixmapWidth;
   k = 0;
   im_ptr = dataConn->getData ();
+  average = 0;
   for (i = 0; i < pixmapHeight; i++)
     for (j = 0; j < pixmapWidth; j++)
       {
 	histogram[*im_ptr]++;
+	average += *im_ptr;
 	im_ptr++;
       }
+
+  average /= dataSize;
 
   low = med = hig = 0;
   j = 0;
@@ -479,6 +493,10 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 	  }
       }
 
+  std::
+    cout << "Data low:" << low << " med:" << med << " hig:" << hig <<
+    " average:" << average << std::endl;
+
   XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
 
   XPutImage (master->getDisplay (), pixmap, gc, image, 0, 0, 0, 0,
@@ -496,6 +514,8 @@ void
 Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
 {
   Rts2DevClientCameraImage::stateChanged (state);
+  std::cout << "State changed:" << state->getName () << " value:" << state->
+    value << std::endl;
   if (state->isName ("priority"))
     {
       if (state->value == 1)
@@ -506,7 +526,10 @@ Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
 	    }
 	}
       else
-	exposureCount = 0;
+	{
+	  std::cout << "exposureCount = 0" << std::endl;
+	  exposureCount = 0;
+	}
     }
 }
 
@@ -663,7 +686,7 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
 	{
 	  if (!strcmp (*cam_iter, conn->getName ()))
 	    {
-	      printf ("Get conn: %p\n", conn);
+	      printf ("Get conn: %s\n", conn->getName ());
 	      cam->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
 	    }
 	}

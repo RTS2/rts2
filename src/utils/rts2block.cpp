@@ -550,6 +550,7 @@ Rts2Conn::send (char *message)
     {
       syslog (LOG_ERR, "Rts2Conn::send [%i:%i] error %i sending '%s':%m",
 	      getCentraldId (), sock, ret, message);
+      connectionsBreak ();
       return -1;
     }
   syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (),
@@ -1135,6 +1136,10 @@ int
 Rts2Block::deleteConnection (Rts2Conn * conn)
 {
   int ret;
+  if (conn->havePriority ())
+    {
+      cancelPriorityOperations ();
+    }
   ret = conn->connectionsBreak ();
   if (!ret)
     {
@@ -1156,6 +1161,7 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	  break;
 	}
     }
+
   for (int i = 0; i < MAX_CONN; i++)
     {
       if (connections[i]
@@ -1163,8 +1169,6 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	{
 	  if (discard_priority != i)
 	    {
-	      syslog (LOG_DEBUG, "cancelPriorityOperations %i %i",
-		      discard_priority, i);
 	      cancelPriorityOperations ();
 	      if (discard_priority >= 0)
 		connections[discard_priority]->setHavePriority (0);
@@ -1215,6 +1219,11 @@ Rts2Block::processOption (int in_opt)
       exit (EXIT_FAILURE);
     }
   return 0;
+}
+
+void
+Rts2Block::cancelPriorityOperations ()
+{
 }
 
 void

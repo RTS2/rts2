@@ -19,6 +19,10 @@ protected:
   float windspeed;
 
   int observingPossible;
+  virtual void cancelPriorityOperations ()
+  {
+    // we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
+  }
 public:
     Rts2DevDome (int argc, char **argv);
   virtual int openDome ()

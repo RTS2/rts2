@@ -61,7 +61,7 @@ CameraChipAlta::setBinning (int in_vert, int in_hori)
   int ret;
   alta->write_RoiBinningH (in_hori);
   alta->write_RoiBinningV (in_vert);
-  return CameraChip::setBinning (in_hori, in_vert);
+  return CameraChip::setBinning (in_vert, in_hori);
 }
 
 int
@@ -218,7 +218,10 @@ Rts2DevCamera (argc, argv)
 Rts2DevCameraAlta::~Rts2DevCameraAlta (void)
 {
   if (alta)
-    delete alta;
+    {
+      alta->CloseDriver ();
+      delete alta;
+    }
 }
 
 int
@@ -248,7 +251,14 @@ Rts2DevCameraAlta::init ()
   ret = alta->InitDriver (0, 0, 0);
 
   if (!ret)
-    return -1;
+    {
+      alta->ResetSystem ();
+      alta->CloseDriver ();
+      sleep (2);
+      ret = alta->InitDriver (0, 0, 0);
+      if (!ret)
+	return -1;
+    }
 
   // Do a system reset to ensure known state, flushing enabled etc
   ret = alta->ResetSystem ();

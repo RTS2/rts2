@@ -42,6 +42,7 @@ private:
   // burst messages
   int pr_hete ();
   int pr_integral ();
+  int pr_integral_spicas ();
   int pr_swift_with_radec ();
   int pr_swift_without_radec ();
 

@@ -65,6 +65,10 @@ public:
   {
     return !strcmp (name, in_name);
   }
+  const char *getName ()
+  {
+    return name;
+  }
 };
 
 class Rts2Conn:public Rts2Object
@@ -344,10 +348,7 @@ protected:
       return 0;
   }
 
-  virtual void cancelPriorityOperations ()
-  {
-
-  }
+  virtual void cancelPriorityOperations ();
 
   virtual void childReturned (pid_t child_pid);
   virtual int willConnect (Rts2Address * in_addr);	// determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect

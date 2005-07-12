@@ -1,5 +1,6 @@
 #include <libnova/libnova.h>
 #include "target.h"
+#include "../utils/rts2config.h"
 
 EXEC SQL include sqlca;
 
@@ -148,7 +149,89 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
 int
 DarkTarget::defaultDark (const char *deviceName, char *buf)
 {
-  strcpy (buf, "E 11");
+  char dark_exposures [1000];
+  char *tmp_c;
+  char *tmp_c2;
+  int ret;
+  int was_blank;
+  int exp_count;
+  int exp_count2;
+
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+  ret = config->getString (deviceName, "darks", dark_exposures, 1000);
+  if (ret)
+    {
+      strcpy (buf, "D 15");
+      return 0;
+    }
+  // get the getCalledNum th observation
+  // count how many exposures are in dark list..
+  tmp_c = dark_exposures;
+  was_blank = 0;
+  exp_count = 0;
+  while (*tmp_c)
+    {
+      switch (was_blank)
+        {
+          case 1:
+            if (!isblank (*tmp_c))
+	      was_blank = 0;
+	    break;
+          case 0:
+            if (isblank (*tmp_c))
+  	      {
+	        was_blank = 1;
+	        exp_count++;
+	      }
+	    break;
+        }
+      tmp_c++;
+    }
+  exp_count = getCalledNum () % exp_count;
+  was_blank = 0;
+  exp_count2 = 0;
+  tmp_c = dark_exposures;
+  while (*tmp_c)
+    {
+      switch (was_blank)
+        {
+          case 1:
+            if (!isblank (*tmp_c))
+              {
+                if (exp_count == exp_count2)
+	          break;
+                was_blank = 0;
+              }
+            break;
+          case 0:
+            if (isblank (*tmp_c))
+	      {
+	        was_blank = 1;
+	        exp_count2++;
+	      }
+	      break;
+        }
+      tmp_c++;
+    }
+  tmp_c2 = buf;
+  *tmp_c2 = 'D';
+  tmp_c2++;
+  *tmp_c2 = ' ';
+  *tmp_c2++;
+  while (*tmp_c)
+    {
+      if (!isblank (*tmp_c))
+        {
+          *tmp_c2 = *tmp_c;
+        }
+      else
+        {
+          return 0;
+        }
+      tmp_c++;
+    }
+  strcpy (buf, "D 16");
   return 0;
 }
 
@@ -163,6 +246,7 @@ DarkTarget::getScript (const char *deviceName, char *buf)
 
   strncpy (d_camera_name.arr, deviceName, DEVICE_NAME_SIZE);
   d_camera_name.len = strlen (deviceName);
+
   // find which dark image we should optimally take..
 
   EXEC SQL DECLARE dark_target CURSOR FOR
@@ -174,7 +258,7 @@ DarkTarget::getScript (const char *deviceName, char *buf)
         darks
       WHERE
           darks.camera_name = images.camera_name
-        AND now () - dark_date < '1 day') AS dark_count
+        AND now () - dark_date < '18 hour') AS dark_count
     FROM
       images
     WHERE
@@ -317,6 +401,29 @@ TargetGRB::getScript (const char *deviceName, char *buf)
     strcpy (buf, "E 300");
   }
   return 0;
+}
+
+float
+TargetGRB::getBonus ()
+{
+  // time from GRB
+  time_t now;
+  time (&now);
+  if (now - grbDate < 86400)
+  {
+    // < 24 hour post burst
+    return ConstTarget::getBonus ()
+      + 100.0 * cos ((double)((double)(now - grbDate) / (2.0*86400.0))) 
+      + 10.0 * cos ((double)((double)(now - lastUpdate) / (2.0*86400.0)));
+  }
+  else if (now - grbDate < 5 * 86400)
+  {
+    // < 5 days post burst - add some time after last observation
+    return ConstTarget::getBonus ()
+      + 10.0 * sin (getLastObsTime () / 3600.0);
+  }
+  // default
+  return ConstTarget::getBonus ();
 }
 
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)

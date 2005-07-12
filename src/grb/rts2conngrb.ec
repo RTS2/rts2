@@ -132,6 +132,13 @@ Rts2ConnGrb::pr_integral ()
 }
 
 int
+Rts2ConnGrb::pr_integral_spicas ()
+{
+  syslog (LOG_DEBUG, "INTEGRAL SPIACS");
+  return 0;
+}
+
+int
 Rts2ConnGrb::pr_swift_with_radec ()
 {
   int grb_id;
@@ -745,6 +752,10 @@ Rts2ConnGrb::receive (fd_set *set)
       case TYPE_INTEGRAL_REFINED_SRC:
       case TYPE_INTEGRAL_OFFLINE_SRC:
          pr_integral ();
+	 break;
+      // integral spiacs
+      case TYPE_INTEGRAL_SPIACS_SRC:
+         pr_integral_spicas ();
 	 break;
       case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
       case TYPE_SWIFT_BAT_GRB_LC_SRC:

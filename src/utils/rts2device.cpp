@@ -692,6 +692,17 @@ Rts2Device::processOption (int in_opt)
   return 0;
 }
 
+void
+Rts2Device::cancelPriorityOperations ()
+{
+  int i;
+  for (i = 0; i < statesSize; i++)
+    {
+      maskState (i, 0xffffff, 0, "all operations canceled by priority");
+    }
+  Rts2Block::cancelPriorityOperations ();
+}
+
 Rts2Dev2DevConn *
 Rts2Device::createClientConnection (char *in_device_name)
 {

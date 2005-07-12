@@ -53,6 +53,8 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   img_id = 0;
   target_id = in_tar_id;
   bonus = -1;
+
+  startCalledNum = 0;
 }
 
 Target::~Target (void)
@@ -153,6 +155,7 @@ Target::endObservation ()
 int
 Target::beforeMove ()
 {
+  startCalledNum++;
   return 0;
 }
 
@@ -381,6 +384,39 @@ Target::getNumObs (time_t *start_time, time_t *end_time)
     AND obs_end <= abstime (:d_end_time); 
 
   return d_count;
+}
+
+double
+Target::getLastObsTime ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_tar_id = getTargetID ();
+  double d_time_diff;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    min (EXTRACT (EPOCH FROM (now () - obs_start)))
+  INTO
+    :d_time_diff
+  FROM
+    observations
+  WHERE
+    tar_id = :d_tar_id
+  GROUP BY
+    tar_id;
+
+  if (sqlca.sqlcode)
+    {
+      if (sqlca.sqlcode == ECPG_NOT_FOUND)
+        {
+           // 1 year was the last observation..
+           return 356 * 86400.0;
+        }
+      else
+        logMsgDb ("Target::getLastObsTime");
+    }
+  return d_time_diff;
 }
 
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)

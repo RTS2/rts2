@@ -99,7 +99,27 @@ public:
   {
     statusBegin = in_status_begin;
   }
+
+  int printTimeDiff (int row, char *text, time_t * in_time);
 };
+
+int
+Rts2CNMonConn::printTimeDiff (int row, char *text, time_t * in_time)
+{
+  char time_buf[50];
+  time_t t = -(*in_time);
+  struct ln_hms hms;
+  time_buf[0] = '\0';
+  if (t > 86400)
+    {
+      sprintf (time_buf, "%i days ", t / 86400);
+      t = t % 86400;
+    }
+  ln_deg_to_hms (360.0 * ((double) t / 86400.0), &hms);
+  sprintf (time_buf, "%s%i:%i:%i", time_buf, hms.hours, hms.minutes,
+	   hms.seconds);
+  mvwprintw (window, row, 1, "%s:-%s", text, time_buf);
+}
 
 class Rts2NMTelescope:public Rts2DevClientTelescopeImage
 {
@@ -366,8 +386,8 @@ Rts2NMGrb::print (WINDOW * wnd)
 {
   time_t now;
   time (&now);
-  mvwprintw (wnd, 1, 1, "L Pac: %-7.2f s",
-	     getValueDouble ("last_packet") - now);
+  time_t last_pack = (int) getValueDouble ("last_packet") - now;
+  connection->printTimeDiff (1, "L Pac", &last_pack);
   mvwprintw (wnd, 2, 1, "Delta: %-5i", getValueDouble ("delta"));
   mvwprintw (wnd, 3, 1, "L Tar: %5", getValueChar ("last_target"));
   mvwprintw (wnd, 4, 1, "LTime: %5f", getValueDouble ("last_target_time"));

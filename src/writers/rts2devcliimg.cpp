@@ -23,10 +23,17 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
     config;
   config = Rts2Config::instance ();
 
+  xplate = 1;
+  yplate = 1;
+  xoa = 0;
+  yoa = 0;
+  rotang = 0;
+
   config->getDouble (connection->getName (), "xplate", xplate);
   config->getDouble (connection->getName (), "yplate", yplate);
   config->getDouble (connection->getName (), "xoa", xoa);
   config->getDouble (connection->getName (), "yoa", yoa);
+  config->getDouble (connection->getName (), "rotang", rotang);
   config->getInteger (connection->getName (), "flip", flip);
 }
 
@@ -95,8 +102,6 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
       int stateVal;
       stateVal =
 	state->value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA);
-      syslog (LOG_DEBUG, "Rts2DevClientCamera::stateChanged stateVal %i",
-	      stateVal);
       if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NODATA))
 	{
 	  queExposure ();
@@ -104,9 +109,6 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
       else if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA))
 	{
 	  isExposing = 0;
-	  syslog (LOG_DEBUG,
-		  "Rts2DevClientCamera::stateChanged que Readout: %i %i",
-		  stateVal, (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA));
 	  connection->
 	    queCommand (new
 			Rts2Command (connection->getMaster (), "readout 0"));
@@ -133,6 +135,7 @@ Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
 			    "center in X axis (divide by binning (BIN_H)!)");
 	  images->setValue ("CAM_YOA", yoa,
 			    "center in Y axis (divide by binning (BIN_V)!)");
+	  images->setValue ("ROTANG", rotang, "camera rotation over X axis");
 	  images->setValue ("FLIP", flip,
 			    "camera flip (since most astrometry devices works as mirrors");
 	}

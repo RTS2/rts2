@@ -342,6 +342,8 @@ Rts2DevCamera::cancelPriorityOperations ()
       chips[i]->cancelPriorityOperations ();
       chips[i]->setBinning (defBinning, defBinning);
     }
+  // init states etc..
+  Rts2Device::cancelPriorityOperations ();
 }
 
 int

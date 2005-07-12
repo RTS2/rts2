@@ -361,6 +361,7 @@ Rts2DevPhotOptec::cancelPriorityOperations ()
     {
       stopIntegrate ();
     }
+  Rts2Device::cancelPriorityOperations ();
 }
 
 int

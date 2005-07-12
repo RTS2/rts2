@@ -32,6 +32,7 @@ protected:
   double yplate;
   double xoa;
   double yoa;
+  double rotang;
   int flip;
 
   float exposureTime;
