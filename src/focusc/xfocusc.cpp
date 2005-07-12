@@ -278,7 +278,7 @@ Rts2xfocusCamera::redraw ()
   XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4,
 		  pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
   len =
-    asprintf (&stringBuf, "L: %f M: %f H: %f Avg: %f", low, med, hig,
+    asprintf (&stringBuf, "L: %.2f M: %.2f H: %.2f Avg: %.2f", low, med, hig,
 	      average);
   XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
 	       stringBuf, len);
@@ -286,7 +286,8 @@ Rts2xfocusCamera::redraw ()
   if (lastHeader)
     {
       len =
-	asprintf (&stringBuf, "[%i,%i:%i,%i] binn: %i:%i exposureTime: %f s",
+	asprintf (&stringBuf,
+		  "[%i,%i:%i,%i] binn: %i:%i exposureTime: %.3f s",
 		  lastHeader->x, lastHeader->y, lastHeader->sizes[0],
 		  lastHeader->sizes[1], lastHeader->binnings[0],
 		  lastHeader->binnings[1], exposureTime);
