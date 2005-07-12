@@ -91,7 +91,7 @@ CameraApogeeChip::setBinning (int in_vert, int in_hori)
 {
   camera->m_ExposureBinX = in_hori;
   camera->m_ExposureBinY = in_vert;
-  return 0;
+  return CameraChip::setBinning (in_vert, in_hori);
 }
 
 int
