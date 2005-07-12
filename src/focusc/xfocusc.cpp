@@ -125,7 +125,11 @@ private:
   XImage *image;
   XSetWindowAttributes xswa;
 
+  int windowHeight;
+  int windowWidth;
+
   void buildWindow ();
+  void rebuildWindow ();
   void redraw ();
   // thread entry function..
   void XeventLoop ();
@@ -166,7 +170,7 @@ public:
   virtual void stateChanged (Rts2ServerState * state);
   virtual Rts2Image *createImage (const struct timeval *expStart)
   {
-    return new Rts2Image ("test.fits", expStart);
+    return new Rts2Image ("!test.fits", expStart);
   }
   void center (int centerWidth, int centerHeight);
 };
@@ -177,6 +181,10 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_ma
   master = in_master;
 
   window = 0L;
+  pixmap = 0L;
+  gc = 0L;
+  windowHeight = 800;
+  windowWidth = 800;
 
   exposureTime = master->defaultExpousure ();
 }
@@ -196,7 +204,7 @@ Rts2xfocusCamera::buildWindow ()
 		   0, master->getDepth (), InputOutput, master->getVisual (),
 		   0, &xswa);
   pixmap =
-    XCreatePixmap (master->getDisplay (), window, 1200, 1200,
+    XCreatePixmap (master->getDisplay (), window, windowHeight, windowWidth,
 		   master->getDepth ());
 
   gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
@@ -211,6 +219,21 @@ Rts2xfocusCamera::buildWindow ()
   XSetWMName (master->getDisplay (), window, &window_title);
 
   pthread_create (&XeventThread, NULL, staticXEventLoop, this);
+}
+
+// called to 
+void
+Rts2xfocusCamera::rebuildWindow ()
+{
+  if (gc)
+    XFreeGC (master->getDisplay (), gc);
+  if (pixmap)
+    XFreePixmap (master->getDisplay (), pixmap);
+  pixmap =
+    XCreatePixmap (master->getDisplay (), window, windowHeight, windowWidth,
+		   master->getDepth ());
+
+  gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
 }
 
 void
@@ -232,7 +255,8 @@ Rts2xfocusCamera::XeventLoop ()
       switch (event.type)
 	{
 	case Expose:
-	  redraw ();
+	  if (pixmap && gc)
+	    redraw ();
 	  break;
 	case KeyPress:
 	  ks = XLookupKeysym ((XKeyEvent *) & event, 0);
@@ -311,6 +335,12 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
   header = dataConn->getImageHeader ();
   width = header->sizes[0];
   height = header->sizes[1];
+  if (width > windowWidth || height > windowHeight)
+    {
+      windowWidth = width;
+      windowHeight = height;
+      rebuildWindow ();
+    }
   // draw window with image..
   if (!image)
     {
