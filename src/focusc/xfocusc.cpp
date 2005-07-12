@@ -52,7 +52,7 @@
 class Rts2xfocus:public Rts2Client
 {
 private:
-  XColor rgb[256];
+  XColor rgb[260];		// <= 255 - images, 256 - red line
   Colormap colormap;
     std::vector < char *>cameraNames;
   float defExposure;
@@ -129,6 +129,9 @@ private:
   int windowHeight;
   int windowWidth;
 
+  int pixmapHeight;
+  int pixmapWidth;
+
   void buildWindow ();
   void rebuildWindow ();
   void redraw ();
@@ -141,6 +144,9 @@ private:
   }
 
   int histogram[HISTOGRAM_LIMIT];
+
+  unsigned short low, med, hig;
+  struct imghdr *lastHeader;
 
 public:
   Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
@@ -187,7 +193,12 @@ Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_ma
   windowHeight = 800;
   windowWidth = 800;
 
+  pixmapHeight = windowHeight;
+  pixmapWidth = windowWidth;
+
   exposureTime = master->defaultExpousure ();
+
+  lastHeader = NULL;
 }
 
 void
@@ -241,6 +252,70 @@ void
 Rts2xfocusCamera::redraw ()
 {
   // do some line-drawing etc..
+  int ret;
+  char *stringBuf;
+  int len;
+  static XPoint points[5];
+  int xc, yc;
+  ret = XSetForeground (master->getDisplay (), gc, 255);
+  // draw lines on surrounding
+  int w = pixmapWidth / 7;
+  int h = pixmapHeight / 7;
+  XDrawLine (master->getDisplay (), pixmap, gc, 0, 0, w, h);
+  XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, 0,
+	     pixmapWidth - w, h);
+  XDrawLine (master->getDisplay (), pixmap, gc, 0, pixmapHeight, w,
+	     pixmapHeight - h);
+  XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, pixmapHeight,
+	     pixmapWidth - w, pixmapHeight - h);
+  XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4,
+		  pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
+  len = asprintf (&stringBuf, "L: %f M: %f H: %f", low, med, hig);
+  XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
+	       stringBuf, len);
+  free (stringBuf);
+  if (lastHeader)
+    {
+      len =
+	asprintf (&stringBuf, "[%i,%i:%i,%i] binn: %i:%i exposureTime: %f s",
+		  lastHeader->x, lastHeader->y, lastHeader->sizes[0],
+		  lastHeader->sizes[1], lastHeader->binnings[0],
+		  lastHeader->binnings[1], exposureTime);
+      XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
+		   pixmapHeight - 20, stringBuf, len);
+      free (stringBuf);
+    }
+  // draw center..
+  xc = pixmapWidth / 2;
+  yc = pixmapHeight / 2;
+  w = pixmapWidth / 10;
+  h = pixmapHeight / 10;
+  points[0].x = xc - w;
+  points[0].y = yc;
+
+  points[1].x = xc;
+  points[1].y = yc + h;
+
+  points[2].x = xc + w;
+  points[2].y = yc;
+
+  points[3].x = xc;
+  points[3].y = yc - h;
+
+  points[4].x = xc - w;
+  points[4].y = yc;
+
+  XDrawLines (master->getDisplay (), pixmap, gc, points, 5, CoordModeOrigin);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - pixmapHeight / 15,
+	     xc, yc + pixmapHeight / 15);
+
+  xswa.colormap = *(master->getColormap ());
+  xswa.background_pixmap = pixmap;
+
+  XChangeWindowAttributes (master->getDisplay (), window,
+			   CWColormap | CWBackPixmap, &xswa);
+
+  XClearWindow (master->getDisplay (), window);
 }
 
 void
@@ -324,22 +399,20 @@ void
 Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 {
   struct imghdr *header;
-  int width, height;
   int dataSize;
   int i, j, k;
   unsigned short *im_ptr;
-  unsigned short low, med, hig;
 
   // get to upper classes as well
   Rts2DevClientCameraImage::dataReceived (dataConn);
 
   header = dataConn->getImageHeader ();
-  width = header->sizes[0];
-  height = header->sizes[1];
-  if (width > windowWidth || height > windowHeight)
+  pixmapWidth = header->sizes[0];
+  pixmapHeight = header->sizes[1];
+  if (pixmapWidth > windowWidth || pixmapHeight > windowHeight)
     {
-      windowWidth = width;
-      windowHeight = height;
+      windowWidth = pixmapWidth;
+      windowHeight = pixmapHeight;
       rebuildWindow ();
     }
   // draw window with image..
@@ -347,18 +420,18 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
     {
       image =
 	XCreateImage (master->getDisplay (), master->getVisual (),
-		      master->getDepth (), ZPixmap, 0, 0, width, height, 8,
-		      0);
-      image->data = new char[image->bytes_per_line * height];
+		      master->getDepth (), ZPixmap, 0, 0, pixmapWidth,
+		      pixmapHeight, 8, 0);
+      image->data = new char[image->bytes_per_line * pixmapHeight];
     }
 
   // build histogram
   memset (histogram, 0, sizeof (int) * HISTOGRAM_LIMIT);
-  dataSize = height * width;
+  dataSize = pixmapHeight * pixmapWidth;
   k = 0;
   im_ptr = dataConn->getData ();
-  for (i = 0; i < height; i++)
-    for (j = 0; j < width; j++)
+  for (i = 0; i < pixmapHeight; i++)
+    for (j = 0; j < pixmapWidth; j++)
       {
 	histogram[*im_ptr]++;
 	im_ptr++;
@@ -385,8 +458,8 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 
   im_ptr = dataConn->getData ();
 
-  for (j = 0; j < height; j++)
-    for (i = 0; i < width; i++)
+  for (j = 0; j < pixmapHeight; j++)
+    for (i = 0; i < pixmapWidth; i++)
       {
 	unsigned short val;
 	val = *im_ptr;
@@ -404,18 +477,15 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 	  }
       }
 
-  XResizeWindow (master->getDisplay (), window, width, height);
+  XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
 
-  XPutImage (master->getDisplay (), pixmap, gc, image, 0, 0, 0, 0, width,
-	     height);
+  XPutImage (master->getDisplay (), pixmap, gc, image, 0, 0, 0, 0,
+	     pixmapWidth, pixmapHeight);
 
-  xswa.colormap = *(master->getColormap ());
-  xswa.background_pixmap = pixmap;
+  if (!lastHeader)
+    lastHeader = new imghdr;
+  memcpy (lastHeader, header, sizeof (imghdr));
 
-  XChangeWindowAttributes (master->getDisplay (), window,
-			   CWColormap | CWBackPixmap, &xswa);
-
-  XClearWindow (master->getDisplay (), window);
   redraw ();
   XFlush (master->getDisplay ());
 }
@@ -558,9 +628,13 @@ Rts2xfocus::init ()
       rgb[i].blue = (unsigned short) (65536 * (1.0 * i / 256));
       rgb[i].flags = DoRed | DoGreen | DoBlue;
 
-
-      XAllocColor (display, colormap, rgb + i);
+      ret = XAllocColor (display, colormap, rgb + i);
     }
+  rgb[256].red = 65536;
+  rgb[256].green = 0;
+  rgb[256].blue = 0;
+  rgb[256].flags = DoRed | DoGreen | DoBlue;
+  ret = XAllocColor (display, colormap, rgb + 256);
   return 0;
 }
 
