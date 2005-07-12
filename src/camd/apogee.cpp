@@ -89,8 +89,8 @@ CameraApogeeChip::init ()
 int
 CameraApogeeChip::setBinning (int in_vert, int in_hori)
 {
-  camera->m_BinX = in_hori;
-  camera->m_BinY = in_vert;
+  camera->m_ExposureBinX = in_hori;
+  camera->m_ExposureBinY = in_vert;
   return 0;
 }
 
@@ -171,6 +171,8 @@ CameraApogeeChip::readoutOneLine ()
       height = chipUsedReadout->height;
       camera->m_ExposureStartX = chipUsedReadout->x;
       camera->m_ExposureStartY = chipUsedReadout->y;
+      camera->m_ExposureNumX = chipUsedReadout->width / usedBinningHorizontal;
+      camera->m_ExposureNumY = chipUsedReadout->height / usedBinningVertical;
       status = camera->GetImage (dest_top, width, height);
       syslog (LOG_DEBUG, "CameraApogeeChip::readoutOneLine status: %i",
 	      status);

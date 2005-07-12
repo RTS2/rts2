@@ -290,8 +290,7 @@ CameraChip::cancelPriorityOperations ()
   stopExposure ();
   endReadout ();
   chipUsedReadout = NULL;
-  usedBinningVertical = 1;
-  usedBinningHorizontal = 1;
+  box (-1, -1, -1, -1);
 }
 
 Rts2DevCamera::Rts2DevCamera (int argc, char **argv):
@@ -341,6 +340,7 @@ Rts2DevCamera::cancelPriorityOperations ()
   for (i = 0; i < chipNum; i++)
     {
       chips[i]->cancelPriorityOperations ();
+      chips[i]->setBinning (defBinning, defBinning);
     }
 }
 
@@ -837,18 +837,15 @@ Rts2DevConnCamera::commandAuthorized ()
     }
   else if (isCommand ("coolmax"))
     {
-      CHECK_PRIORITY;
       return master->camCoolMax (this);
     }
   else if (isCommand ("coolhold"))
     {
-      CHECK_PRIORITY;
       return master->camCoolHold (this);
     }
   else if (isCommand ("cooltemp"))
     {
       float new_temp;
-      CHECK_PRIORITY;
       if (paramNextFloat (&new_temp) || !paramEnd ())
 	return -2;
       return master->camCoolTemp (this, new_temp);

@@ -58,9 +58,10 @@ CameraChipAlta::init ()
 int
 CameraChipAlta::setBinning (int in_vert, int in_hori)
 {
-  alta->m_RoiBinningH = in_vert;
-  alta->m_RoiBinningV = in_hori;
-  return 0;
+  int ret;
+  alta->write_RoiBinningH (in_hori);
+  alta->write_RoiBinningV (in_vert);
+  return CameraChip::setBinning (in_hori, in_vert);
 }
 
 int
@@ -114,12 +115,13 @@ int
 CameraChipAlta::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   int ret;
+  int ret1;
   ret = CameraChip::startReadout (dataConn, conn);
   // set region of intereset..
+  alta->write_RoiPixelsV (chipUsedReadout->height);
+  alta->write_RoiStartY (chipUsedReadout->y);
   alta->m_RoiStartX = chipUsedReadout->x;
-  alta->m_RoiStartY = chipUsedReadout->y;
   alta->m_RoiPixelsH = chipUsedReadout->width;
-  alta->m_RoiPixelsV = chipUsedReadout->height;
   dest_top = dest;
   send_top = (char *) dest;
   return ret;
@@ -185,9 +187,11 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 {
 private:
   CApnCamera * alta;
+  int bit12;
 public:
-  Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv);
-  virtual ~ Rts2DevCameraAlta (void);
+    Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv);
+    virtual ~ Rts2DevCameraAlta (void);
+  virtual int processOption (int in_opt);
   virtual int init ();
 
   virtual int ready ();
@@ -206,12 +210,29 @@ Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv):
 Rts2DevCamera (argc, argv)
 {
   alta = NULL;
+  addOption ('B', "12bits", 0,
+	     "switch to 12 bit readout mode; see alta specs for details");
+  bit12 = 0;
 }
 
 Rts2DevCameraAlta::~Rts2DevCameraAlta (void)
 {
   if (alta)
     delete alta;
+}
+
+int
+Rts2DevCameraAlta::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'B':
+      bit12 = 1;
+      break;
+    default:
+      return Rts2DevCamera::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -235,6 +256,16 @@ Rts2DevCameraAlta::init ()
   if (!ret)
     return -1;
 
+  // set data bits..
+  if (bit12)
+    {
+      alta->write_DataBits (Apn_Resolution_TwelveBit);
+    }
+  else
+    {
+      alta->write_DataBits (Apn_Resolution_SixteenBit);
+    }
+
   chipNum = 1;
   chips[0] = new CameraChipAlta (alta);
 
@@ -252,8 +283,8 @@ Rts2DevCameraAlta::ready ()
 int
 Rts2DevCameraAlta::baseInfo ()
 {
-  strcpy (ccdType, "Alta ");
-  strncat (ccdType, alta->m_CameraModel, 10);
+  strcpy (ccdType, "Alta_");
+  strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
   sprintf (serialNumber, "%i", alta->m_CameraId);
   return 0;
 }
