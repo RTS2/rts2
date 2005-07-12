@@ -26,6 +26,7 @@ public:
 		 Rts2DevClientCamera * camera, int in_obsId,
 		 const struct timeval *exposureStart, int in_imgId);
     Rts2ImageDb (char *in_filename);
+    virtual ~ Rts2ImageDb (void);
   virtual int saveImage ();
 };
 

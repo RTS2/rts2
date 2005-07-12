@@ -91,18 +91,18 @@ Rts2Image::~Rts2Image (void)
 {
   saveImage ();
   if (imageName)
-    delete imageName;
+    delete[]imageName;
   if (cameraName)
-    delete cameraName;
+    delete[]cameraName;
   if (mountName)
-    delete mountName;
+    delete[]mountName;
 }
 
 void
 Rts2Image::setImageName (char *in_filename)
 {
   if (imageName)
-    delete imageName;
+    delete[]imageName;
 
   imageName = new char[strlen (in_filename) + 1];
   strcpy (imageName, in_filename);
@@ -573,9 +573,10 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 int
 Rts2Image::saveImage ()
 {
-  if (flags & IMAGE_SAVE)
+  if (flags & IMAGE_SAVE && ffile)
     {
       fits_close_file (ffile, &fits_status);
+      flags &= !IMAGE_SAVE;
     }
   ffile = NULL;
 }
@@ -584,7 +585,7 @@ void
 Rts2Image::setMountName (const char *in_mountName)
 {
   if (mountName)
-    delete mountName;
+    delete[]mountName;
   mountName = new char[strlen (in_mountName) + 1];
   strcpy (mountName, in_mountName);
   setValue ("MNT_NAME", mountName, "name of mount");

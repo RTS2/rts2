@@ -257,6 +257,11 @@ Rts2ImageDb::Rts2ImageDb (char *in_filename) : Rts2Image (in_filename)
 {
 }
 
+Rts2ImageDb::~Rts2ImageDb ()
+{
+  updateDB ();
+}
+
 // write changes of image to DB..
 
 int
