@@ -58,6 +58,7 @@ private:
   float defExposure;
   char *displayName;
   int defCenter;
+  int defBin;
 
   // X11 stuff
   Display *display;
@@ -450,6 +451,7 @@ Rts2Client (argc, argv)
   defExposure = 10;
   displayName = NULL;
   defCenter = 0;
+  defBin = -1;
 
   centerWidth = -1;
   centerHeight = -1;
@@ -461,6 +463,8 @@ Rts2Client (argc, argv)
   addOption ('a', "autodark", 1, "take and use dark frame");
   addOption ('x', "display", 1, "name of X display");
   addOption ('c', "center", 0, "takes only center images");
+  addOption ('b', "binning", 1,
+	     "default binning (ussually 1, depends on camera setting)");
   addOption ('W', "width", 1, "center width");
   addOption ('H', "height", 1, "center height");
 }
@@ -480,7 +484,7 @@ Rts2xfocus::help ()
     << "\tw,s   .. increase/decrease exposure 0.1 sec" << std::endl
     << "\te,d   .. increase/decrease exposure 1 sec" << std::endl
     << "\tf     .. full frame exposure" << std::endl
-    << "\tc     .. center (256x256) exposure" << std::endl
+    << "\tc     .. center (1/2x1/2 chip size) exposure" << std::endl
     << "\ty     .. save fits file\n" << std::endl
     << "\tu     .. don't save fits file\n" << std::endl
     << "Examples:" << std::endl
@@ -508,6 +512,9 @@ Rts2xfocus::processOption (int in_opt)
       break;
     case 'c':
       defCenter = 1;
+      break;
+    case 'b':
+      defBin = atoi (optarg);
       break;
     case 'W':
       centerWidth = atoi (optarg);
@@ -569,6 +576,10 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
       if (defCenter)
 	{
 	  cam->center (centerWidth, centerHeight);
+	}
+      if (defBin > 0)
+	{
+	  conn->queCommand (new Rts2CommandBinning (this, defBin, defBin));
 	}
       // post exposure event..if name agree
       for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();
