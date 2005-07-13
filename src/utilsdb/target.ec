@@ -4,6 +4,8 @@
 
 #include "target.h"
 
+#include "../utils/rts2config.h"
+
 #include <syslog.h>
 
 EXEC SQL include sqlca;
@@ -232,8 +234,10 @@ int
 Target::getScript (const char *device_name, char *buf)
 {
   char obs_type_str[2];
-  char *s;
   int ret;
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+
   obs_type_str[0] = obs_type;
   obs_type_str[1] = 0;
 
@@ -241,8 +245,11 @@ Target::getScript (const char *device_name, char *buf)
   if (!ret)
     return 0;
 
-  s = "E 10";
-  strncpy (buf, s, MAX_COMMAND_LENGTH);
+  ret = config->getString (device_name, "script", buf, MAX_COMMAND_LENGTH);
+  if (!ret)
+    return 0;
+
+  strncpy (buf, "E 11", MAX_COMMAND_LENGTH);
   return 0;
 }
 

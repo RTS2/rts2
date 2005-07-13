@@ -59,7 +59,7 @@ Rts2DevConn::commandAuthorized ()
 	return -2;
       setName (deviceName);
       setOtherType (deviceType);
-      conn_state = CONN_CONNECTED;
+      authorizationOK ();
       return -1;
     }
   // we need to try that - due to other device commands
@@ -295,8 +295,7 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
     {
       sendValue ("this_device", master->getDeviceName (),
 		 master->getDeviceType ());
-      master->baseInfo (this);
-      master->sendInfo (this);
+      authorizationOK ();
     }
   Rts2Conn::setConnState (new_conn_state);
 }
