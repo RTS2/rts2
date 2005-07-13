@@ -260,7 +260,6 @@ Rts2Conn::receive (fd_set * set)
     return -1;
   if ((sock >= 0) && FD_ISSET (sock, set))
     {
-      time (&lastData);
       if (conn_state == CONN_CONNECTING)
 	{
 	  return acceptConn ();
@@ -270,6 +269,7 @@ Rts2Conn::receive (fd_set * set)
       if (data_size <= 0)
 	return connectionError ();
       buf_top[data_size] = '\0';
+      successfullRead ();
       syslog (LOG_DEBUG, "Rts2Conn::receive reas: %s full_buf: %s size: %i",
 	      buf_top, buf, data_size);
       // put old data size into account..
@@ -362,7 +362,8 @@ int
 Rts2Conn::queCommand (Rts2Command * command)
 {
   command->setConnection (this);
-  if (runningCommand || conn_state != CONN_CONNECTED)
+  if (runningCommand
+      || (conn_state != CONN_CONNECTED && conn_state != CONN_AUTH_PENDING))
     {
       commandQue.push_back (command);
       return 0;
@@ -556,8 +557,20 @@ Rts2Conn::send (char *message)
   syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (),
 	  sock, ret, message);
   write (sock, "\r\n", 2);
-  time (&lastGoodSend);
+  successfullSend ();
   return 0;
+}
+
+void
+Rts2Conn::successfullSend ()
+{
+  time (&lastGoodSend);
+}
+
+void
+Rts2Conn::successfullRead ()
+{
+  time (&lastData);
 }
 
 int

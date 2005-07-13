@@ -181,7 +181,7 @@ public:
 
   virtual int processOption (int in_opt);
   virtual int initChips ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   long checkExposures ();
   int checkReadouts ();
 

@@ -49,7 +49,7 @@ Rts2DevMirror::idle ()
   setTimeoutMin (100000);
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2DevMirror::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnMirror (in_sock, this);

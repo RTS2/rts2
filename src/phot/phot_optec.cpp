@@ -48,7 +48,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
 
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 
   virtual int idle ();
 
@@ -219,7 +219,7 @@ Rts2DevPhotOptec::init ()
   return 0;
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2DevPhotOptec::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnPhot (in_sock, this);

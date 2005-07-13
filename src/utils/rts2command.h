@@ -127,4 +127,10 @@ public:
   Rts2CommandExecNext (Rts2Block * in_master, int next_id);
 };
 
+class Rts2CommandKillAll:public Rts2Command
+{
+public:
+  Rts2CommandKillAll (Rts2Block * in_master);
+};
+
 #endif /* !__RTS2_COMMAND__ */

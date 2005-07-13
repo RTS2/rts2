@@ -22,29 +22,19 @@
 
 class Rts2Device;
 
-class Rts2Dev2DevConn:public Rts2Conn
-{
-private:
-  Rts2Address * address;
-  Rts2Device *master;
-public:
-    Rts2Dev2DevConn (Rts2Device * in_master, char *in_name);
-    Rts2Dev2DevConn (Rts2Device * in_master, Rts2Address * in_addr);
-    virtual ~ Rts2Dev2DevConn (void);
-
-  virtual int init ();
-  virtual int idle ();
-
-  virtual void setAddress (Rts2Address * in_addr);
-  virtual void addressAdded (Rts2Address * in_addr);
-  void connAuth ();
-
-  virtual void setKey (int in_key);
-  virtual void setConnState (conn_state_t new_conn_state);
-};
+/**
+ * Device connection.
+ *
+ * Handles both connections which are created from clients to device, as well
+ * as connections created from device to device. They are distinguished by
+ * connType (set by setType, get by getType calls).
+ */
 
 class Rts2DevConn:public Rts2Conn
 {
+  // in case we know address of other side..
+  Rts2Address *address;
+
   Rts2Device *master;
   virtual int connectionError ();
 protected:
@@ -52,10 +42,23 @@ protected:
   virtual int command ();
 public:
     Rts2DevConn (int in_sock, Rts2Device * in_master);
+
+  virtual int init ();
+  virtual int idle ();
+
   int add (fd_set * set);
   int authorizationOK ();
   int authorizationFailed ();
   void setHavePriority (int in_have_priority);
+
+  virtual void setDeviceAddress (Rts2Address * in_addr);
+  void setDeviceName (char *in_name);
+
+  virtual void addressAdded (Rts2Address * in_addr);
+  void connAuth ();
+
+  virtual void setKey (int in_key);
+  virtual void setConnState (conn_state_t new_conn_state);
 };
 
 class Rts2DevConnMaster:public Rts2Conn
@@ -163,13 +166,13 @@ protected:
   virtual int processOption (int in_opt);
   void cancelPriorityOperations ();
 
-  virtual Rts2Dev2DevConn *createClientConnection (char *in_deviceName);
+  virtual Rts2Conn *createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
 		int default_port, char *default_name);
     virtual ~ Rts2Device (void);
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   int changeState (int state_num, int new_state, char *description);
   int maskState (int state_num, int state_mask, int new_state,
 		 char *description);
@@ -199,6 +202,7 @@ public:
   int info (Rts2Conn * conn);
   int infoAll ();
   virtual int baseInfo (Rts2Conn * conn);
+  int killAll ();
 
   virtual Rts2Conn *getCentraldConn ()
   {

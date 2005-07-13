@@ -73,7 +73,7 @@ protected:
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int init ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   int checkMoves ();
   virtual int idle ();
   virtual int changeMasterState (int new_state);

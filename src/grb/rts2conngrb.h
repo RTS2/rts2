@@ -76,6 +76,8 @@ public:
   char *lastTarget ();
   void setLastTarget (char *in_last_target);
   int lastTargetTime ();
+
+  virtual void endConnection ();
 };
 
 #endif /* !__RTS2_GRBCONN__ */

@@ -116,7 +116,7 @@ Rts2CNMonConn::printTimeDiff (int row, char *text, time_t * in_time)
       t = t % 86400;
     }
   ln_deg_to_hms (360.0 * ((double) t / 86400.0), &hms);
-  sprintf (time_buf, "%s%i:%i:%i", time_buf, hms.hours, hms.minutes,
+  sprintf (time_buf, "%s%i:%02i:%04.1f", time_buf, hms.hours, hms.minutes,
 	   hms.seconds);
   mvwprintw (window, row, 1, "%s:-%s", text, time_buf);
 }

@@ -31,10 +31,13 @@ class Rts2ImageProc:public Rts2DeviceDb
 private:
   std::list < Rts2ConnImgProcess * >imagesQue;
   Rts2ConnImgProcess *runningImage;
+  int goodImages;
+  int trashImages;
+  int morningImages;
 public:
     Rts2ImageProc (int argc, char **argv);
     virtual ~ Rts2ImageProc (void);
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 
   virtual int init ();
   virtual int idle ();
@@ -85,6 +88,10 @@ Rts2ImageProc::Rts2ImageProc (int argc, char **argv):Rts2DeviceDb (argc, argv, D
 	      "IMGP")
 {
   runningImage = NULL;
+
+  goodImages = 0;
+  trashImages = 0;
+  morningImages = 0;
 }
 
 Rts2ImageProc::~Rts2ImageProc (void)
@@ -93,7 +100,7 @@ Rts2ImageProc::~Rts2ImageProc (void)
     delete runningImage;
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2ImageProc::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnImage (in_sock, this);
@@ -142,6 +149,9 @@ Rts2ImageProc::sendInfo (Rts2Conn * conn)
 {
   conn->sendValue ("que_size",
 		   (int) imagesQue.size () + (runningImage ? 1 : 0));
+  conn->sendValue ("good_images", goodImages);
+  conn->sendValue ("trash_images", trashImages);
+  conn->sendValue ("morning_images", morningImages);
 }
 
 int
@@ -160,6 +170,19 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
   if (conn == runningImage)
     {
       // que next image
+      // Rts2Device::deleteConnection will delete runningImage
+      switch (runningImage->getAstrometryStat ())
+	{
+	case GET:
+	  goodImages++;
+	  break;
+	case TRASH:
+	  trashImages++;
+	  break;
+	case MORNING:
+	  morningImages++;
+	  break;
+	}
       runningImage = NULL;
       img_iter = imagesQue.begin ();
       if (img_iter != imagesQue.end ())

@@ -69,7 +69,7 @@ Rts2DevTelescope::init ()
   return Rts2Device::init ();
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2DevTelescope::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnTelescope (in_sock, this);

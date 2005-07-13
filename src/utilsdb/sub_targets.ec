@@ -325,6 +325,19 @@ FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarge
 }
 
 int
+FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  struct ln_equ_posn sun;
+  struct ln_hrz_posn hrz;
+  ln_get_solar_equ_coords (JD, &sun);
+  ln_get_hrz_from_equ (&sun, observer, JD, &hrz);
+  hrz.alt = 40;
+  hrz.az = ln_range_degrees (hrz.az + 180);
+  ln_get_equ_from_hrz (&hrz, observer, JD, pos);
+  return 0;
+}
+
+int
 FocusingTarget::getScript (const char *device_name, char *buf)
 {
   buf[0] = COMMAND_FOCUSING;

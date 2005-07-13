@@ -381,7 +381,7 @@ Rts2DevCamera::initChips ()
   return 0;
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2DevCamera::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnCamera (in_sock, this);

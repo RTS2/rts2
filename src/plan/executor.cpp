@@ -36,7 +36,7 @@ public:
     virtual ~ Rts2Executor (void);
   virtual int processOption (int in_opt);
   virtual int init ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
 
@@ -131,7 +131,7 @@ Rts2Executor::init ()
   return 0;
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2Executor::createConnection (int in_sock, int conn_num)
 {
   return new Rts2ConnExecutor (in_sock, this);

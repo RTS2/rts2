@@ -31,7 +31,7 @@
 #define USEC_SEC		1000000
 
 typedef enum conn_type_t
-{ NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER };
+{ NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER, DEVICE_DEVICE };
 
 typedef enum
 { CONN_UNKNOW, CONN_RESOLVING_DEVICE, CONN_CONNECTING,
@@ -122,6 +122,9 @@ protected:
 
   Rts2DevClient *otherDevice;
   int otherType;
+
+  void successfullSend ();
+  void successfullRead ();
 
 public:
   Rts2Conn (Rts2Block * in_master);

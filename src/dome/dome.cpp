@@ -32,7 +32,7 @@ Rts2DevDome::init ()
   return Rts2Device::init ();
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2DevDome::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnDome (in_sock, this);

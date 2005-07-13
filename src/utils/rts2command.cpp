@@ -165,8 +165,8 @@ Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * in_master, int corr_mark, do
 Rts2Command (in_master)
 {
   char *command;
-  asprintf (&command, "correct %i %lf %lf %lf %lf", corr_mark, ra, dec,
-	    ra_err, dec_err);
+  asprintf (&command, "correct %i %lf %lf %lf %lf", corr_mark, ra_err,
+	    dec_err, ra, dec);
   setCommand (command);
   free (command);
 }
@@ -178,4 +178,10 @@ Rts2Command (in_master)
   asprintf (&command, "next %i", next_id);
   setCommand (command);
   free (command);
+}
+
+Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block * in_master):Rts2Command
+  (in_master)
+{
+  setCommand ("killall");
 }

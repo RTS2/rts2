@@ -47,7 +47,14 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
       if (!currentTarget)
 	break;
       if (script)
-	delete script;
+	{
+	  delete script;
+	  if (!sendLastReadout)
+	    connection->
+	      queCommand (new Rts2CommandKillAll (connection->getMaster ()));
+	  postLastReadout ();
+	  // stop actual observation..
+	}
       currentTarget->getScript (connection->getName (), scriptBuf);
       script = new Rts2Script (scriptBuf, connection->getName ());
       exposureCount = 1;

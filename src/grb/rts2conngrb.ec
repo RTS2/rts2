@@ -575,6 +575,8 @@ Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete
   last_target_time = -1;
 
   do_hete_test = in_do_hete_test;
+  time (&nextTime);
+  nextTime += 60;
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
@@ -601,14 +603,17 @@ Rts2ConnGrb::idle ()
 	  connectionsBreak ();
           break;
         }
-      if (err)
+      else if (err)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %s",
                   strerror (err));
 	  connectionsBreak ();
           break;
         }
-      conn_state = CONN_CONNECTED;
+      else 
+        {
+          conn_state = CONN_AUTH_PENDING;
+	}
       break;
     case CONN_BROKEN:
       time_t now;
@@ -666,20 +671,33 @@ Rts2ConnGrb::init ()
       return -1;
     }
   conn_state = CONN_CONNECTED;
+  time (&nextTime);
+  nextTime += 60;
   return 0;
 }
 
 int
 Rts2ConnGrb::connectionsBreak ()
 {
+  time_t now;
+  time (&now);
+  if (conn_state == CONN_CONNECTING
+    && now < nextTime)
+  {
+    return -1;
+  }
   if (sock > 0)
   {
     close (sock);
     sock = -1;
   }
+  if (conn_state == CONN_CONNECTING)
+  {
+    return -1;
+  }
   if (conn_state != CONN_BROKEN)
   {
-    time (&nextTime);
+    nextTime = now;
     nextTime += 600;
     conn_state = CONN_BROKEN;
   }
@@ -691,7 +709,7 @@ Rts2ConnGrb::receive (fd_set *set)
 {
   int ret = 0;
   struct tm *t;
-  if (conn_state != CONN_CONNECTED)
+  if (conn_state != CONN_CONNECTED && conn_state != CONN_AUTH_PENDING)
   {
     if (conn_state != CONN_BROKEN)
       connectionsBreak ();
@@ -703,18 +721,27 @@ Rts2ConnGrb::receive (fd_set *set)
     short *sp;			// Ptr to a short; used for the swapping
     short pl, ph;			// Low part & high part
     ret = read (sock, (char*) nbuf, sizeof (nbuf));
-    gettimeofday (&last_packet, NULL);
     if (ret < 0)
     {
+      if (conn_state == CONN_AUTH_PENDING)
+      {
+        conn_state = CONN_CONNECTED;
+        return 1;
+      }
       connectionsBreak ();
       return -1;
     }
+    successfullRead ();
+    gettimeofday (&last_packet, NULL);
     /* Immediately echo back the packet so GCN can monitor:
      * (1) the actual receipt by the site, and
      * (2) the roundtrip travel times.
      * Everything except KILL's get echo-ed back.            */
     if(nbuf[PKT_TYPE] != TYPE_KILL_SOCKET)
+    {
       write (sock, (char *)nbuf, sizeof(nbuf)); 
+      successfullSend ();
+    }
     swab (nbuf, lbuf, SIZ_PKT * sizeof (lbuf[0]));
     sp = (short *)lbuf;
     for(int i=0; i<SIZ_PKT; i++)
@@ -827,4 +854,10 @@ int
 Rts2ConnGrb::lastTargetTime ()
 {
   return last_target_time;
+}
+
+void
+Rts2ConnGrb::endConnection ()
+{
+  conn_state = CONN_BROKEN;
 }

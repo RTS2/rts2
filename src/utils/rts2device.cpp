@@ -22,32 +22,103 @@
 #define MINDATAPORT		5556
 #define MAXDATAPORT		5656
 
-Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Device * in_master, char *in_name):
-Rts2Conn (in_master)
+int
+Rts2DevConn::connectionError ()
 {
-  master = in_master;
-  setName (in_name);
-  conn_state = CONN_RESOLVING_DEVICE;
-  address = NULL;
-}
-
-Rts2Dev2DevConn::Rts2Dev2DevConn (Rts2Device * in_master, Rts2Address * in_addr):Rts2Conn
-  (in_master)
-{
-  master = in_master;
-  conn_state = CONN_CONNECTING;
-  setName (in_addr->getName ());
-  setAddress (in_addr);
-  init ();
-}
-
-Rts2Dev2DevConn::~Rts2Dev2DevConn (void)
-{
+  if (conn_state == CONN_AUTH_PENDING)
+    master->authorize (NULL);	// cancel pendig authorization
+  return -1;
 }
 
 int
-Rts2Dev2DevConn::init ()
+Rts2DevConn::commandAuthorized ()
 {
+  if (isCommand ("ready"))
+    {
+      return master->ready (this);
+    }
+  else if (isCommand ("info"))
+    {
+      return master->info (this);
+    }
+  else if (isCommand ("base_info"))
+    {
+      return master->baseInfo (this);
+    }
+  else if (isCommand ("killall"))
+    {
+      CHECK_PRIORITY;
+      return master->killAll ();
+    }
+  else if (isCommand ("this_device"))
+    {
+      char *deviceName;
+      int deviceType;
+      if (paramNextString (&deviceName)
+	  || paramNextInteger (&deviceType) || !paramEnd ())
+	return -2;
+      setName (deviceName);
+      setOtherType (deviceType);
+      conn_state = CONN_CONNECTED;
+      return -1;
+    }
+  // we need to try that - due to other device commands
+  return -5;
+}
+
+int
+Rts2DevConn::command ()
+{
+  int ret;
+  if (getCentraldId () != -1 && conn_state == CONN_AUTH_OK || getType () == DEVICE_DEVICE)	// authorized and running
+    {
+      ret = commandAuthorized ();
+      if (ret == DEVDEM_E_HW)
+	{
+	  sendCommandEnd (DEVDEM_E_HW, "device error");
+	  return -1;
+	}
+      if (ret != -5)
+	return ret;
+    }
+  if (isCommand ("auth"))
+    {
+      int auth_id;
+      int auth_key;
+      if (paramNextInteger (&auth_id)
+	  || paramNextInteger (&auth_key) || !paramEnd ())
+	return -2;
+      setCentraldId (auth_id);
+      setKey (auth_key);
+      ret = master->authorize (this);
+      if (ret)
+	{
+	  sendCommandEnd (DEVDEM_E_SYSTEM,
+			  "cannot authorize; try again later");
+	  return -1;
+	}
+      conn_state = CONN_AUTH_PENDING;
+      return -1;
+    }
+  return Rts2Conn::command ();
+}
+
+Rts2DevConn::Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
+	  in_master)
+{
+  address = NULL;
+  master = in_master;
+  if (in_sock > 0)
+    setType (DEVICE_SERVER);
+  else
+    setType (DEVICE_DEVICE);
+}
+
+int
+Rts2DevConn::init ()
+{
+  if (getType () != DEVICE_DEVICE)
+    return Rts2Conn::init ();
   int ret;
   struct addrinfo *device_addr;
   if (!address)
@@ -85,8 +156,11 @@ Rts2Dev2DevConn::init ()
 }
 
 int
-Rts2Dev2DevConn::idle ()
+Rts2DevConn::idle ()
 {
+  if (getType () != DEVICE_DEVICE)
+    return Rts2Conn::idle ();
+
   switch (conn_state)
     {
     case CONN_CONNECTING:
@@ -112,132 +186,6 @@ Rts2Dev2DevConn::idle ()
       break;
     }
   return Rts2Conn::idle ();
-}
-
-void
-Rts2Dev2DevConn::setAddress (Rts2Address * in_addr)
-{
-  address = in_addr;
-  setOtherType (address->getType ());
-}
-
-void
-Rts2Dev2DevConn::addressAdded (Rts2Address * in_addr)
-{
-  if (isName (in_addr->getName ()))
-    {
-      setAddress (in_addr);
-      init ();
-    }
-}
-
-void
-Rts2Dev2DevConn::connAuth ()
-{
-  master->getCentraldConn ()->
-    queCommand (new Rts2CommandAuthorize (master, getName ()));
-  conn_state = CONN_AUTH_PENDING;
-}
-
-void
-Rts2Dev2DevConn::setKey (int in_key)
-{
-  Rts2Conn::setKey (in_key);
-  if (conn_state == CONN_AUTH_PENDING)
-    {
-      // que to begining, send command
-      // kill all runinng commands
-      queSend (new Rts2CommandSendKey (master, in_key));
-    }
-}
-
-void
-Rts2Dev2DevConn::setConnState (conn_state_t new_conn_state)
-{
-  if (new_conn_state == CONN_CONNECTED)
-    sendValue ("this_device", master->getDeviceName (),
-	       master->getDeviceType ());
-  Rts2Conn::setConnState (new_conn_state);
-}
-
-int
-Rts2DevConn::connectionError ()
-{
-  if (conn_state == CONN_AUTH_PENDING)
-    master->authorize (NULL);	// cancel pendig authorization
-  return -1;
-}
-
-int
-Rts2DevConn::commandAuthorized ()
-{
-  if (isCommand ("ready"))
-    {
-      return master->ready (this);
-    }
-  else if (isCommand ("info"))
-    {
-      return master->info (this);
-    }
-  else if (isCommand ("base_info"))
-    {
-      return master->baseInfo (this);
-    }
-  else if (isCommand ("this_device"))
-    {
-      char *deviceName;
-      int deviceType;
-      if (paramNextString (&deviceName)
-	  || paramNextInteger (&deviceType) || !paramEnd ())
-	return -2;
-      setName (deviceName);
-      setOtherType (deviceType);
-      return -1;
-    }
-  sendCommandEnd (DEVDEM_E_SYSTEM, "devcon unknow command");
-  return -1;
-}
-
-int
-Rts2DevConn::command ()
-{
-  int ret;
-  if (getCentraldId () != -1 && conn_state == CONN_AUTH_OK)	// authorized and running
-    {
-      ret = commandAuthorized ();
-      if (ret == DEVDEM_E_HW)
-	{
-	  sendCommandEnd (DEVDEM_E_HW, "device error");
-	  return -1;
-	}
-      return ret;
-    }
-  if (isCommand ("auth"))
-    {
-      int auth_id;
-      int auth_key;
-      if (paramNextInteger (&auth_id)
-	  || paramNextInteger (&auth_key) || !paramEnd ())
-	return -2;
-      setCentraldId (auth_id);
-      setKey (auth_key);
-      ret = master->authorize (this);
-      if (ret)
-	{
-	  sendCommandEnd (DEVDEM_E_SYSTEM,
-			  "cannot authorize; try again later");
-	  return -1;
-	}
-      conn_state = CONN_AUTH_PENDING;
-      return -1;
-    }
-  return Rts2Conn::command ();
-}
-
-Rts2DevConn::Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
-	  in_master)
-{
-  master = in_master;
 }
 
 int
@@ -284,6 +232,76 @@ Rts2DevConn::setHavePriority (int in_have_priority)
 	}
     }
 }
+
+void
+Rts2DevConn::setDeviceAddress (Rts2Address * in_addr)
+{
+  setType (DEVICE_DEVICE);
+  address = in_addr;
+  conn_state = CONN_CONNECTING;
+  setName (in_addr->getName ());
+  init ();
+  setOtherType (address->getType ());
+}
+
+void
+Rts2DevConn::setDeviceName (char *in_name)
+{
+  setType (DEVICE_DEVICE);
+  setName (in_name);
+  conn_state = CONN_RESOLVING_DEVICE;
+}
+
+void
+Rts2DevConn::addressAdded (Rts2Address * in_addr)
+{
+  if (getType () != DEVICE_DEVICE)
+    return;
+  if (isName (in_addr->getName ()))
+    {
+      setDeviceAddress (in_addr);
+      init ();
+    }
+}
+
+void
+Rts2DevConn::connAuth ()
+{
+  master->getCentraldConn ()->
+    queCommand (new Rts2CommandAuthorize (master, getName ()));
+  conn_state = CONN_AUTH_PENDING;
+}
+
+void
+Rts2DevConn::setKey (int in_key)
+{
+  Rts2Conn::setKey (in_key);
+  if (getType () != DEVICE_DEVICE)
+    return;
+  if (conn_state == CONN_AUTH_PENDING)
+    {
+      // que to begining, send command
+      // kill all runinng commands
+      queSend (new Rts2CommandSendKey (master, in_key));
+    }
+}
+
+void
+Rts2DevConn::setConnState (conn_state_t new_conn_state)
+{
+  if (getType () != DEVICE_DEVICE)
+    return Rts2Conn::setConnState (new_conn_state);
+  if (new_conn_state == CONN_CONNECTED)
+    {
+      sendValue ("this_device", master->getDeviceName (),
+		 master->getDeviceType ());
+      master->baseInfo (this);
+      master->sendInfo (this);
+    }
+  Rts2Conn::setConnState (new_conn_state);
+}
+
+
 
 Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master,
 				      char *in_device_host,
@@ -464,6 +482,8 @@ Rts2DevConnMaster::authorize (Rts2DevConn * conn)
 {
   char *msg;
   int ret;
+  if (!conn)
+    return -1;
   if (auth_conn)
     {
       if (!conn)
@@ -636,7 +656,7 @@ Rts2Device::~Rts2Device (void)
   states = NULL;
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2Device::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConn (in_sock, this);
@@ -703,18 +723,24 @@ Rts2Device::cancelPriorityOperations ()
   Rts2Block::cancelPriorityOperations ();
 }
 
-Rts2Dev2DevConn *
+Rts2Conn *
 Rts2Device::createClientConnection (char *in_device_name)
 {
-  return new Rts2Dev2DevConn (this, in_device_name);
+  Rts2DevConn *conn;
+  conn = createConnection (-1, -1);
+  conn->setDeviceName (in_device_name);
+  return conn;
 }
 
 Rts2Conn *
 Rts2Device::createClientConnection (Rts2Address * in_addres)
 {
+  Rts2DevConn *conn;
   if (in_addres->isAddress (device_name))
     return NULL;
-  return new Rts2Dev2DevConn (this, in_addres);
+  conn = createConnection (-1, -1);
+  conn->setDeviceAddress (in_addres);
+  return conn;
 }
 
 int
@@ -839,6 +865,13 @@ int
 Rts2Device::baseInfo ()
 {
   return -1;
+}
+
+int
+Rts2Device::killAll ()
+{
+  cancelPriorityOperations ();
+  return 0;
 }
 
 int

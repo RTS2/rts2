@@ -15,6 +15,7 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
 private:
   int sendLastReadout;
   Target *currentTarget;
+  Target *nextTarget;		// in case we get some target to que in..
   Rts2Script *script;
   void postLastReadout ();
 public:

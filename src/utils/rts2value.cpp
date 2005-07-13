@@ -42,7 +42,7 @@ Rts2ValueString::setValue (Rts2Conn * connection)
   delete[]value;
   value = new char[strlen (new_value) + 1];
   strcpy (value, new_value);
-  return -1;
+  return 0;
 }
 
 Rts2ValueInteger::Rts2ValueInteger (char *in_val_name):Rts2Value (in_val_name)

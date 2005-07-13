@@ -55,7 +55,7 @@ public:
   };
   int checkOpening ();
   virtual int init ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   virtual int idle ();
 
   virtual int ready ()
