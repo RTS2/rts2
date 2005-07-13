@@ -56,10 +56,9 @@ CREATE TABLE grb (
 	grb_id		integer NOT NULL,
 	grb_seqn	integer NOT NULL,
 	grb_type	integer NOT NULL, -- type of first notice which create that log entry
-	grb_seqn	integer,
 	grb_ra		float8,
 	grb_dec		float8,
-	grb_is_grb	boolean NOT NULL DEFAULT TO true,
+	grb_is_grb	boolean NOT NULL DEFAULT true,
 	grb_date	timestamp,
 	grb_last_update	timestamp,
 	grb_errorbox	float,
@@ -75,7 +74,7 @@ CREATE TABLE grb_gcn (
 	grb_type	integer,
 	grb_update	timestamp,
 	grb_update_usec	integer,
-	packet		long[40]
+	packet		int8[]
 );
 
 CREATE INDEX grb_gcn_prim ON grb_gcn (grb_id, grb_seqn, grb_type);
