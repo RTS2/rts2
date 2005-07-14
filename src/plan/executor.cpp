@@ -167,6 +167,18 @@ Rts2Executor::postEvent (Rts2Event * event)
       if (scriptCount == 0)
 	switchTarget ();
       break;
+    case EVENT_MOVE_FAILED:
+      if (currentTarget)
+	{
+	  // get us lover priority to prevent moves to such dangerous
+	  // position
+	  currentTarget->changePriority (-100,
+					 ln_get_julian_from_sys () +
+					 12 * (1.0 / 1440.0));
+	}
+      if (scriptCount == 0)
+	switchTarget ();
+      break;
     }
   Rts2Device::postEvent (event);
 }

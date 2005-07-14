@@ -155,6 +155,51 @@ Target::endObservation ()
 }
 
 int
+Target::secToObjectSet (double JD)
+{
+  struct ln_rst_time rst;
+  int ret;
+  ret = getRST (&rst, JD);
+  if (ret)
+    return -1;  // don't rise, circumpolar etc..
+  ret = int ((rst.set - JD) * 86400.0);
+  if (ret < 0)
+    // hope we get current set, we are interested in next set..
+    return ret + ((int (ret/86400) + 1) * -86400);
+  return ret;
+}
+
+int
+Target::secToObjectRise (double JD)
+{
+  struct ln_rst_time rst;
+  int ret;
+  ret = getRST (&rst, JD);
+  if (ret)
+    return -1;  // don't rise, circumpolar etc..
+  ret = int ((rst.rise - JD) * 86400.0);
+  if (ret < 0)
+    // hope we get current set, we are interested in next set..
+    return ret + ((int (ret/86400) + 1) * -86400);
+  return ret;
+}
+
+int
+Target::secToObjectMeridianPass (double JD)
+{
+  struct ln_rst_time rst;
+  int ret;
+  ret = getRST (&rst, JD);
+  if (ret)
+    return -1;  // don't rise, circumpolar etc..
+  ret = int ((rst.transit - JD) * 86400.0);
+  if (ret < 0)
+    // hope we get current set, we are interested in next set..
+    return ret + ((int (ret/86400) + 1) * -86400);
+  return ret;
+}
+
+int
 Target::beforeMove ()
 {
   startCalledNum++;
@@ -307,7 +352,7 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
     {
       // object doesn't rise, let's hope tomorrow it will rise
       syslog (LOG_DEBUG, "Target::considerForObserving %i will rise tommorow: %f", getTargetID (), rst.rise);
-      changePriority (-100, JD + 1.0/8640.0);
+      changePriority (-100, JD + 12*(1.0/1440.0));
       return -1;
     }
     syslog (LOG_DEBUG, "Target::considerForObserving %i will rise at: %f", getTargetID (), rst.rise);

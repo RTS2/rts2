@@ -58,7 +58,7 @@ ConstTarget::getRST (struct ln_rst_time *rst, double JD)
   ret = getPosition (&pos, JD);
   if (ret)
     return ret;
-  return ln_get_object_rst (JD, observer, &pos, rst);
+  return ln_get_object_next_rst (JD, observer, &pos, rst);
 }
 
 // EllTarget - good for commets and so on

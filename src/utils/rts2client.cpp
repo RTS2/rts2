@@ -21,7 +21,7 @@ Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, char *in_name):
 Rts2Conn (in_master)
 {
   setName (in_name);
-  conn_state = CONN_RESOLVING_DEVICE;
+  setConnState (CONN_RESOLVING_DEVICE);
   address = NULL;
 }
 
@@ -59,7 +59,7 @@ Rts2ConnClient::init ()
     {
       if (errno = EINPROGRESS)
 	{
-	  conn_state = CONN_CONNECTING;
+	  setConnState (CONN_CONNECTING);
 	  return 0;
 	}
       return -1;
@@ -71,9 +71,8 @@ Rts2ConnClient::init ()
 int
 Rts2ConnClient::idle ()
 {
-  switch (conn_state)
+  if (isConnState (CONN_CONNECTING))
     {
-    case CONN_CONNECTING:
       int err;
       int ret;
       socklen_t len = sizeof (err);
@@ -82,18 +81,18 @@ Rts2ConnClient::idle ()
       if (ret)
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %m");
-	  conn_state = CONN_DELETE;
-	  break;
+	  connectionError ();
 	}
-      if (err)
+      else if (err)
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %s",
 		  strerror (err));
-	  conn_state = CONN_DELETE;
-	  break;
+	  connectionError ();
 	}
-      connLogin ();
-      break;
+      else
+	{
+	  connLogin ();
+	}
     }
   return Rts2Conn::idle ();
 }
@@ -101,7 +100,7 @@ Rts2ConnClient::idle ()
 void
 Rts2ConnClient::setAddress (Rts2Address * in_addr)
 {
-  conn_state = CONN_CONNECTING;
+  setConnState (CONN_CONNECTING);
   address = in_addr;
   setOtherType (address->getType ());
   init ();
@@ -121,14 +120,14 @@ Rts2ConnClient::connLogin ()
 {
   master->getCentraldConn ()->
     queCommand (new Rts2CommandAuthorize (master, getName ()));
-  conn_state = CONN_AUTH_PENDING;
+  setConnState (CONN_AUTH_PENDING);
 }
 
 void
 Rts2ConnClient::setKey (int in_key)
 {
   Rts2Conn::setKey (in_key);
-  if (conn_state == CONN_AUTH_PENDING)
+  if (isConnState (CONN_AUTH_PENDING))
     {
       // que to begining, send command
       // kill all runinng commands
@@ -273,7 +272,7 @@ Rts2ConnCentraldClient::init ()
   freeaddrinfo (master_addr);
   if (ret == -1)
     return -1;
-  conn_state = CONN_CONNECTED;
+  setConnState (CONN_CONNECTED);
 
   queCommand (new Rts2CommandLogin (master, login, password));
   return 0;

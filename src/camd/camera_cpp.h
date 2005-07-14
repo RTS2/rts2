@@ -10,6 +10,20 @@
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
+/* image types, taken from fitsio.h */
+#define CAMERA_BYTE_IMG		8
+#define CAMERA_SHORT_IMG	16
+#define CAMERA_LONG_IMG		32
+#define CAMERA_FLOAT_IMG	-32
+#define CAMERA_DOUBLE_IMG	-64
+#define CAMERA_USHORT_IMG	20
+#define CAMERA_ULONG_IMG	40
+
+#define CAMERA_COOL_OFF		0
+#define CAMERA_COOL_MAX		1
+#define CAMERA_COOL_HOLD	2
+#define CAMERA_COOL_SHUTDOWN	3
+
 class ChipSubset
 {
 public:

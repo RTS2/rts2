@@ -15,6 +15,7 @@ public:
 		  int default_port, char *default_name);
     virtual ~ Rts2DeviceDb (void);
   virtual int processOption (int in_opt);
+  int initDB ();
   virtual int init ();
 };
 

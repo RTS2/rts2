@@ -206,7 +206,7 @@ Rts2DevTelescope::changeMasterState (int new_state)
     }
   // park us during day..
   if (new_state == SERVERD_DAY
-      || new_state == SERVERD_DAY | SERVERD_STANDBY
+      || new_state == (SERVERD_DAY | SERVERD_STANDBY)
       || new_state == SERVERD_OFF)
     startPark (NULL);
   return 0;
@@ -417,6 +417,10 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
     }
   else
     {
+      // first change - set offsets
+      if (numCorr == 0)
+	{
+	}
       // discards changes - astrometry was too late
       locCorNum = -1;
       locCorRa = 0;

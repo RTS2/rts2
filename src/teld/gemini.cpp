@@ -123,6 +123,8 @@ public:
   virtual int endPark ();
   int setTo (double set_ra, double set_dec, int appendModel);
   virtual int setTo (double set_ra, double set_dec);
+  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec);
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec);
   virtual int change (double chng_ra, double chng_dec);
@@ -1320,6 +1322,25 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
 {
   return setTo (set_ra, set_dec, 0);
 }
+
+int
+Rts2DevTelescopeGemini::correctOffsets (double cor_ra, double cor_dec,
+					double real_ra, double real_dec)
+{
+  int32_t v205;
+  int32_t v206;
+  int ret;
+  // change allign parameters..
+  tel_gemini_get (205, &v205);
+  tel_gemini_get (206, &v206);
+  v205 += cor_ra * 3600;	// convert from degrees to arcminutes
+  v206 += cor_dec * 3600;
+  tel_gemini_set (205, v205);
+  ret = tel_gemini_set (206, v206);
+  if (ret)
+    return -1;
+}
+
 
 /*!
  * Correct telescope coordinates.

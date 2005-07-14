@@ -116,11 +116,81 @@ public:
   {
     return -1;
   }
+
+  // some libnova trivials to get more comfortable access to
+  // coordinates
   int getAltAz (struct ln_hrz_posn *hrz)
   {
     return getAltAz (hrz, ln_get_julian_from_sys ());
   }
   virtual int getAltAz (struct ln_hrz_posn *hrz, double JD);
+
+  double getAzDistance ()
+  {
+    return getAzDistance (ln_get_julian_from_sys ());
+  }
+
+  double getAzDistance (double JD)
+  {
+    struct ln_hrz_posn hrz;
+    getAltAz (&hrz, JD);
+    return 90.0 - hrz.alt;
+  }
+
+  double getHourAngle ()
+  {
+    return getHourAngle (ln_get_julian_from_sys ());
+  }
+
+  double getHourAngle (double JD)
+  {
+    double lst;
+    double ha;
+    struct ln_equ_posn pos;
+    int ret;
+    lst = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
+    ret = getPosition (&pos);
+    if (ret)
+      return nan ("f");
+    ha = lst - pos.ra;
+    ha = ln_range_degrees (ha) / 15.0;
+    if (ha > 12.0)
+      return 24 - ha;
+    return ha;
+  }
+
+  double getMeridianDistance ()
+  {
+    return fabs (getHourAngle ());
+  }
+
+  double getMeridianDistance (double JD)
+  {
+    return fabs (getHourAngle (JD));
+  }
+
+  // time in seconds to object set/rise/meridian pass (if it's visible, otherwise -1 (for
+  // circumpolar & not visible objects)
+  int secToObjectSet ()
+  {
+    return secToObjectSet (ln_get_julian_from_sys ());
+  }
+
+  int secToObjectSet (double JD);
+
+  int secToObjectRise ()
+  {
+    return secToObjectRise (ln_get_julian_from_sys ());
+  }
+
+  int secToObjectRise (double JD);
+
+  int secToObjectMeridianPass ()
+  {
+    return secToObjectMeridianPass (ln_get_julian_from_sys ());
+  }
+
+  int secToObjectMeridianPass (double JD);
 
   int getTargetID ()
   {

@@ -135,7 +135,7 @@ Rts2Conn::acceptConn ()
       close (sock);
       sock = new_sock;
       syslog (LOG_DEBUG, "Rts2Conn::acceptConn connection accepted");
-      conn_state = CONN_CONNECTED;
+      setConnState (CONN_CONNECTED);
       return 0;
     }
 }
@@ -256,11 +256,11 @@ Rts2Conn::receive (fd_set * set)
 {
   int data_size = 0;
   // connections market for deletion
-  if (conn_state == CONN_DELETE)
+  if (isConnState (CONN_DELETE))
     return -1;
   if ((sock >= 0) && FD_ISSET (sock, set))
     {
-      if (conn_state == CONN_CONNECTING)
+      if (isConnState (CONN_CONNECTING))
 	{
 	  return acceptConn ();
 	}
@@ -363,12 +363,12 @@ Rts2Conn::queCommand (Rts2Command * command)
 {
   command->setConnection (this);
   if (runningCommand
-      || (conn_state != CONN_CONNECTED && conn_state != CONN_AUTH_PENDING))
+      || isConnState (CONN_CONNECTING)
+      || isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))
     {
       commandQue.push_back (command);
       return 0;
     }
-  delete runningCommand;
   runningCommand = command;
   return command->send ();
 }
@@ -498,6 +498,21 @@ Rts2Conn::status ()
 }
 
 int
+Rts2Conn::sendNextCommand ()
+{
+  // pop next command
+  if (commandQue.size () > 0)
+    {
+      runningCommand = *(commandQue.begin ());
+      commandQue.erase (commandQue.begin ());
+      runningCommand->send ();
+      return 0;
+    }
+  runningCommand = NULL;
+  return -1;
+}
+
+int
 Rts2Conn::commandReturn ()
 {
   int ret;
@@ -510,20 +525,13 @@ Rts2Conn::commandReturn ()
   switch (ret)
     {
     case RTS2_COMMAND_REQUE:
-      break;
+      if (runningCommand)
+	runningCommand->send ();
     case -1:
-      // pop next command
-      if (commandQue.size () > 0)
-	{
-	  runningCommand = *(commandQue.begin ());
-	  commandQue.erase (commandQue.begin ());
-	  break;
-	}
-      runningCommand = NULL;
+      delete runningCommand;
+      sendNextCommand ();
       break;
     }
-  if (runningCommand)
-    runningCommand->send ();
   return -1;
 }
 
@@ -683,6 +691,26 @@ Rts2Conn::sendCommandEnd (int num, char *message)
   return 0;
 }
 
+void
+Rts2Conn::setConnState (conn_state_t new_conn_state)
+{
+  if (new_conn_state == CONN_AUTH_OK || new_conn_state == CONN_CONNECTED)
+    {
+      if (!runningCommand)
+	sendNextCommand ();
+      // otherwise command will be send after command which trigerred
+      // state change finished..
+    }
+  conn_state = new_conn_state;
+}
+
+int
+Rts2Conn::isConnState (conn_state_t in_conn_state)
+{
+  return (conn_state == in_conn_state);
+}
+
+
 int
 Rts2Conn::paramEnd ()
 {
@@ -787,11 +815,8 @@ Rts2Conn::getValue (char *value_name)
 }
 
 Rts2Block::Rts2Block (int in_argc, char **in_argv):
-Rts2Object ()
+Rts2App (in_argc, in_argv)
 {
-  argc = in_argc;
-  argv = in_argv;
-
   idle_timeout = USEC_SEC * 10;
   priority_client = -1;
   openlog (NULL, LOG_PID, LOG_LOCAL0);
@@ -813,15 +838,8 @@ Rts2Object ()
 
 Rts2Block::~Rts2Block (void)
 {
-  std::vector < Rts2Option * >::iterator opt_iter;
-
-  close (sock);
-
-  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
-    {
-      delete (*opt_iter);
-    }
-  options.clear ();
+  if (sock)
+    close (sock);
 }
 
 void
@@ -839,49 +857,10 @@ Rts2Block::getPort (void)
 int
 Rts2Block::init ()
 {
-  int c;
-
-  std::vector < Rts2Option * >::iterator opt_iter;
-
-  Rts2Option *opt;
-
-  struct option *long_option, *an_option;
-
-  long_option =
-    (struct option *) malloc (sizeof (struct option) * (options.size () + 1));
-
-  char *opt_char = (char *) malloc (options.size () * 2 + 1);
-
-  char *end_opt = opt_char;
-
-  an_option = long_option;
-
-  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
-    {
-      opt = (*opt_iter);
-      opt->getOptionStruct (an_option);
-      opt->getOptionChar (&end_opt);
-      an_option++;
-    }
-
-  *end_opt = '\0';
-
-  an_option->name = NULL;
-  an_option->has_arg = 0;
-  an_option->flag = NULL;
-  an_option->val = 0;
-
-  /* get attrs */
-  while (1)
-    {
-      c = getopt_long (argc, argv, opt_char, long_option, NULL);
-
-      if (c == -1)
-	break;
-
-      processOption (c);
-
-    }
+  int ret;
+  ret = initOptions ();
+  if (ret)
+    return ret;
 
   if (deamonize)
     {
@@ -902,7 +881,6 @@ Rts2Block::init ()
       dup (f);
     }
 
-  int ret;
   socklen_t client_len;
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
@@ -947,7 +925,7 @@ Rts2Block::postEvent (Rts2Event * event)
 	  conn->postEvent (new Rts2Event (event));
 	}
     }
-  return Rts2Object::postEvent (event);
+  return Rts2App::postEvent (event);
 }
 
 Rts2Conn *
@@ -1193,23 +1171,6 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
   priority_client = in_priority_client;
 }
 
-void
-Rts2Block::helpOptions ()
-{
-  std::vector < Rts2Option * >::iterator opt_iter;
-  for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
-    {
-      (*opt_iter)->help ();
-    }
-}
-
-void
-Rts2Block::help ()
-{
-  printf ("Options:\n");
-  helpOptions ();
-}
-
 int
 Rts2Block::processOption (int in_opt)
 {
@@ -1221,15 +1182,8 @@ Rts2Block::processOption (int in_opt)
     case 'M':
       mailAddress = optarg;
       break;
-    case 'h':
-    case 0:
-      help ();
-      exit (EXIT_SUCCESS);
-    case '?':
-      break;
     default:
-      printf ("Unknow option: %c (%i)\n", in_opt, in_opt);
-      exit (EXIT_FAILURE);
+      return Rts2App::processOption (in_opt);
     }
   return 0;
 }

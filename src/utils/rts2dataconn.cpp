@@ -24,7 +24,7 @@ Rts2Conn (in_master)
   int ret;
 
   // delet us if construction of socket fails
-  conn_state = CONN_DELETE;
+  setConnState (CONN_DELETE);
   ownerConnection = in_owner_conn;
 
   data = NULL;
@@ -70,12 +70,12 @@ Rts2Conn (in_master)
     {
       if (errno = EINPROGRESS)
 	{
-	  conn_state = CONN_CONNECTING;
+	  setConnState (CONN_CONNECTING);
 	  return;
 	}
       return;
     }
-  conn_state = CONN_CONNECTED;
+  setConnState (CONN_CONNECTED);
 }
 
 Rts2ClientTCPDataConn::~Rts2ClientTCPDataConn (void)
@@ -87,7 +87,7 @@ int
 Rts2ClientTCPDataConn::receive (fd_set * set)
 {
   size_t data_size = 0;
-  if (conn_state == CONN_DELETE)
+  if (isConnState (CONN_DELETE))
     return -1;
   if ((sock >= 0) && FD_ISSET (sock, set))
     {
@@ -97,6 +97,7 @@ Rts2ClientTCPDataConn::receive (fd_set * set)
 	  endConnection ();
 	  return -1;
 	}
+      successfullRead ();
       receivedSize += data_size;
       dataTop += data_size;
     }
@@ -111,9 +112,8 @@ Rts2ClientTCPDataConn::receive (fd_set * set)
 int
 Rts2ClientTCPDataConn::idle ()
 {
-  switch (conn_state)
+  if (isConnState (CONN_CONNECTING))
     {
-    case CONN_CONNECTING:
       int err;
       int ret;
       socklen_t len = sizeof (err);
@@ -122,17 +122,14 @@ Rts2ClientTCPDataConn::idle ()
       if (ret)
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %m");
-	  conn_state = CONN_DELETE;
-	  break;
+	  connectionError ();
 	}
-      if (err)
+      else if (err)
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %s",
 		  strerror (err));
-	  conn_state = CONN_DELETE;
-	  break;
+	  connectionError ();
 	}
-      break;
     }
   return Rts2Conn::idle ();
 }

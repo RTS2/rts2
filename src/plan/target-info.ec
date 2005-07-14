@@ -2,8 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include "../db/db.h"
-#include "../utils/config.h"
+#include "../utils/rts2config.h"
 
 #include <getopt.h>
 #include <libnova/libnova.h>
@@ -29,43 +28,6 @@ printDate (char *text, double JD)
 int
 getInfo (int tar_id, struct ln_lnlat_posn *pos, double JD)
 {
-  EXEC SQL BEGIN DECLARE SECTION;
-  double                d_ra;
-  double                d_dec;
-  int                   d_tar_id = tar_id;
-  EXEC SQL END DECLARE SECTION;
-  struct ln_rst_time    rst;
-  struct ln_equ_posn    object;
-  int                   ret;
-
-  EXEC SQL
-  SELECT 
-    tar_ra, tar_dec
-  INTO
-    :d_ra, :d_dec
-  FROM
-    targets
-  WHERE
-    tar_id = :d_tar_id;
-  if (sqlca.sqlcode)
-  {
-    cout << "Target not found: " << tar_id << "\n";
-    return -1;
-  }
-  object.ra = d_ra;
-  object.dec = d_dec;
-  ret = ln_get_object_next_rst (JD, pos, &object, &rst);
-  if (ret)
-  {
-    cout << "Target " << tar_id << " is circumpolar\n";
-    return 0;
-  }
-
-  printDate ("Rise:", rst.rise);
-  printDate ("Transit:", rst.transit);
-  printDate ("Set:", rst.set);
-
-  return 0; 
 }
 
 int

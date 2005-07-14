@@ -18,6 +18,7 @@
 #include "rts2user.h"
 #include "rts2devclient.h"
 #include "rts2value.h"
+#include "rts2app.h"
 
 #define MSG_COMMAND             0x01
 #define MSG_REPLY
@@ -86,17 +87,9 @@ private:
   int centrald_id;		// id of connection on central server
   in_addr addr;
   int port;			// local port & connection
-  virtual int connectionError ()
-  {
-    conn_state = CONN_BROKEN;
-    if (sock >= 0)
-      close (sock);
-    sock = -1;
-    return -1;
-  }
   int acceptConn ();
 
-  std::list < Rts2Command * >commandQue;
+    std::list < Rts2Command * >commandQue;
   Rts2Command *runningCommand;
 
   // used for monitoring of connection state..
@@ -105,15 +98,14 @@ private:
 
   // connectionTimeout in seconds
   int connectionTimeout;
+  conn_state_t conn_state;
 
 protected:
-  Rts2ServerState * serverState[MAX_STATE];
+    Rts2ServerState * serverState[MAX_STATE];
 
   Rts2Block *master;
   char *command_start;
   int sock;
-
-  conn_state_t conn_state;
 
   int setState (int in_state_num, char *in_state_name, int in_value);
   virtual int setState (char *in_state_name, int in_value);
@@ -126,8 +118,17 @@ protected:
   void successfullSend ();
   void successfullRead ();
 
+  virtual int connectionError ()
+  {
+    setConnState (CONN_BROKEN);
+    if (sock >= 0)
+      close (sock);
+    sock = -1;
+    return -1;
+  }
+
 public:
-  Rts2Conn (Rts2Block * in_master);
+    Rts2Conn (Rts2Block * in_master);
   Rts2Conn (int in_sock, Rts2Block * in_master);
   virtual ~ Rts2Conn (void);
 
@@ -235,7 +236,7 @@ public:
   int sendPriorityInfo (int number);
   int endConnection ()
   {
-    conn_state = CONN_DELETE;	// mark for deleting..
+    setConnState (CONN_DELETE);	// mark for deleting..
   }
 
   virtual int sendInfo (Rts2Conn * conn)
@@ -259,10 +260,8 @@ public:
   {
   }
 
-  virtual void setConnState (conn_state_t new_conn_state)
-  {
-    conn_state = new_conn_state;
-  }
+  virtual void setConnState (conn_state_t new_conn_state);
+  int isConnState (conn_state_t in_conn_state);
 
   int paramEnd ();
   int paramNextString (char **str);
@@ -291,6 +290,7 @@ protected:
   virtual int message ();
   virtual int informations ();
   virtual int status ();
+  int sendNextCommand ();
   int commandReturn ();
   inline char *getCommand ()
   {
@@ -302,7 +302,7 @@ protected:
   }
 };
 
-class Rts2Block:public Rts2Object
+class Rts2Block:public Rts2App
 {
   int sock;
   int port;
@@ -314,52 +314,30 @@ class Rts2Block:public Rts2Object
 
   char *mailAddress;
 
-  char **argv;
-
-    std::vector < Rts2Option * >options;
-
     std::list < Rts2Address * >blockAddress;
     std::list < Rts2User * >blockUsers;
-
-  /**
-   * Prints help message, describing all options
-   */
-  void helpOptions ();
 
   int addConnection (int in_sock);
   int masterState;
 
 protected:
-  int argc;
-
   int deamonize;
 
   int addConnection (Rts2Conn * conn);
   virtual Rts2Conn *createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
 
-  virtual void help ();
-
   virtual int processOption (int in_opt);
-  int addOption (char in_short_option, char *in_long_option, int in_has_arg,
-		 char *in_help_msg)
-  {
-    Rts2Option *an_option =
-      new Rts2Option (in_short_option, in_long_option, in_has_arg,
-		      in_help_msg);
-      options.push_back (an_option);
-      return 0;
-  }
 
   virtual void cancelPriorityOperations ();
 
   virtual void childReturned (pid_t child_pid);
   virtual int willConnect (Rts2Address * in_addr);	// determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
 public:
-  Rts2Conn * connections[MAX_CONN];
+    Rts2Conn * connections[MAX_CONN];
 
-  Rts2Block (int in_argc, char **in_argv);
-  virtual ~ Rts2Block (void);
+    Rts2Block (int in_argc, char **in_argv);
+    virtual ~ Rts2Block (void);
   void setPort (int in_port);
   int getPort (void);
   virtual int init ();

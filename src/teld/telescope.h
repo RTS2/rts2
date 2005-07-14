@@ -121,6 +121,13 @@ public:
   {
     return -1;
   }
+  // isued for first correction which will be sended while telescope
+  // moves to another target; can be used to set fixed offsets
+  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec)
+  {
+    return -1;
+  }
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec)
   {

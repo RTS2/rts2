@@ -167,7 +167,7 @@ Rts2NMTelescope::print (WINDOW * wnd)
   altaz.alt = nan ("f");
 
   gst =
-    getValueDouble ("siderealtime") + getValueDouble ("longtitude") / 15.0;
+    getValueDouble ("siderealtime") - getValueDouble ("longtitude") / 15.0;
   gst = ln_range_degrees (gst * 15.0) / 15.0;
 
   st = gst;

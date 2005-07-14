@@ -46,7 +46,6 @@ public:
   virtual int init ();
   virtual int idle ();
 
-  int add (fd_set * set);
   int authorizationOK ();
   int authorizationFailed ();
   void setHavePriority (int in_have_priority);

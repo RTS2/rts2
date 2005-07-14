@@ -52,7 +52,7 @@ Rts2DeviceDb::processOption (int in_opt)
 }
 
 int
-Rts2DeviceDb::init ()
+Rts2DeviceDb::initDB ()
 {
   int ret;
   EXEC SQL BEGIN DECLARE SECTION;
@@ -62,11 +62,7 @@ Rts2DeviceDb::init ()
 
   Rts2Config *config;
 
-  ret = Rts2Device::init ();
-  if (ret)
-    return ret;
-
-  // load config.
+  // load config..
 
   config = Rts2Config::instance ();
   ret = config->loadFile (configFile);
@@ -91,4 +87,17 @@ Rts2DeviceDb::init ()
   }
 
   return 0;
+}
+
+int
+Rts2DeviceDb::init ()
+{
+  int ret;
+
+  ret = Rts2Device::init ();
+  if (ret)
+    return ret;
+
+  // load config.
+  return initDB ();
 }

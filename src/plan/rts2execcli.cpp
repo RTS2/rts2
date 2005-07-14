@@ -211,3 +211,10 @@ Rts2DevClientTelescopeExec::stateChanged (Rts2ServerState * state)
     }
   Rts2DevClientTelescopeImage::stateChanged (state);
 }
+
+void
+Rts2DevClientTelescopeExec::moveFailed (int status)
+{
+  Rts2DevClientTelescopeImage::moveFailed (status);
+  connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED));
+}

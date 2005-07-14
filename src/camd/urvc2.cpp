@@ -21,8 +21,6 @@
 #include "urvc2/urvc.h"
 #include "camera_cpp.h"
 
-#include "camera_info.h"
-
 #define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
 
 class CameraUrvc2Chip:public CameraChip

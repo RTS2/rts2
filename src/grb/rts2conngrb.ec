@@ -593,40 +593,38 @@ Rts2ConnGrb::idle ()
   int err;
   socklen_t len = sizeof (err);
 
-  switch (conn_state)
+  if (isConnState (CONN_CONNECTING))
     {
-    case CONN_CONNECTING:
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %m");
 	  connectionsBreak ();
-          break;
         }
       else if (err)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %s",
                   strerror (err));
 	  connectionsBreak ();
-          break;
         }
       else 
         {
-          conn_state = CONN_AUTH_PENDING;
+          setConnState (CONN_AUTH_PENDING);
 	}
-      break;
-    case CONN_BROKEN:
+    }
+  else if (isConnState (CONN_BROKEN))
+    {
       time_t now;
       time (&now);
-      if (now < nextTime)
-        break;
-      ret = init ();
-      if (ret)
-      {
-        time (&nextTime);
-	nextTime += 600;
-      }
-      break;
+      if (now > nextTime)
+        {
+          ret = init ();
+          if (ret)
+            {
+              time (&nextTime);
+	      nextTime += 600;
+            }
+	}
     }
   return Rts2Conn::idle ();
 }
@@ -665,12 +663,12 @@ Rts2ConnGrb::init ()
     {
       if (errno = EINPROGRESS)
         {
-          conn_state = CONN_CONNECTING;
+	  setConnState (CONN_CONNECTING);
           return 0;
         }
       return -1;
     }
-  conn_state = CONN_CONNECTED;
+  setConnState (CONN_CONNECTED);
   time (&nextTime);
   nextTime += 60;
   return 0;
@@ -681,7 +679,7 @@ Rts2ConnGrb::connectionsBreak ()
 {
   time_t now;
   time (&now);
-  if (conn_state == CONN_CONNECTING
+  if (isConnState (CONN_CONNECTING)
     && now < nextTime)
   {
     return -1;
@@ -691,15 +689,15 @@ Rts2ConnGrb::connectionsBreak ()
     close (sock);
     sock = -1;
   }
-  if (conn_state == CONN_CONNECTING)
+  if (isConnState (CONN_CONNECTING))
   {
     return -1;
   }
-  if (conn_state != CONN_BROKEN)
+  if (!isConnState (CONN_BROKEN))
   {
     nextTime = now;
     nextTime += 600;
-    conn_state = CONN_BROKEN;
+    setConnState (CONN_BROKEN);
   }
   return -1;
 }
@@ -709,10 +707,9 @@ Rts2ConnGrb::receive (fd_set *set)
 {
   int ret = 0;
   struct tm *t;
-  if (conn_state != CONN_CONNECTED && conn_state != CONN_AUTH_PENDING)
+  if (!isConnState (CONN_CONNECTED) && !isConnState (CONN_AUTH_PENDING))
   {
-    if (conn_state != CONN_BROKEN)
-      connectionsBreak ();
+    connectionsBreak ();
     return -1;
   }
   if (sock >= 0 && FD_ISSET (sock, set))
@@ -723,9 +720,9 @@ Rts2ConnGrb::receive (fd_set *set)
     ret = read (sock, (char*) nbuf, sizeof (nbuf));
     if (ret < 0)
     {
-      if (conn_state == CONN_AUTH_PENDING)
+      if (isConnState (CONN_AUTH_PENDING))
       {
-        conn_state = CONN_CONNECTED;
+        setConnState (CONN_CONNECTED);
         return 1;
       }
       connectionsBreak ();
@@ -859,5 +856,5 @@ Rts2ConnGrb::lastTargetTime ()
 void
 Rts2ConnGrb::endConnection ()
 {
-  conn_state = CONN_BROKEN;
+  setConnState (CONN_BROKEN);
 }
