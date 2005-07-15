@@ -165,7 +165,7 @@ Rts2Selector::selectNext ()
 }
 
 void
-Rts2Selector::considerTarget (int consider_tar_id)
+Rts2Selector::considerTarget (int consider_tar_id, double JD)
 {
   std::list < Target* >::iterator target_list;
   Target *newTar;
@@ -177,13 +177,12 @@ Rts2Selector::considerTarget (int consider_tar_id)
     Target *tar = *target_list;
     if (tar->getTargetID () == consider_tar_id)
     {
-      // we already have that target amongs possible one..
       return;
     }
   }
   // add us..
   newTar = createTarget (consider_tar_id, observer);
-  ret = newTar->considerForObserving (checker, ln_get_julian_from_sys ());
+  ret = newTar->considerForObserving (checker, JD);
   syslog (LOG_DEBUG, "considerForObserving tar_id: %i ret: %i", newTar->getTargetID (), ret);
   if (ret)
   {
@@ -201,6 +200,13 @@ Rts2Selector::findNewTargets ()
   int consider_tar_id;
   EXEC SQL END DECLARE SECTION;
 
+  std::list < Target* >::iterator target_list;
+
+  double JD;
+  int ret;
+
+  JD = ln_get_julian_from_sys ();
+
   // drop old priorities..
 
   EXEC SQL
@@ -210,8 +216,30 @@ Rts2Selector::findNewTargets ()
     tar_bonus = 0,
     tar_bonus_time = NULL
   WHERE
-    tar_bonus_time > now ();
+    tar_bonus_time < now ();
   EXEC SQL COMMIT;
+
+  // drop targets which gets bellow horizont..
+  
+  for (target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
+  {
+    Target *tar = *target_list;
+    ret = tar->considerForObserving (checker, JD);
+    if (ret)
+    {
+      // don't observe us - we are bellow horizont etc..
+      std::list < Target* >::iterator old_list;
+      old_list = target_list;
+      target_list++;
+      possibleTargets.remove (tar);
+      syslog (LOG_DEBUG, "remove target tar_id %if from possible targets", tar->getTargetID ());
+      delete tar;
+    }
+    else
+    {
+      target_list++;
+    }
+  }
 
   EXEC SQL DECLARE findnewtargets CURSOR WITH HOLD FOR
     SELECT
@@ -240,7 +268,7 @@ Rts2Selector::findNewTargets ()
     if (sqlca.sqlcode)
       break;
     // try to find us in considered targets..
-    considerTarget (consider_tar_id);
+    considerTarget (consider_tar_id, JD);
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {

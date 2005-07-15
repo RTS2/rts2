@@ -119,6 +119,7 @@ private:
   int sendDeviceKey ();
   int sendInfo ();
   int sendStatusInfo ();
+  int sendAValue (char *name, int value);
 public:
     Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 		      int in_centrald_id);
@@ -277,7 +278,7 @@ Rts2ConnCentrald::commandDevice ()
 
       if (master->connections[client]->getKey () == 0)
 	{
-	  sendValue ("authorization_failed", client);
+	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM,
 			  "client didn't ask for authorization");
 	  return -1;
@@ -285,14 +286,14 @@ Rts2ConnCentrald::commandDevice ()
 
       if (master->connections[client]->getKey () != key)
 	{
-	  sendValue ("authorization_failed", client);
+	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM, "invalid authorization key");
 	  master->connections[client]->setKey (0);
 	  return -1;
 	}
       master->connections[client]->setKey (0);
 
-      sendValue ("authorization_ok", client);
+      sendAValue ("authorization_ok", client);
       sendInfo ();
 
       return 0;
@@ -350,6 +351,16 @@ Rts2ConnCentrald::sendStatusInfo ()
 }
 
 int
+Rts2ConnCentrald::sendAValue (char *name, int value)
+{
+  char *msg;
+  int ret;
+  asprintf (&msg, "A %s %i", name, value);
+  ret = send (msg);
+  free (msg);
+}
+
+int
 Rts2ConnCentrald::commandClient ()
 {
   if (isCommand ("password"))
@@ -360,8 +371,11 @@ Rts2ConnCentrald::commandClient ()
 
       if (strncmp (passwd, login, CLIENT_LOGIN_SIZE) == 0)
 	{
+	  char *msg;
 	  authorized = 1;
-	  sendValue ("logged_as", getCentraldId ());
+	  asprintf (&msg, "logged_as %i", getCentraldId ());
+	  send (msg);
+	  free (msg);
 	  sendStatusInfo ();
 	  return 0;
 	}
@@ -475,14 +489,19 @@ Rts2ConnCentrald::command ()
 	  setType (DEVICE_SERVER);
 	  sendStatusInfo ();
 	  if (master->getPriorityClient () > -1)
-	    sendValue ("M priority_change", master->getPriorityClient (), 0);
+	    {
+	      asprintf (&msg, "M priority_change %i %i",
+			master->getPriorityClient (), 0);
+	      send (msg);
+	      free (msg);
+	    }
 
 	  asprintf (&msg, "device %i %s %s %i %i",
 		    master->getPriorityClient (), reg_device, hostname, port,
 		    device_type);
 	  ret = send (msg);
 	  free (msg);
-	  sendValue ("registered_as", getCentraldId ());
+	  sendAValue ("registered_as", getCentraldId ());
 	  master->connAdded (this);
 	  sendInfo ();
 	  return ret;

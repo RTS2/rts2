@@ -199,8 +199,8 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
     }
   else
     {
-      conn->send ("current -1");
-      conn->send ("obsid -1");
+      conn->sendValue ("current", -1);
+      conn->sendValue ("obsid", -1);
     }
   if (nextTarget)
     {
@@ -208,7 +208,7 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
     }
   else
     {
-      conn->send ("next -1");
+      conn->sendValue ("next", -1);
     }
   conn->sendValue ("script_count", scriptCount);
   return 0;
@@ -235,13 +235,31 @@ Rts2Executor::setNext (int nextId)
 void
 Rts2Executor::doSwitch ()
 {
+  int ret;
+  int nextId;
   if (nextTarget)
     {
       // go to post-process
       if (currentTarget)
-	queTarget (currentTarget);
-      currentTarget = nextTarget;
-      nextTarget = NULL;
+	{
+	  if (nextTarget)
+	    {
+	      nextId = nextTarget->getTargetID ();
+	    }
+	  else
+	    {
+	      nextId = -1;
+	    }
+	  ret = currentTarget->endObservation (nextId);
+	  if (ret != 1 || nextId != currentTarget->getTargetID ())
+	    // don't que only in case nextTarget and currentTarget are
+	    // same and endObservation returns 1
+	    {
+	      queTarget (currentTarget);
+	      currentTarget = nextTarget;
+	      nextTarget = NULL;
+	    }
+	}
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 }
@@ -279,7 +297,6 @@ void
 Rts2Executor::queTarget (Target * in_target)
 {
   int ret;
-  in_target->endObservation ();
   ret = in_target->postprocess ();
   if (!ret)
     targetsQue.push_back (in_target);

@@ -83,6 +83,7 @@ public:
   virtual int init ();
   int authorize (Rts2DevConn * conn);
   void setHavePriority (int in_have_priority);
+  int deleteConnection (Rts2Conn * conn);
 };
 
 class Rts2DevConnData:public Rts2Conn
@@ -181,6 +182,7 @@ public:
   };
   virtual int init ();
   virtual int idle ();
+  virtual int deleteConnection (Rts2Conn * conn);
   int authorize (Rts2DevConn * conn);
   int sendStatusInfo (Rts2DevConn * conn);
   int sendMaster (char *msg)

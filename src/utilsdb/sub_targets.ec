@@ -39,7 +39,6 @@ Target (in_tar_id, in_obs)
   position.dec = d_dec;
   tar_priority = d_tar_priority;
   tar_bonus = d_tar_bonus;
-  bonus = tar_priority + tar_bonus;
 }
 
 int
@@ -59,6 +58,47 @@ ConstTarget::getRST (struct ln_rst_time *rst, double JD)
   if (ret)
     return ret;
   return ln_get_object_next_rst (JD, observer, &pos, rst);
+}
+
+int
+ConstTarget::selectedAsGood ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  bool d_tar_enabled;
+  int d_tar_id = target_id;
+  float d_tar_priority;
+  float d_tar_bonus;
+  double d_tar_ra;
+  double d_tar_dec;
+  EXEC SQL END DECLARE SECTION;
+  // check if we are still enabled..
+  EXEC SQL
+  SELECT
+    tar_enabled,
+    tar_priority,
+    tar_bonus,
+    tar_ra,
+    tar_dec
+  INTO
+    :d_tar_enabled,
+    :d_tar_priority,
+    :d_tar_bonus,
+    :d_tar_ra,
+    :d_tar_dec
+  WHERE
+    tar_id = :d_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("Target::selectedAsGood");
+    return -1;
+  }
+  tar_priority = d_tar_priority;
+  tar_bonus = d_tar_bonus;
+  position.ra = d_tar_ra;
+  position.dec = d_tar_dec;
+  if (d_tar_enabled && tar_priority + tar_bonus > 0)
+    return 0;
+  return -1;
 }
 
 // EllTarget - good for commets and so on
@@ -510,6 +550,8 @@ TargetSwiftFOV::findPointing ()
       swiftFovCenter.ra = testEqu.ra;
       swiftFovCenter.dec = testEqu.dec;
       swiftId = d_swift_id;
+      swiftTimeStart = d_swift_time;
+      swiftTimeEnd = d_swift_time + (int) d_swift_obstime;
       break;
     }
   }
@@ -561,13 +603,67 @@ TargetSwiftFOV::startObservation (struct ln_equ_posn *position)
 }
 
 int
+TargetSwiftFOV::considerForObserving (ObjectCheck * checker, double JD)
+{
+  // find pointing
+  int ret;
+  struct ln_equ_posn curr_position;
+  double gst = ln_get_mean_sidereal_time (JD);
+
+  findPointing ();
+  if (swiftId < 0)
+  {
+    // no pointing..expect that after 30 minutes, it will be better,
+    // as we can get new pointing from GCN
+    changePriority (-100, JD + 1/1440.0/2.0);
+    return -1;
+  }
+
+  ret = getPosition (&curr_position, JD);
+  if (ret)
+  {
+    changePriority (-100, JD + 1/1440.0/2.0);
+    return -1;
+  }
+
+  ret = checker->is_good (gst, curr_position.ra, curr_position.dec);
+  
+  if (ret)
+  {
+    time_t nextObs;
+    time (&nextObs);
+    if (nextObs > swiftTimeEnd) // we found pointing that already
+    				  // happens..hope that after 2
+				  // minutes, we will get better
+				  // results
+    {
+      nextObs += 2 * 60;
+    }
+    else
+    {
+      nextObs = swiftTimeEnd;
+    }
+    changePriority (-50, &nextObs);
+    return -1;
+  }
+
+  return selectedAsGood ();
+}
+
+int
 TargetSwiftFOV::beforeMove ()
 {
   int oldSwiftId = swiftId;
   // are we still the best swiftId on planet?
   findPointing ();
   if (oldSwiftId != swiftId)
-    endObservation ();  // startObservation will be called after move suceeded and will write new observation..
+    endObservation (-1);  // startObservation will be called after move suceeded and will write new observation..
+}
+
+float
+TargetSwiftFOV::getBonus ()
+{
+
 }
 
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)

@@ -567,7 +567,8 @@ Rts2Client (argc, argv)
 
 Rts2xfocus::~Rts2xfocus (void)
 {
-  XCloseDisplay (display);
+  if (display)
+    XCloseDisplay (display);
 }
 
 void
@@ -700,7 +701,6 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
 int
 Rts2xfocus::run ()
 {
-  // find camera names..
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 137"));
   return Rts2Client::run ();
 }

@@ -82,6 +82,23 @@ public:
 
   int setMasterStandby ();
   virtual int changeMasterState (int new_state);
+
+  void setTemperatur (float in_temp)
+  {
+    temperature = in_temp;
+  }
+  void setHumidity (float in_humidity)
+  {
+    humidity = in_humidity;
+  }
+  void setRain (int in_rain)
+  {
+    rain = in_rain;
+  }
+  void setSwState (int in_sw_state)
+  {
+    sw_state = in_sw_state;
+  }
 };
 
 class Rts2DevConnDome:public Rts2DevConn

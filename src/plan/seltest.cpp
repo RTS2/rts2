@@ -17,6 +17,7 @@ main (int argc, char **argv)
   if (ret)
     return ret;
   next_tar = selector->selectNextNight ();
+  next_tar = selector->selectNextNight ();
   std::cout << "Next target:" << next_tar << std::endl;
   delete selector;
 }

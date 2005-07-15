@@ -64,7 +64,7 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
   if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
     return -3;
   value = new_value;
-  return -1;
+  return 0;
 }
 
 Rts2ValueTime::Rts2ValueTime (char *in_val_name):Rts2Value (in_val_name)
@@ -88,7 +88,7 @@ Rts2ValueTime::setValue (Rts2Conn * connection)
   if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
     return -3;
   value = new_value;
-  return -1;
+  return 0;
 }
 
 Rts2ValueDouble::Rts2ValueDouble (char *in_val_name):Rts2Value (in_val_name)
@@ -110,5 +110,5 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
   if (connection->paramNextDouble (&new_value) || !connection->paramEnd ())
     return -3;
   value = new_value;
-  return -1;
+  return 0;
 }

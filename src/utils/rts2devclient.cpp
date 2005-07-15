@@ -68,15 +68,21 @@ Rts2DevClient::getValueInteger (char *value_name)
 int
 Rts2DevClient::command ()
 {
-  std::vector < Rts2Value * >::iterator val_iter;
-  for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
+  if (connection->isCommand ("V"))
     {
-      Rts2Value *value;
-      value = (*val_iter);
-      if (connection->isCommand (value->getName ()))
-	return value->setValue (connection);
+      char *name;
+      if (connection->paramNextString (&name))
+	return -1;
+      std::vector < Rts2Value * >::iterator val_iter;
+      for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
+	{
+	  Rts2Value *value;
+	  value = (*val_iter);
+	  if (!strcmp (value->getName (), name))
+	    return value->setValue (connection);
+	}
     }
-  return -1;
+  return -2;
 }
 
 const char *

@@ -54,14 +54,13 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   obs_id = -1;
   img_id = 0;
   target_id = in_tar_id;
-  bonus = -1;
 
   startCalledNum = 0;
 }
 
 Target::~Target (void)
 {
-  endObservation ();
+  endObservation (-1);
 }
 
 int
@@ -128,11 +127,13 @@ Target::startObservation (struct ln_equ_posn *position)
 }
 
 int
-Target::endObservation ()
+Target::endObservation (int in_next_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id = obs_id;
   EXEC SQL END DECLARE SECTION;
+  if (in_next_id == getTargetID ())
+    return 1;
   if (obs_id > 0)
   {
     EXEC SQL
@@ -317,6 +318,31 @@ Target::postprocess ()
 
 }
 
+int
+Target::selectedAsGood ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  bool d_tar_enabled;
+  int d_tar_id = target_id;
+  EXEC SQL END DECLARE SECTION;
+  // check if we are still enabled..
+  EXEC SQL
+  SELECT
+    tar_enabled
+  INTO
+    :d_tar_enabled
+  WHERE
+    tar_id = :d_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("Target::selectedAsGood");
+    return -1;
+  }
+  if (d_tar_enabled)
+    return 0;
+  return -1;
+}
+
 /****
  * 
  *   Return -1 if target is not suitable for observing,
@@ -360,7 +386,7 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
     return -1;
   }
   // target was selected for observation
-  return 0;
+  return selectedAsGood (); 
 }
 
 int
@@ -388,14 +414,13 @@ Target::dropBonus ()
 }
 
 int
-Target::changePriority (int pri_change, double validJD)
+Target::changePriority (int pri_change, time_t *time_ch)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int db_tar_id = target_id;
   int db_priority_change = pri_change;
-  long int db_next_t;
+  long int db_next_t = (long int) *time_ch;
   EXEC SQL END DECLARE SECTION;
-  ln_get_timet_from_julian (validJD, &db_next_t);
   EXEC SQL UPDATE 
     targets
   SET
@@ -411,6 +436,14 @@ Target::changePriority (int pri_change, double validJD)
   }
   EXEC SQL COMMIT;
   return 0;
+}
+
+int
+Target::changePriority (int pri_change, double validJD)
+{
+  time_t next;
+  ln_get_timet_from_julian (validJD, &next);
+  return changePriority (pri_change, &next);
 }
 
 int

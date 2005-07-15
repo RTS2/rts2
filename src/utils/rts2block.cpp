@@ -352,8 +352,8 @@ Rts2Conn::sendPriorityInfo (int number)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "I status %i priority", number);
-  ret = sendValue (msg, havePriority ());
+  asprintf (&msg, "I status %i priority %i", number, havePriority ());
+  ret = send (msg);
   free (msg);
   return ret;
 }
@@ -460,8 +460,8 @@ Rts2Conn::command ()
     {
       int ret;
       ret = otherDevice->command ();
-      if (ret == -1)
-	return ret;
+      if (ret == 0)
+	return -1;
     }
   sendCommandEnd (-4, "Unknow command");
   return -4;
@@ -527,6 +527,7 @@ Rts2Conn::commandReturn ()
     case RTS2_COMMAND_REQUE:
       if (runningCommand)
 	runningCommand->send ();
+      break;
     case -1:
       delete runningCommand;
       sendNextCommand ();
@@ -587,7 +588,7 @@ Rts2Conn::sendValue (char *name, int value)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %i", name, value);
+  asprintf (&msg, "V %s %i", name, value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -599,7 +600,7 @@ Rts2Conn::sendValue (char *name, int val1, int val2)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %i %i", name, val1, val2);
+  asprintf (&msg, "V %s %i %i", name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
@@ -611,7 +612,7 @@ Rts2Conn::sendValue (char *name, int val1, double val2)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %i %f", name, val1, val2);
+  asprintf (&msg, "V %s %i %f", name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
@@ -623,7 +624,7 @@ Rts2Conn::sendValue (char *name, char *value)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %s", name, value);
+  asprintf (&msg, "V %s %s", name, value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -635,7 +636,7 @@ Rts2Conn::sendValue (char *name, double value)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %f", name, value);
+  asprintf (&msg, "V %s %f", name, value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -647,7 +648,7 @@ Rts2Conn::sendValue (char *name, char *val1, int val2)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %s %i", name, val1, val2);
+  asprintf (&msg, "V %s %s %i", name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
@@ -660,8 +661,8 @@ Rts2Conn::sendValue (char *name, int val1, int val2, double val3, double val4,
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %i %i %f %f %f %f", name, val1, val2, val3, val4, val5,
-	    val6);
+  asprintf (&msg, "V %s %i %i %f %f %f %f", name, val1, val2, val3, val4,
+	    val5, val6);
   ret = send (msg);
   free (msg);
   return ret;
@@ -673,7 +674,7 @@ Rts2Conn::sendValueTime (char *name, time_t * value)
   char *msg;
   int ret;
 
-  asprintf (&msg, "%s %i", name, *value);
+  asprintf (&msg, "V %s %i", name, *value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -765,6 +766,11 @@ Rts2Conn::paramNextDouble (double *num)
   char *num_end;
   if (paramNextString (&str_num))
     return -1;
+  if (!strcmp (str_num, "nan"))
+    {
+      *num = nan ("f");
+      return 0;
+    }
   *num = strtod (str_num, &num_end);
   if (*num_end)
     return -1;

@@ -90,8 +90,6 @@ private:
   int startCalledNum;		// how many times startObservation was called - good to know for targets
   // which changes behaviour based on how many times we called them before
 protected:
-  float bonus;			// tar_priority + tar_bonus
-
   int target_id;
   struct ln_lnlat_posn *observer;
 
@@ -102,6 +100,7 @@ protected:
   void logMsg (const char *message, double num);
   void logMsg (const char *message, const char *val);
   void logMsgDb (const char *message);
+  virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
 public:
     Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ Target (void);
@@ -207,20 +206,24 @@ public:
   virtual int startObservation (struct ln_equ_posn *position);
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
-  virtual int endObservation ();
+  virtual int endObservation (int in_next_id);
+  // similar to startObservation - return 0 if observation ends, 1 if
+  // it doesn't ends (ussually in case when in_next_id == target_id),
+  // -1 on errror
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
   virtual int acquire ();
   virtual int observe ();
   virtual int postprocess ();
   // scheduler functions
-  virtual int considerForObserving (ObjectCheck * checker, double lst);	// return 0, when target can be observed, otherwise modify tar_bonus..
+  virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
   virtual float getBonus ()
   {
-    return bonus;
+    return -1;
   }
-  virtual int changePriority (int pri_change, double validJD);
+  virtual int changePriority (int pri_change, time_t * time_ch);
+  int changePriority (int pri_change, double validJD);
 
   virtual int getNextImgId ()
   {
@@ -248,10 +251,16 @@ private:
 protected:
   float tar_priority;
   float tar_bonus;
+
+  virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
 public:
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
+  virtual float getBonus ()
+  {
+    return tar_priority + tar_bonus;
+  }
 };
 
 class EllTarget:public Target
@@ -329,12 +338,16 @@ class TargetSwiftFOV:public Target
 private:
   int swiftId;
   struct ln_equ_posn swiftFovCenter;
+  time_t swiftTimeStart;
+  time_t swiftTimeEnd;
 public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
   int findPointing ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startObservation (struct ln_equ_posn *position);
+  virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
+  virtual float getBonus ();
 };
 
 class TargetGps:public ConstTarget

@@ -50,6 +50,8 @@ Rts2DevConn::commandAuthorized ()
       CHECK_PRIORITY;
       return master->killAll ();
     }
+  // pseudo-command; will not be answered with ok ect..
+  // as it can occur inside command block
   else if (isCommand ("this_device"))
     {
       char *deviceName;
@@ -284,8 +286,11 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
     return Rts2Conn::setConnState (new_conn_state);
   if (isConnState (CONN_CONNECTED))
     {
-      sendValue ("this_device", master->getDeviceName (),
-		 master->getDeviceType ());
+      char *msg;
+      asprintf (&msg, "this_device %s %i", master->getDeviceName (),
+		master->getDeviceType ());
+      send (msg);
+      free (msg);
       Rts2Conn::setConnState (CONN_AUTH_OK);
       master->sendStatusInfo (this);
       master->baseInfo (this);
@@ -366,35 +371,49 @@ Rts2DevConnMaster::init ()
 int
 Rts2DevConnMaster::command ()
 {
-  if (isCommand ("authorization_ok"))
+  if (isCommand ("A"))
     {
-      if (auth_conn)
+      char *type;
+      if (paramNextString (&type))
+	return -1;
+      if (!strcmp ("authorization_ok", type))
 	{
-	  int auth_id;
-	  if (paramNextInteger (&auth_id))
-	    return -1;
-	  if (auth_conn->getCentraldId () != auth_id)
-	    return -1;
-	  auth_conn->authorizationOK ();
-	  auth_conn = NULL;
+	  if (auth_conn)
+	    {
+	      int auth_id;
+	      if (paramNextInteger (&auth_id))
+		return -1;
+	      if (auth_conn->getCentraldId () != auth_id)
+		return -1;
+	      auth_conn->authorizationOK ();
+	      auth_conn = NULL;
+	      return -1;
+	    }
 	  return -1;
 	}
-      return 0;
-    }
-  else if (isCommand ("authorization_failed"))
-    {
-      if (auth_conn)
+      else if (!strcmp ("authorization_failed", type))
 	{
-	  int auth_id;
-	  if (paramNextInteger (&auth_id))
-	    return -1;
-	  if (auth_conn->getCentraldId () != auth_id)
-	    return -1;
-	  auth_conn->authorizationFailed ();
-	  auth_conn = NULL;
+	  if (auth_conn)
+	    {
+	      int auth_id;
+	      if (paramNextInteger (&auth_id))
+		return -1;
+	      if (auth_conn->getCentraldId () != auth_id)
+		return -1;
+	      auth_conn->authorizationFailed ();
+	      auth_conn = NULL;
+	      return -1;
+	    }
 	  return -1;
 	}
-      return 0;
+      if (!strcmp ("registered_as", type))
+	{
+	  int clientId;
+	  if (paramNextInteger (&clientId) || !paramEnd ())
+	    return -2;
+	  setCentraldId (clientId);
+	  return -1;
+	}
     }
   if (isCommand ("authorization_key"))
     {
@@ -409,14 +428,7 @@ Rts2DevConnMaster::command ()
 	conn->setKey (p_key);
       return -1;
     }
-  if (isCommand ("registered_as"))
-    {
-      int clientId;
-      if (paramNextInteger (&clientId) || !paramEnd ())
-	return -2;
-      setCentraldId (clientId);
-      return -1;
-    }
+
   return Rts2Conn::command ();
 }
 
@@ -451,7 +463,7 @@ Rts2DevConnMaster::informations ()
   if (paramNextString (&name) || paramNextInteger (&status_num)
       || paramNextString (&state_name) || paramNextInteger (&state_value)
       || !paramEnd ())
-    return 0;
+    return -1;
   return master->setMasterState (state_value);
 }
 
@@ -484,6 +496,14 @@ Rts2DevConnMaster::authorize (Rts2DevConn * conn)
   ret = send (msg);
   free (msg);
   return ret;
+}
+
+int
+Rts2DevConnMaster::deleteConnection (Rts2Conn * conn)
+{
+  if (conn == auth_conn)
+    auth_conn = NULL;
+  return 0;
 }
 
 int
@@ -597,8 +617,8 @@ Rts2State::sendInfo (Rts2Conn * conn, int state_num)
 {
   int ret;
   char *msg;
-  asprintf (&msg, "I status %i %s", state_num, state_name);
-  ret = conn->sendValue (msg, state);
+  asprintf (&msg, "I status %i %s %i", state_num, state_name, state);
+  ret = conn->send (msg);
   free (msg);
   return ret;
 }
@@ -812,6 +832,13 @@ Rts2Device::idle ()
 }
 
 int
+Rts2Device::deleteConnection (Rts2Conn * conn)
+{
+  conn_master->deleteConnection (conn);
+  return Rts2Block::deleteConnection (conn);
+}
+
+int
 Rts2Device::authorize (Rts2DevConn * conn)
 {
   return conn_master->authorize (conn);
@@ -822,9 +849,12 @@ Rts2Device::sendStatusInfo (Rts2DevConn * conn)
 {
   int i;
   int ret;
+  char *msg;
 
+  asprintf (&msg, "I status_num %i", statesSize + 1);
   // last state holds priority info
-  ret = conn->sendValue ("I status_num", statesSize + 1);
+  ret = conn->send (msg);
+  free (msg);
 
   if (ret)
     return ret;
