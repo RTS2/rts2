@@ -711,7 +711,6 @@ Rts2Conn::isConnState (conn_state_t in_conn_state)
   return (conn_state == in_conn_state);
 }
 
-
 int
 Rts2Conn::paramEnd ()
 {

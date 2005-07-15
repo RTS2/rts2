@@ -155,13 +155,10 @@ Rts2Selector::selectNext ()
       return selectDarks ();
       break;
     case SERVERD_DAWN:
-      return selectFlats ();
-      break;
-    case SERVERD_MORNING:
       return selectDarks ();
       break;
   }
-  return TARGET_FLAT; // we don't have any target to take observation..
+  return -1; // we don't have any target to take observation..
 }
 
 void
@@ -324,6 +321,5 @@ Rts2Selector::selectDarks ()
 int
 Rts2Selector::changeMasterState (int new_state)
 {
-  int ret;
   return updateNext ();
 }

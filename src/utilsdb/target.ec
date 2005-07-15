@@ -331,6 +331,8 @@ Target::selectedAsGood ()
     tar_enabled
   INTO
     :d_tar_enabled
+  FROM
+    targets
   WHERE
     tar_id = :d_tar_id;
   if (sqlca.sqlcode)

@@ -51,8 +51,9 @@ int
 Rts2TargetInfo::printTargetInfo ()
 {
   struct ln_hms hms;
-  struct ln_dms dms;
+  struct ln_dms dms, dms2;
   struct ln_equ_posn pos;
+  struct ln_hrz_posn hrz;
   double ha;
   time_t now, last;
   std::cout << "======================" << std::endl;
@@ -75,7 +76,15 @@ Rts2TargetInfo::printTargetInfo ()
   ln_deg_to_hms (ha * 15.0, &hms);
   std::cout << "Hour angle " << hms.hours << ":" << hms.minutes << ":" << hms.
     seconds << " (" << ha << ")" << std::endl;
+  target->getAltAz (&hrz);
+  ln_deg_to_dms (hrz.alt, &dms);
+  ln_deg_to_dms (hrz.az, &dms2);
+  std::cout << "Alt: " << dms.degrees << ":" << dms.minutes << ":"
+    << dms.seconds << " (" << hrz.alt << ") Azimut: "
+    << dms2.degrees << ":" << dms2.minutes << ":" << dms2.seconds
+    << " (" << hrz.az << ")" << std::endl;
   time (&now);
+  std::cout << "Zenit distance " << target->getAzDistance () << std::endl;
   last = now - 86400;
   std::cout << "Observations in last few hours: " << target->getNumObs (&last,
 									&now)

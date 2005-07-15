@@ -340,6 +340,7 @@ private:
   struct ln_equ_posn swiftFovCenter;
   time_t swiftTimeStart;
   time_t swiftTimeEnd;
+  double swiftOnBonus;
 public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
   int findPointing ();		// find Swift pointing for observation

@@ -284,7 +284,7 @@ Rts2DevTelescopeGemini::tel_write_read (char *buf, int wcount, char *rbuf,
 {
   int ret;
   ret = tel_write_read_no_reset (buf, wcount, rbuf, rcount);
-  if (ret <= 0)
+  if (ret < 0)
     {
       // try rebooting
       tel_gemini_reset ();
@@ -732,7 +732,6 @@ Rts2DevTelescopeGemini::tel_write_ra (double ra)
   dtoints (ra, &h, &m, &s);
   if (snprintf (command, 14, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
     return -1;
-  syslog (LOG_INFO, "command: %s", command);
   return tel_rep_write (command);
 }
 
@@ -868,7 +867,7 @@ Rts2DevTelescopeGemini::init ()
 	((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
       tel_termios.c_lflag = 0;
       tel_termios.c_cc[VMIN] = 0;
-      tel_termios.c_cc[VTIME] = 15;
+      tel_termios.c_cc[VTIME] = 40;
 
       if (tcsetattr (tel_desc, TCSANOW, &tel_termios) < 0)
 	return -1;

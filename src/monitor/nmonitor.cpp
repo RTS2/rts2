@@ -276,8 +276,8 @@ Rts2NMDome::print (WINDOW * wnd)
 {
   int dome = getValueInteger ("dome");
   mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueChar ("temperature"));
-  mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueChar ("humidity"));
+  mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueDouble ("temperature"));
+  mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueDouble ("humidity"));
   mvwprintw (wnd, 4, 1, "Pow_tel: %i", getValueInteger ("power_telescope"));
   mvwprintw (wnd, 5, 1, "Pow_cam: %i", getValueInteger ("power_cameras"));
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')

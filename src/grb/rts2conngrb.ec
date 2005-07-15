@@ -62,7 +62,7 @@ Rts2ConnGrb::pr_integral_point ()
   double dec;
   time_t t;
   ra = lbuf[14]/10000.0;
-  dec = lbuf[14]/10000.0;
+  dec = lbuf[15]/10000.0;
   getTimeTfromTJD (lbuf[5], lbuf[6]/100.0, &t);
   return addIntegralPoint (ra, dec, &t);
 }

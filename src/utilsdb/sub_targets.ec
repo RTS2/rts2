@@ -85,6 +85,8 @@ ConstTarget::selectedAsGood ()
     :d_tar_bonus,
     :d_tar_ra,
     :d_tar_dec
+  FROM
+    targets
   WHERE
     tar_id = :d_tar_id;
   if (sqlca.sqlcode)
@@ -482,6 +484,8 @@ TargetGRB::getBonus ()
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
   int ret;
+  swiftOnBonus = 0;
+  target_id = TARGET_SWIFT_FOV;
   ret = findPointing ();
   if (ret)
   {
@@ -611,6 +615,7 @@ TargetSwiftFOV::considerForObserving (ObjectCheck * checker, double JD)
   double gst = ln_get_mean_sidereal_time (JD);
 
   findPointing ();
+
   if (swiftId < 0)
   {
     // no pointing..expect that after 30 minutes, it will be better,
@@ -628,7 +633,7 @@ TargetSwiftFOV::considerForObserving (ObjectCheck * checker, double JD)
 
   ret = checker->is_good (gst, curr_position.ra, curr_position.dec);
   
-  if (ret)
+  if (!ret)
   {
     time_t nextObs;
     time (&nextObs);
@@ -663,7 +668,30 @@ TargetSwiftFOV::beforeMove ()
 float
 TargetSwiftFOV::getBonus ()
 {
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_tar_id = target_id;
+  double d_bonus;
+  EXEC SQL END DECLARE SECTION;
 
+  EXEC SQL
+  SELECT
+    tar_priority
+  INTO
+    :d_bonus
+  FROM
+    targets
+  WHERE
+    tar_id = :d_tar_id; 
+  
+  swiftOnBonus = d_bonus;
+
+  time_t now;
+  time (&now);
+  if (now > swiftTimeStart - 120 && now < swiftTimeEnd + 120)
+    return swiftOnBonus;
+  if (now > swiftTimeStart - 300 && now < swiftTimeEnd + 300)
+    return swiftOnBonus / 2.0;
+  return 1;
 }
 
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)

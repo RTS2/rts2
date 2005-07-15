@@ -260,6 +260,11 @@ Rts2Executor::doSwitch ()
 	      nextTarget = NULL;
 	    }
 	}
+      else
+	{
+	  currentTarget = nextTarget;
+	  nextTarget = NULL;
+	}
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 }
@@ -287,6 +292,7 @@ Rts2Executor::switchTarget ()
 	  if (currentTarget)
 	    queTarget (currentTarget);
 	  currentTarget = NULL;
+	  delete nextTarget;
 	  nextTarget = NULL;
 	}
     }

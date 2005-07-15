@@ -32,6 +32,7 @@ Rts2DevClientCameraExec::~Rts2DevClientCameraExec (void)
 {
   if (script)
     delete script;
+  script = NULL;
 }
 
 void
@@ -49,6 +50,7 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
       if (script)
 	{
 	  delete script;
+	  script = NULL;
 	  if (!sendLastReadout)
 	    connection->
 	      queCommand (new Rts2CommandKillAll (connection->getMaster ()));
@@ -216,5 +218,5 @@ void
 Rts2DevClientTelescopeExec::moveFailed (int status)
 {
   Rts2DevClientTelescopeImage::moveFailed (status);
-  connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED));
+//  connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED));
 }
