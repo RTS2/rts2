@@ -322,9 +322,23 @@ Rts2Executor::doSwitch ()
 	    // don't que only in case nextTarget and currentTarget are
 	    // same and endObservation returns 1
 	    {
-	      queTarget (currentTarget);
-	      currentTarget = nextTarget;
-	      nextTarget = NULL;
+	      if (nextTarget)
+		{
+		  nextId = nextTarget->getTargetID ();
+		}
+	      else
+		{
+		  nextId = -1;
+		}
+	      ret = currentTarget->endObservation (nextId);
+	      if (ret != 1 || nextId != currentTarget->getTargetID ())
+		// don't que only in case nextTarget and currentTarget are
+		// same and endObservation returns 1
+		{
+		  queTarget (currentTarget);
+		  currentTarget = nextTarget;
+		  nextTarget = NULL;
+		}
 	    }
 	  else
 	    {
