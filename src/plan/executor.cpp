@@ -340,11 +340,11 @@ Rts2Executor::doSwitch ()
 		  nextTarget = NULL;
 		}
 	    }
-	  else
-	    {
-	      currentTarget = nextTarget;
-	      nextTarget = NULL;
-	    }
+	}
+      else
+	{
+	  currentTarget = nextTarget;
+	  nextTarget = NULL;
 	}
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
