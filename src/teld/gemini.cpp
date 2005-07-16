@@ -98,6 +98,7 @@ private:
   { TEL_OK, TEL_BLOCKED_RESET, TEL_BLOCKED_PARKING }
   telMotorState;
   int32_t lastMotorState;
+  time_t moveTimeout;
 
   int infoCount;
   int matchCount;
@@ -1082,6 +1083,8 @@ Rts2DevTelescopeGemini::tel_start_move ()
   if (retstr == '0')
     return 0;
   // otherwise read reply..
+  time (&moveTimeout);
+  moveTimeout += 120;
   tel_read_hash (buf, 53);
   if (retstr == '3')		// manual control..
     return 0;
@@ -1123,6 +1126,13 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 int
 Rts2DevTelescopeGemini::isMoving ()
 {
+  time_t now;
+  time (&now);
+  if (moveTimeout > now)
+    {
+      stopMove ();
+      return -2;
+    }
   if (telMotorState != TEL_OK)
     return USEC_SEC;
   if (lastMotorState & 8)

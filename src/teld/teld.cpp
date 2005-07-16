@@ -156,11 +156,6 @@ Rts2DevTelescope::checkMoves ()
 	  if (move_connection)
 	    {
 	      sendInfo (move_connection);
-	      if (ret)
-		move_connection->sendCommandEnd (DEVDEM_E_HW,
-						 "move finished with error");
-	      else
-		move_connection->sendCommandEnd (0, "OK");
 	    }
 	}
       else
@@ -326,7 +321,6 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       moveMark++;
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
       move_connection = conn;
-      ret = -1;			// we will issue OK/failed at the end of move operation
     }
   infoAll ();
   return ret;
