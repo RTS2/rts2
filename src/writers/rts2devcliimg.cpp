@@ -95,52 +95,48 @@ Rts2DevClientCameraImage::processImage (Rts2Image * image)
 }
 
 void
-Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
+Rts2DevClientCameraImage::exposureStarted ()
 {
-  if (state->isName ("img_chip"))
-    {
-      int stateVal;
-      stateVal =
-	state->value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA);
-      if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NODATA))
-	{
-	  queExposure ();
-	}
-      else if (stateVal == (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_DATA))
-	{
-	  isExposing = 0;
-	  connection->
-	    queCommand (new
-			Rts2Command (connection->getMaster (), "readout 0"));
-	}
-      else if (stateVal & CAM_EXPOSING)
-	{
-	  delete images;
-	  exposureTime = getValueDouble ("exposure");
-	  struct timeval expStart;
-	  gettimeofday (&expStart, NULL);
-	  images = createImage (&expStart);
-	  connection->
-	    postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, images));
-	  images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
-			    "CCD temperature");
-	  images->setValue ("EXPOSURE", exposureTime, "exposure time");
-	  images->setValue ("CAM_FAN", getValueInteger ("fan"),
-			    "fan on (1) / off (0)");
-	  images->setValue ("XPLATE", xplate,
-			    "xplate (scale in X axis; divide by binning (BIN_H)!)");
-	  images->setValue ("YPLATE", yplate,
-			    "yplate (scale in Y axis; divide by binning (BIN_V)!)");
-	  images->setValue ("CAM_XOA", xoa,
-			    "center in X axis (divide by binning (BIN_H)!)");
-	  images->setValue ("CAM_YOA", yoa,
-			    "center in Y axis (divide by binning (BIN_V)!)");
-	  images->setValue ("ROTANG", rotang, "camera rotation over X axis");
-	  images->setValue ("FLIP", flip,
-			    "camera flip (since most astrometry devices works as mirrors");
-	}
-    }
-  Rts2DevClientCamera::stateChanged (state);
+  if (images)
+    delete images;
+  exposureTime = getValueDouble ("exposure");
+  struct timeval expStart;
+  gettimeofday (&expStart, NULL);
+  images = createImage (&expStart);
+  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, images));
+  images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
+		    "CCD temperature");
+  images->setValue ("EXPOSURE", exposureTime, "exposure time");
+  images->setValue ("CAM_FAN", getValueInteger ("fan"),
+		    "fan on (1) / off (0)");
+  images->setValue ("XPLATE", xplate,
+		    "xplate (scale in X axis; divide by binning (BIN_H)!)");
+  images->setValue ("YPLATE", yplate,
+		    "yplate (scale in Y axis; divide by binning (BIN_V)!)");
+  images->setValue ("CAM_XOA", xoa,
+		    "center in X axis (divide by binning (BIN_H)!)");
+  images->setValue ("CAM_YOA", yoa,
+		    "center in Y axis (divide by binning (BIN_V)!)");
+  images->setValue ("ROTANG", rotang, "camera rotation over X axis");
+  images->setValue ("FLIP", flip,
+		    "camera flip (since most astrometry devices works as mirrors");
+  Rts2DevClientCamera::exposureStarted ();
+}
+
+void
+Rts2DevClientCameraImage::exposureEnd ()
+{
+  isExposing = 0;
+  connection->
+    queCommand (new Rts2Command (connection->getMaster (), "readout 0"));
+  Rts2DevClientCamera::exposureEnd ();
+}
+
+void
+Rts2DevClientCameraImage::readoutEnd ()
+{
+  queExposure ();
+  Rts2DevClientCamera::readoutEnd ();
 }
 
 Rts2DevClientTelescopeImage::Rts2DevClientTelescopeImage (Rts2Conn * in_connection):Rts2DevClientTelescope

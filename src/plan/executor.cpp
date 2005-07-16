@@ -58,16 +58,26 @@ public:
   }
   virtual int sendInfo (Rts2Conn * conn);
 
+  virtual int changeMasterState (int new_state);
+
   int setNext (int nextId);
+  int setNow (int nextId);
   void queTarget (Target * in_target);
 };
 
 int
 Rts2ConnExecutor::commandAuthorized ()
 {
-  if (isCommand ("next"))
+  int tar_id;
+  if (isCommand ("now"))
     {
-      int tar_id;
+      // change observation imediatelly - in case of burst etc..
+      if (paramNextInteger (&tar_id) || !paramEnd ())
+	return -2;
+      return master->setNow (tar_id);
+    }
+  else if (isCommand ("next"))
+    {
       if (paramNextInteger (&tar_id) || !paramEnd ())
 	return -2;
       return master->setNext (tar_id);
@@ -215,6 +225,28 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
 }
 
 int
+Rts2Executor::changeMasterState (int new_state)
+{
+  if (ignoreDay)
+    return Rts2DeviceDb::changeMasterState (new_state);
+
+  switch (new_state)
+    {
+    case SERVERD_EVENING:
+    case SERVERD_DAWN:
+    case SERVERD_NIGHT:
+    case SERVERD_DUSK:
+    case SERVERD_MORNING:
+      if (!currentTarget && nextTarget)
+	{
+	  switchTarget ();
+	}
+      break;
+    }
+  return Rts2DeviceDb::changeMasterState (new_state);
+}
+
+int
 Rts2Executor::setNext (int nextId)
 {
   if (nextTarget)
@@ -225,10 +257,45 @@ Rts2Executor::setNext (int nextId)
       delete nextTarget;
     }
   nextTarget = createTarget (nextId, observer);
+  if (!nextTarget)
+    return -1;
   if (!currentTarget)
     switchTarget ();
   else
     infoAll ();
+  return 0;
+}
+
+int
+Rts2Executor::setNow (int nextId)
+{
+  Target *newTarget;
+  newTarget = createTarget (nextId, observer);
+  if (!newTarget)
+    {
+      // error..
+      return -2;
+    }
+  if (currentTarget)
+    {
+      currentTarget->endObservation (-1);
+      queTarget (currentTarget);
+    }
+  currentTarget = newTarget;
+
+  queAll (new Rts2CommandKillAll (this));
+
+  // move operation will be qued after kill command, so we get correct
+  // behaviur..et least we should get it
+  postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+
+  // at this situation, we would like to get rid of nextTarget as
+  // well:(
+  if (nextTarget)
+    {
+      delete nextTarget;
+      nextTarget = NULL;
+    }
   return 0;
 }
 
@@ -259,11 +326,11 @@ Rts2Executor::doSwitch ()
 	      currentTarget = nextTarget;
 	      nextTarget = NULL;
 	    }
-	}
-      else
-	{
-	  currentTarget = nextTarget;
-	  nextTarget = NULL;
+	  else
+	    {
+	      currentTarget = nextTarget;
+	      nextTarget = NULL;
+	    }
 	}
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));

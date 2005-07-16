@@ -41,13 +41,15 @@ protected:
   int exposureCount;		// -1 means exposure forewer
 
   virtual void queExposure ();
+  virtual void exposureStarted ();
+  virtual void exposureEnd ();
+  virtual void readoutEnd ();
 public:
     Rts2DevClientCameraImage (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void processImage (Rts2Image * image);
-  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope

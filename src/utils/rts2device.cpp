@@ -678,8 +678,10 @@ Rts2Device::setStateNames (int in_states_size, char **states_names)
 
   int i;
   char *state_name = *states_names;
+#ifdef DEBUG_ALL
   syslog (LOG_DEBUG, "Rts2Device::setStateNames states: %i\n",
 	  in_states_size);
+#endif
   states = (Rts2State **) malloc (sizeof (Rts2State *) * in_states_size);
   for (i = 0; i < in_states_size; i++)
     {

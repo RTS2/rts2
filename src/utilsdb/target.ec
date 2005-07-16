@@ -468,7 +468,10 @@ Target::getNumObs (time_t *start_time, time_t *end_time)
   WHERE
       tar_id = :d_tar_id
     AND obs_start >= abstime (:d_start_time)
-    AND obs_end <= abstime (:d_end_time); 
+    AND (obs_end is null 
+      OR obs_end <= abstime (:d_end_time)
+    );
+  // runnign observations counts as well - hence obs_end is null
 
   return d_count;
 }

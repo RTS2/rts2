@@ -85,12 +85,44 @@ Rts2DevClient::command ()
   return -2;
 }
 
+void
+Rts2DevClient::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("priority"))
+    {
+      switch (state->value)
+	{
+	case 1:
+	  getPriority ();
+	  break;
+	case 0:
+	  lostPriority ();
+	  break;
+	}
+    }
+}
+
 const char *
 Rts2DevClient::getName ()
 {
   return connection->getName ();
 }
 
+void
+Rts2DevClient::getPriority ()
+{
+}
+
+void
+Rts2DevClient::lostPriority ()
+{
+}
+
+void
+Rts2DevClient::died ()
+{
+  lostPriority ();
+}
 
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
@@ -106,6 +138,43 @@ Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClien
   addValue (new Rts2ValueInteger ("filter"));
 
   addValue (new Rts2ValueDouble ("exposure"));
+}
+
+void
+Rts2DevClientCamera::exposureStarted ()
+{
+}
+
+void
+Rts2DevClientCamera::exposureEnd ()
+{
+}
+
+void
+Rts2DevClientCamera::readoutEnd ()
+{
+}
+
+void
+Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("img_chip"))
+    {
+      switch (state->
+	      value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA))
+	{
+	case CAM_EXPOSING:
+	  exposureStarted ();
+	  break;
+	case CAM_DATA:
+	  exposureEnd ();
+	  break;
+	case CAM_NODATA | CAM_NOTREADING | CAM_NOEXPOSURE:
+	  readoutEnd ();
+	  break;
+	}
+    }
+  Rts2DevClient::stateChanged (state);
 }
 
 Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2DevClient
@@ -142,6 +211,36 @@ double
 Rts2DevClientTelescope::getLocalSiderealDeg ()
 {
   return getValueDouble ("siderealtime") * 15.0;
+}
+
+void
+Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("telescope"))
+    {
+      switch (state->value & TEL_MASK_MOVING)
+	{
+	case TEL_MOVING:
+	case TEL_PARKING:
+	  moveStart ();
+	  break;
+	case TEL_OBSERVING:
+	case TEL_PARKED:
+	  moveEnd ();
+	  break;
+	}
+    }
+  Rts2DevClient::stateChanged (state);
+}
+
+void
+Rts2DevClientTelescope::moveStart ()
+{
+}
+
+void
+Rts2DevClientTelescope::moveEnd ()
+{
 }
 
 Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
@@ -190,6 +289,9 @@ Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * in_connection):Rts2DevCli
   (in_connection)
 {
   addValue (new Rts2ValueInteger ("que_size"));
+  addValue (new Rts2ValueInteger ("good_images"));
+  addValue (new Rts2ValueInteger ("trash_images"));
+  addValue (new Rts2ValueInteger ("morning_images"));
 }
 
 int

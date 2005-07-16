@@ -151,7 +151,7 @@ public:
   virtual int idle ();
   virtual int connectionsBreak ()	// returns !0 if we want to keep connection running
   {
-    return 0;
+    return endConnection ();
   }
   inline int isCommand (const char *cmd)
   {
@@ -285,6 +285,11 @@ public:
   Rts2Value *getValue (char *value_name);
 
   int getOtherType ();
+  // set to -1 if we don't need timeout checks..
+  void setConnTimeout (int new_connTimeout)
+  {
+    connectionTimeout = new_connTimeout;
+  }
 protected:
   virtual int command ();
   virtual int message ();

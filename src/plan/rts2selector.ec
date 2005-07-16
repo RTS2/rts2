@@ -12,37 +12,12 @@
 
 #include <libnova/libnova.h>
 
-class Rts2DevClientTelescopeSel: public Rts2DevClientTelescope
-{
-public:
-  Rts2DevClientTelescopeSel (Rts2Conn * in_connection);
-  virtual void stateChanged (Rts2ServerState * state);
-};
-
-Rts2DevClientTelescopeSel::Rts2DevClientTelescopeSel (Rts2Conn * in_connection) : Rts2DevClientTelescope (in_connection)
-{
-}
-
-void
-Rts2DevClientTelescopeSel::stateChanged (Rts2ServerState * state)
-{
-  if (state->isName ("telescope"))
-  {
-    if ((state->value & TEL_MASK_MOVING) == TEL_OBSERVING
-      || (state->value & TEL_MASK_MOVING) == TEL_PARKING)
-      {
-        connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
-      }
-  }
-  Rts2DevClientTelescope::stateChanged (state);
-}
-
-Rts2Selector::Rts2Selector (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, 5562,
-	    "SEL")
+Rts2Selector::Rts2Selector (struct ln_lnlat_posn *in_observer,char * horizontFile)
 {
   checker = NULL;
-  time (&last_selected);
-  next_id = -1;
+  observer = in_observer;
+
+  checker = new ObjectCheck (horizontFile);
 }
 
 Rts2Selector::~Rts2Selector (void)
@@ -60,90 +35,8 @@ Rts2Selector::~Rts2Selector (void)
 }
 
 int
-Rts2Selector::init ()
+Rts2Selector::selectNext (int masterState)
 {
-  int ret;
-  char horizontFile[250];
-
-  ret = Rts2DeviceDb::init ();
-  if (ret)
-    return ret;
-
-  Rts2Config *config;
-  config = Rts2Config::instance ();
-  observer = config->getObserver ();
-
-  // add read config..when we will get config
-  config->getString ("observatory", "horizont", horizontFile, 250);
-  checker = new ObjectCheck (horizontFile);
-  return 0;
-}
-
-int
-Rts2Selector::idle ()
-{
-  time_t now;
-  time (&now);
-  if (now > last_selected + 500)
-  {
-    updateNext ();
-    time (&last_selected);
-  }
-  return Rts2DeviceDb::idle ();
-}
-
-Rts2DevClient *
-Rts2Selector::createOtherType (Rts2Conn * conn, int other_device_type)
-{
-  Rts2DevClient *ret;
-  switch (other_device_type)
-  {
-    case DEVICE_TYPE_MOUNT:
-      return new Rts2DevClientTelescopeSel (conn);
-    case DEVICE_TYPE_EXECUTOR:
-      ret = Rts2DeviceDb::createOtherType (conn, other_device_type);
-      updateNext ();
-      if (next_id > 0)
-        conn->queCommand (new Rts2CommandExecNext (this, next_id));
-      return ret;
-    default:
-      return Rts2DeviceDb::createOtherType (conn, other_device_type);
-  }
-}
-
-void
-Rts2Selector::postEvent (Rts2Event *event)
-{
-  switch (event->getType ())
-  {
-    case EVENT_IMAGE_OK:
-      updateNext ();
-      break;
-  }
-  Rts2Device::postEvent (event);
-}
-
-int
-Rts2Selector::updateNext ()
-{
-  Rts2Conn * exec;
-  next_id = selectNext ();
-  if (next_id > 0)
-  {
-    exec = getOpenConnection ("EXEC");
-    if (exec)
-    {
-      exec->queCommand (new Rts2CommandExecNext (this, next_id));
-    }
-    return 0;
-  }
-  return -1;
-}
-
-int
-Rts2Selector::selectNext ()
-{
-  int masterState = getMasterState ();
   // take care of state - select to make darks when we are able to
   // make darks.
   switch (masterState)
@@ -316,10 +209,4 @@ int
 Rts2Selector::selectDarks ()
 {
   return TARGET_DARK;
-}
-
-int
-Rts2Selector::changeMasterState (int new_state)
-{
-  return updateNext ();
 }

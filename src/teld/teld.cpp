@@ -115,11 +115,6 @@ Rts2DevTelescope::checkMoves ()
 	  if (move_connection)
 	    {
 	      sendInfo (move_connection);
-	      if (ret)
-		move_connection->sendCommandEnd (DEVDEM_E_HW,
-						 "move finished with error");
-	      else
-		move_connection->sendCommandEnd (0, "OK");
 	    }
 	  move_connection = NULL;
 	}

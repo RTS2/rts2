@@ -138,28 +138,20 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
 }
 
 void
-Rts2DevClientCameraExec::stateChanged (Rts2ServerState * state)
+Rts2DevClientCameraExec::exposureEnd ()
 {
-  if (state->isName ("img_chip"))
+  if (!script || (script && script->isLastCommand ()))
     {
-      if ((state->value & (CAM_MASK_EXPOSE | CAM_MASK_DATA)) ==
-	  (CAM_NOEXPOSURE | CAM_DATA))
-	{
-	  if (!script || (script && script->isLastCommand ()))
-	    {
-	      postLastReadout ();
-	    }
-	}
-      if ((state->
-	   value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA)) ==
-	  (CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NODATA))
-	{
-	  nextCommand ();
-	  // we don't want stateChange in camera to react to that..
-	  return;
-	}
+      postLastReadout ();
     }
-  Rts2DevClientCameraImage::stateChanged (state);
+  Rts2DevClientCameraImage::exposureEnd ();
+}
+
+void
+Rts2DevClientCameraExec::readoutEnd ()
+{
+  nextCommand ();
+  // we don't want camera to react to that..
 }
 
 Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection):Rts2DevClientTelescopeImage
@@ -201,22 +193,15 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 }
 
 void
-Rts2DevClientTelescopeExec::stateChanged (Rts2ServerState * state)
+Rts2DevClientTelescopeExec::moveEnd ()
 {
-  if (state->isName ("telescope") && currentTarget)
-    {
-      if ((state->value & TEL_MASK_MOVING) == TEL_OBSERVING
-	  || (state->value & TEL_MASK_MOVING) == TEL_PARKING)
-	{
-	  connection->getMaster ()->postEvent (new Rts2Event (EVENT_OBSERVE));
-	}
-    }
-  Rts2DevClientTelescopeImage::stateChanged (state);
+  connection->getMaster ()->postEvent (new Rts2Event (EVENT_OBSERVE));
+  Rts2DevClientTelescopeImage::moveEnd ();
 }
 
 void
 Rts2DevClientTelescopeExec::moveFailed (int status)
 {
   Rts2DevClientTelescopeImage::moveFailed (status);
-//  connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED));
+  connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED));
 }

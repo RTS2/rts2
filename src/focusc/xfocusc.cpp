@@ -151,6 +151,9 @@ private:
   double average;
   struct imghdr *lastHeader;
 
+  virtual void getPriority ();
+  virtual void lostPriority ();
+
 public:
   Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
   virtual ~ Rts2xfocusCamera (void)
@@ -512,26 +515,25 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 }
 
 void
+Rts2xfocusCamera::getPriority ()
+{
+  if (exposureCount)
+    queExposure ();
+}
+
+void
+Rts2xfocusCamera::lostPriority ()
+{
+  std::cout << "Priority lost" << std::endl;
+  exposureCount = 0;
+}
+
+void
 Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
 {
-  Rts2DevClientCameraImage::stateChanged (state);
   std::cout << "State changed:" << state->getName () << " value:" << state->
     value << std::endl;
-  if (state->isName ("priority"))
-    {
-      if (state->value == 1)
-	{
-	  if (exposureCount)
-	    {
-	      queExposure ();
-	    }
-	}
-      else
-	{
-	  std::cout << "exposureCount = 0" << std::endl;
-	  exposureCount = 0;
-	}
-    }
+  Rts2DevClientCameraImage::stateChanged (state);
 }
 
 void

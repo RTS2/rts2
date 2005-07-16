@@ -27,6 +27,9 @@ protected:
   Rts2Conn * connection;
   enum
   { NOT_PROCESED, PROCESED } processedBaseInfo;
+  virtual void getPriority ();
+  virtual void lostPriority ();
+  virtual void died ();
 public:
     Rts2DevClient (Rts2Conn * in_connection);
   void addValue (Rts2Value * value);
@@ -43,9 +46,7 @@ public:
   {
   }
 
-  virtual void stateChanged (Rts2ServerState * state)
-  {
-  }
+  virtual void stateChanged (Rts2ServerState * state);
 
   const char *getName ();
 };
@@ -61,9 +62,13 @@ public:
 
 class Rts2DevClientCamera:public Rts2DevClient
 {
+protected:
+  virtual void exposureStarted ();
+  virtual void exposureEnd ();
+  virtual void readoutEnd ();
 public:
-  Rts2DevClientCamera (Rts2Conn * in_connection);
-
+    Rts2DevClientCamera (Rts2Conn * in_connection);
+  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientTelescope:public Rts2DevClient
@@ -73,12 +78,15 @@ protected:
   void getObs (struct ln_lnlat_posn *obs);
   double getLocalSiderealDeg ();
 
+  virtual void moveStart ();
+  virtual void moveEnd ();
 public:
     Rts2DevClientTelescope (Rts2Conn * in_connection);
   /*! gets calledn when move finished without success */
   virtual void moveFailed (int status)
   {
   }
+  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientDome:public Rts2DevClient

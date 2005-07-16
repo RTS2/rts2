@@ -109,13 +109,16 @@ Rts2Conn::postMaster (Rts2Event * event)
 int
 Rts2Conn::idle ()
 {
-  time_t now;
-  time (&now);
-  if (now > lastData + connectionTimeout
-      || now > lastGoodSend + connectionTimeout)
-    send ("T ready");
-  if (now > lastData + connectionTimeout * 2)
-    endConnection ();
+  if (connectionTimeout > 0)
+    {
+      time_t now;
+      time (&now);
+      if (now > lastData + connectionTimeout
+	  || now > lastGoodSend + connectionTimeout)
+	send ("T ready");
+      if (now > lastData + connectionTimeout * 2)
+	endConnection ();
+    }
 }
 
 int
@@ -241,8 +244,10 @@ Rts2Conn::processLine ()
     {
       ret = command ();
     }
+#ifdef DEBUG_ALL
   syslog (LOG_DEBUG, "Rts2Conn::processLine [%i] command: %s ret: %i",
 	  getCentraldId (), getCommand (), ret);
+#endif
   if (!ret)
     sendCommandEnd (0, "OK");
   else if (ret == -2)
@@ -270,8 +275,10 @@ Rts2Conn::receive (fd_set * set)
 	return connectionError ();
       buf_top[data_size] = '\0';
       successfullRead ();
+#ifdef DEBUG_ALL
       syslog (LOG_DEBUG, "Rts2Conn::receive reas: %s full_buf: %s size: %i",
 	      buf_top, buf, data_size);
+#endif
       // put old data size into account..
       data_size += buf_top - buf;
       buf_top = buf;
@@ -558,13 +565,16 @@ Rts2Conn::send (char *message)
 
   if (ret != len)
     {
-      syslog (LOG_ERR, "Rts2Conn::send [%i:%i] error %i sending '%s':%m",
-	      getCentraldId (), sock, ret, message);
+      syslog (LOG_ERR,
+	      "Rts2Conn::send [%i:%i] error %i state: %i sending '%s':%m",
+	      getCentraldId (), conn_state, sock, ret, message);
       connectionsBreak ();
       return -1;
     }
+#ifdef DEBUG_ALL
   syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (),
 	  sock, ret, message);
+#endif
   write (sock, "\r\n", 2);
   successfullSend ();
   return 0;
@@ -959,7 +969,9 @@ Rts2Block::addConnection (int in_sock)
     {
       if (!connections[i])
 	{
+#ifdef DEBUG_ALL
 	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
+#endif
 	  connections[i] = createConnection (in_sock, i);
 	  return 0;
 	}

@@ -19,6 +19,10 @@ private:
   Target *nextTarget;		// in case we get some target to que in..
   Rts2Script *script;
   void postLastReadout ();
+
+  virtual void exposureEnd ();
+  virtual void readoutEnd ();
+
 public:
     Rts2DevClientCameraExec (Rts2Conn * in_connection);
     virtual ~ Rts2DevClientCameraExec (void);
@@ -26,17 +30,17 @@ public:
   void nextCommand ();
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void processImage (Rts2Image * image);
-  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
 {
 private:
   Target * currentTarget;
+protected:
+  virtual void moveEnd ();
 public:
-  Rts2DevClientTelescopeExec (Rts2Conn * in_connection);
+    Rts2DevClientTelescopeExec (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
-  virtual void stateChanged (Rts2ServerState * state);
   virtual void moveFailed (int status);
 };
 
