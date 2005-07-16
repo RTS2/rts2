@@ -1,6 +1,8 @@
 #ifndef __RTS2_BLOCK__
 #define __RTS2_BLOCK__
 
+#define DEBUG_ALL
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -120,7 +122,7 @@ protected:
 
   virtual int connectionError ()
   {
-    setConnState (CONN_BROKEN);
+    setConnState (CONN_DELETE);
     if (sock >= 0)
       close (sock);
     sock = -1;
@@ -237,6 +239,10 @@ public:
   int endConnection ()
   {
     setConnState (CONN_DELETE);	// mark for deleting..
+    if (sock >= 0)
+      close (sock);
+    sock = -1;
+    return 0;
   }
 
   virtual int sendInfo (Rts2Conn * conn)
@@ -397,7 +403,6 @@ public:
   {
     return masterState;
   }
-  int connectionError (int in_sock);
   // status-mail related functions  
   int sendMail (char *subject, char *text);
   Rts2Address *findAddress (char *blockName);

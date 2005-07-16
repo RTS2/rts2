@@ -27,7 +27,7 @@ Rts2DevConn::connectionError ()
 {
   if (isConnState (CONN_AUTH_PENDING))
     master->authorize (NULL);	// cancel pendig authorization
-  return -1;
+  return Rts2Conn::connectionError ();
 }
 
 int
