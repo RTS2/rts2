@@ -34,6 +34,7 @@ private:
   int goodImages;
   int trashImages;
   int morningImages;
+  int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
 public:
     Rts2ImageProc (int argc, char **argv);
     virtual ~ Rts2ImageProc (void);
@@ -114,6 +115,8 @@ Rts2ImageProc::init ()
 
   Rts2Config *config;
   config = Rts2Config::instance ();
+
+  sendStop = 0;
 
   return ret;
 }
@@ -200,8 +203,16 @@ Rts2ImageProc::changeRunning (Rts2ConnImgProcess * newImage)
   int ret;
   if (runningImage)
     {
-      runningImage->stop ();
-      imagesQue.push_front (runningImage);
+      if (sendStop)
+	{
+	  runningImage->stop ();
+	  imagesQue.push_front (runningImage);
+	}
+      else
+	{
+	  imagesQue.push_front (newImage);
+	  return;
+	}
     }
   runningImage = newImage;
   ret = runningImage->run ();
