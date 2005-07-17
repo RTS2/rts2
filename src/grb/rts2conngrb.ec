@@ -360,6 +360,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   long int d_grb_update = (int) last_packet.tv_sec;
   int d_grb_update_usec = (int) last_packet.tv_usec;
   float d_grb_errorbox = grb_errorbox;
+  int d_grb_errorbox_ind;
   // used to find correct grb - based on type
   int d_grb_type_start;
   int d_grb_type_end;
@@ -369,6 +370,16 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   EXEC SQL END DECLARE SECTION;
 
   int ret = 0;
+
+  if (isnan (d_grb_errorbox))
+  {
+    d_grb_errorbox_ind = -1;
+    d_grb_errorbox = 0;
+  }
+  else
+  {
+    d_grb_errorbox_ind = 0;
+  }
 
   getGrbBound (grb_type, d_grb_type_start, d_grb_type_end);
 
@@ -400,7 +411,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       targets
     (
       tar_id,
-      tar_type,
+      type_id,
       tar_name,
       tar_ra,
       tar_dec,
@@ -451,7 +462,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       :d_grb_is_grb,
       abstime (:d_grb_date),
       abstime (:d_grb_update),
-      :d_grb_errorbox
+      :d_grb_errorbox :d_grb_errorbox_ind
     );
     if (sqlca.sqlcode)
     {
@@ -577,6 +588,7 @@ Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete
   do_hete_test = in_do_hete_test;
   time (&nextTime);
   nextTime += 60;
+  setConnTimeout (-1);
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
