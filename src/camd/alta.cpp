@@ -321,7 +321,7 @@ Rts2DevCameraAlta::camCoolMax ()
 {
   alta->write_CoolerEnable (true);
   alta->write_FanMode (Apn_FanMode_High);
-  alta->write_CoolerSetPoint (-100);
+  alta->write_CoolerSetPoint (-60);
   return 0;
 }
 
