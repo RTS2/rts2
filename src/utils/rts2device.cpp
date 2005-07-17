@@ -284,14 +284,15 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 {
   if (getType () != DEVICE_DEVICE)
     return Rts2Conn::setConnState (new_conn_state);
-  if (isConnState (CONN_CONNECTED))
+  if (isConnState (CONN_CONNECTED) && new_conn_state != CONN_DELETE
+      && new_conn_state != CONN_BROKEN)
     {
       char *msg;
+      Rts2Conn::setConnState (CONN_AUTH_OK);
       asprintf (&msg, "this_device %s %i", master->getDeviceName (),
 		master->getDeviceType ());
       send (msg);
       free (msg);
-      Rts2Conn::setConnState (CONN_AUTH_OK);
       master->sendStatusInfo (this);
       master->baseInfo (this);
       master->info (this);

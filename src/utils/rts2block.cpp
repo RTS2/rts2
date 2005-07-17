@@ -927,7 +927,7 @@ Rts2Block::init ()
   if (ret == -1)
     {
       syslog (LOG_ERR, "Rts2Block::init bind %m");
-      return -errno;
+      return -1;
     }
   ret = listen (sock, 1);
   if (ret)
