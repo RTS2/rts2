@@ -32,6 +32,7 @@ protected:
   int imgId;
   char *cameraName;
   char *mountName;
+  char *focName;
   char *imageName;
   enum
   { IMGTYPE_UNKNOW, IMGTYPE_DARK, IMGTYPE_FLAT, IMGTYPE_OBJECT, IMGTYPE_ZERO,
@@ -48,11 +49,11 @@ public:
     Rts2Image (char *in_filename);
     virtual ~ Rts2Image (void);
 
-  int toQue ();
-  int toAcquisition ();
-  int toArchive ();
-  int toDark ();
-  int toTrash ();
+  virtual int toQue ();
+  virtual int toAcquisition ();
+  virtual int toArchive ();
+  virtual int toDark ();
+  virtual int toTrash ();
 
   int renameImage (char *new_filename);
 
@@ -101,6 +102,13 @@ public:
   const char *getMountName ()
   {
     return mountName;
+  }
+
+  void setFocuserName (const char *in_focuserName);
+
+  const char *getFocuserName ()
+  {
+    return focName;
   }
 
   long getExposureSec ()

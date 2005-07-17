@@ -86,6 +86,19 @@ public:
     return 0;
   }
 
+  virtual int command ()
+  {
+    // for immediate updates of values..
+    int ret;
+    ret = Rts2ConnClient::command ();
+    if (!ret)
+      {
+	print ();
+	wrefresh (window);
+      }
+    return ret;
+  }
+
   virtual int setState (char *in_state_name, int in_value)
   {
     int ret;
@@ -496,6 +509,10 @@ public:
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
 
+  virtual int willConnect (Rts2Address * in_addr)
+  {
+    return 1;
+  }
   virtual int addAddress (Rts2Address * in_addr);
 
   int resize ()
@@ -768,16 +785,6 @@ Rts2NMonitor::addAddress (Rts2Address * in_addr)
 {
   int ret;
   ret = Rts2Client::addAddress (in_addr);
-  if (ret)
-    return ret;
-  // add that device to our list - create connection for it
-  Rts2Conn *conn;
-  conn = getOpenConnection (in_addr->getName ());
-  if (!conn)
-    {
-      conn = Rts2Client::createClientConnection (in_addr);
-      addConnection (conn);
-    }
   repaint ();
   return ret;
 }

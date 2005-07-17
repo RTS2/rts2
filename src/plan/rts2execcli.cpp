@@ -9,30 +9,19 @@
 #include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
 
-void
-Rts2DevClientCameraExec::postLastReadout ()
-{
-  if (!sendLastReadout)
-    {
-      connection->getMaster ()->
-	postEvent (new Rts2Event (EVENT_LAST_READOUT));
-      sendLastReadout = 1;
-    }
-}
-
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2DevClientCameraImage
   (in_connection)
 {
   currentTarget = NULL;
+  nextTarget = NULL;
   script = NULL;
-  sendLastReadout = -1;
+  blockMove = 0;
+  getObserveStart = 0;
 }
 
 Rts2DevClientCameraExec::~Rts2DevClientCameraExec (void)
 {
-  if (script)
-    delete script;
-  script = NULL;
+  deleteScript ();
 }
 
 void
@@ -41,33 +30,62 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_SET_TARGET:
-      currentTarget = (Target *) event->getArg ();
+      if (currentTarget)
+	{
+	  nextTarget = (Target *) event->getArg ();
+	}
+      else
+	{
+	  currentTarget = (Target *) event->getArg ();
+	  nextTarget = NULL;
+	}
+      break;
+    case EVENT_KILL_ALL:
+      // stop actual observation..
+      deleteScript ();
       break;
     case EVENT_OBSERVE:
-      char scriptBuf[MAX_COMMAND_LENGTH];
-      if (!currentTarget)
-	break;
-      if (script)
+      if (script)		// we are still observing..we will be called after last command finished
 	{
-	  delete script;
-	  script = NULL;
-	  if (!sendLastReadout)
-	    connection->
-	      queCommand (new Rts2CommandKillAll (connection->getMaster ()));
-	  postLastReadout ();
-	  // stop actual observation..
+	  getObserveStart = 1;
+	  break;
 	}
-      currentTarget->getScript (connection->getName (), scriptBuf);
-      script = new Rts2Script (scriptBuf, connection->getName ());
-      exposureCount = 1;
-      connection->getMaster ()->
-	postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
-      if (connection->getState (0) == 0)
-	nextCommand ();
-      // otherwise we post command after end of camera readout
+      startTarget ();
+      getObserveStart = 0;
+      break;
+    case EVENT_MOVE_QUESTION:
+      if (blockMove)
+	{
+	  connection->getMaster ()->
+	    postEvent (new Rts2Event (EVENT_DONT_MOVE));
+	}
       break;
     }
   Rts2DevClientCameraImage::postEvent (event);
+}
+
+void
+Rts2DevClientCameraExec::startTarget ()
+{
+  char scriptBuf[MAX_COMMAND_LENGTH];
+  // currentTarget should be nulled when script ends in
+  // deleteScript
+  if (!currentTarget && nextTarget)
+    {
+      currentTarget = nextTarget;
+      nextTarget = NULL;
+    }
+  if (!currentTarget)
+    return;
+  currentTarget->getScript (connection->getName (), scriptBuf);
+  script = new Rts2Script (scriptBuf, connection->getName ());
+  exposureCount = 1;
+  connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
+  if (connection->getState (0) == 0)
+    {
+      nextCommand ();
+    }
+  // otherwise we post command after end of camera readout
 }
 
 void
@@ -77,23 +95,40 @@ Rts2DevClientCameraExec::nextCommand ()
   char new_device[DEVICE_NAME_SIZE];
   int ret;
   if (!script)			// waiting for script..
-    return;
+    {
+      return;
+    }
   ret = script->nextCommand (connection->getMaster (), &nextComd, new_device);
   if (ret < 0)
     {
-      delete script;
-      script = NULL;
-      postLastReadout ();
-      connection->getMaster ()->
-	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
-      return;
+      deleteScript ();
+      // we don't get new command..delete us and look if there is new
+      // target..
+      if (!getObserveStart)
+	{
+	  return;
+	}
+      getObserveStart = 0;
+      startTarget ();
+      if (!script)
+	{
+	  return;
+	}
+      ret =
+	script->nextCommand (connection->getMaster (), &nextComd, new_device);
+      // we don't have any next command:(
+      if (ret < 0)
+	{
+	  deleteScript ();
+	  return;
+	}
     }
+  blockMove = 1;		// as we run a script..
   if (!strcmp (new_device, connection->getName ()))
     {
-      sendLastReadout = 0;
       connection->queCommand (nextComd);
     }
-  // else change control to other device...somehow
+  // else change control to other device...somehow (post event)
 }
 
 Rts2Image *
@@ -103,6 +138,8 @@ Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
     return new Rts2ImageDb (1, currentTarget->getTargetID (), this,
 			    currentTarget->getObsId (), expStart,
 			    currentTarget->getNextImgId ());
+  syslog (LOG_ERR,
+	  "Rts2DevClientCameraExec::createImage creating no-target image");
   return new Rts2Image ("img.fits", expStart);
 }
 
@@ -138,11 +175,24 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
 }
 
 void
+Rts2DevClientCameraExec::exposureStarted ()
+{
+  // we control observations..
+  if (script)
+    {
+      blockMove = 1;
+    }
+  Rts2DevClientCameraImage::exposureStarted ();
+}
+
+void
 Rts2DevClientCameraExec::exposureEnd ()
 {
   if (!script || (script && script->isLastCommand ()))
     {
-      postLastReadout ();
+      blockMove = 0;
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_LAST_READOUT));
     }
   Rts2DevClientCameraImage::exposureEnd ();
 }
@@ -154,10 +204,25 @@ Rts2DevClientCameraExec::readoutEnd ()
   // we don't want camera to react to that..
 }
 
+void
+Rts2DevClientCameraExec::deleteScript ()
+{
+  if (script)
+    {
+      delete script;
+      script = NULL;
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
+    }
+  currentTarget = NULL;
+  blockMove = 0;
+}
+
 Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection):Rts2DevClientTelescopeImage
   (in_connection)
 {
   currentTarget = NULL;
+  blockMove = 0;
 }
 
 void
@@ -181,11 +246,19 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	    }
 	  else
 	    {
+	      blockMove = 1;
 	      connection->
 		queCommand (new
 			    Rts2CommandMove (connection->getMaster (), this,
 					     coord.ra, coord.dec));
 	    }
+	}
+      break;
+    case EVENT_MOVE_QUESTION:
+      if (blockMove)
+	{
+	  connection->getMaster ()->
+	    postEvent (new Rts2Event (EVENT_DONT_MOVE));
 	}
       break;
     }
@@ -196,6 +269,7 @@ void
 Rts2DevClientTelescopeExec::moveEnd ()
 {
   connection->getMaster ()->postEvent (new Rts2Event (EVENT_OBSERVE));
+  blockMove = 0;
   Rts2DevClientTelescopeImage::moveEnd ();
 }
 
@@ -203,5 +277,6 @@ void
 Rts2DevClientTelescopeExec::moveFailed (int status)
 {
   Rts2DevClientTelescopeImage::moveFailed (status);
+  blockMove = 0;
   connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED));
 }

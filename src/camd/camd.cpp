@@ -498,6 +498,7 @@ Rts2DevCamera::baseInfo (Rts2Conn * conn)
   conn->sendValue ("serial", serialNumber);
   conn->sendValue ("chips", chipNum);
   conn->sendValue ("can_df", canDF);
+  conn->sendValue ("focuser", focuserDevice);
   return 0;
 }
 

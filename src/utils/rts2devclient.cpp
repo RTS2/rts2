@@ -136,6 +136,7 @@ Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClien
   addValue (new Rts2ValueInteger ("cooling_power"));
   addValue (new Rts2ValueInteger ("fan"));
   addValue (new Rts2ValueInteger ("filter"));
+  addValue (new Rts2ValueString ("focuser"));
 
   addValue (new Rts2ValueDouble ("exposure"));
 }
@@ -268,7 +269,8 @@ Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient
 Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("position"));
+  addValue (new Rts2ValueDouble ("temp"));
+  addValue (new Rts2ValueInteger ("pos"));
 }
 
 Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevClient

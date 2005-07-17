@@ -17,6 +17,10 @@ COPY epoch FROM stdin;
 1	'1-1-1970'	'1-1-2032'
 \.
 
+COPY medias FROM stdin;
+0	'/images'	t
+\.
+
 -- standart targets (tar_id < 100)
 
 COPY targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment, tar_enabled, tar_priority, tar_bonus, tar_bonus_time) FROM stdin;

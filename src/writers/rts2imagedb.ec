@@ -28,6 +28,7 @@ Rts2ImageDb::updateObjectDB ()
   double d_img_az;
   int d_epoch_id = epochId;
   int d_med_id = 0;
+  int d_proccess_bitfield = processBitfiedl;
   VARCHAR d_mount_name[8];
   VARCHAR d_camera_name[8];
   EXEC SQL END DECLARE SECTION;
@@ -59,7 +60,8 @@ Rts2ImageDb::updateObjectDB ()
     img_date,
     img_usec,
     epoch_id,
-    med_id
+    med_id,
+    process_bitfield
   )
   VALUES
   (
@@ -75,7 +77,8 @@ Rts2ImageDb::updateObjectDB ()
     abstime (:d_img_date),
     :d_img_usec,
     :d_epoch_id,
-    :d_med_id
+    :d_med_id,
+    :d_proccess_bitfield
   );
   // data found..do just update
   if (sqlca.sqlcode != 0)
@@ -90,7 +93,8 @@ Rts2ImageDb::updateObjectDB ()
       img_date = abstime (:d_img_date),
       img_usec = :d_img_usec,
       epoch_id = :d_epoch_id,
-      med_id   = :d_med_id
+      med_id   = :d_med_id,
+      process_bitfield = :d_proccess_bitfield
     WHERE
         img_id = :d_img_id
       AND obs_id = :d_obs_id;
@@ -234,7 +238,8 @@ Rts2ImageDb::updateAstrometry ()
   EXEC SQL UPDATE
     images
   SET
-    astrometry = :s_astrometry
+    astrometry = :s_astrometry,
+    process_bitfield = process_bitfield | ASTROMETRY_OK | ASTROMETRY_PROC
   WHERE
       obs_id = :d_obs_id
     AND img_id = :d_img_id;
@@ -251,15 +256,46 @@ Rts2ImageDb::Rts2ImageDb (int in_epoch_id, int in_targetId, Rts2DevClientCamera 
       	       int in_obsId, const struct timeval *exposureStart, int in_imgId) : 
   Rts2Image (in_epoch_id, in_targetId, camera, in_obsId, exposureStart, in_imgId)
 {
+  processBitfiedl = 0;
+  getValue ("PROC", processBitfiedl);
 }
 
 Rts2ImageDb::Rts2ImageDb (char *in_filename) : Rts2Image (in_filename)
 {
+  processBitfiedl = 0;
+  getValue ("PROC", processBitfiedl);
 }
 
 Rts2ImageDb::~Rts2ImageDb ()
 {
   updateDB ();
+}
+
+int
+Rts2ImageDb::toArchive ()
+{
+  int ret; 
+  ret = Rts2Image::toArchive ();
+  if (ret)
+    return ret;
+
+  processBitfiedl |= ASTROMETRY_OK | ASTROMETRY_PROC;
+
+  return 0;
+}
+
+int
+Rts2ImageDb::toTrash ()
+{
+  int ret; 
+  ret = Rts2Image::toArchive ();
+  if (ret)
+    return ret;
+
+  processBitfiedl &= (~ASTROMETRY_OK);
+  processBitfiedl |= ASTROMETRY_PROC;
+  
+  return 0;
 }
 
 // write changes of image to DB..
@@ -268,5 +304,6 @@ int
 Rts2ImageDb::saveImage ()
 {
   updateDB ();
+  setValue ("PROC", processBitfiedl, "procesing status; info in DB");
   return Rts2Image::saveImage ();
 }

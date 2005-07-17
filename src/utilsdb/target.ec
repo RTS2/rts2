@@ -43,7 +43,7 @@ Target::logMsg (const char *message, const char *val)
 void
 Target::logMsgDb (const char *message)
 {
-  printf ("SQL error: %i %s (at %s)\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
+  syslog (LOG_ERR, "SQL error: %i %s (at %s)", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
 }
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
@@ -116,12 +116,13 @@ Target::startObservation (struct ln_equ_posn *position)
     :d_obs_alt,
     :d_obs_az
   );
-  EXEC SQL COMMIT;
   if (sqlca.sqlcode != 0)
   {
     logMsgDb ("cannot insert observation start to db");
+    EXEC SQL ROLLBACK;
     return -1;
   }
+  EXEC SQL COMMIT;
   obs_id = d_obs_id;
   return 0;
 }
@@ -234,14 +235,18 @@ Target::observe ()
  * return -1 on error, 0 on success
  */
 int
-Target::getDBScript (int target, const char *camera_name, char *script)
+Target::getDBScript (const char *camera_name, char *script)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int tar_id = target;
-  const char *cam_name = camera_name;
+  int tar_id = getTargetID ();
+  VARCHAR d_camera_name[8];
   VARCHAR sc_script[2000];
   int sc_indicator;
   EXEC SQL END DECLARE SECTION;
+  
+  d_camera_name.len = strlen (camera_name);
+  strncpy (d_camera_name.arr, camera_name, d_camera_name.len);
+  
   EXEC SQL 
   SELECT
     script
@@ -251,7 +256,7 @@ Target::getDBScript (int target, const char *camera_name, char *script)
     scripts
   WHERE
     tar_id = :tar_id
-    AND camera_name = :cam_name;
+    AND camera_name = :d_camera_name;
   if (sqlca.sqlcode)
     goto err;
   if (sc_indicator < 0)
@@ -259,7 +264,6 @@ Target::getDBScript (int target, const char *camera_name, char *script)
   strncpy (script, sc_script.arr, sc_script.len);
   script[sc_script.len] = '\0';
   return 0;
-#undef test_sql
 err:
   printf ("err db_get_script: %li %s\n", sqlca.sqlcode,
 	  sqlca.sqlerrm.sqlerrmc);
@@ -287,7 +291,7 @@ Target::getScript (const char *device_name, char *buf)
   obs_type_str[0] = obs_type;
   obs_type_str[1] = 0;
 
-  ret = getDBScript (target_id, device_name, buf);
+  ret = getDBScript (device_name, buf);
   if (!ret)
     return 0;
 

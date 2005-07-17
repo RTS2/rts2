@@ -17,6 +17,7 @@ Rts2Image::Rts2Image (char *in_filename,
   ffile = NULL;
   cameraName = NULL;
   mountName = NULL;
+  focName = NULL;
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -65,6 +66,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   strcpy (cameraName, camera->getName ());
 
   mountName = NULL;
+  focName = NULL;
 }
 
 Rts2Image::Rts2Image (char *in_filename)
@@ -84,6 +86,8 @@ Rts2Image::Rts2Image (char *in_filename)
   getValue ("CCD_NAME", cameraName);
   mountName = new char[DEVICE_NAME_SIZE + 1];
   getValue ("MNT_NAME", mountName);
+  focName = new char[DEVICE_NAME_SIZE + 1];
+  getValue ("FOC_NAME", focName);
   getValueImageType ();
 }
 
@@ -589,4 +593,14 @@ Rts2Image::setMountName (const char *in_mountName)
   mountName = new char[strlen (in_mountName) + 1];
   strcpy (mountName, in_mountName);
   setValue ("MNT_NAME", mountName, "name of mount");
+}
+
+void
+Rts2Image::setFocuserName (const char *in_focuserName)
+{
+  if (focName)
+    delete[]focName;
+  focName = new char[strlen (in_focuserName) + 1];
+  strcpy (focName, in_focuserName);
+  setValue ("FOC_NAME", focName, "name of mount");
 }

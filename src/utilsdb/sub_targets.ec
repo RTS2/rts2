@@ -433,16 +433,96 @@ ConstTarget (in_tar_id, in_obs)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
     throw &sqlca;
-  grbDate = db_grb_date;
+  grbDate = db_grb_date; 
+  // we don't expect grbDate to change much during observation,
+  // so we will not update that in beforeMove (or somewhere else)
   lastUpdate = db_grb_last_update;
+}
+
+int
+TargetGRB::getDBScript (const char *camera_name, char *script)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_post_sec;
+  int d_pos_ind;
+  VARCHAR sc_script[2000];
+  VARCHAR d_camera_name[8];
+  EXEC SQL END DECLARE SECTION;
+
+  time_t now;
+  int ret;
+  int post_sec;
+
+  // use target script, if such exist..
+  ret = ConstTarget::getDBScript (camera_name, script);
+  if (!ret)
+    return ret;
+
+  time (&now);
+
+  d_camera_name.len = strlen (camera_name);
+  strncpy (d_camera_name.arr, camera_name, d_camera_name.len);
+
+  post_sec = now - grbDate;
+
+  // grb_script_script is NOT NULL
+
+  EXEC SQL DECLARE find_grb_script CURSOR FOR
+    SELECT
+      grb_script_end,
+      grb_script_script
+    FROM
+      grb_script
+    WHERE
+      camera_name = :d_camera_name
+    ORDER BY
+      grb_script_end ASC;
+  EXEC SQL OPEN find_grb_script;
+  while (1)
+  {
+    EXEC SQL FETCH next FROM find_grb_script INTO
+      :d_post_sec :d_pos_ind,
+      :sc_script;
+    if (sqlca.sqlcode)
+      break;
+    if (post_sec < d_post_sec || d_pos_ind < 0)
+    {
+      strncpy (script, sc_script.arr, sc_script.len);
+      script[sc_script.len] = '\0';
+      break;
+    }
+  }
+  if (sqlca.sqlcode)
+    {
+      logMsgDb ("TargetGRB::getDBScript database error");
+      script[0] = '\0';
+      EXEC SQL CLOSE find_grb_script;
+      return -1;
+    }
+  strncpy (script, sc_script.arr, sc_script.len);
+  script[sc_script.len] = '\0';
+  EXEC SQL CLOSE find_grb_script;
+  return 0;
 }
 
 int
 TargetGRB::getScript (const char *deviceName, char *buf)
 {
+  int ret;
   time_t now;
+
+  // try to find values first in DB..
+  ret = getDBScript (deviceName, buf);
+  if (!ret)
+    return ret;
+
   time (&now);
+  
   // switch based on time after burst..
+  // that one has to be hard-coded, there is no way how to
+  // specify it from config (there can be some, but it will be rather
+  // horible way)
+
   if (now - grbDate < 1000)
   {
     strcpy (buf, "E 10 E 20 E 30 E 40");

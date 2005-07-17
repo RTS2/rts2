@@ -10,18 +10,28 @@
 #define EVENT_LAST_READOUT     RTS2_LOCAL_EVENT+51
 #define EVENT_SCRIPT_ENDED     RTS2_LOCAL_EVENT+52
 #define EVENT_MOVE_FAILED      RTS2_LOCAL_EVENT+53
+// to get correct scriptCount..
+#define EVENT_MOVE_QUESTION    RTS2_LOCAL_EVENT+54
+#define EVENT_DONT_MOVE        RTS2_LOCAL_EVENT+55
+#define EVENT_KILL_ALL         RTS2_LOCAL_EVENT+56
 
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
 {
 private:
-  int sendLastReadout;
-  Target *currentTarget;
+  Target * currentTarget;
   Target *nextTarget;		// in case we get some target to que in..
   Rts2Script *script;
-  void postLastReadout ();
 
+  void startTarget ();
+
+  virtual void exposureStarted ();
   virtual void exposureEnd ();
   virtual void readoutEnd ();
+
+  void deleteScript ();
+
+  int blockMove;
+  int getObserveStart;
 
 public:
     Rts2DevClientCameraExec (Rts2Conn * in_connection);
@@ -36,8 +46,9 @@ class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
 {
 private:
   Target * currentTarget;
+  int blockMove;
 protected:
-  virtual void moveEnd ();
+    virtual void moveEnd ();
 public:
     Rts2DevClientTelescopeExec (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);

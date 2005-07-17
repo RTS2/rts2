@@ -1,7 +1,7 @@
 #ifndef __RTS2_DATACONN__
 #define __RTS2_DATACONN__
 
-#include "rts2block.h"
+#include "rts2connnosend.h"
 #include "imghdr.h"
 
 /***************************************************
@@ -19,7 +19,7 @@
  *
  **************************************************/
 
-class Rts2ClientTCPDataConn:public Rts2Conn
+class Rts2ClientTCPDataConn:public Rts2ConnNoSend
 {
 private:
   char *data;

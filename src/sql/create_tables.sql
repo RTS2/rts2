@@ -79,6 +79,16 @@ CREATE TABLE grb_gcn (
 
 CREATE INDEX grb_gcn_prim ON grb_gcn (grb_id, grb_seqn, grb_type);
 
+-- holds script for GRB observations
+
+CREATE TABLE grb_script (
+	camera_name		varchar(8) REFERENCES cameras (camera_name),
+	grb_script_end		integer,  -- post GRB second end
+	  -- time, can be null for default script
+	grb_script_script	varchar(2000) NOT NULL,
+CONSTRAINT prim_grb_script PRIMARY KEY (camera_name, grb_script_start)
+);
+
 -- swift pointing
 
 CREATE TABLE swift (
@@ -277,7 +287,7 @@ DROP TABLE scripts;
 CREATE TABLE scripts (
 	tar_id		integer REFERENCES targets(tar_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name),
-	script		varchar (2000)
+	script		varchar (2000) NOT NULL
 );
 
 CREATE INDEX images_obs_id ON images (obs_id);
@@ -299,8 +309,6 @@ CREATE TABLE users (
 	usr_passwd	varchar(25) NOT NULL,
 	usr_tmp		integer
 );
-
-
 
 CREATE INDEX observations_tar_id ON observations (tar_id);
 

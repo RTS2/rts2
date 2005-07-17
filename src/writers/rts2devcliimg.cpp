@@ -101,6 +101,7 @@ Rts2DevClientCameraImage::exposureStarted ()
     delete images;
   exposureTime = getValueDouble ("exposure");
   struct timeval expStart;
+  char *focuser;
   gettimeofday (&expStart, NULL);
   images = createImage (&expStart);
   connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, images));
@@ -120,6 +121,11 @@ Rts2DevClientCameraImage::exposureStarted ()
   images->setValue ("ROTANG", rotang, "camera rotation over X axis");
   images->setValue ("FLIP", flip,
 		    "camera flip (since most astrometry devices works as mirrors");
+  focuser = getValueChar ("focuser");
+  if (focuser)
+    {
+      images->setFocuserName (focuser);
+    }
   Rts2DevClientCamera::exposureStarted ();
 }
 
@@ -210,6 +216,21 @@ Rts2DevClientFocusImage::Rts2DevClientFocusImage (Rts2Conn * in_connection):Rts2
 void
 Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 {
+  switch (event->getType ())
+    {
+    case EVENT_WRITE_TO_IMAGE:
+      Rts2Image * image;
+      image = (Rts2Image *) event->getArg ();
+      // check if we are correct focuser for given camera
+      if (strcmp (image->getFocuserName (), connection->getName ()))
+	break;
+      image->setValue ("FOC_TYPE", getValueInteger ("type"), "focuser type");
+      image->setValue ("FOC_POS", getValueInteger ("pos"),
+		       "focuser position");
+      image->setValue ("FOC_TEMP", getValueInteger ("temp"),
+		       "focuser temperature");
+      break;
+    }
   Rts2DevClientFocus::postEvent (event);
 }
 

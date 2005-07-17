@@ -35,6 +35,7 @@ private:
   int trashImages;
   int morningImages;
   int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
+  char defaultImgProccess[2000];
 public:
     Rts2ImageProc (int argc, char **argv);
     virtual ~ Rts2ImageProc (void);
@@ -115,6 +116,14 @@ Rts2ImageProc::init ()
 
   Rts2Config *config;
   config = Rts2Config::instance ();
+
+  ret = config->getString ("imgproc", "astrometry", defaultImgProccess, 2000);
+
+  if (ret)
+    {
+      syslog (LOG_ERR,
+	      "Rts2ImageProc::init cannot get astrometry string, exiting!");
+    }
 
   sendStop = 0;
 
@@ -215,7 +224,7 @@ Rts2ImageProc::changeRunning (Rts2ConnImgProcess * newImage)
 	}
     }
   runningImage = newImage;
-  ret = runningImage->run ();
+  ret = runningImage->init ();
   if (ret < 0)
     {
       delete runningImage;
@@ -233,7 +242,7 @@ int
 Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImage;
-  newImage = new Rts2ConnImgProcess (this, conn, in_path);
+  newImage = new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
   if (runningImage)
     {
       imagesQue.push_back (newImage);
@@ -249,7 +258,7 @@ int
 Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImage;
-  newImage = new Rts2ConnImgProcess (this, conn, in_path);
+  newImage = new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
   changeRunning (newImage);
   infoAll ();
   return 0;

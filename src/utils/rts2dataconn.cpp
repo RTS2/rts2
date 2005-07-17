@@ -9,14 +9,12 @@
 #include <fcntl.h>
 
 #include "rts2dataconn.h"
-#include "rts2block.h"
-#include "imghdr.h"
 
 Rts2ClientTCPDataConn::Rts2ClientTCPDataConn (Rts2Block * in_master,
 					      Rts2Conn * in_owner_conn,
 					      char *hostname, int port,
 					      int in_totalSize):
-Rts2Conn (in_master)
+Rts2ConnNoSend (in_master)
 {
   struct addrinfo hints;
   struct addrinfo *addr;
@@ -94,7 +92,7 @@ Rts2ClientTCPDataConn::receive (fd_set * set)
       data_size = read (sock, dataTop, totalSize - receivedSize);
       if (data_size < 0)
 	{
-	  endConnection ();
+	  connectionError ();
 	  return -1;
 	}
       successfullRead ();

@@ -85,13 +85,13 @@ private:
   char obs_type;		// SKY_SURVEY, GBR, .. 
   int selected;			// how many times startObservation was called
 
-  int getDBScript (int target, const char *camera_name, char *script);
-
   int startCalledNum;		// how many times startObservation was called - good to know for targets
   // which changes behaviour based on how many times we called them before
 protected:
   int target_id;
   struct ln_lnlat_posn *observer;
+
+  virtual int getDBScript (const char *camera_name, char *script);
 
   // print nice formated log strings
   void logMsg (const char *message);
@@ -322,7 +322,8 @@ class TargetGRB:public ConstTarget
   time_t grbDate;
   time_t lastUpdate;
 protected:
-    virtual int getScript (const char *deviceName, char *buf);
+    virtual int getDBScript (const char *camera_name, char *script);
+  virtual int getScript (const char *deviceName, char *buf);
 public:
     TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual float getBonus ();

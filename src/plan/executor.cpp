@@ -63,6 +63,7 @@ public:
   int setNext (int nextId);
   int setNow (int nextId);
   void queTarget (Target * in_target);
+  void updateScriptCount ();
 };
 
 int
@@ -167,13 +168,11 @@ Rts2Executor::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_SCRIPT_STARTED:
-      if (scriptCount < 0)
-	scriptCount = 1;
-      else
-	scriptCount++;
+      // we don't care about that now..
       break;
     case EVENT_LAST_READOUT:
-      scriptCount--;
+    case EVENT_SCRIPT_ENDED:
+      updateScriptCount ();
       if (scriptCount == 0)
 	switchTarget ();
       break;
@@ -186,8 +185,15 @@ Rts2Executor::postEvent (Rts2Event * event)
 					 ln_get_julian_from_sys () +
 					 12 * (1.0 / 1440.0));
 	}
+      updateScriptCount ();
       if (scriptCount == 0)
 	switchTarget ();
+      break;
+    case EVENT_MOVE_QUESTION:
+      scriptCount = 0;
+      break;
+    case EVENT_DONT_MOVE:
+      scriptCount++;
       break;
     }
   Rts2Device::postEvent (event);
@@ -283,6 +289,7 @@ Rts2Executor::setNow (int nextId)
     }
   currentTarget = newTarget;
 
+  postEvent (new Rts2Event (EVENT_KILL_ALL));
   queAll (new Rts2CommandKillAll (this));
 
   // move operation will be qued after kill command, so we get correct
@@ -387,6 +394,12 @@ Rts2Executor::queTarget (Target * in_target)
   ret = in_target->postprocess ();
   if (!ret)
     targetsQue.push_back (in_target);
+}
+
+void
+Rts2Executor::updateScriptCount ()
+{
+  postEvent (new Rts2Event (EVENT_MOVE_QUESTION));
 }
 
 Rts2Executor *executor;

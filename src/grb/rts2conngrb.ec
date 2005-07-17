@@ -611,13 +611,13 @@ Rts2ConnGrb::idle ()
       if (ret)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %m");
-	  connectionsBreak ();
+	  connectionError ();
         }
       else if (err)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %s",
                   strerror (err));
-	  connectionsBreak ();
+	  connectionError ();
         }
       else 
         {
@@ -687,7 +687,7 @@ Rts2ConnGrb::init ()
 }
 
 int
-Rts2ConnGrb::connectionsBreak ()
+Rts2ConnGrb::connectionError ()
 {
   time_t now;
   time (&now);
@@ -721,7 +721,7 @@ Rts2ConnGrb::receive (fd_set *set)
   struct tm *t;
   if (!isConnState (CONN_CONNECTED) && !isConnState (CONN_AUTH_PENDING))
   {
-    connectionsBreak ();
+    connectionError ();
     return -1;
   }
   if (sock >= 0 && FD_ISSET (sock, set))
@@ -737,7 +737,7 @@ Rts2ConnGrb::receive (fd_set *set)
         setConnState (CONN_CONNECTED);
         return 1;
       }
-      connectionsBreak ();
+      connectionError ();
       return -1;
     }
     successfullRead ();
@@ -822,7 +822,7 @@ Rts2ConnGrb::receive (fd_set *set)
         pr_swift_without_radec ();
 	break;
       case TYPE_KILL_SOCKET:
-        connectionsBreak ();
+        connectionError ();
         break;
       default:
         syslog (LOG_ERR, "Rts2ConnGrb::receive unknow packet type: %d", lbuf[PKT_TYPE]);

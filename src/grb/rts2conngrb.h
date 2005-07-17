@@ -68,7 +68,7 @@ public:
   virtual ~ Rts2ConnGrb (void);
   virtual int idle ();
   virtual int init ();
-  virtual int connectionsBreak ();
+  virtual int connectionError ();
   virtual int receive (fd_set * set);
 
   int lastPacket ();

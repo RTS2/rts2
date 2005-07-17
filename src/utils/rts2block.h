@@ -1,8 +1,6 @@
 #ifndef __RTS2_BLOCK__
 #define __RTS2_BLOCK__
 
-#define DEBUG_ALL
-
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -120,19 +118,12 @@ protected:
   void successfullSend ();
   void successfullRead ();
 
-  virtual int connectionError ()
-  {
-    setConnState (CONN_DELETE);
-    if (sock >= 0)
-      close (sock);
-    sock = -1;
-    return -1;
-  }
+  virtual int connectionError ();
 
 public:
     Rts2Conn (Rts2Block * in_master);
-  Rts2Conn (int in_sock, Rts2Block * in_master);
-  virtual ~ Rts2Conn (void);
+    Rts2Conn (int in_sock, Rts2Block * in_master);
+    virtual ~ Rts2Conn (void);
 
   virtual void postEvent (Rts2Event * event);
 
@@ -151,10 +142,6 @@ public:
   }
   void postMaster (Rts2Event * event);
   virtual int idle ();
-  virtual int connectionsBreak ()	// returns !0 if we want to keep connection running
-  {
-    return endConnection ();
-  }
   inline int isCommand (const char *cmd)
   {
     return !strcmp (cmd, getCommand ());
@@ -236,14 +223,6 @@ public:
   };
   void setCentraldId (int in_centrald_id);
   int sendPriorityInfo (int number);
-  int endConnection ()
-  {
-    setConnState (CONN_DELETE);	// mark for deleting..
-    if (sock >= 0)
-      close (sock);
-    sock = -1;
-    return 0;
-  }
 
   virtual int sendInfo (Rts2Conn * conn)
   {
@@ -262,7 +241,7 @@ public:
   }
   void queClear ();
 
-  virtual void addressAdded (Rts2Address * in_addr)
+  virtual void addressUpdated (Rts2Address * in_addr)
   {
   }
 
@@ -295,6 +274,11 @@ public:
   void setConnTimeout (int new_connTimeout)
   {
     connectionTimeout = new_connTimeout;
+  }
+
+  void endConnection ()
+  {
+    connectionError ();		// maybe in future we will need to change that
   }
 protected:
   virtual int command ();
@@ -344,6 +328,12 @@ protected:
 
   virtual void childReturned (pid_t child_pid);
   virtual int willConnect (Rts2Address * in_addr);	// determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
+
+  /***
+   * Address list related functions.
+   **/
+  virtual int addAddress (Rts2Address * in_addr);
+
 public:
     Rts2Conn * connections[MAX_CONN];
 
@@ -405,14 +395,13 @@ public:
   }
   // status-mail related functions  
   int sendMail (char *subject, char *text);
-  Rts2Address *findAddress (char *blockName);
+  Rts2Address *findAddress (const char *blockName);
 
-  /***
-   * Address list related functions.
-   **/
   void addAddress (const char *p_name, const char *p_host, int p_port,
 		   int p_device_type);
-  virtual int addAddress (Rts2Address * in_addr);
+
+  void deleteAddress (const char *p_name);
+
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
   void addUser (int p_centraldId, int p_priority, char p_priority_have,

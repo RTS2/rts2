@@ -117,7 +117,7 @@ Rts2Conn::idle ()
 	  || now > lastGoodSend + connectionTimeout)
 	send ("T ready");
       if (now > lastData + connectionTimeout * 2)
-	endConnection ();
+	connectionError ();
     }
 }
 
@@ -568,7 +568,7 @@ Rts2Conn::send (char *message)
       syslog (LOG_ERR,
 	      "Rts2Conn::send [%i:%i] error %i state: %i sending '%s':%m",
 	      getCentraldId (), conn_state, sock, ret, message);
-      connectionsBreak ();
+      connectionError ();
       return -1;
     }
 #ifdef DEBUG_ALL
@@ -590,6 +590,18 @@ void
 Rts2Conn::successfullRead ()
 {
   time (&lastData);
+}
+
+int
+Rts2Conn::connectionError ()
+{
+  setConnState (CONN_DELETE);
+  if (sock >= 0)
+    close (sock);
+  sock = -1;
+  return -1;
+  if (strlen (getName ()))
+    master->deleteAddress (getName ());
 }
 
 int
@@ -1143,17 +1155,17 @@ Rts2Block::run ()
 int
 Rts2Block::deleteConnection (Rts2Conn * conn)
 {
-  int ret;
   if (conn->havePriority ())
     {
       cancelPriorityOperations ();
     }
-  ret = conn->connectionsBreak ();
-  if (!ret)
+  if (conn->isConnState (CONN_DELETE))
     {
       delete conn;
+      return 0;
     }
-  return ret;
+  // don't delete us when we are in incorrect state
+  return -1;
 }
 
 int
@@ -1267,7 +1279,7 @@ Rts2Block::sendMail (char *subject, char *text)
 }
 
 Rts2Address *
-Rts2Block::findAddress (char *blockName)
+Rts2Block::findAddress (const char *blockName)
 {
   std::list < Rts2Address * >::iterator addr_iter;
 
@@ -1288,26 +1300,30 @@ Rts2Block::addAddress (const char *p_name, const char *p_host, int p_port,
 		       int p_device_type)
 {
   int ret;
-  std::list < Rts2Address * >::iterator addr_iter;
-  for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
-       addr_iter++)
+  Rts2Address *an_addr;
+  an_addr = findAddress (p_name);
+  if (an_addr)
     {
-      ret = (*addr_iter)->update (p_name, p_host, p_port, p_device_type);
+      ret = an_addr->update (p_name, p_host, p_port, p_device_type);
       if (!ret)
-	return;
+	{
+	  addAddress (an_addr);
+	  return;
+	}
     }
-  addAddress (new Rts2Address (p_name, p_host, p_port, p_device_type));
+  an_addr = new Rts2Address (p_name, p_host, p_port, p_device_type);
+  blockAddress.push_back (an_addr);
+  addAddress (an_addr);
 }
 
 int
 Rts2Block::addAddress (Rts2Address * in_addr)
 {
   Rts2Conn *conn;
-  blockAddress.push_back (in_addr);
   // recheck all connections waiting for our address
   conn = getOpenConnection (in_addr->getName ());
   if (conn)
-    conn->addressAdded (in_addr);
+    conn->addressUpdated (in_addr);
   else if (willConnect (in_addr))
     {
       conn = createClientConnection (in_addr);
@@ -1315,6 +1331,24 @@ Rts2Block::addAddress (Rts2Address * in_addr)
 	addConnection (conn);
     }
   return 0;
+}
+
+void
+Rts2Block::deleteAddress (const char *p_name)
+{
+  std::list < Rts2Address * >::iterator addr_iter;
+
+  for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
+       addr_iter++)
+    {
+      Rts2Address *addr = (*addr_iter);
+      if (addr->isAddress (p_name))
+	{
+	  blockAddress.erase (addr_iter);
+	  delete addr;
+	  return;
+	}
+    }
 }
 
 Rts2DevClient *
