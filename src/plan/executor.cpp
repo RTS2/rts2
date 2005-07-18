@@ -243,7 +243,6 @@ Rts2Executor::changeMasterState (int new_state)
     case SERVERD_DAWN:
     case SERVERD_NIGHT:
     case SERVERD_DUSK:
-    case SERVERD_MORNING:
       if (!currentTarget && nextTarget)
 	{
 	  switchTarget ();
