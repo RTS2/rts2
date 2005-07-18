@@ -194,6 +194,7 @@ DarkTarget::defaultDark (const char *deviceName, char *buf)
   char dark_exposures [1000];
   char *tmp_c;
   char *tmp_c2;
+  char *tmp_s;
   int ret;
   int was_blank;
   int exp_count;
@@ -209,9 +210,12 @@ DarkTarget::defaultDark (const char *deviceName, char *buf)
     }
   // get the getCalledNum th observation
   // count how many exposures are in dark list..
-  tmp_c = dark_exposures;
-  was_blank = 0;
-  exp_count = 0;
+  tmp_s = dark_exposures;
+  while (*tmp_s && isblank (*tmp_s))
+    tmp_s++;
+  tmp_c = tmp_s;
+  was_blank = 1;
+  exp_count = 1;
   while (*tmp_c)
     {
       switch (was_blank)
@@ -230,10 +234,15 @@ DarkTarget::defaultDark (const char *deviceName, char *buf)
         }
       tmp_c++;
     }
+  if (exp_count == 0)
+  {
+    strcpy (buf, "D 17");
+    return 0;
+  }
   exp_count = getCalledNum () % exp_count;
   was_blank = 0;
   exp_count2 = 0;
-  tmp_c = dark_exposures;
+  tmp_c = tmp_s;
   while (*tmp_c)
     {
       switch (was_blank)
@@ -241,8 +250,6 @@ DarkTarget::defaultDark (const char *deviceName, char *buf)
           case 1:
             if (!isblank (*tmp_c))
               {
-                if (exp_count == exp_count2)
-	          break;
                 was_blank = 0;
               }
             break;
@@ -252,8 +259,10 @@ DarkTarget::defaultDark (const char *deviceName, char *buf)
 	        was_blank = 1;
 	        exp_count2++;
 	      }
-	      break;
+	    break;
         }
+      if (exp_count == exp_count2)
+        break;
       tmp_c++;
     }
   tmp_c2 = buf;
@@ -268,12 +277,11 @@ DarkTarget::defaultDark (const char *deviceName, char *buf)
           *tmp_c2 = *tmp_c;
         }
       else
-        {
-          return 0;
-        }
+        break;
       tmp_c++;
+      tmp_c2++;
     }
-  strcpy (buf, "D 16");
+  *tmp_c2 = '\0'; 
   return 0;
 }
 
