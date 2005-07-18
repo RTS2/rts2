@@ -49,7 +49,6 @@ Rts2ConnImgProcess::newProcess ()
   return -2;
 }
 
-
 int
 Rts2ConnImgProcess::processLine ()
 {

@@ -15,6 +15,8 @@
 #define EVENT_DONT_MOVE        RTS2_LOCAL_EVENT+55
 #define EVENT_KILL_ALL         RTS2_LOCAL_EVENT+56
 
+#define EVENT_OBSERVE_SET      RTS2_LOCAL_EVENT+57
+
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
 {
 private:

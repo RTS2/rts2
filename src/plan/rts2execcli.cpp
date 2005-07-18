@@ -29,6 +29,11 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 {
   switch (event->getType ())
     {
+    case EVENT_KILL_ALL:
+      // stop actual observation..
+      deleteScript ();
+      break;
+    case EVENT_OBSERVE_SET:
     case EVENT_SET_TARGET:
       if (currentTarget)
 	{
@@ -39,11 +44,8 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	  currentTarget = (Target *) event->getArg ();
 	  nextTarget = NULL;
 	}
-      break;
-    case EVENT_KILL_ALL:
-      // stop actual observation..
-      deleteScript ();
-      break;
+      if (event->getType () == EVENT_SET_TARGET)
+	break;
     case EVENT_OBSERVE:
       if (script)		// we are still observing..we will be called after last command finished
 	{
@@ -146,6 +148,10 @@ Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 void
 Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
+  // if unknow type, don't process image..
+  if (image->getType () != IMGTYPE_OBJECT)
+    return;
+
   // find image processor with lowest que number..
   int lovestValue = INT_MAX;
   Rts2Conn *minConn = NULL;
@@ -242,7 +248,9 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	  if (ret == OBS_DONT_MOVE)
 	    {
 	      connection->getMaster ()->
-		postEvent (new Rts2Event (EVENT_OBSERVE));
+		postEvent (new
+			   Rts2Event (EVENT_OBSERVE_SET,
+				      (void *) currentTarget));
 	    }
 	  else
 	    {

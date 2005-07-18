@@ -6,7 +6,7 @@
 #include "../writers/rts2imagedb.h"
 
 typedef enum
-{ NOT_ASTROMETRY, TRASH, GET, MORNING } astrometry_stat_t;
+{ NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT } astrometry_stat_t;
 
 /*
  * "Connection" which reads output of image processor
