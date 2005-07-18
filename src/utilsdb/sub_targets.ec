@@ -293,25 +293,46 @@ DarkTarget::getScript (const char *deviceName, char *buf)
 
   EXEC SQL DECLARE dark_target CURSOR FOR
     SELECT
-      img_exposure,
-      (SELECT
-        count (*)
+        img_exposure,
+        (SELECT
+          count (*)
+        FROM
+          darks
+        WHERE
+            darks.camera_name = images.camera_name
+          AND now () - dark_date < '18 hour'
+        ) AS dark_count
       FROM
+        images,
         darks
       WHERE
-          darks.camera_name = images.camera_name
-        AND now () - dark_date < '18 hour') AS dark_count
-    FROM
-      images
-    WHERE
-        images.camera_name = :d_camera_name
-      AND now () - img_date < '1 day'
-    GROUP BY
+	  images.camera_name = :d_camera_name
+	AND now () - img_date < '1 day'
+	AND now () - dark_date < '1 day'
+	AND dark_exposure = img_exposure
+      GROUP BY
         img_exposure,
         images.camera_name
-    ORDER BY
-      dark_count DESC,
-      img_exposure DESC;
+    UNION
+      SELECT
+        img_exposure,
+        0
+      FROM
+        images
+      WHERE
+          images.camera_name = :d_camera_name
+        AND now () - img_date < '1 day'
+        AND NOT EXISTS (SELECT *
+          FROM
+            darks
+          WHERE
+              darks.camera_name = images.camera_name
+            AND dark_exposure = img_exposure
+            AND now () - dark_date < '1 day'
+	)
+      ORDER BY
+        dark_count DESC,
+        img_exposure DESC;
   EXEC SQL OPEN dark_target;
   if (sqlca.sqlcode)
   {
