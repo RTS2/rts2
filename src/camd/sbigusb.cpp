@@ -99,12 +99,9 @@ CameraSbigChip::isExposing ()
   QueryCommandStatusResults qcsr;
 
   int complete = FALSE;
-  PAR_ERROR ret_c;
 
   qcsp.command = CC_START_EXPOSURE;
-  ret_c = SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr);
-  if (ret_c != CE_NO_ERROR)
-    return -1;
+  SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr);
   if (chipId == 0)
     complete = (qcsr.status & 0x03) != 0x02;
   else
@@ -120,21 +117,20 @@ CameraSbigChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   int ret = CameraChip::startReadout (dataConn, conn);
   if (ret)
     return ret;
-  PAR_ERROR ret_c;
   StartReadoutParams srp;
   srp.ccd = chipId;
   srp.left = srp.top = 0;
   srp.height = chipReadout->height;
   srp.width = chipReadout->width;
   srp.readoutMode = sbig_readout_mode;
-  ret_c = SBIGUnivDrvCommand (CC_START_READOUT, &srp, NULL);
+  SBIGUnivDrvCommand (CC_START_READOUT, &srp, NULL);
   rlp.ccd = chipId;
   rlp.pixelStart = chipUsedReadout->x / usedBinningVertical;
   rlp.pixelLength = chipUsedReadout->width / usedBinningVertical;
   rlp.readoutMode = sbig_readout_mode;
   dest_top = dest;
   send_top = (char *) dest;
-  return checkSbigHw (ret_c);
+  return 0;
 }
 
 int

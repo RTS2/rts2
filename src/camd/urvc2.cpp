@@ -88,6 +88,8 @@ CameraUrvc2Chip::isExposing ()
     return ret;
   int imstate;
   imstate = CCDImagingState (C);
+  if (imstate == -1)
+    return -1;
   if (imstate)
     {
       return 100;		// recheck in 100 msec
@@ -106,7 +108,7 @@ CameraUrvc2Chip::readoutOneLine ()
 	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width,
 	   chipReadout->height, binningVertical))
 	{
-	  return -1;
+	  return -3;
 	}
       dest_top =
 	img + (chipReadout->width * chipReadout->height / binningVertical);
@@ -122,7 +124,7 @@ CameraUrvc2Chip::readoutOneLine ()
     }
   if (!readoutConn)
     {
-      return -1;
+      return -3;
     }
   if (send_top < (char *) dest_top)
     {
