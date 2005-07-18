@@ -288,13 +288,14 @@ int
 Rts2ImageDb::toTrash ()
 {
   int ret; 
-  ret = Rts2Image::toArchive ();
-  if (ret)
-    return ret;
 
   processBitfiedl &= (~ASTROMETRY_OK);
   processBitfiedl |= ASTROMETRY_PROC;
-  
+
+  ret = Rts2Image::toTrash ();
+  if (ret)
+    return ret;
+
   return 0;
 }
 
