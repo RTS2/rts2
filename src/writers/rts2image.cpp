@@ -267,6 +267,30 @@ Rts2Image::toDark ()
 }
 
 int
+Rts2Image::toFlat ()
+{
+  char *new_filename;
+  int ret = 0;
+  struct tm *expT;
+
+  if (!imageName)
+    return -1;
+
+  expT = gmtime (&exposureStart.tv_sec);
+  asprintf (&new_filename,
+	    "%s/flat/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    getImageBase (epochId), cameraName,
+	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
+	    expT->tm_hour, expT->tm_min, expT->tm_sec,
+	    exposureStart.tv_usec / 1000);
+
+  ret = renameImage (new_filename);
+
+  free (new_filename);
+  return ret;
+}
+
+int
 Rts2Image::toTrash ()
 {
   char *new_filename;
@@ -545,6 +569,10 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
   if (imageType == IMGTYPE_DARK)
     {
       return toDark ();
+    }
+  if (imageType == IMGTYPE_FLAT)
+    {
+      return toFlat ();
     }
   return 0;
 }

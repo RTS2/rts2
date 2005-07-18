@@ -12,6 +12,11 @@
 #include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
 
+typedef enum
+{ IMGTYPE_UNKNOW, IMGTYPE_DARK, IMGTYPE_FLAT, IMGTYPE_OBJECT, IMGTYPE_ZERO,
+  IMGTYPE_COMP
+} img_type_t;
+
 class Rts2Image
 {
 private:
@@ -34,10 +39,7 @@ protected:
   char *mountName;
   char *focName;
   char *imageName;
-  enum
-  { IMGTYPE_UNKNOW, IMGTYPE_DARK, IMGTYPE_FLAT, IMGTYPE_OBJECT, IMGTYPE_ZERO,
-    IMGTYPE_COMP
-  } imageType;
+  img_type_t imageType;
 public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
@@ -53,7 +55,13 @@ public:
   virtual int toAcquisition ();
   virtual int toArchive ();
   virtual int toDark ();
+  virtual int toFlat ();
   virtual int toTrash ();
+
+  img_type_t getType ()
+  {
+    return imageType;
+  }
 
   int renameImage (char *new_filename);
 
