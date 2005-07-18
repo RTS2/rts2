@@ -281,7 +281,7 @@ Rts2xfocusCamera::redraw ()
   XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4,
 		  pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
   len =
-    asprintf (&stringBuf, "L: %.2f M: %.2f H: %.2f Avg: %.2f", low, med, hig,
+    asprintf (&stringBuf, "L: %d M: %d H: %d Avg: %.2f", low, med, hig,
 	      average);
   XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
 	       stringBuf, len);
