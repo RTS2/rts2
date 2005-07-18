@@ -66,10 +66,13 @@ Rts2ConnFork::init ()
   // child
   close (filedes[0]);
   dup2 (filedes[1], 1);
+  // close all sockets so when we crash, we don't get any dailing
+  // sockets
+  master->closeSockets ();
   ret = newProcess ();
   if (ret)
-    syslog (LOG_ERR, "Rts2ConnFork::init newProcess return : %i", ret);
-  kill (childPid, SIGINT);
+    syslog (LOG_ERR, "Rts2ConnFork::init newProcess return : %i %m", ret);
+  exit (0);
 }
 
 void

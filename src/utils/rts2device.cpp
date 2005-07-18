@@ -193,6 +193,14 @@ int
 Rts2DevConn::authorizationOK ()
 {
   setConnState (CONN_AUTH_OK);
+  if (getType () == DEVICE_DEVICE)
+    {
+      char *msg;
+      asprintf (&msg, "this_device %s %i", master->getDeviceName (),
+		master->getDeviceType ());
+      send (msg);
+      free (msg);
+    }
   master->sendStatusInfo (this);
   master->baseInfo (this);
   master->info (this);
@@ -204,8 +212,9 @@ int
 Rts2DevConn::authorizationFailed ()
 {
   setCentraldId (-1);
-  setConnState (CONN_AUTH_FAILED);
+  setConnState (CONN_DELETE);
   sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
+  syslog (LOG_DEBUG, "authorizationFailed: %s", getName ());
   return 0;
 }
 
@@ -229,7 +238,6 @@ Rts2DevConn::setHavePriority (int in_have_priority)
 void
 Rts2DevConn::setDeviceAddress (Rts2Address * in_addr)
 {
-  setType (DEVICE_DEVICE);
   address = in_addr;
   setConnState (CONN_CONNECTING);
   setName (in_addr->getName ());
@@ -240,7 +248,6 @@ Rts2DevConn::setDeviceAddress (Rts2Address * in_addr)
 void
 Rts2DevConn::setDeviceName (char *in_name)
 {
-  setType (DEVICE_DEVICE);
   setName (in_name);
   setConnState (CONN_RESOLVING_DEVICE);
 }
@@ -269,9 +276,7 @@ void
 Rts2DevConn::setKey (int in_key)
 {
   Rts2Conn::setKey (in_key);
-  if (getType () != DEVICE_DEVICE)
-    return;
-  if (isConnState (CONN_AUTH_PENDING))
+  if (getType () == DEVICE_DEVICE && isConnState (CONN_AUTH_PENDING))
     {
       // que to begining, send command
       // kill all runinng commands
@@ -284,20 +289,6 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 {
   if (getType () != DEVICE_DEVICE)
     return Rts2Conn::setConnState (new_conn_state);
-  if (isConnState (CONN_CONNECTED) && new_conn_state != CONN_DELETE
-      && new_conn_state != CONN_BROKEN)
-    {
-      char *msg;
-      Rts2Conn::setConnState (CONN_AUTH_OK);
-      asprintf (&msg, "this_device %s %i", master->getDeviceName (),
-		master->getDeviceType ());
-      send (msg);
-      free (msg);
-      master->sendStatusInfo (this);
-      master->baseInfo (this);
-      master->info (this);
-      return;
-    }
   Rts2Conn::setConnState (new_conn_state);
 }
 
@@ -398,8 +389,6 @@ Rts2DevConnMaster::command ()
 	    {
 	      int auth_id;
 	      if (paramNextInteger (&auth_id))
-		return -1;
-	      if (auth_conn->getCentraldId () != auth_id)
 		return -1;
 	      auth_conn->authorizationFailed ();
 	      auth_conn = NULL;

@@ -72,7 +72,7 @@ Rts2App::initOptions ()
 	return ret;
     }
 
-  delete opt_char;
+  delete[]opt_char;
 
   while (optind < argc)
     {

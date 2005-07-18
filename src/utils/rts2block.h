@@ -247,6 +247,10 @@ public:
 
   virtual void setConnState (conn_state_t new_conn_state);
   int isConnState (conn_state_t in_conn_state);
+  conn_state_t getConnState ()
+  {
+    return conn_state;
+  }
 
   int paramEnd ();
   int paramNextString (char **str);
@@ -274,6 +278,10 @@ public:
   void setConnTimeout (int new_connTimeout)
   {
     connectionTimeout = new_connTimeout;
+  }
+  int getConnTimeout ()
+  {
+    return connectionTimeout;
   }
 
   void endConnection ()
@@ -342,6 +350,7 @@ public:
   void setPort (int in_port);
   int getPort (void);
   virtual int init ();
+  void closeSockets ();
 
   virtual void postEvent (Rts2Event * event);
 

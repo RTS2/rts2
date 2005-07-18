@@ -113,10 +113,10 @@ Rts2Conn::idle ()
     {
       time_t now;
       time (&now);
-      if (now > lastData + connectionTimeout
-	  || now > lastGoodSend + connectionTimeout)
+      if (now > lastGoodSend + getConnTimeout ()
+	  && now > lastData + getConnTimeout ())
 	send ("T ready");
-      if (now > lastData + connectionTimeout * 2)
+      if (now > lastData + getConnTimeout () * 2)
 	connectionError ();
     }
 }
@@ -599,9 +599,9 @@ Rts2Conn::connectionError ()
   if (sock >= 0)
     close (sock);
   sock = -1;
-  return -1;
   if (strlen (getName ()))
     master->deleteAddress (getName ());
+  return -1;
 }
 
 int
@@ -865,7 +865,7 @@ Rts2App (in_argc, in_argv)
 
 Rts2Block::~Rts2Block (void)
 {
-  if (sock)
+  if (sock >= 0)
     close (sock);
 }
 
@@ -937,6 +937,13 @@ Rts2Block::init ()
       sock = -1;
       return -1;
     }
+}
+
+void
+Rts2Block::closeSockets ()
+{
+  if (sock >= 0)
+    close (sock);
 }
 
 void
