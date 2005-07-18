@@ -15,7 +15,7 @@
 
 Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port,
 					  Rts2DevDome * in_master):
-Rts2Conn (in_master)
+Rts2ConnNoSend (in_master)
 {
   master = in_master;
   weather_port = in_weather_port;

@@ -99,7 +99,6 @@ Rts2ConnDcm::receive (fd_set * set)
 	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
 	  return 1;
 	}
-      successfullRead ();
       buf[data_size] = 0;
       syslog (LOG_DEBUG, "readed: %i '%s' from: %s:%i", data_size, buf,
 	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
@@ -134,8 +133,6 @@ Rts2ConnDcm::receive (fd_set * set)
       master->setHumidity (humidity);
       master->setRain (rain);
       master->setSwState ((sw1 << 3) | (sw2 << 2) | (sw3 << 1) | (sw4));
-      if (ret > 0)
-	successfullSend ();
     }
   return data_size;
 }
