@@ -10,12 +10,15 @@ class Rts2TargetInfo:public Rts2AppDb
 {
 private:
   std::list < int >targets;
+    std::list < char *>cameras;
   Target *target;
   struct ln_lnlat_posn *obs;
   int printTargetInfo ();
 public:
     Rts2TargetInfo (int argc, char **argv);
     virtual ~ Rts2TargetInfo (void);
+
+  virtual int processOption (int in_opt);
 
   virtual int processArgs (const char *arg);
   virtual int run ();
@@ -25,10 +28,26 @@ Rts2TargetInfo::Rts2TargetInfo (int argc, char **argv):
 Rts2AppDb (argc, argv)
 {
   obs = NULL;
+  addOption ('c', "cameras", 1, "show scripts for given cameras");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()
 {
+  cameras.clear ();
+}
+
+int
+Rts2TargetInfo::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'c':
+      cameras.push_back (optarg);
+      break;
+    default:
+      return Rts2AppDb::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -90,6 +109,19 @@ Rts2TargetInfo::printTargetInfo ()
 									&now)
     << std::endl;
   std::cout << "Bonus: " << target->getBonus () << std::endl;
+
+  // print scripts..
+  std::list < char *>::iterator cam_names;
+  for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
+    {
+      char *cam_name = *cam_names;
+      int ret;
+      char script[MAX_COMMAND_LENGTH];
+      ret = target->getScript (cam_name, script);
+      std::
+	cout << "Script for camera " << cam_name << ":'" << script <<
+	"' ret (" << ret << ")" << std::endl;
+    }
 }
 
 int
