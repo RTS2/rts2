@@ -54,6 +54,7 @@ public:
   }
   virtual int info ()
   {
+    updateScriptCount ();
     return 0;
   }
   virtual int sendInfo (Rts2Conn * conn);

@@ -25,7 +25,7 @@ Rts2ConnFork (in_master, in_exe)
 
 Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
 {
-  if (astrometryStat == TRASH)
+  if (astrometryStat == NOT_ASTROMETRY)
     {
       image->toTrash ();
     }
@@ -37,8 +37,15 @@ Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
 int
 Rts2ConnImgProcess::newProcess ()
 {
+  int ret;
+  syslog (LOG_DEBUG, "Rts2ConnImgProcess::newProcess exe: %s img: %s",
+	  exePath, path);
   if (exePath)
-    return execl (exePath, exePath, path, (char *) NULL);
+    {
+      ret = execl (exePath, exePath, path, (char *) NULL);
+      if (ret)
+	syslog (LOG_ERR, "Rts2ConnImgProcess::newProcess: %m");
+    }
   return -2;
 }
 

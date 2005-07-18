@@ -207,6 +207,7 @@ Rts2DevClientCameraExec::readoutEnd ()
 void
 Rts2DevClientCameraExec::deleteScript ()
 {
+  blockMove = 0;
   if (script)
     {
       delete script;
@@ -215,7 +216,6 @@ Rts2DevClientCameraExec::deleteScript ()
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
     }
   currentTarget = NULL;
-  blockMove = 0;
 }
 
 Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection):Rts2DevClientTelescopeImage

@@ -113,6 +113,8 @@ Rts2ImageProc::init ()
 {
   int ret;
   ret = Rts2DeviceDb::init ();
+  if (ret)
+    return ret;
 
   Rts2Config *config;
   config = Rts2Config::instance ();
