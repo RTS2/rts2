@@ -164,6 +164,21 @@ CREATE TABLE counters (
 	mount_name	varchar(8) REFERENCES mounts(mount_name)
 );
 
+DROP TABLE observations;
+
+CREATE TABLE observations (
+	tar_id		integer REFERENCES targets (tar_id),
+	obs_id		integer PRIMARY KEY NOT NULL,
+	obs_ra		float8,
+	obs_dec		float8,
+	obs_alt		float,
+	obs_az		float,
+	obs_slew	timestamp,  -- start of slew
+	obs_start	timestamp,  -- start of observation
+	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
+	obs_end		timestamp
+);
+
 DROP TABLE darks;
 
 CREATE TABLE darks (
@@ -193,7 +208,7 @@ CREATE TABLE flats (
 	flat_exposure	integer,
 	flat_temperature integer,
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
-	camera_name	varchar(8) REFERENCES cameras(camera_name)
+	camera_name	varchar(8) REFERENCES cameras(camera_name),
 CONSTRAINT flats_prim_key PRIMARY KEY (flat_date, camera_name)
 );
 
@@ -208,21 +223,6 @@ CREATE SEQUENCE grb_tar_id START WITH 50000;
 DROP SEQUENCE point_id;
 
 CREATE SEQUENCE point_id;
-
-DROP TABLE observations;
-
-CREATE TABLE observations (
-	tar_id		integer REFERENCES targets (tar_id),
-	obs_id		integer PRIMARY KEY NOT NULL,
-	obs_ra		float8,
-	obs_dec		float8,
-	obs_alt		float,
-	obs_az		float,
-	obs_slew	timestamp,  -- start of slew
-	obs_start	timestamp,  -- start of observation
-	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
-	obs_end		timestamp
-);
 
 CREATE TABLE swift_observation (
         swift_id        integer NOT NULL REFERENCES swift (swift_id),

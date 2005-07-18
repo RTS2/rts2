@@ -11,6 +11,7 @@ W	Swift FOV
 I	Integral FOV
 d	Dark target
 f	Flat target
+0	fOcusing target
 \.
 
 COPY epoch FROM stdin;
