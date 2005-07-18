@@ -781,6 +781,8 @@ Rts2Device::init ()
   // try to open log file..
 
   ret = Rts2Block::init ();
+  if (ret)
+    return ret;
 
   openlog (NULL, log_option, LOG_LOCAL0);
 
