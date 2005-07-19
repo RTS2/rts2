@@ -447,11 +447,15 @@ Rts2DevCamera::changeMasterState (int new_state)
 {
   switch (new_state)
     {
-    case SERVERD_NIGHT | SERVERD_STANDBY:
-    case SERVERD_NIGHT:
-      return camCoolHold ();
     case SERVERD_DUSK | SERVERD_STANDBY:
+    case SERVERD_NIGHT | SERVERD_STANDBY:
+    case SERVERD_DAWN | SERVERD_STANDBY:
     case SERVERD_DUSK:
+    case SERVERD_NIGHT:
+    case SERVERD_DAWN:
+      return camCoolHold ();
+    case SERVERD_EVENING | SERVERD_STANDBY:
+    case SERVERD_EVENING:
       return camCoolMax ();
     default:
       return camCoolShutdown ();
