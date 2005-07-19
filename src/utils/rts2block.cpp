@@ -470,6 +470,9 @@ Rts2Conn::command ()
       if (ret == 0)
 	return -1;
     }
+  syslog (LOG_DEBUG,
+	  "Rts2Conn::command unknow command: getCommand %s state: %i type: %i name: %s",
+	  getCommand (), conn_state, getType (), getName ());
   sendCommandEnd (-4, "Unknow command");
   return -4;
 }

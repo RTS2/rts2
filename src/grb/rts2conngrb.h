@@ -1,16 +1,14 @@
 #ifndef __RTS2_GRBCONN__
 #define __RTS2_GRBCONN__
 
-#include "../utils/rts2block.h"
-#include "../utils/rts2device.h"
-#include "../utils/rts2client.h"
+#include "../utils/rts2connnosend.h"
 
 #include "grbconst.h"
 #include "grbd.h"
 
 class Rts2DevGrb;
 
-class Rts2ConnGrb:public Rts2Conn
+class Rts2ConnGrb:public Rts2ConnNoSend
 {
 private:
   Rts2DevGrb * master;
@@ -76,8 +74,6 @@ public:
   char *lastTarget ();
   void setLastTarget (char *in_last_target);
   int lastTargetTime ();
-
-  virtual void endConnection ();
 };
 
 #endif /* !__RTS2_GRBCONN__ */

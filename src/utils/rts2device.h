@@ -53,7 +53,6 @@ public:
   virtual void setDeviceAddress (Rts2Address * in_addr);
   void setDeviceName (char *in_name);
 
-  virtual void addressAdded (Rts2Address * in_addr);
   void connAuth ();
 
   virtual void setKey (int in_key);

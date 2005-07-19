@@ -78,7 +78,8 @@ Rts2ConnNoSend (in_master)
 
 Rts2ClientTCPDataConn::~Rts2ClientTCPDataConn (void)
 {
-  delete data;
+  if (data)
+    delete[]data;
 }
 
 int

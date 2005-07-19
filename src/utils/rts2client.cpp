@@ -107,15 +107,6 @@ Rts2ConnClient::setAddress (Rts2Address * in_addr)
 }
 
 void
-Rts2ConnClient::addressAdded (Rts2Address * in_addr)
-{
-  if (isName (in_addr->getName ()))
-    {
-      setAddress (in_addr);
-    }
-}
-
-void
 Rts2ConnClient::connLogin ()
 {
   master->getCentraldConn ()->

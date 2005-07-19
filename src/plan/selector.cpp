@@ -56,6 +56,21 @@ public:
   virtual int init ();
   virtual int idle ();
 
+  virtual int ready ()
+  {
+    return 0;
+  }
+
+  virtual int baseInfo ()
+  {
+    return 0;
+  }
+
+  virtual int info ()
+  {
+    return 0;
+  }
+
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
   virtual void postEvent (Rts2Event * event);

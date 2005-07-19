@@ -57,7 +57,7 @@ Rts2Script::Rts2Script (char *scriptText,
 
 Rts2Script::~Rts2Script (void)
 {
-  delete cmdBuf;
+  delete[]cmdBuf;
 }
 
 int

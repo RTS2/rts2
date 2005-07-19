@@ -571,13 +571,15 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
   }
 }
 
-Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, Rts2DevGrb *in_master):Rts2Conn (in_master)
+Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int
+in_do_hete_test, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
 {
   master = in_master;
   gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
   strcpy (gcn_hostname, in_gcn_hostname);
   gcn_port = in_gcn_port;
-  last_packet.tv_sec = 0;
+  time (&last_packet.tv_sec);
+  last_packet.tv_sec -= 600;
   last_packet.tv_usec = 0;
   last_imalive_sod = -1;
 
@@ -586,9 +588,10 @@ Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete
   last_target_time = -1;
 
   do_hete_test = in_do_hete_test;
+
+  setConnTimeout (185);
   time (&nextTime);
-  nextTime += 60;
-  setConnTimeout (-1);
+  nextTime += getConnTimeout ();
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
@@ -605,8 +608,12 @@ Rts2ConnGrb::idle ()
   int err;
   socklen_t len = sizeof (err);
 
-  if (isConnState (CONN_CONNECTING))
+  time_t now;
+  time (&now);
+
+  switch (getConnState ())
     {
+    case CONN_CONNECTING:
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
         {
@@ -621,24 +628,27 @@ Rts2ConnGrb::idle ()
         }
       else 
         {
-          setConnState (CONN_AUTH_PENDING);
+          setConnState (CONN_CONNECTED);
 	}
-    }
-  else if (isConnState (CONN_BROKEN))
-    {
-      time_t now;
-      time (&now);
-      if (now > nextTime)
+      // kill us when we were in conn_connecting state for to long
+    case CONN_BROKEN:
+      if (nextTime < now)
         {
           ret = init ();
           if (ret)
             {
               time (&nextTime);
-	      nextTime += 600;
+	      nextTime += getConnTimeout ();
             }
 	}
+      break;
+    case CONN_CONNECTED:
+      if (last_packet.tv_sec + getConnTimeout () < now)
+        connectionError ();
+      break;
     }
-  return Rts2Conn::idle ();
+  // we don't like to get called upper code with timeouting stuff..
+  return 0;
 }
 
 int
@@ -682,7 +692,7 @@ Rts2ConnGrb::init ()
     }
   setConnState (CONN_CONNECTED);
   time (&nextTime);
-  nextTime += 60;
+  nextTime += getConnTimeout ();
   return 0;
 }
 
@@ -691,24 +701,15 @@ Rts2ConnGrb::connectionError ()
 {
   time_t now;
   time (&now);
-  if (isConnState (CONN_CONNECTING)
-    && now < nextTime)
-  {
-    return -1;
-  }
   if (sock > 0)
   {
     close (sock);
     sock = -1;
   }
-  if (isConnState (CONN_CONNECTING))
-  {
-    return -1;
-  }
   if (!isConnState (CONN_BROKEN))
   {
     nextTime = now;
-    nextTime += 600;
+    sock = -1;
     setConnState (CONN_BROKEN);
   }
   return -1;
@@ -719,24 +720,18 @@ Rts2ConnGrb::receive (fd_set *set)
 {
   int ret = 0;
   struct tm *t;
-  if (!isConnState (CONN_CONNECTED) && !isConnState (CONN_AUTH_PENDING))
-  {
-    connectionError ();
-    return -1;
-  }
   if (sock >= 0 && FD_ISSET (sock, set))
   {
     // translate packages to linux..
     short *sp;			// Ptr to a short; used for the swapping
     short pl, ph;			// Low part & high part
     ret = read (sock, (char*) nbuf, sizeof (nbuf));
-    if (ret < 0)
+    if (ret == 0 && isConnState (CONN_CONNECTING))
     {
-      if (isConnState (CONN_AUTH_PENDING))
-      {
-        setConnState (CONN_CONNECTED);
-        return 1;
-      }
+      setConnState (CONN_CONNECTED);
+    }
+    else if (ret <= 0)
+    {
       connectionError ();
       return -1;
     }
@@ -863,10 +858,4 @@ int
 Rts2ConnGrb::lastTargetTime ()
 {
   return last_target_time;
-}
-
-void
-Rts2ConnGrb::endConnection ()
-{
-  setConnState (CONN_BROKEN);
 }

@@ -253,18 +253,6 @@ Rts2DevConn::setDeviceName (char *in_name)
 }
 
 void
-Rts2DevConn::addressAdded (Rts2Address * in_addr)
-{
-  if (getType () != DEVICE_DEVICE)
-    return;
-  if (isName (in_addr->getName ()))
-    {
-      setDeviceAddress (in_addr);
-      init ();
-    }
-}
-
-void
 Rts2DevConn::connAuth ()
 {
   master->getCentraldConn ()->
@@ -843,12 +831,6 @@ Rts2Device::sendStatusInfo (Rts2DevConn * conn)
 {
   int i;
   int ret;
-  char *msg;
-
-  asprintf (&msg, "I status_num %i", statesSize + 1);
-  // last state holds priority info
-  ret = conn->send (msg);
-  free (msg);
 
   if (ret)
     return ret;

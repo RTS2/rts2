@@ -29,7 +29,6 @@ public:
   virtual int idle ();
 
   virtual void setAddress (Rts2Address * in_addr);
-  virtual void addressAdded (Rts2Address * in_addr);
   void connLogin ();
 
   virtual void setKey (int in_key);
