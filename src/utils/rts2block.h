@@ -95,6 +95,7 @@ private:
   // used for monitoring of connection state..
   time_t lastGoodSend;
   time_t lastData;
+  time_t lastSendReady;
 
   // connectionTimeout in seconds
   int connectionTimeout;

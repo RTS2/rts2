@@ -41,10 +41,11 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
   otherDevice = NULL;
   otherType = -1;
 
-  time (&lastGoodSend);
-  time (&lastData);
-
   connectionTimeout = 300;	// 5 minutes timeout
+
+  time (&lastGoodSend);
+  lastData = lastGoodSend;
+  lastSendReady = lastGoodSend - connectionTimeout;
 }
 
 Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):
@@ -66,14 +67,18 @@ Rts2Object ()
   otherDevice = NULL;
   otherType = -1;
 
-  time (&lastGoodSend);
-  time (&lastData);
+  connectionTimeout = 300;	// 5 minutes timeout (150 + 150)
 
-  connectionTimeout = 150;	// 5 minutes timeout (150 + 150)
+  time (&lastGoodSend);
+  lastData = lastGoodSend;
+  lastSendReady = lastData - connectionTimeout;
 }
 
 Rts2Conn::~Rts2Conn (void)
 {
+  syslog (LOG_DEBUG,
+	  "Connection deleted: name '%s' centrald_id %i state %i type %i",
+	  getName (), centrald_id, conn_state, type);
   if (sock >= 0)
     close (sock);
   for (int i = 0; i < MAX_STATE; i++)
@@ -109,15 +114,25 @@ Rts2Conn::postMaster (Rts2Event * event)
 int
 Rts2Conn::idle ()
 {
+  int ret;
   if (connectionTimeout > 0)
     {
       time_t now;
       time (&now);
-      if (now > lastGoodSend + getConnTimeout ()
-	  && now > lastData + getConnTimeout ())
-	send ("T ready");
-      if (now > lastData + getConnTimeout () * 2)
-	connectionError ();
+      if (now > lastData + getConnTimeout ()
+	  && now > lastSendReady + getConnTimeout () / 4)
+	{
+	  ret = send ("T ready");
+	  syslog (LOG_DEBUG, "Send T ready ret: %i name: '%s' type:%i", ret,
+		  getName (), type);
+	  time (&lastSendReady);
+	}
+      if (now > (lastData + getConnTimeout () * 2))
+	{
+	  syslog (LOG_DEBUG, "Connection timeout: %i %i %i '%s' type: %i",
+		  lastGoodSend, lastData, now, getName (), type);
+	  connectionError ();
+	}
     }
 }
 
@@ -227,6 +242,7 @@ Rts2Conn::processLine ()
 	return -1;
       if (!strcmp (msg, "ready"))
 	{
+	  syslog (LOG_DEBUG, "Send T OK");
 	  send ("T OK");
 	  return -1;
 	}
@@ -1148,6 +1164,9 @@ Rts2Block::run ()
 		{
 		  if (conn->receive (&read_set) == -1)
 		    {
+		      syslog (LOG_ERR,
+			      "Will delete connection %i, name: '%s'", i,
+			      conn->getName ());
 		      ret = deleteConnection (conn);
 		      // delete connection only when it really requested to be deleted..
 		      if (!ret)
