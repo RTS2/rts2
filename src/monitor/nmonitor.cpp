@@ -509,10 +509,7 @@ public:
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
 
-  virtual int willConnect (Rts2Address * in_addr)
-  {
-    return 1;
-  }
+  virtual int willConnect (Rts2Address * in_addr);
   virtual int addAddress (Rts2Address * in_addr);
 
   int resize ()
@@ -778,6 +775,12 @@ Rts2NMonitor::processKey (int key)
       refreshCommandWindow ();
       break;
     }
+}
+
+int
+Rts2NMonitor::willConnect (Rts2Address * in_addr)
+{
+  return 1;
 }
 
 int
