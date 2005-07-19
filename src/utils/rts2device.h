@@ -68,18 +68,22 @@ class Rts2DevConnMaster:public Rts2Conn
   int device_type;
   int device_port;
   Rts2DevConn *auth_conn;	// connection waiting for authorization
+  time_t nextTime;
 protected:
   int command ();
   int message ();
   int informations ();
   int status ();
+  virtual int connectionError ();
 public:
     Rts2DevConnMaster (Rts2Block * in_master,
 		       char *in_device_host, int in_device_port,
 		       char *in_device_name, int in_device_type,
 		       char *in_master_host, int in_master_port);
+    virtual ~ Rts2DevConnMaster (void);
   int registerDevice ();
   virtual int init ();
+  virtual int idle ();
   int authorize (Rts2DevConn * conn);
   void setHavePriority (int in_have_priority);
   int deleteConnection (Rts2Conn * conn);

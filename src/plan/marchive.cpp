@@ -13,7 +13,7 @@ main (int argc, char **argv)
 {
   Rts2ImageDb *image;
   {
-    ECPGconnect (__LINE__, 0, "stars", NULL, NULL, NULL, 0);
+    ECPGconnect (__LINE__, 0, "stars2", NULL, NULL, NULL, 0);
   }
 #line 7 "marchive.ec"
 

@@ -1084,7 +1084,7 @@ Rts2DevTelescopeGemini::tel_start_move ()
     return 0;
   // otherwise read reply..
   time (&moveTimeout);
-  moveTimeout += 120;
+  moveTimeout += 300;
   tel_read_hash (buf, 53);
   if (retstr == '3')		// manual control..
     return 0;
@@ -1127,14 +1127,14 @@ int
 Rts2DevTelescopeGemini::isMoving ()
 {
   time_t now;
+  if (telMotorState != TEL_OK)
+    return USEC_SEC;
   time (&now);
   if (moveTimeout > now)
     {
       stopMove ();
       return -2;
     }
-  if (telMotorState != TEL_OK)
-    return USEC_SEC;
   if (lastMotorState & 8)
     return USEC_SEC / 10;
   return -2;
@@ -1157,13 +1157,17 @@ Rts2DevTelescopeGemini::endMove ()
 int
 Rts2DevTelescopeGemini::stopMove ()
 {
+  int ret;
   tel_gemini_get (99, &lastMotorState);
   tel_write ("#:Q#", 4);
   if (lastMotorState & 8)
     {
       lastMotorState &= ~8;
-      return tel_gemini_set (99, lastMotorState);
+      ret = tel_gemini_set (99, lastMotorState);
+      sleep (1);
+      return ret;
     }
+  sleep (1);
   return 0;
 }
 

@@ -288,10 +288,8 @@ Rts2ConnCentrald::commandDevice ()
 	{
 	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM, "invalid authorization key");
-	  master->connections[client]->setKey (0);
 	  return -1;
 	}
-      master->connections[client]->setKey (0);
 
       sendAValue ("authorization_ok", client);
       sendInfo ();
@@ -321,11 +319,6 @@ Rts2ConnCentrald::commandDevice ()
   if (isCommand ("off"))
     {
       return master->changeStateOff ();
-    }
-  if (isCommand ("S"))
-    {
-      syslog (LOG_DEBUG, "Rts2ConnCentrald::commandDevice Status command");
-      return 0;
     }
   return -1;
 }

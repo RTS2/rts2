@@ -294,6 +294,11 @@ Rts2Conn (-1, in_master)
   auth_conn = NULL;
 }
 
+Rts2DevConnMaster::~Rts2DevConnMaster (void)
+{
+  syslog (LOG_ERR, "Rts2DevConnMaster::Rts2DevConnMaster deleted!");
+}
+
 int
 Rts2DevConnMaster::registerDevice ()
 {
@@ -311,6 +316,23 @@ Rts2DevConnMaster::registerDevice ()
   ret = send (msg);
   free (msg);
   return ret;
+}
+
+int
+Rts2DevConnMaster::connectionError ()
+{
+  if (sock > 0)
+    {
+      close (sock);
+      sock = -1;
+    }
+  if (!isConnState (CONN_BROKEN))
+    {
+      setConnState (CONN_BROKEN);
+      time (&nextTime);
+      nextTime += 60;
+    }
+  return -1;
 }
 
 int
@@ -346,6 +368,27 @@ Rts2DevConnMaster::init ()
     }
   // have to wait for reply
   return registerDevice ();
+}
+
+int
+Rts2DevConnMaster::idle ()
+{
+  time_t now;
+  time (&now);
+  switch (getConnState ())
+    {
+    case CONN_BROKEN:
+      if (now > nextTime)
+	{
+	  nextTime = now + 60;
+	  int ret;
+	  ret = init ();
+	  if (!ret)
+	    setConnState (CONN_AUTH_OK);
+	}
+      break;
+    }
+  return Rts2Conn::idle ();
 }
 
 int
@@ -832,8 +875,6 @@ Rts2Device::sendStatusInfo (Rts2DevConn * conn)
   int i;
   int ret;
 
-  if (ret)
-    return ret;
   for (i = 0; i < statesSize; i++)
     {
       ret = states[i]->sendInfo (conn, i);

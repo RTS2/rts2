@@ -130,7 +130,7 @@ Rts2ClientTCPDataConn::idle ()
 	  connectionError ();
 	}
     }
-  return Rts2Conn::idle ();
+  return 0;			// we don't want Rts2Conn to take care of our timeouts
 }
 
 void
