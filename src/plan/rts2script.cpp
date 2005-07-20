@@ -61,7 +61,8 @@ Rts2Script::~Rts2Script (void)
 }
 
 int
-Rts2Script::nextCommand (Rts2Block * in_master, Rts2Command ** new_command,
+Rts2Script::nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
+			 Rts2Command ** new_command,
 			 char new_device[DEVICE_NAME_SIZE])
 {
   char *commandStart;
@@ -91,7 +92,8 @@ Rts2Script::nextCommand (Rts2Block * in_master, Rts2Command ** new_command,
       ret = getNextParamFloat (&exp_time);
       if (ret)
 	return -1;
-      *new_command = new Rts2CommandExposure (in_master, EXP_LIGHT, exp_time);
+      *new_command =
+	new Rts2CommandExposure (in_master, camera, EXP_LIGHT, exp_time);
       return 0;
     }
   else if (!strcmp (commandStart, COMMAND_DARK))
@@ -100,7 +102,8 @@ Rts2Script::nextCommand (Rts2Block * in_master, Rts2Command ** new_command,
       ret = getNextParamFloat (&exp_time);
       if (ret)
 	return -1;
-      *new_command = new Rts2CommandExposure (in_master, EXP_DARK, exp_time);
+      *new_command =
+	new Rts2CommandExposure (in_master, camera, EXP_DARK, exp_time);
       return 0;
     }
   else if (!strcmp (commandStart, COMMAND_FILTER))

@@ -68,6 +68,9 @@ protected:
   virtual void readoutEnd ();
 public:
     Rts2DevClientCamera (Rts2Conn * in_connection);
+  virtual void exposureFailed (int status)
+  {
+  }
   virtual void stateChanged (Rts2ServerState * state);
 };
 

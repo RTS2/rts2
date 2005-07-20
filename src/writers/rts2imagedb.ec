@@ -298,6 +298,7 @@ Rts2ImageDb::setDarkFromDb ()
   }
   EXEC SQL CLOSE dark_cursor;
   setValue ("DARK", d_dark_name.arr, "dark image full path");
+  processBitfiedl |= DARK_OK;
 
   return 0;
 }

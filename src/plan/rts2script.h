@@ -3,6 +3,7 @@
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2command.h"
+#include "../utils/rts2devclient.h"
 
 /*!
  * Holds script to execute on given device.
@@ -31,7 +32,8 @@ public:
     Rts2Script (char *scriptText,
 		const char in_defaultDevice[DEVICE_NAME_SIZE]);
     virtual ~ Rts2Script (void);
-  int nextCommand (Rts2Block * in_master, Rts2Command ** new_command,
+  int nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
+		   Rts2Command ** new_command,
 		   char new_device[DEVICE_NAME_SIZE]);
   int isLastCommand (void)
   {

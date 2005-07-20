@@ -88,9 +88,12 @@ public:
 
 class Rts2CommandExposure:public Rts2Command
 {
+private:
+  Rts2DevClientCamera * camera;
 public:
-  Rts2CommandExposure (Rts2Block * in_master, exposureType exp_type,
-		       float exp_time);
+  Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera,
+		       exposureType exp_type, float exp_time);
+  virtual int commandReturnFailed (int status);
 };
 
 class Rts2CommandFilter:public Rts2Command

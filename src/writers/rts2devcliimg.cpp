@@ -46,8 +46,8 @@ Rts2DevClientCameraImage::queExposure ()
     exposureCount--;
   connection->
     queCommand (new
-		Rts2CommandExposure (connection->getMaster (), exposureT,
-				     exposureTime));
+		Rts2CommandExposure (connection->getMaster (), this,
+				     exposureT, exposureTime));
 }
 
 void
@@ -92,6 +92,12 @@ Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 void
 Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
+}
+
+void
+Rts2DevClientCameraImage::exposureFailed (int status)
+{
+  readoutEnd ();		// pretend we can expose new image after failure..
 }
 
 void

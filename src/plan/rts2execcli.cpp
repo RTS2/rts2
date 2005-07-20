@@ -100,7 +100,9 @@ Rts2DevClientCameraExec::nextCommand ()
     {
       return;
     }
-  ret = script->nextCommand (connection->getMaster (), &nextComd, new_device);
+  ret =
+    script->nextCommand (connection->getMaster (), this, &nextComd,
+			 new_device);
   if (ret < 0)
     {
       deleteScript ();
@@ -117,7 +119,8 @@ Rts2DevClientCameraExec::nextCommand ()
 	  return;
 	}
       ret =
-	script->nextCommand (connection->getMaster (), &nextComd, new_device);
+	script->nextCommand (connection->getMaster (), this, &nextComd,
+			     new_device);
       // we don't have any next command:(
       if (ret < 0)
 	{

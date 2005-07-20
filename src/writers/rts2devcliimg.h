@@ -50,6 +50,7 @@ public:
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void processImage (Rts2Image * image);
+  virtual void exposureFailed (int status);
 };
 
 class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope

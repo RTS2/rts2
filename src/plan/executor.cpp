@@ -377,12 +377,14 @@ Rts2Executor::switchTarget ()
 	case SERVERD_DUSK:
 	case SERVERD_NIGHT:
 	case SERVERD_DAWN:
-	case SERVERD_MORNING:
 	  doSwitch ();
 	  break;
 	default:
 	  if (currentTarget)
-	    queTarget (currentTarget);
+	    {
+	      currentTarget->endObservation (-1);
+	      queTarget (currentTarget);
+	    }
 	  currentTarget = NULL;
 	  delete nextTarget;
 	  nextTarget = NULL;
@@ -398,6 +400,8 @@ Rts2Executor::queTarget (Target * in_target)
   ret = in_target->postprocess ();
   if (!ret)
     targetsQue.push_back (in_target);
+  else
+    delete in_target;
 }
 
 void

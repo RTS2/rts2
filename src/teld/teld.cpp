@@ -122,7 +122,8 @@ Rts2DevTelescope::checkMoves ()
 	{
 	  if (moveInfoCount == moveInfoMax)
 	    {
-	      sendInfo (move_connection);
+	      if (move_connection)
+		sendInfo (move_connection);
 	      moveInfoCount = 0;
 	    }
 	  else
@@ -162,7 +163,8 @@ Rts2DevTelescope::checkMoves ()
 	{
 	  if (moveInfoCount == moveInfoMax)
 	    {
-	      sendInfo (move_connection);
+	      if (move_connection)
+		sendInfo (move_connection);
 	      moveInfoCount = 0;
 	    }
 	  else

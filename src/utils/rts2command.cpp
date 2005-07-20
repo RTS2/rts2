@@ -112,6 +112,7 @@ Rts2Command (in_master)
 }
 
 Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master,
+					  Rts2DevClientCamera * in_camera,
 					  exposureType exp_type,
 					  float exp_time):
 Rts2Command (in_master)
@@ -121,6 +122,14 @@ Rts2Command (in_master)
 	    exp_time);
   setCommand (command);
   free (command);
+  camera = in_camera;
+}
+
+int
+Rts2CommandExposure::commandReturnFailed (int status)
+{
+  camera->exposureFailed (status);
+  return Rts2Command::commandReturnFailed (status);
 }
 
 Rts2CommandFilter::Rts2CommandFilter (Rts2Block * in_master, int filter):
