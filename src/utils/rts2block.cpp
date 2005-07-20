@@ -486,6 +486,11 @@ Rts2Conn::command ()
       if (ret == 0)
 	return -1;
     }
+  // don't respond to values with error - otherDevice does respond to
+  // values, i there is no other device, we have to take resposibility
+  // as it can fails (V without value), not with else
+  if (isCommand ("V"))
+    return -1;
   syslog (LOG_DEBUG,
 	  "Rts2Conn::command unknow command: getCommand %s state: %i type: %i name: %s",
 	  getCommand (), conn_state, getType (), getName ());

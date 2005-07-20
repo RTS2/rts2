@@ -359,14 +359,14 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
 {
   // horizont constrain..
   struct ln_equ_posn curr_position;
-  double gst = ln_get_mean_sidereal_time (JD);
+  double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
   int ret;
   if (getPosition (&curr_position, JD))
   {
     changePriority (-100, JD + 1);
     return -1;
   }
-  ret = checker->is_good (gst, curr_position.ra, curr_position.dec);
+  ret = checker->is_good (lst, curr_position.ra, curr_position.dec);
   if (!ret)
   {
     struct ln_rst_time rst;

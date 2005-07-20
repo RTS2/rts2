@@ -218,13 +218,6 @@ Rts2DevTelescope::ready (Rts2Conn * conn)
 int
 Rts2DevTelescope::sendInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "telescope not ready");
-      return -1;
-    }
   if (knowPosition)
     {
       conn->sendValue ("ra", lastRa);

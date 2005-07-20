@@ -117,6 +117,7 @@ Rts2ImageDb::updateDarkDB ()
   int d_img_id = imgId;
   int d_obs_id = obsId;
   int d_dark_date = getExposureSec ();
+  int d_dark_usec = getExposureUsec ();
   double d_dark_exposure;
   double d_dark_temperature;
   int d_epoch_id = epochId;
@@ -136,6 +137,7 @@ Rts2ImageDb::updateDarkDB ()
     img_id,
     obs_id,
     dark_date,
+    dark_usec,
     dark_exposure,
     dark_temperature,
     epoch_id,
@@ -144,6 +146,7 @@ Rts2ImageDb::updateDarkDB ()
     :d_img_id,
     :d_obs_id,
     abstime (:d_dark_date),
+    :d_dark_usec,
     :d_dark_exposure,
     :d_dark_temperature,
     :d_epoch_id,
@@ -252,6 +255,53 @@ Rts2ImageDb::updateAstrometry ()
   return 0;  
 }
 
+int
+Rts2ImageDb::setDarkFromDb ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  VARCHAR d_camera_name[8];
+  int d_date = getExposureSec ();
+  VARCHAR d_dark_name[250];
+  double d_img_temperature;
+  double d_img_exposure;
+  EXEC SQL END DECLARE SECTION;
+
+  if (!cameraName)
+    return -1;
+    
+  strncpy (d_camera_name.arr, cameraName, 8);
+  d_camera_name.len = strlen (cameraName);
+
+  getValue ("CCD_TEMP", d_img_temperature);
+  getValue ("EXPOSURE", d_img_exposure);
+
+  EXEC SQL DECLARE dark_cursor CURSOR FOR
+    SELECT
+      dark_name (dark_date, dark_usec, camera_name)
+    FROM
+      darks
+    WHERE
+        camera_name = :d_camera_name
+      AND abs (dark_temperature - :d_img_temperature) < 2
+      AND abs (EXTRACT (EPOCH FROM dark_date) - :d_date) < 43200
+    ORDER BY
+      dark_date DESC;
+  EXEC SQL OPEN dark_cursor;
+  EXEC SQL FETCH next FROM dark_cursor INTO
+    :d_dark_name;
+  if (sqlca.sqlcode)
+  {
+    syslog (LOG_DEBUG, "Rts2ImageDb::setDarkFromDb SQL error: %s (%i)",
+      sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    EXEC SQL CLOSE dark_cursor;
+    return -1;
+  }
+  EXEC SQL CLOSE dark_cursor;
+  setValue ("DARK", d_dark_name.arr, "dark image full path");
+
+  return 0;
+}
+
 Rts2ImageDb::Rts2ImageDb (int in_epoch_id, int in_targetId, Rts2DevClientCamera * camera,
       	       int in_obsId, const struct timeval *exposureStart, int in_imgId) : 
   Rts2Image (in_epoch_id, in_targetId, camera, in_obsId, exposureStart, in_imgId)
@@ -306,5 +356,6 @@ Rts2ImageDb::saveImage ()
 {
   updateDB ();
   setValue ("PROC", processBitfiedl, "procesing status; info in DB");
+  setDarkFromDb ();
   return Rts2Image::saveImage ();
 }

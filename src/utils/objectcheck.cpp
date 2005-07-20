@@ -83,11 +83,11 @@ ObjectCheck::is_above_horizont (double ha, double dec, double ra1,
 }
 
 int
-ObjectCheck::is_good (double st, double ra, double dec, int hardness)
+ObjectCheck::is_good (double lst, double ra, double dec, int hardness)
 {
   std::vector < struct ln_equ_posn >::iterator Iter1;
 
-  double ha = (ra - st * 15.0);	// normalize
+  double ha = (ra - lst * 15.0);	// normalize
   ha = ln_range_degrees (ha);
   ha /= 15.0;
 

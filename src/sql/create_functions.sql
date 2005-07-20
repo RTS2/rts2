@@ -73,6 +73,22 @@ BEGIN
 END;
 ' LANGUAGE plpgsql;
 
+
+DROP FUNCTION dark_name(timestamp, integer,   varchar(8));
+-- 			dark_date  dark_usec  camera_name
+CREATE FUNCTION imgpath(timestamp, integer, varchar(8)) RETURNS varchar(250) AS '
+DECLARE
+	name	varchar(14);
+BEGIN
+	name:=EXTRACT(YEAR FROM $1) || LPAD(EXTRACT(MONTH FROM $1), 2, ''0'') || LPAD(EXTRACT(DAY FROM $1), 2, ''0'')
+	  || LPAD(EXTRACT(HOUR FROM $1), 2, ''0'') || LPAD(EXTRACT(MINUTE FROM $1), 2, ''0'')
+	  || LPAD(EXTRACT(SECOND FROM $1), 2, ''0'') || ''-'' || LPAD (dark_usec / 1000, 4, ''0'');
+
+	RETURN ''/images/001/darks'' || camera_name || ''/'' || name || ''.fits'';
+END;
+' LANGUAGE plpgsql;
+
+
 DROP FUNCTION ell_update (varchar (150), float4, float4, 
 float4, float4, float4, float4, float8, float4, float4);
 

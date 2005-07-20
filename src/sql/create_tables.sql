@@ -185,6 +185,7 @@ CREATE TABLE darks (
 	obs_id		integer REFERENCES observations(obs_id),
 	img_id		integer NOT NULL,
 	dark_date	timestamp,
+	dark_usec	integer,
 	dark_exposure	float,
 	dark_temperature float,
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),

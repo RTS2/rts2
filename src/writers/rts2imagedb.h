@@ -30,6 +30,8 @@ private:
   int updateDB ();
   int updateAstrometry ();
 
+  int setDarkFromDb ();
+
   int processBitfiedl;
 public:
     Rts2ImageDb (int in_epoch_id, int in_targetId,
