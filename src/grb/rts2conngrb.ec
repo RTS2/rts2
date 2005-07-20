@@ -643,7 +643,8 @@ Rts2ConnGrb::idle ()
 	}
       break;
     case CONN_CONNECTED:
-      if (last_packet.tv_sec + getConnTimeout () < now)
+      if (last_packet.tv_sec + getConnTimeout () < now
+        && nextTime < now)
         connectionError ();
       break;
     }
