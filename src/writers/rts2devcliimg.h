@@ -34,6 +34,7 @@ protected:
   double yoa;
   double rotang;
   int flip;
+  char filter[3];
 
   float exposureTime;
   exposureType exposureT;

@@ -31,13 +31,21 @@ Rts2ImageDb::updateObjectDB ()
   int d_proccess_bitfield = processBitfiedl;
   VARCHAR d_mount_name[8];
   VARCHAR d_camera_name[8];
+  VARCHAR d_img_filter[3];
   EXEC SQL END DECLARE SECTION;
+
+  char filter[3];
 
   strncpy (d_mount_name.arr, mountName, 8);
   d_mount_name.len = strlen (mountName);
 
   strncpy (d_camera_name.arr, cameraName, 8);
   d_camera_name.len = strlen (cameraName);
+
+  getValue ("FILTER", filter);
+
+  strncpy (d_img_filter.arr, filter, 3);
+  d_img_filter.len = strlen (filter);
 
   getValue ("CCD_TEMP", d_img_temperature);
   getValue ("EXPOSURE", d_img_exposure);
@@ -55,6 +63,7 @@ Rts2ImageDb::updateObjectDB ()
     camera_name,
     img_temperature,
     img_exposure,
+    img_filter,
     img_alt,
     img_az,
     img_date,
@@ -72,6 +81,7 @@ Rts2ImageDb::updateObjectDB ()
     :d_camera_name,
     :d_img_temperature,
     :d_img_exposure,
+    :d_img_filter,
     :d_img_alt,
     :d_img_az,
     abstime (:d_img_date),

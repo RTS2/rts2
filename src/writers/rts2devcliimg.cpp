@@ -35,6 +35,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   config->getDouble (connection->getName (), "yoa", yoa);
   config->getDouble (connection->getName (), "rotang", rotang);
   config->getInteger (connection->getName (), "flip", flip);
+  config->getString (connection->getName (), "filter", filter, 3);
 }
 
 void
@@ -127,6 +128,7 @@ Rts2DevClientCameraImage::exposureStarted ()
   images->setValue ("ROTANG", rotang, "camera rotation over X axis");
   images->setValue ("FLIP", flip,
 		    "camera flip (since most astrometry devices works as mirrors");
+  images->setValue ("FILTER", filter, "used camera filter");
   focuser = getValueChar ("focuser");
   if (focuser)
     {
