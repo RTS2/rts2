@@ -150,6 +150,12 @@ Rts2focusc::createOtherType (Rts2Conn * conn, int other_device_type)
 	    }
 	}
       return cam;
+    case DEVICE_TYPE_MOUNT:
+      return new Rts2DevClientTelescopeImage (conn);
+    case DEVICE_TYPE_FOCUS:
+      return new Rts2DevClientFocusImage (conn);
+    case DEVICE_TYPE_DOME:
+      return new Rts2DevClientDomeImage (conn);
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }
@@ -162,7 +168,8 @@ Rts2focusc::run ()
   return Rts2Client::run ();
 }
 
-exposureType Rts2focusc::getExposureType ()
+exposureType
+Rts2focusc::getExposureType ()
 {
   return exposureT;
 }

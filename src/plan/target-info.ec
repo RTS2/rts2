@@ -3,6 +3,7 @@
 #endif
 
 #include "../utils/rts2config.h"
+#include "../utils/objectcheck.h"
 
 #include <getopt.h>
 #include <libnova/libnova.h>

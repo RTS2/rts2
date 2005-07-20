@@ -1,6 +1,7 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
 #include "../utils/rts2config.h"
+#include "../utils/objectcheck.h"
 
 #include <iostream>
 #include <list>
@@ -14,6 +15,7 @@ private:
   Target *target;
   struct ln_lnlat_posn *obs;
   int printTargetInfo ();
+  ObjectCheck *checker;
 public:
     Rts2TargetInfo (int argc, char **argv);
     virtual ~ Rts2TargetInfo (void);
@@ -21,6 +23,7 @@ public:
   virtual int processOption (int in_opt);
 
   virtual int processArgs (const char *arg);
+  virtual int init ();
   virtual int run ();
 };
 
@@ -28,11 +31,14 @@ Rts2TargetInfo::Rts2TargetInfo (int argc, char **argv):
 Rts2AppDb (argc, argv)
 {
   obs = NULL;
+  checker = NULL;
   addOption ('c', "cameras", 1, "show scripts for given cameras");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()
 {
+  if (checker)
+    delete checker;
   cameras.clear ();
 }
 
@@ -74,7 +80,11 @@ Rts2TargetInfo::printTargetInfo ()
   struct ln_equ_posn pos;
   struct ln_hrz_posn hrz;
   double ha;
+  double JD;
+  double gst;
+  double lst;
   time_t now, last;
+
   std::cout << "======================" << std::endl;
   std::cout << "Target ID: " << target->getTargetID () << std::endl;
   target->getPosition (&pos);
@@ -110,6 +120,14 @@ Rts2TargetInfo::printTargetInfo ()
     << std::endl;
   std::cout << "Bonus: " << target->getBonus () << std::endl;
 
+  // is above horizont?
+  JD = ln_get_julian_from_timet (&now);
+  gst = ln_get_mean_sidereal_time (JD);
+  lst = gst + obs->lng / 15.0;
+  std::cout << "Checker is_good:" << checker->is_good (gst, pos.ra, pos.dec)
+    << " (JD: " << JD << " gst: " << gst << " lst: " << lst << ")" << std::
+    endl;
+
   // print scripts..
   std::list < char *>::iterator cam_names;
   for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
@@ -125,16 +143,31 @@ Rts2TargetInfo::printTargetInfo ()
 }
 
 int
-Rts2TargetInfo::run ()
+Rts2TargetInfo::init ()
 {
-  std::list < int >::iterator tar_iter;
+  int ret;
+  char horizontFile[250];
+
+  ret = Rts2AppDb::init ();
+  if (ret)
+    return ret;
+
+  Rts2Config *config;
+  config = Rts2Config::instance ();
 
   if (!obs)
     {
-      Rts2Config *config;
-      config = Rts2Config::instance ();
       obs = config->getObserver ();
     }
+
+  config->getString ("observatory", "horizont", horizontFile, 250);
+  checker = new ObjectCheck (horizontFile);
+}
+
+int
+Rts2TargetInfo::run ()
+{
+  std::list < int >::iterator tar_iter;
 
   for (tar_iter = targets.begin (); tar_iter != targets.end (); tar_iter++)
     {
