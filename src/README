@@ -9,4 +9,5 @@ utils		rts2block.cpp, rts2device.cpp, devser.c, devdem.c, hms.h, ..
 writers		writers for writing images from internal to external format;
 		support stream processing
 phot		Photocounters daemon
+focusc		GUI focuser etc..
 focusd		Focuser
