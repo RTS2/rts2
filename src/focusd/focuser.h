@@ -19,14 +19,14 @@ protected:
   char focType[20];
   int focPos;
   float focTemp;
-  virtual int isFocusing () 
+  virtual int isFocusing ()
   {
-	  return -2;
+    return -2;
   };
 public:
-    Rts2DevFocuser (int argc, char **argv);
+  Rts2DevFocuser (int argc, char **argv);
   virtual int init ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 
   // callback functions
   virtual int ready ()
@@ -49,7 +49,7 @@ public:
   // callback functions from focuser connection
   int idle ();
   int ready (Rts2Conn * conn);
-  int info (Rts2Conn * conn);
+  int sendInfo (Rts2Conn * conn);
   int baseInfo (Rts2Conn * conn);
   int checkState ();
   int stepOut (Rts2Conn * conn, int num, int direction);

@@ -296,7 +296,7 @@ Rts2DevFocuserOptec::getTemp (float *temp)
 int
 Rts2DevFocuserOptec::focus ()
 {
-	// devcli_server_command (NULL, "priority 137");
+  // devcli_server_command (NULL, "priority 137");
 }
 
 int
@@ -308,7 +308,7 @@ Rts2DevFocuserOptec::ready ()
 int
 Rts2DevFocuserOptec::baseInfo ()
 {
-  strcpy (focType, "OPTEC TCF");
+  strcpy (focType, "OPTEC_TCF");
   strcpy (focCamera, camera_name);
   return 0;
 }
@@ -355,7 +355,7 @@ Rts2DevFocuserOptec::stepOut (int num, int direction)
 int
 Rts2DevFocuserOptec::isFocusing ()
 {
-	return 0;
+  return 0;
 }
 
 int
