@@ -932,7 +932,18 @@ Rts2DevTelescopeGemini::idle ()
 		  // parked, let's move us to location where we belong
 		  forcedReparking = 0;
 		  if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
-		    tel_start_move ();
+		    {
+		      tel_start_move ();
+		      tel_gemini_get (130, &worm);
+		      ret = tel_gemini_get (99, &lastMotorState);
+		      if (ret)
+			{
+			  // still not responding, repark
+			  resetMount (RESET_RESTART);
+			  telMotorState = TEL_BLOCKED_RESET;
+			  forcedReparking++;
+			}
+		    }
 		  break;
 		case -1:
 		  forcedReparking++;
