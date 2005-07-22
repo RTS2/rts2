@@ -76,7 +76,7 @@ END;
 
 DROP FUNCTION dark_name(timestamp, integer,   varchar(8));
 -- 			dark_date  dark_usec  camera_name
-CREATE FUNCTION imgpath(timestamp, integer, varchar(8)) RETURNS varchar(250) AS '
+CREATE FUNCTION dark_name(timestamp, integer, varchar(8)) RETURNS varchar(250) AS '
 DECLARE
 	name	varchar(14);
 BEGIN
