@@ -327,7 +327,6 @@ class Rts2Block:public Rts2App
 protected:
   int deamonize;
 
-  int addConnection (Rts2Conn * conn);
   virtual Rts2Conn *createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
 
@@ -352,6 +351,8 @@ public:
   int getPort (void);
   virtual int init ();
   void closeSockets ();
+
+  int addConnection (Rts2Conn * conn);
 
   virtual void postEvent (Rts2Event * event);
 

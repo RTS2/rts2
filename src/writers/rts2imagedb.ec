@@ -34,7 +34,7 @@ Rts2ImageDb::updateObjectDB ()
   VARCHAR d_img_filter[3];
   EXEC SQL END DECLARE SECTION;
 
-  char filter[3];
+  char filter[4] = "UNK";
 
   strncpy (d_mount_name.arr, mountName, 8);
   d_mount_name.len = strlen (mountName);
@@ -44,8 +44,8 @@ Rts2ImageDb::updateObjectDB ()
 
   getValue ("FILTER", filter);
 
-  strncpy (d_img_filter.arr, filter, 3);
-  d_img_filter.len = strlen (filter);
+  d_img_filter.len = strlen (filter) > 3 ? 3 : strlen (filter);
+  strncpy (d_img_filter.arr, filter, d_img_filter.len);
 
   getValue ("CCD_TEMP", d_img_temperature);
   getValue ("EXPOSURE", d_img_exposure);
@@ -304,6 +304,7 @@ Rts2ImageDb::setDarkFromDb ()
     syslog (LOG_DEBUG, "Rts2ImageDb::setDarkFromDb SQL error: %s (%i)",
       sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
     EXEC SQL CLOSE dark_cursor;
+    EXEC SQL ROLLBACK;
     return -1;
   }
   EXEC SQL CLOSE dark_cursor;

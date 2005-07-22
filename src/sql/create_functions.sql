@@ -78,13 +78,13 @@ DROP FUNCTION dark_name(timestamp, integer,   varchar(8));
 -- 			dark_date  dark_usec  camera_name
 CREATE FUNCTION dark_name(timestamp, integer, varchar(8)) RETURNS varchar(250) AS '
 DECLARE
-	name	varchar(14);
+	name	varchar(20);
 BEGIN
 	name:=EXTRACT(YEAR FROM $1) || LPAD(EXTRACT(MONTH FROM $1), 2, ''0'') || LPAD(EXTRACT(DAY FROM $1), 2, ''0'')
 	  || LPAD(EXTRACT(HOUR FROM $1), 2, ''0'') || LPAD(EXTRACT(MINUTE FROM $1), 2, ''0'')
-	  || LPAD(EXTRACT(SECOND FROM $1), 2, ''0'') || ''-'' || LPAD (dark_usec / 1000, 4, ''0'');
+	  || LPAD(EXTRACT(SECOND FROM $1), 2, ''0'') || ''-'' || LPAD ($2 / 1000, 4, ''0'');
 
-	RETURN ''/images/001/darks'' || camera_name || ''/'' || name || ''.fits'';
+	RETURN ''/images/001/darks'' || $3 || ''/'' || name || ''.fits'';
 END;
 ' LANGUAGE plpgsql;
 

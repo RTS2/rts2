@@ -28,6 +28,7 @@
 
 #include "../writers/rts2image.h"
 #include "../writers/rts2devcliimg.h"
+#include "../writers/rts2devclifoc.h"
 
 #include "status.h"
 #include "imghdr.h"
@@ -113,7 +114,7 @@ public:
   }
 };
 
-class Rts2xfocusCamera:public Rts2DevClientCameraImage
+class Rts2xfocusCamera:public Rts2DevClientCameraFoc
 {
 private:
   Rts2xfocus * master;
@@ -176,7 +177,7 @@ public:
 	exposureCount = 0;
 	break;
       }
-    Rts2DevClientCameraImage::postEvent (event);
+    Rts2DevClientCameraFoc::postEvent (event);
   }
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
@@ -188,7 +189,7 @@ public:
   void center (int centerWidth, int centerHeight);
 };
 
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraImage
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraFoc
   (in_connection)
 {
   master = in_master;
@@ -417,7 +418,7 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
   unsigned short *im_ptr;
 
   // get to upper classes as well
-  Rts2DevClientCameraImage::dataReceived (dataConn);
+  Rts2DevClientCameraFoc::dataReceived (dataConn);
 
   header = dataConn->getImageHeader ();
   pixmapWidth = header->sizes[0];
@@ -533,7 +534,7 @@ Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
 {
   std::cout << "State changed:" << state->getName () << " value:" << state->
     value << std::endl;
-  Rts2DevClientCameraImage::stateChanged (state);
+  Rts2DevClientCameraFoc::stateChanged (state);
 }
 
 void

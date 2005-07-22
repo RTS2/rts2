@@ -108,6 +108,12 @@ Rts2DevClient::getName ()
   return connection->getName ();
 }
 
+Rts2Block *
+Rts2DevClient::getMaster ()
+{
+  return connection->getMaster ();
+}
+
 void
 Rts2DevClient::getPriority ()
 {

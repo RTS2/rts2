@@ -21,6 +21,8 @@ class Rts2ServerState;
  * 
  *************************************/
 
+class Rts2Block;
+
 class Rts2DevClient:public Rts2Object
 {
 protected:
@@ -49,6 +51,8 @@ public:
   virtual void stateChanged (Rts2ServerState * state);
 
   const char *getName ();
+
+  Rts2Block *getMaster ();
 };
 
 /**************************************

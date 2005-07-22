@@ -562,5 +562,6 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
     syslog (LOG_ERR, "Cannot create target: %i sqlcode: %i %s",
     db_tar_id, sqlerr->sqlcode, sqlerr->sqlerrm.sqlerrmc);
   }
+  EXEC SQL ROLLBACK;
   return NULL;
 }

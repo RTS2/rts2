@@ -77,6 +77,7 @@ public:
   }
   virtual int info ()
   {
+    tempCCD = 100;
     return 0;
   }
   virtual int camChipInfo ()
