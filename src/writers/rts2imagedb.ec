@@ -278,6 +278,10 @@ Rts2ImageDb::setDarkFromDb ()
 
   if (!cameraName)
     return -1;
+
+  if (!(getType () == IMGTYPE_OBJECT
+  || getType () == IMGTYPE_FLAT))
+    return 0;
     
   strncpy (d_camera_name.arr, cameraName, 8);
   d_camera_name.len = strlen (cameraName);
