@@ -230,7 +230,9 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
       Rts2Image * image;
       image = (Rts2Image *) event->getArg ();
       // check if we are correct focuser for given camera
-      if (strcmp (image->getFocuserName (), connection->getName ()))
+      if (!image->getFocuserName ()
+	  || !connection->getName ()
+	  || strcmp (image->getFocuserName (), connection->getName ()))
 	break;
       image->setValue ("FOC_TYPE", getValueInteger ("type"), "focuser type");
       image->setValue ("FOC_POS", getValueInteger ("pos"),
