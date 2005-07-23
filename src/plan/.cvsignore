@@ -2,7 +2,8 @@
 .libs
 Makefile
 Makefile.in
-rts2-planc
-rts2-single
+rts2-executor
+rts2-imgproc
+rts2-selector
 selector.cpp
 test
