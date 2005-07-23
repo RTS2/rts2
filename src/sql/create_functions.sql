@@ -84,7 +84,7 @@ BEGIN
 	  || LPAD(EXTRACT(HOUR FROM $1), 2, ''0'') || LPAD(EXTRACT(MINUTE FROM $1), 2, ''0'')
 	  || LPAD(EXTRACT(SECOND FROM $1), 2, ''0'') || ''-'' || LPAD ($2 / 1000, 4, ''0'');
 
-	RETURN ''/images/001/darks'' || $3 || ''/'' || name || ''.fits'';
+	RETURN ''/images/001/darks/'' || $3 || ''/'' || name || ''.fits'';
 END;
 ' LANGUAGE plpgsql;
 
