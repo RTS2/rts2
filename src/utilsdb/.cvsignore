@@ -1,0 +1,8 @@
+.deps
+.libs
+Makefile
+Makefile.in
+rts2appdb.cpp
+rts2devicedb.cpp
+sub_targets.cpp
+target.cpp

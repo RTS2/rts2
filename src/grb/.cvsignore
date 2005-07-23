@@ -3,6 +3,7 @@
 Makefile
 Makefile.in
 rts2-grbc
+rts2conngrb.cpp
 *~
 *.log
 
