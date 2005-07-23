@@ -81,6 +81,11 @@ Rts2ConnFramWeather::receive (fd_set * set)
       socklen_t size = sizeof (from);
       data_size =
 	recvfrom (sock, buf, 80, 0, (struct sockaddr *) &from, &size);
+      if (data_size < 0)
+	{
+	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
+	  return 1;
+	}
       buf[data_size] = 0;
       syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, buf,
 	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
