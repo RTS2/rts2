@@ -2,8 +2,10 @@
 .libs
 Makefile
 Makefile.in
+marchive
 rts2-executor
 rts2-imgproc
 rts2-selector
-selector.cpp
+rts2-seltest
+rts2selector.cpp
 test
