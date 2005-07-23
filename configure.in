@@ -315,7 +315,6 @@ AC_OUTPUT([Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile
-	   src/db/Makefile
 	   src/dome/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
