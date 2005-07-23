@@ -1,7 +1,7 @@
 #ifndef _MAPS_H
 #define _MAPS_H
 
-#include "/home/petr/rts2/include/telescope_info.h"
+#include "telescope_info.h"
 
 #define FILEPATH "/dev/tel"
 #define STATFILE "/dev/tel/stat"

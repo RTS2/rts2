@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 
-#include "../db/db.h"
 #include "../utils/mkpath.h"
 
 #include <ctype.h>

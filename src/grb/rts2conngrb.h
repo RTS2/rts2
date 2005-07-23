@@ -23,6 +23,12 @@ private:
   char *last_target;
   int last_target_time;
 
+  // init listen (listening on given port) and call (try to connect to given
+  // port; there must be GCN packet receiving running on oppoiste side) GCN
+  // connection
+  int init_listen ();
+  int init_call ();
+
   // utility functions..
   double getPktSod ();
 
@@ -59,6 +65,8 @@ private:
   char *gcn_hostname;
   int do_hete_test;
 
+  int gcn_listen_sock;
+
   time_t nextTime;
 public:
   Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test,
@@ -66,6 +74,9 @@ public:
   virtual ~ Rts2ConnGrb (void);
   virtual int idle ();
   virtual int init ();
+
+  virtual int add (fd_set * set);
+
   virtual int connectionError ();
   virtual int receive (fd_set * set);
 

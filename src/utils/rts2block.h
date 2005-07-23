@@ -128,7 +128,7 @@ public:
 
   virtual void postEvent (Rts2Event * event);
 
-  int add (fd_set * set);
+  virtual int add (fd_set * set);
   virtual int getState (int state_num)
   {
     if (state_num < 0 || state_num >= MAX_STATE)

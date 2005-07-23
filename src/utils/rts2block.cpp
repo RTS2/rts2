@@ -150,7 +150,6 @@ Rts2Conn::acceptConn ()
     }
   else
     {
-      close (sock);
       sock = new_sock;
       syslog (LOG_DEBUG, "Rts2Conn::acceptConn connection accepted");
       setConnState (CONN_CONNECTED);
@@ -936,8 +935,8 @@ Rts2Block::init ()
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     {
-      perror ("socket");
-      return -errno;
+      syslog (LOG_ERR, "Rts2Block::init bind %m");
+      return -1;
     }
   const int so_reuseaddr = 1;
   setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr,
@@ -953,7 +952,7 @@ Rts2Block::init ()
       syslog (LOG_ERR, "Rts2Block::init bind %m");
       return -1;
     }
-  ret = listen (sock, 1);
+  ret = listen (sock, 5);
   if (ret)
     {
       syslog (LOG_ERR, "Rts2Block::init cannot accept: %m");

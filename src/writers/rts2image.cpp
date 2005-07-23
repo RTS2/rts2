@@ -69,7 +69,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   focName = NULL;
 }
 
-Rts2Image::Rts2Image (char *in_filename)
+Rts2Image::Rts2Image (const char *in_filename)
 {
   imageName = NULL;
   ffile = NULL;
@@ -103,7 +103,7 @@ Rts2Image::~Rts2Image (void)
 }
 
 void
-Rts2Image::setImageName (char *in_filename)
+Rts2Image::setImageName (const char *in_filename)
 {
   if (imageName)
     delete[]imageName;
@@ -142,18 +142,18 @@ Rts2Image::createImage (char *in_filename)
 }
 
 int
-Rts2Image::openImage (char *in_filename)
+Rts2Image::openImage (const char *in_filename)
 {
   fits_status = 0;
 
-  fits_open_diskfile (&ffile, in_filename, READWRITE, &fits_status);
+  setImageName (in_filename);
+
+  fits_open_diskfile (&ffile, imageName, READWRITE, &fits_status);
   if (fits_status)
     {
       fits_report_error (stderr, fits_status);
       return -1;
     }
-
-  setImageName (in_filename);
 
   flags = IMAGE_SAVE;
 
@@ -612,6 +612,18 @@ Rts2Image::saveImage ()
     }
   ffile = NULL;
 }
+
+int
+Rts2Image::deleteImage ()
+{
+  int ret;
+  fits_close_file (ffile, &fits_status);
+  ffile = NULL;
+  flags &= !IMAGE_SAVE;
+  ret = unlink (getImageName ());
+}
+
+
 
 void
 Rts2Image::setMountName (const char *in_mountName)

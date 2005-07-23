@@ -11,6 +11,7 @@
 #include "imghdr.h"
 #include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
+#include "../utils/mkpath.h"
 
 typedef enum
 { IMGTYPE_UNKNOW, IMGTYPE_DARK, IMGTYPE_FLAT, IMGTYPE_OBJECT, IMGTYPE_ZERO,
@@ -25,9 +26,9 @@ private:
   int fits_status;
   int flags;
   struct timeval exposureStart;
-  void setImageName (char *in_filename);
+  void setImageName (const char *in_filename);
   int createImage (char *in_filename);
-  int openImage (char *in_filename);
+  int openImage (const char *in_filename);
   int writeExposureStart ();
   char *getImageBase (int in_epoch_id);
 protected:
@@ -48,7 +49,7 @@ public:
 	       int in_obsId, const struct timeval *exposureStart,
 	       int in_imgId);
   // open image from disk..
-    Rts2Image (char *in_filename);
+    Rts2Image (const char *in_filename);
     virtual ~ Rts2Image (void);
 
   virtual int toQue ();
@@ -99,6 +100,7 @@ public:
   }
 
   virtual int saveImage ();
+  virtual int deleteImage ();
 
   char *getImageName ()
   {

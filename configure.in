@@ -315,12 +315,11 @@ AC_OUTPUT([Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile
+	   src/camd/apogee/Makefile
 	   src/dome/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
 	   src/grb/Makefile
-	   src/grb/bacodine/Makefile
-	   src/grb/ibas/Makefile
 	   src/mirror/Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
@@ -329,7 +328,6 @@ AC_OUTPUT([Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
-	   src/teld/para/Makefile
 	   src/utils/Makefile
            src/wcs/Makefile
 	   src/writers/Makefile

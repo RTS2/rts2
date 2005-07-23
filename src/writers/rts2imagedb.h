@@ -37,13 +37,14 @@ public:
     Rts2ImageDb (int in_epoch_id, int in_targetId,
 		 Rts2DevClientCamera * camera, int in_obsId,
 		 const struct timeval *exposureStart, int in_imgId);
-    Rts2ImageDb (char *in_filename);
+    Rts2ImageDb (const char *in_filename);
     virtual ~ Rts2ImageDb (void);
 
   virtual int toArchive ();
   virtual int toTrash ();
 
   virtual int saveImage ();
+  virtual int deleteImage ();
 };
 
 #endif /* ! __RTS2_IMAGEDB__ */

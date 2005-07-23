@@ -326,7 +326,7 @@ Rts2ImageDb::Rts2ImageDb (int in_epoch_id, int in_targetId, Rts2DevClientCamera 
   getValue ("PROC", processBitfiedl);
 }
 
-Rts2ImageDb::Rts2ImageDb (char *in_filename) : Rts2Image (in_filename)
+Rts2ImageDb::Rts2ImageDb (const char *in_filename) : Rts2Image (in_filename)
 {
   processBitfiedl = 0;
   getValue ("PROC", processBitfiedl);
@@ -374,4 +374,42 @@ Rts2ImageDb::saveImage ()
   setValue ("PROC", processBitfiedl, "procesing status; info in DB");
   setDarkFromDb ();
   return Rts2Image::saveImage ();
+}
+
+int
+Rts2ImageDb::deleteImage ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_img_id = imgId;
+  int d_obs_id = obsId;
+  EXEC SQL END DECLARE SECTION;
+
+  if (getType () == IMGTYPE_OBJECT)
+  {
+    EXEC SQL
+    DELETE FROM
+      images
+    WHERE
+	img_id = :d_img_id
+      AND obs_id = :d_obs_id;
+  }
+  else if (getType () == IMGTYPE_DARK)
+  {
+    EXEC SQL
+    DELETE FROM
+      darks
+    WHERE
+	img_id = :d_img_id
+      AND obs_id = :d_obs_id;
+  }
+  if (sqlca.sqlcode)
+  {
+     reportSqlError ("Rts2ImageDb::deleteImage");
+     EXEC SQL ROLLBACK;
+  }
+  else
+  {
+     EXEC SQL COMMIT;
+  }
+  return Rts2Image::deleteImage ();
 }

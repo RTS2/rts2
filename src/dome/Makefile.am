@@ -2,7 +2,7 @@
 
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm
 
-noinst_HEADERS = dome.h
+noinst_HEADERS = dome.h udpweather.h
 
 LDADD = ../utils/librts2block.a @LIB_NOVA@
 

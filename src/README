@@ -11,3 +11,4 @@ writers		writers for writing images from internal to external format;
 phot		Photocounters daemon
 focusc		GUI focuser etc..
 focusd		Focuser
+bckimages	Thinks for image archive management

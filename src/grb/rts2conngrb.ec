@@ -578,6 +578,8 @@ in_do_hete_test, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
   gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
   strcpy (gcn_hostname, in_gcn_hostname);
   gcn_port = in_gcn_port;
+  gcn_listen_sock = -1;
+
   time (&last_packet.tv_sec);
   last_packet.tv_sec -= 600;
   last_packet.tv_usec = 0;
@@ -589,7 +591,7 @@ in_do_hete_test, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
 
   do_hete_test = in_do_hete_test;
 
-  setConnTimeout (185);
+  setConnTimeout (90);
   time (&nextTime);
   nextTime += getConnTimeout ();
 }
@@ -599,6 +601,8 @@ Rts2ConnGrb::~Rts2ConnGrb (void)
   delete gcn_hostname;
   if (last_target)
     delete last_target;
+  if (gcn_listen_sock >= 0)
+    close (gcn_listen_sock);
 }
 
 int
@@ -653,7 +657,7 @@ Rts2ConnGrb::idle ()
 }
 
 int
-Rts2ConnGrb::init ()
+Rts2ConnGrb::init_call ()
 {
   char *s_port;
   struct addrinfo hints;
@@ -698,6 +702,63 @@ Rts2ConnGrb::init ()
 }
 
 int
+Rts2ConnGrb::init_listen ()
+{
+  int ret;
+
+  if (gcn_listen_sock >= 0)
+  {
+    close (gcn_listen_sock);
+  }
+
+  connectionError ();
+
+  gcn_listen_sock = socket (PF_INET, SOCK_STREAM, 0);
+  if (gcn_listen_sock)
+    return -1;
+  const int so_reuseaddr = 1;
+  setsockopt (gcn_listen_sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof (so_reuseaddr));
+  struct sockaddr_in server;
+  server.sin_family = AF_INET;
+  server.sin_port = htons (gcn_port);
+  server.sin_addr.s_addr = htonl (INADDR_ANY);
+  ret = bind (gcn_listen_sock, (struct sockaddr *) &server, sizeof (server));
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2ConnGrb::init_listen bind: %m");
+      return -1;
+    }
+  ret = listen (sock, 1);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2ConnGrb::init_listen listen: %m");
+      return -1;
+    }
+  setConnState (CONN_CONNECTED);
+  return 0;
+}
+
+int
+Rts2ConnGrb::init ()
+{
+  if (!strcmp (gcn_hostname, "-"))
+    return init_listen ();
+  else
+    return init_call ();
+}
+
+int
+Rts2ConnGrb::add (fd_set * set)
+{
+  if (gcn_listen_sock >= 0)
+  {
+    FD_SET (gcn_listen_sock, set);
+    return 0;
+  }
+  return Rts2Conn::add (set);
+}
+
+int
 Rts2ConnGrb::connectionError ()
 {
   time_t now;
@@ -721,7 +782,27 @@ Rts2ConnGrb::receive (fd_set *set)
 {
   int ret = 0;
   struct tm *t;
-  if (sock >= 0 && FD_ISSET (sock, set))
+  if (FD_ISSET (gcn_listen_sock, set))
+  {
+    // try to accept connection..
+    int new_sock;
+    close (sock); // close previous connections..we support only one GCN connection
+    sock = -1;
+    struct sockaddr_in other_side;
+    socklen_t addr_size = sizeof (struct sockaddr_in);
+    sock = accept (gcn_listen_sock, (struct sockaddr *) &other_side, &addr_size);
+    if (sock == -1)
+    {
+      // bad accept - strange
+      syslog (LOG_ERR, "Rts2ConnGrb::receive accept on gcn_listen_sock: %m");
+      connectionError ();
+    }
+    // close listening socket..when we get connection
+    close (gcn_listen_sock);
+    gcn_listen_sock = -1;
+    setConnState (CONN_CONNECTED);
+  }
+  else if (sock >= 0 && FD_ISSET (sock, set))
   {
     // translate packages to linux..
     short *sp;			// Ptr to a short; used for the swapping

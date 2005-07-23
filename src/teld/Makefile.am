@@ -27,7 +27,7 @@ endif
 
 if PARALIB
 bin_PROGRAMS += rts2-teld-paramount
-rts2_teld_paramount_SOURCES = teld.cpp tpmodel.c paramount.cpp ../utils/config.o
+rts2_teld_paramount_SOURCES = teld.cpp tpmodel.c paramount.cpp
 rts2_teld_paramount_LDFLAGS = @LIB_NOVA@ @LIB_PARA@
 rts2_teld_paramount_CPPFLAGS = @INC_PARA@
 endif

@@ -6,7 +6,7 @@
 #include <signal.h>
 #include "camera_cpp.h"
 
-#include "miniccd/ccd_msg.h"
+#include "ccd_msg.h"
 #include "../utils/rts2device.h"
 
 class CameraMiniccdChip:public CameraChip
