@@ -35,7 +35,7 @@ struct imghdr
   int naxes;			//! Number of axes.
   long sizes[MAX_AXES];		//! Sizes in given axes.
   int binnings[MAX_AXES];	//! Binning in each axe - eg. 2 -> 1 image pixel on given axis is equal 2 ccd pixels.
-  char filter[FILTER_SIZE];	//! Camera filter
+  int filter;			//! Camera filter
   int shutter;
   int x, y;			//! image beginning (detector coordinates)
 };
