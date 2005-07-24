@@ -1091,11 +1091,13 @@ Rts2DevTelescopeGemini::tel_start_move ()
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
     return -1;
+
+  time (&moveTimeout);
+  moveTimeout += 300;
+
   if (retstr == '0')
     return 0;
   // otherwise read reply..
-  time (&moveTimeout);
-  moveTimeout += 300;
   tel_read_hash (buf, 53);
   if (retstr == '3')		// manual control..
     return 0;
@@ -1141,7 +1143,7 @@ Rts2DevTelescopeGemini::isMoving ()
   if (telMotorState != TEL_OK)
     return USEC_SEC;
   time (&now);
-  if (moveTimeout > now)
+  if (now > moveTimeout)
     {
       stopMove ();
       return -2;
