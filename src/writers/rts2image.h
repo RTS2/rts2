@@ -25,6 +25,7 @@ private:
   fitsfile *ffile;
   int fits_status;
   int flags;
+  int filter;
   struct timeval exposureStart;
   void setImageName (const char *in_filename);
   int createImage (char *in_filename);
@@ -144,6 +145,11 @@ public:
   int getImgId ()
   {
     return imgId;
+  }
+
+  int getFilter ()
+  {
+    return filter;
   }
 };
 

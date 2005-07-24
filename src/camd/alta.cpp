@@ -24,7 +24,7 @@ private:
   short unsigned int *dest_top;
   char *send_top;
 public:
-    CameraChipAlta (CApnCamera * in_alta);
+    CameraChipAlta (Rts2DevCamera * in_camer, CApnCamera * in_alta);
   virtual int init ();
   virtual int setBinning (int in_vert, int in_hori);
   virtual int startExposure (int light, float exptime);
@@ -36,7 +36,8 @@ public:
   virtual int endReadout ();
 };
 
-CameraChipAlta::CameraChipAlta (CApnCamera * in_alta):CameraChip (0)
+CameraChipAlta::CameraChipAlta (Rts2DevCamera * in_cam, CApnCamera * in_alta):CameraChip (in_cam,
+	    0)
 {
   alta = in_alta;
 }
@@ -277,7 +278,7 @@ Rts2DevCameraAlta::init ()
     }
 
   chipNum = 1;
-  chips[0] = new CameraChipAlta (alta);
+  chips[0] = new CameraChipAlta (this, alta);
 
   return Rts2DevCamera::initChips ();
 }

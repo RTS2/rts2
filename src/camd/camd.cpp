@@ -12,8 +12,9 @@
 #include "camera_cpp.h"
 #include "imghdr.h"
 
-CameraChip::CameraChip (int in_chip_id)
+CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
 {
+  camera = in_cam;
   chipId = in_chip_id;
   exposureEnd.tv_sec = 0;
   exposureEnd.tv_usec = 0;
@@ -31,9 +32,11 @@ CameraChip::CameraChip (int in_chip_id)
   shutter_state = -1;
 }
 
-CameraChip::CameraChip (int in_chip_id, int in_width, int in_height,
-			float in_pixelX, float in_pixelY, float in_gain)
+CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+			int in_height, float in_pixelX, float in_pixelY,
+			float in_gain)
 {
+  camera = in_cam;
   chipId = in_chip_id;
   exposureEnd.tv_sec = 0;
   exposureEnd.tv_usec = 0;
@@ -172,22 +175,23 @@ int
 CameraChip::sendReadoutData (char *data, size_t data_size)
 {
   int ret;
+  time_t now;
   if (!readoutConn)
     {
       endReadout ();
       return -1;
     }
   ret = readoutConn->send (data, data_size);
-  if ((ret == 0 && data_size > 0) || ret == -2)
+  if (ret == -2)
     {
-      if (send_readout_data_failed++ > MAX_DATA_RETRY)
+      time (&now);
+      if (now > readout_started + 3)
 	{
-	  ret = -1;
+	  syslog (LOG_ERR,
+		  "CameraChip::sendReadoutData connection not established within timeout");
+	  endReadout ();
+	  return -1;
 	}
-    }
-  else
-    {
-      send_readout_data_failed = 0;
     }
   if (ret == -1)
     {
@@ -227,7 +231,7 @@ CameraChip::setReadoutConn (Rts2DevConnData * dataConn)
   readoutConn = dataConn;
   readoutLine = 0;
   sendLine = 0;
-  send_readout_data_failed = 0;
+  time (&readout_started);
 }
 
 int
@@ -265,7 +269,7 @@ CameraChip::sendFirstLine ()
       header.binnings[1] = usedBinningVertical;
       header.x = chipReadout->x;
       header.y = chipReadout->y;
-      strcpy (header.filter, "UNK");
+      header.filter = camera->getFilterNum ();
       header.shutter = shutter_state;
       int ret;
       ret = sendReadoutData ((char *) &header, sizeof (imghdr));
@@ -307,7 +311,7 @@ Rts2Device (argc, argv, DEVICE_TYPE_CCD, 5554, "C0")
   tempRegulation = -1;
   coolingPower = -1;
   fan = -1;
-  filter = -1;
+  filter = NULL;
   canDF = -1;
   ccdType[0] = '0';
   serialNumber[0] = '0';
@@ -377,6 +381,15 @@ Rts2DevCamera::initChips ()
 	return ret;
       if (defBinning != 1)
 	chips[i]->setBinning (defBinning, defBinning);
+    }
+  // init filter
+  if (filter)
+    {
+      ret = filter->init ();
+      if (ret)
+	{
+	  return ret;
+	}
     }
   return 0;
 }
@@ -484,7 +497,7 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
   conn->sendValue ("ccd_temperature", tempCCD);
   conn->sendValue ("cooling_power", coolingPower);
   conn->sendValue ("fan", fan);
-  conn->sendValue ("filter", filter);
+  conn->sendValue ("filter", getFilterNum ());
   return 0;
 }
 
@@ -706,11 +719,22 @@ Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
 int
 Rts2DevCamera::camFilter (Rts2Conn * conn, int new_filter)
 {
-
+  int ret;
+  if (!filter)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have filter wheel");
+      return -1;
+    }
+  ret = filter->setFilterNum (new_filter);
+  Rts2Device::info (conn);
+  if (ret == -1)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera set filter failed");
+    }
+  return ret;
 }
 
-Rts2DevConnCamera::Rts2DevConnCamera (int in_sock,
-				      Rts2DevCamera * in_master_device):
+Rts2DevConnCamera::Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
   master = in_master_device;

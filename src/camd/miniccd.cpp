@@ -27,8 +27,10 @@ class CameraMiniccdChip:public CameraChip
   CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
   CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 public:
-    CameraMiniccdChip (int in_chip_id, int in_fd_chip);
-    CameraMiniccdChip (int in_chip_id, char *chip_dev);
+    CameraMiniccdChip (Rts2DevCamera * in_cam, int in_chip_id,
+		       int in_fd_chip);
+    CameraMiniccdChip (Rts2DevCamera * in_cam, int in_chip_id,
+		       char *chip_dev);
     virtual ~ CameraMiniccdChip (void);
   virtual int init ();
   int startExposureInterleaved (int light, float exptime, int ccdFlags = 0)
@@ -61,8 +63,8 @@ public:
   }
 };
 
-CameraMiniccdChip::CameraMiniccdChip (int in_chip_id, int in_fd_chip):
-CameraChip (in_chip_id)
+CameraMiniccdChip::CameraMiniccdChip (Rts2DevCamera * in_cam, int in_chip_id, int in_fd_chip):
+CameraChip (in_cam, in_chip_id)
 {
   device_name = NULL;
   fd_chip = in_fd_chip;
@@ -70,8 +72,9 @@ CameraChip (in_chip_id)
   interleavedReadout = 0;
 }
 
-CameraMiniccdChip::CameraMiniccdChip (int in_chip_id, char *chip_dev):
-CameraChip (in_chip_id)
+CameraMiniccdChip::CameraMiniccdChip (Rts2DevCamera * in_cam, int in_chip_id,
+				      char *chip_dev):
+CameraChip (in_cam, in_chip_id)
 {
   device_name = chip_dev;
   fd_chip = -1;
@@ -356,7 +359,8 @@ class CameraMiniccdInterleavedChip:public CameraChip
   int chip1_light;
   float chip1_exptime;
 public:
-    CameraMiniccdInterleavedChip (int in_chip_id, int in_fd_chip,
+    CameraMiniccdInterleavedChip (Rts2DevCamera * in_cam, int in_chip_id,
+				  int in_fd_chip,
 				  CameraMiniccdChip * in_chip1,
 				  CameraMiniccdChip * in_chip2);
     virtual ~ CameraMiniccdInterleavedChip (void);
@@ -369,13 +373,15 @@ public:
   virtual int readoutOneLine ();
 };
 
-CameraMiniccdInterleavedChip::CameraMiniccdInterleavedChip (int in_chip_id,
+CameraMiniccdInterleavedChip::CameraMiniccdInterleavedChip (Rts2DevCamera *
+							    in_cam,
+							    int in_chip_id,
 							    int in_fd_chip,
 							    CameraMiniccdChip
 							    * in_chip1,
 							    CameraMiniccdChip
 							    * in_chip2):
-CameraChip (in_chip_id)
+CameraChip (in_cam, in_chip_id)
 {
   slaveChip[0] = in_chip1;
   slaveChip[1] = in_chip2;
@@ -706,19 +712,19 @@ Rts2DevCameraMiniccd::init ()
       strcpy (chip_device_name, device_file);
       chip_device_name[strlen (device_file)] = i + '0';
       chip_device_name[strlen (device_file) + 1] = '\x0';
-      miniChips[i - 1] = new CameraMiniccdChip (i, chip_device_name);
+      miniChips[i - 1] = new CameraMiniccdChip (this, i, chip_device_name);
       chips[i] = miniChips[i - 1];
     }
 
   if (interleave)
     {
       chips[0] =
-	new CameraMiniccdInterleavedChip (0, fd_ccd, miniChips[0],
+	new CameraMiniccdInterleavedChip (this, 0, fd_ccd, miniChips[0],
 					  miniChips[1]);
     }
   else
     {
-      chips[0] = new CameraMiniccdChip (0, fd_ccd);
+      chips[0] = new CameraMiniccdChip (this, 0, fd_ccd);
     }
 
   canDF = 0;			// starlight cameras cannot do DF

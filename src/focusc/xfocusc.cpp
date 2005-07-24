@@ -27,7 +27,6 @@
 #include "../utils/rts2dataconn.h"
 
 #include "../writers/rts2image.h"
-#include "../writers/rts2devcliimg.h"
 #include "../writers/rts2devclifoc.h"
 
 #include "status.h"

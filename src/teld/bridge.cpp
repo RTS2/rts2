@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libnova/libnova.h>
-#include <mcheck.h>
 
 #include "maps.h"
 #include "status.h"
@@ -228,8 +227,6 @@ killSignal (int sig)
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   device = new Rts2DevTelescopeBridge (argc, argv);
 
   signal (SIGTERM, killSignal);

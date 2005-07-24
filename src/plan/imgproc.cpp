@@ -6,6 +6,7 @@
 #include "status.h"
 #include "rts2connimgprocess.h"
 
+#include <glob.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -36,6 +37,9 @@ private:
   int morningImages;
   int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
   char defaultImgProccess[2000];
+  glob_t imageGlob;
+  int globC;
+  int reprocessingPossible;
 public:
     Rts2ImageProc (int argc, char **argv);
     virtual ~ Rts2ImageProc (void);
@@ -53,10 +57,13 @@ public:
 
   virtual int sendInfo (Rts2Conn * conn);
 
+  virtual int changeMasterState (int new_state);
+
   virtual int deleteConnection (Rts2Conn * conn);
 
   int queImage (Rts2Conn * conn, const char *in_path);
   int doImage (Rts2Conn * conn, const char *in_path);
+  int checkNotProcessed ();
   void changeRunning (Rts2ConnImgProcess * newImage);
 };
 
@@ -94,12 +101,19 @@ Rts2ImageProc::Rts2ImageProc (int argc, char **argv):Rts2DeviceDb (argc, argv, D
   goodImages = 0;
   trashImages = 0;
   morningImages = 0;
+
+  imageGlob.gl_pathc = 0;
+  imageGlob.gl_offs = 0;
+  globC = 0;
+  reprocessingPossible = 0;
 }
 
 Rts2ImageProc::~Rts2ImageProc (void)
 {
   if (runningImage)
     delete runningImage;
+  if (imageGlob.gl_pathc)
+    globfree (&imageGlob);
 }
 
 Rts2DevConn *
@@ -169,6 +183,32 @@ Rts2ImageProc::sendInfo (Rts2Conn * conn)
 }
 
 int
+Rts2ImageProc::changeMasterState (int new_state)
+{
+  switch (new_state)
+    {
+    case SERVERD_DUSK:
+    case SERVERD_DUSK | SERVERD_STANDBY_MASK:
+    case SERVERD_NIGHT:
+    case SERVERD_NIGHT | SERVERD_STANDBY_MASK:
+    case SERVERD_DAWN:
+    case SERVERD_DAWN | SERVERD_STANDBY_MASK:
+      if (imageGlob.gl_pathc)
+	{
+	  globfree (&imageGlob);
+	  imageGlob.gl_pathc = 0;
+	  globC = 0;
+	}
+      reprocessingPossible = 0;
+      break;
+    default:
+      reprocessingPossible = 1;
+      if (!runningImage && imagesQue.size () == 0)
+	checkNotProcessed ();
+    }
+}
+
+int
 Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 {
   std::list < Rts2ConnImgProcess * >::iterator img_iter;
@@ -203,6 +243,19 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 	{
 	  imagesQue.erase (img_iter);
 	  changeRunning (*img_iter);
+	}
+      else if (reprocessingPossible)
+	{
+	  if (globC < imageGlob.gl_pathc)
+	    {
+	      queImage (NULL, imageGlob.gl_pathv[globC]);
+	      globC++;
+	    }
+	  else if (imageGlob.gl_pathc > 0)
+	    {
+	      globfree (&imageGlob);
+	      imageGlob.gl_pathc = 0;
+	    }
 	}
     }
   return Rts2DeviceDb::deleteConnection (conn);
@@ -243,15 +296,17 @@ Rts2ImageProc::changeRunning (Rts2ConnImgProcess * newImage)
 int
 Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
 {
-  Rts2ConnImgProcess *newImage;
-  newImage = new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
+  Rts2ConnImgProcess *newImageConn;
+  newImageConn =
+    new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
   if (runningImage)
     {
-      imagesQue.push_back (newImage);
-      sendInfo (conn);
+      imagesQue.push_back (newImageConn);
+      if (conn)
+	sendInfo (conn);
       return 0;
     }
-  changeRunning (newImage);
+  changeRunning (newImageConn);
   infoAll ();
   return 0;
 }
@@ -259,10 +314,40 @@ Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
 int
 Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
 {
-  Rts2ConnImgProcess *newImage;
-  newImage = new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
-  changeRunning (newImage);
+  Rts2ConnImgProcess *newImageConn;
+  newImageConn =
+    new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
+  changeRunning (newImageConn);
   infoAll ();
+  return 0;
+}
+
+int
+Rts2ImageProc::checkNotProcessed ()
+{
+  char image_glob[250];
+  int ret;
+
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+
+  ret = config->getString ("imgproc", "imageglob", image_glob, 250);
+  if (ret)
+    return ret;
+
+  ret = glob (image_glob, 0, NULL, &imageGlob);
+  if (ret)
+    {
+      globfree (&imageGlob);
+      imageGlob.gl_pathc = 0;
+      return -1;
+    }
+
+  globC = 0;
+
+  // start files que..
+  if (imageGlob.gl_pathc > 0)
+    return queImage (NULL, imageGlob.gl_pathv[0]);
   return 0;
 }
 

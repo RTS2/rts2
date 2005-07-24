@@ -2,7 +2,6 @@
 #define __RTS2CONNIMGPROCESS__
 
 #include "../utils/rts2connfork.h"
-#include "../writers/rts2image.h"
 #include "../writers/rts2imagedb.h"
 
 typedef enum
@@ -20,7 +19,6 @@ typedef enum
  */
 class Rts2ConnImgProcess:public Rts2ConnFork
 {
-  char *path;
   Rts2Conn *reqConn;
 
   Rts2Image *image;

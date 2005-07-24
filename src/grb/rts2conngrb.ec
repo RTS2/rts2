@@ -782,7 +782,7 @@ Rts2ConnGrb::receive (fd_set *set)
 {
   int ret = 0;
   struct tm *t;
-  if (FD_ISSET (gcn_listen_sock, set))
+  if (gcn_listen_sock >= 0 && FD_ISSET (gcn_listen_sock, set))
   {
     // try to accept connection..
     int new_sock;

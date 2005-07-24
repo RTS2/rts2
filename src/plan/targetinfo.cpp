@@ -114,6 +114,8 @@ Rts2TargetInfo::printTargetInfo ()
     << " (" << hrz.az << ")" << std::endl;
   time (&now);
   std::cout << "Zenit distance " << target->getAzDistance () << std::endl;
+  std::cout << "Solar distance " << target->getSolarDistance () << std::endl;
+  std::cout << "Lunar distance " << target->getLunarDistance () << std::endl;
   last = now - 86400;
   std::cout << "Observations in last few hours: " << target->getNumObs (&last,
 									&now)

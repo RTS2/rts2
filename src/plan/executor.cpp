@@ -152,19 +152,26 @@ Rts2Executor::createConnection (int in_sock, int conn_num)
 Rts2DevClient *
 Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
+  Rts2DevClient *cli;
   switch (other_device_type)
     {
     case DEVICE_TYPE_MOUNT:
-      return new Rts2DevClientTelescopeExec (conn);
+      cli = new Rts2DevClientTelescopeExec (conn);
+      break;
     case DEVICE_TYPE_CCD:
-      return new Rts2DevClientCameraExec (conn);
+      cli = new Rts2DevClientCameraExec (conn);
+      break;
     case DEVICE_TYPE_FOCUS:
-      return new Rts2DevClientFocusImage (conn);
+      cli = new Rts2DevClientFocusImage (conn);
+      break;
     case DEVICE_TYPE_DOME:
-      return new Rts2DevClientDomeImage (conn);
+      cli = new Rts2DevClientDomeImage (conn);
+      break;
     default:
-      return Rts2DeviceDb::createOtherType (conn, other_device_type);
+      cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
+  cli->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+  return cli;
 }
 
 void
@@ -372,8 +379,11 @@ Rts2Executor::switchTarget ()
 	      queTarget (currentTarget);
 	    }
 	  currentTarget = NULL;
-	  delete nextTarget;
-	  nextTarget = NULL;
+	  if (nextTarget)
+	    {
+	      delete nextTarget;
+	      nextTarget = NULL;
+	    }
 	}
     }
   infoAll ();

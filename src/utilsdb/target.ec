@@ -316,6 +316,56 @@ Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
   return 0;
 }
 
+double
+Target::getAzDistance (double JD)
+{
+  struct ln_hrz_posn hrz;
+  getAltAz (&hrz, JD);
+  return 90.0 - hrz.alt;
+}
+
+double
+Target::getHourAngle (double JD)
+{
+  double lst;
+  double ha;
+  struct ln_equ_posn pos;
+  int ret;
+  lst = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
+  ret = getPosition (&pos);
+  if (ret)
+    return nan ("f");
+  ha = lst - pos.ra;
+  ha = ln_range_degrees (ha) / 15.0;
+  if (ha > 12.0)
+    return 24 - ha;
+  return ha;
+}
+
+double
+Target::getDistance (struct ln_equ_posn *in_pos, double JD)
+{
+  struct ln_equ_posn object;
+  getPosition (&object, JD);
+  return ln_get_angular_separation (&object, in_pos);
+}
+
+double
+Target::getSolarDistance (double JD)
+{
+  struct ln_equ_posn sun;
+  ln_get_solar_equ_coords (JD, &sun);
+  return getDistance (&sun, JD);
+}
+
+double
+Target::getLunarDistance (double JD)
+{
+  struct ln_equ_posn moon;
+  ln_get_lunar_equ_coords (JD, &moon);
+  return getDistance (&moon, JD);
+}
+
 int
 Target::postprocess ()
 {

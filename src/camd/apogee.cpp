@@ -48,7 +48,7 @@ class CameraApogeeChip:public CameraChip
   short unsigned int *dest_top;
   char *send_top;
 public:
-    CameraApogeeChip (CCameraIO * in_camera);
+    CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera);
     virtual ~ CameraApogeeChip (void);
   virtual int init ();
   virtual int setBinning (int in_vert, int in_hori);
@@ -61,7 +61,8 @@ public:
   virtual int endReadout ();
 };
 
-CameraApogeeChip::CameraApogeeChip (CCameraIO * in_camera):CameraChip (0)
+CameraApogeeChip::CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera):CameraChip (in_cam,
+	    0)
 {
   camera = in_camera;
   dest = NULL;
@@ -822,7 +823,7 @@ Rts2DevCameraApogee::processOption (int in_opt)
       cfgname = optarg;
       break;
     case 'I':
-//      filter = new Rts2FilterIfw (optarg);
+      filter = new Rts2FilterIfw (optarg);
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -852,7 +853,7 @@ Rts2DevCameraApogee::init ()
     return -1;
 
   chipNum = 1;
-  chips[0] = new CameraApogeeChip (camera);
+  chips[0] = new CameraApogeeChip (this, camera);
 
   return Rts2DevCamera::initChips ();
 }

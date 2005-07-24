@@ -188,6 +188,7 @@ CREATE TABLE darks (
 	dark_usec	integer,
 	dark_exposure	float,
 	dark_temperature float,
+	dark_mean	float,
 	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	camera_name	varchar(8) REFERENCES cameras(camera_name),
 CONSTRAINT darks_prim_key PRIMARY KEY (obs_id, img_id)

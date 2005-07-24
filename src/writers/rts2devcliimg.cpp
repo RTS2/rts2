@@ -35,7 +35,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   config->getDouble (connection->getName (), "yoa", yoa);
   config->getDouble (connection->getName (), "rotang", rotang);
   config->getInteger (connection->getName (), "flip", flip);
-  config->getString (connection->getName (), "filter", filter, 3);
+  config->getString (connection->getName (), "filter", filter, 200);
 }
 
 void
@@ -64,13 +64,58 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 }
 
 void
+Rts2DevClientCameraImage::writeFilter ()
+{
+  int camFilter = images->getFilter ();
+  if (camFilter < 1)
+    camFilter = 1;
+  char *flt = filter;
+  char *flt_end;
+  char imageFilter[4];
+  int flt_len;
+  while (*flt)
+    {
+      while (isspace (*flt))
+	flt++;
+      if (camFilter == 1)	// got filter..
+	break;
+      while (*flt && !isspace (*flt))
+	flt++;
+      if (!*flt)
+	break;
+      camFilter--;
+    }
+  if (camFilter == 1 && *flt)
+    {
+      flt_end = flt;
+      flt_len = 0;
+      while (!isspace (*flt_end) && *flt_end && flt_len < 3)
+	{
+	  flt_end++;
+	  flt_len++;
+	}
+      strncpy (imageFilter, flt, flt_len);
+      imageFilter[3] = '\0';
+    }
+  else
+    {
+      strcpy (imageFilter, "UNK");
+    }
+  images->setValue ("FILTER", imageFilter, "camera filter as string");
+}
+
+void
 Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
 {
   Rts2DevClientCamera::dataReceived (dataConn);
   if (images)
     {
       if (saveImage)
-	images->writeDate (dataConn);
+	{
+	  images->writeDate (dataConn);
+	  writeFilter ();
+	  // set filter..
+	}
       // save us to the disk..
       images->saveImage ();
       // do basic processing
@@ -128,7 +173,6 @@ Rts2DevClientCameraImage::exposureStarted ()
   images->setValue ("ROTANG", rotang, "camera rotation over X axis");
   images->setValue ("FLIP", flip,
 		    "camera flip (since most astrometry devices works as mirrors");
-  images->setValue ("FILTER", filter, "used camera filter");
   focuser = getValueChar ("focuser");
   if (focuser)
     {

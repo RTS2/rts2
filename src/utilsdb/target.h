@@ -129,34 +129,35 @@ public:
     return getAzDistance (ln_get_julian_from_sys ());
   }
 
-  double getAzDistance (double JD)
-  {
-    struct ln_hrz_posn hrz;
-    getAltAz (&hrz, JD);
-    return 90.0 - hrz.alt;
-  }
+  double getAzDistance (double JD);
 
   double getHourAngle ()
   {
     return getHourAngle (ln_get_julian_from_sys ());
   }
 
-  double getHourAngle (double JD)
+  double getHourAngle (double JD);
+
+  double getDistance (struct ln_equ_posn *in_pos)
   {
-    double lst;
-    double ha;
-    struct ln_equ_posn pos;
-    int ret;
-    lst = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
-    ret = getPosition (&pos);
-    if (ret)
-      return nan ("f");
-    ha = lst - pos.ra;
-    ha = ln_range_degrees (ha) / 15.0;
-    if (ha > 12.0)
-      return 24 - ha;
-    return ha;
+    return getDistance (in_pos, ln_get_julian_from_sys ());
   }
+
+  double getDistance (struct ln_equ_posn *in_pos, double JD);
+
+  double getSolarDistance ()
+  {
+    return getSolarDistance (ln_get_julian_from_sys ());
+  }
+
+  double getSolarDistance (double JD);
+
+  double getLunarDistance ()
+  {
+    return getLunarDistance (ln_get_julian_from_sys ());
+  }
+
+  double getLunarDistance (double JD);
 
   double getMeridianDistance ()
   {
@@ -210,6 +211,15 @@ public:
   // similar to startObservation - return 0 if observation ends, 1 if
   // it doesn't ends (ussually in case when in_next_id == target_id),
   // -1 on errror
+
+  virtual int isContinues ()
+  {
+    return 0;
+  }
+  // returns 1 if target is continuus - in case next target is same | next
+  // targer doesn't exists, we keep exposing and we will not move mount between
+  // exposures. Good for darks observation, partial good for GRB (when we solve
+  // problem with moving mount in exposures - position updates)
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
   virtual int acquire ();
@@ -284,6 +294,10 @@ public:
     DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startObservation (struct ln_equ_posn *position);
+  virtual int isContinues ()
+  {
+    return 1;
+  }
 };
 
 class FlatTarget:public ConstTarget
@@ -293,6 +307,10 @@ protected:
 public:
     FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int isContinues ()
+  {
+    return 1;
+  }
 };
 
 class FocusingTarget:public ConstTarget

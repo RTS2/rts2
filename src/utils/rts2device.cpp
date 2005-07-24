@@ -23,14 +23,6 @@
 #define MAXDATAPORT		5656
 
 int
-Rts2DevConn::connectionError ()
-{
-  if (isConnState (CONN_AUTH_PENDING))
-    master->authorize (NULL);	// cancel pendig authorization
-  return Rts2Conn::connectionError ();
-}
-
-int
 Rts2DevConn::commandAuthorized ()
 {
   if (isCommand ("ready"))
@@ -97,6 +89,7 @@ Rts2DevConn::command ()
 	{
 	  sendCommandEnd (DEVDEM_E_SYSTEM,
 			  "cannot authorize; try again later");
+	  setConnState (CONN_AUTH_FAILED);
 	  return -1;
 	}
       setConnState (CONN_AUTH_PENDING);
@@ -291,7 +284,6 @@ Rts2Conn (-1, in_master)
   device_type = in_device_type;
   strncpy (master_host, in_master_host, HOST_NAME_MAX);
   master_port = in_master_port;
-  auth_conn = NULL;
 }
 
 Rts2DevConnMaster::~Rts2DevConnMaster (void)
@@ -394,37 +386,31 @@ Rts2DevConnMaster::idle ()
 int
 Rts2DevConnMaster::command ()
 {
+  Rts2Conn *auth_conn;
   if (isCommand ("A"))
     {
       char *type;
+      int auth_id;
       if (paramNextString (&type))
 	return -1;
       if (!strcmp ("authorization_ok", type))
 	{
+	  if (paramNextInteger (&auth_id) || !paramEnd ())
+	    return -1;
+	  // find connection with given ID
+	  auth_conn = master->findCentralId (auth_id);
 	  if (auth_conn)
-	    {
-	      int auth_id;
-	      if (paramNextInteger (&auth_id))
-		return -1;
-	      if (auth_conn->getCentraldId () != auth_id)
-		return -1;
-	      auth_conn->authorizationOK ();
-	      auth_conn = NULL;
-	      return -1;
-	    }
+	    auth_conn->authorizationOK ();
 	  return -1;
 	}
       else if (!strcmp ("authorization_failed", type))
 	{
+	  if (paramNextInteger (&auth_id) || !paramEnd ())
+	    return -1;
+	  // find connection with given ID
+	  auth_conn = master->findCentralId (auth_id);
 	  if (auth_conn)
-	    {
-	      int auth_id;
-	      if (paramNextInteger (&auth_id))
-		return -1;
-	      auth_conn->authorizationFailed ();
-	      auth_conn = NULL;
-	      return -1;
-	    }
+	    auth_conn->authorizationFailed ();
 	  return -1;
 	}
       if (!strcmp ("registered_as", type))
@@ -503,28 +489,10 @@ Rts2DevConnMaster::authorize (Rts2DevConn * conn)
 {
   char *msg;
   int ret;
-  if (!conn)
-    return -1;
-  if (auth_conn)
-    {
-      if (!conn)
-	auth_conn = NULL;	// request for canceling authorization
-      return -1;		// authorization already pending, cannot authorize second device at same time
-    }
-  auth_conn = conn;
-  asprintf (&msg, "authorize %i %i", auth_conn->getCentraldId (),
-	    auth_conn->getKey ());
+  asprintf (&msg, "authorize %i %i", conn->getCentraldId (), conn->getKey ());
   ret = send (msg);
   free (msg);
   return ret;
-}
-
-int
-Rts2DevConnMaster::deleteConnection (Rts2Conn * conn)
-{
-  if (conn == auth_conn)
-    auth_conn = NULL;
-  return 0;
 }
 
 int
@@ -586,28 +554,6 @@ int
 Rts2DevConnData::sendHeader ()
 {
 
-}
-
-int
-Rts2DevConnData::acceptConn ()
-{
-  int new_sock;
-  struct sockaddr_in other_side;
-  socklen_t addr_size = sizeof (struct sockaddr_in);
-  new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
-  if (new_sock == -1)
-    {
-      syslog (LOG_ERR, "Rts2DevConnData::acceptConn error %m");
-      return -1;
-    }
-  else
-    {
-      close (sock);
-      sock = new_sock;
-      syslog (LOG_DEBUG, "Rts2DevConnData::acceptConn connection accepted");
-      setConnState (CONN_CONNECTED);
-      return 0;
-    }
 }
 
 void
@@ -854,13 +800,6 @@ int
 Rts2Device::idle ()
 {
   Rts2Block::idle ();
-}
-
-int
-Rts2Device::deleteConnection (Rts2Conn * conn)
-{
-  conn_master->deleteConnection (conn);
-  return Rts2Block::deleteConnection (conn);
 }
 
 int

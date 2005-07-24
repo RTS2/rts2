@@ -16,7 +16,7 @@
 #include "../utils/rts2dataconn.h"
 
 #include "../writers/rts2image.h"
-#include "../writers/rts2devcliimg.h"
+#include "../writers/rts2devclifoc.h"
 
 #include "status.h"
 #include "imghdr.h"
@@ -55,7 +55,7 @@ public:
   exposureType getExposureType ();
 };
 
-class Rts2focuscCamera:public Rts2DevClientCameraImage
+class Rts2focuscCamera:public Rts2DevClientCameraFoc
 {
 private:
   Rts2focusc * master;
@@ -63,7 +63,7 @@ protected:
   virtual void queExposure ()
   {
     exposureT = master->getExposureType ();
-    Rts2DevClientCameraImage::queExposure ();
+    Rts2DevClientCameraFoc::queExposure ();
   }
 public:
     Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master);
@@ -80,7 +80,7 @@ public:
 	exposureCount = 0;
 	break;
       }
-    Rts2DevClientCameraImage::postEvent (event);
+    Rts2DevClientCameraFoc::postEvent (event);
   }
 
   virtual void stateChanged (Rts2ServerState * state);
@@ -168,13 +168,12 @@ Rts2focusc::run ()
   return Rts2Client::run ();
 }
 
-exposureType
-Rts2focusc::getExposureType ()
+exposureType Rts2focusc::getExposureType ()
 {
   return exposureT;
 }
 
-Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master):Rts2DevClientCameraImage
+Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master):Rts2DevClientCameraFoc
   (in_connection)
 {
   exposureTime = in_master->getDefaultExposure ();
@@ -184,7 +183,7 @@ Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_ma
 void
 Rts2focuscCamera::stateChanged (Rts2ServerState * state)
 {
-  Rts2DevClientCameraImage::stateChanged (state);
+  Rts2DevClientCameraFoc::stateChanged (state);
   if (state->isName ("img_chip"))
     {
       std::cout << connection->getName () << " state: " << state->

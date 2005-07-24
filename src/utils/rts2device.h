@@ -36,7 +36,6 @@ class Rts2DevConn:public Rts2Conn
   Rts2Address *address;
 
   Rts2Device *master;
-  virtual int connectionError ();
 protected:
     virtual int commandAuthorized ();
   virtual int command ();
@@ -46,8 +45,8 @@ public:
   virtual int init ();
   virtual int idle ();
 
-  int authorizationOK ();
-  int authorizationFailed ();
+  virtual int authorizationOK ();
+  virtual int authorizationFailed ();
   void setHavePriority (int in_have_priority);
 
   virtual void setDeviceAddress (Rts2Address * in_addr);
@@ -67,7 +66,6 @@ class Rts2DevConnMaster:public Rts2Conn
   char device_name[DEVICE_NAME_SIZE];
   int device_type;
   int device_port;
-  Rts2DevConn *auth_conn;	// connection waiting for authorization
   time_t nextTime;
 protected:
   int command ();
@@ -86,13 +84,11 @@ public:
   virtual int idle ();
   int authorize (Rts2DevConn * conn);
   void setHavePriority (int in_have_priority);
-  int deleteConnection (Rts2Conn * conn);
 };
 
 class Rts2DevConnData:public Rts2Conn
 {
   int sendHeader ();
-  int acceptConn ();
   Rts2Conn *dataConn;
 protected:
   int command ()
@@ -185,7 +181,6 @@ public:
   };
   virtual int init ();
   virtual int idle ();
-  virtual int deleteConnection (Rts2Conn * conn);
   int authorize (Rts2DevConn * conn);
   int sendStatusInfo (Rts2DevConn * conn);
   int sendMaster (char *msg)

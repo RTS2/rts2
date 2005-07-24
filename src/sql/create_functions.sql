@@ -1,49 +1,14 @@
-DROP FUNCTION obj_alt (float8, float8, float8, float8, float8) CASCADE;
-
--- 			ra       dec     JD      lon     lat
-CREATE FUNCTION obj_alt (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_alt' LANGUAGE 'C';
-
-DROP FUNCTION obj_az (float8, float8, float8, float8, float8) CASCADE;
-
--- 			ra       dec     JD      lon     lat
-CREATE FUNCTION obj_az (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_az' LANGUAGE 'C';
-
-DROP FUNCTION obj_rise (float8, float8, float8, float8);
-
-CREATE FUNCTION obj_rise (float8, float8, float8, float8)
-	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_rise' LANGUAGE 'C';
-
-DROP FUNCTION obj_set (float8, float8, float8, float8);
-
-CREATE FUNCTION obj_set (float8, float8, float8, float8)
-	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_set' LANGUAGE 'C';
-
-DROP FUNCTION obj_airmass (float8, float8, float8, float8, float8);
-
--- 			ra       dec     JD      lon     lat
-CREATE FUNCTION obj_airmass (float8, float8, float8, float8, float8) 
-	RETURNS float8 AS '/usr/lib/postgresql/lib/pg_astrolib.so', 'obj_airmass' LANGUAGE 'C';
-
-DROP FUNCTION night_num (timestamp);
-
-CREATE FUNCTION night_num (timestamp with time zone) RETURNS double precision AS 
+CREATE OR REPLACE FUNCTION night_num (timestamp with time zone) RETURNS double precision AS 
 	'SELECT FLOOR((EXTRACT(EPOCH FROM $1) - 43200) / 86400)' LANGUAGE 'SQL';
 
-DROP FUNCTION isinwcs (float8, float8, wcs);
-
-CREATE FUNCTION isinwcs (float8, float8, wcs)
+CREATE OR REPLACE FUNCTION isinwcs (float8, float8, wcs)
   RETURNS bool AS '/usr/lib/postgresql/lib/pg_wcs.so', 'isinwcs' LANGUAGE 'C';
 
-DROP FUNCTION imgrange (wcs);
-
-CREATE FUNCTION imgrange (wcs)
+CREATE OR REPLACE FUNCTION imgrange (wcs)
   RETURNS varchar AS '/usr/lib/postgresql/lib/pg_wcs.so', 'imgrange' LANGUAGE 'C';
 
-DROP FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime);
 -- 			med_id  epoch    mount_name camera_name obs_id  tar_id   date
-CREATE FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime) RETURNS varchar(100) AS '
+CREATE OR REPLACE FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime) RETURNS varchar(100) AS '
 DECLARE
 	path	varchar(50);
 	tar_id	varchar(10);
@@ -74,9 +39,8 @@ END;
 ' LANGUAGE plpgsql;
 
 
-DROP FUNCTION dark_name(timestamp, integer,   varchar(8));
 -- 			dark_date  dark_usec  camera_name
-CREATE FUNCTION dark_name(timestamp, integer, varchar(8)) RETURNS varchar(250) AS '
+CREATE OR REPLACE FUNCTION dark_name(timestamp, integer, varchar(8)) RETURNS varchar(250) AS '
 DECLARE
 	name	varchar(20);
 BEGIN
@@ -89,10 +53,7 @@ END;
 ' LANGUAGE plpgsql;
 
 
-DROP FUNCTION ell_update (varchar (150), float4, float4, 
-float4, float4, float4, float4, float8, float4, float4);
-
-CREATE FUNCTION ell_update (varchar (150), float4, float4, 
+CREATE OR REPLACE FUNCTION ell_update (varchar (150), float4, float4, 
 float4, float4, float4, float4, float8, float4, float4) 
 RETURNS integer AS '
 DECLARE

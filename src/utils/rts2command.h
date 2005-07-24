@@ -62,7 +62,7 @@ public:
 
   virtual int commandReturnOK ()
   {
-    connection->setConnState (CONN_CONNECTED);
+    connection->setConnState (CONN_AUTH_OK);
     return -1;
   }
   virtual int commandReturnFailed ()

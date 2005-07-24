@@ -197,13 +197,13 @@ Rts2DevClientCameraExec::exposureStarted ()
 void
 Rts2DevClientCameraExec::exposureEnd ()
 {
+  Rts2DevClientCameraImage::exposureEnd ();
   if (!script || (script && script->isLastCommand ()))
     {
       blockMove = 0;
       connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_LAST_READOUT));
     }
-  Rts2DevClientCameraImage::exposureEnd ();
 }
 
 void

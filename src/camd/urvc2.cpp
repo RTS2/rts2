@@ -20,6 +20,7 @@
 
 #include "urvc2/urvc.h"
 #include "camera_cpp.h"
+#include "filter.cpp"
 
 #define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
 
@@ -30,8 +31,9 @@ class CameraUrvc2Chip:public CameraChip
   unsigned short *dest_top;
   char *send_top;
 public:
-    CameraUrvc2Chip (int in_chip_id, int in_width, int in_height,
-		     int in_pixelX, int in_pixelY, float in_gain);
+    CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+		     int in_height, int in_pixelX, int in_pixelY,
+		     float in_gain);
     virtual ~ CameraUrvc2Chip ();
 
   virtual int setBinning (int in_vert, int in_hori);
@@ -42,10 +44,11 @@ public:
   virtual int readoutOneLine ();
 };
 
-CameraUrvc2Chip::CameraUrvc2Chip (int in_chip_id, int in_width, int in_height,
-				  int in_pixelX, int in_pixelY,
-				  float in_gain):
-CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
+CameraUrvc2Chip::CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id,
+				  int in_width, int in_height, int in_pixelX,
+				  int in_pixelY, float in_gain):
+CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
+	    in_gain)
 {
   OpenCCD (in_chip_id, &C);
   img = new unsigned short int[C->horzImage * C->vertImage];
@@ -142,7 +145,6 @@ CameraUrvc2Chip::readoutOneLine ()
   return -2;
 }
 
-
 class Rts2DevCameraUrvc2:public Rts2DevCamera
 {
 private:
@@ -178,9 +180,71 @@ public:
   }
   virtual int camCoolTemp (float coolpoint);
   virtual int camCoolShutdown ();
-
-  virtual int camFilter (int new_filter);
+  CAMERA_TYPE getCameraID (void)
+  {
+    return cameraID;
+  }
 };
+
+/*!
+ * Filter class for URVC2 based camera.
+ * It needs it as there is now filter is an extra object.
+ */
+
+class Rts2FilterUrvc2:public Rts2Filter
+{
+  Rts2DevCameraUrvc2 *camera;
+  int filter;
+public:
+    Rts2FilterUrvc2 (Rts2DevCameraUrvc2 * in_camera);
+    virtual ~ Rts2FilterUrvc2 (void);
+  virtual int init (void);
+  virtual int getFilterNum (void);
+  virtual int setFilterNum (int new_filter);
+};
+
+Rts2FilterUrvc2::Rts2FilterUrvc2 (Rts2DevCameraUrvc2 * in_camera):Rts2Filter ()
+{
+  camera = in_camera;
+}
+
+Rts2FilterUrvc2::~Rts2FilterUrvc2 (void)
+{
+  setFilterNum (1);
+}
+
+int
+Rts2FilterUrvc2::init ()
+{
+  setFilterNum (1);
+}
+
+int
+Rts2FilterUrvc2::getFilterNum (void)
+{
+  return filter;
+}
+
+int
+Rts2FilterUrvc2::setFilterNum (int new_filter)
+{
+  PulseOutParams pop;
+
+  if (new_filter < 1 || new_filter > 5)
+    {
+      return -1;
+    }
+
+  pop.pulsePeriod = 18270;
+  pop.pulseWidth = 500 + 300 * (new_filter - 1);
+  pop.numberPulses = 60;
+
+  if (MicroCommand (MC_PULSE, camera->getCameraID (), &pop, NULL))
+    return -1;
+  filter = new_filter;
+
+  return 0;
+}
 
 void
 Rts2DevCameraUrvc2::get_eeprom ()
@@ -325,7 +389,7 @@ Rts2DevCameraUrvc2::init ()
     {
       syslog (LOG_DEBUG, "new CameraUrvc2Chip %i", i);
       chips[i] =
-	new CameraUrvc2Chip (i, Cams[eePtr.model].horzImage,
+	new CameraUrvc2Chip (this, i, Cams[eePtr.model].horzImage,
 			     Cams[eePtr.model].vertImage,
 			     Cams[eePtr.model].pixelX,
 			     Cams[eePtr.model].pixelY,
@@ -349,7 +413,9 @@ Rts2DevCameraUrvc2::init ()
 
   syslog (LOG_DEBUG, "init return %i", Cams[eePtr.model].horzImage);
 
-  return 0;
+  filter = new Rts2FilterUrvc2 (this);
+
+  return Rts2DevCameraUrvc2::initChips ();
 }
 
 int
@@ -462,28 +528,6 @@ int
 Rts2DevCameraUrvc2::camCoolShutdown ()	/* ramp to ambient */
 {
   return setcool (0, 0, 0, FAN_OFF, CAMERA_COOL_OFF);
-}
-
-/* Should be improved to support st237 filter wheel */
-int
-Rts2DevCameraUrvc2::camFilter (int new_filter)	/* set camera filter */
-{
-  PulseOutParams pop;
-
-  if (new_filter < 1 || new_filter > 5)
-    {
-      return -1;
-    }
-
-  pop.pulsePeriod = 18270;
-  pop.pulseWidth = 500 + 300 * (new_filter - 1);
-  pop.numberPulses = 60;
-
-  if (MicroCommand (MC_PULSE, cameraID, &pop, NULL))
-    return -1;
-  filter = new_filter;
-
-  return 0;
 }
 
 int

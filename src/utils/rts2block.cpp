@@ -137,6 +137,20 @@ Rts2Conn::idle ()
 }
 
 int
+Rts2Conn::authorizationOK ()
+{
+  syslog (LOG_ERR, "authorization called on wrong connection");
+  return -1;
+}
+
+int
+Rts2Conn::authorizationFailed ()
+{
+  syslog (LOG_ERR, "authorization failed on wrong connection");
+  return -1;
+}
+
+int
 Rts2Conn::acceptConn ()
 {
   int new_sock;
@@ -150,6 +164,7 @@ Rts2Conn::acceptConn ()
     }
   else
     {
+      close (sock);
       sock = new_sock;
       syslog (LOG_DEBUG, "Rts2Conn::acceptConn connection accepted");
       setConnState (CONN_CONNECTED);
@@ -610,6 +625,20 @@ Rts2Conn::successfullSend ()
 }
 
 void
+Rts2Conn::getSuccessSend (time_t * in_t)
+{
+  *in_t = lastGoodSend;
+}
+
+int
+Rts2Conn::reachedSendTimeout ()
+{
+  time_t now;
+  time (&now);
+  return now > lastGoodSend + getConnTimeout ();
+}
+
+void
 Rts2Conn::successfullRead ()
 {
   time (&lastData);
@@ -748,6 +777,10 @@ Rts2Conn::setConnState (conn_state_t new_conn_state)
       // state change finished..
     }
   conn_state = new_conn_state;
+  if (new_conn_state == CONN_AUTH_FAILED)
+    {
+      connectionError ();
+    }
 }
 
 int
@@ -837,17 +870,6 @@ Rts2Conn::paramNextFloat (float *num)
 void
 Rts2Conn::dataReceived (Rts2ClientTCPDataConn * dataConn)
 {
-  // calculate mean..
-  double mean = 0;
-  unsigned short *pixel = dataConn->getData ();
-  unsigned short *top = dataConn->getTop ();
-  while (pixel < top)
-    {
-      mean += *pixel;
-      pixel++;
-    }
-  mean /= dataConn->getSize ();
-  syslog (LOG_DEBUG, "Rts2Conn::dataReceived mean: %f", mean);
   if (otherDevice)
     {
       otherDevice->dataReceived (dataConn);
@@ -888,8 +910,17 @@ Rts2App (in_argc, in_argv)
 
 Rts2Block::~Rts2Block (void)
 {
+  int i;
   if (sock >= 0)
     close (sock);
+  for (i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	delete conn;
+      connections[i] = NULL;
+    }
 }
 
 void
@@ -1054,6 +1085,20 @@ Rts2Block::findName (const char *in_name)
     }
   // if connection not found, try to look to list of available
   // connections
+  return NULL;
+}
+
+Rts2Conn *
+Rts2Block::findCentralId (int in_id)
+{
+  int i;
+  for (i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn = connections[i];
+      if (conn)
+	if (conn->getCentraldId () == in_id)
+	  return conn;
+    }
   return NULL;
 }
 

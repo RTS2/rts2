@@ -7,6 +7,8 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+#include "filter.h"
+
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
@@ -23,6 +25,8 @@
 #define CAMERA_COOL_MAX		1
 #define CAMERA_COOL_HOLD	2
 #define CAMERA_COOL_SHUTDOWN	3
+
+class Rts2DevCamera;
 
 class ChipSubset
 {
@@ -64,7 +68,7 @@ class CameraChip
 private:
   int sendChip (Rts2Conn * conn, char *name, int value);
   int sendChip (Rts2Conn * conn, char *name, float value);
-  int send_readout_data_failed;
+  time_t readout_started;
   int shutter_state;
 
 protected:
@@ -78,6 +82,8 @@ protected:
   ChipSubset *chipReadout;
   ChipSubset *chipUsedReadout;
 
+  Rts2DevCamera *camera;
+
   float pixelX;
   float pixelY;
 
@@ -88,9 +94,10 @@ protected:
   float gain;
   int sendReadoutData (char *data, size_t data_size);
 public:
-    CameraChip (int in_chip_id);
-    CameraChip (int in_chip_id, int in_width, int in_height, float in_pixelX,
-		float in_pixelY, float in_gain);
+    CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
+    CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+		int in_height, float in_pixelX, float in_pixelY,
+		float in_gain);
     virtual ~ CameraChip (void);
   void setSize (int in_width, int in_height, int in_x, int in_y)
   {
@@ -179,10 +186,12 @@ protected:
   int tempRegulation;
   int coolingPower;
   int fan;
-  int filter;
+
   int canDF;			// if the camera can make dark frames
   char ccdType[64];
   char serialNumber[64];
+
+  Rts2Filter *filter;
 
   float nightCoolTemp;
 protected:
@@ -260,10 +269,6 @@ public:
   {
     return -1;
   }
-  virtual int camFilter (int new_filter)
-  {
-    return -1;
-  }
 
   // callback functions from camera connection
   virtual int ready (Rts2Conn * conn);
@@ -282,6 +287,13 @@ public:
   int camCoolTemp (Rts2Conn * conn, float new_temp);
   int camCoolShutdown (Rts2Conn * conn);
   int camFilter (Rts2Conn * conn, int new_filter);
+
+  int getFilterNum ()
+  {
+    if (filter)
+      return filter->getFilterNum ();
+    return -1;
+  }
 
   virtual int grantPriority (Rts2Conn * conn)
   {

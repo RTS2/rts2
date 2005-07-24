@@ -18,6 +18,7 @@ Rts2Image::Rts2Image (char *in_filename,
   cameraName = NULL;
   mountName = NULL;
   focName = NULL;
+  filter = -1;
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -35,6 +36,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
 
   imageName = NULL;
   ffile = NULL;
+  filter = -1;
 
   epochId = in_epoch_id;
   targetId = in_targetId;
@@ -88,6 +90,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("MNT_NAME", mountName);
   focName = new char[DEVICE_NAME_SIZE + 1];
   getValue ("FOC_NAME", focName);
+  getValue ("CAM_FILT", filter);
   getValueImageType ();
 }
 
@@ -100,6 +103,8 @@ Rts2Image::~Rts2Image (void)
     delete[]cameraName;
   if (mountName)
     delete[]mountName;
+  if (focName)
+    delete[]focName;
 }
 
 void
@@ -561,7 +566,8 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
   setValue ("Y", im_h->y, "image beginning - detector Y coordinate");
   setValue ("BIN_V", im_h->binnings[0], "X axis binning");
   setValue ("BIN_H", im_h->binnings[1], "Y axis binning");
-  setValue ("FILTER", im_h->filter, "filter used for image");
+  setValue ("CAM_FILT", im_h->filter, "filter used for image");
+  filter = im_h->filter;
   setValue ("SHUTTER", im_h->shutter,
 	    "shutter state (1 - open, 2 - closed, 3 - synchro)");
   setValueImageType (im_h->shutter);
@@ -581,6 +587,9 @@ int
 Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 {
   struct imghdr *im_h;
+  double mean = 0;
+  unsigned short *pixel;
+  unsigned short *top;
 
   if (!ffile)
     return 0;
@@ -599,6 +608,16 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       fits_report_error (stderr, fits_status);
       return -1;
     }
+  // calculate mean..
+  pixel = dataConn->getData ();
+  top = dataConn->getTop ();
+  while (pixel < top)
+    {
+      mean += *pixel;
+      pixel++;
+    }
+  mean /= dataConn->getSize () / 2;
+  setValue ("MEAN", mean, "mean value in image");
   return writeImgHeader (im_h);
 }
 

@@ -10,7 +10,7 @@ class CameraDummyChip:public CameraChip
 {
 
 public:
-  CameraDummyChip (void):CameraChip (0)
+  CameraDummyChip (Rts2DevCamera * in_cam):CameraChip (in_cam, 0)
   {
     setSize (100, 200, 0, 0);
   }
@@ -40,6 +40,8 @@ public:
     if (readoutLine <
 	(chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
       {
+	if (readoutLine == 0)
+	  sleep (10);
 	char *data;
 	data = new char[2 * (chipUsedReadout->width - chipUsedReadout->x)];
 	for (int i = 0; i < 2 * chipUsedReadout->width; i++)
@@ -62,7 +64,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 public:
   Rts2DevCameraDummy (int argc, char **argv):Rts2DevCamera (argc, argv)
   {
-    chips[0] = new CameraDummyChip ();
+    chips[0] = new CameraDummyChip (this);
     chipNum = 1;
   }
   virtual int ready ()
@@ -71,12 +73,14 @@ public:
   }
   virtual int baseInfo ()
   {
+    sleep (1);
     strcpy (ccdType, "Dummy");
     strcpy (serialNumber, "1");
     return 0;
   }
   virtual int info ()
   {
+    sleep (1);
     tempCCD = 100;
     return 0;
   }

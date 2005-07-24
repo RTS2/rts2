@@ -24,6 +24,7 @@ Rts2ConnNoSend (in_master)
   // delet us if construction of socket fails
   setConnState (CONN_DELETE);
   ownerConnection = in_owner_conn;
+  setConnTimeout (65);
 
   data = NULL;
   dataTop = NULL;
@@ -91,7 +92,7 @@ Rts2ClientTCPDataConn::receive (fd_set * set)
   if ((sock >= 0) && FD_ISSET (sock, set))
     {
       data_size = read (sock, dataTop, totalSize - receivedSize);
-      if (data_size < 0)
+      if (data_size <= 0)
 	{
 	  connectionError ();
 	  return -1;
@@ -127,8 +128,21 @@ Rts2ClientTCPDataConn::idle ()
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %s",
 		  strerror (err));
+	  if (err == EINPROGRESS)
+	    {
+	      if (!reachedSendTimeout ())
+		return 0;
+	    }
 	  connectionError ();
 	}
+      else
+	{
+	  setConnState (CONN_CONNECTED);
+	}
+    }
+  if (reachedSendTimeout ())
+    {
+      connectionError ();
     }
   return 0;			// we don't want Rts2Conn to take care of our timeouts
 }

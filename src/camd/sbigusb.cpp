@@ -52,8 +52,9 @@ class CameraSbigChip:public CameraChip
   char *send_top;
   int sbig_readout_mode;
 public:
-    CameraSbigChip (int in_chip_id, int in_width, int in_height,
-		    float in_pixelX, float in_pixelY, float in_gain);
+    CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+		    int in_height, float in_pixelX, float in_pixelY,
+		    float in_gain);
     virtual ~ CameraSbigChip ();
   virtual int setBinning (int in_vert, int in_hori)
   {
@@ -70,10 +71,11 @@ public:
   virtual int readoutOneLine ();
 };
 
-CameraSbigChip::CameraSbigChip (int in_chip_id, int in_width, int in_height,
-				float in_pixelX, float in_pixelY,
-				float in_gain):
-CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
+CameraSbigChip::CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id,
+				int in_width, int in_height, float in_pixelX,
+				float in_pixelY, float in_gain):
+CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
+	    in_gain)
 {
   dest = new unsigned short[in_width * in_height];
   GetCCDInfoParams req;
@@ -223,7 +225,6 @@ public:
   virtual int camCoolHold ();
   virtual int camCoolTemp (float new_temp);
   virtual int camCoolShutdown ();
-  virtual int camFilter (int new_filter);
 };
 
 Rts2DevCameraSbig::Rts2DevCameraSbig (int argc, char **argv):
@@ -484,13 +485,6 @@ Rts2DevCameraSbig::camCoolShutdown ()
     return -1;
   ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
   return checkSbigHw (ret);
-}
-
-int
-Rts2DevCameraSbig::camFilter (int new_filter)
-{
-
-
 }
 
 Rts2DevCameraSbig *device;

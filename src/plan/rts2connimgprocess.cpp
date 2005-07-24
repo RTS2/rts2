@@ -16,10 +16,8 @@ Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master,
 					const char *in_path):
 Rts2ConnFork (in_master, in_exe)
 {
-  path = new char[strlen (in_path) + 1];
-  strcpy (path, in_path);
   reqConn = in_conn;
-  image = new Rts2ImageDb (path);
+  image = new Rts2ImageDb (in_path);
   astrometryStat = NOT_ASTROMETRY;
 }
 
@@ -29,7 +27,6 @@ Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
     {
       image->toTrash ();
     }
-  delete[]path;
   delete image;
   sock = -1;
 }
@@ -39,10 +36,16 @@ Rts2ConnImgProcess::newProcess ()
 {
   int ret;
   syslog (LOG_DEBUG, "Rts2ConnImgProcess::newProcess exe: %s img: %s",
-	  exePath, path);
+	  exePath, image->getImageName ());
+  if (image->getType () == IMGTYPE_DARK)
+    {
+      image->toDark ();
+      astrometryStat = DARK;
+      return 0;
+    }
   if (exePath)
     {
-      ret = execl (exePath, exePath, path, (char *) NULL);
+      ret = execl (exePath, exePath, image->getImageName (), (char *) NULL);
       if (ret)
 	syslog (LOG_ERR, "Rts2ConnImgProcess::newProcess: %m");
     }
@@ -61,10 +64,11 @@ Rts2ConnImgProcess::processLine ()
     sscanf (getCommand (), "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
 	    &dec_err);
   syslog (LOG_DEBUG, "receive: %s sscanf: %i", getCommand (), ret);
-  if (ret == 5 && reqConn)
+  if (ret == 5)
     {
-      reqConn->sendValue ("correct", image->getObsId (), image->getImgId (),
-			  ra, dec, ra_err, dec_err);
+      if (reqConn)
+	reqConn->sendValue ("correct", image->getObsId (), image->getImgId (),
+			    ra, dec, ra_err, dec_err);
       image->toArchive ();
       astrometryStat = GET;
       // send correction to telescope..

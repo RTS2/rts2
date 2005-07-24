@@ -91,11 +91,8 @@ public:
     // for immediate updates of values..
     int ret;
     ret = Rts2ConnClient::command ();
-    if (!ret)
-      {
-	print ();
-	wrefresh (window);
-      }
+    print ();
+    wrefresh (window);
     return ret;
   }
 
@@ -380,7 +377,7 @@ public:
     Rts2NMImgproc (Rts2CNMonConn *
 		   in_connection):Rts2DevClientImgproc (in_connection)
   {
-    in_connection->setStatusBegin (2);
+    in_connection->setStatusBegin (5);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -402,6 +399,9 @@ void
 Rts2NMImgproc::print (WINDOW * wnd)
 {
   mvwprintw (wnd, 1, 1, "Que : %-5i", getValueInteger ("que_size"));
+  mvwprintw (wnd, 2, 1, "Good: %i", getValueInteger ("good_images"));
+  mvwprintw (wnd, 3, 1, "Trash: %i", getValueInteger ("trash_images"));
+  mvwprintw (wnd, 4, 1, "Morn: %i", getValueInteger ("morning_images"));
 }
 
 class Rts2NMGrb:public Rts2DevClientGrb
@@ -548,10 +548,7 @@ public:
   virtual int willConnect (Rts2Address * in_addr);
   virtual int addAddress (Rts2Address * in_addr);
 
-  int resize ()
-  {
-    return repaint ();
-  }
+  int resize ();
 
   void processKey (int key);
 };
@@ -609,8 +606,6 @@ Rts2NMonitor::processConnection (Rts2CNMonConn * conn)
 {
   clientConnections.push_back (conn);
   relocatesWindows ();
-  conn->queCommand (new Rts2Command (this, "base_info"));
-  conn->queCommand (new Rts2Command (this, "info"));
 }
 
 Rts2NMonitor::Rts2NMonitor (int argc, char **argv):
@@ -629,13 +624,6 @@ Rts2NMonitor::~Rts2NMonitor (void)
     {
       delwin (statusWindow);
       delwin (commandWindow);
-
-      erase ();
-      refresh ();
-
-      nocbreak ();
-      echo ();
-      endwin ();
     }
 }
 
@@ -765,6 +753,26 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
     }
 }
 
+int
+Rts2NMonitor::resize ()
+{
+  std::vector < Rts2CNMonConn * >::iterator conn_iter;
+  Rts2CNMonConn *conn;
+  for (conn_iter = clientConnections.begin ();
+       conn_iter != clientConnections.end (); conn_iter++)
+    {
+      conn = (*conn_iter);
+      conn->setWindow (NULL);
+    }
+  erase ();
+  endwin ();
+  initscr ();
+  relocatesWindows ();
+  paintWindows ();
+  postEvent (new Rts2Event (EVENT_PRINT));
+  return repaint ();
+}
+
 void
 Rts2NMonitor::processKey (int key)
 {
@@ -865,9 +873,9 @@ sighandler_t old_Winch;
 void
 sigWinch (int sig)
 {
-//  monitor->resize ();
   if (old_Winch)
     old_Winch (sig);
+  monitor->resize ();
 }
 
 void *
@@ -906,6 +914,13 @@ main (int argc, char **argv)
   monitor->run ();
 
   delete (monitor);
+
+  erase ();
+  refresh ();
+
+  nocbreak ();
+  echo ();
+  endwin ();
 
   return 0;
 }

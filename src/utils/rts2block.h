@@ -117,6 +117,8 @@ protected:
   int otherType;
 
   void successfullSend ();
+  void getSuccessSend (time_t * in_t);
+  int reachedSendTimeout ();
   void successfullRead ();
 
   virtual int connectionError ();
@@ -143,6 +145,10 @@ public:
   }
   void postMaster (Rts2Event * event);
   virtual int idle ();
+
+  virtual int authorizationOK ();
+  virtual int authorizationFailed ();
+
   inline int isCommand (const char *cmd)
   {
     return !strcmp (cmd, getCommand ());
@@ -364,6 +370,7 @@ public:
   Rts2Conn *addDataConnection (Rts2Conn * in_conn, char *in_hostname,
 			       int in_port, int in_size);
   Rts2Conn *findName (const char *in_name);
+  Rts2Conn *findCentralId (int in_id);
   virtual int sendStatusMessage (char *state_name, int state);
   virtual int sendMessage (char *message);
   virtual int sendMessage (char *message, int val1, int val2);
