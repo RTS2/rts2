@@ -25,6 +25,7 @@ Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
 {
   if (astrometryStat == NOT_ASTROMETRY)
     {
+      astrometryStat = TRASH;
       image->toTrash ();
     }
   delete image;
