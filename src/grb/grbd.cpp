@@ -97,7 +97,7 @@ Rts2DevGrb::init ()
       if (!ret)
 	break;
       syslog (LOG_ERR,
-	      "Rts2DevGrb::init cannot init conngrb, sleeping fro 60 sec");
+	      "Rts2DevGrb::init cannot init conngrb, sleeping for 60 sec");
       sleep (60);
     }
   addConnection (gcncnn);

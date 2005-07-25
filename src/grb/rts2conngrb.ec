@@ -681,11 +681,13 @@ Rts2ConnGrb::init_call ()
   sock = socket (info->ai_family, info->ai_socktype, info->ai_protocol);
   if (sock == -1)
   {
-    return -1;
     freeaddrinfo (info);
+    return -1;
   }
   ret = connect (sock, info->ai_addr, info->ai_addrlen);
   freeaddrinfo (info);
+  time (&nextTime);
+  nextTime += getConnTimeout ();
   if (ret == -1)
     {
       if (errno = EINPROGRESS)
@@ -696,8 +698,6 @@ Rts2ConnGrb::init_call ()
       return -1;
     }
   setConnState (CONN_CONNECTED);
-  time (&nextTime);
-  nextTime += getConnTimeout ();
   return 0;
 }
 
@@ -709,13 +709,17 @@ Rts2ConnGrb::init_listen ()
   if (gcn_listen_sock >= 0)
   {
     close (gcn_listen_sock);
+    gcn_listen_sock = -1;
   }
 
   connectionError ();
 
   gcn_listen_sock = socket (PF_INET, SOCK_STREAM, 0);
-  if (gcn_listen_sock)
-    return -1;
+  if (gcn_listen_sock == -1)
+    {
+      syslog (LOG_ERR, "Rts2ConnGrb::init_listen socket %m");
+      return -1;
+    }
   const int so_reuseaddr = 1;
   setsockopt (gcn_listen_sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof (so_reuseaddr));
   struct sockaddr_in server;
@@ -728,13 +732,15 @@ Rts2ConnGrb::init_listen ()
       syslog (LOG_ERR, "Rts2ConnGrb::init_listen bind: %m");
       return -1;
     }
-  ret = listen (sock, 1);
+  ret = listen (gcn_listen_sock, 1);
   if (ret)
     {
       syslog (LOG_ERR, "Rts2ConnGrb::init_listen listen: %m");
       return -1;
     }
   setConnState (CONN_CONNECTED);
+  time (&nextTime);
+  nextTime += getConnTimeout ();
   return 0;
 }
 
@@ -801,6 +807,8 @@ Rts2ConnGrb::receive (fd_set *set)
     close (gcn_listen_sock);
     gcn_listen_sock = -1;
     setConnState (CONN_CONNECTED);
+    syslog (LOG_DEBUG, "Rts2ConnGrb::receive accept gcn_listen_sock from %s %i",
+      inet_ntoa (other_side.sin_addr), ntohs (other_side.sin_port));
   }
   else if (sock >= 0 && FD_ISSET (sock, set))
   {
