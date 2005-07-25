@@ -44,6 +44,7 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	  currentTarget = (Target *) event->getArg ();
 	  nextTarget = NULL;
 	}
+      getObserveStart = 0;
       if (event->getType () == EVENT_SET_TARGET)
 	break;
     case EVENT_OBSERVE:
