@@ -28,7 +28,7 @@ class Rts2ConnImgProcess:public Rts2ConnFork
   double ra, dec, ra_err, dec_err;
 
 protected:
-    virtual void endConnection ();
+    virtual int connectionError ();
 
 public:
     Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * in_conn,

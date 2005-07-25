@@ -69,8 +69,8 @@ Rts2ConnImgProcess::processLine ()
   return -1;
 }
 
-void
-Rts2ConnImgProcess::endConnection ()
+int
+Rts2ConnImgProcess::connectionError ()
 {
   int ret;
   const char *telescopeName;
@@ -112,5 +112,5 @@ Rts2ConnImgProcess::endConnection ()
       break;
     }
   delete image;
-  Rts2ConnFork::endConnection ();
+  return Rts2ConnFork::connectionError ();
 }
