@@ -38,7 +38,7 @@
 
 #define GAMMA 0.995
 
-//#define PP_MED 0.60
+#define PP_MED 0.60
 #define PP_HIG 0.995
 #define PP_LOW (1 - PP_HIG)
 
@@ -67,8 +67,11 @@ private:
   Visual *visual;
   int depth;
 
+  int autoSave;
   int centerHeight;
   int centerWidth;
+
+  int crossType;
 
 protected:
     virtual void help ();
@@ -131,12 +134,18 @@ private:
   int windowHeight;
   int windowWidth;
 
+  // when 1, we are in focusing mode - not start next exposure before focus is calculated & changed
+  int focusing;
+
   int pixmapHeight;
   int pixmapWidth;
 
   void buildWindow ();
   void rebuildWindow ();
   void redraw ();
+  void drawCross1 ();
+  void drawCross2 ();
+  void drawCross3 ();
   // thread entry function..
   void XeventLoop ();
   static void *staticXEventLoop (void *arg)
@@ -154,6 +163,8 @@ private:
   virtual void getPriority ();
   virtual void lostPriority ();
 
+  int crossType;
+
 public:
   Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
   virtual ~ Rts2xfocusCamera (void)
@@ -167,7 +178,7 @@ public:
     switch (event->getType ())
       {
       case EVENT_START_EXPOSURE:
-	exposureCount = -1;
+	exposureCount = focusing ? 1 : -1;
 	// build window etc..
 	buildWindow ();
 	queExposure ();
@@ -181,11 +192,9 @@ public:
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual void stateChanged (Rts2ServerState * state);
-  virtual Rts2Image *createImage (const struct timeval *expStart)
-  {
-    return new Rts2Image ("!test.fits", expStart);
-  }
+  virtual Rts2Image *createImage (const struct timeval *expStart);
   void center (int centerWidth, int centerHeight);
+  void setCrossType (int in_crossType);
 };
 
 Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraFoc
@@ -259,14 +268,82 @@ Rts2xfocusCamera::rebuildWindow ()
 }
 
 void
-Rts2xfocusCamera::redraw ()
+Rts2xfocusCamera::drawCross1 ()
 {
-  // do some line-drawing etc..
-  int ret;
+  char *stringBuf;
+  int len;
+
+  XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
+  int rectNum;
+  int i;
+  int xc, yc;
+  XRectangle *rectangles;
+
+  rectNum =
+    (pixmapWidth / 40 >
+     pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
+  rectangles = new XRectangle[rectNum];
+
+  XRectangle *rect = rectangles;
+
+  xc = pixmapWidth / 2;
+  yc = pixmapHeight / 2;
+
+  // draw cross at center
+  XDrawLine (master->getDisplay (), pixmap, gc, xc - 10, yc, xc - 2, yc);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc + 10, yc, xc + 2, yc);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - 10, xc, yc - 2);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc + 10, xc, yc + 2);
+
+  for (i = 0; i < rectNum;)
+    {
+      i++;
+      xc -= 20;
+      yc -= 20;
+      rect->x = xc;
+      rect->y = yc;
+      rect->width = i * 40;
+      rect->height = i * 40;
+      rect++;
+    }
+  XDrawRectangles (master->getDisplay (), pixmap, gc, rectangles, rectNum);
+
+  delete[]rectangles;
+
+  len =
+    asprintf (&stringBuf, "L: %d M: %d H: %d Avg: %.2f", low, med, hig,
+	      average);
+  XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
+	       stringBuf, len);
+  free (stringBuf);
+  if (lastHeader)
+    {
+      len =
+	asprintf (&stringBuf,
+		  "[%i,%i:%i,%i] binn: %i:%i exposureTime: %.3f s",
+		  lastHeader->x, lastHeader->y, lastHeader->sizes[0],
+		  lastHeader->sizes[1], lastHeader->binnings[0],
+		  lastHeader->binnings[1], exposureTime);
+      XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
+		   pixmapHeight - 20, stringBuf, len);
+      free (stringBuf);
+    }
+}
+
+void
+Rts2xfocusCamera::drawCross2 ()
+{
+
+}
+
+void
+Rts2xfocusCamera::drawCross3 ()
+{
   char *stringBuf;
   int len;
   static XPoint points[5];
   int xc, yc;
+
   XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
   // draw lines on surrounding
   int w = pixmapWidth / 7;
@@ -321,7 +398,26 @@ Rts2xfocusCamera::redraw ()
   XDrawLines (master->getDisplay (), pixmap, gc, points, 5, CoordModeOrigin);
   XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - pixmapHeight / 15,
 	     xc, yc + pixmapHeight / 15);
+}
 
+void
+Rts2xfocusCamera::redraw ()
+{
+  // do some line-drawing etc..
+  int ret;
+
+  switch (crossType)
+    {
+    case 1:
+      drawCross1 ();
+      break;
+    case 2:
+      drawCross2 ();
+      break;
+    case 3:
+      drawCross3 ();
+      break;
+    }
   xswa.colormap = *(master->getColormap ());
   xswa.background_pixmap = pixmap;
 
@@ -395,10 +491,10 @@ Rts2xfocusCamera::XeventLoop ()
 	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_STOP));
 	      break;
 	    case XK_y:
-	      saveImage = 1;
+	      setSaveImage (1);
 	      break;
 	    case XK_u:
-	      saveImage = 0;
+	      setSaveImage (0);
 	      break;
 	    default:
 	      break;
@@ -464,10 +560,8 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
       j += histogram[i];
       if ((!low) && (((float) j / (float) dataSize) > PP_LOW))
 	low = i;
-#ifdef PP_MED
       if ((!med) && (((float) j / (float) dataSize) > PP_MED))
 	med = i;
-#endif
       if ((!hig) && (((float) j / (float) dataSize) > PP_HIG))
 	hig = i;
     }
@@ -536,11 +630,28 @@ Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClientCameraFoc::stateChanged (state);
 }
 
+Rts2Image *
+Rts2xfocusCamera::createImage (const struct timeval *expStart)
+{
+  Rts2Image *image;
+  char *filename;
+  asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (), getpid ());
+  image = new Rts2Image (filename, expStart);
+  free (filename);
+  return image;
+}
+
 void
 Rts2xfocusCamera::center (int centerWidth, int centerHeight)
 {
   connection->
     queCommand (new Rts2CommandCenter (master, 0, centerWidth, centerHeight));
+}
+
+void
+Rts2xfocusCamera::setCrossType (int in_crossType)
+{
+  crossType = in_crossType;
 }
 
 Rts2xfocus::Rts2xfocus (int argc, char **argv):
@@ -551,8 +662,12 @@ Rts2Client (argc, argv)
   defCenter = 0;
   defBin = -1;
 
+  autoSave = 0;
+
   centerWidth = -1;
   centerHeight = -1;
+
+  crossType = 1;
 
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
@@ -565,6 +680,7 @@ Rts2Client (argc, argv)
 	     "default binning (ussually 1, depends on camera setting)");
   addOption ('W', "width", 1, "center width");
   addOption ('H', "height", 1, "center height");
+  addOption ('X', "cross", 1, "cross type (default to 1; possible 0 to 3");
 }
 
 Rts2xfocus::~Rts2xfocus (void)
@@ -606,6 +722,9 @@ Rts2xfocus::processOption (int in_opt)
     case 'e':
       defExposure = atof (optarg);
       break;
+    case 's':
+      autoSave = 1;
+      break;
     case 'x':
       displayName = optarg;
       break;
@@ -620,6 +739,9 @@ Rts2xfocus::processOption (int in_opt)
       break;
     case 'H':
       centerHeight = atoi (optarg);
+      break;
+    case 'X':
+      crossType = atoi (optarg);
       break;
     default:
       return Rts2Client::processOption (in_opt);
@@ -676,6 +798,8 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_CCD:
       Rts2xfocusCamera * cam;
       cam = new Rts2xfocusCamera (conn, this);
+      cam->setSaveImage (autoSave);
+      cam->setCrossType (crossType);
       if (defCenter)
 	{
 	  cam->center (centerWidth, centerHeight);
