@@ -21,9 +21,14 @@ class Rts2ConnImgProcess:public Rts2ConnFork
 {
   Rts2Conn *reqConn;
 
-  Rts2Image *image;
+  char *imgPath;
 
   astrometry_stat_t astrometryStat;
+  long id;
+  double ra, dec, ra_err, dec_err;
+
+protected:
+    virtual void endConnection ();
 
 public:
     Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * in_conn,

@@ -17,36 +17,37 @@ Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master,
 Rts2ConnFork (in_master, in_exe)
 {
   reqConn = in_conn;
-  image = new Rts2ImageDb (in_path);
+  imgPath = new char[strlen (in_path) + 1];
+  strcpy (imgPath, in_path);
   astrometryStat = NOT_ASTROMETRY;
 }
 
 Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
 {
-  if (astrometryStat == NOT_ASTROMETRY)
-    {
-      astrometryStat = TRASH;
-      image->toTrash ();
-    }
-  delete image;
-  sock = -1;
+  delete[]imgPath;
 }
 
 int
 Rts2ConnImgProcess::newProcess ()
 {
   int ret;
+  Rts2Image *image;
+
   syslog (LOG_DEBUG, "Rts2ConnImgProcess::newProcess exe: %s img: %s",
-	  exePath, image->getImageName ());
+	  exePath, imgPath);
+
+  image = new Rts2Image (imgPath);
   if (image->getType () == IMGTYPE_DARK)
     {
-      image->toDark ();
       astrometryStat = DARK;
+      delete image;
       return 0;
     }
+  delete image;
+
   if (exePath)
     {
-      ret = execl (exePath, exePath, image->getImageName (), (char *) NULL);
+      ret = execl (exePath, exePath, imgPath, (char *) NULL);
       if (ret)
 	syslog (LOG_ERR, "Rts2ConnImgProcess::newProcess: %m");
     }
@@ -57,26 +58,43 @@ int
 Rts2ConnImgProcess::processLine ()
 {
   int ret;
-  long id;
-  double ra, dec, ra_err, dec_err;
-  const char *telescopeName;
-  int corr_mark;
   ret =
     sscanf (getCommand (), "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
 	    &dec_err);
   syslog (LOG_DEBUG, "receive: %s sscanf: %i", getCommand (), ret);
   if (ret == 5)
     {
+      astrometryStat = GET;
+    }
+  return -1;
+}
+
+void
+Rts2ConnImgProcess::endConnection ()
+{
+  int ret;
+  const char *telescopeName;
+  int corr_mark;
+  Rts2ImageDb *image;
+
+  image = new Rts2ImageDb (imgPath);
+  switch (astrometryStat)
+    {
+    case NOT_ASTROMETRY:
+    case TRASH:
+      astrometryStat = TRASH;
+      image->toTrash ();
+      break;
+    case GET:
       if (reqConn)
 	reqConn->sendValue ("correct", image->getObsId (), image->getImgId (),
 			    ra, dec, ra_err, dec_err);
       image->toArchive ();
-      astrometryStat = GET;
       // send correction to telescope..
       telescopeName = image->getMountName ();
       ret = image->getValue ("MNT_MARK", corr_mark);
       if (ret)
-	return -1;
+	break;
       if (telescopeName)
 	{
 	  Rts2Conn *telConn;
@@ -88,6 +106,11 @@ Rts2ConnImgProcess::processLine ()
 			  Rts2CommandCorrect (master, corr_mark, ra, dec,
 					      ra_err / 60.0, dec_err / 60.0));
 	}
+      break;
+    case DARK:
+      image->toDark ();
+      break;
     }
-  return -1;
+  delete image;
+  Rts2ConnFork::endConnection ();
 }
