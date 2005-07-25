@@ -143,9 +143,11 @@ private:
   void buildWindow ();
   void rebuildWindow ();
   void redraw ();
+  void drawCenterCross (int xc, int yc);
   void drawCross1 ();
   void drawCross2 ();
   void drawCross3 ();
+  void printInfo ();
   // thread entry function..
   void XeventLoop ();
   static void *staticXEventLoop (void *arg)
@@ -268,11 +270,18 @@ Rts2xfocusCamera::rebuildWindow ()
 }
 
 void
+Rts2xfocusCamera::drawCenterCross (int xc, int yc)
+{
+  // draw cross at center
+  XDrawLine (master->getDisplay (), pixmap, gc, xc - 10, yc, xc - 2, yc);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc + 10, yc, xc + 2, yc);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - 10, xc, yc - 2);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc + 10, xc, yc + 2);
+}
+
+void
 Rts2xfocusCamera::drawCross1 ()
 {
-  char *stringBuf;
-  int len;
-
   XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
   int rectNum;
   int i;
@@ -289,11 +298,7 @@ Rts2xfocusCamera::drawCross1 ()
   xc = pixmapWidth / 2;
   yc = pixmapHeight / 2;
 
-  // draw cross at center
-  XDrawLine (master->getDisplay (), pixmap, gc, xc - 10, yc, xc - 2, yc);
-  XDrawLine (master->getDisplay (), pixmap, gc, xc + 10, yc, xc + 2, yc);
-  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - 10, xc, yc - 2);
-  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc + 10, xc, yc + 2);
+  drawCenterCross (xc, yc);
 
   for (i = 0; i < rectNum;)
     {
@@ -309,38 +314,50 @@ Rts2xfocusCamera::drawCross1 ()
   XDrawRectangles (master->getDisplay (), pixmap, gc, rectangles, rectNum);
 
   delete[]rectangles;
-
-  len =
-    asprintf (&stringBuf, "L: %d M: %d H: %d Avg: %.2f", low, med, hig,
-	      average);
-  XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
-	       stringBuf, len);
-  free (stringBuf);
-  if (lastHeader)
-    {
-      len =
-	asprintf (&stringBuf,
-		  "[%i,%i:%i,%i] binn: %i:%i exposureTime: %.3f s",
-		  lastHeader->x, lastHeader->y, lastHeader->sizes[0],
-		  lastHeader->sizes[1], lastHeader->binnings[0],
-		  lastHeader->binnings[1], exposureTime);
-      XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
-		   pixmapHeight - 20, stringBuf, len);
-      free (stringBuf);
-    }
 }
 
 void
 Rts2xfocusCamera::drawCross2 ()
 {
+  XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
+  int arcNum;
+  int i;
+  int xc, yc;
+  XArc *arcs;
 
+  arcNum =
+    (pixmapWidth / 40 >
+     pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
+  arcs = new XArc[arcNum];
+
+  XArc *arc = arcs;
+
+  xc = pixmapWidth / 2;
+  yc = pixmapHeight / 2;
+
+  drawCenterCross (xc, yc);
+
+  for (i = 0; i < arcNum;)
+    {
+      i++;
+      xc -= 20;
+      yc -= 20;
+      arc->x = xc;
+      arc->y = yc;
+      arc->width = i * 40;
+      arc->height = i * 40;
+      arc->angle1 = 0;
+      arc->angle2 = 23040;
+      arc++;
+    }
+  XDrawArcs (master->getDisplay (), pixmap, gc, arcs, arcNum);
+
+  delete[]arcs;
 }
 
 void
 Rts2xfocusCamera::drawCross3 ()
 {
-  char *stringBuf;
-  int len;
   static XPoint points[5];
   int xc, yc;
 
@@ -357,24 +374,6 @@ Rts2xfocusCamera::drawCross3 ()
 	     pixmapWidth - w, pixmapHeight - h);
   XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4,
 		  pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
-  len =
-    asprintf (&stringBuf, "L: %d M: %d H: %d Avg: %.2f", low, med, hig,
-	      average);
-  XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
-	       stringBuf, len);
-  free (stringBuf);
-  if (lastHeader)
-    {
-      len =
-	asprintf (&stringBuf,
-		  "[%i,%i:%i,%i] binn: %i:%i exposureTime: %.3f s",
-		  lastHeader->x, lastHeader->y, lastHeader->sizes[0],
-		  lastHeader->sizes[1], lastHeader->binnings[0],
-		  lastHeader->binnings[1], exposureTime);
-      XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
-		   pixmapHeight - 20, stringBuf, len);
-      free (stringBuf);
-    }
   // draw center..
   xc = pixmapWidth / 2;
   yc = pixmapHeight / 2;
@@ -401,6 +400,31 @@ Rts2xfocusCamera::drawCross3 ()
 }
 
 void
+Rts2xfocusCamera::printInfo ()
+{
+  char *stringBuf;
+  int len;
+  len =
+    asprintf (&stringBuf, "L: %d M: %d H: %d Avg: %.2f", low, med, hig,
+	      average);
+  XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
+	       stringBuf, len);
+  free (stringBuf);
+  if (lastHeader)
+    {
+      len =
+	asprintf (&stringBuf,
+		  "[%i,%i:%i,%i] binn: %i:%i exposureTime: %.3f s",
+		  lastHeader->x, lastHeader->y, lastHeader->sizes[0],
+		  lastHeader->sizes[1], lastHeader->binnings[0],
+		  lastHeader->binnings[1], exposureTime);
+      XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
+		   pixmapHeight - 20, stringBuf, len);
+      free (stringBuf);
+    }
+}
+
+void
 Rts2xfocusCamera::redraw ()
 {
   // do some line-drawing etc..
@@ -418,6 +442,8 @@ Rts2xfocusCamera::redraw ()
       drawCross3 ();
       break;
     }
+  if (crossType > 0)
+    printInfo ();
   xswa.colormap = *(master->getColormap ());
   xswa.background_pixmap = pixmap;
 
@@ -680,7 +706,9 @@ Rts2Client (argc, argv)
 	     "default binning (ussually 1, depends on camera setting)");
   addOption ('W', "width", 1, "center width");
   addOption ('H', "height", 1, "center height");
-  addOption ('X', "cross", 1, "cross type (default to 1; possible 0 to 3");
+  addOption ('X', "cross", 1,
+	     "cross type (default to 1; possible values 0 - no cross, 1 - rectangles\n"
+	     "    2 - circles, 3 - BOOTES special");
 }
 
 Rts2xfocus::~Rts2xfocus (void)
