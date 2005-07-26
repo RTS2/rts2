@@ -86,7 +86,7 @@ CREATE TABLE grb_script (
 	grb_script_end		integer,  -- post GRB second end
 	  -- time, can be null for default script
 	grb_script_script	varchar(2000) NOT NULL,
-CONSTRAINT prim_grb_script PRIMARY KEY (camera_name, grb_script_start)
+CONSTRAINT prim_grb_script PRIMARY KEY (camera_name, grb_script_end)
 );
 
 -- swift pointing

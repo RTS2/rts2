@@ -146,6 +146,11 @@ public:
   void postMaster (Rts2Event * event);
   virtual int idle ();
 
+  virtual void endConnection ()
+  {
+    connectionError ();		// maybe in future we will need to change that
+  }
+
   virtual int authorizationOK ();
   virtual int authorizationFailed ();
 
@@ -291,10 +296,6 @@ public:
     return connectionTimeout;
   }
 
-  void endConnection ()
-  {
-    connectionError ();		// maybe in future we will need to change that
-  }
 protected:
   virtual int command ();
   virtual int message ();
