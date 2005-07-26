@@ -48,7 +48,6 @@ private:
   // high-level I/O functions
   int focus_move (char *cmd, int steps);
   void compute_checksum (char *cmd);
-  int asc_ii (char a);
 public:
     Rts2DevFocuserRobofocus (int argc, char **argv);
    ~Rts2DevFocuserRobofocus (void);
@@ -71,7 +70,6 @@ Rts2DevFocuser (argc, argv)
   device_file = FOCUSER_PORT;
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
-  addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
 }
 
 Rts2DevFocuserRobofocus::~Rts2DevFocuserRobofocus ()
@@ -200,9 +198,6 @@ Rts2DevFocuserRobofocus::processOption (int in_opt)
     case 'f':
       device_file = optarg;
       break;
-    case 'x':
-      camera_name = optarg;
-      break;
     default:
       return Rts2Device::processOption (in_opt);
     }
@@ -258,7 +253,6 @@ int
 Rts2DevFocuserRobofocus::baseInfo ()
 {
   strcpy (focType, "ROBOFOCUS");
-  strcpy (focCamera, camera_name);
   return 0;
 }
 
@@ -362,8 +356,8 @@ Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
   char *ticks[1];
   int num_steps;
 
-  char command[9], rbuf[num_steps + 9], tbuf[7];
-  char command_buffer[8];
+  char command[10], rbuf[num_steps + 9], tbuf[7];
+  char command_buffer[9];
 
   if (steps == 0)
     {
@@ -379,15 +373,7 @@ Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
   ticks[1] = '\0';
 
   // Pad out command with leading zeros
-
-  if (steps < 10)
-    sprintf (command_buffer, "%s00000%i", cmd, steps);
-  else if (steps < 100)
-    sprintf (command_buffer, "%s0000%i", cmd, steps);
-  else if (steps < 1000)
-    sprintf (command_buffer, "%s000%i", cmd, steps);
-  else
-    sprintf (command_buffer, "%s00%i", cmd, steps);
+  sprintf (command_buffer, "%s%06i", cmd, steps);
 
   //Get checksum character
   compute_checksum (command_buffer);
@@ -413,7 +399,7 @@ Rts2DevFocuserRobofocus::compute_checksum (char *cmd)
   size = strlen (cmd);
 
   for (i = 0; i < size; i++)
-    bytesum = bytesum + asc_ii (cmd[i]);
+    bytesum = bytesum + (int) (cmd[i]);
 
   checksum = toascii ((bytesum % 340));
 
@@ -421,19 +407,9 @@ Rts2DevFocuserRobofocus::compute_checksum (char *cmd)
 
 }
 
-// Convert ascii character to decimal code
-int
-Rts2DevFocuserRobofocus::asc_ii (char a)
-{
-  int k = a;
-  return k;
-}
-
 int
 main (int argc, char **argv)
 {
-  // mtrace ();
-
   Rts2DevFocuserRobofocus *device = new Rts2DevFocuserRobofocus (argc, argv);
 
   int ret;

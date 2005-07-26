@@ -25,12 +25,24 @@ Rts2Device (argc, argv, DEVICE_TYPE_FOCUS, 5566, "F0")
 {
   char *states_names[1] = { "focuser" };
   setStateNames (1, states_names);
+
+  focCamera[0] = '\0';
+
+  addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
 }
 
 int
-Rts2DevFocuser::init ()
+Rts2DevFocuser::processOption (int in_opt)
 {
-  return Rts2Device::init ();
+  switch (in_opt)
+    {
+    case 'x':
+      strncpy (focCamera, optarg, 20);
+      focCamera[19] = '\0';
+      break;
+    default:
+      return Rts2Device::processOption (in_opt);
+    }
 }
 
 Rts2DevConn *

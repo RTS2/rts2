@@ -4,7 +4,7 @@
  * @author standa
  */
 
-#ifndef __RTS2_FOCUSD_CPP_
+#ifndef __RTS2_FOCUSD_CPP__
 #define __RTS2_FOCUSD_CPP__
 
 #include "../utils/rts2block.h"
@@ -14,7 +14,6 @@ class Rts2DevFocuser:public Rts2Device
 {
 protected:
   char *device_file;
-  char *camera_name;
   char focCamera[20];
   char focType[20];
   int focPos;
@@ -25,7 +24,7 @@ protected:
   };
 public:
   Rts2DevFocuser (int argc, char **argv);
-  virtual int init ();
+  virtual int processOption (int in_opt);
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 
   // callback functions

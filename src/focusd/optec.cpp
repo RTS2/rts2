@@ -197,9 +197,6 @@ Rts2DevFocuserOptec::processOption (int in_opt)
     case 'f':
       device_file = optarg;
       break;
-    case 'x':
-      camera_name = optarg;
-      break;
     default:
       return Rts2Device::processOption (in_opt);
     }
@@ -309,7 +306,6 @@ int
 Rts2DevFocuserOptec::baseInfo ()
 {
   strcpy (focType, "OPTEC_TCF");
-  strcpy (focCamera, camera_name);
   return 0;
 }
 
@@ -324,7 +320,7 @@ Rts2DevFocuserOptec::info ()
 int
 Rts2DevFocuserOptec::stepOut (int num, int direction)
 {
-  char command[6], rbuf[2];
+  char command[7], rbuf[2];
   char add = ' ';
 
   if (direction == -1)
@@ -334,15 +330,7 @@ Rts2DevFocuserOptec::stepOut (int num, int direction)
 
   if (num > 7000)
     return -1;
-  else if ((num > 999) && (num < 7001))
-    sprintf (command, "F%c%d", add, num);
-  else if ((num > 99) && (num < 1000))
-    sprintf (command, "F%c0%d", add, num);
-  else if ((num > 9) && (num < 100))
-    sprintf (command, "F%c00%d", add, num);
-  else if ((num > -1) && (num < 10))
-    sprintf (command, "F%c000%d", add, num);
-
+  sprintf (command, "F%c%04d", add, num);
 
   if (foc_write_read (command, 6, rbuf, 1) < 0)
     return -1;
@@ -361,8 +349,6 @@ Rts2DevFocuserOptec::isFocusing ()
 int
 main (int argc, char **argv)
 {
-  // mtrace ();
-
   Rts2DevFocuserOptec *device = new Rts2DevFocuserOptec (argc, argv);
 
   int ret;
