@@ -1092,9 +1092,6 @@ Rts2DevTelescopeGemini::tel_start_move ()
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
     return -1;
 
-  time (&moveTimeout);
-  moveTimeout += 300;
-
   if (retstr == '0')
     return 0;
   // otherwise read reply..
@@ -1127,6 +1124,9 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
   startWorm ();
 
   forcedReparking = 0;
+
+  time (&moveTimeout);
+  moveTimeout += 300;
 
   return tel_start_move ();
 }
@@ -1201,6 +1201,9 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
     return 0;
 
   stopWorm ();
+
+  time (&moveTimeout);
+  moveTimeout += 300;
 
   ret = tel_start_move ();
   if (!ret)
