@@ -185,7 +185,7 @@ CameraChip::sendReadoutData (char *data, size_t data_size)
   if (ret == -2)
     {
       time (&now);
-      if (now > readout_started + 3)
+      if (now > readout_started + readoutConn->getConnTimeout ())
 	{
 	  syslog (LOG_ERR,
 		  "CameraChip::sendReadoutData connection not established within timeout");

@@ -217,6 +217,7 @@ int
 Rts2FilterUrvc2::init ()
 {
   setFilterNum (1);
+  return 0;
 }
 
 int
