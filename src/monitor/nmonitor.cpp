@@ -454,7 +454,8 @@ Rts2CNMonConn::printStatus ()
       Rts2ServerState *state = serverState[i];
       if (state)
 	{
-	  mvwprintw (window, nrow, 0, "%10s: %i", state->name, state->value);
+	  mvwprintw (window, nrow, 0, "%10s: %-5i", state->name,
+		     state->value);
 	  nrow++;
 	}
     }

@@ -91,7 +91,8 @@ Rts2DevTelescope::checkMoves ()
 	{
 	  if (move_connection)
 	    sendInfo (move_connection);
-	  maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
+	  maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
+		     DEVICE_ERROR_HW | TEL_OBSERVING,
 		     "move finished with error");
 	  move_connection = NULL;
 	  knowPosition = 0;
@@ -105,7 +106,8 @@ Rts2DevTelescope::checkMoves ()
 	    ret = endMove ();
 	  if (ret)
 	    {
-	      maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
+	      maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
+			 DEVICE_ERROR_HW | TEL_OBSERVING,
 			 "move finished with error");
 	      knowPosition = 0;
 	    }
@@ -141,7 +143,8 @@ Rts2DevTelescope::checkMoves ()
       if (ret == -1)
 	{
 	  infoAll ();
-	  maskState (0, TEL_MASK_MOVING, TEL_PARKED,
+	  maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
+		     DEVICE_ERROR_HW | TEL_PARKED,
 		     "park command finished with error");
 	}
       else if (ret == -2)
@@ -149,7 +152,8 @@ Rts2DevTelescope::checkMoves ()
 	  infoAll ();
 	  ret = endPark ();
 	  if (ret)
-	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,
+	    maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
+		       DEVICE_ERROR_HW | TEL_PARKED,
 		       "park command finished with error");
 	  else
 	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,

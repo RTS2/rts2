@@ -898,7 +898,7 @@ Rts2DevCameraApogee::camChipInfo (int chip)
 int
 Rts2DevCameraApogee::camCoolMax ()
 {
-  camera->write_CoolerSetPoint (-100);
+  camera->write_CoolerSetPoint (-30);
   camera->write_CoolerMode (Camera_CoolerMode_On);
   return 0;
 }
@@ -906,7 +906,10 @@ Rts2DevCameraApogee::camCoolMax ()
 int
 Rts2DevCameraApogee::camCoolHold ()
 {
-  camera->write_CoolerSetPoint (-20);
+  if (isnan (nightCoolTemp))
+    camera->write_CoolerSetPoint (-20);
+  else
+    camera->write_CoolerSetPoint (nightCoolTemp);
   camera->write_CoolerMode (Camera_CoolerMode_On);
   return 0;
 }

@@ -6,6 +6,8 @@
 
 #include "telescope.h"
 
+#include <libnova/libnova.h>
+
 /*!
  * Dummy teld for testing purposes.
  */

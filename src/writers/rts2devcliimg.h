@@ -8,6 +8,8 @@
 
 #include "rts2image.h"
 
+#include <libnova/libnova.h>
+
 /**************************************
  *
  * Defines client descendants capable to stream themselves
@@ -53,6 +55,11 @@ public:
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
+
+  void setSaveImage (int in_saveImage)
+  {
+    saveImage = in_saveImage;
+  }
 };
 
 class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope
@@ -60,6 +67,10 @@ class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope
 public:
   Rts2DevClientTelescopeImage (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
+  void getEqu (struct ln_equ_posn *tel);
+  void getObs (struct ln_lnlat_posn *obs);
+  double getLocalSiderealDeg ();
+  double getDistance (struct ln_equ_posn *in_pos);
 };
 
 class Rts2DevClientDomeImage:public Rts2DevClientDome

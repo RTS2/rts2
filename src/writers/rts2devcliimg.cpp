@@ -235,6 +235,34 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
   Rts2DevClientTelescope::postEvent (event);
 }
 
+void
+Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
+{
+  tel->ra = getValueDouble ("ra");
+  tel->dec = getValueDouble ("dec");
+}
+
+void
+Rts2DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
+{
+  obs->lng = getValueDouble ("longtitude");
+  obs->lat = getValueDouble ("latitude");
+}
+
+double
+Rts2DevClientTelescopeImage::getLocalSiderealDeg ()
+{
+  return getValueDouble ("siderealtime") * 15.0;
+}
+
+double
+Rts2DevClientTelescopeImage::getDistance (struct ln_equ_posn *in_pos)
+{
+  struct ln_equ_posn tel;
+  getEqu (&tel);
+  return ln_get_angular_separation (&tel, in_pos);
+}
+
 Rts2DevClientDomeImage::Rts2DevClientDomeImage (Rts2Conn * in_connection):Rts2DevClientDome
   (in_connection)
 {

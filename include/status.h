@@ -13,6 +13,15 @@
 
 #define DEVICE_MASK_PRIORITY	1
 
+// mask used to communicate errors which occured on device
+#define DEVICE_ERROR_MASK	0xff0000
+
+#define DEVICE_NO_ERROR		0x000000
+// this status is result of kill command, which occured
+#define DEVICE_ERROR_KILL	0x010000
+// unspecified HW error occured
+#define DEVICE_ERROR_HW		0x020000
+
 // Camera status
 #define CAM_MASK_EXPOSE		0x01
 

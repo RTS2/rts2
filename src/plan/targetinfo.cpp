@@ -4,8 +4,19 @@
 #include "../utils/objectcheck.h"
 
 #include <iostream>
+#include <iomanip>
 #include <list>
 #include <stdlib.h>
+
+std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
+{
+  struct ln_dms dms;
+  ln_deg_to_dms (_pos->lng, &dms);
+  _os << std::setw (3) << std::setfill ('0') << dms.degrees << ":"
+    << std::setw (2) << std::setfill ('0') << dms.minutes << ":"
+    << std::setprecision (4) << dms.seconds;
+  return _os;
+}
 
 class Rts2TargetInfo:public Rts2AppDb
 {
@@ -170,6 +181,8 @@ int
 Rts2TargetInfo::run ()
 {
   std::list < int >::iterator tar_iter;
+
+  std::cout << obs << std::endl;
 
   for (tar_iter = targets.begin (); tar_iter != targets.end (); tar_iter++)
     {

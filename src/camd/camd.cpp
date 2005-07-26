@@ -285,7 +285,7 @@ CameraChip::sendFirstLine ()
 int
 CameraChip::readoutOneLine ()
 {
-  return -1;
+  return -3;
 }
 
 void
@@ -418,8 +418,8 @@ Rts2DevCamera::checkExposures ()
 	    maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		       CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
 	  if (ret == -1)
-	    maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		       CAM_NOEXPOSURE | CAM_NODATA,
+	    maskState (i, DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_DATA,
+		       DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NODATA,
 		       "exposure chip finished with error");
 	}
     }
@@ -441,8 +441,13 @@ Rts2DevCamera::checkReadouts ()
 	{
 	  chips[i]->endReadout ();
 	  setTimeout (USEC_SEC);
-	  maskState (i, CAM_MASK_READING, CAM_NOTREADING,
-		     "chip readout ended");
+	  if (ret == -2)
+	    maskState (i, CAM_MASK_READING, CAM_NOTREADING,
+		       "chip readout ended");
+	  else
+	    maskState (i, DEVICE_ERROR_MASK | CAM_MASK_READING,
+		       DEVICE_ERROR_HW | CAM_NOTREADING,
+		       "chip readout ended with error");
 	}
     }
 }
@@ -650,7 +655,8 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
     {
       return 0;
     }
-  maskState (chip, CAM_MASK_READING, CAM_NOTREADING, "chip readout failed");
+  maskState (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
+	     DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
   conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
   return -1;
 }

@@ -1,7 +1,6 @@
 #ifndef __RTS2_DEVCLIENT__
 #define __RTS2_DEVCLIENT__
 
-#include <libnova/libnova.h>
 #include <vector>
 
 #include "rts2object.h"
@@ -81,10 +80,6 @@ public:
 class Rts2DevClientTelescope:public Rts2DevClient
 {
 protected:
-  void getEqu (struct ln_equ_posn *tel);
-  void getObs (struct ln_lnlat_posn *obs);
-  double getLocalSiderealDeg ();
-
   virtual void moveStart ();
   virtual void moveEnd ();
 public:

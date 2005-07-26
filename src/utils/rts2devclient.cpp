@@ -174,7 +174,10 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 	  exposureStarted ();
 	  break;
 	case CAM_DATA:
-	  exposureEnd ();
+	  if ((state->value & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    exposureEnd ();
+	  else
+	    exposureFailed (state->value);
 	  break;
 	case CAM_NODATA | CAM_NOTREADING | CAM_NOEXPOSURE:
 	  readoutEnd ();
@@ -201,26 +204,6 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
 }
 
 void
-Rts2DevClientTelescope::getEqu (struct ln_equ_posn *tel)
-{
-  tel->ra = getValueDouble ("ra");
-  tel->dec = getValueDouble ("dec");
-}
-
-void
-Rts2DevClientTelescope::getObs (struct ln_lnlat_posn *obs)
-{
-  obs->lng = getValueDouble ("longtitude");
-  obs->lat = getValueDouble ("latitude");
-}
-
-double
-Rts2DevClientTelescope::getLocalSiderealDeg ()
-{
-  return getValueDouble ("siderealtime") * 15.0;
-}
-
-void
 Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 {
   if (state->isName ("telescope"))
@@ -233,7 +216,10 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 	  break;
 	case TEL_OBSERVING:
 	case TEL_PARKED:
-	  moveEnd ();
+	  if ((state->value & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    moveEnd ();
+	  else
+	    moveFailed (state->value);
 	  break;
 	}
     }

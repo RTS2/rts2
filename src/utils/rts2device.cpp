@@ -574,7 +574,8 @@ void
 Rts2State::maskState (int state_mask, int new_state, char *description)
 {
   int masked_state = state;
-  masked_state &= !state_mask;
+  // null from state all errors..
+  masked_state &= !DEVICE_ERROR_MASK & !state_mask;
   masked_state |= new_state;
   setState (masked_state, description);
 }
@@ -695,7 +696,8 @@ Rts2Device::cancelPriorityOperations ()
   int i;
   for (i = 0; i < statesSize; i++)
     {
-      maskState (i, 0xffffff, 0, "all operations canceled by priority");
+      maskState (i, 0xffffff | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
+		 "all operations canceled by priority");
     }
   Rts2Block::cancelPriorityOperations ();
 }

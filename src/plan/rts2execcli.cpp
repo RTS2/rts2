@@ -84,7 +84,9 @@ Rts2DevClientCameraExec::startTarget ()
   script = new Rts2Script (scriptBuf, connection->getName ());
   exposureCount = 1;
   connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
-  if (connection->getState (0) == 0)
+  if ((connection->
+       getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
+      (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
     {
       nextCommand ();
     }
