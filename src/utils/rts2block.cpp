@@ -1537,9 +1537,17 @@ Rts2Block::queAll (Rts2Command * command)
   for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();
        addr_iter++)
     {
-      Rts2Command *newCommand = new Rts2Command (command);
       conn = getConnection ((*addr_iter)->getName ());
-      conn->queCommand (newCommand);
+      if (conn)
+	{
+	  Rts2Command *newCommand = new Rts2Command (command);
+	  conn->queCommand (newCommand);
+	}
+      else
+	{
+	  syslog (LOG_DEBUG, "Rts2Block::queAll no connection for %s",
+		  (*addr_iter)->getName ());
+	}
     }
   delete command;
   return 0;

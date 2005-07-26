@@ -33,9 +33,7 @@ public:
   }
   virtual int sendInfo (Rts2Conn * conn);
 
-  int newGcnGrb (int grb_id, int grb_seqn, int grb_type, double grb_ra,
-		 double grb_dec, int grb_is_grb, time_t * grb_date,
-		 float grb_errorbox);
+  int newGcnGrb (int tar_id);
 };
 
 #endif /* __RTS2_GRBD__ */

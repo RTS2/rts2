@@ -189,6 +189,15 @@ Rts2Command (in_master)
   free (command);
 }
 
+Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * in_master, int grb_id):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "grb %i", grb_id);
+  setCommand (command);
+  free (command);
+}
+
 Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block * in_master):Rts2Command
   (in_master)
 {

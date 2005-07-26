@@ -30,7 +30,7 @@ private:
   struct ln_lnlat_posn *observer;
 
   int ignoreDay;
-
+  double grb_sep_limit;
 public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
@@ -63,6 +63,8 @@ public:
 
   int setNext (int nextId);
   int setNow (int nextId);
+  int setNow (Target * newTarget);
+  int setGrb (int grbId);
   void queTarget (Target * in_target);
   void updateScriptCount ();
 };
@@ -71,7 +73,14 @@ int
 Rts2ConnExecutor::commandAuthorized ()
 {
   int tar_id;
-  if (isCommand ("now"))
+  if (isCommand ("grb"))
+    {
+      // change observation if we are to far from GRB position..
+      if (paramNextInteger (&tar_id) || !paramEnd ())
+	return -2;
+      return master->setGrb (tar_id);
+    }
+  else if (isCommand ("now"))
     {
       // change observation imediatelly - in case of burst etc..
       if (paramNextInteger (&tar_id) || !paramEnd ())
@@ -104,6 +113,8 @@ Rts2DeviceDb (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
 
   addOption ('I', "ignore_day", 0, "observe even during daytime");
   ignoreDay = 0;
+
+  grb_sep_limit = -1;
 }
 
 Rts2Executor::~Rts2Executor (void)
@@ -140,6 +151,7 @@ Rts2Executor::init ()
   Rts2Config *config;
   config = Rts2Config::instance ();
   observer = config->getObserver ();
+  config->getDouble ("grbd", "seplimit", grb_sep_limit);
   return 0;
 }
 
@@ -293,6 +305,13 @@ Rts2Executor::setNow (int nextId)
       // error..
       return -2;
     }
+
+  return setNow (newTarget);
+}
+
+int
+Rts2Executor::setNow (Target * newTarget)
+{
   if (currentTarget)
     {
       currentTarget->endObservation (-1);
@@ -314,6 +333,38 @@ Rts2Executor::setNow (int nextId)
       delete nextTarget;
       nextTarget = NULL;
     }
+  return 0;
+}
+
+int
+Rts2Executor::setGrb (int grbId)
+{
+  Target *grbTarget;
+  grbTarget = createTarget (grbId, observer);
+  struct ln_equ_posn currPosition;
+  struct ln_equ_posn grbPosition;
+  if (!grbTarget)
+    {
+      return -2;
+    }
+  // if we don't observe anything..bring us to GRB..
+  if (!currentTarget)
+    {
+      nextTarget = grbTarget;
+      switchTarget ();
+      return 0;
+    }
+  currentTarget->getPosition (&currPosition);
+  grbTarget->getPosition (&grbPosition);
+  if (ln_get_angular_separation (&grbPosition, &currPosition) >=
+      grb_sep_limit)
+    {
+      return setNow (grbTarget);
+    }
+  // otherwise set us as next target
+  if (nextTarget)
+    delete nextTarget;
+  nextTarget = grbTarget;
   return 0;
 }
 

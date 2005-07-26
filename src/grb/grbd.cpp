@@ -14,9 +14,10 @@
  * modifications to include it.
  */
 
-#include <signal.h>
-
+#include "../utils/rts2command.h"
 #include "grbd.h"
+
+#include <signal.h>
 
 Rts2DevGrb::Rts2DevGrb (int argc, char **argv):
 Rts2DeviceDb (argc, argv, DEVICE_TYPE_GRB, 5563, "GRB")
@@ -115,10 +116,20 @@ Rts2DevGrb::sendInfo (Rts2Conn * conn)
 
 // that method is called when somebody want to immediatelly observe GRB
 int
-Rts2DevGrb::newGcnGrb (int grb_id, int grb_seqn, int grb_type, double grb_ra,
-		       double grb_dec, int grb_is_grb, time_t * grb_date,
-		       float grb_errorbox)
+Rts2DevGrb::newGcnGrb (int tar_id)
 {
+  Rts2Conn *exec;
+  exec = getOpenConnection ("EXEC");
+  if (exec)
+    {
+      exec->queCommand (new Rts2CommandExecGrb (this, tar_id));
+    }
+  else
+    {
+      syslog (LOG_ERR, "FATAL! No executor running to post grb ID %i!",
+	      tar_id);
+      return -1;
+    }
   return 0;
 }
 

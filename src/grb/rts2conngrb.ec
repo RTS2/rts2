@@ -522,7 +522,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
   addGcnRaw (grb_id, grb_seqn, grb_type);
 
-  return ret;
+  return master->newGcnGrb (d_tar_id);
 }
 
 int
