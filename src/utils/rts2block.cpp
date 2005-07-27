@@ -76,9 +76,6 @@ Rts2Object ()
 
 Rts2Conn::~Rts2Conn (void)
 {
-  syslog (LOG_DEBUG,
-	  "Connection deleted: name '%s' centrald_id %i state %i type %i",
-	  getName (), centrald_id, conn_state, type);
   if (sock >= 0)
     close (sock);
   for (int i = 0; i < MAX_STATE; i++)

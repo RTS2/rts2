@@ -36,11 +36,11 @@ Rts2ImageDb::updateObjectDB ()
 
   char filter[4] = "UNK";
 
-  strncpy (d_mount_name.arr, mountName, 8);
-  d_mount_name.len = strlen (mountName);
+  strncpy (d_mount_name.arr, getMountName (), 8);
+  d_mount_name.len = strlen (getMountName ());
 
-  strncpy (d_camera_name.arr, cameraName, 8);
-  d_camera_name.len = strlen (cameraName);
+  strncpy (d_camera_name.arr, getCameraName (), 8);
+  d_camera_name.len = strlen (getCameraName ());
 
   getValue ("FILTER", filter);
 

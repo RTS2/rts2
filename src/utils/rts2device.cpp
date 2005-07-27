@@ -288,7 +288,6 @@ Rts2Conn (-1, in_master)
 
 Rts2DevConnMaster::~Rts2DevConnMaster (void)
 {
-  syslog (LOG_ERR, "Rts2DevConnMaster::Rts2DevConnMaster deleted!");
 }
 
 int

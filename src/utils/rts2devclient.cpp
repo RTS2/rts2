@@ -270,6 +270,7 @@ Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevC
 {
   addValue (new Rts2ValueInteger ("current"));
   addValue (new Rts2ValueInteger ("next"));
+  addValue (new Rts2ValueInteger ("priority_target"));
   addValue (new Rts2ValueInteger ("obsid"));
   addValue (new Rts2ValueInteger ("script_count"));
 }

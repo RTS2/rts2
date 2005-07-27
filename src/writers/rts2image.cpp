@@ -58,7 +58,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   writeExposureStart ();
 
   setValue ("EPOCH_ID", epochId, "image epoch ID of observation");
-  setValue ("TARGET", targetId, "target id");
+  setValue ("TARGET", getTargetId (), "target id");
   setValue ("OBSID", obsId, "observation id");
   setValue ("IMGID", imgId, "image id");
   setValue ("PROCES", 0, "no processing done");
@@ -200,7 +200,7 @@ Rts2Image::toAcquisition ()
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
 	    "%s/acqusition/%05i/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
-	    getImageBase (epochId), targetId, cameraName,
+	    getImageBase (epochId), getTargetId (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);
@@ -224,7 +224,7 @@ Rts2Image::toArchive ()
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
 	    "%s/archive/%05i/%s/object/%04i%02i%02i%02i%02i%02i-%04i.fits",
-	    getImageBase (epochId), targetId, cameraName,
+	    getImageBase (epochId), getTargetId (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);
@@ -260,7 +260,7 @@ Rts2Image::toDark ()
     {
       asprintf (&new_filename,
 		"%s/archive/%05i/%s/darks/%04i%02i%02i%02i%02i%02i-%04i.fits",
-		getImageBase (epochId), targetId, cameraName,
+		getImageBase (epochId), getTargetId (), cameraName,
 		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 		expT->tm_hour, expT->tm_min, expT->tm_sec,
 		exposureStart.tv_usec / 1000);

@@ -110,16 +110,27 @@ public:
 
   void setMountName (const char *in_mountName);
 
+  const char *getCameraName ()
+  {
+    if (cameraName)
+      return cameraName;
+    return "(null)";
+  }
+
   const char *getMountName ()
   {
-    return mountName;
+    if (mountName)
+      return mountName;
+    return "(null)";
   }
 
   void setFocuserName (const char *in_focuserName);
 
   const char *getFocuserName ()
   {
-    return focName;
+    if (focName)
+      return focName;
+    return "(null)";
   }
 
   long getExposureSec ()

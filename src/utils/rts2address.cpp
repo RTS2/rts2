@@ -24,7 +24,7 @@ Rts2Address::Rts2Address (const char *in_name, const char *in_host,
 
 Rts2Address::~Rts2Address (void)
 {
-  delete host;
+  delete[]host;
 }
 
 int

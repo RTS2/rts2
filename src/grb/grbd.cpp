@@ -19,6 +19,40 @@
 
 #include <signal.h>
 
+class Rts2DevConnGrbd:public Rts2DevConn
+{
+private:
+  Rts2DevGrb * master;
+public:
+  Rts2DevConnGrbd (int in_sock, Rts2DevGrb * in_master);
+    virtual ~ Rts2DevConnGrbd (void);
+
+  virtual int commandAuthorized ();
+};
+
+Rts2DevConnGrbd::Rts2DevConnGrbd (int in_sock, Rts2DevGrb * in_master):
+Rts2DevConn (in_sock, in_master)
+{
+  master = in_master;
+}
+
+Rts2DevConnGrbd::~Rts2DevConnGrbd (void)
+{
+}
+
+int
+Rts2DevConnGrbd::commandAuthorized ()
+{
+  if (isCommand ("test"))
+    {
+      int tar_id;
+      if (paramNextInteger (&tar_id) || !paramEnd ())
+	return -2;
+      return master->newGcnGrb (tar_id);
+    }
+  return Rts2DevConn::commandAuthorized ();
+}
+
 Rts2DevGrb::Rts2DevGrb (int argc, char **argv):
 Rts2DeviceDb (argc, argv, DEVICE_TYPE_GRB, 5563, "GRB")
 {
@@ -103,6 +137,12 @@ Rts2DevGrb::init ()
     }
   addConnection (gcncnn);
   return ret;
+}
+
+Rts2DevConn *
+Rts2DevGrb::createConnection (int in_sock, int conn_num)
+{
+  return new Rts2DevConnGrbd (in_sock, this);
 }
 
 int

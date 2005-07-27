@@ -22,6 +22,7 @@ class Rts2Executor:public Rts2DeviceDb
 private:
   Target * currentTarget;
   Target *nextTarget;
+  Target *priorityTarget;
   void doSwitch ();
   void switchTarget ();
 
@@ -108,6 +109,7 @@ Rts2DeviceDb (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
   char *states_names[1] = { "executor" };
   currentTarget = NULL;
   nextTarget = NULL;
+  priorityTarget = NULL;
   setStateNames (1, states_names);
   scriptCount = -1;
 
@@ -201,6 +203,16 @@ Rts2Executor::postEvent (Rts2Event * event)
 	switchTarget ();
       break;
     case EVENT_MOVE_FAILED:
+      if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
+	{
+	  // we are free to start new hig-priority observation
+	  currentTarget = priorityTarget;
+	  priorityTarget = NULL;
+	  postEvent (new
+		     Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+	  postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+	  break;
+	}
       if (currentTarget)
 	{
 	  // get us lover priority to prevent moves to such dangerous
@@ -249,6 +261,14 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
   else
     {
       conn->sendValue ("next", -1);
+    }
+  if (priorityTarget)
+    {
+      conn->sendValue ("priority_target", priorityTarget->getTargetID ());
+    }
+  else
+    {
+      conn->sendValue ("priority_target", -1);
     }
   conn->sendValue ("script_count", scriptCount);
   return 0;
@@ -317,17 +337,14 @@ Rts2Executor::setNow (Target * newTarget)
       currentTarget->endObservation (-1);
       queTarget (currentTarget);
     }
-  currentTarget = newTarget;
+  currentTarget = NULL;
+  priorityTarget = newTarget;
 
   postEvent (new Rts2Event (EVENT_KILL_ALL));
   queAll (new Rts2CommandKillAll (this));
 
-  // move operation will be qued after kill command, so we get correct
-  // behaviur..et least we should get it
-  postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-
   // at this situation, we would like to get rid of nextTarget as
-  // well:(
+  // well
   if (nextTarget)
     {
       delete nextTarget;
@@ -343,10 +360,26 @@ Rts2Executor::setGrb (int grbId)
   grbTarget = createTarget (grbId, observer);
   struct ln_equ_posn currPosition;
   struct ln_equ_posn grbPosition;
+  struct ln_hrz_posn grbHrz;
+  int ret;
+
   if (!grbTarget)
     {
       return -2;
     }
+  ret = grbTarget->getAltAz (&grbHrz);
+  // don't care if we don't get altitude from libnova..it's completly weirde, but we should not
+  // miss GRB:(
+  if (!ret)
+    {
+      syslog (LOG_DEBUG, "Rts2Executor::setGrb grbHrz alt:%f", grbHrz.alt);
+      if (grbHrz.alt < 0)
+	{
+	  delete grbTarget;
+	  return -2;
+	}
+    }
+
   // if we don't observe anything..bring us to GRB..
   if (!currentTarget)
     {
@@ -403,6 +436,7 @@ Rts2Executor::doSwitch ()
 	}
     }
   postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+  postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
 }
 
 void

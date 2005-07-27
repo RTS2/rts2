@@ -15,13 +15,12 @@
 #define EVENT_DONT_MOVE        RTS2_LOCAL_EVENT+55
 #define EVENT_KILL_ALL         RTS2_LOCAL_EVENT+56
 
-#define EVENT_OBSERVE_SET      RTS2_LOCAL_EVENT+57
+#define EVENT_SLEW_TO_TARGET   RTS2_LOCAL_EVENT+57
 
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
 {
 private:
   Target * currentTarget;
-  Target *nextTarget;		// in case we get some target to que in..
   Rts2Script *script;
 
   void startTarget ();
@@ -34,6 +33,7 @@ private:
 
   int blockMove;
   int getObserveStart;
+  int imgCount;
 
 public:
     Rts2DevClientCameraExec (Rts2Conn * in_connection);
