@@ -64,6 +64,8 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   startCalledNum = 0;
 
   airmassScale = 750.0;
+
+  observationStart = -1;
 }
 
 Target::~Target (void)
@@ -72,7 +74,7 @@ Target::~Target (void)
 }
 
 int
-Target::startObservation (struct ln_equ_posn *position)
+Target::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_tar_id = target_id;
@@ -108,7 +110,7 @@ Target::startObservation (struct ln_equ_posn *position)
   (
     tar_id,
     obs_id,
-    obs_start,
+    obs_slew,
     obs_ra,
     obs_dec,
     obs_alt,
@@ -126,12 +128,41 @@ Target::startObservation (struct ln_equ_posn *position)
   );
   if (sqlca.sqlcode != 0)
   {
-    logMsgDb ("cannot insert observation start to db");
+    logMsgDb ("cannot insert observation slew start to db");
     EXEC SQL ROLLBACK;
     return -1;
   }
   EXEC SQL COMMIT;
   obs_id = d_obs_id;
+  return 0;
+}
+
+int
+Target::startObservation ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_obs_id = obs_id;
+  EXEC SQL END DECLARE SECTION;
+  if (observationStarted ())
+    return 0;
+  time (&observationStart);
+  if (obs_id > 0)
+  {
+    EXEC SQL
+    UPDATE
+      observations
+    SET
+      obs_start = now ()
+    WHERE
+      obs_id = :d_obs_id;
+    if (sqlca.sqlcode != 0)
+    {
+      logMsgDb ("cannot start observation");
+      EXEC SQL ROLLBACK;
+      return -1;
+    }
+    EXEC SQL COMMIT;
+  }
   return 0;
 }
 
@@ -162,6 +193,12 @@ Target::endObservation (int in_next_id)
     EXEC SQL COMMIT;
   }
   return 0;
+}
+
+int
+Target::observationStarted ()
+{
+  return (observationStart > 0) ? 1 : 0;
 }
 
 int
@@ -322,6 +359,24 @@ Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
     return ret;
   ln_get_hrz_from_equ (&object, observer, JD, hrz);
   return 0;
+}
+
+int
+Target::getGalLng (struct ln_gal_posn *gal, double JD)
+{
+  struct ln_equ_posn curr;
+  getPosition (&curr, JD);
+  ln_get_gal_from_equ (&curr, gal);
+  return 0;
+}
+
+double
+Target::getGalCenterDist (double JD)
+{
+  static struct ln_equ_posn cntr = { 265.610844, -28.916790 };
+  struct ln_equ_posn curr;
+  getPosition (&curr, JD);
+  return ln_get_angular_separation (&curr, &cntr); 
 }
 
 double
@@ -539,7 +594,7 @@ Target::getNumObs (time_t *start_time, time_t *end_time)
     observations
   WHERE
       tar_id = :d_tar_id
-    AND obs_start >= abstime (:d_start_time)
+    AND obs_slew >= abstime (:d_start_time)
     AND (obs_end is null 
       OR obs_end <= abstime (:d_end_time)
     );

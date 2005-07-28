@@ -193,14 +193,26 @@ Rts2Executor::postEvent (Rts2Event * event)
 {
   switch (event->getType ())
     {
+    case EVENT_OBSERVE:
+      if (currentTarget)
+	currentTarget->startObservation ();
+      break;
     case EVENT_SCRIPT_STARTED:
       // we don't care about that now..
       break;
     case EVENT_LAST_READOUT:
     case EVENT_SCRIPT_ENDED:
       updateScriptCount ();
-      if (scriptCount == 0)
-	switchTarget ();
+      if (currentTarget)
+	{
+	  if (scriptCount == 0 && currentTarget->observationStarted ())
+	    switchTarget ();
+	}
+      else
+	{
+	  if (scriptCount == 0)
+	    switchTarget ();
+	}
       break;
     case EVENT_MOVE_FAILED:
       if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)

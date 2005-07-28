@@ -31,15 +31,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);	// for non-optional args
   int addOption (char in_short_option, char *in_long_option, int in_has_arg,
-		 char *in_help_msg)
-  {
-    Rts2Option *an_option =
-      new Rts2Option (in_short_option, in_long_option, in_has_arg,
-		      in_help_msg);
-      options.push_back (an_option);
-      return 0;
-  }
-
+		 char *in_help_msg);
   virtual int run ();
 };
 

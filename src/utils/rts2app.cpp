@@ -11,6 +11,8 @@ Rts2Object ()
 {
   argc = in_argc;
   argv = in_argv;
+
+  addOption ('h', "help", 0, "write this help");
 }
 
 Rts2App::~Rts2App ()
@@ -131,6 +133,17 @@ int
 Rts2App::processArgs (const char *arg)
 {
   return -1;
+}
+
+int
+Rts2App::addOption (char in_short_option, char *in_long_option,
+		    int in_has_arg, char *in_help_msg)
+{
+  Rts2Option *an_option =
+    new Rts2Option (in_short_option, in_long_option, in_has_arg,
+		    in_help_msg);
+  options.push_back (an_option);
+  return 0;
 }
 
 int

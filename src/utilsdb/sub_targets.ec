@@ -377,11 +377,11 @@ DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-DarkTarget::startObservation (struct ln_equ_posn *position)
+DarkTarget::startSlew (struct ln_equ_posn *position)
 {
   currPos.ra = position->ra;
   currPos.dec = position->dec;
-  Target::startObservation (position);
+  Target::startSlew (position);
   return OBS_DONT_MOVE;
 }
 
@@ -682,7 +682,7 @@ TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-TargetSwiftFOV::startObservation (struct ln_equ_posn *position)
+TargetSwiftFOV::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
@@ -690,7 +690,7 @@ TargetSwiftFOV::startObservation (struct ln_equ_posn *position)
   EXEC SQL END DECLARE SECTION;
   int ret;
   
-  ret = Target::startObservation (position);
+  ret = Target::startSlew (position);
   if (ret)
     return ret;
 
@@ -707,7 +707,7 @@ TargetSwiftFOV::startObservation (struct ln_equ_posn *position)
   );
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetSwiftFOV::startObservation SQL error");
+    logMsgDb ("TargetSwiftFOV::startSlew SQL error");
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -771,7 +771,7 @@ TargetSwiftFOV::beforeMove ()
   // are we still the best swiftId on planet?
   findPointing ();
   if (oldSwiftId != swiftId)
-    endObservation (-1);  // startObservation will be called after move suceeded and will write new observation..
+    endObservation (-1);  // startSlew will be called after move suceeded and will write new observation..
 }
 
 float

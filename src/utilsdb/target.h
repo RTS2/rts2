@@ -88,6 +88,8 @@ private:
 
   int startCalledNum;		// how many times startObservation was called - good to know for targets
   double airmassScale;
+
+  time_t observationStart;
   // which changes behaviour based on how many times we called them before
 protected:
   int target_id;
@@ -125,6 +127,18 @@ public:
     return getAltAz (hrz, ln_get_julian_from_sys ());
   }
   virtual int getAltAz (struct ln_hrz_posn *hrz, double JD);
+
+  int getGalLng (struct ln_gal_posn *gal)
+  {
+    return getGalLng (gal, ln_get_julian_from_sys ());
+  }
+  virtual int getGalLng (struct ln_gal_posn *gal, double JD);
+
+  double getGalCenterDist ()
+  {
+    return getGalCenterDist (ln_get_julian_from_sys ());
+  }
+  double getGalCenterDist (double JD);
 
   double getAirmass ()
   {
@@ -217,11 +231,12 @@ public:
   {
     return -1;
   }
-  virtual int startObservation (struct ln_equ_posn *position);
+  virtual int startSlew (struct ln_equ_posn *position);
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
+  virtual int startObservation ();
   virtual int endObservation (int in_next_id);
-  // similar to startObservation - return 0 if observation ends, 1 if
+  // similar to startSlew - return 0 if observation ends, 1 if
   // it doesn't ends (ussually in case when in_next_id == target_id),
   // -1 on errror
 
@@ -229,6 +244,8 @@ public:
   {
     return 0;
   }
+
+  virtual int observationStarted ();
   // returns 1 if target is continuus - in case next target is same | next
   // targer doesn't exists, we keep exposing and we will not move mount between
   // exposures. Good for darks observation, partial good for GRB (when we solve
@@ -306,7 +323,7 @@ protected:
 public:
     DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int startObservation (struct ln_equ_posn *position);
+  virtual int startSlew (struct ln_equ_posn *position);
   virtual int isContinues ()
   {
     return 1;
@@ -377,7 +394,7 @@ public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
   int findPointing ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int startObservation (struct ln_equ_posn *position);
+  virtual int startSlew (struct ln_equ_posn *position);
   virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
   virtual float getBonus ();

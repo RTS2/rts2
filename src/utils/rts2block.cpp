@@ -894,7 +894,6 @@ Rts2App (in_argc, in_argv)
       connections[i] = NULL;
     }
   addOption ('M', "mail-to", 1, "send report mails to this adresses");
-  addOption ('h', "help", 0, "write this help");
   addOption ('i', "interactive", 0,
 	     "run in interactive mode, don't loose console");
 

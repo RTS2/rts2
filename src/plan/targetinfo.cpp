@@ -90,6 +90,7 @@ Rts2TargetInfo::printTargetInfo ()
   struct ln_dms dms, dms2;
   struct ln_equ_posn pos;
   struct ln_hrz_posn hrz;
+  struct ln_gal_posn gal;
   double ha;
   double JD;
   double gst;
@@ -125,6 +126,9 @@ Rts2TargetInfo::printTargetInfo ()
     << " (" << hrz.az << ")" << std::endl;
   std::cout << "Airmas: " << target->getAirmass () << std::endl;
   time (&now);
+  target->getGalLng (&gal);
+  std::cout << "Gal l: " << gal.l << " b: " << gal.
+    b << " center dist: " << target->getGalCenterDist () << std::endl;
   std::cout << "Zenit distance " << target->getZenitDistance () << std::endl;
   std::cout << "Solar distance " << target->getSolarDistance () << std::endl;
   std::cout << "Lunar distance " << target->getLunarDistance () << std::endl;

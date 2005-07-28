@@ -245,7 +245,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	  int ret;
 	  currentTarget->beforeMove ();
 	  getEqu (&coord);
-	  ret = currentTarget->startObservation (&coord);
+	  ret = currentTarget->startSlew (&coord);
 	  if (ret == OBS_DONT_MOVE)
 	    {
 	      connection->getMaster ()->
