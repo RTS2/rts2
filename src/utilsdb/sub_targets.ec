@@ -812,13 +812,25 @@ TargetGps::getBonus ()
 {
   // get our altitude..
   struct ln_hrz_posn hrz;
+  struct ln_equ_posn curr;
   int numobs;
+  int numobs2;
   time_t now;
   time_t start_t;
-  getAltAz (&hrz);
+  time_t start_t2;
+  double JD;
+  double gal_ctr;
+  JD = ln_get_julian_from_sys ();
+  getAltAz (&hrz, JD);
+  getPosition (&curr, JD);
   // get number of observations in last 24 hours..
   time (&now);
   start_t = now - 86400;
+  start_t2 = now - 86400 * 2;
   numobs = getNumObs (&start_t, &now);
-  return ConstTarget::getBonus () + hrz.alt - numobs * 10;
+  numobs2 = getNumObs (&start_t2, &start_t);
+  gal_ctr = getGalCenterDist (JD);
+  if ((90 - observer->lat + curr.dec) == 0)
+    return ConstTarget::getBonus () - 200;
+  return ConstTarget::getBonus () + 20 * (hrz.alt / (90 - observer->lat + curr.dec)) + gal_ctr / 9 - numobs * 10 - numobs2 * 5;
 }
