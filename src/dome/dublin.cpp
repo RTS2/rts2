@@ -5,13 +5,9 @@
  *
  * @author john
  */
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif /* !_GNU_SOURCE */
-
-#include <signal.h>
-#include <fcntl.h>
+#endif
 
 #include "dpci8255.h"
 #include "dpci8255lib.c"
@@ -49,14 +45,14 @@ public:
 /* That should be implemented, using some sensors on dome
   virtual long isClosed ();
   virtual int endClose ();*/
-};
+}
 
 Rts2DevDomeDublin::Rts2DevDomeDublin (int argc, char **argv):
 Rts2DevDome (argc, argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
 
-  dome_file = "/dev/dpci82550";
+  dome_file = "/dev/ttyS0";
   domeModel = "DUBLIN_DOME";
 
   weatherConn = NULL;
@@ -68,7 +64,7 @@ Rts2DevDomeDublin::~Rts2DevDomeDublin (void)
 }
 
 int
-Rts2DevDomeDublin::processOption (int in_opt)
+Rts2DevDomeFram::processOption (int in_opt)
 {
   switch (in_opt)
     {
@@ -85,8 +81,6 @@ int
 Rts2DevDomeDublin::init ()
 {
   int ret;
-  int i;
-
   ret = Rts2DevDome::init ();
   if (ret)
     return ret;
@@ -183,6 +177,7 @@ Rts2DevDomeDublin::closeDome ()
    clear_pin(OPEN);
    d_info.dome = 0;
 */
+  return 0;
 }
 
 int
@@ -199,34 +194,4 @@ Rts2DevDomeDublin::openDome ()
   clear_pin(CLOSE);
   d_info.dome = 1;*/
   return Rts2DevDome::openDome ();
-}
-
-Rts2DevDomeDublin *device;
-
-void
-switchoffSignal (int sig)
-{
-  syslog (LOG_DEBUG, "switchoffSignal signale: %i", sig);
-  delete device;
-  exit (0);
-}
-
-int
-main (int argc, char **argv)
-{
-  device = new Rts2DevDomeDublin (argc, argv);
-
-  signal (SIGINT, switchoffSignal);
-  signal (SIGTERM, switchoffSignal);
-
-  int ret;
-  ret = device->init ();
-//  device->sendFramMail ("FRAM DOME restart");
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dome - exiting!\n");
-      exit (0);
-    }
-  device->run ();
-  delete device;
 }

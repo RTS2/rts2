@@ -123,8 +123,9 @@ Rts2TargetInfo::printTargetInfo ()
     << dms.seconds << " (" << hrz.alt << ") Azimut: "
     << dms2.degrees << ":" << dms2.minutes << ":" << dms2.seconds
     << " (" << hrz.az << ")" << std::endl;
+  std::cout << "Airmas: " << target->getAirmass () << std::endl;
   time (&now);
-  std::cout << "Zenit distance " << target->getAzDistance () << std::endl;
+  std::cout << "Zenit distance " << target->getZenitDistance () << std::endl;
   std::cout << "Solar distance " << target->getSolarDistance () << std::endl;
   std::cout << "Lunar distance " << target->getLunarDistance () << std::endl;
   last = now - 86400;

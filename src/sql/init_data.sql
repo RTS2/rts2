@@ -12,6 +12,7 @@ I	Integral FOV
 d	Dark target
 f	Flat target
 0	fOcusing target
+m	Modeling (have optional parameters in target_model)
 \.
 
 COPY epoch FROM stdin;

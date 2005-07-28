@@ -48,14 +48,22 @@ Target::logMsgDb (const char *message)
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+
   observer = in_obs;
   selected = 0;
+
+  epochId = 1;
+  config->getInteger ("observatory", "epoch_id", epochId);
 
   obs_id = -1;
   img_id = 0;
   target_id = in_tar_id;
 
   startCalledNum = 0;
+
+  airmassScale = 750.0;
 }
 
 Target::~Target (void)
@@ -317,7 +325,17 @@ Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 }
 
 double
-Target::getAzDistance (double JD)
+Target::getAirmass (double JD)
+{
+  struct ln_hrz_posn hrz;
+  double x;
+  getAltAz (&hrz, JD);
+  x = airmassScale * sin (ln_deg_to_rad (hrz.alt));
+  return sqrt (x * x + 2 * airmassScale + 1) - x;
+}
+
+double
+Target::getZenitDistance (double JD)
 {
   struct ln_hrz_posn hrz;
   getAltAz (&hrz, JD);

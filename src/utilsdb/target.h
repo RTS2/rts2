@@ -78,6 +78,7 @@
 class Target
 {
 private:
+  int epochId;
   int obs_id;
   int img_id;
 
@@ -86,6 +87,7 @@ private:
   int selected;			// how many times startObservation was called
 
   int startCalledNum;		// how many times startObservation was called - good to know for targets
+  double airmassScale;
   // which changes behaviour based on how many times we called them before
 protected:
   int target_id;
@@ -124,12 +126,18 @@ public:
   }
   virtual int getAltAz (struct ln_hrz_posn *hrz, double JD);
 
-  double getAzDistance ()
+  double getAirmass ()
   {
-    return getAzDistance (ln_get_julian_from_sys ());
+    return getAirmass (ln_get_julian_from_sys ());
+  }
+  virtual double getAirmass (double JD);
+
+  double getZenitDistance ()
+  {
+    return getZenitDistance (ln_get_julian_from_sys ());
   }
 
-  double getAzDistance (double JD);
+  double getZenitDistance (double JD);
 
   double getHourAngle ()
   {
@@ -191,6 +199,11 @@ public:
   }
 
   int secToObjectMeridianPass (double JD);
+
+  int getEpoch ()
+  {
+    return epochId;
+  }
 
   int getTargetID ()
   {

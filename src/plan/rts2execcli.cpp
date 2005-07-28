@@ -130,7 +130,8 @@ Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
   imgCount++;
   if (currentTarget)
-    return new Rts2ImageDb (1, currentTarget->getTargetID (), this,
+    return new Rts2ImageDb (currentTarget->getEpoch (),
+			    currentTarget->getTargetID (), this,
 			    currentTarget->getObsId (), expStart,
 			    currentTarget->getNextImgId ());
   syslog (LOG_ERR,

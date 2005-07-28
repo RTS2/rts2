@@ -51,6 +51,17 @@ CREATE TABLE phot (
 	phot_sao_num	int8
 );
 
+CREATE TABLE target_model (
+	tar_id		integer PRIMARY KEY REFERENCES targets (tar_id),
+	alt_start	float,
+	alt_stop	float,
+	alt_step	float,
+	az_start	float,
+	az_stop		float,
+	az_step		float,
+	step		integer
+);
+
 CREATE TABLE grb (
 	tar_id		integer REFERENCES targets (tar_id),
 	grb_id		integer NOT NULL,

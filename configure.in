@@ -357,6 +357,9 @@ MOUNT's:
   opentpl       ${OPENTPL}
   paralib       ${PARALIB}
 
+DOME's:
+  PCI8255       ${PCI8255}
+
 ***************************************
 
 Now type 'make' followed by 'make install'
