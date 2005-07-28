@@ -252,7 +252,7 @@ Rts2ImageDb::updateAstrometry ()
     images
   SET
     astrometry = :s_astrometry,
-    process_bitfield = process_bitfield | ASTROMETRY_OK | ASTROMETRY_PROC
+    process_bitfield = process_bitfield | 1 | 2
   WHERE
       obs_id = :d_obs_id
     AND img_id = :d_img_id;
