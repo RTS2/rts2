@@ -917,6 +917,7 @@ Rts2DevCameraApogee::camCoolHold ()
 int
 Rts2DevCameraApogee::camCoolShutdown ()
 {
+  camera->write_CoolerSetPoint (40);
   camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
   return 0;
 }
