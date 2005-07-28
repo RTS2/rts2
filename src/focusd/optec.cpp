@@ -198,7 +198,7 @@ Rts2DevFocuserOptec::processOption (int in_opt)
       device_file = optarg;
       break;
     default:
-      return Rts2Device::processOption (in_opt);
+      return Rts2DevFocuser::processOption (in_opt);
     }
   return 0;
 }
