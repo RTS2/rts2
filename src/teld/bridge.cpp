@@ -17,7 +17,7 @@
 #include "telescope.h"
 
 #define TEL_STATUS  	Tstat->serial_number[63]
-#define MOVE_TIMEOUT	100
+#define MOVE_TIMEOUT	200
 
 
 class Rts2DevTelescopeBridge:public Rts2DevTelescope
