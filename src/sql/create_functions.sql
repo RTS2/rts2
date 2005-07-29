@@ -38,17 +38,37 @@ BEGIN
 END;
 ' LANGUAGE plpgsql;
 
-
--- 			dark_date  dark_usec  camera_name
-CREATE OR REPLACE FUNCTION dark_name(timestamp, integer, varchar(8)) RETURNS varchar(250) AS '
-DECLARE
-	name	varchar(20);
+--                                        date       usec
+CREATE OR REPLACE FUNCTION img_fits_name (timestamp, integer) RETURNS varchar (30) AS '
 BEGIN
-	name:=EXTRACT(YEAR FROM $1) || LPAD(EXTRACT(MONTH FROM $1), 2, ''0'') || LPAD(EXTRACT(DAY FROM $1), 2, ''0'')
+   return EXTRACT(YEAR FROM $1) || LPAD(EXTRACT(MONTH FROM $1), 2, ''0'') || LPAD(EXTRACT(DAY FROM $1), 2, ''0'')
 	  || LPAD(EXTRACT(HOUR FROM $1), 2, ''0'') || LPAD(EXTRACT(MINUTE FROM $1), 2, ''0'')
 	  || LPAD(EXTRACT(SECOND FROM $1), 2, ''0'') || ''-'' || LPAD ($2 / 1000, 4, ''0'');
+END
+' LANGUAGE plpgsql;
 
-	RETURN ''/images/001/darks/'' || $3 || ''/'' || name || ''.fits'';
+-- 			             obs_id   img_id   dark_date  dark_usec  epoch_id camera_name
+CREATE OR REPLACE FUNCTION dark_name(integer, integer, timestamp, integer,   integer, varchar(8)) RETURNS varchar(250) AS '
+DECLARE
+	d_tar_id integer;
+	d_type_id char;
+BEGIN
+	SELECT INTO
+		d_tar_id
+		tar_id
+	FROM
+		observations
+	WHERE
+		obs_id = $1;
+
+	IF d_tar_id = 1 THEN
+		return ''/images/'' || LPAD ($5, 3, ''0'') || ''/darks/'' 
+			|| $6 || ''/'' || img_fits_name ($3, $4) || ''.fits'';
+	ELSE
+		return ''/images/'' || LPAD ($5, 3, ''0'') || ''/archive/''
+			|| LPAD (d_tar_id, 5, ''0'') || ''/darks/''
+			|| img_fits_name ($3, $4) || ''.fits'';
+	END IF;
 END;
 ' LANGUAGE plpgsql;
 
