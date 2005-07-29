@@ -1,6 +1,7 @@
 #ifndef __RTS2_TELD_CPP__
 #define __RTS2_TELD_CPP__
 
+#include <libnova/libnova.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -31,6 +32,7 @@ private:
   int knowPosition;
   double lastRa;
   double lastDec;
+  struct ln_equ_posn lastTar;
 protected:
   char *device_file;
   char telType[64];
@@ -70,6 +72,9 @@ protected:
   {
     return numCorr;
   }
+
+  void setTarget (double tar_ra, double tar_dec);
+  double getMoveTargetSep ();
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int init ();

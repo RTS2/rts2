@@ -47,6 +47,9 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   knowPosition = 0;
 
   nextReset = RESET_RESTART;
+
+  lastTar.ra = 0;
+  lastTar.dec = 0;
 }
 
 int
@@ -61,6 +64,31 @@ Rts2DevTelescope::processOption (int in_opt)
       return Rts2Device::processOption (in_opt);
     }
   return 0;
+}
+
+void
+Rts2DevTelescope::setTarget (double tar_ra, double tar_dec)
+{
+  lastTar.ra = tar_ra;
+  lastTar.dec = tar_dec;
+}
+
+double
+Rts2DevTelescope::getMoveTargetSep ()
+{
+  struct ln_equ_posn curr;
+  info ();
+  if (knowPosition)
+    {
+      curr.ra = lastRa;
+      curr.dec = lastDec;
+    }
+  else
+    {
+      curr.ra = telRa;
+      curr.dec = telDec;
+    }
+  return ln_get_angular_separation (&curr, &lastTar);
 }
 
 int
@@ -311,6 +339,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
 	  locCorDec);
   moveInfoCount = 0;
+  setTarget (tar_ra, tar_dec);
   ret = startMove (tar_ra, tar_dec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");

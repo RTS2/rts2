@@ -161,6 +161,11 @@ Rts2DevTelescopeBridge::isMoving ()
     {
       return -1;
     }
+  // calculate distance..
+  if (getMoveTargetSep () > 3)
+    {
+      return USEC_SEC;
+    }
   if (TEL_STATUS != TEL_POINT)
     {
       return USEC_SEC;

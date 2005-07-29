@@ -1093,7 +1093,10 @@ Rts2DevTelescopeGemini::tel_start_move ()
     return -1;
 
   if (retstr == '0')
-    return 0;
+    {
+      setTarget (lastMoveRa, lastMoveDec);
+      return 0;
+    }
   // otherwise read reply..
   tel_read_hash (buf, 53);
   if (retstr == '3')		// manual control..
