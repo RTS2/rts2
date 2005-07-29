@@ -17,7 +17,7 @@
 #include "telescope.h"
 
 #define TEL_STATUS  	Tstat->serial_number[63]
-#define MOVE_TIMEOUT	200
+#define MOVE_TIMEOUT	100
 
 
 class Rts2DevTelescopeBridge:public Rts2DevTelescope
@@ -27,7 +27,7 @@ private:
   struct T9_ctrl *Tctrl;
   struct T9_stat *Tstat;
   double get_loc_sid_time ();
-  int timeout;
+  time_t timeout;
   time_t startTime;
 public:
     Rts2DevTelescopeBridge (int argc, char **argv);
@@ -139,13 +139,12 @@ Rts2DevTelescopeBridge::info ()
 int
 Rts2DevTelescopeBridge::startMove (double ra, double dec)
 {
-  int timeout = 0;
   Tctrl->power = 0;		//changed
   Tctrl->ra = ra;
   Tctrl->dec = dec;
 
-  timeout = 0;
   time (&startTime);
+  timeout = startTime + MOVE_TIMEOUT;
 
   return 0;
 }
@@ -157,20 +156,14 @@ Rts2DevTelescopeBridge::isMoving ()
   time (&now);
   if (now - startTime < 3)
     return USEC_SEC;
-  timeout++;
   // finish due to error
-  if (timeout > 200)
+  if (now > timeout)
     {
       return -1;
     }
   if (TEL_STATUS != TEL_POINT)
     {
-      return 1000000;
-    }
-  // bridge 20 sec timeout
-  if (timeout < 20)
-    {
-      return 1000000;
+      return USEC_SEC;
     }
   return -2;
 }
@@ -187,6 +180,7 @@ Rts2DevTelescopeBridge::startPark ()
   Tctrl->ra = get_loc_sid_time () - 30;
   Tctrl->dec = Tstat->dec;
   time (&startTime);
+  timeout = startTime + MOVE_TIMEOUT;
   return 0;
 }
 
@@ -211,7 +205,8 @@ Rts2DevTelescopeBridge::stop ()
   Tctrl->ra = telRa;
   Tctrl->dec = telDec;
 
-  timeout = 201;
+  time (&timeout);
+  timeout--;
 }
 
 Rts2DevTelescopeBridge *device;
