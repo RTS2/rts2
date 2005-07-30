@@ -13,12 +13,14 @@ Rts2Command::Rts2Command (Rts2Block * in_owner)
 {
   owner = in_owner;
   text = NULL;
+  commandCond = NO_COND;
 }
 
 Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
 {
   owner = in_owner;
   setCommand (in_text);
+  commandCond = NO_COND;
 }
 
 int
@@ -123,6 +125,7 @@ Rts2Command (in_master)
   setCommand (command);
   free (command);
   camera = in_camera;
+  commandCond = NO_EXPOSURE;
 }
 
 int
@@ -169,6 +172,32 @@ Rts2CommandMove::commandReturnFailed (int status)
   tel->moveFailed (status);
   return Rts2Command::commandReturnFailed (status);
 }
+
+Rts2CommandChange::Rts2CommandChange (Rts2Block * in_master, double ra, double dec):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "change %lf %lf", ra, dec);
+  setCommand (command);
+  free (command);
+  tel = NULL;
+  commandCond = IN_WAIT_STATE;
+}
+
+Rts2CommandChange::Rts2CommandChange (Rts2CommandChange * in_command, Rts2DevClientTelescope * in_tel):Rts2Command
+  (in_command)
+{
+  tel = in_tel;
+}
+
+int
+Rts2CommandChange::commandReturnFailed (int status)
+{
+  if (tel)
+    tel->moveFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
 
 Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * in_master, int corr_mark, double ra, double dec, double ra_err, double dec_err):
 Rts2Command (in_master)

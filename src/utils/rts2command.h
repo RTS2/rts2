@@ -8,12 +8,16 @@
 typedef enum
 { EXP_LIGHT, EXP_DARK } exposureType;
 
+typedef enum
+{ NO_COND, NO_EXPOSURE, IN_WAIT_STATE } commandCondType;
+
 class Rts2Command
 {
 protected:
   Rts2Block * owner;
   Rts2Conn *connection;
   char *text;
+  commandCondType commandCond;
 public:
     Rts2Command (Rts2Block * in_owner);
     Rts2Command (Rts2Block * in_owner, char *in_text);
@@ -22,6 +26,7 @@ public:
     owner = in_command->owner;
     connection = in_command->connection;
     setCommand (in_command->getText ());
+    commandCond = in_command->getCommandCond ();
   }
   virtual ~ Rts2Command (void);
   int setCommand (char *in_text);
@@ -37,6 +42,10 @@ public:
   char *getText ()
   {
     return text;
+  }
+  commandCondType getCommandCond ()
+  {
+    return commandCond;
   }
   virtual int commandReturnOK ();
   virtual int commandReturnFailed (int status);
@@ -114,6 +123,16 @@ class Rts2CommandMove:public Rts2Command
 public:
     Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel,
 		     double ra, double dec);
+  virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandChange:public Rts2Command
+{
+  Rts2DevClientTelescope *tel;
+public:
+    Rts2CommandChange (Rts2Block * in_master, double ra, double dec);
+    Rts2CommandChange (Rts2CommandChange * in_command,
+		       Rts2DevClientTelescope * in_tel);
   virtual int commandReturnFailed (int status);
 };
 
