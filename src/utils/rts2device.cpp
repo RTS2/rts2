@@ -299,9 +299,9 @@ Rts2DevConnMaster::registerDevice ()
     {
       device_host = new char[HOST_NAME_MAX];
       ret = gethostname (device_host, HOST_NAME_MAX);
+      if (ret < 0)
+	return -1;
     }
-  if (ret < 0)
-    return -1;
   asprintf (&msg, "register %s %i %s %i", device_name, device_type,
 	    device_host, device_port);
   ret = send (msg);
@@ -342,17 +342,21 @@ Rts2DevConnMaster::init ()
     }
   else
     {
+      syslog (LOG_ERR, "Rts2DevConnMaster::init cannot get host name %s : %m",
+	      master_host);
       return -1;
     }
   // get hostname
-  if (ret < 0)
-    return -1;
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
-    return -1;
+    {
+      syslog (LOG_ERR, "Rts2DevConnMaster::init cannot create socket: %m");
+      return -1;
+    }
   ret = connect (sock, (struct sockaddr *) &address, sizeof (address));
   if (ret < 0)
     {
+      syslog (LOG_ERR, "Rts2DevConnMaster::init cannot connect: %m");
       close (sock);
       sock = -1;
       return -1;

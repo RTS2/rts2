@@ -962,7 +962,7 @@ Rts2Block::init ()
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     {
-      syslog (LOG_ERR, "Rts2Block::init bind %m");
+      syslog (LOG_ERR, "Rts2Block::init create socket %m");
       return -1;
     }
   const int so_reuseaddr = 1;
@@ -982,11 +982,12 @@ Rts2Block::init ()
   ret = listen (sock, 5);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2Block::init cannot accept: %m");
+      syslog (LOG_ERR, "Rts2Block::init cannot listen: %m");
       close (sock);
       sock = -1;
       return -1;
     }
+  return 0;
 }
 
 void
