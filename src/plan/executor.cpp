@@ -27,6 +27,7 @@ private:
   void switchTarget ();
 
   int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
+  int waitState;
     std::vector < Target * >targetsQue;
   struct ln_lnlat_posn *observer;
 
@@ -117,6 +118,8 @@ Rts2DeviceDb (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
   ignoreDay = 0;
 
   grb_sep_limit = -1;
+
+  waitState = 0;
 }
 
 Rts2Executor::~Rts2Executor (void)
@@ -214,6 +217,14 @@ Rts2Executor::postEvent (Rts2Event * event)
 	    switchTarget ();
 	}
       break;
+    case EVENT_MOVE_OK:
+      if (waitState)
+	{
+	  postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
+	  break;
+	}
+      postEvent (new Rts2Event (EVENT_OBSERVE));
+      break;
     case EVENT_MOVE_FAILED:
       if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
 	{
@@ -225,7 +236,11 @@ Rts2Executor::postEvent (Rts2Event * event)
 	  postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
 	  break;
 	}
-      if (currentTarget)
+      if (waitState)
+	{
+	  postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
+	}
+      else if (currentTarget)
 	{
 	  // get us lover priority to prevent moves to such dangerous
 	  // position
@@ -236,6 +251,12 @@ Rts2Executor::postEvent (Rts2Event * event)
       updateScriptCount ();
       if (scriptCount == 0)
 	switchTarget ();
+      break;
+    case EVENT_ENTER_WAIT:
+      waitState = 1;
+      break;
+    case EVENT_CLEAR_WAIT:
+      waitState = 0;
       break;
     case EVENT_MOVE_QUESTION:
       scriptCount = 0;

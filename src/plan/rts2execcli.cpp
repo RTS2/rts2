@@ -33,6 +33,7 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
       currentTarget = NULL;
       // stop actual observation..
       deleteScript ();
+      waiting = NOT_WAITING;
       break;
     case EVENT_SET_TARGET:
       currentTarget = (Target *) event->getArg ();
@@ -46,6 +47,11 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	}
       startTarget ();
       getObserveStart = 0;
+      break;
+    case EVENT_CLEAR_WAIT:
+      waiting = NOT_WAITING;
+      // in case we have some command pending..send it
+      nextCommand ();
       break;
     case EVENT_MOVE_QUESTION:
       if (blockMove)
@@ -79,19 +85,29 @@ Rts2DevClientCameraExec::startTarget ()
   // otherwise we post command after end of camera readout
 }
 
+int
+Rts2DevClientCameraExec::nextPreparedCommand ()
+{
+  if (nextComd)
+    return 0;
+  return script->nextCommand (connection->getMaster (), this, &nextComd,
+			      cmd_device);
+}
+
 void
 Rts2DevClientCameraExec::nextCommand ()
 {
-  Rts2Command *nextComd;
-  char new_device[DEVICE_NAME_SIZE];
   int ret;
+
   if (!script)			// waiting for script..
     {
       return;
     }
-  ret =
-    script->nextCommand (connection->getMaster (), this, &nextComd,
-			 new_device);
+  if (nextComd && waiting == WAIT_MOVE)
+    {
+      return;
+    }
+  ret = nextPreparedCommand ();
   if (ret < 0)
     {
       deleteScript ();
@@ -107,9 +123,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	{
 	  return;
 	}
-      ret =
-	script->nextCommand (connection->getMaster (), this, &nextComd,
-			     new_device);
+      ret = nextPreparedCommand ();
       // we don't have any next command:(
       if (ret < 0)
 	{
@@ -118,9 +132,33 @@ Rts2DevClientCameraExec::nextCommand ()
 	}
     }
   blockMove = 1;		// as we run a script..
-  if (!strcmp (new_device, connection->getName ()))
+  if (waiting == WAIT_MOVE)
+    return;
+  if (!strcmp (cmd_device, connection->getName ()))
     {
+      if (nextComd->getCommandCond () == NO_EXPOSURE)
+	{
+	  if (isExposing || (connection->
+			     getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
+					     CAM_MASK_READING)) !=
+	      (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
+	    {
+	      return;		// after current exposure ends..
+	    }
+	  isExposing = 1;
+	}
       connection->queCommand (nextComd);
+      nextComd = NULL;		// after command execute, it will be deleted
+    }
+  if (!strcmp (cmd_device, "TX"))	// some telescope command..
+    {
+      connection->getMaster ()->
+	postEvent (new
+		   Rts2Event (EVENT_TEL_SCRIPT_CHANGE, (void *) nextComd));
+      // postEvent have to create copy (in case we will serve more devices) .. so we have to delete command
+      delete nextComd;
+      nextComd = NULL;
+      waiting = WAIT_MOVE;
     }
   // else change control to other device...somehow (post event)
 }
@@ -201,6 +239,11 @@ Rts2DevClientCameraExec::exposureEnd ()
       connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_LAST_READOUT));
     }
+  else
+    {
+      nextComd = NULL;
+      nextCommand ();
+    }
 }
 
 void
@@ -214,6 +257,7 @@ void
 Rts2DevClientCameraExec::deleteScript ()
 {
   blockMove = 0;
+  unblockWait ();
   if (script)
     {
       delete script;
@@ -227,6 +271,7 @@ Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection
   (in_connection)
 {
   currentTarget = NULL;
+  cmdChng = NULL;
   blockMove = 0;
 }
 
@@ -234,8 +279,12 @@ void
 Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 {
   struct ln_equ_posn coord;
+  int waitNum = 0;
   switch (event->getType ())
     {
+    case EVENT_KILL_ALL:
+      waiting = NOT_WAITING;
+      break;
     case EVENT_SET_TARGET:
       currentTarget = (Target *) event->getArg ();
       break;
@@ -262,6 +311,21 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	    }
 	}
       break;
+    case EVENT_TEL_SCRIPT_CHANGE:
+      cmdChng =
+	new Rts2CommandChange ((Rts2CommandChange *) event->getArg (), this);
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &waitNum));
+      if (waitNum == 0)
+	connection->getMaster ()->
+	  postEvent (new Rts2Event (EVENT_ENTER_WAIT));
+      break;
+    case EVENT_ENTER_WAIT:
+      connection->queCommand (cmdChng);
+      break;
+    case EVENT_MOVE_OK:
+    case EVENT_MOVE_FAILED:
+      break;
     case EVENT_MOVE_QUESTION:
       if (blockMove)
 	{
@@ -276,7 +340,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 void
 Rts2DevClientTelescopeExec::moveEnd ()
 {
-  connection->getMaster ()->postEvent (new Rts2Event (EVENT_OBSERVE));
+  connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveEnd ();
 }

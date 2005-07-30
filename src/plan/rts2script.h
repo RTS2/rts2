@@ -27,6 +27,7 @@ private:
 
   char *nextElement ();
   int getNextParamFloat (float *val);
+  int getNextParamDouble (double *val);
   int getNextParamInteger (int *val);
 public:
     Rts2Script (char *scriptText,

@@ -33,8 +33,8 @@ Rts2ConnImgProcess::newProcess ()
   int ret;
   Rts2Image *image;
 
-  syslog (LOG_DEBUG, "Rts2ConnImgProcess::newProcess exe: %s img: %s",
-	  exePath, imgPath);
+  syslog (LOG_DEBUG, "Rts2ConnImgProcess::newProcess exe: %s img: %s (%i)",
+	  exePath, imgPath, getpid ());
 
   image = new Rts2Image (imgPath);
   if (image->getType () == IMGTYPE_DARK)
@@ -76,6 +76,8 @@ Rts2ConnImgProcess::connectionError ()
   const char *telescopeName;
   int corr_mark;
   Rts2ImageDb *image;
+
+  syslog (LOG_DEBUG, "Rts2ConnImgProcess::connectionError %m");
 
   image = new Rts2ImageDb (imgPath);
   switch (astrometryStat)

@@ -36,6 +36,17 @@ Rts2Script::getNextParamFloat (float *val)
 }
 
 int
+Rts2Script::getNextParamDouble (double *val)
+{
+  char *el;
+  el = nextElement ();
+  if (!*el)
+    return -1;
+  *val = atof (el);
+  return 0;
+}
+
+int
 Rts2Script::getNextParamInteger (int *val)
 {
   char *el;
@@ -113,6 +124,16 @@ Rts2Script::nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
       if (ret)
 	return -1;
       *new_command = new Rts2CommandFilter (in_master, filter);
+      return 0;
+    }
+  else if (!strcmp (commandStart, COMMAND_CHANGE))
+    {
+      double ra;
+      double dec;
+      if (getNextParamDouble (&ra) || getNextParamDouble (&dec))
+	return -1;
+      *new_command = new Rts2CommandChange (in_master, ra, dec);
+      strcpy (new_device, "TX");
       return 0;
     }
   // command not found, end of script,..
