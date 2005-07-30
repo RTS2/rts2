@@ -247,7 +247,7 @@ CameraMiniccdChip::readoutOneLine ()
 {
   int ret;
 
-  if (readoutLine < 0 || interleavedReadout)
+  if (interleavedReadout)
     return -1;
 
   if (sendLine == 0)
@@ -256,14 +256,8 @@ CameraMiniccdChip::readoutOneLine ()
       if (ret)
 	return ret;
     }
-  if (!readoutConn)
-    {
-      return -3;
-    }
 
   ret = sendLineData ();
-  if (ret == -2)
-    endReadout ();
   return ret;
 }
 
@@ -271,11 +265,6 @@ int
 CameraMiniccdChip::sendLineData (int numLines)
 {
   int send_data_size;
-
-  if (send_top >= dest_top || !_data)
-    {
-      return -2;
-    }
 
   if (sendLine == 0)
     {
@@ -285,13 +274,13 @@ CameraMiniccdChip::sendLineData (int numLines)
 	{
 	  syslog (LOG_ERR,
 		  "CameraMiniccdChip::readoutOneLine wrong image message");
-	  return -2;
+	  return -1;
 	}
       if (!chipUsedReadout)
 	{
 	  syslog (LOG_ERR,
 		  "CameraMiniccdChip::readoutOneLine not chipUsedReadout");
-	  return -2;
+	  return -1;
 	}
       if (msg[CCD_MSG_LENGTH_LO_INDEX] +
 	  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16) !=
@@ -302,7 +291,7 @@ CameraMiniccdChip::sendLineData (int numLines)
 		  "CameraMiniccdChip::readoutOneLine wrong size %i",
 		  msg[CCD_MSG_LENGTH_LO_INDEX] +
 		  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
-	  return -2;
+	  return -1;
 	}
       send_top += CCD_MSG_IMAGE_LEN;
     }
@@ -317,9 +306,11 @@ CameraMiniccdChip::sendLineData (int numLines)
       send_data_size = sendReadoutData (send_top, numLines * usedRowBytes);
     }
   if (send_data_size < 0)
-    return -2;
+    return -1;
 
   send_top += send_data_size;
+  if (send_top >= dest_top || !_data)
+    return -2;			// end OK
   return 0;
 }
 
@@ -522,9 +513,6 @@ CameraMiniccdInterleavedChip::endReadout ()
 int
 CameraMiniccdInterleavedChip::readoutOneLine ()
 {
-  if (readoutLine < 0)
-    return -1;
-
   int send_data_size;
   int ret;
 
@@ -536,10 +524,6 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
 	return ret;
     }
 
-  if (!readoutConn)
-    {
-      return -3;
-    }
   switch (slaveState)
     {
     case SLAVE2_READOUT:
@@ -555,7 +539,6 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
     default:
       slaveState = NO_ACTION;
     }
-  endReadout ();
   return -2;
 }
 

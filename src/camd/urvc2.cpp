@@ -103,15 +103,13 @@ CameraUrvc2Chip::isExposing ()
 int
 CameraUrvc2Chip::readoutOneLine ()
 {
-  if (readoutLine < 0)
-    return -1;
-  if (!readoutLine)
+  if (readoutLine == 0)
     {
       if (CCDReadout
 	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width,
 	   chipReadout->height, binningVertical))
 	{
-	  return -3;
+	  return -1;
 	}
       dest_top =
 	img + (chipReadout->width * chipReadout->height / binningVertical);
@@ -125,23 +123,14 @@ CameraUrvc2Chip::readoutOneLine ()
       if (ret)
 	return ret;
     }
-  if (!readoutConn)
-    {
-      return -3;
-    }
+  int send_data_size;
+  sendLine++;
+  send_data_size += sendReadoutData (send_top, (char *) dest_top - send_top);
+  if (send_data_size < 0)
+    return -1;
+  send_top += send_data_size;
   if (send_top < (char *) dest_top)
-    {
-      int send_data_size;
-      sendLine++;
-      send_data_size +=
-	sendReadoutData (send_top, (char *) dest_top - send_top);
-      if (send_data_size < 0)
-	return -2;
-
-      send_top += send_data_size;
-      return 0;
-    }
-  endReadout ();
+    return 0;
   return -2;
 }
 

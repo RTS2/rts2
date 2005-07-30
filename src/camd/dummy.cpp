@@ -8,11 +8,12 @@
 
 class CameraDummyChip:public CameraChip
 {
-
+  char *data;
 public:
-  CameraDummyChip (Rts2DevCamera * in_cam):CameraChip (in_cam, 0)
+    CameraDummyChip (Rts2DevCamera * in_cam):CameraChip (in_cam, 0)
   {
     setSize (100, 200, 0, 0);
+    data = NULL;
   }
   virtual int startExposure (int light, float exptime)
   {
@@ -22,41 +23,47 @@ public:
   {
     return 0;
   }
-  virtual int readoutOneLine ()
+  virtual int readoutOneLine ();
+
+  virtual int readoutEnd ()
   {
-    int ret;
-    if (readoutLine < 0)
-      return -1;
-    if (sendLine == 0)
+    if (data)
       {
-	ret = CameraChip::sendFirstLine ();
-	if (ret)
-	  return ret;
+	delete data;
+	data = NULL;
       }
-    if (!readoutConn)
-      {
-	return -3;
-      }
-    if (readoutLine <
-	(chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
-      {
-	if (readoutLine == 0)
-	  sleep (10);
-	char *data;
-	data = new char[2 * (chipUsedReadout->width - chipUsedReadout->x)];
-	for (int i = 0; i < 2 * chipUsedReadout->width; i++)
-	  {
-	    data[i] = i;
-	  }
-	readoutLine++;
-	sendLine++;
-	sendReadoutData (data,
-			 2 * (chipUsedReadout->width - chipUsedReadout->x));
-	return 0;
-      }
-    return -2;
+    return CameraChip::endReadout ();
   }
 };
+
+int
+CameraDummyChip::readoutOneLine ()
+{
+  int ret;
+  if (sendLine == 0)
+    {
+      ret = CameraChip::sendFirstLine ();
+      if (ret)
+	return ret;
+      data = new char[2 * (chipUsedReadout->width - chipUsedReadout->x)];
+    }
+  if (readoutLine == 0)
+    sleep (10);
+  for (int i = 0; i < 2 * chipUsedReadout->width; i++)
+    {
+      data[i] = i + readoutLine;
+    }
+  readoutLine++;
+  sendLine++;
+  ret = sendReadoutData (data,
+			 2 * (chipUsedReadout->width - chipUsedReadout->x));
+  if (ret < 0)
+    return ret;
+  if (readoutLine <
+      (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
+    return 0;			// imediately send new data
+  return -2;			// no more data.. 
+}
 
 class Rts2DevCameraDummy:public Rts2DevCamera
 {

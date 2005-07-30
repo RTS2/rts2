@@ -178,7 +178,6 @@ CameraChip::sendReadoutData (char *data, size_t data_size)
   time_t now;
   if (!readoutConn)
     {
-      endReadout ();
       return -1;
     }
   ret = readoutConn->send (data, data_size);
@@ -189,14 +188,12 @@ CameraChip::sendReadoutData (char *data, size_t data_size)
 	{
 	  syslog (LOG_ERR,
 		  "CameraChip::sendReadoutData connection not established within timeout");
-	  endReadout ();
 	  return -1;
 	}
     }
   if (ret == -1)
     {
       syslog (LOG_ERR, "CameraChip::sendReadoutData %m");
-      endReadout ();
     }
   return ret;
 }
@@ -263,29 +260,29 @@ CameraChip::sendFirstLine ()
       struct imghdr header;
       header.data_type = 1;
       header.naxes = 2;
-      header.sizes[0] = chipReadout->width / usedBinningHorizontal;
-      header.sizes[1] = chipReadout->height / usedBinningVertical;
+      header.sizes[0] = chipUsedReadout->width / usedBinningHorizontal;
+      header.sizes[1] = chipUsedReadout->height / usedBinningVertical;
       header.binnings[0] = usedBinningHorizontal;
       header.binnings[1] = usedBinningVertical;
-      header.x = chipReadout->x;
-      header.y = chipReadout->y;
+      header.x = chipUsedReadout->x;
+      header.y = chipUsedReadout->y;
       header.filter = camera->getFilterNum ();
       header.shutter = shutter_state;
       int ret;
       ret = sendReadoutData ((char *) &header, sizeof (imghdr));
-      if (ret == -1)
-	return -2;
       if (ret == -2)
 	return 100;		// not yet connected, wait for connection..
-      return 0;
+      if (ret > 0)		// data send sucessfully
+	return 0;
+      return ret;		// can be -1 as well
     }
-  return -2;
+  return -1;
 }
 
 int
 CameraChip::readoutOneLine ()
 {
-  return -3;
+  return -1;
 }
 
 void
@@ -431,13 +428,14 @@ Rts2DevCamera::checkReadouts ()
   int ret;
   for (int i = 0; i < chipNum; i++)
     {
+      if ((getState (i) & CAM_MASK_READING) != CAM_READING)
+	continue;
       ret = chips[i]->readoutOneLine ();
       if (ret >= 0)
 	{
 	  setTimeout (ret);
 	}
-      if (ret == -2
-	  || (ret == -3 && (getState (i) & CAM_MASK_READING) == CAM_READING))
+      else
 	{
 	  chips[i]->endReadout ();
 	  setTimeout (USEC_SEC);

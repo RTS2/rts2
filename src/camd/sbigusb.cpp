@@ -147,8 +147,6 @@ CameraSbigChip::endReadout ()
 int
 CameraSbigChip::readoutOneLine ()
 {
-  if (readoutLine < 0)
-    return -1;
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
@@ -165,7 +163,6 @@ CameraSbigChip::readoutOneLine ()
       SBIGUnivDrvCommand (CC_READOUT_LINE, &rlp, dest_top);
       dest_top += rlp.pixelLength;
       readoutLine++;
-      return 0;
     }
   if (sendLine == 0)
     {
@@ -174,23 +171,14 @@ CameraSbigChip::readoutOneLine ()
       if (ret)
 	return ret;
     }
-  if (!readoutConn)
-    {
-      return -3;
-    }
+  int send_data_size;
+  sendLine++;
+  send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
+  if (send_data_size < 0)
+    return -1;
+  send_top += send_data_size;
   if (send_top < (char *) dest_top)
-    {
-      int send_data_size;
-      sendLine++;
-      send_data_size =
-	sendReadoutData (send_top, (char *) dest_top - send_top);
-      if (send_data_size < 0)
-	return -2;
-
-      send_top += send_data_size;
-      return 0;
-    }
-  endReadout ();
+    return 0;
   return -2;
 }
 

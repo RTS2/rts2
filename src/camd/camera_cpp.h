@@ -161,7 +161,9 @@ public:
   virtual void deleteConnection (Rts2Conn * conn)
   {
     if (conn == readoutConn)
-      readoutConn = NULL;
+      {
+	readoutConn = NULL;
+      }
   }
   virtual int endReadout ();
   void clearReadout ();
