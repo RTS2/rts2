@@ -43,6 +43,7 @@ Rts2DevFocuser::processOption (int in_opt)
     default:
       return Rts2Device::processOption (in_opt);
     }
+  return 0;
 }
 
 Rts2DevConn *

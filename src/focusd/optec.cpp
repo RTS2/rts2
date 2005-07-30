@@ -161,7 +161,6 @@ int
 Rts2DevFocuserOptec::foc_write_read (char *buf, int wcount, char *rbuf,
 				     int rcount)
 {
-
   int ret;
 
   ret = foc_write_read_no_reset (buf, wcount, rbuf, rcount);
@@ -215,10 +214,14 @@ Rts2DevFocuserOptec::init ()
   char rbuf[10];
   int ret;
 
+  syslog (LOG_DEBUG, "init");
+
   ret = Rts2DevFocuser::init ();
 
   if (ret)
     return ret;
+
+  syslog (LOG_DEBUG, "open port");
 
   foc_desc = open (device_file, O_RDWR);
 
@@ -246,6 +249,7 @@ Rts2DevFocuserOptec::init ()
   // set manual
   if (foc_write_read ("FMMODE", 6, rbuf, 1) < 0)
     return -1;
+  syslog (LOG_DEBUG, "write read");
   if (rbuf[0] != '!')
     return -1;
 
