@@ -39,7 +39,7 @@
 #define COMMAND_DARK		"D"
 #define COMMAND_FILTER		"F"
 #define COMMAND_PHOTOMETER      'P'
-#define COMMAND_CHANGE		'C'
+#define COMMAND_CHANGE		"C"
 #define COMMAND_WAIT            'W'
 #define COMMAND_SLEEP		'S'
 #define COMMAND_UTC_SLEEP	'U'
