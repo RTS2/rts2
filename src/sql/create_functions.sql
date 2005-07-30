@@ -66,7 +66,7 @@ BEGIN
 			|| $6 || ''/'' || img_fits_name ($3, $4) || ''.fits'';
 	ELSE
 		return ''/images/'' || LPAD ($5, 3, ''0'') || ''/archive/''
-			|| LPAD (d_tar_id, 5, ''0'') || ''/darks/''
+			|| LPAD (d_tar_id, 5, ''0'') || ''/'' || $6 || ''/darks/''
 			|| img_fits_name ($3, $4) || ''.fits'';
 	END IF;
 END;
