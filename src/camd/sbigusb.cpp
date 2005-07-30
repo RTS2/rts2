@@ -163,6 +163,7 @@ CameraSbigChip::readoutOneLine ()
       SBIGUnivDrvCommand (CC_READOUT_LINE, &rlp, dest_top);
       dest_top += rlp.pixelLength;
       readoutLine++;
+      return 0;
     }
   if (sendLine == 0)
     {
