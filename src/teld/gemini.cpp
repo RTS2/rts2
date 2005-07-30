@@ -1451,11 +1451,6 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
       ret = startMove (telRa + chng_ra, telDec + chng_dec);
       if (ret)
 	return ret;
-      while ((ret = isMoving ()) > 0 && c < 200)
-	{
-	  usleep (ret);
-	  c++;
-	}
       // move ewait ended .. log results
       syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change move: %i c: %i", ret,
 	      c);

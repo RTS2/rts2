@@ -70,6 +70,14 @@ public:
     return 0;
   }
 
+  virtual int change (double chng_ra, double chng_dec)
+  {
+    newRa += chng_ra;
+    newDec += chng_dec;
+    countLong = 0;
+    return 0;
+  }
+
   virtual int stop ()
   {
     newRa = 1;

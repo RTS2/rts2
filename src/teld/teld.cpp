@@ -474,10 +474,18 @@ int
 Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
 {
   int ret;
+  setTarget (telRa + chng_ra, telDec + chng_dec);
   ret = change (chng_ra, chng_dec);
   if (ret)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot change");
+    }
+  else
+    {
+      move_fixed = 0;
+      moveMark++;
+      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      move_connection = conn;
     }
   return ret;
 }
