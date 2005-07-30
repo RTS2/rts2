@@ -13,6 +13,32 @@ Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
   processedBaseInfo = NOT_PROCESED;
   addValue (new Rts2ValueString ("type"));
   addValue (new Rts2ValueString ("serial"));
+
+  waiting = NOT_WAITING;
+}
+
+Rts2DevClient::~Rts2DevClient ()
+{
+  unblockWait ();
+}
+
+void
+Rts2DevClient::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_QUERY_WAIT:
+      if (waiting == WAIT_NOT_POSSIBLE)
+	*((int *) event->getArg ()) = *((int *) event->getArg ()) + 1;
+      break;
+    case EVENT_ENTER_WAIT:
+      waiting = WAIT_MOVE;
+      break;
+    case EVENT_CLEAR_WAIT:
+      waiting = NOT_WAITING;
+      break;
+    }
+  Rts2Object::postEvent (event);
 }
 
 void
@@ -130,6 +156,28 @@ Rts2DevClient::died ()
   lostPriority ();
 }
 
+void
+Rts2DevClient::blockWait ()
+{
+  waiting = WAIT_NOT_POSSIBLE;
+}
+
+void
+Rts2DevClient::unblockWait ()
+{
+  if (waiting == WAIT_NOT_POSSIBLE)
+    {
+      int numNonWaits = 0;
+      waiting = NOT_WAITING;
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &numNonWaits));
+      if (numNonWaits == 0)	// still zero, enter wait
+	connection->getMaster ()->
+	  postEvent (new Rts2Event (EVENT_ENTER_WAIT));
+    }
+};
+
+
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
@@ -201,6 +249,11 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
   addValue (new Rts2ValueDouble ("axis0_counts"));
   addValue (new Rts2ValueDouble ("axis1_counts"));
   addValue (new Rts2ValueInteger ("correction_mark"));
+}
+
+Rts2DevClientTelescope::~Rts2DevClientTelescope (void)
+{
+  moveFailed (DEVICE_ERROR_HW);
 }
 
 void

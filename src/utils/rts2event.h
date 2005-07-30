@@ -7,6 +7,10 @@
 #define EVENT_OBSERVE           4
 #define EVENT_IMAGE_OK		5
 
+#define EVENT_QUERY_WAIT	6
+#define EVENT_ENTER_WAIT	7
+#define EVENT_CLEAR_WAIT	8
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
 

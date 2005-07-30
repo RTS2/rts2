@@ -31,8 +31,14 @@ protected:
   virtual void getPriority ();
   virtual void lostPriority ();
   virtual void died ();
+  enum
+  { NOT_WAITING, WAIT_MOVE, WAIT_NOT_POSSIBLE } waiting;	// if we wait for something..
+  virtual void blockWait ();
+  virtual void unblockWait ();
 public:
     Rts2DevClient (Rts2Conn * in_connection);
+    virtual ~ Rts2DevClient (void);
+  virtual void postEvent (Rts2Event * event);
   void addValue (Rts2Value * value);
   Rts2Value *getValue (char *value_name);
   char *getValueChar (char *value_name);
@@ -84,6 +90,7 @@ protected:
   virtual void moveEnd ();
 public:
     Rts2DevClientTelescope (Rts2Conn * in_connection);
+    virtual ~ Rts2DevClientTelescope (void);
   /*! gets calledn when move finished without success */
   virtual void moveFailed (int status)
   {
