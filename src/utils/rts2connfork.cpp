@@ -60,7 +60,7 @@ Rts2ConnFork::init ()
     {
       sock = filedes[0];
       close (filedes[1]);
-      fcntl (sock, F_SETFL, O_NONBLOCK);
+//      fcntl (sock, F_SETFL, O_NONBLOCK);
       return 0;
     }
   // child
