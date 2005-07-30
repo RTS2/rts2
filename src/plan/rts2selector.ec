@@ -122,7 +122,7 @@ Rts2Selector::findNewTargets ()
       old_list = target_list;
       target_list++;
       possibleTargets.remove (tar);
-      syslog (LOG_DEBUG, "remove target tar_id %if from possible targets", tar->getTargetID ());
+      syslog (LOG_DEBUG, "remove target tar_id %i from possible targets", tar->getTargetID ());
       delete tar;
     }
     else
