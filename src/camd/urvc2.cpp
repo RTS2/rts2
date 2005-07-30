@@ -109,6 +109,8 @@ CameraUrvc2Chip::readoutOneLine ()
 	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width,
 	   chipReadout->height, binningVertical))
 	{
+	  syslog (LOG_DEBUG,
+		  "CameraUrvc2Chip::readoutOneLine readout return not-null");
 	  return -1;
 	}
       dest_top =
