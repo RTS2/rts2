@@ -20,12 +20,12 @@
 class Rts2DevClientCameraImage:public Rts2DevClientCamera
 {
 private:
-  int isExposing;
   void writeFilter ();
 protected:
+  int isExposing;
   // we have to allocate that field as soon as we get the knowledge of
   // camera chip numbers..
-    Rts2Image * images;
+  Rts2Image *images;
   int chipNumbers;
   int activeTargetId;
   int saveImage;

@@ -42,6 +42,7 @@ protected:
   char *focName;
   char *imageName;
   img_type_t imageType;
+  double mean;
 public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);

@@ -130,6 +130,7 @@ Rts2ImageDb::updateDarkDB ()
   int d_dark_usec = getExposureUsec ();
   double d_dark_exposure;
   double d_dark_temperature;
+  float d_dark_mean = mean;
   int d_epoch_id = epochId;
   VARCHAR d_camera_name[8];
   EXEC SQL END DECLARE SECTION;
@@ -150,6 +151,7 @@ Rts2ImageDb::updateDarkDB ()
     dark_usec,
     dark_exposure,
     dark_temperature,
+    dark_mean,
     epoch_id,
     camera_name
   ) VALUES (
@@ -159,6 +161,7 @@ Rts2ImageDb::updateDarkDB ()
     :d_dark_usec,
     :d_dark_exposure,
     :d_dark_temperature,
+    :d_dark_mean,
     :d_epoch_id,
     :d_camera_name
   );
@@ -291,11 +294,12 @@ Rts2ImageDb::setDarkFromDb ()
 
   EXEC SQL DECLARE dark_cursor CURSOR FOR
     SELECT
-      dark_name (dark_date, dark_usec, camera_name)
+      dark_name (obs_id, img_id, dark_date, dark_usec, epoch_id, camera_name)
     FROM
       darks
     WHERE
         camera_name = :d_camera_name
+      AND dark_exposure = :d_img_exposure
       AND abs (dark_temperature - :d_img_temperature) < 2
       AND abs (EXTRACT (EPOCH FROM dark_date) - :d_date) < 43200
     ORDER BY

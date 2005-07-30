@@ -19,6 +19,7 @@ Rts2Image::Rts2Image (char *in_filename,
   mountName = NULL;
   focName = NULL;
   filter = -1;
+  mean = 0;
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -37,6 +38,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   imageName = NULL;
   ffile = NULL;
   filter = -1;
+  mean = 0;
 
   epochId = in_epoch_id;
   targetId = in_targetId;
@@ -91,6 +93,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   focName = new char[DEVICE_NAME_SIZE + 1];
   getValue ("FOC_NAME", focName);
   getValue ("CAM_FILT", filter);
+  getValue ("MEAN", mean);
   getValueImageType ();
 }
 
@@ -587,12 +590,13 @@ int
 Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 {
   struct imghdr *im_h;
-  double mean = 0;
   unsigned short *pixel;
   unsigned short *top;
 
   if (!ffile)
     return 0;
+
+  mean = 0;
 
   im_h = dataConn->getImageHeader ();
   // we have to copy data to FITS anyway, so let's do it right now..
@@ -616,7 +620,10 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       mean += *pixel;
       pixel++;
     }
-  mean /= dataConn->getSize () / 2;
+  if ((dataConn->getSize () / 2) > 0)
+    mean /= dataConn->getSize () / 2;
+  else
+    mean = 0;
   setValue ("MEAN", mean, "mean value in image");
   return writeImgHeader (im_h);
 }
