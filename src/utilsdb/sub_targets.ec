@@ -772,6 +772,7 @@ TargetSwiftFOV::beforeMove ()
   findPointing ();
   if (oldSwiftId != swiftId)
     endObservation (-1);  // startSlew will be called after move suceeded and will write new observation..
+  return 0;
 }
 
 float

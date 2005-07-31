@@ -192,6 +192,7 @@ Target::endObservation (int in_next_id)
     }
     EXEC SQL COMMIT;
   }
+  observationStart = -1;
   return 0;
 }
 
