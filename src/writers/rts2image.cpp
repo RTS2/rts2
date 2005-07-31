@@ -75,6 +75,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
 
 Rts2Image::Rts2Image (const char *in_filename)
 {
+  int ret;
   imageName = NULL;
   ffile = NULL;
 
@@ -87,11 +88,17 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("CTIME", exposureStart.tv_sec);
   getValue ("USEC", exposureStart.tv_usec);
   cameraName = new char[DEVICE_NAME_SIZE + 1];
-  getValue ("CCD_NAME", cameraName);
+  ret = getValue ("CCD_NAME", cameraName);
+  if (ret)
+    strcpy (cameraName, "UNK");
   mountName = new char[DEVICE_NAME_SIZE + 1];
-  getValue ("MNT_NAME", mountName);
+  ret = getValue ("MNT_NAME", mountName);
+  if (ret)
+    strcpy (mountName, "UNK");
   focName = new char[DEVICE_NAME_SIZE + 1];
-  getValue ("FOC_NAME", focName);
+  ret = getValue ("FOC_NAME", focName);
+  if (ret)
+    strcpy (focName, "UNK");
   getValue ("CAM_FILT", filter);
   getValue ("MEAN", mean);
   getValueImageType ();
