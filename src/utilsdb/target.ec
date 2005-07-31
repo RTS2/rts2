@@ -411,8 +411,6 @@ Target::getHourAngle (double JD)
     return nan ("f");
   ha = lst - pos.ra;
   ha = ln_range_degrees (ha) / 15.0;
-  if (ha > 12.0)
-    return 24 - ha;
   return ha;
 }
 
@@ -614,7 +612,7 @@ Target::getLastObsTime ()
 
   EXEC SQL
   SELECT
-    min (EXTRACT (EPOCH FROM (now () - obs_start)))
+    min (EXTRACT (EPOCH FROM (now () - obs_slew)))
   INTO
     :d_time_diff
   FROM
@@ -669,6 +667,8 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
         return new FlatTarget (in_tar_id, in_obs);
       case TYPE_FOCUSING:
         return new FocusingTarget (in_tar_id, in_obs);
+      case TYPE_OPORTUNITY:
+        return new OportunityTarget (in_tar_id, in_obs);
       case TYPE_ELLIPTICAL:
 	return new EllTarget (in_tar_id, in_obs);
       case TYPE_GRB:

@@ -355,6 +355,13 @@ public:
   };
 };
 
+class OportunityTarget:public ConstTarget
+{
+public:
+  OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual float getBonus ();
+};
+
 class LunarTarget:public Target
 {
 protected:

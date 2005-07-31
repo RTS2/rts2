@@ -416,6 +416,45 @@ FocusingTarget::getScript (const char *device_name, char *buf)
   return 0;
 }
 
+// pick up some opportunity target; don't pick it too often
+OportunityTarget::OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+{
+}
+
+float
+OportunityTarget::getBonus ()
+{
+  double JD;
+  double retBonus = 0;
+  struct ln_hrz_posn hrz;
+  struct ln_rst_time rst;
+  double lunarDist;
+  double ha;
+  double lastObs;
+  time_t now;
+  time_t start_t;
+  JD = ln_get_julian_from_sys ();
+  getAltAz (&hrz, JD);
+  getRST (&rst, JD);
+  lunarDist = getLunarDistance (JD);
+  ha = getHourAngle ();
+  lastObs = getLastObsTime ();
+  time (&now);
+  start_t = now - 86400;
+  if (lastObs > 3600)
+    retBonus += log (lastObs - 3599);
+  if (lunarDist < 60.0)
+    retBonus -= lunarDist * 10;
+  // bonus for south
+  if (ha < 11)
+    retBonus += log (12 - ha);
+  if (ha > 13)
+    retBonus += log (ha - 12);
+  retBonus += hrz.alt * 2;
+  retBonus -= sin (getNumObs (&start_t, &now) * M_PI_4) * 5;
+  return ConstTarget::getBonus () + retBonus;
+}
+
 // will pickup the Moon
 LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
