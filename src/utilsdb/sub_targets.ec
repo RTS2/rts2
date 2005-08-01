@@ -533,9 +533,16 @@ int
 ModelTarget::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_obs_id = getObsId ();
+  int d_obs_id;
   int d_step = step;
   EXEC SQL END DECLARE SECTION;
+  int ret;
+
+  ret = ConstTarget::startSlew (position);
+  if (ret)
+    return ret;
+
+  d_obs_id = getObsId ();
 
   EXEC SQL
   INSERT INTO
@@ -556,13 +563,14 @@ ModelTarget::startSlew (struct ln_equ_posn *position)
   {
     EXEC SQL COMMIT;
   }
-  return ConstTarget::startSlew (position);
+  return 0;
 }
 
 int
 ModelTarget::endObservation (int in_next_id)
 {
-  writeStep ();
+  if (getObsId () > 0)
+    writeStep ();
   return ConstTarget::endObservation (in_next_id);
 }
 
