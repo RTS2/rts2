@@ -33,6 +33,7 @@ Target (in_tar_id, in_obs)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
+    logMsgDb ("ConstTarget::ConstTarget");
     throw &sqlca;
   }
   position.ra = d_ra;
@@ -608,7 +609,7 @@ OportunityTarget::getBonus ()
   lastObs = getLastObsTime ();
   time (&now);
   start_t = now - 86400;
-  if (lastObs > 3600)
+  if (lastObs > 3600 && lastObs < (3 * 3600))
     retBonus += log (lastObs - 3599) * 20;
   if (lunarDist < 60.0)
     retBonus -= lunarDist * 10;
