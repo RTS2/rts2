@@ -27,8 +27,6 @@ struct termios oldtio, newtio;
 static char *focuser_port = NULL;
 
 #include "focuser.h"
-// #include "../utils/devcli.h"
-// #include "../utils/devconn.h"
 
 class Rts2DevFocuserOptec:public Rts2DevFocuser
 {
@@ -54,7 +52,7 @@ public:
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
-  virtual int stepOut (int num, int direction);
+  virtual int stepOut (int num);
   virtual int getPos (int *position);
   virtual int getTemp (float *temperature);
   virtual int isFocusing ();
@@ -180,7 +178,6 @@ Rts2DevFocuserOptec::Rts2DevFocuserOptec (int argc, char **argv):Rts2DevFocuser 
   device_file = FOCUSER_PORT;
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
-  addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
 }
 
 Rts2DevFocuserOptec::~Rts2DevFocuserOptec ()
@@ -316,24 +313,40 @@ Rts2DevFocuserOptec::baseInfo ()
 int
 Rts2DevFocuserOptec::info ()
 {
-  getPos (&focPos);
-  getTemp (&focTemp);
+  int ret;
+  ret = getPos (&focPos);
+  if (ret)
+    return ret;
+  ret = getTemp (&focTemp);
+  if (ret)
+    return ret;
   return 0;
 }
 
 int
-Rts2DevFocuserOptec::stepOut (int num, int direction)
+Rts2DevFocuserOptec::stepOut (int num)
 {
   char command[7], rbuf[2];
   char add = ' ';
+  int ret;
 
-  if (direction == -1)
-    add = 'I';
-  else if (direction == 1)
-    add = 'O';
+  ret = getPos (&focPos);
+  if (ret)
+    return ret;
 
-  if (num > 7000)
+  if (focPos + num > 7000 || focPos + num < 0)
     return -1;
+
+  if (num < 0)
+    {
+      add = 'I';
+      num *= -1;
+    }
+  else
+    {
+      add = 'O';
+    }
+
   sprintf (command, "F%c%04d", add, num);
 
   if (foc_write_read (command, 6, rbuf, 1) < 0)

@@ -56,7 +56,7 @@ public:
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
-  virtual int stepOut (int num, int direction);
+  virtual int stepOut (int num);
   virtual int getPos (int *position);
   virtual int getTemp (float *temperature);
   virtual int isFocusing ();
@@ -338,13 +338,11 @@ Rts2DevFocuserRobofocus::focus ()
 }
 
 int
-Rts2DevFocuserRobofocus::stepOut (int num, int direction)
+Rts2DevFocuserRobofocus::stepOut (int num)
 {
-
-  if (direction == 1)
-    return focus_move (CMD_FOCUS_MOVE_IN, num);
-  else if (direction == -1)
-    return focus_move (CMD_FOCUS_MOVE_OUT, num);
+  if (num < 0)
+    return focus_move (CMD_FOCUS_MOVE_OUT, -1 * num);
+  return focus_move (CMD_FOCUS_MOVE_IN, num);
 }
 
 

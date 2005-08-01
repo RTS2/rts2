@@ -40,7 +40,7 @@ public:
   {
     return -1;
   };
-  virtual int stepOut (int num, int direction)
+  virtual int stepOut (int num)
   {
     return -1;
   };
@@ -51,7 +51,7 @@ public:
   int sendInfo (Rts2Conn * conn);
   int baseInfo (Rts2Conn * conn);
   int checkState ();
-  int stepOut (Rts2Conn * conn, int num, int direction);
+  int stepOut (Rts2Conn * conn, int num);
   int autoFocus (Rts2Conn * conn);
 };
 

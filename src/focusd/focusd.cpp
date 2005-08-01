@@ -112,11 +112,11 @@ Rts2DevFocuser::baseInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevFocuser::stepOut (Rts2Conn * conn, int num, int direction)
+Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
 {
   int ret;
 
-  ret = stepOut (num, direction);
+  ret = stepOut (num);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
   return ret;
@@ -160,15 +160,12 @@ Rts2DevConnFocuser::commandAuthorized ()
   else if (isCommand ("step"))
     {
       int num;
-      int direction;
-
       // CHECK_PRIORITY;
 
-      if (paramNextInteger (&num) || paramNextInteger (&direction)
-	  || !paramEnd ())
+      if (paramNextInteger (&num) || !paramEnd ())
 	return -2;
 
-      return master->stepOut (this, num, direction);
+      return master->stepOut (this, num);
     }
   else if (isCommand ("focus"))
     {
