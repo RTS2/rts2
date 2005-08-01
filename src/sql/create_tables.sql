@@ -5,6 +5,8 @@ DROP TABLE grb_gcn;
 DROP TABLE grb;
 DROP TABLE swift_observation;
 DROP TABLE swift;
+DROP TABLE target_model;
+DROP TABLE model_observation;
 DROP TABLE integral;
 DROP TABLE targets;
 DROP TABLE epoch;
@@ -59,6 +61,7 @@ CREATE TABLE target_model (
 	az_start	float,
 	az_stop		float,
 	az_step		float,
+	noise		float,
 	step		integer
 );
 
@@ -242,6 +245,13 @@ CREATE TABLE swift_observation (
 	obs_id		integer NOT NULL REFERENCES observations (obs_id),
 CONSTRAINT swift_obs_prim_key PRIMARY KEY (swift_id, obs_id)
 );
+
+CREATE TABLE model_observation (
+	obs_id		integer NOT NULL REFERENCES observations (obs_id),
+	step 		integer NOT NULL
+);
+
+CREATE INDEX model_observation_step ON model_observation (step);
 
 DROP TABLE medias;
 

@@ -27,6 +27,7 @@
 #define TYPE_TECHNICAL          't'
 #define TYPE_TERESTIAL		'T'
 #define TYPE_CALIBRATION	'c'
+#define TYPE_MODEL		'm'
 
 #define TYPE_SWIFT_FOV		'W'
 #define TYPE_INTEGRAL_FOV	'I'
@@ -353,6 +354,35 @@ public:
 							       in_obs)
   {
   };
+};
+
+class ModelTarget:public ConstTarget
+{
+private:
+  struct ln_hrz_posn hrz_poz;
+  double ra_noise;
+  double dec_noise;
+  float alt_start;
+  float alt_stop;
+  float alt_step;
+  float az_start;
+  float az_stop;
+  float az_step;
+  float noise;
+  int step;
+
+  int alt_size;
+
+  int writeStep ();
+  int getNextPosition ();
+  int calPosition ();
+public:
+    ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    virtual ~ ModelTarget (void);
+  virtual int beforeMove ();
+  virtual int startSlew (struct ln_equ_posn *position);
+  virtual int endObservation (int in_next_id);
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
 };
 
 class OportunityTarget:public ConstTarget

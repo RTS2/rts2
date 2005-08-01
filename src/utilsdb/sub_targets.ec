@@ -416,6 +416,165 @@ FocusingTarget::getScript (const char *device_name, char *buf)
   return 0;
 }
 
+ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_tar_id = in_tar_id;
+  float d_alt_start;
+  float d_alt_stop;
+  float d_alt_step;
+  float d_az_start;
+  float d_az_stop;
+  float d_az_step;
+  float d_noise;
+  int d_step;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    alt_start,
+    alt_stop,
+    alt_step,
+    az_start,
+    az_stop,
+    az_step,
+    noise,
+    step
+  INTO
+    :d_alt_start,
+    :d_alt_stop,
+    :d_alt_step,
+    :d_az_start,
+    :d_az_stop,
+    :d_az_stop,
+    :d_noise,
+    :d_step
+  FROM
+    target_model
+  WHERE
+    tar_id = :d_tar_id
+  ;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("ModelTarget::ModelTarget");
+    throw &sqlca;
+  }
+  alt_start = d_alt_start;
+  alt_stop = d_alt_stop;
+  alt_step = d_alt_step;
+  az_start = d_az_start;
+  az_stop = d_az_stop;
+  az_step = d_az_step;
+  noise = d_noise;
+  step = d_step;
+
+  alt_size = (int) (fabs (alt_stop - alt_start) / alt_step);
+  
+  srandom (time (NULL));
+  calPosition ();
+}
+
+ModelTarget::~ModelTarget (void)
+{
+}
+
+int
+ModelTarget::writeStep ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_tar_id = getTargetID ();
+  int d_step = step;
+  EXEC SQL END DECLARE SECTION;
+  EXEC SQL
+  UPDATE
+    target_model
+  SET
+    step = :d_step
+  WHERE
+    tar_id = :d_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("ModelTarget::writeStep");
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL COMMIT;
+  return 0;
+}
+
+int
+ModelTarget::getNextPosition ()
+{
+  step++;
+  return calPosition ();
+}
+
+int
+ModelTarget::calPosition ()
+{
+  hrz_poz.az = az_start + az_step * (step / alt_size);
+  hrz_poz.alt = alt_start + alt_step * (step % alt_size);
+  ra_noise = 2 * noise * ((double) random () / RAND_MAX);
+  ra_noise -= noise;
+  dec_noise = 2 * noise * ((double) random () / RAND_MAX);
+  dec_noise -= noise;
+  // calc ra + dec
+  return 0;
+}
+
+int
+ModelTarget::beforeMove ()
+{
+  endObservation (-1); // we will not observe same model target twice
+  return getNextPosition ();
+}
+
+int
+ModelTarget::startSlew (struct ln_equ_posn *position)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_obs_id = getObsId ();
+  int d_step = step;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  INSERT INTO
+    model_observation
+  (
+    obs_id,
+    step
+  ) VALUES (
+    :d_obs_id,
+    :d_step
+  );
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("ModelTarget::endObservation");
+    EXEC SQL ROLLBACK;
+  }
+  else
+  {
+    EXEC SQL COMMIT;
+  }
+  return ConstTarget::startSlew (position);
+}
+
+int
+ModelTarget::endObservation (int in_next_id)
+{
+  writeStep ();
+  return ConstTarget::endObservation (in_next_id);
+}
+
+int
+ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  ln_get_equ_from_hrz (&hrz_poz, observer, JD, pos);
+  pos->ra += ra_noise;
+  pos->dec += dec_noise;
+  return 0;
+}
+
 // pick up some opportunity target; don't pick it too often
 OportunityTarget::OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {

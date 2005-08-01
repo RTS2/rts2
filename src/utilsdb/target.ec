@@ -667,6 +667,8 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
         return new FlatTarget (in_tar_id, in_obs);
       case TYPE_FOCUSING:
         return new FocusingTarget (in_tar_id, in_obs);
+      case TYPE_MODEL:
+        return new ModelTarget (in_tar_id, in_obs);
       case TYPE_OPORTUNITY:
         return new OportunityTarget (in_tar_id, in_obs);
       case TYPE_ELLIPTICAL:
