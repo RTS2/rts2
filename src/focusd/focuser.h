@@ -12,18 +12,21 @@
 
 class Rts2DevFocuser:public Rts2Device
 {
+private:
+  time_t focusTimeout;
 protected:
   char *device_file;
   char focCamera[20];
   char focType[20];
   int focPos;
+  int focPositionNew;
   float focTemp;
-  virtual int isFocusing ()
-  {
-    return -2;
-  };
+  // minimal steps/sec count; 5 sec will be added to top it
+  int focStepSec;
+
+  virtual int isFocusing ();
 public:
-  Rts2DevFocuser (int argc, char **argv);
+    Rts2DevFocuser (int argc, char **argv);
   virtual int processOption (int in_opt);
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 

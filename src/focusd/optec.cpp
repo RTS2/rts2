@@ -41,9 +41,10 @@ private:
   int foc_write_read_no_reset (char *wbuf, int wcount, char *rbuf,
 			       int rcount);
   int foc_write_read (char *buf, int wcount, char *rbuf, int rcount);
+
   // high-level I/O functions
-  // int foc_pos_get (int * position);
-  // int foc_pos_set (int pos);
+  int getPos (int *position);
+  int getTemp (float *temperature);
 public:
     Rts2DevFocuserOptec (int argc, char **argv);
    ~Rts2DevFocuserOptec (void);
@@ -53,10 +54,7 @@ public:
   virtual int baseInfo ();
   virtual int info ();
   virtual int stepOut (int num);
-  virtual int getPos (int *position);
-  virtual int getTemp (float *temperature);
   virtual int isFocusing ();
-  virtual int focus ();
 };
 
 /*! 
@@ -292,12 +290,6 @@ Rts2DevFocuserOptec::getTemp (float *temp)
 }
 
 int
-Rts2DevFocuserOptec::focus ()
-{
-  // devcli_server_command (NULL, "priority 137");
-}
-
-int
 Rts2DevFocuserOptec::ready ()
 {
   return 0;
@@ -360,7 +352,8 @@ Rts2DevFocuserOptec::stepOut (int num)
 int
 Rts2DevFocuserOptec::isFocusing ()
 {
-  return 0;
+  // stepout command waits till focusing end
+  return -2;
 }
 
 int

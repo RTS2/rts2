@@ -27,6 +27,7 @@ Rts2Device (argc, argv, DEVICE_TYPE_FOCUS, 5566, "F0")
   setStateNames (1, states_names);
 
   focCamera[0] = '\0';
+  focStepSec = 100;
 
   addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
 }
@@ -62,6 +63,17 @@ Rts2DevFocuser::checkState ()
 
       if (ret >= 0)
 	setTimeout (ret);
+      else
+	{
+	  infoAll ();
+	  if (ret == -2)
+	    maskState (0, FOC_MASK_FOCUSING, FOC_SLEEPING,
+		       "focusing finished without errror");
+	  else
+	    maskState (0, DEVICE_ERROR_MASK | FOC_MASK_FOCUSING,
+		       DEVICE_ERROR_HW | FOC_SLEEPING,
+		       "focusing finished with error");
+	}
     }
 }
 
@@ -115,10 +127,19 @@ int
 Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
 {
   int ret;
+  ret = info ();
+  if (ret)
+    return ret;
+
+  focPositionNew = focPos + num;
+  time (&focusTimeout);
+  focusTimeout += (int) ceil (num / focStepSec) + 5;
 
   ret = stepOut (num);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
+  else
+    maskState (0, FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
   return ret;
 }
 
@@ -132,6 +153,22 @@ Rts2DevFocuser::autoFocus (Rts2Conn * conn)
   // command ("priority 50");
 
   return 0;
+}
+
+int
+Rts2DevFocuser::isFocusing ()
+{
+  int ret;
+  time_t now;
+  time (&now);
+  if (now > focusTimeout)
+    return -1;
+  ret = info ();
+  if (ret)
+    return -1;
+  if (focPos != focPositionNew)
+    return USEC_SEC;
+  return -2;
 }
 
 Rts2DevConnFocuser::Rts2DevConnFocuser (int in_sock, Rts2DevFocuser * in_master_device):

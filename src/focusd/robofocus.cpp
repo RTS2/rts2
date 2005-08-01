@@ -48,6 +48,9 @@ private:
   // high-level I/O functions
   int focus_move (char *cmd, int steps);
   void compute_checksum (char *cmd);
+
+  int getPos (int *position);
+  int getTemp (float *temperature);
 public:
     Rts2DevFocuserRobofocus (int argc, char **argv);
    ~Rts2DevFocuserRobofocus (void);
@@ -57,10 +60,6 @@ public:
   virtual int baseInfo ();
   virtual int info ();
   virtual int stepOut (int num);
-  virtual int getPos (int *position);
-  virtual int getTemp (float *temperature);
-  virtual int isFocusing ();
-  virtual int focus ();
 };
 
 
@@ -321,20 +320,6 @@ Rts2DevFocuserRobofocus::getTemp (float *temp)
       *temp = ((atof (tbuf) / 2) - 273.15);	// return temp in Celsius
     }
   return 0;
-}
-
-
-int
-Rts2DevFocuserRobofocus::isFocusing ()
-{
-  return 0;
-}
-
-
-int
-Rts2DevFocuserRobofocus::focus ()
-{
-  // devcli_server_command (NULL, "priority 137");
 }
 
 int
