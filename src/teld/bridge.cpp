@@ -42,7 +42,7 @@ public:
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();
-  virtual int stop ();
+  virtual int stopMove ();
 };
 
 Rts2DevTelescopeBridge::Rts2DevTelescopeBridge (int argc, char **argv):
@@ -203,7 +203,7 @@ Rts2DevTelescopeBridge::endPark ()
 }
 
 int
-Rts2DevTelescopeBridge::stop ()
+Rts2DevTelescopeBridge::stopMove ()
 {
   // should do the work
   Tctrl->power = 0;		//changed
@@ -212,6 +212,7 @@ Rts2DevTelescopeBridge::stop ()
 
   time (&timeout);
   timeout--;
+  return 0;
 }
 
 Rts2DevTelescopeBridge *device;
