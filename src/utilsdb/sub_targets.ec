@@ -446,7 +446,7 @@ ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarg
     :d_alt_step,
     :d_az_start,
     :d_az_stop,
-    :d_az_stop,
+    :d_az_step,
     :d_noise,
     :d_step
   FROM
@@ -601,7 +601,7 @@ OportunityTarget::getBonus ()
   time (&now);
   start_t = now - 86400;
   if (lastObs > 3600)
-    retBonus += log (lastObs - 3599);
+    retBonus += log (lastObs - 3599) * 20;
   if (lunarDist < 60.0)
     retBonus -= lunarDist * 10;
   // bonus for south
