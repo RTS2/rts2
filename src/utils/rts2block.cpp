@@ -186,7 +186,7 @@ Rts2Conn::setState (char *in_state_name, int in_value)
       state = serverState[i];
       if (state && !strcmp (state->name, in_state_name))
 	{
-	  state->value = in_value;
+	  state->setValue (in_value);
 	  if (otherDevice)
 	    otherDevice->stateChanged (state);
 	  return 0;

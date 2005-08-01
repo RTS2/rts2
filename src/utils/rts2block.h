@@ -19,6 +19,7 @@
 #include "rts2devclient.h"
 #include "rts2value.h"
 #include "rts2app.h"
+#include "rts2serverstate.h"
 
 #define MSG_COMMAND             0x01
 #define MSG_REPLY
@@ -47,30 +48,6 @@ class Rts2Command;
 class Rts2ClientTCPDataConn;
 
 class Rts2DevClient;
-
-class Rts2ServerState
-{
-public:
-  char *name;
-  int value;
-    Rts2ServerState (char *in_name)
-  {
-    name = new char[strlen (in_name) + 1];
-      strcpy (name, in_name);
-  }
-   ~Rts2ServerState (void)
-  {
-    delete[]name;
-  }
-  int isName (const char *in_name)
-  {
-    return !strcmp (name, in_name);
-  }
-  const char *getName ()
-  {
-    return name;
-  }
-};
 
 class Rts2Conn:public Rts2Object
 {
@@ -136,7 +113,7 @@ public:
     if (state_num < 0 || state_num >= MAX_STATE)
       return -1;
     if (serverState[state_num])
-      return serverState[state_num]->value;
+      return serverState[state_num]->getValue ();
     return -1;
   }
   virtual int init ()

@@ -456,7 +456,7 @@ Rts2CNMonConn::printStatus ()
       if (state)
 	{
 	  mvwprintw (window, nrow, 0, "%10s: %-5i", state->name,
-		     state->value);
+		     state->getValue ());
 	  nrow++;
 	}
     }
@@ -651,10 +651,15 @@ Rts2NMonitor::repaint ()
 {
   char dateBuf[40];
   time_t now;
+  char stateBuf[20];
+  int masterState;
   time (&now);
 
   wcolor_set (statusWindow, CLR_STATUS, NULL);
-  mvwprintw (statusWindow, 0, 0, "** Status: %i ** ", getMasterState ());
+
+  getMasterState (stateBuf);
+
+  mvwprintw (statusWindow, 0, 0, "** Status: %s ** ", stateBuf);
   wcolor_set (statusWindow, CLR_TEXT, NULL);
   strftime (dateBuf, 40, "%c", gmtime (&now));
   mvwprintw (statusWindow, 0, COLS - 40, "%40s", dateBuf);

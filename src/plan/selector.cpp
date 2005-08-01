@@ -17,9 +17,10 @@
 
 class Rts2DevClientTelescopeSel:public Rts2DevClientTelescope
 {
+protected:
+  virtual void moveEnd ();
 public:
-  Rts2DevClientTelescopeSel (Rts2Conn * in_connection);
-  virtual void stateChanged (Rts2ServerState * state);
+    Rts2DevClientTelescopeSel (Rts2Conn * in_connection);
 };
 
 Rts2DevClientTelescopeSel::Rts2DevClientTelescopeSel (Rts2Conn * in_connection):Rts2DevClientTelescope
@@ -28,18 +29,10 @@ Rts2DevClientTelescopeSel::Rts2DevClientTelescopeSel (Rts2Conn * in_connection):
 }
 
 void
-Rts2DevClientTelescopeSel::stateChanged (Rts2ServerState * state)
+Rts2DevClientTelescopeSel::moveEnd ()
 {
-  if (state->isName ("telescope"))
-    {
-      if ((state->value & TEL_MASK_MOVING) == TEL_OBSERVING
-	  || (state->value & TEL_MASK_MOVING) == TEL_PARKING)
-	{
-	  connection->getMaster ()->
-	    postEvent (new Rts2Event (EVENT_IMAGE_OK));
-	}
-    }
-  Rts2DevClientTelescope::stateChanged (state);
+  connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+  Rts2DevClientTelescope::moveEnd ();
 }
 
 class Rts2SelectorDev:public Rts2DeviceDb

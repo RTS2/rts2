@@ -652,7 +652,7 @@ void
 Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
 {
   std::cout << "State changed:" << state->getName () << " value:" << state->
-    value << std::endl;
+    getValue () << std::endl;
   Rts2DevClientCameraFoc::stateChanged (state);
 }
 

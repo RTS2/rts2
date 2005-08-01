@@ -168,7 +168,8 @@ Rts2focusc::run ()
   return Rts2Client::run ();
 }
 
-exposureType Rts2focusc::getExposureType ()
+exposureType
+Rts2focusc::getExposureType ()
 {
   return exposureT;
 }
@@ -187,7 +188,7 @@ Rts2focuscCamera::stateChanged (Rts2ServerState * state)
   if (state->isName ("img_chip"))
     {
       std::cout << connection->getName () << " state: " << state->
-	value << std::endl;
+	getValue () << std::endl;
     }
 }
 

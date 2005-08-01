@@ -116,7 +116,7 @@ Rts2DevClient::stateChanged (Rts2ServerState * state)
 {
   if (state->isName ("priority"))
     {
-      switch (state->value)
+      switch (state->getValue ())
 	{
 	case 1:
 	  getPriority ();
@@ -216,16 +216,17 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   if (state->isName ("img_chip"))
     {
       switch (state->
-	      value & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA))
+	      getValue () & (CAM_MASK_EXPOSE | CAM_MASK_READING |
+			     CAM_MASK_DATA))
 	{
 	case CAM_EXPOSING:
 	  exposureStarted ();
 	  break;
 	case CAM_DATA:
-	  if ((state->value & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
 	    exposureEnd ();
 	  else
-	    exposureFailed (state->value);
+	    exposureFailed (state->getValue ());
 	  break;
 	case CAM_NODATA | CAM_NOTREADING | CAM_NOEXPOSURE:
 	  readoutEnd ();
@@ -261,7 +262,7 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 {
   if (state->isName ("telescope"))
     {
-      switch (state->value & TEL_MASK_MOVING)
+      switch (state->getValue () & TEL_MASK_MOVING)
 	{
 	case TEL_MOVING:
 	case TEL_PARKING:
@@ -269,10 +270,10 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 	  break;
 	case TEL_OBSERVING:
 	case TEL_PARKED:
-	  if ((state->value & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
 	    moveEnd ();
 	  else
-	    moveFailed (state->value);
+	    moveFailed (state->getValue ());
 	  break;
 	}
     }

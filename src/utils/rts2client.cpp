@@ -213,10 +213,48 @@ Rts2Client::init ()
   return addConnection (central_conn);
 }
 
-int
-Rts2Client::idle ()
+void
+Rts2Client::getMasterState (char buf[20])
 {
-  return Rts2Block::idle ();
+  int masterState;
+  masterState = Rts2Block::getMasterState ();
+  if (masterState == SERVERD_OFF)
+    {
+      strcpy (buf, "OFF");
+      return;
+    }
+  if ((masterState & SERVERD_STATUS_MASK) == SERVERD_STANDBY)
+    {
+      strcpy (buf, "standby ");
+    }
+  else
+    {
+      strcpy (buf, "ready ");
+    }
+  switch (masterState & SERVERD_STATUS_MASK)
+    {
+    case SERVERD_DAY:
+      strcat (buf, "day");
+      break;
+    case SERVERD_EVENING:
+      strcat (buf, "evening");
+      break;
+    case SERVERD_DUSK:
+      strcat (buf, "dusk");
+      break;
+    case SERVERD_NIGHT:
+      strcat (buf, "night");
+      break;
+    case SERVERD_DAWN:
+      strcat (buf, "dawn");
+      break;
+    case SERVERD_MORNING:
+      strcat (buf, "morning");
+      break;
+    default:
+      strcat (buf, "unknow");
+      break;
+    }
 }
 
 /**
@@ -225,7 +263,11 @@ Rts2Client::idle ()
  * Used for putting devices names query etc..
  */
 
-Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, char *in_login, char *in_password, char *in_master_host, char *in_master_port):
+Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master,
+						char *in_login,
+						char *in_password,
+						char *in_master_host,
+						char *in_master_port):
 Rts2Conn (in_master)
 {
   master_host = in_master_host;

@@ -99,12 +99,13 @@ public:
 
   virtual int processOption (int in_opt);
   virtual int init ();
-  virtual int idle ();
 
   virtual Rts2Conn *getCentraldConn ()
   {
     return central_conn;
   }
+
+  void getMasterState (char buf[20]);
 };
 
 #endif /* ! __RTS2_CLIENT__ */
