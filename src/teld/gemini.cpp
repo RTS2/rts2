@@ -102,6 +102,7 @@ private:
 
   int infoCount;
   int matchCount;
+  int bootesSensors;
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -767,9 +768,11 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
 {
   device_file = "/dev/ttyS0";
   geminiConfig = "/etc/rts2/gemini.ini";
+  bootesSensors = 0;
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
   addOption ('c', "config_file", 1, "config file (with model parameters)");
+  addOption ('b', "bootes", 0, "BOOTES G-11 (with 1/0 pointing sensor)");
 
   lastMotorState = 0;
   telMotorState = TEL_OK;
@@ -793,6 +796,9 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
       break;
     case 'c':
       geminiConfig = optarg;
+      break;
+    case 'b':
+      bootesSensors = 1;
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -827,6 +833,8 @@ Rts2DevTelescopeGemini::geminiInit ()
 	return -1;
     }
   tel_write_read_hash ("#:Ml#", 5, rbuf, 1);
+  if (bootesSensors)
+    tel_gemini_set (311, 15);	// reset feature port
   return 0;
 }
 
@@ -1018,11 +1026,23 @@ Rts2DevTelescopeGemini::info ()
 {
   double ha;
   telFlip = 0;
+
   if (tel_read_ra () || tel_read_dec ()
       || tel_read_siderealtime () || tel_read_localtime ())
     return -1;
   ha = ln_range_degrees (telSiderealTime * 15.0 - telRa);
-  telFlip = (ha < 180.0 ? 1 : 0);
+  if (bootesSensors)
+    {
+      int feature;
+      tel_gemini_get (311, &feature);
+      telAxis[0] = (double) ((feature & 1) ? 1 : 0);
+      telAxis[1] = (double) ((feature & 2) ? 1 : 0);
+      telFlip = feature & 1;
+    }
+  else
+    {
+      telFlip = (ha < 180.0 ? 1 : 0);
+    }
   return 0;
 }
 
