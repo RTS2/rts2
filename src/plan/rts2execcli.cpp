@@ -13,6 +13,7 @@ Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2
   (in_connection)
 {
   currentTarget = NULL;
+  nextComd = NULL;
   script = NULL;
   blockMove = 0;
   getObserveStart = 0;
