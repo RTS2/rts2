@@ -24,7 +24,7 @@ Rts2ConnNoSend (in_master)
   // delet us if construction of socket fails
   setConnState (CONN_DELETE);
   ownerConnection = in_owner_conn;
-  setConnTimeout (65);
+  setConnTimeout (140);
 
   data = NULL;
   dataTop = NULL;
