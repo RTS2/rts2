@@ -574,6 +574,7 @@ Rts2Conn::commandReturn ()
   // ignore (for the moment) retuns recieved without command
   if (!runningCommand)
     {
+      syslog (LOG_DEBUG, "Rts2Conn::commandReturn null!");
       return -1;
     }
   ret = runningCommand->commandReturn (atoi (getCommand ()));

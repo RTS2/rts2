@@ -37,6 +37,12 @@ Rts2Command::~Rts2Command (void)
 }
 
 int
+Rts2Command::send ()
+{
+  return connection->send (text);
+}
+
+int
 Rts2Command::commandReturn (int status)
 {
   if (connection)

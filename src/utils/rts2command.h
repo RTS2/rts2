@@ -34,10 +34,7 @@ public:
   {
     connection = conn;
   }
-  virtual int send ()
-  {
-    return connection->send (text);
-  }
+  virtual int send ();
   int commandReturn (int status);
   char *getText ()
   {
