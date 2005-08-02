@@ -11,7 +11,7 @@ W	Swift FOV
 I	Integral FOV
 d	Dark target
 f	Flat target
-0	fOcusing target
+o	fOcusing target
 m	Modeling (have optional parameters in target_model)
 \.
 
