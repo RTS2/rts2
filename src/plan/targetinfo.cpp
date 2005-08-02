@@ -187,8 +187,6 @@ Rts2TargetInfo::run ()
 {
   std::list < int >::iterator tar_iter;
 
-  std::cout << obs << std::endl;
-
   for (tar_iter = targets.begin (); tar_iter != targets.end (); tar_iter++)
     {
       int tar_id;
