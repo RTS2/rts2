@@ -133,6 +133,8 @@ Rts2DevClientCameraExec::nextCommand ()
 	}
     }
   blockMove = 1;		// as we run a script..
+  if (currentTarget)
+    currentTarget->startObservation ();
   if (waiting == WAIT_MOVE)
     return;
   if (!strcmp (cmd_device, connection->getName ()))

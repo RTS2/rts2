@@ -197,8 +197,6 @@ Rts2Executor::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_OBSERVE:
-      if (currentTarget)
-	currentTarget->startObservation ();
       break;
     case EVENT_SCRIPT_STARTED:
       // we don't care about that now..
