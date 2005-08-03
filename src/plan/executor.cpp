@@ -207,7 +207,20 @@ Rts2Executor::postEvent (Rts2Event * event)
       if (currentTarget)
 	{
 	  if (scriptCount == 0 && currentTarget->observationStarted ())
-	    switchTarget ();
+	    {
+	      switchTarget ();
+	    }
+	  // scriptCount is not 0, but we hit continues target..
+	  else if (currentTarget->isContinues ()
+		   && (nextTarget == NULL
+		       || nextTarget->getTargetID () ==
+		       currentTarget->getTargetID ()))
+	    {
+	      // that will eventually hit devclient which post that message, which
+	      // will set currentTarget to this value and handle it same way as EVENT_OBSERVE,
+	      // which is exactly what we want
+	      event->setArg ((void *) currentTarget);
+	    }
 	}
       else
 	{
@@ -255,12 +268,6 @@ Rts2Executor::postEvent (Rts2Event * event)
       break;
     case EVENT_CLEAR_WAIT:
       waitState = 0;
-      break;
-    case EVENT_MOVE_QUESTION:
-      scriptCount = 0;
-      break;
-    case EVENT_DONT_MOVE:
-      scriptCount++;
       break;
     }
   Rts2Device::postEvent (event);
@@ -371,9 +378,6 @@ Rts2Executor::setNow (Target * newTarget)
   currentTarget = NULL;
   priorityTarget = newTarget;
 
-  postEvent (new Rts2Event (EVENT_KILL_ALL));
-  queAll (new Rts2CommandKillAll (this));
-
   // at this situation, we would like to get rid of nextTarget as
   // well
   if (nextTarget)
@@ -381,6 +385,10 @@ Rts2Executor::setNow (Target * newTarget)
       delete nextTarget;
       nextTarget = NULL;
     }
+
+  postEvent (new Rts2Event (EVENT_KILL_ALL));
+  queAll (new Rts2CommandKillAll (this));
+
   return 0;
 }
 
@@ -519,7 +527,8 @@ Rts2Executor::queTarget (Target * in_target)
 void
 Rts2Executor::updateScriptCount ()
 {
-  postEvent (new Rts2Event (EVENT_MOVE_QUESTION));
+  scriptCount = 0;
+  postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) &scriptCount));
 }
 
 Rts2Executor *executor;

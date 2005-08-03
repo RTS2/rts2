@@ -33,13 +33,27 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
     case EVENT_KILL_ALL:
       currentTarget = NULL;
       // stop actual observation..
-      deleteScript ();
       waiting = NOT_WAITING;
+      blockMove = 0;
+      unblockWait ();
+      if (script)
+	{
+	  delete script;
+	  script = NULL;
+	}
+      isExposing = 0;
       break;
     case EVENT_SET_TARGET:
       currentTarget = (Target *) event->getArg ();
       getObserveStart = 0;
       break;
+    case EVENT_LAST_READOUT:
+    case EVENT_SCRIPT_ENDED:
+      if (!event->getArg () || (getObserveStart && script))
+	break;
+      // we get new target..handle that same way as EVENT_OBSERVE command,
+      // telescope will not move
+      currentTarget = (Target *) event->getArg ();
     case EVENT_OBSERVE:
       if (script)		// we are still observing..we will be called after last command finished
 	{
@@ -57,8 +71,7 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
     case EVENT_MOVE_QUESTION:
       if (blockMove)
 	{
-	  connection->getMaster ()->
-	    postEvent (new Rts2Event (EVENT_DONT_MOVE));
+	  *(int *) event->getArg () = *(int *) event->getArg () + 1;
 	}
       break;
     }
@@ -132,9 +145,6 @@ Rts2DevClientCameraExec::nextCommand ()
 	  return;
 	}
     }
-  blockMove = 1;		// as we run a script..
-  if (currentTarget)
-    currentTarget->startObservation ();
   if (waiting == WAIT_MOVE)
     return;
   if (!strcmp (cmd_device, connection->getName ()))
@@ -163,6 +173,9 @@ Rts2DevClientCameraExec::nextCommand ()
       nextComd = NULL;
       waiting = WAIT_MOVE;
     }
+  blockMove = 1;		// as we run a script..
+  if (currentTarget)
+    currentTarget->startObservation ();
   // else change control to other device...somehow (post event)
 }
 
@@ -332,8 +345,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
     case EVENT_MOVE_QUESTION:
       if (blockMove)
 	{
-	  connection->getMaster ()->
-	    postEvent (new Rts2Event (EVENT_DONT_MOVE));
+	  *(int *) event->getArg () = *(int *) event->getArg () + 1;
 	}
       break;
     }
