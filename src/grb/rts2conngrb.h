@@ -51,8 +51,7 @@ private:
   int pr_swift_without_radec ();
 
   // GRB db stuff
-  int addSwiftPoint (double ra, double dec, double roll, const time_t * t,
-		     char *name, float obstime, float merit);
+  int addSwiftPoint (double roll, char *name, float obstime, float merit);
   int addIntegralPoint (double ra, double dec, const time_t * t);
 
   void getGrbBound (int grb_type, int &grb_start, int &grb_end);
@@ -66,6 +65,10 @@ private:
   int do_hete_test;
 
   int gcn_listen_sock;
+
+  time_t swiftLastPoint;
+  double swiftLastRa;
+  double swiftLastDec;
 
   time_t nextTime;
 public:

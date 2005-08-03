@@ -38,21 +38,18 @@ Rts2ConnGrb::pr_imalive ()
 int
 Rts2ConnGrb::pr_swift_point ()
 {
-  double ra;
-  double dec;
   double roll;
-  time_t t;
   char *name;
   float obstime;
   float merit;
-  ra  = lbuf[7]/10000.0;
-  dec = lbuf[8]/10000.0;
+  swiftLastRa  = lbuf[7]/10000.0;
+  swiftLastDec = lbuf[8]/10000.0;
   roll = lbuf[9]/10000.0;
-  getTimeTfromTJD (lbuf[5], lbuf[6]/100.0, &t);
+  getTimeTfromTJD (lbuf[5], lbuf[6]/100.0, &swiftLastPoint);
   name = (char*) (&lbuf[BURST_URL]);
   obstime = lbuf[14]/100.0;
   merit = lbuf[15]/100.0;
-  return addSwiftPoint (ra, dec, roll, &t, name, obstime, merit);
+  return addSwiftPoint (roll, name, obstime, merit);
 }
 
 int
@@ -95,6 +92,10 @@ Rts2ConnGrb::pr_hete ()
       || (lbuf[H_TRIG_FLAGS] & H_ART_TRIG)
     )
   )
+    return 0;
+
+  // not-position burst..
+  if (grb_ra < -1)
     return 0;
 
   if ((lbuf[H_TRIG_FLAGS] & H_DEF_NOT_GRB)
@@ -198,27 +199,67 @@ Rts2ConnGrb::pr_swift_without_radec ()
   int d_grb_id;
   int d_grb_seqn;
   int d_grb_type;
+  int d_grb_type_start;
+  int d_grb_type_end;
   EXEC SQL END DECLARE SECTION;
+
+  time_t grb_date;
 
   d_grb_type = (int)(lbuf[PKT_TYPE]);
   d_grb_id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
   d_grb_seqn = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
 
-  // update if not grb..
-  // EXEC SQL
+  switch (d_grb_type)
+    {
+      case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
+        // get S/C coordinates to slew on
+        getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+        // that's special in big errror-box
+        // but as we specify last know ra/dec, we will slew to best location we know about burst
+        // assume that swift will never spend more then three hours on one location, due to orbit parameters
+	// as burst can happen during slew, we have to put in fabs - otherwise we will not respond to burst
+	// catched during/before slew, but after pointdir notice was send
+        if (fabs (grb_date - swiftLastPoint) < 3 * 3600)
+          addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, 60);
+        break;
+      case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
+        // update if not grb..
+        getGrbBound (d_grb_type, d_grb_type_start, d_grb_type_end);
+        EXEC SQL
+        UPDATE
+          grb
+        SET
+          grb_type = :d_grb_type,
+          grb_seqn = :d_grb_seqn,
+          grb_is_grb = false
+        WHERE
+            grb_id = :d_grb_id
+          AND grb_type >= :d_grb_type_start
+          AND grb_type <= :d_grb_type_end;
+        if (sqlca.sqlcode)
+        {
+          syslog (LOG_DEBUG, "Rts2ConnGrb::pr_swift_without_radec sql errro: %s", sqlca.sqlerrm.sqlerrmc);
+          EXEC SQL ROLLBACK;
+        }
+        else
+        {
+          syslog (LOG_DEBUG, "Rts2ConnGrb::pr_swift_without_radec grb_is_grb = false grb_id %i", d_grb_id);
+          EXEC SQL COMMIT;
+        }
+        break;
+  }
 
   return addGcnRaw (d_grb_id, d_grb_seqn, d_grb_type);
 }
 
 int
-Rts2ConnGrb::addSwiftPoint (double ra, double dec, double roll, const time_t *t, 
-  char * name, float obstime, float merit)
+Rts2ConnGrb::addSwiftPoint (double roll, char * name, float obstime, float merit)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double d_swift_ra = ra;
-  double d_swift_dec = dec;
+  double d_swift_ra = swiftLastRa;
+  double d_swift_dec = swiftLastDec;
   double d_swift_roll = roll;
-  int d_swift_time = (int) *t;
+  int d_swift_time = (int) swiftLastPoint;
   int d_swift_received = (int) last_packet.tv_sec;
   float d_swift_obstime = obstime;
   varchar d_swift_name[70];
@@ -481,7 +522,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
     // update target informations..
     EXEC SQL
     UPDATE
-      targetse
+      targets
     SET
       tar_ra = :d_grb_ra,
       tar_dec = :d_grb_dec
@@ -594,6 +635,10 @@ in_do_hete_test, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
   setConnTimeout (90);
   time (&nextTime);
   nextTime += getConnTimeout ();
+
+  swiftLastPoint = 0;
+  swiftLastRa = nan ("f");
+  swiftLastDec = nan ("f");
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
