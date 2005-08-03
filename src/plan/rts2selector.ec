@@ -72,6 +72,8 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
   }
   // add us..
   newTar = createTarget (consider_tar_id, observer);
+  if (!newTar)
+    return;
   ret = newTar->considerForObserving (checker, JD);
   syslog (LOG_DEBUG, "considerForObserving tar_id: %i ret: %i", newTar->getTargetID (), ret);
   if (ret)
