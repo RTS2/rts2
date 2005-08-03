@@ -229,6 +229,7 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
     }
   if (!minConn)
     return;
+  image->saveImage ();
   minConn->
     queCommand (new Rts2CommandQueImage (connection->getMaster (), image));
 }
@@ -337,7 +338,11 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	  postEvent (new Rts2Event (EVENT_ENTER_WAIT));
       break;
     case EVENT_ENTER_WAIT:
-      connection->queCommand (cmdChng);
+      if (cmdChng)
+	{
+	  connection->queCommand (cmdChng);
+	  cmdChng = NULL;
+	}
       break;
     case EVENT_MOVE_OK:
     case EVENT_MOVE_FAILED:
