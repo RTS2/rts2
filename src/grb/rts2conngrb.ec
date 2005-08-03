@@ -785,7 +785,7 @@ Rts2ConnGrb::init_listen ()
     }
   setConnState (CONN_CONNECTED);
   time (&nextTime);
-  nextTime += getConnTimeout ();
+  nextTime += 2 * getConnTimeout ();
   return 0;
 }
 
@@ -812,8 +812,7 @@ Rts2ConnGrb::add (fd_set * set)
 int
 Rts2ConnGrb::connectionError ()
 {
-  time_t now;
-  time (&now);
+  syslog (LOG_DEBUG, "Rts2ConnGrb::connectionError");
   if (sock > 0)
   {
     close (sock);
@@ -821,7 +820,7 @@ Rts2ConnGrb::connectionError ()
   }
   if (!isConnState (CONN_BROKEN))
   {
-    nextTime = now;
+    time (&nextTime);
     sock = -1;
     setConnState (CONN_BROKEN);
   }
