@@ -74,6 +74,12 @@ Target::~Target (void)
 }
 
 int
+Target::load ()
+{
+  return 0;
+}
+
+int
 Target::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -642,52 +648,70 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
   char db_type_id;
   EXEC SQL END DECLARE SECTION;
 
-  try
-  {
-    EXEC SQL
-    SELECT
-      type_id
-    INTO
-      :db_type_id
-    FROM
-      targets
-    WHERE
-      tar_id = :db_tar_id;
-  
-    if (sqlca.sqlcode)
-      throw &sqlca;
+  Target *retTarget;
+  int ret;
 
-    // get more informations about target..
-    switch (db_type_id)
-    {
-      // calibration targets..
-      case TYPE_DARK:
-        return new DarkTarget (in_tar_id, in_obs);
-      case TYPE_FLAT:
-        return new FlatTarget (in_tar_id, in_obs);
-      case TYPE_FOCUSING:
-        return new FocusingTarget (in_tar_id, in_obs);
-      case TYPE_MODEL:
-        return new ModelTarget (in_tar_id, in_obs);
-      case TYPE_OPORTUNITY:
-        return new OportunityTarget (in_tar_id, in_obs);
-      case TYPE_ELLIPTICAL:
-	return new EllTarget (in_tar_id, in_obs);
-      case TYPE_GRB:
-        return new TargetGRB (in_tar_id, in_obs);
-      case TYPE_SWIFT_FOV:
-        return new TargetSwiftFOV (in_tar_id, in_obs);
-      case TYPE_GPS:
-        return new TargetGps (in_tar_id, in_obs);
-      default:
-        return new ConstTarget (in_tar_id, in_obs);
-    }
+  EXEC SQL
+  SELECT
+    type_id
+  INTO
+    :db_type_id
+  FROM
+    targets
+  WHERE
+    tar_id = :db_tar_id;
+
+  if (sqlca.sqlcode)
+  {
+    syslog (LOG_ERR, "createTarget cannot get entry from targets table for target with ID %i", db_tar_id);
+    return NULL;
   }
-  catch (struct sqlca_t *sqlerr)
+
+  // get more informations about target..
+  switch (db_type_id)
+  {
+    // calibration targets..
+    case TYPE_DARK:
+      retTarget = new DarkTarget (in_tar_id, in_obs);
+      break;
+    case TYPE_FLAT:
+      retTarget = new FlatTarget (in_tar_id, in_obs);
+      break;
+    case TYPE_FOCUSING:
+      retTarget = new FocusingTarget (in_tar_id, in_obs);
+      break;
+    case TYPE_MODEL:
+      retTarget = new ModelTarget (in_tar_id, in_obs);
+      break;
+    case TYPE_OPORTUNITY:
+      retTarget = new OportunityTarget (in_tar_id, in_obs);
+      break;
+    case TYPE_ELLIPTICAL:
+      retTarget = new EllTarget (in_tar_id, in_obs);
+      break;
+    case TYPE_GRB:
+      retTarget = new TargetGRB (in_tar_id, in_obs);
+      break;
+    case TYPE_SWIFT_FOV:
+      retTarget = new TargetSwiftFOV (in_tar_id, in_obs);
+      break;
+    case TYPE_GPS:
+      retTarget = new TargetGps (in_tar_id, in_obs);
+      break;
+    default:
+      retTarget = new ConstTarget (in_tar_id, in_obs);
+      break;
+  }
+
+  ret = retTarget->load ();
+  if (ret)
   {
     syslog (LOG_ERR, "Cannot create target: %i sqlcode: %i %s",
-    db_tar_id, sqlerr->sqlcode, sqlerr->sqlerrm.sqlerrmc);
+    db_tar_id, sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+    EXEC SQL ROLLBACK;
+    delete retTarget;
+    return NULL;
   }
-  EXEC SQL ROLLBACK;
-  return NULL;
+  EXEC SQL COMMIT;
+  return retTarget;
 }

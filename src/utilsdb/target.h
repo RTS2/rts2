@@ -109,7 +109,8 @@ protected:
 public:
     Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ Target (void);
-
+  // that method is GUARANTIE to be called after target creating to load data from DB
+  virtual int load ();
   virtual int getScript (const char *device_name, char *buf);
   int getPosition (struct ln_equ_posn *pos)
   {
@@ -296,6 +297,7 @@ protected:
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
 public:
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
   virtual float getBonus ()
@@ -310,6 +312,7 @@ private:
   struct ln_ell_orbit orbit;
 public:
     EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
 };
@@ -379,6 +382,7 @@ private:
 public:
     ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ ModelTarget (void);
+  virtual int load ();
   virtual int beforeMove ();
   virtual int startSlew (struct ln_equ_posn *position);
   virtual int endObservation (int in_next_id);
@@ -390,6 +394,10 @@ class OportunityTarget:public ConstTarget
 public:
   OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual float getBonus ();
+  virtual int isContinues ()
+  {
+    return 1;
+  }
 };
 
 class LunarTarget:public Target
@@ -404,14 +412,21 @@ public:
 
 class TargetGRB:public ConstTarget
 {
+private:
   time_t grbDate;
   time_t lastUpdate;
+  int shouldUpdate;
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
   virtual int getScript (const char *deviceName, char *buf);
 public:
     TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int load ();
+  virtual int beforeMove ();
   virtual float getBonus ();
+  // some logic needed to distinguish states when GRB position change
+  // from last observation. there was update etc..
+  virtual int isContinues ();
 };
 
 /**
@@ -429,7 +444,7 @@ private:
   double swiftOnBonus;
 public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
-  int findPointing ();		// find Swift pointing for observation
+  virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startSlew (struct ln_equ_posn *position);
   virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..

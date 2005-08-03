@@ -8,12 +8,17 @@ EXEC SQL include sqlca;
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
 Target (in_tar_id, in_obs)
 {
+}
+
+int
+ConstTarget::load ()
+{
   EXEC SQL BEGIN DECLARE SECTION;
   double d_ra;
   double d_dec;
   float d_tar_priority;
   float d_tar_bonus;
-  int db_tar_id = in_tar_id;
+  int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
@@ -33,13 +38,14 @@ Target (in_tar_id, in_obs)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ConstTarget::ConstTarget");
-    throw &sqlca;
+    logMsgDb ("ConstTarget::load");
+    return -1;
   }
   position.ra = d_ra;
   position.dec = d_dec;
   tar_priority = d_tar_priority;
   tar_bonus = d_tar_bonus;
+  return Target::load ();
 }
 
 int
@@ -107,6 +113,11 @@ ConstTarget::selectedAsGood ()
 // EllTarget - good for commets and so on
 EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
+}
+
+int
+EllTarget::load ()
+{
   EXEC SQL BEGIN DECLARE SECTION;
   double ell_minpause;
   double ell_a;
@@ -117,7 +128,7 @@ EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_ta
   double ell_n;
   double ell_JD;
   double min_m;			// minimal magnitude
-  int db_tar_id = in_tar_id;
+  int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
@@ -143,7 +154,10 @@ EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_ta
   WHERE
     ell.tar_id = :db_tar_id;
   if (sqlca.sqlcode)
-    throw &sqlca;
+  {
+    logMsgDb ("EllTarget::load");
+    return -1;
+  }
   orbit.a = ell_a;
   orbit.e = ell_e;
   orbit.i = ell_i;
@@ -151,6 +165,7 @@ EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_ta
   orbit.omega = ell_omega;
   orbit.n = ell_n;
   orbit.JD = ell_JD;
+  return Target::load ();
 }
 
 int
@@ -419,8 +434,13 @@ FocusingTarget::getScript (const char *device_name, char *buf)
 
 ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
+}
+
+int
+ModelTarget::load ()
+{
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_tar_id = in_tar_id;
+  int d_tar_id = getTargetID ();
   float d_alt_start;
   float d_alt_stop;
   float d_alt_step;
@@ -458,7 +478,7 @@ ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarg
   if (sqlca.sqlcode)
   {
     logMsgDb ("ModelTarget::ModelTarget");
-    throw &sqlca;
+    return -1;
   }
   alt_start = d_alt_start;
   alt_stop = d_alt_stop;
@@ -473,6 +493,7 @@ ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarg
   
   srandom (time (NULL));
   calPosition ();
+  return ConstTarget::load ();
 }
 
 ModelTarget::~ModelTarget (void)
@@ -651,10 +672,16 @@ LunarTarget::getScript (const char *deviceName, char *buf)
 TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs) : 
 ConstTarget (in_tar_id, in_obs)
 {
+  shouldUpdate = 1;
+}
+
+int
+TargetGRB::load ()
+{
   EXEC SQL BEGIN DECLARE SECTION;
   long  db_grb_date;
   long  db_grb_last_update;
-  int db_tar_id = in_tar_id;
+  int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
@@ -668,11 +695,16 @@ ConstTarget (in_tar_id, in_obs)
   WHERE
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
-    throw &sqlca;
+  {
+    logMsgDb ("TargetGRB::load");
+    return -1;
+  }
   grbDate = db_grb_date; 
   // we don't expect grbDate to change much during observation,
   // so we will not update that in beforeMove (or somewhere else)
   lastUpdate = db_grb_last_update;
+  shouldUpdate = 0;
+  return ConstTarget::load ();
 }
 
 int
@@ -774,6 +806,16 @@ TargetGRB::getScript (const char *deviceName, char *buf)
   return 0;
 }
 
+int
+TargetGRB::beforeMove ()
+{
+  // update our position..
+  if (shouldUpdate)
+    endObservation (-1);
+  load ();
+  return 0;
+}
+
 float
 TargetGRB::getBonus ()
 {
@@ -797,20 +839,42 @@ TargetGRB::getBonus ()
   return ConstTarget::getBonus ();
 }
 
+int
+TargetGRB::isContinues ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  long  db_grb_last_update;
+  int db_tar_id = getTargetID ();
+  EXEC SQL END DECLARE SECTION;
+  // once we detect need to update, we need to update - stop the observation and start new
+  if (shouldUpdate)
+    return 0;
+
+  EXEC SQL SELECT
+    EXTRACT (EPOCH FROM grb_last_update)
+  INTO
+    :db_grb_last_update
+  FROM
+    grb
+  WHERE
+    tar_id = :db_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("TargetGRB::isContinues");
+    return -1;
+  }
+  return (lastUpdate == db_grb_last_update) ? 1 : 0;
+}
+
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
   int ret;
   swiftOnBonus = 0;
   target_id = TARGET_SWIFT_FOV;
-  ret = findPointing ();
-  if (ret)
-  {
-    throw (&sqlca);
-  }
 }
 
 int
-TargetSwiftFOV::findPointing ()
+TargetSwiftFOV::load ()
 {
   struct ln_hrz_posn testHrz;
   struct ln_equ_posn testEqu;
@@ -930,7 +994,7 @@ TargetSwiftFOV::considerForObserving (ObjectCheck * checker, double JD)
   struct ln_equ_posn curr_position;
   double gst = ln_get_mean_sidereal_time (JD);
 
-  findPointing ();
+  load ();
 
   if (swiftId < 0)
   {
@@ -976,7 +1040,7 @@ TargetSwiftFOV::beforeMove ()
 {
   int oldSwiftId = swiftId;
   // are we still the best swiftId on planet?
-  findPointing ();
+  load ();
   if (oldSwiftId != swiftId)
     endObservation (-1);  // startSlew will be called after move suceeded and will write new observation..
   return 0;
