@@ -73,6 +73,8 @@ private:
 
   int crossType;
 
+  char *focExe;
+
 protected:
     virtual void help ();
 
@@ -134,9 +136,6 @@ private:
   int windowHeight;
   int windowWidth;
 
-  // when 1, we are in focusing mode - not start next exposure before focus is calculated & changed
-  int focusing;
-
   int pixmapHeight;
   int pixmapWidth;
 
@@ -168,7 +167,8 @@ private:
   int crossType;
 
 public:
-  Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
+  Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master,
+		    const char *in_exe);
   virtual ~ Rts2xfocusCamera (void)
   {
     pthread_cancel (XeventThread);
@@ -180,7 +180,7 @@ public:
     switch (event->getType ())
       {
       case EVENT_START_EXPOSURE:
-	exposureCount = focusing ? 1 : -1;
+	exposureCount = (exe != NULL) ? 1 : -1;
 	// build window etc..
 	buildWindow ();
 	queExposure ();
@@ -199,8 +199,10 @@ public:
   void setCrossType (int in_crossType);
 };
 
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):Rts2DevClientCameraFoc
-  (in_connection)
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection,
+				    Rts2xfocus * in_master,
+				    const char *in_exe):
+Rts2DevClientCameraFoc (in_connection, in_exe)
 {
   master = in_master;
 
@@ -695,6 +697,8 @@ Rts2Client (argc, argv)
 
   crossType = 1;
 
+  focExe = NULL;
+
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
   addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
@@ -709,6 +713,8 @@ Rts2Client (argc, argv)
   addOption ('X', "cross", 1,
 	     "cross type (default to 1; possible values 0 - no cross, 1 - rectangles\n"
 	     "    2 - circles, 3 - BOOTES special");
+  addOption ('F', "imageprocess", 1,
+	     "image processing script (default to NULL - no image processing will be done");
 }
 
 Rts2xfocus::~Rts2xfocus (void)
@@ -771,6 +777,9 @@ Rts2xfocus::processOption (int in_opt)
     case 'X':
       crossType = atoi (optarg);
       break;
+    case 'F':
+      focExe = optarg;
+      break;
     default:
       return Rts2Client::processOption (in_opt);
     }
@@ -825,7 +834,7 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
     {
     case DEVICE_TYPE_CCD:
       Rts2xfocusCamera * cam;
-      cam = new Rts2xfocusCamera (conn, this);
+      cam = new Rts2xfocusCamera (conn, this, focExe);
       cam->setSaveImage (autoSave);
       cam->setCrossType (crossType);
       if (defCenter)

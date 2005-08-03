@@ -6,9 +6,25 @@
 
 #include <iostream>
 
-Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection):Rts2DevClientCameraImage
-  (in_connection)
+Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection,
+						const char *in_exe):
+Rts2DevClientCameraImage (in_connection)
 {
+  if (in_exe)
+    {
+      exe = new char[strlen (in_exe) + 1];
+      strcpy (exe, in_exe);
+    }
+  else
+    {
+      exe - NULL;
+    }
+}
+
+Rts2DevClientCameraFoc::~Rts2DevClientCameraFoc (void)
+{
+  if (exe)
+    delete exe;
 }
 
 void
@@ -19,18 +35,22 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 
   Rts2DevClientCameraImage::processImage (image);
 
-  Rts2ConnFocus *focCon = new Rts2ConnFocus (this, image);
-  ret = focCon->init ();
-  if (ret)
+  if (exe)
     {
-      delete focCon;
+      Rts2ConnFocus *focCon = new Rts2ConnFocus (this, image, exe);
+      ret = focCon->init ();
+      if (ret)
+	{
+	  delete focCon;
+	}
+      // after we finish, we will call focus routines..
+      connection->getMaster ()->addConnection (focCon);
     }
-  // after we finish, we will call focus routines..
-  connection->getMaster ()->addConnection (focCon);
 }
 
-Rts2ConnFocus::Rts2ConnFocus (Rts2DevClientCameraFoc * in_camera, Rts2Image * in_image):Rts2ConnFork (in_camera->getMaster (),
-	      "/home/petr/foc-test")
+Rts2ConnFocus::Rts2ConnFocus (Rts2DevClientCameraFoc * in_camera,
+			      Rts2Image * in_image, const char *in_exe):
+Rts2ConnFork (in_camera->getMaster (), in_exe)
 {
   img_path = new char[strlen (in_image->getImageName ()) + 1];
   strcpy (img_path, in_image->getImageName ());
@@ -65,6 +85,7 @@ Rts2ConnFocus::processLine ()
   if (ret == 2)
     {
       std::cout << "Get change: " << id << " " << change << std::endl;
+      // post it to focuser
     }
   return -1;
 }
