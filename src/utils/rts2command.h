@@ -140,6 +140,15 @@ public:
 		      double dec, double ra_err, double dec_err);
 };
 
+class Rts2CommandChangeFocus:public Rts2Command
+{
+private:
+  Rts2DevClientFocus * focuser;
+public:
+  Rts2CommandChangeFocus (Rts2DevClientFocus * in_focuser, int in_steps);
+  virtual int commandReturnFailed (int status);
+};
+
 class Rts2CommandExecNext:public Rts2Command
 {
 public:

@@ -215,6 +215,25 @@ Rts2Command (in_master)
   free (command);
 }
 
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus *
+						in_focuser, int in_steps):
+Rts2Command (in_focuser->getMaster ())
+{
+  char *msg;
+  focuser = in_focuser;
+  asprintf (&msg, "step %i", in_steps);
+  setCommand (msg);
+  free (msg);
+}
+
+int
+Rts2CommandChangeFocus::commandReturnFailed (int status)
+{
+  if (focuser)
+    focuser->focusingFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
 Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * in_master, int next_id):
 Rts2Command (in_master)
 {

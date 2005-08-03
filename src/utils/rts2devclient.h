@@ -113,9 +113,14 @@ public:
 
 class Rts2DevClientFocus:public Rts2DevClient
 {
+protected:
+  virtual void focusingStart ();
+  virtual void focusingEnd ();
 public:
-  Rts2DevClientFocus (Rts2Conn * in_connection);
-
+    Rts2DevClientFocus (Rts2Conn * in_connection);
+    virtual ~ Rts2DevClientFocus (void);
+  virtual void focusingFailed (int status);
+  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientPhot:public Rts2DevClient

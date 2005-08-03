@@ -319,6 +319,48 @@ Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
   addValue (new Rts2ValueInteger ("pos"));
 }
 
+Rts2DevClientFocus::~Rts2DevClientFocus (void)
+{
+  focusingFailed (DEVICE_ERROR_HW);
+}
+
+void
+Rts2DevClientFocus::focusingStart ()
+{
+}
+
+void
+Rts2DevClientFocus::focusingEnd ()
+{
+}
+
+void
+Rts2DevClientFocus::focusingFailed (int status)
+{
+  focusingEnd ();
+}
+
+void
+Rts2DevClientFocus::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("focuser"))
+    {
+      switch (state->getValue () & FOC_MASK_FOCUSING)
+	{
+	case FOC_FOCUSING:
+	  focusingStart ();
+	  break;
+	case FOC_SLEEPING:
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    focusingEnd ();
+	  else
+	    focusingFailed (state->getValue () & DEVICE_ERROR_MASK);
+	  break;
+	}
+    }
+  Rts2DevClient::stateChanged (state);
+}
+
 Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
