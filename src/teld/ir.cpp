@@ -3,14 +3,10 @@
 #endif
 
 #include <errno.h>
-#include <signal.h>
 #include <string.h>
-#include <fcntl.h>
 #include <math.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <libnova/libnova.h>
 
 #include "status.h"
@@ -19,24 +15,59 @@
 #include <cstdio>
 #include <cstdarg>
 #include <opentpl/client.h>
+#include <list>
 
 using namespace OpenTPL;
 
 #define LONGITUDE -3.3847222
 #define LATITUDE 37.064167
 #define ALTITUDE 2896
-#define LOOP_DELAY 500000
+
+class ErrorTime
+{
+  time_t etime;
+  int error;
+public:
+    ErrorTime (int in_error);
+  int clean (time_t now);
+  int isError (int in_error);
+};
+
+ErrorTime::ErrorTime (int in_error)
+{
+  error = in_error;
+  time (&etime);
+}
+
+int
+ErrorTime::clean (time_t now)
+{
+  if (now - etime > 600)
+    return 1;
+  return 0;
+}
+
+int
+ErrorTime::isError (int in_error)
+{
+  if (error = in_error)
+    {
+      time (&etime);
+      return 1;
+    }
+  return 0;
+}
 
 class Rts2DevTelescopeIr:public Rts2DevTelescope
 {
 private:
-  char *ir_ip;
+  std::string * ir_ip;
   int ir_port;
   Client *tplc;
   int timeout;
-  float cover;
+  double cover;
   enum
-  { OPEN, OPENING, CLOSING, CLOSED } cover_state;
+  { OPENED, OPENING, CLOSING, CLOSED } cover_state;
 
   struct ln_equ_posn target;
 
@@ -52,11 +83,20 @@ private:
   virtual int coverClose ();
   virtual int coverOpen ();
 
+  void addError (int in_error);
+
+  void checkErrors ();
+  void checkCover ();
+  void checkPower ();
+
+    std::list < ErrorTime * >errorcodes;
+
 public:
     Rts2DevTelescopeIr (int argc, char **argv);
     virtual ~ Rts2DevTelescopeIr (void);
   virtual int processOption (int in_opt);
   virtual int init ();
+  virtual int idle ();
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
@@ -66,9 +106,9 @@ public:
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();
-  virtual int stop ();
+  virtual int stopMove ();
   virtual int changeMasterState (int new_state);
-  virtual int idle ();
+  virtual int resetMount (resetStates reset_mount);
 };
 
 template < typename T > int
@@ -79,11 +119,11 @@ Rts2DevTelescopeIr::tpl_get (const char *name, T & val, int *status)
   if (!*status)
     {
       Request & r = tplc->Get (name, false);
-      cstatus = r.Wait ();
+      cstatus = r.Wait (USEC_SEC);
 
       if (cstatus != TPLC_OK)
 	{
-	  printf (" error %i\n", cstatus);
+	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_get error %i\n", cstatus);
 	  *status = 1;
 	}
 
@@ -109,15 +149,6 @@ Rts2DevTelescopeIr::tpl_set (const char *name, T val, int *status)
   if (!*status)
     {
       tplc->Set (name, Value (val), true);	// change to set...?
-      //Request &r = tplc->Set(name, Value(val), false ); // change to set...?
-      //cstatus = r.Wait();
-
-      if (cstatus != TPLC_OK)
-	{
-	  printf (" error %i\n", cstatus);
-	  *status = 1;
-	}
-      //r.Dispose();
     }
   return *status;
 }
@@ -134,7 +165,8 @@ Rts2DevTelescopeIr::tpl_setw (const char *name, T val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  printf (" error %i\n", cstatus);
+	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_setw error %i\n",
+		  cstatus);
 	  *status = 1;
 	}
       r.Dispose ();
@@ -146,11 +178,12 @@ int
 Rts2DevTelescopeIr::coverClose ()
 {
   int status = 0;
-  if (cover_state = CLOSED)
+  if (cover_state == CLOSED)
     return 0;
   status = tpl_set ("COVER.TARGETPOS", 0, &status);
   status = tpl_set ("COVER.POWER", 1, &status);
   cover_state = CLOSING;
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::coverClose status: %i", status);
   return status;
 }
 
@@ -163,6 +196,7 @@ Rts2DevTelescopeIr::coverOpen ()
   status = tpl_set ("COVER.TARGETPOS", 1, &status);
   status = tpl_set ("COVER.POWER", 1, &status);
   cover_state = OPENING;
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::coverOpen status: %i", status);
   return status;
 }
 
@@ -193,7 +227,7 @@ Rts2DevTelescopeIr::processOption (int in_opt)
   switch (in_opt)
     {
     case 'I':
-      ir_ip = optarg;
+      ir_ip = new std::string (optarg);
       break;
     case 'P':
       ir_port = atoi (optarg);
@@ -219,7 +253,7 @@ Rts2DevTelescopeIr::init ()
       return -1;
     }
 
-  tplc = new Client (ir_ip, ir_port, 2000);
+  tplc = new Client (*ir_ip, ir_port);
 
   syslog (LOG_DEBUG,
 	  "Status: ConnID = %i, connected: %s, authenticated %s, Welcome Message = %s",
@@ -242,6 +276,204 @@ Rts2DevTelescopeIr::init ()
   return 0;
 }
 
+void
+Rts2DevTelescopeIr::addError (int in_error)
+{
+  char *txt;
+  std::string desc;
+  std::list < ErrorTime * >::iterator errIter;
+  ErrorTime *errt;
+  int status;
+  for (errIter = errorcodes.begin (); errIter != errorcodes.end (); errIter++)
+    {
+      errt = *errIter;
+      if (errt->isError (in_error))
+	return;
+    }
+  // new error
+  asprintf (&txt, "CABINET.STATUS.TEXT[%i]", in_error & 0x00ffffff);
+  status = 0;
+  status = tpl_get (txt, desc, &status);
+  if (status)
+    syslog (LOG_ERR,
+	    "Rts2DevTelescopeIr::checkErrors Telescope getting error: %i sev:%x err:%x",
+	    in_error, in_error & 0xff000000, in_error & 0x00ffffff);
+  else
+    syslog (LOG_DEBUG,
+	    "Rts2DevTelescopeIr::checkErrors Telescope sev: %x err: %x desc: %s",
+	    in_error & 0xff000000, in_error & 0x00ffffff, desc.c_str ());
+  free (txt);
+  errt = new ErrorTime (in_error);
+  errorcodes.push_back (errt);
+}
+
+void
+Rts2DevTelescopeIr::checkErrors ()
+{
+  int status = 0;
+  int listCount;
+  time_t now;
+  std::list < ErrorTime * >::iterator errIter;
+  ErrorTime *errt;
+
+  status = tpl_get ("CABINET.STATUS.LIST_COUNT", listCount, &status);
+  if (status == 0 && listCount > 0)
+    {
+      // print errors to log & ends..
+      string::size_type pos = 1;
+      string::size_type lastpos = 1;
+      std::string list;
+      status = tpl_get ("CABINET.STATUS.LIST", list, &status);
+      if (status == 0)
+	syslog (LOG_ERR,
+		"Rts2DevTelescopeIr::checkErrors Telescope errors: %s",
+		list.c_str ());
+      // decode errors
+      while (true)
+	{
+	  int errn;
+	  if (lastpos > list.size ())
+	    break;
+	  pos = list.find (',', lastpos);
+	  if (pos == string::npos)
+	    pos = list.find ('"', lastpos);
+	  if (pos == string::npos)
+	    break;		// we reach string end..
+	  errn = atoi (list.substr (lastpos, pos).c_str ());
+	  addError (errn);
+	  lastpos = pos + 1;
+	}
+      tpl_set ("CABINET.STATUS.CLEAR", 1, &status);
+    }
+  // clean from list old errors..
+  time (&now);
+  for (errIter = errorcodes.begin (); errIter != errorcodes.end ();)
+    {
+      errt = *errIter;
+      if (errt->clean (now))
+	{
+	  errIter = errorcodes.erase (errIter);
+	  delete errt;
+	}
+      else
+	{
+	  errIter++;
+	}
+    }
+}
+
+void
+Rts2DevTelescopeIr::checkCover ()
+{
+  int status = 0;
+  switch (cover_state)
+    {
+    case OPENING:
+      tpl_get ("COVER.REALPOS", cover, &status);
+      if (cover == 1.0)
+	{
+	  tpl_set ("COVER.POWER", 0, &status);
+	  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkCover opened %i",
+		  status);
+	  cover_state = OPENED;
+	  break;
+	}
+      setTimeout (USEC_SEC);
+      break;
+    case CLOSING:
+      tpl_get ("COVER.REALPOS", cover, &status);
+      if (cover == 0.0)
+	{
+	  tpl_set ("COVER.POWER", 0, &status);
+	  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkCover closed %i",
+		  status);
+	  cover_state = CLOSED;
+	  break;
+	}
+      setTimeout (USEC_SEC);
+      break;
+    }
+}
+
+void
+Rts2DevTelescopeIr::checkPower ()
+{
+  int status;
+  double power_state;
+  double referenced;
+  status = 0;
+  status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevTelescopeIr::checkPower tpl_ret: %i", status);
+      return;
+    }
+  if (power_state == 0)
+    {
+      status = tpl_setw ("CABINET.POWER", 1, &status);
+      status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
+      if (status)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevTelescopeIr::checkPower set power ot 1 ret: %i",
+		  status);
+	  return;
+	}
+      while (power_state == 0.5)
+	{
+	  syslog (LOG_DEBUG,
+		  "Rts2DevTelescopeIr::checkPower waiting for power up");
+	  sleep (5);
+	  status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
+	  if (status)
+	    {
+	      syslog (LOG_ERR,
+		      "Rts2DevTelescopeIr::checkPower power_state ret: %i",
+		      status);
+	      return;
+	    }
+	}
+    }
+  while (true)
+    {
+      status = tpl_get ("CABINET.REFERENCED", referenced, &status);
+      if (status)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevTelescopeIr::checkPower get referenced: %i",
+		  status);
+	  return;
+	}
+      if (referenced == 1)
+	break;
+      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkPower referenced: %f",
+	      referenced);
+      if (referenced == 0)
+	{
+	  int reinit = (nextReset == RESET_COLD_START ? 1 : 0);
+	  status = tpl_set ("CABINET.REINIT", reinit, &status);
+	  if (status)
+	    {
+	      syslog (LOG_ERR, "Rts2DevTelescopeIr::checkPower reinit: %i",
+		      status);
+	      return;
+	    }
+	}
+      sleep (1);
+    }
+}
+
+int
+Rts2DevTelescopeIr::idle ()
+{
+  // check for power..
+  checkPower ();
+  // check for errors..
+  checkErrors ();
+  checkCover ();
+  return Rts2DevTelescope::idle ();
+}
+
 int
 Rts2DevTelescopeIr::ready ()
 {
@@ -251,25 +483,30 @@ Rts2DevTelescopeIr::ready ()
 int
 Rts2DevTelescopeIr::baseInfo ()
 {
+  std::string serial;
+  int status = 0;
+
   telLongtitude = LONGITUDE;
   telLatitude = LATITUDE;
   telAltitude = ALTITUDE;
-  telParkDec = 0;
+  tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
+  strncpy (telSerialNumber, serial.c_str (), 64);
   return 0;
 }
 
 double
 Rts2DevTelescopeIr::get_loc_sid_time ()
 {
-  return 15 * ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
-    LONGITUDE;
+  return ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
+    telLongtitude / 15.0;
 }
 
 int
 Rts2DevTelescopeIr::info ()
 {
-  double zd;
+  double zd, az;
   int status = 0;
+  int track = 0;
 
   if (!(tplc->IsAuth () && tplc->IsConnected ()))
     return -1;
@@ -281,18 +518,42 @@ Rts2DevTelescopeIr::info ()
   status = tpl_get ("POINTING.CURRENT.DEC", telDec, &status);
   if (status)
     return -1;
+  status = tpl_get ("POINTING.TRACK", track, &status);
+  if (status)
+    return -1;
 
   telSiderealTime = get_loc_sid_time ();
   telLocalTime = 0;
 
   status = tpl_get ("ZD.REALPOS", zd, &status);
+  status = tpl_get ("AZ.REALPOS", az, &status);
+
+  if (!track)
+    {
+      // telRA, telDec are invalid: compute them from ZD/AZ
+      struct ln_hrz_posn hrz;
+      struct ln_lnlat_posn observer;
+      struct ln_equ_posn curr;
+      hrz.az = az;
+      hrz.alt = 90 - zd;
+      observer.lng = telLongtitude;
+      observer.lat = telLatitude;
+      ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
+      telRa = curr.ra;
+      telDec = curr.dec;
+      telFlip = 0;
+    }
+  else
+    {
+      telFlip = 0;
+    }
+
   if (status)
     return -1;
 
-  telFlip = (zd < 0);
 
-  telAxis[0] = nan ("f");
-  telAxis[1] = nan ("f");
+  telAxis[0] = az;
+  telAxis[1] = zd;
 
   return 0;
 }
@@ -307,7 +568,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 
   status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
-  status = tpl_setw ("POINTING.TRACK", 4, &status);
+  status = tpl_set ("POINTING.TRACK", 4, &status);
 
   if (status)
     return -1;
@@ -352,13 +613,22 @@ Rts2DevTelescopeIr::endMove ()
 int
 Rts2DevTelescopeIr::startPark ()
 {
-  return startMove (get_loc_sid_time () - 30, 40);
+  int status = 0;
+  // Park to south+zenith
+  status = tpl_set ("POINTING.TRACK", 0, &status);
+  usleep (100000);		//0.1s
+  status = tpl_setw ("AZ.TARGETPOS", 0, &status);
+  status = tpl_setw ("ZD.TARGETPOS", 0, &status);
+
+  if (status)
+    return -1;
+  return 0;
 }
 
 int
 Rts2DevTelescopeIr::isParking ()
 {
-  return isMoving ();
+  return -2;
 }
 
 int
@@ -368,7 +638,7 @@ Rts2DevTelescopeIr::endPark ()
 }
 
 int
-Rts2DevTelescopeIr::stop ()
+Rts2DevTelescopeIr::stopMove ()
 {
   info ();
   startMove (telRa, telDec);
@@ -376,20 +646,13 @@ Rts2DevTelescopeIr::stop ()
 }
 
 int
-Rts2DevConnTelescope::commandAuthorized ()
-{
-  if (isCommand ("cover"))
-    {
-
-    }
-return Rts2}
-
-int
 Rts2DevTelescopeIr::changeMasterState (int new_state)
 {
   switch (new_state)
     {
+    case SERVERD_DUSK:
     case SERVERD_NIGHT:
+    case SERVERD_DAWN:
       return coverOpen ();
     default:
       return coverClose ();
@@ -398,52 +661,46 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
 }
 
 int
-Rts2DevTelescopeIr::idle ()
+Rts2DevTelescopeIr::resetMount (resetStates reset_mount)
 {
-  int status;
-  switch (cover_state)
+  int status = 0;
+  int power = 0;
+  double power_state;
+  status = tpl_setw ("CABINET.POWER", power, &status);
+  if (status)
     {
-    case OPENING:
-      tpl_get ("COVER.REALPOS", cover, &state);
-      if (cover == 1.0)
-	{
-	  tpl_set ("COVER.POWER", 0, &state);
-	  cover_state = OPENED;
-	  break;
-	}
-      setTimeout (USEC_SEC);
-      break;
-    case CLOSING:
-      tpl_get ("COVER.REALPOS", cover, &state);
-      if (cover == 0.0)
-	{
-	  tpl_set ("COVER.POWER", 0, &state);
-	  cover_state = OPENED;
-	  break;
-	}
-      setTimeout (USEC_SEC);
-      break;
+      syslog (LOG_ERR, "Rts2DevTelescopeIr::resetMount powering off: %i",
+	      status);
+      return -1;
     }
-  return Rts2DevTelescope::idle ();
-}
-
-Rts2DevTelescopeIr *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
+  while (true)
+    {
+      syslog (LOG_DEBUG,
+	      "Rts2DevTelescopeIr::resetMount waiting for power down");
+      sleep (5);
+      status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
+      if (status)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevTelescopeIr::resetMount power_state ret: %i",
+		  status);
+	  return -1;
+	}
+      if (power_state == 0 || power_state == -1)
+	{
+	  syslog (LOG_DEBUG,
+		  "Rts2DevTelescopeIr::resetMount final power_state : %f",
+		  power_state);
+	  break;
+	}
+    }
+  return Rts2DevTelescope::resetMount (reset_mount);
 }
 
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevTelescopeIr (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
+  Rts2DevTelescopeIr *device = new Rts2DevTelescopeIr (argc, argv);
 
   int ret;
   ret = device->init ();
