@@ -44,6 +44,10 @@ public:
   {
     return arg;
   }
+  void setArg (void *in_arg)
+  {
+    arg = in_arg;
+  }
 };
 
 #endif /*! __RTS2_EVENT__ */

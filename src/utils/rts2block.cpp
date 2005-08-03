@@ -338,12 +338,6 @@ Rts2Conn::receive (fd_set * set)
 	      processLine ();
 	      command_start = buf_top;
 	    }
-	  else
-	    {
-	      syslog (LOG_ERR,
-		      "Error in comm - *buf_top is not (expected) \n, it's %c; full buf: %s buf_top: %s",
-		      *buf_top, buf, buf_top);
-	    }
 	}
       if (buf != command_start)
 	{
