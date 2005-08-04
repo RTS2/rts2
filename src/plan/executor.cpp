@@ -329,6 +329,20 @@ Rts2Executor::changeMasterState (int new_state)
 	  switchTarget ();
 	}
       break;
+    case SERVERD_MORNING:
+    case SERVERD_DAY:
+      // we need to stop observation that is continuus
+      // and at the mean time kept pointer to it, so we can delete it
+      // first we free nextTarget pointer..
+      if (nextTarget)
+	{
+	  delete nextTarget;
+	}
+      // that will guaranite that in isContinues call, we will find currentTarget
+      // NULL, so we will call switchTarget, which will do the job..
+      // delete on nextTarget will call endObservation, so we will end observation of current target
+      nextTarget = currentTarget;
+      currentTarget = NULL;
     }
   return Rts2DeviceDb::changeMasterState (new_state);
 }
@@ -397,8 +411,6 @@ Rts2Executor::setGrb (int grbId)
 {
   Target *grbTarget;
   grbTarget = createTarget (grbId, observer);
-  struct ln_equ_posn currPosition;
-  struct ln_equ_posn grbPosition;
   struct ln_hrz_posn grbHrz;
   int ret;
 
@@ -426,10 +438,8 @@ Rts2Executor::setGrb (int grbId)
       switchTarget ();
       return 0;
     }
-  currentTarget->getPosition (&currPosition);
-  grbTarget->getPosition (&grbPosition);
-  if (ln_get_angular_separation (&grbPosition, &currPosition) >=
-      grb_sep_limit)
+  ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit);
+  if (ret == 0)
     {
       return setNow (grbTarget);
     }
