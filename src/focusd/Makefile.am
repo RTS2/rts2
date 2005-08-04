@@ -12,3 +12,10 @@ rts2_focusd_robofocus_LDFLAGS = ../utils/librts2block.a
 
 rts2_focusd_dummy_SOURCES = focusd.cpp dummy.cpp
 rts2_focusd_dummy_LDFLAGS = ../utils/librts2block.a
+
+if OPENTPL
+bin_PROGRAMS += rts2-focusd-ir
+rts2_focusd_ir_SOURCES = focusd.cpp ir.cpp
+rts2_focusd_ir_LDFLAGS = @LIB_OPENTPL@ @LIB_PTHREAD@ @LIB_M@ @LIB_CFITSIO@ @LIB_NOVA@ ../utils/librts2block.a
+rts2_focusd_ir_CPPFLAGS = -D HAVE_SYS_IPC_H @INC_OPENTPL@
+endif
