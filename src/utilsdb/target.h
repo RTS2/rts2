@@ -98,16 +98,16 @@ protected:
   virtual int getDBScript (const char *camera_name, char *script);
 
   // print nice formated log strings
-  void logMsg (const char *message);
   void logMsg (const char *message, int num);
   void logMsg (const char *message, long num);
   void logMsg (const char *message, double num);
   void logMsg (const char *message, const char *val);
-  void logMsgDb (const char *message);
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
 public:
     Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ Target (void);
+  void logMsg (const char *message);
+  void logMsgDb (const char *message);
   // that method is GUARANTIE to be called after target creating to load data from DB
   virtual int load ();
   virtual int getScript (const char *device_name, char *buf);
@@ -320,15 +320,35 @@ public:
   virtual int getRST (struct ln_rst_time *rst, double jd);
 };
 
+class DarkTarget;
+
+class PossibleDarks
+{
+private:
+  char *deviceName;
+  // 
+  int defaultDark ();
+  int dbDark ();
+  // we will need temperature as well
+    std::list < float >dark_exposures;
+  DarkTarget *target;
+public:
+    PossibleDarks (DarkTarget * in_target, const char *in_deviceName);
+    virtual ~ PossibleDarks (void);
+  int getScript (char *buf);
+  int isName (const char *in_deviceName);
+};
+
 class DarkTarget:public Target
 {
 private:
   struct ln_equ_posn currPos;
-  int defaultDark (const char *deviceName, char *buf);
+    std::list < PossibleDarks * >darkList;
 protected:
     virtual int getScript (const char *deviceName, char *buf);
 public:
     DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    virtual ~ DarkTarget (void);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startSlew (struct ln_equ_posn *position);
   virtual int isContinues ()

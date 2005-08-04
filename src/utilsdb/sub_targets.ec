@@ -204,111 +204,76 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
   return ln_get_ell_body_rst (JD, observer, &orbit, rst);
 }
 
-int
-DarkTarget::defaultDark (const char *deviceName, char *buf)
+PossibleDarks::PossibleDarks (DarkTarget *in_target, const char *in_deviceName)
 {
-  char dark_exposures [1000];
+  deviceName = new char [strlen (in_deviceName) + 1];
+  strcpy (deviceName, in_deviceName);
+  target = in_target;
+}
+
+PossibleDarks::~PossibleDarks ()
+{
+  delete[] deviceName;
+  dark_exposures.clear ();
+}
+
+int
+PossibleDarks::defaultDark ()
+{
+  char dark_exps [1000];
   char *tmp_c;
-  char *tmp_c2;
   char *tmp_s;
+  float exp;
   int ret;
-  int was_blank;
-  int exp_count;
-  int exp_count2;
 
   Rts2Config *config;
   config = Rts2Config::instance ();
-  ret = config->getString (deviceName, "darks", dark_exposures, 1000);
+  ret = config->getString (deviceName, "darks", dark_exps, 1000);
   if (ret)
     {
-      strcpy (buf, "D 15");
+      dark_exposures.push_back (15);
       return 0;
     }
   // get the getCalledNum th observation
   // count how many exposures are in dark list..
-  tmp_s = dark_exposures;
-  while (*tmp_s && isblank (*tmp_s))
-    tmp_s++;
-  tmp_c = tmp_s;
-  was_blank = 1;
-  exp_count = 1;
-  while (*tmp_c)
-    {
-      switch (was_blank)
-        {
-          case 1:
-            if (!isblank (*tmp_c))
-	      was_blank = 0;
-	    break;
-          case 0:
-            if (isblank (*tmp_c))
-  	      {
-	        was_blank = 1;
-	        exp_count++;
-	      }
-	    break;
-        }
-      tmp_c++;
-    }
-  if (exp_count == 0)
+  tmp_s = dark_exps;
+  while (*tmp_s)
   {
-    strcpy (buf, "D 17");
-    return 0;
+    // skip blanks..
+    while (*tmp_s && isblank (*tmp_s))
+      tmp_s++;
+    if (!*tmp_s)
+      break;
+    exp = strtod (tmp_s, &tmp_c);
+    if (tmp_s == tmp_c)
+    {
+      // error occured
+      target->logMsg ("PossibleDarks::defaultDark invalid entry");
+    }
+    else
+    {
+      dark_exposures.push_back (exp);
+    }
+    tmp_s = tmp_c;
+    if (!*tmp_s)
+      break;
+    tmp_s++;
   }
-  exp_count = getCalledNum () % exp_count;
-  was_blank = 0;
-  exp_count2 = 0;
-  tmp_c = tmp_s;
-  while (*tmp_c)
-    {
-      switch (was_blank)
-        {
-          case 1:
-            if (!isblank (*tmp_c))
-              {
-                was_blank = 0;
-              }
-            break;
-          case 0:
-            if (isblank (*tmp_c))
-	      {
-	        was_blank = 1;
-	        exp_count2++;
-	      }
-	    break;
-        }
-      if (exp_count == exp_count2)
-        break;
-      tmp_c++;
-    }
-  tmp_c2 = buf;
-  *tmp_c2 = 'D';
-  tmp_c2++;
-  *tmp_c2 = ' ';
-  *tmp_c2++;
-  while (*tmp_c)
-    {
-      if (!isblank (*tmp_c))
-        {
-          *tmp_c2 = *tmp_c;
-        }
-      else
-        break;
-      tmp_c++;
-      tmp_c2++;
-    }
-  *tmp_c2 = '\0'; 
+  if (dark_exposures.size () == 0)
+    dark_exposures.push_back (17);
   return 0;
 }
 
 int
-DarkTarget::getScript (const char *deviceName, char *buf)
+PossibleDarks::dbDark ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   VARCHAR d_camera_name[DEVICE_NAME_SIZE];
   float d_img_exposure;
   int d_dark_count;
   EXEC SQL END DECLARE SECTION;
+
+  int ret;
 
   strncpy (d_camera_name.arr, deviceName, DEVICE_NAME_SIZE);
   d_camera_name.len = strlen (deviceName);
@@ -355,34 +320,109 @@ DarkTarget::getScript (const char *deviceName, char *buf)
             AND now () - dark_date < '1 day'
 	)
       ORDER BY
-        dark_count DESC,
-        img_exposure DESC;
+        img_exposure DESC,
+	dark_count DESC;
   EXEC SQL OPEN dark_target;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("DarkTarget::getScript cannot open cursor dark_target, get default 10 sec darks");
+    target->logMsgDb ("PossibleDarks::getDb cannot open cursor dark_target, get default 10 sec darks");
     EXEC SQL CLOSE dark_target;
-    return defaultDark (deviceName, buf);
+    return defaultDark ();
   }
-  EXEC SQL FETCH next FROM dark_target INTO
-    :d_img_exposure,
-    :d_dark_count;
-  if (sqlca.sqlcode)
+  while (true)
   {
-    logMsgDb ("DarkTarget::getScript cannot get entry for darks, get default 10 sec darks");
-    EXEC SQL CLOSE dark_target;
-    return defaultDark (deviceName, buf);
+    EXEC SQL FETCH next FROM dark_target INTO
+      :d_img_exposure,
+      :d_dark_count;
+    if (sqlca.sqlcode)
+    {
+      EXEC SQL CLOSE dark_target;
+      EXEC SQL ROLLBACK;
+      if (dark_exposures.size () == 0)
+      {
+        target->logMsgDb ("PossibleDarks::getDb cannot get entry for darks, get default 10 sec darks");
+        defaultDark ();
+	break;
+      }
+      else
+      {
+        break;
+      }
+    }
+    dark_exposures.push_back (d_img_exposure);
   }
-  // we found (finnaly) dark..let's make the script
-  sprintf (buf, "D %f", d_img_exposure);
-  EXEC SQL CLOSE dark_target;
   return 0;
+}
+
+int
+PossibleDarks::getScript (char *buf)
+{
+  char *buf_top;
+  std::list <float>::iterator dark_exp;
+  if (dark_exposures.size () == 0)
+  {
+    dbDark ();
+  }
+  buf_top = buf;
+  for (dark_exp = dark_exposures.begin (); dark_exp != dark_exposures.end (); dark_exp++)
+  {
+    float dark_ex = *dark_exp;
+    int len = sprintf (buf_top, "D %f", dark_ex);
+    buf_top += len;
+    *buf_top = ' ';
+    buf_top++;
+  }
+  if (buf_top != buf)
+    *(--buf_top) = '\0';
+  return 0;
+}
+
+int
+PossibleDarks::isName (const char *in_deviceName)
+{
+  return !strcmp (in_deviceName, deviceName);
 }
 
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
 {
   currPos.ra = 0;
   currPos.dec = 0;
+}
+
+DarkTarget::~DarkTarget ()
+{
+  std::list <PossibleDarks *>::iterator dark_iter;
+  for (dark_iter = darkList.begin (); dark_iter != darkList.end (); dark_iter++)
+  {
+    PossibleDarks *darkpos;
+    darkpos = *dark_iter;
+    delete darkpos;
+  }
+  darkList.clear ();
+}
+
+int
+DarkTarget::getScript (const char *deviceName, char *buf)
+{
+  PossibleDarks *darkEntry = NULL;
+  // try to find our script...
+  std::list <PossibleDarks *>::iterator dark_iter;
+  for (dark_iter = darkList.begin (); dark_iter != darkList.end (); dark_iter++)
+  {
+    PossibleDarks *darkpos;
+    darkpos = *dark_iter;
+    if (darkpos->isName (deviceName))
+    {
+      darkEntry = darkpos;
+      break;
+    }
+  }
+  if (!darkEntry)
+  {
+    darkEntry = new PossibleDarks (this, deviceName);
+    darkList.push_back (darkEntry);
+  }
+  return darkEntry->getScript (buf);
 }
 
 int
