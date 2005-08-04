@@ -84,7 +84,6 @@ private:
   int img_id;
 
   int type;			// light, dark, flat, flat_dark
-  char obs_type;		// SKY_SURVEY, GBR, .. 
   int selected;			// how many times startObservation was called
 
   int startCalledNum;		// how many times startObservation was called - good to know for targets
@@ -233,6 +232,10 @@ public:
   {
     return -1;
   }
+  // returns 1 when we are almost the same target, so 
+  // interruption of this target is not necessary
+  // otherwise (when interruption is necessary) returns 0
+  virtual int compareWithTarget (Target * in_target, double in_sep_limit);
   virtual int startSlew (struct ln_equ_posn *position);
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
@@ -415,6 +418,7 @@ class TargetGRB:public ConstTarget
 private:
   time_t grbDate;
   time_t lastUpdate;
+  int gcnPacketType;		// gcn packet from last update
   int shouldUpdate;
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
@@ -422,6 +426,8 @@ protected:
 public:
     TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int load ();
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
   virtual int beforeMove ();
   virtual float getBonus ();
   // some logic needed to distinguish states when GRB position change

@@ -80,6 +80,15 @@ Target::load ()
 }
 
 int
+Target::compareWithTarget (Target *in_target, double in_sep_limit)
+{
+  struct ln_equ_posn other_position;
+  in_target->getPosition (&other_position);
+
+  return (getDistance (&other_position) < in_sep_limit);
+}
+
+int
 Target::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -335,13 +344,9 @@ err:
 int
 Target::getScript (const char *device_name, char *buf)
 {
-  char obs_type_str[2];
   int ret;
   Rts2Config *config;
   config = Rts2Config::instance ();
-
-  obs_type_str[0] = obs_type;
-  obs_type_str[1] = 0;
 
   ret = getDBScript (device_name, buf);
   if (!ret)

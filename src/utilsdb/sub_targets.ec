@@ -681,15 +681,18 @@ TargetGRB::load ()
   EXEC SQL BEGIN DECLARE SECTION;
   long  db_grb_date;
   long  db_grb_last_update;
+  int db_grb_type;
   int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
     EXTRACT (EPOCH FROM grb_date),
-    EXTRACT (EPOCH FROM grb_last_update)
+    EXTRACT (EPOCH FROM grb_last_update),
+    grb_type
   INTO
     :db_grb_date,
-    :db_grb_last_update
+    :db_grb_last_update,
+    :db_grb_type
   FROM
     grb
   WHERE
@@ -703,8 +706,43 @@ TargetGRB::load ()
   // we don't expect grbDate to change much during observation,
   // so we will not update that in beforeMove (or somewhere else)
   lastUpdate = db_grb_last_update;
+  gcnPacketType = db_grb_type;
   shouldUpdate = 0;
   return ConstTarget::load ();
+}
+
+int
+TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  time_t now;
+  ln_get_timet_from_julian (JD, &now);
+  // it's SWIFT ALERT, ra&dec are S/C ra&dec
+  if (gcnPacketType == 60 && (now - lastUpdate < 3600))
+  {
+    struct ln_hrz_posn hrz;
+    getAltAz (&hrz, JD);
+    if (hrz.alt > -20 && hrz.alt < 35)
+    {
+      hrz.alt = 35;
+      ln_get_equ_from_hrz (&hrz, observer, JD, pos);
+      return 0;
+    }
+  }
+  return ConstTarget::getPosition (pos, JD);
+}
+
+int
+TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
+{
+  // when it's SWIFT GRB and we are currently observing Swift burst, don't interrupt us
+  // that's good only for WF instruments which observe Swift FOV
+  if (in_target->getTargetID () == TARGET_SWIFT_FOV && gcnPacketType >= 60 && gcnPacketType <= 90)
+  {
+    struct ln_equ_posn other_position;
+    in_target->getPosition (&other_position);
+    return (getDistance (&other_position) < 4 * in_sep_limit);
+  }
+  return ConstTarget::compareWithTarget (in_target, in_sep_limit);
 }
 
 int
@@ -822,6 +860,20 @@ TargetGRB::getBonus ()
   // time from GRB
   time_t now;
   time (&now);
+  // special SWIFT handling..
+  // last packet we have is SWIFT_ALERT..
+  switch (gcnPacketType)
+    {
+      case 60:
+        // we don't get ACK | position within 1 hour..drop our priority to some minumu
+        if (now - grbDate > 3600)
+          return 1;
+        break;
+      case 62:
+        if (now - lastUpdate > 1800)
+          return -1;
+	break;
+    }
   if (now - grbDate < 86400)
   {
     // < 24 hour post burst
