@@ -223,7 +223,7 @@ Rts2Client::getMasterState (char buf[20])
       strcpy (buf, "OFF");
       return;
     }
-  if ((masterState & SERVERD_STATUS_MASK) == SERVERD_STANDBY)
+  if ((masterState & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
     {
       strcpy (buf, "standby ");
     }
