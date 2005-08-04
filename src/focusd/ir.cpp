@@ -44,8 +44,6 @@ public:
   virtual int info ();
   virtual int stepOut (int num);
   virtual int isFocusing ();
-//  virtual int focus ();
-//  virtual int autoFocus (double low, double high, double step);
 };
 
 template < typename T > int
@@ -236,7 +234,7 @@ Rts2DevFocuserIr::stepOut (int num)
       syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set POWER to 1");
     }
   status = tpl_get ("FOCUS.OFFSET", offset, &status);
-  offset += num / 1000.0;
+  offset += (double) num / 1000.0;
   status = tpl_setw ("FOCUS.OFFSET", offset, &status);
   if (status)
     {
