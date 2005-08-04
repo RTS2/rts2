@@ -70,6 +70,7 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 
   if (exe)
     {
+      image->saveImage ();
       Rts2ConnFocus *focCon = new Rts2ConnFocus (this, image, exe);
       ret = focCon->init ();
       if (ret)
@@ -162,6 +163,10 @@ Rts2ConnFocus::processLine ()
       std::cout << "Get change: " << id << " " << change << std::endl;
       camera->changeFocus (change);
       // post it to focuser
+    }
+  else
+    {
+      std::cout << "Get line: " << getCommand () << std::endl;
     }
   return -1;
 }

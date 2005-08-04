@@ -374,6 +374,7 @@ Rts2Image::setValue (char *name, int value, char *comment)
   if (!ffile)
     return -1;
   fits_update_key (ffile, TINT, name, &value, comment, &fits_status);
+  flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
 }
 
@@ -383,6 +384,7 @@ Rts2Image::setValue (char *name, long value, char *comment)
   if (!ffile)
     return -1;
   fits_update_key (ffile, TLONG, name, &value, comment, &fits_status);
+  flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
 }
 
@@ -392,6 +394,7 @@ Rts2Image::setValue (char *name, double value, char *comment)
   if (!ffile)
     return -1;
   fits_update_key (ffile, TDOUBLE, name, &value, comment, &fits_status);
+  flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
 }
 
@@ -402,6 +405,7 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
     return -1;
   fits_update_key (ffile, TSTRING, name, (void *) value, comment,
 		   &fits_status);
+  flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
 }
 
@@ -611,6 +615,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     {
       return -1;
     }
+  flags |= IMAGE_SAVE;
   fits_resize_img (ffile, USHORT_IMG, im_h->naxes, im_h->sizes, &fits_status);
   fits_write_img (ffile, USHORT_IMG, 1, dataConn->getSize () / 2,
 		  dataConn->getData (), &fits_status);
@@ -633,6 +638,20 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     mean = 0;
   setValue ("MEAN", mean, "mean value in image");
   return writeImgHeader (im_h);
+}
+
+int
+Rts2Image::fitsStatusValue (char *valname)
+{
+  int ret = 0;
+  if (fits_status)
+    {
+      ret = -1;
+      fprintf (stderr, "error when setting value '%s'\n", valname);
+      fits_report_error (stderr, fits_status);
+    }
+  fits_status = 0;
+  return ret;
 }
 
 int

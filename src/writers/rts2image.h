@@ -88,18 +88,7 @@ public:
   int writeImgHeader (struct imghdr *im_h);
   int writeDate (Rts2ClientTCPDataConn * dataConn);
 
-  inline int fitsStatusValue (char *valname)
-  {
-    int ret = 0;
-    if (fits_status)
-      {
-	ret = -1;
-	fprintf (stderr, "error when setting value '%s'\n", valname);
-	fits_report_error (stderr, fits_status);
-      }
-    fits_status = 0;
-    return ret;
-  }
+  int fitsStatusValue (char *valname);
 
   virtual int saveImage ();
   virtual int deleteImage ();
@@ -162,6 +151,11 @@ public:
   int getFilter ()
   {
     return filter;
+  }
+
+  double getMean ()
+  {
+    return mean;
   }
 };
 
