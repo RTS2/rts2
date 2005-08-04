@@ -73,8 +73,8 @@ CREATE TABLE grb (
 	grb_ra		float8,
 	grb_dec		float8,
 	grb_is_grb	boolean NOT NULL DEFAULT true,
-	grb_date	timestamp,
-	grb_last_update	timestamp,
+	grb_date	timestamp NOT NULL,
+	grb_last_update	timestamp NOT NULL,
 	grb_errorbox	float,
 CONSTRAINT grb_primary_key PRIMARY KEY (grb_id, grb_seqn, grb_type)
 );
