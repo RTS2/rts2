@@ -124,6 +124,9 @@ Rts2Image::setImageName (const char *in_filename)
     delete[]imageName;
 
   imageName = new char[strlen (in_filename) + 1];
+  // ignore special fitsion names..
+  if (*in_filename == '!')
+    in_filename++;
   strcpy (imageName, in_filename);
 }
 
@@ -675,8 +678,6 @@ Rts2Image::deleteImage ()
   ret = unlink (getImageName ());
 }
 
-
-
 void
 Rts2Image::setMountName (const char *in_mountName)
 {
@@ -694,5 +695,5 @@ Rts2Image::setFocuserName (const char *in_focuserName)
     delete[]focName;
   focName = new char[strlen (in_focuserName) + 1];
   strcpy (focName, in_focuserName);
-  setValue ("FOC_NAME", focName, "name of mount");
+  setValue ("FOC_NAME", focName, "name of focuser");
 }

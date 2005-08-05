@@ -45,6 +45,8 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_FOCUSING_END:
+      if (!exe)			// don't care about messages from focuser when we don't have focusing script
+	break;
       focuser = (Rts2DevClientFocusFoc *) event->getArg ();
       focName = focuser->getName ();
       cameraFoc = getValueChar ("focuser");
@@ -95,7 +97,7 @@ Rts2DevClientCameraFoc::changeFocus (int steps)
     }
 }
 
-Rts2DevClientFocusFoc::Rts2DevClientFocusFoc (Rts2Conn * in_connection):Rts2DevClientFocus
+Rts2DevClientFocusFoc::Rts2DevClientFocusFoc (Rts2Conn * in_connection):Rts2DevClientFocusImage
   (in_connection)
 {
 }
@@ -112,7 +114,7 @@ Rts2DevClientFocusFoc::postEvent (Rts2Event * event)
 					    *((int *) event->getArg ())));
       break;
     }
-  Rts2DevClientFocus::postEvent (event);
+  Rts2DevClientFocusImage::postEvent (event);
 }
 
 void

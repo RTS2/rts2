@@ -75,6 +75,11 @@ private:
 
   char *focExe;
 
+  int autoDark;
+  int query;
+  double tarRa;
+  double tarDec;
+
 protected:
     virtual void help ();
 
@@ -165,32 +170,18 @@ private:
   virtual void lostPriority ();
 
   int crossType;
+  int autoSave;
 
 public:
   Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master,
-		    const char *in_exe);
+		    const char *in_exe, int in_autoSave);
   virtual ~ Rts2xfocusCamera (void)
   {
     pthread_cancel (XeventThread);
     pthread_join (XeventThread, NULL);
   }
 
-  virtual void postEvent (Rts2Event * event)
-  {
-    switch (event->getType ())
-      {
-      case EVENT_START_EXPOSURE:
-	exposureCount = (exe != NULL) ? 1 : -1;
-	// build window etc..
-	buildWindow ();
-	queExposure ();
-	break;
-      case EVENT_STOP_EXPOSURE:
-	exposureCount = 0;
-	break;
-      }
-    Rts2DevClientCameraFoc::postEvent (event);
-  }
+  virtual void postEvent (Rts2Event * event);
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual void stateChanged (Rts2ServerState * state);
@@ -201,7 +192,7 @@ public:
 
 Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection,
 				    Rts2xfocus * in_master,
-				    const char *in_exe):
+				    const char *in_exe, int in_autoSave):
 Rts2DevClientCameraFoc (in_connection, in_exe)
 {
   master = in_master;
@@ -222,6 +213,8 @@ Rts2DevClientCameraFoc (in_connection, in_exe)
   average = 0;
 
   low = med = hig = 0;
+
+  autoSave = in_autoSave;
 }
 
 void
@@ -522,7 +515,7 @@ Rts2xfocusCamera::XeventLoop ()
 	      setSaveImage (1);
 	      break;
 	    case XK_u:
-	      setSaveImage (0);
+	      setSaveImage (0 || exe);
 	      break;
 	    default:
 	      break;
@@ -530,6 +523,24 @@ Rts2xfocusCamera::XeventLoop ()
 	  break;
 	}
     }
+}
+
+void
+Rts2xfocusCamera::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_START_EXPOSURE:
+      exposureCount = (exe != NULL) ? 1 : -1;
+      // build window etc..
+      buildWindow ();
+      queExposure ();
+      break;
+    case EVENT_STOP_EXPOSURE:
+      exposureCount = 0;
+      break;
+    }
+  Rts2DevClientCameraFoc::postEvent (event);
 }
 
 void
@@ -663,6 +674,10 @@ Rts2xfocusCamera::createImage (const struct timeval *expStart)
 {
   Rts2Image *image;
   char *filename;
+  if (autoSave)
+    {
+      return Rts2DevClientCameraFoc::createImage (expStart);
+    }
   asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (), getpid ());
   image = new Rts2Image (filename, expStart);
   free (filename);
@@ -699,15 +714,25 @@ Rts2Client (argc, argv)
 
   focExe = NULL;
 
+  autoDark = 0;
+  query = 0;
+  tarRa = -999.0;
+  tarDec = -999.0;
+
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
+  addOption ('A', "autodark", 0, "take (and use) dark image");
   addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
-  addOption ('s', "save", 1, "save filenames (default don't save");
+  addOption ('S', "save", 1, "save filenames (default don't save");
   addOption ('a', "autodark", 1, "take and use dark frame");
   addOption ('x', "display", 1, "name of X display");
   addOption ('c', "center", 0, "takes only center images");
   addOption ('b', "binning", 1,
 	     "default binning (ussually 1, depends on camera setting)");
+  addOption ('q', "query", 0,
+	     "query after image end to user input (changing focusing etc..");
+  addOption ('r', "ra", 1, "target ra (must come with dec - -d)");
+  addOption ('D', "dec", 1, "target dec (must come with ra - -r)");
   addOption ('W', "width", 1, "center width");
   addOption ('H', "height", 1, "center height");
   addOption ('X', "cross", 1,
@@ -753,10 +778,13 @@ Rts2xfocus::processOption (int in_opt)
     case 'd':
       cameraNames.push_back (optarg);
       break;
+    case 'A':
+      autoDark = 1;
+      break;
     case 'e':
       defExposure = atof (optarg);
       break;
-    case 's':
+    case 'S':
       autoSave = 1;
       break;
     case 'x':
@@ -767,6 +795,15 @@ Rts2xfocus::processOption (int in_opt)
       break;
     case 'b':
       defBin = atoi (optarg);
+      break;
+    case 'q':
+      query = 1;
+      break;
+    case 'R':
+      tarRa = atof (optarg);
+      break;
+    case 'D':
+      tarDec = atof (optarg);
       break;
     case 'W':
       centerWidth = atoi (optarg);
@@ -834,8 +871,8 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
     {
     case DEVICE_TYPE_CCD:
       Rts2xfocusCamera * cam;
-      cam = new Rts2xfocusCamera (conn, this, focExe);
-      cam->setSaveImage (autoSave);
+      cam = new Rts2xfocusCamera (conn, this, focExe, autoSave);
+      cam->setSaveImage (autoSave || focExe);
       cam->setCrossType (crossType);
       if (defCenter)
 	{

@@ -24,7 +24,7 @@ public:
   void changeFocus (int steps);
 };
 
-class Rts2DevClientFocusFoc:public Rts2DevClientFocus
+class Rts2DevClientFocusFoc:public Rts2DevClientFocusImage
 {
 protected:
   virtual void focusingEnd ();

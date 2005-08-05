@@ -160,7 +160,6 @@ Rts2DevClientCameraImage::exposureStarted ()
   char *focuser;
   gettimeofday (&expStart, NULL);
   images = createImage (&expStart);
-  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, images));
   images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
 		    "CCD temperature");
   images->setValue ("EXPOSURE", exposureTime, "exposure time");
@@ -182,6 +181,7 @@ Rts2DevClientCameraImage::exposureStarted ()
     {
       images->setFocuserName (focuser);
     }
+  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, images));
   Rts2DevClientCamera::exposureStarted ();
 }
 
