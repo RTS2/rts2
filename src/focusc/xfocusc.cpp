@@ -121,6 +121,18 @@ public:
   {
     return &colormap;
   }
+  const char *getExePath ()
+  {
+    return focExe;
+  }
+  int getAutoSave ()
+  {
+    return autoSave;
+  }
+  int getFocusingQuery ()
+  {
+    return query;
+  }
 };
 
 class Rts2xfocusCamera:public Rts2DevClientCameraFoc
@@ -173,27 +185,21 @@ private:
   int autoSave;
 
 public:
-  Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master,
-		    const char *in_exe, int in_autoSave);
-  virtual ~ Rts2xfocusCamera (void)
-  {
-    pthread_cancel (XeventThread);
-    pthread_join (XeventThread, NULL);
-  }
+  Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
+  virtual ~ Rts2xfocusCamera (void);
 
   virtual void postEvent (Rts2Event * event);
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual void stateChanged (Rts2ServerState * state);
   virtual Rts2Image *createImage (const struct timeval *expStart);
+  virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
   void center (int centerWidth, int centerHeight);
   void setCrossType (int in_crossType);
 };
 
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection,
-				    Rts2xfocus * in_master,
-				    const char *in_exe, int in_autoSave):
-Rts2DevClientCameraFoc (in_connection, in_exe)
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):
+Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
   master = in_master;
 
@@ -214,7 +220,16 @@ Rts2DevClientCameraFoc (in_connection, in_exe)
 
   low = med = hig = 0;
 
-  autoSave = in_autoSave;
+  autoSave = master->getAutoSave ();
+}
+
+Rts2xfocusCamera::~Rts2xfocusCamera (void)
+{
+  if (XeventThread)
+    {
+      pthread_cancel (XeventThread);
+      pthread_join (XeventThread, NULL);
+    }
 }
 
 void
@@ -530,6 +545,7 @@ Rts2xfocusCamera::postEvent (Rts2Event * event)
 {
   switch (event->getType ())
     {
+
     case EVENT_START_EXPOSURE:
       exposureCount = (exe != NULL) ? 1 : -1;
       // build window etc..
@@ -685,6 +701,43 @@ Rts2xfocusCamera::createImage (const struct timeval *expStart)
 }
 
 void
+Rts2xfocusCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
+{
+  // if we should query..
+  if (master->getFocusingQuery ())
+    {
+      int change;
+      change = focConn->getChange ();
+      if (change == INT_MAX)
+	{
+	  std::
+	    cout << "Focusing algorithm for camera " << getName () <<
+	    " did not converge." << std::endl;
+	  std::
+	    cout << "Write new value, otherwise hit enter for no change " <<
+	    std::endl;
+	  change = 0;
+	}
+      else
+	{
+	  std::cout << "Focusing algorithm for camera " << getName () <<
+	    " recommends to change focus by " << change << std::endl;
+	  std::cout << "Hit enter to confirm, or write new value." << std::
+	    endl;
+	}
+      std::cin >> change;
+      if (change != 0)
+	{
+	  std::cout << "Will change by: " << change << std::endl;
+	  focConn->setChange (change);
+	  Rts2DevClientCameraFoc::focusChange (focus, focConn);
+	}
+      return;
+    }
+  Rts2DevClientCameraFoc::focusChange (focus, focConn);
+}
+
+void
 Rts2xfocusCamera::center (int centerWidth, int centerHeight)
 {
   connection->
@@ -729,7 +782,7 @@ Rts2Client (argc, argv)
   addOption ('c', "center", 0, "takes only center images");
   addOption ('b', "binning", 1,
 	     "default binning (ussually 1, depends on camera setting)");
-  addOption ('q', "query", 0,
+  addOption ('Q', "query", 0,
 	     "query after image end to user input (changing focusing etc..");
   addOption ('r', "ra", 1, "target ra (must come with dec - -d)");
   addOption ('D', "dec", 1, "target dec (must come with ra - -r)");
@@ -796,7 +849,7 @@ Rts2xfocus::processOption (int in_opt)
     case 'b':
       defBin = atoi (optarg);
       break;
-    case 'q':
+    case 'Q':
       query = 1;
       break;
     case 'R':
@@ -871,7 +924,7 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
     {
     case DEVICE_TYPE_CCD:
       Rts2xfocusCamera * cam;
-      cam = new Rts2xfocusCamera (conn, this, focExe, autoSave);
+      cam = new Rts2xfocusCamera (conn, this);
       cam->setSaveImage (autoSave || focExe);
       cam->setCrossType (crossType);
       if (defCenter)
