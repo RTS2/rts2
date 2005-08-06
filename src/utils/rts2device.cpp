@@ -53,7 +53,6 @@ Rts2DevConn::commandAuthorized ()
 	return -2;
       setName (deviceName);
       setOtherType (deviceType);
-      authorizationOK ();
       return -1;
     }
   // we need to try that - due to other device commands
@@ -186,14 +185,6 @@ int
 Rts2DevConn::authorizationOK ()
 {
   setConnState (CONN_AUTH_OK);
-  if (getType () == DEVICE_DEVICE)
-    {
-      char *msg;
-      asprintf (&msg, "this_device %s %i", master->getDeviceName (),
-		master->getDeviceType ());
-      send (msg);
-      free (msg);
-    }
   master->sendStatusInfo (this);
   master->baseInfo (this);
   master->info (this);
@@ -270,12 +261,29 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 {
   if (getType () != DEVICE_DEVICE)
     return Rts2Conn::setConnState (new_conn_state);
+  if (new_conn_state == CONN_AUTH_OK)
+    {
+      char *msg;
+      asprintf (&msg, "this_device %s %i", master->getDeviceName (),
+		master->getDeviceType ());
+      send (msg);
+      free (msg);
+      master->sendStatusInfo (this);
+      master->baseInfo (this);
+      master->info (this);
+    }
   Rts2Conn::setConnState (new_conn_state);
 }
 
 
 
-Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, char *in_master_host, int in_master_port):
+Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master,
+				      char *in_device_host,
+				      int in_device_port,
+				      char *in_device_name,
+				      int in_device_type,
+				      char *in_master_host,
+				      int in_master_port):
 Rts2Conn (-1, in_master)
 {
   device_host = in_device_host;
