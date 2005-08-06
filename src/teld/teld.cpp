@@ -618,7 +618,6 @@ Rts2DevConnTelescope::commandAuthorized ()
       double cor_dec;
       double real_ra;
       double real_dec;
-      CHECK_PRIORITY;
       if (paramNextInteger (&cor_mark)
 	  || paramNextDouble (&cor_ra)
 	  || paramNextDouble (&cor_dec)
