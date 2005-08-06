@@ -77,9 +77,8 @@ protected:
   virtual void readoutEnd ();
 public:
     Rts2DevClientCamera (Rts2Conn * in_connection);
-  virtual void exposureFailed (int status)
-  {
-  }
+  // exposureFailed will get called even when we faild during readout
+  virtual void exposureFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
 };
 

@@ -206,6 +206,11 @@ Rts2DevClientCamera::exposureEnd ()
 }
 
 void
+Rts2DevClientCamera::exposureFailed (int status)
+{
+}
+
+void
 Rts2DevClientCamera::readoutEnd ()
 {
 }
@@ -220,7 +225,10 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 			     CAM_MASK_DATA))
 	{
 	case CAM_EXPOSING:
-	  exposureStarted ();
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    exposureStarted ();
+	  else
+	    exposureFailed (state->getValue ());
 	  break;
 	case CAM_DATA:
 	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
@@ -229,7 +237,10 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 	    exposureFailed (state->getValue ());
 	  break;
 	case CAM_NODATA | CAM_NOTREADING | CAM_NOEXPOSURE:
-	  readoutEnd ();
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    readoutEnd ();
+	  else
+	    exposureFailed (state->getValue ());
 	  break;
 	}
     }
