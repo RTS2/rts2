@@ -3,6 +3,7 @@
 
 #define IMAGE_SAVE	0x01
 #define IMAGE_NOT_SAVE  0x00
+#define IMAGE_KEEP_DATA 0x02
 
 #include <sys/time.h>
 #include <time.h>
@@ -32,6 +33,7 @@ private:
   int openImage (const char *in_filename);
   int writeExposureStart ();
   char *getImageBase (int in_epoch_id);
+  unsigned short *imageData;
 protected:
   int epochId;
   int targetId;
@@ -157,6 +159,14 @@ public:
   {
     return mean;
   }
+
+  void keepImage ()
+  {
+    flags |= IMAGE_KEEP_DATA;
+  }
+
+  unsigned short *getDataUShortInt ();
+  int substractDark (Rts2Image * darkImage);
 };
 
 #endif /* !__RTS2_IMAGE__ */

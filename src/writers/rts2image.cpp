@@ -20,6 +20,7 @@ Rts2Image::Rts2Image (char *in_filename,
   focName = NULL;
   filter = -1;
   mean = 0;
+  imageData = NULL;
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -39,6 +40,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   ffile = NULL;
   filter = -1;
   mean = 0;
+  imageData = NULL;
 
   epochId = in_epoch_id;
   targetId = in_targetId;
@@ -78,6 +80,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   int ret;
   imageName = NULL;
   ffile = NULL;
+  imageData = NULL;
 
   openImage (in_filename);
   // get info..
@@ -115,6 +118,8 @@ Rts2Image::~Rts2Image (void)
     delete[]mountName;
   if (focName)
     delete[]focName;
+  if (imageData)
+    delete[]imageData;
 }
 
 void
@@ -622,6 +627,17 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
   fits_resize_img (ffile, USHORT_IMG, im_h->naxes, im_h->sizes, &fits_status);
   fits_write_img (ffile, USHORT_IMG, 1, dataConn->getSize () / 2,
 		  dataConn->getData (), &fits_status);
+  if (imageData)
+    delete[]imageData;
+  if (flags & IMAGE_KEEP_DATA)
+    {
+      imageData = new unsigned short[dataConn->getSize ()];
+      memcpy (imageData, dataConn->getData (), dataConn->getSize ());
+    }
+  else
+    {
+      imageData = NULL;
+    }
   if (fits_status)
     {
       fits_report_error (stderr, fits_status);
@@ -696,4 +712,51 @@ Rts2Image::setFocuserName (const char *in_focuserName)
   focName = new char[strlen (in_focuserName) + 1];
   strcpy (focName, in_focuserName);
   setValue ("FOC_NAME", focName, "name of focuser");
+}
+
+unsigned short *
+Rts2Image::getDataUShortInt ()
+{
+  if (imageData)
+    return imageData;
+  int nullVal = 0;
+  int anyNull = 0;
+  long naxis[2];
+  int ret;
+  ret = getValues ("NAXIS", naxis, 2);
+  if (ret)
+    return NULL;
+  imageData = new unsigned short[naxis[0] * naxis[1]];
+  fits_status =
+    fits_read_img (ffile, USHORT_IMG, 1, naxis[0] * naxis[1], &nullVal,
+		   imageData, &anyNull, &fits_status);
+  fitsStatusValue ("image");
+}
+
+int
+Rts2Image::substractDark (Rts2Image * darkImage)
+{
+  long naxis[2];
+  long darkNaxis[2];
+  unsigned short *img_data;
+  unsigned short *dark_data;
+  int ret;
+  ret = getValues ("NAXIS", naxis, 2);
+  if (ret)
+    return ret;
+  ret = darkImage->getValues ("NAXIS", darkNaxis, 2);
+  if (ret)
+    return ret;
+  if (naxis[0] != darkNaxis[0] || naxis[1] != darkNaxis[1])
+    return -1;
+  img_data = getDataUShortInt ();
+  dark_data = darkImage->getDataUShortInt ();
+  for (long i = 0; i < (naxis[0] * naxis[1]); i++, img_data++, dark_data++)
+    {
+      if (*img_data <= *dark_data)
+	*img_data = 0;
+      else
+	*img_data = *img_data - *dark_data;
+    }
+  return 0;
 }

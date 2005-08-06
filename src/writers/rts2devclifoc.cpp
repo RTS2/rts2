@@ -20,12 +20,16 @@ Rts2DevClientCameraImage (in_connection)
       exe - NULL;
     }
   isFocusing = 0;
+  darkImage = NULL;
+  autoDark = 0;
 }
 
 Rts2DevClientCameraFoc::~Rts2DevClientCameraFoc (void)
 {
   if (exe)
     delete exe;
+  if (darkImage)
+    delete darkImage;
 }
 
 void
@@ -33,6 +37,13 @@ Rts2DevClientCameraFoc::queExposure ()
 {
   if (isFocusing)
     return;
+  if (autoDark)
+    {
+      if (darkImage)
+	exposureT = EXP_LIGHT;
+      else
+	exposureT = EXP_DARK;
+    }
   Rts2DevClientCameraImage::queExposure ();
 }
 
@@ -84,8 +95,18 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 
   Rts2DevClientCameraImage::processImage (image);
 
-  if (exe)
+  // got requested dark..
+  if (image->getType () == IMGTYPE_DARK)
     {
+      if (darkImage)
+	delete darkImage;
+      darkImage = image;
+      darkImage->keepImage ();
+    }
+  else if (exe)
+    {
+      if (darkImage)
+	image->substractDark (darkImage);
       image->saveImage ();
       Rts2ConnFocus *focCon = new Rts2ConnFocus (this, image, exe);
       ret = focCon->init ();
