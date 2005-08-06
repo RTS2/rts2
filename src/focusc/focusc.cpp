@@ -36,6 +36,7 @@ private:
   float defExposure;
   exposureType exposureT;
   char *focExe;
+  int autoDark;
 protected:
     virtual void help ();
 public:
@@ -54,6 +55,11 @@ public:
   }
 
   exposureType getExposureType ();
+
+  int getAutoDark ()
+  {
+    return autoDark;
+  }
 };
 
 class Rts2focuscCamera:public Rts2DevClientCameraFoc
@@ -104,15 +110,17 @@ Rts2Client (argc, argv)
   defExposure = 10.0;
   exposureT = EXP_LIGHT;
 
+  autoDark = 0;
   focExe = NULL;
 
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
   addOption ('e', "exposure", 1, "exposure (defults to 10 sec)");
   addOption ('s', "secmod", 1, "exposure every UT sec");
+  addOption ('A', "autodark", 0, "take dark images for each different image");
+  addOption ('D', "dark", 0, "create dark images");
   addOption ('Q', "query", 0,
 	     "query after image end to user input (changing focusing etc..)");
-  addOption ('A', "dark", 0, "create dark images");
   addOption ('F', "imageprocess", 1,
 	     "image processing script (default to NULL - no image processing will be done");
 }
@@ -129,6 +137,9 @@ Rts2focusc::processOption (int in_opt)
       defExposure = atof (optarg);
       break;
     case 'A':
+      autoDark = 1;
+      break;
+    case 'D':
       exposureT = EXP_DARK;
       break;
     case 'F':
@@ -178,7 +189,8 @@ Rts2focusc::run ()
   return Rts2Client::run ();
 }
 
-exposureType Rts2focusc::getExposureType ()
+exposureType
+Rts2focusc::getExposureType ()
 {
   return exposureT;
 }
@@ -188,12 +200,14 @@ Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_ma
    in_exe)
 {
   exposureTime = in_master->getDefaultExposure ();
+  autoDark = in_master->getAutoDark ();
   master = in_master;
 }
 
 void
 Rts2focuscCamera::processImage (Rts2Image * image)
 {
+  Rts2DevClientCameraFoc::processImage (image);
   std::cout << "Camera " << getName () << " image_type:";
   switch (image->getType ())
     {

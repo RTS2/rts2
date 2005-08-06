@@ -709,6 +709,7 @@ Rts2xfocusCamera::createImage (const struct timeval *expStart)
 void
 Rts2xfocusCamera::processImage (Rts2Image * image)
 {
+  Rts2DevClientCameraFoc::processImage (image);
   std::cout << "Camera " << getName () << " image_type:";
   switch (image->getType ())
     {
@@ -801,7 +802,7 @@ Rts2Client (argc, argv)
 	     "camera device name(s) (multiple for multiple cameras)");
   addOption ('A', "autodark", 0, "take (and use) dark image");
   addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
-  addOption ('S', "save", 1, "save filenames (default don't save");
+  addOption ('S', "save", 0, "save filenames (default don't save");
   addOption ('a', "autodark", 1, "take and use dark frame");
   addOption ('x', "display", 1, "name of X display");
   addOption ('c', "center", 0, "takes only center images");

@@ -102,6 +102,7 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 	delete darkImage;
       darkImage = image;
       darkImage->keepImage ();
+      exposureCount = 1;
     }
   else if (exe)
     {
