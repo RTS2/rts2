@@ -104,6 +104,12 @@ Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus,
 				     Rts2ConnFocus * focConn)
 {
   int change = focConn->getChange ();
+  if (change == INT_MAX)
+    {
+      exposureCount = 1;
+      queExposure ();
+      return;
+    }
   focus->postEvent (new Rts2Event (EVENT_START_FOCUSING, (void *) &change));
   isFocusing = 1;
 }
