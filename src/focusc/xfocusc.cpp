@@ -193,6 +193,7 @@ public:
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual void stateChanged (Rts2ServerState * state);
   virtual Rts2Image *createImage (const struct timeval *expStart);
+  virtual void processImage (Rts2Image * image);
   virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
   void center (int centerWidth, int centerHeight);
   void setCrossType (int in_crossType);
@@ -701,6 +702,25 @@ Rts2xfocusCamera::createImage (const struct timeval *expStart)
 }
 
 void
+Rts2xfocusCamera::processImage (Rts2Image * image)
+{
+  std::cout << "Camera " << getName () << " image_type:";
+  switch (image->getType ())
+    {
+    case IMGTYPE_DARK:
+      std::cout << "dark";
+      break;
+    case IMGTYPE_OBJECT:
+      std::cout << "object";
+      break;
+    default:
+      std::cout << "unknow (" << image->getType () << ") ";
+      break;
+    }
+  std::cout << std::endl;
+}
+
+void
 Rts2xfocusCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
 {
   // if we should query..
@@ -784,7 +804,7 @@ Rts2Client (argc, argv)
 	     "default binning (ussually 1, depends on camera setting)");
   addOption ('Q', "query", 0,
 	     "query after image end to user input (changing focusing etc..");
-  addOption ('r', "ra", 1, "target ra (must come with dec - -d)");
+  addOption ('R', "ra", 1, "target ra (must come with dec - -d)");
   addOption ('D', "dec", 1, "target dec (must come with ra - -r)");
   addOption ('W', "width", 1, "center width");
   addOption ('H', "height", 1, "center height");
