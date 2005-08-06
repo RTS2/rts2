@@ -133,6 +133,10 @@ public:
   {
     return query;
   }
+  int getAutoDark ()
+  {
+    return autoDark;
+  }
 };
 
 class Rts2xfocusCamera:public Rts2DevClientCameraFoc
@@ -214,6 +218,7 @@ Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
   pixmapWidth = windowWidth;
 
   exposureTime = master->defaultExpousure ();
+  autoDark = master->getAutoDark ();
 
   lastHeader = NULL;
 
