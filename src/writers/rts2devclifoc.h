@@ -6,6 +6,9 @@
 
 #define EVENT_START_FOCUSING	RTS2_LOCAL_EVENT + 500
 #define EVENT_FOCUSING_END	RTS2_LOCAL_EVENT + 501
+#define EVENT_CHANGE_FOCUS	RTS2_LOCAL_EVENT + 502
+
+class Rts2ConnFocus;
 
 class Rts2DevClientCameraFoc:public Rts2DevClientCameraImage
 {
@@ -21,7 +24,8 @@ public:
   virtual void postEvent (Rts2Event * event);
   virtual void processImage (Rts2Image * image);
   // will cause camera to change focus by given steps BEFORE exposition
-  void changeFocus (int steps);
+  // when change == INT_MAX, focusing don't converge
+  virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
 };
 
 class Rts2DevClientFocusFoc:public Rts2DevClientFocusImage
@@ -36,13 +40,26 @@ public:
 class Rts2ConnFocus:public Rts2ConnFork
 {
   char *img_path;
-  Rts2DevClientCameraFoc *camera;
+  char *cameraName;
+  int change;
 public:
-    Rts2ConnFocus (Rts2DevClientCameraFoc * in_camera, Rts2Image * in_image,
+    Rts2ConnFocus (Rts2DevClientCameraFoc * in_client, Rts2Image * in_image,
 		   const char *in_exe);
     virtual ~ Rts2ConnFocus (void);
   virtual int newProcess ();
   virtual int processLine ();
+  int getChange ()
+  {
+    return change;
+  }
+  void setChange (int new_change)
+  {
+    change = new_change;
+  }
+  const char *getCameraName ()
+  {
+    return cameraName;
+  }
 };
 
 #endif /* !CLIFOC__ */

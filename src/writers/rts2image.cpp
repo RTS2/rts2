@@ -141,8 +141,9 @@ Rts2Image::createImage (char *in_filename)
   imageType = IMGTYPE_UNKNOW;
   ffile = NULL;
 
+  setImageName (in_filename);
   // make path for us..
-  ret = mkpath (in_filename, 0777);
+  ret = mkpath (getImageName (), 0777);
   if (ret)
     return -1;
   fits_create_file (&ffile, in_filename, &fits_status);
@@ -153,7 +154,6 @@ Rts2Image::createImage (char *in_filename)
       fits_report_error (stderr, fits_status);
       return -1;
     }
-  setImageName (in_filename);
 
   flags = IMAGE_SAVE;
   return 0;

@@ -39,11 +39,25 @@ Rts2DevClientCameraFoc::queExposure ()
 void
 Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 {
+  Rts2Conn *focus;
   Rts2DevClientFocusFoc *focuser;
+  Rts2ConnFocus *focConn;	// returning with EVENT_CHANGE_FOCUS
   const char *focName;
   char *cameraFoc;
   switch (event->getType ())
     {
+    case EVENT_CHANGE_FOCUS:
+      focus =
+	connection->getMaster ()->
+	getOpenConnection (getValueChar ("focuser"));
+      focConn = (Rts2ConnFocus *) event->getArg ();
+      if (focus
+	  && focConn->getCameraName ()
+	  && !strcmp (focConn->getCameraName (), getName ()))
+	{
+	  focusChange (focus, focConn);
+	}
+      break;
     case EVENT_FOCUSING_END:
       if (!exe)			// don't care about messages from focuser when we don't have focusing script
 	break;
@@ -78,6 +92,7 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
       if (ret)
 	{
 	  delete focCon;
+	  return;
 	}
       // after we finish, we will call focus routines..
       connection->getMaster ()->addConnection (focCon);
@@ -85,17 +100,14 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 }
 
 void
-Rts2DevClientCameraFoc::changeFocus (int steps)
+Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus,
+				     Rts2ConnFocus * focConn)
 {
-  Rts2Conn *focuser;
-  focuser = getMaster ()->getOpenConnection (getValueChar ("focuser"));
-  if (focuser)
-    {
-      focuser->
-	postEvent (new Rts2Event (EVENT_START_FOCUSING, (void *) &steps));
-      isFocusing = 1;
-    }
+  int change = focConn->getChange ();
+  focus->postEvent (new Rts2Event (EVENT_START_FOCUSING, (void *) &change));
+  isFocusing = 1;
 }
+
 
 Rts2DevClientFocusFoc::Rts2DevClientFocusFoc (Rts2Conn * in_connection):Rts2DevClientFocusImage
   (in_connection)
@@ -125,18 +137,24 @@ Rts2DevClientFocusFoc::focusingEnd ()
     postEvent (new Rts2Event (EVENT_FOCUSING_END, (void *) this));
 }
 
-Rts2ConnFocus::Rts2ConnFocus (Rts2DevClientCameraFoc * in_camera,
+Rts2ConnFocus::Rts2ConnFocus (Rts2DevClientCameraFoc * in_client,
 			      Rts2Image * in_image, const char *in_exe):
-Rts2ConnFork (in_camera->getMaster (), in_exe)
+Rts2ConnFork (in_client->getMaster (), in_exe)
 {
-  camera = in_camera;
+  change = INT_MAX;
   img_path = new char[strlen (in_image->getImageName ()) + 1];
   strcpy (img_path, in_image->getImageName ());
+  cameraName = new char[strlen (in_client->getName ()) + 1];
+  strcpy (cameraName, in_client->getName ());
 }
 
 Rts2ConnFocus::~Rts2ConnFocus (void)
 {
+  if (change == INT_MAX)	// we don't get focus change, let's try next image..
+    getMaster ()->
+      postEvent (new Rts2Event (EVENT_CHANGE_FOCUS, (void *) this));
   delete[]img_path;
+  delete[]cameraName;
 }
 
 int
@@ -158,12 +176,14 @@ Rts2ConnFocus::processLine ()
 {
   int ret;
   int id;
-  int change;
   ret = sscanf (getCommand (), "change %i %i", &id, &change);
   if (ret == 2)
     {
       std::cout << "Get change: " << id << " " << change << std::endl;
-      camera->changeFocus (change);
+      if (change == INT_MAX)
+	return -1;		// that's not expected .. ignore it
+      getMaster ()->
+	postEvent (new Rts2Event (EVENT_CHANGE_FOCUS, (void *) this));
       // post it to focuser
     }
   else
