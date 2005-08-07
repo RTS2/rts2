@@ -50,6 +50,7 @@ protected:
   virtual void readoutEnd ();
 public:
     Rts2DevClientCameraImage (Rts2Conn * in_connection);
+    virtual ~ Rts2DevClientCameraImage (void);
   virtual void postEvent (Rts2Event * event);
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual Rts2Image *createImage (const struct timeval *expStart);

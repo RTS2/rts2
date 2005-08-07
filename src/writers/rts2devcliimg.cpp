@@ -38,6 +38,12 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   config->getString (connection->getName (), "filter", filter, 200);
 }
 
+Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
+{
+  if (images)
+    delete images;
+}
+
 void
 Rts2DevClientCameraImage::queExposure ()
 {
@@ -123,8 +129,6 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
       images->saveImage ();
       // do basic processing
       processImage (images);
-      delete images;
-      images = NULL;
     }
 }
 

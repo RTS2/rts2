@@ -21,6 +21,7 @@ Rts2DevClientCameraImage (in_connection)
     }
   isFocusing = 0;
   darkImage = NULL;
+  focConn = NULL;
   autoDark = 0;
 }
 
@@ -30,6 +31,8 @@ Rts2DevClientCameraFoc::~Rts2DevClientCameraFoc (void)
     delete exe;
   if (darkImage)
     delete darkImage;
+  if (focConn)
+    focConn->nullCamera ();
 }
 
 void
@@ -52,7 +55,6 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 {
   Rts2Conn *focus;
   Rts2DevClientFocusFoc *focuser;
-  Rts2ConnFocus *focConn;	// returning with EVENT_CHANGE_FOCUS
   const char *focName;
   char *cameraFoc;
   switch (event->getType ())
@@ -61,10 +63,7 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
       focus =
 	connection->getMaster ()->
 	getOpenConnection (getValueChar ("focuser"));
-      focConn = (Rts2ConnFocus *) event->getArg ();
-      if (focus
-	  && focConn->getCameraName ()
-	  && !strcmp (focConn->getCameraName (), getName ()))
+      if (focus && focConn == (Rts2ConnFocus *) event->getArg ())
 	{
 	  focusChange (focus, focConn);
 	}
@@ -109,15 +108,17 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
       if (darkImage)
 	image->substractDark (darkImage);
       image->saveImage ();
-      Rts2ConnFocus *focCon = new Rts2ConnFocus (this, image, exe);
-      ret = focCon->init ();
+      if (focConn)
+	focConn->endConnection ();	// master will delete that connection..
+      focConn = new Rts2ConnFocus (this, image, exe);
+      ret = focConn->init ();
       if (ret)
 	{
-	  delete focCon;
+	  delete focConn;
 	  return;
 	}
       // after we finish, we will call focus routines..
-      connection->getMaster ()->addConnection (focCon);
+      connection->getMaster ()->addConnection (focConn);
     }
 }
 
@@ -136,6 +137,13 @@ Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus,
   isFocusing = 1;
 }
 
+int
+Rts2DevClientCameraFoc::addStarData (struct stardata *sr)
+{
+  if (images)
+    return images->addStarData (sr);
+  return -1;
+}
 
 Rts2DevClientFocusFoc::Rts2DevClientFocusFoc (Rts2Conn * in_connection):Rts2DevClientFocusImage
   (in_connection)
@@ -174,6 +182,7 @@ Rts2ConnFork (in_client->getMaster (), in_exe)
   strcpy (img_path, in_image->getImageName ());
   cameraName = new char[strlen (in_client->getName ()) + 1];
   strcpy (cameraName, in_client->getName ());
+  camera = in_client;
 }
 
 Rts2ConnFocus::~Rts2ConnFocus (void)
@@ -216,7 +225,21 @@ Rts2ConnFocus::processLine ()
     }
   else
     {
-      std::cout << "Get line: " << getCommand () << std::endl;
+      struct stardata sr;
+      ret =
+	sscanf (getCommand (), " %f %f %f %f", &sr.X, &sr.Y, &sr.F, &sr.fwhm);
+      if (ret != 4)
+	{
+	  std::cout << "Get line: " << getCommand () << std::endl;
+	}
+      else
+	{
+	  if (camera)
+	    {
+	      camera->addStarData (&sr);
+	    }
+	  std::cout << "Sex added" << std::endl;
+	}
     }
   return -1;
 }

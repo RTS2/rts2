@@ -3,6 +3,7 @@
 #endif
 
 #include <libnova/libnova.h>
+#include <malloc.h>
 
 #include "rts2image.h"
 #include "imghdr.h"
@@ -21,6 +22,8 @@ Rts2Image::Rts2Image (char *in_filename,
   filter = -1;
   mean = 0;
   imageData = NULL;
+  sexResults = NULL;
+  sexResultNum = 0;
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -41,6 +44,8 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   filter = -1;
   mean = 0;
   imageData = NULL;
+  sexResults = NULL;
+  sexResultNum = 0;
 
   epochId = in_epoch_id;
   targetId = in_targetId;
@@ -81,6 +86,8 @@ Rts2Image::Rts2Image (const char *in_filename)
   imageName = NULL;
   ffile = NULL;
   imageData = NULL;
+  sexResults = NULL;
+  sexResultNum = 0;
 
   openImage (in_filename);
   // get info..
@@ -120,6 +127,8 @@ Rts2Image::~Rts2Image (void)
     delete[]focName;
   if (imageData)
     delete[]imageData;
+  if (sexResults)
+    free (sexResults);
 }
 
 void
@@ -759,4 +768,58 @@ Rts2Image::substractDark (Rts2Image * darkImage)
 	*img_data = *img_data - *dark_data;
     }
   return 0;
+}
+
+int
+Rts2Image::addStarData (struct stardata *sr)
+{
+  int ret;
+
+  if (sr->F <= 0)		// flux is not significant..
+    return -1;
+
+  sexResultNum++;
+  if (sexResultNum > 1)
+    {
+      sexResults =
+	(struct stardata *) realloc ((void *) sexResults,
+				     sexResultNum * sizeof (struct stardata));
+    }
+  else
+    {
+      sexResults = (struct stardata *) malloc (sizeof (struct stardata));
+    }
+  sexResults[sexResultNum - 1] = *sr;
+  return 0;
+}
+
+static int
+sdcompare (struct stardata *x1, struct stardata *x2)
+{
+  if (x1->fwhm < x2->fwhm)
+    return 1;
+  if (x1->fwhm > x2->fwhm)
+    return -1;
+  return 0;
+}
+
+double
+Rts2Image::getFWHM ()
+{
+  double avg;
+  struct stardata *sr;
+  int i;
+  if (sexResultNum < 4)
+    return nan ("f");
+
+  // qsort (sexResults, sexResultNum, sizeof (struct stardata), sdcompare);
+  // get average
+  avg = 0;
+  sr = sexResults;
+  for (i = 0; i < sexResultNum; i++, sr++)
+    {
+      avg += sr->F;
+    }
+  avg /= sexResultNum;
+  return avg;
 }

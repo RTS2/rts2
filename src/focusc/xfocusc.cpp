@@ -72,6 +72,7 @@ private:
   int centerWidth;
 
   int crossType;
+  int starsType;
 
   char *focExe;
 
@@ -137,6 +138,24 @@ public:
   {
     return autoDark;
   }
+  int getStarsType ()
+  {
+    return starsType;
+  }
+};
+
+class fwhmData
+{
+public:
+  int num;
+  int focPos;
+  double fwhm;
+    fwhmData (int in_num, int in_focPos, double in_fwhm)
+  {
+    num = in_num;
+    focPos = in_focPos;
+    fwhm = in_fwhm;
+  }
 };
 
 class Rts2xfocusCamera:public Rts2DevClientCameraFoc
@@ -167,6 +186,7 @@ private:
   void drawCross1 ();
   void drawCross2 ();
   void drawCross3 ();
+  void drawStars (Rts2Image * image);
   void printInfo ();
   // thread entry function..
   void XeventLoop ();
@@ -188,6 +208,8 @@ private:
   int crossType;
   int autoSave;
 
+  std::list < fwhmData * >fwhmDatas;
+  void printFWHMTable ();
 public:
   Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
   virtual ~ Rts2xfocusCamera (void);
@@ -231,11 +253,21 @@ Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
 {
+  std::list < fwhmData * >::iterator fwhm_iter;
   if (XeventThread)
     {
       pthread_cancel (XeventThread);
       pthread_join (XeventThread, NULL);
     }
+
+  for (fwhm_iter = fwhmDatas.begin (); fwhm_iter != fwhmDatas.end ();
+       fwhm_iter++)
+    {
+      fwhmData *dat;
+      dat = *fwhm_iter;
+      delete dat;
+    }
+  fwhmDatas.clear ();
 }
 
 void
@@ -416,6 +448,20 @@ Rts2xfocusCamera::drawCross3 ()
 }
 
 void
+Rts2xfocusCamera::drawStars (Rts2Image * image)
+{
+  struct stardata *sr;
+  if (!image)
+    return;
+  sr = image->sexResults;
+  for (int i = 0; i < image->sexResultNum; i++, sr++)
+    {
+      XDrawArc (master->getDisplay (), pixmap, gc, (int) sr->X - 10,
+		(int) sr->Y - 10, 20, 20, 0, 23040);
+    }
+}
+
+void
 Rts2xfocusCamera::printInfo ()
 {
   char *stringBuf;
@@ -460,6 +506,9 @@ Rts2xfocusCamera::redraw ()
     }
   if (crossType > 0)
     printInfo ();
+  // draw plots over stars..
+  drawStars (images);
+
   xswa.colormap = *(master->getColormap ());
   xswa.background_pixmap = pixmap;
 
@@ -727,8 +776,40 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 }
 
 void
+Rts2xfocusCamera::printFWHMTable ()
+{
+  std::list < fwhmData * >::iterator dat;
+  std::cout << "=======================" << std::endl;
+  std::cout << "# stars | focPos | fwhm" << std::endl;
+  for (dat = fwhmDatas.begin (); dat != fwhmDatas.end (); dat++)
+    {
+      fwhmData *d;
+      d = *dat;
+      std::cout << std::setw (8) << d->num << "| "
+	<< std::setw (8) << d->focPos << "| " << d->fwhm << std::endl;
+    }
+  std::cout << "=======================" << std::endl;
+}
+
+void
 Rts2xfocusCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
 {
+  if (images->sexResultNum)
+    {
+      double fwhm;
+      int focPos;
+      int ret;
+      fwhm = images->getFWHM ();
+      ret = images->getValue ("FOC_POS", focPos);
+      if (ret)
+	focPos = -1;
+      fwhmDatas.push_back (new fwhmData (images->sexResultNum, focPos, fwhm));
+    }
+
+  printFWHMTable ();
+
+  if (master->getStarsType ())
+    redraw ();
   // if we should query..
   if (master->getFocusingQuery ())
     {
@@ -790,6 +871,7 @@ Rts2Client (argc, argv)
   centerHeight = -1;
 
   crossType = 1;
+  starsType = 0;
 
   focExe = NULL;
 
@@ -805,6 +887,7 @@ Rts2Client (argc, argv)
   addOption ('S', "save", 0, "save filenames (default don't save");
   addOption ('a', "autodark", 1, "take and use dark frame");
   addOption ('x', "display", 1, "name of X display");
+  addOption ('t', "stars", 0, "draw stars over image (default to don't)");
   addOption ('c', "center", 0, "takes only center images");
   addOption ('b', "binning", 1,
 	     "default binning (ussually 1, depends on camera setting)");
@@ -868,6 +951,9 @@ Rts2xfocus::processOption (int in_opt)
       break;
     case 'x':
       displayName = optarg;
+      break;
+    case 't':
+      starsType = 1;
       break;
     case 'c':
       defCenter = 1;

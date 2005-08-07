@@ -8,11 +8,18 @@
 #include <sys/time.h>
 #include <time.h>
 #include <fitsio.h>
+#include <list>
 
 #include "imghdr.h"
 #include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/mkpath.h"
+
+struct stardata
+{
+  double X, Y, F;
+  double fwhm;
+};
 
 typedef enum
 { IMGTYPE_UNKNOW, IMGTYPE_DARK, IMGTYPE_FLAT, IMGTYPE_OBJECT, IMGTYPE_ZERO,
@@ -46,6 +53,10 @@ protected:
   img_type_t imageType;
   double mean;
 public:
+  // list of sex results..
+  struct stardata *sexResults;
+  int sexResultNum;
+
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
   // create image in que
@@ -165,8 +176,18 @@ public:
     flags |= IMAGE_KEEP_DATA;
   }
 
+  void closeData ()
+  {
+    if (imageData)
+      delete imageData;
+    imageData = NULL;
+  }
+
   unsigned short *getDataUShortInt ();
   int substractDark (Rts2Image * darkImage);
+
+  int addStarData (struct stardata *sr);
+  double getFWHM ();
 };
 
 #endif /* !__RTS2_IMAGE__ */

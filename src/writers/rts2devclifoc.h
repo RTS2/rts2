@@ -15,6 +15,7 @@ class Rts2DevClientCameraFoc:public Rts2DevClientCameraImage
 private:
   int isFocusing;
   Rts2Image *darkImage;
+  Rts2ConnFocus *focConn;
 protected:
   char *exe;
   int autoDark;
@@ -28,6 +29,7 @@ public:
   // will cause camera to change focus by given steps BEFORE exposition
   // when change == INT_MAX, focusing don't converge
   virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
+  int addStarData (struct stardata *sr);
 };
 
 class Rts2DevClientFocusFoc:public Rts2DevClientFocusImage
@@ -43,6 +45,7 @@ class Rts2ConnFocus:public Rts2ConnFork
 {
   char *img_path;
   char *cameraName;
+  Rts2DevClientCameraFoc *camera;
   int change;
 public:
     Rts2ConnFocus (Rts2DevClientCameraFoc * in_client, Rts2Image * in_image,
@@ -61,6 +64,10 @@ public:
   const char *getCameraName ()
   {
     return cameraName;
+  }
+  void nullCamera ()
+  {
+    camera = NULL;
   }
 };
 
