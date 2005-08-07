@@ -569,6 +569,8 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
   status = tpl_set ("POINTING.TRACK", 4, &status);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
+	  status);
 
   if (status)
     return -1;
@@ -616,10 +618,15 @@ Rts2DevTelescopeIr::startPark ()
   int status = 0;
   // Park to south+zenith
   status = tpl_set ("POINTING.TRACK", 0, &status);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark tracking status: %i",
+	  status);
   usleep (100000);		//0.1s
   status = tpl_setw ("AZ.TARGETPOS", 0, &status);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark AZ.TARGETPOS status: %i",
+	  status);
   status = tpl_setw ("ZD.TARGETPOS", 0, &status);
-
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark ZD.TARGETPOS status: %i",
+	  status);
   if (status)
     return -1;
   return 0;
@@ -634,13 +641,38 @@ Rts2DevTelescopeIr::isParking ()
 int
 Rts2DevTelescopeIr::endPark ()
 {
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::endPark");
   return 0;
 }
 
 int
 Rts2DevTelescopeIr::stopMove ()
 {
+  int status;
+  double zd;
   info ();
+  // ZD check..
+  status = tpl_get ("ZD.CURRPOS", zd, &status);
+  if (status)
+    {
+      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::stopMove cannot get ZD! (%i)",
+	      status);
+      return -1;
+    }
+  if (fabs (zd) < 1)
+    {
+      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::stopMove suspicious ZD.. %f",
+	      zd);
+      status = tpl_set ("POINTING.TRACK", 0, &status);
+      if (status)
+	{
+	  syslog (LOG_DEBUG,
+		  "Rts2DevTelescopeIr::stopMove cannot set track: %i",
+		  status);
+	  return -1;
+	}
+      return 0;
+    }
   startMove (telRa, telDec);
   return 0;
 }
