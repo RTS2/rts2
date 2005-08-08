@@ -198,6 +198,10 @@ public:
       send ("S priority 0 priority lost");
     have_priority = in_have_priority;
   };
+  int getHavePriority ()
+  {
+    return have_priority;
+  };
   int getPriority ()
   {
     return priority;

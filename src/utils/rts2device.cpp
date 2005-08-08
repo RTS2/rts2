@@ -248,11 +248,20 @@ void
 Rts2DevConn::setKey (int in_key)
 {
   Rts2Conn::setKey (in_key);
-  if (getType () == DEVICE_DEVICE && isConnState (CONN_AUTH_PENDING))
+  if (getType () == DEVICE_DEVICE)
     {
-      // que to begining, send command
-      // kill all runinng commands
-      queSend (new Rts2CommandSendKey (master, in_key));
+      if (isConnState (CONN_AUTH_PENDING))
+	{
+	  // que to begining, send command
+	  // kill all runinng commands
+	  queSend (new Rts2CommandSendKey (master, in_key));
+	}
+      else
+	{
+	  syslog (LOG_DEBUG,
+		  "Rts2DevConn::setKey invalid connection state: %i",
+		  getConnState ());
+	}
     }
 }
 
@@ -441,7 +450,7 @@ Rts2DevConnMaster::command ()
       if (paramNextString (&p_device_name)
 	  || paramNextInteger (&p_key) || !paramEnd ())
 	return -2;
-      conn = master->getConnection (p_device_name);
+      conn = master->getOpenConnection (p_device_name);
       if (conn)
 	conn->setKey (p_key);
       return -1;
