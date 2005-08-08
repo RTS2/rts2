@@ -418,6 +418,11 @@ int
 Rts2Conn::queSend (Rts2Command * command)
 {
   command->setConnection (this);
+  if (isConnState (CONN_CONNECTING) || isConnState (CONN_UNKNOW))
+    {
+      commandQue.push_front (command);
+      return 0;
+    }
   if (runningCommand)
     commandQue.push_front (runningCommand);
   runningCommand = command;
@@ -1254,27 +1259,22 @@ Rts2Block::deleteConnection (Rts2Conn * conn)
 int
 Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 {
-  int discard_priority = -1;
-  for (int i = 0; i < MAX_CONN; i++)
-    {
-      // discard old priority client
-      if (connections[i] && connections[i]->havePriority ())
-	{
-	  discard_priority = i;
-	  break;
-	}
-    }
+  int discard_priority = 1;
+  Rts2Conn *priConn;
+  priConn = findCentralId (in_priority_client);
+  if (priConn && priConn->getHavePriority ())
+    discard_priority = 0;
 
   for (int i = 0; i < MAX_CONN; i++)
     {
       if (connections[i]
 	  && connections[i]->getCentraldId () == in_priority_client)
 	{
-	  if (discard_priority != i)
+	  if (discard_priority)
 	    {
 	      cancelPriorityOperations ();
-	      if (discard_priority >= 0)
-		connections[discard_priority]->setHavePriority (0);
+	      if (priConn)
+		priConn->setHavePriority (0);
 	    }
 	  connections[i]->setHavePriority (1);
 	  break;
