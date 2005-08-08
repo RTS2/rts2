@@ -5,6 +5,7 @@
 #include "rts2connimgprocess.h"
 #include "../utils/rts2command.h"
 
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -78,6 +79,8 @@ Rts2ConnImgProcess::connectionError ()
   Rts2ImageDb *image;
 
   syslog (LOG_DEBUG, "Rts2ConnImgProcess::connectionError %m");
+  if (errno == EAGAIN)
+    return 1;
 
   image = new Rts2ImageDb (imgPath);
   switch (astrometryStat)
