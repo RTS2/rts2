@@ -4,6 +4,7 @@
 
 #include "rts2connfork.h"
 
+#include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
 
@@ -23,6 +24,17 @@ Rts2ConnFork::~Rts2ConnFork (void)
     delete[]exePath;
 }
 
+int
+Rts2ConnFork::connectionError ()
+{
+  if (errno == EAGAIN)
+    {
+      syslog (LOG_DEBUG,
+	      "Rts2ConnFork::connectionError reported EAGAIN - that should not happen, ignoring");
+      return 1;
+    }
+  return Rts2Conn::connectionError ();
+}
 
 int
 Rts2ConnFork::newProcess ()
@@ -60,7 +72,7 @@ Rts2ConnFork::init ()
     {
       sock = filedes[0];
       close (filedes[1]);
-//      fcntl (sock, F_SETFL, O_NONBLOCK);
+      fcntl (sock, F_SETFL, O_NONBLOCK);
       return 0;
     }
   // child
