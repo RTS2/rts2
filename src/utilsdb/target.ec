@@ -512,14 +512,15 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
       return -1;
     }
     // object is above horizont, but checker reject it..let's see what
-    // will hapens in 10 minutes 
+    // will hapens in 12 minutes 
     if (rst.rise < JD)
     {
-      // object doesn't rise, let's hope tomorrow it will rise
-      syslog (LOG_DEBUG, "Target::considerForObserving %i will rise tommorow: %f", getTargetID (), rst.rise);
+      // object rose, but is not above horizont, let's hope in 12 minutes it will get above horizont
+      syslog (LOG_DEBUG, "Target::considerForObserving %i will rise tommorow: %f JD %f", getTargetID (), rst.rise, JD);
       changePriority (-100, JD + 12*(1.0/1440.0));
       return -1;
     }
+    // object is setting, let's target it for next rise..
     syslog (LOG_DEBUG, "Target::considerForObserving %i will rise at: %f", getTargetID (), rst.rise);
     changePriority (-100, rst.rise);
     return -1;
