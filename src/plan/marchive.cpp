@@ -2,6 +2,7 @@
 #include "../utils/rts2config.h"
 
 #include <signal.h>
+#include <iostream>
 
 #include <list>
 
@@ -10,7 +11,14 @@ class Rts2MoveArchive:public Rts2AppDbImage
 protected:
   virtual int processImage (Rts2ImageDb * image)
   {
-    return image->saveImage ();
+    int ret;
+    double val;
+      std::cout << "Processing " << image->getImageName () << "..";
+      ret = image->getValue ("CRVAL1", val);
+    if (!ret)
+        ret = image->toArchive ();
+      std::cout << (ret ? "failed (not arhive?)" : "archive") << std::endl;
+      return 0;
   }
 public:
     Rts2MoveArchive (int argc, char **argv):Rts2AppDbImage (argc, argv)
