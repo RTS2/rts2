@@ -24,6 +24,7 @@ public:
   virtual int processArgs (const char *in_arg)
   {
     imageNames.push_back (in_arg);
+    return 0;
   }
 
   virtual int run ()
