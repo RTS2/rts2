@@ -239,6 +239,7 @@ Rts2DevConn::setDeviceName (char *in_name)
 void
 Rts2DevConn::connAuth ()
 {
+  syslog (LOG_DEBUG, "auth: %s state: %i", getName (), getConnState ());
   master->getCentraldConn ()->
     queCommand (new Rts2CommandAuthorize (master, getName ()));
   setConnState (CONN_AUTH_PENDING);

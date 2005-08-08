@@ -13,7 +13,11 @@ EXEC SQL include sqlca;
 int
 Rts2DeviceDb::willConnect (Rts2Address * in_addr)
 {
-  return 1;
+  if (in_addr->getType () < getDeviceType ()
+    || (in_addr->getType () == getDeviceType ()
+      && strcmp (in_addr->getName (), getDeviceName ()) < 0))
+    return 1;
+  return 0;
 }
 
 Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
