@@ -66,6 +66,7 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
       if (focus && focConn == (Rts2ConnFocus *) event->getArg ())
 	{
 	  focusChange (focus, focConn);
+	  focConn = NULL;
 	}
       break;
     case EVENT_FOCUSING_END:
@@ -108,8 +109,6 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
       if (darkImage)
 	image->substractDark (darkImage);
       image->saveImage ();
-      if (focConn)
-	focConn->endConnection ();	// master will delete that connection..
       focConn = new Rts2ConnFocus (this, image, exe);
       ret = focConn->init ();
       if (ret)
