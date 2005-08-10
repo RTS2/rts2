@@ -140,6 +140,12 @@ Rts2DevClient::getMaster ()
   return connection->getMaster ();
 }
 
+int
+Rts2DevClient::queCommand (Rts2Command * command)
+{
+  return connection->queCommand (command);
+}
+
 void
 Rts2DevClient::getPriority ()
 {

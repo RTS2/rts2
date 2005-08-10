@@ -7,6 +7,7 @@
 #include "rts2block.h"
 #include "rts2value.h"
 
+class Rts2Command;
 class Rts2ClientTCPDataConn;
 class Rts2ServerState;
 
@@ -58,6 +59,8 @@ public:
   const char *getName ();
 
   Rts2Block *getMaster ();
+
+  int queCommand (Rts2Command * command);
 };
 
 /**************************************
