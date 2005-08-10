@@ -655,8 +655,6 @@ Rts2Centrald::idle ()
 	{
 	  current_state = (current_state & SERVERD_STANDBY_MASK) | call_state;
 	}
-      syslog (LOG_DEBUG, "riseset thread sleeping %li seconds for %i",
-	      next_event_time - curr_time + 1, next_event_type);
       if (current_state != old_current_state)
 	{
 	  sendStatusMessage (SERVER_STATUS, current_state);
