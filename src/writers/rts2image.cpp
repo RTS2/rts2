@@ -24,6 +24,7 @@ Rts2Image::Rts2Image (char *in_filename,
   imageData = NULL;
   sexResults = NULL;
   sexResultNum = 0;
+  focPos = -1;
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -46,6 +47,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   imageData = NULL;
   sexResults = NULL;
   sexResultNum = 0;
+  focPos = -1;
 
   epochId = in_epoch_id;
   targetId = in_targetId;
@@ -109,6 +111,9 @@ Rts2Image::Rts2Image (const char *in_filename)
   ret = getValue ("FOC_NAME", focName);
   if (ret)
     strcpy (focName, "UNK");
+  ret = getValue ("FOC_POS", focPos);
+  if (ret)
+    focPos = -1;
   getValue ("CAM_FILT", filter);
   getValue ("MEAN", mean);
   getValueImageType ();
@@ -818,7 +823,7 @@ Rts2Image::getFWHM ()
   sr = sexResults;
   for (i = 0; i < sexResultNum; i++, sr++)
     {
-      avg += sr->F;
+      avg += sr->fwhm;
     }
   avg /= sexResultNum;
   return avg;

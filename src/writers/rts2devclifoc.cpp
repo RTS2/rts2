@@ -226,7 +226,8 @@ Rts2ConnFocus::processLine ()
     {
       struct stardata sr;
       ret =
-	sscanf (getCommand (), " %f %f %f %f", &sr.X, &sr.Y, &sr.F, &sr.fwhm);
+	sscanf (getCommand (), " %lf %lf %lf %lf", &sr.X, &sr.Y, &sr.F,
+		&sr.fwhm);
       if (ret != 4)
 	{
 	  std::cout << "Get line: " << getCommand () << std::endl;
@@ -237,7 +238,8 @@ Rts2ConnFocus::processLine ()
 	    {
 	      camera->addStarData (&sr);
 	    }
-	  std::cout << "Sex added" << std::endl;
+	  std::cout << "Sex added (" << sr.X << ", " << sr.Y << ", " << sr.
+	    F << ", " << sr.fwhm << ")" << std::endl;
 	}
     }
   return -1;

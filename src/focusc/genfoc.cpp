@@ -118,7 +118,7 @@ Rts2GenFocCamera::printFWHMTable ()
       fwhmData *d;
       d = *dat;
       std::cout << std::setw (8) << d->num << "| "
-	<< std::setw (8) << d->focPos << "| " << d->fwhm << std::endl;
+	<< std::setw (7) << d->focPos << "| " << d->fwhm << std::endl;
     }
   std::cout << "=======================" << std::endl;
 }
@@ -132,9 +132,7 @@ Rts2GenFocCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
       int focPos;
       int ret;
       fwhm = images->getFWHM ();
-      ret = images->getValue ("FOC_POS", focPos);
-      if (ret)
-	focPos = -1;
+      focPos = images->getFocPos ();
       fwhmDatas.push_back (new fwhmData (images->sexResultNum, focPos, fwhm));
     }
 

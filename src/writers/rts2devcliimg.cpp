@@ -319,8 +319,7 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 	  || strcmp (image->getFocuserName (), connection->getName ()))
 	break;
       image->setValue ("FOC_TYPE", getValueInteger ("type"), "focuser type");
-      image->setValue ("FOC_POS", getValueInteger ("pos"),
-		       "focuser position");
+      image->setFocPos (getValueInteger ("pos"));
       image->setValue ("FOC_TEMP", getValueInteger ("temp"),
 		       "focuser temperature");
       break;

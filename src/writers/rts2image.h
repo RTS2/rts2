@@ -41,6 +41,7 @@ private:
   int writeExposureStart ();
   char *getImageBase (int in_epoch_id);
   unsigned short *imageData;
+  int focPos;
 protected:
   int epochId;
   int targetId;
@@ -169,6 +170,17 @@ public:
   double getMean ()
   {
     return mean;
+  }
+
+  int getFocPos ()
+  {
+    return focPos;
+  }
+
+  void setFocPos (int new_pos)
+  {
+    focPos = new_pos;
+    setValue ("FOC_POS", focPos, "focuser position");
   }
 
   void keepImage ()

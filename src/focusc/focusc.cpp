@@ -76,6 +76,7 @@ Rts2focusc::Rts2focusc (int argc, char **argv):
 Rts2GenFocClient (argc, argv)
 {
   exposureT = EXP_LIGHT;
+  autoSave = 1;
 
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
