@@ -9,6 +9,8 @@
  *
  */
 
+#include "genfoc.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -18,72 +20,26 @@
 #include <math.h>
 
 #include <iostream>
-#include <fstream>
 #include <iomanip>
 #include <vector>
 
-#include "../utils/rts2block.h"
-#include "../utils/rts2client.h"
-#include "../utils/rts2dataconn.h"
-
-#include "../writers/rts2image.h"
-#include "../writers/rts2devclifoc.h"
-
-#include "status.h"
-#include "imghdr.h"
-
 #include <limits.h>
 
-#define PP_NEG
-
-#define GAMMA 0.995
-
-#define PP_MED 0.60
-#define PP_HIG 0.995
-#define PP_LOW (1 - PP_HIG)
-
-#define HISTOGRAM_LIMIT		65536
-
-// events types
-#define EVENT_START_EXPOSURE	1000
-#define EVENT_STOP_EXPOSURE	1001
-
-#define EVENT_INTEGRATE_START   1002
-#define EVENT_INTEGRATE_STOP    1003
-
-class Rts2xfocus:public Rts2Client
+class Rts2xfocus:public Rts2GenFocClient
 {
 private:
   XColor rgb[260];		// <= 255 - images, 256 - red line
   Colormap colormap;
-    std::vector < char *>cameraNames;
-  float defExposure;
   char *displayName;
-  int defCenter;
-  int defBin;
 
   // X11 stuff
   Display *display;
   Visual *visual;
   int depth;
 
-  int autoSave;
-  int centerHeight;
-  int centerWidth;
-
   int crossType;
   int starsType;
-
-  char *focExe;
-
-  int autoDark;
-  int query;
-  double tarRa;
-  double tarDec;
-
-protected:
-    virtual void help ();
-
+  virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
 public:
     Rts2xfocus (int argc, char **argv);
     virtual ~ Rts2xfocus (void);
@@ -94,12 +50,7 @@ public:
 					  int other_device_type);
 
   virtual int init ();
-  virtual int run ();
-
-  float defaultExpousure ()
-  {
-    return defExposure;
-  }
+  virtual void help ();
 
   Display *getDisplay ()
   {
@@ -122,43 +73,13 @@ public:
   {
     return &colormap;
   }
-  const char *getExePath ()
-  {
-    return focExe;
-  }
-  int getAutoSave ()
-  {
-    return autoSave;
-  }
-  int getFocusingQuery ()
-  {
-    return query;
-  }
-  int getAutoDark ()
-  {
-    return autoDark;
-  }
   int getStarsType ()
   {
     return starsType;
   }
 };
 
-class fwhmData
-{
-public:
-  int num;
-  int focPos;
-  double fwhm;
-    fwhmData (int in_num, int in_focPos, double in_fwhm)
-  {
-    num = in_num;
-    focPos = in_focPos;
-    fwhm = in_fwhm;
-  }
-};
-
-class Rts2xfocusCamera:public Rts2DevClientCameraFoc
+class Rts2xfocusCamera:public Rts2GenFocCamera
 {
 private:
   Rts2xfocus * master;
@@ -196,20 +117,10 @@ private:
     return NULL;
   }
 
-  int histogram[HISTOGRAM_LIMIT];
-
-  unsigned short low, med, hig;
-  double average;
-  struct imghdr *lastHeader;
-
-  virtual void getPriority ();
-  virtual void lostPriority ();
-
   int crossType;
-  int autoSave;
+protected:
+  virtual void printFWHMTable ();
 
-  std::list < fwhmData * >fwhmDatas;
-  void printFWHMTable ();
 public:
   Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
   virtual ~ Rts2xfocusCamera (void);
@@ -217,16 +128,11 @@ public:
   virtual void postEvent (Rts2Event * event);
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
-  virtual void stateChanged (Rts2ServerState * state);
-  virtual Rts2Image *createImage (const struct timeval *expStart);
-  virtual void processImage (Rts2Image * image);
-  virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
-  void center (int centerWidth, int centerHeight);
   void setCrossType (int in_crossType);
 };
 
 Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):
-Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
+Rts2GenFocCamera (in_connection, in_master)
 {
   master = in_master;
 
@@ -238,36 +144,15 @@ Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 
   pixmapHeight = windowHeight;
   pixmapWidth = windowWidth;
-
-  exposureTime = master->defaultExpousure ();
-  autoDark = master->getAutoDark ();
-
-  lastHeader = NULL;
-
-  average = 0;
-
-  low = med = hig = 0;
-
-  autoSave = master->getAutoSave ();
 }
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
 {
-  std::list < fwhmData * >::iterator fwhm_iter;
   if (XeventThread)
     {
       pthread_cancel (XeventThread);
       pthread_join (XeventThread, NULL);
     }
-
-  for (fwhm_iter = fwhmDatas.begin (); fwhm_iter != fwhmDatas.end ();
-       fwhm_iter++)
-    {
-      fwhmData *dat;
-      dat = *fwhm_iter;
-      delete dat;
-    }
-  fwhmDatas.clear ();
 }
 
 void
@@ -600,19 +485,25 @@ Rts2xfocusCamera::postEvent (Rts2Event * event)
 {
   switch (event->getType ())
     {
-
     case EVENT_START_EXPOSURE:
-      exposureCount = (exe != NULL) ? 1 : -1;
+      Rts2GenFocCamera::postEvent (event);
       // build window etc..
       buildWindow ();
-      queExposure ();
-      break;
-    case EVENT_STOP_EXPOSURE:
-      exposureCount = 0;
-      break;
+      if (connection->havePriority ())
+	queExposure ();
+      return;
     }
-  Rts2DevClientCameraFoc::postEvent (event);
+  Rts2GenFocCamera::postEvent (event);
 }
+
+void
+Rts2xfocusCamera::printFWHMTable ()
+{
+  Rts2GenFocCamera::printFWHMTable ();
+  if (master->getStarsType ())
+    redraw ();
+}
+
 
 void
 Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
@@ -719,189 +610,25 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 }
 
 void
-Rts2xfocusCamera::getPriority ()
-{
-  if (exposureCount)
-    queExposure ();
-}
-
-void
-Rts2xfocusCamera::lostPriority ()
-{
-  std::cout << "Priority lost" << std::endl;
-  exposureCount = 0;
-}
-
-void
-Rts2xfocusCamera::stateChanged (Rts2ServerState * state)
-{
-  std::cout << "State changed:" << state->getName () << " value:" << state->
-    getValue () << std::endl;
-  Rts2DevClientCameraFoc::stateChanged (state);
-}
-
-Rts2Image *
-Rts2xfocusCamera::createImage (const struct timeval *expStart)
-{
-  Rts2Image *image;
-  char *filename;
-  if (autoSave)
-    {
-      return Rts2DevClientCameraFoc::createImage (expStart);
-    }
-  asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (), getpid ());
-  image = new Rts2Image (filename, expStart);
-  free (filename);
-  return image;
-}
-
-void
-Rts2xfocusCamera::processImage (Rts2Image * image)
-{
-  Rts2DevClientCameraFoc::processImage (image);
-  std::cout << "Camera " << getName () << " image_type:";
-  switch (image->getType ())
-    {
-    case IMGTYPE_DARK:
-      std::cout << "dark";
-      break;
-    case IMGTYPE_OBJECT:
-      std::cout << "object";
-      break;
-    default:
-      std::cout << "unknow (" << image->getType () << ") ";
-      break;
-    }
-  std::cout << std::endl;
-}
-
-void
-Rts2xfocusCamera::printFWHMTable ()
-{
-  std::list < fwhmData * >::iterator dat;
-  std::cout << "=======================" << std::endl;
-  std::cout << "# stars | focPos | fwhm" << std::endl;
-  for (dat = fwhmDatas.begin (); dat != fwhmDatas.end (); dat++)
-    {
-      fwhmData *d;
-      d = *dat;
-      std::cout << std::setw (8) << d->num << "| "
-	<< std::setw (8) << d->focPos << "| " << d->fwhm << std::endl;
-    }
-  std::cout << "=======================" << std::endl;
-}
-
-void
-Rts2xfocusCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
-{
-  if (images->sexResultNum)
-    {
-      double fwhm;
-      int focPos;
-      int ret;
-      fwhm = images->getFWHM ();
-      ret = images->getValue ("FOC_POS", focPos);
-      if (ret)
-	focPos = -1;
-      fwhmDatas.push_back (new fwhmData (images->sexResultNum, focPos, fwhm));
-    }
-
-  printFWHMTable ();
-
-  if (master->getStarsType ())
-    redraw ();
-  // if we should query..
-  if (master->getFocusingQuery ())
-    {
-      int change;
-      change = focConn->getChange ();
-      if (change == INT_MAX)
-	{
-	  std::
-	    cout << "Focusing algorithm for camera " << getName () <<
-	    " did not converge." << std::endl;
-	  std::
-	    cout << "Write new value, otherwise hit enter for no change " <<
-	    std::endl;
-	  change = 0;
-	}
-      else
-	{
-	  std::cout << "Focusing algorithm for camera " << getName () <<
-	    " recommends to change focus by " << change << std::endl;
-	  std::cout << "Hit enter to confirm, or write new value." << std::
-	    endl;
-	}
-      std::cin >> change;
-      if (change != 0)
-	{
-	  std::cout << "Will change by: " << change << std::endl;
-	  focConn->setChange (change);
-	  Rts2DevClientCameraFoc::focusChange (focus, focConn);
-	}
-      return;
-    }
-  Rts2DevClientCameraFoc::focusChange (focus, focConn);
-}
-
-void
-Rts2xfocusCamera::center (int centerWidth, int centerHeight)
-{
-  connection->
-    queCommand (new Rts2CommandCenter (master, 0, centerWidth, centerHeight));
-}
-
-void
 Rts2xfocusCamera::setCrossType (int in_crossType)
 {
   crossType = in_crossType;
 }
 
 Rts2xfocus::Rts2xfocus (int argc, char **argv):
-Rts2Client (argc, argv)
+Rts2GenFocClient (argc, argv)
 {
-  defExposure = 10;
   displayName = NULL;
-  defCenter = 0;
-  defBin = -1;
-
-  autoSave = 0;
-
-  centerWidth = -1;
-  centerHeight = -1;
 
   crossType = 1;
   starsType = 0;
 
-  focExe = NULL;
-
-  autoDark = 0;
-  query = 0;
-  tarRa = -999.0;
-  tarDec = -999.0;
-
-  addOption ('d', "device", 1,
-	     "camera device name(s) (multiple for multiple cameras)");
-  addOption ('A', "autodark", 0, "take (and use) dark image");
-  addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
-  addOption ('S', "save", 0, "save filenames (default don't save");
-  addOption ('a', "autodark", 1, "take and use dark frame");
   addOption ('x', "display", 1, "name of X display");
   addOption ('t', "stars", 0, "draw stars over image (default to don't)");
-  addOption ('c', "center", 0, "takes only center images");
-  addOption ('b', "binning", 1,
-	     "default binning (ussually 1, depends on camera setting)");
-  addOption ('Q', "query", 0,
-	     "query after image end to user input (changing focusing etc..");
-  addOption ('R', "ra", 1, "target ra (must come with dec - -d)");
-  addOption ('D', "dec", 1, "target dec (must come with ra - -r)");
-  addOption ('W', "width", 1, "center width");
-  addOption ('H', "height", 1, "center height");
   addOption ('X', "cross", 1,
 	     "cross type (default to 1; possible values 0 - no cross, 1 - rectangles\n"
 	     "    2 - circles, 3 - BOOTES special");
-  addOption ('F', "imageprocess", 1,
-	     "image processing script (default to NULL - no image processing will be done");
+  addOption ('S', "save", 0, "save filenames (default don't save");
 }
 
 Rts2xfocus::~Rts2xfocus (void)
@@ -937,15 +664,6 @@ Rts2xfocus::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'd':
-      cameraNames.push_back (optarg);
-      break;
-    case 'A':
-      autoDark = 1;
-      break;
-    case 'e':
-      defExposure = atof (optarg);
-      break;
     case 'S':
       autoSave = 1;
       break;
@@ -955,35 +673,11 @@ Rts2xfocus::processOption (int in_opt)
     case 't':
       starsType = 1;
       break;
-    case 'c':
-      defCenter = 1;
-      break;
-    case 'b':
-      defBin = atoi (optarg);
-      break;
-    case 'Q':
-      query = 1;
-      break;
-    case 'R':
-      tarRa = atof (optarg);
-      break;
-    case 'D':
-      tarDec = atof (optarg);
-      break;
-    case 'W':
-      centerWidth = atoi (optarg);
-      break;
-    case 'H':
-      centerHeight = atoi (optarg);
-      break;
     case 'X':
       crossType = atoi (optarg);
       break;
-    case 'F':
-      focExe = optarg;
-      break;
     default:
-      return Rts2Client::processOption (in_opt);
+      return Rts2GenFocClient::processOption (in_opt);
     }
   return 0;
 }
@@ -992,7 +686,7 @@ int
 Rts2xfocus::init ()
 {
   int ret;
-  ret = Rts2Client::init ();
+  ret = Rts2GenFocClient::init ();
   if (ret)
     return ret;
 
@@ -1028,6 +722,15 @@ Rts2xfocus::init ()
   return 0;
 }
 
+Rts2GenFocCamera *
+Rts2xfocus::createFocCamera (Rts2Conn * conn)
+{
+  Rts2xfocusCamera *cam;
+  cam = new Rts2xfocusCamera (conn, this);
+  cam->setCrossType (crossType);
+  return cam;
+}
+
 Rts2DevClient *
 Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
 {
@@ -1035,45 +738,12 @@ Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
   switch (other_device_type)
     {
     case DEVICE_TYPE_CCD:
-      Rts2xfocusCamera * cam;
-      cam = new Rts2xfocusCamera (conn, this);
-      cam->setSaveImage (autoSave || focExe);
-      cam->setCrossType (crossType);
-      if (defCenter)
-	{
-	  cam->center (centerWidth, centerHeight);
-	}
-      if (defBin > 0)
-	{
-	  conn->queCommand (new Rts2CommandBinning (this, defBin, defBin));
-	}
-      // post exposure event..if name agree
-      for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();
-	   cam_iter++)
-	{
-	  if (!strcmp (*cam_iter, conn->getName ()))
-	    {
-	      printf ("Get conn: %s\n", conn->getName ());
-	      cam->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
-	    }
-	}
-      return cam;
-    case DEVICE_TYPE_MOUNT:
-      return new Rts2DevClientTelescopeImage (conn);
-    case DEVICE_TYPE_FOCUS:
-      return new Rts2DevClientFocusFoc (conn);
-    case DEVICE_TYPE_DOME:
-      return new Rts2DevClientDomeImage (conn);
+      Rts2GenFocCamera * cam;
+      cam = createFocCamera (conn);
+      return initFocCamera (cam);
     default:
-      return Rts2Client::createOtherType (conn, other_device_type);
+      return Rts2GenFocClient::createOtherType (conn, other_device_type);
     }
-}
-
-int
-Rts2xfocus::run ()
-{
-  getCentraldConn ()->queCommand (new Rts2Command (this, "priority 137"));
-  return Rts2Client::run ();
 }
 
 int
