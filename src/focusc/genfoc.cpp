@@ -170,10 +170,10 @@ Rts2GenFocCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
       if (end_c != c)
 	change = cons_change;
       std::cout << std::endl;
+      focConn->setChange (change);
       if (change != 0)
 	{
 	  std::cout << "Will change by: " << change << std::endl;
-	  focConn->setChange (change);
 	  Rts2DevClientCameraFoc::focusChange (focus, focConn);
 	  return;
 	}
@@ -308,6 +308,10 @@ Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
 {
   switch (other_device_type)
     {
+    case DEVICE_TYPE_CCD:
+      Rts2GenFocCamera * cam;
+      cam = createFocCamera (conn);
+      return initFocCamera (cam);
     case DEVICE_TYPE_MOUNT:
       return new Rts2DevClientTelescopeImage (conn);
     case DEVICE_TYPE_FOCUS:

@@ -46,9 +46,6 @@ public:
 
   virtual int processOption (int in_opt);
 
-  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-					  int other_device_type);
-
   virtual int init ();
   virtual void help ();
 
@@ -504,7 +501,6 @@ Rts2xfocusCamera::printFWHMTable ()
     redraw ();
 }
 
-
 void
 Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 {
@@ -729,21 +725,6 @@ Rts2xfocus::createFocCamera (Rts2Conn * conn)
   cam = new Rts2xfocusCamera (conn, this);
   cam->setCrossType (crossType);
   return cam;
-}
-
-Rts2DevClient *
-Rts2xfocus::createOtherType (Rts2Conn * conn, int other_device_type)
-{
-  std::vector < char *>::iterator cam_iter;
-  switch (other_device_type)
-    {
-    case DEVICE_TYPE_CCD:
-      Rts2GenFocCamera * cam;
-      cam = createFocCamera (conn);
-      return initFocCamera (cam);
-    default:
-      return Rts2GenFocClient::createOtherType (conn, other_device_type);
-    }
 }
 
 int
