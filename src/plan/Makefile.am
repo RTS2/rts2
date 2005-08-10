@@ -29,7 +29,5 @@ rts2_marchive_SOURCES = marchive.cpp
 rts2_marchive_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_marchive_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2imagedb.a ../utils/librts2block.a ../utilsdb/librts2blockdb.a
 
-EXTRA_DIST = rts2selector.ec
-
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
