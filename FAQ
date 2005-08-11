@@ -1,123 +1,203 @@
-FAQ pro rts2
+RTS2 FAQ - Frequently Asked Questions (with bit of troubleshooting)
 
-*) Jak funguje chlazeni?
+Completly revisited (and writen in english) for new RTS2 release (code named 0.5.0)
 
-Centralni server ma stav. Zakladni jsou: DAY, DUSK, NIGHT a DAWN.
-NIGHT je od zapadu Slunce po vychod Slunce (= Slunce ma vysku 0 stupnu
-nad obzorem, astronomicky soumrak/vychod zatim neuvazuji a je otazkou,
-jestli ma smysl - podle mych poslednich zkusenosti se s CCD daji
-poridit slusne snimky (na kterych by byly k videni pripadne bursty) od
-vychodu prvni hvezdy, kdy ustavujete dalekohled). DUSK je 2 hodiny
-pred zapadem Slunce do zapadu slunce, DAWN zacina vychodem Slunce a
-trva 2 hodiny.
+*) What does RTS2 stands for?
 
-Pokud pustite camd_urvc, dostane od centralniho serveru jeho aktualni
-stav. Na jeho zaklade se rozhodne, jak nastavi kameru:
+It stands for Remote Telescope System 2. As name suggest, there was Remote
+Telescope System, which was later renamed to RTS1. It was writen in python,
+which was later discovered as pretty stupid idea, as project at the
+Mathematical and Physical Faculty of Prague Charles Univerzity for telescope
+BART.
 
-DAY - vetrak vypnut, chlazeni vypnuto
-DUSK - vetrak zapnut, chlazeni na maximu
-NIGHT - vetrak zapnut, chlazeni na aktualni teplotu CCD + 5 stupnu,
-zaokrouhlenou na 5ti stupnove skoky (-5,-10,-15,.. stupnu).
-DAWN - vetrak zapnut, chlazeni na 0 %.
+RTS2 was firstly written in pure C as my diploma thesis. After I finish degree,
+it was (almost completly) rewritten to C++. Rewrites enabled be to
+maternialized ideas I gather during writing C code - primary objectiv was
+selector and executor separation, but there were more issues (memory leaks...)
 
-Camd se podle vyse popsaneho chova i pri presunu z jednoho stavu do
-druheho.
+*) Does it run? Where? Can I use it?
 
-Normalni sekvence (vsechno bezi, a vy nemusite restartovat camd,
-kamera je zapnuta i pres den).:
-ZS - zapad Slunce
-VS - vychod Slunce
---------------------------------
-ZS - 2 hodiny: zapnuti vetraku, zapnuti chlazeni na maximu
-ZS - nastaveni teploty na aktualni teplotu CCD + 5 stupnu
-VS - vypnuti chlazeni
-VS + 2 hodiny - vypnuti chlazeni
+Yes, currently it runs on those telescopes:
 
-Pokud camd restartujete (obcas k tomu bohuzel dochazi dost casto,
-preci jenom mam v rts2 nejake y bugy), tak se MENI nastaveni
-teploty/vetrani kamery. Pokud bezi porad, meni se pouze v nahore
-uvedenych casech.
+BART - Ondrejov, Czech Republic
+BOOTES - Two telescopes in Huelva station, Spain, one (Bootes IR) on
+http://www.osn.iaa.es (seems code have no altitute limits - it's 2896 meters
+above see level
 
-Priklad z praxe:
-Prijete k BARTovi, zjistite, ze nekdo vypnul kamery => nezacalo se
-chladit. Chcete znovu pustit camd. Pustite ho, a teplota se nastavi na
-aktualni teplotu cipu =~ vzhledem k tomu, ze se nechladilo, na teplotu
-okolniho vzduchu. To se vam urcite nezamlouva, zmenite teplotu (viz
-dale) a az do rana mate jistotu, ze vam na teplotu nic nebude sahat
-(pokud nebudete muset restartovat urvc).
+FRAM - monitoring telescope at Argentina, build by Physical Institute of 
 
-*) Jak muzu zmenit teplotu, na kterou se chladi?
+It should work on Watcher telescope in South Africa in some time.
 
-spustit "/home/mates/urvc/urvc -p 1" na game pod rootem. Napsat cool,
-zmacknout enter, napsat 1, zmacknout enter, napsat pozadaovanou
-teplotu, enter.
+Yes, you can use the software, as long as you agree with it's licence (GNU
+licence - see COPYING).
 
-*) Jak poznam, ze planovac funguje.
+*) How do I switch it on/off?
 
-Metod je nekolik. Hlavni je, ze kazde zhruba tri minuty slysim pohyb
-dalekoledu (pokud sedi clovek u BARTa u pocitacu, docela si na ten
-pravidelny rytmus zvykne a prijde mu pak divne, ze nic neslysi a
-podiva se tedy do logu - pohyb dalekohledu vydava dost
-charakteristicky zvuk, nejdrive hluk motoru, potom zapipani po
-dokonceni pohybu).
+We define some three basic modes for RTS2:
 
-Dalsi je z vystupu, ktery pise planc na obrazovku. Normalne vypada
-takto:
+- off
+- standby
+- on
 
-OK
-exposure countdown 1..
-target: 1674
-filename: !/images/ST8/1674/20030223221650.fitscreate
-'!/images/ST8/1674/20030223221650.fits'
-reading data socket: 9 size: 3145776
-waiting for priority 3145776
-waiting end
-Ra: 140.000000 Dec: 55.000000
-Alt: 84.656767 Az: 160.534504
-sleeping for 58 sec, till Sun Feb 23 22:19:49 2003
+Let's see what they mean:
 
-reading finished bytes of 3145776
-chdir /images/ST8/1674/
-Measuring from: "Unnamed" / 1536 x 1024 / 16 bits INTEGER data
-(M+D) Background: 823.296    RMS: 17.0077    / Threshold: 11.9054
-Objects: detected 3165     / sextracted 3058
-> All done
-calling /home/rtopera/bin/detect 20030223221650.fits.
-calling /home/rtopera/bin/past 20030223221650.fits
-2>20030223221650.fits.past.OK
-ra: 146.380875 dec: 44.898903 ra_err: 0.397339 dec_err: 7.732544
-OK
+"off" is mean for safe state of the telescope. When telescope is off, no
+observations will be carried, telescope should't move, cameras will not be
+cooled etc.. It's similar to your car staying without fuel.
 
-Komentar k jednotlivym radkum dopisu.
+"standby" means everything is prepared for observation, except dome, which
+remains closed. Standby is used when you are unsure about weather state and
+don't know, if it clears out or if it will turn to worsest snow storm within
+over last 40 years within next few hours. As you have to cool cameras, that
+state is there primarly for keeping cameras cooled. RTS2 is put to standby by
+weather station, when weather is unfavorable for obseravation. RTS2 can carry
+some dark observation while in standby mode - so when you feel you need to
+repair something on telescope, it's better to put RTS2 to off mode, so you will
+be sure it will not try to operate any device (which can lead to device
+damage).
 
-*) Jak velka by mela byt chyba najizdeni, kterou pise planc?
+It's equivalent to your car engine running, but you are not riding the car.
 
-Maximalne do 30 (chyba je psana v uhlovych minutach), v teld_lx200 je
-limit natvrdo 5 stupnu (t.j. 300 uhlovych minut). Prumer by se mel
-pohybovat kolem 5ti minut, chyba by mela periodicky menit znamenko
-(alespon takove jsou do ted nase zkusenost).
+"on" is for carring observations. Mount is running, door/roof will open when
+you switch from to on. If you have meteo station, you will not be able to
+switch to on if weather doesn't cooperate - if it's raining or too windy,
+depending on your local setup.
 
-Meade udava presnost najizdeni do 5ti minut, podle vseho to plati jak
-kdy. Vetsinou se vejdete spise do 10ti, nez do 5ti.
+It's equivalent to you car on highway (which can sometimes turn to pawed urban road).
 
-*) Jak je pocitan azimut?
+To switch between states, use rts2-mon. Run it, and either press F keys for switch:
 
-Azimut ktery zobrazuje planc je pocitan tak, ze jih ma 0 stupnu, zapad
-90, sever 180, vychod 270.
+- F2 for off
+- F3 for standby
+- F4 for on
 
-*) Jaka prava musim mit, abych mohl pousted
-(camd_urvc|teld_lx200|serverd|planc|grbc)?
+and confirm with pressing y key, or write "on", "standby" or "off" and hit enter
+(text will apear at top left corner of the screen). Text commands are there for
+terminals, which don't have F keys (or don't support them).
 
-Na camd_urvc miste byt root (z duvodu nutnosti blokovat preruseni). Na
-teld_lx200 by melo stacit pravo cteni i zapisu na port, na ktery je
-dalekohled pripojen.
+*) How can I tell it's doing something?
 
-Serverd nepotrebuje nic (zatim, az bude na portu pod 1024, bude
-potrebovat roota - ted je na 555?).
+The overall best way is to go to the telescope, check that it's pointing
+somewhere, it's moving ocassionally, and check that you find latest images
+focused, with stars and hopefully with astrometry (read on about where to find
+images).
 
-Planc i grbc museji mit pravo na psani do adresare /images (obycejne
-pres nejakou skupinu), a museji mit pristup na databazi stars (pgsql
-stars, \dp pro vypis povoleni, create user <lokalni unixovy uzivatel>;
-vytvori noveho uzivatele, alter group observers add user <lokalni
-unixovy uzivatel>; prida daneho uzivatele - za podmniky, ze mate
-vhodna prava.
+Second best way is to watch monitor (run by rts2-mon). Let's examine various parts
+- they begin with green top. They represent informations about various programs,
+that have to work together to keep telescope running and camera exposing:
+
+EXEC is the executor. It's resposibility is to take input what should be
+observed, run the observation, write images to disk, take care about images
+beiing delivered for processing and end obsertvation. When system is running,
+you should see some number > 0 at Curr: entry. That number denotes current
+observation beeing performed.
+
+Next is then identifier of next scheduled observations. When it's filled, it
+testify that selector is working properly (more on selector later).
+
+Prio: is used only for priority interruption. When you see there an entry for
+longer time (more then 1 minute), it marks a problem in code and should be
+repoted as bug.
+
+Then you have devices - the most important are cameras and mount.
+
+All devices have state field. Rule of thumb, which can be followed, is that at
+any time, at least one state of at least one device shouldn't be zero. It can
+only blink to zero and then turn to something else (or some other device should
+awaken from sleep and swith it's state from 0 to some number).
+
+If you observe, that state of cameras and mount remain at 0 for longer time
+(more then 10 seconds), you should not that as suspicious and (most probably)
+issue a bug report. Please take screenshot of rts2-mon and send it with
+bug-report as clue to what happened.
+
+*) How can I test that GCN reception is working?
+
+Start monitor, locate GRBD entry. By L Pac (Last Packet) you should see time >
+- 1 minute (e.g less then -0:00:59.9). When time show there is greater, it
+means that most probably we lost connection to GCN server.
+
+*) How can I test that GRB observation will be correctly executed?
+
+GRB OT observation is quite hard. Althought it seems pretty easy (get the
+comps, connect them, write software..and voila, we will have detections), after
+more deep study it evolves, that it's not so easy. But anyway, it's feasible.
+
+To be sure that you catch GRB you should test system reaction to GRB events.
+Here we will describe path packet must take before observation will start.
+
+GCN packet arrives at GRBD, it's decoded, and writen to database. When it's GRB
+notice, GRBD execute grb command on EXECutor. It pass only target ID as
+reference, so EXECutor have to retrieve target from database, where it was
+previously written by GRBD.
+
+EXECutor takes target_id, make target, calculate it's horizontal position, and
+when that target is above horizont (alt > 0), it clears it for futher
+execution. When target is close to current target (distance is entered in
+degrees in rts2.ini, in seplimit entry, and defaults to 0), target becomes
+priority target.
+
+EXECutor sends interruption command to all devices. When it get reply from
+telescope, that it gets interuption command, it start slew on telescope. While
+telescope is slewing, it prepares execution script for cameras. When telescope
+finished slewing, and executor knows, that cameras stoped current exposure, it
+starts exposure on cameras - otherwise it wait till it get clearance from
+cameras, that they are ready to expose.
+
+You got two options here how to test system performace - either you can accept
+HETE test-notices and wait for them (-T switch added to rts2-grbd command line
+will do that), or, if you don't like to wait for HETE test, you can start own
+observation in GRB mode. For that:
+
+- start rts2-mon
+- issue GRBD.test <target_id>
+
+where target_id is ID of some target. You should see as your target is entered
+to Prio: entry in EXECutor, and Curr: and Next: are nulled, then it's entered
+as Curr: and telescope slew starts. You can check if you get images at right
+place, processed for you.
+
+If that sounds complicated to you and you think that it will take too much time
+for GCN observation to reach telescope, don't worry. Measured difference
+between packet arrives and telescope slew started (telescope slew is the primary
+thinks that block observation, and we would like to start slew as soon as
+possible - cameras can be resolved while we move to new location) shows, that
+we spend less then 1 second in RTS2 overhead, and I hope we even spend less -
+something like 0.2 sec is value I expected. Running on moderate HW (PC Pentium
+800 Mhz with 256 MB RAM).
+
+*) Where will I find images?
+
+Images are in:                                                                                                                           
+                                                                                                                                          
+/images/<epoch>/que/<camera_name>  - there is temporaly storage for                                                                       
+images, which haven't been processed yet. Nothing should remains here on                                                                  
+morning.                                                                                                                                  
+                                                                                                                                          
+/images/<epoch>/archive/<target_id>/<camera_name>/object - images with astrometry. So                                                     
+for example, as GRB050724 get target_id 49999 on Bootes IR, images with
+astrometry were put to /images/<epoch>/archive/49999/<camera_name>/object/<date+time>.fits                                                                
+/images/<epoch>/trash/<target_id>/<camera_name> - images without
+astrometry are put there.                                                                                                                 
+                                                                                                                                          
+In previous lines:                                                                                                                        
+                                                                                                                                          
+<epoch> is 002 for BIR now. Should be changed to 3, after we gain some
+experience/change instruments..                                                                                                           
+                                                                                                                                          
+<camera_name> is sbig on BIR (now).                                                                                                       
+                                                                                                                                          
+So /images/<epoch>/archive/<target_id>/<camera_name>/object resolves to:                                                                  
+                                                                                                                                          
+/images/002/archive/49999/sbig/object                                                                                                     
+                                                                                                                                          
+Let's see it:
+petr@ir1:/images/002/archive/49999/sbig/object$ ls
+20050810200400-0432.fits  20050810203158-0745.fits ....
+
+
+===============================================================================
+
+Most questions contributed by BOOTES staff, most of the answers were written by
+Petr Kubanek.  Please feel free to drop an email to petr@kubanek.net in case
+you feel something is missing there.
