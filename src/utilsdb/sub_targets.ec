@@ -441,18 +441,12 @@ DarkTarget::startSlew (struct ln_equ_posn *position)
   return OBS_DONT_MOVE;
 }
 
-int
-FlatTarget::getScript (const char *deviceName, char *buf)
-{
-  strcpy (buf, "E 1");
-}
-
 FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
 }
 
-int
-FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void
+FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 {
   struct ln_equ_posn sun;
   struct ln_hrz_posn hrz;
@@ -461,6 +455,88 @@ FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
   hrz.alt = 40;
   hrz.az = ln_range_degrees (hrz.az + 180);
   ln_get_equ_from_hrz (&hrz, observer, JD, pos);
+}
+
+int
+FlatTarget::getScript (const char *deviceName, char *buf)
+{
+  strcpy (buf, "E 1");
+}
+
+// we will try to find target, that is among empty fields, and is at oposite location from sun
+// that target will then become our target_id, so entries in observation log
+// will refer to that id, not to generic flat target_id
+int
+FlatTarget::load ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  double d_tar_ra;
+  double d_tar_dec;
+  int d_tar_id;
+  EXEC SQL END DECLARE SECTION;
+
+  double minAntiDist = 1000;
+  double curDist;
+  struct ln_equ_posn d_tar;
+  struct ln_equ_posn antiSolarPosition;
+  struct ln_hrz_posn hrz;
+  double JD;
+
+  JD = ln_get_julian_from_sys ();
+
+  getAntiSolarPos (&antiSolarPosition, JD);
+
+  EXEC SQL DECLARE flat_targets CURSOR FOR
+  SELECT
+    tar_ra,
+    tar_dec,
+    tar_id
+  FROM
+    targets
+  WHERE
+      type_id = 'f'
+    AND tar_enabled = true;
+  EXEC SQL OPEN flat_targets;
+  while (1)
+    {
+      EXEC SQL FETCH next FROM flat_targets INTO
+        :d_tar_ra,
+	:d_tar_dec,
+	:d_tar_id;
+      if (sqlca.sqlcode)
+        break;
+      d_tar.ra = d_tar_ra;
+      d_tar.dec = d_tar_dec;
+      // we should be at least 10 deg above horizont to be considered..
+      ln_get_hrz_from_equ (&d_tar, observer, JD, &hrz);
+      if (hrz.alt < 10)
+        continue;
+      // test if we found the best target..
+      curDist = ln_get_angular_separation (&d_tar, &antiSolarPosition);
+      if (curDist < minAntiDist)
+        {
+          target_id = d_tar_id;
+          minAntiDist = curDist;
+        }
+    }
+  if (sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
+    {
+      logMsgDb ("FlatTarget::load");
+      EXEC SQL CLOSE flat_targets;
+      //in that case, we will simply use generic flat target..
+      return 0;
+    }
+  EXEC SQL CLOSE flat_targets;
+  return ConstTarget::load ();
+}
+
+int
+FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  if (target_id != TARGET_FLAT)
+    return ConstTarget::getPosition (pos, JD);
+  // generic flat target observations
+  getAntiSolarPos (pos, JD);
   return 0;
 }
 

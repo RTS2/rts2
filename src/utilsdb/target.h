@@ -359,10 +359,13 @@ public:
 
 class FlatTarget:public ConstTarget
 {
+private:
+  void getAntiSolarPos (struct ln_equ_posn *pos, double JD);
 protected:
-  virtual int getScript (const char *deviceName, char *buf);
+    virtual int getScript (const char *deviceName, char *buf);
 public:
     FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int isContinues ()
   {
