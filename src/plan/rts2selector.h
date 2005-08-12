@@ -15,6 +15,8 @@ private:
   int selectDarks ();
   ObjectCheck *checker;
   struct ln_lnlat_posn *observer;
+  double flat_sun_min;
+  double flat_sun_max;
 public:
     Rts2Selector (struct ln_lnlat_posn *in_observer, char *horizontFile);
     virtual ~ Rts2Selector (void);

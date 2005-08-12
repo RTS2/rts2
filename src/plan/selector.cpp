@@ -43,9 +43,12 @@ private:
   time_t last_selected;
 
   int next_id;
+
+  int idle_select;
 public:
     Rts2SelectorDev (int argc, char **argv);
     virtual ~ Rts2SelectorDev (void);
+  virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
 
@@ -79,12 +82,30 @@ Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, 5562, "SEL")
   sel = NULL;
   next_id = -1;
   time (&last_selected);
+
+  idle_select = 300;
+  addOption ('I', "idle_select", 1,
+	     "selection timeout (reselect every I seconds)");
 }
 
 Rts2SelectorDev::~Rts2SelectorDev (void)
 {
   if (sel)
     delete sel;
+}
+
+int
+Rts2SelectorDev::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'I':
+      idle_select = atoi (optarg);
+      break;
+    default:
+      return Rts2DeviceDb::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -115,7 +136,7 @@ Rts2SelectorDev::idle ()
 {
   time_t now;
   time (&now);
-  if (now > last_selected + 500)
+  if (now > last_selected + idle_select)
     {
       updateNext ();
       time (&last_selected);

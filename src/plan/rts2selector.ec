@@ -8,16 +8,36 @@
  */
  
 #include "rts2selector.h"
+#include "../utils/rts2config.h"
 #include "status.h"
 
 #include <libnova/libnova.h>
 
 Rts2Selector::Rts2Selector (struct ln_lnlat_posn *in_observer,char * horizontFile)
 {
+  int ret;
+  Rts2Config * config;
+  double val;
+  
   checker = NULL;
   observer = in_observer;
 
   checker = new ObjectCheck (horizontFile);
+  config = Rts2Config::instance ();
+  flat_sun_min = 100;
+  flat_sun_max = 100;
+  ret = config->getDouble ("observatory", "flat_sun_min", flat_sun_min);
+  if (ret)
+    return;
+  ret = config->getDouble ("observatory", "flat_sun_max", flat_sun_max);
+  if (ret)
+    return;
+  if (flat_sun_min > flat_sun_max)
+    {
+      val = flat_sun_min;
+      flat_sun_min = flat_sun_max;
+      flat_sun_max = val;
+    }
 }
 
 Rts2Selector::~Rts2Selector (void)
@@ -37,6 +57,9 @@ Rts2Selector::~Rts2Selector (void)
 int
 Rts2Selector::selectNext (int masterState)
 {
+  struct ln_equ_posn sun;
+  struct ln_hrz_posn sun_hrz;
+  double JD;
   // take care of state - select to make darks when we are able to
   // make darks.
   switch (masterState)
@@ -44,10 +67,15 @@ Rts2Selector::selectNext (int masterState)
     case SERVERD_NIGHT:
       return selectNextNight ();
       break;
-    case SERVERD_DUSK:
-      return selectDarks ();
-      break;
     case SERVERD_DAWN:
+    case SERVERD_DUSK:
+      if (flat_sun_min >= flat_sun_max)
+        return selectDarks ();
+      JD = ln_get_julian_from_sys ();
+      ln_get_solar_equ_coords (JD, &sun);
+      ln_get_hrz_from_equ (&sun, observer, JD, &sun_hrz);
+      if (sun_hrz.alt >= flat_sun_min && flat_sun_max <= flat_sun_max)
+        return selectFlats ();
       return selectDarks ();
       break;
   }
