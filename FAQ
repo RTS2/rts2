@@ -75,6 +75,8 @@ and confirm with pressing y key, or write "on", "standby" or "off" and hit enter
 (text will apear at top left corner of the screen). Text commands are there for
 terminals, which don't have F keys (or don't support them).
 
+*) How is focusing working?
+
 *) How can I tell it's doing something?
 
 The overall best way is to go to the telescope, check that it's pointing
@@ -107,9 +109,119 @@ only blink to zero and then turn to something else (or some other device should
 awaken from sleep and swith it's state from 0 to some number).
 
 If you observe, that state of cameras and mount remain at 0 for longer time
-(more then 10 seconds), you should not that as suspicious and (most probably)
+(more then 10 seconds), you should note that as suspicious and (most probably)
 issue a bug report. Please take screenshot of rts2-mon and send it with
 bug-report as clue to what happened.
+
+*) How can I focus it?
+
+You can use manual focusing mode. On bootes IR it works following way:
+
+- as root, issue:
+killall rts2-executor
+
+Then issue (prefereably in your home directory, and even better in some subdirectory):
+rts2-focusc -F /etc/rts2/sex -Q -A -d sbig
+
+Yor console should start to look like this:
+
+Get conn: sbig
+State changed (sbig): img_chip value:65536
+State changed (sbig): mg_chip value:65536
+State changed (sbig): g_chip value:65536
+State changed (sbig): priority value:1
+State changed (sbig): img_chip value:1
+State changed (sbig): img_chip value:4
+State changed (sbig): img_chip value:2
+Camera sbig image_type:dark
+State changed (sbig): img_chip value:0
+State changed (sbig): img_chip value:1
+State changed (sbig): img_chip value:4
+State changed (sbig): img_chip value:2
+Camera sbig image_type:object
+State changed (sbig): img_chip value:0
+Measuring from: "Unnamed" / 1530 x 1020 / 16 bits INTEGER data
+(M+D) Background: 120.634    RMS: 8.21888    / Threshold: 41.0944
+Objects: detected 3        / sextracted 2
+> All done
+Sex added (356.641, 197.072, 5563.68, 6.32)
+Sex added (408.058, 654.733, 6677.7, 8.28)
+=======================
+# stars | focPos | fwhm
+      67|    7128| 8.73343
+=======================
+Focusing algorithm for camera sbig did not converge.
+Write new value, otherwise hit enter for no change
+20
+
+Now write some value change, and after while, you will end with:
+
+Sex added (663.349, 415.322, 255983, 5.78)
+Sex added (954.144, 917.04, 1717.61, 5.9)
+Sex added (1353.35, 776.675, 656346, 6.11)
+Sex added (939.765, 193.297, 2331.69, 6.23)
+Sex added (356.641, 197.072, 5563.68, 6.32)
+Sex added (408.058, 654.733, 6677.7, 8.28)
+=======================
+# stars | focPos | fwhm
+      67|    7128| 8.73343
+      72|    7152| 7.50417
+      66|    7143| 8.05485
+      71|    7152| 7.61155
+      76|    7163| 6.74474
+      76|    7172| 5.94592
+      75|    7182| 5.6392
+      81|    7192| 5.0679
+      79|    7202| 5.10709
+      79|    7197| 5.14481
+      77|    7193| 5.51117
+      79|    7192| 5.25241
+      74|    7191| 5.79514
+      78|    7188| 5.48
+      80|    7198| 5.75188
+      80|    7208| 5.28238
+      84|    7217| 5.16929
+      81|    7217| 5.16654
+      81|    7228| 5.59025
+      84|    7218| 5.18881
+      79|    7213| 5.21127
+      83|    7217| 4.62241
+      79|    7217| 5.47025
+      81|    7217| 5.72975
+      79|    7217| 5.5143
+      13|    7217| 6.45231
+      73|    7217| 4.98205
+      77|    7217| 4.70532
+      78|    7217| 4.74526
+      72|    7212| 5.12361
+      72|    7202| 4.95306
+      75|    7202| 4.71067
+      73|    7197| 5.45699
+      72|    7208| 5.05861
+      65|    7207| 5.77031
+      76|    7212| 4.70316
+      74|    7212| 5.10257
+      82|    7207| 4.41659
+      75|    7207| 4.99627
+      71|    7212| 5.69113
+      76|    7212| 5.05039
+      72|    7207| 5.15903
+      73|    7203| 4.95658
+      74|    7200| 5.33027
+      79|    7204| 4.56114
+      80|    7204| 4.54662
+      75|    7207| 5.20053
+      77|    7205| 5.03922
+      79|    7203| 4.57063
+      78|    7202| 4.69821
+      79|    7201| 4.7238
+      78|    7207| 4.86628
+=======================
+Focusing algorithm for camera sbig did not converge.
+Write new value, otherwise hit enter for no change 
+
+When you are happy with results, hit ctrl+c and start executor to take charge
+of observation.
 
 *) How can I test that GCN reception is working?
 
