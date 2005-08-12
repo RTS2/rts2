@@ -142,6 +142,7 @@
 #define DEVDEM_E_SYSTEM		-5	// some system error
 #define DEVDEM_E_PRIORITY	-6	// error by changing priority
 #define DEVDEM_E_TIMEOUT	-7	// connection has time-outed
+#define DEVDEM_E_IGNORE         -8	// command mind as unnecessary..
 
 // Client errors goes together, intersection between devdem and plancomm clients
 // must be empty.
