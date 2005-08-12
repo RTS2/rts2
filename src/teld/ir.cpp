@@ -22,6 +22,7 @@ using namespace OpenTPL;
 #define LONGITUDE -3.3847222
 #define LATITUDE 37.064167
 #define ALTITUDE 2896
+#define BLIND_SIZE 1.0
 
 class ErrorTime
 {
@@ -566,6 +567,15 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   target.ra = ra;
   target.dec = dec;
 
+  // move to zenit - move to different dec instead
+  if (fabs (dec - telLatitude) <= BLIND_SIZE)
+    {
+      if (fabs (ra / 15.0 - get_loc_sid_time ()) <= BLIND_SIZE / 15.0)
+	{
+	  target.dec = telLatitude - BLIND_SIZE;
+	}
+    }
+
   status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
   status = tpl_set ("POINTING.TRACK", 4, &status);
@@ -598,7 +608,7 @@ Rts2DevTelescopeIr::isMoving ()
   curr.ra = telRa;
   curr.dec = telDec;
 
-  if (ln_get_angular_separation (&target, &curr) > 2)
+  if (ln_get_angular_separation (&target, &curr) > 0.1)
     {
       return 1000;
     }
@@ -648,7 +658,7 @@ Rts2DevTelescopeIr::endPark ()
 int
 Rts2DevTelescopeIr::stopMove ()
 {
-  int status;
+  int status = 0;
   double zd;
   info ();
   // ZD check..

@@ -72,8 +72,8 @@ protected:
   {
     return numCorr;
   }
-
-  void setTarget (double tar_ra, double tar_dec);
+  // returns 0 when we need to 
+  int setTarget (double tar_ra, double tar_dec);
   double getMoveTargetSep ();
 public:
   Rts2DevTelescope (int argc, char **argv);

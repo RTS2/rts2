@@ -48,8 +48,8 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
 
   nextReset = RESET_RESTART;
 
-  lastTar.ra = 0;
-  lastTar.dec = 0;
+  lastTar.ra = -1000;
+  lastTar.dec = -1000;
 }
 
 int
@@ -66,11 +66,16 @@ Rts2DevTelescope::processOption (int in_opt)
   return 0;
 }
 
-void
+int
 Rts2DevTelescope::setTarget (double tar_ra, double tar_dec)
 {
+  if (lastTar.ra == tar_ra && lastTar.dec == tar_dec)
+    return 0;
+  if (knowPosition && lastRa == tar_ra && lastDec == tar_dec)
+    return 0;
   lastTar.ra = tar_ra;
   lastTar.dec = tar_dec;
+  return 1;
 }
 
 double
@@ -263,6 +268,8 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
     {
       conn->sendValue ("ra", telRa);
       conn->sendValue ("dec", telDec);
+      conn->sendValue ("ra_tel", telRa);
+      conn->sendValue ("dec_tel", telDec);
     }
   conn->sendValue ("siderealtime", telSiderealTime);
   conn->sendValue ("localtime", telLocalTime);
@@ -299,29 +306,26 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
 	  locCorDec);
+  ret = setTarget (tar_ra, tar_dec);
+  // we know our position and we are on it..don't move
+  if (ret == 0)
+    {
+      conn->sendCommandEnd (DEVDEM_E_IGNORE, "move will not be performed");
+      return -1;
+    }
   if (knowPosition)
     {
-      struct ln_equ_posn pos_last;
-      struct ln_equ_posn pos_wanted;
       double sep;
-      pos_last.ra = lastRa;
-      pos_last.dec = lastDec;
-      pos_wanted.ra = tar_ra;
-      pos_wanted.dec = tar_dec;
-      sep = ln_get_angular_separation (&pos_last, &pos_wanted);
+      sep = getMoveTargetSep ();
       syslog (LOG_DEBUG, "Rts2DevTelescope::startMove sep: %f", sep);
       if (sep > 2)
 	{
 	  knowPosition = 0;
 	}
-      lastRa = tar_ra;
-      lastDec = tar_dec;
     }
   // we received correction for last move..
   if (locCorNum == moveMark)
     {
-      tar_ra += locCorRa;
-      tar_dec += locCorDec;
       // if we don't move too far from last correction
       if (knowPosition)
 	{
@@ -333,13 +337,14 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 	  locCorRa = 0;
 	  locCorDec = 0;
 	}
+      tar_ra += locCorRa;
+      tar_dec += locCorDec;
     }
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
 	  locCorDec);
   moveInfoCount = 0;
-  setTarget (tar_ra, tar_dec);
   ret = startMove (tar_ra, tar_dec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
@@ -422,8 +427,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	{
 	  knowPosition = 1;
 	  info ();
-	  lastRa = telRa - locCorRa;
-	  lastDec = telDec - locCorDec;
+	  lastRa = real_ra;
+	  lastDec = real_dec;
 	}
       else
 	{
@@ -474,7 +479,12 @@ int
 Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
 {
   int ret;
-  setTarget (telRa + chng_ra, telDec + chng_dec);
+  ret = setTarget (telRa + chng_ra, telDec + chng_dec);
+  if (ret == 0)
+    {
+      conn->sendCommandEnd (DEVDEM_E_IGNORE, "move will not be performed");
+      return -1;
+    }
   ret = change (chng_ra, chng_dec);
   if (ret)
     {

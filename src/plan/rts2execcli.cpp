@@ -368,8 +368,13 @@ Rts2DevClientTelescopeExec::moveEnd ()
 void
 Rts2DevClientTelescopeExec::moveFailed (int status)
 {
-  Rts2DevClientTelescopeImage::moveFailed (status);
+  if (status == DEVDEM_E_IGNORE)
+    {
+      moveEnd ();
+      return;
+    }
   blockMove = 0;
+  Rts2DevClientTelescopeImage::moveFailed (status);
   // move failed because we get priority..
   connection->getMaster ()->
     postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
