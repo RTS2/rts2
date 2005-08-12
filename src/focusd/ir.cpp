@@ -201,7 +201,7 @@ Rts2DevFocuserIr::info ()
     return -1;
 
   double realPos;
-  status = tpl_get ("FOCUS.REALPOS", realPos, &status);
+  status = tpl_get ("FOCUS.OFFSET", realPos, &status);
   if (status)
     return -1;
 
@@ -240,6 +240,7 @@ Rts2DevFocuserIr::stepOut (int num)
     {
       syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set offset!");
     }
+  usleep (USEC_SEC * 3);
   power = 0;
   status = tpl_setw ("FOCUS.POWER", power, &status);
   if (status)
