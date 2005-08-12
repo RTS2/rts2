@@ -429,6 +429,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	  info ();
 	  lastRa = real_ra;
 	  lastDec = real_dec;
+	  lastTar.ra = lastRa;
+	  lastTar.dec = lastDec;
 	}
       else
 	{
