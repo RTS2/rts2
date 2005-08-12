@@ -25,6 +25,7 @@ protected:
   int focStepSec;
 
   virtual int isFocusing ();
+  virtual int endFocusing ();
 public:
     Rts2DevFocuser (int argc, char **argv);
   virtual int processOption (int in_opt);

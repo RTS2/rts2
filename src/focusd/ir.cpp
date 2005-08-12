@@ -34,6 +34,8 @@ private:
   // high-level I/O functions
   // int foc_pos_get (int * position);
   // int foc_pos_set (int pos);
+protected:
+    virtual int endFocusing ();
 public:
     Rts2DevFocuserIr (int argc, char **argv);
    ~Rts2DevFocuserIr (void);
@@ -201,7 +203,7 @@ Rts2DevFocuserIr::info ()
     return -1;
 
   double realPos;
-  status = tpl_get ("FOCUS.OFFSET", realPos, &status);
+  status = tpl_get ("FOCUS.REALPOS", realPos, &status);
   if (status)
     return -1;
 
@@ -239,23 +241,37 @@ Rts2DevFocuserIr::stepOut (int num)
   if (status)
     {
       syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set offset!");
+      return -1;
     }
-  usleep (USEC_SEC * 3);
-  power = 0;
-  status = tpl_setw ("FOCUS.POWER", power, &status);
-  if (status)
-    {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set POWER to 0");
-    }
-  if (status)
-    return -1;
   return 0;
 }
 
 int
 Rts2DevFocuserIr::isFocusing ()
 {
-  return -2;
+  double targetdistance;
+  int status = 0;
+  status = tpl_get ("FOCUS.TARGETDISTANCE", targetdistance, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserIr::isFocusing status: %i", status);
+      return -1;
+    }
+  return (fabs (targetdistance) < 0.005) ? -2 : USEC_SEC / 50;
+}
+
+int
+Rts2DevFocuserIr::endFocusing ()
+{
+  int status = 0;
+  int power = 0;
+  status = tpl_setw ("FOCUS.POWER", power, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserIr::endFocusing cannot set POWER to 0");
+      return -1;
+    }
+  return 0;
 }
 
 int

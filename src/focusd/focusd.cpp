@@ -65,14 +65,15 @@ Rts2DevFocuser::checkState ()
 	setTimeout (ret);
       else
 	{
+	  ret = endFocusing ();
 	  infoAll ();
-	  if (ret == -2)
-	    maskState (0, FOC_MASK_FOCUSING, FOC_SLEEPING,
-		       "focusing finished without errror");
-	  else
+	  if (ret)
 	    maskState (0, DEVICE_ERROR_MASK | FOC_MASK_FOCUSING,
 		       DEVICE_ERROR_HW | FOC_SLEEPING,
 		       "focusing finished with error");
+	  else
+	    maskState (0, FOC_MASK_FOCUSING, FOC_SLEEPING,
+		       "focusing finished without errror");
 	}
     }
 }
@@ -169,6 +170,12 @@ Rts2DevFocuser::isFocusing ()
   if (focPos != focPositionNew)
     return USEC_SEC;
   return -2;
+}
+
+int
+Rts2DevFocuser::endFocusing ()
+{
+  return 0;
 }
 
 Rts2DevConnFocuser::Rts2DevConnFocuser (int in_sock, Rts2DevFocuser * in_master_device):
