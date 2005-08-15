@@ -212,7 +212,7 @@ Rts2DevTelescopeBridge::stopMove ()
 
   time (&timeout);
   timeout--;
-  return 0;
+  return Rts2DevTelescope::stopMove ();
 }
 
 Rts2DevTelescopeBridge *device;

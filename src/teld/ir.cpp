@@ -653,6 +653,7 @@ Rts2DevTelescopeIr::stopMove ()
 {
   int status = 0;
   double zd;
+  Rts2DevTelescope::stopMove ();
   info ();
   // ZD check..
   status = tpl_get ("ZD.CURRPOS", zd, &status);

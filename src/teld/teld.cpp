@@ -127,6 +127,8 @@ Rts2DevTelescope::checkMoves ()
 	  maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
 		     DEVICE_ERROR_HW | TEL_OBSERVING,
 		     "move finished with error");
+	  lastTar.ra = -1000;
+	  lastTar.dec = -1000;
 	  move_connection = NULL;
 	  knowPosition = 0;
 	}
@@ -238,6 +240,14 @@ Rts2DevTelescope::changeMasterState (int new_state)
       || new_state == (SERVERD_DAY | SERVERD_STANDBY)
       || new_state == SERVERD_OFF)
     startPark (NULL);
+  return 0;
+}
+
+int
+Rts2DevTelescope::stopMove ()
+{
+  lastTar.ra = -1000;
+  lastTar.dec = -1000;
   return 0;
 }
 
@@ -481,6 +491,10 @@ int
 Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
 {
   int ret;
+  syslog (LOG_DEBUG, "Rts2DevTelescope::change %f %f", chng_ra, chng_dec);
+  ret = info ();
+  if (ret)
+    return -2;
   ret = setTarget (telRa + chng_ra, telDec + chng_dec);
   if (ret == 0)
     {

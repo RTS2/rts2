@@ -110,10 +110,7 @@ public:
   {
     return -1;
   }
-  virtual int stopMove ()
-  {
-    return -1;
-  }
+  virtual int stopMove ();
   virtual int startMoveFixed (double tar_ha, double tar_dec)
   {
     return -1;

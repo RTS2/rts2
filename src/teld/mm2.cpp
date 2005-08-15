@@ -942,6 +942,7 @@ Rts2DevTelescopeMM2::stopMove ()
 {
   char dirs[] = { 'e', 'w', 'n', 's' };
   int i;
+  Rts2DevTelescope::stopMove ();
   for (i = 0; i < 4; i++)
     {
       if (telescope_stop_move (dirs[i]) < 0)

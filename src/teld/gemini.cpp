@@ -1204,7 +1204,7 @@ Rts2DevTelescopeGemini::stopMove ()
       return ret;
     }
   sleep (1);
-  return 0;
+  return Rts2DevTelescope::stopMove ();
 }
 
 int
