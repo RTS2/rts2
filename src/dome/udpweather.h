@@ -54,4 +54,16 @@ public:
   virtual int receive (fd_set * set);
   // return 1 if weather is favourable to open dome..
   virtual int isGoodWeather ();
+  int getRain ()
+  {
+    return rain;
+  }
+  float getWindspeed ()
+  {
+    return windspeed;
+  }
+  time_t getNextOpen ()
+  {
+    return nextGoodWeather;
+  }
 };

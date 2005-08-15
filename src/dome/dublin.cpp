@@ -160,6 +160,10 @@ Rts2DevDomeDublin::info ()
 {
   sw_state = 1;
 
+  rain = weatherConn->getRain ();
+  windspeed = weatherConn->getWindspeed ();
+  nextOpen = weatherConn->getNextOpen ();
+
   return 0;
 }
 

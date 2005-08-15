@@ -8,7 +8,7 @@ LDADD = ../utils/librts2block.a @LIB_NOVA@
 
 rts2_dome_bart_SOURCES = dome.cpp bart.cpp
 
-rts2_dome_fram_SOURCES = dome.cpp fram.cpp
+rts2_dome_fram_SOURCES = dome.cpp fram.cpp udpweather.cpp
 
 if PCI8255
 bin_PROGRAMS += rts2-dome-dublin
