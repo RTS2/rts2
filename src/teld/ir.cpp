@@ -592,28 +592,21 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 int
 Rts2DevTelescopeIr::isMoving ()
 {
-  double diffRa, diffDec;
-  ln_equ_posn curr;
-
+  int status = 0;
+  double zd_dist;
+  double az_dist;
   timeout++;
-
   // finish due to error
   if (timeout > 20000)
     {
       return -1;
     }
-
-  info ();
-
-  curr.ra = telRa;
-  curr.dec = telDec;
-
-  if (ln_get_angular_separation (&target, &curr) > 0.1)
-    {
-      return 1000;
-    }
-  // bridge 20 sec timeout
-  return -2;
+  status = tpl_get ("ZD.TARGETDISTANCE", zd_dist, &status);
+  status = tpl_get ("AZ.TARGETDISTANCE", az_dist, &status);
+  // 0.01 = 36 arcsec
+  if (fabs (zd_dist) <= 0.01 && fabs (az_dist) <= 0.01)
+    return -2;
+  return USEC_SEC / 100;
 }
 
 int
@@ -631,10 +624,10 @@ Rts2DevTelescopeIr::startPark ()
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark tracking status: %i",
 	  status);
   usleep (100000);		//0.1s
-  status = tpl_setw ("AZ.TARGETPOS", 0, &status);
+  status = tpl_set ("AZ.TARGETPOS", 0, &status);
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark AZ.TARGETPOS status: %i",
 	  status);
-  status = tpl_setw ("ZD.TARGETPOS", 0, &status);
+  status = tpl_set ("ZD.TARGETPOS", 0, &status);
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark ZD.TARGETPOS status: %i",
 	  status);
   if (status)
@@ -645,7 +638,7 @@ Rts2DevTelescopeIr::startPark ()
 int
 Rts2DevTelescopeIr::isParking ()
 {
-  return -2;
+  return isMoving ();
 }
 
 int
