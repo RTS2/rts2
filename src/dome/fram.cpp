@@ -792,6 +792,8 @@ Rts2DevDomeFram::init ()
 
   tcgetattr (dome_port, &oldtio);
 
+  newtio = oldtio;
+
   newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
   newtio.c_oflag = 0;
