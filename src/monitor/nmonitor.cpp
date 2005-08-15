@@ -359,11 +359,15 @@ void
 Rts2NMDome::print (WINDOW * wnd)
 {
   int dome = getValueInteger ("dome");
+  time_t time_to_open;
+  time (&time_to_open);
+  time_to_open = getValueDouble ("next_open") - time_to_open;
   mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueDouble ("temperature"));
   mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueDouble ("humidity"));
-  mvwprintw (wnd, 4, 1, "Pow_tel: %i", getValueInteger ("power_telescope"));
-  mvwprintw (wnd, 5, 1, "Pow_cam: %i", getValueInteger ("power_cameras"));
+  mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i", getValueDouble ("windspeed"),
+	     getValueInteger ("rain"));
+  connection->printTimeDiff (5, "NextO", &time_to_open);
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
   mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
