@@ -290,6 +290,44 @@ Rts2NMFocus::print (WINDOW * wnd)
   mvwprintw (wnd, 4, 1, "pos: %+i", getValueInteger ("pos"));
 }
 
+class Rts2NMPhot:public Rts2DevClientPhot
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMPhot (Rts2CNMonConn *
+		in_connection):Rts2DevClientPhot (in_connection)
+  {
+    in_connection->setStatusBegin (5);
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    WINDOW *window;
+    switch (event->getType ())
+      {
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientPhot::postEvent (event);
+  }
+};
+
+void
+Rts2NMPhot::print (WINDOW * wnd)
+{
+  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
+  mvwprintw (wnd, 3, 1, "fil:", getValueDouble ("filter"));
+  mvwprintw (wnd, 4, 1, "cnt: %+i", getValueInteger ("count"));
+}
+
+
+
 class Rts2NMDome:public Rts2DevClientDome
 {
 private:
@@ -747,6 +785,8 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2NMCamera ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_FOCUS:
       return new Rts2NMFocus ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_PHOT:
+      return new Rts2NMPhot ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_DOME:
       return new Rts2NMDome ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_EXECUTOR:
