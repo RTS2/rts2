@@ -127,9 +127,13 @@ public:
 
 class Rts2DevClientPhot:public Rts2DevClient
 {
+protected:
+  virtual void addCount (int count, float exp, int is_ov);
+  int lastCount;
+  float lastExp;
 public:
-  Rts2DevClientPhot (Rts2Conn * in_connection);
-
+    Rts2DevClientPhot (Rts2Conn * in_connection);
+  virtual int command ();
 };
 
 class Rts2DevClientExecutor:public Rts2DevClient

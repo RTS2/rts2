@@ -325,8 +325,40 @@ Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
 Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueDouble ("filter"));
-  addValue (new Rts2ValueDouble ("filter_c"));
+  addValue (new Rts2ValueInteger ("filter"));
+  lastCount = -1;
+  lastExp = -1.0;
+}
+
+int
+Rts2DevClientPhot::command ()
+{
+  int count;
+  float exp;
+  if (connection->isCommand ("count"))
+    {
+      if (connection->paramNextInteger (&count)
+	  || connection->paramNextFloat (&exp))
+	return -3;
+      addCount (count, exp, 0);
+      return -1;
+    }
+  if (connection->isCommand ("count_ov"))
+    {
+      if (connection->paramNextInteger (&count)
+	  || connection->paramNextFloat (&exp))
+	return -3;
+      addCount (count, exp, 1);
+      return -1;
+    }
+  return Rts2DevClient::command ();
+}
+
+void
+Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
+{
+  lastCount = count;
+  lastExp = exp;
 }
 
 Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
