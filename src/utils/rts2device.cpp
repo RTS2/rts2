@@ -186,8 +186,10 @@ Rts2DevConn::authorizationOK ()
 {
   setConnState (CONN_AUTH_OK);
   master->sendStatusInfo (this);
-  master->baseInfo (this);
-  master->info (this);
+  master->baseInfo ();
+  master->sendBaseInfo (this);
+  master->info ();
+  master->sendInfo (this);
   sendCommandEnd (0, "OK authorized");
   return 0;
 }
@@ -925,5 +927,5 @@ Rts2Device::baseInfo (Rts2Conn * conn)
       conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
       return -1;
     }
-  return 0;
+  return sendBaseInfo (conn);
 }

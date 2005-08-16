@@ -138,15 +138,8 @@ Rts2DevDome::sendInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevDome::baseInfo (Rts2Conn * conn)
+Rts2DevDome::sendBaseInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = baseInfo ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
-      return -1;
-    }
   conn->sendValue ("type", domeModel);
   return 0;
 }

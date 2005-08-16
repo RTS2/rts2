@@ -55,6 +55,7 @@ public:
   virtual int info ();
   virtual int baseInfo ();
 
+  virtual int sendBaseInfo (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
 
   virtual int changeMasterState (int new_state);
@@ -168,6 +169,12 @@ Rts2ImageProc::info ()
 
 int
 Rts2ImageProc::baseInfo ()
+{
+  return 0;
+}
+
+int
+Rts2ImageProc::sendBaseInfo (Rts2Conn * conn)
 {
   return 0;
 }

@@ -505,15 +505,8 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevCamera::baseInfo (Rts2Conn * conn)
+Rts2DevCamera::sendBaseInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = baseInfo ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
-      return -1;
-    }
   conn->sendValue ("type", ccdType);
   conn->sendValue ("serial", serialNumber);
   conn->sendValue ("chips", chipNum);

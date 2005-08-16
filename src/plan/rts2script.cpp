@@ -60,27 +60,42 @@ Rts2Script::getNextParamInteger (int *val)
 Rts2Script::Rts2Script (char *scriptText,
 			const char in_defaultDevice[DEVICE_NAME_SIZE])
 {
+  Rts2ScriptElement *element;
   cmdBuf = new char[strlen (scriptText) + 1];
   strcpy (cmdBuf, scriptText);
   strcpy (defaultDevice, in_defaultDevice);
   cmdBufTop = cmdBuf;
+  do
+    {
+      element = parseBuf ();
+      if (!element)
+	break;
+      elements.push_back (element);
+    }
+  while (1);
 }
 
 Rts2Script::~Rts2Script (void)
 {
+  std::list < Rts2ScriptElement * >::iterator el_iter;
+  for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+    {
+      Rts2ScriptElement *el;
+      el = *el_iter;
+      delete el;
+    }
+  elements.clear ();
   delete[]cmdBuf;
 }
 
-int
-Rts2Script::nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
-			 Rts2Command ** new_command,
-			 char new_device[DEVICE_NAME_SIZE])
+Rts2ScriptElement *
+Rts2Script::parseBuf ()
 {
   char *commandStart;
   char *devSep;
+  char new_device[DEVICE_NAME_SIZE];
   int ret;
 
-  *new_command = NULL;
   // find whole command
   commandStart = nextElement ();
   // if we include device name
@@ -102,40 +117,53 @@ Rts2Script::nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
       float exp_time;
       ret = getNextParamFloat (&exp_time);
       if (ret)
-	return -1;
-      *new_command =
-	new Rts2CommandExposure (in_master, camera, EXP_LIGHT, exp_time);
-      return 0;
+	return NULL;
+      return new Rts2ScriptElementExpose (this, exp_time);
     }
   else if (!strcmp (commandStart, COMMAND_DARK))
     {
       float exp_time;
       ret = getNextParamFloat (&exp_time);
       if (ret)
-	return -1;
-      *new_command =
-	new Rts2CommandExposure (in_master, camera, EXP_DARK, exp_time);
-      return 0;
+	return NULL;
+      return new Rts2ScriptElementDark (this, exp_time);
     }
   else if (!strcmp (commandStart, COMMAND_FILTER))
     {
       int filter;
       ret = getNextParamInteger (&filter);
       if (ret)
-	return -1;
-      *new_command = new Rts2CommandFilter (in_master, filter);
-      return 0;
+	return NULL;
+      return new Rts2ScriptElementFilter (this, filter);
     }
   else if (!strcmp (commandStart, COMMAND_CHANGE))
     {
       double ra;
       double dec;
       if (getNextParamDouble (&ra) || getNextParamDouble (&dec))
-	return -1;
-      *new_command = new Rts2CommandChange (in_master, ra, dec);
-      strcpy (new_device, "TX");
-      return 0;
+	return NULL;
+      return new Rts2ScriptElementChange (this, ra, dec);
     }
-  // command not found, end of script,..
-  return -1;
+  return NULL;
+}
+
+int
+Rts2Script::nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
+			 Rts2Command ** new_command,
+			 char new_device[DEVICE_NAME_SIZE])
+{
+  std::list < Rts2ScriptElement * >::iterator el_iter;
+  Rts2ScriptElement *nextElement;
+  int ret;
+
+  el_iter = elements.begin ();
+  if (el_iter == elements.end ())
+    // command not found, end of script,..
+    return -1;
+
+  nextElement = *el_iter;
+  ret = nextElement->nextCommand (in_master, camera, new_command, new_device);
+  elements.erase (el_iter);
+  delete nextElement;
+  return ret;
 }

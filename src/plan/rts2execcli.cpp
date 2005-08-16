@@ -160,6 +160,9 @@ Rts2DevClientCameraExec::nextCommand ()
 	    }
 	  isExposing = 1;
 	}
+      syslog (LOG_DEBUG,
+	      "Rts2DevClientCameraExec::nextCommand exposure waiting %i",
+	      waiting);
       connection->queCommand (nextComd);
       nextComd = NULL;		// after command execute, it will be deleted
     }
@@ -261,6 +264,14 @@ Rts2DevClientCameraExec::exposureEnd ()
       nextComd = NULL;
       nextCommand ();
     }
+}
+
+void
+Rts2DevClientCameraExec::exposureFailed (int status)
+{
+  // in case of an error..
+  blockMove = 0;
+  Rts2DevClientCameraImage::exposureFailed (status);
 }
 
 void

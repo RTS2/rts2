@@ -53,7 +53,7 @@ public:
   int idle ();
   int ready (Rts2Conn * conn);
   int sendInfo (Rts2Conn * conn);
-  int baseInfo (Rts2Conn * conn);
+  int sendBaseInfo (Rts2Conn * conn);
   int checkState ();
   int stepOut (Rts2Conn * conn, int num);
   int autoFocus (Rts2Conn * conn);

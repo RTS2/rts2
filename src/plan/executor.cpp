@@ -54,6 +54,7 @@ public:
   {
     return 0;
   }
+  virtual int sendBaseInfo (Rts2Conn * conn);
   virtual int info ()
   {
     updateScriptCount ();
@@ -277,6 +278,12 @@ int
 Rts2Executor::idle ()
 {
   return Rts2Device::idle ();
+}
+
+int
+Rts2Executor::sendBaseInfo (Rts2Conn * conn)
+{
+  return 0;
 }
 
 int

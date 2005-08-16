@@ -142,7 +142,11 @@ Rts2FilterIfw::init (void)
   /*
    * Set the new options for the port...
    */
-  tcsetattr (dev_port, TCSANOW, &options);
+  if (tcsetattr (dev_port, TCSANOW, &options))
+    {
+      syslog (LOG_ERR, "Rts2FilterIfw::init tcsetattr %m");
+      return -1;
+    }
 
   /* initialise filter wheel */
   n = writePort ("WSMODE\r", 7);

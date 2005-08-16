@@ -33,6 +33,10 @@ public:
     return 0;
   }
   virtual int sendInfo (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn)
+  {
+    return 0;
+  }
 
   int newGcnGrb (int tar_id);
 };

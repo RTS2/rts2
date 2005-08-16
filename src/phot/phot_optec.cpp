@@ -86,6 +86,10 @@ public:
   virtual int changeMasterState (int new_state);
 
   virtual int sendInfo (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn)
+  {
+    return 0;
+  }
 };
 
 class Rts2DevConnPhot:public Rts2DevConn

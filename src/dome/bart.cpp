@@ -318,7 +318,14 @@ Rts2DevDomeBart::init ()
   if (dome_port == -1)
     return -1;
 
-  tcgetattr (dome_port, &oldtio);
+  ret = tcgetattr (dome_port, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeBart::init tcgetattr %m");
+      return -1;
+    }
+
+  newtio = oldtio;
 
   newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
@@ -328,7 +335,12 @@ Rts2DevDomeBart::init ()
   newtio.c_cc[VTIME] = 1;
 
   tcflush (dome_port, TCIOFLUSH);
-  tcsetattr (dome_port, TCSANOW, &newtio);
+  ret = tcsetattr (dome_port, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeBart::init tcsetattr %m");
+      return -1;
+    }
 
   return 0;
 }

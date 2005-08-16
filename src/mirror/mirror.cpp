@@ -82,15 +82,8 @@ Rts2DevMirror::sendInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevMirror::baseInfo (Rts2Conn * conn)
+Rts2DevMirror::sendBaseInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = baseInfo ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "mirror not ready");
-      return -1;
-    }
   return 0;
 }
 

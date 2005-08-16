@@ -291,15 +291,8 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevTelescope::baseInfo (Rts2Conn * conn)
+Rts2DevTelescope::sendBaseInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = baseInfo ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "telescope not ready");
-      return -1;
-    }
   conn->sendValue ("type", telType);
   conn->sendValue ("serial", telSerialNumber);
   conn->sendValue ("longtitude", telLongtitude);

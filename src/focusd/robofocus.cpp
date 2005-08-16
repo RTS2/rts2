@@ -226,7 +226,14 @@ Rts2DevFocuserRobofocus::init ()
       return -1;
     }
 
-  tcgetattr (foc_desc, &oldtio);
+  ret = tcgetattr (foc_desc, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserRobofocus::init tcgetattr %m");
+      return -1;
+    }
+
+  newtio = oldtio;
 
   newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
@@ -236,7 +243,12 @@ Rts2DevFocuserRobofocus::init ()
   newtio.c_cc[VTIME] = 50;
 
   tcflush (foc_desc, TCIOFLUSH);
-  tcsetattr (foc_desc, TCSANOW, &newtio);
+  ret = tcsetattr (foc_desc, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserRobofocus::init tcsetattr %m");
+      return -1;
+    }
 
   return 0;
 

@@ -108,17 +108,8 @@ Rts2DevFocuser::sendInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevFocuser::baseInfo (Rts2Conn * conn)
+Rts2DevFocuser::sendBaseInfo (Rts2Conn * conn)
 {
-  int ret;
-
-  ret = baseInfo ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "telescope not ready");
-      return -1;
-    }
-
   conn->sendValue ("type", focType);
   conn->sendValue ("camera", focCamera);
   return 0;

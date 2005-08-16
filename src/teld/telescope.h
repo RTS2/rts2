@@ -181,7 +181,7 @@ public:
   // callback functions from telescope connection
   virtual int ready (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
-  virtual int baseInfo (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn);
 
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);

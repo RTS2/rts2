@@ -112,7 +112,7 @@ Rts2DevMirrorFram::Rts2DevMirrorFram (int argc, char **argv):Rts2DevMirror (argc
 	       argv)
 {
   addOption ('f', "mirror_dev", 1, "mirror device");
-  mirror_dev = "";
+  mirror_dev = NULL;
   mirror_fd = -1;
   mirr_log = NULL;
 }
@@ -152,30 +152,46 @@ Rts2DevMirrorFram::init ()
   if (!mirr_log)
     mirr_log = fopen ("/var/log/rts2-mirror", "a");
 
-  if (*mirror_dev)
+  if (!mirror_dev)
     {
-      mirror_fd = open (mirror_dev, O_RDWR);
-      if (mirror_fd < 0)
-	{
-	  syslog (LOG_ERR, "Rts2DevMirrorFram::init mirror open: %m");
-	  return -1;
-	}
-
-      tcgetattr (mirror_fd, &oldtio);
-
-      newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-      newtio.c_iflag = IGNPAR;
-      newtio.c_oflag = 0;
-      newtio.c_lflag = 0;
-      newtio.c_cc[VMIN] = 0;
-      newtio.c_cc[VTIME] = 4;
-
-      tcflush (mirror_fd, TCIOFLUSH);
-      tcsetattr (mirror_fd, TCSANOW, &newtio);
-
-      syslog (LOG_DEBUG, "Rts2DevMirrorFram::init mirror initialized on %s",
-	      mirror_dev);
+      syslog (LOG_ERR,
+	      "Rts2DevMirrorFram::init /dev entry wasn't passed as parameter - exiting");
+      return -1;
     }
+
+  mirror_fd = open (mirror_dev, O_RDWR);
+  if (mirror_fd < 0)
+    {
+      syslog (LOG_ERR, "Rts2DevMirrorFram::init mirror open: %m");
+      return -1;
+    }
+
+  ret = tcgetattr (mirror_fd, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevMirrorFram::init tcgetattr %m");
+      return -1;
+    }
+
+  newtio = oldtio;
+
+  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+  newtio.c_iflag = IGNPAR;
+  newtio.c_oflag = 0;
+  newtio.c_lflag = 0;
+  newtio.c_cc[VMIN] = 0;
+  newtio.c_cc[VTIME] = 4;
+
+  tcflush (mirror_fd, TCIOFLUSH);
+  ret = tcsetattr (mirror_fd, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevMirrorFram::init tcsetattr %m");
+      return -1;
+    }
+
+  syslog (LOG_DEBUG, "Rts2DevMirrorFram::init mirror initialized on %s",
+	  mirror_dev);
 
   return startClose ();
 }

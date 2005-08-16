@@ -47,6 +47,7 @@ public:
   void nextCommand ();
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void processImage (Rts2Image * image);
+  virtual void exposureFailed (int status);
 };
 
 class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage

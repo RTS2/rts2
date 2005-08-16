@@ -67,6 +67,16 @@ public:
     return 0;
   }
 
+  virtual int sendInfo (Rts2Conn * conn)
+  {
+    return 0;
+  }
+
+  virtual int sendBaseInfo (Rts2Conn * conn)
+  {
+    return 0;
+  }
+
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
   virtual void postEvent (Rts2Event * event);

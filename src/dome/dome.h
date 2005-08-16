@@ -73,7 +73,7 @@ public:
 
   // callback function from dome connection
   virtual int ready (Rts2Conn * conn);
-  virtual int baseInfo (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
 
   virtual int observing ();

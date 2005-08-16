@@ -321,14 +321,22 @@ int
 Rts2DevDomeFram::openWDC ()
 {
   struct termios oldtio, newtio;
+  int ret;
 
   wdc_port = open (wdc_file, O_RDWR | O_NOCTTY);
   if (wdc_port < 0)
     {
-      syslog (LOG_ERR, "Can't open device %s : %m", wdc_file);
+      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC Can't open device %s : %m",
+	      wdc_file);
       return -1;
     }
-  tcgetattr (wdc_port, &oldtio);
+  ret = tcgetattr (wdc_port, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC tcgetattr %m");
+      return -1;
+    }
+  newtio = oldtio;
   newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
   newtio.c_oflag = 0;
@@ -336,7 +344,12 @@ Rts2DevDomeFram::openWDC ()
   newtio.c_cc[VMIN] = 0;
   newtio.c_cc[VTIME] = 100;
   tcflush (wdc_port, TCIOFLUSH);
-  tcsetattr (wdc_port, TCSANOW, &newtio);
+  ret = tcsetattr (wdc_port, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC tcsetattr %m");
+      return -1;
+    }
 
   return setWDCTimeOut (1, wdcTimeOut);
 }
@@ -790,7 +803,12 @@ Rts2DevDomeFram::init ()
   if (dome_port == -1)
     return -1;
 
-  tcgetattr (dome_port, &oldtio);
+  ret = tcgetattr (dome_port, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::init tcgetattr %m");
+      return -1;
+    }
 
   newtio = oldtio;
 
@@ -802,7 +820,12 @@ Rts2DevDomeFram::init ()
   newtio.c_cc[VTIME] = 1;
 
   tcflush (dome_port, TCIOFLUSH);
-  tcsetattr (dome_port, TCSANOW, &newtio);
+  ret = tcsetattr (dome_port, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::init tcsetattr %m");
+      return -1;
+    }
 
   vypni_pin (adresa[VENTIL_AKTIVACNI].port,
 	     adresa[VENTIL_AKTIVACNI].pin | adresa[KOMPRESOR].pin);

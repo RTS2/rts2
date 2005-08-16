@@ -275,7 +275,7 @@ public:
   // callback functions from camera connection
   virtual int ready (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
-  virtual int baseInfo (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn);
   int camChipInfo (Rts2Conn * conn, int chip);
   int camExpose (Rts2Conn * conn, int chip, int light, float exptime);
   int camStopExpose (Rts2Conn * conn, int chip);
