@@ -31,7 +31,6 @@ private:
 
   int phot_command (char command, short arg);
 
-  long req_time_usec;
   short req_time;
   int req_count;
 
@@ -40,6 +39,9 @@ private:
   Rts2Conn *integrateConn;
 
   virtual int startIntegrate (float in_req_time, int in_req_count);
+
+protected:
+  int sendCount (int count, short exp, int is_ov);
 
 public:
     Rts2DevPhotOptec (int argc, char **argv);
@@ -251,11 +253,10 @@ Rts2DevPhotOptec::idle ()
 		case 'B':
 		  req_count--;
 		  if (result[0] == 'B')
-		    integrateConn->sendValue ("count_ov", result[1],
-					      req_time);
+		    sendCount (result[1], req_time, 1);
 		  else
-		    integrateConn->sendValue ("count", result[1], req_time);
-		  setTimeout (req_time_usec);
+		    sendCount (result[1], req_time, 0);
+		  setTimeout (req_time * 1000);
 		  break;
 		case '0':
 		  filter = result[1] / FILTER_STEP;
@@ -263,7 +264,7 @@ Rts2DevPhotOptec::idle ()
 		  setTimeout (1000);
 		  break;
 		case '-':
-		  integrateConn->send ("count 0 0");
+		  sendCount (0, 0, 1);
 		  endIntegrate ();
 		  break;
 		}
@@ -386,6 +387,17 @@ int
 Rts2DevPhotOptec::sendInfo (Rts2Conn * conn)
 {
   conn->sendValue ("filter", filter);
+}
+
+int
+Rts2DevPhotOptec::sendCount (int count, short exp, int is_ov)
+{
+  char *msg;
+  int ret;
+  asprintf (&msg, "send %i %i %i", count, exp, is_ov);
+  ret = integrateConn->send (msg);
+  free (msg);
+  return ret;
 }
 
 Rts2DevPhotOptec *device;

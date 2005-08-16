@@ -334,21 +334,15 @@ int
 Rts2DevClientPhot::command ()
 {
   int count;
-  float exp;
+  int exp;
+  int is_ov;
   if (connection->isCommand ("count"))
     {
       if (connection->paramNextInteger (&count)
-	  || connection->paramNextFloat (&exp))
+	  || connection->paramNextInteger (&exp)
+	  || connection->paramNextInteger (&is_ov))
 	return -3;
-      addCount (count, exp, 0);
-      return -1;
-    }
-  if (connection->isCommand ("count_ov"))
-    {
-      if (connection->paramNextInteger (&count)
-	  || connection->paramNextFloat (&exp))
-	return -3;
-      addCount (count, exp, 1);
+      addCount (count, exp / 1000.0, is_ov);
       return -1;
     }
   return Rts2DevClient::command ();
