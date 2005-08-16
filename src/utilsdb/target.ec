@@ -513,7 +513,7 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
     }
     // object is above horizont, but checker reject it..let's see what
     // will hapens in 12 minutes 
-    if (rst.transit < rst.set)
+    if (rst.transit < rst.set && rst.set < rst.rise)
     {
       // object rose, but is not above horizont, let's hope in 12 minutes it will get above horizont
       syslog (LOG_DEBUG, "Target::considerForObserving %i will rise tommorow: %f JD %f", getTargetID (), rst.rise, JD);
