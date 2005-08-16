@@ -75,6 +75,7 @@ protected:
   // returns 0 when we need to 
   int setTarget (double tar_ra, double tar_dec);
   double getMoveTargetSep ();
+  double get_loc_sid_time ();
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int init ();

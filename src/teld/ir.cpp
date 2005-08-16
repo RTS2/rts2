@@ -79,8 +79,6 @@ private:
     template < typename T > int tpl_setw (const char *name, T val,
 					  int *status);
 
-  double get_loc_sid_time ();
-
   virtual int coverClose ();
   virtual int coverOpen ();
 
@@ -493,13 +491,6 @@ Rts2DevTelescopeIr::baseInfo ()
   tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
   strncpy (telSerialNumber, serial.c_str (), 64);
   return 0;
-}
-
-double
-Rts2DevTelescopeIr::get_loc_sid_time ()
-{
-  return ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
-    telLongtitude / 15.0;
 }
 
 int

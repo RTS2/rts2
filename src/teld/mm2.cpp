@@ -382,9 +382,7 @@ int
 Rts2DevTelescopeMM2::tel_read_siderealtime ()
 {
   tel_read_longtitude ();
-  telSiderealTime = ln_get_mean_sidereal_time
-    (ln_get_julian_from_sys ()) * 15.0 - telLongtitude;
-  telSiderealTime = ln_range_degrees (telSiderealTime) / 15.0;
+  telSiderealTime = get_loc_sid_time ();
 }
 
 /*! 

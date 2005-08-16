@@ -96,6 +96,15 @@ Rts2DevTelescope::getMoveTargetSep ()
   return ln_get_angular_separation (&curr, &lastTar);
 }
 
+double
+Rts2DevTelescope::get_loc_sid_time ()
+{
+  double ret;
+  ret = ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) * 15.0 +
+    telLongtitude;
+  return ln_range_degrees (ret) / 15.0;
+}
+
 int
 Rts2DevTelescope::init ()
 {

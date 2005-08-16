@@ -26,7 +26,6 @@ private:
   int _Tstat_handle, _Tctrl_handle;
   struct T9_ctrl *Tctrl;
   struct T9_stat *Tstat;
-  double get_loc_sid_time ();
   time_t timeout;
   time_t startTime;
 public:
@@ -113,13 +112,6 @@ Rts2DevTelescopeBridge::baseInfo ()
   return 0;
 }
 
-double
-Rts2DevTelescopeBridge::get_loc_sid_time ()
-{
-  return 15 * ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
-    Tstat->longtitude;
-}
-
 int
 Rts2DevTelescopeBridge::info ()
 {
@@ -182,7 +174,7 @@ Rts2DevTelescopeBridge::endMove ()
 int
 Rts2DevTelescopeBridge::startPark ()
 {
-  Tctrl->ra = get_loc_sid_time () - 30;
+  Tctrl->ra = get_loc_sid_time () * 15.0 - 30;
   Tctrl->dec = Tstat->dec;
   time (&startTime);
   timeout = startTime + MOVE_TIMEOUT;
