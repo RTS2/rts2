@@ -71,7 +71,7 @@ public:
     connection->setConnState (CONN_AUTH_OK);
     return -1;
   }
-  virtual int commandReturnFailed ()
+  virtual int commandReturnFailed (int status)
   {
     connection->setConnState (CONN_AUTH_FAILED);
     return -1;
