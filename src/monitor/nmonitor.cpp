@@ -323,7 +323,7 @@ Rts2NMPhot::print (WINDOW * wnd)
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
   mvwprintw (wnd, 3, 1, "fil:", getValueDouble ("filter"));
-  mvwprintw (wnd, 4, 1, "cnt: %+i", getValueInteger ("count"));
+  mvwprintw (wnd, 4, 1, "cnt: %i (%f)", lastCount, lastExp);
 }
 
 
