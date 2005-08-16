@@ -394,7 +394,7 @@ Rts2DevPhotOptec::sendCount (int count, short exp, int is_ov)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "send %i %i %i", count, exp, is_ov);
+  asprintf (&msg, "count %i %i %i", count, exp, is_ov);
   ret = integrateConn->send (msg);
   free (msg);
   return ret;
