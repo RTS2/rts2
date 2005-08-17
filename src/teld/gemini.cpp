@@ -963,6 +963,7 @@ Rts2DevTelescopeGemini::idle ()
       else
 	{
 	  stopWorm ();
+	  stopMove ();
 	  ret = -1;
 	}
     }
@@ -1035,7 +1036,7 @@ Rts2DevTelescopeGemini::info ()
       tel_gemini_get (311, &feature);
       telAxis[0] = (double) ((feature & 1) ? 1 : 0);
       telAxis[1] = (double) ((feature & 2) ? 1 : 0);
-      telFlip = feature & 1;
+      telFlip = (feature & 2) ? 1 : 0;
     }
   else
     {
