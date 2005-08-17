@@ -51,7 +51,7 @@ ErrorTime::clean (time_t now)
 int
 ErrorTime::isError (int in_error)
 {
-  if (error = in_error)
+  if (error == in_error)
     {
       time (&etime);
       return 1;
@@ -338,7 +338,7 @@ Rts2DevTelescopeIr::checkErrors ()
 	    pos = list.find ('"', lastpos);
 	  if (pos == string::npos)
 	    break;		// we reach string end..
-	  errn = atoi (list.substr (lastpos, pos).c_str ());
+	  errn = atoi (list.substr (lastpos, pos - lastpos).c_str ());
 	  addError (errn);
 	  lastpos = pos + 1;
 	}
