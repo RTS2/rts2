@@ -1192,17 +1192,13 @@ Rts2DevTelescopeGemini::endMove ()
 int
 Rts2DevTelescopeGemini::stopMove ()
 {
-  int ret;
   tel_gemini_get (99, &lastMotorState);
   tel_write ("#:Q#", 4);
   if (lastMotorState & 8)
     {
       lastMotorState &= ~8;
-      ret = tel_gemini_set (99, lastMotorState);
-      sleep (1);
-      return ret;
+      tel_gemini_set (99, lastMotorState);
     }
-  sleep (1);
   return Rts2DevTelescope::stopMove ();
 }
 

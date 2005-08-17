@@ -315,9 +315,9 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 {
   int ret;
   syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
+	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec);
+	  locCorDec, lastTar.ra, lastTar.dec);
   ret = setTarget (tar_ra, tar_dec);
   // we know our position and we are on it..don't move
   if (ret == 0)
