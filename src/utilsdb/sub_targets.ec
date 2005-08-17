@@ -1166,16 +1166,16 @@ TargetSwiftFOV::considerForObserving (ObjectCheck * checker, double JD)
 
   if (swiftId < 0)
   {
-    // no pointing..expect that after 30 minutes, it will be better,
+    // no pointing..expect that after 3 minutes, it will be better,
     // as we can get new pointing from GCN
-    changePriority (-100, JD + 1/1440.0/2.0);
+    changePriority (-100, JD + 1/1440.0/20.0);
     return -1;
   }
 
   ret = getPosition (&curr_position, JD);
   if (ret)
   {
-    changePriority (-100, JD + 1/1440.0/2.0);
+    changePriority (-100, JD + 1/1440.0/20.0);
     return -1;
   }
 
