@@ -65,7 +65,7 @@ private:
   std::string * ir_ip;
   int ir_port;
   Client *tplc;
-  int timeout;
+  time_t timeout;
   double cover;
   enum
   { OPENED, OPENING, CLOSING, CLOSED } cover_state;
@@ -283,6 +283,36 @@ Rts2DevTelescopeIr::addError (int in_error)
   std::list < ErrorTime * >::iterator errIter;
   ErrorTime *errt;
   int status;
+  int errNum = in_error & 0x00ffffff;
+  // try to park if on limit switches..
+  if (errNum == 88 || errNum == 89)
+    {
+      double zd;
+      int status = 0;
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeIr::checkErrors soft limit in ZD (%i)",
+	      errNum);
+      status = tpl_get ("ZD.CURRPOS", zd, &status);
+      if (!status)
+	{
+	  if (zd < -80)
+	    zd = -80;
+	  if (zd > 80)
+	    zd = 80;
+	  status = tpl_set ("ZD.TARGETPOS", zd, &status);
+	  syslog (LOG_ERR,
+		  "Rts2DevTelescopeIr::checkErrors zd soft limit reset %f (%i)",
+		  zd, status);
+	}
+    }
+  if ((getState (0) & TEL_MASK_MOVING) != TEL_PARKING)
+    {
+      if (errNum == 58 || errNum == 59 || errNum == 90 || errNum == 91)
+	{
+	  // emergency park..
+	  Rts2DevTelescope::startPark (NULL);
+	}
+    }
   for (errIter = errorcodes.begin (); errIter != errorcodes.end (); errIter++)
     {
       errt = *errIter;
@@ -290,13 +320,13 @@ Rts2DevTelescopeIr::addError (int in_error)
 	return;
     }
   // new error
-  asprintf (&txt, "CABINET.STATUS.TEXT[%i]", in_error & 0x00ffffff);
+  asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errNum);
   status = 0;
   status = tpl_get (txt, desc, &status);
   if (status)
     syslog (LOG_ERR,
 	    "Rts2DevTelescopeIr::checkErrors Telescope getting error: %i sev:%x err:%x",
-	    in_error, in_error & 0xff000000, in_error & 0x00ffffff);
+	    in_error, in_error & 0xff000000, errNum);
   else
     syslog (LOG_DEBUG,
 	    "Rts2DevTelescopeIr::checkErrors Telescope sev: %x err: %x desc: %s",
@@ -576,7 +606,8 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   if (status)
     return -1;
 
-  timeout = 0;
+  time (&timeout);
+  timeout += 120;
   return 0;
 }
 
@@ -584,18 +615,21 @@ int
 Rts2DevTelescopeIr::isMoving ()
 {
   int status = 0;
-  double zd_dist;
-  double az_dist;
-  timeout++;
-  // finish due to error
-  if (timeout > 20000)
+  double poin_dist;
+  time_t now;
+  time (&now);
+  // finish due to timeout
+  if (timeout < now)
     {
+      status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeIr::isMoving targetdistance in timeout: %f (%i)",
+	      poin_dist, status);
       return -1;
     }
-  status = tpl_get ("ZD.TARGETDISTANCE", zd_dist, &status);
-  status = tpl_get ("AZ.TARGETDISTANCE", az_dist, &status);
+  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
   // 0.01 = 36 arcsec
-  if (fabs (zd_dist) <= 0.01 && fabs (az_dist) <= 0.01)
+  if (fabs (poin_dist) <= 0.01)
     return -2;
   return USEC_SEC / 100;
 }
@@ -623,6 +657,8 @@ Rts2DevTelescopeIr::startPark ()
 	  status);
   if (status)
     return -1;
+  time (&timeout);
+  timeout += 300;
   return 0;
 }
 
@@ -679,12 +715,13 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
     {
     case SERVERD_DUSK:
     case SERVERD_NIGHT:
+    case SERVERD_NIGHT | SERVERD_STANDBY:
     case SERVERD_DAWN:
       return coverOpen ();
     default:
       return coverClose ();
     }
-  return 0;
+  return Rts2DevTelescope::changeMasterState (new_state);
 }
 
 int
