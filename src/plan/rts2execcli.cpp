@@ -61,6 +61,14 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	  break;
 	}
       startTarget ();
+      if ((connection->
+	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
+			   CAM_MASK_READING)) ==
+	  (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
+	{
+	  nextCommand ();
+	}
+      // otherwise we post command after end of camera readout
       getObserveStart = 0;
       break;
     case EVENT_CLEAR_WAIT:
@@ -90,13 +98,6 @@ Rts2DevClientCameraExec::startTarget ()
   script = new Rts2Script (scriptBuf, connection->getName ());
   exposureCount = 1;
   connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
-  if ((connection->
-       getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
-      (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
-    {
-      nextCommand ();
-    }
-  // otherwise we post command after end of camera readout
 }
 
 int
@@ -160,9 +161,6 @@ Rts2DevClientCameraExec::nextCommand ()
 	    }
 	  isExposing = 1;
 	}
-      syslog (LOG_DEBUG,
-	      "Rts2DevClientCameraExec::nextCommand exposure waiting %i",
-	      waiting);
       connection->queCommand (nextComd);
       nextComd = NULL;		// after command execute, it will be deleted
     }
