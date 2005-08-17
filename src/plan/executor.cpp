@@ -417,9 +417,17 @@ int
 Rts2Executor::setGrb (int grbId)
 {
   Target *grbTarget;
-  grbTarget = createTarget (grbId, observer);
   struct ln_hrz_posn grbHrz;
   int ret;
+
+  // is during night and ready?
+  if (getMasterState () != SERVERD_NIGHT)
+    {
+      syslog (LOG_DEBUG, "Rts2Executor::setGrb daylight GRB ignored");
+      return -2;
+    }
+
+  grbTarget = createTarget (grbId, observer);
 
   if (!grbTarget)
     {
