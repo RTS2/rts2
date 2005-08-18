@@ -303,6 +303,7 @@ Rts2DevTelescopeIr::addError (int in_error)
 	  syslog (LOG_DEBUG,
 		  "Rts2DevTelescopeIr::checkErrors set pointing status %i",
 		  status);
+	  sleep (1);
 	  status = tpl_set ("ZD.TARGETPOS", zd, &status);
 	  syslog (LOG_ERR,
 		  "Rts2DevTelescopeIr::checkErrors zd soft limit reset %f (%i)",
@@ -652,7 +653,7 @@ Rts2DevTelescopeIr::startPark ()
   status = tpl_set ("POINTING.TRACK", 0, &status);
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark tracking status: %i",
 	  status);
-  usleep (100000);		//0.1s
+  sleep (1);
   status = tpl_set ("AZ.TARGETPOS", 0, &status);
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark AZ.TARGETPOS status: %i",
 	  status);
@@ -722,8 +723,10 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
     case SERVERD_NIGHT | SERVERD_STANDBY:
     case SERVERD_DAWN:
       coverOpen ();
+      break;
     default:
       coverClose ();
+      break;
     }
   return Rts2DevTelescope::changeMasterState (new_state);
 }
