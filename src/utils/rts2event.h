@@ -14,6 +14,14 @@
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
 
+// local events are defined in local headers!
+// so far those offeset ranges (from RTS2_LOCAL_EVENT) are reserved for:
+//
+// rts2execcli.h            50- 99
+// rts2connimgprocess.h    200-249
+// rts2scriptelement.h     250-259
+// rts2devclifoc.h         500-549
+
 class Rts2Event
 {
 private:

@@ -4,6 +4,9 @@
 #include "../utils/rts2connfork.h"
 #include "../writers/rts2imagedb.h"
 
+#define EVENT_OK_ASTROMETRY	RTS2_LOCAL_EVENT + 200
+#define EVENT_NOT_ASTROMETRY	RTS2_LOCAL_EVENT + 201
+
 typedef enum
 { NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT } astrometry_stat_t;
 
@@ -19,7 +22,8 @@ typedef enum
  */
 class Rts2ConnImgProcess:public Rts2ConnFork
 {
-  Rts2Conn *reqConn;
+private:
+  Rts2Conn * reqConn;
 
   char *imgPath;
 

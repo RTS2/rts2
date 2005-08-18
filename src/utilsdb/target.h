@@ -39,14 +39,11 @@
 #define COMMAND_EXPOSURE	"E"
 #define COMMAND_DARK		"D"
 #define COMMAND_FILTER		"F"
-#define COMMAND_PHOTOMETER      'P'
+#define COMMAND_FOCUSING	'O'
 #define COMMAND_CHANGE		"C"
-#define COMMAND_WAIT            'W'
-#define COMMAND_SLEEP		'S'
-#define COMMAND_UTC_SLEEP	'U'
-#define COMMAND_CENTERING	'c'
-#define	COMMAND_FOCUSING	'f'
-#define COMMAND_MIRROR		'M'
+#define COMMAND_WAIT		"W"
+#define COMMAND_ACQUIRE		"A"
+#define COMMAND_WAIT_ACQUIRE	"Aw"
 
 #define TARGET_DARK		1
 #define TARGET_FLAT		2
@@ -55,6 +52,8 @@
 #define TARGET_SWIFT_FOV	10
 #define TARGET_INTEGRAL_FOV	11
 
+#define OBS_MOVE		0
+#define OBS_ALREADY_STARTED	1
 #define OBS_DONT_MOVE		2
 
 /**

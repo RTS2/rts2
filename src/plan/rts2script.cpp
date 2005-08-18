@@ -57,13 +57,15 @@ Rts2Script::getNextParamInteger (int *val)
   return 0;
 }
 
-Rts2Script::Rts2Script (char *scriptText,
-			const char in_defaultDevice[DEVICE_NAME_SIZE])
+Rts2Script::Rts2Script (char *scriptText, Rts2Conn * in_connection):Rts2Object
+  ()
 {
-  Rts2ScriptElement *element;
+  Rts2ScriptElement *
+    element;
   cmdBuf = new char[strlen (scriptText) + 1];
   strcpy (cmdBuf, scriptText);
-  strcpy (defaultDevice, in_defaultDevice);
+  strcpy (defaultDevice, in_connection->getName ());
+  connection = in_connection;
   cmdBufTop = cmdBuf;
   do
     {
@@ -86,6 +88,13 @@ Rts2Script::~Rts2Script (void)
     }
   elements.clear ();
   delete[]cmdBuf;
+}
+
+void
+Rts2Script::postEvent (Rts2Event * event)
+{
+  if (elements.size () > 0)
+    (*elements.begin ())->postEvent (event);
 }
 
 Rts2ScriptElement *
@@ -144,11 +153,27 @@ Rts2Script::parseBuf ()
 	return NULL;
       return new Rts2ScriptElementChange (this, ra, dec);
     }
+  else if (!strcmp (commandStart, COMMAND_WAIT))
+    {
+      return new Rts2ScriptElementWait (this);
+    }
+  else if (!strcmp (commandStart, COMMAND_ACQUIRE))
+    {
+      double precision;
+      float expTime;
+      if (getNextParamDouble (&precision) || getNextParamFloat (&expTime))
+	return NULL;
+      return new Rts2ScriptElementAcquire (this, precision, expTime);
+    }
+  else if (!strcmp (commandStart, COMMAND_WAIT_ACQUIRE))
+    {
+      return new Rts2ScriptElementWaitAcquire (this);
+    }
   return NULL;
 }
 
 int
-Rts2Script::nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
+Rts2Script::nextCommand (Rts2DevClientCamera * camera,
 			 Rts2Command ** new_command,
 			 char new_device[DEVICE_NAME_SIZE])
 {
@@ -157,13 +182,36 @@ Rts2Script::nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
   int ret;
 
   el_iter = elements.begin ();
-  if (el_iter == elements.end ())
-    // command not found, end of script,..
-    return -1;
-
-  nextElement = *el_iter;
-  ret = nextElement->nextCommand (in_master, camera, new_command, new_device);
-  elements.erase (el_iter);
-  delete nextElement;
+  while (1)
+    {
+      if (el_iter == elements.end ())
+	// command not found, end of script,..
+	return NEXT_COMMAND_END_SCRIPT;
+      nextElement = *el_iter;
+      ret = nextElement->nextCommand (camera, new_command, new_device);
+      if (ret != NEXT_COMMAND_NEXT)
+	break;
+    }
+  switch (ret)
+    {
+    case 0:
+      elements.erase (el_iter);
+      delete nextElement;
+      break;
+    case NEXT_COMMAND_WAITING:
+      *new_command = NULL;
+      break;
+    case NEXT_COMMAND_KEEP:
+      // keep us
+      break;
+    }
   return ret;
+}
+
+int
+Rts2Script::processImage (Rts2Image * image)
+{
+  if (elements.size () == 0)
+    return -1;
+  return (*elements.begin ())->processImage (image);
 }

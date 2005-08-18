@@ -776,6 +776,20 @@ Rts2Image::substractDark (Rts2Image * darkImage)
 }
 
 int
+Rts2Image::setAstroResults (double ra, double dec, double ra_err,
+			    double dec_err)
+{
+  struct ln_equ_posn pos1;
+  struct ln_equ_posn pos2;
+  pos1.ra = ra;
+  pos1.dec = dec;
+  pos2.ra = ra + ra_err;
+  pos2.dec = dec + dec_err;
+  return setValue ("POS_ERR", ln_get_angular_separation (&pos1, &pos2),
+		   "error in position");
+}
+
+int
 Rts2Image::addStarData (struct stardata *sr)
 {
   int ret;

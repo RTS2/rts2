@@ -198,8 +198,20 @@ public:
   unsigned short *getDataUShortInt ();
   int substractDark (Rts2Image * darkImage);
 
+  int setAstroResults (double ra, double dec, double ra_err, double dec_err);
+
   int addStarData (struct stardata *sr);
   double getFWHM ();
+
+  double getPrecision ()
+  {
+    double val;
+    int ret;
+    ret = getValue ("POS_ERR", val);
+    if (ret)
+      return nan ("f");
+    return val;
+  }
 };
 
 #endif /* !__RTS2_IMAGE__ */

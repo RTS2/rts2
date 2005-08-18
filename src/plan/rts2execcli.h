@@ -18,6 +18,7 @@
 #define EVENT_SLEW_TO_TARGET   RTS2_LOCAL_EVENT+58
 
 #define EVENT_TEL_SCRIPT_CHANGE  RTS2_LOCAL_EVENT+59
+#define EVENT_TEL_SCRIPT_RESYNC  RTS2_LOCAL_EVENT+60
 
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
 {
@@ -56,6 +57,9 @@ private:
   Target * currentTarget;
   int blockMove;
   Rts2CommandChange *cmdChng;
+
+  int syncTarget ();
+  void checkInterChange ();
 protected:
     virtual void moveEnd ();
 public:

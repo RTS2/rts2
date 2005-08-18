@@ -106,7 +106,7 @@ Target::startSlew (struct ln_equ_posn *position)
   selected++;
 
   if (obs_id > 0) // we already observe that target
-    return 1;
+    return OBS_ALREADY_STARTED;
 
   d_obs_ra = position->ra;
   d_obs_dec = position->dec;
@@ -149,7 +149,7 @@ Target::startSlew (struct ln_equ_posn *position)
   }
   EXEC SQL COMMIT;
   obs_id = d_obs_id;
-  return 0;
+  return OBS_MOVE;
 }
 
 int

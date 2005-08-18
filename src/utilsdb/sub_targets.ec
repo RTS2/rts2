@@ -701,7 +701,7 @@ ModelTarget::startSlew (struct ln_equ_posn *position)
   {
     EXEC SQL COMMIT;
   }
-  return 0;
+  return OBS_MOVE;
 }
 
 int
@@ -1151,7 +1151,7 @@ TargetSwiftFOV::startSlew (struct ln_equ_posn *position)
     return -1;
   }
   EXEC SQL COMMIT;
-  return 0;
+  return OBS_MOVE;
 }
 
 int

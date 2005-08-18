@@ -6,8 +6,16 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2devclient.h"
+#include "../writers/rts2image.h"
 
 #include <list>
+
+#define NEXT_COMMAND_NEXT	       -2
+#define NEXT_COMMAND_END_SCRIPT        -1
+#define NEXT_COMMAND_KEEP     		1
+#define NEXT_COMMAND_WAITING  		2
+#define NEXT_COMMAND_RESYNC		3
+#define NEXT_COMMAND_CHECK_WAIT		4
 
 /*!
  * Holds script to execute on given device.
@@ -24,7 +32,7 @@
 
 class Rts2ScriptElement;
 
-class Rts2Script
+class Rts2Script:public Rts2Object
 {
 private:
   char *cmdBuf;
@@ -37,11 +45,12 @@ private:
   int getNextParamInteger (int *val);
   Rts2ScriptElement *parseBuf ();
     std::list < Rts2ScriptElement * >elements;
+  Rts2Conn *connection;
 public:
-    Rts2Script (char *scriptText,
-		const char in_defaultDevice[DEVICE_NAME_SIZE]);
+    Rts2Script (char *scriptText, Rts2Conn * in_connection);
     virtual ~ Rts2Script (void);
-  int nextCommand (Rts2Block * in_master, Rts2DevClientCamera * camera,
+  virtual void postEvent (Rts2Event * event);
+  int nextCommand (Rts2DevClientCamera * camera,
 		   Rts2Command ** new_command,
 		   char new_device[DEVICE_NAME_SIZE]);
   int isLastCommand (void)
@@ -51,6 +60,11 @@ public:
   void getDefaultDevice (char new_device[DEVICE_NAME_SIZE])
   {
     strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE);
+  }
+  int processImage (Rts2Image * image);
+  Rts2Block *getMaster ()
+  {
+    return connection->getMaster ();
   }
 };
 

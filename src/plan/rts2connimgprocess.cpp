@@ -66,6 +66,7 @@ Rts2ConnImgProcess::processLine ()
   if (ret == 5)
     {
       astrometryStat = GET;
+      // inform others..
     }
   return -1;
 }
@@ -94,6 +95,7 @@ Rts2ConnImgProcess::connectionError ()
       if (reqConn)
 	reqConn->sendValue ("correct", image->getObsId (), image->getImgId (),
 			    ra, dec, ra_err, dec_err);
+      image->setAstroResults (ra, dec, ra_err / 60.0, dec_err / 60.0);
       image->toArchive ();
       // send correction to telescope..
       telescopeName = image->getMountName ();
@@ -116,6 +118,10 @@ Rts2ConnImgProcess::connectionError ()
       image->toDark ();
       break;
     }
+  if (astrometryStat == GET)
+    master->postEvent (new Rts2Event (EVENT_OK_ASTROMETRY, (void *) image));
+  else
+    master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
   delete image;
   return Rts2ConnFork::connectionError ();
 }

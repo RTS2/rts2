@@ -82,6 +82,16 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	  *(int *) event->getArg () = *(int *) event->getArg () + 1;
 	}
       break;
+    case EVENT_OK_ASTROMETRY:
+    case EVENT_NOT_ASTROMETRY:
+      if (script)
+	{
+	  script->postEvent (event);
+	  if (waiting == WAIT_MOVE)
+	    // get a change to process updates..
+	    nextCommand ();
+	}
+      break;
     }
   Rts2DevClientCameraImage::postEvent (event);
 }
@@ -95,7 +105,7 @@ Rts2DevClientCameraExec::startTarget ()
   if (!currentTarget)
     return;
   currentTarget->getScript (connection->getName (), scriptBuf);
-  script = new Rts2Script (scriptBuf, connection->getName ());
+  script = new Rts2Script (scriptBuf, connection);
   exposureCount = 1;
   connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
@@ -103,10 +113,26 @@ Rts2DevClientCameraExec::startTarget ()
 int
 Rts2DevClientCameraExec::nextPreparedCommand ()
 {
+  int ret;
   if (nextComd)
     return 0;
-  return script->nextCommand (connection->getMaster (), this, &nextComd,
-			      cmd_device);
+  ret = script->nextCommand (this, &nextComd, cmd_device);
+  if (ret == NEXT_COMMAND_WAITING)
+    waiting = WAIT_MOVE;
+  if (ret == NEXT_COMMAND_CHECK_WAIT)
+    {
+      unblockWait ();
+      if (waiting == NOT_WAITING)
+	waiting = WAIT_MOVE;
+    }
+  if (ret == NEXT_COMMAND_RESYNC)
+    {
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_TEL_SCRIPT_RESYNC));
+      if (waiting == NOT_WAITING)
+	waiting = WAIT_MOVE;
+    }
+  return ret;
 }
 
 void
@@ -115,10 +141,6 @@ Rts2DevClientCameraExec::nextCommand ()
   int ret;
 
   if (!script)			// waiting for script..
-    {
-      return;
-    }
-  if (nextComd && waiting == WAIT_MOVE)
     {
       return;
     }
@@ -202,6 +224,14 @@ Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 void
 Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
+  int ret;
+  // try processing in script..
+  if (script)
+    {
+      ret = script->processImage (image);
+      if (!ret)
+	return;
+    }
   // if unknow type, don't process image..
   if (image->getType () != IMGTYPE_OBJECT)
     return;
@@ -304,8 +334,7 @@ Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection
 void
 Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 {
-  struct ln_equ_posn coord;
-  int waitNum = 0;
+  int ret;
   switch (event->getType ())
     {
     case EVENT_KILL_ALL:
@@ -317,40 +346,44 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
     case EVENT_SLEW_TO_TARGET:
       if (currentTarget)
 	{
-	  int ret;
 	  currentTarget->beforeMove ();
-	  getEqu (&coord);
-	  ret = currentTarget->startSlew (&coord);
-	  if (ret == OBS_DONT_MOVE)
+	  ret = syncTarget ();
+	  switch (ret)
 	    {
+	    case OBS_DONT_MOVE:
 	      connection->getMaster ()->
 		postEvent (new
 			   Rts2Event (EVENT_OBSERVE, (void *) currentTarget));
-	    }
-	  else
-	    {
+	      break;
+	    case OBS_MOVE:
+	    case OBS_ALREADY_STARTED:
 	      blockMove = 1;
-	      connection->
-		queCommand (new
-			    Rts2CommandMove (connection->getMaster (), this,
-					     coord.ra, coord.dec));
+	      break;
 	    }
 	}
+      break;
+    case EVENT_TEL_SCRIPT_RESYNC:
+      cmdChng = NULL;
+      checkInterChange ();
       break;
     case EVENT_TEL_SCRIPT_CHANGE:
       cmdChng =
 	new Rts2CommandChange ((Rts2CommandChange *) event->getArg (), this);
-      connection->getMaster ()->
-	postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &waitNum));
-      if (waitNum == 0)
-	connection->getMaster ()->
-	  postEvent (new Rts2Event (EVENT_ENTER_WAIT));
+      checkInterChange ();
       break;
     case EVENT_ENTER_WAIT:
       if (cmdChng)
 	{
 	  connection->queCommand (cmdChng);
 	  cmdChng = NULL;
+	}
+      else
+	{
+	  ret = syncTarget ();
+	  if (ret == OBS_DONT_MOVE)
+	    {
+	      postEvent (new Rts2Event (EVENT_MOVE_OK));
+	    }
 	}
       break;
     case EVENT_MOVE_OK:
@@ -364,6 +397,38 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
       break;
     }
   Rts2DevClientTelescopeImage::postEvent (event);
+}
+
+int
+Rts2DevClientTelescopeExec::syncTarget ()
+{
+  struct ln_equ_posn coord;
+  int ret;
+  if (!currentTarget)
+    return -1;
+  getEqu (&coord);
+  ret = currentTarget->startSlew (&coord);
+  switch (ret)
+    {
+    case OBS_MOVE:
+    case OBS_ALREADY_STARTED:
+      connection->
+	queCommand (new
+		    Rts2CommandMove (connection->getMaster (), this,
+				     coord.ra, coord.dec));
+      break;
+    }
+  return ret;
+}
+
+void
+Rts2DevClientTelescopeExec::checkInterChange ()
+{
+  int waitNum = 0;
+  connection->getMaster ()->
+    postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &waitNum));
+  if (waitNum == 0)
+    connection->getMaster ()->postEvent (new Rts2Event (EVENT_ENTER_WAIT));
 }
 
 void
