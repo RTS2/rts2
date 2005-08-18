@@ -168,7 +168,6 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   struct ln_equ_posn tel;
   struct ln_lnlat_posn obs;
-  double st;
 
   getEqu (&tel);
   getObs (&obs);
@@ -176,13 +175,11 @@ Rts2NMTelescope::print (WINDOW * wnd)
   altaz.az = nan ("f");
   altaz.alt = nan ("f");
 
-  gst =
-    getValueDouble ("siderealtime") - getValueDouble ("longtitude") / 15.0;
+  lst = getValueDouble ("siderealtime");
+  gst = lst - getValueDouble ("longtitude") / 15.0;
   gst = ln_range_degrees (gst * 15.0) / 15.0;
 
-  st = gst;
-
-  ln_get_hrz_from_equ_sidereal_time (&tel, &obs, st, &altaz);
+  ln_get_hrz_from_equ_sidereal_time (&tel, &obs, gst, &altaz);
 
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
@@ -196,8 +193,7 @@ Rts2NMTelescope::print (WINDOW * wnd)
   mvwprintw (wnd, 5, 1, "Lon/Lat: %+03.3f %+03.3f",
 	     getValueDouble ("longtitude"), getValueDouble ("latitude"));
 
-  lst = getValueDouble ("siderealtime") * 15.0;
-  ln_rad_to_hms (ln_deg_to_rad (lst), &hms);
+  ln_rad_to_hms (ln_deg_to_rad (lst * 15.0), &hms);
   mvwprintw (wnd, 6, 1, "Lsid: %07.3f (%02i:%02i:%02.1f)",
 	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
 	     hms.seconds);
