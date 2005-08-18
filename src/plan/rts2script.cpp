@@ -94,7 +94,8 @@ void
 Rts2Script::postEvent (Rts2Event * event)
 {
   if (elements.size () > 0)
-    (*elements.begin ())->postEvent (event);
+    (*elements.begin ())->postEvent (new Rts2Event (event));
+  Rts2Object::postEvent (event);
 }
 
 Rts2ScriptElement *

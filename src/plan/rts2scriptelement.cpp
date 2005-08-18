@@ -163,6 +163,7 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	}
       break;
     }
+  Rts2Object::postEvent (event);
 }
 
 int

@@ -89,7 +89,7 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
     case EVENT_NOT_ASTROMETRY:
       if (script)
 	{
-	  script->postEvent (event);
+	  script->postEvent (new Rts2Event (event));
 	  if (waiting == WAIT_MOVE)
 	    // get a change to process updates..
 	    nextCommand ();
@@ -211,7 +211,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	  return;
 	}
     }
-  if (waiting == WAIT_MOVE)
+  if (waiting == WAIT_MOVE || waitAcq == WAIT_SLAVE)
     return;
   if (!strcmp (cmd_device, connection->getName ()))
     {
