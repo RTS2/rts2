@@ -43,9 +43,7 @@ public:
   {
     telRa = newRa;
     telDec = newDec;
-    telSiderealTime =
-      15 * ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
-      telLongtitude;
+    telSiderealTime = get_loc_sid_time ();
     return 0;
   }
 
