@@ -255,8 +255,7 @@ Rts2DevTelescope::changeMasterState (int new_state)
 int
 Rts2DevTelescope::stopMove ()
 {
-  lastTar.ra = -1000;
-  lastTar.dec = -1000;
+  unsetTarget ();
   return 0;
 }
 
@@ -474,6 +473,7 @@ int
 Rts2DevTelescope::startPark (Rts2Conn * conn)
 {
   int ret;
+  unsetTarget ();
   ret = startPark ();
   if (ret)
     {

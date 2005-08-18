@@ -74,6 +74,11 @@ protected:
   }
   // returns 0 when we need to 
   int setTarget (double tar_ra, double tar_dec);
+  void unsetTarget ()
+  {
+    lastTar.ra = -1000;
+    lastTar.dec = -1000;
+  }
   double getMoveTargetSep ();
   double get_loc_sid_time ();
 public:

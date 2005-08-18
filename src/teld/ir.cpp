@@ -296,13 +296,18 @@ Rts2DevTelescopeIr::addError (int in_error)
       if (!status)
 	{
 	  if (zd < -80)
-	    zd = -80;
+	    zd = -20;
 	  if (zd > 80)
-	    zd = 80;
+	    zd = 20;
+	  status = tpl_set ("POINTING.TRACK", 0, &status);
+	  syslog (LOG_DEBUG,
+		  "Rts2DevTelescopeIr::checkErrors set pointing status %i",
+		  status);
 	  status = tpl_set ("ZD.TARGETPOS", zd, &status);
 	  syslog (LOG_ERR,
 		  "Rts2DevTelescopeIr::checkErrors zd soft limit reset %f (%i)",
 		  zd, status);
+	  unsetTarget ();
 	}
     }
   if ((getState (0) & TEL_MASK_MOVING) != TEL_PARKING)
@@ -617,20 +622,19 @@ Rts2DevTelescopeIr::isMoving ()
   int status = 0;
   double poin_dist;
   time_t now;
+  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
   time (&now);
+  // 0.01 = 36 arcsec
+  if (fabs (poin_dist) <= 0.01)
+    return -2;
   // finish due to timeout
   if (timeout < now)
     {
-      status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
       syslog (LOG_ERR,
 	      "Rts2DevTelescopeIr::isMoving targetdistance in timeout: %f (%i)",
 	      poin_dist, status);
       return -1;
     }
-  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-  // 0.01 = 36 arcsec
-  if (fabs (poin_dist) <= 0.01)
-    return -2;
   return USEC_SEC / 100;
 }
 
@@ -717,9 +721,9 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
     case SERVERD_NIGHT:
     case SERVERD_NIGHT | SERVERD_STANDBY:
     case SERVERD_DAWN:
-      return coverOpen ();
+      coverOpen ();
     default:
-      return coverClose ();
+      coverClose ();
     }
   return Rts2DevTelescope::changeMasterState (new_state);
 }
