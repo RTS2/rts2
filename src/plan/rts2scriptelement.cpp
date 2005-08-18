@@ -108,7 +108,8 @@ Rts2ScriptElementFilter::nextCommand (Rts2DevClientCamera * camera,
 Rts2ScriptElementAcquire::Rts2ScriptElementAcquire (Rts2Script * in_script, double in_precision, float in_expTime):Rts2ScriptElement
   (in_script)
 {
-  precision = in_precision;
+  reqPrecision = in_precision;
+  lastPrecision = nan ("f");
   expTime = in_expTime;
   processor = NULL;
   processingState = NEED_IMAGE;
@@ -135,14 +136,22 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	      processingState = FAILED;
 	      break;
 	    }
-	  if (img_prec <= precision)
+	  if (img_prec <= reqPrecision)
 	    {
 	      processingState = PRECISION_OK;
 	    }
 	  else
 	    {
-	      // some test if precision is better then previous one..
-	      processingState = PRECISION_BAD;
+	      // test if precision is better then previous one..
+	      if (isnan (lastPrecision) || img_prec < lastPrecision / 2)
+		{
+		  processingState = PRECISION_BAD;
+		  lastPrecision = img_prec;
+		}
+	      else
+		{
+		  processingState = FAILED;
+		}
 	    }
 	}
       break;
@@ -173,21 +182,24 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
 				 expTime);
       getDevice (new_device);
       processingState = WAITING_IMAGE;
-      break;
+      return NEXT_COMMAND_ACQUSITION_IMAGE;
     case WAITING_IMAGE:
     case WAITING_ASTROMETRY:
       return NEXT_COMMAND_WAITING;
-      break;
     case FAILED:
-      return NEXT_COMMAND_END_SCRIPT;
+      return NEXT_COMMAND_PRECISION_FAILED;
     case PRECISION_OK:
-      return NEXT_COMMAND_NEXT;
+      return NEXT_COMMAND_PRECISION_OK;
     case PRECISION_BAD:
       processingState = NEED_IMAGE;
       // end of movemen will call nextCommand, as we should have waiting set to WAIT_MOVE
       return NEXT_COMMAND_RESYNC;
     }
-  return NEXT_COMMAND_KEEP;
+  // that should not happen!
+  syslog (LOG_ERR,
+	  "Rts2ScriptElementAcquire::nextCommand unexpected processing state %i",
+	  processingState);
+  return NEXT_COMMAND_NEXT;
 }
 
 int
@@ -231,4 +243,5 @@ Rts2ScriptElementWaitAcquire::nextCommand (Rts2DevClientCamera * camera,
 					   Rts2Command ** new_command,
 					   char new_device[DEVICE_NAME_SIZE])
 {
+  return NEXT_COMMAND_WAIT_ACQUSITION;
 }

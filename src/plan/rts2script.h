@@ -16,7 +16,11 @@
 #define NEXT_COMMAND_WAITING  		2
 #define NEXT_COMMAND_RESYNC		3
 #define NEXT_COMMAND_CHECK_WAIT		4
-
+#define NEXT_COMMAND_PRECISION_FAILED   5
+// you should not return NEXT_COMMAND_PRECISION_OK on first nextCommand call
+#define NEXT_COMMAND_PRECISION_OK	6
+#define NEXT_COMMAND_WAIT_ACQUSITION    7
+#define NEXT_COMMAND_ACQUSITION_IMAGE   8
 /*!
  * Holds script to execute on given device.
  * Script might include commands to other devices; in such case device

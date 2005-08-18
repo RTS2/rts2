@@ -195,6 +195,10 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
   switch (ret)
     {
     case 0:
+    case NEXT_COMMAND_CHECK_WAIT:
+    case NEXT_COMMAND_PRECISION_FAILED:
+    case NEXT_COMMAND_PRECISION_OK:
+    case NEXT_COMMAND_WAIT_ACQUSITION:
       elements.erase (el_iter);
       delete nextElement;
       break;
@@ -202,6 +206,8 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
       *new_command = NULL;
       break;
     case NEXT_COMMAND_KEEP:
+    case NEXT_COMMAND_RESYNC:
+    case NEXT_COMMAND_ACQUSITION_IMAGE:
       // keep us
       break;
     }

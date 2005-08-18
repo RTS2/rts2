@@ -90,7 +90,8 @@ public:
 class Rts2ScriptElementAcquire:public Rts2ScriptElement
 {
 private:
-  double precision;
+  double reqPrecision;
+  double lastPrecision;
   float expTime;
   Rts2ConnImgProcess *processor;
   enum

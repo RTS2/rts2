@@ -20,6 +20,8 @@
 #define EVENT_TEL_SCRIPT_CHANGE  RTS2_LOCAL_EVENT+59
 #define EVENT_TEL_SCRIPT_RESYNC  RTS2_LOCAL_EVENT+60
 
+#define EVENT_ACQUSITION_END	RTS2_LOCAL_EVENT+61
+
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
 {
 private:
@@ -27,6 +29,9 @@ private:
   Rts2Script *script;
   Rts2Command *nextComd;
   char cmd_device[DEVICE_NAME_SIZE];
+
+  enum
+  { NO_WAIT, WAIT_SLAVE, WAIT_MASTER } waitAcq;
 
   void startTarget ();
 

@@ -18,6 +18,7 @@ Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2
   blockMove = 0;
   getObserveStart = 0;
   imgCount = 0;
+  waitAcq = NO_WAIT;
 }
 
 Rts2DevClientCameraExec::~Rts2DevClientCameraExec (void)
@@ -28,6 +29,7 @@ Rts2DevClientCameraExec::~Rts2DevClientCameraExec (void)
 void
 Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 {
+  int acqEnd;
   switch (event->getType ())
     {
     case EVENT_KILL_ALL:
@@ -36,6 +38,7 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
       waiting = NOT_WAITING;
       blockMove = 0;
       unblockWait ();
+      waitAcq = NO_WAIT;
       if (script)
 	{
 	  delete script;
@@ -92,6 +95,22 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	    nextCommand ();
 	}
       break;
+    case EVENT_ACQUSITION_END:
+      if (waitAcq != WAIT_SLAVE)
+	break;
+      waitAcq = NO_WAIT;
+      acqEnd = *(int *) event->getArg ();
+      switch (acqEnd)
+	{
+	case NEXT_COMMAND_PRECISION_OK:
+	  nextCommand ();
+	  break;
+	case -5:		// failed with script deletion..
+	case NEXT_COMMAND_PRECISION_FAILED:
+	  deleteScript ();
+	  break;
+	}
+      break;
     }
   Rts2DevClientCameraImage::postEvent (event);
 }
@@ -117,20 +136,44 @@ Rts2DevClientCameraExec::nextPreparedCommand ()
   if (nextComd)
     return 0;
   ret = script->nextCommand (this, &nextComd, cmd_device);
-  if (ret == NEXT_COMMAND_WAITING)
-    waiting = WAIT_MOVE;
-  if (ret == NEXT_COMMAND_CHECK_WAIT)
+  switch (ret)
     {
+    case NEXT_COMMAND_WAITING:
+      waiting = WAIT_MOVE;
+      break;
+    case NEXT_COMMAND_CHECK_WAIT:
       unblockWait ();
       if (waiting == NOT_WAITING)
 	waiting = WAIT_MOVE;
-    }
-  if (ret == NEXT_COMMAND_RESYNC)
-    {
+      break;
+    case NEXT_COMMAND_RESYNC:
       connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_TEL_SCRIPT_RESYNC));
       if (waiting == NOT_WAITING)
 	waiting = WAIT_MOVE;
+      break;
+    case NEXT_COMMAND_PRECISION_OK:
+    case NEXT_COMMAND_PRECISION_FAILED:
+      waiting = NOT_WAITING;	// don't wait for mount move - it will not happen
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &ret));
+      if (ret == NEXT_COMMAND_PRECISION_OK)
+	{
+	  // there wouldn't be a recursion, as Rts2ScriptElement->nextCommand
+	  // should never return NEXT_COMMAND_PRECISION_OK
+	  ret = nextPreparedCommand ();
+	}
+      else
+	{
+	  ret = NEXT_COMMAND_END_SCRIPT;
+	}
+      break;
+    case NEXT_COMMAND_WAIT_ACQUSITION:
+      waitAcq = WAIT_SLAVE;
+      break;
+    case NEXT_COMMAND_ACQUSITION_IMAGE:
+      waitAcq = WAIT_MASTER;
+      break;
     }
   return ret;
 }
@@ -140,7 +183,7 @@ Rts2DevClientCameraExec::nextCommand ()
 {
   int ret;
 
-  if (!script)			// waiting for script..
+  if (!script || waitAcq == WAIT_SLAVE)	// waiting for script or acqusition
     {
       return;
     }
@@ -314,6 +357,15 @@ Rts2DevClientCameraExec::deleteScript ()
 {
   blockMove = 0;
   unblockWait ();
+  if (waitAcq == WAIT_MASTER)
+    {
+      int acqRet;
+      // should not happen
+      acqRet = -5;
+      connection->getMaster ()->
+	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &acqRet));
+    }
+  waitAcq = NO_WAIT;
   if (script)
     {
       delete script;
