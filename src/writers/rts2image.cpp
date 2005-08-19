@@ -507,6 +507,15 @@ Rts2Image::getValue (char *name, long &value, char *comment)
 }
 
 int
+Rts2Image::getValue (char *name, float &value, char *comment)
+{
+  if (!ffile)
+    return -1;
+  fits_read_key (ffile, TFLOAT, name, (void *) &value, comment, &fits_status);
+  return fitsStatusValue (name);
+}
+
+int
 Rts2Image::getValue (char *name, double &value, char *comment)
 {
   if (!ffile)

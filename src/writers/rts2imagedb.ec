@@ -22,11 +22,11 @@ Rts2ImageDb::updateObjectDB ()
   char d_obs_subtype = 'S';
   int d_img_date = getExposureSec ();
   int d_img_usec = getExposureUsec ();
-  double d_img_temperature = 100;
+  float d_img_temperature = 100;
   int d_img_temperature_ind;
-  double d_img_exposure;
-  double d_img_alt;
-  double d_img_az;
+  float d_img_exposure;
+  float d_img_alt;
+  float d_img_az;
   int d_epoch_id = epochId;
   int d_med_id = 0;
   int d_proccess_bitfield = processBitfiedl;
@@ -129,8 +129,8 @@ Rts2ImageDb::updateDarkDB ()
   int d_obs_id = obsId;
   int d_dark_date = getExposureSec ();
   int d_dark_usec = getExposureUsec ();
-  double d_dark_exposure;
-  double d_dark_temperature = 100;
+  float d_dark_exposure;
+  float d_dark_temperature = 100;
   int d_dark_temperature_ind;
   float d_dark_mean = mean;
   int d_epoch_id = epochId;

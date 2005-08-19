@@ -90,6 +90,7 @@ public:
 
   int getValue (char *name, int &value, char *comment = NULL);
   int getValue (char *name, long &value, char *comment = NULL);
+  int getValue (char *name, float &value, char *comment = NULL);
   int getValue (char *name, double &value, char *comment = NULL);
   int getValue (char *name, char *value, char *comment = NULL);
   int getValueImageType ();
