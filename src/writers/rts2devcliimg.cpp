@@ -27,6 +27,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   yplate = 1;
   xoa = 0;
   yoa = 0;
+  flip = 1;
   rotang = 0;
 
   config->getDouble (connection->getName (), "xplate", xplate);

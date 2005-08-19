@@ -22,7 +22,8 @@ Rts2ImageDb::updateObjectDB ()
   char d_obs_subtype = 'S';
   int d_img_date = getExposureSec ();
   int d_img_usec = getExposureUsec ();
-  double d_img_temperature;
+  double d_img_temperature = 100;
+  int d_img_temperature_ind;
   double d_img_exposure;
   double d_img_alt;
   double d_img_az;
@@ -47,7 +48,7 @@ Rts2ImageDb::updateObjectDB ()
   d_img_filter.len = strlen (filter) > 3 ? 3 : strlen (filter);
   strncpy (d_img_filter.arr, filter, d_img_filter.len);
 
-  getValue ("CCD_TEMP", d_img_temperature);
+  d_img_temperature_ind = getValue ("CCD_TEMP", d_img_temperature);
   getValue ("EXPOSURE", d_img_exposure);
   getValue ("ALT", d_img_alt);
   getValue ("AZ", d_img_az);
@@ -79,7 +80,7 @@ Rts2ImageDb::updateObjectDB ()
     :d_obs_subtype,
     :d_mount_name,
     :d_camera_name,
-    :d_img_temperature,
+    :d_img_temperature :d_img_temperature_ind,
     :d_img_exposure,
     :d_img_filter,
     :d_img_alt,
@@ -129,13 +130,14 @@ Rts2ImageDb::updateDarkDB ()
   int d_dark_date = getExposureSec ();
   int d_dark_usec = getExposureUsec ();
   double d_dark_exposure;
-  double d_dark_temperature;
+  double d_dark_temperature = 100;
+  int d_dark_temperature_ind;
   float d_dark_mean = mean;
   int d_epoch_id = epochId;
   VARCHAR d_camera_name[8];
   EXEC SQL END DECLARE SECTION;
 
-  getValue ("CCD_TEMP", d_dark_temperature);
+  d_dark_temperature_ind = getValue ("CCD_TEMP", d_dark_temperature);
   getValue ("EXPOSURE", d_dark_exposure);
 
   strncpy (d_camera_name.arr, cameraName, 8);
@@ -160,7 +162,7 @@ Rts2ImageDb::updateDarkDB ()
     abstime (:d_dark_date),
     :d_dark_usec,
     :d_dark_exposure,
-    :d_dark_temperature,
+    :d_dark_temperature :d_dark_temperature_ind,
     :d_dark_mean,
     :d_epoch_id,
     :d_camera_name
