@@ -462,7 +462,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       locCorDec = 0;
     }
   syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
+	  "Rts2DevTelescope::correct intersting val 2: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform correction");
