@@ -51,6 +51,7 @@ class Rts2Centrald:public Rts2Block
   struct ln_lnlat_posn *observer;
 
   int morning_off;
+  int morning_standby;
 
 protected:
   int changeState (int new_state);
@@ -529,6 +530,7 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
     config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
 
   morning_off = config->getBoolean ("centrald", "morning_off");
+  morning_standby = config->getBoolean ("centrald", "morning_standby");
 
   addOption ('p', "port", 1, "port on which centrald will listen");
 }
@@ -647,9 +649,12 @@ Rts2Centrald::idle ()
     {
       old_current_state = current_state;
       if ((current_state & SERVERD_STATUS_MASK) == SERVERD_MORNING
-	  && call_state == SERVERD_DAY && morning_off)
+	  && call_state == SERVERD_DAY)
 	{
-	  current_state = SERVERD_OFF;
+	  if (morning_off)
+	    current_state = SERVERD_OFF;
+	  else if (morning_standby)
+	    current_state = call_state | SERVERD_STANDBY;
 	}
       else
 	{
