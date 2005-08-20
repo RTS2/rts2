@@ -912,7 +912,7 @@ Rts2Device::infoAll ()
       conn = connections[i];
       if (conn)
 	{
-	  info (conn);
+	  sendInfo (conn);
 	}
     }
 }
