@@ -59,6 +59,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 
   obs_id = -1;
   img_id = 0;
+  obs_state = 0;
   target_id = in_tar_id;
 
   startCalledNum = 0;
@@ -104,6 +105,8 @@ Target::startSlew (struct ln_equ_posn *position)
 
   getPosition (position);
   selected++;
+
+  obs_state != 0x01;
 
   if (obs_id > 0) // we already observe that target
     return OBS_ALREADY_STARTED;
@@ -177,8 +180,33 @@ Target::startObservation ()
       return -1;
     }
     EXEC SQL COMMIT;
+    obs_state |= 0x02;
   }
   return 0;
+}
+
+void
+Target::acqusitionStart ()
+{
+  obs_state |= 0x04;
+}
+
+void
+Target::acqusitionEnd ()
+{
+  obs_state &= ~ 0x04;
+}
+
+void
+Target::interupted ()
+{
+  obs_state |= 0x10;
+}
+
+void
+Target::acqusitionFailed ()
+{
+  obs_state |= 0x20;
 }
 
 int
@@ -186,6 +214,7 @@ Target::endObservation (int in_next_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id = obs_id;
+  int d_obs_state = obs_state;
   EXEC SQL END DECLARE SECTION;
   if (in_next_id == getTargetID ())
     return 1;
@@ -195,7 +224,8 @@ Target::endObservation (int in_next_id)
     UPDATE
       observations
     SET
-      obs_end = now ()
+      obs_end = now (),
+      obs_state = :d_obs_state
     WHERE
       obs_id = :d_obs_id;
     obs_id = -1;

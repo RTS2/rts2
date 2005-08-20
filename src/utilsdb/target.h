@@ -82,6 +82,8 @@ private:
   int obs_id;
   int img_id;
 
+  int obs_state;		// 0 - not started 0x01 - slew started 0x02 - images taken 0x04 - acquistion started
+  // mask with 0xf0 - 0x00 - nominal end 0x10 - interupted 0x20 - acqusition don't converge
   int type;			// light, dark, flat, flat_dark
   int selected;			// how many times startObservation was called
 
@@ -239,6 +241,10 @@ public:
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
   virtual int startObservation ();
+  void acqusitionStart ();
+  void acqusitionEnd ();
+  void acqusitionFailed ();
+  void interupted ();
   virtual int endObservation (int in_next_id);
   // similar to startSlew - return 0 if observation ends, 1 if
   // it doesn't ends (ussually in case when in_next_id == target_id),
