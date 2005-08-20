@@ -261,6 +261,10 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
   addValue (new Rts2ValueDouble ("altitude"));
   addValue (new Rts2ValueDouble ("ra"));
   addValue (new Rts2ValueDouble ("dec"));
+  addValue (new Rts2ValueDouble ("ra_tel"));
+  addValue (new Rts2ValueDouble ("dec_tel"));
+  addValue (new Rts2ValueDouble ("ra_tar"));
+  addValue (new Rts2ValueDouble ("dec_tar"));
   addValue (new Rts2ValueDouble ("siderealtime"));
   addValue (new Rts2ValueDouble ("localtime"));
   addValue (new Rts2ValueInteger ("flip"));

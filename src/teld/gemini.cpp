@@ -939,6 +939,9 @@ Rts2DevTelescopeGemini::idle ()
 		  forcedReparking = 0;
 		  if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
 		    {
+		      // not ideal; lastMoveRa contains (possibly corrected) move values
+		      // but we don't care much about that as we have reparked..
+		      setTarget (lastMoveRa, lastMoveDec);
 		      tel_start_move ();
 		      tel_gemini_get (130, &worm);
 		      ret = tel_gemini_get (99, &lastMotorState);
@@ -1113,7 +1116,6 @@ Rts2DevTelescopeGemini::tel_start_move ()
 
   if (retstr == '0')
     {
-      setTarget (lastMoveRa, lastMoveDec);
       return 0;
     }
   // otherwise read reply..

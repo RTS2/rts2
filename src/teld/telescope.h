@@ -191,6 +191,7 @@ public:
 
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
+  int startResyncMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
   int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec,
 	       double real_ra, double real_dec);

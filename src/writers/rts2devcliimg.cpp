@@ -233,8 +233,16 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 		       "mark used for mount corretion");
       getEqu (&object);
       getObs (&obs);
-      image->setValue ("RASC", object.ra, "mount RA");
-      image->setValue ("DECL", object.dec, "mount DEC");
+      image->setValue ("RASC", getValueDouble ("ra_tar"), "target RA");
+      image->setValue ("DECL", getValueDouble ("dec_tar"), "target DEC");
+      image->setValue ("CUR_RA", object.ra,
+		       "current RA (real or from astrometry)");
+      image->setValue ("CUR_DEC", object.dec,
+		       "current DEC (real or from astrometry)");
+      image->setValue ("MNT_RA", getValueDouble ("ra_tel"),
+		       "mount RA (read from sensors)");
+      image->setValue ("MNT_DEC", getValueDouble ("dec_tel"),
+		       "mount DEC (read from sensors)");
       image->setValue ("LONG", obs.lng, "mount longtitude");
       image->setValue ("LAT", obs.lat, "mount latitude");
       gst = getValueDouble ("siderealtime") * 15.0 - obs.lng;

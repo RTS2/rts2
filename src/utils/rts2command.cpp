@@ -179,6 +179,24 @@ Rts2CommandMove::commandReturnFailed (int status)
   return Rts2Command::commandReturnFailed (status);
 }
 
+
+Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "resync %lf %lf", ra, dec);
+  setCommand (command);
+  free (command);
+  tel = in_tel;
+}
+
+int
+Rts2CommandResyncMove::commandReturnFailed (int status)
+{
+  tel->moveFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
 Rts2CommandChange::Rts2CommandChange (Rts2Block * in_master, double ra, double dec):
 Rts2Command (in_master)
 {

@@ -69,10 +69,19 @@ Rts2DevTelescope::processOption (int in_opt)
 int
 Rts2DevTelescope::setTarget (double tar_ra, double tar_dec)
 {
-  if (lastTar.ra == tar_ra && lastTar.dec == tar_dec)
-    return 0;
-  if (knowPosition && lastRa == tar_ra && lastDec == tar_dec)
-    return 0;
+  // either we know position, and we move to exact position which we know the center is (from correction..)
+  if (knowPosition)
+    {
+      // should replace that with distance check..
+      if (lastRa == tar_ra && lastDec == tar_dec)
+	return 0;
+    }
+  // or we don't know our position yet, but we issue move to same position..
+  else
+    {
+      if (lastTar.ra == tar_ra && lastTar.dec == tar_dec)
+	return 0;
+    }
   lastTar.ra = tar_ra;
   lastTar.dec = tar_dec;
   return 1;
@@ -279,16 +288,16 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
     {
       conn->sendValue ("ra", lastRa);
       conn->sendValue ("dec", lastDec);
-      conn->sendValue ("ra_tel", telRa);
-      conn->sendValue ("dec_tel", telDec);
     }
   else
     {
       conn->sendValue ("ra", telRa);
       conn->sendValue ("dec", telDec);
-      conn->sendValue ("ra_tel", telRa);
-      conn->sendValue ("dec_tel", telDec);
     }
+  conn->sendValue ("ra_tel", telRa);
+  conn->sendValue ("dec_tel", telDec);
+  conn->sendValue ("ra_tar", lastTar.ra);
+  conn->sendValue ("dec_tar", lastTar.dec);
   conn->sendValue ("siderealtime", telSiderealTime);
   conn->sendValue ("localtime", telLocalTime);
   conn->sendValue ("flip", telFlip);
@@ -390,6 +399,68 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
 }
 
 int
+Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
+				   double tar_dec)
+{
+  int ret;
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::startResyncMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
+	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
+	  locCorDec, lastTar.ra, lastTar.dec);
+  if (tar_ra != lastTar.ra || tar_dec != lastTar.dec)
+    {
+      syslog (LOG_DEBUG,
+	      "Rts2DevTelescope::startResyncMove called wrong - calling startMove!");
+      return startMove (conn, tar_ra, tar_dec);
+    }
+  if (knowPosition)
+    {
+      double sep;
+      sep = getMoveTargetSep ();
+      syslog (LOG_DEBUG, "Rts2DevTelescope::startResyncMove sep: %f", sep);
+      if (sep > 2)
+	{
+	  knowPosition = 0;
+	}
+    }
+  // we received correction for last move..and yes, we would like to apply it in resync
+  if (locCorNum == moveMark)
+    {
+      // if we don't move too far from last correction
+      if (knowPosition)
+	{
+	  locCorNum++;
+	}
+      else
+	{
+	  locCorNum = -1;
+	  locCorRa = 0;
+	  locCorDec = 0;
+	}
+      tar_ra += locCorRa;
+      tar_dec += locCorDec;
+    }
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::startResyncMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
+	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
+	  locCorDec);
+  moveInfoCount = 0;
+  ret = startMove (tar_ra, tar_dec);
+  if (ret)
+    conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
+  else
+    {
+      move_fixed = 0;
+      moveMark++;
+      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      move_connection = conn;
+    }
+  infoAll ();
+  return ret;
+}
+
+
+int
 Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 {
   int ret;
@@ -440,8 +511,6 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	  info ();
 	  lastRa = real_ra;
 	  lastDec = real_dec;
-	  lastTar.ra = lastRa;
-	  lastTar.dec = lastDec;
 	}
       else
 	{
@@ -618,6 +687,16 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  || !paramEnd ())
 	return -2;
       return master->startMove (this, tar_ra, tar_dec);
+    }
+  else if (isCommand ("resync"))
+    {
+      double tar_ra;
+      double tar_dec;
+      CHECK_PRIORITY;
+      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
+	  || !paramEnd ())
+	return -2;
+      return master->startResyncMove (this, tar_ra, tar_dec);
     }
   else if (isCommand ("fixed"))
     {

@@ -463,11 +463,16 @@ Rts2DevClientTelescopeExec::syncTarget ()
   switch (ret)
     {
     case OBS_MOVE:
-    case OBS_ALREADY_STARTED:
       connection->
 	queCommand (new
 		    Rts2CommandMove (connection->getMaster (), this,
 				     coord.ra, coord.dec));
+      break;
+    case OBS_ALREADY_STARTED:
+      connection->
+	queCommand (new
+		    Rts2CommandResyncMove (connection->getMaster (), this,
+					   coord.ra, coord.dec));
       break;
     }
   return ret;
