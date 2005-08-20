@@ -1106,9 +1106,6 @@ Rts2DevTelescopeGemini::tel_start_move ()
   char retstr;
   char buf[55];
 
-  // stop any pending movement
-  stopMove ();
-
   if ((tel_write_ra (lastMoveRa) < 0) || (tel_write_dec (lastMoveDec) < 0))
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
