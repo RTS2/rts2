@@ -271,6 +271,7 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
   addValue (new Rts2ValueDouble ("axis0_counts"));
   addValue (new Rts2ValueDouble ("axis1_counts"));
   addValue (new Rts2ValueInteger ("correction_mark"));
+  addValue (new Rts2ValueInteger ("num_corr"));
 }
 
 Rts2DevClientTelescope::~Rts2DevClientTelescope (void)
