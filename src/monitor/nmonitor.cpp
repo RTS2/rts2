@@ -198,9 +198,9 @@ Rts2NMTelescope::print (WINDOW * wnd)
 	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
 	     hms.seconds);
 
-  ln_rad_to_hms (ln_deg_to_rad (gst * 15.0), &hms);
-  mvwprintw (wnd, 7, 1, "Gsid: %07.3f (%02i:%02i:%02.1f)", gst, hms.hours,
-	     hms.minutes, hms.seconds);
+  mvwprintw (wnd, 7, 1, "Corr: %i Exec: %i",
+	     getValueInteger ("correction_mark"),
+	     getValueInteger ("num_corr"));
 }
 
 class Rts2NMCamera:public Rts2DevClientCamera
