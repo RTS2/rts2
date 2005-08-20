@@ -304,6 +304,7 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
   conn->sendValue ("axis0_counts", telAxis[0]);
   conn->sendValue ("axis1_counts", telAxis[1]);
   conn->sendValue ("correction_mark", moveMark);
+  conn->sendValue ("num_corr", numCorr);
   return 0;
 }
 
@@ -493,17 +494,9 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	{
 	  ret = 0;
 	  // change scope
-	  if (locCorNum == moveMark)
-	    {
-	      locCorRa += cor_ra;
-	      locCorDec += cor_dec;
-	    }
-	  else
-	    {
-	      locCorNum = moveMark;
-	      locCorRa = cor_ra;
-	      locCorDec = cor_dec;
-	    }
+	  locCorNum = moveMark;
+	  locCorRa = cor_ra;
+	  locCorDec = cor_dec;
 	}
       if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
 	{
@@ -524,6 +517,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       // first change - set offsets
       if (numCorr == 0)
 	{
+	  ret = correctOffsets (cor_ra, cor_dec, real_ra, real_dec);
 	}
       // discards changes - astrometry was too late
       locCorNum = -1;
