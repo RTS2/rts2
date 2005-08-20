@@ -388,6 +388,7 @@ class ModelTarget:public ConstTarget
 {
 private:
   struct ln_hrz_posn hrz_poz;
+  struct ln_equ_posn equ_poz;
   double ra_noise;
   double dec_noise;
   float alt_start;

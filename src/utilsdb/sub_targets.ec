@@ -656,7 +656,9 @@ ModelTarget::calPosition ()
   ra_noise -= noise;
   dec_noise = 2 * noise * ((double) random () / RAND_MAX);
   dec_noise -= noise;
-  // calc ra + dec
+  // null ra + dec .. for recurent call do getPosition (JD..)
+  equ_poz.ra = -1000;
+  equ_poz.dec = -1000;
   return 0;
 }
 
@@ -715,9 +717,13 @@ ModelTarget::endObservation (int in_next_id)
 int
 ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
-  ln_get_equ_from_hrz (&hrz_poz, observer, JD, pos);
-  pos->ra += ra_noise;
-  pos->dec += dec_noise;
+  if (equ_poz.ra < -10)
+  {
+    ln_get_equ_from_hrz (&hrz_poz, observer, JD, &equ_poz);
+    equ_poz.ra += ra_noise;
+    equ_poz.dec += dec_noise;
+  }
+  *pos = equ_poz;
   return 0;
 }
 
