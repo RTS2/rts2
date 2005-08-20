@@ -81,6 +81,7 @@ public:
   virtual int off ();
 
   int setMasterStandby ();
+  int setMasterOn ();
   virtual int changeMasterState (int new_state);
 
   void setTemperatur (float in_temp)

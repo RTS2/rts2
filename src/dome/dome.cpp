@@ -177,8 +177,22 @@ Rts2DevDome::setMasterStandby ()
   if ((serverState != SERVERD_OFF)
       && ((getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY))
     {
-      sendMaster ("standby");
+      return sendMaster ("standby");
     }
+  return 0;
+}
+
+int
+Rts2DevDome::setMasterOn ()
+{
+  int serverState;
+  serverState = getMasterState ();
+  if ((serverState != SERVERD_OFF)
+      && ((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY))
+    {
+      return sendMaster ("on");
+    }
+  return 0;
 }
 
 int

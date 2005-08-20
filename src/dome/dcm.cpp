@@ -80,6 +80,7 @@ Rts2ConnDcm::receive (fd_set * set)
   int ret;
   char buf[100];
   char status[10];
+  char dome_name[10];
   int data_size = 0;
   struct tm statDate;
   float temp;
@@ -106,11 +107,12 @@ Rts2ConnDcm::receive (fd_set * set)
       // * 1A 2005-07-21 23:56:56 -10.67 98.9 0 c c o o ok
       ret =
 	sscanf (buf,
-		"1A %i-%u-%u %u:%u:%f %f %f %i %i %i %i %i %s",
-		&statDate.tm_year, &statDate.tm_mon, &statDate.tm_mday,
-		&statDate.tm_hour, &statDate.tm_min, &sec_f, &temp,
-		&humidity, &rain, &sw1, &sw2, &sw3, &sw4, status);
-      if (ret != 14)
+		"%s %i-%u-%u %u:%u:%f %f %f %i %i %i %i %i %s",
+		dome_name, &statDate.tm_year, &statDate.tm_mon,
+		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
+		&sec_f, &temp, &humidity, &rain, &sw1, &sw2, &sw3, &sw4,
+		status);
+      if (ret != 15)
 	{
 	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
 	  rain = 1;
@@ -133,6 +135,14 @@ Rts2ConnDcm::receive (fd_set * set)
       master->setHumidity (humidity);
       master->setRain (rain);
       master->setSwState ((sw1 << 3) | (sw2 << 2) | (sw3 << 1) | (sw4));
+      if (sw1 && sw2 && !sw3 && !sw4)
+	{
+	  master->setMasterOn ();
+	}
+      else if (!sw1 && !sw2)
+	{
+	  master->setMasterStandby ();
+	}
     }
   return data_size;
 }
