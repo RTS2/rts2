@@ -52,9 +52,10 @@ class Rts2DevDomeDcm:public Rts2DevDome
 {
 private:
   Rts2ConnFramWeather * weatherConn;
+  int dcm_weather_port;
 
 public:
-  Rts2DevDomeDcm (int argc, char **argv);
+    Rts2DevDomeDcm (int argc, char **argv);
     virtual ~ Rts2DevDomeDcm (void);
   virtual int processOption (int in_opt);
   virtual int init ();
@@ -151,6 +152,9 @@ Rts2DevDomeDcm::Rts2DevDomeDcm (int argc, char **argv):
 Rts2DevDome (argc, argv)
 {
   weatherConn = NULL;
+  addOption ('W', "dcm_weather", 1,
+	     "UPD port number of packets from DCM (default to 4998)");
+  dcm_weather_port = 4998;
 }
 
 Rts2DevDomeDcm::~Rts2DevDomeDcm (void)
@@ -162,6 +166,9 @@ Rts2DevDomeDcm::processOption (int in_opt)
 {
   switch (in_opt)
     {
+    case 'W':
+      dcm_weather_port = atoi (optarg);
+      break;
     default:
       return Rts2DevDome::processOption (in_opt);
     }
@@ -182,7 +189,7 @@ Rts2DevDomeDcm::init ()
     {
       if (!connections[i])
 	{
-	  weatherConn = new Rts2ConnDcm (4998, this);
+	  weatherConn = new Rts2ConnDcm (dcm_weather_port, this);
 	  weatherConn->init ();
 	  connections[i] = weatherConn;
 	  break;
