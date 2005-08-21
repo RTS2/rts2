@@ -89,7 +89,8 @@ private:
   void checkPower ();
 
     std::list < ErrorTime * >errorcodes;
-
+  int irTracking;
+  char irConfig;
 public:
     Rts2DevTelescopeIr (int argc, char **argv);
     virtual ~ Rts2DevTelescopeIr (void);
@@ -106,6 +107,15 @@ public:
   virtual int isParking ();
   virtual int endPark ();
   virtual int stopMove ();
+  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec);
+  virtual int correct (double cor_ra, double cor_dec, double real_ra,
+		       double real_dec);
+  virtual int change (double chng_ra, double chng_dec);
+  virtual int saveModel ();
+  virtual int loadModel ();
+  virtual int stopWorm ();
+  virtual int startWorm ();
   virtual int changeMasterState (int new_state);
   virtual int resetMount (resetStates reset_mount);
 };
@@ -205,8 +215,15 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int argc, char **argv):Rts2DevTelescope 
   ir_ip = NULL;
   ir_port = 0;
   tplc = NULL;
-  addOption ('I', "ir_ip", 1, "IR TCP/IP address");
+
+  irTracking = 4;
+  irConfig = "/etc/rts2/ir.ini"
+    addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
+  addOption ('t', "ir_tracking", 1,
+	     "IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
+  addOption ('c', "ir_config", 1,
+	     "IR config file (with model, used for load_model/save_model");
 
   strcpy (telType, "BOOTES_IR");
   strcpy (telSerialNumber, "001");
@@ -230,6 +247,12 @@ Rts2DevTelescopeIr::processOption (int in_opt)
       break;
     case 'P':
       ir_port = atoi (optarg);
+      break;
+    case 't':
+      irTracking = atoi (optarg);
+      break;
+    case 'c':
+      irConfig = optarg;
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -605,7 +628,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 
   status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
-  status = tpl_set ("POINTING.TRACK", 4, &status);
+  status = tpl_set ("POINTING.TRACK", irTracking, &status);
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
 	  status);
 
@@ -710,6 +733,78 @@ Rts2DevTelescopeIr::stopMove ()
       return 0;
     }
   startMove (telRa, telDec);
+  return 0;
+}
+
+int
+Rts2DevTelescopeIr::correctOffsets (double cor_ra, double cor_dec,
+				    double real_ra, double real_dec)
+{
+}
+
+int
+Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
+			     double real_dec)
+{
+}
+
+int
+Rts2DevTelescopeIr::change (double chng_ra, double chng_dec)
+{
+}
+
+/**
+ * OpenTCI/Bootes IR - POINTING.POINTINGPARAMS.xx:
+ * AOFF, ZOFF, AE, AN, NPAE, CA, FLEX
+ * AOFF, ZOFF = az / zd offset
+ * AE = azimut tilt east
+ * AN = az tilt north
+ * NPAE = az / zd not perpendicular
+ * CA = M1 tilt with respect to optical axis
+ * FLEX = sagging of tube
+ */
+int
+Rts2DevTelescopeIr::saveModel ()
+{
+  int status = 0;
+  double aoff, zoff, ae, an, npae, ca, flex;
+  status = tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel status: %i", status);
+      return -1;
+    }
+
+}
+
+int
+Rts2DevTelescopeIr::loadModel ()
+{
+}
+
+int
+Rts2DevTelescopeIr::stopWorm ()
+{
+  int status = 0;
+  status = tpl_set ("POINTING.TRACK", 0, &status);
+  if (status)
+    return -1;
+  return 0;
+}
+
+int
+Rts2DevTelescopeIr::startWorm ()
+{
+  int status = 0;
+  status = tpl_set ("POINTING.TRACK", irTracking, &status);
+  if (status)
+    return -1;
   return 0;
 }
 

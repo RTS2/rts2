@@ -71,13 +71,6 @@ Rts2DevMirror::ready (Rts2Conn * conn)
 int
 Rts2DevMirror::sendInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "mirror not ready");
-      return -1;
-    }
   return 0;
 }
 
@@ -86,7 +79,6 @@ Rts2DevMirror::sendBaseInfo (Rts2Conn * conn)
 {
   return 0;
 }
-
 
 int
 Rts2DevConnMirror::commandAuthorized ()

@@ -35,7 +35,7 @@ Rts2DevClient::postEvent (Rts2Event * event)
       waiting = WAIT_MOVE;
       break;
     case EVENT_CLEAR_WAIT:
-      waiting = NOT_WAITING;
+      clearWait ();
       break;
     }
   Rts2Object::postEvent (event);
@@ -181,8 +181,33 @@ Rts2DevClient::unblockWait ()
 	connection->getMaster ()->
 	  postEvent (new Rts2Event (EVENT_ENTER_WAIT));
     }
-};
+}
 
+void
+Rts2DevClient::unsetWait ()
+{
+  unblockWait ();
+  clearWait ();
+}
+
+int
+Rts2DevClient::isWaitMove ()
+{
+  return (waiting == WAIT_MOVE);
+}
+
+void
+Rts2DevClient::clearWait ()
+{
+  waiting = NOT_WAITING;
+}
+
+void
+Rts2DevClient::setWaitMove ()
+{
+  if (waiting == NOT_WAITING)
+    waiting = WAIT_MOVE;
+}
 
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
@@ -234,19 +259,19 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
 	    exposureStarted ();
 	  else
-	    exposureFailed (state->getValue ());
+	    exposureFailed (state->getValue () & DEVICE_ERROR_MASK);
 	  break;
 	case CAM_DATA:
 	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
 	    exposureEnd ();
 	  else
-	    exposureFailed (state->getValue ());
+	    exposureFailed (state->getValue () & DEVICE_ERROR_MASK);
 	  break;
 	case CAM_NODATA | CAM_NOTREADING | CAM_NOEXPOSURE:
 	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
 	    readoutEnd ();
 	  else
-	    exposureFailed (state->getValue ());
+	    exposureFailed (state->getValue () & DEVICE_ERROR_MASK);
 	  break;
 	}
     }
@@ -295,7 +320,7 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
 	    moveEnd ();
 	  else
-	    moveFailed (state->getValue ());
+	    moveFailed (state->getValue () & DEVICE_ERROR_MASK);
 	  break;
 	}
     }
@@ -327,12 +352,71 @@ Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
   addValue (new Rts2ValueDouble ("observingPossible"));
 }
 
+Rts2DevClientMirror::Rts2DevClientMirror (Rts2Conn * in_connection):Rts2DevClient
+  (in_connection)
+{
+}
+
+Rts2DevClientMirror::~Rts2DevClientMirror (void)
+{
+  moveFailed (DEVICE_ERROR_HW);
+}
+
+void
+Rts2DevClientMirror::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("mirror"))
+    {
+      if (state->getValue () & DEVICE_ERROR_MASK)
+	{
+	  moveFailed (state->getValue () & DEVICE_ERROR_MASK);
+	}
+      else
+	{
+	  switch (state->getValue () & MIRROR_MASK)
+	    {
+	    case MIRROR_A:
+	      mirrorA ();
+	      break;
+	    case MIRROR_B:
+	      mirrorB ();
+	      break;
+	    case MIRROR_UNKNOW:
+	      // strange, but that can happen
+	      moveFailed (DEVICE_ERROR_HW);
+	      break;
+	    }
+	}
+    }
+  Rts2DevClient::stateChanged (state);
+}
+
+void
+Rts2DevClientMirror::mirrorA ()
+{
+}
+
+void
+Rts2DevClientMirror::mirrorB ()
+{
+}
+
+void
+Rts2DevClientMirror::moveFailed (int status)
+{
+}
+
 Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
   addValue (new Rts2ValueInteger ("filter"));
   lastCount = -1;
   lastExp = -1.0;
+}
+
+Rts2DevClientPhot::~Rts2DevClientPhot ()
+{
+  integrationFailed (DEVICE_ERROR_HW);
 }
 
 int
@@ -351,6 +435,42 @@ Rts2DevClientPhot::command ()
       return -1;
     }
   return Rts2DevClient::command ();
+}
+
+void
+Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("phot"))
+    {
+      switch (state->getValue () & PHOT_MASK_INTEGRATE)
+	{
+	case PHOT_NOINTEGRATE:
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    integrationEnd ();
+	  else
+	    integrationFailed (state->getValue () & DEVICE_ERROR_MASK);
+	  break;
+	case PHOT_INTEGRATE:
+	  integrationStart ();
+	  break;
+	}
+    }
+  Rts2DevClient::stateChanged (state);
+}
+
+void
+Rts2DevClientPhot::integrationStart ()
+{
+}
+
+void
+Rts2DevClientPhot::integrationEnd ()
+{
+}
+
+void
+Rts2DevClientPhot::integrationFailed (int status)
+{
 }
 
 void

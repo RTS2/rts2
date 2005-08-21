@@ -26,10 +26,24 @@ protected:
 public:
     Rts2ScriptElement (Rts2Script * in_script);
     virtual ~ Rts2ScriptElement (void);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
   virtual int nextCommand (Rts2DevClientCamera * camera,
 			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]) = 0;
+			   char new_device[DEVICE_NAME_SIZE]);
+  virtual int nextCommand (Rts2DevClientPhot * phot,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
   virtual int processImage (Rts2Image * image);
+  /**
+   * Returns 1 if we are waiting for that signal.
+   * Signal is > 0
+   */
+  virtual int waitForSignal (int in_sig)
+  {
+    return 0;
+  }
 };
 
 class Rts2ScriptElementExpose:public Rts2ScriptElement
@@ -62,18 +76,18 @@ private:
 public:
     Rts2ScriptElementChange (Rts2Script * in_script, double in_ra,
 			     double in_dec);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementWait:public Rts2ScriptElement
 {
 public:
   Rts2ScriptElementWait (Rts2Script * in_script);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementFilter:public Rts2ScriptElement
@@ -115,9 +129,58 @@ class Rts2ScriptElementWaitAcquire:public Rts2ScriptElement
 {
 public:
   Rts2ScriptElementWaitAcquire (Rts2Script * in_script);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
+};
+
+class Rts2ScriptElementMirror:public Rts2ScriptElement
+{
+private:
+  int mirror_pos;
+public:
+    Rts2ScriptElementMirror (Rts2Script * in_script, int in_mirror_pos);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
+};
+
+class Rts2ScriptElementPhotometer:public Rts2ScriptElement
+{
+private:
+  int filter;
+  float exposure;
+  int count;
+public:
+    Rts2ScriptElementPhotometer (Rts2Script * in_script, int in_filter,
+				 float in_exposure, int in_count);
+  virtual int nextCommand (Rts2DevClientPhot * client,
 			   Rts2Command ** new_command,
 			   char new_device[DEVICE_NAME_SIZE]);
+};
+
+class Rts2ScriptElementSendSignal:public Rts2ScriptElement
+{
+private:
+  int sig;
+public:
+    Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
+};
+
+class Rts2ScriptElementWaitSignal:public Rts2ScriptElement
+{
+private:
+  int sig;
+public:
+  // in_sig must be > 0
+    Rts2ScriptElementWaitSignal (Rts2Script * in_script, int in_sig);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
+  virtual int waitForSignal (int in_sig);
 };
 
 #endif /* !__RTS2_SCRIPTELEMENT__ */

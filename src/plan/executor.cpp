@@ -185,6 +185,12 @@ Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_DOME:
       cli = new Rts2DevClientDomeImage (conn);
       break;
+    case DEVICE_TYPE_MIRROR:
+      cli = new Rts2DevClientMirrorExec (conn);
+      break;
+    case DEVICE_TYPE_PHOT:
+      cli = new Rts2DevClientPhotExec (conn);
+      break;
     default:
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
@@ -241,6 +247,7 @@ Rts2Executor::postEvent (Rts2Event * event)
       if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
 	{
 	  // we are free to start new hig-priority observation
+	  queTarget (currentTarget);
 	  currentTarget = priorityTarget;
 	  priorityTarget = NULL;
 	  postEvent (new
@@ -488,7 +495,6 @@ Rts2Executor::doSwitch ()
 	    // don't que only in case nextTarget and currentTarget are
 	    // same and endObservation returns 1
 	    {
-	      queTarget (currentTarget);
 	      currentTarget = nextTarget;
 	      nextTarget = NULL;
 	    }

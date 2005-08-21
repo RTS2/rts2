@@ -11,6 +11,10 @@
 #define EVENT_ENTER_WAIT	7
 #define EVENT_CLEAR_WAIT	8
 
+// send some signal to other device..so they will
+// know that something is going on
+#define EVENT_SIGNAL		9
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
 

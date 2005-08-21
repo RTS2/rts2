@@ -187,6 +187,9 @@ Rts2Selector::findNewTargets ()
     EXEC SQL FETCH next FROM findnewtargets INTO :consider_tar_id;
     if (sqlca.sqlcode)
       break;
+    // do not consider FLAT and other master targets!
+    if (consider_tar_id == TARGET_FLAT)
+      continue;
     // try to find us in considered targets..
     considerTarget (consider_tar_id, JD);
   }

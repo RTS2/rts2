@@ -41,9 +41,16 @@
 #define COMMAND_FILTER		"F"
 #define COMMAND_FOCUSING	'O'
 #define COMMAND_CHANGE		"C"
+// must be paired with COMMAND_CHANGE
 #define COMMAND_WAIT		"W"
 #define COMMAND_ACQUIRE		"A"
 #define COMMAND_WAIT_ACQUIRE	"Aw"
+#define COMMAND_MIRROR_MOVE	"M"
+#define COMMAND_PHOTOMETER	"P"
+
+// signal handling..
+#define COMMAND_SEND_SIGNAL	"SS"
+#define COMMAND_WAIT_SIGNAL	"SW"
 
 #define TARGET_DARK		1
 #define TARGET_FLAT		2

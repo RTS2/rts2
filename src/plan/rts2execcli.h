@@ -2,6 +2,8 @@
 #define __RTS2_EXECCLI__
 
 #include "rts2script.h"
+#include "rts2devscript.h"
+
 #include "../writers/rts2devcliimg.h"
 #include "../utils/rts2event.h"
 #include "../utilsdb/target.h"
@@ -22,35 +24,49 @@
 
 #define EVENT_ACQUSITION_END	RTS2_LOCAL_EVENT+61
 
-class Rts2DevClientCameraExec:public Rts2DevClientCameraImage
+class Rts2DevClientCameraExec:public Rts2DevClientCameraImage,
+  public Rts2DevScript
 {
-private:
-  Target * currentTarget;
-  Rts2Script *script;
-  Rts2Command *nextComd;
-  char cmd_device[DEVICE_NAME_SIZE];
+protected:
+  virtual void unblockWait ()
+  {
+    Rts2DevClientCameraImage::unblockWait ();
+  }
+  virtual void unsetWait ()
+  {
+    Rts2DevClientCameraImage::unsetWait ();
+    isExposing = 0;
+  };
 
-  enum
-  { NO_WAIT, WAIT_SLAVE, WAIT_MASTER } waitAcq;
+  virtual void clearWait ()
+  {
+    Rts2DevClientCameraImage::clearWait ();
+  };
 
-  void startTarget ();
+  virtual int isWaitMove ()
+  {
+    return Rts2DevClientCameraImage::isWaitMove ();
+  };
+
+  virtual void setWaitMove ()
+  {
+    return Rts2DevClientCameraImage::setWaitMove ();
+  };
 
   virtual void exposureStarted ();
   virtual void exposureEnd ();
   virtual void readoutEnd ();
 
-  void deleteScript ();
-
-  int blockMove;
-  int getObserveStart;
   int imgCount;
-  int nextPreparedCommand ();
 
+  virtual void startTarget ();
+
+  virtual int getNextCommand ();
 public:
-    Rts2DevClientCameraExec (Rts2Conn * in_connection);
-    virtual ~ Rts2DevClientCameraExec (void);
+  Rts2DevClientCameraExec (Rts2Conn * in_connection);
+  virtual ~ Rts2DevClientCameraExec (void);
   virtual void postEvent (Rts2Event * event);
-  void nextCommand ();
+  virtual void nextCommand ();
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
@@ -71,6 +87,32 @@ public:
     Rts2DevClientTelescopeExec (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
   virtual void moveFailed (int status);
+};
+
+class Rts2DevClientMirrorExec:public Rts2DevClientMirror
+{
+protected:
+  virtual void mirrorA ();
+  virtual void mirrorB ();
+public:
+    Rts2DevClientMirrorExec (Rts2Conn * in_connection);
+};
+
+class Rts2DevClientPhotExec:public Rts2DevClientPhot
+{
+private:
+  int blockMove;
+  Target *currentTarget;
+
+  Rts2Script *script;
+  Rts2Command *nextComd;
+  char cmd_device[DEVICE_NAME_SIZE];
+protected:
+    virtual void integrationEnd ();
+  virtual void addCount (int count, float exp, int is_ov);
+public:
+    Rts2DevClientPhotExec (Rts2Conn * in_connection);
+  virtual void postEvent (Rts2Event * event);
 };
 
 #endif /*! __RTS2_EXECCLI__ */

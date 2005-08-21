@@ -21,6 +21,8 @@
 #define NEXT_COMMAND_PRECISION_OK	6
 #define NEXT_COMMAND_WAIT_ACQUSITION    7
 #define NEXT_COMMAND_ACQUSITION_IMAGE   8
+
+#define NEXT_COMMAND_WAIT_SIGNAL	9
 /*!
  * Holds script to execute on given device.
  * Script might include commands to other devices; in such case device
@@ -55,6 +57,9 @@ public:
     virtual ~ Rts2Script (void);
   virtual void postEvent (Rts2Event * event);
   int nextCommand (Rts2DevClientCamera * camera,
+		   Rts2Command ** new_command,
+		   char new_device[DEVICE_NAME_SIZE]);
+  int nextCommand (Rts2DevClientPhot * phot,
 		   Rts2Command ** new_command,
 		   char new_device[DEVICE_NAME_SIZE]);
   int isLastCommand (void)

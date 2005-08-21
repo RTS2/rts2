@@ -36,6 +36,10 @@ protected:
   { NOT_WAITING, WAIT_MOVE, WAIT_NOT_POSSIBLE } waiting;	// if we wait for something..
   virtual void blockWait ();
   virtual void unblockWait ();
+  virtual void unsetWait ();
+  virtual void clearWait ();
+  virtual int isWaitMove ();
+  virtual void setWaitMove ();
 public:
     Rts2DevClient (Rts2Conn * in_connection);
     virtual ~ Rts2DevClient (void);
@@ -108,9 +112,14 @@ public:
 
 class Rts2DevClientMirror:public Rts2DevClient
 {
+protected:
+  virtual void mirrorA ();
+  virtual void mirrorB ();
 public:
-  Rts2DevClientMirror (Rts2Conn * in_connection);
-
+    Rts2DevClientMirror (Rts2Conn * in_connection);
+    virtual ~ Rts2DevClientMirror (void);
+  virtual void moveFailed (int status);
+  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientFocus:public Rts2DevClient
@@ -128,12 +137,17 @@ public:
 class Rts2DevClientPhot:public Rts2DevClient
 {
 protected:
+  virtual void integrationStart ();
+  virtual void integrationEnd ();
   virtual void addCount (int count, float exp, int is_ov);
   int lastCount;
   float lastExp;
 public:
     Rts2DevClientPhot (Rts2Conn * in_connection);
+    virtual ~ Rts2DevClientPhot (void);
   virtual int command ();
+  virtual void integrationFailed (int status);
+  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientExecutor:public Rts2DevClient

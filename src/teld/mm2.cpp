@@ -865,8 +865,6 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
 {
   int ret;
 
-  stopMove ();
-
   ret = tel_slew_to (HOME_RA, HOME_DEC);
 
   if (ret)

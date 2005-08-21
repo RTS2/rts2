@@ -9,6 +9,10 @@
 
 #define FILTER_STEP  33
 
+#include "phot.h"
+#include "../utils/rts2device.h"
+#include "kernel/phot.h"
+
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
@@ -19,11 +23,7 @@
 #include <syslog.h>
 #include <time.h>
 
-#include "../utils/rts2device.h"
-#include "kernel/phot.h"
-#include "status.h"
-
-class Rts2DevPhotOptec:public Rts2Device
+class Rts2DevPhotOptec:public Rts2DevPhot
 {
 private:
   char *phot_dev;
@@ -31,18 +31,10 @@ private:
 
   int phot_command (char command, short arg);
 
-  short req_time;
-  int req_count;
-
-  int filter;
-
-  Rts2Conn *integrateConn;
-
-  virtual int startIntegrate (float in_req_time, int in_req_count);
-
 protected:
-  int sendCount (int count, short exp, int is_ov);
+    virtual int startIntegrate ();
 
+  virtual int endIntegrate ();
 public:
     Rts2DevPhotOptec (int argc, char **argv);
     virtual ~ Rts2DevPhotOptec (void);
@@ -50,16 +42,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
 
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
-
   virtual int idle ();
-
-  virtual int deleteConnection (Rts2Conn * conn)
-  {
-    if (integrateConn == conn)
-      integrateConn = NULL;
-    return Rts2Device::deleteConnection (conn);
-  }
 
   virtual int ready ()
   {
@@ -75,93 +58,11 @@ public:
   };
 
   virtual int homeFilter ();
-
-  int startIntegrate (Rts2Conn * conn, float in_req_time, int in_req_count);
-  virtual int endIntegrate ();
+  virtual int moveFilter (int new_filter);
   virtual int stopIntegrate ();
-
-  virtual int moveFilter (Rts2Conn * conn, int new_filter);
-  virtual int enableFilter (Rts2Conn * conn);
-
-  virtual void cancelPriorityOperations ();
-
-  virtual int changeMasterState (int new_state);
-
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn)
-  {
-    return 0;
-  }
+  virtual int enableMove ();
+  virtual int disableMove ();
 };
-
-class Rts2DevConnPhot:public Rts2DevConn
-{
-private:
-  Rts2DevPhotOptec * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnPhot (int in_sock, Rts2DevPhotOptec * in_master_device);
-};
-
-int
-Rts2DevConnPhot::commandAuthorized ()
-{
-  if (isCommand ("home"))
-    {
-      return master->homeFilter ();
-    }
-  else if (isCommand ("integrate"))
-    {
-      float req_time;
-      int req_count;
-      CHECK_PRIORITY;
-      if (paramNextFloat (&req_time) || paramNextInteger (&req_count)
-	  || !paramEnd ())
-	return -2;
-
-      return master->startIntegrate (this, req_time, req_count);
-    }
-
-  else if (isCommand ("stop"))
-    {
-      CHECK_PRIORITY;
-      return master->stopIntegrate ();
-    }
-
-  else if (isCommand ("filter"))
-    {
-      int new_filter;
-      if (paramNextInteger (&new_filter) || !paramEnd ())
-	return -2;
-//    CHECK_PRIORITY;
-      return master->moveFilter (this, new_filter);
-    }
-  else if (isCommand ("enable"))
-    {
-      if (!paramEnd ())
-	return -2;
-      CHECK_PRIORITY;
-      return master->enableFilter (this);
-    }
-  else if (isCommand ("help"))
-    {
-      send ("info - phot informations");
-      send ("exit - exit from main loop");
-      send ("help - print, what you are reading just now");
-      send ("integrate <time> <count> - start integration");
-      send ("enable - enable filter movements");
-      send ("stop - stop any running integration");
-      return 0;
-    }
-  return Rts2DevConn::commandAuthorized ();
-}
-
-Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhotOptec * in_master_device):Rts2DevConn (in_sock,
-	     in_master_device)
-{
-  master = in_master_device;
-}
 
 int
 Rts2DevPhotOptec::phot_command (char command, short arg)
@@ -176,16 +77,12 @@ Rts2DevPhotOptec::phot_command (char command, short arg)
   return -1;
 }
 
-Rts2DevPhotOptec::Rts2DevPhotOptec (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_PHOT, 5559,
-	    "PHOT")
+Rts2DevPhotOptec::Rts2DevPhotOptec (int argc, char **argv):Rts2DevPhot (argc,
+	     argv)
 {
-  char *
-  states_names[1] = { "phot" };
-  setStateNames (1, states_names);
   addOption ('f', "phot_file", 1, "photometer file (default to /dev/phot0)");
   phot_dev = "/dev/phot0";
   fd = -1;
-  integrateConn = NULL;
 }
 
 Rts2DevPhotOptec::~Rts2DevPhotOptec (void)
@@ -211,7 +108,7 @@ int
 Rts2DevPhotOptec::init ()
 {
   int ret;
-  ret = Rts2Device::init ();
+  ret = Rts2DevPhot::init ();
   if (ret)
     return ret;
 
@@ -223,12 +120,6 @@ Rts2DevPhotOptec::init ()
     }
   // reset occurs on open of photometer file..
   return 0;
-}
-
-Rts2DevConn *
-Rts2DevPhotOptec::createConnection (int in_sock, int conn_num)
-{
-  return new Rts2DevConnPhot (in_sock, this);
 }
 
 int
@@ -253,10 +144,10 @@ Rts2DevPhotOptec::idle ()
 		case 'B':
 		  req_count--;
 		  if (result[0] == 'B')
-		    sendCount (result[1], req_time, 1);
+		    sendCount (result[1], (short) (req_time * 1000.0), 1);
 		  else
-		    sendCount (result[1], req_time, 0);
-		  setTimeout (req_time * 1000);
+		    sendCount (result[1], (short) (req_time * 1000.0), 0);
+		  setTimeout ((long) req_time * USEC_SEC);
 		  break;
 		case '0':
 		  filter = result[1] / FILTER_STEP;
@@ -281,123 +172,54 @@ Rts2DevPhotOptec::idle ()
 	  return endIntegrate ();
 	}
     }
-  return Rts2Device::idle ();
+  return Rts2DevPhot::idle ();
 }
 
 int
 Rts2DevPhotOptec::homeFilter ()
 {
-  filter = 0;
   return phot_command (PHOT_CMD_RESET, 0);
 }
 
 int
-Rts2DevPhotOptec::startIntegrate (float in_req_time, int in_req_count)
+Rts2DevPhotOptec::startIntegrate ()
 {
-  req_time = (short) (in_req_time * 1000);
-  req_count = in_req_count;
-
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
-  return phot_command (PHOT_CMD_INTEGRATE, req_time);
-}
-
-int
-Rts2DevPhotOptec::startIntegrate (Rts2Conn * conn, float in_req_time,
-				  int in_req_count)
-{
-  int ret;
-  ret = startIntegrate (in_req_time, in_req_count);
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot start integration");
-      return -1;
-    }
-  conn->sendValue ("integration", req_time / 1000.0);
-  integrateConn = conn;
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "Integration started");
-  return 0;
+  return phot_command (PHOT_CMD_INTEGRATE, (short) req_time * 1000);
 }
 
 int
 Rts2DevPhotOptec::endIntegrate ()
 {
   req_count = 0;
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-	     "Integration finished");
-  integrateConn = NULL;
-  return phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  return Rts2DevPhot::endIntegrate ();
 }
 
 int
 Rts2DevPhotOptec::stopIntegrate ()
 {
   req_count = 0;
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-	     "Integration interrupted");
-  return phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
+  return Rts2DevPhot::stopIntegrate ();
 }
 
 int
-Rts2DevPhotOptec::moveFilter (Rts2Conn * conn, int new_filter)
+Rts2DevPhotOptec::moveFilter (int new_filter)
 {
-  int ret;
-  ret = phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
-  if (ret)
-    return -1;
-  filter = new_filter;
-  conn->sendValue ("filter", new_filter);
-  return 0;
+  return phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
 }
 
 int
-Rts2DevPhotOptec::enableFilter (Rts2Conn * conn)
+Rts2DevPhotOptec::enableMove ()
 {
-  int ret;
-  ret = phot_command (PHOT_CMD_INTEGR_ENABLED, 1);
-  if (ret)
-    return -1;
-  return 0;
-}
-
-void
-Rts2DevPhotOptec::cancelPriorityOperations ()
-{
-  if (getState (0) & PHOT_MASK_INTEGRATE == PHOT_INTEGRATE)
-    {
-      stopIntegrate ();
-    }
-  Rts2Device::cancelPriorityOperations ();
+  return phot_command (PHOT_CMD_INTEGR_ENABLED, 1);
 }
 
 int
-Rts2DevPhotOptec::changeMasterState (int new_state)
+Rts2DevPhotOptec::disableMove ()
 {
-  switch (new_state & SERVERD_STATUS_MASK)
-    {
-    case SERVERD_NIGHT:
-      phot_command (PHOT_CMD_INTEGR_ENABLED, 1);
-      break;
-    default:			/* other - SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF, etc */
-      phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
-    }
-  return 0;
-}
-
-int
-Rts2DevPhotOptec::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("filter", filter);
-}
-
-int
-Rts2DevPhotOptec::sendCount (int count, short exp, int is_ov)
-{
-  char *msg;
-  int ret;
-  asprintf (&msg, "count %i %i %i", count, exp, is_ov);
-  ret = integrateConn->send (msg);
-  free (msg);
-  return ret;
+  return phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
 }
 
 Rts2DevPhotOptec *device;
