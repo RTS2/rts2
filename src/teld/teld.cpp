@@ -424,9 +424,12 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
 	  knowPosition = 0;
 	}
     }
+  infoAll ();
   // we received correction for last move..and yes, we would like to apply it in resync
   if (locCorNum == moveMark)
     {
+      tar_ra = telRa;
+      tar_dec = telDec;
       // if we don't move too far from last correction
       if (knowPosition)
 	{
@@ -456,7 +459,6 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
       move_connection = conn;
     }
-  infoAll ();
   return ret;
 }
 
