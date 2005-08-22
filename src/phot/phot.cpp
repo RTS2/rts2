@@ -1,0 +1,321 @@
+/*! 
+ * @file Photometer deamon. 
+ *
+ * @author petr
+ */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#include "phot.h"
+#include "../utils/rts2device.h"
+#include "kernel/phot.h"
+#include "status.h"
+
+#include <fcntl.h>
+#include <errno.h>
+#include <signal.h>
+#include <sys/io.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <syslog.h>
+#include <time.h>
+
+int
+Rts2DevConnPhot::commandAuthorized ()
+{
+  int ret;
+  if (isCommand ("home"))
+    {
+      return master->homeFilter ();
+    }
+  else if (isCommand ("integrate"))
+    {
+      float new_req_time;
+      int new_req_count;
+      CHECK_PRIORITY;
+      if (paramNextFloat (&new_req_time) || paramNextInteger (&new_req_count)
+	  || !paramEnd ())
+	return -2;
+
+      return master->startIntegrate (this, new_req_time, new_req_count);
+    }
+
+  else if (isCommand ("intfil"))
+    {
+      int new_filter;
+      float new_req_time;
+      int new_req_count;
+      CHECK_PRIORITY;
+      if (paramNextInteger (&new_filter) || paramNextFloat (&new_req_time)
+	  || paramNextInteger (&new_req_count) || !paramEnd ())
+	return -2;
+
+      ret = master->moveFilter (this, new_filter);
+      if (ret)
+	return ret;
+      return master->startIntegrate (this, new_req_time, new_req_count);
+    }
+
+  else if (isCommand ("stop"))
+    {
+      CHECK_PRIORITY;
+      return master->stopIntegrate ();
+    }
+
+  else if (isCommand ("filter"))
+    {
+      int new_filter;
+      if (paramNextInteger (&new_filter) || !paramEnd ())
+	return -2;
+//    CHECK_PRIORITY;
+      return master->moveFilter (this, new_filter);
+    }
+  else if (isCommand ("enable"))
+    {
+      if (!paramEnd ())
+	return -2;
+      CHECK_PRIORITY;
+      return master->enableFilter (this);
+    }
+  else if (isCommand ("help"))
+    {
+      send ("info - phot informations");
+      send ("exit - exit from main loop");
+      send ("help - print, what you are reading just now");
+      send ("integrate <time> <count> - start integration");
+      send ("enable - enable filter movements");
+      send ("stop - stop any running integration");
+      return 0;
+    }
+  return Rts2DevConn::commandAuthorized ();
+}
+
+Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device):Rts2DevConn (in_sock,
+	     in_master_device)
+{
+  master = in_master_device;
+}
+
+Rts2DevPhot::Rts2DevPhot (int argc, char **argv):
+Rts2Device (argc, argv, DEVICE_TYPE_PHOT, 5559, "PHOT")
+{
+  char *states_names[1] = { "phot" };
+  setStateNames (1, states_names);
+  filter = 0;
+
+  req_count = -1;
+  setReqTime (1);
+}
+
+int
+Rts2DevPhot::idle ()
+{
+  long ret;
+  struct timeval now;
+  gettimeofday (&now, NULL);
+  if (now.tv_sec > nextCountDue.tv_sec
+      || (now.tv_sec == nextCountDue.tv_sec
+	  && now.tv_usec > nextCountDue.tv_usec))
+    {
+      ret = getCount ();
+      if (ret >= 0)
+	{
+	  setTimeout (ret);
+	  nextCountDue.tv_sec = now.tv_sec + ret / USEC_SEC;
+	  nextCountDue.tv_usec = now.tv_usec + ret % USEC_SEC;
+	  if (nextCountDue.tv_usec >= USEC_SEC)
+	    {
+	      nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
+	      nextCountDue.tv_usec %= USEC_SEC;
+	    }
+	}
+      if (ret < 0)
+	{
+	  endIntegrate ();
+	}
+    }
+  else
+    {
+      setTimeout ((nextCountDue.tv_sec - now.tv_sec) * USEC_SEC +
+		  nextCountDue.tv_usec - now.tv_usec);
+    }
+  return Rts2Device::idle ();
+}
+
+Rts2DevConn *
+Rts2DevPhot::createConnection (int in_sock, int conn_num)
+{
+  return new Rts2DevConnPhot (in_sock, this);
+}
+
+int
+Rts2DevPhot::homeFilter ()
+{
+  return -1;
+}
+
+int
+Rts2DevPhot::moveFilter (int new_filter)
+{
+  return -1;
+}
+
+int
+Rts2DevPhot::startIntegrate ()
+{
+  return -1;
+}
+
+int
+Rts2DevPhot::startIntegrate (Rts2Conn * conn, float in_req_time,
+			     int in_req_count)
+{
+  int ret;
+  req_count = in_req_count;
+  ret = startIntegrate ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot start integration");
+      return -1;
+    }
+  setReqTime (in_req_time);
+  maskState (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "integration started");
+  return 0;
+}
+
+int
+Rts2DevPhot::endIntegrate ()
+{
+  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
+	     "integration finished");
+  if (req_time != 1)
+    {
+      setReqTime (req_time);
+      // keep us update in one sec..
+      startIntegrate ();
+    }
+  req_count = -1;
+  return 0;
+}
+
+int
+Rts2DevPhot::stopIntegrate ()
+{
+  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
+	     "Integration interrupted");
+  return 0;
+}
+
+int
+Rts2DevPhot::homeFilter (Rts2Conn * conn)
+{
+  int ret;
+  ret = homeFilter ();
+  if (ret)
+    return -1;
+  filter = 0;
+  infoAll ();
+  return ret;
+}
+
+int
+Rts2DevPhot::enableMove ()
+{
+  return -1;
+}
+
+int
+Rts2DevPhot::disableMove ()
+{
+  return -1;
+}
+
+int
+Rts2DevPhot::moveFilter (Rts2Conn * conn, int new_filter)
+{
+  int ret;
+  ret = moveFilter (new_filter);
+  if (ret)
+    return -1;
+  filter = new_filter;
+  infoAll ();
+  return 0;
+}
+
+int
+Rts2DevPhot::enableFilter (Rts2Conn * conn)
+{
+  int ret;
+  ret = enableMove ();
+  if (ret)
+    return -1;
+  infoAll ();
+  return 0;
+}
+
+void
+Rts2DevPhot::cancelPriorityOperations ()
+{
+  stopIntegrate ();
+  Rts2Device::cancelPriorityOperations ();
+}
+
+int
+Rts2DevPhot::changeMasterState (int new_state)
+{
+  switch (new_state & SERVERD_STATUS_MASK)
+    {
+    case SERVERD_NIGHT:
+      enableMove ();
+      break;
+    default:			/* other - SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF, etc */
+      disableMove ();
+      break;
+    }
+  return 0;
+}
+
+void
+Rts2DevPhot::setReqTime (float in_req_time)
+{
+  req_time = in_req_time;
+  gettimeofday (&nextCountDue, NULL);
+  nextCountDue.tv_sec += (long) floor (in_req_time);
+  nextCountDue.tv_usec +=
+    (long) ((in_req_time - floor (in_req_time)) * USEC_SEC);
+  if (nextCountDue.tv_usec >= USEC_SEC)
+    {
+      nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
+      nextCountDue.tv_usec %= USEC_SEC;
+    }
+}
+
+int
+Rts2DevPhot::sendInfo (Rts2Conn * conn)
+{
+  conn->sendValue ("filter", filter);
+}
+
+int
+Rts2DevPhot::sendCount (int count, float exp, int is_ov)
+{
+  char *msg;
+  int ret;
+  asprintf (&msg, "%i %f %i", count, exp, is_ov);
+  for (int i = 1; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn = connections[i];
+      if (conn)
+	{
+	  conn->sendValue ("count", msg);
+	}
+    }
+  if (req_count == 0)
+    endIntegrate ();
+  if (req_count > 0)
+    req_count--;
+  free (msg);
+  return ret;
+}
