@@ -137,9 +137,13 @@ Rts2Image *
 Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 {
   struct tm expT;
-  char fn[20];
+  char fn[28];
+  int camlen;
+  camlen = strlen (connection->getName ());
+  strcpy (fn, connection->getName ());
+  strcat (fn, "_");
   gmtime_r (&expStart->tv_sec, &expT);
-  strftime (fn, 20, "%H%M%S.fits", &expT);
+  strftime (fn + camlen + 1, 20, "%H%M%S.fits", &expT);
   return new Rts2Image (fn, expStart);
 }
 
