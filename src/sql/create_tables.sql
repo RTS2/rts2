@@ -287,9 +287,10 @@ DROP TABLE counts;
 CREATE TABLE counts ( 
 	obs_id		integer REFERENCES observations(obs_id),
 	count_date	abstime NOT NULL,
+	count_usec	integer NOT NULL,
 	count_value	integer NOT NULL,
 	count_exposure	float,
-	count_filter	varchar(3),
+	count_filter	char(1),
 	count_ra	float8,
 	count_dec	float8,
 	counter_name	varchar(8) REFERENCES counters(counter_name)

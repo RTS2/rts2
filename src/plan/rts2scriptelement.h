@@ -11,6 +11,12 @@
 
 #define EVENT_PRECISION_REACHED		RTS2_LOCAL_EVENT + 250
 
+#define EVENT_MIRROR_SET		RTS2_LOCAL_EVENT + 251
+#define EVENT_MIRROR_FINISH		RTS2_LOCAL_EVENT + 252
+
+#define EVENT_ACQUIRE_START		RTS2_LOCAL_EVENT + 253
+#define EVENT_ACQUIRE_WAIT		RTS2_LOCAL_EVENT + 254
+
 class Rts2Script;
 
 /**
@@ -138,11 +144,27 @@ class Rts2ScriptElementMirror:public Rts2ScriptElement
 {
 private:
   int mirror_pos;
+  char *mirror_name;
 public:
-    Rts2ScriptElementMirror (Rts2Script * in_script, int in_mirror_pos);
+    Rts2ScriptElementMirror (Rts2Script * in_script, char *in_mirror_name,
+			     int in_mirror_pos);
+    virtual ~ Rts2ScriptElementMirror (void);
+  virtual void postEvent (Rts2Event * event);
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,
 			      char new_device[DEVICE_NAME_SIZE]);
+  int takeJob ()
+  {
+    mirror_pos = -1;
+  }
+  int getMirrorPos ()
+  {
+    return mirror_pos;
+  }
+  int isMirrorName (const char *in_name)
+  {
+    return !strcmp (mirror_name, in_name);
+  }
 };
 
 class Rts2ScriptElementPhotometer:public Rts2ScriptElement
@@ -165,6 +187,7 @@ private:
   int sig;
 public:
     Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig);
+    virtual ~ Rts2ScriptElementSendSignal (void);
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,
 			      char new_device[DEVICE_NAME_SIZE]);

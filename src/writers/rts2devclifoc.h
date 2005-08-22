@@ -71,4 +71,12 @@ public:
   }
 };
 
+class Rts2DevClientPhotFoc:public Rts2DevClientPhot
+{
+protected:
+  virtual void addCount (int count, float exp, int is_ov);
+public:
+    Rts2DevClientPhotFoc (Rts2Conn * in_conn);
+};
+
 #endif /* !CLIFOC__ */

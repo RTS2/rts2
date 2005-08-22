@@ -253,6 +253,9 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setValue ("AZ", hrz.az, "mount azimut");
       image->setValue ("MNT_FLIP", getValueInteger ("flip"), "mount flip");
       break;
+    case EVENT_GET_RADEC:
+      getEqu ((struct ln_equ_posn *) event->getArg ());
+      break;
     }
 
   Rts2DevClientTelescope::postEvent (event);

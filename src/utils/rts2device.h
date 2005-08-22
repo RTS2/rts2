@@ -174,7 +174,7 @@ public:
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   int changeState (int state_num, int new_state, char *description);
   int maskState (int state_num, int state_mask, int new_state,
-		 char *description);
+		 char *description = NULL);
   int getState (int state_num)
   {
     return states[state_num]->getState ();

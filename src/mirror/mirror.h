@@ -66,7 +66,9 @@ public:
     return -1;
   }
 
-  virtual int ready (Rts2Conn * conn);
+  int startOpen (Rts2Conn * conn);
+  int startClose (Rts2Conn * conn);
+
   virtual int sendBaseInfo (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
 };

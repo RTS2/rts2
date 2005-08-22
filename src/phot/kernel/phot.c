@@ -240,7 +240,7 @@ reset (struct device_struct *dev)
   // start filter move
   dev->command_pending = 1;
   filter_routine ((unsigned long) dev);
-  printk (KERN_INFO "Reset complete\n");
+  printk (KERN_INFO "reset complete\n");
 }
 
 void
@@ -396,12 +396,12 @@ process_command (void *arg)
 	}
       else
 	{
-	  printk (KERN_ERR "Integration disabled, move filter ignored\n");
+	  printk (KERN_ERR "integration disabled, move filter ignored\n");
 	}
       break;
     case PHOT_CMD_INTEGR_ENABLED:
       dev->integration_enabled = intargs (&dev->command_list->command[1]);
-      printk (KERN_INFO "Integration %s\n",
+      printk (KERN_INFO "integration %s\n",
 	      (dev->integration_enabled ? "enabled" : "disabled"));
       if (!dev->integration_enabled)
 	{
@@ -419,7 +419,7 @@ process_command (void *arg)
 	}
       break;
     default:
-      printk (KERN_WARNING "Unknow command '%c' (%x)\n",
+      printk (KERN_WARNING "unknow command '%c' (%x)\n",
 	      dev->command_list->command[0], dev->command_list->command[0]);
       break;
     }
@@ -593,8 +593,8 @@ init_module (void)
   reset (&device);
   device.integration_enabled = 0;
   create_proc_read_entry ("phot", 0, NULL, phot_read_procmem, NULL);
-  printk (KERN_INFO "Module loaded\n");
-  printk (KERN_INFO "Integration disabled\n");
+  printk (KERN_INFO "module loaded\n");
+  printk (KERN_INFO "integration disabled\n");
   return 0;
 }
 
@@ -606,5 +606,5 @@ cleanup_module (void)
   unregister_chrdev (major_number, "phot");
   free_command_list (&device);
   remove_proc_entry ("phot", NULL);
-  printk (KERN_DEBUG "Optec module unloaded\n");
+  printk (KERN_DEBUG "module unloaded\n");
 }

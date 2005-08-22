@@ -23,6 +23,7 @@
 #define NEXT_COMMAND_ACQUSITION_IMAGE   8
 
 #define NEXT_COMMAND_WAIT_SIGNAL	9
+#define NEXT_COMMAND_WAIT_MIRROR	10
 /*!
  * Holds script to execute on given device.
  * Script might include commands to other devices; in such case device
@@ -52,6 +53,7 @@ private:
   Rts2ScriptElement *parseBuf ();
     std::list < Rts2ScriptElement * >elements;
   Rts2Conn *connection;
+  int executedCount;
 public:
     Rts2Script (char *scriptText, Rts2Conn * in_connection);
     virtual ~ Rts2Script (void);
@@ -74,6 +76,10 @@ public:
   Rts2Block *getMaster ()
   {
     return connection->getMaster ();
+  }
+  int getExecutedCount ()
+  {
+    return executedCount;
   }
 };
 

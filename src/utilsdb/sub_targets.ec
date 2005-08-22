@@ -231,7 +231,6 @@ PossibleDarks::defaultDark ()
   ret = config->getString (deviceName, "darks", dark_exps, 1000);
   if (ret)
     {
-      dark_exposures.push_back (15);
       return 0;
     }
   // get the getCalledNum th observation
@@ -474,6 +473,9 @@ FlatTarget::load ()
   double d_tar_dec;
   int d_tar_id;
   EXEC SQL END DECLARE SECTION;
+
+  if (getTargetID () != TARGET_FLAT)
+    return ConstTarget::load ();
 
   double minAntiDist = 1000;
   double curDist;

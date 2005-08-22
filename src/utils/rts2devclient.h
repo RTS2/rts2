@@ -50,6 +50,7 @@ public:
   double getValueDouble (char *value_name);
   int getValueInteger (char *value_name);
 
+  virtual int commandValue (const char *name);
   virtual int command ();
 
     std::vector < Rts2Value * >values;
@@ -145,7 +146,7 @@ protected:
 public:
     Rts2DevClientPhot (Rts2Conn * in_connection);
     virtual ~ Rts2DevClientPhot (void);
-  virtual int command ();
+  virtual int commandValue (const char *name);
   virtual void integrationFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
 };

@@ -217,8 +217,9 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int argc, char **argv):Rts2DevTelescope 
   tplc = NULL;
 
   irTracking = 4;
-  irConfig = "/etc/rts2/ir.ini"
-    addOption ('I', "ir_ip", 1, "IR TCP/IP address");
+  irConfig = "/etc/rts2/ir.ini";
+
+  addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
   addOption ('t', "ir_tracking", 1,
 	     "IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");

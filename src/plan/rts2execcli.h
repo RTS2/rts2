@@ -36,22 +36,22 @@ protected:
   {
     Rts2DevClientCameraImage::unsetWait ();
     isExposing = 0;
-  };
+  }
 
   virtual void clearWait ()
   {
     Rts2DevClientCameraImage::clearWait ();
-  };
+  }
 
   virtual int isWaitMove ()
   {
     return Rts2DevClientCameraImage::isWaitMove ();
-  };
+  }
 
   virtual void setWaitMove ()
   {
     return Rts2DevClientCameraImage::setWaitMove ();
-  };
+  }
 
   virtual void exposureStarted ();
   virtual void exposureEnd ();
@@ -96,23 +96,9 @@ protected:
   virtual void mirrorB ();
 public:
     Rts2DevClientMirrorExec (Rts2Conn * in_connection);
-};
-
-class Rts2DevClientPhotExec:public Rts2DevClientPhot
-{
-private:
-  int blockMove;
-  Target *currentTarget;
-
-  Rts2Script *script;
-  Rts2Command *nextComd;
-  char cmd_device[DEVICE_NAME_SIZE];
-protected:
-    virtual void integrationEnd ();
-  virtual void addCount (int count, float exp, int is_ov);
-public:
-    Rts2DevClientPhotExec (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
+
+  virtual void moveFailed (int status);
 };
 
 #endif /*! __RTS2_EXECCLI__ */

@@ -244,3 +244,17 @@ Rts2ConnFocus::processLine ()
     }
   return -1;
 }
+
+Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn):Rts2DevClientPhot
+  (in_conn)
+{
+}
+
+void
+Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
+{
+  std::cout << "Count on " << connection->
+    getName () << ": filter: " << getValueInteger ("filter") << " count " <<
+    count << " exp: " << exp << " is_ov: " << is_ov << std::endl;
+
+}

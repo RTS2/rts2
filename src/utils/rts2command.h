@@ -159,6 +159,25 @@ public:
   virtual int commandReturnFailed (int status);
 };
 
+class Rts2CommandMirror:public Rts2Command
+{
+private:
+  Rts2DevClientMirror * mirror;
+public:
+  Rts2CommandMirror (Rts2DevClientMirror * in_mirror, int in_pos);
+  virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandIntegrate:public Rts2Command
+{
+private:
+  Rts2DevClientPhot * phot;
+public:
+  Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, int in_filter,
+			float in_exp, int in_count);
+  virtual int commandReturnFailed (int status);
+};
+
 class Rts2CommandExecNext:public Rts2Command
 {
 public:

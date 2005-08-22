@@ -42,7 +42,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
 
-  virtual int idle ();
+  virtual long getCount ();
 
   virtual int ready ()
   {
@@ -122,57 +122,34 @@ Rts2DevPhotOptec::init ()
   return 0;
 }
 
-int
-Rts2DevPhotOptec::idle ()
+long
+Rts2DevPhotOptec::getCount ()
 {
-  if (getState (0) & PHOT_MASK_INTEGRATE == PHOT_INTEGRATE)
+  int ret;
+  unsigned short result[2];
+  ret = read (fd, &result[0], 2);
+  result[1] = 0;
+  ret = read (fd, &result[1], 2);
+  if (ret == 2)
     {
-      if (req_count > 0)
+      switch (result[0])
 	{
-	  int ret;
-	  unsigned short result[2];
-	  ret = read (fd, &result[0], 2);
-	  result[1] = 0;
-	  ret = read (fd, &result[1], 2);
-	  if (!integrateConn)
-	    return endIntegrate ();
-	  if (ret == 2)
-	    {
-	      switch (result[0])
-		{
-		case 'A':
-		case 'B':
-		  req_count--;
-		  if (result[0] == 'B')
-		    sendCount (result[1], (short) (req_time * 1000.0), 1);
-		  else
-		    sendCount (result[1], (short) (req_time * 1000.0), 0);
-		  setTimeout ((long) req_time * USEC_SEC);
-		  break;
-		case '0':
-		  filter = result[1] / FILTER_STEP;
-		  integrateConn->sendValue ("filter", filter);
-		  setTimeout (1000);
-		  break;
-		case '-':
-		  sendCount (0, 0, 1);
-		  endIntegrate ();
-		  break;
-		}
-	    }
-	}
-      else
-	{
-	  // wait for data in quick mode
-	  setTimeout (1000);
-	}
-      if (req_count <= 0)
-	{
-	  setTimeout (USEC_SEC);
-	  return endIntegrate ();
+	case 'A':
+	case 'B':
+	  sendCount (result[1], req_time, (result[0] == 'B' ? 1 : 0));
+	  return (long) (req_time * USEC_SEC);
+	  break;
+	case '0':
+	  filter = result[1] / FILTER_STEP;
+	  infoAll ();
+	  return 0;
+	  break;
+	case '-':
+	  return -1;
+	  break;
 	}
     }
-  return Rts2DevPhot::idle ();
+  return (long) (req_time * USEC_SEC);
 }
 
 int
@@ -191,7 +168,6 @@ Rts2DevPhotOptec::startIntegrate ()
 int
 Rts2DevPhotOptec::endIntegrate ()
 {
-  req_count = 0;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   return Rts2DevPhot::endIntegrate ();
 }
@@ -199,7 +175,6 @@ Rts2DevPhotOptec::endIntegrate ()
 int
 Rts2DevPhotOptec::stopIntegrate ()
 {
-  req_count = 0;
   phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   return Rts2DevPhot::stopIntegrate ();
 }

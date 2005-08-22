@@ -314,6 +314,8 @@ Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2DevClientTelescopeImage (conn);
     case DEVICE_TYPE_FOCUS:
       return new Rts2DevClientFocusFoc (conn);
+    case DEVICE_TYPE_PHOT:
+      return new Rts2DevClientPhotFoc (conn);
     case DEVICE_TYPE_DOME:
       return new Rts2DevClientDomeImage (conn);
     default:

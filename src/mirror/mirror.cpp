@@ -56,13 +56,26 @@ Rts2DevMirror::createConnection (int in_sock, int conn_num)
 }
 
 int
-Rts2DevMirror::ready (Rts2Conn * conn)
+Rts2DevMirror::startOpen (Rts2Conn * conn)
 {
   int ret;
-  ret = ready ();
+  ret = startOpen ();
   if (ret)
     {
-      conn->sendCommandEnd (DEVDEM_E_HW, "mirror not ready");
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot open mirror");
+      return -1;
+    }
+  return 0;
+}
+
+int
+Rts2DevMirror::startClose (Rts2Conn * conn)
+{
+  int ret;
+  ret = startClose ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot close mirror");
       return -1;
     }
   return 0;
@@ -91,15 +104,9 @@ Rts2DevConnMirror::commandAuthorized ()
       if (paramNextString (&str_dir) || !paramEnd ())
 	return -2;
       if (!strcasecmp (str_dir, "open"))
-	ret = master->startOpen ();
+	return master->startOpen (this);
       if (!strcasecmp (str_dir, "close"))
-	ret = master->startClose ();
-      if (ret)
-	{
-	  sendCommandEnd (DEVDEM_E_HW, "cannot open/close mirror");
-	  return -1;
-	}
-      return 0;
+	return master->startClose (this);
     }
   if (isCommand ("set"))
     {
@@ -111,20 +118,24 @@ Rts2DevConnMirror::commandAuthorized ()
 	return -2;
       if (!strcasecmp (str_dir, "A"))
 	if ((getState (0) & MIRROR_MASK) != MIRROR_A)
-	  ret = master->startClose ();
+	  {
+	    return master->startClose (this);
+	  }
 	else
-	  ret = -1;
+	  {
+	    sendCommandEnd (DEVDEM_E_IGNORE, "already in A");
+	    return -1;
+	  }
       else if (!strcasecmp (str_dir, "B"))
 	if ((getState (0) & MIRROR_MASK) != MIRROR_B)
-	  ret = master->startOpen ();
+	  {
+	    return master->startOpen (this);
+	  }
 	else
-	  ret = -1;
-      if (ret)
-	{
-	  sendCommandEnd (DEVDEM_E_HW, "cannot open/close mirror");
-	  return -1;
-	}
-      return 0;
+	  {
+	    sendCommandEnd (DEVDEM_E_IGNORE, "already in B");
+	    return -1;
+	  }
     }
   return Rts2DevConn::commandAuthorized ();
 }

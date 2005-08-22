@@ -1,6 +1,7 @@
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
 #include "rts2execcli.h"
+#include "rts2devcliphot.h"
 
 #include <vector>
 #include <signal.h>
@@ -68,6 +69,12 @@ public:
   int setNow (int nextId);
   int setNow (Target * newTarget);
   int setGrb (int grbId);
+
+  void stop ()
+  {
+    maskState (0, EXEC_MASK_STOP, EXEC_STOP);
+  }
+
   void queTarget (Target * in_target);
   void updateScriptCount ();
 };
@@ -95,6 +102,12 @@ Rts2ConnExecutor::commandAuthorized ()
       if (paramNextInteger (&tar_id) || !paramEnd ())
 	return -2;
       return master->setNext (tar_id);
+    }
+  else if (isCommand ("stop"))
+    {
+      if (!paramEnd ())
+	return -2;
+      master->stop ();
     }
   return Rts2DevConn::commandAuthorized ();
 }
@@ -203,18 +216,31 @@ Rts2Executor::postEvent (Rts2Event * event)
 {
   switch (event->getType ())
     {
+    case EVENT_SLEW_TO_TARGET:
+      maskState (0, EXEC_STATE_MASK, EXEC_MOVE);
     case EVENT_OBSERVE:
       break;
     case EVENT_SCRIPT_STARTED:
-      // we don't care about that now..
+      maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
+      break;
+    case EVENT_ACQUIRE_START:
+      maskState (0, EXEC_STATE_MASK, EXEC_ACQUIRE);
+      break;
+    case EVENT_ACQUIRE_WAIT:
+      maskState (0, EXEC_STATE_MASK, EXEC_ACQUIRE_WAIT);
+      break;
+    case EVENT_ACQUSITION_END:
+      maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
       break;
     case EVENT_LAST_READOUT:
+      maskState (0, EXEC_STATE_MASK, EXEC_LASTREAD);
     case EVENT_SCRIPT_ENDED:
       updateScriptCount ();
       if (currentTarget)
 	{
 	  if (scriptCount == 0 && currentTarget->observationStarted ())
 	    {
+	      maskState (0, EXEC_STATE_MASK, EXEC_IDLE);
 	      switchTarget ();
 	    }
 	  // scriptCount is not 0, but we hit continues target..
@@ -223,10 +249,12 @@ Rts2Executor::postEvent (Rts2Event * event)
 		       || nextTarget->getTargetID () ==
 		       currentTarget->getTargetID ()))
 	    {
+	      // wait, if we are in stop..don't que it again..
+	      if ((getState (0) & EXEC_MASK_STOP) != EXEC_STOP)
+		event->setArg ((void *) currentTarget);
 	      // that will eventually hit devclient which post that message, which
 	      // will set currentTarget to this value and handle it same way as EVENT_OBSERVE,
 	      // which is exactly what we want
-	      event->setArg ((void *) currentTarget);
 	    }
 	}
       else
@@ -346,17 +374,8 @@ Rts2Executor::changeMasterState (int new_state)
     case SERVERD_MORNING:
     case SERVERD_DAY:
       // we need to stop observation that is continuus
-      // and at the mean time kept pointer to it, so we can delete it
-      // first we free nextTarget pointer..
-      if (nextTarget)
-	{
-	  delete nextTarget;
-	}
-      // that will guaranite that in isContinues call, we will find currentTarget
-      // NULL, so we will call switchTarget, which will do the job..
-      // delete on nextTarget will call endObservation, so we will end observation of current target
-      nextTarget = currentTarget;
-      currentTarget = NULL;
+      // that will guarantie that in isContinues call, we will not que our target again
+      maskState (0, EXEC_MASK_STOP, EXEC_STOP);
     }
   return Rts2DeviceDb::changeMasterState (new_state);
 }
@@ -512,7 +531,22 @@ Rts2Executor::doSwitch ()
 void
 Rts2Executor::switchTarget ()
 {
-  if (ignoreDay)
+  if ((getState (0) & EXEC_MASK_STOP) == EXEC_STOP)
+    {
+      if (currentTarget)
+	{
+	  currentTarget->endObservation (-1);
+	  queTarget (currentTarget);
+	}
+      currentTarget = NULL;
+      if (nextTarget)
+	{
+	  delete nextTarget;
+	  nextTarget = NULL;
+	}
+      maskState (0, EXEC_MASK_STOP, EXEC_NOT_STOP);
+    }
+  else if (ignoreDay)
     {
       doSwitch ();
     }

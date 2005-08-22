@@ -15,6 +15,7 @@
 // know that something is going on
 #define EVENT_SIGNAL		9
 
+#define EVENT_GET_RADEC		10
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
 

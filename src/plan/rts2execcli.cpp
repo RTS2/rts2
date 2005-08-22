@@ -50,32 +50,19 @@ Rts2DevClientCameraExec::nextCommand ()
   if (!ret)
     return;
 
-  if (!strcmp (cmd_device, connection->getName ()))
+  if (nextComd->getCommandCond () == NO_EXPOSURE)
     {
-      if (nextComd->getCommandCond () == NO_EXPOSURE)
+      if (isExposing || (connection->
+			 getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
+					 CAM_MASK_READING)) !=
+	  (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
 	{
-	  if (isExposing || (connection->
-			     getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
-					     CAM_MASK_READING)) !=
-	      (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
-	    {
-	      return;		// after current exposure ends..
-	    }
-	  isExposing = 1;
+	  return;		// after current exposure ends..
 	}
-      connection->queCommand (nextComd);
-      nextComd = NULL;		// after command execute, it will be deleted
+      isExposing = 1;
     }
-  if (!strcmp (cmd_device, "TX"))	// some telescope command..
-    {
-      connection->getMaster ()->
-	postEvent (new
-		   Rts2Event (EVENT_TEL_SCRIPT_CHANGE, (void *) nextComd));
-      // postEvent have to create copy (in case we will serve more devices) .. so we have to delete command
-      delete nextComd;
-      nextComd = NULL;
-      waiting = WAIT_MOVE;
-    }
+  connection->queCommand (nextComd);
+  nextComd = NULL;		// after command execute, it will be deleted
   blockMove = 1;		// as we run a script..
   if (currentTarget)
     currentTarget->startObservation ();
@@ -109,7 +96,9 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
     {
       ret = script->processImage (image);
       if (!ret)
-	return;
+	{
+	  return;
+	}
     }
   // if unknow type, don't process image..
   if (image->getType () != IMGTYPE_OBJECT)
@@ -122,7 +111,7 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
     {
       Rts2Value *que_size;
       Rts2Conn *conn;
-      conn = connection->getMaster ()->connections[i];
+      conn = getMaster ()->connections[i];
       if (conn)
 	{
 	  que_size = conn->getValue ("que_size");
@@ -140,8 +129,7 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
   if (!minConn)
     return;
   image->saveImage ();
-  minConn->
-    queCommand (new Rts2CommandQueImage (connection->getMaster (), image));
+  minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
 void
@@ -163,8 +151,7 @@ Rts2DevClientCameraExec::exposureEnd ()
     {
       blockMove = 0;
       currentTarget = NULL;
-      connection->getMaster ()->
-	postEvent (new Rts2Event (EVENT_LAST_READOUT));
+      getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
     }
   else
     {
@@ -216,7 +203,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	  switch (ret)
 	    {
 	    case OBS_DONT_MOVE:
-	      connection->getMaster ()->
+	      getMaster ()->
 		postEvent (new
 			   Rts2Event (EVENT_OBSERVE, (void *) currentTarget));
 	      break;
@@ -278,13 +265,13 @@ Rts2DevClientTelescopeExec::syncTarget ()
     case OBS_MOVE:
       connection->
 	queCommand (new
-		    Rts2CommandMove (connection->getMaster (), this,
+		    Rts2CommandMove (getMaster (), this,
 				     coord.ra, coord.dec));
       break;
     case OBS_ALREADY_STARTED:
       connection->
 	queCommand (new
-		    Rts2CommandResyncMove (connection->getMaster (), this,
+		    Rts2CommandResyncMove (getMaster (), this,
 					   coord.ra, coord.dec));
       break;
     }
@@ -295,16 +282,16 @@ void
 Rts2DevClientTelescopeExec::checkInterChange ()
 {
   int waitNum = 0;
-  connection->getMaster ()->
+  getMaster ()->
     postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &waitNum));
   if (waitNum == 0)
-    connection->getMaster ()->postEvent (new Rts2Event (EVENT_ENTER_WAIT));
+    getMaster ()->postEvent (new Rts2Event (EVENT_ENTER_WAIT));
 }
 
 void
 Rts2DevClientTelescopeExec::moveEnd ()
 {
-  connection->getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
+  getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveEnd ();
 }
@@ -320,7 +307,7 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveFailed (status);
   // move failed because we get priority..
-  connection->getMaster ()->
+  getMaster ()->
     postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
 }
 
@@ -330,32 +317,37 @@ Rts2DevClientMirrorExec::Rts2DevClientMirrorExec (Rts2Conn * in_connection):Rts2
 }
 
 void
+Rts2DevClientMirrorExec::postEvent (Rts2Event * event)
+{
+  Rts2ScriptElementMirror *se;
+  switch (event->getType ())
+    {
+    case EVENT_MIRROR_SET:
+      se = (Rts2ScriptElementMirror *) event->getArg ();
+      if (se->isMirrorName (connection->getName ()))
+	{
+	  connection->
+	    queCommand (new Rts2CommandMirror (this, se->getMirrorPos ()));
+	  se->takeJob ();
+	}
+      break;
+    }
+}
+
+void
 Rts2DevClientMirrorExec::mirrorA ()
 {
+  getMaster ()->postEvent (new Rts2Event (EVENT_MIRROR_FINISH));
 }
 
 void
 Rts2DevClientMirrorExec::mirrorB ()
 {
-}
-
-Rts2DevClientPhotExec::Rts2DevClientPhotExec (Rts2Conn * in_connection):Rts2DevClientPhot
-  (in_connection)
-{
-  blockMove = 0;
+  getMaster ()->postEvent (new Rts2Event (EVENT_MIRROR_FINISH));
 }
 
 void
-Rts2DevClientPhotExec::integrationEnd ()
+Rts2DevClientMirrorExec::moveFailed (int status)
 {
-}
-
-void
-Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
-{
-}
-
-void
-Rts2DevClientPhotExec::postEvent (Rts2Event * event)
-{
+  getMaster ()->postEvent (new Rts2Event (EVENT_MIRROR_FINISH));
 }

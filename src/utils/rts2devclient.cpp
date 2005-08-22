@@ -92,21 +92,28 @@ Rts2DevClient::getValueInteger (char *value_name)
 }
 
 int
+Rts2DevClient::commandValue (const char *name)
+{
+  std::vector < Rts2Value * >::iterator val_iter;
+  for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
+    {
+      Rts2Value *value;
+      value = (*val_iter);
+      if (!strcmp (value->getName (), name))
+	return value->setValue (connection);
+    }
+  return -2;
+}
+
+int
 Rts2DevClient::command ()
 {
+  char *name;
   if (connection->isCommand ("V"))
     {
-      char *name;
       if (connection->paramNextString (&name))
 	return -1;
-      std::vector < Rts2Value * >::iterator val_iter;
-      for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
-	{
-	  Rts2Value *value;
-	  value = (*val_iter);
-	  if (!strcmp (value->getName (), name))
-	    return value->setValue (connection);
-	}
+      return commandValue (name);
     }
   return -2;
 }
@@ -420,21 +427,21 @@ Rts2DevClientPhot::~Rts2DevClientPhot ()
 }
 
 int
-Rts2DevClientPhot::command ()
+Rts2DevClientPhot::commandValue (const char *name)
 {
   int count;
-  int exp;
+  float exp;
   int is_ov;
-  if (connection->isCommand ("count"))
+  if (!strcmp (name, "count"))
     {
       if (connection->paramNextInteger (&count)
-	  || connection->paramNextInteger (&exp)
+	  || connection->paramNextFloat (&exp)
 	  || connection->paramNextInteger (&is_ov))
 	return -3;
-      addCount (count, exp / 1000.0, is_ov);
-      return -1;
+      addCount (count, exp, is_ov);
+      return 0;
     }
-  return Rts2DevClient::command ();
+  return Rts2DevClient::commandValue (name);
 }
 
 void

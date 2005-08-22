@@ -187,7 +187,7 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	}
       break;
     }
-  Rts2Object::postEvent (event);
+  Rts2ScriptElement::postEvent (event);
 }
 
 int
@@ -254,6 +254,7 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
     {
       script->getMaster ()->addConnection (processor);
       processingState = WAITING_ASTROMETRY;
+      script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_WAIT));
     }
   return 0;
 }
@@ -272,10 +273,29 @@ Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
   return NEXT_COMMAND_WAIT_ACQUSITION;
 }
 
-Rts2ScriptElementMirror::Rts2ScriptElementMirror (Rts2Script * in_script, int in_mirror_pos):Rts2ScriptElement
+Rts2ScriptElementMirror::Rts2ScriptElementMirror (Rts2Script * in_script, char *in_mirror_name, int in_mirror_pos):Rts2ScriptElement
   (in_script)
 {
   mirror_pos = in_mirror_pos;
+  mirror_name = new char[strlen (in_mirror_name) + 1];
+  strcpy (mirror_name, in_mirror_name);
+}
+
+Rts2ScriptElementMirror::~Rts2ScriptElementMirror ()
+{
+  delete[]mirror_name;
+}
+
+void
+Rts2ScriptElementMirror::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_MIRROR_FINISH:
+      mirror_pos = -2;
+      break;
+    }
+  Rts2ScriptElement::postEvent (event);
 }
 
 int
@@ -283,14 +303,27 @@ Rts2ScriptElementMirror::defnextCommand (Rts2DevClient * client,
 					 Rts2Command ** new_command,
 					 char new_device[DEVICE_NAME_SIZE])
 {
+  if (mirror_pos == -1)
+    return NEXT_COMMAND_WAIT_MIRROR;
+  if (mirror_pos < 0)		// job finished..
+    return NEXT_COMMAND_NEXT;
+  // send signal..if at least one mirror will get it, wait for it, otherwise end imediately
+  script->getMaster ()->
+    postEvent (new Rts2Event (EVENT_MIRROR_SET, (void *) this));
+  // somebody pick that job..
+  if (mirror_pos == -1)
+    {
+      return NEXT_COMMAND_WAIT_MIRROR;
+    }
+  // nobody cared, find another..
+  syslog (LOG_DEBUG,
+	  "Rts2ScriptElementMirror::defnextCommand nobody cared about mirror %s",
+	  mirror_name);
+  return NEXT_COMMAND_NEXT;
 }
 
-Rts2ScriptElementPhotometer::Rts2ScriptElementPhotometer (Rts2Script *
-							  in_script,
-							  int in_filter,
-							  float in_exposure,
-							  int in_count):
-Rts2ScriptElement (in_script)
+Rts2ScriptElementPhotometer::Rts2ScriptElementPhotometer (Rts2Script * in_script, int in_filter, float in_exposure, int in_count):Rts2ScriptElement
+  (in_script)
 {
   filter = in_filter;
   exposure = in_exposure;
@@ -302,14 +335,21 @@ Rts2ScriptElementPhotometer::nextCommand (Rts2DevClientPhot * phot,
 					  Rts2Command ** new_command,
 					  char new_device[DEVICE_NAME_SIZE])
 {
+  *new_command = new Rts2CommandIntegrate (phot, filter, exposure, count);
+  getDevice (new_device);
+  return 0;
 }
 
-Rts2ScriptElementSendSignal::Rts2ScriptElementSendSignal (Rts2Script *
-							  in_script,
-							  int in_sig):
-Rts2ScriptElement (in_script)
+Rts2ScriptElementSendSignal::Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig):Rts2ScriptElement
+  (in_script)
 {
   sig = in_sig;
+}
+
+Rts2ScriptElementSendSignal::~Rts2ScriptElementSendSignal (void)
+{
+  script->getMaster ()->
+    postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
 }
 
 int
@@ -318,8 +358,7 @@ Rts2ScriptElementSendSignal::defnextCommand (Rts2DevClient * client,
 					     char
 					     new_device[DEVICE_NAME_SIZE])
 {
-  script->getMaster ()->
-    postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
+  // we will do job required for us in destructor..
   return NEXT_COMMAND_NEXT;
 }
 

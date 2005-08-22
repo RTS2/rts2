@@ -252,6 +252,45 @@ Rts2CommandChangeFocus::commandReturnFailed (int status)
   return Rts2Command::commandReturnFailed (status);
 }
 
+Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * in_mirror, int in_pos):Rts2Command (in_mirror->
+	     getMaster
+	     ())
+{
+  mirror = in_mirror;
+  char *
+    msg;
+  asprintf (&msg, "set %c", (in_pos == 0 ? 'A' : 'B'));
+  setCommand (msg);
+  free (msg);
+}
+
+int
+Rts2CommandMirror::commandReturnFailed (int status)
+{
+  if (mirror)
+    mirror->moveFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
+Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, int in_filter, float in_exp, int in_count):Rts2Command (in_phot->
+	     getMaster
+	     ())
+{
+  phot = in_phot;
+  char *
+    msg;
+  asprintf (&msg, "intfil %i %f %i", in_filter, in_exp, in_count);
+  setCommand (msg);
+  free (msg);
+}
+
+int
+Rts2CommandIntegrate::commandReturnFailed (int status)
+{
+  if (phot)
+    phot->integrationFailed (status);
+}
+
 Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * in_master, int next_id):
 Rts2Command (in_master)
 {

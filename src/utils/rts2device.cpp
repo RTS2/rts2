@@ -588,6 +588,8 @@ Rts2State::setState (int new_state, char *description)
       return;
     }
   state = new_state;
+  if (!description)
+    description = "null";
   syslog (LOG_DEBUG, "Rts2State::setState new_state: %i desc: %s this: %p",
 	  new_state, description, this);
   master->sendStatusMessage (state_name, state);

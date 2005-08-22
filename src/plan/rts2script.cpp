@@ -75,6 +75,7 @@ Rts2Script::Rts2Script (char *scriptText, Rts2Conn * in_connection):Rts2Object
       elements.push_back (element);
     }
   while (1);
+  executedCount = 0;
 }
 
 Rts2Script::~Rts2Script (void)
@@ -97,8 +98,6 @@ Rts2Script::postEvent (Rts2Event * event)
     el_iter_for_erase;
   Rts2ScriptElement *el;
   int ret;
-  if (elements.size () > 0)
-    (*elements.begin ())->postEvent (new Rts2Event (event));
   switch (event->getType ())
     {
     case EVENT_SIGNAL:
@@ -120,6 +119,10 @@ Rts2Script::postEvent (Rts2Event * event)
 	      *((int *) event->getArg ()) = -1;
 	    }
 	}
+      break;
+    default:
+      if (elements.size () > 0)
+	(*elements.begin ())->postEvent (new Rts2Event (event));
       break;
     }
   Rts2Object::postEvent (event);
@@ -202,7 +205,7 @@ Rts2Script::parseBuf ()
       int mirror_pos;
       if (getNextParamInteger (&mirror_pos))
 	return NULL;
-      return new Rts2ScriptElementMirror (this, mirror_pos);
+      return new Rts2ScriptElementMirror (this, new_device, mirror_pos);
     }
   else if (!strcmp (commandStart, COMMAND_PHOTOMETER))
     {
@@ -252,6 +255,9 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
       ret = nextElement->nextCommand (camera, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
 	break;
+      delete nextElement;
+      el_iter++;
+      elements.erase (elements.begin ());
     }
   switch (ret)
     {
@@ -269,9 +275,13 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
     case NEXT_COMMAND_KEEP:
     case NEXT_COMMAND_RESYNC:
     case NEXT_COMMAND_ACQUSITION_IMAGE:
+    case NEXT_COMMAND_WAIT_SIGNAL:
+    case NEXT_COMMAND_WAIT_MIRROR:
       // keep us
       break;
     }
+  if (ret != NEXT_COMMAND_NEXT)
+    executedCount++;
   return ret;
 }
 
@@ -294,6 +304,9 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
       ret = nextElement->nextCommand (phot, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
 	break;
+      delete nextElement;
+      el_iter++;
+      elements.erase (elements.begin ());
     }
   switch (ret)
     {
@@ -311,9 +324,13 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
     case NEXT_COMMAND_KEEP:
     case NEXT_COMMAND_RESYNC:
     case NEXT_COMMAND_ACQUSITION_IMAGE:
+    case NEXT_COMMAND_WAIT_SIGNAL:
+    case NEXT_COMMAND_WAIT_MIRROR:
       // keep us
       break;
     }
+  if (ret != NEXT_COMMAND_NEXT)
+    executedCount++;
   return ret;
 }
 

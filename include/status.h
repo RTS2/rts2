@@ -123,8 +123,13 @@
 #define EXEC_IDLE		0x00
 #define EXEC_MOVE		0x01
 #define EXEC_ACQUIRE		0x02
-#define EXEC_OBSERVE		0x03
-#define EXEC_LASTREAD		0x04
+#define EXEC_ACQUIRE_WAIT	0x03
+#define EXEC_OBSERVE		0x04
+#define EXEC_LASTREAD		0x05
+
+#define EXEC_MASK_STOP		0x10
+#define EXEC_NOT_STOP		0x00
+#define EXEC_STOP		0x10
 
 #define IMGPROC_IDLE		0x00
 #define IMGPROC_RUN		0x00
