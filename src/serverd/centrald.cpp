@@ -655,6 +655,9 @@ Rts2Centrald::idle ()
 	    current_state = SERVERD_OFF;
 	  else if (morning_standby)
 	    current_state = call_state | SERVERD_STANDBY;
+	  else
+	    current_state =
+	      (current_state & SERVERD_STANDBY_MASK) | call_state;
 	}
       else
 	{
