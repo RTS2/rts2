@@ -318,6 +318,8 @@ Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2DevClientPhotFoc (conn);
     case DEVICE_TYPE_DOME:
       return new Rts2DevClientDomeImage (conn);
+    case DEVICE_TYPE_MIRROR:
+      return new Rts2DevClientMirrorImage (conn);
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }
