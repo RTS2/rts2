@@ -192,10 +192,10 @@ Rts2DevPhot::endIntegrate ()
 	     "integration finished");
   if (req_time != 1)
     {
-      setReqTime (req_time);
-      // keep us update in one sec..
-      startIntegrate ();
+      setReqTime (1);
     }
+  // keep us update in one sec..
+  startIntegrate ();
   req_count = -1;
   return 0;
 }

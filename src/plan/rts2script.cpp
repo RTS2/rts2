@@ -80,6 +80,8 @@ Rts2Script::Rts2Script (char *scriptText, Rts2Conn * in_connection):Rts2Object
 
 Rts2Script::~Rts2Script (void)
 {
+  // all operations with elements list should be ignored
+  executedCount = -1;
   std::list < Rts2ScriptElement * >::iterator el_iter;
   for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
     {
@@ -97,6 +99,8 @@ Rts2Script::postEvent (Rts2Event * event)
   std::list < Rts2ScriptElement * >::iterator el_iter, el_iter_tmp,
     el_iter_for_erase;
   Rts2ScriptElement *el;
+  if (executedCount < 0)
+    return;
   int ret;
   switch (event->getType ())
     {
@@ -247,6 +251,11 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
 
   *new_command = NULL;
 
+  if (executedCount < 0)
+    {
+      return NEXT_COMMAND_END_SCRIPT;
+    }
+
   el_iter = elements.begin ();
   while (1)
     {
@@ -298,6 +307,11 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
 
   *new_command = NULL;
 
+  if (executedCount < 0)
+    {
+      return NEXT_COMMAND_END_SCRIPT;
+    }
+
   el_iter = elements.begin ();
   while (1)
     {
@@ -340,7 +354,7 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
 int
 Rts2Script::processImage (Rts2Image * image)
 {
-  if (elements.size () == 0)
+  if (executedCount < 0 || elements.size () == 0)
     return -1;
   return (*elements.begin ())->processImage (image);
 }

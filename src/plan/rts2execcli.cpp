@@ -311,7 +311,7 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
     postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
 }
 
-Rts2DevClientMirrorExec::Rts2DevClientMirrorExec (Rts2Conn * in_connection):Rts2DevClientMirror
+Rts2DevClientMirrorExec::Rts2DevClientMirrorExec (Rts2Conn * in_connection):Rts2DevClientMirrorImage
   (in_connection)
 {
 }
@@ -332,6 +332,7 @@ Rts2DevClientMirrorExec::postEvent (Rts2Event * event)
 	}
       break;
     }
+  Rts2DevClientMirrorImage::postEvent (event);
 }
 
 void

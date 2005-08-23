@@ -53,6 +53,7 @@ private:
   Rts2ScriptElement *parseBuf ();
     std::list < Rts2ScriptElement * >elements;
   Rts2Conn *connection;
+  // is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
   int executedCount;
 public:
     Rts2Script (char *scriptText, Rts2Conn * in_connection);

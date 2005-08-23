@@ -89,7 +89,7 @@ public:
   virtual void moveFailed (int status);
 };
 
-class Rts2DevClientMirrorExec:public Rts2DevClientMirror
+class Rts2DevClientMirrorExec:public Rts2DevClientMirrorImage
 {
 protected:
   virtual void mirrorA ();

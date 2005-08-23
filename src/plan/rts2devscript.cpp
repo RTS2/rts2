@@ -35,7 +35,6 @@ Rts2DevScript::startTarget ()
 void
 Rts2DevScript::postEvent (Rts2Event * event)
 {
-  Rts2Event *signalEvent;
   int sig;
   int acqEnd;
   switch (event->getType ())
@@ -142,8 +141,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
       if (!script)
 	break;
       sig = *(int *) event->getArg ();
-      signalEvent = new Rts2Event (EVENT_SIGNAL, (void *) &sig);
-      script->postEvent (signalEvent);
+      script->postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
       if (sig == -1)
 	{
 	  waitScript = NO_WAIT;

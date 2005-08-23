@@ -403,20 +403,20 @@ process_command (void *arg)
       dev->integration_enabled = intargs (&dev->command_list->command[1]);
       printk (KERN_INFO "integration %s\n",
 	      (dev->integration_enabled ? "enabled" : "disabled"));
-      if (!dev->integration_enabled)
+//      if (!dev->integration_enabled)
+//      {
+      if (dev->command_pending)
 	{
-	  if (dev->command_pending)
-	    {
-	      dev->status |= PHOT_S_INTEGRATION_DIS;
-	      // cancel any running procedure, write out fake results
-	      dev->command_timer.function ((unsigned long) dev);
-	      dev->status &= ~PHOT_S_INTEGRATION_DIS;
-	    }
-	  del_timer_sync (&dev->command_timer);
-	  dev->desired_position = 0;
-	  dev->command_pending = 1;
-	  filter_routine ((unsigned long) dev);
+	  dev->status |= PHOT_S_INTEGRATION_DIS;
+	  // cancel any running procedure, write out fake results
+	  dev->command_timer.function ((unsigned long) dev);
+	  dev->status &= ~PHOT_S_INTEGRATION_DIS;
 	}
+      del_timer_sync (&dev->command_timer);
+      dev->desired_position = 0;
+      dev->command_pending = 1;
+      filter_routine ((unsigned long) dev);
+//      }
       break;
     default:
       printk (KERN_WARNING "unknow command '%c' (%x)\n",

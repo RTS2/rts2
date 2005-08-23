@@ -88,6 +88,13 @@ public:
   virtual void postEvent (Rts2Event * event);
 };
 
+class Rts2DevClientMirrorImage:public Rts2DevClientMirror
+{
+public:
+  Rts2DevClientMirrorImage (Rts2Conn * in_connection);
+  virtual void postEvent (Rts2Event * event);
+};
+
 class Rts2CommandQueImage:public Rts2Command
 {
 public:

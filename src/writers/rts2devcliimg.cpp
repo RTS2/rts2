@@ -197,6 +197,8 @@ Rts2DevClientCameraImage::exposureStarted ()
 void
 Rts2DevClientCameraImage::exposureEnd ()
 {
+  syslog (LOG_DEBUG, "Rts2DevClientCameraImage::exposureEnd %s",
+	  connection->getName ());
   if (!isExposing)
     return Rts2DevClientCamera::exposureEnd ();
   isExposing = 0;
@@ -344,6 +346,29 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
     }
   Rts2DevClientFocus::postEvent (event);
 }
+
+Rts2DevClientMirrorImage::Rts2DevClientMirrorImage (Rts2Conn * in_connection):Rts2DevClientMirror
+  (in_connection)
+{
+}
+
+void
+Rts2DevClientMirrorImage::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_WRITE_TO_IMAGE:
+      Rts2Image * image;
+      char *mirrVal;
+      asprintf (&mirrVal, "MIR_%s", connection->getName ());
+      image = (Rts2Image *) event->getArg ();
+      image->setValue (mirrVal, connection->getState (0), "mirror status");
+      free (mirrVal);
+      break;
+    }
+  Rts2DevClientMirror::postEvent (event);
+}
+
 
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command
   (in_owner)
