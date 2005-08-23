@@ -245,6 +245,8 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
   Rts2ScriptElement *nextElement;
   int ret;
 
+  *new_command = NULL;
+
   el_iter = elements.begin ();
   while (1)
     {
@@ -294,6 +296,8 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
   Rts2ScriptElement *nextElement;
   int ret;
 
+  *new_command = NULL;
+
   el_iter = elements.begin ();
   while (1)
     {
@@ -319,7 +323,6 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
       delete nextElement;
       break;
     case NEXT_COMMAND_WAITING:
-      *new_command = NULL;
       break;
     case NEXT_COMMAND_KEEP:
     case NEXT_COMMAND_RESYNC:

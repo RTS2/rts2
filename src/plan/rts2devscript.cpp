@@ -111,7 +111,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_MIRROR_FINISH:
-      if (script)
+      if (script && waitScript == WAIT_MIRROR)
 	{
 	  script->postEvent (new Rts2Event (event));
 	  waitScript = NO_WAIT;
