@@ -228,7 +228,8 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 	  imagesQue.erase (img_iter);
 	}
     }
-  runningImage->deleteConnection (conn);
+  if (runningImage)
+    runningImage->deleteConnection (conn);
   if (conn == runningImage)
     {
       // que next image
