@@ -501,6 +501,13 @@ public:
   virtual float getBonus ();
 };
 
+class TargetSkySurvey:public ConstTarget
+{
+public:
+  TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual float getBonus ();
+};
+
 // load target from DB
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 

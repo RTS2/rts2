@@ -436,6 +436,11 @@ DarkTarget::startSlew (struct ln_equ_posn *position)
 {
   currPos.ra = position->ra;
   currPos.dec = position->dec;
+  // when telescope isn't initialized to point when we get ra | dec - put some defaults
+  if (isnan (currPos.ra))
+    currPos.ra = -999;
+  if (isnan (currPos.dec))
+    currPos.dec = -999;
   Target::startSlew (position);
   return OBS_DONT_MOVE;
 }
@@ -608,6 +613,7 @@ ModelTarget::load ()
   step = d_step;
 
   alt_size = (int) (fabs (alt_stop - alt_start) / alt_step);
+  alt_size++;
   
   srandom (time (NULL));
   calPosition ();
@@ -757,7 +763,7 @@ OportunityTarget::getBonus ()
   if (lastObs > 3600 && lastObs < (3 * 3600))
     retBonus += log (lastObs - 3599) * 20;
   if (lunarDist < 60.0)
-    retBonus -= lunarDist * 10;
+    retBonus -= log (60 - lunarDist) * 10;
   // bonus for south
   if (ha < 11)
     retBonus += log (12 - ha);
@@ -998,11 +1004,16 @@ TargetGRB::getBonus ()
           return -1;
 	break;
     }
+  if (now - grbDate < 3600)
+  {
+    // < 1 hour fixed boost to be sure to not miss it
+    return ConstTarget::getBonus () + 2000;
+  }
   if (now - grbDate < 86400)
   {
     // < 24 hour post burst
     return ConstTarget::getBonus ()
-      + 100.0 * cos ((double)((double)(now - grbDate) / (2.0*86400.0))) 
+      + 1000.0 * cos ((double)((double)(now - grbDate) / (2.0*86400.0))) 
       + 10.0 * cos ((double)((double)(now - lastUpdate) / (2.0*86400.0)));
   }
   else if (now - grbDate < 5 * 86400)
@@ -1281,4 +1292,21 @@ TargetGps::getBonus ()
   if ((90 - observer->lat + curr.dec) == 0)
     return ConstTarget::getBonus () - 200;
   return ConstTarget::getBonus () + 20 * (hrz.alt / (90 - observer->lat + curr.dec)) + gal_ctr / 9 - numobs * 10 - numobs2 * 5;
+}
+
+TargetSkySurvey::TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
+{
+}
+
+float
+TargetSkySurvey::getBonus ()
+{
+  time_t now;
+  time_t start_t;
+  int numobs;
+  time (&now);
+  now -= 300;
+  start_t = now - 86400;
+  numobs = getNumObs (&start_t, &now);
+  return ConstTarget::getBonus () - numobs * 10;
 }

@@ -734,6 +734,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
     case TYPE_GPS:
       retTarget = new TargetGps (in_tar_id, in_obs);
       break;
+    case TYPE_SKY_SURVEY:
+      retTarget = new TargetSkySurvey (in_tar_id, in_obs);
+      break;
     default:
       retTarget = new ConstTarget (in_tar_id, in_obs);
       break;
