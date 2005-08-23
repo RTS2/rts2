@@ -100,7 +100,6 @@ Rts2DevConnMirror::commandAuthorized ()
     {
       char *str_dir;
       int ret = 0;
-      CHECK_PRIORITY;
       if (paramNextString (&str_dir) || !paramEnd ())
 	return -2;
       if (!strcasecmp (str_dir, "open"))
@@ -112,7 +111,6 @@ Rts2DevConnMirror::commandAuthorized ()
     {
       char *str_dir;
       int ret = 0;
-      CHECK_PRIORITY;
       if (paramNextString (&str_dir) || !paramEnd () ||
 	  (strcasecmp (str_dir, "A") && strcasecmp (str_dir, "B")))
 	return -2;
