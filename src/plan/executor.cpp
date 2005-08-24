@@ -275,7 +275,8 @@ Rts2Executor::postEvent (Rts2Event * event)
       if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
 	{
 	  // we are free to start new hig-priority observation
-	  queTarget (currentTarget);
+	  if (currentTarget)
+	    queTarget (currentTarget);
 	  currentTarget = priorityTarget;
 	  priorityTarget = NULL;
 	  postEvent (new
