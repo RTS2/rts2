@@ -373,11 +373,11 @@ Rts2Executor::changeMasterState (int new_state)
 	  switchTarget ();
 	}
       break;
-    case SERVERD_MORNING:
-    case SERVERD_DAY:
+    default:
       // we need to stop observation that is continuus
       // that will guarantie that in isContinues call, we will not que our target again
       maskState (0, EXEC_MASK_STOP, EXEC_STOP);
+      break;
     }
   return Rts2DeviceDb::changeMasterState (new_state);
 }
