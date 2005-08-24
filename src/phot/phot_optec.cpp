@@ -161,21 +161,18 @@ Rts2DevPhotOptec::homeFilter ()
 int
 Rts2DevPhotOptec::startIntegrate ()
 {
-  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   return phot_command (PHOT_CMD_INTEGRATE, (short) (req_time * 1000));
 }
 
 int
 Rts2DevPhotOptec::endIntegrate ()
 {
-  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   return Rts2DevPhot::endIntegrate ();
 }
 
 int
 Rts2DevPhotOptec::stopIntegrate ()
 {
-  phot_command (PHOT_CMD_STOP_INTEGRATE, 0);
   return Rts2DevPhot::stopIntegrate ();
 }
 
