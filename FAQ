@@ -2,6 +2,49 @@ RTS2 FAQ - Frequently Asked Questions (with bit of troubleshooting)
 
 Completly revisited (and writen in english) for new RTS2 release (code named 0.5.0)
 
+*) How do I start it/restart it/stop the beast to allow me do some work on
+telescope?
+
+To park it - rts2-mon, F2 (switch to off). Read "How do I switch it on/off?"
+for more info.
+
+Note that RTS2 is designed to run forever without need to restart it.  Windows
+ways of solving problems (press ctrl+alt+del, reboot, try again) will most
+probably not produce sensible results - they will only worsen posibility of
+discovering exact cause of problem, and most probably failed exactly same way
+as before (because you haven't found some random errors, you have found a real
+bug in system, at most cases).
+
+So when you encounter some strange behaviour of whole system, please consider
+submiting bug to authors. If I have access on machine running RTS2, I can
+(using gdb attach functionality) get some more information why it failed and so
+find a generic solution, which is better then constant rebooting.
+
+To start RTS2 - as root issue:
+
+/etc/init.d/rts2 start
+
+That in my case leads to:
+
+omega:/home/petr# /etc/init.d/rts2 start
+Starting RTS2 centrald daemon:rts2-centrald.
+Starting RTS2 deamons: rts2-camd-dummy(C0) rts2-camd-dummy(C1) rts2-focusd-dummy(F1) rts2-teld-dummy(T0) rts2-phot-dummy(PHOT) rts2-mirror-dummy(M0).
+Starting RTS2 services: rts2-imgproc(IMGP) rts2-grbd(GRBD) rts2-executor(EXEC) rts2-selector(SEL).
+omega:/home/petr# 
+
+To stop it:
+
+/etc/init.d/rts2 stop
+
+To stop it with centrald (centrald is main server of RTS2, which keeps track
+about devices running; should not be necessary unless you update code):
+
+/etc/init.d/rts2 stop-centrald
+
+To restart it:
+
+/etc/init.d/rts2 restart
+
 *) What does RTS2 stands for?
 
 It stands for Remote Telescope System 2. As name suggest, there was Remote
@@ -11,8 +54,8 @@ Mathematical and Physical Faculty of Prague Charles Univerzity for telescope
 BART.
 
 RTS2 was firstly written in pure C as my diploma thesis. After I finish degree,
-it was (almost completly) rewritten to C++. Rewrites enabled be to
-maternialized ideas I gather during writing C code - primary objectiv was
+it was (almost completly) rewritten to C++. Rewrites enabled me to
+maternialize ideas I gather during writing C code - primary objectiv was
 selector and executor separation, but there were more issues (memory leaks...)
 
 *) Does it run? Where? Can I use it?
@@ -21,10 +64,10 @@ Yes, currently it runs on those telescopes:
 
 BART - Ondrejov, Czech Republic
 BOOTES - Two telescopes in Huelva station, Spain, one (Bootes IR) on
-http://www.osn.iaa.es (seems code have no altitute limits - it's 2896 meters
-above see level
+http://www.osn.iaa.es
 
-FRAM - monitoring telescope at Argentina, build by Physical Institute of 
+FRAM - monitoring telescope at Argentina, build by Physical Institute of the
+Czech Republic
 
 It should work on Watcher telescope in South Africa in some time.
 
@@ -74,6 +117,16 @@ To switch between states, use rts2-mon. Run it, and either press F keys for swit
 and confirm with pressing y key, or write "on", "standby" or "off" and hit enter
 (text will apear at top left corner of the screen). Text commands are there for
 terminals, which don't have F keys (or don't support them).
+
+*) I opened the dome but the telescope is like crazy going from object ID xxx
+to yyy  every few seconds...  Anyone around knows what to do?
+
+Most probably you don't have any camera. System is programed to point telescope
+and then execute exposition on camera. If no camera is founded, or no camera is
+running, it ends observation and start a new one, resulting in new slew.
+
+Most probably some new version will not have this problem and will not produce
+that crazy slew.
 
 *) How is focusing working?
 
@@ -306,7 +359,6 @@ So /images/<epoch>/archive/<target_id>/<camera_name>/object resolves to:
 Let's see it:
 petr@ir1:/images/002/archive/49999/sbig/object$ ls
 20050810200400-0432.fits  20050810203158-0745.fits ....
-
 
 ===============================================================================
 
