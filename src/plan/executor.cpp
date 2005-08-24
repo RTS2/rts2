@@ -376,7 +376,7 @@ Rts2Executor::changeMasterState (int new_state)
     default:
       // we need to stop observation that is continuus
       // that will guarantie that in isContinues call, we will not que our target again
-      maskState (0, EXEC_MASK_STOP, EXEC_STOP);
+      stop ();
       break;
     }
   return Rts2DeviceDb::changeMasterState (new_state);
@@ -536,6 +536,8 @@ Rts2Executor::switchTarget ()
 {
   if ((getState (0) & EXEC_MASK_STOP) == EXEC_STOP)
     {
+      maskState (0, EXEC_MASK_STOP, EXEC_NOT_STOP);
+      postEvent (new Rts2Event (EVENT_KILL_ALL));
       if (currentTarget)
 	{
 	  currentTarget->endObservation (-1);
@@ -547,7 +549,6 @@ Rts2Executor::switchTarget ()
 	  delete nextTarget;
 	  nextTarget = NULL;
 	}
-      maskState (0, EXEC_MASK_STOP, EXEC_NOT_STOP);
     }
   else if (ignoreDay)
     {
