@@ -595,6 +595,7 @@ Rts2DevDomeFram::openDome ()
 long
 Rts2DevDomeFram::isOpened ()
 {
+  int flag = 0;
   syslog (LOG_DEBUG, "isOpened %i", movingState);
   switch (movingState)
     {
@@ -603,6 +604,7 @@ Rts2DevDomeFram::isOpened ()
       if (!(isOn (KONCAK_OTEVRENI_LEVY) || checkMotorTimeout ()))
 	// go to end return..
 	break;
+      flag = 1;
       // follow on..
     case MOVE_OPEN_RIGHT:
       openRight ();
@@ -613,6 +615,8 @@ Rts2DevDomeFram::isOpened ()
     default:
       return -2;
     }
+  if (flag)
+    infoAll ();
   return FRAM_CHECK_TIMEOUT;
 }
 
@@ -688,6 +692,7 @@ Rts2DevDomeFram::closeDome ()
 long
 Rts2DevDomeFram::isClosed ()
 {
+  int flag = 0;			// send infoAll at end
   syslog (LOG_DEBUG, "isClosed %i", movingState);
   switch (movingState)
     {
@@ -709,6 +714,7 @@ Rts2DevDomeFram::isClosed ()
 	}
       if (!(isOn (KONCAK_ZAVRENI_PRAVY)))
 	break;
+      flag = 1;
       // close dome..
     case MOVE_CLOSE_LEFT:
       closeLeft ();
@@ -750,6 +756,8 @@ Rts2DevDomeFram::isClosed ()
     default:
       return -2;
     }
+  if (flag)
+    infoAll ();
   return FRAM_CHECK_TIMEOUT;
 }
 

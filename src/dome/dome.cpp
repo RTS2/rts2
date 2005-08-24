@@ -54,12 +54,15 @@ Rts2DevDome::checkOpening ()
       if (ret == -1)
 	{
 	  endOpen ();
+	  infoAll ();
 	  maskState (0, DOME_DOME_MASK, DOME_OPENED,
 		     "opening finished with error");
 	}
       if (ret == -2)
 	{
-	  if (endOpen ())
+	  ret = endOpen ();
+	  infoAll ();
+	  if (ret)
 	    {
 	      maskState (0, DOME_DOME_MASK, DOME_OPENED,
 			 "dome opened with error");
@@ -82,12 +85,15 @@ Rts2DevDome::checkOpening ()
       if (ret == -1)
 	{
 	  endClose ();
+	  infoAll ();
 	  maskState (0, DOME_DOME_MASK, DOME_CLOSED,
 		     "closing finished with error");
 	}
       if (ret == -2)
 	{
-	  if (endClose ())
+	  ret = endClose ();
+	  infoAll ();
+	  if (ret)
 	    {
 	      maskState (0, DOME_DOME_MASK, DOME_CLOSED,
 			 "dome closed with error");
