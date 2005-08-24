@@ -115,7 +115,7 @@ Rts2DevConnMirror::commandAuthorized ()
 	  (strcasecmp (str_dir, "A") && strcasecmp (str_dir, "B")))
 	return -2;
       if (!strcasecmp (str_dir, "A"))
-	if ((getState (0) & MIRROR_MASK) != MIRROR_A)
+	if ((master->getState (0) & MIRROR_MASK) != MIRROR_A)
 	  {
 	    return master->startClose (this);
 	  }
@@ -125,7 +125,7 @@ Rts2DevConnMirror::commandAuthorized ()
 	    return -1;
 	  }
       else if (!strcasecmp (str_dir, "B"))
-	if ((getState (0) & MIRROR_MASK) != MIRROR_B)
+	if ((master->getState (0) & MIRROR_MASK) != MIRROR_B)
 	  {
 	    return master->startOpen (this);
 	  }
