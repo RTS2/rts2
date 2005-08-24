@@ -174,13 +174,13 @@ Rts2DevPhot::startIntegrate (Rts2Conn * conn, float in_req_time,
 {
   int ret;
   req_count = in_req_count;
+  setReqTime (in_req_time);
   ret = startIntegrate ();
   if (ret)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot start integration");
       return -1;
     }
-  setReqTime (in_req_time);
   maskState (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "integration started");
   return 0;
 }
@@ -205,6 +205,8 @@ Rts2DevPhot::stopIntegrate ()
 {
   maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 	     "Integration interrupted");
+  setReqTime (1);
+  startIntegrate ();
   return 0;
 }
 
