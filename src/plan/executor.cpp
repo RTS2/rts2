@@ -282,6 +282,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 	  postEvent (new
 		     Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 	  postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+	  infoAll ();
 	  break;
 	}
       if (waitState)
@@ -436,6 +437,7 @@ Rts2Executor::setNow (Target * newTarget)
 
   postEvent (new Rts2Event (EVENT_KILL_ALL));
   queAll (new Rts2CommandKillAll (this));
+  infoAll ();
 
   return 0;
 }

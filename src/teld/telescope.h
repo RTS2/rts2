@@ -29,6 +29,11 @@ private:
   double locCorDec;
   int locCorNum;
 
+  // last errors
+  double raCorr;
+  double decCorr;
+  double posErr;
+
   int knowPosition;
   double lastRa;
   double lastDec;

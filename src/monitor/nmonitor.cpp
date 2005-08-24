@@ -141,7 +141,7 @@ public:
 		     in_connection):Rts2DevClientTelescopeImage
     (in_connection)
   {
-    in_connection->setStatusBegin (8);
+    in_connection->setStatusBegin (9);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -185,20 +185,23 @@ Rts2NMTelescope::print (WINDOW * wnd)
   mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
 	     getValueDouble ("ra"), getValueDouble ("dec"),
 	     getValueDouble ("flip") ? 'f' : 'n');
-  mvwprintw (wnd, 3, 1, "Az/Al/D: %03.0f %+02.0f %s", altaz.az, altaz.alt,
+  if (getValueInteger ("know_position"))
+    mvwprintw (wnd, 3, 1, "Err: %.2f %.2f", getValueDouble ("ra_corr") * 60.0,
+	       getValueDouble ("dec_corr") * 60.0);
+  mvwprintw (wnd, 4, 1, "Az/Al/D: %03.0f %+02.0f %s", altaz.az, altaz.alt,
 	     ln_hrz_to_nswe (&altaz));
 
-  mvwprintw (wnd, 4, 1, "x/y: %.0f %.0f", getValueDouble ("axis0_counts"),
+  mvwprintw (wnd, 5, 1, "x/y: %.0f %.0f", getValueDouble ("axis0_counts"),
 	     getValueDouble ("axis1_counts"));
-  mvwprintw (wnd, 5, 1, "Lon/Lat: %+03.3f %+03.3f",
+  mvwprintw (wnd, 6, 1, "Lon/Lat: %+03.3f %+03.3f",
 	     getValueDouble ("longtitude"), getValueDouble ("latitude"));
 
   ln_rad_to_hms (ln_deg_to_rad (lst * 15.0), &hms);
-  mvwprintw (wnd, 6, 1, "Lsid: %07.3f (%02i:%02i:%02.1f)",
+  mvwprintw (wnd, 7, 1, "Lsid: %07.3f (%02i:%02i:%02.1f)",
 	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
 	     hms.seconds);
 
-  mvwprintw (wnd, 7, 1, "Corr: %i Exec: %i",
+  mvwprintw (wnd, 8, 1, "Corr: %i Exec: %i",
 	     getValueInteger ("correction_mark"),
 	     getValueInteger ("num_corr"));
 }

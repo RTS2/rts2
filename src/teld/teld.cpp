@@ -39,6 +39,10 @@ Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   locCorRa = 0;
   locCorDec = 0;
 
+  raCorr = nan ("f");
+  decCorr = nan ("f");
+  posErr = nan ("f");
+
   addOption ('n', "max_corr_num", 1,
 	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
 
@@ -298,6 +302,9 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
   conn->sendValue ("dec_tel", telDec);
   conn->sendValue ("ra_tar", lastTar.ra);
   conn->sendValue ("dec_tar", lastTar.dec);
+  conn->sendValue ("ra_corr", raCorr);
+  conn->sendValue ("dec_corr", decCorr);
+  conn->sendValue ("know_position", knowPosition);
   conn->sendValue ("siderealtime", telSiderealTime);
   conn->sendValue ("localtime", telLocalTime);
   conn->sendValue ("flip", telFlip);
@@ -481,6 +488,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
+  raCorr = cor_ra;
+  decCorr = cor_dec;
   // not moved yet
   if (moveMark == cor_mark)
     {
@@ -488,9 +497,11 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	{
 	  ret = correct (cor_ra, cor_dec, real_ra, real_dec);
 	  if (!ret)
-	    numCorr++;
-	  locCorRa = 0;
-	  locCorDec = 0;
+	    {
+	      numCorr++;
+	      locCorRa = 0;
+	      locCorDec = 0;
+	    }
 	}
       else
 	{
