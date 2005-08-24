@@ -1,3 +1,5 @@
+#include "rts2config.h"
+
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -94,7 +96,16 @@ ObjectCheck::is_good (double lst, double ra, double dec, int hardness)
   double last_ra = 0, last_dec = 0;
 
   if (horizont.size () == 0)
-    return 1;
+    {
+      struct ln_equ_posn curr;
+      struct ln_hrz_posn hrz;
+      curr.ra = ra;
+      curr.dec = dec;
+      ln_get_hrz_from_equ_sidereal_time (&curr,
+					 Rts2Config::instance ()->
+					 getObserver (), lst, &hrz);
+      return hrz.alt > 0;
+    }
 
   for (Iter1 = horizont.begin (); Iter1 != horizont.end (); Iter1++)
     {
