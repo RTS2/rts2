@@ -600,7 +600,7 @@ Rts2State::maskState (int state_mask, int new_state, char *description)
 {
   int masked_state = state;
   // null from state all errors..
-  masked_state &= !DEVICE_ERROR_MASK & !state_mask;
+  masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
   masked_state |= new_state;
   setState (masked_state, description);
 }
