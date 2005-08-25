@@ -1310,3 +1310,48 @@ TargetSkySurvey::getBonus ()
   numobs = getNumObs (&start_t, &now);
   return ConstTarget::getBonus () - numobs * 10;
 }
+
+TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+{
+}
+
+int
+TargetTerestial::considerForObserving (ObjectCheck *checker, double JD)
+{
+  // we can obsere it any time..
+  return selectedAsGood ();
+}
+
+float
+TargetTerestial::getBonus ()
+{
+  time_t now;
+  time_t start_t;
+  struct tm *now_t;
+  int numobs;
+  int minofday;
+  time (&now);
+  now_t = gmtime (&now);
+
+  minofday = now_t->tm_hour * 60 + now_t->tm_min;
+  // HAM times (all UTC) (min of day)
+  // 1:30 - 3:30          90 - 210
+  // 4:00 - 6:00         240 - 360 
+  // 6:30 - 8:30         390 - 510
+  // not correct times..
+  if (minofday < 100
+    || (minofday > 200 && minofday < 250)
+    || (minofday > 350 && minofday < 400)
+    || minofday > 500)
+    return 1;
+
+  // we can observe..
+  
+  start_t = now - 3600;
+  numobs = getNumObs (&start_t, &now);
+
+  if (numobs == 0)
+    return 600;
+  if (numobs == 1)
+    return 1;
+}

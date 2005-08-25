@@ -63,6 +63,8 @@
 #define OBS_ALREADY_STARTED	1
 #define OBS_DONT_MOVE		2
 
+#define OBS_MOVE_FIXED		3
+
 /**
  * Class for one observation.
  *
@@ -505,6 +507,14 @@ class TargetSkySurvey:public ConstTarget
 {
 public:
   TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual float getBonus ();
+};
+
+class TargetTerestial:public ConstTarget
+{
+public:
+  TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int considerForObserving (ObjectCheck * checker, double JD);
   virtual float getBonus ();
 };
 

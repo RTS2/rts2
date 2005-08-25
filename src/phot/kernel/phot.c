@@ -61,7 +61,7 @@ int base_port = 0x300;
 MODULE_PARM (base_port, "i");
 MODULE_PARM_DESC (base_port, "The base I/O port (default 0x300)");
 
-#define BUF_LEN			128	// circular write buffer len
+#define BUF_LEN			4	// circular write buffer len
 #define PHOT_COMMAND_LEN	3	// command maximal lenght
 #define MAX_WAIT		1000	// maximal wait time - integration
 #define intargs(f)	(*(u16*)f)
@@ -75,6 +75,7 @@ struct device_struct
   int buf_last_read;		// buffer last read index
   int filter_position;
   int desired_position;
+  int filter_position_integration;
   u16 integration_time;		// desired integration time in msec (sec * 1000)
   int status;
   int integration_enabled;	// if it's save to integrate
@@ -251,11 +252,15 @@ integrate_routine (struct device_struct *dev)
       command_delay ();
       frequency += inb (dev->base_port + 6) * 256;
       frequency = 65536 - frequency;
-      // if OV was detected..
-      if (dev->ov_count)
-	add_reply (dev, 'B', frequency);
-      else
-	add_reply (dev, 'A', frequency);
+      // don't report if that was during filter move..
+      if (dev->filter_position_integration == dev->filter_position)
+	{
+	  // if OV was detected..
+	  if (dev->ov_count)
+	    add_reply (dev, 'B', frequency);
+	  else
+	    add_reply (dev, 'A', frequency);
+	}
     }
   start_integrate (dev);
 }
@@ -280,7 +285,7 @@ start_integrate (struct device_struct *dev)
   command_delay ();
   outb (0, dev->base_port);
   dev->ov_count = 0;
-
+  dev->filter_position_integration = dev->filter_position;
   // que timer readout
   dev->integration_next = (HZ * dev->integration_time) / 1000;
 }

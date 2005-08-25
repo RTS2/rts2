@@ -123,6 +123,16 @@ public:
   virtual int commandReturnFailed (int status);
 };
 
+class Rts2CommandMoveFixed:public Rts2Command
+{
+  Rts2DevClientTelescope *tel;
+public:
+    Rts2CommandMoveFixed (Rts2Block * in_master,
+			  Rts2DevClientTelescope * in_tel, double ra,
+			  double dec);
+  virtual int commandReturnFailed (int status);
+};
+
 class Rts2CommandResyncMove:public Rts2Command
 {
   Rts2DevClientTelescope *tel;

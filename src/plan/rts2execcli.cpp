@@ -268,6 +268,11 @@ Rts2DevClientTelescopeExec::syncTarget ()
 		    Rts2CommandMove (getMaster (), this,
 				     coord.ra, coord.dec));
       break;
+    case OBS_MOVE_FIXED:
+      connection->
+	queCommand (new
+		    Rts2CommandMoveFixed (getMaster (), this,
+					  coord.ra, coord.dec));
     case OBS_ALREADY_STARTED:
       connection->
 	queCommand (new
