@@ -1355,3 +1355,13 @@ TargetTerestial::getBonus ()
   if (numobs == 1)
     return 1;
 }
+
+int
+TargetTerestial::startSlew (struct ln_equ_posn *position)
+{
+  int ret;
+  ret = ConstTarget::startSlew (position);
+  if (ret == -1)
+    return ret;
+  return OBS_MOVE_FIXED;
+}

@@ -516,6 +516,7 @@ public:
   TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int considerForObserving (ObjectCheck * checker, double JD);
   virtual float getBonus ();
+  virtual int startSlew (struct ln_equ_posn *position);
 };
 
 // load target from DB
