@@ -81,6 +81,8 @@ private:
   int telescope_start_move (char direction);
   int telescope_stop_move (char direction);
 
+  void telescope_stop_goto ();
+
   int geminiInit ();
 
   double fixed_ha;
@@ -1100,11 +1102,25 @@ Rts2DevTelescopeGemini::telescope_stop_move (char direction)
   return tel_write (command, 5) < 0 ? -1 : 0;
 }
 
+void
+Rts2DevTelescopeGemini::telescope_stop_goto ()
+{
+  tel_gemini_get (99, &lastMotorState);
+  tel_write ("#:Q#", 4);
+  if (lastMotorState & 8)
+    {
+      lastMotorState &= ~8;
+      tel_gemini_set (99, lastMotorState);
+    }
+}
+
 int
 Rts2DevTelescopeGemini::tel_start_move ()
 {
   char retstr;
   char buf[55];
+
+  telescope_stop_goto ();
 
   if ((tel_write_ra (lastMoveRa) < 0) || (tel_write_dec (lastMoveDec) < 0))
     return -1;
@@ -1191,13 +1207,7 @@ Rts2DevTelescopeGemini::endMove ()
 int
 Rts2DevTelescopeGemini::stopMove ()
 {
-  tel_gemini_get (99, &lastMotorState);
-  tel_write ("#:Q#", 4);
-  if (lastMotorState & 8)
-    {
-      lastMotorState &= ~8;
-      tel_gemini_set (99, lastMotorState);
-    }
+  telescope_stop_goto ();
   return Rts2DevTelescope::stopMove ();
 }
 
@@ -1210,7 +1220,7 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
   // compute ra
   tel_read_siderealtime ();
 
-  lastMoveRa = telSiderealTime * 15.0 + fixed_ha;
+  lastMoveRa = telSiderealTime * 15.0 - fixed_ha;
 
   tel_normalize (&lastMoveRa, &lastMoveDec);
 
