@@ -300,23 +300,6 @@ Target::beforeMove ()
 }
 
 /**
- * Move to designated target, get astrometry, proof that target was acquired with given margin.
- *
- * @return 0 if I can observe futher, -1 if observation was canceled
- */
-int
-Target::acquire ()
-{
-
-}
-
-int
-Target::observe ()
-{
-
-}
-
-/**
  * Return script for camera exposure.
  *
  * @param target        target id
@@ -477,12 +460,6 @@ Target::getLunarDistance (double JD)
   struct ln_equ_posn moon;
   ln_get_lunar_equ_coords (JD, &moon);
   return getDistance (&moon, JD);
-}
-
-int
-Target::postprocess ()
-{
-
 }
 
 int

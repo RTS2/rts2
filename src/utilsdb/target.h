@@ -48,6 +48,9 @@
 #define COMMAND_MIRROR_MOVE	"M"
 #define COMMAND_PHOTOMETER	"P"
 
+// HAM acqusition - only on FRAM telescope
+#define COMMAND_HAM		"HAM"
+
 // signal handling..
 #define COMMAND_SEND_SIGNAL	"SS"
 #define COMMAND_WAIT_SIGNAL	"SW"
@@ -271,9 +274,6 @@ public:
   // problem with moving mount in exposures - position updates)
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
-  virtual int acquire ();
-  virtual int observe ();
-  virtual int postprocess ();
   // scheduler functions
   virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
