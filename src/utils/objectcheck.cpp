@@ -99,11 +99,16 @@ ObjectCheck::is_good (double lst, double ra, double dec, int hardness)
     {
       struct ln_equ_posn curr;
       struct ln_hrz_posn hrz;
+      struct ln_lnlat_posn *observer;
+      double gst;
       curr.ra = ra;
       curr.dec = dec;
+      observer = Rts2Config::instance ()->getObserver ();
+      gst = lst - observer->lng / 15.0;
+      gst = ln_range_degrees (gst * 15.0) / 15.0;
       ln_get_hrz_from_equ_sidereal_time (&curr,
 					 Rts2Config::instance ()->
-					 getObserver (), lst, &hrz);
+					 getObserver (), gst, &hrz);
       return hrz.alt > 0;
     }
 
