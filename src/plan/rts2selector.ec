@@ -151,7 +151,7 @@ Rts2Selector::findNewTargets ()
       std::list < Target* >::iterator old_list;
       old_list = target_list;
       target_list++;
-      possibleTargets.remove (tar);
+      possibleTargets.erase (old_list);
       syslog (LOG_DEBUG, "remove target tar_id %i from possible targets", tar->getTargetID ());
       delete tar;
     }
