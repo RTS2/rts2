@@ -27,6 +27,7 @@
 
 #define RAMP_TO			1
 #define RAMP_STEP		1
+#define STEPS_OPEN_CLOSE	180
 
 class Rts2DevMirrorFram:public Rts2DevMirror
 {
@@ -282,7 +283,7 @@ Rts2DevMirrorFram::info ()
 int
 Rts2DevMirrorFram::startOpen ()
 {
-  steps = 170;
+  steps = STEPS_OPEN_CLOSE;
   return Rts2DevMirror::startOpen ();
 }
 
@@ -295,7 +296,7 @@ Rts2DevMirrorFram::isOpened ()
 int
 Rts2DevMirrorFram::startClose ()
 {
-  steps = 170;
+  steps = STEPS_OPEN_CLOSE;
   return Rts2DevMirror::startClose ();
 }
 
