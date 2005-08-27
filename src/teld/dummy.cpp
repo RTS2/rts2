@@ -68,6 +68,24 @@ public:
     return 0;
   }
 
+  virtual int startMoveFixed (double tar_az, double tar_alt)
+  {
+    newRa = tar_az;
+    newDec = tar_alt;
+    countLong = 0;
+    return 0;
+  }
+
+  virtual int isMovingFixed ()
+  {
+    return isMoving ();
+  }
+
+  virtual int endMoveFixed ()
+  {
+    return 0;
+  }
+
   virtual int change (double chng_ra, double chng_dec)
   {
     newRa += chng_ra;
