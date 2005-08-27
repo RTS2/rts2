@@ -308,13 +308,14 @@ Rts2DevClientDomeImage::postEvent (Rts2Event * event)
     case EVENT_WRITE_TO_IMAGE:
       Rts2Image * image;
       image = (Rts2Image *) event->getArg ();
-      image->setValue ("DOME_NAME", connection->getName (),
-		       "name of the dome");
-      image->setValue ("RAIN", getValueInteger ("rain"), "is it raining");
+      image->setValue ("DOME", connection->getName (), "name of the dome");
+      image->setValue ("RAIN", getValueInteger ("rain"),
+		       "whenever is raining");
       image->setValue ("WINDSPED", getValueDouble ("windspeed"), "windspeed");
-      image->setValue ("DOME_TEMP", getValueDouble ("temperature"),
+      image->setValue ("DOME_TMP", getValueDouble ("(outside) temperature"),
 		       "temperature in degrees C");
-      image->setValue ("DOME_HUM", getValueDouble ("humidity"), "humidity");
+      image->setValue ("DOME_HUM", getValueDouble ("humidity"),
+		       "(outside) humidity");
       break;
     }
   Rts2DevClientDome::postEvent (event);

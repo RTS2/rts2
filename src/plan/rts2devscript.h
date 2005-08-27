@@ -45,7 +45,6 @@ protected:
 public:
     Rts2DevScript (Rts2Conn * in_script_connection);
     virtual ~ Rts2DevScript (void);
-
   virtual void postEvent (Rts2Event * event);
   virtual void nextCommand () = 0;
 };

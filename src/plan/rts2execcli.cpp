@@ -16,7 +16,7 @@ Rts2DevScript (in_connection)
   imgCount = 0;
 }
 
-Rts2DevClientCameraExec::~Rts2DevClientCameraExec (void)
+Rts2DevClientCameraExec::~Rts2DevClientCameraExec ()
 {
   deleteScript ();
 }
@@ -181,6 +181,8 @@ Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection
   currentTarget = NULL;
   cmdChng = NULL;
   blockMove = 0;
+  fixedOffset.ra = 0;
+  fixedOffset.dec = 0;
 }
 
 void
@@ -247,6 +249,11 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	  *(int *) event->getArg () = *(int *) event->getArg () + 1;
 	}
       break;
+    case EVENT_SET_FIXED_OFFSET:
+      // need to change this to values that makes sense
+      fixedOffset.ra += 0.2;
+      fixedOffset.dec += 0.01;
+      break;
     }
   Rts2DevClientTelescopeImage::postEvent (event);
 }
@@ -272,7 +279,9 @@ Rts2DevClientTelescopeExec::syncTarget ()
       connection->
 	queCommand (new
 		    Rts2CommandMoveFixed (getMaster (), this,
-					  coord.ra, coord.dec));
+					  coord.ra + fixedOffset.ra,
+					  coord.dec + fixedOffset.dec));
+      break;
     case OBS_ALREADY_STARTED:
       connection->
 	queCommand (new

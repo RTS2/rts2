@@ -57,11 +57,14 @@ Rts2Script::getNextParamInteger (int *val)
   return 0;
 }
 
-Rts2Script::Rts2Script (char *scriptText, Rts2Conn * in_connection):Rts2Object
+Rts2Script::Rts2Script (Rts2Conn * in_connection, Target * target):Rts2Object
   ()
 {
   Rts2ScriptElement *
     element;
+  char
+    scriptText[MAX_COMMAND_LENGTH];
+  target->getScript (in_connection->getName (), scriptText);
   cmdBuf = new char[strlen (scriptText) + 1];
   strcpy (cmdBuf, scriptText);
   strcpy (defaultDevice, in_connection->getName ());
@@ -69,7 +72,7 @@ Rts2Script::Rts2Script (char *scriptText, Rts2Conn * in_connection):Rts2Object
   cmdBufTop = cmdBuf;
   do
     {
-      element = parseBuf ();
+      element = parseBuf (target);
       if (!element)
 	break;
       elements.push_back (element);
@@ -124,6 +127,14 @@ Rts2Script::postEvent (Rts2Event * event)
 	    }
 	}
       break;
+    case EVENT_ACQUIRE_QUERY:
+    case EVENT_SIGNAL_QUERY:
+      for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+	{
+	  el = *el_iter;
+	  el->postEvent (new Rts2Event (event));
+	}
+      break;
     default:
       if (elements.size () > 0)
 	(*elements.begin ())->postEvent (new Rts2Event (event));
@@ -133,7 +144,7 @@ Rts2Script::postEvent (Rts2Event * event)
 }
 
 Rts2ScriptElement *
-Rts2Script::parseBuf ()
+Rts2Script::parseBuf (Target * target)
 {
   char *commandStart;
   char *devSep;
@@ -198,6 +209,8 @@ Rts2Script::parseBuf ()
       float expTime;
       if (getNextParamDouble (&precision) || getNextParamFloat (&expTime))
 	return NULL;
+      if (target->isAcquired ())
+	return new Rts2ScriptElement (this);
       return new Rts2ScriptElementAcquire (this, precision, expTime);
     }
   else if (!strcmp (commandStart, COMMAND_WAIT_ACQUIRE))
@@ -236,6 +249,14 @@ Rts2Script::parseBuf ()
       if (signalNum <= 0)
 	return NULL;
       return new Rts2ScriptElementWaitSignal (this, signalNum);
+    }
+  else if (!strcmp (commandStart, COMMAND_HAM))
+    {
+      int repNumber;
+      float exposure;
+      if (getNextParamInteger (&repNumber) || getNextParamFloat (&exposure))
+	return NULL;
+      return new Rts2ScriptElementAcquireHam (this, repNumber, exposure);
     }
   return NULL;
 }

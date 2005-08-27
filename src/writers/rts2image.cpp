@@ -11,20 +11,29 @@
 #include "../utils/mkpath.h"
 #include "../utilsdb/target.h"
 
-Rts2Image::Rts2Image (char *in_filename,
-		      const struct timeval *in_exposureStart)
+void
+Rts2Image::initData ()
 {
   imageName = NULL;
   ffile = NULL;
   cameraName = NULL;
   mountName = NULL;
   focName = NULL;
+  imageData = NULL;
   filter = -1;
   mean = 0;
   imageData = NULL;
   sexResults = NULL;
   sexResultNum = 0;
   focPos = -1;
+  signalNoise = 17;
+  getFailed = 0;
+}
+
+Rts2Image::Rts2Image (char *in_filename,
+		      const struct timeval *in_exposureStart)
+{
+  initData ();
 
   createImage (in_filename);
   exposureStart = *in_exposureStart;
@@ -40,14 +49,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   char *in_filename;
   struct tm *expT;
 
-  imageName = NULL;
-  ffile = NULL;
-  filter = -1;
-  mean = 0;
-  imageData = NULL;
-  sexResults = NULL;
-  sexResultNum = 0;
-  focPos = -1;
+  initData ();
 
   epochId = in_epoch_id;
   targetId = in_targetId;
@@ -85,11 +87,8 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
 Rts2Image::Rts2Image (const char *in_filename)
 {
   int ret;
-  imageName = NULL;
-  ffile = NULL;
-  imageData = NULL;
-  sexResults = NULL;
-  sexResultNum = 0;
+
+  initData ();
 
   openImage (in_filename);
   // get info..
@@ -99,6 +98,12 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("IMGID", imgId);
   getValue ("CTIME", exposureStart.tv_sec);
   getValue ("USEC", exposureStart.tv_usec);
+  ret = getValues ("NAXIS", naxis, 2);
+  if (ret)
+    {
+      naxis[0] = 0;
+      naxis[1] = 0;
+    }
   cameraName = new char[DEVICE_NAME_SIZE + 1];
   ret = getValue ("CCD_NAME", cameraName);
   if (ret)
@@ -152,7 +157,6 @@ Rts2Image::setImageName (const char *in_filename)
 int
 Rts2Image::createImage (char *in_filename)
 {
-  long naxes = 1;
   int ret;
 
   fits_status = 0;
@@ -165,8 +169,10 @@ Rts2Image::createImage (char *in_filename)
   ret = mkpath (getImageName (), 0777);
   if (ret)
     return -1;
+  naxis[0] = 1;
+  naxis[1] = 1;
   fits_create_file (&ffile, in_filename, &fits_status);
-  fits_create_img (ffile, USHORT_IMG, 1, &naxes, &fits_status);
+  fits_create_img (ffile, USHORT_IMG, 2, naxis, &fits_status);
   syslog (LOG_DEBUG, "Rts2Image::createImage %p %s", this, in_filename);
   if (fits_status)
     {
@@ -642,12 +648,15 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 
   im_h = dataConn->getImageHeader ();
   // we have to copy data to FITS anyway, so let's do it right now..
-  if (im_h->naxes < 0 || im_h->naxes > 5)
+  if (im_h->naxes != 2)
     {
+      syslog (LOG_ERR, "Rts2Image::writeDate not 2D image %i", im_h->naxes);
       return -1;
     }
   flags |= IMAGE_SAVE;
-  fits_resize_img (ffile, USHORT_IMG, im_h->naxes, im_h->sizes, &fits_status);
+  naxis[0] = im_h->sizes[0];
+  naxis[1] = im_h->sizes[1];
+  fits_resize_img (ffile, USHORT_IMG, im_h->naxes, naxis, &fits_status);
   fits_write_img (ffile, USHORT_IMG, 1, dataConn->getSize () / 2,
 		  dataConn->getData (), &fits_status);
   if (imageData)
@@ -659,6 +668,8 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     }
   else
     {
+      if (imageData)
+	delete[]imageData;
       imageData = NULL;
     }
   if (fits_status)
@@ -678,7 +689,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     mean /= dataConn->getSize () / 2;
   else
     mean = 0;
-  setValue ("MEAN", mean, "mean value in image");
+  setValue ("AVERAGE", mean, "average value of image");
   return writeImgHeader (im_h);
 }
 
@@ -744,37 +755,26 @@ Rts2Image::getDataUShortInt ()
     return imageData;
   int nullVal = 0;
   int anyNull = 0;
-  long naxis[2];
-  int ret;
-  ret = getValues ("NAXIS", naxis, 2);
-  if (ret)
-    return NULL;
-  imageData = new unsigned short[naxis[0] * naxis[1]];
+  imageData = new unsigned short[getWidth () * getHeight ()];
   fits_status =
-    fits_read_img (ffile, USHORT_IMG, 1, naxis[0] * naxis[1], &nullVal,
+    fits_read_img (ffile, USHORT_IMG, 1, getWidth () * getHeight (), &nullVal,
 		   imageData, &anyNull, &fits_status);
   fitsStatusValue ("image");
+  return imageData;
 }
 
 int
 Rts2Image::substractDark (Rts2Image * darkImage)
 {
-  long naxis[2];
-  long darkNaxis[2];
   unsigned short *img_data;
   unsigned short *dark_data;
-  int ret;
-  ret = getValues ("NAXIS", naxis, 2);
-  if (ret)
-    return ret;
-  ret = darkImage->getValues ("NAXIS", darkNaxis, 2);
-  if (ret)
-    return ret;
-  if (naxis[0] != darkNaxis[0] || naxis[1] != darkNaxis[1])
+  if (getWidth () != darkImage->getWidth ()
+      || getHeight () != darkImage->getHeight ())
     return -1;
   img_data = getDataUShortInt ();
   dark_data = darkImage->getDataUShortInt ();
-  for (long i = 0; i < (naxis[0] * naxis[1]); i++, img_data++, dark_data++)
+  for (long i = 0; i < (getWidth () * getHeight ());
+       i++, img_data++, dark_data++)
     {
       if (*img_data <= *dark_data)
 	*img_data = 0;
@@ -831,6 +831,12 @@ sdcompare (struct stardata *x1, struct stardata *x2)
   return 0;
 }
 
+int
+Rts2Image::isGoodForFwhm (struct stardata *sr)
+{
+  return (sr->flags == 0 && sr->F > signalNoise * sr->Fe);
+}
+
 double
 Rts2Image::getFWHM ()
 {
@@ -846,8 +852,190 @@ Rts2Image::getFWHM ()
   sr = sexResults;
   for (i = 0; i < sexResultNum; i++, sr++)
     {
-      avg += sr->fwhm;
+      if (isGoodForFwhm (sr))
+	avg += sr->fwhm;
     }
   avg /= sexResultNum;
   return avg;
+}
+
+static int
+shortcompare (const void *val1, const void *val2)
+{
+  return (*(unsigned short *) val1 < *(unsigned short *) val2) ? -1 :
+    ((*(unsigned short *) val1 == *(unsigned short *) val2) ? 0 : 1);
+}
+
+unsigned short
+getShortMean (unsigned short *meanData, int sub)
+{
+  qsort (meanData, sub, sizeof (unsigned short), shortcompare);
+  if (sub % 2)
+    return meanData[sub / 2];
+  return (meanData[(sub / 2) - 1] + meanData[(sub / 2)]) / 2;
+}
+
+int
+Rts2Image::getCenterRow (long row, int row_width, double &x)
+{
+  unsigned short *data;
+  data = getDataUShortInt ();
+  unsigned short *rowData;
+  unsigned short *meanData;
+  unsigned short max;
+  long i;
+  long j;
+  long k;
+  long maxI;
+  if (!data)
+    return -1;
+  // compute mean collumn
+  rowData = new unsigned short[getWidth ()];
+  meanData = new unsigned short[row_width];
+  data += row * getWidth ();
+  if (row_width < 2)
+    {
+      return -1;
+    }
+  for (j = 0; j < getWidth (); j++)
+    {
+      for (i = 0; i < row_width; i++)
+	{
+	  meanData[i] = data[j + i * getWidth ()];
+	}
+      rowData[j] = getShortMean (meanData, row_width);
+    }
+  // bin data in row..
+  i = j = k = 0;
+  while (j < getWidth ())
+    {
+      // last bit..
+      k += row_width;
+      rowData[i] =
+	getShortMean (rowData + j,
+		      (k > getWidth ())? (k - getWidth ()) : row_width);
+      i++;
+      j = k;
+    }
+  // decide, which part of slope we are in
+  // i hold size of reduced rowData array
+  // find maximum..
+  max = rowData[0];
+  maxI = 0;
+  for (j = 1; j < i; j++)
+    {
+      if (rowData[j] > max)
+	{
+	  max = rowData[j];
+	  maxI = j;
+	}
+    }
+  // close to left border - left
+  if (maxI < (i / 10))
+    x = -1;
+  // close to right border - right
+  else if (maxI > (i - (i / 10)))
+    x = getWidth () + 1;
+  // take value in middle
+  else
+    x = (maxI * row_width) + row_width / 2;
+  delete[]rowData;
+  delete[]meanData;
+  return 0;
+}
+
+int
+Rts2Image::getCenterCol (long col, int col_width, double &y)
+{
+  unsigned short *data;
+  data = getDataUShortInt ();
+  unsigned short *colData;
+  unsigned short *meanData;
+  unsigned short max;
+  long i;
+  long j;
+  long k;
+  long maxI;
+  if (!data)
+    return -1;
+  // smooth image..
+  colData = new unsigned short[getHeight ()];
+  meanData = new unsigned short[col_width];
+  data += col * getHeight ();
+  if (col_width < 2)
+    {
+      // special handling..
+      return -1;
+    }
+  for (j = 0; j < getHeight (); j++)
+    {
+      for (i = 0; i < col_width; i++)
+	{
+	  meanData[i] = data[j + i * getHeight ()];
+	}
+      colData[j] = getShortMean (meanData, col_width);
+    }
+  // bin data in row..
+  i = j = k = 0;
+  while (j < getHeight ())
+    {
+      // last bit..
+      k += col_width;
+      colData[i] =
+	getShortMean (colData + j,
+		      (k > getHeight ())? (k - getHeight ()) : col_width);
+      i++;
+      j = k;
+    }
+  // find gauss on image..
+  //ret = findGauss (colData, i, y);
+  maxI = 0;
+  for (j = 1; j < i; j++)
+    {
+      if (colData[j] > max)
+	{
+	  max = colData[j];
+	  maxI = j;
+	}
+    }
+  // close to left border - left
+  if (maxI < (i / 10))
+    y = -1;
+  // close to right border - right
+  else if (maxI > (i - (i / 10)))
+    y = getHeight () + 1;
+  // take value in middle
+  else
+    y = (maxI * col_width) + col_width / 2;
+  delete[]colData;
+  delete[]meanData;
+  return 0;
+}
+
+int
+Rts2Image::getCenter (double &x, double &y, int bin)
+{
+  int ret;
+  long i;
+  i = 0;
+  while ((i + bin) < getHeight ())
+    {
+      ret = getCenterRow (i, bin, x);
+      if (ret)
+	return -1;
+      if (x > 0 && x < getWidth ())
+	break;
+      i += bin;
+    }
+  i = 0;
+  while ((i + bin) < getWidth ())
+    {
+      ret = getCenterCol (i, bin, y);
+      if (ret)
+	return -1;
+      if (y > 0 && y < getHeight ())
+	break;
+      i += bin;
+    }
+  return 0;
 }

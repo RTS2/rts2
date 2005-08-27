@@ -716,7 +716,7 @@ Rts2Device::processOption (int in_opt)
 }
 
 void
-Rts2Device::cancelPriorityOperations ()
+Rts2Device::clearStatesPriority ()
 {
   int i;
   for (i = 0; i < statesSize; i++)
@@ -724,7 +724,6 @@ Rts2Device::cancelPriorityOperations ()
       maskState (i, 0xffffff | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
 		 "all operations canceled by priority");
     }
-  Rts2Block::cancelPriorityOperations ();
 }
 
 Rts2Conn *

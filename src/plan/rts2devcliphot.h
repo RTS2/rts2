@@ -36,6 +36,7 @@ protected:
   virtual int getNextCommand ();
 public:
   Rts2DevClientPhotExec (Rts2Conn * in_connection);
+  virtual ~ Rts2DevClientPhotExec (void);
   virtual void postEvent (Rts2Event * event);
   virtual void integrationFailed (int status);
   virtual void nextCommand ();

@@ -6,6 +6,7 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2devclient.h"
+#include "../utilsdb/target.h"
 #include "../writers/rts2image.h"
 
 #include <list>
@@ -50,13 +51,14 @@ private:
   int getNextParamFloat (float *val);
   int getNextParamDouble (double *val);
   int getNextParamInteger (int *val);
-  Rts2ScriptElement *parseBuf ();
+  // we should not save reference to target, as it can be changed|deleted without our knowledge
+  Rts2ScriptElement *parseBuf (Target * target);
     std::list < Rts2ScriptElement * >elements;
   Rts2Conn *connection;
   // is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
   int executedCount;
 public:
-    Rts2Script (char *scriptText, Rts2Conn * in_connection);
+    Rts2Script (Rts2Conn * in_connection, Target * target);
     virtual ~ Rts2Script (void);
   virtual void postEvent (Rts2Event * event);
   int nextCommand (Rts2DevClientCamera * camera,
@@ -72,6 +74,10 @@ public:
   void getDefaultDevice (char new_device[DEVICE_NAME_SIZE])
   {
     strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE);
+  }
+  char *getDefaultDevice ()
+  {
+    return defaultDevice;
   }
   int processImage (Rts2Image * image);
   Rts2Block *getMaster ()

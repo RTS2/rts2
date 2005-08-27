@@ -103,6 +103,8 @@ private:
   double airmassScale;
 
   time_t observationStart;
+
+  int acquired;
   // which changes behaviour based on how many times we called them before
 protected:
   int target_id;
@@ -256,6 +258,11 @@ public:
   void acqusitionStart ();
   void acqusitionEnd ();
   void acqusitionFailed ();
+  // called when waiting for acqusition..
+  int isAcquired ()
+  {
+    return acquired;
+  }
   void interupted ();
   virtual int endObservation (int in_next_id);
   // similar to startSlew - return 0 if observation ends, 1 if
@@ -274,6 +281,10 @@ public:
   // problem with moving mount in exposures - position updates)
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
+  // ready for target post-processing (call some script,..)
+  virtual int postprocess ()
+  {
+  }
   // scheduler functions
   virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();

@@ -60,10 +60,11 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_CHANGE_FOCUS:
-      focus =
-	connection->getMaster ()->
-	getOpenConnection (getValueChar ("focuser"));
-      if (focus && focConn == (Rts2ConnFocus *) event->getArg ())
+      focuser = (Rts2DevClientFocusFoc *) event->getArg ();
+      focName = focuser->getName ();
+      cameraFoc = getValueChar ("focuser");
+      if (focName && cameraFoc
+	  && !strcmp (focuser->getName (), getValueChar ("focuser")))
 	{
 	  focusChange (focus, focConn);
 	  focConn = NULL;
@@ -108,8 +109,8 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
     {
       if (darkImage)
 	image->substractDark (darkImage);
-      image->saveImage ();
-      focConn = new Rts2ConnFocus (this, image, exe);
+      focConn =
+	new Rts2ConnFocus (getMaster (), image, exe, EVENT_CHANGE_FOCUS);
       ret = focConn->init ();
       if (ret)
 	{
@@ -134,14 +135,6 @@ Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus,
     }
   focus->postEvent (new Rts2Event (EVENT_START_FOCUSING, (void *) &change));
   isFocusing = 1;
-}
-
-int
-Rts2DevClientCameraFoc::addStarData (struct stardata *sr)
-{
-  if (images)
-    return images->addStarData (sr);
-  return -1;
 }
 
 Rts2DevClientFocusFoc::Rts2DevClientFocusFoc (Rts2Conn * in_connection):Rts2DevClientFocusImage
@@ -172,34 +165,30 @@ Rts2DevClientFocusFoc::focusingEnd ()
     postEvent (new Rts2Event (EVENT_FOCUSING_END, (void *) this));
 }
 
-Rts2ConnFocus::Rts2ConnFocus (Rts2DevClientCameraFoc * in_client,
-			      Rts2Image * in_image, const char *in_exe):
-Rts2ConnFork (in_client->getMaster (), in_exe)
+Rts2ConnFocus::Rts2ConnFocus (Rts2Block * in_master, Rts2Image * in_image,
+			      const char *in_exe, int in_endEvent):
+Rts2ConnFork (in_master, in_exe)
 {
   change = INT_MAX;
   img_path = new char[strlen (in_image->getImageName ()) + 1];
   strcpy (img_path, in_image->getImageName ());
-  cameraName = new char[strlen (in_client->getName ()) + 1];
-  strcpy (cameraName, in_client->getName ());
-  camera = in_client;
+  image = in_image;
+  endEvent = in_endEvent;
 }
 
 Rts2ConnFocus::~Rts2ConnFocus (void)
 {
   if (change == INT_MAX)	// we don't get focus change, let's try next image..
-    getMaster ()->
-      postEvent (new Rts2Event (EVENT_CHANGE_FOCUS, (void *) this));
+    getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
   delete[]img_path;
-  delete[]cameraName;
 }
 
 int
 Rts2ConnFocus::newProcess ()
 {
-  syslog (LOG_DEBUG, "Rts2ConnFocus::newProcess exe: %s img: %s", exePath,
-	  img_path);
   if (exePath)
     {
+      image->saveImage ();
       execl (exePath, exePath, img_path, (char *) NULL);
       // when execl fails..
       syslog (LOG_ERR, "Rts2ConnFocus::newProcess: %m");
@@ -218,28 +207,26 @@ Rts2ConnFocus::processLine ()
       std::cout << "Get change: " << id << " " << change << std::endl;
       if (change == INT_MAX)
 	return -1;		// that's not expected .. ignore it
-      getMaster ()->
-	postEvent (new Rts2Event (EVENT_CHANGE_FOCUS, (void *) this));
+      getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
       // post it to focuser
     }
   else
     {
       struct stardata sr;
       ret =
-	sscanf (getCommand (), " %lf %lf %lf %lf", &sr.X, &sr.Y, &sr.F,
-		&sr.fwhm);
+	sscanf (getCommand (), "%lf %lf %lf %lf %lf %i", &sr.X, &sr.Y, &sr.F,
+		&sr.Fe, &sr.fwhm, &sr.flags);
       if (ret != 4)
 	{
 	  std::cout << "Get line: " << getCommand () << std::endl;
 	}
       else
 	{
-	  if (camera)
-	    {
-	      camera->addStarData (&sr);
-	    }
+	  if (image)
+	    image->addStarData (&sr);
 	  std::cout << "Sex added (" << sr.X << ", " << sr.Y << ", " << sr.
-	    F << ", " << sr.fwhm << ")" << std::endl;
+	    F << ", " << sr.Fe << ", " << sr.fwhm << ", " << sr.
+	    flags << ")" << std::endl;
 	}
     }
   return -1;

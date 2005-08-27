@@ -345,6 +345,7 @@ Rts2DevCamera::cancelPriorityOperations ()
     }
   setTimeout (USEC_SEC);
   // init states etc..
+  clearStatesPriority ();
   Rts2Device::cancelPriorityOperations ();
 }
 

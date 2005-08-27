@@ -69,6 +69,7 @@ protected:
   virtual void cancelPriorityOperations ()
   {
     stopMove ();
+    clearStatesPriority ();
     Rts2Device::cancelPriorityOperations ();
   }
   resetStates nextReset;

@@ -8,6 +8,11 @@ Rts2DevClientPhotExec::Rts2DevClientPhotExec (Rts2Conn * in_connection):Rts2DevC
 {
 }
 
+Rts2DevClientPhotExec::~Rts2DevClientPhotExec ()
+{
+  deleteScript ();
+}
+
 void
 Rts2DevClientPhotExec::integrationEnd ()
 {

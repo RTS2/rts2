@@ -67,6 +67,8 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   airmassScale = 750.0;
 
   observationStart = -1;
+
+  acquired = 0;
 }
 
 Target::~Target (void)
@@ -195,6 +197,7 @@ void
 Target::acqusitionEnd ()
 {
   obs_state &= ~ 0x04;
+  acquired = 1;
 }
 
 void

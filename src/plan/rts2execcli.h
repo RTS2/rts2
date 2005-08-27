@@ -79,6 +79,8 @@ private:
   int blockMove;
   Rts2CommandChange *cmdChng;
 
+  struct ln_equ_posn fixedOffset;
+
   int syncTarget ();
   void checkInterChange ();
 protected:

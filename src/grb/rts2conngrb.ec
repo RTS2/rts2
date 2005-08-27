@@ -550,7 +550,28 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
     if (sqlca.sqlcode)
     {
-      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot insert new GCN : %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN : %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+      EXEC SQL ROLLBACK;
+      ret = -1;
+    }
+    else
+    {
+      EXEC SQL COMMIT;
+    }
+
+    if (d_grb_errorbox_ind == 0)
+    {
+      EXEC SQL
+      UPDATE
+        grb
+      SET
+        grb_errorbox = :d_grb_errorbox
+      WHERE
+        tar_id = :d_tar_id;
+    }
+    if (sqlca.sqlcode)
+    {
+      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN errorbox: %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
       EXEC SQL ROLLBACK;
       ret = -1;
     }

@@ -163,7 +163,7 @@ protected:
    * @return 0 on success, -1 if option wasn't processed
    */
   virtual int processOption (int in_opt);
-  void cancelPriorityOperations ();
+  void clearStatesPriority ();
 
   virtual Rts2Conn *createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);

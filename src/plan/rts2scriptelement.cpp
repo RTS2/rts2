@@ -2,6 +2,7 @@
 
 #include "../utils/rts2config.h"
 #include "../writers/rts2imagedb.h"
+#include "../writers/rts2devclifoc.h"
 
 Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
 {
@@ -135,7 +136,6 @@ Rts2ScriptElementAcquire::Rts2ScriptElementAcquire (Rts2Script * in_script, doub
   reqPrecision = in_precision;
   lastPrecision = nan ("f");
   expTime = in_expTime;
-  processor = NULL;
   processingState = NEED_IMAGE;
   Rts2Config::instance ()->getString ("imgproc", "astrometry",
 				      defaultImgProccess, 2000);
@@ -186,6 +186,9 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	  processingState = FAILED;
 	}
       break;
+    case EVENT_ACQUIRE_QUERY:
+      *(int *) event->getArg () = *(int *) event->getArg () + 1;
+      break;
     }
   Rts2ScriptElement::postEvent (event);
 }
@@ -231,6 +234,8 @@ int
 Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 {
   int ret;
+  Rts2ConnImgProcess *processor;
+
   if (processingState != WAITING_IMAGE)
     {
       syslog (LOG_ERR,
@@ -270,7 +275,13 @@ Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
 					      char
 					      new_device[DEVICE_NAME_SIZE])
 {
-  return NEXT_COMMAND_WAIT_ACQUSITION;
+  int acqCount = 0;
+  // detect is somebody plans to run A command..
+  script->getMaster ()->
+    postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &acqCount));
+  if (acqCount)
+    return NEXT_COMMAND_WAIT_ACQUSITION;
+  return NEXT_COMMAND_NEXT;
 }
 
 Rts2ScriptElementMirror::Rts2ScriptElementMirror (Rts2Script * in_script, char *in_mirror_name, int in_mirror_pos):Rts2ScriptElement
@@ -352,6 +363,19 @@ Rts2ScriptElementSendSignal::~Rts2ScriptElementSendSignal (void)
     postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
 }
 
+void
+Rts2ScriptElementSendSignal::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_SIGNAL_QUERY:
+      if (*(int *) event->getArg () == sig)
+	*(int *) event->getArg () = -1;
+      break;
+    }
+  Rts2ScriptElement::postEvent (event);
+}
+
 int
 Rts2ScriptElementSendSignal::defnextCommand (Rts2DevClient * client,
 					     Rts2Command ** new_command,
@@ -374,8 +398,19 @@ Rts2ScriptElementWaitSignal::defnextCommand (Rts2DevClient * client,
 					     char
 					     new_device[DEVICE_NAME_SIZE])
 {
+  int ret;
+
+  // not valid signal..
   if (sig == -1)
     return NEXT_COMMAND_NEXT;
+
+  // nobody will send us a signal..end script
+  ret = sig;
+  script->getMaster ()->
+    postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
+  if (ret != -1)
+    return NEXT_COMMAND_NEXT;
+
   return NEXT_COMMAND_WAIT_SIGNAL;
 }
 
@@ -386,6 +421,86 @@ Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
     {
       sig = -1;
       return 1;
+    }
+  return 0;
+}
+
+Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime):Rts2ScriptElementAcquire (in_script, 0.01,
+			  in_expTime)
+{
+  int
+    ret;
+  maxRetries = in_maxRetries;
+  defaultImgProccess[0] = '\0';
+  Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
+				      "sextractor", defaultImgProccess, 2000);
+}
+
+void
+Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
+{
+  Rts2ConnFocus *focConn;
+  Rts2Image *image;
+  double ham_x, ham_y;
+  double ra_offset, dec_offset;
+  int ret;
+  Rts2Conn *conn;
+  switch (event->getType ())
+    {
+    case EVENT_HAM_DATA:
+      focConn = (Rts2ConnFocus *) event->getArg ();
+      image = focConn->getImage ();
+      // that was our image
+      if (image->getObsId () == obsId && image->getImgId () == imgId)
+	{
+	  ret = image->getHam (ham_x, ham_y);
+	  if (ret)
+	    {
+	      processingState = FAILED;	// ham not found..
+	    }
+	  else
+	    {
+	      // change fixed offset
+	      script->getMaster ()->
+		postEvent (new Rts2Event (EVENT_SET_FIXED_OFFSET));
+	      processingState = PRECISION_BAD;
+	    }
+	}
+      break;
+    }
+  Rts2ScriptElementAcquire::postEvent (event);
+}
+
+int
+Rts2ScriptElementAcquireHam::processImage (Rts2Image * image)
+{
+  int ret;
+  Rts2ConnFocus *processor;
+  if (processingState != WAITING_IMAGE)
+    {
+      syslog (LOG_ERR,
+	      "Rts2ScriptElementAcquireHam::processImage invalid processingState: %i",
+	      processingState);
+      return -1;
+    }
+  obsId = image->getObsId ();
+  imgId = image->getImgId ();
+  processor =
+    new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
+		       EVENT_HAM_DATA);
+
+  ret = processor->init ();
+  if (ret < 0)
+    {
+      delete processor;
+      processor = NULL;
+      processingState = FAILED;
+    }
+  else
+    {
+      script->getMaster ()->addConnection (processor);
+      processingState = WAITING_ASTROMETRY;
+      script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_WAIT));
     }
   return 0;
 }

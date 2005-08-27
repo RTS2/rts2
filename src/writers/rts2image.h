@@ -17,8 +17,8 @@
 
 struct stardata
 {
-  double X, Y, F;
-  double fwhm;
+  double X, Y, F, Fe, fwhm;
+  int flags;
 };
 
 typedef enum
@@ -42,6 +42,12 @@ private:
   char *getImageBase (int in_epoch_id);
   unsigned short *imageData;
   int focPos;
+  // we assume that image is 2D
+  long naxis[2];
+  float signalNoise;
+  int getFailed;
+
+  void initData ();
 protected:
   int epochId;
   int targetId;
@@ -53,6 +59,8 @@ protected:
   char *imageName;
   img_type_t imageType;
   double mean;
+
+  virtual int isGoodForFwhm (struct stardata *sr);
 public:
   // list of sex results..
   struct stardata *sexResults;
@@ -213,6 +221,58 @@ public:
       return nan ("f");
     return val;
   }
+  // assumes, that on image is displayed strong light source,
+  // it find position of it's center
+  // return 0 if center was found , -1 in case of error.
+  // Put center coordinates in pixels to x and y
+
+  // helpers, get row & line center
+  int getCenterRow (long row, int row_width, double &x);
+  int getCenterCol (long col, int col_width, double &y);
+
+  int getCenter (double &x, double &y, int bin);
+
+  long getWidth ()
+  {
+    return naxis[0];
+  }
+
+  long getHeight ()
+  {
+    return naxis[1];
+  }
+
+  // returns ra & dec distance in degrees of pixel [x,y] from device axis
+  // I think it's better to use double precission even in pixel coordinates, as I'm then sure I'll not 
+  // loose precision somewhere in calculation
+  int getOffset (double x, double y, double &chng_ra, double &chng_dec);
+
+  // returns pixels [x1,y1] and [x2,y2] offset in ra and dec degrees
+  int getOffset (double x1, double y1, double x2, double y2, double &chng_ra,
+		 double &chng_dec);
+
+  // this function is good only for HAM source detection on FRAM telescope in Argentina.
+  // HAM is calibration source, which is used test target for photometer to measure it's sesitivity 
+  // (and other things, such as athmospheric dispersion..).
+  // You most probably don't need it.
+  int getHam (double &x, double &y);
+
+  int getRaDec (double x, double y, double &ra, double &dec);
+
+  // get xoa and yoa coeficients
+  double getXoA ();
+  double getYoA ();
+
+  // get rotang - get value from WCS when available; ROTANG is in radians, and is true rotang of image
+  // (assumig top is N, left is E - e.g. is corrected for telescope flip
+  double getRotang ();
+
+  double getCenterRa ();
+  double getCenterDec ();
+
+  // get xplate and yplate coeficients - in degrees!
+  double getXPlate ();
+  double getYPlate ();
 };
 
 #endif /* !__RTS2_IMAGE__ */

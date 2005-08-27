@@ -406,6 +406,10 @@ int
 Rts2Executor::setNow (int nextId)
 {
   Target *newTarget;
+
+  if (!currentTarget)
+    return setNext (nextId);
+
   newTarget = createTarget (nextId, observer);
   if (!newTarget)
     {
@@ -425,6 +429,10 @@ Rts2Executor::setNow (Target * newTarget)
       queTarget (currentTarget);
     }
   currentTarget = NULL;
+
+  if (priorityTarget)
+    delete priorityTarget;	// delete old priority target
+
   priorityTarget = newTarget;
 
   // at this situation, we would like to get rid of nextTarget as

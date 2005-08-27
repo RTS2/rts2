@@ -261,6 +261,7 @@ void
 Rts2DevPhot::cancelPriorityOperations ()
 {
   stopIntegrate ();
+  clearStatesPriority ();
   Rts2Device::cancelPriorityOperations ();
 }
 

@@ -16,6 +16,19 @@
 
 #define EVENT_ACQUIRE_START		RTS2_LOCAL_EVENT + 253
 #define EVENT_ACQUIRE_WAIT		RTS2_LOCAL_EVENT + 254
+#define EVENT_ACQUIRE_QUERY		RTS2_LOCAL_EVENT + 255
+
+// send some signal to other device..so they will
+// know that something is going on
+#define EVENT_SIGNAL			RTS2_LOCAL_EVENT + 256
+
+#define EVENT_SIGNAL_QUERY		RTS2_LOCAL_EVENT + 257
+
+// send when data we received 
+#define EVENT_HAM_DATA			RTS2_LOCAL_EVENT + 258
+
+#define EVENT_SET_FIXED_OFFSET		RTS2_LOCAL_EVENT + 259
+
 
 class Rts2Script;
 
@@ -109,11 +122,10 @@ public:
 
 class Rts2ScriptElementAcquire:public Rts2ScriptElement
 {
-private:
+protected:
   double reqPrecision;
   double lastPrecision;
   float expTime;
-  Rts2ConnImgProcess *processor;
   enum
   { NEED_IMAGE, WAITING_IMAGE, WAITING_ASTROMETRY, WAITING_MOVE, PRECISION_OK,
     PRECISION_BAD, FAILED
@@ -188,6 +200,7 @@ private:
 public:
     Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig);
     virtual ~ Rts2ScriptElementSendSignal (void);
+  virtual void postEvent (Rts2Event * event);
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,
 			      char new_device[DEVICE_NAME_SIZE]);
@@ -204,6 +217,20 @@ public:
 			      Rts2Command ** new_command,
 			      char new_device[DEVICE_NAME_SIZE]);
   virtual int waitForSignal (int in_sig);
+};
+
+/**
+ * Some special handling for HAM..
+ */
+class Rts2ScriptElementAcquireHam:public Rts2ScriptElementAcquire
+{
+private:
+  int maxRetries;
+public:
+    Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries,
+				 float in_expTime);
+  virtual void postEvent (Rts2Event * event);
+  virtual int processImage (Rts2Image * image);
 };
 
 #endif /* !__RTS2_SCRIPTELEMENT__ */

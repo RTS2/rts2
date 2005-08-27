@@ -29,7 +29,6 @@ public:
   // will cause camera to change focus by given steps BEFORE exposition
   // when change == INT_MAX, focusing don't converge
   virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
-  int addStarData (struct stardata *sr);
 };
 
 class Rts2DevClientFocusFoc:public Rts2DevClientFocusImage
@@ -43,13 +42,14 @@ public:
 
 class Rts2ConnFocus:public Rts2ConnFork
 {
+private:
   char *img_path;
-  char *cameraName;
-  Rts2DevClientCameraFoc *camera;
+  Rts2Image *image;
   int change;
+  int endEvent;
 public:
-    Rts2ConnFocus (Rts2DevClientCameraFoc * in_client, Rts2Image * in_image,
-		   const char *in_exe);
+    Rts2ConnFocus (Rts2Block * in_master, Rts2Image * in_image,
+		   const char *in_exe, int in_endEvent);
     virtual ~ Rts2ConnFocus (void);
   virtual int newProcess ();
   virtual int processLine ();
@@ -63,11 +63,15 @@ public:
   }
   const char *getCameraName ()
   {
-    return cameraName;
+    return image->getCameraName ();
+  }
+  Rts2Image *getImage ()
+  {
+    return image;
   }
   void nullCamera ()
   {
-    camera = NULL;
+    image = NULL;
   }
 };
 

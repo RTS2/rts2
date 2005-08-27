@@ -15,19 +15,17 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
 
 Rts2DevScript::~Rts2DevScript (void)
 {
-  deleteScript ();
+  // cannot call deleteScript there, as unsetWait is pure virtual
 }
 
 void
 Rts2DevScript::startTarget ()
 {
-  char scriptBuf[MAX_COMMAND_LENGTH];
   // currentTarget should be nulled when script ends in
   // deleteScript
   if (!currentTarget)
     return;
-  currentTarget->getScript (script_connection->getName (), scriptBuf);
-  script = new Rts2Script (scriptBuf, script_connection);
+  script = new Rts2Script (script_connection, currentTarget);
   script_connection->getMaster ()->
     postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
@@ -66,7 +64,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
       // we get new target..handle that same way as EVENT_OBSERVE command,
       // telescope will not move
       currentTarget = (Target *) event->getArg ();
-      if (currentTarget && currentTarget->getTargetID () == dont_execute_for)
+      // currentTarget is defined - tested in if (!event->getArg () || ..
+      if (currentTarget->getTargetID () == dont_execute_for)
 	{
 	  currentTarget = NULL;
 	  break;
@@ -101,6 +100,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
       break;
     case EVENT_OK_ASTROMETRY:
     case EVENT_NOT_ASTROMETRY:
+    case EVENT_HAM_DATA:
       if (script)
 	{
 	  script->postEvent (new Rts2Event (event));
@@ -136,6 +136,17 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  deleteScript ();
 	  break;
 	}
+      break;
+    case EVENT_ACQUIRE_QUERY:
+      if (currentTarget && currentTarget->isAcquired ())
+	{
+	  // target that was already acquired will not be acquired again
+	  *(int *) event->getArg () = 0;
+	  break;
+	}
+    case EVENT_SIGNAL_QUERY:
+      if (script)
+	script->postEvent (new Rts2Event (event));
       break;
     case EVENT_SIGNAL:
       if (!script)
@@ -215,6 +226,7 @@ Rts2DevScript::nextPreparedCommand ()
 	}
       break;
     case NEXT_COMMAND_WAIT_ACQUSITION:
+      // let's wait for that..
       waitScript = WAIT_SLAVE;
       break;
     case NEXT_COMMAND_ACQUSITION_IMAGE:
