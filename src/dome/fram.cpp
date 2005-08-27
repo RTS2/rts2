@@ -37,7 +37,7 @@
 // following times are in seconds!
 #define FRAM_TIME_OPEN_RIGHT	26
 #define FRAM_TIME_OPEN_LEFT	24
-#define FRAM_TIME_CLOSE_RIGHT	30
+#define FRAM_TIME_CLOSE_RIGHT	32
 #define FRAM_TIME_CLOSE_LEFT	28
 
 #define FRAM_TIME_RECLOSE_RIGHT 5
@@ -147,6 +147,7 @@ private:
 
   Rts2ConnFramWeather *weatherConn;
 
+  int zjisti_stav_portu_int ();
   int zjisti_stav_portu ();
   void zapni_pin (unsigned char c_port, unsigned char pin);
   void vypni_pin (unsigned char c_port, unsigned char pin);
@@ -207,6 +208,7 @@ private:
   int resetWDC ();
   int getWDCTimeOut ();
   int setWDCTimeOut (int on, double timeout);
+  int getWDCTemp (int id);
 
   enum
   { MOVE_NONE, MOVE_OPEN_LEFT, MOVE_OPEN_LEFT_WAIT, MOVE_OPEN_RIGHT,
@@ -241,28 +243,77 @@ public:
 };
 
 int
-Rts2DevDomeFram::zjisti_stav_portu ()
+Rts2DevDomeFram::zjisti_stav_portu_int ()
 {
-  unsigned char t, c = STAV_PORTU | PORT_A;
+  unsigned char t1, t2, c;
   int ret;
-  write (dome_port, &c, 1);
-  if (read (dome_port, &t, 1) < 1)
-    syslog (LOG_ERR, "read error 0");
-  else
-    syslog (LOG_DEBUG, "stav: A: %x:", t);
-  read (dome_port, &stav_portu[PORT_A], 1);
-  syslog (LOG_DEBUG, "A state: %x", stav_portu[PORT_A]);
+  usleep (USEC_SEC / 1000);
+  c = STAV_PORTU | PORT_A;
+  ret = write (dome_port, &c, 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu writeA %m (%i)",
+	      ret);
+      return -1;
+    }
+  ret = read (dome_port, &t1, 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu readA %m (%i)",
+	      ret);
+      return -1;
+    }
+  ret = read (dome_port, &stav_portu[PORT_A], 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeFram::zjisti_stav_portu read PORT_A %m (%i)", ret);
+      return -1;
+    }
   c = STAV_PORTU | PORT_B;
   write (dome_port, &c, 1);
-  if (read (dome_port, &t, 1) < 1)
-    syslog (LOG_ERR, "read error 1");
-  else
-    syslog (LOG_DEBUG, " B: %x:", t);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu writeB %m (%i)",
+	      ret);
+      return -1;
+    }
+  ret = read (dome_port, &t2, 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeFram::zjisti_stav_portu write PORT_B %m (%i)", ret);
+      return -1;
+    }
   ret = read (dome_port, &stav_portu[PORT_B], 1);
-  syslog (LOG_DEBUG, "B state: %x", stav_portu[PORT_B]);
-  if (ret < 1)
-    return -1;
+  if (ret != 1)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeFram::zjisti_stav_portu read PORT_B %m (%i)", ret);
+      return -1;
+    }
+  syslog (LOG_DEBUG,
+	  "Rts2DevDomeFram::zjisti_stav_portu A: %x stav_portu[PORT_A]: %x B: %x stav_portu[PORT_B]: %x",
+	  t1, stav_portu[PORT_A], t2, stav_portu[PORT_B]);
   return 0;
+}
+
+int
+Rts2DevDomeFram::zjisti_stav_portu ()
+{
+  int ret;
+  int timeout = 0;
+  do
+    {
+      ret = zjisti_stav_portu_int ();
+      if (ret == 0)
+	break;
+      timeout++;
+      tcflush (dome_port, TCIOFLUSH);
+      usleep (USEC_SEC / 2);
+    }
+  while (timeout < 10);
+  return ret;
 }
 
 void
@@ -452,6 +503,44 @@ Rts2DevDomeFram::setWDCTimeOut (int on, double timeout)
     syslog (LOG_DEBUG, "Rts2DevDomeFram::setWDCTimeOut reply: %s", reply + 1);
 
   return 0;
+}
+
+int
+Rts2DevDomeFram::getWDCTemp (int id)
+{
+  int i, q, r, t;
+  char reply[128];
+
+  if ((id < 0) || (id > 2))
+    return -1;
+
+  t = sprintf (reply, "~017%X\r", id + 5);
+  write (wdc_port, reply, t);
+  tcflush (wdc_port, TCOFLUSH);
+
+  q = i = t = 0;
+  do
+    {
+      r = read (wdc_port, &q, 1);
+      if (r == 1)
+	reply[i++] = q;
+      else
+	{
+	  t++;
+	  if (t > 10)
+	    return -1;
+	}
+    }
+  while (q > 20);
+
+  reply[i] = 0;
+
+  if (reply[0] != '!')
+    return -1;
+
+  i = atoi (reply + 1);
+
+  return i;
 }
 
 #define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
@@ -968,6 +1057,8 @@ Rts2DevDomeFram::info ()
   sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
   rain = weatherConn->getRain ();
   windspeed = weatherConn->getWindspeed ();
+  if (wdc_port > 0)
+    temperature = getWDCTemp (0);
   nextOpen = weatherConn->getNextOpen ();
   return 0;
 }

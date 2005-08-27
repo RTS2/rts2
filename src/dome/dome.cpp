@@ -237,12 +237,10 @@ Rts2DevConnDome::commandAuthorized ()
 {
   if (isCommand ("open"))
     {
-      CHECK_PRIORITY;
       return master->openDome ();
     }
   else if (isCommand ("close"))
     {
-      CHECK_PRIORITY;
       return master->closeDome ();
     }
   return Rts2DevConn::commandAuthorized ();
