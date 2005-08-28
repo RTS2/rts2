@@ -79,10 +79,12 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
   char *filename;
   if (autoSave)
     {
-      return Rts2DevClientCameraFoc::createImage (expStart);
+      image = Rts2DevClientCameraFoc::createImage (expStart);
+      image->keepImage ();
     }
   asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (), getpid ());
   image = new Rts2Image (filename, expStart);
+  image->keepImage ();
   free (filename);
   return image;
 }
@@ -124,7 +126,7 @@ Rts2GenFocCamera::printFWHMTable ()
 }
 
 void
-Rts2GenFocCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
+Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 {
   if (images->sexResultNum)
     {
@@ -172,11 +174,9 @@ Rts2GenFocCamera::focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn)
       if (change != 0)
 	{
 	  std::cout << "Will change by: " << change << std::endl;
-	  Rts2DevClientCameraFoc::focusChange (focus, focConn);
-	  return;
 	}
     }
-  Rts2DevClientCameraFoc::focusChange (focus, focConn);
+  Rts2DevClientCameraFoc::focusChange (focus);
 }
 
 void

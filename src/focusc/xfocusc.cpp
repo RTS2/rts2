@@ -88,7 +88,7 @@ private:
   GC gc;
   XGCValues gvc;
   Pixmap pixmap;
-  XImage *image;
+  XImage *ximage;
   XSetWindowAttributes xswa;
 
   int windowHeight;
@@ -124,7 +124,7 @@ public:
 
   virtual void postEvent (Rts2Event * event);
 
-  virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
+  virtual void processImage (Rts2Image * image);
   void setCrossType (int in_crossType);
 };
 
@@ -354,7 +354,7 @@ Rts2xfocusCamera::printInfo ()
   XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
 	       stringBuf, len);
   free (stringBuf);
-  if (lastHeader)
+/*  if (lastHeader)
     {
       len =
 	asprintf (&stringBuf,
@@ -365,7 +365,7 @@ Rts2xfocusCamera::printInfo ()
       XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
 		   pixmapHeight - 20, stringBuf, len);
       free (stringBuf);
-    }
+    } */
 }
 
 void
@@ -502,19 +502,17 @@ Rts2xfocusCamera::printFWHMTable ()
 }
 
 void
-Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
+Rts2xfocusCamera::processImage (Rts2Image * image)
 {
-  struct imghdr *header;
   int dataSize;
   int i, j, k;
   unsigned short *im_ptr;
 
   // get to upper classes as well
-  Rts2DevClientCameraFoc::dataReceived (dataConn);
+  Rts2DevClientCameraFoc::processImage (image);
 
-  header = dataConn->getImageHeader ();
-  pixmapWidth = header->sizes[0];
-  pixmapHeight = header->sizes[1];
+  pixmapWidth = image->getWidth ();
+  pixmapHeight = image->getHeight ();
   if (pixmapWidth > windowWidth || pixmapHeight > windowHeight)
     {
       windowWidth = pixmapWidth;
@@ -525,20 +523,20 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
     cout << "Get data : [" << pixmapWidth << "x" << pixmapHeight << "]" <<
     std::endl;
   // draw window with image..
-  if (!image)
+  if (!ximage)
     {
-      image =
+      ximage =
 	XCreateImage (master->getDisplay (), master->getVisual (),
 		      master->getDepth (), ZPixmap, 0, 0, pixmapWidth,
 		      pixmapHeight, 8, 0);
-      image->data = new char[image->bytes_per_line * pixmapHeight];
+      ximage->data = new char[ximage->bytes_per_line * pixmapHeight];
     }
 
   // build histogram
   memset (histogram, 0, sizeof (int) * HISTOGRAM_LIMIT);
   dataSize = pixmapHeight * pixmapWidth;
   k = 0;
-  im_ptr = dataConn->getData ();
+  im_ptr = image->getDataUShortInt ();
   average = 0;
   for (i = 0; i < pixmapHeight; i++)
     for (j = 0; j < pixmapWidth; j++)
@@ -567,7 +565,7 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
   if (low == hig)
     low = hig / 2 - 1;
 
-  im_ptr = dataConn->getData ();
+  im_ptr = image->getDataUShortInt ();
 
   for (j = 0; j < pixmapHeight; j++)
     for (i = 0; i < pixmapWidth; i++)
@@ -576,12 +574,12 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 	val = *im_ptr;
 	im_ptr++;
 	if (val < low)
-	  XPutPixel (image, i, j, master->getRGB (0)->pixel);
+	  XPutPixel (ximage, i, j, master->getRGB (0)->pixel);
 	else if (val > hig)
-	  XPutPixel (image, i, j, master->getRGB (255)->pixel);
+	  XPutPixel (ximage, i, j, master->getRGB (255)->pixel);
 	else
 	  {
-	    XPutPixel (image, i, j,
+	    XPutPixel (ximage, i, j,
 		       master->
 		       getRGB ((int) (255 * (val - low) / (hig - low)))->
 		       pixel);
@@ -594,12 +592,12 @@ Rts2xfocusCamera::dataReceived (Rts2ClientTCPDataConn * dataConn)
 
   XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
 
-  XPutImage (master->getDisplay (), pixmap, gc, image, 0, 0, 0, 0,
+  XPutImage (master->getDisplay (), pixmap, gc, ximage, 0, 0, 0, 0,
 	     pixmapWidth, pixmapHeight);
 
-  if (!lastHeader)
+/*  if (!lastHeader)
     lastHeader = new imghdr;
-  memcpy (lastHeader, header, sizeof (imghdr));
+  memcpy (lastHeader, header, sizeof (imghdr)); */
 
   redraw ();
   XFlush (master->getDisplay ());

@@ -118,7 +118,7 @@ public:
   virtual void stateChanged (Rts2ServerState * state);
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void processImage (Rts2Image * image);
-  virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
+  virtual void focusChange (Rts2Conn * focus);
   void center (int centerWidth, int centerHeight);
 };
 
