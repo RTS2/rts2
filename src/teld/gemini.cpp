@@ -1389,8 +1389,8 @@ Rts2DevTelescopeGemini::correctOffsets (double cor_ra, double cor_dec,
   // change allign parameters..
   tel_gemini_get (205, &v205);
   tel_gemini_get (206, &v206);
-  v205 += (int) (cor_ra * 3600);	// convert from degrees to arcminutes
-  v206 += (int) (cor_dec * 3600);
+  v205 = (int) (cor_ra * 3600);	// convert from degrees to arcminutes
+  v206 = (int) (cor_dec * 3600);
   tel_gemini_set (205, v205);
   ret = tel_gemini_set (206, v206);
   if (ret)
