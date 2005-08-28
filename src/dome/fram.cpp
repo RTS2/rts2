@@ -217,10 +217,13 @@ private:
     MOVE_CLOSE_LEFT_WAIT,
     MOVE_RECLOSE_RIGHT_WAIT, MOVE_RECLOSE_LEFT_WAIT
   } movingState;
+
+protected:
+  virtual int processOption (int in_opt);
+
 public:
   Rts2DevDomeFram (int argc, char **argv);
   virtual ~ Rts2DevDomeFram (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
 

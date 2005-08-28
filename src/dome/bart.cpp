@@ -119,10 +119,13 @@ private:
 
   int isOn (int c_port);
   int handle_zasuvky (int state);
+
+protected:
+  virtual int processOption (int in_opt);
+
 public:
   Rts2DevDomeBart (int argc, char **argv);
   virtual ~ Rts2DevDomeBart (void);
-  virtual int processOption (int in_opt);
 
   virtual int init ();
 

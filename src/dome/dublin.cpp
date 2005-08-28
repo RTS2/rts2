@@ -26,10 +26,11 @@ private:
 
   Rts2ConnFramWeather *weatherConn;
 
+protected:
+    virtual int processOption (int in_opt);
 public:
     Rts2DevDomeDublin (int argc, char **argv);
     virtual ~ Rts2DevDomeDublin (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
 

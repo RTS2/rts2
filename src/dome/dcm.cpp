@@ -54,10 +54,11 @@ private:
   Rts2ConnFramWeather * weatherConn;
   int dcm_weather_port;
 
+protected:
+    virtual int processOption (int in_opt);
 public:
     Rts2DevDomeDcm (int argc, char **argv);
     virtual ~ Rts2DevDomeDcm (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
 
   virtual int ready ();
