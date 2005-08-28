@@ -1395,6 +1395,7 @@ Rts2DevTelescopeGemini::correctOffsets (double cor_ra, double cor_dec,
   ret = tel_gemini_set (206, v206);
   if (ret)
     return -1;
+  return 0;
 }
 
 

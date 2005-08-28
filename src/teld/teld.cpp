@@ -531,6 +531,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       if (numCorr == 0)
 	{
 	  ret = correctOffsets (cor_ra, cor_dec, real_ra, real_dec);
+	  if (ret == 0)
+	    numCorr++;
 	}
       // discards changes - astrometry was too late
       locCorNum = -1;
