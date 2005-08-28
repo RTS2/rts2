@@ -55,18 +55,19 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 {
   Rts2Conn *focus;
   Rts2DevClientFocusFoc *focuser;
+  Rts2ConnFocus *eventConn;
   const char *focName;
   char *cameraFoc;
   switch (event->getType ())
     {
     case EVENT_CHANGE_FOCUS:
-      focuser = (Rts2DevClientFocusFoc *) event->getArg ();
-      focName = focuser->getName ();
-      cameraFoc = getValueChar ("focuser");
-      if (focName && cameraFoc
-	  && !strcmp (focuser->getName (), getValueChar ("focuser")))
+      eventConn = (Rts2ConnFocus *) event->getArg ();
+      focus =
+	connection->getMaster ()->
+	getOpenConnection (getValueChar ("focuser"));
+      if (eventConn && eventConn == focConn)
 	{
-	  focusChange (focus, focConn);
+	  focusChange (focus);
 	  focConn = NULL;
 	}
       break;
@@ -102,8 +103,11 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
       if (darkImage)
 	delete darkImage;
       darkImage = image;
-      darkImage->keepImage ();
+      darkImage->saveImage ();
       exposureCount = 1;
+      if (image == images)
+	images = NULL;
+      queExposure ();
     }
   else if (exe)
     {
@@ -123,11 +127,10 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 }
 
 void
-Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus,
-				     Rts2ConnFocus * focConn)
+Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus)
 {
   int change = focConn->getChange ();
-  if (change == INT_MAX)
+  if (change == INT_MAX || !focus)
     {
       exposureCount = 1;
       queExposure ();

@@ -13,7 +13,7 @@
 static int
 sdFluxCompare (const void *sr1, const void *sr2)
 {
-  return (((struct stardata *) sr1)->F <
+  return (((struct stardata *) sr1)->F >
 	  ((struct stardata *) sr2)->F) ? -1 : 1;
 }
 

@@ -668,8 +668,6 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     }
   else
     {
-      if (imageData)
-	delete[]imageData;
       imageData = NULL;
     }
   if (fits_status)
@@ -751,11 +749,19 @@ Rts2Image::setFocuserName (const char *in_focuserName)
 unsigned short *
 Rts2Image::getDataUShortInt ()
 {
+  int ret;
   if (imageData)
     return imageData;
   int nullVal = 0;
   int anyNull = 0;
   imageData = new unsigned short[getWidth () * getHeight ()];
+  if (!ffile)
+    {
+      ret = openImage (getImageName ());
+      if (ret)
+	return NULL;
+    }
+
   fits_status =
     fits_read_img (ffile, USHORT_IMG, 1, getWidth () * getHeight (), &nullVal,
 		   imageData, &anyNull, &fits_status);

@@ -15,10 +15,12 @@ class Rts2DevClientCameraFoc:public Rts2DevClientCameraImage
 private:
   int isFocusing;
   Rts2Image *darkImage;
-  Rts2ConnFocus *focConn;
+
 protected:
   char *exe;
   int autoDark;
+
+  Rts2ConnFocus *focConn;
 
   virtual void queExposure ();
 public:
@@ -28,7 +30,7 @@ public:
   virtual void processImage (Rts2Image * image);
   // will cause camera to change focus by given steps BEFORE exposition
   // when change == INT_MAX, focusing don't converge
-  virtual void focusChange (Rts2Conn * focus, Rts2ConnFocus * focConn);
+  virtual void focusChange (Rts2Conn * focus);
 };
 
 class Rts2DevClientFocusFoc:public Rts2DevClientFocusImage
