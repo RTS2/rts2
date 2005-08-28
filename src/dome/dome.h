@@ -19,6 +19,11 @@ protected:
   float windspeed;
 
   int observingPossible;
+  int maxWindSpeed;
+  int maxPeekWindspeed;
+
+  virtual int processOption (int in_opt);
+
   virtual void cancelPriorityOperations ()
   {
     // we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
@@ -99,6 +104,16 @@ public:
   void setSwState (int in_sw_state)
   {
     sw_state = in_sw_state;
+  }
+
+  int getMaxPeekWindspeed ()
+  {
+    return maxPeekWindspeed;
+  }
+
+  int getMaxWindSpeed ()
+  {
+    return maxWindSpeed;
   }
 };
 

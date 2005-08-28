@@ -115,10 +115,10 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	}
       syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %i status: %s",
 	      windspeed, rain, lastWeatherStatus, status);
-      if (rain != 0 || windspeed > FRAM_MAX_PEAK_WINDSPEED)
+      if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
 	{
 	  time (&lastBadWeather);
-	  if (rain == 0 && windspeed > FRAM_MAX_WINDSPEED)
+	  if (rain == 0 && windspeed > master->getMaxWindSpeed ())
 	    setWeatherTimeout (FRAM_BAD_WINDSPEED_TIMEOUT);
 	  else
 	    setWeatherTimeout (FRAM_BAD_WEATHER_TIMEOUT);
@@ -143,7 +143,8 @@ Rts2ConnFramWeather::isGoodWeather ()
       setWeatherTimeout (FRAM_CONN_TIMEOUT);
       return 0;
     }
-  if (windspeed > FRAM_MAX_WINDSPEED || rain != 0 || (nextGoodWeather > now))
+  if (windspeed > master->getMaxWindSpeed () || rain != 0
+      || (nextGoodWeather > now))
     return 0;
   return 1;
 }

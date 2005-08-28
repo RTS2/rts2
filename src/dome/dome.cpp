@@ -21,9 +21,33 @@ Rts2Device (argc, argv, DEVICE_TYPE_DOME, 5552, "DOME")
   power_cameras = 0;
   nextOpen = -1;
   rain = 1;
-  windspeed = nan ("f");
+  windspeed = nan ("f");	// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
+
+  maxWindSpeed = 50;
+  maxPeekWindspeed = 50;
+
+  addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
+  addOption ('P', "max_peek_windspeed", 1,
+	     "maximal allowed windspeed (in km/h");
 
   observingPossible = 0;
+}
+
+int
+Rts2DevDome::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'W':
+      maxWindSpeed = atoi (optarg);
+      break;
+    case 'P':
+      maxPeekWindspeed = atoi (optarg);
+      break;
+    default:
+      return Rts2Device::processOption (in_opt);
+    }
+  return 0;
 }
 
 int

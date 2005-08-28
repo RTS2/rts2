@@ -24,9 +24,6 @@
 
 // how long we will keep lastWeatherStatus as actual (in second)
 #define FRAM_WEATHER_TIMEOUT	40
-// should be in 0-99 range, as 99 is maximum value which station can measure
-#define FRAM_MAX_WINDSPEED      50
-#define FRAM_MAX_PEAK_WINDSPEED 50
 
 class Rts2ConnFramWeather:public Rts2ConnNoSend
 {
