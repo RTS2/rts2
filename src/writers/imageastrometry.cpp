@@ -24,8 +24,11 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
   ra = cos (rotang) * ra_t - sin (rotang) * dec_t;
   dec = cos (rotang) * dec_t + sin (rotang) * ra_t;
   // we are at new coordinates..apply offsets
-  ra += getCenterRa ();
   dec += getCenterDec ();
+  // transoform ra offset due to sphere
+  if (fabs (dec) < 89)
+    ra /= cos (ln_deg_to_rad (dec));
+  ra += getCenterRa ();
   if (getFailed != startGetFailed)
     return -1;
   return 0;
