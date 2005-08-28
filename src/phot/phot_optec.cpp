@@ -191,7 +191,11 @@ Rts2DevPhotOptec::enableMove ()
 int
 Rts2DevPhotOptec::disableMove ()
 {
-  return phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
+  int ret;
+  ret = phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
+  filter = 0;
+  infoAll ();
+  return ret;
 }
 
 Rts2DevPhotOptec *device;
