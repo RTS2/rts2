@@ -199,7 +199,6 @@ private:
   int sig;
 public:
     Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig);
-    virtual ~ Rts2ScriptElementSendSignal (void);
   virtual void postEvent (Rts2Event * event);
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,

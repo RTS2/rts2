@@ -189,6 +189,7 @@ void
 Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 {
   int ret;
+  struct ln_equ_posn *offset;
   switch (event->getType ())
     {
     case EVENT_KILL_ALL:
@@ -250,9 +251,13 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_SET_FIXED_OFFSET:
-      // need to change this to values that makes sense
-      fixedOffset.ra += 0.2;
-      fixedOffset.dec += 0.01;
+      offset = (ln_equ_posn *) event->getArg ();
+      fixedOffset.ra += offset->ra;
+      fixedOffset.dec += offset->dec;
+      break;
+    case EVENT_ACQUSITION_END:
+      fixedOffset.ra = 0;
+      fixedOffset.dec = 0;
       break;
     }
   Rts2DevClientTelescopeImage::postEvent (event);

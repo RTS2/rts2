@@ -357,12 +357,6 @@ Rts2ScriptElementSendSignal::Rts2ScriptElementSendSignal (Rts2Script * in_script
   sig = in_sig;
 }
 
-Rts2ScriptElementSendSignal::~Rts2ScriptElementSendSignal (void)
-{
-  script->getMaster ()->
-    postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
-}
-
 void
 Rts2ScriptElementSendSignal::postEvent (Rts2Event * event)
 {
@@ -382,7 +376,11 @@ Rts2ScriptElementSendSignal::defnextCommand (Rts2DevClient * client,
 					     char
 					     new_device[DEVICE_NAME_SIZE])
 {
-  // we will do job required for us in destructor..
+  // when some else script will wait reach point when it has to wait for
+  // this signal, it will not wait as it will ask before enetring wait
+  // if some script will send required signal
+  script->getMaster ()->
+    postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
   return NEXT_COMMAND_NEXT;
 }
 
@@ -442,7 +440,7 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
   Rts2ConnFocus *focConn;
   Rts2Image *image;
   double ham_x, ham_y;
-  double ra_offset, dec_offset;
+  struct ln_equ_posn offset;
   int ret;
   Rts2Conn *conn;
   switch (event->getType ())
@@ -466,9 +464,19 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA %lf %lf",
 		      ham_x, ham_y);
-	      script->getMaster ()->
-		postEvent (new Rts2Event (EVENT_SET_FIXED_OFFSET));
-	      processingState = PRECISION_BAD;
+	      ret = image->getOffset (ham_x, ham_y, offset.ra, offset.dec);
+	      if (ret)
+		{
+		  processingState = FAILED;
+		}
+	      else
+		{
+		  script->getMaster ()->
+		    postEvent (new
+			       Rts2Event (EVENT_SET_FIXED_OFFSET,
+					  (void *) &offset));
+		  processingState = PRECISION_BAD;
+		}
 	    }
 	}
       break;
