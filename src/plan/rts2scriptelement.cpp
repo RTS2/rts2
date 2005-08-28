@@ -456,11 +456,16 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 	  ret = image->getHam (ham_x, ham_y);
 	  if (ret)
 	    {
+	      syslog (LOG_DEBUG,
+		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA failed");
 	      processingState = FAILED;	// ham not found..
 	    }
 	  else
 	    {
 	      // change fixed offset
+	      syslog (LOG_DEBUG,
+		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA %lf %lf",
+		      ham_x, ham_y);
 	      script->getMaster ()->
 		postEvent (new Rts2Event (EVENT_SET_FIXED_OFFSET));
 	      processingState = PRECISION_BAD;

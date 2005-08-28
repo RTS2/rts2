@@ -132,7 +132,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	case -5:		// failed with script deletion..
 	case NEXT_COMMAND_PRECISION_FAILED:
 	  if (currentTarget)
-	    currentTarget->interupted ();
+	    currentTarget->acqusitionFailed ();
 	  deleteScript ();
 	  break;
 	}
