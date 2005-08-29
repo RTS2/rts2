@@ -219,7 +219,7 @@ Rts2ConnFocus::processLine ()
       ret =
 	sscanf (getCommand (), "%lf %lf %lf %lf %lf %i", &sr.X, &sr.Y, &sr.F,
 		&sr.Fe, &sr.fwhm, &sr.flags);
-      if (ret != 4)
+      if (ret != 6)
 	{
 	  std::cout << "Get line: " << getCommand () << std::endl;
 	}
