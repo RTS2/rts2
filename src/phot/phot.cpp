@@ -34,7 +34,6 @@ Rts2DevConnPhot::commandAuthorized ()
     {
       float new_req_time;
       int new_req_count;
-      CHECK_PRIORITY;
       if (paramNextFloat (&new_req_time) || paramNextInteger (&new_req_count)
 	  || !paramEnd ())
 	return -2;
@@ -47,7 +46,6 @@ Rts2DevConnPhot::commandAuthorized ()
       int new_filter;
       float new_req_time;
       int new_req_count;
-      CHECK_PRIORITY;
       if (paramNextInteger (&new_filter) || paramNextFloat (&new_req_time)
 	  || paramNextInteger (&new_req_count) || !paramEnd ())
 	return -2;
@@ -60,7 +58,6 @@ Rts2DevConnPhot::commandAuthorized ()
 
   else if (isCommand ("stop"))
     {
-      CHECK_PRIORITY;
       return master->stopIntegrate ();
     }
 
@@ -69,14 +66,12 @@ Rts2DevConnPhot::commandAuthorized ()
       int new_filter;
       if (paramNextInteger (&new_filter) || !paramEnd ())
 	return -2;
-//    CHECK_PRIORITY;
       return master->moveFilter (this, new_filter);
     }
   else if (isCommand ("enable"))
     {
       if (!paramEnd ())
 	return -2;
-      CHECK_PRIORITY;
       return master->enableFilter (this);
     }
   else if (isCommand ("help"))
