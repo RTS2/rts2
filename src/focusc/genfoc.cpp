@@ -81,6 +81,7 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
     {
       image = Rts2DevClientCameraFoc::createImage (expStart);
       image->keepImage ();
+      return image;
     }
   asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (), getpid ());
   image = new Rts2Image (filename, expStart);

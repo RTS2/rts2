@@ -198,7 +198,7 @@ Rts2Image::openImage (const char *in_filename)
       return -1;
     }
 
-  flags = IMAGE_SAVE;
+  flags |= IMAGE_SAVE;
 
   return 0;
 }
