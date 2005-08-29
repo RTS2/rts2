@@ -241,8 +241,6 @@ Rts2DevPhot::moveFilter (Rts2Conn * conn, int new_filter)
   ret = moveFilter (new_filter);
   if (ret)
     return -1;
-  filter = new_filter;
-  infoAll ();
   return 0;
 }
 

@@ -70,6 +70,7 @@ Rts2DevPhotDummy::startIntegrate ()
 int
 Rts2DevPhotDummy::moveFilter (int new_filter)
 {
+  filter = new_filter;
   return 0;
 }
 

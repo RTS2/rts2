@@ -127,29 +127,38 @@ Rts2DevPhotOptec::getCount ()
 {
   int ret;
   unsigned short result[2];
-  ret = read (fd, &result[0], 2);
-  result[1] = 0;
-  ret = read (fd, &result[1], 2);
-  if (ret == 2)
+  while (1)
     {
-      switch (result[0])
+      ret = read (fd, &result, 4);
+      if (ret == -1)
+	break;
+      if (ret == 4)
 	{
-	case 'A':
-	case 'B':
-	  sendCount (result[1], req_time, (result[0] == 'B' ? 1 : 0));
-	  return (long) (req_time * USEC_SEC);
-	  break;
-	case '0':
-	  filter = result[1] / FILTER_STEP;
-	  infoAll ();
-	  return 0;
-	  break;
-	case '-':
-	  return -1;
+	  switch (result[0])
+	    {
+	    case '0':
+	      filter = result[1] / FILTER_STEP;
+	      infoAll ();
+	      break;
+	    case '-':
+	      return -1;
+	      break;
+	    }
+	}
+      else
+	{
+	  syslog (LOG_ERR, "Rts2DevPhotOptec::getCount invalid read ret: %i",
+		  ret);
 	  break;
 	}
     }
-  return (long) (req_time * USEC_SEC);
+  // we don't care if we get any counts before we change filter..
+  if (ret == -1 && errno == EAGAIN && result[0] == 'A' || result[0] == 'B')
+    {
+      sendCount (result[1], req_time, (result[0] == 'B' ? 1 : 0));
+      return (long) (req_time * USEC_SEC);
+    }
+  return 1000;
 }
 
 int
