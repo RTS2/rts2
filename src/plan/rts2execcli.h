@@ -35,7 +35,6 @@ protected:
   virtual void unsetWait ()
   {
     Rts2DevClientCameraImage::unsetWait ();
-    isExposing = 0;
   }
 
   virtual void clearWait ()

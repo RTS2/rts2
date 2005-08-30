@@ -110,6 +110,14 @@ ConstTarget::selectedAsGood ()
   return -1;
 }
 
+int
+ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
+{
+  struct ln_equ_posn other_position;
+  in_target->getPosition (&other_position);
+  return (getDistance (&other_position) < in_sep_limit);
+}
+
 // EllTarget - good for commets and so on
 EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
@@ -868,9 +876,7 @@ TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
   // that's good only for WF instruments which observe Swift FOV
   if (in_target->getTargetID () == TARGET_SWIFT_FOV && gcnPacketType >= 60 && gcnPacketType <= 90)
   {
-    struct ln_equ_posn other_position;
-    in_target->getPosition (&other_position);
-    return (getDistance (&other_position) < 4 * in_sep_limit);
+    return ConstTarget::compareWithTarget (in_target, 4 * in_sep_limit);
   }
   return ConstTarget::compareWithTarget (in_target, in_sep_limit);
 }

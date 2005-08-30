@@ -150,7 +150,6 @@ Rts2DevClientCameraExec::exposureEnd ()
   if (!script || (script && script->isLastCommand ()))
     {
       blockMove = 0;
-      currentTarget = NULL;
       getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
     }
   else

@@ -47,6 +47,8 @@ private:
   char *cmdBufTop;
   char defaultDevice[DEVICE_NAME_SIZE];
 
+  Rts2ScriptElement *currScriptElement;
+
   char *nextElement ();
   int getNextParamFloat (float *val);
   int getNextParamDouble (double *val);

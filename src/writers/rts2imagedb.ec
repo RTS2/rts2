@@ -132,7 +132,7 @@ Rts2ImageDb::updateDarkDB ()
   float d_dark_exposure;
   float d_dark_temperature = 100;
   int d_dark_temperature_ind;
-  float d_dark_mean = mean;
+  float d_dark_mean = getAverage ();
   int d_epoch_id = epochId;
   VARCHAR d_camera_name[8];
   EXEC SQL END DECLARE SECTION;

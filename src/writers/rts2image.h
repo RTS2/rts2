@@ -37,7 +37,8 @@ private:
   struct timeval exposureStart;
   void setImageName (const char *in_filename);
   int createImage (char *in_filename);
-  int openImage (const char *in_filename);
+  // when in_filename == NULL, we take image name stored in this->imageName
+  int openImage (const char *in_filename = NULL);
   int writeExposureStart ();
   char *getImageBase (int in_epoch_id);
   unsigned short *imageData;
@@ -46,6 +47,11 @@ private:
   long naxis[2];
   float signalNoise;
   int getFailed;
+  double average;
+  short int min;
+  short int max;
+  short int mean;
+  int *histogram;
 
   void initData ();
 protected:
@@ -58,7 +64,6 @@ protected:
   char *focName;
   char *imageName;
   img_type_t imageType;
-  double mean;
 
   virtual int isGoodForFwhm (struct stardata *sr);
 public:
@@ -66,6 +71,8 @@ public:
   struct stardata *sexResults;
   int sexResultNum;
 
+  // memory-only image..
+    Rts2Image ();
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
   // create image in que
@@ -176,9 +183,11 @@ public:
     return filter;
   }
 
-  double getMean ()
+  void computeStatistics ();
+
+  double getAverage ()
   {
-    return mean;
+    return average;
   }
 
   int getFocPos ()

@@ -79,6 +79,7 @@ Rts2Script::Rts2Script (Rts2Conn * in_connection, Target * target):Rts2Object
     }
   while (1);
   executedCount = 0;
+  currScriptElement = NULL;
 }
 
 Rts2Script::~Rts2Script (void)
@@ -102,8 +103,6 @@ Rts2Script::postEvent (Rts2Event * event)
   std::list < Rts2ScriptElement * >::iterator el_iter, el_iter_tmp,
     el_iter_for_erase;
   Rts2ScriptElement *el;
-  if (executedCount < 0)
-    return;
   int ret;
   switch (event->getType ())
     {
@@ -267,7 +266,6 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
 			 char new_device[DEVICE_NAME_SIZE])
 {
   std::list < Rts2ScriptElement * >::iterator el_iter;
-  Rts2ScriptElement *nextElement;
   int ret;
 
   *new_command = NULL;
@@ -283,11 +281,11 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
       if (el_iter == elements.end ())
 	// command not found, end of script,..
 	return NEXT_COMMAND_END_SCRIPT;
-      nextElement = *el_iter;
-      ret = nextElement->nextCommand (camera, new_command, new_device);
+      currScriptElement = *el_iter;
+      ret = currScriptElement->nextCommand (camera, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
 	break;
-      delete nextElement;
+      delete currScriptElement;
       el_iter++;
       elements.erase (elements.begin ());
     }
@@ -299,7 +297,8 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
     case NEXT_COMMAND_PRECISION_OK:
     case NEXT_COMMAND_WAIT_ACQUSITION:
       elements.erase (el_iter);
-      delete nextElement;
+      delete currScriptElement;
+      currScriptElement = NULL;
       break;
     case NEXT_COMMAND_WAITING:
       *new_command = NULL;
@@ -339,11 +338,11 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
       if (el_iter == elements.end ())
 	// command not found, end of script,..
 	return NEXT_COMMAND_END_SCRIPT;
-      nextElement = *el_iter;
-      ret = nextElement->nextCommand (phot, new_command, new_device);
+      currScriptElement = *el_iter;
+      ret = currScriptElement->nextCommand (phot, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
 	break;
-      delete nextElement;
+      delete currScriptElement;
       el_iter++;
       elements.erase (elements.begin ());
     }
@@ -355,7 +354,8 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
     case NEXT_COMMAND_PRECISION_OK:
     case NEXT_COMMAND_WAIT_ACQUSITION:
       elements.erase (el_iter);
-      delete nextElement;
+      delete currScriptElement;
+      currScriptElement = NULL;
       break;
     case NEXT_COMMAND_WAITING:
       break;

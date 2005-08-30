@@ -5,6 +5,8 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
 {
   currentTarget = NULL;
   nextComd = NULL;
+  nextScript = NULL;
+  nextTarget = NULL;
   script = NULL;
   blockMove = 0;
   getObserveStart = 0;
@@ -24,8 +26,18 @@ Rts2DevScript::startTarget ()
   // currentTarget should be nulled when script ends in
   // deleteScript
   if (!currentTarget)
-    return;
-  script = new Rts2Script (script_connection, currentTarget);
+    {
+      if (!nextTarget)
+	return;
+      script = nextScript;
+      currentTarget = nextTarget;
+      nextScript = NULL;
+      nextTarget = NULL;
+    }
+  else
+    {
+      script = new Rts2Script (script_connection, currentTarget);
+    }
   script_connection->getMaster ()->
     postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
@@ -39,6 +51,12 @@ Rts2DevScript::postEvent (Rts2Event * event)
     {
     case EVENT_KILL_ALL:
       currentTarget = NULL;
+      if (nextScript)
+	{
+	  delete nextScript;
+	  nextScript = NULL;
+	}
+      nextTarget = NULL;
       // stop actual observation..
       blockMove = 0;
       unsetWait ();
@@ -50,11 +68,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_SET_TARGET:
-      currentTarget = (Target *) event->getArg ();
-      if (currentTarget && currentTarget->getTargetID () == dont_execute_for)
-	{
-	  currentTarget = NULL;
-	}
+      setNextTarget ((Target *) event->getArg ());
       getObserveStart = 0;
       break;
     case EVENT_LAST_READOUT:
@@ -63,13 +77,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	break;
       // we get new target..handle that same way as EVENT_OBSERVE command,
       // telescope will not move
-      currentTarget = (Target *) event->getArg ();
+      setNextTarget ((Target *) event->getArg ());
       // currentTarget is defined - tested in if (!event->getArg () || ..
-      if (currentTarget->getTargetID () == dont_execute_for)
-	{
-	  currentTarget = NULL;
-	  break;
-	}
     case EVENT_OBSERVE:
       if (script)		// we are still observing..we will be called after last command finished
 	{
@@ -147,6 +156,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
     case EVENT_SIGNAL_QUERY:
       if (script)
 	script->postEvent (new Rts2Event (event));
+      if (nextScript)
+	nextScript->postEvent (new Rts2Event (event));
       break;
     case EVENT_SIGNAL:
       if (!script)
@@ -180,11 +191,40 @@ Rts2DevScript::deleteScript ()
   if (script)
     {
       if (currentTarget && script->getExecutedCount () == 0)
-	dont_execute_for = currentTarget->getTargetID ();
+	{
+	  dont_execute_for = currentTarget->getTargetID ();
+	  if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
+	    {
+	      delete nextScript;
+	      nextScript = NULL;
+	      nextTarget = NULL;
+	    }
+	}
       delete script;
       script = NULL;
+      currentTarget = NULL;
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
+    }
+}
+
+void
+Rts2DevScript::setNextTarget (Target * in_target)
+{
+  if (nextTarget)
+    {
+      // we have to free our memory..
+      delete nextScript;
+      nextScript = NULL;
+    }
+  nextTarget = in_target;
+  if (nextTarget->getTargetID () == dont_execute_for)
+    {
+      nextTarget = NULL;
+    }
+  else
+    {
+      nextScript = new Rts2Script (script_connection, nextTarget);
     }
 }
 

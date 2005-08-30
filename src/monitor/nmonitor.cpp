@@ -382,7 +382,7 @@ public:
     Rts2NMExecutor (Rts2CNMonConn *
 		    in_connection):Rts2DevClientExecutor (in_connection)
   {
-    in_connection->setStatusBegin (6);
+    in_connection->setStatusBegin (8);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -408,6 +408,8 @@ Rts2NMExecutor::print (WINDOW * wnd)
   mvwprintw (wnd, 3, 1, "Prio: %-5i", getValueInteger ("priority_target"));
   mvwprintw (wnd, 4, 1, "ObsI: %5i", getValueInteger ("obsid"));
   mvwprintw (wnd, 5, 1, "ScCo: %5i", getValueInteger ("script_count"));
+  mvwprintw (wnd, 6, 1, "Acq OK: %i", getValueInteger ("acqusition_ok"));
+  mvwprintw (wnd, 7, 1, "Acq Fa: %i", getValueInteger ("acqusition_failed"));
 }
 
 class Rts2NMImgproc:public Rts2DevClientImgproc

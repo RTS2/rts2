@@ -109,10 +109,10 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 	images = NULL;
       queExposure ();
     }
-  else if (exe)
+  else if (darkImage)
+    image->substractDark (darkImage);
+  if (image->getType () == IMGTYPE_OBJECT && exe)
     {
-      if (darkImage)
-	image->substractDark (darkImage);
       focConn =
 	new Rts2ConnFocus (getMaster (), image, exe, EVENT_CHANGE_FOCUS);
       ret = focConn->init ();

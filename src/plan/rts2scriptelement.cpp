@@ -264,6 +264,12 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
   return 0;
 }
 
+void
+Rts2ScriptElementAcquire::cancelCommands ()
+{
+  processingState = FAILED;
+}
+
 Rts2ScriptElementWaitAcquire::Rts2ScriptElementWaitAcquire (Rts2Script * in_script):Rts2ScriptElement
   (in_script)
 {

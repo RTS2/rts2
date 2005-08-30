@@ -75,18 +75,25 @@ Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
 Rts2Image *
 Rts2GenFocCamera::createImage (const struct timeval *expStart)
 {
-  Rts2Image *image;
   char *filename;
+  Rts2Image *image;
   if (autoSave)
     {
       image = Rts2DevClientCameraFoc::createImage (expStart);
       image->keepImage ();
       return image;
     }
-  asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (), getpid ());
-  image = new Rts2Image (filename, expStart);
-  image->keepImage ();
-  free (filename);
+  if (exe)
+    {
+      asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (),
+		getpid ());
+      image = new Rts2Image (filename, expStart);
+      image->keepImage ();
+      free (filename);
+      return image;
+    }
+  // memory-only image
+  image = new Rts2Image ();
   return image;
 }
 

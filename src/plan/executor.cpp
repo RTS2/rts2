@@ -34,6 +34,9 @@ private:
 
   int ignoreDay;
   double grb_sep_limit;
+
+  int acqusitionOk;
+  int acqusitionFailed;
 public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
@@ -134,10 +137,14 @@ Rts2DeviceDb (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
   grb_sep_limit = -1;
 
   waitState = 0;
+
+  acqusitionOk = 0;
+  acqusitionFailed = 0;
 }
 
 Rts2Executor::~Rts2Executor (void)
 {
+  postEvent (new Rts2Event (EVENT_KILL_ALL));
   if (currentTarget)
     delete currentTarget;
   if (nextTarget)
@@ -207,7 +214,8 @@ Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
     default:
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
-  cli->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+  if (currentTarget)
+    cli->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
   return cli;
 }
 
@@ -231,6 +239,16 @@ Rts2Executor::postEvent (Rts2Event * event)
       break;
     case EVENT_ACQUSITION_END:
       maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
+      switch (*(int *) event->getArg ())
+	{
+	case NEXT_COMMAND_PRECISION_OK:
+	  acqusitionOk++;
+	  break;
+	case -5:
+	case NEXT_COMMAND_PRECISION_FAILED:
+	  acqusitionFailed++;
+	  break;
+	}
       break;
     case EVENT_LAST_READOUT:
       maskState (0, EXEC_STATE_MASK, EXEC_LASTREAD);
@@ -353,6 +371,8 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
       conn->sendValue ("priority_target", -1);
     }
   conn->sendValue ("script_count", scriptCount);
+  conn->sendValue ("acqusition_ok", acqusitionOk);
+  conn->sendValue ("acqusition_failed", acqusitionFailed);
   return 0;
 }
 
@@ -535,8 +555,11 @@ Rts2Executor::doSwitch ()
 	  nextTarget = NULL;
 	}
     }
-  postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-  postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+  if (currentTarget)
+    {
+      postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+      postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+    }
 }
 
 void

@@ -63,6 +63,15 @@ public:
   {
     return 0;
   }
+  /**
+   * That method will be called when we currently run that
+   * command and we would like to cancel observation.
+   *
+   * Should be used in children when appopriate.
+   */
+  virtual void cancelCommands ()
+  {
+  }
 };
 
 class Rts2ScriptElementExpose:public Rts2ScriptElement
@@ -141,6 +150,7 @@ public:
 			   Rts2Command ** new_command,
 			   char new_device[DEVICE_NAME_SIZE]);
   virtual int processImage (Rts2Image * image);
+  virtual void cancelCommands ();
 };
 
 class Rts2ScriptElementWaitAcquire:public Rts2ScriptElement

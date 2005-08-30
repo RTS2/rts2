@@ -547,6 +547,8 @@ Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevC
   addValue (new Rts2ValueInteger ("priority_target"));
   addValue (new Rts2ValueInteger ("obsid"));
   addValue (new Rts2ValueInteger ("script_count"));
+  addValue (new Rts2ValueInteger ("acqusition_ok"));
+  addValue (new Rts2ValueInteger ("acqusition_failed"));
 }
 
 Rts2DevClientSelector::Rts2DevClientSelector (Rts2Conn * in_connection):Rts2DevClient

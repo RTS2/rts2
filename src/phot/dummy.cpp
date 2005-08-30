@@ -71,6 +71,7 @@ int
 Rts2DevPhotDummy::moveFilter (int new_filter)
 {
   filter = new_filter;
+  infoAll ();
   return 0;
 }
 

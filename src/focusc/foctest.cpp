@@ -14,7 +14,7 @@ main (int argc, char **argv)
   Rts2Image *image;
   long naxes[2];
   image = new Rts2Image (argv[1]);
-  std::cout << "mean: " << image->getMean () << std::endl;
+  std::cout << "average: " << image->getAverage () << std::endl;
   image->getValues ("NAXIS", naxes, 2);
   std::cout << "NAXIS: " << naxes[0] << "x" << naxes[1] << std::endl;
   sleep (10);

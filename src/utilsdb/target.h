@@ -332,6 +332,7 @@ public:
   {
     return tar_priority + tar_bonus;
   }
+  virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
 };
 
 class EllTarget:public Target

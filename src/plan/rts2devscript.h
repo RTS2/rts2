@@ -16,7 +16,10 @@ class Rts2DevScript:public Rts2Object
 {
 private:
   Rts2Conn * script_connection;
+  Rts2Script *nextScript;
+  Target *nextTarget;
   int dont_execute_for;
+  void setNextTarget (Target * in_target);
 protected:
     Target * currentTarget;
   Rts2Script *script;

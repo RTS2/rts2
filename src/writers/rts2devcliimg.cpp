@@ -120,14 +120,14 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
   Rts2DevClientCamera::dataReceived (dataConn);
   if (images)
     {
+      images->writeDate (dataConn);
       if (saveImage)
 	{
-	  images->writeDate (dataConn);
 	  writeFilter ();
 	  // set filter..
+	  // save us to the disk..
+	  images->saveImage ();
 	}
-      // save us to the disk..
-      images->saveImage ();
       // do basic processing
       processImage (images);
     }
