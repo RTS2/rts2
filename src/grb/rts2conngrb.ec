@@ -469,7 +469,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       :d_grb_dec,
       true,
       :d_tar_comment,
-      1000,
+      100,
       100,
       NULL
     );
