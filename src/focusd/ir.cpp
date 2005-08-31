@@ -257,7 +257,7 @@ Rts2DevFocuserIr::isFocusing ()
       syslog (LOG_ERR, "Rts2DevFocuserIr::isFocusing status: %i", status);
       return -1;
     }
-  return (fabs (targetdistance) < 0.005) ? -2 : USEC_SEC / 50;
+  return (fabs (targetdistance) < 0.001) ? -2 : USEC_SEC / 50;
 }
 
 int
