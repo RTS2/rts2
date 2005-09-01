@@ -27,7 +27,7 @@
 // send when data we received 
 #define EVENT_HAM_DATA			RTS2_LOCAL_EVENT + 258
 
-#define EVENT_SET_FIXED_OFFSET		RTS2_LOCAL_EVENT + 259
+#define EVENT_ADD_FIXED_OFFSET		RTS2_LOCAL_EVENT + 259
 
 
 class Rts2Script;
@@ -235,6 +235,7 @@ class Rts2ScriptElementAcquireHam:public Rts2ScriptElementAcquire
 {
 private:
   int maxRetries;
+  int retries;
 public:
     Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries,
 				 float in_expTime);

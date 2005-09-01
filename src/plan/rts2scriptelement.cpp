@@ -432,9 +432,8 @@ Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
 Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime):Rts2ScriptElementAcquire (in_script, 0.01,
 			  in_expTime)
 {
-  int
-    ret;
   maxRetries = in_maxRetries;
+  retries = 0;
   defaultImgProccess[0] = '\0';
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
 				      "sextractor", defaultImgProccess, 2000);
@@ -462,7 +461,23 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 	    {
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA failed");
-	      processingState = FAILED;	// ham not found..
+	      if (maxRetries > 0)
+		{
+		  maxRetries--;
+		  retries++;
+		  processingState = PRECISION_BAD;
+		  // try some offset..
+		  offset.ra = 0.7 * retries * (retries % 2 ? 1 : -1);
+		  offset.dec = 0;
+		  script->getMaster ()->
+		    postEvent (new
+			       Rts2Event (EVENT_ADD_FIXED_OFFSET,
+					  (void *) &offset));
+		}
+	      else
+		{
+		  processingState = FAILED;	// ham not found..
+		}
 	    }
 	  else
 	    {
@@ -479,9 +494,10 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 		{
 		  script->getMaster ()->
 		    postEvent (new
-			       Rts2Event (EVENT_SET_FIXED_OFFSET,
+			       Rts2Event (EVENT_ADD_FIXED_OFFSET,
 					  (void *) &offset));
 		  processingState = PRECISION_BAD;
+		  maxRetries--;
 		}
 	    }
 	}

@@ -249,7 +249,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	  *(int *) event->getArg () = *(int *) event->getArg () + 1;
 	}
       break;
-    case EVENT_SET_FIXED_OFFSET:
+    case EVENT_ADD_FIXED_OFFSET:
       offset = (ln_equ_posn *) event->getArg ();
       fixedOffset.ra += offset->ra;
       fixedOffset.dec += offset->dec;
