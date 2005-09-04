@@ -154,11 +154,11 @@ Rts2DevTelescope::checkMoves ()
 	}
       else if (ret == -1)
 	{
-
+	  stopSearch ();
 	}
       else if (ret == -2)
 	{
-
+	  endSearch ();
 	}
     }
   else if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
