@@ -79,6 +79,10 @@
 #define TEL_NOTRACK		0x00
 #define TEL_TRACKING		0x08
 
+#define TEL_MASK_SEARCHING	0x10
+#define TEL_NOSEARCH		0x00
+#define TEL_SEARCH		0x10
+
 // dome status
 
 #define DOME_DOME_MASK		0x0f
