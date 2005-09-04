@@ -17,6 +17,13 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
   double ra_t, dec_t;
   double rotang;
   int startGetFailed = getFailed;
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   ra_t = (x - getXoA ()) * getXPlate ();
   dec_t = (y - getYoA ()) * getYPlate ();
   rotang = getRotang ();
@@ -37,6 +44,13 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
 int
 Rts2Image::getOffset (double x, double y, double &chng_ra, double &chng_dec)
 {
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   return getOffset (x, y, getXoA (), getYoA (), chng_ra, chng_dec);
 }
 
