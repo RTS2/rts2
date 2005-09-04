@@ -1402,7 +1402,7 @@ Rts2DevTelescopeGemini::changeSearch ()
   struct timeval now;
   if (telMotorState != TEL_OK)
     return -1;
-  if (searchStep >= (SEARCH_STEPS - 1))
+  if (searchStep >= SEARCH_STEPS)
     {
       // that will stop move in all directions
       telescope_stop_goto ();
@@ -1465,7 +1465,7 @@ Rts2DevTelescopeGemini::changeSearch ()
 	{
 	  ret = telescope_start_move (DIR_NORTH);
 	}
-      else if (lastSearchRaDiv == -1)
+      else if (lastSearchDecDiv == -1)
 	{
 	  ret = telescope_start_move (DIR_SOUTH);
 	}
