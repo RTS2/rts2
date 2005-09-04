@@ -52,11 +52,17 @@ protected:
   double telLatitude;
   double telAltitude;
   double telParkDec;
+  double searchRadius;
+  double searchSpeed;		// in multiply of HA speed..eg 1 == 15 arcsec / sec
   virtual int isMovingFixed ()
   {
     return isMoving ();
   }
   virtual int isMoving ()
+  {
+    return -2;
+  }
+  virtual int isSearching ()
   {
     return -2;
   }
@@ -68,7 +74,14 @@ protected:
   virtual int processOption (int in_opt);
   virtual void cancelPriorityOperations ()
   {
-    stopMove ();
+    if ((getState (0) & TEL_MASK_SEARCHING) == TEL_SEARCH)
+      {
+	stopSearch ();
+      }
+    else
+      {
+	stopMove ();
+      }
     clearStatesPriority ();
     Rts2Device::cancelPriorityOperations ();
   }
@@ -131,6 +144,12 @@ public:
   {
     return -1;
   }
+  virtual int startSearch ()
+  {
+    return -1;
+  }
+  virtual int stopSearch ();
+  virtual int endSearch ();
   virtual int setTo (double set_ra, double set_dec)
   {
     return -1;
@@ -197,6 +216,7 @@ public:
 
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
+  int startSearch (Rts2Conn * conn, double radius, double in_searchSpeed);
   int startResyncMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
   int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec,

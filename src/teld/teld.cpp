@@ -133,16 +133,56 @@ Rts2DevTelescope::createConnection (int in_sock, int conn_num)
 int
 Rts2DevTelescope::checkMoves ()
 {
-  if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
+  int ret;
+  if ((getState (0) & TEL_MASK_SEARCHING) == TEL_SEARCH)
     {
-      int ret;
+      ret = isSearching ();
+      if (ret >= 0)
+	{
+	  setTimeout (ret);
+	  if (moveInfoCount == moveInfoMax)
+	    {
+	      info ();
+	      if (move_connection)
+		sendInfo (move_connection);
+	      moveInfoCount = 0;
+	    }
+	  else
+	    {
+	      moveInfoCount++;
+	    }
+	}
+      else if (ret == -1)
+	{
+
+	}
+      else if (ret == -2)
+	{
+
+	}
+    }
+  else if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
+    {
       if (move_fixed)
 	ret = isMovingFixed ();
       else
 	ret = isMoving ();
       if (ret >= 0)
-	setTimeout (ret);
-      if (ret == -1)
+	{
+	  setTimeout (ret);
+	  if (moveInfoCount == moveInfoMax)
+	    {
+	      info ();
+	      if (move_connection)
+		sendInfo (move_connection);
+	      moveInfoCount = 0;
+	    }
+	  else
+	    {
+	      moveInfoCount++;
+	    }
+	}
+      else if (ret == -1)
 	{
 	  if (move_connection)
 	    sendInfo (move_connection);
@@ -177,10 +217,16 @@ Rts2DevTelescope::checkMoves ()
 	    }
 	  move_connection = NULL;
 	}
-      else
+    }
+  else if ((getState (0) & TEL_MASK_MOVING) == TEL_PARKING)
+    {
+      ret = isParking ();
+      if (ret >= 0)
 	{
+	  setTimeout (ret);
 	  if (moveInfoCount == moveInfoMax)
 	    {
+	      info ();
 	      if (move_connection)
 		sendInfo (move_connection);
 	      moveInfoCount = 0;
@@ -190,13 +236,6 @@ Rts2DevTelescope::checkMoves ()
 	      moveInfoCount++;
 	    }
 	}
-    }
-  if ((getState (0) & TEL_MASK_MOVING) == TEL_PARKING)
-    {
-      int ret;
-      ret = isParking ();
-      if (ret >= 0)
-	setTimeout (ret);
       if (ret == -1)
 	{
 	  infoAll ();
@@ -218,19 +257,6 @@ Rts2DevTelescope::checkMoves ()
 	  if (move_connection)
 	    {
 	      sendInfo (move_connection);
-	    }
-	}
-      else
-	{
-	  if (moveInfoCount == moveInfoMax)
-	    {
-	      if (move_connection)
-		sendInfo (move_connection);
-	      moveInfoCount = 0;
-	    }
-	  else
-	    {
-	      moveInfoCount++;
 	    }
 	}
     }
@@ -270,6 +296,20 @@ Rts2DevTelescope::stopMove ()
 {
   unsetTarget ();
   return 0;
+}
+
+int
+Rts2DevTelescope::stopSearch ()
+{
+  maskState (0, TEL_MASK_SEARCHING, TEL_NOSEARCH);
+  infoAll ();
+  return 0;
+}
+
+int
+Rts2DevTelescope::endSearch ()
+{
+  return maskState (0, TEL_MASK_SEARCHING, TEL_NOSEARCH);
 }
 
 int
@@ -404,6 +444,21 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
       move_connection = conn;
     }
   return ret;
+}
+
+int
+Rts2DevTelescope::startSearch (Rts2Conn * conn, double radius,
+			       double in_searchSpeed)
+{
+  int ret;
+  searchRadius = radius;
+  searchSpeed = in_searchSpeed;
+  ret = startSearch ();
+  if (ret)
+    return ret;
+  move_connection = conn;
+  maskState (0, TEL_MASK_SEARCHING, TEL_SEARCH);
+  return 0;
 }
 
 int
@@ -815,6 +870,21 @@ Rts2DevConnTelescope::commandAuthorized ()
       if (paramNextString (&dir) || !paramEnd ())
 	return -2;
       return master->stopDir (dir);
+    }
+  else if (isCommand ("search"))
+    {
+      double in_radius;
+      double in_searchSpeed;
+      if (paramNextDouble (&in_radius) || paramNextDouble (&in_searchSpeed)
+	  || !paramEnd ())
+	return -2;
+      return master->startSearch (this, in_radius, in_searchSpeed);
+    }
+  else if (isCommand ("searchstop"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->stopSearch ();
     }
   return Rts2DevConn::commandAuthorized ();
 }

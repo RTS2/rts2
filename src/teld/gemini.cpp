@@ -43,6 +43,49 @@
 
 #define TCM_DEFAULT_RATE	32768
 
+#define SEARCH_STEPS	16
+
+int arr[] = { 0, 1, 2, 3 };
+
+struct
+{
+  short raDiv;
+  short decDiv;
+} searchDirs[SEARCH_STEPS] =
+{
+  {
+  0, 1},
+  {
+  0, -1},
+  {
+  0, -1},
+  {
+  0, 1},
+  {
+  1, 0},
+  {
+  -1, 0},
+  {
+  -1, 0},
+  {
+  1, 0},
+  {
+  1, 1},
+  {
+  -1, -1},
+  {
+  -1, -1},
+  {
+  1, 1},
+  {
+  -1, 1},
+  {
+  1, -1},
+  {
+  1, -1},
+  {
+-1, 1}};
+
 class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
 private:
@@ -105,6 +148,17 @@ private:
   int infoCount;
   int matchCount;
   int bootesSensors;
+
+  void clearSearch ();
+  // execute next search step, if necessary
+  int changeSearch ();
+
+  int searchStep;
+  long searchUsecTime;
+
+  short lastSearchRaDiv;
+  short lastSearchDecDiv;
+  struct timeval nextSearchStep;
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -122,6 +176,10 @@ public:
   virtual int startMoveFixed (double tar_ha, double tar_dec);
   virtual int isMovingFixed ();
   virtual int endMoveFixed ();
+  virtual int startSearch ();
+  virtual int isSearching ();
+  virtual int stopSearch ();
+  virtual int endSearch ();
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();
@@ -779,6 +837,8 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTe
   infoCount = 0;
   matchCount = 0;
   tel_desc = -1;
+
+  clearSearch ();
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -1015,6 +1075,9 @@ Rts2DevTelescopeGemini::baseInfo ()
       break;
     case 5:
       strcpy (telType, "Titan");
+      break;
+    case 6:
+      strcpy (telType, "Titan50");
       break;
     default:
       sprintf (telType, "UNK %2i", gem_type);
@@ -1294,6 +1357,154 @@ Rts2DevTelescopeGemini::endMoveFixed ()
   if (tel_write ("#:ONfixed#", 10) > 0)
     return 0;
   return -1;
+}
+
+void
+Rts2DevTelescopeGemini::clearSearch ()
+{
+  searchStep = 0;
+  searchUsecTime = 0;
+  lastSearchRaDiv = 0;
+  lastSearchDecDiv = 0;
+  timerclear (&nextSearchStep);
+}
+
+int
+Rts2DevTelescopeGemini::startSearch ()
+{
+  int ret;
+  char *searchSpeedCh;
+  clearSearch ();
+  if (searchSpeed > 0.8)
+    searchSpeed = 0.8;
+  else if (searchSpeed < 0.2)
+    searchSpeed = 0.2;
+  // maximal guiding speed
+  asprintf (&searchSpeedCh, "%lf", searchSpeed);
+  ret = tel_gemini_setch (150, searchSpeedCh);
+  free (searchSpeedCh);
+  if (ret)
+    return -1;
+  ret = tel_gemini_set (170, 1);
+  if (ret)
+    return -1;
+  ret = tel_set_rate (RATE_GUIDE);
+  searchUsecTime =
+    (long int) (USEC_SEC * (searchRadius * 3600 / (searchSpeed * 15.0)));
+  return changeSearch ();
+}
+
+int
+Rts2DevTelescopeGemini::changeSearch ()
+{
+  int ret;
+  struct timeval add;
+  struct timeval now;
+  if (telMotorState != TEL_OK)
+    return -1;
+  if (searchStep >= (SEARCH_STEPS - 1))
+    {
+      // that will stop move in all directions
+      telescope_stop_goto ();
+      return -2;
+    }
+  ret = 0;
+  gettimeofday (&now, NULL);
+  // change in RaDiv..
+  if (lastSearchRaDiv != searchDirs[searchStep].raDiv)
+    {
+      // stop old in RA
+      if (lastSearchRaDiv == 1)
+	{
+	  ret = telescope_stop_move (DIR_WEST);
+	}
+      else if (lastSearchRaDiv == -1)
+	{
+	  ret = telescope_stop_move (DIR_EAST);
+	}
+      if (ret)
+	return -1;
+    }
+  // change in DecDiv..
+  if (lastSearchDecDiv != searchDirs[searchStep].decDiv)
+    {
+      // stop old in DEC
+      if (lastSearchDecDiv == 1)
+	{
+	  ret = telescope_stop_move (DIR_NORTH);
+	}
+      else if (lastSearchDecDiv == -1)
+	{
+	  ret = telescope_stop_move (DIR_SOUTH);
+	}
+      if (ret)
+	return -1;
+    }
+  // send current location
+  infoAll ();
+  if (lastSearchRaDiv != searchDirs[searchStep].raDiv)
+    {
+      lastSearchRaDiv = searchDirs[searchStep].raDiv;
+      // start new in RA
+      if (lastSearchRaDiv == 1)
+	{
+	  ret = telescope_start_move (DIR_WEST);
+	}
+      else if (lastSearchRaDiv == -1)
+	{
+	  ret = telescope_start_move (DIR_EAST);
+	}
+      if (ret)
+	return -1;
+    }
+  if (lastSearchDecDiv != searchDirs[searchStep].decDiv)
+    {
+      lastSearchDecDiv = searchDirs[searchStep].decDiv;
+      // start new in DEC
+      if (lastSearchDecDiv == 1)
+	{
+	  ret = telescope_start_move (DIR_NORTH);
+	}
+      else if (lastSearchRaDiv == -1)
+	{
+	  ret = telescope_start_move (DIR_SOUTH);
+	}
+      if (ret)
+	return -1;
+    }
+  searchStep++;
+  add.tv_sec = searchUsecTime / USEC_SEC;
+  add.tv_usec = searchUsecTime % USEC_SEC;
+  timeradd (&now, &add, &nextSearchStep);
+  return 0;
+}
+
+int
+Rts2DevTelescopeGemini::isSearching ()
+{
+  struct timeval now;
+  gettimeofday (&now, NULL);
+  if (timercmp (&now, &nextSearchStep, >))
+    {
+      return changeSearch ();
+    }
+  return 100;
+}
+
+int
+Rts2DevTelescopeGemini::stopSearch ()
+{
+  clearSearch ();
+  telescope_stop_goto ();
+  return Rts2DevTelescope::stopSearch ();
+}
+
+int
+Rts2DevTelescopeGemini::endSearch ()
+{
+  clearSearch ();
+  telescope_stop_goto ();
+  return Rts2DevTelescope::endSearch ();
 }
 
 int
