@@ -18,9 +18,32 @@ private:
   double newRa;
   double newDec;
   long countLong;
+protected:
+
+    virtual int isMoving ()
+  {
+    if (countLong > 12)
+      return -2;
+    countLong++;
+    return USEC_SEC;
+  }
+
+  virtual int isMovingFixed ()
+  {
+    return isMoving ();
+  }
+
+  virtual int isSearching ()
+  {
+    return USEC_SEC;
+  }
+
+  virtual int isParking ()
+  {
+    return isMoving ();
+  }
 public:
-    Rts2DevTelescopeDummy (int argc, char **argv):Rts2DevTelescope (argc,
-								    argv)
+Rts2DevTelescopeDummy (int argc, char **argv):Rts2DevTelescope (argc, argv)
   {
     newRa = 0;
     newDec = 0;
@@ -55,14 +78,6 @@ public:
     return 0;
   }
 
-  virtual int isMoving ()
-  {
-    if (countLong > 12)
-      return -2;
-    countLong++;
-    return USEC_SEC;
-  }
-
   virtual int endMove ()
   {
     return 0;
@@ -76,12 +91,12 @@ public:
     return 0;
   }
 
-  virtual int isMovingFixed ()
+  virtual int endMoveFixed ()
   {
-    return isMoving ();
+    return 0;
   }
 
-  virtual int endMoveFixed ()
+  virtual int startSearch ()
   {
     return 0;
   }
@@ -107,11 +122,6 @@ public:
     newDec = 2;
     countLong = 0;
     return 0;
-  }
-
-  virtual int isParking ()
-  {
-    return isMoving ();
   }
 
   virtual int endPark ()
