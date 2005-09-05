@@ -47,6 +47,7 @@
 #define COMMAND_WAIT_ACQUIRE	"Aw"
 #define COMMAND_MIRROR_MOVE	"M"
 #define COMMAND_PHOTOMETER	"P"
+#define COMMAND_PHOT_SEARCH	"PS"
 
 // HAM acqusition - only on FRAM telescope
 #define COMMAND_HAM		"HAM"

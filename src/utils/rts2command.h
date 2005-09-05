@@ -104,8 +104,16 @@ public:
 
 class Rts2CommandFilter:public Rts2Command
 {
+private:
+  Rts2DevClientCamera * camera;
+  Rts2DevClientPhot *phot;
+  void setCommandFilter (int filter);
 public:
-  Rts2CommandFilter (Rts2Block * in_master, int filter);
+    Rts2CommandFilter (Rts2DevClientCamera * in_camera, int filter);
+    Rts2CommandFilter (Rts2DevClientPhot * in_phot, int filter);
+
+  virtual int commandReturnOK ();
+  virtual int commandReturnFailed (int status);
 };
 
 class Rts2CommandCenter:public Rts2Command
@@ -141,6 +149,21 @@ public:
 			   Rts2DevClientTelescope * in_tel, double ra,
 			   double dec);
   virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandSearch:public Rts2Command
+{
+  Rts2DevClientTelescope *tel;
+public:
+    Rts2CommandSearch (Rts2DevClientTelescope * in_tel, double searchRadius,
+		       double searchSpeed);
+  virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandSearchStop:public Rts2Command
+{
+public:
+  Rts2CommandSearchStop (Rts2DevClientTelescope * in_tel);
 };
 
 class Rts2CommandChange:public Rts2Command

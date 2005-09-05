@@ -29,6 +29,11 @@
 
 #define EVENT_ADD_FIXED_OFFSET		RTS2_LOCAL_EVENT + 259
 
+#define EVENT_TEL_SEARCH_START		RTS2_LOCAL_EVENT + 260
+#define EVENT_TEL_SEARCH_STOP		RTS2_LOCAL_EVENT + 261
+#define EVENT_TEL_SEARCH_END		RTS2_LOCAL_EVENT + 262
+// successfull search
+#define EVENT_TEL_SEARCH_SUCCESS	RTS2_LOCAL_EVENT + 263
 
 class Rts2Script;
 
@@ -125,6 +130,9 @@ private:
 public:
     Rts2ScriptElementFilter (Rts2Script * in_script, int in_filter);
   virtual int nextCommand (Rts2DevClientCamera * camera,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+  virtual int nextCommand (Rts2DevClientPhot * phot,
 			   Rts2Command ** new_command,
 			   char new_device[DEVICE_NAME_SIZE]);
 };
@@ -241,6 +249,37 @@ public:
 				 float in_expTime);
   virtual void postEvent (Rts2Event * event);
   virtual int processImage (Rts2Image * image);
+};
+
+/**
+ * Photometer based search of stars
+ */
+class Rts2ScriptElementSearch:public Rts2ScriptElement
+{
+private:
+  double searchRadius;
+  double searchSpeed;
+  enum
+  { NEED_SEARCH, SEARCHING, SEARCH_OK, SEARCH_FAILED } processingState;
+public:
+    Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius,
+			     double in_searchSpeed);
+  virtual void postEvent (Rts2Event * event);
+  virtual int nextCommand (Rts2DevClientPhot * phot,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+  double getSearchRadius ()
+  {
+    return searchRadius;
+  }
+  double getSearchSpeed ()
+  {
+    return searchSpeed;
+  }
+  void getJob ()
+  {
+    searchRadius = nan ("f");
+  }
 };
 
 #endif /* !__RTS2_SCRIPTELEMENT__ */

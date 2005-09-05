@@ -333,6 +333,18 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 	    moveFailed (state->getValue () & DEVICE_ERROR_MASK);
 	  break;
 	}
+      switch (state->getValue () & TEL_MASK_SEARCHING)
+	{
+	case TEL_SEARCH:
+	  searchStart ();
+	  break;
+	case TEL_NOSEARCH:
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    searchEnd ();
+	  else
+	    searchFailed (state->getValue () & DEVICE_ERROR_MASK);
+	  break;
+	}
     }
   Rts2DevClient::stateChanged (state);
 }
@@ -344,6 +356,16 @@ Rts2DevClientTelescope::moveStart ()
 
 void
 Rts2DevClientTelescope::moveEnd ()
+{
+}
+
+void
+Rts2DevClientTelescope::searchStart ()
+{
+}
+
+void
+Rts2DevClientTelescope::searchEnd ()
 {
 }
 

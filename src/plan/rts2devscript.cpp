@@ -99,7 +99,14 @@ Rts2DevScript::postEvent (Rts2Event * event)
     case EVENT_CLEAR_WAIT:
       clearWait ();
       // in case we have some command pending..send it
-      nextCommand ();
+      if ((script_connection->
+	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
+			   CAM_MASK_READING)) ==
+	  (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
+	{
+	  nextCommand ();
+	}
+      // otherwise, exposureEnd/readoutEnd will query new command
       break;
     case EVENT_MOVE_QUESTION:
       if (blockMove)
@@ -170,6 +177,19 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  nextCommand ();
 	}
       break;
+    case EVENT_TEL_SEARCH_END:
+    case EVENT_TEL_SEARCH_STOP:
+    case EVENT_TEL_SEARCH_SUCCESS:
+      if (waitScript != WAIT_SEARCH)
+	break;
+      waitScript = NO_WAIT;
+      if (script)
+	script->postEvent (new Rts2Event (event));
+      if (event->getType () == EVENT_TEL_SEARCH_SUCCESS)
+	nextCommand ();
+      else			// we get to end of search pattern..to bad, stop us
+	deleteScript ();
+      break;
     }
   Rts2Object::postEvent (event);
 }
@@ -206,6 +226,13 @@ Rts2DevScript::deleteScript ()
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
     }
+}
+
+void
+Rts2DevScript::searchSucess ()
+{
+  script_connection->getMaster ()->
+    postEvent (new Rts2Event (EVENT_TEL_SEARCH_SUCCESS));
 }
 
 void
@@ -281,6 +308,9 @@ Rts2DevScript::nextPreparedCommand ()
     case NEXT_COMMAND_WAIT_MIRROR:
       waitScript = WAIT_MIRROR;
       break;
+    case NEXT_COMMAND_WAIT_SEARCH:
+      waitScript = WAIT_SEARCH;
+      break;
     }
   return ret;
 }
@@ -319,7 +349,7 @@ Rts2DevScript::haveNextCommand ()
 	}
     }
   if (isWaitMove () || waitScript == WAIT_SLAVE || waitScript == WAIT_SIGNAL
-      || waitScript == WAIT_MIRROR)
+      || waitScript == WAIT_MIRROR || waitScript == WAIT_SEARCH)
     return 0;
   if (!strcmp (cmd_device, "TX"))	// some telescope command..
     {

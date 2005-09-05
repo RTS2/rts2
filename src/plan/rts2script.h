@@ -25,6 +25,8 @@
 
 #define NEXT_COMMAND_WAIT_SIGNAL	9
 #define NEXT_COMMAND_WAIT_MIRROR	10
+
+#define NEXT_COMMAND_WAIT_SEARCH	11
 /*!
  * Holds script to execute on given device.
  * Script might include commands to other devices; in such case device

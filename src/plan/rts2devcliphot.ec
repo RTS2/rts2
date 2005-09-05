@@ -6,6 +6,7 @@ Rts2DevClientPhotExec::Rts2DevClientPhotExec (Rts2Conn * in_connection):Rts2DevC
   Rts2DevScript
   (in_connection)
 {
+  minFlux = 20;
 }
 
 Rts2DevClientPhotExec::~Rts2DevClientPhotExec ()
@@ -42,7 +43,18 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
   VARCHAR d_counter_name[8];
   EXEC SQL END DECLARE SECTION;
   if ((connection->getState (0) & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
-    return;
+    {
+      // we are in searching mode..
+      if (waitScript == WAIT_SEARCH)
+	{
+	  syslog (LOG_DEBUG,
+		  "Rts2DevClientPhotExec::addCount WAIT_SEARCH %i %f %i",
+		  count, exp, is_ov);
+	  if (is_ov || (count / exp) > minFlux)
+	    searchSucess ();
+	}
+      return;
+    }
 
   if (!currentTarget)
     return;
@@ -51,17 +63,18 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
   struct timeval now;
 
   if (is_ov)
-  {
-    syslog (LOG_DEBUG, "Rts2DevClientPhotExec::addCount is_ov");
-    return;
-  }
+    {
+      syslog (LOG_DEBUG, "Rts2DevClientPhotExec::addCount is_ov");
+      return;
+    }
 
   gettimeofday (&now, NULL);
 
   actRaDec.ra = -1000;
   actRaDec.dec = -1000;
 
-  getMaster ()->postEvent (new Rts2Event (EVENT_GET_RADEC, (void *) &actRaDec));
+  getMaster ()->
+    postEvent (new Rts2Event (EVENT_GET_RADEC, (void *) &actRaDec));
 
   d_obs_id = currentTarget->getObsId ();
   d_count_date = now.tv_sec;
@@ -76,10 +89,10 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
   d_counter_name.len = strlen (connection->getName ());
   if (d_counter_name.len > 8)
     d_counter_name.len = 8;
-  
+
   EXEC SQL
   INSERT INTO
-    counts
+    counts 
   (
     obs_id,
     count_date,
@@ -103,16 +116,17 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
     :d_count_dec,
     :d_counter_name
   );
-  
+
   if (sqlca.sqlcode != 0)
-  {
-    syslog (LOG_ERR, "Rts2DevClientPhotExec::addCount db error %s", sqlca.sqlerrm.sqlerrmc);
-    EXEC SQL ROLLBACK;
-  }
+    {
+      syslog (LOG_ERR, "Rts2DevClientPhotExec::addCount db error %s",
+	      sqlca.sqlerrm.sqlerrmc);
+      EXEC SQL ROLLBACK;
+    }
   else
-  {
-    EXEC SQL COMMIT;
-  }
+    {
+      EXEC SQL COMMIT;
+    }
 }
 
 int
@@ -141,4 +155,16 @@ Rts2DevClientPhotExec::nextCommand ()
   blockMove = 1;		// as we run a script..
   if (currentTarget)
     currentTarget->startObservation ();
+}
+
+void
+Rts2DevClientPhotExec::filterOK ()
+{
+  nextCommand ();
+}
+
+void
+Rts2DevClientPhotExec::filterFailed (int status)
+{
+  deleteScript ();
 }

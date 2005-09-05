@@ -88,6 +88,13 @@ public:
   // exposureFailed will get called even when we faild during readout
   virtual void exposureFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
+
+  virtual void filterOK ()
+  {
+  }
+  virtual void filterFailed ()
+  {
+  }
 };
 
 class Rts2DevClientTelescope:public Rts2DevClient
@@ -95,11 +102,16 @@ class Rts2DevClientTelescope:public Rts2DevClient
 protected:
   virtual void moveStart ();
   virtual void moveEnd ();
+  virtual void searchStart ();
+  virtual void searchEnd ();
 public:
     Rts2DevClientTelescope (Rts2Conn * in_connection);
     virtual ~ Rts2DevClientTelescope (void);
   /*! gets calledn when move finished without success */
   virtual void moveFailed (int status)
+  {
+  }
+  virtual void searchFailed (int status)
   {
   }
   virtual void stateChanged (Rts2ServerState * state);
@@ -149,6 +161,13 @@ public:
   virtual int commandValue (const char *name);
   virtual void integrationFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
+
+  virtual void filterOK ()
+  {
+  }
+  virtual void filterFailed ()
+  {
+  }
 };
 
 class Rts2DevClientExecutor:public Rts2DevClient

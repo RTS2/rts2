@@ -141,13 +141,51 @@ Rts2CommandExposure::commandReturnFailed (int status)
   return Rts2Command::commandReturnFailed (status);
 }
 
-Rts2CommandFilter::Rts2CommandFilter (Rts2Block * in_master, int filter):
-Rts2Command (in_master)
+void
+Rts2CommandFilter::setCommandFilter (int filter)
 {
   char *command;
   asprintf (&command, "filter %i", filter);
   setCommand (command);
   free (command);
+}
+
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * in_camera,
+				      int filter):
+Rts2Command (in_camera->getMaster ())
+{
+  camera = in_camera;
+  phot = NULL;
+  setCommandFilter (filter);
+}
+
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * in_phot,
+				      int filter):
+Rts2Command (in_phot->getMaster ())
+{
+  camera = NULL;
+  phot = in_phot;
+  setCommandFilter (filter);
+}
+
+int
+Rts2CommandFilter::commandReturnOK ()
+{
+  if (camera)
+    camera->filterOK ();
+  if (phot)
+    phot->filterOK ();
+  return Rts2Command::commandReturnOK ();
+}
+
+int
+Rts2CommandFilter::commandReturnFailed (int status)
+{
+  if (camera)
+    camera->filterFailed ();
+  if (phot)
+    phot->filterFailed ();
+  return Rts2Command::commandReturnFailed (status);
 }
 
 Rts2CommandCenter::Rts2CommandCenter (Rts2Block * in_master, int chip, int width = -1, int height = -1):Rts2Command
@@ -211,6 +249,30 @@ Rts2CommandResyncMove::commandReturnFailed (int status)
 {
   tel->moveFailed (status);
   return Rts2Command::commandReturnFailed (status);
+}
+
+Rts2CommandSearch::Rts2CommandSearch (Rts2DevClientTelescope * in_tel, double searchRadius, double searchSpeed):Rts2Command (in_tel->
+	     getMaster
+	     ())
+{
+  char *
+    command;
+  asprintf (&command, "search %lf %lf", searchRadius, searchSpeed);
+  setCommand (command);
+  free (command);
+  tel = in_tel;
+}
+
+int
+Rts2CommandSearch::commandReturnFailed (int status)
+{
+  tel->searchFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
+Rts2CommandSearchStop::Rts2CommandSearchStop (Rts2DevClientTelescope * in_tel):Rts2Command (in_tel->getMaster (),
+	     "searchstop")
+{
 }
 
 Rts2CommandChange::Rts2CommandChange (Rts2Block * in_master, double ra, double dec):

@@ -5,8 +5,12 @@
 
 class Rts2DevClientPhotExec:public Rts2DevClientPhot, public Rts2DevScript
 {
+private:
+  // minFlux to be considered as success
+  float minFlux;
+
 protected:
-  virtual void unblockWait ()
+    virtual void unblockWait ()
   {
     Rts2DevClientPhot::unblockWait ();
   }
@@ -39,6 +43,10 @@ public:
   virtual ~ Rts2DevClientPhotExec (void);
   virtual void postEvent (Rts2Event * event);
   virtual void integrationFailed (int status);
+
+  virtual void filterOK ();
+  virtual void filterFailed (int status);
+
   virtual void nextCommand ();
 };
 

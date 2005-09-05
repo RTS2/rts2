@@ -125,7 +125,17 @@ Rts2ScriptElementFilter::nextCommand (Rts2DevClientCamera * camera,
 				      Rts2Command ** new_command,
 				      char new_device[DEVICE_NAME_SIZE])
 {
-  *new_command = new Rts2CommandFilter (script->getMaster (), filter);
+  *new_command = new Rts2CommandFilter (camera, filter);
+  getDevice (new_device);
+  return 0;
+}
+
+int
+Rts2ScriptElementFilter::nextCommand (Rts2DevClientPhot * phot,
+				      Rts2Command ** new_command,
+				      char new_device[DEVICE_NAME_SIZE])
+{
+  *new_command = new Rts2CommandFilter (phot, filter);
   getDevice (new_device);
   return 0;
 }
@@ -461,9 +471,8 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 	    {
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA failed");
-	      if (maxRetries > 0)
+	      if (retries <= maxRetries)
 		{
-		  maxRetries--;
 		  retries++;
 		  processingState = PRECISION_BAD;
 		  // try some offset..
@@ -488,16 +497,19 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 	      ret = image->getOffset (ham_x, ham_y, offset.ra, offset.dec);
 	      if (ret)
 		{
+		  syslog (LOG_DEBUG,
+			  "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA getOffset %i",
+			  ret);
 		  processingState = FAILED;
 		}
 	      else
 		{
+		  processingState = PRECISION_BAD;
 		  script->getMaster ()->
 		    postEvent (new
 			       Rts2Event (EVENT_ADD_FIXED_OFFSET,
 					  (void *) &offset));
-		  processingState = PRECISION_BAD;
-		  maxRetries--;
+		  retries++;
 		}
 	    }
 	}
@@ -538,4 +550,53 @@ Rts2ScriptElementAcquireHam::processImage (Rts2Image * image)
       script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_WAIT));
     }
   return 0;
+}
+
+Rts2ScriptElementSearch::Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius, double in_searchSpeed):Rts2ScriptElement
+  (in_script)
+{
+  searchRadius = in_searchRadius;
+  searchSpeed = in_searchSpeed;
+  processingState = NEED_SEARCH;
+}
+
+void
+Rts2ScriptElementSearch::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_TEL_SEARCH_SUCCESS:
+      processingState = SEARCH_OK;
+      break;
+    case EVENT_TEL_SEARCH_END:
+    case EVENT_TEL_SEARCH_STOP:
+      processingState = SEARCH_FAILED;
+      break;
+    }
+  Rts2ScriptElement::postEvent (event);
+}
+
+int
+Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
+				      Rts2Command ** new_command,
+				      char new_device[DEVICE_NAME_SIZE])
+{
+  switch (processingState)
+    {
+    case NEED_SEARCH:
+      script->getMaster ()->
+	postEvent (new Rts2Event (EVENT_TEL_SEARCH_START, (void *) this));
+      if (!isnan (searchRadius))
+	{
+	  // no one pick our task..lets move to next command
+	  return NEXT_COMMAND_NEXT;
+	}
+      processingState = SEARCHING;
+    case SEARCHING:
+      return NEXT_COMMAND_WAIT_SEARCH;
+    case SEARCH_OK:
+      return NEXT_COMMAND_NEXT;
+    case SEARCH_FAILED:
+      return NEXT_COMMAND_END_SCRIPT;
+    }
 }

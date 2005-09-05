@@ -1,8 +1,7 @@
 camd		CAMera Daemons
-db		DataBase access
 dome		Dome (roof) control
-grb		grb receiving client
-plan		planer
+grb		grb receiving - rts2-grbd
+plan		planning & execution & image processing - rts2-selector, rts2-executor, rts2-imgproc
 monitor		Monitoring client
 teld		TELescope Daemons
 utils		rts2block.cpp, rts2device.cpp, devser.c, devdem.c, hms.h, ..

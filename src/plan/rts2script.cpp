@@ -257,6 +257,15 @@ Rts2Script::parseBuf (Target * target)
 	return NULL;
       return new Rts2ScriptElementAcquireHam (this, repNumber, exposure);
     }
+  else if (!strcmp (commandStart, COMMAND_PHOT_SEARCH))
+    {
+      double searchRadius;
+      double searchSpeed;
+      if (getNextParamDouble (&searchRadius)
+	  || getNextParamDouble (&searchSpeed))
+	return NULL;
+      return new Rts2ScriptElementSearch (this, searchRadius, searchSpeed);
+    }
   return NULL;
 }
 
@@ -308,6 +317,7 @@ Rts2Script::nextCommand (Rts2DevClientCamera * camera,
     case NEXT_COMMAND_ACQUSITION_IMAGE:
     case NEXT_COMMAND_WAIT_SIGNAL:
     case NEXT_COMMAND_WAIT_MIRROR:
+    case NEXT_COMMAND_WAIT_SEARCH:
       // keep us
       break;
     }
@@ -358,12 +368,14 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
       currScriptElement = NULL;
       break;
     case NEXT_COMMAND_WAITING:
+      *new_command = NULL;
       break;
     case NEXT_COMMAND_KEEP:
     case NEXT_COMMAND_RESYNC:
     case NEXT_COMMAND_ACQUSITION_IMAGE:
     case NEXT_COMMAND_WAIT_SIGNAL:
     case NEXT_COMMAND_WAIT_MIRROR:
+    case NEXT_COMMAND_WAIT_SEARCH:
       // keep us
       break;
     }

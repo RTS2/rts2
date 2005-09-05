@@ -27,7 +27,8 @@ protected:
   char cmd_device[DEVICE_NAME_SIZE];
 
   enum
-  { NO_WAIT, WAIT_SLAVE, WAIT_MASTER, WAIT_SIGNAL, WAIT_MIRROR } waitScript;
+  { NO_WAIT, WAIT_SLAVE, WAIT_MASTER, WAIT_SIGNAL, WAIT_MIRROR,
+      WAIT_SEARCH } waitScript;
 
   int blockMove;
   int getObserveStart;
@@ -44,6 +45,9 @@ protected:
   virtual void setWaitMove () = 0;
 
   virtual void deleteScript ();
+
+  // called when we find source..
+  virtual void searchSucess ();
 
 public:
     Rts2DevScript (Rts2Conn * in_script_connection);
