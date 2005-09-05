@@ -30,6 +30,7 @@ Rts2Image::getHam (double &x, double &y)
     }
   qsort (sexResults, sexResultNum, sizeof (struct stardata), sdFluxCompare);
   // we think that first source is HAM
+  syslog (LOG_DEBUG, "Rts2Image::getHam flux0: %f", sexResults[0].F);
   if (sexResults[0].F > 120000)
     {
       // let's see if the second is close enough..airplane light
@@ -46,6 +47,8 @@ Rts2Image::getHam (double &x, double &y)
 	  y = sexResults[1].Y;
 	  return 0;
 	}
+      else
+	syslog (LOG_DEBUG, "Rts2Image::getHam big sidt: %f", dist);
     }
   // HAM not found..
   return -1;
