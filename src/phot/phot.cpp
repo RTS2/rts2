@@ -185,11 +185,7 @@ Rts2DevPhot::endIntegrate ()
 {
   maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 	     "integration finished");
-  if (req_time != 1)
-    {
-      setReqTime (1);
-    }
-  // keep us update in one sec..
+  // keep us update in old time
   startIntegrate ();
   req_count = -1;
   return 0;
@@ -200,7 +196,6 @@ Rts2DevPhot::stopIntegrate ()
 {
   maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 	     "Integration interrupted");
-  setReqTime (1);
   startIntegrate ();
   return 0;
 }
