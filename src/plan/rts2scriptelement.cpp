@@ -295,6 +295,8 @@ Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
   // detect is somebody plans to run A command..
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &acqCount));
+  syslog (LOG_DEBUG, "Rts2ScriptElementWaitAcquire::defnextCommand %i (%s)",
+	  acqCount, script->getDefaultDevice ());
   if (acqCount)
     return NEXT_COMMAND_WAIT_ACQUSITION;
   return NEXT_COMMAND_NEXT;
@@ -434,9 +436,10 @@ Rts2ScriptElementWaitSignal::defnextCommand (Rts2DevClient * client,
   ret = sig;
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
+  syslog (LOG_DEBUG, "Rts2ScriptElementWaitSignal::defnextCommand %i (%s)",
+	  ret, script->getDefaultDevice ());
   if (ret != -1)
     return NEXT_COMMAND_NEXT;
-
   return NEXT_COMMAND_WAIT_SIGNAL;
 }
 
@@ -489,7 +492,8 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 	  if (ret)
 	    {
 	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA failed");
+		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA failed (numStars: %i)",
+		      image->sexResultNum);
 	      if (retries <= maxRetries)
 		{
 		  retries++;
