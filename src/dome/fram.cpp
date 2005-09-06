@@ -1061,7 +1061,7 @@ Rts2DevDomeFram::info ()
   rain = weatherConn->getRain ();
   windspeed = weatherConn->getWindspeed ();
   if (wdc_port > 0)
-    temperature = getWDCTemp (0);
+    temperature = getWDCTemp (2);
   nextOpen = weatherConn->getNextOpen ();
   return 0;
 }
