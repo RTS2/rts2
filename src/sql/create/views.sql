@@ -1,15 +1,3 @@
-DROP VIEW targets_images;
-DROP VIEW targets_noimages;
-DROP VIEW targets_imgcount;
-DROP VIEW targets_enabled;
-DROP VIEW observations_images;
-DROP VIEW observations_imgcount;
-DROP VIEW observations_noimages;
-DROP VIEW observations_nights;
-DROP VIEW images_nights;
-DROP VIEW targets_counts;
-DROP VIEW images_path;
-
 CREATE VIEW targets_imgcount AS
 SELECT targets.tar_id, count(*) AS img_count
 	FROM targets, observations, images 

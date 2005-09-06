@@ -1,17 +1,3 @@
-DROP TABLE terestial;
-DROP TABLE ell;
-DROP TABLE ot;
-DROP TABLE grb_gcn;
-DROP TABLE grb;
-DROP TABLE swift_observation;
-DROP TABLE swift;
-DROP TABLE target_model;
-DROP TABLE model_observation;
-DROP TABLE integral;
-DROP TABLE targets;
-DROP TABLE epoch;
-DROP TABLE types;
-
 CREATE GROUP "observers";
 
 CREATE TABLE epoch (
@@ -144,14 +130,10 @@ CREATE TABLE terestial (
 	ter_offset	integer -- observation offset in minutes
 );
 
-DROP TABLE cameras;
-
 CREATE TABLE cameras (
 	camera_name	varchar(8) PRIMARY KEY,
 	camera_description	varchar(100)
 );
-
-DROP TABLE mounts;
 
 CREATE TABLE mounts (
 	mount_name	varchar(8) PRIMARY KEY,
@@ -161,14 +143,10 @@ CREATE TABLE mounts (
 	mount_desc	varchar(100)
 );
 
-DROP TABLE counters;
-
 CREATE TABLE counters ( 
 	counter_name	varchar(8) PRIMARY KEY,
 	mount_name	varchar(8) REFERENCES mounts(mount_name)
 );
-
-DROP TABLE observations;
 
 CREATE TABLE observations (
 	tar_id		integer REFERENCES targets (tar_id),
@@ -182,8 +160,6 @@ CREATE TABLE observations (
 	obs_state	integer NOT NULL DEFAULT 0, -- observing, processing, ...
 	obs_end		timestamp
 );
-
-DROP TABLE darks;
 
 CREATE TABLE darks (
 	obs_id		integer REFERENCES observations(obs_id),
@@ -206,8 +182,6 @@ CREATE INDEX darks_exposures ON darks (dark_date);
 
 CREATE INDEX darks_temperature ON darks (dark_temperature);
 
-DROP TABLE flats;
-
 CREATE TABLE flats ( 
 	flat_name	varchar(250) NOT NULL,
 	flat_date	timestamp,
@@ -218,15 +192,9 @@ CREATE TABLE flats (
 CONSTRAINT flats_prim_key PRIMARY KEY (flat_date, camera_name)
 );
 
-DROP SEQUENCE tar_id;
-
 CREATE SEQUENCE tar_id START WITH 1000;
 
-DROP SEQUENCE grb_tar_id;
-
 CREATE SEQUENCE grb_tar_id START WITH 50000;
-
-DROP SEQUENCE point_id;
 
 CREATE SEQUENCE point_id;
 
@@ -243,15 +211,11 @@ CREATE TABLE model_observation (
 
 CREATE INDEX model_observation_step ON model_observation (step);
 
-DROP TABLE medias;
-
 CREATE TABLE medias (
 	med_id		integer PRIMARY KEY NOT NULL,
 	med_path	varchar(50),
 	med_mounted	boolean DEfAULT TRUE NOT NULL
 );
-
-DROP TABLE images;
 
 CREATE TABLE images (
 	obs_id		integer REFERENCES observations(obs_id),
@@ -282,8 +246,6 @@ CREATE TABLE images (
 CONSTRAINT images_prim_key PRIMARY KEY (obs_id, img_id)
 );
 
-DROP TABLE counts;
-
 CREATE TABLE counts ( 
 	obs_id		integer REFERENCES observations(obs_id),
 	count_date	abstime NOT NULL,
@@ -295,8 +257,6 @@ CREATE TABLE counts (
 	count_dec	float8,
 	counter_name	varchar(8) REFERENCES counters(counter_name)
 );
-
-DROP TABLE scripts;
 
 CREATE TABLE scripts (
 	tar_id		integer REFERENCES targets(tar_id),
@@ -318,15 +278,9 @@ CREATE INDEX images_obs_id ON images (obs_id);
 
 CREATE INDEX counts_obs_id ON counts (obs_id);
 
-DROP SEQUENCE img_id;
-
 CREATE SEQUENCE img_id;
 
-DROP SEQUENCE med_id;
-
 CREATE SEQUENCE med_id;
-
-DROP TABLE users;
 
 CREATE TABLE users (
 	usr_login	varchar(25) NOT NULL,
@@ -336,19 +290,13 @@ CREATE TABLE users (
 
 CREATE INDEX observations_tar_id ON observations (tar_id);
 
-DROP SEQUENCE obs_id;
-
 CREATE SEQUENCE obs_id;
-
-DROP VIEW observations_nights;
 
 CREATE VIEW observations_nights AS 
 	SELECT *, extract (day from (obs_start - interval '12:0:0')) AS obs_night,
 		extract (month from (obs_start - interval '12:0:0')) AS obs_month,
 		extract (year from (obs_start - interval '12:0:0')) AS obs_year
 		FROM observations;
-
-DROP VIEW images_nights;
 
 CREATE VIEW images_nights AS 
 	SELECT *, extract (day from (img_date - interval '12:0:0')) AS img_night, 
