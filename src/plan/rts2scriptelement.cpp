@@ -447,6 +447,12 @@ Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script
   defaultImgProccess[0] = '\0';
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
 				      "sextractor", defaultImgProccess, 2000);
+  spiral = new Rts2Spiral ();
+}
+
+Rts2ScriptElementAcquireHam::~Rts2ScriptElementAcquireHam (void)
+{
+  delete spiral;
 }
 
 void
@@ -457,6 +463,7 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
   double ham_x, ham_y;
   struct ln_equ_posn offset;
   int ret;
+  short next_x, next_y;
   Rts2Conn *conn;
   switch (event->getType ())
     {
@@ -476,8 +483,9 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 		  retries++;
 		  processingState = PRECISION_BAD;
 		  // try some offset..
-		  offset.ra = 0.7 * retries * (retries % 2 ? 1 : -1);
-		  offset.dec = 0;
+		  spiral->getNextStep (next_x, next_y);
+		  offset.ra = 0.7 * next_x;
+		  offset.dec = 0.3 * next_y;
 		  script->getMaster ()->
 		    postEvent (new
 			       Rts2Event (EVENT_ADD_FIXED_OFFSET,

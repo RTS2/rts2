@@ -3,6 +3,7 @@
 
 #include "rts2script.h"
 #include "rts2connimgprocess.h"
+#include "rts2spiral.h"
 #include "../writers/rts2image.h"
 #include "../utils/rts2object.h"
 #include "../utils/rts2block.h"
@@ -244,9 +245,11 @@ class Rts2ScriptElementAcquireHam:public Rts2ScriptElementAcquire
 private:
   int maxRetries;
   int retries;
+  Rts2Spiral *spiral;
 public:
     Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries,
 				 float in_expTime);
+    virtual ~ Rts2ScriptElementAcquireHam (void);
   virtual void postEvent (Rts2Event * event);
   virtual int processImage (Rts2Image * image);
 };
