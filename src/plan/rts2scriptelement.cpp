@@ -454,7 +454,7 @@ Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
   return 0;
 }
 
-Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime):Rts2ScriptElementAcquire (in_script, 0.01,
+Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime):Rts2ScriptElementAcquire (in_script, 0.05,
 			  in_expTime)
 {
   maxRetries = in_maxRetries;
@@ -477,6 +477,7 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
   Rts2Image *image;
   double ham_x, ham_y;
   struct ln_equ_posn offset;
+  double sep;
   int ret;
   short next_x, next_y;
   Rts2Conn *conn;
@@ -518,7 +519,8 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA %lf %lf",
 		      ham_x, ham_y);
-	      ret = image->getOffset (ham_x, ham_y, offset.ra, offset.dec);
+	      ret =
+		image->getOffset (ham_x, ham_y, offset.ra, offset.dec, sep);
 	      if (ret)
 		{
 		  syslog (LOG_DEBUG,
@@ -528,12 +530,19 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 		}
 	      else
 		{
-		  processingState = PRECISION_BAD;
-		  script->getMaster ()->
-		    postEvent (new
-			       Rts2Event (EVENT_ADD_FIXED_OFFSET,
-					  (void *) &offset));
-		  retries++;
+		  if (sep < reqPrecision)
+		    {
+		      processingState = PRECISION_OK;
+		    }
+		  else
+		    {
+		      processingState = PRECISION_BAD;
+		      script->getMaster ()->
+			postEvent (new
+				   Rts2Event (EVENT_ADD_FIXED_OFFSET,
+					      (void *) &offset));
+		      retries++;
+		    }
 		}
 	    }
 	}
