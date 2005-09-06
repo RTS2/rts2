@@ -183,7 +183,7 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
-	     getValueDouble ("ra"), getValueDouble ("dec"),
+	     getValueDouble ("ra_tel"), getValueDouble ("dec_tel"),
 	     getValueDouble ("flip") ? 'f' : 'n');
   if (getValueInteger ("know_position"))
     mvwprintw (wnd, 3, 1, "Err: %.2f %.2f", getValueDouble ("ra_corr") * 60.0,
@@ -360,7 +360,7 @@ Rts2NMDome::print (WINDOW * wnd)
   int dome = getValueInteger ("dome");
   time_t time_to_open;
   time (&time_to_open);
-  time_to_open = (long) getValueDouble ("next_open") - time_to_open;
+  time_to_open = time_to_open - (long) getValueInteger ("next_open");
   mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueDouble ("temperature"));
   mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueDouble ("humidity"));
