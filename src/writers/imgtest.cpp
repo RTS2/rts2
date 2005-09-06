@@ -10,6 +10,7 @@ main (int argc, char **argv)
   double dec;
   double x;
   double y;
+  double sep;
   Rts2Image *image;
   image = new Rts2Image (argv[1]);
   std::cout << "Image dimension: " << image->getWidth () << "x" << image->
@@ -36,7 +37,8 @@ main (int argc, char **argv)
     << ":" << y << std::endl;
   std::
     cout << "Rts2Image::getOffset (659.433000, 94.990000, x, y) " << image->
-    getOffset (659.433000, 94.990000, x,
-	       y) << " " << x << " " << y << std::endl;
+    getOffset (659.433000, 94.990000, x, y,
+	       sep) << " " << x << " " << y << " (" << sep << ")" << std::
+    endl;
   return 0;
 }

@@ -44,7 +44,8 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
 }
 
 int
-Rts2Image::getOffset (double x, double y, double &chng_ra, double &chng_dec)
+Rts2Image::getOffset (double x, double y, double &chng_ra, double &chng_dec,
+		      double &sep_angle)
 {
   int ret;
   if (!ffile)
@@ -53,23 +54,24 @@ Rts2Image::getOffset (double x, double y, double &chng_ra, double &chng_dec)
       if (ret)
 	return ret;
     }
-  return getOffset (x, y, getXoA (), getYoA (), chng_ra, chng_dec);
+  return getOffset (x, y, getXoA (), getYoA (), chng_ra, chng_dec, sep_angle);
 }
 
 int
 Rts2Image::getOffset (double x1, double y1, double x2, double y2,
-		      double &chng_ra, double &chng_dec)
+		      double &chng_ra, double &chng_dec, double &sep_angle)
 {
   int ret;
-  double ra1, ra2, dec1, dec2;
-  ret = getRaDec (x1, y1, ra1, dec1);
+  struct ln_equ_posn pos1, pos2;
+  ret = getRaDec (x1, y1, pos1.ra, pos1.dec);
   if (ret)
     return ret;
-  ret = getRaDec (x2, y2, ra2, dec2);
+  ret = getRaDec (x2, y2, pos2.ra, pos2.dec);
   if (ret)
     return ret;
-  chng_ra = ra1 - ra2;
-  chng_dec = dec1 - dec2;
+  chng_ra = pos1.ra - pos2.ra;
+  chng_dec = pos1.dec - pos2.dec;
+  sep_angle = ln_get_angular_separation (&pos1, &pos2);
   return ret;
 }
 

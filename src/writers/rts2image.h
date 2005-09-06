@@ -254,11 +254,12 @@ public:
   // returns ra & dec distance in degrees of pixel [x,y] from device axis
   // I think it's better to use double precission even in pixel coordinates, as I'm then sure I'll not 
   // loose precision somewhere in calculation
-  int getOffset (double x, double y, double &chng_ra, double &chng_dec);
+  int getOffset (double x, double y, double &chng_ra, double &chng_dec,
+		 double &sep_angle);
 
   // returns pixels [x1,y1] and [x2,y2] offset in ra and dec degrees
   int getOffset (double x1, double y1, double x2, double y2, double &chng_ra,
-		 double &chng_dec);
+		 double &chng_dec, double &sep_angle);
 
   // this function is good only for HAM source detection on FRAM telescope in Argentina.
   // HAM is calibration source, which is used test target for photometer to measure it's sesitivity 
