@@ -273,7 +273,7 @@ public:
   double getYoA ();
 
   // get rotang - get value from WCS when available; ROTANG is in radians, and is true rotang of image
-  // (assumig top is N, left is E - e.g. is corrected for telescope flip
+  // (assumig top is N, left is E - e.g. is corrected for telescope flip)
   double getRotang ();
 
   double getCenterRa ();
@@ -282,6 +282,9 @@ public:
   // get xplate and yplate coeficients - in degrees!
   double getXPlate ();
   double getYPlate ();
+
+  // mnt flip value
+  int getMountFlip ();
 };
 
 #endif /* !__RTS2_IMAGE__ */

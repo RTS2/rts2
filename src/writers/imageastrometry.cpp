@@ -27,9 +27,11 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
   ra_t = (x - getXoA ()) * getXPlate ();
   dec_t = (y - getYoA ()) * getYPlate ();
   rotang = getRotang ();
-  // transform to new coordinates, rotated by clokwise rotang..
-  ra = cos (rotang) * ra_t - sin (rotang) * dec_t;
-  dec = cos (rotang) * dec_t + sin (rotang) * ra_t;
+  // that gets clokwise rotang..
+  rotang = -1 * rotang;
+  // transform to new coordinates, rotated by counterclokwise rotang..
+  ra = cos (rotang) * ra_t + sin (rotang) * dec_t;
+  dec = cos (rotang) * dec_t - sin (rotang) * ra_t;
   // we are at new coordinates..apply offsets
   dec += getCenterDec ();
   // transoform ra offset due to sphere
@@ -110,6 +112,10 @@ Rts2Image::getRotang ()
       getFailed++;
       return 0;
     }
+  // should be only 0 or 1
+  ret = getMountFlip ();
+  // mount flip correction
+  val += ret * 180.0;
   return ln_deg_to_rad (val);
 }
 
@@ -167,4 +173,18 @@ Rts2Image::getYPlate ()
       return 0;
     }
   return val / 3600.0;
+}
+
+int
+Rts2Image::getMountFlip ()
+{
+  int ret;
+  int val;
+  ret = getValue ("MNT_FLIP", val);
+  if (ret)
+    {
+      getFailed++;
+      return 0;
+    }
+  return val;
 }

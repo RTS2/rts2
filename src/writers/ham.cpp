@@ -44,7 +44,7 @@ Rts2Image::getHam (double &x, double &y)
       if (dist < 100)
 	{
 	  x = sexResults[0].X;
-	  y = sexResults[1].Y;
+	  y = sexResults[0].Y;
 	  return 0;
 	}
       else
