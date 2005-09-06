@@ -92,7 +92,10 @@ Rts2ConnGrb::pr_hete ()
       || (lbuf[H_TRIG_FLAGS] & H_ART_TRIG)
     )
   )
+  {
+    syslog (LOG_DEBUG, "Rts2ConnGrb::pr_hete test packet");
     return 0;
+  }
 
   // not-position burst..
   if (grb_ra < -1)
@@ -117,6 +120,15 @@ Rts2ConnGrb::pr_integral ()
   int grb_is_grb = 1;
   time_t grb_date;
   float grb_errorbox;
+
+  if (!do_hete_test
+    && ((lbuf[12] & (2 < 31))
+    )
+  )
+  {
+    syslog (LOG_DEBUG, "Rts2ConnGrb::pr_integral test packet (%0xd)", lbuf[12]);
+    return 0;
+  }
 
   grb_id = (lbuf[BURST_TRIG] & I_TRIGNUM_MASK) >> I_TRIGNUM_SHIFT;
   grb_seqn = (lbuf[BURST_TRIG] & I_SEQNUM_MASK) >> I_SEQNUM_SHIFT;
