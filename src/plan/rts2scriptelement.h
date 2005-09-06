@@ -216,8 +216,10 @@ class Rts2ScriptElementSendSignal:public Rts2ScriptElement
 {
 private:
   int sig;
+  bool askedFor;
 public:
     Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig);
+    virtual ~ Rts2ScriptElementSendSignal (void);
   virtual void postEvent (Rts2Event * event);
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,

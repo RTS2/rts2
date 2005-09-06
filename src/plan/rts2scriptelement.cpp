@@ -371,6 +371,14 @@ Rts2ScriptElementSendSignal::Rts2ScriptElementSendSignal (Rts2Script * in_script
   (in_script)
 {
   sig = in_sig;
+  askedFor = false;
+}
+
+Rts2ScriptElementSendSignal::~Rts2ScriptElementSendSignal ()
+{
+  if (askedFor)
+    script->getMaster ()->
+      postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
 }
 
 void
@@ -380,7 +388,10 @@ Rts2ScriptElementSendSignal::postEvent (Rts2Event * event)
     {
     case EVENT_SIGNAL_QUERY:
       if (*(int *) event->getArg () == sig)
-	*(int *) event->getArg () = -1;
+	{
+	  askedFor = true;
+	  *(int *) event->getArg () = -1;
+	}
       break;
     }
   Rts2ScriptElement::postEvent (event);
@@ -397,6 +408,7 @@ Rts2ScriptElementSendSignal::defnextCommand (Rts2DevClient * client,
   // if some script will send required signal
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
+  askedFor = false;
   return NEXT_COMMAND_NEXT;
 }
 
