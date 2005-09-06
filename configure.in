@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.5.0, pkubanek@asu.cas.cz)
+AC_INIT(rts2, 0.5.1, pkubanek@asu.cas.cz)
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
@@ -283,7 +283,7 @@ if test "x${libnova}" = "xyes" -a "x${psql}" = "xyes"; then
 	# Check for PostgreSQL
 	AC_POSTGRESQL
 	AC_ECPG
-	AC_SUBST([PSQL_SUBDIRS],['utilsdb plan grb pgsql bckimages sql'])
+	AC_SUBST([PSQL_SUBDIRS],['plan grb pgsql bckimages sql'])
 fi
 
 # Checks for library functions.
@@ -324,6 +324,9 @@ AC_OUTPUT([Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
 	   src/sql/Makefile
+	   src/sql/create/Makefile
+	   src/sql/drop/Makefile
+	   src/sql/update/Makefile
 	   src/pgsql/Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
