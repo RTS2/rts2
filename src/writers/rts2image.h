@@ -286,6 +286,9 @@ public:
 
   // mnt flip value
   int getMountFlip ();
+
+  // image flip value - ussually 1
+  int getFlip ();
 };
 
 #endif /* !__RTS2_IMAGE__ */
