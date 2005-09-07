@@ -26,13 +26,13 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
     }
   ra_t = (x - getXoA ()) * getXPlate ();
   dec_t = (y - getYoA ()) * getYPlate ();
+  // we are obsering sky..so EW swap (unless there is mirror)
   if (getFlip ())
     ra_t *= -1;
   rotang = getRotang ();
   // transform to new coordinates, rotated by clokwise rotang..
   ra = cos (rotang) * ra_t - sin (rotang) * dec_t;
   dec = cos (rotang) * dec_t + sin (rotang) * ra_t;
-  // we are obsering sky..so EW swap (unless there is mirror)
   // we are at new coordinates..apply offsets
   dec += getCenterDec ();
   // transoform ra offset due to sphere
