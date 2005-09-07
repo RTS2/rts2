@@ -530,6 +530,9 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 		}
 	      else
 		{
+		  syslog (LOG_DEBUG,
+			  "Rts2ScriptElementAcquire::offsets ra: %f dec: %f",
+			  offset.ra, offset.dec);
 		  if (sep < reqPrecision)
 		    {
 		      processingState = PRECISION_OK;
