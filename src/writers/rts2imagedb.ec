@@ -205,6 +205,11 @@ Rts2ImageDb::updateAstrometry ()
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id = obsId;
   int d_img_id = imgId;
+
+  double d_img_err_ra;
+  double d_img_err_dec;
+  double d_img_err;
+
   VARCHAR s_astrometry[2000];
   EXEC SQL END DECLARE SECTION;
 
@@ -216,6 +221,7 @@ Rts2ImageDb::updateAstrometry ()
   double crota[2];
   double equinox;
   double epoch;
+
   int ret;
 
   ctype[0] = (char *) malloc (9);
@@ -246,6 +252,10 @@ Rts2ImageDb::updateAstrometry ()
   if (ret)
     return -1;
 
+  getValue ("POS_ERA", d_img_err_ra);
+  getValue ("POS_EDEC", d_img_err_dec);
+  getValue ("POS_ERR", d_img_err);
+
   snprintf (s_astrometry.arr, 2000,
     "NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
     "CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f",
@@ -256,7 +266,10 @@ Rts2ImageDb::updateAstrometry ()
   EXEC SQL UPDATE
     images
   SET
-    astrometry = :s_astrometry,
+    astrometry  = :s_astrometry,
+    img_err_ra  = :d_img_err_ra,
+    img_err_dec = :d_img_err_dec,
+    img_err     = :d_img_err,
     process_bitfield = process_bitfield | 1 | 2
   WHERE
       obs_id = :d_obs_id
