@@ -118,7 +118,8 @@ Rts2ConnDcm::receive (fd_set * set)
 		status);
       if (ret != 15)
 	{
-	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
+	  syslog (LOG_ERR, "sscanf on udp data returned: %i ('%s')", ret,
+		  buf);
 	  rain = 1;
 	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
 	  return data_size;
