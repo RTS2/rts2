@@ -47,14 +47,16 @@ Rts2DevScript::postEvent (Rts2Event * event)
 {
   int sig;
   int acqEnd;
+  Rts2Script *tmp_script;
   switch (event->getType ())
     {
     case EVENT_KILL_ALL:
       currentTarget = NULL;
       if (nextScript)
 	{
-	  delete nextScript;
+	  tmp_script = nextScript;
 	  nextScript = NULL;
+	  delete tmp_script;
 	}
       nextTarget = NULL;
       // stop actual observation..
@@ -63,8 +65,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
       waitScript = NO_WAIT;
       if (script)
 	{
-	  delete script;
+	  tmp_script = script;
 	  script = NULL;
+	  delete tmp_script;
 	}
       break;
     case EVENT_SET_TARGET:
@@ -197,6 +200,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 void
 Rts2DevScript::deleteScript ()
 {
+  Rts2Script *tmp_script;
   blockMove = 0;
   unsetWait ();
   if (waitScript == WAIT_MASTER)
@@ -215,13 +219,15 @@ Rts2DevScript::deleteScript ()
 	  dont_execute_for = currentTarget->getTargetID ();
 	  if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
 	    {
-	      delete nextScript;
+	      tmp_script = nextScript;
 	      nextScript = NULL;
+	      delete tmp_script;
 	      nextTarget = NULL;
 	    }
 	}
-      delete script;
+      tmp_script = script;
       script = NULL;
+      delete tmp_script;
       currentTarget = NULL;
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
@@ -238,11 +244,13 @@ Rts2DevScript::searchSucess ()
 void
 Rts2DevScript::setNextTarget (Target * in_target)
 {
+  Rts2Script *tmp_script;
   if (nextTarget)
     {
       // we have to free our memory..
-      delete nextScript;
+      tmp_script = nextScript;
       nextScript = NULL;
+      delete tmp_script;
     }
   nextTarget = in_target;
   if (nextTarget->getTargetID () == dont_execute_for)
