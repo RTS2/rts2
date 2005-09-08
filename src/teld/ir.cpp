@@ -90,7 +90,7 @@ private:
 
     std::list < ErrorTime * >errorcodes;
   int irTracking;
-  char irConfig;
+  char *irConfig;
 public:
     Rts2DevTelescopeIr (int argc, char **argv);
     virtual ~ Rts2DevTelescopeIr (void);
