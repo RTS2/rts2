@@ -103,8 +103,10 @@ Rts2ConnDcm::receive (fd_set * set)
 	  return 1;
 	}
       buf[data_size] = 0;
+#ifdef DEBUG_ALL
       syslog (LOG_DEBUG, "readed: %i '%s' from: %s:%i", data_size, buf,
 	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
+#endif
       // parse weather info
       // * 1A 2005-07-21 23:56:56 -10.67 98.9 0 c c o o ok
       ret =
@@ -131,8 +133,10 @@ Rts2ConnDcm::receive (fd_set * set)
 	  // if sensors doesn't work, switch rain on
 	  rain = 1;
 	}
-      syslog (LOG_DEBUG, "rain: %i date: %i status: %s",
-	      rain, lastWeatherStatus, status);
+      // log only rain messages..they are interesting
+      if (rain)
+	syslog (LOG_DEBUG, "rain: %i date: %i status: %s",
+		rain, lastWeatherStatus, status);
       master->setTemperatur (temp);
       master->setHumidity (humidity);
       master->setRain (rain);
