@@ -21,7 +21,7 @@ public:
     Rts2Selector (struct ln_lnlat_posn *in_observer, char *horizontFile);
     virtual ~ Rts2Selector (void);
   int selectNext (int masterState);	// return next observation..
-  int selectNextNight ();
+  int selectNextNight (int in_bonusLimit = 0);
 };
 
 #endif /* !__RTS2_SELECTOR__ */

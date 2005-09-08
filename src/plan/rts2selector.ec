@@ -60,6 +60,7 @@ Rts2Selector::selectNext (int masterState)
   struct ln_equ_posn sun;
   struct ln_hrz_posn sun_hrz;
   double JD;
+  int ret;
   // take care of state - select to make darks when we are able to
   // make darks.
   switch (masterState)
@@ -69,6 +70,11 @@ Rts2Selector::selectNext (int masterState)
       break;
     case SERVERD_DAWN:
     case SERVERD_DUSK:
+      // special case - select GRBs, which are new (=targets with priority higher then 1500)
+      ret = selectNextNight (1500);
+      if (ret != -1)
+        return ret;
+      // otherwise select darks/flats/whatever
       if (flat_sun_min >= flat_sun_max)
         return selectDarks ();
       JD = ln_get_julian_from_sys ();
@@ -203,7 +209,7 @@ Rts2Selector::findNewTargets ()
 };
 
 int
-Rts2Selector::selectNextNight ()
+Rts2Selector::selectNextNight (int in_bonusLimit)
 {
   std::list < Target *>::iterator target_list;
   // search for new observation targets..
@@ -224,10 +230,14 @@ Rts2Selector::selectNextNight ()
       maxBonus = tar_bonus;
     }
   }
-  if (maxBonus < 0)
+  if (maxBonus < in_bonusLimit)
   {
-    // we don't get a targets..so take some darks..
-    return selectDarks ();
+    // we don't get any target..so take some darks..
+    if (in_bonusLimit == 0)
+      return selectDarks ();
+    else
+      // indicate error
+      return -1;
   }
   return maxId;
 }
