@@ -135,7 +135,7 @@ EllTarget::load ()
   double ell_omega;
   double ell_n;
   double ell_JD;
-  double min_m;			// minimal magnitude
+//  double min_m;			// minimal magnitude
   int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
@@ -279,8 +279,6 @@ PossibleDarks::dbDark ()
   float d_img_exposure;
   int d_dark_count;
   EXEC SQL END DECLARE SECTION;
-
-  int ret;
 
   strncpy (d_camera_name.arr, deviceName, DEVICE_NAME_SIZE);
   d_camera_name.len = strlen (deviceName);
@@ -473,6 +471,7 @@ int
 FlatTarget::getScript (const char *deviceName, char *buf)
 {
   strcpy (buf, "E 1");
+  return 0;
 }
 
 // we will try to find target, that is among empty fields, and is at oposite location from sun
@@ -686,7 +685,7 @@ ModelTarget::beforeMove ()
 }
 
 int
-ModelTarget::startSlew (struct ln_equ_posn *position)
+ModelTarget::startSlew (struct ln_equ_posn *pos)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
@@ -694,7 +693,7 @@ ModelTarget::startSlew (struct ln_equ_posn *position)
   EXEC SQL END DECLARE SECTION;
   int ret;
 
-  ret = ConstTarget::startSlew (position);
+  ret = ConstTarget::startSlew (pos);
   if (ret)
     return ret;
 
@@ -1061,7 +1060,6 @@ TargetGRB::isContinues ()
 
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
-  int ret;
   swiftOnBonus = 0;
   target_id = TARGET_SWIFT_FOV;
 }
@@ -1360,13 +1358,14 @@ TargetTerestial::getBonus ()
     return 600;
   if (numobs == 1)
     return 1;
+  return 1;
 }
 
 int
-TargetTerestial::startSlew (struct ln_equ_posn *position)
+TargetTerestial::startSlew (struct ln_equ_posn *pos)
 {
   int ret;
-  ret = ConstTarget::startSlew (position);
+  ret = ConstTarget::startSlew (pos);
   if (ret == -1)
     return ret;
   return OBS_MOVE_FIXED;

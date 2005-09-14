@@ -43,7 +43,7 @@ Target::logMsg (const char *message, const char *val)
 void
 Target::logMsgDb (const char *message)
 {
-  syslog (LOG_ERR, "SQL error: %i %s (at %s)", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
+  syslog (LOG_ERR, "SQL error: %li %s (at %s)", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
 }
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
@@ -108,7 +108,7 @@ Target::startSlew (struct ln_equ_posn *position)
   getPosition (position);
   selected++;
 
-  obs_state != 0x01;
+  obs_state |= 0x01;
 
   if (obs_id > 0) // we already observe that target
     return OBS_ALREADY_STARTED;
@@ -411,10 +411,8 @@ double
 Target::getAirmass (double JD)
 {
   struct ln_hrz_posn hrz;
-  double x;
   getAltAz (&hrz, JD);
-  x = airmassScale * sin (ln_deg_to_rad (hrz.alt));
-  return sqrt (x * x + 2 * airmassScale + 1) - x;
+  return ln_get_airmass (hrz.alt, airmassScale);
 }
 
 double
@@ -492,6 +490,15 @@ Target::selectedAsGood ()
   return -1;
 }
 
+/**
+ * return 0 if we cannot observe that target, 1 if it's above horizont.
+ */
+int
+Target::isGood (ObjectCheck *checker, double lst, double ra, double dec)
+{
+  return checker->is_good (lst, ra, dec);
+}
+
 /****
  * 
  *   Return -1 if target is not suitable for observing,
@@ -509,7 +516,7 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
     changePriority (-100, JD + 1);
     return -1;
   }
-  ret = checker->is_good (lst, curr_position.ra, curr_position.dec);
+  ret = isGood (checker, lst, curr_position.ra, curr_position.dec);
   if (!ret)
   {
     struct ln_rst_time rst;
@@ -728,7 +735,7 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
   ret = retTarget->load ();
   if (ret)
   {
-    syslog (LOG_ERR, "Cannot create target: %i sqlcode: %i %s",
+    syslog (LOG_ERR, "Cannot create target: %i sqlcode: %li %s",
     db_tar_id, sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
     EXEC SQL ROLLBACK;
     delete retTarget;

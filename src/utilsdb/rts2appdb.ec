@@ -3,7 +3,7 @@
 
 #include <syslog.h>
 
-Rts2AppDb::Rts2AppDb (int argc, char **argv) : Rts2App (argc, argv)
+Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2App (in_argc, in_argv)
 {
   connectString = NULL;
   configFile = NULL;

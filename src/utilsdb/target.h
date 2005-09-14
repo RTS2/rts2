@@ -285,7 +285,9 @@ public:
   // ready for target post-processing (call some script,..)
   virtual int postprocess ()
   {
+    return 0;
   }
+  int isGood (ObjectCheck * checker, double lst, double ra, double dec);
   // scheduler functions
   virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
