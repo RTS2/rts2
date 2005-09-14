@@ -95,7 +95,7 @@ ObjectCheck::is_good (double lst, double ra, double dec, int hardness)
   std::vector < struct ln_equ_posn >::iterator Iter1;
   struct ln_lnlat_posn *observer;
 
-  double ha = (ra - lst * 15.0);	// normalize
+  double ha = (lst * 15.0 - ra);	// normalize
   ha = ln_range_degrees (ha);
   ha /= 15.0;
 
