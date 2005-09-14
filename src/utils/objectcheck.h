@@ -15,7 +15,8 @@ private:
   std::vector < struct ln_equ_posn >horizont;
   int load_horizont (char *horizont_file);
   inline int is_above_horizont (double st, double dec, double ra1,
-				double dec1, double ra2, double dec2);
+				double dec1, double ra2, double dec2,
+				double lat);
 public:
     ObjectCheck (char *horizont_file);
    ~ObjectCheck ();
