@@ -177,6 +177,7 @@ void
 Rts2DevClientCameraExec::filterFailed (int status)
 {
   deleteScript ();
+  Rts2DevClientCameraImage::filterFailed ();
 }
 
 void

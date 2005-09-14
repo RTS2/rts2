@@ -19,6 +19,7 @@ private:
   Rts2Script *nextScript;
   Target *nextTarget;
   int dont_execute_for;
+  int failedCount;
   void setNextTarget (Target * in_target);
 protected:
     Target * currentTarget;
@@ -28,7 +29,8 @@ protected:
 
   enum
   { NO_WAIT, WAIT_SLAVE, WAIT_MASTER, WAIT_SIGNAL, WAIT_MIRROR,
-      WAIT_SEARCH } waitScript;
+    WAIT_SEARCH
+  } waitScript;
 
   int blockMove;
   int getObserveStart;
@@ -43,6 +45,9 @@ protected:
   virtual void clearWait () = 0;
   virtual int isWaitMove () = 0;
   virtual void setWaitMove () = 0;
+
+  virtual int getFailedCount () = 0;
+  virtual void clearFailedCount () = 0;
 
   virtual void deleteScript ();
 

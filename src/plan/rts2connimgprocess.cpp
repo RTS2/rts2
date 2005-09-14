@@ -117,6 +117,8 @@ Rts2ConnImgProcess::connectionError ()
     case DARK:
       image->toDark ();
       break;
+    default:
+      break;
     }
   if (astrometryStat == GET)
     master->postEvent (new Rts2Event (EVENT_OK_ASTROMETRY, (void *) image));

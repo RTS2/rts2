@@ -184,7 +184,7 @@ public:
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,
 			      char new_device[DEVICE_NAME_SIZE]);
-  int takeJob ()
+  void takeJob ()
   {
     mirror_pos = -1;
   }

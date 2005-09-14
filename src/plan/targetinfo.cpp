@@ -38,8 +38,8 @@ public:
   virtual int run ();
 };
 
-Rts2TargetInfo::Rts2TargetInfo (int argc, char **argv):
-Rts2AppDb (argc, argv)
+Rts2TargetInfo::Rts2TargetInfo (int in_argc, char **in_argv):
+Rts2AppDb (in_argc, in_argv)
 {
   obs = NULL;
   checker = NULL;
@@ -142,9 +142,10 @@ Rts2TargetInfo::printTargetInfo ()
   JD = ln_get_julian_from_timet (&now);
   gst = ln_get_mean_sidereal_time (JD);
   lst = gst + obs->lng / 15.0;
-  std::cout << "Checker is_good:" << checker->is_good (gst, pos.ra, pos.dec)
-    << " (JD: " << JD << " gst: " << gst << " lst: " << lst << ")" << std::
-    endl;
+  std::cout << "Checker is_good:" << target->isGood (checker, lst, pos.ra,
+						     pos.
+						     dec) << " (JD: " << JD <<
+    " gst: " << gst << " lst: " << lst << ")" << std::endl;
 
   // print scripts..
   std::list < char *>::iterator cam_names;
@@ -158,6 +159,7 @@ Rts2TargetInfo::printTargetInfo ()
 	cout << "Script for camera " << cam_name << ":'" << script <<
 	"' ret (" << ret << ")" << std::endl;
     }
+  return 0;
 }
 
 int
@@ -180,6 +182,7 @@ Rts2TargetInfo::init ()
 
   config->getString ("observatory", "horizont", horizontFile, 250);
   checker = new ObjectCheck (horizontFile);
+  return 0;
 }
 
 int
@@ -200,6 +203,7 @@ Rts2TargetInfo::run ()
       printTargetInfo ();
       delete target;
     }
+  return 0;
 }
 
 int

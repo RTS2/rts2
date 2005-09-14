@@ -332,7 +332,6 @@ Rts2Script::nextCommand (Rts2DevClientPhot * phot,
 			 char new_device[DEVICE_NAME_SIZE])
 {
   std::list < Rts2ScriptElement * >::iterator el_iter;
-  Rts2ScriptElement *nextElement;
   int ret;
 
   *new_command = NULL;

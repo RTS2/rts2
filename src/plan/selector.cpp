@@ -86,8 +86,8 @@ public:
   int updateNext ();
 };
 
-Rts2SelectorDev::Rts2SelectorDev (int argc, char **argv):
-Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, 5562, "SEL")
+Rts2SelectorDev::Rts2SelectorDev (int in_argc, char **in_argv):
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SELECTOR, 5562, "SEL")
 {
   sel = NULL;
   next_id = -1;

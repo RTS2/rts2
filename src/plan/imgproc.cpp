@@ -38,7 +38,7 @@ private:
   int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
   char defaultImgProccess[2000];
   glob_t imageGlob;
-  int globC;
+  unsigned int globC;
   int reprocessingPossible;
 public:
     Rts2ImageProc (int argc, char **argv);
@@ -94,7 +94,7 @@ Rts2DevConnImage::commandAuthorized ()
   return Rts2DevConn::commandAuthorized ();
 }
 
-Rts2ImageProc::Rts2ImageProc (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_IMGPROC, 5561,
+Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_IMGPROC, 5561,
 	      "IMGP")
 {
   runningImage = NULL;
@@ -187,6 +187,7 @@ Rts2ImageProc::sendInfo (Rts2Conn * conn)
   conn->sendValue ("good_images", goodImages);
   conn->sendValue ("trash_images", trashImages);
   conn->sendValue ("morning_images", morningImages);
+  return 0;
 }
 
 int
@@ -213,6 +214,7 @@ Rts2ImageProc::changeMasterState (int new_state)
       if (!runningImage && imagesQue.size () == 0)
 	checkNotProcessed ();
     }
+  return Rts2DeviceDb::changeMasterState (new_state);
 }
 
 int
@@ -244,6 +246,8 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 	  break;
 	case MORNING:
 	  morningImages++;
+	  break;
+	default:
 	  break;
 	}
       runningImage = NULL;

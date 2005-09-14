@@ -17,8 +17,8 @@ public:
   virtual int run ();
 };
 
-Rts2SelectorApp::Rts2SelectorApp (int argc, char **argv):
-Rts2AppDb (argc, argv)
+Rts2SelectorApp::Rts2SelectorApp (int in_argc, char **in_argv):
+Rts2AppDb (in_argc, in_argv)
 {
 }
 
@@ -48,6 +48,7 @@ Rts2SelectorApp::run ()
   std::cout << "Next target:" << next_tar << std::endl;
 
   delete sel;
+  return 0;
 }
 
 Rts2SelectorApp *selApp;

@@ -232,6 +232,8 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
       processingState = NEED_IMAGE;
       // end of movemen will call nextCommand, as we should have waiting set to WAIT_MOVE
       return NEXT_COMMAND_RESYNC;
+    default:
+      break;
     }
   // that should not happen!
   syslog (LOG_ERR,
@@ -480,7 +482,6 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
   double sep;
   int ret;
   short next_x, next_y;
-  Rts2Conn *conn;
   switch (event->getType ())
     {
     case EVENT_HAM_DATA:
@@ -635,4 +636,5 @@ Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
     case SEARCH_FAILED:
       return NEXT_COMMAND_END_SCRIPT;
     }
+  return 0;
 }

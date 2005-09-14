@@ -31,7 +31,17 @@ protected:
 
   virtual void setWaitMove ()
   {
-    return Rts2DevClientPhot::setWaitMove ();
+    Rts2DevClientPhot::setWaitMove ();
+  }
+
+  virtual int getFailedCount ()
+  {
+    return Rts2DevClient::getFailedCount ();
+  }
+
+  virtual void clearFailedCount ()
+  {
+    Rts2DevClient::clearFailedCount ();
   }
 
   virtual void integrationEnd ();

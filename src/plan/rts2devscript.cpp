@@ -38,6 +38,7 @@ Rts2DevScript::startTarget ()
     {
       script = new Rts2Script (script_connection, currentTarget);
     }
+  clearFailedCount ();
   script_connection->getMaster ()->
     postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
@@ -225,6 +226,9 @@ Rts2DevScript::deleteScript ()
 	      nextTarget = NULL;
 	    }
 	}
+      if (getFailedCount () > 0)
+	// don't execute us for current target..
+	dont_execute_for = currentTarget->getTargetID ();
       tmp_script = script;
       script = NULL;
       delete tmp_script;

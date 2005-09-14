@@ -121,8 +121,8 @@ Rts2ConnExecutor::Rts2ConnExecutor (int in_sock, Rts2Executor * in_master):Rts2D
   master = in_master;
 }
 
-Rts2Executor::Rts2Executor (int argc, char **argv):
-Rts2DeviceDb (argc, argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
+Rts2Executor::Rts2Executor (int in_argc, char **in_argv):
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
 {
   char *states_names[1] = { "executor" };
   currentTarget = NULL;

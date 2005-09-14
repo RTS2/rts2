@@ -49,7 +49,17 @@ protected:
 
   virtual void setWaitMove ()
   {
-    return Rts2DevClientCameraImage::setWaitMove ();
+    Rts2DevClientCameraImage::setWaitMove ();
+  }
+
+  virtual int getFailedCount ()
+  {
+    return Rts2DevClient::getFailedCount ();
+  }
+
+  virtual void clearFailedCount ()
+  {
+    Rts2DevClient::clearFailedCount ();
   }
 
   virtual void exposureStarted ();
