@@ -263,6 +263,8 @@ AC_SUBST(debug)
 
 CFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CFLAGS)
+CXXFLAGS="-Wall -Wshadow -g"
+AC_SUBST(CXXFLAGS)
 
 LDFLAGS=""
 AC_SUBST(LDFLAGS)

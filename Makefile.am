@@ -5,4 +5,4 @@ SUBDIRS =	include \
 		src 	\
 		html
 
-EXTRA_DIST = rts2.conf
+EXTRA_DIST = rts2.ini

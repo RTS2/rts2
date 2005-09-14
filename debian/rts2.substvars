@@ -1,0 +1,1 @@
+shlibs:Depends=libc6 (>= 2.3.2.ds1-21), libcfitsio2, libecpg4 (>= 7.4), libgcc1 (>= 1:3.4.1-3), libjpeg62, libncurses5 (>= 5.4-1), libnova, libstdc++5 (>= 1:3.3.4-1), libx11-6 | xlibs (>> 4.1.0)
