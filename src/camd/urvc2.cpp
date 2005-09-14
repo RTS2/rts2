@@ -308,7 +308,8 @@ Rts2DevCameraUrvc2::set_fan (int fan_state)
 }
 
 int
-Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int fan, int state)
+Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int in_fan,
+			     int state)
 {
   MicroTemperatureRegulationParams cool;
 
@@ -316,7 +317,7 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int fan, int state)
   cool.ccdSetpoint = setpt;
   cool.preload = prel;
 
-  set_fan (fan);
+  set_fan (in_fan);
 
   if (MicroCommand (MC_REGULATE_TEMP, cameraID, &cool, NULL))
     return -1;
@@ -325,8 +326,8 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int fan, int state)
   return 0;
 }
 
-Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int argc, char **argv):Rts2DevCamera (argc,
-	       argv)
+Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
+	       in_argv)
 {
   cameraID = DEFAULT_CAMERA;
   tempRegulation = -1;
@@ -354,7 +355,7 @@ Rts2DevCameraUrvc2::init ()
 
   syslog (LOG_DEBUG, "::init");
 
-  if (i = MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &gvr))
+  if ((i = MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &gvr)))
     {
       syslog (LOG_DEBUG, "GET_VERSION ret: %i", i);
       return -1;
@@ -362,7 +363,7 @@ Rts2DevCameraUrvc2::init ()
 
   cameraID = (CAMERA_TYPE) gvr.cameraID;
 
-  if (i = MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
+  if ((i = MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr)))
     {
       syslog (LOG_DEBUG, "TEMP_STATUS ret: %i", i);
       return -1;
@@ -513,7 +514,7 @@ int
 Rts2DevCameraUrvc2::camCoolTemp (float coolpoint)	/* set direct setpoint */
 {
   ad_temp = ccd_c2ad (coolpoint) + 0x7;	// zaokrohlovat a neorezavat!
-  camCoolTemp ();
+  return camCoolTemp ();
 }
 
 int

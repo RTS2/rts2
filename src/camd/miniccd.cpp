@@ -210,7 +210,7 @@ CameraMiniccdChip::isExposing ()
       int row_bytes = usedRowBytes;
 
       // readout some data, use them..
-      int ret;
+      int ret1;
       if (readoutLine == 0)
 	row_bytes += CCD_MSG_IMAGE_LEN;
       FD_ZERO (&set);
@@ -219,15 +219,15 @@ CameraMiniccdChip::isExposing ()
       select (fd_chip + 1, &set, NULL, NULL, &read_tout);
       if (!FD_ISSET (fd_chip, &set))
 	return 0;
-      ret = read (fd_chip, dest_top, row_bytes);
+      ret1 = read (fd_chip, dest_top, row_bytes);
       // second try should help in case of header, which can be passed
       // in different readout:(
-      if (ret != row_bytes)
+      if (ret1 != row_bytes)
 	{
 	  int ret2;
-	  ret2 = read (fd_chip, dest_top + ret, row_bytes - ret);
+	  ret2 = read (fd_chip, dest_top + ret1, row_bytes - ret1);
 	  // that's an error
-	  if (ret2 + ret != row_bytes)
+	  if (ret2 + ret1 != row_bytes)
 	    {
 	      syslog (LOG_ERR,
 		      "CameraMiniccdChip::isExposing cannot readout line");
@@ -282,8 +282,8 @@ CameraMiniccdChip::sendLineData (int numLines)
 		  "CameraMiniccdChip::readoutOneLine not chipUsedReadout");
 	  return -1;
 	}
-      if (msg[CCD_MSG_LENGTH_LO_INDEX] +
-	  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16) !=
+      if ((unsigned int) (msg[CCD_MSG_LENGTH_LO_INDEX] +
+			  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16)) !=
 	  ((chipUsedReadout->height / usedBinningVertical) *
 	   usedRowBytes) + CCD_MSG_IMAGE_LEN)
 	{
@@ -485,6 +485,7 @@ CameraMiniccdInterleavedChip::isExposing ()
     default:
       return CameraChip::isExposing ();
     }
+  return 0;
 }
 
 int
@@ -513,12 +514,10 @@ CameraMiniccdInterleavedChip::endReadout ()
 int
 CameraMiniccdInterleavedChip::readoutOneLine ()
 {
-  int send_data_size;
   int ret;
 
   if (sendLine == 0)
     {
-      int ret;
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;
@@ -575,8 +574,8 @@ public:
   virtual int camFilter (int new_filter);
 };
 
-Rts2DevCameraMiniccd::Rts2DevCameraMiniccd (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraMiniccd::Rts2DevCameraMiniccd (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   fd_ccd = -1;
   interleave = 0;
@@ -767,7 +766,7 @@ Rts2DevCameraMiniccd::camCoolShutdown ()
 }
 
 int
-Rts2DevCameraMiniccd::camFilter (int filter)
+Rts2DevCameraMiniccd::camFilter (int in_filter)
 {
   return 0;
 }

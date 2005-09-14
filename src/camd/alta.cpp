@@ -195,8 +195,8 @@ public:
   virtual int camCoolShutdown ();
 };
 
-Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraAlta::Rts2DevCameraAlta (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   alta = NULL;
   addOption ('B', "12bits", 0,

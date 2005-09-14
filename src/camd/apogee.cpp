@@ -99,7 +99,6 @@ int
 CameraApogeeChip::startExposure (int light, float exptime)
 {
   bool ret;
-  Camera_Status status;
   ret = camera->Expose (exptime, light);
 
   if (!ret)
@@ -158,8 +157,6 @@ CameraApogeeChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 int
 CameraApogeeChip::readoutOneLine ()
 {
-  int ret;
-
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
@@ -401,7 +398,7 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
       if (CfgGet
 	  (inifp, "system", "reg_offset", retbuf, sizeof (retbuf), &plen))
 	{
-	  unsigned short val = strtol (retbuf, NULL, 0);
+//        unsigned short val = strtol (retbuf, NULL, 0);
 //        if (val >= 0x0 && val <= 0xF0)
 //          camera->m_RegisterOffset = val & 0xF0;
 	}
@@ -776,8 +773,8 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 }
 
 
-Rts2DevCameraApogee::Rts2DevCameraApogee (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraApogee::Rts2DevCameraApogee (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   addOption ('n', "device_id", 1,
 	     "device ID (ussualy 0, which is also default)");

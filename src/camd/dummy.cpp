@@ -69,7 +69,8 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 {
 
 public:
-  Rts2DevCameraDummy (int argc, char **argv):Rts2DevCamera (argc, argv)
+  Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
+								  in_argv)
   {
     chips[0] = new CameraDummyChip (this);
     chipNum = 1;

@@ -169,6 +169,7 @@ CameraChip::send (Rts2Conn * conn)
   sendChip (conn, "pixelX", pixelX);
   sendChip (conn, "pixelY", pixelY);
   sendChip (conn, "gain", gain);
+  return 0;
 }
 
 int
@@ -294,8 +295,8 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-Rts2DevCamera::Rts2DevCamera (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_CCD, 5554, "C0")
+Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, 5554, "C0")
 {
   int i;
   char *states_names[MAX_CHIPS] = { "img_chip", "trc_chip", "intr_chip" };
@@ -399,7 +400,7 @@ Rts2DevCamera::createConnection (int in_sock, int conn_num)
   return new Rts2DevConnCamera (in_sock, this);
 }
 
-long
+void
 Rts2DevCamera::checkExposures ()
 {
   long ret;
@@ -424,7 +425,7 @@ Rts2DevCamera::checkExposures ()
     }
 }
 
-int
+void
 Rts2DevCamera::checkReadouts ()
 {
   int ret;
@@ -478,19 +479,6 @@ Rts2DevCamera::changeMasterState (int new_state)
     default:
       return camCoolShutdown ();
     }
-}
-
-int
-Rts2DevCamera::ready (Rts2Conn * conn)
-{
-  int ret;
-  ret = ready ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera not ready");
-      return -1;
-    }
-  return 0;
 }
 
 int
@@ -575,6 +563,7 @@ Rts2DevCamera::camStopExpose (Rts2Conn * conn, int chip)
       chips[chip]->endExposure ();
       return camStopExpose (chip);
     }
+  return -1;
 }
 
 int

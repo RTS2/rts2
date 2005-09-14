@@ -216,8 +216,8 @@ public:
   virtual int camCoolShutdown ();
 };
 
-Rts2DevCameraSbig::Rts2DevCameraSbig (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraSbig::Rts2DevCameraSbig (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   pcam = NULL;
 }

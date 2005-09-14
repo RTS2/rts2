@@ -142,8 +142,8 @@ public:
   virtual int camFilter (int new_filter);
 };
 
-Rts2DevCameraAndor::Rts2DevCameraAndor (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   andorRoot = "/root/andor/examples/common";
   andorGain = 255;

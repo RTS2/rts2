@@ -16,7 +16,7 @@
 int
 Rts2FilterIfw::writePort (char *buf, size_t len)
 {
-  int ret;
+  size_t ret;
   ret = write (dev_port, buf, len);
   if (ret != len)
     {
@@ -67,6 +67,7 @@ Rts2FilterIfw::shutdown (void)
     }
   close (dev_port);
   dev_port = -1;
+  return 0;
 }
 
 Rts2FilterIfw::Rts2FilterIfw (char *in_dev_file)
@@ -174,9 +175,6 @@ Rts2FilterIfw::getFilterNum (void)
 {
   int filter_number;
   int n;
-  int read_result;
-  char filter_name[1];
-  char buffer[1];
 
   n = writePort ("WFILTR\r", 7);
   if (n == -1)

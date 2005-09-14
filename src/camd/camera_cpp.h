@@ -207,8 +207,8 @@ public:
   virtual int processOption (int in_opt);
   virtual int initChips ();
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
-  long checkExposures ();
-  int checkReadouts ();
+  void checkExposures ();
+  void checkReadouts ();
 
   virtual int idle ();
 
@@ -273,7 +273,6 @@ public:
   }
 
   // callback functions from camera connection
-  virtual int ready (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
   virtual int sendBaseInfo (Rts2Conn * conn);
   int camChipInfo (Rts2Conn * conn, int chip);
