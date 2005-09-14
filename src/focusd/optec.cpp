@@ -22,10 +22,6 @@
 #define BAUDRATE B19200
 #define FOCUSER_PORT "/dev/ttyS0"
 
-struct termios oldtio, newtio;
-
-static char *focuser_port = NULL;
-
 #include "focuser.h"
 
 class Rts2DevFocuserOptec:public Rts2DevFocuser
@@ -151,6 +147,7 @@ Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
     {
       syslog (LOG_DEBUG, "Optec:readed returns %i", tmp_rcount);
     }
+  return 0;
 }
 
 int
@@ -170,8 +167,8 @@ Rts2DevFocuserOptec::foc_write_read (char *buf, int wcount, char *rbuf,
 
 
 
-Rts2DevFocuserOptec::Rts2DevFocuserOptec (int argc, char **argv):Rts2DevFocuser (argc,
-		argv)
+Rts2DevFocuserOptec::Rts2DevFocuserOptec (int in_argc, char **in_argv):Rts2DevFocuser (in_argc,
+		in_argv)
 {
   device_file = FOCUSER_PORT;
 
@@ -254,7 +251,7 @@ Rts2DevFocuserOptec::init ()
 int
 Rts2DevFocuserOptec::getPos (int *position)
 {
-  char command[6], rbuf[6], tbuf[6];
+  char rbuf[6], tbuf[6];
 
   if (foc_write_read ("FPOSRO", 6, rbuf, 6) < 1)
     return -1;
@@ -273,7 +270,7 @@ Rts2DevFocuserOptec::getPos (int *position)
 int
 Rts2DevFocuserOptec::getTemp (float *temp)
 {
-  char command[6], rbuf[6], tbuf[6];
+  char rbuf[6], tbuf[6];
 
   if (foc_write_read ("FTMPRO", 6, rbuf, 6) < 1)
     return -1;

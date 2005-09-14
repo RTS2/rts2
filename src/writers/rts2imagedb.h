@@ -36,7 +36,7 @@ private:
 public:
     Rts2ImageDb (int in_epoch_id, int in_targetId,
 		 Rts2DevClientCamera * camera, int in_obsId,
-		 const struct timeval *exposureStart, int in_imgId);
+		 const struct timeval *expStart, int in_imgId);
     Rts2ImageDb (const char *in_filename);
     virtual ~ Rts2ImageDb (void);
 

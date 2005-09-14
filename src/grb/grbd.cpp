@@ -53,8 +53,8 @@ Rts2DevConnGrbd::commandAuthorized ()
   return Rts2DevConn::commandAuthorized ();
 }
 
-Rts2DevGrb::Rts2DevGrb (int argc, char **argv):
-Rts2DeviceDb (argc, argv, DEVICE_TYPE_GRB, 5563, "GRB")
+Rts2DevGrb::Rts2DevGrb (int in_argc, char **in_argv):
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, 5563, "GRB")
 {
   gcncnn = NULL;
   gcn_host = NULL;
@@ -152,6 +152,7 @@ Rts2DevGrb::sendInfo (Rts2Conn * conn)
   conn->sendValue ("delta", gcncnn->delta ());
   conn->sendValue ("last_target", gcncnn->lastTarget ());
   conn->sendValue ("last_target_time", gcncnn->lastTargetTime ());
+  return 0;
 }
 
 // that method is called when somebody want to immediatelly observe GRB

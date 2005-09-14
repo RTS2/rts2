@@ -140,7 +140,6 @@ Rts2GenFocCamera::focusChange (Rts2Conn * focus)
     {
       double fwhm;
       int focPos;
-      int ret;
       fwhm = images->getFWHM ();
       focPos = images->getFocPos ();
       fwhmDatas.push_back (new fwhmData (images->sexResultNum, focPos, fwhm));
@@ -194,8 +193,8 @@ Rts2GenFocCamera::center (int centerWidth, int centerHeight)
     queCommand (new Rts2CommandCenter (master, 0, centerWidth, centerHeight));
 }
 
-Rts2GenFocClient::Rts2GenFocClient (int argc, char **argv):
-Rts2Client (argc, argv)
+Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):
+Rts2Client (in_argc, in_argv)
 {
   defExposure = 10;
   defCenter = 0;

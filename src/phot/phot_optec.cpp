@@ -77,8 +77,8 @@ Rts2DevPhotOptec::phot_command (char command, short arg)
   return -1;
 }
 
-Rts2DevPhotOptec::Rts2DevPhotOptec (int argc, char **argv):Rts2DevPhot (argc,
-	     argv)
+Rts2DevPhotOptec::Rts2DevPhotOptec (int in_argc, char **in_argv):Rts2DevPhot (in_argc,
+	     in_argv)
 {
   addOption ('f', "phot_file", 1, "photometer file (default to /dev/phot0)");
   phot_dev = "/dev/phot0";

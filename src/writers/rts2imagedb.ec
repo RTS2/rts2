@@ -9,7 +9,7 @@ EXEC SQL include sqlca;
 void
 Rts2ImageDb::reportSqlError (char *msg)
 {
-  printf ("SQL error %i %s (in %s)\n", sqlca.sqlcode,
+  printf ("SQL error %li %s (in %s)\n", sqlca.sqlcode,
   sqlca.sqlerrm.sqlerrmc, msg);
 }
 
@@ -35,7 +35,7 @@ Rts2ImageDb::updateObjectDB ()
   VARCHAR d_img_filter[3];
   EXEC SQL END DECLARE SECTION;
 
-  char filter[4] = "UNK";
+  char tmp_filter[4] = "UNK";
 
   strncpy (d_mount_name.arr, getMountName (), 8);
   d_mount_name.len = strlen (getMountName ());
@@ -43,10 +43,10 @@ Rts2ImageDb::updateObjectDB ()
   strncpy (d_camera_name.arr, getCameraName (), 8);
   d_camera_name.len = strlen (getCameraName ());
 
-  getValue ("FILTER", filter);
+  getValue ("FILTER", tmp_filter);
 
-  d_img_filter.len = strlen (filter) > 3 ? 3 : strlen (filter);
-  strncpy (d_img_filter.arr, filter, d_img_filter.len);
+  d_img_filter.len = strlen (tmp_filter) > 3 ? 3 : strlen (tmp_filter);
+  strncpy (d_img_filter.arr, tmp_filter, d_img_filter.len);
 
   d_img_temperature_ind = getValue ("CCD_TEMP", d_img_temperature);
   getValue ("EXPOSURE", d_img_exposure);
@@ -94,7 +94,7 @@ Rts2ImageDb::updateObjectDB ()
   // data found..do just update
   if (sqlca.sqlcode != 0)
   {
-    printf ("Cannot insert new image, triing update (error: %i %s)\n",
+    printf ("Cannot insert new image, triing update (error: %li %s)\n",
     sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
     EXEC SQL ROLLBACK;
     EXEC SQL
@@ -194,6 +194,8 @@ Rts2ImageDb::updateDB ()
       return updateDarkDB ();
     case IMGTYPE_FLAT:
       return updateFlatDB ();
+    default:
+      break;
   }
   syslog (LOG_DEBUG, "unknow image type: %i", imageType);
   return -1;
@@ -213,7 +215,7 @@ Rts2ImageDb::updateAstrometry ()
   VARCHAR s_astrometry[2000];
   EXEC SQL END DECLARE SECTION;
 
-  long naxis[2];
+  long a_naxis[2];
   char *ctype[2];
   double crpix[2];
   double crval[2];
@@ -227,7 +229,7 @@ Rts2ImageDb::updateAstrometry ()
   ctype[0] = (char *) malloc (9);
   ctype[1] = (char *) malloc (9);
 
-  ret = getValues ("NAXIS", naxis, 2);
+  ret = getValues ("NAXIS", a_naxis, 2);
   if (ret)
     return -1;
   ret = getValues ("CTYPE", (char **) &ctype, 2);
@@ -259,7 +261,7 @@ Rts2ImageDb::updateAstrometry ()
   snprintf (s_astrometry.arr, 2000,
     "NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
     "CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f",
-    naxis[0], naxis[1], ctype[0], ctype[1], crpix[0], crpix[1],
+    a_naxis[0], a_naxis[1], ctype[0], ctype[1], crpix[0], crpix[1],
     crval[0], crval[1], cdelt[0], cdelt[1], crota[0], equinox, epoch);
   s_astrometry.len = strlen (s_astrometry.arr);
 
@@ -324,7 +326,7 @@ Rts2ImageDb::setDarkFromDb ()
     :d_dark_name;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_DEBUG, "Rts2ImageDb::setDarkFromDb SQL error: %s (%i)",
+    syslog (LOG_DEBUG, "Rts2ImageDb::setDarkFromDb SQL error: %s (%li)",
       sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
     EXEC SQL CLOSE dark_cursor;
     EXEC SQL ROLLBACK;
@@ -338,8 +340,8 @@ Rts2ImageDb::setDarkFromDb ()
 }
 
 Rts2ImageDb::Rts2ImageDb (int in_epoch_id, int in_targetId, Rts2DevClientCamera * camera,
-      	       int in_obsId, const struct timeval *exposureStart, int in_imgId) : 
-  Rts2Image (in_epoch_id, in_targetId, camera, in_obsId, exposureStart, in_imgId)
+      	       int in_obsId, const struct timeval *expStart, int in_imgId) : 
+  Rts2Image (in_epoch_id, in_targetId, camera, in_obsId, expStart, in_imgId)
 {
   processBitfiedl = 0;
   getValue ("PROC", processBitfiedl);

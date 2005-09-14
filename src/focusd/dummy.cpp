@@ -24,8 +24,8 @@ public:
   virtual int isFocusing ();
 };
 
-Rts2DevFocuserDummy::Rts2DevFocuserDummy (int argc, char **argv):
-Rts2DevFocuser (argc, argv)
+Rts2DevFocuserDummy::Rts2DevFocuserDummy (int in_argc, char **in_argv):
+Rts2DevFocuser (in_argc, in_argv)
 {
   focPos = 3000;
   focTemp = 100;

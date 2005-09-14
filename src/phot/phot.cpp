@@ -93,8 +93,8 @@ Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device):R
   master = in_master_device;
 }
 
-Rts2DevPhot::Rts2DevPhot (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_PHOT, 5559, "PHOT")
+Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, 5559, "PHOT")
 {
   char *states_names[1] = { "phot" };
   setStateNames (1, states_names);
@@ -287,6 +287,7 @@ int
 Rts2DevPhot::sendInfo (Rts2Conn * conn)
 {
   conn->sendValue ("filter", filter);
+  return 0;
 }
 
 int

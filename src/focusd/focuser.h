@@ -54,7 +54,7 @@ public:
   int ready (Rts2Conn * conn);
   int sendInfo (Rts2Conn * conn);
   int sendBaseInfo (Rts2Conn * conn);
-  int checkState ();
+  void checkState ();
   int stepOut (Rts2Conn * conn, int num);
   int autoFocus (Rts2Conn * conn);
 };

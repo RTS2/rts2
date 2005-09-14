@@ -20,8 +20,8 @@
 
 #include "focuser.h"
 
-Rts2DevFocuser::Rts2DevFocuser (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_FOCUS, 5550, "F0")
+Rts2DevFocuser::Rts2DevFocuser (int in_argc, char **in_argv):
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, 5550, "F0")
 {
   char *states_names[1] = { "focuser" };
   setStateNames (1, states_names);
@@ -53,7 +53,7 @@ Rts2DevFocuser::createConnection (int in_sock, int conn_num)
   return new Rts2DevConnFocuser (in_sock, this);
 }
 
-int
+void
 Rts2DevFocuser::checkState ()
 {
   if ((getState (0) & FOC_MASK_FOCUSING) == FOC_FOCUSING)

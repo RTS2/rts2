@@ -25,12 +25,7 @@
 #define CMD_TEMP_GET			"FT"
 #define CMD_FOCUS_GOTO			"FG"
 
-struct termios oldtio, newtio;
-
-static char *focuser_port = NULL;
-
 #include "focuser.h"
-
 
 class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 {
@@ -63,8 +58,9 @@ public:
 };
 
 
-Rts2DevFocuserRobofocus::Rts2DevFocuserRobofocus (int argc, char **argv):
-Rts2DevFocuser (argc, argv)
+Rts2DevFocuserRobofocus::Rts2DevFocuserRobofocus (int in_argc,
+						  char **in_argv):
+Rts2DevFocuser (in_argc, in_argv)
 {
   device_file = FOCUSER_PORT;
 
@@ -170,6 +166,7 @@ Rts2DevFocuserRobofocus::foc_write_read_no_reset (char *wbuf, int wcount,
     {
       syslog (LOG_DEBUG, "Robofocus:readed returns %i", tmp_rcount);
     }
+  return 0;
 }
 
 int
@@ -347,11 +344,10 @@ Rts2DevFocuserRobofocus::stepOut (int num)
 int
 Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
 {
-  int i;
   char *ticks[1];
   int num_steps;
 
-  char command[10], rbuf[num_steps + 9], tbuf[7];
+  char command[10], rbuf[num_steps + 9];
   char command_buffer[9];
 
   if (steps == 0)
@@ -388,8 +384,8 @@ Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
 void
 Rts2DevFocuserRobofocus::compute_checksum (char *cmd)
 {
-  int i, bytesum = 0;
-  unsigned int size;
+  int bytesum = 0;
+  unsigned int size, i;
 
   size = strlen (cmd);
 

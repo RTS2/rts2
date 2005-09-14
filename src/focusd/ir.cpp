@@ -111,8 +111,8 @@ Rts2DevFocuserIr::tpl_setw (const char *name, T val, int *status)
 }
 
 
-Rts2DevFocuserIr::Rts2DevFocuserIr (int argc, char **argv):Rts2DevFocuser (argc,
-		argv)
+Rts2DevFocuserIr::Rts2DevFocuserIr (int in_argc, char **in_argv):Rts2DevFocuser (in_argc,
+		in_argv)
 {
   is_focusing = 0;
   ir_ip = NULL;

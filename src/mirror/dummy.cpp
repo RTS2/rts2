@@ -3,7 +3,8 @@
 class Rts2DevMirrorDummy:public Rts2DevMirror
 {
 public:
-  Rts2DevMirrorDummy (int argc, char **argv):Rts2DevMirror (argc, argv)
+  Rts2DevMirrorDummy (int in_argc, char **in_argv):Rts2DevMirror (in_argc,
+								  in_argv)
   {
   }
   virtual int endOpen ()
@@ -41,7 +42,7 @@ public:
   }
 };
 
-
+int
 main (int argc, char **argv)
 {
   Rts2DevMirrorDummy *device = new Rts2DevMirrorDummy (argc, argv);

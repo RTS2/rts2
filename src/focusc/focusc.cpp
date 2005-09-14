@@ -72,8 +72,8 @@ Rts2focusc::help ()
     << std::endl;
 }
 
-Rts2focusc::Rts2focusc (int argc, char **argv):
-Rts2GenFocClient (argc, argv)
+Rts2focusc::Rts2focusc (int in_argc, char **in_argv):
+Rts2GenFocClient (in_argc, in_argv)
 {
   exposureT = EXP_LIGHT;
   autoSave = 1;

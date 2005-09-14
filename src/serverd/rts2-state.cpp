@@ -63,7 +63,7 @@ main (int argc, char **argv)
 {
   struct ln_lnlat_posn obs;
   time_t t, ev_time;
-  int ret, curr_type, next_type;
+  int curr_type, next_type;
   int c;
 
   Rts2Config *config;

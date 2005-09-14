@@ -36,17 +36,17 @@ Rts2CMonitorConnection::printStatus ()
        val_iter != otherDevice->values.end (); val_iter++)
     {
       Rts2Value *val = (*val_iter);
-      char *buf;
-      buf = val->getValue ();
+      char *val_buf;
+      val_buf = val->getValue ();
       cout << fixed << setprecision (2);
-      if (buf)
+      if (val_buf)
 	cout << setw (15) << val->
-	  getName () << " = " << setw (8) << buf << endl;
+	  getName () << " = " << setw (8) << val_buf << endl;
     }
 }
 
 int
-Rts2CMonitorConnection::commandReturn (Rts2Command * command, int cmd_status)
+Rts2CMonitorConnection::commandReturn (Rts2Command * cmd, int cmd_status)
 {
   // if command failed..
   if (cmd_status)
@@ -56,11 +56,11 @@ Rts2CMonitorConnection::commandReturn (Rts2Command * command, int cmd_status)
       cout <<
 	"===================================" << endl
 	<< getName () << " FAILED! " << endl << endl
-	<< command->getText () << "'returned : " << cmd_status << endl;
+	<< cmd->getText () << "'returned : " << cmd_status << endl;
       return -1;
     }
   // command OK..
-  if (!strcmp (command->getText (), "info"))
+  if (!strcmp (cmd->getText (), "info"))
     {
       printStatus ();
     }
@@ -92,7 +92,7 @@ protected:
   }
 
 public:
-    Rts2CMonitor (int argc, char **argv):Rts2Client (argc, argv)
+    Rts2CMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
   {
 
   }

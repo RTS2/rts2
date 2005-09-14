@@ -28,6 +28,7 @@ int
 Rts2DeleteApp::findImages ()
 {
   // find images in db and run delete on them..
+  return 0;
 }
 
 int
@@ -57,7 +58,7 @@ Rts2DeleteApp::deleteImage (const char *in_name)
   return ret;
 }
 
-Rts2DeleteApp::Rts2DeleteApp (int argc, char **argv) : Rts2AppDb (argc, argv)
+Rts2DeleteApp::Rts2DeleteApp (int in_argc, char **in_argv) : Rts2AppDb (in_argc, in_argv)
 {
   addOption ('n', "notmod", 1, "don't delete anything, just show what will be done");
   dont_delete = 0;

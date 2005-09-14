@@ -372,8 +372,6 @@ void
 Rts2xfocusCamera::redraw ()
 {
   // do some line-drawing etc..
-  int ret;
-
   switch (crossType)
     {
     case 1:
@@ -609,8 +607,8 @@ Rts2xfocusCamera::setCrossType (int in_crossType)
   crossType = in_crossType;
 }
 
-Rts2xfocus::Rts2xfocus (int argc, char **argv):
-Rts2GenFocClient (argc, argv)
+Rts2xfocus::Rts2xfocus (int in_argc, char **in_argv):
+Rts2GenFocClient (in_argc, in_argv)
 {
   displayName = NULL;
 

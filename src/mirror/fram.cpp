@@ -69,13 +69,12 @@ Rts2DevMirrorFram::mirror_command (char cmd, int arg, char *ret_cmd,
   char command_buffer[3];
   int ret;
   size_t readed;
-  int tries = 0;
   char tc[27];
   time_t t;
   command_buffer[0] = cmd;
   *((int *) &command_buffer[1]) = arg;
   syslog (LOG_DEBUG, "cmd %i arg %i", cmd, arg);
-start:
+
   ret = write (mirror_fd, command_buffer, 3);
   if (ret != 3)
     {
@@ -109,8 +108,8 @@ start:
   return 0;
 }
 
-Rts2DevMirrorFram::Rts2DevMirrorFram (int argc, char **argv):Rts2DevMirror (argc,
-	       argv)
+Rts2DevMirrorFram::Rts2DevMirrorFram (int in_argc, char **in_argv):Rts2DevMirror (in_argc,
+	       in_argv)
 {
   addOption ('f', "mirror_dev", 1, "mirror device");
   mirror_dev = NULL;

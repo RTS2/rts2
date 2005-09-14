@@ -189,12 +189,11 @@ Rts2ConnCentrald::priorityCommand ()
 int
 Rts2ConnCentrald::sendDeviceKey ()
 {
-  int key = random ();
+  int dev_key = random ();
   char *msg;
   // device number could change..device names don't
   char *dev_name;
   Rts2Conn *dev;
-  int dev_id;
   if (paramNextString (&dev_name) || !paramEnd ())
     return -2;
   // find device, set it authorization key
@@ -204,7 +203,7 @@ Rts2ConnCentrald::sendDeviceKey ()
       sendCommandEnd (DEVDEM_E_SYSTEM, "cannot find device with name");
       return -1;
     }
-  setKey (key);
+  setKey (dev_key);
   asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
   send (msg);
   free (msg);
@@ -215,7 +214,6 @@ int
 Rts2ConnCentrald::sendInfo ()
 {
   int i;
-  Rts2Conn *dev;
 
   if (!paramEnd ())
     return -2;
@@ -253,6 +251,8 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
       ret = conn->send (msg);
       free (msg);
       break;
+    default:
+      break;
     }
   return ret;
 }
@@ -263,9 +263,9 @@ Rts2ConnCentrald::commandDevice ()
   if (isCommand ("authorize"))
     {
       int client;
-      int key;
+      int dev_key;
       if (paramNextInteger (&client)
-	  || paramNextInteger (&key) || !paramEnd ())
+	  || paramNextInteger (&dev_key) || !paramEnd ())
 	return -2;
 
       if (client >= MAX_CONN || client < 0)
@@ -285,7 +285,7 @@ Rts2ConnCentrald::commandDevice ()
 	  return -1;
 	}
 
-      if (master->connections[client]->getKey () != key)
+      if (master->connections[client]->getKey () != dev_key)
 	{
 	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM, "invalid authorization key");
@@ -345,13 +345,14 @@ Rts2ConnCentrald::sendStatusInfo ()
 }
 
 int
-Rts2ConnCentrald::sendAValue (char *name, int value)
+Rts2ConnCentrald::sendAValue (char *val_name, int value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "A %s %i", name, value);
+  asprintf (&msg, "A %s %i", val_name, value);
   ret = send (msg);
   free (msg);
+  return ret;
 }
 
 int
@@ -464,7 +465,6 @@ Rts2ConnCentrald::command ()
 	  char *in_hostname;
 	  char *msg;
 	  int ret;
-	  unsigned int in_port;
 
 	  if (paramNextString (&reg_device) || paramNextInteger (&device_type)
 	      || paramNextString (&in_hostname) || paramNextInteger (&port)
@@ -635,7 +635,6 @@ int
 Rts2Centrald::idle ()
 {
   time_t curr_time;
-  struct ln_lnlat_posn obs;
 
   int call_state;
   int old_current_state;
@@ -668,12 +667,12 @@ Rts2Centrald::idle ()
 	  sendStatusMessage (SERVER_STATUS, current_state);
 	}
     }
+  return Rts2Block::idle ();
 }
 
 int
 main (int argc, char **argv)
 {
-  int i;
   Rts2Centrald *centrald;
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
   centrald = new Rts2Centrald (argc, argv);

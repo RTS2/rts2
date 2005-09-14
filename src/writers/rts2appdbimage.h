@@ -12,9 +12,10 @@ protected:
   std::list < const char *>imageNames;
   virtual int processImage (Rts2ImageDb * image)
   {
+    return 0;
   }
 public:
-    Rts2AppDbImage (int argc, char **argv):Rts2AppDb (argc, argv)
+    Rts2AppDbImage (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
   {
   }
   virtual ~ Rts2AppDbImage (void)

@@ -17,7 +17,7 @@ Rts2DevClientCameraImage (in_connection)
     }
   else
     {
-      exe - NULL;
+      exe = NULL;
     }
   isFocusing = 0;
   darkImage = NULL;

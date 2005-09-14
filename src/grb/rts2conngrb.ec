@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <libnova/libnova.h>
+
 EXEC SQL include sqlca;
 
 double
@@ -39,29 +41,30 @@ int
 Rts2ConnGrb::pr_swift_point ()
 {
   double roll;
-  char *name;
+  char *obs_name;
   float obstime;
   float merit;
   swiftLastRa  = lbuf[7]/10000.0;
   swiftLastDec = lbuf[8]/10000.0;
   roll = lbuf[9]/10000.0;
   getTimeTfromTJD (lbuf[5], lbuf[6]/100.0, &swiftLastPoint);
-  name = (char*) (&lbuf[BURST_URL]);
+  obs_name = (char*) (&lbuf[BURST_URL]);
   obstime = lbuf[14]/100.0;
   merit = lbuf[15]/100.0;
-  return addSwiftPoint (roll, name, obstime, merit);
+  return addSwiftPoint (roll, obs_name, obstime, merit);
 }
 
 int
 Rts2ConnGrb::pr_integral_point ()
 {
-  double ra;
-  double dec;
+  struct ln_equ_posn pos_int, pos_j2000;
   time_t t;
-  ra = lbuf[14]/10000.0;
-  dec = lbuf[15]/10000.0;
+  pos_int.ra = lbuf[14]/10000.0;
+  pos_int.dec = lbuf[15]/10000.0;
+  // precess to J2000
+  ln_get_equ_prec2 (&pos_int, ln_get_julian_from_sys (), JD2000, &pos_j2000);
   getTimeTfromTJD (lbuf[5], lbuf[6]/100.0, &t);
-  return addIntegralPoint (ra, dec, &t);
+  return addIntegralPoint (pos_j2000.ra, pos_j2000.dec, &t);
 }
 
 int
@@ -111,8 +114,7 @@ Rts2ConnGrb::pr_integral ()
   int grb_id;
   int grb_seqn;
   int grb_type;
-  double grb_ra;
-  double grb_dec;
+  struct ln_equ_posn pos_int, pos_j2000;
   int grb_is_grb = 1;
   time_t grb_date;
   float grb_errorbox;
@@ -122,7 +124,7 @@ Rts2ConnGrb::pr_integral ()
     )
   )
   {
-    syslog (LOG_DEBUG, "Rts2ConnGrb::pr_integral test packet (%0xd)", lbuf[12]);
+    syslog (LOG_DEBUG, "Rts2ConnGrb::pr_integral test packet (%0lxi)", lbuf[12]);
     return 0;
   }
 
@@ -130,14 +132,16 @@ Rts2ConnGrb::pr_integral ()
   grb_seqn = (lbuf[BURST_TRIG] & I_SEQNUM_MASK) >> I_SEQNUM_SHIFT;
   grb_type = lbuf[PKT_TYPE];
 
-  grb_ra = lbuf[BURST_RA]/10000.0;
-  grb_dec = lbuf[BURST_DEC]/10000.0;
+  pos_int.ra = lbuf[BURST_RA]/10000.0;
+  pos_int.dec = lbuf[BURST_DEC]/10000.0;
+
+  ln_get_equ_prec2 (&pos_int, ln_get_julian_from_sys (), JD2000, &pos_j2000);
 
   getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
 
   grb_errorbox = (float) lbuf[BURST_ERROR]/60.0;
 
-  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_errorbox);
 }
 
 int
@@ -158,8 +162,6 @@ Rts2ConnGrb::pr_swift_with_radec ()
   int grb_is_grb = 1;
   time_t grb_date;
   float grb_errorbox;
-
-  long trig_id;
 
   grb_type = (int) (lbuf[PKT_TYPE]);
   grb_id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
@@ -261,7 +263,7 @@ Rts2ConnGrb::pr_swift_without_radec ()
 }
 
 int
-Rts2ConnGrb::addSwiftPoint (double roll, char * name, float obstime, float merit)
+Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float merit)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   double d_swift_ra = swiftLastRa;
@@ -274,8 +276,8 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * name, float obstime, float merit
   float d_swift_merit = merit;
   EXEC SQL END DECLARE SECTION;
 
-  strcpy (d_swift_name.arr, name);
-  d_swift_name.len = strlen (name);
+  strcpy (d_swift_name.arr, obs_name);
+  d_swift_name.len = strlen (obs_name);
 
   EXEC SQL
   INSERT INTO
@@ -407,7 +409,6 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   bool d_grb_is_grb = grb_is_grb;
   long int d_grb_date = (int) *grb_date;
   long int d_grb_update = (int) last_packet.tv_sec;
-  int d_grb_update_usec = (int) last_packet.tv_usec;
   float d_grb_errorbox = grb_errorbox;
   int d_grb_errorbox_ind;
   // used to find correct grb - based on type
@@ -491,7 +492,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
     );
     if (sqlca.sqlcode)
     {
-      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint insert target error: %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint insert target error: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
       EXEC SQL ROLLBACK;
     }
     // insert new grb packet
@@ -523,7 +524,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
     );
     if (sqlca.sqlcode)
     {
-      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot insert new GCN : %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot insert new GCN : %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
       EXEC SQL ROLLBACK;
       ret = -1;
     }
@@ -570,7 +571,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
     if (sqlca.sqlcode)
     {
-      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN : %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN : %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
       EXEC SQL ROLLBACK;
       ret = -1;
     }
@@ -591,7 +592,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
     }
     if (sqlca.sqlcode)
     {
-      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN errorbox: %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN errorbox: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
       EXEC SQL ROLLBACK;
       ret = -1;
     }
@@ -642,7 +643,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
   );
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "Rts2ConnGrb::addGcnRaw cannot insert new gcn packet: %i %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+    syslog (LOG_ERR, "Rts2ConnGrb::addGcnRaw cannot insert new gcn packet: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -737,6 +738,8 @@ Rts2ConnGrb::idle ()
         && nextTime < now)
         connectionError ();
       break;
+    default:
+      break;
     }
   // we don't like to get called upper code with timeouting stuff..
   return 0;
@@ -776,7 +779,7 @@ Rts2ConnGrb::init_call ()
   nextTime += getConnTimeout ();
   if (ret == -1)
     {
-      if (errno = EINPROGRESS)
+      if (errno == EINPROGRESS)
         {
 	  setConnState (CONN_CONNECTING);
           return 0;
@@ -876,7 +879,6 @@ Rts2ConnGrb::receive (fd_set *set)
   if (gcn_listen_sock >= 0 && FD_ISSET (gcn_listen_sock, set))
   {
     // try to accept connection..
-    int new_sock;
     close (sock); // close previous connections..we support only one GCN connection
     sock = -1;
     struct sockaddr_in other_side;
@@ -995,7 +997,7 @@ Rts2ConnGrb::receive (fd_set *set)
         connectionError ();
         break;
       default:
-        syslog (LOG_ERR, "Rts2ConnGrb::receive unknow packet type: %d", lbuf[PKT_TYPE]);
+        syslog (LOG_ERR, "Rts2ConnGrb::receive unknow packet type: %ld", lbuf[PKT_TYPE]);
 	break;
     }
   }

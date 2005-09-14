@@ -20,10 +20,6 @@ sdFluxCompare (const void *sr1, const void *sr2)
 int
 Rts2Image::getHam (double &x, double &y)
 {
-  struct stardata *sr;
-  double xoa;
-  double yoa;
-  int ret;
   if (sexResultNum == 0)
     {
       return -1;

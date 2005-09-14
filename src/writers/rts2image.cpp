@@ -52,8 +52,6 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
 		      Rts2DevClientCamera * camera, int in_obsId,
 		      const struct timeval *in_exposureStart, int in_imgId)
 {
-  struct imghdr *im_h;
-  long naxes = 1;
   char *in_filename;
   struct tm *expT;
 
@@ -66,7 +64,7 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
   exposureStart = *in_exposureStart;
 
   expT = gmtime (&exposureStart.tv_sec);
-  asprintf (&in_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+  asprintf (&in_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
 	    getImageBase (in_epoch_id), camera->getName (),
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -223,7 +221,7 @@ Rts2Image::toQue ()
     return -1;
 
   expT = gmtime (&exposureStart.tv_sec);
-  asprintf (&new_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+  asprintf (&new_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
 	    getImageBase (epochId), cameraName, expT->tm_year + 1900,
 	    expT->tm_mon + 1, expT->tm_mday, expT->tm_hour, expT->tm_min,
 	    expT->tm_sec, exposureStart.tv_usec / 1000);
@@ -246,7 +244,7 @@ Rts2Image::toAcquisition ()
 
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/acqusition/%05i/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    "%s/acqusition/%05i/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
 	    getImageBase (epochId), getTargetId (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -270,7 +268,7 @@ Rts2Image::toArchive ()
 
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/archive/%05i/%s/object/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    "%s/archive/%05i/%s/object/%04i%02i%02i%02i%02i%02i-%04li.fits",
 	    getImageBase (epochId), getTargetId (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -297,7 +295,7 @@ Rts2Image::toDark ()
   if (getTargetId () == TARGET_DARK)
     {
       asprintf (&new_filename,
-		"%s/darks/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+		"%s/darks/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
 		getImageBase (epochId), cameraName,
 		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 		expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -306,7 +304,7 @@ Rts2Image::toDark ()
   else
     {
       asprintf (&new_filename,
-		"%s/archive/%05i/%s/darks/%04i%02i%02i%02i%02i%02i-%04i.fits",
+		"%s/archive/%05i/%s/darks/%04i%02i%02i%02i%02i%02i-%04li.fits",
 		getImageBase (epochId), getTargetId (), cameraName,
 		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 		expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -330,7 +328,7 @@ Rts2Image::toFlat ()
 
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/flat/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    "%s/flat/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
 	    getImageBase (epochId), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -354,7 +352,7 @@ Rts2Image::toTrash ()
 
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/trash/%05i/%s/%04i%02i%02i%02i%02i%02i-%04i.fits",
+	    "%s/trash/%05i/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
 	    getImageBase (epochId), getTargetId (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
@@ -729,6 +727,7 @@ Rts2Image::saveImage ()
       flags &= ~IMAGE_SAVE;
     }
   ffile = NULL;
+  return 0;
 }
 
 int
@@ -739,6 +738,7 @@ Rts2Image::deleteImage ()
   ffile = NULL;
   flags &= !IMAGE_SAVE;
   ret = unlink (getImageName ());
+  return ret;
 }
 
 void
@@ -831,8 +831,6 @@ Rts2Image::setAstroResults (double ra, double dec, double ra_err,
 int
 Rts2Image::addStarData (struct stardata *sr)
 {
-  int ret;
-
   if (sr->F <= 0)		// flux is not significant..
     return -1;
 
@@ -851,7 +849,7 @@ Rts2Image::addStarData (struct stardata *sr)
   return 0;
 }
 
-static int
+/* static int
 sdcompare (struct stardata *x1, struct stardata *x2)
 {
   if (x1->fwhm < x2->fwhm)
@@ -859,7 +857,7 @@ sdcompare (struct stardata *x1, struct stardata *x2)
   if (x1->fwhm > x2->fwhm)
     return -1;
   return 0;
-}
+} */
 
 int
 Rts2Image::isGoodForFwhm (struct stardata *sr)
@@ -908,21 +906,21 @@ getShortMean (unsigned short *averageData, int sub)
 int
 Rts2Image::getCenterRow (long row, int row_width, double &x)
 {
-  unsigned short *data;
-  data = getDataUShortInt ();
+  unsigned short *tmp_data;
+  tmp_data = getDataUShortInt ();
   unsigned short *rowData;
   unsigned short *averageData;
-  unsigned short max;
+  unsigned short data_max;
   long i;
   long j;
   long k;
   long maxI;
-  if (!data)
+  if (!tmp_data)
     return -1;
   // compute average collumn
   rowData = new unsigned short[getWidth ()];
   averageData = new unsigned short[row_width];
-  data += row * getWidth ();
+  tmp_data += row * getWidth ();
   if (row_width < 2)
     {
       return -1;
@@ -931,7 +929,7 @@ Rts2Image::getCenterRow (long row, int row_width, double &x)
     {
       for (i = 0; i < row_width; i++)
 	{
-	  averageData[i] = data[j + i * getWidth ()];
+	  averageData[i] = tmp_data[j + i * getWidth ()];
 	}
       rowData[j] = getShortMean (averageData, row_width);
     }
@@ -950,13 +948,13 @@ Rts2Image::getCenterRow (long row, int row_width, double &x)
   // decide, which part of slope we are in
   // i hold size of reduced rowData array
   // find maximum..
-  max = rowData[0];
+  data_max = rowData[0];
   maxI = 0;
   for (j = 1; j < i; j++)
     {
-      if (rowData[j] > max)
+      if (rowData[j] > data_max)
 	{
-	  max = rowData[j];
+	  data_max = rowData[j];
 	  maxI = j;
 	}
     }
@@ -977,21 +975,21 @@ Rts2Image::getCenterRow (long row, int row_width, double &x)
 int
 Rts2Image::getCenterCol (long col, int col_width, double &y)
 {
-  unsigned short *data;
-  data = getDataUShortInt ();
+  unsigned short *tmp_data;
+  tmp_data = getDataUShortInt ();
   unsigned short *colData;
   unsigned short *averageData;
-  unsigned short max;
+  unsigned short data_max;
   long i;
   long j;
   long k;
   long maxI;
-  if (!data)
+  if (!tmp_data)
     return -1;
   // smooth image..
   colData = new unsigned short[getHeight ()];
   averageData = new unsigned short[col_width];
-  data += col * getHeight ();
+  tmp_data += col * getHeight ();
   if (col_width < 2)
     {
       // special handling..
@@ -1001,7 +999,7 @@ Rts2Image::getCenterCol (long col, int col_width, double &y)
     {
       for (i = 0; i < col_width; i++)
 	{
-	  averageData[i] = data[j + i * getHeight ()];
+	  averageData[i] = tmp_data[j + i * getHeight ()];
 	}
       colData[j] = getShortMean (averageData, col_width);
     }
@@ -1019,12 +1017,13 @@ Rts2Image::getCenterCol (long col, int col_width, double &y)
     }
   // find gauss on image..
   //ret = findGauss (colData, i, y);
+  data_max = colData[0];
   maxI = 0;
   for (j = 1; j < i; j++)
     {
-      if (colData[j] > max)
+      if (colData[j] > data_max)
 	{
-	  max = colData[j];
+	  data_max = colData[j];
 	  maxI = j;
 	}
     }

@@ -67,7 +67,7 @@ public:
   {
     return window != NULL;
   }
-  int setWindow (WINDOW * in_window)
+  void setWindow (WINDOW * in_window)
   {
     if (hasWindow ())
       delwin (window);
@@ -79,7 +79,7 @@ public:
     return window;
   }
 
-  virtual int commandReturn (Rts2Command * command, int status)
+  virtual int commandReturn (Rts2Command * cmd, int in_status)
   {
     print ();
     wrefresh (window);
@@ -110,10 +110,10 @@ public:
     statusBegin = in_status_begin;
   }
 
-  int printTimeDiff (int row, char *text, time_t * in_time);
+  void printTimeDiff (int row, char *text, time_t * in_time);
 };
 
-int
+void
 Rts2CNMonConn::printTimeDiff (int row, char *text, time_t * in_time)
 {
   char time_buf[50];
@@ -122,7 +122,7 @@ Rts2CNMonConn::printTimeDiff (int row, char *text, time_t * in_time)
   time_buf[0] = '\0';
   if (t > 86400)
     {
-      sprintf (time_buf, "%i days ", t / 86400);
+      sprintf (time_buf, "%li days ", t / 86400);
       t = t % 86400;
     }
   ln_deg_to_hms (360.0 * ((double) t / 86400.0), &hms);
@@ -371,6 +371,53 @@ Rts2NMDome::print (WINDOW * wnd)
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
   mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
 #undef is_on
+}
+
+class Rts2NMCopula:public Rts2DevClientCopula
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMCopula (Rts2CNMonConn *
+		  in_connection):Rts2DevClientCopula (in_connection)
+  {
+    in_connection->setStatusBegin (9);
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    switch (event->getType ())
+      {
+	WINDOW *window;
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientCopula::postEvent (event);
+  }
+};
+
+void
+Rts2NMCopula::print (WINDOW * wnd)
+{
+  int dome = getValueInteger ("dome");
+  time_t time_to_open;
+  time (&time_to_open);
+  time_to_open = time_to_open - (long) getValueInteger ("next_open");
+  mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueDouble ("temperature"));
+  mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueDouble ("humidity"));
+  mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i", getValueDouble ("windspeed"),
+	     getValueInteger ("rain"));
+  connection->printTimeDiff (5, "NextO", &time_to_open);
+#define is_on(num)	((dome & (1 << num))? 'O' : 'f')
+  mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
+  mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
+#undef is_on
+  mvwprintw (wnd, 8, 1, "Az: %f", getValueDouble ("az"));
 }
 
 class Rts2NMExecutor:public Rts2DevClientExecutor
@@ -653,8 +700,8 @@ Rts2NMonitor::processConnection (Rts2CNMonConn * conn)
   relocatesWindows ();
 }
 
-Rts2NMonitor::Rts2NMonitor (int argc, char **argv):
-Rts2Client (argc, argv)
+Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):
+Rts2Client (in_argc, in_argv)
 {
   statusWindow = NULL;
   commandWindow = NULL;
@@ -687,6 +734,7 @@ Rts2NMonitor::paintWindows ()
   wbkgdset (commandWindow, A_BOLD | COLOR_PAIR (CLR_STATUS));
   waddch (commandWindow, 'C');
   curs_set (1);
+  return 0;
 }
 
 int
@@ -695,7 +743,6 @@ Rts2NMonitor::repaint ()
   char dateBuf[40];
   time_t now;
   char stateBuf[20];
-  int masterState;
   time (&now);
 
   wcolor_set (statusWindow, CLR_STATUS, NULL);
@@ -794,6 +841,8 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2NMPhot ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_DOME:
       return new Rts2NMDome ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_COPULA:
+      return new Rts2NMCopula ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_EXECUTOR:
       return new Rts2NMExecutor ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_IMGPROC:

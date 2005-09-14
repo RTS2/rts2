@@ -22,7 +22,7 @@ public:
 
   virtual int ready ()
   {
-
+    return 0;
   }
   virtual int baseInfo ()
   {

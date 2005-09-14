@@ -27,6 +27,7 @@ DROP TABLE scripts;
 DROP SEQUENCE img_id;
 DROP SEQUENCE med_id;
 DROP TABLE users;
+DROP TABLE airmass_cal_images;
 DROP SEQUENCE obs_id;
 DROP VIEW observations_nights;
 DROP VIEW images_nights;

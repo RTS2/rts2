@@ -43,8 +43,8 @@ public:
   virtual int disableMove ();
 };
 
-Rts2DevPhotDummy::Rts2DevPhotDummy (int argc, char **argv):
-Rts2DevPhot (argc, argv)
+Rts2DevPhotDummy::Rts2DevPhotDummy (int in_argc, char **in_argv):
+Rts2DevPhot (in_argc, in_argv)
 {
 }
 

@@ -7,8 +7,8 @@
 
 #include "mirror.h"
 
-Rts2DevMirror::Rts2DevMirror (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_MIRROR, 5551, "M0")
+Rts2DevMirror::Rts2DevMirror (int in_argc, char **in_argv):
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_MIRROR, 5551, "M0")
 {
   char *states_names[1] = { "mirror" };
   setStateNames (1, states_names);
@@ -47,6 +47,7 @@ Rts2DevMirror::idle ()
     }
   // set timeouts..
   setTimeoutMin (100000);
+  return ret;
 }
 
 Rts2DevConn *
@@ -99,7 +100,6 @@ Rts2DevConnMirror::commandAuthorized ()
   if (isCommand ("mirror"))
     {
       char *str_dir;
-      int ret = 0;
       if (paramNextString (&str_dir) || !paramEnd ())
 	return -2;
       if (!strcasecmp (str_dir, "open"))
@@ -110,7 +110,6 @@ Rts2DevConnMirror::commandAuthorized ()
   if (isCommand ("set"))
     {
       char *str_dir;
-      int ret = 0;
       if (paramNextString (&str_dir) || !paramEnd () ||
 	  (strcasecmp (str_dir, "A") && strcasecmp (str_dir, "B")))
 	return -2;
