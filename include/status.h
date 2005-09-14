@@ -68,20 +68,25 @@
 
 // telescope status
 #define TEL_MASK_MOVING		0x07
+#define TEL_MASK_COP_MOVING	0x0f
 
 #define TEL_OBSERVING		0x00
 #define TEL_MOVING		0x01
 #define TEL_PARKED		0x02
 #define TEL_PARKING		0x04
 
-#define TEL_MASK_TRACK		0x08
-
-#define TEL_NOTRACK		0x00
-#define TEL_TRACKING		0x08
+#define TEL_MASK_COP		0x08
+#define TEL_NO_WAIT_COP		0x00
+#define TEL_WAIT_COP		0x08
 
 #define TEL_MASK_SEARCHING	0x10
 #define TEL_NOSEARCH		0x00
 #define TEL_SEARCH		0x10
+
+#define TEL_MASK_TRACK		0x20
+
+#define TEL_NOTRACK		0x00
+#define TEL_TRACKING		0x20
 
 // dome status
 
@@ -97,6 +102,16 @@
 #define DOME_WEATHER_OK		0x10
 #define DOME_WEATHER_BAD	0x20
 #define DOME_WEATHER_UNKNOW	0x30
+
+#define DOME_COP_MASK		0xc0
+
+#define DOME_COP_MASK_MOVE	0x40
+#define DOME_COP_NOT_MOVE	0x00
+#define DOME_COP_MOVE		0x40
+
+#define DOME_COP_MASK_SYNC	0x80
+#define DOME_COP_NOT_SYNC	0x00
+#define DOME_COP_SYNC		0x80
 
 #define MIRROR_MASK		0x1f
 #define MIRROR_MASK_MOVE	0x10
@@ -186,6 +201,7 @@
 #define DEVICE_TYPE_GRB		9
 #define DEVICE_TYPE_FOCUS	10
 #define DEVICE_TYPE_MIRROR	11
+#define DEVICE_TYPE_COPULA	12
 
 #define DEVICE_TYPE_EXECUTOR    20
 #define DEVICE_TYPE_IMGPROC	21
