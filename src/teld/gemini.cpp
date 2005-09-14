@@ -558,7 +558,6 @@ int
 Rts2DevTelescopeGemini::tel_gemini_reset ()
 {
   char rbuf[50];
-  int tmp_rcount = -1;
 
   // write_read_hash
   if (tcflush (tel_desc, TCIOFLUSH) < 0)
@@ -821,8 +820,8 @@ Rts2DevTelescopeGemini::tel_write_dec (double dec)
   return tel_rep_write (command);
 }
 
-Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int argc, char **argv):Rts2DevTelescope (argc,
-		  argv)
+Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+		  in_argv)
 {
   device_file = "/dev/ttyS0";
   geminiConfig = "/etc/rts2/gemini.ini";
@@ -907,7 +906,6 @@ int
 Rts2DevTelescopeGemini::init ()
 {
   struct termios tel_termios;
-  char rbuf[10];
   int ret;
 
   ret = Rts2DevTelescope::init ();
@@ -992,7 +990,6 @@ Rts2DevTelescopeGemini::idle ()
 	    }
 	  else
 	    {
-	      int ret;
 	      ret = isParking ();
 	      switch (ret)
 		{
@@ -1277,7 +1274,6 @@ Rts2DevTelescopeGemini::stopMove ()
 int
 Rts2DevTelescopeGemini::startMoveFixedReal ()
 {
-  char retstr;
   int ret;
 
   // compute ra
@@ -1304,7 +1300,6 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
 int
 Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 {
-  double tar_ra;
   fixed_ha = tar_ha;
   lastMoveDec = tar_dec;
   fixed_ntries = 0;
@@ -1671,8 +1666,7 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 int
 Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 {
-  int32_t track;
-  int64_t u_sleep;
+  long u_sleep;
   int ret;
   info ();
   syslog (LOG_INFO, "Rts2DevTelescopeGemini::change before: ra %f dec %f",
@@ -1703,8 +1697,8 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	    {
 	      // slew speed to 1 - 0.50 arcmin / sec
 	      u_sleep =
-		(uint64_t) (((fabs (chng_ra) * 60.0) * 2.0) * USEC_SEC +
-			    USEC_SEC / 10.0);
+		(long) (((fabs (chng_ra) * 60.0) * 2.0) * USEC_SEC +
+			USEC_SEC / 10.0);
 	      tel_gemini_set (170, 1);
 	      telescope_start_move ('e');
 	      usleep (u_sleep);
@@ -1714,8 +1708,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	  else
 	    {
 	      // slew speed to 20 - 5 arcmin / sec
-	      u_sleep =
-		(uint64_t) (((fabs (chng_dec) * 60.0) / 5.0) * USEC_SEC);
+	      u_sleep = (long) (((fabs (chng_dec) * 60.0) / 5.0) * USEC_SEC);
 	      tel_gemini_set (170, 20);
 	      telescope_start_move ('w');
 	      usleep (u_sleep);
@@ -1729,7 +1722,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	  tel_gemini_set (170, 20);
 	  // slew speed to 20 - 5 arcmin / sec
 	  direction = chng_dec > 0 ? 'n' : 's';
-	  u_sleep = (uint64_t) ((fabs (chng_dec) * 60.0) / 5.0 * USEC_SEC);
+	  u_sleep = (long) ((fabs (chng_dec) * 60.0) / 5.0 * USEC_SEC);
 	  telescope_start_move (direction);
 	  usleep (u_sleep);
 	  ret = telescope_stop_move (direction);
@@ -1750,7 +1743,6 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 int
 Rts2DevTelescopeGemini::startPark ()
 {
-  char buf = '2';
   int ret;
   if (telMotorState != TEL_OK)
     return -1;
@@ -1822,7 +1814,6 @@ Rts2DevTelescopeGemini::saveModel ()
 extern int
 Rts2DevTelescopeGemini::loadModel ()
 {
-  int *reg = save_registers;
   FILE *config_file;
   char *line;
   size_t numchar;

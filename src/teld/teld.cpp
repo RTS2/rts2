@@ -14,9 +14,10 @@
 #include "../utils/rts2block.h"
 
 #include "telescope.h"
+#include "rts2devclicop.h"
 
-Rts2DevTelescope::Rts2DevTelescope (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_MOUNT, 5553, "T0")
+Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
 {
   char *states_names[1] = { "telescope" };
   setStateNames (1, states_names);
@@ -270,6 +271,37 @@ Rts2DevTelescope::idle ()
   return Rts2Device::idle ();
 }
 
+void
+Rts2DevTelescope::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_COP_SYNCED:
+      maskState (0, TEL_MASK_COP, TEL_NO_WAIT_COP);
+      break;
+    }
+  Rts2Device::postEvent (event);
+}
+
+int
+Rts2DevTelescope::willConnect (Rts2Address * in_addr)
+{
+  if (in_addr->getType () == DEVICE_TYPE_COPULA)
+    return 1;
+  return Rts2Device::willConnect (in_addr);
+}
+
+Rts2DevClient *
+Rts2DevTelescope::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_COPULA:
+      return new Rts2DevClientCopulaTeld (conn);
+    }
+  return Rts2Device::createOtherType (conn, other_device_type);
+}
+
 int
 Rts2DevTelescope::changeMasterState (int new_state)
 {
@@ -310,19 +342,6 @@ int
 Rts2DevTelescope::endSearch ()
 {
   return maskState (0, TEL_MASK_SEARCHING, TEL_NOSEARCH);
-}
-
-int
-Rts2DevTelescope::ready (Rts2Conn * conn)
-{
-  int ret;
-  ret = ready ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "telescope not ready");
-      return -1;
-    }
-  return 0;
 }
 
 int
@@ -370,6 +389,10 @@ int
 Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 {
   int ret;
+  struct ln_equ_posn dome_position;
+  dome_position.ra = tar_ra;
+  dome_position.dec = tar_dec;
+
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
@@ -420,7 +443,18 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     {
       move_fixed = 0;
       moveMark++;
-      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      // try to sync dome..
+      postEvent (new Rts2Event (EVENT_COP_START_SYNC, &dome_position));
+      // somebody cared about it..
+      if (isnan (dome_position.ra))
+	{
+	  maskState (0, TEL_MASK_COP_MOVING, TEL_MOVING | TEL_WAIT_COP,
+		     "move started");
+	}
+      else
+	{
+	  maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+	}
       move_connection = conn;
     }
   infoAll ();

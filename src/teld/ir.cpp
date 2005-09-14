@@ -209,8 +209,8 @@ Rts2DevTelescopeIr::coverOpen ()
   return status;
 }
 
-Rts2DevTelescopeIr::Rts2DevTelescopeIr (int argc, char **argv):Rts2DevTelescope (argc,
-		  argv)
+Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+		  in_argv)
 {
   ir_ip = NULL;
   ir_port = 0;

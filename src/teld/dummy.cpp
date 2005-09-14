@@ -43,7 +43,8 @@ protected:
     return isMoving ();
   }
 public:
-Rts2DevTelescopeDummy (int argc, char **argv):Rts2DevTelescope (argc, argv)
+Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+		    in_argv)
   {
     newRa = 0;
     newDec = 0;

@@ -39,6 +39,7 @@ private:
   double lastDec;
   struct ln_equ_posn lastTar;
 protected:
+    virtual int willConnect (Rts2Address * in_addr);
   char *device_file;
   char telType[64];
   char telSerialNumber[64];
@@ -106,7 +107,10 @@ public:
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   int checkMoves ();
   virtual int idle ();
+  virtual void postEvent (Rts2Event * event);
   virtual int changeMasterState (int new_state);
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
   virtual int deleteConnection (Rts2Conn * in_conn)
   {
     if (in_conn == move_connection)
@@ -114,19 +118,7 @@ public:
     return Rts2Device::deleteConnection (in_conn);
   }
 
-  // callback functions for Camera alone
-  virtual int ready ()
-  {
-    return -1;
-  }
-  virtual int info ()
-  {
-    return -1;
-  }
-  virtual int baseInfo ()
-  {
-    return -1;
-  }
+  // callback functions for telescope alone
   virtual int startMove (double tar_ra, double tar_dec)
   {
     return -1;
@@ -210,7 +202,6 @@ public:
   }
 
   // callback functions from telescope connection
-  virtual int ready (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
   virtual int sendBaseInfo (Rts2Conn * conn);
 

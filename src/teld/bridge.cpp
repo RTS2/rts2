@@ -44,8 +44,8 @@ public:
   virtual int stopMove ();
 };
 
-Rts2DevTelescopeBridge::Rts2DevTelescopeBridge (int argc, char **argv):
-Rts2DevTelescope (argc, argv)
+Rts2DevTelescopeBridge::Rts2DevTelescopeBridge (int in_argc, char **in_argv):
+Rts2DevTelescope (in_argc, in_argv)
 {
   _Tctrl_handle = -1;
   _Tstat_handle = -1;
