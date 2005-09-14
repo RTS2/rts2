@@ -1,14 +1,18 @@
 # $Id$
 
-bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm
+bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm rts2-dome-mark rts2-copula-dummy
 
-noinst_HEADERS = dome.h udpweather.h
+noinst_HEADERS = dome.h udpweather.h copula.h
 
 LDADD = ../utils/librts2block.a @LIB_NOVA@
 
 rts2_dome_bart_SOURCES = dome.cpp bart.cpp
 
 rts2_dome_fram_SOURCES = dome.cpp fram.cpp udpweather.cpp
+
+rts2_dome_mark_SOURCES = dome.cpp copula.cpp mark.cpp udpweather.cpp
+
+rts2_copula_dummy_SOURCES = dome.cpp copula.cpp dummy_cop.cpp
 
 if PCI8255
 bin_PROGRAMS += rts2-dome-dublin

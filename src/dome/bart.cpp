@@ -147,8 +147,8 @@ public:
   virtual int changeMasterState (int new_state);
 };
 
-Rts2DevDomeBart::Rts2DevDomeBart (int argc, char **argv):
-Rts2DevDome (argc, argv)
+Rts2DevDomeBart::Rts2DevDomeBart (int in_argc, char **in_argv):
+Rts2DevDome (in_argc, in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   dome_file = "/dev/ttyS0";

@@ -29,7 +29,8 @@ protected:
     // we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
   }
 public:
-    Rts2DevDome (int argc, char **argv);
+    Rts2DevDome (int argc, char **argv, int in_device_type =
+		 DEVICE_TYPE_DOME);
   virtual int openDome ()
   {
     maskState (0, DOME_DOME_MASK, DOME_OPENING, "opening dome");
@@ -63,21 +64,7 @@ public:
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   virtual int idle ();
 
-  virtual int ready ()
-  {
-    return -1;
-  };
-  virtual int baseInfo ()
-  {
-    return -1;
-  };
-  virtual int info ()
-  {
-    return -1;
-  };
-
   // callback function from dome connection
-  virtual int ready (Rts2Conn * conn);
   virtual int sendBaseInfo (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
 

@@ -80,8 +80,8 @@ int
 Rts2ConnDcm::receive (fd_set * set)
 {
   int ret;
-  char buf[100];
-  char status[10];
+  char Wbuf[100];
+  char Wstatus[10];
   char dome_name[10];
   int data_size = 0;
   struct tm statDate;
@@ -96,30 +96,30 @@ Rts2ConnDcm::receive (fd_set * set)
       struct sockaddr_in from;
       socklen_t size = sizeof (from);
       data_size =
-	recvfrom (sock, buf, 80, 0, (struct sockaddr *) &from, &size);
+	recvfrom (sock, Wbuf, 80, 0, (struct sockaddr *) &from, &size);
       if (data_size < 0)
 	{
 	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
 	  return 1;
 	}
-      buf[data_size] = 0;
+      Wbuf[data_size] = 0;
 #ifdef DEBUG_ALL
-      syslog (LOG_DEBUG, "readed: %i '%s' from: %s:%i", data_size, buf,
+      syslog (LOG_DEBUG, "readed: %i '%s' from: %s:%i", data_size, Wbuf,
 	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
 #endif
       // parse weather info
       // * 1A 2005-07-21 23:56:56 -10.67 98.9 0 c c o o ok
       ret =
-	sscanf (buf,
+	sscanf (Wbuf,
 		"%s %i-%u-%u %u:%u:%f %f %f %i %i %i %i %i %s",
 		dome_name, &statDate.tm_year, &statDate.tm_mon,
 		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
 		&sec_f, &temp, &humidity, &rain, &sw1, &sw2, &sw3, &sw4,
-		status);
+		Wstatus);
       if (ret != 15)
 	{
 	  syslog (LOG_ERR, "sscanf on udp data returned: %i ('%s')", ret,
-		  buf);
+		  Wbuf);
 	  rain = 1;
 	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
 	  return data_size;
@@ -129,15 +129,15 @@ Rts2ConnDcm::receive (fd_set * set)
       statDate.tm_mon--;
       statDate.tm_sec = (int) sec_f;
       lastWeatherStatus = mktime (&statDate);
-      if (strcmp (status, "ok"))
+      if (strcmp (Wstatus, "ok"))
 	{
 	  // if sensors doesn't work, switch rain on
 	  rain = 1;
 	}
       // log only rain messages..they are interesting
       if (rain)
-	syslog (LOG_DEBUG, "rain: %i date: %i status: %s",
-		rain, lastWeatherStatus, status);
+	syslog (LOG_DEBUG, "rain: %i date: %li status: %s",
+		rain, lastWeatherStatus, Wstatus);
       master->setTemperatur (temp);
       master->setHumidity (humidity);
       master->setRain (rain);
@@ -154,8 +154,8 @@ Rts2ConnDcm::receive (fd_set * set)
   return data_size;
 }
 
-Rts2DevDomeDcm::Rts2DevDomeDcm (int argc, char **argv):
-Rts2DevDome (argc, argv)
+Rts2DevDomeDcm::Rts2DevDomeDcm (int in_argc, char **in_argv):
+Rts2DevDome (in_argc, in_argv)
 {
   weatherConn = NULL;
   addOption ('W', "dcm_weather", 1,
@@ -191,19 +191,13 @@ Rts2DevDomeDcm::init ()
   if (ret)
     return ret;
 
-  for (i = 0; i < MAX_CONN; i++)
+  weatherConn = new Rts2ConnDcm (dcm_weather_port, this);
+  weatherConn->init ();
+
+  ret = addConnection (weatherConn);
+  if (ret)
     {
-      if (!connections[i])
-	{
-	  weatherConn = new Rts2ConnDcm (dcm_weather_port, this);
-	  weatherConn->init ();
-	  connections[i] = weatherConn;
-	  break;
-	}
-    }
-  if (i == MAX_CONN)
-    {
-      syslog (LOG_ERR, "no free conn for Rts2ConnFramWeather");
+      delete weatherConn;
       return -1;
     }
 

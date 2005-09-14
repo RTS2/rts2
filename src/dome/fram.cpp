@@ -320,27 +320,27 @@ Rts2DevDomeFram::zjisti_stav_portu ()
 }
 
 void
-Rts2DevDomeFram::zapni_pin (unsigned char port, unsigned char pin)
+Rts2DevDomeFram::zapni_pin (unsigned char in_port, unsigned char pin)
 {
   unsigned char c;
   zjisti_stav_portu ();
-  c = ZAPIS_NA_PORT | port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", port, pin, c);
+  c = ZAPIS_NA_PORT | in_port;
+  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
   write (dome_port, &c, 1);
-  c = stav_portu[port] | pin;
+  c = stav_portu[in_port] | pin;
   syslog (LOG_DEBUG, "zapni_pin: %xh", c);
   write (dome_port, &c, 1);
 }
 
 void
-Rts2DevDomeFram::vypni_pin (unsigned char port, unsigned char pin)
+Rts2DevDomeFram::vypni_pin (unsigned char in_port, unsigned char pin)
 {
   unsigned char c;
   zjisti_stav_portu ();
-  c = ZAPIS_NA_PORT | port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", port, pin, c);
+  c = ZAPIS_NA_PORT | in_port;
+  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
   write (dome_port, &c, 1);
-  c = stav_portu[port] & (~pin);
+  c = stav_portu[in_port] & (~pin);
   syslog (LOG_DEBUG, "%xh", c);
   write (dome_port, &c, 1);
 }
@@ -366,7 +366,7 @@ Rts2DevDomeFram::checkMotorTimeout ()
   time_t now;
   time (&now);
   if (now >= timeoutEnd)
-    syslog (LOG_DEBUG, "timeout reached: %i state: %i", now - timeoutEnd,
+    syslog (LOG_DEBUG, "timeout reached: %li state: %i", now - timeoutEnd,
 	    movingState);
   return (now >= timeoutEnd);
 }
@@ -413,6 +413,7 @@ Rts2DevDomeFram::closeWDC ()
 {
   setWDCTimeOut (1, 120.0);
   close (wdc_port);
+  return 0;
 }
 
 int
@@ -990,8 +991,8 @@ Rts2DevDomeFram::idle ()
   return Rts2DevDome::idle ();
 }
 
-Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
-	     argv)
+Rts2DevDomeFram::Rts2DevDomeFram (int in_argc, char **in_argv):Rts2DevDome (in_argc,
+	     in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   addOption ('w', "wdc_file", 1, "/dev file with watch-dog card");

@@ -8,8 +8,8 @@
 
 #include "dome.h"
 
-Rts2DevDome::Rts2DevDome (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_DOME, 5552, "DOME")
+Rts2DevDome::Rts2DevDome (int in_argc, char **in_argv, int in_device_type):
+Rts2Device (in_argc, in_argv, in_device_type, 5552, "DOME")
 {
   char *states_names[1] = { "dome" };
   setStateNames (1, states_names);
@@ -137,19 +137,6 @@ Rts2DevDome::idle ()
 {
   checkOpening ();
   return Rts2Device::idle ();
-}
-
-int
-Rts2DevDome::ready (Rts2Conn * conn)
-{
-  int ret;
-  ret = ready ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
-      return -1;
-    }
-  return 0;
 }
 
 int

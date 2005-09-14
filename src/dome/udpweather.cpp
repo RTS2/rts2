@@ -39,7 +39,6 @@ int
 Rts2ConnFramWeather::init ()
 {
   struct sockaddr_in bind_addr;
-  int optval = 1;
   int ret;
 
   bind_addr.sin_family = AF_INET;
@@ -70,8 +69,8 @@ int
 Rts2ConnFramWeather::receive (fd_set * set)
 {
   int ret;
-  char buf[100];
-  char status[10];
+  char Wbuf[100];
+  char Wstatus[10];
   int data_size = 0;
   struct tm statDate;
   float sec_f;
@@ -80,22 +79,22 @@ Rts2ConnFramWeather::receive (fd_set * set)
       struct sockaddr_in from;
       socklen_t size = sizeof (from);
       data_size =
-	recvfrom (sock, buf, 80, 0, (struct sockaddr *) &from, &size);
+	recvfrom (sock, Wbuf, 80, 0, (struct sockaddr *) &from, &size);
       if (data_size < 0)
 	{
 	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
 	  return 1;
 	}
-      buf[data_size] = 0;
-      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, buf,
+      Wbuf[data_size] = 0;
+      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, Wbuf,
 	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
       // parse weather info
       ret =
-	sscanf (buf,
+	sscanf (Wbuf,
 		"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%fZ status=%s",
 		&windspeed, &rain, &statDate.tm_year, &statDate.tm_mon,
 		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
-		&sec_f, status);
+		&sec_f, Wstatus);
       if (ret != 9)
 	{
 	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
@@ -108,13 +107,13 @@ Rts2ConnFramWeather::receive (fd_set * set)
       statDate.tm_mon--;
       statDate.tm_sec = (int) sec_f;
       lastWeatherStatus = mktime (&statDate);
-      if (strcmp (status, "watch"))
+      if (strcmp (Wstatus, "watch"))
 	{
 	  // if sensors doesn't work, switch rain on
 	  rain = 1;
 	}
-      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %i status: %s",
-	      windspeed, rain, lastWeatherStatus, status);
+      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %li status: %s",
+	      windspeed, rain, lastWeatherStatus, Wstatus);
       if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
 	{
 	  time (&lastBadWeather);
