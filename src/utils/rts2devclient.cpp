@@ -15,6 +15,8 @@ Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
   addValue (new Rts2ValueString ("serial"));
 
   waiting = NOT_WAITING;
+
+  failedCount = 0;
 }
 
 Rts2DevClient::~Rts2DevClient ()
@@ -121,6 +123,8 @@ Rts2DevClient::command ()
 void
 Rts2DevClient::stateChanged (Rts2ServerState * state)
 {
+  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_ERROR_HW)
+    incFailedCount ();
   if (state->isName ("priority"))
     {
       switch (state->getValue ())
@@ -148,9 +152,9 @@ Rts2DevClient::getMaster ()
 }
 
 int
-Rts2DevClient::queCommand (Rts2Command * command)
+Rts2DevClient::queCommand (Rts2Command * cmd)
 {
-  return connection->queCommand (command);
+  return connection->queCommand (cmd);
 }
 
 void
@@ -319,9 +323,10 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 {
   if (state->isName ("telescope"))
     {
-      switch (state->getValue () & TEL_MASK_MOVING)
+      switch (state->getValue () & TEL_MASK_COP_MOVING)
 	{
 	case TEL_MOVING:
+	case TEL_MOVING | TEL_WAIT_COP:
 	case TEL_PARKING:
 	  moveStart ();
 	  break;
@@ -382,6 +387,51 @@ Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
   addValue (new Rts2ValueInteger ("rain"));
   addValue (new Rts2ValueDouble ("windspeed"));
   addValue (new Rts2ValueDouble ("observingPossible"));
+}
+
+Rts2DevClientCopula::Rts2DevClientCopula (Rts2Conn * in_connection):Rts2DevClientDome
+  (in_connection)
+{
+  addValue (new Rts2ValueDouble ("az"));
+}
+
+void
+Rts2DevClientCopula::syncStarted ()
+{
+}
+
+void
+Rts2DevClientCopula::syncEnded ()
+{
+}
+
+void
+Rts2DevClientCopula::syncFailed (int status)
+{
+}
+
+void
+Rts2DevClientCopula::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("dome"))
+    {
+      switch (state->getValue () & DOME_COP_MASK_SYNC)
+	{
+	case DOME_COP_NOT_SYNC:
+	  if (state->getValue () & DEVICE_ERROR_MASK)
+	    syncFailed (state->getValue ());
+	  else
+	    syncStarted ();
+	  break;
+	case DOME_COP_SYNC:
+	  if (state->getValue () & DEVICE_ERROR_MASK)
+	    syncFailed (state->getValue ());
+	  else
+	    syncEnded ();
+	  break;
+	}
+    }
+  Rts2DevClientDome::stateChanged (state);
 }
 
 Rts2DevClientMirror::Rts2DevClientMirror (Rts2Conn * in_connection):Rts2DevClient

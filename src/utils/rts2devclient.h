@@ -25,8 +25,10 @@ class Rts2Block;
 
 class Rts2DevClient:public Rts2Object
 {
+private:
+  int failedCount;
 protected:
-  Rts2Conn * connection;
+    Rts2Conn * connection;
   enum
   { NOT_PROCESED, PROCESED } processedBaseInfo;
   virtual void getPriority ();
@@ -40,9 +42,22 @@ protected:
   virtual void clearWait ();
   virtual int isWaitMove ();
   virtual void setWaitMove ();
+
+  void incFailedCount ()
+  {
+    failedCount++;
+  }
+  int getFailedCount ()
+  {
+    return failedCount;
+  }
+  void clearFailedCount ()
+  {
+    failedCount = 0;
+  }
 public:
-    Rts2DevClient (Rts2Conn * in_connection);
-    virtual ~ Rts2DevClient (void);
+  Rts2DevClient (Rts2Conn * in_connection);
+  virtual ~ Rts2DevClient (void);
   virtual void postEvent (Rts2Event * event);
   void addValue (Rts2Value * value);
   Rts2Value *getValue (char *value_name);
@@ -53,7 +68,7 @@ public:
   virtual int commandValue (const char *name);
   virtual int command ();
 
-    std::vector < Rts2Value * >values;
+  std::vector < Rts2Value * >values;
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn)
   {
@@ -65,7 +80,16 @@ public:
 
   Rts2Block *getMaster ();
 
-  int queCommand (Rts2Command * command);
+  int queCommand (Rts2Command * cmd);
+
+  int commandReturn (Rts2Command * cmd, int status)
+  {
+    if (status)
+      incFailedCount ();
+    else
+      clearFailedCount ();
+    return 0;
+  }
 };
 
 /**************************************
@@ -121,6 +145,17 @@ class Rts2DevClientDome:public Rts2DevClient
 {
 public:
   Rts2DevClientDome (Rts2Conn * in_connection);
+};
+
+class Rts2DevClientCopula:public Rts2DevClientDome
+{
+protected:
+  virtual void syncStarted ();
+  virtual void syncEnded ();
+public:
+    Rts2DevClientCopula (Rts2Conn * in_connection);
+  virtual void syncFailed (int status);
+  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientMirror:public Rts2DevClient
