@@ -311,8 +311,26 @@ Rts2Command (in_master)
   free (command);
 }
 
-Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus *
-						in_focuser, int in_steps):
+Rts2CommandCopulaMove::Rts2CommandCopulaMove (Rts2DevClientCopula * in_copula,
+					      double ra, double dec):
+Rts2Command (in_copula->getMaster ())
+{
+  char *msg;
+  copula = in_copula;
+  asprintf (&msg, "move %f %f", ra, dec);
+  setCommand (msg);
+  free (msg);
+}
+
+int
+Rts2CommandCopulaMove::commandReturnFailed (int status)
+{
+  if (copula)
+    copula->syncFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus * in_focuser, int in_steps):
 Rts2Command (in_focuser->getMaster ())
 {
   char *msg;
@@ -367,6 +385,7 @@ Rts2CommandIntegrate::commandReturnFailed (int status)
 {
   if (phot)
     phot->integrationFailed (status);
+  return Rts2Command::commandReturnFailed (status);
 }
 
 Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * in_master, int next_id):

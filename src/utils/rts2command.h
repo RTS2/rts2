@@ -183,6 +183,15 @@ public:
 		      double dec, double ra_err, double dec_err);
 };
 
+class Rts2CommandCopulaMove:public Rts2Command
+{
+  Rts2DevClientCopula *copula;
+public:
+    Rts2CommandCopulaMove (Rts2DevClientCopula * in_copula, double ra,
+			   double dec);
+  virtual int commandReturnFailed (int status);
+};
+
 class Rts2CommandChangeFocus:public Rts2Command
 {
 private:

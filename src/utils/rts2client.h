@@ -94,7 +94,7 @@ protected:
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
   virtual int willConnect (Rts2Address * in_addr);
 public:
-    Rts2Client (int argc, char **argv);
+    Rts2Client (int in_argc, char **in_argv);
     virtual ~ Rts2Client (void);
 
   virtual int processOption (int in_opt);

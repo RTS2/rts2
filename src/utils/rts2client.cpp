@@ -57,7 +57,7 @@ Rts2ConnClient::init ()
   freeaddrinfo (device_addr);
   if (ret == -1)
     {
-      if (errno = EINPROGRESS)
+      if (errno == EINPROGRESS)
 	{
 	  setConnState (CONN_CONNECTING);
 	  return 0;
@@ -153,7 +153,8 @@ Rts2Client::willConnect (Rts2Address * in_addr)
   return 1;
 }
 
-Rts2Client::Rts2Client (int argc, char **argv):Rts2Block (argc, argv)
+Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc,
+	   in_argv)
 {
   central_host = "localhost";
   central_port = "5557";
@@ -216,14 +217,14 @@ Rts2Client::init ()
 void
 Rts2Client::getMasterState (char buf[20])
 {
-  int masterState;
-  masterState = Rts2Block::getMasterState ();
-  if (masterState == SERVERD_OFF)
+  int currMasterState;
+  currMasterState = Rts2Block::getMasterState ();
+  if (currMasterState == SERVERD_OFF)
     {
       strcpy (buf, "OFF");
       return;
     }
-  if ((masterState & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+  if ((currMasterState & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
     {
       strcpy (buf, "standby ");
     }
@@ -231,7 +232,7 @@ Rts2Client::getMasterState (char buf[20])
     {
       strcpy (buf, "ready ");
     }
-  switch (masterState & SERVERD_STATUS_MASK)
+  switch (currMasterState & SERVERD_STATUS_MASK)
     {
     case SERVERD_DAY:
       strcat (buf, "day");
@@ -342,11 +343,11 @@ Rts2ConnCentraldClient::command ()
 int
 Rts2ConnCentraldClient::informations ()
 {
-  char *name;
+  char *i_name;
   int status_num;
   char *state_name;
   int state_value;
-  if (paramNextString (&name) || paramNextInteger (&status_num)
+  if (paramNextString (&i_name) || paramNextInteger (&status_num)
       || paramNextString (&state_name) || paramNextInteger (&state_value)
       || !paramEnd ())
     return 0;

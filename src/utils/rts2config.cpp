@@ -64,7 +64,6 @@ Rts2Config::getString (const char *section, const char *param, char *buf,
   char *ss;
   char *es;
   int ret;
-  int len;
 
   *buf = '\0';
 
@@ -199,7 +198,6 @@ int
 Rts2Config::getBoolean (const char *section, const char *param)
 {
   char valbuf[100];
-  char *retv;
   int ret;
   ret = getString (section, param, valbuf, 100);
   if (ret)

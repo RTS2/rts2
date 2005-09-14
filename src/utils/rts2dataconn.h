@@ -29,7 +29,7 @@ private:
   Rts2Conn *ownerConnection;
 public:
     Rts2ClientTCPDataConn (Rts2Block * in_master, Rts2Conn * in_owner_conn,
-			   char *hostname, int port, int in_totalSize);
+			   char *hostname, int in_port, int in_totalSize);
     virtual ~ Rts2ClientTCPDataConn (void);
 
   virtual int receive (fd_set * set);

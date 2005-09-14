@@ -29,9 +29,7 @@ public:
   {
     return valueName;
   }
-  virtual int setValue (Rts2Conn * connection)
-  {
-  }
+  virtual int setValue (Rts2Conn * connection) = 0;
   virtual char *getValue (int width = 0, int precision = 0)
   {
     return "<unknow>";

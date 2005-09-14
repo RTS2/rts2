@@ -12,12 +12,12 @@
 
 Rts2ClientTCPDataConn::Rts2ClientTCPDataConn (Rts2Block * in_master,
 					      Rts2Conn * in_owner_conn,
-					      char *hostname, int port,
+					      char *hostname, int in_port,
 					      int in_totalSize):
 Rts2ConnNoSend (in_master)
 {
   struct addrinfo hints;
-  struct addrinfo *addr;
+  struct addrinfo *in_addr;
   char *s_port;
   int ret;
 
@@ -35,23 +35,24 @@ Rts2ConnNoSend (in_master)
   hints.ai_family = PF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = 0;
-  asprintf (&s_port, "%i", port);
-  ret = getaddrinfo (hostname, s_port, &hints, &addr);
+  asprintf (&s_port, "%i", in_port);
+  ret = getaddrinfo (hostname, s_port, &hints, &in_addr);
   free (s_port);
   if (ret)
     {
       syslog (LOG_ERR,
 	      "Rts2ClientTCPDataConn::Rts2ClientTCPDataConn getaddrinfo: %m");
-      freeaddrinfo (addr);
+      freeaddrinfo (in_addr);
       sock = -1;
       return;
     }
-  sock = socket (addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+  sock =
+    socket (in_addr->ai_family, in_addr->ai_socktype, in_addr->ai_protocol);
   if (sock == -1)
     {
       syslog (LOG_ERR,
 	      "Rts2ClientTCPDataConn::Rts2ClientTCPDataConn socket: %m");
-      freeaddrinfo (addr);
+      freeaddrinfo (in_addr);
       return;
     }
   ret = fcntl (sock, F_SETFL, O_NONBLOCK);
@@ -61,13 +62,13 @@ Rts2ConnNoSend (in_master)
 	      "Rts2ClientTCPDataConn::Rts2ClientTCPDataConn cannot set socket non-blocking: %m");
     }
   // try to connect
-  ret = connect (sock, addr->ai_addr, addr->ai_addrlen);
-  freeaddrinfo (addr);
+  ret = connect (sock, in_addr->ai_addr, in_addr->ai_addrlen);
+  freeaddrinfo (in_addr);
   data = new char[totalSize];
   dataTop = data;
   if (ret == -1)
     {
-      if (errno = EINPROGRESS)
+      if (errno == EINPROGRESS)
 	{
 	  setConnState (CONN_CONNECTING);
 	  return;

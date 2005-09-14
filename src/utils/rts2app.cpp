@@ -150,4 +150,5 @@ int
 Rts2App::run ()
 {
   std::cout << "Empty run methods!" << std::endl;
+  return 0;
 }

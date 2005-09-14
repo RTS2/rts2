@@ -135,17 +135,17 @@ public:
   {
     return !strcmp (cmd, getCommand ());
   }
-  virtual int send (char *message);
-  int sendValue (char *name, int value);
-  int sendValue (char *name, int val1, int val2);
-  int sendValue (char *name, int val1, double val2);
-  int sendValue (char *name, char *value);
-  int sendValue (char *name, double value);
-  int sendValue (char *name, char *val1, int val2);
-  int sendValue (char *name, int val1, int val2, double val3, double val4,
+  virtual int send (char *msg);
+  int sendValue (char *val_name, int value);
+  int sendValue (char *val_name, int val1, int val2);
+  int sendValue (char *val_name, int val1, double val2);
+  int sendValue (char *val_name, char *value);
+  int sendValue (char *val_name, double value);
+  int sendValue (char *val_name, char *val1, int val2);
+  int sendValue (char *val_name, int val1, int val2, double val3, double val4,
 		 double val5, double val6);
-  int sendValueTime (char *name, time_t * value);
-  int sendCommandEnd (int num, char *message);
+  int sendValueTime (char *val_name, time_t * value);
+  int sendCommandEnd (int num, char *in_msg);
   virtual int processLine ();
   virtual int receive (fd_set * set);
   conn_type_t getType ()
@@ -222,12 +222,9 @@ public:
     return -1;
   }
 
-  int queCommand (Rts2Command * command);
-  int queSend (Rts2Command * command);
-  virtual int commandReturn (Rts2Command * command, int status)
-  {
-    return 0;
-  }
+  int queCommand (Rts2Command * cmd);
+  int queSend (Rts2Command * cmd);
+  virtual int commandReturn (Rts2Command * cmd, int in_status);
   int queEmpty ()
   {
     return (runningCommand == NULL && commandQue.size () == 0);
@@ -366,7 +363,7 @@ public:
     if (new_timeout < idle_timeout)
       idle_timeout = new_timeout;
   }
-  int endRunLoop ()
+  void endRunLoop ()
   {
     end_loop = 1;
   }
@@ -438,7 +435,7 @@ public:
     return NULL;
   }
 
-  int queAll (Rts2Command * command);
+  int queAll (Rts2Command * cmd);
   int queAll (char *text);
 
   int allQuesEmpty ();

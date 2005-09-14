@@ -138,7 +138,7 @@ Rts2DevConn::init ()
   freeaddrinfo (device_addr);
   if (ret == -1)
     {
-      if (errno = EINPROGRESS)
+      if (errno == EINPROGRESS)
 	{
 	  setConnState (CONN_CONNECTING);
 	  return 0;
@@ -402,6 +402,8 @@ Rts2DevConnMaster::idle ()
 	    setConnState (CONN_AUTH_OK);
 	}
       break;
+    default:
+      break;
     }
   return Rts2Conn::idle ();
 }
@@ -412,11 +414,11 @@ Rts2DevConnMaster::command ()
   Rts2Conn *auth_conn;
   if (isCommand ("A"))
     {
-      char *type;
+      char *a_type;
       int auth_id;
-      if (paramNextString (&type))
+      if (paramNextString (&a_type))
 	return -1;
-      if (!strcmp ("authorization_ok", type))
+      if (!strcmp ("authorization_ok", a_type))
 	{
 	  if (paramNextInteger (&auth_id) || !paramEnd ())
 	    return -1;
@@ -426,7 +428,7 @@ Rts2DevConnMaster::command ()
 	    auth_conn->authorizationOK ();
 	  return -1;
 	}
-      else if (!strcmp ("authorization_failed", type))
+      else if (!strcmp ("authorization_failed", a_type))
 	{
 	  if (paramNextInteger (&auth_id) || !paramEnd ())
 	    return -1;
@@ -436,7 +438,7 @@ Rts2DevConnMaster::command ()
 	    auth_conn->authorizationFailed ();
 	  return -1;
 	}
-      if (!strcmp ("registered_as", type))
+      if (!strcmp ("registered_as", a_type))
 	{
 	  int clientId;
 	  if (paramNextInteger (&clientId) || !paramEnd ())
@@ -486,11 +488,11 @@ Rts2DevConnMaster::message ()
 int
 Rts2DevConnMaster::informations ()
 {
-  char *name;
+  char *i_name;
   int status_num;
   char *state_name;
   int state_value;
-  if (paramNextString (&name) || paramNextInteger (&status_num)
+  if (paramNextString (&i_name) || paramNextInteger (&status_num)
       || paramNextString (&state_name) || paramNextInteger (&state_value)
       || !paramEnd ())
     return -1;
@@ -560,7 +562,7 @@ Rts2DevConnData::init ()
 }
 
 int
-Rts2DevConnData::send (char *message)
+Rts2DevConnData::send (char *msg)
 {
   return 0;
 }
@@ -576,7 +578,7 @@ Rts2DevConnData::send (char *data, size_t data_size)
 int
 Rts2DevConnData::sendHeader ()
 {
-
+  return 0;
 }
 
 void
@@ -761,6 +763,7 @@ Rts2Device::maskState (int state_num, int state_mask, int new_state,
 	  "Rts2Device::maskState state: %i state_mask: %i new_state: %i desc: %s",
 	  state_num, state_mask, new_state, description);
   states[state_num]->maskState (state_mask, new_state, description);
+  return 0;
 }
 
 int
@@ -797,7 +800,7 @@ Rts2Device::init ()
 		  lock_fname);
 	  return -1;
 	}
-      syslog (LOG_ERR, "cannot flock %s: %m, lock_fname");
+      syslog (LOG_ERR, "cannot flock %s: %m, lock_fname", lock_fname);
       return -1;
     }
 
@@ -825,7 +828,7 @@ Rts2Device::init ()
 int
 Rts2Device::idle ()
 {
-  Rts2Block::idle ();
+  return Rts2Block::idle ();
 }
 
 int
@@ -916,6 +919,7 @@ Rts2Device::infoAll ()
 	  sendInfo (conn);
 	}
     }
+  return 0;
 }
 
 int

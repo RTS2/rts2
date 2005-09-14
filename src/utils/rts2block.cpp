@@ -92,6 +92,7 @@ Rts2Conn::add (fd_set * set)
     {
       FD_SET (sock, set);
     }
+  return 0;
 }
 
 void
@@ -126,11 +127,12 @@ Rts2Conn::idle ()
 	}
       if (now > (lastData + getConnTimeout () * 2))
 	{
-	  syslog (LOG_DEBUG, "Connection timeout: %i %i %i '%s' type: %i",
+	  syslog (LOG_DEBUG, "Connection timeout: %li %li %li '%s' type: %i",
 		  lastGoodSend, lastData, now, getName (), type);
 	  connectionError ();
 	}
     }
+  return 0;
 }
 
 int
@@ -296,7 +298,6 @@ Rts2Conn::receive (fd_set * set)
 	{
 	  return acceptConn ();
 	}
-      int ret;
       data_size = read (sock, buf_top, MAX_DATA - (buf_top - buf));
       if (data_size <= 0)
 	return connectionError ();
@@ -350,13 +351,13 @@ Rts2Conn::receive (fd_set * set)
 }
 
 int
-Rts2Conn::getOurAddress (struct sockaddr_in *addr)
+Rts2Conn::getOurAddress (struct sockaddr_in *in_addr)
 {
   // get our address and pass it to data conn
   socklen_t size;
   size = sizeof (struct sockaddr_in);
 
-  return getsockname (sock, (struct sockaddr *) addr, &size);
+  return getsockname (sock, (struct sockaddr *) in_addr, &size);
 }
 
 void
@@ -369,7 +370,6 @@ void
 Rts2Conn::getAddress (char *addrBuf, int buf_size)
 {
   char *addr_s;
-  int ret;
   addr_s = inet_ntoa (addr);
   strncpy (addrBuf, addr_s, buf_size);
   addrBuf[buf_size - 1] = '0';
@@ -400,33 +400,41 @@ Rts2Conn::sendPriorityInfo (int number)
 }
 
 int
-Rts2Conn::queCommand (Rts2Command * command)
+Rts2Conn::queCommand (Rts2Command * cmd)
 {
-  command->setConnection (this);
+  cmd->setConnection (this);
   if (runningCommand
       || isConnState (CONN_CONNECTING)
       || isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))
     {
-      commandQue.push_back (command);
+      commandQue.push_back (cmd);
       return 0;
     }
-  runningCommand = command;
-  return command->send ();
+  runningCommand = cmd;
+  return cmd->send ();
 }
 
 int
-Rts2Conn::queSend (Rts2Command * command)
+Rts2Conn::queSend (Rts2Command * cmd)
 {
-  command->setConnection (this);
+  cmd->setConnection (this);
   if (isConnState (CONN_CONNECTING) || isConnState (CONN_UNKNOW))
     {
-      commandQue.push_front (command);
+      commandQue.push_front (cmd);
       return 0;
     }
   if (runningCommand)
     commandQue.push_front (runningCommand);
-  runningCommand = command;
+  runningCommand = cmd;
   return runningCommand->send ();
+}
+
+int
+Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
+{
+  if (otherDevice)
+    otherDevice->commandReturn (cmd, in_status);
+  return 0;
 }
 
 void
@@ -436,9 +444,9 @@ Rts2Conn::queClear ()
   for (que_iter = commandQue.begin (); que_iter != commandQue.end ();
        que_iter++)
     {
-      Rts2Command *command;
-      command = (*que_iter);
-      delete command;
+      Rts2Command *cmd;
+      cmd = (*que_iter);
+      delete cmd;
     }
   commandQue.clear ();
 }
@@ -599,7 +607,7 @@ Rts2Conn::message ()
 }
 
 int
-Rts2Conn::send (char *message)
+Rts2Conn::send (char *msg)
 {
   int len;
   int ret;
@@ -607,21 +615,21 @@ Rts2Conn::send (char *message)
   if (sock == -1)
     return -1;
 
-  len = strlen (message);
+  len = strlen (msg);
 
-  ret = write (sock, message, len);
+  ret = write (sock, msg, len);
 
   if (ret != len)
     {
       syslog (LOG_ERR,
 	      "Rts2Conn::send [%i:%i] error %i state: %i sending '%s':%m",
-	      getCentraldId (), conn_state, sock, ret, message);
+	      getCentraldId (), conn_state, sock, ret, msg);
       connectionError ();
       return -1;
     }
 #ifdef DEBUG_ALL
   syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (),
-	  sock, ret, message);
+	  sock, ret, msg);
 #endif
   write (sock, "\r\n", 2);
   successfullSend ();
@@ -667,85 +675,85 @@ Rts2Conn::connectionError ()
 }
 
 int
-Rts2Conn::sendValue (char *name, int value)
+Rts2Conn::sendValue (char *val_name, int value)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %i", name, value);
+  asprintf (&msg, "V %s %i", val_name, value);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *name, int val1, int val2)
+Rts2Conn::sendValue (char *val_name, int val1, int val2)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %i %i", name, val1, val2);
+  asprintf (&msg, "V %s %i %i", val_name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *name, int val1, double val2)
+Rts2Conn::sendValue (char *val_name, int val1, double val2)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %i %f", name, val1, val2);
+  asprintf (&msg, "V %s %i %f", val_name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *name, char *value)
+Rts2Conn::sendValue (char *val_name, char *value)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %s", name, value);
+  asprintf (&msg, "V %s %s", val_name, value);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *name, double value)
+Rts2Conn::sendValue (char *val_name, double value)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %f", name, value);
+  asprintf (&msg, "V %s %f", val_name, value);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *name, char *val1, int val2)
+Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %s %i", name, val1, val2);
+  asprintf (&msg, "V %s %s %i", val_name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *name, int val1, int val2, double val3, double val4,
-		     double val5, double val6)
+Rts2Conn::sendValue (char *val_name, int val1, int val2, double val3,
+		     double val4, double val5, double val6)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %i %i %f %f %f %f", name, val1, val2, val3, val4,
+  asprintf (&msg, "V %s %i %i %f %f %f %f", val_name, val1, val2, val3, val4,
 	    val5, val6);
   ret = send (msg);
   free (msg);
@@ -753,23 +761,23 @@ Rts2Conn::sendValue (char *name, int val1, int val2, double val3, double val4,
 }
 
 int
-Rts2Conn::sendValueTime (char *name, time_t * value)
+Rts2Conn::sendValueTime (char *val_name, time_t * value)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, "V %s %i", name, *value);
+  asprintf (&msg, "V %s %li", val_name, *value);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendCommandEnd (int num, char *message)
+Rts2Conn::sendCommandEnd (int num, char *in_msg)
 {
   char *msg;
 
-  asprintf (&msg, "%+04i %s", num, message);
+  asprintf (&msg, "%+04i %s", num, in_msg);
   send (msg);
   free (msg);
 
@@ -954,7 +962,7 @@ Rts2Block::init ()
 
   if (deamonize)
     {
-      int ret = fork ();
+      ret = fork ();
       if (ret < 0)
 	{
 	  perror ("Rts2Block::Rts2Device deamonize fork");
@@ -971,7 +979,6 @@ Rts2Block::init ()
       dup (f);
     }
 
-  socklen_t client_len;
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     {
@@ -1238,6 +1245,7 @@ Rts2Block::run ()
       if (ret == -1)
 	break;
     }
+  return 0;
 }
 
 int
@@ -1281,6 +1289,7 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	}
     }
   priority_client = in_priority_client;
+  return 0;
 }
 
 int
@@ -1445,6 +1454,8 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2DevClientCamera (conn);
     case DEVICE_TYPE_DOME:
       return new Rts2DevClientDome (conn);
+    case DEVICE_TYPE_COPULA:
+      return new Rts2DevClientCopula (conn);
     case DEVICE_TYPE_PHOT:
       return new Rts2DevClientPhot (conn);
     case DEVICE_TYPE_EXECUTOR:
@@ -1485,6 +1496,7 @@ int
 Rts2Block::addUser (Rts2User * in_user)
 {
   blockUsers.push_back (in_user);
+  return 0;
 }
 
 Rts2Conn *
