@@ -1,6 +1,7 @@
 #include "copula.h"
 #include "udpweather.h"
 
+#include <math.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <signal.h>
@@ -22,6 +23,12 @@
 // average az size of one step (in arcdeg)
 #define STEP_AZ_SIZE		0.2
 
+// how many deg to turn before switching from fast to non-fast mode
+#define FAST_TIMEOUT		1
+
+// how many arcdeg we can be off to be considerd to hit position
+#define MIN_ERR			0.6
+
 /*!
  * Copula for MARK telescope on Prague Observatory - http://www.observatory.cz
  *
@@ -41,11 +48,26 @@ private:
 
   int weatherPort;
   Rts2ConnFramWeather *weatherConn;
+
+  double lastFast;
+
+  enum
+  { UNKNOW, IN_PROGRESS, DONE, ERROR } initialized;
+
+  int slew ();
+protected:
+    virtual int moveStart ();
+  virtual long isMoving ();
+  virtual int moveEnd ();
 public:
     Rts2DevCopulaMark (int argc, char **argv);
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
+
+  virtual int ready ();
+  virtual int info ();
+  virtual int baseInfo ();
 
   virtual int openDome ();
   virtual long isOpened ();
@@ -56,13 +78,14 @@ public:
   virtual int moveStop ();
 };
 
-uint16_t
-Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
+uint16_t Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
-  uint16_t ret = 0xff;
+  uint16_t
+    ret = 0xff;
   for (int l = 0; l < msgLen; l++)
     {
-      char znakp = msgBuf[l];
+      char
+	znakp = msgBuf[l];
       for (int i = 0; i < 8; i++)
 	{
 	  if ((ret ^ znakp) & 0x01)
@@ -138,6 +161,10 @@ Rts2DevCopulaMark::writeReg (int reg, uint16_t reg_val)
 {
   char wbuf[11];
   char rbuf[8];
+  // we must either be initialized or
+  // or we must issue initialization request
+  if (!(initialized == DONE || (reg == REG_COP_CONTROL && reg_val == 0x10)))
+    return -1;
   wbuf[0] = SLAVE;
   wbuf[1] = REG_WRITE;
   wbuf[2] = (reg & 0xff00) >> 8;
@@ -156,7 +183,11 @@ Rts2DevCopulaMark::Rts2DevCopulaMark (int in_argc, char **in_argv):Rts2DevCopula
   weatherPort = 5002;
   weatherConn = NULL;
 
+  lastFast = nan ("f");
+
   device_file = "/dev/ttyS0";
+
+  initialized = UNKNOW;
 
   addOption ('f', "device", 1, "device filename (default to /dev/ttyS0");
   addOption ('W', "mark_weather", 1,
@@ -232,14 +263,55 @@ int
 Rts2DevCopulaMark::idle ()
 {
   int ret;
-  uint16_t az_val;
-  // read az state..
-  ret = readReg (REG_POSITION, &az_val);
-  if (!ret)
+  uint16_t copState;
+  // check for weather..
+  if (weatherConn->isGoodWeather ())
     {
-      setCurrentAz (az_val * STEP_AZ_SIZE);
+      if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
+	{
+	  // after centrald reply, that he switched the state, dome will
+	  // open
+	  sendMaster ("on");
+	}
     }
-
+  else
+    {
+      // close dome - don't thrust centrald to be running and closing
+      // it for us
+      ret = closeDome ();
+      if (ret == -1)
+	{
+	  setTimeout (10 * USEC_SEC);
+	}
+      setMasterStandby ();
+    }
+  if (initialized == UNKNOW || initialized == DONE
+      || initialized == IN_PROGRESS || initialized == ERROR)
+    {
+      // check if initialized
+      ret = readReg (REG_STATE, &copState);
+      if (ret)
+	{
+	  syslog (LOG_ERR, "Rts2DevCopula::idle cannot read reg!");
+	  sleep (2);
+	  tcflush (cop_desc, TCIOFLUSH);
+	  initialized = ERROR;
+	}
+      else if ((copState & 0x0200) == 0)
+	{
+	  if (initialized != IN_PROGRESS)
+	    {
+	      // not initialized, initialize
+	      writeReg (REG_COP_CONTROL, 0x10);
+	      initialized = IN_PROGRESS;
+	    }
+	}
+      else
+	{
+	  initialized = DONE;
+	}
+    }
   return Rts2DevCopula::idle ();
 }
 
@@ -247,6 +319,8 @@ int
 Rts2DevCopulaMark::openDome ()
 {
   int ret;
+  if (!weatherConn->isGoodWeather ())
+    return -1;
   ret = writeReg (REG_SPLIT_CONTROL, 0x0001);
   if (ret)
     return ret;
@@ -284,6 +358,125 @@ Rts2DevCopulaMark::isClosed ()
       return USEC_SEC;
     }
   return -2;
+}
+
+int
+Rts2DevCopulaMark::ready ()
+{
+  return 0;
+}
+
+int
+Rts2DevCopulaMark::info ()
+{
+  int ret;
+  int16_t az_val;
+  rain = weatherConn->getRain ();
+  windspeed = weatherConn->getWindspeed ();
+  nextOpen = weatherConn->getNextOpen ();
+  ret = readReg (REG_POSITION, (uint16_t *) & az_val);
+  if (!ret)
+    {
+      setCurrentAz (ln_range_degrees (az_val * STEP_AZ_SIZE));
+      return Rts2DevCopula::info ();
+    }
+  return -1;
+}
+
+int
+Rts2DevCopulaMark::baseInfo ()
+{
+  return 0;
+}
+
+/**
+ * @return -1 on error, -2 when move complete (on target position), 0 when nothing interesting happen
+ */
+int
+Rts2DevCopulaMark::slew ()
+{
+  int ret;
+  uint16_t copControl;
+  ret = readReg (REG_COP_CONTROL, &copControl);
+  // we need to move in oposite direction..do slow change
+  if (((copControl & 0x01) && getTargetDistance () < 0)
+      || ((copControl & 0x02) && getTargetDistance () > 0))
+    {
+      // stop faster movement..
+      if (copControl & 0x08)
+	{
+	  copControl &= ~(0x08);
+	  lastFast = getCurrentAz ();
+	  return writeReg (REG_COP_CONTROL, copControl);
+	}
+      // wait for copula to reach some distance in slow mode..
+      if (fabs (lastFast - getCurrentAz ()) < FAST_TIMEOUT
+	  || fabs (lastFast - getCurrentAz ()) > (360 - FAST_TIMEOUT))
+	{
+	  return 0;
+	}
+      // can finaly stop movement..
+      copControl &= ~(0x03);
+      writeReg (REG_COP_CONTROL, copControl);
+      lastFast = nan ("f");
+    }
+  // going our direction..
+  if ((copControl & 0x01) || (copControl & 0x02))
+    {
+      // already in fast mode..
+      if (copControl & 0x08)
+	{
+	  // try to slow down when needed
+	  if (fabs (getTargetDistance ()) < FAST_TIMEOUT)
+	    {
+	      copControl &= ~(0x08);
+	      ret = writeReg (REG_COP_CONTROL, copControl);
+	      if (ret)
+		return -1;
+	    }
+	}
+      // test if we hit target destination
+      if (fabs (getTargetDistance ()) < MIN_ERR)
+	{
+	  copControl &= ~(0x03);
+	  ret = writeReg (REG_COP_CONTROL, copControl);
+	  if (ret)
+	    return -1;
+	  return -2;
+	}
+    }
+  return 0;
+}
+
+int
+Rts2DevCopulaMark::moveStart ()
+{
+  int ret;
+  ret = needSplitChange ();
+  if (ret == 0 || ret == -1)
+    return ret;			// pretend we change..so other devices can sync on our command
+  slew ();
+  return Rts2DevCopula::moveStart ();
+}
+
+long
+Rts2DevCopulaMark::isMoving ()
+{
+  int ret;
+  ret = needSplitChange ();
+  if (ret == -1)
+    return ret;
+  ret = slew ();
+  if (ret == 0)
+    return USEC_SEC / 100;
+  return ret;
+}
+
+int
+Rts2DevCopulaMark::moveEnd ()
+{
+  writeReg (REG_COP_CONTROL, 0x00);
+  return Rts2DevCopula::moveEnd ();
 }
 
 int

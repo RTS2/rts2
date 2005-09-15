@@ -16,6 +16,9 @@ private:
 
   char *configFile;
 
+  double targetDistance;
+  void synced ();
+
 protected:
   // called to bring copula in sync with target az
     virtual int moveStart ();
@@ -30,6 +33,17 @@ protected:
   {
     currentAz = in_az;
   }
+
+  double getTargetDistance ()
+  {
+    return targetDistance;
+  }
+
+  double getCurrentAz ()
+  {
+    return currentAz;
+  }
+
 public:
   Rts2DevCopula (int argc, char **argv);
 
@@ -46,7 +60,10 @@ public:
 
   // returns target current alt & az
   void getTargetAltAz (struct ln_hrz_posn *hrz);
-  // returns 0 when we are satisfied with curent position, 1 when split position change is needed, -1 when we cannot reposition to given ra/dec
+  // returns 0 when we are satisfied with curent position, 1 when split position change is needed,
+  // and west movement is recomended, 2 when east movement is recomended,
+  // set targetDistance to targetdistance in deg.. (is in -180..+180 range)
+  // -1 when we cannot reposition to given ra/dec
   virtual int needSplitChange ();
   // calculate split width in arcdeg for given altititude; when copula don't have split at given altitude, returns -1
   virtual double getSplitWidth (double alt)

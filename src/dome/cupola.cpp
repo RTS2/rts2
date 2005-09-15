@@ -9,6 +9,7 @@ Rts2DevDome (in_argc, in_argv, DEVICE_TYPE_COPULA)
   targetPos.ra = nan ("f");
   targetPos.dec = nan ("f");
   currentAz = 0;		// pointing to south
+  targetDistance = 0;
 
   configFile = NULL;
 
@@ -68,7 +69,7 @@ Rts2DevCopula::idle ()
 	    moveStop ();
 	}
     }
-  else if (needSplitChange () == 1)
+  else if (needSplitChange () > 0)
     {
       moveStart ();
     }
@@ -101,8 +102,7 @@ Rts2DevCopula::moveTo (Rts2Conn * conn, double ra, double dec)
   int ret;
   targetPos.ra = ra;
   targetPos.dec = dec;
-  info ();
-  sendInfo (conn);
+  infoAll ();
   ret = moveStart ();
   if (ret)
     return ret;
@@ -125,6 +125,13 @@ Rts2DevCopula::moveStop ()
   return 0;
 }
 
+void
+Rts2DevCopula::synced ()
+{
+  infoAll ();
+  maskState (0, DOME_COP_MASK_SYNC, DOME_COP_SYNC);
+}
+
 int
 Rts2DevCopula::moveEnd ()
 {
@@ -144,15 +151,29 @@ Rts2DevCopula::getTargetAltAz (struct ln_hrz_posn *hrz)
 int
 Rts2DevCopula::needSplitChange ()
 {
+  int ret;
   struct ln_hrz_posn targetHrz;
   double splitWidth;
   getTargetAltAz (&targetHrz);
   splitWidth = getSplitWidth (targetHrz.alt);
   if (splitWidth < 0)
     return -1;
+  // get current az
+  ret = info ();
+  if (ret)
+    return -1;
   // simple check; can be repleaced by some more complicated for more complicated setups
+  targetDistance = getCurrentAz () - targetHrz.az;
+  if (targetDistance > 180)
+    targetDistance = (targetDistance - 360);
+  else if (targetDistance < -180)
+    targetDistance = (targetDistance + 360);
   if (fabs (currentAz - targetHrz.az) > getSplitWidth (targetHrz.alt))
-    return 1;
+    {
+      if ((getState (0) & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
+	synced ();
+      return 1;
+    }
   return 0;
 }
 
