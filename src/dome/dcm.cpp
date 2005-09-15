@@ -185,7 +185,6 @@ int
 Rts2DevDomeDcm::init ()
 {
   int ret;
-  int i;
 
   ret = Rts2DevDome::init ();
   if (ret)
