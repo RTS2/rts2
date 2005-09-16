@@ -839,6 +839,8 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   matchCount = 0;
   tel_desc = -1;
 
+  worm = 0;
+
   clearSearch ();
 }
 
