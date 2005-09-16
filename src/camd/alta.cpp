@@ -59,7 +59,6 @@ CameraChipAlta::init ()
 int
 CameraChipAlta::setBinning (int in_vert, int in_hori)
 {
-  int ret;
   alta->write_RoiBinningH (in_hori);
   alta->write_RoiBinningV (in_vert);
   return CameraChip::setBinning (in_vert, in_hori);
@@ -116,7 +115,6 @@ int
 CameraChipAlta::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   int ret;
-  int ret1;
   ret = CameraChip::startReadout (dataConn, conn);
   // set region of intereset..
   alta->write_RoiPixelsV (chipUsedReadout->height);
@@ -149,7 +147,6 @@ CameraChipAlta::readoutOneLine ()
     }
   if (sendLine == 0)
     {
-      int ret;
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;

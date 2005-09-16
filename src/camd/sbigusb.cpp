@@ -299,7 +299,6 @@ Rts2DevCameraSbig::ready ()
 int
 Rts2DevCameraSbig::info ()
 {
-  MY_LOGICAL enabled;
   QueryTemperatureStatusResults qtsr;
   QueryCommandStatusParams qcsp;
   QueryCommandStatusResults qcsr;
