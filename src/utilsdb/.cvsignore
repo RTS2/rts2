@@ -6,3 +6,5 @@ rts2appdb.cpp
 rts2devicedb.cpp
 sub_targets.cpp
 target.cpp
+airmasscale.cpp
+rts2-*
