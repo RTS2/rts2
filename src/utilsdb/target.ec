@@ -61,6 +61,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   img_id = 0;
   obs_state = 0;
   target_id = in_tar_id;
+  target_type = TYPE_UNKNOW;
 
   startCalledNum = 0;
 
@@ -732,6 +733,7 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
       break;
   }
 
+  retTarget->setTargetType (db_type_id);
   ret = retTarget->load ();
   if (ret)
   {

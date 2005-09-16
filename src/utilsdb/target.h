@@ -16,6 +16,8 @@
 
 #define MAX_COMMAND_LENGTH              2000
 
+#define TYPE_UNKNOW		'u'
+
 #define TYPE_OPORTUNITY         'O'
 #define TYPE_GRB                'G'
 #define TYPE_GRB_TEST		'g'
@@ -109,6 +111,7 @@ private:
   // which changes behaviour based on how many times we called them before
 protected:
   int target_id;
+  char target_type;
   struct ln_lnlat_posn *observer;
 
   virtual int getDBScript (const char *camera_name, char *script);
@@ -239,6 +242,14 @@ public:
   int getTargetID ()
   {
     return target_id;
+  }
+  char getTargetType ()
+  {
+    return target_type;
+  }
+  void setTargetType (char in_target_type)
+  {
+    target_type = in_target_type;
   }
   int getObsId ()
   {
