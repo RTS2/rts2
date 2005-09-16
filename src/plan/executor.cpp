@@ -478,7 +478,9 @@ Rts2Executor::setGrb (int grbId)
   int ret;
 
   // is during night and ready?
-  if (getMasterState () != SERVERD_NIGHT)
+  if (!(getMasterState () == SERVERD_NIGHT
+	|| getMasterState () == SERVERD_DUSK
+	|| getMasterState () == SERVERD_DAWN))
     {
       syslog (LOG_DEBUG, "Rts2Executor::setGrb daylight GRB ignored");
       return -2;
@@ -491,7 +493,7 @@ Rts2Executor::setGrb (int grbId)
       return -2;
     }
   ret = grbTarget->getAltAz (&grbHrz);
-  // don't care if we don't get altitude from libnova..it's completly weirde, but we should not
+  // don't care if we don't get altitude from libnova..it's completly weird, but we should not
   // miss GRB:(
   if (!ret)
     {
