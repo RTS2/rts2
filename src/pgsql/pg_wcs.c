@@ -70,7 +70,7 @@ PG_FUNCTION_INFO_V1 (img_wcs_crval1);
 PG_FUNCTION_INFO_V1 (img_wcs_crval2);
 PG_FUNCTION_INFO_V1 (img_wcs_cdelt1);
 PG_FUNCTION_INFO_V1 (img_wcs_cdelt2);
-PG_FUNCTION_INFO_V1 (img_wcs_rotang);
+PG_FUNCTION_INFO_V1 (img_wcs_crota);
 PG_FUNCTION_INFO_V1 (img_wcs_epoch);
 
 // helper
@@ -157,7 +157,6 @@ wcs_in (PG_FUNCTION_ARGS)
       ARG_FLOAT (crpix2);
       ARG_FLOAT (crval1);
       ARG_FLOAT (crval2);
-      // ARG_FLOAT(*cd);
       ARG_FLOAT (cdelt1);
       ARG_FLOAT (cdelt2);
       ARG_FLOAT (crota);
@@ -310,7 +309,10 @@ img_wcs_ctype1 (PG_FUNCTION_ARGS)
   if (PG_ARGISNULL (0))
     PG_RETURN_NULL ();
 
+  arg = PG_GETARG_KWCS_P (0);
+
   l = strlen (arg->ctype1);
+  l++;
 
   res = (text *) palloc (VARHDRSZ + l);
   VARATT_SIZEP (res) = VARHDRSZ + l;
@@ -328,7 +330,10 @@ img_wcs_ctype2 (PG_FUNCTION_ARGS)
   if (PG_ARGISNULL (0))
     PG_RETURN_NULL ();
 
-  l = strlen (arg->ctype1);
+  arg = PG_GETARG_KWCS_P (0);
+
+  l = strlen (arg->ctype2);
+  l++;
 
   res = (text *) palloc (VARHDRSZ + l);
   VARATT_SIZEP (res) = VARHDRSZ + l;
