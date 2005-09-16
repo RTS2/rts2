@@ -16,38 +16,38 @@ CREATE TABLE airmass_cal_images (
 FOREIGN KEY (obs_id, img_id) REFERENCES images (obs_id, img_id)
 );
 
-CREATE OR REPLACE FUNCTION img_wcs_naxis1 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_naxis1' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_naxis1 (wcs)
+  RETURNS int AS 'pg_wcs.so', 'img_wcs_naxis1' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_naxis2 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_naxis2' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_naxis2 (wcs)
+  RETURNS int AS 'pg_wcs.so', 'img_wcs_naxis2' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_ctype1 ()
-  RETURNS varchar AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_ctype1' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_ctype1 (wcs)
+  RETURNS varchar AS 'pg_wcs.so', 'img_wcs_ctype1' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_ctype2 ()
-  RETURNS varchar AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_ctype2' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_ctype2 (wcs)
+  RETURNS varchar AS 'pg_wcs.so', 'img_wcs_ctype2' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_crpix1 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_crpix1' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_crpix1 (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_crpix1' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_crpix2 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_crpix2' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_crpix2 (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_crpix2' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_crval1 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_crval1' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_crval1 (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_crval1' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_crval2 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_crval2' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_crval2 (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_crval2' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_cdelt1 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_cdelt1' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_cdelt1 (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_cdelt1' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_cdelt2 ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_cdelt2' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_cdelt2 (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_cdelt2' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_crota ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_crota' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_crota (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_crota' LANGUAGE 'C';
 
-CREATE OR REPLACE FUNCTION img_wcs_epoch ()
-  RETURNS float8 AS '/usr/lib/postgresql/lib/pg_wcs.so', 'img_wcs_epoch' LANGUAGE 'C';
+CREATE OR REPLACE FUNCTION img_wcs_epoch (wcs)
+  RETURNS float8 AS 'pg_wcs.so', 'img_wcs_epoch' LANGUAGE 'C';
