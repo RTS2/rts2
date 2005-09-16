@@ -1444,10 +1444,12 @@ Rts2DevTelescopeGemini::changeSearch ()
       if (lastSearchRaDiv == 1)
 	{
 	  ret = telescope_start_move (DIR_WEST);
+	  stopWorm ();
 	}
       else if (lastSearchRaDiv == -1)
 	{
 	  ret = telescope_start_move (DIR_EAST);
+	  stopWorm ();
 	}
       if (ret)
 	return -1;
@@ -1459,10 +1461,12 @@ Rts2DevTelescopeGemini::changeSearch ()
       if (lastSearchDecDiv == 1)
 	{
 	  ret = telescope_start_move (DIR_NORTH);
+	  stopWorm ();
 	}
       else if (lastSearchDecDiv == -1)
 	{
 	  ret = telescope_start_move (DIR_SOUTH);
+	  stopWorm ();
 	}
       if (ret)
 	return -1;
