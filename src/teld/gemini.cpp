@@ -159,6 +159,8 @@ private:
   short lastSearchRaDiv;
   short lastSearchDecDiv;
   struct timeval nextSearchStep;
+
+  int32_t worm;
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -954,7 +956,6 @@ int
 Rts2DevTelescopeGemini::idle ()
 {
   int ret;
-  int32_t worm;
   tel_gemini_get (130, &worm);
   ret = tel_gemini_get (99, &lastMotorState);
   // if moving, not on limits & need info..
@@ -1145,8 +1146,13 @@ int
 Rts2DevTelescopeGemini::telescope_start_move (char direction)
 {
   char command[6];
+  int ret;
   sprintf (command, "#:M%c#", direction);
-  return tel_write (command, 5) == 1 ? -1 : 0;
+  ret = tel_write (command, 5) == 1 ? -1 : 0;
+  // workaround suggested by Rene Goerlich
+  if (worm == 135)
+    stopWorm ();
+  return ret;
 }
 
 /*! 
@@ -1444,12 +1450,10 @@ Rts2DevTelescopeGemini::changeSearch ()
       if (lastSearchRaDiv == 1)
 	{
 	  ret = telescope_start_move (DIR_WEST);
-	  stopWorm ();
 	}
       else if (lastSearchRaDiv == -1)
 	{
 	  ret = telescope_start_move (DIR_EAST);
-	  stopWorm ();
 	}
       if (ret)
 	return -1;
@@ -1461,12 +1465,10 @@ Rts2DevTelescopeGemini::changeSearch ()
       if (lastSearchDecDiv == 1)
 	{
 	  ret = telescope_start_move (DIR_NORTH);
-	  stopWorm ();
 	}
       else if (lastSearchDecDiv == -1)
 	{
 	  ret = telescope_start_move (DIR_SOUTH);
-	  stopWorm ();
 	}
       if (ret)
 	return -1;
@@ -1864,12 +1866,14 @@ Rts2DevTelescopeGemini::loadModel ()
 int
 Rts2DevTelescopeGemini::stopWorm ()
 {
+  worm = 135;
   return tel_gemini_set (135, 1);
 }
 
 int
 Rts2DevTelescopeGemini::startWorm ()
 {
+  worm = 131;
   return tel_gemini_set (131, 1);
 }
 
