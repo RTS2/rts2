@@ -101,6 +101,6 @@ Rts2ConnFork::childReturned (pid_t in_child_pid)
     {
       childEnd ();
       childPid = -1;
-      endConnection ();
+      // endConnection will be called after read from pipe fails
     }
 }
