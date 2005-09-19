@@ -871,19 +871,24 @@ Rts2Image::getFWHM ()
   double avg;
   struct stardata *sr;
   int i;
+  int numStars;
   if (sexResultNum < 4)
     return nan ("f");
 
   // qsort (sexResults, sexResultNum, sizeof (struct stardata), sdcompare);
   // get average
   avg = 0;
+  numStars = 0;
   sr = sexResults;
   for (i = 0; i < sexResultNum; i++, sr++)
     {
       if (isGoodForFwhm (sr))
-	avg += sr->fwhm;
+	{
+	  avg += sr->fwhm;
+	  numStars++;
+	}
     }
-  avg /= sexResultNum;
+  avg /= numStars;
   return avg;
 }
 
