@@ -417,7 +417,7 @@ Rts2NMCopula::print (WINDOW * wnd)
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
   mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
 #undef is_on
-  mvwprintw (wnd, 8, 1, "Az: %f", getValueDouble ("az"));
+  mvwprintw (wnd, 8, 1, "Az: %06.2f", getValueDouble ("az"));
 }
 
 class Rts2NMExecutor:public Rts2DevClientExecutor
@@ -450,11 +450,12 @@ public:
 void
 Rts2NMExecutor::print (WINDOW * wnd)
 {
-  mvwprintw (wnd, 1, 1, "Curr: %-5i", getValueInteger ("current"));
-  mvwprintw (wnd, 2, 1, "Next: %-5i", getValueInteger ("next"));
-  mvwprintw (wnd, 3, 1, "Prio: %-5i", getValueInteger ("priority_target"));
-  mvwprintw (wnd, 4, 1, "ObsI: %5i", getValueInteger ("obsid"));
-  mvwprintw (wnd, 5, 1, "ScCo: %5i", getValueInteger ("script_count"));
+  mvwprintw (wnd, 1, 1, "Curr: %i (%i)", getValueInteger ("current"),
+	     getValueInteger ("current_sel"));
+  mvwprintw (wnd, 2, 1, "Next: %i", getValueInteger ("next"));
+  mvwprintw (wnd, 3, 1, "Prio: %i", getValueInteger ("priority_target"));
+  mvwprintw (wnd, 4, 1, "ObsI: %i", getValueInteger ("obsid"));
+  mvwprintw (wnd, 5, 1, "ScCo: %i", getValueInteger ("script_count"));
   mvwprintw (wnd, 6, 1, "Acq OK: %i", getValueInteger ("acqusition_ok"));
   mvwprintw (wnd, 7, 1, "Acq Fa: %i", getValueInteger ("acqusition_failed"));
 }
