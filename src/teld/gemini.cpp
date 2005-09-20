@@ -161,6 +161,7 @@ private:
   struct timeval nextSearchStep;
 
   int32_t worm;
+  int worm_move_needed;		// 1 if we need to put mount to 130 tracking (we are performing RA move)
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -840,6 +841,7 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   tel_desc = -1;
 
   worm = 0;
+  worm_move_needed = 0;
 
   clearSearch ();
 }
@@ -1149,6 +1151,12 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
 {
   char command[6];
   int ret;
+  // start worm if moving in RA DEC..
+  if (worm == 135 && (direction == DIR_EAST || direction == DIR_WEST))
+    {
+      startWorm ();
+      worm_move_needed = 1;
+    }
   sprintf (command, "#:M%c#", direction);
   ret = tel_write (command, 5) == 1 ? -1 : 0;
   // workaround suggested by Rene Goerlich
@@ -1167,6 +1175,11 @@ Rts2DevTelescopeGemini::telescope_stop_move (char direction)
 {
   char command[6];
   sprintf (command, "#:Q%c#", direction);
+  if (worm_move_needed && (direction == DIR_EAST || direction == DIR_WEST))
+    {
+      worm_move_needed = 0;
+      stopWorm ();
+    }
   return tel_write (command, 5) < 0 ? -1 : 0;
 }
 
@@ -1179,6 +1192,10 @@ Rts2DevTelescopeGemini::telescope_stop_goto ()
     {
       lastMotorState &= ~8;
       tel_gemini_set (99, lastMotorState);
+    }
+  if (worm_move_needed)
+    {
+      worm_move_needed = 0;
     }
 }
 
@@ -1370,6 +1387,7 @@ Rts2DevTelescopeGemini::clearSearch ()
   lastSearchRaDiv = 0;
   lastSearchDecDiv = 0;
   timerclear (&nextSearchStep);
+  worm_move_needed = 0;
 }
 
 int
