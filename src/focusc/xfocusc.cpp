@@ -39,6 +39,7 @@ private:
 
   int crossType;
   int starsType;
+
   virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
 public:
     Rts2xfocus (int argc, char **argv);
@@ -115,6 +116,14 @@ private:
   }
 
   int crossType;
+  int lastImage;
+
+  long lastX;
+  long lastY;
+  long lastSizeX;
+  long lastSizeY;
+  int binningsX;
+  int binningsY;
 protected:
   virtual void printFWHMTable ();
 
@@ -141,6 +150,8 @@ Rts2GenFocCamera (in_connection, in_master)
 
   pixmapHeight = windowHeight;
   pixmapWidth = windowWidth;
+
+  lastImage = 0;
 }
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
@@ -354,18 +365,17 @@ Rts2xfocusCamera::printInfo ()
   XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
 	       stringBuf, len);
   free (stringBuf);
-/*  if (lastHeader)
+  if (lastImage)
     {
       len =
 	asprintf (&stringBuf,
-		  "[%i,%i:%i,%i] binn: %i:%i exposureTime: %.3f s",
-		  lastHeader->x, lastHeader->y, lastHeader->sizes[0],
-		  lastHeader->sizes[1], lastHeader->binnings[0],
-		  lastHeader->binnings[1], exposureTime);
+		  "[%li,%li:%li,%li] binn: %i:%i exposureTime: %.3f s",
+		  lastX, lastY, lastSizeX, lastSizeY,
+		  binningsX, binningsY, exposureTime);
       XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
 		   pixmapHeight - 20, stringBuf, len);
       free (stringBuf);
-    } */
+    }
 }
 
 void
@@ -593,9 +603,15 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
   XPutImage (master->getDisplay (), pixmap, gc, ximage, 0, 0, 0, 0,
 	     pixmapWidth, pixmapHeight);
 
-/*  if (!lastHeader)
-    lastHeader = new imghdr;
-  memcpy (lastHeader, header, sizeof (imghdr)); */
+  if (!lastImage)
+    lastImage = 1;
+  // some info values
+  image->getValue ("X", lastX);
+  image->getValue ("Y", lastY);
+  lastSizeX = image->getWidth ();
+  lastSizeY = image->getHeight ();
+  image->getValue ("BIN_V", binningsX);
+  image->getValue ("BIN_H", binningsY);
 
   redraw ();
   XFlush (master->getDisplay ());

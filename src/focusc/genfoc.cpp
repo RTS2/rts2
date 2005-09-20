@@ -13,8 +13,6 @@ Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient *
   exposureTime = master->defaultExpousure ();
   autoDark = master->getAutoDark ();
 
-  lastHeader = NULL;
-
   average = 0;
 
   low = med = hig = 0;

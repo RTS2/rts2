@@ -100,7 +100,6 @@ private:
 protected:
   unsigned short low, med, hig;
   double average;
-  struct imghdr *lastHeader;
   int autoSave;
   int histogram[HISTOGRAM_LIMIT];
 
