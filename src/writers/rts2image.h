@@ -14,6 +14,7 @@
 #include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/mkpath.h"
+#include "../utilsdb/target.h"
 
 struct stardata
 {
@@ -57,6 +58,9 @@ private:
 protected:
   int epochId;
   int targetId;
+  int targetIdSel;
+  char targetType;
+  char *targetName;
   int obsId;
   int imgId;
   char *cameraName;
@@ -76,9 +80,8 @@ public:
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
   // create image in que
-    Rts2Image (int in_epoch_id, int in_targetId, Rts2DevClientCamera * camera,
-	       int in_obsId, const struct timeval *exposureStart,
-	       int in_imgId);
+    Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
+	       const struct timeval *exposureStart);
   // open image from disk..
     Rts2Image (const char *in_filename);
     virtual ~ Rts2Image (void);
@@ -100,6 +103,7 @@ public:
   int setValue (char *name, int value, char *comment);
   int setValue (char *name, long value, char *comment);
   int setValue (char *name, double value, char *comment);
+  int setValue (char *name, char value, char *comment);
   int setValue (char *name, const char *value, char *comment);
   int setValueImageType (int shutter_state);
 
@@ -107,7 +111,8 @@ public:
   int getValue (char *name, long &value, char *comment = NULL);
   int getValue (char *name, float &value, char *comment = NULL);
   int getValue (char *name, double &value, char *comment = NULL);
-  int getValue (char *name, char *value, char *comment = NULL);
+  int getValue (char *name, char &value, char *command = NULL);
+  int getValue (char *name, char *value, int valLen, char *comment = NULL);
   int getValueImageType ();
 
   int getValues (char *name, int *values, int num, int nstart = 1);
@@ -166,6 +171,16 @@ public:
   int getTargetId ()
   {
     return targetId;
+  }
+
+  int getTargetIdSel ()
+  {
+    return targetIdSel;
+  }
+
+  char getTargetType ()
+  {
+    return targetType;
   }
 
   int getObsId ()

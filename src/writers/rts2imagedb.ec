@@ -4,6 +4,8 @@
 
 #include "rts2imagedb.h"
 
+#include <libnova/airmass.h>
+
 EXEC SQL include sqlca;
 
 void
@@ -43,7 +45,7 @@ Rts2ImageDb::updateObjectDB ()
   strncpy (d_camera_name.arr, getCameraName (), 8);
   d_camera_name.len = strlen (getCameraName ());
 
-  getValue ("FILTER", tmp_filter);
+  getValue ("FILTER", tmp_filter, 4);
 
   d_img_filter.len = strlen (tmp_filter) > 3 ? 3 : strlen (tmp_filter);
   strncpy (d_img_filter.arr, tmp_filter, d_img_filter.len);
@@ -339,18 +341,95 @@ Rts2ImageDb::setDarkFromDb ()
   return 0;
 }
 
-Rts2ImageDb::Rts2ImageDb (int in_epoch_id, int in_targetId, Rts2DevClientCamera * camera,
-      	       int in_obsId, const struct timeval *expStart, int in_imgId) : 
-  Rts2Image (in_epoch_id, in_targetId, camera, in_obsId, expStart, in_imgId)
+void
+Rts2ImageDb::initDbImage ()
 {
   processBitfiedl = 0;
   getValue ("PROC", processBitfiedl);
 }
 
+void
+Rts2ImageDb::updateCalibrationDb ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_air_last_image;
+  float db_airmass;
+  int db_obs_id = getObsId ();
+  int db_img_id = getImgId ();
+  EXEC SQL END DECLARE SECTION;
+
+  double img_alt;
+
+  int ret;
+
+  // we have calibration image processed..update airmass_cal_images table
+  if (isCalibrationImage ())
+  {
+    ret = getValue ("ALT", img_alt);
+    if (!ret)
+    {
+      db_airmass = ln_get_airmass (img_alt, 750.0);
+      db_air_last_image = getExposureSec ();
+      // delete - unset our old references (if any exists..)
+      EXEC SQL
+      UPDATE
+        airmass_cal_images
+      SET
+        air_last_image = abstime (0),
+	obs_id = NULL,
+	img_id = NULL
+      WHERE
+          obs_id = :db_obs_id
+	AND img_id = :db_img_id;
+
+      if (sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
+      {
+        reportSqlError ("Rts2Image::updateCalibrationDb unseting airmass_cal_images");
+	EXEC SQL ROLLBACK;
+      }
+      else
+      {
+        EXEC SQL COMMIT;
+      }
+      // if not processed, or processed and not failed..
+      if (!(processBitfiedl & ASTROMETRY_PROC)
+	|| (processBitfiedl & ASTROMETRY_OK))
+      {
+	EXEC SQL
+	UPDATE
+	  airmass_cal_images
+	SET
+	  air_last_image = abstime (:db_air_last_image),
+	  obs_id = :db_obs_id,
+	  img_id = :db_img_id
+	WHERE
+	    air_airmass_start <= :db_airmass
+	  AND :db_airmass < air_airmass_end
+	  AND air_last_image <= abstime (:db_air_last_image);
+
+	if (sqlca.sqlcode)
+	{
+	  reportSqlError ("Rts2Image::toArchive updating airmass_cal_images");
+	  EXEC SQL ROLLBACK;
+	}
+	else
+	{
+	  EXEC SQL COMMIT;
+	}
+      }
+    }
+  }
+}
+
+Rts2ImageDb::Rts2ImageDb (Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
+  Rts2Image (currTarget, camera, expStart)
+{
+  initDbImage ();
+}
+
 Rts2ImageDb::Rts2ImageDb (const char *in_filename) : Rts2Image (in_filename)
 {
-  processBitfiedl = 0;
-  getValue ("PROC", processBitfiedl);
+  initDbImage ();
 }
 
 Rts2ImageDb::~Rts2ImageDb ()
@@ -361,7 +440,8 @@ Rts2ImageDb::~Rts2ImageDb ()
 int
 Rts2ImageDb::toArchive ()
 {
-  int ret; 
+  int ret;
+
   ret = Rts2Image::toArchive ();
   if (ret)
     return ret;
@@ -394,6 +474,7 @@ Rts2ImageDb::saveImage ()
   updateDB ();
   setValue ("PROC", processBitfiedl, "procesing status; info in DB");
   setDarkFromDb ();
+  updateCalibrationDb ();
   return Rts2Image::saveImage ();
 }
 

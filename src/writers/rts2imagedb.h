@@ -11,6 +11,7 @@
 #define __RTS2_IMAGEDB__
 
 #include "rts2image.h"
+#include "../utilsdb/target.h"
 
 // process_bitfield content
 #define ASTROMETRY_PROC	0x01
@@ -33,12 +34,18 @@ private:
   int setDarkFromDb ();
 
   int processBitfiedl;
+  void initDbImage ();
+  int isCalibrationImage ()
+  {
+    return (getTargetType () == TYPE_CALIBRATION
+	    || getTargetType () == TYPE_PHOTOMETRIC);
+  }
+  void updateCalibrationDb ();
 public:
-    Rts2ImageDb (int in_epoch_id, int in_targetId,
-		 Rts2DevClientCamera * camera, int in_obsId,
-		 const struct timeval *expStart, int in_imgId);
-    Rts2ImageDb (const char *in_filename);
-    virtual ~ Rts2ImageDb (void);
+  Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
+	       const struct timeval *expStartd);
+  Rts2ImageDb (const char *in_filename);
+  virtual ~ Rts2ImageDb (void);
 
   virtual int toArchive ();
   virtual int toTrash ();

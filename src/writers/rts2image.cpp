@@ -16,6 +16,11 @@ Rts2Image::initData ()
 {
   imageName = NULL;
   ffile = NULL;
+  targetId = -1;
+  targetIdSel = -1;
+  targetType = TYPE_UNKNOW;
+  targetName = NULL;
+  epochId = -1;
   cameraName = NULL;
   mountName = NULL;
   focName = NULL;
@@ -48,24 +53,25 @@ Rts2Image::Rts2Image (char *in_filename,
   writeExposureStart ();
 }
 
-Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
-		      Rts2DevClientCamera * camera, int in_obsId,
-		      const struct timeval *in_exposureStart, int in_imgId)
+Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
+		      const struct timeval *in_exposureStart)
 {
   char *in_filename;
   struct tm *expT;
 
   initData ();
 
-  epochId = in_epoch_id;
-  targetId = in_targetId;
-  obsId = in_obsId;
-  imgId = in_imgId;
+  epochId = currTarget->getEpoch ();
+  targetId = currTarget->getTargetID ();
+  targetIdSel = currTarget->getObsTargetID ();
+  targetType = currTarget->getTargetType ();
+  obsId = currTarget->getObsId ();
+  imgId = currTarget->getNextImgId ();
   exposureStart = *in_exposureStart;
 
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&in_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (in_epoch_id), camera->getName (),
+	    getImageBase (epochId), camera->getName (),
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);
@@ -78,9 +84,22 @@ Rts2Image::Rts2Image (int in_epoch_id, int in_targetId,
 
   setValue ("EPOCH_ID", epochId, "image epoch ID of observation");
   setValue ("TARGET", getTargetId (), "target id");
+  setValue ("TARSEL", getTargetIdSel (), "selector target id");
+  setValue ("TARTYPE", targetType, "target type");
   setValue ("OBSID", obsId, "observation id");
   setValue ("IMGID", imgId, "image id");
   setValue ("PROCES", 0, "no processing done");
+
+  if (currTarget->getTargetName ())
+    {
+      targetName = new char[strlen (currTarget->getTargetName ()) + 1];
+      strcpy (targetName, currTarget->getTargetName ());
+      setValue ("OBJECT", currTarget->getTargetName (), "target name");
+    }
+  else
+    {
+      setValue ("OBJECT", "(null)", "target name was null");
+    }
 
   cameraName = new char[DEVICE_NAME_SIZE + 1];
   setValue ("CCD_NAME", camera->getName (), "camera name");
@@ -100,6 +119,10 @@ Rts2Image::Rts2Image (const char *in_filename)
   // get info..
   getValue ("EPOCH_ID", epochId);
   getValue ("TARGET", targetId);
+  getValue ("TARSEL", targetIdSel);
+  getValue ("TARTYPE", targetType);
+  targetName = new char[FLEN_VALUE];
+  getValue ("OBJECT", targetName, FLEN_VALUE);
   getValue ("OBSID", obsId);
   getValue ("IMGID", imgId);
   getValue ("CTIME", exposureStart.tv_sec);
@@ -111,22 +134,22 @@ Rts2Image::Rts2Image (const char *in_filename)
       naxis[1] = 0;
     }
   cameraName = new char[DEVICE_NAME_SIZE + 1];
-  ret = getValue ("CCD_NAME", cameraName);
+  ret = getValue ("CCD_NAME", cameraName, DEVICE_NAME_SIZE);
   if (ret)
     strcpy (cameraName, "UNK");
   mountName = new char[DEVICE_NAME_SIZE + 1];
-  ret = getValue ("MNT_NAME", mountName);
+  ret = getValue ("MNT_NAME", mountName, DEVICE_NAME_SIZE);
   if (ret)
     strcpy (mountName, "UNK");
   focName = new char[DEVICE_NAME_SIZE + 1];
-  ret = getValue ("FOC_NAME", focName);
+  ret = getValue ("FOC_NAME", focName, DEVICE_NAME_SIZE);
   if (ret)
     strcpy (focName, "UNK");
   ret = getValue ("FOC_POS", focPos);
   if (ret)
     focPos = -1;
   getValue ("CAM_FILT", filter);
-  getValue ("MEAN", average);
+  getValue ("AVERAGE", average);
   getValueImageType ();
 }
 
@@ -135,6 +158,8 @@ Rts2Image::~Rts2Image (void)
   saveImage ();
   if (imageName)
     delete[]imageName;
+  if (targetName)
+    delete[]targetName;
   if (cameraName)
     delete[]cameraName;
   if (mountName)
@@ -434,6 +459,19 @@ Rts2Image::setValue (char *name, double value, char *comment)
 }
 
 int
+Rts2Image::setValue (char *name, char value, char *comment)
+{
+  char val[2];
+  if (!ffile)
+    return -1;
+  val[0] = value;
+  val[1] = '\0';
+  fits_update_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
+  flags |= IMAGE_SAVE;
+  return fitsStatusValue (name);
+}
+
+int
 Rts2Image::setValue (char *name, const char *value, char *comment)
 {
   if (!ffile)
@@ -539,11 +577,25 @@ Rts2Image::getValue (char *name, double &value, char *comment)
 }
 
 int
-Rts2Image::getValue (char *name, char *value, char *comment)
+Rts2Image::getValue (char *name, char &value, char *comment)
 {
+  static char val[FLEN_VALUE];
   if (!ffile)
     return -1;
-  fits_read_key (ffile, TSTRING, name, (void *) value, comment, &fits_status);
+  fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
+  value = *val;
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::getValue (char *name, char *value, int valLen, char *comment)
+{
+  static char val[FLEN_VALUE];
+  if (!ffile)
+    return -1;
+  fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
+  strncpy (value, val, valLen);
+  value[valLen - 1] = '\0';
   return fitsStatusValue (name);
 }
 
@@ -552,7 +604,7 @@ Rts2Image::getValueImageType ()
 {
   int ret;
   char value[20];
-  ret = getValue ("IMAGETYP", value);
+  ret = getValue ("IMAGETYP", value, 20);
   if (ret)
     return ret;
   // switch based on IMAGETYPE
