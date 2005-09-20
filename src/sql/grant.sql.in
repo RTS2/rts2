@@ -112,3 +112,9 @@ GRANT SELECT ON observations_imgcount TO GROUP observers;
 GRANT SELECT ON observations_images TO GROUP observers;
 GRANT SELECT ON observations_nights TO GROUP observers;
 GRANT SELECT ON images_nights TO GROUP observers;
+
+GRANT ALL ON airmass_cal_images TO GROUP observers;
+GRANT SELECT ON airmass_cal_images TO "__WWWUSER__";
+
+GRANT ALL ON targets_users TO GROUP observers;
+GRANT ALL ON targets_users TO "__WWWUSER__";
