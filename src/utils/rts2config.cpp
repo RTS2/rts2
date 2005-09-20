@@ -15,10 +15,15 @@ Rts2Config *
 Rts2Config::Rts2Config ()
 {
   fp = NULL;
+  observer.lat = 0;
+  observer.lng = 0;
+  checker = NULL;
 }
 
 Rts2Config::~Rts2Config ()
 {
+  if (checker)
+    delete checker;
   if (fp)
     fclose (fp);
   fp = NULL;
@@ -35,6 +40,7 @@ Rts2Config::instance ()
 int
 Rts2Config::loadFile (char *filename)
 {
+  char horizont_file[250];
   if (!filename)
     // default
     filename = "/etc/rts2/rts2.ini";
@@ -51,6 +57,9 @@ Rts2Config::loadFile (char *filename)
   observer.lng = 0;
   getDouble ("observatory", "longtitude", observer.lng);
   getDouble ("observatory", "latitude", observer.lat);
+  // load horizont file..
+  getString ("observatory", "horizont", horizont_file, 250);
+  checker = new ObjectCheck (horizont_file);
   return 0;
 }
 
@@ -212,4 +221,10 @@ struct ln_lnlat_posn *
 Rts2Config::getObserver ()
 {
   return &observer;
+}
+
+ObjectCheck *
+Rts2Config::getObjectChecker ()
+{
+  return checker;
 }

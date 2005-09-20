@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <libnova/libnova.h>
 
+#include "objectcheck.h"
+
 class Rts2Config
 {
 private:
@@ -16,6 +18,7 @@ private:
   static Rts2Config *pInstance;
 
   struct ln_lnlat_posn observer;
+  ObjectCheck *checker;
 
 public:
     Rts2Config ();
@@ -29,6 +32,7 @@ public:
 
   // some special functions..
   struct ln_lnlat_posn *getObserver ();
+  ObjectCheck *getObjectChecker ();
 };
 
 #endif /*! __RTS2_CONFIG__ */
