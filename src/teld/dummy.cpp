@@ -3,10 +3,10 @@
 #endif
 
 #include <signal.h>
+#include <libnova/libnova.h>
 
 #include "telescope.h"
-
-#include <libnova/libnova.h>
+#include "../utils/rts2config.h"
 
 /*!
  * Dummy teld for testing purposes.
@@ -53,6 +53,21 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
     telLatitude = 0;
     telAltitude = 0;
   }
+
+  virtual int init ()
+  {
+    int ret;
+    ret = Rts2DevTelescope::init ();
+    if (ret)
+      return ret;
+    Rts2Config *config;
+    config = Rts2Config::instance ();
+    config->loadFile ();
+    telLatitude = config->getObserver ()->lat;
+    telLongtitude = config->getObserver ()->lng;
+    return 0;
+  }
+
   virtual int ready ()
   {
     return 0;
