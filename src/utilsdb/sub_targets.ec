@@ -16,22 +16,27 @@ ConstTarget::load ()
   EXEC SQL BEGIN DECLARE SECTION;
   double d_ra;
   double d_dec;
+  VARCHAR d_tar_name[TARGET_NAME_LEN];
   float d_tar_priority;
+  int d_tar_priority_ind;
   float d_tar_bonus;
-  int db_tar_id = getTargetID ();
+  int d_tar_bonus_ind;
+  int db_tar_id = getObsTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
   SELECT 
     tar_ra,
     tar_dec,
+    tar_name, 
     tar_priority,
     tar_bonus
   INTO
     :d_ra,
     :d_dec,
-    :d_tar_priority,
-    :d_tar_bonus
+    :d_tar_name,
+    :d_tar_priority :d_tar_priority_ind,
+    :d_tar_bonus :d_tar_bonus_ind
   FROM
     targets
   WHERE
@@ -43,8 +48,24 @@ ConstTarget::load ()
   }
   position.ra = d_ra;
   position.dec = d_dec;
-  tar_priority = d_tar_priority;
-  tar_bonus = d_tar_bonus;
+
+  if (target_name)
+    delete target_name;
+  
+  target_name = new char[d_tar_name.len + 1];
+  strncpy (target_name, d_tar_name.arr, d_tar_name.len);
+  target_name[d_tar_name.len] = '\0';
+
+  if (d_tar_priority_ind >= 0)
+    tar_priority = d_tar_priority;
+  else
+    tar_priority = -1;
+    
+  if (d_tar_bonus_ind >= 0)
+    tar_bonus = d_tar_bonus;
+  else
+    tar_bonus = -1;
+
   return Target::load ();
 }
 
@@ -225,6 +246,18 @@ PossibleDarks::~PossibleDarks ()
   dark_exposures.clear ();
 }
 
+void
+PossibleDarks::addDarkExposure (float exp)
+{
+  std::list < float >::iterator dark_iter;
+  for (dark_iter = dark_exposures.begin (); dark_iter != dark_exposures.end (); dark_iter++)
+  {
+    if (*dark_iter == exp)
+      return;
+  }
+  dark_exposures.push_back (exp);
+}
+
 int
 PossibleDarks::defaultDark ()
 {
@@ -259,7 +292,8 @@ PossibleDarks::defaultDark ()
     }
     else
     {
-      dark_exposures.push_back (exp);
+      // test if it exists..
+      addDarkExposure (exp);
     }
     tmp_s = tmp_c;
     if (!*tmp_s)
@@ -345,17 +379,14 @@ PossibleDarks::dbDark ()
       EXEC SQL ROLLBACK;
       if (dark_exposures.size () == 0)
       {
-        target->logMsgDb ("PossibleDarks::getDb cannot get entry for darks, get default 10 sec darks");
-        defaultDark ();
-	break;
+        target->logMsgDb ("PossibleDarks::getDb cannot get entry for darks (will use only defaults)");
       }
-      else
-      {
-        break;
-      }
+      break;
     }
-    dark_exposures.push_back (d_img_exposure);
+    addDarkExposure (d_img_exposure);
   }
+  // add default darks..
+  defaultDark ();
   return 0;
 }
 
@@ -495,8 +526,10 @@ FlatTarget::load ()
   struct ln_equ_posn antiSolarPosition;
   struct ln_hrz_posn hrz;
   double JD;
+  double lst;
 
   JD = ln_get_julian_from_sys ();
+  lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
   getAntiSolarPos (&antiSolarPosition, JD);
 
@@ -509,6 +542,7 @@ FlatTarget::load ()
     targets
   WHERE
       type_id = 'f'
+    AND (tar_bonus_time is NULL OR tar_bonus > 0)
     AND tar_enabled = true;
   EXEC SQL OPEN flat_targets;
   while (1)
@@ -525,15 +559,19 @@ FlatTarget::load ()
       ln_get_hrz_from_equ (&d_tar, observer, JD, &hrz);
       if (hrz.alt < 10)
         continue;
+      // and of course we should be above horizont..
+      if (!isGood (lst, d_tar_ra, d_tar_dec))
+	continue;
       // test if we found the best target..
       curDist = ln_get_angular_separation (&d_tar, &antiSolarPosition);
       if (curDist < minAntiDist)
         {
-          target_id = d_tar_id;
+          obs_target_id = d_tar_id;
           minAntiDist = curDist;
         }
     }
-  if (sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
+  if ((sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
+    || obs_target_id <= 0)
     {
       logMsgDb ("FlatTarget::load");
       EXEC SQL CLOSE flat_targets;
@@ -547,11 +585,230 @@ FlatTarget::load ()
 int
 FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
-  if (target_id != TARGET_FLAT)
+  if (obs_target_id > 0)
     return ConstTarget::getPosition (pos, JD);
   // generic flat target observations
   getAntiSolarPos (pos, JD);
   return 0;
+}
+
+int
+FlatTarget::considerForObserving (double JD)
+{
+  // get new position..when new is available..
+  load ();
+  // still return considerForObserving..is there is nothing, then get -1 so selector will delete us
+  return ConstTarget::considerForObserving (JD);
+}
+
+CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
+{
+  airmassPosition.ra = airmassPosition.dec = 0;
+  time (&lastImage);
+}
+
+// the idea is to cover uniformly whole sky.
+// in airmass_cal_images table we have recorded previous observations
+// for frames with astrometry which contains targeted airmass
+int
+CalibrationTarget::load ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  double d_airmass_start;
+  double d_airmass_end;
+  long d_airmass_last_image;
+
+  double db_tar_ra;
+  double db_tar_dec;
+  int db_tar_id;
+  char db_type_id;
+  VARCHAR db_tar_name[TARGET_NAME_LEN];
+  EXEC SQL END DECLARE SECTION;
+
+  double JD = ln_get_julian_from_sys ();
+
+  double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
+
+  std::list <PosCalibration *> cal_list;
+  std::list <PosCalibration *>::iterator cal_iter, cal_iter2;
+  if (getTargetID () != TARGET_CALIBRATION)
+    return ConstTarget::load ();
+
+  // create airmass & target_id pool (I dislike idea of creating
+  // target object, as that will cost me a lot of resources
+  EXEC SQL DECLARE pos_calibration CURSOR FOR
+  SELECT
+    tar_ra,
+    tar_dec,
+    tar_id,
+    type_id,
+    tar_name
+  FROM
+    targets
+  WHERE
+      tar_enabled = true
+    AND (tar_bonus_time is NULL OR tar_bonus > 0)
+    AND tar_id != 6
+    AND (
+        type_id = 'c'
+      OR type_id = 'M'
+    );
+  EXEC SQL OPEN pos_calibration;
+  while (1)
+  {
+    EXEC SQL FETCH next FROM pos_calibration
+    INTO
+      :db_tar_ra,
+      :db_tar_dec,
+      :db_tar_id,
+      :db_type_id,
+      :db_tar_name;
+    if (sqlca.sqlcode)
+      break;
+    if (Rts2Config::instance ()->getObjectChecker ()->is_good (lst, db_tar_ra, db_tar_dec))
+    {
+      PosCalibration *newCal = new PosCalibration (db_tar_id, db_tar_ra, db_tar_dec, db_type_id,
+        db_tar_name.arr, observer, getAirmassScale (), JD);
+      cal_list.push_back (newCal);
+    }
+  }
+  if (sqlca.sqlcode != ECPG_NOT_FOUND || cal_list.size () == 0)
+  {
+    // free cal_list..
+    for (cal_iter = cal_list.begin (); cal_iter != cal_list.end ();)
+    {
+      cal_iter2 = cal_iter;
+      cal_iter++;
+      delete *cal_iter2;
+    }
+    cal_list.clear ();
+    logMsgDb ("CalibrationTarget::load cannot load any possible target");
+    EXEC SQL CLOSE pos_calibration;
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL CLOSE pos_calibration;
+  EXEC SQL COMMIT;
+
+  // center airmass is 1.5 - when we don't have any images in airmass_cal_images,
+  // order us by distance from such center distance
+  EXEC SQL DECLARE cur_airmass_cal_images CURSOR FOR
+  SELECT
+    air_airmass_start,
+    air_airmass_end,
+    EXTRACT (EPOCH FROM air_last_image)
+  FROM
+    airmass_cal_images
+  ORDER BY
+    air_last_image asc,
+    abs (1.5 - (air_airmass_start + air_airmass_end) / 2) asc;
+  EXEC SQL OPEN cur_airmass_cal_images;
+  obs_target_id = -1;
+  while (1)
+  {
+    EXEC SQL FETCH next FROM cur_airmass_cal_images
+    INTO
+      :d_airmass_start,
+      :d_airmass_end,
+      :d_airmass_last_image;
+    if (sqlca.sqlcode)
+      break;
+    // find any target which lies within requested airmass range
+    for (cal_iter = cal_list.begin (); cal_iter != cal_list.end (); cal_iter++)
+    {
+      PosCalibration *calib = *cal_iter;
+      if (calib->getCurrAirmass () >= d_airmass_start 
+	&& calib->getCurrAirmass () < d_airmass_end)
+      {
+	// switch current target coordinates..
+	obs_target_id = calib->getTargetId ();
+	calib->getCurrPos (&airmassPosition);
+	lastImage = (time_t) d_airmass_last_image;
+	break;
+      }
+    }
+    if (obs_target_id != -1)
+      break;
+    char *logmsg;
+    asprintf (&logmsg, "CalibrationTarget::load cannot find any target for airmass between %f and %f", d_airmass_start, d_airmass_end);
+    logMsgDb (logmsg);
+    free (logmsg);
+  }
+  // free cal_list..
+  for (cal_iter = cal_list.begin (); cal_iter != cal_list.end ();)
+  {
+    cal_iter2 = cal_iter;
+    cal_iter++;
+    delete *cal_iter2;
+  }
+  cal_list.clear ();
+  // SQL test..
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("CalibrationTarget::load cannot find any airmass_cal_images entry");
+    EXEC SQL CLOSE cur_airmass_cal_images;
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL CLOSE cur_airmass_cal_images;
+  EXEC SQL COMMIT;
+  if (obs_target_id != -1)
+    return ConstTarget::load ();
+  // no target found..
+  return -1;
+}
+
+int
+CalibrationTarget::beforeMove ()
+{
+  // as calibration target can change between time we select it, let's reload us
+  if (getTargetID () == TARGET_CALIBRATION)
+    load ();
+  return ConstTarget::beforeMove ();
+}
+
+int
+CalibrationTarget::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  if (obs_target_id <= 0)
+  {
+    // no target..
+    if (target_id == TARGET_CALIBRATION)
+      return -1;
+    return ConstTarget::getPosition (pos, JD);
+  }
+  *pos = airmassPosition;
+  return 0;
+}
+
+int
+CalibrationTarget::considerForObserving (double JD)
+{
+  // load (possibly new target) before considering us..
+  load ();
+  return ConstTarget::considerForObserving (JD);
+}
+
+float
+CalibrationTarget::getBonus ()
+{
+  time_t now;
+  time_t t_diff;
+  if (obs_target_id <= 0)
+    return -1;
+  time (&now);
+  t_diff = now - lastImage;
+  // 1 hour is not interesting..
+  if (t_diff < 3600)
+    return 1;
+  // 2 hours..
+  else if (t_diff < 7200)
+    return 50;
+  // interesting then..
+  else if (t_diff < 12 * 3600)
+    return 50 + (250 * ((double) t_diff / (12 * 3600)));
+  // required (but don't interrupt burst, please
+  return 300;
 }
 
 int
@@ -1178,12 +1435,12 @@ TargetSwiftFOV::startSlew (struct ln_equ_posn *position)
 }
 
 int
-TargetSwiftFOV::considerForObserving (ObjectCheck * checker, double JD)
+TargetSwiftFOV::considerForObserving (double JD)
 {
   // find pointing
   int ret;
   struct ln_equ_posn curr_position;
-  double gst = ln_get_mean_sidereal_time (JD);
+  double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
   load ();
 
@@ -1202,7 +1459,7 @@ TargetSwiftFOV::considerForObserving (ObjectCheck * checker, double JD)
     return -1;
   }
 
-  ret = checker->is_good (gst, curr_position.ra, curr_position.dec);
+  ret = isGood (lst, curr_position.ra, curr_position.dec);
   
   if (!ret)
   {
@@ -1320,7 +1577,7 @@ TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs):C
 }
 
 int
-TargetTerestial::considerForObserving (ObjectCheck *checker, double JD)
+TargetTerestial::considerForObserving (double JD)
 {
   // we can obsere it any time..
   return selectedAsGood ();

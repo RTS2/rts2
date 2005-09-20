@@ -61,7 +61,9 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   img_id = 0;
   obs_state = 0;
   target_id = in_tar_id;
+  obs_target_id = -1;
   target_type = TYPE_UNKNOW;
+  target_name = NULL;
 
   startCalledNum = 0;
 
@@ -75,6 +77,8 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 Target::~Target (void)
 {
   endObservation (-1);
+  if (target_name)
+    delete target_name;
 }
 
 int
@@ -96,7 +100,7 @@ int
 Target::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_tar_id = target_id;
+  int d_tar_id = getObsTargetID ();
   int d_obs_id;
   double d_obs_ra;
   double d_obs_dec;
@@ -220,7 +224,7 @@ Target::endObservation (int in_next_id)
   int d_obs_id = obs_id;
   int d_obs_state = obs_state;
   EXEC SQL END DECLARE SECTION;
-  if (in_next_id == getTargetID ())
+  if (isContinues () && in_next_id == getTargetID ())
     return 1;
   if (obs_id > 0)
   {
@@ -469,7 +473,7 @@ Target::selectedAsGood ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   bool d_tar_enabled;
-  int d_tar_id = target_id;
+  int d_tar_id = getObsTargetID ();
   EXEC SQL END DECLARE SECTION;
   // check if we are still enabled..
   EXEC SQL
@@ -495,9 +499,9 @@ Target::selectedAsGood ()
  * return 0 if we cannot observe that target, 1 if it's above horizont.
  */
 int
-Target::isGood (ObjectCheck *checker, double lst, double ra, double dec)
+Target::isGood (double lst, double ra, double dec)
 {
-  return checker->is_good (lst, ra, dec);
+  return Rts2Config::instance ()->getObjectChecker ()->is_good (lst, ra, dec);
 }
 
 /****
@@ -506,7 +510,7 @@ Target::isGood (ObjectCheck *checker, double lst, double ra, double dec)
  *   othrwise return 0.
  */
 int
-Target::considerForObserving (ObjectCheck *checker, double JD)
+Target::considerForObserving (double JD)
 {
   // horizont constrain..
   struct ln_equ_posn curr_position;
@@ -517,7 +521,7 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
     changePriority (-100, JD + 1);
     return -1;
   }
-  ret = isGood (checker, lst, curr_position.ra, curr_position.dec);
+  ret = isGood (lst, curr_position.ra, curr_position.dec);
   if (!ret)
   {
     struct ln_rst_time rst;
@@ -527,6 +531,13 @@ Target::considerForObserving (ObjectCheck *checker, double JD)
       // object doesn't rise, let's hope tomorrow it will rise
       syslog (LOG_DEBUG, "Target::considerForObserving tar %i don't rise", getTargetID ());
       changePriority (-100, JD + 1);
+      return -1;
+    }
+    // handle circumpolar objects..
+    if (ret == 1)
+    {
+      syslog (LOG_DEBUG, "Target::considerForObserving is circumpolar, but is not good, scheduling after 10 minutes");
+      changePriority (-100, JD + 10.0 / (24.0 * 60.0));
       return -1;
     }
     // object is above horizont, but checker reject it..let's see what
@@ -575,9 +586,9 @@ int
 Target::changePriority (int pri_change, time_t *time_ch)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_tar_id = target_id;
+  int db_tar_id = getObsTargetID ();
   int db_priority_change = pri_change;
-  long int db_next_t = (long int) *time_ch;
+  int db_next_t = (int) *time_ch;
   EXEC SQL END DECLARE SECTION;
   EXEC SQL UPDATE 
     targets
@@ -588,6 +599,7 @@ Target::changePriority (int pri_change, time_t *time_ch)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
+    printf ("db_next_t: %i\n", db_next_t);
     logMsgDb ("Target::changePriority");
     EXEC SQL ROLLBACK;
     return -1;
@@ -703,6 +715,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
       break;
     case TYPE_FOCUSING:
       retTarget = new FocusingTarget (in_tar_id, in_obs);
+      break;
+    case TYPE_CALIBRATION:
+      retTarget = new CalibrationTarget (in_tar_id, in_obs);
       break;
     case TYPE_MODEL:
       retTarget = new ModelTarget (in_tar_id, in_obs);

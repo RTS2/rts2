@@ -16,6 +16,8 @@
 
 #define MAX_COMMAND_LENGTH              2000
 
+#define TARGET_NAME_LEN		150
+
 #define TYPE_UNKNOW		'u'
 
 #define TYPE_OPORTUNITY         'O'
@@ -61,6 +63,12 @@
 #define TARGET_DARK		1
 #define TARGET_FLAT		2
 #define TARGET_FOCUSING		3
+// orimary model
+#define TARGET_MODEL		4
+// primary terestial - based on HAM/FRAM number
+#define TARGET_TERRESTIAL	5
+// master calibration target
+#define TARGET_CALIBRATION	6
 
 #define TARGET_SWIFT_FOV	10
 #define TARGET_INTEGRAL_FOV	11
@@ -111,7 +119,9 @@ private:
   // which changes behaviour based on how many times we called them before
 protected:
   int target_id;
+  int obs_target_id;
   char target_type;
+  char *target_name;
   struct ln_lnlat_posn *observer;
 
   virtual int getDBScript (const char *camera_name, char *script);
@@ -243,6 +253,12 @@ public:
   {
     return target_id;
   }
+  virtual int getObsTargetID ()
+  {
+    if (obs_target_id > 0)
+      return obs_target_id;
+    return getTargetID ();
+  }
   char getTargetType ()
   {
     return target_type;
@@ -250,6 +266,17 @@ public:
   void setTargetType (char in_target_type)
   {
     target_type = in_target_type;
+  }
+  const char *getTargetName ()
+  {
+    return target_name;
+  }
+  void setTargetName (const char *in_target_name)
+  {
+    if (target_name)
+      delete target_name;
+    target_name = new char[strlen (in_target_name) + 1];
+    strcpy (target_name, in_target_name);
   }
   int getObsId ()
   {
@@ -298,9 +325,9 @@ public:
   {
     return 0;
   }
-  int isGood (ObjectCheck * checker, double lst, double ra, double dec);
+  int isGood (double lst, double ra, double dec);
   // scheduler functions
-  virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
+  virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
   virtual float getBonus ()
   {
@@ -326,6 +353,11 @@ public:
   {
     return startCalledNum;
   }
+
+  double getAirmassScale ()
+  {
+    return airmassScale;
+  }
 };
 
 class ConstTarget:public Target
@@ -336,7 +368,7 @@ protected:
   float tar_priority;
   float tar_bonus;
 
-  virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
+  virtual int selectedAsGood ();	// get called when target was selected to update bonuses, target position etc..
 public:
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int load ();
@@ -367,6 +399,7 @@ class PossibleDarks
 private:
   char *deviceName;
   // 
+  void addDarkExposure (float exp);
   int defaultDark ();
   int dbDark ();
   // we will need temperature as well
@@ -407,10 +440,73 @@ public:
     FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int considerForObserving (double JD);
   virtual int isContinues ()
   {
     return 1;
   }
+};
+
+// possible calibration target
+class PosCalibration
+{
+private:
+  int tar_id;
+  double currAirmass;
+  struct ln_equ_posn object;
+  char type_id;
+  char *tar_name;
+public:
+    PosCalibration (int in_tar_id, double ra, double dec, char in_type_id,
+		    char *in_tar_name, struct ln_lnlat_posn *observer,
+		    double airmassScale, double JD)
+  {
+    struct ln_hrz_posn hrz;
+      tar_id = in_tar_id;
+
+      object.ra = ra;
+      object.dec = dec;
+      ln_get_hrz_from_equ (&object, observer, JD, &hrz);
+      currAirmass = ln_get_airmass (hrz.alt, airmassScale);
+
+      type_id = in_type_id;
+      tar_name = in_tar_name;
+  }
+  int getTargetId ()
+  {
+    return tar_id;
+  }
+  double getCurrAirmass ()
+  {
+    return currAirmass;
+  }
+  void getCurrPos (struct ln_equ_posn *in_pos)
+  {
+    in_pos->ra = object.ra;
+    in_pos->dec = object.dec;
+  }
+  char getTargetType ()
+  {
+    return type_id;
+  }
+  char *getTargetName ()
+  {
+    return tar_name;
+  }
+};
+
+class CalibrationTarget:public ConstTarget
+{
+private:
+  struct ln_equ_posn airmassPosition;
+  time_t lastImage;
+public:
+    CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int load ();
+  virtual int beforeMove ();
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int considerForObserving (double JD);
+  virtual float getBonus ();
 };
 
 class FocusingTarget:public ConstTarget
@@ -517,7 +613,7 @@ public:
   virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startSlew (struct ln_equ_posn *position);
-  virtual int considerForObserving (ObjectCheck * checker, double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
+  virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
   virtual float getBonus ();
 };
@@ -540,7 +636,7 @@ class TargetTerestial:public ConstTarget
 {
 public:
   TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs);
-  virtual int considerForObserving (ObjectCheck * checker, double JD);
+  virtual int considerForObserving (double JD);
   virtual float getBonus ();
   virtual int startSlew (struct ln_equ_posn *position);
 };
