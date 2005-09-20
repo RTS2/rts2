@@ -346,12 +346,14 @@ Rts2Executor::sendInfo (Rts2Conn * conn)
 {
   if (currentTarget)
     {
-      conn->sendValue ("current", currentTarget->getTargetID ());
+      conn->sendValue ("current", currentTarget->getObsTargetID ());
+      conn->sendValue ("current_sel", currentTarget->getTargetID ());
       conn->sendValue ("obsid", currentTarget->getObsId ());
     }
   else
     {
       conn->sendValue ("current", -1);
+      conn->sendValue ("current_sel", -1);
       conn->sendValue ("obsid", -1);
     }
   if (nextTarget)

@@ -73,10 +73,7 @@ Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
   imgCount++;
   if (currentTarget)
-    return new Rts2ImageDb (currentTarget->getEpoch (),
-			    currentTarget->getTargetID (), this,
-			    currentTarget->getObsId (), expStart,
-			    currentTarget->getNextImgId ());
+    return new Rts2ImageDb (currentTarget, this, expStart);
   syslog (LOG_ERR,
 	  "Rts2DevClientCameraExec::createImage creating no-target image");
   Rts2Image *image;

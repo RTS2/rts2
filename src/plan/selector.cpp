@@ -122,7 +122,6 @@ int
 Rts2SelectorDev::init ()
 {
   int ret;
-  char horizontFile[250];
   struct ln_lnlat_posn *observer;
 
   ret = Rts2DeviceDb::init ();
@@ -133,10 +132,7 @@ Rts2SelectorDev::init ()
   config = Rts2Config::instance ();
   observer = config->getObserver ();
 
-  // add read config..when we will get config
-  config->getString ("observatory", "horizont", horizontFile, 250);
-
-  sel = new Rts2Selector (observer, horizontFile);
+  sel = new Rts2Selector (observer);
 
   return 0;
 }

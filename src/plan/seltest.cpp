@@ -33,15 +33,13 @@ Rts2SelectorApp::run ()
 
   Rts2Config *config;
   struct ln_lnlat_posn *observer;
-  char horizontFile[250];
 
   Rts2Selector *sel;
 
   config = Rts2Config::instance ();
   observer = config->getObserver ();
-  config->getString ("observatory", "horizont", horizontFile, 250);
 
-  sel = new Rts2Selector (observer, horizontFile);
+  sel = new Rts2Selector (observer);
 
   next_tar = sel->selectNextNight ();
 

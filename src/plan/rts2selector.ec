@@ -13,16 +13,14 @@
 
 #include <libnova/libnova.h>
 
-Rts2Selector::Rts2Selector (struct ln_lnlat_posn *in_observer,char * horizontFile)
+Rts2Selector::Rts2Selector (struct ln_lnlat_posn *in_observer)
 {
   int ret;
   Rts2Config * config;
   double val;
   
-  checker = NULL;
   observer = in_observer;
 
-  checker = new ObjectCheck (horizontFile);
   config = Rts2Config::instance ();
   flat_sun_min = 100;
   flat_sun_max = 100;
@@ -50,8 +48,6 @@ Rts2Selector::~Rts2Selector (void)
     delete tar;
   }
   possibleTargets.clear ();
-  if (checker)
-    delete checker;
 }
 
 int
@@ -108,7 +104,7 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
   newTar = createTarget (consider_tar_id, observer);
   if (!newTar)
     return;
-  ret = newTar->considerForObserving (checker, JD);
+  ret = newTar->considerForObserving (JD);
   syslog (LOG_DEBUG, "considerForObserving tar_id: %i ret: %i", newTar->getTargetID (), ret);
   if (ret)
   {
@@ -150,7 +146,7 @@ Rts2Selector::findNewTargets ()
   for (target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
   {
     Target *tar = *target_list;
-    ret = tar->considerForObserving (checker, JD);
+    ret = tar->considerForObserving (JD);
     if (ret)
     {
       // don't observe us - we are bellow horizont etc..

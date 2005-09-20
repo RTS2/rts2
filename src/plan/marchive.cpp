@@ -17,7 +17,7 @@ protected:
       ret = image->getValue ("CRVAL1", val);
     if (!ret)
         ret = image->toArchive ();
-      std::cout << (ret ? "failed (not arhive?)" : "archive") << std::endl;
+      std::cout << (ret ? "failed (not archive?)" : "archive") << std::endl;
       return 0;
   }
 public:

@@ -1,7 +1,6 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
 #include "../utils/rts2config.h"
-#include "../utils/objectcheck.h"
 
 #include <iostream>
 #include <iomanip>
@@ -26,7 +25,6 @@ private:
   Target *target;
   struct ln_lnlat_posn *obs;
   int printTargetInfo ();
-  ObjectCheck *checker;
 public:
     Rts2TargetInfo (int argc, char **argv);
     virtual ~ Rts2TargetInfo (void);
@@ -42,14 +40,11 @@ Rts2TargetInfo::Rts2TargetInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   obs = NULL;
-  checker = NULL;
   addOption ('c', "cameras", 1, "show scripts for given cameras");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()
 {
-  if (checker)
-    delete checker;
   cameras.clear ();
 }
 
@@ -98,7 +93,12 @@ Rts2TargetInfo::printTargetInfo ()
   time_t now, last;
 
   std::cout << "======================" << std::endl;
-  std::cout << "Target ID: " << target->getTargetID () << std::endl;
+  std::cout << "Target ID: " << target->
+    getTargetID () << " obs target id: " << target->
+    getObsTargetID () << std::endl;
+  std::cout << "Target name: " << target->
+    getTargetName () << " target type: " << target->
+    getTargetType () << std::endl;
   target->getPosition (&pos);
   ln_deg_to_hms (pos.ra, &hms);
   ln_deg_to_dms (pos.dec, &dms);
@@ -142,7 +142,7 @@ Rts2TargetInfo::printTargetInfo ()
   JD = ln_get_julian_from_timet (&now);
   gst = ln_get_mean_sidereal_time (JD);
   lst = gst + obs->lng / 15.0;
-  std::cout << "Checker is_good:" << target->isGood (checker, lst, pos.ra,
+  std::cout << "Checker is_good:" << target->isGood (lst, pos.ra,
 						     pos.
 						     dec) << " (JD: " << JD <<
     " gst: " << gst << " lst: " << lst << ")" << std::endl;
@@ -166,7 +166,6 @@ int
 Rts2TargetInfo::init ()
 {
   int ret;
-  char horizontFile[250];
 
   ret = Rts2AppDb::init ();
   if (ret)
@@ -180,8 +179,6 @@ Rts2TargetInfo::init ()
       obs = config->getObserver ();
     }
 
-  config->getString ("observatory", "horizont", horizontFile, 250);
-  checker = new ObjectCheck (horizontFile);
   return 0;
 }
 
