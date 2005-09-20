@@ -19,6 +19,7 @@ Copyright 2005 Petr Kubanek  */
 
 #include <iostream>
 #include <math.h>
+#include <libnova/libnova.h>
 
 class Rts2AirmasScale: public Rts2AppDb
 {
@@ -106,7 +107,7 @@ Rts2AirmasScale::doSetAirmass ()
   float db_airmass_end;
   EXEC SQL END DECLARE SECTION;
 
-  for (db_airmass_start = 1; db_airmass_start < max; db_airmass_start += steps)
+  for (db_airmass_start = ln_get_airmass (90, 750.0); db_airmass_start < max; db_airmass_start += steps)
   {
     db_airmass_end = db_airmass_start + steps;
     if (db_airmass_end > max)
