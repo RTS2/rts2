@@ -655,7 +655,9 @@ CalibrationTarget::load ()
     AND (
         type_id = 'c'
       OR type_id = 'M'
-    );
+    )
+  ORDER BY
+    tar_priority + tar_bonus desc;
   EXEC SQL OPEN pos_calibration;
   while (1)
   {
