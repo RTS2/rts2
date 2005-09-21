@@ -629,6 +629,9 @@ CalibrationTarget::load ()
 
   double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
+  time_t now;
+  time_t hour_back;
+
   std::list <PosCalibration *> cal_list;
   std::list <PosCalibration *>::iterator cal_iter, cal_iter2;
   if (getTargetID () != TARGET_CALIBRATION)
@@ -668,7 +671,7 @@ CalibrationTarget::load ()
     if (Rts2Config::instance ()->getObjectChecker ()->is_good (lst, db_tar_ra, db_tar_dec))
     {
       PosCalibration *newCal = new PosCalibration (db_tar_id, db_tar_ra, db_tar_dec, db_type_id,
-        db_tar_name.arr, observer, getAirmassScale (), JD);
+        db_tar_name.arr, observer, JD);
       cal_list.push_back (newCal);
     }
   }
@@ -704,6 +707,8 @@ CalibrationTarget::load ()
     abs (1.5 - (air_airmass_start + air_airmass_end) / 2) asc;
   EXEC SQL OPEN cur_airmass_cal_images;
   obs_target_id = -1;
+  time (&now);
+  hour_back = now - 3600;
   while (1)
   {
     EXEC SQL FETCH next FROM cur_airmass_cal_images
@@ -720,11 +725,19 @@ CalibrationTarget::load ()
       if (calib->getCurrAirmass () >= d_airmass_start 
 	&& calib->getCurrAirmass () < d_airmass_end)
       {
-	// switch current target coordinates..
-	obs_target_id = calib->getTargetId ();
-	calib->getCurrPos (&airmassPosition);
-	lastImage = (time_t) d_airmass_last_image;
-	break;
+	// if that target was already observerd..
+	if (calib->getNumObs (&hour_back, &now) > 0)
+	{
+	  calib->changePriority (-100, JD + 1.0/24.0);
+	}
+	else
+	{
+	  // switch current target coordinates..
+	  obs_target_id = calib->getTargetID ();
+	  calib->getPosition (&airmassPosition, JD);
+	  lastImage = (time_t) d_airmass_last_image;
+	  break;
+	}
       }
     }
     if (obs_target_id != -1)

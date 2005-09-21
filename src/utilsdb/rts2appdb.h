@@ -9,6 +9,7 @@
 //
 class Rts2SqlColumn
 {
+private:
   char *sql;
   char *name;
 public:
@@ -17,6 +18,10 @@ public:
   char *genSql ()
   {
     return sql;
+  }
+  const char *getHeader ()
+  {
+    return name;
   }
 };
 

@@ -448,50 +448,36 @@ public:
 };
 
 // possible calibration target
-class PosCalibration
+class PosCalibration:public Target
 {
 private:
-  int tar_id;
   double currAirmass;
-  struct ln_equ_posn object;
   char type_id;
-  char *tar_name;
+  struct ln_equ_posn object;
 public:
     PosCalibration (int in_tar_id, double ra, double dec, char in_type_id,
-		    char *in_tar_name, struct ln_lnlat_posn *observer,
-		    double airmassScale, double JD)
+		    char *in_tar_name, struct ln_lnlat_posn *in_observer,
+		    double JD):Target (in_tar_id, in_observer)
   {
     struct ln_hrz_posn hrz;
-      tar_id = in_tar_id;
 
       object.ra = ra;
       object.dec = dec;
       ln_get_hrz_from_equ (&object, observer, JD, &hrz);
-      currAirmass = ln_get_airmass (hrz.alt, airmassScale);
+      currAirmass = ln_get_airmass (hrz.alt, getAirmassScale ());
 
-      type_id = in_type_id;
-      tar_name = in_tar_name;
-  }
-  int getTargetId ()
-  {
-    return tar_id;
+      setTargetType (in_type_id);
+      setTargetName (in_tar_name);
   }
   double getCurrAirmass ()
   {
     return currAirmass;
   }
-  void getCurrPos (struct ln_equ_posn *in_pos)
+  virtual int getPosition (struct ln_equ_posn *in_pos, double JD)
   {
     in_pos->ra = object.ra;
     in_pos->dec = object.dec;
-  }
-  char getTargetType ()
-  {
-    return type_id;
-  }
-  char *getTargetName ()
-  {
-    return tar_name;
+    return 0;
   }
 };
 

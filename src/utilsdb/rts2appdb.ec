@@ -135,6 +135,7 @@ Rts2SqlQuery::display ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   char *stmp;
+  int row;
   int cols;
   int cur_col;
   int col_len;
@@ -146,6 +147,8 @@ Rts2SqlQuery::display ()
   unsigned long d_unsigned_long;
   EXEC SQL END DECLARE SECTION;
 
+  std::list <Rts2SqlColumn *>::iterator col_iter;
+
   EXEC SQL ALLOCATE DESCRIPTOR disp_desc;
 
   std::cout << genSql () << std::endl;
@@ -156,6 +159,9 @@ Rts2SqlQuery::display ()
 
   EXEC SQL DECLARE disp_cur CURSOR FOR disp_stmp;
   EXEC SQL OPEN disp_cur;
+
+  row = 0;
+  
   while (1)
   {
     EXEC SQL FETCH next FROM disp_cur INTO DESCRIPTOR disp_desc;
@@ -169,12 +175,27 @@ Rts2SqlQuery::display ()
 
     EXEC SQL GET DESCRIPTOR disp_desc :cols = COUNT;
 
-    std::cout << "Cols:" << cols << std::endl;
+    if (row == 0)
+    {
+      // print header..
+      std::cout << "-----------------------------------" << std::endl;
+      cur_col = 1;
+      for (col_iter = columns.begin (); col_iter != columns.end (); col_iter++)
+      {
+	if (cur_col > 1)
+	  std::cout << "|";
+	std::cout << (*col_iter)->getHeader ();
+	cur_col++;
+      }
+      std::cout << std::endl;
+    }
+
+    row++;
 
     for (cur_col = 1; cur_col <= cols; cur_col++)
     {
       EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :type = TYPE;
-      EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :col_len = RETURNED_OCTET_LENGTH;
+      EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :col_len = OCTET_LENGTH;
       EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :col_car = CARDINALITY;
       std::cout << "Col " << cur_col << " type " << type << " len " << col_len << " car " << col_car << std::endl;
       // unsigned short..
@@ -182,15 +203,15 @@ Rts2SqlQuery::display ()
       {
 	case ECPGt_unsigned_short:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_unsig_short = DATA;
-	  std::cout << "data:" << d_unsig_short << std::endl;
+	  std::cout << "data us:" << d_unsig_short << std::endl;
 	  break;
 	case ECPGt_unsigned_long:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_unsigned_long = DATA;
-	  std::cout << "data:" << d_unsigned_long << std::endl;
+	  std::cout << "data ul:" << d_unsigned_long << std::endl;
 	  break;
 	case ECPGt_long_long:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_long_long = DATA;
-	  std::cout << "data:" << d_long_long << std::endl;
+	  std::cout << "data ll:" << d_long_long << std::endl;
 	  break;
 	default:
 	  std::cout << "unknow type" << std::endl;
