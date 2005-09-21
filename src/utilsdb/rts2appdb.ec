@@ -6,6 +6,8 @@
 #include <iostream>
 #include <syslog.h>
 
+EXEC SQL INCLUDE sql3types;
+
 Rts2SqlColumn::Rts2SqlColumn (const char *in_sql, const char *in_name)
 {
   if (in_sql)
@@ -138,13 +140,14 @@ Rts2SqlQuery::display ()
   int row;
   int cols;
   int cur_col;
-  int col_len;
-  int col_car;
-  enum ECPGttype type;
+  int col_len, col_car, scale, precision;
+  int type;
 
-  unsigned short d_unsig_short;
-  long long d_long_long;
-  unsigned long d_unsigned_long;
+  bool d_bool;
+  int d_int;
+  float d_float;
+  double d_double;
+  char d_string[1024];
   EXEC SQL END DECLARE SECTION;
 
   std::list <Rts2SqlColumn *>::iterator col_iter;
@@ -194,30 +197,59 @@ Rts2SqlQuery::display ()
 
     for (cur_col = 1; cur_col <= cols; cur_col++)
     {
-      EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :type = TYPE;
-      EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :col_len = OCTET_LENGTH;
-      EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :col_car = CARDINALITY;
-      std::cout << "Col " << cur_col << " type " << type << " len " << col_len << " car " << col_car << std::endl;
+      if (cur_col > 1)
+	std::cout << " | ";
+      EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col
+      	:type = TYPE,
+        :col_len = OCTET_LENGTH,
+	:scale = SCALE,
+	:precision = PRECISION,
+        :col_car = CARDINALITY;
       // unsigned short..
       switch (type)
       {
-	case ECPGt_unsigned_short:
-	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_unsig_short = DATA;
-	  std::cout << "data us:" << d_unsig_short << std::endl;
+	case SQL3_BOOLEAN:
+	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_bool = DATA;
+	  std::cout << (d_bool ? "true" : "false");
 	  break;
-	case ECPGt_unsigned_long:
-	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_unsigned_long = DATA;
-	  std::cout << "data ul:" << d_unsigned_long << std::endl;
+	case SQL3_NUMERIC:
+	case SQL3_DECIMAL:
+	  if (scale == 0)
+	  {
+	    EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_int = DATA;
+	    std::cout << d_int;
+	  }
+	  else
+	  {
+	    EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_double = DATA;
+	    std::cout << d_double;
+	  }
 	  break;
-	case ECPGt_long_long:
-	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_long_long = DATA;
-	  std::cout << "data ll:" << d_long_long << std::endl;
+	case SQL3_INTEGER:
+	case SQL3_SMALLINT:
+	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_int = DATA;
+	  std::cout << d_int;
 	  break;
+	case SQL3_FLOAT:
+	case SQL3_REAL:
+	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_float = DATA;
+	  std::cout << d_float;
+	  break;
+	case SQL3_DOUBLE_PRECISION:
+	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_double = DATA;
+	  std::cout << d_double;
+	  break;
+	case SQL3_DATE_TIME_TIMESTAMP:
+	case SQL3_INTERVAL:
+	case SQL3_CHARACTER:
+	case SQL3_CHARACTER_VARYING:
 	default:
-	  std::cout << "unknow type" << std::endl;
+	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_string = DATA;
+	  std::cout << d_string;
 	  break;
       }
     }
+    std::cout << std::endl;
   }
 
   EXEC SQL CLOSE disp_cur;
