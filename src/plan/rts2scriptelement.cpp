@@ -540,12 +540,19 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 		    }
 		  else
 		    {
-		      processingState = PRECISION_BAD;
-		      script->getMaster ()->
-			postEvent (new
-				   Rts2Event (EVENT_ADD_FIXED_OFFSET,
-					      (void *) &offset));
-		      retries++;
+		      if (retries <= maxRetries)
+			{
+			  processingState = PRECISION_BAD;
+			  script->getMaster ()->
+			    postEvent (new
+				       Rts2Event (EVENT_ADD_FIXED_OFFSET,
+						  (void *) &offset));
+			  retries++;
+			}
+		      else
+			{
+			  processingState = FAILED;
+			}
 		    }
 		}
 	    }
