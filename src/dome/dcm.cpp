@@ -142,11 +142,11 @@ Rts2ConnDcm::receive (fd_set * set)
       master->setHumidity (humidity);
       master->setRain (rain);
       master->setSwState ((sw1 << 3) | (sw2 << 2) | (sw3 << 1) | (sw4));
-      if (sw1 && sw2 && !sw3 && !sw4)
+      if (sw1 && sw2)
 	{
 	  master->setMasterOn ();
 	}
-      else if (!sw1 && !sw2)
+      else if (!sw1 && !sw2 && sw3 && sw4)
 	{
 	  master->setMasterStandby ();
 	}
