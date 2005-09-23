@@ -96,9 +96,10 @@ Rts2TargetInfo::printTargetInfo ()
   std::cout << "Target ID: " << target->
     getTargetID () << " obs target id: " << target->
     getObsTargetID () << std::endl;
-  std::cout << "Target name: " << target->
-    getTargetName () << " target type: " << target->
-    getTargetType () << std::endl;
+  std::cout << "Target name: " << (target->
+				   getTargetName ()? target->
+				   getTargetName () : "(null)") <<
+    " target type: " << target->getTargetType () << std::endl;
   target->getPosition (&pos);
   ln_deg_to_hms (pos.ra, &hms);
   ln_deg_to_dms (pos.dec, &dms);
