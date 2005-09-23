@@ -12,7 +12,7 @@ rts2_flatprocess_SOURCES = flatprocess.cpp
 AM_CFLAGS = @LIBPG_CFLAGS@
 
 rts2_bckimages_LDFLAGS = ../utils/librts2block.a @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ 
-rts2_flatprocess_LDFLAGS = ../utils/librts2block.a @LIB_CFITSIO@ @LIB_M@
+rts2_flatprocess_LDFLAGS = ../utils/librts2block.a @LIB_CFITSIO@ @LIB_NOVA@ @LIB_M@
 
 rts2_deleteimage_SOURCES = deleteimage.cpp
 rts2_deleteimage_CXXFLAGS = @LIBPG_CFLAGS@
