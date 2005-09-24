@@ -637,6 +637,8 @@ CalibrationTarget::load ()
   if (getTargetID () != TARGET_CALIBRATION)
     return ConstTarget::load ();
 
+  EXEC SQL BEGIN TRANSACTION;
+
   // create airmass & target_id pool (I dislike idea of creating
   // target object, as that will cost me a lot of resources
   EXEC SQL DECLARE pos_calibration CURSOR FOR
@@ -694,6 +696,8 @@ CalibrationTarget::load ()
   }
   EXEC SQL CLOSE pos_calibration;
   EXEC SQL COMMIT;
+
+  EXEC SQL BEGIN TRANSACTION;
 
   // center airmass is 1.5 - when we don't have any images in airmass_cal_images,
   // order us by distance from such center distance

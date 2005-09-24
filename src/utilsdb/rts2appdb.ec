@@ -4,39 +4,27 @@
 #include <ecpgtype.h>
 
 #include <iostream>
+#include <iomanip>
+#include <string>
+
 #include <syslog.h>
 
 EXEC SQL INCLUDE sql3types;
 
-Rts2SqlColumn::Rts2SqlColumn (const char *in_sql, const char *in_name)
+std::ostream & operator << (std::ostream & _os, struct tm *print_t)
 {
-  if (in_sql)
-  {
-    sql = new char[strlen (in_sql) + 1];
-    strcpy (sql, in_sql);
-  }
-  else
-  {
-    sql = NULL;
-  }
-
-  if (in_name)
-  {
-    name = new char[strlen (in_name) + 1];
-    strcpy (name, in_name);
-  }
-  else
-  {
-    name = NULL;
-  }
+  static char buf[50];
+  strftime (buf, 50, "%c", print_t);
+  _os << buf;
+  return _os;
 }
 
-Rts2SqlColumn::~Rts2SqlColumn (void)
+std::ostream & operator << (std::ostream & _os, time_t *print_tt)
 {
-  if (sql)
-    delete sql;
-  if (name)
-    delete name;
+  static struct tm *print_t;
+  print_t = gmtime (print_tt);
+  _os << print_t;
+  return _os;
 }
 
 Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
@@ -51,6 +39,7 @@ Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
   {
     from = NULL;
   }
+  where = NULL;
 }
 
 Rts2SqlQuery::~Rts2SqlQuery (void)
@@ -67,6 +56,8 @@ Rts2SqlQuery::~Rts2SqlQuery (void)
     delete *col_iter2;
   }
   columns.clear ();
+  if (where)
+    delete[] where;
 }
 
 void
@@ -79,57 +70,75 @@ Rts2SqlQuery::addColumn (Rts2SqlColumn *add_column)
 }
 
 void
-Rts2SqlQuery::addColumn (const char *in_sql, const char *in_name)
+Rts2SqlQuery::addColumn (const char *in_sql, const char *in_name, int in_order)
 {
-  Rts2SqlQuery::addColumn (new Rts2SqlColumn (in_sql, in_name));
+  Rts2SqlQuery::addColumn (new Rts2SqlColumn (in_sql, in_name, in_order));
+}
+
+void
+Rts2SqlQuery::addWhere (const char *in_where)
+{
+  if (!where)
+  {
+    where = new char[strlen (in_where) + 1];
+    strcpy (where, in_where);
+  }
+  else
+  {
+    char *new_where = new char[strlen (where) + strlen (in_where) + 6];
+    strcpy (new_where, where);
+    delete[] where;
+    strcat (new_where, " and ");
+    strcat (new_where, in_where);
+    where = new_where;
+  }
 }
 
 char *
 Rts2SqlQuery::genSql ()
 {
-  size_t len = 2000;
-  size_t used_len = 0;
+  std::string query;
   std::list <Rts2SqlColumn *>::iterator col_iter1;
   if (sql)
     return sql;
-  sql = new char[len];
-  strcpy (sql, "select ");
-  used_len = strlen (sql);
+  query = std::string ();
+  query += "select ";
   for (col_iter1 = columns.begin (); col_iter1 != columns.end (); col_iter1++)
   {
     Rts2SqlColumn *col = (*col_iter1);
     char *col_sql = col->genSql ();
-    if (used_len + strlen (col_sql) + 2 >= len)
-    {
-      char *new_sql;
-      len += 2000;
-      new_sql = new char[len];
-      strcpy (new_sql, sql);
-      delete sql;
-      sql = new_sql;
-    }
     if (col_iter1 != columns.begin ())
-      strcat (sql, ", ");
-    strcat (sql, col_sql);
-    used_len += strlen (col_sql);
+      query += ", ";
+    query += col_sql;
   }
   // add from
   if (from)
   {
-    if (used_len + 6 + strlen (from) >= len)
-    {
-      char *new_sql;
-      len += 2000;
-      new_sql = new char[len];
-      strcpy (new_sql, sql);
-      delete sql;
-      sql = new_sql;
-    }
-    strcat (sql, " from ");
-    strcat (sql, from);
-    used_len += 6 + strlen (from);
+    query += " from ";
+    query += from;
   }
+  if (where)
+  {
+    query += " where ";
+    query += where;
+  }
+  sql = new char[query.length() + 1];
+  strcpy (sql, query.c_str ());
   return sql;
+}
+
+void
+Rts2SqlQuery::displayMinusPlusLine ()
+{
+  std::list <Rts2SqlColumn *>::iterator col_iter;
+  for (col_iter = columns.begin (); col_iter != columns.end (); col_iter++)
+  {
+    if (col_iter != columns.begin ())
+      std::cout << "-+-";
+    for (int i = 0; i < (*col_iter)->getFieldSize (); i++)
+      std::cout << '-';
+  }
+  std::cout << std::endl;
 }
 
 void
@@ -140,7 +149,7 @@ Rts2SqlQuery::display ()
   int row;
   int cols;
   int cur_col;
-  int col_len, col_car, scale, precision;
+  int col_car, scale, precision;
   int type;
 
   bool d_bool;
@@ -148,6 +157,10 @@ Rts2SqlQuery::display ()
   float d_float;
   double d_double;
   char d_string[1024];
+
+  int len;
+  int is_null;
+
   EXEC SQL END DECLARE SECTION;
 
   std::list <Rts2SqlColumn *>::iterator col_iter;
@@ -180,64 +193,108 @@ Rts2SqlQuery::display ()
 
     if (row == 0)
     {
-      // print header..
-      std::cout << "-----------------------------------" << std::endl;
       cur_col = 1;
       for (col_iter = columns.begin (); col_iter != columns.end (); col_iter++)
       {
+        EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col
+	  :type = TYPE,
+	  :len = RETURNED_OCTET_LENGTH;
+	switch (type)
+	{
+	  case SQL3_BOOLEAN:
+	    len = 5;
+	    break;
+          case SQL3_NUMERIC:
+	  case SQL3_DECIMAL:
+	    len = 8;
+	    break;
+	  case SQL3_INTEGER:
+	    len = 10;
+	    break;
+	  case SQL3_SMALLINT:
+	    len = 6;
+	    break;
+	  case SQL3_FLOAT:
+	  case SQL3_REAL:
+	    len = 8;
+	    break;
+	  case SQL3_DOUBLE_PRECISION:
+	    len = 10;
+	    break;
+	  case SQL3_DATE_TIME_TIMESTAMP:
+	  case SQL3_INTERVAL:
+	    len = 28;
+	    break;
+	  case SQL3_CHARACTER:
+	  case SQL3_CHARACTER_VARYING:
+	  default:
+	    // leave empty..
+	    break;
+	}
 	if (cur_col > 1)
-	  std::cout << "|";
-	std::cout << (*col_iter)->getHeader ();
+	{
+	  std::cout << " | ";
+	}
+	std::cout << std::setw (len) << (*col_iter)->getHeader (len);
 	cur_col++;
       }
       std::cout << std::endl;
+      // display -+ line
+      displayMinusPlusLine ();
     }
 
     row++;
 
-    for (cur_col = 1; cur_col <= cols; cur_col++)
+    for (cur_col = 1, col_iter = columns.begin (); cur_col <= cols && col_iter != columns.end (); cur_col++, col_iter++)
     {
       if (cur_col > 1)
 	std::cout << " | ";
       EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col
       	:type = TYPE,
-        :col_len = OCTET_LENGTH,
 	:scale = SCALE,
 	:precision = PRECISION,
+	:is_null = INDICATOR,
         :col_car = CARDINALITY;
       // unsigned short..
+      len = (*col_iter)->getFieldSize ();
       switch (type)
       {
 	case SQL3_BOOLEAN:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_bool = DATA;
-	  std::cout << (d_bool ? "true" : "false");
+	  std::cout << std::setw(len) << (d_bool ? "true" : "false");
+	  (*col_iter)->processValue (&d_bool, type, is_null);
 	  break;
 	case SQL3_NUMERIC:
 	case SQL3_DECIMAL:
 	  if (scale == 0)
 	  {
 	    EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_int = DATA;
-	    std::cout << d_int;
+	    std::cout << std::setw(len) << d_int;
+	    (*col_iter)->processValue (&d_int, type, is_null);
 	  }
 	  else
 	  {
 	    EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_double = DATA;
-	    std::cout << d_double;
+	    std::cout << std::setw(len) << d_double;
+	    (*col_iter)->processValue (&d_double, type, is_null);
 	  }
 	  break;
 	case SQL3_INTEGER:
 	case SQL3_SMALLINT:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_int = DATA;
-	  std::cout << d_int;
+	  std::cout << std::setw(len) << d_int;
+	  (*col_iter)->processValue (&d_int, type, is_null);
 	  break;
 	case SQL3_FLOAT:
 	case SQL3_REAL:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_float = DATA;
-	  std::cout << d_float;
+	  std::cout << std::setw(len) << d_float;
+	  (*col_iter)->processValue (&d_float, type, is_null);
 	  break;
 	case SQL3_DOUBLE_PRECISION:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_double = DATA;
-	  std::cout << d_double;
+	  std::cout << std::setw(len) << d_double;
+	  (*col_iter)->processValue (&d_double, type, is_null);
 	  break;
 	case SQL3_DATE_TIME_TIMESTAMP:
 	case SQL3_INTERVAL:
@@ -245,12 +302,17 @@ Rts2SqlQuery::display ()
 	case SQL3_CHARACTER_VARYING:
 	default:
 	  EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col :d_string = DATA;
-	  std::cout << d_string;
+	  std::cout << std::setw(len) << std::setprecision(len) << d_string;
+	  (*col_iter)->processValue (&d_string, type, is_null);
 	  break;
       }
     }
     std::cout << std::endl;
   }
+
+  displayMinusPlusLine ();
+
+  std::cout << std::endl << row << " rows were displayed" << std::endl << std::endl;
 
   EXEC SQL CLOSE disp_cur;
   EXEC SQL DEALLOCATE DESCRIPTOR disp_desc;
