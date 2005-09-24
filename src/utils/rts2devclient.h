@@ -185,6 +185,8 @@ public:
 class Rts2DevClientPhot:public Rts2DevClient
 {
 protected:
+  virtual void filterMoveStart ();
+  virtual void filterMoveEnd ();
   virtual void integrationStart ();
   virtual void integrationEnd ();
   virtual void addCount (int count, float exp, int is_ov);
@@ -195,20 +197,21 @@ public:
     virtual ~ Rts2DevClientPhot (void);
   virtual int commandValue (const char *name);
   virtual void integrationFailed (int status);
+  virtual void filterMoveFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
 
   virtual void filterOK ()
-  {
-  }
-  virtual void filterFailed ()
   {
   }
 };
 
 class Rts2DevClientExecutor:public Rts2DevClient
 {
+protected:
+  virtual void lastReadout ();
 public:
-  Rts2DevClientExecutor (Rts2Conn * in_connection);
+    Rts2DevClientExecutor (Rts2Conn * in_connection);
+  virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2DevClientSelector:public Rts2DevClient

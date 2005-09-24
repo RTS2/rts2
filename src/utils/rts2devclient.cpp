@@ -524,20 +524,53 @@ Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
 {
   if (state->isName ("phot"))
     {
-      switch (state->getValue () & PHOT_MASK_INTEGRATE)
+      if (state->maskValueChanged (PHOT_MASK_INTEGRATE))
 	{
-	case PHOT_NOINTEGRATE:
-	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
-	    integrationEnd ();
-	  else
-	    integrationFailed (state->getValue () & DEVICE_ERROR_MASK);
-	  break;
-	case PHOT_INTEGRATE:
-	  integrationStart ();
-	  break;
+	  switch (state->getValue () & PHOT_MASK_INTEGRATE)
+	    {
+	    case PHOT_NOINTEGRATE:
+	      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+		integrationEnd ();
+	      else
+		integrationFailed (state->getValue () & DEVICE_ERROR_MASK);
+	      break;
+	    case PHOT_INTEGRATE:
+	      integrationStart ();
+	      break;
+	    }
+	}
+      if (state->maskValueChanged (PHOT_MASK_FILTER))
+	{
+	  switch (state->getValue () & PHOT_MASK_FILTER)
+	    {
+	    case PHOT_FILTER_MOVE:
+	      filterMoveStart ();
+	      break;
+	    case PHOT_FILTER_IDLE:
+	      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+		filterMoveEnd ();
+	      else
+		filterMoveFailed ((state->getValue () & DEVICE_ERROR_MASK));
+	      break;
+	    }
 	}
     }
   Rts2DevClient::stateChanged (state);
+}
+
+void
+Rts2DevClientPhot::filterMoveStart ()
+{
+}
+
+void
+Rts2DevClientPhot::filterMoveEnd ()
+{
+}
+
+void
+Rts2DevClientPhot::filterMoveFailed (int status)
+{
 }
 
 void
@@ -622,6 +655,26 @@ Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevC
   addValue (new Rts2ValueInteger ("script_count"));
   addValue (new Rts2ValueInteger ("acqusition_ok"));
   addValue (new Rts2ValueInteger ("acqusition_failed"));
+}
+
+void
+Rts2DevClientExecutor::lastReadout ()
+{
+}
+
+void
+Rts2DevClientExecutor::stateChanged (Rts2ServerState * state)
+{
+  if (state->isName ("executor"))
+    {
+      switch (state->getValue () & EXEC_STATE_MASK)
+	{
+	case EXEC_LASTREAD:
+	  lastReadout ();
+	  break;
+	}
+    }
+  Rts2DevClient::stateChanged (state);
 }
 
 Rts2DevClientSelector::Rts2DevClientSelector (Rts2Conn * in_connection):Rts2DevClient
