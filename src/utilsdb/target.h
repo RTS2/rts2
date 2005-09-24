@@ -79,6 +79,17 @@
 
 #define OBS_MOVE_FIXED		3
 
+// move was executed
+#define OBS_BIT_MOVED		0x01
+// observation started - expect some nice images in db
+#define OBS_BIT_STARTED		0x02
+// set while in acquisition
+#define OBS_BIT_ACQUSITION	0x04
+// when observation was interupted
+#define OBS_BIT_INTERUPED	0x10
+// when acqusition failed
+#define OBS_BIT_ACQUSITION_FAI	0x20
+
 /**
  * Class for one observation.
  *

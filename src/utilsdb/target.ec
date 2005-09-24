@@ -113,7 +113,7 @@ Target::startSlew (struct ln_equ_posn *position)
   getPosition (position);
   selected++;
 
-  obs_state |= 0x01;
+  obs_state |= OBS_BIT_MOVED;
 
   if (obs_id > 0) // we already observe that target
     return OBS_ALREADY_STARTED;
@@ -187,7 +187,7 @@ Target::startObservation ()
       return -1;
     }
     EXEC SQL COMMIT;
-    obs_state |= 0x02;
+    obs_state |= OBS_BIT_STARTED;
   }
   return 0;
 }
@@ -195,26 +195,26 @@ Target::startObservation ()
 void
 Target::acqusitionStart ()
 {
-  obs_state |= 0x04;
+  obs_state |= OBS_BIT_ACQUSITION;
 }
 
 void
 Target::acqusitionEnd ()
 {
-  obs_state &= ~ 0x04;
+  obs_state &= ~ OBS_BIT_ACQUSITION;
   acquired = 1;
 }
 
 void
 Target::interupted ()
 {
-  obs_state |= 0x10;
+  obs_state |= OBS_BIT_INTERUPED;
 }
 
 void
 Target::acqusitionFailed ()
 {
-  obs_state |= 0x20;
+  obs_state |= OBS_BIT_ACQUSITION_FAI;
 }
 
 int
