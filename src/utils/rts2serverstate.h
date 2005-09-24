@@ -7,6 +7,7 @@ class Rts2ServerState
 {
 private:
   int value;
+  int oldValue;
   time_t lastUpdate;
 public:
   char *name;
@@ -14,6 +15,9 @@ public:
   {
     name = new char[strlen (in_name) + 1];
       strcpy (name, in_name);
+      lastUpdate = 0;
+      oldValue = 0;
+      value = 0;
   }
    ~Rts2ServerState (void)
   {
@@ -30,11 +34,20 @@ public:
   void setValue (int new_value)
   {
     time (&lastUpdate);
+    oldValue = value;
     value = new_value;
   }
   int getValue ()
   {
     return value;
+  }
+  int getOldValue ()
+  {
+    return oldValue;
+  }
+  bool maskValueChanged (int q_mask)
+  {
+    return (getValue () & q_mask) != (getOldValue () & q_mask);
   }
 };
 
