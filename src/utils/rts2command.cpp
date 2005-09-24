@@ -173,8 +173,6 @@ Rts2CommandFilter::commandReturnOK ()
 {
   if (camera)
     camera->filterOK ();
-  if (phot)
-    phot->filterOK ();
   return Rts2Command::commandReturnOK ();
 }
 
@@ -184,7 +182,7 @@ Rts2CommandFilter::commandReturnFailed (int status)
   if (camera)
     camera->filterFailed ();
   if (phot)
-    phot->filterFailed ();
+    phot->filterMoveFailed (status);
   return Rts2Command::commandReturnFailed (status);
 }
 
