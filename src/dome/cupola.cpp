@@ -41,6 +41,7 @@ Rts2DevCopula::init ()
   // get config values..
   Rts2Config *config;
   config = Rts2Config::instance ();
+  config->loadFile ();
   observer = config->getObserver ();
   return 0;
 }
@@ -72,6 +73,11 @@ Rts2DevCopula::idle ()
   else if (needSplitChange () > 0)
     {
       moveStart ();
+      setTimeout (USEC_SEC);
+    }
+  else
+    {
+      setTimeout (10 * USEC_SEC);
     }
   return Rts2DevDome::idle ();
 }

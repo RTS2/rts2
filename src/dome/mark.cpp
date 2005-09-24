@@ -55,6 +55,7 @@ private:
   { UNKNOW, IN_PROGRESS, DONE, ERROR } initialized;
 
   int slew ();
+  void parkCopula ();
 protected:
     virtual int moveStart ();
   virtual long isMoving ();
@@ -76,6 +77,10 @@ public:
   virtual long isClosed ();
 
   virtual int moveStop ();
+
+  // park copula
+  virtual int standby ();
+  virtual int off ();
 };
 
 uint16_t Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
@@ -397,6 +402,10 @@ Rts2DevCopulaMark::slew ()
 {
   int ret;
   uint16_t copControl;
+
+  if (initialized != DONE)
+    return -1;
+
   ret = readReg (REG_COP_CONTROL, &copControl);
   // we need to move in oposite direction..do slow change
   if (((copControl & 0x01) && getTargetDistance () < 0)
@@ -484,6 +493,31 @@ Rts2DevCopulaMark::moveStop ()
 {
   writeReg (REG_COP_CONTROL, 0x00);
   return Rts2DevCopula::moveStop ();
+}
+
+void
+Rts2DevCopulaMark::parkCopula ()
+{
+  if (initialized != IN_PROGRESS)
+    {
+      // reinitialize copula
+      writeReg (REG_COP_CONTROL, 0x10);
+      initialized = IN_PROGRESS;
+    }
+}
+
+int
+Rts2DevCopulaMark::standby ()
+{
+  parkCopula ();
+  return Rts2DevCopula::standby ();
+}
+
+int
+Rts2DevCopulaMark::off ()
+{
+  parkCopula ();
+  return Rts2DevCopula::off ();
 }
 
 Rts2DevCopulaMark *device = NULL;
