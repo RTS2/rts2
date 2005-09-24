@@ -39,6 +39,20 @@ protected:
 
   virtual int getNextCommand () = 0;
   int nextPreparedCommand ();
+  /**
+   * Entry point for script execution.
+   * 
+   * That's entry point to script execution. It's called when device
+   * is free to do new job - e.g when camera finish exposure (as we
+   * can move filter wheel during chip readout).
+   *
+   * It can be called more then once for one command - hence we keep
+   * in nextComd prepared next command, and return it from
+   * nextPreparedCommand when it's wise to return it.
+   *
+   * @return 0 when there isn't any next command to execute, 1 when
+   * there is next command available.
+   */
   int haveNextCommand ();
   virtual void unblockWait () = 0;
   virtual void unsetWait () = 0;

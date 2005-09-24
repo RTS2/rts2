@@ -641,6 +641,15 @@ Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
     case SEARCH_OK:
       return NEXT_COMMAND_NEXT;
     case SEARCH_FAILED:
+      // que end of script
+      *new_command = new Rts2CommandFilter (phot, 0);
+      getDevice (new_device);
+      // filterMoveCommand will result in call of either
+      // filterMoveFailed (calls now deleteScript) or filterMoveEnd
+      // (calls next command)
+      return NEXT_COMMAND_KEEP;
+    case SEARCH_FAILED2:
+      // so we get there..
       return NEXT_COMMAND_END_SCRIPT;
     }
   return 0;

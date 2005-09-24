@@ -158,13 +158,14 @@ Rts2DevClientPhotExec::nextCommand ()
 }
 
 void
-Rts2DevClientPhotExec::filterOK ()
+Rts2DevClientPhotExec::filterMoveEnd ()
 {
-  nextCommand ();
+  if ((connection->getState (0) & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
+    nextCommand ();
 }
 
 void
-Rts2DevClientPhotExec::filterFailed (int status)
+Rts2DevClientPhotExec::filterMoveFailed (int status)
 {
   deleteScript ();
 }

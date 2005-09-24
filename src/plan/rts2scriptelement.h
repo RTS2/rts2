@@ -265,7 +265,9 @@ private:
   double searchRadius;
   double searchSpeed;
   enum
-  { NEED_SEARCH, SEARCHING, SEARCH_OK, SEARCH_FAILED } processingState;
+  { NEED_SEARCH, SEARCHING, SEARCH_OK, SEARCH_FAILED,
+    SEARCH_FAILED2
+  } processingState;
 public:
     Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius,
 			     double in_searchSpeed);

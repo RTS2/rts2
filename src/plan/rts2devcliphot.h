@@ -44,6 +44,8 @@ protected:
     Rts2DevClient::clearFailedCount ();
   }
 
+  virtual void filterMoveEnd ();
+
   virtual void integrationEnd ();
   virtual void addCount (int count, float exp, int is_ov);
 
@@ -54,8 +56,7 @@ public:
   virtual void postEvent (Rts2Event * event);
   virtual void integrationFailed (int status);
 
-  virtual void filterOK ();
-  virtual void filterFailed (int status);
+  virtual void filterMoveFailed (int status);
 
   virtual void nextCommand ();
 };

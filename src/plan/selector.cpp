@@ -35,6 +35,26 @@ Rts2DevClientTelescopeSel::moveEnd ()
   Rts2DevClientTelescope::moveEnd ();
 }
 
+class Rts2DevClientExecutorSel:public Rts2DevClientExecutor
+{
+protected:
+  virtual void lastReadout ();
+public:
+    Rts2DevClientExecutorSel (Rts2Conn * in_connection);
+};
+
+Rts2DevClientExecutorSel::Rts2DevClientExecutorSel (Rts2Conn * in_connection):Rts2DevClientExecutor
+  (in_connection)
+{
+}
+
+void
+Rts2DevClientExecutorSel::lastReadout ()
+{
+  connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+  Rts2DevClientExecutor::lastReadout ();
+}
+
 class Rts2SelectorDev:public Rts2DeviceDb
 {
 private:
