@@ -17,8 +17,10 @@
 
 class Rts2DevPhotDummy:public Rts2DevPhot
 {
+private:
+  int filterCount;
 protected:
-  virtual int startIntegrate ();
+    virtual int startIntegrate ();
 public:
     Rts2DevPhotDummy (int argc, char **argv);
 
@@ -38,7 +40,8 @@ public:
   };
 
   virtual int homeFilter ();
-  virtual int moveFilter (int new_filter);
+  virtual int startFilterMove (int new_filter);
+  virtual long isFilterMoving ();
   virtual int enableMove ();
   virtual int disableMove ();
 };
@@ -68,11 +71,20 @@ Rts2DevPhotDummy::startIntegrate ()
 }
 
 int
-Rts2DevPhotDummy::moveFilter (int new_filter)
+Rts2DevPhotDummy::startFilterMove (int new_filter)
 {
   filter = new_filter;
-  infoAll ();
-  return 0;
+  filterCount = 10;
+  return Rts2DevPhot::startFilterMove (new_filter);
+}
+
+long
+Rts2DevPhotDummy::isFilterMoving ()
+{
+  if (filterCount <= 0)
+    return -2;
+  filterCount--;
+  return USEC_SEC / 10;
 }
 
 int

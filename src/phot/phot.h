@@ -41,7 +41,12 @@ public:
   }
 
   virtual int homeFilter ();
-  virtual int moveFilter (int new_filter);
+
+  void checkFilterMove ();
+
+  virtual int startFilterMove (int new_filter);
+  virtual long isFilterMoving ();
+  virtual int endFilterMove ();
   virtual int enableMove ();
   virtual int disableMove ();
 

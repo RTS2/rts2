@@ -104,6 +104,23 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, 5559, "PHOT")
   setReqTime (1);
 }
 
+void
+Rts2DevPhot::checkFilterMove ()
+{
+  long ret;
+  if ((getState (0) & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
+    {
+      ret = isFilterMoving ();
+      if (ret > 0)
+	{
+	  setTimeoutMin (ret);
+	  return;
+	}
+      // when it's -1 or -2..end filter move
+      endFilterMove ();
+    }
+}
+
 int
 Rts2DevPhot::idle ()
 {
@@ -136,6 +153,8 @@ Rts2DevPhot::idle ()
       setTimeout ((nextCountDue.tv_sec - now.tv_sec) * USEC_SEC +
 		  nextCountDue.tv_usec - now.tv_usec);
     }
+  // check filter moving..
+  checkFilterMove ();
   return Rts2Device::idle ();
 }
 
@@ -152,9 +171,24 @@ Rts2DevPhot::homeFilter ()
 }
 
 int
-Rts2DevPhot::moveFilter (int new_filter)
+Rts2DevPhot::startFilterMove (int new_filter)
 {
-  return -1;
+  maskState (0, PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
+  return 0;
+}
+
+long
+Rts2DevPhot::isFilterMoving ()
+{
+  return -2;
+}
+
+int
+Rts2DevPhot::endFilterMove ()
+{
+  infoAll ();
+  maskState (0, PHOT_MASK_FILTER, PHOT_FILTER_IDLE);
+  return 0;
 }
 
 int
@@ -228,7 +262,7 @@ int
 Rts2DevPhot::moveFilter (Rts2Conn * conn, int new_filter)
 {
   int ret;
-  ret = moveFilter (new_filter);
+  ret = startFilterMove (new_filter);
   if (ret)
     return -1;
   return 0;

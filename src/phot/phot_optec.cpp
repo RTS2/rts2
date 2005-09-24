@@ -28,6 +28,7 @@ class Rts2DevPhotOptec:public Rts2DevPhot
 private:
   char *phot_dev;
   int fd;
+  time_t filter_move_timeout;
 
   int phot_command (char command, short arg);
 
@@ -58,7 +59,8 @@ public:
   };
 
   virtual int homeFilter ();
-  virtual int moveFilter (int new_filter);
+  virtual int startFilterMove (int new_filter);
+  virtual long isFilterMoving ();
   virtual int stopIntegrate ();
   virtual int enableMove ();
   virtual int disableMove ();
@@ -138,7 +140,8 @@ Rts2DevPhotOptec::getCount ()
 	    {
 	    case '0':
 	      filter = result[1] / FILTER_STEP;
-	      infoAll ();
+	      if ((getState (0) & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
+		endFilterMove ();
 	      break;
 	    case '-':
 	      return -1;
@@ -186,9 +189,27 @@ Rts2DevPhotOptec::stopIntegrate ()
 }
 
 int
-Rts2DevPhotOptec::moveFilter (int new_filter)
+Rts2DevPhotOptec::startFilterMove (int new_filter)
 {
-  return phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
+  int ret;
+  ret = phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
+  if (ret)
+    return ret;
+  time (&filter_move_timeout);
+  // 10 sec timeout for move
+  filter_move_timeout += 10;
+  return Rts2DevPhot::startFilterMove (new_filter);
+}
+
+long
+Rts2DevPhotOptec::isFilterMoving ()
+{
+  time_t now;
+  time (&now);
+  // timeout..
+  if (filter_move_timeout < now)
+    return -1;
+  return USEC_SEC;
 }
 
 int
