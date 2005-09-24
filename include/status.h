@@ -61,6 +61,10 @@
 #define PHOT_NOINTEGRATE	0x00
 #define PHOT_INTEGRATE		0x01
 
+#define PHOT_MASK_FILTER	0x02
+#define PHOT_FILTER_IDLE	0x00
+#define PHOT_FILTER_MOVE	0x02
+
 // focuser status
 #define FOC_MASK_FOCUSING	0x01
 #define FOC_SLEEPING		0x00
