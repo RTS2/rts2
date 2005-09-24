@@ -647,6 +647,7 @@ Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
       // filterMoveCommand will result in call of either
       // filterMoveFailed (calls now deleteScript) or filterMoveEnd
       // (calls next command)
+      processingState = SEARCH_FAILED2;
       return NEXT_COMMAND_KEEP;
     case SEARCH_FAILED2:
       // so we get there..

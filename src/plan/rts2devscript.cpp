@@ -189,10 +189,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
       waitScript = NO_WAIT;
       if (script)
 	script->postEvent (new Rts2Event (event));
-      if (event->getType () == EVENT_TEL_SEARCH_SUCCESS)
-	nextCommand ();
-      else			// we get to end of search pattern..to bad, stop us
-	deleteScript ();
+      // give script chance to finish searching (e.g. move filter back
+      // to 0, then delete script)
+      nextCommand ();
       break;
     }
   Rts2Object::postEvent (event);
