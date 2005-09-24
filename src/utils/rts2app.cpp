@@ -152,3 +152,33 @@ Rts2App::run ()
   std::cout << "Empty run methods!" << std::endl;
   return 0;
 }
+
+int
+Rts2App::parseDate (const char *in_date, struct tm *out_time)
+{
+  char *ret;
+  char *ret2;
+  out_time->tm_isdst = 0;
+  out_time->tm_hour = out_time->tm_min = out_time->tm_sec = 0;
+  ret = strptime (in_date, "%Y-%m-%d", out_time);
+  if (ret && ret != in_date)
+    {
+      // we end with is T, let's check if it contains time..
+      if (*ret == 'T')
+	{
+	  ret2 = strptime (ret, "T%H:%M:%S", out_time);
+	  if (ret2 && *ret2 == '\0')
+	    return 0;
+	  ret2 = strptime (ret, "T%H:%M", out_time);
+	  if (ret2 && *ret2 == '\0')
+	    return 0;
+	  ret2 = strptime (ret, "T%H", out_time);
+	  if (ret2 && *ret2 == '\0')
+	    return 0;
+	  return -1;
+	}
+      // only year..
+      return 0;
+    }
+  return -1;
+}
