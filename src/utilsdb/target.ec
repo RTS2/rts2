@@ -591,8 +591,6 @@ Target::changePriority (int pri_change, time_t *time_ch)
   int db_next_t = (int) *time_ch;
   EXEC SQL END DECLARE SECTION;
   
-  EXEC SQL BEGIN TRANSACTION;
-
   EXEC SQL UPDATE 
     targets
   SET

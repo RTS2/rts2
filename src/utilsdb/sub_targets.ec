@@ -633,11 +633,10 @@ CalibrationTarget::load ()
   time_t hour_back;
 
   std::list <PosCalibration *> cal_list;
+  std::list <PosCalibration *> bad_list;
   std::list <PosCalibration *>::iterator cal_iter, cal_iter2;
   if (getTargetID () != TARGET_CALIBRATION)
     return ConstTarget::load ();
-
-  EXEC SQL BEGIN TRANSACTION;
 
   // create airmass & target_id pool (I dislike idea of creating
   // target object, as that will cost me a lot of resources
@@ -697,8 +696,6 @@ CalibrationTarget::load ()
   EXEC SQL CLOSE pos_calibration;
   EXEC SQL COMMIT;
 
-  EXEC SQL BEGIN TRANSACTION;
-
   // center airmass is 1.5 - when we don't have any images in airmass_cal_images,
   // order us by distance from such center distance
   EXEC SQL DECLARE cur_airmass_cal_images CURSOR FOR
@@ -734,7 +731,9 @@ CalibrationTarget::load ()
 	// if that target was already observerd..
 	if (calib->getNumObs (&hour_back, &now) > 0)
 	{
-	  calib->changePriority (-100, JD + 1.0/24.0);
+	  // we have to que it for change - we need to change it's
+	  // priority outside current transaction, which hold cursor..
+	  bad_list.push_back (calib);
 	}
 	else
 	{
@@ -753,6 +752,12 @@ CalibrationTarget::load ()
     logMsgDb (logmsg);
     free (logmsg);
   }
+  // change priority for bad targets..
+  for (cal_iter = bad_list.begin (); cal_iter != bad_list.end (); cal_iter++)
+  {
+    (*cal_iter)->changePriority (-100, JD + 1.0/24.0);
+  }
+  bad_list.clear ();
   // free cal_list..
   for (cal_iter = cal_list.begin (); cal_iter != cal_list.end ();)
   {
@@ -761,6 +766,7 @@ CalibrationTarget::load ()
     delete *cal_iter2;
   }
   cal_list.clear ();
+
   // SQL test..
   if (sqlca.sqlcode)
   {
