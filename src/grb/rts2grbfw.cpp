@@ -107,6 +107,9 @@ int
 Rts2GrbForwardClientConn::receive (fd_set * set)
 {
   static long loc_buf[SIZ_PKT];
+  if (sock < 0)
+    return -1;
+
   if (FD_ISSET (sock, set))
     {
       int ret;

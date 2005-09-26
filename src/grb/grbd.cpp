@@ -148,7 +148,7 @@ Rts2DevGrb::init ()
       int ret2;
       Rts2GrbForwardConnection *forwardConnection;
       forwardConnection = new Rts2GrbForwardConnection (this, forwardPort);
-      ret = forwardConnection->init ();
+      ret2 = forwardConnection->init ();
       if (ret2)
 	{
 	  syslog (LOG_ERR,
