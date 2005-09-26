@@ -125,9 +125,9 @@ bool
 CApnCamera::BufferDriftScan (char *bufferName, int delay, int rowCount,
 			     int nblock, int npipe)
 {
-  unsigned short *pImageData, *ptr;
-  bool status;
-  int irow;
+  //unsigned short *pImageData, *ptr;
+  //bool status; 
+  //int irow;
   short cols, rows, hbin, vbin;
 
   cols = m_pvtExposurePixelsH;
