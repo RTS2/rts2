@@ -9,6 +9,12 @@ Rts2ConnNoSend::Rts2ConnNoSend (Rts2Block * in_master):Rts2Conn (in_master)
   setConnTimeout (-1);
 }
 
+Rts2ConnNoSend::Rts2ConnNoSend (int in_sock, Rts2Block * in_master):
+Rts2Conn (in_sock, in_master)
+{
+  setConnTimeout (-1);
+}
+
 Rts2ConnNoSend::~Rts2ConnNoSend (void)
 {
 }

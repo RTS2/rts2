@@ -8,7 +8,8 @@ class Rts2ConnNoSend:public Rts2Conn
 
 public:
   Rts2ConnNoSend (Rts2Block * in_master);
-  virtual ~ Rts2ConnNoSend (void);
+  Rts2ConnNoSend (int in_sock, Rts2Block * in_master);
+    virtual ~ Rts2ConnNoSend (void);
 
   virtual int send (char *message);
 };
