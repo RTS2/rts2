@@ -61,6 +61,9 @@ Rts2GrbForwardConnection::receive (fd_set * set)
 	  syslog (LOG_ERR, "Rts2GrbForwardConnection::receive accept %m");
 	  return 0;
 	}
+      syslog (LOG_DEBUG,
+	      "Rts2GrbForwardClientConn::accept connection from %s %i",
+	      inet_ntoa (other_side.sin_addr), ntohs (other_side.sin_port));
       Rts2GrbForwardClientConn *newConn =
 	new Rts2GrbForwardClientConn (new_sock, getMaster ());
       getMaster ()->addConnection (newConn);
