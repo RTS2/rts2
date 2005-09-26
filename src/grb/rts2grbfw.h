@@ -11,7 +11,7 @@
  *
  * @author petr
  */
-class Rts2GrbForwardConnection:public Rts2Conn
+class Rts2GrbForwardConnection:public Rts2ConnNoSend
 {
 private:
   int forwardPort;

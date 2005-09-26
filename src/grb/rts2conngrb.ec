@@ -1009,9 +1009,9 @@ Rts2ConnGrb::receive (fd_set *set)
         syslog (LOG_ERR, "Rts2ConnGrb::receive unknow packet type: %ld", lbuf[PKT_TYPE]);
 	break;
     }
+    // enable others to catch-up (FW connections will forward packet to their sockets)
+    getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_GRB_PACKET, nbuf));
   }
-  // enable others to catch-up (FW connections will forward packet to their sockets)
-  getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_GRB_PACKET, nbuf));
   return ret;
 }
 

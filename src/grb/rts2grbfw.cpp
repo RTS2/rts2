@@ -6,7 +6,7 @@
 
 Rts2GrbForwardConnection::Rts2GrbForwardConnection (Rts2Block * in_master,
 						    int in_forwardPort):
-Rts2Conn (in_master)
+Rts2ConnNoSend (in_master)
 {
   forwardPort = in_forwardPort;
 }
@@ -121,6 +121,7 @@ Rts2GrbForwardClientConn::receive (fd_set * set)
 	{
 	  syslog (LOG_ERR, "Rts2GrbForwardClientConn::receive %m (%i, %i)",
 		  errno, ret);
+	  connectionError ();
 	  return -1;
 	}
       // get some data back..
