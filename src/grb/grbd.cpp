@@ -2,16 +2,17 @@
 #define _GNU_SOURCE
 #endif
 
-/*!
- *
+/**
  * Receive info from GCN via socket, put them to DB.
  *
  * Based on http://gcn.gsfc.nasa.gov/socket_demo.c 
  * socket_demo     Ver: 3.29   23 Mar 05,
- * which is CVSed with GRBC. Only "active" satellite packets are received.
+ * which is CVSed with GRBC. Only "active" satellite packets are processed.
  *
  * If new version of socket_demo.c show up, we need to invesigate
  * modifications to include it.
+ *
+ * @author petr
  */
 
 #include "../utils/rts2command.h"
@@ -60,11 +61,13 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, 5563, "GRB")
   gcn_host = NULL;
   gcn_port = -1;
   do_hete_test = 0;
+  forwardPort = -1;
 
   addOption ('S', "gcn_host", 1, "GCN host name");
   addOption ('P', "gcn_port", 1, "GCN port");
   addOption ('T', "test", 0,
 	     "process test notices (default to off - don't process them)");
+  addOption ('f', "forward", 1, "forward incoming notices to that port");
 }
 
 Rts2DevGrb::~Rts2DevGrb (void)
@@ -87,6 +90,9 @@ Rts2DevGrb::processOption (int in_opt)
       break;
     case 'T':
       do_hete_test = 1;
+      break;
+    case 'f':
+      forwardPort = atoi (optarg);
       break;
     default:
       return Rts2DeviceDb::processOption (in_opt);
@@ -136,6 +142,26 @@ Rts2DevGrb::init ()
       sleep (60);
     }
   addConnection (gcncnn);
+  // add forward connection
+  if (forwardPort > 0)
+    {
+      int ret2;
+      Rts2GrbForwardConnection *forwardConnection;
+      forwardConnection = new Rts2GrbForwardConnection (this, forwardPort);
+      ret = forwardConnection->init ();
+      if (ret2)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevGrb::init cannot create forward connection, ignoring (%i)",
+		  ret2);
+	  delete forwardConnection;
+	  forwardConnection = NULL;
+	}
+      else
+	{
+	  addConnection (forwardConnection);
+	}
+    }
   return ret;
 }
 

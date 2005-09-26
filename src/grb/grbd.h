@@ -3,6 +3,10 @@
 
 #include "../utilsdb/rts2devicedb.h"
 #include "rts2conngrb.h"
+#include "rts2grbfw.h"
+
+// when we get GRB packet..
+#define RTS2_EVENT_GRB_PACKET  RTS2_LOCAL_EVENT + 600
 
 class Rts2ConnGrb;
 
@@ -13,6 +17,8 @@ private:
   char *gcn_host;
   int gcn_port;
   int do_hete_test;
+
+  int forwardPort;
 public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();
