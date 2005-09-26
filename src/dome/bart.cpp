@@ -93,7 +93,7 @@ enum stavy
 enum stavy zasuvky_stavy[3][NUM_ZAS] =
 {
   // off
-  {ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_VYP},
+  {ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_ZAP, ZAS_VYP},
   // standby
   {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP},
   // observnig
