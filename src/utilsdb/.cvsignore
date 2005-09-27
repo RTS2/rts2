@@ -7,4 +7,5 @@ rts2devicedb.cpp
 sub_targets.cpp
 target.cpp
 airmasscale.cpp
+rts2sqlcolumn.cpp
 rts2-*
