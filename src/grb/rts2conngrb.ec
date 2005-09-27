@@ -120,7 +120,7 @@ Rts2ConnGrb::pr_integral ()
   float grb_errorbox;
 
   if (!do_hete_test
-    && ((lbuf[12] & (2 < 31))
+    && ((lbuf[12] & (1 << 31))
     )
   )
   {
