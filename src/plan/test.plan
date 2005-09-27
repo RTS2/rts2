@@ -1,0 +1,9 @@
+09.06.2002 21:17:50
+	wf.info
+	wf.expose 0 10
++15
+	wf.readout 0
++20
+	RECEIVE.fits !moje.fits wf.data 0
++1000
+	tel.moveto 10 20

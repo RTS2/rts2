@@ -1,0 +1,16 @@
+#define	IBC_OK				(0)
+
+#define	IBC_ERR_BASE			(50)
+
+#define	IBC_NUL_PTR			(IBC_ERR_BASE + 0)
+#define	IBC_BAD_ARG			(IBC_ERR_BASE + 1)
+#define	IBC_NO_SOCKET			(IBC_ERR_BASE + 2)
+#define	IBC_BIND_FAILED			(IBC_ERR_BASE + 3)
+#define	IBC_CONN_REFUSED		(IBC_ERR_BASE + 4)
+#define	IBC_BAD_CRC			(IBC_ERR_BASE + 5)
+#define	IBC_SIGNALLED			(IBC_ERR_BASE + 6)
+#define	IBC_SENDTO_FAILED		(IBC_ERR_BASE + 7)
+#define	IBC_NOT_INIT			(IBC_ERR_BASE + 8)
+#define	IBC_FCNTL_FAILED		(IBC_ERR_BASE + 9)
+#define	IBC_BAD_ARCH			(IBC_ERR_BASE + 10)
+#define	IBC_AGAIN			(IBC_ERR_BASE + 11)
