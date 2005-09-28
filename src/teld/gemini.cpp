@@ -28,7 +28,7 @@
 #include "../utils/hms.h"
 
 // uncomment following line, if you want all port read logging (will
-// at about 10 30-bytes lines to syslog for every query). 
+// add about 10 30-bytes lines to syslog for every query). 
 // #define DEBUG_ALL_PORT_COMM
 
 #define RATE_SLEW	'S'
@@ -1154,7 +1154,12 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
   // start worm if moving in RA DEC..
   if (worm == 135 && (direction == DIR_EAST || direction == DIR_WEST))
     {
+      // G11 (version 3.x) have some problems with starting worm..give it some time
+      // to react
       startWorm ();
+      usleep (USEC_SEC / 10);
+      startWorm ();
+      usleep (USEC_SEC / 10);
       worm_move_needed = 1;
     }
   sprintf (command, "#:M%c#", direction);
@@ -1463,6 +1468,13 @@ Rts2DevTelescopeGemini::changeSearch ()
     }
   // send current location
   infoAll ();
+
+  // change to new..
+  searchStep++;
+  add.tv_sec = searchUsecTime / USEC_SEC;
+  add.tv_usec = searchUsecTime % USEC_SEC;
+  timeradd (&now, &add, &nextSearchStep);
+
   if (lastSearchRaDiv != searchDirs[searchStep].raDiv)
     {
       lastSearchRaDiv = searchDirs[searchStep].raDiv;
@@ -1493,10 +1505,6 @@ Rts2DevTelescopeGemini::changeSearch ()
       if (ret)
 	return -1;
     }
-  searchStep++;
-  add.tv_sec = searchUsecTime / USEC_SEC;
-  add.tv_usec = searchUsecTime % USEC_SEC;
-  timeradd (&now, &add, &nextSearchStep);
   return 0;
 }
 
