@@ -10,18 +10,23 @@
 #include <fcntl.h>
 
 #define M16			0xA001	/* crc-16 mask */
-#define SLAVE			0x02
+#define SLAVE			0x01
 
 #define REG_READ		0x03
-#define REG_WRITE		0x10
+#define REG_WRITE		0x06
 
 #define REG_STATE		0x01
 #define REG_POSITION		0x02
 #define REG_COP_CONTROL		0x03
 #define REG_SPLIT_CONTROL	0x04
 
+#define FAKE_WEATHER
+
 // average az size of one step (in arcdeg)
-#define STEP_AZ_SIZE		0.2
+#define STEP_AZ_SIZE		1
+
+// AZ offset - AZ of 0 position (in libnova notation - 0 is South, 90 is West)
+#define STEP_AZ_OFFSET		270
 
 // how many deg to turn before switching from fast to non-fast mode
 #define FAST_TIMEOUT		1
@@ -81,12 +86,17 @@ public:
   // park copula
   virtual int standby ();
   virtual int off ();
+
+  virtual double getSplitWidth (double alt)
+  {
+    return 5;
+  }
 };
 
 uint16_t Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
   uint16_t
-    ret = 0xff;
+    ret = 0xffff;
   for (int l = 0; l < msgLen; l++)
     {
       char
@@ -112,9 +122,17 @@ Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
   int ret;
   uint16_t crc16;
   crc16 = getMsgBufCRC16 (w_buf, w_buf_len - 2);
-  w_buf[w_buf_len - 2] = (crc16 & 0xff00) >> 8;
-  w_buf[w_buf_len - 1] = (crc16 & 0x00ff);
+  w_buf[w_buf_len - 2] = (crc16 & 0x00ff);
+  w_buf[w_buf_len - 1] = (crc16 & 0xff00) >> 8;
   ret = write (cop_desc, w_buf, w_buf_len);
+#ifdef DEBUG_ALL
+  for (int i = 0; i < w_buf_len; i++)
+    {
+      syslog (LOG_DEBUG,
+	      "Rts2DevCopulaMark::write_read write byte %i value %x", i,
+	      w_buf[i]);
+    }
+#endif
   if (ret != w_buf_len)
     {
       syslog (LOG_ERR, "Rts2DevCopulaMark::write_read ret != w_buf_len %i %i",
@@ -122,6 +140,14 @@ Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
       return -1;
     }
   ret = read (cop_desc, r_buf, r_buf_len);
+#ifdef DEBUG_ALL
+  for (int i = 0; i < r_buf_len; i++)
+    {
+      syslog (LOG_DEBUG,
+	      "Rts2DevCopulaMark::write_read read byte %i value %x", i,
+	      r_buf[i]);
+    }
+#endif
   if (ret != r_buf_len)
     {
       syslog (LOG_ERR, "Rts2DevCopulaMark::write_read ret != r_buf_len %i %i",
@@ -130,12 +156,16 @@ Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
     }
   // get checksum
   crc16 = getMsgBufCRC16 (r_buf, r_buf_len - 2);
-  if (r_buf[r_buf_len - 2] != (crc16 & 0xff00) >> 8
-      || r_buf[r_buf_len - 1] != (crc16 & 0x00ff))
+  if ((r_buf[r_buf_len - 1] & ((crc16 & 0xff00) >> 8)) !=
+      ((crc16 & 0xff00) >> 8)
+      || (r_buf[r_buf_len - 2] & (crc16 & 0x00ff)) != (crc16 & 0x00ff))
     {
       syslog (LOG_ERR,
-	      "Rts2DevCopulaMark::write_read invalid checksum! (should be %xi, is %xi)",
-	      crc16, (uint16_t) r_buf[r_buf_len - 2]);
+	      "Rts2DevCopulaMark::write_read invalid checksum! (should be %x %x, is %x %x (%x %x))",
+	      ((crc16 & 0xff00) >> 8), (crc16 & 0x00ff), r_buf[r_buf_len - 1],
+	      r_buf[r_buf_len - 2],
+	      (r_buf[r_buf_len - 1] & ((crc16 & 0xff00) >> 8)),
+	      (r_buf[r_buf_len - 2] & (crc16 & 0x00ff)));
       return -1;
     }
   usleep (USEC_SEC / 10);
@@ -157,29 +187,32 @@ Rts2DevCopulaMark::readReg (int reg, uint16_t * reg_val)
   ret = write_read (wbuf, 8, rbuf, 7);
   if (ret)
     return ret;
-  *reg_val = (rbuf[3] << 8) || (rbuf[4]);
+  *reg_val = rbuf[3];
+  *reg_val = *reg_val << 8;
+  *reg_val |= (rbuf[4]);
+  syslog (LOG_DEBUG, "Rts2DevCopulaMark::readReg reg %i val %x", reg,
+	  *reg_val);
   return 0;
 }
 
 int
 Rts2DevCopulaMark::writeReg (int reg, uint16_t reg_val)
 {
-  char wbuf[11];
+  char wbuf[8];
   char rbuf[8];
   // we must either be initialized or
   // or we must issue initialization request
-  if (!(initialized == DONE || (reg == REG_COP_CONTROL && reg_val == 0x10)))
+  if (!(initialized == DONE || (reg == REG_COP_CONTROL && reg_val == 0x08)))
     return -1;
   wbuf[0] = SLAVE;
   wbuf[1] = REG_WRITE;
   wbuf[2] = (reg & 0xff00) >> 8;
   wbuf[3] = (reg & 0x00ff);
-  wbuf[4] = 0x00;
-  wbuf[5] = 0x01;
-  wbuf[6] = 0x02;
-  wbuf[7] = (reg_val & 0xff00) >> 8;
-  wbuf[8] = (reg_val & 0x00ff);
-  return write_read (wbuf, 11, rbuf, 8);
+  wbuf[4] = (reg_val & 0xff00) >> 8;
+  wbuf[5] = (reg_val & 0x00ff);
+  syslog (LOG_DEBUG, "Rts2DevCopulaMark::writeReg reg %i value %x", reg,
+	  reg_val);
+  return write_read (wbuf, 8, rbuf, 8);
 }
 
 Rts2DevCopulaMark::Rts2DevCopulaMark (int in_argc, char **in_argv):Rts2DevCopula (in_argc,
@@ -244,7 +277,7 @@ Rts2DevCopulaMark::init ()
     ((cop_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
   cop_termios.c_lflag = 0;
   cop_termios.c_cc[VMIN] = 0;
-  cop_termios.c_cc[VTIME] = 10;
+  cop_termios.c_cc[VTIME] = 40;
 
   if (tcsetattr (cop_desc, TCSANOW, &cop_termios) < 0)
     return -1;
@@ -270,7 +303,11 @@ Rts2DevCopulaMark::idle ()
   int ret;
   uint16_t copState;
   // check for weather..
+#ifndef FAKE_WEATHER
   if (weatherConn->isGoodWeather ())
+#else
+  if (true)
+#endif
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
@@ -305,10 +342,10 @@ Rts2DevCopulaMark::idle ()
 	}
       else if ((copState & 0x0200) == 0)
 	{
-	  if (initialized != IN_PROGRESS)
+	  if (initialized != IN_PROGRESS && initialized != DONE)
 	    {
 	      // not initialized, initialize
-	      writeReg (REG_COP_CONTROL, 0x10);
+	      writeReg (REG_COP_CONTROL, 0x08);
 	      initialized = IN_PROGRESS;
 	    }
 	}
@@ -324,8 +361,10 @@ int
 Rts2DevCopulaMark::openDome ()
 {
   int ret;
+#ifndef FAKE_WEATHER
   if (!weatherConn->isGoodWeather ())
     return -1;
+#endif
   ret = writeReg (REG_SPLIT_CONTROL, 0x0001);
   if (ret)
     return ret;
@@ -382,8 +421,10 @@ Rts2DevCopulaMark::info ()
   ret = readReg (REG_POSITION, (uint16_t *) & az_val);
   if (!ret)
     {
-      setCurrentAz (ln_range_degrees (az_val * STEP_AZ_SIZE));
-      return Rts2DevCopula::info ();
+      setCurrentAz (ln_range_degrees
+		    ((az_val * STEP_AZ_SIZE) + STEP_AZ_OFFSET));
+      Rts2DevCopula::info ();
+      return 0;
     }
   return -1;
 }
@@ -412,9 +453,9 @@ Rts2DevCopulaMark::slew ()
       || ((copControl & 0x02) && getTargetDistance () > 0))
     {
       // stop faster movement..
-      if (copControl & 0x08)
+      if (copControl & 0x04)
 	{
-	  copControl &= ~(0x08);
+	  copControl &= ~(0x04);
 	  lastFast = getCurrentAz ();
 	  return writeReg (REG_COP_CONTROL, copControl);
 	}
@@ -433,16 +474,17 @@ Rts2DevCopulaMark::slew ()
   if ((copControl & 0x01) || (copControl & 0x02))
     {
       // already in fast mode..
-      if (copControl & 0x08)
+      if (copControl & 0x04)
 	{
 	  // try to slow down when needed
 	  if (fabs (getTargetDistance ()) < FAST_TIMEOUT)
 	    {
-	      copControl &= ~(0x08);
+	      copControl &= ~(0x04);
 	      ret = writeReg (REG_COP_CONTROL, copControl);
 	      if (ret)
 		return -1;
 	    }
+	  syslog (LOG_DEBUG, "Rts2DevCopulaMark::slew slow down");
 	}
       // test if we hit target destination
       if (fabs (getTargetDistance ()) < MIN_ERR)
@@ -453,6 +495,15 @@ Rts2DevCopulaMark::slew ()
 	    return -1;
 	  return -2;
 	}
+    }
+  // not move at all
+  if ((copControl & 0x03) == 0x00)
+    {
+      copControl = (getTargetDistance () < 0) ? 0x02 : 0x01;
+      ret = writeReg (REG_COP_CONTROL, copControl);
+      if (ret)
+	return -1;
+      return 0;
     }
   return 0;
 }
@@ -501,7 +552,7 @@ Rts2DevCopulaMark::parkCopula ()
   if (initialized != IN_PROGRESS)
     {
       // reinitialize copula
-      writeReg (REG_COP_CONTROL, 0x10);
+      writeReg (REG_COP_CONTROL, 0x08);
       initialized = IN_PROGRESS;
     }
 }
