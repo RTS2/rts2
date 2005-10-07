@@ -105,7 +105,7 @@ Rts2DevClientCameraImage::writeFilter ()
 	  flt_len++;
 	}
       strncpy (imageFilter, flt, flt_len);
-      imageFilter[3] = '\0';
+      imageFilter[flt_len] = '\0';
     }
   else
     {
@@ -249,6 +249,10 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 		       "mount RA (read from sensors)");
       image->setValue ("MNT_DEC", getValueDouble ("dec_tel"),
 		       "mount DEC (read from sensors)");
+      image->setValue ("MNT_AX0", getValueDouble ("axis0_counts"),
+		       "mount axis 0 counts");
+      image->setValue ("MNT_AX1", getValueDouble ("axis1_counts"),
+		       "mount axis 1 counts");
       image->setValue ("LONG", obs.lng, "mount longtitude");
       image->setValue ("LAT", obs.lat, "mount latitude");
       gst = getValueDouble ("siderealtime") * 15.0 - obs.lng;
