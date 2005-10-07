@@ -1092,6 +1092,7 @@ TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs) :
 ConstTarget (in_tar_id, in_obs)
 {
   shouldUpdate = 1;
+  grb_is_grb = true;
 }
 
 int
@@ -1101,17 +1102,20 @@ TargetGRB::load ()
   long  db_grb_date;
   long  db_grb_last_update;
   int db_grb_type;
+  bool db_grb_is_grb;
   int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
     EXTRACT (EPOCH FROM grb_date),
     EXTRACT (EPOCH FROM grb_last_update),
-    grb_type
+    grb_type,
+    grb_is_grb
   INTO
     :db_grb_date,
     :db_grb_last_update,
-    :db_grb_type
+    :db_grb_type,
+    :db_grb_is_grb
   FROM
     grb
   WHERE
@@ -1126,6 +1130,7 @@ TargetGRB::load ()
   // so we will not update that in beforeMove (or somewhere else)
   lastUpdate = db_grb_last_update;
   gcnPacketType = db_grb_type;
+  grb_is_grb = db_grb_is_grb;
   shouldUpdate = 0;
   return ConstTarget::load ();
 }
@@ -1277,12 +1282,13 @@ TargetGRB::getBonus ()
   // time from GRB
   time_t now;
   time (&now);
+  float retBonus;
   // special SWIFT handling..
   // last packet we have is SWIFT_ALERT..
   switch (gcnPacketType)
     {
       case 60:
-        // we don't get ACK | position within 1 hour..drop our priority to some minumu
+        // we don't get ACK | position within 1 hour..drop our priority back to some mimimum value
         if (now - grbDate > 3600)
           return 1;
         break;
@@ -1294,23 +1300,30 @@ TargetGRB::getBonus ()
   if (now - grbDate < 3600)
   {
     // < 1 hour fixed boost to be sure to not miss it
-    return ConstTarget::getBonus () + 2000;
+    retBonus = ConstTarget::getBonus () + 2000;
   }
-  if (now - grbDate < 86400)
+  else if (now - grbDate < 86400)
   {
     // < 24 hour post burst
-    return ConstTarget::getBonus ()
+    retBonus = ConstTarget::getBonus ()
       + 1000.0 * cos ((double)((double)(now - grbDate) / (2.0*86400.0))) 
       + 10.0 * cos ((double)((double)(now - lastUpdate) / (2.0*86400.0)));
   }
   else if (now - grbDate < 5 * 86400)
   {
     // < 5 days post burst - add some time after last observation
-    return ConstTarget::getBonus ()
+    retBonus = ConstTarget::getBonus ()
       + 10.0 * sin (getLastObsTime () / 3600.0);
   }
-  // default
-  return ConstTarget::getBonus ();
+  else
+  {
+    // default
+    retBonus = ConstTarget::getBonus ();
+  }
+  // if it was not GRB..
+  if (grb_is_grb == false)
+    retBonus /= 2;
+  return retBonus;
 }
 
 int

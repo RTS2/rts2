@@ -576,6 +576,7 @@ private:
   time_t grbDate;
   time_t lastUpdate;
   int gcnPacketType;		// gcn packet from last update
+  bool grb_is_grb;
   int shouldUpdate;
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
