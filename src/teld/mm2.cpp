@@ -55,7 +55,7 @@
 #define MOTORS_ON	1
 #define MOTORS_OFF	-1
 
-#define HOME_DEC	87
+#define HOME_DEC	-87
 
 // hard-coded LONGTITUDE & LATITUDE
 #define TEL_LONG 	-6.239166667
@@ -825,10 +825,10 @@ Rts2DevTelescopeMM2::tel_slew_to (double ra, double dec)
     return -1;
   if (retstr == '0')
     {
+      setTarget (ra, dec);
       set_move_timeout (100);
       return 0;
     }
-  setTarget (ra, dec);
   return -1;
 }
 
@@ -1225,11 +1225,15 @@ void
 Rts2DevTelescopeMM2::goodPark ()
 {
   tel_read_siderealtime ();
-  telAxis[0] = telRa - telSiderealTime * 15.0;
+  telAxis[0] = telRa - telSiderealTime * 15.0 - 90;
   telAxis[0] = ln_range_degrees (telAxis[0]);
   if (telAxis[0] > 180.0)
     {
-      telAxis[0] -= 360.0;
+      telAxis[0] = 360 - telAxis[0];
+    }
+  if (telAxis[0] > 90.0)
+    {
+      telAxis[0] = 180.0 - telAxis[0];
     }
   cw_pos = SAFE_CWD;
   syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::isParking reset pos: %f",
