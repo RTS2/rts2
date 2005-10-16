@@ -72,6 +72,9 @@ PG_FUNCTION_INFO_V1 (img_wcs_cdelt1);
 PG_FUNCTION_INFO_V1 (img_wcs_cdelt2);
 PG_FUNCTION_INFO_V1 (img_wcs_crota);
 PG_FUNCTION_INFO_V1 (img_wcs_epoch);
+// center RA and DEC
+PG_FUNCTION_INFO_V1 (img_wcs_center_ra);
+PG_FUNCTION_INFO_V1 (img_wcs_center_dec);
 
 // helper
 char *
@@ -428,4 +431,34 @@ img_wcs_epoch (PG_FUNCTION_ARGS)
 
   arg = PG_GETARG_KWCS_P (0);
   PG_RETURN_FLOAT8 (arg->epoch);
+}
+
+Datum
+img_wcs_center_ra (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  if (!strncmp (arg->ctype1, "RA--", 4))
+    PG_RETURN_FLOAT8 (arg->crval1);
+  if (!strncmp (arg->ctype2, "RA--", 4))
+    PG_RETURN_FLOAT8 (arg->crval2);
+  PG_RETURN_NULL ();
+}
+
+Datum
+img_wcs_center_dec (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  if (!strncmp (arg->ctype1, "DEC-", 4))
+    PG_RETURN_FLOAT8 (arg->crval1);
+  if (!strncmp (arg->ctype2, "DEC-", 4))
+    PG_RETURN_FLOAT8 (arg->crval2);
+  PG_RETURN_NULL ();
 }
