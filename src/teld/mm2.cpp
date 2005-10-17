@@ -58,14 +58,15 @@
 #define HOME_DEC	-87
 
 // hard-coded LONGTITUDE & LATITUDE
-#define TEL_LONG 	-6.239166667
-#define TEL_LAT		53.3155555555
+// BOYDEN
+#define TEL_LONG 	26.4056
+#define TEL_LAT		-29.0389
 
 // dec of visible earth rotational axis pole
 #define TEL_POLE	(TEL_LAT > 0 ? 90 : -90)
 
 // we shall not move below that POS - e.g. our target is to keep telAxis[0] in <-1 * NOT_SAFE_POS, NOT_SAFE_POS>
-// it must be > 90.0 for system to work
+// it must be < 100.0 for system to work
 #define NOT_SAFE_POS	110.0
 
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
@@ -689,15 +690,12 @@ Rts2DevTelescopeMM2::idle ()
   time_t now;
   // if we don't update pos for more then 5 seconds..
   time (&now);
-  if (now > (last_pos_update + 5))
+  if (now > (last_pos_update + 2))
     {
-      // we run worn, so let's update 
+      // let's update 
       // position by elapsed sidereal time
-      if (worm_state == RUNNING)
-	{
-	  // we are moving to west
-	  telAxis[0] -= 360.0 * (now - last_pos_update) / LN_SIDEREAL_DAY_SEC;
-	}
+      // we are moving to west
+      telAxis[0] -= 360.0 * (now - last_pos_update) / LN_SIDEREAL_DAY_SEC;
       // there was big change in ra, which we should keep track of - it can
       // be result of manual move of the telescope or performed goto
       double ha_change;
@@ -717,6 +715,28 @@ Rts2DevTelescopeMM2::idle ()
 		ha_change = ha_change + 180.0;
 	      telAxis[0] += ha_change;
 	      last_pos_ra = telRa;
+	    }
+	  // too much on west..park and resync
+	  if (telAxis[0] < -100.0)
+	    {
+	      int ret;
+	      tel_read_siderealtime ();
+	      homeHA = telSiderealTime * 15.0 + 90.0;
+	      double ha_diff = ln_range_degrees (homeHA - telRa);
+	      // keep on same side as current telRa
+	      if (ha_diff < 90 || ha_diff > 270)
+		homeHA = telSiderealTime * 15.0 - 90;
+	      // make sure we will initiate move to part closer to our side..
+	      homeHA -= 30.0;
+	      homeHA = ln_range_degrees (homeHA);
+	      // recalculate homeHA to correct half
+	      ret = tel_slew_to (homeHA, telDec);
+	      if (ret == 0)
+		{
+		  move_state = MOVE_CLOSE_HOME;
+		  maskState (0, TEL_MASK_MOVING, TEL_MOVING,
+			     "forced move to avoid pilar crash");
+		}
 	    }
 	}
       syslog (LOG_DEBUG,
@@ -968,12 +988,13 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
   double step_diff_flip, step_diff;
 
   // we assume tar_ra = telRa + ra_diff
-  double ra_diff = tar_ra - telRa;
+  double ra_diff = ln_range_degrees (tar_ra - telRa);
 
-  step_diff_flip =
-    MAX (pole_dist_act + pole_dist_tar, fabs (fabs (ra_diff) - 180));
+  step_diff_flip = MAX (pole_dist_act + pole_dist_tar, fabs (ra_diff - 180));
 
-  step_diff = MAX (fabs (pole_dist_act - pole_dist_tar), fabs (ra_diff));
+  step_diff =
+    MAX (fabs (pole_dist_act - pole_dist_tar),
+	 (ra_diff > 180) ? (360.0 - ra_diff) : ra_diff);
 
   // that's to calculate new telAxis[0] value; it measure mount movement in RA unit, which dynostar will choose to perform
   if (step_diff_flip < step_diff)
@@ -985,20 +1006,22 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
 
   // Dynostar will choose closer path, regaredes if it will hit the pilar or not
   // so put ra_diff to -180,180 range
-  ra_diff = ln_range_degrees (ra_diff);
   if (ra_diff > 180.0)
     ra_diff = ra_diff - 360.0;
 
   // calculate new pos..
   double new_pos = telAxis[0] + ra_diff;
 
+  syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::startMove new_pos: %f", new_pos);
+
   if ((new_pos < -90) || (new_pos > NOT_SAFE_POS))
     {
       // go throught parking..
       tel_read_siderealtime ();
       homeHA = telSiderealTime * 15.0 + 90;
+      double ha_diff = ln_range_degrees (homeHA - telRa);
       // keep on same side as current telRa
-      if (ln_range_degrees (homeHA - telRa) > 180)
+      if (ha_diff < 90 || ha_diff > 270)
 	homeHA = telSiderealTime * 15.0 - 90;
       // make sure we will initiate move to part closer to our side..
       if (new_pos < 0)
@@ -1225,6 +1248,7 @@ void
 Rts2DevTelescopeMM2::goodPark ()
 {
   tel_read_siderealtime ();
+  last_pos_ra = telRa;
   telAxis[0] = telRa - telSiderealTime * 15.0 - 90;
   telAxis[0] = ln_range_degrees (telAxis[0]);
   if (telAxis[0] > 180.0)
