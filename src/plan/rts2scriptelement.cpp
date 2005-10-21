@@ -84,6 +84,58 @@ Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera,
   return 0;
 }
 
+Rts2ScriptElementBinning::Rts2ScriptElementBinning (Rts2Script * in_script, int in_bin):Rts2ScriptElement
+  (in_script)
+{
+  bin = in_bin;
+}
+
+int
+Rts2ScriptElementBinning::nextCommand (Rts2DevClientCamera * camera,
+				       Rts2Command ** new_command,
+				       char new_device[DEVICE_NAME_SIZE])
+{
+  *new_command = new Rts2CommandBinning (camera, bin, bin);
+  getDevice (new_device);
+  return 0;
+}
+
+Rts2ScriptElementBox::Rts2ScriptElementBox (Rts2Script * in_script, int in_x, int in_y, int in_w, int in_h):Rts2ScriptElement
+  (in_script)
+{
+  x = in_x;
+  y = in_y;
+  w = in_w;
+  h = in_h;
+}
+
+int
+Rts2ScriptElementBox::nextCommand (Rts2DevClientCamera * camera,
+				   Rts2Command ** new_command,
+				   char new_device[DEVICE_NAME_SIZE])
+{
+  *new_command = new Rts2CommandBox (camera, 0, x, y, w, h);
+  getDevice (new_device);
+  return 0;
+}
+
+Rts2ScriptElementCenter::Rts2ScriptElementCenter (Rts2Script * in_script, int in_w, int in_h):Rts2ScriptElement
+  (in_script)
+{
+  w = in_w;
+  h = in_h;
+}
+
+int
+Rts2ScriptElementCenter::nextCommand (Rts2DevClientCamera * camera,
+				      Rts2Command ** new_command,
+				      char new_device[DEVICE_NAME_SIZE])
+{
+  *new_command = new Rts2CommandCenter (camera, 0, w, h);
+  getDevice (new_device);
+  return 0;
+}
+
 Rts2ScriptElementChange::Rts2ScriptElementChange (Rts2Script * in_script, double in_ra, double in_dec):Rts2ScriptElement
   (in_script)
 {

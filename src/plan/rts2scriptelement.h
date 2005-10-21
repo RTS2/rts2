@@ -102,6 +102,40 @@ public:
 			   char new_device[DEVICE_NAME_SIZE]);
 };
 
+class Rts2ScriptElementBinning:public Rts2ScriptElement
+{
+private:
+  int bin;
+public:
+    Rts2ScriptElementBinning (Rts2Script * in_script, int in_bin);
+  virtual int nextCommand (Rts2DevClientCamera * camera,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+};
+
+class Rts2ScriptElementBox:public Rts2ScriptElement
+{
+private:
+  int x, y, w, h;
+public:
+    Rts2ScriptElementBox (Rts2Script * in_script, int in_x, int in_y,
+			  int in_w, int in_h);
+  virtual int nextCommand (Rts2DevClientCamera * camera,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+};
+
+class Rts2ScriptElementCenter:public Rts2ScriptElement
+{
+private:
+  int w, h;
+public:
+    Rts2ScriptElementCenter (Rts2Script * in_script, int in_w, int in_h);
+  virtual int nextCommand (Rts2DevClientCamera * camera,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+};
+
 class Rts2ScriptElementChange:public Rts2ScriptElement
 {
 private:

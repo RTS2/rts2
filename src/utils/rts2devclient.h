@@ -119,6 +119,12 @@ public:
   virtual void filterFailed ()
   {
   }
+  virtual void settingsOK ()
+  {
+  }
+  virtual void settingsFailed (int status)
+  {
+  }
 };
 
 class Rts2DevClientTelescope:public Rts2DevClient

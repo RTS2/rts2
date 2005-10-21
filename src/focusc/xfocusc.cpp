@@ -429,13 +429,13 @@ Rts2xfocusCamera::XeventLoop ()
 	  switch (ks)
 	    {
 	    case XK_1:
-	      connection->queCommand (new Rts2CommandBinning (master, 1, 1));
+	      connection->queCommand (new Rts2CommandBinning (this, 1, 1));
 	      break;
 	    case XK_2:
-	      connection->queCommand (new Rts2CommandBinning (master, 2, 2));
+	      connection->queCommand (new Rts2CommandBinning (this, 2, 2));
 	      break;
 	    case XK_3:
-	      connection->queCommand (new Rts2CommandBinning (master, 3, 3));
+	      connection->queCommand (new Rts2CommandBinning (this, 3, 3));
 	      break;
 	    case XK_e:
 	      exposureTime += 1;

@@ -109,9 +109,30 @@ Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, const char *d
  * 
  *************************************************************/
 
-Rts2CommandBinning::Rts2CommandBinning (Rts2Block * in_master, int binning_v,
-					int binning_h):
-Rts2Command (in_master)
+Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera):Rts2Command (in_camera->
+	     getMaster
+	     ())
+{
+  camera = in_camera;
+}
+
+int
+Rts2CommandCameraSettings::commandReturnOK ()
+{
+  camera->settingsOK ();
+  return Rts2Command::commandReturnOK ();
+}
+
+int
+Rts2CommandCameraSettings::commandReturnFailed (int status)
+{
+  camera->settingsFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
+
+Rts2CommandBinning::Rts2CommandBinning (Rts2DevClientCamera * in_camera, int binning_v, int binning_h):
+Rts2CommandCameraSettings (in_camera)
 {
   char *command;
   asprintf (&command, "binning 0 %i %i", binning_v, binning_h);
@@ -186,8 +207,18 @@ Rts2CommandFilter::commandReturnFailed (int status)
   return Rts2Command::commandReturnFailed (status);
 }
 
-Rts2CommandCenter::Rts2CommandCenter (Rts2Block * in_master, int chip, int width = -1, int height = -1):Rts2Command
-  (in_master)
+Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int chip, int x, int y, int w, int h):Rts2CommandCameraSettings
+  (in_camera)
+{
+  char *
+    command;
+  asprintf (&command, "box %i %i %i %i %i", chip, x, y, w, h);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int chip, int width = -1, int height = -1):Rts2CommandCameraSettings
+  (in_camera)
 {
   char *
     command;

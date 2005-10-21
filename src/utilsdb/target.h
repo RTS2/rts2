@@ -45,6 +45,9 @@
 #define COMMAND_FILTER		"F"
 #define COMMAND_FOCUSING	'O'
 #define COMMAND_CHANGE		"C"
+#define COMMAND_BINNING		"BIN"
+#define COMMAND_BOX		"BOX"
+#define COMMAND_CENTER		"CENTER"
 // must be paired with COMMAND_CHANGE
 #define COMMAND_WAIT		"W"
 #define COMMAND_ACQUIRE		"A"

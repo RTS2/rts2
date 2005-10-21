@@ -84,12 +84,26 @@ public:
   Rts2CommandAuthorize (Rts2Block * in_master, const char *device_name);
 };
 
+// common class for all command, which changed camera settings
+// that will call at the end settingsOK or seetingsFailed
+class Rts2CommandCameraSettings:public Rts2Command
+{
+private:
+  Rts2DevClientCamera * camera;
+public:
+  Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera);
+
+  virtual int commandReturnOK ();
+  virtual int commandReturnFailed (int status);
+};
+
 // devices commands
 
-class Rts2CommandBinning:public Rts2Command
+class Rts2CommandBinning:public Rts2CommandCameraSettings
 {
 public:
-  Rts2CommandBinning (Rts2Block * in_master, int binning_v, int binning_h);
+  Rts2CommandBinning (Rts2DevClientCamera * in_camera, int binning_v,
+		      int binning_h);
 };
 
 class Rts2CommandExposure:public Rts2Command
@@ -116,10 +130,19 @@ public:
   virtual int commandReturnFailed (int status);
 };
 
-class Rts2CommandCenter:public Rts2Command
+class Rts2CommandBox:public Rts2CommandCameraSettings
 {
 public:
-  Rts2CommandCenter (Rts2Block * in_master, int chip, int width, int height);
+  Rts2CommandBox (Rts2DevClientCamera * in_camera, int chip, int x, int y,
+		  int w, int h);
+};
+
+
+class Rts2CommandCenter:public Rts2CommandCameraSettings
+{
+public:
+  Rts2CommandCenter (Rts2DevClientCamera * in_camera, int chip, int width,
+		     int height);
 };
 
 class Rts2CommandMove:public Rts2Command

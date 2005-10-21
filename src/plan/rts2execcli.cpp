@@ -178,6 +178,20 @@ Rts2DevClientCameraExec::filterFailed (int status)
 }
 
 void
+Rts2DevClientCameraExec::settingsOK ()
+{
+  nextCommand ();
+}
+
+void
+Rts2DevClientCameraExec::settingsFailed (int status)
+{
+  deleteScript ();
+  Rts2DevClientCameraImage::settingsFailed (status);
+}
+
+
+void
 Rts2DevClientCameraExec::readoutEnd ()
 {
   nextCommand ();

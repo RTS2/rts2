@@ -188,7 +188,7 @@ void
 Rts2GenFocCamera::center (int centerWidth, int centerHeight)
 {
   connection->
-    queCommand (new Rts2CommandCenter (master, 0, centerWidth, centerHeight));
+    queCommand (new Rts2CommandCenter (this, 0, centerWidth, centerHeight));
 }
 
 Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):
@@ -294,7 +294,7 @@ Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
     }
   if (defBin > 0)
     {
-      cam->queCommand (new Rts2CommandBinning (this, defBin, defBin));
+      cam->queCommand (new Rts2CommandBinning (cam, defBin, defBin));
     }
   // post exposure event..if name agree
   for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();

@@ -190,6 +190,29 @@ Rts2Script::parseBuf (Target * target)
 	return NULL;
       return new Rts2ScriptElementFilter (this, filter);
     }
+  else if (!strcmp (commandStart, COMMAND_BINNING))
+    {
+      int bin;
+      if (getNextParamInteger (&bin))
+	return NULL;
+      return new Rts2ScriptElementBinning (this, bin);
+    }
+  else if (!strcmp (commandStart, COMMAND_BOX))
+    {
+      int x, y, w, h;
+      if (getNextParamInteger (&x)
+	  || getNextParamInteger (&y)
+	  || getNextParamInteger (&w) || getNextParamInteger (&h))
+	return NULL;
+      return new Rts2ScriptElementBox (this, x, y, w, h);
+    }
+  else if (!strcmp (commandStart, COMMAND_CENTER))
+    {
+      int w, h;
+      if (getNextParamInteger (&w) || getNextParamInteger (&h))
+	return NULL;
+      return new Rts2ScriptElementCenter (this, w, h);
+    }
   else if (!strcmp (commandStart, COMMAND_CHANGE))
     {
       double ra;
