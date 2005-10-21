@@ -106,16 +106,21 @@ CameraUrvc2Chip::readoutOneLine ()
   if (readoutLine == 0)
     {
       if (CCDReadout
-	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width,
-	   chipReadout->height, binningVertical))
+	  (img, C, chipReadout->x / binningVertical,
+	   chipReadout->y / binningVertical,
+	   chipReadout->width / binningVertical,
+	   chipReadout->height / binningVertical, binningVertical))
 	{
 	  syslog (LOG_DEBUG,
 		  "CameraUrvc2Chip::readoutOneLine readout return not-null");
 	  return -1;
 	}
       dest_top =
-	img + (chipReadout->width * chipReadout->height / binningVertical);
+	img +
+	((chipReadout->width / binningVertical) *
+	 (chipReadout->height / binningVertical));
       readoutLine = 1;
+      // save to file
       return 0;
     }
   if (sendLine == 0)
