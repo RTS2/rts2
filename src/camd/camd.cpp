@@ -63,7 +63,7 @@ int
 CameraChip::center (int in_w, int in_h)
 {
   int x, y, w, h;
-  if (in_w > 0 && chipSize->width > in_w)
+  if (in_w > 0 && chipSize->width >= in_w)
     {
       w = in_w;
       x = chipSize->width / 2 - w / 2;
@@ -73,7 +73,7 @@ CameraChip::center (int in_w, int in_h)
       w = chipSize->width / 2;
       x = chipSize->width / 4;
     }
-  if (in_h > 0 && chipSize->height > in_h)
+  if (in_h > 0 && chipSize->height >= in_h)
     {
       h = in_h;
       y = chipSize->height / 2 - h / 2;
