@@ -265,6 +265,9 @@ Rts2GenFocClient::processOption (int in_opt)
     case 'H':
       centerHeight = atoi (optarg);
       break;
+    case 'c':
+      defCenter = 1;
+      break;
     case 'F':
       focExe = optarg;
       break;
