@@ -114,6 +114,15 @@ LIB_ALTA="${ALTA}/ApnCamera.o ${ALTA}/ApnCamera_USB.o ${ALTA}/ApogeeUsbLinux.o $
 INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${LIBUSB_CFLAGS}",
 [ALTA=no])
 
+# FLI..
+AC_ARG_WITH(fli,
+[  --with-fli             path to libfli CCD driver, build FLI CCD driver],
+FLI="${withval}";
+LIB_FLI="-L${FLI} -lfli}";
+INC_FLI="-I${FLI}",
+[FLI=no])
+
+
 AM_CONDITIONAL(ALTA, test x$ALTA != xno)
 AC_SUBST(ALTA)
 AC_SUBST(LIB_ALTA)
@@ -186,7 +195,6 @@ if test "x${wcs}" = "xyes"; then
 **** libwcs directory somewhere, where I can acces them
 EOF
 	exit 1])
-	AC_SUBST([WCS_SUBDIRS], ['writers planc grbc focusc'])
 fi
 
 AC_CHECK_LIB([ncurses], [mvwprintw], LIB_NCURSES="-lncurses";
@@ -281,12 +289,8 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
-if test "x${libnova}" = "xyes" -a "x${psql}" = "xyes"; then
-	# Check for PostgreSQL
-	AC_POSTGRESQL
-	AC_ECPG
-	AC_SUBST([PSQL_SUBDIRS],['plan grb pgsql bckimages sql'])
-fi
+AC_POSTGRESQL
+AC_ECPG
 
 # Checks for library functions.
 AC_FUNC_FORK
@@ -337,6 +341,7 @@ AC_OUTPUT([Makefile
            src/wcs/Makefile
 	   src/writers/Makefile
 	   src/utilsdb/Makefile
+	   src/db/Makefile
 	   man/rts2.1
 	   man/rts2.conf.5
 	   man/rts2-centrald.1
@@ -357,6 +362,7 @@ CCD's:
   sbig		${SBIG}
   andor         ${ANDOR}
   alta          ${ALTA}
+  fli		${FLI}
 
 MOUNT's:
   opentpl       ${OPENTPL}
