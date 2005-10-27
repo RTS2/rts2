@@ -38,7 +38,7 @@ protected:
     virtual int endFocusing ();
 public:
     Rts2DevFocuserIr (int argc, char **argv);
-   ~Rts2DevFocuserIr (void);
+    virtual ~ Rts2DevFocuserIr (void);
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int ready ();
