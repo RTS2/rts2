@@ -16,11 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "filter_fli.h"
+
+#include <string.h>
+
 Rts2FilterFli::Rts2FilterFli (char *in_deviceName, flidomain_t in_domain)
 {
   deviceName = new char[strlen (in_deviceName) + 1];
   strcpy (deviceName, in_deviceName);
-  domain = in_domain;
+  domain = (in_domain & 0x00ff) | FLIDEVICE_FILTERWHEEL;
   dev = 0;
 }
 

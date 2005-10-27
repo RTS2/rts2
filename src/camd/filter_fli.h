@@ -8,9 +8,9 @@
 class Rts2FilterFli:public Rts2Filter
 {
 private:
-  libflidev_t dev;
+  flidev_t dev;
   char *deviceName;
-  flidomain_t in_domain;
+  flidomain_t domain;
 
   long filter_count;
 

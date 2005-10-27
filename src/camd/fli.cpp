@@ -26,6 +26,7 @@
  */
 
 #include "camera_cpp.h"
+#include "filter_fli.h"
 
 #include "libfli.h"
 
@@ -34,11 +35,10 @@
 class CameraFliChip:public CameraChip
 {
 private:
-  unsigned int *buf;
-  unsigned *dest_top;
+  uint16_t * buf;
+  uint16_t *dest_top;
   char *send_top;
-private:
-    flidev_t dev;
+  flidev_t dev;
 
 public:
     CameraFliChip (Rts2DevCamera * in_cam, int in_chip_id, flidev_t in_fli);
@@ -71,16 +71,13 @@ CameraFliChip::init ()
 {
   LIBFLIAPI ret;
   long x, y, w, h;
+
   ret = FLIGetVisibleArea (dev, &x, &y, &w, &h);
   if (ret)
     return -1;
-  setSize ((int) x, (int) y, (int) w, (int) h);
+  setSize ((int) (w - x), (int) (h - y), (int) x, (int) y);
 
   ret = FLIGetPixelSize (dev, &pixelX, &pixelY);
-  if (ret)
-    return -1;
-
-  ret = FLISetBitDepth (dev, FLI_MODE_16BIT);
   if (ret)
     return -1;
 
@@ -133,9 +130,8 @@ CameraFliChip::startExposure (int light, float exptime)
 
   // alloc space for data..now we support only 16bit mode
   delete buf;
-  buf = new unsigned int[(chipUsedReadout->width / usedBinningHorizontal)
-			 * (chipUsedReadout->height / usedBinningVertical) *
-			 2];
+  buf = new uint16_t[(chipUsedReadout->width / usedBinningHorizontal)
+		     * (chipUsedReadout->height / usedBinningVertical)];
   return 0;
 }
 
@@ -215,7 +211,9 @@ CameraFliChip::readoutOneLine ()
   sendLine++;
   send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
   if (send_data_size < 0)
-    return -1;
+    {
+      return -1;
+    }
   send_top += send_data_size;
   if (send_top < (char *) dest_top)
     return 0;
@@ -234,6 +232,10 @@ private:
   flidomain_t deviceDomain;
 
   flidev_t dev;
+
+  char *filterDevice;
+
+  int fliDebug;
 public:
     Rts2DevCameraFli (int in_argc, char **in_argv);
     virtual ~ Rts2DevCameraFli (void);
@@ -257,11 +259,17 @@ public:
 Rts2DevCameraFli::Rts2DevCameraFli (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
-  deviceName = "";
+  deviceName = NULL;
   deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
+  filterDevice = NULL;
+  fliDebug = FLIDEBUG_NONE;
   addOption ('f', "device_name", 1, "device name");
   addOption ('D', "domain", 1,
 	     "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+  addOption ('L', "fli_filter", 1,
+	     "FLI filter wheel (will have same domain as device)");
+  addOption ('b', "fli_debug", 1,
+	     "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 }
 
 Rts2DevCameraFli::~Rts2DevCameraFli (void)
@@ -290,6 +298,23 @@ Rts2DevCameraFli::processOption (int in_opt)
       else
 	return -1;
       break;
+    case 'L':
+      filterDevice = optarg;
+      break;
+    case 'b':
+      switch (atoi (optarg))
+	{
+	case 1:
+	  fliDebug = FLIDEBUG_FAIL;
+	  break;
+	case 2:
+	  fliDebug = FLIDEBUG_FAIL | FLIDEBUG_WARN;
+	  break;
+	case 3:
+	  fliDebug = FLIDEBUG_ALL;
+	  break;
+	}
+      break;
     default:
       return Rts2DevCamera::processOption (in_opt);
     }
@@ -306,12 +331,18 @@ Rts2DevCameraFli::init ()
   if (ret_c)
     return ret_c;
 
+  if (fliDebug)
+    FLISetDebugLevel (NULL, FLIDEBUG_ALL);
+
   ret = FLIOpen (&dev, deviceName, deviceDomain);
   if (ret)
     return -1;
 
   chipNum = 1;
   chips[0] = new CameraFliChip (this, 0, dev);
+
+  if (filterDevice)
+    filter = new Rts2FilterFli (filterDevice, deviceDomain);
 
   return initChips ();
 }
