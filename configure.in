@@ -114,19 +114,23 @@ LIB_ALTA="${ALTA}/ApnCamera.o ${ALTA}/ApnCamera_USB.o ${ALTA}/ApogeeUsbLinux.o $
 INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${LIBUSB_CFLAGS}",
 [ALTA=no])
 
-# FLI..
-AC_ARG_WITH(fli,
-[  --with-fli             path to libfli CCD driver, build FLI CCD driver],
-FLI="${withval}";
-LIB_FLI="-L${FLI} -lfli}";
-INC_FLI="-I${FLI}",
-[FLI=no])
-
-
 AM_CONDITIONAL(ALTA, test x$ALTA != xno)
 AC_SUBST(ALTA)
 AC_SUBST(LIB_ALTA)
 AC_SUBST(INC_ALTA)
+
+# FLI..
+AC_ARG_WITH(fli,
+[  --with-fli             path to libfli CCD driver, build FLI CCD driver],
+FLI="${withval}";
+LIB_FLI="-L${FLI} -lfli";
+INC_FLI="-I${FLI}",
+[FLI=no])
+
+AM_CONDITIONAL(FLI, test x$FLI != xno)
+AC_SUBST(FLI)
+AC_SUBST(LIB_FLI)
+AC_SUBST(INC_FLI)
 
 # check for OPENTPL
 AC_ARG_WITH(opentpl,
