@@ -32,7 +32,7 @@ class CameraUrvc2Chip:public CameraChip
   char *send_top;
 public:
     CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		     int in_height, int in_pixelX, int in_pixelY,
+		     int in_height, double in_pixelX, double in_pixelY,
 		     float in_gain);
     virtual ~ CameraUrvc2Chip ();
 
@@ -45,8 +45,9 @@ public:
 };
 
 CameraUrvc2Chip::CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id,
-				  int in_width, int in_height, int in_pixelX,
-				  int in_pixelY, float in_gain):
+				  int in_width, int in_height,
+				  double in_pixelX, double in_pixelY,
+				  float in_gain):
 CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
 	    in_gain)
 {

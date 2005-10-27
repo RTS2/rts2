@@ -33,7 +33,7 @@ CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
 }
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-			int in_height, float in_pixelX, float in_pixelY,
+			int in_height, double in_pixelX, double in_pixelY,
 			float in_gain)
 {
   camera = in_cam;
@@ -154,6 +154,18 @@ CameraChip::sendChip (Rts2Conn * conn, char *name, float value)
   int ret;
 
   asprintf (&msg, "chip %i %s %0.2f", chipId, name, value);
+  ret = conn->send (msg);
+  free (msg);
+  return ret;
+}
+
+int
+CameraChip::sendChip (Rts2Conn * conn, char *name, double value)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, "chip %i %s %lf", chipId, name, value);
   ret = conn->send (msg);
   free (msg);
   return ret;

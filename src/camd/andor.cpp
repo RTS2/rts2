@@ -36,7 +36,7 @@ class CameraAndorChip:public CameraChip
   char *send_top;
 public:
     CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		     int in_height, float in_pixelX, float in_pixelY,
+		     int in_height, double in_pixelX, double in_pixelY,
 		     float in_gain);
     virtual ~ CameraAndorChip (void);
   virtual long isExposing ();
@@ -47,7 +47,7 @@ private:
 
 CameraAndorChip::CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
 				  int in_width, int in_height,
-				  float in_pixelX, float in_pixelY,
+				  double in_pixelX, double in_pixelY,
 				  float in_gain):
 CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
 	    in_gain)

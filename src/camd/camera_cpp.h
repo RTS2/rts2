@@ -68,6 +68,7 @@ class CameraChip
 private:
   int sendChip (Rts2Conn * conn, char *name, int value);
   int sendChip (Rts2Conn * conn, char *name, float value);
+  int sendChip (Rts2Conn * conn, char *name, double value);
   time_t readout_started;
   int shutter_state;
 
@@ -84,8 +85,8 @@ protected:
 
   Rts2DevCamera *camera;
 
-  float pixelX;
-  float pixelY;
+  double pixelX;
+  double pixelY;
 
   int binningVertical;
   int binningHorizontal;
@@ -96,7 +97,7 @@ protected:
 public:
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		int in_height, float in_pixelX, float in_pixelY,
+		int in_height, double in_pixelX, double in_pixelY,
 		float in_gain);
     virtual ~ CameraChip (void);
   void setSize (int in_width, int in_height, int in_x, int in_y)
