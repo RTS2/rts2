@@ -13,10 +13,7 @@ main (int argc, char **argv)
   double sep;
   Rts2Image *image;
   image = new Rts2Image (argv[1]);
-  std::cout << "Target type: " << image->getTargetType () << std::endl;
-  std::cout << "Camera name: " << image->getCameraName () << std::endl;
-  std::cout << "Image dimension: " << image->getWidth () << "x" << image->
-    getHeight () << " pixels" << std::endl;
+  std::cout << image << std::endl;
   std::cout << "Image XoA and Yoa: [" << image->getXoA () << ":" << image->
     getYoA () << "]" << std::endl;
   std::cout << "[XoA:YoA] RA: " << image->

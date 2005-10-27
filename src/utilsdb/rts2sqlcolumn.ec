@@ -46,6 +46,11 @@ Rts2SqlColumn::printStatistics (std::ostream &os)
 {
 }
 
+bool operator < (Rts2SqlColumn lhs, Rts2SqlColumn rhs)
+{
+  return lhs.getOrderBy () < rhs.getOrderBy ();
+}
+
 /**
  * Defines some extra statistic for ObsState column.
  */

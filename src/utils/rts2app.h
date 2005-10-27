@@ -45,4 +45,8 @@ public:  Rts2App (int in_argc, char **in_argv);
   int parseDate (const char *in_date, struct tm *out_time);
 };
 
+// send mail to recepient; requires /usr/bin/mail binary
+int sendMailTo (const char *subject, const char *text,
+		const char *mailAddress);
+
 #endif /* !__RTS2_APP__ */

@@ -96,7 +96,10 @@ double
 Rts2DevTelescope::getMoveTargetSep ()
 {
   struct ln_equ_posn curr;
-  info ();
+  int ret;
+  ret = info ();
+  if (ret)
+    return 0;
   if (knowPosition)
     {
       curr.ra = lastRa;

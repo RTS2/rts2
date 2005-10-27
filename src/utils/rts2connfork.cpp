@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 Rts2ConnFork::Rts2ConnFork (Rts2Block * in_master, const char *in_exe):
 Rts2ConnNoSend (in_master)

@@ -23,6 +23,7 @@
 // rts2scriptelement.h     250-259
 // rts2devclifoc.h         500-549
 // rts2devclicop.h         550-600
+// grbd.h                  600-650
 
 class Rts2Event
 {

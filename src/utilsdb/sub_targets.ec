@@ -815,13 +815,13 @@ CalibrationTarget::considerForObserving (double JD)
 }
 
 float
-CalibrationTarget::getBonus ()
+CalibrationTarget::getBonus (double JD)
 {
   time_t now;
   time_t t_diff;
   if (obs_target_id <= 0)
     return -1;
-  time (&now);
+  ln_get_timet_from_julian (JD, &now);
   t_diff = now - lastImage;
   // 1 hour is not interesting..
   if (t_diff < 3600)
@@ -1030,9 +1030,8 @@ OportunityTarget::OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 }
 
 float
-OportunityTarget::getBonus ()
+OportunityTarget::getBonus (double JD)
 {
-  double JD;
   double retBonus = 0;
   struct ln_hrz_posn hrz;
   struct ln_rst_time rst;
@@ -1041,26 +1040,25 @@ OportunityTarget::getBonus ()
   double lastObs;
   time_t now;
   time_t start_t;
-  JD = ln_get_julian_from_sys ();
   getAltAz (&hrz, JD);
   getRST (&rst, JD);
   lunarDist = getLunarDistance (JD);
   ha = getHourAngle ();
   lastObs = getLastObsTime ();
-  time (&now);
+  ln_get_timet_from_julian (JD, &now);
   start_t = now - 86400;
   if (lastObs > 3600 && lastObs < (3 * 3600))
     retBonus += log (lastObs - 3599) * 20;
   if (lunarDist < 60.0)
     retBonus -= log (60 - lunarDist) * 10;
   // bonus for south
-  if (ha < 11)
-    retBonus += log (12 - ha);
-  if (ha > 13)
-    retBonus += log (ha - 12);
+  if (ha < 165)
+    retBonus += log ((180 - ha) / 15.0);
+  if (ha > 195)
+    retBonus += log ((ha - 180) / 15.0);
   retBonus += hrz.alt * 2;
   retBonus -= sin (getNumObs (&start_t, &now) * M_PI_4) * 5;
-  return ConstTarget::getBonus () + retBonus;
+  return ConstTarget::getBonus (JD) + retBonus;
 }
 
 // will pickup the Moon
@@ -1225,11 +1223,13 @@ TargetGRB::getDBScript (const char *camera_name, char *script)
       logMsgDb ("TargetGRB::getDBScript database error");
       script[0] = '\0';
       EXEC SQL CLOSE find_grb_script;
+      EXEC SQL ROLLBACK;
       return -1;
     }
   strncpy (script, sc_script.arr, sc_script.len);
   script[sc_script.len] = '\0';
   EXEC SQL CLOSE find_grb_script;
+  EXEC SQL COMMIT;
   return 0;
 }
 
@@ -1277,12 +1277,12 @@ TargetGRB::beforeMove ()
 }
 
 float
-TargetGRB::getBonus ()
+TargetGRB::getBonus (double JD)
 {
   // time from GRB
   time_t now;
-  time (&now);
   float retBonus;
+  ln_get_timet_from_julian (JD, &now);
   // special SWIFT handling..
   // last packet we have is SWIFT_ALERT..
   switch (gcnPacketType)
@@ -1300,25 +1300,25 @@ TargetGRB::getBonus ()
   if (now - grbDate < 3600)
   {
     // < 1 hour fixed boost to be sure to not miss it
-    retBonus = ConstTarget::getBonus () + 2000;
+    retBonus = ConstTarget::getBonus (JD) + 2000;
   }
   else if (now - grbDate < 86400)
   {
     // < 24 hour post burst
-    retBonus = ConstTarget::getBonus ()
+    retBonus = ConstTarget::getBonus (JD)
       + 1000.0 * cos ((double)((double)(now - grbDate) / (2.0*86400.0))) 
       + 10.0 * cos ((double)((double)(now - lastUpdate) / (2.0*86400.0)));
   }
   else if (now - grbDate < 5 * 86400)
   {
     // < 5 days post burst - add some time after last observation
-    retBonus = ConstTarget::getBonus ()
+    retBonus = ConstTarget::getBonus (JD)
       + 10.0 * sin (getLastObsTime () / 3600.0);
   }
   else
   {
     // default
-    retBonus = ConstTarget::getBonus ();
+    retBonus = ConstTarget::getBonus (JD);
   }
   // if it was not GRB..
   if (grb_is_grb == false)
@@ -1533,7 +1533,7 @@ TargetSwiftFOV::beforeMove ()
 }
 
 float
-TargetSwiftFOV::getBonus ()
+TargetSwiftFOV::getBonus (double JD)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_tar_id = target_id;
@@ -1553,7 +1553,7 @@ TargetSwiftFOV::getBonus ()
   swiftOnBonus = d_bonus;
 
   time_t now;
-  time (&now);
+  ln_get_timet_from_julian (JD, &now);
   if (now > swiftTimeStart - 120 && now < swiftTimeEnd + 120)
     return swiftOnBonus;
   if (now > swiftTimeStart - 300 && now < swiftTimeEnd + 300)
@@ -1566,7 +1566,7 @@ TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget 
 }
 
 float
-TargetGps::getBonus ()
+TargetGps::getBonus (double JD)
 {
   // get our altitude..
   struct ln_hrz_posn hrz;
@@ -1576,21 +1576,19 @@ TargetGps::getBonus ()
   time_t now;
   time_t start_t;
   time_t start_t2;
-  double JD;
   double gal_ctr;
-  JD = ln_get_julian_from_sys ();
   getAltAz (&hrz, JD);
   getPosition (&curr, JD);
   // get number of observations in last 24 hours..
-  time (&now);
+  ln_get_timet_from_julian (JD, &now);
   start_t = now - 86400;
   start_t2 = now - 86400 * 2;
   numobs = getNumObs (&start_t, &now);
   numobs2 = getNumObs (&start_t2, &start_t);
   gal_ctr = getGalCenterDist (JD);
   if ((90 - observer->lat + curr.dec) == 0)
-    return ConstTarget::getBonus () - 200;
-  return ConstTarget::getBonus () + 20 * (hrz.alt / (90 - observer->lat + curr.dec)) + gal_ctr / 9 - numobs * 10 - numobs2 * 5;
+    return ConstTarget::getBonus (JD) - 200;
+  return ConstTarget::getBonus (JD) + 20 * (hrz.alt / (90 - observer->lat + curr.dec)) + gal_ctr / 9 - numobs * 10 - numobs2 * 5;
 }
 
 TargetSkySurvey::TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
@@ -1598,16 +1596,16 @@ TargetSkySurvey::TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs): 
 }
 
 float
-TargetSkySurvey::getBonus ()
+TargetSkySurvey::getBonus (double JD)
 {
   time_t now;
   time_t start_t;
   int numobs;
-  time (&now);
+  ln_get_timet_from_julian (JD, &now);
   now -= 300;
   start_t = now - 86400;
   numobs = getNumObs (&start_t, &now);
-  return ConstTarget::getBonus () - numobs * 10;
+  return ConstTarget::getBonus (JD) - numobs * 10;
 }
 
 TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
@@ -1622,14 +1620,14 @@ TargetTerestial::considerForObserving (double JD)
 }
 
 float
-TargetTerestial::getBonus ()
+TargetTerestial::getBonus (double JD)
 {
   time_t now;
   time_t start_t;
   struct tm *now_t;
   int numobs;
   int minofday;
-  time (&now);
+  ln_get_timet_from_julian (JD, &now);
   now_t = gmtime (&now);
 
   minofday = now_t->tm_hour * 60 + now_t->tm_min;

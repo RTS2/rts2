@@ -5,6 +5,7 @@ sqldatadir = ${datadir}/doc/@PACKAGE@/sql
 SUBDIRS = create drop update
 
 dist_sqldata_DATA =     init_data.sql		\
-			grant.sql.in
+			grant.sql.in		\
+			README
 
 dist_sqldata_SCRIPTS =  rts2-builddb

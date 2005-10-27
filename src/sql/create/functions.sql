@@ -2,10 +2,10 @@ CREATE OR REPLACE FUNCTION night_num (timestamp with time zone) RETURNS double p
 	'SELECT FLOOR((EXTRACT(EPOCH FROM $1) - 43200) / 86400)' LANGUAGE 'SQL';
 
 CREATE OR REPLACE FUNCTION isinwcs (float8, float8, wcs)
-  RETURNS bool AS '/usr/lib/postgresql/lib/pg_wcs.so', 'isinwcs' LANGUAGE 'C';
+  RETURNS bool AS 'pg_wcs.so', 'isinwcs' LANGUAGE 'C';
 
 CREATE OR REPLACE FUNCTION imgrange (wcs)
-  RETURNS varchar AS '/usr/lib/postgresql/lib/pg_wcs.so', 'imgrange' LANGUAGE 'C';
+  RETURNS varchar AS 'pg_wcs.so', 'imgrange' LANGUAGE 'C';
 
 -- 			med_id  epoch    mount_name camera_name obs_id  tar_id   date
 CREATE OR REPLACE FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime) RETURNS varchar(100) AS '

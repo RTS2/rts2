@@ -12,7 +12,7 @@ protected:
   virtual void syncEnded ();
 public:
     Rts2DevClientCopulaTeld (Rts2Conn * conn);
-
+    virtual ~ Rts2DevClientCopulaTeld (void);
   virtual void syncFailed (int status);
   virtual void postEvent (Rts2Event * event);
 };

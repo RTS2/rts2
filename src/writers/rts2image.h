@@ -9,6 +9,7 @@
 #include <time.h>
 #include <fitsio.h>
 #include <list>
+#include <ostream>
 
 #include "imghdr.h"
 #include "../utils/rts2dataconn.h"
@@ -36,6 +37,7 @@ private:
   int flags;
   int filter;
   struct timeval exposureStart;
+  float exposureLength;
   void setImageName (const char *in_filename);
   int createImage (char *in_filename);
   // when in_filename == NULL, we take image name stored in this->imageName
@@ -69,6 +71,10 @@ protected:
   char *imageName;
   img_type_t imageType;
 
+  struct ln_equ_posn pos_astr;
+  double ra_err;
+  double dec_err;
+
   virtual int isGoodForFwhm (struct stardata *sr);
 public:
   // list of sex results..
@@ -77,6 +83,8 @@ public:
 
   // memory-only image..
     Rts2Image ();
+  // skeleton for DB image
+    Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure);
   // create image
     Rts2Image (char *in_filename, const struct timeval *exposureStart);
   // create image in que
@@ -125,6 +133,8 @@ public:
 
   int fitsStatusValue (char *valname);
 
+  double getAstrometryErr ();
+
   virtual int saveImage ();
   virtual int deleteImage ();
 
@@ -166,6 +176,17 @@ public:
   long getExposureUsec ()
   {
     return exposureStart.tv_usec;
+  }
+
+  void setExposureLength (float in_exposureLength)
+  {
+    exposureLength = in_exposureLength;
+    setValue ("EXPOSURE", exposureLength, "exposure time");
+  }
+
+  float getExposureLength ()
+  {
+    return exposureLength;
   }
 
   int getTargetId ()
@@ -304,6 +325,10 @@ public:
 
   // image flip value - ussually 1
   int getFlip ();
+
+  friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 };
+
+std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 
 #endif /* !__RTS2_IMAGE__ */

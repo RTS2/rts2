@@ -4,12 +4,16 @@
 
 #include "rts2connimgprocess.h"
 #include "../utils/rts2command.h"
+#include "../utilsdb/rts2taruser.h"
+#include "../utilsdb/rts2obs.h"
 
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+
+#include <sstream>
 
 Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master,
 					Rts2Conn * in_conn,
@@ -90,6 +94,7 @@ Rts2ConnImgProcess::connectionError ()
     case TRASH:
       astrometryStat = TRASH;
       image->toTrash ();
+      sendProcEndMail (image);
       break;
     case GET:
       if (reqConn)
@@ -113,6 +118,8 @@ Rts2ConnImgProcess::connectionError ()
 			  Rts2CommandCorrect (master, corr_mark, ra, dec,
 					      ra_err / 60.0, dec_err / 60.0));
 	}
+      sendOKMail (image);
+      sendProcEndMail (image);
       break;
     case DARK:
       image->toDark ();
@@ -126,4 +133,43 @@ Rts2ConnImgProcess::connectionError ()
     master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
   delete image;
   return Rts2ConnFork::connectionError ();
+}
+
+void
+Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
+{
+  // is first such image..
+  if (image->getOKCount () == 1)
+    {
+      Rts2TarUser tar_user =
+	Rts2TarUser (image->getTargetId (), image->getTargetType ());
+      std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
+      std::ostringstream subject;
+      subject << "TARGET #" << image->getTargetId ()
+	<< " GET ASTROMETRY (IMG_ID #" << image->getImgId () << ")";
+      std::ostringstream os;
+      os << image;
+      sendMailTo (subject.str ().c_str (), os.str ().c_str (),
+		  mails.c_str ());
+    }
+}
+
+void
+Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
+{
+  // last processed
+  if (image->getUnprocessedCount () == 0)
+    {
+      Rts2TarUser tar_user =
+	Rts2TarUser (image->getTargetId (), image->getTargetType ());
+      Rts2Obs observation = Rts2Obs (image->getObsId ());
+      std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
+      std::ostringstream subject;
+      subject << "TARGET #" << image->getTargetId ()
+	<< ", OBSERVATION " << image->getObsId () << " ALL IMAGES PROCESSED";
+      std::ostringstream os;
+      os << observation;
+      sendMailTo (subject.str ().c_str (), os.str ().c_str (),
+		  mails.c_str ());
+    }
 }

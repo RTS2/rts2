@@ -44,7 +44,5 @@ fi
 AC_CHECK_LIB([ecpg], [ECPGconnect], LIB_ECPG="-lecpg"; AC_SUBST(LIB_ECPG),
 	AC_MSG_ERROR(You haven't ecpg library. Please install libecpg-dev package."))
 
-
 AC_SUBST(ECPG)
 ])
-

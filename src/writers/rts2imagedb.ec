@@ -3,7 +3,9 @@
 #endif
 
 #include "rts2imagedb.h"
+#include "../utils/timestamp.h"
 
+#include <iomanip>
 #include <libnova/airmass.h>
 
 EXEC SQL include sqlca;
@@ -11,7 +13,7 @@ EXEC SQL include sqlca;
 void
 Rts2ImageDb::reportSqlError (char *msg)
 {
-  printf ("SQL error %li %s (in %s)\n", sqlca.sqlcode,
+  syslog (LOG_DEBUG, "SQL error %li %s (in %s)\n", sqlca.sqlcode,
   sqlca.sqlerrm.sqlerrmc, msg);
 }
 
@@ -256,9 +258,9 @@ Rts2ImageDb::updateAstrometry ()
   if (ret)
     return -1;
 
-  getValue ("POS_ERA", d_img_err_ra);
-  getValue ("POS_EDEC", d_img_err_dec);
-  getValue ("POS_ERR", d_img_err);
+  d_img_err_ra = ra_err;
+  d_img_err_dec = dec_err;
+  d_img_err = getAstrometryErr ();
 
   snprintf (s_astrometry.arr, 2000,
     "NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
@@ -432,6 +434,53 @@ Rts2ImageDb::Rts2ImageDb (const char *in_filename) : Rts2Image (in_filename)
   initDbImage ();
 }
 
+Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
+{
+  initDbImage ();
+  // fill in filter
+  // fill in exposureStart
+  // fill in average (for darks..)
+  // fill in target_id
+  // fill in epochId
+  // fill in camera_name
+  // fill in mount_name
+  // fill in obsId
+  // fill in imgId
+  // fill in ra_err
+  // fill in dec_err
+  // fill in pos_astr (from astrometry)
+  // fill in imageType
+  // fill in imageName
+}
+
+Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, 
+    float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name,
+    const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec,
+    double in_img_err) : Rts2Image (in_img_date, in_img_usec, in_img_exposure)
+{
+  targetId = in_tar_id;
+  targetIdSel = in_tar_id;
+  targetType = in_obs_subtype;
+  targetName = NULL;
+  obsId = in_obs_id;
+  imgId = in_img_id;
+  cameraName = new char[strlen (in_camera_name) + 1];
+  strcpy (cameraName, in_camera_name);
+  mountName = new char[strlen (in_mount_name) + 1];
+  strcpy (mountName, in_mount_name);
+  focName = NULL;
+  // construct image name..
+
+  imageType = IMGTYPE_UNKNOW;
+  ra_err = in_img_err_ra;
+  dec_err = in_img_err_dec;
+
+  // TODO fill that..
+  pos_astr.ra = nan ("f");
+  pos_astr.dec = nan ("f");
+  processBitfiedl = in_process_bitfield;
+}
+
 Rts2ImageDb::~Rts2ImageDb ()
 {
   updateDB ();
@@ -514,4 +563,69 @@ Rts2ImageDb::deleteImage ()
      EXEC SQL COMMIT;
   }
   return Rts2Image::deleteImage ();
+}
+
+int
+Rts2ImageDb::getOKCount ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_obs_id = getObsId ();
+  int db_count = 0;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    count (*)
+  INTO
+    :db_count
+  FROM
+    images
+  WHERE
+      obs_id = :db_obs_id
+    AND (process_bitfield & 2);
+  EXEC SQL ROLLBACK;
+
+  return db_count;
+}
+
+int
+Rts2ImageDb::getUnprocessedCount ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_obs_id = getObsId ();
+  int db_count = 0;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    count (*)
+  INTO
+    :db_count
+  FROM
+    images
+  WHERE
+      obs_id = :db_obs_id
+    AND ((process_bitfield & 1) = 0);
+  EXEC SQL ROLLBACK;
+
+  return db_count;
+}
+
+
+std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
+{
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  int old_precision = _os.precision ();
+
+  _os 
+    << Timestamp (img_db.getExposureSec () + (double) img_db.getExposureUsec () / USEC_SEC) << " | "
+    << std::setw(8) << img_db.getExposureLength () << " | "
+    << std::setw(6) << img_db.ra_err << " | "
+    << std::setw(6) << img_db.dec_err << " | "
+    << std::endl;
+
+  _os.flags (old_settings);
+  _os.precision (old_precision);
+
+  return _os;
 }

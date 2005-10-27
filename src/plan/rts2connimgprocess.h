@@ -31,6 +31,9 @@ private:
   long id;
   double ra, dec, ra_err, dec_err;
 
+  void sendOKMail (Rts2ImageDb * image);
+  void sendProcEndMail (Rts2ImageDb * image);
+
 protected:
     virtual int connectionError ();
 

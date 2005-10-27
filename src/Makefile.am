@@ -8,5 +8,14 @@ SUBDIRS = \
 	mirror  \
 	wcs \
 	utilsdb \
-	${LIBNOVA_SUBDIRS} \
-	${PSQL_SUBDIRS}
+	teld \
+	writers \
+	monitor \
+	focusc \
+	serverd \
+	plan \
+	grb \
+	pgsql \
+	bckimages \
+	sql \
+	db

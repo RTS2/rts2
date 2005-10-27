@@ -1,5 +1,6 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
+#include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
 
 #include <iostream>
@@ -25,6 +26,9 @@ private:
   Target *target;
   struct ln_lnlat_posn *obs;
   int printTargetInfo ();
+  int printObservations;
+  int printImages;
+  int printCounts;
 public:
     Rts2TargetInfo (int argc, char **argv);
     virtual ~ Rts2TargetInfo (void);
@@ -40,7 +44,17 @@ Rts2TargetInfo::Rts2TargetInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   obs = NULL;
+  printObservations = 0;
+  printImages = 0;
+  printCounts = 0;
+
   addOption ('c', "cameras", 1, "show scripts for given cameras");
+  addOption ('o', "observations", 2,
+	     "print observations (in given time range)");
+  addOption ('i', "images", 2, "print images (in given time range)");
+  addOption ('I', "images_summary", 0, "print image summary row");
+  addOption ('p', "photometer", 2, "print counts (in given time range)");
+  addOption ('P', "photometer_summary", 0, "print counts summary row");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()
@@ -55,6 +69,21 @@ Rts2TargetInfo::processOption (int in_opt)
     {
     case 'c':
       cameras.push_back (optarg);
+      break;
+    case 'o':
+      printObservations = 1;
+      break;
+    case 'i':
+      printImages |= DISPLAY_ALL;
+      break;
+    case 'I':
+      printImages |= DISPLAY_SUMMARY;
+      break;
+    case 'p':
+      printCounts |= DISPLAY_ALL;
+      break;
+    case 'P':
+      printCounts |= DISPLAY_SUMMARY;
       break;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -81,73 +110,7 @@ Rts2TargetInfo::processArgs (const char *arg)
 int
 Rts2TargetInfo::printTargetInfo ()
 {
-  struct ln_hms hms;
-  struct ln_dms dms, dms2;
-  struct ln_equ_posn pos;
-  struct ln_hrz_posn hrz;
-  struct ln_gal_posn gal;
-  double ha;
-  double JD;
-  double gst;
-  double lst;
-  time_t now, last;
-
-  std::cout << "======================" << std::endl;
-  std::cout << "Target ID: " << target->
-    getTargetID () << " obs target id: " << target->
-    getObsTargetID () << std::endl;
-  std::cout << "Target name: " << (target->
-				   getTargetName ()? target->
-				   getTargetName () : "(null)") <<
-    " target type: " << target->getTargetType () << std::endl;
-  target->getPosition (&pos);
-  ln_deg_to_hms (pos.ra, &hms);
-  ln_deg_to_dms (pos.dec, &dms);
-  std::cout << "Actual position: RA " << hms.hours << ":" << hms.
-    minutes << ":" << hms.seconds << "(" << pos.
-    ra << ") (2000)" << " Dec: " << dms.degrees << ":" << dms.
-    minutes << ":" << dms.seconds << "(" << pos.
-    dec << ") (2000)" << std::endl;
-  std::cout << "Rise after " << target->
-    secToObjectRise () << " seconds" << std::endl;
-  std::cout << "Transit after " << target->
-    secToObjectMeridianPass () << " seconds" << std::endl;
-  std::cout << "Set after " << target->
-    secToObjectSet () << " seconds" << std::endl;
-  ha = target->getHourAngle ();
-  ln_deg_to_hms (ha * 15.0, &hms);
-  std::cout << "Hour angle " << hms.hours << ":" << hms.minutes << ":" << hms.
-    seconds << " (" << ha << ")" << std::endl;
-  target->getAltAz (&hrz);
-  ln_deg_to_dms (hrz.alt, &dms);
-  ln_deg_to_dms (hrz.az, &dms2);
-  std::cout << "Alt: " << dms.degrees << ":" << dms.minutes << ":"
-    << dms.seconds << " (" << hrz.alt << ") Azimut: "
-    << dms2.degrees << ":" << dms2.minutes << ":" << dms2.seconds
-    << " (" << hrz.az << ")" << std::endl;
-  std::cout << "Airmas: " << target->getAirmass () << std::endl;
-  time (&now);
-  target->getGalLng (&gal);
-  std::cout << "Gal l: " << gal.l << " b: " << gal.
-    b << " center dist: " << target->getGalCenterDist () << std::endl;
-  std::cout << "Zenit distance " << target->getZenitDistance () << std::endl;
-  std::cout << "Solar distance " << target->getSolarDistance () << std::endl;
-  std::cout << "Lunar distance " << target->getLunarDistance () << std::endl;
-  last = now - 86400;
-  std::cout << "Observations in last few hours: " << target->getNumObs (&last,
-									&now)
-    << std::endl;
-  std::cout << "Bonus: " << target->getBonus () << std::endl;
-
-  // is above horizont?
-  JD = ln_get_julian_from_timet (&now);
-  gst = ln_get_mean_sidereal_time (JD);
-  lst = gst + obs->lng / 15.0;
-  std::cout << "Checker is_good:" << target->isGood (lst, pos.ra,
-						     pos.
-						     dec) << " (JD: " << JD <<
-    " gst: " << gst << " lst: " << lst << ")" << std::endl;
-
+  std::cout << target;
   // print scripts..
   std::list < char *>::iterator cam_names;
   for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
@@ -159,6 +122,20 @@ Rts2TargetInfo::printTargetInfo ()
       std::
 	cout << "Script for camera " << cam_name << ":'" << script <<
 	"' ret (" << ret << ")" << std::endl;
+    }
+  // print observations..
+  if (printObservations)
+    {
+      Rts2ObsSet obsSet = Rts2ObsSet (target->getTargetID ());
+      if (printImages)
+	obsSet.printImages (printImages);
+      if (printCounts)
+	obsSet.printCounts (printCounts);
+      std::cout << obsSet << std::endl;
+    }
+  else if (printImages)
+    {
+
     }
   return 0;
 }

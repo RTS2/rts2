@@ -9,6 +9,11 @@ Rts2DevClientCopulaTeld::Rts2DevClientCopulaTeld (Rts2Conn * conn):Rts2DevClient
 {
 }
 
+Rts2DevClientCopulaTeld::~Rts2DevClientCopulaTeld (void)
+{
+  getMaster ()->postEvent (new Rts2Event (EVENT_COP_SYNCED));
+}
+
 void
 Rts2DevClientCopulaTeld::syncEnded ()
 {

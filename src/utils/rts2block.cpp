@@ -1338,36 +1338,11 @@ Rts2Block::willConnect (Rts2Address * in_addr)
 int
 Rts2Block::sendMail (char *subject, char *text)
 {
-  int ret;
-  char *cmd;
-  FILE *mailFile;
-
   // no mail will be send
   if (!mailAddress)
     return 0;
 
-  // fork so we will not inhibit calling process..
-  ret = fork ();
-  if (ret == -1)
-    {
-      syslog (LOG_ERR, "Rts2Block::sendMail fork: %m");
-      return -1;
-    }
-  if (ret != 0)
-    {
-      return 0;
-    }
-  asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, mailAddress);
-  mailFile = popen (cmd, "w");
-  if (!mailFile)
-    {
-      syslog (LOG_ERR, "Rts2Block::sendMail popen: %m");
-      exit (0);
-    }
-  fprintf (mailFile, "%s", text);
-  pclose (mailFile);
-  free (cmd);
-  exit (0);
+  return sendMailTo (subject, text, mailAddress);
 }
 
 Rts2Address *

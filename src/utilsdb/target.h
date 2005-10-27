@@ -1,7 +1,9 @@
 #ifndef __RTS_TARGET__
 #define __RTS_TARGET__
+
 #include <errno.h>
 #include <libnova/libnova.h>
+#include <ostream>
 #include <stdio.h>
 #include <time.h>
 
@@ -9,6 +11,8 @@
 
 #include "../utils/objectcheck.h"
 #include "../utils/rts2device.h"
+
+#include "rts2taruser.h"
 
 #define MAX_READOUT_TIME		120
 #define PHOT_TIMEOUT			10
@@ -93,6 +97,19 @@
 // when acqusition failed
 #define OBS_BIT_ACQUSITION_FAI	0x20
 
+// send message when observation stars
+#define SEND_START_OBS		0x01
+// send message when first image from given observation get astrometry
+#define SEND_ASTRO_OK		0x02
+// send message at the end of observation
+#define SEND_END_OBS		0x04
+// send message at end of processing
+#define SEND_END_PROC		0x08
+// send message at end of night, with all observations and number of images obtained/processed
+#define SEND_END_NIGHT		0x10
+
+class Rts2Obs;
+
 /**
  * Class for one observation.
  *
@@ -117,7 +134,8 @@ class Target
 private:
   int epochId;
   int obs_id;
-  int img_id;
+  Rts2Obs *observation;
+  int img_id;			// count for images
 
   int obs_state;		// 0 - not started 0x01 - slew started 0x02 - images taken 0x04 - acquistion started
   // mask with 0xf0 - 0x00 - nominal end 0x10 - interupted 0x20 - acqusition don't converge
@@ -129,8 +147,13 @@ private:
 
   time_t observationStart;
 
+  Rts2TarUser *targetUsers;
+
   int acquired;
   // which changes behaviour based on how many times we called them before
+
+  void sendTargetMail (int eventMask, const char *subject_text);	// send mail to users..
+
 protected:
   int target_id;
   int obs_target_id;
@@ -197,6 +220,9 @@ public:
 
   double getZenitDistance (double JD);
 
+  /**
+   * Returns target HA in arcdeg, e.g. in same value as target RA is given.
+   */
   double getHourAngle ()
   {
     return getHourAngle (ln_get_julian_from_sys ());
@@ -296,6 +322,11 @@ public:
   {
     return obs_id;
   }
+
+  int getRST (struct ln_rst_time *rst)
+  {
+    return getRST (rst, ln_get_julian_from_sys ());
+  }
   virtual int getRST (struct ln_rst_time *rst, double jd)
   {
     return -1;
@@ -343,7 +374,11 @@ public:
   // scheduler functions
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
-  virtual float getBonus ()
+  float getBonus ()
+  {
+    return getBonus (ln_get_julian_from_sys ());
+  }
+  virtual float getBonus (double JD)
   {
     return -1;
   }
@@ -372,6 +407,8 @@ public:
   {
     return airmassScale;
   }
+
+  std::string getUsersEmail (int in_event_mask);
 };
 
 class ConstTarget:public Target
@@ -388,7 +425,7 @@ public:
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
-  virtual float getBonus ()
+  virtual float getBonus (double JD)
   {
     return tar_priority + tar_bonus;
   }
@@ -506,7 +543,7 @@ public:
   virtual int beforeMove ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int considerForObserving (double JD);
-  virtual float getBonus ();
+  virtual float getBonus (double JD);
 };
 
 class FocusingTarget:public ConstTarget
@@ -556,7 +593,7 @@ class OportunityTarget:public ConstTarget
 {
 public:
   OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-  virtual float getBonus ();
+  virtual float getBonus (double JD);
   virtual int isContinues ()
   {
     return 1;
@@ -590,7 +627,7 @@ public:
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
   virtual int beforeMove ();
-  virtual float getBonus ();
+  virtual float getBonus (double JD);
   // some logic needed to distinguish states when GRB position change
   // from last observation. there was update etc..
   virtual int isContinues ();
@@ -616,21 +653,21 @@ public:
   virtual int startSlew (struct ln_equ_posn *position);
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
-  virtual float getBonus ();
+  virtual float getBonus (double JD);
 };
 
 class TargetGps:public ConstTarget
 {
 public:
   TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs);
-  virtual float getBonus ();
+  virtual float getBonus (double JD);
 };
 
 class TargetSkySurvey:public ConstTarget
 {
 public:
   TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs);
-  virtual float getBonus ();
+  virtual float getBonus (double JD);
 };
 
 class TargetTerestial:public ConstTarget
@@ -638,11 +675,19 @@ class TargetTerestial:public ConstTarget
 public:
   TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int considerForObserving (double JD);
-  virtual float getBonus ();
+  virtual float getBonus (double JD);
   virtual int startSlew (struct ln_equ_posn *position);
 };
 
 // load target from DB
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+
+// send end mails
+void sendEndMails (const time_t * t_from, const time_t * t_to,
+		   int printImages, int printCounts,
+		   struct ln_lnlat_posn *in_obs);
+
+// print target information to stdout..
+std::ostream & operator << (std::ostream & _os, Target * target);
 
 #endif /*! __RTS_TARGET__ */

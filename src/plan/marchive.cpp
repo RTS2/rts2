@@ -1,4 +1,5 @@
 #include "../writers/rts2appdbimage.h"
+#include "../writers/rts2imagedb.h"
 #include "../utils/rts2config.h"
 
 #include <signal.h>

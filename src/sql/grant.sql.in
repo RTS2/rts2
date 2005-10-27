@@ -118,3 +118,6 @@ GRANT SELECT ON airmass_cal_images TO "__WWWUSER__";
 
 GRANT ALL ON targets_users TO GROUP observers;
 GRANT ALL ON targets_users TO "__WWWUSER__";
+
+GRANT ALL ON type_users TO GROUP observers;
+GRANT ALL ON type_users TO "__WWWUSER__";

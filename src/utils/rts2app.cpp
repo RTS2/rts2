@@ -5,6 +5,7 @@
 #include "rts2app.h"
 
 #include <iostream>
+#include <syslog.h>
 
 Rts2App::Rts2App (int in_argc, char **in_argv):
 Rts2Object ()
@@ -41,7 +42,7 @@ Rts2App::initOptions ()
   long_option =
     (struct option *) malloc (sizeof (struct option) * (options.size () + 1));
 
-  char *opt_char = new char[options.size () * 2 + 1];
+  char *opt_char = new char[options.size () * 3 + 1];
 
   char *end_opt = opt_char;
 
@@ -181,4 +182,35 @@ Rts2App::parseDate (const char *in_date, struct tm *out_time)
       return 0;
     }
   return -1;
+}
+
+int
+sendMailTo (const char *subject, const char *text, const char *mailAddress)
+{
+  int ret;
+  char *cmd;
+  FILE *mailFile;
+
+  // fork so we will not inhibit calling process..
+  ret = fork ();
+  if (ret == -1)
+    {
+      syslog (LOG_ERR, "Rts2Block::sendMail fork: %m");
+      return -1;
+    }
+  if (ret != 0)
+    {
+      return 0;
+    }
+  asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, mailAddress);
+  mailFile = popen (cmd, "w");
+  if (!mailFile)
+    {
+      syslog (LOG_ERR, "Rts2Block::sendMail popen: %m");
+      exit (0);
+    }
+  fprintf (mailFile, "%s", text);
+  pclose (mailFile);
+  free (cmd);
+  exit (0);
 }

@@ -3,10 +3,17 @@
 #endif
 
 #include "target.h"
+#include "rts2obs.h"
+#include "rts2obsset.h"
 
+#include "../utils/rts2app.h"
 #include "../utils/rts2config.h"
+#include "../utils/libnova_cpp.h"
+#include "../utils/timestamp.h"
 
 #include <syslog.h>
+
+#include <sstream>
 
 EXEC SQL include sqlca;
 
@@ -46,6 +53,33 @@ Target::logMsgDb (const char *message)
   syslog (LOG_ERR, "SQL error: %li %s (at %s)", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
 }
 
+void
+Target::sendTargetMail (int eventMask, const char *subject_text)
+{
+  std::string mails;
+  
+  // send mails
+  mails = getUsersEmail (eventMask);
+  if (mails.length ())
+  {
+    std::ostringstream os;
+    std::ostringstream subject;
+    subject << "TARGET #" << getObsTargetID ()
+     << " (" << getTargetID () << ") "
+     << subject_text << " #" << getObsId ();
+    // lazy observation init
+    if (observation == NULL)
+    {
+      observation = new Rts2Obs (getObsId ());
+      observation->load ();
+      observation->setPrintImages (DISPLAY_ALL | DISPLAY_SUMMARY);
+      observation->setPrintCounts (DISPLAY_ALL | DISPLAY_SUMMARY);
+    }
+    os << *observation;
+    sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
+  }
+}
+
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   Rts2Config *config;
@@ -58,12 +92,15 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   config->getInteger ("observatory", "epoch_id", epochId);
 
   obs_id = -1;
+  observation = NULL;
+
   img_id = 0;
   obs_state = 0;
   target_id = in_tar_id;
   obs_target_id = -1;
   target_type = TYPE_UNKNOW;
   target_name = NULL;
+  targetUsers = NULL;
 
   startCalledNum = 0;
 
@@ -72,18 +109,22 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   observationStart = -1;
 
   acquired = 0;
+
 }
 
 Target::~Target (void)
 {
   endObservation (-1);
-  if (target_name)
-    delete target_name;
+  delete[] target_name;
+  delete targetUsers;
+  delete observation;
 }
 
 int
 Target::load ()
 {
+  // load target users for events..
+  targetUsers = new Rts2TarUser (getTargetID (), getTargetType ());
   return 0;
 }
 
@@ -188,6 +229,8 @@ Target::startObservation ()
     }
     EXEC SQL COMMIT;
     obs_state |= OBS_BIT_STARTED;
+
+    sendTargetMail (SEND_START_OBS, "START OBSERVATION");
   }
   return 0;
 }
@@ -224,6 +267,7 @@ Target::endObservation (int in_next_id)
   int d_obs_id = obs_id;
   int d_obs_state = obs_state;
   EXEC SQL END DECLARE SECTION;
+
   if (isContinues () && in_next_id == getTargetID ())
     return 1;
   if (obs_id > 0)
@@ -236,14 +280,18 @@ Target::endObservation (int in_next_id)
       obs_state = :d_obs_state
     WHERE
       obs_id = :d_obs_id;
-    obs_id = -1;
     if (sqlca.sqlcode != 0)
     {
       logMsgDb ("cannot end observation");
       EXEC SQL ROLLBACK;
+      obs_id = -1;
       return -1;
     }
     EXEC SQL COMMIT;
+
+    sendTargetMail (SEND_END_OBS, "END OF OBSERVATION");
+
+    obs_id = -1;
   }
   observationStart = -1;
   return 0;
@@ -440,7 +488,7 @@ Target::getHourAngle (double JD)
   if (ret)
     return nan ("f");
   ha = lst - pos.ra;
-  ha = ln_range_degrees (ha) / 15.0;
+  ha = ln_range_degrees (ha);
   return ha;
 }
 
@@ -678,6 +726,14 @@ Target::getLastObsTime ()
   return d_time_diff;
 }
 
+std::string
+Target::getUsersEmail (int in_event_mask)
+{
+  if (targetUsers)
+    return targetUsers->getUsers (in_event_mask);
+  return std::string ("");
+}
+
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -761,4 +817,146 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
   }
   EXEC SQL COMMIT;
   return retTarget;
+}
+
+void
+sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts, struct ln_lnlat_posn *in_obs)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  long db_from = (long) *t_from;
+  long db_end = (long) *t_to;
+  int db_tar_id;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL DECLARE tar_obs_cur CURSOR FOR
+  SELECT
+    targets.tar_id
+  FROM
+    targets,
+    observations
+  WHERE
+      targets.tar_id = observations.tar_id
+    AND observations.obs_slew >= abstime (:db_from)
+    AND observations.obs_end <= abstime (:db_end);
+    
+  EXEC SQL OPEN tar_obs_cur;
+
+  while (1)
+  {
+    Target *tar;
+    EXEC SQL FETCH next FROM tar_obs_cur INTO
+      :db_tar_id;
+    if (sqlca.sqlcode)
+      break;
+    tar = createTarget (db_tar_id, in_obs);
+    if (tar)
+    {
+      std::string mails = tar->getUsersEmail (SEND_END_NIGHT);
+      std::string subject_text = std::string ("END OF NIGHT, TARGET #");
+      Rts2ObsSet obsset = Rts2ObsSet (db_tar_id, t_from, t_to);
+      subject_text += db_tar_id;
+      std::ostringstream os;
+      obsset.printImages (printImages);
+      obsset.printCounts (printCounts);
+      os << tar << obsset;
+      sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
+      delete tar;
+    }
+  }
+  EXEC SQL CLOSE tar_obs_cur;
+  EXEC SQL COMMIT;
+}
+
+std::ostream &
+operator << (std::ostream &_os, Target *target)
+{
+  int ret;
+  struct ln_equ_posn pos;
+  struct ln_hrz_posn hrz;
+  struct ln_gal_posn gal;
+  struct ln_rst_time rst;
+  double JD;
+  double gst;
+  double lst;
+  time_t now, last;
+
+  time (&now);
+  JD = ln_get_julian_from_timet (&now);
+
+  target->getPosition (&pos, JD);
+
+  _os << target->getTargetID () 
+    << " (" << target->getObsTargetID () << ") " 
+    << target->getTargetName ()
+    << " (" << target->getTargetType () << ")"
+    << " RA " << LibnovaRa (pos.ra)
+    << " DEC " << LibnovaDeg90 (pos.dec)
+    << " (J2000) "
+    << std::endl;
+/*  _os << "Rise after " << target->
+    secToObjectRise () << " seconds" << std::endl;
+  _os << "Transit after " << target->
+    secToObjectMeridianPass () << " seconds" << std::endl;
+  _os << "Set after " << target->
+    secToObjectSet () << " seconds"; */
+  target->getAltAz (&hrz, JD);
+  _os << "ALT " << LibnovaDeg90 (hrz.alt)
+    << " ZD " << LibnovaDeg90 (target->getZenitDistance ()) 
+    << " AZ " << LibnovaDeg (hrz.az)
+    << " HA " << LibnovaRa (target->getHourAngle ())
+    << " AM " << target->getAirmass ()
+    << std::endl;
+  ret = target->getRST (&rst, JD);
+  switch (ret)
+  {
+    case -1:
+      _os << " - circumpolar - " << std::endl;
+      break;
+    case 1:
+      _os << " - don't rise - " << std::endl;
+      break;
+    default:
+      if (rst.set < rst.rise && rst.rise < rst.transit)
+      {
+	_os << "S " << TimeJD (rst.set)
+	  << " R " << TimeJD (rst.rise)
+	  << " T " << TimeJD (rst.transit)
+	  << std::endl;
+      }
+      else if (rst.transit < rst.set && rst.set < rst.rise)
+      {
+	_os << "T " << TimeJD (rst.transit)
+	  << " S " << TimeJD (rst.set)
+	  << " R " << TimeJD (rst.rise)
+	  << std::endl;
+      }
+      else
+      {
+	_os << "R " << TimeJD (rst.rise)
+	  << " T " << TimeJD (rst.transit)
+	  << " S " << TimeJD (rst.set)
+	  << std::endl;
+      }
+  }
+  target->getGalLng (&gal, JD);
+  _os << "GL " << LibnovaDeg (gal.l) 
+    << " GB " << LibnovaDeg90 (gal.b)
+    << " GCD " << LibnovaDeg (target->getGalCenterDist (JD))
+    << std::endl;
+  _os << "SD " << LibnovaDeg (target->getSolarDistance (JD))
+    << " LD " << LibnovaDeg (target->getLunarDistance (JD))
+    << std::endl;
+  last = now - 86400;
+  _os << "OBS_24_H " << target->getNumObs (&last, &now)
+    << std::endl;
+  _os << "BONUS " << target->getBonus (JD) << std::endl;
+
+  // is above horizont?
+  gst = ln_get_mean_sidereal_time (JD);
+  lst = gst + Rts2Config::instance ()->getObserver()->lng / 15.0;
+  _os << "Checker is_good:" << target->isGood (lst, pos.ra,
+						     pos.
+						     dec) << " (JD: " << JD <<
+    " gst: " << gst << " lst: " << lst << ")" << std::endl;
+  return _os;
 }

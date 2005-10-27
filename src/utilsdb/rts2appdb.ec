@@ -98,15 +98,16 @@ char *
 Rts2SqlQuery::genSql ()
 {
   std::string query;
+  std::string order_by;
   std::list <Rts2SqlColumn *>::iterator col_iter1;
+  std::list <Rts2SqlColumn *> col_copy;
   if (sql)
     return sql;
   query = std::string ();
   query += "select ";
   for (col_iter1 = columns.begin (); col_iter1 != columns.end (); col_iter1++)
   {
-    Rts2SqlColumn *col = (*col_iter1);
-    char *col_sql = col->genSql ();
+    char *col_sql = (*col_iter1)->genSql ();
     if (col_iter1 != columns.begin ())
       query += ", ";
     query += col_sql;
@@ -122,6 +123,30 @@ Rts2SqlQuery::genSql ()
     query += " where ";
     query += where;
   }
+  order_by = std::string ();
+  // order by part..
+  col_copy = std::list <Rts2SqlColumn *> (columns);
+  col_copy.sort ();
+  for (col_iter1 = col_copy.begin (); col_iter1 != col_copy.end (); col_iter1++)
+  {
+    Rts2SqlColumn *col;
+    col = (*col_iter1);
+    if (col->getOrderBy () != 0)
+    {
+      if (order_by.length () == 0)
+	order_by += " order by ";
+      else
+	order_by += ", ";
+
+      order_by += col->genSql ();
+      if (col->getOrderBy () > 0)
+	order_by += " asc";
+      else
+	order_by += " desc";
+    }
+  }
+  query += order_by;
+
   sql = new char[query.length() + 1];
   strcpy (sql, query.c_str ());
   return sql;

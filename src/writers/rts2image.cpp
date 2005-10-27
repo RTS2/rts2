@@ -14,6 +14,8 @@
 void
 Rts2Image::initData ()
 {
+  exposureLength = nan ("f");
+
   imageName = NULL;
   ffile = NULL;
   targetId = -1;
@@ -35,12 +37,26 @@ Rts2Image::initData ()
   focPos = -1;
   signalNoise = 17;
   getFailed = 0;
+
+  pos_astr.ra = nan ("f");
+  pos_astr.dec = nan ("f");
+  ra_err = nan ("f");
+  dec_err = nan ("f");
 }
 
 Rts2Image::Rts2Image ()
 {
   initData ();
   flags = IMAGE_KEEP_DATA;
+}
+
+Rts2Image::Rts2Image (long in_img_date, int in_img_usec,
+		      float in_img_exposure)
+{
+  initData ();
+  exposureStart.tv_sec = in_img_date;
+  exposureStart.tv_usec = in_img_usec;
+  exposureLength = in_img_exposure;
 }
 
 Rts2Image::Rts2Image (char *in_filename,
@@ -88,7 +104,7 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
   setValue ("TARTYPE", targetType, "target type");
   setValue ("OBSID", obsId, "observation id");
   setValue ("IMGID", imgId, "image id");
-  setValue ("PROCES", 0, "no processing done");
+  setValue ("PROC", 0, "image processing status");
 
   if (currTarget->getTargetName ())
     {
@@ -127,6 +143,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("IMGID", imgId);
   getValue ("CTIME", exposureStart.tv_sec);
   getValue ("USEC", exposureStart.tv_usec);
+  getValue ("EXPOSURE", exposureLength);
   ret = getValues ("NAXIS", naxis, 2);
   if (ret)
     {
@@ -150,6 +167,11 @@ Rts2Image::Rts2Image (const char *in_filename)
     focPos = -1;
   getValue ("CAM_FILT", filter);
   getValue ("AVERAGE", average);
+  getValue ("POS_ERA", ra_err);
+  getValue ("POS_EDEC", dec_err);
+  // astrometry get !!
+  getValue ("CRVAL1", pos_astr.ra);
+  getValue ("CRVAL2", pos_astr.dec);
   getValueImageType ();
 }
 
@@ -431,8 +453,13 @@ Rts2Image::getImageBase (int in_epoch_id)
 int
 Rts2Image::setValue (char *name, int value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_update_key (ffile, TINT, name, &value, comment, &fits_status);
   flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
@@ -441,8 +468,13 @@ Rts2Image::setValue (char *name, int value, char *comment)
 int
 Rts2Image::setValue (char *name, long value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_update_key (ffile, TLONG, name, &value, comment, &fits_status);
   flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
@@ -451,8 +483,13 @@ Rts2Image::setValue (char *name, long value, char *comment)
 int
 Rts2Image::setValue (char *name, double value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_update_key (ffile, TDOUBLE, name, &value, comment, &fits_status);
   flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
@@ -462,8 +499,13 @@ int
 Rts2Image::setValue (char *name, char value, char *comment)
 {
   char val[2];
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   val[0] = value;
   val[1] = '\0';
   fits_update_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
@@ -474,8 +516,13 @@ Rts2Image::setValue (char *name, char value, char *comment)
 int
 Rts2Image::setValue (char *name, const char *value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_update_key (ffile, TSTRING, name, (void *) value, comment,
 		   &fits_status);
   flags |= IMAGE_SAVE;
@@ -542,8 +589,13 @@ Rts2Image::setValueImageType (int shutter_state)
 int
 Rts2Image::getValue (char *name, int &value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_read_key (ffile, TINT, name, (void *) &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -551,8 +603,13 @@ Rts2Image::getValue (char *name, int &value, char *comment)
 int
 Rts2Image::getValue (char *name, long &value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_read_key (ffile, TLONG, name, (void *) &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -560,8 +617,13 @@ Rts2Image::getValue (char *name, long &value, char *comment)
 int
 Rts2Image::getValue (char *name, float &value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_read_key (ffile, TFLOAT, name, (void *) &value, comment, &fits_status);
   return fitsStatusValue (name);
 }
@@ -569,8 +631,13 @@ Rts2Image::getValue (char *name, float &value, char *comment)
 int
 Rts2Image::getValue (char *name, double &value, char *comment)
 {
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_read_key (ffile, TDOUBLE, name, (void *) &value, comment,
 		 &fits_status);
   return fitsStatusValue (name);
@@ -580,8 +647,13 @@ int
 Rts2Image::getValue (char *name, char &value, char *comment)
 {
   static char val[FLEN_VALUE];
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
   value = *val;
   return fitsStatusValue (name);
@@ -591,8 +663,13 @@ int
 Rts2Image::getValue (char *name, char *value, int valLen, char *comment)
 {
   static char val[FLEN_VALUE];
+  int ret;
   if (!ffile)
-    return -1;
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
   fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
   strncpy (value, val, valLen);
   value[valLen - 1] = '\0';
@@ -770,11 +847,27 @@ Rts2Image::fitsStatusValue (char *valname)
   return ret;
 }
 
+double
+Rts2Image::getAstrometryErr ()
+{
+  struct ln_equ_posn pos2;
+  pos2.ra = pos_astr.ra + ra_err;
+  pos2.dec = pos_astr.dec + dec_err;
+  return ln_get_angular_separation (&pos_astr, &pos2);
+}
+
 int
 Rts2Image::saveImage ()
 {
   if (flags & IMAGE_SAVE && ffile)
     {
+      // save astrometry error
+      if (!isnan (ra_err) && !isnan (dec_err))
+	{
+	  setValue ("POS_ERA", ra_err, "RA error in position");
+	  setValue ("POS_EDEC", dec_err, "DEC error in position");
+	  setValue ("POS_ERR", getAstrometryErr (), "error in position");
+	}
       fits_close_file (ffile, &fits_status);
       flags &= ~IMAGE_SAVE;
     }
@@ -864,20 +957,14 @@ Rts2Image::substractDark (Rts2Image * darkImage)
 }
 
 int
-Rts2Image::setAstroResults (double ra, double dec, double ra_err,
-			    double dec_err)
+Rts2Image::setAstroResults (double in_ra, double in_dec, double in_ra_err,
+			    double in_dec_err)
 {
-  struct ln_equ_posn pos1;
-  struct ln_equ_posn pos2;
-  int ret;
-  pos1.ra = ra;
-  pos1.dec = dec;
-  pos2.ra = ra + ra_err;
-  pos2.dec = dec + dec_err;
-  ret = setValue ("POS_ERA", ra_err, "RA error in position");
-  ret = setValue ("POS_EDEC", dec_err, "DEC error in position");
-  return setValue ("POS_ERR", ln_get_angular_separation (&pos1, &pos2),
-		   "error in position");
+  pos_astr.ra = in_ra;
+  pos_astr.dec = in_dec;
+  ra_err = in_ra_err;
+  dec_err = in_dec_err;
+  return 0;
 }
 
 int
@@ -1124,4 +1211,13 @@ Rts2Image::getCenter (double &x, double &y, int bin)
       i += bin;
     }
   return 0;
+}
+
+std::ostream & operator << (std::ostream & _os, Rts2Image * image)
+{
+  _os << "C " << image->getCameraName ()
+    << " [" << image->getWidth () << ":"
+    << image->getHeight () << "]"
+    << " RA " << image->getCenterRa () << " DEC " << image->getCenterDec ();
+  return _os;
 }

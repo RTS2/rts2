@@ -44,6 +44,9 @@ public:
   virtual void printStatistics (std::ostream & os);
 };
 
+// for sorting..
+bool operator < (Rts2SqlColumn lhs, Rts2SqlColumn rhs);
+
 class Rts2SqlColumnObsState:public Rts2SqlColumn
 {
   unsigned int interupted;

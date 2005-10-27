@@ -72,6 +72,11 @@ Rts2DevCopulaDummy (int in_argc, char **in_argv):Rts2DevCopula (in_argc,
   {
     return isMoving ();
   }
+
+  virtual double getSplitWidth (double alt)
+  {
+    return 1;
+  }
 };
 
 Rts2DevCopulaDummy *device;

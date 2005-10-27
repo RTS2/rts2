@@ -128,7 +128,10 @@ Rts2DevDome::checkOpening ()
 	    }
 	}
     }
-  setTimeout (10 * USEC_SEC);
+  // if we are back in idle state..beware of copula state (bit non-structural, but I 
+  // cannot find better solution)
+  if ((getState (0) & DOME_COP_MASK_MOVE) == DOME_COP_NOT_MOVE)
+    setTimeout (10 * USEC_SEC);
   return 0;
 }
 

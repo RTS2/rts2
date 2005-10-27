@@ -174,13 +174,13 @@ Rts2DevCopula::needSplitChange ()
     targetDistance = (targetDistance - 360);
   else if (targetDistance < -180)
     targetDistance = (targetDistance + 360);
-  if (fabs (currentAz - targetHrz.az) > getSplitWidth (targetHrz.alt))
+  if (fabs (targetDistance) < splitWidth)
     {
       if ((getState (0) & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
 	synced ();
-      return 1;
+      return 0;
     }
-  return 0;
+  return 1;
 }
 
 int

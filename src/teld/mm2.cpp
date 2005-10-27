@@ -67,7 +67,7 @@
 
 // we shall not move below that POS - e.g. our target is to keep telAxis[0] in <-1 * NOT_SAFE_POS, NOT_SAFE_POS>
 // it must be < 100.0 for system to work
-#define NOT_SAFE_POS	110.0
+#define NOT_SAFE_POS	100.0
 
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
 #define MAX(a,b)	((a) > (b) ? (a) : (b))

@@ -6,7 +6,7 @@ ALTER TABLE images ADD COLUMN img_err		float8;
 ALTER TABLE images ADD CONSTRAINT images_obs_img UNIQUE (obs_id, img_id);
 
 -- add email for originators/interested parties
-ALTER TABLE users ADD COLUMN usr_email VARCHAR[200];
+ALTER TABLE users ADD COLUMN usr_email VARCHAR(200);
 ALTER TABLE users ADD COLUMN usr_id integer;
 
 ALTER TABLE ONLY users ADD CONSTRAINT users_pkey PRIMARY KEY (usr_id);

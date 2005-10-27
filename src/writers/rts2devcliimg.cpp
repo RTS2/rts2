@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
+#include <ctype.h>
+
 #include "rts2devcliimg.h"
 #include "../utils/rts2config.h"
 
@@ -171,7 +173,7 @@ Rts2DevClientCameraImage::exposureStarted ()
   images = createImage (&expStart);
   images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
 		    "CCD temperature");
-  images->setValue ("EXPOSURE", exposureTime, "exposure time");
+  images->setExposureLength (exposureTime);
   images->setValue ("CAM_FAN", getValueInteger ("fan"),
 		    "fan on (1) / off (0)");
   images->setValue ("XPLATE", xplate,
