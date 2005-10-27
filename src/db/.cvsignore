@@ -6,3 +6,5 @@ Makefile.in
 db.c
 photlist.c
 test
+rts2-nightmails
+rts2-nightreport
