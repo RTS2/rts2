@@ -4,7 +4,7 @@ SUBDIRS = urvc2 apogee
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
-noinst_HEADERS = camera_cpp.h ccd_msg.h filter_ifw.h filter.h
+noinst_HEADERS = camera_cpp.h ccd_msg.h filter_ifw.h filter.h filter_fli.h
 
 LDADD = ../utils/librts2block.a
 
@@ -36,4 +36,11 @@ bin_PROGRAMS += rts2-camd-alta
 rts2_camd_alta_SOURCES = camd.cpp alta.cpp alta/ApnCamera_Linux.cpp
 rts2_camd_alta_LDFLAGS = @LIB_ALTA@ @LIB_M@
 rts2_camd_alta_CXXFLAGS = @INC_ALTA@
+endif
+
+if FLI
+bin_PROGRAMS += rts2-camd-fli
+rts2_camd_fli_SOURCES = camd.cpp fli.cpp filter.cpp filter_fli.cpp
+rts2_camd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
+rts2_camd_fli_CXXFLAGS = @INC_FLI@
 endif
