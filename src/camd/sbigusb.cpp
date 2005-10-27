@@ -53,7 +53,7 @@ class CameraSbigChip:public CameraChip
   int sbig_readout_mode;
 public:
     CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		    int in_height, float in_pixelX, float in_pixelY,
+		    int in_height, double in_pixelX, double in_pixelY,
 		    float in_gain);
     virtual ~ CameraSbigChip ();
   virtual int setBinning (int in_vert, int in_hori)
@@ -72,8 +72,8 @@ public:
 };
 
 CameraSbigChip::CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id,
-				int in_width, int in_height, float in_pixelX,
-				float in_pixelY, float in_gain):
+				int in_width, int in_height, double in_pixelX,
+				double in_pixelY, float in_gain):
 CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
 	    in_gain)
 {
@@ -150,15 +150,15 @@ CameraSbigChip::readoutOneLine ()
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
-      if (readoutLine < chipUsedReadout->y)
+      if (readoutLine < (chipUsedReadout->y / usedBinningVertical))
 	{
 	  DumpLinesParams dlp;
 	  dlp.ccd = chipId;
 	  dlp.lineLength =
-	    ((chipUsedReadout->y - readoutLine) / usedBinningVertical);
+	    (chipUsedReadout->y / usedBinningVertical) - readoutLine;
 	  dlp.readoutMode = sbig_readout_mode;
 	  SBIGUnivDrvCommand (CC_DUMP_LINES, &dlp, NULL);
-	  readoutLine = chipReadout->y;
+	  readoutLine = chipReadout->y / usedBinningVertical;
 	}
       SBIGUnivDrvCommand (CC_READOUT_LINE, &rlp, dest_top);
       dest_top += rlp.pixelLength;
