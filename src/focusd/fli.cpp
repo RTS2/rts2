@@ -159,6 +159,9 @@ Rts2DevFocuserFli::info ()
   ret = FLIGetStepperPosition (dev, &steps);
   if (ret)
     return -1;
+
+  focPos = (int) steps;
+
   return 0;
 }
 
