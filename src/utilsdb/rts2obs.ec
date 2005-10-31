@@ -1,10 +1,13 @@
 #include "rts2obs.h"
 #include "target.h"
+#include "rts2taruser.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
 
 #include <iostream>
 #include <iomanip>
+#include <syslog.h>
+#include <sstream>
 
 EXEC SQL INCLUDE sqlca;
 
@@ -12,14 +15,16 @@ Rts2Obs::Rts2Obs (int in_obs_id)
 {
   obs_id = in_obs_id;
   tar_id = -1;
+  tar_type = 0; 
   displayImages = 0;
   displayCounts = 0;
 }
 
-Rts2Obs::Rts2Obs (int in_tar_id, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, 
+Rts2Obs::Rts2Obs (int in_tar_id, char in_tar_type, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, 
       double in_obs_az, double in_obs_slew, double in_obs_start, int in_obs_state, double in_obs_end)
 {
   tar_id = in_tar_id;
+  tar_type = in_tar_type;
   obs_id = in_obs_id;
   obs_ra = in_obs_ra;
   obs_dec = in_obs_dec;
@@ -45,15 +50,23 @@ Rts2Obs::load ()
   EXEC SQL BEGIN DECLARE SECTION;
   VARCHAR db_tar_name[TARGET_NAME_LEN];
   int db_tar_id;
+  char db_tar_type;
   int db_obs_id = obs_id;
   double db_obs_ra;
+  int ind_obs_ra;
   double db_obs_dec;
+  int ind_obs_dec;
   double db_obs_alt;
+  int ind_obs_alt;
   double db_obs_az;
+  int ind_obs_az;
   double db_obs_slew;
+  int ind_obs_slew;
   double db_obs_start;
+  int ind_obs_start;
   int db_obs_state;
   double db_obs_end;
+  int ind_obs_end;
   EXEC SQL END DECLARE SECTION;
 
   // already loaded
@@ -73,6 +86,7 @@ Rts2Obs::load ()
   SELECT
     tar_name,
     observations.tar_id,
+    tar_type,
     obs_ra,
     obs_dec,
     obs_alt,
@@ -84,14 +98,15 @@ Rts2Obs::load ()
   INTO
     :db_tar_name,
     :db_tar_id,
-    :db_obs_ra,
-    :db_obs_dec,
-    :db_obs_alt,
-    :db_obs_az,
-    :db_obs_slew,
-    :db_obs_start,
+    :db_tar_type,
+    :db_obs_ra     :ind_obs_ra,
+    :db_obs_dec    :ind_obs_dec,
+    :db_obs_alt    :ind_obs_alt,
+    :db_obs_az     :ind_obs_az,
+    :db_obs_slew   :ind_obs_slew,
+    :db_obs_start  :ind_obs_start,
     :db_obs_state,
-    :db_obs_end
+    :db_obs_end    :ind_obs_end
   FROM
     observations,
     targets
@@ -100,19 +115,28 @@ Rts2Obs::load ()
     AND observations.tar_id = targets.tar_id;
   if (sqlca.sqlcode)
   {
+    syslog (LOG_DEBUG, "Rts2Obs::load DB error: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
     EXEC SQL ROLLBACK;
     return -1;
   }
   EXEC SQL COMMIT;
   tar_id = db_tar_id;
-  obs_ra = db_obs_ra;
-  obs_dec = db_obs_dec;
-  obs_alt = db_obs_alt;
-  obs_az = db_obs_az;
-  obs_slew = db_obs_slew;
-  obs_start = db_obs_start;
+  tar_type = db_tar_type;
+  if (ind_obs_ra >= 0)
+    obs_ra = db_obs_ra;
+  if (ind_obs_dec >= 0)
+    obs_dec = db_obs_dec;
+  if (ind_obs_alt >= 0)
+    obs_alt = db_obs_alt;
+  if (ind_obs_az >= 0)
+    obs_az = db_obs_az;
+  if (ind_obs_slew >= 0)
+    obs_slew = db_obs_slew;
+  if (ind_obs_start >= 0)
+    obs_start = db_obs_start;
   obs_state = db_obs_state;
-  obs_end = db_obs_end;
+  if (ind_obs_end >= 0)
+    obs_end = db_obs_end;
   return 0;
 }
 
@@ -135,7 +159,7 @@ Rts2Obs::printImages (std::ostream &_os)
   std::vector <Rts2ImageDb *>::iterator img_iter;
   if (imgset.empty ())
   {
-    _os << "   " << "--- no images ---";
+    _os << "   " << "--- no images ---" << std::endl;
     return;
   }
   for (img_iter = imgset.begin (); img_iter != imgset.end (); img_iter++)
@@ -190,7 +214,7 @@ Rts2Obs::loadCounts ()
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    std::cerr << "Rts2Obs::loadCounts error in DB " << sqlca.sqlerrm.sqlerrmc << std::endl;
+    syslog (LOG_DEBUG, "Rts2Obs::loadCounts DB error: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
     EXEC SQL CLOSE cur_counts;
     EXEC SQL ROLLBACK;
     return -1;
@@ -206,7 +230,7 @@ Rts2Obs::printCounts (std::ostream &_os)
   std::vector <Rts2Count>::iterator count_iter;
   if (counts.empty ())
   {
-    _os << "    " << "--- no counts ---";
+    _os << "    " << "--- no counts ---" << std::endl;
     return;
   }
   for (count_iter = counts.begin (); count_iter != counts.end (); count_iter++)
@@ -219,6 +243,51 @@ void
 Rts2Obs::printCountsSummary (std::ostream &_os)
 {
   _os << "    Number of counts:" << counts.size () << std::endl;
+}
+
+int
+Rts2Obs::getUnprocessedCount ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_obs_id = getObsId ();
+  int db_count = 0;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    count (*)
+  INTO
+    :db_count
+  FROM
+    images
+  WHERE
+      obs_id = :db_obs_id
+    AND ((process_bitfield & 1) = 0);
+  EXEC SQL ROLLBACK;
+
+  return db_count;
+}
+
+void
+Rts2Obs::checkUnprocessedImages ()
+{
+  load ();
+  if (obs_end == 0)
+    return;
+  // obs_end is not null - observation ends sucessfully
+  // get unprocessed counts..
+  if (getUnprocessedCount () == 0)
+  {
+    Rts2TarUser tar_user = Rts2TarUser (getTargetId (), getTargetType ());
+    std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
+    std::ostringstream subject;
+    subject << "TARGET #" << getTargetId ()
+      << ", OBSERVATION " << getObsId ()
+      << " ALL IMAGES PROCESSED";
+    std::ostringstream os;
+    os << *this;
+    sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
+  }
 }
 
 std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)

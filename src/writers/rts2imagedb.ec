@@ -491,11 +491,14 @@ Rts2ImageDb::toArchive ()
 {
   int ret;
 
+  processBitfiedl |= ASTROMETRY_OK | ASTROMETRY_PROC;
+
   ret = Rts2Image::toArchive ();
   if (ret)
+  {
+    processBitfiedl |= IMG_ERR;
     return ret;
-
-  processBitfiedl |= ASTROMETRY_OK | ASTROMETRY_PROC;
+  }
 
   return 0;
 }
@@ -582,35 +585,11 @@ Rts2ImageDb::getOKCount ()
     images
   WHERE
       obs_id = :db_obs_id
-    AND (process_bitfield & 2);
+    AND ((process_bitfield & 2) = 2);
   EXEC SQL ROLLBACK;
 
   return db_count;
 }
-
-int
-Rts2ImageDb::getUnprocessedCount ()
-{
-  EXEC SQL BEGIN DECLARE SECTION;
-  int db_obs_id = getObsId ();
-  int db_count = 0;
-  EXEC SQL END DECLARE SECTION;
-
-  EXEC SQL
-  SELECT
-    count (*)
-  INTO
-    :db_count
-  FROM
-    images
-  WHERE
-      obs_id = :db_obs_id
-    AND ((process_bitfield & 1) = 0);
-  EXEC SQL ROLLBACK;
-
-  return db_count;
-}
-
 
 std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
 {

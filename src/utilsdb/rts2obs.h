@@ -35,6 +35,7 @@ private:
   int displayCounts;
 
   int tar_id;
+  char tar_type;
   int obs_id;
   double obs_ra;
   double obs_dec;
@@ -55,7 +56,7 @@ public:
    *
    * Handy when creating class from cursor.
    */
-    Rts2Obs (int in_tar_id, int in_obs_id, double in_obs_ra,
+    Rts2Obs (int in_tar_id, char in_tar_type, int in_obs_id, double in_obs_ra,
 	     double in_obs_dec, double in_obs_alt, double in_obs_az,
 	     double in_obs_slew, double in_obs_start, int in_obs_state,
 	     double in_obs_end);
@@ -84,10 +85,22 @@ public:
     return tar_id;
   }
 
+  char getTargetType ()
+  {
+    return tar_type;
+  }
+
   int getObsId ()
   {
     return obs_id;
   }
+
+  int getUnprocessedCount ();
+
+  // called to check if we have any unprocessed images
+  // if we don't have any unprocessed images and observation was ended, then
+  // call appopriate mails
+  void checkUnprocessedImages ();
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Obs & obs);
 };

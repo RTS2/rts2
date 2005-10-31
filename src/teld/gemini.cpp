@@ -1058,6 +1058,8 @@ int
 Rts2DevTelescopeGemini::baseInfo ()
 {
   int32_t gem_type;
+  char buf[5];
+  int ret;
   if (tel_read_longtitude () || tel_read_latitude ())
     return -1;
   tel_gemini_get (0, &gem_type);
@@ -1082,8 +1084,14 @@ Rts2DevTelescopeGemini::baseInfo ()
       strcpy (telType, "Titan50");
       break;
     default:
-      sprintf (telType, "UNK %2i", gem_type);
+      sprintf (telType, "UNK_%2i", gem_type);
     }
+  ret = tel_write_read ("#:GV#", 5, buf, 3);
+  if (ret)
+    return -1;
+  buf[4] = '\0';
+  strcat (telType, "_");
+  strcat (telType, buf);
   strcpy (telSerialNumber, "000001");
   telAltitude = 600;
 

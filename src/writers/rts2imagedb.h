@@ -20,6 +20,8 @@
 #define ASTROMETRY_OK	0x02
 #define DARK_OK		0x04
 #define FLAT_OK		0x08
+// some error durring image operations occured, information in DB is unrealiable
+#define IMG_ERR		0x8000
 
 class Rts2ImageDb:public Rts2Image
 {
@@ -66,7 +68,6 @@ public:
   virtual int deleteImage ();
 
   int getOKCount ();
-  int getUnprocessedCount ();
 
   friend std::ostream & operator << (std::ostream & _os,
 				     Rts2ImageDb & img_db);

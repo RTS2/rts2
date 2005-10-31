@@ -19,6 +19,7 @@ Rts2ObsSet::load (std::string in_where)
   double db_obs_end;
 
   int db_tar_ind;
+  char db_tar_type;
   int db_obs_ra_ind;
   int db_obs_dec_ind;
   int db_obs_alt_ind;
@@ -35,6 +36,7 @@ Rts2ObsSet::load (std::string in_where)
   SELECT
     tar_name,
     observations.tar_id,
+    tar_type,
     obs_id,
     obs_ra,
     obs_dec,
@@ -58,6 +60,7 @@ Rts2ObsSet::load (std::string in_where)
     EXEC SQL FETCH next FROM obs_cur_timestamps INTO
       :db_tar_name :db_tar_ind,
       :db_tar_id,
+      :db_tar_type,
       :db_obs_id,
       :db_obs_ra :db_obs_ra_ind,
       :db_obs_dec :db_obs_dec_ind,
@@ -70,7 +73,7 @@ Rts2ObsSet::load (std::string in_where)
     if (sqlca.sqlcode)
       break;
     // add new observations to vector
-    observations.push_back (Rts2Obs (db_tar_id, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
+    observations.push_back (Rts2Obs (db_tar_id, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
       db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end));
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)

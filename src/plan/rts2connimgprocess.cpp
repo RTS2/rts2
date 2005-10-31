@@ -158,18 +158,6 @@ void
 Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
 {
   // last processed
-  if (image->getUnprocessedCount () == 0)
-    {
-      Rts2TarUser tar_user =
-	Rts2TarUser (image->getTargetId (), image->getTargetType ());
-      Rts2Obs observation = Rts2Obs (image->getObsId ());
-      std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
-      std::ostringstream subject;
-      subject << "TARGET #" << image->getTargetId ()
-	<< ", OBSERVATION " << image->getObsId () << " ALL IMAGES PROCESSED";
-      std::ostringstream os;
-      os << observation;
-      sendMailTo (subject.str ().c_str (), os.str ().c_str (),
-		  mails.c_str ());
-    }
+  Rts2Obs observation = Rts2Obs (image->getObsId ());
+  observation.checkUnprocessedImages ();
 }
