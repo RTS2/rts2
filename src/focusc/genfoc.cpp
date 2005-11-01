@@ -210,6 +210,10 @@ Rts2Client (in_argc, in_argv)
   tarRa = -999.0;
   tarDec = -999.0;
 
+  photometerFile = NULL;
+  photometerTime = 1;
+  photometerFilterChange = 0;
+
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
 
@@ -226,6 +230,12 @@ Rts2Client (in_argc, in_argv)
   addOption ('H', "height", 1, "center height");
   addOption ('F', "imageprocess", 1,
 	     "image processing script (default to NULL - no image processing will be done");
+  addOption ('P', "photometer_file", 1,
+	     "save photometer results to given file");
+  addOption ('M', "photometer_time", 1,
+	     "photometer integration time (in seconds); default to 1 second");
+  addOption ('C', "change_filter", 1,
+	     "change filter on photometer after taking n counts; default to 0 (don't change)");
 }
 
 Rts2GenFocClient::~Rts2GenFocClient (void)
@@ -270,6 +280,15 @@ Rts2GenFocClient::processOption (int in_opt)
       break;
     case 'F':
       focExe = optarg;
+      break;
+    case 'P':
+      photometerFile = optarg;
+      break;
+    case 'M':
+      photometerTime = atof (optarg);
+      break;
+    case 'C':
+      photometerFilterChange = atoi (optarg);
       break;
     default:
       return Rts2Client::processOption (in_opt);
@@ -323,7 +342,8 @@ Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_FOCUS:
       return new Rts2DevClientFocusFoc (conn);
     case DEVICE_TYPE_PHOT:
-      return new Rts2DevClientPhotFoc (conn);
+      return new Rts2DevClientPhotFoc (conn, photometerFile, photometerTime,
+				       photometerFilterChange);
     case DEVICE_TYPE_DOME:
       return new Rts2DevClientDomeImage (conn);
     case DEVICE_TYPE_MIRROR:

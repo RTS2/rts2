@@ -39,6 +39,10 @@ private:
   double tarRa;
   double tarDec;
 
+  char *photometerFile;
+  double photometerTime;
+  int photometerFilterChange;
+
 protected:
   int autoSave;
 
