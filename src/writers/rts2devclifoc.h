@@ -4,6 +4,8 @@
 #include "rts2devcliimg.h"
 #include "../utils/rts2connfork.h"
 
+#include <fstream>
+
 #define EVENT_START_FOCUSING	RTS2_LOCAL_EVENT + 500
 #define EVENT_FOCUSING_END	RTS2_LOCAL_EVENT + 501
 #define EVENT_CHANGE_FOCUS	RTS2_LOCAL_EVENT + 502
@@ -79,10 +81,19 @@ public:
 
 class Rts2DevClientPhotFoc:public Rts2DevClientPhot
 {
+private:
+  std::ofstream os;
+  char *photometerFile;
+  double photometerTime;
+  int photometerFilterChange;
+  int countCount;
 protected:
-  virtual void addCount (int count, float exp, int is_ov);
+    virtual void addCount (int count, float exp, int is_ov);
 public:
-    Rts2DevClientPhotFoc (Rts2Conn * in_conn);
+    Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile,
+			  double in_photometerTime,
+			  int in_photometerFilterChange);
+    virtual ~ Rts2DevClientPhotFoc (void);
 };
 
 #endif /* !CLIFOC__ */

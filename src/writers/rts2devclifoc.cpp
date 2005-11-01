@@ -3,6 +3,7 @@
 #endif
 
 #include "rts2devclifoc.h"
+#include "../utils/timestamp.h"
 
 #include <iostream>
 
@@ -235,9 +236,29 @@ Rts2ConnFocus::processLine ()
   return -1;
 }
 
-Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn):Rts2DevClientPhot
+Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile, double in_photometerTime, int in_photometerFilterChange):Rts2DevClientPhot
   (in_conn)
 {
+  photometerFile = in_photometerFile;
+  photometerTime = in_photometerTime;
+  photometerFilterChange = in_photometerFilterChange;
+  countCount = 0;
+  if (photometerFile)
+    {
+      os.open (photometerFile, std::ofstream::out | std::ofstream::app);
+      if (!os.is_open ())
+	{
+	  std::
+	    cout << "Cannot write to " << photometerFile << ", exiting." <<
+	    std::endl;
+	  exit (1);
+	}
+    }
+}
+
+Rts2DevClientPhotFoc::~Rts2DevClientPhotFoc (void)
+{
+  os.close ();
 }
 
 void
@@ -246,5 +267,32 @@ Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
   std::cout << "Count on " << connection->
     getName () << ": filter: " << getValueInteger ("filter") << " count " <<
     count << " exp: " << exp << " is_ov: " << is_ov << std::endl;
-
+  countCount++;
+  if (photometerFile)
+    {
+      os << Timestamp (time (NULL))
+	<< " " << connection->getName ()
+	<< " " << getValueInteger ("filter")
+	<< " " << count << " " << exp << " " << is_ov << std::endl;
+      os.flush ();
+    }
+  if (photometerFilterChange > 0 && countCount >= photometerFilterChange)
+    {
+      connection->
+	queCommand (new
+		    Rts2CommandIntegrate (this,
+					  (getValueInteger ("filter") +
+					   1) % 10, photometerTime,
+					  photometerFilterChange));
+      countCount = 0;
+    }
+  else if (exp != photometerTime)
+    {
+      connection->
+	queCommand (new
+		    Rts2CommandIntegrate (this,
+					  (getValueInteger ("filter") +
+					   1) % 10, photometerTime,
+					  photometerFilterChange));
+    }
 }
