@@ -291,6 +291,10 @@ Target::endObservation (int in_next_id)
 
     sendTargetMail (SEND_END_OBS, "END OF OBSERVATION");
 
+    // check if that was the last observation..
+    Rts2Obs observation = Rts2Obs (getObsId ());
+    observation.checkUnprocessedImages ();
+
     obs_id = -1;
   }
   observationStart = -1;

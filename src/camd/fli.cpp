@@ -75,7 +75,11 @@ CameraFliChip::init ()
   ret = FLIGetVisibleArea (dev, &x, &y, &w, &h);
   if (ret)
     return -1;
-  setSize ((int) (w - x), (int) (h - y), (int) x, (int) y);
+  // put true width & height
+  w -= x;
+  h -= y;
+  chipSize = new ChipSubset ((int) x, (int) y, (int) w, (int) h);
+  chipReadout = new ChipSubset (0, 0, (int) w, (int) h);
 
   ret = FLIGetPixelSize (dev, &pixelX, &pixelY);
   if (ret)
@@ -102,11 +106,13 @@ CameraFliChip::startExposure (int light, float exptime)
 {
   LIBFLIAPI ret;
 
-  ret = FLISetImageArea (dev, chipReadout->x, chipReadout->y,
-			 chipReadout->x +
-			 chipReadout->width / binningHorizontal,
-			 chipReadout->y +
-			 chipReadout->height / binningVertical);
+  ret =
+    FLISetImageArea (dev, chipSize->x + chipReadout->x,
+		     chipSize->y + chipReadout->y,
+		     chipSize->x + chipReadout->x +
+		     chipReadout->width / binningHorizontal,
+		     chipSize->y + chipReadout->y +
+		     chipReadout->height / binningVertical);
   if (ret)
     return -1;
 

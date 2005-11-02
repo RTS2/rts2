@@ -86,7 +86,7 @@ Rts2Obs::load ()
   SELECT
     tar_name,
     observations.tar_id,
-    tar_type,
+    type_id,
     obs_ra,
     obs_dec,
     obs_alt,
@@ -159,19 +159,19 @@ Rts2Obs::printImages (std::ostream &_os)
   std::vector <Rts2ImageDb *>::iterator img_iter;
   if (imgset.empty ())
   {
-    _os << "   " << "--- no images ---" << std::endl;
+    _os << "      " << "--- no images ---" << std::endl;
     return;
   }
   for (img_iter = imgset.begin (); img_iter != imgset.end (); img_iter++)
   {
-    _os << "   " << *(*img_iter);
+    _os << "      " << *(*img_iter);
   }
 }
 
 void
 Rts2Obs::printImagesSummary (std::ostream &_os)
 {
-  _os << "    " << imgset << std::endl;
+  _os << "      " << imgset << std::endl;
 }
 
 int
@@ -230,19 +230,19 @@ Rts2Obs::printCounts (std::ostream &_os)
   std::vector <Rts2Count>::iterator count_iter;
   if (counts.empty ())
   {
-    _os << "    " << "--- no counts ---" << std::endl;
+    _os << "      " << "--- no counts ---" << std::endl;
     return;
   }
   for (count_iter = counts.begin (); count_iter != counts.end (); count_iter++)
   {
-    _os << "    " << (*count_iter);
+    _os << "      " << (*count_iter);
   }
 }
 
 void
 Rts2Obs::printCountsSummary (std::ostream &_os)
 {
-  _os << "    Number of counts:" << counts.size () << std::endl;
+  _os << "       Number of counts:" << counts.size () << std::endl;
 }
 
 int
@@ -298,6 +298,7 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os.precision (2);
   _os << std::setw (8) << obs.obs_id << " | "
+    << obs.tar_id << " | "
     << LibnovaRa (obs.obs_ra) << " | "
     << LibnovaDeg90 (obs.obs_dec) << " | "
     << LibnovaDeg90 (obs.obs_alt) << " | "

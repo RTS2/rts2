@@ -240,6 +240,9 @@ isinwcs2 (PG_FUNCTION_ARGS)
   phi = M_PI + atan2 (-cos (dec) * sin (ra - crra), sin (dec) * cos (crdec) - cos (dec) * sin (crdec) * cos (ra - crra));	// (5), p. 1080
   theta = asin (sin (dec) * sin (crdec) + cos (dec) * cos (crdec) * cos (ra - crra));	// (6), p. 1080
 
+  if (theta < 0)
+    PG_RETURN_BOOL (false);
+
   r_theta = cos (theta) / sin (theta);
 
   px = r_theta * sin (phi);
