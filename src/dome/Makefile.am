@@ -6,7 +6,7 @@ noinst_HEADERS = dome.h udpweather.h copula.h
 
 LDADD = ../utils/librts2block.a @LIB_NOVA@
 
-rts2_dome_bart_SOURCES = dome.cpp bart.cpp
+rts2_dome_bart_SOURCES = dome.cpp bart.cpp udpweather.cpp
 
 rts2_dome_fram_SOURCES = dome.cpp fram.cpp udpweather.cpp
 

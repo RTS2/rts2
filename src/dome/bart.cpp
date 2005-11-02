@@ -16,8 +16,8 @@
 #include <math.h>
 #include <time.h>
 
-#include "status.h"
 #include "dome.h"
+#include "udpweather.h"
 
 #define BAUDRATE B9600
 #define CTENI_PORTU 0
@@ -93,7 +93,7 @@ enum stavy
 enum stavy zasuvky_stavy[3][NUM_ZAS] =
 {
   // off
-  {ZAS_VYP, ZAS_VYP, ZAS_VYP, ZAS_ZAP, ZAS_VYP},
+  {ZAS_ZAP, ZAS_VYP, ZAS_VYP, ZAS_ZAP, ZAS_VYP},
   // standby
   {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP},
   // observnig
@@ -108,6 +108,8 @@ private:
 
   unsigned char spinac[2];
   unsigned char stav_portu[3];
+
+  Rts2ConnFramWeather *weatherConn;
 
   int zjisti_stav_portu ();
   void zapni_pin (unsigned char c_port, unsigned char pin);
@@ -128,6 +130,8 @@ public:
   virtual ~ Rts2DevDomeBart (void);
 
   virtual int init ();
+
+  virtual int idle ();
 
   virtual int ready ();
   virtual int baseInfo ();
@@ -154,6 +158,8 @@ Rts2DevDome (in_argc, in_argv)
   dome_file = "/dev/ttyS0";
 
   domeModel = "BART_FORD_2";
+
+  weatherConn = NULL;
 }
 
 Rts2DevDomeBart::~Rts2DevDomeBart (void)
@@ -227,6 +233,8 @@ Rts2DevDomeBart::openDome ()
 {
   if (!isOn (KONCAK_OTEVRENI_JIH))
     return endOpen ();
+  if (!weatherConn->isGoodWeather ())
+    return -1;
   VYP (MOTOR);
   sleep (1);
   VYP (SMER);
@@ -311,6 +319,7 @@ int
 Rts2DevDomeBart::init ()
 {
   struct termios oldtio, newtio;
+  int i;
 
   int ret = Rts2DevDome::init ();
   if (ret)
@@ -345,7 +354,52 @@ Rts2DevDomeBart::init ()
       return -1;
     }
 
+  for (i = 0; i < MAX_CONN; i++)
+    {
+      if (!connections[i])
+	{
+	  weatherConn = new Rts2ConnFramWeather (1500, this);
+	  weatherConn->init ();
+	  connections[i] = weatherConn;
+	  break;
+	}
+    }
+  if (i == MAX_CONN)
+    {
+      syslog (LOG_ERR, "no free conn for Rts2ConnFramWeather");
+      return -1;
+    }
+
   return 0;
+}
+
+int
+Rts2DevDomeBart::idle ()
+{
+  // check for weather..
+  if (weatherConn->isGoodWeather ())
+    {
+      if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
+	{
+	  // after centrald reply, that he switched the state, dome will
+	  // open
+	  sendMaster ("on");
+	}
+    }
+  else
+    {
+      int ret;
+      // close dome - don't thrust centrald to be running and closing
+      // it for us
+      ret = closeDome ();
+      if (ret == -1)
+	{
+	  setTimeout (10 * USEC_SEC);
+	}
+      setMasterStandby ();
+    }
+  return Rts2DevDome::idle ();
 }
 
 int
@@ -385,6 +439,9 @@ Rts2DevDomeBart::info ()
   sw_state |= (getPortState (KONCAK_OTEVRENI_SEVER) << 1);
   sw_state |= (getPortState (KONCAK_ZAVRENI_JIH) << 2);
   sw_state |= (getPortState (KONCAK_ZAVRENI_SEVER) << 3);
+  rain = weatherConn->getRain ();
+  windspeed = weatherConn->getWindspeed ();
+  nextOpen = weatherConn->getNextOpen ();
   return 0;
 }
 
