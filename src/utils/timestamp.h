@@ -6,6 +6,7 @@
 #include <ostream>
 #include <libnova/libnova.h>
 #include <sys/time.h>
+#include <time.h>
 
 /**
  * Provides support timestamps obtained from DB.
@@ -15,7 +16,6 @@
  * 
  * @author petr
  */
-
 class Timestamp
 {
 private:
@@ -23,7 +23,9 @@ private:
 public:
     Timestamp ()
   {
-    ts = 0;
+    struct timeval tv;
+      gettimeofday (&tv, NULL);
+      ts = tv.tv_sec + tv.tv_usec / USEC_SEC;
   }
   Timestamp (double _ts)
   {
@@ -49,6 +51,14 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts);
 class TimeJD:public Timestamp
 {
 public:
+  /**
+   * Construct Timestamp from JD.
+   *
+   * We cannot put it to Timestamp, as we already have in Timestamp
+   * constructor which takes one double.
+   *
+   * @param JD Julian Day as double variable
+   */
   TimeJD (double JD):Timestamp ()
   {
     time_t _ts;
@@ -56,5 +66,25 @@ public:
       setTs (_ts);
   }
 };
+
+class TimeDiff
+{
+private:
+  double time_1, time_2;
+public:
+  /**
+   * Construct time diff from two doubles.
+   *
+   */
+    TimeDiff (double in_time_1, double in_time_2)
+  {
+    time_1 = in_time_1;
+    time_2 = in_time_2;
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, TimeDiff _td);
+};
+
+std::ostream & operator << (std::ostream & _os, TimeDiff _td);
 
 #endif /* !__TIMESTAMP_CPP__ */

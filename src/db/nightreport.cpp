@@ -46,8 +46,7 @@ Rts2AppDb (in_argc, in_argv)
 
 Rts2Night::~Rts2Night (void)
 {
-  if (tm_night)
-    delete tm_night;
+  delete tm_night;
 }
 
 int
@@ -106,8 +105,8 @@ Rts2Night::init ()
       // let's calculate time from..t_from will contains start of night
       // local 12:00 will be at ~ give time..
       tm_night->tm_hour =
-	(int) ln_range_degrees (Rts2Config::instance ()->getObserver ()->lng /
-				15);
+	(int) ln_range_degrees (Rts2Config::instance ()->getObserver ()->lng +
+				180.0) / 15;
       if (tm_night->tm_hour > 12)
 	tm_night->tm_hour = 24 - tm_night->tm_hour;
       tm_night->tm_min = tm_night->tm_sec = 0;

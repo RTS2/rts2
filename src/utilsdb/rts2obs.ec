@@ -77,10 +77,10 @@ Rts2Obs::load ()
   obs_dec = nan ("f");
   obs_alt = nan ("f");
   obs_az = nan ("f");
-  obs_slew = 0;
-  obs_start = 0;
+  obs_slew = nan ("f");
+  obs_start = nan ("f");
   obs_state = 0;
-  obs_end = 0;
+  obs_end = nan ("f");
 
   EXEC SQL
   SELECT
@@ -298,16 +298,25 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os.precision (2);
   _os << std::setw (8) << obs.obs_id << " | "
-    << obs.tar_id << " | "
+    << std::setw(6) << obs.tar_id << " | "
     << LibnovaRa (obs.obs_ra) << " | "
     << LibnovaDeg90 (obs.obs_dec) << " | "
     << LibnovaDeg90 (obs.obs_alt) << " | "
     << LibnovaDeg (obs.obs_az) << " | "
     << Timestamp (obs.obs_slew) << " | "
-    << std::setfill (' ') 
-    << std::setw (10) << (obs.obs_start - obs.obs_slew) << " | "
-    << std::setw (10) << (obs.obs_end - obs.obs_start) << " | "
-    << Rts2ObsState (obs.obs_state);
+    << std::setfill (' ');
+
+  if (obs.obs_start > 0)
+    _os << std::setw (10) << TimeDiff (obs.obs_slew, obs.obs_start) << " | ";
+  else
+    _os << std::setw (10) << "not" << " | ";
+
+  if (obs.obs_end > 0)
+    _os << std::setw (10) << TimeDiff (obs.obs_start, obs.obs_end) << " | ";
+  else
+    _os << std::setw (10) << "not" << " | ";
+
+  _os << Rts2ObsState (obs.obs_state);
   if (obs.displayImages)
   {
     obs.loadImages ();

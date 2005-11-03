@@ -6,10 +6,12 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include <sstream>
+
 std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 {
   // convert timestamp to timeval
-  static struct timeval tv;
+  struct timeval tv;
   struct tm *gmt;
   tv.tv_sec = (long) _ts.ts;
   tv.tv_usec = (long) ((_ts.ts - floor (_ts.ts)) * USEC_SEC);
@@ -32,5 +34,49 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
   _os.precision (old_precision);
   _os.fill (old_fill);
 
+  return _os;
+}
+
+std::ostream & operator << (std::ostream & _os, TimeDiff _td)
+{
+  if (isnan (_td.time_1) || isnan (_td.time_2))
+    {
+      _os << "na (nan)";
+    }
+  else
+    {
+      std::ostringstream _oss;
+      int diff = (int) (_td.time_2 - _td.time_1);
+      if (diff < 0)
+	{
+	  _oss << "-";
+	  diff *= -1;
+	}
+      long usec_diff =
+	(long) ((fabs (_td.time_2 - _td.time_1) - diff) * USEC_SEC);
+      bool print_all = false;
+      if (diff / 86400 > 1)
+	{
+	  _oss << (diff / 86400) << " day";
+	  diff %= 86400;
+	  print_all = true;
+	}
+      _oss.fill ('0');
+      if (diff / 3600 > 1 || print_all)
+	{
+	  _oss << (diff / 3600) << ":";
+	  diff %= 3600;
+	  print_all = true;
+	}
+      if (diff / 60 > 1 || print_all)
+	{
+	  _oss << (diff / 60) << ":";
+	  diff %= 60;
+	}
+      _oss.precision (2);
+      _oss << diff << "." << std::setw (2) << (int) (usec_diff /
+						     (USEC_SEC / 100));
+      _os << _oss.str ();
+    }
   return _os;
 }
