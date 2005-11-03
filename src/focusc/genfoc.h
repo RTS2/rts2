@@ -40,8 +40,10 @@ private:
   double tarDec;
 
   char *photometerFile;
-  double photometerTime;
+  float photometerTime;
   int photometerFilterChange;
+
+    std::vector < int >skipFilters;
 
 protected:
   int autoSave;
