@@ -6,6 +6,7 @@
 #include "../utils/timestamp.h"
 
 #include <iostream>
+#include <algorithm>
 
 Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection,
 						const char *in_exe):
@@ -236,7 +237,7 @@ Rts2ConnFocus::processLine ()
   return -1;
 }
 
-Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile, double in_photometerTime, int in_photometerFilterChange):Rts2DevClientPhot
+Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile, float in_photometerTime, int in_photometerFilterChange, std::vector < int >in_skipFilters):Rts2DevClientPhot
   (in_conn)
 {
   photometerFile = in_photometerFile;
@@ -254,6 +255,8 @@ Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photome
 	  exit (1);
 	}
     }
+  skipFilters = in_skipFilters;
+  newFilter = 0;
 }
 
 Rts2DevClientPhotFoc::~Rts2DevClientPhotFoc (void)
@@ -264,10 +267,12 @@ Rts2DevClientPhotFoc::~Rts2DevClientPhotFoc (void)
 void
 Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
 {
+  int currFilter = getValueInteger ("filter");
   std::cout << "Count on " << connection->
-    getName () << ": filter: " << getValueInteger ("filter") << " count " <<
+    getName () << ": filter: " << currFilter << " count " <<
     count << " exp: " << exp << " is_ov: " << is_ov << std::endl;
-  countCount++;
+  if (newFilter == currFilter)
+    countCount++;
   if (photometerFile)
     {
       os << Timestamp (time (NULL))
@@ -278,21 +283,25 @@ Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
     }
   if (photometerFilterChange > 0 && countCount >= photometerFilterChange)
     {
+      // try to find filter in skipped one..
+      do
+	{
+	  newFilter = (newFilter + 1) % 10;
+	}
+      while (std::
+	     find (skipFilters.begin (), skipFilters.end (),
+		   newFilter) != skipFilters.end ());
       connection->
 	queCommand (new
-		    Rts2CommandIntegrate (this,
-					  (getValueInteger ("filter") +
-					   1) % 10, photometerTime,
+		    Rts2CommandIntegrate (this, newFilter, photometerTime,
 					  photometerFilterChange));
       countCount = 0;
     }
-  else if (exp != photometerTime)
+  else if (exp != photometerTime || newFilter != currFilter)
     {
       connection->
 	queCommand (new
-		    Rts2CommandIntegrate (this,
-					  (getValueInteger ("filter") +
-					   1) % 10, photometerTime,
+		    Rts2CommandIntegrate (this, newFilter, photometerTime,
 					  photometerFilterChange));
     }
 }
