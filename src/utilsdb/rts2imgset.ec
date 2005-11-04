@@ -35,6 +35,7 @@ Rts2ImgSet::load ()
   double d_img_err_dec;
   double d_img_err;
 
+  int d_img_temperature_ind;
   int d_img_err_ra_ind;
   int d_img_err_dec_ind;
   int d_img_err_ind;
@@ -96,7 +97,7 @@ Rts2ImgSet::load ()
       :d_img_date,
       :d_img_usec,
       :d_img_exposure,
-      :d_img_temperature,
+      :d_img_temperature :d_img_temperature_ind,
       :d_img_filter,
       :d_img_alt,
       :d_img_az,
@@ -109,6 +110,8 @@ Rts2ImgSet::load ()
       :d_img_err :d_img_err_ind;
     if (sqlca.sqlcode)
       break;
+    if (d_img_temperature_ind < 0)
+      d_img_temperature = nan ("f");
     if (! (d_process_bitfield & ASTROMETRY_OK))
     {
       d_img_err_ra = nan ("f");
@@ -131,7 +134,7 @@ Rts2ImgSet::load ()
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    std::cerr << "Rts2Obs::loadImages error in DB: " << sqlca.sqlerrm.sqlerrmc << std::endl;
+    std::cerr << "Rts2ImgSet::loadImages error in DB: " << sqlca.sqlerrm.sqlerrmc << std::endl;
     EXEC SQL CLOSE cur_images;
     EXEC SQL ROLLBACK;
     return -1;
