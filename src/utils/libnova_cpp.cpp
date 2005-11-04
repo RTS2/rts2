@@ -14,9 +14,12 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
   ln_deg_to_hms (l_ra.ra, &ra_hms);
   char old_fill = _os.fill ('0');
   int old_precison = _os.precision (2);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << std::setw (2) << ra_hms.hours << ":"
     << std::setw (2) << ra_hms.minutes << ":"
     << std::setw (5) << ra_hms.seconds;
+  _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
   return _os;
@@ -33,10 +36,13 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
   ln_deg_to_dms (l_deg.deg, &deg_dms);
   char old_fill = _os.fill ('0');
   int old_precison = _os.precision (2);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << (deg_dms.neg ? '-' : '+')
     << std::setw (3) << deg_dms.degrees << "o"
     << std::setw (2) << deg_dms.minutes << "'"
     << std::setw (5) << deg_dms.seconds;
+  _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
   return _os;
@@ -53,10 +59,13 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
   ln_deg_to_dms (l_deg.deg, &deg_dms);
   char old_fill = _os.fill ('0');
   int old_precison = _os.precision (2);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << (deg_dms.neg ? '-' : '+')
     << std::setw (2) << deg_dms.degrees << "o"
     << std::setw (2) << deg_dms.minutes << "'"
     << std::setw (5) << deg_dms.seconds;
+  _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
   return _os;

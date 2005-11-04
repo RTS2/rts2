@@ -62,7 +62,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
       bool print_all = false;
       if (diff / 86400 > 1)
 	{
-	  _oss << (diff / 86400) << " day";
+	  _oss << (diff / 86400) << " days ";
 	  diff %= 86400;
 	  print_all = true;
 	}
