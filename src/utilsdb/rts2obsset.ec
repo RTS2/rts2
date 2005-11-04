@@ -116,7 +116,7 @@ Rts2ObsSet::Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * en
      << " AND observations.obs_slew >= abstime ("
      << *start_t
      << ") AND ((observations.obs_slew <= abstime ("
-     << *start_t
+     << *end_t
      << ") AND (observations.obs_end is NULL OR observations.obs_end < abstime ("
      << *end_t
      << "))";
@@ -129,7 +129,7 @@ Rts2ObsSet::Rts2ObsSet (const time_t * start_t, const time_t * end_t)
   os << "observations.obs_slew >= abstime ("
      << *start_t
      << ") AND ((observations.obs_slew <= abstime ("
-     << *start_t
+     << *end_t
      << ") AND observations.obs_end is NULL) OR observations.obs_end < abstime ("
      << *end_t
      << "))";
