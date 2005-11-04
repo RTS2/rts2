@@ -115,12 +115,12 @@ Rts2ImgSet::load ()
       break;
     if (d_img_temperature_ind < 0)
       d_img_temperature = nan ("f");
-    if (! (d_process_bitfield & ASTROMETRY_OK))
-    {
+    if (d_img_err_ra_ind < 0)
       d_img_err_ra = nan ("f");
+    if (d_img_err_dec_ind < 0)
       d_img_err_dec = nan ("f");
+    if (d_img_err_ind < 0)
       d_img_err = nan ("f");
-    }
 
     img_alt += d_img_alt;
     img_az  += d_img_az;
