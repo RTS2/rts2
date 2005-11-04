@@ -13,6 +13,11 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
   // convert timestamp to timeval
   struct timeval tv;
   struct tm *gmt;
+  if (isnan (_ts.ts))
+    {
+      _os << std::setw (22) << "nan";
+      return _os;
+    }
   tv.tv_sec = (long) _ts.ts;
   tv.tv_usec = (long) ((_ts.ts - floor (_ts.ts)) * USEC_SEC);
   gmt = gmtime (&tv.tv_sec);
