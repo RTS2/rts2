@@ -98,7 +98,13 @@ protected:
   int reachedSendTimeout ();
   void successfullRead ();
 
-  virtual int connectionError ();
+  /**
+   * Function called on connection error.
+   *
+   * @param last_data_size  < 0 when real error occurs, =0 when no more data on connection, >0 when there 
+   * 	were sucessfully received data, but they were either not allowed or signaled end of connection
+   */
+  virtual int connectionError (int last_data_size);
 
 public:
     Rts2Conn (Rts2Block * in_master);
@@ -125,7 +131,7 @@ public:
 
   virtual void endConnection ()
   {
-    connectionError ();		// maybe in future we will need to change that
+    connectionError (-1);
   }
 
   virtual int authorizationOK ();

@@ -10,7 +10,7 @@ private:
 
 protected:
   char *exePath;
-  virtual int connectionError ();
+  virtual int connectionError (int last_data_size);
 public:
     Rts2ConnFork (Rts2Block * in_master, const char *in_exe);
     virtual ~ Rts2ConnFork (void);

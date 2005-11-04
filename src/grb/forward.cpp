@@ -56,7 +56,7 @@ public:
 
   virtual int add (fd_set * set);
 
-  virtual int connectionError ();
+  virtual int connectionError (int last_data_size);
   virtual int receive (fd_set * set);
 
   int lastPacket ();
@@ -130,13 +130,13 @@ Rts2ConnFwGrb::idle ()
       if (ret)
 	{
 	  syslog (LOG_ERR, "Rts2ConnFwGrb::idle getsockopt %m");
-	  connectionError ();
+	  connectionError (-1);
 	}
       else if (err)
 	{
 	  syslog (LOG_ERR, "Rts2ConnFwGrb::idle getsockopt %s",
 		  strerror (err));
-	  connectionError ();
+	  connectionError (-1);
 	}
       else
 	{
@@ -156,7 +156,7 @@ Rts2ConnFwGrb::idle ()
       break;
     case CONN_CONNECTED:
       if (last_packet.tv_sec + getConnTimeout () < now && nextTime < now)
-	connectionError ();
+	connectionError (-1);
       break;
     default:
       break;
@@ -221,7 +221,7 @@ Rts2ConnFwGrb::init_listen ()
       gcn_listen_sock = -1;
     }
 
-  connectionError ();
+  connectionError (-1);
 
   gcn_listen_sock = socket (PF_INET, SOCK_STREAM, 0);
   if (gcn_listen_sock == -1)
@@ -275,7 +275,7 @@ Rts2ConnFwGrb::add (fd_set * set)
 }
 
 int
-Rts2ConnFwGrb::connectionError ()
+Rts2ConnFwGrb::connectionError (int last_data_size)
 {
   syslog (LOG_DEBUG, "Rts2ConnFwGrb::connectionError");
   if (sock > 0)
@@ -311,7 +311,7 @@ Rts2ConnFwGrb::receive (fd_set * set)
 	  // bad accept - strange
 	  syslog (LOG_ERR,
 		  "Rts2ConnFwGrb::receive accept on gcn_listen_sock: %m");
-	  connectionError ();
+	  connectionError (-1);
 	}
       // close listening socket..when we get connection
       close (gcn_listen_sock);
@@ -333,7 +333,7 @@ Rts2ConnFwGrb::receive (fd_set * set)
 	}
       else if (ret <= 0)
 	{
-	  connectionError ();
+	  connectionError (ret);
 	  return -1;
 	}
       successfullRead ();
@@ -368,7 +368,7 @@ Rts2ConnFwGrb::receive (fd_set * set)
 	  pr_imalive ();
 	  break;
 	case TYPE_KILL_SOCKET:
-	  connectionError ();
+	  connectionError (-1);
 	  break;
 	default:
 	  syslog (LOG_ERR, "Rts2ConnFwGrb::receive unknow packet type: %ld",

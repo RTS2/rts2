@@ -129,7 +129,7 @@ Rts2Conn::idle ()
 	{
 	  syslog (LOG_DEBUG, "Connection timeout: %li %li %li '%s' type: %i",
 		  lastGoodSend, lastData, now, getName (), type);
-	  connectionError ();
+	  connectionError (-1);
 	}
     }
   return 0;
@@ -300,7 +300,7 @@ Rts2Conn::receive (fd_set * set)
 	}
       data_size = read (sock, buf_top, MAX_DATA - (buf_top - buf));
       if (data_size <= 0)
-	return connectionError ();
+	return connectionError (data_size);
       buf_top[data_size] = '\0';
       successfullRead ();
 #ifdef DEBUG_ALL
@@ -624,7 +624,7 @@ Rts2Conn::send (char *msg)
       syslog (LOG_ERR,
 	      "Rts2Conn::send [%i:%i] error %i state: %i sending '%s':%m",
 	      getCentraldId (), conn_state, sock, ret, msg);
-      connectionError ();
+      connectionError (ret);
       return -1;
     }
 #ifdef DEBUG_ALL
@@ -663,7 +663,7 @@ Rts2Conn::successfullRead ()
 }
 
 int
-Rts2Conn::connectionError ()
+Rts2Conn::connectionError (int last_data_size)
 {
   setConnState (CONN_DELETE);
   if (sock >= 0)
@@ -797,7 +797,7 @@ Rts2Conn::setConnState (conn_state_t new_conn_state)
   conn_state = new_conn_state;
   if (new_conn_state == CONN_AUTH_FAILED)
     {
-      connectionError ();
+      connectionError (-1);
     }
 }
 

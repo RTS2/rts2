@@ -81,13 +81,13 @@ Rts2ConnClient::idle ()
       if (ret)
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %m");
-	  connectionError ();
+	  connectionError (-1);
 	}
       else if (err)
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %s",
 		  strerror (err));
-	  connectionError ();
+	  connectionError (-1);
 	}
       else
 	{

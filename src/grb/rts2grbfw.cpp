@@ -90,7 +90,7 @@ Rts2GrbForwardClientConn::forwardPacket (long *nbuf)
       syslog (LOG_ERR,
 	      "Rts2GrbForwardClientConn::forwardPacket cannot forward %m (%i, %i)",
 	      errno, ret);
-      connectionError ();
+      connectionError (-1);
     }
 }
 
@@ -121,7 +121,7 @@ Rts2GrbForwardClientConn::receive (fd_set * set)
 	{
 	  syslog (LOG_ERR, "Rts2GrbForwardClientConn::receive %m (%i, %i)",
 		  errno, ret);
-	  connectionError ();
+	  connectionError (ret);
 	  return -1;
 	}
       // get some data back..

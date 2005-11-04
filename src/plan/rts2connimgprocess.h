@@ -35,7 +35,7 @@ private:
   void sendProcEndMail (Rts2ImageDb * image);
 
 protected:
-    virtual int connectionError ();
+    virtual int connectionError (int last_data_size);
 
 public:
     Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * in_conn,

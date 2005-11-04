@@ -165,13 +165,13 @@ Rts2DevConn::idle ()
       if (ret)
 	{
 	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %m");
-	  connectionError ();
+	  connectionError (-1);
 	}
       else if (err)
 	{
 	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %s",
 		  strerror (err));
-	  connectionError ();
+	  connectionError (-1);
 	}
       else
 	{
@@ -330,7 +330,7 @@ Rts2DevConnMaster::registerDevice ()
 }
 
 int
-Rts2DevConnMaster::connectionError ()
+Rts2DevConnMaster::connectionError (int last_data_size)
 {
   if (sock > 0)
     {

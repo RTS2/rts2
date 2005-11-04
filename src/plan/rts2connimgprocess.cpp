@@ -76,16 +76,18 @@ Rts2ConnImgProcess::processLine ()
 }
 
 int
-Rts2ConnImgProcess::connectionError ()
+Rts2ConnImgProcess::connectionError (int last_data_size)
 {
   int ret;
   const char *telescopeName;
   int corr_mark;
   Rts2ImageDb *image;
 
-  syslog (LOG_DEBUG, "Rts2ConnImgProcess::connectionError %m");
-  if (errno == EAGAIN)
-    return 1;
+  if (last_data_size < 0 && errno == EAGAIN)
+    {
+      syslog (LOG_DEBUG, "Rts2ConnImgProcess::connectionError %m");
+      return 1;
+    }
 
   image = new Rts2ImageDb (imgPath);
   switch (astrometryStat)
@@ -132,7 +134,7 @@ Rts2ConnImgProcess::connectionError ()
   else
     master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
   delete image;
-  return Rts2ConnFork::connectionError ();
+  return Rts2ConnFork::connectionError (last_data_size);
 }
 
 void

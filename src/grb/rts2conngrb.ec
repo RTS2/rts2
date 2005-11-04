@@ -717,13 +717,13 @@ Rts2ConnGrb::idle ()
       if (ret)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %m");
-	  connectionError ();
+	  connectionError (-1);
         }
       else if (err)
         {
           syslog (LOG_ERR, "Rts2ConnGrb::idle getsockopt %s",
                   strerror (err));
-	  connectionError ();
+	  connectionError (-1);
         }
       else 
         {
@@ -744,7 +744,7 @@ Rts2ConnGrb::idle ()
     case CONN_CONNECTED:
       if (last_packet.tv_sec + getConnTimeout () < now
         && nextTime < now)
-        connectionError ();
+        connectionError (-1);
       break;
     default:
       break;
@@ -809,7 +809,7 @@ Rts2ConnGrb::init_listen ()
     gcn_listen_sock = -1;
   }
 
-  connectionError ();
+  connectionError (-1);
 
   gcn_listen_sock = socket (PF_INET, SOCK_STREAM, 0);
   if (gcn_listen_sock == -1)
@@ -862,7 +862,7 @@ Rts2ConnGrb::add (fd_set * set)
 }
 
 int
-Rts2ConnGrb::connectionError ()
+Rts2ConnGrb::connectionError (int last_data_size)
 {
   syslog (LOG_DEBUG, "Rts2ConnGrb::connectionError");
   if (sock > 0)
@@ -896,7 +896,7 @@ Rts2ConnGrb::receive (fd_set *set)
     {
       // bad accept - strange
       syslog (LOG_ERR, "Rts2ConnGrb::receive accept on gcn_listen_sock: %m");
-      connectionError ();
+      connectionError (-1);
     }
     // close listening socket..when we get connection
     close (gcn_listen_sock);
@@ -917,7 +917,7 @@ Rts2ConnGrb::receive (fd_set *set)
     }
     else if (ret <= 0)
     {
-      connectionError ();
+      connectionError (ret);
       return -1;
     }
     successfullRead ();
@@ -1003,7 +1003,7 @@ Rts2ConnGrb::receive (fd_set *set)
         pr_swift_without_radec ();
 	break;
       case TYPE_KILL_SOCKET:
-        connectionError ();
+        connectionError (-1);
         break;
       default:
         syslog (LOG_ERR, "Rts2ConnGrb::receive unknow packet type: %ld", lbuf[PKT_TYPE]);

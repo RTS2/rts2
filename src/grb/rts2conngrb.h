@@ -80,7 +80,7 @@ public:
 
   virtual int add (fd_set * set);
 
-  virtual int connectionError ();
+  virtual int connectionError (int last_data_size);
   virtual int receive (fd_set * set);
 
   int lastPacket ();

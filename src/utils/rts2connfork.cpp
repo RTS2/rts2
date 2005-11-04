@@ -26,15 +26,15 @@ Rts2ConnFork::~Rts2ConnFork (void)
 }
 
 int
-Rts2ConnFork::connectionError ()
+Rts2ConnFork::connectionError (int last_data_size)
 {
-  if (errno == EAGAIN)
+  if (last_data_size < 0 && errno == EAGAIN)
     {
       syslog (LOG_DEBUG,
 	      "Rts2ConnFork::connectionError reported EAGAIN - that should not happen, ignoring");
       return 1;
     }
-  return Rts2Conn::connectionError ();
+  return Rts2Conn::connectionError (last_data_size);
 }
 
 int

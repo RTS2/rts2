@@ -96,7 +96,7 @@ Rts2ClientTCPDataConn::receive (fd_set * set)
       data_size = read (sock, dataTop, totalSize - receivedSize);
       if (data_size <= 0)
 	{
-	  connectionError ();
+	  connectionError (data_size);
 	  return -1;
 	}
       successfullRead ();
@@ -124,7 +124,7 @@ Rts2ClientTCPDataConn::idle ()
       if (ret)
 	{
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %m");
-	  connectionError ();
+	  connectionError (-1);
 	}
       else if (err)
 	{
@@ -135,7 +135,7 @@ Rts2ClientTCPDataConn::idle ()
 	      if (!reachedSendTimeout ())
 		return 0;
 	    }
-	  connectionError ();
+	  connectionError (-1);
 	}
       else
 	{
@@ -144,7 +144,7 @@ Rts2ClientTCPDataConn::idle ()
     }
   if (reachedSendTimeout ())
     {
-      connectionError ();
+      connectionError (-1);
     }
   return 0;			// we don't want Rts2Conn to take care of our timeouts
 }
