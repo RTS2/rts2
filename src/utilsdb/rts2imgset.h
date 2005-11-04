@@ -32,6 +32,11 @@ private:
     img_err_ra;
   float
     img_err_dec;
+
+  int
+    count;
+  int
+    astro_count;
 public:
   Rts2ImgSet ();
   Rts2ImgSet (Rts2Obs * in_observation);

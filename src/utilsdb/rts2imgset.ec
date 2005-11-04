@@ -42,7 +42,6 @@ Rts2ImgSet::load ()
   EXEC SQL END DECLARE SECTION;
 
   int tar_id;
-  int count = 0;
 
   if (observation)
   {
@@ -62,6 +61,7 @@ Rts2ImgSet::load ()
   img_err_dec = 0;
 
   count = 0;
+  astro_count = 0;
 
   EXEC SQL DECLARE cur_images CURSOR FOR
   SELECT
@@ -121,9 +121,13 @@ Rts2ImgSet::load ()
 
     img_alt += d_img_alt;
     img_az  += d_img_az;
-    img_err += d_img_err;
-    img_err_ra  += d_img_err_ra;
-    img_err_dec += d_img_err_dec;
+    if (!isnan (d_img_err))
+    {
+      img_err += d_img_err;
+      img_err_ra  += d_img_err_ra;
+      img_err_dec += d_img_err_dec;
+      astro_count++;
+    }
     count++;
       
     push_back (new Rts2ImageDb (tar_id, d_obs_id, d_img_id, d_obs_subtype,
@@ -144,17 +148,31 @@ Rts2ImgSet::load ()
 
   img_alt /= count;
   img_az  /= count;
-  img_err /= count;
-  img_err_ra  /= count;
-  img_err_dec /= count;
+  if (astro_count > 0)
+  {
+    img_err /= astro_count;
+    img_err_ra  /= astro_count;
+    img_err_dec /= astro_count;
+  }
+  else
+  {
+    img_err = nan ("f");
+    img_err_ra = nan ("f");
+    img_err_dec = nan ("f");
+  }
 
   return 0;
 }
 
 std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)
 {
-  _os << "Number of images:" << img_set.size ()
-    << " avg. alt:" << img_set.img_alt
+  int old_precision = _os.precision(0);
+  _os << "images:" << img_set.size ()
+    << " with astrometry:" << img_set.astro_count
+    << "(" << (img_set.count / img_set.astro_count) << ")";
+  _os.precision(2);
+  _os << " avg. alt:" << img_set.img_alt
     << " avg. err:" << img_set.img_err;
+  _os.precision (old_precision);
   return _os;
 }
