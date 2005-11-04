@@ -960,9 +960,9 @@ operator << (std::ostream &_os, Target *target)
   // is above horizont?
   gst = ln_get_mean_sidereal_time (JD);
   lst = gst + Rts2Config::instance ()->getObserver()->lng / 15.0;
-  _os << "Checker is_good:" << target->isGood (lst, pos.ra,
-						     pos.
-						     dec) << " (JD: " << JD <<
-    " gst: " << gst << " lst: " << lst << ")" << std::endl;
+  _os << (target->isGood (lst, pos.ra, pos.dec)
+   ? "Target is above local horizont." 
+   : "Target is below local horizont, it's not possible to observe it.")
+   << std::endl;
   return _os;
 }
