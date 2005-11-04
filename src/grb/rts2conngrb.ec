@@ -141,6 +141,12 @@ Rts2ConnGrb::pr_integral ()
 
   grb_errorbox = (float) lbuf[BURST_ERROR]/60.0;
 
+  if (grb_errorbox < 0 && grb_type == TYPE_INTEGRAL_OFFLINE_SRC)
+  {
+    grb_is_grb = 0;
+    grb_errorbox *= -1;
+  }
+
   return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_errorbox);
 }
 
