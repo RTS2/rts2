@@ -738,6 +738,61 @@ Target::getUsersEmail (int in_event_mask)
   return std::string ("");
 }
 
+double
+Target::getFirstObs ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_tar_id = getTargetID ();
+  double ret;
+  EXEC SQL END DECLARE SECTION;
+  EXEC SQL
+  SELECT
+    MIN (EXTRACT (EPOCH FROM obs_start))
+  INTO
+    :ret
+  FROM
+    observations
+  WHERE
+    tar_id = :db_tar_id;
+  if (sqlca.sqlcode)
+  {
+    EXEC SQL ROLLBACK;
+    return nan("f");
+  }
+  EXEC SQL ROLLBACK;
+  return ret;
+}
+
+double
+Target::getLastObs ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_tar_id = getTargetID ();
+  double ret;
+  EXEC SQL END DECLARE SECTION;
+  EXEC SQL
+  SELECT
+    MAX (EXTRACT (EPOCH FROM obs_start))
+  INTO
+    :ret
+  FROM
+    observations
+  WHERE
+    tar_id = :db_tar_id;
+  if (sqlca.sqlcode)
+  {
+    EXEC SQL ROLLBACK;
+    return nan("f");
+  }
+  EXEC SQL ROLLBACK;
+  return ret;
+}
+
+void
+Target::printExtra (std::ostream &_os)
+{
+}
+
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -964,5 +1019,6 @@ operator << (std::ostream &_os, Target *target)
    ? "Target is above local horizont." 
    : "Target is below local horizont, it's not possible to observe it.")
    << std::endl;
+  target->printExtra (_os);
   return _os;
 }

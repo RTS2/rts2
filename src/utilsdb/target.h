@@ -408,6 +408,23 @@ public:
     return airmassScale;
   }
 
+  /**
+   * Returns time of first observation, or nan if no observation.
+   */
+  double getFirstObs ();
+
+  /**
+   * Returns time of last observation, or nan if no observation.
+   */
+  double getLastObs ();
+
+  /**
+   * Prints extra informations about target, which can be interested to user.
+   *
+   * @param _os stream to print that
+   */
+  virtual void printExtra (std::ostream & _os);
+
   std::string getUsersEmail (int in_event_mask);
 };
 
@@ -616,6 +633,7 @@ private:
   time_t grbDate;
   time_t lastUpdate;
   int gcnPacketType;		// gcn packet from last update
+  int gcnGrbId;
   bool grb_is_grb;
   int shouldUpdate;
 protected:
@@ -631,6 +649,9 @@ public:
   // some logic needed to distinguish states when GRB position change
   // from last observation. there was update etc..
   virtual int isContinues ();
+
+  double getFirstPacket ();
+  virtual void printExtra (std::ostream & _os);
 };
 
 /**
@@ -654,6 +675,8 @@ public:
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
   virtual float getBonus (double JD);
+
+  virtual void printExtra (std::ostream & _os);
 };
 
 class TargetGps:public ConstTarget

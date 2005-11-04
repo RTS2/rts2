@@ -1103,6 +1103,7 @@ TargetGRB::load ()
   long  db_grb_date;
   long  db_grb_last_update;
   int db_grb_type;
+  int db_grb_id;
   bool db_grb_is_grb;
   int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
@@ -1111,11 +1112,13 @@ TargetGRB::load ()
     EXTRACT (EPOCH FROM grb_date),
     EXTRACT (EPOCH FROM grb_last_update),
     grb_type,
+    grb_id,
     grb_is_grb
   INTO
     :db_grb_date,
     :db_grb_last_update,
     :db_grb_type,
+    :db_grb_id,
     :db_grb_is_grb
   FROM
     grb
@@ -1131,6 +1134,7 @@ TargetGRB::load ()
   // so we will not update that in beforeMove (or somewhere else)
   lastUpdate = db_grb_last_update;
   gcnPacketType = db_grb_type;
+  gcnGrbId = db_grb_id;
   grb_is_grb = db_grb_is_grb;
   shouldUpdate = 0;
   return ConstTarget::load ();
@@ -1356,6 +1360,71 @@ TargetGRB::isContinues ()
   return (lastUpdate == db_grb_last_update) ? 1 : 0;
 }
 
+double
+TargetGRB::getFirstPacket ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_grb_id = gcnGrbId;
+  int db_grb_type = gcnPacketType;
+  long db_grb_update;
+  long db_grb_update_usec;
+  EXEC SQL END DECLARE SECTION;
+  EXEC SQL
+  SELECT
+    EXTRACT (EPOCH FROM grb_update),
+    grb_update_usec
+  INTO
+    :db_grb_update,
+    :db_grb_update_usec
+  FROM
+    grb_gcn
+  WHERE
+      grb_id = :db_grb_id
+    AND grb_type = :db_grb_type
+    AND grb_update = (SELECT min(grb_update) FROM grb_gcn WHERE grb_id = :db_grb_id and grb_type = :db_grb_type);
+  if (sqlca.sqlcode)
+  {
+    EXEC SQL ROLLBACK;
+    return nan("f");
+  }
+  EXEC SQL ROLLBACK;
+  return db_grb_update + db_grb_update_usec / USEC_SEC;
+}
+
+void
+TargetGRB::printExtra (std::ostream &_os)
+{
+  double firstPacket = getFirstPacket ();
+  double firstObs = getFirstObs ();
+  _os 
+    << (grb_is_grb ? "IS GRB" : "not GRB") << " GRB DATE: " << Timestamp (grbDate)
+    << "GCN FIRST PACKET: " << Timestamp (firstPacket)
+    << " (" << TimeDiff (grbDate, firstPacket) << ") "
+    << "GCN LAST UPDATE: " << Timestamp (lastUpdate);
+  // get satelite
+  if (gcnPacketType >= 40 && gcnPacketType <= 45)
+    _os << "HETE BURST ";
+  else if (gcnPacketType >= 50 && gcnPacketType <= 55)
+    _os << "INTEGRAL BURST ";
+  else if (gcnPacketType >= 60 && gcnPacketType <= 85)
+    _os << "SWIFT BURTS ";
+  else
+    _os << "Unknow ";
+  _os << "(" << gcnPacketType << ")" << std::endl;
+  // get information about obsering time..
+  if (isnan (firstObs))
+  {
+    _os << "GRB without observation";
+  }
+  else
+  {
+    _os << "FIRST OBSERVATION " << Timestamp (firstObs)
+      << "GRB delta " << TimeDiff (firstPacket, firstObs)
+      << " GCN delta " << TimeDiff (firstPacket, firstObs);
+  }
+  _os << std::endl;
+}
+
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
   swiftOnBonus = 0;
@@ -1567,6 +1636,15 @@ TargetSwiftFOV::getBonus (double JD)
   if (now > swiftTimeStart - 300 && now < swiftTimeEnd + 300)
     return swiftOnBonus / 2.0;
   return 1;
+}
+
+void
+TargetSwiftFOV::printExtra (std::ostream &_os)
+{
+  _os << "SwiftFOW ID: " << swiftId 
+  << " FROM: " << Timestamp (swiftTimeStart) 
+  << " TO: " << Timestamp (swiftTimeEnd)
+  << std::endl;
 }
 
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
