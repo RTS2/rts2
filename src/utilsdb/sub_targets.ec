@@ -3,6 +3,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
 
+#include <iomanip>
 #include <sstream>
 
 EXEC SQL include sqlca;
@@ -1396,11 +1397,6 @@ TargetGRB::printExtra (std::ostream &_os)
 {
   double firstPacket = getFirstPacket ();
   double firstObs = getFirstObs ();
-  _os 
-    << (grb_is_grb ? "IS GRB" : "not GRB") << " GRB DATE: " << Timestamp (grbDate)
-    << "GCN FIRST PACKET: " << Timestamp (firstPacket)
-    << " (" << TimeDiff (grbDate, firstPacket) << ") "
-    << "GCN LAST UPDATE: " << Timestamp (lastUpdate);
   // get satelite
   if (gcnPacketType >= 40 && gcnPacketType <= 45)
     _os << "HETE BURST ";
@@ -1411,6 +1407,16 @@ TargetGRB::printExtra (std::ostream &_os)
   else
     _os << "Unknow ";
   _os << "(" << gcnPacketType << ")" << std::endl;
+  _os 
+    << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") 
+    << std::endl
+    << "         GRB DATE: " << Timestamp (grbDate)
+    << std::endl
+    << " GCN FIRST PACKET: " << Timestamp (firstPacket)
+    << " (" << TimeDiff (grbDate, firstPacket) << ") "
+    << std::endl
+    << "  GCN LAST UPDATE: " << Timestamp (lastUpdate)
+    << std::endl;
   // get information about obsering time..
   if (isnan (firstObs))
   {
@@ -1418,9 +1424,12 @@ TargetGRB::printExtra (std::ostream &_os)
   }
   else
   {
-    _os << "FIRST OBSERVATION " << Timestamp (firstObs)
-      << "GRB delta " << TimeDiff (firstPacket, firstObs)
-      << " GCN delta " << TimeDiff (firstPacket, firstObs);
+    _os 
+      << "FIRST OBSERVATION: " << Timestamp (firstObs)
+      << std::endl
+      << "        GRB delta: " << std::setw (10) << TimeDiff (grbDate, firstObs)
+      << std::endl
+      << "        GCN delta: " << std::setw (10) << TimeDiff (firstPacket, firstObs);
   }
   _os << std::endl;
 }
