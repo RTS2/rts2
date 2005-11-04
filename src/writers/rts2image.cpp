@@ -42,6 +42,7 @@ Rts2Image::initData ()
   pos_astr.dec = nan ("f");
   ra_err = nan ("f");
   dec_err = nan ("f");
+  img_err = nan ("f");
 }
 
 Rts2Image::Rts2Image ()
@@ -169,6 +170,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("AVERAGE", average);
   getValue ("POS_ERA", ra_err);
   getValue ("POS_EDEC", dec_err);
+  getValue ("POS_ERR", img_err);
   // astrometry get !!
   getValue ("CRVAL1", pos_astr.ra);
   getValue ("CRVAL2", pos_astr.dec);

@@ -299,11 +299,11 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   _os.precision (2);
   _os << std::setw (8) << obs.obs_id << " | "
     << std::setw(6) << obs.tar_id << " | "
+    << Timestamp (obs.obs_slew) << " | "
     << LibnovaRa (obs.obs_ra) << " | "
     << LibnovaDeg90 (obs.obs_dec) << " | "
     << LibnovaDeg90 (obs.obs_alt) << " | "
     << LibnovaDeg (obs.obs_az) << " | "
-    << Timestamp (obs.obs_slew) << " | "
     << std::setfill (' ');
 
   if (obs.obs_start > 0)

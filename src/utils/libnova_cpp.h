@@ -41,8 +41,22 @@ public:
   friend std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 };
 
+class LibnovaDegArcMin:public LibnovaDeg
+{
+public:
+  LibnovaDegArcMin (double in_deg):LibnovaDeg (in_deg)
+  {
+  }
+
+  friend std::ostream & operator << (std::ostream & _os,
+				     LibnovaDegArcMin l_deg);
+};
+
+
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
+std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);
 
 #endif /* !__LIBNOVA_CPP__ */

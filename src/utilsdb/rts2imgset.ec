@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include "../utils/libnova_cpp.h"
+
 Rts2ImgSet::Rts2ImgSet ()
 {
   observation = NULL;
@@ -168,11 +170,14 @@ std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)
 {
   int old_precision = _os.precision(0);
   _os << "images:" << img_set.size ()
-    << " with astrometry:" << img_set.astro_count
-    << "(" << (img_set.count / img_set.astro_count) << ")";
+    << " with astrometry:" << img_set.astro_count;
+  if (img_set.count > 0)
+  {
+    _os << " (" << (100 * img_set.astro_count / img_set.count) << "%)";
+  }
   _os.precision(2);
-  _os << " avg. alt:" << img_set.img_alt
-    << " avg. err:" << img_set.img_err;
+  _os << " avg. alt:" << LibnovaDeg90 (img_set.img_alt)
+    << " avg. err:" << LibnovaDegArcMin (img_set.img_err);
   _os.precision (old_precision);
   return _os;
 }

@@ -4,6 +4,7 @@
 
 #include "rts2imagedb.h"
 #include "../utils/timestamp.h"
+#include "../utils/libnova_cpp.h"
 
 #include <iomanip>
 #include <libnova/airmass.h>
@@ -474,6 +475,7 @@ Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_o
   imageType = IMGTYPE_UNKNOW;
   ra_err = in_img_err_ra;
   dec_err = in_img_err_dec;
+  img_err = in_img_err;
 
   // TODO fill that..
   pos_astr.ra = nan ("f");
@@ -597,10 +599,13 @@ std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
   int old_precision = _os.precision ();
 
   _os 
+    << std::setw(5) << img_db.getCameraName () << " | "
+    << std::setw(4) << img_db.getImgId () << " | "
     << Timestamp (img_db.getExposureSec () + (double) img_db.getExposureUsec () / USEC_SEC) << " | "
-    << std::setw(8) << img_db.getExposureLength () << " | "
-    << std::setw(6) << img_db.ra_err << " | "
-    << std::setw(6) << img_db.dec_err << " | "
+    << std::setw(8) << img_db.getExposureLength () << "' | "
+    << LibnovaDegArcMin (img_db.ra_err) << " | " 
+    << LibnovaDegArcMin (img_db.dec_err) << " | "
+    << LibnovaDegArcMin (img_db.img_err)
     << std::endl;
 
   _os.flags (old_settings);

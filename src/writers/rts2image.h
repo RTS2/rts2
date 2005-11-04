@@ -74,6 +74,7 @@ protected:
   struct ln_equ_posn pos_astr;
   double ra_err;
   double dec_err;
+  double img_err;
 
   virtual int isGoodForFwhm (struct stardata *sr);
 public:

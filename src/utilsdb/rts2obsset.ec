@@ -115,6 +115,8 @@ Rts2ObsSet::Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * en
      << in_tar_id
      << " AND observations.obs_slew >= abstime ("
      << *start_t
+     << ") AND ((observations.obs_slew <= abstime ("
+     << *start_t
      << ") AND (observations.obs_end is NULL OR observations.obs_end < abstime ("
      << *end_t
      << "))";
@@ -126,7 +128,9 @@ Rts2ObsSet::Rts2ObsSet (const time_t * start_t, const time_t * end_t)
   std::ostringstream os;
   os << "observations.obs_slew >= abstime ("
      << *start_t
-     << ") AND (observations.obs_end is NULL OR observations.obs_end < abstime ("
+     << ") AND ((observations.obs_slew <= abstime ("
+     << *start_t
+     << ") AND observations.obs_end is NULL) OR observations.obs_end < abstime ("
      << *end_t
      << "))";
   load (os.str());
