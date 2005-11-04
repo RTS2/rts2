@@ -41,7 +41,7 @@ protected:
 
   void setWeatherTimeout (time_t wait_time);
 protected:
-    virtual int connectionError ()
+    virtual int connectionError (int last_data_size)
   {
     return 0;
   }
