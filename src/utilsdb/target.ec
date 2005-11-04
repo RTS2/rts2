@@ -884,6 +884,8 @@ operator << (std::ostream &_os, Target *target)
   double lst;
   time_t now, last;
 
+  const char *name = target->getTargetName ();
+
   time (&now);
   JD = ln_get_julian_from_timet (&now);
 
@@ -891,7 +893,7 @@ operator << (std::ostream &_os, Target *target)
 
   _os << target->getTargetID () 
     << " (" << target->getObsTargetID () << ") " 
-    << target->getTargetName ()
+    << (name ? name : "null name")
     << " (" << target->getTargetType () << ")"
     << " RA " << LibnovaRa (pos.ra)
     << " DEC " << LibnovaDeg90 (pos.dec)

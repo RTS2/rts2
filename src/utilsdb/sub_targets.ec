@@ -1,6 +1,9 @@
 #include <libnova/libnova.h>
 #include "target.h"
 #include "../utils/rts2config.h"
+#include "../utils/timestamp.h"
+
+#include <sstream>
 
 EXEC SQL include sqlca;
 
@@ -1428,6 +1431,11 @@ TargetSwiftFOV::load ()
   EXEC SQL CLOSE find_swift_poiniting;
   if (swiftId < 0)
     return -1;
+  std::ostringstream name;
+  name << "SwiftFOV #" << swiftId 
+  << " ( " << Timestamp(swiftTimeStart)
+  << " - " << Timestamp(swiftTimeEnd) << " )";
+  setTargetName (name.str().c_str());
   return 0;
 }
 
