@@ -67,6 +67,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 	  print_all = true;
 	}
       _oss.fill ('0');
+      _oss.precision (2);
       if (diff / 3600 > 1 || print_all)
 	{
 	  _oss << (diff / 3600) << ":";
@@ -78,7 +79,6 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 	  _oss << (diff / 60) << ":";
 	  diff %= 60;
 	}
-      _oss.precision (2);
       _oss << diff << "." << std::setw (2) << (int) (usec_diff /
 						     (USEC_SEC / 100));
       _os << _oss.str ();
