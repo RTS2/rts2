@@ -83,7 +83,9 @@ Rts2ImgSet::load ()
   FROM
     images
   WHERE
-    obs_id = :d_obs_id;
+    obs_id = :d_obs_id
+  ORDER BY
+    img_id desc;
 
   EXEC SQL OPEN cur_images;
   while (1)
