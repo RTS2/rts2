@@ -146,7 +146,7 @@ Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
       std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
       std::ostringstream subject;
       subject << "TARGET #"
-	<< image->getObsTargetID ()
+	<< image->getTargetIdSel ()
 	<< " (" << image->getTargetId ()
 	<< ") GET ASTROMETRY (IMG_ID #" << image->getImgId () << ")";
       std::ostringstream os;
