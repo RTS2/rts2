@@ -624,6 +624,7 @@ Rts2ScriptElementAcquireHam::processImage (Rts2Image * image)
       syslog (LOG_ERR,
 	      "Rts2ScriptElementAcquireHam::processImage invalid processingState: %i",
 	      processingState);
+      processingState = FAILED;
       return -1;
     }
   obsId = image->getObsId ();
