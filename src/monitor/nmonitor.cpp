@@ -110,25 +110,26 @@ public:
     statusBegin = in_status_begin;
   }
 
-  void printTimeDiff (int row, char *text, time_t * in_time);
+  void printTimeDiff (int row, char *text, double diff);
 };
 
 void
-Rts2CNMonConn::printTimeDiff (int row, char *text, time_t * in_time)
+Rts2CNMonConn::printTimeDiff (int row, char *text, double diff)
 {
   char time_buf[50];
-  time_t t = -(*in_time);
   struct ln_hms hms;
   time_buf[0] = '\0';
+  double t = fabs (diff);
   if (t > 86400)
     {
-      sprintf (time_buf, "%li days ", t / 86400);
-      t = t % 86400;
+      sprintf (time_buf, "%li days ", (long) (t / 86400));
+      t = (long) t % 86400;
     }
-  ln_deg_to_hms (360.0 * ((double) t / 86400.0), &hms);
-  sprintf (time_buf, "%s%i:%02i:%04.1f", time_buf, hms.hours, hms.minutes,
-	   hms.seconds);
-  mvwprintw (window, row, 1, "%s:-%s", text, time_buf);
+  // that will delete sign..
+  ln_deg_to_hms (360.0 * ((double) fabs (t) / 86400.0), &hms);
+  sprintf (time_buf, "%s%c%i:%02i:%04.1f", time_buf, diff > 0 ? '+' : '-',
+	   hms.hours, hms.minutes, hms.seconds);
+  mvwprintw (window, row, 1, "%s:%s", text, time_buf);
 }
 
 class Rts2NMTelescope:public Rts2DevClientTelescopeImage
@@ -184,7 +185,7 @@ Rts2NMTelescope::print (WINDOW * wnd)
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
 	     getValueDouble ("ra_tel"), getValueDouble ("dec_tel"),
-	     getValueDouble ("flip") ? 'f' : 'n');
+	     getValueInteger ("flip") ? 'f' : 'n');
   if (getValueInteger ("know_position"))
     mvwprintw (wnd, 3, 1, "Err: %.2f %.2f", getValueDouble ("ra_corr") * 60.0,
 	       getValueDouble ("dec_corr") * 60.0);
@@ -358,15 +359,16 @@ void
 Rts2NMDome::print (WINDOW * wnd)
 {
   int dome = getValueInteger ("dome");
-  time_t time_to_open;
-  time (&time_to_open);
-  time_to_open = time_to_open - (long) getValueInteger ("next_open");
+  time_t now;
+  long time_to_open;
+  time (&now);
+  time_to_open = getValueInteger ("next_open") - now;
   mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueDouble ("temperature"));
   mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueDouble ("humidity"));
   mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i", getValueDouble ("windspeed"),
 	     getValueInteger ("rain"));
-  connection->printTimeDiff (5, "NextO", &time_to_open);
+  connection->printTimeDiff (5, "NextO", time_to_open);
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
   mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
@@ -404,15 +406,16 @@ void
 Rts2NMCopula::print (WINDOW * wnd)
 {
   int dome = getValueInteger ("dome");
-  time_t time_to_open;
-  time (&time_to_open);
-  time_to_open = time_to_open - (long) getValueInteger ("next_open");
+  time_t now;
+  long time_to_open;
+  time (&now);
+  time_to_open = getValueInteger ("next_open") - now;
   mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueDouble ("temperature"));
   mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueDouble ("humidity"));
   mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i", getValueDouble ("windspeed"),
 	     getValueInteger ("rain"));
-  connection->printTimeDiff (5, "NextO", &time_to_open);
+  connection->printTimeDiff (5, "NextO", time_to_open);
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
   mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
@@ -527,8 +530,8 @@ Rts2NMGrb::print (WINDOW * wnd)
 {
   time_t now;
   time (&now);
-  time_t last_pack = (int) getValueDouble ("last_packet") - now;
-  connection->printTimeDiff (1, "L Pac", &last_pack);
+  long last_pack = (int) getValueDouble ("last_packet") - now;
+  connection->printTimeDiff (1, "L Pac", last_pack);
   mvwprintw (wnd, 2, 1, "Delta: %-5i", getValueDouble ("delta"));
   mvwprintw (wnd, 3, 1, "L Tar: %5", getValueChar ("last_target"));
   mvwprintw (wnd, 4, 1, "LTime: %5f", getValueDouble ("last_target_time"));
