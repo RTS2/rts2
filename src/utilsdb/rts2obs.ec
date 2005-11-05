@@ -153,27 +153,6 @@ Rts2Obs::loadImages ()
   return imgset.load ();
 }
 
-void
-Rts2Obs::printImages (std::ostream &_os)
-{
-  std::vector <Rts2ImageDb *>::iterator img_iter;
-  if (imgset.empty ())
-  {
-    _os << "      " << "--- no images ---" << std::endl;
-    return;
-  }
-  for (img_iter = imgset.begin (); img_iter != imgset.end (); img_iter++)
-  {
-    _os << "      " << *(*img_iter);
-  }
-}
-
-void
-Rts2Obs::printImagesSummary (std::ostream &_os)
-{
-  _os << "      " << imgset << std::endl;
-}
-
 int
 Rts2Obs::loadCounts ()
 {
@@ -321,10 +300,7 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   {
     obs.loadImages ();
     _os << std::endl;
-    if (obs.displayImages & DISPLAY_ALL)
-      obs.printImages (_os);
-    if (obs.displayImages & DISPLAY_SUMMARY)
-      obs.printImagesSummary (_os);
+    obs.imgset.print (_os, obs.displayImages);
   }
   if (obs.displayCounts)
   {

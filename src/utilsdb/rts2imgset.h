@@ -20,6 +20,8 @@ class Rts2ImgSet:public
 Rts2ImageDb * >
 {
 private:
+  int
+    tar_id;
   Rts2Obs *
     observation;
   float
@@ -37,11 +39,21 @@ private:
     count;
   int
     astro_count;
+
+  int
+  loadObs ();
+  int
+  loadTarget ();
 public:
   Rts2ImgSet ();
+  Rts2ImgSet (int in_tar_id);
   Rts2ImgSet (Rts2Obs * in_observation);
+  virtual ~
+  Rts2ImgSet (void);
   int
   load ();
+  void
+  print (std::ostream & _os, int printImages);
 
   friend
     std::ostream &

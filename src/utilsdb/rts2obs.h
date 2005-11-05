@@ -63,9 +63,6 @@ public:
     virtual ~ Rts2Obs (void);
   int load ();
   int loadImages ();
-  void printImages (std::ostream & _os);
-  void printImagesSummary (std::ostream & _os);
-
   int loadCounts ();
   void printCounts (std::ostream & _os);
   void printCountsSummary (std::ostream & _os);
