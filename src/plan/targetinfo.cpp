@@ -133,9 +133,15 @@ Rts2TargetInfo::printTargetInfo ()
 	obsSet.printCounts (printCounts);
       std::cout << obsSet << std::endl;
     }
-  else if (printImages)
+  else if (printImages || printCounts)
     {
-
+      if (printImages)
+	{
+	  Rts2ImgSet imgset = Rts2ImgSet (target->getTargetID ());
+	  imgset.load ();
+	  imgset.print (std::cout, printImages);
+	  imgset.clear ();
+	}
     }
   return 0;
 }
