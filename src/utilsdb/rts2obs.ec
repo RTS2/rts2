@@ -286,14 +286,14 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
     << std::setfill (' ');
 
   if (obs.obs_start > 0)
-    _os << std::setw (10) << TimeDiff (obs.obs_slew, obs.obs_start) << " | ";
+    _os << std::setw (12) << TimeDiff (obs.obs_slew, obs.obs_start) << " | ";
   else
-    _os << std::setw (10) << "not" << " | ";
+    _os << std::setw (12) << "not" << " | ";
 
   if (obs.obs_end > 0)
-    _os << std::setw (10) << TimeDiff (obs.obs_start, obs.obs_end) << " | ";
+    _os << std::setw (12) << TimeDiff (obs.obs_start, obs.obs_end) << " | ";
   else
-    _os << std::setw (10) << "not" << " | ";
+    _os << std::setw (12) << "not" << " | ";
 
   _os << Rts2ObsState (obs.obs_state);
   if (obs.displayImages)

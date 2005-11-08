@@ -1079,9 +1079,11 @@ OportunityTarget::getBonus (double JD)
   ln_get_timet_from_julian (JD, &now);
   start_t = now - 86400;
   if (lastObs > 3600 && lastObs < (3 * 3600))
-    retBonus += log (lastObs - 3599) * 20;
+    retBonus -= log (lastObs / 3600) * 50;
+  else if (lastObs < 86400)
+    retBonus -= log (3) * 50;
   if (lunarDist < 60.0)
-    retBonus -= log (60 - lunarDist) * 10;
+    retBonus -= log (61 - lunarDist) * 10;
   // bonus for south
   if (ha < 165)
     retBonus += log ((180 - ha) / 15.0);
