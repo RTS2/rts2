@@ -12,6 +12,9 @@ EXEC SQL include sqlca;
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
 Target (in_tar_id, in_obs)
 {
+  tar_priority = nan ("f");
+  tar_bonus = nan ("f");
+  tar_enabled = -1;
 }
 
 int
@@ -25,6 +28,7 @@ ConstTarget::load ()
   int d_tar_priority_ind;
   float d_tar_bonus;
   int d_tar_bonus_ind;
+  bool d_tar_enabled;
   int db_tar_id = getObsTargetID ();
   EXEC SQL END DECLARE SECTION;
 
@@ -34,13 +38,15 @@ ConstTarget::load ()
     tar_dec,
     tar_name, 
     tar_priority,
-    tar_bonus
+    tar_bonus,
+    tar_enabled
   INTO
     :d_ra,
     :d_dec,
     :d_tar_name,
     :d_tar_priority :d_tar_priority_ind,
-    :d_tar_bonus :d_tar_bonus_ind
+    :d_tar_bonus :d_tar_bonus_ind,
+    :d_tar_enabled
   FROM
     targets
   WHERE
@@ -69,6 +75,8 @@ ConstTarget::load ()
     tar_bonus = d_tar_bonus;
   else
     tar_bonus = -1;
+
+  tar_enabled = d_tar_enabled;
 
   return Target::load ();
 }
@@ -130,6 +138,7 @@ ConstTarget::selectedAsGood ()
   tar_bonus = d_tar_bonus;
   position.ra = d_tar_ra;
   position.dec = d_tar_dec;
+  tar_enabled = d_tar_enabled;
   if (d_tar_enabled && tar_priority + tar_bonus > 0)
     return 0;
   return -1;
@@ -141,6 +150,24 @@ ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
   struct ln_equ_posn other_position;
   in_target->getPosition (&other_position);
   return (getDistance (&other_position) < in_sep_limit);
+}
+
+void
+ConstTarget::printExtra (std::ostream &_os)
+{
+  Target::printExtra (_os);
+  switch (tar_enabled)
+  {
+    case 1:
+      _os << "Target is enabled" << std::endl;
+      break;
+    case 0:
+      _os << "Target is disabled" << std::endl;
+      break;
+    default:
+      _os << "Unknow target dis state:" << tar_enabled << std::endl;
+  }
+  _os << "Target priority " << tar_priority << ", bonus " << tar_bonus << std::endl;
 }
 
 // EllTarget - good for commets and so on
@@ -1397,17 +1424,17 @@ TargetGRB::printExtra (std::ostream &_os)
 {
   double firstPacket = getFirstPacket ();
   double firstObs = getFirstObs ();
+  ConstTarget::printExtra (_os);
   // get satelite
   if (gcnPacketType >= 40 && gcnPacketType <= 45)
     _os << "HETE BURST ";
   else if (gcnPacketType >= 50 && gcnPacketType <= 55)
     _os << "INTEGRAL BURST ";
   else if (gcnPacketType >= 60 && gcnPacketType <= 85)
-    _os << "SWIFT BURTS ";
+    _os << "SWIFT BURST ";
   else
-    _os << "Unknow ";
-  _os << "(" << gcnPacketType << ")" << std::endl;
-  _os 
+    _os << "Unknow type ";
+  _os << "(" << gcnPacketType << "), " 
     << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") 
     << std::endl
     << "         GRB DATE: " << Timestamp (grbDate)
@@ -1650,6 +1677,7 @@ TargetSwiftFOV::getBonus (double JD)
 void
 TargetSwiftFOV::printExtra (std::ostream &_os)
 {
+  Target::printExtra (_os);
   _os << "SwiftFOW ID: " << swiftId 
   << " FROM: " << Timestamp (swiftTimeStart) 
   << " TO: " << Timestamp (swiftTimeEnd)

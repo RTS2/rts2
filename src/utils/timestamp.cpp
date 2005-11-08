@@ -60,28 +60,34 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
       long usec_diff =
 	(long) ((fabs (_td.time_2 - _td.time_1) - diff) * USEC_SEC);
       bool print_all = false;
-      if (diff / 86400 > 1)
+      if (diff / 86400 >= 1)
 	{
 	  _oss << (diff / 86400) << " days ";
 	  diff %= 86400;
 	  print_all = true;
 	}
       _oss.fill ('0');
-      _oss.precision (2);
-      if (diff / 3600 > 1 || print_all)
+      if (diff / 3600 >= 1 || print_all)
 	{
-	  _oss << (diff / 3600) << ":";
+	  _oss << std::setw (2) << (diff / 3600) << ":";
 	  diff %= 3600;
 	  print_all = true;
 	}
-      if (diff / 60 > 1 || print_all)
+      if (diff / 60 >= 1 || print_all)
 	{
-	  _oss << (diff / 60) << ":";
+	  _oss << std::setw (2) << (diff / 60) << ":";
 	  diff %= 60;
 	}
-      _oss << diff << "." << std::setw (2) << (int) (usec_diff /
-						     (USEC_SEC / 100));
+      _oss << std::setw (2) << diff << "." << std::
+	setw (2) << (int) (usec_diff / (USEC_SEC / 100));
       _os << _oss.str ();
     }
+  return _os;
+}
+
+std::ostream & operator << (std::ostream & _os, TimeJDDiff _tjd)
+{
+  TimeDiff td = TimeDiff (_tjd.time_diff, _tjd.getTs ());
+  _os << ((TimeJD) _tjd) << " (" << td << ")";
   return _os;
 }

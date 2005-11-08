@@ -59,6 +59,7 @@
 #define COMMAND_MIRROR_MOVE	"M"
 #define COMMAND_PHOTOMETER	"P"
 #define COMMAND_PHOT_SEARCH	"PS"
+#define COMMAND_BLOCK_WAITSIG   "block_waitsig"
 
 // HAM acqusition - only on FRAM telescope
 #define COMMAND_HAM		"HAM"
@@ -435,6 +436,7 @@ private:
 protected:
   float tar_priority;
   float tar_bonus;
+  char tar_enabled;
 
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses, target position etc..
 public:
@@ -447,6 +449,7 @@ public:
     return tar_priority + tar_bonus;
   }
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
+  virtual void printExtra (std::ostream & _os);
 };
 
 class EllTarget:public Target

@@ -954,12 +954,6 @@ operator << (std::ostream &_os, Target *target)
     << " DEC " << LibnovaDeg90 (pos.dec)
     << " (J2000) "
     << std::endl;
-/*  _os << "Rise after " << target->
-    secToObjectRise () << " seconds" << std::endl;
-  _os << "Transit after " << target->
-    secToObjectMeridianPass () << " seconds" << std::endl;
-  _os << "Set after " << target->
-    secToObjectSet () << " seconds"; */
   target->getAltAz (&hrz, JD);
   _os << "ALT " << LibnovaDeg90 (hrz.alt)
     << " ZD " << LibnovaDeg90 (target->getZenitDistance ()) 
@@ -979,23 +973,22 @@ operator << (std::ostream &_os, Target *target)
     default:
       if (rst.set < rst.rise && rst.rise < rst.transit)
       {
-	_os << "S " << TimeJD (rst.set)
-	  << " R " << TimeJD (rst.rise)
-	  << " T " << TimeJD (rst.transit)
-	  << std::endl;
+	_os << "S " << TimeJDDiff (rst.set, now) << std::endl
+	  << "R " << TimeJDDiff (rst.rise, now) << std::endl
+	  << "T " << TimeJDDiff (rst.transit, now) << std::endl;
       }
       else if (rst.transit < rst.set && rst.set < rst.rise)
       {
-	_os << "T " << TimeJD (rst.transit)
-	  << " S " << TimeJD (rst.set)
-	  << " R " << TimeJD (rst.rise)
+	_os << "T " << TimeJDDiff (rst.transit, now) << std::endl
+	  << "S " << TimeJDDiff (rst.set, now) << std::endl
+	  << "R " << TimeJDDiff (rst.rise, now) << std::endl
 	  << std::endl;
       }
       else
       {
-	_os << "R " << TimeJD (rst.rise)
-	  << " T " << TimeJD (rst.transit)
-	  << " S " << TimeJD (rst.set)
+	_os << "R " << TimeJDDiff (rst.rise, now) << std::endl
+	  << "T " << TimeJDDiff (rst.transit, now) << std::endl
+	  << "S " << TimeJDDiff (rst.set, now) << std::endl
 	  << std::endl;
       }
   }

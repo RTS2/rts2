@@ -43,6 +43,10 @@ public:
   {
     ts = _ts;
   }
+  double getTs ()
+  {
+    return ts;
+  }
   friend std::ostream & operator << (std::ostream & _os, Timestamp _ts);
 };
 
@@ -86,5 +90,20 @@ public:
 };
 
 std::ostream & operator << (std::ostream & _os, TimeDiff _td);
+
+class TimeJDDiff:public TimeJD
+{
+private:
+  time_t time_diff;
+public:
+  TimeJDDiff (double in_time_jd, time_t in_time_diff):TimeJD (in_time_jd)
+  {
+    time_diff = in_time_diff;
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, TimeJDDiff _tjd);
+};
+
+std::ostream & operator << (std::ostream & _os, TimeJDDiff _tjd);
 
 #endif /* !__TIMESTAMP_CPP__ */
