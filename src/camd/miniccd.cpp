@@ -57,7 +57,7 @@ public:
     return CameraChip::endReadout ();
   }
   int sendLineData (int numLines = -1);
-  char *getLineData ();
+  char *getAllData ();
 
   int getSizeOfPixel ()
   {
@@ -321,7 +321,7 @@ CameraMiniccdChip::sendLineData (int numLines)
 }
 
 char *
-CameraMiniccdChip::getLineData ()
+CameraMiniccdChip::getAllData ()
 {
   char *ret;
 
@@ -332,13 +332,13 @@ CameraMiniccdChip::getLineData ()
       if (msg[CCD_MSG_INDEX] != CCD_MSG_IMAGE)
 	{
 	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::getLineData wrong image message");
+		  "CameraMiniccdChip::getAllData wrong image message");
 	  return NULL;
 	}
       if (!chipUsedReadout)
 	{
 	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::getLineData not chipUsedReadout");
+		  "CameraMiniccdChip::getAllData not chipUsedReadout");
 	  return NULL;
 	}
       if ((unsigned int) (msg[CCD_MSG_LENGTH_LO_INDEX] +
@@ -347,7 +347,7 @@ CameraMiniccdChip::getLineData ()
 	   usedRowBytes) + CCD_MSG_IMAGE_LEN)
 	{
 	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::getLineData wrong size %i",
+		  "CameraMiniccdChip::getAllData wrong size %i",
 		  msg[CCD_MSG_LENGTH_LO_INDEX] +
 		  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
 	  return NULL;
@@ -388,7 +388,7 @@ class CameraMiniccdInterleavedChip:public CameraChip
 private:
   enum
   { NO_ACTION, SLAVE1_EXPOSING, SLAVE2_EXPOSING, SLAVE1_READOUT,
-    SLAVE2_READOUT
+    SLAVE2_READOUT, SENDING
   } slaveState;
   CameraMiniccdChip *slaveChip[2];
   long firstReadoutTime;
@@ -398,7 +398,10 @@ private:
   float chip1_exptime;
   int usedRowBytes;
   // do 2x2 binning
-  void doBinning (uint16_t * row1, uint16_t * row2);
+  char *doBinning (uint16_t * row1, uint16_t * row2);
+  char *send_top;
+  char *dest_top;
+  uint16_t *_data;
 public:
     CameraMiniccdInterleavedChip (Rts2DevCamera * in_cam, int in_chip_id,
 				  int in_fd_chip,
@@ -428,36 +431,175 @@ CameraChip (in_cam, in_chip_id)
   slaveChip[1] = in_chip2;
   firstReadoutTime = 3 * USEC_SEC;	// default readout is expected to last 3 sec..
   slaveState = NO_ACTION;
+  _data = NULL;
 }
 
 CameraMiniccdInterleavedChip::~CameraMiniccdInterleavedChip (void)
 {
-
+  delete[]_data;
 }
 
-void
+char *
 CameraMiniccdInterleavedChip::doBinning (uint16_t * row1, uint16_t * row2)
 {
-  uint16_t *row_out = row1;
-  // row offset
-  int i = 0;
-  int out = 0;
-  // bin it now - first row;
-  for (i = 0; i < (usedRowBytes); i++)
+#define SCALE_X		0.5
+#define SCALE_Y		0.259
+// offset aplied after scalling
+#define OFF_X		1
+#define OFF_Y		3
+  // pixels which are processed ring now
+  uint16_t a0_0, a0_1, a1_0, a1_1;
+  uint16_t b0_0, b0_1, b1_0, b1_1;
+  int w = chipUsedReadout->width * 2;
+  int h = chipUsedReadout->height * 2;
+  int x, y, n_x;
+  long n_y;
+  float n_fx, n_fy;
+  int n_w, n_h;
+  uint16_t *r_swap;
+  // those arrays hold transformed images
+  uint16_t *img_1 = new uint16_t[(w + 1) * (h + 1) * 8];
+  uint16_t *img_2 = new uint16_t[(w + 1) * (h + 1) * 8];
+  uint16_t *img_com = new uint16_t[(w + 1) * (h + 1) * 8];
+  // initialize data..
+  if (!_data)
     {
-      out += *row1;
-      row1++;
-      out += *row2;
-      row2++;
-      // divide by 4..
-      if ((i % 2) == 1)
-	{
-	  out /= 4;
-	  *row_out = (uint16_t) out;
-	  row_out++;
-	  out = 0;
-	}
+      _data = new uint16_t[w * h];
     }
+  // split data to odd and even columns, scale by factor 0.5 and 0.259
+  // init new coordinates
+  n_y = 0;
+  n_fy = 0;
+
+  n_w = (int) (w / SCALE_X / 2);
+
+  // end of image..
+
+  // biliniear scalling
+  // y is coordinate in old image, n_x and n_y are coordinates in transformed image
+  for (y = 0; y < (chipUsedReadout->height - 1); y++)
+    {
+      a0_0 = row1[0];
+      a0_1 = row1[2];
+      a1_0 = row2[w];
+      a1_1 = row2[w + 2];
+
+      b0_0 = row1[0];
+      b0_1 = row1[2];
+      b1_0 = row2[w + 1];
+      b1_1 = row2[w + 3];
+
+      uint16_t *n_r1 = row1 + (w - 1);
+      float fi;
+      int i;
+
+      n_x = 0;
+      n_fx = 0;
+
+      for (x = 0; row1 < n_r1; x++)
+	{
+	  a0_1 = row1[2];
+	  a1_1 = row1[w + 2];
+
+	  b0_1 = row2[2];
+	  b1_1 = row2[w + 3];
+	  float x_fmax = 0;
+	  int x_max = 0;
+	  // fill all pixels we can fill with data we have in a and b
+	  for (fi = n_fy, i = 0; fi < (y + 1); fi += SCALE_Y, i++)
+	    {
+	      float fj;
+	      int j;
+	      for (fj = n_fx, j = 0; fj < (x + 1) && n_x + j < n_w;
+		   fj += SCALE_X, j++)
+		{
+		  int index = n_y + n_w * i + (n_x + j);
+		  // drop to [0,0],[1,1] system..
+		  float ii = fi - n_fy;
+		  float jj = fj - n_fx;
+		  img_1[index] = (uint16_t) (a0_0 * (ii - 1) * (jj - 1)
+					     - a1_0 * jj * (ii - 1)
+					     - a0_1 * (jj - 1) * ii
+					     + a1_1 * jj * ii);
+		  img_2[index] = (uint16_t) (b0_0 * (ii - 1) * (jj - 1)
+					     - b1_0 * jj * (ii - 1)
+					     - b0_1 * (jj - 1) * ii
+					     + b1_1 * jj * ii);
+		}
+	      if (fi == n_fy)
+		{
+		  x_fmax = fj;
+		  x_max = j;
+		}
+	    }
+
+	  row1 += 2;
+	  row2 += 2;
+
+	  n_fx = x_fmax;
+	  n_x += x_max;
+
+	  a0_0 = a0_1;
+	  a1_0 = a1_1;
+
+	  b0_0 = b0_1;
+	  b1_0 = b1_1;
+	}
+      n_fy += (fi - n_fy);
+      n_y += n_w * i;
+      // swap rows..
+      r_swap = row1;
+      row1 = row2;
+      row2 = r_swap;
+    }
+  n_h = n_y / n_w;
+
+  // ok, we have transformed image, now combine it back to master image..
+  for (y = 0; y < n_h; y++)
+    for (x = 0; x < n_w; x++)
+      {
+	int n_x2 = x + OFF_X;
+	int n_y2 = y + OFF_Y;
+	int index = y * n_w + x;
+	if (n_x2 < 0 || n_x2 > n_w || n_y2 < 0 || n_y2 > n_h)
+	  {
+	    img_com[index] = img_1[index];
+	  }
+	else
+	  {
+	    img_com[index] =
+	      (uint16_t) (((long) img_1[index] + (long) img_2[index]) / 2);
+	  }
+      }
+  // and scale to 1/4 in height and 1/2 in height (as 1/2 of scalling is done by combining rows and cols..
+  w = chipUsedReadout->width;
+  h = chipUsedReadout->height;
+  int n_x2;
+  int n_y2;
+  for (y = 0, n_y2 = 0; y < h; y++, n_y2 += 4)
+    for (x = 0, n_x2 = 0; x < w; x++, n_x2 += 2)
+      {
+	long sum = 0;
+	int num = 0;
+	for (int yy = n_y2; yy < n_y2 + 4 && yy < n_h; yy++)
+	  for (int xx = n_x2; xx < n_x2 + 2 && xx < n_w; xx++)
+	    {
+	      sum += img_com[yy * n_w + xx];
+	      num++;
+	    }
+	if (num > 0)
+	  {
+	    _data[y * w + x] = sum / num;
+	  }
+	else
+	  {
+	    _data[y * w + x] = 0;
+	  }
+      }
+  delete[]img_1;
+  delete[]img_2;
+  delete[]img_com;
+  return (char *) _data;
 }
 
 int
@@ -598,6 +740,7 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
 {
   int ret;
   char *row1, *row2;
+  int send_data_size;
 
   if (sendLine == 0)
     {
@@ -610,20 +753,28 @@ CameraMiniccdInterleavedChip::readoutOneLine ()
   switch (slaveState)
     {
     case SLAVE2_READOUT:
-      row1 = slaveChip[0]->getLineData ();
-      row2 = slaveChip[1]->getLineData ();
+      row1 = slaveChip[0]->getAllData ();
+      row2 = slaveChip[1]->getAllData ();
       if (!(row1 && row2))
 	{
-	  // error while retrieving data
+	  // error while retriving data
 	  return -1;
 	}
-      doBinning ((uint16_t *) row1, (uint16_t *) row2);
-      // calculate new data in ret1
-      sendReadoutData (row1, usedRowBytes);
-      sendLine++;
-      if (slaveChip[0]->haveUnsendData ())
+      send_top = doBinning ((uint16_t *) row1, (uint16_t *) row2);
+      dest_top = send_top + ((chipUsedReadout->width / usedBinningHorizontal)
+			     * (chipUsedReadout->height /
+				usedBinningVertical)) * 2;
+      slaveState = SENDING;
+    case SENDING:
+      send_data_size = sendReadoutData (send_top, dest_top - send_top);
+      if (send_data_size < 0)
+	{
+	  slaveState = NO_ACTION;
+	  return -1;
+	}
+      send_top += send_data_size;
+      if (send_top < dest_top)
 	return 0;
-      return -2;
     default:
       slaveState = NO_ACTION;
     }
@@ -865,8 +1016,7 @@ Rts2DevCameraMiniccd *device;
 void
 killSignal (int sig)
 {
-  if (device)
-    delete device;
+  delete device;
   exit (0);
 }
 
