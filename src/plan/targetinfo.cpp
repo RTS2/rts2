@@ -55,6 +55,8 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('I', "images_summary", 0, "print image summary row");
   addOption ('p', "photometer", 2, "print counts (in given time range)");
   addOption ('P', "photometer_summary", 0, "print counts summary row");
+  addOption ('t', "target_type", 0,
+	     "search for target types, not for targets IDs");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()

@@ -39,7 +39,7 @@ Rts2DevClientCameraExec::startTarget ()
 int
 Rts2DevClientCameraExec::getNextCommand ()
 {
-  return script->nextCommand (this, &nextComd, cmd_device);
+  return script->nextCommand (*this, &nextComd, cmd_device);
 }
 
 void

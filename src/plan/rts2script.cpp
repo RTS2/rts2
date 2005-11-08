@@ -3,6 +3,7 @@
 #endif
 
 #include "rts2script.h"
+#include "rts2scriptblock.h"
 #include "../utilsdb/target.h"
 #include <string.h>
 #include <ctype.h>
@@ -75,18 +76,19 @@ Rts2Script::Rts2Script (Rts2Conn * in_connection, Target * target):Rts2Object
       element = parseBuf (target);
       if (!element)
 	break;
+      // we are currently in block..
       elements.push_back (element);
     }
   while (1);
   executedCount = 0;
   currScriptElement = NULL;
+  el_iter = elements.begin ();
 }
 
 Rts2Script::~Rts2Script (void)
 {
   // all operations with elements list should be ignored
   executedCount = -1;
-  std::list < Rts2ScriptElement * >::iterator el_iter;
   for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
     {
       Rts2ScriptElement *el;
@@ -100,43 +102,37 @@ Rts2Script::~Rts2Script (void)
 void
 Rts2Script::postEvent (Rts2Event * event)
 {
-  std::list < Rts2ScriptElement * >::iterator el_iter, el_iter_tmp,
-    el_iter_for_erase;
+  std::list < Rts2ScriptElement * >::iterator el_iter_sig;
   Rts2ScriptElement *el;
   int ret;
   switch (event->getType ())
     {
     case EVENT_SIGNAL:
-      for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+      for (el_iter_sig = el_iter; el_iter_sig != elements.end ();
+	   el_iter_sig++)
 	{
-	  el = *el_iter;
+	  el = *el_iter_sig;
 	  ret = el->waitForSignal (*(int *) event->getArg ());
 	  if (ret)
 	    {
-	      // we find first signal..take from list out all previsous script elements, put as at begining
-	      for (el_iter_tmp = elements.begin (); el_iter_tmp != el_iter;)
-		{
-		  el = *el_iter_tmp;
-		  el_iter_for_erase = el_iter_tmp;
-		  el_iter_tmp++;
-		  delete el;
-		  elements.erase (el_iter_for_erase);
-		}
+	      // we find first signal..put as at begining
+	      el_iter = el_iter_sig;
 	      *((int *) event->getArg ()) = -1;
 	    }
 	}
       break;
     case EVENT_ACQUIRE_QUERY:
     case EVENT_SIGNAL_QUERY:
-      for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+      for (el_iter_sig = el_iter; el_iter_sig != elements.end ();
+	   el_iter_sig++)
 	{
-	  el = *el_iter;
+	  el = *el_iter_sig;
 	  el->postEvent (new Rts2Event (event));
 	}
       break;
     default:
-      if (elements.size () > 0)
-	(*elements.begin ())->postEvent (new Rts2Event (event));
+      if (el_iter != elements.end ())
+	(*el_iter)->postEvent (new Rts2Event (event));
       break;
     }
   Rts2Object::postEvent (event);
@@ -289,127 +285,44 @@ Rts2Script::parseBuf (Target * target)
 	return NULL;
       return new Rts2ScriptElementSearch (this, searchRadius, searchSpeed);
     }
+  else if (!strcmp (commandStart, COMMAND_BLOCK_WAITSIG))
+    {
+      int waitSig;
+      char *el;
+      Rts2ScriptElementBlock *blockEl;
+      Rts2ScriptElement *newElement;
+      if (getNextParamInteger (&waitSig))
+	return NULL;
+      // test for block start..
+      el = nextElement ();
+      // error, return NULL
+      if (*el != '{')
+	return NULL;
+      blockEl = new Rts2SEBSignalEnd (this, waitSig);
+      // parse block..
+      while (1)
+	{
+	  newElement = parseBuf (target);
+	  // "}" will result in NULL, which we capture here
+	  if (!newElement)
+	    break;
+	  blockEl->addElement (newElement);
+	}
+      // block can end by script end as well..
+      return blockEl;
+    }
+  // end of block..
+  else if (!strcmp (commandStart, "}"))
+    {
+      return NULL;
+    }
   return NULL;
-}
-
-int
-Rts2Script::nextCommand (Rts2DevClientCamera * camera,
-			 Rts2Command ** new_command,
-			 char new_device[DEVICE_NAME_SIZE])
-{
-  std::list < Rts2ScriptElement * >::iterator el_iter;
-  int ret;
-
-  *new_command = NULL;
-
-  if (executedCount < 0)
-    {
-      return NEXT_COMMAND_END_SCRIPT;
-    }
-
-  el_iter = elements.begin ();
-  while (1)
-    {
-      if (el_iter == elements.end ())
-	// command not found, end of script,..
-	return NEXT_COMMAND_END_SCRIPT;
-      currScriptElement = *el_iter;
-      ret = currScriptElement->nextCommand (camera, new_command, new_device);
-      if (ret != NEXT_COMMAND_NEXT)
-	break;
-      delete currScriptElement;
-      el_iter++;
-      elements.erase (elements.begin ());
-    }
-  switch (ret)
-    {
-    case 0:
-    case NEXT_COMMAND_CHECK_WAIT:
-    case NEXT_COMMAND_PRECISION_FAILED:
-    case NEXT_COMMAND_PRECISION_OK:
-    case NEXT_COMMAND_WAIT_ACQUSITION:
-      elements.erase (el_iter);
-      delete currScriptElement;
-      currScriptElement = NULL;
-      break;
-    case NEXT_COMMAND_WAITING:
-      *new_command = NULL;
-      break;
-    case NEXT_COMMAND_KEEP:
-    case NEXT_COMMAND_RESYNC:
-    case NEXT_COMMAND_ACQUSITION_IMAGE:
-    case NEXT_COMMAND_WAIT_SIGNAL:
-    case NEXT_COMMAND_WAIT_MIRROR:
-    case NEXT_COMMAND_WAIT_SEARCH:
-      // keep us
-      break;
-    }
-  if (ret != NEXT_COMMAND_NEXT)
-    executedCount++;
-  return ret;
-}
-
-int
-Rts2Script::nextCommand (Rts2DevClientPhot * phot,
-			 Rts2Command ** new_command,
-			 char new_device[DEVICE_NAME_SIZE])
-{
-  std::list < Rts2ScriptElement * >::iterator el_iter;
-  int ret;
-
-  *new_command = NULL;
-
-  if (executedCount < 0)
-    {
-      return NEXT_COMMAND_END_SCRIPT;
-    }
-
-  el_iter = elements.begin ();
-  while (1)
-    {
-      if (el_iter == elements.end ())
-	// command not found, end of script,..
-	return NEXT_COMMAND_END_SCRIPT;
-      currScriptElement = *el_iter;
-      ret = currScriptElement->nextCommand (phot, new_command, new_device);
-      if (ret != NEXT_COMMAND_NEXT)
-	break;
-      delete currScriptElement;
-      el_iter++;
-      elements.erase (elements.begin ());
-    }
-  switch (ret)
-    {
-    case 0:
-    case NEXT_COMMAND_CHECK_WAIT:
-    case NEXT_COMMAND_PRECISION_FAILED:
-    case NEXT_COMMAND_PRECISION_OK:
-    case NEXT_COMMAND_WAIT_ACQUSITION:
-      elements.erase (el_iter);
-      delete currScriptElement;
-      currScriptElement = NULL;
-      break;
-    case NEXT_COMMAND_WAITING:
-      *new_command = NULL;
-      break;
-    case NEXT_COMMAND_KEEP:
-    case NEXT_COMMAND_RESYNC:
-    case NEXT_COMMAND_ACQUSITION_IMAGE:
-    case NEXT_COMMAND_WAIT_SIGNAL:
-    case NEXT_COMMAND_WAIT_MIRROR:
-    case NEXT_COMMAND_WAIT_SEARCH:
-      // keep us
-      break;
-    }
-  if (ret != NEXT_COMMAND_NEXT)
-    executedCount++;
-  return ret;
 }
 
 int
 Rts2Script::processImage (Rts2Image * image)
 {
-  if (executedCount < 0 || elements.size () == 0)
+  if (executedCount < 0 || el_iter == elements.end ())
     return -1;
-  return (*elements.begin ())->processImage (image);
+  return (*el_iter)->processImage (image);
 }

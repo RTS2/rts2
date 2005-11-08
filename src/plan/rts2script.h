@@ -27,6 +27,10 @@
 #define NEXT_COMMAND_WAIT_MIRROR	10
 
 #define NEXT_COMMAND_WAIT_SEARCH	11
+
+// when return value contains that mask, we will keep command,
+// as we get it from block
+#define NEXT_COMMAND_MASK_BLOCK		0x100000
 /*!
  * Holds script to execute on given device.
  * Script might include commands to other devices; in such case device
@@ -58,6 +62,7 @@ private:
   // we should not save reference to target, as it can be changed|deleted without our knowledge
   Rts2ScriptElement *parseBuf (Target * target);
     std::list < Rts2ScriptElement * >elements;
+    std::list < Rts2ScriptElement * >::iterator el_iter;
   Rts2Conn *connection;
   // is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
   int executedCount;
@@ -65,15 +70,13 @@ public:
     Rts2Script (Rts2Conn * in_connection, Target * target);
     virtual ~ Rts2Script (void);
   virtual void postEvent (Rts2Event * event);
-  int nextCommand (Rts2DevClientCamera * camera,
-		   Rts2Command ** new_command,
-		   char new_device[DEVICE_NAME_SIZE]);
-  int nextCommand (Rts2DevClientPhot * phot,
-		   Rts2Command ** new_command,
-		   char new_device[DEVICE_NAME_SIZE]);
+    template < typename T > int nextCommand (T & device,
+					     Rts2Command ** new_command,
+					     char
+					     new_device[DEVICE_NAME_SIZE]);
   int isLastCommand (void)
   {
-    return (elements.size () == 0) ? 1 : 0;
+    return (el_iter == elements.end ());
   }
   void getDefaultDevice (char new_device[DEVICE_NAME_SIZE])
   {
@@ -93,5 +96,65 @@ public:
     return executedCount;
   }
 };
+
+template < typename T > int
+Rts2Script::nextCommand (T & device,
+			 Rts2Command ** new_command,
+			 char new_device[DEVICE_NAME_SIZE])
+{
+  int ret;
+
+  *new_command = NULL;
+
+  if (executedCount < 0)
+    {
+      return NEXT_COMMAND_END_SCRIPT;
+    }
+
+  while (1)
+    {
+      if (el_iter == elements.end ())
+	// command not found, end of script,..
+	return NEXT_COMMAND_END_SCRIPT;
+      currScriptElement = *el_iter;
+      ret = currScriptElement->nextCommand (&device, new_command, new_device);
+      if (ret != NEXT_COMMAND_NEXT)
+	break;
+      // move to next command
+      el_iter++;
+    }
+  if (ret & NEXT_COMMAND_MASK_BLOCK)
+    {
+      ret &= ~NEXT_COMMAND_MASK_BLOCK;
+    }
+  else
+    {
+      switch (ret)
+	{
+	case 0:
+	case NEXT_COMMAND_CHECK_WAIT:
+	case NEXT_COMMAND_PRECISION_FAILED:
+	case NEXT_COMMAND_PRECISION_OK:
+	case NEXT_COMMAND_WAIT_ACQUSITION:
+	  el_iter++;
+	  currScriptElement = NULL;
+	  break;
+	case NEXT_COMMAND_WAITING:
+	  *new_command = NULL;
+	  break;
+	case NEXT_COMMAND_KEEP:
+	case NEXT_COMMAND_RESYNC:
+	case NEXT_COMMAND_ACQUSITION_IMAGE:
+	case NEXT_COMMAND_WAIT_SIGNAL:
+	case NEXT_COMMAND_WAIT_MIRROR:
+	case NEXT_COMMAND_WAIT_SEARCH:
+	  // keep us
+	  break;
+	}
+    }
+  if (ret != NEXT_COMMAND_NEXT)
+    executedCount++;
+  return ret;
+}
 
 #endif /* ! __RTS2_SCRIPT__ */
