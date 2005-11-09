@@ -578,7 +578,6 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       grb_ra = :d_grb_ra,
       grb_dec = :d_grb_dec,
       grb_is_grb = :d_grb_is_grb,
-      grb_date = abstime (:d_grb_date),
       grb_last_update = abstime (:d_grb_update)
     WHERE
       tar_id = :d_tar_id;
