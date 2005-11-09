@@ -1124,6 +1124,7 @@ ConstTarget (in_tar_id, in_obs)
 {
   shouldUpdate = 1;
   grb_is_grb = true;
+  gcnPacketType = -1;
 }
 
 int
@@ -1164,6 +1165,32 @@ TargetGRB::load ()
   // so we will not update that in beforeMove (or somewhere else)
   lastUpdate = db_grb_last_update;
   gcnPacketType = db_grb_type;
+  // switch of packet type - packet class
+  if (gcnPacketType >= 40 && gcnPacketType <= 45)
+  {
+    // HETE burst
+    gcnPacketMin = 40;
+    gcnPacketMax = 45;
+  }
+  else if (gcnPacketType >= 50 && gcnPacketType <= 55)
+  {
+    // INTEGRAL burst
+    gcnPacketMin = 50;
+    gcnPacketMax = 55;
+  }
+  else if (gcnPacketType >= 60 && gcnPacketType <= 85)
+  {
+    // SWIFT burst
+    gcnPacketMin = 60;
+    gcnPacketMax = 85;
+  }
+  else
+  {
+    // UNKNOW
+    gcnPacketMin = 0;
+    gcnPacketMax = 1000;
+  }
+
   gcnGrbId = db_grb_id;
   grb_is_grb = db_grb_is_grb;
   shouldUpdate = 0;
@@ -1395,7 +1422,8 @@ TargetGRB::getFirstPacket ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int db_grb_id = gcnGrbId;
-  int db_grb_type = gcnPacketType;
+  int db_grb_type_min = gcnPacketMin;
+  int db_grb_type_max = gcnPacketMax;
   long db_grb_update;
   long db_grb_update_usec;
   EXEC SQL END DECLARE SECTION;
@@ -1410,8 +1438,10 @@ TargetGRB::getFirstPacket ()
     grb_gcn
   WHERE
       grb_id = :db_grb_id
-    AND grb_type = :db_grb_type
-    AND grb_update = (SELECT min(grb_update) FROM grb_gcn WHERE grb_id = :db_grb_id and grb_type = :db_grb_type);
+    AND grb_type >= :db_grb_type_min
+    AND grb_type <= :db_grb_type_max
+    AND grb_update = (SELECT min(grb_update) FROM grb_gcn
+      WHERE grb_id = :db_grb_id and grb_type >= :db_grb_type_min and grb_type <= :db_grb_type_max);
   if (sqlca.sqlcode)
   {
     EXEC SQL ROLLBACK;
@@ -1428,11 +1458,11 @@ TargetGRB::printExtra (std::ostream &_os)
   double firstObs = getFirstObs ();
   ConstTarget::printExtra (_os);
   // get satelite
-  if (gcnPacketType >= 40 && gcnPacketType <= 45)
+  if (gcnPacketMin == 40)
     _os << "HETE BURST ";
-  else if (gcnPacketType >= 50 && gcnPacketType <= 55)
+  else if (gcnPacketMin == 50)
     _os << "INTEGRAL BURST ";
-  else if (gcnPacketType >= 60 && gcnPacketType <= 85)
+  else if (gcnPacketType == 60)
     _os << "SWIFT BURST ";
   else
     _os << "Unknow type ";
