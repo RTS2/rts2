@@ -639,6 +639,8 @@ private:
   int gcnGrbId;
   bool grb_is_grb;
   int shouldUpdate;
+  int gcnPacketMin;		// usefull for searching for packet class
+  int gcnPacketMax;
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
   virtual int getScript (const char *deviceName, char *buf);
