@@ -183,8 +183,7 @@ Rts2DevFocuserFli::home ()
   ret = FLIHomeFocuser (dev);
   if (ret)
     return -1;
-  setFocusTimeout (30);
-  return 0;
+  return Rts2DevFocuser::home ();
 }
 
 int

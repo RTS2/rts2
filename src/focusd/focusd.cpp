@@ -262,6 +262,16 @@ Rts2DevConnFocuser::commandAuthorized ()
 
       return master->stepOut (this, num);
     }
+  else if (isCommand ("set"))
+    {
+      int num;
+      // CHECK_PRIORITY;
+
+      if (paramNextInteger (&num) || !paramEnd ())
+	return -2;
+
+      return master->setTo (this, num);
+    }
   else if (isCommand ("focus"))
     {
       // CHECK_PRIORITY;
