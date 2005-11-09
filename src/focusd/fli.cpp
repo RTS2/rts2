@@ -46,6 +46,7 @@ public:
   virtual int baseInfo ();
   virtual int info ();
   virtual int stepOut (int num);
+  virtual int home ();
   virtual int isFocusing ();
 };
 
@@ -172,6 +173,17 @@ Rts2DevFocuserFli::stepOut (int num)
   ret = FLIStepMotorAsync (dev, (long) num);
   if (ret)
     return -1;
+  return 0;
+}
+
+int
+Rts2DevFocuserFli::home ()
+{
+  LIBFLIAPI ret;
+  ret = FLIHomeFocuser (dev);
+  if (ret)
+    return -1;
+  setFocusTimeout (30);
   return 0;
 }
 
