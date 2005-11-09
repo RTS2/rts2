@@ -45,6 +45,7 @@ public:
   virtual int baseInfo ();
   virtual int info ();
   virtual int stepOut (int num);
+  virtual int setTo (int num);
   virtual int isFocusing ();
 };
 
@@ -244,6 +245,46 @@ Rts2DevFocuserIr::stepOut (int num)
       return -1;
     }
   return 0;
+}
+
+int
+Rts2DevFocuserIr::setTo (int num)
+{
+  int status = 0;
+
+  int power = 1;
+  int referenced = 0;
+  double offset;
+  int ret;
+
+  status = tpl_get ("FOCUS.REFERENCED", referenced, &status);
+  if (referenced != 1)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut referenced is : %i",
+	      referenced);
+      return -1;
+    }
+  status = tpl_setw ("FOCUS.POWER", power, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set POWER to 1");
+    }
+  offset = (double) num / 1000.0;
+  status = tpl_setw ("FOCUS.OFFSET", offset, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set offset!");
+      return -1;
+    }
+  setFocusTimeout (100);
+  return 0;
+}
+
+
+int
+Rts2DevFocuserIr::setTo (int num)
+{
+
 }
 
 int
