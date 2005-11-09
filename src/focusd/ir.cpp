@@ -222,7 +222,6 @@ Rts2DevFocuserIr::stepOut (int num)
   int power = 1;
   int referenced = 0;
   double offset;
-  int ret;
 
   status = tpl_get ("FOCUS.REFERENCED", referenced, &status);
   if (referenced != 1)
@@ -255,7 +254,6 @@ Rts2DevFocuserIr::setTo (int num)
   int power = 1;
   int referenced = 0;
   double offset;
-  int ret;
 
   status = tpl_get ("FOCUS.REFERENCED", referenced, &status);
   if (referenced != 1)
@@ -278,13 +276,6 @@ Rts2DevFocuserIr::setTo (int num)
     }
   setFocusTimeout (100);
   return 0;
-}
-
-
-int
-Rts2DevFocuserIr::setTo (int num)
-{
-
 }
 
 int
