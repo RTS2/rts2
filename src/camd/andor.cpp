@@ -298,7 +298,10 @@ int
 Rts2DevCameraAndor::camCoolHold ()
 {
   CoolerON ();
-  SetTemperature (-10);
+  if (isnan (nightCoolTemp))
+    SetTemperature (-5);
+  else
+    SetTemperature (nightCoolTemp);
   return 0;
 }
 
