@@ -1462,7 +1462,7 @@ TargetGRB::printExtra (std::ostream &_os)
     _os << "HETE BURST ";
   else if (gcnPacketMin == 50)
     _os << "INTEGRAL BURST ";
-  else if (gcnPacketType == 60)
+  else if (gcnPacketMin == 60)
     _os << "SWIFT BURST ";
   else
     _os << "Unknow type ";
