@@ -16,6 +16,8 @@
 #include <cstdarg>
 #include <opentpl/client.h>
 #include <list>
+#include <iostream>
+#include <fstream>
 
 using namespace OpenTPL;
 
@@ -153,8 +155,6 @@ Rts2DevTelescopeIr::tpl_get (const char *name, T & val, int *status)
 template < typename T > int
 Rts2DevTelescopeIr::tpl_set (const char *name, T val, int *status)
 {
-  int cstatus;
-
   if (!*status)
     {
       tplc->Set (name, Value (val), true);	// change to set...?
@@ -312,7 +312,7 @@ Rts2DevTelescopeIr::addError (int in_error)
   if (errNum == 88 || errNum == 89)
     {
       double zd;
-      int status = 0;
+      status = 0;
       syslog (LOG_ERR,
 	      "Rts2DevTelescopeIr::checkErrors soft limit in ZD (%i)",
 	      errNum);
@@ -450,6 +450,9 @@ Rts2DevTelescopeIr::checkCover ()
 	  break;
 	}
       setTimeout (USEC_SEC);
+      break;
+    case OPENED:
+    case CLOSED:
       break;
     }
 }
@@ -767,6 +770,7 @@ Rts2DevTelescopeIr::change (double chng_ra, double chng_dec)
 int
 Rts2DevTelescopeIr::saveModel ()
 {
+  std::ofstream of;
   int status = 0;
   double aoff, zoff, ae, an, npae, ca, flex;
   status = tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
@@ -781,12 +785,47 @@ Rts2DevTelescopeIr::saveModel ()
       syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel status: %i", status);
       return -1;
     }
-
+  of.open ("/etc/rts2/ir.model", ios_base::out | ios_base::trunc);
+  of << aoff << " "
+    << zoff << " "
+    << ae << " "
+    << an << " " << npae << " " << ca << " " << flex << " " << std::endl;
+  of.close ();
+  if (of.fail ())
+    {
+      syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel file");
+    }
 }
 
 int
 Rts2DevTelescopeIr::loadModel ()
 {
+  std::ifstream ifs;
+  int status = 0;
+  double aoff, zoff, ae, an, npae, ca, flex;
+  try
+  {
+    ifs.open ("/etc/rts2/ir.model");
+    ifs >> aoff >> zoff >> ae >> an >> npae >> ca >> flex;
+  }
+  catch (exception & e)
+  {
+    syslog (LOG_DEBUG, "Rts2DevTelescopeIr::loadModel error");
+    return -1;
+  }
+  status = tpl_set ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+  status = tpl_set ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+  status = tpl_set ("POINTING.POINTINGPARAMS.AE", ae, &status);
+  status = tpl_set ("POINTING.POINTINGPARAMS.AN", an, &status);
+  status = tpl_set ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
+  status = tpl_set ("POINTING.POINTINGPARAMS.CA", ca, &status);
+  status = tpl_set ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel status: %i", status);
+      return -1;
+    }
+  return 0;
 }
 
 int
