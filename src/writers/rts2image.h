@@ -41,7 +41,8 @@ private:
   void setImageName (const char *in_filename);
   int createImage (char *in_filename);
   // when in_filename == NULL, we take image name stored in this->imageName
-  int openImage (const char *in_filename = NULL);
+  int openImage ();
+  int openImage (const char *in_filename);
   int writeExposureStart ();
   char *getImageBase (int in_epoch_id);
   unsigned short *imageData;

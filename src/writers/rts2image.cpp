@@ -240,6 +240,14 @@ Rts2Image::createImage (char *in_filename)
 }
 
 int
+Rts2Image::openImage ()
+{
+  if (imageName)
+    return openImage (NULL);
+  return -1;
+}
+
+int
 Rts2Image::openImage (const char *in_filename)
 {
   fits_status = 0;
