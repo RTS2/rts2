@@ -744,17 +744,59 @@ int
 Rts2DevTelescopeIr::correctOffsets (double cor_ra, double cor_dec,
 				    double real_ra, double real_dec)
 {
+  return -1;
 }
 
 int
 Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
 			     double real_dec)
 {
+  int ret;
+  // idea - convert current & astrometry position to alt & az, get
+  // offset in alt & az, apply offset
+  struct ln_equ_posn eq_astr;
+  struct ln_hrz_posn hrz_astr;
+  struct ln_hrz_posn hrz_target;
+  struct ln_lnlat_posn observer;
+  double az_off;
+  double alt_off;
+  double sep;
+  double jd = ln_get_julian_from_sys ();
+  int sample = 1;
+  eq_astr.ra = real_ra;
+  eq_ast.dec = real_dec;
+  observer.lng = telLongtitude;
+  observer.lat = telLatitude;
+  ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
+  getTargetAltAz (&hrz_target, jd);
+  // calculate alt & az diff
+  az_off = hrz_astr.az - hrz_target.az;
+  alt_off = hrz_astr.alt - hrz_target.alt;
+  sep = ln_get_angular_separation (&hrz_astr, &hrz_target);
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescopeIr::correct az_off: %f alt_off: %f sep: %f",
+	  az_off, alt_off, sep);
+  if (sep > 2)
+    return -1;
+  alt_off *= -1;		// get ZD offset
+  status = tpl_set ("AZ.OFFSET", az_off, &status);
+  status = tpl_set ("ZD.OFFSET", alt_off, &status);
+  // sample..
+  status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::correct status: %i", status);
+  if (status)
+    {
+      return -1;
+    }
+  return 0;
 }
 
 int
 Rts2DevTelescopeIr::change (double chng_ra, double chng_dec)
 {
+  // convert RA to AZ
+  // we have actual telRa, as Rts2DevTelescope::change (Rts2Conn ..) calls info
+  return startMove (telRa + chng_ra, telDec + chng_dec);
 }
 
 /**
@@ -794,7 +836,9 @@ Rts2DevTelescopeIr::saveModel ()
   if (of.fail ())
     {
       syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel file");
+      return -1;
     }
+  return 0;
 }
 
 int

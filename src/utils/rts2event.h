@@ -20,7 +20,7 @@
 //
 // rts2execcli.h            50- 99
 // rts2connimgprocess.h    200-249
-// rts2scriptelement.h     250-259
+// rts2scriptelement.h     250-299
 // rts2devclifoc.h         500-549
 // rts2devclicop.h         550-600
 // grbd.h                  600-650

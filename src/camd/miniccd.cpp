@@ -641,6 +641,15 @@ CameraMiniccdInterleavedChip::startExposure (int light, float exptime)
 
   gettimeofday (&slave2ExposureStart, NULL);
 
+  // distribute changes to chipReadout structure..
+  slaveChip[0]->box (chipReadout->x, chipReadout->y, chipReadout->width,
+		     chipReadout->height / 2);
+  slaveChip[1]->box (chipReadout->x, chipReadout->y, chipReadout->width,
+		     chipReadout->height / 2);
+  // and binning
+  slaveChip[0]->setBinning (binningVertical, binningHorizontal);
+  slaveChip[1]->setBinning (binningVertical, binningHorizontal);
+
   ret = slaveChip[0]->startExposureInterleaved (light, exptime);
   if (ret)
     return -1;

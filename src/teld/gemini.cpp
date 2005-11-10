@@ -35,10 +35,6 @@
 #define RATE_FIND	'M'
 #define RATE_CENTER	'C'
 #define RATE_GUIDE	'G'
-#define DIR_NORTH	'n'
-#define DIR_EAST	'e'
-#define DIR_SOUTH	's'
-#define DIR_WEST	'w'
 #define PORT_TIMEOUT	5
 
 #define TCM_DEFAULT_RATE	32768
@@ -106,7 +102,9 @@ private:
   int tel_gemini_getch (int id, char *in_buf);
   int tel_gemini_setch (int id, char *in_buf);
   int tel_gemini_set (int id, int32_t val);
+  int tel_gemini_set (int id, double val);
   int tel_gemini_get (int id, int32_t * val);
+  int tel_gemini_get (int id, double *val);
   int tel_gemini_reset ();
   int tel_gemini_match_time ();
   int tel_read_ra ();
@@ -200,6 +198,9 @@ public:
   virtual int resetMount (resetStates reset_state);
   virtual int startDir (char *dir);
   virtual int stopDir (char *dir);
+  virtual int startGuide (char dir, double dir_dist);
+  virtual int stopGuide (char dir);
+  virtual int stopGuideAll ();
 };
 
 /*! 
@@ -476,6 +477,23 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
   return -1;
 }
 
+int
+Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
+{
+  char buf[15];
+  int len;
+  len = sprintf (buf, ">%i:%f0.1", id, val);
+  buf[len] = tel_gemini_checksum (buf);
+  len++;
+  buf[len] = '#';
+  len++;
+  buf[len] = '\0';
+  if (tel_write (buf, len) > 0)
+    return 0;
+  return -1;
+}
+
+
 /*!
  * Read gemini local parameters
  *
@@ -551,6 +569,37 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t * val)
       return -1;
     }
   *val = atol (buf);
+  return 0;
+}
+
+int
+Rts2DevTelescopeGemini::tel_gemini_get (int id, double *val)
+{
+  char buf[9], *ptr, checksum;
+  int len, ret;
+  len = sprintf (buf, "<%i:", id);
+  buf[len] = tel_gemini_checksum (buf);
+  len++;
+  buf[len] = '#';
+  len++;
+  buf[len] = '\0';
+  ret = tel_write_read_hash (buf, len, buf, 8);
+  if (ret < 0)
+    return ret;
+  for (ptr = buf; *ptr && (isdigit (*ptr) || *ptr == '.' || *ptr == '-');
+       ptr++);
+  checksum = *ptr;
+  *ptr = '\0';
+  if (tel_gemini_checksum (buf) != checksum)
+    {
+      syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
+	      tel_gemini_checksum (buf), checksum);
+      if (*buf)
+	sleep (5);
+      tcflush (tel_desc, TCIOFLUSH);
+      return -1;
+    }
+  *val = atof (buf);
   return 0;
 }
 
@@ -1951,6 +2000,53 @@ Rts2DevTelescopeGemini::stopDir (char *dir)
     }
   return -2;
 }
+
+int
+Rts2DevTelescopeGemini::startGuide (char dir, double dir_dist)
+{
+  int ret;
+  switch (dir)
+    {
+    case DIR_EAST:
+    case DIR_WEST:
+    case DIR_NORTH:
+    case DIR_SOUTH:
+      tel_set_rate (RATE_GUIDE);
+      // set smallest rate..
+      tel_gemini_set (150, 0.2);
+      ret = telescope_start_move (dir);
+      if (ret)
+	return ret;
+      return Rts2DevTelescope::startGuide (dir, dir_dist);
+    }
+  return -2;
+}
+
+int
+Rts2DevTelescopeGemini::stopGuide (char dir)
+{
+  int ret;
+  switch (dir)
+    {
+    case DIR_EAST:
+    case DIR_WEST:
+    case DIR_NORTH:
+    case DIR_SOUTH:
+      ret = telescope_stop_move (dir);
+      if (ret)
+	return ret;
+      return Rts2DevTelescope::stopGuide (dir);
+    }
+  return -2;
+}
+
+int
+Rts2DevTelescopeGemini::stopGuideAll ()
+{
+  telescope_stop_goto ();
+  return Rts2DevTelescope::stopGuideAll ();
+}
+
 
 Rts2DevTelescopeGemini *device;
 

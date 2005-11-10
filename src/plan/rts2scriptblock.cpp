@@ -118,6 +118,9 @@ Rts2ScriptElementBlock::nextCommand (Rts2DevClientPhot * client,
 				     char new_device[DEVICE_NAME_SIZE])
 {
   int ret;
+  if (endLoop () || blockElements.empty ())
+    return NEXT_COMMAND_NEXT;
+
   while (1)
     {
       ret = (*curr_element)->nextCommand (client, new_command, new_device);
@@ -126,8 +129,6 @@ Rts2ScriptElementBlock::nextCommand (Rts2DevClientPhot * client,
       curr_element++;
       if (curr_element == blockElements.end ())
 	{
-	  if (endLoop ())
-	    return NEXT_COMMAND_NEXT;
 	  curr_element = blockElements.begin ();
 	}
     }
@@ -161,30 +162,10 @@ Rts2SEBSignalEnd::Rts2SEBSignalEnd (Rts2Script * in_script, int end_sig_num):Rts
   (in_script)
 {
   sig_num = end_sig_num;
-  askedFor = false;
 }
 
 Rts2SEBSignalEnd::~Rts2SEBSignalEnd (void)
 {
-  if (askedFor)
-    script->getMaster ()->
-      postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig_num));
-}
-
-void
-Rts2SEBSignalEnd::postEvent (Rts2Event * event)
-{
-  switch (event->getType ())
-    {
-    case EVENT_SIGNAL_QUERY:
-      if (*(int *) event->getArg () == sig_num)
-	{
-	  *(int *) event->getArg () = -1;
-	  askedFor = 1;
-	}
-      break;
-    }
-  Rts2ScriptElementBlock::postEvent (event);
 }
 
 int

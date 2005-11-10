@@ -137,6 +137,7 @@ public:
 
   double getAstrometryErr ();
 
+  int closeFile ();
   virtual int saveImage ();
   virtual int deleteImage ();
 
@@ -304,6 +305,9 @@ public:
   // (and other things, such as athmospheric dispersion..).
   // You most probably don't need it.
   int getHam (double &x, double &y);
+
+  // return offset to brightest star in field
+  int getBrightestOffset (double &x, double &y);
 
   int getRaDec (double x, double y, double &ra, double &dec);
 

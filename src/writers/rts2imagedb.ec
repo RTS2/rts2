@@ -27,11 +27,11 @@ Rts2ImageDb::updateObjectDB ()
   char d_obs_subtype = 'S';
   int d_img_date = getExposureSec ();
   int d_img_usec = getExposureUsec ();
-  float d_img_temperature = 100;
+  float d_img_temperature = -500;
   int d_img_temperature_ind;
-  float d_img_exposure;
-  float d_img_alt;
-  float d_img_az;
+  float d_img_exposure = -1;
+  float d_img_alt = -100;
+  float d_img_az = -100;
   int d_epoch_id = epochId;
   int d_med_id = 0;
   int d_proccess_bitfield = processBitfiedl;
@@ -54,7 +54,7 @@ Rts2ImageDb::updateObjectDB ()
   strncpy (d_img_filter.arr, tmp_filter, d_img_filter.len);
 
   d_img_temperature_ind = getValue ("CCD_TEMP", d_img_temperature);
-  getValue ("EXPOSURE", d_img_exposure);
+  d_img_exposure = getExposureLength ();
   getValue ("ALT", d_img_alt);
   getValue ("AZ", d_img_az);
 
@@ -143,7 +143,7 @@ Rts2ImageDb::updateDarkDB ()
   EXEC SQL END DECLARE SECTION;
 
   d_dark_temperature_ind = getValue ("CCD_TEMP", d_dark_temperature);
-  getValue ("EXPOSURE", d_dark_exposure);
+  d_dark_exposure = getExposureLength ();
 
   strncpy (d_camera_name.arr, cameraName, 8);
   d_camera_name.len = strlen (cameraName);
@@ -297,8 +297,8 @@ Rts2ImageDb::setDarkFromDb ()
   VARCHAR d_camera_name[8];
   int d_date = getExposureSec ();
   VARCHAR d_dark_name[250];
-  double d_img_temperature;
-  double d_img_exposure;
+  double d_img_temperature = nan("f");
+  double d_img_exposure = nan("f");
   EXEC SQL END DECLARE SECTION;
 
   if (!cameraName)
@@ -312,7 +312,7 @@ Rts2ImageDb::setDarkFromDb ()
   d_camera_name.len = strlen (cameraName);
 
   getValue ("CCD_TEMP", d_img_temperature);
-  getValue ("EXPOSURE", d_img_exposure);
+  d_img_exposure = getExposureLength ();
 
   EXEC SQL DECLARE dark_cursor CURSOR FOR
     SELECT
@@ -338,6 +338,7 @@ Rts2ImageDb::setDarkFromDb ()
     return -1;
   }
   EXEC SQL CLOSE dark_cursor;
+  EXEC SQL COMMIT;
   setValue ("DARK", d_dark_name.arr, "dark image full path");
   processBitfiedl |= DARK_OK;
 

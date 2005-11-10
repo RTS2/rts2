@@ -105,3 +105,11 @@ Rts2DeviceDb::init ()
   // load config.
   return initDB ();
 }
+
+void
+Rts2DeviceDb::closeSockets ()
+{
+// dosn't work??
+//  EXEC SQL DISCONNECT;
+  Rts2Device::closeSockets ();
+}

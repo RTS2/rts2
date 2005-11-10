@@ -55,6 +55,12 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
 
   lastTar.ra = -1000;
   lastTar.dec = -1000;
+
+  for (int i = 0; i < 4; i++)
+    {
+      timerclear (dir_timeouts + i);
+    }
+  telGuidingSpeed = nan ("f");
 }
 
 int
@@ -113,6 +119,21 @@ Rts2DevTelescope::getMoveTargetSep ()
   return ln_get_angular_separation (&curr, &lastTar);
 }
 
+void
+Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz)
+{
+  getTargetAltAz (hrz, ln_get_julian_from_sys ());
+}
+
+void
+Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
+{
+  struct ln_lnlat_posn observer;
+  observer.lng = telLongtitude;
+  observer.lat = telLatitude;
+  ln_get_hrz_from_equ (&lastTar, &observer, jd, hrz);
+}
+
 double
 Rts2DevTelescope::get_loc_sid_time ()
 {
@@ -134,7 +155,7 @@ Rts2DevTelescope::createConnection (int in_sock, int conn_num)
   return new Rts2DevConnTelescope (in_sock, this);
 }
 
-int
+void
 Rts2DevTelescope::checkMoves ()
 {
   int ret;
@@ -264,13 +285,28 @@ Rts2DevTelescope::checkMoves ()
 	    }
 	}
     }
-  return 0;
+}
+
+void
+Rts2DevTelescope::checkGuiding ()
+{
+  struct timeval now;
+  gettimeofday (&now, NULL);
+  if (dir_timeouts[0].tv_sec > 0 && timercmp (&now, dir_timeouts + 0, >))
+    stopGuide (DIR_NORTH);
+  if (dir_timeouts[1].tv_sec > 0 && timercmp (&now, dir_timeouts + 1, >))
+    stopGuide (DIR_EAST);
+  if (dir_timeouts[2].tv_sec > 0 && timercmp (&now, dir_timeouts + 2, >))
+    stopGuide (DIR_SOUTH);
+  if (dir_timeouts[3].tv_sec > 0 && timercmp (&now, dir_timeouts + 3, >))
+    stopGuide (DIR_WEST);
 }
 
 int
 Rts2DevTelescope::idle ()
 {
   checkMoves ();
+  checkGuiding ();
   return Rts2Device::idle ();
 }
 
@@ -348,6 +384,83 @@ Rts2DevTelescope::endSearch ()
 }
 
 int
+Rts2DevTelescope::startGuide (char dir, double dir_dist)
+{
+  struct timeval *tv;
+  struct timeval tv_add;
+  int state_dir;
+  switch (dir)
+    {
+    case DIR_NORTH:
+      tv = dir_timeouts + 0;
+      state_dir = TEL_GUIDE_NORTH;
+      break;
+    case DIR_EAST:
+      tv = dir_timeouts + 1;
+      state_dir = TEL_GUIDE_EAST;
+      break;
+    case DIR_SOUTH:
+      tv = dir_timeouts + 2;
+      state_dir = TEL_GUIDE_SOUTH;
+      break;
+    case DIR_WEST:
+      tv = dir_timeouts + 3;
+      state_dir = TEL_GUIDE_WEST;
+      break;
+    default:
+      return -1;
+    }
+  double dir_timeout = (dir_dist / 15.0) * telGuidingSpeed;
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::startGuide dir: %c dir_dist: %f dir_timeout: %f",
+	  dir, dir_dist, dir_timeout);
+  gettimeofday (&tv_add, NULL);
+  tv_add.tv_sec = (int) (floor (dir_timeout));
+  tv_add.tv_usec = (int) ((dir_timeout - tv_add.tv_sec) * USEC_SEC);
+  timeradd (tv, &tv_add, tv);
+  maskState (0, state_dir, state_dir, "started guiding");
+  return 0;
+}
+
+int
+Rts2DevTelescope::stopGuide (char dir)
+{
+  int state_dir;
+  switch (dir)
+    {
+    case DIR_NORTH:
+      dir_timeouts[0].tv_sec = 0;
+      state_dir = TEL_GUIDE_NORTH;
+      break;
+    case DIR_EAST:
+      dir_timeouts[1].tv_sec = 0;
+      state_dir = TEL_GUIDE_EAST;
+      break;
+    case DIR_SOUTH:
+      dir_timeouts[2].tv_sec = 0;
+      state_dir = TEL_GUIDE_SOUTH;
+      break;
+    case DIR_WEST:
+      dir_timeouts[3].tv_sec = 0;
+      state_dir = TEL_GUIDE_WEST;
+      break;
+    default:
+      return -1;
+    }
+  syslog (LOG_DEBUG, "Rts2DevTelescope::stopGuide dir: %c", dir);
+  maskState (0, state_dir, TEL_NOGUIDE, "guiding ended");
+  return 0;
+}
+
+int
+Rts2DevTelescope::stopGuideAll ()
+{
+  syslog (LOG_DEBUG, "Rts2DevTelescope::stopGuideAll");
+  maskState (0, TEL_GUIDE_MASK, TEL_NOGUIDE, "guiding stoped");
+  return 0;
+}
+
+int
 Rts2DevTelescope::sendInfo (Rts2Conn * conn)
 {
   if (knowPosition)
@@ -374,6 +487,7 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
   conn->sendValue ("axis1_counts", telAxis[1]);
   conn->sendValue ("correction_mark", moveMark);
   conn->sendValue ("num_corr", numCorr);
+  conn->sendValue ("guiding_speed", telGuidingSpeed);
   return 0;
 }
 
@@ -907,6 +1021,28 @@ Rts2DevConnTelescope::commandAuthorized ()
       if (paramNextString (&dir) || !paramEnd ())
 	return -2;
       return master->stopDir (dir);
+    }
+  else if (isCommand ("start_guide"))
+    {
+      char *dir;
+      double dir_timeout;
+      if (paramNextString (&dir)
+	  || paramNextDouble (&dir_timeout) || !paramEnd ())
+	return -2;
+      return master->startGuide (*dir, dir_timeout);
+    }
+  else if (isCommand ("stop_guide"))
+    {
+      char *dir;
+      if (paramNextString (&dir) || !paramEnd ())
+	return -2;
+      return master->stopGuide (*dir);
+    }
+  else if (isCommand ("stop_guide_all"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->stopGuideAll ();
     }
   else if (isCommand ("search"))
     {

@@ -98,6 +98,7 @@ Rts2ImgSet::loadTarget ()
       tar_id = :d_tar_id
     AND observations.obs_id = images.obs_id
   ORDER BY
+    img_date desc,
     img_id desc;
 
   EXEC SQL OPEN cur_images_tar;

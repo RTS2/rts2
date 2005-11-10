@@ -40,9 +40,7 @@ public:
 			   char new_device[DEVICE_NAME_SIZE]);
 
   virtual int processImage (Rts2Image * image);
-
   virtual int waitForSignal (int in_sig);
-
   virtual void cancelCommands ();
 };
 
@@ -52,7 +50,6 @@ class Rts2SEBSignalEnd:public Rts2ScriptElementBlock
 private:
   // sig_num will become -1, when we get signal..
   int sig_num;
-  bool askedFor;
 protected:
     virtual bool endLoop ()
   {
@@ -62,7 +59,6 @@ public:
     Rts2SEBSignalEnd (Rts2Script * in_script, int end_sig_num);
   virtual ~ Rts2SEBSignalEnd (void);
 
-  virtual void postEvent (Rts2Event * event);
   virtual int waitForSignal (int in_sig);
 };
 

@@ -49,6 +49,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
   int sig;
   int acqEnd;
   Rts2Script *tmp_script;
+  AcquireQuery *ac;
   switch (event->getType ())
     {
     case EVENT_KILL_ALL:
@@ -158,10 +159,13 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_ACQUIRE_QUERY:
-      if (currentTarget && currentTarget->isAcquired ())
+      ac = (AcquireQuery *) event->getArg ();
+      if (currentTarget
+	  && ac->tar_id == currentTarget->getObsTargetID ()
+	  && currentTarget->isAcquired ())
 	{
 	  // target that was already acquired will not be acquired again
-	  *(int *) event->getArg () = 0;
+	  ac->count = 0;
 	  break;
 	}
     case EVENT_SIGNAL_QUERY:
@@ -360,7 +364,8 @@ Rts2DevScript::haveNextCommand ()
 	}
     }
   if (isWaitMove () || waitScript == WAIT_SLAVE || waitScript == WAIT_SIGNAL
-      || waitScript == WAIT_MIRROR || waitScript == WAIT_SEARCH)
+      || waitScript == WAIT_MIRROR || waitScript == WAIT_SEARCH
+      || nextComd == NULL)
     return 0;
   if (!strcmp (cmd_device, "TX"))	// some telescope command..
     {

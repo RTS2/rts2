@@ -17,6 +17,7 @@ public:
   virtual int processOption (int in_opt);
   int initDB ();
   virtual int init ();
+  virtual void closeSockets ();
 };
 
 #endif /* !__RTS2_DEVICEDB__ */

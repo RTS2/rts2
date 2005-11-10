@@ -60,7 +60,7 @@ ConstTarget::load ()
   position.dec = d_dec;
 
   if (target_name)
-    delete target_name;
+    delete[] target_name;
   
   target_name = new char[d_tar_name.len + 1];
   strncpy (target_name, d_tar_name.arr, d_tar_name.len);

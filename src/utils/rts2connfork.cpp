@@ -37,6 +37,11 @@ Rts2ConnFork::connectionError (int last_data_size)
   return Rts2Conn::connectionError (last_data_size);
 }
 
+void
+Rts2ConnFork::beforeFork ()
+{
+}
+
 int
 Rts2ConnFork::newProcess ()
 {
@@ -63,6 +68,8 @@ Rts2ConnFork::init ()
 	      "Rts2ConnImgProcess::run cannot create pipe for process: %m");
       return -1;
     }
+  // do everything that will be needed to done before forking
+  beforeFork ();
   childPid = fork ();
   if (childPid == -1)
     {

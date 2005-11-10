@@ -867,7 +867,7 @@ Rts2Image::getAstrometryErr ()
 }
 
 int
-Rts2Image::saveImage ()
+Rts2Image::closeFile ()
 {
   if (flags & IMAGE_SAVE && ffile)
     {
@@ -883,6 +883,12 @@ Rts2Image::saveImage ()
     }
   ffile = NULL;
   return 0;
+}
+
+int
+Rts2Image::saveImage ()
+{
+  return closeFile ();
 }
 
 int

@@ -1,3 +1,29 @@
+0.5.2
+===
+ * guiding support
+   - guiding section in config, minchange and badchange parameters
+ * rts2-lastnightreport script changed to rts2-nightreport, and accept
+   some parameters (see rts2-nightreport --help to give you some idea;
+   and experince with them on production system)
+ * rts2-targetinfo accept some more parameters.
+ * it's now possible to send emails to interested users on those events:
+   - start of observation (start of imaginign, e.g. after telescope
+     slew)
+   - end of observation (after last image taken)
+   - first image with astrometry
+   - when all images from observation group are processed
+   - at the end of night observations
+ * Users can be assigned either to observations, or to group of
+   observations - e.g. you can get those emails for observation 1033 and
+   for all GRBs (even new one, which will be generated from GRB). It's 
+   configurable on user level.
+ * FLI support
+
+0.5.1
+===
+ * small changes in DB
+ * focusing
+
 0.5.0
 ===
  * rts2block.cpp, rts2device.cpp - new communication library

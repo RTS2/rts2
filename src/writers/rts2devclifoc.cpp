@@ -188,12 +188,22 @@ Rts2ConnFocus::~Rts2ConnFocus (void)
   delete[]img_path;
 }
 
+void
+Rts2ConnFocus::beforeFork ()
+{
+  if (exePath)
+    {
+      // don't care about DB stuff - it will care about it
+      // when we will delete image
+      image->closeFile ();
+    }
+}
+
 int
 Rts2ConnFocus::newProcess ()
 {
   if (exePath)
     {
-      image->saveImage ();
       execl (exePath, exePath, img_path, (char *) NULL);
       // when execl fails..
       syslog (LOG_ERR, "Rts2ConnFocus::newProcess: %m");

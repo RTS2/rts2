@@ -24,6 +24,23 @@
 
 #define EVENT_ACQUSITION_END	RTS2_LOCAL_EVENT+61
 
+#define EVENT_TEL_START_GUIDING	RTS2_LOCAL_EVENT+62
+#define EVENT_TEL_STOP_GUIDING  RTS2_LOCAL_EVENT+63
+
+#define EVENT_QUE_IMAGE		RTS2_LOCAL_EVENT+64
+
+class GuidingParams
+{
+public:
+  char dir;
+  double dist;
+    GuidingParams (char in_dir, double in_dist)
+  {
+    dir = in_dir;
+    dist = in_dist;
+  }
+};
+
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage,
   public Rts2DevScript
 {
@@ -77,6 +94,7 @@ public:
   virtual void postEvent (Rts2Event * event);
   virtual void nextCommand ();
   virtual Rts2Image *createImage (const struct timeval *expStart);
+  void queImage (Rts2Image * image);
   virtual void processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
 

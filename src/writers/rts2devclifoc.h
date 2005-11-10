@@ -52,6 +52,8 @@ private:
   Rts2Image *image;
   int change;
   int endEvent;
+protected:
+    virtual void beforeFork ();
 public:
     Rts2ConnFocus (Rts2Block * in_master, Rts2Image * in_image,
 		   const char *in_exe, int in_endEvent);

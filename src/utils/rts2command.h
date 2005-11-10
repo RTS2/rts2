@@ -206,6 +206,27 @@ public:
 		      double dec, double ra_err, double dec_err);
 };
 
+class Rts2CommandStartGuide:public Rts2Command
+{
+public:
+  Rts2CommandStartGuide (Rts2Block * in_master, char dir, double dir_dist);
+};
+
+class Rts2CommandStopGuide:public Rts2Command
+{
+public:
+  Rts2CommandStopGuide (Rts2Block * in_master, char dir);
+};
+
+class Rts2CommandStopGuideAll:public Rts2Command
+{
+public:
+  Rts2CommandStopGuideAll (Rts2Block * in_master):Rts2Command (in_master)
+  {
+    setCommand ("stop_guide_all");
+  }
+};
+
 class Rts2CommandCopulaMove:public Rts2Command
 {
   Rts2DevClientCopula *copula;

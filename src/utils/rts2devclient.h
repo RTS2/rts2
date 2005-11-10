@@ -125,6 +125,8 @@ public:
   virtual void settingsFailed (int status)
   {
   }
+
+  bool isIdle ();
 };
 
 class Rts2DevClientTelescope:public Rts2DevClient

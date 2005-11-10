@@ -24,6 +24,15 @@ Rts2DevClientCameraExec::~Rts2DevClientCameraExec ()
 void
 Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 {
+  Rts2Image *image;
+  switch (event->getType ())
+    {
+    case EVENT_QUE_IMAGE:
+      image = (Rts2Image *) event->getArg ();
+      if (!strcmp (image->getCameraName (), getName ()))
+	queImage (image);
+      break;
+    }
   Rts2DevScript::postEvent (new Rts2Event (event));
   Rts2DevClientCameraImage::postEvent (event);
 }
@@ -52,10 +61,7 @@ Rts2DevClientCameraExec::nextCommand ()
 
   if (nextComd->getCommandCond () == NO_EXPOSURE)
     {
-      if (isExposing || (connection->
-			 getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
-					 CAM_MASK_READING)) !=
-	  (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
+      if (isExposing || !isIdle ())
 	{
 	  return;		// after current exposure ends..
 	}
@@ -85,18 +91,8 @@ Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 }
 
 void
-Rts2DevClientCameraExec::processImage (Rts2Image * image)
+Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
-  int ret;
-  // try processing in script..
-  if (script)
-    {
-      ret = script->processImage (image);
-      if (!ret)
-	{
-	  return;
-	}
-    }
   // if unknow type, don't process image..
   if (image->getType () != IMGTYPE_OBJECT)
     return;
@@ -127,6 +123,22 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
     return;
   image->saveImage ();
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
+}
+
+void
+Rts2DevClientCameraExec::processImage (Rts2Image * image)
+{
+  int ret;
+  // try processing in script..
+  if (script)
+    {
+      ret = script->processImage (image);
+      if (!ret)
+	{
+	  return;
+	}
+    }
+  queImage (image);
 }
 
 void
@@ -213,6 +225,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 {
   int ret;
   struct ln_equ_posn *offset;
+  GuidingParams *gp;
   Rts2ScriptElementSearch *searchEl;
   switch (event->getType ())
     {
@@ -292,6 +305,15 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
     case EVENT_ACQUSITION_END:
       fixedOffset.ra = 0;
       fixedOffset.dec = 0;
+      break;
+    case EVENT_TEL_START_GUIDING:
+      gp = (GuidingParams *) event->getArg ();
+      connection->
+	queCommand (new
+		    Rts2CommandStartGuide (getMaster (), gp->dir, gp->dist));
+      break;
+    case EVENT_TEL_STOP_GUIDING:
+      connection->queCommand (new Rts2CommandStopGuideAll (getMaster ()));
       break;
     }
   Rts2DevClientTelescopeImage::postEvent (event);

@@ -340,6 +340,25 @@ Rts2Command (in_master)
   free (command);
 }
 
+Rts2CommandStartGuide::Rts2CommandStartGuide (Rts2Block * in_master, char dir,
+					      double dir_dist):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "start_guide %c %lf", dir, dir_dist);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandStopGuide::Rts2CommandStopGuide (Rts2Block * in_master, char dir):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "stop_guide %c", dir);
+  setCommand (command);
+  free (command);
+}
+
 Rts2CommandCopulaMove::Rts2CommandCopulaMove (Rts2DevClientCopula * in_copula,
 					      double ra, double dec):
 Rts2Command (in_copula->getMaster ())

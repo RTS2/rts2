@@ -289,6 +289,14 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
+bool Rts2DevClientCamera::isIdle ()
+{
+  return ((connection->
+	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
+			   CAM_MASK_READING)) ==
+	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
+}
+
 Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
@@ -311,6 +319,7 @@ Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2De
   addValue (new Rts2ValueDouble ("axis1_counts"));
   addValue (new Rts2ValueInteger ("correction_mark"));
   addValue (new Rts2ValueInteger ("num_corr"));
+  addValue (new Rts2ValueDouble ("guiding_speed"));
 }
 
 Rts2DevClientTelescope::~Rts2DevClientTelescope (void)

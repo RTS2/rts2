@@ -38,6 +38,11 @@ private:
   double lastRa;
   double lastDec;
   struct ln_equ_posn lastTar;
+
+  void checkMoves ();
+  void checkGuiding ();
+
+  struct timeval dir_timeouts[4];
 protected:
     virtual int willConnect (Rts2Address * in_addr);
   char *device_file;
@@ -53,6 +58,7 @@ protected:
   double telLatitude;
   double telAltitude;
   double telParkDec;
+  double telGuidingSpeed;	// in multiply of sidereal speed..eg 1 == 15 arcsec/sec
   double searchRadius;
   double searchSpeed;		// in multiply of HA speed..eg 1 == 15 arcsec / sec
   virtual int isMovingFixed ()
@@ -100,12 +106,13 @@ protected:
     lastTar.dec = -1000;
   }
   double getMoveTargetSep ();
+  void getTargetAltAz (struct ln_hrz_posn *hrz);
+  void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
   double get_loc_sid_time ();
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int init ();
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
-  int checkMoves ();
   virtual int idle ();
   virtual void postEvent (Rts2Event * event);
   virtual int changeMasterState (int new_state);
@@ -200,6 +207,10 @@ public:
   {
     return -1;
   }
+
+  virtual int startGuide (char dir, double dir_dist);
+  virtual int stopGuide (char dir);
+  virtual int stopGuideAll ();
 
   // callback functions from telescope connection
   virtual int sendInfo (Rts2Conn * conn);

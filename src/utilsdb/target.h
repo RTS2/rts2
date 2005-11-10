@@ -60,6 +60,7 @@
 #define COMMAND_PHOTOMETER	"P"
 #define COMMAND_PHOT_SEARCH	"PS"
 #define COMMAND_BLOCK_WAITSIG   "block_waitsig"
+#define COMMAND_GUIDING		"guiding"
 
 // HAM acqusition - only on FRAM telescope
 #define COMMAND_HAM		"HAM"

@@ -147,7 +147,6 @@ public:
   virtual int camCoolHold ();
   virtual int camCoolTemp (float new_temp);
   virtual int camCoolShutdown ();
-  virtual int camFilter (int new_filter);
 };
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
@@ -296,7 +295,7 @@ Rts2DevCameraAndor::camStopRead (int chip)
 int
 Rts2DevCameraAndor::camCoolMax ()
 {
-  return -1;
+  return camCoolHold ();
 }
 
 int
@@ -322,12 +321,6 @@ Rts2DevCameraAndor::camCoolShutdown ()
 {
   CoolerOFF ();
   return 0;
-}
-
-int
-Rts2DevCameraAndor::camFilter (int new_filter)
-{
-  return -1;
 }
 
 int

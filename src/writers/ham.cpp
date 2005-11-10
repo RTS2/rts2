@@ -49,3 +49,19 @@ Rts2Image::getHam (double &x, double &y)
   // HAM not found..
   return -1;
 }
+
+int
+Rts2Image::getBrightestOffset (double &x, double &y)
+{
+  if (sexResultNum == 0)
+    {
+      return -1;
+    }
+  qsort (sexResults, sexResultNum, sizeof (struct stardata), sdFluxCompare);
+  // returns coordinates of brightest source
+  syslog (LOG_DEBUG, "Rts2Image::getBrightestOffset flux0: %f flags: %i",
+	  sexResults[0].F, sexResults[0].flags);
+  x = sexResults[0].X;
+  y = sexResults[0].Y;
+  return 0;
+}

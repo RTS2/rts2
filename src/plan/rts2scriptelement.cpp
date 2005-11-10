@@ -209,6 +209,7 @@ void
 Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 {
   Rts2ImageDb *image;
+  AcquireQuery *ac;
   switch (event->getType ())
     {
     case EVENT_OK_ASTROMETRY:
@@ -249,7 +250,8 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_ACQUIRE_QUERY:
-      *(int *) event->getArg () = *(int *) event->getArg () + 1;
+      ac = (AcquireQuery *) event->getArg ();
+      ac->count++;
       break;
     }
   Rts2ScriptElement::postEvent (event);
@@ -334,9 +336,12 @@ Rts2ScriptElementAcquire::cancelCommands ()
   processingState = FAILED;
 }
 
-Rts2ScriptElementWaitAcquire::Rts2ScriptElementWaitAcquire (Rts2Script * in_script):Rts2ScriptElement
-  (in_script)
+Rts2ScriptElementWaitAcquire::Rts2ScriptElementWaitAcquire (Rts2Script *
+							    in_script,
+							    int in_tar_id):
+Rts2ScriptElement (in_script)
 {
+  tar_id = in_tar_id;
 }
 
 int
@@ -345,13 +350,13 @@ Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
 					      char
 					      new_device[DEVICE_NAME_SIZE])
 {
-  int acqCount = 0;
+  AcquireQuery ac = AcquireQuery (tar_id);
   // detect is somebody plans to run A command..
   script->getMaster ()->
-    postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &acqCount));
+    postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
   syslog (LOG_DEBUG, "Rts2ScriptElementWaitAcquire::defnextCommand %i (%s)",
-	  acqCount, script->getDefaultDevice ());
-  if (acqCount)
+	  ac.count, script->getDefaultDevice ());
+  if (ac.count)
     return NEXT_COMMAND_WAIT_ACQUSITION;
   return NEXT_COMMAND_NEXT;
 }

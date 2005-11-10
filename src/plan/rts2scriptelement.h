@@ -35,6 +35,23 @@
 #define EVENT_TEL_SEARCH_END		RTS2_LOCAL_EVENT + 262
 // successfull search
 #define EVENT_TEL_SEARCH_SUCCESS	RTS2_LOCAL_EVENT + 263
+// guiding data available
+#define EVENT_GUIDING_DATA		RTS2_LOCAL_EVENT + 364
+
+/**
+ * Helper class for EVENT_ACQUIRE_QUERY
+ */
+class AcquireQuery
+{
+public:
+  int tar_id;
+  int count;
+    AcquireQuery (int in_tar_id)
+  {
+    tar_id = in_tar_id;
+    count = 0;
+  }
+};
 
 class Rts2Script;
 
@@ -47,7 +64,7 @@ class Rts2ScriptElement:public Rts2Object
 {
 protected:
   Rts2Script * script;
-  inline void getDevice (char new_device[DEVICE_NAME_SIZE]);
+  void getDevice (char new_device[DEVICE_NAME_SIZE]);
 public:
     Rts2ScriptElement (Rts2Script * in_script);
     virtual ~ Rts2ScriptElement (void);
@@ -198,8 +215,11 @@ public:
 
 class Rts2ScriptElementWaitAcquire:public Rts2ScriptElement
 {
+private:
+  // for which target shall we wait
+  int tar_id;
 public:
-  Rts2ScriptElementWaitAcquire (Rts2Script * in_script);
+    Rts2ScriptElementWaitAcquire (Rts2Script * in_script, int in_tar_id);
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,
 			      char new_device[DEVICE_NAME_SIZE]);

@@ -4,6 +4,7 @@
 
 #include "rts2script.h"
 #include "rts2scriptblock.h"
+#include "rts2scriptguiding.h"
 #include "../utilsdb/target.h"
 #include <string.h>
 #include <ctype.h>
@@ -233,7 +234,8 @@ Rts2Script::parseBuf (Target * target)
     }
   else if (!strcmp (commandStart, COMMAND_WAIT_ACQUIRE))
     {
-      return new Rts2ScriptElementWaitAcquire (this);
+      return new Rts2ScriptElementWaitAcquire (this,
+					       target->getObsTargetID ());
     }
   else if (!strcmp (commandStart, COMMAND_MIRROR_MOVE))
     {
@@ -315,6 +317,15 @@ Rts2Script::parseBuf (Target * target)
   else if (!strcmp (commandStart, "}"))
     {
       return NULL;
+    }
+  else if (!strcmp (commandStart, COMMAND_GUIDING))
+    {
+      float init_exposure;
+      int end_signal;
+      if (getNextParamFloat (&init_exposure)
+	  || getNextParamInteger (&end_signal))
+	return NULL;
+      return new Rts2ScriptElementGuiding (this, init_exposure, end_signal);
     }
   return NULL;
 }
