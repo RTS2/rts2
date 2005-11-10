@@ -3,10 +3,10 @@
 #endif
 
 #include <math.h>
-#include <mcheck.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include "camera_cpp.h"
 #include "../utils/rts2device.h"
@@ -31,6 +31,7 @@ using namespace std;
 
 class CameraAndorChip:public CameraChip
 {
+private:
   unsigned short *dest;		// for chips..
   unsigned short *dest_top;
   char *send_top;
@@ -40,9 +41,9 @@ public:
 		     float in_gain);
     virtual ~ CameraAndorChip (void);
   virtual long isExposing ();
+  virtual int stopExposure ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
-private:
 };
 
 CameraAndorChip::CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
@@ -73,6 +74,13 @@ CameraAndorChip::isExposing ()
   if (status == DRV_ACQUIRING)
     return 0;
   return -2;
+}
+
+int
+CameraAndorChip::stopExposure ()
+{
+  AbortAcquisition ();
+  return CameraChip::stopExposure ();
 }
 
 int
@@ -242,11 +250,8 @@ int
 Rts2DevCameraAndor::info ()
 {
   int c_status;
-  int iTemp;
-  c_status = GetTemperature (&iTemp);
-  tempCCD = (int) iTemp;
+  c_status = GetTemperatureF (&tempCCD);
   tempAir = nan ("f");
-  tempSet = nan ("f");
   coolingPower = (int) (50 * 1000);
   tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
   return 0;
@@ -297,12 +302,10 @@ Rts2DevCameraAndor::camCoolMax ()
 int
 Rts2DevCameraAndor::camCoolHold ()
 {
-  CoolerON ();
   if (isnan (nightCoolTemp))
-    SetTemperature (-5);
+    return camCoolTemp (-5);
   else
-    SetTemperature (nightCoolTemp);
-  return 0;
+    return camCoolTemp (nightCoolTemp);
 }
 
 int
@@ -310,6 +313,7 @@ Rts2DevCameraAndor::camCoolTemp (float new_temp)
 {
   CoolerON ();
   SetTemperature ((int) new_temp);
+  tempSet = new_temp;
   return 0;
 }
 
@@ -332,12 +336,22 @@ Rts2DevCameraAndor::camSetShutter (int shut_control)
   return SetShutter (1, shut_control, 50, 50);
 }
 
+Rts2DevCameraAndor *device = NULL;
+
+void
+killSignal (int sig)
+{
+  delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  mtrace ();
+  device = new Rts2DevCameraAndor (argc, argv);
 
-  Rts2DevCameraAndor *device = new Rts2DevCameraAndor (argc, argv);
+  signal (SIGINT, killSignal);
+  signal (SIGTERM, killSignal);
 
   int ret;
   ret = device->init ();

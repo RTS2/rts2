@@ -124,7 +124,7 @@ public:
     binningHorizontal = in_hori;
     return 0;
   }
-  int box (int in_x, int in_y, int in_width, int in_height)
+  virtual int box (int in_x, int in_y, int in_width, int in_height)
   {
     // tests for -1 -> full size
     if (in_x == -1)
