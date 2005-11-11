@@ -45,6 +45,7 @@ public:
     virtual ~ CameraFliChip (void);
   virtual int init ();
   virtual int setBinning (int in_vert, int in_hori);
+  virtual int box (int in_x, int in_y, int in_width, int in_height);
   virtual int startExposure (int light, float exptime);
   virtual long isExposing ();
   virtual int stopExposure ();
@@ -99,6 +100,29 @@ CameraFliChip::setBinning (int in_vert, int in_hori)
   if (ret)
     return -1;
   return CameraChip::setBinning (in_vert, in_hori);
+}
+
+int
+CameraFliChip::box (int in_x, int in_y, int in_width, int in_height)
+{
+  // tests for -1 -> full size
+  if (in_x == -1)
+    in_x = 0;
+  if (in_y == -1)
+    in_y = 0;
+  if (in_width == -1)
+    in_width = chipSize->width;
+  if (in_height == -1)
+    in_height = chipSize->height;
+  if (in_x < chipSize->x || in_y < chipSize->y
+      || ((in_x - chipSize->x) + in_width) > chipSize->width
+      || ((in_y - chipSize->y) + in_height) > chipSize->height)
+    return -1;
+  chipReadout->x = in_x;
+  chipReadout->y = in_y;
+  chipReadout->width = in_width;
+  chipReadout->height = in_height;
+  return 0;
 }
 
 int
@@ -157,9 +181,14 @@ int
 CameraFliChip::stopExposure ()
 {
   LIBFLIAPI ret;
-  ret = FLICancelExposure (dev);
-  if (ret)
-    return ret;
+  long timer;
+  ret = FLIGetExposureStatus (dev, &timer);
+  if (ret == 0 && timer > 0)
+    {
+      ret = FLICancelExposure (dev);
+      if (ret)
+	return ret;
+    }
   delete buf;
   buf = NULL;
   return CameraChip::stopExposure ();
