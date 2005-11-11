@@ -27,7 +27,7 @@ Rts2Image::getHam (double &x, double &y)
   qsort (sexResults, sexResultNum, sizeof (struct stardata), sdFluxCompare);
   // we think that first source is HAM
   syslog (LOG_DEBUG, "Rts2Image::getHam flux0: %f", sexResults[0].F);
-  if (sexResults[0].F > 120000)
+  if (sexResults[0].F > 100000)
     {
       // let's see if the second is close enough..airplane light
       float dist;
@@ -37,7 +37,7 @@ Rts2Image::getHam (double &x, double &y)
 	      ((sexResults[0].Y - sexResults[1].Y) * (sexResults[0].Y -
 						      sexResults[1].Y)));
       // we are quite sure we find it..
-      if (dist < 100)
+      if (dist < 100 || sexResults[0].F > 150000)
 	{
 	  x = sexResults[0].X;
 	  y = sexResults[0].Y;
