@@ -58,6 +58,7 @@
 #define COMMAND_WAIT_ACQUIRE	"Aw"
 #define COMMAND_MIRROR_MOVE	"M"
 #define COMMAND_PHOTOMETER	"P"
+#define COMMAND_STAR_SEARCH	"star"
 #define COMMAND_PHOT_SEARCH	"PS"
 #define COMMAND_BLOCK_WAITSIG   "block_waitsig"
 #define COMMAND_GUIDING		"guiding"
