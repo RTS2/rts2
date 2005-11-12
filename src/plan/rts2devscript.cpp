@@ -121,7 +121,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
       break;
     case EVENT_OK_ASTROMETRY:
     case EVENT_NOT_ASTROMETRY:
-    case EVENT_HAM_DATA:
+    case EVENT_STAR_DATA:
       if (script)
 	{
 	  script->postEvent (new Rts2Event (event));

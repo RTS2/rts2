@@ -278,6 +278,18 @@ Rts2Script::parseBuf (Target * target)
 	return NULL;
       return new Rts2ScriptElementAcquireHam (this, repNumber, exposure);
     }
+  else if (!strcmp (commandStart, COMMAND_STAR_SEARCH))
+    {
+      int repNumber;
+      double precision;
+      float exposure;
+      double scale;
+      if (getNextParamInteger (&repNumber) || getNextParamDouble (&precision)
+	  || getNextParamFloat (&exposure) || getNextParamDouble (&scale))
+	return NULL;
+      return new Rts2ScriptElementAcquireStar (this, repNumber, precision,
+					       exposure, scale, scale);
+    }
   else if (!strcmp (commandStart, COMMAND_PHOT_SEARCH))
     {
       double searchRadius;

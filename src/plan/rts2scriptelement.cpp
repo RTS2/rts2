@@ -513,105 +513,86 @@ Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
   return 0;
 }
 
-Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime):Rts2ScriptElementAcquire (in_script, 0.05,
-			  in_expTime)
+Rts2ScriptElementAcquireStar::Rts2ScriptElementAcquireStar (Rts2Script * in_script, int in_maxRetries, double in_precision, float in_expTime, double in_spiral_scale_ra, double in_spiral_scale_dec):
+Rts2ScriptElementAcquire (in_script, in_precision, in_expTime)
 {
   maxRetries = in_maxRetries;
   retries = 0;
+  spiral_scale_ra = in_spiral_scale_ra;
+  spiral_scale_dec = in_spiral_scale_dec;
   defaultImgProccess[0] = '\0';
+
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
 				      "sextractor", defaultImgProccess, 2000);
   spiral = new Rts2Spiral ();
 }
 
-Rts2ScriptElementAcquireHam::~Rts2ScriptElementAcquireHam (void)
+Rts2ScriptElementAcquireStar::~Rts2ScriptElementAcquireStar (void)
 {
   delete spiral;
 }
 
 void
-Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
+Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 {
   Rts2ConnFocus *focConn;
   Rts2Image *image;
-  double ham_x, ham_y;
   struct ln_equ_posn offset;
-  double sep;
   int ret;
   short next_x, next_y;
   switch (event->getType ())
     {
-    case EVENT_HAM_DATA:
+    case EVENT_STAR_DATA:
       focConn = (Rts2ConnFocus *) event->getArg ();
       image = focConn->getImage ();
       // that was our image
       if (image->getObsId () == obsId && image->getImgId () == imgId)
 	{
-	  ret = image->getHam (ham_x, ham_y);
-	  if (ret)
+	  ret = getSource (image, offset.ra, offset.dec);
+	  switch (ret)
 	    {
+	    case -1:
 	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA failed (numStars: %i)",
+		      "Rts2ScriptElementAcquireStar::postEvent EVENT_STAR_DATA failed (numStars: %i)",
 		      image->sexResultNum);
-	      if (retries <= maxRetries)
+	      if (retries >= maxRetries)
 		{
-		  retries++;
-		  processingState = PRECISION_BAD;
-		  // try some offset..
-		  spiral->getNextStep (next_x, next_y);
-		  offset.ra = 0.7 * next_x;
-		  offset.dec = 0.3 * next_y;
-		  script->getMaster ()->
-		    postEvent (new
-			       Rts2Event (EVENT_ADD_FIXED_OFFSET,
-					  (void *) &offset));
-		}
-	      else
-		{
-		  processingState = FAILED;	// ham not found..
-		}
-	    }
-	  else
-	    {
-	      // change fixed offset
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA %lf %lf",
-		      ham_x, ham_y);
-	      ret =
-		image->getOffset (ham_x, ham_y, offset.ra, offset.dec, sep);
-	      if (ret)
-		{
-		  syslog (LOG_DEBUG,
-			  "Rts2ScriptElementAcquireHam::postEvent EVENT_HAM_DATA getOffset %i",
-			  ret);
 		  processingState = FAILED;
+		  break;
 		}
-	      else
+	      retries++;
+	      processingState = PRECISION_BAD;
+	      // try some offset..
+	      spiral->getNextStep (next_x, next_y);
+	      offset.ra = spiral_scale_ra * next_x;
+	      offset.dec = spiral_scale_dec * next_y;
+	      script->getMaster ()->
+		postEvent (new
+			   Rts2Event (EVENT_ADD_FIXED_OFFSET,
+				      (void *) &offset));
+	      break;
+	    case 0:
+	      syslog (LOG_DEBUG,
+		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f",
+		      offset.ra, offset.dec);
+	      processingState = PRECISION_OK;
+	      break;
+	    case 1:
+	      syslog (LOG_DEBUG,
+		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f",
+		      offset.ra, offset.dec);
+	      if (retries >= maxRetries)
 		{
-		  syslog (LOG_DEBUG,
-			  "Rts2ScriptElementAcquire::offsets ra: %f dec: %f",
-			  offset.ra, offset.dec);
-		  if (sep < reqPrecision)
-		    {
-		      processingState = PRECISION_OK;
-		    }
-		  else
-		    {
-		      if (retries <= maxRetries)
-			{
-			  processingState = PRECISION_BAD;
-			  script->getMaster ()->
-			    postEvent (new
-				       Rts2Event (EVENT_ADD_FIXED_OFFSET,
-						  (void *) &offset));
-			  retries++;
-			}
-		      else
-			{
-			  processingState = FAILED;
-			}
-		    }
+		  processingState = FAILED;
+		  break;
 		}
+	      processingState = PRECISION_BAD;
+	      script->getMaster ()->
+		postEvent (new
+			   Rts2Event (EVENT_ADD_FIXED_OFFSET,
+				      (void *) &offset));
+	      retries++;
+	      break;
 	    }
 	}
       break;
@@ -620,14 +601,14 @@ Rts2ScriptElementAcquireHam::postEvent (Rts2Event * event)
 }
 
 int
-Rts2ScriptElementAcquireHam::processImage (Rts2Image * image)
+Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
 {
   int ret;
   Rts2ConnFocus *processor;
   if (processingState != WAITING_IMAGE)
     {
       syslog (LOG_ERR,
-	      "Rts2ScriptElementAcquireHam::processImage invalid processingState: %i",
+	      "Rts2ScriptElementAcquireStar::processImage invalid processingState: %i",
 	      processingState);
       processingState = FAILED;
       return -1;
@@ -636,7 +617,7 @@ Rts2ScriptElementAcquireHam::processImage (Rts2Image * image)
   imgId = image->getImgId ();
   processor =
     new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
-		       EVENT_HAM_DATA);
+		       EVENT_STAR_DATA);
 
   ret = processor->init ();
   if (ret < 0)
@@ -652,6 +633,58 @@ Rts2ScriptElementAcquireHam::processImage (Rts2Image * image)
       script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_WAIT));
     }
   return 0;
+}
+
+int
+Rts2ScriptElementAcquireStar::getSource (Rts2Image * image, double &ra_offset,
+					 double &dec_offset)
+{
+  int ret;
+  double off_x, off_y;
+  double sep;
+  float flux;
+  ret = image->getBrightestOffset (off_x, off_y, flux);
+  if (ret || flux < 100)
+    return -1;
+  ret = image->getOffset (off_x, off_y, ra_offset, dec_offset, sep);
+  if (ret)
+    return -1;
+  if (sep < reqPrecision)
+    return 0;
+  return 1;
+}
+
+Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime):Rts2ScriptElementAcquireStar (in_script, in_maxRetries, 0.05, in_expTime, 0.7,
+			      0.3)
+{
+}
+
+Rts2ScriptElementAcquireHam::~Rts2ScriptElementAcquireHam (void)
+{
+}
+
+int
+Rts2ScriptElementAcquireHam::getSource (Rts2Image * image, double &ra_off,
+					double &dec_off)
+{
+  double ham_x, ham_y;
+  double sep;
+  int ret;
+  ret = image->getHam (ham_x, ham_y);
+  if (ret)
+    return -1;			// continue HAM search..
+  // change fixed offset
+  syslog (LOG_DEBUG,
+	  "Rts2ScriptElementAcquireHam::getSource %lf %lf", ham_x, ham_y);
+  ret = image->getOffset (ham_x, ham_y, ra_off, dec_off, sep);
+  if (ret)
+    return -1;
+  syslog (LOG_DEBUG,
+	  "Rts2ScriptElementAcquireHam::offsets ra: %f dec: %f",
+	  ra_off, dec_off);
+  if (sep < reqPrecision)
+    return 0;
+  return 1;
 }
 
 Rts2ScriptElementSearch::Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius, double in_searchSpeed):Rts2ScriptElement

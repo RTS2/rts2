@@ -24,7 +24,7 @@ private:
 
   char defaultImgProccess[2000];
   enum
-  { NEED_IMAGE, WAITING_IMAGE, FAILED
+  { NO_IMAGE, NEED_IMAGE, WAITING_IMAGE, FAILED
   } processingState;
 
   // will become -1 in case guiding goes other way then we wanted

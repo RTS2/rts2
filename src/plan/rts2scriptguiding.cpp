@@ -12,7 +12,7 @@ Rts2ScriptElement (in_script)
   expTime = init_exposure;
   endSignal = in_endSignal;
   defaultImgProccess[0] = '\0';
-  processingState = NEED_IMAGE;
+  processingState = NO_IMAGE;
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
 				      "sextractor", defaultImgProccess, 2000);
   obsId = -1;
@@ -71,6 +71,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
   Rts2Image *image;
   double star_x, star_y;
   double star_ra, star_dec, star_sep;
+  float flux;
   int ret;
   switch (event->getType ())
     {
@@ -79,7 +80,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
       image = focConn->getImage ();
       if (image->getObsId () == obsId && image->getImgId () == imgId)
 	{
-	  ret = image->getBrightestOffset (star_x, star_y);
+	  ret = image->getBrightestOffset (star_x, star_y, flux);
 	  if (ret)
 	    {
 	      syslog (LOG_DEBUG,
@@ -101,7 +102,6 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 		  syslog (LOG_DEBUG,
 			  "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA getOffset %i",
 			  ret);
-//          processingState = FAILED;
 		  if (processingState != NEED_IMAGE)
 		    processingState = NEED_IMAGE;
 		}
@@ -150,10 +150,16 @@ Rts2ScriptElementGuiding::nextCommand (Rts2DevClientCamera * camera,
 				       Rts2Command ** new_command,
 				       char new_device[DEVICE_NAME_SIZE])
 {
+  int ret = endSignal;
   if (endSignal == -1)
     return NEXT_COMMAND_NEXT;
   switch (processingState)
     {
+    case NO_IMAGE:
+      script->getMaster ()->
+	postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
+      if (ret != -1)
+	return NEXT_COMMAND_NEXT;
     case WAITING_IMAGE:
       if (!camera->isIdle ())
 	{

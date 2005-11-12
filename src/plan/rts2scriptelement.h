@@ -26,7 +26,7 @@
 #define EVENT_SIGNAL_QUERY		RTS2_LOCAL_EVENT + 257
 
 // send when data we received 
-#define EVENT_HAM_DATA			RTS2_LOCAL_EVENT + 258
+#define EVENT_STAR_DATA			RTS2_LOCAL_EVENT + 258
 
 #define EVENT_ADD_FIXED_OFFSET		RTS2_LOCAL_EVENT + 259
 
@@ -293,21 +293,57 @@ public:
   virtual int waitForSignal (int in_sig);
 };
 
-/**
- * Some special handling for HAM..
+/** 
+ * Class for bright source acquistion
  */
-class Rts2ScriptElementAcquireHam:public Rts2ScriptElementAcquire
+class Rts2ScriptElementAcquireStar:public Rts2ScriptElementAcquire
 {
 private:
   int maxRetries;
   int retries;
+  double spiral_scale_ra;
+  double spiral_scale_dec;
   Rts2Spiral *spiral;
+protected:
+  /**
+   * Decide, if image contains source of interest...
+   *
+   * It's called from processImage to decide what to do.
+   *
+   * @return -1 when we should continue in spiral search, 0 when source is in expected position,
+   * 1 when source is in field, but offset was measured; in that case it fills ra_offset and dec_offset.
+   */
+    virtual int getSource (Rts2Image * image, double &ra_off,
+			   double &dec_off);
+public:
+  /**
+   * @param in_spiral_scale_ra  RA scale in degrees
+   * @param in_spiral_scale_dec DEC scale in degrees
+   */
+    Rts2ScriptElementAcquireStar (Rts2Script * in_script, int in_maxRetries,
+				  double in_precision, float in_expTime,
+				  double in_spiral_scale_ra,
+				  double in_spiral_scale_dec);
+    virtual ~ Rts2ScriptElementAcquireStar (void);
+  virtual void postEvent (Rts2Event * event);
+  virtual int processImage (Rts2Image * image);
+};
+
+/**
+ * Some special handling for HAM..
+ */
+class Rts2ScriptElementAcquireHam:public Rts2ScriptElementAcquireStar
+{
+private:
+  int maxRetries;
+  int retries;
+protected:
+    virtual int getSource (Rts2Image * image, double &ra_off,
+			   double &dec_off);
 public:
     Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries,
 				 float in_expTime);
     virtual ~ Rts2ScriptElementAcquireHam (void);
-  virtual void postEvent (Rts2Event * event);
-  virtual int processImage (Rts2Image * image);
 };
 
 /**
