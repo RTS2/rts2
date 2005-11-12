@@ -51,7 +51,7 @@ Rts2Image::getHam (double &x, double &y)
 }
 
 int
-Rts2Image::getBrightestOffset (double &x, double &y)
+Rts2Image::getBrightestOffset (double &x, double &y, float &flux)
 {
   if (sexResultNum == 0)
     {
@@ -63,5 +63,6 @@ Rts2Image::getBrightestOffset (double &x, double &y)
 	  sexResults[0].F, sexResults[0].flags);
   x = sexResults[0].X;
   y = sexResults[0].Y;
+  flux = sexResults[0].F;
   return 0;
 }

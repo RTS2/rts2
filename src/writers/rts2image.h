@@ -306,8 +306,8 @@ public:
   // You most probably don't need it.
   int getHam (double &x, double &y);
 
-  // return offset to brightest star in field
-  int getBrightestOffset (double &x, double &y);
+  // return offset & flux of the brightest star in field
+  int getBrightestOffset (double &x, double &y, float &flux);
 
   int getRaDec (double x, double y, double &ra, double &dec);
 
