@@ -54,6 +54,11 @@ Rts2ImageDb::updateObjectDB ()
   strncpy (d_img_filter.arr, tmp_filter, d_img_filter.len);
 
   d_img_temperature_ind = getValue ("CCD_TEMP", d_img_temperature);
+  if (isnan (d_img_temperature))
+  {
+    d_img_temperature = 100;
+    d_img_temperature_ind = -1;
+  }
   d_img_exposure = getExposureLength ();
   getValue ("ALT", d_img_alt);
   getValue ("AZ", d_img_az);
