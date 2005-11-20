@@ -344,10 +344,14 @@ Rts2DevClientTelescopeExec::syncTarget ()
 					  coord.dec + fixedOffset.dec));
       break;
     case OBS_ALREADY_STARTED:
+      syslog (LOG_DEBUG,
+	      "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra %lf dec %lf",
+	      fixedOffset.ra, fixedOffset.dec);
       connection->
 	queCommand (new
 		    Rts2CommandResyncMove (getMaster (), this,
-					   coord.ra, coord.dec));
+					   coord.ra + fixedOffset.ra,
+					   coord.dec + fixedOffset.dec));
       break;
     }
   return ret;
