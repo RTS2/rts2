@@ -261,6 +261,8 @@ private:
 public:
   Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, int in_filter,
 			float in_exp, int in_count);
+    Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, float in_exp,
+			  int in_count);
   virtual int commandReturnFailed (int status);
 };
 

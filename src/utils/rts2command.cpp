@@ -428,6 +428,18 @@ Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, int in_
   free (msg);
 }
 
+Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * in_phot,
+					    float in_exp, int in_count):
+Rts2Command (in_phot->getMaster ())
+{
+  phot = in_phot;
+  char *msg;
+  asprintf (&msg, "integrate %f %i", in_exp, in_count);
+  setCommand (msg);
+  free (msg);
+}
+
+
 int
 Rts2CommandIntegrate::commandReturnFailed (int status)
 {
