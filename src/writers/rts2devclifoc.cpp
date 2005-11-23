@@ -206,7 +206,8 @@ Rts2ConnFocus::newProcess ()
     {
       execl (exePath, exePath, img_path, (char *) NULL);
       // when execl fails..
-      syslog (LOG_ERR, "Rts2ConnFocus::newProcess: %m");
+      syslog (LOG_ERR, "Rts2ConnFocus::newProcess: %m exePath: '%s'",
+	      exePath);
     }
   return -2;
 }
@@ -309,9 +310,21 @@ Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
     }
   else if (exp != photometerTime || newFilter != currFilter)
     {
-      connection->
-	queCommand (new
-		    Rts2CommandIntegrate (this, newFilter, photometerTime,
-					  photometerFilterChange));
+      // we take care of filter change..
+      if (photometerFilterChange > 0)
+	{
+	  connection->
+	    queCommand (new
+			Rts2CommandIntegrate (this, newFilter, photometerTime,
+					      photometerFilterChange));
+	}
+      else
+	{
+	  // update only counter integration time..
+	  connection->
+	    queCommand (new Rts2CommandIntegrate (this, photometerTime, 1));
+	  // we don't care about filter..
+	  newFilter = currFilter;
+	}
     }
 }
