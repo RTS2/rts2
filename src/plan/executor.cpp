@@ -390,6 +390,11 @@ Rts2Executor::changeMasterState (int new_state)
     case SERVERD_DAWN:
     case SERVERD_NIGHT:
     case SERVERD_DUSK:
+      // unblock stop state
+      if ((getState (0) & EXEC_MASK_STOP) == EXEC_STOP)
+	{
+	  maskState (0, EXEC_MASK_STOP, EXEC_NOT_STOP);
+	}
       if (!currentTarget && nextTarget)
 	{
 	  switchTarget ();
