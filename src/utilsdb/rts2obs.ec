@@ -269,6 +269,19 @@ Rts2Obs::checkUnprocessedImages ()
   }
 }
 
+int
+Rts2Obs::getNumberOfGoodImages ()
+{
+  std::vector <Rts2ImageDb *>::iterator img_iter;
+  int ret = 0;
+  for (img_iter = imgset.begin (); img_iter != imgset.end (); img_iter++)
+  {
+    if ((*img_iter)->haveOKAstrometry ())
+      ret++;
+  }
+  return ret;
+}
+
 std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
 {
   std::ios_base::fmtflags old_settings = _os.flags ();

@@ -91,13 +91,21 @@ Rts2ObsSet::load (std::string in_where)
     if (db_obs_start_ind < 0)
       db_obs_start = nan("f");
     if (db_obs_state_ind < 0)
-      db_obs_state = -1;
+      db_obs_state = 0;
     if (db_obs_end_ind < 0)
       db_obs_end = nan("f");
 
     // add new observations to vector
-    observations.push_back (Rts2Obs (db_tar_id, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
-      db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end));
+    Rts2Obs obs = Rts2Obs (db_tar_id, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
+      db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end);
+    observations.push_back (obs);
+    if (db_obs_state & OBS_BIT_STARTED)
+    {
+      if (db_obs_state & OBS_BIT_ACQUSITION_FAI)
+	failedNum++;
+      else
+	successNum++;
+    }
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
@@ -147,6 +155,52 @@ Rts2ObsSet::Rts2ObsSet (int in_tar_id)
 Rts2ObsSet::~Rts2ObsSet (void)
 {
   observations.clear ();
+}
+
+int
+Rts2ObsSet::getNumberOfImages ()
+{
+  std::vector <Rts2Obs>::iterator obs_iter;
+  int ret = 0;
+  for (obs_iter = observations.begin (); obs_iter != observations.end (); obs_iter++)
+  {
+    ret += (*obs_iter).getNumberOfImages ();
+  }
+  return ret;
+}
+
+int
+Rts2ObsSet::getNumberOfGoodImages ()
+{
+  std::vector <Rts2Obs>::iterator obs_iter;
+  int ret = 0;
+  for (obs_iter = observations.begin (); obs_iter != observations.end (); obs_iter++)
+  {
+    ret += (*obs_iter).getNumberOfGoodImages ();
+  }
+  return ret;
+}
+
+void
+Rts2ObsSet::printStatistics (std::ostream & _os)
+{
+  int allNum = getNumberOfImages ();
+  int goodNum = getNumberOfGoodImages ();
+  int success = getSuccess ();
+  int failed = getFailed ();
+  int prec = _os.precision (2);
+  _os << "Number of observations: " << observations.size () << std::endl
+    << "Succesfully ended:" << success << std::endl
+    << "Failed:" << failed << std::endl
+    << "Number of images:" << allNum 
+    << " with astrometry:" << goodNum
+    << " without astrometry:" << (allNum - goodNum);
+  if (allNum > 0)
+  {
+    _os << " (" << (((double)(goodNum * 100)) / allNum) << "%)";
+  }
+  _os << std::endl;
+  _os.precision (prec);
 }
 
 std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)

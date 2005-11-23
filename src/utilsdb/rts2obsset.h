@@ -25,10 +25,14 @@ private:
   std::vector < Rts2Obs > observations;
   int images;
   int counts;
+  int successNum;
+  int failedNum;
   void initObsSet ()
   {
     images = 0;
     counts = 0;
+    successNum = 0;
+    failedNum = 0;
   }
   void load (std::string in_where);
 public:
@@ -56,6 +60,19 @@ public:
   {
     counts = in_counts;
   }
+
+  int getSuccess ()
+  {
+    return successNum;
+  }
+  int getFailed ()
+  {
+    return failedNum;
+  }
+  int getNumberOfImages ();
+  int getNumberOfGoodImages ();
+
+  void printStatistics (std::ostream & _os);
 
   friend std::ostream & operator << (std::ostream & _os,
 				     Rts2ObsSet & obs_set);

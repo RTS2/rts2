@@ -12,8 +12,10 @@ private:
   struct tm *tm_night;
   int printImages;
   int printCounts;
+  int printStat;
   void printObsList ();
   void printStatistics ();
+  Rts2ObsSet *obs_set;
 public:
     Rts2Night (int argc, char **argv);
     virtual ~ Rts2Night (void);
@@ -30,8 +32,10 @@ Rts2AppDb (in_argc, in_argv)
   // 24 hours before..
   t_from = t_to - 86400;
   tm_night = NULL;
+  obs_set = NULL;
   printImages = 0;
   printCounts = 0;
+  printStat = 0;
   addOption ('f', "from", 1,
 	     "date from which take measurements; default to current date - 24 hours");
   addOption ('t', "to", 1,
@@ -47,6 +51,7 @@ Rts2AppDb (in_argc, in_argv)
 Rts2Night::~Rts2Night (void)
 {
   delete tm_night;
+  delete obs_set;
 }
 
 int
@@ -86,6 +91,9 @@ Rts2Night::processOption (int in_opt)
     case 'P':
       printCounts |= DISPLAY_SUMMARY;
       break;
+    case 's':
+      printStat = 1;
+      break;
     default:
       return Rts2AppDb::processOption (in_opt);
     }
@@ -123,19 +131,18 @@ Rts2Night::init ()
 void
 Rts2Night::printObsList ()
 {
-  Rts2ObsSet obs_set = Rts2ObsSet (&t_from, &t_to);
   if (printImages)
-    obs_set.printImages (printImages);
+    obs_set->printImages (printImages);
   if (printCounts)
-    obs_set.printCounts (printCounts);
-  std::cout << obs_set;
+    obs_set->printCounts (printCounts);
+  std::cout << *obs_set;
 }
 
 
 void
 Rts2Night::printStatistics ()
 {
-
+  obs_set->printStatistics (std::cout);
 }
 
 int
@@ -148,34 +155,12 @@ Rts2Night::run ()
   // from which date to which..
   std::cout << "From " << &t_from << " to " << &t_to << std::endl;
 
+  obs_set = new Rts2ObsSet (&t_from, &t_to);
+
   printObsList ();
 
-  // Observation statistics query
-/*  Rts2SqlQuery *q = new Rts2SqlQuery ("observations");
-  q->addColumn ("obs_id", "ID", ORDER_DESC);
-  q->addColumn ("obs_slew", "Slew");
-  q->addColumn ("obs_start", "Start");
-  q->addColumn ("obs_end", "End");
-  obsState = new Rts2SqlColumnObsState ("obs_state", "State");
-  q->addColumn (obsState);
-  asprintf (&whereStr, "obs_start between abstime(%li) and abstime(%li)", t_from, t_to);
-  q->addWhere (whereStr);
-  q->display ();
-  obsState->printStatistics (std::cout);
-  free (whereStr);
-  delete q; */
-
-  // image statistic:
-/*  q = new Rts2SqlQuery ("images");
-  q->addColumn ("obs_id", "ID", ORDER_DESC);
-  q->addColumn ("img_id", "ID", ORDER_DESC);
-  q->addColumn ("img_date", "Slew");
-  q->addColumn ("process_bitfield", "Process");
-  asprintf (&whereStr, "img_date between abstime(%li) and abstime(%li)", t_from, t_to);
-  q->addWhere (whereStr);
-  q->display ();
-  free (whereStr);
-  delete q; */
+  if (printStat)
+    printStatistics ();
 
   return 0;
 }

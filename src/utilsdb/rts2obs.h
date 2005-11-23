@@ -99,6 +99,13 @@ public:
   // call appopriate mails
   void checkUnprocessedImages ();
 
+  int getNumberOfImages ()
+  {
+    return imgset.size ();
+  }
+
+  int getNumberOfGoodImages ();
+
   friend std::ostream & operator << (std::ostream & _os, Rts2Obs & obs);
 };
 

@@ -69,6 +69,11 @@ public:
 
   int getOKCount ();
 
+  bool haveOKAstrometry ()
+  {
+    return (processBitfiedl & ASTROMETRY_OK);
+  }
+
   friend std::ostream & operator << (std::ostream & _os,
 				     Rts2ImageDb & img_db);
 };
