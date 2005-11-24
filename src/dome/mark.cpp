@@ -1,4 +1,4 @@
-#include "copula.h"
+#include "cupola.h"
 #include "udpweather.h"
 
 #include <math.h>
@@ -93,14 +93,13 @@ public:
   }
 };
 
-uint16_t Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
+uint16_t
+Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
-  uint16_t
-    ret = 0xffff;
+  uint16_t ret = 0xffff;
   for (int l = 0; l < msgLen; l++)
     {
-      char
-	znakp = msgBuf[l];
+      char znakp = msgBuf[l];
       for (int i = 0; i < 8; i++)
 	{
 	  if ((ret ^ znakp) & 0x01)

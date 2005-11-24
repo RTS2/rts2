@@ -1,4 +1,4 @@
-#include "copula.h"
+#include "cupola.h"
 #include "../utils/rts2config.h"
 
 #include <math.h>
