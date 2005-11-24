@@ -5,7 +5,7 @@
 /*!
  * Dummy copula for testing.
  */
-class Rts2DevCopulaDummy:public Rts2DevCopula
+class Rts2DevCupolaDummy:public Rts2DevCupola
 {
 private:
   int mcount;
@@ -13,14 +13,14 @@ protected:
     virtual int moveStart ()
   {
     mcount = 0;
-    return Rts2DevCopula::moveStart ();
+    return Rts2DevCupola::moveStart ();
   }
   virtual int moveEnd ()
   {
     struct ln_hrz_posn hrz;
     getTargetAltAz (&hrz);
     setCurrentAz (hrz.az);
-    return Rts2DevCopula::moveEnd ();
+    return Rts2DevCupola::moveEnd ();
   }
   virtual long isMoving ()
   {
@@ -31,7 +31,7 @@ protected:
   }
 
 public:
-Rts2DevCopulaDummy (int in_argc, char **in_argv):Rts2DevCopula (in_argc,
+Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
 		 in_argv)
   {
   }
@@ -54,7 +54,7 @@ Rts2DevCopulaDummy (int in_argc, char **in_argv):Rts2DevCopula (in_argc,
   virtual int openDome ()
   {
     mcount = 0;
-    return Rts2DevCopula::openDome ();
+    return Rts2DevCupola::openDome ();
   }
 
   virtual long isOpened ()
@@ -65,7 +65,7 @@ Rts2DevCopulaDummy (int in_argc, char **in_argv):Rts2DevCopula (in_argc,
   virtual int closeDome ()
   {
     mcount = 0;
-    return Rts2DevCopula::closeDome ();
+    return Rts2DevCupola::closeDome ();
   }
 
   virtual long isClosed ()
@@ -79,13 +79,13 @@ Rts2DevCopulaDummy (int in_argc, char **in_argv):Rts2DevCopula (in_argc,
   }
 };
 
-Rts2DevCopulaDummy *device;
+Rts2DevCupolaDummy *device;
 
 int
 main (int argc, char **argv)
 {
   int ret;
-  device = new Rts2DevCopulaDummy (argc, argv);
+  device = new Rts2DevCupolaDummy (argc, argv);
   ret = device->init ();
   if (ret)
     {

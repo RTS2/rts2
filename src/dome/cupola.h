@@ -6,7 +6,7 @@
 
 #include <libnova/libnova.h>
 
-class Rts2DevCopula:public Rts2DevDome
+class Rts2DevCupola:public Rts2DevDome
 {
 private:
   struct ln_equ_posn targetPos;
@@ -45,7 +45,7 @@ protected:
   }
 
 public:
-  Rts2DevCopula (int argc, char **argv);
+  Rts2DevCupola (int argc, char **argv);
 
   virtual int processOption (int in_opt);
   virtual int init ();
@@ -68,15 +68,15 @@ public:
   virtual double getSplitWidth (double alt) = 0;
 };
 
-class Rts2DevConnCopula:public Rts2DevConnDome
+class Rts2DevConnCupola:public Rts2DevConnDome
 {
 private:
-  Rts2DevCopula * master;
+  Rts2DevCupola * master;
 protected:
   virtual int commandAuthorized ();
 public:
-    Rts2DevConnCopula (int in_sock,
-		       Rts2DevCopula *
+    Rts2DevConnCupola (int in_sock,
+		       Rts2DevCupola *
 		       in_master_device):Rts2DevConnDome (in_sock,
 							  in_master_device)
   {

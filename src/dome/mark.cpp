@@ -35,11 +35,11 @@
 #define MIN_ERR			0.6
 
 /*!
- * Copula for MARK telescope on Prague Observatory - http://www.observatory.cz
+ * Cupola for MARK telescope on Prague Observatory - http://www.observatory.cz
  *
  * @author petr
  */
-class Rts2DevCopulaMark:public Rts2DevCopula
+class Rts2DevCupolaMark:public Rts2DevCupola
 {
 private:
   char *device_file;
@@ -60,13 +60,13 @@ private:
   { UNKNOW, IN_PROGRESS, DONE, ERROR } initialized;
 
   int slew ();
-  void parkCopula ();
+  void parkCupola ();
 protected:
     virtual int moveStart ();
   virtual long isMoving ();
   virtual int moveEnd ();
 public:
-    Rts2DevCopulaMark (int argc, char **argv);
+    Rts2DevCupolaMark (int argc, char **argv);
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
@@ -94,7 +94,7 @@ public:
 };
 
 uint16_t
-Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
+Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
   uint16_t ret = 0xffff;
   for (int l = 0; l < msgLen; l++)
@@ -115,7 +115,7 @@ Rts2DevCopulaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 // last 2 bits are reserved for crc! They are counted in w_buf_len and r_buf_len, and
 // will be modified by this function
 int
-Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
+Rts2DevCupolaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
 			       int r_buf_len)
 {
   int ret;
@@ -128,13 +128,13 @@ Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
   for (int i = 0; i < w_buf_len; i++)
     {
       syslog (LOG_DEBUG,
-	      "Rts2DevCopulaMark::write_read write byte %i value %x", i,
+	      "Rts2DevCupolaMark::write_read write byte %i value %x", i,
 	      w_buf[i]);
     }
 #endif
   if (ret != w_buf_len)
     {
-      syslog (LOG_ERR, "Rts2DevCopulaMark::write_read ret != w_buf_len %i %i",
+      syslog (LOG_ERR, "Rts2DevCupolaMark::write_read ret != w_buf_len %i %i",
 	      ret, w_buf_len);
       return -1;
     }
@@ -143,13 +143,13 @@ Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
   for (int i = 0; i < r_buf_len; i++)
     {
       syslog (LOG_DEBUG,
-	      "Rts2DevCopulaMark::write_read read byte %i value %x", i,
+	      "Rts2DevCupolaMark::write_read read byte %i value %x", i,
 	      r_buf[i]);
     }
 #endif
   if (ret != r_buf_len)
     {
-      syslog (LOG_ERR, "Rts2DevCopulaMark::write_read ret != r_buf_len %i %i",
+      syslog (LOG_ERR, "Rts2DevCupolaMark::write_read ret != r_buf_len %i %i",
 	      ret, r_buf_len);
       return -1;
     }
@@ -160,7 +160,7 @@ Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
       || (r_buf[r_buf_len - 2] & (crc16 & 0x00ff)) != (crc16 & 0x00ff))
     {
       syslog (LOG_ERR,
-	      "Rts2DevCopulaMark::write_read invalid checksum! (should be %x %x, is %x %x (%x %x))",
+	      "Rts2DevCupolaMark::write_read invalid checksum! (should be %x %x, is %x %x (%x %x))",
 	      ((crc16 & 0xff00) >> 8), (crc16 & 0x00ff), r_buf[r_buf_len - 1],
 	      r_buf[r_buf_len - 2],
 	      (r_buf[r_buf_len - 1] & ((crc16 & 0xff00) >> 8)),
@@ -172,7 +172,7 @@ Rts2DevCopulaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
 }
 
 int
-Rts2DevCopulaMark::readReg (int reg, uint16_t * reg_val)
+Rts2DevCupolaMark::readReg (int reg, uint16_t * reg_val)
 {
   int ret;
   char wbuf[8];
@@ -189,13 +189,13 @@ Rts2DevCopulaMark::readReg (int reg, uint16_t * reg_val)
   *reg_val = rbuf[3];
   *reg_val = *reg_val << 8;
   *reg_val |= (rbuf[4]);
-  syslog (LOG_DEBUG, "Rts2DevCopulaMark::readReg reg %i val %x", reg,
+  syslog (LOG_DEBUG, "Rts2DevCupolaMark::readReg reg %i val %x", reg,
 	  *reg_val);
   return 0;
 }
 
 int
-Rts2DevCopulaMark::writeReg (int reg, uint16_t reg_val)
+Rts2DevCupolaMark::writeReg (int reg, uint16_t reg_val)
 {
   char wbuf[8];
   char rbuf[8];
@@ -209,12 +209,12 @@ Rts2DevCopulaMark::writeReg (int reg, uint16_t reg_val)
   wbuf[3] = (reg & 0x00ff);
   wbuf[4] = (reg_val & 0xff00) >> 8;
   wbuf[5] = (reg_val & 0x00ff);
-  syslog (LOG_DEBUG, "Rts2DevCopulaMark::writeReg reg %i value %x", reg,
+  syslog (LOG_DEBUG, "Rts2DevCupolaMark::writeReg reg %i value %x", reg,
 	  reg_val);
   return write_read (wbuf, 8, rbuf, 8);
 }
 
-Rts2DevCopulaMark::Rts2DevCopulaMark (int in_argc, char **in_argv):Rts2DevCopula (in_argc,
+Rts2DevCupolaMark::Rts2DevCupolaMark (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
 	       in_argv)
 {
   weatherPort = 5002;
@@ -232,7 +232,7 @@ Rts2DevCopulaMark::Rts2DevCopulaMark (int in_argc, char **in_argv):Rts2DevCopula
 }
 
 int
-Rts2DevCopulaMark::processOption (int in_opt)
+Rts2DevCupolaMark::processOption (int in_opt)
 {
   switch (in_opt)
     {
@@ -243,21 +243,21 @@ Rts2DevCopulaMark::processOption (int in_opt)
       weatherPort = atoi (optarg);
       break;
     default:
-      return Rts2DevCopula::processOption (in_opt);
+      return Rts2DevCupola::processOption (in_opt);
     }
   return 0;
 }
 
 int
-Rts2DevCopulaMark::init ()
+Rts2DevCupolaMark::init ()
 {
   struct termios cop_termios;
   int ret;
-  ret = Rts2DevCopula::init ();
+  ret = Rts2DevCupola::init ();
   if (ret)
     return ret;
 
-  syslog (LOG_DEBUG, "Rts2DevCopulaMark::init open: %s", device_file);
+  syslog (LOG_DEBUG, "Rts2DevCupolaMark::init open: %s", device_file);
 
   cop_desc = open (device_file, O_RDWR);
   if (cop_desc < 0)
@@ -297,7 +297,7 @@ Rts2DevCopulaMark::init ()
 }
 
 int
-Rts2DevCopulaMark::idle ()
+Rts2DevCupolaMark::idle ()
 {
   int ret;
   uint16_t copState;
@@ -334,7 +334,7 @@ Rts2DevCopulaMark::idle ()
       ret = readReg (REG_STATE, &copState);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2DevCopula::idle cannot read reg!");
+	  syslog (LOG_ERR, "Rts2DevCupola::idle cannot read reg!");
 	  sleep (2);
 	  tcflush (cop_desc, TCIOFLUSH);
 	  initialized = ERROR;
@@ -353,11 +353,11 @@ Rts2DevCopulaMark::idle ()
 	  initialized = DONE;
 	}
     }
-  return Rts2DevCopula::idle ();
+  return Rts2DevCupola::idle ();
 }
 
 int
-Rts2DevCopulaMark::openDome ()
+Rts2DevCupolaMark::openDome ()
 {
   int ret;
 #ifndef FAKE_WEATHER
@@ -367,27 +367,27 @@ Rts2DevCopulaMark::openDome ()
   ret = writeReg (REG_SPLIT_CONTROL, 0x0001);
   if (ret)
     return ret;
-  return Rts2DevCopula::openDome ();
+  return Rts2DevCupola::openDome ();
 }
 
 long
-Rts2DevCopulaMark::isOpened ()
+Rts2DevCupolaMark::isOpened ()
 {
   return -2;
 }
 
 int
-Rts2DevCopulaMark::closeDome ()
+Rts2DevCupolaMark::closeDome ()
 {
   int ret;
   ret = writeReg (REG_SPLIT_CONTROL, 0x0000);
   if (ret)
     return ret;
-  return Rts2DevCopula::closeDome ();
+  return Rts2DevCupola::closeDome ();
 }
 
 long
-Rts2DevCopulaMark::isClosed ()
+Rts2DevCupolaMark::isClosed ()
 {
   int ret;
   uint16_t reg_val;
@@ -404,13 +404,13 @@ Rts2DevCopulaMark::isClosed ()
 }
 
 int
-Rts2DevCopulaMark::ready ()
+Rts2DevCupolaMark::ready ()
 {
   return 0;
 }
 
 int
-Rts2DevCopulaMark::info ()
+Rts2DevCupolaMark::info ()
 {
   int ret;
   int16_t az_val;
@@ -422,14 +422,14 @@ Rts2DevCopulaMark::info ()
     {
       setCurrentAz (ln_range_degrees
 		    ((az_val * STEP_AZ_SIZE) + STEP_AZ_OFFSET));
-      Rts2DevCopula::info ();
+      Rts2DevCupola::info ();
       return 0;
     }
   return -1;
 }
 
 int
-Rts2DevCopulaMark::baseInfo ()
+Rts2DevCupolaMark::baseInfo ()
 {
   return 0;
 }
@@ -438,7 +438,7 @@ Rts2DevCopulaMark::baseInfo ()
  * @return -1 on error, -2 when move complete (on target position), 0 when nothing interesting happen
  */
 int
-Rts2DevCopulaMark::slew ()
+Rts2DevCupolaMark::slew ()
 {
   int ret;
   uint16_t copControl;
@@ -483,7 +483,7 @@ Rts2DevCopulaMark::slew ()
 	      if (ret)
 		return -1;
 	    }
-	  syslog (LOG_DEBUG, "Rts2DevCopulaMark::slew slow down");
+	  syslog (LOG_DEBUG, "Rts2DevCupolaMark::slew slow down");
 	}
       // test if we hit target destination
       if (fabs (getTargetDistance ()) < MIN_ERR)
@@ -508,18 +508,18 @@ Rts2DevCopulaMark::slew ()
 }
 
 int
-Rts2DevCopulaMark::moveStart ()
+Rts2DevCupolaMark::moveStart ()
 {
   int ret;
   ret = needSplitChange ();
   if (ret == 0 || ret == -1)
     return ret;			// pretend we change..so other devices can sync on our command
   slew ();
-  return Rts2DevCopula::moveStart ();
+  return Rts2DevCupola::moveStart ();
 }
 
 long
-Rts2DevCopulaMark::isMoving ()
+Rts2DevCupolaMark::isMoving ()
 {
   int ret;
   ret = needSplitChange ();
@@ -532,21 +532,21 @@ Rts2DevCopulaMark::isMoving ()
 }
 
 int
-Rts2DevCopulaMark::moveEnd ()
+Rts2DevCupolaMark::moveEnd ()
 {
   writeReg (REG_COP_CONTROL, 0x00);
-  return Rts2DevCopula::moveEnd ();
+  return Rts2DevCupola::moveEnd ();
 }
 
 int
-Rts2DevCopulaMark::moveStop ()
+Rts2DevCupolaMark::moveStop ()
 {
   writeReg (REG_COP_CONTROL, 0x00);
-  return Rts2DevCopula::moveStop ();
+  return Rts2DevCupola::moveStop ();
 }
 
 void
-Rts2DevCopulaMark::parkCopula ()
+Rts2DevCupolaMark::parkCupola ()
 {
   if (initialized != IN_PROGRESS)
     {
@@ -557,20 +557,20 @@ Rts2DevCopulaMark::parkCopula ()
 }
 
 int
-Rts2DevCopulaMark::standby ()
+Rts2DevCupolaMark::standby ()
 {
-  parkCopula ();
-  return Rts2DevCopula::standby ();
+  parkCupola ();
+  return Rts2DevCupola::standby ();
 }
 
 int
-Rts2DevCopulaMark::off ()
+Rts2DevCupolaMark::off ()
 {
-  parkCopula ();
-  return Rts2DevCopula::off ();
+  parkCupola ();
+  return Rts2DevCupola::off ();
 }
 
-Rts2DevCopulaMark *device = NULL;
+Rts2DevCupolaMark *device = NULL;
 
 void
 killSignal (int sig)
@@ -584,7 +584,7 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  device = new Rts2DevCopulaMark (argc, argv);
+  device = new Rts2DevCupolaMark (argc, argv);
   ret = device->init ();
   if (ret)
     {

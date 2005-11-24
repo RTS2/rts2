@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-Rts2DevCopula::Rts2DevCopula (int in_argc, char **in_argv):
+Rts2DevCupola::Rts2DevCupola (int in_argc, char **in_argv):
 Rts2DevDome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 {
   targetPos.ra = nan ("f");
@@ -17,7 +17,7 @@ Rts2DevDome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 }
 
 int
-Rts2DevCopula::processOption (int in_opt)
+Rts2DevCupola::processOption (int in_opt)
 {
   switch (in_opt)
     {
@@ -31,7 +31,7 @@ Rts2DevCopula::processOption (int in_opt)
 }
 
 int
-Rts2DevCopula::init ()
+Rts2DevCupola::init ()
 {
   int ret;
   ret = Rts2DevDome::init ();
@@ -47,13 +47,13 @@ Rts2DevCopula::init ()
 }
 
 Rts2DevConn *
-Rts2DevCopula::createConnection (int in_sock, int conn_num)
+Rts2DevCupola::createConnection (int in_sock, int conn_num)
 {
-  return new Rts2DevConnCopula (in_sock, this);
+  return new Rts2DevConnCupola (in_sock, this);
 }
 
 int
-Rts2DevCopula::idle ()
+Rts2DevCupola::idle ()
 {
   long ret;
   if ((getState (0) & DOME_COP_MASK_MOVE) == DOME_COP_MOVE)
@@ -83,13 +83,13 @@ Rts2DevCopula::idle ()
 }
 
 int
-Rts2DevCopula::sendBaseInfo (Rts2Conn * conn)
+Rts2DevCupola::sendBaseInfo (Rts2Conn * conn)
 {
   return Rts2DevDome::sendBaseInfo (conn);
 }
 
 int
-Rts2DevCopula::sendInfo (Rts2Conn * conn)
+Rts2DevCupola::sendInfo (Rts2Conn * conn)
 {
   struct ln_hrz_posn hrz;
   // target ra+dec
@@ -103,7 +103,7 @@ Rts2DevCopula::sendInfo (Rts2Conn * conn)
 }
 
 int
-Rts2DevCopula::moveTo (Rts2Conn * conn, double ra, double dec)
+Rts2DevCupola::moveTo (Rts2Conn * conn, double ra, double dec)
 {
   int ret;
   targetPos.ra = ra;
@@ -117,14 +117,14 @@ Rts2DevCopula::moveTo (Rts2Conn * conn, double ra, double dec)
 }
 
 int
-Rts2DevCopula::moveStart ()
+Rts2DevCupola::moveStart ()
 {
   maskState (0, DOME_COP_MASK_MOVE, DOME_COP_MOVE);
   return 0;
 }
 
 int
-Rts2DevCopula::moveStop ()
+Rts2DevCupola::moveStop ()
 {
   maskState (0, DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
   infoAll ();
@@ -132,14 +132,14 @@ Rts2DevCopula::moveStop ()
 }
 
 void
-Rts2DevCopula::synced ()
+Rts2DevCupola::synced ()
 {
   infoAll ();
   maskState (0, DOME_COP_MASK_SYNC, DOME_COP_SYNC);
 }
 
 int
-Rts2DevCopula::moveEnd ()
+Rts2DevCupola::moveEnd ()
 {
   maskState (0, DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
   infoAll ();
@@ -147,7 +147,7 @@ Rts2DevCopula::moveEnd ()
 }
 
 void
-Rts2DevCopula::getTargetAltAz (struct ln_hrz_posn *hrz)
+Rts2DevCupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
   double JD;
   JD = ln_get_julian_from_sys ();
@@ -155,7 +155,7 @@ Rts2DevCopula::getTargetAltAz (struct ln_hrz_posn *hrz)
 }
 
 int
-Rts2DevCopula::needSplitChange ()
+Rts2DevCupola::needSplitChange ()
 {
   int ret;
   struct ln_hrz_posn targetHrz;
@@ -184,7 +184,7 @@ Rts2DevCopula::needSplitChange ()
 }
 
 int
-Rts2DevConnCopula::commandAuthorized ()
+Rts2DevConnCupola::commandAuthorized ()
 {
   if (isCommand ("move"))
     {
