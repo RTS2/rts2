@@ -29,6 +29,8 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   yplate = 1;
   xoa = 0;
   yoa = 0;
+  ter_xoa = nan ("f");
+  ter_yoa = nan ("f");
   flip = 1;
   rotang = 0;
 
@@ -36,6 +38,8 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   config->getDouble (connection->getName (), "yplate", yplate);
   config->getDouble (connection->getName (), "xoa", xoa);
   config->getDouble (connection->getName (), "yoa", yoa);
+  config->getDouble (connection->getName (), "ter_xoa", ter_xoa);
+  config->getDouble (connection->getName (), "ter_yoa", ter_yoa);
   config->getDouble (connection->getName (), "rotang", rotang);
   config->getInteger (connection->getName (), "flip", flip);
   config->getString (connection->getName (), "filter", filter, 200);
@@ -183,10 +187,21 @@ Rts2DevClientCameraImage::exposureStarted ()
 		    "xplate (scale in X axis; divide by binning (BIN_H)!)");
   images->setValue ("YPLATE", yplate,
 		    "yplate (scale in Y axis; divide by binning (BIN_V)!)");
-  images->setValue ("CAM_XOA", xoa,
-		    "center in X axis (divide by binning (BIN_H)!)");
-  images->setValue ("CAM_YOA", yoa,
-		    "center in Y axis (divide by binning (BIN_V)!)");
+  if (images->getTargetType () == TYPE_TERESTIAL
+      && !isnan (ter_xoa) && !isnan (ter_yoa))
+    {
+      images->setValue ("CAM_XOA", ter_xoa,
+			"ter center in X axis (divide by binning (BIN_H)!)");
+      images->setValue ("CAM_YOA", ter_yoa,
+			"ter center in Y axis (divide by binning (BIN_V)!)");
+    }
+  else
+    {
+      images->setValue ("CAM_XOA", xoa,
+			"center in X axis (divide by binning (BIN_H)!)");
+      images->setValue ("CAM_YOA", yoa,
+			"center in Y axis (divide by binning (BIN_V)!)");
+    }
   images->setValue ("ROTANG", rotang, "camera rotation over X axis");
   images->setValue ("FLIP", flip,
 		    "camera flip (since most astrometry devices works as mirrors");

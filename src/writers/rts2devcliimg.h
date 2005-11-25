@@ -35,6 +35,8 @@ protected:
   double yplate;
   double xoa;
   double yoa;
+  double ter_xoa;
+  double ter_yoa;
   double rotang;
   int flip;
   char filter[200];
