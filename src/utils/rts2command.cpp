@@ -315,6 +315,18 @@ Rts2Command (in_master)
   commandCond = IN_WAIT_STATE;
 }
 
+Rts2CommandChange::Rts2CommandChange (Rts2DevClientTelescope * in_tel,
+				      double ra, double dec):
+Rts2Command (in_tel->getMaster ())
+{
+  char *command;
+  asprintf (&command, "change %lf %lf", ra, dec);
+  setCommand (command);
+  free (command);
+  tel = in_tel;
+  commandCond = IN_WAIT_STATE;
+}
+
 Rts2CommandChange::Rts2CommandChange (Rts2CommandChange * in_command, Rts2DevClientTelescope * in_tel):Rts2Command
   (in_command)
 {

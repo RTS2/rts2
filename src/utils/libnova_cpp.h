@@ -52,8 +52,6 @@ public:
 				     LibnovaDegArcMin l_deg);
 };
 
-
-
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);

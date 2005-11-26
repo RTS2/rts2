@@ -194,6 +194,8 @@ class Rts2CommandChange:public Rts2Command
   Rts2DevClientTelescope *tel;
 public:
     Rts2CommandChange (Rts2Block * in_master, double ra, double dec);
+    Rts2CommandChange (Rts2DevClientTelescope * in_tel, double ra,
+		       double dec);
     Rts2CommandChange (Rts2CommandChange * in_command,
 		       Rts2DevClientTelescope * in_tel);
   virtual int commandReturnFailed (int status);
