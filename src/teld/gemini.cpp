@@ -146,6 +146,8 @@ private:
   int infoCount;
   int matchCount;
   int bootesSensors;
+  struct timeval changeTimeRa;
+  struct timeval changeTimeDec;
 
   void clearSearch ();
   // execute next search step, if necessary
@@ -892,6 +894,9 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   worm = 0;
   worm_move_needed = 0;
 
+  timerclear (&changeTimeRa);
+  timerclear (&changeTimeDec);
+
   clearSearch ();
 }
 
@@ -1323,11 +1328,47 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 int
 Rts2DevTelescopeGemini::isMoving ()
 {
-  time_t now;
+  int ret;
+  struct timeval now;
   if (telMotorState != TEL_OK)
     return USEC_SEC;
-  time (&now);
-  if (now > moveTimeout)
+  gettimeofday (&now, NULL);
+  // change move..
+  if (changeTimeRa.tv_sec > 0 || changeTimeRa.tv_usec > 0
+      || changeTimeDec.tv_sec > 0 || changeTimeDec.tv_usec > 0)
+    {
+      if (changeTimeRa.tv_sec > 0 || changeTimeRa.tv_usec > 0)
+	{
+	  if (timercmp (&changeTimeRa, &now, <))
+	    {
+	      ret = telescope_stop_move (DIR_EAST);
+	      if (ret == -1)
+		return ret;
+	      ret = telescope_stop_move (DIR_WEST);
+	      if (ret == -1)
+		return ret;
+	      timerclear (&changeTimeRa);
+	    }
+	}
+      if (changeTimeDec.tv_sec > 0 || changeTimeDec.tv_usec > 0)
+	{
+	  if (timercmp (&changeTimeDec, &now, <))
+	    {
+	      ret = telescope_stop_move (DIR_NORTH);
+	      if (ret == -1)
+		return ret;
+	      ret = telescope_stop_move (DIR_SOUTH);
+	      if (ret == -1)
+		return ret;
+	      timerclear (&changeTimeDec);
+	    }
+	}
+      if (changeTimeRa.tv_sec == 0 && changeTimeRa.tv_usec == 0
+	  && changeTimeDec.tv_sec == 0 && changeTimeDec.tv_usec == 0)
+	return -2;
+      return 0;
+    }
+  if (now.tv_sec > moveTimeout)
     {
       stopMove ();
       return -2;
@@ -1355,6 +1396,8 @@ int
 Rts2DevTelescopeGemini::stopMove ()
 {
   telescope_stop_goto ();
+  timerclear (&changeTimeRa);
+  timerclear (&changeTimeDec);
   return Rts2DevTelescope::stopMove ();
 }
 
@@ -1757,16 +1800,19 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 int
 Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 {
-  long u_sleep;
   int ret;
-  info ();
+  long u_sleep;
+  struct timeval now;
+  ret = info ();
+  if (ret)
+    return ret;
   syslog (LOG_INFO, "Rts2DevTelescopeGemini::change before: ra %f dec %f",
 	  telRa, telDec);
   if (fabs (chng_dec) < 87)
     chng_ra = chng_ra / cos (ln_deg_to_rad (chng_dec));
   syslog (LOG_INFO, "Losmandy: calculated ra %f dec: %f", chng_ra, chng_dec);
   // decide, if we make change, or move using move command
-  if (fabs (chng_ra) > 1 / 60.0 && fabs (chng_dec) > 1 / 60.0)
+  if (fabs (chng_ra) > 3 / 60.0 && fabs (chng_dec) > 3 / 60.0)
     {
       int c = 0;
       ret = startMove (telRa + chng_ra, telDec + chng_dec);
@@ -1778,52 +1824,43 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
     }
   else
     {
+      ret = -1;
       char direction;
       // center rate
-      tel_set_rate (RATE_CENTER);
+      ret = tel_set_rate (RATE_CENTER);
+      if (ret == -1)
+	return ret;
+      ret = tel_gemini_set (170, 1);
+      if (ret == -1)
+	return ret;
       if (chng_ra != 0)
 	{
 	  // first - RA direction
-	  if (chng_ra > 0)
-	    {
-	      // slew speed to 1 - 0.50 arcmin / sec
-	      u_sleep =
-		(long) (((fabs (chng_ra) * 60.0) * 2.0) * USEC_SEC +
-			USEC_SEC / 10.0);
-	      tel_gemini_set (170, 1);
-	      telescope_start_move ('e');
-	      usleep (u_sleep);
-	      ret = telescope_stop_move ('e');
-	      syslog (LOG_INFO, "u_sleep: %li", u_sleep);
-	    }
-	  else
-	    {
-	      // slew speed to 20 - 5 arcmin / sec
-	      u_sleep = (long) (((fabs (chng_dec) * 60.0) / 5.0) * USEC_SEC);
-	      tel_gemini_set (170, 20);
-	      telescope_start_move ('w');
-	      usleep (u_sleep);
-	      ret = telescope_stop_move ('w');
-	      syslog (LOG_INFO, "u_sleep: %li", u_sleep);
-	    }
+	  // slew speed to 1 - 0.25 arcmin / sec
+	  direction = chng_ra > 0 ? DIR_EAST : DIR_WEST;
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 4.0) * USEC_SEC +
+			    USEC_SEC / 10.0);
+	  changeTimeRa.tv_sec = (long) (u_sleep / USEC_SEC);
+	  changeTimeRa.tv_usec = (long) (u_sleep - changeTimeRa.tv_sec);
+	  ret = telescope_start_move (direction);
+	  gettimeofday (&now, NULL);
+	  timeradd (&changeTimeRa, &now, &changeTimeRa);
 	}
       if (chng_dec != 0)
 	{
-	  // second - dec direction
-	  tel_gemini_set (170, 20);
 	  // slew speed to 20 - 5 arcmin / sec
 	  direction = chng_dec > 0 ? 'n' : 's';
-	  u_sleep = (long) ((fabs (chng_dec) * 60.0) / 5.0 * USEC_SEC);
-	  telescope_start_move (direction);
-	  usleep (u_sleep);
-	  ret = telescope_stop_move (direction);
-	  syslog (LOG_INFO, "u_sleep: %li", u_sleep);
+	  u_sleep = (long) ((fabs (chng_dec) * 60.0) * 4.0 * USEC_SEC);
+	  changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
+	  changeTimeDec.tv_usec = (long) (u_sleep - changeTimeDec.tv_sec);
+	  ret = telescope_start_move (direction);
+	  gettimeofday (&now, NULL);
+	  timeradd (&changeTimeDec, &now, &changeTimeDec);
 	}
     }
-  info ();
-  syslog (LOG_INFO, "Rts2DevTelescopeGemini::change after-change: %f %f",
-	  telRa, telDec);
-  return ret;
+  if (ret == -1)
+    return -1;
+  return 0;
 }
 
 /*! 
