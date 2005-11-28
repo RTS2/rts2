@@ -174,11 +174,15 @@ protected:
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
 public:
     Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  // create new target. Save will save it to the database..
+    Target ();
     virtual ~ Target (void);
   void logMsg (const char *message);
   void logMsgDb (const char *message);
   // that method is GUARANTIE to be called after target creating to load data from DB
   virtual int load ();
+  virtual int save ();
+  virtual int save (int tar_id);
   virtual int getScript (const char *device_name, char *buf);
   int getPosition (struct ln_equ_posn *pos)
   {
@@ -711,6 +715,9 @@ public:
 
 // load target from DB
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+
+// load target from string
+Target *createTarget (std::string tar_desc);
 
 // send end mails
 void sendEndMails (const time_t * t_from, const time_t * t_to,

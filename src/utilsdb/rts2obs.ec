@@ -15,7 +15,8 @@ Rts2Obs::Rts2Obs (int in_obs_id)
 {
   obs_id = in_obs_id;
   tar_id = -1;
-  tar_type = 0; 
+  tar_type = 0;
+  imgset = NULL;
   displayImages = 0;
   displayCounts = 0;
 }
@@ -34,14 +35,21 @@ Rts2Obs::Rts2Obs (int in_tar_id, char in_tar_type, int in_obs_id, double in_obs_
   obs_start = in_obs_start;
   obs_state = in_obs_state;
   obs_end = in_obs_end;
+  imgset = NULL;
+  displayImages = 0;
+  displayCounts = 0;
 }
 
 Rts2Obs::~Rts2Obs (void)
 {
   std::vector <Rts2ImageDb *>::iterator img_iter;
-  for (img_iter = imgset.begin (); img_iter != imgset.end (); img_iter++)
-    delete (*img_iter);
-  imgset.clear ();
+  if (imgset)
+  {
+    for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
+      delete (*img_iter);
+    imgset->clear ();
+    delete imgset;
+  }
 }
 
 int
@@ -144,13 +152,16 @@ int
 Rts2Obs::loadImages ()
 {
   int ret;
+  if (imgset)
+    // already loaded..
+    return 0;
   ret = load ();
   if (ret)
     return ret;
 
-  imgset = Rts2ImgSet (this);
+  imgset = new Rts2ImgSet (this);
 
-  return imgset.load ();
+  return imgset->load ();
 }
 
 int
@@ -272,9 +283,12 @@ Rts2Obs::checkUnprocessedImages ()
 int
 Rts2Obs::getNumberOfGoodImages ()
 {
+  loadImages ();
+  if (!imgset)
+    return 0;
   std::vector <Rts2ImageDb *>::iterator img_iter;
   int ret = 0;
-  for (img_iter = imgset.begin (); img_iter != imgset.end (); img_iter++)
+  for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
   {
     if ((*img_iter)->haveOKAstrometry ())
       ret++;
@@ -313,7 +327,7 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   {
     obs.loadImages ();
     _os << std::endl;
-    obs.imgset.print (_os, obs.displayImages);
+    obs.imgset->print (_os, obs.displayImages);
   }
   if (obs.displayCounts)
   {

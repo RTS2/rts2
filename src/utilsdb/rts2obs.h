@@ -28,7 +28,7 @@ class Rts2Obs
 {
 private:
   //! list of images for that observation
-  Rts2ImgSet imgset;
+  Rts2ImgSet * imgset;
   std::vector < Rts2Count > counts;
 
   int displayImages;
@@ -101,7 +101,10 @@ public:
 
   int getNumberOfImages ()
   {
-    return imgset.size ();
+    loadImages ();
+    if (imgset)
+      return imgset->size ();
+    return 0;
   }
 
   int getNumberOfGoodImages ();

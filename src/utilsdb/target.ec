@@ -109,7 +109,37 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   observationStart = -1;
 
   acquired = 0;
+}
 
+Target::Target ()
+{
+  Rts2Config *config;
+  config = Rts2Config::instance ();
+
+  observer = config->getObserver ();
+  selected = 0;
+
+  epochId = 1;
+  config->getInteger ("observatory", "epoch_id", epochId);
+
+  obs_id = -1;
+  observation = NULL;
+
+  img_id = 0;
+  obs_state = 0;
+  target_id = -1;
+  obs_target_id = -1;
+  target_type = TYPE_UNKNOW;
+  target_name = NULL;
+  targetUsers = NULL;
+
+  startCalledNum = 0;
+
+  airmassScale = 750.0;
+
+  observationStart = -1;
+
+  acquired = 0;
 }
 
 Target::~Target (void)
@@ -125,6 +155,18 @@ Target::load ()
 {
   // load target users for events..
   targetUsers = new Rts2TarUser (getTargetID (), getTargetType ());
+  return 0;
+}
+
+int
+Target::save ()
+{
+  return 0;
+}
+
+int
+Target::save (int tar_id)
+{
   return 0;
 }
 
