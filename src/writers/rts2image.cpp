@@ -1229,6 +1229,17 @@ Rts2Image::getCenter (double &x, double &y, int bin)
   return 0;
 }
 
+int
+Rts2Image::getError (double &eRa, double &eDec, double &eRad)
+{
+  if (isnan (ra_err) || isnan (dec_err) || isnan (img_err))
+    return -1;
+  eRa = ra_err;
+  eDec = dec_err;
+  eRad = img_err;
+  return 0;
+}
+
 std::ostream & operator << (std::ostream & _os, Rts2Image * image)
 {
   _os << "C " << image->getCameraName ()

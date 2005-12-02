@@ -332,6 +332,8 @@ public:
   // image flip value - ussually 1
   int getFlip ();
 
+  int getError (double &eRa, double &eDec, double &eRad);
+
   friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 };
 
