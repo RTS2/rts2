@@ -339,6 +339,39 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
   }
 }
 
+int
+Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
+{
+  double tRa;
+  double tDec;
+  double tRad;
+
+  eRa = 0;
+  eDec = 0;
+  eRad = 0;
+
+  int aNum = 0;
+
+  std::vector <Rts2ImageDb *>::iterator img_iter;
+  for (img_iter = begin (); img_iter != end (); img_iter++)
+  {
+    if (((*img_iter)->getError (tRa, tDec, tRad)) == 0)
+    {
+      eRa += tRa;
+      eDec += tDec;
+      eRad += tDec;
+      aNum++;
+    }
+  }
+  if (aNum > 0)
+  {
+    eRa /= aNum;
+    eDec /= aNum;
+    eRad /= aNum;
+  }
+  return aNum;
+}
+
 std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)
 {
   _os << "images:" << img_set.count;

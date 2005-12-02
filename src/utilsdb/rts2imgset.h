@@ -54,6 +54,8 @@ public:
   load ();
   void
   print (std::ostream & _os, int printImages);
+  int
+  getAverageErrors (double &eRa, double &eDec, double &eRad);
 
   friend
     std::ostream &

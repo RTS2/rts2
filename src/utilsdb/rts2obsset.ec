@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "../utils/libnova_cpp.h"
+
 void
 Rts2ObsSet::load (std::string in_where)
 {
@@ -158,34 +160,63 @@ Rts2ObsSet::~Rts2ObsSet (void)
 }
 
 int
-Rts2ObsSet::getNumberOfImages ()
+Rts2ObsSet::computeStatistics ()
 {
-  std::vector <Rts2Obs>::iterator obs_iter;
-  int ret = 0;
-  for (obs_iter = observations.begin (); obs_iter != observations.end (); obs_iter++)
-  {
-    ret += (*obs_iter).getNumberOfImages ();
-  }
-  return ret;
-}
+  int anum = 0;
 
-int
-Rts2ObsSet::getNumberOfGoodImages ()
-{
   std::vector <Rts2Obs>::iterator obs_iter;
-  int ret = 0;
+  allNum = 0;
+  goodNum = 0;
+  firstNum = 0;
+
+  errFirstRa = 0;
+  errFirstDec = 0;
+  errFirstRad = 0;
+  
+  errAvgRa = 0;
+  errAvgDec = 0;
+  errAvgRad = 0;
+
   for (obs_iter = observations.begin (); obs_iter != observations.end (); obs_iter++)
   {
-    ret += (*obs_iter).getNumberOfGoodImages ();
+    double efRa, efDec, efRad;
+    double eaRa, eaDec, eaRad;
+    int ret;
+    allNum += (*obs_iter).getNumberOfImages ();
+    goodNum += (*obs_iter).getNumberOfGoodImages ();
+    ret = (*obs_iter).getFirstErrors (efRa, efDec, efRad);
+    if (!ret)
+    {
+      errFirstRa += efRa;
+      errFirstDec += efDec;
+      errFirstRad += efRad;
+      firstNum++;
+    }
+    ret = (*obs_iter).getAverageErrors (eaRa, eaDec, eaRad);
+    if (ret > 0)
+    {
+      errAvgRa += eaRa;
+      errAvgDec += eaDec;
+      errAvgRad += eaRad;
+      anum ++;
+    }
   }
-  return ret;
+
+  errFirstRa /= firstNum;
+  errFirstDec /= firstNum;
+  errFirstRad /= firstNum;
+
+  errAvgRa /= anum;
+  errAvgDec /= anum;
+  errAvgRad /= anum;
+  
+  return 0;
 }
 
 void
 Rts2ObsSet::printStatistics (std::ostream & _os)
 {
-  int allNum = getNumberOfImages ();
-  int goodNum = getNumberOfGoodImages ();
+  computeStatistics ();
   int success = getSuccess ();
   int failed = getFailed ();
   int prec = _os.precision (2);
@@ -200,6 +231,16 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
     _os << " (" << (((double)(goodNum * 100)) / allNum) << "%)";
   }
   _os << std::endl;
+  if (goodNum > 0)
+  {
+    _os
+    << "First images errors: ra " << LibnovaDegArcMin (errFirstRa)
+    << " dec: " << LibnovaDegArcMin (errFirstDec)
+    << " radius: " << LibnovaDegArcMin (errFirstRad) << std::endl
+    << "Average error ra: " << LibnovaDegArcMin (errAvgRa)
+    << " dec: " << LibnovaDegArcMin (errAvgDec)
+    << " radius: " << LibnovaDegArcMin (errAvgRad);
+  }
   _os.precision (prec);
 }
 

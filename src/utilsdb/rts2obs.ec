@@ -296,6 +296,33 @@ Rts2Obs::getNumberOfGoodImages ()
   return ret;
 }
 
+int
+Rts2Obs::getFirstErrors (double &eRa, double &eDec, double &eRad)
+{
+  loadImages ();
+  if (!imgset)
+    return -1;
+
+  std::vector <Rts2ImageDb *>::iterator img_iter;
+  for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
+  {
+    if (((*img_iter)->getError (eRa, eDec, eRad)) == 0)
+    {
+      return 0;
+    }
+  }
+  return -1;
+}
+
+int
+Rts2Obs::getAverageErrors (double &eRa, double &eDec, double &eRad)
+{
+  loadImages ();
+  if (!imgset)
+    return -1;
+  return imgset->getAverageErrors (eRa, eDec, eRad);
+}
+
 std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
 {
   std::ios_base::fmtflags old_settings = _os.flags ();

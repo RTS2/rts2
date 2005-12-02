@@ -109,6 +109,9 @@ public:
 
   int getNumberOfGoodImages ();
 
+  int getFirstErrors (double &eRa, double &eDec, double &eRad);
+  int getAverageErrors (double &eRa, double &eDec, double &eRad);
+
   friend std::ostream & operator << (std::ostream & _os, Rts2Obs & obs);
 };
 

@@ -33,8 +33,35 @@ private:
     counts = 0;
     successNum = 0;
     failedNum = 0;
+
+    allNum = 0;
+    goodNum = 0;
+
+    firstNum = 0;
+
+    errFirstRa = 0;
+    errFirstDec = 0;
+    errFirstRad = 0;
+
+    errAvgRa = 0;
+    errAvgDec = 0;
+    errAvgRad = 0;
   }
   void load (std::string in_where);
+
+  // numbers
+  int allNum;
+  int goodNum;
+  int firstNum;
+
+  // errors..
+  double errFirstRa;
+  double errFirstDec;
+  double errFirstRad;
+
+  double errAvgRa;
+  double errAvgDec;
+  double errAvgRad;
 public:
   Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
   Rts2ObsSet (const time_t * start_t, const time_t * end_t);
@@ -69,8 +96,17 @@ public:
   {
     return failedNum;
   }
-  int getNumberOfImages ();
-  int getNumberOfGoodImages ();
+  int computeStatistics ();
+
+  int getNumberOfImages ()
+  {
+    return allNum;
+  }
+
+  int getNumberOfGoodImages ()
+  {
+    return goodNum;
+  }
 
   void printStatistics (std::ostream & _os);
 
