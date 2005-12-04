@@ -359,7 +359,7 @@ Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
     {
       eRa += tRa;
       eDec += tDec;
-      eRad += tDec;
+      eRad += tRad;
       aNum++;
     }
   }

@@ -239,7 +239,7 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
     << " radius: " << LibnovaDegArcMin (errFirstRad) << std::endl
     << "Average error ra: " << LibnovaDegArcMin (errAvgRa)
     << " dec: " << LibnovaDegArcMin (errAvgDec)
-    << " radius: " << LibnovaDegArcMin (errAvgRad);
+    << " radius: " << LibnovaDegArcMin (errAvgRad) << std::endl;
   }
   _os.precision (prec);
 }
