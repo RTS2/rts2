@@ -116,8 +116,6 @@ Rts2Night::init ()
 	(int) ln_range_degrees (180.0 -
 				Rts2Config::instance ()->getObserver ()->
 				lng) / 15;
-      if (tm_night->tm_hour > 12)
-	tm_night->tm_hour = 24 - tm_night->tm_hour;
       tm_night->tm_min = tm_night->tm_sec = 0;
       t_from = mktime (tm_night);
       if (t_from + 86400 > t_to)
