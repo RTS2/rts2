@@ -19,6 +19,8 @@ private:
   int do_hete_test;
 
   int forwardPort;
+
+  char *addExe;
 public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();

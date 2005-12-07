@@ -62,18 +62,21 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, 5563, "GRB")
   gcn_port = -1;
   do_hete_test = 0;
   forwardPort = -1;
+  addExe = NULL;
 
   addOption ('S', "gcn_host", 1, "GCN host name");
   addOption ('P', "gcn_port", 1, "GCN port");
   addOption ('T', "test", 0,
 	     "process test notices (default to off - don't process them)");
   addOption ('f', "forward", 1, "forward incoming notices to that port");
+  addOption ('a', "add_exe", 1,
+	     "execute that command when new GCN packet arrives");
 }
 
 Rts2DevGrb::~Rts2DevGrb (void)
 {
-  if (gcn_host)
-    delete[]gcn_host;
+  delete[]gcn_host;
+  delete[]addExe;
 }
 
 int
@@ -93,6 +96,9 @@ Rts2DevGrb::processOption (int in_opt)
       break;
     case 'f':
       forwardPort = atoi (optarg);
+      break;
+    case 'a':
+      addExe = optarg;
       break;
     default:
       return Rts2DeviceDb::processOption (in_opt);
@@ -129,8 +135,22 @@ Rts2DevGrb::init ()
 	return -1;
     }
 
+  // try to get exe from config
+  if (!addExe)
+    {
+      char *conf_addExe = new char[1024];
+      ret = config->getString ("grbd", "add_exe", conf_addExe, 200);
+      if (ret)
+	{
+	  delete conf_addExe;
+	}
+      else
+	{
+	  addExe = conf_addExe;
+	}
+    }
   // add connection..
-  gcncnn = new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, this);
+  gcncnn = new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, this);
   // wait till grb connection init..
   while (1)
     {

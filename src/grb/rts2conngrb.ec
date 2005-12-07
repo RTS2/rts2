@@ -1,4 +1,5 @@
 #include "rts2conngrb.h"
+#include "rts2grbexecconn.h"
 
 #include <errno.h>
 #include <netdb.h>
@@ -618,7 +619,25 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
   addGcnRaw (grb_id, grb_seqn, grb_type);
 
-  return master->newGcnGrb (d_tar_id);
+  ret = master->newGcnGrb (d_tar_id);
+
+  // last think is to call some external exe..
+  if (addExe)
+  {
+    int execRet;
+    Rts2GrbExecConn *execConn = new Rts2GrbExecConn (master, addExe, d_tar_id, grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, grb_date, grb_errorbox);
+    execRet = execConn->init ();
+    if (execRet < 0)
+    {
+      delete execConn;
+    }
+    else if (execRet == 0)
+    {
+      master->addConnection (execConn);
+    }
+  }
+
+  return ret;
 }
 
 int
@@ -668,7 +687,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 }
 
 Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int
-in_do_hete_test, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
+in_do_hete_test, char *in_addExe, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
 {
   master = in_master;
   gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
@@ -694,6 +713,8 @@ in_do_hete_test, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
   swiftLastPoint = 0;
   swiftLastRa = nan ("f");
   swiftLastDec = nan ("f");
+
+  addExe = in_addExe;
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)

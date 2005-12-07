@@ -12,6 +12,8 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 {
 private:
   Rts2DevGrb * master;
+  // path to exec when we get new burst; pass parameters on command line
+  char *addExe;
 
   long lbuf[SIZ_PKT];		// local buffer - swaped for Linux 
   long nbuf[SIZ_PKT];		// network buffer
@@ -73,7 +75,7 @@ private:
   time_t nextTime;
 public:
   Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test,
-	       Rts2DevGrb * in_master);
+	       char *in_addExe, Rts2DevGrb * in_master);
   virtual ~ Rts2ConnGrb (void);
   virtual int idle ();
   virtual int init ();
