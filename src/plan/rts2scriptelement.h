@@ -36,7 +36,9 @@
 // successfull search
 #define EVENT_TEL_SEARCH_SUCCESS	RTS2_LOCAL_EVENT + 263
 // guiding data available
-#define EVENT_GUIDING_DATA		RTS2_LOCAL_EVENT + 364
+#define EVENT_GUIDING_DATA		RTS2_LOCAL_EVENT + 264
+// ask for acquire state..
+#define EVENT_GET_ACQUIRE_STATE		RTS2_LOCAL_EVENT + 265
 
 /**
  * Helper class for EVENT_ACQUIRE_QUERY

@@ -146,14 +146,10 @@ Rts2DevScript::postEvent (Rts2Event * event)
       switch (acqEnd)
 	{
 	case NEXT_COMMAND_PRECISION_OK:
-	  if (currentTarget)
-	    currentTarget->acqusitionEnd ();
 	  nextCommand ();
 	  break;
 	case -5:		// failed with script deletion..
 	case NEXT_COMMAND_PRECISION_FAILED:
-	  if (currentTarget)
-	    currentTarget->acqusitionFailed ();
 	  deleteScript ();
 	  break;
 	}

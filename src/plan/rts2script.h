@@ -45,6 +45,7 @@
  */
 
 class Rts2ScriptElement;
+class Rts2SEBAcquired;
 
 class Rts2Script:public Rts2Object
 {
@@ -55,6 +56,8 @@ private:
 
   Rts2ScriptElement *currScriptElement;
 
+  // test whenewer next element is one that is given..
+  bool isNext (const char *element);
   char *nextElement ();
   int getNextParamFloat (float *val);
   int getNextParamDouble (double *val);

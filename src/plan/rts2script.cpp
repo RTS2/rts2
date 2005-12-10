@@ -9,6 +9,28 @@
 #include <string.h>
 #include <ctype.h>
 
+// test if next element is one that is given
+bool
+Rts2Script::isNext (const char *element)
+{
+  // skip spaces..
+  size_t el_len = strlen (element);
+  while (isspace (*cmdBufTop))
+    cmdBufTop++;
+  if (!strncmp (element, cmdBufTop, el_len))
+    {
+      // eat us..
+      cmdBufTop += el_len;
+      if (*cmdBufTop)
+	{
+	  *cmdBufTop = '\0';
+	  cmdBufTop++;
+	}
+      return true;
+    }
+  return false;
+}
+
 char *
 Rts2Script::nextElement ()
 {
@@ -59,13 +81,11 @@ Rts2Script::getNextParamInteger (int *val)
   return 0;
 }
 
-Rts2Script::Rts2Script (Rts2Conn * in_connection, Target * target):Rts2Object
-  ()
+Rts2Script::Rts2Script (Rts2Conn * in_connection, Target * target):
+Rts2Object ()
 {
-  Rts2ScriptElement *
-    element;
-  char
-    scriptText[MAX_COMMAND_LENGTH];
+  Rts2ScriptElement *element;
+  char scriptText[MAX_COMMAND_LENGTH];
   target->getScript (in_connection->getName (), scriptText);
   cmdBuf = new char[strlen (scriptText) + 1];
   strcpy (cmdBuf, scriptText);
@@ -77,7 +97,6 @@ Rts2Script::Rts2Script (Rts2Conn * in_connection, Target * target):Rts2Object
       element = parseBuf (target);
       if (!element)
 	break;
-      // we are currently in block..
       elements.push_back (element);
     }
   while (1);
@@ -228,6 +247,7 @@ Rts2Script::parseBuf (Target * target)
       float expTime;
       if (getNextParamDouble (&precision) || getNextParamFloat (&expTime))
 	return NULL;
+      // target is already acquired
       if (target->isAcquired ())
 	return new Rts2ScriptElement (this);
       return new Rts2ScriptElementAcquire (this, precision, expTime);
@@ -324,6 +344,45 @@ Rts2Script::parseBuf (Target * target)
 	}
       // block can end by script end as well..
       return blockEl;
+    }
+  else if (!strcmp (commandStart, COMMAND_BLOCK_ACQ))
+    {
+      char *el;
+      Rts2ScriptElement *newElement;
+      Rts2SEBAcquired *acqIfEl;
+      // test for block start..
+      el = nextElement ();
+      // error, return NULL
+      if (*el != '{')
+	return NULL;
+      acqIfEl = new Rts2SEBAcquired (this, target->getObsTargetID ());
+      // parse block..
+      while (1)
+	{
+	  newElement = parseBuf (target);
+	  // "}" will result in NULL, which we capture here
+	  if (!newElement)
+	    break;
+	  acqIfEl->addElement (newElement);
+	}
+      // test for if..
+      if (isNext (COMMAND_BLOCK_ELSE))
+	{
+	  el = nextElement ();
+	  if (*el != '{')
+	    return NULL;
+	  // parse block..
+	  while (1)
+	    {
+	      newElement = parseBuf (target);
+	      // "}" will result in NULL, which we capture here
+	      if (!newElement)
+		break;
+	      acqIfEl->addElseElement (newElement);
+	    }
+	}
+      // block can end by script end as well..
+      return acqIfEl;
     }
   // end of block..
   else if (!strcmp (commandStart, "}"))

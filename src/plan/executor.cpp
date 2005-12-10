@@ -238,15 +238,23 @@ Rts2Executor::postEvent (Rts2Event * event)
       maskState (0, EXEC_STATE_MASK, EXEC_ACQUIRE_WAIT);
       break;
     case EVENT_ACQUSITION_END:
+      // we receive event before any connection - connections
+      // receive it from Rts2Device.
+      // So we can safely change target status here, and it will
+      // propagate to devices connections
       maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
       switch (*(int *) event->getArg ())
 	{
 	case NEXT_COMMAND_PRECISION_OK:
-	  acqusitionOk++;
+	  if (currentTarget)
+	    currentTarget->acqusitionEnd ();
+	  maskState (0, EXEC_MASK_ACQ, EXEC_ACQ_OK);
 	  break;
 	case -5:
 	case NEXT_COMMAND_PRECISION_FAILED:
-	  acqusitionFailed++;
+	  if (currentTarget)
+	    currentTarget->acqusitionFailed ();
+	  maskState (0, EXEC_MASK_ACQ, EXEC_ACQ_FAILED);
 	  break;
 	}
       break;
@@ -324,6 +332,10 @@ Rts2Executor::postEvent (Rts2Event * event)
       break;
     case EVENT_CLEAR_WAIT:
       waitState = 0;
+      break;
+    case EVENT_GET_ACQUIRE_STATE:
+      *((int *) event->getArg ()) =
+	(currentTarget) ? currentTarget->getAcquired () : -2;
       break;
     }
   Rts2Device::postEvent (event);
@@ -554,6 +566,7 @@ Rts2Executor::doSwitch ()
 	    // don't que only in case nextTarget and currentTarget are
 	    // same and endObservation returns 1
 	    {
+	      queTarget (currentTarget);
 	      currentTarget = nextTarget;
 	      nextTarget = NULL;
 	    }
@@ -626,6 +639,16 @@ void
 Rts2Executor::queTarget (Target * in_target)
 {
   int ret;
+  // test for final acq..
+  switch (in_target->getAcquired ())
+    {
+    case 1:
+      acqusitionOk++;
+      break;
+    case -1:
+      acqusitionFailed++;
+      break;
+    }
   ret = in_target->postprocess ();
   if (!ret)
     targetsQue.push_back (in_target);

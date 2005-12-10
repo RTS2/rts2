@@ -15,7 +15,8 @@ private:
   std::list < Rts2ScriptElement * >::iterator curr_element;
   int blockScriptRet (int ret);
 protected:
-    virtual bool endLoop ()
+  int loopCount;
+  virtual bool endLoop ()
   {
     return true;
   }
@@ -44,7 +45,9 @@ public:
   virtual void cancelCommands ();
 };
 
-// will wait for signal, after signal we will end execution of that block
+/**
+ * Will wait for signal, after signal we will end execution of that block.
+ */
 class Rts2SEBSignalEnd:public Rts2ScriptElementBlock
 {
 private:
@@ -60,6 +63,58 @@ public:
   virtual ~ Rts2SEBSignalEnd (void);
 
   virtual int waitForSignal (int in_sig);
+};
+
+/**
+ * Will test if target is acquired. Can be acompained with else block, that
+ * will be executed when 
+ */
+class Rts2SEBAcquired:public Rts2ScriptElementBlock
+{
+private:
+  Rts2ScriptElementBlock * elseBlock;
+  int tar_id;
+  enum
+  { NOT_CALLED, ACQ_OK, ACQ_FAILED } state;
+  void checkState ();
+protected:
+    virtual bool endLoop ();
+public:
+    Rts2SEBAcquired (Rts2Script * in_script, int in_tar_id);
+    virtual ~ Rts2SEBAcquired (void);
+
+  virtual void postEvent (Rts2Event * event);
+
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
+
+  virtual int nextCommand (Rts2DevClientCamera * client,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+
+  virtual int nextCommand (Rts2DevClientPhot * client,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+
+  virtual int processImage (Rts2Image * image);
+  virtual int waitForSignal (int in_sig);
+  virtual void cancelCommands ();
+
+  virtual void addElseElement (Rts2ScriptElement * element);
+};
+
+/**
+ * Else block for storing else path..
+ */
+class Rts2SEBElse:public Rts2ScriptElementBlock
+{
+protected:
+  virtual bool endLoop ();
+public:
+  Rts2SEBElse (Rts2Script * in_script):Rts2ScriptElementBlock (in_script)
+  {
+  }
 };
 
 #endif /* !__RTS2_SCRIPT_BLOCK__ */

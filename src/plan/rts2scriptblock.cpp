@@ -4,6 +4,7 @@ Rts2ScriptElementBlock::Rts2ScriptElementBlock (Rts2Script * in_script):Rts2Scri
   (in_script)
 {
   curr_element = blockElements.end ();
+  loopCount = 0;
 }
 
 Rts2ScriptElementBlock::~Rts2ScriptElementBlock (void)
@@ -82,6 +83,7 @@ Rts2ScriptElementBlock::defnextCommand (Rts2DevClient * client,
       curr_element++;
       if (curr_element == blockElements.end ())
 	{
+	  loopCount++;
 	  if (endLoop ())
 	    return NEXT_COMMAND_NEXT;
 	  curr_element = blockElements.begin ();
@@ -104,6 +106,7 @@ Rts2ScriptElementBlock::nextCommand (Rts2DevClientCamera * client,
       curr_element++;
       if (curr_element == blockElements.end ())
 	{
+	  loopCount++;
 	  if (endLoop ())
 	    return NEXT_COMMAND_NEXT;
 	  curr_element = blockElements.begin ();
@@ -129,6 +132,9 @@ Rts2ScriptElementBlock::nextCommand (Rts2DevClientPhot * client,
       curr_element++;
       if (curr_element == blockElements.end ())
 	{
+	  loopCount++;
+	  if (endLoop ())
+	    return NEXT_COMMAND_NEXT;
 	  curr_element = blockElements.begin ();
 	}
     }
@@ -178,4 +184,168 @@ Rts2SEBSignalEnd::waitForSignal (int in_sig)
       return 1;
     }
   return Rts2ScriptElementBlock::waitForSignal (in_sig);
+}
+
+Rts2SEBAcquired::Rts2SEBAcquired (Rts2Script * in_script, int in_tar_id):Rts2ScriptElementBlock
+  (in_script)
+{
+  elseBlock = NULL;
+  tar_id = in_tar_id;
+  state = NOT_CALLED;
+}
+
+Rts2SEBAcquired::~Rts2SEBAcquired (void)
+{
+  delete elseBlock;
+}
+
+bool
+Rts2SEBAcquired::endLoop ()
+{
+  return (loopCount != 0);
+}
+
+void
+Rts2SEBAcquired::checkState ()
+{
+  if (state == NOT_CALLED)
+    {
+      int acquireState = 0;
+      script->getMaster ()->
+	postEvent (new
+		   Rts2Event (EVENT_GET_ACQUIRE_STATE,
+			      (void *) &acquireState));
+      if (acquireState == 1)
+	state = ACQ_OK;
+      else
+	state = ACQ_FAILED;
+    }
+}
+
+void
+Rts2SEBAcquired::postEvent (Rts2Event * event)
+{
+  switch (state)
+    {
+    case ACQ_OK:
+      Rts2ScriptElementBlock::postEvent (event);
+      break;
+    case ACQ_FAILED:
+      if (elseBlock)
+	{
+	  elseBlock->postEvent (event);
+	  break;
+	}
+    case NOT_CALLED:
+      Rts2ScriptElement::postEvent (event);
+      break;
+    }
+}
+
+int
+Rts2SEBAcquired::defnextCommand (Rts2DevClient * client,
+				 Rts2Command ** new_command,
+				 char new_device[DEVICE_NAME_SIZE])
+{
+  checkState ();
+  if (state == ACQ_OK)
+    return Rts2ScriptElementBlock::defnextCommand (client, new_command,
+						   new_device);
+  if (elseBlock)
+    return elseBlock->defnextCommand (client, new_command, new_device);
+  return NEXT_COMMAND_NEXT;
+}
+
+int
+Rts2SEBAcquired::nextCommand (Rts2DevClientCamera * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE])
+{
+  checkState ();
+  if (state == ACQ_OK)
+    return Rts2ScriptElementBlock::nextCommand (client, new_command,
+						new_device);
+  if (elseBlock)
+    return elseBlock->defnextCommand (client, new_command, new_device);
+  return NEXT_COMMAND_NEXT;
+}
+
+int
+Rts2SEBAcquired::nextCommand (Rts2DevClientPhot * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE])
+{
+  checkState ();
+  if (state == ACQ_OK)
+    return Rts2ScriptElementBlock::nextCommand (client, new_command,
+						new_device);
+  if (elseBlock)
+    return elseBlock->defnextCommand (client, new_command, new_device);
+  return NEXT_COMMAND_NEXT;
+}
+
+int
+Rts2SEBAcquired::processImage (Rts2Image * image)
+{
+  switch (state)
+    {
+    case ACQ_OK:
+      return Rts2ScriptElementBlock::processImage (image);
+    case ACQ_FAILED:
+      if (elseBlock)
+	return elseBlock->processImage (image);
+    default:
+      return Rts2ScriptElement::processImage (image);
+    }
+}
+
+int
+Rts2SEBAcquired::waitForSignal (int in_sig)
+{
+  switch (state)
+    {
+    case ACQ_OK:
+      return Rts2ScriptElementBlock::waitForSignal (in_sig);
+    case ACQ_FAILED:
+      if (elseBlock)
+	return elseBlock->waitForSignal (in_sig);
+    default:
+      return Rts2ScriptElement::waitForSignal (in_sig);
+    }
+}
+
+void
+Rts2SEBAcquired::cancelCommands ()
+{
+  switch (state)
+    {
+    case ACQ_OK:
+      Rts2ScriptElementBlock::cancelCommands ();
+      break;
+    case ACQ_FAILED:
+      if (elseBlock)
+	{
+	  elseBlock->cancelCommands ();
+	  break;
+	}
+    case NOT_CALLED:
+      Rts2ScriptElement::cancelCommands ();
+      break;
+    }
+}
+
+void
+Rts2SEBAcquired::addElseElement (Rts2ScriptElement * element)
+{
+  if (!elseBlock)
+    {
+      elseBlock = new Rts2SEBElse (script);
+    }
+  elseBlock->addElement (element);
+}
+
+bool
+Rts2SEBElse::endLoop ()
+{
+  return (loopCount != 0);
 }
