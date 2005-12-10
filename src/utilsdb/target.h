@@ -62,6 +62,8 @@
 #define COMMAND_PHOT_SEARCH	"PS"
 #define COMMAND_BLOCK_WAITSIG   "block_waitsig"
 #define COMMAND_GUIDING		"guiding"
+#define COMMAND_BLOCK_ACQ	"ifacq"
+#define COMMAND_BLOCK_ELSE	"else"
 
 // HAM acqusition - only on FRAM telescope
 #define COMMAND_HAM		"HAM"
@@ -351,6 +353,10 @@ public:
   void acqusitionFailed ();
   // called when waiting for acqusition..
   int isAcquired ()
+  {
+    return (acquired == 1);
+  }
+  int getAcquired ()
   {
     return acquired;
   }

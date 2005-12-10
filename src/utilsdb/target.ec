@@ -161,7 +161,26 @@ Target::load ()
 int
 Target::save ()
 {
-  return 0;
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_new_id;
+  EXEC SQL END DECLARE SECTION;
+
+  // generate new id, if we don't have any 
+  if (target_id == -1)
+  {
+    EXEC SQL
+    SELECT
+      nextval ('tar_id')
+    INTO
+      :db_new_id;
+    if (sqlca.sqlcode)
+    {
+      logMsgDb ("Target::save cannot get new tar_id");
+      return -1;
+    }
+  }
+
+  return save (target_id);
 }
 
 int
@@ -300,6 +319,7 @@ void
 Target::acqusitionFailed ()
 {
   obs_state |= OBS_BIT_ACQUSITION_FAI;
+  acquired = -1;
 }
 
 int
