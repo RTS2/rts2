@@ -338,10 +338,10 @@ Rts2DevPhot::sendCount (int count, float exp, int is_ov)
 	  conn->sendValue ("count", msg);
 	}
     }
-  if (req_count == 0)
-    endIntegrate ();
   if (req_count > 0)
     req_count--;
+  if (req_count == 0)
+    endIntegrate ();
   free (msg);
   return ret;
 }
