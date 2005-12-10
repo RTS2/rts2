@@ -170,6 +170,11 @@
 #define EXEC_NOT_STOP		0x00
 #define EXEC_STOP		0x10
 
+#define EXEC_MASK_ACQ		0x60
+#define EXEC_NOT_ACQ		0x00
+#define EXEC_ACQ_OK		0x20
+#define EXEC_ACQ_FAILED		0x40
+
 #define IMGPROC_IDLE		0x00
 #define IMGPROC_RUN		0x00
 
