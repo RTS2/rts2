@@ -168,8 +168,8 @@ Rts2Image::Rts2Image (const char *in_filename)
     focPos = -1;
   getValue ("CAM_FILT", filter);
   getValue ("AVERAGE", average);
-  getValue ("POS_ERA", ra_err);
-  getValue ("POS_EDEC", dec_err);
+  getValue ("RA_ERR", ra_err);
+  getValue ("DEC_ERR", dec_err);
   getValue ("POS_ERR", img_err);
   // astrometry get !!
   getValue ("CRVAL1", pos_astr.ra);
@@ -874,8 +874,8 @@ Rts2Image::closeFile ()
       // save astrometry error
       if (!isnan (ra_err) && !isnan (dec_err))
 	{
-	  setValue ("POS_ERA", ra_err, "RA error in position");
-	  setValue ("POS_EDEC", dec_err, "DEC error in position");
+	  setValue ("RA_ERR", ra_err, "RA error in position");
+	  setValue ("DEC_ERR", dec_err, "DEC error in position");
 	  setValue ("POS_ERR", getAstrometryErr (), "error in position");
 	}
       fits_close_file (ffile, &fits_status);
