@@ -185,7 +185,8 @@ CameraSbigChip::readoutOneLine ()
 
 class Rts2DevCameraSbig:public Rts2DevCamera
 {
-  CSBIGCam *pcam;
+private:
+  CSBIGCam * pcam;
   int checkSbigHw (PAR_ERROR ret)
   {
     if (ret == CE_NO_ERROR)
@@ -194,6 +195,9 @@ class Rts2DevCameraSbig:public Rts2DevCamera
     return -1;
   }
   int fanState (int newFanState);
+  int usb_port;
+protected:
+  virtual int processOption (int in_opt);
 public:
   Rts2DevCameraSbig (int argc, char **argv);
   virtual ~ Rts2DevCameraSbig ();
@@ -220,11 +224,32 @@ Rts2DevCameraSbig::Rts2DevCameraSbig (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
   pcam = NULL;
+  usb_port = 0;
+  addOption ('u', "usb_port", 1, "USB port number - defaults to 0");
 }
 
 Rts2DevCameraSbig::~Rts2DevCameraSbig ()
 {
   delete pcam;
+}
+
+int
+Rts2DevCameraSbig::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'u':
+      usb_port = atoi (optarg);
+      if (usb_port <= 0 || usb_port > 3)
+	{
+	  usb_port = 0;
+	  return -1;
+	}
+      break;
+    default:
+      return Rts2DevCamera::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -234,7 +259,12 @@ Rts2DevCameraSbig::init ()
   ret_c_init = Rts2DevCamera::init ();
   if (ret_c_init)
     return ret_c_init;
-  pcam = new CSBIGCam (DEV_USB);
+
+  if (usb_port)
+    pcam = new CSBIGCam (DEV_USB1 + (usb_port - 1));
+  else
+    pcam = new CSBIGCam (DEV_USB);
+
   if (pcam->GetError () != CE_NO_ERROR)
     {
       delete pcam;
