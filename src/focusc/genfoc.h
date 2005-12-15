@@ -104,7 +104,7 @@ class Rts2GenFocCamera:public Rts2DevClientCameraFoc
 private:
   Rts2GenFocClient * master;
 protected:
-  unsigned short low, med, hig;
+  unsigned short low, med, hig, max, min;
   double average;
   int autoSave;
   int histogram[HISTOGRAM_LIMIT];

@@ -360,8 +360,8 @@ Rts2xfocusCamera::printInfo ()
   char *stringBuf;
   int len;
   len =
-    asprintf (&stringBuf, "L: %d M: %d H: %d Avg: %.2f", low, med, hig,
-	      average);
+    asprintf (&stringBuf, "L: %d M: %d H: %d Min: %d Avg: %.2f Max: %d",
+	      low, med, hig, min, average, max);
   XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
 	       stringBuf, len);
   free (stringBuf);
@@ -546,11 +546,17 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
   k = 0;
   im_ptr = image->getDataUShortInt ();
   average = 0;
+  max = 0;
+  min = 65536;
   for (i = 0; i < pixmapHeight; i++)
     for (j = 0; j < pixmapWidth; j++)
       {
 	histogram[*im_ptr]++;
 	average += *im_ptr;
+	if (max < *im_ptr)
+	  max = *im_ptr;
+	if (min > *im_ptr)
+	  min = *im_ptr;
 	im_ptr++;
       }
 
@@ -596,7 +602,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 
   std::
     cout << "Data low:" << low << " med:" << med << " hig:" << hig <<
-    " average:" << average << std::endl;
+    " min:" << min << " average:" << average << " max:" << max << std::endl;
 
   XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
 
