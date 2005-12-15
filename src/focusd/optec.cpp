@@ -102,7 +102,7 @@ Rts2DevFocuserOptec::foc_write (char *buf, int count)
   int ret;
   syslog (LOG_DEBUG, "Optec:will write:'%s'", buf);
   ret = write (foc_desc, buf, count);
-  tcflush (foc_desc, TCIFLUSH);
+//  tcflush (foc_desc, TCIFLUSH);
   return ret;
 }
 
@@ -127,19 +127,19 @@ Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
   int tmp_rcount = -1;
   char *buf;
 
-  if (tcflush (foc_desc, TCIOFLUSH) < 0)
-    return -1;
+//  if (tcflush (foc_desc, TCIOFLUSH) < 0)
+//    return -1;
 
   if (foc_write (wbuf, wcount) < 0)
     return -1;
 
-  tmp_rcount = foc_read (rbuf, rcount);
+  tmp_rcount = read (foc_desc, rbuf, rcount);
 
   if (tmp_rcount > 0)
     {
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
-      buf[rcount] = 0;
+      buf[rcount] = '\0';
       syslog (LOG_DEBUG, "Optec:readed %i %s", tmp_rcount, buf);
       free (buf);
     }
@@ -147,7 +147,7 @@ Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
     {
       syslog (LOG_DEBUG, "Optec:readed returns %i", tmp_rcount);
     }
-  return 0;
+  return tmp_rcount;
 }
 
 int
@@ -233,10 +233,12 @@ Rts2DevFocuserOptec::init ()
     ((foc_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
   foc_termios.c_lflag = 0;
   foc_termios.c_cc[VMIN] = 0;
-  foc_termios.c_cc[VTIME] = 15;
+  foc_termios.c_cc[VTIME] = 40;
 
   if (tcsetattr (foc_desc, TCSANOW, &foc_termios) < 0)
     return -1;
+
+  tcflush (foc_desc, TCIOFLUSH);
 
   // set manual
   if (foc_write_read ("FMMODE", 6, rbuf, 1) < 0)
@@ -251,18 +253,15 @@ Rts2DevFocuserOptec::init ()
 int
 Rts2DevFocuserOptec::getPos (int *position)
 {
-  char rbuf[6], tbuf[6];
+  char rbuf[7];
 
   if (foc_write_read ("FPOSRO", 6, rbuf, 6) < 1)
     return -1;
   else
     {
-      tbuf[0] = rbuf[2];
-      tbuf[1] = rbuf[3];
-      tbuf[2] = rbuf[4];
-      tbuf[3] = rbuf[5];
-      tbuf[4] = '\0';
-      *position = atoi (tbuf);
+      rbuf[6] = '\0';
+      syslog (LOG_DEBUG, "0: %i", rbuf[0]);
+      *position = atoi ((rbuf + 2));
     }
   return 0;
 }
@@ -270,18 +269,14 @@ Rts2DevFocuserOptec::getPos (int *position)
 int
 Rts2DevFocuserOptec::getTemp (float *temp)
 {
-  char rbuf[6], tbuf[6];
+  char rbuf[8];
 
-  if (foc_write_read ("FTMPRO", 6, rbuf, 6) < 1)
+  if (foc_write_read ("FTMPRO", 6, rbuf, 7) < 1)
     return -1;
   else
     {
-      tbuf[0] = rbuf[2];
-      tbuf[1] = rbuf[3];
-      tbuf[2] = rbuf[4];
-      tbuf[3] = rbuf[5];
-      tbuf[4] = '\0';
-      *temp = atof (tbuf);
+      rbuf[7] = '\0';
+      *temp = atof ((rbuf + 2));
     }
   return 0;
 }
