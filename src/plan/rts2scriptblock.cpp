@@ -30,6 +30,7 @@ Rts2ScriptElementBlock::blockScriptRet (int ret)
       curr_element++;
       if (curr_element == blockElements.end ())
 	{
+	  loopCount++;
 	  if (endLoop ())
 	    return ret;
 	  curr_element = blockElements.begin ();

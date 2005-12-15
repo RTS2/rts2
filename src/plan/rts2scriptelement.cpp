@@ -644,11 +644,13 @@ Rts2ScriptElementAcquireStar::getSource (Rts2Image * image, double &ra_offset,
   double sep;
   float flux;
   ret = image->getBrightestOffset (off_x, off_y, flux);
-  if (ret || flux < 100)
+  if (ret || flux < 5000)
     return -1;
   ret = image->getOffset (off_x, off_y, ra_offset, dec_offset, sep);
   if (ret)
     return -1;
+  ra_offset *= -1.0;
+  dec_offset *= -1.0;
   if (sep < reqPrecision)
     return 0;
   return 1;
