@@ -196,6 +196,10 @@ private:
   }
   int fanState (int newFanState);
   int usb_port;
+  char *reqSerialNumber;
+
+  SBIG_DEVICE_TYPE getDevType ();
+
 protected:
   virtual int processOption (int in_opt);
 public:
@@ -225,7 +229,10 @@ Rts2DevCamera (in_argc, in_argv)
 {
   pcam = NULL;
   usb_port = 0;
+  reqSerialNumber = NULL;
   addOption ('u', "usb_port", 1, "USB port number - defaults to 0");
+  addOption ('S', "serial_number", 1,
+	     "SBIG serial number to accept for that camera");
 }
 
 Rts2DevCameraSbig::~Rts2DevCameraSbig ()
@@ -246,24 +253,87 @@ Rts2DevCameraSbig::processOption (int in_opt)
 	  return -1;
 	}
       break;
+    case 'S':
+      if (usb_port)
+	return -1;
+      reqSerialNumber = optarg;
+      break;
     default:
       return Rts2DevCamera::processOption (in_opt);
     }
   return 0;
 }
 
+SBIG_DEVICE_TYPE
+Rts2DevCameraSbig::getDevType ()
+{
+  switch (usb_port)
+    {
+    case 1:
+      return DEV_USB1;
+      break;
+    case 2:
+      return DEV_USB2;
+      break;
+    case 3:
+      return DEV_USB3;
+      break;
+    case 4:
+      return DEV_USB4;
+    default:
+      return DEV_USB;
+    }
+}
+
 int
 Rts2DevCameraSbig::init ()
 {
   int ret_c_init;
+  OpenDeviceParams odp;
+
   ret_c_init = Rts2DevCamera::init ();
   if (ret_c_init)
     return ret_c_init;
 
-  if (usb_port)
-    pcam = new CSBIGCam (DEV_USB1 + (usb_port - 1));
-  else
-    pcam = new CSBIGCam (DEV_USB);
+  pcam = new CSBIGCam ();
+  if (pcam->OpenDriver () != CE_NO_ERROR)
+    {
+      delete pcam;
+      return -1;
+    }
+
+  // find camera by serial number..
+  if (reqSerialNumber)
+    {
+      QueryUSBResults qusbres;
+      if (pcam->SBIGUnivDrvCommand (CC_QUERY_USB, NULL, &qusbres) !=
+	  CE_NO_ERROR)
+	{
+	  delete pcam;
+	  return -1;
+	}
+      // search for serial number..
+      for (usb_port = 0; usb_port < 4; usb_port++)
+	{
+	  if (qusbres.usbInfo[usb_port].cameraFound == TRUE
+	      && !strncmp (qusbres.usbInfo[usb_port].serialNumber,
+			   reqSerialNumber, 10))
+	    break;
+	}
+      if (usb_port == 4)
+	{
+	  delete pcam;
+	  return -1;
+	}
+      usb_port++;		//cause it's 1 based..
+    }
+
+  odp.deviceType = getDevType ();
+  if (pcam->OpenDevice (odp) != CE_NO_ERROR)
+    {
+      delete pcam;
+      return -1;
+    }
 
   if (pcam->GetError () != CE_NO_ERROR)
     {
@@ -356,17 +426,17 @@ Rts2DevCameraSbig::baseInfo ()
   if (pcam->GetError () != CE_NO_ERROR)
     return -1;
   sprintf (ccdType, "SBIG_%i", pcam->GetCameraType ());
-  strcpy (serialNumber, "001");
   // get serial number
 
   GetCCDInfoParams req;
   GetCCDInfoResults2 res;
   PAR_ERROR ret;
 
-  req.request = CCD_INFO_EXTENDED2_IMAGING;
+  req.request = CCD_INFO_EXTENDED;
   ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &req, &res);
   if (ret != CE_NO_ERROR)
     return -1;
+  strcpy (serialNumber, res.serialNumber);
   canDF = 1;
   return 0;
 }
