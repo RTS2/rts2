@@ -6,8 +6,9 @@
 
 class LibnovaRa
 {
-private:
+protected:
   double ra;
+  void toHms (struct ln_hms *ra_hms);
 public:
     LibnovaRa (double in_ra)
   {
@@ -16,10 +17,20 @@ public:
   friend std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 };
 
+class LibnovaRaComp:public LibnovaRa
+{
+public:
+  LibnovaRaComp (double in_ra):LibnovaRa (in_ra)
+  {
+  }
+  friend std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
+};
+
 class LibnovaDeg
 {
 protected:
   double deg;
+  void toDms (struct ln_dms *deg_dms);
 public:
     LibnovaDeg (double in_deg)
   {
@@ -41,6 +52,17 @@ public:
   friend std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 };
 
+class LibnovaDeg90Comp:public LibnovaDeg90
+{
+public:
+  LibnovaDeg90Comp (double in_deg):LibnovaDeg90 (in_deg)
+  {
+  }
+
+  friend std::ostream & operator << (std::ostream & _os,
+				     LibnovaDeg90Comp l_deg);
+};
+
 class LibnovaDegArcMin:public LibnovaDeg
 {
 public:
@@ -53,8 +75,10 @@ public:
 };
 
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
+std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
+std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);
 
 #endif /* !__LIBNOVA_CPP__ */
