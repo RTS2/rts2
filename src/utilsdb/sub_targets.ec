@@ -17,6 +17,16 @@ Target (in_tar_id, in_obs)
   tar_enabled = -1;
 }
 
+ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):
+Target (in_tar_id, in_obs)
+{
+  tar_priority = nan ("f");
+  tar_bonus = nan ("f");
+  tar_enabled = -1;
+  position.ra = pos->ra;
+  position.dec = pos->dec;
+}
+
 int
 ConstTarget::load ()
 {

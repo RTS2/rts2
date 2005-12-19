@@ -164,6 +164,7 @@ protected:
   int obs_target_id;
   char target_type;
   char *target_name;
+  char *target_comment;
   struct ln_lnlat_posn *observer;
 
   virtual int getDBScript (const char *camera_name, char *script);
@@ -322,10 +323,19 @@ public:
   }
   void setTargetName (const char *in_target_name)
   {
-    if (target_name)
-      delete target_name;
+    delete target_name;
     target_name = new char[strlen (in_target_name) + 1];
     strcpy (target_name, in_target_name);
+  }
+  const char *getTargetComment ()
+  {
+    return target_comment;
+  }
+  void setTargetComment (const char *in_target_comment)
+  {
+    delete target_comment;
+    target_comment = new char[strlen (in_target_comment) + 1];
+    strcpy (target_comment, in_target_comment);
   }
   int getObsId ()
   {
@@ -453,6 +463,8 @@ protected:
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses, target position etc..
 public:
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs,
+		 struct ln_equ_posn *pos);
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);

@@ -100,6 +100,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   obs_target_id = -1;
   target_type = TYPE_UNKNOW;
   target_name = NULL;
+  target_comment = NULL;
   targetUsers = NULL;
 
   startCalledNum = 0;
@@ -131,6 +132,7 @@ Target::Target ()
   obs_target_id = -1;
   target_type = TYPE_UNKNOW;
   target_name = NULL;
+  target_comment = NULL;
   targetUsers = NULL;
 
   startCalledNum = 0;
@@ -146,6 +148,7 @@ Target::~Target (void)
 {
   endObservation (-1);
   delete[] target_name;
+  delete[] target_comment;
   delete targetUsers;
   delete observation;
 }
@@ -166,7 +169,7 @@ Target::save ()
   EXEC SQL END DECLARE SECTION;
 
   // generate new id, if we don't have any 
-  if (target_id == -1)
+  if (target_id <= 0)
   {
     EXEC SQL
     SELECT
@@ -180,12 +183,80 @@ Target::save ()
     }
   }
 
-  return save (target_id);
+  return save (db_new_id);
 }
 
 int
 Target::save (int tar_id)
 {
+  // first, try an update..
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_tar_id = tar_id;
+  char db_type_id = getTargetType ();
+  VARCHAR db_tar_name[150];
+  int db_tar_name_ind = 0;
+  VARCHAR db_tar_comment[2000];
+  int db_tar_comment_ind = 0;
+  EXEC SQL END DECLARE SECTION;
+  // fill in name and comment..
+  if (getTargetName ())
+  {
+    db_tar_name.len = strlen (getTargetName ());
+    strcpy (db_tar_name.arr, getTargetName ());
+  }
+  else
+  {
+    db_tar_name_ind = -1;
+  }
+  
+  if (getTargetComment ())
+  {
+    db_tar_comment.len = strlen (getTargetComment ());
+    strcpy (db_tar_comment.arr, getTargetComment ());
+  }
+  else
+  {
+    db_tar_comment_ind = -1;
+  }
+  
+  // try inserting it..
+  EXEC SQL
+  INSERT INTO targets
+  (
+    tar_id,
+    type_id,
+    tar_name,
+    tar_comment
+  )
+  VALUES
+  (
+    :db_tar_id,
+    :db_type_id,
+    :db_tar_name :db_tar_name_ind,
+    :db_tar_comment :db_tar_comment_ind
+  );
+  // insert failed - try update
+  if (sqlca.sqlcode)
+  {
+    EXEC SQL
+    UPDATE
+      targets
+    SET
+      type_id = :db_type_id,
+      tar_name = :db_tar_name,
+      tar_comment = :db_tar_comment
+    WHERE
+      tar_id = :db_tar_id;
+
+    if (sqlca.sqlcode)
+    {
+      logMsgDb ("Target::save");
+      EXEC SQL ROLLBACK;
+      return -1;
+    }
+  }
+  target_id = db_tar_id;
+  EXEC SQL COMMIT;
   return 0;
 }
 
