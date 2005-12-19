@@ -20,6 +20,12 @@ private:
   int argc;
   char **argv;
 
+protected:
+    virtual int processOption (int in_opt);
+  virtual int processArgs (const char *arg);	// for non-optional args
+  int addOption (char in_short_option, char *in_long_option, int in_has_arg,
+		 char *in_help_msg);
+
 public:  Rts2App (int in_argc, char **in_argv);
     virtual ~ Rts2App ();
 
@@ -28,10 +34,6 @@ public:  Rts2App (int in_argc, char **in_argv);
 
   virtual void help ();
 
-  virtual int processOption (int in_opt);
-  virtual int processArgs (const char *arg);	// for non-optional args
-  int addOption (char in_short_option, char *in_long_option, int in_has_arg,
-		 char *in_help_msg);
   virtual int run ();
 
   /**
