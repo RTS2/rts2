@@ -384,7 +384,7 @@ Rts2DevDomeBart::idle ()
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open
-	  sendMaster ("on");
+	  domeWeatherGood ();
 	}
     }
   else

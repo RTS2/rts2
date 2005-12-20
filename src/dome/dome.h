@@ -21,6 +21,7 @@ protected:
   int observingPossible;
   int maxWindSpeed;
   int maxPeekWindspeed;
+  bool weatherCanOpenDome;
 
   virtual int processOption (int in_opt);
 
@@ -28,9 +29,10 @@ protected:
   {
     // we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
   }
+
+  void domeWeatherGood ();
 public:
-    Rts2DevDome (int argc, char **argv, int in_device_type =
-		 DEVICE_TYPE_DOME);
+  Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
   virtual int openDome ()
   {
     maskState (0, DOME_DOME_MASK, DOME_OPENING, "opening dome");

@@ -25,10 +25,13 @@ Rts2Device (in_argc, in_argv, in_device_type, 5552, "DOME")
 
   maxWindSpeed = 50;
   maxPeekWindspeed = 50;
+  weatherCanOpenDome = false;
 
   addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
   addOption ('P', "max_peek_windspeed", 1,
 	     "maximal allowed windspeed (in km/h");
+  addOption ('O', "weather_can_open", 0,
+	     "specified that option if weather signal is allowed to open dome");
 
   observingPossible = 0;
 }
@@ -44,10 +47,22 @@ Rts2DevDome::processOption (int in_opt)
     case 'P':
       maxPeekWindspeed = atoi (optarg);
       break;
+    case 'O':
+      weatherCanOpenDome = true;
+      break;
     default:
       return Rts2Device::processOption (in_opt);
     }
   return 0;
+}
+
+void
+Rts2DevDome::domeWeatherGood ()
+{
+  if (weatherCanOpenDome)
+    {
+      sendMaster ("on");
+    }
 }
 
 int
