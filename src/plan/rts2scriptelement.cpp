@@ -314,6 +314,8 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
   processor =
     new Rts2ConnImgProcess (script->getMaster (), NULL, defaultImgProccess,
 			    image->getImageName ());
+  // save image before processing..
+  image->saveImage ();
   ret = processor->init ();
   if (ret < 0)
     {
@@ -618,7 +620,8 @@ Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
   processor =
     new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
 		       EVENT_STAR_DATA);
-
+  // save image before processing
+  image->saveImage ();
   ret = processor->init ();
   if (ret < 0)
     {
