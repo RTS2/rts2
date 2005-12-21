@@ -122,8 +122,11 @@ CameraAndorChip::readoutOneLine ()
 
 class Rts2DevCameraAndor:public Rts2DevCamera
 {
+private:
   int andorGain;
   char *andorRoot;
+  int horizontalSpeed;
+  int verticalSpeed;
 
   int camSetShutter (int shut_control);
 protected:
@@ -154,8 +157,12 @@ Rts2DevCamera (in_argc, in_argv)
 {
   andorRoot = "/root/andor/examples/common";
   andorGain = 255;
+  horizontalSpeed = -1;
+  verticalSpeed = -1;
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
+  addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
+  addOption ('V', "vertical_speed", 1, "set vertical readout speed");
 }
 
 Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
@@ -185,6 +192,12 @@ Rts2DevCameraAndor::processOption (int in_opt)
       break;
     case 'r':
       andorRoot = optarg;
+      break;
+    case 'H':
+      horizontalSpeed = atoi (optarg);
+      break;
+    case 'V':
+      verticalSpeed = atoi (optarg);
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -229,6 +242,30 @@ Rts2DevCameraAndor::init ()
 
   SetExposureTime (5.0);
   SetEMCCDGain (andorGain);
+
+  if (horizontalSpeed >= 0)
+    {
+      ret = SetHorizontalSpeed (horizontalSpeed);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::init cannot set horizontal speed to %i",
+		  horizontalSpeed);
+	  return -1;
+	}
+    }
+
+  if (verticalSpeed >= 0)
+    {
+      ret = SetVerticalSpeed (verticalSpeed);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::init cannot set vertical speed to %i",
+		  verticalSpeed);
+	  return -1;
+	}
+    }
 
   chipNum = 1;
 
