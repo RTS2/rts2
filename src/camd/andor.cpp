@@ -127,6 +127,7 @@ private:
   char *andorRoot;
   int horizontalSpeed;
   int verticalSpeed;
+  bool printSpeedInfo;
 
   int camSetShutter (int shut_control);
 protected:
@@ -159,10 +160,13 @@ Rts2DevCamera (in_argc, in_argv)
   andorGain = 255;
   horizontalSpeed = -1;
   verticalSpeed = -1;
+  printSpeedInfo = false;
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
   addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
   addOption ('V', "vertical_speed", 1, "set vertical readout speed");
+  addOption ('S', "speed_info", 0,
+	     "print speed info - information about speed available");
 }
 
 Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
@@ -198,6 +202,9 @@ Rts2DevCameraAndor::processOption (int in_opt)
       break;
     case 'V':
       verticalSpeed = atoi (optarg);
+      break;
+    case 'S':
+      printSpeedInfo = true;
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -257,7 +264,7 @@ Rts2DevCameraAndor::init ()
 
   if (verticalSpeed >= 0)
     {
-      ret = SetVerticalSpeed (verticalSpeed);
+      ret = SetVSSpeed (verticalSpeed);
       if (ret != DRV_SUCCESS)
 	{
 	  syslog (LOG_ERR,
@@ -273,6 +280,57 @@ Rts2DevCameraAndor::init ()
   chips[0] = cc;
   chips[1] = NULL;
 
+  if (printSpeedInfo)
+    {
+      int speeds;
+      int value;
+      float float_v;
+      int i;
+      ret = GetNumberHorizontalSpeeds (&speeds);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::init cannot get horizontal speeds");
+	  return -1;
+	}
+      for (i = 0; i < speeds; i++)
+	{
+	  ret = GetHorizontalSpeed (i, &value);
+	  if (ret != DRV_SUCCESS)
+	    {
+	      syslog (LOG_ERR,
+		      "Rts2DevCameraAndor::init cannot get horizontal speed %i",
+		      i);
+	      return -1;
+	    }
+	  syslog (LOG_DEBUG,
+		  "Rts2DevCameraAndor::init horizontal speed: %i value: %i ms",
+		  i, value);
+	}
+
+      ret = GetNumberVSSpeeds (&speeds);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::init cannot get horizontal speeds");
+	  return -1;
+	}
+      for (i = 0; i < speeds; i++)
+	{
+	  ret = GetVSSpeed (i, &float_v);
+	  if (ret != DRV_SUCCESS)
+	    {
+	      syslog (LOG_ERR,
+		      "Rts2DevCameraAndor::init cannot get vertical speed %i",
+		      i);
+	      return -1;
+	    }
+	  syslog (LOG_DEBUG,
+		  "Rts2DevCameraAndor::init vertical speed: %i value: %f ms",
+		  i, float_v);
+	}
+
+    }
   return Rts2DevCamera::initChips ();
 }
 
