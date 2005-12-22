@@ -127,9 +127,13 @@ private:
   char *andorRoot;
   int horizontalSpeed;
   int verticalSpeed;
+  int adChannel;
   bool printSpeedInfo;
+  // number of AD channels
+  int chanNum;
 
   int camSetShutter (int shut_control);
+  int printChannelInfo (int channel);
 protected:
     virtual void help ();
 public:
@@ -160,10 +164,13 @@ Rts2DevCamera (in_argc, in_argv)
   andorGain = 255;
   horizontalSpeed = -1;
   verticalSpeed = -1;
+  adChannel = -1;
   printSpeedInfo = false;
+  chanNum = 0;
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
   addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
+  addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('V', "vertical_speed", 1, "set vertical readout speed");
   addOption ('S', "speed_info", 0,
 	     "print speed info - information about speed available");
@@ -213,6 +220,53 @@ Rts2DevCameraAndor::processOption (int in_opt)
 }
 
 int
+Rts2DevCameraAndor::printChannelInfo (int channel)
+{
+  int ret;
+  int speeds;
+  float value;
+  int depth;
+  int i;
+  ret = GetBitDepth (channel, &depth);
+  if (ret != DRV_SUCCESS)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevCameraAndor::printChannelInfo cannto get depth for channel %i",
+	      channel);
+      return -1;
+    }
+  syslog (LOG_DEBUG,
+	  "Rts2DevCameraAndor::printChannelInfo depth for channel %i value: %i",
+	  channel, depth);
+  for (int j = 0; j < 2; j++)
+    {
+      ret = GetNumberHSSpeeds (channel, j, &speeds);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::printChannelInfo cannot get horizontal speeds for channel %i type %i",
+		  channel, j);
+	  return -1;
+	}
+      for (i = 0; i < speeds; i++)
+	{
+	  ret = GetHSSpeed (channel, j, i, &value);
+	  if (ret != DRV_SUCCESS)
+	    {
+	      syslog (LOG_ERR,
+		      "Rts2DevCameraAndor::printChannelInfo cannot get horizontal speed %i, channel %i type %i",
+		      i, channel, j);
+	      return -1;
+	    }
+	  syslog (LOG_DEBUG,
+		  "Rts2DevCameraAndor::printChannelInfo horizontal speed: %i, channel %i type %i value: %f Hz",
+		  i, channel, j, value);
+	}
+    }
+  return 0;
+}
+
+int
 Rts2DevCameraAndor::init ()
 {
   CameraAndorChip *cc;
@@ -249,16 +303,30 @@ Rts2DevCameraAndor::init ()
 
   SetExposureTime (5.0);
   SetEMCCDGain (andorGain);
-
-  if (horizontalSpeed >= 0)
+  if (adChannel >= 0)
     {
-      ret = SetHorizontalSpeed (horizontalSpeed);
+      ret = SetADChannel (adChannel);
       if (ret != DRV_SUCCESS)
 	{
 	  syslog (LOG_ERR,
-		  "Rts2DevCameraAndor::init cannot set horizontal speed to %i",
-		  horizontalSpeed);
+		  "Rts2DevCameraAndor::init cannot set AD channel to %i",
+		  adChannel);
 	  return -1;
+	}
+    }
+
+  if (horizontalSpeed >= 0)
+    {
+      for (int i = 0; i < 2; i++)
+	{
+	  ret = SetHSSpeed (i, horizontalSpeed);
+	  if (ret != DRV_SUCCESS)
+	    {
+	      syslog (LOG_ERR,
+		      "Rts2DevCameraAndor::init cannot set horizontal speed to channel %i, type %i, value %i",
+		      adChannel, i, horizontalSpeed);
+	      return -1;
+	    }
 	}
     }
 
@@ -282,32 +350,29 @@ Rts2DevCameraAndor::init ()
 
   if (printSpeedInfo)
     {
+      int channels;
       int speeds;
-      int value;
-      float float_v;
+      float value;
       int i;
-      ret = GetNumberHorizontalSpeeds (&speeds);
+      ret = GetNumberADChannels (&channels);
       if (ret != DRV_SUCCESS)
 	{
 	  syslog (LOG_ERR,
-		  "Rts2DevCameraAndor::init cannot get horizontal speeds");
+		  "Rts2DevCameraAndor::init cannot get number of AD channels");
 	  return -1;
 	}
-      for (i = 0; i < speeds; i++)
+      syslog (LOG_DEBUG, "Rts2DevCameraAndor::init channels: %i", channels);
+      // print horizontal channels..
+      for (i = 0; i < channels; i++)
 	{
-	  ret = GetHorizontalSpeed (i, &value);
-	  if (ret != DRV_SUCCESS)
+	  ret = printChannelInfo (i);
+	  if (ret)
 	    {
-	      syslog (LOG_ERR,
-		      "Rts2DevCameraAndor::init cannot get horizontal speed %i",
-		      i);
-	      return -1;
+	      return ret;
 	    }
-	  syslog (LOG_DEBUG,
-		  "Rts2DevCameraAndor::init horizontal speed: %i value: %i ms",
-		  i, value);
 	}
 
+      // print vertical channels..
       ret = GetNumberVSSpeeds (&speeds);
       if (ret != DRV_SUCCESS)
 	{
@@ -317,7 +382,7 @@ Rts2DevCameraAndor::init ()
 	}
       for (i = 0; i < speeds; i++)
 	{
-	  ret = GetVSSpeed (i, &float_v);
+	  ret = GetVSSpeed (i, &value);
 	  if (ret != DRV_SUCCESS)
 	    {
 	      syslog (LOG_ERR,
@@ -326,10 +391,9 @@ Rts2DevCameraAndor::init ()
 	      return -1;
 	    }
 	  syslog (LOG_DEBUG,
-		  "Rts2DevCameraAndor::init vertical speed: %i value: %f ms",
-		  i, float_v);
+		  "Rts2DevCameraAndor::init vertical speed: %i value: %f Hz",
+		  i, value);
 	}
-
     }
   return Rts2DevCamera::initChips ();
 }
