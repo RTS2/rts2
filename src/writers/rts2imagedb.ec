@@ -292,6 +292,7 @@ Rts2ImageDb::updateAstrometry ()
     reportSqlError ("astrometry update");
     return -1;
   }
+  processBitfiedl |= ASTROMETRY_PROC | ASTROMETRY_OK;
   return 0;  
 }
 
