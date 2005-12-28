@@ -116,7 +116,7 @@ Rts2ClientTCPDataConn::idle ()
 {
   if (isConnState (CONN_CONNECTING))
     {
-      int err;
+      int err = 0;
       int ret;
       socklen_t len = sizeof (err);
 
