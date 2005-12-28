@@ -203,6 +203,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
     case TYPE_SWIFT_XRT_POSITION_SRC:
     case TYPE_SWIFT_UVOT_POS_SRC:
       grb_errorbox = (float) 60 * lbuf[BURST_ERROR] / 10000.0;
+      break;
     default:
       grb_errorbox = nan ("f");
   }
@@ -756,6 +757,7 @@ Rts2ConnGrb::idle ()
         {
           setConnState (CONN_CONNECTED);
 	}
+      break;
       // kill us when we were in conn_connecting state for to long
     case CONN_BROKEN:
       if (nextTime < now)
