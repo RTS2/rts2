@@ -127,6 +127,7 @@ private:
   char *andorRoot;
   int horizontalSpeed;
   int verticalSpeed;
+  int vsamp;
   int adChannel;
   bool printSpeedInfo;
   // number of AD channels
@@ -164,14 +165,16 @@ Rts2DevCamera (in_argc, in_argv)
   andorGain = 255;
   horizontalSpeed = -1;
   verticalSpeed = -1;
+  vsamp = -1;
   adChannel = -1;
   printSpeedInfo = false;
   chanNum = 0;
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
   addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
-  addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('V', "vertical_speed", 1, "set vertical readout speed");
+  addOption ('A', "vs_amplitude", 1, "VS amplitude (0-4)");
+  addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('S', "speed_info", 0,
 	     "print speed info - information about speed available");
 }
@@ -210,6 +213,13 @@ Rts2DevCameraAndor::processOption (int in_opt)
     case 'V':
       verticalSpeed = atoi (optarg);
       break;
+    case 'A':
+      vsamp = atoi (optarg);
+      if (vsamp < 0 || vsamp > 4)
+	{
+	  printf ("amplitude must be in 0-4 range\n");
+	  exit (EXIT_FAILURE);
+	}
     case 'S':
       printSpeedInfo = true;
       break;
@@ -303,6 +313,7 @@ Rts2DevCameraAndor::init ()
 
   SetExposureTime (5.0);
   SetEMCCDGain (andorGain);
+  // adChannel
   if (adChannel >= 0)
     {
       ret = SetADChannel (adChannel);
@@ -315,18 +326,28 @@ Rts2DevCameraAndor::init ()
 	}
     }
 
+  // vertical amplitude
+  if (vsamp >= 0)
+    {
+      ret = SetVSAmplitude (vsamp);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::init set vs amplitude to %i failed",
+		  vsamp);
+	  return -1;
+	}
+    }
+
   if (horizontalSpeed >= 0)
     {
-      for (int i = 0; i < 2; i++)
+      ret = SetHSSpeed (0, horizontalSpeed);
+      if (ret != DRV_SUCCESS)
 	{
-	  ret = SetHSSpeed (i, horizontalSpeed);
-	  if (ret != DRV_SUCCESS)
-	    {
-	      syslog (LOG_ERR,
-		      "Rts2DevCameraAndor::init cannot set horizontal speed to channel %i, type %i, value %i",
-		      adChannel, i, horizontalSpeed);
-	      return -1;
-	    }
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::init cannot set horizontal speed to channel %i, type 0, value %i",
+		  adChannel, horizontalSpeed);
+	  return -1;
 	}
     }
 
