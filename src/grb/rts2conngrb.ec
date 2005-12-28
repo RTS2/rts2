@@ -74,8 +74,7 @@ Rts2ConnGrb::pr_hete ()
   int grb_id;
   int grb_seqn;
   int grb_type;
-  double grb_ra;
-  double grb_dec;
+  struct ln_equ_posn pos_int, pos_j2000;
   int grb_is_grb = 1;
   time_t grb_date;
   float grb_errorbox;
@@ -84,8 +83,8 @@ Rts2ConnGrb::pr_hete ()
   grb_seqn = ((lbuf[BURST_TRIG] & H_SEQNUM_MASK) >> H_SEQNUM_SHIFT);
   grb_type = lbuf[PKT_TYPE];
 
-  grb_ra = lbuf[BURST_RA] / 10000.0;
-  grb_dec = lbuf[BURST_DEC] / 10000.0;
+  pos_int.ra = lbuf[BURST_RA] / 10000.0;
+  pos_int.dec = lbuf[BURST_DEC] / 10000.0;
 
   getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
 
@@ -101,12 +100,14 @@ Rts2ConnGrb::pr_hete ()
     return 0;
   }
 
+  ln_get_equ_prec2 (&pos_int, ln_get_julian_from_timet (&grb_date), JD2000, &pos_j2000);
+
   if ((lbuf[H_TRIG_FLAGS] & H_DEF_NOT_GRB)
     || (lbuf[H_TRIG_FLAGS] & H_DEF_SGR)
     || (lbuf[H_TRIG_FLAGS] & H_DEF_XRB))
     grb_is_grb = 0;
   
-  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_errorbox);
 }
 
 int
@@ -136,9 +137,9 @@ Rts2ConnGrb::pr_integral ()
   pos_int.ra = lbuf[BURST_RA]/10000.0;
   pos_int.dec = lbuf[BURST_DEC]/10000.0;
 
-  ln_get_equ_prec2 (&pos_int, ln_get_julian_from_sys (), JD2000, &pos_j2000);
-
   getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+
+  ln_get_equ_prec2 (&pos_int, ln_get_julian_from_timet (&grb_date), JD2000, &pos_j2000);
 
   grb_errorbox = (float) lbuf[BURST_ERROR]/60.0;
 
