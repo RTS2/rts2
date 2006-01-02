@@ -1088,11 +1088,11 @@ operator << (std::ostream &_os, Target *target)
     << " (J2000) "
     << std::endl;
   target->getAltAz (&hrz, JD);
-  _os << "ALT " << LibnovaDeg90 (hrz.alt)
-    << " ZD " << LibnovaDeg90 (target->getZenitDistance ()) 
-    << " AZ " << LibnovaDeg (hrz.az)
-    << " HA " << LibnovaRa (target->getHourAngle ())
-    << " AM " << target->getAirmass ()
+  _os << "Altitude " << LibnovaDeg90 (hrz.alt)
+    << " Zenit dist. " << LibnovaDeg90 (target->getZenitDistance ()) 
+    << " Azimuth " << LibnovaDeg (hrz.az)
+    << " Hour angle " << LibnovaRa (target->getHourAngle ())
+    << " Airmass " << target->getAirmass ()
     << std::endl;
   ret = target->getRST (&rst, JD);
   switch (ret)
@@ -1106,35 +1106,38 @@ operator << (std::ostream &_os, Target *target)
     default:
       if (rst.set < rst.rise && rst.rise < rst.transit)
       {
-	_os << "S " << TimeJDDiff (rst.set, now) << std::endl
-	  << "R " << TimeJDDiff (rst.rise, now) << std::endl
-	  << "T " << TimeJDDiff (rst.transit, now) << std::endl;
+	_os 
+	  << "Set     " << TimeJDDiff (rst.set, now) << std::endl
+	  << "Rise    " << TimeJDDiff (rst.rise, now) << std::endl
+	  << "Transit " << TimeJDDiff (rst.transit, now) << std::endl;
       }
       else if (rst.transit < rst.set && rst.set < rst.rise)
       {
-	_os << "T " << TimeJDDiff (rst.transit, now) << std::endl
-	  << "S " << TimeJDDiff (rst.set, now) << std::endl
-	  << "R " << TimeJDDiff (rst.rise, now) << std::endl
+	_os 
+	  << "Transit " << TimeJDDiff (rst.transit, now) << std::endl
+	  << "Set     " << TimeJDDiff (rst.set, now) << std::endl
+	  << "Rise    " << TimeJDDiff (rst.rise, now) << std::endl
 	  << std::endl;
       }
       else
       {
-	_os << "R " << TimeJDDiff (rst.rise, now) << std::endl
-	  << "T " << TimeJDDiff (rst.transit, now) << std::endl
-	  << "S " << TimeJDDiff (rst.set, now) << std::endl
+	_os 
+	  << "Rise    " << TimeJDDiff (rst.rise, now) << std::endl
+	  << "Transit " << TimeJDDiff (rst.transit, now) << std::endl
+	  << "Set     " << TimeJDDiff (rst.set, now) << std::endl
 	  << std::endl;
       }
   }
   target->getGalLng (&gal, JD);
-  _os << "GL " << LibnovaDeg (gal.l) 
-    << " GB " << LibnovaDeg90 (gal.b)
-    << " GCD " << LibnovaDeg (target->getGalCenterDist (JD))
+  _os << "Gal. longitude " << LibnovaDeg (gal.l) 
+    << " Gal. latitude " << LibnovaDeg90 (gal.b)
+    << " Gal. center dist. " << LibnovaDeg (target->getGalCenterDist (JD))
     << std::endl;
-  _os << "SD " << LibnovaDeg (target->getSolarDistance (JD))
-    << " LD " << LibnovaDeg (target->getLunarDistance (JD))
+  _os << "Solar dist. " << LibnovaDeg (target->getSolarDistance (JD))
+    << " Lunar dist. " << LibnovaDeg (target->getLunarDistance (JD))
     << std::endl;
   last = now - 86400;
-  _os << "OBS_24_H " << target->getNumObs (&last, &now)
+  _os << "OBS in last 24 hours " << target->getNumObs (&last, &now)
     << std::endl;
   _os << "BONUS " << target->getBonus (JD) << std::endl;
 
