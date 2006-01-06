@@ -99,8 +99,19 @@ Rts2ConnGrb::pr_hete ()
     syslog (LOG_DEBUG, "Rts2ConnGrb::pr_hete test packet");
     return 0;
   }
-
-  ln_get_equ_prec2 (&pos_int, ln_get_julian_from_timet (&grb_date), JD2000, &pos_j2000);
+  
+  // convert to J2000 only when it's true GRB
+  // HETE non GRB notices (GRB retraction notices) have ra and dec -999.99, and we 
+  // need to pass that value futher to addGcnPoint, so it will not update RA & DEC in DB.
+  if (pos_int.ra > -300 && pos_int.dec > -300)
+  {
+    ln_get_equ_prec2 (&pos_int, ln_get_julian_from_timet (&grb_date), JD2000, &pos_j2000);
+  }
+  else
+  {
+    pos_j2000.ra = pos_int.ra;
+    pos_j2000.dec = pos_int.dec;
+  }
 
   if ((lbuf[H_TRIG_FLAGS] & H_DEF_NOT_GRB)
     || (lbuf[H_TRIG_FLAGS] & H_DEF_SGR)
