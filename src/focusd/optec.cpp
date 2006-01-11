@@ -74,7 +74,9 @@ Rts2DevFocuserOptec::foc_read (char *buf, int count)
   for (readed = 0; readed < count; readed++)
     {
       int ret = read (foc_desc, &buf[readed], 1);
+#ifdef DEBUG_ALL_PORT_COMM
       printf ("read_from: %i size:%i\n", foc_desc, ret);
+#endif
       if (ret <= 0)
 	{
 	  return -1;
@@ -133,7 +135,7 @@ Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
   if (foc_write (wbuf, wcount) < 0)
     return -1;
 
-  tmp_rcount = read (foc_desc, rbuf, rcount);
+  tmp_rcount = foc_read (rbuf, rcount);
 
   if (tmp_rcount > 0)
     {
@@ -241,7 +243,7 @@ Rts2DevFocuserOptec::init ()
   tcflush (foc_desc, TCIOFLUSH);
 
   // set manual
-  if (foc_write_read ("FMMODE", 6, rbuf, 1) < 0)
+  if (foc_write_read ("FMMODE", 6, rbuf, 3) < 0)
     return -1;
   syslog (LOG_DEBUG, "write read");
   if (rbuf[0] != '!')
@@ -253,9 +255,9 @@ Rts2DevFocuserOptec::init ()
 int
 Rts2DevFocuserOptec::getPos (int *position)
 {
-  char rbuf[7];
+  char rbuf[9];
 
-  if (foc_write_read ("FPOSRO", 6, rbuf, 6) < 1)
+  if (foc_write_read ("FPOSRO", 6, rbuf, 8) < 1)
     return -1;
   else
     {
@@ -269,9 +271,9 @@ Rts2DevFocuserOptec::getPos (int *position)
 int
 Rts2DevFocuserOptec::getTemp (float *temp)
 {
-  char rbuf[8];
+  char rbuf[10];
 
-  if (foc_write_read ("FTMPRO", 6, rbuf, 7) < 1)
+  if (foc_write_read ("FTMPRO", 6, rbuf, 9) < 1)
     return -1;
   else
     {
@@ -310,7 +312,7 @@ Rts2DevFocuserOptec::info ()
 int
 Rts2DevFocuserOptec::stepOut (int num)
 {
-  char command[7], rbuf[2];
+  char command[7], rbuf[4];
   char add = ' ';
   int ret;
 
@@ -333,7 +335,7 @@ Rts2DevFocuserOptec::stepOut (int num)
 
   sprintf (command, "F%c%04d", add, num);
 
-  if (foc_write_read (command, 6, rbuf, 1) < 0)
+  if (foc_write_read (command, 6, rbuf, 3) < 0)
     return -1;
   if (rbuf[0] != '*')
     return -1;
