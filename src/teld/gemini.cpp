@@ -1140,7 +1140,7 @@ Rts2DevTelescopeGemini::baseInfo ()
     default:
       sprintf (telType, "UNK_%2i", gem_type);
     }
-  ret = tel_write_read ("#:GV#", 5, buf, 3);
+  ret = tel_write_read_hash ("#:GV#", 5, buf, 4);
   if (ret)
     return -1;
   buf[4] = '\0';
