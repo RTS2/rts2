@@ -94,8 +94,16 @@ CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 int
 CameraAndorChip::readoutOneLine ()
 {
+  int ret;
   if (readoutLine < chipSize->height)
     {
+      int status;
+      ret = GetStatus (&status);
+      if (ret != DRV_SUCCESS)
+	return -1;
+      // still acquiring
+      if (status == DRV_ACQUIRING)
+	return 100;
       int size = chipSize->height * chipSize->width;
       readoutLine = chipSize->height;
       GetAcquiredData16 (dest, size);
@@ -104,7 +112,6 @@ CameraAndorChip::readoutOneLine ()
     }
   if (sendLine == 0)
     {
-      int ret;
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;
