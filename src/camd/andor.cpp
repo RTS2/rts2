@@ -40,7 +40,6 @@ public:
 		     int in_height, double in_pixelX, double in_pixelY,
 		     float in_gain);
     virtual ~ CameraAndorChip (void);
-  virtual long isExposing ();
   virtual int stopExposure ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
@@ -61,21 +60,6 @@ CameraAndorChip::~CameraAndorChip (void)
   delete dest;
 };
 
-long
-CameraAndorChip::isExposing ()
-{
-  long ret;
-  ret = CameraChip::isExposing ();
-  if (ret > 0)
-    return ret;
-
-  int status;
-  GetStatus (&status);
-  if (status == DRV_ACQUIRING)
-    return 0;
-  return -2;
-}
-
 int
 CameraAndorChip::stopExposure ()
 {
@@ -95,18 +79,22 @@ int
 CameraAndorChip::readoutOneLine ()
 {
   int ret;
-  if (readoutLine < chipSize->height)
+  if (readoutLine < chipUsedReadout->height)
     {
       int status;
       ret = GetStatus (&status);
       if (ret != DRV_SUCCESS)
 	return -1;
-      // still acquiring
       if (status == DRV_ACQUIRING)
 	return 100;
-      int size = chipSize->height * chipSize->width;
-      readoutLine = chipSize->height;
-      GetAcquiredData16 (dest, size);
+      int size = chipUsedReadout->height * chipUsedReadout->width;
+      ret = GetAcquiredData16 (dest, size);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR, "GetAcquiredData16 return %i", ret);
+	  return -1;
+	}
+      readoutLine = chipUsedReadout->height;
       dest_top += size;
       return 0;
     }
