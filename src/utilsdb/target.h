@@ -366,6 +366,12 @@ public:
   {
     return (acquired == 1);
   }
+  // return 0 when acquistion isn't running, non 0 when we are currently
+  // acquiring target (searching for correct field)
+  int isAcquiring ()
+  {
+    return (obs_state & OBS_BIT_ACQUSITION);
+  }
   int getAcquired ()
   {
     return acquired;
