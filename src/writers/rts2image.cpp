@@ -87,11 +87,24 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
   exposureStart = *in_exposureStart;
 
   expT = gmtime (&exposureStart.tv_sec);
-  asprintf (&in_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), camera->getName (),
-	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-	    expT->tm_hour, expT->tm_min, expT->tm_sec,
-	    exposureStart.tv_usec / 1000);
+  if (currTarget->isAcquiring ())
+    {
+      // put acqusition images to acqusition que
+      asprintf (&in_filename,
+		"%s/acqusition/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
+		getImageBase (epochId), camera->getName (),
+		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
+		expT->tm_hour, expT->tm_min, expT->tm_sec,
+		exposureStart.tv_usec / 1000);
+    }
+  else
+    {
+      asprintf (&in_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
+		getImageBase (epochId), camera->getName (),
+		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
+		expT->tm_hour, expT->tm_min, expT->tm_sec,
+		exposureStart.tv_usec / 1000);
+    }
 
   createImage (in_filename);
 
