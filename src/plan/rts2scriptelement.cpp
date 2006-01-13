@@ -596,6 +596,7 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	      retries++;
 	      break;
 	    }
+	  image->toAcquisition ();
 	}
       break;
     }
