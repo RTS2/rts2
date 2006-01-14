@@ -533,9 +533,9 @@ int
 Rts2ImageDb::saveImage ()
 {
   updateDB ();
-  setValue ("PROC", processBitfiedl, "procesing status; info in DB");
   setDarkFromDb ();
   updateCalibrationDb ();
+  setValue ("PROC", processBitfiedl, "procesing status; info in DB");
   return Rts2Image::saveImage ();
 }
 
