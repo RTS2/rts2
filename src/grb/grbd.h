@@ -21,6 +21,7 @@ private:
   int forwardPort;
 
   char *addExe;
+  int execFollowups;
 public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();

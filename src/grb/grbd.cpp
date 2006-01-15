@@ -63,6 +63,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, 5563, "GRB")
   do_hete_test = 0;
   forwardPort = -1;
   addExe = NULL;
+  execFollowups = 0;
 
   addOption ('S', "gcn_host", 1, "GCN host name");
   addOption ('P', "gcn_port", 1, "GCN port");
@@ -71,6 +72,8 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, 5563, "GRB")
   addOption ('f', "forward", 1, "forward incoming notices to that port");
   addOption ('a', "add_exe", 1,
 	     "execute that command when new GCN packet arrives");
+  addOption ('U', "exec_followups", 0,
+	     "execute observation and add_exe script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
 }
 
 Rts2DevGrb::~Rts2DevGrb (void)
@@ -99,6 +102,9 @@ Rts2DevGrb::processOption (int in_opt)
       break;
     case 'a':
       addExe = optarg;
+      break;
+    case 'U':
+      execFollowups = 1;
       break;
     default:
       return Rts2DeviceDb::processOption (in_opt);
@@ -150,7 +156,9 @@ Rts2DevGrb::init ()
 	}
     }
   // add connection..
-  gcncnn = new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, this);
+  gcncnn =
+    new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups,
+		     this);
   // wait till grb connection init..
   while (1)
     {

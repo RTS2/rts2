@@ -632,6 +632,19 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
   addGcnRaw (grb_id, grb_seqn, grb_type);
 
+  // test if that's only follow-up
+  if (!execFollowups)
+  {
+    // swift burst
+    if (d_grb_type_start == TYPE_SWIFT_BAT_GRB_ALERT_SRC
+      && grb_id < 100000
+      && d_grb_errorbox_ind == -1)
+    {
+      // and it's only follow-up slew notice without errorbox..don't do anything
+      return ret;
+    }
+  }
+
   ret = master->newGcnGrb (d_tar_id);
 
   // last think is to call some external exe..
@@ -700,7 +713,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 }
 
 Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int
-in_do_hete_test, char *in_addExe, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
+in_do_hete_test, char *in_addExe, int in_execFollowups, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
 {
   master = in_master;
   gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
@@ -728,6 +741,7 @@ in_do_hete_test, char *in_addExe, Rts2DevGrb *in_master):Rts2ConnNoSend (in_mast
   swiftLastDec = nan ("f");
 
   addExe = in_addExe;
+  execFollowups = in_execFollowups;
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)

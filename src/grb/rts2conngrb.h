@@ -14,6 +14,8 @@ private:
   Rts2DevGrb * master;
   // path to exec when we get new burst; pass parameters on command line
   char *addExe;
+  // whenewer to exec script even for follow-ups slew (only Swift can make those)
+  int execFollowups;
 
   long lbuf[SIZ_PKT];		// local buffer - swaped for Linux 
   long nbuf[SIZ_PKT];		// network buffer
@@ -75,7 +77,7 @@ private:
   time_t nextTime;
 public:
   Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test,
-	       char *in_addExe, Rts2DevGrb * in_master);
+	       char *in_addExe, int in_execFollowups, Rts2DevGrb * in_master);
   virtual ~ Rts2ConnGrb (void);
   virtual int idle ();
   virtual int init ();
