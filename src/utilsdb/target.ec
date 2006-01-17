@@ -1097,10 +1097,10 @@ operator << (std::ostream &_os, Target *target)
   ret = target->getRST (&rst, JD);
   switch (ret)
   {
-    case -1:
+    case 1:
       _os << " - circumpolar - " << std::endl;
       break;
-    case 1:
+    case -1:
       _os << " - don't rise - " << std::endl;
       break;
     default:
