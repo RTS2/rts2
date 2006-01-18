@@ -2,6 +2,7 @@
 #include "../utilsdb/target.h"
 #include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
+#include "../utils/libnova_cpp.h"
 
 #include <iostream>
 #include <iomanip>
@@ -26,6 +27,7 @@ private:
   Target *target;
   struct ln_lnlat_posn *obs;
   int printTargetInfo ();
+  int printExtendet;
   int printObservations;
   int printImages;
   int printCounts;
@@ -44,11 +46,14 @@ Rts2TargetInfo::Rts2TargetInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   obs = NULL;
+  printExtendet = 0;
   printObservations = 0;
   printImages = 0;
   printCounts = 0;
 
   addOption ('c', "cameras", 1, "show scripts for given cameras");
+  addOption ('E', "extendet", 2,
+	     "print extendet informations (visibility prediction,..)");
   addOption ('o', "observations", 2,
 	     "print observations (in given time range)");
   addOption ('i', "images", 2, "print images (in given time range)");
@@ -71,6 +76,9 @@ Rts2TargetInfo::processOption (int in_opt)
     {
     case 'c':
       cameras.push_back (optarg);
+      break;
+    case 'E':
+      printExtendet = 1;
       break;
     case 'o':
       printObservations = 1;
@@ -112,9 +120,22 @@ Rts2TargetInfo::processArgs (const char *arg)
 int
 Rts2TargetInfo::printTargetInfo ()
 {
+  double JD;
   std::cout << target;
   // print scripts..
   std::list < char *>::iterator cam_names;
+  if (printExtendet)
+    {
+      JD = ln_get_julian_from_sys ();
+      for (int i = 0; i < 10; i++)
+	{
+	  JD += 10;
+
+	  std::cout << "==================================" << std::endl <<
+	    "Date: " << LibnovaDate (JD) << std::endl;
+	  target->sendPositionInfo (std::cout, JD);
+	}
+    }
   for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
     {
       char *cam_name = *cam_names;
