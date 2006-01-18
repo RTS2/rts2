@@ -157,3 +157,18 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
   _os.fill (old_fill);
   return _os;
 }
+
+std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
+{
+  char old_fill = _os.fill ('0');
+  int old_precison = _os.precision (2);
+  _os << std::setw (4) << l_date.date.years << "/"
+    << std::setw (2) << l_date.date.months << "/"
+    << std::setw (2) << l_date.date.days << " "
+    << std::setw (2) << l_date.date.hours << ":"
+    << std::setw (2) << l_date.date.minutes << ":"
+    << std::setw (2) << l_date.date.seconds << " UT";
+  _os.precision (old_precison);
+  _os.fill (old_fill);
+  return _os;
+}

@@ -74,11 +74,35 @@ public:
 				     LibnovaDegArcMin l_deg);
 };
 
+class LibnovaDate
+{
+private:
+  struct ln_date date;
+public:
+    LibnovaDate (double JD)
+  {
+    ln_get_date (JD, &date);
+  }
+
+  LibnovaDate (struct ln_date *in_date)
+  {
+    date.years = in_date->years;
+    date.months = in_date->months;
+    date.days = in_date->days;
+    date.hours = in_date->hours;
+    date.minutes = in_date->minutes;
+    date.seconds = in_date->seconds;
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
+};
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);
+std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
 
 #endif /* !__LIBNOVA_CPP__ */
