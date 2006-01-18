@@ -247,12 +247,26 @@ public:
 
   double getDistance (struct ln_equ_posn *in_pos, double JD);
 
+  double getRaDistance (struct ln_equ_posn *in_pos)
+  {
+    return getRaDistance (in_pos, ln_get_julian_from_sys ());
+  }
+
+  double getRaDistance (struct ln_equ_posn *in_pos, double JD);
+
   double getSolarDistance ()
   {
     return getSolarDistance (ln_get_julian_from_sys ());
   }
 
   double getSolarDistance (double JD);
+
+  double getSolarRaDistance ()
+  {
+    return getSolarRaDistance (ln_get_julian_from_sys ());
+  }
+
+  double getSolarRaDistance (double JD);
 
   double getLunarDistance ()
   {
@@ -453,6 +467,14 @@ public:
    * @param _os stream to print that
    */
   virtual void printExtra (std::ostream & _os);
+
+  /**
+   * Prints position info for given JD.
+   *
+   * @param _os stream to print that
+   * @param JD date for which to print info
+   */
+  virtual void sendPositionInfo (std::ostream & _os, double JD);
 
   std::string getUsersEmail (int in_event_mask);
 };

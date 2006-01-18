@@ -638,7 +638,23 @@ Target::getDistance (struct ln_equ_posn *in_pos, double JD)
 }
 
 double
+Target::getRaDistance (struct ln_equ_posn *in_pos, double JD)
+{
+  struct ln_equ_posn object;
+  getPosition (&object, JD);
+  return ln_range_degrees (object.ra - in_pos->ra);
+}
+
+double
 Target::getSolarDistance (double JD)
+{
+  struct ln_equ_posn sun;
+  ln_get_solar_equ_coords (JD, &sun);
+  return getDistance (&sun, JD);
+}
+
+double
+Target::getSolarRaDistance (double JD)
 {
   struct ln_equ_posn sun;
   ln_get_solar_equ_coords (JD, &sun);
@@ -1059,42 +1075,25 @@ sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int pri
   EXEC SQL COMMIT;
 }
 
-std::ostream &
-operator << (std::ostream &_os, Target *target)
+void
+Target::sendPositionInfo (std::ostream &_os, double JD)
 {
-  int ret;
-  struct ln_equ_posn pos;
   struct ln_hrz_posn hrz;
   struct ln_gal_posn gal;
   struct ln_rst_time rst;
-  double JD;
-  double gst;
-  double lst;
-  time_t now, last;
-
-  const char *name = target->getTargetName ();
+  time_t now;
+  int ret;
 
   time (&now);
-  JD = ln_get_julian_from_timet (&now);
 
-  target->getPosition (&pos, JD);
-
-  _os << target->getTargetID () 
-    << " (" << target->getObsTargetID () << ") " 
-    << (name ? name : "null name")
-    << " (" << target->getTargetType () << ")"
-    << " RA " << LibnovaRa (pos.ra)
-    << " DEC " << LibnovaDeg90 (pos.dec)
-    << " (J2000) "
-    << std::endl;
-  target->getAltAz (&hrz, JD);
+  getAltAz (&hrz, JD);
   _os << "Altitude " << LibnovaDeg90 (hrz.alt)
-    << " Zenit dist. " << LibnovaDeg90 (target->getZenitDistance ()) 
+    << " Zenit dist. " << LibnovaDeg90 (getZenitDistance ()) 
     << " Azimuth " << LibnovaDeg (hrz.az)
-    << " Hour angle " << LibnovaRa (target->getHourAngle ())
-    << " Airmass " << target->getAirmass ()
+    << " Hour angle " << LibnovaRa (getHourAngle ())
+    << " Airmass " << getAirmass ()
     << std::endl;
-  ret = target->getRST (&rst, JD);
+  ret = getRST (&rst, JD);
   switch (ret)
   {
     case 1:
@@ -1128,14 +1127,44 @@ operator << (std::ostream &_os, Target *target)
 	  << std::endl;
       }
   }
-  target->getGalLng (&gal, JD);
+  getGalLng (&gal, JD);
   _os << "Gal. longitude " << LibnovaDeg (gal.l) 
     << " Gal. latitude " << LibnovaDeg90 (gal.b)
-    << " Gal. center dist. " << LibnovaDeg (target->getGalCenterDist (JD))
+    << " Gal. center dist. " << LibnovaDeg (getGalCenterDist (JD))
     << std::endl;
-  _os << "Solar dist. " << LibnovaDeg (target->getSolarDistance (JD))
-    << " Lunar dist. " << LibnovaDeg (target->getLunarDistance (JD))
+  _os << "Solar dist. " << LibnovaDeg (getSolarDistance (JD))
+    << " Solar RA dist. " << LibnovaDeg (getSolarRaDistance (JD))
+    << " Lunar dist. " << LibnovaDeg (getLunarDistance (JD))
     << std::endl;
+}
+
+std::ostream &
+operator << (std::ostream &_os, Target *target)
+{
+  struct ln_equ_posn pos;
+  double JD;
+  double gst;
+  double lst;
+  time_t now, last;
+
+  const char *name = target->getTargetName ();
+
+  time (&now);
+  JD = ln_get_julian_from_timet (&now);
+
+  target->getPosition (&pos, JD);
+
+  _os << target->getTargetID () 
+    << " (" << target->getObsTargetID () << ") " 
+    << (name ? name : "null name")
+    << " (" << target->getTargetType () << ")"
+    << " RA " << LibnovaRa (pos.ra)
+    << " DEC " << LibnovaDeg90 (pos.dec)
+    << " (J2000) "
+    << std::endl;
+    
+  target->sendPositionInfo (_os, JD);
+  
   last = now - 86400;
   _os << "OBS in last 24 hours " << target->getNumObs (&last, &now)
     << std::endl;
