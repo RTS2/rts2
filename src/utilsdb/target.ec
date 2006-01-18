@@ -658,7 +658,7 @@ Target::getSolarRaDistance (double JD)
 {
   struct ln_equ_posn sun;
   ln_get_solar_equ_coords (JD, &sun);
-  return getDistance (&sun, JD);
+  return getRaDistance (&sun, JD);
 }
 
 double
