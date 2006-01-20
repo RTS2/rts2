@@ -188,6 +188,8 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
 {
   int ret;
   Rts2ConnFocus *processor;
+  syslog (LOG_DEBUG, "Rts2ScriptElementGuiding::processImage state: %i",
+	  processingState);
   if (processingState != WAITING_IMAGE)
     {
       syslog (LOG_ERR,
@@ -198,6 +200,9 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
     }
   obsId = image->getObsId ();
   imgId = image->getImgId ();
+  syslog (LOG_DEBUG,
+	  "Rts2ScriptElementGuiding::processImage defaultImgProccess: %s",
+	  defaultImgProccess);
   processor =
     new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
 		       EVENT_GUIDING_DATA);
@@ -214,6 +219,7 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
       script->getMaster ()->addConnection (processor);
       processingState = NEED_IMAGE;
     }
+  syslog (LOG_DEBUG, "Rts2ConnImgProcess::processImage executed processor");
   return 0;
 }
 
