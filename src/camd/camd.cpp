@@ -884,7 +884,6 @@ Rts2DevConnCamera::commandAuthorized ()
   else if (isCommand ("filter"))
     {
       int new_filter;
-      CHECK_PRIORITY;
       if (paramNextInteger (&new_filter) || !paramEnd ())
 	return -2;
       return master->camFilter (this, new_filter);
