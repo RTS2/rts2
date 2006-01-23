@@ -900,6 +900,8 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   timerclear (&changeTimeDec);
 
   nextChangeDec = 0;
+  // default guiding speed
+  telGuidingSpeed = 0.2;
 
   clearSearch ();
 }
@@ -2089,6 +2091,7 @@ Rts2DevTelescopeGemini::startGuide (char dir, double dir_dist)
       tel_set_rate (RATE_GUIDE);
       // set smallest rate..
       tel_gemini_set (150, 0.2);
+      telGuidingSpeed = 0.2;
       ret = telescope_start_move (dir);
       if (ret)
 	return ret;
