@@ -542,6 +542,10 @@ FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 int
 FlatTarget::getScript (const char *deviceName, char *buf)
 {
+  int ret;
+  ret = ConstTarget::getDBScript (deviceName, buf);
+  if (!ret)
+    return ret;
   strcpy (buf, "E 1");
   return 0;
 }
