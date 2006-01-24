@@ -348,6 +348,8 @@ Rts2DevCameraFli::processOption (int in_opt)
 	case 3:
 	  fliDebug = FLIDEBUG_ALL;
 	  break;
+	default:
+	  return -1;
 	}
       break;
     default:
@@ -367,7 +369,7 @@ Rts2DevCameraFli::init ()
     return ret_c;
 
   if (fliDebug)
-    FLISetDebugLevel (NULL, FLIDEBUG_ALL);
+    FLISetDebugLevel (NULL, fliDebug);
 
   ret = FLIOpen (&dev, deviceName, deviceDomain);
   if (ret)

@@ -31,8 +31,7 @@ Rts2FilterFli::Rts2FilterFli (char *in_deviceName, flidomain_t in_domain)
 Rts2FilterFli::~Rts2FilterFli (void)
 {
   delete[]deviceName;
-  if (dev)
-    FLIClose (dev);
+  FLIClose (dev);
 }
 
 int
