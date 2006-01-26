@@ -34,6 +34,7 @@ private:
 
   int ignoreDay;
   double grb_sep_limit;
+  double grb_min_sep;
 
   int acqusitionOk;
   int acqusitionFailed;
@@ -135,6 +136,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
   ignoreDay = 0;
 
   grb_sep_limit = -1;
+  grb_min_sep = 0;
 
   waitState = 0;
 
@@ -178,6 +180,7 @@ Rts2Executor::init ()
   config = Rts2Config::instance ();
   observer = config->getObserver ();
   config->getDouble ("grbd", "seplimit", grb_sep_limit);
+  config->getDouble ("grbd", "minsep", grb_min_sep);
   return 0;
 }
 
@@ -535,6 +538,12 @@ Rts2Executor::setGrb (int grbId)
   if (ret == 0)
     {
       return setNow (grbTarget);
+    }
+  // if that's only few arcsec update, don't change
+  ret = grbTarget->compareWithTarget (currentTarget, grb_min_sep);
+  if (ret == 1)
+    {
+      return 0;
     }
   // otherwise set us as next target
   if (nextTarget)
