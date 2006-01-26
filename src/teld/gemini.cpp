@@ -1450,8 +1450,21 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
 int
 Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 {
-  fixed_ha = tar_ha;
-  lastMoveDec = tar_dec;
+  int32_t ra_ind;
+  int32_t dec_ind;
+  int ret;
+
+  ret = tel_gemini_get (205, &ra_ind);
+  if (ret)
+    return ret;
+  ret = tel_gemini_get (206, &dec_ind);
+  if (ret)
+    return ret;
+
+  // apply offsets
+  fixed_ha = tar_ha + ((double) ra_ind) / 3600.0;
+  lastMoveDec = tar_dec + ((double) dec_ind) / 3600.0;
+
   fixed_ntries = 0;
 
   return startMoveFixedReal ();
@@ -1826,21 +1839,16 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   ret = info ();
   if (ret)
     return ret;
-  syslog (LOG_INFO, "Rts2DevTelescopeGemini::change before: ra %f dec %f",
+  syslog (LOG_INFO, "Rts2DevTelescopeGemini::change ra %f dec %f",
 	  telRa, telDec);
-  if (fabs (chng_dec) < 87)
-    chng_ra = chng_ra / cos (ln_deg_to_rad (chng_dec));
-  syslog (LOG_INFO, "Losmandy: calculated ra %f dec: %f", chng_ra, chng_dec);
   // decide, if we make change, or move using move command
   if (fabs (chng_ra) > 3 / 60.0 && fabs (chng_dec) > 3 / 60.0)
     {
-      int c = 0;
       ret = startMove (telRa + chng_ra, telDec + chng_dec);
       if (ret)
 	return ret;
-      // move ewait ended .. log results
-      syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change move: %i c: %i", ret,
-	      c);
+      // move wait ended .. log results
+      syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change move: %i", ret);
     }
   else
     {
