@@ -344,8 +344,9 @@ Rts2DevTelescope::createOtherType (Rts2Conn * conn, int other_device_type)
 int
 Rts2DevTelescope::changeMasterState (int new_state)
 {
-  if (new_state != SERVERD_NIGHT
-      && new_state != (SERVERD_NIGHT | SERVERD_STANDBY))
+  int status = new_state & SERVERD_STATUS_MASK;
+  if (status == SERVERD_MORNING || status == SERVERD_DAY
+      || new_state == SERVERD_OFF)
     {
       moveMark = 0;
       numCorr = 0;
@@ -355,9 +356,7 @@ Rts2DevTelescope::changeMasterState (int new_state)
       knowPosition = 0;
     }
   // park us during day..
-  if (new_state == SERVERD_DAY
-      || new_state == (SERVERD_DAY | SERVERD_STANDBY)
-      || new_state == SERVERD_OFF)
+  if (status == SERVERD_DAY || new_state == SERVERD_OFF)
     startPark (NULL);
   return 0;
 }
@@ -860,6 +859,16 @@ Rts2DevTelescope::resetMount (Rts2Conn * conn, resetStates reset_state)
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot reset");
     }
   return ret;
+}
+
+int
+Rts2DevTelescope::getFlip ()
+{
+  int ret;
+  ret = info ();
+  if (ret)
+    return ret;
+  return telFlip;
 }
 
 int

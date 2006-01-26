@@ -230,6 +230,7 @@ public:
   int stopWorm (Rts2Conn * conn);
   int startWorm (Rts2Conn * conn);
   int resetMount (Rts2Conn * conn, resetStates reset_state);
+  virtual int getFlip ();
   virtual int grantPriority (Rts2Conn * conn);
 };
 
