@@ -251,7 +251,9 @@ Rts2NMCamera::print (WINDOW * wnd)
 	     getValueDouble ("ccd_temperature"));
   mvwprintw (wnd, 6, 1, "CPo: %04.1f %%",
 	     getValueDouble ("cooling_power") / 10.0);
-  mvwprintw (wnd, 7, 1, "Fan: %s", getValueDouble ("fan") ? "on " : "off");
+  mvwprintw (wnd, 7, 1, "Fan: %s Fil: %i",
+	     getValueDouble ("fan") ? "on " : "off",
+	     getValueInteger ("filter"));
 }
 
 class Rts2NMFocus:public Rts2DevClientFocus
