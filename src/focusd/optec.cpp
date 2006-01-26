@@ -30,6 +30,7 @@ private:
   char *device_file_io;
   int foc_desc;
   int status;
+  bool damagedTempSens;
   // low-level I/O functions
   int foc_read (char *buf, int count);
   int foc_read_hash (char *buf, int count);
@@ -129,9 +130,6 @@ Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
   int tmp_rcount = -1;
   char *buf;
 
-//  if (tcflush (foc_desc, TCIOFLUSH) < 0)
-//    return -1;
-
   if (foc_write (wbuf, wcount) < 0)
     return -1;
 
@@ -173,8 +171,11 @@ Rts2DevFocuserOptec::Rts2DevFocuserOptec (int in_argc, char **in_argv):Rts2DevFo
 		in_argv)
 {
   device_file = FOCUSER_PORT;
+  damagedTempSens = false;
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+  addOption ('D', "damaged_temp_sensor", 0,
+	     "if focuser have damaged temp sensor");
 }
 
 Rts2DevFocuserOptec::~Rts2DevFocuserOptec ()
@@ -189,6 +190,9 @@ Rts2DevFocuserOptec::processOption (int in_opt)
     {
     case 'f':
       device_file = optarg;
+      break;
+    case 'D':
+      damagedTempSens = true;
       break;
     default:
       return Rts2DevFocuser::processOption (in_opt);
@@ -272,6 +276,9 @@ int
 Rts2DevFocuserOptec::getTemp (float *temp)
 {
   char rbuf[10];
+
+  if (damagedTempSens)
+    return 0;
 
   if (foc_write_read ("FTMPRO", 6, rbuf, 9) < 1)
     return -1;
