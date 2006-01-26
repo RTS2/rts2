@@ -71,6 +71,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  script = NULL;
 	  delete tmp_script;
 	}
+      delete nextComd;
+      nextComd = NULL;
       break;
     case EVENT_SET_TARGET:
       setNextTarget ((Target *) event->getArg ());
