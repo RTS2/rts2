@@ -63,7 +63,8 @@ private:
   int getNextParamDouble (double *val);
   int getNextParamInteger (int *val);
   // we should not save reference to target, as it can be changed|deleted without our knowledge
-  Rts2ScriptElement *parseBuf (Target * target);
+  Rts2ScriptElement *parseBuf (Target * target,
+			       struct ln_equ_posn *target_pos);
     std::list < Rts2ScriptElement * >elements;
     std::list < Rts2ScriptElement * >::iterator el_iter;
   Rts2Conn *connection;

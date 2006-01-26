@@ -192,7 +192,7 @@ Rts2ScriptElementFilter::nextCommand (Rts2DevClientPhot * phot,
   return 0;
 }
 
-Rts2ScriptElementAcquire::Rts2ScriptElementAcquire (Rts2Script * in_script, double in_precision, float in_expTime):Rts2ScriptElement
+Rts2ScriptElementAcquire::Rts2ScriptElementAcquire (Rts2Script * in_script, double in_precision, float in_expTime, struct ln_equ_posn * in_center_pos):Rts2ScriptElement
   (in_script)
 {
   reqPrecision = in_precision;
@@ -203,6 +203,9 @@ Rts2ScriptElementAcquire::Rts2ScriptElementAcquire (Rts2Script * in_script, doub
 				      defaultImgProccess, 2000);
   obsId = -1;
   imgId = -1;
+
+  center_pos.ra = in_center_pos->ra;
+  center_pos.dec = in_center_pos->dec;
 }
 
 void
@@ -515,13 +518,14 @@ Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
   return 0;
 }
 
-Rts2ScriptElementAcquireStar::Rts2ScriptElementAcquireStar (Rts2Script * in_script, int in_maxRetries, double in_precision, float in_expTime, double in_spiral_scale_ra, double in_spiral_scale_dec):
-Rts2ScriptElementAcquire (in_script, in_precision, in_expTime)
+Rts2ScriptElementAcquireStar::Rts2ScriptElementAcquireStar (Rts2Script * in_script, int in_maxRetries, double in_precision, float in_expTime, double in_spiral_scale_ra, double in_spiral_scale_dec, struct ln_equ_posn * in_center_pos):
+Rts2ScriptElementAcquire (in_script, in_precision, in_expTime, in_center_pos)
 {
   maxRetries = in_maxRetries;
   retries = 0;
   spiral_scale_ra = in_spiral_scale_ra;
   spiral_scale_dec = in_spiral_scale_dec;
+
   defaultImgProccess[0] = '\0';
 
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
@@ -566,7 +570,8 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	      processingState = PRECISION_BAD;
 	      // try some offset..
 	      spiral->getNextStep (next_x, next_y);
-	      offset.ra = spiral_scale_ra * next_x;
+	      // change spiral RA, which are in planar deg, to sphere deg
+	      offset.ra = (spiral_scale_ra * next_x) / cos (center_pos.dec);
 	      offset.dec = spiral_scale_dec * next_y;
 	      script->getMaster ()->
 		postEvent (new
@@ -660,8 +665,9 @@ Rts2ScriptElementAcquireStar::getSource (Rts2Image * image, double &ra_offset,
   return 1;
 }
 
-Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime):Rts2ScriptElementAcquireStar (in_script, in_maxRetries, 0.05, in_expTime, 0.7,
-			      0.3)
+Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime, struct ln_equ_posn * in_center_pos):Rts2ScriptElementAcquireStar (in_script, in_maxRetries, 0.05, in_expTime, 0.7,
+			      0.3,
+			      in_center_pos)
 {
 }
 

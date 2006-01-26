@@ -163,6 +163,7 @@ Rts2DevClientCameraExec::exposureEnd ()
     }
   else
     {
+      delete nextComd;
       nextComd = NULL;
       nextCommand ();
     }

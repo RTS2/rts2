@@ -86,7 +86,10 @@ Rts2Object ()
 {
   Rts2ScriptElement *element;
   char scriptText[MAX_COMMAND_LENGTH];
+  struct ln_equ_posn target_pos;
+
   target->getScript (in_connection->getName (), scriptText);
+  target->getPosition (&target_pos);
   cmdBuf = new char[strlen (scriptText) + 1];
   strcpy (cmdBuf, scriptText);
   strcpy (defaultDevice, in_connection->getName ());
@@ -94,7 +97,7 @@ Rts2Object ()
   cmdBufTop = cmdBuf;
   do
     {
-      element = parseBuf (target);
+      element = parseBuf (target, &target_pos);
       if (!element)
 	break;
       elements.push_back (element);
@@ -159,7 +162,7 @@ Rts2Script::postEvent (Rts2Event * event)
 }
 
 Rts2ScriptElement *
-Rts2Script::parseBuf (Target * target)
+Rts2Script::parseBuf (Target * target, struct ln_equ_posn *target_pos)
 {
   char *commandStart;
   char *devSep;
@@ -250,7 +253,8 @@ Rts2Script::parseBuf (Target * target)
       // target is already acquired
       if (target->isAcquired ())
 	return new Rts2ScriptElement (this);
-      return new Rts2ScriptElementAcquire (this, precision, expTime);
+      return new Rts2ScriptElementAcquire (this, precision, expTime,
+					   target_pos);
     }
   else if (!strcmp (commandStart, COMMAND_WAIT_ACQUIRE))
     {
@@ -296,7 +300,8 @@ Rts2Script::parseBuf (Target * target)
       float exposure;
       if (getNextParamInteger (&repNumber) || getNextParamFloat (&exposure))
 	return NULL;
-      return new Rts2ScriptElementAcquireHam (this, repNumber, exposure);
+      return new Rts2ScriptElementAcquireHam (this, repNumber, exposure,
+					      target_pos);
     }
   else if (!strcmp (commandStart, COMMAND_STAR_SEARCH))
     {
@@ -308,7 +313,8 @@ Rts2Script::parseBuf (Target * target)
 	  || getNextParamFloat (&exposure) || getNextParamDouble (&scale))
 	return NULL;
       return new Rts2ScriptElementAcquireStar (this, repNumber, precision,
-					       exposure, scale, scale);
+					       exposure, scale, scale,
+					       target_pos);
     }
   else if (!strcmp (commandStart, COMMAND_PHOT_SEARCH))
     {
@@ -336,7 +342,7 @@ Rts2Script::parseBuf (Target * target)
       // parse block..
       while (1)
 	{
-	  newElement = parseBuf (target);
+	  newElement = parseBuf (target, target_pos);
 	  // "}" will result in NULL, which we capture here
 	  if (!newElement)
 	    break;
@@ -359,7 +365,7 @@ Rts2Script::parseBuf (Target * target)
       // parse block..
       while (1)
 	{
-	  newElement = parseBuf (target);
+	  newElement = parseBuf (target, target_pos);
 	  // "}" will result in NULL, which we capture here
 	  if (!newElement)
 	    break;
@@ -374,7 +380,7 @@ Rts2Script::parseBuf (Target * target)
 	  // parse block..
 	  while (1)
 	    {
-	      newElement = parseBuf (target);
+	      newElement = parseBuf (target, target_pos);
 	      // "}" will result in NULL, which we capture here
 	      if (!newElement)
 		break;

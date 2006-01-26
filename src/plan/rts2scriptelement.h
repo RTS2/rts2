@@ -204,9 +204,11 @@ protected:
   char defaultImgProccess[2000];
   int obsId;
   int imgId;
+  struct ln_equ_posn center_pos;
 public:
     Rts2ScriptElementAcquire (Rts2Script * in_script, double in_precision,
-			      float in_expTime);
+			      float in_expTime,
+			      struct ln_equ_posn *in_center_pos);
   virtual void postEvent (Rts2Event * event);
   virtual int nextCommand (Rts2DevClientCamera * camera,
 			   Rts2Command ** new_command,
@@ -325,7 +327,8 @@ public:
     Rts2ScriptElementAcquireStar (Rts2Script * in_script, int in_maxRetries,
 				  double in_precision, float in_expTime,
 				  double in_spiral_scale_ra,
-				  double in_spiral_scale_dec);
+				  double in_spiral_scale_dec,
+				  struct ln_equ_posn *in_center_pos);
     virtual ~ Rts2ScriptElementAcquireStar (void);
   virtual void postEvent (Rts2Event * event);
   virtual int processImage (Rts2Image * image);
@@ -344,7 +347,8 @@ protected:
 			   double &dec_off);
 public:
     Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries,
-				 float in_expTime);
+				 float in_expTime,
+				 struct ln_equ_posn *in_center_pos);
     virtual ~ Rts2ScriptElementAcquireHam (void);
 };
 
