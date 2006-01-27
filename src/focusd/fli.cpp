@@ -53,6 +53,8 @@ public:
 Rts2DevFocuserFli::Rts2DevFocuserFli (int in_argc, char **in_argv):
 Rts2DevFocuser (in_argc, in_argv)
 {
+  focTemp = nan ("f");
+
   deviceName = NULL;
   deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
   fliDebug = FLIDEBUG_NONE;
