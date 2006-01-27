@@ -571,7 +571,9 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	      // try some offset..
 	      spiral->getNextStep (next_x, next_y);
 	      // change spiral RA, which are in planar deg, to sphere deg
-	      offset.ra = (spiral_scale_ra * next_x) / cos (center_pos.dec);
+	      offset.ra =
+		(spiral_scale_ra * next_x) /
+		cos (ln_deg_to_rad (center_pos.dec));
 	      offset.dec = spiral_scale_dec * next_y;
 	      script->getMaster ()->
 		postEvent (new
