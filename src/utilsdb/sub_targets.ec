@@ -1720,6 +1720,12 @@ TargetSwiftFOV::getBonus (double JD)
   return 1;
 }
 
+int
+TargetSwiftFOV::isContinues ()
+{
+  return 1;
+}
+
 void
 TargetSwiftFOV::printExtra (std::ostream &_os)
 {

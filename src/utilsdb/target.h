@@ -732,6 +732,7 @@ public:
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
   virtual float getBonus (double JD);
+  virtual int isContinues ();
 
   virtual void printExtra (std::ostream & _os);
 };
