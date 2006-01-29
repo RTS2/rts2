@@ -71,7 +71,7 @@ Rts2SimbadTarget::load ()
 	  iss->getline (buf, LINEBUF);
 	  aliases.push_back (string (buf));
 	}
-      else if (str_type == "#!")
+      else if (str_type.substr (0, 2) == "#!")
 	{
 	  cerr << "Not found" << endl;
 	  return -1;
