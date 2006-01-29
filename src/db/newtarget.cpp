@@ -4,6 +4,8 @@
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 
+#include "rts2simbadtarget.h"
+
 #include <iostream>
 #include <iomanip>
 #include <list>
@@ -18,8 +20,7 @@ private:
 protected:
   int askForInt (const char *desc, int &val);
   int askForString (const char *desc, std::string & val);
-  int askForObject (const char *desc, struct ln_equ_posn *pos,
-		    std::string & name);
+  int askForObject (const char *desc, Target ** retTarget);
 public:
     Rts2NewTarget (int argc, char **argv);
     virtual ~ Rts2NewTarget (void);
@@ -73,8 +74,7 @@ Rts2NewTarget::askForString (const char *desc, std::string & val)
 }
 
 int
-Rts2NewTarget::askForObject (const char *desc, struct ln_equ_posn *object,
-			     std::string & name)
+Rts2NewTarget::askForObject (const char *desc, Target ** retTarget)
 {
   std::string obj_text ("");
   int ret;
@@ -89,6 +89,8 @@ Rts2NewTarget::askForObject (const char *desc, struct ln_equ_posn *object,
   int step = 1;
   enum
   { NOT_GET, RA, DEC } state;
+  bool ra_six = false;
+
   state = NOT_GET;
   while (1)
     {
@@ -120,6 +122,8 @@ Rts2NewTarget::askForObject (const char *desc, struct ln_equ_posn *object,
 	  state = RA;
 	case RA:
 	  ra += (val / step);
+	  if (step > 1)
+	    ra_six = true;
 	  step *= 60;
 	  break;
 	case DEC:
@@ -131,17 +135,29 @@ Rts2NewTarget::askForObject (const char *desc, struct ln_equ_posn *object,
   if (state == DEC)
     {
       // convert ra from hours to degs
-      object->ra = ra * 15.0;
-      object->dec = dec_sign * dec;
+      // if ra is one number, then it's already in degrees
+      double obj_ra = ra;
+      if (ra_six)
+	obj_ra *= 15.0;
+      double obj_dec = dec_sign * dec;
       // set name..
+      ConstTarget *constTarget = new ConstTarget ();
+      constTarget->setPosition (obj_ra, obj_dec);
       std::ostringstream os;
-      os << "S " << LibnovaRaComp (object->ra) << LibnovaDeg90Comp (object->
-								    dec);
-      name = os.str ();
+      os << "S " << LibnovaRaComp (obj_ra) << LibnovaDeg90Comp (obj_dec);
+      constTarget->setTargetName (os.str ().c_str ());
+      *retTarget = constTarget;
       return 0;
     }
   // try to get target from SIMBAD
-  return -1;
+  *retTarget = new Rts2SimbadTarget (obj_text.c_str ());
+  ret = (*retTarget)->load ();
+  if (ret)
+    {
+      delete *retTarget;
+      return -1;
+    }
+  return 0;
 }
 
 Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):
@@ -191,26 +207,25 @@ int
 Rts2NewTarget::run ()
 {
   int n_tar_id = 0;
-  struct ln_equ_posn target_coordinates;
   int ret;
+  Target *new_tar;
   std::string target_name;
   // ask for target ID..
   std::cout << "Default values are written at [].." << std::endl;
+  ret = askForObject ("Target name, RA&DEC or anything else", &new_tar);
+  if (ret)
+    return ret;
   askForInt ("Target ID", n_tar_id);
-  askForObject ("Target name, RA&DEC or anything else", &target_coordinates,
-		target_name);
-  std::cout << LibnovaRa (target_coordinates.
-			  ra) << " " << LibnovaDeg90 (target_coordinates.
-						      dec) << std::endl;
 
-  Target *new_target = new ConstTarget (n_tar_id, obs, &target_coordinates);
-  new_target->setTargetName (target_name.c_str ());
-  new_target->setTargetType (TYPE_OPORTUNITY);
+  std::cout << new_tar;
+
+  new_tar->setTargetType (TYPE_OPORTUNITY);
   if (n_tar_id > 0)
-    ret = new_target->save (n_tar_id);
+    ret = new_tar->save (n_tar_id);
   else
-    ret = new_target->save ();
-  delete new_target;
+    ret = new_tar->save ();
+
+  delete new_tar;
   if (ret)
     std::cerr << "Error when saving target." << std::endl;
   return 0;
