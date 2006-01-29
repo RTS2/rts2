@@ -217,18 +217,20 @@ Rts2NewTarget::run ()
     return ret;
   askForInt ("Target ID", n_tar_id);
 
-  std::cout << new_tar;
-
   new_tar->setTargetType (TYPE_OPORTUNITY);
   if (n_tar_id > 0)
     ret = new_tar->save (n_tar_id);
   else
     ret = new_tar->save ();
 
+  std::cout << new_tar;
   delete new_tar;
+
   if (ret)
-    std::cerr << "Error when saving target." << std::endl;
-  return 0;
+    {
+      std::cerr << "Error when saving target." << std::endl;
+    }
+  return ret;
 }
 
 int
