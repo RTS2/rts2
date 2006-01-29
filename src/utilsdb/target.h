@@ -724,8 +724,12 @@ private:
   time_t swiftTimeStart;
   time_t swiftTimeEnd;
   double swiftOnBonus;
+  char *swiftName;
+  double swiftRoll;
 public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    virtual ~ TargetSwiftFOV (void);
+
   virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startSlew (struct ln_equ_posn *position);

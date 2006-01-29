@@ -1511,6 +1511,12 @@ TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Tar
 {
   swiftOnBonus = 0;
   target_id = TARGET_SWIFT_FOV;
+  swiftName = NULL;
+}
+
+TargetSwiftFOV::~TargetSwiftFOV (void)
+{
+  delete[] swiftName;
 }
 
 int
@@ -1528,6 +1534,7 @@ TargetSwiftFOV::load ()
   int d_swift_roll_null;
   int d_swift_time;
   float d_swift_obstime;
+  VARCHAR d_swift_name[70];
   EXEC SQL END DECLARE SECTION;
 
   swiftId = -1;
@@ -1539,7 +1546,8 @@ TargetSwiftFOV::load ()
       swift_dec,
       swift_roll,
       EXTRACT (EPOCH FROM swift_time),
-      swift_obstime
+      swift_obstime,
+      swift_name
     FROM
       swift
     WHERE
@@ -1556,7 +1564,8 @@ TargetSwiftFOV::load ()
       :d_swift_dec,
       :d_swift_roll :d_swift_roll_null,
       :d_swift_time,
-      :d_swift_obstime;
+      :d_swift_obstime,
+      :d_swift_name;
     if (sqlca.sqlcode)
       break;
     // check for our altitude..
@@ -1582,6 +1591,16 @@ TargetSwiftFOV::load ()
   EXEC SQL CLOSE find_swift_poiniting;
   if (swiftId < 0)
     return -1;
+  if (d_swift_roll_null)
+    swiftRoll = nan ("f");
+  else
+    swiftRoll = d_swift_roll;
+  delete[] swiftName;
+
+  swiftName = new char[d_swift_name.len + 1];
+  strncpy (swiftName, d_swift_name.arr, d_swift_name.len);
+  swiftName[d_swift_name.len] = '\0';
+
   std::ostringstream name;
   name << "SwiftFOV #" << swiftId 
   << " ( " << Timestamp(swiftTimeStart)
@@ -1734,6 +1753,8 @@ TargetSwiftFOV::printExtra (std::ostream &_os)
   << " FROM: " << Timestamp (swiftTimeStart) 
   << " TO: " << Timestamp (swiftTimeEnd)
   << std::endl;
+  _os << "NAME " << swiftName << std::endl;
+  _os << "ROLL " << swiftRoll << std::endl;
 }
 
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
