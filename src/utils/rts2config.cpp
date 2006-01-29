@@ -186,6 +186,24 @@ Rts2Config::getInteger (const char *section, const char *param, int &value)
 }
 
 int
+Rts2Config::getFloat (const char *section, const char *param, float &value)
+{
+  char valbuf[100];
+  char *retv;
+  int ret;
+  ret = getString (section, param, valbuf, 100);
+  if (ret)
+    return ret;
+  value = strtof (valbuf, &retv);
+  if (*retv != '\0')
+    {
+      value = 0;
+      return -1;
+    }
+  return 0;
+}
+
+int
 Rts2Config::getDouble (const char *section, const char *param, double &value)
 {
   char valbuf[100];
@@ -215,6 +233,21 @@ Rts2Config::getBoolean (const char *section, const char *param)
       || strcasecmp (valbuf, "yes") == 0 || strcasecmp (valbuf, "true") == 0)
     return 1;
   return 0;
+}
+
+void
+Rts2Config::getBoolean (const char *section, const char *param, bool & value)
+{
+  char valbuf[100];
+  int ret;
+  ret = getString (section, param, valbuf, 100);
+  if (ret)
+    return;
+  if (strcasecmp (valbuf, "y") == 0
+      || strcasecmp (valbuf, "yes") == 0 || strcasecmp (valbuf, "true") == 0)
+    value = true;
+  else
+    value = false;
 }
 
 struct ln_lnlat_posn *

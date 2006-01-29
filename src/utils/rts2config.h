@@ -27,8 +27,10 @@ public:
   int loadFile (char *filename = NULL);
   int getString (const char *section, const char *param, char *buf, int bufl);
   int getInteger (const char *section, const char *param, int &value);
+  int getFloat (const char *section, const char *param, float &value);
   int getDouble (const char *section, const char *param, double &value);
   int getBoolean (const char *section, const char *param);
+  void getBoolean (const char *section, const char *param, bool & value);
 
   // some special functions..
   struct ln_lnlat_posn *getObserver ();
