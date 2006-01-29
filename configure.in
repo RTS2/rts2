@@ -296,6 +296,9 @@ AC_STRUCT_TM
 AC_POSTGRESQL
 AC_ECPG
 
+# Check for gsoap
+AC_GSOAP
+
 # Checks for library functions.
 AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL
@@ -374,6 +377,8 @@ MOUNT's:
 
 DOME's:
   PCI8255       ${PCI8255}
+
+gsoap           ${gsoap}  
 
 ***************************************
 
