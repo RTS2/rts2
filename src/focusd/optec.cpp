@@ -71,20 +71,18 @@ Rts2DevFocuserOptec::foc_read (char *buf, int count)
 {
   int readed;
 
-  for (readed = 0; readed < count; readed++)
+  readed = 0;
+
+  while (readed < count)
     {
-      int ret = read (foc_desc, &buf[readed], 1);
-#ifdef DEBUG_ALL_PORT_COMM
-      printf ("read_from: %i size:%i\n", foc_desc, ret);
-#endif
+      int ret;
+      ret = read (foc_desc, &buf[readed], count - readed);
       if (ret <= 0)
 	{
 	  syslog (LOG_ERR, "Rts2DevFocuserOptec::foc_read %m (%i)", errno);
 	  return -1;
 	}
-#ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "Optec: readed '%c'", buf[readed]);
-#endif
+      readed += ret;
     }
   return readed;
 }
