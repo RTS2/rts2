@@ -1443,7 +1443,10 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
 
   ret = tel_start_move ();
   if (!ret)
-    fixed_ntries++;
+    {
+      setTarget (lastMoveRa, lastMoveDec);
+      fixed_ntries++;
+    }
   return ret;
 }
 
