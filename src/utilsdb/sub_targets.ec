@@ -104,9 +104,12 @@ ConstTarget::save (int tar_id)
   EXEC SQL BEGIN DECLARE SECTION;
   double d_tar_ra;
   double d_tar_dec;
+  float d_tar_priority;
   int d_tar_id;
+  bool d_tar_enabled;
   EXEC SQL END DECLARE SECTION;
 
+  Rts2Config *config = Rts2Config::instance ();
   int ret;
 
   ret = Target::save (tar_id);
@@ -115,6 +118,12 @@ ConstTarget::save (int tar_id)
 
   d_tar_ra = position.ra;
   d_tar_dec = position.dec;
+
+  d_tar_priority = 0;
+  config->getFloat ("newtarget", "priority", d_tar_priority);
+
+  d_tar_enabled = true;
+  config->getBoolean ("newtarget", "enabled", d_tar_enabled);
 
   d_tar_id = tar_id;
 
@@ -127,13 +136,13 @@ ConstTarget::save (int tar_id)
     tar_priority = 0,
     tar_bonus = 0,
     tar_bonus_time = NULL,
-    tar_enabled = true
+    tar_enabled = :d_tar_enabled
   WHERE
     tar_id = :d_tar_id;
 
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ConstTarget::load");
+    logMsgDb ("ConstTarget::save");
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -1641,7 +1650,15 @@ TargetSwiftFOV::load ()
   }
   EXEC SQL CLOSE find_swift_poiniting;
   if (swiftId < 0)
-    return -1;
+  {
+    setTargetName ("Cannot find any Swift FOV");
+    swiftFovCenter.ra = nan ("f");
+    swiftFovCenter.dec = nan ("f");
+    swiftTimeStart = 0;
+    swiftTimeEnd = 0;
+    swiftRoll = nan ("f");
+    return 0;
+  }
   if (d_swift_roll_null)
     swiftRoll = nan ("f");
   else
