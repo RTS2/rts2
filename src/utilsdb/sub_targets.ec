@@ -9,6 +9,13 @@
 EXEC SQL include sqlca;
 
 // ConstTarget
+ConstTarget::ConstTarget () : Target ()
+{
+  tar_priority = nan ("f");
+  tar_bonus = nan ("f");
+  tar_enabled = -1;
+}
+
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
 Target (in_tar_id, in_obs)
 {
@@ -89,6 +96,50 @@ ConstTarget::load ()
   tar_enabled = d_tar_enabled;
 
   return Target::load ();
+}
+
+int
+ConstTarget::save (int tar_id)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  double d_tar_ra;
+  double d_tar_dec;
+  int d_tar_id;
+  EXEC SQL END DECLARE SECTION;
+
+  int ret;
+
+  ret = Target::save (tar_id);
+  if (ret)
+    return ret;
+
+  d_tar_ra = position.ra;
+  d_tar_dec = position.dec;
+
+  d_tar_id = tar_id;
+
+  EXEC SQL
+  UPDATE
+    targets
+  SET
+    tar_ra = :d_tar_ra,
+    tar_dec = :d_tar_dec,
+    tar_priority = 0,
+    tar_bonus = 0,
+    tar_bonus_time = NULL,
+    tar_enabled = true
+  WHERE
+    tar_id = :d_tar_id;
+
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("ConstTarget::load");
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  tar_enabled = 0;
+  EXEC SQL COMMIT;
+  return 0;
 }
 
 int

@@ -184,7 +184,7 @@ public:
   void logMsgDb (const char *message);
   // that method is GUARANTIE to be called after target creating to load data from DB
   virtual int load ();
-  virtual int save ();
+  int save ();
   virtual int save (int tar_id);
   virtual int getScript (const char *device_name, char *buf);
   int getPosition (struct ln_equ_posn *pos)
@@ -337,7 +337,7 @@ public:
   }
   void setTargetName (const char *in_target_name)
   {
-    delete target_name;
+    delete[]target_name;
     target_name = new char[strlen (in_target_name) + 1];
     strcpy (target_name, in_target_name);
   }
@@ -490,10 +490,12 @@ protected:
 
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses, target position etc..
 public:
+    ConstTarget ();
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs,
 		 struct ln_equ_posn *pos);
   virtual int load ();
+  virtual int save (int tar_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
   virtual float getBonus (double JD)
@@ -502,6 +504,12 @@ public:
   }
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
   virtual void printExtra (std::ostream & _os);
+
+  void setPosition (double ra, double dec)
+  {
+    position.ra = ra;
+    position.dec = dec;
+  }
 };
 
 class EllTarget:public Target
