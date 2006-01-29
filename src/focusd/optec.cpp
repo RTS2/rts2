@@ -33,7 +33,6 @@ private:
   bool damagedTempSens;
   // low-level I/O functions
   int foc_read (char *buf, int count);
-  int foc_read_hash (char *buf, int count);
   int foc_write (char *buf, int count);
   int foc_write_read_no_reset (char *wbuf, int wcount, char *rbuf,
 			       int rcount);
@@ -80,6 +79,7 @@ Rts2DevFocuserOptec::foc_read (char *buf, int count)
 #endif
       if (ret <= 0)
 	{
+	  syslog (LOG_ERR, "Rts2DevFocuserOptec::foc_read %m (%i)", errno);
 	  return -1;
 	}
 #ifdef DEBUG_ALL_PORT_COMM
