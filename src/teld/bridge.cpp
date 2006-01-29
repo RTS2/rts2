@@ -174,8 +174,13 @@ Rts2DevTelescopeBridge::endMove ()
 int
 Rts2DevTelescopeBridge::startPark ()
 {
-  Tctrl->ra = get_loc_sid_time () * 15.0 - 30;
-  Tctrl->dec = Tstat->dec;
+  double park_ra, park_dec;
+  Tctrl->power = 0;
+  park_ra = get_loc_sid_time () * 15.0 - 30;
+  park_dec = 0;
+  Tctrl->ra = park_ra;
+  Tctrl->dec = park_dec;
+  setTarget (park_ra, park_dec);
   time (&startTime);
   timeout = startTime + MOVE_TIMEOUT;
   return 0;
