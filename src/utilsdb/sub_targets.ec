@@ -148,6 +148,7 @@ ConstTarget::save (int tar_id)
   }
   tar_enabled = d_tar_enabled;
   tar_priority = d_tar_priority;
+  tar_bonus = 0;
   EXEC SQL COMMIT;
   return 0;
 }
