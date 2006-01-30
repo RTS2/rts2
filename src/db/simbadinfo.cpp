@@ -54,6 +54,7 @@ Rts2SimbadInfo::run ()
     return ret;
 
   std::cout << target;
+  target->printObservations (1, std::cout);
 
   return ret;
 }
