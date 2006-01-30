@@ -100,7 +100,7 @@ Rts2ObsSet::load (std::string in_where)
     // add new observations to vector
     Rts2Obs obs = Rts2Obs (db_tar_id, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
       db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end);
-    observations.push_back (obs);
+    push_back (obs);
     if (db_obs_state & OBS_BIT_STARTED)
     {
       if (db_obs_state & OBS_BIT_ACQUSITION_FAI)
@@ -154,9 +154,19 @@ Rts2ObsSet::Rts2ObsSet (int in_tar_id)
   load (os.str());
 }
 
+Rts2ObsSet::Rts2ObsSet (struct ln_equ_posn * position, double radius)
+{
+  std::ostringstream os;
+  os << "ln_angular_separation (observations.obs_ra, observations.obs_dec, "
+    << position->ra << ", "
+    << position->dec << ") < "
+    << radius;
+  load (os.str());
+}
+
 Rts2ObsSet::~Rts2ObsSet (void)
 {
-  observations.clear ();
+  clear ();
 }
 
 int
@@ -177,7 +187,7 @@ Rts2ObsSet::computeStatistics ()
   errAvgDec = 0;
   errAvgRad = 0;
 
-  for (obs_iter = observations.begin (); obs_iter != observations.end (); obs_iter++)
+  for (obs_iter = begin (); obs_iter != end (); obs_iter++)
   {
     double efRa, efDec, efRad;
     double eaRa, eaDec, eaRad;
@@ -220,7 +230,7 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
   int success = getSuccess ();
   int failed = getFailed ();
   int prec = _os.precision (2);
-  _os << "Number of observations: " << observations.size () << std::endl
+  _os << "Number of observations: " << size () << std::endl
     << "Succesfully ended:" << success << std::endl
     << "Failed:" << failed << std::endl
     << "Number of images:" << allNum 
@@ -248,7 +258,7 @@ std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)
 {
   std::vector <Rts2Obs>::iterator obs_iter;
   _os << "Observations list follow:" << std::endl;
-  for (obs_iter = obs_set.observations.begin (); obs_iter != obs_set.observations.end (); obs_iter++)
+  for (obs_iter = obs_set.begin (); obs_iter != obs_set.end (); obs_iter++)
   {
     (*obs_iter).setPrintImages (obs_set.getPrintImages ());
     (*obs_iter).setPrintCounts (obs_set.getPrintCounts ());

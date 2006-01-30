@@ -19,15 +19,21 @@
  * @author petr
  */
 
-class Rts2ObsSet
+class Rts2ObsSet:public
+  std::vector <
+  Rts2Obs >
 {
 private:
-  std::vector < Rts2Obs > observations;
-  int images;
-  int counts;
-  int successNum;
-  int failedNum;
-  void initObsSet ()
+  int
+    images;
+  int
+    counts;
+  int
+    successNum;
+  int
+    failedNum;
+  void
+  initObsSet ()
   {
     images = 0;
     counts = 0;
@@ -47,71 +53,93 @@ private:
     errAvgDec = 0;
     errAvgRad = 0;
   }
-  void load (std::string in_where);
+  void
+  load (std::string in_where);
 
   // numbers
-  int allNum;
-  int goodNum;
-  int firstNum;
+  int
+    allNum;
+  int
+    goodNum;
+  int
+    firstNum;
 
   // errors..
-  double errFirstRa;
-  double errFirstDec;
-  double errFirstRad;
+  double
+    errFirstRa;
+  double
+    errFirstDec;
+  double
+    errFirstRad;
 
-  double errAvgRa;
-  double errAvgDec;
-  double errAvgRad;
+  double
+    errAvgRa;
+  double
+    errAvgDec;
+  double
+    errAvgRad;
 public:
   Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
   Rts2ObsSet (const time_t * start_t, const time_t * end_t);
   Rts2ObsSet (int in_tar_id);
+  Rts2ObsSet (struct ln_equ_posn *position, double radius);
   virtual ~ Rts2ObsSet (void);
 
-  void printImages (int in_images)
+  void
+  printImages (int in_images)
   {
     images = in_images;
   }
 
-  int getPrintImages ()
+  int
+  getPrintImages ()
   {
     return images;
   }
 
-  int getPrintCounts ()
+  int
+  getPrintCounts ()
   {
     return counts;
   }
 
-  void printCounts (int in_counts)
+  void
+  printCounts (int in_counts)
   {
     counts = in_counts;
   }
 
-  int getSuccess ()
+  int
+  getSuccess ()
   {
     return successNum;
   }
-  int getFailed ()
+  int
+  getFailed ()
   {
     return failedNum;
   }
-  int computeStatistics ();
+  int
+  computeStatistics ();
 
-  int getNumberOfImages ()
+  int
+  getNumberOfImages ()
   {
     return allNum;
   }
 
-  int getNumberOfGoodImages ()
+  int
+  getNumberOfGoodImages ()
   {
     return goodNum;
   }
 
-  void printStatistics (std::ostream & _os);
+  void
+  printStatistics (std::ostream & _os);
 
-  friend std::ostream & operator << (std::ostream & _os,
-				     Rts2ObsSet & obs_set);
+  friend
+    std::ostream &
+  operator << (std::ostream & _os, Rts2ObsSet & obs_set);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);

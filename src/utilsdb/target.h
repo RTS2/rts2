@@ -477,6 +477,18 @@ public:
   virtual void sendPositionInfo (std::ostream & _os, double JD);
 
   std::string getUsersEmail (int in_event_mask);
+
+
+  /**
+   * Print observations at current target postion around given position.
+   *
+   */
+  int printObservations (double radius, std::ostream & _os)
+  {
+    return printObservations (radius, ln_get_julian_from_sys (), _os);
+  }
+
+  int printObservations (double radius, double JD, std::ostream & _os);
 };
 
 class ConstTarget:public Target

@@ -942,6 +942,16 @@ Target::printExtra (std::ostream &_os)
 {
 }
 
+int
+Target::printObservations (double radius, double JD, std::ostream &_os)
+{
+  struct ln_equ_posn tar_pos;
+  getPosition (&tar_pos, JD);
+  
+  Rts2ObsSet obsset = Rts2ObsSet (&tar_pos, radius);
+  _os << obsset;
+}
+
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   EXEC SQL BEGIN DECLARE SECTION;
