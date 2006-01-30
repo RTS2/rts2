@@ -5,6 +5,7 @@
 #include "rts2app.h"
 
 #include <iostream>
+#include <sstream>
 #include <syslog.h>
 
 Rts2App::Rts2App (int in_argc, char **in_argv):
@@ -144,6 +145,51 @@ Rts2App::addOption (char in_short_option, char *in_long_option,
     new Rts2Option (in_short_option, in_long_option, in_has_arg,
 		    in_help_msg);
   options.push_back (an_option);
+  return 0;
+}
+
+int
+Rts2App::askForInt (const char *desc, int &val)
+{
+  char temp[200];
+  while (1)
+    {
+      std::cout << desc << " [" << val << "]: ";
+      std::cin.getline (temp, 200);
+      std::string str_val (temp);
+      if (str_val.empty ())
+	break;
+      std::istringstream is (str_val);
+      is >> val;
+      if (!is.fail ())
+	break;
+      std::cout << "Invalid number!" << std::endl;
+      std::cin.clear ();
+      std::cin.ignore (2000, '\n');
+    }
+  std::cout << desc << ": " << val << std::endl;
+  return 0;
+}
+
+int
+Rts2App::askForString (const char *desc, std::string & val)
+{
+  char temp[201];
+  while (1)
+    {
+      std::cout << desc << " [" << val << "]: ";
+      std::cin.getline (temp, 200);
+      // use default value
+      if (strlen (temp) == 0)
+	break;
+      val = std::string (temp);
+      if (!std::cin.fail ())
+	break;
+      std::cout << "Invalid string!" << std::endl;
+      std::cin.clear ();
+      std::cin.ignore (2000, '\n');
+    }
+  std::cout << desc << ": " << val << std::endl;
   return 0;
 }
 

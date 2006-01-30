@@ -26,6 +26,12 @@ protected:
   int addOption (char in_short_option, char *in_long_option, int in_has_arg,
 		 char *in_help_msg);
 
+  /**
+   * Ask user for integer.
+   */
+  int askForInt (const char *desc, int &val);
+  int askForString (const char *desc, std::string & val);
+
 public:  Rts2App (int in_argc, char **in_argv);
     virtual ~ Rts2App ();
 
