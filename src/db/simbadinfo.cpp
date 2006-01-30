@@ -12,30 +12,28 @@
 #include <stdlib.h>
 #include <sstream>
 
-class Rts2NewTarget:public Rts2TargetApp
+class Rts2SimbadInfo:public Rts2TargetApp
 {
 public:
-  Rts2NewTarget (int in_argc, char **in_argv);
-    virtual ~ Rts2NewTarget (void);
+  Rts2SimbadInfo (int in_argc, char **in_argv);
+    virtual ~ Rts2SimbadInfo (void);
 
   virtual int processOption (int in_opt);
 
   virtual int run ();
 };
 
-
-Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):
+Rts2SimbadInfo::Rts2SimbadInfo (int in_argc, char **in_argv):
 Rts2TargetApp (in_argc, in_argv)
 {
 }
 
-Rts2NewTarget::~Rts2NewTarget (void)
+Rts2SimbadInfo::~Rts2SimbadInfo ()
 {
 }
 
-
 int
-Rts2NewTarget::processOption (int in_opt)
+Rts2SimbadInfo::processOption (int in_opt)
 {
   switch (in_opt)
     {
@@ -46,33 +44,17 @@ Rts2NewTarget::processOption (int in_opt)
 }
 
 int
-Rts2NewTarget::run ()
+Rts2SimbadInfo::run ()
 {
-  int n_tar_id = 0;
   int ret;
-  std::string target_name;
   // ask for target ID..
   std::cout << "Default values are written at [].." << std::endl;
   ret = askForObject ("Target name, RA&DEC or anything else");
   if (ret)
     return ret;
-  askForInt ("Target ID", n_tar_id);
-  target_name = target->getTargetName ();
-  askForString ("Target NAME", target_name);
-  target->setTargetName (target_name.c_str ());
-
-  target->setTargetType (TYPE_OPORTUNITY);
-  if (n_tar_id > 0)
-    ret = target->save (n_tar_id);
-  else
-    ret = target->save ();
 
   std::cout << target;
 
-  if (ret)
-    {
-      std::cerr << "Error when saving target." << std::endl;
-    }
   return ret;
 }
 
@@ -80,8 +62,8 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  Rts2NewTarget *app;
-  app = new Rts2NewTarget (argc, argv);
+  Rts2SimbadInfo *app;
+  app = new Rts2SimbadInfo (argc, argv);
   ret = app->init ();
   if (ret)
     return 1;

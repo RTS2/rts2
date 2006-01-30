@@ -83,6 +83,9 @@ Rts2SimbadTarget::load ()
 	}
       else if (str_type == "%I.0")
 	{
+	  // eat whitespace
+	  *iss >> std::ws;
+
 	  iss->getline (buf, LINEBUF);
 	  setTargetName (buf);
 	}
