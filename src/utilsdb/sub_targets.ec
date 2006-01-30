@@ -133,7 +133,7 @@ ConstTarget::save (int tar_id)
   SET
     tar_ra = :d_tar_ra,
     tar_dec = :d_tar_dec,
-    tar_priority = 0,
+    tar_priority = :d_tar_priority,
     tar_bonus = 0,
     tar_bonus_time = NULL,
     tar_enabled = :d_tar_enabled
@@ -146,7 +146,8 @@ ConstTarget::save (int tar_id)
     EXEC SQL ROLLBACK;
     return -1;
   }
-  tar_enabled = 0;
+  tar_enabled = d_tar_enabled;
+  tar_priority = d_tar_priority;
   EXEC SQL COMMIT;
   return 0;
 }
