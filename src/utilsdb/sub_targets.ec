@@ -1687,6 +1687,18 @@ TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
+TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD)
+{
+  struct ln_equ_posn pos;
+  int ret;
+  
+  ret = getPosition (&pos, JD);
+  if (ret)
+    return ret;
+  return ln_get_object_next_rst (JD, observer, &pos, rst);
+}
+
+int
 TargetSwiftFOV::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;

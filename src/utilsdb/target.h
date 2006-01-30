@@ -752,6 +752,7 @@ public:
 
   virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int getRST (struct ln_rst_time *rst, double JD);
   virtual int startSlew (struct ln_equ_posn *position);
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
