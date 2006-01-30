@@ -32,11 +32,10 @@ private:
   int status;
   bool damagedTempSens;
   // low-level I/O functions
-  int foc_read (char *buf, int count);
+  int foc_read (char *buf, int count, int timeouts);
   int foc_write (char *buf, int count);
-  int foc_write_read_no_reset (char *wbuf, int wcount, char *rbuf,
-			       int rcount);
-  int foc_write_read (char *buf, int wcount, char *rbuf, int rcount);
+  int foc_write_read (char *wbuf, int wcount, char *rbuf, int rcount,
+		      int timeouts = 0);
 
   // high-level I/O functions
   int getPos (int *position);
@@ -67,7 +66,7 @@ public:
  */
 
 int
-Rts2DevFocuserOptec::foc_read (char *buf, int count)
+Rts2DevFocuserOptec::foc_read (char *buf, int count, int timeouts)
 {
   int readed;
 
@@ -79,8 +78,15 @@ Rts2DevFocuserOptec::foc_read (char *buf, int count)
       ret = read (foc_desc, &buf[readed], count - readed);
       if (ret <= 0)
 	{
-	  syslog (LOG_ERR, "Rts2DevFocuserOptec::foc_read %m (%i)", errno);
-	  return -1;
+	  if (timeouts <= 0)
+	    {
+	      syslog (LOG_ERR, "Rts2DevFocuserOptec::foc_read %m (%i)",
+		      errno);
+	      return -1;
+	    }
+	  timeouts--;
+	  // repeat read
+	  ret = 0;
 	}
       readed += ret;
     }
@@ -122,8 +128,8 @@ Rts2DevFocuserOptec::foc_write (char *buf, int count)
  * @return -1 and set errno on failure, rcount otherwise
  */
 int
-Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
-					      char *rbuf, int rcount)
+Rts2DevFocuserOptec::foc_write_read (char *wbuf, int wcount, char *rbuf,
+				     int rcount, int timeouts)
 {
   int tmp_rcount = -1;
   char *buf;
@@ -131,7 +137,7 @@ Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
   if (foc_write (wbuf, wcount) < 0)
     return -1;
 
-  tmp_rcount = foc_read (rbuf, rcount);
+  tmp_rcount = foc_read (rbuf, rcount, timeouts);
 
   if (tmp_rcount > 0)
     {
@@ -146,21 +152,6 @@ Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
       syslog (LOG_DEBUG, "Optec:readed returns %i", tmp_rcount);
     }
   return tmp_rcount;
-}
-
-int
-Rts2DevFocuserOptec::foc_write_read (char *buf, int wcount, char *rbuf,
-				     int rcount)
-{
-  int ret;
-
-  ret = foc_write_read_no_reset (buf, wcount, rbuf, rcount);
-
-  if (ret <= 0)
-    {
-      ret = foc_write_read_no_reset (buf, wcount, rbuf, rcount);
-    }
-  return ret;
 }
 
 
@@ -338,9 +329,11 @@ Rts2DevFocuserOptec::stepOut (int num)
       add = 'O';
     }
 
+  // maximal time fore move is +- 40 sec
+
   sprintf (command, "F%c%04d", add, num);
 
-  if (foc_write_read (command, 6, rbuf, 3) < 0)
+  if (foc_write_read (command, 6, rbuf, 3, 10) < 0)
     return -1;
   if (rbuf[0] != '*')
     return -1;
