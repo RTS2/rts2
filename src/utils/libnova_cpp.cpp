@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <iomanip>
+#include <sstream>
 
 void
 LibnovaRa::toHms (struct ln_hms *ra_hms)
@@ -191,9 +192,56 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
 {
   double val;
-  _is >> val;
-  l_deg.deg = val;
-  return _is;
+  double out = 0;
+  double step = 1;
+  std::ostringstream * os = NULL;
+  std::istringstream * is = NULL;
+  while (1)
+    {
+      char peek_val = _is.peek ();
+      if (isdigit (peek_val)
+	  || peek_val == '.' || peek_val == '-' || peek_val == '+')
+	{
+	  if (!os)
+	    os = new std::ostringstream ();
+	  (*os) << peek_val;
+	  _is.get ();
+	  continue;
+	}
+      switch (_is.peek ())
+	{
+	case 'h':
+	  step = 15;
+	case ' ':
+	case ':':
+	case 'o':
+	case 'd':
+	case 'm':
+	case 's':
+	  delete is;
+	  // eat character
+	  _is.get ();
+	  if (os)
+	    {
+	      is = new std::istringstream (os->str ());
+	      (*is) >> val;
+	    }
+	  else
+	    {
+	      continue;
+	    }
+	  delete os;
+	  os = NULL;
+	  break;
+	default:
+	  l_deg.deg = out;
+	  return _is;
+	}
+      if (out == 0 && val < 0)
+	step *= -1;
+      out += val / step;
+      step *= 60.0;
+    }
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)

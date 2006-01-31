@@ -210,6 +210,7 @@ Rts2App::askForDegrees (const char *desc, double &val)
       std::cin.ignore (2000, '\n');
     }
   val = degDist.getDeg ();
+  std::cout << desc << ": " << degDist << std::endl;
   return 0;
 }
 
@@ -236,19 +237,19 @@ Rts2App::askForString (const char *desc, std::string & val)
 }
 
 int
-Rts2App::run ()
-{
-  std::cout << "Empty run methods!" << std::endl;
-  return 0;
-}
-
-int
 Rts2App::askForChr (const char *desc, char &out)
 {
   char temp[201];
   std::cout << desc;
   std::cin.getline (temp, 200);
   out = *temp;
+  return 0;
+}
+
+int
+Rts2App::run ()
+{
+  std::cout << "Empty run methods!" << std::endl;
   return 0;
 }
 
