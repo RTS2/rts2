@@ -36,6 +36,10 @@ public:
   {
     deg = in_deg;
   }
+  double getDeg ()
+  {
+    return deg;
+  }
   friend std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 };
 
@@ -74,6 +78,19 @@ public:
 				     LibnovaDegArcMin l_deg);
 };
 
+class LibnovaDegDist:public LibnovaDeg
+{
+public:
+  LibnovaDegDist (double in_deg):LibnovaDeg (in_deg)
+  {
+  }
+
+  friend std::ostream & operator << (std::ostream & _os,
+				     LibnovaDegDist l_deg);
+  friend std::istream & operator >> (std::istream & _is,
+				     LibnovaDegDist & l_deg);
+};
+
 class LibnovaDate
 {
 private:
@@ -103,6 +120,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);
+std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg);
+std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
 
 #endif /* !__LIBNOVA_CPP__ */

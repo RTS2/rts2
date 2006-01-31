@@ -49,6 +49,7 @@ Rts2NewTarget::processOption (int in_opt)
 int
 Rts2NewTarget::run ()
 {
+  double radius = 10.0 / 60.0;
   int n_tar_id = 0;
   int ret;
   std::string target_name;
@@ -62,12 +63,12 @@ Rts2NewTarget::run ()
   selection.addChoice ('q', "Quit");
   selection.addChoice ('o', "List observations around position");
   selection.addChoice ('t', "List targets around position");
+
   while (1)
     {
       char sel_ret;
       sel_ret = selection.query (std::cout);
       // 10 arcmin radius
-      double radius = 10.0 / 60.0;
       if (sel_ret == 's')
 	break;
       switch (sel_ret)
@@ -75,11 +76,11 @@ Rts2NewTarget::run ()
 	case 'q':
 	  return 0;
 	case 'o':
-	  askForDouble ("Radius", radius);
+	  askForDegrees ("Radius", radius);
 	  target->printObservations (radius, std::cout);
 	  break;
 	case 't':
-	  askForDouble ("Radius", radius);
+	  askForDegrees ("Radius", radius);
 	  target->printTargets (radius, std::cout);
 	  break;
 	}
