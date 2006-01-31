@@ -5,6 +5,7 @@
 #include "target.h"
 #include "rts2obs.h"
 #include "rts2obsset.h"
+#include "rts2targetset.h"
 
 #include "../utils/rts2app.h"
 #include "../utils/rts2config.h"
@@ -950,6 +951,20 @@ Target::printObservations (double radius, double JD, std::ostream &_os)
   
   Rts2ObsSet obsset = Rts2ObsSet (&tar_pos, radius);
   _os << obsset;
+
+  return obsset.size ();
+}
+
+int
+Target::printTargets (double radius, double JD, std::ostream &_os)
+{
+  struct ln_equ_posn tar_pos;
+  getPosition (&tar_pos, JD);
+  
+  Rts2TargetSet tarset = Rts2TargetSet (&tar_pos, radius);
+  _os << tarset;
+
+  return tarset.size ();
 }
 
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)

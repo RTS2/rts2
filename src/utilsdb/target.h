@@ -489,6 +489,13 @@ public:
   }
 
   int printObservations (double radius, double JD, std::ostream & _os);
+
+  int printTargets (double radius, std::ostream & _os)
+  {
+    return printTargets (radius, ln_get_julian_from_sys (), _os);
+  }
+
+  int printTargets (double radius, double JD, std::ostream & _os);
 };
 
 class ConstTarget:public Target
