@@ -13,7 +13,7 @@ Target * >
 {
 private:
   void
-  load (std::string in_where);
+  load (std::string in_where, std::string order_by);
 public:
   Rts2TargetSet (struct ln_equ_posn *pos, double radius);
   virtual ~

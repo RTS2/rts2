@@ -4,14 +4,15 @@
 #include <sstream>
 
 void
-Rts2TargetSet::load (std::string in_where)
+Rts2TargetSet::load (std::string in_where, std::string order_by)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   char *stmp_c;
 
   int db_tar_id;
-
   EXEC SQL END DECLARE SECTION;
+
+  std::list <int> target_ids;
 
   asprintf (&stmp_c, 
   "SELECT "
@@ -20,8 +21,8 @@ Rts2TargetSet::load (std::string in_where)
     "targets"
   " WHERE "
     "%s"
-  " ORDER BY tar_id ASC;",
-    in_where.c_str());
+  " ORDER BY %s;",
+    in_where.c_str(), order_by.c_str());
 
   EXEC SQL PREPARE tar_stmp FROM :stmp_c;
 
@@ -35,8 +36,7 @@ Rts2TargetSet::load (std::string in_where)
       :db_tar_id;
     if (sqlca.sqlcode)
       break;
-    Target *tar = createTarget (db_tar_id, Rts2Config::instance()->getObserver ());
-    push_back (tar);
+    target_ids.push_back (db_tar_id);
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
@@ -45,16 +45,28 @@ Rts2TargetSet::load (std::string in_where)
   EXEC SQL CLOSE tar_cur;
   free (stmp_c);
   EXEC SQL ROLLBACK;
+
+  for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
+  {
+    Target *tar = createTarget (*iter, Rts2Config::instance()->getObserver ());
+    push_back (tar);
+  }
+
+  target_ids.clear ();
 }
 
 Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius)
 {
   std::ostringstream os;
+  std::ostringstream where_os;
   os << "ln_angular_separation (targets.tar_ra, targets.tar_dec, "
     << pos->ra << ", "
-    << pos->dec << ") < "
+    << pos->dec << ") ";
+  where_os << os.str();
+  os << "<"
     << radius;
-  load (os.str());
+  where_os << " ASC";
+  load (os.str(), where_os.str());
 }
 
 Rts2TargetSet::~Rts2TargetSet (void)
