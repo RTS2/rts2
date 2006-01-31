@@ -30,6 +30,7 @@ protected:
    * Ask user for integer.
    */
   int askForInt (const char *desc, int &val);
+  int askForDouble (const char *desc, double &val);
   int askForString (const char *desc, std::string & val);
 
 public:  Rts2App (int in_argc, char **in_argv);
@@ -41,6 +42,11 @@ public:  Rts2App (int in_argc, char **in_argv);
   virtual void help ();
 
   virtual int run ();
+
+  /**
+   * Ask user for char, used to ask for chair in choice question.
+   */
+  int askForChr (const char *desc, char &out);
 
   /**
    * Parses and initialize tm structure from char.

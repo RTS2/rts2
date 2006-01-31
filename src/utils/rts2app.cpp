@@ -172,6 +172,31 @@ Rts2App::askForInt (const char *desc, int &val)
 }
 
 int
+Rts2App::askForDouble (const char *desc, double &val)
+{
+  char temp[200];
+  while (1)
+    {
+      std::cout << desc << " [" << val << "]: ";
+      std::cin.getline (temp, 200);
+      std::string str_val (temp);
+      if (str_val.empty ())
+	break;
+      std::istringstream is (str_val);
+      is >> val;
+      if (!is.fail ())
+	break;
+      std::cout << "Invalid number!" << std::endl;
+      std::cin.clear ();
+      std::cin.ignore (2000, '\n');
+    }
+  std::cout << desc << ": " << val << std::endl;
+  return 0;
+}
+
+
+
+int
 Rts2App::askForString (const char *desc, std::string & val)
 {
   char temp[201];
@@ -197,6 +222,16 @@ int
 Rts2App::run ()
 {
   std::cout << "Empty run methods!" << std::endl;
+  return 0;
+}
+
+int
+Rts2App::askForChr (const char *desc, char &out)
+{
+  char temp[201];
+  std::cout << desc;
+  std::cin.getline (temp, 200);
+  out = *temp;
   return 0;
 }
 
