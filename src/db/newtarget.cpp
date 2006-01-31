@@ -3,6 +3,7 @@
 #include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2askchoice.h"
 
 #include "rts2targetapp.h"
 
@@ -56,6 +57,33 @@ Rts2NewTarget::run ()
   ret = askForObject ("Target name, RA&DEC or anything else");
   if (ret)
     return ret;
+  Rts2AskChoice selection = Rts2AskChoice (this);
+  selection.addChoice ('s', "Save");
+  selection.addChoice ('q', "Quit");
+  selection.addChoice ('o', "List observations around position");
+  selection.addChoice ('t', "List targets around position");
+  while (1)
+    {
+      char sel_ret;
+      sel_ret = selection.query (std::cout);
+      // 10 arcmin radius
+      double radius = 10.0 / 60.0;
+      if (sel_ret == 's')
+	break;
+      switch (sel_ret)
+	{
+	case 'q':
+	  return 0;
+	case 'o':
+	  askForDouble ("Radius", radius);
+	  target->printObservations (radius, std::cout);
+	  break;
+	case 't':
+	  askForDouble ("Radius", radius);
+	  target->printTargets (radius, std::cout);
+	  break;
+	}
+    }
   askForInt ("Target ID", n_tar_id);
   target_name = target->getTargetName ();
   askForString ("Target NAME", target_name);
