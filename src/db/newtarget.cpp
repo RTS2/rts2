@@ -49,7 +49,8 @@ Rts2NewTarget::processOption (int in_opt)
 int
 Rts2NewTarget::run ()
 {
-  double radius = 10.0 / 60.0;
+  // 10 arcmin default radius
+  static double radius = 10.0 / 60.0;
   int n_tar_id = 0;
   int ret;
   std::string target_name;
@@ -68,7 +69,6 @@ Rts2NewTarget::run ()
     {
       char sel_ret;
       sel_ret = selection.query (std::cout);
-      // 10 arcmin radius
       if (sel_ret == 's')
 	break;
       switch (sel_ret)

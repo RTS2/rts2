@@ -3,6 +3,7 @@
 #include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2askchoice.h"
 
 #include "rts2targetapp.h"
 
@@ -46,6 +47,7 @@ Rts2SimbadInfo::processOption (int in_opt)
 int
 Rts2SimbadInfo::run ()
 {
+  static double radius = 10.0 / 60.0;
   int ret;
   // ask for target ID..
   std::cout << "Default values are written at [].." << std::endl;
@@ -54,9 +56,32 @@ Rts2SimbadInfo::run ()
     return ret;
 
   std::cout << target;
-  target->printObservations (1, std::cout);
 
-  return ret;
+  Rts2AskChoice selection = Rts2AskChoice (this);
+  selection.addChoice ('s', "Save");
+  selection.addChoice ('q', "Quit");
+  selection.addChoice ('o', "List observations around position");
+  selection.addChoice ('t', "List targets around position");
+
+  while (1)
+    {
+      char sel_ret;
+      sel_ret = selection.query (std::cout);
+      switch (sel_ret)
+	{
+	case 's':
+	case 'q':
+	  return 0;
+	case 'o':
+	  askForDegrees ("Radius", radius);
+	  target->printObservations (radius, std::cout);
+	  break;
+	case 't':
+	  askForDegrees ("Radius", radius);
+	  target->printTargets (radius, std::cout);
+	  break;
+	}
+    }
 }
 
 int
