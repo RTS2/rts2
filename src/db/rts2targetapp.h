@@ -11,6 +11,7 @@ class Rts2TargetApp:public Rts2AppDb
 protected:
   Target * target;
   struct ln_lnlat_posn *obs;
+  int askForDegrees (const char *desc, double &val);
   int askForObject (const char *desc);
 public:
     Rts2TargetApp (int argc, char **argv);

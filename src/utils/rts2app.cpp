@@ -3,7 +3,6 @@
 #endif
 
 #include "rts2app.h"
-#include "libnova_cpp.h"
 
 #include <iostream>
 #include <sstream>
@@ -192,25 +191,6 @@ Rts2App::askForDouble (const char *desc, double &val)
       std::cin.ignore (2000, '\n');
     }
   std::cout << desc << ": " << val << std::endl;
-  return 0;
-}
-
-int
-Rts2App::askForDegrees (const char *desc, double &val)
-{
-  LibnovaDegDist degDist = LibnovaDegDist (val);
-  while (1)
-    {
-      std::cout << desc << " [" << degDist << "]: ";
-      std::cin >> degDist;
-      if (!std::cin.fail ())
-	break;
-      std::cout << "Invalid string!" << std::endl;
-      std::cin.clear ();
-      std::cin.ignore (2000, '\n');
-    }
-  val = degDist.getDeg ();
-  std::cout << desc << ": " << degDist << std::endl;
   return 0;
 }
 

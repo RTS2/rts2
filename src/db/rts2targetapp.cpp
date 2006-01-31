@@ -4,6 +4,7 @@
 #include "../utils/libnova_cpp.h"
 
 #include <sstream>
+#include <iostream>
 
 Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
@@ -15,6 +16,25 @@ Rts2AppDb (in_argc, in_argv)
 Rts2TargetApp::~Rts2TargetApp (void)
 {
   delete target;
+}
+
+int
+Rts2TargetApp::askForDegrees (const char *desc, double &val)
+{
+  LibnovaDegDist degDist = LibnovaDegDist (val);
+  while (1)
+    {
+      std::cout << desc << " [" << degDist << "]: ";
+      std::cin >> degDist;
+      if (!std::cin.fail ())
+	break;
+      std::cout << "Invalid string!" << std::endl;
+      std::cin.clear ();
+      std::cin.ignore (2000, '\n');
+    }
+  val = degDist.getDeg ();
+  std::cout << desc << ": " << degDist << std::endl;
+  return 0;
 }
 
 int

@@ -31,7 +31,6 @@ protected:
    */
   int askForInt (const char *desc, int &val);
   int askForDouble (const char *desc, double &val);
-  int askForDegrees (const char *desc, double &val);
   int askForString (const char *desc, std::string & val);
 
 public:  Rts2App (int in_argc, char **in_argv);
