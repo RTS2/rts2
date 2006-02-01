@@ -177,6 +177,7 @@ class Rts2DevCamera:public Rts2Device
 {
 private:
   char *focuserDevice;
+  int lastFilterNum;
 protected:
   char *device_file;
   // camera chips
@@ -305,6 +306,11 @@ public:
 	  return 1;
       }
     return Rts2Device::grantPriority (conn);
+  }
+
+  int getLastFilterNum ()
+  {
+    return lastFilterNum;
   }
 };
 

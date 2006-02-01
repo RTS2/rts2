@@ -279,7 +279,7 @@ CameraChip::sendFirstLine ()
       header.binnings[1] = usedBinningVertical;
       header.x = chipUsedReadout->x;
       header.y = chipUsedReadout->y;
-      header.filter = camera->getFilterNum ();
+      header.filter = camera->getLastFilterNum ();
       header.shutter = shutter_state;
       int ret;
       ret = sendReadoutData ((char *) &header, sizeof (imghdr));
@@ -609,6 +609,8 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 
   Rts2DevConnData *data_conn;
   data_conn = new Rts2DevConnData (this, conn);
+
+  lastFilterNum = getFilterNum ();
 
   ret = data_conn->init ();
   // add data connection
