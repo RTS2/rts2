@@ -1,4 +1,5 @@
 #include "genfoc.h"
+#include "../utils/rts2config.h"
 
 #include <iostream>
 #include <iomanip>
@@ -213,10 +214,10 @@ Rts2Client (in_argc, in_argv)
   photometerFile = NULL;
   photometerTime = 1;
   photometerFilterChange = 0;
+  configFile = NULL;
 
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
-
   addOption ('A', "autodark", 0, "take (and use) dark image");
   addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
   addOption ('c', "center", 0, "takes only center images");
@@ -236,6 +237,7 @@ Rts2Client (in_argc, in_argv)
   addOption ('C', "change_filter", 1,
 	     "change filter on photometer after taking n counts; default to 0 (don't change)");
   addOption ('K', "skip_filter", 1, "Skip that filter number");
+  addOption ('c', "config", 1, "configuration file");
 }
 
 Rts2GenFocClient::~Rts2GenFocClient (void)
@@ -354,6 +356,19 @@ Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }
+}
+
+int
+Rts2GenFocClient::init ()
+{
+  Rts2Config *config;
+  int ret;
+
+  config = Rts2Config::instance ();
+  ret = config->loadFile (configFile);
+  if (ret)
+    return ret;
+  return Rts2Client::init ();
 }
 
 int
