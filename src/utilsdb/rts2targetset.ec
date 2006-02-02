@@ -49,7 +49,8 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
   for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
   {
     Target *tar = createTarget (*iter, Rts2Config::instance()->getObserver ());
-    push_back (tar);
+    if (tar)
+      push_back (tar);
   }
 
   target_ids.clear ();
