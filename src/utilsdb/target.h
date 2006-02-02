@@ -746,6 +746,7 @@ public:
 class TargetSwiftFOV:public Target
 {
 private:
+  int oldSwiftId;
   int swiftId;
   struct ln_equ_posn swiftFovCenter;
   time_t swiftTimeStart;

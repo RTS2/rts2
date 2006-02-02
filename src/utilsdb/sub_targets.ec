@@ -1573,6 +1573,8 @@ TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Tar
 {
   swiftOnBonus = 0;
   target_id = TARGET_SWIFT_FOV;
+  swiftId = -1;
+  oldSwiftId = -1;
   swiftName = NULL;
 }
 
@@ -1644,6 +1646,8 @@ TargetSwiftFOV::load ()
       }	
       swiftFovCenter.ra = testEqu.ra;
       swiftFovCenter.dec = testEqu.dec;
+      if (oldSwiftId == -1)
+        oldSwiftId = d_swift_id;
       swiftId = d_swift_id;
       swiftTimeStart = d_swift_time;
       swiftTimeEnd = d_swift_time + (int) d_swift_obstime;
@@ -1784,7 +1788,6 @@ TargetSwiftFOV::considerForObserving (double JD)
 int
 TargetSwiftFOV::beforeMove ()
 {
-  int oldSwiftId = swiftId;
   // are we still the best swiftId on planet?
   load ();
   if (oldSwiftId != swiftId)
@@ -1824,6 +1827,14 @@ TargetSwiftFOV::getBonus (double JD)
 int
 TargetSwiftFOV::isContinues ()
 {
+  int ret;
+  load ();
+  if (oldSwiftId != swiftId)
+    return 0;
+  ret = Target::getBonus ();
+  // FOV become uinteresting..
+  if (ret == 1)
+    return 0;
   return 1;
 }
 
