@@ -154,6 +154,9 @@ private:
   // execute next search step, if necessary
   int changeSearch ();
 
+  void getAxis ();
+  int parkBootesSensors ();
+
   int searchStep;
   long searchUsecTime;
 
@@ -633,6 +636,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 	case RESET_RESTART:
 	  tel_write ("bR#", 3);
 	  break;
+	case RESET_INIT_START:
 	case RESET_WARM_START:
 	  tel_write ("bW#", 3);
 	  break;
@@ -1161,6 +1165,16 @@ Rts2DevTelescopeGemini::baseInfo ()
   return 0;
 }
 
+void
+Rts2DevTelescopeGemini::getAxis ()
+{
+  int feature;
+  tel_gemini_get (311, &feature);
+  telAxis[0] = (double) ((feature & 1) ? 1 : 0);
+  telAxis[1] = (double) ((feature & 2) ? 1 : 0);
+  telFlip = (feature & 2) ? 1 : 0;
+}
+
 int
 Rts2DevTelescopeGemini::info ()
 {
@@ -1173,11 +1187,7 @@ Rts2DevTelescopeGemini::info ()
   ha = ln_range_degrees (telSiderealTime * 15.0 - telRa);
   if (bootesSensors)
     {
-      int feature;
-      tel_gemini_get (311, &feature);
-      telAxis[0] = (double) ((feature & 1) ? 1 : 0);
-      telAxis[1] = (double) ((feature & 2) ? 1 : 0);
-      telFlip = (feature & 2) ? 1 : 0;
+      getAxis ();
     }
   else
     {
@@ -1198,7 +1208,9 @@ Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
 {
   char command[6];
   sprintf (command, "#:R%c#", new_rate);
-  return tel_write (command, 5);
+  if (tel_write (command, 5) > 0)
+    return 0;
+  return -1;
 }
 
 /*! 
@@ -2093,9 +2105,69 @@ Rts2DevTelescopeGemini::startWorm ()
 }
 
 int
+Rts2DevTelescopeGemini::parkBootesSensors ()
+{
+  int ret;
+  char direction;
+  time_t timeout;
+  time_t now;
+  double old_tel_axis;
+  ret = info ();
+  startWorm ();
+  // first park in RA
+  old_tel_axis = telAxis[0];
+  direction = old_tel_axis ? DIR_EAST : DIR_WEST;
+  time (&timeout);
+  now = timeout;
+  timeout += 20;
+  ret = tel_set_rate (RATE_SLEW);
+  if (ret)
+    return ret;
+  ret = telescope_start_move (direction);
+  if (ret)
+    {
+      telescope_stop_move (direction);
+      return ret;
+    }
+  while (telAxis[0] == old_tel_axis && now < timeout)
+    {
+      getAxis ();
+      time (&now);
+    }
+  telescope_stop_move (direction);
+  // then in dec
+  //
+  old_tel_axis = telAxis[1];
+  direction = old_tel_axis ? DIR_NORTH : DIR_SOUTH;
+  time (&timeout);
+  now = timeout;
+  timeout += 20;
+  ret = telescope_start_move (direction);
+  if (ret)
+    {
+      telescope_stop_move (direction);
+      return ret;
+    }
+  while (telAxis[1] == old_tel_axis && now < timeout)
+    {
+      getAxis ();
+      time (&now);
+    }
+  telescope_stop_move (direction);
+  tel_gemini_set (205, 0);
+  tel_gemini_set (206, 0);
+  return 0;
+}
+
+int
 Rts2DevTelescopeGemini::resetMount (resetStates reset_mount)
 {
   int ret;
+  if (reset_mount == RESET_INIT_START && bootesSensors)
+    {
+      // park using optical things
+      parkBootesSensors ();
+    }
   ret = tel_gemini_set (65535, 65535);
   if (ret)
     return ret;

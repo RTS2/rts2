@@ -1012,6 +1012,8 @@ Rts2DevConnTelescope::commandAuthorized ()
 	    reset_state = RESET_WARM_START;
 	  else if (!strcmp (param, "cold_start"))
 	    reset_state = RESET_COLD_START;
+	  else if (!strcmp (param, "init"))
+	    reset_state = RESET_INIT_START;
 	  else
 	    return -2;
 	}

@@ -12,7 +12,7 @@
 // acquired from 
 
 typedef enum
-{ RESET_RESTART, RESET_WARM_START, RESET_COLD_START }
+{ RESET_RESTART, RESET_WARM_START, RESET_COLD_START, RESET_INIT_START }
 resetStates;
 
 class Rts2DevTelescope:public Rts2Device
