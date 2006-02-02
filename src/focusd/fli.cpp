@@ -33,7 +33,6 @@ class Rts2DevFocuserFli:public Rts2DevFocuser
 {
 private:
   flidev_t dev;
-  char *deviceName;
   flidomain_t deviceDomain;
 
   int fliDebug;
@@ -55,10 +54,8 @@ Rts2DevFocuser (in_argc, in_argv)
 {
   focTemp = nan ("f");
 
-  deviceName = NULL;
   deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
   fliDebug = FLIDEBUG_NONE;
-  addOption ('f', "device_name", 1, "device name");
   addOption ('D', "domain", 1,
 	     "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
   addOption ('b', "fli_debug", 1,
@@ -75,9 +72,6 @@ Rts2DevFocuserFli::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'f':
-      deviceName = optarg;
-      break;
     case 'D':
       deviceDomain = FLIDEVICE_FOCUSER;
       if (!strcasecmp ("USB", optarg))
@@ -120,6 +114,8 @@ Rts2DevFocuserFli::init ()
 {
   LIBFLIAPI ret;
   int ret_f;
+  char **names;
+  char *nam_sep;
 
   ret_f = Rts2DevFocuser::init ();
   if (ret_f)
@@ -128,7 +124,22 @@ Rts2DevFocuserFli::init ()
   if (fliDebug)
     FLISetDebugLevel (NULL, FLIDEBUG_ALL);
 
-  ret = FLIOpen (&dev, deviceName, deviceDomain);
+  ret = FLIList (deviceDomain, &names);
+  if (ret)
+    return -1;
+
+  if (names[0] == NULL)
+    {
+      syslog (LOG_ERR, "Rts2DevFocuserFli::init No device found!");
+      return -1;
+    }
+
+  nam_sep = strchr (names[0], ';');
+  if (nam_sep)
+    *nam_sep = '\0';
+
+  ret = FLIOpen (&dev, names[0], deviceDomain);
+  FLIFreeList (names);
   if (ret)
     return -1;
 
