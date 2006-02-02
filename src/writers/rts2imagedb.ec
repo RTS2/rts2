@@ -329,7 +329,7 @@ Rts2ImageDb::setDarkFromDb ()
         camera_name = :d_camera_name
       AND dark_exposure = :d_img_exposure
       AND abs (dark_temperature - :d_img_temperature) < 2
-      AND abs (EXTRACT (EPOCH FROM dark_date) - :d_date) < 43200
+      AND abs (EXTRACT (EPOCH FROM dark_date) - :d_date) < 60000
     ORDER BY
       dark_date DESC;
   EXEC SQL OPEN dark_cursor;
