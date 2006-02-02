@@ -83,8 +83,8 @@ void
 Rts2DevClientCameraImage::writeFilter ()
 {
   int camFilter = images->getFilter ();
-  if (camFilter < 1)
-    camFilter = 1;
+  if (camFilter < 0)
+    camFilter = 0;
   char *flt = filter;
   char *flt_end;
   char imageFilter[4];
@@ -93,7 +93,7 @@ Rts2DevClientCameraImage::writeFilter ()
     {
       while (isspace (*flt))
 	flt++;
-      if (camFilter == 1)	// got filter..
+      if (camFilter == 0)	// got filter..
 	break;
       while (*flt && !isspace (*flt))
 	flt++;
@@ -101,7 +101,7 @@ Rts2DevClientCameraImage::writeFilter ()
 	break;
       camFilter--;
     }
-  if (camFilter == 1 && *flt)
+  if (camFilter == 0 && *flt)
     {
       flt_end = flt;
       flt_len = 0;
