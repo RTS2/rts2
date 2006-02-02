@@ -21,8 +21,7 @@ Rts2ConnFork::~Rts2ConnFork (void)
 {
   if (childPid > 0)
     kill (childPid, SIGINT);
-  if (exePath)
-    delete[]exePath;
+  delete[]exePath;
 }
 
 int
