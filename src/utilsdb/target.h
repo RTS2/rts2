@@ -159,6 +159,8 @@ private:
 
   void sendTargetMail (int eventMask, const char *subject_text);	// send mail to users..
 
+  double minAlt;
+
 protected:
   int target_id;
   int obs_target_id;
@@ -203,6 +205,12 @@ public:
   {
     return getAltAz (hrz, ln_get_julian_from_sys ());
   }
+
+  double getMinAlt ()
+  {
+    return minAlt;
+  }
+
   virtual int getAltAz (struct ln_hrz_posn *hrz, double JD);
 
   int getGalLng (struct ln_gal_posn *gal)
@@ -413,7 +421,7 @@ public:
   {
     return 0;
   }
-  int isGood (double lst, double ra, double dec);
+  virtual int isGood (double lst, double JD, struct ln_equ_posn *pos);
   // scheduler functions
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();

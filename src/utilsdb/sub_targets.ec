@@ -667,7 +667,7 @@ FlatTarget::load ()
       if (hrz.alt < 10)
         continue;
       // and of course we should be above horizont..
-      if (!isGood (lst, d_tar_ra, d_tar_dec))
+      if (!isGood (lst, JD, &d_tar))
 	continue;
       // test if we found the best target..
       curDist = ln_get_angular_separation (&d_tar, &antiSolarPosition);
@@ -1761,7 +1761,7 @@ TargetSwiftFOV::considerForObserving (double JD)
     return -1;
   }
 
-  ret = isGood (lst, curr_position.ra, curr_position.dec);
+  ret = isGood (lst, JD, &curr_position);
   
   if (!ret)
   {
@@ -1827,7 +1827,7 @@ TargetSwiftFOV::getBonus (double JD)
 int
 TargetSwiftFOV::isContinues ()
 {
-  int ret;
+  double ret;
   load ();
   if (oldSwiftId != swiftId)
     return 0;

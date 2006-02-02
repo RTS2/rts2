@@ -92,6 +92,9 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
   epochId = 1;
   config->getInteger ("observatory", "epoch_id", epochId);
 
+  minAlt = 0;
+  config->getDouble ("observatory", "min_alt", minAlt);
+
   obs_id = -1;
   observation = NULL;
 
@@ -123,6 +126,9 @@ Target::Target ()
 
   epochId = 1;
   config->getInteger ("observatory", "epoch_id", epochId);
+
+  minAlt = 0;
+  config->getDouble ("observatory", "min_alt", minAlt);
 
   obs_id = -1;
   observation = NULL;
@@ -701,9 +707,13 @@ Target::selectedAsGood ()
  * return 0 if we cannot observe that target, 1 if it's above horizont.
  */
 int
-Target::isGood (double lst, double ra, double dec)
+Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
 {
-  return Rts2Config::instance ()->getObjectChecker ()->is_good (lst, ra, dec);
+  struct ln_hrz_posn hrz;
+  getAltAz (&hrz, JD);
+  if (hrz.alt < minAlt)
+    return 0;
+  return Rts2Config::instance ()->getObjectChecker ()->is_good (lst, pos->ra, pos->dec);
 }
 
 /****
@@ -723,7 +733,7 @@ Target::considerForObserving (double JD)
     changePriority (-100, JD + 1);
     return -1;
   }
-  ret = isGood (lst, curr_position.ra, curr_position.dec);
+  ret = isGood (lst, JD, &curr_position);
   if (!ret)
   {
     struct ln_rst_time rst;
@@ -1198,10 +1208,11 @@ operator << (std::ostream &_os, Target *target)
   // is above horizont?
   gst = ln_get_mean_sidereal_time (JD);
   lst = gst + Rts2Config::instance ()->getObserver()->lng / 15.0;
-  _os << (target->isGood (lst, pos.ra, pos.dec)
+  _os << (target->isGood (lst, JD, & pos)
    ? "Target is above local horizont." 
    : "Target is below local horizont, it's not possible to observe it.")
    << std::endl;
+  _os << "MIN_ALT " << target->getMinAlt () << std::endl;
   target->printExtra (_os);
   return _os;
 }
