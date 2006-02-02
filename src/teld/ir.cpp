@@ -617,6 +617,7 @@ int
 Rts2DevTelescopeIr::startMove (double ra, double dec)
 {
   int status = 0;
+  double sep;
 
   target.ra = ra;
   target.dec = dec;
@@ -639,6 +640,13 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   if (status)
     return -1;
 
+  // wait till we get it processed
+  sep = getMoveTargetSep ();
+  if (sep > 1)
+    sleep (3);
+  else if (sep > 2 / 60.0)
+    usleep (USEC_SEC / 10);
+
   time (&timeout);
   timeout += 120;
   return 0;
@@ -654,7 +662,11 @@ Rts2DevTelescopeIr::isMoving ()
   time (&now);
   // 0.01 = 36 arcsec
   if (fabs (poin_dist) <= 0.01)
-    return -2;
+    {
+      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::isMoving target distance: %f",
+	      poin_dist);
+      return -2;
+    }
   // finish due to timeout
   if (timeout < now)
     {
@@ -764,13 +776,13 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   double jd = ln_get_julian_from_sys ();
   int sample = 1;
   eq_astr.ra = real_ra;
-  eq_ast.dec = real_dec;
+  eq_astr.dec = real_dec;
   observer.lng = telLongtitude;
   observer.lat = telLatitude;
   ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
   getTargetAltAz (&hrz_target, jd);
   // calculate alt & az diff
-  az_off = hrz_astr.az - hrz_target.az;
+/*  az_off = hrz_astr.az - hrz_target.az;
   alt_off = hrz_astr.alt - hrz_target.alt;
   sep = ln_get_angular_separation (&hrz_astr, &hrz_target);
   syslog (LOG_DEBUG,
@@ -787,7 +799,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   if (status)
     {
       return -1;
-    }
+    } */
   return 0;
 }
 
