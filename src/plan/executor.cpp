@@ -415,6 +415,17 @@ Rts2Executor::changeMasterState (int new_state)
 	  switchTarget ();
 	}
       break;
+    case (SERVERD_DAWN | SERVERD_STANDBY):
+    case (SERVERD_NIGHT | SERVERD_STANDBY):
+    case (SERVERD_DUSK | SERVERD_STANDBY):
+      delete nextTarget;
+      // next will be dark..
+      nextTarget = createTarget (1, observer);
+      if (!currentTarget)
+	{
+	  switchTarget ();
+	}
+      break;
     default:
       // we need to stop observation that is continuus
       // that will guarantie that in isContinues call, we will not que our target again
@@ -627,6 +638,14 @@ Rts2Executor::switchTarget ()
 	case SERVERD_DAWN:
 	  doSwitch ();
 	  break;
+	case SERVERD_DUSK | SERVERD_STANDBY:
+	case SERVERD_DAWN | SERVERD_STANDBY:
+	  if (!currentTarget && nextTarget && nextTarget->getTargetID () == 1)
+	    {
+	      // switch to dark..
+	      doSwitch ();
+	      break;
+	    }
 	default:
 	  if (currentTarget)
 	    {
