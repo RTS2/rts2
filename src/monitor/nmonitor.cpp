@@ -509,7 +509,7 @@ private:
 public:
     Rts2NMGrb (Rts2CNMonConn * in_connection):Rts2DevClientGrb (in_connection)
   {
-    in_connection->setStatusBegin (5);
+    in_connection->setStatusBegin (6);
     connection = in_connection;
   }
   virtual void postEvent (Rts2Event * event)
@@ -537,6 +537,8 @@ Rts2NMGrb::print (WINDOW * wnd)
   mvwprintw (wnd, 2, 1, "Delta: %-5i", getValueDouble ("delta"));
   mvwprintw (wnd, 3, 1, "L Tar: %5", getValueChar ("last_target"));
   mvwprintw (wnd, 4, 1, "LTime: %5f", getValueDouble ("last_target_time"));
+  mvwprintw (wnd, 5, 1, "Exec_link: %s",
+	     getValueInteger ("exec") ? "OK" : "failed");
 }
 
 // here begins nmonitor common part
