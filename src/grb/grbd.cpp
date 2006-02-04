@@ -206,6 +206,7 @@ Rts2DevGrb::sendInfo (Rts2Conn * conn)
   conn->sendValue ("delta", gcncnn->delta ());
   conn->sendValue ("last_target", gcncnn->lastTarget ());
   conn->sendValue ("last_target_time", gcncnn->lastTargetTime ());
+  conn->sendValue ("exec", getOpenConnection ("EXEC") ? 1 : 0);
   return 0;
 }
 
