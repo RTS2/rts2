@@ -128,7 +128,7 @@ Rts2DevFocuserIr::Rts2DevFocuserIr (int in_argc, char **in_argv):Rts2DevFocuser 
 
 Rts2DevFocuserIr::~Rts2DevFocuserIr ()
 {
-
+  delete tplc;
 }
 
 int
