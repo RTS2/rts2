@@ -1,23 +1,7 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include <errno.h>
-#include <string.h>
-#include <math.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <libnova/libnova.h>
-
-#include "status.h"
-#include "telescope.h"
-
-#include <cstdio>
-#include <cstdarg>
-#include <opentpl/client.h>
-#include <list>
-#include <iostream>
+#include <sstream>
 #include <fstream>
+
+#include "ir.h"
 
 using namespace OpenTPL;
 
@@ -25,16 +9,6 @@ using namespace OpenTPL;
 #define LATITUDE 37.064167
 #define ALTITUDE 2896
 #define BLIND_SIZE 1.0
-
-class ErrorTime
-{
-  time_t etime;
-  int error;
-public:
-    ErrorTime (int in_error);
-  int clean (time_t now);
-  int isError (int in_error);
-};
 
 ErrorTime::ErrorTime (int in_error)
 {
@@ -60,67 +34,6 @@ ErrorTime::isError (int in_error)
     }
   return 0;
 }
-
-class Rts2DevTelescopeIr:public Rts2DevTelescope
-{
-private:
-  std::string * ir_ip;
-  int ir_port;
-  Client *tplc;
-  time_t timeout;
-  double cover;
-  enum
-  { OPENED, OPENING, CLOSING, CLOSED } cover_state;
-
-  struct ln_equ_posn target;
-
-    template < typename T > int tpl_get (const char *name, T & val,
-					 int *status);
-    template < typename T > int tpl_set (const char *name, T val,
-					 int *status);
-    template < typename T > int tpl_setw (const char *name, T val,
-					  int *status);
-
-  virtual int coverClose ();
-  virtual int coverOpen ();
-
-  void addError (int in_error);
-
-  void checkErrors ();
-  void checkCover ();
-  void checkPower ();
-
-    std::list < ErrorTime * >errorcodes;
-  int irTracking;
-  char *irConfig;
-public:
-    Rts2DevTelescopeIr (int argc, char **argv);
-    virtual ~ Rts2DevTelescopeIr (void);
-  virtual int processOption (int in_opt);
-  virtual int init ();
-  virtual int idle ();
-  virtual int ready ();
-  virtual int baseInfo ();
-  virtual int info ();
-  virtual int startMove (double tar_ra, double tar_dec);
-  virtual int isMoving ();
-  virtual int endMove ();
-  virtual int startPark ();
-  virtual int isParking ();
-  virtual int endPark ();
-  virtual int stopMove ();
-  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
-			      double real_dec);
-  virtual int correct (double cor_ra, double cor_dec, double real_ra,
-		       double real_dec);
-  virtual int change (double chng_ra, double chng_dec);
-  virtual int saveModel ();
-  virtual int loadModel ();
-  virtual int stopWorm ();
-  virtual int startWorm ();
-  virtual int changeMasterState (int new_state);
-  virtual int resetMount (resetStates reset_mount);
-};
 
 template < typename T > int
 Rts2DevTelescopeIr::tpl_get (const char *name, T & val, int *status)
@@ -235,7 +148,7 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
 
 Rts2DevTelescopeIr::~Rts2DevTelescopeIr (void)
 {
-
+  delete tplc;
 }
 
 int
@@ -262,14 +175,8 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 }
 
 int
-Rts2DevTelescopeIr::init ()
+Rts2DevTelescopeIr::initDevice ()
 {
-  int ret;
-  int status = 0;
-  ret = Rts2DevTelescope::init ();
-  if (ret)
-    return ret;
-
   if (!ir_ip || !ir_port)
     {
       fprintf (stderr, "Invalid port or IP address of mount controller PC\n");
@@ -289,6 +196,22 @@ Rts2DevTelescopeIr::init ()
       syslog (LOG_ERR, "Connection to server failed");
       return -1;
     }
+  return 0;
+}
+
+int
+Rts2DevTelescopeIr::init ()
+{
+  int ret;
+  int status = 0;
+  ret = Rts2DevTelescope::init ();
+  if (ret)
+    return ret;
+
+  ret = initDevice ();
+  if (ret)
+    return ret;
+
   tpl_get ("COVER.REALPOS", cover, &status);
   if (cover == 0)
     cover_state = CLOSED;
@@ -299,10 +222,33 @@ Rts2DevTelescopeIr::init ()
   return 0;
 }
 
+// decode IR error
+int
+Rts2DevTelescopeIr::getError (int in_error, std::string & desc)
+{
+  char *txt;
+  std::string err_desc;
+  std::ostringstream os;
+  int status;
+  int errNum = in_error & 0x00ffffff;
+  asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errNum);
+  status = 0;
+  status = tpl_get (txt, err_desc, &status);
+  if (status)
+    os << "Telescope getting error: " << status
+      << " sev:" << std::hex << (in_error & 0xff000000)
+      << " err:" << std::hex << errNum;
+  else
+    os << "Telescope sev: " << std::hex << (in_error & 0xff000000)
+      << " err:" << std::hex << errNum << " desc: " << err_desc;
+  free (txt);
+  desc = os.str ();
+  return status;
+}
+
 void
 Rts2DevTelescopeIr::addError (int in_error)
 {
-  char *txt;
   std::string desc;
   std::list < ErrorTime * >::iterator errIter;
   ErrorTime *errt;
@@ -350,18 +296,8 @@ Rts2DevTelescopeIr::addError (int in_error)
 	return;
     }
   // new error
-  asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errNum);
-  status = 0;
-  status = tpl_get (txt, desc, &status);
-  if (status)
-    syslog (LOG_ERR,
-	    "Rts2DevTelescopeIr::checkErrors Telescope getting error: %i sev:%x err:%x",
-	    in_error, in_error & 0xff000000, errNum);
-  else
-    syslog (LOG_DEBUG,
-	    "Rts2DevTelescopeIr::checkErrors Telescope sev: %x err: %x desc: %s",
-	    in_error & 0xff000000, in_error & 0x00ffffff, desc.c_str ());
-  free (txt);
+  getError (in_error, desc);
+  syslog (LOG_ERR, "Rts2DevTelescopeIr::checkErrors %s", desc.c_str ());
   errt = new ErrorTime (in_error);
   errorcodes.push_back (errt);
 }
@@ -957,20 +893,4 @@ Rts2DevTelescopeIr::resetMount (resetStates reset_mount)
 	}
     }
   return Rts2DevTelescope::resetMount (reset_mount);
-}
-
-int
-main (int argc, char **argv)
-{
-  Rts2DevTelescopeIr *device = new Rts2DevTelescopeIr (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize telescope bridge - exiting!\n");
-      exit (0);
-    }
-  device->run ();
-  delete device;
 }
