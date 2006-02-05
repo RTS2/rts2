@@ -635,6 +635,8 @@ Rts2Block (in_argc, in_argv)
 
   device_host = NULL;
 
+  lockf = 0;
+
   // now add options..
   addOption ('p', "port", 1, "port to listen for request");
   addOption ('l', "hostname", 1,
@@ -651,7 +653,8 @@ Rts2Device::~Rts2Device (void)
 {
   int i;
 
-  close (lockf);
+  if (lockf)
+    close (lockf);
 
   for (i = 0; i < statesSize; i++)
     delete states[i];
