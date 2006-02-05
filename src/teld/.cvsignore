@@ -4,3 +4,4 @@ Makefile
 Makefile.in
 *~
 rts2-teld*
+rts2-ir-errors
