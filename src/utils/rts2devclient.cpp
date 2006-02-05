@@ -289,7 +289,8 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool Rts2DevClientCamera::isIdle ()
+bool
+Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -733,4 +734,5 @@ Rts2DevClientGrb::Rts2DevClientGrb (Rts2Conn * in_connection):Rts2DevClient
   addValue (new Rts2ValueDouble ("delta"));
   addValue (new Rts2ValueString ("last_target"));
   addValue (new Rts2ValueDouble ("last_target_time"));
+  addValue (new Rts2ValueInteger ("exec"));
 }
