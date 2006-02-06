@@ -557,8 +557,7 @@ Rts2Executor::setGrb (int grbId)
       return 0;
     }
   // otherwise set us as next target
-  if (nextTarget)
-    delete nextTarget;
+  delete nextTarget;
   nextTarget = grbTarget;
   return 0;
 }
