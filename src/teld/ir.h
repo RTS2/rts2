@@ -52,6 +52,8 @@ private:
   virtual int coverClose ();
   virtual int coverOpen ();
 
+  int startMoveReal (double ra, double dec);
+
   void addError (int in_error);
 
   void checkErrors ();

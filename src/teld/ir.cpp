@@ -550,6 +550,19 @@ Rts2DevTelescopeIr::info ()
 }
 
 int
+Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
+{
+  int status = 0;
+  status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
+  status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
+  status = tpl_set ("POINTING.TRACK", irTracking, &status);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
+	  status);
+
+  return status;
+}
+
+int
 Rts2DevTelescopeIr::startMove (double ra, double dec)
 {
   int status = 0;
@@ -567,12 +580,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 	}
     }
 
-  status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
-  status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
-  status = tpl_set ("POINTING.TRACK", irTracking, &status);
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
-	  status);
-
+  status = startMoveReal (ra, dec);
   if (status)
     return -1;
 
@@ -684,7 +692,7 @@ Rts2DevTelescopeIr::stopMove ()
 	}
       return 0;
     }
-  startMove (telRa, telDec);
+  startMoveReal (telRa, telDec);
   return 0;
 }
 
