@@ -100,6 +100,11 @@ protected:
   }
   // returns 0 when we need to 
   int setTarget (double tar_ra, double tar_dec);
+  void getTarget (struct ln_equ_posn *out_tar)
+  {
+    out_tar->ra = lastTar.ra;
+    out_tar->dec = lastTar.dec;
+  }
   void unsetTarget ()
   {
     lastTar.ra = -1000;
