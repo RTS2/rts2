@@ -28,6 +28,7 @@ $PSQLDB < create/views.sql
 
 $PSQLDB < update/rel_0_5_1.sql
 $PSQLDB < update/rel_0_5_2.sql
+$PSQLDB < update/rel_0_6_0.sql
 
 # grant rights
 
