@@ -726,6 +726,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   double alt_off;
   double sep;
   double jd = ln_get_julian_from_sys ();
+  double quality;
   int sample = 1;
   int status = 0;
 
@@ -750,7 +751,9 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   status = tpl_set ("ZD.OFFSET", alt_off, &status);
   // sample..
   status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::correct status: %i", status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::correct quality: % f status: %i",
+	  quality, status);
   if (status)
     {
       return -1;
