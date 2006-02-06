@@ -7,6 +7,7 @@
 #include <vector>
 
 class Rts2Obs;
+class Rts2ImageDb;
 
 /**
  * Class for accesing images.

@@ -138,8 +138,7 @@ public:
   printStatistics (std::ostream & _os);
 
   friend
-    std::ostream &
-  operator << (std::ostream & _os, Rts2ObsSet & obs_set);
+    std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);

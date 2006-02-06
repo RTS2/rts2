@@ -14,8 +14,6 @@
 #define DISPLAY_ALL		0x01
 #define DISPLAY_SUMMARY		0x02
 
-class Rts2ImgSet;
-
 /**
  * Observation class.
  *
@@ -99,13 +97,7 @@ public:
   // call appopriate mails
   void checkUnprocessedImages ();
 
-  int getNumberOfImages ()
-  {
-    loadImages ();
-    if (imgset)
-      return imgset->size ();
-    return 0;
-  }
+  int getNumberOfImages ();
 
   int getNumberOfGoodImages ();
 

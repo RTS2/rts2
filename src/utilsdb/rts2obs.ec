@@ -281,6 +281,15 @@ Rts2Obs::checkUnprocessedImages ()
 }
 
 int
+Rts2Obs::getNumberOfImages ()
+{
+  loadImages ();
+  if (imgset)
+    return imgset->size ();
+  return 0;
+}
+
+int
 Rts2Obs::getNumberOfGoodImages ()
 {
   loadImages ();

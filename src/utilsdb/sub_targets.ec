@@ -1,5 +1,6 @@
 #include <libnova/libnova.h>
 #include "target.h"
+#include "rts2plan.h"
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
 
@@ -11,9 +12,6 @@ EXEC SQL include sqlca;
 // ConstTarget
 ConstTarget::ConstTarget () : Target ()
 {
-  tar_priority = nan ("f");
-  tar_bonus = nan ("f");
-  tar_enabled = -1;
 }
 
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
@@ -40,30 +38,16 @@ ConstTarget::load ()
   EXEC SQL BEGIN DECLARE SECTION;
   double d_ra;
   double d_dec;
-  VARCHAR d_tar_name[TARGET_NAME_LEN];
-  float d_tar_priority;
-  int d_tar_priority_ind;
-  float d_tar_bonus;
-  int d_tar_bonus_ind;
-  bool d_tar_enabled;
   int db_tar_id = getObsTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
   SELECT 
     tar_ra,
-    tar_dec,
-    tar_name, 
-    tar_priority,
-    tar_bonus,
-    tar_enabled
+    tar_dec
   INTO
     :d_ra,
-    :d_dec,
-    :d_tar_name,
-    :d_tar_priority :d_tar_priority_ind,
-    :d_tar_bonus :d_tar_bonus_ind,
-    :d_tar_enabled
+    :d_dec
   FROM
     targets
   WHERE
@@ -75,25 +59,6 @@ ConstTarget::load ()
   }
   position.ra = d_ra;
   position.dec = d_dec;
-
-  if (target_name)
-    delete[] target_name;
-  
-  target_name = new char[d_tar_name.len + 1];
-  strncpy (target_name, d_tar_name.arr, d_tar_name.len);
-  target_name[d_tar_name.len] = '\0';
-
-  if (d_tar_priority_ind >= 0)
-    tar_priority = d_tar_priority;
-  else
-    tar_priority = -1;
-    
-  if (d_tar_bonus_ind >= 0)
-    tar_bonus = d_tar_bonus;
-  else
-    tar_bonus = -1;
-
-  tar_enabled = d_tar_enabled;
 
   return Target::load ();
 }
@@ -1576,6 +1541,7 @@ TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Tar
   swiftId = -1;
   oldSwiftId = -1;
   swiftName = NULL;
+  target_name = new char[200];
 }
 
 TargetSwiftFOV::~TargetSwiftFOV (void)
@@ -1951,4 +1917,201 @@ TargetTerestial::startSlew (struct ln_equ_posn *pos)
   if (ret == -1)
     return ret;
   return OBS_MOVE_FIXED;
+}
+
+TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (in_tar_id, in_obs)
+{
+  selectedPlan = NULL;
+  nextPlan = NULL;
+  hourLastSearch = 16.0;
+  Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch);
+}
+
+TargetPlan::~TargetPlan (void)
+{
+  delete selectedPlan;
+  delete nextPlan;
+}
+
+int
+TargetPlan::load (double JD)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_cur_plan_id;
+  double db_cur_plan_start;
+
+  long last;
+  EXEC SQL END DECLARE SECTION;
+
+  int db_plan_id = -1;
+  int db_next_plan_id = -1;
+
+  time_t now;
+
+  int ret;
+
+  ln_get_timet_from_julian (JD, &now);
+
+  // we have observation that can be executed now
+
+  if (selectedPlan 
+    && nextPlan
+    && nextPlan->getPlanStart () < now)
+  {
+    return 0;
+  }
+
+  // get plan entries from last 12 hours..
+  last = now - (16 * 3600);
+
+  EXEC SQL DECLARE cur_plan CURSOR FOR
+  SELECT
+    plan_id,
+    EXTRACT (EPOCH FROM plan_start)
+  FROM
+    plan
+  WHERE
+    EXTRACT (EPOCH FROM plan_start) >= :last
+  ORDER BY
+    plan_start ASC;
+
+  EXEC SQL OPEN cur_plan;
+  while (1)
+  {
+    EXEC SQL FETCH next FROM cur_plan INTO
+      :db_cur_plan_id,
+      :db_cur_plan_start;
+    if (sqlca.sqlcode)
+      break;
+    if (db_plan_id == -1 && db_cur_plan_start > now)
+    {
+      // that's the last plan ID
+      db_plan_id = db_next_plan_id;
+      db_next_plan_id = db_cur_plan_id;
+      break;
+    }
+    // keep for futher reference
+    db_next_plan_id = db_cur_plan_id;
+  }
+  if (sqlca.sqlcode)
+  {
+    if (sqlca.sqlcode != ECPG_NOT_FOUND
+      || db_next_plan_id == -1)
+    {
+      logMsgDb ("TargetPlan::load cannot find any plan");
+      EXEC SQL CLOSE cur_plan;
+      EXEC SQL ROLLBACK;
+      return 0;
+    }
+    // we don't find next, but we have current
+    db_plan_id = db_next_plan_id;
+    db_next_plan_id = -1;
+  }
+  EXEC SQL CLOSE cur_plan;
+  EXEC SQL COMMIT;
+
+  ret = Target::load ();
+  if (ret)
+    return ret;
+  
+  if (db_plan_id != -1)
+  {
+    delete selectedPlan;
+    selectedPlan = new Rts2Plan (db_plan_id);
+    ret = selectedPlan->load ();
+    if (ret)
+    {
+      delete selectedPlan;
+      selectedPlan = NULL;
+      setTargetName ("Cannot load target from schedule");
+      return -1;
+    }
+    setTargetName (selectedPlan->getTarget()->getTargetName ());
+  }
+  else
+  {
+    setTargetName ("No scheduled target");
+  }
+  if (db_next_plan_id != -1)
+  {
+    delete nextPlan;
+    nextPlan = new Rts2Plan (db_next_plan_id);
+    ret = nextPlan->load ();
+    if (ret)
+    {
+      delete nextPlan;
+      nextPlan = NULL;
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int
+TargetPlan::getDBScript (const char *camera_name, char *script)
+{
+  if (selectedPlan)
+    return selectedPlan->getTarget()->getScript (camera_name, script);
+  return -1;
+}
+
+int
+TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  if (selectedPlan)
+    return selectedPlan->getTarget()->getPosition (pos, JD);
+  pos->ra = nan ("f");
+  pos->dec = nan ("f");
+  return -1;
+}
+
+int
+TargetPlan::getRST (struct ln_rst_time *rst, double JD)
+{
+  if (selectedPlan)
+    return selectedPlan->getTarget()->getRST (rst, JD);
+  return -1;
+}
+
+int
+TargetPlan::getObsTargetID ()
+{
+  if (selectedPlan)
+    return selectedPlan->getTarget()->getObsTargetID ();
+  return Target::getObsTargetID ();
+}
+
+int
+TargetPlan::considerForObserving (double JD)
+{
+  int ret;
+  ret = load (JD);
+  if (ret)
+    return ret;
+  return Target::considerForObserving (JD);
+}
+
+void
+TargetPlan::printExtra (std::ostream & _os)
+{
+  if (selectedPlan)
+  {
+    _os << "Selected plan: " << std::endl
+      << *selectedPlan << std::endl
+      << selectedPlan->getTarget () << std::endl;
+  }
+  else
+  {
+    _os << "No plan selected" << std::endl;
+  }
+  if (nextPlan)
+  {
+    _os << "Next plan: " << std::endl
+      << *nextPlan << std::endl
+      << nextPlan->getTarget () << std::endl;
+  }
+  else
+  {
+    _os << "No next plan selected" << std::endl;
+  }
 }

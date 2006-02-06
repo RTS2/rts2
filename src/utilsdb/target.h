@@ -44,6 +44,9 @@
 #define TYPE_FLAT		'f'
 #define TYPE_FOCUSING		'o'
 
+// master plan target
+#define TYPE_PLAN		'p'
+
 #define COMMAND_EXPOSURE	"E"
 #define COMMAND_DARK		"D"
 #define COMMAND_FILTER		"F"
@@ -169,6 +172,10 @@ protected:
   char *target_comment;
   struct ln_lnlat_posn *observer;
 
+  float tar_priority;
+  float tar_bonus;
+  char tar_enabled;
+
   virtual int getDBScript (const char *camera_name, char *script);
 
   // print nice formated log strings
@@ -189,6 +196,10 @@ public:
   int save ();
   virtual int save (int tar_id);
   virtual int getScript (const char *device_name, char *buf);
+  struct ln_lnlat_posn *getObserver ()
+  {
+    return observer;
+  }
   int getPosition (struct ln_equ_posn *pos)
   {
     return getPosition (pos, ln_get_julian_from_sys ());
@@ -431,7 +442,7 @@ public:
   }
   virtual float getBonus (double JD)
   {
-    return -1;
+    return tar_priority + tar_bonus;
   }
   virtual int changePriority (int pri_change, time_t * time_ch);
   int changePriority (int pri_change, double validJD);
@@ -511,11 +522,8 @@ class ConstTarget:public Target
 private:
   struct ln_equ_posn position;
 protected:
-  float tar_priority;
-  float tar_bonus;
-  char tar_enabled;
 
-  virtual int selectedAsGood ();	// get called when target was selected to update bonuses, target position etc..
+    virtual int selectedAsGood ();	// get called when target was selected to update bonuses, target position etc..
 public:
     ConstTarget ();
     ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
@@ -525,10 +533,6 @@ public:
   virtual int save (int tar_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
-  virtual float getBonus (double JD)
-  {
-    return tar_priority + tar_bonus;
-  }
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
   virtual void printExtra (std::ostream & _os);
 
@@ -575,11 +579,10 @@ class DarkTarget:public Target
 private:
   struct ln_equ_posn currPos;
     std::list < PossibleDarks * >darkList;
-protected:
-    virtual int getScript (const char *deviceName, char *buf);
 public:
     DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ DarkTarget (void);
+  virtual int getScript (const char *deviceName, char *buf);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int startSlew (struct ln_equ_posn *position);
   virtual int isContinues ()
@@ -592,10 +595,9 @@ class FlatTarget:public ConstTarget
 {
 private:
   void getAntiSolarPos (struct ln_equ_posn *pos, double JD);
-protected:
-    virtual int getScript (const char *deviceName, char *buf);
 public:
     FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  virtual int getScript (const char *deviceName, char *buf);
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int considerForObserving (double JD);
@@ -655,14 +657,13 @@ public:
 
 class FocusingTarget:public ConstTarget
 {
-protected:
-  virtual int getScript (const char *deviceName, char *buf);
 public:
-    FocusingTarget (int in_tar_id,
-		    struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id,
-							       in_obs)
+  FocusingTarget (int in_tar_id,
+		  struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id,
+							     in_obs)
   {
   };
+  virtual int getScript (const char *deviceName, char *buf);
 };
 
 class ModelTarget:public ConstTarget
@@ -709,10 +710,9 @@ public:
 
 class LunarTarget:public Target
 {
-protected:
-  virtual int getScript (const char *deviceName, char *buf);
 public:
-    LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
+  virtual int getScript (const char *deviceName, char *buf);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
 };
@@ -730,12 +730,12 @@ private:
   int gcnPacketMax;
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
-  virtual int getScript (const char *deviceName, char *buf);
 public:
     TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
+  virtual int getScript (const char *deviceName, char *buf);
   virtual int beforeMove ();
   virtual float getBonus (double JD);
   // some logic needed to distinguish states when GRB position change
@@ -801,11 +801,39 @@ public:
   virtual int startSlew (struct ln_equ_posn *position);
 };
 
-// load target from DB
-Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+class Rts2Plan;
 
-// load target from string
-Target *createTarget (std::string tar_desc);
+class TargetPlan:public Target
+{
+private:
+  Rts2Plan * selectedPlan;
+  Rts2Plan *nextPlan;
+
+  // how long to look back for previous plan
+  float hourLastSearch;
+protected:
+    virtual int getDBScript (const char *camera_name, char *script);
+public:
+    TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    virtual ~ TargetPlan (void);
+
+  virtual int load ()
+  {
+    return load (ln_get_julian_from_sys ());
+  }
+  virtual int load (double JD);
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int getRST (struct ln_rst_time *rst, double JD);
+  virtual int getObsTargetID ();
+  virtual int considerForObserving (double JD);
+
+  virtual void printExtra (std::ostream & _os);
+};
+
+// load target from DB
+Target *createTarget (int in_tar_id);
+
+Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 
 // send end mails
 void sendEndMails (const time_t * t_from, const time_t * t_to,

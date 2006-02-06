@@ -52,6 +52,7 @@ void
 Target::logMsgDb (const char *message)
 {
   syslog (LOG_ERR, "SQL error: %li %s (at %s)", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
+  std::cerr << "SQL error: " <<  sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << message << std::endl;
 }
 
 void
@@ -149,6 +150,10 @@ Target::Target ()
   observationStart = -1;
 
   acquired = 0;
+
+  tar_priority = nan ("f");
+  tar_bonus = nan ("f");
+  tar_enabled = -1;
 }
 
 Target::~Target (void)
@@ -163,6 +168,55 @@ Target::~Target (void)
 int
 Target::load ()
 {
+  EXEC SQL BEGIN DECLARE SECTION;
+  VARCHAR d_tar_name[TARGET_NAME_LEN];
+  float d_tar_priority;
+  int d_tar_priority_ind;
+  float d_tar_bonus;
+  int d_tar_bonus_ind;
+  bool d_tar_enabled;
+  int db_tar_id = getObsTargetID ();
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT 
+    tar_name, 
+    tar_priority,
+    tar_bonus,
+    tar_enabled
+  INTO
+    :d_tar_name,
+    :d_tar_priority :d_tar_priority_ind,
+    :d_tar_bonus :d_tar_bonus_ind,
+    :d_tar_enabled
+  FROM
+    targets
+  WHERE
+    tar_id = :db_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("Target::load");
+    return 0;
+  }
+
+  delete[] target_name;
+  
+  target_name = new char[d_tar_name.len + 1];
+  strncpy (target_name, d_tar_name.arr, d_tar_name.len);
+  target_name[d_tar_name.len] = '\0';
+
+  if (d_tar_priority_ind >= 0)
+    tar_priority = d_tar_priority;
+  else
+    tar_priority = -1;
+    
+  if (d_tar_bonus_ind >= 0)
+    tar_bonus = d_tar_bonus;
+  else
+    tar_bonus = -1;
+
+  tar_enabled = d_tar_enabled;
+  
   // load target users for events..
   targetUsers = new Rts2TarUser (getTargetID (), getTargetType ());
   return 0;
@@ -977,6 +1031,11 @@ Target::printTargets (double radius, double JD, std::ostream &_os)
   return tarset.size ();
 }
 
+Target *createTarget (int in_tar_id)
+{
+  return createTarget (in_tar_id, Rts2Config::instance()->getObserver ());
+}
+
 Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -1042,6 +1101,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
       break;
     case TYPE_TERESTIAL:
       retTarget = new TargetTerestial (in_tar_id, in_obs);
+      break;
+    case TYPE_PLAN:
+      retTarget = new TargetPlan (in_tar_id, in_obs);
       break;
     default:
       retTarget = new ConstTarget (in_tar_id, in_obs);
@@ -1207,7 +1269,7 @@ operator << (std::ostream &_os, Target *target)
 
   // is above horizont?
   gst = ln_get_mean_sidereal_time (JD);
-  lst = gst + Rts2Config::instance ()->getObserver()->lng / 15.0;
+  lst = gst + target->getObserver()->lng / 15.0;
   _os << (target->isGood (lst, JD, & pos)
    ? "Target is above local horizont." 
    : "Target is below local horizont, it's not possible to observe it.")
