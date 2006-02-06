@@ -258,3 +258,31 @@ std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
   _os.fill (old_fill);
   return _os;
 }
+
+std::istream & operator >> (std::istream & _is, LibnovaDate & l_date)
+{
+  char ch;
+  _is >> l_date.date.years >> ch >> l_date.date.months >> ch >> l_date.date.
+    days >> ch >> l_date.date.hours >> ch >> l_date.date.
+    minutes >> ch >> l_date.date.seconds;
+  return _is;
+}
+
+Rts2Night::Rts2Night (struct tm * tm_night, struct ln_lnlat_posn * obs)
+{
+  struct tm tm_tmp;
+  // let's calculate time from..t_from will contains start of night
+  // local 12:00 will be at ~ give time..
+  tm_tmp = *tm_night;
+  tm_tmp.tm_hour = (int) ln_range_degrees (180.0 - obs->lng) / 15;
+  tm_tmp.tm_min = tm_tmp.tm_sec = 0;
+  from = mktime (&tm_tmp);
+  to = from + 86400;
+}
+
+std::ostream & operator << (std::ostream & _os, Rts2Night night)
+{
+  _os << LibnovaDate (night.getFrom ())
+    << " - " << LibnovaDate (night.getTo ());
+  return _os;
+}

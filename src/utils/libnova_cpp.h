@@ -3,6 +3,7 @@
 
 #include <libnova/libnova.h>
 #include <ostream>
+#include <time.h>
 
 class LibnovaRa
 {
@@ -96,8 +97,20 @@ class LibnovaDate
 private:
   struct ln_date date;
 public:
-    LibnovaDate (double JD)
+    LibnovaDate ()
   {
+    ln_get_date_from_sys (&date);
+  }
+
+  LibnovaDate (double JD)
+  {
+    ln_get_date (JD, &date);
+  }
+
+  LibnovaDate (time_t * t)
+  {
+    double JD;
+    JD = ln_get_julian_from_timet (t);
     ln_get_date (JD, &date);
   }
 
@@ -111,7 +124,37 @@ public:
     date.seconds = in_date->seconds;
   }
 
+  void getTimeT (time_t * t)
+  {
+    ln_get_timet_from_julian (ln_get_julian_day (&date), t);
+  }
+
   friend std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
+  friend std::istream & operator >> (std::istream & _is,
+				     LibnovaDate & l_date);
+};
+
+/** 
+ * Calculate from date night - e.g. date/time at which night started and at which it ends
+ */
+class Rts2Night
+{
+private:
+  time_t from;
+  time_t to;
+public:
+    Rts2Night (struct tm *in_date, struct ln_lnlat_posn *obs);
+
+  time_t *getFrom ()
+  {
+    return &from;
+  }
+  time_t *getTo ()
+  {
+    return &to;
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, Rts2Night night);
 };
 
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
@@ -123,5 +166,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg);
 std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
+std::istream & operator >> (std::istream & _is, LibnovaDate & l_date);
+std::ostream & operator << (std::ostream & _os, Rts2Night night);
 
 #endif /* !__LIBNOVA_CPP__ */
