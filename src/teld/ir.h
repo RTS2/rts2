@@ -63,6 +63,7 @@ private:
     std::list < ErrorTime * >errorcodes;
   int irTracking;
   char *irConfig;
+  bool makeModel;
 public:
     Rts2DevTelescopeIr (int argc, char **argv);
     virtual ~ Rts2DevTelescopeIr (void);

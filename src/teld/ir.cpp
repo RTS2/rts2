@@ -132,12 +132,15 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
   irTracking = 4;
   irConfig = "/etc/rts2/ir.ini";
 
+  makeModel = false;
+
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
   addOption ('t', "ir_tracking", 1,
 	     "IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
   addOption ('c', "ir_config", 1,
 	     "IR config file (with model, used for load_model/save_model");
+  addOption ('M', "make_model", 0, "use offsets to make model");
 
   strcpy (telType, "BOOTES_IR");
   strcpy (telSerialNumber, "001");
@@ -167,6 +170,9 @@ Rts2DevTelescopeIr::processOption (int in_opt)
       break;
     case 'c':
       irConfig = optarg;
+      break;
+    case 'M':
+      makeModel = true;
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -707,10 +713,12 @@ int
 Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
 			     double real_dec)
 {
-  int ret;
+  if (!makeModel)
+    return -1;
   // idea - convert current & astrometry position to alt & az, get
   // offset in alt & az, apply offset
   struct ln_equ_posn eq_astr;
+  struct ln_equ_posn eq_target;
   struct ln_hrz_posn hrz_astr;
   struct ln_hrz_posn hrz_target;
   struct ln_lnlat_posn observer;
@@ -719,22 +727,25 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   double sep;
   double jd = ln_get_julian_from_sys ();
   int sample = 1;
+  int status = 0;
+
   eq_astr.ra = real_ra;
   eq_astr.dec = real_dec;
+  getTarget (&eq_target);
   observer.lng = telLongtitude;
   observer.lat = telLatitude;
   ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
   getTargetAltAz (&hrz_target, jd);
   // calculate alt & az diff
-/*  az_off = hrz_astr.az - hrz_target.az;
-  alt_off = hrz_astr.alt - hrz_target.alt;
-  sep = ln_get_angular_separation (&hrz_astr, &hrz_target);
+  az_off = hrz_target.az - hrz_astr.az;
+  alt_off = hrz_target.alt - hrz_astr.alt;
+  alt_off *= -1;		// get ZD offset
+  sep = ln_get_angular_separation (&eq_astr, &eq_target);
   syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeIr::correct az_off: %f alt_off: %f sep: %f",
+	  "Rts2DevTelescopeIr::correct az_off: %f zd_off: %f sep: %f",
 	  az_off, alt_off, sep);
   if (sep > 2)
     return -1;
-  alt_off *= -1;		// get ZD offset
   status = tpl_set ("AZ.OFFSET", az_off, &status);
   status = tpl_set ("ZD.OFFSET", alt_off, &status);
   // sample..
@@ -743,7 +754,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   if (status)
     {
       return -1;
-    } */
+    }
   return 0;
 }
 
