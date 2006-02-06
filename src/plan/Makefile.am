@@ -1,6 +1,7 @@
 # $Id$
 
-bin_PROGRAMS = rts2-executor rts2-imgproc rts2-selector rts2-seltest rts2-targetinfo rts2-marchive
+bin_PROGRAMS = rts2-executor rts2-imgproc rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
+	       rts2-plan
 noinst_HEADERS = rts2execcli.h rts2script.h rts2connimgprocess.h rts2selector.h rts2scriptelement.h \
 		 rts2devscript.h rts2devcliphot.h rts2spiral.h rts2scriptblock.h rts2scriptguiding.h
 
@@ -30,6 +31,10 @@ rts2_targetinfo_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_
 rts2_marchive_SOURCES = marchive.cpp
 rts2_marchive_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_marchive_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
+
+rts2_plan_SOURCES = planapp.cpp
+rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_plan_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^

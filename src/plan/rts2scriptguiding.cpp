@@ -102,8 +102,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 		  syslog (LOG_DEBUG,
 			  "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA getOffset %i",
 			  ret);
-		  if (processingState != NEED_IMAGE)
-		    processingState = NEED_IMAGE;
+		  processingState = NEED_IMAGE;
 		}
 	      else
 		{
@@ -132,8 +131,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 					      (void *) pars));
 		      delete pars;
 		    }
-		  if (processingState != NEED_IMAGE)
-		    processingState = NEED_IMAGE;
+		  processingState = NEED_IMAGE;
 		}
 	    }
 	}
@@ -155,17 +153,14 @@ Rts2ScriptElementGuiding::nextCommand (Rts2DevClientCamera * camera,
     return NEXT_COMMAND_NEXT;
   switch (processingState)
     {
+    case WAITING_IMAGE:
+      *new_command = NULL;
+      return NEXT_COMMAND_NEXT;
     case NO_IMAGE:
       script->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
       if (ret != -1)
 	return NEXT_COMMAND_NEXT;
-    case WAITING_IMAGE:
-      if (!camera->isIdle ())
-	{
-	  *new_command = NULL;
-	  return NEXT_COMMAND_KEEP;
-	}
     case NEED_IMAGE:
       *new_command =
 	new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT,
@@ -206,7 +201,7 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
   processor =
     new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
 		       EVENT_GUIDING_DATA);
-
+  image->saveImage ();
   ret = processor->init ();
   if (ret < 0)
     {
@@ -219,7 +214,9 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
       script->getMaster ()->addConnection (processor);
       processingState = NEED_IMAGE;
     }
-  syslog (LOG_DEBUG, "Rts2ConnImgProcess::processImage executed processor");
+  syslog (LOG_DEBUG,
+	  "Rts2ConnImgProcess::processImage executed processor %i %p", ret,
+	  processor);
   return 0;
 }
 
