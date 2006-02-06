@@ -358,6 +358,13 @@ Rts2ImageDb::initDbImage ()
   getValue ("PROC", processBitfiedl);
 }
 
+int
+Rts2ImageDb::isCalibrationImage ()
+{
+  return (getTargetType () == TYPE_CALIBRATION
+	  || getTargetType () == TYPE_PHOTOMETRIC);
+}
+
 void
 Rts2ImageDb::updateCalibrationDb ()
 {

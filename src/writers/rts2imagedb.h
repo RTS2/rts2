@@ -37,29 +37,25 @@ private:
 
   int processBitfiedl;
   void initDbImage ();
-  int isCalibrationImage ()
-  {
-    return (getTargetType () == TYPE_CALIBRATION
-	    || getTargetType () == TYPE_PHOTOMETRIC);
-  }
+  inline int isCalibrationImage ();
   void updateCalibrationDb ();
 
 public:
-  Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
-	       const struct timeval *expStartd);
-  Rts2ImageDb (const char *in_filename);
+    Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
+		 const struct timeval *expStartd);
+    Rts2ImageDb (const char *in_filename);
   //! Construct image directly from DB (eg. retrieve all missing parameters)
-  Rts2ImageDb (int in_obs_id, int in_img_id);
+    Rts2ImageDb (int in_obs_id, int in_img_id);
   //! Construcy image from one database row..
-  Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id,
-	       char in_obs_subtype, long in_img_date, int in_img_usec,
-	       float in_img_exposure, float in_img_temperature,
-	       const char *in_img_filter, float in_img_alt, float in_img_az,
-	       const char *in_camera_name, const char *in_mount_name,
-	       bool in_delete_flag, int in_process_bitfield,
-	       double in_img_err_ra, double in_img_err_dec,
-	       double in_img_err);
-  virtual ~ Rts2ImageDb (void);
+    Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id,
+		 char in_obs_subtype, long in_img_date, int in_img_usec,
+		 float in_img_exposure, float in_img_temperature,
+		 const char *in_img_filter, float in_img_alt, float in_img_az,
+		 const char *in_camera_name, const char *in_mount_name,
+		 bool in_delete_flag, int in_process_bitfield,
+		 double in_img_err_ra, double in_img_err_dec,
+		 double in_img_err);
+    virtual ~ Rts2ImageDb (void);
 
   virtual int toArchive ();
   virtual int toTrash ();

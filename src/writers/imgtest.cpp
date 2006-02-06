@@ -34,6 +34,7 @@ main (int argc, char **argv)
   std::cout << "Rts2Image::getCenterRow " << image->getCenter (x, y,
 							       3) << " " << x
     << ":" << y << std::endl;
+
   std::
     cout << "Rts2Image::getOffset (659.433000, 94.990000, x, y) " << image->
     getOffset (659.433000, 94.990000, x, y,
