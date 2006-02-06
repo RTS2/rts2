@@ -1,11 +1,12 @@
 #include "../utils/rts2config.h"
+#include "../utils/libnova_cpp.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2obsset.h"
 
 #include <time.h>
 #include <iostream>
 
-class Rts2Night:public Rts2AppDb
+class Rts2NightReport:public Rts2AppDb
 {
 private:
   time_t t_from, t_to;
@@ -17,15 +18,15 @@ private:
   void printStatistics ();
   Rts2ObsSet *obs_set;
 public:
-    Rts2Night (int argc, char **argv);
-    virtual ~ Rts2Night (void);
+    Rts2NightReport (int argc, char **argv);
+    virtual ~ Rts2NightReport (void);
 
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int run ();
 };
 
-Rts2Night::Rts2Night (int in_argc, char **in_argv):
+Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   time (&t_to);
@@ -48,14 +49,14 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('s', "statistics", 0, "print night statistics");
 }
 
-Rts2Night::~Rts2Night (void)
+Rts2NightReport::~Rts2NightReport (void)
 {
   delete tm_night;
   delete obs_set;
 }
 
 int
-Rts2Night::processOption (int in_opt)
+Rts2NightReport::processOption (int in_opt)
 {
   int ret;
   struct tm tm_ret;
@@ -101,7 +102,7 @@ Rts2Night::processOption (int in_opt)
 }
 
 int
-Rts2Night::init ()
+Rts2NightReport::init ()
 {
   int ret;
   ret = Rts2AppDb::init ();
@@ -112,23 +113,16 @@ Rts2Night::init ()
     {
       // let's calculate time from..t_from will contains start of night
       // local 12:00 will be at ~ give time..
-      tm_night->tm_hour =
-	(int) ln_range_degrees (180.0 -
-				Rts2Config::instance ()->getObserver ()->
-				lng) / 15;
-      tm_night->tm_min = tm_night->tm_sec = 0;
-      t_from = mktime (tm_night);
-      if (t_from + 86400 > t_to)
-	t_from -= 86400;
-      t_to = t_from + 86400;
-      if (t_from > t_to)
-	t_from -= 86400;
+      Rts2Night night =
+	Rts2Night (tm_night, Rts2Config::instance ()->getObserver ());
+      t_from = *(night.getFrom ());
+      t_to = *(night.getTo ());
     }
   return 0;
 }
 
 void
-Rts2Night::printObsList ()
+Rts2NightReport::printObsList ()
 {
   if (printImages)
     obs_set->printImages (printImages);
@@ -139,13 +133,13 @@ Rts2Night::printObsList ()
 
 
 void
-Rts2Night::printStatistics ()
+Rts2NightReport::printStatistics ()
 {
   obs_set->printStatistics (std::cout);
 }
 
 int
-Rts2Night::run ()
+Rts2NightReport::run ()
 {
 //  char *whereStr;
   Rts2Config *config;
@@ -164,14 +158,14 @@ Rts2Night::run ()
   return 0;
 }
 
-Rts2Night *app;
+Rts2NightReport *app;
 
 
 int
 main (int argc, char **argv)
 {
   int ret;
-  app = new Rts2Night (argc, argv);
+  app = new Rts2NightReport (argc, argv);
   ret = app->init ();
   if (ret)
     {

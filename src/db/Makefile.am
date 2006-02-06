@@ -15,7 +15,6 @@ rts2_nightmails_SOURCES = nightmails.cpp
 rts2_nightmails_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
 
 if GSOAP
-
 bin_PROGRAMS+=rts2-newtarget rts2-simbadinfo
 
 SOAPHEADER=simbad.h
