@@ -409,6 +409,10 @@ public:
   {
     return acquired;
   }
+  void nullAcquired ()
+  {
+    acquired = 0;
+  }
   void interupted ();
   virtual int endObservation (int in_next_id);
   // similar to startSlew - return 0 if observation ends, 1 if

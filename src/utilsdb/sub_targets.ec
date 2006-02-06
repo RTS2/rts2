@@ -1012,7 +1012,7 @@ ModelTarget::writeStep ()
 int
 ModelTarget::getNextPosition ()
 {
-  step++;
+  step += 2 * ((int) fabs ((alt_stop - alt_start) / alt_step) + 1) + 1 ;
   return calPosition ();
 }
 
@@ -1035,6 +1035,7 @@ int
 ModelTarget::beforeMove ()
 {
   endObservation (-1); // we will not observe same model target twice
+  nullAcquired ();
   return getNextPosition ();
 }
 
@@ -1966,7 +1967,7 @@ TargetPlan::load (double JD)
     return ret;
 
   // get plan entries from last 12 hours..
-  last = now - (16 * 3600);
+  last = (int) (now - (hourLastSearch * 3600));
 
   EXEC SQL DECLARE cur_plan CURSOR FOR
   SELECT
