@@ -1961,6 +1961,10 @@ TargetPlan::load (double JD)
     return 0;
   }
 
+  ret = Target::load ();
+  if (ret)
+    return ret;
+
   // get plan entries from last 12 hours..
   last = now - (16 * 3600);
 
@@ -2010,10 +2014,6 @@ TargetPlan::load (double JD)
   EXEC SQL CLOSE cur_plan;
   EXEC SQL COMMIT;
 
-  ret = Target::load ();
-  if (ret)
-    return ret;
-  
   if (db_plan_id != -1)
   {
     delete selectedPlan;
