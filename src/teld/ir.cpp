@@ -746,6 +746,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   double sep;
   double jd = ln_get_julian_from_sys ();
   double quality;
+  double zd;
   int sample = 1;
   int status = 0;
 
@@ -759,7 +760,15 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   // calculate alt & az diff
   az_off = hrz_target.az - hrz_astr.az;
   alt_off = hrz_target.alt - hrz_astr.alt;
-  alt_off *= -1;		// get ZD offset
+
+  status = tpl_get ("ZD.CURRPOS", zd, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevTelescopeIr::correct cannot get ZD.CURRPOS");
+      return -1;
+    }
+  if (zd > 0)
+    alt_off *= -1;		// get ZD offset - when ZD < 0, it's actuall alt offset
   sep = ln_get_angular_separation (&eq_astr, &eq_target);
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescopeIr::correct az_off: %f zd_off: %f sep: %f",
