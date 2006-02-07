@@ -356,6 +356,7 @@ Rts2ImageDb::initDbImage ()
 {
   processBitfiedl = 0;
   getValue ("PROC", processBitfiedl);
+  filter = NULL;
 }
 
 int
@@ -495,11 +496,15 @@ Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_o
   pos_astr.ra = nan ("f");
   pos_astr.dec = nan ("f");
   processBitfiedl = in_process_bitfield;
+
+  filter = new char[strlen(in_img_filter) + 1];
+  strcpy (filter, in_img_filter);
 }
 
 Rts2ImageDb::~Rts2ImageDb ()
 {
   updateDB ();
+  delete[] filter;
 }
 
 int
@@ -616,6 +621,7 @@ std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
     << std::setw(5) << img_db.getCameraName () << " | "
     << std::setw(4) << img_db.getImgId () << " | "
     << Timestamp (img_db.getExposureSec () + (double) img_db.getExposureUsec () / USEC_SEC) << " | "
+    << std::setw(3) << img_db.getFilter () << " | "
     << std::setw(8) << img_db.getExposureLength () << "' | "
     << LibnovaDegArcMin (img_db.ra_err) << " | " 
     << LibnovaDegArcMin (img_db.dec_err) << " | "

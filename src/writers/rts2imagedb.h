@@ -40,6 +40,8 @@ private:
   inline int isCalibrationImage ();
   void updateCalibrationDb ();
 
+  char *filter;
+
 public:
     Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
 		 const struct timeval *expStartd);
@@ -62,6 +64,11 @@ public:
 
   virtual int saveImage ();
   virtual int deleteImage ();
+
+  const char *getFilter ()
+  {
+    return filter;
+  }
 
   int getOKCount ();
 
