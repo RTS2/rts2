@@ -526,6 +526,7 @@ int
 Rts2DevCameraAndor::camCoolShutdown ()
 {
   CoolerOFF ();
+  tempSet = +50;
   return 0;
 }
 
@@ -557,6 +558,7 @@ main (int argc, char **argv)
   if (ret)
     {
       syslog (LOG_ERR, "Cannot initialize Andor camera - exiting!");
+      delete device;
       exit (1);
     }
   device->run ();

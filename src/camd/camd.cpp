@@ -345,6 +345,7 @@ Rts2DevCamera::~Rts2DevCamera ()
       delete chips[i];
       chips[i] = NULL;
     }
+  delete filter;
 }
 
 void
