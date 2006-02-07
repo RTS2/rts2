@@ -688,6 +688,8 @@ private:
 
   int alt_size;
 
+  int modelStepType;
+
   int writeStep ();
   int getNextPosition ();
   int calPosition ();

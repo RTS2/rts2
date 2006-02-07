@@ -918,6 +918,8 @@ FocusingTarget::getScript (const char *device_name, char *buf)
 
 ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
+  modelStepType = 2;
+  Rts2Config::instance ()->getInteger ("observatory", "model_step_type", modelStepType);
 }
 
 int
@@ -975,7 +977,7 @@ ModelTarget::load ()
 
   alt_size = (int) (fabs (alt_stop - alt_start) / alt_step);
   alt_size++;
-  
+
   srandom (time (NULL));
   calPosition ();
   return ConstTarget::load ();
@@ -1012,7 +1014,19 @@ ModelTarget::writeStep ()
 int
 ModelTarget::getNextPosition ()
 {
-  step += 2 * ((int) fabs ((alt_stop - alt_start) / alt_step) + 1) + 1 ;
+  switch (modelStepType)
+  {
+    case -1:
+      // linear model
+      step++;
+      break;
+    case 0:
+      // random model
+      step += ((double) random () * ((fabs (360.0 / az_step) + 1) * fabs((alt_stop - alt_start) / alt_step) + 1)) / RAND_MAX;
+      break;
+    default:  
+      step += modelStepType * ((int) fabs ((alt_stop - alt_start) / alt_step) + 1) + 1;
+  }
   return calPosition ();
 }
 
