@@ -416,6 +416,28 @@ Rts2ConnGrb::getGrbBound (int grb_type, int &grb_start, int &grb_end)
   }
 }
 
+bool
+Rts2ConnGrb::gcnContainsNewPos (int grb_type, int curr_grb_type)
+{
+  // if that's an old update from less precise instrument..
+  if (grb_type < curr_grb_type)
+    return false;
+  switch (grb_type)
+  {
+    case TYPE_SWIFT_SCALEDMAP_SRC:
+    case TYPE_SWIFT_XRT_SPECTRUM_SRC:
+    case TYPE_SWIFT_XRT_LC_SRC:
+    case TYPE_SWIFT_XRT_CENTROID_SRC:
+    case TYPE_SWIFT_UVOT_DBURST_SRC:
+    case TYPE_SWIFT_UVOT_FCHART_SRC:
+    case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
+    case TYPE_SWIFT_POINTDIR_SRC:
+      return false;
+    default:
+      return true;
+  }
+}
+
 int
 Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, float grb_errorbox)
 {
@@ -424,6 +446,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   int d_grb_id = grb_id;
   int d_grb_seqn = grb_seqn;
   int d_grb_type = grb_type;
+  int d_curr_grb_type = -1;
   double d_grb_ra = grb_ra;
   double d_grb_dec = grb_dec;
   bool d_grb_is_grb = grb_is_grb;
@@ -457,9 +480,11 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
   EXEC SQL
   SELECT
-    tar_id
+    tar_id,
+    grb_type
   INTO
-    :d_tar_id
+    :d_tar_id,
+    :d_curr_grb_type
   FROM
     grb
   WHERE
@@ -558,14 +583,20 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
     }
     else
     {
-      syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint grb created: tar_id: %i grb_id: %i grb_seqn: %i", d_tar_id, d_grb_id, d_grb_seqn);
+      syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint grb created: tar_id: %i grb_id: %i grb_seqn: %i ra: %f dec: %f", d_tar_id, d_grb_id, d_grb_seqn, d_grb_ra, d_grb_dec);
       EXEC SQL COMMIT;
     }
+  }
+  else if (sqlca.sqlcode)
+  {
+    syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint SQL error: %s", sqlca.sqlerrm.sqlerrmc);
+    EXEC SQL ROLLBACK;
+    return -1;
   }
   else
   {
     // HETE burst have values -999 in some retraction notices..
-    if (d_grb_ra > -300 && d_grb_dec > -300)
+    if (gcnContainsNewPos (d_grb_type, d_curr_grb_type) && d_grb_ra > -300 && d_grb_dec > -300)
       {
 	// update target informations..
 	EXEC SQL
@@ -581,6 +612,11 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	  syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update targets: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 	  EXEC SQL ROLLBACK;
 	}
+      }
+      else
+      {
+	// it's only update and it's not update that can bring new coordinates (UVOT, XRT,..)
+	syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint don't update coordinates for type %i (curr %i) ra: %f dec: %f", grb_type, d_curr_grb_type, d_grb_ra, d_grb_dec);
       }
     // update grb informations..
     EXEC SQL
