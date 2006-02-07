@@ -42,13 +42,6 @@ private:
 
   struct ln_equ_posn target;
 
-    template < typename T > int tpl_get (const char *name, T & val,
-					 int *status);
-    template < typename T > int tpl_set (const char *name, T val,
-					 int *status);
-    template < typename T > int tpl_setw (const char *name, T val,
-					  int *status);
-
   virtual int coverClose ();
   virtual int coverOpen ();
 
@@ -64,6 +57,14 @@ private:
   int irTracking;
   char *irConfig;
   bool makeModel;
+
+protected:
+    template < typename T > int tpl_get (const char *name, T & val,
+					 int *status);
+    template < typename T > int tpl_set (const char *name, T val,
+					 int *status);
+    template < typename T > int tpl_setw (const char *name, T val,
+					  int *status);
 public:
     Rts2DevTelescopeIr (int argc, char **argv);
     virtual ~ Rts2DevTelescopeIr (void);

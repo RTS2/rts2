@@ -1,6 +1,7 @@
 #include <sstream>
 #include <fstream>
 
+#include "../utils/rts2config.h"
 #include "ir.h"
 
 using namespace OpenTPL;
@@ -151,6 +152,7 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
 
 Rts2DevTelescopeIr::~Rts2DevTelescopeIr (void)
 {
+  delete ir_ip;
   delete tplc;
 }
 
@@ -183,6 +185,13 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 int
 Rts2DevTelescopeIr::initDevice ()
 {
+  Rts2Config *config = Rts2Config::instance ();
+  config->loadFile (NULL);
+  // try to get default from config file
+  if (!ir_ip)
+    config->getString ("ir", "ip", &ir_ip);
+  if (!ir_port)
+    config->getInteger ("ir", "port", ir_port);
   if (!ir_ip || !ir_port)
     {
       fprintf (stderr, "Invalid port or IP address of mount controller PC\n");

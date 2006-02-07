@@ -33,6 +33,38 @@ Rts2DevIrError::run ()
       getError (atoi (*iter), desc);
       std::cout << desc << std::endl;
     }
+  // dump model
+  int status = 0;
+  double aoff, zoff, ae, an, npae, ca, flex;
+  int recordcount;
+  status = tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+
+  std::cout << "POINTING.POINTINGPARAMS.AOFF " << aoff << std::endl;
+  std::cout << "POINTING.POINTINGPARAMS.ZOFF " << zoff << std::endl;
+  std::cout << "POINTING.POINTINGPARAMS.AE " << ae << std::endl;
+  std::cout << "POINTING.POINTINGPARAMS.AN " << an << std::endl;
+  std::cout << "POINTING.POINTINGPARAMS.NPAE " << npae << std::endl;
+  std::cout << "POINTING.POINTINGPARAMS.CA " << ca << std::endl;
+  std::cout << "POINTING.POINTINGPARAMS.FLEX " << flex << std::endl;
+  // dump offsets
+  status = tpl_get ("AZ.OFFSET", aoff, &status);
+  status = tpl_get ("ZD.OFFSET", zoff, &status);
+
+  std::cout << "AZ.OFFSET " << aoff << std::endl;
+  std::cout << "ZD.OFFSET " << zoff << std::endl;
+
+  status =
+    tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT", recordcount, &status);
+
+  std::cout << "POINTING.POINTINGPARAMS.RECORDCOUNT " << recordcount << std::
+    endl;
+
   return 0;
 }
 
