@@ -59,7 +59,7 @@ Rts2DevIrError::run ()
       std::cout << desc << std::endl;
     }
   int status = 0;
-  float fparam;
+  double fparam;
 
   switch (op)
     {
@@ -67,12 +67,12 @@ Rts2DevIrError::run ()
       break;
     case CAL:
       fparam = 2;
-      status = tpl_set ("POINTING.POINTINGPARAMS.CALCULATE", iparam, &status);
+      status = tpl_set ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
       break;
     case RESET:
       fparam = 0;
       status =
-	tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", iparam, &status);
+	tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", fparam, &status);
       break;
     }
 
