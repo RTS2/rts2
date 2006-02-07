@@ -3,18 +3,43 @@
 class Rts2DevIrError:public Rts2DevTelescopeIr
 {
   std::list < const char *>errList;
+  enum
+  { NO_OP, CAL, RESET } op;
 protected:
-    virtual int processArgs (const char *arg);
+    virtual int processOption (int in_opt);
+  virtual int processArgs (const char *arg);
 public:
-    Rts2DevIrError (int in_argc, char **in_argv):Rts2DevTelescopeIr (in_argc,
-								     in_argv)
-  {
-  }
-  virtual ~ Rts2DevIrError (void)
+    Rts2DevIrError (int in_argc, char **in_argv);
+    virtual ~ Rts2DevIrError (void)
   {
   }
   virtual int run ();
 };
+
+Rts2DevIrError::Rts2DevIrError (int in_argc, char **in_argv):
+Rts2DevTelescopeIr (in_argc, in_argv)
+{
+  op = NO_OP;
+  addOption ('C', "calculate", 0, "Calculate model");
+  addOption ('R', "reset_model", 0, "Reset model counts");
+}
+
+int
+Rts2DevIrError::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'C':
+      op = CAL;
+      break;
+    case 'R':
+      op = RESET;
+      break;
+    default:
+      return Rts2DevTelescopeIr::processOption (in_opt);
+    }
+  return 0;
+}
 
 int
 Rts2DevIrError::processArgs (const char *arg)
@@ -33,10 +58,30 @@ Rts2DevIrError::run ()
       getError (atoi (*iter), desc);
       std::cout << desc << std::endl;
     }
-  // dump model
   int status = 0;
+  float fparam;
+
+  switch (op)
+    {
+    case NO_OP:
+      break;
+    case CAL:
+      fparam = 2;
+      status = tpl_set ("POINTING.POINTINGPARAMS.CALCULATE", iparam, &status);
+      break;
+    case RESET:
+      fparam = 0;
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", iparam, &status);
+      break;
+    }
+
+  // dump model
   double aoff, zoff, ae, an, npae, ca, flex;
   int recordcount;
+  std::string dumpfile;
+
+  status = tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
@@ -45,6 +90,7 @@ Rts2DevIrError::run ()
   status = tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
 
+  std::cout << "POINTING.POINTINGPARAMS.DUMPFILE " << dumpfile << std::endl;
   std::cout << "POINTING.POINTINGPARAMS.AOFF " << aoff << std::endl;
   std::cout << "POINTING.POINTINGPARAMS.ZOFF " << zoff << std::endl;
   std::cout << "POINTING.POINTINGPARAMS.AE " << ae << std::endl;
@@ -64,6 +110,10 @@ Rts2DevIrError::run ()
 
   std::cout << "POINTING.POINTINGPARAMS.RECORDCOUNT " << recordcount << std::
     endl;
+
+  status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
+
+  std::cout << "POINTING.POINTINGPARAMS.CALCULATE " << fparam << std::endl;
 
   return 0;
 }

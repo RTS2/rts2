@@ -65,10 +65,10 @@ protected:
 					 int *status);
     template < typename T > int tpl_setw (const char *name, T val,
 					  int *status);
+  virtual int processOption (int in_opt);
 public:
     Rts2DevTelescopeIr (int argc, char **argv);
     virtual ~ Rts2DevTelescopeIr (void);
-  virtual int processOption (int in_opt);
   virtual int initDevice ();
   virtual int init ();
   virtual int idle ();
