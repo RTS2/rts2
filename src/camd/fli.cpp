@@ -263,12 +263,11 @@ CameraFliChip::readoutOneLine ()
 class Rts2DevCameraFli:public Rts2DevCamera
 {
 private:
-  char *deviceName;
   flidomain_t deviceDomain;
 
   flidev_t dev;
 
-  char *filterDevice;
+  bool filterFli;
 
   int fliDebug;
 public:
@@ -294,15 +293,13 @@ public:
 Rts2DevCameraFli::Rts2DevCameraFli (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
-  deviceName = NULL;
   deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
-  filterDevice = NULL;
+  filterFli = false;
   fliDebug = FLIDEBUG_NONE;
-  addOption ('f', "device_name", 1, "device name");
   addOption ('D', "domain", 1,
 	     "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
-  addOption ('L', "fli_filter", 1,
-	     "FLI filter wheel (will have same domain as device)");
+  addOption ('L', "fli_filter", 0,
+	     "find FLI filter wheel (will have same domain as device)");
   addOption ('b', "fli_debug", 1,
 	     "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 }
@@ -317,9 +314,6 @@ Rts2DevCameraFli::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'f':
-      deviceName = optarg;
-      break;
     case 'D':
       deviceDomain = FLIDEVICE_CAMERA;
       if (!strcasecmp ("USB", optarg))
@@ -334,7 +328,7 @@ Rts2DevCameraFli::processOption (int in_opt)
 	return -1;
       break;
     case 'L':
-      filterDevice = optarg;
+      filterFli = true;
       break;
     case 'b':
       switch (atoi (optarg))
@@ -364,6 +358,9 @@ Rts2DevCameraFli::init ()
   LIBFLIAPI ret;
 
   int ret_c;
+  char **names;
+  char *nam_sep;
+
   ret_c = Rts2DevCamera::init ();
   if (ret_c)
     return ret_c;
@@ -371,15 +368,32 @@ Rts2DevCameraFli::init ()
   if (fliDebug)
     FLISetDebugLevel (NULL, fliDebug);
 
-  ret = FLIOpen (&dev, deviceName, deviceDomain);
+  ret = FLIList (deviceDomain, &names);
+  if (ret)
+    return -1;
+
+  if (names[0] == NULL)
+    {
+      syslog (LOG_ERR, "Rts2DevCameraFli::init No device found!");
+      return -1;
+    }
+
+  // separate semicolon
+  nam_sep = strchr (names[0], ';');
+  if (nam_sep)
+    *nam_sep = '\0';
+
+  ret = FLIOpen (&dev, names[0], deviceDomain);
+  FLIFreeList (names);
+
   if (ret)
     return -1;
 
   chipNum = 1;
   chips[0] = new CameraFliChip (this, 0, dev);
 
-  if (filterDevice)
-    filter = new Rts2FilterFli (filterDevice, deviceDomain);
+  if (filterFli)
+    filter = new Rts2FilterFli (deviceDomain);
 
   return initChips ();
 }
@@ -422,7 +436,7 @@ Rts2DevCameraFli::baseInfo ()
   ret = FLIGetFWRevision (dev, &fwrev);
   if (ret)
     return -1;
-  sprintf (serialNumber, "%li.%li", hwrev, fwrev);
+  sprintf (ccdType, "FLI_%li.%li", hwrev, fwrev);
 
   return 0;
 }

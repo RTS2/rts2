@@ -19,18 +19,16 @@
 #include "filter_fli.h"
 
 #include <string.h>
+#include <syslog.h>
 
-Rts2FilterFli::Rts2FilterFli (char *in_deviceName, flidomain_t in_domain)
+Rts2FilterFli::Rts2FilterFli (flidomain_t in_domain)
 {
-  deviceName = new char[strlen (in_deviceName) + 1];
-  strcpy (deviceName, in_deviceName);
   domain = (in_domain & 0x00ff) | FLIDEVICE_FILTERWHEEL;
   dev = 0;
 }
 
 Rts2FilterFli::~Rts2FilterFli (void)
 {
-  delete[]deviceName;
   FLIClose (dev);
 }
 
@@ -38,8 +36,29 @@ int
 Rts2FilterFli::init (void)
 {
   LIBFLIAPI ret;
+  char **names;
+  char *nam_sep;
 
-  ret = FLIOpen (&dev, deviceName, domain);
+  ret = Rts2Filter::init ();
+  if (ret)
+    return ret;
+
+  ret = FLIList (domain, &names);
+  if (ret)
+    return -1;
+
+  if (names[0] == NULL)
+    {
+      syslog (LOG_ERR, "Rts2FilterFli::init No device found!");
+      return -1;
+    }
+
+  nam_sep = strchr (names[0], ';');
+  if (nam_sep)
+    *nam_sep = '\0';
+
+  ret = FLIOpen (&dev, names[0], domain);
+  FLIFreeList (names);
   if (ret)
     return -1;
 

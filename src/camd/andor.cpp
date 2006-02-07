@@ -130,7 +130,7 @@ private:
   int camSetShutter (int shut_control);
   int printChannelInfo (int channel);
 
-  char *filterDevice;
+  bool filterFli;
   int fliDebug;
 protected:
     virtual void help ();
@@ -166,7 +166,7 @@ Rts2DevCamera (in_argc, in_argv)
   adChannel = -1;
   printSpeedInfo = false;
   chanNum = 0;
-  filterDevice = NULL;
+  filterFli = false;
   fliDebug = FLIDEBUG_NONE;
 
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
@@ -177,7 +177,7 @@ Rts2DevCamera (in_argc, in_argv)
   addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('S', "speed_info", 0,
 	     "print speed info - information about speed available");
-  addOption ('L', "fli_filter", 1, "FLI filter wheel (on USB)");
+  addOption ('L', "fli_filter", 0, "find FLI filter wheel (on USB)");
   addOption ('b', "fli_debug", 1,
 	     "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 }
@@ -227,7 +227,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
       printSpeedInfo = true;
       break;
     case 'L':
-      filterDevice = optarg;
+      filterFli = true;
       break;
     case 'b':
       switch (atoi (optarg))
@@ -440,9 +440,8 @@ Rts2DevCameraAndor::init ()
     }
   if (fliDebug)
     FLISetDebugLevel (NULL, fliDebug);
-  if (filterDevice)
-    filter =
-      new Rts2FilterFli (filterDevice, FLIDEVICE_CAMERA | FLIDOMAIN_USB);
+  if (filterFli)
+    filter = new Rts2FilterFli (FLIDEVICE_CAMERA | FLIDOMAIN_USB);
   return Rts2DevCamera::initChips ();
 }
 

@@ -13,7 +13,7 @@ Rts2Filter::~Rts2Filter (void)
 int
 Rts2Filter::init (void)
 {
-  return -1;
+  return 0;
 }
 
 int
