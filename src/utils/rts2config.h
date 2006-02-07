@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <libnova/libnova.h>
+#include <string>
 
 #include "objectcheck.h"
 
@@ -26,6 +27,7 @@ public:
   static Rts2Config *instance ();
   int loadFile (char *filename = NULL);
   int getString (const char *section, const char *param, char *buf, int bufl);
+  int getString (const char *section, const char *param, std::string ** buf);
   int getInteger (const char *section, const char *param, int &value);
   int getFloat (const char *section, const char *param, float &value);
   int getDouble (const char *section, const char *param, double &value);

@@ -164,6 +164,20 @@ Rts2Config::getString (const char *section, const char *param, char *buf,
 	}
     }
   return -1;
+}
+
+int
+Rts2Config::getString (const char *section, const char *param,
+		       std::string ** buf)
+{
+  char tmp_buf[BUF_SIZE];
+  int ret;
+  ret = getString (section, param, tmp_buf, BUF_SIZE);
+  if (ret)
+    return ret;
+  delete (*buf);
+  *buf = new std::string (tmp_buf);
+  return 0;
 #undef BUF_SIZE
 }
 
