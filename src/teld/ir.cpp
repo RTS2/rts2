@@ -140,7 +140,7 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
 	     "IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
   addOption ('c', "ir_config", 1,
 	     "IR config file (with model, used for load_model/save_model");
-  addOption ('M', "make_model", 0, "use offsets to make model");
+  addOption ('O', "make_model", 0, "use offsets to make model");
 
   strcpy (telType, "BOOTES_IR");
   strcpy (telSerialNumber, "001");
@@ -171,7 +171,7 @@ Rts2DevTelescopeIr::processOption (int in_opt)
     case 'c':
       irConfig = optarg;
       break;
-    case 'M':
+    case 'O':
       makeModel = true;
       break;
     default:
@@ -584,6 +584,16 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 	{
 	  target.dec = telLatitude - BLIND_SIZE;
 	}
+    }
+
+  double az_off = 0;
+  double alt_off = 0;
+  status = tpl_set ("AZ.OFFSET", az_off, &status);
+  status = tpl_set ("ZD.OFFSET", alt_off, &status);
+  if (status)
+    {
+      syslog (LOG_ERR, "Rts2DevTelescopeIr::startMove cannot zero offset");
+      return -1;
     }
 
   status = startMoveReal (ra, dec);
