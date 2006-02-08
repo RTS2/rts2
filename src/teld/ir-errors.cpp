@@ -91,13 +91,14 @@ Rts2DevIrError::run ()
   status = tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
 
   std::cout << "POINTING.POINTINGPARAMS.DUMPFILE " << dumpfile << std::endl;
-  std::cout << "POINTING.POINTINGPARAMS.AOFF " << aoff << std::endl;
-  std::cout << "POINTING.POINTINGPARAMS.ZOFF " << zoff << std::endl;
-  std::cout << "POINTING.POINTINGPARAMS.AE " << ae << std::endl;
-  std::cout << "POINTING.POINTINGPARAMS.AN " << an << std::endl;
-  std::cout << "POINTING.POINTINGPARAMS.NPAE " << npae << std::endl;
-  std::cout << "POINTING.POINTINGPARAMS.CA " << ca << std::endl;
-  std::cout << "POINTING.POINTINGPARAMS.FLEX " << flex << std::endl;
+  std::cout.precision (20);
+  std::cout << "AOFF = " << aoff << std::endl;
+  std::cout << "ZOFF = " << zoff << std::endl;
+  std::cout << "AE = " << ae << std::endl;
+  std::cout << "AN = " << an << std::endl;
+  std::cout << "NPAE = " << npae << std::endl;
+  std::cout << "CA = " << ca << std::endl;
+  std::cout << "FLEX = " << flex << std::endl;
   // dump offsets
   status = tpl_get ("AZ.OFFSET", aoff, &status);
   status = tpl_get ("ZD.OFFSET", zoff, &status);

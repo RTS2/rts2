@@ -826,6 +826,7 @@ Rts2DevTelescopeIr::saveModel ()
       return -1;
     }
   of.open ("/etc/rts2/ir.model", ios_base::out | ios_base::trunc);
+  of.precision (20);
   of << aoff << " "
     << zoff << " "
     << ae << " "
