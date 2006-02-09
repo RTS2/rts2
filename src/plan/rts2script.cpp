@@ -10,11 +10,11 @@
 #include <ctype.h>
 
 // test if next element is one that is given
-bool Rts2Script::isNext (const char *element)
+bool
+Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t
-    el_len = strlen (element);
+  size_t el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -404,7 +404,7 @@ Rts2Script::parseBuf (Target * target, struct ln_equ_posn *target_pos)
 	return NULL;
       return new Rts2ScriptElementGuiding (this, init_exposure, end_signal);
     }
-  syslog (LOG_ERR, "Rts2Script::parseBuf unknow command: %s", commandStart);
+  syslog (LOG_ERR, "Rts2Script::parseBuf unknown command: %s", commandStart);
   return NULL;
 }
 
