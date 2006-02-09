@@ -36,6 +36,8 @@ Rts2SelectorApp::run ()
 
   Rts2Selector *sel;
 
+  Target *tar;
+
   config = Rts2Config::instance ();
   observer = config->getObserver ();
 
@@ -44,6 +46,18 @@ Rts2SelectorApp::run ()
   next_tar = sel->selectNextNight ();
 
   std::cout << "Next target:" << next_tar << std::endl;
+
+  tar = createTarget (next_tar, observer);
+  if (tar)
+    {
+      std::cout << tar << std::endl;
+    }
+  else
+    {
+      std::cout << "cannot create target" << std::endl;
+    }
+
+  delete tar;
 
   delete sel;
   return 0;
