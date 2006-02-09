@@ -55,6 +55,9 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts);
 class TimeJD:public Timestamp
 {
 public:
+  TimeJD ():Timestamp ()
+  {
+  }
   /**
    * Construct Timestamp from JD.
    *
@@ -66,8 +69,8 @@ public:
   TimeJD (double JD):Timestamp ()
   {
     time_t _ts;
-      ln_get_timet_from_julian (JD, &_ts);
-      setTs (_ts);
+    ln_get_timet_from_julian (JD, &_ts);
+    setTs (_ts);
   }
 };
 
@@ -76,11 +79,15 @@ class TimeDiff
 private:
   double time_1, time_2;
 public:
+    TimeDiff ()
+  {
+  }
+
   /**
    * Construct time diff from two doubles.
    *
    */
-    TimeDiff (double in_time_1, double in_time_2)
+  TimeDiff (double in_time_1, double in_time_2)
   {
     time_1 = in_time_1;
     time_2 = in_time_2;
@@ -96,6 +103,10 @@ class TimeJDDiff:public TimeJD
 private:
   time_t time_diff;
 public:
+  TimeJDDiff ():TimeJD ()
+  {
+  }
+
   TimeJDDiff (double in_time_jd, time_t in_time_diff):TimeJD (in_time_jd)
   {
     time_diff = in_time_diff;

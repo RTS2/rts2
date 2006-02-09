@@ -32,6 +32,12 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
   return _os;
 }
 
+std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra)
+{
+  _os << l_ra.getRa () << " (" << LibnovaRa (l_ra) << ")";
+  return _os;
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra)
 {
   if (isnan (l_ra.ra))
@@ -103,6 +109,12 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
   _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
+  return _os;
+}
+
+std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec)
+{
+  _os << l_dec.getDec () << " (" << LibnovaDec (l_dec) << ")";
   return _os;
 }
 
