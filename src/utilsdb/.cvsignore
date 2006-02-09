@@ -14,4 +14,5 @@ rts2taruser.cpp
 rts2imgset.cpp
 rts2count.cpp
 rts2targetset.cpp
+rts2camlist.cpp
 rts2-*
