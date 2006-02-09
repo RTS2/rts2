@@ -603,6 +603,8 @@ Target::getDBScript (const char *camera_name, char *script)
   WHERE
     tar_id = :tar_id
     AND camera_name = :d_camera_name;
+  if (sqlca.sqlcode == ECPG_NOT_FOUND)
+    return -1;
   if (sqlca.sqlcode)
     goto err;
   if (sc_indicator < 0)
@@ -611,8 +613,7 @@ Target::getDBScript (const char *camera_name, char *script)
   script[sc_script.len] = '\0';
   return 0;
 err:
-  printf ("err db_get_script: %li %s\n", sqlca.sqlcode,
-	  sqlca.sqlerrm.sqlerrmc);
+  logMsgDb ("err db_get_script");
   script[0] = '\0';
   return -1;
 }
