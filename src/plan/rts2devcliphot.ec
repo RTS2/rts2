@@ -17,6 +17,7 @@ Rts2DevClientPhotExec::~Rts2DevClientPhotExec ()
 void
 Rts2DevClientPhotExec::integrationEnd ()
 {
+  blockMove = 0;
   nextCommand ();
   Rts2DevClientPhot::integrationEnd ();
 }
@@ -24,6 +25,7 @@ Rts2DevClientPhotExec::integrationEnd ()
 void
 Rts2DevClientPhotExec::integrationFailed (int status)
 {
+  blockMove = 0;
   nextCommand ();
   Rts2DevClientPhot::integrationFailed (status);
 }
@@ -133,6 +135,14 @@ int
 Rts2DevClientPhotExec::getNextCommand ()
 {
   return script->nextCommand (*this, &nextComd, cmd_device);
+}
+
+void
+Rts2DevClientPhotExec::clearBlockMove ()
+{
+  if (isIntegrating ())
+    return;
+  Rts2DevScript::clearBlockMove ();
 }
 
 void

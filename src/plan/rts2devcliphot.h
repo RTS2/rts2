@@ -50,6 +50,8 @@ protected:
   virtual void addCount (int count, float exp, int is_ov);
 
   virtual int getNextCommand ();
+
+  virtual void clearBlockMove ();
 public:
   Rts2DevClientPhotExec (Rts2Conn * in_connection);
   virtual ~ Rts2DevClientPhotExec (void);

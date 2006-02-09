@@ -88,6 +88,8 @@ protected:
   virtual void startTarget ();
 
   virtual int getNextCommand ();
+
+  virtual void clearBlockMove ();
 public:
   Rts2DevClientCameraExec (Rts2Conn * in_connection);
   virtual ~ Rts2DevClientCameraExec (void);

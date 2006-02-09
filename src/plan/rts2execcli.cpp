@@ -52,6 +52,15 @@ Rts2DevClientCameraExec::getNextCommand ()
 }
 
 void
+Rts2DevClientCameraExec::clearBlockMove ()
+{
+  // we will be cleared when exposure ends..
+  if (isExposing)
+    return;
+  Rts2DevScript::clearBlockMove ();
+}
+
+void
 Rts2DevClientCameraExec::nextCommand ()
 {
   int ret;
@@ -59,11 +68,19 @@ Rts2DevClientCameraExec::nextCommand ()
   if (!ret)
     return;
 
-  if (nextComd->getCommandCond () == NO_EXPOSURE)
+  if (nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE
+      || nextComd->getCommandCond () == NO_EXPOSURE_MOVE)
     {
       if (isExposing || !isIdle ())
 	{
 	  return;		// after current exposure ends..
+	}
+      // don't execute command which need stable mount before
+      // move was executed
+      if (currentTarget && nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE)
+	{
+	  if (!currentTarget->wasMoved ())
+	    return;
 	}
       isExposing = 1;
     }
@@ -156,9 +173,9 @@ void
 Rts2DevClientCameraExec::exposureEnd ()
 {
   Rts2DevClientCameraImage::exposureEnd ();
+  blockMove = 0;
   if (!script || (script && script->isLastCommand ()))
     {
-      blockMove = 0;
       getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
     }
   else
@@ -332,6 +349,7 @@ Rts2DevClientTelescopeExec::syncTarget ()
   switch (ret)
     {
     case OBS_MOVE:
+      currentTarget->moveStarted ();
       connection->
 	queCommand (new
 		    Rts2CommandMove (getMaster (), this,
@@ -380,6 +398,8 @@ Rts2DevClientTelescopeExec::checkInterChange ()
 void
 Rts2DevClientTelescopeExec::moveEnd ()
 {
+  if (currentTarget)
+    currentTarget->moveEnded ();
   getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveEnd ();
@@ -393,6 +413,8 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
       moveEnd ();
       return;
     }
+  if (currentTarget)
+    currentTarget->moveFailed ();
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveFailed (status);
   // move failed because we get priority..

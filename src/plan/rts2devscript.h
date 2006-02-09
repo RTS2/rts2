@@ -68,9 +68,14 @@ protected:
   // called when we find source..
   virtual void searchSucess ();
 
+  virtual void clearBlockMove ()
+  {
+    blockMove = 0;
+  }
+
 public:
     Rts2DevScript (Rts2Conn * in_script_connection);
-    virtual ~ Rts2DevScript (void);
+  virtual ~ Rts2DevScript (void);
   virtual void postEvent (Rts2Event * event);
   virtual void nextCommand () = 0;
 };

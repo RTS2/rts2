@@ -203,7 +203,7 @@ void
 Rts2DevScript::deleteScript ()
 {
   Rts2Script *tmp_script;
-  blockMove = 0;
+  clearBlockMove ();
   unsetWait ();
   if (waitScript == WAIT_MASTER)
     {

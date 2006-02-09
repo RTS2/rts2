@@ -16,6 +16,7 @@ private:
   { NO_OP, OP_DUMP, OP_LOAD, OP_GENERATE } operation;
   int dumpPlan ();
   int loadPlan ();
+  int generatePlan ();
   struct tm *tm_night;
 protected:
     virtual int processOption (int in_opt);
@@ -84,6 +85,12 @@ Rts2PlanApp::loadPlan ()
 }
 
 int
+Rts2PlanApp::generatePlan ()
+{
+  return -1;
+}
+
+int
 Rts2PlanApp::processOption (int in_opt)
 {
   int ret;
@@ -130,8 +137,7 @@ Rts2PlanApp::run ()
     case OP_LOAD:
       return loadPlan ();
     case OP_GENERATE:
-
-      return 0;
+      return generatePlan ();
     }
   return -1;
 }
