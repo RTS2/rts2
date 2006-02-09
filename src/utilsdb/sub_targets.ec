@@ -3,6 +3,7 @@
 #include "rts2plan.h"
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
+#include "../utils/infoval.h"
 
 #include <iomanip>
 #include <sstream>
@@ -204,7 +205,9 @@ ConstTarget::printExtra (std::ostream &_os)
     default:
       _os << "Unknow target dis state:" << tar_enabled << std::endl;
   }
-  _os << "Target priority " << tar_priority << ", bonus " << tar_bonus << std::endl;
+  _os 
+    << InfoVal<double> ("TARGET PRIORITY", tar_priority)
+    << InfoVal<double> ("TARGET BONUS", tar_bonus);
 }
 
 // EllTarget - good for commets and so on
@@ -1523,15 +1526,11 @@ TargetGRB::printExtra (std::ostream &_os)
   else
     _os << "Unknow type ";
   _os << "(" << gcnPacketType << "), " 
-    << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") 
-    << std::endl
-    << "         GRB DATE: " << Timestamp (grbDate)
-    << std::endl
-    << " GCN FIRST PACKET: " << Timestamp (firstPacket)
-    << " (" << TimeDiff (grbDate, firstPacket) << ") "
-    << std::endl
-    << "  GCN LAST UPDATE: " << Timestamp (lastUpdate)
-    << std::endl;
+    << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") << std::endl
+    << InfoVal<Timestamp> ("GRB DATE", Timestamp (grbDate))
+    << InfoVal<Timestamp> ("GCN FIRST PACKET", Timestamp (firstPacket))
+    << InfoVal<TimeDiff> ("GRB->GCN", TimeDiff (grbDate, firstPacket))
+    << InfoVal<Timestamp> ("GCN LAST UPDATE", Timestamp (lastUpdate));
   // get information about obsering time..
   if (isnan (firstObs))
   {
@@ -1540,11 +1539,9 @@ TargetGRB::printExtra (std::ostream &_os)
   else
   {
     _os 
-      << "FIRST OBSERVATION: " << Timestamp (firstObs)
-      << std::endl
-      << "        GRB delta: " << std::setw (10) << TimeDiff (grbDate, firstObs)
-      << std::endl
-      << "        GCN delta: " << std::setw (10) << TimeDiff (firstPacket, firstObs);
+      << InfoVal<Timestamp> ("FIRST OBSERVATION", Timestamp (firstObs))
+      << InfoVal<TimeDiff> ("GRB delta", TimeDiff (grbDate, firstObs))
+      << InfoVal<TimeDiff> ("GCN delta", TimeDiff (firstPacket, firstObs));
   }
   _os << std::endl;
 }
@@ -1823,12 +1820,12 @@ void
 TargetSwiftFOV::printExtra (std::ostream &_os)
 {
   Target::printExtra (_os);
-  _os << "SwiftFOW ID: " << swiftId 
-  << " FROM: " << Timestamp (swiftTimeStart) 
-  << " TO: " << Timestamp (swiftTimeEnd)
-  << std::endl;
-  _os << "NAME " << swiftName << std::endl;
-  _os << "ROLL " << swiftRoll << std::endl;
+  _os 
+  << InfoVal<const char *> ("NAME", swiftName)
+  << InfoVal<int> ("SwiftFOW ID", swiftId)
+  << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
+  << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
+  << InfoVal<double> ("ROLL", swiftRoll);
 }
 
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
@@ -2111,22 +2108,25 @@ TargetPlan::printExtra (std::ostream & _os)
 {
   if (selectedPlan)
   {
-    _os << "Selected plan: " << std::endl
+    _os 
+      << "SELECTED PLAN" << std::endl
       << *selectedPlan << std::endl
-      << selectedPlan->getTarget () << std::endl;
+      << selectedPlan->getTarget () << std::endl
+      << "*************************************************" << std::endl;
   }
   else
   {
-    _os << "No plan selected" << std::endl;
+    _os << "NO PLAN SELECTED" << std::endl;
   }
   if (nextPlan)
   {
-    _os << "Next plan: " << std::endl
+    _os << "NEXT PLAN" << std::endl
       << *nextPlan << std::endl
-      << nextPlan->getTarget () << std::endl;
+      << nextPlan->getTarget () << std::endl
+      << "*************************************************" << std::endl;
   }
   else
   {
-    _os << "No next plan selected" << std::endl;
+    _os << "NO NEXT PLAN SELECTED" << std::endl;
   }
 }

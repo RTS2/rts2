@@ -7,6 +7,7 @@
 #include "rts2obsset.h"
 #include "rts2targetset.h"
 
+#include "../utils/infoval.h"
 #include "../utils/rts2app.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
@@ -15,6 +16,7 @@
 #include <syslog.h>
 
 #include <sstream>
+#include <iomanip>
 
 EXEC SQL include sqlca;
 
@@ -730,6 +732,14 @@ Target::getLunarDistance (double JD)
   return getDistance (&moon, JD);
 }
 
+double
+Target::getLunarRaDistance (double JD)
+{
+  struct ln_equ_posn moon;
+  ln_get_lunar_equ_coords (JD, &moon);
+  return getRaDistance (&moon, JD);
+}
+
 int
 Target::selectedAsGood ()
 {
@@ -1184,54 +1194,55 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
   time (&now);
 
   getAltAz (&hrz, JD);
-  _os << "Altitude " << LibnovaDeg90 (hrz.alt)
-    << " Zenit dist. " << LibnovaDeg90 (getZenitDistance ()) 
-    << " Azimuth " << LibnovaDeg (hrz.az)
-    << " Hour angle " << LibnovaRa (getHourAngle ())
-    << " Airmass " << getAirmass ()
+  _os 
+    << InfoVal<LibnovaDeg90> ("ALTITUDE", LibnovaDeg90 (hrz.alt))
+    << InfoVal<LibnovaDeg90> ("ZENITH DISTANCE", LibnovaDeg90 (getZenitDistance ()))
+    << InfoVal<LibnovaDeg> ("AZIMUTH", LibnovaDeg (hrz.az))
+    << InfoVal<LibnovaRa> ("HOUR ANGLE", LibnovaRa (getHourAngle ()))
+    << InfoVal<double> ("AIRMASS", getAirmass ())
     << std::endl;
   ret = getRST (&rst, JD);
   switch (ret)
   {
     case 1:
-      _os << " - circumpolar - " << std::endl;
+      _os << " - CIRCUMPOLAR - " << std::endl;
       break;
     case -1:
-      _os << " - don't rise - " << std::endl;
+      _os << " - DON'T RISE - " << std::endl;
       break;
     default:
       if (rst.set < rst.rise && rst.rise < rst.transit)
       {
 	_os 
-	  << "Set     " << TimeJDDiff (rst.set, now) << std::endl
-	  << "Rise    " << TimeJDDiff (rst.rise, now) << std::endl
-	  << "Transit " << TimeJDDiff (rst.transit, now) << std::endl;
+	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now)) 
+	  << InfoVal<TimeJDDiff> ("RISE", TimeJDDiff (rst.rise, now))
+	  << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now));
       }
       else if (rst.transit < rst.set && rst.set < rst.rise)
       {
 	_os 
-	  << "Transit " << TimeJDDiff (rst.transit, now) << std::endl
-	  << "Set     " << TimeJDDiff (rst.set, now) << std::endl
-	  << "Rise    " << TimeJDDiff (rst.rise, now) << std::endl
-	  << std::endl;
+	  << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now))
+	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now))
+	  << InfoVal<TimeJDDiff> ("RISE", TimeJDDiff (rst.rise, now));
       }
       else
       {
 	_os 
-	  << "Rise    " << TimeJDDiff (rst.rise, now) << std::endl
-	  << "Transit " << TimeJDDiff (rst.transit, now) << std::endl
-	  << "Set     " << TimeJDDiff (rst.set, now) << std::endl
-	  << std::endl;
+	  << InfoVal<TimeJDDiff> ("RISE", TimeJDDiff (rst.rise, now))
+	  << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now))
+	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now));
       }
   }
   getGalLng (&gal, JD);
-  _os << "Gal. longitude " << LibnovaDeg (gal.l) 
-    << " Gal. latitude " << LibnovaDeg90 (gal.b)
-    << " Gal. center dist. " << LibnovaDeg (getGalCenterDist (JD))
-    << std::endl;
-  _os << "Solar dist. " << LibnovaDeg (getSolarDistance (JD))
-    << " Solar RA dist. " << LibnovaDeg (getSolarRaDistance (JD))
-    << " Lunar dist. " << LibnovaDeg (getLunarDistance (JD))
+  _os 
+    << std::endl
+    << InfoVal<LibnovaDeg> ("GAL. LONGITUDE", LibnovaDeg (gal.l))
+    << InfoVal<LibnovaDeg90> ("GAL. LATITUDE", LibnovaDeg90 (gal.b))
+    << InfoVal<LibnovaDeg> ("GAL. CENTER DIST.", LibnovaDeg (getGalCenterDist (JD)))
+    << InfoVal<LibnovaDeg> ("SOLAR DIST.", LibnovaDeg (getSolarDistance (JD)))
+    << InfoVal<LibnovaDeg> ("SOLAR RA DIST.", LibnovaDeg (getSolarRaDistance (JD)))
+    << InfoVal<LibnovaDeg> ("LUNAR DIST.", LibnovaDeg (getLunarDistance (JD)))
+    << InfoVal<LibnovaDeg> ("LUNAR RA DIST.", LibnovaDeg (getLunarRaDistance (JD)))
     << std::endl;
 }
 
@@ -1251,21 +1262,24 @@ operator << (std::ostream &_os, Target *target)
 
   target->getPosition (&pos, JD);
 
-  _os << target->getTargetID () 
-    << " (" << target->getObsTargetID () << ") " 
-    << (name ? name : "null name")
-    << " (" << target->getTargetType () << ")"
-    << " RA " << LibnovaRa (pos.ra)
-    << " DEC " << LibnovaDeg90 (pos.dec)
-    << " (J2000) "
+  _os 
+    << InfoVal<int> ("ID", target->getTargetID ())
+    << InfoVal<int> ("SEL_ID", target->getObsTargetID ())
+    << InfoVal<const char *> ("NAME", (name ? name : "null name"))
+    << InfoVal<char> ("TYPE", target->getTargetType ())
+    << InfoVal<LibnovaRaJ2000> ("RA", LibnovaRaJ2000 (pos.ra))
+    << InfoVal<LibnovaDecJ2000> ("DEC", LibnovaDecJ2000 (pos.dec))
     << std::endl;
     
   target->sendPositionInfo (_os, JD);
   
   last = now - 86400;
-  _os << "OBS in last 24 hours " << target->getNumObs (&last, &now)
-    << std::endl;
-  _os << "BONUS " << target->getBonus (JD) << std::endl;
+  _os 
+    << InfoVal<int> ("24 HOURS OBS", target->getNumObs (&last, &now));
+  last = now - 7 * 86400;  
+  _os
+    << InfoVal<int> ("7 DAYS OBS", target->getNumObs (&last, &now))
+    << InfoVal<double> ("BONUS", target->getBonus (JD));
 
   // is above horizont?
   gst = ln_get_mean_sidereal_time (JD);
@@ -1274,7 +1288,7 @@ operator << (std::ostream &_os, Target *target)
    ? "Target is above local horizont." 
    : "Target is below local horizont, it's not possible to observe it.")
    << std::endl;
-  _os << "MIN_ALT " << target->getMinAlt () << std::endl;
+  _os << InfoVal<double> ("MIN_ALT", target->getMinAlt ());
   target->printExtra (_os);
   return _os;
 }

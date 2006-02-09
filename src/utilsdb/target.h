@@ -217,7 +217,7 @@ public:
     return getAltAz (hrz, ln_get_julian_from_sys ());
   }
 
-  double getMinAlt ()
+  virtual double getMinAlt ()
   {
     return minAlt;
   }
@@ -293,6 +293,13 @@ public:
   }
 
   double getLunarDistance (double JD);
+
+  double getLunarRaDistance ()
+  {
+    return getLunarRaDistance (ln_get_julian_from_sys ());
+  }
+
+  double getLunarRaDistance (double JD);
 
   double getMeridianDistance ()
   {
@@ -744,6 +751,10 @@ public:
   virtual int getScript (const char *deviceName, char *buf);
   virtual int beforeMove ();
   virtual float getBonus (double JD);
+  virtual double getMinAlt ()
+  {
+    return 0;
+  }
   // some logic needed to distinguish states when GRB position change
   // from last observation. there was update etc..
   virtual int isContinues ();
