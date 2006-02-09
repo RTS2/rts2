@@ -80,7 +80,10 @@ Rts2DevClientCameraExec::nextCommand ()
       if (currentTarget && nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE)
 	{
 	  if (!currentTarget->wasMoved ())
-	    return;
+	    {
+	      getObserveStart = START_CURRENT;
+	      return;
+	    }
 	}
       isExposing = 1;
     }

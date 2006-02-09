@@ -9,7 +9,7 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
   nextTarget = NULL;
   script = NULL;
   blockMove = 0;
-  getObserveStart = 0;
+  getObserveStart = NO_START;
   waitScript = NO_WAIT;
   dont_execute_for = -1;
   script_connection = in_script_connection;
@@ -78,20 +78,20 @@ Rts2DevScript::postEvent (Rts2Event * event)
       break;
     case EVENT_SET_TARGET:
       setNextTarget ((Target *) event->getArg ());
-      getObserveStart = 0;
+      getObserveStart = NO_START;
       break;
     case EVENT_LAST_READOUT:
     case EVENT_SCRIPT_ENDED:
-      if (!event->getArg () || (getObserveStart && script))
+      if (!event->getArg () || (getObserveStart == START_NEXT && script))
 	break;
       // we get new target..handle that same way as EVENT_OBSERVE command,
       // telescope will not move
       setNextTarget ((Target *) event->getArg ());
       // currentTarget is defined - tested in if (!event->getArg () || ..
     case EVENT_OBSERVE:
-      if (script)		// we are still observing..we will be called after last command finished
+      if (script && getObserveStart != START_CURRENT)	// we are still observing..we will be called after last command finished
 	{
-	  getObserveStart = 1;
+	  getObserveStart = START_NEXT;
 	  break;
 	}
       startTarget ();
@@ -103,7 +103,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  nextCommand ();
 	}
       // otherwise we post command after end of camera readout
-      getObserveStart = 0;
+      getObserveStart = NO_START;
       break;
     case EVENT_CLEAR_WAIT:
       clearWait ();
@@ -347,11 +347,11 @@ Rts2DevScript::haveNextCommand ()
       deleteScript ();
       // we don't get new command..delete us and look if there is new
       // target..
-      if (!getObserveStart)
+      if (getObserveStart == NO_START)
 	{
 	  return 0;
 	}
-      getObserveStart = 0;
+      getObserveStart = NO_START;
       startTarget ();
       if (!script)
 	{

@@ -33,8 +33,8 @@ protected:
   } waitScript;
 
   int blockMove;
-  int getObserveStart;
-
+  enum
+  { NO_START, START_CURRENT, START_NEXT } getObserveStart;
   virtual void startTarget ();
 
   virtual int getNextCommand () = 0;
