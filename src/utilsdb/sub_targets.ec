@@ -1025,7 +1025,7 @@ ModelTarget::getNextPosition ()
       break;
     case 0:
       // random model
-      step += ((double) random () * ((fabs (360.0 / az_step) + 1) * fabs((alt_stop - alt_start) / alt_step) + 1)) / RAND_MAX;
+      step += (int) (((double) random () * ((fabs (360.0 / az_step) + 1) * fabs((alt_stop - alt_start) / alt_step) + 1)) / RAND_MAX);
       break;
     default:  
       step += modelStepType * ((int) fabs ((alt_stop - alt_start) / alt_step) + 1) + 1;
@@ -2016,7 +2016,6 @@ TargetPlan::load (double JD)
     {
       logMsgDb ("TargetPlan::load cannot find any plan");
       EXEC SQL CLOSE cur_plan;
-      EXEC SQL ROLLBACK;
       return 0;
     }
     // we don't find next, but we have current
@@ -2024,7 +2023,6 @@ TargetPlan::load (double JD)
     db_next_plan_id = -1;
   }
   EXEC SQL CLOSE cur_plan;
-  EXEC SQL COMMIT;
 
   if (db_plan_id != -1)
   {

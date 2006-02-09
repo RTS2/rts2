@@ -58,6 +58,19 @@ Target::logMsgDb (const char *message)
 }
 
 void
+Target::getTargetSubject (std::string &subj)
+{
+  subj += getTargetName ();
+  subj += " #";
+  subj += getObsTargetID ();
+  subj += " (";
+  subj += getTargetID ();
+  subj += ")";
+  subj += " ";
+  subj += getTargetType ();
+}
+
+void
 Target::sendTargetMail (int eventMask, const char *subject_text)
 {
   std::string mails;
@@ -68,8 +81,9 @@ Target::sendTargetMail (int eventMask, const char *subject_text)
   {
     std::ostringstream os;
     std::ostringstream subject;
-    subject << "TARGET #" << getObsTargetID ()
-     << " (" << getTargetID () << ") "
+    std::string tars;
+    getTargetSubject (tars);
+    subject << "TARGET #" << tars 
      << subject_text << " #" << getObsId ();
     // lazy observation init
     if (observation == NULL)
@@ -91,6 +105,7 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 
   observer = in_obs;
   selected = 0;
+  moveCount = 0;
 
   epochId = 1;
   config->getInteger ("observatory", "epoch_id", epochId);
@@ -126,6 +141,7 @@ Target::Target ()
 
   observer = config->getObserver ();
   selected = 0;
+  moveCount = 0;
 
   epochId = 1;
   config->getInteger ("observatory", "epoch_id", epochId);
@@ -1169,11 +1185,13 @@ sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int pri
       std::string mails = tar->getUsersEmail (SEND_END_NIGHT);
       std::string subject_text = std::string ("END OF NIGHT, TARGET #");
       Rts2ObsSet obsset = Rts2ObsSet (db_tar_id, t_from, t_to);
-      subject_text += db_tar_id;
+      tar->getTargetSubject (subject_text);
       std::ostringstream os;
       obsset.printImages (printImages);
       obsset.printCounts (printCounts);
-      os << tar << obsset;
+      os << tar;
+      tar->printExtra (os);
+      os << obsset;
       sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
       delete tar;
     }

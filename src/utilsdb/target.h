@@ -164,6 +164,8 @@ private:
 
   double minAlt;
 
+  int moveCount;
+
 protected:
   int target_id;
   int obs_target_id;
@@ -191,6 +193,8 @@ public:
     virtual ~ Target (void);
   void logMsg (const char *message);
   void logMsgDb (const char *message);
+  void getTargetSubject (std::string & subj);
+
   // that method is GUARANTIE to be called after target creating to load data from DB
   virtual int load ();
   int save ();
@@ -395,6 +399,22 @@ public:
   // otherwise (when interruption is necessary) returns 0
   virtual int compareWithTarget (Target * in_target, double in_sep_limit);
   virtual int startSlew (struct ln_equ_posn *position);
+  void moveStarted ()
+  {
+    moveCount = 1;
+  }
+  void moveEnded ()
+  {
+    moveCount = 2;
+  }
+  void moveFailed ()
+  {
+    moveCount = 3;
+  }
+  bool wasMoved ()
+  {
+    return (moveCount == 2 || moveCount == 3);
+  }
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
   virtual int startObservation ();
@@ -421,21 +441,22 @@ public:
     acquired = 0;
   }
   void interupted ();
-  virtual int endObservation (int in_next_id);
+
   // similar to startSlew - return 0 if observation ends, 1 if
   // it doesn't ends (ussually in case when in_next_id == target_id),
   // -1 on errror
+  virtual int endObservation (int in_next_id);
 
+  // returns 1 if target is continuus - in case next target is same | next
+  // targer doesn't exists, we keep exposing and we will not move mount between
+  // exposures. Good for darks observation, partial good for GRB (when we solve
+  // problem with moving mount in exposures - position updates)
   virtual int isContinues ()
   {
     return 0;
   }
 
-  virtual int observationStarted ();
-  // returns 1 if target is continuus - in case next target is same | next
-  // targer doesn't exists, we keep exposing and we will not move mount between
-  // exposures. Good for darks observation, partial good for GRB (when we solve
-  // problem with moving mount in exposures - position updates)
+  int observationStarted ();
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
   // ready for target post-processing (call some script,..)
