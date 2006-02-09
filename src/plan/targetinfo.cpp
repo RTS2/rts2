@@ -1,4 +1,5 @@
 #include "../utilsdb/rts2appdb.h"
+#include "../utilsdb/rts2camlist.h"
 #include "../utilsdb/target.h"
 #include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
@@ -23,7 +24,7 @@ class Rts2TargetInfo:public Rts2AppDb
 {
 private:
   std::list < int >targets;
-    std::list < char *>cameras;
+  Rts2CamList cameras;
   Target *target;
   struct ln_lnlat_posn *obs;
   int printTargetInfo ();
@@ -51,7 +52,6 @@ Rts2AppDb (in_argc, in_argv)
   printImages = 0;
   printCounts = 0;
 
-  addOption ('c', "cameras", 1, "show scripts for given cameras");
   addOption ('E', "extendet", 2,
 	     "print extendet informations (visibility prediction,..)");
   addOption ('o', "observations", 2,
@@ -74,9 +74,6 @@ Rts2TargetInfo::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'c':
-      cameras.push_back (optarg);
-      break;
     case 'E':
       printExtendet = 1;
       break;
@@ -123,7 +120,7 @@ Rts2TargetInfo::printTargetInfo ()
   double JD;
   std::cout << target;
   // print scripts..
-  std::list < char *>::iterator cam_names;
+  Rts2CamList::iterator cam_names;
   if (printExtendet)
     {
       JD = ln_get_julian_from_sys ();
@@ -138,7 +135,7 @@ Rts2TargetInfo::printTargetInfo ()
     }
   for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
     {
-      char *cam_name = *cam_names;
+      const char *cam_name = (*cam_names).c_str ();
       int ret;
       char script[MAX_COMMAND_LENGTH];
       ret = target->getScript (cam_name, script);
@@ -185,6 +182,8 @@ Rts2TargetInfo::init ()
     {
       obs = config->getObserver ();
     }
+
+  cameras = Rts2CamList ();
 
   return 0;
 }
