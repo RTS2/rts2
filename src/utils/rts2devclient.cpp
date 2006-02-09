@@ -289,8 +289,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -504,6 +503,7 @@ Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient
   addValue (new Rts2ValueInteger ("filter"));
   lastCount = -1;
   lastExp = -1.0;
+  integrating = false;
 }
 
 Rts2DevClientPhot::~Rts2DevClientPhot ()
@@ -586,16 +586,19 @@ Rts2DevClientPhot::filterMoveFailed (int status)
 void
 Rts2DevClientPhot::integrationStart ()
 {
+  integrating = true;
 }
 
 void
 Rts2DevClientPhot::integrationEnd ()
 {
+  integrating = false;
 }
 
 void
 Rts2DevClientPhot::integrationFailed (int status)
 {
+  integrating = false;
 }
 
 void
@@ -603,6 +606,47 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
 {
   lastCount = count;
   lastExp = exp;
+}
+
+bool Rts2DevClientPhot::isIntegrating ()
+{
+  return integrating;
+}
+
+Rts2DevClientFilter::Rts2DevClientFilter (Rts2Conn * in_connection):Rts2DevClient
+  (in_connection)
+{
+  addValue (new Rts2ValueInteger ("filter"));
+}
+
+Rts2DevClientFilter::~Rts2DevClientFilter ()
+{
+}
+
+void
+Rts2DevClientFilter::filterMoveStart ()
+{
+}
+
+void
+Rts2DevClientFilter::filterMoveEnd ()
+{
+}
+
+void
+Rts2DevClientFilter::filterMoveFailed (int status)
+{
+}
+
+void
+Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
+{
+
+}
+
+void
+Rts2DevClientFilter::filterOK ()
+{
 }
 
 Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient

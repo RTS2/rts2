@@ -200,6 +200,7 @@ protected:
   virtual void addCount (int count, float exp, int is_ov);
   int lastCount;
   float lastExp;
+  bool integrating;
 public:
     Rts2DevClientPhot (Rts2Conn * in_connection);
     virtual ~ Rts2DevClientPhot (void);
@@ -211,6 +212,22 @@ public:
   virtual void filterOK ()
   {
   }
+
+  bool isIntegrating ();
+};
+
+class Rts2DevClientFilter:public Rts2DevClient
+{
+protected:
+  virtual void filterMoveStart ();
+  virtual void filterMoveEnd ();
+public:
+    Rts2DevClientFilter (Rts2Conn * in_connection);
+    virtual ~ Rts2DevClientFilter (void);
+  virtual void filterMoveFailed (int status);
+  virtual void stateChanged (Rts2ServerState * state);
+
+  virtual void filterOK ();
 };
 
 class Rts2DevClientExecutor:public Rts2DevClient

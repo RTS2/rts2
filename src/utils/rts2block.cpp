@@ -1433,6 +1433,8 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2DevClientCopula (conn);
     case DEVICE_TYPE_PHOT:
       return new Rts2DevClientPhot (conn);
+    case DEVICE_TYPE_FW:
+      return new Rts2DevClientFilter (conn);
     case DEVICE_TYPE_EXECUTOR:
       return new Rts2DevClientExecutor (conn);
     case DEVICE_TYPE_IMGPROC:

@@ -9,7 +9,8 @@ typedef enum
 { EXP_LIGHT, EXP_DARK } exposureType;
 
 typedef enum
-{ NO_COND, NO_EXPOSURE, IN_WAIT_STATE } commandCondType;
+{ NO_COND, NO_EXPOSURE_MOVE, NO_EXPOSURE_NO_MOVE,
+    IN_WAIT_STATE } commandCondType;
 
 class Rts2Command
 {

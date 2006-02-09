@@ -152,7 +152,10 @@ Rts2Command (in_master)
   setCommand (command);
   free (command);
   camera = in_camera;
-  commandCond = NO_EXPOSURE;
+  if (exp_type == EXP_LIGHT)
+    commandCond = NO_EXPOSURE_NO_MOVE;
+  else
+    commandCond = NO_EXPOSURE_MOVE;
 }
 
 int
