@@ -36,7 +36,9 @@ Rts2DevScript::startTarget ()
     }
   else
     {
-      script = new Rts2Script (script_connection, currentTarget);
+      script =
+	new Rts2Script (script_connection->getMaster (),
+			script_connection->getName (), currentTarget);
     }
   clearFailedCount ();
   script_connection->getMaster ()->
@@ -264,7 +266,9 @@ Rts2DevScript::setNextTarget (Target * in_target)
     }
   else
     {
-      nextScript = new Rts2Script (script_connection, nextTarget);
+      nextScript =
+	new Rts2Script (script_connection->getMaster (),
+			script_connection->getName (), nextTarget);
     }
 }
 

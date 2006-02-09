@@ -81,19 +81,19 @@ Rts2Script::getNextParamInteger (int *val)
   return 0;
 }
 
-Rts2Script::Rts2Script (Rts2Conn * in_connection, Target * target):
+Rts2Script::Rts2Script (Rts2Block * in_master, const char *cam_name, Target * target):
 Rts2Object ()
 {
   Rts2ScriptElement *element;
   char scriptText[MAX_COMMAND_LENGTH];
   struct ln_equ_posn target_pos;
 
-  target->getScript (in_connection->getName (), scriptText);
+  target->getScript (cam_name, scriptText);
   target->getPosition (&target_pos);
   cmdBuf = new char[strlen (scriptText) + 1];
   strcpy (cmdBuf, scriptText);
-  strcpy (defaultDevice, in_connection->getName ());
-  connection = in_connection;
+  strcpy (defaultDevice, cam_name);
+  master = in_master;
   cmdBufTop = cmdBuf;
   do
     {
@@ -185,7 +185,12 @@ Rts2Script::parseBuf (Target * target, struct ln_equ_posn *target_pos)
     {
       strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE);
     }
-  if (!strcmp (commandStart, COMMAND_EXPOSURE))
+  // we hit end of script buffer
+  if (commandStart == '\0')
+    {
+      return NULL;
+    }
+  else if (!strcmp (commandStart, COMMAND_EXPOSURE))
     {
       float exp_time;
       ret = getNextParamFloat (&exp_time);
@@ -404,7 +409,6 @@ Rts2Script::parseBuf (Target * target, struct ln_equ_posn *target_pos)
 	return NULL;
       return new Rts2ScriptElementGuiding (this, init_exposure, end_signal);
     }
-  syslog (LOG_ERR, "Rts2Script::parseBuf unknown command: %s", commandStart);
   return NULL;
 }
 

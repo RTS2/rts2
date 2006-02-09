@@ -24,7 +24,8 @@ rts2_seltest_SOURCES = seltest.cpp rts2selector.cpp
 rts2_seltest_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_seltest_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
-rts2_targetinfo_SOURCES = targetinfo.cpp 
+rts2_targetinfo_SOURCES = targetinfo.cpp rts2script.cpp rts2scriptelement.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2connimgprocess.cpp \
+			  rts2spiral.cpp
 rts2_targetinfo_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_targetinfo_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
 

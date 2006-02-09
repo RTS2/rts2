@@ -4,6 +4,7 @@
 #include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
+#include "rts2script.h"
 
 #include <iostream>
 #include <iomanip>
@@ -137,11 +138,21 @@ Rts2TargetInfo::printTargetInfo ()
     {
       const char *cam_name = (*cam_names).c_str ();
       int ret;
-      char script[MAX_COMMAND_LENGTH];
-      ret = target->getScript (cam_name, script);
+      char script_buf[MAX_COMMAND_LENGTH];
+      int failedCount;
+      ret = target->getScript (cam_name, script_buf);
       std::
-	cout << "Script for camera " << cam_name << ":'" << script <<
+	cout << "Script for camera " << cam_name << ":'" << script_buf <<
 	"' ret (" << ret << ")" << std::endl;
+      // try to parse it..
+      Rts2Script script = Rts2Script (NULL, cam_name, target);
+      failedCount = script.getFaultLocation ();
+      if (failedCount != -1)
+	{
+	  std::
+	    cout << "PARSING of script '" << script_buf << "' FAILED!!! AT "
+	    << failedCount << std::endl;
+	}
     }
   // print observations..
   if (printObservations)

@@ -67,17 +67,24 @@ private:
 			       struct ln_equ_posn *target_pos);
     std::list < Rts2ScriptElement * >elements;
     std::list < Rts2ScriptElement * >::iterator el_iter;
-  Rts2Conn *connection;
+  Rts2Block *master;
   // is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
   int executedCount;
 public:
-    Rts2Script (Rts2Conn * in_connection, Target * target);
+    Rts2Script (Rts2Block * in_master, const char *cam_name, Target * target);
     virtual ~ Rts2Script (void);
   virtual void postEvent (Rts2Event * event);
     template < typename T > int nextCommand (T & device,
 					     Rts2Command ** new_command,
 					     char
 					     new_device[DEVICE_NAME_SIZE]);
+  // returns -1 when there wasn't any error, otherwise index of element that wasn't parsed
+  int getFaultLocation ()
+  {
+    if (*cmdBufTop == '\0')
+      return -1;
+    return (cmdBufTop - cmdBuf);
+  }
   int isLastCommand (void)
   {
     return (el_iter == elements.end ());
@@ -93,7 +100,7 @@ public:
   int processImage (Rts2Image * image);
   Rts2Block *getMaster ()
   {
-    return connection->getMaster ();
+    return master;
   }
   int getExecutedCount ()
   {
