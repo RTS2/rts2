@@ -60,14 +60,12 @@ Target::logMsgDb (const char *message)
 void
 Target::getTargetSubject (std::string &subj)
 {
-  subj += getTargetName ();
-  subj += " #";
-  subj += getObsTargetID ();
-  subj += " (";
-  subj += getTargetID ();
-  subj += ")";
-  subj += " ";
-  subj += getTargetType ();
+  std::ostringstream _os;
+  _os 
+    << getTargetName ()
+    << " #" << getObsTargetID () << " (" << getTargetID () << ")"
+    << " " << getTargetType ();
+  subj = _os.str();  
 }
 
 void
@@ -83,8 +81,8 @@ Target::sendTargetMail (int eventMask, const char *subject_text)
     std::ostringstream subject;
     std::string tars;
     getTargetSubject (tars);
-    subject << "TARGET #" << tars 
-     << subject_text << " #" << getObsId ();
+    subject << "TARGET " << tars 
+     << subject_text << " obs #" << getObsId ();
     // lazy observation init
     if (observation == NULL)
     {
