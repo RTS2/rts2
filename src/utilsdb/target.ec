@@ -91,7 +91,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text)
       observation->setPrintImages (DISPLAY_ALL | DISPLAY_SUMMARY);
       observation->setPrintCounts (DISPLAY_ALL | DISPLAY_SUMMARY);
     }
-    os << *observation;
+    os << this << std::endl << *observation;
     sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
   }
 }

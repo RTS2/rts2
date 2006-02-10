@@ -19,6 +19,8 @@ Rts2Obs::Rts2Obs (int in_obs_id)
   imgset = NULL;
   displayImages = 0;
   displayCounts = 0;
+
+  load ();
 }
 
 Rts2Obs::Rts2Obs (int in_tar_id, char in_tar_type, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, 
