@@ -1,5 +1,6 @@
 #include "rts2targetset.h"
 #include "../utils/rts2config.h"
+#include "../utils/libnova_cpp.h"
 
 #include <sstream>
 
@@ -48,7 +49,7 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
 
   for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
   {
-    Target *tar = createTarget (*iter, Rts2Config::instance()->getObserver ());
+    Target *tar = createTarget (*iter, obs);
     if (tar)
       push_back (tar);
   }
@@ -56,7 +57,7 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
   target_ids.clear ();
 }
 
-Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius)
+Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs)
 {
   std::ostringstream os;
   std::ostringstream where_os;
@@ -67,6 +68,9 @@ Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius)
   os << "<"
     << radius;
   where_os << " ASC";
+  obs = in_obs;
+  if (!obs)
+    obs = Rts2Config::instance ()->getObserver ();
   load (os.str(), where_os.str());
 }
 
@@ -75,6 +79,77 @@ Rts2TargetSet::~Rts2TargetSet (void)
   for (Rts2TargetSet::iterator iter = begin (); iter != end (); iter++)
   {
     delete *iter;
+  }
+  clear ();
+}
+
+void
+Rts2TargetSetGrb::load ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_tar_id;
+  EXEC SQL END DECLARE SECTION;
+
+  std::list <int> target_ids;
+
+  EXEC SQL DECLARE grb_tar_cur CURSOR FOR
+  SELECT
+    tar_id
+  FROM
+    grb
+  ORDER BY
+    grb_date DESC;
+
+  EXEC SQL OPEN grb_tar_cur;
+
+  while (1)
+  {
+    EXEC SQL FETCH next FROM grb_tar_cur INTO
+      :db_tar_id;
+    if (sqlca.sqlcode)
+      break;
+    target_ids.push_back (db_tar_id);
+  }
+  if (sqlca.sqlcode != ECPG_NOT_FOUND)
+  {
+    syslog (LOG_ERR, "Rts2TargetSet::load cannot load targets");
+  }
+  EXEC SQL CLOSE grb_tar_cur;
+  EXEC SQL ROLLBACK;
+
+  for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
+  {
+    TargetGRB *tar = (TargetGRB *) createTarget (*iter, obs);
+    if (tar)
+      push_back (tar);
+  }
+
+  target_ids.clear ();
+}
+
+Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)
+{
+  obs = in_obs;
+  if (!obs)
+    obs = Rts2Config::instance ()->getObserver ();
+  load ();
+}
+
+Rts2TargetSetGrb::~Rts2TargetSetGrb (void)
+{
+  for (Rts2TargetSetGrb::iterator iter = begin (); iter != end (); iter++)
+  {
+    delete *iter;
+  }
+  clear ();
+}
+
+void
+Rts2TargetSetGrb::printGrbList (std::ostream & _os)
+{
+  for (Rts2TargetSetGrb::iterator iter = begin (); iter != end (); iter++)
+  {
+    (*iter)->printGrbList (_os);
   }
   clear ();
 }

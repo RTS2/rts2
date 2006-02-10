@@ -1524,22 +1524,34 @@ TargetGRB::getFirstPacket ()
   return db_grb_update + db_grb_update_usec / USEC_SEC;
 }
 
+const char *
+TargetGRB::getSatelite ()
+{
+  // get satelite
+  if (gcnPacketMin == 40)
+    return "HETE BURST ";
+  else if (gcnPacketMin == 50)
+    return "INTEGRAL BURST ";
+  else if (gcnPacketMin == 60)
+  {
+    if (gcnPacketType >= 81)
+      return "SWIFT BURST (UVOT)";
+    if (gcnPacketType >= 67)
+      return "SWIFT BURST (XRT)";
+    return "SWIFT BURST (BAT)";
+  }
+  return "Unknow type";
+}
+
 void
 TargetGRB::printExtra (std::ostream &_os)
 {
   double firstPacket = getFirstPacket ();
   double firstObs = getFirstObs ();
   ConstTarget::printExtra (_os);
-  // get satelite
-  if (gcnPacketMin == 40)
-    _os << "HETE BURST ";
-  else if (gcnPacketMin == 50)
-    _os << "INTEGRAL BURST ";
-  else if (gcnPacketMin == 60)
-    _os << "SWIFT BURST ";
-  else
-    _os << "Unknow type ";
-  _os << "(" << gcnPacketType << "), " 
+  _os 
+    << getSatelite ()
+    << InfoVal<int> ("TYPE", gcnPacketType)
     << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") << std::endl
     << InfoVal<Timestamp> ("GRB DATE", Timestamp (grbDate))
     << InfoVal<Timestamp> ("GCN FIRST PACKET", Timestamp (firstPacket))
@@ -1558,6 +1570,25 @@ TargetGRB::printExtra (std::ostream &_os)
       << InfoVal<TimeDiff> ("GCN delta", TimeDiff (firstPacket, firstObs));
   }
   _os << std::endl;
+}
+
+void
+TargetGRB::printGrbList (std::ostream & _os)
+{
+  struct ln_equ_posn pos;
+  double firstObs = getFirstObs ();
+  getPosition (&pos, ln_get_julian_from_sys ());
+  _os
+    << "  "
+    << std::setw(20) << getTargetName () << " | "
+    << LibnovaRa (pos.ra) << " | " 
+    << LibnovaDec (pos.dec) << " | "
+    << Timestamp (grbDate) << " | "
+    << Timestamp (getFirstPacket ()) << " | "
+    << Timestamp (firstObs) << " | "
+    << TimeDiff (grbDate, firstObs) << " | "
+    << Timestamp (getLastObs ())
+    << std::endl;
 }
 
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)

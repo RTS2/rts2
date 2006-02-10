@@ -762,6 +762,8 @@ private:
   int shouldUpdate;
   int gcnPacketMin;		// usefull for searching for packet class
   int gcnPacketMax;
+
+  const char *getSatelite ();
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
 public:
@@ -782,6 +784,7 @@ public:
 
   double getFirstPacket ();
   virtual void printExtra (std::ostream & _os);
+  void printGrbList (std::ostream & _os);
 };
 
 /**
