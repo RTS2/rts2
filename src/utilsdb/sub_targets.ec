@@ -1453,27 +1453,40 @@ int
 TargetGRB::isContinues ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  long  db_grb_last_update;
   int db_tar_id = getTargetID ();
+  double db_tar_ra;
+  double db_tar_dec;
   EXEC SQL END DECLARE SECTION;
+
+  struct ln_equ_posn pos;
+
   // once we detect need to update, we need to update - stop the observation and start new
   if (shouldUpdate)
     return 0;
 
   EXEC SQL SELECT
-    EXTRACT (EPOCH FROM grb_last_update)
+    tar_ra,
+    tar_dec
   INTO
-    :db_grb_last_update
+    :db_tar_ra,
+    :db_tar_dec
   FROM
-    grb
+    grb,
+    targets
   WHERE
-    tar_id = :db_tar_id;
+      targets.tar_id = :db_tar_id
+    AND targets.tar_id = grb.tar_id;
+
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetGRB::isContinues");
     return -1;
   }
-  return (lastUpdate == db_grb_last_update) ? 1 : 0;
+  getPosition (&pos, ln_get_julian_from_sys ());
+  if (pos.ra == db_tar_ra && pos.dec == db_tar_dec)
+    return 1;
+  // we get big update, lets synchronize again..  
+  return 0;
 }
 
 double
