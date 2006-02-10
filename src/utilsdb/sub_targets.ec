@@ -1486,6 +1486,7 @@ TargetGRB::isContinues ()
   if (pos.ra == db_tar_ra && pos.dec == db_tar_dec)
     return 1;
   // we get big update, lets synchronize again..  
+  shouldUpdate = 1;
   return 0;
 }
 
