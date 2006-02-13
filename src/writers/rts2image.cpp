@@ -43,6 +43,8 @@ Rts2Image::initData ()
   ra_err = nan ("f");
   dec_err = nan ("f");
   img_err = nan ("f");
+
+  isAcquiring = 0;
 }
 
 Rts2Image::Rts2Image ()
@@ -87,7 +89,8 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
   exposureStart = *in_exposureStart;
 
   expT = gmtime (&exposureStart.tv_sec);
-  if (currTarget->isAcquiring ())
+  isAcquiring = currTarget->isAcquiring ();
+  if (isAcquiring)
     {
       // put acqusition images to acqusition que
       asprintf (&in_filename,

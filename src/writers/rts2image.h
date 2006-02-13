@@ -56,6 +56,7 @@ private:
   short int max;
   short int mean;
   int *histogram;
+  int isAcquiring;
 
   void initData ();
 protected:
@@ -238,6 +239,11 @@ public:
   {
     focPos = new_pos;
     setValue ("FOC_POS", focPos, "focuser position");
+  }
+
+  int getIsAcquiring ()
+  {
+    return isAcquiring;
   }
 
   void keepImage ()
