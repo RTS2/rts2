@@ -10,6 +10,7 @@
 #include <signal.h>
 
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -104,7 +105,9 @@ class Rts2DevDomeBart:public Rts2DevDome
 {
 private:
   int dome_port;
+  int rain_port;
   char *dome_file;
+  char *rain_detector;
 
   unsigned char spinac[2];
   unsigned char stav_portu[3];
@@ -126,6 +129,7 @@ private:
 
 protected:
   virtual int processOption (int in_opt);
+  virtual int isGoodWeather ();
 
 public:
   Rts2DevDomeBart (int argc, char **argv);
@@ -157,8 +161,11 @@ Rts2DevDomeBart::Rts2DevDomeBart (int in_argc, char **in_argv):
 Rts2DevDome (in_argc, in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
+  addOption ('R', "rain_detector", 1, "/dev/file for rain detector");
   addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
   dome_file = "/dev/ttyS0";
+  rain_detector = NULL;
+  rain_port = -1;
 
   domeModel = "BART_FORD_2";
 
@@ -171,6 +178,7 @@ Rts2DevDome (in_argc, in_argv)
 
 Rts2DevDomeBart::~Rts2DevDomeBart (void)
 {
+  close (rain_port);
   close (dome_port);
 }
 
@@ -240,7 +248,7 @@ Rts2DevDomeBart::openDome ()
 {
   if (!isOn (KONCAK_OTEVRENI_JIH))
     return endOpen ();
-  if (weatherConn && !weatherConn->isGoodWeather ())
+  if (!isGoodWeather ())
     return -1;
   VYP (MOTOR);
   sleep (1);
@@ -316,6 +324,9 @@ Rts2DevDomeBart::processOption (int in_opt)
     case 'f':
       dome_file = optarg;
       break;
+    case 'R':
+      rain_detector = optarg;
+      break;
     case 'I':
       ignoreMeteo = 1;
       break;
@@ -323,6 +334,24 @@ Rts2DevDomeBart::processOption (int in_opt)
       return Rts2DevDome::processOption (in_opt);
     }
   return 0;
+}
+
+int
+Rts2DevDomeBart::isGoodWeather ()
+{
+  int flags;
+  int ret;
+  ret = ioctl (rain_port, TIOCMGET, &flags);
+  // ioctl failed or it's raining..
+  if (ret || flags & TIOCM_RI)
+    {
+      rain = 1;
+      return 0;
+    }
+  rain = 0;
+  if (weatherConn)
+    return weatherConn->isGoodWeather ();
+  return 1;
 }
 
 int
@@ -367,6 +396,33 @@ Rts2DevDomeBart::init ()
       return -1;
     }
 
+  if (rain_detector)
+    {
+      // init rain detector
+      int flags;
+      rain_port = open (rain_detector, O_RDWR | O_NOCTTY);
+      if (rain_port == -1)
+	{
+	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot open %s : %m",
+		  rain_detector);
+	  return -1;
+	}
+      ret = ioctl (rain_port, TIOCMGET, &flags);
+      if (ret)
+	{
+	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot get flags: %m");
+	  return -1;
+	}
+      flags &= ~TIOCM_DTR;
+      flags |= TIOCM_RTS;
+      ret = ioctl (rain_port, TIOCMSET, &flags);
+      if (ret)
+	{
+	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot set flags: %m");
+	  return -1;
+	}
+    }
+
   if (ignoreMeteo)
     return 0;
 
@@ -393,11 +449,7 @@ int
 Rts2DevDomeBart::idle ()
 {
   // check for weather..
-  if (!weatherConn)
-    {
-      domeWeatherGood ();
-    }
-  else if (weatherConn->isGoodWeather ())
+  if (isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
@@ -461,7 +513,7 @@ Rts2DevDomeBart::info ()
   sw_state |= (getPortState (KONCAK_ZAVRENI_SEVER) << 3);
   if (weatherConn)
     {
-      rain = weatherConn->getRain ();
+      rain |= weatherConn->getRain ();
       windspeed = weatherConn->getWindspeed ();
       nextOpen = weatherConn->getNextOpen ();
     }
