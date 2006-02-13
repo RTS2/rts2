@@ -122,6 +122,8 @@ private:
   int isOn (int c_port);
   int handle_zasuvky (int state);
 
+  int ignoreMeteo;
+
 protected:
   virtual int processOption (int in_opt);
 
@@ -155,11 +157,16 @@ Rts2DevDomeBart::Rts2DevDomeBart (int in_argc, char **in_argv):
 Rts2DevDome (in_argc, in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
+  addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
   dome_file = "/dev/ttyS0";
 
   domeModel = "BART_FORD_2";
 
   weatherConn = NULL;
+  ignoreMeteo = 0;
+
+  rain = 0;
+  windspeed = nan ("f");
 }
 
 Rts2DevDomeBart::~Rts2DevDomeBart (void)
@@ -233,7 +240,7 @@ Rts2DevDomeBart::openDome ()
 {
   if (!isOn (KONCAK_OTEVRENI_JIH))
     return endOpen ();
-  if (!weatherConn->isGoodWeather ())
+  if (weatherConn && !weatherConn->isGoodWeather ())
     return -1;
   VYP (MOTOR);
   sleep (1);
@@ -309,6 +316,9 @@ Rts2DevDomeBart::processOption (int in_opt)
     case 'f':
       dome_file = optarg;
       break;
+    case 'I':
+      ignoreMeteo = 1;
+      break;
     default:
       return Rts2DevDome::processOption (in_opt);
     }
@@ -328,7 +338,10 @@ Rts2DevDomeBart::init ()
   dome_port = open (dome_file, O_RDWR | O_NOCTTY);
 
   if (dome_port == -1)
-    return -1;
+    {
+      syslog (LOG_ERR, "Rts2DevDomeBart::init open %m");
+      return -1;
+    }
 
   ret = tcgetattr (dome_port, &oldtio);
   if (ret)
@@ -354,6 +367,9 @@ Rts2DevDomeBart::init ()
       return -1;
     }
 
+  if (ignoreMeteo)
+    return 0;
+
   for (i = 0; i < MAX_CONN; i++)
     {
       if (!connections[i])
@@ -377,7 +393,11 @@ int
 Rts2DevDomeBart::idle ()
 {
   // check for weather..
-  if (weatherConn->isGoodWeather ())
+  if (!weatherConn)
+    {
+      domeWeatherGood ();
+    }
+  else if (weatherConn->isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
@@ -439,9 +459,12 @@ Rts2DevDomeBart::info ()
   sw_state |= (getPortState (KONCAK_OTEVRENI_SEVER) << 1);
   sw_state |= (getPortState (KONCAK_ZAVRENI_JIH) << 2);
   sw_state |= (getPortState (KONCAK_ZAVRENI_SEVER) << 3);
-  rain = weatherConn->getRain ();
-  windspeed = weatherConn->getWindspeed ();
-  nextOpen = weatherConn->getNextOpen ();
+  if (weatherConn)
+    {
+      rain = weatherConn->getRain ();
+      windspeed = weatherConn->getWindspeed ();
+      nextOpen = weatherConn->getNextOpen ();
+    }
   return 0;
 }
 
