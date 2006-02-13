@@ -34,6 +34,11 @@ protected:
     Rts2DevClientPhot::setWaitMove ();
   }
 
+  virtual int queCommandFromScript (Rts2Command * com)
+  {
+    return queCommand (com);
+  }
+
   virtual int getFailedCount ()
   {
     return Rts2DevClient::getFailedCount ();

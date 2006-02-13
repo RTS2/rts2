@@ -36,7 +36,7 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
   int d_count_value;
-  int d_count_date;
+  double d_count_date;
   int d_count_usec;
   float d_count_exposure;
   char d_count_filter;
@@ -79,7 +79,7 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
     postEvent (new Rts2Event (EVENT_GET_RADEC, (void *) &actRaDec));
 
   d_obs_id = currentTarget->getObsId ();
-  d_count_date = now.tv_sec;
+  d_count_date = now.tv_sec + now.tv_usec / USEC_SEC;
   d_count_usec = now.tv_usec;
   d_count_value = count;
   d_count_exposure = exp;

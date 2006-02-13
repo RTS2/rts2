@@ -228,6 +228,9 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	    }
 	  if (img_prec <= reqPrecision)
 	    {
+	      syslog (LOG_DEBUG,
+		      "Rts2ScriptElementAcquire::postEvent seting PRECISION_OK on %f <= %f obsId %i imgId %i",
+		      img_prec, reqPrecision, obsId, imgId);
 	      processingState = PRECISION_OK;
 	    }
 	  else
@@ -284,6 +287,8 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
     case FAILED:
       return NEXT_COMMAND_PRECISION_FAILED;
     case PRECISION_OK:
+      syslog (LOG_DEBUG,
+	      "Rts2ScriptElementAcquire::nextCommand PRECISION_OK");
       return NEXT_COMMAND_PRECISION_OK;
     case PRECISION_BAD:
       processingState = NEED_IMAGE;
@@ -305,11 +310,11 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
   int ret;
   Rts2ConnImgProcess *processor;
 
-  if (processingState != WAITING_IMAGE)
+  if (processingState != WAITING_IMAGE || !image->getIsAcquiring ())
     {
       syslog (LOG_ERR,
-	      "Rts2ScriptElementAcquire::processImage invalid processingState: %i",
-	      processingState);
+	      "Rts2ScriptElementAcquire::processImage invalid processingState: %i isAcquiring: %i",
+	      processingState, image->getIsAcquiring ());
       return -1;
     }
   obsId = image->getObsId ();
@@ -587,6 +592,8 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f",
 		      offset.ra, offset.dec);
+	      syslog (LOG_DEBUG,
+		      "Rts2ScriptElementAcquireStar::postEvent processingState = PRECISION_OK");
 	      processingState = PRECISION_OK;
 	      break;
 	    case 1:
