@@ -20,7 +20,7 @@ Rts2ConnGrb::getPktSod ()
 }
 
 void
-Rts2ConnGrb::getTimeTfromTJD (long TJD, double SOD, time_t * in_time, int * usec)
+Rts2ConnGrb::getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long * usec)
 {
   double JD = getJDfromTJD (TJD, SOD);
   ln_get_timet_from_julian (JD, in_time);
@@ -77,6 +77,7 @@ Rts2ConnGrb::pr_hete ()
   struct ln_equ_posn pos_int, pos_j2000;
   int grb_is_grb = 1;
   time_t grb_date;
+  long grb_date_usec;
   float grb_errorbox;
 
   grb_id = ((lbuf[BURST_TRIG] & H_TRIGNUM_MASK) >> H_TRIGNUM_SHIFT);
@@ -86,7 +87,7 @@ Rts2ConnGrb::pr_hete ()
   pos_int.ra = lbuf[BURST_RA] / 10000.0;
   pos_int.dec = lbuf[BURST_DEC] / 10000.0;
 
-  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
 
   grb_errorbox = (lbuf[H_WXM_DIM_NSIG] >> 16) / 60.0;
 
@@ -118,7 +119,7 @@ Rts2ConnGrb::pr_hete ()
     || (lbuf[H_TRIG_FLAGS] & H_DEF_XRB))
     grb_is_grb = 0;
   
-  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox);
 }
 
 int
@@ -130,6 +131,7 @@ Rts2ConnGrb::pr_integral ()
   struct ln_equ_posn pos_int, pos_j2000;
   int grb_is_grb = 1;
   time_t grb_date;
+  long grb_date_usec;
   float grb_errorbox;
 
   if (!do_hete_test
@@ -148,7 +150,7 @@ Rts2ConnGrb::pr_integral ()
   pos_int.ra = lbuf[BURST_RA]/10000.0;
   pos_int.dec = lbuf[BURST_DEC]/10000.0;
 
-  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
 
   ln_get_equ_prec2 (&pos_int, ln_get_julian_from_timet (&grb_date), JD2000, &pos_j2000);
 
@@ -160,7 +162,7 @@ Rts2ConnGrb::pr_integral ()
     grb_errorbox *= -1;
   }
 
-  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox);
 }
 
 int
@@ -180,6 +182,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
   double grb_dec;
   int grb_is_grb = 1;
   time_t grb_date;
+  long grb_date_usec;
   float grb_errorbox;
 
   grb_type = (int) (lbuf[PKT_TYPE]);
@@ -207,7 +210,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
       break;
   }
 
-  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
   switch (grb_type)
   {
     case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
@@ -218,7 +221,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
     default:
       grb_errorbox = nan ("f");
   }
-  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox);
 }
 
 int
@@ -234,6 +237,7 @@ Rts2ConnGrb::pr_swift_without_radec ()
   EXEC SQL END DECLARE SECTION;
 
   time_t grb_date;
+  long grb_date_usec;
 
   d_grb_type = (int)(lbuf[PKT_TYPE]);
   d_grb_id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
@@ -243,14 +247,14 @@ Rts2ConnGrb::pr_swift_without_radec ()
     {
       case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
         // get S/C coordinates to slew on
-        getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date);
+        getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
         // that's special in big errror-box
         // but as we specify last know ra/dec, we will slew to best location we know about burst
         // assume that swift will never spend more then three hours on one location, due to orbit parameters
 	// as burst can happen during slew, we have to put in fabs - otherwise we will not respond to burst
 	// catched during/before slew, but after pointdir notice was send
         if (fabs (grb_date - swiftLastPoint) < 3 * 3600)
-          addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, 60);
+          addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, grb_date_usec, 60);
         break;
       case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
         // update if not grb..
@@ -439,7 +443,7 @@ Rts2ConnGrb::gcnContainsNewPos (int grb_type, int curr_grb_type)
 }
 
 int
-Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, float grb_errorbox)
+Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_tar_id;
@@ -450,8 +454,8 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   double d_grb_ra = grb_ra;
   double d_grb_dec = grb_dec;
   bool d_grb_is_grb = grb_is_grb;
-  long int d_grb_date = (int) *grb_date;
-  long int d_grb_update = (int) last_packet.tv_sec;
+  double d_grb_date = (long) *grb_date + grb_date_usec / USEC_SEC;
+  double d_grb_update = last_packet.tv_sec + last_packet.tv_usec / USEC_SEC;
   float d_grb_errorbox = grb_errorbox;
   int d_grb_errorbox_ind;
   // used to find correct grb - based on type
@@ -475,6 +479,11 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   {
     d_grb_errorbox_ind = 0;
   }
+
+  d_tar_name.len = snprintf (d_tar_name.arr, 150, "GRB %02d%02d%06.3f GCN #%i", 
+    grb_broken_time->tm_year % 100, grb_broken_time->tm_mon + 1, grb_broken_time->tm_mday +
+    (grb_broken_time->tm_hour * 3600 + grb_broken_time->tm_min * 60 + grb_broken_time->tm_sec) / 86400.0,
+    d_grb_id);
 
   getGrbBound (grb_type, d_grb_type_start, d_grb_type_end);
 
@@ -503,10 +512,6 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
     }
     // generate new GRB details
     grb_broken_time = gmtime (grb_date);
-    d_tar_name.len = sprintf (d_tar_name.arr, "GRB %02d%02d%06.3f GCN #%i", 
-      grb_broken_time->tm_year % 100, grb_broken_time->tm_mon + 1, grb_broken_time->tm_mday +
-      (grb_broken_time->tm_hour * 3600 + grb_broken_time->tm_min * 60 + grb_broken_time->tm_sec) / 86400.0,
-      d_grb_id);
     d_tar_comment.len = sprintf (d_tar_comment.arr, "Generated by GRBD for event %d-%02d-%02dT%02d:%02d:%02d, GCN #%i, type %i",
       grb_broken_time->tm_year + 1900, grb_broken_time->tm_mon + 1, grb_broken_time->tm_mday,
       grb_broken_time->tm_hour, grb_broken_time->tm_min, grb_broken_time->tm_sec, d_grb_id, d_grb_type);
@@ -699,6 +704,8 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
     }
   }
 
+  setLastTarget (d_tar_name.arr, d_grb_update);
+
   return ret;
 }
 
@@ -782,9 +789,8 @@ in_do_hete_test, char *in_addExe, int in_execFollowups, Rts2DevGrb *in_master):R
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
 {
-  delete gcn_hostname;
-  if (last_target)
-    delete last_target;
+  delete[] gcn_hostname;
+  delete[] last_target;
   if (gcn_listen_sock >= 0)
     close (gcn_listen_sock);
 }
@@ -1124,15 +1130,15 @@ Rts2ConnGrb::lastTarget ()
 }
 
 void
-Rts2ConnGrb::setLastTarget (char *in_last_target)
+Rts2ConnGrb::setLastTarget (char *in_last_target, double in_last_target_time)
 {
-  if (last_target)
-    delete last_target;
+  delete[] last_target;
   last_target = new char[strlen (in_last_target) + 1];
   strcpy (last_target, in_last_target);
+  last_target_time = in_last_target_time;
 }
 
-int
+double
 Rts2ConnGrb::lastTargetTime ()
 {
   return last_target_time;

@@ -25,7 +25,7 @@ private:
 
   double deltaValue;
   char *last_target;
-  int last_target_time;
+  double last_target_time;
 
   // init listen (listening on given port) and call (try to connect to given
   // port; there must be GCN packet receiving running on oppoiste side) GCN
@@ -36,7 +36,7 @@ private:
   // utility functions..
   double getPktSod ();
 
-  void getTimeTfromTJD (long TJD, double SOD, time_t * in_time, int *usec =
+  void getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long *usec =
 			NULL);
 
   double getJDfromTJD (long TJD, double SOD)
@@ -62,7 +62,7 @@ private:
   bool gcnContainsNewPos (int grb_type, int curr_grb_typ);
   int addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		   double grb_dec, bool grb_is_grb, time_t * grb_date,
-		   float grb_errorbox);
+		   long grb_date_usec, float grb_errorbox);
   int addGcnRaw (int grb_id, int grb_seqn, int grb_type);
 
   int gcn_port;
@@ -91,8 +91,8 @@ public:
   int lastPacket ();
   double delta ();
   char *lastTarget ();
-  void setLastTarget (char *in_last_target);
-  int lastTargetTime ();
+  void setLastTarget (char *in_last_target, double in_last_target_time);
+  double lastTargetTime ();
 };
 
 #endif /* !__RTS2_GRBCONN__ */
