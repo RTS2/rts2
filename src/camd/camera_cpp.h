@@ -236,6 +236,8 @@ public:
     return -1;
   }
 
+  virtual int scriptEnds ();
+
   virtual int camChipInfo (int chip)
   {
     return -1;

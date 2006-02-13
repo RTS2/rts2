@@ -364,6 +364,19 @@ Rts2DevCamera::cancelPriorityOperations ()
 }
 
 int
+Rts2DevCamera::scriptEnds ()
+{
+  int i;
+  for (i = 0; i < chipNum; i++)
+    {
+      chips[i]->box (-1, -1, -1, -1);
+      chips[i]->setBinning (defBinning, defBinning);
+    }
+  setTimeout (USEC_SEC);
+  return Rts2Device::scriptEnds ();
+}
+
+int
 Rts2DevCamera::processOption (int in_opt)
 {
   switch (in_opt)
