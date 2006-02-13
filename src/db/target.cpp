@@ -1,9 +1,11 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2targetset.h"
+#include "../utils/rts2askchoice.h"
 #include "../utils/rts2config.h"
 
 #include <iostream>
 
+#define OP_NONE		0x00
 #define OP_ENABLE	0x03
 #define OP_DISABLE	0x01
 #define OP_MASK_EN	0x03
@@ -12,8 +14,15 @@
 
 class Rts2Target:public Rts2AppDb
 {
+private:
   int op;
     std::list < int >tar_ids;
+  Rts2TargetSet *target_set;
+
+  float new_bonus;
+  time_t new_bonus_time;
+
+  int runInteractive ();
 public:
     Rts2Target (int argc, char **argv);
     virtual ~ Rts2Target (void);
@@ -28,7 +37,10 @@ public:
 Rts2Target::Rts2Target (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
-  op = 0;
+  target_set = NULL;
+  op = OP_NONE;
+  new_bonus = nan ("f");
+
   addOption ('e', "enable", 0, "enable given targets");
   addOption ('d', "disable", 0,
 	     "disable given targets (they will not be picked up by selector");
@@ -38,11 +50,14 @@ Rts2AppDb (in_argc, in_argv)
 
 Rts2Target::~Rts2Target ()
 {
+  delete target_set;
 }
 
 int
 Rts2Target::processOption (int in_opt)
 {
+  int ret;
+  struct tm tm_ret;
   switch (in_opt)
     {
     case 'e':
@@ -54,6 +69,17 @@ Rts2Target::processOption (int in_opt)
       if (op & OP_ENABLE)
 	return -1;
       op |= OP_DISABLE;
+      return 0;
+    case 'b':
+      new_bonus = atof (optarg);
+      op |= OP_BONUS;
+      return 0;
+    case 'B':
+      ret = parseDate (optarg, &tm_ret);
+      if (ret)
+	return ret;
+      new_bonus_time = mktime (&tm_ret);
+      op |= OP_BONUS_TIME;
       return 0;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -91,19 +117,71 @@ Rts2Target::init ()
 }
 
 int
+Rts2Target::runInteractive ()
+{
+  Rts2AskChoice selection = Rts2AskChoice (this);
+  selection.addChoice ('e', "Enable target(s)");
+  selection.addChoice ('d', "Disable target(s)");
+  selection.addChoice ('o', "List observations around position");
+  selection.addChoice ('t', "List targets around position");
+  selection.addChoice ('n', "Choose new target");
+  selection.addChoice ('s', "Save");
+  selection.addChoice ('q', "Quit");
+  while (1)
+    {
+      char sel_ret;
+      sel_ret = selection.query (std::cout);
+      switch (sel_ret)
+	{
+	case 'e':
+
+	  break;
+	case 'd':
+
+	  break;
+	case 'o':
+
+	  break;
+	case 't':
+
+	  break;
+	case 'n':
+
+	  break;
+	case 'q':
+	  return 0;
+	case 's':
+	  return target_set->save ();
+	}
+    }
+}
+
+int
 Rts2Target::run ()
 {
-  Rts2TargetSet target_set = Rts2TargetSet (tar_ids);
+  target_set = new Rts2TargetSet (tar_ids);
   if ((op & OP_MASK_EN) == OP_ENABLE)
     {
-      target_set.setTargetEnabled (true);
+      target_set->setTargetEnabled (true);
     }
   if ((op & OP_MASK_EN) == OP_DISABLE)
     {
-      target_set.setTargetEnabled (false);
+      target_set->setTargetEnabled (false);
+    }
+  if (op & OP_BONUS)
+    {
+      target_set->setTargetBonus (new_bonus);
+    }
+  if (op & OP_BONUS_TIME)
+    {
+      target_set->setTargetBonusTime (&new_bonus_time);
+    }
+  if (op == OP_NONE)
+    {
+      return runInteractive ();
     }
 
-  return target_set.save ();
+  return target_set->save ();
 }
 
 int

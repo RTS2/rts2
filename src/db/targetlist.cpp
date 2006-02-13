@@ -63,6 +63,7 @@ Rts2TargetList::run ()
 {
   Rts2TargetSetGrb tar_set = Rts2TargetSetGrb ();
   tar_set.printGrbList (std::cout);
+  return 0;
 }
 
 int
