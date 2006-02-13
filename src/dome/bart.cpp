@@ -276,6 +276,7 @@ Rts2DevDomeBart::endOpen ()
 {
   VYP (MOTOR);
   zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  setTimeout (USEC_SEC);
   return Rts2DevDome::endOpen ();
 }
 
