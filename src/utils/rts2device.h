@@ -206,6 +206,7 @@ public:
   int infoAll ();
   virtual int baseInfo (Rts2Conn * conn);
   int killAll ();
+  virtual int scriptEnds ();
 
   virtual Rts2Conn *getCentraldConn ()
   {

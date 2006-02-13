@@ -10,7 +10,8 @@ typedef enum
 
 typedef enum
 { NO_COND, NO_EXPOSURE_MOVE, NO_EXPOSURE_NO_MOVE,
-    IN_WAIT_STATE } commandCondType;
+  IN_WAIT_STATE
+} commandCondType;
 
 class Rts2Command
 {
@@ -285,6 +286,12 @@ class Rts2CommandKillAll:public Rts2Command
 {
 public:
   Rts2CommandKillAll (Rts2Block * in_master);
+};
+
+class Rts2CommandScriptEnds:public Rts2Command
+{
+public:
+  Rts2CommandScriptEnds (Rts2Block * in_master);
 };
 
 #endif /* !__RTS2_COMMAND__ */

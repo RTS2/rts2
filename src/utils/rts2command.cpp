@@ -486,3 +486,9 @@ Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block * in_master):Rts2Command
 {
   setCommand ("killall");
 }
+
+Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block * in_master):Rts2Command
+  (in_master)
+{
+  setCommand ("script_ends");
+}

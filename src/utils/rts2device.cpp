@@ -42,6 +42,11 @@ Rts2DevConn::commandAuthorized ()
       CHECK_PRIORITY;
       return master->killAll ();
     }
+  else if (isCommand ("script_ends"))
+    {
+      CHECK_PRIORITY;
+      return master->scriptEnds ();
+    }
   // pseudo-command; will not be answered with ok ect..
   // as it can occur inside command block
   else if (isCommand ("this_device"))
@@ -590,10 +595,6 @@ Rts2State::setState (int new_state, char *description)
       return;
     }
   state = new_state;
-  if (!description)
-    description = "null";
-  syslog (LOG_DEBUG, "Rts2State::setState new_state: %i desc: %s this: %p",
-	  new_state, description, this);
   master->sendStatusMessage (state_name, state);
 };
 
@@ -877,6 +878,12 @@ int
 Rts2Device::killAll ()
 {
   cancelPriorityOperations ();
+  return 0;
+}
+
+int
+Rts2Device::scriptEnds ()
+{
   return 0;
 }
 
