@@ -47,14 +47,18 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
   free (stmp_c);
   EXEC SQL ROLLBACK;
 
+  load (target_ids);
+}
+
+void
+Rts2TargetSet::load (std::list<int> &target_ids)
+{
   for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
   {
     Target *tar = createTarget (*iter, obs);
     if (tar)
       push_back (tar);
   }
-
-  target_ids.clear ();
 }
 
 Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs)
@@ -72,6 +76,14 @@ Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_
   if (!obs)
     obs = Rts2Config::instance ()->getObserver ();
   load (os.str(), where_os.str());
+}
+
+Rts2TargetSet::Rts2TargetSet (std::list<int> &tar_ids, struct ln_lnlat_posn *in_obs)
+{
+  obs = in_obs;
+  if (!obs)
+    obs = Rts2Config::instance ()->getObserver ();
+  load (tar_ids);
 }
 
 Rts2TargetSet::~Rts2TargetSet (void)
@@ -123,8 +135,49 @@ Rts2TargetSetGrb::load ()
     if (tar)
       push_back (tar);
   }
+}
 
-  target_ids.clear ();
+void
+Rts2TargetSet::setTargetEnabled (bool enabled)
+{
+  for (iterator iter = begin (); iter != end (); iter++)
+  {
+    (*iter)->setTargetEnabled (enabled);
+  }
+}
+
+void
+Rts2TargetSet::setTargetBonus (float new_bonus)
+{
+  for (iterator iter = begin (); iter != end (); iter++)
+  {
+    (*iter)->setTargetBonus (new_bonus);
+  }
+}
+
+void
+Rts2TargetSet::setTargetBonusTime (time_t *new_time)
+{
+  for (iterator iter = begin (); iter != end (); iter++)
+  {
+    (*iter)->setTargetBonusTime (new_time);
+  }
+}
+
+int
+Rts2TargetSet::save ()
+{
+  int ret = 0;
+  int ret_s;
+  
+  for (iterator iter = begin (); iter != end (); iter++)
+  {
+    ret_s = (*iter)->save ();
+    if (ret_s)
+      ret--;
+  }
+  // return number of targets for which save failed
+  return ret;
 }
 
 Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)

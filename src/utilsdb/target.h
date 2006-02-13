@@ -166,6 +166,11 @@ private:
 
   int moveCount;
 
+  float tar_priority;
+  float tar_bonus;
+  time_t tar_bonus_time;
+  bool tar_enabled;
+
 protected:
   int target_id;
   int obs_target_id;
@@ -173,10 +178,6 @@ protected:
   char *target_name;
   char *target_comment;
   struct ln_lnlat_posn *observer;
-
-  float tar_priority;
-  float tar_bonus;
-  char tar_enabled;
 
   virtual int getDBScript (const char *camera_name, char *script);
 
@@ -381,6 +382,42 @@ public:
     target_comment = new char[strlen (in_target_comment) + 1];
     strcpy (target_comment, in_target_comment);
   }
+  bool getTargetEnabled ()
+  {
+    return tar_enabled;
+  }
+  void setTargetEnabled (bool new_en = true)
+  {
+    tar_enabled = new_en;
+  }
+
+  float getTargetPriority ()
+  {
+    return tar_priority;
+  }
+
+  float getTargetBonus ()
+  {
+    return tar_bonus;
+  }
+
+  const time_t *getTargetBonusTime ()
+  {
+    return &tar_bonus_time;
+  }
+
+  void setTargetBonus (float new_bonus, time_t * new_time = NULL)
+  {
+    tar_bonus = new_bonus;
+    if (new_time)
+      setTargetBonusTime (new_time);
+  }
+
+  void setTargetBonusTime (time_t * new_time)
+  {
+    tar_bonus_time = *new_time;
+  }
+
   int getObsId ()
   {
     return obs_id;

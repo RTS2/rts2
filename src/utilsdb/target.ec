@@ -81,7 +81,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text)
     std::ostringstream subject;
     std::string tars;
     getTargetSubject (tars);
-    subject << "TARGET " << tars 
+    subject << "TARGET " << tars << " " 
      << subject_text << " obs #" << getObsId ();
     // lazy observation init
     if (observation == NULL)
@@ -167,9 +167,14 @@ Target::Target ()
 
   acquired = 0;
 
-  tar_priority = nan ("f");
+
+  tar_priority = 0;
   tar_bonus = nan ("f");
-  tar_enabled = -1;
+  tar_bonus_time = 0;
+  tar_enabled = false;
+
+  config->getFloat ("newtarget", "priority", tar_priority);
+  config->getBoolean ("newtarget", "enabled", tar_enabled);
 }
 
 Target::~Target (void)
@@ -190,6 +195,8 @@ Target::load ()
   int d_tar_priority_ind;
   float d_tar_bonus;
   int d_tar_bonus_ind;
+  long d_tar_bonus_time;
+  int d_tar_bonus_time_ind;
   bool d_tar_enabled;
   int db_tar_id = getObsTargetID ();
   EXEC SQL END DECLARE SECTION;
@@ -199,11 +206,13 @@ Target::load ()
     tar_name, 
     tar_priority,
     tar_bonus,
+    EXTRACT (EPOCH FROM tar_bonus_time),
     tar_enabled
   INTO
     :d_tar_name,
     :d_tar_priority :d_tar_priority_ind,
     :d_tar_bonus :d_tar_bonus_ind,
+    :d_tar_bonus_time :d_tar_bonus_time_ind,
     :d_tar_enabled
   FROM
     targets
@@ -224,12 +233,17 @@ Target::load ()
   if (d_tar_priority_ind >= 0)
     tar_priority = d_tar_priority;
   else
-    tar_priority = -1;
+    tar_priority = 0;
     
   if (d_tar_bonus_ind >= 0)
     tar_bonus = d_tar_bonus;
   else
     tar_bonus = -1;
+
+  if (d_tar_bonus_time_ind >= 0)
+    tar_bonus_time = d_tar_bonus_time;
+  else
+    tar_bonus_time = 0;
 
   tar_enabled = d_tar_enabled;
   
@@ -242,7 +256,7 @@ int
 Target::save ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_new_id;
+  int db_new_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   // generate new id, if we don't have any 
@@ -274,6 +288,12 @@ Target::save (int tar_id)
   int db_tar_name_ind = 0;
   VARCHAR db_tar_comment[2000];
   int db_tar_comment_ind = 0;
+  float db_tar_priority = getTargetPriority ();
+  float db_tar_bonus = getTargetBonus ();
+  int db_tar_bonus_ind;
+  long db_tar_bonus_time = *(getTargetBonusTime ());
+  int db_tar_bonus_time_ind;
+  bool db_tar_enabled = getTargetEnabled ();
   EXEC SQL END DECLARE SECTION;
   // fill in name and comment..
   if (getTargetName ())
@@ -283,6 +303,7 @@ Target::save (int tar_id)
   }
   else
   {
+    db_tar_name.len = 0;
     db_tar_name_ind = -1;
   }
   
@@ -293,7 +314,28 @@ Target::save (int tar_id)
   }
   else
   {
+    db_tar_comment.len = 0;
     db_tar_comment_ind = -1;
+  }
+
+  if (isnan (db_tar_bonus))
+  {
+    db_tar_bonus = 0;
+    db_tar_bonus_time = 0;
+    db_tar_bonus_ind =-1;
+    db_tar_bonus_time_ind = -1;
+  }
+  else
+  {
+    db_tar_bonus_ind = 0;
+    if (db_tar_bonus_time > 0)
+    {
+      db_tar_bonus_time_ind = 0;
+    }
+    else
+    {
+      db_tar_bonus_time_ind = -1;
+    }
   }
   
   // try inserting it..
@@ -303,25 +345,39 @@ Target::save (int tar_id)
     tar_id,
     type_id,
     tar_name,
-    tar_comment
+    tar_comment,
+    tar_priority,
+    tar_bonus,
+    tar_bonus_time,
+    tar_enabled
   )
   VALUES
   (
     :db_tar_id,
     :db_type_id,
     :db_tar_name :db_tar_name_ind,
-    :db_tar_comment :db_tar_comment_ind
+    :db_tar_comment :db_tar_comment_ind,
+    :db_tar_priority,
+    :db_tar_bonus :db_tar_bonus_ind,
+    abstime (:db_tar_bonus_time :db_tar_bonus_time_ind),
+    :db_tar_enabled
   );
   // insert failed - try update
   if (sqlca.sqlcode)
   {
+    EXEC SQL ROLLBACK;
+
     EXEC SQL
     UPDATE
       targets
     SET
       type_id = :db_type_id,
       tar_name = :db_tar_name,
-      tar_comment = :db_tar_comment
+      tar_comment = :db_tar_comment,
+      tar_priority = :db_tar_priority,
+      tar_bonus = :db_tar_bonus :db_tar_bonus_ind,
+      tar_bonus_time = abstime(:db_tar_bonus_time :db_tar_bonus_time),
+      tar_enabled = :db_tar_enabled
     WHERE
       tar_id = :db_tar_id;
 
@@ -333,6 +389,7 @@ Target::save (int tar_id)
     }
   }
   target_id = db_tar_id;
+
   EXEC SQL COMMIT;
   return 0;
 }
@@ -761,13 +818,21 @@ Target::selectedAsGood ()
   EXEC SQL BEGIN DECLARE SECTION;
   bool d_tar_enabled;
   int d_tar_id = getObsTargetID ();
+  float d_tar_priority;
+  int d_tar_priority_ind;
+  float d_tar_bonus;
+  int d_tar_bonus_ind;
   EXEC SQL END DECLARE SECTION;
   // check if we are still enabled..
   EXEC SQL
   SELECT
-    tar_enabled
+    tar_enabled,
+    tar_priority,
+    tar_bonus
   INTO
-    :d_tar_enabled
+    :d_tar_enabled,
+    :d_tar_priority :d_tar_priority_ind,
+    :d_tar_bonus :d_tar_bonus_ind
   FROM
     targets
   WHERE
@@ -777,7 +842,17 @@ Target::selectedAsGood ()
     logMsgDb ("Target::selectedAsGood");
     return -1;
   }
-  if (d_tar_enabled)
+  tar_enabled = d_tar_enabled;
+  if (d_tar_priority_ind >= 0)
+    tar_priority = d_tar_priority;
+  else
+    tar_priority = 0;
+  if (d_tar_bonus_ind >= 0)
+    tar_bonus = d_tar_bonus;
+  else
+    tar_bonus = 0;
+    
+  if (tar_enabled && tar_priority + tar_bonus >= 0)
     return 0;
   return -1;
 }
@@ -1030,6 +1105,18 @@ Target::getLastObs ()
 void
 Target::printExtra (std::ostream &_os)
 {
+  if (tar_enabled)
+  {
+    _os << "Target is enabled" << std::endl;
+  }
+  else
+  {
+    _os << "Target is disabled" << std::endl;
+  }
+  _os 
+    << InfoVal<double> ("TARGET PRIORITY", tar_priority)
+    << InfoVal<double> ("TARGET BONUS", tar_bonus)
+    << InfoVal<Timestamp> ("TARGET BONUS TIME", Timestamp(tar_bonus_time));
 }
 
 int

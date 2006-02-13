@@ -18,17 +18,11 @@ ConstTarget::ConstTarget () : Target ()
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
 Target (in_tar_id, in_obs)
 {
-  tar_priority = nan ("f");
-  tar_bonus = nan ("f");
-  tar_enabled = -1;
 }
 
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):
 Target (in_tar_id, in_obs)
 {
-  tar_priority = nan ("f");
-  tar_bonus = nan ("f");
-  tar_enabled = -1;
   position.ra = pos->ra;
   position.dec = pos->dec;
 }
@@ -70,12 +64,9 @@ ConstTarget::save (int tar_id)
   EXEC SQL BEGIN DECLARE SECTION;
   double d_tar_ra;
   double d_tar_dec;
-  float d_tar_priority;
   int d_tar_id;
-  bool d_tar_enabled;
   EXEC SQL END DECLARE SECTION;
 
-  Rts2Config *config = Rts2Config::instance ();
   int ret;
 
   ret = Target::save (tar_id);
@@ -85,12 +76,6 @@ ConstTarget::save (int tar_id)
   d_tar_ra = position.ra;
   d_tar_dec = position.dec;
 
-  d_tar_priority = 0;
-  config->getFloat ("newtarget", "priority", d_tar_priority);
-
-  d_tar_enabled = true;
-  config->getBoolean ("newtarget", "enabled", d_tar_enabled);
-
   d_tar_id = tar_id;
 
   EXEC SQL
@@ -98,11 +83,7 @@ ConstTarget::save (int tar_id)
     targets
   SET
     tar_ra = :d_tar_ra,
-    tar_dec = :d_tar_dec,
-    tar_priority = :d_tar_priority,
-    tar_bonus = 0,
-    tar_bonus_time = NULL,
-    tar_enabled = :d_tar_enabled
+    tar_dec = :d_tar_dec
   WHERE
     tar_id = :d_tar_id;
 
@@ -112,9 +93,6 @@ ConstTarget::save (int tar_id)
     EXEC SQL ROLLBACK;
     return -1;
   }
-  tar_enabled = d_tar_enabled;
-  tar_priority = d_tar_priority;
-  tar_bonus = 0;
   EXEC SQL COMMIT;
   return 0;
 }
@@ -142,25 +120,16 @@ int
 ConstTarget::selectedAsGood ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  bool d_tar_enabled;
   int d_tar_id = target_id;
-  float d_tar_priority;
-  float d_tar_bonus;
   double d_tar_ra;
   double d_tar_dec;
   EXEC SQL END DECLARE SECTION;
   // check if we are still enabled..
   EXEC SQL
   SELECT
-    tar_enabled,
-    tar_priority,
-    tar_bonus,
     tar_ra,
     tar_dec
   INTO
-    :d_tar_enabled,
-    :d_tar_priority,
-    :d_tar_bonus,
     :d_tar_ra,
     :d_tar_dec
   FROM
@@ -172,14 +141,9 @@ ConstTarget::selectedAsGood ()
     logMsgDb ("Target::selectedAsGood");
     return -1;
   }
-  tar_priority = d_tar_priority;
-  tar_bonus = d_tar_bonus;
   position.ra = d_tar_ra;
   position.dec = d_tar_dec;
-  tar_enabled = d_tar_enabled;
-  if (d_tar_enabled && tar_priority + tar_bonus > 0)
-    return 0;
-  return -1;
+  return Target::selectedAsGood ();
 }
 
 int
@@ -194,20 +158,6 @@ void
 ConstTarget::printExtra (std::ostream &_os)
 {
   Target::printExtra (_os);
-  switch (tar_enabled)
-  {
-    case 1:
-      _os << "Target is enabled" << std::endl;
-      break;
-    case 0:
-      _os << "Target is disabled" << std::endl;
-      break;
-    default:
-      _os << "Unknow target dis state:" << tar_enabled << std::endl;
-  }
-  _os 
-    << InfoVal<double> ("TARGET PRIORITY", tar_priority)
-    << InfoVal<double> ("TARGET BONUS", tar_bonus);
 }
 
 // EllTarget - good for commets and so on
