@@ -123,13 +123,17 @@ Rts2ClientTCPDataConn::idle ()
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %m");
+#endif
 	  connectionError (-1);
 	}
       else if (err)
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %s",
 		  strerror (err));
+#endif
 	  if (err == EINPROGRESS)
 	    {
 	      if (!reachedSendTimeout ())

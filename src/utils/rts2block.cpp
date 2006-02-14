@@ -121,8 +121,10 @@ Rts2Conn::idle ()
 	  && now > lastSendReady + getConnTimeout () / 4)
 	{
 	  ret = send ("T ready");
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Send T ready ret: %i name: '%s' type:%i", ret,
 		  getName (), type);
+#endif
 	  time (&lastSendReady);
 	}
       if (now > (lastData + getConnTimeout () * 2))
@@ -158,14 +160,16 @@ Rts2Conn::acceptConn ()
   new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
   if (new_sock == -1)
     {
-      syslog (LOG_DEBUG, "Rts2Conn::acceptConn data accept");
+      syslog (LOG_ERR, "Rts2Conn::acceptConn data accept %m");
       return -1;
     }
   else
     {
       close (sock);
       sock = new_sock;
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG, "Rts2Conn::acceptConn connection accepted");
+#endif
       setConnState (CONN_CONNECTED);
       return 0;
     }
@@ -255,7 +259,9 @@ Rts2Conn::processLine ()
 	return -1;
       if (!strcmp (msg, "ready"))
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Send T OK");
+#endif
 	  send ("T OK");
 	  return -1;
 	}
@@ -581,7 +587,9 @@ Rts2Conn::commandReturn ()
   // ignore (for the moment) retuns recieved without command
   if (!runningCommand)
     {
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG, "Rts2Conn::commandReturn null!");
+#endif
       return -1;
     }
   ret = runningCommand->commandReturn (atoi (getCommand ()));
@@ -621,9 +629,11 @@ Rts2Conn::send (char *msg)
 
   if (ret != len)
     {
+#ifdef DEBUG_EXTRA
       syslog (LOG_ERR,
 	      "Rts2Conn::send [%i:%i] error %i state: %i sending '%s':%m",
 	      getCentraldId (), conn_state, sock, ret, msg);
+#endif
       connectionError (ret);
       return -1;
     }
@@ -1079,7 +1089,9 @@ Rts2Block::addConnection (Rts2Conn * conn)
     {
       if (!connections[i])
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
+#endif
 	  connections[i] = conn;
 	  return 0;
 	}
@@ -1230,9 +1242,11 @@ Rts2Block::run ()
 		{
 		  if (conn->receive (&read_set) == -1)
 		    {
+#ifdef DEBUG_EXTRA
 		      syslog (LOG_ERR,
 			      "Will delete connection %i, name: '%s'", i,
 			      conn->getName ());
+#endif
 		      ret = deleteConnection (conn);
 		      // delete connection only when it really requested to be deleted..
 		      if (!ret)
@@ -1317,7 +1331,9 @@ Rts2Block::cancelPriorityOperations ()
 void
 Rts2Block::childReturned (pid_t child_pid)
 {
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "child returned: %i", child_pid);
+#endif
   for (int i = 0; i < MAX_CONN; i++)
     {
       Rts2Conn *conn;
@@ -1539,8 +1555,10 @@ Rts2Block::queAll (Rts2Command * command)
 	}
       else
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Rts2Block::queAll no connection for %s",
 		  (*addr_iter)->getName ());
+#endif
 	}
     }
   delete command;

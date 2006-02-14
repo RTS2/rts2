@@ -169,13 +169,17 @@ Rts2DevConn::idle ()
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %m");
+#endif
 	  connectionError (-1);
 	}
       else if (err)
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %s",
 		  strerror (err));
+#endif
 	  connectionError (-1);
 	}
       else
@@ -246,7 +250,9 @@ Rts2DevConn::setDeviceName (char *in_name)
 void
 Rts2DevConn::connAuth ()
 {
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "auth: %s state: %i", getName (), getConnState ());
+#endif
   master->getCentraldConn ()->
     queCommand (new Rts2CommandAuthorize (master, getName ()));
   setConnState (CONN_AUTH_PENDING);
@@ -266,9 +272,11 @@ Rts2DevConn::setKey (int in_key)
 	}
       else
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG,
 		  "Rts2DevConn::setKey invalid connection state: %i",
 		  getConnState ());
+#endif
 	}
     }
 }
@@ -763,9 +771,11 @@ int
 Rts2Device::maskState (int state_num, int state_mask, int new_state,
 		       char *description)
 {
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG,
 	  "Rts2Device::maskState state: %i state_mask: %i new_state: %i desc: %s",
 	  state_num, state_mask, new_state, description);
+#endif
   states[state_num]->maskState (state_mask, new_state, description);
   return 0;
 }

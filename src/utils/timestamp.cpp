@@ -24,7 +24,7 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-  int old_precision = _os.precision (2);
+  int old_precision = _os.precision (3);
   char old_fill = _os.fill ('0');
 
   _os << (gmt->tm_year + 1900) << "-"
