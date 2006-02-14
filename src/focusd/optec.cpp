@@ -107,7 +107,9 @@ int
 Rts2DevFocuserOptec::foc_write (char *buf, int count)
 {
   int ret;
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Optec:will write:'%s'", buf);
+#endif
   ret = write (foc_desc, buf, count);
 //  tcflush (foc_desc, TCIFLUSH);
   return ret;
@@ -132,8 +134,6 @@ Rts2DevFocuserOptec::foc_write_read (char *wbuf, int wcount, char *rbuf,
 				     int rcount, int timeouts)
 {
   int tmp_rcount = -1;
-  char *buf;
-
   if (foc_write (wbuf, wcount) < 0)
     return -1;
 
@@ -141,11 +141,14 @@ Rts2DevFocuserOptec::foc_write_read (char *wbuf, int wcount, char *rbuf,
 
   if (tmp_rcount > 0)
     {
+#ifdef DEBUG_EXTRA
+      char *buf;
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = '\0';
       syslog (LOG_DEBUG, "Optec:readed %i %s", tmp_rcount, buf);
       free (buf);
+#endif
     }
   else
     {
@@ -201,14 +204,10 @@ Rts2DevFocuserOptec::init ()
   char rbuf[10];
   int ret;
 
-  syslog (LOG_DEBUG, "init");
-
   ret = Rts2DevFocuser::init ();
 
   if (ret)
     return ret;
-
-  syslog (LOG_DEBUG, "open port");
 
   foc_desc = open (device_file, O_RDWR);
 
@@ -238,7 +237,6 @@ Rts2DevFocuserOptec::init ()
   // set manual
   if (foc_write_read ("FMMODE", 6, rbuf, 3) < 0)
     return -1;
-  syslog (LOG_DEBUG, "write read");
   if (rbuf[0] != '!')
     return -1;
 
@@ -252,12 +250,14 @@ Rts2DevFocuserOptec::getPos (int *position)
 
   if (foc_write_read ("FPOSRO", 6, rbuf, 8) < 1)
     return -1;
+#ifdef DEBUG_EXTRA
   else
     {
       rbuf[6] = '\0';
       syslog (LOG_DEBUG, "0: %i", rbuf[0]);
       *position = atoi ((rbuf + 2));
     }
+#endif
   return 0;
 }
 
