@@ -318,7 +318,7 @@ Rts2Image::toAcquisition ()
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
 	    "%s/acqusition/%05i/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), getTargetId (), cameraName,
+	    getImageBase (epochId), getTargetIdSel (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);
@@ -342,7 +342,7 @@ Rts2Image::toArchive ()
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
 	    "%s/archive/%05i/%s/object/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), getTargetId (), cameraName,
+	    getImageBase (epochId), getTargetIdSel (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);
@@ -378,7 +378,7 @@ Rts2Image::toDark ()
     {
       asprintf (&new_filename,
 		"%s/archive/%05i/%s/darks/%04i%02i%02i%02i%02i%02i-%04li.fits",
-		getImageBase (epochId), getTargetId (), cameraName,
+		getImageBase (epochId), getTargetIdSel (), cameraName,
 		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 		expT->tm_hour, expT->tm_min, expT->tm_sec,
 		exposureStart.tv_usec / 1000);
@@ -426,7 +426,7 @@ Rts2Image::toTrash ()
   expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
 	    "%s/trash/%05i/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), getTargetId (), cameraName,
+	    getImageBase (epochId), getTargetIdSel (), cameraName,
 	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
 	    expT->tm_hour, expT->tm_min, expT->tm_sec,
 	    exposureStart.tv_usec / 1000);
@@ -563,7 +563,7 @@ Rts2Image::setValue (char *name, time_t * sec, long usec, char *comment)
   struct tm t_tm;
   gmtime_r (sec, &t_tm);
   strftime (buf, 25, "%Y-%m-%dT%H:%M:%S.", &t_tm);
-  snprintf (buf + 20, 3, "%03li", usec / 1000);
+  snprintf (buf + 20, 4, "%03li", usec / 1000);
   return setValue (name, buf, comment);
 }
 
