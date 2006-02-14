@@ -441,12 +441,17 @@ Rts2DevCamera::checkExposures ()
 	      setTimeout (ret);
 	    }
 	  if (ret == -2)
-	    maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		       CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
+	    {
+	      maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+			 CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
+	    }
 	  if (ret == -1)
-	    maskState (i, DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		       DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NODATA,
-		       "exposure chip finished with error");
+	    {
+	      maskState (i,
+			 DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_DATA,
+			 DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NODATA,
+			 "exposure chip finished with error");
+	    }
 	}
     }
 }
@@ -559,6 +564,7 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
       chips[chip]->setExposure (exptime,
 				light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
+      lastFilterNum = getFilterNum ();
       // call us to check for exposures..
       long new_timeout;
       new_timeout = camWaitExpose (chip);
@@ -623,8 +629,6 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 
   Rts2DevConnData *data_conn;
   data_conn = new Rts2DevConnData (this, conn);
-
-  lastFilterNum = getFilterNum ();
 
   ret = data_conn->init ();
   // add data connection
