@@ -465,6 +465,7 @@ Rts2Image::writeExposureStart ()
 	    "exposure start (seconds since 1.1.1970)");
   setValue ("USEC", exposureStart.tv_usec, "exposure start micro seconds");
   setValue ("JD", ln_get_julian_from_timet (&t), "exposure JD");
+  setValue ("DATE-OBS", &t, exposureStart.tv_usec, "start of exposure");
   return 0;
 }
 
@@ -553,6 +554,17 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
 		   &fits_status);
   flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
+}
+
+int
+Rts2Image::setValue (char *name, time_t * sec, long usec, char *comment)
+{
+  char buf[25];
+  struct tm t_tm;
+  gmtime_r (sec, &t_tm);
+  strftime (buf, 25, "%Y-%m-%dT%H:%M:%S.", &t_tm);
+  snprintf (buf + 20, 3, "%03li", usec / 1000);
+  return setValue (name, buf, comment);
 }
 
 int
@@ -894,6 +906,9 @@ Rts2Image::closeFile ()
 	  setValue ("DEC_ERR", dec_err, "DEC error in position");
 	  setValue ("POS_ERR", getAstrometryErr (), "error in position");
 	}
+      struct timeval now;
+      gettimeofday (&now, NULL);
+      setValue ("DATE", &(now.tv_sec), now.tv_usec, "creation date");
       fits_close_file (ffile, &fits_status);
       flags &= ~IMAGE_SAVE;
     }

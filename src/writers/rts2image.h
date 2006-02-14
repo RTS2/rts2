@@ -116,6 +116,7 @@ public:
   int setValue (char *name, double value, char *comment);
   int setValue (char *name, char value, char *comment);
   int setValue (char *name, const char *value, char *comment);
+  int setValue (char *name, time_t * sec, long usec, char *comment);
   int setValueImageType (int shutter_state);
 
   int getValue (char *name, int &value, char *comment = NULL);
