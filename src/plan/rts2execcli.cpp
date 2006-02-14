@@ -90,12 +90,10 @@ Rts2DevClientCameraExec::nextCommand ()
   connection->queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
   blockMove = 1;		// as we run a script..
-  if (currentTarget)
-    currentTarget->startObservation ();
 }
 
 Rts2Image *
-Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
+Rts2DevClientCameraExec::createImage (const struct timeval * expStart)
 {
   imgCount++;
   if (currentTarget)
@@ -169,6 +167,8 @@ Rts2DevClientCameraExec::exposureStarted ()
     {
       blockMove = 1;
     }
+  if (currentTarget)
+    currentTarget->startObservation ();
   Rts2DevClientCameraImage::exposureStarted ();
 }
 
@@ -368,9 +368,11 @@ Rts2DevClientTelescopeExec::syncTarget ()
     case OBS_ALREADY_STARTED:
       if (fixedOffset.ra != 0 || fixedOffset.dec != 0)
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG,
 		  "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra %lf dec %lf",
 		  fixedOffset.ra, fixedOffset.dec);
+#endif
 	  connection->
 	    queCommand (new
 			Rts2CommandChange (this, fixedOffset.ra,

@@ -38,8 +38,10 @@ Rts2ConnImgProcess::newProcess ()
   int ret;
   Rts2Image *image;
 
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2ConnImgProcess::newProcess exe: %s img: %s (%i)",
 	  exePath, imgPath, getpid ());
+#endif
 
   image = new Rts2Image (imgPath);
   if (image->getType () == IMGTYPE_DARK)
@@ -66,7 +68,9 @@ Rts2ConnImgProcess::processLine ()
   ret =
     sscanf (getCommand (), "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
 	    &dec_err);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "receive: %s sscanf: %i", getCommand (), ret);
+#endif
   if (ret == 5)
     {
       astrometryStat = GET;

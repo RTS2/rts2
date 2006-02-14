@@ -228,9 +228,11 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	    }
 	  if (img_prec <= reqPrecision)
 	    {
+#ifdef DEBUG_EXTRA
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquire::postEvent seting PRECISION_OK on %f <= %f obsId %i imgId %i",
 		      img_prec, reqPrecision, obsId, imgId);
+#endif
 	      processingState = PRECISION_OK;
 	    }
 	  else
@@ -287,8 +289,10 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
     case FAILED:
       return NEXT_COMMAND_PRECISION_FAILED;
     case PRECISION_OK:
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG,
 	      "Rts2ScriptElementAcquire::nextCommand PRECISION_OK");
+#endif
       return NEXT_COMMAND_PRECISION_OK;
     case PRECISION_BAD:
       processingState = NEED_IMAGE;
@@ -312,9 +316,11 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 
   if (processingState != WAITING_IMAGE || !image->getIsAcquiring ())
     {
+#ifdef DEBUG_EXTRA
       syslog (LOG_ERR,
 	      "Rts2ScriptElementAcquire::processImage invalid processingState: %i isAcquiring: %i",
 	      processingState, image->getIsAcquiring ());
+#endif
       return -1;
     }
   obsId = image->getObsId ();
@@ -364,8 +370,10 @@ Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
   // detect is somebody plans to run A command..
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2ScriptElementWaitAcquire::defnextCommand %i (%s)",
 	  ac.count, script->getDefaultDevice ());
+#endif
   if (ac.count)
     return NEXT_COMMAND_WAIT_ACQUSITION;
   return NEXT_COMMAND_NEXT;
@@ -505,8 +513,10 @@ Rts2ScriptElementWaitSignal::defnextCommand (Rts2DevClient * client,
   ret = sig;
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2ScriptElementWaitSignal::defnextCommand %i (%s)",
 	  ret, script->getDefaultDevice ());
+#endif
   if (ret != -1)
     return NEXT_COMMAND_NEXT;
   return NEXT_COMMAND_WAIT_SIGNAL;
@@ -590,15 +600,13 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	      break;
 	    case 0:
 	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f",
+		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f OK",
 		      offset.ra, offset.dec);
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireStar::postEvent processingState = PRECISION_OK");
 	      processingState = PRECISION_OK;
 	      break;
 	    case 1:
 	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f",
+		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f failed",
 		      offset.ra, offset.dec);
 	      if (retries >= maxRetries)
 		{

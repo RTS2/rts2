@@ -149,8 +149,10 @@ Rts2DevScript::postEvent (Rts2Event * event)
       if (waitScript != WAIT_SLAVE)
 	break;
       waitScript = NO_WAIT;
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG, "Rts2DevScript::postEvent EVENT_ACQUSITION_END %s",
 	      script_connection->getName ());
+#endif
       acqEnd = *(int *) event->getArg ();
       switch (acqEnd)
 	{
@@ -217,8 +219,10 @@ Rts2DevScript::deleteScript ()
       int acqRet;
       // should not happen
       acqRet = -5;
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG,
 	      "Rts2DevScript::deleteScript sending EVENT_ACQUSITION_END");
+#endif
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &acqRet));
     }
@@ -304,9 +308,11 @@ Rts2DevScript::nextPreparedCommand ()
     case NEXT_COMMAND_PRECISION_FAILED:
       clearWait ();		// don't wait for mount move - it will not happen
       waitScript = NO_WAIT;
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG,
 	      "Rts2DevScript::nextPreparedCommand sending EVENT_ACQUSITION_END %s %i",
 	      script_connection->getName (), ret);
+#endif
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &ret));
       if (ret == NEXT_COMMAND_PRECISION_OK)

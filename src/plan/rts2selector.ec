@@ -108,7 +108,9 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
   if (!newTar)
     return;
   ret = newTar->considerForObserving (JD);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "considerForObserving tar_id: %i ret: %i", newTar->getTargetID (), ret);
+#endif
   if (ret)
   {
     delete newTar;
@@ -222,7 +224,9 @@ Rts2Selector::selectNextNight (int in_bonusLimit)
   {
     Target *tar = *target_list;
     tar_bonus = tar->getBonus ();
+#ifdef DEBUG_EXTRA
     syslog (LOG_DEBUG, "bonus: %i %f", tar->getTargetID (), tar_bonus);
+#endif
     if (tar_bonus > maxBonus)
     {
       maxId = tar->getTargetID ();
