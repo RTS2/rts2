@@ -32,7 +32,7 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
     << std::setw (2) << gmt->tm_mday << "T"
     << std::setw (2) << gmt->tm_hour << ":"
     << std::setw (2) << gmt->tm_min << ":"
-    << std::setw (5) << ((double) gmt->tm_sec +
+    << std::setw (6) << ((double) gmt->tm_sec +
 			 (double) tv.tv_usec / USEC_SEC);
 
   _os.flags (old_settings);
@@ -79,7 +79,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 	  diff %= 60;
 	}
       _oss << std::setw (2) << diff << "." << std::
-	setw (2) << (int) (usec_diff / (USEC_SEC / 100));
+	setw (3) << (int) (usec_diff / (USEC_SEC / 1000));
       _os << _oss.str ();
     }
   return _os;
