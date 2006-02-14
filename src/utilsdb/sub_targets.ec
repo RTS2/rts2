@@ -1529,14 +1529,12 @@ TargetGRB::printGrbList (std::ostream & _os)
   double firstObs = getFirstObs ();
   getPosition (&pos, ln_get_julian_from_sys ());
   _os
-    << "  "
-    << std::setw(20) << getTargetName () << " | "
+    << std::setw(5) << getTargetID () << " | "
     << LibnovaRa (pos.ra) << " | " 
     << LibnovaDec (pos.dec) << " | "
     << Timestamp (grbDate) << " | "
-    << Timestamp (getFirstPacket ()) << " | "
-    << Timestamp (firstObs) << " | "
-    << TimeDiff (grbDate, firstObs) << " | "
+    << std::setw(15) << TimeDiff (grbDate, firstObs) << " | "
+    << std::setw(15) << TimeDiff (getFirstPacket (), firstObs) << " | "
     << Timestamp (getLastObs ())
     << std::endl;
 }
