@@ -75,9 +75,9 @@ Rts2ValueTime::Rts2ValueTime (char *in_val_name):Rts2Value (in_val_name)
 char *
 Rts2ValueTime::getValue (int width, int precision)
 {
-  struct tm *t;
-  t = localtime (&value);
-  strftime (buf, 100, "%c", t);
+  struct tm t;
+  gmtime_r (&value, &t);
+  strftime (buf, 100, "%Y-%m-%dT%H:%M:%S", &t);
   return buf;
 }
 
