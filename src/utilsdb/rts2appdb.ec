@@ -11,22 +11,6 @@
 
 EXEC SQL INCLUDE sql3types;
 
-std::ostream & operator << (std::ostream & _os, struct tm *print_t)
-{
-  static char buf[50];
-  strftime (buf, 50, "%c", print_t);
-  _os << buf;
-  return _os;
-}
-
-std::ostream & operator << (std::ostream & _os, time_t *print_tt)
-{
-  static struct tm *print_t;
-  print_t = gmtime (print_tt);
-  _os << print_t;
-  return _os;
-}
-
 Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
 {
   sql = NULL;

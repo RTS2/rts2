@@ -6,9 +6,7 @@
 
 #include "rts2sqlcolumn.h"
 #include "../utils/rts2app.h"
-
-std::ostream & operator << (std::ostream & _os, struct tm *print_t);
-std::ostream & operator << (std::ostream & _os, time_t * print_tt);
+#include "../utils/timestamp.h"
 
 // for SQL tables display on console..
 //
