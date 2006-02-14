@@ -189,6 +189,12 @@ Target::~Target (void)
 int
 Target::load ()
 {
+  return loadTarget (getObsTargetID ());
+}
+
+int
+Target::loadTarget (int in_tar_id)
+{
   EXEC SQL BEGIN DECLARE SECTION;
   VARCHAR d_tar_name[TARGET_NAME_LEN];
   float d_tar_priority;
@@ -198,7 +204,7 @@ Target::load ()
   long d_tar_bonus_time;
   int d_tar_bonus_time_ind;
   bool d_tar_enabled;
-  int db_tar_id = getObsTargetID ();
+  int db_tar_id = in_tar_id;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
@@ -234,7 +240,7 @@ Target::load ()
     tar_priority = d_tar_priority;
   else
     tar_priority = 0;
-    
+
   if (d_tar_bonus_ind >= 0)
     tar_bonus = d_tar_bonus;
   else
@@ -817,7 +823,7 @@ Target::selectedAsGood ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   bool d_tar_enabled;
-  int d_tar_id = getObsTargetID ();
+  int d_tar_id = getTargetID ();
   float d_tar_priority;
   int d_tar_priority_ind;
   float d_tar_bonus;

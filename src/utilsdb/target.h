@@ -198,6 +198,8 @@ public:
 
   // that method is GUARANTIE to be called after target creating to load data from DB
   virtual int load ();
+  // load target data from give target id
+  int loadTarget (int in_tar_id);
   int save ();
   virtual int save (int tar_id);
   virtual int getScript (const char *device_name, char *buf);
@@ -394,6 +396,11 @@ public:
   float getTargetPriority ()
   {
     return tar_priority;
+  }
+
+  void setTargetPriority (float new_priority)
+  {
+    tar_priority = new_priority;
   }
 
   float getTargetBonus ()
@@ -895,10 +902,7 @@ public:
     TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ TargetPlan (void);
 
-  virtual int load ()
-  {
-    return load (ln_get_julian_from_sys ());
-  }
+  virtual int load ();
   virtual int load (double JD);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double JD);

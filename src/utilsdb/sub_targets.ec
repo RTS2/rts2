@@ -138,7 +138,7 @@ ConstTarget::selectedAsGood ()
     tar_id = :d_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("Target::selectedAsGood");
+    logMsgDb ("ConstTarget::selectedAsGood");
     return -1;
   }
   position.ra = d_tar_ra;
@@ -1939,6 +1939,12 @@ TargetPlan::~TargetPlan (void)
 }
 
 int
+TargetPlan::load ()
+{
+  return load (ln_get_julian_from_sys ());
+}
+
+int
 TargetPlan::load (double JD)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -1961,12 +1967,13 @@ TargetPlan::load (double JD)
 
   if (selectedPlan 
     && nextPlan
-    && nextPlan->getPlanStart () < now)
+    && nextPlan->getPlanStart () > now)
   {
     return 0;
   }
 
-  ret = Target::load ();
+  // always load plan target!
+  ret = Target::loadTarget (getTargetID ());
   if (ret)
     return ret;
 
@@ -2063,9 +2070,10 @@ TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
 {
   if (selectedPlan)
     return selectedPlan->getTarget()->getPosition (pos, JD);
-  pos->ra = nan ("f");
-  pos->dec = nan ("f");
-  return -1;
+  // pretend to observe in zenith..
+  pos->ra = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
+  pos->dec = observer->lat;
+  return 0;
 }
 
 int
