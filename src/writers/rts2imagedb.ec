@@ -615,7 +615,7 @@ Rts2ImageDb::getOKCount ()
 std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
 {
   std::ios_base::fmtflags old_settings = _os.flags ();
-  int old_precision = _os.precision ();
+  int old_precision = _os.precision (2);
 
   _os 
     << std::setw(5) << img_db.getCameraName () << " | "
