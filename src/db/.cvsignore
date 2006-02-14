@@ -9,5 +9,8 @@ test
 rts2-nightmails
 rts2-nightreport
 rts2-newtarget
+rts2-simbadinfo
+rts2-targetlist
+rts2-target
 soap*
 SesameSoapBinding*
