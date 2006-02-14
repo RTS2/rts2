@@ -146,7 +146,9 @@ Rts2NightReport::run ()
 //  Rts2SqlColumnObsState *obsState;
   config = Rts2Config::instance ();
   // from which date to which..
-  std::cout << "From " << &t_from << " to " << &t_to << std::endl;
+  std::
+    cout << "From " << Timestamp (t_from) << " to " << Timestamp (t_to) <<
+    std::endl;
 
   obs_set = new Rts2ObsSet (&t_from, &t_to);
 
