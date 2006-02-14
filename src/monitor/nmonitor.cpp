@@ -759,7 +759,7 @@ Rts2NMonitor::repaint ()
 
   mvwprintw (statusWindow, 0, 0, "** Status: %s ** ", stateBuf);
   wcolor_set (statusWindow, CLR_TEXT, NULL);
-  strftime (dateBuf, 40, "%c", gmtime (&now));
+  strftime (dateBuf, 40, "%Y-%m-%dT%H:%M:%S", gmtime (&now));
   mvwprintw (statusWindow, 0, COLS - 40, "%40s", dateBuf);
   refresh ();
   wrefresh (statusWindow);
