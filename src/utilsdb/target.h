@@ -908,6 +908,7 @@ public:
   virtual int getRST (struct ln_rst_time *rst, double JD);
   virtual int getObsTargetID ();
   virtual int considerForObserving (double JD);
+  virtual int isContinues ();
 
   virtual void printExtra (std::ostream & _os);
 };

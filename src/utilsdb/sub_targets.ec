@@ -2102,6 +2102,20 @@ TargetPlan::considerForObserving (double JD)
   return Target::considerForObserving (JD);
 }
 
+int
+TargetPlan::isContinues ()
+{
+  time_t now;
+  time (&now);
+  if (selectedPlan)
+  {
+    if (nextPlan && nextPlan->getPlanStart () < now)
+      return 0;
+    return selectedPlan->getTarget()->isContinues ();
+  }
+  return 0;
+}
+
 void
 TargetPlan::printExtra (std::ostream & _os)
 {
