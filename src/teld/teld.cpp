@@ -656,6 +656,12 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       tar_ra += locCorRa;
       tar_dec += locCorDec;
     }
+  if (isBellowResolution (locCorRa, locCorDec))
+    {
+      conn->sendCommandEnd (DEVDEM_E_IGNORE,
+			    "position change is bellow telescope resolution");
+      return -1;
+    }
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startResyncMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,

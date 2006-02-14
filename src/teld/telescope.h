@@ -114,6 +114,11 @@ protected:
   void getTargetAltAz (struct ln_hrz_posn *hrz);
   void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
   double get_loc_sid_time ();
+
+  virtual bool isBellowResolution (double ra_off, double dec_off)
+  {
+    return (ra_off == 0 && dec_off == 0);
+  }
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual int init ();
