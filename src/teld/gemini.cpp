@@ -306,7 +306,9 @@ int
 Rts2DevTelescopeGemini::tel_write (char *buf, int count)
 {
   int ret;
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Losmandy:will write:'%s'", buf);
+#endif
   ret = write (tel_desc, buf, count);
   return ret;
 }
@@ -341,11 +343,13 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
 
   if (tmp_rcount > 0)
     {
+#ifdef DEBUG_EXTRA
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
       syslog (LOG_DEBUG, "Losmandy:readed %i '%s'", tmp_rcount, buf);
       free (buf);
+#endif
       return 0;
     }
   syslog (LOG_DEBUG, "Losmandy:readed returns %i", tmp_rcount);
@@ -1420,7 +1424,9 @@ Rts2DevTelescopeGemini::endMove ()
 {
   int32_t track;
   tel_gemini_get (130, &track);
+#ifdef DEBUG_EXTRA
   syslog (LOG_INFO, "rate: %i", track);
+#endif
   tel_gemini_set (131, 1);
   tel_gemini_get (130, &track);
   setTimeout (USEC_SEC);
@@ -1539,9 +1545,11 @@ Rts2DevTelescopeGemini::isMovingFixed ()
       sep = ln_get_angular_separation (&pos1, &pos2);
       if (sep > 15 / 60 / 4)	// 15 seconds..
 	{
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG,
 		  "Rts2DevTelescopeGemini::isMovingFixed sep: %f arcsec",
 		  sep * 3600);
+#endif
 	  // reque move..
 	  ret = startMoveFixedReal ();
 	  if (ret)		// end in case of error
@@ -1559,7 +1567,9 @@ Rts2DevTelescopeGemini::endMoveFixed ()
   int32_t track;
   stopWorm ();
   tel_gemini_get (130, &track);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "endMoveFixed track: %i", track);
+#endif
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONfixed#", 10) > 0)
     return 0;
@@ -1866,7 +1876,9 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
   pos2.dec = real_dec;
 
   sep = ln_get_angular_separation (&pos1, &pos2);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::correct separation: %f", sep);
+#endif
   if (sep > 5)
     return -1;
 
@@ -1948,8 +1960,10 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   ret = info ();
   if (ret)
     return ret;
+#ifdef DEBUG_EXTRA
   syslog (LOG_INFO, "Rts2DevTelescopeGemini::change ra %f dec %f",
 	  telRa, telDec);
+#endif
   // decide, if we make change, or move using move command
   if (fabs (chng_ra) > 3 / 60.0 && fabs (chng_dec) > 3 / 60.0)
     {
@@ -1957,7 +1971,9 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
       if (ret)
 	return ret;
       // move wait ended .. log results
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change move: %i", ret);
+#endif
     }
   else
     {

@@ -383,8 +383,10 @@ Rts2DevTelescopeIr::checkCover ()
       if (cover == 1.0)
 	{
 	  tpl_set ("COVER.POWER", 0, &status);
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkCover opened %i",
 		  status);
+#endif
 	  cover_state = OPENED;
 	  break;
 	}
@@ -395,8 +397,10 @@ Rts2DevTelescopeIr::checkCover ()
       if (cover == 0.0)
 	{
 	  tpl_set ("COVER.POWER", 0, &status);
+#ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkCover closed %i",
 		  status);
+#endif
 	  cover_state = CLOSED;
 	  break;
 	}
@@ -571,8 +575,10 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
   status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
   status = tpl_set ("POINTING.TRACK", irTracking, &status);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
 	  status);
+#endif
 
   return status;
 }
@@ -632,8 +638,10 @@ Rts2DevTelescopeIr::isMoving ()
   // 0.01 = 36 arcsec
   if (fabs (poin_dist) <= 0.01)
     {
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG, "Rts2DevTelescopeIr::isMoving target distance: %f",
 	      poin_dist);
+#endif
       return -2;
     }
   // finish due to timeout
@@ -659,17 +667,20 @@ Rts2DevTelescopeIr::startPark ()
   int status = 0;
   // Park to south+zenith
   status = tpl_set ("POINTING.TRACK", 0, &status);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark tracking status: %i",
 	  status);
+#endif
   sleep (1);
   status = tpl_set ("AZ.TARGETPOS", 0, &status);
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark AZ.TARGETPOS status: %i",
-	  status);
   status = tpl_set ("ZD.TARGETPOS", 0, &status);
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark ZD.TARGETPOS status: %i",
-	  status);
   if (status)
-    return -1;
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevTelescopeIr::startPark ZD.TARGETPOS status: %i",
+	      status);
+      return -1;
+    }
   time (&timeout);
   timeout += 300;
   return 0;
@@ -684,7 +695,9 @@ Rts2DevTelescopeIr::isParking ()
 int
 Rts2DevTelescopeIr::endPark ()
 {
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::endPark");
+#endif
   return 0;
 }
 
@@ -770,9 +783,11 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   if (zd > 0)
     alt_off *= -1;		// get ZD offset - when ZD < 0, it's actuall alt offset
   sep = ln_get_angular_separation (&eq_astr, &eq_target);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescopeIr::correct az_off: %f zd_off: %f sep: %f",
 	  az_off, alt_off, sep);
+#endif
   if (sep > 2)
     return -1;
   status = tpl_set ("AZ.OFFSET", az_off, &status);
@@ -780,8 +795,10 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   // sample..
   status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::correct quality: % f status: %i",
 	  quality, status);
+#endif
   if (status)
     {
       return -1;
