@@ -2121,6 +2121,16 @@ TargetPlan::isContinues ()
 }
 
 int
+TargetPlan::beforeMove ()
+{
+  // update our position..
+  if (needChange)
+    endObservation (-1);
+  load ();
+  return 0;
+}
+
+int
 TargetPlan::startObservation ()
 {
   needChange = false;

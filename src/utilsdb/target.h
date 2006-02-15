@@ -910,6 +910,7 @@ public:
   virtual int getObsTargetID ();
   virtual int considerForObserving (double JD);
   virtual int isContinues ();
+  virtual int beforeMove ();
   virtual int startObservation ();
 
   virtual void printExtra (std::ostream & _os);
