@@ -97,6 +97,8 @@ public:
   {
     return getDeg ();
   }
+
+  friend std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec);
 };
 
 class LibnovaDecJ2000:public LibnovaDec
@@ -174,9 +176,7 @@ public:
 
   LibnovaDate (time_t * t)
   {
-    double JD;
-    JD = ln_get_julian_from_timet (t);
-    ln_get_date (JD, &date);
+    ln_get_date_from_timet (t, &date);
   }
 
   LibnovaDate (struct ln_date *in_date)
@@ -232,6 +232,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
+std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec);
 std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);

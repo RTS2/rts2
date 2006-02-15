@@ -112,6 +112,29 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
   return _os;
 }
 
+std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
+{
+  if (isnan (l_dec.deg))
+    {
+      _os << std::setw (11) << "nan";
+      return _os;
+    }
+  struct ln_dms deg_dms;
+  l_dec.toDms (&deg_dms);
+  char old_fill = _os.fill ('0');
+  int old_precison = _os.precision (1);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  _os << (deg_dms.neg ? '-' : '+')
+    << std::setw (2) << deg_dms.degrees << "o"
+    << std::setw (2) << deg_dms.minutes << "'"
+    << std::setw (4) << deg_dms.seconds;
+  _os.setf (old_settings);
+  _os.precision (old_precison);
+  _os.fill (old_fill);
+  return _os;
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec)
 {
   _os << l_dec.getDec () << " (" << LibnovaDec (l_dec) << ")";
@@ -259,13 +282,16 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
 {
   char old_fill = _os.fill ('0');
-  int old_precison = _os.precision (2);
+  int old_precison = _os.precision (3);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << std::setw (4) << l_date.date.years << "/"
     << std::setw (2) << l_date.date.months << "/"
     << std::setw (2) << l_date.date.days << " "
     << std::setw (2) << l_date.date.hours << ":"
     << std::setw (2) << l_date.date.minutes << ":"
-    << std::setw (2) << l_date.date.seconds << " UT";
+    << std::setw (6) << l_date.date.seconds << " UT";
+  _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
   return _os;
