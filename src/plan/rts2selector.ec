@@ -76,7 +76,7 @@ Rts2Selector::selectNext (int masterState)
       JD = ln_get_julian_from_sys ();
       ln_get_solar_equ_coords (JD, &sun);
       ln_get_hrz_from_equ (&sun, observer, JD, &sun_hrz);
-      if (sun_hrz.alt >= flat_sun_min && flat_sun_max <= flat_sun_max)
+      if (sun_hrz.alt >= flat_sun_min && sun_hrz.alt <= flat_sun_max)
         return selectFlats ();
       // don't break..
     case SERVERD_DAWN | SERVERD_STANDBY:
