@@ -610,7 +610,8 @@ FlatTarget::load ()
 int
 FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
-  if (obs_target_id > 0)
+  // we were loaded, or we aren't generic flat target
+  if (obs_target_id > 0 || getTargetID () != TARGET_FLAT)
     return ConstTarget::getPosition (pos, JD);
   // generic flat target observations
   getAntiSolarPos (pos, JD);
@@ -1931,12 +1932,58 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
   hourLastSearch = 16.0;
   Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch);
   needChange = false;
+  nextTargetRefresh = 0;
 }
 
 TargetPlan::~TargetPlan (void)
 {
   delete selectedPlan;
   delete nextPlan;
+}
+
+int
+TargetPlan::loadNext (time_t *t)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_next_plan_id;
+  long db_next_plan_start;
+  long db_now = *t;
+  EXEC SQL END DECLARE SECTION;
+
+  int ret;
+
+  EXEC SQL
+  SELECT
+    tar_id,
+    EXTRACT (EPOCH FROM plan_start)
+  INTO
+    :db_next_plan_id,
+    :db_next_plan_start
+  FROM
+    plan
+  WHERE
+    plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_now));
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("TargetPlan::loadNext cannot load next target");
+    EXEC SQL ROLLBACK;
+    delete nextPlan;
+    nextPlan = NULL;
+    return -1;
+  }
+  EXEC SQL ROLLBACK;
+  if (nextPlan && nextPlan->getPlanId() == db_next_plan_id && nextPlan->getPlanStart() == db_next_plan_start)
+    return 0;
+  delete nextPlan;
+  nextPlan = new Rts2Plan (db_next_plan_id);
+  ret = nextPlan->load ();
+  if (ret)
+  {
+    delete nextPlan;
+    nextPlan = NULL;
+    return -1;
+  }
+  return 0;
 }
 
 int
@@ -1965,12 +2012,18 @@ TargetPlan::load (double JD)
   ln_get_timet_from_julian (JD, &now);
 
   // we have observation that can be executed now
-
-  if (selectedPlan 
-    && nextPlan
-    && nextPlan->getPlanStart () > now)
+  if (selectedPlan)
   {
-    return 0;
+    if (now < nextTargetRefresh)
+      return 0;
+    // try to load next plan - check if it wasn't updated
+    loadNext (&now);
+    nextTargetRefresh = now + 60;
+    if ((nextPlan && nextPlan->getPlanStart () > now)
+     || (!nextPlan)) 
+    {
+      return 0;
+    }
   }
 
   // always load plan target!
@@ -1980,6 +2033,9 @@ TargetPlan::load (double JD)
 
   // get plan entries from last 12 hours..
   last = (int) (now - (hourLastSearch * 3600));
+
+  // check for next plan entry after 1 minute..
+  nextTargetRefresh = now + 60;
 
   EXEC SQL DECLARE cur_plan CURSOR FOR
   SELECT
@@ -2065,7 +2121,7 @@ TargetPlan::getDBScript (const char *camera_name, char *script)
 {
   if (selectedPlan)
     return selectedPlan->getTarget()->getScript (camera_name, script);
-  return -1;
+  return Target::getDBScript (camera_name, script);
 }
 
 int
@@ -2084,7 +2140,8 @@ TargetPlan::getRST (struct ln_rst_time *rst, double JD)
 {
   if (selectedPlan)
     return selectedPlan->getTarget()->getRST (rst, JD);
-  return -1;
+  // otherwise we have circumpolar target
+  return 1;
 }
 
 int

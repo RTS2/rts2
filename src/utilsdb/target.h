@@ -897,6 +897,8 @@ private:
   // how long to look back for previous plan
   float hourLastSearch;
   bool needChange;
+  time_t nextTargetRefresh;
+  int loadNext (time_t * t);
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
 public:
