@@ -896,6 +896,7 @@ private:
 
   // how long to look back for previous plan
   float hourLastSearch;
+  bool needChange;
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
 public:
@@ -909,6 +910,7 @@ public:
   virtual int getObsTargetID ();
   virtual int considerForObserving (double JD);
   virtual int isContinues ();
+  virtual int startObservation ();
 
   virtual void printExtra (std::ostream & _os);
 };

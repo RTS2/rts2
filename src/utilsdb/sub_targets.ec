@@ -1930,6 +1930,7 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
   nextPlan = NULL;
   hourLastSearch = 16.0;
   Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch);
+  needChange = false;
 }
 
 TargetPlan::~TargetPlan (void)
@@ -2028,6 +2029,7 @@ TargetPlan::load (double JD)
   {
     delete selectedPlan;
     selectedPlan = new Rts2Plan (db_plan_id);
+    needChange = true;
     ret = selectedPlan->load ();
     if (ret)
     {
@@ -2106,6 +2108,8 @@ int
 TargetPlan::isContinues ()
 {
   time_t now;
+  if (needChange)
+    return 0;
   time (&now);
   if (selectedPlan)
   {
@@ -2114,6 +2118,13 @@ TargetPlan::isContinues ()
     return selectedPlan->getTarget()->isContinues ();
   }
   return 0;
+}
+
+int
+TargetPlan::startObservation ()
+{
+  needChange = false;
+  return Target::startObservation ();
 }
 
 void
