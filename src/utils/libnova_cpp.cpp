@@ -301,7 +301,7 @@ std::istream & operator >> (std::istream & _is, LibnovaDate & l_date)
 {
   char ch;
   _is >> l_date.date.years >> ch >> l_date.date.months >> ch >> l_date.date.
-    days >> ch >> l_date.date.hours >> ch >> l_date.date.
+    days >> l_date.date.hours >> ch >> l_date.date.
     minutes >> ch >> l_date.date.seconds;
   return _is;
 }
