@@ -2027,9 +2027,10 @@ TargetPlan::load (double JD)
 
   if (db_plan_id != -1)
   {
+    if (selectedPlan)
+      needChange = true;
     delete selectedPlan;
     selectedPlan = new Rts2Plan (db_plan_id);
-    needChange = true;
     ret = selectedPlan->load ();
     if (ret)
     {
@@ -2123,10 +2124,10 @@ TargetPlan::isContinues ()
 int
 TargetPlan::beforeMove ()
 {
+  load ();
   // update our position..
   if (needChange)
     endObservation (-1);
-  load ();
   return 0;
 }
 
