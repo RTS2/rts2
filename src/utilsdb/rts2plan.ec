@@ -1,3 +1,4 @@
+#include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "rts2plan.h"
 
@@ -223,12 +224,38 @@ Rts2Plan::getObservation ()
 
 std::ostream & operator << (std::ostream & _os, Rts2Plan plan)
 {
-  _os << "  " << std::setw (8) << plan.plan_id << " | "
-    << std::setw (8) << plan.prop_id << " | "
-    << std::setw (8) << plan.tar_id << " | "
-    << std::setw (8) << plan.obs_id << " | "
-    << std::setw (9) << LibnovaDate (&plan.plan_start) << " | "
-    << std::setw (8) << plan.plan_status
+  struct ln_hrz_posn hrz;
+  time_t plan_start;
+  const char *tar_name;
+  struct ln_lnlat_posn *obs;
+  int good;
+  double JD;
+  int ret;
+  plan_start = plan.getPlanStart ();
+  JD = ln_get_julian_from_timet (&plan_start);
+  ret = plan.load ();
+  if (ret)
+  {
+    tar_name = "(not loaded!)";
+    good = 0;
+  }
+  else
+  {
+    tar_name = plan.getTarget()->getTargetName();
+    good = plan.getTarget()->isGood (JD);
+  }
+  obs = Rts2Config::instance()->getObserver ();
+  plan.getTarget ()->getAltAz (&hrz, JD);
+  _os << "  " << std::setw (8) << plan.plan_id << "|"
+    << std::setw (8) << plan.prop_id << "|"
+    << std::left << std::setw (20) << tar_name << "|"
+    << std::setw (8) << plan.tar_id << "|"
+    << std::setw (8) << plan.obs_id << "|"
+    << std::setw (9) << LibnovaDate (&plan.plan_start) << "|"
+    << std::setw (8) << plan.plan_status << "|"
+    << LibnovaDeg90 (hrz.alt) << "|"
+    << LibnovaDeg (hrz.az) << "|"
+    << std::setw(1) << (good ? 'G' : 'B')
     << std::endl;
 
   return _os;
