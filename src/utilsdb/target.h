@@ -509,6 +509,7 @@ public:
     return 0;
   }
   virtual int isGood (double lst, double JD, struct ln_equ_posn *pos);
+  virtual int isGood (double JD);
   // scheduler functions
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();

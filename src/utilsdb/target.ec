@@ -876,6 +876,14 @@ Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
   return Rts2Config::instance ()->getObjectChecker ()->is_good (lst, pos->ra, pos->dec);
 }
 
+int
+Target::isGood (double JD)
+{
+  struct ln_equ_posn pos;
+  getPosition (&pos, JD);
+  return isGood (ln_get_mean_sidereal_time (JD) + observer->lng / 15.0, JD, &pos);
+}
+
 /****
  * 
  *   Return -1 if target is not suitable for observing,
