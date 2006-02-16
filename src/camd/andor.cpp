@@ -93,6 +93,7 @@ CameraAndorChip::readoutOneLine ()
 	  syslog (LOG_ERR, "GetAcquiredData16 return %i", ret);
 	  return -1;
 	}
+      size /= (usedBinningVertical * usedBinningHorizontal);
       readoutLine = chipUsedReadout->height;
       dest_top += size;
       return 0;
