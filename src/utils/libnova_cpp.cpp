@@ -102,7 +102,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
   int old_precison = _os.precision (2);
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-  _os << (deg_dms.neg ? '-' : '+')
+  _os << std::setw (1) << (deg_dms.neg ? '-' : '+')
     << std::setw (2) << deg_dms.degrees << "o"
     << std::setw (2) << deg_dms.minutes << "'"
     << std::setw (5) << deg_dms.seconds;
