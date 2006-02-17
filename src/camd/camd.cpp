@@ -325,6 +325,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, 5554, "C0")
   canDF = -1;
   ccdType[0] = '0';
   serialNumber[0] = '0';
+  lastExp = nan ("f");
 
   nightCoolTemp = nan ("f");
   focuserDevice = NULL;
@@ -522,6 +523,7 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
   conn->sendValue ("cooling_power", coolingPower);
   conn->sendValue ("fan", fan);
   conn->sendValue ("filter", getFilterNum ());
+  conn->sendValue ("exposure", lastExp);
   return 0;
 }
 
@@ -559,7 +561,8 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
   ret = camExpose (chip, light, exptime);
   if (!ret)
     {
-      conn->sendValue ("exposure", exptime);
+      lastExp = exptime;
+      infoAll ();
       maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
       chips[chip]->setExposure (exptime,

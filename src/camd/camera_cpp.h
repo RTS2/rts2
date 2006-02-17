@@ -178,6 +178,7 @@ class Rts2DevCamera:public Rts2Device
 private:
   char *focuserDevice;
   int lastFilterNum;
+  float lastExp;
 protected:
   char *device_file;
   // camera chips
