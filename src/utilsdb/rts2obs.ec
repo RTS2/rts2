@@ -343,7 +343,7 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
     << std::setw(6) << obs.tar_id << " | "
     << Timestamp (obs.obs_slew) << " | "
     << LibnovaRa (obs.obs_ra) << " | "
-    << LibnovaDeg90 (obs.obs_dec) << " | "
+    << LibnovaDec (obs.obs_dec) << " | "
     << LibnovaDeg90 (obs.obs_alt) << " | "
     << LibnovaDeg (obs.obs_az) << " | "
     << std::setfill (' ');

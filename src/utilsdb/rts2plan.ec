@@ -249,7 +249,7 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan plan)
   _os << "  " << std::setw (8) << plan.plan_id << "|"
     << std::setw (8) << plan.prop_id << "|"
     << std::left << std::setw (20) << tar_name << "|"
-    << std::setw (8) << plan.tar_id << "|"
+    << std::right << std::setw (8) << plan.tar_id << "|"
     << std::setw (8) << plan.obs_id << "|"
     << std::setw (9) << LibnovaDate (&plan.plan_start) << "|"
     << std::setw (8) << plan.plan_status << "|"
