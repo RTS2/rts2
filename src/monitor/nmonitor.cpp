@@ -239,6 +239,7 @@ Rts2NMCamera::print (WINDOW * wnd)
 {
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
+  mvwprintw (wnd, 3, 1, "Exp: %.2f", getValueDouble ("exposure"));
 /*  if (info->chip_info)
     mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
 	       info->chip_info[0].height);
