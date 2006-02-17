@@ -1941,6 +1941,7 @@ TargetPlan::~TargetPlan (void)
   delete nextPlan;
 }
 
+// return -1 on error, 0 when no change is needed/detected, 1 when new plan was loaded
 int
 TargetPlan::loadNext (time_t *t)
 {
@@ -1950,11 +1951,9 @@ TargetPlan::loadNext (time_t *t)
   long db_now = *t;
   EXEC SQL END DECLARE SECTION;
 
-  int ret;
-
   EXEC SQL
   SELECT
-    tar_id,
+    plan_id,
     EXTRACT (EPOCH FROM plan_start)
   INTO
     :db_next_plan_id,
@@ -1967,23 +1966,14 @@ TargetPlan::loadNext (time_t *t)
   {
     logMsgDb ("TargetPlan::loadNext cannot load next target");
     EXEC SQL ROLLBACK;
-    delete nextPlan;
-    nextPlan = NULL;
-    return -1;
+    // we can be last plan entry - so change us, so selectedTarget will be changed
+    return 1;
   }
   EXEC SQL ROLLBACK;
   if (nextPlan && nextPlan->getPlanId() == db_next_plan_id && nextPlan->getPlanStart() == db_next_plan_start)
     return 0;
-  delete nextPlan;
-  nextPlan = new Rts2Plan (db_next_plan_id);
-  ret = nextPlan->load ();
-  if (ret)
-  {
-    delete nextPlan;
-    nextPlan = NULL;
-    return -1;
-  }
-  return 0;
+  // we will need change
+  return 1;
 }
 
 int
@@ -2017,10 +2007,12 @@ TargetPlan::load (double JD)
     if (now < nextTargetRefresh)
       return 0;
     // try to load next plan - check if it wasn't updated
-    loadNext (&now);
+    ret = loadNext (&now);
     nextTargetRefresh = now + 60;
-    if ((nextPlan && nextPlan->getPlanStart () > now)
-     || (!nextPlan)) 
+    // hnour change detected by load next
+    if (ret == 0
+      && ((nextPlan && nextPlan->getPlanStart () > now)
+        || (!nextPlan))) 
     {
       return 0;
     }
@@ -2160,6 +2152,15 @@ TargetPlan::considerForObserving (double JD)
   if (ret)
     return ret;
   return Target::considerForObserving (JD);
+}
+
+float
+TargetPlan::getBonus (double JD)
+{
+  // we have something to observe
+  if (selectedPlan)
+    return Target::getBonus (JD);
+  return 0;
 }
 
 int

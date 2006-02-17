@@ -912,6 +912,7 @@ public:
   virtual int getRST (struct ln_rst_time *rst, double JD);
   virtual int getObsTargetID ();
   virtual int considerForObserving (double JD);
+  virtual float getBonus (double JD);
   virtual int isContinues ();
   virtual int beforeMove ();
   virtual int startObservation ();
