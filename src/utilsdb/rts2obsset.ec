@@ -80,6 +80,8 @@ Rts2ObsSet::load (std::string in_where)
       :db_obs_end :db_obs_end_ind;
     if (sqlca.sqlcode)
       break;
+    if (db_tar_ind < 0)
+      db_tar_name.arr[0] = '\0';
     if (db_obs_ra_ind < 0)
       db_obs_ra = nan("f");
     if (db_obs_dec_ind < 0)
@@ -98,7 +100,7 @@ Rts2ObsSet::load (std::string in_where)
       db_obs_end = nan("f");
 
     // add new observations to vector
-    Rts2Obs obs = Rts2Obs (db_tar_id, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
+    Rts2Obs obs = Rts2Obs (db_tar_id, db_tar_name.arr, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
       db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end);
     push_back (obs);
     if (db_obs_state & OBS_BIT_STARTED)

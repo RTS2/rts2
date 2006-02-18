@@ -15,16 +15,19 @@ Rts2Obs::Rts2Obs (int in_obs_id)
 {
   obs_id = in_obs_id;
   tar_id = -1;
+  tar_name = std::string ("unset");
   tar_type = 0;
   imgset = NULL;
   displayImages = 0;
   displayCounts = 0;
 }
 
-Rts2Obs::Rts2Obs (int in_tar_id, char in_tar_type, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, 
-      double in_obs_az, double in_obs_slew, double in_obs_start, int in_obs_state, double in_obs_end)
+Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra, 
+      double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start,
+      int in_obs_state, double in_obs_end)
 {
   tar_id = in_tar_id;
+  tar_name = std::string (in_tar_name);
   tar_type = in_tar_type;
   obs_id = in_obs_id;
   obs_ra = in_obs_ra;
@@ -129,6 +132,7 @@ Rts2Obs::load ()
   }
   EXEC SQL COMMIT;
   tar_id = db_tar_id;
+  tar_name = std::string (db_tar_name.arr);
   tar_type = db_tar_type;
   if (ind_obs_ra >= 0)
     obs_ra = db_obs_ra;
@@ -339,13 +343,14 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
 
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os.precision (2);
-  _os << std::setw (8) << obs.obs_id << " | "
-    << std::setw(6) << obs.tar_id << " | "
-    << Timestamp (obs.obs_slew) << " | "
-    << LibnovaRa (obs.obs_ra) << " | "
-    << LibnovaDec (obs.obs_dec) << " | "
-    << LibnovaDeg90 (obs.obs_alt) << " | "
-    << LibnovaDeg (obs.obs_az) << " | "
+  _os << std::setw (5) << obs.obs_id << "|"
+    << std::setw(6) << obs.tar_id << "|"
+    << std::left << std::setw (20) << obs.tar_name << "|"
+    << Timestamp (obs.obs_slew) << "|"
+    << LibnovaRa (obs.obs_ra) << "|"
+    << LibnovaDec (obs.obs_dec) << "|"
+    << LibnovaDeg90 (obs.obs_alt) << "|"
+    << LibnovaDeg (obs.obs_az) << "|"
     << std::setfill (' ');
 
   if (obs.obs_start > 0)
