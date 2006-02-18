@@ -345,7 +345,7 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   _os.precision (2);
   _os << std::setw (5) << obs.obs_id << "|"
     << std::setw(6) << obs.tar_id << "|"
-    << std::left << std::setw (20) << obs.tar_name << "|"
+    << std::left << std::setw (20) << obs.tar_name << std::right << "|"
     << Timestamp (obs.obs_slew) << "|"
     << LibnovaRa (obs.obs_ra) << "|"
     << LibnovaDec (obs.obs_dec) << "|"
