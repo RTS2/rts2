@@ -100,9 +100,8 @@ CameraFliChip::box (int in_x, int in_y, int in_width, int in_height)
     in_width = chipSize->width;
   if (in_height == -1)
     in_height = chipSize->height;
-  if (in_x < chipSize->x || in_y < chipSize->y
-      || ((in_x - chipSize->x) + in_width) > chipSize->width
-      || ((in_y - chipSize->y) + in_height) > chipSize->height)
+  if (in_x < 0 || in_y < 0
+      || in_width > chipSize->width || in_height > chipSize->height)
     return -1;
   chipReadout->x = in_x;
   chipReadout->y = in_y;
