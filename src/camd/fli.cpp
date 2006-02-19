@@ -44,7 +44,6 @@ public:
     CameraFliChip (Rts2DevCamera * in_cam, int in_chip_id, flidev_t in_fli);
     virtual ~ CameraFliChip (void);
   virtual int init ();
-  virtual int setBinning (int in_vert, int in_hori);
   virtual int box (int in_x, int in_y, int in_width, int in_height);
   virtual int startExposure (int light, float exptime);
   virtual long isExposing ();
@@ -90,19 +89,6 @@ CameraFliChip::init ()
 }
 
 int
-CameraFliChip::setBinning (int in_vert, int in_hori)
-{
-  LIBFLIAPI ret;
-  ret = FLISetVBin (dev, in_vert);
-  if (ret)
-    return -1;
-  ret = FLISetHBin (dev, in_hori);
-  if (ret)
-    return -1;
-  return CameraChip::setBinning (in_vert, in_hori);
-}
-
-int
 CameraFliChip::box (int in_x, int in_y, int in_width, int in_height)
 {
   // tests for -1 -> full size
@@ -129,6 +115,13 @@ int
 CameraFliChip::startExposure (int light, float exptime)
 {
   LIBFLIAPI ret;
+
+  ret = FLISetVBin (dev, binningVertical);
+  if (ret)
+    return -1;
+  ret = FLISetHBin (dev, binningHorizontal);
+  if (ret)
+    return -1;
 
   ret =
     FLISetImageArea (dev, chipSize->x + chipReadout->x / binningHorizontal,
