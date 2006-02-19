@@ -124,8 +124,8 @@ CameraFliChip::startExposure (int light, float exptime)
     return -1;
 
   ret =
-    FLISetImageArea (dev, chipSize->x + chipReadout->x / binningHorizontal,
-		     chipSize->y + chipReadout->y / binningVertical,
+    FLISetImageArea (dev, chipSize->x + chipReadout->x,
+		     chipSize->y + chipReadout->y,
 		     chipSize->x + chipReadout->x +
 		     chipReadout->width / binningHorizontal,
 		     chipSize->y + chipReadout->y +
