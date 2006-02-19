@@ -206,17 +206,8 @@ int
 CameraFliChip::readoutOneLine ()
 {
   LIBFLIAPI ret;
-  if (readoutLine <
-      (chipUsedReadout->y + (chipUsedReadout->height / usedBinningVertical)))
+  if (readoutLine < (chipUsedReadout->height / usedBinningVertical))
     {
-      // flush lines..
-      if (readoutLine < chipUsedReadout->y)
-	{
-	  ret = FLIFlushRow (dev, chipUsedReadout->y, 1);
-	  if (ret)
-	    return -1;
-	  readoutLine = chipUsedReadout->y;
-	}
       // read lines..
       ret =
 	FLIGrabRow (dev, dest_top,
