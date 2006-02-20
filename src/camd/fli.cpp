@@ -197,7 +197,7 @@ CameraFliChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 int
 CameraFliChip::endReadout ()
 {
-  delete buf;
+  delete[]buf;
   buf = NULL;
   return CameraChip::endReadout ();
 }
