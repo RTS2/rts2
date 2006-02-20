@@ -52,7 +52,7 @@ Rts2GenFocCamera::postEvent (Rts2Event * event)
 void
 Rts2GenFocCamera::getPriority ()
 {
-  if (exposureCount)
+  if (exposureCount && isIdle ())
     queExposure ();
 }
 
