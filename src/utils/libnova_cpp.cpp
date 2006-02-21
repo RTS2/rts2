@@ -229,6 +229,7 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
   double val;
   double out = 0;
   double step = 1;
+  bool get_something = false;
   std::ostringstream * os = NULL;
   std::istringstream * is = NULL;
   while (1)
@@ -265,11 +266,13 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
 	    {
 	      continue;
 	    }
+	  get_something = true;
 	  delete os;
 	  os = NULL;
 	  break;
 	default:
-	  l_deg.deg = out;
+	  if (get_something)
+	    l_deg.deg = out;
 	  return _is;
 	}
       if (out == 0 && val < 0)
