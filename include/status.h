@@ -143,6 +143,10 @@
 #define MIRROR_B		0x03
 #define MIRROR_B_A		0x14
 
+#define FILTERD_MASK		0x02
+#define FILTERD_IDLE		0x00
+#define FILTERD_MOVE		0x02
+
 #define SERVERD_DAY		0
 #define SERVERD_EVENING		1
 #define SERVERD_DUSK		2
