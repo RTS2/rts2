@@ -1931,7 +1931,6 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
   nextPlan = NULL;
   hourLastSearch = 16.0;
   Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch);
-  needChange = false;
   nextTargetRefresh = 0;
 }
 
@@ -1941,15 +1940,36 @@ TargetPlan::~TargetPlan (void)
   delete nextPlan;
 }
 
-// return -1 on error, 0 when no change is needed/detected, 1 when new plan was loaded
-int
-TargetPlan::loadNext (time_t *t)
+// refresh next time..
+void
+TargetPlan::refreshNext ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int db_next_plan_id;
   long db_next_plan_start;
-  long db_now = *t;
+  long db_next;
   EXEC SQL END DECLARE SECTION;
+
+  time_t now;
+  int ret;
+
+  time (&now);
+  if (nextTargetRefresh < now)
+    return;
+
+  // next refresh after 60 seconds
+  nextTargetRefresh = now + 60;
+
+  if (nextPlan)
+  {
+    db_next = nextPlan->getPlanStart ();
+  }
+  else
+  {
+    db_next = now;
+    // consider targets 1/2 old..
+    db_next -= 1800;
+  }
 
   EXEC SQL
   SELECT
@@ -1961,19 +1981,29 @@ TargetPlan::loadNext (time_t *t)
   FROM
     plan
   WHERE
-    plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_now));
+    plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_next));
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetPlan::loadNext cannot load next target");
+    logMsgDb ("TargetPlan::refreshNext cannot load next target");
     EXEC SQL ROLLBACK;
     // we can be last plan entry - so change us, so selectedTarget will be changed
-    return 1;
+    return;
   }
   EXEC SQL ROLLBACK;
+  // we loaded same plan as already prepared
   if (nextPlan && nextPlan->getPlanId() == db_next_plan_id && nextPlan->getPlanStart() == db_next_plan_start)
-    return 0;
+    return;
+  delete nextPlan;
+  nextPlan = new Rts2Plan (db_next_plan_id);
+  ret = nextPlan->load ();
+  if (ret)
+  {
+    delete nextPlan;
+    nextPlan = NULL;
+    return;
+  }
   // we will need change
-  return 1;
+  return;
 }
 
 int
@@ -2000,23 +2030,6 @@ TargetPlan::load (double JD)
   int ret;
 
   ln_get_timet_from_julian (JD, &now);
-
-  // we have observation that can be executed now
-  if (selectedPlan)
-  {
-    if (now < nextTargetRefresh)
-      return 0;
-    // try to load next plan - check if it wasn't updated
-    ret = loadNext (&now);
-    nextTargetRefresh = now + 60;
-    // hnour change detected by load next
-    if (ret == 0
-      && ((nextPlan && nextPlan->getPlanStart () > now)
-        || (!nextPlan))) 
-    {
-      return 0;
-    }
-  }
 
   // always load plan target!
   ret = Target::loadTarget (getTargetID ());
@@ -2075,8 +2088,6 @@ TargetPlan::load (double JD)
 
   if (db_plan_id != -1)
   {
-    if (selectedPlan)
-      needChange = true;
     delete selectedPlan;
     selectedPlan = new Rts2Plan (db_plan_id);
     ret = selectedPlan->load ();
@@ -2167,43 +2178,45 @@ int
 TargetPlan::isContinues ()
 {
   time_t now;
-  if (needChange)
-    return 0;
+  refreshNext ();
   time (&now);
+  if (nextPlan && nextPlan->getPlanStart () < now)
+    return 2;
   if (selectedPlan)
-  {
-    if (nextPlan && nextPlan->getPlanStart () < now)
-      return 0;
     return selectedPlan->getTarget()->isContinues ();
-  }
   return 0;
 }
 
 int
 TargetPlan::beforeMove ()
 {
-  load ();
-  // update our position..
-  if (needChange)
-    endObservation (-1);
-  return 0;
+  if (selectedPlan)
+    selectedPlan->getTarget ()->beforeMove ();
+  return Target::beforeMove ();
 }
 
 int
-TargetPlan::startObservation ()
+TargetPlan::startSlew (struct ln_equ_posn *pos)
 {
-  needChange = false;
-  return Target::startObservation ();
+  int ret;
+  if (selectedPlan)
+  {
+    ret = selectedPlan->startSlew (pos);
+    setObsId (selectedPlan->getTarget()->getObsId ());
+    return ret;
+  }
+  return Target::startSlew (pos);
 }
 
 void
 TargetPlan::printExtra (std::ostream & _os)
 {
+  Target::printExtra (_os);
   if (selectedPlan)
   {
     _os 
       << "SELECTED PLAN" << std::endl
-      << *selectedPlan << std::endl
+      << selectedPlan << std::endl
       << selectedPlan->getTarget () << std::endl
       << "*************************************************" << std::endl;
   }
@@ -2214,7 +2227,7 @@ TargetPlan::printExtra (std::ostream & _os)
   if (nextPlan)
   {
     _os << "NEXT PLAN" << std::endl
-      << *nextPlan << std::endl
+      << nextPlan << std::endl
       << nextPlan->getTarget () << std::endl
       << "*************************************************" << std::endl;
   }

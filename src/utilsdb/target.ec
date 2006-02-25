@@ -266,7 +266,7 @@ Target::save ()
   EXEC SQL END DECLARE SECTION;
 
   // generate new id, if we don't have any 
-  if (target_id <= 0)
+  if (db_new_id <= 0)
   {
     EXEC SQL
     SELECT
@@ -424,9 +424,6 @@ Target::startSlew (struct ln_equ_posn *position)
   struct ln_hrz_posn hrz;
 
   getPosition (position);
-  selected++;
-
-  obs_state |= OBS_BIT_MOVED;
 
   if (obs_id > 0) // we already observe that target
     return OBS_ALREADY_STARTED;
@@ -471,8 +468,32 @@ Target::startSlew (struct ln_equ_posn *position)
     return -1;
   }
   EXEC SQL COMMIT;
-  obs_id = d_obs_id;
+  setObsId (d_obs_id);
   return OBS_MOVE;
+}
+
+void
+Target::moveStarted ()
+{
+  moveCount = 1;
+}
+
+void
+Target::moveEnded ()
+{
+  moveCount = 2;
+}
+
+void
+Target::moveFailed ()
+{
+  moveCount = 3;
+}
+
+bool
+Target::wasMoved ()
+{
+  return (moveCount == 2 || moveCount == 3);
 }
 
 int
@@ -541,7 +562,7 @@ Target::endObservation (int in_next_id)
   int d_obs_state = obs_state;
   EXEC SQL END DECLARE SECTION;
 
-  if (isContinues () && in_next_id == getTargetID ())
+  if (isContinues () == 1 && in_next_id == getTargetID ())
     return 1;
   if (obs_id > 0)
   {
@@ -571,6 +592,12 @@ Target::endObservation (int in_next_id)
     obs_id = -1;
   }
   observationStart = -1;
+  return 0;
+}
+
+int
+Target::isContinues ()
+{
   return 0;
 }
 
@@ -629,6 +656,12 @@ int
 Target::beforeMove ()
 {
   startCalledNum++;
+  return 0;
+}
+
+int
+Target::postprocess ()
+{
   return 0;
 }
 
@@ -962,6 +995,12 @@ Target::dropBonus ()
   return 0;
 }
 
+float
+Target::getBonus (double JD)
+{
+  return tar_priority + tar_bonus;
+}
+
 int
 Target::changePriority (int pri_change, time_t *time_ch)
 {
@@ -1155,6 +1194,18 @@ Target::printTargets (double radius, double JD, std::ostream &_os)
   _os << tarset;
 
   return tarset.size ();
+}
+
+int
+Target::printImages (double radius, double JD, std::ostream &_os)
+{
+  struct ln_equ_posn tar_pos;
+  getPosition (&tar_pos, JD);
+
+  Rts2ImgSet img_set = Rts2ImgSet (&tar_pos, radius);
+  _os << img_set;
+  
+  return img_set.size ();
 }
 
 Target *createTarget (int in_tar_id)

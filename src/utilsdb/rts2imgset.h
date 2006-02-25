@@ -42,13 +42,14 @@ private:
     astro_count;
 
   int
-  loadObs ();
-  int
   loadTarget ();
+  int
+  load (std::string in_where);
 public:
   Rts2ImgSet ();
   Rts2ImgSet (int in_tar_id);
   Rts2ImgSet (Rts2Obs * in_observation);
+  Rts2ImgSet (struct ln_equ_posn *pos, double radius);
   virtual ~
   Rts2ImgSet (void);
   int

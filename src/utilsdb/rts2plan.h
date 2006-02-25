@@ -28,7 +28,14 @@ public:
   int save ();
   int del ();
 
+  int startSlew (struct ln_equ_posn *position);
+
   Target *getTarget ();
+  void clearTarget ()
+  {
+    target = NULL;
+  }
+
   Rts2Obs *getObservation ();
 
   int getPlanId ()
@@ -41,11 +48,11 @@ public:
     return plan_start;
   }
 
-  friend std::ostream & operator << (std::ostream & _os, Rts2Plan plan);
+  friend std::ostream & operator << (std::ostream & _os, Rts2Plan * plan);
   friend std::istream & operator >> (std::istream & _is, Rts2Plan & plan);
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2Plan plan);
+std::ostream & operator << (std::ostream & _os, Rts2Plan * plan);
 std::istream & operator >> (std::istream & _is, Rts2Plan & plan);
 
 #endif /* !__RTS2_PLAN__ */

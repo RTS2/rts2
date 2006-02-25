@@ -196,12 +196,48 @@ Rts2Plan::del ()
   return 0;
 }
 
+int
+Rts2Plan::startSlew (struct ln_equ_posn *position)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_plan_id = plan_id;
+  int db_obs_id;
+  EXEC SQL END DECLARE SECTION;
+  int ret;
+  ret = getTarget ()->startSlew (position);
+  if (obs_id > 0)
+    return ret;
+
+  obs_id = getTarget()->getObsId ();
+  db_obs_id = obs_id;
+
+  EXEC SQL
+  UPDATE
+    plan
+  SET
+    obs_id = :db_obs_id,
+    plan_status = plan_status | 1
+  WHERE
+    plan_id = :db_plan_id;
+  if (sqlca.sqlcode)
+  {
+    syslog (LOG_ERR, "Rts2Plan::startSlew %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    EXEC SQL ROLLBACK;
+  }
+  else
+  {
+    EXEC SQL COMMIT;
+  }
+  return ret;
+}
+
 Target *
 Rts2Plan::getTarget ()
 {
   if (target)
     return target;
-  return createTarget (tar_id);
+  target = createTarget (tar_id);
+  return target;
 }
 
 Rts2Obs *
@@ -222,7 +258,7 @@ Rts2Plan::getObservation ()
   return observation;
 }
 
-std::ostream & operator << (std::ostream & _os, Rts2Plan plan)
+std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
 {
   struct ln_hrz_posn hrz;
   time_t plan_start;
@@ -231,9 +267,9 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan plan)
   int good;
   double JD;
   int ret;
-  plan_start = plan.getPlanStart ();
+  plan_start = plan->getPlanStart ();
   JD = ln_get_julian_from_timet (&plan_start);
-  ret = plan.load ();
+  ret = plan->load ();
   if (ret)
   {
     tar_name = "(not loaded!)";
@@ -241,18 +277,18 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan plan)
   }
   else
   {
-    tar_name = plan.getTarget()->getTargetName();
-    good = plan.getTarget()->isGood (JD);
+    tar_name = plan->getTarget()->getTargetName();
+    good = plan->getTarget()->isGood (JD);
   }
   obs = Rts2Config::instance()->getObserver ();
-  plan.getTarget ()->getAltAz (&hrz, JD);
-  _os << "  " << std::setw (8) << plan.plan_id << "|"
-    << std::setw (8) << plan.prop_id << "|"
+  plan->getTarget ()->getAltAz (&hrz, JD);
+  _os << "  " << std::setw (8) << plan->plan_id << "|"
+    << std::setw (8) << plan->prop_id << "|"
     << std::left << std::setw (20) << tar_name << "|"
-    << std::right << std::setw (8) << plan.tar_id << "|"
-    << std::setw (8) << plan.obs_id << "|"
-    << std::setw (9) << LibnovaDate (&plan.plan_start) << "|"
-    << std::setw (8) << plan.plan_status << "|"
+    << std::right << std::setw (8) << plan->tar_id << "|"
+    << std::setw (8) << plan->obs_id << "|"
+    << std::setw (9) << LibnovaDate (&(plan->plan_start)) << "|"
+    << std::setw (8) << plan->plan_status << "|"
     << LibnovaDeg90 (hrz.alt) << "|"
     << LibnovaDeg (hrz.az) << "|"
     << std::setw(1) << (good ? 'G' : 'B')

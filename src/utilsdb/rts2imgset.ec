@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 #include "../utils/libnova_cpp.h"
 
@@ -22,6 +23,11 @@ Rts2ImgSet::Rts2ImgSet (Rts2Obs *in_observation)
 {
   tar_id = in_observation->getTargetId ();
   observation = in_observation;
+}
+
+Rts2ImgSet::Rts2ImgSet (struct ln_equ_posn * pos, double radius)
+{
+
 }
 
 Rts2ImgSet::~Rts2ImgSet (void)
@@ -164,9 +170,11 @@ Rts2ImgSet::loadTarget ()
 }
 
 int
-Rts2ImgSet::loadObs ()
+Rts2ImgSet::load (std::string in_where)
 {
   EXEC SQL BEGIN DECLARE SECTION;
+  char *stmp_c;
+
   int d_obs_id;
   int d_img_id;
   char d_obs_subtype;
@@ -191,8 +199,6 @@ Rts2ImgSet::loadObs ()
   int d_img_err_ind;
   EXEC SQL END DECLARE SECTION;
 
-  d_obs_id = observation->getObsId ();
- 
   img_alt = 0;
   img_az  = 0;
   img_err = 0;
@@ -202,36 +208,42 @@ Rts2ImgSet::loadObs ()
   count = 0;
   astro_count = 0;
 
-  EXEC SQL DECLARE cur_images CURSOR FOR
-  SELECT
-    img_id,
-    obs_subtype,
-    EXTRACT (EPOCH FROM img_date),
-    img_usec,
-    img_exposure,
-    img_temperature,
-    img_filter,
-    img_alt,
-    img_az,
-    camera_name,
-    mount_name,
-    delete_flag,
-    process_bitfield,
-    img_err_ra,
-    img_err_dec,
-    img_err
-  FROM
-    images
-  WHERE
-    obs_id = :d_obs_id
-  ORDER BY
-    img_id desc;
+  asprintf (&stmp_c,
+  "SELECT "
+    "img_id,"
+    "obs_id,"
+    "obs_subtype,"
+    "EXTRACT (EPOCH FROM img_date),"
+    "img_usec,"
+    "img_exposure,"
+    "img_temperature,"
+    "img_filter,"
+    "img_alt,"
+    "img_az,"
+    "camera_name,"
+    "mount_name,"
+    "delete_flag,"
+    "process_bitfield,"
+    "img_err_ra,"
+    "img_err_dec,"
+    "img_err"
+  " FROM "
+    "images"
+  " WHERE "
+    " %s "
+  " ORDER BY "
+    "img_id DESC;", in_where.c_str());
+
+  EXEC SQL PREPARE cur_images_stmp FROM :stmp_c;
+
+  EXEC SQL DECLARE cur_images CURSOR FOR cur_images_stmp;
 
   EXEC SQL OPEN cur_images;
   while (1)
   {
     EXEC SQL FETCH next FROM cur_images INTO
       :d_img_id,
+      :d_obs_id,
       :d_obs_subtype,
       :d_img_date,
       :d_img_usec,
@@ -275,6 +287,7 @@ Rts2ImgSet::loadObs ()
       d_img_err_dec, d_img_err));
 
   }
+  free (stmp_c);
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
     std::cerr << "Rts2ImgSet::loadObs error in DB: " << sqlca.sqlerrm.sqlerrmc << std::endl;
@@ -293,9 +306,15 @@ Rts2ImgSet::load ()
 {
   int ret;
   if (observation)
-    ret = loadObs ();
+  {
+    std::ostringstream os;
+    os << "obs_id = " << observation->getObsId ();
+    ret = load (os.str());
+  }
   else
+  {
     ret = loadTarget ();
+  }
 
   // compute statistics
 

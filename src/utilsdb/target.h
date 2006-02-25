@@ -430,6 +430,16 @@ public:
     return obs_id;
   }
 
+  /**
+   * Set observation ID and start observation
+   */
+  void setObsId (int new_obs_id)
+  {
+    obs_id = new_obs_id;
+    selected++;
+    obs_state |= OBS_BIT_MOVED;
+  }
+
   int getRST (struct ln_rst_time *rst)
   {
     return getRST (rst, ln_get_julian_from_sys ());
@@ -443,25 +453,13 @@ public:
   // otherwise (when interruption is necessary) returns 0
   virtual int compareWithTarget (Target * in_target, double in_sep_limit);
   virtual int startSlew (struct ln_equ_posn *position);
-  void moveStarted ()
-  {
-    moveCount = 1;
-  }
-  void moveEnded ()
-  {
-    moveCount = 2;
-  }
-  void moveFailed ()
-  {
-    moveCount = 3;
-  }
-  bool wasMoved ()
-  {
-    return (moveCount == 2 || moveCount == 3);
-  }
+  void moveStarted ();
+  void moveEnded ();
+  void moveFailed ();
+  bool wasMoved ();
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
-  virtual int startObservation ();
+  int startObservation ();
   void acqusitionStart ();
   void acqusitionEnd ();
   void acqusitionFailed ();
@@ -495,19 +493,14 @@ public:
   // targer doesn't exists, we keep exposing and we will not move mount between
   // exposures. Good for darks observation, partial good for GRB (when we solve
   // problem with moving mount in exposures - position updates)
-  virtual int isContinues ()
-  {
-    return 0;
-  }
+  // returns 2 when target need change - usefull for plan target and other targets,
+  // which set obs_target_id
+  virtual int isContinues ();
 
   int observationStarted ();
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
-  // ready for target post-processing (call some script,..)
-  virtual int postprocess ()
-  {
-    return 0;
-  }
+  int postprocess ();
   virtual int isGood (double lst, double JD, struct ln_equ_posn *pos);
   virtual int isGood (double JD);
   // scheduler functions
@@ -517,14 +510,11 @@ public:
   {
     return getBonus (ln_get_julian_from_sys ());
   }
-  virtual float getBonus (double JD)
-  {
-    return tar_priority + tar_bonus;
-  }
+  virtual float getBonus (double JD);
   virtual int changePriority (int pri_change, time_t * time_ch);
   int changePriority (int pri_change, double validJD);
 
-  virtual int getNextImgId ()
+  int getNextImgId ()
   {
     return ++img_id;
   }
@@ -592,6 +582,13 @@ public:
   }
 
   int printTargets (double radius, double JD, std::ostream & _os);
+
+  int printImages (double radius, std::ostream & _os)
+  {
+    return printImages (radius, ln_get_julian_from_sys (), _os);
+  }
+
+  int printImages (double radius, double JD, std::ostream & _os);
 };
 
 class ConstTarget:public Target
@@ -897,9 +894,8 @@ private:
 
   // how long to look back for previous plan
   float hourLastSearch;
-  bool needChange;
   time_t nextTargetRefresh;
-  int loadNext (time_t * t);
+  void refreshNext ();
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
 public:
@@ -915,7 +911,7 @@ public:
   virtual float getBonus (double JD);
   virtual int isContinues ();
   virtual int beforeMove ();
-  virtual int startObservation ();
+  virtual int startSlew (struct ln_equ_posn *position);
 
   virtual void printExtra (std::ostream & _os);
 };
