@@ -1954,7 +1954,7 @@ TargetPlan::refreshNext ()
   int ret;
 
   time (&now);
-  if (nextTargetRefresh < now)
+  if (now < nextTargetRefresh)
     return;
 
   // next refresh after 60 seconds
