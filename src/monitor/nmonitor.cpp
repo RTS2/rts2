@@ -329,7 +329,40 @@ Rts2NMPhot::print (WINDOW * wnd)
   mvwprintw (wnd, 4, 1, "cnt: %i (%0.3f)", lastCount, lastExp);
 }
 
+class Rts2NMFilter:public Rts2DevClientFilter
+{
+private:
+  Rts2CNMonConn * connection;
+  void print (WINDOW * wnd);
+public:
+    Rts2NMFilter (Rts2CNMonConn *
+		  in_connection):Rts2DevClientFilter (in_connection)
+  {
+    in_connection->setStatusBegin (4);
+    connection = in_connection;
+  }
+  virtual void postEvent (Rts2Event * event)
+  {
+    WINDOW *window;
+    switch (event->getType ())
+      {
+      case EVENT_PRINT:
+	window = connection->getWindow ();
+	if (window)
+	  print (window);
+	break;
+      }
+    Rts2DevClientFilter::postEvent (event);
+  }
+};
 
+void
+Rts2NMFilter::print (WINDOW * wnd)
+{
+  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
+  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
+  mvwprintw (wnd, 3, 1, "fil: %i", getValueInteger ("filter"));
+}
 
 class Rts2NMDome:public Rts2DevClientDome
 {
@@ -848,6 +881,8 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2NMFocus ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_PHOT:
       return new Rts2NMPhot ((Rts2CNMonConn *) conn);
+    case DEVICE_TYPE_FW:
+      return new Rts2NMFilter ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_DOME:
       return new Rts2NMDome ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_COPULA:
