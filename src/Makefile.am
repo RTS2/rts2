@@ -6,6 +6,7 @@ SUBDIRS = \
 	dome	\
 	focusd  \
 	mirror  \
+	filterd \
 	wcs \
 	utilsdb \
 	teld \

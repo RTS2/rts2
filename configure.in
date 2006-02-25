@@ -330,6 +330,7 @@ AC_OUTPUT([Makefile
 	   src/camd/urvc2/Makefile
 	   src/camd/apogee/Makefile
 	   src/dome/Makefile
+	   src/filterd/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
 	   src/grb/Makefile
