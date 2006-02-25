@@ -18,6 +18,7 @@ main (int argc, char **argv)
     getYoA () << "]" << std::endl;
   std::cout << "[XoA:YoA] RA: " << image->
     getCenterRa () << " DEC: " << image->getCenterDec () << std::endl;
+  std::cout << "FLIP: " << image->getFlip () << std::endl;
   image->getRaDec (image->getXoA (), image->getYoA (), ra, dec);
   std::cout << "ROTANG: " << ln_rad_to_deg (image->
 					    getRotang ()) << " (deg) XPLATE: "
