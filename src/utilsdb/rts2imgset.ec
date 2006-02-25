@@ -52,7 +52,7 @@ Rts2ImgSet::loadTarget ()
   int d_img_usec;
   float d_img_exposure;
   float d_img_temperature;
-  VARCHAR d_img_filter[3];
+  VARCHAR d_img_filter[4];
   float d_img_alt;
   float d_img_az;
   VARCHAR d_camera_name[DEVICE_NAME_SIZE];
@@ -280,6 +280,8 @@ Rts2ImgSet::load (std::string in_where)
       astro_count++;
     }
     count++;
+
+    d_img_filter.arr[d_img_filter.len] = '\0';
       
     push_back (new Rts2ImageDb (tar_id, d_obs_id, d_img_id, d_obs_subtype,
       d_img_date, d_img_usec, d_img_exposure, d_img_temperature, d_img_filter.arr, d_img_alt, d_img_az,
