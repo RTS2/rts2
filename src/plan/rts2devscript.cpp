@@ -40,6 +40,7 @@ Rts2DevScript::startTarget ()
 	new Rts2Script (script_connection->getMaster (),
 			script_connection->getName (), currentTarget);
     }
+
   clearFailedCount ();
   queCommandFromScript (new
 			Rts2CommandScriptEnds (script_connection->
@@ -83,6 +84,10 @@ Rts2DevScript::postEvent (Rts2Event * event)
       setNextTarget ((Target *) event->getArg ());
       getObserveStart = NO_START;
       break;
+      // when we finish move, we can observe
+    case EVENT_MOVE_OK:
+      getObserveStart = START_CURRENT;
+      break;
     case EVENT_LAST_READOUT:
     case EVENT_SCRIPT_ENDED:
       if (!event->getArg () || (getObserveStart == START_NEXT && script))
@@ -98,27 +103,12 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  break;
 	}
       startTarget ();
-      if ((script_connection->
-	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
-			   CAM_MASK_READING)) ==
-	  (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
-	{
-	  nextCommand ();
-	}
-      // otherwise we post command after end of camera readout
-      getObserveStart = NO_START;
+      nextCommand ();
       break;
     case EVENT_CLEAR_WAIT:
       clearWait ();
-      // in case we have some command pending..send it
-      if ((script_connection->
-	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
-			   CAM_MASK_READING)) ==
-	  (CAM_NOEXPOSURE & CAM_NODATA & CAM_NOTREADING))
-	{
-	  nextCommand ();
-	}
-      // otherwise, exposureEnd/readoutEnd will query new command
+      nextCommand ();
+      // if we are still exposing, exposureEnd/readoutEnd will query new command
       break;
     case EVENT_MOVE_QUESTION:
       if (blockMove)
@@ -368,7 +358,6 @@ Rts2DevScript::haveNextCommand ()
 	{
 	  return 0;
 	}
-      getObserveStart = NO_START;
       startTarget ();
       if (!script)
 	{

@@ -51,6 +51,7 @@ protected:
 
   virtual void filterMoveEnd ();
 
+  virtual void integrationStart ();
   virtual void integrationEnd ();
   virtual void addCount (int count, float exp, int is_ov);
 

@@ -38,6 +38,11 @@ private:
 
   int acqusitionOk;
   int acqusitionFailed;
+
+  int setNow (Target * newTarget);
+
+  void queTarget (Target * in_target);
+  void updateScriptCount ();
 public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
@@ -71,16 +76,12 @@ public:
 
   int setNext (int nextId);
   int setNow (int nextId);
-  int setNow (Target * newTarget);
   int setGrb (int grbId);
 
   void stop ()
   {
     maskState (0, EXEC_MASK_STOP, EXEC_STOP);
   }
-
-  void queTarget (Target * in_target);
-  void updateScriptCount ();
 };
 
 int
@@ -147,10 +148,8 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
 Rts2Executor::~Rts2Executor (void)
 {
   postEvent (new Rts2Event (EVENT_KILL_ALL));
-  if (currentTarget)
-    delete currentTarget;
-  if (nextTarget)
-    delete nextTarget;
+  delete currentTarget;
+  delete nextTarget;
 }
 
 int
@@ -273,7 +272,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 	      switchTarget ();
 	    }
 	  // scriptCount is not 0, but we hit continues target..
-	  else if (currentTarget->isContinues ()
+	  else if (currentTarget->isContinues () == 1
 		   && (nextTarget == NULL
 		       || nextTarget->getTargetID () ==
 		       currentTarget->getTargetID ()))
@@ -567,19 +566,22 @@ Rts2Executor::doSwitch ()
 {
   int ret;
   int nextId;
+  // we need to change current target - usefull for planner runs
+  if (currentTarget && currentTarget->isContinues () == 2
+      && (!nextTarget
+	  || nextTarget->getTargetID () == currentTarget->getTargetID ()))
+    {
+      delete nextTarget;
+      // create again our target..since conditions changed, we will get different target id
+      nextTarget = createTarget (currentTarget->getTargetID (), observer);
+    }
   if (nextTarget)
     {
       // go to post-process
       if (currentTarget)
 	{
-	  if (nextTarget)
-	    {
-	      nextId = nextTarget->getTargetID ();
-	    }
-	  else
-	    {
-	      nextId = -1;
-	    }
+	  // nex target is defined - tested on line -5
+	  nextId = nextTarget->getTargetID ();
 	  ret = currentTarget->endObservation (nextId);
 	  if (!(ret == 1 && nextId == currentTarget->getTargetID ()))
 	    // don't que only in case nextTarget and currentTarget are
@@ -695,8 +697,7 @@ Rts2Executor *executor;
 void
 killSignal (int sig)
 {
-  if (executor)
-    delete executor;
+  delete executor;
   exit (0);
 }
 

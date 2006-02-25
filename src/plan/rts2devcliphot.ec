@@ -15,6 +15,14 @@ Rts2DevClientPhotExec::~Rts2DevClientPhotExec ()
 }
 
 void
+Rts2DevClientPhotExec::integrationStart ()
+{
+  if (currentTarget)
+    currentTarget->startObservation ();
+  Rts2DevClientPhot::integrationStart ();
+}
+
+void
 Rts2DevClientPhotExec::integrationEnd ()
 {
   blockMove = 0;
@@ -163,8 +171,8 @@ Rts2DevClientPhotExec::nextCommand ()
   connection->queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
   blockMove = 1;		// as we run a script..
-  if (currentTarget)
-    currentTarget->startObservation ();
+  if (currentTarget && !currentTarget->wasMoved ())
+    getObserveStart = START_CURRENT;
 }
 
 void
