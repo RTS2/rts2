@@ -894,6 +894,7 @@ private:
 
   // how long to look back for previous plan
   float hourLastSearch;
+  float hourConsiderPlans;
   time_t nextTargetRefresh;
   void refreshNext ();
 protected:

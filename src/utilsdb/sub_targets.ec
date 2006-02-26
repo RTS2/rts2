@@ -1931,6 +1931,8 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
   nextPlan = NULL;
   hourLastSearch = 16.0;
   Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch);
+  hourConsiderPlans = 1.0;
+  Rts2Config::instance ()->getFloat ("selector", "consider_plan", hourConsiderPlans);
   nextTargetRefresh = 0;
 }
 
@@ -1963,6 +1965,9 @@ TargetPlan::refreshNext ()
   if (nextPlan)
   {
     db_next = nextPlan->getPlanStart ();
+    // we need to select new plan..don't bother with db select
+    if (db_next < now)
+      return;
   }
   else
   {
@@ -2018,6 +2023,8 @@ TargetPlan::load (double JD)
   EXEC SQL BEGIN DECLARE SECTION;
   int db_cur_plan_id;
   double db_cur_plan_start;
+  int db_obs_id;
+  int db_obs_id_ind;
 
   long last;
   EXEC SQL END DECLARE SECTION;
@@ -2026,6 +2033,7 @@ TargetPlan::load (double JD)
   int db_next_plan_id = -1;
 
   time_t now;
+  time_t considerPlans;
 
   int ret;
 
@@ -2037,7 +2045,9 @@ TargetPlan::load (double JD)
     return ret;
 
   // get plan entries from last 12 hours..
-  last = (int) (now - (hourLastSearch * 3600));
+  last = (time_t) (now - (hourLastSearch * 3600));
+
+  considerPlans = (time_t) (now - (hourConsiderPlans * 3600.0));
 
   // check for next plan entry after 1 minute..
   nextTargetRefresh = now + 60;
@@ -2045,6 +2055,7 @@ TargetPlan::load (double JD)
   EXEC SQL DECLARE cur_plan CURSOR FOR
   SELECT
     plan_id,
+    obs_id,
     EXTRACT (EPOCH FROM plan_start)
   FROM
     plan
@@ -2058,15 +2069,32 @@ TargetPlan::load (double JD)
   {
     EXEC SQL FETCH next FROM cur_plan INTO
       :db_cur_plan_id,
+      :db_obs_id :db_obs_id_ind,
       :db_cur_plan_start;
     if (sqlca.sqlcode)
       break;
-    if (db_plan_id == -1 && db_cur_plan_start > now)
+    if (db_cur_plan_start > now)
     {
-      // that's the last plan ID
-      db_plan_id = db_next_plan_id;
+      if (db_plan_id == -1)
+      {
+        // that's the last plan ID
+        db_plan_id = db_next_plan_id;
+      }
       db_next_plan_id = db_cur_plan_id;
       break;
+    }
+    if (db_obs_id_ind < 0 && db_cur_plan_start > considerPlans)
+    {
+      // we found current plan - one that wasn't observed and is close enought to current time
+      if (db_plan_id == -1)
+      {
+        db_plan_id = db_cur_plan_id;
+      }
+      else
+      {
+	db_next_plan_id = db_cur_plan_id;
+	break;
+      }
     }
     // keep for futher reference
     db_next_plan_id = db_cur_plan_id;
@@ -2081,7 +2109,10 @@ TargetPlan::load (double JD)
       return 0;
     }
     // we don't find next, but we have current
-    db_plan_id = db_next_plan_id;
+    if (db_plan_id == -1)
+    {
+      db_plan_id = db_next_plan_id;
+    }  
     db_next_plan_id = -1;
   }
   EXEC SQL CLOSE cur_plan;
