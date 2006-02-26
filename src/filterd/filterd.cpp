@@ -1,7 +1,7 @@
 #include "filterd.h"
 
 Rts2DevFilterd::Rts2DevFilterd (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, 5550, "W0")
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, 5549, "W0")
 {
   char *states_names[1] = { "filter" };
   setStateNames (1, states_names);
