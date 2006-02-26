@@ -227,7 +227,9 @@ public:
   virtual void filterMoveFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
 
-  virtual void filterOK ();
+  virtual void filterOK ()
+  {
+  }
 };
 
 class Rts2DevClientExecutor:public Rts2DevClient

@@ -180,6 +180,7 @@ Rts2Command (in_camera->getMaster ())
 {
   camera = in_camera;
   phot = NULL;
+  filterCli = NULL;
   setCommandFilter (filter);
 }
 
@@ -189,14 +190,30 @@ Rts2Command (in_phot->getMaster ())
 {
   camera = NULL;
   phot = in_phot;
+  filterCli = NULL;
   setCommandFilter (filter);
 }
+
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * in_filter,
+				      int filter):
+Rts2Command (in_filter->getMaster ())
+{
+  camera = NULL;
+  phot = NULL;
+  filterCli = in_filter;
+  setCommandFilter (filter);
+}
+
 
 int
 Rts2CommandFilter::commandReturnOK ()
 {
   if (camera)
     camera->filterOK ();
+  if (phot)
+    phot->filterOK ();
+  if (filterCli)
+    filterCli->filterOK ();
   return Rts2Command::commandReturnOK ();
 }
 
@@ -207,6 +224,8 @@ Rts2CommandFilter::commandReturnFailed (int status)
     camera->filterFailed ();
   if (phot)
     phot->filterMoveFailed (status);
+  if (filterCli)
+    filterCli->filterMoveFailed (status);
   return Rts2Command::commandReturnFailed (status);
 }
 

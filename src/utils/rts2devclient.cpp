@@ -641,12 +641,21 @@ Rts2DevClientFilter::filterMoveFailed (int status)
 void
 Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
 {
-
-}
-
-void
-Rts2DevClientFilter::filterOK ()
-{
+  if (state->maskValueChanged (FILTERD_MASK))
+    {
+      switch (state->getValue () & FILTERD_MASK)
+	{
+	case FILTERD_MOVE:
+	  filterMoveStart ();
+	  break;
+	case FILTERD_IDLE:
+	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	    filterMoveEnd ();
+	  else
+	    filterMoveFailed ((state->getValue () & DEVICE_ERROR_MASK));
+	  break;
+	}
+    }
 }
 
 Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient

@@ -123,10 +123,12 @@ class Rts2CommandFilter:public Rts2Command
 private:
   Rts2DevClientCamera * camera;
   Rts2DevClientPhot *phot;
+  Rts2DevClientFilter *filterCli;
   void setCommandFilter (int filter);
 public:
     Rts2CommandFilter (Rts2DevClientCamera * in_camera, int filter);
     Rts2CommandFilter (Rts2DevClientPhot * in_phot, int filter);
+    Rts2CommandFilter (Rts2DevClientFilter * in_filter, int filter);
 
   virtual int commandReturnOK ();
   virtual int commandReturnFailed (int status);
