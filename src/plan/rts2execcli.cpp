@@ -175,7 +175,6 @@ Rts2DevClientCameraExec::exposureStarted ()
 void
 Rts2DevClientCameraExec::exposureEnd ()
 {
-  Rts2DevClientCameraImage::exposureEnd ();
   blockMove = 0;
   if (!script || (script && script->isLastCommand ()))
     {
@@ -187,6 +186,8 @@ Rts2DevClientCameraExec::exposureEnd ()
       nextComd = NULL;
       nextCommand ();
     }
+  // send readout after we deal with next command - which can be filter move
+  Rts2DevClientCameraImage::exposureEnd ();
 }
 
 void
