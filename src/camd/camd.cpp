@@ -11,6 +11,7 @@
 
 #include "camera_cpp.h"
 #include "imghdr.h"
+#include "rts2devcliwheel.h"
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
 {
@@ -327,14 +328,21 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, 5554, "C0")
   serialNumber[0] = '0';
   lastExp = nan ("f");
 
+  exposureFilter = -1;
+
   nightCoolTemp = nan ("f");
   focuserDevice = NULL;
+  wheelDevice = NULL;
+  filterMove = NOT_MOVE;
+  filterExpChip = -1;
   defBinning = 1;
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
   addOption ('F', "focuser", 1,
 	     "name of focuser device, which will be granted to do exposures without priority");
+  addOption ('W', "filterwheel", 1,
+	     "name of device which is used as filter wheel");
   addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
 }
 
@@ -347,6 +355,26 @@ Rts2DevCamera::~Rts2DevCamera ()
       chips[i] = NULL;
     }
   delete filter;
+}
+
+int
+Rts2DevCamera::willConnect (Rts2Address * in_addr)
+{
+  if (in_addr->getType () == DEVICE_TYPE_FW
+      && in_addr->isAddress (wheelDevice))
+    return 1;
+  return Rts2Device::willConnect (in_addr);
+}
+
+Rts2DevClient *
+Rts2DevCamera::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  switch (other_device_type)
+    {
+    case DEVICE_TYPE_FW:
+      return new Rts2DevClientFilterCamera (conn);
+    }
+  return Rts2Device::createOtherType (conn, other_device_type);
 }
 
 void
@@ -387,6 +415,9 @@ Rts2DevCamera::processOption (int in_opt)
       break;
     case 'F':
       focuserDevice = optarg;
+      break;
+    case 'W':
+      wheelDevice = optarg;
       break;
     case 'b':
       defBinning = atoi (optarg);
@@ -441,6 +472,12 @@ Rts2DevCamera::checkExposures ()
 	    {
 	      setTimeout (ret);
 	    }
+	  // handle filter command
+	  if (exposureFilter >= 0)
+	    {
+	      camFilter (exposureFilter);
+	      exposureFilter = -1;
+	    }
 	  if (ret == -2)
 	    {
 	      maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
@@ -483,6 +520,26 @@ Rts2DevCamera::checkReadouts ()
 		       "chip readout ended with error");
 	}
     }
+}
+
+void
+Rts2DevCamera::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_FILTER_MOVE_END:
+      // update info about FW
+      infoAll ();
+      filterMove = NOT_MOVE;
+      if (filterExpChip >= 0)
+	{
+	  // start qued exposure
+	  camStartExposure (filterExpChip, 1, filterExpTime);
+	  filterExpChip = -1;
+	}
+      break;
+    }
+  Rts2Device::postEvent (event);
 }
 
 int
@@ -535,6 +592,7 @@ Rts2DevCamera::sendBaseInfo (Rts2Conn * conn)
   conn->sendValue ("chips", chipNum);
   conn->sendValue ("can_df", canDF);
   conn->sendValue ("focuser", focuserDevice);
+  conn->sendValue ("wheel", wheelDevice);
   return 0;
 }
 
@@ -552,33 +610,53 @@ Rts2DevCamera::camChipInfo (Rts2Conn * conn, int chip)
 }
 
 int
+Rts2DevCamera::camStartExposure (int chip, int light, float exptime)
+{
+  int ret;
+
+  ret = camExpose (chip, light, exptime);
+  if (ret)
+    return ret;
+
+  lastExp = exptime;
+  infoAll ();
+  maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+	     CAM_EXPOSING | CAM_NODATA, "exposure chip started");
+  chips[chip]->setExposure (exptime,
+			    light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
+  lastFilterNum = getFilterNum ();
+  // call us to check for exposures..
+  long new_timeout;
+  new_timeout = camWaitExpose (chip);
+  if (new_timeout >= 0)
+    {
+      setTimeout (new_timeout);
+    }
+  return 0;
+}
+
+int
 Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 {
   int ret;
 
-  Rts2Device::info (conn);
-
-  ret = camExpose (chip, light, exptime);
-  if (!ret)
+  if (light && filterMove == MOVE)
     {
-      lastExp = exptime;
-      infoAll ();
-      maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
-      chips[chip]->setExposure (exptime,
-				light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
-      lastFilterNum = getFilterNum ();
-      // call us to check for exposures..
-      long new_timeout;
-      new_timeout = camWaitExpose (chip);
-      if (new_timeout >= 0)
-	{
-	  setTimeout (new_timeout);
-	}
-      return 0;
+      // que exposure after filter move ends
+      filterExpChip = chip;
+      filterExpTime = exptime;
+      ret = 0;
     }
-  conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
-  return -1;
+  else
+    {
+      filterExpChip = -1;
+      ret = camStartExposure (chip, light, exptime);
+    }
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
+    }
+  return ret;
 }
 
 long
@@ -740,21 +818,77 @@ Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
 }
 
 int
+Rts2DevCamera::camFilter (int new_filter)
+{
+  int ret;
+  if (wheelDevice)
+    {
+      struct filterStart fs;
+      fs.filterName = wheelDevice;
+      fs.filter = new_filter;
+      postEvent (new Rts2Event (EVENT_FILTER_START_MOVE, (void *) &fs));
+      // filter move will be performed
+      if (fs.filter == -1)
+	{
+	  filterMove = MOVE;
+	  ret = 0;
+	}
+      else
+	{
+	  filterMove = NOT_MOVE;
+	  ret = -1;
+	}
+    }
+  else
+    {
+      ret = filter->setFilterNum (new_filter);
+      Rts2Device::infoAll ();
+    }
+  return ret;
+}
+
+int
 Rts2DevCamera::camFilter (Rts2Conn * conn, int new_filter)
 {
   int ret;
-  if (!filter)
+  if (!filter && !wheelDevice)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have filter wheel");
       return -1;
     }
-  ret = filter->setFilterNum (new_filter);
-  Rts2Device::info (conn);
+  for (int i = 0; i < chipNum; i++)
+    {
+      if (getState (i) & CAM_EXPOSING)
+	{
+	  // que filter change after exposure ends..
+	  exposureFilter = new_filter;
+	  return 0;
+	}
+    }
+  ret = camFilter (new_filter);
   if (ret == -1)
     {
       conn->sendCommandEnd (DEVDEM_E_HW, "camera set filter failed");
     }
   return ret;
+}
+
+int
+Rts2DevCamera::getFilterNum ()
+{
+  if (wheelDevice)
+    {
+      struct filterStart fs;
+      fs.filterName = wheelDevice;
+      fs.filter = -1;
+      postEvent (new Rts2Event (EVENT_FILTER_GET, (void *) &fs));
+      return fs.filter;
+    }
+  else if (filter)
+    {
+      return filter->getFilterNum ();
+    }
+  return -1;
 }
 
 Rts2DevConnCamera::Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device):

@@ -177,9 +177,21 @@ class Rts2DevCamera:public Rts2Device
 {
 private:
   char *focuserDevice;
+  char *wheelDevice;
+  enum
+  { NOT_MOVE, MOVE } filterMove;
+  int filterExpChip;
+  float filterExpTime;
   int lastFilterNum;
   float lastExp;
+
+  int exposureFilter;
+
+  int camStartExposure (int chip, int light, float exptime);
+  // when we call that function, we must be sure that either filter or wheelDevice != NULL
+  int camFilter (int new_filter);
 protected:
+  int willConnect (Rts2Address * in_addr);
   char *device_file;
   // camera chips
   CameraChip *chips[MAX_CHIPS];
@@ -199,8 +211,8 @@ protected:
   Rts2Filter *filter;
 
   float nightCoolTemp;
-protected:
-    virtual void cancelPriorityOperations ();
+
+  virtual void cancelPriorityOperations ();
   int defBinning;
 
 public:
@@ -213,6 +225,8 @@ public:
   void checkExposures ();
   void checkReadouts ();
 
+  virtual void postEvent (Rts2Event * event);
+
   virtual int idle ();
 
   virtual int deleteConnection (Rts2Conn * conn)
@@ -223,7 +237,8 @@ public:
   }
 
   virtual int changeMasterState (int new_state);
-
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
   virtual int ready ()
   {
     return -1;
@@ -294,12 +309,7 @@ public:
   int camCoolShutdown (Rts2Conn * conn);
   int camFilter (Rts2Conn * conn, int new_filter);
 
-  int getFilterNum ()
-  {
-    if (filter)
-      return filter->getFilterNum ();
-    return -1;
-  }
+  virtual int getFilterNum ();
 
   virtual int grantPriority (Rts2Conn * conn)
   {
