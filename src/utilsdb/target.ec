@@ -1197,12 +1197,20 @@ Target::printTargets (double radius, double JD, std::ostream &_os)
 }
 
 int
-Target::printImages (double radius, double JD, std::ostream &_os)
+Target::printImages (double JD, std::ostream &_os)
 {
   struct ln_equ_posn tar_pos;
-  getPosition (&tar_pos, JD);
+  int ret;
+  
+  ret = getPosition (&tar_pos, JD);
+  if (ret)
+    return ret;
 
-  Rts2ImgSet img_set = Rts2ImgSet (&tar_pos, radius);
+  Rts2ImgSetPosition img_set = Rts2ImgSetPosition (&tar_pos);
+  ret = img_set.load ();
+  if (ret)
+    return ret;
+
   _os << img_set;
   
   return img_set.size ();

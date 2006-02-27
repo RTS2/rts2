@@ -583,12 +583,12 @@ public:
 
   int printTargets (double radius, double JD, std::ostream & _os);
 
-  int printImages (double radius, std::ostream & _os)
+  int printImages (std::ostream & _os)
   {
-    return printImages (radius, ln_get_julian_from_sys (), _os);
+    return printImages (ln_get_julian_from_sys (), _os);
   }
 
-  int printImages (double radius, double JD, std::ostream & _os);
+  int printImages (double JD, std::ostream & _os);
 };
 
 class ConstTarget:public Target

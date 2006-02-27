@@ -21,10 +21,6 @@ class Rts2ImgSet:public
 Rts2ImageDb * >
 {
 private:
-  int
-    tar_id;
-  Rts2Obs *
-    observation;
   float
     img_alt;
   float
@@ -41,19 +37,18 @@ private:
   int
     astro_count;
 
-  int
-  loadTarget ();
+protected:
   int
   load (std::string in_where);
+  void
+  stat ();
 public:
   Rts2ImgSet ();
-  Rts2ImgSet (int in_tar_id);
-  Rts2ImgSet (Rts2Obs * in_observation);
-  Rts2ImgSet (struct ln_equ_posn *pos, double radius);
+  // abstract. subclasses needs to define that
+  virtual int
+  load () = 0;
   virtual ~
   Rts2ImgSet (void);
-  int
-  load ();
   void
   print (std::ostream & _os, int printImages);
   int
@@ -62,6 +57,41 @@ public:
   friend
     std::ostream &
   operator << (std::ostream & _os, Rts2ImgSet & img_set);
+};
+
+class Rts2ImgSetTarget:
+public Rts2ImgSet
+{
+private:
+  int
+    tar_id;
+public:
+  Rts2ImgSetTarget (int in_tar_id);
+  virtual int
+  load ();
+};
+
+class Rts2ImgSetObs:
+public Rts2ImgSet
+{
+private:
+  Rts2Obs * observation;
+public:
+  Rts2ImgSetObs (Rts2Obs * in_observation);
+  virtual int
+  load ();
+};
+
+class Rts2ImgSetPosition:
+public Rts2ImgSet
+{
+private:
+  struct ln_equ_posn
+    pos;
+public:
+  Rts2ImgSetPosition (struct ln_equ_posn *in_pos);
+  virtual int
+  load ();
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ImgSet & img_set);

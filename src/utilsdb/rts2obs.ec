@@ -163,8 +163,7 @@ Rts2Obs::loadImages ()
   if (ret)
     return ret;
 
-  imgset = new Rts2ImgSet (this);
-
+  imgset = new Rts2ImgSetObs (this);
   return imgset->load ();
 }
 
