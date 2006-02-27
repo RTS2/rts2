@@ -168,7 +168,7 @@ Rts2TargetInfo::printTargetInfo ()
     {
       if (printImages)
 	{
-	  Rts2ImgSet imgset = Rts2ImgSet (target->getTargetID ());
+	  Rts2ImgSetTarget imgset = Rts2ImgSetTarget (target->getTargetID ());
 	  imgset.load ();
 	  imgset.print (std::cout, printImages);
 	  imgset.clear ();
