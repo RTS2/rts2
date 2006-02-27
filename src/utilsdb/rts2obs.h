@@ -13,6 +13,7 @@
 // what to print..
 #define DISPLAY_ALL		0x01
 #define DISPLAY_SUMMARY		0x02
+#define DISPLAY_OBS		0x04
 
 /**
  * Observation class.

@@ -195,7 +195,7 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
     }
     for (img_iter = begin (); img_iter != end (); img_iter++)
     {
-      _os << "      " << *(*img_iter);
+      (*img_iter)->print (_os, printImages);
     }
   }
   if (printImages & DISPLAY_SUMMARY)
