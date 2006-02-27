@@ -1211,8 +1211,8 @@ Target::printImages (double JD, std::ostream &_os)
   if (ret)
     return ret;
 
-  _os << img_set;
-  
+  img_set.print (std::cout, DISPLAY_ALL);
+
   return img_set.size ();
 }
 
