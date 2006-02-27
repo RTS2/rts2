@@ -62,6 +62,7 @@ Rts2SimbadInfo::run ()
   selection.addChoice ('q', "Quit");
   selection.addChoice ('o', "List observations around position");
   selection.addChoice ('t', "List targets around position");
+  selection.addChoice ('i', "List images around position");
 
   while (1)
     {
@@ -79,6 +80,9 @@ Rts2SimbadInfo::run ()
 	case 't':
 	  askForDegrees ("Radius", radius);
 	  target->printTargets (radius, std::cout);
+	  break;
+	case 'i':
+	  target->printImages (std::cout);
 	  break;
 	}
     }
