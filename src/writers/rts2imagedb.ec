@@ -1,13 +1,11 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "rts2imagedb.h"
 #include "../utils/timestamp.h"
 #include "../utils/libnova_cpp.h"
 
 #include <iomanip>
 #include <libnova/airmass.h>
+
+#define DISPLAY_OBS		0x04
 
 EXEC SQL include sqlca;
 
@@ -612,24 +610,33 @@ Rts2ImageDb::getOKCount ()
   return db_count;
 }
 
-std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
+void
+Rts2ImageDb::print (std::ostream &_os, int in_flags)
 {
   std::ios_base::fmtflags old_settings = _os.flags ();
   int old_precision = _os.precision (2);
 
+  if (in_flags & DISPLAY_OBS)
+    _os
+      << std::setw(5) << getObsId () << " | ";
+
   _os 
-    << std::setw(5) << img_db.getCameraName () << " | "
-    << std::setw(4) << img_db.getImgId () << " | "
-    << Timestamp (img_db.getExposureSec () + (double) img_db.getExposureUsec () / USEC_SEC) << " | "
-    << std::setw(3) << img_db.getFilter () << " | "
-    << std::setw(8) << img_db.getExposureLength () << "' | "
-    << LibnovaDegArcMin (img_db.ra_err) << " | " 
-    << LibnovaDegArcMin (img_db.dec_err) << " | "
-    << LibnovaDegArcMin (img_db.img_err)
+    << std::setw(5) << getCameraName () << " | "
+    << std::setw(4) << getImgId () << " | "
+    << Timestamp (getExposureSec () + (double) getExposureUsec () / USEC_SEC) << " | "
+    << std::setw(3) << getFilter () << " | "
+    << std::setw(8) << getExposureLength () << "' | "
+    << LibnovaDegArcMin (ra_err) << " | " 
+    << LibnovaDegArcMin (dec_err) << " | "
+    << LibnovaDegArcMin (img_err)
     << std::endl;
 
   _os.flags (old_settings);
   _os.precision (old_precision);
+}
 
+std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
+{
+  img_db.print (_os);
   return _os;
 }
