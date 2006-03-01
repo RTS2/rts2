@@ -188,7 +188,8 @@ Rts2ImageDb::updateDarkDB ()
 int
 Rts2ImageDb::updateFlatDB ()
 {
-  return -1;
+  // flat images aren't stored in DB - we store only finished flats
+  return 0;
 }
 
 int
