@@ -1,4 +1,4 @@
-SUBDIRS = 
+SUBDIRS = model
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-bridge rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200
 
