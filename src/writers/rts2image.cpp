@@ -581,12 +581,14 @@ Rts2Image::setValueImageType (int shutter_state)
       switch (shutter_state)
 	{
 	case 1:
+	case 3:
 	  imageType = IMGTYPE_FLAT;
 	  break;
 	case 2:
 	  imageType = IMGTYPE_DARK;
 	  break;
 	}
+      break;
     default:
       switch (shutter_state)
 	{

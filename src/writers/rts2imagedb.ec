@@ -194,7 +194,7 @@ Rts2ImageDb::updateFlatDB ()
 int
 Rts2ImageDb::updateDB ()
 {
-  switch (imageType)
+  switch (getType ())
   {
     case IMGTYPE_OBJECT:
       return updateObjectDB ();
