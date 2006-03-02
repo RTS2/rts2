@@ -345,6 +345,7 @@ AC_OUTPUT([Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
+	   src/teld/model/Makefile
 	   src/utils/Makefile
            src/wcs/Makefile
 	   src/writers/Makefile
