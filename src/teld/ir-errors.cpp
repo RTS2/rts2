@@ -1,10 +1,53 @@
 #include "ir.h"
 
+#include <sstream>
+#include <iomanip>
+
+class IrAxis
+{
+private:
+  double referenced;
+  double currpos;
+  double targetpos;
+  double power;
+  const char *name;
+public:
+    IrAxis (const char *in_name, double in_referenced, double in_currpos,
+	    double in_targetpos, double in_power);
+  friend std::ostream & operator << (std::ostream & _os, IrAxis irax);
+};
+
+IrAxis::IrAxis (const char *in_name, double in_referenced, double in_currpos,
+		double in_targetpos, double in_power)
+{
+  name = in_name;
+  referenced = in_referenced;
+  currpos = in_currpos;
+  targetpos = in_targetpos;
+  power = in_power;
+}
+
+std::ostream & operator << (std::ostream & _os, IrAxis irax)
+{
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  _os
+    << irax.name << ".REFERENCED " << irax.referenced << std::endl
+    << irax.name << ".CURRPOS " << irax.currpos << std::endl
+    << irax.name << ".TARGETPOS " << irax.targetpos << std::endl
+    << irax.name << ".POWER " << irax.power << std::endl;
+  _os.setf (old_settings);
+  return _os;
+}
+
 class Rts2DevIrError:public Rts2DevTelescopeIr
 {
   std::list < const char *>errList;
   enum
-  { NO_OP, CAL, RESET } op;
+  { NO_OP, CAL, RESET, REFERENCED } op;
+
+  IrAxis getAxisStatus (const char *ax_name);
+  int doReferenced ();
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -16,12 +59,58 @@ public:
   virtual int run ();
 };
 
+IrAxis
+Rts2DevIrError::getAxisStatus (const char *ax_name)
+{
+  double referenced = nan ("f");
+  double currpos = nan ("f");
+  double targetpos = nan ("f");
+  double power = nan ("f");
+  std::ostringstream * os;
+  int status = 0;
+
+  os = new std::ostringstream ();
+  (*os) << ax_name << ".REFERENCED";
+  status = tpl_get (os->str ().c_str (), referenced, &status);
+  delete os;
+  os = new std::ostringstream ();
+  (*os) << ax_name << ".CURRPOS";
+  status = tpl_get (os->str ().c_str (), currpos, &status);
+  delete os;
+  os = new std::ostringstream ();
+  (*os) << ax_name << ".TARGETPOS";
+  status = tpl_get (os->str ().c_str (), targetpos, &status);
+  delete os;
+  os = new std::ostringstream ();
+  (*os) << ax_name << ".POWER";
+  status = tpl_get (os->str ().c_str (), power, &status);
+  delete os;
+  return IrAxis (ax_name, referenced, currpos, targetpos, power);
+}
+
+int
+Rts2DevIrError::doReferenced ()
+{
+  int status = 0;
+  double fpar;
+  status = tpl_get ("CABINET.REFERENCED", fpar, &status);
+  std::cout << "CABINET.REFERENCED " << fpar << std::endl;
+  std::cout << getAxisStatus ("ZD");
+  std::cout << getAxisStatus ("AZ");
+  std::cout << getAxisStatus ("FOCUS");
+  std::cout << getAxisStatus ("MIRROR");
+  std::cout << getAxisStatus ("DEROTATOR[3]");
+  std::cout << getAxisStatus ("COVER");
+  return status;
+}
+
 Rts2DevIrError::Rts2DevIrError (int in_argc, char **in_argv):
 Rts2DevTelescopeIr (in_argc, in_argv)
 {
   op = NO_OP;
   addOption ('C', "calculate", 0, "Calculate model");
   addOption ('R', "reset_model", 0, "Reset model counts");
+  addOption ('F', "referenced", 0, "Referencing status");
 }
 
 int
@@ -34,6 +123,9 @@ Rts2DevIrError::processOption (int in_opt)
       break;
     case 'R':
       op = RESET;
+      break;
+    case 'F':
+      op = REFERENCED;
       break;
     default:
       return Rts2DevTelescopeIr::processOption (in_opt);
@@ -73,6 +165,9 @@ Rts2DevIrError::run ()
       fparam = 0;
       status =
 	tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", fparam, &status);
+      break;
+    case REFERENCED:
+      return doReferenced ();
       break;
     }
 
