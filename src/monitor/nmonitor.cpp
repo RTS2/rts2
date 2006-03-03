@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <curses.h>
 #include <libnova/libnova.h>
 #include <getopt.h>
@@ -397,11 +393,32 @@ Rts2NMDome::print (WINDOW * wnd)
   int dome = getValueInteger ("dome");
   time_t now;
   long time_to_open;
+  double temp;
+  double humi;
+  double vapor;
+  double dew;
   time (&now);
   time_to_open = getValueInteger ("next_open") - now;
+
+  temp = getValueDouble ("temperature");
+  humi = getValueDouble ("humidity");
+
+  if (isnan (temp) || isnan (humi))
+    {
+      vapor = nan ("f");
+      dew = nan ("f");
+    }
+  else
+    {
+      vapor = (humi / 100) * 0.611 * exp (17.27 * temp / (temp + 237.3));
+      dew =
+	ceil (10 * ((116.9 + 237.3 * log (vapor)) / (16.78 - log (vapor)))) /
+	10;
+    }
+
   mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC", getValueDouble ("temperature"));
-  mvwprintw (wnd, 3, 1, "Hum: %2.2f %", getValueDouble ("humidity"));
+  mvwprintw (wnd, 2, 1, "Tem: %+2.2f oC Vap: %2.2f", temp, vapor);
+  mvwprintw (wnd, 3, 1, "Hum: %2.2f dew: %+2.2f", humi, dew);
   mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i", getValueDouble ("windspeed"),
 	     getValueInteger ("rain"));
   connection->printTimeDiff (5, "NextO", time_to_open);
@@ -417,8 +434,8 @@ private:
   Rts2CNMonConn * connection;
   void print (WINDOW * wnd);
 public:
-    Rts2NMCopula (Rts2CNMonConn *
-		  in_connection):Rts2DevClientCopula (in_connection)
+    Rts2NMCopula (Rts2CNMonConn * in_connection):Rts2DevClientCopula
+    (in_connection)
   {
     in_connection->setStatusBegin (9);
     connection = in_connection;
@@ -465,8 +482,8 @@ private:
   Rts2CNMonConn * connection;
   void print (WINDOW * wnd);
 public:
-    Rts2NMExecutor (Rts2CNMonConn *
-		    in_connection):Rts2DevClientExecutor (in_connection)
+    Rts2NMExecutor (Rts2CNMonConn * in_connection):Rts2DevClientExecutor
+    (in_connection)
   {
     in_connection->setStatusBegin (8);
     connection = in_connection;
@@ -505,8 +522,8 @@ private:
   Rts2CNMonConn * connection;
   void print (WINDOW * wnd);
 public:
-    Rts2NMImgproc (Rts2CNMonConn *
-		   in_connection):Rts2DevClientImgproc (in_connection)
+    Rts2NMImgproc (Rts2CNMonConn * in_connection):Rts2DevClientImgproc
+    (in_connection)
   {
     in_connection->setStatusBegin (5);
     connection = in_connection;
