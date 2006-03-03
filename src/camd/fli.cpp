@@ -26,7 +26,6 @@
  */
 
 #include "camera_cpp.h"
-#include "filter_fli.h"
 
 #include "libfli.h"
 
@@ -250,7 +249,6 @@ private:
 
   flidev_t dev;
 
-  bool filterFli;
   long hwRev;
 
   int fliDebug;
@@ -278,13 +276,10 @@ Rts2DevCameraFli::Rts2DevCameraFli (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
   deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
-  filterFli = false;
   fliDebug = FLIDEBUG_NONE;
   hwRev = -1;
   addOption ('D', "domain", 1,
 	     "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
-  addOption ('L', "fli_filter", 0,
-	     "find FLI filter wheel (will have same domain as device)");
   addOption ('R', "HW revision", 1, "find camera by HW revision");
   addOption ('b', "fli_debug", 1,
 	     "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
@@ -312,9 +307,6 @@ Rts2DevCameraFli::processOption (int in_opt)
 	deviceDomain |= FLIDOMAIN_INET;
       else
 	return -1;
-      break;
-    case 'L':
-      filterFli = true;
       break;
     case 'R':
       hwRev = atol (optarg);
@@ -409,9 +401,6 @@ Rts2DevCameraFli::init ()
 
   chipNum = 1;
   chips[0] = new CameraFliChip (this, 0, dev);
-
-  if (filterFli)
-    filter = new Rts2FilterFli (deviceDomain);
 
   return initChips ();
 }

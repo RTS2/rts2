@@ -31,7 +31,6 @@
 #include "apogee/CameraIO_Linux.h"
 
 #include "camera_cpp.h"
-#include "filter_ifw.h"
 
 // Error codes returned from config_load
 const int CCD_OPEN_NOERR = 0;	// No error detected
@@ -780,8 +779,6 @@ Rts2DevCamera (in_argc, in_argv)
 	     "device ID (ussualy 0, which is also default)");
   addOption ('c', "config_name", 1,
 	     "device ini config file (default to /etc/rts2/apogee.ini");
-  addOption ('I', "IFW wheel port", 1,
-	     "dev entry for IFW (Optec) filter wheel, if camera is equiped with such");
   device_id = 0;
   cfgname = "/etc/rts2/apogee.ini";
 
@@ -806,9 +803,6 @@ Rts2DevCameraApogee::processOption (int in_opt)
       break;
     case 'c':
       cfgname = optarg;
-      break;
-    case 'I':
-      filter = new Rts2FilterIfw (optarg);
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);

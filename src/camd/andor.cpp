@@ -9,7 +9,6 @@
 #include <signal.h>
 
 #include "camera_cpp.h"
-#include "filter_fli.h"
 
 #ifdef __GNUC__
 #  if(__GNUC__ > 3 || __GNUC__ ==3)
@@ -130,9 +129,6 @@ private:
 
   int camSetShutter (int shut_control);
   int printChannelInfo (int channel);
-
-  bool filterFli;
-  int fliDebug;
 protected:
     virtual void help ();
 public:
@@ -167,8 +163,6 @@ Rts2DevCamera (in_argc, in_argv)
   adChannel = -1;
   printSpeedInfo = false;
   chanNum = 0;
-  filterFli = false;
-  fliDebug = FLIDEBUG_NONE;
 
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
@@ -178,9 +172,6 @@ Rts2DevCamera (in_argc, in_argv)
   addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('S', "speed_info", 0,
 	     "print speed info - information about speed available");
-  addOption ('L', "fli_filter", 0, "find FLI filter wheel (on USB)");
-  addOption ('b', "fli_debug", 1,
-	     "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 }
 
 Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
@@ -226,25 +217,6 @@ Rts2DevCameraAndor::processOption (int in_opt)
 	}
     case 'S':
       printSpeedInfo = true;
-      break;
-    case 'L':
-      filterFli = true;
-      break;
-    case 'b':
-      switch (atoi (optarg))
-	{
-	case 1:
-	  fliDebug = FLIDEBUG_FAIL;
-	  break;
-	case 2:
-	  fliDebug = FLIDEBUG_FAIL | FLIDEBUG_WARN;
-	  break;
-	case 3:
-	  fliDebug = FLIDEBUG_ALL;
-	  break;
-	default:
-	  return -1;
-	}
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -439,10 +411,6 @@ Rts2DevCameraAndor::init ()
 		  i, value);
 	}
     }
-  if (fliDebug)
-    FLISetDebugLevel (NULL, fliDebug);
-  if (filterFli)
-    filter = new Rts2FilterFli (FLIDEVICE_CAMERA | FLIDOMAIN_USB);
   return Rts2DevCamera::initChips ();
 }
 
