@@ -94,7 +94,7 @@ enum stavy
 enum stavy zasuvky_stavy[3][NUM_ZAS] =
 {
   // off
-  {ZAS_ZAP, ZAS_VYP, ZAS_VYP, ZAS_ZAP, ZAS_VYP},
+  {ZAS_ZAP, ZAS_ZAP, ZAS_VYP, ZAS_ZAP, ZAS_VYP},
   // standby
   {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP},
   // observnig
@@ -185,23 +185,19 @@ Rts2DevDomeBart::~Rts2DevDomeBart (void)
 int
 Rts2DevDomeBart::zjisti_stav_portu ()
 {
-  unsigned char t, c = STAV_PORTU | PORT_A;
+  unsigned char ta, tb, c = STAV_PORTU | PORT_A;
   int ret;
   write (dome_port, &c, 1);
-  if (read (dome_port, &t, 1) < 1)
+  if (read (dome_port, &ta, 1) < 1)
     syslog (LOG_ERR, "read error 0");
-  else
-    syslog (LOG_DEBUG, "stav: A: %x:", t);
   read (dome_port, &stav_portu[PORT_A], 1);
-  syslog (LOG_DEBUG, "A state: %x", stav_portu[PORT_A]);
   c = STAV_PORTU | PORT_B;
   write (dome_port, &c, 1);
-  if (read (dome_port, &t, 1) < 1)
+  if (read (dome_port, &tb, 1) < 1)
     syslog (LOG_ERR, "read error 1");
-  else
-    syslog (LOG_DEBUG, " B: %x:", t);
   ret = read (dome_port, &stav_portu[PORT_B], 1);
-  syslog (LOG_DEBUG, "B state: %x", stav_portu[PORT_B]);
+  syslog (LOG_DEBUG, "A stav: %x state: %x B stav: %x state: %x", ta,
+	  stav_portu[PORT_A], tb, stav_portu[PORT_B]);
   if (ret < 1)
     return -1;
   return 0;
@@ -236,7 +232,10 @@ Rts2DevDomeBart::vypni_pin (unsigned char c_port, unsigned char pin)
 int
 Rts2DevDomeBart::isOn (int c_port)
 {
-  zjisti_stav_portu ();
+  int ret;
+  ret = zjisti_stav_portu ();
+  if (ret)
+    return -1;
   return !(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
 }
 
@@ -283,10 +282,25 @@ Rts2DevDomeBart::endOpen ()
 int
 Rts2DevDomeBart::closeDome ()
 {
+  int motor;
+  int smer;
   if (!isOn (KONCAK_ZAVRENI_JIH))
     return endClose ();
-  VYP (MOTOR);
-  sleep (1);
+  motor = isOn (MOTOR);
+  smer = isOn (SMER);
+  if (motor == -1 || smer == -1)
+    {
+      // errror
+      return -1;
+    }
+  if (!motor)
+    {
+      // closing in progress
+      if (!smer)
+	return 0;
+      VYP (MOTOR);
+      sleep (1);
+    }
   ZAP (SMER);
   sleep (1);
   ZAP (MOTOR);
@@ -310,6 +324,12 @@ Rts2DevDomeBart::isClosed ()
 int
 Rts2DevDomeBart::endClose ()
 {
+  int motor;
+  motor = isOn (MOTOR);
+  if (motor == -1)
+    return -1;
+  if (motor)
+    return Rts2DevDome::endClose ();
   VYP (MOTOR);
   sleep (1);
   VYP (SMER);
@@ -342,14 +362,19 @@ Rts2DevDomeBart::isGoodWeather ()
 {
   int flags;
   int ret;
-  ret = ioctl (rain_port, TIOCMGET, &flags);
-  // ioctl failed or it's raining..
-  if (ret || flags & TIOCM_RI)
+  if (rain_port > 0)
     {
-      rain = 1;
-      return 0;
+      ret = ioctl (rain_port, TIOCMGET, &flags);
+      syslog (LOG_DEBUG, "Rts2DevDomeBart::isGoodWeather flags: %08x %i",
+	      flags, flags);
+      // ioctl failed or it's raining..
+      if (ret || !(flags & TIOCM_RI))
+	{
+	  rain = 1;
+	  return 0;
+	}
+      rain = 0;
     }
-  rain = 0;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
   return 1;
