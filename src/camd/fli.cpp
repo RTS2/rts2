@@ -370,15 +370,15 @@ Rts2DevCameraFli::init ()
   // find device based on hw revision..
   if (hwRev > 0)
     {
-      char *nam = names[0];
-      while (nam)
+      char **nam = names;
+      while (*nam)
 	{
 	  // separate semicolon
 	  long cam_hwrev;
-	  nam_sep = strchr (nam, ';');
+	  nam_sep = strchr (*nam, ';');
 	  if (nam_sep)
 	    *nam_sep = '\0';
-	  ret = FLIOpen (&dev, nam, deviceDomain);
+	  ret = FLIOpen (&dev, *nam, deviceDomain);
 	  if (ret)
 	    {
 	      nam++;
