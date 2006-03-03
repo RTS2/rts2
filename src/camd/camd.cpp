@@ -360,7 +360,7 @@ Rts2DevCamera::~Rts2DevCamera ()
 int
 Rts2DevCamera::willConnect (Rts2Address * in_addr)
 {
-  if (in_addr->getType () == DEVICE_TYPE_FW
+  if (wheelDevice && in_addr->getType () == DEVICE_TYPE_FW
       && in_addr->isAddress (wheelDevice))
     return 1;
   return Rts2Device::willConnect (in_addr);
