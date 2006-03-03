@@ -332,10 +332,7 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
 						 char *rbuf, int rcount)
 {
   int tmp_rcount = -1;
-  char *buf;
 
-//  if (tcflush (tel_desc, TCIOFLUSH) < 0)
-//    return -1;
   if (tel_write (wbuf, wcount) < 0)
     return -1;
 
@@ -382,8 +379,6 @@ Rts2DevTelescopeGemini::tel_write_read_hash (char *wbuf, int wcount,
 {
   int tmp_rcount = -1;
 
-//  if (tcflush (tel_desc, TCIOFLUSH) < 0)
-//    return -1;
   if (tel_write (wbuf, wcount) < 0)
     return -1;
 
