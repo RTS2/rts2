@@ -1182,7 +1182,7 @@ Target::printShortInfo (std::ostream & _os, double JD)
   _os
    << getTargetID () << " | "
    << getTargetType () << " | "
-   << std::left << std::setw (20) << (name ? name :  "null") << std::right << " | "
+   << std::left << std::setw (40) << (name ? name :  "null") << std::right << " | "
    << LibnovaRa (pos.ra) << " | "
    << LibnovaDec (pos.dec);
 }
