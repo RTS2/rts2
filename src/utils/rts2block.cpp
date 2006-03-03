@@ -1523,9 +1523,11 @@ Rts2Block::getConnection (char *deviceName)
 
   if (!devAddr)
     {
+#ifdef DEBUG_EXTRA
       syslog (LOG_ERR,
 	      "Cannot find device with name '%s', creating new connection",
 	      deviceName);
+#endif
       conn = createClientConnection (deviceName);
       addConnection (conn);
       return conn;
