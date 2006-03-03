@@ -4,10 +4,16 @@
 
 #include <iostream>
 
+#define LIST_ALL	0x00
+#define LIST_GRB	0x01
+
 class Rts2TargetList:public Rts2AppDb
 {
+private:
+  // which target to list
+  int list;
 public:
-  Rts2TargetList (int argc, char **argv);
+    Rts2TargetList (int argc, char **argv);
     virtual ~ Rts2TargetList (void);
 
   virtual int processOption (int in_opt);
@@ -20,6 +26,8 @@ public:
 Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
+  list = LIST_ALL;
+  addOption ('g', "grb", 0, "list onlu GRBs");
 }
 
 Rts2TargetList::~Rts2TargetList ()
@@ -31,6 +39,9 @@ Rts2TargetList::processOption (int in_opt)
 {
   switch (in_opt)
     {
+    case 'g':
+      list = LIST_GRB;
+      break;
     default:
       return Rts2AppDb::processOption (in_opt);
     }
@@ -61,8 +72,21 @@ Rts2TargetList::init ()
 int
 Rts2TargetList::run ()
 {
-  Rts2TargetSetGrb tar_set = Rts2TargetSetGrb ();
-  tar_set.printGrbList (std::cout);
+  Rts2TargetSetGrb *tar_set_grb;
+  Rts2TargetSet *tar_set;
+  switch (list)
+    {
+    case LIST_GRB:
+      tar_set_grb = new Rts2TargetSetGrb ();
+      tar_set_grb->printGrbList (std::cout);
+      delete tar_set_grb;
+      break;
+    default:
+      tar_set = new Rts2TargetSet ();
+      std::cout << (*tar_set);
+      delete tar_set;
+      break;
+    }
   return 0;
 }
 
