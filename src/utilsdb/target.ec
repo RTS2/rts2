@@ -3,6 +3,7 @@
 #endif
 
 #include "target.h"
+#include "target_auger.h"
 #include "rts2obs.h"
 #include "rts2obsset.h"
 #include "rts2targetset.h"
@@ -1172,6 +1173,20 @@ Target::printExtra (std::ostream &_os)
     << InfoVal<Timestamp> ("TARGET BONUS TIME", Timestamp(tar_bonus_time));
 }
 
+void
+Target::printShortInfo (std::ostream & _os, double JD)
+{
+  struct ln_equ_posn pos;
+  const char * name = getTargetName ();
+  getPosition (&pos, JD);
+  _os
+   << getTargetID () << " | "
+   << getTargetType () << " | "
+   << std::left << std::setw (20) << (name ? name :  "null") << std::right << " | "
+   << LibnovaRa (pos.ra) << " | "
+   << LibnovaDec (pos.dec);
+}
+
 int
 Target::printObservations (double radius, double JD, std::ostream &_os)
 {
@@ -1289,6 +1304,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
       break;
     case TYPE_PLAN:
       retTarget = new TargetPlan (in_tar_id, in_obs);
+      break;
+    case TYPE_AUGER:
+      retTarget = new TargetAuger (in_tar_id, in_obs);
       break;
     default:
       retTarget = new ConstTarget (in_tar_id, in_obs);

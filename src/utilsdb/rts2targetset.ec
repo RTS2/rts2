@@ -61,6 +61,14 @@ Rts2TargetSet::load (std::list<int> &target_ids)
   }
 }
 
+Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs)
+{
+  obs = in_obs;
+  if (!obs)
+    obs = Rts2Config::instance ()->getObserver ();
+  load (std::string ("true"), std::string ("tar_id ASC"));
+}
+
 Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs)
 {
   std::ostringstream os;
@@ -204,14 +212,14 @@ Rts2TargetSetGrb::printGrbList (std::ostream & _os)
   {
     (*iter)->printGrbList (_os);
   }
-  clear ();
 }
 
 std::ostream & operator << (std::ostream &_os, Rts2TargetSet &tar_set)
 {
   for (Rts2TargetSet::iterator tar_iter = tar_set.begin(); tar_iter != tar_set.end (); tar_iter++)
   {
-    _os << (*tar_iter);
+    (*tar_iter)->printShortInfo (_os);
+    _os << std::endl;
   }
   return _os;
 }

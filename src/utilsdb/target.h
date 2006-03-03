@@ -40,6 +40,8 @@
 #define TYPE_SWIFT_FOV		'W'
 #define TYPE_INTEGRAL_FOV	'I'
 
+#define TYPE_AUGER		'A'
+
 #define TYPE_DARK		'd'
 #define TYPE_FLAT		'f'
 #define TYPE_FOCUSING		'o'
@@ -448,6 +450,7 @@ public:
   {
     return -1;
   }
+
   // returns 1 when we are almost the same target, so 
   // interruption of this target is not necessary
   // otherwise (when interruption is necessary) returns 0
@@ -553,6 +556,16 @@ public:
    * @param _os stream to print that
    */
   virtual void printExtra (std::ostream & _os);
+
+  /**
+   * print short target info
+   */
+  void printShortInfo (std::ostream & _os)
+  {
+    printShortInfo (_os, ln_get_julian_from_sys ());
+  }
+
+  virtual void printShortInfo (std::ostream & _os, double JD);
 
   /**
    * Prints position info for given JD.
