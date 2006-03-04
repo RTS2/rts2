@@ -2060,7 +2060,8 @@ TargetPlan::load (double JD)
   FROM
     plan
   WHERE
-    EXTRACT (EPOCH FROM plan_start) >= :last
+      EXTRACT (EPOCH FROM plan_start) >= :last
+    AND tar_id <> 7
   ORDER BY
     plan_start ASC;
 
@@ -2122,7 +2123,8 @@ TargetPlan::load (double JD)
     delete selectedPlan;
     selectedPlan = new Rts2Plan (db_plan_id);
     ret = selectedPlan->load ();
-    if (ret)
+    if (ret
+      || selectedPlan->getTarget ()->getTargetType () == TYPE_PLAN)
     {
       delete selectedPlan;
       selectedPlan = NULL;
@@ -2255,7 +2257,7 @@ TargetPlan::printExtra (std::ostream & _os)
   {
     _os << "NO PLAN SELECTED" << std::endl;
   }
-  if (nextPlan)
+  if (nextPlan && nextPlan->getTarget()->getTargetType() != TYPE_PLAN)
   {
     _os << "NEXT PLAN" << std::endl
       << nextPlan << std::endl

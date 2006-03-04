@@ -97,6 +97,10 @@ Rts2Plan::save ()
   int db_plan_status = plan_status;
   EXEC SQL END DECLARE SECTION;
 
+  // don't save entries with same target id as master plan
+  if (db_tar_id == TARGET_PLAN)
+    return -1;
+
   if (db_plan_id == -1)
   {
     EXEC SQL

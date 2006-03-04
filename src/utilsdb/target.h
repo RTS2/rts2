@@ -86,6 +86,8 @@
 #define TARGET_TERRESTIAL	5
 // master calibration target
 #define TARGET_CALIBRATION	6
+// master plan target
+#define TARGET_PLAN		7
 
 #define TARGET_SWIFT_FOV	10
 #define TARGET_INTEGRAL_FOV	11
