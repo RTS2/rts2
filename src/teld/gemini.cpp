@@ -1486,8 +1486,8 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
     return ret;
 
   // apply offsets
-  tar_ha += ((double) ra_ind) / 3600;
-  tar_dec += ((double) dec_ind) / 3600.0;
+  //tar_ha += ((double) ra_ind) / 3600;
+  //tar_dec += ((double) dec_ind) / 3600.0;
 
   // we moved to fixed ra before..
   if (!isnan (fixed_ha))
@@ -1913,7 +1913,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	  ret = tel_gemini_set (170, 1);
 	  if (ret == -1)
 	    return ret;
-	  u_sleep = (long) (((fabs (chng_ra) * 90.0)) * USEC_SEC);
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 3.0) * USEC_SEC);
 	}
       else
 	{
@@ -1960,7 +1960,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	  telRa, telDec);
 #endif
   // decide, if we make change, or move using move command
-  if (fabs (chng_ra) > 3 / 60.0 && fabs (chng_dec) > 3 / 60.0)
+  if (fabs (chng_ra) > 2 / 60.0 || fabs (chng_dec) > 2 / 60.0)
     {
       ret = startMove (telRa + chng_ra, telDec + chng_dec);
       if (ret)
