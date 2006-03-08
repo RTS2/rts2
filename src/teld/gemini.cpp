@@ -1369,11 +1369,11 @@ Rts2DevTelescopeGemini::isMoving ()
 		  long u_sleep;
 		  // slew speed to 20 - 5 arcmin / sec
 		  direction = nextChangeDec > 0 ? DIR_NORTH : DIR_SOUTH;
-		  ret = tel_gemini_set (170, 1);
+		  ret = tel_gemini_set (150, 0.8);
 		  if (ret)
 		    return -1;
 		  u_sleep =
-		    (long) ((fabs (nextChangeDec) * 60.0) * 3.0 * USEC_SEC);
+		    (long) ((fabs (nextChangeDec) * 60.0) * 4.0 * USEC_SEC);
 		  changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
 		  changeTimeDec.tv_usec =
 		    (long) (u_sleep - changeTimeDec.tv_sec);
@@ -1895,7 +1895,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 
   int ret;
   // center rate
-  ret = tel_set_rate (RATE_CENTER);
+  ret = tel_set_rate (RATE_GUIDE);
   if (ret == -1)
     return ret;
   nextChangeDec = 0;
@@ -1910,18 +1910,18 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
       if (chng_ra > 0)
 	{
 	  direction = DIR_EAST;
-	  ret = tel_gemini_set (170, 1);
+	  ret = tel_gemini_set (150, 0.8);
 	  if (ret == -1)
 	    return ret;
-	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 3.0) * USEC_SEC);
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 4.0) * USEC_SEC);
 	}
       else
 	{
 	  direction = DIR_WEST;
-	  ret = tel_gemini_set (170, 2);
+	  ret = tel_gemini_set (150, 0.8);
 	  if (ret == -1)
 	    return ret;
-	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 3.0) * USEC_SEC +
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 4.0) * USEC_SEC +
 			    USEC_SEC / 10.0);
 	}
       changeTimeRa.tv_sec = (long) (u_sleep / USEC_SEC);
@@ -1935,10 +1935,10 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
     {
       // slew speed to 20 - 5 arcmin / sec
       direction = chng_dec > 0 ? DIR_NORTH : DIR_SOUTH;
-      ret = tel_gemini_set (170, 1);
+      ret = tel_gemini_set (150, 0.8);
       if (ret == -1)
 	return ret;
-      u_sleep = (long) ((fabs (chng_dec) * 60.0) * 3.0 * USEC_SEC);
+      u_sleep = (long) ((fabs (chng_dec) * 60.0) * 4.0 * USEC_SEC);
       changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
       changeTimeDec.tv_usec = (long) (u_sleep - changeTimeDec.tv_sec);
       ret = telescope_start_move (direction);
