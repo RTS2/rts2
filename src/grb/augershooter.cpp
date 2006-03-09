@@ -5,6 +5,7 @@
  */
 
 #include "augershooter.h"
+#include "../utils/rts2command.h"
 
 Rts2DevAugerShooter::Rts2DevAugerShooter (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, 5560, "AUGRSH")
@@ -53,6 +54,23 @@ Rts2DevAugerShooter::init ()
   addConnection (shootercnn);
 
   return ret;
+}
+
+int
+Rts2DevAugerShooter::newShower ()
+{
+  Rts2Conn *exec;
+  exec = getOpenConnection ("EXEC");
+  if (exec)
+    {
+      exec->queCommand (new Rts2CommandExecShower (this));
+    }
+  else
+    {
+      syslog (LOG_ERR, "FATAL! No executor running to post shower!");
+      return -1;
+    }
+  return 0;
 }
 
 Rts2DevAugerShooter *device = NULL;

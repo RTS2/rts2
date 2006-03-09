@@ -25,6 +25,7 @@ public:
   }
 
   virtual int init ();
+  int newShower ();
 };
 
 #endif /*! __RTS2_AUGERSHOOTER__ */

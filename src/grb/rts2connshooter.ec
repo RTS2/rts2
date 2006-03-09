@@ -13,10 +13,13 @@
 
 EXEC SQL include sqlca;
 
+#define GPS_OFFSET	315961200
+
 void
-Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double & out_time)
+Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 {
-  out_time = GPSsec + 100000 + GPSusec / USEC_SEC;
+  // we need to handle somehow leap seconds, but that can wait
+  out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC;
 }
 
 // is called when nbuf contains '\n'
@@ -36,7 +39,8 @@ Rts2ConnShooter::processAuger ()
   long gps_usec;
 
   std::istringstream _is (nbuf);
-  _is >> db_auger_t3id >> gps_sec >> gps_usec >> db_auger_npixels >> db_auger_sdpphi >> db_auger_sdptheta >> db_auger_sdpangle;
+  _is >> db_auger_t3id >> gps_sec >> gps_usec >> db_auger_npixels >>
+    db_auger_sdpphi >> db_auger_sdptheta >> db_auger_sdpangle;
   if (_is.fail ())
     return -1;
 
@@ -44,35 +48,30 @@ Rts2ConnShooter::processAuger ()
 
   EXEC SQL INSERT INTO
     auger
-  (
-    auger_t3id,
-    auger_date,
-    auger_npixels,
-    auger_sdpphi,
-    auger_sdptheta,
-    auger_sdpangle
-  )
-  VALUES
-  (
-    :db_auger_t3id,
-    abstime (:db_auger_date),
-    :db_auger_npixels,
-    :db_auger_sdpphi,
-    :db_auger_sdptheta,
-    :db_auger_sdpangle
-  );
+    (auger_t3id,
+     auger_date,
+     auger_npixels,
+     auger_sdpphi,
+     auger_sdptheta,
+     auger_sdpangle)
+    VALUES
+    (:db_auger_t3id,
+     abstime
+     (:db_auger_date),:db_auger_npixels,:db_auger_sdpphi,:db_auger_sdptheta,:db_auger_sdpangle);
   if (sqlca.sqlcode)
-  {
-    syslog (LOG_ERR, "Rts2ConnShooter::processAuger cannot add new value to db: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
-    EXEC SQL ROLLBACK;
-    return -1;
-  }
+    {
+      syslog (LOG_ERR,
+	      "Rts2ConnShooter::processAuger cannot add new value to db: %s (%li)",
+	      sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+      EXEC SQL ROLLBACK;
+      return -1;
+    }
   EXEC SQL COMMIT;
-  return 0;
+  return master->newShower ();
 }
 
-Rts2ConnShooter::Rts2ConnShooter (int in_port, 
-Rts2DevAugerShooter *in_master):Rts2ConnNoSend (in_master)
+Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master):Rts2ConnNoSend
+  (in_master)
 {
   master = in_master;
   port = in_port;
@@ -108,19 +107,19 @@ Rts2ConnShooter::idle ()
     case CONN_CONNECTING:
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
-        {
-          syslog (LOG_ERR, "Rts2ConnShooter::idle getsockopt %m");
+	{
+	  syslog (LOG_ERR, "Rts2ConnShooter::idle getsockopt %m");
 	  connectionError (-1);
-        }
+	}
       else if (err)
-        {
-          syslog (LOG_ERR, "Rts2ConnShooter::idle getsockopt %s",
-                  strerror (err));
+	{
+	  syslog (LOG_ERR, "Rts2ConnShooter::idle getsockopt %s",
+		  strerror (err));
 	  connectionError (-1);
-        }
-      else 
-        {
-          setConnState (CONN_CONNECTED);
+	}
+      else
+	{
+	  setConnState (CONN_CONNECTED);
 	}
       break;
     case CONN_CONNECTED:
@@ -139,10 +138,10 @@ Rts2ConnShooter::init_listen ()
   int ret;
 
   if (auger_listen_socket >= 0)
-  {
-    close (auger_listen_socket);
-    auger_listen_socket = -1;
-  }
+    {
+      close (auger_listen_socket);
+      auger_listen_socket = -1;
+    }
 
   connectionError (-1);
 
@@ -153,12 +152,14 @@ Rts2ConnShooter::init_listen ()
       return -1;
     }
   const int so_reuseaddr = 1;
-  setsockopt (auger_listen_socket, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof (so_reuseaddr));
+  setsockopt (auger_listen_socket, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr,
+	      sizeof (so_reuseaddr));
   struct sockaddr_in server;
   server.sin_family = AF_INET;
   server.sin_port = htons (port);
   server.sin_addr.s_addr = htonl (INADDR_ANY);
-  ret = bind (auger_listen_socket, (struct sockaddr *) &server, sizeof (server));
+  ret =
+    bind (auger_listen_socket, (struct sockaddr *) &server, sizeof (server));
   if (ret)
     {
       syslog (LOG_ERR, "Rts2ConnShooter::init_listen bind: %m");
@@ -184,10 +185,10 @@ int
 Rts2ConnShooter::add (fd_set * set)
 {
   if (auger_listen_socket >= 0)
-  {
-    FD_SET (auger_listen_socket, set);
-    return 0;
-  }
+    {
+      FD_SET (auger_listen_socket, set);
+      return 0;
+    }
   return Rts2Conn::add (set);
 }
 
@@ -196,63 +197,67 @@ Rts2ConnShooter::connectionError (int last_data_size)
 {
   syslog (LOG_DEBUG, "Rts2ConnShooter::connectionError");
   if (sock > 0)
-  {
-    close (sock);
-    sock = -1;
-  }
+    {
+      close (sock);
+      sock = -1;
+    }
   if (!isConnState (CONN_BROKEN))
-  {
-    sock = -1;
-    setConnState (CONN_BROKEN);
-  }
+    {
+      sock = -1;
+      setConnState (CONN_BROKEN);
+    }
   return -1;
 }
 
 int
-Rts2ConnShooter::receive (fd_set *set)
+Rts2ConnShooter::receive (fd_set * set)
 {
   int ret = 0;
   if (auger_listen_socket >= 0 && FD_ISSET (auger_listen_socket, set))
-  {
-    // try to accept connection..
-    close (sock); // close previous connections..we support only one GCN connection
-    sock = -1;
-    struct sockaddr_in other_side;
-    socklen_t addr_size = sizeof (struct sockaddr_in);
-    sock = accept (auger_listen_socket, (struct sockaddr *) &other_side, &addr_size);
-    if (sock == -1)
     {
-      // bad accept - strange
-      syslog (LOG_ERR, "Rts2ConnShooter::receive accept on auger_listen_socket: %m");
-      connectionError (-1);
-    }
-    // close listening socket..when we get connection
-    close (auger_listen_socket);
-    auger_listen_socket = -1;
-    setConnState (CONN_CONNECTED);
-    syslog (LOG_DEBUG, "Rts2ConnShooter::receive accept auger_listen_socket from %s %i",
-      inet_ntoa (other_side.sin_addr), ntohs (other_side.sin_port));
-  }
-  else if (sock >= 0 && FD_ISSET (sock, set))
-  {
-    ret = read (sock, nbuf, sizeof (nbuf));
-    if (ret == 0 && isConnState (CONN_CONNECTING))
-    {
+      // try to accept connection..
+      close (sock);		// close previous connections..we support only one GCN connection
+      sock = -1;
+      struct sockaddr_in other_side;
+      socklen_t addr_size = sizeof (struct sockaddr_in);
+      sock =
+	accept (auger_listen_socket, (struct sockaddr *) &other_side,
+		&addr_size);
+      if (sock == -1)
+	{
+	  // bad accept - strange
+	  syslog (LOG_ERR,
+		  "Rts2ConnShooter::receive accept on auger_listen_socket: %m");
+	  connectionError (-1);
+	}
+      // close listening socket..when we get connection
+      close (auger_listen_socket);
+      auger_listen_socket = -1;
       setConnState (CONN_CONNECTED);
+      syslog (LOG_DEBUG,
+	      "Rts2ConnShooter::receive accept auger_listen_socket from %s %i",
+	      inet_ntoa (other_side.sin_addr), ntohs (other_side.sin_port));
     }
-    else if (ret <= 0)
+  else if (sock >= 0 && FD_ISSET (sock, set))
     {
-      connectionError (ret);
-      return -1;
+      ret = read (sock, nbuf, sizeof (nbuf));
+      if (ret == 0 && isConnState (CONN_CONNECTING))
+	{
+	  setConnState (CONN_CONNECTED);
+	}
+      else if (ret <= 0)
+	{
+	  connectionError (ret);
+	  return -1;
+	}
+      nbuf[ret] = '\0';
+      processAuger ();
+      syslog (LOG_DEBUG, "Rts2ConnShooter::receive date: %s", nbuf);
+      successfullRead ();
+      gettimeofday (&last_packet, NULL);
+      // enable others to catch-up (FW connections will forward packet to their sockets)
+      getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
     }
-    nbuf[ret] = '\0';
-    processAuger ();
-    syslog (LOG_DEBUG, "Rts2ConnShooter::receive date: %s", nbuf);
-    successfullRead ();
-    gettimeofday (&last_packet, NULL);
-    // enable others to catch-up (FW connections will forward packet to their sockets)
-    getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
-  }
   return ret;
 }
 
