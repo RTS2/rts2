@@ -118,7 +118,7 @@ Rts2DevTelescopeBridge::info ()
   telRa = Tstat->ra;
   telDec = Tstat->dec;
 
-  telSiderealTime = get_loc_sid_time ();
+  telSiderealTime = getLocSidTime ();
   telLocalTime = Tstat->localtime;
   telFlip = Tstat->flip;
 
@@ -176,7 +176,7 @@ Rts2DevTelescopeBridge::startPark ()
 {
   double park_ra, park_dec;
   Tctrl->power = 0;
-  park_ra = get_loc_sid_time () * 15.0 - 30;
+  park_ra = getLocSidTime () * 15.0 - 30;
   park_dec = 0;
   Tctrl->ra = park_ra;
   Tctrl->dec = park_dec;

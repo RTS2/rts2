@@ -406,7 +406,7 @@ Rts2DevTelescopeMM2::tel_read_localtime ()
 int
 Rts2DevTelescopeMM2::tel_read_siderealtime ()
 {
-  telSiderealTime = get_loc_sid_time ();
+  telSiderealTime = getLocSidTime ();
   return 0;
 }
 

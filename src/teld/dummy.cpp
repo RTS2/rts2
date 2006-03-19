@@ -82,7 +82,7 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
   {
     telRa = newRa;
     telDec = newDec;
-    telSiderealTime = get_loc_sid_time ();
+    telSiderealTime = getLocSidTime ();
     return 0;
   }
 

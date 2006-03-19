@@ -135,7 +135,7 @@ Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 }
 
 double
-Rts2DevTelescope::get_loc_sid_time ()
+Rts2DevTelescope::getLocSidTime ()
 {
   double ret;
   ret = ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) * 15.0 +

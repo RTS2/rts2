@@ -373,7 +373,7 @@ int
 Rts2DevTelescopeLX200::tel_read_siderealtime ()
 {
   tel_read_longtitude ();
-  telSiderealTime = get_loc_sid_time ();
+  telSiderealTime = getLocSidTime ();
   return 0;
 }
 

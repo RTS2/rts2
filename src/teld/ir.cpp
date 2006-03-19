@@ -532,7 +532,7 @@ Rts2DevTelescopeIr::info ()
   if (status)
     return -1;
 
-  telSiderealTime = get_loc_sid_time ();
+  telSiderealTime = getLocSidTime ();
   telLocalTime = 0;
 
   status = tpl_get ("ZD.REALPOS", zd, &status);
@@ -595,7 +595,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   // move to zenit - move to different dec instead
   if (fabs (dec - telLatitude) <= BLIND_SIZE)
     {
-      if (fabs (ra / 15.0 - get_loc_sid_time ()) <= BLIND_SIZE / 15.0)
+      if (fabs (ra / 15.0 - getLocSidTime ()) <= BLIND_SIZE / 15.0)
 	{
 	  target.dec = telLatitude - BLIND_SIZE;
 	}
