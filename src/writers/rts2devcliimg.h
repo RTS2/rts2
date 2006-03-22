@@ -71,6 +71,9 @@ public:
   Rts2DevClientTelescopeImage (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
   void getEqu (struct ln_equ_posn *tel);
+  void getEquTel (struct ln_equ_posn *tel);
+  void getEquTar (struct ln_equ_posn *tar);
+  void getAltAz (struct ln_hrz_posn *hrz);
   void getObs (struct ln_lnlat_posn *obs);
   double getLocalSiderealDeg ();
   double getDistance (struct ln_equ_posn *in_pos);

@@ -258,6 +258,7 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setValue ("MNT_MARK", getValueInteger ("correction_mark"),
 		       "mark used for mount corretion");
       getEqu (&object);
+      getAltAz (&hrz);
       getObs (&obs);
       image->setValue ("RASC", getValueDouble ("ra_tar"), "target RA");
       image->setValue ("DECL", getValueDouble ("dec_tar"), "target DEC");
@@ -277,7 +278,6 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setValue ("LAT", obs.lat, "mount latitude");
       gst = getValueDouble ("siderealtime") * 15.0 - obs.lng;
       gst = ln_range_degrees (gst) / 15.0;
-      ln_get_hrz_from_equ_sidereal_time (&object, &obs, gst, &hrz);
       image->setValue ("GST", gst, "Global Sidereal Time");
       image->setValue ("ALT", hrz.alt, "mount altitude");
       image->setValue ("AZ", hrz.az, "mount azimut");
@@ -296,6 +296,35 @@ Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 {
   tel->ra = getValueDouble ("ra");
   tel->dec = getValueDouble ("dec");
+}
+
+void
+Rts2DevClientTelescopeImage::getEquTel (struct ln_equ_posn *tel)
+{
+  tel->ra = getValueDouble ("ra_tel");
+  tel->dec = getValueDouble ("dec_tel");
+}
+
+void
+Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
+{
+  tar->ra = getValueDouble ("ra_tar");
+  tar->dec = getValueDouble ("dec_tar");
+}
+
+void
+Rts2DevClientTelescopeImage::getAltAz (struct ln_hrz_posn *hrz)
+{
+  struct ln_equ_posn pos;
+  struct ln_lnlat_posn obs;
+  double gst;
+
+  getEqu (&pos);
+  getObs (&obs);
+  gst = getLocalSiderealDeg () - obs.lng;
+  gst = ln_range_degrees (gst) / 15.0;
+
+  ln_get_hrz_from_equ_sidereal_time (&pos, &obs, gst, hrz);
 }
 
 void
