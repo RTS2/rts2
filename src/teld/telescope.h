@@ -8,12 +8,19 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+// types of corrections
+#define COR_ABERATION	0x01
+#define COR_PRECESSION	0x02
+#define COR_REFRACTION	0x04
+
 // types of reset
 // acquired from 
 
 typedef enum
 { RESET_RESTART, RESET_WARM_START, RESET_COLD_START, RESET_INIT_START }
 resetStates;
+
+class Rts2TelModel;
 
 class Rts2DevTelescope:public Rts2Device
 {
@@ -43,8 +50,19 @@ private:
   void checkGuiding ();
 
   struct timeval dir_timeouts[4];
+
+  char *modelFile;
+  Rts2TelModel *model;
+
+  void applyAberation (struct ln_equ_posn *pos, double JD);
+  void applyPrecession (struct ln_equ_posn *pos, double JD);
+  void applyRefraction (struct ln_equ_posn *pos, double JD);
+
+  void applyModel (struct ln_equ_posn *pos, double JD);
 protected:
-    virtual int willConnect (Rts2Address * in_addr);
+  int corrections;
+
+  virtual int willConnect (Rts2Address * in_addr);
   char *device_file;
   char telType[64];
   char telSerialNumber[64];
@@ -114,13 +132,21 @@ protected:
   void getTargetAltAz (struct ln_hrz_posn *hrz);
   void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
   double getLocSidTime ();
+  double getLocSidTime (double JD);
+  double getLstDeg (double JD);
 
   virtual bool isBellowResolution (double ra_off, double dec_off)
   {
     return (ra_off == 0 && dec_off == 0);
   }
+
+  void needStop ()
+  {
+    maskState (0, TEL_MASK_NEED_STOP, TEL_MASK_NEED_STOP);
+  }
 public:
   Rts2DevTelescope (int argc, char **argv);
+  virtual ~ Rts2DevTelescope (void);
   virtual int init ();
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   virtual int idle ();
@@ -185,7 +211,8 @@ public:
   }
   virtual int change (double chng_ra, double chng_dec)
   {
-    return -1;
+    // we have actual telRa, as Rts2DevTelescope::change (Rts2Conn ..) calls info
+    return startMove (telRa + chng_ra, telDec + chng_dec);
   }
   virtual int saveModel ()
   {
@@ -216,6 +243,10 @@ public:
   virtual int stopDir (char *dir)
   {
     return -1;
+  }
+  double getLatitude ()
+  {
+    return telLatitude;
   }
 
   virtual int startGuide (char dir, double dir_dist);

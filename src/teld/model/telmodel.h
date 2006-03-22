@@ -48,13 +48,15 @@ public:
   }
   double getLatitude ()
   {
-    return Rts2Config::instance ()->getObserver ()->lat;
+    return telescope->getLatitude ();
   }
 };
 
 /**
  * Holds telescope model.
  * Performs on terms apply and reverse calls.
+ *
+ * When we pass ln_equ_posn, ra is hour angle (in degrees), not RA value.
  */
 class Rts2TelModel
 {
@@ -73,7 +75,13 @@ public:
     Rts2TelModel (Rts2DevTelescope * in_telescope, const char *in_modelFile);
     virtual ~ Rts2TelModel (void);
   int load ();
+  /**
+   * Apply model to coordinates. Pos.ra is hour angle, not RA.
+   */
   int apply (struct ln_equ_posn *pos);
+  /**
+   * Apply model to coordinates. Pos.ra is hour angle, not RA.
+   */
   int apply (struct ln_equ_posn *pos, double sid);
   int reverse (struct ln_equ_posn *pos);
   int reverse (struct ln_equ_posn *pos, double sid);

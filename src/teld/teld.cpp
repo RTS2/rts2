@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <mcheck.h>
 #include <math.h>
 #include <stdio.h>
@@ -15,6 +11,8 @@
 
 #include "telescope.h"
 #include "rts2devclicop.h"
+
+#include "model/telmodel.h"
 
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
@@ -44,8 +42,13 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   decCorr = nan ("f");
   posErr = nan ("f");
 
+  modelFile = NULL;
+  model = NULL;
+
   addOption ('n', "max_corr_num", 1,
 	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
+  addOption ('m', "model file", 1,
+	     "name of file holding RTS2-calculated model parameters");
 
   maxCorrNum = 1;
 
@@ -61,6 +64,14 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
       timerclear (dir_timeouts + i);
     }
   telGuidingSpeed = nan ("f");
+
+  // default is to don't apply any corrections
+  corrections = 0x00;
+}
+
+Rts2DevTelescope::~Rts2DevTelescope (void)
+{
+  delete model;
 }
 
 int
@@ -70,6 +81,9 @@ Rts2DevTelescope::processOption (int in_opt)
     {
     case 'n':
       maxCorrNum = atoi (optarg);
+      break;
+    case 'm':
+      modelFile = optarg;
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -137,16 +151,84 @@ Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 double
 Rts2DevTelescope::getLocSidTime ()
 {
+  return getLocSidTime (ln_get_julian_from_sys ());
+}
+
+double
+Rts2DevTelescope::getLocSidTime (double JD)
+{
   double ret;
-  ret = ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) * 15.0 +
-    telLongtitude;
+  ret = ln_get_apparent_sidereal_time (JD) * 15.0 + telLongtitude;
   return ln_range_degrees (ret) / 15.0;
+}
+
+double
+Rts2DevTelescope::getLstDeg (double JD)
+{
+  return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
+			   telLongtitude);
+}
+
+void
+Rts2DevTelescope::applyAberation (struct ln_equ_posn *pos, double JD)
+{
+  ln_get_equ_aber (pos, JD, pos);
+}
+
+void
+Rts2DevTelescope::applyPrecession (struct ln_equ_posn *pos, double JD)
+{
+  ln_get_equ_prec (pos, JD, pos);
+}
+
+void
+Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
+{
+  struct ln_hrz_posn hrz;
+  struct ln_lnlat_posn obs;
+  double ref;
+
+  obs.lng = telLongtitude;
+  obs.lat = telLatitude;
+
+  ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
+  ref = ln_get_refraction_adj (hrz.alt, 1010, 10);
+  hrz.alt += ref;
+  ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
+}
+
+void
+Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, double JD)
+{
+  struct ln_equ_posn hadec;
+  double lst;
+  if (!model)
+    return;
+  lst = getLstDeg (JD);
+  hadec.ra = ln_range_degrees (lst - pos->ra);
+  hadec.dec = pos->dec;
+  model->apply (&hadec, JD);
+  // get back from model - from HA
+  pos->ra = ln_range_degrees (lst - hadec.ra);
+  pos->dec = hadec.dec;
 }
 
 int
 Rts2DevTelescope::init ()
 {
-  return Rts2Device::init ();
+  int ret;
+  ret = Rts2Device::init ();
+  if (ret)
+    return ret;
+
+  if (modelFile)
+    {
+      model = new Rts2TelModel (this, modelFile);
+      ret = model->load ();
+      if (ret)
+	return ret;
+    }
+  return 0;
 }
 
 Rts2DevConn *
@@ -505,15 +587,34 @@ int
 Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 {
   int ret;
-  struct ln_equ_posn dome_position;
-  dome_position.ra = tar_ra;
-  dome_position.dec = tar_dec;
+  struct ln_equ_posn pos;
+  double JD;
+
+  pos.ra = tar_ra;
+  pos.dec = tar_dec;
+
+  JD = ln_get_julian_from_sys ();
+
+  // apply all posible corrections
+  if (corrections & COR_ABERATION)
+    applyAberation (&pos, JD);
+  if (corrections & COR_PRECESSION)
+    applyPrecession (&pos, JD);
+  if (corrections & COR_REFRACTION)
+    applyRefraction (&pos, JD);
+
+  // apply model
+  applyModel (&pos, JD);
 
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
 	  locCorDec, lastTar.ra, lastTar.dec);
   ret = setTarget (tar_ra, tar_dec);
+
+  tar_ra = pos.ra;
+  tar_dec = pos.dec;
+
   // we know our position and we are on it..don't move
   if (ret == 0)
     {
@@ -560,9 +661,9 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       move_fixed = 0;
       moveMark++;
       // try to sync dome..
-      postEvent (new Rts2Event (EVENT_COP_START_SYNC, &dome_position));
+      postEvent (new Rts2Event (EVENT_COP_START_SYNC, &pos));
       // somebody cared about it..
-      if (isnan (dome_position.ra))
+      if (isnan (pos.ra))
 	{
 	  maskState (0, TEL_MASK_COP_MOVING, TEL_MOVING | TEL_WAIT_COP,
 		     "move started");
