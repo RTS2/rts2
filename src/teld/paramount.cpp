@@ -130,15 +130,21 @@ private:
   int saveAxis (std::ostream & os, const MKS3Id & axis);
 
   // returns actual home offset
-  int getHomeOffset (int64_t & off);
+  int getHomeOffset (CWORD32 & off);
 
-  inline double getLstDeg (double JD);
+  int updateLimits ();
 
-  int sky2counts (double ra, double dec, int64_t & ac, int64_t & dc);
-  int counts2sky (int64_t ac, int64_t dc, double &ra, double &dec);
+  int sky2counts (double ra, double dec, CWORD32 & ac, CWORD32 & dc);
+  int counts2sky (CWORD32 ac, CWORD32 dc, double &ra, double &dec);
 
   int moveState;
 
+  CWORD32 acMin;
+  CWORD32 acMax;
+  CWORD32 dcMin;
+  CWORD32 dcMax;
+
+  int acMargin;
 protected:
     virtual int processOption (int in_opt);
   virtual int isMoving ();
@@ -159,6 +165,11 @@ public:
 
   virtual int startPark ();
   virtual int endPark ();
+
+  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec);
+  virtual int correct (double cor_ra, double cor_dec, double real_ra,
+		       double real_dec);
 
   // save and load gemini informations
   virtual int saveModel ();
@@ -333,7 +344,7 @@ Rts2DevTelParamount::saveAxis (std::ostream & os, const MKS3Id & axis)
 }
 
 int
-Rts2DevTelParamount::getHomeOffset (int64_t & off)
+Rts2DevTelParamount::getHomeOffset (CWORD32 & off)
 {
   int ret;
   long en0, pos0;
@@ -344,29 +355,39 @@ Rts2DevTelParamount::getHomeOffset (int64_t & off)
   ret = MKS3PosCurGet (axis0, &pos0);
   if (ret != MKS_OK)
     return ret;
+  std::cout << "en " << en0 << " " << pos0 << std::endl;
   off = en0 - pos0;
   return 0;
 }
 
-double
-Rts2DevTelParamount::getLstDeg (double JD)
+int
+Rts2DevTelParamount::updateLimits ()
 {
-  return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
-			   telLongtitude);
+  int ret;
+  ret = MKS3ConstsLimMinGet (axis0, &acMin);
+  if (ret)
+    return -1;
+  ret = MKS3ConstsLimMaxGet (axis0, &acMax);
+  if (ret)
+    return -1;
+
+  ret = MKS3ConstsLimMinGet (axis1, &dcMin);
+  if (ret)
+    return -1;
+  ret = MKS3ConstsLimMaxGet (axis1, &dcMax);
+  if (ret)
+    return -1;
+  return 0;
 }
 
 int
-Rts2DevTelParamount::sky2counts (double ra, double dec, int64_t & ac,
-				 int64_t & dc)
+Rts2DevTelParamount::sky2counts (double ra, double dec, CWORD32 & ac,
+				 CWORD32 & dc)
 {
   double JD, lst;
   struct ln_equ_posn pos;
   struct ln_hrz_posn hrz;
-  int64_t homeOff;
-  CWORD32 acMin;
-  CWORD32 acMax;
-  CWORD32 dcMin;
-  CWORD32 dcMax;
+  CWORD32 homeOff;
   int ret;
   bool flip = false;
 
@@ -408,28 +429,17 @@ Rts2DevTelParamount::sky2counts (double ra, double dec, int64_t & ac,
   dc = (int64_t) (dec * decCpd);
 
   // gets the limits
-  ret = MKS3ConstsLimMinGet (axis0, &acMin);
-  if (ret)
-    return -1;
-  ret = MKS3ConstsLimMaxGet (axis0, &acMax);
+  ret = updateLimits ();
   if (ret)
     return -1;
 
-  ret = MKS3ConstsLimMinGet (axis1, &dcMin);
-  if (ret)
-    return -1;
-  ret = MKS3ConstsLimMaxGet (axis1, &dcMax);
-  if (ret)
-    return -1;
-
-
-  while ((ac - 1000) < acMin)
+  while ((ac - acMargin) < acMin)
     // ticks per revolution - don't have idea where to get that
     {
       ac += (int64_t) (RA_TICKS / 2.0);
       flip = !flip;
     }
-  while ((ac + 1000) > acMax)
+  while ((ac + acMargin) > acMax)
     {
       ac -= (int64_t) (RA_TICKS / 2.0);
       flip = !flip;
@@ -438,7 +448,7 @@ Rts2DevTelParamount::sky2counts (double ra, double dec, int64_t & ac,
   if (flip)
     {
       if (dec < 0)
-	dc += (int64_t) ((180 + dec) * 2 * decCpd);
+	dc += (int64_t) ((270 + dec) * 2 * decCpd);
       else
 	dc += (int64_t) ((90 - dec) * 2 * decCpd);
     }
@@ -457,11 +467,11 @@ Rts2DevTelParamount::sky2counts (double ra, double dec, int64_t & ac,
 }
 
 int
-Rts2DevTelParamount::counts2sky (int64_t ac, int64_t dc, double &ra,
+Rts2DevTelParamount::counts2sky (CWORD32 ac, CWORD32 dc, double &ra,
 				 double &dec)
 {
   double JD, lst;
-  int64_t homeOff;
+  CWORD32 homeOff;
   int ret;
 
   ret = getHomeOffset (homeOff);
@@ -530,6 +540,11 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
   // how many counts per degree
   haCpd = 32000.0;		// - for N hemisphere, + for S hemisphere
   decCpd = -20883.33333333333;
+
+  acMargin = 10000;
+
+  // apply all correction for paramount
+  corrections = COR_ABERATION | COR_PRECESSION | COR_REFRACTION;
 
   // int paramout values
   paramountValues.
@@ -626,6 +641,10 @@ Rts2DevTelParamount::init ()
   telLongtitude = config->getObserver ()->lng;
   telLatitude = config->getObserver ()->lat;
 
+  ret = updateLimits ();
+  if (ret)
+    return -1;
+
   ret0 = MKS3MotorOn (axis0);
   ret1 = MKS3MotorOn (axis1);
   checkRet ();
@@ -638,13 +657,19 @@ Rts2DevTelParamount::init ()
   ret1 = MKS3MotorOff (axis1);
   ret = checkRet ();
 
-  return 0;
+  return ret;
 }
 
 int
 Rts2DevTelParamount::idle ()
 {
+  long ac = 0;
   int ret;
+  // check if we aren't close to RA limit
+  ret = MKS3PosCurGet (axis0, &ac);
+  if ((ac + acMargin) > acMax)
+    needStop ();
+
   ret = updateStatus ();
   if (ret)
     {
@@ -690,8 +715,8 @@ int
 Rts2DevTelParamount::startMove (double tar_ra, double tar_dec)
 {
   int ret;
-  int64_t ac = 0;
-  int64_t dc = 0;
+  CWORD32 ac = 0;
+  CWORD32 dc = 0;
 
   ret = updateStatus ();
   if (ret)
@@ -811,6 +836,20 @@ Rts2DevTelParamount::endPark ()
   ret0 = MKS3MotorOff (axis0);
   ret1 = MKS3MotorOff (axis1);
   return checkRet ();
+}
+
+int
+Rts2DevTelParamount::correctOffsets (double cor_ra, double cor_dec,
+				     double real_ra, double real_dec)
+{
+  return 0;
+}
+
+int
+Rts2DevTelParamount::correct (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec)
+{
+  return 0;
 }
 
 int
