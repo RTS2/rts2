@@ -101,6 +101,10 @@
 #define TEL_GUIDE_SOUTH		0x0400
 #define TEL_GUIDE_WEST		0x0800
 
+// when telescope need stop of observation - when it's aproaching limits etc.
+#define TEL_MASK_NEED_STOP	0x1000
+#define TEL_NEED_STOP		0x1000
+
 // telescope movement dirs
 
 #define DIR_NORTH	'n'
@@ -232,6 +236,7 @@
 #define DEVICE_TYPE_MIRROR	11
 #define DEVICE_TYPE_COPULA	12
 #define DEVICE_TYPE_FW		13
+#define DEVICE_TYPE_AUGERSH	14
 
 #define DEVICE_TYPE_EXECUTOR    20
 #define DEVICE_TYPE_IMGPROC	21
