@@ -230,9 +230,6 @@ Rts2NMTelescope::print (WINDOW * wnd)
   getAltAz (&altaz);
   getObs (&obs);
 
-  altaz.az = nan ("f");
-  altaz.alt = nan ("f");
-
   lst = getLocalSiderealDeg ();
 
   mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
