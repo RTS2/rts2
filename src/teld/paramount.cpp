@@ -135,7 +135,7 @@ private:
   int updateLimits ();
 
   int sky2counts (double ra, double dec, CWORD32 & ac, CWORD32 & dc);
-  int counts2sky (CWORD32 ac, CWORD32 dc, double &ra, double &dec);
+  int counts2sky (CWORD32 & ac, CWORD32 dc, double &ra, double &dec);
 
   int moveState;
 
@@ -425,8 +425,8 @@ Rts2DevTelParamount::sky2counts (double ra, double dec, CWORD32 & ac,
     dec = -180 - dec;
 
   // convert to ac; ra now holds HA
-  ac = (int64_t) ((ra + haZero) * haCpd);
-  dc = (int64_t) (dec * decCpd);
+  ac = (CWORD32) ((ra + haZero) * haCpd);
+  dc = (CWORD32) (dec * decCpd);
 
   // gets the limits
   ret = updateLimits ();
@@ -436,22 +436,17 @@ Rts2DevTelParamount::sky2counts (double ra, double dec, CWORD32 & ac,
   while ((ac - acMargin) < acMin)
     // ticks per revolution - don't have idea where to get that
     {
-      ac += (int64_t) (RA_TICKS / 2.0);
+      ac += (CWORD32) (RA_TICKS / 2.0);
       flip = !flip;
     }
   while ((ac + acMargin) > acMax)
     {
-      ac -= (int64_t) (RA_TICKS / 2.0);
+      ac -= (CWORD32) (RA_TICKS / 2.0);
       flip = !flip;
     }
 
   if (flip)
-    {
-      if (dec < 0)
-	dc += (int64_t) ((270 + dec) * 2 * decCpd);
-      else
-	dc += (int64_t) ((90 - dec) * 2 * decCpd);
-    }
+    dc += (CWORD32) ((90 - dec) * 2 * decCpd);
 
   // put dc to correct numbers
   while (dc < dcMin)
@@ -467,7 +462,7 @@ Rts2DevTelParamount::sky2counts (double ra, double dec, CWORD32 & ac,
 }
 
 int
-Rts2DevTelParamount::counts2sky (CWORD32 ac, CWORD32 dc, double &ra,
+Rts2DevTelParamount::counts2sky (CWORD32 & ac, CWORD32 dc, double &ra,
 				 double &dec)
 {
   double JD, lst;
@@ -481,10 +476,10 @@ Rts2DevTelParamount::counts2sky (CWORD32 ac, CWORD32 dc, double &ra,
   JD = ln_get_julian_from_sys ();
   lst = getLstDeg (JD);
 
-  ra = (double) ((ac + homeOff) / haCpd) - haZero;
-  dec = (double) (dc / decCpd) - decZero;
+  ac += homeOff;
 
-  std::cout << "Home off " << homeOff << std::endl;
+  ra = (double) (ac / haCpd) - haZero;
+  dec = (double) (dc / decCpd) - decZero;
 
   ra = lst - ra;
 
@@ -497,19 +492,23 @@ Rts2DevTelParamount::counts2sky (CWORD32 ac, CWORD32 dc, double &ra,
       else
 	dec = -180 - dec;
       ra += 180;
+      ac += (CWORD32) (RA_TICKS / 2.0);
     }
   else
     {
       telFlip = 0;
     }
 
+  while (ac < acMin)
+    ac += RA_TICKS;
+  while (ac > acMax)
+    ac += RA_TICKS;
+
   dec = ln_range_degrees (dec);
   if (dec > 180.0)
     dec -= 360.0;
 
   ra = ln_range_degrees (ra);
-
-  // apply reverse model
 
   if (telLatitude < 0)
     dec *= -1;
@@ -697,7 +696,7 @@ Rts2DevTelParamount::baseInfo ()
 int
 Rts2DevTelParamount::info ()
 {
-  long ac = 0, dc = 0;
+  CWORD32 ac = 0, dc = 0;
   int ret;
   ret0 = MKS3PosCurGet (axis0, &ac);
   ret1 = MKS3PosCurGet (axis1, &dc);
