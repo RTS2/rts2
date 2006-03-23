@@ -22,9 +22,6 @@
 #define FRAM_BAD_WINDSPEED_TIMEOUT 600
 #define FRAM_CONN_TIMEOUT	   600
 
-// how long we will keep lastWeatherStatus as actual (in second)
-#define FRAM_WEATHER_TIMEOUT	40
-
 class Rts2ConnFramWeather:public Rts2ConnNoSend
 {
 private:
@@ -32,12 +29,12 @@ private:
 
 protected:
   int weather_port;
+  int weather_timeout;
 
   int rain;
   float windspeed;
   time_t lastWeatherStatus;
   time_t lastBadWeather;
-  time_t nextGoodWeather;
 
   void setWeatherTimeout (time_t wait_time);
 protected:
@@ -46,7 +43,8 @@ protected:
     return 0;
   }
 public:
-    Rts2ConnFramWeather (int in_weather_port, Rts2DevDome * in_master);
+    Rts2ConnFramWeather (int in_weather_port, int in_weather_timeout,
+			 Rts2DevDome * in_master);
   virtual int init ();
   virtual int receive (fd_set * set);
   // return 1 if weather is favourable to open dome..
@@ -58,9 +56,5 @@ public:
   float getWindspeed ()
   {
     return windspeed;
-  }
-  time_t getNextOpen ()
-  {
-    return nextGoodWeather;
   }
 };

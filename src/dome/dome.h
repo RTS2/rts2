@@ -4,6 +4,8 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+#define DEF_WEATHER_TIMEOUT	600
+
 class Rts2DevDome:public Rts2Device
 {
 protected:
@@ -22,6 +24,8 @@ protected:
   int maxWindSpeed;
   int maxPeekWindspeed;
   bool weatherCanOpenDome;
+
+  time_t nextGoodWeather;
 
   virtual int processOption (int in_opt);
 
@@ -90,6 +94,11 @@ public:
   {
     rain = in_rain;
   }
+  void setWindSpeed (float in_windpseed)
+  {
+    windspeed = in_windpseed;
+  }
+  void setWeatherTimeout (time_t wait_time);
   void setSwState (int in_sw_state)
   {
     sw_state = in_sw_state;
@@ -103,6 +112,10 @@ public:
   int getMaxWindSpeed ()
   {
     return maxWindSpeed;
+  }
+  time_t getNextOpen ()
+  {
+    return nextGoodWeather;
   }
 };
 

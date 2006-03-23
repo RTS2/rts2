@@ -34,6 +34,10 @@ Rts2Device (in_argc, in_argv, in_device_type, 5552, "DOME")
 	     "specified that option if weather signal is allowed to open dome");
 
   observingPossible = 0;
+
+  time (&nextGoodWeather);
+
+  nextGoodWeather += DEF_WEATHER_TIMEOUT;
 }
 
 int
@@ -259,6 +263,16 @@ Rts2DevDome::changeMasterState (int new_state)
     default:
       return off ();
     }
+}
+
+void
+Rts2DevDome::setWeatherTimeout (time_t wait_time)
+{
+  time_t next;
+  time (&next);
+  next += wait_time;
+  if (next > nextGoodWeather)
+    nextGoodWeather = next;
 }
 
 int

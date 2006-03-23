@@ -14,25 +14,22 @@
 #include <fcntl.h>
 
 Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port,
+					  int in_weather_timeout,
 					  Rts2DevDome * in_master):
 Rts2ConnNoSend (in_master)
 {
   master = in_master;
   weather_port = in_weather_port;
+  weather_timeout = in_weather_timeout;
 
   lastWeatherStatus = 0;
   time (&lastBadWeather);
-  nextGoodWeather = lastBadWeather + FRAM_CONN_TIMEOUT;
 }
 
 void
 Rts2ConnFramWeather::setWeatherTimeout (time_t wait_time)
 {
-  time_t next;
-  time (&next);
-  next += wait_time;
-  if (next > nextGoodWeather)
-    nextGoodWeather = next;
+  master->setWeatherTimeout (wait_time);
 }
 
 int
@@ -137,13 +134,13 @@ Rts2ConnFramWeather::isGoodWeather ()
   time_t now;
   time (&now);
   // if no conenction, set nextGoodWeather appopritery
-  if (now - lastWeatherStatus > FRAM_WEATHER_TIMEOUT)
+  if (now - lastWeatherStatus > weather_timeout)
     {
       setWeatherTimeout (FRAM_CONN_TIMEOUT);
       return 0;
     }
   if (windspeed > master->getMaxWindSpeed () || rain != 0
-      || (nextGoodWeather > now))
+      || (master->getNextOpen () > now))
     return 0;
   return 1;
 }
