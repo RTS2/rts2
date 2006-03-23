@@ -180,6 +180,8 @@ Rts2DevFilterdIfw::init (void)
   term_options.c_cc[VTIME] = 80;
   term_options.c_cc[VMIN] = 0;
 
+  tcflush (dev_port, TCIFLUSH);
+
   /*
    * Set the new options for the port...
    */
@@ -206,7 +208,6 @@ Rts2DevFilterdIfw::init (void)
     }
   syslog (LOG_DEBUG, "Rts2DevFilterdIfw::init Filter wheel initialised: %s",
 	  filter_buff);
-  tcflush (dev_port, TCIFLUSH);
   return 0;
 }
 
@@ -231,9 +232,8 @@ Rts2DevFilterdIfw::getFilterNum (void)
     }
   else
     {
-      filter_number = atoi (filter_buff);
+      filter_number = atoi (filter_buff) - 1;
     }
-  tcflush (dev_port, TCIFLUSH);
   return filter_number;
 }
 
@@ -243,7 +243,7 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
   char set_filter[] = "WGOTOx\r";
   int ret;
 
-  if (new_filter > 5 || new_filter < 1)
+  if (new_filter > 4 || new_filter < 0)
     {
       syslog (LOG_ERR,
 	      "Rts2DevFilterdIfw::setFilterNum bad filter number: %i",
@@ -251,7 +251,7 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
       return -1;
     }
 
-  set_filter[5] = (char) new_filter + '0';
+  set_filter[5] = (char) new_filter + '1';
 
   ret = writePort (set_filter, 7);
   if (ret == -1)
@@ -272,7 +272,6 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 	      filter_buff);
       ret = 0;
     }
-  tcflush (dev_port, TCIFLUSH);
 
   return ret;
 }
