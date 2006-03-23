@@ -34,6 +34,16 @@
 
 #define CAS_NA_OTEVRENI 30
 
+// we should get packets every minute; 5 min timeout, as data from meteo station
+// aren't as precise as we want and we observe dropouts quite often
+#define BART_WEATHER_TIMEOUT  360
+
+// how long after weather was bad can weather be good again; in
+// seconds
+#define BART_BAD_WEATHER_TIMEOUT   360
+#define BART_BAD_WINDSPEED_TIMEOUT 360
+#define BART_CONN_TIMEOUT	   360
+
 typedef enum
 { ZASUVKA_1, ZASUVKA_2, ZASUVKA_3, ZASUVKA_4, ZASUVKA_5, ZASUVKA_6, MOTOR,
   SMER, SVETLO, TOPENI, KONCAK_OTEVRENI_JIH, KONCAK_ZAVRENI_JIH,
@@ -151,6 +161,7 @@ WeatherBuf::parse (char *buf)
   char *value;
   char *endval;
   float fval;
+  bool last = false;
   while (*buf)
     {
       // eat blanks
@@ -169,13 +180,27 @@ WeatherBuf::parse (char *buf)
       while (*buf && *buf != ',')
 	buf++;
       if (!*buf)
-	break;
+	last = true;
       *buf = '\0';
       fval = strtod (value, &endval);
       if (*endval)
-	break;
+	{
+	  if (!strcmp (value, "no"))
+	    {
+	      fval = 0;
+	    }
+	  else if (!strcmp (value, "yes"))
+	    {
+	      fval = 1;
+	    }
+	  else
+	    {
+	      break;
+	    }
+	}
       values.push_back (WeatherVal (name, fval));
-      buf++;
+      if (!last)
+	buf++;
     }
   if (*buf)
     return -1;
@@ -210,7 +235,7 @@ public:
 
 Rts2ConnBartWeather::Rts2ConnBartWeather (int in_weather_port,
 					  Rts2DevDome * in_master):
-Rts2ConnFramWeather (in_weather_port, in_master)
+Rts2ConnFramWeather (in_weather_port, BART_WEATHER_TIMEOUT, in_master)
 {
   master = in_master;
 }
@@ -220,10 +245,8 @@ Rts2ConnBartWeather::receive (fd_set * set)
 {
   int ret;
   char Wbuf[500];
-  char Wstatus[10];
   int data_size = 0;
   float rtRainRate;
-  float rtWindSpeed;
   float rtOutsideHum;
   float rtOutsideTemp;
   if (sock >= 0 && FD_ISSET (sock, set))
@@ -244,43 +267,36 @@ Rts2ConnBartWeather::receive (fd_set * set)
       //rtExtraTemp2=3.3, rtWindSpeed=0.0, rtInsideHum=22.0, rtWindDir=207.0, rtExtraTemp1=3.9, rtRainRate=0.0, rtOutsideHum=52.0, rtWindAvgSpeed=0.4, rtInsideTemp=23.4, rtExtraHum1=51.0, rtBaroCurr=1000.0, rtExtraHum2=51.0, rtOutsideTemp=0.5/
       WeatherBuf *weather = new WeatherBuf ();
       ret = weather->parse (Wbuf);
-      weather->getValue ("rtRainRate", rtRainRate, ret);
-      weather->getValue ("rtWindSpeed", rtWindSpeed, ret);
+      weather->getValue ("rtIsRaining", rtRainRate, ret);
+      weather->getValue ("rtWindAvgSpeed", windspeed, ret);
       weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
-      weather->getValue ("rtOutsideHum", rtOutsideTemp, ret);
+      weather->getValue ("rtOutsideTemp", rtOutsideTemp, ret);
       if (ret)
 	{
 	  rain = 1;
-	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
+	  setWeatherTimeout (BART_CONN_TIMEOUT);
 	  return data_size;
 	}
       rain = rtRainRate > 0 ? 1 : 0;
       master->setTemperatur (rtOutsideTemp);
       master->setRain (rain);
       master->setHumidity (rtOutsideHum);
+      master->setWindSpeed (windspeed);
       delete weather;
 
       time (&lastWeatherStatus);
-      if (strcmp (Wstatus, "watch"))
-	{
-	  // if sensors doesn't work, switch rain on
-	  rain = 1;
-	}
-      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %li status: %s",
-	      windspeed, rain, lastWeatherStatus, Wstatus);
+      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %li status: %i",
+	      windspeed, rain, lastWeatherStatus, ret);
       if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
 	{
 	  time (&lastBadWeather);
 	  if (rain == 0 && windspeed > master->getMaxWindSpeed ())
-	    setWeatherTimeout (FRAM_BAD_WINDSPEED_TIMEOUT);
+	    setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT);
 	  else
-	    setWeatherTimeout (FRAM_BAD_WEATHER_TIMEOUT);
+	    setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
 	  master->closeDome ();
 	  master->setMasterStandby ();
 	}
-      // ack message
-//      ret =
-//      sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));
     }
   return data_size;
 }
@@ -549,12 +565,14 @@ Rts2DevDomeBart::isGoodWeather ()
   if (rain_port > 0)
     {
       ret = ioctl (rain_port, TIOCMGET, &flags);
-      syslog (LOG_DEBUG, "Rts2DevDomeBart::isGoodWeather flags: %08x %i",
-	      flags, flags);
+      syslog (LOG_DEBUG,
+	      "Rts2DevDomeBart::isGoodWeather flags: %08x %i rain:%i", flags,
+	      flags, (flags & TIOCM_RI));
       // ioctl failed or it's raining..
       if (ret || !(flags & TIOCM_RI))
 	{
 	  rain = 1;
+	  setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
 	  return 0;
 	}
       rain = 0;
@@ -725,8 +743,8 @@ Rts2DevDomeBart::info ()
     {
       rain |= weatherConn->getRain ();
       windspeed = weatherConn->getWindspeed ();
-      nextOpen = weatherConn->getNextOpen ();
     }
+  nextOpen = getNextOpen ();
   return 0;
 }
 
