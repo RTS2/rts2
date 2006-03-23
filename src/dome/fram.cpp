@@ -31,6 +31,9 @@
 #define PORT_B 1
 #define PORT_C 2
 
+// how long we will keep lastWeatherStatus as actual (in second)
+#define FRAM_WEATHER_TIMEOUT	40
+
 // check time in usec (1000000 ms = 1s)
 #define FRAM_CHECK_TIMEOUT 1000
 
@@ -944,7 +947,8 @@ Rts2DevDomeFram::init ()
     {
       if (!connections[i])
 	{
-	  weatherConn = new Rts2ConnFramWeather (5002, this);
+	  weatherConn =
+	    new Rts2ConnFramWeather (5002, FRAM_WEATHER_TIMEOUT, this);
 	  weatherConn->init ();
 	  connections[i] = weatherConn;
 	  break;
@@ -1063,7 +1067,7 @@ Rts2DevDomeFram::info ()
   windspeed = weatherConn->getWindspeed ();
   if (wdc_port > 0)
     temperature = getWDCTemp (2);
-  nextOpen = weatherConn->getNextOpen ();
+  nextOpen = getNextOpen ();
   return 0;
 }
 
