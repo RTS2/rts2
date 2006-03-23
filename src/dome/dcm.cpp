@@ -26,15 +26,13 @@
  * @author petr
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif /* !_GNU_SOURCE */
-
 #include <signal.h>
 #include <fcntl.h>
 
 #include "dome.h"
 #include "udpweather.h"
+
+#define DCM_WEATHER_TIMEOUT	40
 
 class Rts2DevDomeDcm;
 
@@ -67,7 +65,7 @@ public:
 };
 
 Rts2ConnDcm::Rts2ConnDcm (int in_weather_port, Rts2DevDomeDcm * in_master):
-Rts2ConnFramWeather (in_weather_port, in_master)
+Rts2ConnFramWeather (in_weather_port, DCM_WEATHER_TIMEOUT, in_master)
 {
   master = in_master;
 }
