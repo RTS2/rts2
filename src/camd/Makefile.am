@@ -17,7 +17,7 @@ endif
 
 if ANDOR 
 bin_PROGRAMS += rts2-camd-andor
-rts2_camd_andor_SOURCES = camd.cpp andor.cpp filter.cpp rts2devcliwheel.cpp
+rts2_camd_andor_SOURCES = camd.cpp andor.cpp rts2devcliwheel.cpp
 rts2_camd_andor_LDFLAGS = @LIB_ANDOR@ @LIB_M@ @LIB_PTHREAD@ @LIB_FLI@
 rts2_camd_andor_CXXFLAGS = @INC_ANDOR@ @INC_FLI@
 endif
@@ -27,7 +27,7 @@ rts2_camd_miniccd_SOURCES = camd.cpp miniccd.cpp rts2devcliwheel.cpp
 rts2_camd_urvc2_SOURCES = camd.cpp urvc2.cpp rts2devcliwheel.cpp
 rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
 
-rts2_camd_apogee_SOURCES = camd.cpp apogee.cpp apogee/CameraIO_LinuxPCI.cpp filter.cpp rts2devcliwheel.cpp
+rts2_camd_apogee_SOURCES = camd.cpp apogee.cpp apogee/CameraIO_LinuxPCI.cpp rts2devcliwheel.cpp
 
 rts2_camd_dummy_SOURCES = camd.cpp dummy.cpp rts2devcliwheel.cpp
 
@@ -40,7 +40,7 @@ endif
 
 if FLI
 bin_PROGRAMS += rts2-camd-fli
-rts2_camd_fli_SOURCES = camd.cpp fli.cpp filter.cpp rts2devcliwheel.cpp
+rts2_camd_fli_SOURCES = camd.cpp fli.cpp rts2devcliwheel.cpp
 rts2_camd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
 rts2_camd_fli_CXXFLAGS = @INC_FLI@
 endif
