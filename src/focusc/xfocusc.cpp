@@ -548,8 +548,20 @@ Rts2xfocusCamera::XeventLoop ()
 	      double del =
 		exposureStart.tv_sec +
 		(double) exposureStart.tv_usec / USEC_SEC;
-	      printf ("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n", del,
-		      ((buttonX - mouseX) / del), (buttonY - mouseY) / del);
+	      double offsetX = buttonX - mouseX;
+	      double offsetY = buttonY - mouseY;
+	      if (del > 0)
+		{
+		  printf
+		    ("Delay %.4f sec\nX offset: %.1f drift: %.1f pixels/sec\nY offset: %.1f drift: %1.f pixels/sec\n",
+		     del, offsetX, offsetX / del, offsetY, offsetY / del);
+		}
+	      else
+		{
+		  printf
+		    ("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n",
+		     del, offsetX, offsetY);
+		}
 	      // clear results
 	      buttonX = -1;
 	      buttonY = -1;

@@ -92,7 +92,7 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
       return image;
     }
   // memory-only image
-  image = new Rts2Image ();
+  image = new Rts2Image (expStart);
   return image;
 }
 
