@@ -86,13 +86,15 @@ public:
 
   // memory-only image..
     Rts2Image ();
+  // memory-only with exposure time
+    Rts2Image (const struct timeval *in_exposureStart);
   // skeleton for DB image
     Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure);
   // create image
-    Rts2Image (char *in_filename, const struct timeval *exposureStart);
+    Rts2Image (char *in_filename, const struct timeval *in_exposureStart);
   // create image in que
     Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
-	       const struct timeval *exposureStart);
+	       const struct timeval *in_exposureStart);
   // open image from disk..
     Rts2Image (const char *in_filename);
     virtual ~ Rts2Image (void);

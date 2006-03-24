@@ -53,6 +53,14 @@ Rts2Image::Rts2Image ()
   flags = IMAGE_KEEP_DATA;
 }
 
+Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
+{
+  initData ();
+  flags = IMAGE_KEEP_DATA;
+  exposureStart = *in_exposureStart;
+  writeExposureStart ();
+}
+
 Rts2Image::Rts2Image (long in_img_date, int in_img_usec,
 		      float in_img_exposure)
 {
