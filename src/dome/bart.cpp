@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "dome.h"
-#include "udpweather.h"
+#include "rts2connbufweather.h"
 
 #define BAUDRATE B9600
 #define CTENI_PORTU 0
@@ -113,194 +113,6 @@ enum stavy zasuvky_stavy[3][NUM_ZAS] =
   {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
-class WeatherVal
-{
-private:
-  const char *name;
-public:
-  float value;
-
-    WeatherVal (const char *in_name, float in_value)
-  {
-    name = in_name;
-    value = in_value;
-  }
-
-  bool isValue (const char *in_name)
-  {
-    return !strcmp (name, in_name);
-  }
-};
-
-class WeatherBuf
-{
-private:
-  std::vector < WeatherVal > values;
-public:
-  WeatherBuf ();
-  virtual ~ WeatherBuf (void);
-
-  int parse (char *buf);
-  void getValue (const char *name, float &val, int &status);
-};
-
-WeatherBuf::WeatherBuf ()
-{
-
-}
-
-WeatherBuf::~WeatherBuf ()
-{
-  values.clear ();
-}
-
-int
-WeatherBuf::parse (char *buf)
-{
-  char *name;
-  char *value;
-  char *endval;
-  float fval;
-  bool last = false;
-  while (*buf)
-    {
-      // eat blanks
-      while (*buf && isblank (*buf))
-	buf++;
-      if (!*buf)
-	break;
-      name = buf;
-      while (*buf && *buf != '=')
-	buf++;
-      if (!*buf)
-	break;
-      *buf = '\0';
-      buf++;
-      value = buf;
-      while (*buf && *buf != ',')
-	buf++;
-      if (!*buf)
-	last = true;
-      *buf = '\0';
-      fval = strtod (value, &endval);
-      if (*endval)
-	{
-	  if (!strcmp (value, "no"))
-	    {
-	      fval = 0;
-	    }
-	  else if (!strcmp (value, "yes"))
-	    {
-	      fval = 1;
-	    }
-	  else
-	    {
-	      break;
-	    }
-	}
-      values.push_back (WeatherVal (name, fval));
-      if (!last)
-	buf++;
-    }
-  if (*buf)
-    return -1;
-  return 0;
-}
-
-void
-WeatherBuf::getValue (const char *name, float &val, int &status)
-{
-  if (status)
-    return;
-  for (std::vector < WeatherVal >::iterator iter = values.begin ();
-       iter != values.end (); iter++)
-    {
-      if ((*iter).isValue (name))
-	{
-	  val = (*iter).value;
-	  return;
-	}
-    }
-  status = -1;
-}
-
-class Rts2ConnBartWeather:public Rts2ConnFramWeather
-{
-private:
-  Rts2DevDome * master;
-public:
-  Rts2ConnBartWeather (int in_weather_port, Rts2DevDome * in_master);
-  virtual int receive (fd_set * set);
-};
-
-Rts2ConnBartWeather::Rts2ConnBartWeather (int in_weather_port,
-					  Rts2DevDome * in_master):
-Rts2ConnFramWeather (in_weather_port, BART_WEATHER_TIMEOUT, in_master)
-{
-  master = in_master;
-}
-
-int
-Rts2ConnBartWeather::receive (fd_set * set)
-{
-  int ret;
-  char Wbuf[500];
-  int data_size = 0;
-  float rtRainRate;
-  float rtOutsideHum;
-  float rtOutsideTemp;
-  if (sock >= 0 && FD_ISSET (sock, set))
-    {
-      struct sockaddr_in from;
-      socklen_t size = sizeof (from);
-      data_size =
-	recvfrom (sock, Wbuf, 500, 0, (struct sockaddr *) &from, &size);
-      if (data_size < 0)
-	{
-	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
-	  return 1;
-	}
-      Wbuf[data_size] = 0;
-      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, Wbuf,
-	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
-      // parse weather info
-      //rtExtraTemp2=3.3, rtWindSpeed=0.0, rtInsideHum=22.0, rtWindDir=207.0, rtExtraTemp1=3.9, rtRainRate=0.0, rtOutsideHum=52.0, rtWindAvgSpeed=0.4, rtInsideTemp=23.4, rtExtraHum1=51.0, rtBaroCurr=1000.0, rtExtraHum2=51.0, rtOutsideTemp=0.5/
-      WeatherBuf *weather = new WeatherBuf ();
-      ret = weather->parse (Wbuf);
-      weather->getValue ("rtIsRaining", rtRainRate, ret);
-      weather->getValue ("rtWindAvgSpeed", windspeed, ret);
-      weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
-      weather->getValue ("rtOutsideTemp", rtOutsideTemp, ret);
-      if (ret)
-	{
-	  rain = 1;
-	  setWeatherTimeout (BART_CONN_TIMEOUT);
-	  return data_size;
-	}
-      rain = rtRainRate > 0 ? 1 : 0;
-      master->setTemperatur (rtOutsideTemp);
-      master->setRain (rain);
-      master->setHumidity (rtOutsideHum);
-      master->setWindSpeed (windspeed);
-      delete weather;
-
-      time (&lastWeatherStatus);
-      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %li status: %i",
-	      windspeed, rain, lastWeatherStatus, ret);
-      if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
-	{
-	  time (&lastBadWeather);
-	  if (rain == 0 && windspeed > master->getMaxWindSpeed ())
-	    setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT);
-	  else
-	    setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
-	  master->closeDome ();
-	  master->setMasterStandby ();
-	}
-    }
-  return data_size;
-}
-
 class Rts2DevDomeBart:public Rts2DevDome
 {
 private:
@@ -312,7 +124,7 @@ private:
   unsigned char spinac[2];
   unsigned char stav_portu[3];
 
-  Rts2ConnBartWeather *weatherConn;
+  Rts2ConnBufWeather *weatherConn;
 
   int zjisti_stav_portu ();
   void zapni_pin (unsigned char c_port, unsigned char pin);
@@ -658,7 +470,11 @@ Rts2DevDomeBart::init ()
     {
       if (!connections[i])
 	{
-	  weatherConn = new Rts2ConnBartWeather (1500, this);
+	  weatherConn =
+	    new Rts2ConnBufWeather (1500, BART_WEATHER_TIMEOUT,
+				    BART_CONN_TIMEOUT,
+				    BART_BAD_WEATHER_TIMEOUT,
+				    BART_BAD_WINDSPEED_TIMEOUT, this);
 	  weatherConn->init ();
 	  connections[i] = weatherConn;
 	  break;
@@ -666,7 +482,7 @@ Rts2DevDomeBart::init ()
     }
   if (i == MAX_CONN)
     {
-      syslog (LOG_ERR, "no free conn for Rts2ConnBartWeather");
+      syslog (LOG_ERR, "no free conn for Rts2ConnBufWeather");
       return -1;
     }
 
