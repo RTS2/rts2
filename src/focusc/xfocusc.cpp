@@ -132,6 +132,9 @@ private:
 
   int buttonX;
   int buttonY;
+  struct timeval buttonImageTime;
+
+  struct timeval exposureStart;
 protected:
   virtual void printFWHMTable ();
 
@@ -163,6 +166,9 @@ Rts2GenFocCamera (in_connection, in_master)
 
   mouseX = mouseY = -1;
   buttonX = buttonY = -1;
+
+  timerclear (&buttonImageTime);
+  timerclear (&exposureStart);
 }
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
@@ -529,8 +535,27 @@ Rts2xfocusCamera::XeventLoop ()
 	case ButtonPress:
 	  mouseX = ((XButtonPressedEvent *) & event)->x;
 	  mouseY = ((XButtonPressedEvent *) & event)->y;
-	  buttonX = mouseX;
-	  buttonY = mouseY;
+	  if (buttonX < 0 && buttonY < 0)
+	    {
+	      buttonX = mouseX;
+	      buttonY = mouseY;
+	      buttonImageTime = exposureStart;
+	    }
+	  else
+	    {
+	      // calculate distance travelled, print it, pixels / sec travelled, discard button
+	      timersub (&exposureStart, &buttonImageTime, &exposureStart);
+	      double del =
+		exposureStart.tv_sec +
+		(double) exposureStart.tv_usec / USEC_SEC;
+	      printf ("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n", del,
+		      ((buttonX - mouseX) / del), (buttonY - mouseY) / del);
+	      // clear results
+	      buttonX = -1;
+	      buttonY = -1;
+	      timerclear (&buttonImageTime);
+	    }
+
 	  printf ("%i %i\n", mouseX, mouseY);
 
 	  printMouse ();
@@ -673,6 +698,9 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
   lastSizeY = image->getHeight ();
   image->getValue ("BIN_V", binningsX);
   image->getValue ("BIN_H", binningsY);
+
+  exposureStart.tv_sec = image->getExposureSec ();
+  exposureStart.tv_usec = image->getExposureUsec ();
 
   redraw ();
   XFlush (master->getDisplay ());
