@@ -107,6 +107,8 @@ private:
   void drawCross3 ();
   void drawStars (Rts2Image * image);
   void printInfo ();
+  void printMouse ();
+  void redrawMouse ();
   // thread entry function..
   void XeventLoop ();
   static void *staticXEventLoop (void *arg)
@@ -124,6 +126,12 @@ private:
   long lastSizeY;
   int binningsX;
   int binningsY;
+
+  int mouseX;
+  int mouseY;
+
+  int buttonX;
+  int buttonY;
 protected:
   virtual void printFWHMTable ();
 
@@ -152,6 +160,9 @@ Rts2GenFocCamera (in_connection, in_master)
   pixmapWidth = windowWidth;
 
   lastImage = 0;
+
+  mouseX = mouseY = -1;
+  buttonX = buttonY = -1;
 }
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
@@ -183,7 +194,8 @@ Rts2xfocusCamera::buildWindow ()
 
   gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
   XSelectInput (master->getDisplay (), window,
-		KeyPressMask | ButtonPressMask | ExposureMask);
+		KeyPressMask | ButtonPressMask | ExposureMask |
+		PointerMotionMask);
   XMapRaised (master->getDisplay (), window);
 
   cameraName = new char[strlen (connection->getName ()) + 1];
@@ -359,11 +371,12 @@ Rts2xfocusCamera::printInfo ()
 {
   char *stringBuf;
   int len;
+  XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
   len =
     asprintf (&stringBuf, "L: %d M: %d H: %d Min: %d Avg: %.2f Max: %d",
 	      low, med, hig, min, average, max);
-  XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20,
-	       stringBuf, len);
+  XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100,
+		    20, stringBuf, len);
   free (stringBuf);
   if (lastImage)
     {
@@ -372,10 +385,32 @@ Rts2xfocusCamera::printInfo ()
 		  "[%li,%li:%li,%li] binn: %i:%i exposureTime: %.3f s",
 		  lastX, lastY, lastSizeX, lastSizeY,
 		  binningsX, binningsY, exposureTime);
-      XDrawString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150,
-		   pixmapHeight - 20, stringBuf, len);
+      XDrawImageString (master->getDisplay (), pixmap, gc,
+			pixmapWidth / 2 - 150, pixmapHeight - 20, stringBuf,
+			len);
       free (stringBuf);
     }
+}
+
+void
+Rts2xfocusCamera::printMouse ()
+{
+  char stringBuf[20];
+  int len;
+  len = snprintf (stringBuf, 20, "%i %i", mouseX, mouseY);
+  XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
+  XDrawImageString (master->getDisplay (), pixmap, gc, 30, 30, stringBuf,
+		    len);
+  if (buttonX >= 0 && buttonY >= 0)
+    drawCenterCross (buttonX, buttonY);
+}
+
+void
+Rts2xfocusCamera::redrawMouse ()
+{
+  XClearArea (master->getDisplay (), window, 0, 0, 100, 40, False);
+  XClearArea (master->getDisplay (), window, buttonX - 10, buttonY - 10, 20,
+	      20, False);
 }
 
 void
@@ -399,6 +434,8 @@ Rts2xfocusCamera::redraw ()
   // draw plots over stars..
   drawStars (images);
 
+  printMouse ();
+
   xswa.colormap = *(master->getColormap ());
   xswa.background_pixmap = pixmap;
 
@@ -417,7 +454,8 @@ Rts2xfocusCamera::XeventLoop ()
   while (1)
     {
       XWindowEvent (master->getDisplay (), window,
-		    KeyPressMask | ButtonPressMask | ExposureMask, &event);
+		    KeyPressMask | ButtonPressMask | ExposureMask |
+		    PointerMotionMask, &event);
       switch (event.type)
 	{
 	case Expose:
@@ -480,6 +518,23 @@ Rts2xfocusCamera::XeventLoop ()
 	    default:
 	      break;
 	    }
+	  break;
+	case MotionNotify:
+	  mouseX = ((XMotionEvent *) & event)->x;
+	  mouseY = ((XMotionEvent *) & event)->y;
+
+	  printMouse ();
+	  redrawMouse ();
+	  break;
+	case ButtonPress:
+	  mouseX = ((XButtonPressedEvent *) & event)->x;
+	  mouseY = ((XButtonPressedEvent *) & event)->y;
+	  buttonX = mouseX;
+	  buttonY = mouseY;
+	  printf ("%i %i\n", mouseX, mouseY);
+
+	  printMouse ();
+	  redrawMouse ();
 	  break;
 	}
     }
