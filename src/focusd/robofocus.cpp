@@ -33,7 +33,8 @@ private:
   char *device_file_io;
   int foc_desc;
   char checksum;
-  int status;
+  int step_num;
+
   // low-level I/O functions
   int foc_read (char *buf, int count);
   int foc_write (char *buf, int count);
@@ -46,17 +47,21 @@ private:
 
   int getPos (int *position);
   int getTemp (float *temperature);
+  int getSwitchState ();
+protected:
+    virtual int processOption (int in_opt);
+  virtual int isFocusing ();
 public:
     Rts2DevFocuserRobofocus (int argc, char **argv);
    ~Rts2DevFocuserRobofocus (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
   virtual int stepOut (int num);
+  virtual int setTo (int num);
+  virtual int setSwitch (int switch_num, int new_state);
 };
-
 
 Rts2DevFocuserRobofocus::Rts2DevFocuserRobofocus (int in_argc,
 						  char **in_argv):
@@ -65,6 +70,8 @@ Rts2DevFocuser (in_argc, in_argv)
   device_file = FOCUSER_PORT;
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+
+  switchNum = 4;
 }
 
 Rts2DevFocuserRobofocus::~Rts2DevFocuserRobofocus ()
@@ -85,11 +92,8 @@ Rts2DevFocuserRobofocus::~Rts2DevFocuserRobofocus ()
 int
 Rts2DevFocuserRobofocus::foc_write (char *buf, int count)
 {
-  int ret;
   syslog (LOG_DEBUG, "Robofocus:will write:'%s'", buf);
-  ret = write (foc_desc, buf, count);
-  tcflush (foc_desc, TCIFLUSH);
-  return ret;
+  return write (foc_desc, buf, count);
 }
 
 /*! 
@@ -110,18 +114,20 @@ Rts2DevFocuserRobofocus::foc_read (char *buf, int count)
 {
   int readed;
 
-  for (readed = 0; readed < count; readed++)
+  for (readed = 0; readed < count;)
     {
-      int ret = read (foc_desc, &buf[readed], 1);
-      printf ("read_from: %i size:%i\n", foc_desc, ret);
+      int ret = read (foc_desc, &buf[readed], count - readed);
       if (ret <= 0)
 	{
+	  tcflush (foc_desc, TCIOFLUSH);
+	  sleep (1);
 	  return -1;
 	}
-#ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "Robofocus: readed '%c'", buf[readed]);
-#endif
+      readed += ret;
     }
+#ifdef DEBUG_ALL_PORT_COMM
+  syslog (LOG_DEBUG, "Robofocus: readed '%s'", buf[readed]);
+#endif
   return readed;
 }
 
@@ -146,9 +152,6 @@ Rts2DevFocuserRobofocus::foc_write_read_no_reset (char *wbuf, int wcount,
   int tmp_rcount = -1;
   char *buf;
 
-  if (tcflush (foc_desc, TCIOFLUSH) < 0)
-    return -1;
-
   if (foc_write (wbuf, wcount) < 0)
     return -1;
 
@@ -156,7 +159,7 @@ Rts2DevFocuserRobofocus::foc_write_read_no_reset (char *wbuf, int wcount,
 
   if (tmp_rcount > 0)
     {
-      buf = (char *) malloc (rcount + 1);
+      buf = (char *) malloc (tmp_rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
       syslog (LOG_DEBUG, "Robofocus:readed %i %s", tmp_rcount, buf);
@@ -166,7 +169,7 @@ Rts2DevFocuserRobofocus::foc_write_read_no_reset (char *wbuf, int wcount,
     {
       syslog (LOG_DEBUG, "Robofocus:readed returns %i", tmp_rcount);
     }
-  return 0;
+  return tmp_rcount;
 }
 
 int
@@ -215,7 +218,7 @@ Rts2DevFocuserRobofocus::init ()
   if (ret)
     return ret;
 
-  struct termios oldtio, newtio;
+  struct termios tio;
   foc_desc = open (device_file, O_RDWR | O_NOCTTY);
   if (foc_desc == -1)
     {
@@ -223,32 +226,33 @@ Rts2DevFocuserRobofocus::init ()
       return -1;
     }
 
-  ret = tcgetattr (foc_desc, &oldtio);
+  ret = tcgetattr (foc_desc, &tio);
   if (ret)
     {
       syslog (LOG_ERR, "Rts2DevFocuserRobofocus::init tcgetattr %m");
       return -1;
     }
 
-  newtio = oldtio;
+  if (cfsetospeed (&tio, B9600) < 0 || cfsetispeed (&tio, B9600) < 0)
+    return -1;
 
-  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-  newtio.c_iflag = IGNPAR;
-  newtio.c_oflag = 0;
-  newtio.c_lflag = 0;
-  newtio.c_cc[VMIN] = 0;
-  newtio.c_cc[VTIME] = 50;
+  tio.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
+  tio.c_oflag = 0;
+  tio.c_cflag = ((tio.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
+  tio.c_lflag = 0;
+  tio.c_cc[VMIN] = 0;
+  tio.c_cc[VTIME] = 40;
 
-  tcflush (foc_desc, TCIOFLUSH);
-  ret = tcsetattr (foc_desc, TCSANOW, &newtio);
+
+  ret = tcsetattr (foc_desc, TCSANOW, &tio);
   if (ret)
     {
       syslog (LOG_ERR, "Rts2DevFocuserRobofocus::init tcsetattr %m");
       return -1;
     }
+  tcflush (foc_desc, TCIOFLUSH);
 
   return 0;
-
 }
 
 int
@@ -270,6 +274,10 @@ Rts2DevFocuserRobofocus::info ()
 {
   getPos (&focPos);
   getTemp (&focTemp);
+  // querry for switch state 
+  int state = getSwitchState ();
+  if (state >= 0)
+    focSwitches = state;
   return 0;
 }
 
@@ -277,8 +285,8 @@ Rts2DevFocuserRobofocus::info ()
 int
 Rts2DevFocuserRobofocus::getPos (int *position)
 {
-  char command[9], rbuf[9], tbuf[7];
-  char command_buffer[8];
+  char command[10], rbuf[10];
+  char command_buffer[9];
 
 // Put together command with neccessary checksum
   sprintf (command_buffer, "FG000000");
@@ -288,17 +296,7 @@ Rts2DevFocuserRobofocus::getPos (int *position)
 
   if (foc_write_read (command, 9, rbuf, 9) < 1)
     return -1;
-  else
-    {
-      tbuf[0] = rbuf[2];
-      tbuf[1] = rbuf[3];
-      tbuf[2] = rbuf[4];
-      tbuf[3] = rbuf[5];
-      tbuf[4] = rbuf[6];
-      tbuf[5] = rbuf[7];
-      tbuf[6] = '\0';
-      *position = atoi (tbuf);
-    }
+  *position = atoi (rbuf + 2);
   return 0;
 }
 
@@ -306,8 +304,8 @@ Rts2DevFocuserRobofocus::getPos (int *position)
 int
 Rts2DevFocuserRobofocus::getTemp (float *temp)
 {
-  char command[9], rbuf[9], tbuf[7];
-  char command_buffer[8];
+  char command[10], rbuf[10];
+  char command_buffer[9];
 
 // Put together command with neccessary checksum
   sprintf (command_buffer, "FT000000");
@@ -315,53 +313,91 @@ Rts2DevFocuserRobofocus::getTemp (float *temp)
 
   sprintf (command, "%s%c", command_buffer, checksum);
 
-
   if (foc_write_read (command, 9, rbuf, 9) < 1)
     return -1;
-  else
-    {
-      tbuf[0] = rbuf[3];
-      tbuf[1] = rbuf[4];
-      tbuf[2] = rbuf[5];
-      tbuf[3] = rbuf[6];
-      tbuf[4] = rbuf[7];
-      tbuf[5] = '\0';
-      *temp = ((atof (tbuf) / 2) - 273.15);	// return temp in Celsius
-    }
+  *temp = ((atof (rbuf + 2) / 2) - 273.15);	// return temp in Celsius
   return 0;
+}
+
+int
+Rts2DevFocuserRobofocus::getSwitchState ()
+{
+  char command[10], rbuf[10];
+  char command_buffer[9];
+  int ret;
+
+  sprintf (command_buffer, "FP000000");
+  compute_checksum (command_buffer);
+
+  sprintf (command, "%s%c", command_buffer, checksum);
+  if (foc_write_read (command, 9, rbuf, 9) < 1)
+    return -1;
+  ret = 0;
+  for (int i = 0; i < switchNum; i++)
+    {
+      if (rbuf[i + 4] == '2')
+	ret |= (1 << i);
+    }
+  return ret;
 }
 
 int
 Rts2DevFocuserRobofocus::stepOut (int num)
 {
   if (num < 0)
-    return focus_move (CMD_FOCUS_MOVE_OUT, -1 * num);
-  return focus_move (CMD_FOCUS_MOVE_IN, num);
+    return focus_move (CMD_FOCUS_MOVE_IN, -1 * num);
+  return focus_move (CMD_FOCUS_MOVE_OUT, num);
 }
 
+int
+Rts2DevFocuserRobofocus::setTo (int num)
+{
+  char command[9], command_buf[10];
+  sprintf (command, "FG%06i", num);
+  compute_checksum (command);
+  sprintf (command_buf, "%s%c", command, checksum);
+  if (foc_write (command_buf, 9) < 1)
+    return -1;
+  return 0;
+}
 
+int
+Rts2DevFocuserRobofocus::setSwitch (int switch_num, int new_state)
+{
+  char command[10], rbuf[10];
+  char command_buffer[9] = "FP001111";
+  if (switch_num >= switchNum)
+    return -1;
+  int state = getSwitchState ();
+  if (state < 0)
+    return -1;
+  for (int i = 0; i < switchNum; i++)
+    {
+      if (state & (1 << i))
+	command_buffer[i + 4] = '2';
+    }
+  command_buffer[switch_num + 4] = (new_state == 1 ? '2' : '1');
+  compute_checksum (command_buffer);
+  sprintf (command, "%s%c", command_buffer, checksum);
+
+  if (foc_write_read (command, 9, rbuf, 9) < 1)
+    return -1;
+
+  infoAll ();
+  return 0;
+}
 
 int
 Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
 {
-  char *ticks[1];
-  int num_steps;
-
-  char command[10], rbuf[num_steps + 9];
+  char command[10];
   char command_buffer[9];
 
-  if (steps == 0)
-    {
-      return (0);
-    }
-
   // Number of steps moved must account for backlash compensation
-  if (strcmp (cmd, CMD_FOCUS_MOVE_OUT) == 0)
-    num_steps = steps + 40;
-  else
-    num_steps = steps;
-
-  ticks[1] = '\0';
+//  if (strcmp (cmd, CMD_FOCUS_MOVE_OUT) == 0)
+//    num_steps = steps + 40;
+//  else
+//    num_steps = steps;
 
   // Pad out command with leading zeros
   sprintf (command_buffer, "%s%06i", cmd, steps);
@@ -373,11 +409,32 @@ Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
 
   // Send command to focuser
 
-  if (foc_write_read (command, 9, rbuf, num_steps + 9) < 1)
+  if (foc_write (command, 9) < 1)
     return -1;
 
-  return 0;
+  step_num = steps;
 
+  return 0;
+}
+
+int
+Rts2DevFocuserRobofocus::isFocusing ()
+{
+  char rbuf[10];
+  int ret;
+  ret = foc_read (rbuf, 1);
+  if (ret == -1)
+    return ret;
+  // if we get F, read out end command
+  printf ("%c\n", *rbuf);
+  if (*rbuf == 'F')
+    {
+      ret = foc_read (rbuf + 1, 8);
+      if (ret != 8)
+	return -1;
+      return -2;
+    }
+  return 0;
 }
 
 // Calculate checksum (according to RoboFocus spec.)
@@ -393,9 +450,6 @@ Rts2DevFocuserRobofocus::compute_checksum (char *cmd)
     bytesum = bytesum + (int) (cmd[i]);
 
   checksum = toascii ((bytesum % 340));
-
-  return;
-
 }
 
 int

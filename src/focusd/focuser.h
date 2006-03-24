@@ -22,6 +22,8 @@ protected:
   int focPos;
   int focPositionNew;
   float focTemp;
+  int focSwitches;		// bitfield holding power switches state - for Robofocus
+  int switchNum;
   // minimal steps/sec count; 5 sec will be added to top it
   int focStepSec;
 
@@ -55,6 +57,12 @@ public:
   // default to use stepOut function
   virtual int setTo (int num);
   virtual int home ();
+
+  // set switch state
+  virtual int setSwitch (int switch_num, int new_state)
+  {
+    return -1;
+  }
 
   // callback functions from focuser connection
   int idle ();

@@ -30,6 +30,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, 5550, "F0")
   focStepSec = 100;
   homePos = 750;
 
+  focSwitches = 0;
+  switchNum = 0;		// zero switches
+
   addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
   addOption ('o', "home", 1, "home position (default to 750!)");
 }
@@ -72,6 +75,7 @@ Rts2DevFocuser::checkState ()
 	{
 	  ret = endFocusing ();
 	  infoAll ();
+	  setTimeout (USEC_SEC);
 	  if (ret)
 	    maskState (0, DEVICE_ERROR_MASK | FOC_MASK_FOCUSING,
 		       DEVICE_ERROR_HW | FOC_SLEEPING,
@@ -109,6 +113,7 @@ Rts2DevFocuser::sendInfo (Rts2Conn * conn)
 {
   conn->sendValue ("temp", focTemp);
   conn->sendValue ("pos", focPos);
+  conn->sendValue ("switches", focSwitches);
   return 0;
 }
 
@@ -117,6 +122,7 @@ Rts2DevFocuser::sendBaseInfo (Rts2Conn * conn)
 {
   conn->sendValue ("type", focType);
   conn->sendValue ("camera", focCamera);
+  conn->sendValue ("switch_num", switchNum);
   return 0;
 }
 
@@ -283,6 +289,15 @@ Rts2DevConnFocuser::commandAuthorized ()
       if (!paramEnd ())
 	return -2;
       return master->home (this);
+    }
+  else if (isCommand ("switch"))
+    {
+      int switch_num;
+      int new_state;
+      if (paramNextInteger (&switch_num) || paramNextInteger (&new_state)
+	  || !paramEnd ())
+	return -2;
+      return master->setSwitch (switch_num, new_state);
     }
   return Rts2DevConn::commandAuthorized ();
 }
