@@ -877,33 +877,36 @@ Rts2DevCameraApogee::camChipInfo (int chip)
 int
 Rts2DevCameraApogee::camCoolMax ()
 {
-  camera->write_CoolerSetPoint (-30);
-  camera->write_CoolerMode (Camera_CoolerMode_On);
-  return 0;
+  return camCoolTemp (-30);
 }
 
 int
 Rts2DevCameraApogee::camCoolHold ()
 {
-  if (isnan (nightCoolTemp))
-    camera->write_CoolerSetPoint (-20);
-  else
-    camera->write_CoolerSetPoint (nightCoolTemp);
-  camera->write_CoolerMode (Camera_CoolerMode_On);
-  return 0;
+  return camCoolTemp (isnan (nightCoolTemp) ? -20 : nightCoolTemp);
 }
 
 int
 Rts2DevCameraApogee::camCoolShutdown ()
 {
-  camera->write_CoolerSetPoint (40);
-  camera->write_CoolerMode (Camera_CoolerMode_Off);
+  Camera_CoolerMode cMode;
+  cMode = camera->read_CoolerMode ();
+  // first shutdown, if we are in shutdown, then off
+  if (cMode == Camera_CoolerMode_Shutdown)
+    camera->write_CoolerMode (Camera_CoolerMode_Off);
+  else
+    camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
   return 0;
 }
 
 int
 Rts2DevCameraApogee::camCoolTemp (float new_temp)
 {
+  Camera_CoolerMode cMode;
+  cMode = camera->read_CoolerMode ();
+  // we must traverse from shutdown to off mode before we can go to on
+  if (cMode == Camera_CoolerMode_Shutdown)
+    camera->write_CoolerMode (Camera_CoolerMode_Off);
   camera->write_CoolerSetPoint (new_temp);
   camera->write_CoolerMode (Camera_CoolerMode_On);
   return 0;

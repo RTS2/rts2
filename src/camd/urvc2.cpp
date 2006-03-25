@@ -20,7 +20,6 @@
 
 #include "urvc2/urvc.h"
 #include "camera_cpp.h"
-#include "filter.cpp"
 
 #define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
 
