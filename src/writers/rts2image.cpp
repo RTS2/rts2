@@ -45,6 +45,8 @@ Rts2Image::initData ()
   img_err = nan ("f");
 
   isAcquiring = 0;
+
+  config_rotang = nan ("f");
 }
 
 Rts2Image::Rts2Image ()
@@ -915,6 +917,25 @@ Rts2Image::closeFile ()
 	  setValue ("RA_ERR", ra_err, "RA error in position");
 	  setValue ("DEC_ERR", dec_err, "DEC error in position");
 	  setValue ("POS_ERR", getAstrometryErr (), "error in position");
+	}
+      if (!isnan (config_rotang))
+	{
+	  int flip;
+	  flip = getMountFlip ();
+	  switch (flip)
+	    {
+	    case 1:
+	      config_rotang += 180.0;
+	      config_rotang = ln_range_degrees (config_rotang);
+	    case 0:
+	      setValue ("ROTANG", config_rotang,
+			"camera rotation over X axis");
+	      config_rotang = nan ("f");
+	      break;
+	    default:
+	      setValue ("ROTANG", config_rotang,
+			"CONFIG rotang - not corrected for flip");
+	    }
 	}
       struct timeval now;
       gettimeofday (&now, NULL);

@@ -37,7 +37,7 @@ protected:
   double yoa;
   double ter_xoa;
   double ter_yoa;
-  double rotang;
+  double config_rotang;
   int flip;
   char filter[200];
 

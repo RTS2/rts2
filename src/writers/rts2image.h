@@ -57,6 +57,9 @@ private:
   short int mean;
   int *histogram;
   int isAcquiring;
+  // that value is nan when rotang was already set; it's same double when rotang was set (by camera)
+  // and become nan once we save image (so mnt_flip can be applied properly).
+  double config_rotang;
 
   void initData ();
 protected:
@@ -342,6 +345,11 @@ public:
   int getFlip ();
 
   int getError (double &eRa, double &eDec, double &eRad);
+
+  void setConfigRotang (double in_config_rotang)
+  {
+    config_rotang = in_config_rotang;
+  }
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 };

@@ -101,11 +101,7 @@ Rts2Image::getRotang ()
       getFailed++;
       return 0;
     }
-  // should be only 0 or 1
-  ret = getMountFlip ();
-  // mount flip correction
-  val += ret * 180.0;
-  return ln_deg_to_rad (val);
+  return val;
 }
 
 double
@@ -173,7 +169,7 @@ Rts2Image::getMountFlip ()
   if (ret)
     {
       getFailed++;
-      return 0;
+      return -1;
     }
   return val;
 }
