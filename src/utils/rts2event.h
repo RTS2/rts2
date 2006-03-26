@@ -12,6 +12,7 @@
 #define EVENT_CLEAR_WAIT	8
 
 #define EVENT_GET_RADEC		10
+#define EVENT_MOUNT_CHANGE	11
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
 
