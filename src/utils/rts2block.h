@@ -280,12 +280,20 @@ public:
     return connectionTimeout;
   }
 
+  Rts2ServerState *getStateObject (int state_num)
+  {
+    if (state_num < 0 || state_num >= MAX_STATE)
+      return NULL;
+    return serverState[state_num];
+  }
+
 protected:
   virtual int command ();
   virtual int message ();
   virtual int informations ();
   virtual int status ();
   int sendNextCommand ();
+
   int commandReturn ();
   inline char *getCommand ()
   {
