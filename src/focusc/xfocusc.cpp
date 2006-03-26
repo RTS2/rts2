@@ -785,7 +785,7 @@ Rts2GenFocClient (in_argc, in_argv)
 	     "cross type (default to 1; possible values 0 - no cross, 1 - rectangles\n"
 	     "    2 - circles, 3 - BOOTES special");
   addOption ('S', "save", 0, "save filenames (default don't save");
-  addOption ('C', "change_val", 1,
+  addOption ('m', "change_val", 1,
 	     "change value (in arcseconds; default to 15 arcsec");
 }
 
@@ -835,7 +835,7 @@ Rts2xfocus::processOption (int in_opt)
     case 'X':
       crossType = atoi (optarg);
       break;
-    case 'C':
+    case 'm':
       changeVal = atof (optarg);
       break;
     default:
