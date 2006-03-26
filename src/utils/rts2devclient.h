@@ -90,6 +90,8 @@ public:
       clearFailedCount ();
     return 0;
   }
+
+  int getStatus (int stat_num);
 };
 
 /**************************************
@@ -230,6 +232,12 @@ public:
   virtual void filterOK ()
   {
   }
+};
+
+class Rts2DevClientAugerShooter:public Rts2DevClient
+{
+public:
+  Rts2DevClientAugerShooter (Rts2Conn * in_connection);
 };
 
 class Rts2DevClientExecutor:public Rts2DevClient

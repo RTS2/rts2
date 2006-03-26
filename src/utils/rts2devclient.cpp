@@ -220,6 +220,12 @@ Rts2DevClient::setWaitMove ()
     waiting = WAIT_MOVE;
 }
 
+int
+Rts2DevClient::getStatus (int stat_num)
+{
+  return connection->getState (stat_num);
+}
+
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
@@ -289,7 +295,8 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool Rts2DevClientCamera::isIdle ()
+bool
+Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -608,7 +615,8 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool Rts2DevClientPhot::isIntegrating ()
+bool
+Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
@@ -658,11 +666,20 @@ Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
     }
 }
 
+Rts2DevClientAugerShooter::Rts2DevClientAugerShooter (Rts2Conn * in_connection):Rts2DevClient
+  (in_connection)
+{
+  addValue (new Rts2ValueTime ("last_target_time"));
+  addValue (new Rts2ValueTime ("last_packet"));
+}
+
 Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
   addValue (new Rts2ValueDouble ("temp"));
   addValue (new Rts2ValueInteger ("pos"));
+  addValue (new Rts2ValueInteger ("switch_num"));
+  addValue (new Rts2ValueInteger ("switches"));
 }
 
 Rts2DevClientFocus::~Rts2DevClientFocus (void)
