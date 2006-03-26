@@ -14,6 +14,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <X11/keysymdef.h>
 
 #include <pthread.h>
 
@@ -39,6 +40,9 @@ private:
 
   int crossType;
   int starsType;
+
+  // initially in arcsec, but converted (and used) in degrees
+  double changeVal;
 
   virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
 public:
@@ -135,11 +139,14 @@ private:
   struct timeval buttonImageTime;
 
   struct timeval exposureStart;
+
+  double change_val;		// change value in degrees
 protected:
   virtual void printFWHMTable ();
 
 public:
-  Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master);
+  Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val,
+		    Rts2xfocus * in_master);
   virtual ~ Rts2xfocusCamera (void);
 
   virtual void postEvent (Rts2Event * event);
@@ -148,7 +155,9 @@ public:
   void setCrossType (int in_crossType);
 };
 
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, Rts2xfocus * in_master):
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection,
+				    double in_change_val,
+				    Rts2xfocus * in_master):
 Rts2GenFocCamera (in_connection, in_master)
 {
   master = in_master;
@@ -169,6 +178,8 @@ Rts2GenFocCamera (in_connection, in_master)
 
   timerclear (&buttonImageTime);
   timerclear (&exposureStart);
+
+  change_val = in_change_val;
 }
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
@@ -456,6 +467,7 @@ Rts2xfocusCamera::XeventLoop ()
 {
   XEvent event;
   KeySym ks;
+  struct ln_equ_posn change;
 
   while (1)
     {
@@ -520,6 +532,39 @@ Rts2xfocusCamera::XeventLoop ()
 	      break;
 	    case XK_u:
 	      setSaveImage (0 || exe);
+	      break;
+	      // change stuff
+	    case XK_h:
+	    case XK_Left:
+	      change.ra = -1 * change_val;
+	      change.dec = 0;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+	      break;
+	    case XK_j:
+	    case XK_Down:
+	      change.ra = 0;
+	      change.dec = -1 * change_val;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+	      break;
+	    case XK_k:
+	    case XK_Up:
+	      change.ra = 0;
+	      change.dec = change_val;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+	      break;
+	    case XK_l:
+	    case XK_Right:
+	      change.ra = change_val;
+	      change.dec = 0;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
 	      break;
 	    default:
 	      break;
@@ -732,12 +777,16 @@ Rts2GenFocClient (in_argc, in_argv)
   crossType = 1;
   starsType = 0;
 
+  changeVal = 15;
+
   addOption ('x', "display", 1, "name of X display");
   addOption ('t', "stars", 0, "draw stars over image (default to don't)");
   addOption ('X', "cross", 1,
 	     "cross type (default to 1; possible values 0 - no cross, 1 - rectangles\n"
 	     "    2 - circles, 3 - BOOTES special");
   addOption ('S', "save", 0, "save filenames (default don't save");
+  addOption ('C', "change_val", 1,
+	     "change value (in arcseconds; default to 15 arcsec");
 }
 
 Rts2xfocus::~Rts2xfocus (void)
@@ -759,6 +808,7 @@ Rts2xfocus::help ()
     << "\tc     .. center (1/2x1/2 chip size) exposure" << std::endl
     << "\ty     .. save fits file\n" << std::endl
     << "\tu     .. don't save fits file\n" << std::endl
+    << "\thjkl, arrrows .. move (change mount position)\n" << std::endl
     << "Examples:" << std::endl
     <<
     "\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1"
@@ -785,6 +835,9 @@ Rts2xfocus::processOption (int in_opt)
     case 'X':
       crossType = atoi (optarg);
       break;
+    case 'C':
+      changeVal = atof (optarg);
+      break;
     default:
       return Rts2GenFocClient::processOption (in_opt);
     }
@@ -798,6 +851,9 @@ Rts2xfocus::init ()
   ret = Rts2GenFocClient::init ();
   if (ret)
     return ret;
+
+  // convert to degrees
+  changeVal /= 3600.0;
 
   display = XOpenDisplay (displayName);
   if (!display)
@@ -835,7 +891,7 @@ Rts2GenFocCamera *
 Rts2xfocus::createFocCamera (Rts2Conn * conn)
 {
   Rts2xfocusCamera *cam;
-  cam = new Rts2xfocusCamera (conn, this);
+  cam = new Rts2xfocusCamera (conn, changeVal, this);
   cam->setCrossType (crossType);
   return cam;
 }
