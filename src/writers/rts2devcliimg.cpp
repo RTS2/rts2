@@ -244,6 +244,7 @@ Rts2DevClientTelescopeImage::Rts2DevClientTelescopeImage (Rts2Conn * in_connecti
 void
 Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 {
+  struct ln_equ_posn *change;	// change in degrees
   switch (event->getType ())
     {
     case EVENT_WRITE_TO_IMAGE:
@@ -285,6 +286,10 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       break;
     case EVENT_GET_RADEC:
       getEqu ((struct ln_equ_posn *) event->getArg ());
+      break;
+    case EVENT_MOUNT_CHANGE:
+      change = (struct ln_equ_posn *) event->getArg ();
+      queCommand (new Rts2CommandChange (this, change->ra, change->dec));
       break;
     }
 
