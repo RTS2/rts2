@@ -500,6 +500,12 @@ Rts2Command (in_master)
   free (command);
 }
 
+Rts2CommandExecShower::Rts2CommandExecShower (Rts2Block * in_master):
+Rts2Command (in_master)
+{
+  setCommand ("shower");
+}
+
 Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block * in_master):Rts2Command
   (in_master)
 {

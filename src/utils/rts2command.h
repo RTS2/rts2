@@ -284,6 +284,12 @@ public:
   Rts2CommandExecGrb (Rts2Block * in_master, int grb_id);
 };
 
+class Rts2CommandExecShower:public Rts2Command
+{
+public:
+  Rts2CommandExecShower (Rts2Block * in_master);
+};
+
 class Rts2CommandKillAll:public Rts2Command
 {
 public:
