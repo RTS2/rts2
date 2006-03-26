@@ -36,7 +36,9 @@ Rts2TelModel::apply (struct ln_equ_posn *pos, double lst)
   for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
        iter != terms.end (); iter++)
     {
+//      std::cout << (*iter) << "Before: " << pos->ra << " " << pos->dec << std::endl;
       (*iter)->apply (pos, cond);
+//      std::cout << "After: " << pos->ra << " " << pos->dec << std::endl;
     }
   return 0;
 }
@@ -61,74 +63,80 @@ Rts2TelModel::reverse (struct ln_equ_posn *pos, double sid)
 std::istream & operator >> (std::istream & is, Rts2TelModel * model)
 {
   std::string name;
-  char eq;
+
   double corr;
+  double sigma;
   Rts2ModelTerm *term;
-  // load line..
+  // first line
+  is.getline (model->caption, 80);
+  // second line - method, number, refA, refB
+  is >> model->method >> model->num >> model->rms >> model->refA >> model->
+    refB;
+  is.ignore (2000, is.widen ('\n'));
+  if (is.fail ())
+    return is;
   while (!is.eof ())
     {
       is >> name;
-      // ignore comment lines
-      if (name.at (0) == '#')
-	{
-	  // read till end of line
-	  is.ignore (2000);
-	  continue;
-	}
-      // get corr parameter
-      is >> eq >> corr;
-      if (eq != '=' || is.fail ())
+      if (name == "END")
 	{
 	  return is;
 	}
-
+      // get corr parameter
+      is >> corr >> sigma;
+      if (is.fail ())
+	{
+	  return is;
+	}
+      // correction is in degrees to speed up a calculation
+      corr /= 3600.0;
       if (name == "ME")
 	{
-	  term = new Rts2TermME (corr);
+	  term = new Rts2TermME (corr, sigma);
 	}
       else if (name == "MA")
 	{
-	  term = new Rts2TermMA (corr);
+	  term = new Rts2TermMA (corr, sigma);
 	}
       else if (name == "IH")
 	{
-	  term = new Rts2TermIH (corr);
+	  term = new Rts2TermIH (corr, sigma);
 	}
       else if (name == "ID")
 	{
-	  term = new Rts2TermID (corr);
+	  term = new Rts2TermID (corr, sigma);
 	}
       else if (name == "CH")
 	{
-	  term = new Rts2TermCH (corr);
+	  term = new Rts2TermCH (corr, sigma);
 	}
       else if (name == "NP")
 	{
-	  term = new Rts2TermNP (corr);
+	  term = new Rts2TermNP (corr, sigma);
 	}
       else if (name == "PHH")
 	{
-	  term = new Rts2TermPHH (corr);
+	  term = new Rts2TermPHH (corr, sigma);
 	}
       else if (name == "PDD")
 	{
-	  term = new Rts2TermPDD (corr);
+	  term = new Rts2TermPDD (corr, sigma);
 	}
       else if (name == "A1H")
 	{
-	  term = new Rts2TermA1H (corr);
+	  term = new Rts2TermA1H (corr, sigma);
 	}
       else if (name == "A1D")
 	{
-	  term = new Rts2TermA1D (corr);
+	  term = new Rts2TermA1D (corr, sigma);
 	}
       else if (name == "TF")
 	{
-	  term = new Rts2TermTF (corr);
+	  term = new Rts2TermTF (corr, sigma);
 	}
       else if (name == "TX")
 	{
-	  term = new Rts2TermTX (corr);
+	  term = new Rts2TermTX (corr, sigma);
 	}
       else
 	{

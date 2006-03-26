@@ -18,11 +18,13 @@ private:
   const char *name;
 protected:
   double corr;			// corection parameter, always in degrees!
+  double sigma;			// model sigma
 public:
-    Rts2ModelTerm (const char *in_name, double in_corr)
+    Rts2ModelTerm (const char *in_name, double in_corr, double in_sigma)
   {
     name = in_name;
     corr = in_corr;
+    sigma = in_sigma;
   }
   virtual ~ Rts2ModelTerm (void)
   {
@@ -53,7 +55,8 @@ std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term);
 class Rts2TermME:public Rts2ModelTerm
 {
 public:
-  Rts2TermME (double in_corr):Rts2ModelTerm ("ME", in_corr)
+  Rts2TermME (double in_corr, double in_sigma):Rts2ModelTerm ("ME", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -68,7 +71,8 @@ public:
 class Rts2TermMA:public Rts2ModelTerm
 {
 public:
-  Rts2TermMA (double in_corr):Rts2ModelTerm ("MA", in_corr)
+  Rts2TermMA (double in_corr, double in_sigma):Rts2ModelTerm ("MA", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -83,7 +87,8 @@ public:
 class Rts2TermIH:public Rts2ModelTerm
 {
 public:
-  Rts2TermIH (double in_corr):Rts2ModelTerm ("IH", in_corr)
+  Rts2TermIH (double in_corr, double in_sigma):Rts2ModelTerm ("IH", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -98,7 +103,8 @@ public:
 class Rts2TermID:public Rts2ModelTerm
 {
 public:
-  Rts2TermID (double in_corr):Rts2ModelTerm ("ID", in_corr)
+  Rts2TermID (double in_corr, double in_sigma):Rts2ModelTerm ("ID", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -113,7 +119,8 @@ public:
 class Rts2TermCH:public Rts2ModelTerm
 {
 public:
-  Rts2TermCH (double in_corr):Rts2ModelTerm ("CH", in_corr)
+  Rts2TermCH (double in_corr, double in_sigma):Rts2ModelTerm ("CH", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -128,7 +135,8 @@ public:
 class Rts2TermNP:public Rts2ModelTerm
 {
 public:
-  Rts2TermNP (double in_corr):Rts2ModelTerm ("NP", in_corr)
+  Rts2TermNP (double in_corr, double in_sigma):Rts2ModelTerm ("NP", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -143,7 +151,8 @@ public:
 class Rts2TermPHH:public Rts2ModelTerm
 {
 public:
-  Rts2TermPHH (double in_corr):Rts2ModelTerm ("PHH", in_corr)
+  Rts2TermPHH (double in_corr, double in_sigma):Rts2ModelTerm ("PHH", in_corr,
+							       in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -158,7 +167,8 @@ public:
 class Rts2TermPDD:public Rts2ModelTerm
 {
 public:
-  Rts2TermPDD (double in_corr):Rts2ModelTerm ("PDD", in_corr)
+  Rts2TermPDD (double in_corr, double in_sigma):Rts2ModelTerm ("PDD", in_corr,
+							       in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -173,7 +183,8 @@ public:
 class Rts2TermA1H:public Rts2ModelTerm
 {
 public:
-  Rts2TermA1H (double in_corr):Rts2ModelTerm ("A1H", in_corr)
+  Rts2TermA1H (double in_corr, double in_sigma):Rts2ModelTerm ("A1H", in_corr,
+							       in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -188,7 +199,8 @@ public:
 class Rts2TermA1D:public Rts2ModelTerm
 {
 public:
-  Rts2TermA1D (double in_corr):Rts2ModelTerm ("A1D", in_corr)
+  Rts2TermA1D (double in_corr, double in_sigma):Rts2ModelTerm ("A1D", in_corr,
+							       in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -203,7 +215,8 @@ public:
 class Rts2TermTF:public Rts2ModelTerm
 {
 public:
-  Rts2TermTF (double in_corr):Rts2ModelTerm ("TF", in_corr)
+  Rts2TermTF (double in_corr, double in_sigma):Rts2ModelTerm ("TF", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,
@@ -218,7 +231,8 @@ public:
 class Rts2TermTX:public Rts2ModelTerm
 {
 public:
-  Rts2TermTX (double in_corr):Rts2ModelTerm ("TX", in_corr)
+  Rts2TermTX (double in_corr, double in_sigma):Rts2ModelTerm ("TX", in_corr,
+							      in_sigma)
   {
   }
   virtual void apply (struct ln_equ_posn *pos,

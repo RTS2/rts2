@@ -11,7 +11,9 @@ in180 (double x)
 
 std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term)
 {
-  os << term->name << " = " << term->corr << std::endl;
+  // correction is (internally) in degrees!
+  os << term->name << " " << (term->corr *
+			      3600.0) << " " << term->sigma << std::endl;
   return os;
 }
 
@@ -109,7 +111,7 @@ void
 Rts2TermNP::apply (struct ln_equ_posn *pos,
 		   Rts2ObsConditions * obs_conditions)
 {
-  pos->ra = pos->ra - (corr) * tan (ln_deg_to_rad (pos->ra));
+  pos->ra = pos->ra - (corr) * tan (ln_deg_to_rad (pos->dec));
   pos->dec = pos->dec;
 }
 
