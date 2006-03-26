@@ -10,6 +10,7 @@ class LibnovaRa
 protected:
   double ra;
   void toHms (struct ln_hms *ra_hms);
+  void fromHms (struct ln_hms *ra_hms);
 public:
     LibnovaRa ()
   {
@@ -24,6 +25,7 @@ public:
     return ra;
   }
   friend std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
+  friend std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra);
 };
 
 class LibnovaRaJ2000:public LibnovaRa
@@ -36,6 +38,16 @@ public:
   {
   }
   friend std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
+};
+
+class LibnovaHaM:public LibnovaRa
+{
+public:
+  LibnovaHaM ():LibnovaRa ()
+  {
+  }
+  friend std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM);
+  friend std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM);
 };
 
 class LibnovaRaComp:public LibnovaRa
@@ -55,6 +67,7 @@ class LibnovaDeg
 protected:
   double deg;
   void toDms (struct ln_dms *deg_dms);
+  void fromDms (struct ln_dms *deg_dms);
 public:
     LibnovaDeg ()
   {
@@ -64,11 +77,16 @@ public:
   {
     deg = in_deg;
   }
+  LibnovaDeg (struct ln_dms *deg_dms)
+  {
+    fromDms (deg_dms);
+  }
   double getDeg ()
   {
     return deg;
   }
   friend std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
+  friend std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg);
 };
 
 class LibnovaDeg90:public LibnovaDeg
@@ -159,6 +177,56 @@ public:
 				     LibnovaDegDist & l_deg);
 };
 
+class LibnovaRaDec
+{
+private:
+  LibnovaRa * ra;
+  LibnovaDec *dec;
+public:
+    LibnovaRaDec ()
+  {
+    ra = NULL;
+    dec = NULL;
+  }
+
+  LibnovaRaDec (struct ln_equ_posn *pos)
+  {
+    ra = new LibnovaRa (pos->ra);
+    dec = new LibnovaDec (pos->dec);
+  }
+
+  virtual ~ LibnovaRaDec (void)
+  {
+    delete ra;
+    delete dec;
+  }
+
+  double getRa ()
+  {
+    if (ra)
+      return ra->getRa ();
+    return nan ("f");
+  }
+
+  double getDec ()
+  {
+    if (dec)
+      return dec->getDec ();
+    return nan ("f");
+  }
+
+  void getPos (struct ln_equ_posn *pos)
+  {
+    pos->ra = getRa ();
+    pos->dec = getDec ();
+  }
+
+  friend std::ostream & operator << (std::ostream & _os,
+				     LibnovaRaDec l_radec);
+  friend std::istream & operator >> (std::istream & _is,
+				     LibnovaRaDec & l_radec);
+};
+
 class LibnovaDate
 {
 private:
@@ -228,9 +296,13 @@ public:
 };
 
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
+std::istream & operator >> (std::istream & _os, LibnovaRa & l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
+std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM);
+std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM);
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
+std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec);
 std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec);
@@ -238,6 +310,10 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg);
 std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg);
+
+std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec);
+std::istream & operator >> (std::istream & _is, LibnovaRaDec & l_radec);
+
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
 std::istream & operator >> (std::istream & _is, LibnovaDate & l_date);
 std::ostream & operator << (std::ostream & _os, Rts2Night night);

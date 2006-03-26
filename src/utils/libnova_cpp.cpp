@@ -10,6 +10,12 @@ LibnovaRa::toHms (struct ln_hms *ra_hms)
   ln_deg_to_hms (ra, ra_hms);
 }
 
+void
+LibnovaRa::fromHms (struct ln_hms *ra_hms)
+{
+  ra = ln_hms_to_deg (ra_hms);
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 {
   if (isnan (l_ra.ra))
@@ -23,8 +29,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
   int old_precison = _os.precision (2);
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-  _os << std::setw (2) << ra_hms.hours << ":"
-    << std::setw (2) << ra_hms.minutes << ":"
+  _os << std::setw (2) << ra_hms.hours << " "
+    << std::setw (2) << ra_hms.minutes << " "
     << std::setw (5) << ra_hms.seconds;
   _os.setf (old_settings);
   _os.precision (old_precison);
@@ -32,10 +38,42 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
   return _os;
 }
 
+std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra)
+{
+  struct ln_hms hms;
+  _is >> hms.hours >> hms.minutes >> hms.seconds;
+  l_ra.fromHms (&hms);
+  return _is;
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra)
 {
   _os << l_ra.getRa () << " (" << LibnovaRa (l_ra) << ")";
   return _os;
+}
+
+std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM)
+{
+  struct ln_hms hms;
+  l_haM.toHms (&hms);
+  int old_precison = _os.precision (2);
+  char old_fill = _os.fill ('0');
+  _os << std::setw (2) << hms.hours << " "
+    << std::setw (5) << (hms.minutes + hms.seconds / 60.0);
+  _os.fill (old_fill);
+  _os.precision (old_precison);
+  return _os;
+}
+
+std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM)
+{
+  struct ln_hms hms;
+  _is >> hms.hours >> hms.seconds;
+  hms.minutes = (unsigned short int) floor (hms.seconds);
+  hms.seconds -= hms.minutes;
+  hms.seconds *= 60.0;
+  l_haM.fromHms (&hms);
+  return _is;
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra)
@@ -66,6 +104,12 @@ LibnovaDeg::toDms (struct ln_dms *deg_dms)
   ln_deg_to_dms (deg, deg_dms);
 }
 
+void
+LibnovaDeg::fromDms (struct ln_dms *deg_dms)
+{
+  deg = ln_dms_to_deg (deg_dms);
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 {
   if (isnan (l_deg.deg))
@@ -80,13 +124,26 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << (deg_dms.neg ? '-' : '+')
-    << std::setw (3) << deg_dms.degrees << "o"
-    << std::setw (2) << deg_dms.minutes << "'"
+    << std::setw (3) << deg_dms.degrees << " "
+    << std::setw (2) << deg_dms.minutes << " "
     << std::setw (5) << deg_dms.seconds;
   _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
   return _os;
+}
+
+std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg)
+{
+  struct ln_dms deg_dms;
+  char neg;
+  _is >> neg >> deg_dms.degrees >> deg_dms.minutes >> deg_dms.seconds;
+  if (neg == '-')
+    deg_dms.neg = 1;
+  else
+    deg_dms.neg = 0;
+  l_deg.fromDms (&deg_dms);
+  return _is;
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
@@ -103,8 +160,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << std::setw (1) << (deg_dms.neg ? '-' : '+')
-    << std::setw (2) << deg_dms.degrees << "o"
-    << std::setw (2) << deg_dms.minutes << "'"
+    << std::setw (2) << deg_dms.degrees << " "
+    << std::setw (2) << deg_dms.minutes << " "
     << std::setw (5) << deg_dms.seconds;
   _os.setf (old_settings);
   _os.precision (old_precison);
@@ -126,8 +183,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << (deg_dms.neg ? '-' : '+')
-    << std::setw (2) << deg_dms.degrees << "o"
-    << std::setw (2) << deg_dms.minutes << "'"
+    << std::setw (2) << deg_dms.degrees << " "
+    << std::setw (2) << deg_dms.minutes << " "
     << std::setw (4) << deg_dms.seconds;
   _os.setf (old_settings);
   _os.precision (old_precison);
@@ -280,6 +337,23 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
       out += val / step;
       step *= 60.0;
     }
+}
+
+std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
+{
+  if (l_radec.ra && l_radec.dec)
+    _os << *(l_radec.ra) << " " << *(l_radec.dec);
+  return _os;
+}
+
+std::istream & operator >> (std::istream & _is, LibnovaRaDec & l_radec)
+{
+  delete l_radec.ra;
+  delete l_radec.dec;
+  l_radec.ra = new LibnovaRa ();
+  l_radec.dec = new LibnovaDec ();
+  _is >> (*(l_radec.ra)) >> (*(l_radec.dec));
+  return _is;
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
