@@ -820,7 +820,7 @@ Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
 int
 Rts2DevCamera::camFilter (int new_filter)
 {
-  int ret;
+  int ret = -1;
   if (wheelDevice)
     {
       struct filterStart fs;
