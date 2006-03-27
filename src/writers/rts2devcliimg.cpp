@@ -370,7 +370,7 @@ Rts2DevClientDomeImage::postEvent (Rts2Event * event)
       image->setValue ("RAIN", getValueInteger ("rain"),
 		       "whenever is raining");
       image->setValue ("WINDSPED", getValueDouble ("windspeed"), "windspeed");
-      image->setValue ("DOME_TMP", getValueDouble ("(outside) temperature"),
+      image->setValue ("DOME_TMP", getValueDouble ("temperature"),
 		       "temperature in degrees C");
       image->setValue ("DOME_HUM", getValueDouble ("humidity"),
 		       "(outside) humidity");
