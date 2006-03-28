@@ -182,7 +182,7 @@ applyME (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	M = -M_PI + M;
     }
 
-  M = M - ln_deg_to_rad (corr / 3600);
+  M = M + ln_deg_to_rad (corr / 3600);
 
   if (M > M_PI)
     M -= 2 * M_PI;
@@ -214,9 +214,9 @@ applyMA (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 {
   double d, h;
 
-  d = in->dec - (corr / 3600) * sin (ln_deg_to_rad (in->ra));
+  d = in->dec + (corr / 3600) * sin (ln_deg_to_rad (in->ra));
   h =
-    in->ra +
+    in->ra -
     (corr / 3600) * cos (ln_deg_to_rad (in->ra)) *
     tan (ln_deg_to_rad (in->dec));
 
@@ -231,7 +231,7 @@ applyIH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	 double a1, double a2, double phi)
 {
   // Add a zero point to the hour angle
-  out->ra = in180 (in->ra - corr / 3600);
+  out->ra = in180 (in->ra + corr / 3600);
   // No change for declination
   out->dec = in->dec;
 }
@@ -243,29 +243,59 @@ applyID (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	 double a1, double a2, double phi)
 {
   // Add a zero point to the declination
-  out->dec = in180 (in->dec - corr / 3600);
+  out->dec = in180 (in->dec + corr / 3600);
   // No change for hour angle
   out->ra = in->ra;
 }
 
 // East-West Collimation Error
-// status: OK
+// status: OK -- patched with (-1*a1) to behave well
 void
 applyCH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	 double a1, double a2, double phi)
 {
-  out->ra = in->ra - (corr / 3600) / cos (ln_deg_to_rad (in->dec));
+  // out->ra = in->ra - (-1*a1) * (corr / 3600) / cos (ln_deg_to_rad (in->dec));
+  out->ra = in->ra + (corr / 3600) / cos (ln_deg_to_rad (in->dec));
+  printf ("\033[14;3HCH:"
+	  "in->ra=%f "
+	  "corr=%f "
+	  "in->dec=%f "
+	  "1/cos(in->dec)=%f "
+	  "fix=%f",
+	  in->ra,
+	  corr / 3600,
+	  in->dec,
+	  1 / cos (ln_deg_to_rad (in->dec)),
+	  +(corr / 3600) / cos (ln_deg_to_rad (in->dec)));
+
   out->dec = in->dec;
 }
 
 // HA/Dec Non-perpendicularity
-// status: chyba
+// status: used to fail, now testing
 void
 applyNP (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	 double a1, double a2, double phi)
 {
-  out->ra = in->ra - (corr / 3600) * tan (ln_deg_to_rad (in->ra));
+  out->ra = in->ra + (corr / 3600) * tan (ln_deg_to_rad (in->dec));
   out->dec = in->dec;
+}
+
+// FO: Fork Flexure
+// status: testing
+void
+applyFO (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	 double a1, double a2, double phi)
+{
+  out->dec = in->dec + (corr / 3600) * cos (ln_deg_to_rad (in->ra));
+  out->ra = in->ra;
+}
+
+// HPSH4...? Zvrhlost! Nicmene para ji potrebuje, takze casem...
+void
+applyHPSH4 (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	    double a1, double a2, double phi)
+{
 }
 
 // Step size in h (for Paramount, where it's unsure)
@@ -275,7 +305,7 @@ applyPHH (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	  double a1, double a2, double phi)
 {
   out->ra =
-    in->ra -
+    in->ra +
     ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (in->ra));
   out->dec = in->dec;
 }
@@ -287,9 +317,42 @@ applyPDD (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
 	  double a1, double a2, double phi)
 {
   out->dec =
-    in->dec -
+    in->dec +
     ln_rad_to_deg (ln_deg_to_rad (corr / 3600) * ln_deg_to_rad (in->dec));
+  //out->dec = in->dec - ln_rad_to_deg ( (corr / 3600) * ln_deg_to_rad (in->dec));
   out->ra = in->ra;
+}
+
+void
+applyHCEC (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	   double a1, double a2, double phi)
+{
+  out->ra = in->ra + (corr / 3600) * cos (ln_deg_to_rad (in->ra));
+  out->dec = in->dec;
+}
+
+void
+applyHCES (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	   double a1, double a2, double phi)
+{
+  out->ra = in->ra + (corr / 3600) * sin (ln_deg_to_rad (in->ra));
+  out->dec = in->dec;
+}
+
+void
+applyDCEC (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	   double a1, double a2, double phi)
+{
+  out->ra = in->ra;
+  out->dec = in->dec + (corr / 3600) * cos (ln_deg_to_rad (in->dec));
+}
+
+void
+applyDCES (struct ln_equ_posn *in, struct ln_equ_posn *out, double corr,
+	   double a1, double a2, double phi)
+{
+  out->ra = in->ra;
+  out->dec = in->dec + (corr / 3600) * sin (ln_deg_to_rad (in->dec));
 }
 
 // Aux1 to h (for Paramount, where it's unsure)
@@ -424,6 +487,8 @@ struct tpa_termref
   {
   applyID, "ID"},
   {
+  applyFO, "FO"},
+  {
   applyCH, "CH"},
   {
   applyNP, "NP"},
@@ -438,7 +503,15 @@ struct tpa_termref
   {
   applyTX, "TX"},
   {
-  applyTF, "TF"}
+  applyTF, "TF"},
+  {
+  applyHCEC, "HCEC"},
+  {
+  applyHCES, "HCES"},
+  {
+  applyDCEC, "DCEC"},
+  {
+  applyDCES, "DCES"}
 };
 
 int
@@ -525,6 +598,15 @@ get_model (char *filename)
   return 0;
 }
 
+void
+release_model ()
+{
+  int i;
+
+  for (i = 0; i < model->terms; i++)
+    free (model->term[i]);
+}
+
 #ifdef DEBUG
 void
 bonz (struct ln_equ_posn *pos)
@@ -569,6 +651,32 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
     applyProperMotion (tel_pos, tel_pos, proper_motion, JD);
   applyAberation (tel_pos, tel_pos, JD);
   applyPrecession (tel_pos, tel_pos, JD);
+
+  {
+    char z = '+';
+    double d, dm, ds, r, rm, rs;
+    d = tel_pos->dec;
+    r = tel_pos->ra;
+    if (d < 0)
+      {
+	z = '-';
+	d = -d;
+      }
+    dm = floor (60 * (d - floor (d)));
+    ds = 60 * (60 * d - floor (60 * d));
+    d = floor (d);
+
+    r /= 15;
+    rm = floor (60 * (r - floor (r)));
+    rs = 60 * (60 * r - floor (60 * r));
+    r = floor (r);
+
+
+    printf
+      ("\033[3;3HCURRENT COORD: [%.4f:%.4f] %02.0f %02.0f %05.2f %c%02.0f %02.0f %04.1f   \n",
+       tel_pos->ra, tel_pos->dec, r, rm, rs, z, d, dm, ds);
+  }
+
   if (obs)
     {
       applyRefraction (tel_pos, tel_pos, obs, JD);
@@ -612,6 +720,8 @@ tpoint_correction (struct ln_equ_posn *mean_pos,	/* mean pos of the object to go
   tel_pos->ra = in360 (Q - tel_pos->ra);	// make ra from ha
 
 //  bonz (tel_pos);
+//
+  release_model ();
 
   return ret;
 }
@@ -633,7 +743,7 @@ tpoint_apply_now (double *ra, double *dec, double aux1, double aux2, int rev)
   double JD;
   int ret = 0;
 
-  printf ("[%d]", rev);
+//printf("[%d]", rev);
 
   mean_pos.ra = *ra;
   mean_pos.dec = *dec;
@@ -744,12 +854,13 @@ main ()
 
 	  printf (" 0 0 2000 ", r, d);
 
-	  ra = r;
-	  de = d tpoint_apply_now (&r, &d, (float) flip, 0, 0);
+	  //ra=r;de=d
+
+	  tpoint_apply_now (&r, &d, (float) flip, 0, 0);
 
 	  // reverse the direction of the correction :*)
-	  r = 2 * ra - r;
-	  d = 2 * de - d;
+	  //r=2*ra-r;
+	  //d=2*de-d;
 
 	  f2dms (r / 15, NULL, ' ');
 	  f2dms (d, NULL, '+');
