@@ -54,13 +54,19 @@ private:
   char *modelFile;
   Rts2TelModel *model;
 
+  char *modelFile0;
+  Rts2TelModel *model0;
+
   void applyAberation (struct ln_equ_posn *pos, double JD);
   void applyPrecession (struct ln_equ_posn *pos, double JD);
   void applyRefraction (struct ln_equ_posn *pos, double JD);
 
-  void applyModel (struct ln_equ_posn *pos, double JD);
 protected:
   int corrections;
+
+  void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change,
+		   int flip, double JD);
+  void applyCorrections (struct ln_equ_posn *pos, double JD);
 
   virtual int willConnect (Rts2Address * in_addr);
   char *device_file;
@@ -123,6 +129,11 @@ protected:
     out_tar->ra = lastTar.ra;
     out_tar->dec = lastTar.dec;
   }
+  void getTargetCorrected (struct ln_equ_posn *out_tar)
+  {
+    getTargetCorrected (out_tar, ln_get_julian_from_sys ());
+  }
+  void getTargetCorrected (struct ln_equ_posn *out_tar, double JD);
   void unsetTarget ()
   {
     lastTar.ra = -1000;
@@ -142,7 +153,7 @@ protected:
 
   void needStop ()
   {
-    maskState (0, TEL_MASK_NEED_STOP, TEL_MASK_NEED_STOP);
+    maskState (0, TEL_MASK_NEED_STOP, TEL_NEED_STOP);
   }
 public:
   Rts2DevTelescope (int argc, char **argv);

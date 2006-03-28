@@ -45,10 +45,15 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
   modelFile = NULL;
   model = NULL;
 
+  modelFile0 = NULL;
+  model0 = NULL;
+
   addOption ('n', "max_corr_num", 1,
 	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
-  addOption ('m', "model file", 1,
-	     "name of file holding RTS2-calculated model parameters");
+  addOption ('m', "model_file", 1,
+	     "name of file holding RTS2-calculated model parameters (for flip = 1, or for both when o is not specified)");
+  addOption ('o', "model_file_flip 0", 1,
+	     "name of file holding RTS2-calculated model parameters for flip = 0");
 
   maxCorrNum = 1;
 
@@ -72,6 +77,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
 Rts2DevTelescope::~Rts2DevTelescope (void)
 {
   delete model;
+  delete model0;
 }
 
 int
@@ -84,6 +90,9 @@ Rts2DevTelescope::processOption (int in_opt)
       break;
     case 'm':
       modelFile = optarg;
+      break;
+    case 'o':
+      modelFile0 = optarg;
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -110,6 +119,13 @@ Rts2DevTelescope::setTarget (double tar_ra, double tar_dec)
   lastTar.ra = tar_ra;
   lastTar.dec = tar_dec;
   return 1;
+}
+
+void
+Rts2DevTelescope::getTargetCorrected (struct ln_equ_posn *out_tar, double JD)
+{
+  getTarget (out_tar);
+  applyCorrections (out_tar, JD);
 }
 
 double
@@ -198,18 +214,51 @@ Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 }
 
 void
-Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, double JD)
+Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
+			      struct ln_equ_posn *model_change, int flip,
+			      double JD)
 {
   struct ln_equ_posn hadec;
+  double ra;
   double lst;
-  if (!model)
-    return;
+  if (!model && !model0)
+    {
+      model_change->ra = 0;
+      model_change->dec = 0;
+      return;
+    }
   lst = getLstDeg (JD);
   hadec.ra = ln_range_degrees (lst - pos->ra);
   hadec.dec = pos->dec;
-  model->apply (&hadec, JD);
+  if (flip && model)
+    model->apply (&hadec);
+  else if (!flip && model0)
+    model0->apply (&hadec);
+  // fallback - use whenever model is available
+  else if (model)
+    model->apply (&hadec);
+  else
+    model0->apply (&hadec);
+
   // get back from model - from HA
-  pos->ra = ln_range_degrees (lst - hadec.ra);
+  ra = ln_range_degrees (lst - hadec.ra);
+
+  // calculate change
+  model_change->ra = pos->ra - ra;
+  model_change->dec = pos->dec - hadec.dec;
+
+  // change above 5 degrees are strange - reject them
+  if (fabs (model_change->ra) > 5 || fabs (model_change->dec) > 5)
+    {
+      syslog (LOG_DEBUG,
+	      "Rts2DevTelescope::applyModel big change - rejecting ra %f dec %f",
+	      model_change->ra, model_change->dec);
+      model_change->ra = 0;
+      model_change->dec = 0;
+      return;
+    }
+
+  pos->ra = ra;
   pos->dec = hadec.dec;
 }
 
@@ -225,6 +274,13 @@ Rts2DevTelescope::init ()
     {
       model = new Rts2TelModel (this, modelFile);
       ret = model->load ();
+      if (ret)
+	return ret;
+    }
+  if (modelFile0)
+    {
+      model0 = new Rts2TelModel (this, modelFile0);
+      ret = model0->load ();
       if (ret)
 	return ret;
     }
@@ -583,6 +639,18 @@ Rts2DevTelescope::sendBaseInfo (Rts2Conn * conn)
   return 0;
 }
 
+void
+Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
+{
+  // apply all posible corrections
+  if (corrections & COR_ABERATION)
+    applyAberation (pos, JD);
+  if (corrections & COR_PRECESSION)
+    applyPrecession (pos, JD);
+  if (corrections & COR_REFRACTION)
+    applyRefraction (pos, JD);
+}
+
 int
 Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 {
@@ -595,21 +663,13 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 
   JD = ln_get_julian_from_sys ();
 
-  // apply all posible corrections
-  if (corrections & COR_ABERATION)
-    applyAberation (&pos, JD);
-  if (corrections & COR_PRECESSION)
-    applyPrecession (&pos, JD);
-  if (corrections & COR_REFRACTION)
-    applyRefraction (&pos, JD);
-
-  // apply model
-  applyModel (&pos, JD);
+  applyCorrections (&pos, JD);
 
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
 	  locCorDec, lastTar.ra, lastTar.dec);
+  // target is without corrections
   ret = setTarget (tar_ra, tar_dec);
 
   tar_ra = pos.ra;
@@ -670,7 +730,8 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 	}
       else
 	{
-	  maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+	  maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		     "move started");
 	}
       move_connection = conn;
     }
