@@ -4,7 +4,7 @@ AM_CXXFLAGS = @LIBPG_CFLAGS@
 AM_CFLAGS = @LIBPG_CFLAGS@
 AM_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@
 
-bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target
+bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target rts2-tpm
 
 noinst_HEADERS = rts2targetapp.h rts2simbadtarget.h simbad.h
 
@@ -19,6 +19,9 @@ rts2_targetlist_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ ../ut
 
 rts2_target_SOURCES = target.cpp
 rts2_target_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
+
+rts2_tpm_SOURCES = tpm.cpp
+rts2_tpm_LDFLAGS = @LIB_NOVA@ @LIB_CFITSIO@ ../writers/librts2imagedb.a ../utils/librts2block.a
 
 if GSOAP
 bin_PROGRAMS+=rts2-newtarget rts2-simbadinfo
