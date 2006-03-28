@@ -79,10 +79,8 @@ public:
    * Apply model to coordinates. Pos.ra is hour angle, not RA.
    */
   int apply (struct ln_equ_posn *pos);
-  /**
-   * Apply model to coordinates. Pos.ra is hour angle, not RA.
-   */
-  int apply (struct ln_equ_posn *pos, double sid);
+  int applyVerbose (struct ln_equ_posn *pos);
+
   int reverse (struct ln_equ_posn *pos);
   int reverse (struct ln_equ_posn *pos, double sid);
 

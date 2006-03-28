@@ -27,21 +27,29 @@ Rts2TelModel::load ()
 int
 Rts2TelModel::apply (struct ln_equ_posn *pos)
 {
-  return apply (pos, ln_get_mean_sidereal_time (ln_get_julian_from_sys ()));
+  for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+       iter != terms.end (); iter++)
+    {
+      (*iter)->apply (pos, cond);
+    }
+  return 0;
 }
 
 int
-Rts2TelModel::apply (struct ln_equ_posn *pos, double lst)
+Rts2TelModel::applyVerbose (struct ln_equ_posn *pos)
 {
   for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
        iter != terms.end (); iter++)
     {
-//      std::cout << (*iter) << "Before: " << pos->ra << " " << pos->dec << std::endl;
+      std::cout << (*iter) << "Before: " << pos->ra << " " << pos->
+	dec << std::endl;
       (*iter)->apply (pos, cond);
-//      std::cout << "After: " << pos->ra << " " << pos->dec << std::endl;
+      std::cout << "After: " << pos->ra << " " << pos->
+	dec << std::endl << std::endl;
     }
   return 0;
 }
+
 
 int
 Rts2TelModel::reverse (struct ln_equ_posn *pos)

@@ -22,7 +22,19 @@ void
 Rts2TermME::apply (struct ln_equ_posn *pos,
 		   Rts2ObsConditions * obs_conditions)
 {
-  double h0, d0, h1, d1, M, N;
+  // simple method
+  double dh;
+  double dd;
+
+  dh = corr * sin (ln_deg_to_rad (pos->ra)) * tan (ln_deg_to_rad (pos->dec));
+  dd = corr * cos (ln_deg_to_rad (pos->ra));
+
+  pos->ra += dh;
+  pos->dec += dd;
+
+  // that one doesn't work
+/*  double h0, d0, h1, d1, M, N;
+
 
   h0 = ln_deg_to_rad (in180 (pos->ra));
   d0 = ln_deg_to_rad (in180 (pos->dec));
@@ -37,7 +49,7 @@ Rts2TermME::apply (struct ln_equ_posn *pos,
       else
 	M = -M_PI + M;
     }
-
+  std::cout << M;
   M = M - ln_deg_to_rad (corr);
 
   if (M > M_PI)
@@ -59,7 +71,7 @@ Rts2TermME::apply (struct ln_equ_posn *pos,
     h1 += 2 * M_PI;
 
   pos->ra = ln_rad_to_deg (h1);
-  pos->dec = ln_rad_to_deg (d1);
+  pos->dec = ln_rad_to_deg (d1); */
 }
 
 // status OK
@@ -69,13 +81,13 @@ Rts2TermMA::apply (struct ln_equ_posn *pos,
 {
   double d, h;
 
-  d = pos->dec - (corr) * sin (ln_deg_to_rad (pos->ra));
   h =
-    pos->ra +
-    (corr) * cos (ln_deg_to_rad (pos->ra)) * tan (ln_deg_to_rad (pos->dec));
+    -1 * corr * cos (ln_deg_to_rad (pos->ra)) *
+    tan (ln_deg_to_rad (pos->dec));
+  d = corr * sin (ln_deg_to_rad (pos->ra));
 
-  pos->ra = h;
-  pos->dec = d;
+  pos->ra += h;
+  pos->dec += d;
 }
 
 // status: OK
@@ -83,9 +95,7 @@ void
 Rts2TermIH::apply (struct ln_equ_posn *pos,
 		   Rts2ObsConditions * obs_conditions)
 {
-  // Add a zero point to the hour angle
-  pos->ra = in180 (pos->ra - corr);
-  // No change for declination
+  pos->ra = ln_range_degrees (pos->ra + corr);
 }
 
 // status: OK
@@ -94,7 +104,7 @@ Rts2TermID::apply (struct ln_equ_posn *pos,
 		   Rts2ObsConditions * obs_conditions)
 {
   // Add a zero point to the declination
-  pos->dec = in180 (pos->dec - corr);
+  pos->dec = in180 (pos->dec + corr);
   // No change for hour angle
 }
 
@@ -103,16 +113,15 @@ void
 Rts2TermCH::apply (struct ln_equ_posn *pos,
 		   Rts2ObsConditions * obs_conditions)
 {
-  pos->ra = pos->ra - (corr) / cos (ln_deg_to_rad (pos->dec));
+  pos->ra += corr / cos (ln_deg_to_rad (pos->dec));
 }
 
-// status: error?
+// status: OK
 void
 Rts2TermNP::apply (struct ln_equ_posn *pos,
 		   Rts2ObsConditions * obs_conditions)
 {
-  pos->ra = pos->ra - (corr) * tan (ln_deg_to_rad (pos->dec));
-  pos->dec = pos->dec;
+  pos->ra += corr * tan (ln_deg_to_rad (pos->dec));
 }
 
 // status: ok
@@ -121,7 +130,7 @@ Rts2TermPHH::apply (struct ln_equ_posn *pos,
 		    Rts2ObsConditions * obs_conditions)
 {
   pos->ra =
-    pos->ra - ln_rad_to_deg (ln_deg_to_rad (corr) * ln_deg_to_rad (pos->ra));
+    pos->ra + ln_rad_to_deg (ln_deg_to_rad (corr) * ln_deg_to_rad (pos->ra));
 }
 
 // status: ok
@@ -163,9 +172,8 @@ Rts2TermTF::apply (struct ln_equ_posn *pos,
   h = ln_deg_to_rad (pos->ra);
   f = ln_deg_to_rad (obs_conditions->getLatitude ());
 
-  pos->ra = pos->ra + (corr) * cos (f) * sin (h) / cos (d);
-  pos->dec =
-    pos->dec + (corr) * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d));
+  pos->ra += corr * cos (f) * sin (h) / cos (d);
+  pos->dec += corr * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d));
 }
 
 void
@@ -177,12 +185,10 @@ Rts2TermTX::apply (struct ln_equ_posn *pos,
   h = ln_deg_to_rad (pos->ra);
   f = ln_deg_to_rad (obs_conditions->getLatitude ());
 
-  pos->ra =
-    pos->ra +
-    (corr) * cos (f) * sin (h) / cos (d) /
-    (cos (d) * sin (f) + cos (d) * cos (h) * cos (f));
-  pos->dec =
-    pos->dec +
+  pos->ra +=
+    (corr * cos (f) * sin (h) / cos (d)) /
+    (sin (d) * sin (f) + cos (d) * cos (h) * cos (f));
+  pos->dec +=
     (corr) * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d)) /
-    (cos (d) * sin (f) + cos (d) * cos (h) * cos (f));
+    (sin (d) * sin (f) + cos (d) * cos (h) * cos (f));
 }
