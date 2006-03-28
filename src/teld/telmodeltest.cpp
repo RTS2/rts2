@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -51,6 +52,7 @@ Rts2App (in_argc, in_argv)
   config = Rts2Config::instance ();
   modelFile = NULL;
   model = NULL;
+  telescope = NULL;
   verbose = 0;
   addOption ('m', "model-file", 1, "Model file to use");
   addOption ('v', "verbose", 0, "Report model progress");
@@ -93,6 +95,12 @@ TelModelTest::init ()
   ret = Rts2App::init ();
   if (ret)
     return ret;
+
+  if (runFiles.empty ())
+    {
+      help ();
+      return -1;
+    }
 
   telescope = new Rts2DevTelescopeModelTest ();
 
@@ -149,26 +157,51 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 	{
 	  struct ln_dms lat;
 	  struct ln_date date;
+	  std::string line;
+	  std::getline (is, line);
+	  std::istringstream iss (line);
 	  date.hours = 0;
 	  date.minutes = 0;
 	  date.seconds = 0;
 	  // get sign
-	  is >> firstChar >> lat.degrees >> lat.minutes >> lat.
-	    seconds >> date.years >> date.months >> date.
-	    days >> temp >> press;
-	  if (is.fail ())
-	    return;
-	  is.ignore (2000, is.widen ('\n'));
+	  if (isblank (firstChar))
+	    iss >> firstChar;
+
+	  iss >> lat.degrees >> lat.minutes >> lat.seconds;
+
+	  iss >> date.years >> date.months >> date.days;
+	  if (iss.fail ())
+	    {
+	      date.years = 2000;
+	      date.months = 1;
+	      date.days = 1;
+	      temp = nan ("f");
+	      press = nan ("f");
+	    }
+	  else
+	    {
+	      iss >> temp >> press;
+	      if (iss.fail ())
+		{
+		  temp = nan ("f");
+		  press = nan ("f");
+		}
+	    }
 	  if (firstChar == '-')
 	    lat.neg = 1;
 	  else
 	    lat.neg = 0;
 	  telescope->setObserverLat (ln_dms_to_deg (&lat));
 	  latLine = true;
-	  os << " " << LibnovaDeg (&lat) << " "
-	    << date.years << " "
-	    << date.months << " "
-	    << date.days << " " << temp << " " << press << " " << std::endl;
+	  os << " " << LibnovaDeg90 (ln_dms_to_deg (&lat)) << " "
+	    << date.years << " " << date.months << " " << date.days;
+	  if (!isnan (temp))
+	    {
+	      os << " " << temp;
+	      if (!isnan (press))
+		os << " " << press;
+	    }
+	  os << std::endl;
 	}
       // data lines
       else
