@@ -12,5 +12,6 @@ rts2-newtarget
 rts2-simbadinfo
 rts2-targetlist
 rts2-target
+rts2-tpm
 soap*
 SesameSoapBinding*
