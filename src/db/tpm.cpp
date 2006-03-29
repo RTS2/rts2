@@ -88,6 +88,7 @@ TPM::run ()
       printImage (image, std::cout);
       delete image;
     }
+  std::cout << "END" << std::endl;
   return 0;
 }
 
@@ -118,7 +119,7 @@ TPM::headline (Rts2Image * image, std::ostream & _os)
   image->getValue ("LONG", obs.lng);
   // standart header
   _os << "RTS2 model from astrometry" << std::endl << ":EQUAT" << std::endl	// we are observing on equatorial mount
-    << ":ALLSKY" << std::endl	// we have images from all sky
+    << ":J2000" << std::endl	// everuthing is J2000
     << ":NODA" << std::endl	// don't know
     << " " << LibnovaDeg90 (obs.lat) << " 2000 1 01" << std::endl;	// we have J2000, not refracted coordinates from mount
   return 0;
@@ -138,7 +139,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
   int ret;
 
-  ret = image->getCoordTarget (actual);
+  ret = image->getCoordAstrometry (actual);
   if (ret)
     return ret;
   ret = image->getCoordTarget (target);
@@ -162,7 +163,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
   JD = ln_get_julian_from_timet (&ct);
   mean_sidereal =
-    ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) - obs.lng);
+    ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) + obs.lng);
 
   LibnovaHaM lst (mean_sidereal);
 
