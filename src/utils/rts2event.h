@@ -27,6 +27,7 @@
 // grbd.h                  600-649
 // rts2devcliwheel.h       650-699
 // augershooter.h          700-749
+// rts2devclifocuser.h     750-799
 
 class Rts2Event
 {

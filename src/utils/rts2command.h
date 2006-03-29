@@ -246,8 +246,23 @@ class Rts2CommandChangeFocus:public Rts2Command
 {
 private:
   Rts2DevClientFocus * focuser;
+  Rts2DevClientCamera *camera;
+  void change (int in_steps);
 public:
-  Rts2CommandChangeFocus (Rts2DevClientFocus * in_focuser, int in_steps);
+    Rts2CommandChangeFocus (Rts2DevClientFocus * in_focuser, int in_steps);
+    Rts2CommandChangeFocus (Rts2DevClientCamera * in_camera, int in_steps);
+  virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandSetFocus:public Rts2Command
+{
+private:
+  Rts2DevClientFocus * focuser;
+  Rts2DevClientCamera *camera;
+  void set (int in_steps);
+public:
+    Rts2CommandSetFocus (Rts2DevClientFocus * in_focuser, int in_steps);
+    Rts2CommandSetFocus (Rts2DevClientCamera * in_camera, int in_steps);
   virtual int commandReturnFailed (int status);
 };
 

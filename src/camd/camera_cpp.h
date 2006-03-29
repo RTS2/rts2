@@ -311,6 +311,11 @@ public:
 
   virtual int getFilterNum ();
 
+  // focuser functions
+  int setFocuser (Rts2Conn * conn, int new_set);
+  int stepFocuser (Rts2Conn * conn, int step_count);
+  int getFocuser (Rts2Conn * conn, int &foc_val);
+
   virtual int grantPriority (Rts2Conn * conn)
   {
     if (focuserDevice)

@@ -204,7 +204,6 @@ Rts2Command (in_filter->getMaster ())
   setCommandFilter (filter);
 }
 
-
 int
 Rts2CommandFilter::commandReturnOK ()
 {
@@ -412,14 +411,31 @@ Rts2CommandCopulaMove::commandReturnFailed (int status)
   return Rts2Command::commandReturnFailed (status);
 }
 
-Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus * in_focuser, int in_steps):
-Rts2Command (in_focuser->getMaster ())
+void
+Rts2CommandChangeFocus::change (int in_steps)
 {
   char *msg;
-  focuser = in_focuser;
   asprintf (&msg, "step %i", in_steps);
   setCommand (msg);
   free (msg);
+}
+
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus *
+						in_focuser, int in_steps):
+Rts2Command (in_focuser->getMaster ())
+{
+  focuser = in_focuser;
+  camera = NULL;
+  change (in_steps);
+}
+
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientCamera *
+						in_camera, int in_steps):
+Rts2Command (in_camera->getMaster ())
+{
+  focuser = NULL;
+  camera = in_camera;
+  change (in_steps);
 }
 
 int
@@ -427,6 +443,45 @@ Rts2CommandChangeFocus::commandReturnFailed (int status)
 {
   if (focuser)
     focuser->focusingFailed (status);
+  if (camera)
+    camera->focuserFailed (status);
+  return Rts2Command::commandReturnFailed (status);
+}
+
+void
+Rts2CommandSetFocus::set (int in_steps)
+{
+  char *msg;
+  asprintf (&msg, "set %i", in_steps);
+  setCommand (msg);
+  free (msg);
+}
+
+Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientFocus * in_focuser,
+					  int in_steps):
+Rts2Command (in_focuser->getMaster ())
+{
+  focuser = in_focuser;
+  camera = NULL;
+  set (in_steps);
+}
+
+Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientCamera * in_camera,
+					  int in_steps):
+Rts2Command (in_camera->getMaster ())
+{
+  focuser = NULL;
+  camera = in_camera;
+  set (in_steps);
+}
+
+int
+Rts2CommandSetFocus::commandReturnFailed (int status)
+{
+  if (focuser)
+    focuser->focusingFailed (status);
+  if (camera)
+    camera->focuserFailed (status);
   return Rts2Command::commandReturnFailed (status);
 }
 

@@ -46,6 +46,9 @@ public:
   LibnovaHaM ():LibnovaRa ()
   {
   }
+  LibnovaHaM (double in_ha):LibnovaRa (in_ha)
+  {
+  }
   friend std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM);
   friend std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM);
 };
@@ -189,6 +192,12 @@ public:
     dec = NULL;
   }
 
+  LibnovaRaDec (LibnovaRaDec & in_libnova)
+  {
+    ra = new LibnovaRa (in_libnova.getRa ());
+    dec = new LibnovaDec (in_libnova.getDec ());
+  }
+
   LibnovaRaDec (struct ln_equ_posn *pos)
   {
     ra = new LibnovaRa (pos->ra);
@@ -219,6 +228,14 @@ public:
   {
     pos->ra = getRa ();
     pos->dec = getDec ();
+  }
+
+  void setPos (struct ln_equ_posn *pos)
+  {
+    delete ra;
+    delete dec;
+    ra = new LibnovaRa (pos->ra);
+    dec = new LibnovaDec (pos->dec);
   }
 
   friend std::ostream & operator << (std::ostream & _os,

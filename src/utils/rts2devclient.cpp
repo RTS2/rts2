@@ -239,6 +239,7 @@ Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClien
   addValue (new Rts2ValueInteger ("fan"));
   addValue (new Rts2ValueInteger ("filter"));
   addValue (new Rts2ValueString ("focuser"));
+  addValue (new Rts2ValueInteger ("focpos"));
 
   addValue (new Rts2ValueDouble ("exposure"));
 }

@@ -121,6 +121,12 @@ public:
   virtual void filterFailed ()
   {
   }
+  virtual void focuserOK ()
+  {
+  }
+  virtual void focuserFailed (int status)
+  {
+  }
   virtual void settingsOK ()
   {
   }

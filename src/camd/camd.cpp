@@ -12,6 +12,7 @@
 #include "camera_cpp.h"
 #include "imghdr.h"
 #include "rts2devcliwheel.h"
+#include "rts2devclifocuser.h"
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
 {
@@ -363,6 +364,9 @@ Rts2DevCamera::willConnect (Rts2Address * in_addr)
   if (wheelDevice && in_addr->getType () == DEVICE_TYPE_FW
       && in_addr->isAddress (wheelDevice))
     return 1;
+  if (focuserDevice && in_addr->getType () == DEVICE_TYPE_FOCUS
+      && in_addr->isAddress (focuserDevice))
+    return 1;
   return Rts2Device::willConnect (in_addr);
 }
 
@@ -373,6 +377,8 @@ Rts2DevCamera::createOtherType (Rts2Conn * conn, int other_device_type)
     {
     case DEVICE_TYPE_FW:
       return new Rts2DevClientFilterCamera (conn);
+    case DEVICE_TYPE_FOCUS:
+      return new Rts2DevClientFocusCamera (conn);
     }
   return Rts2Device::createOtherType (conn, other_device_type);
 }
@@ -891,6 +897,62 @@ Rts2DevCamera::getFilterNum ()
   return -1;
 }
 
+int
+Rts2DevCamera::setFocuser (Rts2Conn * conn, int new_set)
+{
+  if (!focuserDevice)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have focuser");
+      return -1;
+    }
+  struct focuserMove fm;
+  fm.focuserName = focuserDevice;
+  fm.value = new_set;
+  postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
+  if (fm.focuserName)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "error during focusing");
+      return -1;
+    }
+  return 0;
+}
+
+int
+Rts2DevCamera::stepFocuser (Rts2Conn * conn, int step_count)
+{
+  if (!focuserDevice)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have focuser");
+      return -1;
+    }
+  struct focuserMove fm;
+  fm.focuserName = focuserDevice;
+  fm.value = step_count;
+  postEvent (new Rts2Event (EVENT_FOCUSER_STEP, (void *) &fm));
+  if (fm.focuserName)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "error during focusing");
+      return -1;
+    }
+  return 0;
+}
+
+int
+Rts2DevCamera::getFocuser (Rts2Conn * conn, int &foc_val)
+{
+  foc_val = 0;
+  struct focuserMove fm;
+  fm.focuserName = focuserDevice;
+  postEvent (new Rts2Event (EVENT_FOCUSER_GET, (void *) &fm));
+  if (fm.focuserName)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "error at focuser");
+      return -1;
+    }
+  foc_val = fm.value;
+  return 0;
+}
+
 Rts2DevConnCamera::Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
@@ -945,6 +1007,7 @@ Rts2DevConnCamera::commandAuthorized ()
       send ("focus <steps> - change focus to the given steps");
       send ("autofocus - try to autofocus picture");
       send ("filter <filter number> - set camera filter");
+      send ("step|set - get/set focuser values");
       send ("exit - exit from connection");
       send ("help - print, what you are reading just now");
       return 0;
@@ -1044,6 +1107,20 @@ Rts2DevConnCamera::commandAuthorized ()
       if (paramNextInteger (&new_filter) || !paramEnd ())
 	return -2;
       return master->camFilter (this, new_filter);
+    }
+  else if (isCommand ("step"))
+    {
+      int foc_step;
+      if (paramNextInteger (&foc_step) || !paramEnd ())
+	return -2;
+      return master->stepFocuser (this, foc_step);
+    }
+  else if (isCommand ("set"))
+    {
+      int foc_set;
+      if (paramNextInteger (&foc_set) || !paramEnd ())
+	return -2;
+      return master->setFocuser (this, foc_set);
     }
   return Rts2DevConn::commandAuthorized ();
 }
