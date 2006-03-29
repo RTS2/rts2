@@ -18,6 +18,8 @@ private:
   std::vector < std::string > filenames;
   int headline (Rts2Image * image, std::ostream & _os);
   int printImage (Rts2Image * image, std::ostream & _os);
+  // select images with given flip; -1 for all flip, 0 or 1 for given flip
+  int selFlip;
 
   struct ln_lnlat_posn obs;
 protected:
@@ -36,6 +38,8 @@ public:
 TPM::TPM (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
+  selFlip = -1;
+  addOption ('f', "flip", 1, "select images with given flip (0 or 1)");
 }
 
 TPM::~TPM (void)
@@ -46,7 +50,26 @@ TPM::~TPM (void)
 int
 TPM::processOption (int in_opt)
 {
-  return Rts2App::processOption (in_opt);
+  switch (in_opt)
+    {
+    case 'f':
+      if (!strcmp (optarg, "1"))
+	selFlip = 1;
+      else if (!strcmp (optarg, "0"))
+	selFlip = 0;
+      else
+	{
+	  std::
+	    cout << "You entered invalid flip, please select either 0 or 1" <<
+	    std::endl;
+	  help ();
+	  return -1;
+	}
+      break;
+    default:
+      return Rts2App::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -134,7 +157,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
   double JD;
   double mean_sidereal;
   float expo;
-  int flip;
+  int imageFlip;
   double aux1;
 
   int ret;
@@ -154,7 +177,10 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
   if (ret)
     return ret;
 
-  flip = image->getMountFlip ();
+  imageFlip = image->getMountFlip ();
+  // don't process images with invalid flip
+  if (selFlip != -1 && imageFlip != selFlip)
+    return 0;
   ret = image->getValue ("MNT_AX1", aux1);
   if (ret)
     return ret;
@@ -167,8 +193,8 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
   LibnovaHaM lst (mean_sidereal);
 
-  _os << actual << " 0 0 2000.0 " << target << " " << lst << " " << flip <<
-    " " << aux1 << std::endl;
+  _os << actual << " 0 0 2000.0 " << target << " " << lst << " " << imageFlip
+    << " " << aux1 << std::endl;
   return 0;
 }
 
