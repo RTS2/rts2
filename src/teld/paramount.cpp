@@ -2,6 +2,7 @@
 #include "model/telmodel.h"
 
 #include "../utils/rts2config.h"
+#include "../utils/libnova_cpp.h"
 
 #include <libmks3.h>
 #include <iostream>
@@ -494,12 +495,18 @@ Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
   // apply model
   applyModel (pos, &model_change, flip, JD);
 
-  // on south hemisphere we have to change direction of dec change
-  if (telLatitude < 0)
+  // when fliped, change sign - most probably work diferently on N and S; tested only on S
+  if ((flip && telLatitude < 0) || (!flip && telLatitude > 0))
     model_change.dec *= -1;
+
+  LibnovaRaDec lchange (&model_change);
+
+  std::cout << "Before model " << ac << dc << lchange << std::endl;
 
   ac += (CWORD32) (model_change.ra * haCpd);
   dc += (CWORD32) (model_change.dec * decCpd);
+
+  std::cout << "After model" << ac << dc << std::endl;
 
   ac -= homeOff;
 
