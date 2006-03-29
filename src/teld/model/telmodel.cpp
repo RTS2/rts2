@@ -54,7 +54,26 @@ Rts2TelModel::applyVerbose (struct ln_equ_posn *pos)
 int
 Rts2TelModel::reverse (struct ln_equ_posn *pos)
 {
-  return reverse (pos, ln_get_mean_sidereal_time (ln_get_julian_from_sys ()));
+  struct ln_equ_posn pos2;
+
+  for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+       iter != terms.end (); iter++)
+    {
+      pos2.ra = pos->ra;
+      pos2.dec = pos->dec;
+
+      std::cout << (*iter) << "Before: " << pos->ra << " " << pos->
+	dec << std::endl;
+
+      (*iter)->apply (pos, cond);
+
+      pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
+      pos->dec = 2 * pos2.dec - pos->dec;
+
+      std::cout << "After: " << pos->ra << " " << pos->
+	dec << std::endl << std::endl;
+    }
+  return 0;
 }
 
 int
@@ -145,6 +164,22 @@ std::istream & operator >> (std::istream & is, Rts2TelModel * model)
       else if (name == "TX")
 	{
 	  term = new Rts2TermTX (corr, sigma);
+	}
+      else if (name == "HCEC")
+	{
+	  term = new Rts2TermHCEC (corr, sigma);
+	}
+      else if (name == "HCES")
+	{
+	  term = new Rts2TermHCES (corr, sigma);
+	}
+      else if (name == "DCEC")
+	{
+	  term = new Rts2TermDCEC (corr, sigma);
+	}
+      else if (name == "DCES")
+	{
+	  term = new Rts2TermDCES (corr, sigma);
 	}
       else
 	{

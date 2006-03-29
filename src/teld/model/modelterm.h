@@ -239,4 +239,52 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
+class Rts2TermHCEC:public Rts2ModelTerm
+{
+public:
+  Rts2TermHCEC (double in_corr, double in_sigma):Rts2ModelTerm ("HCEC",
+								in_corr,
+								in_sigma)
+  {
+  }
+  virtual void apply (struct ln_equ_posn *pos,
+		      Rts2ObsConditions * obs_conditions);
+};
+
+class Rts2TermHCES:public Rts2ModelTerm
+{
+public:
+  Rts2TermHCES (double in_corr, double in_sigma):Rts2ModelTerm ("HCES",
+								in_corr,
+								in_sigma)
+  {
+  }
+  virtual void apply (struct ln_equ_posn *pos,
+		      Rts2ObsConditions * obs_conditions);
+};
+
+class Rts2TermDCEC:public Rts2ModelTerm
+{
+public:
+  Rts2TermDCEC (double in_corr, double in_sigma):Rts2ModelTerm ("DCEC",
+								in_corr,
+								in_sigma)
+  {
+  }
+  virtual void apply (struct ln_equ_posn *pos,
+		      Rts2ObsConditions * obs_conditions);
+};
+
+class Rts2TermDCES:public Rts2ModelTerm
+{
+public:
+  Rts2TermDCES (double in_corr, double in_sigma):Rts2ModelTerm ("DCES",
+								in_corr,
+								in_sigma)
+  {
+  }
+  virtual void apply (struct ln_equ_posn *pos,
+		      Rts2ObsConditions * obs_conditions);
+};
+
 #endif /*! __RTS2_MODELTERM__ */

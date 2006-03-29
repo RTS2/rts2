@@ -192,3 +192,31 @@ Rts2TermTX::apply (struct ln_equ_posn *pos,
     (corr) * (cos (f) * cos (h) * sin (d) - sin (f) * cos (d)) /
     (sin (d) * sin (f) + cos (d) * cos (h) * cos (f));
 }
+
+void
+Rts2TermHCEC::apply (struct ln_equ_posn *pos,
+		     Rts2ObsConditions * obs_conditions)
+{
+  pos->ra += corr * cos (ln_deg_to_rad (pos->ra));
+}
+
+void
+Rts2TermHCES::apply (struct ln_equ_posn *pos,
+		     Rts2ObsConditions * obs_conditions)
+{
+  pos->ra += corr * sin (ln_deg_to_rad (pos->ra));
+}
+
+void
+Rts2TermDCEC::apply (struct ln_equ_posn *pos,
+		     Rts2ObsConditions * obs_conditions)
+{
+  pos->dec += corr * cos (ln_deg_to_rad (pos->dec));
+}
+
+void
+Rts2TermDCES::apply (struct ln_equ_posn *pos,
+		     Rts2ObsConditions * obs_conditions)
+{
+  pos->dec += corr * sin (ln_deg_to_rad (pos->dec));
+}
