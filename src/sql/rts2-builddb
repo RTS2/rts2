@@ -30,6 +30,10 @@ $PSQLDB < update/rel_0_5_1.sql
 $PSQLDB < update/rel_0_5_2.sql
 $PSQLDB < update/rel_0_6_0.sql
 
+# load init data
+
+$PSQLDB < init_data.sql
+
 # grant rights
 
 $PSQLDB < grant.sql
