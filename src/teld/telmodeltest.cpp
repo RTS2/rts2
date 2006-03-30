@@ -30,6 +30,7 @@ private:
     std::vector < std::string > runFiles;
   Rts2DevTelescopeModelTest *telescope;
   int verbose;
+  int generate;			// generate arteficial data
 
   void test (double ra, double dec);
   void runOnFile (std::string filename, std::ostream & os);
@@ -54,8 +55,10 @@ Rts2App (in_argc, in_argv)
   model = NULL;
   telescope = NULL;
   verbose = 0;
+  generate = 0;
   addOption ('m', "model-file", 1, "Model file to use");
   addOption ('v', "verbose", 0, "Report model progress");
+  addOption ('g', "generate", 0, "Generate arteficial data");
 }
 
 TelModelTest::~TelModelTest (void)
@@ -74,6 +77,9 @@ TelModelTest::processOption (int in_opt)
       break;
     case 'v':
       verbose++;
+      break;
+    case 'g':
+      generate = 1;
       break;
     default:
       return Rts2App::processOption (in_opt);
