@@ -586,6 +586,7 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
   conn->sendValue ("cooling_power", coolingPower);
   conn->sendValue ("fan", fan);
   conn->sendValue ("filter", getFilterNum ());
+  conn->sendValue ("focpos", getFocPos ());
   conn->sendValue ("exposure", lastExp);
   return 0;
 }
@@ -938,19 +939,14 @@ Rts2DevCamera::stepFocuser (Rts2Conn * conn, int step_count)
 }
 
 int
-Rts2DevCamera::getFocuser (Rts2Conn * conn, int &foc_val)
+Rts2DevCamera::getFocPos ()
 {
-  foc_val = 0;
   struct focuserMove fm;
   fm.focuserName = focuserDevice;
   postEvent (new Rts2Event (EVENT_FOCUSER_GET, (void *) &fm));
   if (fm.focuserName)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "error at focuser");
-      return -1;
-    }
-  foc_val = fm.value;
-  return 0;
+    return -1;
+  return fm.value;
 }
 
 Rts2DevConnCamera::Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device):

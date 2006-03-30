@@ -39,7 +39,7 @@ Rts2DevClientFocusCamera::postEvent (Rts2Event * event)
 	}
       break;
     }
-  Rts2DevClientFocusCamera::postEvent (event);
+  Rts2DevClientFocus::postEvent (event);
 }
 
 void

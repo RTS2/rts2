@@ -314,7 +314,7 @@ public:
   // focuser functions
   int setFocuser (Rts2Conn * conn, int new_set);
   int stepFocuser (Rts2Conn * conn, int step_count);
-  int getFocuser (Rts2Conn * conn, int &foc_val);
+  int getFocPos ();
 
   virtual int grantPriority (Rts2Conn * conn)
   {
