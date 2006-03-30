@@ -307,8 +307,9 @@ Rts2NMCamera::print (WINDOW * wnd)
 	     getValueDouble ("air_temperature"));
   mvwprintw (wnd, 5, 1, "CCD: %+05.1f oC",
 	     getValueDouble ("ccd_temperature"));
-  mvwprintw (wnd, 6, 1, "CPo: %04.1f %%",
-	     getValueDouble ("cooling_power") / 10.0);
+  mvwprintw (wnd, 6, 1, "CPo: %03.0f Foc: %i",
+	     getValueDouble ("cooling_power") / 10.0,
+	     getValueInteger ("focpos"));
   mvwprintw (wnd, 7, 1, "Fan: %s Fil: %i",
 	     getValueDouble ("fan") ? "on " : "off",
 	     getValueInteger ("filter"));
