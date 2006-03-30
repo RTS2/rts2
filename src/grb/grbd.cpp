@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 /**
  * Receive info from GCN via socket, put them to DB.
  *
@@ -229,13 +225,12 @@ Rts2DevGrb::newGcnGrb (int tar_id)
   return 0;
 }
 
-Rts2DevGrb *grb;
+Rts2DevGrb *grb = NULL;
 
 void
 killSignal (int sig)
 {
-  if (grb)
-    delete grb;
+  delete grb;
   exit (0);
 }
 

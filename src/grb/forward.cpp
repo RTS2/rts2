@@ -7,6 +7,7 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2connnosend.h"
 #include "grbconst.h"
+#include "grbd.h"
 #include "rts2grbfw.h"
 
 #include <errno.h>
@@ -14,8 +15,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <signal.h>
-
-#define RTS2_EVENT_GRB_PACKET	RTS2_LOCAL_EVENT + 600
 
 class Rts2ConnFwGrb:public Rts2ConnNoSend
 {

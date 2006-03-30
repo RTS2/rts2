@@ -22,10 +22,11 @@ private:
 
   char *addExe;
   int execFollowups;
+
+  virtual int processOption (int in_opt);
 public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 
