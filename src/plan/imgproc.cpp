@@ -314,7 +314,7 @@ Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
     new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
   if (runningImage)
     {
-      imagesQue.push_back (newImageConn);
+      imagesQue.push_front (newImageConn);
       if (conn)
 	sendInfo (conn);
       return 0;

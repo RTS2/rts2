@@ -65,10 +65,11 @@ private:
   int next_id;
 
   int idle_select;
+protected:
+    virtual int processOption (int in_opt);
 public:
     Rts2SelectorDev (int argc, char **argv);
     virtual ~ Rts2SelectorDev (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
 

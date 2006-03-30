@@ -43,10 +43,11 @@ private:
 
   void queTarget (Target * in_target);
   void updateScriptCount ();
+protected:
+    virtual int processOption (int in_opt);
 public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
@@ -77,6 +78,7 @@ public:
   int setNext (int nextId);
   int setNow (int nextId);
   int setGrb (int grbId);
+  int setShower ();
 
   void stop ()
   {
@@ -94,6 +96,12 @@ Rts2ConnExecutor::commandAuthorized ()
       if (paramNextInteger (&tar_id) || !paramEnd ())
 	return -2;
       return master->setGrb (tar_id);
+    }
+  else if (isCommand ("shower"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->setShower ();
     }
   else if (isCommand ("now"))
     {
@@ -540,6 +548,7 @@ Rts2Executor::setGrb (int grbId)
   // if we don't observe anything..bring us to GRB..
   if (!currentTarget)
     {
+      delete nextTarget;
       nextTarget = grbTarget;
       switchTarget ();
       return 0;
@@ -559,6 +568,12 @@ Rts2Executor::setGrb (int grbId)
   delete nextTarget;
   nextTarget = grbTarget;
   return 0;
+}
+
+int
+Rts2Executor::setShower ()
+{
+  return setNow (TARGET_SHOWER);
 }
 
 void

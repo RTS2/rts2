@@ -207,7 +207,7 @@ Rts2DevClientCameraExec::filterOK ()
 void
 Rts2DevClientCameraExec::filterFailed (int status)
 {
-  deleteScript ();
+  nextCommand ();
   Rts2DevClientCameraImage::filterFailed ();
 }
 
