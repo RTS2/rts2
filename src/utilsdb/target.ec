@@ -328,8 +328,8 @@ Target::save (int tar_id)
   if (isnan (db_tar_bonus))
   {
     db_tar_bonus = 0;
-    db_tar_bonus_time = 0;
     db_tar_bonus_ind =-1;
+    db_tar_bonus_time = 0;
     db_tar_bonus_time_ind = -1;
   }
   else

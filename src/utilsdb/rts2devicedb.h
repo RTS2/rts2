@@ -10,11 +10,11 @@ class Rts2DeviceDb:public Rts2Device
   char *configFile;
 protected:
     virtual int willConnect (Rts2Address * in_addr);
+  virtual int processOption (int in_opt);
 public:
     Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
 		  int default_port, char *default_name);
     virtual ~ Rts2DeviceDb (void);
-  virtual int processOption (int in_opt);
   int initDB ();
   virtual int init ();
   virtual void closeSockets ();

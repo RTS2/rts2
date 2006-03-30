@@ -91,6 +91,7 @@
 
 #define TARGET_SWIFT_FOV	10
 #define TARGET_INTEGRAL_FOV	11
+#define TARGET_SHOWER		12
 
 #define OBS_MOVE		0
 #define OBS_ALREADY_STARTED	1
