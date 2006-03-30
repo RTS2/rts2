@@ -1,6 +1,6 @@
 # $Id$
 
-bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm rts2-cupola-mark rts2-cupola-dummy
+bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm rts2-dome-dublin rts2-cupola-mark rts2-cupola-dummy
 
 noinst_HEADERS = dome.h udpweather.h cupola.h rts2connbufweather.h
 
@@ -13,8 +13,6 @@ rts2_dome_fram_SOURCES = dome.cpp fram.cpp udpweather.cpp
 rts2_cupola_mark_SOURCES = dome.cpp cupola.cpp mark.cpp udpweather.cpp
 
 rts2_cupola_dummy_SOURCES = dome.cpp cupola.cpp dummy_cup.cpp
-
-bin_PROGRAMS += rts2-dome-dublin
 
 rts2_dome_dublin_SOURCES = dome.cpp dublin.cpp udpweather.cpp rts2connbufweather.cpp
 

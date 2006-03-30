@@ -90,12 +90,13 @@ Rts2ConnFramWeather (in_weather_port, in_weather_timeout, in_master)
 int
 Rts2ConnBufWeather::receive (fd_set * set)
 {
-  int ret;
+  int ret, ret_c;
   char Wbuf[500];
   int data_size = 0;
   float rtRainRate;
   float rtOutsideHum;
   float rtOutsideTemp;
+  float weatherTimeout;
   if (sock >= 0 && FD_ISSET (sock, set))
     {
       struct sockaddr_in from;
@@ -116,6 +117,14 @@ Rts2ConnBufWeather::receive (fd_set * set)
       //rtExtraTemp2=3.3, rtWindSpeed=0.0, rtInsideHum=22.0, rtWindDir=207.0, rtExtraTemp1=3.9, rtRainRate=0.0, rtOutsideHum=52.0, rtWindAvgSpeed=0.4, rtInsideTemp=23.4, rtExtraHum1=51.0, rtBaroCurr=1000.0, rtExtraHum2=51.0, rtOutsideTemp=0.5/
       WeatherBuf *weather = new WeatherBuf ();
       ret = weather->parse (Wbuf);
+      ret_c = ret;
+      weather->getValue ("weatherTimeout", weatherTimeout, ret_c);
+      // if we found weatherTimeout - that's message beeing send to us to set timeout
+      if (!ret_c)
+	{
+	  badSetWeatherTimeout ((int) weatherTimeout);
+	}
+
       weather->getValue ("rtIsRaining", rtRainRate, ret);
       weather->getValue ("rtWindAvgSpeed", windspeed, ret);
       weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
@@ -123,7 +132,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
       if (ret)
 	{
 	  rain = 1;
-	  setWeatherTimeout (conn_timeout);
+	  badSetWeatherTimeout (conn_timeout);
 	  return data_size;
 	}
       rain = rtRainRate > 0 ? 1 : 0;
@@ -140,11 +149,9 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	{
 	  time (&lastBadWeather);
 	  if (rain == 0 && windspeed > master->getMaxWindSpeed ())
-	    setWeatherTimeout (bad_windspeed_timeout);
+	    badSetWeatherTimeout (bad_windspeed_timeout);
 	  else
-	    setWeatherTimeout (bad_weather_timeout);
-	  master->closeDome ();
-	  master->setMasterStandby ();
+	    badSetWeatherTimeout (bad_weather_timeout);
 	}
     }
   return data_size;

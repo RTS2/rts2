@@ -32,6 +32,14 @@ Rts2ConnFramWeather::setWeatherTimeout (time_t wait_time)
   master->setWeatherTimeout (wait_time);
 }
 
+void
+Rts2ConnFramWeather::badSetWeatherTimeout (time_t wait_time)
+{
+  master->setWeatherTimeout (wait_time);
+  master->closeDome ();
+  master->setMasterStandby ();
+}
+
 int
 Rts2ConnFramWeather::init ()
 {

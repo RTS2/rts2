@@ -28,7 +28,7 @@
 #define GOOD		0
 #define BAD		-1
 
-#define WATCHER_METEO_TIMEOUT	30
+#define WATCHER_METEO_TIMEOUT	80
 
 #define WATCHER_BAD_WEATHER_TIMEOUT	3600
 #define WATCHER_BAD_WINDSPEED_TIMEOUT	360
@@ -213,12 +213,14 @@ Rts2DevDomeDublin::info ()
   return 0;
 }
 
-bool
-Rts2DevDomeDublin::isMoving ()
+bool Rts2DevDomeDublin::isMoving ()
 {
-  int result;
-  int moving = 0;
-  int count;
+  int
+    result;
+  int
+    moving = 0;
+  int
+    count;
   for (count = 0; count < 5; count++)
     {
       result = (inb (BASE + 2));
