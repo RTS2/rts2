@@ -806,11 +806,23 @@ Rts2DevTelParamount::updateTrack ()
 int
 Rts2DevTelParamount::idle ()
 {
-  long ac = 0;
   struct timeval now;
+  CWORD32 homeOff, ac = 0;
   int ret;
   // check if we aren't close to RA limit
   ret = MKS3PosCurGet (axis0, &ac);
+  if (ret)
+    {
+      sleep (10);
+      return Rts2Device::idle ();
+    }
+  ret = getHomeOffset (homeOff);
+  if (ret)
+    {
+      sleep (10);
+      return Rts2Device::idle ();
+    }
+  ac += homeOff;
   if (telLatitude < 0)
     {
       if ((ac + acMargin) > acMax)
