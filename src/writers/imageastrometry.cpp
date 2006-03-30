@@ -187,3 +187,36 @@ Rts2Image::getFlip ()
     }
   return val;
 }
+
+int
+Rts2Image::getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name)
+{
+  int ret;
+  struct ln_equ_posn pos;
+  ret = getValue (ra_name, pos.ra);
+  if (ret)
+    return ret;
+  ret = getValue (dec_name, pos.dec);
+  if (ret)
+    return ret;
+  radec.setPos (&pos);
+  return 0;
+}
+
+int
+Rts2Image::getCoordTarget (LibnovaRaDec & radec)
+{
+  return getCoord (radec, "RASC", "DECL");
+}
+
+int
+Rts2Image::getCoordAstrometry (LibnovaRaDec & radec)
+{
+  return getCoord (radec, "CRVAL1", "CRVAL2");
+}
+
+int
+Rts2Image::getCoordMount (LibnovaRaDec & radec)
+{
+  return getCoord (radec, "MNT_RA", "MNT_DEC");
+}

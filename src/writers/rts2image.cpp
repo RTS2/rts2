@@ -282,6 +282,11 @@ Rts2Image::openImage (const char *in_filename)
     setImageName (in_filename);
 
   fits_open_diskfile (&ffile, imageName, READWRITE, &fits_status);
+  if (fits_status == FILE_NOT_OPENED)
+    {
+      fits_status = 0;
+      fits_open_diskfile (&ffile, imageName, READONLY, &fits_status);
+    }
   if (fits_status)
     {
       fits_report_error (stderr, fits_status);

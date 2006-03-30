@@ -12,6 +12,7 @@
 #include <ostream>
 
 #include "imghdr.h"
+#include "../utils/libnova_cpp.h"
 #include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/mkpath.h"
@@ -350,6 +351,11 @@ public:
   {
     config_rotang = in_config_rotang;
   }
+
+  int getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name);
+  int getCoordTarget (LibnovaRaDec & radec);
+  int getCoordAstrometry (LibnovaRaDec & radec);
+  int getCoordMount (LibnovaRaDec & radec);
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 };
