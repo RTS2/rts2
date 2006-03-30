@@ -15,14 +15,14 @@ class Rts2ModelTerm
 {
 private:
   // term name
-  const char *name;
+  std::string name;
 protected:
   double corr;			// corection parameter, always in degrees!
   double sigma;			// model sigma
 public:
     Rts2ModelTerm (const char *in_name, double in_corr, double in_sigma)
   {
-    name = in_name;
+    name = std::string (in_name);
     corr = in_corr;
     sigma = in_sigma;
   }
@@ -283,6 +283,32 @@ public:
 								in_sigma)
   {
   }
+  virtual void apply (struct ln_equ_posn *pos,
+		      Rts2ObsConditions * obs_conditions);
+};
+
+typedef enum
+{ SIN, COS, NOT } sincos_t;
+
+/**
+ * Class which calculate harmonics terms.
+ * It have to construct function from name, using sin & cos etc..
+ */
+class Rts2TermHarmonics:public Rts2ModelTerm
+{
+private:
+  char resType;
+  sincos_t func[2];
+  char param[2];
+  int mul[2];
+
+  const char *getFunc (const char *in_func, int i);
+  double getValue (struct ln_equ_posn *pos,
+		   Rts2ObsConditions * obs_conditions, int i);
+  double getMember (struct ln_equ_posn *pos,
+		    Rts2ObsConditions * obs_conditions, int i);
+public:
+    Rts2TermHarmonics (double in_corr, double in_sigma, const char *in_name);
   virtual void apply (struct ln_equ_posn *pos,
 		      Rts2ObsConditions * obs_conditions);
 };

@@ -181,6 +181,11 @@ std::istream & operator >> (std::istream & is, Rts2TelModel * model)
 	{
 	  term = new Rts2TermDCES (corr, sigma);
 	}
+      // generic harmonics term
+      else if (name[0] == 'H')
+	{
+	  term = new Rts2TermHarmonics (corr, sigma, name.c_str ());
+	}
       else
 	{
 	  return is;

@@ -220,3 +220,117 @@ Rts2TermDCES::apply (struct ln_equ_posn *pos,
 {
   pos->dec += corr * sin (ln_deg_to_rad (pos->dec));
 }
+
+Rts2TermHarmonics::Rts2TermHarmonics (double in_corr, double in_sigma,
+				      const char *in_name):
+Rts2ModelTerm (in_name, in_corr, in_sigma)
+{
+  func[0] = NOT;
+  func[1] = NOT;
+  const char *end;
+  // parse it
+  if (strlen (in_name) < 4)
+    return;
+  resType = in_name[1];
+  end = getFunc (in_name + 2, 0);
+  if (!end)
+    return;
+  if (*end)
+    getFunc (end, 1);
+}
+
+const char *
+Rts2TermHarmonics::getFunc (const char *in_func, int i)
+{
+  const char *end = in_func + 1;
+  int times = 1;
+  if (!end)
+    return NULL;
+  switch (*in_func)
+    {
+    case 'S':
+      func[i] = SIN;
+      break;
+    case 'C':
+      func[i] = COS;
+      break;
+    default:
+      std::cout << "Unknow function " << in_func << std::endl;
+      return NULL;
+    }
+  param[i] = *end;
+  end++;
+  mul[i] = 0;
+  while (isdigit (*end))
+    {
+      mul[i] = mul[i] * times + (*end - '0');
+      times *= 10;
+      end++;
+    }
+  return end;
+}
+
+double
+Rts2TermHarmonics::getValue (struct ln_equ_posn *pos,
+			     Rts2ObsConditions * obs_conditions, int i)
+{
+  double val = mul[i];
+//  struct ln_hrz_posn hrz;
+  switch (param[i])
+    {
+    case 'H':
+      val *= pos->ra;
+      break;
+    case 'D':
+      val *= pos->dec;
+      break;
+/*    case 'A':
+      ln_get_hrz_from_equ_sidereal_time (pos,  
+      break; */
+    default:
+      std::cout << "Unknow parameter " << param[i] << std::endl;
+      val = nan ("f");
+    }
+  return val;
+}
+
+double
+Rts2TermHarmonics::getMember (struct ln_equ_posn *pos,
+			      Rts2ObsConditions * obs_conditions, int i)
+{
+  double val;
+  switch (func[i])
+    {
+    case SIN:
+      val = ln_deg_to_rad (getValue (pos, obs_conditions, i));
+      return sin (val);
+      break;
+    case COS:
+      val = ln_deg_to_rad (getValue (pos, obs_conditions, i));
+      return cos (val);
+      break;
+    case NOT:
+    default:
+      return (i == 0 ? 0 : 1);
+    }
+}
+
+void
+Rts2TermHarmonics::apply (struct ln_equ_posn *pos,
+			  Rts2ObsConditions * obs_conditions)
+{
+  double resVal = corr;
+  for (int i = 0; i < 2; i++)
+    resVal *= getMember (pos, obs_conditions, i);
+  switch (resType)
+    {
+    case 'H':
+      pos->ra += resVal;
+      break;
+    case 'D':
+      pos->dec += resVal;
+      break;
+    default:
+      std::cout << "Cannot process (yet?) resType " << resType << std::endl;
+    }
+}
