@@ -67,6 +67,8 @@ protected:
   void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change,
 		   int flip, double JD);
   void applyCorrections (struct ln_equ_posn *pos, double JD);
+  // apply corrections (at system time)
+  void applyCorrections (double &tar_ra, double &tar_dec);
 
   virtual int willConnect (Rts2Address * in_addr);
   char *device_file;

@@ -8,6 +8,7 @@
 
 #include "../utils/rts2device.h"
 #include "../utils/rts2block.h"
+#include "../utils/libnova_cpp.h"
 
 #include "telescope.h"
 #include "rts2devclicop.h"
@@ -231,14 +232,14 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
   hadec.ra = ln_range_degrees (lst - pos->ra);
   hadec.dec = pos->dec;
   if (flip && model)
-    model->apply (&hadec);
+    model->reverse (&hadec);
   else if (!flip && model0)
-    model0->apply (&hadec);
+    model0->reverse (&hadec);
   // fallback - use whenever model is available
   else if (model)
-    model->apply (&hadec);
+    model->reverse (&hadec);
   else
-    model0->apply (&hadec);
+    model0->reverse (&hadec);
 
   // get back from model - from HA
   ra = ln_range_degrees (lst - hadec.ra);
@@ -642,6 +643,8 @@ Rts2DevTelescope::sendBaseInfo (Rts2Conn * conn)
 void
 Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
 {
+  LibnovaRaDec lp_in (pos);
+  std::cout << lp_in << std::endl;
   // apply all posible corrections
   if (corrections & COR_ABERATION)
     applyAberation (pos, JD);
@@ -649,6 +652,21 @@ Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
     applyPrecession (pos, JD);
   if (corrections & COR_REFRACTION)
     applyRefraction (pos, JD);
+  LibnovaRaDec lp (pos);
+  std::cout << lp << std::endl;
+}
+
+void
+Rts2DevTelescope::applyCorrections (double &tar_ra, double &tar_dec)
+{
+  struct ln_equ_posn pos;
+  pos.ra = tar_ra;
+  pos.dec = tar_dec;
+
+  applyCorrections (&pos, ln_get_julian_from_sys ());
+
+  tar_ra = pos.ra;
+  tar_dec = pos.dec;
 }
 
 int
@@ -778,14 +796,17 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
 				   double tar_dec)
 {
   int ret;
+
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startResyncMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
 	  locCorDec, lastTar.ra, lastTar.dec);
+
   if (tar_ra != lastTar.ra || tar_dec != lastTar.dec)
     {
       syslog (LOG_DEBUG,
 	      "Rts2DevTelescope::startResyncMove called wrong - calling startMove!");
+      applyCorrections (tar_ra, tar_dec);
       return startMove (conn, tar_ra, tar_dec);
     }
   if (knowPosition)
@@ -824,6 +845,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
 			    "position change is bellow telescope resolution");
       return -1;
     }
+  applyCorrections (tar_ra, tar_dec);
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startResyncMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
