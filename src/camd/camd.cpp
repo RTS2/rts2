@@ -455,6 +455,7 @@ Rts2DevCamera::initChips ()
 	  return ret;
 	}
     }
+  // init focuser - try to read focuser offsets & initial position from filer
   return 0;
 }
 
@@ -941,6 +942,8 @@ Rts2DevCamera::stepFocuser (Rts2Conn * conn, int step_count)
 int
 Rts2DevCamera::getFocPos ()
 {
+  if (!focuserDevice)
+    return -1;
   struct focuserMove fm;
   fm.focuserName = focuserDevice;
   postEvent (new Rts2Event (EVENT_FOCUSER_GET, (void *) &fm));
