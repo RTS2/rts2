@@ -643,8 +643,6 @@ Rts2DevTelescope::sendBaseInfo (Rts2Conn * conn)
 void
 Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
 {
-  LibnovaRaDec lp_in (pos);
-  std::cout << lp_in << std::endl;
   // apply all posible corrections
   if (corrections & COR_ABERATION)
     applyAberation (pos, JD);
@@ -652,8 +650,6 @@ Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
     applyPrecession (pos, JD);
   if (corrections & COR_REFRACTION)
     applyRefraction (pos, JD);
-  LibnovaRaDec lp (pos);
-  std::cout << lp << std::endl;
 }
 
 void
@@ -823,8 +819,6 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
   // we received correction for last move..and yes, we would like to apply it in resync
   if (locCorNum == moveMark)
     {
-      tar_ra = telRa;
-      tar_dec = telDec;
       // if we don't move too far from last correction
       if (knowPosition)
 	{
