@@ -107,9 +107,9 @@ Rts2DeviceDb::init ()
 }
 
 void
-Rts2DeviceDb::closeSockets ()
+Rts2DeviceDb::forkedInstance ()
 {
 // dosn't work??
 //  EXEC SQL DISCONNECT;
-  Rts2Device::closeSockets ();
+  Rts2Device::forkedInstance ();
 }

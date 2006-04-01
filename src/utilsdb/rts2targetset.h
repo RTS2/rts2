@@ -11,10 +11,9 @@ class Rts2TargetSet:public
   std::list <
 Target * >
 {
-private:
+protected:
   void
   load (std::string in_where, std::string order_by);
-protected:
   void
   load (std::list < int >&target_ids);
 
@@ -39,6 +38,16 @@ public:
 
   int
   save ();
+};
+
+/**
+ * Holds calibration targets
+ */
+class Rts2TargetSetCal:
+public Rts2TargetSet
+{
+public:
+  Rts2TargetSetCal (Target * in_masterTarget, double JD);
 };
 
 /**

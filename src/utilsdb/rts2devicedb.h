@@ -17,7 +17,7 @@ public:
     virtual ~ Rts2DeviceDb (void);
   int initDB ();
   virtual int init ();
-  virtual void closeSockets ();
+  virtual void forkedInstance ();
 };
 
 #endif /* !__RTS2_DEVICEDB__ */

@@ -492,9 +492,15 @@ Target::moveFailed ()
 }
 
 bool
+Target::moveWasStarted ()
+{
+  return (moveCount != 0);
+}
+
+bool
 Target::wasMoved ()
 {
-  return (moveCount == 2 || moveCount == 3);
+  return moveCount == 2;
 }
 
 int
@@ -587,8 +593,8 @@ Target::endObservation (int in_next_id)
     sendTargetMail (SEND_END_OBS, "END OF OBSERVATION");
 
     // check if that was the last observation..
-    Rts2Obs observation = Rts2Obs (getObsId ());
-    observation.checkUnprocessedImages ();
+    Rts2Obs out_observation = Rts2Obs (getObsId ());
+    out_observation.checkUnprocessedImages ();
 
     obs_id = -1;
   }
@@ -799,8 +805,7 @@ Target::getHourAngle (double JD)
   ret = getPosition (&pos);
   if (ret)
     return nan ("f");
-  ha = lst - pos.ra;
-  ha = ln_range_degrees (ha);
+  ha = ln_range_degrees (lst - pos.ra);
   return ha;
 }
 
@@ -1486,4 +1491,11 @@ operator << (std::ostream &_os, Target *target)
   _os << InfoVal<double> ("MIN_ALT", target->getMinAlt ());
   target->printExtra (_os);
   return _os;
+}
+
+int
+Target::getCalTargets (double JD, Rts2TargetSet &in_set)
+{
+  in_set = Rts2TargetSetCal (this, JD);
+  return in_set.size ();
 }

@@ -104,48 +104,6 @@ Rts2TargetSet::~Rts2TargetSet (void)
 }
 
 void
-Rts2TargetSetGrb::load ()
-{
-  EXEC SQL BEGIN DECLARE SECTION;
-  int db_tar_id;
-  EXEC SQL END DECLARE SECTION;
-
-  std::list <int> target_ids;
-
-  EXEC SQL DECLARE grb_tar_cur CURSOR FOR
-  SELECT
-    tar_id
-  FROM
-    grb
-  ORDER BY
-    grb_date DESC;
-
-  EXEC SQL OPEN grb_tar_cur;
-
-  while (1)
-  {
-    EXEC SQL FETCH next FROM grb_tar_cur INTO
-      :db_tar_id;
-    if (sqlca.sqlcode)
-      break;
-    target_ids.push_back (db_tar_id);
-  }
-  if (sqlca.sqlcode != ECPG_NOT_FOUND)
-  {
-    syslog (LOG_ERR, "Rts2TargetSet::load cannot load targets");
-  }
-  EXEC SQL CLOSE grb_tar_cur;
-  EXEC SQL ROLLBACK;
-
-  for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
-  {
-    TargetGRB *tar = (TargetGRB *) createTarget (*iter, obs);
-    if (tar)
-      push_back (tar);
-  }
-}
-
-void
 Rts2TargetSet::setTargetEnabled (bool enabled)
 {
   for (iterator iter = begin (); iter != end (); iter++)
@@ -188,6 +146,19 @@ Rts2TargetSet::save ()
   return ret;
 }
 
+Rts2TargetSetCal::Rts2TargetSetCal (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver ())
+{
+  double airmass = in_masterTarget->getAirmass (JD);
+  std::ostringstream os, func;
+  func << "ln_airmass (targets.tar_ra, targets.tar_dec, "
+    << in_masterTarget->getObserver ()->lng << ", "
+    << in_masterTarget->getObserver ()->lat << ", "
+    << JD << ")";
+  os << func << " > " << (airmass - 0.1)
+   << " and " << func << " < " << (airmass + 0.1);
+  load (os.str (), func.str ());
+}
+
 Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)
 {
   obs = in_obs;
@@ -203,6 +174,48 @@ Rts2TargetSetGrb::~Rts2TargetSetGrb (void)
     delete *iter;
   }
   clear ();
+}
+
+void
+Rts2TargetSetGrb::load ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_tar_id;
+  EXEC SQL END DECLARE SECTION;
+
+  std::list <int> target_ids;
+
+  EXEC SQL DECLARE grb_tar_cur CURSOR FOR
+  SELECT
+    tar_id
+  FROM
+    grb
+  ORDER BY
+    grb_date DESC;
+
+  EXEC SQL OPEN grb_tar_cur;
+
+  while (1)
+  {
+    EXEC SQL FETCH next FROM grb_tar_cur INTO
+      :db_tar_id;
+    if (sqlca.sqlcode)
+      break;
+    target_ids.push_back (db_tar_id);
+  }
+  if (sqlca.sqlcode != ECPG_NOT_FOUND)
+  {
+    syslog (LOG_ERR, "Rts2TargetSet::load cannot load targets");
+  }
+  EXEC SQL CLOSE grb_tar_cur;
+  EXEC SQL ROLLBACK;
+
+  for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
+  {
+    TargetGRB *tar = (TargetGRB *) createTarget (*iter, obs);
+    if (tar)
+      push_back (tar);
+  }
 }
 
 void

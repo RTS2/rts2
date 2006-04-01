@@ -273,6 +273,8 @@ Rts2Obs::checkUnprocessedImages ()
   {
     Rts2TarUser tar_user = Rts2TarUser (getTargetId (), getTargetType ());
     std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
+    if (mails.size () == 0)
+      return;
     std::ostringstream subject;
     subject << "TARGET #" << getTargetId ()
       << ", OBSERVATION " << getObsId ()

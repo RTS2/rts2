@@ -122,6 +122,7 @@
 #define SEND_END_NIGHT		0x10
 
 class Rts2Obs;
+class Rts2TargetSet;
 
 /**
  * Class for one observation.
@@ -462,6 +463,7 @@ public:
   void moveStarted ();
   void moveEnded ();
   void moveFailed ();
+  bool moveWasStarted ();
   bool wasMoved ();
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
@@ -605,6 +607,16 @@ public:
   }
 
   int printImages (double JD, std::ostream & _os);
+
+  /**
+   * Return calibration targets for given target
+   */
+  int getCalTargets (Rts2TargetSet & in_set)
+  {
+    return getCalTargets (ln_get_julian_from_sys (), in_set);
+  }
+
+  virtual int getCalTargets (double JD, Rts2TargetSet & in_set);
 };
 
 class ConstTarget:public Target
