@@ -62,16 +62,10 @@ Rts2TelModel::reverse (struct ln_equ_posn *pos)
       pos2.ra = pos->ra;
       pos2.dec = pos->dec;
 
-      std::cout << (*iter) << "Before: " << pos->ra << " " << pos->
-	dec << std::endl;
-
       (*iter)->apply (pos, cond);
 
       pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
       pos->dec = 2 * pos2.dec - pos->dec;
-
-      std::cout << "After: " << pos->ra << " " << pos->
-	dec << std::endl << std::endl;
     }
   return 0;
 }
