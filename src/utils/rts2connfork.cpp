@@ -87,7 +87,7 @@ Rts2ConnFork::init ()
   dup2 (filedes[1], 1);
   // close all sockets so when we crash, we don't get any dailing
   // sockets
-  master->closeSockets ();
+  master->forkedInstance ();
   ret = newProcess ();
   if (ret)
     syslog (LOG_ERR, "Rts2ConnFork::init newProcess return : %i %m", ret);

@@ -349,7 +349,7 @@ public:
   void setPort (int in_port);
   int getPort (void);
   virtual int init ();
-  virtual void closeSockets ();
+  virtual void forkedInstance ();
 
   int addConnection (Rts2Conn * conn);
 

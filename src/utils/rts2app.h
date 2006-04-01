@@ -59,8 +59,9 @@ public:  Rts2App (int in_argc, char **in_argv);
   int parseDate (const char *in_date, struct tm *out_time);
 };
 
-// send mail to recepient; requires /usr/bin/mail binary
+// send mail to recepient; requires /usr/bin/mail binary; if master object is specified, that object
+// method forkedInstance will be called, which might close whenever descriptors are needed
 int sendMailTo (const char *subject, const char *text,
-		const char *mailAddress);
+		const char *mailAddress, Rts2Object * master = NULL);
 
 #endif /* !__RTS2_APP__ */

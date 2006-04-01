@@ -264,7 +264,8 @@ Rts2App::parseDate (const char *in_date, struct tm *out_time)
 }
 
 int
-sendMailTo (const char *subject, const char *text, const char *mailAddress)
+sendMailTo (const char *subject, const char *text, const char *mailAddress,
+	    Rts2Object * master)
 {
   int ret;
   char *cmd;
@@ -281,6 +282,8 @@ sendMailTo (const char *subject, const char *text, const char *mailAddress)
     {
       return 0;
     }
+  if (master)
+    master->forkedInstance ();
   asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, mailAddress);
   mailFile = popen (cmd, "w");
   if (!mailFile)

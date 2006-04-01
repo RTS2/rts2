@@ -27,6 +27,10 @@ public:
     // discard event..
     delete event;
   }
+
+  virtual void forkedInstance ()
+  {
+  }
 };
 
 #endif /*! __RTS2_OBJECT__ */

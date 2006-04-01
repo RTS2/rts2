@@ -1021,7 +1021,7 @@ Rts2Block::init ()
 }
 
 void
-Rts2Block::closeSockets ()
+Rts2Block::forkedInstance ()
 {
   if (sock >= 0)
     close (sock);
@@ -1358,7 +1358,7 @@ Rts2Block::sendMail (char *subject, char *text)
   if (!mailAddress)
     return 0;
 
-  return sendMailTo (subject, text, mailAddress);
+  return sendMailTo (subject, text, mailAddress, this);
 }
 
 Rts2Address *
