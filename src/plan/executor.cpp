@@ -257,7 +257,11 @@ Rts2Executor::postEvent (Rts2Event * event)
 	{
 	case NEXT_COMMAND_PRECISION_OK:
 	  if (currentTarget)
-	    currentTarget->acqusitionEnd ();
+	    {
+	      syslog (LOG_DEBUG, "NEXT_COMMAND_PRECISION_OK %i",
+		      currentTarget->getObsTargetID ());
+	      currentTarget->acqusitionEnd ();
+	    }
 	  maskState (0, EXEC_MASK_ACQ, EXEC_ACQ_OK);
 	  break;
 	case -5:
@@ -269,7 +273,11 @@ Rts2Executor::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_LAST_READOUT:
-      maskState (0, EXEC_STATE_MASK, EXEC_LASTREAD);
+      updateScriptCount ();
+      // that was last script running
+      if (scriptCount == 0)
+	maskState (0, EXEC_STATE_MASK, EXEC_LASTREAD);
+      break;
     case EVENT_SCRIPT_ENDED:
       updateScriptCount ();
       if (currentTarget)

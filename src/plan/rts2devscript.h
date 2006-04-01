@@ -32,8 +32,8 @@ protected:
   } waitScript;
 
   int blockMove;
-  enum
-  { NO_START, START_CURRENT, START_NEXT } getObserveStart;
+//  enum
+//  { NO_START, START_CURRENT, START_NEXT } getObserveStart;
   virtual void startTarget ();
 
   virtual int getNextCommand () = 0;

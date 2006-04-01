@@ -3,6 +3,7 @@
 #endif
 
 #include <limits.h>
+#include <iostream>
 
 #include "rts2execcli.h"
 #include "../writers/rts2imagedb.h"
@@ -79,9 +80,9 @@ Rts2DevClientCameraExec::nextCommand ()
       // move was executed
       if (currentTarget && nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE)
 	{
+	  std::cerr << "Moved: " << currentTarget->wasMoved () << std::endl;
 	  if (!currentTarget->wasMoved ())
 	    {
-	      getObserveStart = START_CURRENT;
 	      return;
 	    }
 	}
@@ -179,6 +180,7 @@ Rts2DevClientCameraExec::exposureEnd ()
   if (!script || (script && script->isLastCommand ()))
     {
       getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
+      deleteScript ();
     }
   else
     {
@@ -419,7 +421,7 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
       moveEnd ();
       return;
     }
-  if (currentTarget)
+  if (currentTarget && currentTarget->moveWasStarted ())
     currentTarget->moveFailed ();
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveFailed (status);

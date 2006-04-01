@@ -370,10 +370,11 @@ Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
   // detect is somebody plans to run A command..
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
-#ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2ScriptElementWaitAcquire::defnextCommand %i (%s)",
-	  ac.count, script->getDefaultDevice ());
-#endif
+//#ifdef DEBUG_EXTRA
+  syslog (LOG_DEBUG,
+	  "Rts2ScriptElementWaitAcquire::defnextCommand %i (%s) %i", ac.count,
+	  script->getDefaultDevice (), tar_id);
+//#endif
   if (ac.count)
     return NEXT_COMMAND_WAIT_ACQUSITION;
   return NEXT_COMMAND_NEXT;
@@ -576,12 +577,12 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquireStar::postEvent EVENT_STAR_DATA failed (numStars: %i)",
 		      image->sexResultNum);
+	      retries++;
 	      if (retries >= maxRetries)
 		{
 		  processingState = FAILED;
 		  break;
 		}
-	      retries++;
 	      processingState = PRECISION_BAD;
 	      // try some offset..
 	      spiral->getNextStep (next_x, next_y);
@@ -608,6 +609,7 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	      syslog (LOG_DEBUG,
 		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f failed",
 		      offset.ra, offset.dec);
+	      retries++;
 	      if (retries >= maxRetries)
 		{
 		  processingState = FAILED;
@@ -618,7 +620,6 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 		postEvent (new
 			   Rts2Event (EVENT_ADD_FIXED_OFFSET,
 				      (void *) &offset));
-	      retries++;
 	      break;
 	    }
 	  image->toAcquisition ();
