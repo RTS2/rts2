@@ -153,8 +153,8 @@ private:
   struct timeval track_start_time;
   struct timeval track_recalculate;
   struct timeval track_next;
-  MKS3ObjTrackInfo track0;
-  MKS3ObjTrackInfo track1;
+  MKS3ObjTrackInfo *track0;
+  MKS3ObjTrackInfo *track1;
 protected:
     virtual int processOption (int in_opt);
   virtual int isMoving ();
@@ -600,6 +600,12 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
   timerclear (&track_recalculate);
   timerclear (&track_next);
 
+  track_recalculate.tv_sec = 1;
+  track_recalculate.tv_usec = 0;
+
+  track0 = NULL;
+  track1 = NULL;
+
   // apply all correction for paramount
   corrections = COR_ABERATION | COR_PRECESSION | COR_REFRACTION;
 
@@ -659,7 +665,8 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
 
 Rts2DevTelParamount::~Rts2DevTelParamount (void)
 {
-
+  delete track0;
+  delete track1;
 }
 
 int
@@ -711,6 +718,8 @@ Rts2DevTelParamount::init ()
   ret = updateLimits ();
   if (ret)
     return -1;
+
+  moveState = TEL_SLEW;
 
   ret0 = MKS3MotorOn (axis0);
   ret1 = MKS3MotorOn (axis1);
@@ -774,11 +783,46 @@ Rts2DevTelParamount::updateTrack ()
   double JD;
   struct ln_equ_posn corr_pos;
   double track_delta;
-  CWORD32 ac, dc;
+  CWORD32 ac, dc, homeOff;
   MKS3ObjTrackStat stat0, stat1;
+  int ret;
 
   gettimeofday (&track_next, NULL);
   timeradd (&track_next, &track_recalculate, &track_next);
+
+  if (!track0 || !track1)
+    {
+      JD = ln_get_julian_from_sys ();
+      ret = getHomeOffset (homeOff);
+      if (ret)
+	return;
+
+      getTargetCorrected (&corr_pos, JD);
+
+      ret = sky2counts (&corr_pos, ac, dc, JD, homeOff);
+      if (ret)
+	return;
+      std::
+	cout << "Rts2DevTelParamount::updateTrack " << ac << " " << dc <<
+	std::endl;
+      ret0 = MKS3PosTargetSet (axis0, (long) ac);
+      ret1 = MKS3PosTargetSet (axis1, (long) dc);
+
+      // if that's too far..home us
+      if (ret0 == MAIN_AT_LIMIT)
+	{
+	  ret0 = MKS3Home (axis0, 0);
+	  moveState |= TEL_FORCED_HOMING0;
+	}
+      if (ret1 == MAIN_AT_LIMIT)
+	{
+	  ret1 = MKS3Home (axis1, 0);
+	  moveState |= TEL_FORCED_HOMING1;
+	}
+      checkRet ();
+      return;
+    }
+
   track_delta =
     track_next.tv_sec - track_start_time.tv_sec + (track_next.tv_usec -
 						   track_start_time.tv_usec) /
@@ -789,17 +833,19 @@ Rts2DevTelParamount::updateTrack ()
   // calculate position at track_next time
   sky2counts (&corr_pos, ac, dc, JD, 0);
 
-  std::cout << "Track ac " << ac << " dc " << dc << std::endl;
+  std::
+    cout << "Track ac " << ac << " dc " << dc << " " << track_delta << std::
+    endl;
   ret0 =
-    MKS3ObjTrackPointAdd (axis0, &track0,
+    MKS3ObjTrackPointAdd (axis0, track0,
 			  track_delta +
-			  track0.prevPointTimeTicks / track0.sampleFreq, ac,
-			  &stat0);
+			  track0->prevPointTimeTicks / track0->sampleFreq,
+			  (CWORD32) (ac + (track_delta * 10000)), &stat0);
   ret1 =
-    MKS3ObjTrackPointAdd (axis1, &track1,
+    MKS3ObjTrackPointAdd (axis1, track1,
 			  track_delta +
-			  track1.prevPointTimeTicks / track1.sampleFreq, dc,
-			  &stat1);
+			  track1->prevPointTimeTicks / track1->sampleFreq,
+			  (CWORD32) (dc + (track_delta * 10000)), &stat1);
   checkRet ();
 }
 
@@ -841,13 +887,15 @@ Rts2DevTelParamount::idle ()
       // don't check for move etc..
       return Rts2Device::idle ();
     }
-  // issue new track request..if needed
-//  if ((getState (0) & TEL_MASK_MOVING) == TEL_OBSERVING)
-//  {
-//    gettimeofday (&now, NULL);
-//    if (timercmp (&track_next, &now, <))
-//      updateTrack ();
-//  }
+  // issue new track request..if needed and we aren't homing
+  if ((getState (0) & TEL_MASK_MOVING) == TEL_OBSERVING
+      && !(status0 & MOTOR_HOMING) && !(status0 & MOTOR_SLEWING)
+      && !(status1 & MOTOR_HOMING) && !(status1 & MOTOR_SLEWING))
+    {
+      gettimeofday (&now, NULL);
+      if (timercmp (&track_next, &now, <))
+	updateTrack ();
+    }
   // check for some critical stuff
   return Rts2DevTelescope::idle ();
 }
@@ -887,6 +935,12 @@ Rts2DevTelParamount::startMove (double tar_ra, double tar_dec)
   int ret;
   CWORD32 ac = 0;
   CWORD32 dc = 0;
+
+  delete track0;
+  delete track1;
+
+  track0 = NULL;
+  track1 = NULL;
 
   ret = updateStatus ();
   if (ret)
@@ -963,20 +1017,24 @@ Rts2DevTelParamount::isMoving ()
 int
 Rts2DevTelParamount::endMove ()
 {
-  int ret, ret_track;
+  int ret;
+//  int ret_track;
   ret0 = MKS3MotorOn (axis0);
   ret1 = MKS3MotorOn (axis1);
   ret = checkRet ();
   // init tracking structures
   gettimeofday (&track_start_time, NULL);
   timerclear (&track_next);
-/*  ret0 = MKS3ObjTrackInit (axis0, &track0);
-  ret1 = MKS3ObjTrackInit (axis1, &track1);
+/*  if (!track0)
+    track0 = new MKS3ObjTrackInfo ();
+  if (!track1)
+    track1 = new MKS3ObjTrackInfo ();
+  ret0 = MKS3ObjTrackInit (axis0, track0);
+  ret1 = MKS3ObjTrackInit (axis1, track1);
   ret_track = checkRet ();
   if (!ret_track)
     updateTrack ();
-  else
-    std::cout << "Track init " << ret0 << " " << ret1 << std::endl; */
+  std::cout << "Track init " << ret0 << " " << ret1 << std::endl; */
   // 1 sec sleep to get time to settle down
   sleep (1);
   return ret;
@@ -985,8 +1043,15 @@ Rts2DevTelParamount::endMove ()
 int
 Rts2DevTelParamount::stopMove ()
 {
+  int ret;
   // if we issue startMove after abor, we will get to position after homing is performed
   if ((moveState & TEL_FORCED_HOMING0) || (moveState & TEL_FORCED_HOMING1))
+    return 0;
+  // check if we are homing..
+  ret = updateStatus ();
+  if (ret)
+    return -1;
+  if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
     return 0;
   ret0 = MKS3PosAbort (axis0);
   ret1 = MKS3PosAbort (axis1);
@@ -997,6 +1062,13 @@ int
 Rts2DevTelParamount::startPark ()
 {
   int ret;
+
+  delete track0;
+  delete track1;
+
+  track0 = NULL;
+  track1 = NULL;
+
   ret0 = MKS3MotorOn (axis0);
   ret1 = MKS3MotorOn (axis1);
   ret = checkRet ();
