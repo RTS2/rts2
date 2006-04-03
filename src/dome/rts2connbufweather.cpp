@@ -129,7 +129,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
       weather->getValue ("rtWindAvgSpeed", windspeed, ret);
       weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
       weather->getValue ("rtOutsideTemp", rtOutsideTemp, ret);
-      if (ret)
+      if (ret && ret_c)
 	{
 	  rain = 1;
 	  badSetWeatherTimeout (conn_timeout);
@@ -153,6 +153,8 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	  else
 	    badSetWeatherTimeout (bad_weather_timeout);
 	}
+      // ack message
+      sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));
     }
   return data_size;
 }

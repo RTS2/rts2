@@ -9,15 +9,35 @@
 
 class WeatherTimeout:public Rts2App
 {
+private:
+  int timeout;			// in seconds
 public:
-  WeatherTimeout (int in_argc, char **in_argv);
+    WeatherTimeout (int in_argc, char **in_argv);
 
+  virtual int processOption (int in_opt);
   virtual int run ();
 };
 
 WeatherTimeout::WeatherTimeout (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
+  timeout = 3600;
+
+  addOption ('t', "timeout", 1, "timeout (in seconds) to send");
+}
+
+int
+WeatherTimeout::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 't':
+      timeout = atoi (optarg);
+      break;
+    default:
+      return Rts2App::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -28,6 +48,8 @@ WeatherTimeout::run ()
   struct sockaddr_in serv_addr;
   int ret;
   struct hostent *server_info;
+  char *send_string;
+  int msg_size;
 
   char buf[4];
 
@@ -61,14 +83,14 @@ WeatherTimeout::run ()
       return 1;
     }
 
+  msg_size = asprintf (&send_string, "weatherTimeout=%i", timeout);
   ret =
-    sendto (sock, "weatherTimeout=3600", 19, 0,
+    sendto (sock, send_string, msg_size, 0,
 	    (struct sockaddr *) &serv_addr, sizeof (serv_addr));
   if (ret < 0)
     {
       perror ("write");
     }
-
   ret = recvfrom (sock, buf, 3, 0, (struct sockaddr *) &serv_addr, &size);
 
   if (ret < 0)
@@ -79,6 +101,7 @@ WeatherTimeout::run ()
   buf[3] = 0;
 
   printf ("read %s\n", buf);
+  free (send_string);
 
   close (sock);
   return 0;

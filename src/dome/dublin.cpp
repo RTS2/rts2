@@ -13,7 +13,7 @@
 #include "dome.h"
 #include "rts2connbufweather.h"
 
-#define	ROOF_TIMEOUT	300	// in seconds
+#define	ROOF_TIMEOUT	360	// in seconds
 
 #define OPEN		2
 #define CLOSE		4
@@ -25,9 +25,6 @@
 #define WATCHER_DOME_CLOSED	0
 #define WATCHER_DOME_UNKNOWN	-1
 
-#define GOOD		0
-#define BAD		-1
-
 #define WATCHER_METEO_TIMEOUT	80
 
 #define WATCHER_BAD_WEATHER_TIMEOUT	3600
@@ -36,14 +33,25 @@
 
 #define BASE 0xde00
 
+typedef enum
+{ TYPE_OPENED, TYPE_CLOSED, TYPE_STUCK } smsType_t;
+
 class Rts2DevDomeDublin:public Rts2DevDome
 {
 private:
   int dome_state;
   int ignoreMeteo;
+  time_t timeOpenClose;
+  bool domeFailed;
+  char *smsExec;
 
   Rts2ConnBufWeather *weatherConn;
   bool isMoving ();
+
+  void executeSms (smsType_t type);
+
+  void openDomeReal ();
+  void closeDomeReal ();
 protected:
     virtual int processOption (int in_opt);
   virtual int isGoodWeather ();
@@ -70,10 +78,16 @@ Rts2DevDomeDublin::Rts2DevDomeDublin (int in_argc, char **in_argv):
 Rts2DevDome (in_argc, in_argv)
 {
   domeModel = "DUBLIN_DOME";
+  smsExec = NULL;
   addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
+  addOption ('S', "execute_sms", 1,
+	     "execute this commmand to send sms about roof");
   ignoreMeteo = 0;
 
   weatherConn = NULL;
+
+  timeOpenClose = 0;
+  domeFailed = false;
 }
 
 Rts2DevDomeDublin::~Rts2DevDomeDublin (void)
@@ -83,6 +97,28 @@ Rts2DevDomeDublin::~Rts2DevDomeDublin (void)
   outb (0, BASE + 1);
 }
 
+void
+Rts2DevDomeDublin::executeSms (smsType_t type)
+{
+  char *cmd;
+  char *msg;
+  switch (type)
+    {
+    case TYPE_OPENED:
+      msg = "Watcher roof opened as expected";
+      break;
+    case TYPE_CLOSED:
+      msg = "Watcher roof closed as expected";
+      break;
+    case TYPE_STUCK:
+      msg = "FAILURE! Watcher roof failed!!";
+      break;
+    }
+  asprintf (&cmd, "%s '%s'", smsExec, msg);
+  system (cmd);
+  free (cmd);
+}
+
 int
 Rts2DevDomeDublin::processOption (int in_opt)
 {
@@ -90,6 +126,9 @@ Rts2DevDomeDublin::processOption (int in_opt)
     {
     case 'I':
       ignoreMeteo = 1;
+      break;
+    case 'S':
+      smsExec = optarg;
       break;
     default:
       return Rts2DevDome::processOption (in_opt);
@@ -201,7 +240,19 @@ Rts2DevDomeDublin::baseInfo ()
 int
 Rts2DevDomeDublin::info ()
 {
-  sw_state = 1;
+  // switches are both off either when we move enclosure or when dome failed
+  if (domeFailed || timeOpenClose > 0)
+    sw_state = 0;
+  else
+    switch (dome_state)
+      {
+      case DOME_OPENED:
+	sw_state = 4;
+	break;
+      case DOME_CLOSED:
+	sw_state = 1;
+	break;
+      }
 
   if (weatherConn)
     {
@@ -213,14 +264,12 @@ Rts2DevDomeDublin::info ()
   return 0;
 }
 
-bool Rts2DevDomeDublin::isMoving ()
+bool
+Rts2DevDomeDublin::isMoving ()
 {
-  int
-    result;
-  int
-    moving = 0;
-  int
-    count;
+  int result;
+  int moving = 0;
+  int count;
   for (count = 0; count < 5; count++)
     {
       result = (inb (BASE + 2));
@@ -231,7 +280,18 @@ bool Rts2DevDomeDublin::isMoving ()
   // motor is moving when we get moving at more then half instances of read
   if (count < moving * 2)
     return true;
+  // dome is regarded as not failed after move of motor stop nominal way
+  domeFailed = false;
   return false;
+}
+
+void
+Rts2DevDomeDublin::openDomeReal ()
+{
+  outb (OPEN, BASE);
+
+  sleep (1);
+  outb (0, BASE);
 }
 
 int
@@ -242,10 +302,10 @@ Rts2DevDomeDublin::openDome ()
   if (isMoving () || dome_state == WATCHER_DOME_OPEN)
     return 0;
 
-  outb (OPEN, BASE);
+  openDomeReal ();
 
-  sleep (1);
-  outb (0, BASE);
+  time (&timeOpenClose);
+  timeOpenClose += ROOF_TIMEOUT;
 
   return Rts2DevDome::openDome ();
 }
@@ -253,14 +313,38 @@ Rts2DevDomeDublin::openDome ()
 long
 Rts2DevDomeDublin::isOpened ()
 {
+  time_t now;
+  time (&now);
+  // timeout
+  if (now > timeOpenClose)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeDublin::isOpened timeout");
+      domeFailed = true;
+      executeSms (TYPE_STUCK);
+      // stop motor
+      closeDomeReal ();
+      return -2;
+    }
   return (isMoving ()? USEC_SEC : -2);
 }
 
 int
 Rts2DevDomeDublin::endOpen ()
 {
+  timeOpenClose = 0;
   dome_state = WATCHER_DOME_OPEN;
+  if (!domeFailed)
+    executeSms (TYPE_OPENED);
   return Rts2DevDome::endOpen ();
+}
+
+void
+Rts2DevDomeDublin::closeDomeReal ()
+{
+  outb (CLOSE, BASE);
+
+  sleep (1);
+  outb (0, BASE);
 }
 
 int
@@ -270,10 +354,10 @@ Rts2DevDomeDublin::closeDome ()
   if (isMoving () || dome_state == WATCHER_DOME_CLOSED)
     return 0;
 
-  outb (CLOSE, BASE);
+  closeDomeReal ();
 
-  sleep (1);
-  outb (0, BASE);
+  time (&timeOpenClose);
+  timeOpenClose += ROOF_TIMEOUT;
 
   return Rts2DevDome::closeDome ();
 }
@@ -281,13 +365,25 @@ Rts2DevDomeDublin::closeDome ()
 long
 Rts2DevDomeDublin::isClosed ()
 {
+  time_t now;
+  time (&now);
+  if (now > timeOpenClose)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeDublin::isClosed dome timeout");
+      domeFailed = true;
+      openDomeReal ();
+      return -2;
+    }
   return (isMoving ()? USEC_SEC : -2);
 }
 
 int
 Rts2DevDomeDublin::endClose ()
 {
+  timeOpenClose = 0;
   dome_state = WATCHER_DOME_CLOSED;
+  if (!domeFailed)
+    executeSms (TYPE_CLOSED);
   return Rts2DevDome::endClose ();
 }
 
