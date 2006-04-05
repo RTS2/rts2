@@ -13,11 +13,12 @@ class Rts2PlanApp:public Rts2AppDb
 {
 private:
   enum
-  { NO_OP, OP_DUMP, OP_LOAD, OP_GENERATE } operation;
+  { NO_OP, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY } operation;
   int dumpPlan ();
   int loadPlan ();
   int generatePlan ();
-  struct tm *tm_night;
+  int copyPlan ();
+  double JD;
 protected:
     virtual int processOption (int in_opt);
 public:
@@ -33,35 +34,29 @@ Rts2AppDb (in_argc, in_argv)
   Rts2Config *config;
   config = Rts2Config::instance ();
 
+  JD = ln_get_julian_from_sys ();
+
   operation = NO_OP;
-  tm_night = NULL;
 
   addOption ('n', "night", 1, "work with this night");
   addOption ('D', "dump_plan", 0, "dump plan to standart output");
   addOption ('L', "load_plan", 0, "load plan from standart input");
   addOption ('G', "generate", 0, "generate plan based on targets");
+  addOption ('C', "copy_plan", 1,
+	     "copy plan to given night (from night given by -n)");
 }
 
 Rts2PlanApp::~Rts2PlanApp (void)
 {
-  delete tm_night;
 }
 
 int
 Rts2PlanApp::dumpPlan ()
 {
   Rts2PlanSet *plan_set;
-  if (tm_night)
-    {
-      Rts2Night night =
-	Rts2Night (tm_night, Rts2Config::instance ()->getObserver ());
-      plan_set = new Rts2PlanSet (night.getFrom (), night.getTo ());
-      std::cout << "Night " << night << std::endl;
-    }
-  else
-    {
-      plan_set = new Rts2PlanSet ();
-    }
+  Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
+  plan_set = new Rts2PlanSet (night.getFrom (), night.getTo ());
+  std::cout << "Night " << night << std::endl;
   std::cout << (*plan_set) << std::endl;
   delete plan_set;
   return 0;
@@ -91,14 +86,19 @@ Rts2PlanApp::generatePlan ()
 }
 
 int
+Rts2PlanApp::copyPlan ()
+{
+  return -1;
+}
+
+int
 Rts2PlanApp::processOption (int in_opt)
 {
   int ret;
   switch (in_opt)
     {
     case 'n':
-      tm_night = new struct tm;
-      ret = parseDate (optarg, tm_night);
+      ret = parseDate (optarg, JD);
       if (ret)
 	return ret;
       break;
@@ -116,6 +116,11 @@ Rts2PlanApp::processOption (int in_opt)
       if (operation != NO_OP)
 	return -1;
       operation = OP_GENERATE;
+      break;
+    case 'C':
+      if (operation != NO_OP)
+	return -1;
+      operation = OP_COPY;
       break;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -138,6 +143,8 @@ Rts2PlanApp::run ()
       return loadPlan ();
     case OP_GENERATE:
       return generatePlan ();
+    case OP_COPY:
+      return copyPlan ();
     }
   return -1;
 }
