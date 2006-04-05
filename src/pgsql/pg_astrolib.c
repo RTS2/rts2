@@ -27,6 +27,7 @@
 #include <fmgr.h>
 
 PG_FUNCTION_INFO_V1 (ln_angular_separation);
+PG_FUNCTION_INFO_V1 (ln_airmass);
 
 Datum
 ln_angular_separation (PG_FUNCTION_ARGS)
@@ -43,4 +44,25 @@ ln_angular_separation (PG_FUNCTION_ARGS)
   pos2.dec = PG_GETARG_FLOAT8 (3);
 
   PG_RETURN_FLOAT8 (ln_get_angular_separation (&pos1, &pos2));
+}
+
+Datum
+ln_airmass (PG_FUNCTION_ARGS)
+{
+  struct ln_equ_posn pos;
+  struct ln_lnlat_posn obs;
+  struct ln_hrz_posn hrz;
+  // ra, dec, lng, lat, JD
+  if (PG_ARGISNULL (0) || PG_ARGISNULL (1)
+      || PG_ARGISNULL (2) || PG_ARGISNULL (3) || PG_ARGISNULL (4))
+    PG_RETURN_NULL ();
+
+  pos.ra = PG_GETARG_FLOAT8 (0);
+  pos.dec = PG_GETARG_FLOAT8 (1);
+  obs.lng = PG_GETARG_FLOAT8 (2);
+  obs.lat = PG_GETARG_FLOAT8 (3);
+
+  ln_get_hrz_from_equ (&pos, &obs, PG_GETARG_FLOAT8 (4), &hrz);
+
+  PG_RETURN_FLOAT4 (ln_get_airmass (hrz.alt, 750));
 }
