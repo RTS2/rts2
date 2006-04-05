@@ -22,13 +22,14 @@ Rts2SimbadTarget::load ()
 #define LINEBUF  200
   char buf[LINEBUF];
 
-  SesameSoapBinding bind = SesameSoapBinding ();
+  SesameSoapBinding *bind = new SesameSoapBinding ();
   ns1__sesameResponse r;
-  bind.ns1__sesame (string (getTargetName ()), string ("ui"), r);
-  if (bind.soap->error != SOAP_OK)
+  bind->ns1__sesame (string (getTargetName ()), string ("ui"), r);
+  if (bind->soap->error != SOAP_OK)
     {
       cerr << "Cannot get coordinates for " << getTargetName () << endl;
-      soap_print_fault (bind.soap, stderr);
+      soap_print_fault (bind->soap, stderr);
+      delete bind;
       return -1;
     }
   istringstream *iss = new istringstream ();
@@ -53,6 +54,7 @@ Rts2SimbadTarget::load ()
 	  if (nobj != 1)
 	    {
 	      cerr << "More then 1 object found!" << endl;
+	      delete bind;
 	      return -1;
 	    }
 	}
@@ -74,6 +76,7 @@ Rts2SimbadTarget::load ()
       else if (str_type.substr (0, 2) == "#!")
 	{
 	  cerr << "Not found" << endl;
+	  delete bind;
 	  return -1;
 	}
       else if (str_type == "%J.E")
@@ -113,7 +116,7 @@ Rts2SimbadTarget::load ()
 	  iss->getline (buf, LINEBUF);
 	}
     }
-
+  delete bind;
 #undef LINEBUF
   return 0;
 }
