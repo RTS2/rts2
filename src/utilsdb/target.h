@@ -212,6 +212,7 @@ public:
   int save ();
   virtual int save (int tar_id);
   virtual int getScript (const char *device_name, char *buf);
+  int setScript (const char *device_name, const char *buf);
   struct ln_lnlat_posn *getObserver ()
   {
     return observer;

@@ -120,6 +120,15 @@ Rts2TargetSet::setTargetEnabled (bool enabled)
 }
 
 void
+Rts2TargetSet::setTargetPriority (float new_priority)
+{
+  for (iterator iter = begin (); iter != end (); iter++)
+  {
+    (*iter)->setTargetPriority (new_priority);
+  }
+}
+
+void
 Rts2TargetSet::setTargetBonus (float new_bonus)
 {
   for (iterator iter = begin (); iter != end (); iter++)
@@ -134,6 +143,15 @@ Rts2TargetSet::setTargetBonusTime (time_t *new_time)
   for (iterator iter = begin (); iter != end (); iter++)
   {
     (*iter)->setTargetBonusTime (new_time);
+  }
+}
+
+void
+Rts2TargetSet::setTargetScript (const char *device_name, const char *script)
+{
+  for (iterator iter = begin (); iter != end (); iter++)
+  {
+    (*iter)->setScript (device_name, script);
   }
 }
 

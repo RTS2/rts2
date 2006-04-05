@@ -748,6 +748,60 @@ Target::getScript (const char *device_name, char *buf)
 }
 
 int
+Target::setScript (const char *device_name, const char *buf)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  VARCHAR d_camera_name[8];
+  VARCHAR d_script[2000];
+  int d_tar_id = getTargetID ();
+  EXEC SQL END DECLARE SECTION;
+
+  d_camera_name.len = strlen (device_name);
+  if (d_camera_name.len > 8)
+    d_camera_name.len = 8;
+  strncpy (d_camera_name.arr, device_name, 8);
+
+  d_script.len = strlen (buf);
+  if (d_script.len > 2000)
+    d_script.len = 2000;
+  strncpy (d_script.arr, buf, d_script.len);
+
+  EXEC SQL
+  INSERT INTO scripts
+  (
+    camera_name,
+    tar_id,
+    script
+  )
+  VALUES
+  (
+    :d_camera_name,
+    :d_tar_id,
+    :d_script
+  );
+  // insert failed - try update
+  if (sqlca.sqlcode)
+  {
+    EXEC SQL ROLLBACK;
+    EXEC SQL UPDATE
+      scripts
+    SET
+      script = :d_script
+    WHERE
+        camera_name = :d_camera_name
+      AND tar_id = :d_tar_id;
+    if (sqlca.sqlcode)
+    {
+      logMsgDb ("Target::setScript");
+      EXEC SQL ROLLBACK;
+      return -1;
+    }
+  }
+  EXEC SQL COMMIT;
+  return 0;
+}
+
+int
 Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 {
   int ret;
