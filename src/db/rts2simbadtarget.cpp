@@ -124,7 +124,7 @@ Rts2SimbadTarget::load ()
 void
 Rts2SimbadTarget::printExtra (std::ostream & _os)
 {
-  ConstTarget::printExtra (_os);
+  ConstTarget::printExtra (_os, ln_get_julian_from_sys ());
 
   _os << "REFERENCED " << references << std::endl;
   int old_prec = _os.precision (2);
