@@ -13,6 +13,7 @@
 #include "../utils/rts2device.h"
 
 #include "rts2taruser.h"
+#include "rts2targetset.h"
 
 #define MAX_READOUT_TIME		120
 #define PHOT_TIMEOUT			10
@@ -45,6 +46,8 @@
 #define TYPE_DARK		'd'
 #define TYPE_FLAT		'f'
 #define TYPE_FOCUSING		'o'
+
+#define TYPE_LANDOLT		'l'
 
 // master plan target
 #define TYPE_PLAN		'p'
@@ -560,7 +563,7 @@ public:
    *
    * @param _os stream to print that
    */
-  virtual void printExtra (std::ostream & _os);
+  virtual void printExtra (std::ostream & _os, double JD);
 
   /**
    * print short target info
@@ -579,6 +582,11 @@ public:
    * @param JD date for which to print info
    */
   virtual void sendPositionInfo (std::ostream & _os, double JD);
+  void sendInfo (std::ostream & _os)
+  {
+    sendInfo (_os, ln_get_julian_from_sys ());
+  }
+  virtual void sendInfo (std::ostream & _os, double JD);
 
   std::string getUsersEmail (int in_event_mask);
 
@@ -611,12 +619,12 @@ public:
   /**
    * Return calibration targets for given target
    */
-  int getCalTargets (Rts2TargetSet & in_set)
+  Rts2TargetSet *getCalTargets ()
   {
-    return getCalTargets (ln_get_julian_from_sys (), in_set);
+    return getCalTargets (ln_get_julian_from_sys ());
   }
 
-  virtual int getCalTargets (double JD, Rts2TargetSet & in_set);
+  virtual Rts2TargetSet *getCalTargets (double JD);
 };
 
 class ConstTarget:public Target
@@ -636,7 +644,7 @@ public:
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
-  virtual void printExtra (std::ostream & _os);
+  virtual void printExtra (std::ostream & _os, double JD);
 
   void setPosition (double ra, double dec)
   {
@@ -853,7 +861,7 @@ public:
   virtual int isContinues ();
 
   double getFirstPacket ();
-  virtual void printExtra (std::ostream & _os);
+  virtual void printExtra (std::ostream & _os, double JD);
   void printGrbList (std::ostream & _os);
 };
 
@@ -886,7 +894,7 @@ public:
   virtual float getBonus (double JD);
   virtual int isContinues ();
 
-  virtual void printExtra (std::ostream & _os);
+  virtual void printExtra (std::ostream & _os, double JD);
 };
 
 class TargetGps:public ConstTarget
@@ -942,7 +950,7 @@ public:
   virtual int beforeMove ();
   virtual int startSlew (struct ln_equ_posn *position);
 
-  virtual void printExtra (std::ostream & _os);
+  virtual void printExtra (std::ostream & _os, double JD);
 };
 
 // load target from DB

@@ -1162,7 +1162,7 @@ Target::getLastObs ()
 }
 
 void
-Target::printExtra (std::ostream &_os)
+Target::printExtra (std::ostream &_os, double JD)
 {
   if (tar_enabled)
   {
@@ -1182,14 +1182,21 @@ void
 Target::printShortInfo (std::ostream & _os, double JD)
 {
   struct ln_equ_posn pos;
+  struct ln_hrz_posn hrz;
   const char * name = getTargetName ();
+  int old_prec = _os.precision (2);
   getPosition (&pos, JD);
+  getAltAz (&hrz, JD);
+  LibnovaRaDec raDec (&pos);
+  LibnovaHrz hrzP (&hrz);
   _os
    << getTargetID () << " | "
    << getTargetType () << " | "
    << std::left << std::setw (40) << (name ? name :  "null") << std::right << " | "
-   << LibnovaRa (pos.ra) << " | "
-   << LibnovaDec (pos.dec);
+   << raDec << " | "
+   << std::setw (5) << getAirmass (JD) << " | "
+   << hrzP;
+  _os.precision (old_prec);
 }
 
 int
@@ -1341,6 +1348,9 @@ sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int pri
   int db_tar_id;
   EXEC SQL END DECLARE SECTION;
 
+  double JD;
+  JD = ln_get_julian_from_sys ();
+
   EXEC SQL DECLARE tar_obs_cur CURSOR FOR
   SELECT
     targets.tar_id
@@ -1371,8 +1381,8 @@ sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int pri
       std::ostringstream os;
       obsset.printImages (printImages);
       obsset.printCounts (printCounts);
-      os << tar;
-      tar->printExtra (os);
+      tar->sendInfo (os, JD);
+      tar->printExtra (os, JD);
       os << obsset;
       sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
       delete tar;
@@ -1388,24 +1398,28 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
   struct ln_hrz_posn hrz;
   struct ln_gal_posn gal;
   struct ln_rst_time rst;
+  double hourangle;
   time_t now;
   int ret;
 
-  time (&now);
+  ln_get_timet_from_julian (JD, &now);
 
   getAltAz (&hrz, JD);
+  hourangle = getHourAngle (JD);
   _os 
     << InfoVal<LibnovaDeg90> ("ALTITUDE", LibnovaDeg90 (hrz.alt))
-    << InfoVal<LibnovaDeg90> ("ZENITH DISTANCE", LibnovaDeg90 (getZenitDistance ()))
-    << InfoVal<LibnovaDeg> ("AZIMUTH", LibnovaDeg (hrz.az))
-    << InfoVal<LibnovaRa> ("HOUR ANGLE", LibnovaRa (getHourAngle ()))
-    << InfoVal<double> ("AIRMASS", getAirmass ())
+    << InfoVal<LibnovaDeg90> ("ZENITH DISTANCE", LibnovaDeg90 (getZenitDistance (JD)))
+    << InfoVal<LibnovaDeg360> ("AZIMUTH", LibnovaDeg360 (hrz.az))
+    << InfoVal<LibnovaRa> ("HOUR ANGLE", LibnovaRa (hourangle))
+    << InfoVal<double> ("AIRMASS", getAirmass (JD))
     << std::endl;
   ret = getRST (&rst, JD);
   switch (ret)
   {
     case 1:
       _os << " - CIRCUMPOLAR - " << std::endl;
+      rst.transit = JD + ((360 - hourangle) / 15.0 / 24.0);
+      _os << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now));
       break;
     case -1:
       _os << " - DON'T RISE - " << std::endl;
@@ -1436,66 +1450,69 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
   getGalLng (&gal, JD);
   _os 
     << std::endl
-    << InfoVal<LibnovaDeg> ("GAL. LONGITUDE", LibnovaDeg (gal.l))
+    << InfoVal<LibnovaDeg360> ("GAL. LONGITUDE", LibnovaDeg360 (gal.l))
     << InfoVal<LibnovaDeg90> ("GAL. LATITUDE", LibnovaDeg90 (gal.b))
-    << InfoVal<LibnovaDeg> ("GAL. CENTER DIST.", LibnovaDeg (getGalCenterDist (JD)))
-    << InfoVal<LibnovaDeg> ("SOLAR DIST.", LibnovaDeg (getSolarDistance (JD)))
+    << InfoVal<LibnovaDeg360> ("GAL. CENTER DIST.", LibnovaDeg360 (getGalCenterDist (JD)))
+    << InfoVal<LibnovaDeg360> ("SOLAR DIST.", LibnovaDeg360 (getSolarDistance (JD)))
     << InfoVal<LibnovaDeg> ("SOLAR RA DIST.", LibnovaDeg (getSolarRaDistance (JD)))
-    << InfoVal<LibnovaDeg> ("LUNAR DIST.", LibnovaDeg (getLunarDistance (JD)))
+    << InfoVal<LibnovaDeg360> ("LUNAR DIST.", LibnovaDeg360 (getLunarDistance (JD)))
     << InfoVal<LibnovaDeg> ("LUNAR RA DIST.", LibnovaDeg (getLunarRaDistance (JD)))
     << std::endl;
+}
+
+void
+Target::sendInfo (std::ostream & _os, double JD)
+{
+  struct ln_equ_posn pos;
+  double gst;
+  double lst;
+  time_t now, last;
+
+  const char *name = getTargetName ();
+
+  ln_get_timet_from_julian (JD, &now);
+
+  getPosition (&pos, JD);
+
+  _os 
+    << InfoVal<int> ("ID", getTargetID ())
+    << InfoVal<int> ("SEL_ID", getObsTargetID ())
+    << InfoVal<const char *> ("NAME", (name ? name : "null name"))
+    << InfoVal<char> ("TYPE", getTargetType ())
+    << InfoVal<LibnovaRaJ2000> ("RA", LibnovaRaJ2000 (pos.ra))
+    << InfoVal<LibnovaDecJ2000> ("DEC", LibnovaDecJ2000 (pos.dec))
+    << std::endl;
+    
+  sendPositionInfo (_os, JD);
+  
+  last = now - 86400;
+  _os 
+    << InfoVal<int> ("24 HOURS OBS", getNumObs (&last, &now));
+  last = now - 7 * 86400;  
+  _os
+    << InfoVal<int> ("7 DAYS OBS", getNumObs (&last, &now))
+    << InfoVal<double> ("BONUS", getBonus (JD));
+
+  // is above horizont?
+  gst = ln_get_mean_sidereal_time (JD);
+  lst = gst + getObserver()->lng / 15.0;
+  _os << (isGood (lst, JD, & pos)
+   ? "Target is above local horizont." 
+   : "Target is below local horizont, it's not possible to observe it.")
+   << std::endl;
+  _os << InfoVal<double> ("MIN_ALT", getMinAlt ());
+  printExtra (_os, JD);
+}
+
+Rts2TargetSet *
+Target::getCalTargets (double JD)
+{
+  return new Rts2TargetSetCal (this, JD);
 }
 
 std::ostream &
 operator << (std::ostream &_os, Target *target)
 {
-  struct ln_equ_posn pos;
-  double JD;
-  double gst;
-  double lst;
-  time_t now, last;
-
-  const char *name = target->getTargetName ();
-
-  time (&now);
-  JD = ln_get_julian_from_timet (&now);
-
-  target->getPosition (&pos, JD);
-
-  _os 
-    << InfoVal<int> ("ID", target->getTargetID ())
-    << InfoVal<int> ("SEL_ID", target->getObsTargetID ())
-    << InfoVal<const char *> ("NAME", (name ? name : "null name"))
-    << InfoVal<char> ("TYPE", target->getTargetType ())
-    << InfoVal<LibnovaRaJ2000> ("RA", LibnovaRaJ2000 (pos.ra))
-    << InfoVal<LibnovaDecJ2000> ("DEC", LibnovaDecJ2000 (pos.dec))
-    << std::endl;
-    
-  target->sendPositionInfo (_os, JD);
-  
-  last = now - 86400;
-  _os 
-    << InfoVal<int> ("24 HOURS OBS", target->getNumObs (&last, &now));
-  last = now - 7 * 86400;  
-  _os
-    << InfoVal<int> ("7 DAYS OBS", target->getNumObs (&last, &now))
-    << InfoVal<double> ("BONUS", target->getBonus (JD));
-
-  // is above horizont?
-  gst = ln_get_mean_sidereal_time (JD);
-  lst = gst + target->getObserver()->lng / 15.0;
-  _os << (target->isGood (lst, JD, & pos)
-   ? "Target is above local horizont." 
-   : "Target is below local horizont, it's not possible to observe it.")
-   << std::endl;
-  _os << InfoVal<double> ("MIN_ALT", target->getMinAlt ());
-  target->printExtra (_os);
+  target->sendInfo (_os);
   return _os;
-}
-
-int
-Target::getCalTargets (double JD, Rts2TargetSet &in_set)
-{
-  in_set = Rts2TargetSetCal (this, JD);
-  return in_set.size ();
 }

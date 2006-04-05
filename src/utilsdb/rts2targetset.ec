@@ -61,6 +61,13 @@ Rts2TargetSet::load (std::list<int> &target_ids)
   }
 }
 
+Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs, bool do_load)
+{
+  obs = in_obs;
+  if (do_load)
+    load (std::string ("true"), std::string ("tar_id ASC"));
+}
+
 Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs)
 {
   obs = in_obs;
@@ -146,17 +153,30 @@ Rts2TargetSet::save ()
   return ret;
 }
 
-Rts2TargetSetCal::Rts2TargetSetCal (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver ())
+std::ostream &
+Rts2TargetSet::print (std::ostream & _os, double JD)
+{
+  for (Rts2TargetSet::iterator tar_iter = begin(); tar_iter != end (); tar_iter++)
+  {
+    (*tar_iter)->printShortInfo (_os, JD);
+    _os << std::endl;
+  }
+  return _os;
+}
+
+Rts2TargetSetCal::Rts2TargetSetCal (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver (), false)
 {
   double airmass = in_masterTarget->getAirmass (JD);
-  std::ostringstream os, func;
-  func << "ln_airmass (targets.tar_ra, targets.tar_dec, "
+  std::ostringstream os, func, ord;
+  func.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  func.precision (12);
+  func << "ABS (ln_airmass (targets.tar_ra, targets.tar_dec, "
     << in_masterTarget->getObserver ()->lng << ", "
     << in_masterTarget->getObserver ()->lat << ", "
-    << JD << ")";
-  os << func << " > " << (airmass - 0.1)
-   << " and " << func << " < " << (airmass + 0.1);
-  load (os.str (), func.str ());
+    << JD << ") - " << airmass << ")";
+  os << func.str () << " < 0.1 AND ((type_id = 'c' AND tar_id <> 6) or type_id = 'l') AND tar_enabled = true";
+  ord << func.str () << " ASC";
+  load (os.str (), ord.str ());
 }
 
 Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)
@@ -229,10 +249,6 @@ Rts2TargetSetGrb::printGrbList (std::ostream & _os)
 
 std::ostream & operator << (std::ostream &_os, Rts2TargetSet &tar_set)
 {
-  for (Rts2TargetSet::iterator tar_iter = tar_set.begin(); tar_iter != tar_set.end (); tar_iter++)
-  {
-    (*tar_iter)->printShortInfo (_os);
-    _os << std::endl;
-  }
+  tar_set.print (_os, ln_get_julian_from_sys ());
   return _os;
 }

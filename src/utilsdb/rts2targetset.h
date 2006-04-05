@@ -19,6 +19,7 @@ protected:
 
   struct ln_lnlat_posn *
     obs;
+  Rts2TargetSet (struct ln_lnlat_posn *in_obs, bool do_load);
 public:
   // print all targets..
   Rts2TargetSet (struct ln_lnlat_posn *in_obs = NULL);
@@ -38,6 +39,8 @@ public:
 
   int
   save ();
+  std::ostream &
+  print (std::ostream & _os, double JD);
 };
 
 /**
@@ -49,6 +52,9 @@ public Rts2TargetSet
 public:
   Rts2TargetSetCal (Target * in_masterTarget, double JD);
 };
+
+class
+  TargetGRB;
 
 /**
  * Holds last GRBs

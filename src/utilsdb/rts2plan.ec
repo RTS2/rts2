@@ -286,6 +286,7 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
   }
   obs = Rts2Config::instance()->getObserver ();
   plan->getTarget ()->getAltAz (&hrz, JD);
+  LibnovaHrz lHrz (&hrz);
   _os << "  " << std::setw (8) << plan->plan_id << "|"
     << std::setw (8) << plan->prop_id << "|"
     << std::left << std::setw (20) << tar_name << "|"
@@ -293,8 +294,7 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
     << std::setw (8) << plan->obs_id << "|"
     << std::setw (9) << LibnovaDate (&(plan->plan_start)) << "|"
     << std::setw (8) << plan->plan_status << "|"
-    << LibnovaDeg90 (hrz.alt) << "|"
-    << LibnovaDeg (hrz.az) << "|"
+    << lHrz << "|"
     << std::setw(1) << (good ? 'G' : 'B')
     << std::endl;
 

@@ -155,9 +155,9 @@ ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
 }
 
 void
-ConstTarget::printExtra (std::ostream &_os)
+ConstTarget::printExtra (std::ostream &_os, double JD)
 {
-  Target::printExtra (_os);
+  Target::printExtra (_os, JD);
 }
 
 // EllTarget - good for commets and so on
@@ -1495,11 +1495,11 @@ TargetGRB::getSatelite ()
 }
 
 void
-TargetGRB::printExtra (std::ostream &_os)
+TargetGRB::printExtra (std::ostream &_os, double JD)
 {
   double firstPacket = getFirstPacket ();
   double firstObs = getFirstObs ();
-  ConstTarget::printExtra (_os);
+  ConstTarget::printExtra (_os, JD);
   _os 
     << getSatelite ()
     << InfoVal<int> ("TYPE", gcnPacketType)
@@ -1811,9 +1811,9 @@ TargetSwiftFOV::isContinues ()
 }
 
 void
-TargetSwiftFOV::printExtra (std::ostream &_os)
+TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
 {
-  Target::printExtra (_os);
+  Target::printExtra (_os, JD);
   _os 
   << InfoVal<const char *> ("NAME", swiftName)
   << InfoVal<int> ("SwiftFOW ID", swiftId)
@@ -2242,9 +2242,9 @@ TargetPlan::startSlew (struct ln_equ_posn *pos)
 }
 
 void
-TargetPlan::printExtra (std::ostream & _os)
+TargetPlan::printExtra (std::ostream & _os, double JD)
 {
-  Target::printExtra (_os);
+  Target::printExtra (_os, JD);
   if (selectedPlan)
   {
     _os 
