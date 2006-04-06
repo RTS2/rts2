@@ -1899,7 +1899,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
   if (ret == -1)
     return ret;
   nextChangeDec = 0;
-  if (!telFlip)
+  if (!getFlip ())
     {
       chng_dec *= -1;
     }
