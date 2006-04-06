@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <syslog.h>
+#include <libnova/libnova.h>
 
 Rts2App::Rts2App (int in_argc, char **in_argv):
 Rts2Object ()
@@ -261,6 +262,20 @@ Rts2App::parseDate (const char *in_date, struct tm *out_time)
       return 0;
     }
   return -1;
+}
+
+int
+Rts2App::parseDate (const char *in_date, double &JD)
+{
+  struct tm tm_date;
+  struct ln_date l_date;
+  int ret;
+  ret = parseDate (in_date, &tm_date);
+  if (ret)
+    return ret;
+  ln_get_date_from_tm (&tm_date, &l_date);
+  JD = ln_get_julian_day (&l_date);
+  return 0;
 }
 
 int
