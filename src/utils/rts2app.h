@@ -57,7 +57,6 @@ public:  Rts2App (int in_argc, char **in_argv);
    * @return -1 on error, 0 on succes
    */
   int parseDate (const char *in_date, struct tm *out_time);
-  int parseDate (const char *in_date, double &JD);
 };
 
 // send mail to recepient; requires /usr/bin/mail binary; if master object is specified, that object

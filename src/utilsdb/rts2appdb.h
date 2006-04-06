@@ -42,6 +42,8 @@ public:
   virtual int processOption (int in_opt);
   int initDB ();
   virtual int init ();
+
+  int parseDate (const char *in_date, double &JD);
 };
 
 #endif /* !__RTS2_APPDB__ */
