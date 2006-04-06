@@ -86,7 +86,6 @@ public:
 			      double real_dec);
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec);
-  virtual int change (double chng_ra, double chng_dec);
   virtual int saveModel ();
   virtual int loadModel ();
   virtual int stopWorm ();

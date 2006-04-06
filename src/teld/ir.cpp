@@ -806,14 +806,6 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   return 0;
 }
 
-int
-Rts2DevTelescopeIr::change (double chng_ra, double chng_dec)
-{
-  // convert RA to AZ
-  // we have actual telRa, as Rts2DevTelescope::change (Rts2Conn ..) calls info
-  return startMove (telRa + chng_ra, telDec + chng_dec);
-}
-
 /**
  * OpenTCI/Bootes IR - POINTING.POINTINGPARAMS.xx:
  * AOFF, ZOFF, AE, AN, NPAE, CA, FLEX
