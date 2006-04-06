@@ -63,20 +63,20 @@ Rts2NightReport::processOption (int in_opt)
   switch (in_opt)
     {
     case 'f':
-      ret = parseDate (optarg, &tm_ret);
+      ret = Rts2App::parseDate (optarg, &tm_ret);
       if (ret)
 	return ret;
       t_from = mktime (&tm_ret);
       break;
     case 't':
-      ret = parseDate (optarg, &tm_ret);
+      ret = Rts2App::parseDate (optarg, &tm_ret);
       if (ret)
 	return ret;
       t_to = mktime (&tm_ret);
       break;
     case 'n':
       tm_night = new struct tm;
-      ret = parseDate (optarg, tm_night);
+      ret = Rts2App::parseDate (optarg, tm_night);
       if (ret)
 	return ret;
       break;

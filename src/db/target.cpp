@@ -104,7 +104,7 @@ Rts2TargetApp::processOption (int in_opt)
       op |= OP_BONUS;
       break;
     case 'B':
-      ret = parseDate (optarg, &tm_ret);
+      ret = Rts2App::parseDate (optarg, &tm_ret);
       if (ret)
 	return ret;
       new_bonus_time = mktime (&tm_ret);
