@@ -169,6 +169,29 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
   return _os;
 }
 
+std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg)
+{
+  if (isnan (l_deg.deg))
+    {
+      _os << std::setw (11) << "nan";
+      return _os;
+    }
+  struct ln_dms deg_dms;
+  l_deg.toDms (&deg_dms);
+  char old_fill = _os.fill ('0');
+  int old_precison = _os.precision (2);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  _os
+    << std::setw (3) << deg_dms.degrees << " "
+    << std::setw (2) << deg_dms.minutes << " "
+    << std::setw (5) << deg_dms.seconds;
+  _os.setf (old_settings);
+  _os.precision (old_precison);
+  _os.fill (old_fill);
+  return _os;
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 {
   if (isnan (l_dec.deg))
@@ -343,6 +366,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
 {
   if (l_radec.ra && l_radec.dec)
     _os << *(l_radec.ra) << " " << *(l_radec.dec);
+  else
+    _os << "nan nan";
   return _os;
 }
 
@@ -354,6 +379,15 @@ std::istream & operator >> (std::istream & _is, LibnovaRaDec & l_radec)
   l_radec.dec = new LibnovaDec ();
   _is >> (*(l_radec.ra)) >> (*(l_radec.dec));
   return _is;
+}
+
+std::ostream & operator << (std::ostream & _os, LibnovaHrz l_hrz)
+{
+  if (l_hrz.alt && l_hrz.az)
+    _os << *(l_hrz.alt) << " " << *(l_hrz.az);
+  else
+    _os << "nan nan";
+  return _os;
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
@@ -392,6 +426,20 @@ Rts2Night::Rts2Night (struct tm * tm_night, struct ln_lnlat_posn * obs)
   tm_tmp.tm_hour = (int) ln_range_degrees (180.0 - obs->lng) / 15;
   tm_tmp.tm_min = tm_tmp.tm_sec = 0;
   from = mktime (&tm_tmp);
+  to = from + 86400;
+}
+
+Rts2Night::Rts2Night (double JD, struct ln_lnlat_posn *obs)
+{
+  struct ln_date l_date;
+  // let's calculate time from..t_from will contains start of night
+  // local 12:00 will be at ~ give time..
+  ln_get_date (JD, &l_date);
+  l_date.hours = (int) ln_range_degrees (180.0 - obs->lng) / 15;
+  l_date.minutes = 0;
+  l_date.seconds = 0;
+  JD = ln_get_julian_day (&l_date);
+  ln_get_timet_from_julian (JD, &from);
   to = from + 86400;
 }
 

@@ -105,6 +105,19 @@ public:
   friend std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 };
 
+class LibnovaDeg360:public LibnovaDeg
+{
+public:
+  LibnovaDeg360 ():LibnovaDeg ()
+  {
+  }
+  LibnovaDeg360 (double in_deg):LibnovaDeg (ln_range_degrees (in_deg))
+  {
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg);
+};
+
 class LibnovaDec:public LibnovaDeg90
 {
 public:
@@ -244,6 +257,68 @@ public:
 				     LibnovaRaDec & l_radec);
 };
 
+class LibnovaHrz
+{
+private:
+  LibnovaDeg90 * alt;
+  LibnovaDeg360 *az;
+public:
+    LibnovaHrz ()
+  {
+    alt = NULL;
+    az = NULL;
+  }
+
+  LibnovaHrz (LibnovaHrz & in_libnova)
+  {
+    alt = new LibnovaDeg90 (in_libnova.getAlt ());
+    az = new LibnovaDeg360 (in_libnova.getAz ());
+  }
+
+  LibnovaHrz (struct ln_hrz_posn *hrz)
+  {
+    alt = new LibnovaDeg90 (hrz->alt);
+    az = new LibnovaDeg360 (hrz->az);
+  }
+
+  virtual ~ LibnovaHrz (void)
+  {
+    delete alt;
+    delete az;
+  }
+
+  double getAlt ()
+  {
+    if (alt)
+      return alt->getDeg ();
+    return nan ("f");
+  }
+
+  double getAz ()
+  {
+    if (az)
+      return az->getDeg ();
+    return nan ("f");
+  }
+
+  void getHrz (struct ln_hrz_posn *hrz)
+  {
+    hrz->alt = getAlt ();
+    hrz->az = getAz ();
+  }
+
+  void setHrz (struct ln_hrz_posn *hrz)
+  {
+    delete alt;
+    delete az;
+    alt = new LibnovaDeg90 (hrz->alt);
+    az = new LibnovaDeg360 (hrz->az);
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, LibnovaHrz l_hrz);
+};
+
+
 class LibnovaDate
 {
 private:
@@ -299,6 +374,7 @@ public:
     from = to - 86400;
   }
   Rts2Night (struct tm *in_date, struct ln_lnlat_posn *obs);
+  Rts2Night (double JD, struct ln_lnlat_posn *obs);
 
   time_t *getFrom ()
   {
@@ -321,6 +397,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
+std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg);
 std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec);
 std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg);
@@ -330,6 +407,8 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg);
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec);
 std::istream & operator >> (std::istream & _is, LibnovaRaDec & l_radec);
+
+std::ostream & operator << (std::ostream & _os, LibnovaHrz l_hrz);
 
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
 std::istream & operator >> (std::istream & _is, LibnovaDate & l_date);
