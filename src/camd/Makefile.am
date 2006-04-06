@@ -6,7 +6,7 @@ bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dumm
 
 noinst_HEADERS = camera_cpp.h ccd_msg.h rts2devcliwheel.h filter.h rts2devclifocuser.h
 
-LDADD = ../utils/librts2block.a @LIB_M@ @LIB_NOVA@
+LDADD = ../utils/librts2block.a
 
 if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
