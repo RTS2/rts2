@@ -540,6 +540,7 @@ FlatTarget::load ()
   double d_tar_ra;
   double d_tar_dec;
   int d_tar_id;
+  const int db_target_flat = TARGET_FLAT;
   EXEC SQL END DECLARE SECTION;
 
   if (getTargetID () != TARGET_FLAT)
@@ -568,7 +569,8 @@ FlatTarget::load ()
   WHERE
       type_id = 'f'
     AND (tar_bonus_time is NULL OR tar_bonus > 0)
-    AND tar_enabled = true;
+    AND tar_enabled = true
+    AND tar_id <> :db_target_flat;
   EXEC SQL OPEN flat_targets;
   while (1)
     {
