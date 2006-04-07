@@ -236,8 +236,9 @@ Rts2Executor::postEvent (Rts2Event * event)
     {
     case EVENT_SLEW_TO_TARGET:
       maskState (0, EXEC_STATE_MASK, EXEC_MOVE);
-    case EVENT_OBSERVE:
       break;
+    case EVENT_OBSERVE:
+      // we can get EVENT_OBSERVE in case of continues observation
     case EVENT_SCRIPT_STARTED:
       maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
       break;

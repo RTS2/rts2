@@ -316,11 +316,9 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 
   if (processingState != WAITING_IMAGE || !image->getIsAcquiring ())
     {
-#ifdef DEBUG_EXTRA
       syslog (LOG_ERR,
 	      "Rts2ScriptElementAcquire::processImage invalid processingState: %i isAcquiring: %i",
 	      processingState, image->getIsAcquiring ());
-#endif
       return -1;
     }
   obsId = image->getObsId ();
