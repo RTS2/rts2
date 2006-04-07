@@ -108,6 +108,9 @@ Rts2DevFilterdFli::init (void)
   if (ret)
     return ret;
 
+  if (fliDebug)
+    FLISetDebugLevel (NULL, fliDebug);
+
   ret = FLIList (deviceDomain, &names);
   if (ret)
     return -1;
