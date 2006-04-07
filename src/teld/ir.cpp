@@ -907,7 +907,6 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
     {
     case SERVERD_DUSK:
     case SERVERD_NIGHT:
-    case SERVERD_NIGHT | SERVERD_STANDBY:
     case SERVERD_DAWN:
       coverOpen ();
       break;
