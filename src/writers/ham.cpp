@@ -29,13 +29,20 @@ Rts2Image::getHam (double &x, double &y)
   syslog (LOG_DEBUG, "Rts2Image::getHam flux0: %f", sexResults[0].F);
   if (sexResults[0].F > 100000)
     {
-      // let's see if the second is close enough..airplane light
       float dist;
-      dist =
-	sqrt (((sexResults[0].X - sexResults[1].X) * (sexResults[0].X -
-						      sexResults[1].X)) +
-	      ((sexResults[0].Y - sexResults[1].Y) * (sexResults[0].Y -
-						      sexResults[1].Y)));
+      if (sexResultNum > 1)
+	{
+	  // let's see if the second is close enough..airplane light
+	  dist =
+	    sqrt (((sexResults[0].X - sexResults[1].X) * (sexResults[0].X -
+							  sexResults[1].X)) +
+		  ((sexResults[0].Y - sexResults[1].Y) * (sexResults[0].Y -
+							  sexResults[1].Y)));
+	}
+      else
+	{
+	  dist = 101;
+	}
       // we are quite sure we find it..
       if (dist < 100 || sexResults[0].F > 150000)
 	{
