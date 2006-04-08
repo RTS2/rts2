@@ -757,10 +757,12 @@ class CalibrationTarget:public ConstTarget
 private:
   struct ln_equ_posn airmassPosition;
   time_t lastImage;
+  int needUpdate;
 public:
     CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int load ();
   virtual int beforeMove ();
+  virtual int endObservation (int in_next_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int considerForObserving (double JD);
   virtual float getBonus (double JD);

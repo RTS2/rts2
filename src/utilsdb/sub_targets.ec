@@ -633,6 +633,7 @@ CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_ob
 {
   airmassPosition.ra = airmassPosition.dec = 0;
   time (&lastImage);
+  needUpdate = 1;
 }
 
 // the idea is to cover uniformly whole sky.
@@ -806,7 +807,10 @@ CalibrationTarget::load ()
   EXEC SQL CLOSE cur_airmass_cal_images;
   EXEC SQL COMMIT;
   if (obs_target_id != -1)
+  {
+    needUpdate = 0;
     return ConstTarget::load ();
+  }
   // no target found..
   return -1;
 }
@@ -815,9 +819,16 @@ int
 CalibrationTarget::beforeMove ()
 {
   // as calibration target can change between time we select it, let's reload us
-  if (getTargetID () == TARGET_CALIBRATION)
+  if (getTargetID () == TARGET_CALIBRATION && needUpdate)
     load ();
   return ConstTarget::beforeMove ();
+}
+
+int
+CalibrationTarget::endObservation (int in_next_id)
+{
+  needUpdate = 1;
+  return ConstTarget::endObservation (in_next_id);
 }
 
 int
