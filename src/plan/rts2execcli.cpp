@@ -42,8 +42,6 @@ void
 Rts2DevClientCameraExec::startTarget ()
 {
   Rts2DevScript::startTarget ();
-  // should be deleted..
-  exposureCount = 1;
 }
 
 int
