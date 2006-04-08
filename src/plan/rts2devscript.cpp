@@ -43,6 +43,9 @@ Rts2DevScript::startTarget ()
   queCommandFromScript (new
 			Rts2CommandScriptEnds (script_connection->
 					       getMaster ()));
+  delete nextComd;
+  nextComd = NULL;
+
   script_connection->getMaster ()->
     postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
