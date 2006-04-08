@@ -263,6 +263,9 @@ Rts2DevScript::deleteScript ()
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
     }
+  // make sure we don't left any garbage for start of observation
+  delete nextComd;
+  nextComd = NULL;
 }
 
 void
