@@ -16,6 +16,10 @@
 #define RA_TICKS		11520000
 #define DEC_TICKS		7500000
 
+// park positions
+#define PARK_AXIS0		0
+#define PARK_AXIS1		-3100000
+
 
 typedef enum
 { T16, T32 } para_t;
@@ -1076,6 +1080,7 @@ Rts2DevTelParamount::startPark ()
     return -1;
   ret0 = MKS3Home (axis0, 0);
   ret1 = MKS3Home (axis1, 0);
+  moveState = TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1;
   return checkRet ();
 }
 
@@ -1083,10 +1088,21 @@ int
 Rts2DevTelParamount::isParking ()
 {
   int ret;
-  ret = updateStatus ();
-  if (ret)
-    return ret;
-  if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+  if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
+    {
+      if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+	return USEC_SEC / 10;
+      moveState = TEL_SLEW;
+      // move to park position
+      ret0 = MKS3PosTargetSet (axis0, PARK_AXIS0);
+      ret1 = MKS3PosTargetSet (axis1, PARK_AXIS1);
+      ret = updateStatus ();
+      if (ret)
+	return -1;
+      return USEC_SEC / 10;
+    }
+  // home finished, only check if we get to proper position
+  if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
     return USEC_SEC / 10;
   return -2;
 }
