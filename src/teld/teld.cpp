@@ -765,7 +765,8 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
     {
       move_fixed = 1;
       moveMark++;
-      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		 "move started");
       knowPosition = 0;
       move_connection = conn;
     }
@@ -852,7 +853,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
     {
       move_fixed = 0;
       moveMark++;
-      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		 "move started");
       move_connection = conn;
     }
   return ret;
@@ -951,7 +953,8 @@ Rts2DevTelescope::startPark (Rts2Conn * conn)
     {
       move_fixed = 0;
       moveMark++;
-      maskState (0, TEL_MASK_MOVING, TEL_PARKING, "parking started");
+      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
+		 "parking started");
     }
   return ret;
 }
@@ -979,7 +982,8 @@ Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
     {
       move_fixed = 0;
       moveMark++;
-      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "move started");
+      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		 "move started");
       move_connection = conn;
     }
   return ret;
