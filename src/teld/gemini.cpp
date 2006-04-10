@@ -1532,7 +1532,7 @@ Rts2DevTelescopeGemini::isMovingFixed ()
       double sep;
       // check that we reach destination..
       info ();
-      pos1.ra = fixed_ha + telSiderealTime * 15.0;
+      pos1.ra = telSiderealTime * 15.0 - fixed_ha;
       pos1.dec = lastMoveDec;
 
       pos2.ra = telRa;
