@@ -14,6 +14,7 @@ Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2
   (in_connection),
 Rts2DevScript (in_connection)
 {
+  queCurrentImage = false;
   imgCount = 0;
 }
 
@@ -78,7 +79,6 @@ Rts2DevClientCameraExec::nextCommand ()
       // move was executed
       if (currentTarget && nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE)
 	{
-	  std::cerr << "Moved: " << currentTarget->wasMoved () << std::endl;
 	  if (!currentTarget->wasMoved ())
 	    {
 	      return;
@@ -147,13 +147,17 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
   int ret;
   // try processing in script..
-  if (script)
+  if (script && !queCurrentImage)
     {
       ret = script->processImage (image);
       if (!ret)
 	{
 	  return;
 	}
+    }
+  else
+    {
+      queCurrentImage = false;
     }
   queImage (image);
 }
@@ -178,6 +182,8 @@ Rts2DevClientCameraExec::exposureEnd ()
   if (!script || (script && script->isLastCommand ()))
     {
       getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
+      // created image is last in script - will be qued, not processed
+      queCurrentImage = true;
       deleteScript ();
     }
   else
@@ -195,6 +201,7 @@ Rts2DevClientCameraExec::exposureFailed (int status)
 {
   // in case of an error..
   blockMove = 0;
+  queCurrentImage = false;
   Rts2DevClientCameraImage::exposureFailed (status);
 }
 

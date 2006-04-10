@@ -44,6 +44,8 @@ public:
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage,
   public Rts2DevScript
 {
+private:
+  bool queCurrentImage;
 protected:
   virtual void unblockWait ()
   {
