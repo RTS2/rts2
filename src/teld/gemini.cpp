@@ -1294,8 +1294,6 @@ Rts2DevTelescopeGemini::tel_start_move ()
 
   if (retstr == '0')
     {
-      fixed_ha = nan ("f");
-
       return 0;
     }
   // otherwise read reply..
@@ -1321,6 +1319,8 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 
   lastMoveRa = tar_ra;
   lastMoveDec = tar_dec;
+
+  fixed_ha = nan ("f");
 
   if (telMotorState != TEL_OK)	// lastMoveRa && lastMoveDec will bring us to correct location after we finish rebooting/reparking
     return 0;
@@ -1988,6 +1988,7 @@ int
 Rts2DevTelescopeGemini::startPark ()
 {
   int ret;
+  fixed_ha = nan ("f");
   if (telMotorState != TEL_OK)
     return -1;
 
