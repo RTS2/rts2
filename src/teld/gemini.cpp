@@ -1538,7 +1538,7 @@ Rts2DevTelescopeGemini::isMovingFixed ()
       pos2.ra = telRa;
       pos2.dec = telDec;
       sep = ln_get_angular_separation (&pos1, &pos2);
-      if (sep > 15 / 60 / 4)	// 15 seconds..
+      if (sep > 15.0 / 60.0 / 4.0)	// 15 seconds..
 	{
 #ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG,
