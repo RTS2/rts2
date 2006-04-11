@@ -181,10 +181,11 @@ Rts2DevClientCameraExec::exposureEnd ()
   blockMove = 0;
   if (!script || (script && script->isLastCommand ()))
     {
+      deleteScript ();
+      // EVENT_LAST_READOUT will start new script, when it's possible
       getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
       // created image is last in script - will be qued, not processed
       queCurrentImage = true;
-      deleteScript ();
     }
   else
     {
