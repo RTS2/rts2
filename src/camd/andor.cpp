@@ -495,6 +495,7 @@ int
 Rts2DevCameraAndor::camCoolShutdown ()
 {
   CoolerOFF ();
+  SetTemperature (20);
   tempSet = +50;
   return 0;
 }
