@@ -18,7 +18,7 @@
 
 // park positions
 #define PARK_AXIS0		0
-#define PARK_AXIS1		-3100000
+#define PARK_AXIS1		-2550000
 
 
 typedef enum
