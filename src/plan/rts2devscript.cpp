@@ -131,7 +131,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	{
 	  script->postEvent (new Rts2Event (event));
 	  if (isWaitMove ())
-	    // get a change to process updates..
+	    // get a chance to process updates..
 	    nextCommand ();
 	}
       break;
@@ -245,8 +245,6 @@ Rts2DevScript::deleteScript ()
     {
       if (currentTarget && script->getExecutedCount () == 0)
 	{
-	  std::cout << "Dont execute for 1" << currentTarget->
-	    getTargetID () << std::endl;
 	  dont_execute_for = currentTarget->getTargetID ();
 	  if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
 	    {
@@ -258,8 +256,6 @@ Rts2DevScript::deleteScript ()
 	}
       if (getFailedCount () > 0)
 	{
-	  std::cout << "Dont execute for 2" << currentTarget->
-	    getTargetID () << std::endl;
 	  // don't execute us for current target..
 	  dont_execute_for = currentTarget->getTargetID ();
 	}

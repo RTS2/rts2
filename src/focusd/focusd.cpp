@@ -21,7 +21,7 @@
 #include "focuser.h"
 
 Rts2DevFocuser::Rts2DevFocuser (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, 5550, "F0")
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
   char *states_names[1] = { "focuser" };
   setStateNames (1, states_names);

@@ -16,7 +16,7 @@
 #include "model/telmodel.h"
 
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, 5553, "T0")
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
   char *states_names[1] = { "telescope" };
   setStateNames (1, states_names);

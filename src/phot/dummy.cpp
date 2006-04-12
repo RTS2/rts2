@@ -24,6 +24,8 @@ protected:
 public:
     Rts2DevPhotDummy (int argc, char **argv);
 
+  virtual int scriptEnds ();
+
   virtual long getCount ();
 
   virtual int ready ()
@@ -49,6 +51,13 @@ public:
 Rts2DevPhotDummy::Rts2DevPhotDummy (int in_argc, char **in_argv):
 Rts2DevPhot (in_argc, in_argv)
 {
+}
+
+int
+Rts2DevPhotDummy::scriptEnds ()
+{
+  startFilterMove (0);
+  return Rts2DevPhot::scriptEnds ();
 }
 
 long

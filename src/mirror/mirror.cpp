@@ -8,7 +8,7 @@
 #include "mirror.h"
 
 Rts2DevMirror::Rts2DevMirror (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_MIRROR, 5551, "M0")
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_MIRROR, "M0")
 {
   char *states_names[1] = { "mirror" };
   setStateNames (1, states_names);

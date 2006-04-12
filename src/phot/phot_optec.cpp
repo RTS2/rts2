@@ -40,6 +40,7 @@ public:
     Rts2DevPhotOptec (int argc, char **argv);
     virtual ~ Rts2DevPhotOptec (void);
 
+  virtual int scriptEnds ();
   virtual int processOption (int in_opt);
   virtual int init ();
 
@@ -90,6 +91,14 @@ Rts2DevPhotOptec::Rts2DevPhotOptec (int in_argc, char **in_argv):Rts2DevPhot (in
 Rts2DevPhotOptec::~Rts2DevPhotOptec (void)
 {
   close (fd);
+}
+
+int
+Rts2DevPhotOptec::scriptEnds ()
+{
+  // set filter to black
+  startFilterMove (0);
+  return Rts2DevPhot::scriptEnds ();
 }
 
 int

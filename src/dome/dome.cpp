@@ -9,7 +9,7 @@
 #include "dome.h"
 
 Rts2DevDome::Rts2DevDome (int in_argc, char **in_argv, int in_device_type):
-Rts2Device (in_argc, in_argv, in_device_type, 5552, "DOME")
+Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
   char *states_names[1] = { "dome" };
   setStateNames (1, states_names);

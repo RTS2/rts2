@@ -33,7 +33,7 @@
 #include "../utils/rts2config.h"
 #include "status.h"
 
-#define PORT	5557
+#define PORT	617
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX		255

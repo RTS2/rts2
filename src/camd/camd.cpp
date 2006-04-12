@@ -310,7 +310,7 @@ CameraChip::cancelPriorityOperations ()
 }
 
 Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, 5554, "C0")
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
   int i;
   char *states_names[MAX_CHIPS] = { "img_chip", "trc_chip", "intr_chip" };

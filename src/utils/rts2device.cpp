@@ -627,14 +627,13 @@ Rts2State::sendInfo (Rts2Conn * conn, int state_num)
   return ret;
 }
 
-Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, int default_port, char *default_name):
+Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, char *default_name):
 Rts2Block (in_argc, in_argv)
 {
   /* put defaults to variables.. */
-  setPort (default_port);
   device_name = default_name;
   centrald_host = "localhost";
-  centrald_port = 5557;
+  centrald_port = 617;
   log_option = 0;
 
   statesSize = 0;
@@ -647,7 +646,6 @@ Rts2Block (in_argc, in_argv)
   lockf = 0;
 
   // now add options..
-  addOption ('p', "port", 1, "port to listen for request");
   addOption ('l', "hostname", 1,
 	     "hostname, if it different from return of gethostname()");
   addOption ('s', "centrald_host", 1,
@@ -703,11 +701,6 @@ Rts2Device::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'p':
-      int a_port;
-      a_port = atoi (optarg);
-      setPort (a_port);
-      break;
     case 'l':
       device_host = optarg;
       break;

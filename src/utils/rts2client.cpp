@@ -157,7 +157,7 @@ Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc,
 	   in_argv)
 {
   central_host = "localhost";
-  central_port = "5557";
+  central_port = "617";
 
   login = "petr";
   password = "petr";

@@ -13,7 +13,7 @@ protected:
   virtual int processOption (int in_opt);
 public:
     Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
-		  int default_port, char *default_name);
+		  char *default_name);
     virtual ~ Rts2DeviceDb (void);
   int initDB ();
   virtual int init ();

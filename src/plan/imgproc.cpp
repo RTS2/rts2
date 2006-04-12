@@ -94,7 +94,7 @@ Rts2DevConnImage::commandAuthorized ()
   return Rts2DevConn::commandAuthorized ();
 }
 
-Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_IMGPROC, 5561,
+Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_IMGPROC,
 	      "IMGP")
 {
   runningImage = NULL;

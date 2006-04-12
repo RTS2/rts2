@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -933,6 +929,8 @@ Rts2App (in_argc, in_argv)
   signal (SIGPIPE, SIG_IGN);
 
   masterState = 0;
+  // allocate ports dynamically
+  port = 0;
 }
 
 Rts2Block::~Rts2Block (void)
@@ -1009,6 +1007,14 @@ Rts2Block::init ()
       syslog (LOG_ERR, "Rts2Block::init bind %m");
       return -1;
     }
+  socklen_t sock_size = sizeof (server);
+  ret = getsockname (sock, (struct sockaddr *) &server, &sock_size);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2Block::init getsockname %m");
+      return -1;
+    }
+  setPort (ntohs (server.sin_port));
   ret = listen (sock, 5);
   if (ret)
     {

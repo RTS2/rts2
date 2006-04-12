@@ -169,7 +169,7 @@ protected:
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
-		int default_port, char *default_name);
+		char *default_name);
     virtual ~ Rts2Device (void);
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   int changeState (int state_num, int new_state, char *description);

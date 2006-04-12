@@ -47,8 +47,8 @@ CameraDummyChip::readoutOneLine ()
 	return ret;
       data = new char[2 * (chipUsedReadout->width - chipUsedReadout->x)];
     }
-  if (readoutLine == 0)
-    sleep (10);
+//  if (readoutLine == 0)
+//    sleep (10);
   for (int i = 0; i < 2 * chipUsedReadout->width; i++)
     {
       data[i] = i + readoutLine;

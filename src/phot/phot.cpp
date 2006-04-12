@@ -94,7 +94,7 @@ Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device):R
 }
 
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, 5559, "PHOT")
+Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
   char *states_names[1] = { "phot" };
   setStateNames (1, states_names);
