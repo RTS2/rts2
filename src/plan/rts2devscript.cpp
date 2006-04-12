@@ -158,6 +158,10 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  nextCommand ();
 	  break;
 	case -5:		// failed with script deletion..
+	  syslog (LOG_DEBUG,
+		  "Rts2DevScript::postEvent EVENT_ACQUSITION_END -5 %s",
+		  script_connection->getName ());
+	  break;
 	case NEXT_COMMAND_PRECISION_FAILED:
 	  deleteScript ();
 	  break;
@@ -233,7 +237,10 @@ Rts2DevScript::deleteScript ()
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &acqRet));
     }
+  // make sure we don't left any garbage for start of observation
   waitScript = NO_WAIT;
+  delete nextComd;
+  nextComd = NULL;
   if (script)
     {
       if (currentTarget && script->getExecutedCount () == 0)
@@ -260,12 +267,12 @@ Rts2DevScript::deleteScript ()
       script = NULL;
       delete tmp_script;
       currentTarget = NULL;
+      // that can result in call to startTarget and
+      // therefore nextCommand, which will set nextComd - so we
+      // don't want to touch it after that
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
     }
-  // make sure we don't left any garbage for start of observation
-  delete nextComd;
-  nextComd = NULL;
 }
 
 void
