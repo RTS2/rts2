@@ -246,11 +246,14 @@ Rts2DevDomeDublin::info ()
   else
     switch (dome_state)
       {
-      case DOME_OPENED:
+      case WATCHER_DOME_OPEN:
+	sw_state = 1;
+	break;
+      case WATCHER_DOME_CLOSED:
 	sw_state = 4;
 	break;
-      case DOME_CLOSED:
-	sw_state = 1;
+      default:
+	sw_state = 0;
 	break;
       }
 
@@ -270,15 +273,16 @@ Rts2DevDomeDublin::isMoving ()
   int result;
   int moving = 0;
   int count;
-  for (count = 0; count < 5; count++)
+  for (count = 0; count < 100; count++)
     {
       result = (inb (BASE + 2));
       // we think it's moving
       if (result & 2)
 	moving++;
+      usleep (USEC_SEC / 100);
     }
-  // motor is moving when we get moving at more then half instances of read
-  if (count < moving * 2)
+  // motor is moving at least once
+  if (moving > 0)
     return true;
   // dome is regarded as not failed after move of motor stop nominal way
   domeFailed = false;
@@ -292,6 +296,9 @@ Rts2DevDomeDublin::openDomeReal ()
 
   sleep (1);
   outb (0, BASE);
+
+  // wait for motor to decide to move
+  sleep (5);
 }
 
 int
@@ -345,6 +352,9 @@ Rts2DevDomeDublin::closeDomeReal ()
 
   sleep (1);
   outb (0, BASE);
+
+  // give controller time to react
+  sleep (5);
 }
 
 int
@@ -371,6 +381,7 @@ Rts2DevDomeDublin::isClosed ()
     {
       syslog (LOG_ERR, "Rts2DevDomeDublin::isClosed dome timeout");
       domeFailed = true;
+      executeSms (TYPE_STUCK);
       openDomeReal ();
       return -2;
     }
