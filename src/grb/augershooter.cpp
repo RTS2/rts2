@@ -8,7 +8,7 @@
 #include "../utils/rts2command.h"
 
 Rts2DevAugerShooter::Rts2DevAugerShooter (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, 5560, "AUGRSH")
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 {
   shootercnn = NULL;
   port = 1240;

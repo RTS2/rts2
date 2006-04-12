@@ -51,7 +51,7 @@ Rts2DevConnGrbd::commandAuthorized ()
 }
 
 Rts2DevGrb::Rts2DevGrb (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, 5563, "GRB")
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 {
   gcncnn = NULL;
   gcn_host = NULL;
