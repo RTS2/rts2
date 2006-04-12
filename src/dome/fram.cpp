@@ -1109,17 +1109,19 @@ Rts2DevDomeFram::sendFramMail (char *subject)
   int ret;
   ret = zjisti_stav_portu ();
   asprintf (&openText, "%s.\n"
-	    "End switched status:\n"
-	    "KONCAK_ZAVRENI_PRAVY:%i  KONCAK_ZAVRENI_LEVY:%i\n"
-	    "KONCAK_OTEVRENI_PRAVY:%i KONCAK_OTEVRENI_PRAVY:%i\n"
+	    "End switch status:\n"
+	    "CLOSE SWITCH RIGHT:%i  CLOSE SWITCH LEFT:%i\n"
+	    "OPEN SWITCH RIGHT:%i OPEN SWITCH LEFT:%i\n"
 	    "Weather::isGoodWeather %i\n"
-	    "zjisti_stav_portu ret: %i\n"
+	    "raining: %i\n"
+	    "windspeed: %f\n"
+	    "port state: %i\n"
 	    "closingNum: %i lastClosing: %s",
 	    subject,
 	    isOn (KONCAK_ZAVRENI_PRAVY), isOn (KONCAK_ZAVRENI_LEVY),
 	    isOn (KONCAK_OTEVRENI_PRAVY), isOn (KONCAK_OTEVRENI_LEVY),
 	    (weatherConn ? weatherConn->isGoodWeather () : -2),
-	    ret, closingNum, ctime (&lastClosing));
+	    rain, windspeed, ret, closingNum, ctime (&lastClosing));
   ret = sendMail (subject, openText);
   free (openText);
   return ret;
