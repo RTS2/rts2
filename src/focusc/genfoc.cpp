@@ -237,7 +237,6 @@ Rts2Client (in_argc, in_argv)
   addOption ('C', "change_filter", 1,
 	     "change filter on photometer after taking n counts; default to 0 (don't change)");
   addOption ('K', "skip_filter", 1, "Skip that filter number");
-  addOption ('c', "config", 1, "configuration file");
 }
 
 Rts2GenFocClient::~Rts2GenFocClient (void)
