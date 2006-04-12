@@ -1,8 +1,6 @@
 #include "rts2devscript.h"
 #include "rts2execcli.h"
 
-#include <iostream>
-
 Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
 {
   currentTarget = NULL;
@@ -11,6 +9,7 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
   nextTarget = NULL;
   script = NULL;
   blockMove = 0;
+  getObserveStart = NO_START;
   waitScript = NO_WAIT;
   dont_execute_for = -1;
   script_connection = in_script_connection;
@@ -35,17 +34,17 @@ Rts2DevScript::startTarget ()
       nextScript = NULL;
       nextTarget = NULL;
     }
-  script =
-    new Rts2Script (script_connection->getMaster (),
-		    script_connection->getName (), currentTarget);
+  else
+    {
+      script =
+	new Rts2Script (script_connection->getMaster (),
+			script_connection->getName (), currentTarget);
+    }
 
   clearFailedCount ();
   queCommandFromScript (new
 			Rts2CommandScriptEnds (script_connection->
 					       getMaster ()));
-  delete nextComd;
-  nextComd = NULL;
-
   script_connection->getMaster ()->
     postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
@@ -83,31 +82,24 @@ Rts2DevScript::postEvent (Rts2Event * event)
       break;
     case EVENT_SET_TARGET:
       setNextTarget ((Target *) event->getArg ());
-      if (currentTarget)
-	break;
-      // we don't have target..so let's observe us
-      startTarget ();
-      nextCommand ();
+      getObserveStart = NO_START;
       break;
       // when we finish move, we can observe
     case EVENT_MOVE_OK:
+      getObserveStart = START_CURRENT;
       break;
     case EVENT_LAST_READOUT:
     case EVENT_SCRIPT_ENDED:
-      if (event->getArg ())
-	// we get new target..handle that same way as EVENT_OBSERVE command,
-	// telescope will not move
-	setNextTarget ((Target *) event->getArg ());
-      // we still have something to do
-      if (currentTarget)
+      if (!event->getArg () || (getObserveStart == START_NEXT && script))
 	break;
-      // currentTarget is defined - tested in if (event->getArg ())
+      // we get new target..handle that same way as EVENT_OBSERVE command,
+      // telescope will not move
+      setNextTarget ((Target *) event->getArg ());
+      // currentTarget is defined - tested in if (!event->getArg () || ..
     case EVENT_OBSERVE:
-      // we can start script before we get EVENT_OBSERVE - don't start us in such case
-      if (currentTarget)
+      if (script && getObserveStart != START_CURRENT)	// we are still observing..we will be called after last command finished
 	{
-	  // only check if we have something to do
-	  nextCommand ();
+	  getObserveStart = START_NEXT;
 	  break;
 	}
       startTarget ();
@@ -131,7 +123,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	{
 	  script->postEvent (new Rts2Event (event));
 	  if (isWaitMove ())
-	    // get a chance to process updates..
+	    // get a change to process updates..
 	    nextCommand ();
 	}
       break;
@@ -158,10 +150,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  nextCommand ();
 	  break;
 	case -5:		// failed with script deletion..
-	  syslog (LOG_DEBUG,
-		  "Rts2DevScript::postEvent EVENT_ACQUSITION_END -5 %s",
-		  script_connection->getName ());
-	  break;
 	case NEXT_COMMAND_PRECISION_FAILED:
 	  deleteScript ();
 	  break;
@@ -175,15 +163,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	{
 	  // target that was already acquired will not be acquired again
 	  ac->count = 0;
-	  break;
-	}
-      // we have to wait for decesion from next target
-      if (nextTarget && ac->tar_id == nextTarget->getObsTargetID ())
-	{
-	  if (nextTarget->isAcquired ())
-	    ac->count = 0;
-	  else
-	    ac->count++;
 	  break;
 	}
     case EVENT_SIGNAL_QUERY:
@@ -237,10 +216,7 @@ Rts2DevScript::deleteScript ()
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &acqRet));
     }
-  // make sure we don't left any garbage for start of observation
   waitScript = NO_WAIT;
-  delete nextComd;
-  nextComd = NULL;
   if (script)
     {
       if (currentTarget && script->getExecutedCount () == 0)
@@ -255,17 +231,12 @@ Rts2DevScript::deleteScript ()
 	    }
 	}
       if (getFailedCount () > 0)
-	{
-	  // don't execute us for current target..
-	  dont_execute_for = currentTarget->getTargetID ();
-	}
+	// don't execute us for current target..
+	dont_execute_for = currentTarget->getTargetID ();
       tmp_script = script;
       script = NULL;
       delete tmp_script;
       currentTarget = NULL;
-      // that can result in call to startTarget and
-      // therefore nextCommand, which will set nextComd - so we
-      // don't want to touch it after that
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
     }
@@ -381,6 +352,12 @@ Rts2DevScript::haveNextCommand ()
   if (ret < 0)
     {
       deleteScript ();
+      // we don't get new command..delete us and look if there is new
+      // target..
+      if (getObserveStart == NO_START)
+	{
+	  return 0;
+	}
       startTarget ();
       if (!script)
 	{

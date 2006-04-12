@@ -3,7 +3,6 @@
 #endif
 
 #include <limits.h>
-#include <iostream>
 
 #include "rts2execcli.h"
 #include "../writers/rts2imagedb.h"
@@ -14,7 +13,6 @@ Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2
   (in_connection),
 Rts2DevScript (in_connection)
 {
-  queCurrentImage = false;
   imgCount = 0;
 }
 
@@ -43,6 +41,8 @@ void
 Rts2DevClientCameraExec::startTarget ()
 {
   Rts2DevScript::startTarget ();
+  // should be deleted..
+  exposureCount = 1;
 }
 
 int
@@ -81,6 +81,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	{
 	  if (!currentTarget->wasMoved ())
 	    {
+	      getObserveStart = START_CURRENT;
 	      return;
 	    }
 	}
@@ -147,17 +148,13 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
   int ret;
   // try processing in script..
-  if (script && !queCurrentImage)
+  if (script)
     {
       ret = script->processImage (image);
       if (!ret)
 	{
 	  return;
 	}
-    }
-  else
-    {
-      queCurrentImage = false;
     }
   queImage (image);
 }
@@ -181,11 +178,7 @@ Rts2DevClientCameraExec::exposureEnd ()
   blockMove = 0;
   if (!script || (script && script->isLastCommand ()))
     {
-      deleteScript ();
-      // EVENT_LAST_READOUT will start new script, when it's possible
       getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
-      // created image is last in script - will be qued, not processed
-      queCurrentImage = true;
     }
   else
     {
@@ -202,7 +195,6 @@ Rts2DevClientCameraExec::exposureFailed (int status)
 {
   // in case of an error..
   blockMove = 0;
-  queCurrentImage = false;
   Rts2DevClientCameraImage::exposureFailed (status);
 }
 
@@ -278,7 +270,6 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			   Rts2Event (EVENT_OBSERVE, (void *) currentTarget));
 	      break;
 	    case OBS_MOVE:
-	    case OBS_MOVE_FIXED:
 	    case OBS_ALREADY_STARTED:
 	      blockMove = 1;
 	      break;
@@ -369,7 +360,6 @@ Rts2DevClientTelescopeExec::syncTarget ()
 				     coord.ra, coord.dec));
       break;
     case OBS_MOVE_FIXED:
-      currentTarget->moveStarted ();
       connection->
 	queCommand (new
 		    Rts2CommandMoveFixed (getMaster (), this,
@@ -377,7 +367,6 @@ Rts2DevClientTelescopeExec::syncTarget ()
 					  coord.dec + fixedOffset.dec));
       break;
     case OBS_ALREADY_STARTED:
-      currentTarget->moveStarted ();
       if (fixedOffset.ra != 0 || fixedOffset.dec != 0)
 	{
 #ifdef DEBUG_EXTRA
@@ -430,7 +419,7 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
       moveEnd ();
       return;
     }
-  if (currentTarget && currentTarget->moveWasStarted ())
+  if (currentTarget)
     currentTarget->moveFailed ();
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveFailed (status);

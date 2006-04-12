@@ -132,7 +132,7 @@ Rts2ConnExecutor::Rts2ConnExecutor (int in_sock, Rts2Executor * in_master):Rts2D
 }
 
 Rts2Executor::Rts2Executor (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, 5570, "EXEC")
 {
   char *states_names[1] = { "executor" };
   currentTarget = NULL;
@@ -236,9 +236,8 @@ Rts2Executor::postEvent (Rts2Event * event)
     {
     case EVENT_SLEW_TO_TARGET:
       maskState (0, EXEC_STATE_MASK, EXEC_MOVE);
-      break;
     case EVENT_OBSERVE:
-      // we can get EVENT_OBSERVE in case of continues observation
+      break;
     case EVENT_SCRIPT_STARTED:
       maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
       break;
@@ -258,11 +257,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 	{
 	case NEXT_COMMAND_PRECISION_OK:
 	  if (currentTarget)
-	    {
-	      syslog (LOG_DEBUG, "NEXT_COMMAND_PRECISION_OK %i",
-		      currentTarget->getObsTargetID ());
-	      currentTarget->acqusitionEnd ();
-	    }
+	    currentTarget->acqusitionEnd ();
 	  maskState (0, EXEC_MASK_ACQ, EXEC_ACQ_OK);
 	  break;
 	case -5:
@@ -274,11 +269,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_LAST_READOUT:
-      updateScriptCount ();
-      // that was last script running
-      if (scriptCount == 0)
-	maskState (0, EXEC_STATE_MASK, EXEC_LASTREAD);
-      break;
+      maskState (0, EXEC_STATE_MASK, EXEC_LASTREAD);
     case EVENT_SCRIPT_ENDED:
       updateScriptCount ();
       if (currentTarget)

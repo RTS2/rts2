@@ -168,12 +168,11 @@ Rts2DevClientPhotExec::nextCommand ()
   if (!ret)
     return;
 
-  if (currentTarget && !currentTarget->wasMoved ())
-    return;
-
   connection->queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
   blockMove = 1;		// as we run a script..
+  if (currentTarget && !currentTarget->wasMoved ())
+    getObserveStart = START_CURRENT;
 }
 
 void

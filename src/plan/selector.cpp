@@ -108,7 +108,7 @@ public:
 };
 
 Rts2SelectorDev::Rts2SelectorDev (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SELECTOR, "SEL")
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SELECTOR, 5562, "SEL")
 {
   sel = NULL;
   next_id = -1;

@@ -30,12 +30,9 @@ private:
   struct ln_lnlat_posn *obs;
   int printTargetInfo ();
   int printExtendet;
-  int printCalTargets;
   int printObservations;
   int printImages;
   int printCounts;
-
-  double JD;
 public:
     Rts2TargetInfo (int argc, char **argv);
     virtual ~ Rts2TargetInfo (void);
@@ -52,16 +49,12 @@ Rts2AppDb (in_argc, in_argv)
 {
   obs = NULL;
   printExtendet = 0;
-  printCalTargets = 0;
   printObservations = 0;
   printImages = 0;
   printCounts = 0;
 
-  JD = ln_get_julian_from_sys ();
-
   addOption ('E', "extendet", 2,
 	     "print extendet informations (visibility prediction,..)");
-  addOption ('C', "calibartion", 0, "print recommended calibration targets");
   addOption ('o', "observations", 2,
 	     "print observations (in given time range)");
   addOption ('i', "images", 2, "print images (in given time range)");
@@ -70,7 +63,6 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('P', "photometer_summary", 0, "print counts summary row");
   addOption ('t', "target_type", 0,
 	     "search for target types, not for targets IDs");
-  addOption ('d', "date", 1, "give informations for this data");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()
@@ -81,14 +73,10 @@ Rts2TargetInfo::~Rts2TargetInfo ()
 int
 Rts2TargetInfo::processOption (int in_opt)
 {
-  int ret;
   switch (in_opt)
     {
     case 'E':
       printExtendet = 1;
-      break;
-    case 'C':
-      printCalTargets = 1;
       break;
     case 'o':
       printObservations = 1;
@@ -104,11 +92,6 @@ Rts2TargetInfo::processOption (int in_opt)
       break;
     case 'P':
       printCounts |= DISPLAY_SUMMARY;
-      break;
-    case 'd':
-      ret = parseDate (optarg, JD);
-      if (ret)
-	return ret;
       break;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -135,11 +118,13 @@ Rts2TargetInfo::processArgs (const char *arg)
 int
 Rts2TargetInfo::printTargetInfo ()
 {
-  target->sendInfo (std::cout, JD);
+  double JD;
+  std::cout << target;
   // print scripts..
   Rts2CamList::iterator cam_names;
   if (printExtendet)
     {
+      JD = ln_get_julian_from_sys ();
       for (int i = 0; i < 10; i++)
 	{
 	  JD += 10;
@@ -168,16 +153,6 @@ Rts2TargetInfo::printTargetInfo ()
 	    cout << "PARSING of script '" << script_buf << "' FAILED!!! AT "
 	    << failedCount << std::endl;
 	}
-    }
-  // print recomended calibrations targets
-  if (printCalTargets)
-    {
-      Rts2TargetSet *cal;
-      cal = target->getCalTargets (JD);
-      std::cout << "==================================" << std::endl <<
-	"Calibration targets" << std::endl;
-      cal->print (std::cout, JD);
-      delete cal;
     }
   // print observations..
   if (printObservations)
