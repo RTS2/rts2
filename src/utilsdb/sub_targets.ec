@@ -1977,17 +1977,12 @@ TargetPlan::refreshNext ()
 
   if (nextPlan)
   {
-    db_next = nextPlan->getPlanStart ();
     // we need to select new plan..don't bother with db select
-    if (db_next < now)
+    if (nextPlan->getPlanStart () < now)
       return;
   }
-  else
-  {
-    db_next = now;
-    // consider targets 1/2 old..
-    db_next -= 1800;
-  }
+  // consider targets 1/2 hours old..
+  db_next = now - 1800;
 
   EXEC SQL
   SELECT
@@ -1999,7 +1994,7 @@ TargetPlan::refreshNext ()
   FROM
     plan
   WHERE
-    plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_next));
+    plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_next) AND obs_id IS NULL);
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetPlan::refreshNext cannot load next target");
