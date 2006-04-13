@@ -278,6 +278,8 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			   Rts2Event (EVENT_OBSERVE, (void *) currentTarget));
 	      break;
 	    case OBS_MOVE:
+	      fixedOffset.ra = 0;
+	      fixedOffset.dec = 0;
 	    case OBS_MOVE_FIXED:
 	    case OBS_ALREADY_STARTED:
 	      blockMove = 1;
@@ -334,8 +336,6 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
       fixedOffset.dec += offset->dec;
       break;
     case EVENT_ACQUSITION_END:
-      fixedOffset.ra = 0;
-      fixedOffset.dec = 0;
       break;
     case EVENT_TEL_START_GUIDING:
       gp = (GuidingParams *) event->getArg ();
@@ -370,6 +370,9 @@ Rts2DevClientTelescopeExec::syncTarget ()
       break;
     case OBS_MOVE_FIXED:
       currentTarget->moveStarted ();
+      syslog (LOG_DEBUG,
+	      "Rts2DevClientCameraExec::syncTarget ra %f dec %f ora %f odec %f",
+	      coord.ra, coord.dec, fixedOffset.ra, fixedOffset.dec);
       connection->
 	queCommand (new
 		    Rts2CommandMoveFixed (getMaster (), this,
