@@ -24,7 +24,7 @@ private:
   short unsigned int *dest_top;
   char *send_top;
 public:
-    CameraChipAlta (CApnCamera * in_alta);
+    CameraChipAlta (Rts2DevCamera * in_camer, CApnCamera * in_alta);
   virtual int init ();
   virtual int setBinning (int in_vert, int in_hori);
   virtual int startExposure (int light, float exptime);
@@ -36,7 +36,8 @@ public:
   virtual int endReadout ();
 };
 
-CameraChipAlta::CameraChipAlta (CApnCamera * in_alta):CameraChip (0)
+CameraChipAlta::CameraChipAlta (Rts2DevCamera * in_cam, CApnCamera * in_alta):CameraChip (in_cam,
+	    0)
 {
   alta = in_alta;
 }
@@ -58,9 +59,9 @@ CameraChipAlta::init ()
 int
 CameraChipAlta::setBinning (int in_vert, int in_hori)
 {
-  alta->m_RoiBinningH = in_vert;
-  alta->m_RoiBinningV = in_hori;
-  return 0;
+  alta->write_RoiBinningH (in_hori);
+  alta->write_RoiBinningV (in_vert);
+  return CameraChip::setBinning (in_vert, in_hori);
 }
 
 int
@@ -88,10 +89,10 @@ CameraChipAlta::isExposing ()
 
   status = alta->read_ImagingStatus ();
 
+  if (status < 0)
+    return -2;
   if (status != Apn_Status_ImageReady)
-    return 2000000;
-  if (status == -1)
-    return -1;
+    return 200;
   // exposure has ended.. 
   return -2;
 }
@@ -116,10 +117,10 @@ CameraChipAlta::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   int ret;
   ret = CameraChip::startReadout (dataConn, conn);
   // set region of intereset..
+  alta->write_RoiPixelsV (chipUsedReadout->height);
+  alta->write_RoiStartY (chipUsedReadout->y);
   alta->m_RoiStartX = chipUsedReadout->x;
-  alta->m_RoiStartY = chipUsedReadout->y;
   alta->m_RoiPixelsH = chipUsedReadout->width;
-  alta->m_RoiPixelsV = chipUsedReadout->height;
   dest_top = dest;
   send_top = (char *) dest;
   return ret;
@@ -140,49 +141,31 @@ CameraChipAlta::readoutOneLine ()
       unsigned long count;
       status = alta->GetImageData (dest_top, width, height, count);
       if (!status)
-	return -3;
+	return -1;
       dest_top += width * height;
-      readoutLine = chipUsedReadout->height + chipUsedReadout->y;
+      readoutLine = chipUsedReadout->y + chipUsedReadout->height;
     }
   if (sendLine == 0)
     {
-      int ret;
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;
     }
-  if (!readoutConn)
-    {
-      return -3;
-    }
+  int send_data_size;
+  sendLine++;
+  send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
+  if (send_data_size < 0)
+    return -1;
+  send_top += send_data_size;
   if (send_top < (char *) dest_top)
-    {
-      int send_data_size;
-      sendLine++;
-      send_data_size =
-	sendReadoutData (send_top, (char *) dest_top - send_top);
-      if (send_data_size < 0)
-	return -2;
-
-      send_top += send_data_size;
-      return 0;
-    }
-  endReadout ();
+    return 0;
   return -2;
 }
 
 int
 CameraChipAlta::endReadout ()
 {
-  if (!readoutConn)
-    {
-      short unsigned int dat[chipSize->width];
-      unsigned long count;
-      unsigned short width, height;
-      width = chipSize->width;
-      height = 1;
-      alta->GetImageData (dat, width, height, count);
-    }
+  // reset system??
   return CameraChip::endReadout ();
 }
 
@@ -190,9 +173,11 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 {
 private:
   CApnCamera * alta;
+  int bit12;
 public:
-  Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv);
-  virtual ~ Rts2DevCameraAlta (void);
+    Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv);
+    virtual ~ Rts2DevCameraAlta (void);
+  virtual int processOption (int in_opt);
   virtual int init ();
 
   virtual int ready ();
@@ -207,16 +192,36 @@ public:
   virtual int camCoolShutdown ();
 };
 
-Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraAlta::Rts2DevCameraAlta (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   alta = NULL;
+  addOption ('B', "12bits", 0,
+	     "switch to 12 bit readout mode; see alta specs for details");
+  bit12 = 0;
 }
 
 Rts2DevCameraAlta::~Rts2DevCameraAlta (void)
 {
   if (alta)
-    delete alta;
+    {
+      alta->CloseDriver ();
+      delete alta;
+    }
+}
+
+int
+Rts2DevCameraAlta::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'B':
+      bit12 = 1;
+      break;
+    default:
+      return Rts2DevCamera::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -232,7 +237,14 @@ Rts2DevCameraAlta::init ()
   ret = alta->InitDriver (0, 0, 0);
 
   if (!ret)
-    return -1;
+    {
+      alta->ResetSystem ();
+      alta->CloseDriver ();
+      sleep (2);
+      ret = alta->InitDriver (0, 0, 0);
+      if (!ret)
+	return -1;
+    }
 
   // Do a system reset to ensure known state, flushing enabled etc
   ret = alta->ResetSystem ();
@@ -240,8 +252,18 @@ Rts2DevCameraAlta::init ()
   if (!ret)
     return -1;
 
+  // set data bits..
+  if (bit12)
+    {
+      alta->write_DataBits (Apn_Resolution_TwelveBit);
+    }
+  else
+    {
+      alta->write_DataBits (Apn_Resolution_SixteenBit);
+    }
+
   chipNum = 1;
-  chips[0] = new CameraChipAlta (alta);
+  chips[0] = new CameraChipAlta (this, alta);
 
   return Rts2DevCamera::initChips ();
 }
@@ -257,8 +279,8 @@ Rts2DevCameraAlta::ready ()
 int
 Rts2DevCameraAlta::baseInfo ()
 {
-  strcpy (ccdType, "Alta ");
-  strncat (ccdType, alta->m_CameraModel, 10);
+  strcpy (ccdType, "Alta_");
+  strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
   sprintf (serialNumber, "%i", alta->m_CameraId);
   return 0;
 }
@@ -285,7 +307,7 @@ Rts2DevCameraAlta::camCoolMax ()
 {
   alta->write_CoolerEnable (true);
   alta->write_FanMode (Apn_FanMode_High);
-  alta->write_CoolerSetPoint (-100);
+  alta->write_CoolerSetPoint (-60);
   return 0;
 }
 

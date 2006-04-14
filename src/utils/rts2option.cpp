@@ -9,5 +9,11 @@ Rts2Option::getOptionChar (char **end_opt)
     {
       **end_opt = ':';
       (*end_opt)++;
+      // optional text after option..
+      if (has_arg == 2)
+	{
+	  **end_opt = ':';
+	  (*end_opt)++;
+	}
     }
 }

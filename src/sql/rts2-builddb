@@ -1,0 +1,42 @@
+#!/bin/bash
+
+DBNAME=$1
+PSQL=psql
+
+PSQLDB="$PSQL $DBNAME"
+
+if [ "x$DBNAME" == "x" ]; then
+  echo "Usage: $0 <db_name>"
+  exit 1
+fi
+
+$PSQLDB -c "select * from pg_tables" 2>&1 >/dev/null
+if [ $? != 0 ]; then
+  echo "Cannot execute psql / you don't have access to database '$DBNAME'"
+  exit 2
+fi
+
+# build database
+
+$PSQLDB < create/language.sql
+$PSQLDB < create/typ_wcs.sql
+$PSQLDB < create/functions.sql
+$PSQLDB < create/tables.sql
+$PSQLDB < create/views.sql
+
+# update to current version
+
+$PSQLDB < update/rel_0_5_1.sql
+$PSQLDB < update/rel_0_5_2.sql
+$PSQLDB < update/rel_0_6_0.sql
+$PSQLDB < update/rel_0_6_1.sql
+
+# load init data
+
+$PSQLDB < init_data.sql
+
+# grant rights
+
+$PSQLDB < grant.sql
+
+

@@ -1,757 +1,865 @@
-/*!
- * @file Plan test client
- * $Id$
- *
- * Client to test camera deamon.
- *
- * @author petr
- */
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 
-#include <errno.h>
-#include <libnova/libnova.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <mcheck.h>
-#include <getopt.h>
-#include <math.h>
+/*!
+ *
+ * Display images from RTS2 camera devices in nifty Xwindow.
+ * Allow some basic user interaction.
+ *
+ */
 
-#include "../utils/devcli.h"
-#include "../utils/devconn.h"
-#include "../utils/mkpath.h"
-#include "../utils/mv.h"
-#include "../writers/fits.h"
-#include "imghdr.h"
-#include "status.h"
-#include "phot_info.h"
+#include "genfoc.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <X11/keysymdef.h>
 
-#define PP_NEG
+#include <pthread.h>
 
-#define GAMMA 0.995
+#include <math.h>
 
-//#define PP_MED 0.60
-#define PP_HIG 0.995
-#define PP_LOW (1 - PP_HIG)
+#include <iostream>
+#include <iomanip>
+#include <vector>
 
-#define HISTOGRAM_LIMIT		65536
+#include <limits.h>
 
-#define MAX_DEVICES             5
-
-Display *display;
-Visual *visual;
-int depth;
-
-int light_image = 1;
-
-XColor rgb[256];
-
-Colormap colormap;
-
-int
-phot_handler (struct param_status *params, struct phot_info *info)
-{
-  time_t t;
-  time (&t);
-  int ret;
-  if (!strcmp (params->param_argv, "filter"))
-    return param_next_integer (params, &info->filter);
-  if (!strcmp (params->param_argv, "count"))
-    {
-      FILE *phot_log;
-      char tc[30];
-      phot_log = fopen ("phot_log", "a");
-      ctime_r (&t, tc);
-      tc[strlen (tc) - 1] = 0;
-      ret = param_next_integer (params, &info->count);
-      fprintf (phot_log, "%s %i %i\n", tc, info->filter, info->count);
-      fclose (phot_log);
-    }
-  return ret;
-}
-
-class DeviceWindow
+class Rts2xfocus:public Rts2GenFocClient
 {
 private:
-  int save_fits;
-  int autodark;
-  int img_num;			// image number with same parameters (exposure time, binning etc..
-  unsigned short *dark_image;
+  XColor rgb[260];		// <= 255 - images, 256 - red line
+  Colormap colormap;
+  char *displayName;
+
+  // X11 stuff
+  Display *display;
+  Visual *visual;
+  int depth;
+
+  int crossType;
+  int starsType;
+
+  // initially in arcsec, but converted (and used) in degrees
+  double changeVal;
+
+  virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
 public:
-  struct device *camera;
+    Rts2xfocus (int argc, char **argv);
+    virtual ~ Rts2xfocus (void);
 
-  Window window;
+  virtual int processOption (int in_opt);
 
-  GC gc;
-  XGCValues gcv;
-  Pixmap pixmap;
-  XImage *image;
+  virtual int init ();
+  virtual void help ();
 
-  int hist[HISTOGRAM_LIMIT];
-
-  float exposure_time;
-
-  pthread_t thr;
-  pthread_attr_t attrs;
-
-    DeviceWindow (char *camera_name, Window root_window, int center,
-		  float exposure, int i_save_fits, int i_autodark);
-
-   ~DeviceWindow ()
+  Display *getDisplay ()
   {
-    XUnmapWindow (display, window);
-  };
-
-  void redraw ()
+    return display;
+  }
+  int getDepth ()
   {
-    XDrawImageString (display, window, gc, 50, 50, "hellow", 6);
-  };
-
-  static void *static_event_loop (void *arg)
+    return depth;
+  }
+  Visual *getVisual ()
   {
-    return ((DeviceWindow *) arg)->event_loop (NULL);
+    return visual;
   }
 
-  int center_exposure (void)
+  XColor *getRGB (int i)
   {
-    struct camera_info *caminfo = (struct camera_info *) &camera->info;
-    int x, y, w, h;
-    if (devcli_command (camera, NULL, "chipinfo 0"))
-      return -1;
-    x = caminfo->chip_info[0].width / 2 - 128;
-    y = caminfo->chip_info[0].height / 2 - 128;
-    w =
-      x + 256 <
-      caminfo->chip_info[0].width ? 256 : caminfo->chip_info[0].width - x;
-    h =
-      y + 256 <
-      caminfo->chip_info[0].height ? 256 : caminfo->chip_info[0].height - y;
-
-    devcli_command (camera, NULL, "box 0 %i %i %i %i", x, y, w, h);
-    printf
-      ("reading frame center [%i,%i:%i,%i]!!\n==============\n",
-       x, y, x + w, y + h);
+    return &rgb[i];
   }
-
-
-  void *event_loop (void *arg)
+  Colormap *getColormap ()
   {
-    struct camera_info *caminfo = (struct camera_info *) &camera->info;
-    while (1)
-      {
-	XEvent event;
-
-	printf ("waiting for event\n", event.type);
-	fflush (stdout);
-
-	XNextEvent (display, &event);
-	KeySym ks;
-
-	printf ("XEvent %i\n", event.type);
-	fflush (stdout);
-
-	switch (event.type)
-	  {
-	  case Expose:
-	    redraw ();
-	    break;
-	  case KeyPress:
-	    ks = XLookupKeysym ((XKeyEvent *) & event, 0);
-	    switch (ks)
-	      {
-	      case XK_1:
-		clearDark ();
-		devcli_command (this->camera, NULL, "binning 0 1 1");
-		break;
-	      case XK_2:
-		clearDark ();
-		devcli_command (this->camera, NULL, "binning 0 2 2");
-		break;
-	      case XK_3:
-		clearDark ();
-		devcli_command (this->camera, NULL, "binning 0 3 3");
-		break;
-	      case XK_e:
-		clearDark ();
-		exposure_time += 1;
-		break;
-	      case XK_d:
-		clearDark ();
-		if (exposure_time > 1)
-		  exposure_time -= 1;
-		break;
-	      case XK_w:
-		clearDark ();
-		exposure_time += 0.1;
-		break;
-	      case XK_s:
-		clearDark ();
-		if (exposure_time > 0.1)
-		  exposure_time -= 0.1;
-		break;
-	      case XK_q:
-		clearDark ();
-		exposure_time += 0.01;
-		break;
-	      case XK_a:
-		clearDark ();
-		if (exposure_time > 0.01)
-		  exposure_time -= 0.01;
-		break;
-	      case XK_f:
-		clearDark ();
-		devcli_command (camera, NULL, "box 0 -1 -1 -1 -1");
-		printf ("reading FULL FRAME!!\n================");
-		break;
-	      case XK_c:
-		clearDark ();
-		center_exposure ();
-		break;
-	      case XK_p:
-		devcli_command_all (DEVICE_TYPE_PHOT, "integrate 10 1800");
-		break;
-	      case XK_o:
-		devcli_command_all (DEVICE_TYPE_PHOT, "stop");
-		break;
-	      case XK_y:
-		save_fits = 1;
-		printf ("Will write fits from %s\n", camera->name);
-		break;
-	      case XK_u:
-		save_fits = 0;
-		printf ("Don't write fits from %s\n", camera->name);
-		break;
-	      default:
-		// fprintf (stderr, "Unknow key pressed:%i\n", (int) ks);
-		break;
-	      }
-	  }
-	printf ("next_exposure_time: %f\n", exposure_time);
-      }
-  };
-
-  static int static_data_handler (int sock, size_t size,
-				  struct image_info *image_info, void *arg)
-  {
-    printf ("data handler");
-    fflush (stdout);
-    return ((DeviceWindow *) arg)->data_handler (sock, size, image_info);
+    return &colormap;
   }
-
-  /*!
-   * Handle camera data connection.
-   *
-   * @params sock         socket fd.
-   *
-   * @return      0 on success, -1 and set errno on error.
-   */
-  int data_handler (int sock, size_t size, struct image_info *image_info)
+  int getStarsType ()
   {
-    int i, j, k, width, height;
-    struct fits_receiver_data receiver;
-    struct tm gmt;
-    char *data = NULL, *d, *pix_data;
-    unsigned short *im;
-    unsigned short m;
-    int ret = 0;
-    ssize_t s;
-    int l_save_fits;
-    XSetWindowAttributes xswa;
-    struct imghdr *imghdr;
-    char *filename = NULL;
-    char filen[250];
-
-    int ds;
-
-    l_save_fits = save_fits;
-
-    unsigned short low, med, hig;
-
-    unsigned short *im_ptr;
-    unsigned short *dark_ptr;
-
-    printf ("reading data socket: %i size: %i\n", sock, size);
-
-    if (l_save_fits)
-      {
-	// create path with camera name
-	if (mkpath (image_info->camera_name, 0755) != 0)
-	  {
-	    perror ("creating dir for camera");
-	    l_save_fits = 0;
-	  }
-	else
-	  {
-	    gmtime_r (&image_info->exposure_tv.tv_sec, &gmt);
-	    asprintf (&filename, "%s/%s%04i%02i%02i%02i%02i%02i-%03i.fits",
-		      image_info->camera_name,
-		      (image_info->target_type == TARGET_DARK ? "d" : ""),
-		      gmt.tm_year + 1900, gmt.tm_mon + 1, gmt.tm_mday,
-		      gmt.tm_hour, gmt.tm_min, gmt.tm_sec,
-		      (int) (image_info->exposure_tv.tv_usec / 1000));
-	    strcpy (filen, filename);
-	    printf ("filename: %s\n", filename);
-	    if (fits_create (&receiver, filename)
-		|| fits_init (&receiver, size))
-	      {
-		perror ("camc data_handler fits_init");
-		ret = -1;
-		goto out;
-	      }
-	  }
-      }
-
-    receiver.info = image_info;
-
-    data = (char *) malloc (size * 2 + sizeof (struct imghdr));
-    d = data;
-
-    while ((s = devcli_read_data (sock, d, DATA_BLOCK_SIZE)) > 0)
-      {
-	if (l_save_fits)
-	  {
-	    if ((ret = fits_handler (d, s, &receiver)) < 0)
-	      goto out;
-	  }
-	d += s;
-      }
-
-    if (s < 0)
-      {
-	perror ("camc data_handler");
-	ret = -1;
-	goto out;
-      }
-
-    printf ("reading finished\n");
-
-    pix_data = data + sizeof (struct imghdr);
-
-    im = (unsigned short *) pix_data;
-
-    imghdr = (struct imghdr *) data;
-
-    width = imghdr->sizes[0];
-    height = imghdr->sizes[1];
-
-    if (image_info->target_type == TARGET_DARK)
-      {
-	delete dark_image;
-	// unfortunatelly we have to copy data..as we have in pix_data
-	// data with image header, and later we will have no way how to
-	// free them (if we loose their pointer)
-	dark_image = new unsigned short[width * height];
-	memcpy ((char *) dark_image, pix_data,
-		width * height * sizeof (unsigned short));
-      }
-
-    if (l_save_fits)
-      {
-	if (fits_write_image_info (&receiver, image_info, NULL)
-	    || fits_close (&receiver))
-	  {
-	    perror ("camc data_handler fits_write");
-	    ret = -1;
-	    goto out;
-	  }
-      }
-
-    if (!image)
-      {
-	image =
-	  XCreateImage (display, visual, depth, ZPixmap, 0, 0, width, height,
-			8, 0);
-	image->data = (char *) malloc (image->bytes_per_line * height + 16);
-
-      }
-
-    // histogram build
-    for (i = 0; i < HISTOGRAM_LIMIT; i++)
-      hist[i] = 0;
-
-    ds = height * width;
-    k = 0;
-    printf ("image: %ix%i\n", height, width);
-
-    im_ptr = im;
-    dark_ptr = dark_image;
-
-    for (j = 0; j < height; j++)
-      for (i = 0; i < width; i++)
-	{
-	  if (dark_ptr)
-	    {
-	      // substract dark image
-	      if (*dark_ptr < *im_ptr)
-		*im_ptr -= *dark_ptr;
-	      else
-		*im_ptr = 0;
-	      dark_ptr++;
-	    }
-	  hist[*im_ptr]++;
-	  im_ptr++;
-	}
-
-    low = med = hig = 0;
-    j = 0;
-    for (i = 0; i < HISTOGRAM_LIMIT; i++)
-      {
-	j += hist[i];
-	if ((!low) && (((float) j / (float) ds) > PP_LOW))
-	  low = i;
-#ifdef PP_MED
-	if ((!med) && (((float) j / (float) ds) > PP_MED))
-	  med = i;
-#endif
-	if ((!hig) && (((float) j / (float) ds) > PP_HIG))
-	  hig = i;
-      }
-    if (!hig)
-      hig = 65535;
-    if (low == hig)
-      low = hig / 2 - 1;
-    fprintf (stderr, "levels: low:%d, med:%d, hi:%d ds: %d\n", low, med, hig,
-	     ds);
-
-    im_ptr = im;
-
-    for (j = 0; j < height; j++)
-      for (i = 0; i < width; i++)
-	{
-	  m = *im_ptr;
-	  im_ptr++;
-	  if (m < low)
-	    XPutPixel (image, i, j, rgb[0].pixel);
-	  else if (m > hig)
-	    XPutPixel (image, i, j, rgb[255].pixel);
-	  else
-	    {
-	      //printf ("middle: %i %i %li\n", m, 256 * (m - low) / (hig - low), rgb[(int)256 * (m - low) / (hig - low)].pixel);
-	      XPutPixel (image, i, j, rgb[(int) (256 * (m - low) / (hig - low))].pixel);	// );
-	    }
-	}
-
-    XResizeWindow (display, window, width, height);
-
-    XPutImage (display, pixmap, gc, image, 0, 0, 0, 0, width, height);
-
-    xswa.colormap = colormap;
-    xswa.background_pixmap = pixmap;
-
-    XChangeWindowAttributes (display, window, CWColormap | CWBackPixmap,
-			     &xswa);
-
-    XClearWindow (display, window);
-    redraw ();
-    XFlush (display);
-
-  out:
-    free (data);
-    data = NULL;
-    free (filename);
-    img_num++;
-    return ret;
-  };
-
-  int readout ()
-  {
-    struct image_info *info;
-    struct timezone tz;
-
-    info = (struct image_info *) malloc (sizeof (struct image_info));
-
-    gettimeofday (&info->exposure_tv, &tz);
-    info->exposure_length = exposure_time;
-    info->target_id = -1;
-    info->observation_id = -1;
-    info->target_type = (isLight ()? TARGET_LIGHT : TARGET_DARK);
-    info->camera_name = camera->name;
-    printf ("waiting for camera\n");
-    fflush (stdout);
-    if (devcli_command (camera, NULL, "info") ||
-	!memcpy (&info->camera, &camera->info, sizeof (struct camera_info)) ||
-	!memset (&info->telescope, 0, sizeof (struct telescope_info)) ||
-	devcli_image_info (camera, info)
-	|| devcli_wait_for_status (camera, "img_chip", CAM_MASK_EXPOSE,
-				   CAM_NOEXPOSURE, 0))
-      {
-	printf ("wait with error\n");
-	fflush (stdout);
-	free (info);
-	return -1;
-      }
-    printf ("wait for readout\n");
-    fflush (stdout);
-
-    if (devcli_command (camera, NULL, "readout 0"))
-      {
-	printf ("reading commond err\n");
-	fflush (stdout);
-	free (info);
-	return -1;
-      }
-    free (info);
-    printf ("reading out\n");
-    fflush (stdout);
-    return 0;
-  };
-
-  static void *run (void *arg)
-  {
-
-    ((DeviceWindow *) arg)->expose_loop ();
-  }
-
-  void expose_loop ()
-  {
-    time_t start_time;
-
-    time (&start_time);
-    start_time += 20;
-
-    pthread_attr_init (&attrs);
-    pthread_create (&thr, &attrs, static_event_loop, this);
-
-    while (1)
-      {
-	time_t t = time (NULL);
-
-	devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
-				DEVICE_PRIORITY, 0);
-
-	printf ("OK\n");
-
-	time (&t);
-	printf ("exposure countdown %s..", ctime (&t));
-	t += (long int) exposure_time;
-	printf ("readout at: %s", ctime (&t));
-	printf ("exposure_time: %f\n", exposure_time);
-	if (devcli_wait_for_status (camera, "img_chip", CAM_MASK_READING,
-				    CAM_NOTREADING, 0) ||
-	    devcli_command (camera, NULL, "expose 0 %i %f",
-			    (isLight ()? 1 : 0), exposure_time))
-	  {
-	    perror ("expose:");
-	  }
-	printf ("startign readout\n");
-	fflush (stdout);
-	readout ();
-	printf ("after readout\n");
-	fflush (stdout);
-      }
-  }
-
-  int isLight (void)
-  {
-    return !(autodark && img_num == 0);
-
-  }
-
-  void clearDark (void)
-  {
-    img_num = 0;
-    delete dark_image;
-    dark_image = NULL;
+    return starsType;
   }
 };
 
-DeviceWindow::DeviceWindow (char *camera_name, Window root_window, int center,
-			    float exposure, int i_save_fits, int i_autodark)
+class Rts2xfocusCamera:public Rts2GenFocCamera
 {
+private:
+  Rts2xfocus * master;
+
+  pthread_t XeventThread;
+
+  // X11 stuff
+  Window window;
+  GC gc;
+  XGCValues gvc;
+  Pixmap pixmap;
+  XImage *ximage;
   XSetWindowAttributes xswa;
-  XTextProperty window_title;
 
-  gc = NULL;
-  image = NULL;
-  rgb[256];
-  exposure_time = exposure;
+  int windowHeight;
+  int windowWidth;
 
-  save_fits = i_save_fits;
-  autodark = i_autodark;
-  img_num = 0;
-  dark_image = NULL;
+  int pixmapHeight;
+  int pixmapWidth;
 
-  window =
-    XCreateWindow (display, DefaultRootWindow (display), 0, 0, 100,
-		   100, 0, depth, InputOutput, visual, 0, &xswa);
+  void buildWindow ();
+  void rebuildWindow ();
+  void redraw ();
+  void drawCenterCross (int xc, int yc);
+  void drawCross1 ();
+  void drawCross2 ();
+  void drawCross3 ();
+  void drawStars (Rts2Image * image);
+  void printInfo ();
+  void printMouse ();
+  void redrawMouse ();
+  // thread entry function..
+  void XeventLoop ();
+  static void *staticXEventLoop (void *arg)
+  {
+    ((Rts2xfocusCamera *) arg)->XeventLoop ();
+    return NULL;
+  }
 
-  pixmap = XCreatePixmap (display, window, 1200, 1200, depth);
+  int crossType;
+  int lastImage;
 
-  gc = XCreateGC (display, pixmap, 0, &gcv);
+  long lastX;
+  long lastY;
+  long lastSizeX;
+  long lastSizeY;
+  int binningsX;
+  int binningsY;
 
-  XSelectInput (display, window,
-		KeyPressMask | ButtonPressMask | ExposureMask);
+  int mouseX;
+  int mouseY;
 
-  XMapRaised (display, window);
+  int buttonX;
+  int buttonY;
+  struct timeval buttonImageTime;
 
-  camera = devcli_find (camera_name);
+  struct timeval exposureStart;
 
-  if (!camera)
-    {
-      printf ("**** Cannot find camera '%s'\n", camera_name);
-      exit (EXIT_FAILURE);
-    }
-  camera->data_handler_args = this;
-  camera->data_handler = static_data_handler;
+  double change_val;		// change value in degrees
+protected:
+  virtual void printFWHMTable ();
 
-#define CAMD_WRITE_READ(command) if (devcli_command (camera, NULL, command) < 0) \
-  				{ \
-      		                  perror ("devcli_write_read_camd"); \
-				  return; \
-				}
+public:
+  Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val,
+		    Rts2xfocus * in_master);
+  virtual ~ Rts2xfocusCamera (void);
 
-  CAMD_WRITE_READ ("ready");
-  CAMD_WRITE_READ ("base_info");
-  CAMD_WRITE_READ ("info");
-  CAMD_WRITE_READ ("chipinfo 0");
+  virtual void postEvent (Rts2Event * event);
 
-  if (center)
-    {
-      center_exposure ();
-    }
+  virtual void processImage (Rts2Image * image);
+  void setCrossType (int in_crossType);
+};
 
-  devcli_wait_for_status (camera, "priority", DEVICE_MASK_PRIORITY,
-			  DEVICE_PRIORITY, 0);
-  XStringListToTextProperty (&camera_name, 1, &window_title);
-  XSetWMName (display, window, &window_title);
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection,
+				    double in_change_val,
+				    Rts2xfocus * in_master):
+Rts2GenFocCamera (in_connection, in_master)
+{
+  master = in_master;
+
+  window = 0L;
+  pixmap = 0L;
+  gc = 0L;
+  windowHeight = 800;
+  windowWidth = 800;
+
+  pixmapHeight = windowHeight;
+  pixmapWidth = windowWidth;
+
+  lastImage = 0;
+
+  mouseX = mouseY = -1;
+  buttonX = buttonY = -1;
+
+  timerclear (&buttonImageTime);
+  timerclear (&exposureStart);
+
+  change_val = in_change_val;
 }
 
-
-int
-main (int argc, char **argv)
+Rts2xfocusCamera::~Rts2xfocusCamera (void)
 {
-  uint16_t port = SERVERD_PORT;
+  if (XeventThread)
+    {
+      pthread_cancel (XeventThread);
+      pthread_join (XeventThread, NULL);
+    }
+}
 
+void
+Rts2xfocusCamera::buildWindow ()
+{
+  XTextProperty window_title;
+  char *cameraName;
+
+  if (!exposureCount)
+    return;
+
+  window =
+    XCreateWindow (master->getDisplay (),
+		   DefaultRootWindow (master->getDisplay ()), 0, 0, 100, 100,
+		   0, master->getDepth (), InputOutput, master->getVisual (),
+		   0, &xswa);
+  pixmap =
+    XCreatePixmap (master->getDisplay (), window, windowHeight, windowWidth,
+		   master->getDepth ());
+
+  gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
+  XSelectInput (master->getDisplay (), window,
+		KeyPressMask | ButtonPressMask | ExposureMask |
+		PointerMotionMask);
+  XMapRaised (master->getDisplay (), window);
+
+  cameraName = new char[strlen (connection->getName ()) + 1];
+  strcpy (cameraName, connection->getName ());
+
+  XStringListToTextProperty (&cameraName, 1, &window_title);
+  XSetWMName (master->getDisplay (), window, &window_title);
+
+  pthread_create (&XeventThread, NULL, staticXEventLoop, this);
+}
+
+// called to 
+void
+Rts2xfocusCamera::rebuildWindow ()
+{
+  if (gc)
+    XFreeGC (master->getDisplay (), gc);
+  if (pixmap)
+    XFreePixmap (master->getDisplay (), pixmap);
+  pixmap =
+    XCreatePixmap (master->getDisplay (), window, windowHeight, windowWidth,
+		   master->getDepth ());
+
+  gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
+}
+
+void
+Rts2xfocusCamera::drawCenterCross (int xc, int yc)
+{
+  // draw cross at center
+  XDrawLine (master->getDisplay (), pixmap, gc, xc - 10, yc, xc - 2, yc);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc + 10, yc, xc + 2, yc);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - 10, xc, yc - 2);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc + 10, xc, yc + 2);
+}
+
+void
+Rts2xfocusCamera::drawCross1 ()
+{
+  XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
+  int rectNum;
   int i;
+  int xc, yc;
+  XRectangle *rectangles;
 
-  char *server;
+  rectNum =
+    (pixmapWidth / 40 >
+     pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
+  rectangles = new XRectangle[rectNum];
 
-  char *camera_names[MAX_DEVICES];
-  int camera_num = 0;
-  DeviceWindow *camera_window[MAX_DEVICES];
+  XRectangle *rect = rectangles;
 
-  pthread_t camera_thr[MAX_DEVICES];
-  pthread_attr_t attrs;
+  xc = pixmapWidth / 2;
+  yc = pixmapHeight / 2;
 
-  Window root_window;
-  XSetWindowAttributes xswa;
+  drawCenterCross (xc, yc);
 
-  struct device *phot;
+  for (i = 0; i < rectNum;)
+    {
+      i++;
+      xc -= 20;
+      yc -= 20;
+      rect->x = xc;
+      rect->y = yc;
+      rect->width = i * 40;
+      rect->height = i * 40;
+      rect++;
+    }
+  XDrawRectangles (master->getDisplay (), pixmap, gc, rectangles, rectNum);
 
-  int center = 0;
-  float exposure = 10.0;
-  int save_fits = 0;
-  int autodark = 0;
+  delete[]rectangles;
+}
 
-  int c = 0;
+void
+Rts2xfocusCamera::drawCross2 ()
+{
+  XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
+  int arcNum;
+  int i;
+  int xc, yc;
+  XArc *arcs;
 
-#ifdef DEBUG
-  mtrace ();
-#endif
-  /* get attrs */
+  arcNum =
+    (pixmapWidth / 40 >
+     pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
+  arcs = new XArc[arcNum];
 
-  camera_names[0] = "C0";
+  XArc *arc = arcs;
+
+  xc = pixmapWidth / 2;
+  yc = pixmapHeight / 2;
+
+  drawCenterCross (xc, yc);
+
+  for (i = 0; i < arcNum;)
+    {
+      i++;
+      xc -= 20;
+      yc -= 20;
+      arc->x = xc;
+      arc->y = yc;
+      arc->width = i * 40;
+      arc->height = i * 40;
+      arc->angle1 = 0;
+      arc->angle2 = 23040;
+      arc++;
+    }
+  XDrawArcs (master->getDisplay (), pixmap, gc, arcs, arcNum);
+
+  delete[]arcs;
+}
+
+void
+Rts2xfocusCamera::drawCross3 ()
+{
+  static XPoint points[5];
+  int xc, yc;
+
+  XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
+  // draw lines on surrounding
+  int w = pixmapWidth / 7;
+  int h = pixmapHeight / 7;
+  XDrawLine (master->getDisplay (), pixmap, gc, 0, 0, w, h);
+  XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, 0,
+	     pixmapWidth - w, h);
+  XDrawLine (master->getDisplay (), pixmap, gc, 0, pixmapHeight, w,
+	     pixmapHeight - h);
+  XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, pixmapHeight,
+	     pixmapWidth - w, pixmapHeight - h);
+  XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4,
+		  pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
+  // draw center..
+  xc = pixmapWidth / 2;
+  yc = pixmapHeight / 2;
+  w = pixmapWidth / 10;
+  h = pixmapHeight / 10;
+  points[0].x = xc - w;
+  points[0].y = yc;
+
+  points[1].x = xc;
+  points[1].y = yc + h;
+
+  points[2].x = xc + w;
+  points[2].y = yc;
+
+  points[3].x = xc;
+  points[3].y = yc - h;
+
+  points[4].x = xc - w;
+  points[4].y = yc;
+
+  XDrawLines (master->getDisplay (), pixmap, gc, points, 5, CoordModeOrigin);
+  XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - pixmapHeight / 15,
+	     xc, yc + pixmapHeight / 15);
+}
+
+void
+Rts2xfocusCamera::drawStars (Rts2Image * image)
+{
+  struct stardata *sr;
+  if (!image)
+    return;
+  sr = image->sexResults;
+  for (int i = 0; i < image->sexResultNum; i++, sr++)
+    {
+      XDrawArc (master->getDisplay (), pixmap, gc, (int) sr->X - 10,
+		(int) sr->Y - 10, 20, 20, 0, 23040);
+    }
+}
+
+void
+Rts2xfocusCamera::printInfo ()
+{
+  char *stringBuf;
+  int len;
+  XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
+  len =
+    asprintf (&stringBuf, "L: %d M: %d H: %d Min: %d Avg: %.2f Max: %d",
+	      low, med, hig, min, average, max);
+  XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100,
+		    20, stringBuf, len);
+  free (stringBuf);
+  if (lastImage)
+    {
+      len =
+	asprintf (&stringBuf,
+		  "[%li,%li:%li,%li] binn: %i:%i exposureTime: %.3f s",
+		  lastX, lastY, lastSizeX, lastSizeY,
+		  binningsX, binningsY, exposureTime);
+      XDrawImageString (master->getDisplay (), pixmap, gc,
+			pixmapWidth / 2 - 150, pixmapHeight - 20, stringBuf,
+			len);
+      free (stringBuf);
+    }
+}
+
+void
+Rts2xfocusCamera::printMouse ()
+{
+  char stringBuf[20];
+  int len;
+  len = snprintf (stringBuf, 20, "%i %i", mouseX, mouseY);
+  XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
+  XDrawImageString (master->getDisplay (), pixmap, gc, 30, 30, stringBuf,
+		    len);
+  if (buttonX >= 0 && buttonY >= 0)
+    drawCenterCross (buttonX, buttonY);
+}
+
+void
+Rts2xfocusCamera::redrawMouse ()
+{
+  XClearArea (master->getDisplay (), window, 0, 0, 100, 40, False);
+  XClearArea (master->getDisplay (), window, buttonX - 10, buttonY - 10, 20,
+	      20, False);
+}
+
+void
+Rts2xfocusCamera::redraw ()
+{
+  // do some line-drawing etc..
+  switch (crossType)
+    {
+    case 1:
+      drawCross1 ();
+      break;
+    case 2:
+      drawCross2 ();
+      break;
+    case 3:
+      drawCross3 ();
+      break;
+    }
+  if (crossType > 0)
+    printInfo ();
+  // draw plots over stars..
+  drawStars (images);
+
+  printMouse ();
+
+  xswa.colormap = *(master->getColormap ());
+  xswa.background_pixmap = pixmap;
+
+  XChangeWindowAttributes (master->getDisplay (), window,
+			   CWColormap | CWBackPixmap, &xswa);
+
+  XClearWindow (master->getDisplay (), window);
+}
+
+void
+Rts2xfocusCamera::XeventLoop ()
+{
+  XEvent event;
+  KeySym ks;
+  struct ln_equ_posn change;
 
   while (1)
     {
-      static struct option long_option[] = {
-	{"device", 1, 0, 'd'},
-	{"center", 0, 0, 'c'},
-	{"exposure", 1, 0, 'e'},
-	{"port", 1, 0, 'p'},
-	{"help", 0, 0, 'h'},
-	{"save", 0, 0, 's'},
-	{"autodark", 0, 0, 'a'},
-	{0, 0, 0, 0}
-      };
-      c = getopt_long (argc, argv, "d:ce:p:hsD", long_option, NULL);
-
-      if (c == -1)
-	break;
-
-      switch (c)
+      XWindowEvent (master->getDisplay (), window,
+		    KeyPressMask | ButtonPressMask | ExposureMask |
+		    PointerMotionMask, &event);
+      switch (event.type)
 	{
-	case 'd':
-	  camera_names[camera_num] = optarg;
-	  camera_num++;
-	  if (camera_num >= MAX_DEVICES)
+	case Expose:
+	  if (pixmap && gc)
+	    redraw ();
+	  break;
+	case KeyPress:
+	  ks = XLookupKeysym ((XKeyEvent *) & event, 0);
+	  switch (ks)
 	    {
-	      printf ("More than %i devices specified, exiting.\n",
-		      MAX_DEVICES);
-	      exit (1);
+	    case XK_1:
+	      connection->queCommand (new Rts2CommandBinning (this, 1, 1));
+	      break;
+	    case XK_2:
+	      connection->queCommand (new Rts2CommandBinning (this, 2, 2));
+	      break;
+	    case XK_3:
+	      connection->queCommand (new Rts2CommandBinning (this, 3, 3));
+	      break;
+	    case XK_e:
+	      exposureTime += 1;
+	      break;
+	    case XK_d:
+	      if (exposureTime > 1)
+		exposureTime -= 1;
+	      break;
+	    case XK_w:
+	      exposureTime += 0.1;
+	      break;
+	    case XK_s:
+	      if (exposureTime > 0.1)
+		exposureTime -= 0.1;
+	      break;
+	    case XK_q:
+	      exposureTime += 0.01;
+	      break;
+	    case XK_a:
+	      if (exposureTime > 0.01)
+		exposureTime -= 0.01;
+	      break;
+	    case XK_f:
+	      connection->
+		queCommand (new Rts2Command (master, "box 0 -1 -1 -1 -1"));
+	      break;
+	    case XK_c:
+	      connection->queCommand (new Rts2Command (master, "center 0"));
+	      break;
+	    case XK_p:
+	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_START));
+	      break;
+	    case XK_o:
+	      master->postEvent (new Rts2Event (EVENT_INTEGRATE_STOP));
+	      break;
+	    case XK_y:
+	      setSaveImage (1);
+	      break;
+	    case XK_u:
+	      setSaveImage (0 || exe);
+	      break;
+	      // change stuff
+	    case XK_h:
+	    case XK_Left:
+	      change.ra = -1 * change_val;
+	      change.dec = 0;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+	      break;
+	    case XK_j:
+	    case XK_Down:
+	      change.ra = 0;
+	      change.dec = -1 * change_val;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+	      break;
+	    case XK_k:
+	    case XK_Up:
+	      change.ra = 0;
+	      change.dec = change_val;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+	      break;
+	    case XK_l:
+	    case XK_Right:
+	      change.ra = change_val;
+	      change.dec = 0;
+	      master->
+		postEvent (new
+			   Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+	      break;
+	    default:
+	      break;
 	    }
 	  break;
-	case 'c':
-	  center = 1;
+	case MotionNotify:
+	  mouseX = ((XMotionEvent *) & event)->x;
+	  mouseY = ((XMotionEvent *) & event)->y;
+
+	  printMouse ();
+	  redrawMouse ();
 	  break;
-	case 'e':
-	  exposure = atof (optarg);
+	case ButtonPress:
+	  mouseX = ((XButtonPressedEvent *) & event)->x;
+	  mouseY = ((XButtonPressedEvent *) & event)->y;
+	  if (buttonX < 0 && buttonY < 0)
+	    {
+	      buttonX = mouseX;
+	      buttonY = mouseY;
+	      buttonImageTime = exposureStart;
+	    }
+	  else
+	    {
+	      // calculate distance travelled, print it, pixels / sec travelled, discard button
+	      timersub (&exposureStart, &buttonImageTime, &exposureStart);
+	      double del =
+		exposureStart.tv_sec +
+		(double) exposureStart.tv_usec / USEC_SEC;
+	      double offsetX = buttonX - mouseX;
+	      double offsetY = buttonY - mouseY;
+	      if (del > 0)
+		{
+		  printf
+		    ("Delay %.4f sec\nX offset: %.1f drift: %.1f pixels/sec\nY offset: %.1f drift: %1.f pixels/sec\n",
+		     del, offsetX, offsetX / del, offsetY, offsetY / del);
+		}
+	      else
+		{
+		  printf
+		    ("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n",
+		     del, offsetX, offsetY);
+		}
+	      // clear results
+	      buttonX = -1;
+	      buttonY = -1;
+	      timerclear (&buttonImageTime);
+	    }
+
+	  printf ("%i %i\n", mouseX, mouseY);
+
+	  printMouse ();
+	  redrawMouse ();
 	  break;
-	case 'p':
-	  port = atoi (optarg);
-	  break;
-	case 'h':
-	  printf ("Options:\n");
-	  printf
-	    ("\t--device|-d <device_name> device(s) name(s) (xfocusc accept multiple entries)\n");
-	  printf ("\t--port|-p <port_num>   port of the server\n");
-	  printf ("\t--center|-c            start center exposure\n");
-	  printf ("\t--exposure|-e          exposure time in seconds\n");
-	  printf ("\t--save|-s              autosave images\n");
-	  printf ("\t--autodark|-a          takes and uses dark images\n");
-	  printf ("Keys:\n"
-		  "\t1,2,3 .. binning 1x1, 2x2, 3x3\n"
-		  "\tq,a   .. increase/decrease exposure 0.01 sec\n"
-		  "\tw,s   .. increase/decrease exposure 0.1 sec\n"
-		  "\te,d   .. increase/decrease exposure 1 sec\n"
-		  "\tf     .. full frame exposure\n"
-		  "\tc     .. center (256x256) exposure\n"
-		  "\ty     .. save fits file\n"
-		  "\tu     .. don't save fits file\n");
-	  printf ("Examples:\n"
-		  "\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1\n"
-		  "\trts2-xfocusc -d C2 -a -e 10    .. takes 10 sec exposures on device C2. Takes darks and use them\n");
-	  exit (EXIT_SUCCESS);
-	case 's':
-	  save_fits = 1;
-	  break;
-	case 'a':
-	  autodark = 1;
-	  break;
-	case '?':
-	  break;
-	default:
-	  printf ("?? getopt returned unknow character %o ??\n", c);
 	}
     }
-  if (optind != argc - 1)
+}
+
+void
+Rts2xfocusCamera::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
     {
-      printf ("You must pass server address\n");
-      exit (EXIT_FAILURE);
+    case EVENT_START_EXPOSURE:
+      Rts2GenFocCamera::postEvent (event);
+      // build window etc..
+      buildWindow ();
+      if (connection->havePriority ())
+	queExposure ();
+      return;
+    }
+  Rts2GenFocCamera::postEvent (event);
+}
+
+void
+Rts2xfocusCamera::printFWHMTable ()
+{
+  Rts2GenFocCamera::printFWHMTable ();
+  if (master->getStarsType ())
+    redraw ();
+}
+
+void
+Rts2xfocusCamera::processImage (Rts2Image * image)
+{
+  int dataSize;
+  int i, j, k;
+  unsigned short *im_ptr;
+
+  // get to upper classes as well
+  Rts2DevClientCameraFoc::processImage (image);
+
+  pixmapWidth = image->getWidth ();
+  pixmapHeight = image->getHeight ();
+  if (pixmapWidth > windowWidth || pixmapHeight > windowHeight)
+    {
+      windowWidth = pixmapWidth;
+      windowHeight = pixmapHeight;
+      rebuildWindow ();
+    }
+  std::
+    cout << "Get data : [" << pixmapWidth << "x" << pixmapHeight << "]" <<
+    std::endl;
+  // draw window with image..
+  if (!ximage)
+    {
+      ximage =
+	XCreateImage (master->getDisplay (), master->getVisual (),
+		      master->getDepth (), ZPixmap, 0, 0, pixmapWidth,
+		      pixmapHeight, 8, 0);
+      ximage->data = new char[ximage->bytes_per_line * pixmapHeight];
     }
 
-  server = argv[optind++];
+  // build histogram
+  memset (histogram, 0, sizeof (int) * HISTOGRAM_LIMIT);
+  dataSize = pixmapHeight * pixmapWidth;
+  k = 0;
+  im_ptr = image->getDataUShortInt ();
+  average = 0;
+  max = 0;
+  min = 65536;
+  for (i = 0; i < pixmapHeight; i++)
+    for (j = 0; j < pixmapWidth; j++)
+      {
+	histogram[*im_ptr]++;
+	average += *im_ptr;
+	if (max < *im_ptr)
+	  max = *im_ptr;
+	if (min > *im_ptr)
+	  min = *im_ptr;
+	im_ptr++;
+      }
 
-  display = XOpenDisplay (NULL);
+  average /= dataSize;
 
+  low = med = hig = 0;
+  j = 0;
+  for (i = 0; i < HISTOGRAM_LIMIT; i++)
+    {
+      j += histogram[i];
+      if ((!low) && (((float) j / (float) dataSize) > PP_LOW))
+	low = i;
+      if ((!med) && (((float) j / (float) dataSize) > PP_MED))
+	med = i;
+      if ((!hig) && (((float) j / (float) dataSize) > PP_HIG))
+	hig = i;
+    }
+  if (!hig)
+    hig = 65536;
+  if (low == hig)
+    low = hig / 2 - 1;
+
+  im_ptr = image->getDataUShortInt ();
+
+  for (j = 0; j < pixmapHeight; j++)
+    for (i = 0; i < pixmapWidth; i++)
+      {
+	unsigned short val;
+	val = *im_ptr;
+	im_ptr++;
+	if (val < low)
+	  XPutPixel (ximage, i, j, master->getRGB (0)->pixel);
+	else if (val > hig)
+	  XPutPixel (ximage, i, j, master->getRGB (255)->pixel);
+	else
+	  {
+	    XPutPixel (ximage, i, j,
+		       master->
+		       getRGB ((int) (255 * (val - low) / (hig - low)))->
+		       pixel);
+	  }
+      }
+
+  std::
+    cout << "Data low:" << low << " med:" << med << " hig:" << hig <<
+    " min:" << min << " average:" << average << " max:" << max << std::endl;
+
+  XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
+
+  XPutImage (master->getDisplay (), pixmap, gc, ximage, 0, 0, 0, 0,
+	     pixmapWidth, pixmapHeight);
+
+  if (!lastImage)
+    lastImage = 1;
+  // some info values
+  image->getValue ("X", lastX);
+  image->getValue ("Y", lastY);
+  lastSizeX = image->getWidth ();
+  lastSizeY = image->getHeight ();
+  image->getValue ("BIN_V", binningsX);
+  image->getValue ("BIN_H", binningsY);
+
+  exposureStart.tv_sec = image->getExposureSec ();
+  exposureStart.tv_usec = image->getExposureUsec ();
+
+  redraw ();
+  XFlush (master->getDisplay ());
+}
+
+void
+Rts2xfocusCamera::setCrossType (int in_crossType)
+{
+  crossType = in_crossType;
+}
+
+Rts2xfocus::Rts2xfocus (int in_argc, char **in_argv):
+Rts2GenFocClient (in_argc, in_argv)
+{
+  displayName = NULL;
+
+  crossType = 1;
+  starsType = 0;
+
+  changeVal = 15;
+
+  addOption ('x', "display", 1, "name of X display");
+  addOption ('t', "stars", 0, "draw stars over image (default to don't)");
+  addOption ('X', "cross", 1,
+	     "cross type (default to 1; possible values 0 - no cross, 1 - rectangles\n"
+	     "    2 - circles, 3 - BOOTES special");
+  addOption ('S', "save", 0, "save filenames (default don't save");
+  addOption ('m', "change_val", 1,
+	     "change value (in arcseconds; default to 15 arcsec");
+}
+
+Rts2xfocus::~Rts2xfocus (void)
+{
+  if (display)
+    XCloseDisplay (display);
+}
+
+void
+Rts2xfocus::help ()
+{
+  Rts2Client::help ();
+  std::cout << "Keys:" << std::endl
+    << "\t1,2,3 .. binning 1x1, 2x2, 3x3" << std::endl
+    << "\tq,a   .. increase/decrease exposure 0.01 sec" << std::endl
+    << "\tw,s   .. increase/decrease exposure 0.1 sec" << std::endl
+    << "\te,d   .. increase/decrease exposure 1 sec" << std::endl
+    << "\tf     .. full frame exposure" << std::endl
+    << "\tc     .. center (1/2x1/2 chip size) exposure" << std::endl
+    << "\ty     .. save fits file\n" << std::endl
+    << "\tu     .. don't save fits file\n" << std::endl
+    << "\thjkl, arrrows .. move (change mount position)\n" << std::endl
+    << "Examples:" << std::endl
+    <<
+    "\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1"
+    << std::
+    endl <<
+    "\trts2-xfocusc -d C2 -a -e 10    .. takes 10 sec exposures on device C2. Takes darks and use them"
+    << std::endl;
+}
+
+int
+Rts2xfocus::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'S':
+      autoSave = 1;
+      break;
+    case 'x':
+      displayName = optarg;
+      break;
+    case 't':
+      starsType = 1;
+      break;
+    case 'X':
+      crossType = atoi (optarg);
+      break;
+    case 'm':
+      changeVal = atof (optarg);
+      break;
+    default:
+      return Rts2GenFocClient::processOption (in_opt);
+    }
+  return 0;
+}
+
+int
+Rts2xfocus::init ()
+{
+  int ret;
+  ret = Rts2GenFocClient::init ();
+  if (ret)
+    return ret;
+
+  // convert to degrees
+  changeVal /= 3600.0;
+
+  display = XOpenDisplay (displayName);
   if (!display)
     {
-      printf ("null display\n");
-      exit (1);
+      std::cerr << "Cannot open display" << std::endl;
+      return -1;
     }
 
   depth = DefaultDepth (display, DefaultScreen (display));
@@ -759,7 +867,7 @@ main (int argc, char **argv)
 
   colormap = DefaultColormap (display, DefaultScreen (display));
 
-  printf ("Window created.\n");
+  std::cout << "Display opened succesfully" << std::endl;
 
   // allocate colormap..
   for (int i = 0; i < 256; i++)
@@ -769,58 +877,38 @@ main (int argc, char **argv)
       rgb[i].blue = (unsigned short) (65536 * (1.0 * i / 256));
       rgb[i].flags = DoRed | DoGreen | DoBlue;
 
-
-      XAllocColor (display, colormap, rgb + i);
+      ret = XAllocColor (display, colormap, rgb + i);
     }
+  rgb[256].red = USHRT_MAX;
+  rgb[256].green = 0;
+  rgb[256].blue = 0;
+  rgb[256].flags = DoRed | DoGreen | DoBlue;
+  ret = XAllocColor (display, colormap, &rgb[256]);
+  return 0;
+}
 
-  printf ("connecting to %s:%i\n", server, port);
+Rts2GenFocCamera *
+Rts2xfocus::createFocCamera (Rts2Conn * conn)
+{
+  Rts2xfocusCamera *cam;
+  cam = new Rts2xfocusCamera (conn, changeVal, this);
+  cam->setCrossType (crossType);
+  return cam;
+}
 
-  /* connect to the server */
-  if (devcli_server_login (server, port, "petr", "petr") < 0)
+int
+main (int argc, char **argv)
+{
+  Rts2xfocus *masterFocus;
+  int ret;
+  masterFocus = new Rts2xfocus (argc, argv);
+  ret = masterFocus->init ();
+  if (ret)
     {
-      perror ("devcli_server_login");
-      exit (EXIT_FAILURE);
+      delete masterFocus;
+      return 1;
     }
-
-  devcli_server_command (NULL, "priority 137");
-
-  printf ("waiting for priority\n");
-
-  for (i = 0; i < camera_num; i++)
-    {
-      camera_window[i] =
-	new DeviceWindow (camera_names[i], root_window, center, exposure,
-			  save_fits, autodark);
-    }
-
-  printf ("waiting end\n");
-
-  for (phot = devcli_devices (); phot; phot = phot->next)
-    if (phot->type == DEVICE_TYPE_PHOT)
-      {
-	printf ("setting handler: %s\n", phot->name);
-	devcli_set_command_handler (phot,
-				    (devcli_handle_response_t) phot_handler);
-      }
-
-  for (i = 0; i < camera_num; i++)
-    {
-      pthread_attr_init (&attrs);
-      pthread_create (&(camera_thr[i]), &attrs, DeviceWindow::run,
-		      (void *) camera_window[i]);
-    }
-
-  for (i = 0; i < camera_num; i++)
-    {
-      pthread_join (camera_thr[i], NULL);
-    }
-
-  printf ("joind sucessfull\n");
-  fflush (stdout);
-
-  devcli_server_disconnect ();
-
-  XCloseDisplay (display);
-
+  masterFocus->run ();
+  delete masterFocus;
   return 0;
 }

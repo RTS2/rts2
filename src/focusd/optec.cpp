@@ -22,13 +22,7 @@
 #define BAUDRATE B19200
 #define FOCUSER_PORT "/dev/ttyS0"
 
-struct termios oldtio, newtio;
-
-static char *focuser_port = NULL;
-
 #include "focuser.h"
-// #include "../utils/devcli.h"
-// #include "../utils/devconn.h"
 
 class Rts2DevFocuserOptec:public Rts2DevFocuser
 {
@@ -36,16 +30,16 @@ private:
   char *device_file_io;
   int foc_desc;
   int status;
+  bool damagedTempSens;
   // low-level I/O functions
-  int foc_read (char *buf, int count);
-  int foc_read_hash (char *buf, int count);
+  int foc_read (char *buf, int count, int timeouts);
   int foc_write (char *buf, int count);
-  int foc_write_read_no_reset (char *wbuf, int wcount, char *rbuf,
-			       int rcount);
-  int foc_write_read (char *buf, int wcount, char *rbuf, int rcount);
+  int foc_write_read (char *wbuf, int wcount, char *rbuf, int rcount,
+		      int timeouts = 0);
+
   // high-level I/O functions
-  // int foc_pos_get (int * position);
-  // int foc_pos_set (int pos);
+  int getPos (int *position);
+  int getTemp (float *temperature);
 public:
     Rts2DevFocuserOptec (int argc, char **argv);
    ~Rts2DevFocuserOptec (void);
@@ -54,11 +48,8 @@ public:
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
-  virtual int stepOut (int num, int direction);
-  virtual int getPos (int *position);
-  virtual int getTemp (float *temperature);
+  virtual int stepOut (int num);
   virtual int isFocusing ();
-  virtual int focus ();
 };
 
 /*! 
@@ -75,21 +66,29 @@ public:
  */
 
 int
-Rts2DevFocuserOptec::foc_read (char *buf, int count)
+Rts2DevFocuserOptec::foc_read (char *buf, int count, int timeouts)
 {
   int readed;
 
-  for (readed = 0; readed < count; readed++)
+  readed = 0;
+
+  while (readed < count)
     {
-      int ret = read (foc_desc, &buf[readed], 1);
-      printf ("read_from: %i size:%i\n", foc_desc, ret);
+      int ret;
+      ret = read (foc_desc, &buf[readed], count - readed);
       if (ret <= 0)
 	{
-	  return -1;
+	  if (timeouts <= 0)
+	    {
+	      syslog (LOG_ERR, "Rts2DevFocuserOptec::foc_read %m (%i)",
+		      errno);
+	      return -1;
+	    }
+	  timeouts--;
+	  // repeat read
+	  ret = 0;
 	}
-#ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "Optec: readed '%c'", buf[readed]);
-#endif
+      readed += ret;
     }
   return readed;
 }
@@ -108,9 +107,11 @@ int
 Rts2DevFocuserOptec::foc_write (char *buf, int count)
 {
   int ret;
+#ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Optec:will write:'%s'", buf);
+#endif
   ret = write (foc_desc, buf, count);
-  tcflush (foc_desc, TCIFLUSH);
+//  tcflush (foc_desc, TCIFLUSH);
   return ret;
 }
 
@@ -129,59 +130,44 @@ Rts2DevFocuserOptec::foc_write (char *buf, int count)
  * @return -1 and set errno on failure, rcount otherwise
  */
 int
-Rts2DevFocuserOptec::foc_write_read_no_reset (char *wbuf, int wcount,
-					      char *rbuf, int rcount)
+Rts2DevFocuserOptec::foc_write_read (char *wbuf, int wcount, char *rbuf,
+				     int rcount, int timeouts)
 {
   int tmp_rcount = -1;
-  char *buf;
-
-  if (tcflush (foc_desc, TCIOFLUSH) < 0)
-    return -1;
-
   if (foc_write (wbuf, wcount) < 0)
     return -1;
 
-  tmp_rcount = foc_read (rbuf, rcount);
+  tmp_rcount = foc_read (rbuf, rcount, timeouts);
 
   if (tmp_rcount > 0)
     {
+#ifdef DEBUG_EXTRA
+      char *buf;
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
-      buf[rcount] = 0;
+      buf[rcount] = '\0';
       syslog (LOG_DEBUG, "Optec:readed %i %s", tmp_rcount, buf);
       free (buf);
+#endif
     }
   else
     {
       syslog (LOG_DEBUG, "Optec:readed returns %i", tmp_rcount);
     }
-}
-
-int
-Rts2DevFocuserOptec::foc_write_read (char *buf, int wcount, char *rbuf,
-				     int rcount)
-{
-
-  int ret;
-
-  ret = foc_write_read_no_reset (buf, wcount, rbuf, rcount);
-
-  if (ret <= 0)
-    {
-      ret = foc_write_read_no_reset (buf, wcount, rbuf, rcount);
-    }
-  return ret;
+  return tmp_rcount;
 }
 
 
 
-Rts2DevFocuserOptec::Rts2DevFocuserOptec (int argc, char **argv):Rts2DevFocuser (argc,
-		argv)
+Rts2DevFocuserOptec::Rts2DevFocuserOptec (int in_argc, char **in_argv):Rts2DevFocuser (in_argc,
+		in_argv)
 {
   device_file = FOCUSER_PORT;
+  damagedTempSens = false;
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
-  addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
+  addOption ('D', "damaged_temp_sensor", 0,
+	     "if focuser have damaged temp sensor");
 }
 
 Rts2DevFocuserOptec::~Rts2DevFocuserOptec ()
@@ -197,11 +183,11 @@ Rts2DevFocuserOptec::processOption (int in_opt)
     case 'f':
       device_file = optarg;
       break;
-    case 'x':
-      camera_name = optarg;
+    case 'D':
+      damagedTempSens = true;
       break;
     default:
-      return Rts2Device::processOption (in_opt);
+      return Rts2DevFocuser::processOption (in_opt);
     }
   return 0;
 }
@@ -241,13 +227,15 @@ Rts2DevFocuserOptec::init ()
     ((foc_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
   foc_termios.c_lflag = 0;
   foc_termios.c_cc[VMIN] = 0;
-  foc_termios.c_cc[VTIME] = 15;
+  foc_termios.c_cc[VTIME] = 40;
 
   if (tcsetattr (foc_desc, TCSANOW, &foc_termios) < 0)
     return -1;
 
+  tcflush (foc_desc, TCIOFLUSH);
+
   // set manual
-  if (foc_write_read ("FMMODE", 6, rbuf, 1) < 0)
+  if (foc_write_read ("FMMODE", 6, rbuf, 3) < 0)
     return -1;
   if (rbuf[0] != '!')
     return -1;
@@ -258,45 +246,37 @@ Rts2DevFocuserOptec::init ()
 int
 Rts2DevFocuserOptec::getPos (int *position)
 {
-  char command[6], rbuf[6], tbuf[6];
+  char rbuf[9];
 
-  if (foc_write_read ("FPOSRO", 6, rbuf, 6) < 1)
+  if (foc_write_read ("FPOSRO", 6, rbuf, 8) < 1)
     return -1;
+#ifdef DEBUG_EXTRA
   else
     {
-      tbuf[0] = rbuf[2];
-      tbuf[1] = rbuf[3];
-      tbuf[2] = rbuf[4];
-      tbuf[3] = rbuf[5];
-      tbuf[4] = '\0';
-      *position = atoi (tbuf);
+      rbuf[6] = '\0';
+      syslog (LOG_DEBUG, "0: %i", rbuf[0]);
+      *position = atoi ((rbuf + 2));
     }
+#endif
   return 0;
 }
 
 int
 Rts2DevFocuserOptec::getTemp (float *temp)
 {
-  char command[6], rbuf[6], tbuf[6];
+  char rbuf[10];
 
-  if (foc_write_read ("FTMPRO", 6, rbuf, 6) < 1)
+  if (damagedTempSens)
+    return 0;
+
+  if (foc_write_read ("FTMPRO", 6, rbuf, 9) < 1)
     return -1;
   else
     {
-      tbuf[0] = rbuf[2];
-      tbuf[1] = rbuf[3];
-      tbuf[2] = rbuf[4];
-      tbuf[3] = rbuf[5];
-      tbuf[4] = '\0';
-      *temp = atof (tbuf);
+      rbuf[7] = '\0';
+      *temp = atof ((rbuf + 2));
     }
   return 0;
-}
-
-int
-Rts2DevFocuserOptec::focus ()
-{
-	// devcli_server_command (NULL, "priority 137");
 }
 
 int
@@ -308,43 +288,52 @@ Rts2DevFocuserOptec::ready ()
 int
 Rts2DevFocuserOptec::baseInfo ()
 {
-  strcpy (focType, "OPTEC TCF");
-  strcpy (focCamera, camera_name);
+  strcpy (focType, "OPTEC_TCF");
   return 0;
 }
 
 int
 Rts2DevFocuserOptec::info ()
 {
-  getPos (&focPos);
-  getTemp (&focTemp);
+  int ret;
+  ret = getPos (&focPos);
+  if (ret)
+    return ret;
+  ret = getTemp (&focTemp);
+  if (ret)
+    return ret;
   return 0;
 }
 
 int
-Rts2DevFocuserOptec::stepOut (int num, int direction)
+Rts2DevFocuserOptec::stepOut (int num)
 {
-  char command[6], rbuf[2];
+  char command[7], rbuf[4];
   char add = ' ';
+  int ret;
 
-  if (direction == -1)
-    add = 'I';
-  else if (direction == 1)
-    add = 'O';
+  ret = getPos (&focPos);
+  if (ret)
+    return ret;
 
-  if (num > 7000)
+  if (focPos + num > 7000 || focPos + num < 0)
     return -1;
-  else if ((num > 999) && (num < 7001))
-    sprintf (command, "F%c%d", add, num);
-  else if ((num > 99) && (num < 1000))
-    sprintf (command, "F%c0%d", add, num);
-  else if ((num > 9) && (num < 100))
-    sprintf (command, "F%c00%d", add, num);
-  else if ((num > -1) && (num < 10))
-    sprintf (command, "F%c000%d", add, num);
 
+  if (num < 0)
+    {
+      add = 'I';
+      num *= -1;
+    }
+  else
+    {
+      add = 'O';
+    }
 
-  if (foc_write_read (command, 6, rbuf, 1) < 0)
+  // maximal time fore move is +- 40 sec
+
+  sprintf (command, "F%c%04d", add, num);
+
+  if (foc_write_read (command, 6, rbuf, 3, 10) < 0)
     return -1;
   if (rbuf[0] != '*')
     return -1;
@@ -355,14 +344,13 @@ Rts2DevFocuserOptec::stepOut (int num, int direction)
 int
 Rts2DevFocuserOptec::isFocusing ()
 {
-	return 0;
+  // stepout command waits till focusing end
+  return -2;
 }
 
 int
 main (int argc, char **argv)
 {
-  // mtrace ();
-
   Rts2DevFocuserOptec *device = new Rts2DevFocuserOptec (argc, argv);
 
   int ret;

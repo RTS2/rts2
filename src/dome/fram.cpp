@@ -10,7 +10,6 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <mcheck.h>
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -20,6 +19,7 @@
 #include <time.h>
 
 
+#include "udpweather.h"
 #include "dome.h"
 
 #define BAUDRATE B9600
@@ -31,23 +31,20 @@
 #define PORT_B 1
 #define PORT_C 2
 
+// how long we will keep lastWeatherStatus as actual (in second)
+#define FRAM_WEATHER_TIMEOUT	40
+
 // check time in usec (1000000 ms = 1s)
 #define FRAM_CHECK_TIMEOUT 1000
 
 // following times are in seconds!
 #define FRAM_TIME_OPEN_RIGHT	26
 #define FRAM_TIME_OPEN_LEFT	24
-#define FRAM_TIME_CLOSE_RIGHT	30
+#define FRAM_TIME_CLOSE_RIGHT	32
 #define FRAM_TIME_CLOSE_LEFT	28
 
 #define FRAM_TIME_RECLOSE_RIGHT 5
 #define FRAM_TIME_RECLOSE_LEFT  5
-
-// how long we will keep lastWeatherStatus as actual (in second)
-#define FRAM_WEATHER_TIMEOUT	40
-// should be in 0-99 range, as 99 is maximum value which station can measure
-#define FRAM_MAX_WINDSPEED      50
-#define FRAM_MAX_PEAK_WINDSPEED 50
 
 // try to close dome again after n second
 #define FRAM_TIME_CLOSING_RETRY	200
@@ -55,12 +52,6 @@
 // if closing fails for n times, do not close again; send warning
 // e-mail
 #define FRAM_MAX_CLOSING_RETRY  3
-
-// how long after weather was bad can weather be good again; in
-// seconds
-#define FRAM_BAD_WEATHER_TIMEOUT   7200
-#define FRAM_BAD_WINDSPEED_TIMEOUT 600
-#define FRAM_CONN_TIMEOUT	   600
 
 // how many times to try to reclose dome
 #define FRAM_RECLOSING_MAX	3
@@ -136,172 +127,6 @@ enum stavy zasuvky_stavy[3][NUM_ZAS] =
   {ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
-/**********************************************************************************************
- *
- * Class for weather info connection.
- *
- * Bind to specified port, send back responds packet, changed state
- * acordingly to weather service, close/open dome as well (using
- * master pointer)
- *
- * To be used in Pierre-Auger site in Argentina.
- * 
- *********************************************************************************************/
-
-class Rts2ConnFramWeather:public Rts2Conn
-{
-private:
-  Rts2DevDome * master;
-  int weather_port;
-
-  int rain;
-  float windspeed;
-  time_t lastWeatherStatus;
-  time_t lastBadWeather;
-  time_t nextGoodWeather;
-
-  void setWeatherTimeout (time_t wait_time);
-
-protected:
-
-public:
-    Rts2ConnFramWeather (int in_weather_port, Rts2DevDome * in_master);
-  virtual int init ();
-  virtual int receive (fd_set * set);
-  // return 1 if weather is favourable to open dome..
-  virtual int isGoodWeather ();
-};
-
-Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port,
-					  Rts2DevDome * in_master):
-Rts2Conn (in_master)
-{
-  master = in_master;
-  weather_port = in_weather_port;
-
-  lastWeatherStatus = 0;
-  time (&lastBadWeather);
-  nextGoodWeather = lastBadWeather + FRAM_CONN_TIMEOUT;
-}
-
-void
-Rts2ConnFramWeather::setWeatherTimeout (time_t wait_time)
-{
-  time_t next;
-  time (&next);
-  next += wait_time;
-  if (next > nextGoodWeather)
-    nextGoodWeather = next;
-}
-
-int
-Rts2ConnFramWeather::init ()
-{
-  struct sockaddr_in bind_addr;
-  int optval = 1;
-  int ret;
-
-  bind_addr.sin_family = AF_INET;
-  bind_addr.sin_port = htons (weather_port);
-  bind_addr.sin_addr.s_addr = htonl (INADDR_ANY);
-
-  sock = socket (PF_INET, SOCK_DGRAM, 0);
-  if (sock < 0)
-    {
-      syslog (LOG_ERR, "Rts2ConnFramWeather::init socket: %m");
-      return -1;
-    }
-  ret = fcntl (sock, F_SETFL, O_NONBLOCK);
-  if (ret)
-    {
-      syslog (LOG_ERR, "Rts2ConnFramWeather::init fcntl: %m");
-      return -1;
-    }
-  ret = bind (sock, (struct sockaddr *) &bind_addr, sizeof (bind_addr));
-  if (ret)
-    {
-      syslog (LOG_ERR, "Rts2ConnFramWeather::init bind: %m");
-    }
-  return ret;
-}
-
-int
-Rts2ConnFramWeather::receive (fd_set * set)
-{
-  int ret;
-  char buf[100];
-  char status[10];
-  int data_size = 0;
-  struct tm statDate;
-  float sec_f;
-  if (sock >= 0 && FD_ISSET (sock, set))
-    {
-      struct sockaddr_in from;
-      socklen_t size = sizeof (from);
-      data_size =
-	recvfrom (sock, buf, 80, 0, (struct sockaddr *) &from, &size);
-      buf[data_size] = 0;
-      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, buf,
-	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
-      // parse weather info
-      ret =
-	sscanf (buf,
-		"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%fZ status=%s",
-		&windspeed, &rain, &statDate.tm_year, &statDate.tm_mon,
-		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
-		&sec_f, status);
-      if (ret != 9)
-	{
-	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
-	  rain = 1;
-	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
-	  return data_size;
-	}
-      statDate.tm_isdst = 0;
-      statDate.tm_year -= 1900;
-      statDate.tm_mon--;
-      statDate.tm_sec = (int) sec_f;
-      lastWeatherStatus = mktime (&statDate);
-      if (strcmp (status, "watch"))
-	{
-	  // if sensors doesn't work, switch rain on
-	  rain = 1;
-	}
-      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %i status: %s",
-	      windspeed, rain, lastWeatherStatus, status);
-      if (rain != 0 || windspeed > FRAM_MAX_PEAK_WINDSPEED)
-	{
-	  time (&lastBadWeather);
-	  if (rain == 0 && windspeed > FRAM_MAX_WINDSPEED)
-	    setWeatherTimeout (FRAM_BAD_WINDSPEED_TIMEOUT);
-	  else
-	    setWeatherTimeout (FRAM_BAD_WEATHER_TIMEOUT);
-	  master->closeDome ();
-	  master->setMasterStandby ();
-	}
-      // ack message
-      ret =
-	sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));
-    }
-  return data_size;
-}
-
-int
-Rts2ConnFramWeather::isGoodWeather ()
-{
-  time_t now;
-  time (&now);
-  // if no conenction, set nextGoodWeather appopritery
-  if (now - lastWeatherStatus > FRAM_WEATHER_TIMEOUT)
-    {
-      setWeatherTimeout (FRAM_CONN_TIMEOUT);
-      return 0;
-    }
-  if (windspeed > FRAM_MAX_WINDSPEED || rain != 0 || (nextGoodWeather > now))
-    return 0;
-  return 1;
-}
-
 /***********************************************************************************************
  * 
  * Class for dome controller.
@@ -325,6 +150,7 @@ private:
 
   Rts2ConnFramWeather *weatherConn;
 
+  int zjisti_stav_portu_int ();
   int zjisti_stav_portu ();
   void zapni_pin (unsigned char c_port, unsigned char pin);
   void vypni_pin (unsigned char c_port, unsigned char pin);
@@ -385,6 +211,7 @@ private:
   int resetWDC ();
   int getWDCTimeOut ();
   int setWDCTimeOut (int on, double timeout);
+  int getWDCTemp (int id);
 
   enum
   { MOVE_NONE, MOVE_OPEN_LEFT, MOVE_OPEN_LEFT_WAIT, MOVE_OPEN_RIGHT,
@@ -393,10 +220,13 @@ private:
     MOVE_CLOSE_LEFT_WAIT,
     MOVE_RECLOSE_RIGHT_WAIT, MOVE_RECLOSE_LEFT_WAIT
   } movingState;
+
+protected:
+  virtual int processOption (int in_opt);
+
 public:
   Rts2DevDomeFram (int argc, char **argv);
   virtual ~ Rts2DevDomeFram (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
 
@@ -419,52 +249,101 @@ public:
 };
 
 int
-Rts2DevDomeFram::zjisti_stav_portu ()
+Rts2DevDomeFram::zjisti_stav_portu_int ()
 {
-  unsigned char t, c = STAV_PORTU | PORT_A;
+  unsigned char t1, t2, c;
   int ret;
-  write (dome_port, &c, 1);
-  if (read (dome_port, &t, 1) < 1)
-    syslog (LOG_ERR, "read error 0");
-  else
-    syslog (LOG_DEBUG, "stav: A: %x:", t);
-  read (dome_port, &stav_portu[PORT_A], 1);
-  syslog (LOG_DEBUG, "A state: %x", stav_portu[PORT_A]);
+  usleep (USEC_SEC / 1000);
+  c = STAV_PORTU | PORT_A;
+  ret = write (dome_port, &c, 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu writeA %m (%i)",
+	      ret);
+      return -1;
+    }
+  ret = read (dome_port, &t1, 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu readA %m (%i)",
+	      ret);
+      return -1;
+    }
+  ret = read (dome_port, &stav_portu[PORT_A], 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeFram::zjisti_stav_portu read PORT_A %m (%i)", ret);
+      return -1;
+    }
   c = STAV_PORTU | PORT_B;
   write (dome_port, &c, 1);
-  if (read (dome_port, &t, 1) < 1)
-    syslog (LOG_ERR, "read error 1");
-  else
-    syslog (LOG_DEBUG, " B: %x:", t);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu writeB %m (%i)",
+	      ret);
+      return -1;
+    }
+  ret = read (dome_port, &t2, 1);
+  if (ret != 1)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeFram::zjisti_stav_portu write PORT_B %m (%i)", ret);
+      return -1;
+    }
   ret = read (dome_port, &stav_portu[PORT_B], 1);
-  syslog (LOG_DEBUG, "B state: %x", stav_portu[PORT_B]);
-  if (ret < 1)
-    return -1;
+  if (ret != 1)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeFram::zjisti_stav_portu read PORT_B %m (%i)", ret);
+      return -1;
+    }
+  syslog (LOG_DEBUG,
+	  "Rts2DevDomeFram::zjisti_stav_portu A: %x stav_portu[PORT_A]: %x B: %x stav_portu[PORT_B]: %x",
+	  t1, stav_portu[PORT_A], t2, stav_portu[PORT_B]);
   return 0;
 }
 
+int
+Rts2DevDomeFram::zjisti_stav_portu ()
+{
+  int ret;
+  int timeout = 0;
+  do
+    {
+      ret = zjisti_stav_portu_int ();
+      if (ret == 0)
+	break;
+      timeout++;
+      tcflush (dome_port, TCIOFLUSH);
+      usleep (USEC_SEC / 2);
+    }
+  while (timeout < 10);
+  return ret;
+}
+
 void
-Rts2DevDomeFram::zapni_pin (unsigned char port, unsigned char pin)
+Rts2DevDomeFram::zapni_pin (unsigned char in_port, unsigned char pin)
 {
   unsigned char c;
   zjisti_stav_portu ();
-  c = ZAPIS_NA_PORT | port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", port, pin, c);
+  c = ZAPIS_NA_PORT | in_port;
+  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
   write (dome_port, &c, 1);
-  c = stav_portu[port] | pin;
+  c = stav_portu[in_port] | pin;
   syslog (LOG_DEBUG, "zapni_pin: %xh", c);
   write (dome_port, &c, 1);
 }
 
 void
-Rts2DevDomeFram::vypni_pin (unsigned char port, unsigned char pin)
+Rts2DevDomeFram::vypni_pin (unsigned char in_port, unsigned char pin)
 {
   unsigned char c;
   zjisti_stav_portu ();
-  c = ZAPIS_NA_PORT | port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", port, pin, c);
+  c = ZAPIS_NA_PORT | in_port;
+  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
   write (dome_port, &c, 1);
-  c = stav_portu[port] & (~pin);
+  c = stav_portu[in_port] & (~pin);
   syslog (LOG_DEBUG, "%xh", c);
   write (dome_port, &c, 1);
 }
@@ -490,7 +369,7 @@ Rts2DevDomeFram::checkMotorTimeout ()
   time_t now;
   time (&now);
   if (now >= timeoutEnd)
-    syslog (LOG_DEBUG, "timeout reached: %i state: %i", now - timeoutEnd,
+    syslog (LOG_DEBUG, "timeout reached: %li state: %i", now - timeoutEnd,
 	    movingState);
   return (now >= timeoutEnd);
 }
@@ -499,14 +378,22 @@ int
 Rts2DevDomeFram::openWDC ()
 {
   struct termios oldtio, newtio;
+  int ret;
 
   wdc_port = open (wdc_file, O_RDWR | O_NOCTTY);
   if (wdc_port < 0)
     {
-      syslog (LOG_ERR, "Can't open device %s : %m", wdc_file);
+      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC Can't open device %s : %m",
+	      wdc_file);
       return -1;
     }
-  tcgetattr (wdc_port, &oldtio);
+  ret = tcgetattr (wdc_port, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC tcgetattr %m");
+      return -1;
+    }
+  newtio = oldtio;
   newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
   newtio.c_oflag = 0;
@@ -514,7 +401,12 @@ Rts2DevDomeFram::openWDC ()
   newtio.c_cc[VMIN] = 0;
   newtio.c_cc[VTIME] = 100;
   tcflush (wdc_port, TCIOFLUSH);
-  tcsetattr (wdc_port, TCSANOW, &newtio);
+  ret = tcsetattr (wdc_port, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC tcsetattr %m");
+      return -1;
+    }
 
   return setWDCTimeOut (1, wdcTimeOut);
 }
@@ -524,6 +416,7 @@ Rts2DevDomeFram::closeWDC ()
 {
   setWDCTimeOut (1, 120.0);
   close (wdc_port);
+  return 0;
 }
 
 int
@@ -617,6 +510,44 @@ Rts2DevDomeFram::setWDCTimeOut (int on, double timeout)
     syslog (LOG_DEBUG, "Rts2DevDomeFram::setWDCTimeOut reply: %s", reply + 1);
 
   return 0;
+}
+
+int
+Rts2DevDomeFram::getWDCTemp (int id)
+{
+  int i, q, r, t;
+  char reply[128];
+
+  if ((id < 0) || (id > 2))
+    return -1;
+
+  t = sprintf (reply, "~017%X\r", id + 5);
+  write (wdc_port, reply, t);
+  tcflush (wdc_port, TCOFLUSH);
+
+  q = i = t = 0;
+  do
+    {
+      r = read (wdc_port, &q, 1);
+      if (r == 1)
+	reply[i++] = q;
+      else
+	{
+	  t++;
+	  if (t > 10)
+	    return -1;
+	}
+    }
+  while (q > 20);
+
+  reply[i] = 0;
+
+  if (reply[0] != '!')
+    return -1;
+
+  i = atoi (reply + 1);
+
+  return i;
 }
 
 #define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
@@ -760,6 +691,7 @@ Rts2DevDomeFram::openDome ()
 long
 Rts2DevDomeFram::isOpened ()
 {
+  int flag = 0;
   syslog (LOG_DEBUG, "isOpened %i", movingState);
   switch (movingState)
     {
@@ -768,6 +700,7 @@ Rts2DevDomeFram::isOpened ()
       if (!(isOn (KONCAK_OTEVRENI_LEVY) || checkMotorTimeout ()))
 	// go to end return..
 	break;
+      flag = 1;
       // follow on..
     case MOVE_OPEN_RIGHT:
       openRight ();
@@ -778,6 +711,8 @@ Rts2DevDomeFram::isOpened ()
     default:
       return -2;
     }
+  if (flag)
+    infoAll ();
   return FRAM_CHECK_TIMEOUT;
 }
 
@@ -853,6 +788,7 @@ Rts2DevDomeFram::closeDome ()
 long
 Rts2DevDomeFram::isClosed ()
 {
+  int flag = 0;			// send infoAll at end
   syslog (LOG_DEBUG, "isClosed %i", movingState);
   switch (movingState)
     {
@@ -874,6 +810,7 @@ Rts2DevDomeFram::isClosed ()
 	}
       if (!(isOn (KONCAK_ZAVRENI_PRAVY)))
 	break;
+      flag = 1;
       // close dome..
     case MOVE_CLOSE_LEFT:
       closeLeft ();
@@ -915,6 +852,8 @@ Rts2DevDomeFram::isClosed ()
     default:
       return -2;
     }
+  if (flag)
+    infoAll ();
   return FRAM_CHECK_TIMEOUT;
 }
 
@@ -968,7 +907,14 @@ Rts2DevDomeFram::init ()
   if (dome_port == -1)
     return -1;
 
-  tcgetattr (dome_port, &oldtio);
+  ret = tcgetattr (dome_port, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::init tcgetattr %m");
+      return -1;
+    }
+
+  newtio = oldtio;
 
   newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
@@ -978,7 +924,12 @@ Rts2DevDomeFram::init ()
   newtio.c_cc[VTIME] = 1;
 
   tcflush (dome_port, TCIOFLUSH);
-  tcsetattr (dome_port, TCSANOW, &newtio);
+  ret = tcsetattr (dome_port, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeFram::init tcsetattr %m");
+      return -1;
+    }
 
   vypni_pin (adresa[VENTIL_AKTIVACNI].port,
 	     adresa[VENTIL_AKTIVACNI].pin | adresa[KOMPRESOR].pin);
@@ -996,7 +947,8 @@ Rts2DevDomeFram::init ()
     {
       if (!connections[i])
 	{
-	  weatherConn = new Rts2ConnFramWeather (5002, this);
+	  weatherConn =
+	    new Rts2ConnFramWeather (5002, FRAM_WEATHER_TIMEOUT, this);
 	  weatherConn->init ();
 	  connections[i] = weatherConn;
 	  break;
@@ -1043,8 +995,8 @@ Rts2DevDomeFram::idle ()
   return Rts2DevDome::idle ();
 }
 
-Rts2DevDomeFram::Rts2DevDomeFram (int argc, char **argv):Rts2DevDome (argc,
-	     argv)
+Rts2DevDomeFram::Rts2DevDomeFram (int in_argc, char **in_argv):Rts2DevDome (in_argc,
+	     in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   addOption ('w', "wdc_file", 1, "/dev file with watch-dog card");
@@ -1071,6 +1023,7 @@ Rts2DevDomeFram::~Rts2DevDomeFram (void)
   stopMove ();
   if (wdc_file)
     closeWDC ();
+  stopMove ();
   close (dome_port);
 }
 
@@ -1110,6 +1063,11 @@ Rts2DevDomeFram::info ()
   sw_state |= (getPortState (KONCAK_OTEVRENI_LEVY) << 1);
   sw_state |= (getPortState (KONCAK_ZAVRENI_PRAVY) << 2);
   sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
+  rain = weatherConn->getRain ();
+  windspeed = weatherConn->getWindspeed ();
+  if (wdc_port > 0)
+    temperature = getWDCTemp (2);
+  nextOpen = getNextOpen ();
   return 0;
 }
 
@@ -1151,17 +1109,19 @@ Rts2DevDomeFram::sendFramMail (char *subject)
   int ret;
   ret = zjisti_stav_portu ();
   asprintf (&openText, "%s.\n"
-	    "End switched status:\n"
-	    "KONCAK_ZAVRENI_PRAVY:%i  KONCAK_ZAVRENI_LEVY:%i\n"
-	    "KONCAK_OTEVRENI_PRAVY:%i KONCAK_OTEVRENI_PRAVY:%i\n"
+	    "End switch status:\n"
+	    "CLOSE SWITCH RIGHT:%i  CLOSE SWITCH LEFT:%i\n"
+	    "OPEN SWITCH RIGHT:%i OPEN SWITCH LEFT:%i\n"
 	    "Weather::isGoodWeather %i\n"
-	    "zjisti_stav_portu ret: %i\n"
+	    "raining: %i\n"
+	    "windspeed: %f\n"
+	    "port state: %i\n"
 	    "closingNum: %i lastClosing: %s",
 	    subject,
 	    isOn (KONCAK_ZAVRENI_PRAVY), isOn (KONCAK_ZAVRENI_LEVY),
 	    isOn (KONCAK_OTEVRENI_PRAVY), isOn (KONCAK_OTEVRENI_LEVY),
 	    (weatherConn ? weatherConn->isGoodWeather () : -2),
-	    ret, closingNum, ctime (&lastClosing));
+	    rain, windspeed, ret, closingNum, ctime (&lastClosing));
   ret = sendMail (subject, openText);
   free (openText);
   return ret;

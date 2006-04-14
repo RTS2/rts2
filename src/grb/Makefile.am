@@ -1,10 +1,20 @@
 # $Id$
 
-SUBDIRS = ibas bacodine
+bin_PROGRAMS = rts2-grbd rts2-grbforward rts2-augershooter
 
-bin_PROGRAMS = rts2-grbc
+noinst_HEADERS = grbd.h grbconst.h rts2conngrb.h rts2grbfw.h rts2grbexecconn.h rts2connshooter.h augershooter.h
+extra_DIST = rts2conngrb.ec rts2connshooter.ec
 
-noinst_HEADERS = grbc.h
+rts2_grbd_SOURCES = grbd.cpp rts2conngrb.cpp rts2grbfw.cpp rts2grbexecconn.cpp
+rts2_grbd_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_grbd_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a
 
-rts2_grbc_SOURCES = grbc.cpp
-rts2_grbc_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_PTHREAD@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2fits.a ../db/libdb.a ../utils/libdevcli.a bacodine/libbacodine.a ibas/libibas.a
+rts2_grbforward_SOURCES = forward.cpp rts2grbfw.cpp
+rts2_grbforward_LDFLAGS = @LIB_M@ ../utils/librts2block.a
+
+rts2_augershooter_SOURCES = augershooter.cpp rts2connshooter.cpp
+rts2_augershooter_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_augershooter_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a
+
+%.cpp: %.ec
+	@ECPG@ -o $@ $^

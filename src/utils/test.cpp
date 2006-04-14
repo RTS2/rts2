@@ -5,67 +5,60 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <math.h>
 #include <errno.h>
+#include <libnova/libnova.h>
 
-#include "config.h"
-#include "hms.h"
 #include "mkpath.h"
 
 #include "objectcheck.h"
+#include "rts2config.h"
 
 int
 main (int argc, char **argv)
 {
   double value;
+  int i_value;
+
   char buf[20];
-  int h, m, s;
   ObjectCheck *checker;
-  printf ("10.2 - %f\n", hmstod ("10.2"));
-  printf ("10a58V67 - %f\n", hmstod ("10a58V67"));
-
-  value = hmstod ("-11aa11:57a");
-  assert (errno != 0);
-
-  dtoints (-0.530240, &h, &m, &s);
-  printf ("hms: %+i:%i:%i\n", h, m, s);
 
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
-  printf ("ret %i\n", read_config ("/etc/rts2/rts2.conf"));
 
-  printf ("ret %f\n", get_double_default ("longtitude", 1));
-  printf ("ret %f\n", get_double_default ("latitude", 1));
-  printf ("C0.rotang: %f\n", get_device_double_default ("C0", "rotang", 10));
-  printf ("C0.rotang: %f\n",
-	  get_device_double_default ("sbig", "rotang", 10));
-  printf ("ret: %s\n", get_device_string_default ("C1", "name", "moje"));
-  printf ("ret: %f\n", get_double_default ("day_horizont", 25));
-  printf ("ret: %f\n", get_double_default ("night_horizont", 25));
-  printf ("ret: %f\n",
-	  get_device_double_default ("hete", "dark_frequency", 25));
+  Rts2Config *conf = new Rts2Config ();
 
-  printf ("ret: %s\n", get_string_default ("epoch", "000"));
-  printf ("ret: %s\n",
-	  get_sub_device_string_default ("CNF1", "script", "G", "AA"));
-  printf ("ret: %s\n",
-	  get_sub_device_string_default ("CNF1", "script", "S", "AA"));
+  printf ("ret %i\n", conf->loadFile ("test.ini"));
 
-  printf ("ret exposure_time: %f\n",
-	  get_device_double_default ("grbc", "exposure_time", 120));
+  struct ln_lnlat_posn *observer;
+  observer = conf->getObserver ();
+  printf ("long %f\n", observer->lng);
+  printf ("lat %f\n", observer->lat);
+  printf ("C0.rotang: %i ", conf->getDouble ("C0", "rotang", value));
+  printf ("val %f\n", value);
+  printf ("ret: %i ", conf->getString ("C1", "name", buf, 20));
+  printf ("val %s\n", buf);
+  printf ("ret: %i ", conf->getDouble ("centrald", "day_horizont", value));
+  printf ("val %f\n", value);
+  printf ("ret: %i ", conf->getDouble ("centrald", "night_horizont", value));
+  printf ("val %f\n", value);
+  printf ("ret: %i ", conf->getInteger ("hete", "dark_frequency", i_value));
+  printf ("val %i\n", i_value);
 
-  checker =
-    new ObjectCheck (get_string_default ("horizont", "/etc/rts2/horizont"));
+  printf ("ret: %i ", conf->getString ("CNF1", "script", buf, 20));
+  printf ("val %s\n", buf);
+  printf ("ret: %i ", conf->getString ("observatory", "horizont", buf, 20));
+  checker = new ObjectCheck (buf);
 
   for (value = 0; value < 360; value += 7.5)
     {
       printf ("%f -20 is_good: %i\n", value,
 	      checker->is_good (0, value, -20));
-      printf ("%f 0 is_good: %i\n", value, checker->is_good (0, value, 0));
-      printf ("%f 80 is_good: %i\n", value, checker->is_good (0, value, 80));
+      printf ("%f 0 is_good: %i\n", value, checker->is_good (18, value, 0));
+      printf ("%f 30 is_good: %i\n", value, checker->is_good (18, value, 30));
     }
 
   delete checker;
+  delete conf;
 
   return 0;
 }

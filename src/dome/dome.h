@@ -4,6 +4,8 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+#define DEF_WEATHER_TIMEOUT	600
+
 class Rts2DevDome:public Rts2Device
 {
 protected:
@@ -12,10 +14,29 @@ protected:
 
   float temperature;
   float humidity;
+  int power_telescope;
+  int power_cameras;
+  time_t nextOpen;
+  int rain;
+  float windspeed;
 
   int observingPossible;
+  int maxWindSpeed;
+  int maxPeekWindspeed;
+  bool weatherCanOpenDome;
+
+  time_t nextGoodWeather;
+
+  virtual int processOption (int in_opt);
+
+  virtual void cancelPriorityOperations ()
+  {
+    // we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
+  }
+
+  void domeWeatherGood ();
 public:
-    Rts2DevDome (int argc, char **argv);
+  Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
   virtual int openDome ()
   {
     maskState (0, DOME_DOME_MASK, DOME_OPENING, "opening dome");
@@ -46,33 +67,56 @@ public:
   };
   int checkOpening ();
   virtual int init ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   virtual int idle ();
 
-  virtual int ready ()
-  {
-    return -1;
-  };
-  virtual int baseInfo ()
-  {
-    return -1;
-  };
-  virtual int info ()
-  {
-    return -1;
-  };
-
   // callback function from dome connection
-  int ready (Rts2Conn * conn);
-  int baseInfo (Rts2Conn * conn);
-  int info (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn);
 
   virtual int observing ();
   virtual int standby ();
   virtual int off ();
 
   int setMasterStandby ();
+  int setMasterOn ();
   virtual int changeMasterState (int new_state);
+
+  void setTemperatur (float in_temp)
+  {
+    temperature = in_temp;
+  }
+  void setHumidity (float in_humidity)
+  {
+    humidity = in_humidity;
+  }
+  void setRain (int in_rain)
+  {
+    rain = in_rain;
+  }
+  void setWindSpeed (float in_windpseed)
+  {
+    windspeed = in_windpseed;
+  }
+  void setWeatherTimeout (time_t wait_time);
+  void setSwState (int in_sw_state)
+  {
+    sw_state = in_sw_state;
+  }
+
+  int getMaxPeekWindspeed ()
+  {
+    return maxPeekWindspeed;
+  }
+
+  int getMaxWindSpeed ()
+  {
+    return maxWindSpeed;
+  }
+  time_t getNextOpen ()
+  {
+    return nextGoodWeather;
+  }
 };
 
 class Rts2DevConnDome:public Rts2DevConn

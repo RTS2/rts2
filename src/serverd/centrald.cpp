@@ -22,7 +22,6 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <malloc.h>
-#include <mcheck.h>
 #include <libnova/libnova.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -31,14 +30,16 @@
 #include <arpa/inet.h>
 
 #include "../utils/rts2block.h"
-#include "../utils/config.h"
+#include "../utils/rts2config.h"
 #include "status.h"
 
-#define PORT	5557
+#define PORT	617
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX		255
 #endif
+
+class Rts2ConnCentrald;
 
 class Rts2Centrald:public Rts2Block
 {
@@ -47,15 +48,30 @@ class Rts2Centrald:public Rts2Block
 
   int next_event_type;
   time_t next_event_time;
-  struct ln_lnlat_posn observer;
+  struct ln_lnlat_posn *observer;
+
+  int morning_off;
+  int morning_standby;
 
 protected:
   int changeState (int new_state);
   int idle ();
 
   virtual int processOption (int in_opt);
+
+  // those callbacks are now empty; they can be use in future
+  // to link two centrald to enable cooperative observation
+  virtual Rts2Conn *createClientConnection (char *in_deviceName)
+  {
+    return NULL;
+  }
+  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
+  {
+    return NULL;
+  }
+
 public:
-    Rts2Centrald (int in_argc, char **in_argv);
+  Rts2Centrald (int in_argc, char **in_argv);
 
   int init ();
   int changePriority (time_t timeout);
@@ -63,25 +79,26 @@ public:
   int changeStateOn ()
   {
     return changeState ((next_event_type + 5) % 6);
-  };
+  }
   int changeStateStandby ()
   {
     return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6));
-  };
+  }
   int changeStateOff ()
   {
     return changeState (SERVERD_OFF);
-  };
+  }
   inline int getState ()
   {
     return current_state;
-  };
+  }
   inline int getPriorityClient ()
   {
     return priority_client;
-  };
+  }
 
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  void connAdded (Rts2ConnCentrald * added);
 };
 
 class Rts2ConnCentrald:public Rts2Conn
@@ -99,9 +116,11 @@ private:
   int commandDevice ();
   int commandClient ();
   // command handling functions
+  int priorityCommand ();
   int sendDeviceKey ();
   int sendInfo ();
   int sendStatusInfo ();
+  int sendAValue (char *name, int value);
 public:
     Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 		      int in_centrald_id);
@@ -130,14 +149,51 @@ Rts2ConnCentrald::~Rts2ConnCentrald (void)
 }
 
 int
+Rts2ConnCentrald::priorityCommand ()
+{
+  int timeout;
+  int new_priority;
+
+  if (isCommand ("priority"))
+    {
+      if (paramNextInteger (&new_priority) || !paramEnd ())
+	return -1;
+      timeout = 0;
+    }
+  else
+    {
+      if (paramNextInteger (&new_priority) ||
+	  paramNextInteger (&timeout) || !paramEnd ())
+	return -1;
+      timeout += time (NULL);
+    }
+
+  sendValue ("old_priority", getPriority (), getCentraldId ());
+
+  sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
+
+  setPriority (new_priority);
+
+  if (master->changePriority (timeout))
+    {
+      sendCommandEnd (DEVDEM_E_PRIORITY,
+		      "error when processing priority request");
+      return -1;
+    }
+
+  sendValue ("new_priority", master->getPriorityClient (), getPriority ());
+
+  return 0;
+}
+
+int
 Rts2ConnCentrald::sendDeviceKey ()
 {
-  int key = random ();
+  int dev_key = random ();
   char *msg;
   // device number could change..device names don't
   char *dev_name;
   Rts2Conn *dev;
-  int dev_id;
   if (paramNextString (&dev_name) || !paramEnd ())
     return -2;
   // find device, set it authorization key
@@ -147,8 +203,8 @@ Rts2ConnCentrald::sendDeviceKey ()
       sendCommandEnd (DEVDEM_E_SYSTEM, "cannot find device with name");
       return -1;
     }
-  setKey (key);
-  asprintf (&msg, "authorization_key %s %i", dev_name, key);
+  setKey (dev_key);
+  asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
   send (msg);
   free (msg);
   return 0;
@@ -158,7 +214,6 @@ int
 Rts2ConnCentrald::sendInfo ()
 {
   int i;
-  Rts2Conn *dev;
 
   if (!paramEnd ())
     return -2;
@@ -191,10 +246,12 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
       free (msg);
       break;
     case DEVICE_SERVER:
-      asprintf (&msg, "device %i %s %s:%i %i",
+      asprintf (&msg, "device %i %s %s %i %i",
 		getCentraldId (), getName (), hostname, port, device_type);
       ret = conn->send (msg);
       free (msg);
+      break;
+    default:
       break;
     }
   return ret;
@@ -206,10 +263,15 @@ Rts2ConnCentrald::commandDevice ()
   if (isCommand ("authorize"))
     {
       int client;
-      int key;
+      int dev_key;
       if (paramNextInteger (&client)
-	  || paramNextInteger (&key) || !paramEnd ())
+	  || paramNextInteger (&dev_key) || !paramEnd ())
 	return -2;
+
+      if (client >= MAX_CONN || client < 0)
+	{
+	  return -2;
+	}
 
       // client wanished when we processed data..
       if (master->connections[client] == NULL)
@@ -217,22 +279,21 @@ Rts2ConnCentrald::commandDevice ()
 
       if (master->connections[client]->getKey () == 0)
 	{
-	  sendValue ("authorization_failed", client);
+	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM,
 			  "client didn't ask for authorization");
 	  return -1;
 	}
 
-      if (master->connections[client]->getKey () != key)
+      if (master->connections[client]->getKey () != dev_key)
 	{
-	  sendValue ("authorization_failed", client);
+	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM, "invalid authorization key");
-	  master->connections[client]->setKey (0);
 	  return -1;
 	}
-      master->connections[client]->setKey (0);
 
-      sendValue ("authorization_ok", client);
+      sendAValue ("authorization_ok", client);
+      sendInfo ();
 
       return 0;
     }
@@ -248,6 +309,10 @@ Rts2ConnCentrald::commandDevice ()
     {
       return master->changeStateOn ();
     }
+  if (isCommand ("priority") || isCommand ("prioritydeferred"))
+    {
+      return priorityCommand ();
+    }
   if (isCommand ("standby"))
     {
       return master->changeStateStandby ();
@@ -255,11 +320,6 @@ Rts2ConnCentrald::commandDevice ()
   if (isCommand ("off"))
     {
       return master->changeStateOff ();
-    }
-  if (isCommand ("S"))
-    {
-      syslog (LOG_DEBUG, "Rts2ConnCentrald::commandDevice Status command");
-      return 0;
     }
   return -1;
 }
@@ -285,6 +345,17 @@ Rts2ConnCentrald::sendStatusInfo ()
 }
 
 int
+Rts2ConnCentrald::sendAValue (char *val_name, int value)
+{
+  char *msg;
+  int ret;
+  asprintf (&msg, "A %s %i", val_name, value);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
 Rts2ConnCentrald::commandClient ()
 {
   if (isCommand ("password"))
@@ -295,8 +366,11 @@ Rts2ConnCentrald::commandClient ()
 
       if (strncmp (passwd, login, CLIENT_LOGIN_SIZE) == 0)
 	{
+	  char *msg;
 	  authorized = 1;
-	  sendValue ("logged_as", getCentraldId ());
+	  asprintf (&msg, "logged_as %i", getCentraldId ());
+	  send (msg);
+	  free (msg);
 	  sendStatusInfo ();
 	  return 0;
 	}
@@ -329,41 +403,7 @@ Rts2ConnCentrald::commandClient ()
 	}
       if (isCommand ("priority") || isCommand ("prioritydeferred"))
 	{
-	  int timeout;
-	  int new_priority;
-
-	  if (isCommand ("priority"))
-	    {
-	      if (paramNextInteger (&new_priority) || !paramEnd ())
-		return -1;
-	      timeout = 0;
-	    }
-	  else
-	    {
-	      if (paramNextInteger (&new_priority) ||
-		  paramNextInteger (&timeout) || !paramEnd ())
-		return -1;
-	      timeout += time (NULL);
-	    }
-
-	  sendValue ("old_priority", getPriority (), getCentraldId ());
-
-	  sendValue ("actual_priority", master->getPriorityClient (),
-		     getPriority ());
-
-	  setPriority (new_priority);
-
-	  if (master->changePriority (timeout))
-	    {
-	      sendCommandEnd (DEVDEM_E_PRIORITY,
-			      "error when processing priority request");
-	      return -1;
-	    }
-
-	  sendValue ("new_priority", master->getPriorityClient (),
-		     getPriority ());
-
-	  return 0;
+	  return priorityCommand ();
 	}
       if (isCommand ("key"))
 	{
@@ -407,6 +447,7 @@ Rts2ConnCentrald::command ()
 	  strncpy (login, in_login, CLIENT_LOGIN_SIZE);
 
 	  setType (CLIENT_SERVER);
+	  master->connAdded (this);
 	  return 0;
 	}
       else
@@ -424,7 +465,6 @@ Rts2ConnCentrald::command ()
 	  char *in_hostname;
 	  char *msg;
 	  int ret;
-	  unsigned int in_port;
 
 	  if (paramNextString (&reg_device) || paramNextInteger (&device_type)
 	      || paramNextString (&in_hostname) || paramNextInteger (&port)
@@ -443,13 +483,21 @@ Rts2ConnCentrald::command ()
 	  setType (DEVICE_SERVER);
 	  sendStatusInfo ();
 	  if (master->getPriorityClient () > -1)
-	    sendValue ("M priority_change", master->getPriorityClient (), 0);
+	    {
+	      asprintf (&msg, "M priority_change %i %i",
+			master->getPriorityClient (), 0);
+	      send (msg);
+	      free (msg);
+	    }
 
-	  asprintf (&msg, "device %i %s %s:%i %i",
+	  asprintf (&msg, "device %i %s %s %i %i",
 		    master->getPriorityClient (), reg_device, hostname, port,
 		    device_type);
 	  ret = send (msg);
 	  free (msg);
+	  sendAValue ("registered_as", getCentraldId ());
+	  master->connAdded (this);
+	  sendInfo ();
 	  return ret;
 	}
       else
@@ -473,11 +521,16 @@ Rts2ConnCentrald::command ()
 Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
 	   in_argv)
 {
-  observer.lng = get_double_default ("longtitude", 0);
-  observer.lat = get_double_default ("latitude", 0);
+  Rts2Config *
+    config = Rts2Config::instance ();
+  config->loadFile ();
+  observer = config->getObserver ();
+
   current_state =
-    (strcmp (get_device_string_default ("centrald", "reboot_on", "N"), "Y") ?
-     SERVERD_OFF : 0);
+    config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
+
+  morning_off = config->getBoolean ("centrald", "morning_off");
+  morning_standby = config->getBoolean ("centrald", "morning_standby");
 
   addOption ('p', "port", 1, "port on which centrald will listen");
 }
@@ -507,6 +560,18 @@ Rts2Conn *
 Rts2Centrald::createConnection (int in_sock, int conn_num)
 {
   return new Rts2ConnCentrald (in_sock, this, conn_num);
+}
+
+void
+Rts2Centrald::connAdded (Rts2ConnCentrald * added)
+{
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	added->sendInfo (conn);
+    }
 }
 
 /*!
@@ -553,14 +618,16 @@ Rts2Centrald::changePriority (time_t timeout)
 	}
     }
 
-  if (priority_client >= 0 && connections[priority_client])
-    connections[priority_client]->setHavePriority (0);
+  if (priority_client != new_priority_client)
+    {
+      if (priority_client >= 0 && connections[priority_client])
+	connections[priority_client]->setHavePriority (0);
 
-  priority_client = new_priority_client;
+      priority_client = new_priority_client;
 
-  if (priority_client >= 0 && connections[priority_client])
-    connections[priority_client]->setHavePriority (1);
-
+      if (priority_client >= 0 && connections[priority_client])
+	connections[priority_client]->setHavePriority (1);
+    }
   return sendMessage ("priority_change", priority_client, timeout);
 }
 
@@ -568,54 +635,46 @@ int
 Rts2Centrald::idle ()
 {
   time_t curr_time;
-  struct ln_lnlat_posn obs;
 
   int call_state;
   int old_current_state;
 
   curr_time = time (NULL);
 
-  next_event (&observer, &curr_time, &call_state, &next_event_type,
+  next_event (observer, &curr_time, &call_state, &next_event_type,
 	      &next_event_time);
 
   if (current_state != SERVERD_OFF && current_state != call_state)
     {
       old_current_state = current_state;
       if ((current_state & SERVERD_STATUS_MASK) == SERVERD_MORNING
-	  && call_state == SERVERD_DAY
-	  &&
-	  !strcmp (get_device_string_default
-		   ("centrald", "morning_off", "N"), "Y"))
+	  && call_state == SERVERD_DAY)
 	{
-	  current_state = SERVERD_OFF;
+	  if (morning_off)
+	    current_state = SERVERD_OFF;
+	  else if (morning_standby)
+	    current_state = call_state | SERVERD_STANDBY;
+	  else
+	    current_state =
+	      (current_state & SERVERD_STANDBY_MASK) | call_state;
 	}
       else
 	{
 	  current_state = (current_state & SERVERD_STANDBY_MASK) | call_state;
 	}
-      syslog (LOG_DEBUG, "riseset thread sleeping %li seconds for %i",
-	      next_event_time - curr_time + 1, next_event_type);
       if (current_state != old_current_state)
 	{
 	  sendStatusMessage (SERVER_STATUS, current_state);
 	}
     }
+  return Rts2Block::idle ();
 }
-
-
 
 int
 main (int argc, char **argv)
 {
-  int i;
   Rts2Centrald *centrald;
-  mtrace ();
   openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
-  if (read_config (CONFIG_FILE) == -1)
-    syslog (LOG_ERR,
-	    "Cannot open config file " CONFIG_FILE ", defaults will be used");
-  else
-    syslog (LOG_INFO, "Config readed from " CONFIG_FILE);
   centrald = new Rts2Centrald (argc, argv);
   centrald->init ();
   centrald->run ();

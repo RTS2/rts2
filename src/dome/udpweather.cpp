@@ -14,32 +14,36 @@
 #include <fcntl.h>
 
 Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port,
+					  int in_weather_timeout,
 					  Rts2DevDome * in_master):
-Rts2Conn (in_master)
+Rts2ConnNoSend (in_master)
 {
   master = in_master;
   weather_port = in_weather_port;
+  weather_timeout = in_weather_timeout;
 
   lastWeatherStatus = 0;
   time (&lastBadWeather);
-  nextGoodWeather = lastBadWeather + FRAM_CONN_TIMEOUT;
 }
 
 void
 Rts2ConnFramWeather::setWeatherTimeout (time_t wait_time)
 {
-  time_t next;
-  time (&next);
-  next += wait_time;
-  if (next > nextGoodWeather)
-    nextGoodWeather = next;
+  master->setWeatherTimeout (wait_time);
+}
+
+void
+Rts2ConnFramWeather::badSetWeatherTimeout (time_t wait_time)
+{
+  master->setWeatherTimeout (wait_time);
+  master->closeDome ();
+  master->setMasterStandby ();
 }
 
 int
 Rts2ConnFramWeather::init ()
 {
   struct sockaddr_in bind_addr;
-  int optval = 1;
   int ret;
 
   bind_addr.sin_family = AF_INET;
@@ -70,8 +74,8 @@ int
 Rts2ConnFramWeather::receive (fd_set * set)
 {
   int ret;
-  char buf[100];
-  char status[10];
+  char Wbuf[100];
+  char Wstatus[10];
   int data_size = 0;
   struct tm statDate;
   float sec_f;
@@ -80,17 +84,22 @@ Rts2ConnFramWeather::receive (fd_set * set)
       struct sockaddr_in from;
       socklen_t size = sizeof (from);
       data_size =
-	recvfrom (sock, buf, 80, 0, (struct sockaddr *) &from, &size);
-      buf[data_size] = 0;
-      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, buf,
+	recvfrom (sock, Wbuf, 80, 0, (struct sockaddr *) &from, &size);
+      if (data_size < 0)
+	{
+	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
+	  return 1;
+	}
+      Wbuf[data_size] = 0;
+      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, Wbuf,
 	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
       // parse weather info
       ret =
-	sscanf (buf,
+	sscanf (Wbuf,
 		"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%fZ status=%s",
 		&windspeed, &rain, &statDate.tm_year, &statDate.tm_mon,
 		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
-		&sec_f, status);
+		&sec_f, Wstatus);
       if (ret != 9)
 	{
 	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
@@ -103,17 +112,17 @@ Rts2ConnFramWeather::receive (fd_set * set)
       statDate.tm_mon--;
       statDate.tm_sec = (int) sec_f;
       lastWeatherStatus = mktime (&statDate);
-      if (strcmp (status, "watch"))
+      if (strcmp (Wstatus, "watch"))
 	{
 	  // if sensors doesn't work, switch rain on
 	  rain = 1;
 	}
-      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %i status: %s",
-	      windspeed, rain, lastWeatherStatus, status);
-      if (rain != 0 || windspeed > FRAM_MAX_PEAK_WINDSPEED)
+      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %li status: %s",
+	      windspeed, rain, lastWeatherStatus, Wstatus);
+      if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
 	{
 	  time (&lastBadWeather);
-	  if (rain == 0 && windspeed > FRAM_MAX_WINDSPEED)
+	  if (rain == 0 && windspeed > master->getMaxWindSpeed ())
 	    setWeatherTimeout (FRAM_BAD_WINDSPEED_TIMEOUT);
 	  else
 	    setWeatherTimeout (FRAM_BAD_WEATHER_TIMEOUT);
@@ -133,12 +142,13 @@ Rts2ConnFramWeather::isGoodWeather ()
   time_t now;
   time (&now);
   // if no conenction, set nextGoodWeather appopritery
-  if (now - lastWeatherStatus > FRAM_WEATHER_TIMEOUT)
+  if (now - lastWeatherStatus > weather_timeout)
     {
       setWeatherTimeout (FRAM_CONN_TIMEOUT);
       return 0;
     }
-  if (windspeed > FRAM_MAX_WINDSPEED || rain != 0 || (nextGoodWeather > now))
+  if (windspeed > master->getMaxWindSpeed () || rain != 0
+      || (master->getNextOpen () > now))
     return 0;
   return 1;
 }

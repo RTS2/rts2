@@ -5,35 +5,60 @@
  *
  * @author john
  */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif /* !_GNU_SOURCE */
-
 #include <signal.h>
-#include <fcntl.h>
 
-#include "dpci8255.h"
-#include "dpci8255lib.c"
+#include <sys/io.h>
+#include <asm/io.h>
 
 #include "dome.h"
-#include "udpweather.h"
+#include "rts2connbufweather.h"
 
-#define OPEN		1
-#define CLOSE		2
+#define	ROOF_TIMEOUT	360	// in seconds
+
+#define OPEN		2
+#define CLOSE		4
+
+#define OPENING		2
+#define CLOSING		0
+
+#define WATCHER_DOME_OPEN	1
+#define WATCHER_DOME_CLOSED	0
+#define WATCHER_DOME_UNKNOWN	-1
+
+#define WATCHER_METEO_TIMEOUT	80
+
+#define WATCHER_BAD_WEATHER_TIMEOUT	3600
+#define WATCHER_BAD_WINDSPEED_TIMEOUT	360
+#define WATCHER_CONN_TIMEOUT		360
+
+#define BASE 0xde00
+
+typedef enum
+{ TYPE_OPENED, TYPE_CLOSED, TYPE_STUCK } smsType_t;
 
 class Rts2DevDomeDublin:public Rts2DevDome
 {
 private:
-  int dome_port;
-  char *dome_file;
+  int dome_state;
+  int ignoreMeteo;
+  time_t timeOpenClose;
+  bool domeFailed;
+  char *smsExec;
 
-  Rts2ConnFramWeather *weatherConn;
+  Rts2ConnBufWeather *weatherConn;
+  bool isMoving ();
+
+  void executeSms (smsType_t type);
+
+  void openDomeReal ();
+  void closeDomeReal ();
+protected:
+    virtual int processOption (int in_opt);
+  virtual int isGoodWeather ();
 
 public:
     Rts2DevDomeDublin (int argc, char **argv);
     virtual ~ Rts2DevDomeDublin (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
   virtual int idle ();
 
@@ -42,29 +67,56 @@ public:
   virtual int info ();
 
   virtual int openDome ();
-/* That should be implemented, using some sensors on dome
-  virtual long isOpened (); 
-  virtual int endOpen (); */
+  virtual long isOpened ();
+  virtual int endOpen ();
   virtual int closeDome ();
-/* That should be implemented, using some sensors on dome
   virtual long isClosed ();
-  virtual int endClose ();*/
+  virtual int endClose ();
 };
 
-Rts2DevDomeDublin::Rts2DevDomeDublin (int argc, char **argv):
-Rts2DevDome (argc, argv)
+Rts2DevDomeDublin::Rts2DevDomeDublin (int in_argc, char **in_argv):
+Rts2DevDome (in_argc, in_argv)
 {
-  addOption ('f', "dome_file", 1, "/dev file for dome serial port");
-
-  dome_file = "/dev/dpci82550";
   domeModel = "DUBLIN_DOME";
+  smsExec = NULL;
+  addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
+  addOption ('S', "execute_sms", 1,
+	     "execute this commmand to send sms about roof");
+  ignoreMeteo = 0;
 
   weatherConn = NULL;
+
+  timeOpenClose = 0;
+  domeFailed = false;
 }
 
 Rts2DevDomeDublin::~Rts2DevDomeDublin (void)
 {
-  close (dome_port);
+  outb (0, BASE);
+// SWITCH OFF INTERFACE
+  outb (0, BASE + 1);
+}
+
+void
+Rts2DevDomeDublin::executeSms (smsType_t type)
+{
+  char *cmd;
+  char *msg;
+  switch (type)
+    {
+    case TYPE_OPENED:
+      msg = "Watcher roof opened as expected";
+      break;
+    case TYPE_CLOSED:
+      msg = "Watcher roof closed as expected";
+      break;
+    case TYPE_STUCK:
+      msg = "FAILURE! Watcher roof failed!!";
+      break;
+    }
+  asprintf (&cmd, "%s '%s'", smsExec, msg);
+  system (cmd);
+  free (cmd);
 }
 
 int
@@ -72,8 +124,11 @@ Rts2DevDomeDublin::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'f':
-      dome_file = optarg;
+    case 'I':
+      ignoreMeteo = 1;
+      break;
+    case 'S':
+      smsExec = optarg;
       break;
     default:
       return Rts2DevDome::processOption (in_opt);
@@ -82,30 +137,51 @@ Rts2DevDomeDublin::processOption (int in_opt)
 }
 
 int
+Rts2DevDomeDublin::isGoodWeather ()
+{
+  if (weatherConn)
+    return weatherConn->isGoodWeather ();
+  return 1;
+}
+
+int
 Rts2DevDomeDublin::init ()
 {
-  int ret;
-  int i;
-
+  int ret, i;
   ret = Rts2DevDome::init ();
   if (ret)
     return ret;
 
-  dome_port = open (dome_file, O_RDONLY);
+  dome_state = WATCHER_DOME_UNKNOWN;
 
-  if (dome_port == -1)
-    return -1;
+  ioperm (BASE, 4, 1);
 
-  WritePci8255ControlWord (dome_port, CONTROLWORD1, 0x80);
-  WritePci8255ControlWord (dome_port, CONTROLWORD2, 0x80);
-  WritePci8255Port (dome_port, PORTA1, 0);
-  WritePci8255Port (dome_port, PORTA2, 0);
+// SET CONTROL WORD
+  outb (137, BASE + 3);
+
+
+// INITIALIZE ALL PORTS TO 0
+
+  for (i = 0; i <= 2; i++)
+    {
+      outb (0, BASE + i);
+    }
+
+// SWITCH ON INTERFACE
+  outb (1, BASE + 1);
+
+  if (ignoreMeteo)
+    return 0;
 
   for (i = 0; i < MAX_CONN; i++)
     {
       if (!connections[i])
 	{
-	  weatherConn = new Rts2ConnFramWeather (5002, this);
+	  weatherConn =
+	    new Rts2ConnBufWeather (5002, WATCHER_METEO_TIMEOUT,
+				    WATCHER_CONN_TIMEOUT,
+				    WATCHER_BAD_WEATHER_TIMEOUT,
+				    WATCHER_BAD_WINDSPEED_TIMEOUT, this);
 	  weatherConn->init ();
 	  connections[i] = weatherConn;
 	  break;
@@ -124,7 +200,7 @@ int
 Rts2DevDomeDublin::idle ()
 {
   // check for weather..
-  if (weatherConn->isGoodWeather ())
+  if (isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
@@ -164,41 +240,164 @@ Rts2DevDomeDublin::baseInfo ()
 int
 Rts2DevDomeDublin::info ()
 {
-  sw_state = 1;
+  // switches are both off either when we move enclosure or when dome failed
+  if (domeFailed || timeOpenClose > 0)
+    sw_state = 0;
+  else
+    switch (dome_state)
+      {
+      case WATCHER_DOME_OPEN:
+	sw_state = 1;
+	break;
+      case WATCHER_DOME_CLOSED:
+	sw_state = 4;
+	break;
+      default:
+	sw_state = 0;
+	break;
+      }
+
+  if (weatherConn)
+    {
+      rain = weatherConn->getRain ();
+      windspeed = weatherConn->getWindspeed ();
+    }
+  nextOpen = getNextOpen ();
 
   return 0;
 }
 
-int
-Rts2DevDomeDublin::closeDome ()
+bool Rts2DevDomeDublin::isMoving ()
 {
-  WritePci8255Port (dome_port, PORTA2, CLOSE);
+  int
+    result;
+  int
+    moving = 0;
+  int
+    count;
+  for (count = 0; count < 100; count++)
+    {
+      result = (inb (BASE + 2));
+      // we think it's moving
+      if (result & 2)
+	moving++;
+      usleep (USEC_SEC / 100);
+    }
+  // motor is moving at least once
+  if (moving > 0)
+    return true;
+  // dome is regarded as not failed after move of motor stop nominal way
+  domeFailed = false;
+  return false;
+}
+
+void
+Rts2DevDomeDublin::openDomeReal ()
+{
+  outb (OPEN, BASE);
+
   sleep (1);
-  WritePci8255Port (dome_port, PORTA2, 0);
+  outb (0, BASE);
 
-  return Rts2DevDome::closeDome ();
-
-// ADD SOME STUFF ABOUT CAMERA/TELESCOPE POWER HERE?
-/*   set_pin(CLOSE);
-   clear_pin(OPEN);
-   d_info.dome = 0;
-*/
+  // wait for motor to decide to move
+  sleep (5);
 }
 
 int
 Rts2DevDomeDublin::openDome ()
 {
-  if (!weatherConn->isGoodWeather ())
+  if (!isGoodWeather ())
     return -1;
+  if (isMoving () || dome_state == WATCHER_DOME_OPEN)
+    return 0;
 
-  WritePci8255Port (dome_port, PORTA2, OPEN);
-  sleep (1);
-  WritePci8255Port (dome_port, PORTA2, 0);
-// ADD SOME STUFF ABOUT CAMERA/TELESCOPE POWER HERE?
-/*  set_pin(OPEN);
-  clear_pin(CLOSE);
-  d_info.dome = 1;*/
+  openDomeReal ();
+
+  time (&timeOpenClose);
+  timeOpenClose += ROOF_TIMEOUT;
+
   return Rts2DevDome::openDome ();
+}
+
+long
+Rts2DevDomeDublin::isOpened ()
+{
+  time_t now;
+  time (&now);
+  // timeout
+  if (now > timeOpenClose)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeDublin::isOpened timeout");
+      domeFailed = true;
+      executeSms (TYPE_STUCK);
+      // stop motor
+      closeDomeReal ();
+      return -2;
+    }
+  return (isMoving ()? USEC_SEC : -2);
+}
+
+int
+Rts2DevDomeDublin::endOpen ()
+{
+  timeOpenClose = 0;
+  dome_state = WATCHER_DOME_OPEN;
+  if (!domeFailed)
+    executeSms (TYPE_OPENED);
+  return Rts2DevDome::endOpen ();
+}
+
+void
+Rts2DevDomeDublin::closeDomeReal ()
+{
+  outb (CLOSE, BASE);
+
+  sleep (1);
+  outb (0, BASE);
+
+  // give controller time to react
+  sleep (5);
+}
+
+int
+Rts2DevDomeDublin::closeDome ()
+{
+  // we cannot close dome when we are still moving
+  if (isMoving () || dome_state == WATCHER_DOME_CLOSED)
+    return 0;
+
+  closeDomeReal ();
+
+  time (&timeOpenClose);
+  timeOpenClose += ROOF_TIMEOUT;
+
+  return Rts2DevDome::closeDome ();
+}
+
+long
+Rts2DevDomeDublin::isClosed ()
+{
+  time_t now;
+  time (&now);
+  if (now > timeOpenClose)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeDublin::isClosed dome timeout");
+      domeFailed = true;
+      executeSms (TYPE_STUCK);
+      openDomeReal ();
+      return -2;
+    }
+  return (isMoving ()? USEC_SEC : -2);
+}
+
+int
+Rts2DevDomeDublin::endClose ()
+{
+  timeOpenClose = 0;
+  dome_state = WATCHER_DOME_CLOSED;
+  if (!domeFailed)
+    executeSms (TYPE_CLOSED);
+  return Rts2DevDome::endClose ();
 }
 
 Rts2DevDomeDublin *device;

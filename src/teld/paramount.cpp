@@ -1,288 +1,695 @@
-#include <stdio.h>
-#include <math.h>
-#include <libnova/libnova.h>
-#include <fcntl.h>
-#include <time.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <signal.h>
-#include "tpmodel.h"
-#include "libmks3.h"
-
 #include "telescope.h"
+#include "model/telmodel.h"
 
-#define LONGITUDE -6.732778
-#define LATITUDE 37.104444
-#define ALTITUDE 10.0
-#define LOOP_DELAY 200000
+#include "../utils/rts2config.h"
+#include "../utils/libnova_cpp.h"
 
-/* RAW model: Tpoint models should be computed as addition to this one */
-#define DEC_CPD -20880.0	// DOUBLE - how many counts per degree...
-#define HA_CPD -32000.0		// 8.9 counts per arcsecond
-// Podle dvou ruznych modelu je to bud <-31845;-31888>, nebo <-31876;-31928>, => -31882
-// pripadne <32112;32156> a <32072;32124> => -32118 (8.9216c/") podle toho, jestli se
-// to ma pricist nebo odecist, coz nevim. -m.
+#include <libmks3.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
 
-#define DEC_ZERO (-0.380*DEC_CPD)	// DEC homing: -2.079167 deg
-#define HA_ZERO (-29.880*HA_CPD)	// AFTERNOON ZERO: -30 deg
+#define TEL_SLEW		0x00
+#define TEL_FORCED_HOMING0	0x01
+#define TEL_FORCED_HOMING1	0x02
+
+#define RA_TICKS		11520000
+#define DEC_TICKS		7500000
+
+// park positions
+#define PARK_AXIS0		0
+#define PARK_AXIS1		-2550000
+
 
 typedef enum
-{
-  TEL_POINT,
-  // Sidereal mode, telescope points to an object. Is allowed to give commands, 
-  // if it somehow gets to a dangerous position, it will be
-  // stopped, if it will need rehoming, will recieve it
-  TEL_SLEWING,
-  // Slewing to a position: after recieving position change. Cannot give telescope
-  // commands apart of killing of the slew (then recycle and
-  // slew from "point" state
-  TEL_STOP,
-  // Motors are off: before doing anything (if requested) is needed to switch them on
-  TEL_HOMING,
-  // one of tel axes does homing: nothing can we do until it reaches homing
-  TEL_TIMEOUT,
-  // Connection to telescope has not been reached: no commands until we'll 
-  // know what's up
-//    TEL_JOYSTICK// Somebody touches joystick at the telescope?
-}
-TEL_STATE;
+{ T16, T32 } para_t;
 
-class Rts2DevTelescopeParamount:public Rts2DevTelescope
+/**
+ * Holds paramount constant values
+ */
+class ParaVal
 {
 private:
-  MKS3Id axis0, axis1;
-  int ret0, ret1;
-  unsigned short stat0, stat1;	// axis status
-
-  struct ln_lnlat_posn observer;
-
-  double sid_home ();
-
-  // *** return siderial time in degrees ***
-  // once libnova will use struct timeval in
-  // ln_ln_get_julian_from_sys, this will be completely OK
-  //
-  double sid_time (double julian)
-  {
-    return ln_range_degrees (15 * ln_get_apparent_sidereal_time (julian) +
-			     LONGITUDE);
-  }
-  double gethoming (double sid);
-  double x180 (double x);
-
-  void counts2sky (long ac, long dc, double *ra, double *dec, int *flip);
-  int sky2counts (double ra, double dec, long *ac, long *dc);
-  TEL_STATE state;
-  char *device_file;
-protected:
-  virtual int stopMove ();
+  const char *name;
+  para_t type;
+  int id;
 public:
-  Rts2DevTelescopeParamount (int argc, char **argv);
-  virtual ~ Rts2DevTelescopeParamount (void);
-  virtual int processOption (int in_opt);
-  virtual int init ();
-  virtual int idle ();
-  virtual int ready ();
-  virtual int baseInfo ();
-  virtual int info ();
-  virtual int startMove (double tar_ra, double tar_dec);
-  virtual int isMoving ();
-  virtual int endMove ();
-  virtual int startPark ();
-  virtual int isParking ();
-  virtual int endPark ();
+    ParaVal (const char *in_name, para_t in_type, int in_id)
+  {
+    name = in_name;
+    type = in_type;
+    id = in_id;
+  }
+
+  bool isName (std::string in_name)
+  {
+    return (name == in_name);
+  }
+
+  int writeAxis (std::ostream & _os, const MKS3Id & axis);
+  int readAxis (std::istream & _is, const MKS3Id & axis);
 };
 
-Rts2DevTelescopeParamount::Rts2DevTelescopeParamount (int argc, char **argv):
-Rts2DevTelescope (argc, argv)
+int
+ParaVal::writeAxis (std::ostream & _os, const MKS3Id & axis)
 {
-  telSiderealTime = 0;
-
-  axis0.unitId = 0x64;
-  axis1.unitId = 0x64;
-
-  axis0.axisId = 0;
-  axis1.axisId = 1;
-
-  device_file = "/dev/ttyS0";
-  addOption ('f', "device_file", 1,
-	     "/dev/ttySx entry for Paramount connector");
-
-  strcpy (telType, "ParamountME");
-  strcpy (telSerialNumber, "-");
-}
-
-Rts2DevTelescopeParamount::~Rts2DevTelescopeParamount (void)
-{
-  // some done?
-}
-
-void
-display_status (long status, int color)
-{
-  if (status & MOTOR_HOMING)
-    fprintf (stdout, "\033[%dmHOG\033[m ", 30 + color);
-//  if (status & MOTOR_SERVO)
-//    printf ("\033[%dmSRV\033[m ", 30 + color);
-  if (status & MOTOR_INDEXING)
-    fprintf (stdout, "\033[%dmIDX\033[m ", 30 + color);
-  if (status & MOTOR_SLEWING)
-    fprintf (stdout, "\033[%dmSLW\033[m ", 30 + color);
-  if (!(status & MOTOR_HOMED))
-    fprintf (stdout, "\033[%dm!HO\033[m ", 30 + color);
-  if (status & MOTOR_JOYSTICKING)
-    fprintf (stdout, "\033[%dmJOY\033[m ", 30 + color);
-  if (status & MOTOR_OFF)
-    fprintf (stdout, "\033[%dmOFF\033[m ", 30 + color);
-}
-
-// return sid time since homing
-double
-Rts2DevTelescopeParamount::sid_home ()
-{
-  long pos0, en0, sidhome;
-
-  if (MKS3PosEncoderGet (axis0, &en0))
-    return 0;
-  if (MKS3PosCurGet (axis0, &pos0))
-    return 0;
-
-  sidhome = en0 - pos0;
-  return (double) sidhome / HA_CPD;
-}
-
-double
-Rts2DevTelescopeParamount::gethoming (double sid)
-{
-  static double home, oldhome = 0;
-
-  home = sid - sid_home ();
-
-  if (fabs (home - oldhome) > .001)	// 3.6" 
-    oldhome = home;
-
-  return oldhome;
-}
-
-/* compute RAW trasformation (no Tpoint) */
-void
-Rts2DevTelescopeParamount::counts2sky (long ac, long dc, double *ra,
-				       double *dec, int *flip)
-{
-  double _ra, _dec, JD;
-
-  // Base transform to raw RA, DEC    
-  JD = ln_get_julian_from_sys ();
-  telSiderealTime = sid_time (JD);
-
-  _dec = (double) (dc - DEC_ZERO) / DEC_CPD;
-  _ra = (double) (ac - HA_ZERO) / HA_CPD;
-  _ra = -_ra + gethoming (telSiderealTime);
-
-  // Flip
-  if (_dec > 90)
+  CWORD16 val16;
+  CWORD32 val32;
+  int ret;
+  _os << name << ": ";
+  switch (type)
     {
-      *flip = 1;
-      _dec = 180 - _dec;
-      _ra = 180 + _ra;
+    case T16:
+      ret = _MKS3DoGetVal16 (axis, id, &val16);
+      if (ret)
+	{
+	  _os << "error" << std::endl;
+	  return -1;
+	}
+      _os << val16 << std::endl;
+      break;
+    case T32:
+      ret = _MKS3DoGetVal32 (axis, id, &val32);
+      if (ret)
+	{
+	  _os << "error" << std::endl;
+	  return -1;
+	}
+      _os << val32 << std::endl;
+      break;
     }
-  else
-    *flip = 0;
-
-  _dec = x180 (_dec);
-  _ra = ln_range_degrees (_ra);
-
-  printf ("TP <-: %f %f ->", _ra, _dec);
-  tpoint_apply_now (&_ra, &_dec, (double) (*flip), 0.0, 1);
-  printf ("%f %f\n", _ra, _dec);
-
-  *dec = _dec;
-  *ra = _ra;
+  return ret;
 }
 
 int
-Rts2DevTelescopeParamount::sky2counts (double ra, double dec, long *ac,
-				       long *dc)
+ParaVal::readAxis (std::istream & _is, const MKS3Id & axis)
 {
-  long _dc, _ac, flip = 0;
-  double ha, JD;
-  struct ln_equ_posn aber_pos, pos;
-  struct ln_hrz_posn hrz;
-
-  JD = ln_get_julian_from_sys ();
-  telSiderealTime = sid_time (JD);
-
-// Aberation
-//  ln_get_equ_aber (&pos, JD, &aber_pos);
-// Precession
-//  ln_get_equ_prec (&aber_pos, JD, &pos);
-// Refraction 
-  //  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
-//  hrz.alt += get_refraction (hrz.alt);
-//  ln_get_equ_from_hrz (&hrz, &observer, JD, &pos);
-//  ra = pos.ra;
-//  dec = pos.dec;
-
-// True Hour angle
-// first to decide the flip...
-  ha = x180 (telSiderealTime - ra);
-// xxx FLIP xxx
-  if (ha < 0)
-    flip = 1;
-
-  pos.ra = ra;
-  pos.dec = dec;
-  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
-
-  if (hrz.alt < 0)
-    return -1;
-
-  printf ("TP ->: %f %f ->", ra, dec);
-  tpoint_apply_now (&ra, &dec, (double) flip, 0.0, 0);
-  printf ("%f %f\n", ra, dec);
-
-//  pos.ra = ra;
-//  pos.dec = dec;
-//  ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
-//  printf ("<%f, %f,%f,%f>\n", ra, ha, dec, hrz.alt);
-
-  // now finally
-  ha = x180 (telSiderealTime - ra);
-  ra = x180 (gethoming (telSiderealTime) - ra);
-
-  if (flip)
+  CWORD16 val16;
+  CWORD32 val32;
+  int ret;
+  switch (type)
     {
-      dec = 180 - dec;
-      ra = 180 + ra;
+    case T16:
+      _is >> val16;
+      if (_is.fail ())
+	return -1;
+      ret = _MKS3DoSetVal16 (axis, id, val16);
+      break;
+    case T32:
+      _is >> val32;
+      if (_is.fail ())
+	return -1;
+      ret = _MKS3DoSetVal32 (axis, id, val32);
+      break;
     }
+  return ret;
+}
 
-  _dc = (long) (DEC_ZERO + (DEC_CPD * dec));
-  _ac = (long) (HA_ZERO + (HA_CPD * ra));
+class Rts2DevTelParamount:public Rts2DevTelescope
+{
+private:
+  MKS3Id axis0;
+  MKS3Id axis1;
+  char *device_name;
+  char *paramount_cfg;
 
-  *dc = _dc;
-  *ac = _ac;
+  int ret0;
+  int ret1;
 
-//  if (hrz.alt < 0)
-//    return -1;
+  CWORD16 status0;
+  CWORD16 status1;
+
+  // that's in degrees
+  double haZero;
+  double decZero;
+
+  double haCpd;
+  double decCpd;
+
+  int checkRetAxis (const MKS3Id & axis, int reta);
+  int checkRet ();
+  int updateStatus ();
+
+    std::vector < ParaVal > paramountValues;
+
+  int saveAxis (std::ostream & os, const MKS3Id & axis);
+
+  // returns actual home offset
+  int getHomeOffset (CWORD32 & off);
+
+  int updateLimits ();
+
+  int sky2counts (double ra, double dec, CWORD32 & ac, CWORD32 & dc);
+  int sky2counts (struct ln_equ_posn *pos, CWORD32 & ac, CWORD32 & dc,
+		  double JD, CWORD32 homeOff);
+  int counts2sky (CWORD32 & ac, CWORD32 dc, double &ra, double &dec);
+
+  int moveState;
+
+  CWORD32 acMin;
+  CWORD32 acMax;
+  CWORD32 dcMin;
+  CWORD32 dcMax;
+
+  int acMargin;
+
+  // variables for tracking
+  struct timeval track_start_time;
+  struct timeval track_recalculate;
+  struct timeval track_next;
+  MKS3ObjTrackInfo *track0;
+  MKS3ObjTrackInfo *track1;
+protected:
+    virtual int processOption (int in_opt);
+  virtual int isMoving ();
+  virtual int isParking ();
+
+  virtual void updateTrack ();
+public:
+    Rts2DevTelParamount (int in_argc, char **in_argv);
+    virtual ~ Rts2DevTelParamount (void);
+
+  virtual int init ();
+  virtual int idle ();
+
+  virtual int baseInfo ();
+  virtual int info ();
+
+  virtual int startMove (double tar_ra, double tar_dec);
+  virtual int endMove ();
+  virtual int stopMove ();
+
+  virtual int startPark ();
+  virtual int endPark ();
+
+  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec);
+  virtual int correct (double cor_ra, double cor_dec, double real_ra,
+		       double real_dec);
+
+  // save and load gemini informations
+  virtual int saveModel ();
+  virtual int loadModel ();
+};
+
+int
+Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
+{
+  char *msg = NULL;
+  switch (reta)
+    {
+    case COMM_OKPACKET:
+      msg = "comm packet OK";
+      break;
+    case COMM_NOPACKET:
+      msg = "comm no packet";
+      break;
+    case COMM_TIMEOUT:
+      msg = "comm timeout (check cable!)";
+      break;
+    case COMM_COMMERROR:
+      msg = "comm error";
+      break;
+    case COMM_BADCHAR:
+      msg = "bad char at comm";
+      break;
+    case COMM_OVERRUN:
+      msg = "comm overrun";
+      break;
+    case COMM_BADCHECKSUM:
+      msg = "comm bad checksum";
+      break;
+    case COMM_BADLEN:
+      msg = "comm bad message len";
+      break;
+    case COMM_BADCOMMAND:
+      msg = "comm bad command";
+      break;
+    case COMM_INITFAIL:
+      msg = "comm init fail";
+      break;
+    case COMM_NACK:
+      msg = "comm not acknowledged";
+      break;
+    case COMM_BADID:
+      msg = "comm bad id";
+      break;
+    case COMM_BADSEQ:
+      msg = "comm bad sequence";
+      break;
+    case COMM_BADVALCODE:
+      msg = "comm bad value code";
+      break;
+
+    case MAIN_WRONG_UNIT:
+      msg = "main wrong unit";
+      break;
+    case MAIN_BADMOTORINIT:
+      msg = "main bad motor init";
+      break;
+    case MAIN_BADMOTORSTATE:
+      msg = "main bad motor state";
+      break;
+    case MAIN_BADSERVOSTATE:
+      msg = "main bad servo state";
+      break;
+    case MAIN_SERVOBUSY:
+      msg = "main servo busy";
+      break;
+    case MAIN_BAD_PEC_LENGTH:
+      msg = "main bad pec lenght";
+      break;
+    case MAIN_AT_LIMIT:
+      msg = "main at limit";
+      break;
+    case MAIN_NOT_HOMED:
+      msg = "main not homed";
+      break;
+    case MAIN_BAD_POINT_ADD:
+      msg = "main bad point add";
+      break;
+
+    case FLASH_PROGERR:
+      msg = "flash program error";
+      break;
+/*    case FLASH_ERASEERR:
+      msg = "flash erase error";
+      break; */
+    case FLASH_TIMEOUT:
+      msg = "flash timeout";
+      break;
+    case FLASH_CANT_OPEN_FILE:
+      msg = "flash cannot open file";
+      break;
+    case FLASH_BAD_FILE:
+      msg = "flash bad file";
+      break;
+    case FLASH_FILE_READ_ERR:
+      msg = "flash file read err";
+      break;
+    case FLASH_BADVALID:
+      msg = "flash bad value id";
+      break;
+
+    case MOTOR_OK:
+      msg = "motor ok";
+      break;
+    case MOTOR_OVERCURRENT:
+      msg = "motor over current";
+      break;
+    case MOTOR_POSERRORLIM:
+      msg = "motor maximum position error exceeded";
+      break;
+    case MOTOR_STILL_ON:
+      msg = "motor still slewing but command needs it stopped";
+      break;
+    case MOTOR_NOT_ON:
+      msg = "motor off";
+      break;
+    case MOTOR_STILL_MOVING:
+      msg = "motor still slewing but command needs it stopped";
+      break;
+    }
+  if (msg)
+    std::cout << "Axis:" << axis.axisId << " " << msg << std::endl;
+  return reta;
+}
+
+int
+Rts2DevTelParamount::checkRet ()
+{
+  int reta0, reta1;
+  reta0 = checkRetAxis (axis0, ret0);
+  reta1 = checkRetAxis (axis1, ret1);
+  if (reta0 != MKS_OK || reta1 != MKS_OK)
+    return -1;
   return 0;
 }
 
-double
-Rts2DevTelescopeParamount::x180 (double x)
+int
+Rts2DevTelParamount::updateStatus ()
 {
-  for (; x > 180; x -= 360);
-  for (; x < -180; x += 360);
-  return x;
+  ret0 = MKS3StatusGet (axis0, &status0);
+  ret1 = MKS3StatusGet (axis1, &status1);
+  return checkRet ();
 }
 
 int
-Rts2DevTelescopeParamount::processOption (int in_opt)
+Rts2DevTelParamount::saveAxis (std::ostream & os, const MKS3Id & axis)
 {
+  int ret;
+  CWORD16 pMajor, pMinor, pBuild;
+
+  ret = MKS3VersionGet (axis, &pMajor, &pMinor, &pBuild);
+  if (ret)
+    return -1;
+
+  os << "*********************** Axis "
+    << axis.axisId << (axis.axisId ? " (DEC)" : " (RA)")
+    << " Control version " << pMajor << "." << pMinor << "." << pBuild
+    << " ********************" << std::endl;
+
+  for (std::vector < ParaVal >::iterator iter = paramountValues.begin ();
+       iter != paramountValues.end (); iter++)
+    {
+      ret = (*iter).writeAxis (os, axis);
+      if (ret)
+	return -1;
+    }
+  return 0;
+}
+
+int
+Rts2DevTelParamount::getHomeOffset (CWORD32 & off)
+{
+  int ret;
+  long en0, pos0;
+
+  ret = MKS3PosEncoderGet (axis0, &en0);
+  if (ret != MKS_OK)
+    return ret;
+  ret = MKS3PosCurGet (axis0, &pos0);
+  if (ret != MKS_OK)
+    return ret;
+  off = en0 - pos0;
+  return 0;
+}
+
+int
+Rts2DevTelParamount::updateLimits ()
+{
+  int ret;
+  ret = MKS3ConstsLimMinGet (axis0, &acMin);
+  if (ret)
+    return -1;
+  ret = MKS3ConstsLimMaxGet (axis0, &acMax);
+  if (ret)
+    return -1;
+
+  ret = MKS3ConstsLimMinGet (axis1, &dcMin);
+  if (ret)
+    return -1;
+  ret = MKS3ConstsLimMaxGet (axis1, &dcMax);
+  if (ret)
+    return -1;
+  return 0;
+}
+
+int
+Rts2DevTelParamount::sky2counts (double ra, double dec, CWORD32 & ac,
+				 CWORD32 & dc)
+{
+  double JD;
+  CWORD32 homeOff;
+  struct ln_equ_posn pos;
+  int ret;
+
+  JD = ln_get_julian_from_sys ();
+
+  ret = getHomeOffset (homeOff);
+  if (ret)
+    return -1;
+
+  pos.ra = ra;
+  pos.dec = dec;
+
+  return sky2counts (&pos, ac, dc, JD, homeOff);
+}
+
+int
+Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
+				 CWORD32 & dc, double JD, CWORD32 homeOff)
+{
+  double lst, ra, dec;
+  struct ln_hrz_posn hrz;
+  struct ln_equ_posn model_change;
+  int ret;
+  bool flip = false;
+
+  lst = getLstDeg (JD);
+
+  ln_get_hrz_from_equ (pos, Rts2Config::instance ()->getObserver (), JD,
+		       &hrz);
+  if (hrz.alt < -1)
+    {
+      return -1;
+    }
+
+  // get hour angle
+  ra = ln_range_degrees (lst - pos->ra);
+  if (ra > 180.0)
+    ra -= 360.0;
+
+  // pretend we are at north hemispehere.. at least for dec
+  dec = pos->dec;
+  if (telLatitude < 0)
+    dec *= -1;
+
+  dec = decZero + dec;
+  if (dec > 90)
+    dec = 180 - dec;
+  if (dec < -90)
+    dec = -180 - dec;
+
+  // convert to ac; ra now holds HA
+  ac = (CWORD32) ((ra + haZero) * haCpd);
+  dc = (CWORD32) (dec * decCpd);
+
+  // gets the limits
+  ret = updateLimits ();
+  if (ret)
+    return -1;
+
+  // purpose of following code is to get from west side of flip
+  // on S, we prefer negative values
+  if (telLatitude < 0)
+    {
+      while ((ac - acMargin) < acMin)
+	// ticks per revolution - don't have idea where to get that
+	{
+	  ac += (CWORD32) (RA_TICKS / 2.0);
+	  flip = !flip;
+	}
+    }
+  while ((ac + acMargin) > acMax)
+    {
+      ac -= (CWORD32) (RA_TICKS / 2.0);
+      flip = !flip;
+    }
+  // while on N we would like to see positive values
+  if (telLatitude > 0)
+    {
+      while ((ac - acMargin) < acMin)
+	// ticks per revolution - don't have idea where to get that
+	{
+	  ac += (CWORD32) (RA_TICKS / 2.0);
+	  flip = !flip;
+	}
+    }
+
+  if (flip)
+    dc += (CWORD32) ((90 - dec) * 2 * decCpd);
+
+  // put dc to correct numbers
+  while (dc < dcMin)
+    dc += DEC_TICKS;
+  while (dc > dcMax)
+    dc -= DEC_TICKS;
+
+  // apply model
+  applyModel (pos, &model_change, flip, JD);
+
+  // when fliped, change sign - most probably work diferently on N and S; tested only on S
+  if ((flip && telLatitude < 0) || (!flip && telLatitude > 0))
+    model_change.dec *= -1;
+
+  LibnovaRaDec lchange (&model_change);
+
+  std::cout << "Before model " << ac << dc << lchange << std::endl;
+
+  ac += (CWORD32) (model_change.ra * haCpd);
+  dc += (CWORD32) (model_change.dec * decCpd);
+
+  std::cout << "After model" << ac << dc << std::endl;
+
+  ac -= homeOff;
+
+  return 0;
+}
+
+int
+Rts2DevTelParamount::counts2sky (CWORD32 & ac, CWORD32 dc, double &ra,
+				 double &dec)
+{
+  double JD, lst;
+  CWORD32 homeOff;
+  int ret;
+
+  ret = getHomeOffset (homeOff);
+  if (ret)
+    return -1;
+
+  JD = ln_get_julian_from_sys ();
+  lst = getLstDeg (JD);
+
+  ac += homeOff;
+
+  ra = (double) (ac / haCpd) - haZero;
+  dec = (double) (dc / decCpd) - decZero;
+
+  ra = lst - ra;
+
+  // flipped
+  if (fabs (dec) > 90)
+    {
+      telFlip = 1;
+      if (dec > 0)
+	dec = 180 - dec;
+      else
+	dec = -180 - dec;
+      ra += 180;
+      ac += (CWORD32) (RA_TICKS / 2.0);
+    }
+  else
+    {
+      telFlip = 0;
+    }
+
+  while (ac < acMin)
+    ac += RA_TICKS;
+  while (ac > acMax)
+    ac -= RA_TICKS;
+
+  dec = ln_range_degrees (dec);
+  if (dec > 180.0)
+    dec -= 360.0;
+
+  ra = ln_range_degrees (ra);
+
+  if (telLatitude < 0)
+    dec *= -1;
+
+  return 0;
+}
+
+Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+		  in_argv)
+{
+  axis0.unitId = 0x64;
+  axis0.axisId = 0;
+
+  axis1.unitId = 0x64;
+  axis1.axisId = 1;
+
+  device_name = "/dev/ttyS0";
+  paramount_cfg = "/etc/rts2/paramount.cfg";
+  addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
+  addOption ('P', "paramount_cfg", 1,
+	     "paramount config file (default /etc/rts2/paramount.cfg");
+  addOption ('R', "recalculate", 1,
+	     "track update interval in sec; < 0 to disable track updates; defaults to 1 sec");
+
+  // in degrees! 30 for south, -30 for north hemisphere 
+  // it's (lst - ra(home))
+  haZero = 30.0;
+  decZero = 0;
+
+  // how many counts per degree
+  haCpd = 32000.0;		// - for N hemisphere, + for S hemisphere
+  decCpd = -20883.33333333333;
+
+  acMargin = 10000;
+
+  timerclear (&track_start_time);
+  timerclear (&track_recalculate);
+  timerclear (&track_next);
+
+  track_recalculate.tv_sec = 1;
+  track_recalculate.tv_usec = 0;
+
+  track0 = NULL;
+  track1 = NULL;
+
+  // apply all correction for paramount
+  corrections = COR_ABERATION | COR_PRECESSION | COR_REFRACTION;
+
+  // int paramout values
+  paramountValues.
+    push_back (ParaVal ("Index angle", T16, CMD_VAL16_INDEX_ANGLE));
+  paramountValues.push_back (ParaVal ("Base rate", T32, CMD_VAL32_BASERATE));
+  paramountValues.
+    push_back (ParaVal ("Maximum speed", T32, CMD_VAL32_SLEW_VEL));
+  paramountValues.
+    push_back (ParaVal ("Acceleration", T32, CMD_VAL32_SQRT_ACCEL));
+//  paramountValues.push_back (ParaVal ("Non-sidereal tracking rate" ));
+  paramountValues.
+    push_back (ParaVal
+	       ("Minimum position limit", T32, CMD_VAL32_MIN_POS_LIM));
+  paramountValues.
+    push_back (ParaVal
+	       ("Maximum position limit", T32, CMD_VAL32_MAX_POS_LIM));
+  paramountValues.
+    push_back (ParaVal ("Sensor (from sync)", T16, CMD_VAL16_HOME_SENSORS));
+  paramountValues.
+    push_back (ParaVal ("Guide", T32, CMD_VAL32_CONSTS_VEL_GUIDE));
+//  paramountValues.push_back (ParaVal ("Tics per revolution",
+  paramountValues.push_back (ParaVal ("PEC ratio", T16, CMD_VAL16_PEC_RATIO));
+  paramountValues.
+    push_back (ParaVal
+	       ("Maximum position error", T16, CMD_VAL16_ERROR_LIMIT));
+//  paramountValues.push_back (ParaVal ("Unit Id.",
+  paramountValues.
+    push_back (ParaVal ("EMF constants", T16, CMD_VAL16_EMF_FACTOR));
+  paramountValues.
+    push_back (ParaVal ("Home velocity high", T32, CMD_VAL32_HOMEVEL_HI));
+  paramountValues.
+    push_back (ParaVal ("Home velocity medium", T32, CMD_VAL32_HOMEVEL_MED));
+  paramountValues.
+    push_back (ParaVal ("Home velocity low", T32, CMD_VAL32_HOMEVEL_LO));
+  paramountValues.
+    push_back (ParaVal ("Home direction, sense", T16, CMD_VAL16_HOMEDIR));
+  paramountValues.
+    push_back (ParaVal
+	       ("Home mode, required, Joystick, In-out-in", T16,
+		CMD_VAL16_HOME_MODE));
+  paramountValues.
+    push_back (ParaVal ("Home index offset", T16, CMD_VAL16_HOME2INDEX));
+  paramountValues.
+    push_back (ParaVal ("PEC cutoff speed", T32, CMD_VAL32_PEC_CUT_SPEED));
+  paramountValues.
+    push_back (ParaVal ("Maximum voltage", T16, CMD_VAL16_MOTOR_VOLT_MAX));
+  paramountValues.
+    push_back (ParaVal ("Maximum gain", T16, CMD_VAL16_MOTOR_PROPORT_MAX));
+  paramountValues.
+    push_back (ParaVal ("Home sense 1", T16, CMD_VAL16_HOMESENSE1));
+  paramountValues.
+    push_back (ParaVal ("Home sense 2", T16, CMD_VAL16_HOMESENSE2));
+  paramountValues.push_back (ParaVal ("Cur pos", T32, CMD_VAL32_CURPOS));
+}
+
+Rts2DevTelParamount::~Rts2DevTelParamount (void)
+{
+  delete track0;
+  delete track1;
+}
+
+int
+Rts2DevTelParamount::processOption (int in_opt)
+{
+  double rec_sec;
   switch (in_opt)
     {
     case 'f':
-      device_file = optarg;
+      device_name = optarg;
+      break;
+    case 'P':
+      paramount_cfg = optarg;
+      break;
+    case 'R':
+      rec_sec = atof (optarg);
+      track_recalculate.tv_sec = (int) rec_sec;
+      track_recalculate.tv_usec =
+	(int) ((rec_sec - track_recalculate.tv_sec) * USEC_SEC);
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -291,228 +698,540 @@ Rts2DevTelescopeParamount::processOption (int in_opt)
 }
 
 int
-Rts2DevTelescopeParamount::init ()
+Rts2DevTelParamount::init ()
 {
+  CWORD16 motorState0, motorState1;
+  CWORD32 pos0, pos1;
   int ret;
+  int i;
   ret = Rts2DevTelescope::init ();
   if (ret)
     return ret;
 
-  state = TEL_POINT;		// fool-proof beginning...
+  ret = MKS3Init (device_name);
+  if (ret)
+    return -1;
 
-  while (1)
+  Rts2Config *config = Rts2Config::instance ();
+  ret = config->loadFile ();
+  if (ret)
+    return -1;
+  telLongtitude = config->getObserver ()->lng;
+  telLatitude = config->getObserver ()->lat;
+
+  ret = updateLimits ();
+  if (ret)
+    return -1;
+
+  moveState = TEL_SLEW;
+
+  ret0 = MKS3MotorOn (axis0);
+  ret1 = MKS3MotorOn (axis1);
+  checkRet ();
+
+  ret0 = MKS3PosAbort (axis0);
+  ret1 = MKS3PosAbort (axis1);
+  checkRet ();
+
+  // wait till it stop slew
+  for (i = 0; i < 10; i++)
     {
-      ret = MKS3Init (device_file);
-      if (!ret)
+      ret = updateStatus ();
+      if (ret)
+	return ret;
+      ret0 = MKS3MotorStatusGet (axis0, &motorState0);
+      ret1 = MKS3MotorStatusGet (axis1, &motorState1);
+      ret = checkRet ();
+      if (ret)
+	return ret;
+      if (!((motorState0 & MOTOR_SLEWING) || (motorState1 & MOTOR_SLEWING)))
 	break;
-
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeParamount::init cannot call MKS3Init, waiting 1 minute");
-      sleep (60);
+      if ((motorState0 & MOTOR_POSERRORLIM)
+	  || (motorState1 & MOTOR_POSERRORLIM))
+	{
+	  ret0 = MKS3ConstsMaxPosErrorSet (axis0, 16000);
+	  ret1 = MKS3ConstsMaxPosErrorSet (axis1, 16000);
+	  ret = checkRet ();
+	  if (ret)
+	    return ret;
+	  i = 10;
+	  break;
+	}
+      sleep (1);
     }
+
+  if (i == 10)
+    {
+      ret0 = MKS3PosCurGet (axis0, &pos0);
+      ret1 = MKS3PosCurGet (axis1, &pos1);
+      ret = checkRet ();
+      if (ret)
+	return ret;
+      ret0 = MKS3PosTargetSet (axis0, pos0);
+      ret1 = MKS3PosTargetSet (axis1, pos1);
+      ret = checkRet ();
+      if (ret)
+	return ret;
+    }
+
+  ret0 = MKS3MotorOff (axis0);
+  ret1 = MKS3MotorOff (axis1);
+  ret = checkRet ();
 
   return ret;
 }
 
-int
-Rts2DevTelescopeParamount::idle ()
+void
+Rts2DevTelParamount::updateTrack ()
 {
-  long axis0_counts;
-  long axis1_counts;
-  // get telescope coordinates
-  ret0 = MKS3PosCurGet (axis0, &axis0_counts);
-  ret1 = MKS3PosCurGet (axis1, &axis1_counts);
-  counts2sky (axis0_counts, axis1_counts, &telRa, &telDec, &telFlip);
+  double JD;
+  struct ln_equ_posn corr_pos;
+  double track_delta;
+  CWORD32 ac, dc, homeOff;
+  MKS3ObjTrackStat stat0, stat1;
+  int ret;
 
-  // TELESCOPE PART: zjistit, jak se ma dalekohled (update statutu,
-  // tj.  slew/neslew/motor stoji/je potreba uhoumovat/uz se
-  // nehoumuje)
+  gettimeofday (&track_next, NULL);
+  timeradd (&track_next, &track_recalculate, &track_next);
 
-  ret0 = MKS3StatusGet (axis0, &stat0);
-  ret1 = MKS3StatusGet (axis1, &stat1);
-
-  if (sky2counts (telRa, telDec, &axis0_counts, &axis1_counts))	// if failed, park us..
+  if (!track0 || !track1)
     {
-      startPark ();
-      maskState (0, TEL_MASK_MOVING, TEL_PARKING, "forced telescope park");
+      JD = ln_get_julian_from_sys ();
+      ret = getHomeOffset (homeOff);
+      if (ret)
+	return;
+
+      getTargetCorrected (&corr_pos, JD);
+
+      ret = sky2counts (&corr_pos, ac, dc, JD, homeOff);
+      if (ret)
+	return;
+      std::
+	cout << "Rts2DevTelParamount::updateTrack " << ac << " " << dc <<
+	std::endl;
+      ret0 = MKS3PosTargetSet (axis0, (long) ac);
+      ret1 = MKS3PosTargetSet (axis1, (long) dc);
+
+      // if that's too far..home us
+      if (ret0 == MAIN_AT_LIMIT)
+	{
+	  ret0 = MKS3Home (axis0, 0);
+	  moveState |= TEL_FORCED_HOMING0;
+	}
+      if (ret1 == MAIN_AT_LIMIT)
+	{
+	  ret1 = MKS3Home (axis1, 0);
+	  moveState |= TEL_FORCED_HOMING1;
+	}
+      checkRet ();
+      return;
     }
 
-  if (ret0 || ret1)
+  track_delta =
+    track_next.tv_sec - track_start_time.tv_sec + (track_next.tv_usec -
+						   track_start_time.tv_usec) /
+    USEC_SEC;
+  JD = ln_get_julian_from_timet (&track_next.tv_sec);
+  JD += track_next.tv_usec / USEC_SEC / 86400.0;
+  getTargetCorrected (&corr_pos, JD);
+  // calculate position at track_next time
+  sky2counts (&corr_pos, ac, dc, JD, 0);
+
+  std::
+    cout << "Track ac " << ac << " dc " << dc << " " << track_delta << std::
+    endl;
+  ret0 =
+    MKS3ObjTrackPointAdd (axis0, track0,
+			  track_delta +
+			  track0->prevPointTimeTicks / track0->sampleFreq,
+			  (CWORD32) (ac + (track_delta * 10000)), &stat0);
+  ret1 =
+    MKS3ObjTrackPointAdd (axis1, track1,
+			  track_delta +
+			  track1->prevPointTimeTicks / track1->sampleFreq,
+			  (CWORD32) (dc + (track_delta * 10000)), &stat1);
+  checkRet ();
+}
+
+int
+Rts2DevTelParamount::idle ()
+{
+  struct timeval now;
+  CWORD32 homeOff, ac = 0;
+  int ret;
+  // check if we aren't close to RA limit
+  ret = MKS3PosCurGet (axis0, &ac);
+  if (ret)
     {
-      if (state != TEL_TIMEOUT)
-	{
-	  syslog (LOG_DEBUG,
-		  "Didn't get status..h:%d d:%d (setting state to TEL_TIMEOUT)",
-		  ret0, ret1);
-	  state = TEL_TIMEOUT;
-	}
-      return Rts2DevTelescope::idle ();
+      sleep (10);
+      return Rts2Device::idle ();
+    }
+  ret = getHomeOffset (homeOff);
+  if (ret)
+    {
+      sleep (10);
+      return Rts2Device::idle ();
+    }
+  ac += homeOff;
+  if (telLatitude < 0)
+    {
+      if ((ac + acMargin) > acMax)
+	needStop ();
     }
   else
     {
-      if (state == TEL_TIMEOUT)
-	{
-	  // we don't like to be distributed for next 10 seconds..
-	  syslog (LOG_DEBUG, "Telescope's back! (wait 10s)");
-	  state = TEL_POINT;
-	  sleep (10);
-	}
+      if ((ac - acMargin) < acMin)
+	needStop ();
     }
-  // handle homing..
-  if (!(stat0 & MOTOR_HOMED) && !(stat0 & MOTOR_HOMING))
+  ret = updateStatus ();
+  if (ret)
     {
-      MKS3Home (axis0, 0);
-      state = TEL_HOMING;
-      maskState (0, TEL_MASK_MOVING, TEL_PARKING, "forced homing (ra axis)");
+      // give mount time to recover
+      sleep (10);
+      // don't check for move etc..
+      return Rts2Device::idle ();
     }
-  if (!(stat0 & MOTOR_HOMED) && !(stat0 & MOTOR_HOMING))
+  // issue new track request..if needed and we aren't homing
+  if ((getState (0) & TEL_MASK_MOVING) == TEL_OBSERVING
+      && !(status0 & MOTOR_HOMING) && !(status0 & MOTOR_SLEWING)
+      && !(status1 & MOTOR_HOMING) && !(status1 & MOTOR_SLEWING))
     {
-      MKS3Home (axis0, 0);
-      state = TEL_HOMING;
-      maskState (0, TEL_MASK_MOVING, TEL_PARKING, "forced homing (dec axis)");
+      gettimeofday (&now, NULL);
+      if (timercmp (&track_next, &now, <))
+	updateTrack ();
     }
-
-  if (stat0 & MOTOR_SLEWING || stat1 & MOTOR_SLEWING)
-    {
-      if (state != TEL_SLEWING)
-	{
-	  maskState (0, TEL_MASK_MOVING, TEL_MOVING,
-		     "moving started (paramount)");
-	  state = TEL_SLEWING;
-	}
-    }
-
+  // check for some critical stuff
   return Rts2DevTelescope::idle ();
 }
 
 int
-Rts2DevTelescopeParamount::ready ()
+Rts2DevTelParamount::baseInfo ()
 {
-  return state != TEL_TIMEOUT;
+  CWORD16 pMajor, pMinor, pBuild;
+  int ret;
+  ret = MKS3VersionGet (axis0, &pMajor, &pMinor, &pBuild);
+  if (ret)
+    return ret;
+  snprintf (telType, 64, "Paramount_%i_%i_%i", pMajor, pMinor, pBuild);
+  return 0;
 }
 
 int
-Rts2DevTelescopeParamount::baseInfo ()
+Rts2DevTelParamount::info ()
 {
-  return state != TEL_TIMEOUT;
+  CWORD32 ac = 0, dc = 0;
+  int ret;
+  ret0 = MKS3PosCurGet (axis0, &ac);
+  ret1 = MKS3PosCurGet (axis1, &dc);
+  ret = checkRet ();
+  if (ret)
+    return ret;
+  telSiderealTime = getLocSidTime ();
+  ret = counts2sky (ac, dc, telRa, telDec);
+  telAxis[0] = ac;
+  telAxis[1] = dc;
+  return ret;
 }
 
 int
-Rts2DevTelescopeParamount::info ()
+Rts2DevTelParamount::startMove (double tar_ra, double tar_dec)
 {
-  return state != TEL_TIMEOUT;
-}
+  int ret;
+  CWORD32 ac = 0;
+  CWORD32 dc = 0;
 
-int
-Rts2DevTelescopeParamount::startMove (double tar_ra, double tar_dec)
-{
-  long ac, dc;
-  if (!sky2counts (tar_ra, tar_dec, &ac, &dc))
+  delete track0;
+  delete track1;
+
+  track0 = NULL;
+  track1 = NULL;
+
+  ret = updateStatus ();
+  if (ret)
+    return -1;
+  ret0 = MKS_OK;
+  ret1 = MKS_OK;
+  // when we are homing, we will move after home finish
+  if (status0 & MOTOR_HOMING)
     {
-      state = TEL_SLEWING;
-      ret0 = MKS3PosTargetSet (axis0, ac);
-      ret1 = MKS3PosTargetSet (axis1, dc);
-      if (ret0 == MAIN_AT_LIMIT)
-	{
-	  // home if we reached limit (= stop motors)
-	  MKS3Home (axis0, 0);
-	}
-      if (ret1 == MAIN_AT_LIMIT)
-	{
-	  MKS3Home (axis1, 1);
-	}
-      return (ret0 || ret1 ? -1 : 0);	// some other error..
+      moveState = TEL_FORCED_HOMING0;
+      return 0;
     }
-  return -1;
-}
-
-int
-Rts2DevTelescopeParamount::isMoving ()
-{
-  if (stat0 & MOTOR_OFF || stat1 & MOTOR_OFF)
+  if (status1 & MOTOR_HOMING)
     {
-      state = TEL_STOP;
-      return -2;
+      moveState = TEL_FORCED_HOMING1;
+      return 0;
     }
-  return LOOP_DELAY;
+  if ((status0 & MOTOR_OFF) || (status1 & MOTOR_OFF))
+    {
+      ret0 = MKS3MotorOn (axis0);
+      ret1 = MKS3MotorOn (axis1);
+      usleep (USEC_SEC / 10);
+    }
+  ret = checkRet ();
+  if (ret)
+    {
+      return -1;
+    }
+
+  ret = sky2counts (tar_ra, tar_dec, ac, dc);
+  if (ret)
+    {
+      return -1;
+    }
+
+  moveState = TEL_SLEW;
+
+  ret0 = MKS3PosTargetSet (axis0, (long) ac);
+  ret1 = MKS3PosTargetSet (axis1, (long) dc);
+
+  // if that's too far..home us
+  if (ret0 == MAIN_AT_LIMIT)
+    {
+      ret0 = MKS3Home (axis0, 0);
+      moveState |= TEL_FORCED_HOMING0;
+    }
+  if (ret1 == MAIN_AT_LIMIT)
+    {
+      ret1 = MKS3Home (axis1, 0);
+      moveState |= TEL_FORCED_HOMING1;
+    }
+  return checkRet ();
 }
 
 int
-Rts2DevTelescopeParamount::endMove ()
+Rts2DevTelParamount::isMoving ()
 {
+  // we were called from idle loop
+  if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
+    {
+      if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+	return USEC_SEC / 10;
+      // re-move
+      struct ln_equ_posn tar;
+      getTargetCorrected (&tar);
+      return startMove (tar.ra, tar.dec);
+    }
+  if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+    return USEC_SEC / 10;
+  // we reached destination
+  return -2;
+}
+
+int
+Rts2DevTelParamount::endMove ()
+{
+  int ret;
+//  int ret_track;
   ret0 = MKS3MotorOn (axis0);
   ret1 = MKS3MotorOn (axis1);
-  state = TEL_POINT;
-  return (ret0 || ret1 ? -1 : 0);
+  ret = checkRet ();
+  // init tracking structures
+  gettimeofday (&track_start_time, NULL);
+  timerclear (&track_next);
+/*  if (!track0)
+    track0 = new MKS3ObjTrackInfo ();
+  if (!track1)
+    track1 = new MKS3ObjTrackInfo ();
+  ret0 = MKS3ObjTrackInit (axis0, track0);
+  ret1 = MKS3ObjTrackInit (axis1, track1);
+  ret_track = checkRet ();
+  if (!ret_track)
+    updateTrack ();
+  std::cout << "Track init " << ret0 << " " << ret1 << std::endl; */
+  // 1 sec sleep to get time to settle down
+  sleep (1);
+  return ret;
 }
 
 int
-Rts2DevTelescopeParamount::stopMove ()
+Rts2DevTelParamount::stopMove ()
 {
+  int ret;
+  // if we issue startMove after abor, we will get to position after homing is performed
+  if ((moveState & TEL_FORCED_HOMING0) || (moveState & TEL_FORCED_HOMING1))
+    return 0;
+  // check if we are homing..
+  ret = updateStatus ();
+  if (ret)
+    return -1;
+  if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+    return 0;
   ret0 = MKS3PosAbort (axis0);
   ret1 = MKS3PosAbort (axis1);
-  usleep (LOOP_DELAY);
-  return (ret0 || ret1 ? -1 : 0);
+  return checkRet ();
 }
 
 int
-Rts2DevTelescopeParamount::startPark ()
+Rts2DevTelParamount::startPark ()
 {
+  int ret;
+
+  delete track0;
+  delete track1;
+
+  track0 = NULL;
+  track1 = NULL;
+
+  ret0 = MKS3MotorOn (axis0);
+  ret1 = MKS3MotorOn (axis1);
+  ret = checkRet ();
+  if (ret)
+    return -1;
+  ret0 = MKS3Home (axis0, 0);
+  ret1 = MKS3Home (axis1, 0);
+  moveState = TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1;
+  return checkRet ();
+}
+
+int
+Rts2DevTelParamount::isParking ()
+{
+  int ret;
+  if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
+    {
+      if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
+	return USEC_SEC / 10;
+      moveState = TEL_SLEW;
+      // move to park position
+      ret0 = MKS3PosTargetSet (axis0, PARK_AXIS0);
+      ret1 = MKS3PosTargetSet (axis1, PARK_AXIS1);
+      ret = updateStatus ();
+      if (ret)
+	return -1;
+      return USEC_SEC / 10;
+    }
+  // home finished, only check if we get to proper position
+  if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+    return USEC_SEC / 10;
+  return -2;
+}
+
+int
+Rts2DevTelParamount::endPark ()
+{
+  int ret;
+  ret = updateStatus ();
+  if (ret)
+    return -1;
+  if (!(status0 & MOTOR_HOMED) || !(status1 & MOTOR_HOMED))
+    return -1;
   ret0 = MKS3MotorOff (axis0);
   ret1 = MKS3MotorOff (axis1);
-  return (ret0 || ret1 ? -1 : 0);
+  return checkRet ();
 }
 
 int
-Rts2DevTelescopeParamount::isParking ()
-{
-  if (stat0 & MOTOR_HOMING || stat1 && MOTOR_HOMING)
-    {
-      // check again for homing..
-      return LOOP_DELAY;
-    }
-  if (stat0 & MOTOR_OFF || stat1 & MOTOR_OFF)
-    {
-      return -2;
-      state = TEL_STOP;
-    }
-  MKS3MotorOff (axis0);
-  MKS3MotorOff (axis1);
-  return LOOP_DELAY;
-}
-
-int
-Rts2DevTelescopeParamount::endPark ()
+Rts2DevTelParamount::correctOffsets (double cor_ra, double cor_dec,
+				     double real_ra, double real_dec)
 {
   return 0;
 }
 
-Rts2DevTelescopeParamount *device;
-
-void
-switchoffSignal (int sig)
+int
+Rts2DevTelParamount::correct (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec)
 {
-  syslog (LOG_DEBUG, "switchoffSignal signal: %i", sig);
-  delete device;
-  exit (1);
+  return 0;
 }
 
+int
+Rts2DevTelParamount::saveModel ()
+{
+  // dump Paramount stuff
+  int ret;
+  std::ofstream os (paramount_cfg);
+  if (os.fail ())
+    return -1;
+  ret = saveAxis (os, axis0);
+  if (ret)
+    return -1;
+  ret = saveAxis (os, axis1);
+  if (ret)
+    return -1;
+  os.close ();
+  return 0;
+}
+
+int
+Rts2DevTelParamount::loadModel ()
+{
+  std::string name;
+  std::ifstream is (paramount_cfg);
+  MKS3Id *used_axe = NULL;
+  int axisId;
+  int ret;
+
+  if (is.fail ())
+    return -1;
+  while (!is.eof ())
+    {
+      is >> name;
+      // find a comment, swap axis
+      if (name.find ("**") == 0)
+	{
+	  is >> name >> axisId;
+	  is.ignore (2000, is.widen ('\n'));
+	  if (is.fail ())
+	    return -1;
+	  switch (axisId)
+	    {
+	    case 0:
+	      used_axe = &axis0;
+	      break;
+	    case 1:
+	      used_axe = &axis1;
+	      break;
+	    default:
+	      return -1;
+	    }
+	}
+      else
+	{
+	  // read until ":"
+	  while (true)
+	    {
+	      if (name.find (':') != name.npos)
+		break;
+	      std::string name_ap;
+	      is >> name_ap;
+	      if (is.fail ())
+		return -1;
+	      name = name + std::string (" ") + name_ap;
+	    }
+	  name = name.substr (0, name.size () - 1);
+	  // find value and load it
+	  for (std::vector < ParaVal >::iterator iter =
+	       paramountValues.begin (); iter != paramountValues.end ();
+	       iter++)
+	    {
+	      if ((*iter).isName (name))
+		{
+		  if (!used_axe)
+		    return -1;
+		  // found value
+		  ret = (*iter).readAxis (is, *used_axe);
+		  if (ret)
+		    return -1;
+		  is.ignore (2000, is.widen ('\n'));
+		}
+	    }
+	}
+    }
+  return 0;
+}
+
+Rts2DevTelParamount *device;
 
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevTelescopeParamount (argc, argv);
-
-  signal (SIGINT, switchoffSignal);
-  signal (SIGTERM, switchoffSignal);
-
-  int ret = -1;
+  int ret;
+  device = new Rts2DevTelParamount (argc, argv);
   ret = device->init ();
   if (ret)
-    {
-      fprintf (stderr, "Cannot find telescope, exiting\n");
-      exit (1);
-    }
-  device->run ();
+    return ret;
+  ret = device->run ();
   delete device;
+  return ret;
 }

@@ -12,6 +12,22 @@
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
+/* image types, taken from fitsio.h */
+#define CAMERA_BYTE_IMG		8
+#define CAMERA_SHORT_IMG	16
+#define CAMERA_LONG_IMG		32
+#define CAMERA_FLOAT_IMG	-32
+#define CAMERA_DOUBLE_IMG	-64
+#define CAMERA_USHORT_IMG	20
+#define CAMERA_ULONG_IMG	40
+
+#define CAMERA_COOL_OFF		0
+#define CAMERA_COOL_MAX		1
+#define CAMERA_COOL_HOLD	2
+#define CAMERA_COOL_SHUTDOWN	3
+
+class Rts2DevCamera;
+
 class ChipSubset
 {
 public:
@@ -52,7 +68,9 @@ class CameraChip
 private:
   int sendChip (Rts2Conn * conn, char *name, int value);
   int sendChip (Rts2Conn * conn, char *name, float value);
-  int send_readout_data_failed;
+  int sendChip (Rts2Conn * conn, char *name, double value);
+  time_t readout_started;
+  int shutter_state;
 
 protected:
   int chipId;
@@ -65,8 +83,10 @@ protected:
   ChipSubset *chipReadout;
   ChipSubset *chipUsedReadout;
 
-  float pixelX;
-  float pixelY;
+  Rts2DevCamera *camera;
+
+  double pixelX;
+  double pixelY;
 
   int binningVertical;
   int binningHorizontal;
@@ -75,9 +95,10 @@ protected:
   float gain;
   int sendReadoutData (char *data, size_t data_size);
 public:
-    CameraChip (int in_chip_id);
-    CameraChip (int in_chip_id, int in_width, int in_height, float in_pixelX,
-		float in_pixelY, float in_gain);
+    CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
+    CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+		int in_height, double in_pixelX, double in_pixelY,
+		float in_gain);
     virtual ~ CameraChip (void);
   void setSize (int in_width, int in_height, int in_x, int in_y)
   {
@@ -103,7 +124,7 @@ public:
     binningHorizontal = in_hori;
     return 0;
   }
-  int box (int in_x, int in_y, int in_width, int in_height)
+  virtual int box (int in_x, int in_y, int in_width, int in_height)
   {
     // tests for -1 -> full size
     if (in_x == -1)
@@ -124,11 +145,12 @@ public:
     chipReadout->height = in_height;
     return 0;
   }
+  int center (int in_w, int in_h);
   virtual int startExposure (int light, float exptime)
   {
     return -1;
   }
-  int setExposure (float exptime);
+  int setExposure (float exptime, int in_shutter_state);
   virtual long isExposing ();
   virtual int endExposure ();
   virtual int stopExposure ()
@@ -137,23 +159,39 @@ public:
   }
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   void setReadoutConn (Rts2DevConnData * dataConn);
-  void deleteConnection (Rts2Conn * conn)
+  virtual void deleteConnection (Rts2Conn * conn)
   {
     if (conn == readoutConn)
       {
 	readoutConn = NULL;
-	endReadout ();
       }
   }
   virtual int endReadout ();
   void clearReadout ();
   virtual int sendFirstLine ();
   virtual int readoutOneLine ();
+  virtual void cancelPriorityOperations ();
 };
 
 class Rts2DevCamera:public Rts2Device
 {
+private:
+  char *focuserDevice;
+  char *wheelDevice;
+  enum
+  { NOT_MOVE, MOVE } filterMove;
+  int filterExpChip;
+  float filterExpTime;
+  int lastFilterNum;
+  float lastExp;
+
+  int exposureFilter;
+
+  int camStartExposure (int chip, int light, float exptime);
+  // when we call that function, we must be sure that either filter or wheelDevice != NULL
+  int camFilter (int new_filter);
 protected:
+  int willConnect (Rts2Address * in_addr);
   char *device_file;
   // camera chips
   CameraChip *chips[MAX_CHIPS];
@@ -165,6 +203,7 @@ protected:
   int tempRegulation;
   int coolingPower;
   int fan;
+
   int canDF;			// if the camera can make dark frames
   char ccdType[64];
   char serialNumber[64];
@@ -182,88 +221,85 @@ public:
 
   virtual int processOption (int in_opt);
   virtual int initChips ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
-  long checkExposures ();
-  int checkReadouts ();
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  void checkExposures ();
+  void checkReadouts ();
+
+  virtual void postEvent (Rts2Event * event);
 
   virtual int idle ();
 
-  virtual void deleteConnection (Rts2Conn * conn)
+  virtual int deleteConnection (Rts2Conn * conn)
   {
     for (int i = 0; i < chipNum; i++)
       chips[i]->deleteConnection (conn);
-    Rts2Device::deleteConnection (conn);
+    return Rts2Device::deleteConnection (conn);
   }
 
   virtual int changeMasterState (int new_state);
-
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
   virtual int ready ()
   {
     return -1;
-  };
+  }
   virtual int info ()
   {
     return -1;
-  };
+  }
   virtual int baseInfo ()
   {
     return -1;
-  };
+  }
+
+  virtual int scriptEnds ();
 
   virtual int camChipInfo (int chip)
   {
     return -1;
-  };
+  }
   virtual int camExpose (int chip, int light, float exptime)
   {
     return chips[chip]->startExposure (light, exptime);
-  };
+  }
   virtual long camWaitExpose (int chip);
   virtual int camStopExpose (int chip)
   {
     return chips[chip]->stopExposure ();
-  };
-  virtual int camBox (int chip, int x, int y, int width, int height)
-  {
-    return -1;
-  };
+  }
   virtual int camReadout (int chip)
   {
     return -1;
-  };
+  }
   virtual int camStopRead (int chip)
   {
     return chips[chip]->endReadout ();
-  };
+  }
   virtual int camCoolMax ()
   {
     return -1;
-  };
+  }
   virtual int camCoolHold ()
   {
     return -1;
-  };
+  }
   virtual int camCoolTemp (float new_temp)
   {
     return -1;
-  };
+  }
   virtual int camCoolShutdown ()
   {
     return -1;
-  };
-  virtual int camFilter (int new_filter)
-  {
-    return -1;
-  };
+  }
 
   // callback functions from camera connection
-  virtual int ready (Rts2Conn * conn);
-  virtual int info (Rts2Conn * conn);
-  virtual int baseInfo (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn);
   int camChipInfo (Rts2Conn * conn, int chip);
   int camExpose (Rts2Conn * conn, int chip, int light, float exptime);
   int camStopExpose (Rts2Conn * conn, int chip);
   int camBox (Rts2Conn * conn, int chip, int x, int y, int width, int height);
+  int camCenter (Rts2Conn * conn, int chip, int in_w, int in_h);
   int camReadout (Rts2Conn * conn, int chip);
   int camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin);
   int camStopRead (Rts2Conn * conn, int chip);
@@ -272,6 +308,28 @@ public:
   int camCoolTemp (Rts2Conn * conn, float new_temp);
   int camCoolShutdown (Rts2Conn * conn);
   int camFilter (Rts2Conn * conn, int new_filter);
+
+  virtual int getFilterNum ();
+
+  // focuser functions
+  int setFocuser (Rts2Conn * conn, int new_set);
+  int stepFocuser (Rts2Conn * conn, int step_count);
+  int getFocPos ();
+
+  virtual int grantPriority (Rts2Conn * conn)
+  {
+    if (focuserDevice)
+      {
+	if (conn->isName (focuserDevice))
+	  return 1;
+      }
+    return Rts2Device::grantPriority (conn);
+  }
+
+  int getLastFilterNum ()
+  {
+    return lastFilterNum;
+  }
 };
 
 class Rts2DevConnCamera:public Rts2DevConn

@@ -3,6 +3,7 @@
 #endif
 
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -10,7 +11,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libnova/libnova.h>
-#include <mcheck.h>
 
 #include "maps.h"
 #include "status.h"
@@ -26,8 +26,7 @@ private:
   int _Tstat_handle, _Tctrl_handle;
   struct T9_ctrl *Tctrl;
   struct T9_stat *Tstat;
-  double get_loc_sid_time ();
-  int timeout;
+  time_t timeout;
   time_t startTime;
 public:
     Rts2DevTelescopeBridge (int argc, char **argv);
@@ -42,11 +41,11 @@ public:
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();
-  virtual int stop ();
+  virtual int stopMove ();
 };
 
-Rts2DevTelescopeBridge::Rts2DevTelescopeBridge (int argc, char **argv):
-Rts2DevTelescope (argc, argv)
+Rts2DevTelescopeBridge::Rts2DevTelescopeBridge (int in_argc, char **in_argv):
+Rts2DevTelescope (in_argc, in_argv)
 {
   _Tctrl_handle = -1;
   _Tstat_handle = -1;
@@ -113,20 +112,13 @@ Rts2DevTelescopeBridge::baseInfo ()
   return 0;
 }
 
-double
-Rts2DevTelescopeBridge::get_loc_sid_time ()
-{
-  return 15 * ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()) +
-    Tstat->longtitude;
-}
-
 int
 Rts2DevTelescopeBridge::info ()
 {
   telRa = Tstat->ra;
   telDec = Tstat->dec;
 
-  telSiderealTime = get_loc_sid_time ();
+  telSiderealTime = getLocSidTime ();
   telLocalTime = Tstat->localtime;
   telFlip = Tstat->flip;
 
@@ -139,13 +131,12 @@ Rts2DevTelescopeBridge::info ()
 int
 Rts2DevTelescopeBridge::startMove (double ra, double dec)
 {
-  int timeout = 0;
   Tctrl->power = 0;		//changed
   Tctrl->ra = ra;
   Tctrl->dec = dec;
 
-  timeout = 0;
   time (&startTime);
+  timeout = startTime + MOVE_TIMEOUT;
 
   return 0;
 }
@@ -157,20 +148,19 @@ Rts2DevTelescopeBridge::isMoving ()
   time (&now);
   if (now - startTime < 3)
     return USEC_SEC;
-  timeout++;
   // finish due to error
-  if (timeout > 200)
+  if (now > timeout)
     {
       return -1;
     }
+  // calculate distance..
+  if (getMoveTargetSep () > 3)
+    {
+      return USEC_SEC;
+    }
   if (TEL_STATUS != TEL_POINT)
     {
-      return 1000000;
-    }
-  // bridge 20 sec timeout
-  if (timeout < 20)
-    {
-      return 1000000;
+      return USEC_SEC;
     }
   return -2;
 }
@@ -184,9 +174,15 @@ Rts2DevTelescopeBridge::endMove ()
 int
 Rts2DevTelescopeBridge::startPark ()
 {
-  Tctrl->ra = get_loc_sid_time () - 30;
-  Tctrl->dec = Tstat->dec;
+  double park_ra, park_dec;
+  Tctrl->power = 0;
+  park_ra = getLocSidTime () * 15.0 - 30;
+  park_dec = 0;
+  Tctrl->ra = park_ra;
+  Tctrl->dec = park_dec;
+  setTarget (park_ra, park_dec);
   time (&startTime);
+  timeout = startTime + MOVE_TIMEOUT;
   return 0;
 }
 
@@ -204,22 +200,35 @@ Rts2DevTelescopeBridge::endPark ()
 }
 
 int
-Rts2DevTelescopeBridge::stop ()
+Rts2DevTelescopeBridge::stopMove ()
 {
   // should do the work
   Tctrl->power = 0;		//changed
   Tctrl->ra = telRa;
   Tctrl->dec = telDec;
 
-  timeout = 201;
+  time (&timeout);
+  timeout--;
+  return Rts2DevTelescope::stopMove ();
+}
+
+Rts2DevTelescopeBridge *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
 }
 
 int
 main (int argc, char **argv)
 {
-  mtrace ();
+  device = new Rts2DevTelescopeBridge (argc, argv);
 
-  Rts2DevTelescopeBridge *device = new Rts2DevTelescopeBridge (argc, argv);
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

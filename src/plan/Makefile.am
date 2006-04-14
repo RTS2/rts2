@@ -1,29 +1,41 @@
 # $Id$
 
-bin_PROGRAMS = rts2-planc rts2-single rts2-target-info
+bin_PROGRAMS = rts2-executor rts2-imgproc rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
+	       rts2-plan
+noinst_HEADERS = rts2execcli.h rts2script.h rts2connimgprocess.h rts2selector.h rts2scriptelement.h \
+		 rts2devscript.h rts2devcliphot.h rts2spiral.h rts2scriptblock.h rts2scriptguiding.h
 
-noinst_PROGRAMS = test
+EXTRA_DIST = rts2selector.ec rts2devcliphot.ec
 
-noinst_HEADERS = selector.h median.h target.h
+rts2_executor_SOURCES = executor.cpp rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2connimgprocess.cpp rts2devscript.cpp \
+			rts2devcliphot.cpp rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp
+rts2_executor_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_executor_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
-rts2_planc_SOURCES = planc.cpp selector.cpp target.cpp sub_targets.cpp median.c centering.cpp
-rts2_single_SOURCES = single.cpp selector.cpp target.cpp sub_targets.cpp median.c centering.cpp
-rts2_target_info_SOURCES = target-info.cpp
-test_SOURCES = test.cpp target.cpp sub_targets.cpp selector.cpp median.c centering.cpp
+rts2_imgproc_SOURCES = imgproc.cpp rts2connimgprocess.cpp 
+rts2_imgproc_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_imgproc_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
-EXTRA_DIST = selector.ec target-info.ec
+rts2_selector_SOURCES = selector.cpp rts2selector.cpp
+rts2_selector_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_selector_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
 
-rts2_planc_CXXFLAGS = @LIBPG_CFLAGS@
-rts2_planc_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_PTHREAD@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2fits.a ../utils/libdevcli.a ../db/libdb.a
+rts2_seltest_SOURCES = seltest.cpp rts2selector.cpp
+rts2_seltest_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_seltest_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
-rts2_single_CXXFLAGS = @LIBPG_CFLAGS@
-rts2_single_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_PTHREAD@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2fits.a ../utils/libdevcli.a ../db/libdb.a
+rts2_targetinfo_SOURCES = targetinfo.cpp rts2script.cpp rts2scriptelement.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2connimgprocess.cpp \
+			  rts2spiral.cpp
+rts2_targetinfo_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_targetinfo_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
 
-rts2_target_info_CXXFLAGS = @LIBPG_CFLAGS@
-rts2_target_info_LDFLAGS = @LIBPG_LIBS@ @LIB_NOVA@ @LIB_M@ @LIB_ECPG@ ../utils/libdevcli.a ../db/libdb.a
+rts2_marchive_SOURCES = marchive.cpp
+rts2_marchive_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_marchive_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
-test_CXXFLAGS = @LIBPG_CFLAGS@
-test_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_PTHREAD@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2fits.a ../utils/libdevcli.a ../db/libdb.a
+rts2_plan_SOURCES = planapp.cpp
+rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_plan_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^

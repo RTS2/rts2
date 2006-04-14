@@ -3,10 +3,10 @@
 #endif
 
 #include <math.h>
-#include <mcheck.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include "camera_cpp.h"
 #include "../utils/rts2device.h"
@@ -52,8 +52,9 @@ class CameraSbigChip:public CameraChip
   char *send_top;
   int sbig_readout_mode;
 public:
-    CameraSbigChip (int in_chip_id, int in_width, int in_height,
-		    float in_pixelX, float in_pixelY, float in_gain);
+    CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+		    int in_height, double in_pixelX, double in_pixelY,
+		    float in_gain);
     virtual ~ CameraSbigChip ();
   virtual int setBinning (int in_vert, int in_hori)
   {
@@ -70,10 +71,11 @@ public:
   virtual int readoutOneLine ();
 };
 
-CameraSbigChip::CameraSbigChip (int in_chip_id, int in_width, int in_height,
-				float in_pixelX, float in_pixelY,
-				float in_gain):
-CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
+CameraSbigChip::CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id,
+				int in_width, int in_height, double in_pixelX,
+				double in_pixelY, float in_gain):
+CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
+	    in_gain)
 {
   dest = new unsigned short[in_width * in_height];
   GetCCDInfoParams req;
@@ -101,14 +103,11 @@ CameraSbigChip::isExposing ()
   int complete = FALSE;
 
   qcsp.command = CC_START_EXPOSURE;
-  if (SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) ==
-      CE_NO_ERROR)
-    {
-      if (chipId == 0)
-	complete = (qcsr.status & 0x03) != 0x02;
-      else
-	complete = (qcsr.status & 0x0C) != 0x08;
-    }
+  SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr);
+  if (chipId == 0)
+    complete = (qcsr.status & 0x03) != 0x02;
+  else
+    complete = (qcsr.status & 0x0C) != 0x08;
   if (complete)
     return -2;
   return 0;
@@ -118,6 +117,8 @@ int
 CameraSbigChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   int ret = CameraChip::startReadout (dataConn, conn);
+  if (ret)
+    return ret;
   StartReadoutParams srp;
   srp.ccd = chipId;
   srp.left = srp.top = 0;
@@ -131,7 +132,7 @@ CameraSbigChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   rlp.readoutMode = sbig_readout_mode;
   dest_top = dest;
   send_top = (char *) dest;
-  return ret;
+  return 0;
 }
 
 int
@@ -146,20 +147,18 @@ CameraSbigChip::endReadout ()
 int
 CameraSbigChip::readoutOneLine ()
 {
-  if (readoutLine < 0)
-    return -1;
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
-      if (readoutLine < chipUsedReadout->y)
+      if (readoutLine < (chipUsedReadout->y / usedBinningVertical))
 	{
 	  DumpLinesParams dlp;
 	  dlp.ccd = chipId;
 	  dlp.lineLength =
-	    ((chipUsedReadout->y - readoutLine) / usedBinningVertical);
+	    (chipUsedReadout->y / usedBinningVertical) - readoutLine;
 	  dlp.readoutMode = sbig_readout_mode;
 	  SBIGUnivDrvCommand (CC_DUMP_LINES, &dlp, NULL);
-	  readoutLine = chipReadout->y;
+	  readoutLine = chipReadout->y / usedBinningVertical;
 	}
       SBIGUnivDrvCommand (CC_READOUT_LINE, &rlp, dest_top);
       dest_top += rlp.pixelLength;
@@ -173,29 +172,21 @@ CameraSbigChip::readoutOneLine ()
       if (ret)
 	return ret;
     }
-  if (!readoutConn)
-    {
-      return -3;
-    }
+  int send_data_size;
+  sendLine++;
+  send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
+  if (send_data_size < 0)
+    return -1;
+  send_top += send_data_size;
   if (send_top < (char *) dest_top)
-    {
-      int send_data_size;
-      sendLine++;
-      send_data_size =
-	sendReadoutData (send_top, (char *) dest_top - send_top);
-      if (send_data_size < 0)
-	return -2;
-
-      send_top += send_data_size;
-      return 0;
-    }
-  endReadout ();
+    return 0;
   return -2;
 }
 
 class Rts2DevCameraSbig:public Rts2DevCamera
 {
-  CSBIGCam *pcam;
+private:
+  CSBIGCam * pcam;
   int checkSbigHw (PAR_ERROR ret)
   {
     if (ret == CE_NO_ERROR)
@@ -204,6 +195,13 @@ class Rts2DevCameraSbig:public Rts2DevCamera
     return -1;
   }
   int fanState (int newFanState);
+  int usb_port;
+  char *reqSerialNumber;
+
+  SBIG_DEVICE_TYPE getDevType ();
+
+protected:
+  virtual int processOption (int in_opt);
 public:
   Rts2DevCameraSbig (int argc, char **argv);
   virtual ~ Rts2DevCameraSbig ();
@@ -224,13 +222,17 @@ public:
   virtual int camCoolHold ();
   virtual int camCoolTemp (float new_temp);
   virtual int camCoolShutdown ();
-  virtual int camFilter (int new_filter);
 };
 
-Rts2DevCameraSbig::Rts2DevCameraSbig (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraSbig::Rts2DevCameraSbig (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   pcam = NULL;
+  usb_port = 0;
+  reqSerialNumber = NULL;
+  addOption ('u', "usb_port", 1, "USB port number - defaults to 0");
+  addOption ('S', "serial_number", 1,
+	     "SBIG serial number to accept for that camera");
 }
 
 Rts2DevCameraSbig::~Rts2DevCameraSbig ()
@@ -239,13 +241,99 @@ Rts2DevCameraSbig::~Rts2DevCameraSbig ()
 }
 
 int
+Rts2DevCameraSbig::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'u':
+      usb_port = atoi (optarg);
+      if (usb_port <= 0 || usb_port > 3)
+	{
+	  usb_port = 0;
+	  return -1;
+	}
+      break;
+    case 'S':
+      if (usb_port)
+	return -1;
+      reqSerialNumber = optarg;
+      break;
+    default:
+      return Rts2DevCamera::processOption (in_opt);
+    }
+  return 0;
+}
+
+SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
+{
+  switch (usb_port)
+    {
+    case 1:
+      return DEV_USB1;
+      break;
+    case 2:
+      return DEV_USB2;
+      break;
+    case 3:
+      return DEV_USB3;
+      break;
+    case 4:
+      return DEV_USB4;
+    default:
+      return DEV_USB;
+    }
+}
+
+int
 Rts2DevCameraSbig::init ()
 {
   int ret_c_init;
+  OpenDeviceParams odp;
+
   ret_c_init = Rts2DevCamera::init ();
   if (ret_c_init)
     return ret_c_init;
-  pcam = new CSBIGCam (DEV_USB);
+
+  pcam = new CSBIGCam ();
+  if (pcam->OpenDriver () != CE_NO_ERROR)
+    {
+      delete pcam;
+      return -1;
+    }
+
+  // find camera by serial number..
+  if (reqSerialNumber)
+    {
+      QueryUSBResults qusbres;
+      if (pcam->SBIGUnivDrvCommand (CC_QUERY_USB, NULL, &qusbres) !=
+	  CE_NO_ERROR)
+	{
+	  delete pcam;
+	  return -1;
+	}
+      // search for serial number..
+      for (usb_port = 0; usb_port < 4; usb_port++)
+	{
+	  if (qusbres.usbInfo[usb_port].cameraFound == TRUE
+	      && !strncmp (qusbres.usbInfo[usb_port].serialNumber,
+			   reqSerialNumber, 10))
+	    break;
+	}
+      if (usb_port == 4)
+	{
+	  delete pcam;
+	  return -1;
+	}
+      usb_port++;		//cause it's 1 based..
+    }
+
+  odp.deviceType = getDevType ();
+  if (pcam->OpenDevice (odp) != CE_NO_ERROR)
+    {
+      delete pcam;
+      return -1;
+    }
+
   if (pcam->GetError () != CE_NO_ERROR)
     {
       delete pcam;
@@ -274,7 +362,7 @@ Rts2DevCameraSbig::init ()
       return -1;
     }
   cc =
-    new CameraSbigChip (0, res.readoutInfo[0].width,
+    new CameraSbigChip (this, 0, res.readoutInfo[0].width,
 			res.readoutInfo[0].height,
 			res.readoutInfo[0].pixelWidth,
 			res.readoutInfo[0].pixelHeight,
@@ -288,7 +376,7 @@ Rts2DevCameraSbig::init ()
       return -1;
     }
   cc =
-    new CameraSbigChip (1, res.readoutInfo[0].width,
+    new CameraSbigChip (this, 1, res.readoutInfo[0].width,
 			res.readoutInfo[0].height / 2,
 			res.readoutInfo[0].pixelWidth,
 			res.readoutInfo[0].pixelHeight,
@@ -310,7 +398,6 @@ Rts2DevCameraSbig::ready ()
 int
 Rts2DevCameraSbig::info ()
 {
-  MY_LOGICAL enabled;
   QueryTemperatureStatusResults qtsr;
   QueryCommandStatusParams qcsp;
   QueryCommandStatusResults qcsr;
@@ -344,12 +431,11 @@ Rts2DevCameraSbig::baseInfo ()
   GetCCDInfoResults2 res;
   PAR_ERROR ret;
 
-  req.request = CCD_INFO_EXTENDED2_IMAGING;
+  req.request = CCD_INFO_EXTENDED;
   ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &req, &res);
   if (ret != CE_NO_ERROR)
     return -1;
-  //strncpy (serialNumber, res.serialNumber, 10);
-  strncpy (serialNumber, "007", 10);
+  strcpy (serialNumber, res.serialNumber);
   canDF = 1;
   return 0;
 }
@@ -485,22 +571,26 @@ Rts2DevCameraSbig::camCoolShutdown ()
   if (fanState (FALSE))
     return -1;
   ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
-  return (checkSbigHw (ret));
+  return checkSbigHw (ret);
 }
 
-int
-Rts2DevCameraSbig::camFilter (int new_filter)
+Rts2DevCameraSbig *device;
+
+void
+killSignal (int sig)
 {
-
-
+  if (device)
+    delete device;
+  exit (0);
 }
 
 int
 main (int argc, char **argv)
 {
-  mtrace ();
+  device = new Rts2DevCameraSbig (argc, argv);
 
-  Rts2DevCameraSbig *device = new Rts2DevCameraSbig (argc, argv);
+  signal (SIGTERM, killSignal);
+  signal (SIGINT, killSignal);
 
   int ret;
   ret = device->init ();

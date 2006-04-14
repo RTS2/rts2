@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.5.0, pkubanek@asu.cas.cz)
+AC_INIT(rts2, 0.6.1, pkubanek@asu.cas.cz)
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
@@ -47,14 +47,6 @@ esac],[xfocusc=yes])
 
 AM_CONDITIONAL(XFOCUSC, test x$xfocusc = xyes)
 
-AC_ARG_WITH(pgsql,
-[  --without-pgsql         don't build pgsql dependent clients],
-[case "${withval}" in
-	yes) psql=yes ;;
-	no)  psql=no ;;
-	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
-esac],[psql=yes])
-
 AC_ARG_WITH(libnova,
 [  --without-libnova       don't build libnova dependent programs],
 [case "${withval}" in
@@ -64,6 +56,14 @@ AC_ARG_WITH(libnova,
 esac],[libnova=yes])
 
 AM_CONDITIONAL(LIBNOVA, test x$libnova = xyes)
+
+AC_ARG_WITH(pgsql,
+[  --without-pgsql         don't build pgsql dependent clients],
+[case "${withval}" in
+	yes) psql=yes ;;
+	no)  psql=no ;;
+	*) AC_MSG_ERROR(bad value ${withval} for --without-pgsql) ;;
+esac],[psql=yes])
 
 AC_ARG_WITH(wcs,
 [  --without-wcs           don't build WCS dependent programs],
@@ -118,6 +118,19 @@ AM_CONDITIONAL(ALTA, test x$ALTA != xno)
 AC_SUBST(ALTA)
 AC_SUBST(LIB_ALTA)
 AC_SUBST(INC_ALTA)
+
+# FLI..
+AC_ARG_WITH(fli,
+[  --with-fli             path to libfli CCD driver, build FLI CCD driver],
+FLI="${withval}";
+LIB_FLI="-L${FLI} -lfli";
+INC_FLI="-I${FLI}",
+[FLI=no])
+
+AM_CONDITIONAL(FLI, test x$FLI != xno)
+AC_SUBST(FLI)
+AC_SUBST(LIB_FLI)
+AC_SUBST(INC_FLI)
 
 # check for OPENTPL
 AC_ARG_WITH(opentpl,
@@ -186,7 +199,6 @@ if test "x${wcs}" = "xyes"; then
 **** libwcs directory somewhere, where I can acces them
 EOF
 	exit 1])
-	AC_SUBST([WCS_SUBDIRS], ['writers planc grbc focusc'])
 fi
 
 AC_CHECK_LIB([ncurses], [mvwprintw], LIB_NCURSES="-lncurses";
@@ -204,15 +216,13 @@ AC_SUBST(LIB_PANEL), [cat <<EOF
 EOF
 exit 1])
 
-if test "x${libnova}" = "xyes"; then
-	AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
-	AC_SUBST(LIB_NOVA), [cat << EOF
+AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
+AC_SUBST(LIB_NOVA), [cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
-	exit 1])
-	AC_SUBST([LIBNOVA_SUBDIRS], ['teld monitor writers focusc serverd'])
-fi
+exit 1])
+AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
 AC_SUBST(LIB_PTHREAD), [cat << EOF
@@ -225,14 +235,6 @@ if test "x"$xfocusc = "xyes"; then
 	AC_PATH_XTRA
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 fi
-
-AC_CHECK_LIB([efence], [malloc], LIB_EFENCE="-lefence", [cat << EOF
-**** You don't have libefence library installed.
-**** Please try to get it somewhere.
-EOF
-LIB_EFENCE=""])
-
-AC_SUBST(LIB_EFENCE)
 
 AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg";
 AC_SUBST(LIB_JPEG), [cat << EOF
@@ -273,6 +275,8 @@ AC_SUBST(debug)
 
 CFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CFLAGS)
+CXXFLAGS="-Wall -Wshadow -g"
+AC_SUBST(CXXFLAGS)
 
 LDFLAGS=""
 AC_SUBST(LDFLAGS)
@@ -289,12 +293,11 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
-if test "x${libnova}" = "xyes" -a "x${psql}" = "xyes"; then
-	# Check for PostgreSQL
-	AC_POSTGRESQL
-	AC_ECPG
-	AC_SUBST([PSQL_SUBDIRS],['db plan pgsql grb bckimages sql'])
-fi
+AC_POSTGRESQL
+AC_ECPG
+
+# Check for gsoap
+AC_GSOAP
 
 # Checks for library functions.
 AC_FUNC_FORK
@@ -303,7 +306,7 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([atexit dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow])
 
 AC_CHECK_HEADERS([limits.h]) 
 AC_FUNC_CHOWN 
@@ -325,25 +328,29 @@ AC_OUTPUT([Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile
-	   src/db/Makefile
+	   src/camd/apogee/Makefile
 	   src/dome/Makefile
+	   src/filterd/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
 	   src/grb/Makefile
-	   src/grb/bacodine/Makefile
-	   src/grb/ibas/Makefile
 	   src/mirror/Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
 	   src/sql/Makefile
+	   src/sql/create/Makefile
+	   src/sql/drop/Makefile
+	   src/sql/update/Makefile
 	   src/pgsql/Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
-	   src/teld/para/Makefile
+	   src/teld/model/Makefile
 	   src/utils/Makefile
            src/wcs/Makefile
 	   src/writers/Makefile
+	   src/utilsdb/Makefile
+	   src/db/Makefile
 	   man/rts2.1
 	   man/rts2.conf.5
 	   man/rts2-centrald.1
@@ -364,10 +371,16 @@ CCD's:
   sbig		${SBIG}
   andor         ${ANDOR}
   alta          ${ALTA}
+  fli		${FLI}
 
 MOUNT's:
   opentpl       ${OPENTPL}
   paralib       ${PARALIB}
+
+DOME's:
+  PCI8255       ${PCI8255}
+
+gsoap           ${gsoap}  
 
 ***************************************
 

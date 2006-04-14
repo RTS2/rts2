@@ -2,11 +2,10 @@
 
 sqldatadir = ${datadir}/doc/@PACKAGE@/sql
 
-nodist_sqldata_DATA = 	create_functions.sql	\
-			create_tables.sql	\
-			create_views.sql
+SUBDIRS = create drop update
 
-dist_sqldata_DATA = 	create_typ_wcs.sql
+dist_sqldata_DATA =     init_data.sql		\
+			grant.sql.in		\
+			README
 
-grant.sql: grant.sql.in
-	cat $< | sed -e 's/__WWWUSER__/www-data/g' > $@
+dist_sqldata_SCRIPTS =  rts2-builddb

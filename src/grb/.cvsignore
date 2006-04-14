@@ -2,7 +2,9 @@
 .libs
 Makefile
 Makefile.in
-rts2-grbc
+rts2-grbd
+rts2-grbforward
+rts2conngrb.cpp
 *~
 *.log
 

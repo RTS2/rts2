@@ -1,5 +1,5 @@
 /*!
- * @file Defines extension to PostgresSQL to handle efectivelly WCS informations.
+ * @file Defines extension to PostgresSQL to enable libnova calculations
  *
  * @author petr
  *
@@ -26,103 +26,43 @@
 #include <postgres.h>
 #include <fmgr.h>
 
-#define AIRMASS_SCALE	750.0
-
-PG_FUNCTION_INFO_V1 (obj_alt);
-PG_FUNCTION_INFO_V1 (obj_az);
-PG_FUNCTION_INFO_V1 (obj_rise);
-PG_FUNCTION_INFO_V1 (obj_set);
-PG_FUNCTION_INFO_V1 (obj_airmass);
+PG_FUNCTION_INFO_V1 (ln_angular_separation);
+PG_FUNCTION_INFO_V1 (ln_airmass);
 
 Datum
-obj_alt (PG_FUNCTION_ARGS)
+ln_angular_separation (PG_FUNCTION_ARGS)
 {
-  struct ln_equ_posn object;
-  struct ln_lnlat_posn observer;
-  double ST;
+  struct ln_equ_posn pos1, pos2;
+
+  if (PG_ARGISNULL (0) || PG_ARGISNULL (1)
+      || PG_ARGISNULL (2) || PG_ARGISNULL (3))
+    PG_RETURN_NULL ();
+
+  pos1.ra = PG_GETARG_FLOAT8 (0);
+  pos1.dec = PG_GETARG_FLOAT8 (1);
+  pos2.ra = PG_GETARG_FLOAT8 (2);
+  pos2.dec = PG_GETARG_FLOAT8 (3);
+
+  PG_RETURN_FLOAT8 (ln_get_angular_separation (&pos1, &pos2));
+}
+
+Datum
+ln_airmass (PG_FUNCTION_ARGS)
+{
+  struct ln_equ_posn pos;
+  struct ln_lnlat_posn obs;
   struct ln_hrz_posn hrz;
-  int i;
+  // ra, dec, lng, lat, JD
+  if (PG_ARGISNULL (0) || PG_ARGISNULL (1)
+      || PG_ARGISNULL (2) || PG_ARGISNULL (3) || PG_ARGISNULL (4))
+    PG_RETURN_NULL ();
 
-  // get input parameters...
-  for (i = 0; i < 5; i++)
-    if PG_ARGISNULL
-      (i) PG_RETURN_NULL ();
+  pos.ra = PG_GETARG_FLOAT8 (0);
+  pos.dec = PG_GETARG_FLOAT8 (1);
+  obs.lng = PG_GETARG_FLOAT8 (2);
+  obs.lat = PG_GETARG_FLOAT8 (3);
 
-  object.ra = PG_GETARG_FLOAT8 (0);
-  object.dec = PG_GETARG_FLOAT8 (1);
-  ST = PG_GETARG_FLOAT8 (2);
-  observer.lng = PG_GETARG_FLOAT8 (3);
-  observer.lat = PG_GETARG_FLOAT8 (4);
+  ln_get_hrz_from_equ (&pos, &obs, PG_GETARG_FLOAT8 (4), &hrz);
 
-  ln_get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
-
-  PG_RETURN_FLOAT8 (hrz.alt);
-}
-
-Datum
-obj_az (PG_FUNCTION_ARGS)
-{
-  struct ln_equ_posn object;
-  struct ln_lnlat_posn observer;
-  double ST;
-  struct ln_hrz_posn hrz;
-  int i;
-
-  // get input parameters...
-  for (i = 0; i < 5; i++)
-    if PG_ARGISNULL
-      (i) PG_RETURN_NULL ();
-
-  object.ra = PG_GETARG_FLOAT8 (0);
-  object.dec = PG_GETARG_FLOAT8 (1);
-  ST = PG_GETARG_FLOAT8 (2);
-  observer.lng = PG_GETARG_FLOAT8 (3);
-  observer.lat = PG_GETARG_FLOAT8 (4);
-
-  ln_get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
-
-  PG_RETURN_FLOAT8 (hrz.az);
-}
-
-Datum
-obj_rise (PG_FUNCTION_ARGS)
-{
-
-
-
-}
-
-Datum
-obj_set (PG_FUNCTION_ARGS)
-{
-
-
-}
-
-Datum
-obj_airmass (PG_FUNCTION_ARGS)
-{
-  struct ln_equ_posn object;
-  struct ln_lnlat_posn observer;
-  double ST;
-  struct ln_hrz_posn hrz;
-  double x;
-  int i;
-
-  // get input parameters...
-  for (i = 0; i < 5; i++)
-    if PG_ARGISNULL
-      (i) PG_RETURN_NULL ();
-
-  object.ra = PG_GETARG_FLOAT8 (0);
-  object.dec = PG_GETARG_FLOAT8 (1);
-  ST = PG_GETARG_FLOAT8 (2);
-  observer.lng = PG_GETARG_FLOAT8 (3);
-  observer.lat = PG_GETARG_FLOAT8 (4);
-
-  ln_get_hrz_from_equ_sidereal_time (&object, &observer, ST, &hrz);
-
-  x = AIRMASS_SCALE * sin (M_PI * hrz.alt / 180.0);
-
-  PG_RETURN_FLOAT8 (sqrt (x * x + 2 * AIRMASS_SCALE + 1) - x);
+  PG_RETURN_FLOAT4 (ln_get_airmass (hrz.alt, 750));
 }

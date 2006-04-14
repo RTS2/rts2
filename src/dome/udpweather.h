@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <time.h>
 
+#include "../utils/rts2connnosend.h"
 #include "dome.h"
 
 // how long after weather was bad can weather be good again; in
@@ -21,32 +22,40 @@
 #define FRAM_BAD_WINDSPEED_TIMEOUT 600
 #define FRAM_CONN_TIMEOUT	   600
 
-// how long we will keep lastWeatherStatus as actual (in second)
-#define FRAM_WEATHER_TIMEOUT	40
-// should be in 0-99 range, as 99 is maximum value which station can measure
-#define FRAM_MAX_WINDSPEED      50
-#define FRAM_MAX_PEAK_WINDSPEED 50
-
-class Rts2ConnFramWeather:public Rts2Conn
+class Rts2ConnFramWeather:public Rts2ConnNoSend
 {
 private:
   Rts2DevDome * master;
+
+protected:
   int weather_port;
+  int weather_timeout;
 
   int rain;
   float windspeed;
   time_t lastWeatherStatus;
   time_t lastBadWeather;
-  time_t nextGoodWeather;
 
   void setWeatherTimeout (time_t wait_time);
+  void badSetWeatherTimeout (time_t wait_time);
 
-protected:
-
+  virtual int connectionError (int last_data_size)
+  {
+    return 0;
+  }
 public:
-    Rts2ConnFramWeather (int in_weather_port, Rts2DevDome * in_master);
+    Rts2ConnFramWeather (int in_weather_port, int in_weather_timeout,
+			 Rts2DevDome * in_master);
   virtual int init ();
   virtual int receive (fd_set * set);
   // return 1 if weather is favourable to open dome..
   virtual int isGoodWeather ();
+  int getRain ()
+  {
+    return rain;
+  }
+  float getWindspeed ()
+  {
+    return windspeed;
+  }
 };

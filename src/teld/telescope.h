@@ -1,23 +1,33 @@
 #ifndef __RTS2_TELD_CPP__
 #define __RTS2_TELD_CPP__
 
+#include <libnova/libnova.h>
 #include <sys/time.h>
 #include <time.h>
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+// types of corrections
+#define COR_ABERATION	0x01
+#define COR_PRECESSION	0x02
+#define COR_REFRACTION	0x04
+
 // types of reset
 // acquired from 
 
 typedef enum
-{ RESET_RESTART, RESET_WARM_START, RESET_COLD_START }
+{ RESET_RESTART, RESET_WARM_START, RESET_COLD_START, RESET_INIT_START }
 resetStates;
+
+class Rts2TelModel;
 
 class Rts2DevTelescope:public Rts2Device
 {
 private:
   Rts2Conn * move_connection;
+  int moveInfoCount;
+  int moveInfoMax;
   int moveMark;
   int numCorr;
   int maxCorrNum;
@@ -26,10 +36,41 @@ private:
   double locCorDec;
   int locCorNum;
 
+  // last errors
+  double raCorr;
+  double decCorr;
+  double posErr;
+
   int knowPosition;
   double lastRa;
   double lastDec;
+  struct ln_equ_posn lastTar;
+
+  void checkMoves ();
+  void checkGuiding ();
+
+  struct timeval dir_timeouts[4];
+
+  char *modelFile;
+  Rts2TelModel *model;
+
+  char *modelFile0;
+  Rts2TelModel *model0;
+
+  void applyAberation (struct ln_equ_posn *pos, double JD);
+  void applyPrecession (struct ln_equ_posn *pos, double JD);
+  void applyRefraction (struct ln_equ_posn *pos, double JD);
+
 protected:
+  int corrections;
+
+  void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change,
+		   int flip, double JD);
+  void applyCorrections (struct ln_equ_posn *pos, double JD);
+  // apply corrections (at system time)
+  void applyCorrections (double &tar_ra, double &tar_dec);
+
+  virtual int willConnect (Rts2Address * in_addr);
   char *device_file;
   char telType[64];
   char telSerialNumber[64];
@@ -43,6 +84,9 @@ protected:
   double telLatitude;
   double telAltitude;
   double telParkDec;
+  double telGuidingSpeed;	// in multiply of sidereal speed..eg 1 == 15 arcsec/sec
+  double searchRadius;
+  double searchSpeed;		// in multiply of HA speed..eg 1 == 15 arcsec / sec
   virtual int isMovingFixed ()
   {
     return isMoving ();
@@ -51,14 +95,28 @@ protected:
   {
     return -2;
   }
+  virtual int isSearching ()
+  {
+    return -2;
+  }
   virtual int isParking ()
   {
     return -2;
   }
   int move_fixed;
+  virtual int processOption (int in_opt);
   virtual void cancelPriorityOperations ()
   {
-    stopMove ();
+    if ((getState (0) & TEL_MASK_SEARCHING) == TEL_SEARCH)
+      {
+	stopSearch ();
+      }
+    else
+      {
+	stopMove ();
+      }
+    clearStatesPriority ();
+    Rts2Device::cancelPriorityOperations ();
   }
   resetStates nextReset;
 
@@ -66,33 +124,57 @@ protected:
   {
     return numCorr;
   }
+  // returns 0 when we need to 
+  int setTarget (double tar_ra, double tar_dec);
+  void getTarget (struct ln_equ_posn *out_tar)
+  {
+    out_tar->ra = lastTar.ra;
+    out_tar->dec = lastTar.dec;
+  }
+  void getTargetCorrected (struct ln_equ_posn *out_tar)
+  {
+    getTargetCorrected (out_tar, ln_get_julian_from_sys ());
+  }
+  void getTargetCorrected (struct ln_equ_posn *out_tar, double JD);
+  void unsetTarget ()
+  {
+    lastTar.ra = -1000;
+    lastTar.dec = -1000;
+  }
+  double getMoveTargetSep ();
+  void getTargetAltAz (struct ln_hrz_posn *hrz);
+  void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
+  double getLocSidTime ();
+  double getLocSidTime (double JD);
+  double getLstDeg (double JD);
+
+  virtual bool isBellowResolution (double ra_off, double dec_off)
+  {
+    return (ra_off == 0 && dec_off == 0);
+  }
+
+  void needStop ()
+  {
+    maskState (0, TEL_MASK_NEED_STOP, TEL_NEED_STOP);
+  }
 public:
   Rts2DevTelescope (int argc, char **argv);
-  virtual int processOption (int in_opt);
+  virtual ~ Rts2DevTelescope (void);
   virtual int init ();
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
-  int checkMoves ();
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   virtual int idle ();
+  virtual void postEvent (Rts2Event * event);
   virtual int changeMasterState (int new_state);
-  virtual void deleteConnection (Rts2Conn * in_conn)
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
+  virtual int deleteConnection (Rts2Conn * in_conn)
   {
     if (in_conn == move_connection)
       move_connection = NULL;
+    return Rts2Device::deleteConnection (in_conn);
   }
 
-  // callback functions for Camera alone
-  virtual int ready ()
-  {
-    return -1;
-  }
-  virtual int info ()
-  {
-    return -1;
-  }
-  virtual int baseInfo ()
-  {
-    return -1;
-  }
+  // callback functions for telescope alone
   virtual int startMove (double tar_ra, double tar_dec)
   {
     return -1;
@@ -101,10 +183,7 @@ public:
   {
     return -1;
   }
-  virtual int stopMove ()
-  {
-    return -1;
-  }
+  virtual int stopMove ();
   virtual int startMoveFixed (double tar_ha, double tar_dec)
   {
     return -1;
@@ -113,7 +192,20 @@ public:
   {
     return -1;
   }
+  virtual int startSearch ()
+  {
+    return -1;
+  }
+  virtual int stopSearch ();
+  virtual int endSearch ();
   virtual int setTo (double set_ra, double set_dec)
+  {
+    return -1;
+  }
+  // isued for first correction which will be sended while telescope
+  // moves to another target; can be used to set fixed offsets
+  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
+			      double real_dec)
   {
     return -1;
   }
@@ -132,7 +224,8 @@ public:
   }
   virtual int change (double chng_ra, double chng_dec)
   {
-    return -1;
+    // we have actual telRa, as Rts2DevTelescope::change (Rts2Conn ..) calls info
+    return startMove (telRa + chng_ra, telDec + chng_dec);
   }
   virtual int saveModel ()
   {
@@ -164,14 +257,23 @@ public:
   {
     return -1;
   }
+  double getLatitude ()
+  {
+    return telLatitude;
+  }
+
+  virtual int startGuide (char dir, double dir_dist);
+  virtual int stopGuide (char dir);
+  virtual int stopGuideAll ();
 
   // callback functions from telescope connection
-  int ready (Rts2Conn * conn);
-  int info (Rts2Conn * conn);
-  int baseInfo (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn);
+  virtual int sendBaseInfo (Rts2Conn * conn);
 
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
+  int startSearch (Rts2Conn * conn, double radius, double in_searchSpeed);
+  int startResyncMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
   int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec,
 	       double real_ra, double real_dec);
@@ -182,6 +284,8 @@ public:
   int stopWorm (Rts2Conn * conn);
   int startWorm (Rts2Conn * conn);
   int resetMount (Rts2Conn * conn, resetStates reset_state);
+  virtual int getFlip ();
+  virtual int grantPriority (Rts2Conn * conn);
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn

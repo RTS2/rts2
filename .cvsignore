@@ -14,3 +14,12 @@ stamp-h
 autom4te*
 rts2-*.tar.gz
 rts2-*.tar.bz2
+autogen.sh
+compile
+config.guess
+config.sub
+depcomp
+ltmain.sh
+macros
+stamp-h2.in
+

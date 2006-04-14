@@ -1,6 +1,6 @@
 ### Detect PostgreSQL
 
-AC_DEFUN(AC_POSTGRESQL,
+AC_DEFUN([AC_POSTGRESQL],
 [
 if test -z "$PG_CONFIG" ; then
     AC_PATH_PROG( PG_CONFIG, pg_config, no )
@@ -31,7 +31,7 @@ AC_SUBST(LIBPG_SERVER_LIBS)
 AC_SUBST(LIBPG_SERVER_CFLAGS)
 ])
 
-AC_DEFUN(AC_ECPG, 
+AC_DEFUN([AC_ECPG], 
 [
 if test -z "$ECPG" ; then
     AC_PATH_PROG( ECPG, ecpg, no, $PATH:$PG_CONFIG_SERVER_BINDIR)
@@ -44,7 +44,27 @@ fi
 AC_CHECK_LIB([ecpg], [ECPGconnect], LIB_ECPG="-lecpg"; AC_SUBST(LIB_ECPG),
 	AC_MSG_ERROR(You haven't ecpg library. Please install libecpg-dev package."))
 
-
 AC_SUBST(ECPG)
 ])
 
+# test for GSOAP
+AC_DEFUN([AC_GSOAP],
+[
+AC_CHECK_PROG([gsoap], [soapcpp2], "yes", "no")
+
+LIB_GSOAP=""
+LIB_GSOAP_CFLAGS=""
+
+if test x$gsoap = xyes ; then
+  LIB_GSOAP="-lgsoap"
+  SOAP=soapcpp2
+  SOAP_FLAGS=""
+fi
+
+AC_SUBST(LIB_GSOAP_CFLAGS)
+AC_SUBST(LIB_GSOAP)
+AC_SUBST(SOAP)
+AC_SUBST(SOAP_FLAGS)
+
+AM_CONDITIONAL(GSOAP, test x$gsoap = xyes)
+])

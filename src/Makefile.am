@@ -4,6 +4,19 @@ SUBDIRS = \
 	camd	\
 	phot	\
 	dome	\
+	focusd  \
+	mirror  \
+	filterd \
 	wcs \
-	${LIBNOVA_SUBDIRS} \
-	${PSQL_SUBDIRS}
+	utilsdb \
+	teld \
+	writers \
+	monitor \
+	focusc \
+	serverd \
+	plan \
+	grb \
+	pgsql \
+	bckimages \
+	sql \
+	db

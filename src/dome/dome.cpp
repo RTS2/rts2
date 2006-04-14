@@ -2,19 +2,71 @@
 #define _GNU_SOURCE
 #endif
 
+#include <math.h>
+
 #include "status.h"
 
 #include "dome.h"
 
-Rts2DevDome::Rts2DevDome (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_DOME, 5552, "DOME")
+Rts2DevDome::Rts2DevDome (int in_argc, char **in_argv, int in_device_type):
+Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
   char *states_names[1] = { "dome" };
   setStateNames (1, states_names);
 
   sw_state = -1;
+  temperature = nan ("f");
+  humidity = nan ("f");
+  power_telescope = 0;
+  power_cameras = 0;
+  nextOpen = -1;
+  rain = 1;
+  windspeed = nan ("f");	// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
+
+  maxWindSpeed = 50;
+  maxPeekWindspeed = 50;
+  weatherCanOpenDome = false;
+
+  addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
+  addOption ('P', "max_peek_windspeed", 1,
+	     "maximal allowed windspeed (in km/h");
+  addOption ('O', "weather_can_open", 0,
+	     "specified that option if weather signal is allowed to open dome");
 
   observingPossible = 0;
+
+  time (&nextGoodWeather);
+
+  nextGoodWeather += DEF_WEATHER_TIMEOUT;
+}
+
+int
+Rts2DevDome::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'W':
+      maxWindSpeed = atoi (optarg);
+      break;
+    case 'P':
+      maxPeekWindspeed = atoi (optarg);
+      break;
+    case 'O':
+      weatherCanOpenDome = true;
+      break;
+    default:
+      return Rts2Device::processOption (in_opt);
+    }
+  return 0;
+}
+
+void
+Rts2DevDome::domeWeatherGood ()
+{
+  if (weatherCanOpenDome)
+    {
+      sendMaster ("on");
+    }
 }
 
 int
@@ -23,7 +75,7 @@ Rts2DevDome::init ()
   return Rts2Device::init ();
 }
 
-Rts2Conn *
+Rts2DevConn *
 Rts2DevDome::createConnection (int in_sock, int conn_num)
 {
   return new Rts2DevConnDome (in_sock, this);
@@ -45,12 +97,15 @@ Rts2DevDome::checkOpening ()
       if (ret == -1)
 	{
 	  endOpen ();
+	  infoAll ();
 	  maskState (0, DOME_DOME_MASK, DOME_OPENED,
 		     "opening finished with error");
 	}
       if (ret == -2)
 	{
-	  if (endOpen ())
+	  ret = endOpen ();
+	  infoAll ();
+	  if (ret)
 	    {
 	      maskState (0, DOME_DOME_MASK, DOME_OPENED,
 			 "dome opened with error");
@@ -73,12 +128,15 @@ Rts2DevDome::checkOpening ()
       if (ret == -1)
 	{
 	  endClose ();
+	  infoAll ();
 	  maskState (0, DOME_DOME_MASK, DOME_CLOSED,
 		     "closing finished with error");
 	}
       if (ret == -2)
 	{
-	  if (endClose ())
+	  ret = endClose ();
+	  infoAll ();
+	  if (ret)
 	    {
 	      maskState (0, DOME_DOME_MASK, DOME_CLOSED,
 			 "dome closed with error");
@@ -89,7 +147,10 @@ Rts2DevDome::checkOpening ()
 	    }
 	}
     }
-  setTimeout (10 * USEC_SEC);
+  // if we are back in idle state..beware of copula state (bit non-structural, but I 
+  // cannot find better solution)
+  if ((getState (0) & DOME_COP_MASK_MOVE) == DOME_COP_NOT_MOVE)
+    setTimeout (10 * USEC_SEC);
   return 0;
 }
 
@@ -101,42 +162,23 @@ Rts2DevDome::idle ()
 }
 
 int
-Rts2DevDome::ready (Rts2Conn * conn)
+Rts2DevDome::sendInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = ready ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
-      return -1;
-    }
-  return 0;
-}
-
-int
-Rts2DevDome::info (Rts2Conn * conn)
-{
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
-      return -1;
-    }
   conn->sendValue ("dome", sw_state);
+  conn->sendValue ("temperature", temperature);
+  conn->sendValue ("humidity", humidity);
+  conn->sendValue ("power_telescope", power_telescope);
+  conn->sendValue ("power_cameras", power_cameras);
+  conn->sendValueTime ("next_open", &nextOpen);
+  conn->sendValue ("rain", rain);
+  conn->sendValue ("windspeed", windspeed);
+  conn->sendValue ("observingPossible", observingPossible);
   return 0;
 }
 
 int
-Rts2DevDome::baseInfo (Rts2Conn * conn)
+Rts2DevDome::sendBaseInfo (Rts2Conn * conn)
 {
-  int ret;
-  ret = baseInfo ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "dome not ready");
-      return -1;
-    }
   conn->sendValue ("type", domeModel);
   return 0;
 }
@@ -174,8 +216,22 @@ Rts2DevDome::setMasterStandby ()
   if ((serverState != SERVERD_OFF)
       && ((getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY))
     {
-      sendMaster ("standby");
+      return sendMaster ("standby");
     }
+  return 0;
+}
+
+int
+Rts2DevDome::setMasterOn ()
+{
+  int serverState;
+  serverState = getMasterState ();
+  if ((serverState != SERVERD_OFF)
+      && ((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY))
+    {
+      return sendMaster ("on");
+    }
+  return 0;
 }
 
 int
@@ -186,6 +242,7 @@ Rts2DevDome::changeMasterState (int new_state)
     {
       switch (new_state & SERVERD_STATUS_MASK)
 	{
+	case SERVERD_EVENING:
 	case SERVERD_DUSK:
 	case SERVERD_NIGHT:
 	case SERVERD_DAWN:
@@ -196,14 +253,26 @@ Rts2DevDome::changeMasterState (int new_state)
     }
   switch (new_state)
     {
-    case SERVERD_NIGHT:
-      return observing ();
     case SERVERD_DUSK:
+    case SERVERD_NIGHT:
     case SERVERD_DAWN:
+      return observing ();
+    case SERVERD_EVENING:
+    case SERVERD_MORNING:
       return standby ();
     default:
       return off ();
     }
+}
+
+void
+Rts2DevDome::setWeatherTimeout (time_t wait_time)
+{
+  time_t next;
+  time (&next);
+  next += wait_time;
+  if (next > nextGoodWeather)
+    nextGoodWeather = next;
 }
 
 int
@@ -211,12 +280,10 @@ Rts2DevConnDome::commandAuthorized ()
 {
   if (isCommand ("open"))
     {
-      CHECK_PRIORITY;
       return master->openDome ();
     }
   else if (isCommand ("close"))
     {
-      CHECK_PRIORITY;
       return master->closeDome ();
     }
   return Rts2DevConn::commandAuthorized ();

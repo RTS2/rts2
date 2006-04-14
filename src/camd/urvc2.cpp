@@ -17,13 +17,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/io.h>
-#include <mcheck.h>
 
 #include "urvc2/urvc.h"
 #include "camera_cpp.h"
-
-#include "camera_info.h"
-#include "filter.h"
 
 #define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
 
@@ -34,8 +30,9 @@ class CameraUrvc2Chip:public CameraChip
   unsigned short *dest_top;
   char *send_top;
 public:
-    CameraUrvc2Chip (int in_chip_id, int in_width, int in_height,
-		     int in_pixelX, int in_pixelY, float in_gain);
+    CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+		     int in_height, double in_pixelX, double in_pixelY,
+		     float in_gain);
     virtual ~ CameraUrvc2Chip ();
 
   virtual int setBinning (int in_vert, int in_hori);
@@ -46,10 +43,12 @@ public:
   virtual int readoutOneLine ();
 };
 
-CameraUrvc2Chip::CameraUrvc2Chip (int in_chip_id, int in_width, int in_height,
-				  int in_pixelX, int in_pixelY,
+CameraUrvc2Chip::CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id,
+				  int in_width, int in_height,
+				  double in_pixelX, double in_pixelY,
 				  float in_gain):
-CameraChip (in_chip_id, in_width, in_height, in_pixelX, in_pixelY, in_gain)
+CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
+	    in_gain)
 {
   OpenCCD (in_chip_id, &C);
   img = new unsigned short int[C->horzImage * C->vertImage];
@@ -92,6 +91,8 @@ CameraUrvc2Chip::isExposing ()
     return ret;
   int imstate;
   imstate = CCDImagingState (C);
+  if (imstate == -1)
+    return -1;
   if (imstate)
     {
       return 100;		// recheck in 100 msec
@@ -102,19 +103,24 @@ CameraUrvc2Chip::isExposing ()
 int
 CameraUrvc2Chip::readoutOneLine ()
 {
-  if (readoutLine < 0)
-    return -1;
-  if (!readoutLine)
+  if (readoutLine == 0)
     {
       if (CCDReadout
-	  (img, C, chipReadout->x, chipReadout->y, chipReadout->width,
-	   chipReadout->height, binningVertical))
+	  (img, C, chipReadout->x / binningVertical,
+	   chipReadout->y / binningVertical,
+	   chipReadout->width / binningVertical,
+	   chipReadout->height / binningVertical, binningVertical))
 	{
+	  syslog (LOG_DEBUG,
+		  "CameraUrvc2Chip::readoutOneLine readout return not-null");
 	  return -1;
 	}
       dest_top =
-	img + (chipReadout->width * chipReadout->height / binningVertical);
+	img +
+	((chipReadout->width / binningVertical) *
+	 (chipReadout->height / binningVertical));
       readoutLine = 1;
+      // save to file
       return 0;
     }
   if (sendLine == 0)
@@ -124,26 +130,16 @@ CameraUrvc2Chip::readoutOneLine ()
       if (ret)
 	return ret;
     }
-  if (!readoutConn)
-    {
-      return -1;
-    }
+  int send_data_size;
+  sendLine++;
+  send_data_size += sendReadoutData (send_top, (char *) dest_top - send_top);
+  if (send_data_size < 0)
+    return -1;
+  send_top += send_data_size;
   if (send_top < (char *) dest_top)
-    {
-      int send_data_size;
-      sendLine++;
-      send_data_size +=
-	sendReadoutData (send_top, (char *) dest_top - send_top);
-      if (send_data_size < 0)
-	return -2;
-
-      send_top += send_data_size;
-      return 0;
-    }
-  endReadout ();
+    return 0;
   return -2;
 }
-
 
 class Rts2DevCameraUrvc2:public Rts2DevCamera
 {
@@ -180,8 +176,6 @@ public:
   }
   virtual int camCoolTemp (float coolpoint);
   virtual int camCoolShutdown ();
-
-  virtual int camFilter (int new_filter);
   CAMERA_TYPE getCameraID (void)
   {
     return cameraID;
@@ -219,6 +213,7 @@ int
 Rts2FilterUrvc2::init ()
 {
   setFilterNum (1);
+  return 0;
 }
 
 int
@@ -318,7 +313,8 @@ Rts2DevCameraUrvc2::set_fan (int fan_state)
 }
 
 int
-Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int fan, int state)
+Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int in_fan,
+			     int state)
 {
   MicroTemperatureRegulationParams cool;
 
@@ -326,7 +322,7 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int fan, int state)
   cool.ccdSetpoint = setpt;
   cool.preload = prel;
 
-  set_fan (fan);
+  set_fan (in_fan);
 
   if (MicroCommand (MC_REGULATE_TEMP, cameraID, &cool, NULL))
     return -1;
@@ -335,8 +331,8 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int fan, int state)
   return 0;
 }
 
-Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int argc, char **argv):Rts2DevCamera (argc,
-	       argv)
+Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
+	       in_argv)
 {
   cameraID = DEFAULT_CAMERA;
   tempRegulation = -1;
@@ -364,7 +360,7 @@ Rts2DevCameraUrvc2::init ()
 
   syslog (LOG_DEBUG, "::init");
 
-  if (i = MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &gvr))
+  if ((i = MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &gvr)))
     {
       syslog (LOG_DEBUG, "GET_VERSION ret: %i", i);
       return -1;
@@ -372,7 +368,7 @@ Rts2DevCameraUrvc2::init ()
 
   cameraID = (CAMERA_TYPE) gvr.cameraID;
 
-  if (i = MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
+  if ((i = MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr)))
     {
       syslog (LOG_DEBUG, "TEMP_STATUS ret: %i", i);
       return -1;
@@ -391,7 +387,7 @@ Rts2DevCameraUrvc2::init ()
     {
       syslog (LOG_DEBUG, "new CameraUrvc2Chip %i", i);
       chips[i] =
-	new CameraUrvc2Chip (i, Cams[eePtr.model].horzImage,
+	new CameraUrvc2Chip (this, i, Cams[eePtr.model].horzImage,
 			     Cams[eePtr.model].vertImage,
 			     Cams[eePtr.model].pixelX,
 			     Cams[eePtr.model].pixelY,
@@ -523,7 +519,7 @@ int
 Rts2DevCameraUrvc2::camCoolTemp (float coolpoint)	/* set direct setpoint */
 {
   ad_temp = ccd_c2ad (coolpoint) + 0x7;	// zaokrohlovat a neorezavat!
-  camCoolTemp ();
+  return camCoolTemp ();
 }
 
 int
@@ -532,24 +528,16 @@ Rts2DevCameraUrvc2::camCoolShutdown ()	/* ramp to ambient */
   return setcool (0, 0, 0, FAN_OFF, CAMERA_COOL_OFF);
 }
 
-/* Should be improved to support st237 filter wheel */
-int
-Rts2DevCameraUrvc2::camFilter (int new_filter)	/* set camera filter */
-{
-}
-
 int
 main (int argc, char **argv)
 {
-  mtrace ();
-
   Rts2DevCameraUrvc2 *device = new Rts2DevCameraUrvc2 (argc, argv);
 
   int ret;
   ret = device->init ();
   if (ret)
     {
-      fprintf (stderr, "Cannot initialize camera - exiting!");
+      fprintf (stderr, "Cannot initialize camera - exiting!\n");
       exit (0);
     }
   device->run ();

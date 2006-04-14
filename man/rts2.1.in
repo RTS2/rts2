@@ -1,12 +1,23 @@
 .pc
 .TH rts2 1 "@DATE@" "RTS2 @VERSION@" "Remote Telescope System 2 description"
 .SH NAME
-rts2 \- Remote Telescope System 2 description
-.SH BASIC FACTS
+rts2 \- Remote Telescope System 2
+.SH BASIC FEATURES
 
+RTS2 is targeted for autonomous observations using robotic telescopes.
 
 .SH PROTOCOL
 
+.SH REFERENCES
+
+See:
+ \fBPetr Kubanek\fP RTS2 - Remote Telescope System, 2nd Version,
+ Proceedings of the IVth GRB Afterglow Workshop, Hunstville, AL, 2004
+
+http://lascaux.asu.cas.cz/rts2 for actual informations.
+
 .SH AUTHORS
+
 Petr Kubanek \fB<petr at lascaux dot asu dot cas dot cz>\fP
+
 Martin Jelinek \fB<mates at asu dot cas dot cz>\fP

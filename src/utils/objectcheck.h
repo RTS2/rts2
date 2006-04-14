@@ -15,7 +15,8 @@ private:
   std::vector < struct ln_equ_posn >horizont;
   int load_horizont (char *horizont_file);
   inline int is_above_horizont (double st, double dec, double ra1,
-				double dec1, double ra2, double dec2);
+				double dec1, double ra2, double dec2,
+				double lat);
 public:
     ObjectCheck (char *horizont_file);
    ~ObjectCheck ();
@@ -29,7 +30,7 @@ public:
    * 
    * @return 0 if we can observe, <0 otherwise
    */
-  int is_good (double st, double ra, double dec, int hardness = 0);
+  int is_good (double lst, double ra, double dec, int hardness = 0);
 };
 
 #endif /* ! __RTS2__OBJECTCHECK__ */

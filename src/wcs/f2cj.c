@@ -19,6 +19,7 @@
 //#define PP_MED 0.60
 #define PP_HIG 0.995
 #define PP_LOW (1 - PP_HIG)
+#define min(a,b) (((a)<(b))?(a):(b))
 
 JSAMPLE *image_buffer;		/* Points to large array of image data */
 int image_height = 80;		// 78
@@ -59,7 +60,9 @@ write_gray_jpeg_file (int quality)
 	  int i;
 	  JSAMPLE *img = &image_buffer[cinfo.next_scanline * row_stride * 3];
 	  for (i = 0; i < logo_image.width * 3; i++)
-	    img[i] &= logo_image.pixel_data[row_logo + i];
+	    img[i] =
+	      (min (logo_image.pixel_data[row_logo + i], img[i]) +
+	       img[i]) / 2;
 	  row_logo += i;
 	}
       /* jpeg_write_scanlines expects an array of pointers to scanlines.

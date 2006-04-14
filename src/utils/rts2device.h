@@ -18,34 +18,44 @@
 
 #include "rts2block.h"
 
-#define RTS2_CONN_AUTH_PENDING	1
-#define RTS2_CONN_AUTH_OK	2
-#define RTS2_CONN_AUTH_FAILED	3
-
 #define CHECK_PRIORITY if (!havePriority ()) { sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
-
-using namespace std;
 
 class Rts2Device;
 
+/**
+ * Device connection.
+ *
+ * Handles both connections which are created from clients to device, as well
+ * as connections created from device to device. They are distinguished by
+ * connType (set by setType, get by getType calls).
+ */
+
 class Rts2DevConn:public Rts2Conn
 {
+  // in case we know address of other side..
+  Rts2Address *address;
+
   Rts2Device *master;
-  virtual int connectionError ();
 protected:
     virtual int commandAuthorized ();
-  int command ();
+  virtual int command ();
 public:
-    Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock,
-								(Rts2Block *)
-								in_master)
-  {
-    master = in_master;
-  };
-  int add (fd_set * set);
-  int authorizationOK ();
-  int authorizationFailed ();
+    Rts2DevConn (int in_sock, Rts2Device * in_master);
+
+  virtual int init ();
+  virtual int idle ();
+
+  virtual int authorizationOK ();
+  virtual int authorizationFailed ();
   void setHavePriority (int in_have_priority);
+
+  virtual void setDeviceAddress (Rts2Address * in_addr);
+  void setDeviceName (char *in_name);
+
+  void connAuth ();
+
+  virtual void setKey (int in_key);
+  virtual void setConnState (conn_state_t new_conn_state);
 };
 
 class Rts2DevConnMaster:public Rts2Conn
@@ -56,19 +66,22 @@ class Rts2DevConnMaster:public Rts2Conn
   char device_name[DEVICE_NAME_SIZE];
   int device_type;
   int device_port;
-  Rts2DevConn *auth_conn;	// connection waiting for authorization
+  time_t nextTime;
 protected:
   int command ();
   int message ();
   int informations ();
   int status ();
+  virtual int connectionError (int last_data_size);
 public:
     Rts2DevConnMaster (Rts2Block * in_master,
 		       char *in_device_host, int in_device_port,
 		       char *in_device_name, int in_device_type,
 		       char *in_master_host, int in_master_port);
+    virtual ~ Rts2DevConnMaster (void);
   int registerDevice ();
   virtual int init ();
+  virtual int idle ();
   int authorize (Rts2DevConn * conn);
   void setHavePriority (int in_have_priority);
 };
@@ -76,7 +89,6 @@ public:
 class Rts2DevConnData:public Rts2Conn
 {
   int sendHeader ();
-  int acceptConn ();
   Rts2Conn *dataConn;
 protected:
   int command ()
@@ -93,7 +105,7 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
     dataConn = conn;
   }
   virtual int init ();
-  virtual int send (char *message);
+  virtual int send (char *msg);
   int send (char *data, size_t data_size);
 };
 
@@ -151,13 +163,18 @@ protected:
    * @return 0 on success, -1 if option wasn't processed
    */
   virtual int processOption (int in_opt);
+  void clearStatesPriority ();
+
+  virtual Rts2Conn *createClientConnection (char *in_deviceName);
+  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
-		int default_port, char *default_name);
+		char *default_name);
     virtual ~ Rts2Device (void);
+  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
   int changeState (int state_num, int new_state, char *description);
   int maskState (int state_num, int state_mask, int new_state,
-		 char *description);
+		 char *description = NULL);
   int getState (int state_num)
   {
     return states[state_num]->getState ();
@@ -177,8 +194,32 @@ public:
   virtual int baseInfo ();
 
   virtual int ready (Rts2Conn * conn);
-  virtual int info (Rts2Conn * conn);
+  virtual int sendInfo (Rts2Conn * conn)
+  {
+    return 0;
+  }
+  virtual int sendBaseInfo (Rts2Conn * conn)
+  {
+    return 0;
+  }
+  int info (Rts2Conn * conn);
+  int infoAll ();
   virtual int baseInfo (Rts2Conn * conn);
+  int killAll ();
+  virtual int scriptEnds ();
+
+  virtual Rts2Conn *getCentraldConn ()
+  {
+    return conn_master;
+  };
+  char *getDeviceName ()
+  {
+    return device_name;
+  };
+  int getDeviceType ()
+  {
+    return device_type;
+  };
 };
 
 #endif /* !__RTS2_DEVICE__ */

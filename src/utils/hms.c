@@ -131,20 +131,3 @@ dtoints (double value, int *h, int *m, int *s)
     }
   return 0;
 }
-
-/*!
- * Opposite to hmstod.
- * 
- * @see hmstod
- * @param value		value to convert
- * @param hptr		should be allocated to minimal 10 characters
- * 
- * @return -1 and set errno on error, number of writen bits otherwise
- */
-extern int
-dtohms (double value, char *hptr)
-{
-  int h, m, s;
-  dtoints (value, &h, &m, &s);
-  return sprintf (hptr, "%02i:%02i:%02i", h, m, s);
-}

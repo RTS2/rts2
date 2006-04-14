@@ -1,0 +1,22 @@
+This directory (and its subdirectories) contains all necessary SQL files and
+shell scripts used to create database to hold RTS2 data.
+
+Subdirectories:
+
+* blanks - blank areas, used to populate FLAT targets.
+
+* create - contains script to create database. When you will run in on
+  live database, new script tables will be created, old preserved.
+  
+* drop - contains drop scripts. USE ON LIVE DATABASE (e.g. with data) ON YOUR
+  OWN RISK. Please note, that most probably you will drop database
+  with all data by running sql scripts in this subdirectory.
+
+* update - contains update scripts. Basicaly you should run scripts in
+  create, then scripts in update.
+
+Scripts:
+
+* rts2-builddb - build RTS2 database. Run scripts in create, then in
+  update. Populate tables using data in create init_date.sql. Will not
+  install to $PREFIX/bin.

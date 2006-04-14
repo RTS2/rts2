@@ -11,6 +11,7 @@
 #endif /* !_GNU_SOURCE */
 
 #include <math.h>
+#include <signal.h>
 #include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,7 +31,6 @@
 #include "apogee/CameraIO_Linux.h"
 
 #include "camera_cpp.h"
-#include "filter_ifw.h"
 
 // Error codes returned from config_load
 const int CCD_OPEN_NOERR = 0;	// No error detected
@@ -47,7 +47,7 @@ class CameraApogeeChip:public CameraChip
   short unsigned int *dest_top;
   char *send_top;
 public:
-    CameraApogeeChip (CCameraIO * in_camera);
+    CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera);
     virtual ~ CameraApogeeChip (void);
   virtual int init ();
   virtual int setBinning (int in_vert, int in_hori);
@@ -60,7 +60,8 @@ public:
   virtual int endReadout ();
 };
 
-CameraApogeeChip::CameraApogeeChip (CCameraIO * in_camera):CameraChip (0)
+CameraApogeeChip::CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera):CameraChip (in_cam,
+	    0)
 {
   camera = in_camera;
   dest = NULL;
@@ -88,16 +89,15 @@ CameraApogeeChip::init ()
 int
 CameraApogeeChip::setBinning (int in_vert, int in_hori)
 {
-  camera->m_BinX = in_hori;
-  camera->m_BinY = in_vert;
-  return 0;
+  camera->m_ExposureBinX = in_hori;
+  camera->m_ExposureBinY = in_vert;
+  return CameraChip::setBinning (in_vert, in_hori);
 }
 
 int
 CameraApogeeChip::startExposure (int light, float exptime)
 {
   bool ret;
-  Camera_Status status;
   ret = camera->Expose (exptime, light);
 
   if (!ret)
@@ -124,7 +124,7 @@ CameraApogeeChip::isExposing ()
   status = camera->read_Status ();
 
   if (status != Camera_Status_ImageReady)
-    return 2000000;
+    return 200;
   // exposure has ended.. 
   return -2;
 }
@@ -156,11 +156,6 @@ CameraApogeeChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 int
 CameraApogeeChip::readoutOneLine ()
 {
-  int ret;
-
-  if (readoutLine < 0)
-    return -1;
-
   if (readoutLine <
       (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
     {
@@ -168,11 +163,17 @@ CameraApogeeChip::readoutOneLine ()
       short int width, height;
       width = chipUsedReadout->width;
       height = chipUsedReadout->height;
+      camera->m_ExposureStartX = chipUsedReadout->x;
+      camera->m_ExposureStartY = chipUsedReadout->y;
+      camera->m_ExposureNumX = chipUsedReadout->width / usedBinningHorizontal;
+      camera->m_ExposureNumY = chipUsedReadout->height / usedBinningVertical;
       status = camera->GetImage (dest_top, width, height);
+      syslog (LOG_DEBUG, "CameraApogeeChip::readoutOneLine status: %i",
+	      status);
       if (!status)
-	return -3;
+	return -1;
       dest_top += width * height;
-      readoutLine = chipUsedReadout->height + chipUsedReadout->y;
+      readoutLine = chipUsedReadout->y + chipUsedReadout->height;
     }
   if (sendLine == 0)
     {
@@ -181,23 +182,14 @@ CameraApogeeChip::readoutOneLine ()
       if (ret)
 	return ret;
     }
-  if (!readoutConn)
-    {
-      return -3;
-    }
+  int send_data_size;
+  sendLine++;
+  send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
+  if (send_data_size < 0)
+    return -1;
+  send_top += send_data_size;
   if (send_top < (char *) dest_top)
-    {
-      int send_data_size;
-      sendLine++;
-      send_data_size =
-	sendReadoutData (send_top, (char *) dest_top - send_top);
-      if (send_data_size < 0)
-	return -2;
-
-      send_top += send_data_size;
-      return 0;
-    }
-  endReadout ();
+    return 0;			// there are still some data to send..
   return -2;
 }
 
@@ -405,7 +397,7 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
       if (CfgGet
 	  (inifp, "system", "reg_offset", retbuf, sizeof (retbuf), &plen))
 	{
-	  unsigned short val = strtol (retbuf, NULL, 0);
+//        unsigned short val = strtol (retbuf, NULL, 0);
 //        if (val >= 0x0 && val <= 0xF0)
 //          camera->m_RegisterOffset = val & 0xF0;
 	}
@@ -780,21 +772,19 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 }
 
 
-Rts2DevCameraApogee::Rts2DevCameraApogee (int argc, char **argv):
-Rts2DevCamera (argc, argv)
+Rts2DevCameraApogee::Rts2DevCameraApogee (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
   addOption ('n', "device_id", 1,
 	     "device ID (ussualy 0, which is also default)");
-  addOption ('c', "config_name", 1,
+  addOption ('C', "config_name", 1,
 	     "device ini config file (default to /etc/rts2/apogee.ini");
-  addOption ('I', "IFW wheel port", 1,
-	     "dev entry for IFW (Optec) filter wheel, if camera is equiped with such");
   device_id = 0;
   cfgname = "/etc/rts2/apogee.ini";
 
   camera = NULL;
 
-  fan = 0;
+  fan = 1;
   canDF = 1;
 }
 
@@ -811,11 +801,8 @@ Rts2DevCameraApogee::processOption (int in_opt)
     case 'n':
       device_id = atoi (optarg);
       break;
-    case 'c':
+    case 'C':
       cfgname = optarg;
-      break;
-    case 'I':
-      filter = new Rts2FilterIfw (optarg);
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -845,7 +832,7 @@ Rts2DevCameraApogee::init ()
     return -1;
 
   chipNum = 1;
-  chips[0] = new CameraApogeeChip (camera);
+  chips[0] = new CameraApogeeChip (this, camera);
 
   return Rts2DevCamera::initChips ();
 }
@@ -863,7 +850,7 @@ Rts2DevCameraApogee::ready ()
 int
 Rts2DevCameraApogee::baseInfo ()
 {
-  strcpy (ccdType, "Apogee ");
+  strcpy (ccdType, "Apogee_");
   strncat (ccdType, camera->m_Sensor, 10);
   strcpy (serialNumber, "007");
   return 0;
@@ -890,40 +877,60 @@ Rts2DevCameraApogee::camChipInfo (int chip)
 int
 Rts2DevCameraApogee::camCoolMax ()
 {
-  camera->write_CoolerSetPoint (-100);
-  camera->write_CoolerMode (Camera_CoolerMode_On);
-  return 0;
+  return camCoolTemp (-30);
 }
 
 int
 Rts2DevCameraApogee::camCoolHold ()
 {
-  camera->write_CoolerSetPoint (-20);
-  camera->write_CoolerMode (Camera_CoolerMode_On);
-  return 0;
+  return camCoolTemp (isnan (nightCoolTemp) ? -20 : nightCoolTemp);
 }
 
 int
 Rts2DevCameraApogee::camCoolShutdown ()
 {
-  camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
+  Camera_CoolerMode cMode;
+  cMode = camera->read_CoolerMode ();
+  // first shutdown, if we are in shutdown, then off
+  if (cMode == Camera_CoolerMode_Shutdown)
+    camera->write_CoolerMode (Camera_CoolerMode_Off);
+  else
+    camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
   return 0;
 }
 
 int
 Rts2DevCameraApogee::camCoolTemp (float new_temp)
 {
+  Camera_CoolerMode cMode;
+  cMode = camera->read_CoolerMode ();
+  // we must traverse from shutdown to off mode before we can go to on
+  if (cMode == Camera_CoolerMode_Shutdown)
+    camera->write_CoolerMode (Camera_CoolerMode_Off);
   camera->write_CoolerSetPoint (new_temp);
   camera->write_CoolerMode (Camera_CoolerMode_On);
   return 0;
 }
 
+Rts2DevCameraApogee *device;
+
+void
+killSignal (int sig)
+{
+  if (device)
+    delete device;
+  exit (0);
+}
+
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraApogee *device = new Rts2DevCameraApogee (argc, argv);
-
   int ret;
+  device = new Rts2DevCameraApogee (argc, argv);
+
+  signal (SIGINT, killSignal);
+  signal (SIGTERM, killSignal);
+
   ret = device->init ();
   if (ret)
     {

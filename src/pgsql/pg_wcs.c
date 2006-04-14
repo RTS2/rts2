@@ -60,6 +60,21 @@ PG_FUNCTION_INFO_V1 (wcs_in);
 PG_FUNCTION_INFO_V1 (wcs_out);
 PG_FUNCTION_INFO_V1 (isinwcs);
 PG_FUNCTION_INFO_V1 (imgrange);
+PG_FUNCTION_INFO_V1 (img_wcs_naxis1);
+PG_FUNCTION_INFO_V1 (img_wcs_naxis2);
+PG_FUNCTION_INFO_V1 (img_wcs_ctype1);
+PG_FUNCTION_INFO_V1 (img_wcs_ctype2);
+PG_FUNCTION_INFO_V1 (img_wcs_crpix1);
+PG_FUNCTION_INFO_V1 (img_wcs_crpix2);
+PG_FUNCTION_INFO_V1 (img_wcs_crval1);
+PG_FUNCTION_INFO_V1 (img_wcs_crval2);
+PG_FUNCTION_INFO_V1 (img_wcs_cdelt1);
+PG_FUNCTION_INFO_V1 (img_wcs_cdelt2);
+PG_FUNCTION_INFO_V1 (img_wcs_crota);
+PG_FUNCTION_INFO_V1 (img_wcs_epoch);
+// center RA and DEC
+PG_FUNCTION_INFO_V1 (img_wcs_center_ra);
+PG_FUNCTION_INFO_V1 (img_wcs_center_dec);
 
 // helper
 char *
@@ -145,7 +160,6 @@ wcs_in (PG_FUNCTION_ARGS)
       ARG_FLOAT (crpix2);
       ARG_FLOAT (crval1);
       ARG_FLOAT (crval2);
-      // ARG_FLOAT(*cd);
       ARG_FLOAT (cdelt1);
       ARG_FLOAT (cdelt2);
       ARG_FLOAT (crota);
@@ -262,4 +276,189 @@ imgrange (PG_FUNCTION_ARGS)
   pfree (buffer);
   wcsfree (wcs);
   PG_RETURN_TEXT_P (res);
+}
+
+/*!
+ * Returns varius WCS stuff out of kwcs
+ */
+Datum
+img_wcs_naxis1 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_INT32 (arg->naxis1);
+}
+
+Datum
+img_wcs_naxis2 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_INT32 (arg->naxis2);
+}
+
+Datum
+img_wcs_ctype1 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  int l;
+  text *res;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+
+  l = strlen (arg->ctype1);
+  l++;
+
+  res = (text *) palloc (VARHDRSZ + l);
+  VARATT_SIZEP (res) = VARHDRSZ + l;
+  memcpy (VARDATA (res), arg->ctype1, l);
+
+  PG_RETURN_TEXT_P (res);
+}
+
+Datum
+img_wcs_ctype2 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  int l;
+  text *res;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+
+  l = strlen (arg->ctype2);
+  l++;
+
+  res = (text *) palloc (VARHDRSZ + l);
+  VARATT_SIZEP (res) = VARHDRSZ + l;
+  memcpy (VARDATA (res), arg->ctype2, l);
+
+  PG_RETURN_TEXT_P (res);
+}
+
+Datum
+img_wcs_crpix1 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->crpix1);
+}
+
+Datum
+img_wcs_crpix2 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->crpix2);
+}
+
+Datum
+img_wcs_crval1 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->crval1);
+}
+
+Datum
+img_wcs_crval2 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->crval2);
+}
+
+Datum
+img_wcs_cdelt1 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->cdelt1);
+}
+
+Datum
+img_wcs_cdelt2 (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->cdelt2);
+}
+
+Datum
+img_wcs_crota (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->crota);
+}
+
+Datum
+img_wcs_epoch (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  PG_RETURN_FLOAT8 (arg->epoch);
+}
+
+Datum
+img_wcs_center_ra (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  if (!strncmp (arg->ctype1, "RA--", 4))
+    PG_RETURN_FLOAT8 (arg->crval1);
+  if (!strncmp (arg->ctype2, "RA--", 4))
+    PG_RETURN_FLOAT8 (arg->crval2);
+  PG_RETURN_NULL ();
+}
+
+Datum
+img_wcs_center_dec (PG_FUNCTION_ARGS)
+{
+  struct kwcs *arg;
+  if (PG_ARGISNULL (0))
+    PG_RETURN_NULL ();
+
+  arg = PG_GETARG_KWCS_P (0);
+  if (!strncmp (arg->ctype1, "DEC-", 4))
+    PG_RETURN_FLOAT8 (arg->crval1);
+  if (!strncmp (arg->ctype2, "DEC-", 4))
+    PG_RETURN_FLOAT8 (arg->crval2);
+  PG_RETURN_NULL ();
 }

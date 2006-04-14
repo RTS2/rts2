@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../utils/config.h"
+#include "../utils/rts2config.h"
 
 #define test_nval(name,count)	if (count != nval) { fprintf (stderr, "Invalid number of values in %s (expecting %i, got %i)\n",\
 				name, count, nval); goto err; }
@@ -48,9 +48,7 @@ main (int argc, char **argv)
 
   int c;
 
-  read_config (CONFIG_FILE);
-
-  obs_epoch = get_string_default ("epoch", "00T");
+  obs_epoch = "00T";
 
   /* get attrs */
   while (1)
