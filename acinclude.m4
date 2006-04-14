@@ -1,6 +1,6 @@
 ### Detect PostgreSQL
 
-AC_DEFUN(AC_POSTGRESQL,
+AC_DEFUN([AC_POSTGRESQL],
 [
 if test -z "$PG_CONFIG" ; then
     AC_PATH_PROG( PG_CONFIG, pg_config, no )
@@ -31,7 +31,7 @@ AC_SUBST(LIBPG_SERVER_LIBS)
 AC_SUBST(LIBPG_SERVER_CFLAGS)
 ])
 
-AC_DEFUN(AC_ECPG, 
+AC_DEFUN([AC_ECPG], 
 [
 if test -z "$ECPG" ; then
     AC_PATH_PROG( ECPG, ecpg, no, $PATH:$PG_CONFIG_SERVER_BINDIR)
@@ -48,7 +48,7 @@ AC_SUBST(ECPG)
 ])
 
 # test for GSOAP
-AC_DEFUN(AC_GSOAP,
+AC_DEFUN([AC_GSOAP],
 [
 AC_CHECK_PROG([gsoap], [soapcpp2], "yes", "no")
 
