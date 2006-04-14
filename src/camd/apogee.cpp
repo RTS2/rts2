@@ -137,7 +137,7 @@ CameraApogeeChip::isExposing ()
 
   time (&now);
 
-  if (expExposureEnd > now)
+  if (expExposureEnd < now)
     return -1;
   // exposure has ended.. 
   return -2;
