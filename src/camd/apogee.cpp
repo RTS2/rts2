@@ -46,6 +46,7 @@ class CameraApogeeChip:public CameraChip
   short unsigned int *dest;
   short unsigned int *dest_top;
   char *send_top;
+  time_t expExposureEnd;
 public:
     CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera);
     virtual ~ CameraApogeeChip (void);
@@ -109,6 +110,7 @@ CameraApogeeChip::startExposure (int light, float exptime)
   chipUsedReadout = new ChipSubset (chipReadout);
   usedBinningVertical = binningVertical;
   usedBinningHorizontal = binningHorizontal;
+  expExposureEnd = 0;
   return 0;
 }
 
@@ -116,15 +118,27 @@ long
 CameraApogeeChip::isExposing ()
 {
   long ret;
+  time_t now;
   Camera_Status status;
   ret = CameraChip::isExposing ();
   if (ret > 0)
     return ret;
 
+  if (expExposureEnd == 0)
+    {
+      time (&expExposureEnd);
+      expExposureEnd += 10;
+    }
+
   status = camera->read_Status ();
 
   if (status != Camera_Status_ImageReady)
     return 200;
+
+  time (&now);
+
+  if (expExposureEnd > now)
+    return -1;
   // exposure has ended.. 
   return -2;
 }
