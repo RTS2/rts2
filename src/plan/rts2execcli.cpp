@@ -189,8 +189,8 @@ Rts2DevClientCameraExec::exposureEnd ()
     }
   else
     {
-      delete nextComd;
-      nextComd = NULL;
+      // delete nextComd;
+      // nextComd = NULL;
       nextCommand ();
     }
   // send readout after we deal with next command - which can be filter move
