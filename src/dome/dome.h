@@ -34,6 +34,8 @@ protected:
     // we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
   }
 
+  bool ignoreMeteo;
+
   void domeWeatherGood ();
 public:
   Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
@@ -51,6 +53,7 @@ public:
   {
     return -2;
   };
+  int closeDomeWeather ();
   virtual int closeDome ()
   {
     maskState (0, DOME_DOME_MASK, DOME_CLOSING, "closing dome");

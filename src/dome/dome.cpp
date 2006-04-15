@@ -26,12 +26,15 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
   maxWindSpeed = 50;
   maxPeekWindspeed = 50;
   weatherCanOpenDome = false;
+  ignoreMeteo = false;
+
 
   addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
   addOption ('P', "max_peek_windspeed", 1,
 	     "maximal allowed windspeed (in km/h");
   addOption ('O', "weather_can_open", 0,
 	     "specified that option if weather signal is allowed to open dome");
+  addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
 
   observingPossible = 0;
 
@@ -53,6 +56,9 @@ Rts2DevDome::processOption (int in_opt)
       break;
     case 'O':
       weatherCanOpenDome = true;
+      break;
+    case 'I':
+      ignoreMeteo = true;
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -180,6 +186,19 @@ int
 Rts2DevDome::sendBaseInfo (Rts2Conn * conn)
 {
   conn->sendValue ("type", domeModel);
+  return 0;
+}
+
+int
+Rts2DevDome::closeDomeWeather ()
+{
+  int ret;
+  if (ignoreMeteo == false)
+    {
+      ret = closeDome ();
+      setMasterStandby ();
+      return ret;
+    }
   return 0;
 }
 

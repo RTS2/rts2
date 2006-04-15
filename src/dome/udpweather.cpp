@@ -36,8 +36,7 @@ void
 Rts2ConnFramWeather::badSetWeatherTimeout (time_t wait_time)
 {
   master->setWeatherTimeout (wait_time);
-  master->closeDome ();
-  master->setMasterStandby ();
+  master->closeDomeWeather ();
 }
 
 int
@@ -104,7 +103,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	{
 	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
 	  rain = 1;
-	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
+	  badSetWeatherTimeout (FRAM_CONN_TIMEOUT);
 	  return data_size;
 	}
       statDate.tm_isdst = 0;
@@ -123,11 +122,9 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	{
 	  time (&lastBadWeather);
 	  if (rain == 0 && windspeed > master->getMaxWindSpeed ())
-	    setWeatherTimeout (FRAM_BAD_WINDSPEED_TIMEOUT);
+	    badSetWeatherTimeout (FRAM_BAD_WINDSPEED_TIMEOUT);
 	  else
-	    setWeatherTimeout (FRAM_BAD_WEATHER_TIMEOUT);
-	  master->closeDome ();
-	  master->setMasterStandby ();
+	    badSetWeatherTimeout (FRAM_BAD_WEATHER_TIMEOUT);
 	}
       // ack message
       ret =

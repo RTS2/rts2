@@ -137,8 +137,6 @@ private:
   int isOn (int c_port);
   int handle_zasuvky (int state);
 
-  int ignoreMeteo;
-
 protected:
   virtual int processOption (int in_opt);
   virtual int isGoodWeather ();
@@ -182,7 +180,6 @@ Rts2DevDome (in_argc, in_argv)
   domeModel = "BART_FORD_2";
 
   weatherConn = NULL;
-  ignoreMeteo = 0;
 
   rain = 0;
   windspeed = nan ("f");
@@ -359,9 +356,6 @@ Rts2DevDomeBart::processOption (int in_opt)
       break;
     case 'R':
       rain_detector = optarg;
-      break;
-    case 'I':
-      ignoreMeteo = 1;
       break;
     default:
       return Rts2DevDome::processOption (in_opt);
