@@ -1464,26 +1464,29 @@ TargetGRB::getFirstPacket ()
   long db_grb_update;
   long db_grb_update_usec;
   EXEC SQL END DECLARE SECTION;
-  EXEC SQL
+  EXEC SQL DECLARE cur_grb_first_packet CURSOR FOR
   SELECT
     EXTRACT (EPOCH FROM grb_update),
     grb_update_usec
-  INTO
-    :db_grb_update,
-    :db_grb_update_usec
   FROM
     grb_gcn
   WHERE
       grb_id = :db_grb_id
-    AND grb_type >= :db_grb_type_min
-    AND grb_type <= :db_grb_type_max
-    AND grb_update = (SELECT min(grb_update) FROM grb_gcn
-      WHERE grb_id = :db_grb_id and grb_type >= :db_grb_type_min and grb_type <= :db_grb_type_max);
+    AND grb_type BETWEEN :db_grb_type_min AND :db_grb_type_max
+  ORDER BY
+    grb_update asc,
+    grb_update_usec asc;
+  EXEC SQL OPEN cur_grb_first_packet;
+  EXEC SQL FETCH next FROM cur_grb_first_packet INTO
+    :db_grb_update,
+    :db_grb_update_usec;
   if (sqlca.sqlcode)
   {
+    EXEC SQL CLOSE cur_grb_first_packet;
     EXEC SQL ROLLBACK;
     return nan("f");
   }
+  EXEC SQL CLOSE cur_grb_first_packet;
   EXEC SQL ROLLBACK;
   return db_grb_update + db_grb_update_usec / USEC_SEC;
 }
