@@ -206,13 +206,13 @@ Rts2FilterUrvc2::Rts2FilterUrvc2 (Rts2DevCameraUrvc2 * in_camera):Rts2Filter ()
 
 Rts2FilterUrvc2::~Rts2FilterUrvc2 (void)
 {
-  setFilterNum (1);
+  setFilterNum (0);
 }
 
 int
 Rts2FilterUrvc2::init ()
 {
-  setFilterNum (1);
+  setFilterNum (0);
   return 0;
 }
 
@@ -227,13 +227,13 @@ Rts2FilterUrvc2::setFilterNum (int new_filter)
 {
   PulseOutParams pop;
 
-  if (new_filter < 1 || new_filter > 5)
+  if (new_filter < 0 || new_filter > 4)
     {
       return -1;
     }
 
   pop.pulsePeriod = 18270;
-  pop.pulseWidth = 500 + 300 * (new_filter - 1);
+  pop.pulseWidth = 500 + 300 * new_filter;
   pop.numberPulses = 60;
 
   if (MicroCommand (MC_PULSE, camera->getCameraID (), &pop, NULL))
