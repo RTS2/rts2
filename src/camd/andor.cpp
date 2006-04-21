@@ -38,6 +38,7 @@ public:
 		     int in_height, double in_pixelX, double in_pixelY,
 		     float in_gain);
     virtual ~ CameraAndorChip (void);
+  virtual int startExposure (int light, float exptime);
   virtual int stopExposure ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
@@ -58,10 +59,38 @@ CameraAndorChip::~CameraAndorChip (void)
   delete dest;
 };
 
+
+int
+CameraAndorChip::startExposure (int light, float exptime)
+{
+  int ret;
+  ret =
+    SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
+	      chipReadout->x + chipReadout->height, chipReadout->y + 1,
+	      chipReadout->y + chipReadout->width);
+  if (ret != DRV_SUCCESS)
+    {
+      syslog (LOG_ERR, "SetImage return %i", ret);
+      return -1;
+    }
+
+  chipUsedReadout = new ChipSubset (chipReadout);
+  usedBinningVertical = binningVertical;
+  usedBinningHorizontal = binningHorizontal;
+
+  SetExposureTime (exptime);
+  SetShutter (1, light == 1 ? 0 : 2, 50, 50);
+  ret = StartAcquisition ();
+  if (ret != DRV_SUCCESS)
+    return -1;
+  return 0;
+}
+
 int
 CameraAndorChip::stopExposure ()
 {
   AbortAcquisition ();
+  FreeInternalMemory ();
   return CameraChip::stopExposure ();
 }
 
@@ -85,14 +114,15 @@ CameraAndorChip::readoutOneLine ()
 	return -1;
       if (status == DRV_ACQUIRING)
 	return 100;
-      int size = chipUsedReadout->height * chipUsedReadout->width;
+      int size =
+	(chipUsedReadout->width / usedBinningHorizontal) *
+	(chipUsedReadout->height / usedBinningVertical);
       ret = GetAcquiredData16 (dest, size);
       if (ret != DRV_SUCCESS)
 	{
 	  syslog (LOG_ERR, "GetAcquiredData16 return %i", ret);
 	  return -1;
 	}
-      size /= (usedBinningVertical * usedBinningHorizontal);
       readoutLine = chipUsedReadout->height;
       dest_top += size;
       return 0;
@@ -127,7 +157,6 @@ private:
   // number of AD channels
   int chanNum;
 
-  int camSetShutter (int shut_control);
   int printChannelInfo (int channel);
 protected:
     virtual void help ();
@@ -143,9 +172,6 @@ public:
   virtual int info ();
   virtual int baseInfo ();
   virtual int camChipInfo (int chip);
-  virtual int camExpose (int chip, int light, float exptime);
-  virtual int camStopExpose (int chip);
-  virtual int camStopRead (int chip);
   virtual int camCoolMax ();
   virtual int camCoolHold ();
   virtual int camCoolTemp (float new_temp);
@@ -304,7 +330,7 @@ Rts2DevCameraAndor::init ()
   GetDetector (&width, &height);
 
   //Initialize Shutter
-  camSetShutter (0);
+  SetShutter (1, 0, 50, 50);
 
   SetExposureTime (5.0);
   SetEMCCDGain (andorGain);
@@ -446,28 +472,6 @@ Rts2DevCameraAndor::camChipInfo (int chip)
 }
 
 int
-Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
-{
-  SetExposureTime (exptime);
-  camSetShutter (light == 1 ? 0 : 2);
-  StartAcquisition ();
-  return 0;
-}
-
-int
-Rts2DevCameraAndor::camStopExpose (int chip)
-{
-  // not supported
-  return -1;
-}
-
-int
-Rts2DevCameraAndor::camStopRead (int chip)
-{
-  return -1;
-}
-
-int
 Rts2DevCameraAndor::camCoolMax ()
 {
   return camCoolHold ();
@@ -498,12 +502,6 @@ Rts2DevCameraAndor::camCoolShutdown ()
   SetTemperature (20);
   tempSet = +50;
   return 0;
-}
-
-int
-Rts2DevCameraAndor::camSetShutter (int shut_control)
-{
-  return SetShutter (1, shut_control, 50, 50);
 }
 
 Rts2DevCameraAndor *device = NULL;
