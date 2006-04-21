@@ -3,11 +3,6 @@
  *
  * @author standa
  */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -250,14 +245,14 @@ Rts2DevFocuserOptec::getPos (int *position)
 
   if (foc_write_read ("FPOSRO", 6, rbuf, 8) < 1)
     return -1;
-#ifdef DEBUG_EXTRA
   else
     {
       rbuf[6] = '\0';
+#ifdef DEBUG_EXTRA
       syslog (LOG_DEBUG, "0: %i", rbuf[0]);
+#endif
       *position = atoi ((rbuf + 2));
     }
-#endif
   return 0;
 }
 
