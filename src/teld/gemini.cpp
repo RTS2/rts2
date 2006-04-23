@@ -1,11 +1,10 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 /*! 
  * @file Driver file for LOSMANDY Gemini telescope systems 
  * 
  * @author petr 
  */
+
+#define DEBUG_EXTRA 	1
 
 #include <ctype.h>
 #include <signal.h>
@@ -341,7 +340,7 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
   if (tmp_rcount > 0)
     {
 #ifdef DEBUG_EXTRA
-      buf = (char *) malloc (rcount + 1);
+      char *buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
       syslog (LOG_DEBUG, "Losmandy:readed %i '%s'", tmp_rcount, buf);
@@ -1551,7 +1550,6 @@ Rts2DevTelescopeGemini::isMovingFixed ()
 	    return -2;
 	  return USEC_SEC;
 	}
-      return ret;
     }
   return ret;
 }
@@ -2017,6 +2015,9 @@ static int save_registers[] = {
   208,				// modeling parameter FD (mirror flop/gear play in declination) in seconds of arc
   209,				// modeling paremeter CF (counterweight & RA axis flexure) in seconds of arc
   211,				// modeling parameter TF (tube flexure) in seconds of arc 
+  221,				// ra limit 1
+  222,				// ra limit 2
+  223,				// ra limit 3
   411,				// RA track divisor 
   412,				// DEC tracking divisor
   -1
