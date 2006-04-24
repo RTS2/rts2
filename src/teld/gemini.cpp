@@ -1303,13 +1303,11 @@ Rts2DevTelescopeGemini::info ()
 {
   double ha;
   telFlip = 0;
-  int32_t raTick, decTick;
 
   if (tel_read_ra () || tel_read_dec ()
       || tel_read_siderealtime () || tel_read_localtime ())
     return -1;
   ha = ln_range_degrees (telSiderealTime * 15.0 - telRa);
-  tel_gemini_get (235, raTick, decTick);
   if (bootesSensors)
     {
       getAxis ();
@@ -1317,8 +1315,6 @@ Rts2DevTelescopeGemini::info ()
   else
     {
       telFlip = getFlip ();
-      telAxis[0] = raTick;
-      telAxis[1] = decTick;
     }
 
   return 0;
@@ -2346,12 +2342,15 @@ Rts2DevTelescopeGemini::stopGuideAll ()
 int
 Rts2DevTelescopeGemini::getFlip ()
 {
-  char buf[3];
+  int32_t raTick, decTick;
   int ret;
-  ret = tel_write_read_hash (":Gm#", 4, buf, 2);
+
+  ret = tel_gemini_get (235, raTick, decTick);
   if (ret < 1)
     return -1;
-  if (*buf == 'E')
+  telAxis[0] = raTick;
+  telAxis[1] = decTick;
+  if (decTick > 4000)
     return 1;
   return 0;
 }
