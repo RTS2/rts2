@@ -877,8 +877,9 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 {
   int ret = -1;
   syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
+	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f real_ra: %f real_de: %f moveMark: %i cor_mark %i",
+	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec,
+	  real_ra, real_dec, moveMark, cor_mark);
   raCorr = cor_ra;
   decCorr = cor_dec;
   // not moved yet
@@ -899,8 +900,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	  ret = 0;
 	  // change scope
 	  locCorNum = moveMark;
-	  locCorRa = cor_ra;
-	  locCorDec = cor_dec;
+	  locCorRa += cor_ra;
+	  locCorDec += cor_dec;
 	}
       if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
 	{
