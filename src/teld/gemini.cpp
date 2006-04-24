@@ -1021,12 +1021,15 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1478,7 +1481,10 @@ Rts2DevTelescopeGemini::isMoving ()
   if (changeTime.tv_sec > 0)
     {
       if (timercmp (&changeTime, &now, <))
-	return -2;
+	{
+	  timerclear (&changeTime);
+	  return -2;
+	}
       return 0;
     }
   if (now.tv_sec > moveTimeout)
@@ -2068,6 +2074,7 @@ Rts2DevTelescopeGemini::startPark ()
   ret = tel_write ("#:hP#", 5);
   if (ret <= 0)
     return -1;
+  sleep (1);
   return 0;
 }
 
