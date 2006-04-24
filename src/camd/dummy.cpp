@@ -19,10 +19,6 @@ public:
   {
     return 0;
   }
-  virtual int endExposure ()
-  {
-    return 0;
-  }
   virtual int readoutOneLine ();
 
   virtual int readoutEnd ()
