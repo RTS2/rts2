@@ -677,8 +677,6 @@ Rts2ScriptElementAcquireStar::getSource (Rts2Image * image, double &ra_offset,
   ret = image->getOffset (off_x, off_y, ra_offset, dec_offset, sep);
   if (ret)
     return -1;
-  ra_offset *= -1.0;
-  dec_offset *= -1.0;
   if (sep < reqPrecision)
     return 0;
   return 1;

@@ -260,7 +260,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_KILL_ALL:
-      waiting = NOT_WAITING;
+      clearWait ();
       break;
     case EVENT_SET_TARGET:
       currentTarget = (Target *) event->getArg ();
