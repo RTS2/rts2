@@ -246,6 +246,8 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
   if (goodNum > 0)
   {
     _os
+    << "First images : " << firstNum << " from " << size () 
+    << "(" << (size () > 0 ? 100 * firstNum / size () : nan ("f")) << "%)" << std::endl
     << "First images errors: ra " << LibnovaDegArcMin (errFirstRa)
     << " dec: " << LibnovaDegArcMin (errFirstDec)
     << " radius: " << LibnovaDegArcMin (errFirstRad) << std::endl
