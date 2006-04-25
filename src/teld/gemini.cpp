@@ -1959,7 +1959,7 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
   if (ret)
     {
       // mount correction failed - do local one
-
+      return Rts2DevTelescope::correct (cor_ra, cor_dec, real_ra, real_dec);
     }
   return ret;
 }
@@ -2346,7 +2346,7 @@ Rts2DevTelescopeGemini::getFlip ()
   int ret;
 
   ret = tel_gemini_get (235, raTick, decTick);
-  if (ret < 1)
+  if (ret)
     return -1;
   telAxis[0] = raTick;
   telAxis[1] = decTick;
