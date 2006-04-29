@@ -250,6 +250,7 @@ private:
   flidev_t dev;
 
   long hwRev;
+  int camNum;
 
   int fliDebug;
 public:
@@ -278,11 +279,13 @@ Rts2DevCamera (in_argc, in_argv)
   deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
   fliDebug = FLIDEBUG_NONE;
   hwRev = -1;
+  camNum = -1;
   addOption ('D', "domain", 1,
 	     "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
   addOption ('R', "HW revision", 1, "find camera by HW revision");
   addOption ('b', "fli_debug", 1,
 	     "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+  addOption ('n', "number", 1, "Camera number (in FLI list)");
 }
 
 Rts2DevCameraFli::~Rts2DevCameraFli (void)
@@ -327,6 +330,9 @@ Rts2DevCameraFli::processOption (int in_opt)
 	  return -1;
 	}
       break;
+    case 'n':
+      camNum = atoi (optarg);
+      break;
     default:
       return Rts2DevCamera::processOption (in_opt);
     }
@@ -341,6 +347,7 @@ Rts2DevCameraFli::init ()
   int ret_c;
   char **names;
   char *nam_sep;
+  char **nam;			// current name
 
   ret_c = Rts2DevCamera::init ();
   if (ret_c)
@@ -362,7 +369,7 @@ Rts2DevCameraFli::init ()
   // find device based on hw revision..
   if (hwRev > 0)
     {
-      char **nam = names;
+      nam = names;
       while (*nam)
 	{
 	  // separate semicolon
@@ -385,6 +392,22 @@ Rts2DevCameraFli::init ()
 	  FLIClose (dev);
 	  nam++;
 	}
+    }
+  else if (camNum > 0)
+    {
+      nam = names;
+      int i = 1;
+      while (*nam && i != camNum)
+	{
+	  nam++;
+	  i++;
+	}
+      if (!*nam)
+	return -1;
+      i--;
+      nam_sep = strchr (names[i], ';');
+      *nam_sep = '\0';
+      ret = FLIOpen (&dev, names[i], deviceDomain);
     }
   else
     {
