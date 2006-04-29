@@ -416,7 +416,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   addOption ('W', "filterwheel", 1,
 	     "name of device which is used as filter wheel");
   addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
-  addOption ('e', "focexp", 1, "starting focusing exposure time");
+  addOption ('E', "focexp", 1, "starting focusing exposure time");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -500,7 +500,7 @@ Rts2DevCamera::processOption (int in_opt)
     case 'b':
       defBinning = atoi (optarg);
       break;
-    case 'e':
+    case 'E':
       defFocusExposure = atof (optarg);
       break;
     default:
@@ -632,7 +632,7 @@ Rts2DevCamera::idle ()
   checkReadouts ();
   if (isIdle () && isFocusing ())
     {
-      ret = camExpose (0, 1, focusExposure);
+      ret = camStartExposure (0, 1, focusExposure);
       if (ret)
 	endFocusing ();
     }
@@ -1055,14 +1055,16 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSINGS) == CAM_FOCUSING);
 }
