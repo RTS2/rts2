@@ -568,15 +568,33 @@ Rts2NMDome::print (WINDOW * wnd)
     {
     case 2:
       ignoreString = "METEO OVERRIDE";
+      if (has_colors ())
+	wcolor_set (wnd, CLR_WARNING, NULL);
+      else
+	wstandout (wnd);
       break;
     case 1:
+      if (has_colors ())
+	wcolor_set (wnd, CLR_OK, NULL);
+      else
+	wstandout (wnd);
       ignoreString = "meteo active";
       break;
     default:
+      if (has_colors ())
+	wcolor_set (wnd, CLR_WARNING, NULL);
+      else
+	wstandout (wnd);
       ignoreString = "ignore unknow";
       break;
     }
   mvwprintw (wnd, 8, 1, "%s", ignoreString);
+
+  if (has_colors ())
+    wcolor_set (wnd, CLR_TEXT, NULL);
+  else
+    wstandend (wnd);
+
 
   printStatus (wnd, connection);
 }
