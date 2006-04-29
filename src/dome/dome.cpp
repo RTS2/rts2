@@ -179,6 +179,7 @@ Rts2DevDome::sendInfo (Rts2Conn * conn)
   conn->sendValue ("rain", rain);
   conn->sendValue ("windspeed", windspeed);
   conn->sendValue ("observingPossible", observingPossible);
+  conn->sendValue ("ignoreMeteo", (ignoreMeteo ? 2 : 1));
   return 0;
 }
 
@@ -304,6 +305,18 @@ Rts2DevConnDome::commandAuthorized ()
   else if (isCommand ("close"))
     {
       return master->closeDome ();
+    }
+  else if (isCommand ("ignore"))
+    {
+      char *ignore;
+      bool newIgnore = false;
+      if (paramNextString (&ignore) || !paramEnd ())
+	return -2;
+      if (!strcasecmp (ignore, "on"))
+	{
+	  newIgnore = true;
+	}
+      return master->setIgnoreMeteo (newIgnore);
     }
   return Rts2DevConn::commandAuthorized ();
 }

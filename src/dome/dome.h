@@ -85,6 +85,12 @@ public:
   int setMasterOn ();
   virtual int changeMasterState (int new_state);
 
+  int setIgnoreMeteo (bool newIgnore)
+  {
+    ignoreMeteo = newIgnore;
+    return 0;
+  }
+
   void setTemperatur (float in_temp)
   {
     temperature = in_temp;
