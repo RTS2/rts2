@@ -78,10 +78,8 @@ Rts2GenFocClient (in_argc, in_argv)
   exposureT = EXP_LIGHT;
   autoSave = 1;
 
-  addOption ('d', "device", 1,
-	     "camera device name(s) (multiple for multiple cameras)");
   addOption ('s', "secmod", 1, "exposure every UT sec");
-  addOption ('D', "dark", 0, "create dark images");
+  addOption ('a', "dark", 0, "create dark images");
 }
 
 int
@@ -89,11 +87,8 @@ Rts2focusc::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'D':
+    case 'a':
       exposureT = EXP_DARK;
-      break;
-    case 'F':
-      focExe = optarg;
       break;
     default:
       return Rts2GenFocClient::processOption (in_opt);
