@@ -404,6 +404,7 @@ Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
   addValue (new Rts2ValueInteger ("rain"));
   addValue (new Rts2ValueDouble ("windspeed"));
   addValue (new Rts2ValueDouble ("observingPossible"));
+  addValue (new Rts2ValueInteger ("ignoreMeteo"));
 }
 
 Rts2DevClientCopula::Rts2DevClientCopula (Rts2Conn * in_connection):Rts2DevClientDome
