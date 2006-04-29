@@ -160,6 +160,7 @@ private:
   };
 
   int isOn (int c_port);
+  const char *isOnString (int c_port);
   int handle_zasuvky (int state);
 
   /**
@@ -325,8 +326,11 @@ Rts2DevDomeFram::zjisti_stav_portu ()
 void
 Rts2DevDomeFram::zapni_pin (unsigned char in_port, unsigned char pin)
 {
+  int ret;
   unsigned char c;
-  zjisti_stav_portu ();
+  ret = zjisti_stav_portu ();
+  if (ret)
+    return;
   c = ZAPIS_NA_PORT | in_port;
   syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
   write (dome_port, &c, 1);
@@ -338,8 +342,11 @@ Rts2DevDomeFram::zapni_pin (unsigned char in_port, unsigned char pin)
 void
 Rts2DevDomeFram::vypni_pin (unsigned char in_port, unsigned char pin)
 {
+  int ret;
   unsigned char c;
-  zjisti_stav_portu ();
+  ret = zjisti_stav_portu ();
+  if (ret)
+    return;
   c = ZAPIS_NA_PORT | in_port;
   syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
   write (dome_port, &c, 1);
@@ -353,6 +360,13 @@ Rts2DevDomeFram::isOn (int c_port)
 {
   zjisti_stav_portu ();
   return !(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
+}
+
+const char *
+Rts2DevDomeFram::isOnString (int c_port)
+{
+  return (stav_portu[adresa[c_port].port] & adresa[c_port].
+	  pin) ? "off" : "on ";
 }
 
 void
@@ -719,11 +733,20 @@ Rts2DevDomeFram::isOpened ()
 int
 Rts2DevDomeFram::endOpen ()
 {
+  int ret;
   stopMove ();
   VYP (VENTIL_OTEVIRANI_PRAVY);
   VYP (VENTIL_OTEVIRANI_LEVY);
-  zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
-  sendFramMail ("FRAM dome opened");
+  ret = zjisti_stav_portu ();	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  if (!ret && isOn (KONCAK_OTEVRENI_PRAVY) && isOn (KONCAK_OTEVRENI_LEVY) &&
+      !isOn (KONCAK_ZAVRENI_PRAVY) && !isOn (KONCAK_ZAVRENI_LEVY))
+    {
+      sendFramMail ("FRAM dome opened");
+    }
+  else
+    {
+      sendFramMail ("WARNING FRAM dome opened with wrong end swithes status");
+    }
   return Rts2DevDome::endOpen ();
 }
 
@@ -860,14 +883,25 @@ Rts2DevDomeFram::isClosed ()
 int
 Rts2DevDomeFram::endClose ()
 {
+  int ret;
   stopMove ();
   VYP (VENTIL_ZAVIRANI_LEVY);
   VYP (VENTIL_ZAVIRANI_PRAVY);
-  zjisti_stav_portu ();		//kdyz se to vynecha, neposle to posledni prikaz nebo znak
+  ret = zjisti_stav_portu ();	//kdyz se to vynecha, neposle to posledni prikaz nebo znak
   time (&lastClosing);
   if (closingNum != lastClosingNum)
     {
-      sendFramMail ("FRAM dome closed");
+      if (!ret && !isOn (KONCAK_OTEVRENI_PRAVY)
+	  && !isOn (KONCAK_OTEVRENI_LEVY) && isOn (KONCAK_ZAVRENI_PRAVY)
+	  && isOn (KONCAK_ZAVRENI_LEVY))
+	{
+	  sendFramMail ("FRAM dome closed");
+	}
+      else
+	{
+	  sendFramMail
+	    ("WARNING FRAM dome closed with wrong end switches state");
+	}
       lastClosingNum = closingNum;
     }
   return Rts2DevDome::endClose ();
@@ -1110,18 +1144,20 @@ Rts2DevDomeFram::sendFramMail (char *subject)
   ret = zjisti_stav_portu ();
   asprintf (&openText, "%s.\n"
 	    "End switch status:\n"
-	    "CLOSE SWITCH RIGHT:%i  CLOSE SWITCH LEFT:%i\n"
-	    "OPEN SWITCH RIGHT:%i OPEN SWITCH LEFT:%i\n"
+	    "CLOSE SWITCH RIGHT:%s CLOSE SWITCH LEFT:%s\n"
+	    " OPEN SWITCH RIGHT:%s  OPEN SWITCH LEFT:%s\n"
 	    "Weather::isGoodWeather %i\n"
 	    "raining: %i\n"
-	    "windspeed: %f\n"
+	    "windspeed: %.2f km/h\n"
 	    "port state: %i\n"
 	    "closingNum: %i lastClosing: %s",
 	    subject,
-	    isOn (KONCAK_ZAVRENI_PRAVY), isOn (KONCAK_ZAVRENI_LEVY),
-	    isOn (KONCAK_OTEVRENI_PRAVY), isOn (KONCAK_OTEVRENI_LEVY),
-	    (weatherConn ? weatherConn->isGoodWeather () : -2),
-	    rain, windspeed, ret, closingNum, ctime (&lastClosing));
+	    isOnString (KONCAK_ZAVRENI_PRAVY),
+	    isOnString (KONCAK_ZAVRENI_LEVY),
+	    isOnString (KONCAK_OTEVRENI_PRAVY),
+	    isOnString (KONCAK_OTEVRENI_LEVY),
+	    (weatherConn ? weatherConn->isGoodWeather () : -2), rain,
+	    windspeed, ret, closingNum, ctime (&lastClosing));
   ret = sendMail (subject, openText);
   free (openText);
   return ret;
