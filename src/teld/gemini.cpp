@@ -1021,15 +1021,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -2014,7 +2011,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
       if (ret)
 	return ret;
     }
-  chng_time.tv_sec = 5;
+  chng_time.tv_sec = 10;
   chng_time.tv_usec = 0;
   gettimeofday (&changeTime, NULL);
   timeradd (&changeTime, &chng_time, &changeTime);
