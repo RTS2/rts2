@@ -366,7 +366,12 @@ Rts2GenFocClient::init ()
   config = Rts2Config::instance ();
   ret = config->loadFile (configFile);
   if (ret)
-    return ret;
+    {
+      std::cerr << "Cannot load configuration file '"
+	<< (configFile ? configFile : "/etc/rts2/rts2.ini")
+	<< ")" << std::endl;
+      return ret;
+    }
   return Rts2Client::init ();
 }
 
