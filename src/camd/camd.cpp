@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <fcntl.h>
 #include <time.h>
 
 #include "camera_cpp.h"
-#include "imghdr.h"
 #include "rts2devcliwheel.h"
 #include "rts2devclifocuser.h"
 
@@ -32,6 +32,9 @@ CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
   readoutLine = -1;
   sendLine = -1;
   shutter_state = -1;
+
+  focusingData = NULL;
+  focusingDataTop = NULL;
 }
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
@@ -53,12 +56,17 @@ CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
   readoutLine = -1;
   sendLine = -1;
   shutter_state = -1;
+
+  focusingData = NULL;
+  focusingDataTop = NULL;
 }
 
 CameraChip::~CameraChip (void)
 {
   delete chipSize;
   delete chipReadout;
+
+  delete focusingData;
 }
 
 int
@@ -132,8 +140,16 @@ CameraChip::isExposing ()
 int
 CameraChip::endExposure ()
 {
+  int ret;
   exposureEnd.tv_sec = 0;
   exposureEnd.tv_usec = 0;
+  if (camera->isFocusing ())
+    {
+      // fake readout - only to memory
+      ret = startReadout (NULL, NULL);
+      if (ret)
+	camera->endFocusing ();
+    }
   return 0;
 }
 
@@ -193,6 +209,11 @@ CameraChip::sendReadoutData (char *data, size_t data_size)
   time_t now;
   if (!readoutConn)
     {
+      if (camera->isFocusing ())
+	{
+	  return processData (data, data_size);
+	}
+      // completly strange then..
       return -1;
     }
   ret = readoutConn->send (data, data_size);
@@ -213,27 +234,49 @@ CameraChip::sendReadoutData (char *data, size_t data_size)
   return ret;
 }
 
+int
+CameraChip::processData (char *data, size_t size)
+{
+  memcpy (focusingDataTop, data, size);
+  focusingDataTop += size;
+  return 0;
+}
+
+int
+CameraChip::doFocusing ()
+{
+  // dummy method to write data to see it's working as expected
+  int f = open ("/tmp/focusing.dat", O_CREAT | O_TRUNC | O_WRONLY);
+  write (f, focusingData,
+	 focusingHeader.sizes[0] * focusingHeader.sizes[1] * 2);
+  close (f);
+  return 0;
+}
 
 int
 CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
   char *msg;
   char address[200];
-  setReadoutConn (dataConn);
-  dataConn->getAddress ((char *) &address, 200);
   if (!chipUsedReadout)
     {
       chipUsedReadout = new ChipSubset (chipReadout);
       usedBinningVertical = binningVertical;
       usedBinningHorizontal = binningHorizontal;
     }
-  asprintf (&msg, "D connect %i %s %i %i", chipId, address,
-	    dataConn->getLocalPort (),
-	    (chipUsedReadout->width / usedBinningHorizontal)
-	    * (chipUsedReadout->height / usedBinningVertical)
-	    * sizeof (unsigned short) + sizeof (imghdr));
-  conn->send (msg);
-  free (msg);
+  setReadoutConn (dataConn);
+  if (dataConn && conn)
+    {
+      dataConn->getAddress ((char *) &address, 200);
+
+      asprintf (&msg, "D connect %i %s %i %i", chipId, address,
+		dataConn->getLocalPort (),
+		(chipUsedReadout->width / usedBinningHorizontal)
+		* (chipUsedReadout->height / usedBinningVertical)
+		* sizeof (unsigned short) + sizeof (imghdr));
+      conn->send (msg);
+      free (msg);
+    }
   return 0;
 }
 
@@ -249,6 +292,18 @@ CameraChip::setReadoutConn (Rts2DevConnData * dataConn)
 int
 CameraChip::endReadout ()
 {
+  if (camera->isFocusing ())
+    {
+      int ret;
+      ret = doFocusing ();
+      if (ret)
+	{
+	  delete[]focusingData;
+	  focusingData = NULL;
+	  focusingDataTop = NULL;
+	  camera->endFocusing ();
+	}
+    }
   clearReadout ();
   if (readoutConn)
     {
@@ -270,27 +325,42 @@ CameraChip::clearReadout ()
 int
 CameraChip::sendFirstLine ()
 {
+  int w, h;
+  w = chipUsedReadout->width / usedBinningHorizontal;
+  h = chipUsedReadout->height / usedBinningVertical;
+  if (camera->isFocusing ())
+    {
+      // alocate data..
+      if (!focusingData || focusingHeader.sizes[0] < w
+	  || focusingHeader.sizes[1] < h)
+	{
+	  delete[]focusingData;
+	  focusingData = new char[w * h * 2];
+	}
+      focusingDataTop = focusingData;
+    }
+  focusingHeader.data_type = 1;
+  focusingHeader.naxes = 2;
+  focusingHeader.sizes[0] = chipUsedReadout->width / usedBinningHorizontal;
+  focusingHeader.sizes[1] = chipUsedReadout->height / usedBinningVertical;
+  focusingHeader.binnings[0] = usedBinningHorizontal;
+  focusingHeader.binnings[1] = usedBinningVertical;
+  focusingHeader.x = chipUsedReadout->x;
+  focusingHeader.y = chipUsedReadout->y;
+  focusingHeader.filter = camera->getLastFilterNum ();
+  focusingHeader.shutter = shutter_state;
   if (readoutConn)
     {
-      struct imghdr header;
-      header.data_type = 1;
-      header.naxes = 2;
-      header.sizes[0] = chipUsedReadout->width / usedBinningHorizontal;
-      header.sizes[1] = chipUsedReadout->height / usedBinningVertical;
-      header.binnings[0] = usedBinningHorizontal;
-      header.binnings[1] = usedBinningVertical;
-      header.x = chipUsedReadout->x;
-      header.y = chipUsedReadout->y;
-      header.filter = camera->getLastFilterNum ();
-      header.shutter = shutter_state;
       int ret;
-      ret = sendReadoutData ((char *) &header, sizeof (imghdr));
+      ret = sendReadoutData ((char *) &focusingHeader, sizeof (imghdr));
       if (ret == -2)
 	return 100;		// not yet connected, wait for connection..
       if (ret > 0)		// data send sucessfully
 	return 0;
       return ret;		// can be -1 as well
     }
+  else if (camera->isFocusing ())
+    return 0;
   return -1;
 }
 
@@ -337,6 +407,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   filterMove = NOT_MOVE;
   filterExpChip = -1;
   defBinning = 1;
+  defFocusExposure = 10;
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
@@ -345,6 +416,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   addOption ('W', "filterwheel", 1,
 	     "name of device which is used as filter wheel");
   addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
+  addOption ('e', "focexp", 1, "starting focusing exposure time");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -427,6 +499,9 @@ Rts2DevCamera::processOption (int in_opt)
       break;
     case 'b':
       defBinning = atoi (optarg);
+      break;
+    case 'e':
+      defFocusExposure = atof (optarg);
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -552,8 +627,15 @@ Rts2DevCamera::postEvent (Rts2Event * event)
 int
 Rts2DevCamera::idle ()
 {
+  int ret;
   checkExposures ();
   checkReadouts ();
+  if (isIdle () && isFocusing ())
+    {
+      ret = camExpose (0, 1, focusExposure);
+      if (ret)
+	endFocusing ();
+    }
   return Rts2Device::idle ();
 }
 
@@ -952,6 +1034,39 @@ Rts2DevCamera::getFocPos ()
   return fm.value;
 }
 
+int
+Rts2DevCamera::startFocus (Rts2Conn * conn)
+{
+  if (isFocusing ())
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "already performing autofocus");
+      return -1;
+    }
+  focusExposure = defFocusExposure;
+  // idle routine will check for that..
+  maskState (0, CAM_MASK_FOCUSINGS, CAM_FOCUSING);
+  return 0;
+}
+
+int
+Rts2DevCamera::endFocusing ()
+{
+  maskState (0, CAM_MASK_FOCUSINGS, CAM_NOFOCUSING);
+  return 0;
+}
+
+bool Rts2DevCamera::isIdle ()
+{
+  return ((getState (0) &
+	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
+	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
+}
+
+bool Rts2DevCamera::isFocusing ()
+{
+  return ((getState (0) & CAM_MASK_FOCUSINGS) == CAM_FOCUSING);
+}
+
 Rts2DevConnCamera::Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
@@ -997,16 +1112,15 @@ Rts2DevConnCamera::commandAuthorized ()
       send ("stopexpo <chip> - stop exposition on given chip");
       send ("progexpo <chip> - query exposition progress");
       send ("readout <chip> - start reading given chip");
-      send ("focus <chip> - try to focus image");
       send ("mirror <open|close> - open/close mirror");
       send
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       send ("stopread <chip> - stop reading given chip");
       send ("cooltemp <temp> - cooling temperature");
-      send ("focus <steps> - change focus to the given steps");
-      send ("autofocus - try to autofocus picture");
+      send ("set <steps> - change focus to the given steps");
+      send ("step <steps> - change focus by given steps");
+      send ("focus - try to autofocus picture");
       send ("filter <filter number> - set camera filter");
-      send ("step|set - get/set focuser values");
       send ("exit - exit from connection");
       send ("help - print, what you are reading just now");
       return 0;
@@ -1120,6 +1234,10 @@ Rts2DevConnCamera::commandAuthorized ()
       if (paramNextInteger (&foc_set) || !paramEnd ())
 	return -2;
       return master->setFocuser (this, foc_set);
+    }
+  else if (isCommand ("focus"))
+    {
+      return master->startFocus (this);
     }
   return Rts2DevConn::commandAuthorized ();
 }

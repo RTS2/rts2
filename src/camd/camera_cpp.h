@@ -6,6 +6,7 @@
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
+#include "imghdr.h"
 
 #include "filter.h"
 
@@ -93,7 +94,27 @@ protected:
   int usedBinningVertical;
   int usedBinningHorizontal;
   float gain;
+  struct imghdr focusingHeader;
+
   int sendReadoutData (char *data, size_t data_size);
+
+  char *focusingData;
+  char *focusingDataTop;
+
+  virtual int processData (char *data, size_t size);
+  /**
+   * Function to do focusing. To fullfill it's task, it can
+   * use following informations:
+   *
+   * focusingData is (char *) array holding last image
+   * focusingHeader holds informations about image size etc.
+   * focusExposure is (float) with exposure setting of focussing
+   *
+   * Shall focusing need a box image, it should call box method.
+   *
+   * Return 0 if focusing should continue, !0 otherwise.
+   */
+  virtual int doFocusing ();
 public:
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
@@ -190,6 +211,7 @@ private:
   int camStartExposure (int chip, int light, float exptime);
   // when we call that function, we must be sure that either filter or wheelDevice != NULL
   int camFilter (int new_filter);
+
 protected:
   int willConnect (Rts2Address * in_addr);
   char *device_file;
@@ -214,7 +236,6 @@ protected:
 
   virtual void cancelPriorityOperations ();
   int defBinning;
-
 public:
     Rts2DevCamera (int argc, char **argv);
     virtual ~ Rts2DevCamera (void);
@@ -315,6 +336,16 @@ public:
   int setFocuser (Rts2Conn * conn, int new_set);
   int stepFocuser (Rts2Conn * conn, int step_count);
   int getFocPos ();
+
+  float focusExposure;
+  float defFocusExposure;
+
+  // autofocus
+  int startFocus (Rts2Conn * conn);
+  int endFocusing ();
+
+  bool isIdle ();
+  bool isFocusing ();
 
   virtual int grantPriority (Rts2Conn * conn)
   {
