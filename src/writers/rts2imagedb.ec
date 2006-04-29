@@ -502,7 +502,6 @@ Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_o
 
 Rts2ImageDb::~Rts2ImageDb ()
 {
-  updateDB ();
   delete[] filter;
 }
 
@@ -543,6 +542,8 @@ Rts2ImageDb::toTrash ()
 int
 Rts2ImageDb::saveImage ()
 {
+  if (!shouldSaveImage())
+    return 0;
   updateDB ();
   setDarkFromDb ();
   updateCalibrationDb ();

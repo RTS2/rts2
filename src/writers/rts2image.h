@@ -258,6 +258,11 @@ public:
     flags |= IMAGE_KEEP_DATA;
   }
 
+  bool shouldSaveImage ()
+  {
+    return (flags & IMAGE_SAVE);
+  }
+
   void closeData ()
   {
     if (imageData)

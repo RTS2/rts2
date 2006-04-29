@@ -206,18 +206,12 @@ Rts2Image::Rts2Image (const char *in_filename)
 Rts2Image::~Rts2Image (void)
 {
   saveImage ();
-  if (imageName)
-    delete[]imageName;
-  if (targetName)
-    delete[]targetName;
-  if (cameraName)
-    delete[]cameraName;
-  if (mountName)
-    delete[]mountName;
-  if (focName)
-    delete[]focName;
-  if (imageData)
-    delete[]imageData;
+  delete[]imageName;
+  delete[]targetName;
+  delete[]cameraName;
+  delete[]mountName;
+  delete[]focName;
+  delete[]imageData;
   if (sexResults)
     free (sexResults);
 }
@@ -1047,6 +1041,7 @@ Rts2Image::setAstroResults (double in_ra, double in_dec, double in_ra_err,
   pos_astr.dec = in_dec;
   ra_err = in_ra_err;
   dec_err = in_dec_err;
+  flags |= IMAGE_SAVE;
   return 0;
 }
 
