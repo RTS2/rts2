@@ -516,7 +516,7 @@ public:
     Rts2NMDome (Rts2CNMonConn *
 		in_connection):Rts2DevClientDome (in_connection)
   {
-    setStatusBegin (8);
+    setStatusBegin (9);
   }
   virtual void postEvent (Rts2Event * event)
   {
@@ -535,6 +535,7 @@ Rts2NMDome::print (WINDOW * wnd)
   double humi;
   double vapor;
   double dew;
+  char *ignoreString;
   time (&now);
   time_to_open = getValueInteger ("next_open") - now;
 
@@ -563,6 +564,19 @@ Rts2NMDome::print (WINDOW * wnd)
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
   mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
+  switch (getValueInteger ("ignoreMeteo"))
+    {
+    case 2:
+      ignoreString = "METEO OVERRIDE";
+      break;
+    case 1:
+      ignoreString = "meteo active";
+      break;
+    default:
+      ignoreString = "ignore unknow";
+      break;
+    }
+  mvwprintw (wnd, 8, 1, "%s", ignoreString);
 
   printStatus (wnd, connection);
 }
