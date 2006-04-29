@@ -288,10 +288,6 @@ public:
   {
     return chips[chip]->stopExposure ();
   }
-  virtual int camReadout (int chip)
-  {
-    return -1;
-  }
   virtual int camStopRead (int chip)
   {
     return chips[chip]->endReadout ();
@@ -321,6 +317,7 @@ public:
   int camStopExpose (Rts2Conn * conn, int chip);
   int camBox (Rts2Conn * conn, int chip, int x, int y, int width, int height);
   int camCenter (Rts2Conn * conn, int chip, int in_w, int in_h);
+  int camReadout (int chip);
   int camReadout (Rts2Conn * conn, int chip);
   int camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin);
   int camStopRead (Rts2Conn * conn, int chip);

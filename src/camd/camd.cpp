@@ -131,7 +131,6 @@ CameraChip::isExposing ()
       || (tv.tv_sec == exposureEnd.tv_sec
 	  && tv.tv_usec >= exposureEnd.tv_usec))
     {
-      endExposure ();
       return 0;			// exposure ended
     }
   return (exposureEnd.tv_sec - tv.tv_sec) * USEC_SEC + (exposureEnd.tv_usec - tv.tv_usec);	// timeout
@@ -146,7 +145,7 @@ CameraChip::endExposure ()
   if (camera->isFocusing ())
     {
       // fake readout - only to memory
-      ret = startReadout (NULL, NULL);
+      ret = camera->camReadout (chipId);
       if (ret)
 	camera->endFocusing ();
     }
@@ -239,7 +238,7 @@ CameraChip::processData (char *data, size_t size)
 {
   memcpy (focusingDataTop, data, size);
   focusingDataTop += size;
-  return 0;
+  return size;
 }
 
 int
@@ -376,6 +375,9 @@ CameraChip::cancelPriorityOperations ()
   stopExposure ();
   endReadout ();
   chipUsedReadout = NULL;
+  delete[]focusingData;
+  focusingData = NULL;
+  focusingDataTop = NULL;
   box (-1, -1, -1, -1);
 }
 
@@ -564,6 +566,7 @@ Rts2DevCamera::checkExposures ()
 	    {
 	      maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 			 CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
+	      chips[i]->endExposure ();
 	    }
 	  if (ret == -1)
 	    {
@@ -571,6 +574,7 @@ Rts2DevCamera::checkExposures ()
 			 DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_DATA,
 			 DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NODATA,
 			 "exposure chip finished with error");
+	      chips[i]->stopExposure ();
 	    }
 	}
     }
@@ -789,6 +793,23 @@ Rts2DevCamera::camCenter (Rts2Conn * conn, int chip, int in_h, int in_w)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, "cannot set box size");
   return ret;
+}
+
+// when we don't have data connection - handy for exposing
+int
+Rts2DevCamera::camReadout (int chip)
+{
+  int ret;
+  maskState (chip, CAM_MASK_READING | CAM_MASK_DATA, CAM_READING | CAM_NODATA,
+	     "chip readout started");
+  ret = chips[chip]->startReadout (NULL, NULL);
+  if (!ret)
+    {
+      return 0;
+    }
+  maskState (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
+	     DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
+  return -1;
 }
 
 int
@@ -1055,16 +1076,14 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSINGS) == CAM_FOCUSING);
 }
