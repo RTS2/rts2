@@ -224,7 +224,7 @@ private:
 
 protected:
   virtual int processOption (int in_opt);
-
+  virtual int isGoodWeather ();
 public:
   Rts2DevDomeFram (int argc, char **argv);
   virtual ~ Rts2DevDomeFram (void);
@@ -669,7 +669,7 @@ Rts2DevDomeFram::openDome ()
 {
   if (movingState != MOVE_NONE)
     return -1;
-  if (!weatherConn->isGoodWeather ())
+  if (!isGoodWeather ())
     return -1;
 
   lastClosing = 0;
@@ -928,6 +928,16 @@ Rts2DevDomeFram::processOption (int in_opt)
 }
 
 int
+Rts2DevDomeFram::isGoodWeather ()
+{
+  if (ignoreMeteo)
+    return 1;
+  if (weatherConn)
+    return weatherConn->isGoodWeather ();
+  return 0;
+}
+
+int
 Rts2DevDomeFram::init ()
 {
   struct termios oldtio, newtio;
@@ -1004,7 +1014,7 @@ Rts2DevDomeFram::idle ()
   if (wdc_file)
     resetWDC ();
   // check for weather..
-  if (weatherConn->isGoodWeather ())
+  if (isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
@@ -1156,7 +1166,7 @@ Rts2DevDomeFram::sendFramMail (char *subject)
 	    isOnString (KONCAK_ZAVRENI_LEVY),
 	    isOnString (KONCAK_OTEVRENI_PRAVY),
 	    isOnString (KONCAK_OTEVRENI_LEVY),
-	    (weatherConn ? weatherConn->isGoodWeather () : -2), rain,
+	    isGoodWeather (), rain,
 	    windspeed, ret, closingNum, ctime (&lastClosing));
   ret = sendMail (subject, openText);
   free (openText);

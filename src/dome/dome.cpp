@@ -76,6 +76,14 @@ Rts2DevDome::domeWeatherGood ()
 }
 
 int
+Rts2DevDome::isGoodWeather ()
+{
+  if (ignoreMeteo)
+    return 1;
+  return 0;
+}
+
+int
 Rts2DevDome::init ()
 {
   return Rts2Device::init ();

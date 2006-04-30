@@ -37,6 +37,7 @@ protected:
   bool ignoreMeteo;
 
   void domeWeatherGood ();
+  virtual int isGoodWeather ();
 public:
   Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
   virtual int openDome ()

@@ -379,13 +379,17 @@ Rts2DevDomeBart::isGoodWeather ()
 	{
 	  rain = 1;
 	  setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
+	  if (ignoreMeteo)
+	    return 1;
 	  return 0;
 	}
       rain = 0;
     }
+  if (ignoreMeteo)
+    return 1;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
-  return 1;
+  return 0;
 }
 
 int

@@ -139,9 +139,11 @@ Rts2DevDomeDublin::processOption (int in_opt)
 int
 Rts2DevDomeDublin::isGoodWeather ()
 {
+  if (ignoreMeteo)
+    return 1;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
-  return 1;
+  return 0;
 }
 
 int
@@ -267,12 +269,14 @@ Rts2DevDomeDublin::info ()
   return 0;
 }
 
-bool
-Rts2DevDomeDublin::isMoving ()
+bool Rts2DevDomeDublin::isMoving ()
 {
-  int result;
-  int moving = 0;
-  int count;
+  int
+    result;
+  int
+    moving = 0;
+  int
+    count;
   for (count = 0; count < 100; count++)
     {
       result = (inb (BASE + 2));
