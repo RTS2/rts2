@@ -19,9 +19,19 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
   int startGetFailed = getFailed;
   ra_t = (x - getXoA ()) * getXPlate ();
   dec_t = (y - getYoA ()) * getYPlate ();
-  // we are obsering sky..so EW swap (unless there is mirror)
+  // we are obsering sky..so NS swap (unless there is mirror)
   if (getFlip ())
-    ra_t *= -1;
+    {
+      dec_t *= -1;
+    }
+/*  else
+    {
+      ra_t *= -1;
+      dec_t *= -1;
+    } */
+
+  // I'm unsure about that..
+  // dec_t *= -1;
   rotang = getRotang ();
   // transform to new coordinates, rotated by clokwise rotang..
   ra = cos (rotang) * ra_t - sin (rotang) * dec_t;
@@ -101,7 +111,7 @@ Rts2Image::getRotang ()
       getFailed++;
       return 0;
     }
-  return val;
+  return ln_deg_to_rad (val);
 }
 
 double
