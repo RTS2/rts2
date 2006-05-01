@@ -215,6 +215,14 @@ Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 }
 
 void
+Rts2DevTelescope::dontKnowPosition ()
+{
+  knowPosition = 0;
+  locCorRa = 0;
+  locCorDec = 0;
+}
+
+void
 Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
 			      struct ln_equ_posn *model_change, int flip,
 			      double JD)
@@ -356,7 +364,7 @@ Rts2DevTelescope::checkMoves ()
 	  lastTar.ra = -1000;
 	  lastTar.dec = -1000;
 	  move_connection = NULL;
-	  knowPosition = 0;
+	  dontKnowPosition ();
 	}
       else if (ret == -2)
 	{
@@ -370,7 +378,7 @@ Rts2DevTelescope::checkMoves ()
 	      maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
 			 DEVICE_ERROR_HW | TEL_OBSERVING,
 			 "move finished with error");
-	      knowPosition = 0;
+	      dontKnowPosition ();
 	    }
 	  else
 	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
@@ -490,9 +498,7 @@ Rts2DevTelescope::changeMasterState (int new_state)
       moveMark = 0;
       numCorr = 0;
       locCorNum = -1;
-      locCorRa = 0;
-      locCorDec = 0;
-      knowPosition = 0;
+      dontKnowPosition ();
     }
   // park us during day..
   if (status == SERVERD_DAY || new_state == SERVERD_OFF)
@@ -701,9 +707,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       sep = getMoveTargetSep ();
       syslog (LOG_DEBUG, "Rts2DevTelescope::startMove sep: %f", sep);
       if (sep > 2)
-	{
-	  knowPosition = 0;
-	}
+	dontKnowPosition ();
     }
   // we received correction for last move..
   if (locCorNum == moveMark)
@@ -767,7 +771,7 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
       moveMark++;
       maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
 		 "move started");
-      knowPosition = 0;
+      dontKnowPosition ();
       move_connection = conn;
     }
   return ret;
@@ -812,9 +816,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       sep = getMoveTargetSep ();
       syslog (LOG_DEBUG, "Rts2DevTelescope::startResyncMove sep: %f", sep);
       if (sep > 2)
-	{
-	  knowPosition = 0;
-	}
+	dontKnowPosition ();
     }
   infoAll ();
   // we received correction for last move..and yes, we would like to apply it in resync
@@ -899,9 +901,9 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	{
 	  ret = 0;
 	  // change scope
-	  locCorNum = moveMark;
 	  locCorRa += cor_ra;
 	  locCorDec += cor_dec;
+	  locCorNum = moveMark;
 	}
       if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
 	{

@@ -61,6 +61,8 @@ private:
   void applyPrecession (struct ln_equ_posn *pos, double JD);
   void applyRefraction (struct ln_equ_posn *pos, double JD);
 
+  void dontKnowPosition ();
+
 protected:
   int corrections;
 
