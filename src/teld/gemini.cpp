@@ -1986,9 +1986,16 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
   struct timeval chng_time;
   int ret = 0;
   nextChangeDec = 0;
-  tel_set_rate (RATE_CENTER);
-  // set smallest rate..
-  tel_gemini_set (170, 1);
+  // smaller then 30 arcsec
+  if (chng_dec < 30.0 / 3600.0 && chng_ra < 30.0 / 3600.0)
+    {
+      // set smallest rate..
+      tel_gemini_set (150, 0.2);
+    }
+  else
+    {
+      tel_gemini_set (150, 0.8);
+    }
   if (!getFlip ())
     {
       chng_dec *= -1;
