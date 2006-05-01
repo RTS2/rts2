@@ -1021,12 +1021,15 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1983,6 +1986,9 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
   struct timeval chng_time;
   int ret = 0;
   nextChangeDec = 0;
+  tel_set_rate (RATE_CENTER);
+  // set smallest rate..
+  tel_gemini_set (170, 1);
   if (!getFlip ())
     {
       chng_dec *= -1;
