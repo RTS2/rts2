@@ -1478,7 +1478,6 @@ Rts2DevTelescopeGemini::isMoving ()
     {
       if (timercmp (&changeTime, &now, <))
 	{
-	  timerclear (&changeTime);
 	  return -2;
 	}
       return 0;
@@ -1497,6 +1496,13 @@ int
 Rts2DevTelescopeGemini::endMove ()
 {
   int32_t track;
+  // don't start tracking while we are performing only change - it seems to
+  // disturb RA tracking
+  if (changeTime.tv_sec > 0)
+    {
+      timerclear (&changeTime);
+      return 0;
+    }
   tel_gemini_get (130, track);
 #ifdef DEBUG_EXTRA
   syslog (LOG_INFO, "rate: %i", track);
