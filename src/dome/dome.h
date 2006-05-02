@@ -89,6 +89,7 @@ public:
   int setIgnoreMeteo (bool newIgnore)
   {
     ignoreMeteo = newIgnore;
+    infoAll ();
     return 0;
   }
 
