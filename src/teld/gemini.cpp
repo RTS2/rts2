@@ -501,7 +501,7 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
 {
   char buf[15];
   int len;
-  len = sprintf (buf, ">%i:%f0.1", id, val);
+  len = sprintf (buf, ">%i:%0.1f", id, val);
   buf[len] = tel_gemini_checksum (buf);
   len++;
   buf[len] = '#';
@@ -1986,16 +1986,25 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
   struct timeval chng_time;
   int ret = 0;
   nextChangeDec = 0;
+
   // smaller then 30 arcsec
-  if (chng_dec < 30.0 / 3600.0 && chng_ra < 30.0 / 3600.0)
+  if (chng_dec < 60.0 / 3600.0 && chng_ra < 60.0 / 3600.0)
     {
       // set smallest rate..
       tel_gemini_set (150, 0.2);
+      if (chng_dec > 30.0 / 3600.0 || chng_ra > 30.0 / 3600.0)
+	chng_time.tv_sec = 20;
+      else
+	chng_time.tv_sec = 10;
+      if (chng_ra < 30.0 / 3600.0)
+	chng_ra = 0;
     }
   else
     {
       tel_gemini_set (150, 0.8);
+      chng_time.tv_sec = 10;
     }
+  chng_time.tv_usec = 0;
   if (!getFlip ())
     {
       chng_dec *= -1;
@@ -2024,8 +2033,6 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
       if (ret)
 	return ret;
     }
-  chng_time.tv_sec = 10;
-  chng_time.tv_usec = 0;
   gettimeofday (&changeTime, NULL);
   timeradd (&changeTime, &chng_time, &changeTime);
   return ret;
