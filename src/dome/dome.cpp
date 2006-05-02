@@ -223,6 +223,7 @@ Rts2DevDome::observing ()
 int
 Rts2DevDome::standby ()
 {
+  ignoreMeteo = false;
   if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
@@ -231,6 +232,7 @@ Rts2DevDome::standby ()
 int
 Rts2DevDome::off ()
 {
+  ignoreMeteo = false;
   if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
