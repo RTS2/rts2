@@ -335,6 +335,7 @@ public:
 
   // get rotang - get value from WCS when available; ROTANG is in radians, and is true rotang of image
   // (assumig top is N, left is E - e.g. is corrected for telescope flip)
+  // it's WCS style - counterclockwise
   double getRotang ();
 
   double getCenterRa ();
