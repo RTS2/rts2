@@ -140,7 +140,7 @@ private:
   int fixed_ntries;
 
   int startMoveFixedReal ();
-  int guide (char direction, double val);
+  int guide (char direction, unsigned int val);
   int change_real (double chng_ra, double chng_dec);
 
   int forcedReparking;		// used to count reparking, when move fails
@@ -1021,12 +1021,15 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1968,14 +1971,13 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 int
-Rts2DevTelescopeGemini::guide (char direction, double val)
+Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 {
   // convert to arcsec
   char buf[20];
   int len;
   int ret;
-  val *= 3600.0;
-  len = sprintf (buf, ":Ma%c%.0f#", direction, val);
+  len = sprintf (buf, ":Mi%c%i#", direction, val);
   ret = tel_write (buf, len);
   if (ret != len)
     return -1;
@@ -1990,7 +1992,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
   int ret = 0;
   nextChangeDec = 0;
 
-  // smaller then 30 arcsec
+/*  // smaller then 30 arcsec
   if (chng_dec < 60.0 / 3600.0 && chng_ra < 60.0 / 3600.0)
     {
       // set smallest rate..
@@ -1999,9 +2001,8 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	chng_ra = 0;
     }
   else
-    {
-      tel_gemini_set (150, 0.8);
-    }
+    { */
+  tel_gemini_set (150, 0.8);
   chng_time.tv_sec =
     (int) (fabs (chng_ra) >
 	   fabs (chng_dec) ? (fabs (chng_ra) * 3600.0 *
@@ -2023,7 +2024,9 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	{
 	  direction = DIR_WEST;
 	}
-      ret = guide (direction, fabs (chng_ra));
+      ret =
+	guide (direction,
+	       (unsigned int) (fabs (chng_ra) * 255.0 / maxPrecGuideRa));
       if (ret)
 	return ret;
     }
@@ -2031,7 +2034,9 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
     {
       // slew speed to 20 - 5 arcmin / sec
       direction = chng_dec > 0 ? DIR_NORTH : DIR_SOUTH;
-      ret = guide (direction, fabs (chng_dec));
+      ret =
+	guide (direction,
+	       (unsigned int) (fabs (chng_dec) * 255.0 / maxPrecGuideDec));
       if (ret)
 	return ret;
     }
