@@ -140,6 +140,7 @@ private:
   int fixed_ntries;
 
   int startMoveFixedReal ();
+  bool isGuiding (struct timeval *now);
   int guide (char direction, unsigned int val);
   int change_real (double chng_ra, double chng_dec);
 
@@ -159,6 +160,7 @@ private:
   int matchCount;
   int bootesSensors;
   struct timeval changeTime;
+  bool guideDetected;
 
   void clearSearch ();
   // execute next search step, if necessary
@@ -935,6 +937,7 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   worm_move_needed = 0;
 
   timerclear (&changeTime);
+  guideDetected = false;
 
   nextChangeDec = 0;
   // default guiding speed
@@ -1021,15 +1024,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1476,11 +1476,7 @@ Rts2DevTelescopeGemini::isMoving ()
   // change move..
   if (changeTime.tv_sec > 0)
     {
-      if (timercmp (&changeTime, &now, <))
-	{
-	  return -2;
-	}
-      return 0;
+      return (isGuiding (&now) ? 0 : -2);
     }
   if (now.tv_sec > moveTimeout)
     {
@@ -1970,6 +1966,20 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
   return ret;
 }
 
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+{
+  int
+    ret;
+  char
+    guiding;
+  ret = tel_write_read (":Gv#", 4, &guiding, 1);
+  if (guiding == 'G')
+    guideDetected = true;
+  if ((guideDetected && guiding != 'G') || timercmp (&changeTime, now, <))
+    return false;
+  return true;
+}
+
 int
 Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 {
@@ -2003,10 +2013,8 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
   else
     { */
   tel_gemini_set (150, 0.8);
-  chng_time.tv_sec =
-    (int) (fabs (chng_ra) >
-	   fabs (chng_dec) ? (fabs (chng_ra) * 3600.0 *
-			      1.5) : (fabs (chng_dec) * 3600.0 * 1.5));
+  chng_time.tv_sec = (int) (fabs (chng_ra) > fabs (chng_dec) ? (ceil (fabs (chng_ra) * 240.0))	// * 0.8 * some constand, but that will left enought margin..
+			    : (ceil (fabs (chng_dec) * 240.0)));
   chng_time.tv_usec = 0;
   if (!getFlip ())
     {
@@ -2042,6 +2050,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
     }
   gettimeofday (&changeTime, NULL);
   timeradd (&changeTime, &chng_time, &changeTime);
+  guideDetected = false;
   return ret;
 }
 
