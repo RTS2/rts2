@@ -2016,17 +2016,20 @@ Rts2DevTelescopeGemini::changeDec ()
   char direction;
   struct timeval chng_time;
   int ret;
-  nextChangeDec = 0;
   direction = nextChangeDec > 0 ? DIR_NORTH : DIR_SOUTH;
   ret = guide (direction,
 	       (unsigned int) (fabs (nextChangeDec) * 255.0 /
 			       maxPrecGuideDec));
   if (ret)
-    return ret;
+    {
+      nextChangeDec = 0;
+      return ret;
+    }
   chng_time.tv_sec = (int) (ceil (fabs (nextChangeDec) * 240.0));
   gettimeofday (&changeTime, NULL);
   timeradd (&changeTime, &chng_time, &changeTime);
   guideDetected = false;
+  nextChangeDec = 0;
   return 0;
 }
 
