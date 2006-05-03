@@ -181,6 +181,7 @@ private:
   int worm_move_needed;		// 1 if we need to put mount to 130 tracking (we are performing RA move)
 
   double nextChangeDec;
+  bool decChanged;
 
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
@@ -941,6 +942,7 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   guideDetected = false;
 
   nextChangeDec = 0;
+  decChanged = false;
   // default guiding speed
   telGuidingSpeed = 0.2;
 
@@ -1025,15 +1027,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1511,7 +1510,9 @@ Rts2DevTelescopeGemini::endMove ()
   // disturb RA tracking
   if (changeTime.tv_sec > 0)
     {
-      startWorm ();
+      if (!decChanged)
+	startWorm ();
+      decChanged = false;
       timerclear (&changeTime);
       return 0;
     }
@@ -1982,11 +1983,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
   return ret;
 }
 
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2025,6 +2027,7 @@ Rts2DevTelescopeGemini::changeDec ()
       nextChangeDec = 0;
       return ret;
     }
+  decChanged = true;
   chng_time.tv_sec = (int) (ceil (fabs (nextChangeDec) * 240.0));
   gettimeofday (&changeTime, NULL);
   timeradd (&changeTime, &chng_time, &changeTime);
@@ -2078,6 +2081,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
       gettimeofday (&changeTime, NULL);
       timeradd (&changeTime, &chng_time, &changeTime);
       guideDetected = false;
+      decChanged = false;
       return 0;
     }
   else if (chng_dec != 0)
