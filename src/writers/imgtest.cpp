@@ -41,5 +41,11 @@ main (int argc, char **argv)
     getOffset (659.433000, 94.990000, x, y,
 	       sep) << " " << x << " " << y << " (" << sep << ")" << std::
     endl;
+
+  std::
+    cout << "Rts2Image::getOffset (140, 144.3, x, y) " << image->
+    getOffset (140, 144.3, x, y,
+	       sep) << " " << x << " " << y << " (" << sep << ")" << std::
+    endl;
   return 0;
 }

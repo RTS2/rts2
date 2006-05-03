@@ -8,7 +8,7 @@
  *
  * Most probably will converge to WCS class solution (or even WCSlib incorporation) in future.
  *
- * @author Petr Kubanek <pkubanek@lascaux.asu.cas.cz>
+ * @author Petr Kubanek <pkubanek@asu.cas.cz>
  */
 
 int
@@ -24,18 +24,13 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
     {
       dec_t *= -1;
     }
-/*  else
-    {
-      ra_t *= -1;
-      dec_t *= -1;
-    } */
-
-  // I'm unsure about that..
-  // dec_t *= -1;
-  rotang = getRotang ();
-  // transform to new coordinates, rotated by clokwise rotang..
-  ra = cos (rotang) * ra_t - sin (rotang) * dec_t;
-  dec = cos (rotang) * dec_t + sin (rotang) * ra_t;
+  // rotang is clokwise..we have formula for counterclokwise
+  rotang = -1 * getRotang ();
+  double cos_r = cos (rotang);
+  double sin_r = sin (rotang);
+  // transform to new coordinates, rotated by counterclokwise rotang..
+  ra = cos_r * ra_t - sin_r * dec_t;
+  dec = cos_r * dec_t + sin_r * ra_t;
   // we are at new coordinates..apply offsets
   dec += getCenterDec ();
   // transform ra offset due to sphere
