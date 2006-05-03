@@ -142,6 +142,7 @@ private:
   int startMoveFixedReal ();
   bool isGuiding (struct timeval *now);
   int guide (char direction, unsigned int val);
+  int changeDec ();
   int change_real (double chng_ra, double chng_dec);
 
   int forcedReparking;		// used to count reparking, when move fails
@@ -1479,7 +1480,18 @@ Rts2DevTelescopeGemini::isMoving ()
   // change move..
   if (changeTime.tv_sec > 0)
     {
-      return (isGuiding (&now) ? 0 : -2);
+      if (isGuiding (&now))
+	return 0;
+      if (nextChangeDec != 0)
+	{
+	  // worm need to be started - most probably due to error in Gemini
+	  startWorm ();
+	  // initiate dec change
+	  if (changeDec ())
+	    return -1;
+	  return 0;
+	}
+      return -2;
     }
   if (now.tv_sec > moveTimeout)
     {
@@ -1499,6 +1511,7 @@ Rts2DevTelescopeGemini::endMove ()
   // disturb RA tracking
   if (changeTime.tv_sec > 0)
     {
+      startWorm ();
       timerclear (&changeTime);
       return 0;
     }
@@ -1998,12 +2011,31 @@ Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 }
 
 int
+Rts2DevTelescopeGemini::changeDec ()
+{
+  char direction;
+  struct timeval chng_time;
+  int ret;
+  nextChangeDec = 0;
+  direction = nextChangeDec > 0 ? DIR_NORTH : DIR_SOUTH;
+  ret = guide (direction,
+	       (unsigned int) (fabs (nextChangeDec) * 255.0 /
+			       maxPrecGuideDec));
+  if (ret)
+    return ret;
+  chng_time.tv_sec = (int) (ceil (fabs (nextChangeDec) * 240.0));
+  gettimeofday (&changeTime, NULL);
+  timeradd (&changeTime, &chng_time, &changeTime);
+  guideDetected = false;
+  return 0;
+}
+
+int
 Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 {
   char direction;
   struct timeval chng_time;
   int ret = 0;
-  nextChangeDec = 0;
 
 /*  // smaller then 30 arcsec
   if (chng_dec < 60.0 / 3600.0 && chng_ra < 60.0 / 3600.0)
@@ -2016,9 +2048,6 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
   else
     { */
   tel_gemini_set (150, 0.8);
-  chng_time.tv_sec = (int) (fabs (chng_ra) > fabs (chng_dec) ? (ceil (fabs (chng_ra) * 240.0))	// * 0.8 * some constand, but that will left enought margin..
-			    : (ceil (fabs (chng_dec) * 240.0)));
-  chng_time.tv_usec = 0;
   if (!getFlip ())
     {
       chng_dec *= -1;
@@ -2040,21 +2069,22 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	       (unsigned int) (fabs (chng_ra) * 255.0 / maxPrecGuideRa));
       if (ret)
 	return ret;
+
+      chng_time.tv_sec = (int) (ceil (fabs (chng_ra) * 240.0));	// * 0.8 * some constand, but that will left enought margin..
+      nextChangeDec = chng_dec;
+      gettimeofday (&changeTime, NULL);
+      timeradd (&changeTime, &chng_time, &changeTime);
+      guideDetected = false;
+      return 0;
     }
-  if (chng_dec != 0)
+  else if (chng_dec != 0)
     {
-      // slew speed to 20 - 5 arcmin / sec
-      direction = chng_dec > 0 ? DIR_NORTH : DIR_SOUTH;
-      ret =
-	guide (direction,
-	       (unsigned int) (fabs (chng_dec) * 255.0 / maxPrecGuideDec));
-      if (ret)
-	return ret;
+      nextChangeDec = chng_dec;
+      // don't update guide,,
+      // that will be chandled in changeDec
+      return 0;
     }
-  gettimeofday (&changeTime, NULL);
-  timeradd (&changeTime, &chng_time, &changeTime);
-  guideDetected = false;
-  return ret;
+  return -1;
 }
 
 int
@@ -2065,8 +2095,8 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   if (ret)
     return ret;
 #ifdef DEBUG_EXTRA
-  syslog (LOG_INFO, "Rts2DevTelescopeGemini::change ra %f dec %f",
-	  telRa, telDec);
+  syslog (LOG_INFO,
+	  "Rts2DevTelescopeGemini::change ra %f dec %f", telRa, telDec);
 #endif
   // decide, if we make change, or move using move command
   if (fabs (chng_ra) > maxPrecGuideRa || fabs (chng_dec) > maxPrecGuideDec)
@@ -2100,9 +2130,7 @@ Rts2DevTelescopeGemini::startPark ()
   fixed_ha = nan ("f");
   if (telMotorState != TEL_OK)
     return -1;
-
   stopMove ();
-
   ret = tel_write ("#:hP#", 5);
   if (ret <= 0)
     return -1;
@@ -2134,14 +2162,12 @@ static int save_registers[] = {
   412,				// DEC tracking divisor
   -1
 };
-
 int
 Rts2DevTelescopeGemini::saveModel ()
 {
   int *reg = save_registers;
   char buf[20];
   FILE *config_file;
-
   config_file = fopen (geminiConfig, "w");
   if (!config_file)
     {
@@ -2177,7 +2203,6 @@ Rts2DevTelescopeGemini::loadModel ()
   size_t numchar;
   int id;
   int ret;
-
   config_file = fopen (geminiConfig, "r");
   if (!config_file)
     {
@@ -2189,7 +2214,6 @@ Rts2DevTelescopeGemini::loadModel ()
 
   numchar = 100;
   line = (char *) malloc (numchar);
-
   while (getline (&line, &numchar, config_file) != -1)
     {
       char *buf;
@@ -2211,7 +2235,6 @@ Rts2DevTelescopeGemini::loadModel ()
 	}
     }
   free (line);
-
   return 0;
 }
 
@@ -2380,7 +2403,6 @@ Rts2DevTelescopeGemini::getFlip ()
 {
   int32_t raTick, decTick;
   int ret;
-
   ret = tel_gemini_get (235, raTick, decTick);
   if (ret)
     return -1;
@@ -2392,7 +2414,6 @@ Rts2DevTelescopeGemini::getFlip ()
 }
 
 Rts2DevTelescopeGemini *device;
-
 void
 killSignal (int sig)
 {
@@ -2405,10 +2426,8 @@ int
 main (int argc, char **argv)
 {
   device = new Rts2DevTelescopeGemini (argc, argv);
-
   signal (SIGINT, killSignal);
   signal (SIGTERM, killSignal);
-
   int ret = -1;
   ret = device->init ();
   if (ret)
