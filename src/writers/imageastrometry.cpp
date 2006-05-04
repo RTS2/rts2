@@ -19,11 +19,6 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
   int startGetFailed = getFailed;
   ra_t = (x - getXoA ()) * getXPlate ();
   dec_t = (y - getYoA ()) * getYPlate ();
-  // we are obsering sky..so NS swap (unless there is mirror)
-  if (getFlip ())
-    {
-      dec_t *= -1;
-    }
   // rotang is clokwise..we have formula for counterclokwise
   rotang = -1 * getRotang ();
   double cos_r = cos (rotang);
@@ -31,6 +26,9 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
   // transform to new coordinates, rotated by counterclokwise rotang..
   ra = cos_r * ra_t - sin_r * dec_t;
   dec = cos_r * dec_t + sin_r * ra_t;
+  // NS swap when there is a mirror
+  if (!getFlip ())
+    dec *= -1;
   // we are at new coordinates..apply offsets
   dec += getCenterDec ();
   // transform ra offset due to sphere
