@@ -140,9 +140,11 @@ private:
   int fixed_ntries;
 
   int startMoveFixedReal ();
+#ifdef L4_GUIDE
   bool isGuiding (struct timeval *now);
-  int guide (char direction, unsigned int val);
+  int guide (char direction, double val);
   int changeDec ();
+#endif
   int change_real (double chng_ra, double chng_dec);
 
   int forcedReparking;		// used to count reparking, when move fails
@@ -160,7 +162,12 @@ private:
   int infoCount;
   int matchCount;
   int bootesSensors;
+#ifdef L4_GUIDE
   struct timeval changeTime;
+#else
+  struct timeval changeTimeRa;
+  struct timeval changeTimeDec;
+#endif
   bool guideDetected;
 
   void clearSearch ();
@@ -937,8 +944,12 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
 
   worm = 0;
   worm_move_needed = 0;
-
+#ifdef L4_GUIDE
   timerclear (&changeTime);
+#else
+  timerclear (&changeTimeRa);
+  timerclear (&changeTimeDec);
+#endif
   guideDetected = false;
 
   nextChangeDec = 0;
@@ -1027,12 +1038,15 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1477,6 +1491,7 @@ Rts2DevTelescopeGemini::isMoving ()
     return USEC_SEC;
   gettimeofday (&now, NULL);
   // change move..
+#ifdef L4_GUIDE
   if (changeTime.tv_sec > 0)
     {
       if (isGuiding (&now))
@@ -1492,6 +1507,64 @@ Rts2DevTelescopeGemini::isMoving ()
 	}
       return -2;
     }
+#else
+  int ret;
+  if (changeTimeRa.tv_sec > 0 || changeTimeRa.tv_usec > 0
+      || changeTimeDec.tv_sec > 0 || changeTimeDec.tv_usec > 0)
+    {
+      if (changeTimeRa.tv_sec > 0 || changeTimeRa.tv_usec > 0)
+	{
+	  if (timercmp (&changeTimeRa, &now, <))
+	    {
+	      ret = telescope_stop_move (DIR_EAST);
+	      if (ret == -1)
+		return ret;
+	      ret = telescope_stop_move (DIR_WEST);
+	      if (ret == -1)
+		return ret;
+	      timerclear (&changeTimeRa);
+	      if (nextChangeDec != 0)
+		{
+		  char direction;
+		  long u_sleep;
+		  // slew speed to 20 - 5 arcmin / sec
+		  direction = nextChangeDec > 0 ? DIR_NORTH : DIR_SOUTH;
+		  ret = tel_gemini_set (150, 0.8);
+		  if (ret)
+		    return -1;
+		  u_sleep =
+		    (long) ((fabs (nextChangeDec) * 60.0) * 4.0 * USEC_SEC);
+		  changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
+		  changeTimeDec.tv_usec =
+		    (long) (u_sleep - changeTimeDec.tv_sec);
+		  ret = telescope_start_move (direction);
+		  if (ret == -1)
+		    return ret;
+		  gettimeofday (&now, NULL);
+		  timeradd (&changeTimeDec, &now, &changeTimeDec);
+		}
+	    }
+	}
+      if (changeTimeDec.tv_sec > 0 || changeTimeDec.tv_usec > 0)
+	{
+	  if (timercmp (&changeTimeDec, &now, <))
+	    {
+	      nextChangeDec = 0;
+	      ret = telescope_stop_move (DIR_NORTH);
+	      if (ret == -1)
+		return ret;
+	      ret = telescope_stop_move (DIR_SOUTH);
+	      if (ret == -1)
+		return ret;
+	      timerclear (&changeTimeDec);
+	    }
+	}
+      if (changeTimeRa.tv_sec == 0 && changeTimeRa.tv_usec == 0
+	  && changeTimeDec.tv_sec == 0 && changeTimeDec.tv_usec == 0)
+	return -2;
+      return 0;
+    }
+#endif
   if (now.tv_sec > moveTimeout)
     {
       stopMove ();
@@ -1506,6 +1579,7 @@ int
 Rts2DevTelescopeGemini::endMove ()
 {
   int32_t track;
+#ifdef L4_GUIDE
   // don't start tracking while we are performing only change - it seems to
   // disturb RA tracking
   if (changeTime.tv_sec > 0)
@@ -1516,6 +1590,7 @@ Rts2DevTelescopeGemini::endMove ()
       timerclear (&changeTime);
       return 0;
     }
+#endif
   tel_gemini_get (130, track);
 #ifdef DEBUG_EXTRA
   syslog (LOG_INFO, "rate: %i", track);
@@ -1532,7 +1607,12 @@ int
 Rts2DevTelescopeGemini::stopMove ()
 {
   telescope_stop_goto ();
+#ifdef L4_GUIDE
   timerclear (&changeTime);
+#else
+  timerclear (&changeTimeRa);
+  timerclear (&changeTimeDec);
+#endif
   return Rts2DevTelescope::stopMove ();
 }
 
@@ -1595,8 +1675,12 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
       if (ha_diff > 180)
 	ha_diff = ha_diff - 360;
       // do changes smaller then max change arc min using precision guide command
+#ifdef L4_GUIDE
       if (fabs (ha_diff) < maxPrecGuideRa
 	  && fabs (dec_diff) < maxPrecGuideDec)
+#else
+      if (fabs (ha_diff) < 5 / 60.0 && fabs (dec_diff) < 5 / 60.0)
+#endif
 	{
 	  ret = change_real (ha_diff, dec_diff);
 	  if (!ret)
@@ -1983,12 +2067,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
   return ret;
 }
 
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+#ifdef L4_GUIDE
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2093,6 +2177,69 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
     }
   return -1;
 }
+#else
+int
+Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
+{
+  char direction;
+  long u_sleep;
+  struct timeval now;
+
+  int ret;
+  // center rate
+  ret = tel_set_rate (RATE_GUIDE);
+  if (ret == -1)
+    return ret;
+  nextChangeDec = 0;
+  if (!getFlip ())
+    {
+      chng_dec *= -1;
+    }
+  if (chng_ra != 0)
+    {
+      // first - RA direction
+      // slew speed to 1 - 0.25 arcmin / sec
+      if (chng_ra > 0)
+	{
+	  direction = DIR_EAST;
+	  ret = tel_gemini_set (150, 0.8);
+	  if (ret == -1)
+	    return ret;
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 4.0) * USEC_SEC);
+	}
+      else
+	{
+	  direction = DIR_WEST;
+	  ret = tel_gemini_set (150, 0.8);
+	  if (ret == -1)
+	    return ret;
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 4.0) * USEC_SEC +
+			    USEC_SEC / 10.0);
+	}
+      changeTimeRa.tv_sec = (long) (u_sleep / USEC_SEC);
+      changeTimeRa.tv_usec = (long) (u_sleep - changeTimeRa.tv_sec);
+      ret = telescope_start_move (direction);
+      gettimeofday (&now, NULL);
+      timeradd (&changeTimeRa, &now, &changeTimeRa);
+      nextChangeDec = chng_dec;
+    }
+  else if (chng_dec != 0)
+    {
+      // slew speed to 20 - 5 arcmin / sec
+      direction = chng_dec > 0 ? DIR_NORTH : DIR_SOUTH;
+      ret = tel_gemini_set (150, 0.8);
+      if (ret == -1)
+	return ret;
+      u_sleep = (long) ((fabs (chng_dec) * 60.0) * 4.0 * USEC_SEC);
+      changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
+      changeTimeDec.tv_usec = (long) (u_sleep - changeTimeDec.tv_sec);
+      ret = telescope_start_move (direction);
+      gettimeofday (&now, NULL);
+      timeradd (&changeTimeDec, &now, &changeTimeDec);
+    }
+  return ret;
+}
+#endif
 
 int
 Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
@@ -2106,7 +2253,11 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	  "Rts2DevTelescopeGemini::change ra %f dec %f", telRa, telDec);
 #endif
   // decide, if we make change, or move using move command
+#ifdef L4_GUIDE
   if (fabs (chng_ra) > maxPrecGuideRa || fabs (chng_dec) > maxPrecGuideDec)
+#else
+  if (fabs (chng_ra) > 5 / 60.0 || fabs (chng_dec) > 5 / 60.0)
+#endif
     {
       ret = startMove (telRa + chng_ra, telDec + chng_dec);
       if (ret)
