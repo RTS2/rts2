@@ -252,6 +252,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
     }
   struct ln_dms deg_dms;
   l_deg.toDms (&deg_dms);
+  std::ios_base::fmtflags old_settings =
+    _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   int old_precison = _os.precision (2);
   if (deg_dms.degrees == 0 && deg_dms.minutes == 0)
     {
@@ -259,18 +261,16 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
     }
   else
     {
-      std::ios_base::fmtflags old_settings = _os.flags ();
-      _os.setf (std::ios_base::fixed | std::ios_base::showpos,
-		std::ios_base::floatfield);
-      _os << std::setw (5) << ((deg_dms.neg ? -1 : 1) *
-			       (deg_dms.degrees * 60 +
-				deg_dms.minutes)) << "'";
-      _os.setf (old_settings);
+      _os << std::setw (5)
+	<< std::showpos << ((deg_dms.neg ? -1 : 1) *
+			    (deg_dms.degrees * 60 +
+			     deg_dms.minutes)) << std::noshowpos << "'";
     }
   char old_fill = _os.fill ('0');
   _os << std::setw (5) << deg_dms.seconds;
-  _os.precision (old_precison);
   _os.fill (old_fill);
+  _os.precision (old_precison);
+  _os.setf (old_settings);
   return _os;
 }
 
@@ -285,20 +285,19 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
   struct ln_dms deg_dms;
   l_deg.toDms (&deg_dms);
   int old_precison = _os.precision (2);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   if (deg_dms.degrees == 0 && deg_dms.minutes == 0)
     {
       _os << "   0'";
     }
   else
     {
-      std::ios_base::fmtflags old_settings = _os.flags ();
-      _os.setf (std::ios_base::fixed | std::ios_base::showpos,
-		std::ios_base::floatfield);
       _os << std::setw (5) << (deg_dms.degrees * 60 + deg_dms.minutes) << "'";
-      _os.setf (old_settings);
     }
   char old_fill = _os.fill ('0');
   _os << std::setw (5) << deg_dms.seconds;
+  _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
   return _os;
