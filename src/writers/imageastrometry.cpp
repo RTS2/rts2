@@ -17,21 +17,21 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
   double ra_t, dec_t;
   double rotang;
   int startGetFailed = getFailed;
-  ra_t = (x - getXoA ()) * getXPlate ();
-  dec_t = (y - getYoA ()) * getYPlate ();
-  // rotang is clokwise..we have formula for counterclokwise
-  rotang = -1 * getRotang ();
+  ra_t = (x - getXoA ());
+  dec_t = (y - getYoA ());
   double cos_r = cos (rotang);
   double sin_r = sin (rotang);
-  // transform to new coordinates, rotated by counterclokwise rotang..
+  // transform to new coordinates, rotated by clockwise rotang..
   ra = cos_r * ra_t - sin_r * dec_t;
   dec = cos_r * dec_t + sin_r * ra_t;
   // NS swap when there is a mirror
   if (!getFlip ())
     dec *= -1;
   // we are at new coordinates..apply offsets
+  dec *= getYPlate ();
   dec += getCenterDec ();
   // transform ra offset due to sphere
+  ra *= getXPlate ();
   if (fabs (dec) < 89)
     ra /= cos (ln_deg_to_rad (dec));
   ra += getCenterRa ();
