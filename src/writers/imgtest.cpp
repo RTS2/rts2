@@ -1,7 +1,34 @@
 #include <libnova/libnova.h>
 #include <iostream>
+#include <iomanip>
 
 #include "rts2image.h"
+#include "../utils/libnova_cpp.h"
+
+void
+printOffset (double x, double y, Rts2Image * image)
+{
+  double sep;
+  double x_out;
+  double y_out;
+
+  image->getOffset (x, y, x_out, y_out, sep);
+
+  std::ios_base::fmtflags old_settings =
+    std::cout.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
+  int old_p = std::cout.precision (2);
+
+  std::cout << "Rts2Image::getOffset ("
+    << std::setw (10) << x << ", "
+    << std::setw (10) << y << "): "
+    << LibnovaDegArcMin (x_out) << " "
+    << LibnovaDegArcMin (y_out) << " ("
+    << LibnovaDegArcMin (sep) << ")" << std::endl;
+
+  std::cout.precision (old_p);
+  std::cout.setf (old_settings);
+}
 
 int
 main (int argc, char **argv)
@@ -10,7 +37,6 @@ main (int argc, char **argv)
   double dec;
   double x;
   double y;
-  double sep;
   Rts2Image *image;
   image = new Rts2Image (argv[1]);
   std::cout << image << std::endl;
@@ -36,16 +62,10 @@ main (int argc, char **argv)
 							       3) << " " << x
     << ":" << y << std::endl;
 
-  std::
-    cout << "Rts2Image::getOffset (659.433000, 94.990000, x, y) " << image->
-    getOffset (659.433000, 94.990000, x, y,
-	       sep) << " " << x << " " << y << " (" << sep << ")" << std::
-    endl;
+  printOffset (image->getXoA () + 50, image->getYoA (), image);
+  printOffset (image->getXoA (), image->getYoA () + 50, image);
+  printOffset (image->getXoA () - 50, image->getYoA (), image);
+  printOffset (image->getXoA (), image->getYoA () - 50, image);
 
-  std::
-    cout << "Rts2Image::getOffset (140, 144.3, x, y) " << image->
-    getOffset (140, 144.3, x, y,
-	       sep) << " " << x << " " << y << " (" << sep << ")" << std::
-    endl;
   return 0;
 }
