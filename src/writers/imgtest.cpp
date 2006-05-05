@@ -11,8 +11,10 @@ printOffset (double x, double y, Rts2Image * image)
   double sep;
   double x_out;
   double y_out;
+  double ra, dec;
 
   image->getOffset (x, y, x_out, y_out, sep);
+  image->getRaDec (x, y, ra, dec);
 
   std::ios_base::fmtflags old_settings =
     std::cout.setf (std::ios_base::fixed, std::ios_base::floatfield);
@@ -22,7 +24,9 @@ printOffset (double x, double y, Rts2Image * image)
   std::cout << "Rts2Image::getOffset ("
     << std::setw (10) << x << ", "
     << std::setw (10) << y << "): "
-    << LibnovaDegArcMin (x_out) << " "
+    << "RA " << LibnovaRa (ra) << " "
+    << LibnovaDegArcMin (x_out)
+    << " DEC " << LibnovaDec (dec) << " "
     << LibnovaDegArcMin (y_out) << " ("
     << LibnovaDegArcMin (sep) << ")" << std::endl;
 
