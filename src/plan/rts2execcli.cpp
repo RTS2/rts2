@@ -332,7 +332,9 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
       break;
     case EVENT_ADD_FIXED_OFFSET:
       offset = (ln_equ_posn *) event->getArg ();
-      fixedOffset.ra += offset->ra;
+      // ra hold offset in HA - that increase on west
+      // but we get offset in RA, which increase on east
+      fixedOffset.ra -= offset->ra;
       fixedOffset.dec += offset->dec;
       break;
     case EVENT_ACQUSITION_END:
@@ -371,7 +373,7 @@ Rts2DevClientTelescopeExec::syncTarget ()
     case OBS_MOVE_FIXED:
       currentTarget->moveStarted ();
       syslog (LOG_DEBUG,
-	      "Rts2DevClientCameraExec::syncTarget ra %f dec %f ora %f odec %f",
+	      "Rts2DevClientCameraExec::syncTarget ha %f dec %f oha %f odec %f",
 	      coord.ra, coord.dec, fixedOffset.ra, fixedOffset.dec);
       connection->
 	queCommand (new
