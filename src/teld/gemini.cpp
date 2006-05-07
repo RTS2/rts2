@@ -1038,15 +1038,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1671,7 +1668,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
     {
       // check if we can only change..
       ha_diff = ln_range_degrees (tar_ha - fixed_ha);
-      dec_diff = lastMoveDec - tar_dec;
+      dec_diff = tar_dec - lastMoveDec;
       if (ha_diff > 180)
 	ha_diff = ha_diff - 360;
       // do changes smaller then max change arc min using precision guide command
@@ -2068,11 +2065,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
