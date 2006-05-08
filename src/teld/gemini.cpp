@@ -1596,7 +1596,10 @@ Rts2DevTelescopeGemini::endMove ()
 #ifdef DEBUG_EXTRA
   syslog (LOG_INFO, "rate: %i", track);
 #endif
-  tel_gemini_set (131, 1);
+  if (track != 135)
+    {
+      tel_gemini_set (131, 1);
+    }
   tel_gemini_get (130, track);
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONtest#", 9) > 0)
