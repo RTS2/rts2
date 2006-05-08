@@ -1038,12 +1038,15 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1530,7 +1533,8 @@ Rts2DevTelescopeGemini::isMoving ()
 		  if (ret)
 		    return -1;
 		  u_sleep =
-		    (long) ((fabs (nextChangeDec) * 60.0) * 4.0 * USEC_SEC);
+		    (long) ((fabs (nextChangeDec) * 60.0) * (4.0 / 0.8) *
+			    USEC_SEC);
 		  changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
 		  changeTimeDec.tv_usec =
 		    (long) (u_sleep - changeTimeDec.tv_sec);
@@ -2065,12 +2069,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2203,7 +2206,8 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	  ret = tel_gemini_set (150, 0.8);
 	  if (ret == -1)
 	    return ret;
-	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 4.0) * USEC_SEC);
+	  u_sleep =
+	    (long) (((fabs (chng_ra) * 60.0) * (4.0 / 0.8)) * USEC_SEC);
 	}
       else
 	{
@@ -2211,8 +2215,9 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	  ret = tel_gemini_set (150, 0.8);
 	  if (ret == -1)
 	    return ret;
-	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * 4.0) * USEC_SEC +
-			    USEC_SEC / 10.0);
+	  u_sleep =
+	    (long) (((fabs (chng_ra) * 60.0) * (4.0 / 0.8)) * USEC_SEC +
+		    USEC_SEC / 10.0);
 	}
       changeTimeRa.tv_sec = (long) (u_sleep / USEC_SEC);
       changeTimeRa.tv_usec = (long) (u_sleep - changeTimeRa.tv_sec);
@@ -2228,7 +2233,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
       ret = tel_gemini_set (150, 0.8);
       if (ret == -1)
 	return ret;
-      u_sleep = (long) ((fabs (chng_dec) * 60.0) * 4.0 * USEC_SEC);
+      u_sleep = (long) ((fabs (chng_dec) * 60.0) * (4.0 / 0.8) * USEC_SEC);
       changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
       changeTimeDec.tv_usec = (long) (u_sleep - changeTimeDec.tv_sec);
       ret = telescope_start_move (direction);
