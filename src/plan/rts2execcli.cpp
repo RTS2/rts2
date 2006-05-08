@@ -334,7 +334,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
       offset = (ln_equ_posn *) event->getArg ();
       // ra hold offset in HA - that increase on west
       // but we get offset in RA, which increase on east
-      fixedOffset.ra -= offset->ra;
+      fixedOffset.ra += offset->ra;
       fixedOffset.dec += offset->dec;
       break;
     case EVENT_ACQUSITION_END:
