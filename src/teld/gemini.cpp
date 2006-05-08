@@ -1379,10 +1379,14 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
       usleep (USEC_SEC / 10);
       worm_move_needed = 1;
     }
+  else
+    {
+      worm_move_needed = 0;
+    }
   sprintf (command, "#:M%c#", direction);
   ret = tel_write (command, 5) == 1 ? -1 : 0;
   // workaround suggested by Rene Goerlich
-  if (worm == 135)
+  if (worm_move_needed == 1)
     stopWorm ();
   return ret;
 }
@@ -1415,10 +1419,7 @@ Rts2DevTelescopeGemini::telescope_stop_goto ()
       lastMotorState &= ~8;
       tel_gemini_set (99, lastMotorState);
     }
-  if (worm_move_needed)
-    {
-      worm_move_needed = 0;
-    }
+  worm_move_needed = 0;
 }
 
 int
@@ -1469,6 +1470,7 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
     return 0;
 
   startWorm ();
+  worm_move_needed = 0;
 
   forcedReparking = 0;
 
