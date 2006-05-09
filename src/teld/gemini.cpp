@@ -1386,8 +1386,8 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
   sprintf (command, "#:M%c#", direction);
   ret = tel_write (command, 5) == 1 ? -1 : 0;
   // workaround suggested by Rene Goerlich
-  if (worm_move_needed == 1)
-    stopWorm ();
+  //if (worm_move_needed == 1)
+  //  stopWorm ();
   return ret;
 }
 
@@ -1598,10 +1598,10 @@ Rts2DevTelescopeGemini::endMove ()
 #ifdef DEBUG_EXTRA
   syslog (LOG_INFO, "rate: %i", track);
 #endif
-  if (track != 135)
-    {
-      tel_gemini_set (131, 1);
-    }
+  // if (track != 135)
+  //  {
+  //    tel_gemini_set (131, 1);
+  //  }
   tel_gemini_get (130, track);
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONtest#", 9) > 0)
@@ -2205,28 +2205,45 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
     {
       // first - RA direction
       // slew speed to 1 - 0.25 arcmin / sec
-      if (chng_ra > 0)
+      direction = (chng_ra > 0) ? DIR_EAST : DIR_WEST;
+      ret = tel_gemini_set (150, 0.8);
+      if (ret == -1)
+	return ret;
+      if (!isnan (fixed_ha))
 	{
-	  direction = DIR_EAST;
-	  ret = tel_gemini_set (150, 0.8);
-	  if (ret == -1)
-	    return ret;
-	  u_sleep =
-	    (long) (((fabs (chng_ra) * 60.0) * (4.0 / 0.8)) * USEC_SEC);
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * (4.0)) * USEC_SEC);
 	}
       else
 	{
-	  direction = DIR_WEST;
-	  ret = tel_gemini_set (150, 0.8);
-	  if (ret == -1)
-	    return ret;
 	  u_sleep =
-	    (long) (((fabs (chng_ra) * 60.0) * (4.0 / 0.8)) * USEC_SEC +
-		    USEC_SEC / 10.0);
+	    (long) (((fabs (chng_ra) * 60.0) * (4.0 / 0.8)) * USEC_SEC);
 	}
       changeTimeRa.tv_sec = (long) (u_sleep / USEC_SEC);
       changeTimeRa.tv_usec = (long) (u_sleep - changeTimeRa.tv_sec);
-      ret = telescope_start_move (direction);
+      if (!isnan (fixed_ha))
+	{
+	  if (direction == DIR_EAST)
+	    {
+	      ret = tel_set_rate (RATE_CENTER);
+	      if (ret)
+		return ret;
+	      ret = tel_gemini_set (170, 2);
+	      if (ret)
+		return ret;
+	      startWorm ();
+	      ret = telescope_start_move (direction);
+	    }
+	  // west..only turn worm on
+	  else
+	    {
+	      ret = startWorm ();
+	      worm_move_needed = 1;
+	    }
+	}
+      else
+	{
+	  ret = telescope_start_move (direction);
+	}
       gettimeofday (&now, NULL);
       timeradd (&changeTimeRa, &now, &changeTimeRa);
       nextChangeDec = chng_dec;
