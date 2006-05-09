@@ -577,6 +577,17 @@ public:
   virtual void printShortInfo (std::ostream & _os, double JD);
 
   /**
+   * Prints one-line info with bonus inforamtions
+   */
+
+  void printShortBonusInfo (std::ostream & _os)
+  {
+    printShortBonusInfo (_os, ln_get_julian_from_sys ());
+  }
+
+  virtual void printShortBonusInfo (std::ostream & _os, double JD);
+
+  /**
    * Prints position info for given JD.
    *
    * @param _os stream to print that

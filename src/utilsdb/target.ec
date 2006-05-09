@@ -1244,7 +1244,7 @@ Target::printShortInfo (std::ostream & _os, double JD)
   LibnovaRaDec raDec (&pos);
   LibnovaHrz hrzP (&hrz);
   _os
-   << getTargetID () << " | "
+   << std::setw (5) << getTargetID () << " | "
    << getTargetType () << " | "
    << std::left << std::setw (40) << (name ? name :  "null") << std::right << " | "
    << raDec << " | "
@@ -1252,6 +1252,29 @@ Target::printShortInfo (std::ostream & _os, double JD)
    << hrzP;
   _os.precision (old_prec);
 }
+
+void
+Target::printShortBonusInfo (std::ostream & _os, double JD)
+{
+  struct ln_equ_posn pos;
+  struct ln_hrz_posn hrz;
+  const char * name = getTargetName ();
+  int old_prec = _os.precision (2);
+  getPosition (&pos, JD);
+  getAltAz (&hrz, JD);
+  LibnovaRaDec raDec (&pos);
+  LibnovaHrz hrzP (&hrz);
+  _os
+   << std::setw (5) << getTargetID () << " | "
+   << std::setw (7) << getBonus (JD) << " | "
+   << getTargetType () << " | "
+   << std::left << std::setw (40) << (name ? name :  "null") << std::right << " | "
+   << raDec << " | "
+   << std::setw (5) << getAirmass (JD) << " | "
+   << hrzP;
+  _os.precision (old_prec);
+}
+
 
 int
 Target::printObservations (double radius, double JD, std::ostream &_os)

@@ -764,6 +764,10 @@ CalibrationTarget::load ()
 	  // priority outside current transaction, which hold cursor..
 	  bad_list.push_back (calib);
 	}
+	else if (calib->getLunarDistance (JD) < 20)
+	{
+          bad_list.push_back (calib);
+	}
 	else
 	{
 	  // switch current target coordinates..

@@ -45,30 +45,38 @@ public:
   save ();
   std::ostream &
   print (std::ostream & _os, double JD);
+
+  std::ostream &
+  printBonusList (std::ostream & _os, double JD);
+};
+
+class
+  Rts2TargetSetSelectable:
+  public
+  Rts2TargetSet
+{
+public:
+  Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs = NULL);
 };
 
 /**
  * Holds calibration targets
  */
-class
-  Rts2TargetSetCal:
-  public
-  Rts2TargetSet
+class Rts2TargetSetCal:
+public Rts2TargetSet
 {
 public:
   Rts2TargetSetCal (Target * in_masterTarget, double JD);
 };
 
-class TargetGRB;
+class
+  TargetGRB;
 
 /**
  * Holds last GRBs
  */
-class
-  Rts2TargetSetGrb:
-  public
-  std::list <
-TargetGRB * >
+class Rts2TargetSetGrb:
+public std::list < TargetGRB * >
 {
 private:
   void
@@ -79,8 +87,7 @@ protected:
     obs;
 public:
   Rts2TargetSetGrb (struct ln_lnlat_posn *in_obs = NULL);
-  virtual ~
-  Rts2TargetSetGrb (void);
+  virtual ~ Rts2TargetSetGrb (void);
 
   void
   printGrbList (std::ostream & _os);

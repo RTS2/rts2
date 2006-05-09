@@ -182,6 +182,25 @@ Rts2TargetSet::print (std::ostream & _os, double JD)
   return _os;
 }
 
+std::ostream &
+Rts2TargetSet::printBonusList (std::ostream & _os, double JD)
+{
+  for (Rts2TargetSet::iterator tar_iter = begin(); tar_iter != end (); tar_iter++)
+  {
+    (*tar_iter)->printShortBonusInfo (_os, JD);
+    _os << std::endl;
+  }
+  return _os;
+}
+
+Rts2TargetSetSelectable::Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs) : Rts2TargetSet (in_obs, false)
+{
+  obs = in_obs;
+  if (!obs)
+    obs = Rts2Config::instance ()->getObserver ();
+  load (std::string ("tar_enabled = true AND tar_priority + tar_bonus > 0"), std::string ("tar_priority + tar_bonus DESC"));
+}
+
 Rts2TargetSetCal::Rts2TargetSetCal (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver (), false)
 {
   double airmass = in_masterTarget->getAirmass (JD);
