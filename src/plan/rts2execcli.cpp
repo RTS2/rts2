@@ -375,10 +375,11 @@ Rts2DevClientTelescopeExec::syncTarget ()
       syslog (LOG_DEBUG,
 	      "Rts2DevClientCameraExec::syncTarget ha %f dec %f oha %f odec %f",
 	      coord.ra, coord.dec, fixedOffset.ra, fixedOffset.dec);
+      // we are ofsetting in HA, but offset is in RA - hence -
       connection->
 	queCommand (new
 		    Rts2CommandMoveFixed (getMaster (), this,
-					  coord.ra + fixedOffset.ra,
+					  coord.ra - fixedOffset.ra,
 					  coord.dec + fixedOffset.dec));
       break;
     case OBS_ALREADY_STARTED:

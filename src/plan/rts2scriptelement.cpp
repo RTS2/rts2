@@ -706,8 +706,6 @@ Rts2ScriptElementAcquireHam::getSource (Rts2Image * image, double &ra_off,
   syslog (LOG_DEBUG,
 	  "Rts2ScriptElementAcquireHam::getSource %lf %lf", ham_x, ham_y);
   ret = image->getOffset (ham_x, ham_y, ra_off, dec_off, sep);
-  // we are offseting in HA
-  ra_off *= -1;
   if (ret)
     return -1;
   syslog (LOG_DEBUG,
