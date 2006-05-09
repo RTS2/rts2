@@ -1038,15 +1038,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1531,6 +1528,9 @@ Rts2DevTelescopeGemini::isMoving ()
 		  long u_sleep;
 		  // slew speed to 20 - 5 arcmin / sec
 		  direction = nextChangeDec > 0 ? DIR_NORTH : DIR_SOUTH;
+		  ret = tel_set_rate (RATE_GUIDE);
+		  if (ret)
+		    return -1;
 		  ret = tel_gemini_set (150, 0.8);
 		  if (ret)
 		    return -1;
@@ -1676,7 +1676,9 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
   if (!isnan (fixed_ha))
     {
       // check if we can only change..
-      ha_diff = ln_range_degrees (tar_ha - fixed_ha);
+      // if we want to go to W, diff have to be negative, as RA is decreasing to W,
+      // so we need to substract tar_ha from last one (smaller - bigger number)
+      ha_diff = ln_range_degrees (fixed_ha - tar_ha);
       dec_diff = tar_dec - lastMoveDec;
       if (ha_diff > 180)
 	ha_diff = ha_diff - 360;
@@ -2074,11 +2076,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
