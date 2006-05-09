@@ -41,11 +41,14 @@ Rts2TelModel::applyVerbose (struct ln_equ_posn *pos)
   for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
        iter != terms.end (); iter++)
     {
+      struct ln_equ_posn old_pos = *pos;
       std::cout << (*iter) << "Before: " << pos->ra << " " << pos->
 	dec << std::endl;
       (*iter)->apply (pos, cond);
-      std::cout << "After: " << pos->ra << " " << pos->
-	dec << std::endl << std::endl;
+      std::cout << "After: " << pos->ra << " " << pos->dec << std::endl <<
+	"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
+						 old_pos.
+						 dec) << ")" << std::endl;
     }
   return 0;
 }
