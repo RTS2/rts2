@@ -49,12 +49,16 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   modelFile0 = NULL;
   model0 = NULL;
 
+  standbyPark = false;
+
   addOption ('n', "max_corr_num", 1,
 	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
   addOption ('m', "model_file", 1,
 	     "name of file holding RTS2-calculated model parameters (for flip = 1, or for both when o is not specified)");
   addOption ('o', "model_file_flip 0", 1,
 	     "name of file holding RTS2-calculated model parameters for flip = 0");
+
+  addOption ('S', "standby-park", 0, "park when switched to standby");
 
   maxCorrNum = 1;
 
@@ -94,6 +98,9 @@ Rts2DevTelescope::processOption (int in_opt)
       break;
     case 'o':
       modelFile0 = optarg;
+      break;
+    case 'S':
+      standbyPark = true;
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -501,7 +508,8 @@ Rts2DevTelescope::changeMasterState (int new_state)
       dontKnowPosition ();
     }
   // park us during day..
-  if (status == SERVERD_DAY || new_state == SERVERD_OFF)
+  if (status == SERVERD_DAY || new_state == SERVERD_OFF
+      || ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
     startPark (NULL);
   return 0;
 }

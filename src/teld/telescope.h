@@ -57,6 +57,8 @@ private:
   char *modelFile0;
   Rts2TelModel *model0;
 
+  bool standbyPark;
+
   void applyAberation (struct ln_equ_posn *pos, double JD);
   void applyPrecession (struct ln_equ_posn *pos, double JD);
   void applyRefraction (struct ln_equ_posn *pos, double JD);
