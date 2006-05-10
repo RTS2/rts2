@@ -1038,15 +1038,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1470,8 +1467,20 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
     return 0;
 
   startWorm ();
-  tel_set_rate (RATE_SLEW);
-  tel_gemini_set (170, 8);
+  double sep = getMoveTargetSep ();
+#ifdef DEBUG_EXTRA
+  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change sep %f", sep);
+#endif
+  if (sep > 1)
+    {
+      tel_set_rate (RATE_SLEW);
+      tel_gemini_set (170, 8);
+    }
+  else
+    {
+      tel_set_rate (RATE_CENTER);
+      tel_gemini_set (170, 2);
+    }
   worm_move_needed = 0;
 
   forcedReparking = 0;
@@ -2081,11 +2090,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2288,7 +2298,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 #ifdef L4_GUIDE
   if (fabs (chng_ra) > maxPrecGuideRa || fabs (chng_dec) > maxPrecGuideDec)
 #else
-  if (fabs (chng_ra) > 5 / 60.0 || fabs (chng_dec) > 5 / 60.0)
+  if (fabs (chng_ra) > 20 / 60.0 || fabs (chng_dec) > 20 / 60.0)
 #endif
     {
       ret = startMove (telRa + chng_ra, telDec + chng_dec);
