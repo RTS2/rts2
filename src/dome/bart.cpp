@@ -172,7 +172,6 @@ Rts2DevDome (in_argc, in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   addOption ('R', "rain_detector", 1, "/dev/file for rain detector");
-  addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
   dome_file = "/dev/ttyS0";
   rain_detector = NULL;
   rain_port = -1;
