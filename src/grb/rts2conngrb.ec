@@ -454,8 +454,8 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   double d_grb_ra = grb_ra;
   double d_grb_dec = grb_dec;
   bool d_grb_is_grb = grb_is_grb;
-  double d_grb_date = (long) *grb_date + grb_date_usec / USEC_SEC;
-  double d_grb_update = last_packet.tv_sec + last_packet.tv_usec / USEC_SEC;
+  double d_grb_date = *grb_date + (double) grb_date_usec / USEC_SEC;
+  double d_grb_update = last_packet.tv_sec + (double) last_packet.tv_usec / USEC_SEC;
   float d_grb_errorbox = grb_errorbox;
   int d_grb_errorbox_ind;
   // used to find correct grb - based on type
