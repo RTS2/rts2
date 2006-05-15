@@ -321,8 +321,8 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
     :d_swift_ra,
     :d_swift_dec,
     :d_swift_roll,
-    :d_swift_time,
-    :d_swift_received,
+    (TIMESTAMP 'epoch' + :d_swift_time * INTERVAL '1 seconds'),
+    (TIMESTAMP 'epoch' + :d_swift_received * INTERVAL '1 seconds'),
     :d_swift_name,
     :d_swift_obstime,
     :d_swift_merit
@@ -360,8 +360,8 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
     nextval ('point_id'),
     :d_integral_ra,
     :d_integral_dec,
-    :d_integral_time,
-    :d_integral_received
+    (TIMESTAMP 'epoch' + :d_integral_time * INTERVAL '1 seconds'),
+    (TIMESTAMP 'epoch' + :d_integral_received * INTERVAL '1 seconds')
   );
   if (sqlca.sqlcode != 0)
   {
@@ -576,8 +576,8 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       :d_grb_ra,
       :d_grb_dec,
       :d_grb_is_grb,
-      :d_grb_date,
-      :d_grb_update,
+      (TIMESTAMP 'epoch' + :d_grb_date * INTERVAL '1 seconds'),
+      (TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds'),
       :d_grb_errorbox :d_grb_errorbox_ind
     );
     if (sqlca.sqlcode)
@@ -633,7 +633,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       grb_ra = :d_grb_ra,
       grb_dec = :d_grb_dec,
       grb_is_grb = :d_grb_is_grb,
-      grb_last_update = :d_grb_update
+      grb_last_update = (TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds')
     WHERE
       tar_id = :d_tar_id;
 
@@ -738,7 +738,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
     :d_grb_id,
     :d_grb_seqn,
     :d_grb_type,
-    :d_grb_update,
+    (TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds'),
     :d_grb_update_usec,
     :d_packet
   );
