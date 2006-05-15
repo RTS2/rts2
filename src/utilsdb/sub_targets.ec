@@ -2228,7 +2228,8 @@ TargetPlan::isContinues ()
   time_t now;
   refreshNext ();
   time (&now);
-  if (nextPlan && nextPlan->getPlanStart () < now)
+  if ((nextPlan && nextPlan->getPlanStart () < now)
+    || !(nextPlan))
     return 2;
   if (selectedPlan)
     return selectedPlan->getTarget()->isContinues ();
