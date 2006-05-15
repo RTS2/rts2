@@ -293,8 +293,8 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
   double d_swift_ra = swiftLastRa;
   double d_swift_dec = swiftLastDec;
   double d_swift_roll = roll;
-  int d_swift_time = (int) swiftLastPoint;
-  int d_swift_received = (int) last_packet.tv_sec;
+  double d_swift_time = (long) swiftLastPoint;
+  double d_swift_received = (long) last_packet.tv_sec + (double) last_packet.tv_usec / USEC_SEC;
   float d_swift_obstime = obstime;
   varchar d_swift_name[70];
   float d_swift_merit = merit;
@@ -321,8 +321,8 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
     :d_swift_ra,
     :d_swift_dec,
     :d_swift_roll,
-    abstime (:d_swift_time),
-    abstime (:d_swift_received),
+    :d_swift_time,
+    :d_swift_received,
     :d_swift_name,
     :d_swift_obstime,
     :d_swift_merit
@@ -343,8 +343,8 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
   EXEC SQL BEGIN DECLARE SECTION;
   double d_integral_ra = ra;
   double d_integral_dec = dec;
-  int d_integral_time = (int) *t;
-  int d_integral_received = (int) last_packet.tv_sec;
+  double d_integral_time = (int) *t;
+  double d_integral_received = (long) last_packet.tv_sec + (double) last_packet.tv_usec / USEC_SEC;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
@@ -360,8 +360,8 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
     nextval ('point_id'),
     :d_integral_ra,
     :d_integral_dec,
-    abstime (:d_integral_time),
-    abstime (:d_integral_received)
+    :d_integral_time,
+    :d_integral_received
   );
   if (sqlca.sqlcode != 0)
   {
@@ -576,8 +576,8 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       :d_grb_ra,
       :d_grb_dec,
       :d_grb_is_grb,
-      abstime (:d_grb_date),
-      abstime (:d_grb_update),
+      :d_grb_date,
+      :d_grb_update,
       :d_grb_errorbox :d_grb_errorbox_ind
     );
     if (sqlca.sqlcode)
@@ -633,7 +633,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       grb_ra = :d_grb_ra,
       grb_dec = :d_grb_dec,
       grb_is_grb = :d_grb_is_grb,
-      grb_last_update = abstime (:d_grb_update)
+      grb_last_update = :d_grb_update
     WHERE
       tar_id = :d_tar_id;
 
@@ -738,7 +738,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
     :d_grb_id,
     :d_grb_seqn,
     :d_grb_type,
-    abstime (:d_grb_update),
+    :d_grb_update,
     :d_grb_update_usec,
     :d_packet
   );
