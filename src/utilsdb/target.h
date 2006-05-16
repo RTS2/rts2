@@ -846,8 +846,8 @@ public:
 class TargetGRB:public ConstTarget
 {
 private:
-  time_t grbDate;
-  time_t lastUpdate;
+  double grbDate;
+  double lastUpdate;
   int gcnPacketType;		// gcn packet from last update
   int gcnGrbId;
   bool grb_is_grb;

@@ -1158,8 +1158,8 @@ int
 TargetGRB::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  long  db_grb_date;
-  long  db_grb_last_update;
+  double  db_grb_date;
+  double  db_grb_last_update;
   int db_grb_type;
   int db_grb_id;
   bool db_grb_is_grb;
@@ -1280,7 +1280,7 @@ TargetGRB::getDBScript (const char *camera_name, char *script)
   d_camera_name.len = strlen (camera_name);
   strncpy (d_camera_name.arr, camera_name, d_camera_name.len);
 
-  post_sec = now - grbDate;
+  post_sec = now - (time_t) grbDate;
 
   // grb_script_script is NOT NULL
 
@@ -1342,11 +1342,11 @@ TargetGRB::getScript (const char *deviceName, char *buf)
   // specify it from config (there can be some, but it will be rather
   // horible way)
 
-  if (now - grbDate < 1000)
+  if (now - (time_t) grbDate < 1000)
   {
     strcpy (buf, "E 10 E 20 E 30 E 40");
   }
-  else if (now - grbDate < 10000)
+  else if (now - (time_t) grbDate < 10000)
   {
     strcpy (buf, "E 100 E 200");
   }
@@ -1380,7 +1380,7 @@ TargetGRB::getBonus (double JD)
     {
       case 60:
         // we don't get ACK | position within 1 hour..drop our priority back to some mimimum value
-        if (now - grbDate > 3600)
+        if (now - (time_t) grbDate > 3600)
           return 1;
         break;
       case 62:
@@ -1388,19 +1388,19 @@ TargetGRB::getBonus (double JD)
           return -1;
 	break;
     }
-  if (now - grbDate < 3600)
+  if (now - (time_t) grbDate < 3600)
   {
     // < 1 hour fixed boost to be sure to not miss it
     retBonus = ConstTarget::getBonus (JD) + 2000;
   }
-  else if (now - grbDate < 86400)
+  else if (now - (time_t) grbDate < 86400)
   {
     // < 24 hour post burst
     retBonus = ConstTarget::getBonus (JD)
-      + 1000.0 * cos ((double)((double)(now - grbDate) / (2.0*86400.0))) 
+      + 1000.0 * cos ((double)((double)(now - (time_t) grbDate) / (2.0*86400.0))) 
       + 10.0 * cos ((double)((double)(now - lastUpdate) / (2.0*86400.0)));
   }
-  else if (now - grbDate < 5 * 86400)
+  else if (now - (time_t) grbDate < 5 * 86400)
   {
     // < 5 days post burst - add some time after last observation
     retBonus = ConstTarget::getBonus (JD)
@@ -1492,7 +1492,7 @@ TargetGRB::getFirstPacket ()
   }
   EXEC SQL CLOSE cur_grb_first_packet;
   EXEC SQL ROLLBACK;
-  return db_grb_update + db_grb_update_usec / USEC_SEC;
+  return db_grb_update + (double) db_grb_update_usec / USEC_SEC;
 }
 
 const char *
