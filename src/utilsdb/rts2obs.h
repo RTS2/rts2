@@ -44,6 +44,7 @@ private:
   double obs_slew;
   double obs_start;
   int obs_state;
+  // nan when observations wasn't ended
   double obs_end;
 
 public:

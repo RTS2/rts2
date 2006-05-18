@@ -265,7 +265,7 @@ void
 Rts2Obs::checkUnprocessedImages ()
 {
   load ();
-  if (obs_end == 0)
+  if (isnan (obs_end))
     return;
   // obs_end is not null - observation ends sucessfully
   // get unprocessed counts..
@@ -359,7 +359,7 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   else
     _os << std::setw (12) << "not" << " | ";
 
-  if (obs.obs_end > 0)
+  if (!isnan (obs.obs_end))
     _os << std::setw (12) << TimeDiff (obs.obs_start, obs.obs_end) << " | ";
   else
     _os << std::setw (12) << "not" << " | ";
