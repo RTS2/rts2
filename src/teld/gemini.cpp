@@ -96,7 +96,7 @@ private:
   int tel_write_read (char *buf, int wcount, char *rbuf, int rcount);
   int tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount);
   int tel_read_hms (double *hmsptr, char *command);
-  char tel_gemini_checksum (const char *buf);
+  unsigned char tel_gemini_checksum (const char *buf);
   // higher level I/O functions
   int tel_gemini_getch (int id, char *in_buf);
   int tel_gemini_setch (int id, char *in_buf);
@@ -443,14 +443,14 @@ Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, char *command)
  * 
  * @return computed checksum
  */
-char
+unsigned char
 Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
 {
   unsigned char checksum = 0;
   for (; *buf; buf++)
     checksum ^= *buf;
-  checksum %= 128;		// modulo 128
   checksum += 64;
+  checksum %= 128;		// modulo 128
   return checksum;
 }
 
@@ -535,7 +535,8 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
 int
 Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
 {
-  char *ptr, checksum;
+  char *ptr;
+  unsigned char checksum, cal;
   int len, ret;
   len = sprintf (buf, "<%i:", id);
   buf[len] = tel_gemini_checksum (buf);
@@ -549,11 +550,12 @@ Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
   ptr = buf + ret - 1;
   checksum = *ptr;
   *ptr = '\0';
-  if (tel_gemini_checksum (buf) != checksum)
+  cal = tel_gemini_checksum (buf);
+  if (cal != checksum)
     {
       syslog (LOG_ERR,
-	      "invalid gemini checksum: should be '%c', is '%c' (%i) %i",
-	      tel_gemini_checksum (buf), checksum, checksum, ret);
+	      "invalid gemini checksum: should be '%c' (%i), is '%c' (%i) %i",
+	      cal, cal, checksum, checksum, ret);
       if (*buf || checksum)
 	sleep (5);
       tcflush (tel_desc, TCIOFLUSH);
@@ -1038,15 +1040,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -2093,11 +2092,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
