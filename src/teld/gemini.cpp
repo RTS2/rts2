@@ -190,6 +190,11 @@ private:
   double nextChangeDec;
   bool decChanged;
 
+  char gem_version;
+  char gem_subver;
+
+  int decFlipLimit;
+
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
@@ -961,6 +966,8 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
 
   fixed_ha = nan ("f");
 
+  decFlipLimit = 4000;
+
   clearSearch ();
 }
 
@@ -1012,6 +1019,7 @@ int
 Rts2DevTelescopeGemini::geminiInit ()
 {
   char rbuf[10];
+  int ret;
 
   tel_gemini_reset ();
 
@@ -1037,15 +1045,26 @@ Rts2DevTelescopeGemini::geminiInit ()
   tel_write_read_hash (":Ml#", 5, rbuf, 1);
   if (bootesSensors)
     tel_gemini_set (311, 15);	// reset feature port
+
+  ret = tel_write_read_hash ("#:GV#", 5, rbuf, 4);
+  if (ret <= 0)
+    return -1;
+
+  gem_version = rbuf[0] - '0';
+  gem_subver = (rbuf[1] - '0') * 10 + (rbuf[2] - '0');
+
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1063,10 +1082,17 @@ Rts2DevTelescopeGemini::readRatios ()
   raRatio = 0;
   decRatio = 0;
 
+  if (gem_version < 4)
+    {
+      maxPrecGuideRa = 5 / 60.0;
+      maxPrecGuideDec = 5 / 60.0;
+      return 0;
+    }
+
   raRatio = readRatiosInter (21);
   decRatio = readRatiosInter (22);
 
-  if (raRatio <= 0 || decRatio <= 0)
+  if (raRatio == -1 || decRatio == -1)
     return -1;
 
   maxPrecGuideRa = raRatio;
@@ -1083,6 +1109,8 @@ Rts2DevTelescopeGemini::readRatios ()
 int
 Rts2DevTelescopeGemini::setCorrection ()
 {
+  if (gem_version < 4)
+    return 0;
   switch (corrections)
     {
     case COR_ABERATION | COR_PRECESSION + COR_REFRACTION:
@@ -1288,6 +1316,7 @@ Rts2DevTelescopeGemini::baseInfo ()
       break;
     case 6:
       strcpy (telType, "Titan50");
+      decFlipLimit = 6750;
       break;
     default:
       sprintf (telType, "UNK_%2i", gem_type);
@@ -1317,13 +1346,11 @@ Rts2DevTelescopeGemini::getAxis ()
 int
 Rts2DevTelescopeGemini::info ()
 {
-  double ha;
   telFlip = 0;
 
   if (tel_read_ra () || tel_read_dec ()
       || tel_read_siderealtime () || tel_read_localtime ())
     return -1;
-  ha = ln_range_degrees (telSiderealTime * 15.0 - telRa);
   if (bootesSensors)
     {
       getAxis ();
@@ -2092,12 +2119,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2605,12 +2631,19 @@ Rts2DevTelescopeGemini::getFlip ()
 {
   int32_t raTick, decTick;
   int ret;
+  if (gem_version < 4)
+    {
+      double ha;
+      ha = ln_range_degrees (telSiderealTime * 15.0 - telRa);
+
+      return ha < 180.0 ? 1 : 0;
+    }
   ret = tel_gemini_get (235, raTick, decTick);
   if (ret)
     return -1;
   telAxis[0] = raTick;
   telAxis[1] = decTick;
-  if (decTick > 4000)
+  if (decTick > decFlipLimit)
     return 1;
   return 0;
 }
