@@ -720,12 +720,8 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
   // we received correction for last move..
   if (locCorNum == moveMark)
     {
-      // if we don't move too far from last correction
-      if (knowPosition)
-	{
-	  locCorNum++;
-	}
-      else
+      // if we move too far from last correction
+      if (!knowPosition)
 	{
 	  locCorNum = -1;
 	  locCorRa = 0;
@@ -830,12 +826,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
   // we received correction for last move..and yes, we would like to apply it in resync
   if (locCorNum == moveMark)
     {
-      // if we don't move too far from last correction
-      if (knowPosition)
-	{
-	  locCorNum++;
-	}
-      else
+      // if we move too far from last correction
+      if (!knowPosition)
 	{
 	  locCorNum = -1;
 	  locCorRa = 0;
@@ -908,10 +900,15 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       else
 	{
 	  ret = 0;
-	  // change scope
-	  locCorRa += cor_ra;
-	  locCorDec += cor_dec;
-	  locCorNum = moveMark;
+	  // not yet corrected
+	  if (locCorNum != moveMark)
+	    {
+	      // change scope
+	      locCorRa += cor_ra;
+	      locCorDec += cor_dec;
+	      locCorNum = moveMark;
+	      // next correction with same mark will be ignored
+	    }
 	}
       if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
 	{
@@ -936,10 +933,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	  if (ret == 0)
 	    numCorr++;
 	}
-      // discards changes - astrometry was too late
-      locCorNum = -1;
-      locCorRa = 0;
-      locCorDec = 0;
+      // ignore changes - they will be (possibly) deleted at dontKnowPosition
     }
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::correct intersting val 2: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
