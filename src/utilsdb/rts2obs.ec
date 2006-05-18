@@ -261,20 +261,22 @@ Rts2Obs::getUnprocessedCount ()
   return db_count;
 }
 
-void
+int
 Rts2Obs::checkUnprocessedImages ()
 {
+  int ret;
   load ();
   if (isnan (obs_end))
-    return;
+    return -1;
   // obs_end is not null - observation ends sucessfully
   // get unprocessed counts..
-  if (getUnprocessedCount () == 0)
+  ret = getUnprocessedCount ();
+  if (ret == 0)
   {
     Rts2TarUser tar_user = Rts2TarUser (getTargetId (), getTargetType ());
     std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
     if (mails.size () == 0)
-      return;
+      return ret;
     std::ostringstream subject;
     subject << "TARGET #" << getTargetId ()
       << ", OBSERVATION " << getObsId ()
@@ -283,6 +285,7 @@ Rts2Obs::checkUnprocessedImages ()
     os << *this;
     sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
   }
+  return ret;
 }
 
 int

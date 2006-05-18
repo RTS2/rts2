@@ -95,10 +95,16 @@ public:
 
   int getUnprocessedCount ();
 
-  // called to check if we have any unprocessed images
-  // if we don't have any unprocessed images and observation was ended, then
-  // call appopriate mails
-  void checkUnprocessedImages ();
+  /**
+   * Called to check if we have any unprocessed images
+   * if we don't have any unprocessed images and observation was ended, then
+   * call appopriate mails.
+   *
+   * @return 0 when we don't have more images to process and observation
+   * was already finished, -1 when observation is still ongoing, > 0 when there are
+   * return images to process, but observation was ended.
+   */
+  int checkUnprocessedImages ();
 
   int getNumberOfImages ();
 
