@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.5.1, pkubanek@asu.cas.cz)
+AC_INIT(rts2, 0.6.2, pkubanek@asu.cas.cz)
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
@@ -351,6 +351,7 @@ AC_OUTPUT([Makefile
 	   src/writers/Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile
+	   src/soap/Makefile
 	   man/rts2.1
 	   man/rts2.conf.5
 	   man/rts2-centrald.1
