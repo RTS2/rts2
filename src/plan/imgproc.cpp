@@ -30,13 +30,14 @@ public:
 class Rts2ImageProc:public Rts2DeviceDb
 {
 private:
-  std::list < Rts2ConnImgProcess * >imagesQue;
-  Rts2ConnImgProcess *runningImage;
+  std::list < Rts2ConnProcess * >imagesQue;
+  Rts2ConnProcess *runningImage;
   int goodImages;
   int trashImages;
   int morningImages;
   int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
-  char defaultImgProccess[2000];
+  char defaultImgProcess[2000];
+  char defaultObsProcess[2000];
   glob_t imageGlob;
   unsigned int globC;
   int reprocessingPossible;
@@ -64,8 +65,11 @@ public:
 
   int queImage (Rts2Conn * conn, const char *in_path);
   int doImage (Rts2Conn * conn, const char *in_path);
+
+  int queObs (Rts2Conn * conn, int obsId);
+
   int checkNotProcessed ();
-  void changeRunning (Rts2ConnImgProcess * newImage);
+  void changeRunning (Rts2ConnProcess * newImage);
 };
 
 Rts2DevConnImage::Rts2DevConnImage (int in_sock, Rts2ImageProc * in_master):
@@ -90,6 +94,13 @@ Rts2DevConnImage::commandAuthorized ()
       if (paramNextString (&in_imageName) || !paramEnd ())
 	return -2;
       return master->doImage (this, in_imageName);
+    }
+  if (isCommand ("que_obs"))
+    {
+      int obsId;
+      if (paramNextInteger (&obsId) || !paramEnd ())
+	return -2;
+      return master->queObs (this, obsId);
     }
   return Rts2DevConn::commandAuthorized ();
 }
@@ -134,12 +145,22 @@ Rts2ImageProc::init ()
   Rts2Config *config;
   config = Rts2Config::instance ();
 
-  ret = config->getString ("imgproc", "astrometry", defaultImgProccess, 2000);
+  ret = config->getString ("imgproc", "astrometry", defaultImgProcess, 2000);
 
   if (ret)
     {
       syslog (LOG_ERR,
 	      "Rts2ImageProc::init cannot get astrometry string, exiting!");
+      return ret;
+    }
+
+  ret = config->getString ("imgproc", "obsprocess", defaultObsProcess, 2000);
+
+  if (ret)
+    {
+      syslog (LOG_ERR,
+	      "Rts2ImageProc::init cannot get obs process script, exiting");
+      return ret;
     }
 
   sendStop = 0;
@@ -150,11 +171,11 @@ Rts2ImageProc::init ()
 int
 Rts2ImageProc::idle ()
 {
-  std::list < Rts2ConnImgProcess * >::iterator img_iter;
+  std::list < Rts2ConnProcess * >::iterator img_iter;
   if (!runningImage && imagesQue.size () != 0)
     {
       img_iter = imagesQue.begin ();
-      Rts2ConnImgProcess *newImage = *img_iter;
+      Rts2ConnProcess *newImage = *img_iter;
       imagesQue.erase (img_iter);
       changeRunning (newImage);
     }
@@ -220,7 +241,7 @@ Rts2ImageProc::changeMasterState (int new_state)
 int
 Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 {
-  std::list < Rts2ConnImgProcess * >::iterator img_iter;
+  std::list < Rts2ConnProcess * >::iterator img_iter;
   for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();
        img_iter++)
     {
@@ -275,7 +296,7 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 }
 
 void
-Rts2ImageProc::changeRunning (Rts2ConnImgProcess * newImage)
+Rts2ImageProc::changeRunning (Rts2ConnProcess * newImage)
 {
   int ret;
   if (runningImage)
@@ -311,7 +332,7 @@ Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImageConn;
   newImageConn =
-    new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
+    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path);
   if (runningImage)
     {
       imagesQue.push_front (newImageConn);
@@ -329,8 +350,25 @@ Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImageConn;
   newImageConn =
-    new Rts2ConnImgProcess (this, conn, defaultImgProccess, in_path);
+    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path);
   changeRunning (newImageConn);
+  infoAll ();
+  return 0;
+}
+
+int
+Rts2ImageProc::queObs (Rts2Conn * conn, int obsId)
+{
+  Rts2ConnObsProcess *newObsConn;
+  newObsConn = new Rts2ConnObsProcess (this, conn, defaultObsProcess, obsId);
+  if (runningImage)
+    {
+      imagesQue.push_front (newObsConn);
+      if (conn)
+	sendInfo (conn);
+      return 0;
+    }
+  changeRunning (newObsConn);
   infoAll ();
   return 0;
 }

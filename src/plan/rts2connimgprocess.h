@@ -3,6 +3,7 @@
 
 #include "../utils/rts2connfork.h"
 #include "../writers/rts2imagedb.h"
+#include "../utilsdb/rts2obs.h"
 
 #define EVENT_OK_ASTROMETRY	RTS2_LOCAL_EVENT + 200
 #define EVENT_NOT_ASTROMETRY	RTS2_LOCAL_EVENT + 201
@@ -10,7 +11,28 @@
 typedef enum
 { NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT } astrometry_stat_t;
 
-/*
+class Rts2ConnProcess:public Rts2ConnFork
+{
+protected:
+  Rts2Conn * reqConn;
+  astrometry_stat_t astrometryStat;
+public:
+    Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		     const char *in_exe);
+
+  void deleteConnection (Rts2Conn * conn)
+  {
+    if (conn == reqConn)
+      reqConn = NULL;
+  }
+
+  astrometry_stat_t getAstrometryStat ()
+  {
+    return astrometryStat;
+  }
+};
+
+/**
  * "Connection" which reads output of image processor
  *
  * This class expect that images are stored in CENTRAL repository,
@@ -20,14 +42,13 @@ typedef enum
  * Hence passing full image path will be sufficient for finding
  * it.
  */
-class Rts2ConnImgProcess:public Rts2ConnFork
+class Rts2ConnImgProcess:public Rts2ConnProcess
 {
 private:
   Rts2Conn * reqConn;
 
   char *imgPath;
 
-  astrometry_stat_t astrometryStat;
   long id;
   double ra, dec, ra_err, dec_err;
 
@@ -44,17 +65,19 @@ public:
 
   virtual int newProcess ();
   virtual int processLine ();
+};
 
-  void deleteConnection (Rts2Conn * conn)
-  {
-    if (conn == reqConn)
-      reqConn = NULL;
-  }
+class Rts2ConnObsProcess:public Rts2ConnProcess
+{
+private:
+  int obsId;
+  Rts2Obs *obs;
+public:
+    Rts2ConnObsProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+			const char *in_exe, int in_obsId);
 
-  astrometry_stat_t getAstrometryStat ()
-  {
-    return astrometryStat;
-  }
+  virtual int newProcess ();
+  virtual int processLine ();
 };
 
 #endif /* !__RTS2CONNIMGPROCESS__ */

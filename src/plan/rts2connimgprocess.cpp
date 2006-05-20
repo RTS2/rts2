@@ -15,13 +15,19 @@
 
 #include <sstream>
 
+Rts2ConnProcess::Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+				  const char *in_exe):
+Rts2ConnFork (in_master, in_exe)
+{
+  reqConn = in_conn;
+}
+
 Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master,
 					Rts2Conn * in_conn,
 					const char *in_exe,
 					const char *in_path):
-Rts2ConnFork (in_master, in_exe)
+Rts2ConnProcess (in_master, in_conn, in_exe)
 {
-  reqConn = in_conn;
   imgPath = new char[strlen (in_path) + 1];
   strcpy (imgPath, in_path);
   astrometryStat = NOT_ASTROMETRY;
@@ -35,7 +41,6 @@ Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
 int
 Rts2ConnImgProcess::newProcess ()
 {
-  int ret;
   Rts2Image *image;
 
 #ifdef DEBUG_EXTRA
@@ -54,9 +59,8 @@ Rts2ConnImgProcess::newProcess ()
 
   if (exePath)
     {
-      ret = execl (exePath, exePath, imgPath, (char *) NULL);
-      if (ret)
-	syslog (LOG_ERR, "Rts2ConnImgProcess::newProcess: %m");
+      execl (exePath, exePath, imgPath, (char *) NULL);
+      syslog (LOG_ERR, "Rts2ConnImgProcess::newProcess: %m");
     }
   return -2;
 }
@@ -168,4 +172,56 @@ Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
   // last processed
   Rts2Obs observation = Rts2Obs (image->getObsId ());
   observation.checkUnprocessedImages ();
+}
+
+Rts2ConnObsProcess::Rts2ConnObsProcess (Rts2Block * in_master,
+					Rts2Conn * in_conn,
+					const char *in_exe, int in_obsId):
+Rts2ConnProcess (in_master, in_conn, in_exe)
+{
+  obsId = in_obsId;
+  obs = NULL;
+}
+
+int
+Rts2ConnObsProcess::newProcess ()
+{
+  int ret;
+  char *obsIdCh;
+  char *obsTarIdCh;
+  char *obsTarTypeCh;
+#ifdef DEBUG_EXTRA
+  syslog (LOG_DEBUG, "Rts2ConnObsProcess::newProcess exe: %s obsid: %i",
+	  exePath, obsId);
+#endif
+  obs = new Rts2Obs (obsId);
+  ret = obs->load ();
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2ConnObsProcess::newProcess cannot load obs %i",
+	      obsId);
+      return ret;
+    }
+
+  asprintf (&obsIdCh, "%i", obsId);
+  asprintf (&obsTarIdCh, "%i", obs->getTargetId ());
+  asprintf (&obsTarTypeCh, "%c", obs->getTargetType ());
+
+  delete obs;
+
+  if (exePath)
+    {
+      execl (exePath, exePath, obsIdCh, obsTarIdCh, obsTarTypeCh,
+	     (char *) NULL);
+      // if we get there, it's error in execl
+      syslog (LOG_ERR, "Rts2ConnObsProcess::newProcess: %m");
+    }
+  return -2;
+}
+
+int
+Rts2ConnObsProcess::processLine ()
+{
+  // no error
+  return -1;
 }
