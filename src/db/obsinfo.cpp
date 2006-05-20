@@ -56,12 +56,15 @@ Rts2ObsInfo::processOption (int in_opt)
 	  break;
 	case 'a':
 	  action = IMAGES_ASTR_OK;
+	  imageFlag = (imageFlag & ~DISPLAY_MASK_ASTR) | DISPLAY_ASTR_OK;
 	  break;
 	case 't':
 	  action = IMAGES_TRASH;
+	  imageFlag = (imageFlag & ~DISPLAY_MASK_ASTR) | DISPLAY_ASTR_TRASH;
 	  break;
 	case 'q':
 	  action = IMAGES_QUE;
+	  imageFlag = (imageFlag & ~DISPLAY_MASK_ASTR) | DISPLAY_ASTR_QUE;
 	  break;
 	default:
 	  std::cerr << "Invalid action '" << *optarg << "'" << std::endl;
@@ -106,16 +109,13 @@ Rts2ObsInfo::run ()
 	case EXT_INFO:
 	  std::cout << obs << std::endl;
 	case IMAGES:
+	case IMAGES_ASTR_OK:
+	case IMAGES_TRASH:
+	case IMAGES_QUE:
 	  ret = obs.loadImages ();
 	  if (ret)
 	    return ret;
 	  obs.getImageSet ()->print (std::cout, imageFlag);
-	  break;
-	case IMAGES_ASTR_OK:
-	  break;
-	case IMAGES_TRASH:
-	  break;
-	case IMAGES_QUE:
 	  break;
 	}
     }
