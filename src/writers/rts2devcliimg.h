@@ -106,4 +106,10 @@ public:
   Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image);
 };
 
+class Rts2CommandQueObs:public Rts2Command
+{
+public:
+  Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId);
+};
+
 #endif /* !__RTS2_DEVCLIENT_IMG__ */
