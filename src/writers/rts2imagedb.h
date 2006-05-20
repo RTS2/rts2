@@ -56,7 +56,7 @@ public:
 		 const char *in_camera_name, const char *in_mount_name,
 		 bool in_delete_flag, int in_process_bitfield,
 		 double in_img_err_ra, double in_img_err_dec,
-		 double in_img_err);
+		 double in_img_err, int in_epoch_id);
     virtual ~ Rts2ImageDb (void);
 
   virtual int toArchive ();
@@ -79,6 +79,10 @@ public:
 
   friend std::ostream & operator << (std::ostream & _os,
 				     Rts2ImageDb & img_db);
+
+  virtual void printFileName (std::ostream & _os);
+
+  virtual void getFileName (std::string & out_filename);
 
   void print (std::ostream & _os, int in_flags = 0);
 };

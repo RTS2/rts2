@@ -45,7 +45,6 @@ private:
   int openImage ();
   int openImage (const char *in_filename);
   int writeExposureStart ();
-  char *getImageBase (int in_epoch_id);
   unsigned short *imageData;
   int focPos;
   // we assume that image is 2D
@@ -83,6 +82,7 @@ protected:
   double img_err;
 
   virtual int isGoodForFwhm (struct stardata *sr);
+  char *getImageBase (void);
 public:
   // list of sex results..
   struct stardata *sexResults;
@@ -204,6 +204,8 @@ public:
   {
     return targetId;
   }
+
+  const char *getTargetName ();
 
   int getTargetIdSel ()
   {
@@ -363,9 +365,18 @@ public:
   int getCoordAstrometry (LibnovaRaDec & radec);
   int getCoordMount (LibnovaRaDec & radec);
 
+  const char *getOnlyFileName ();
+
+  virtual void getFileName (std::string & out_filename);
+
   friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Image * image);
+
+//Rts2Image & operator - (Rts2Image & img_1, Rts2Image & img_2);
+//Rts2Image & operator + (Rts2Image & img_, Rts2Image & img_2);
+//Rts2Image & operator -= (Rts2Image & img_2);
+//Rts2Image & operator += (Rts2Image & img_2);
 
 #endif /* !__RTS2_IMAGE__ */

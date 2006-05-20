@@ -86,7 +86,6 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
 		      const struct timeval *in_exposureStart)
 {
   char *in_filename;
-  struct tm *expT;
 
   initData ();
 
@@ -98,25 +97,18 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
   imgId = currTarget->getNextImgId ();
   exposureStart = *in_exposureStart;
 
-  expT = gmtime (&exposureStart.tv_sec);
   isAcquiring = currTarget->isAcquiring ();
   if (isAcquiring)
     {
       // put acqusition images to acqusition que
       asprintf (&in_filename,
-		"%s/acqusition/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-		getImageBase (epochId), camera->getName (),
-		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-		expT->tm_hour, expT->tm_min, expT->tm_sec,
-		exposureStart.tv_usec / 1000);
+		"%s/acqusition/que/%s/%s",
+		getImageBase (), camera->getName (), getOnlyFileName ());
     }
   else
     {
-      asprintf (&in_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-		getImageBase (epochId), camera->getName (),
-		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-		expT->tm_hour, expT->tm_min, expT->tm_sec,
-		exposureStart.tv_usec / 1000);
+      asprintf (&in_filename, "%s/que/%s/%s",
+		getImageBase (), camera->getName (), getOnlyFileName ());
     }
 
   createImage (in_filename);
@@ -297,16 +289,12 @@ Rts2Image::toQue ()
 {
   char *new_filename;
   int ret = 0;
-  struct tm *expT;
 
   if (!imageName)
     return -1;
 
-  expT = gmtime (&exposureStart.tv_sec);
-  asprintf (&new_filename, "%s/que/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), cameraName, expT->tm_year + 1900,
-	    expT->tm_mon + 1, expT->tm_mday, expT->tm_hour, expT->tm_min,
-	    expT->tm_sec, exposureStart.tv_usec / 1000);
+  asprintf (&new_filename, "%s/que/%s/%s",
+	    getImageBase (), cameraName, getOnlyFileName ());
 
   ret = renameImage (new_filename);
 
@@ -319,18 +307,14 @@ Rts2Image::toAcquisition ()
 {
   char *new_filename;
   int ret = 0;
-  struct tm *expT;
 
   if (!imageName)
     return -1;
 
-  expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/acqusition/%05i/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), getTargetIdSel (), cameraName,
-	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-	    expT->tm_hour, expT->tm_min, expT->tm_sec,
-	    exposureStart.tv_usec / 1000);
+	    "%s/acqusition/%s/%s/%s",
+	    getImageBase (), getTargetName (), cameraName,
+	    getOnlyFileName ());
 
   ret = renameImage (new_filename);
 
@@ -343,18 +327,14 @@ Rts2Image::toArchive ()
 {
   char *new_filename;
   int ret = 0;
-  struct tm *expT;
 
   if (!imageName)
     return -1;
 
-  expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/archive/%05i/%s/object/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), getTargetIdSel (), cameraName,
-	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-	    expT->tm_hour, expT->tm_min, expT->tm_sec,
-	    exposureStart.tv_usec / 1000);
+	    "%s/archive/%s/%s/object/%s",
+	    getImageBase (), getTargetName (), cameraName,
+	    getOnlyFileName ());
 
   ret = renameImage (new_filename);
 
@@ -368,29 +348,22 @@ Rts2Image::toDark ()
 {
   char *new_filename;
   int ret = 0;
-  struct tm *expT;
 
   if (!imageName)
     return -1;
 
-  expT = gmtime (&exposureStart.tv_sec);
   if (getTargetId () == TARGET_DARK)
     {
       asprintf (&new_filename,
-		"%s/darks/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-		getImageBase (epochId), cameraName,
-		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-		expT->tm_hour, expT->tm_min, expT->tm_sec,
-		exposureStart.tv_usec / 1000);
+		"%s/darks/%s/%s",
+		getImageBase (), cameraName, getOnlyFileName ());
     }
   else
     {
       asprintf (&new_filename,
-		"%s/archive/%05i/%s/darks/%04i%02i%02i%02i%02i%02i-%04li.fits",
-		getImageBase (epochId), getTargetIdSel (), cameraName,
-		expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-		expT->tm_hour, expT->tm_min, expT->tm_sec,
-		exposureStart.tv_usec / 1000);
+		"%s/archive/%s/%s/darks/%s",
+		getImageBase (), getTargetName (), cameraName,
+		getOnlyFileName ());
     }
   ret = renameImage (new_filename);
 
@@ -403,18 +376,12 @@ Rts2Image::toFlat ()
 {
   char *new_filename;
   int ret = 0;
-  struct tm *expT;
 
   if (!imageName)
     return -1;
 
-  expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/flat/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), cameraName,
-	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-	    expT->tm_hour, expT->tm_min, expT->tm_sec,
-	    exposureStart.tv_usec / 1000);
+	    "%s/flat/%s/%s", getImageBase (), cameraName, getOnlyFileName ());
 
   ret = renameImage (new_filename);
 
@@ -427,18 +394,14 @@ Rts2Image::toTrash ()
 {
   char *new_filename;
   int ret = 0;
-  struct tm *expT;
 
   if (!imageName)
     return -1;
 
-  expT = gmtime (&exposureStart.tv_sec);
   asprintf (&new_filename,
-	    "%s/trash/%05i/%s/%04i%02i%02i%02i%02i%02i-%04li.fits",
-	    getImageBase (epochId), getTargetIdSel (), cameraName,
-	    expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-	    expT->tm_hour, expT->tm_min, expT->tm_sec,
-	    exposureStart.tv_usec / 1000);
+	    "%s/trash/%s/%s/%s",
+	    getImageBase (), getTargetName (), cameraName,
+	    getOnlyFileName ());
 
   ret = renameImage (new_filename);
 
@@ -479,10 +442,10 @@ Rts2Image::writeExposureStart ()
 }
 
 char *
-Rts2Image::getImageBase (int in_epoch_id)
+Rts2Image::getImageBase ()
 {
-  static char buf[6];
-  sprintf (buf, "/images/%03i", in_epoch_id);
+  static char buf[12];
+  sprintf (buf, "/images/%03i", epochId);
   return buf;
 }
 
@@ -973,6 +936,14 @@ Rts2Image::setMountName (const char *in_mountName)
   setValue ("MNT_NAME", mountName, "name of mount");
 }
 
+const char *
+Rts2Image::getTargetName ()
+{
+  static char buf[6];
+  sprintf (buf, "%05i", getTargetIdSel ());
+  return buf;
+}
+
 void
 Rts2Image::setFocuserName (const char *in_focuserName)
 {
@@ -1300,6 +1271,25 @@ Rts2Image::getError (double &eRa, double &eDec, double &eRad)
   eDec = dec_err;
   eRad = img_err;
   return 0;
+}
+
+const char *
+Rts2Image::getOnlyFileName ()
+{
+  struct tm *expT;
+  static char buf[25];
+  expT = gmtime (&exposureStart.tv_sec);
+  sprintf (buf, "%04i%02i%02i%02i%02i%02i-%04li.fits",
+	   expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
+	   expT->tm_hour, expT->tm_min, expT->tm_sec,
+	   exposureStart.tv_usec / 1000);
+  return buf;
+}
+
+void
+Rts2Image::getFileName (std::string & out_filename)
+{
+  out_filename = std::string (imageName);
 }
 
 std::ostream & operator << (std::ostream & _os, Rts2Image * image)

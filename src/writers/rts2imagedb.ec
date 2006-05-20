@@ -1,11 +1,11 @@
+#include "imgdisplay.h"
 #include "rts2imagedb.h"
 #include "../utils/timestamp.h"
 #include "../utils/libnova_cpp.h"
 
 #include <iomanip>
 #include <libnova/airmass.h>
-
-#define DISPLAY_OBS		0x04
+#include <sstream>
 
 EXEC SQL include sqlca;
 
@@ -471,7 +471,7 @@ Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
 Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, 
     float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name,
     const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec,
-    double in_img_err) : Rts2Image (in_img_date, in_img_usec, in_img_exposure)
+    double in_img_err, int in_epoch_id) : Rts2Image (in_img_date, in_img_usec, in_img_exposure)
 {
   targetId = in_tar_id;
   targetIdSel = in_tar_id;
@@ -495,6 +495,8 @@ Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_o
   pos_astr.ra = nan ("f");
   pos_astr.dec = nan ("f");
   processBitfiedl = in_process_bitfield;
+
+  epochId = in_epoch_id;
 
   filter = new char[strlen(in_img_filter) + 1];
   strcpy (filter, in_img_filter);
@@ -613,10 +615,47 @@ Rts2ImageDb::getOKCount ()
 }
 
 void
+Rts2ImageDb::printFileName (std::ostream &_os)
+{
+  _os << getImageBase ();
+  if (processBitfiedl & ASTROMETRY_PROC)
+  {
+    if (processBitfiedl & ASTROMETRY_OK)
+    {
+      _os << "/archive/" << getTargetName () << "/" << getCameraName () << "/object";
+    }
+    else
+    {
+      _os << "/trash/" << getTargetName () << "/" << getCameraName ();
+    }
+  }
+  else
+  {
+    _os << "/que/" << getCameraName ();
+  }
+  _os << "/" << getOnlyFileName ();
+}
+
+void
+Rts2ImageDb::getFileName (std::string &out_filename)
+{
+  std::ostringstream out;
+  printFileName (out);
+  out_filename = out.str();
+}
+
+void
 Rts2ImageDb::print (std::ostream &_os, int in_flags)
 {
   std::ios_base::fmtflags old_settings = _os.flags ();
   int old_precision = _os.precision (2);
+
+  if (in_flags & DISPLAY_SHORT)
+  {
+    printFileName (_os);
+    _os << std::endl;
+    return;
+  }
 
   if (in_flags & DISPLAY_OBS)
     _os
