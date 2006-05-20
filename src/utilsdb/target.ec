@@ -2,6 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
+#include "imgdisplay.h"
 #include "target.h"
 #include "target_auger.h"
 #include "rts2obs.h"

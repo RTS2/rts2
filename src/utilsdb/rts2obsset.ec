@@ -1,3 +1,4 @@
+#include "imgdisplay.h"
 #include "rts2obsset.h"
 
 #include <sstream>
@@ -118,6 +119,11 @@ Rts2ObsSet::load (std::string in_where)
   EXEC SQL CLOSE obs_cur_timestamps;
   free (stmp_c);
   EXEC SQL ROLLBACK;
+}
+
+Rts2ObsSet::Rts2ObsSet (void)
+{
+
 }
 
 Rts2ObsSet::Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t)

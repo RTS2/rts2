@@ -10,11 +10,6 @@
 #include "rts2count.h"
 #include "rts2imgset.h"
 
-// what to print..
-#define DISPLAY_ALL		0x01
-#define DISPLAY_SUMMARY		0x02
-#define DISPLAY_OBS		0x04
-
 /**
  * Observation class.
  *
@@ -91,6 +86,11 @@ public:
   int getObsId ()
   {
     return obs_id;
+  }
+
+  Rts2ImgSet *getImageSet ()
+  {
+    return imgset;
   }
 
   int getUnprocessedCount ();

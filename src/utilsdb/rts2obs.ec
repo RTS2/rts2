@@ -1,3 +1,4 @@
+#include "imgdisplay.h"
 #include "rts2obs.h"
 #include "target.h"
 #include "rts2taruser.h"

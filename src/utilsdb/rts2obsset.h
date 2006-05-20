@@ -79,6 +79,7 @@ private:
   double
     errAvgRad;
 public:
+  Rts2ObsSet (void);
   Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
   Rts2ObsSet (const time_t * start_t, const time_t * end_t);
   Rts2ObsSet (int in_tar_id);
