@@ -19,4 +19,5 @@ SUBDIRS = \
 	pgsql \
 	bckimages \
 	sql \
-	db
+	db \
+	soap
