@@ -1,3 +1,4 @@
+#include "imgdisplay.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2obs.h"
 #include "../utilsdb/rts2obsset.h"
@@ -11,7 +12,9 @@ private:
   Rts2ObsSet * obsset;
   enum
   { BASIC_INFO, EXT_INFO, IMAGES, IMAGES_ASTR_OK, IMAGES_TRASH,
-      IMAGES_QUE } action;
+    IMAGES_QUE
+  } action;
+  int imageFlag;
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -25,8 +28,10 @@ Rts2ObsInfo::Rts2ObsInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   obsset = new Rts2ObsSet ();
+  imageFlag = DISPLAY_ALL;
   addOption ('a', "action", 1,
 	     "i->images, a->with astrometry, t->trash images, q->que images (not yet processed)");
+  addOption ('s', "short", 0, "short image listing");
   action = BASIC_INFO;
 }
 
@@ -62,6 +67,9 @@ Rts2ObsInfo::processOption (int in_opt)
 	  std::cerr << "Invalid action '" << *optarg << "'" << std::endl;
 	  return -1;
 	}
+      break;
+    case 's':
+      imageFlag |= DISPLAY_SHORT;
       break;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -101,7 +109,7 @@ Rts2ObsInfo::run ()
 	  ret = obs.loadImages ();
 	  if (ret)
 	    return ret;
-	  obs.getImageSet ()->print (std::cout, DISPLAY_ALL);
+	  obs.getImageSet ()->print (std::cout, imageFlag);
 	  break;
 	case IMAGES_ASTR_OK:
 	  break;

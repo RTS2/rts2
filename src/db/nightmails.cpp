@@ -1,3 +1,4 @@
+#include "imgdisplay.h"
 #include "../utils/rts2config.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2obsset.h"
