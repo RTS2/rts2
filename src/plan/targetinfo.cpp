@@ -1,3 +1,4 @@
+#include "imgdisplay.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2camlist.h"
 #include "../utilsdb/target.h"
