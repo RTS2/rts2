@@ -28,7 +28,7 @@
 //  Note: modify this file to customize the generated data type declarations
 
 //gsoapopt w
-#import <string>
+#include <string>
 
 //gsoap ns1  service name:      SesameSoapBinding 
 //gsoap ns1  service type:      Sesame 
