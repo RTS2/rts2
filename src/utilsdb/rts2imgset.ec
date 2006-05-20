@@ -200,7 +200,14 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
     }
     for (img_iter = begin (); img_iter != end (); img_iter++)
     {
-      (*img_iter)->print (_os, printImages);
+      Rts2ImageDb *image = (*img_iter);
+      if ((printImages & DISPLAY_ASTR_OK) && !image->haveOKAstrometry ())
+	continue;
+      if ((printImages & DISPLAY_ASTR_TRASH) && (image->haveOKAstrometry () || !image->isProcessed ()))
+	continue;
+      if ((printImages & DISPLAY_ASTR_QUE) && image->isProcessed ())
+	continue;
+      image->print (_os, printImages);
     }
   }
   if (printImages & DISPLAY_SUMMARY)
