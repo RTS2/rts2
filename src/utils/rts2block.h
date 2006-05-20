@@ -64,7 +64,6 @@ private:
   int centrald_id;		// id of connection on central server
   in_addr addr;
   int port;			// local port & connection
-  int acceptConn ();
 
     std::list < Rts2Command * >commandQue;
   Rts2Command *runningCommand;
@@ -84,6 +83,8 @@ protected:
   Rts2Block *master;
   char *command_start;
   int sock;
+
+  virtual int acceptConn ();
 
   int setState (int in_state_num, char *in_state_name, int in_value);
   virtual int setState (char *in_state_name, int in_value);

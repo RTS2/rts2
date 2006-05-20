@@ -28,6 +28,7 @@
 // rts2devcliwheel.h       650-699
 // augershooter.h          700-749
 // rts2devclifocuser.h     750-799
+// rts2soapclient.h       1000-1200 
 
 class Rts2Event
 {
