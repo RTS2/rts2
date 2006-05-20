@@ -241,6 +241,7 @@
 #define DEVICE_TYPE_EXECUTOR    20
 #define DEVICE_TYPE_IMGPROC	21
 #define DEVICE_TYPE_SELECTOR    22
+#define DEVICE_TYPE_SOAP	23
 
 // and more to come..
 // #define DEVICE_TYPE_
