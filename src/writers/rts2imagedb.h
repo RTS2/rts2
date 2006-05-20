@@ -77,6 +77,11 @@ public:
     return (processBitfiedl & ASTROMETRY_OK);
   }
 
+  bool isProcessed ()
+  {
+    return (processBitfiedl & ASTROMETRY_PROC);
+  }
+
   friend std::ostream & operator << (std::ostream & _os,
 				     Rts2ImageDb & img_db);
 
