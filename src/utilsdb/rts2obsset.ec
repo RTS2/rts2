@@ -123,7 +123,6 @@ Rts2ObsSet::load (std::string in_where)
 
 Rts2ObsSet::Rts2ObsSet (void)
 {
-
 }
 
 Rts2ObsSet::Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t)
@@ -159,6 +158,22 @@ Rts2ObsSet::Rts2ObsSet (int in_tar_id)
   std::ostringstream os;
   os << "observations.tar_id = "
      << in_tar_id;
+  load (os.str());
+}
+
+Rts2ObsSet::Rts2ObsSet (char type_id, int state_mask, bool inv)
+{
+  std::ostringstream os;
+  os << "(targets.type_id = "
+     << type_id
+     << ") and ((observations.obs_state & "
+     << state_mask 
+     << ") ";
+  if (inv)
+    os << "!";
+  os << "= "
+     << state_mask
+     << ")";
   load (os.str());
 }
 

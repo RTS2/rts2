@@ -46,7 +46,7 @@ Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int 
 
 Rts2Obs::~Rts2Obs (void)
 {
-  std::vector <Rts2ImageDb *>::iterator img_iter;
+  std::vector <Rts2Image *>::iterator img_iter;
   if (imgset)
   {
     for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
@@ -304,7 +304,7 @@ Rts2Obs::getNumberOfGoodImages ()
   loadImages ();
   if (!imgset)
     return 0;
-  std::vector <Rts2ImageDb *>::iterator img_iter;
+  std::vector <Rts2Image *>::iterator img_iter;
   int ret = 0;
   for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
   {
@@ -321,7 +321,7 @@ Rts2Obs::getFirstErrors (double &eRa, double &eDec, double &eRad)
   if (!imgset)
     return -1;
 
-  std::vector <Rts2ImageDb *>::iterator img_iter;
+  std::vector <Rts2Image *>::iterator img_iter;
   for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
   {
     if (((*img_iter)->getError (eRa, eDec, eRad)) == 0)
@@ -352,12 +352,12 @@ Rts2Obs::maskState (int newBits)
   EXEC SQL UPDATE
     observations 
   SET
-    obs_state = obs_state | newBits
+    obs_state = obs_state | :db_newBits
   WHERE
     obs_id = :db_obs_id;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "Rts2Obs::maskState: %m (%i)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    syslog (LOG_ERR, "Rts2Obs::maskState: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
     EXEC SQL ROLLBACK;
     return;
   }
@@ -376,12 +376,12 @@ Rts2Obs::unmaskState (int newBits)
   EXEC SQL UPDATE
     observations 
   SET
-    obs_state = obs_state & newBits
+    obs_state = obs_state & :db_newBits
   WHERE
     obs_id = :db_obs_id;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "Rts2Obs::unmaskState: %m (%i)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    syslog (LOG_ERR, "Rts2Obs::unmaskState: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
     EXEC SQL ROLLBACK;
     return;
   }

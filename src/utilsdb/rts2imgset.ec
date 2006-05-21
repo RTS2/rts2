@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "../utils/libnova_cpp.h"
+#include "../writers/rts2imagedb.h"
 
 Rts2ImgSet::Rts2ImgSet ()
 {
@@ -14,7 +15,7 @@ Rts2ImgSet::Rts2ImgSet ()
 
 Rts2ImgSet::~Rts2ImgSet (void)
 {
-  std::vector <Rts2ImageDb *>::iterator img_iter;
+  std::vector <Rts2Image *>::iterator img_iter;
   for (img_iter = begin (); img_iter != end (); img_iter++)
   {
     delete *img_iter;
@@ -192,7 +193,7 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
 {
   if (printImages & DISPLAY_ALL)
   {
-    std::vector <Rts2ImageDb *>::iterator img_iter;
+    std::vector <Rts2Image *>::iterator img_iter;
     if (empty () && !(printImages & DISPLAY_SHORT))
     {
       _os << "      " << "--- no images ---" << std::endl;
@@ -200,7 +201,7 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
     }
     for (img_iter = begin (); img_iter != end (); img_iter++)
     {
-      Rts2ImageDb *image = (*img_iter);
+      Rts2Image *image = (*img_iter);
       if ((printImages & DISPLAY_ASTR_OK) && !image->haveOKAstrometry ())
 	continue;
       if ((printImages & DISPLAY_ASTR_TRASH) && (image->haveOKAstrometry () || !image->isProcessed ()))
@@ -229,7 +230,7 @@ Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
 
   int aNum = 0;
 
-  std::vector <Rts2ImageDb *>::iterator img_iter;
+  std::vector <Rts2Image *>::iterator img_iter;
   for (img_iter = begin (); img_iter != end (); img_iter++)
   {
     if (((*img_iter)->getError (tRa, tDec, tRad)) == 0)
@@ -289,6 +290,28 @@ Rts2ImgSetPosition::load ()
     << ", " << pos.dec
     << ", astrometry)";
   return Rts2ImgSet::load (os.str ());
+}
+
+Rts2ImgSetFlats::Rts2ImgSetFlats (Rts2ObsSet *in_observations)
+{
+  observations = in_observations;
+}
+
+int
+Rts2ImgSetFlats::load ()
+{
+  return -1;
+}
+
+Rts2ImgSetDarks::Rts2ImgSetDarks (Rts2ObsSet *in_observations)
+{
+  observations = in_observations;
+}
+
+int
+Rts2ImgSetDarks::load ()
+{
+  return -1;
 }
 
 std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)

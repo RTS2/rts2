@@ -1,12 +1,13 @@
 #ifndef __RTS2_IMGSET__
 #define __RTS2_IMGSET__
 
-#include "../writers/rts2imagedb.h"
+#include "../writers/rts2image.h"
 
 #include <iostream>
 #include <vector>
 
 class Rts2Obs;
+class Rts2ObsSet;
 class Rts2ImageDb;
 
 /**
@@ -18,7 +19,7 @@ class Rts2ImageDb;
  */
 class Rts2ImgSet:public
   std::vector <
-Rts2ImageDb * >
+Rts2Image * >
 {
 private:
   float
@@ -90,6 +91,28 @@ private:
     pos;
 public:
   Rts2ImgSetPosition (struct ln_equ_posn *in_pos);
+  virtual int
+  load ();
+};
+
+class Rts2ImgSetFlats:
+public Rts2ImgSet
+{
+private:
+  Rts2ObsSet * observations;
+public:
+  Rts2ImgSetFlats (Rts2ObsSet * in_observations);
+  virtual int
+  load ();
+};
+
+class Rts2ImgSetDarks:
+public Rts2ImgSet
+{
+private:
+  Rts2ObsSet * observations;
+public:
+  Rts2ImgSetDarks (Rts2ObsSet * in_observations);
   virtual int
   load ();
 };

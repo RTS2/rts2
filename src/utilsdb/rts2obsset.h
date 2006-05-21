@@ -83,6 +83,7 @@ public:
   Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
   Rts2ObsSet (const time_t * start_t, const time_t * end_t);
   Rts2ObsSet (int in_tar_id);
+  Rts2ObsSet (char type_id, int state_mask, bool inv = false);
   Rts2ObsSet (struct ln_equ_posn *position, double radius);
   virtual ~ Rts2ObsSet (void);
 
