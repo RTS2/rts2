@@ -72,12 +72,12 @@ public:
 
   int getOKCount ();
 
-  bool haveOKAstrometry ()
+  virtual bool haveOKAstrometry ()
   {
     return (processBitfiedl & ASTROMETRY_OK);
   }
 
-  bool isProcessed ()
+  virtual bool isProcessed ()
   {
     return (processBitfiedl & ASTROMETRY_PROC);
   }
@@ -89,7 +89,7 @@ public:
 
   virtual void getFileName (std::string & out_filename);
 
-  void print (std::ostream & _os, int in_flags = 0);
+  virtual void print (std::ostream & _os, int in_flags = 0);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ImageDb & img_db);

@@ -108,6 +108,7 @@ public:
   virtual int toArchive ();
   virtual int toDark ();
   virtual int toFlat ();
+  virtual int toMasterFlat ();
   virtual int toTrash ();
 
   img_type_t getType ()
@@ -368,6 +369,20 @@ public:
   const char *getOnlyFileName ();
 
   virtual void getFileName (std::string & out_filename);
+
+  virtual bool haveOKAstrometry ()
+  {
+    return false;
+  }
+
+  virtual bool isProcessed ()
+  {
+    return false;
+  }
+
+  virtual void printFileName (std::ostream & _os);
+
+  virtual void print (std::ostream & _os, int in_flags = 0);
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 };

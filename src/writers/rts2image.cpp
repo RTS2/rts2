@@ -9,7 +9,13 @@
 #include "imghdr.h"
 
 #include "../utils/mkpath.h"
+#include "../utils/libnova_cpp.h"
+#include "../utils/timestamp.h"
 #include "../utilsdb/target.h"
+
+#include "imgdisplay.h"
+
+#include <iomanip>
 
 void
 Rts2Image::initData ()
@@ -381,7 +387,27 @@ Rts2Image::toFlat ()
     return -1;
 
   asprintf (&new_filename,
-	    "%s/flat/%s/%s", getImageBase (), cameraName, getOnlyFileName ());
+	    "%s/flat/%s/raw/%s",
+	    getImageBase (), cameraName, getOnlyFileName ());
+
+  ret = renameImage (new_filename);
+
+  free (new_filename);
+  return ret;
+}
+
+int
+Rts2Image::toMasterFlat ()
+{
+  char *new_filename;
+  int ret = 0;
+
+  if (!imageName)
+    return -1;
+
+  asprintf (&new_filename,
+	    "%s/flat/%s/master/%s",
+	    getImageBase (), cameraName, getOnlyFileName ());
 
   ret = renameImage (new_filename);
 
@@ -1290,6 +1316,43 @@ void
 Rts2Image::getFileName (std::string & out_filename)
 {
   out_filename = std::string (imageName);
+}
+
+void
+Rts2Image::printFileName (std::ostream & _os)
+{
+  _os << getImageName ();
+}
+
+void
+Rts2Image::print (std::ostream & _os, int in_flags)
+{
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  int old_precision = _os.precision (2);
+
+  if (in_flags & DISPLAY_SHORT)
+    {
+      printFileName (_os);
+      _os << std::endl;
+      return;
+    }
+
+  if (in_flags & DISPLAY_OBS)
+    _os << std::setw (5) << getObsId () << " | ";
+
+  _os
+    << std::setw (5) << getCameraName () << " | "
+    << std::setw (4) << getImgId () << " | "
+    << Timestamp (getExposureSec () +
+		  (double) getExposureUsec () /
+		  USEC_SEC) << " | " << std::
+    setw (3) << getFilter () << " | " << std::
+    setw (8) << getExposureLength () << "' | " << LibnovaDegArcMin (nan ("f"))
+    << " | " << LibnovaDegArcMin (nan ("f")) << " | " <<
+    LibnovaDegArcMin (nan ("f")) << std::endl;
+
+  _os.flags (old_settings);
+  _os.precision (old_precision);
 }
 
 std::ostream & operator << (std::ostream & _os, Rts2Image * image)
