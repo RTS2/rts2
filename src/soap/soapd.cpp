@@ -25,6 +25,7 @@ Rts2Conn (in_master)
   sock = soap_bind (&soap, NULL, in_port, 100);
   if (sock < 0)
     soap_print_fault (&soap, stderr);
+  setConnTimeout (-1);
   fprintf (stderr, "Socket connection successful: master socket = %d\n",
 	   sock);
 }
