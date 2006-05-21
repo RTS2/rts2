@@ -47,6 +47,7 @@ public:
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 
   virtual int init ();
+  virtual void postEvent (Rts2Event * event);
   virtual int idle ();
   virtual int ready ()
   {
@@ -166,6 +167,20 @@ Rts2ImageProc::init ()
   sendStop = 0;
 
   return ret;
+}
+
+void
+Rts2ImageProc::postEvent (Rts2Event * event)
+{
+  int obsId;
+  switch (event->getType ())
+    {
+    case EVENT_ALL_PROCESSED:
+      obsId = *((int *) event->getArg ());
+      queObs (NULL, obsId);
+      break;
+    }
+  Rts2DeviceDb::postEvent (event);
 }
 
 int
