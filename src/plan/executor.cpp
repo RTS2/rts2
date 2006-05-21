@@ -24,6 +24,9 @@ private:
   Target * currentTarget;
   Target *nextTarget;
   Target *priorityTarget;
+  void queDarks ();
+  void queFlats ();
+  void beforeChange ();
   void doSwitch ();
   void switchTarget ();
 
@@ -585,6 +588,45 @@ Rts2Executor::setShower ()
   return setNow (TARGET_SHOWER);
 }
 
+
+void
+Rts2Executor::queDarks ()
+{
+  Rts2Conn *minConn = getMinConn ("que_size");
+  if (!minConn)
+    return;
+  minConn->queCommand (new Rts2Command (this, "que_darks"));
+}
+
+void
+Rts2Executor::queFlats ()
+{
+  Rts2Conn *minConn = getMinConn ("que_size");
+  if (!minConn)
+    return;
+  minConn->queCommand (new Rts2Command (this, "que_flats"));
+}
+
+void
+Rts2Executor::beforeChange ()
+{
+  // both currentTarget and nextTarget are defined
+  char currType;
+  char nextType;
+  if (currentTarget)
+    currType = currentTarget->getTargetType ();
+  else
+    currType = TYPE_UNKNOW;
+  if (nextTarget)
+    nextType = nextTarget->getTargetType ();
+  else
+    nextType = currType;
+  if (currType == TYPE_DARK && nextType != TYPE_DARK)
+    queDarks ();
+  if (currType == TYPE_FLAT && nextType != TYPE_FLAT)
+    queFlats ();
+}
+
 void
 Rts2Executor::doSwitch ()
 {
@@ -599,6 +641,8 @@ Rts2Executor::doSwitch ()
       // create again our target..since conditions changed, we will get different target id
       nextTarget = createTarget (currentTarget->getTargetID (), observer);
     }
+  // check dark and flat processing
+  beforeChange ();
   if (nextTarget)
     {
       // go to post-process

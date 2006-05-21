@@ -7,6 +7,7 @@
 
 #define EVENT_OK_ASTROMETRY	RTS2_LOCAL_EVENT + 200
 #define EVENT_NOT_ASTROMETRY	RTS2_LOCAL_EVENT + 201
+#define EVENT_ALL_PROCESSED	RTS2_LOCAL_EVENT + 202
 
 typedef enum
 { NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT } astrometry_stat_t;
@@ -77,6 +78,24 @@ public:
 			const char *in_exe, int in_obsId);
 
   virtual int newProcess ();
+  virtual int processLine ();
+};
+
+class Rts2ConnDarkProcess:public Rts2ConnProcess
+{
+public:
+  Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		       const char *in_exe);
+
+  virtual int processLine ();
+};
+
+class Rts2ConnFlatProcess:public Rts2ConnProcess
+{
+public:
+  Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		       const char *in_exe);
+
   virtual int processLine ();
 };
 

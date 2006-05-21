@@ -169,9 +169,18 @@ Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
 void
 Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
 {
+  int ret;
+  int obsId;
   // last processed
-  Rts2Obs observation = Rts2Obs (image->getObsId ());
-  observation.checkUnprocessedImages ();
+  obsId = image->getObsId ();
+  Rts2Obs observation = Rts2Obs (obsId);
+  ret = observation.checkUnprocessedImages ();
+  if (ret == 0)
+    {
+      // que as
+      getMaster ()->
+	postEvent (new Rts2Event (EVENT_ALL_PROCESSED, (void *) &obsId));
+    }
 }
 
 Rts2ConnObsProcess::Rts2ConnObsProcess (Rts2Block * in_master,
@@ -223,5 +232,27 @@ int
 Rts2ConnObsProcess::processLine ()
 {
   // no error
+  return -1;
+}
+
+Rts2ConnDarkProcess::Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe):Rts2ConnProcess (in_master, in_conn,
+		 in_exe)
+{
+}
+
+int
+Rts2ConnDarkProcess::processLine ()
+{
+  return -1;
+}
+
+Rts2ConnFlatProcess::Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe):Rts2ConnProcess (in_master, in_conn,
+		 in_exe)
+{
+}
+
+int
+Rts2ConnFlatProcess::processLine ()
+{
   return -1;
 }

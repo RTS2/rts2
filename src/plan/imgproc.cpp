@@ -38,6 +38,8 @@ private:
   int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
   char defaultImgProcess[2000];
   char defaultObsProcess[2000];
+  char defaultDarkProcess[2000];
+  char defaultFlatProcess[2000];
   glob_t imageGlob;
   unsigned int globC;
   int reprocessingPossible;
@@ -64,10 +66,15 @@ public:
 
   virtual int deleteConnection (Rts2Conn * conn);
 
+  int que (Rts2ConnProcess * newProc);
+
   int queImage (Rts2Conn * conn, const char *in_path);
   int doImage (Rts2Conn * conn, const char *in_path);
 
   int queObs (Rts2Conn * conn, int obsId);
+
+  int queDarks (Rts2Conn * conn);
+  int queFlats (Rts2Conn * conn);
 
   int checkNotProcessed ();
   void changeRunning (Rts2ConnProcess * newImage);
@@ -89,20 +96,33 @@ Rts2DevConnImage::commandAuthorized ()
 	return -2;
       return master->queImage (this, in_imageName);
     }
-  if (isCommand ("do_image"))
+  else if (isCommand ("do_image"))
     {
       char *in_imageName;
       if (paramNextString (&in_imageName) || !paramEnd ())
 	return -2;
       return master->doImage (this, in_imageName);
     }
-  if (isCommand ("que_obs"))
+  else if (isCommand ("que_obs"))
     {
       int obsId;
       if (paramNextInteger (&obsId) || !paramEnd ())
 	return -2;
       return master->queObs (this, obsId);
     }
+  else if (isCommand ("que_darks"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->queDarks (this);
+    }
+  else if (isCommand ("que_flats"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->queFlats (this);
+    }
+
   return Rts2DevConn::commandAuthorized ();
 }
 
@@ -147,7 +167,6 @@ Rts2ImageProc::init ()
   config = Rts2Config::instance ();
 
   ret = config->getString ("imgproc", "astrometry", defaultImgProcess, 2000);
-
   if (ret)
     {
       syslog (LOG_ERR,
@@ -156,11 +175,28 @@ Rts2ImageProc::init ()
     }
 
   ret = config->getString ("imgproc", "obsprocess", defaultObsProcess, 2000);
-
   if (ret)
     {
       syslog (LOG_ERR,
 	      "Rts2ImageProc::init cannot get obs process script, exiting");
+      return ret;
+    }
+
+  ret =
+    config->getString ("imgproc", "darkprocess", defaultDarkProcess, 2000);
+  if (ret)
+    {
+      syslog (LOG_ERR,
+	      "Rts2ImageProc::init cannot get dark process script, exiting");
+      return ret;
+    }
+
+  ret =
+    config->getString ("imgproc", "flatprocess", defaultFlatProcess, 2000);
+  if (ret)
+    {
+      syslog (LOG_ERR,
+	      "Rts2ImageProc::init cannot get flat process script, exiting");
       return ret;
     }
 
@@ -250,6 +286,7 @@ Rts2ImageProc::changeMasterState (int new_state)
       if (!runningImage && imagesQue.size () == 0)
 	checkNotProcessed ();
     }
+  // start dark & flat processing
   return Rts2DeviceDb::changeMasterState (new_state);
 }
 
@@ -343,21 +380,23 @@ Rts2ImageProc::changeRunning (Rts2ConnProcess * newImage)
 }
 
 int
+Rts2ImageProc::que (Rts2ConnProcess * newProc)
+{
+  if (runningImage)
+    imagesQue.push_front (newProc);
+  else
+    changeRunning (newProc);
+  infoAll ();
+  return 0;
+}
+
+int
 Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImageConn;
   newImageConn =
     new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path);
-  if (runningImage)
-    {
-      imagesQue.push_front (newImageConn);
-      if (conn)
-	sendInfo (conn);
-      return 0;
-    }
-  changeRunning (newImageConn);
-  infoAll ();
-  return 0;
+  return que (newImageConn);
 }
 
 int
@@ -376,16 +415,23 @@ Rts2ImageProc::queObs (Rts2Conn * conn, int obsId)
 {
   Rts2ConnObsProcess *newObsConn;
   newObsConn = new Rts2ConnObsProcess (this, conn, defaultObsProcess, obsId);
-  if (runningImage)
-    {
-      imagesQue.push_front (newObsConn);
-      if (conn)
-	sendInfo (conn);
-      return 0;
-    }
-  changeRunning (newObsConn);
-  infoAll ();
-  return 0;
+  return que (newObsConn);
+}
+
+int
+Rts2ImageProc::queDarks (Rts2Conn * conn)
+{
+  Rts2ConnDarkProcess *newDarkConn;
+  newDarkConn = new Rts2ConnDarkProcess (this, conn, defaultDarkProcess);
+  return que (newDarkConn);
+}
+
+int
+Rts2ImageProc::queFlats (Rts2Conn * conn)
+{
+  Rts2ConnFlatProcess *newFlatConn;
+  newFlatConn = new Rts2ConnFlatProcess (this, conn, defaultFlatProcess);
+  return que (newFlatConn);
 }
 
 int
