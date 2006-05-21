@@ -88,8 +88,6 @@ public:
   virtual void printFileName (std::ostream & _os);
 
   virtual void getFileName (std::string & out_filename);
-
-  virtual void print (std::ostream & _os, int in_flags = 0);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ImageDb & img_db);

@@ -1347,9 +1347,9 @@ Rts2Image::print (std::ostream & _os, int in_flags)
 		  (double) getExposureUsec () /
 		  USEC_SEC) << " | " << std::
     setw (3) << getFilter () << " | " << std::
-    setw (8) << getExposureLength () << "' | " << LibnovaDegArcMin (nan ("f"))
-    << " | " << LibnovaDegArcMin (nan ("f")) << " | " <<
-    LibnovaDegArcMin (nan ("f")) << std::endl;
+    setw (8) << getExposureLength () << "' | " << LibnovaDegArcMin (ra_err) <<
+    " | " << LibnovaDegArcMin (dec_err) << " | " << LibnovaDegArcMin (img_err)
+    << std::endl;
 
   _os.flags (old_settings);
   _os.precision (old_precision);
