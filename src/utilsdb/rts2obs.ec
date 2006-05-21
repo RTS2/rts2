@@ -341,6 +341,50 @@ Rts2Obs::getAverageErrors (double &eRa, double &eDec, double &eRad)
   return imgset->getAverageErrors (eRa, eDec, eRad);
 }
 
+void
+Rts2Obs::maskState (int newBits)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_obs_id = obs_id;
+  int db_newBits = newBits;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL UPDATE
+    observations 
+  SET
+    obs_state = obs_state | newBits
+  WHERE
+    obs_id = :db_obs_id;
+  if (sqlca.sqlcode)
+  {
+    syslog (LOG_ERR, "Rts2Obs::maskState: %m (%i)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    return;
+  }
+  obs_state |= newBits;
+}
+
+void
+Rts2Obs::unmaskState (int newBits)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_obs_id = obs_id;
+  int db_newBits = ~newBits;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL UPDATE
+    observations 
+  SET
+    obs_state = obs_state & newBits
+  WHERE
+    obs_id = :db_obs_id;
+  if (sqlca.sqlcode)
+  {
+    syslog (LOG_ERR, "Rts2Obs::unmaskState: %m (%i)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    return;
+  }
+  obs_state |= newBits;
+}
+
 std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
 {
   std::ios_base::fmtflags old_settings = _os.flags ();

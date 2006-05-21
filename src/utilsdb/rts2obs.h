@@ -113,6 +113,9 @@ public:
   int getFirstErrors (double &eRa, double &eDec, double &eRad);
   int getAverageErrors (double &eRa, double &eDec, double &eRad);
 
+  void maskState (int newBits);
+  void unmaskState (int newBits);
+
   friend std::ostream & operator << (std::ostream & _os, Rts2Obs & obs);
 };
 

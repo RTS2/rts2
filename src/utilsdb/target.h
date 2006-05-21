@@ -112,6 +112,8 @@
 #define OBS_BIT_INTERUPED	0x10
 // when acqusition failed
 #define OBS_BIT_ACQUSITION_FAI	0x20
+// observation was processed
+#define OBS_BIT_PROCESSED	0x40
 
 // send message when observation stars
 #define SEND_START_OBS		0x01
