@@ -358,8 +358,10 @@ Rts2Obs::maskState (int newBits)
   if (sqlca.sqlcode)
   {
     syslog (LOG_ERR, "Rts2Obs::maskState: %m (%i)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    EXEC SQL ROLLBACK;
     return;
   }
+  EXEC SQL COMMIT;
   obs_state |= newBits;
 }
 
@@ -380,8 +382,10 @@ Rts2Obs::unmaskState (int newBits)
   if (sqlca.sqlcode)
   {
     syslog (LOG_ERR, "Rts2Obs::unmaskState: %m (%i)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    EXEC SQL ROLLBACK;
     return;
   }
+  EXEC SQL COMMIT;
   obs_state |= newBits;
 }
 
