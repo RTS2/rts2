@@ -21,7 +21,7 @@ protected:
   char buf[100];
 public:
     Rts2Value (char *in_val_name);
-  int isValue (char *in_val_name)
+  int isValue (const char *in_val_name)
   {
     return !strcmp (in_val_name, valueName);
   }

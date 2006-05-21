@@ -268,7 +268,7 @@ public:
   {
   }
 
-  Rts2Value *getValue (char *value_name);
+  Rts2Value *getValue (const char *value_name);
 
   int getOtherType ();
   // set to -1 if we don't need timeout checks..
@@ -460,6 +460,11 @@ public:
   {
     return 0;
   }
+
+  /** 
+   * Return connection with minimum (integer) value.
+   */
+  Rts2Conn *getMinConn (const char *valueName);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

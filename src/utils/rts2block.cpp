@@ -901,7 +901,7 @@ Rts2Conn::dataReceived (Rts2ClientTCPDataConn * dataConn)
 }
 
 Rts2Value *
-Rts2Conn::getValue (char *value_name)
+Rts2Conn::getValue (const char *value_name)
 {
   if (otherDevice)
     {
@@ -1595,4 +1595,31 @@ Rts2Block::allQuesEmpty ()
 	}
     }
   return ret;
+}
+
+Rts2Conn *
+Rts2Block::getMinConn (const char *valueName)
+{
+  int lovestValue = INT_MAX;
+  Rts2Conn *minConn = NULL;
+  for (int i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Value *que_size;
+      Rts2Conn *conn;
+      conn = connections[i];
+      if (conn)
+	{
+	  que_size = conn->getValue (valueName);
+	  if (que_size)
+	    {
+	      if (que_size->getValueInteger () >= 0
+		  && que_size->getValueInteger () < lovestValue)
+		{
+		  minConn = conn;
+		  lovestValue = que_size->getValueInteger ();
+		}
+	    }
+	}
+    }
+  return minConn;
 }

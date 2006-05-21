@@ -50,7 +50,7 @@ Rts2DevClient::addValue (Rts2Value * value)
 }
 
 Rts2Value *
-Rts2DevClient::getValue (char *value_name)
+Rts2DevClient::getValue (const char *value_name)
 {
   std::vector < Rts2Value * >::iterator val_iter;
   for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
@@ -64,7 +64,7 @@ Rts2DevClient::getValue (char *value_name)
 }
 
 char *
-Rts2DevClient::getValueChar (char *value_name)
+Rts2DevClient::getValueChar (const char *value_name)
 {
   Rts2Value *val;
   val = getValue (value_name);
@@ -74,7 +74,7 @@ Rts2DevClient::getValueChar (char *value_name)
 }
 
 double
-Rts2DevClient::getValueDouble (char *value_name)
+Rts2DevClient::getValueDouble (const char *value_name)
 {
   Rts2Value *val;
   val = getValue (value_name);
@@ -84,7 +84,7 @@ Rts2DevClient::getValueDouble (char *value_name)
 }
 
 int
-Rts2DevClient::getValueInteger (char *value_name)
+Rts2DevClient::getValueInteger (const char *value_name)
 {
   Rts2Value *val;
   val = getValue (value_name);

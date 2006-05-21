@@ -60,10 +60,10 @@ public:
   virtual ~ Rts2DevClient (void);
   virtual void postEvent (Rts2Event * event);
   void addValue (Rts2Value * value);
-  Rts2Value *getValue (char *value_name);
-  char *getValueChar (char *value_name);
-  double getValueDouble (char *value_name);
-  int getValueInteger (char *value_name);
+  Rts2Value *getValue (const char *value_name);
+  char *getValueChar (const char *value_name);
+  double getValueDouble (const char *value_name);
+  int getValueInteger (const char *value_name);
 
   virtual int commandValue (const char *name);
   virtual int command ();
