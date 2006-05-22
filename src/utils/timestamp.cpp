@@ -75,11 +75,17 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 	}
       if (diff / 60 >= 1 || print_all)
 	{
-	  _oss << std::setw (2) << (diff / 60) << ":";
+	  _oss << std::setw (2) << (diff / 60);
+	  if (!print_all)
+	    _oss << "m ";
+	  else
+	    _oss << ":";
 	  diff %= 60;
 	}
       _oss << std::setw (2) << diff << "." << std::
 	setw (3) << (int) (usec_diff / (USEC_SEC / 1000));
+      if (!print_all)
+	_oss << "s";
       _os << _oss.str ();
     }
   return _os;
