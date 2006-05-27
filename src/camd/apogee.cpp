@@ -891,7 +891,7 @@ Rts2DevCameraApogee::camChipInfo (int chip)
 int
 Rts2DevCameraApogee::camCoolMax ()
 {
-  return camCoolTemp (-30);
+  return camCoolHold ();
 }
 
 int
