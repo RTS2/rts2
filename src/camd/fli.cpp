@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2006 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -253,6 +253,7 @@ private:
   int camNum;
 
   int fliDebug;
+  int nflush;
 public:
     Rts2DevCameraFli (int in_argc, char **in_argv);
     virtual ~ Rts2DevCameraFli (void);
@@ -280,12 +281,14 @@ Rts2DevCamera (in_argc, in_argv)
   fliDebug = FLIDEBUG_NONE;
   hwRev = -1;
   camNum = -1;
+  nflush = -1;
   addOption ('D', "domain", 1,
 	     "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
   addOption ('R', "HW revision", 1, "find camera by HW revision");
   addOption ('b', "fli_debug", 1,
 	     "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
   addOption ('n', "number", 1, "Camera number (in FLI list)");
+  addOption ('l', "flush", 1, "Number of CCD flushes");
 }
 
 Rts2DevCameraFli::~Rts2DevCameraFli (void)
@@ -332,6 +335,9 @@ Rts2DevCameraFli::processOption (int in_opt)
       break;
     case 'n':
       camNum = atoi (optarg);
+      break;
+    case 'l':
+      nflush = atoi (optarg);
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -421,6 +427,18 @@ Rts2DevCameraFli::init ()
 
   if (ret)
     return -1;
+
+  if (nflush >= 0)
+    {
+      ret = FLISetNFlushes (dev, nflush);
+      if (ret)
+	{
+	  syslog (LOG_ERR, "Rts2DevCameraFli::init FLISetNFlushes ret: %li",
+		  ret);
+	  return -1;
+	}
+      syslog (LOG_DEBUG, "Rts2DevCameraFli::init set Nflush to %i", nflush);
+    }
 
   chipNum = 1;
   chips[0] = new CameraFliChip (this, 0, dev);
