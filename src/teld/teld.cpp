@@ -227,6 +227,7 @@ Rts2DevTelescope::dontKnowPosition ()
   knowPosition = 0;
   locCorRa = 0;
   locCorDec = 0;
+  locCorNum = -1;
 }
 
 void
@@ -504,7 +505,6 @@ Rts2DevTelescope::changeMasterState (int new_state)
     {
       moveMark = 0;
       numCorr = 0;
-      locCorNum = -1;
       dontKnowPosition ();
     }
   // park us during day..
@@ -717,19 +717,8 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       if (sep > 2)
 	dontKnowPosition ();
     }
-  // we received correction for last move..
-  if (locCorNum == moveMark)
-    {
-      // if we move too far from last correction
-      if (!knowPosition)
-	{
-	  locCorNum = -1;
-	  locCorRa = 0;
-	  locCorDec = 0;
-	}
-      tar_ra += locCorRa;
-      tar_dec += locCorDec;
-    }
+  tar_ra += locCorRa;
+  tar_dec += locCorDec;
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::startMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
 	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
@@ -823,19 +812,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
 	dontKnowPosition ();
     }
   infoAll ();
-  // we received correction for last move..and yes, we would like to apply it in resync
-  if (locCorNum == moveMark)
-    {
-      // if we move too far from last correction
-      if (!knowPosition)
-	{
-	  locCorNum = -1;
-	  locCorRa = 0;
-	  locCorDec = 0;
-	}
-      tar_ra += locCorRa;
-      tar_dec += locCorDec;
-    }
+  tar_ra += locCorRa;
+  tar_dec += locCorDec;
   if (isBellowResolution (locCorRa, locCorDec))
     {
       conn->sendCommandEnd (DEVDEM_E_IGNORE,
