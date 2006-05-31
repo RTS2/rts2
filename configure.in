@@ -145,6 +145,19 @@ AC_SUBST(OPENTPL)
 AC_SUBST(LIB_OPENTPL)
 AC_SUBST(INC_OPENTPL)
 
+# check for COMEDI
+AC_ARG_WITH(comedi,
+[  --with-comedi	path to COMEDI library, build comedi dependent binaries],
+COMEDI="${withval}";
+LIB_COMEDI="-lcomedi";
+INC_COMEDI="",
+[COMEDI=no])
+
+AM_CONDITIONAL(COMEDI, test x$COMEDI != xno)
+AC_SUBST(COMEDI)
+AC_SUBST(LIB_COMEDI)
+AC_SUBST(INC_COMEDI)
+
 # check for paramount library 
 AC_ARG_WITH(paralib,
 [  --with-paralib          path to Paramount library, build Paramount driver],
@@ -242,6 +255,13 @@ AC_SUBST(LIB_JPEG), [cat << EOF
 **** Please try to get it somewhere.
 EOF
 exit 1])
+
+#AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
+#AC_SUBST(LIB_COMEDI), [cat << EOF
+#**** You don't have comedi library installed.
+#**** Please try to get it somewhere.
+#EOF
+#exit 1])
 
 WWWUSER="none"
 

@@ -18,4 +18,10 @@ rts2_dome_dublin_SOURCES = dome.cpp dublin.cpp udpweather.cpp rts2connbufweather
 
 rts2_dome_dcm_SOURCES = dome.cpp dcm.cpp udpweather.cpp
 
+if COMEDI
+bin_PROGRAMS += rts2-dome-ir
+rts2_dome_ir_SOURCES = dome.cpp ir.cpp
+rts2_dome_ir_LDFLAGS = @LIB_COMEDI@
+endif
+
 rts2_weathertimeout_SOURCES = weathertimeout.cpp

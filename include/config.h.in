@@ -9,9 +9,6 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
-/* Define to 1 if you have the `atexit' function. */
-#undef HAVE_ATEXIT
-
 /* Define to 1 if you have the `bzero' function. */
 #undef HAVE_BZERO
 

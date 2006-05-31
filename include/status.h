@@ -38,7 +38,7 @@
 #define CAM_NODATA		0x00
 #define CAM_DATA		0x04
 
-#define CAM_MASK_FOCUSINGS	0x08
+#define CAM_MASK_FOCUSING	0x08
 
 #define CAM_NOFOCUSING		0x00
 #define CAM_FOCUSING		0x08
