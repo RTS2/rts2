@@ -22,16 +22,20 @@
 
 #include "dome.h"
 
+#define LEFT_CLOSE	0
+#define RIGHT_CLOSE	3
+#define LEFT_OPEN	1
+#define RIGHT_OPEN	2
+
 class Rts2DevDomeIR:public Rts2DevDome
 {
 private:
   char *dome_file;
   comedi_t *it;
-  double temp, humi, wind;
 
   int initDevice ();
-  int comediValue (int channel, double *value);
-  int getSNOW ();
+  int getPort (int channel, double *value);
+  int getSNOW (float *temp, float *humi, float *wind);
 
   int openLeft ();
   int openRight ();
@@ -54,12 +58,17 @@ public:
   virtual int observing ();
   virtual int baseInfo ();
   virtual int info ();
-/*
-  virtual int openDome ();
-  virtual long isOpened ();
-  virtual int closeDome ();
-  virtual long isClosed ();
-*/
+
+//  virtual int openDome ();
+//  virtual long isOpened ();
+//  virtual int closeDome ();
+//  virtual long isClosed ();
+  int openLeft ();
+  int openRight ();
+
+  int closeLeft ();
+  int closeRight ();
+
 };
 
 int
@@ -71,18 +80,24 @@ Rts2DevDomeIR::initDevice ()
 }
 
 int
-Rts2DevDomeIR::comediValue (int channel, double *value)
+Rts2DevDomeIR::getPort (int channel, double *value)
 {
   int subdev = 0;
   int max, range = 0;
   lsampl_t data;
   comedi_range *rqn;
   int aref = AREF_GROUND;
+  double tmp;
 
   max = comedi_get_maxdata (it, subdev, channel);
   rqn = comedi_get_range (it, subdev, channel, range);
   comedi_data_read (it, subdev, channel, range, aref, &data);
-  *value = comedi_to_phys (data, rqn, max);
+  tmp = comedi_to_phys (data, rqn, max);
+
+  if (isnan (tmp))
+    *value = -10;
+  else
+    *value = 10 * tmp;
 
   return 0;
 }
@@ -115,7 +130,7 @@ Rts2DevDomeIR::~Rts2DevDomeIR (void)
 }
 
 int
-Rts2DevDomeIR::getSNOW ()
+Rts2DevDomeIR::getSNOW (float *temp, float *humi, float *wind)
 {
   int sockfd, bytes_read, ret, i, j = 0;
   struct sockaddr_in dest;
@@ -190,15 +205,15 @@ Rts2DevDomeIR::getSNOW ()
       if (j == 6)
 	wind2 = atof (token);
       if (j == 18)
-	temp = atof (token);
+	*temp = atof (token);
       if (j == 24)
-	humi = atof (token);
+	*humi = atof (token);
     }
 
   if (wind1 > wind2)
-    wind = wind1;
+    *wind = wind1;
   else
-    wind = wind2;
+    *wind = wind2;
 
   return 0;
 }
@@ -215,12 +230,10 @@ Rts2DevDomeIR::info ()
      sw_state |= (getPortState (KONCAK_OTEVRENI_LEVY) << 1);
      sw_state |= (getPortState (KONCAK_ZAVRENI_PRAVY) << 2);
      sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
-     rain = weatherConn->getRain ();
    */
-  getSNOW ();
-  windspeed = wind;
-  temperature = temp;
-  humidity = humi;
+  //rain = weatherConn->getRain ();
+
+  getSNOW (&temperature, &humidity, &windspeed);
   nextOpen = getNextOpen ();
   return 0;
 }
