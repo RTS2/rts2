@@ -22,6 +22,8 @@
 
 #include "dome.h"
 
+#define BAUDRATE B9600
+
 #define LEFT_CLOSE	0
 #define RIGHT_CLOSE	3
 #define LEFT_OPEN	1
@@ -31,6 +33,7 @@ class Rts2DevDomeIR:public Rts2DevDome
 {
 private:
   char *dome_file;
+  int dome_port;
   comedi_t *it;
 
   int initDevice ();
@@ -41,6 +44,11 @@ private:
   int openRight ();
   int closeLeft ();
   int closeRight ();
+
+  int leftClosed ();
+  int rightClosed ();
+  int leftOpened ();
+  int rightOpened ();
 
 protected:
 //   virtual int processOption ();
@@ -63,11 +71,6 @@ public:
 //  virtual long isOpened ();
 //  virtual int closeDome ();
 //  virtual long isClosed ();
-  int openLeft ();
-  int openRight ();
-
-  int closeLeft ();
-  int closeRight ();
 
 };
 
@@ -100,6 +103,62 @@ Rts2DevDomeIR::getPort (int channel, double *value)
     *value = 10 * tmp;
 
   return 0;
+}
+
+int
+Rts2DevDomeIR::leftClosed ()
+{
+  int ret;
+  double val;
+
+  ret = getPort (LEFT_CLOSE, &val);
+
+  if (val == -10)
+    return 0;
+  else
+    return 1;
+}
+
+int
+Rts2DevDomeIR::rightClosed ()
+{
+  int ret;
+  double val;
+
+  ret = getPort (RIGHT_CLOSE, &val);
+
+  if (val == -10)
+    return 0;
+  else
+    return 1;
+}
+
+int
+Rts2DevDomeIR::leftOpened ()
+{
+  int ret;
+  double val;
+
+  ret = getPort (LEFT_OPEN, &val);
+
+  if (val == -10)
+    return 0;
+  else
+    return 1;
+}
+
+int
+Rts2DevDomeIR::rightOpened ()
+{
+  int ret;
+  double val;
+
+  ret = getPort (RIGHT_OPEN, &val);
+
+  if (val == -10)
+    return 0;
+  else
+    return 1;
 }
 
 Rts2DevDomeIR::Rts2DevDomeIR (int in_argc, char **in_argv):Rts2DevDome (in_argc,
@@ -226,11 +285,17 @@ Rts2DevDomeIR::info ()
      ret = zjisti_stav_portu ();
      if (ret)
      return -1;
+   */
+  /*
      sw_state = getPortState (KONCAK_OTEVRENI_PRAVY);
      sw_state |= (getPortState (KONCAK_OTEVRENI_LEVY) << 1);
      sw_state |= (getPortState (KONCAK_ZAVRENI_PRAVY) << 2);
      sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
    */
+  if (leftClosed () && rightClosed ())
+    sw_state = 4;
+  if (leftOpened () && rightOpened ())
+    sw_state = 1;
   //rain = weatherConn->getRain ();
 
   getSNOW (&temperature, &humidity, &windspeed);
@@ -273,9 +338,64 @@ Rts2DevDomeIR::idle ()
 int
 Rts2DevDomeIR::init ()
 {
+  struct termios oldtio, newtio;
+
   int ret = Rts2DevDome::init ();
   if (ret)
     return ret;
+
+  dome_port = open (dome_file, O_RDWR | O_NOCTTY);
+  if (dome_port == -1)
+    return -1;
+
+  ret = tcgetattr (dome_port, &oldtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeIR::init tcgetattr %m");
+      return -1;
+    }
+
+  newtio = oldtio;
+
+  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+  newtio.c_iflag = IGNPAR;
+  newtio.c_oflag = 0;
+  newtio.c_lflag = 0;
+  newtio.c_cc[VMIN] = 0;
+  newtio.c_cc[VTIME] = 1;
+
+  tcflush (dome_port, TCIOFLUSH);
+  ret = tcsetattr (dome_port, TCSANOW, &newtio);
+  if (ret)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeIR::init tcsetattr %m");
+      return -1;
+    }
+
+  return 0;
+}
+
+int
+Rts2DevDomeIR::openLeft ()
+{
+  return 0;
+}
+
+int
+Rts2DevDomeIR::openRight ()
+{
+  return 0;
+}
+
+int
+Rts2DevDomeIR::closeLeft ()
+{
+  return 0;
+}
+
+int
+Rts2DevDomeIR::closeRight ()
+{
   return 0;
 }
 
