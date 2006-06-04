@@ -147,6 +147,9 @@ Rts2Soapd::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_MOUNT:
       cli = new Rts2DevClientTelescopeSoap (conn);
       break;
+    case DEVICE_TYPE_EXECUTOR:
+      cli = new Rts2DevClientExecutorSoap (conn);
+      break;
     default:
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
@@ -166,6 +169,13 @@ int
 ns1__getEqu (struct soap *soap, ns1__getEquResponse & res)
 {
   soapd->postEvent (new Rts2Event (EVENT_SOAP_TEL_GETEQU, (void *) &res));
+  return SOAP_OK;
+}
+
+int
+ns1__getExec (struct soap *soap, ns1__getExecResponse & res)
+{
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_EXEC_GETST, (void *) &res));
   return SOAP_OK;
 }
 

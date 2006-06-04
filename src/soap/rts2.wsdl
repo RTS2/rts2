@@ -45,6 +45,22 @@
  </operation>
 </portType>
 
+<message name="getExecRequest">
+</message>
+
+<message name="getExecResponse">
+  <part name="current" type="xsd:int"/>
+  <part name="next" type="xsd:int"/>
+</message>
+
+<portType name="exec">
+  <operation name="getExec">
+    <documentation>Get current and next target.</documentation>
+    <input message="tns:getExecRequest"/>
+    <output message="tns:getExecResponse"/>
+  </operation>
+</portType>
+
 <binding name="rts2" type="tns:equ">
  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
  <operation name="getEqu">
@@ -56,6 +72,19 @@
      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
   </output>
  </operation>
+</binding>
+
+<binding name="rts2" type="tns:exec">
+  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getExec">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
 </binding>
 
 <service name="rts2">
