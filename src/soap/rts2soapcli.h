@@ -6,6 +6,7 @@
 
 #define EVENT_SOAP_TEL_GETEQU  RTS2_LOCAL_EVENT+1000
 #define EVENT_SOAP_EXEC_GETST  RTS2_LOCAL_EVENT+1001
+#define EVENT_SOAP_DOME_GETST  RTS2_LOCAL_EVENT+1002
 
 class Rts2DevClientTelescopeSoap:public Rts2DevClientTelescope
 {
@@ -18,6 +19,13 @@ class Rts2DevClientExecutorSoap:public Rts2DevClientExecutor
 {
 public:
   Rts2DevClientExecutorSoap (Rts2Conn * in_connection);
+  virtual void postEvent (Rts2Event * event);
+};
+
+class Rts2DevClientDomeSoap:public Rts2DevClientDome
+{
+public:
+  Rts2DevClientDomeSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
 

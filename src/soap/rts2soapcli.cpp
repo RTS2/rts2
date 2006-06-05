@@ -35,10 +35,30 @@ Rts2DevClientExecutorSoap::postEvent (Rts2Event * event)
     case EVENT_SOAP_EXEC_GETST:
       res = (ns1__getExecResponse *) event->getArg ();
       res->current = getValueInteger ("current_sel");
-      res->next = getValueInteger ("priority_target");
-      // res->obsid = getStatus (0);
+      // res->name = getValueChar ("current_info");
+      res->next = getValueInteger ("obsid");
       break;
     }
 
   Rts2DevClientExecutor::postEvent (event);
+}
+
+Rts2DevClientDomeSoap::Rts2DevClientDomeSoap (Rts2Conn * in_connection):Rts2DevClientDome
+  (in_connection)
+{
+}
+
+void
+Rts2DevClientDomeSoap::postEvent (Rts2Event * event)
+{
+  struct ns1__getDomeResponse *res;
+  switch (event->getType ())
+    {
+    case EVENT_SOAP_DOME_GETST:
+      res = (ns1__getDomeResponse *) event->getArg ();
+      res->temp = getValueDouble ("temperature");
+      res->humi = getValueDouble ("humidity");
+      res->wind = getValueDouble ("windspeed");
+      break;
+    }
 }
