@@ -676,6 +676,8 @@ public:
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd);
+
+  virtual void printExtra (std::ostream & _os, double JD);
 };
 
 class DarkTarget;

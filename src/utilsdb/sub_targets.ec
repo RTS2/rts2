@@ -254,6 +254,20 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
   return ln_get_ell_body_rst (JD, observer, &orbit, rst);
 }
 
+void
+EllTarget::printExtra (std::ostream & _os, double JD)
+{
+  Target::printExtra (_os, JD);
+  _os
+    << InfoVal<TimeJD> ("EPOCH", TimeJD (orbit.JD))
+    << InfoVal<double> ("n", orbit.n)
+    << InfoVal<double> ("a", orbit.a)
+    << InfoVal<double> ("e", orbit.e)
+    << InfoVal<double> ("Peri.", orbit.w)
+    << InfoVal<double> ("Node", orbit.omega)
+    << InfoVal<double> ("Incl.", orbit.i);
+}
+
 PossibleDarks::PossibleDarks (DarkTarget *in_target, const char *in_deviceName)
 {
   deviceName = new char [strlen (in_deviceName) + 1];
