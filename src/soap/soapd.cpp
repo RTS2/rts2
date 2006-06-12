@@ -44,7 +44,7 @@ Rts2SoapConn::acceptConn ()
 {
   int s;
   s = soap_accept (&soap);
-  fprintf (stderr, "Socket connection successful: slave socket = %d\n", s);
+//  fprintf (stderr, "Socket connection successful: slave socket = %d\n", s);
   if (s < 0)
     {
       soap_print_fault (&soap, stderr);
@@ -180,6 +180,11 @@ int
 ns1__getTelescope (struct soap *in_soap, char *name,
 		   ns1__getTelescopeResponse & res)
 {
+  res.tel = soap_new_ns1__telescope (in_soap, 1);
+  res.tel->target = soap_new_ns1__radec (in_soap, 1);
+  res.tel->mount = soap_new_ns1__radec (in_soap, 1);
+  res.tel->astrometry = soap_new_ns1__radec (in_soap, 1);
+  res.tel->err = soap_new_ns1__radec (in_soap, 1);
   soapd->postEvent (new Rts2Event (EVENT_SOAP_TEL_GET, (void *) &res));
   return SOAP_OK;
 }

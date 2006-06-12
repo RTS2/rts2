@@ -41,15 +41,32 @@ Rts2TestSoap::run ()
 {
   struct soap soap;
   struct ns1__getEquResponse res;
+  struct ns1__getTelescopeResponse resTel;
   int ret;
 
   soap_init (&soap);
 
   ret = soap_call_ns1__getEqu (&soap, server, "", res);
   if (ret != SOAP_OK)
-    std::cout << "Cannot connect to SOAP server: " << ret << std::endl;
-  else
-    std::cout << res.radec->ra << " " << res.radec->dec << std::endl;
+    {
+      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+      return ret;
+    }
+  std::cout << res.radec->ra << " " << res.radec->dec << std::endl;
+
+  ret = soap_call_ns1__getTelescope (&soap, server, "", "T0", resTel);
+  if (ret != SOAP_OK)
+    {
+      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+      return ret;
+    }
+  std::cout
+    << resTel.tel->target->ra << " " << resTel.tel->target->dec << std::endl
+    << resTel.tel->mount->ra << " " << resTel.tel->mount->dec << std::endl
+    << resTel.tel->astrometry->ra << " " << resTel.tel->astrometry->
+    dec << std::endl << resTel.tel->err->ra << " " << resTel.tel->err->
+    dec << std::endl;
+
   return ret;
 }
 

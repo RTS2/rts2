@@ -9,12 +9,29 @@ void
 Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
 {
   struct ns1__getEquResponse *res;
+  struct ns1__getTelescopeResponse *resTel;
   switch (event->getType ())
     {
     case EVENT_SOAP_TEL_GETEQU:
       res = (ns1__getEquResponse *) event->getArg ();
       res->radec->ra = getValueDouble ("ra");
       res->radec->dec = getValueDouble ("dec");
+      break;
+    case EVENT_SOAP_TEL_GET:
+      resTel = (ns1__getTelescopeResponse *) event->getArg ();
+
+      resTel->tel->target->ra = getValueDouble ("ra_tar");
+      resTel->tel->target->dec = getValueDouble ("dec_tar");
+
+      resTel->tel->mount->ra = getValueDouble ("ra_tel");
+      resTel->tel->mount->dec = getValueDouble ("dec_tel");
+
+      resTel->tel->astrometry->ra = getValueDouble ("ra");
+      resTel->tel->astrometry->dec = getValueDouble ("dec");
+
+      resTel->tel->err->ra = getValueDouble ("ra_corr");
+      resTel->tel->err->dec = getValueDouble ("dec_corr");
+
       break;
     }
 
