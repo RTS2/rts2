@@ -13,8 +13,8 @@ Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
     {
     case EVENT_SOAP_TEL_GETEQU:
       res = (ns1__getEquResponse *) event->getArg ();
-      res->ra = getValueDouble ("ra");
-      res->dec = getValueDouble ("dec");
+      res->radec->ra = getValueDouble ("ra");
+      res->radec->dec = getValueDouble ("dec");
       break;
     }
 

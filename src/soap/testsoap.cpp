@@ -46,7 +46,10 @@ Rts2TestSoap::run ()
   soap_init (&soap);
 
   ret = soap_call_ns1__getEqu (&soap, server, "", res);
-  std::cout << res.ra << " " << res.dec << std::endl;
+  if (ret != SOAP_OK)
+    std::cout << "Cannot connect to SOAP server: " << ret << std::endl;
+  else
+    std::cout << res.radec->ra << " " << res.radec->dec << std::endl;
   return ret;
 }
 

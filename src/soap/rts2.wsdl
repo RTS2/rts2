@@ -25,6 +25,20 @@
   elementFormDefault="unqualified"
   attributeFormDefault="unqualified">
   <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+  <complexType name="radec">
+    <sequence>
+      <element name="ra" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="dec" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
+  <complexType name="telescope">
+    <sequence>
+      <element name="target" type="ns:radec" minOccurs="1" maxOccurs="1"/>
+      <element name="mount" type="ns:radec" minOccurs="1" maxOccurs="1"/>
+      <element name="astrometry" type="ns:radec" minOccurs="1" maxOccurs="1"/>
+      <element name="err" type="ns:radec" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
  </schema>
 
 </types>
@@ -33,15 +47,27 @@
 </message>
 
 <message name="getEquResponse">
- <part name="ra" type="xsd:double"/>
- <part name="dec" type="xsd:double"/>
+ <part name="radec" type="ns:radec"/>
 </message>
 
-<portType name="equ">
+<message name="getTelRequest">
+  <part name="name" type="xsd:string"/>
+</message>
+
+<message name="getTelResponse">
+ <part name="tel" type="ns:telescope"/>
+</message>
+
+<portType name="tel">
  <operation name="getEqu">
   <documentation>Get current coordinates of the telescope.</documentation>
   <input message="tns:getEquRequest"/>
   <output message="tns:getEquResponse"/>
+ </operation>
+ <operation name="getTelescope">
+  <documentation>Get telescope info.</documentation>
+  <input message="tns:getTelRequest"/>
+  <output message="tns:getTelResponse"/>
  </operation>
 </portType>
 
@@ -78,15 +104,24 @@
   </operation>
 </portType>
 
-<binding name="rts2" type="tns:equ">
+<binding name="rts2" type="tns:tel">
  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
  <operation name="getEqu">
-  <SOAP:operation style="rpc" soapAction=""/>
+  <SOAP:operation style="rpc" soapaction=""/>
   <input>
-     <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+     <SOAP:body use="encoded" namespace="urn:rts2" encodingstyle="http://schemas.xmlsoap.org/soap/encoding/"/>
   </input>
   <output>
-     <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+     <SOAP:body use="encoded" namespace="urn:rts2" encodingstyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+  </output>
+ </operation>
+ <operation name="getTelescope">
+  <SOAP:operation style="rpc" soapaction=""/>
+  <input>
+     <SOAP:body use="encoded" namespace="urn:rts2" encodingstyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+  </input>
+  <output>
+     <SOAP:body use="encoded" namespace="urn:rts2" encodingstyle="http://schemas.xmlsoap.org/soap/encoding/"/>
   </output>
  </operation>
 </binding>

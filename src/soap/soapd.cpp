@@ -169,21 +169,30 @@ Rts2Soapd::sendInfo (Rts2Conn * conn)
 Rts2Soapd *soapd;
 
 int
-ns1__getEqu (struct soap *soap, ns1__getEquResponse & res)
+ns1__getEqu (struct soap *in_soap, ns1__getEquResponse & res)
 {
+  res.radec = soap_new_ns1__radec (in_soap, 1);
   soapd->postEvent (new Rts2Event (EVENT_SOAP_TEL_GETEQU, (void *) &res));
   return SOAP_OK;
 }
 
 int
-ns1__getExec (struct soap *soap, ns1__getExecResponse & res)
+ns1__getTelescope (struct soap *in_soap, char *name,
+		   ns1__getTelescopeResponse & res)
+{
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_TEL_GET, (void *) &res));
+  return SOAP_OK;
+}
+
+int
+ns1__getExec (struct soap *in_soap, ns1__getExecResponse & res)
 {
   soapd->postEvent (new Rts2Event (EVENT_SOAP_EXEC_GETST, (void *) &res));
   return SOAP_OK;
 }
 
 int
-ns1__getDome (struct soap *soap, ns1__getDomeResponse & res)
+ns1__getDome (struct soap *in_soap, ns1__getDomeResponse & res)
 {
   soapd->postEvent (new Rts2Event (EVENT_SOAP_DOME_GETST, (void *) &res));
   return SOAP_OK;
