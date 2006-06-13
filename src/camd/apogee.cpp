@@ -905,6 +905,7 @@ Rts2DevCameraApogee::camCoolShutdown ()
 {
   Camera_CoolerMode cMode;
   cMode = camera->read_CoolerMode ();
+  camera->write_CoolerSetPoint (+20);
   // first shutdown, if we are in shutdown, then off
   if (cMode == Camera_CoolerMode_Shutdown)
     camera->write_CoolerMode (Camera_CoolerMode_Off);
