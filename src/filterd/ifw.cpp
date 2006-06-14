@@ -23,11 +23,15 @@ class Rts2DevFilterdIfw:public Rts2DevFilterd
   int writePort (char *buf, size_t len);
   int readPort (size_t len);
   int shutdown ();
+  void homeFilter ();
+
+  int homeCount;
 public:
     Rts2DevFilterdIfw (int in_argc, char **in_argv);
     virtual ~ Rts2DevFilterdIfw (void);
   virtual int processOption (int in_opt);
   virtual int init (void);
+  virtual int changeMasterState (int new_state);
   virtual int getFilterNum (void);
   virtual int setFilterNum (int new_filter);
 };
@@ -58,6 +62,21 @@ Rts2DevFilterdIfw::readPort (size_t len)
     }
   filter_buff[ret] = '\0';
   return 0;
+}
+
+void
+Rts2DevFilterdIfw::homeFilter ()
+{
+  int ret;
+  ret = writePort ("WHOME\r", 6);
+  if (ret == -1)
+    return;
+  readPort (4);
+  if (strstr (filter_buff, "ER"))
+    {
+      syslog (LOG_ERR, "Rts2DevFilterdIfw::init error while homing: %s",
+	      filter_buff);
+    }
 }
 
 int
@@ -93,6 +112,7 @@ Rts2DevFilterdIfw::Rts2DevFilterdIfw (int in_argc, char **in_argv):Rts2DevFilter
 		in_argv)
 {
   dev_port = -1;
+  homeCount = 0;
 
   addOption ('f', "device_name", 1, "device name (/dev..)");
 }
@@ -176,8 +196,8 @@ Rts2DevFilterdIfw::init (void)
   term_options.c_cflag &= ~CSIZE;
   term_options.c_cflag |= CS8;
 
-  /* set timeout  to 10 seconds */
-  term_options.c_cc[VTIME] = 80;
+  /* set timeout  to 20 seconds */
+  term_options.c_cc[VTIME] = 200;
   term_options.c_cc[VMIN] = 0;
 
   tcflush (dev_port, TCIFLUSH);
@@ -209,6 +229,24 @@ Rts2DevFilterdIfw::init (void)
   syslog (LOG_DEBUG, "Rts2DevFilterdIfw::init Filter wheel initialised: %s",
 	  filter_buff);
   return 0;
+}
+
+int
+Rts2DevFilterdIfw::changeMasterState (int new_state)
+{
+  switch (new_state)
+    {
+    case SERVERD_DUSK:
+    case SERVERD_NIGHT:
+    case SERVERD_DAWN:
+      break;
+    default:
+      // home FW when we will not need it
+      homeFilter ();
+      homeCount = 0;
+      break;
+    }
+  return Rts2Device::changeMasterState (new_state);
 }
 
 int
@@ -264,12 +302,19 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
       syslog (LOG_ERR,
 	      "Rts2DevFilterdIfw::setFilterNum FILTER WHEEL ERROR: %s",
 	      filter_buff);
+      // make sure we will home filter, but home only once if there is still error
+      if (homeCount == 0)
+	{
+	  homeFilter ();
+	  homeCount++;
+	}
       ret = -1;
     }
   else
     {
       syslog (LOG_DEBUG, "Rts2DevFilterdIfw::setFilterNum Set filter: %s\n",
 	      filter_buff);
+      homeCount = 0;
       ret = 0;
     }
 
