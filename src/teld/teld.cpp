@@ -947,10 +947,17 @@ Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
 {
   int ret;
   syslog (LOG_DEBUG, "Rts2DevTelescope::change %f %f", chng_ra, chng_dec);
-  ret = info ();
-  if (ret)
-    return -2;
-  ret = setTarget (telRa + chng_ra, telDec + chng_dec);
+  if (lastTar.ra < 0)
+    {
+      ret = info ();
+      if (ret)
+	return ret;
+      ret = setTarget (telRa + chng_ra, telDec + chng_dec);
+    }
+  else
+    {
+      ret = setTarget (lastTar.ra + chng_ra, lastTar.dec + chng_dec);
+    }
   if (ret == 0)
     {
       conn->sendCommandEnd (DEVDEM_E_IGNORE, "move will not be performed");

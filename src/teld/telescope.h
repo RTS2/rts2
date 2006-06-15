@@ -228,8 +228,8 @@ public:
   }
   virtual int change (double chng_ra, double chng_dec)
   {
-    // we have actual telRa, as Rts2DevTelescope::change (Rts2Conn ..) calls info
-    return startMove (telRa + chng_ra, telDec + chng_dec);
+    // ::change (Rts2Conn * conn.. calls setTarget with new target coordinates
+    return startMove (lastTar.ra, lastTar.dec);
   }
   virtual int saveModel ()
   {
