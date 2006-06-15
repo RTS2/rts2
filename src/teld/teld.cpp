@@ -800,7 +800,6 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
     {
       syslog (LOG_DEBUG,
 	      "Rts2DevTelescope::startResyncMove called wrong - calling startMove!");
-      applyCorrections (tar_ra, tar_dec);
       return startMove (conn, tar_ra, tar_dec);
     }
   if (knowPosition)
