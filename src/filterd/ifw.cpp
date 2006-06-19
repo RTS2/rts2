@@ -55,7 +55,7 @@ Rts2DevFilterdIfw::readPort (size_t len)
 {
   int ret;
   ret = read (dev_port, filter_buff, len);
-  if (ret == -1)
+  if (ret <= 0)
     {
       syslog (LOG_ERR, "Rts2DevFilterdIfw::readPort %m");
       filter_buff[0] = '\0';
