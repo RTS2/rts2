@@ -36,6 +36,8 @@ public:
   virtual int init ();
   int startExposureInterleaved (int light, float exptime, int ccdFlags = 0)
   {
+    if (exptime < 10)
+      return -1;
     return startExposure (light, exptime, ccdFlags, 1);
   }
   virtual int startExposure (int light, float exptime)
