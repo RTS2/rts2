@@ -18,6 +18,7 @@
 
 #include "filterd.h"
 #include "libfli.h"
+#include "libfli-filter-focuser.h"
 
 #include <signal.h>
 
