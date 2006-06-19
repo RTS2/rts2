@@ -35,6 +35,8 @@ private:
   // high-level I/O functions
   int getPos (int *position);
   int getTemp (float *temperature);
+protected:
+    virtual bool isAtStartPosition ();
 public:
     Rts2DevFocuserOptec (int argc, char **argv);
    ~Rts2DevFocuserOptec (void);
@@ -235,7 +237,9 @@ Rts2DevFocuserOptec::init ()
   if (rbuf[0] != '!')
     return -1;
 
-  return 0;
+  ret = checkStartPosition ();
+
+  return ret;
 }
 
 int
@@ -272,6 +276,16 @@ Rts2DevFocuserOptec::getTemp (float *temp)
       *temp = atof ((rbuf + 2));
     }
   return 0;
+}
+
+bool
+Rts2DevFocuserOptec::isAtStartPosition ()
+{
+  int ret;
+  ret = getPos (&focPos);
+  if (ret)
+    return false;
+  return (focPos == 3500);
 }
 
 int

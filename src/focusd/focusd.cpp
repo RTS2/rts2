@@ -29,12 +29,15 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
   focCamera[0] = '\0';
   focStepSec = 100;
   homePos = 750;
+  startPosition = INT_MIN;
 
   focSwitches = 0;
   switchNum = 0;		// zero switches
 
   addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
   addOption ('o', "home", 1, "home position (default to 750!)");
+  addOption ('p', "start_position", 1,
+	     "focuser start position (focuser will be set to this one, if initial position is detected");
 }
 
 int
@@ -48,6 +51,9 @@ Rts2DevFocuser::processOption (int in_opt)
       break;
     case 'o':
       homePos = atoi (optarg);
+      break;
+    case 'p':
+      startPosition = atoi (optarg);
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -232,8 +238,23 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-Rts2DevConnFocuser::Rts2DevConnFocuser (int in_sock,
-					Rts2DevFocuser * in_master_device):
+bool
+Rts2DevFocuser::isAtStartPosition ()
+{
+  return false;
+}
+
+int
+Rts2DevFocuser::checkStartPosition ()
+{
+  if (startPosition != INT_MIN && isAtStartPosition ())
+    {
+      return setTo (startPosition);
+    }
+  return 0;
+}
+
+Rts2DevConnFocuser::Rts2DevConnFocuser (int in_sock, Rts2DevFocuser * in_master_device):
 Rts2DevConn (in_sock, in_master_device)
 {
   master = in_master_device;

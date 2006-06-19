@@ -26,11 +26,15 @@ protected:
   int switchNum;
   // minimal steps/sec count; 5 sec will be added to top it
   int focStepSec;
+  int startPosition;
 
   virtual int isFocusing ();
   virtual int endFocusing ();
 
   void setFocusTimeout (int timeout);
+
+  virtual bool isAtStartPosition ();
+  int checkStartPosition ();
 public:
     Rts2DevFocuser (int argc, char **argv);
   virtual int processOption (int in_opt);
