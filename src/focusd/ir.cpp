@@ -307,14 +307,14 @@ Rts2DevFocuserIr::endFocusing ()
   return 0;
 }
 
-int
+bool
 Rts2DevFocuserIr::isAtStartPosition ()
 {
   int ret;
   ret = info ();
   if (ret)
     return false;
-  return (fabs (focPos) < 50);
+  return (fabs ((float) focPos) < 50);
 }
 
 int
