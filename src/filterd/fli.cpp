@@ -30,13 +30,19 @@ private:
   long filter_count;
 
   int fliDebug;
+
+protected:
+    virtual int getFilterNum (void);
+  virtual int setFilterNum (int new_filter);
+
+
 public:
     Rts2DevFilterdFli (int in_argc, char **in_argv);
     virtual ~ Rts2DevFilterdFli (void);
   virtual int processOption (int in_opt);
   virtual int init (void);
-  virtual int getFilterNum (void);
-  virtual int setFilterNum (int new_filter);
+
+  virtual int homeFilter ();
 };
 
 
@@ -159,6 +165,12 @@ Rts2DevFilterdFli::setFilterNum (int new_filter)
   if (ret)
     return -1;
   return 0;
+}
+
+int
+Rts2DevFilterdFli::homeFilter ()
+{
+  return setFilterNum (FLI_FILTERPOSITION_HOME);
 }
 
 Rts2DevFilterdFli *device = NULL;

@@ -55,6 +55,12 @@ Rts2DevFilterd::setFilterNum (int new_filter)
 }
 
 int
+Rts2DevFilterd::homeFilter ()
+{
+  return -1;
+}
+
+int
 Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
 {
   int ret;
@@ -86,6 +92,12 @@ Rts2DevConnFilter::commandAuthorized ()
       if (paramNextInteger (&new_filter) || !paramEnd ())
 	return -2;
       return master->setFilterNum (this, new_filter);
+    }
+  else if (isCommand ("home"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->homeFilter ();
     }
   else if (isCommand ("help"))
     {

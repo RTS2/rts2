@@ -23,7 +23,6 @@ class Rts2DevFilterdIfw:public Rts2DevFilterd
   int writePort (char *buf, size_t len);
   int readPort (size_t len);
   int shutdown ();
-  void homeFilter ();
 
   int homeCount;
 public:
@@ -34,6 +33,8 @@ public:
   virtual int changeMasterState (int new_state);
   virtual int getFilterNum (void);
   virtual int setFilterNum (int new_filter);
+
+  virtual int homeFilter ();
 };
 
 int
@@ -64,19 +65,21 @@ Rts2DevFilterdIfw::readPort (size_t len)
   return 0;
 }
 
-void
+int
 Rts2DevFilterdIfw::homeFilter ()
 {
   int ret;
   ret = writePort ("WHOME\r", 6);
   if (ret == -1)
-    return;
+    return ret;
   readPort (4);
   if (strstr (filter_buff, "ER"))
     {
       syslog (LOG_ERR, "Rts2DevFilterdIfw::init error while homing: %s",
 	      filter_buff);
+      return -1;
     }
+  return 0;
 }
 
 int

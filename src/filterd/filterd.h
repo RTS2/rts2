@@ -35,6 +35,8 @@ public:
   virtual int sendBaseInfo (Rts2Conn * conn);
 
   int setFilterNum (Rts2DevConnFilter * conn, int new_filter);
+
+  virtual int homeFilter ();
 };
 
 class Rts2DevConnFilter:public Rts2DevConn
