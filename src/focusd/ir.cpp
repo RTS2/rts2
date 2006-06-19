@@ -36,6 +36,7 @@ private:
   // int foc_pos_set (int pos);
 protected:
     virtual int endFocusing ();
+  virtual bool isAtStartPosition ();
 public:
     Rts2DevFocuserIr (int argc, char **argv);
     virtual ~ Rts2DevFocuserIr (void);
@@ -304,6 +305,16 @@ Rts2DevFocuserIr::endFocusing ()
       return -1;
     }
   return 0;
+}
+
+int
+Rts2DevFocuserIr::isAtStartPosition ()
+{
+  int ret;
+  ret = info ();
+  if (ret)
+    return false;
+  return (fabs (focPos) < 50);
 }
 
 int
