@@ -181,7 +181,9 @@ Rts2DevFocuserIr::init ()
       return -1;
     }
 
-  return 0;
+  ret = checkStartPosition ();
+
+  return ret;
 }
 
 int
@@ -307,10 +309,10 @@ Rts2DevFocuserIr::endFocusing ()
   return 0;
 }
 
-bool
-Rts2DevFocuserIr::isAtStartPosition ()
+bool Rts2DevFocuserIr::isAtStartPosition ()
 {
-  int ret;
+  int
+    ret;
   ret = info ();
   if (ret)
     return false;
@@ -320,9 +322,11 @@ Rts2DevFocuserIr::isAtStartPosition ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevFocuserIr *device = new Rts2DevFocuserIr (argc, argv);
+  Rts2DevFocuserIr *
+    device = new Rts2DevFocuserIr (argc, argv);
 
-  int ret;
+  int
+    ret;
   ret = device->init ();
   if (ret)
     {
@@ -330,5 +334,6 @@ main (int argc, char **argv)
       exit (0);
     }
   device->run ();
-  delete device;
+  delete
+    device;
 }

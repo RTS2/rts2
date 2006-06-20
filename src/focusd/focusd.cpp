@@ -167,9 +167,16 @@ Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
 
   ret = stepOut (num);
   if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
+    {
+      if (conn)
+	{
+	  conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
+	}
+    }
   else
-    maskState (0, FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
+    {
+      maskState (0, FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
+    }
   return ret;
 }
 
@@ -249,7 +256,7 @@ Rts2DevFocuser::checkStartPosition ()
 {
   if (startPosition != INT_MIN && isAtStartPosition ())
     {
-      return setTo (startPosition);
+      return setTo (NULL, startPosition);
     }
   return 0;
 }
