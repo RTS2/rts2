@@ -53,6 +53,8 @@ private:
   void checkCover ();
   void checkPower ();
 
+  void initCoverState ();
+
     std::list < ErrorTime * >errorcodes;
   int irTracking;
   char *irConfig;

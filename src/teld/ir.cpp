@@ -101,12 +101,15 @@ int
 Rts2DevTelescopeIr::coverClose ()
 {
   int status = 0;
+  double targetPos;
   if (cover_state == CLOSED)
     return 0;
   status = tpl_set ("COVER.TARGETPOS", 0, &status);
   status = tpl_set ("COVER.POWER", 1, &status);
+  status = tpl_get ("COVER.TARGETPOS", targetPos, &status);
   cover_state = CLOSING;
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::coverClose status: %i", status);
+  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::coverClose status: %i targetPos:%f",
+	  status, targetPos);
   return status;
 }
 
@@ -218,7 +221,6 @@ int
 Rts2DevTelescopeIr::init ()
 {
   int ret;
-  int status = 0;
   ret = Rts2DevTelescope::init ();
   if (ret)
     return ret;
@@ -227,13 +229,7 @@ Rts2DevTelescopeIr::init ()
   if (ret)
     return ret;
 
-  tpl_get ("COVER.REALPOS", cover, &status);
-  if (cover == 0)
-    cover_state = CLOSED;
-  else if (cover == 1)
-    cover_state = OPENED;
-  else
-    cover_state = CLOSING;
+  initCoverState ();
   return 0;
 }
 
@@ -478,6 +474,32 @@ Rts2DevTelescopeIr::checkPower ()
 	}
       sleep (1);
     }
+  // force close of cover..
+  initCoverState ();
+  switch (getMasterState ())
+    {
+    case SERVERD_DUSK:
+    case SERVERD_NIGHT:
+    case SERVERD_DAWN:
+      coverOpen ();
+      break;
+    default:
+      coverClose ();
+      break;
+    }
+}
+
+void
+Rts2DevTelescopeIr::initCoverState ()
+{
+  int status = 0;
+  tpl_get ("COVER.REALPOS", cover, &status);
+  if (cover == 0)
+    cover_state = CLOSED;
+  else if (cover == 1)
+    cover_state = OPENED;
+  else
+    cover_state = CLOSING;
 }
 
 int
