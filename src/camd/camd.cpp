@@ -420,6 +420,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   defFocusExposure = 10;
 
   gain = nan ("f");
+  defaultGain = nan ("f");
   rnoise = nan ("f");
 
   // cooling & other options..
@@ -480,6 +481,8 @@ Rts2DevCamera::cancelPriorityOperations ()
   setTimeout (USEC_SEC);
   // init states etc..
   clearStatesPriority ();
+  if (!isnan (defaultGain))
+    setGain (defaultGain);
   Rts2Device::cancelPriorityOperations ();
 }
 
@@ -493,6 +496,8 @@ Rts2DevCamera::scriptEnds ()
       chips[i]->setBinning (defBinning, defBinning);
     }
   setTimeout (USEC_SEC);
+  if (!isnan (defaultGain))
+    setGain (defaultGain);
   return Rts2Device::scriptEnds ();
 }
 
@@ -1104,14 +1109,16 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

@@ -235,6 +235,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
 	  printf ("gain must be in 0-255 range\n");
 	  exit (EXIT_FAILURE);
 	}
+      defaultGain = gain;
       break;
     case 'r':
       andorRoot = optarg;

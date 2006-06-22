@@ -238,6 +238,7 @@ protected:
   int defBinning;
 
   double gain;
+  double defaultGain;
   double rnoise;
 
   virtual int setGain (double in_gain);
