@@ -248,6 +248,16 @@ Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int chip,
   free (command);
 }
 
+Rts2CommandGain::Rts2CommandGain (Rts2DevClientCamera * in_camera,
+				  double gain):
+Rts2CommandCameraSettings (in_camera)
+{
+  char *command;
+  asprintf (&command, "gain %f", gain);
+  setCommand (command);
+  free (command);
+}
+
 Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master,
 				  Rts2DevClientTelescope * in_tel, double ra,
 				  double dec):

@@ -149,6 +149,12 @@ public:
 		     int height);
 };
 
+class Rts2CommandGain:public Rts2CommandCameraSettings
+{
+public:
+  Rts2CommandGain (Rts2DevClientCamera * in_camera, double gain);
+};
+
 class Rts2CommandMove:public Rts2Command
 {
   Rts2DevClientTelescope *tel;
