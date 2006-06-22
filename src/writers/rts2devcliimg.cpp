@@ -181,6 +181,10 @@ Rts2DevClientCameraImage::exposureStarted ()
   images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
 		    "CCD temperature");
   images->setExposureLength (exposureTime);
+
+  images->setValue ("GAIN", getValueDouble ("gain"), "CCD gain");
+  images->setValue ("RNOISE", getValueDouble ("rnoise"), "CCD readout noise");
+
   images->setValue ("CAM_FAN", getValueInteger ("fan"),
 		    "fan on (1) / off (0)");
   images->setValue ("XPLATE", xplate,
@@ -330,6 +334,8 @@ Rts2DevClientTelescopeImage::getAltAz (struct ln_hrz_posn *hrz)
   gst = ln_range_degrees (gst) / 15.0;
 
   ln_get_hrz_from_equ_sidereal_time (&pos, &obs, gst, hrz);
+
+//  printf ("%f %f %f %f\n", pos.ra, pos.dec, hrz->alt, hrz->az);
 }
 
 void
