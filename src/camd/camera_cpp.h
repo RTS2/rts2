@@ -236,6 +236,11 @@ protected:
 
   virtual void cancelPriorityOperations ();
   int defBinning;
+
+  double gain;
+  double rnoise;
+
+  virtual int setGain (double in_gain);
 public:
     Rts2DevCamera (int argc, char **argv);
     virtual ~ Rts2DevCamera (void);
@@ -340,6 +345,8 @@ public:
   // autofocus
   int startFocus (Rts2Conn * conn);
   int endFocusing ();
+
+  int setGain (Rts2Conn * conn, double in_gain);
 
   bool isIdle ();
   bool isFocusing ();

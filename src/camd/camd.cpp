@@ -383,6 +383,12 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
+int
+Rts2DevCamera::setGain (double in_gain)
+{
+  return -1;
+}
+
 Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
@@ -412,6 +418,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   filterExpChip = -1;
   defBinning = 1;
   defFocusExposure = 10;
+
+  gain = nan ("f");
+  rnoise = nan ("f");
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
@@ -677,6 +686,8 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
   conn->sendValue ("filter", getFilterNum ());
   conn->sendValue ("focpos", getFocPos ());
   conn->sendValue ("exposure", lastExp);
+  conn->sendValue ("gain", gain);
+  conn->sendValue ("rnoise", rnoise);
   return 0;
 }
 
@@ -1080,16 +1091,27 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+int
+Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
+{
+  int ret;
+  ret = setGain (in_gain);
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot set gain");
+      return -1;
+    }
+  return ret;
+}
+
+bool Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
@@ -1265,6 +1287,13 @@ Rts2DevConnCamera::commandAuthorized ()
   else if (isCommand ("focus"))
     {
       return master->startFocus (this);
+    }
+  else if (isCommand ("gain"))
+    {
+      double gain_set;
+      if (paramNextDouble (&gain_set) || !paramEnd ())
+	return -2;
+      return master->setGain (this, gain_set);
     }
   return Rts2DevConn::commandAuthorized ();
 }

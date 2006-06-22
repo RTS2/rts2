@@ -147,7 +147,6 @@ CameraAndorChip::readoutOneLine ()
 class Rts2DevCameraAndor:public Rts2DevCamera
 {
 private:
-  int andorGain;
   char *andorRoot;
   int horizontalSpeed;
   int verticalSpeed;
@@ -160,6 +159,7 @@ private:
   int printChannelInfo (int channel);
 protected:
     virtual void help ();
+  virtual int setGain (double in_gain);
 public:
     Rts2DevCameraAndor (int argc, char **argv);
     virtual ~ Rts2DevCameraAndor (void);
@@ -182,7 +182,7 @@ Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
   andorRoot = "/root/andor/examples/common";
-  andorGain = 255;
+  gain = 255;
   horizontalSpeed = -1;
   verticalSpeed = -1;
   vsamp = -1;
@@ -213,13 +213,24 @@ Rts2DevCameraAndor::help ()
 }
 
 int
+Rts2DevCameraAndor::setGain (double in_gain)
+{
+  int ret;
+  ret = SetEMCCDGain ((int) in_gain);
+  if (ret != DRV_SUCCESS)
+    return -1;
+  gain = in_gain;
+  return 0;
+}
+
+int
 Rts2DevCameraAndor::processOption (int in_opt)
 {
   switch (in_opt)
     {
     case 'g':
-      andorGain = atoi (optarg);
-      if (andorGain > 255 || andorGain < 0)
+      gain = atof (optarg);
+      if (gain > 255 || gain < 0)
 	{
 	  printf ("gain must be in 0-255 range\n");
 	  exit (EXIT_FAILURE);
@@ -333,7 +344,8 @@ Rts2DevCameraAndor::init ()
   SetShutter (1, 0, 50, 50);
 
   SetExposureTime (5.0);
-  SetEMCCDGain (andorGain);
+  setGain (gain);
+
   // adChannel
   if (adChannel >= 0)
     {
