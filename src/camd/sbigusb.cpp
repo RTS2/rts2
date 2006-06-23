@@ -110,7 +110,7 @@ CameraSbigChip::isExposing ()
     complete = (qcsr.status & 0x0C) != 0x08;
   if (complete)
     return -2;
-  return 0;
+  return 1;
 }
 
 int
@@ -264,8 +264,7 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE
-Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
