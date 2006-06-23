@@ -64,10 +64,6 @@ int
 CameraAndorChip::startExposure (int light, float exptime)
 {
   int ret;
-  // get temp
-  int c_status;
-  c_status = GetTemperatureF (&tempCCD);
-  tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
 
   ret =
     SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
@@ -162,6 +158,8 @@ private:
   int chanNum;
 
   int printChannelInfo (int channel);
+
+  void getTemp ();
 protected:
     virtual void help ();
   virtual int setGain (double in_gain);
@@ -181,6 +179,8 @@ public:
   virtual int camCoolHold ();
   virtual int camCoolTemp (float new_temp);
   virtual int camCoolShutdown ();
+
+  virtual int camExpose (int chip, int light, float exptime);
 };
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
@@ -223,7 +223,10 @@ Rts2DevCameraAndor::setGain (double in_gain)
   int ret;
   ret = SetEMCCDGain ((int) in_gain);
   if (ret != DRV_SUCCESS)
-    return -1;
+    {
+      syslog (LOG_ERR, "Rts2DevCameraAndor::setGain error %i", ret);
+      return -1;
+    }
   gain = in_gain;
   return 0;
 }
@@ -464,6 +467,25 @@ Rts2DevCameraAndor::ready ()
   return 0;
 }
 
+void
+Rts2DevCameraAndor::getTemp ()
+{
+  int c_status;
+  float tmpTemp;
+  c_status = GetTemperatureF (&tmpTemp);
+  if (!
+      (c_status == DRV_ACQUIRING || c_status == DRV_NOT_INITIALIZED
+       || c_status == DRV_ERROR_ACK))
+    {
+      tempCCD = tmpTemp;
+      tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
+    }
+  else
+    {
+      syslog (LOG_DEBUG, "Rts2DevCameraAndor::info status: %i", c_status);
+    }
+}
+
 int
 Rts2DevCameraAndor::info ()
 {
@@ -471,9 +493,7 @@ Rts2DevCameraAndor::info ()
   coolingPower = (int) (50 * 1000);
   if (isIdle ())
     {
-      int c_status;
-      c_status = GetTemperatureF (&tempCCD);
-      tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
+      getTemp ();
     }
   return 0;
 }
@@ -523,6 +543,13 @@ Rts2DevCameraAndor::camCoolShutdown ()
   SetTemperature (20);
   tempSet = +50;
   return 0;
+}
+
+int
+Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
+{
+  getTemp ();
+  return Rts2DevCamera::camExpose (chip, light, exptime);
 }
 
 Rts2DevCameraAndor *device = NULL;
