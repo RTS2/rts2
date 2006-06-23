@@ -421,6 +421,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 
   gain = nan ("f");
   defaultGain = nan ("f");
+  nextGain = nan ("f");
   rnoise = nan ("f");
 
   // cooling & other options..
@@ -483,6 +484,7 @@ Rts2DevCamera::cancelPriorityOperations ()
   clearStatesPriority ();
   if (!isnan (defaultGain))
     setGain (defaultGain);
+  nextGain = nan ("f");
   Rts2Device::cancelPriorityOperations ();
 }
 
@@ -498,6 +500,7 @@ Rts2DevCamera::scriptEnds ()
   setTimeout (USEC_SEC);
   if (!isnan (defaultGain))
     setGain (defaultGain);
+  nextGain = nan ("f");
   return Rts2Device::scriptEnds ();
 }
 
@@ -612,6 +615,11 @@ Rts2DevCamera::checkReadouts ()
       else
 	{
 	  chips[i]->endReadout ();
+	  if (!isnan (nextGain))
+	    {
+	      setGain (nextGain);
+	      nextGain = nan ("f");
+	    }
 	  setTimeout (USEC_SEC);
 	  if (ret == -2)
 	    maskState (i, CAM_MASK_READING, CAM_NOTREADING,
@@ -1100,6 +1108,11 @@ int
 Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
 {
   int ret;
+  if (!isIdle ())
+    {
+      nextGain = in_gain;
+      return 0;
+    }
   ret = setGain (in_gain);
   if (ret)
     {
@@ -1109,16 +1122,14 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

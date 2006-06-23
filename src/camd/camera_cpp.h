@@ -239,6 +239,7 @@ protected:
 
   double gain;
   double defaultGain;
+  double nextGain;
   double rnoise;
 
   virtual int setGain (double in_gain);
