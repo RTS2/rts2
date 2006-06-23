@@ -64,6 +64,11 @@ int
 CameraAndorChip::startExposure (int light, float exptime)
 {
   int ret;
+  // get temp
+  int c_status;
+  c_status = GetTemperatureF (&tempCCD);
+  tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
+
   ret =
     SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
 	      chipReadout->x + chipReadout->height, chipReadout->y + 1,
@@ -462,11 +467,14 @@ Rts2DevCameraAndor::ready ()
 int
 Rts2DevCameraAndor::info ()
 {
-  int c_status;
-  c_status = GetTemperatureF (&tempCCD);
   tempAir = nan ("f");
   coolingPower = (int) (50 * 1000);
-  tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
+  if (isIdle ())
+    {
+      int c_status;
+      c_status = GetTemperatureF (&tempCCD);
+      tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
+    }
   return 0;
 }
 
