@@ -256,6 +256,7 @@ Rts2CommandCameraSettings (in_camera)
   asprintf (&command, "gain %f", gain);
   setCommand (command);
   free (command);
+  commandCond = NO_EXPOSURE_MOVE;
 }
 
 Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master,
