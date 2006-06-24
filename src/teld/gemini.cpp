@@ -40,6 +40,9 @@
 
 #define SEARCH_STEPS	16
 
+#define MIN(a,b)	((a) < (b) ? (a) : (b))
+#define MAX(a,b)	((a) > (b) ? (a) : (b))
+
 int arr[] = { 0, 1, 2, 3 };
 
 struct
@@ -132,6 +135,7 @@ private:
 
   int32_t readRatiosInter (int startId);
   int readRatios ();
+  int readLimits ();
   int setCorrection ();
 
   int geminiInit ();
@@ -194,6 +198,9 @@ private:
   char gem_subver;
 
   int decFlipLimit;
+
+  double haMinusLimit;
+  double haPlusLimit;
 
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
@@ -1107,6 +1114,15 @@ Rts2DevTelescopeGemini::readRatios ()
 }
 
 int
+Rts2DevTelescopeGemini::readLimits ()
+{
+  // TODO read from 221 and 222
+  haMinusLimit = -94;
+  haPlusLimit = 97;
+  return 0;
+}
+
+int
 Rts2DevTelescopeGemini::setCorrection ()
 {
   if (gem_version < 4)
@@ -1177,6 +1193,9 @@ Rts2DevTelescopeGemini::init ()
       if (!ret)
 	{
 	  ret = readRatios ();
+	  if (ret)
+	    return ret;
+	  ret = readLimits ();
 	  if (ret)
 	    return ret;
 	  setCorrection ();
@@ -1485,10 +1504,106 @@ Rts2DevTelescopeGemini::tel_start_move ()
 int
 Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
 {
+  int newFlip = telFlip;
+  bool willFlip = false;
+  double ra_diff, ra_diff_flip;
+  double dec_diff, dec_diff_flip;
+  double ha;
+
+  double max_not_flip, max_flip;
+
+  struct ln_equ_posn pos;
+  struct ln_equ_posn model_change;
+
   tel_normalize (&tar_ra, &tar_dec);
 
   lastMoveRa = tar_ra;
   lastMoveDec = tar_dec;
+
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescopeGemini::startMove lastMoveRa: %f telRa %f flip: %i",
+	  lastMoveRa, telRa, newFlip);
+
+  ra_diff = ln_range_degrees (telRa - lastMoveRa);
+  if (ra_diff > 180.0)
+    ra_diff -= 360.0;
+
+  dec_diff = telDec - lastMoveDec;
+
+  // get diff when we flip..
+  ra_diff_flip = ln_range_degrees (180 + telRa - lastMoveRa);
+  if (ra_diff_flip > 180.0)
+    ra_diff_flip -= 360.0;
+
+  if (telLatitude > 0)
+    dec_diff_flip = (90 - telDec + 90 - lastMoveDec);
+  else
+    dec_diff_flip = (telDec - 90 + lastMoveDec - 90);
+
+  // decide which path is closer
+
+  max_not_flip = MAX (fabs (ra_diff), fabs (dec_diff));
+  max_flip = MAX (fabs (ra_diff_flip), fabs (dec_diff_flip));
+
+  if (max_flip < max_not_flip)
+    willFlip = true;
+
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescopeGemini::startMove ra_diff: %f dec_diff: %f ra_diff_flip: %f dec_diff_flip: %f max_not_flip: %f max_flip: %f willFlip %i",
+	  ra_diff, dec_diff, ra_diff_flip, dec_diff_flip, max_not_flip,
+	  max_flip, willFlip);
+
+  // "do" flip
+  if (willFlip)
+    newFlip = !newFlip;
+
+  // calculate current HA
+  ha = telSiderealTime * 15.0 - telRa;
+
+  // normalize HA to meridian angle
+  if (newFlip)
+    ha = 90.0 - ha;
+  else
+    ha = ha + 90.0;
+
+  ha = ln_range_degrees (ha);
+
+  if (ha > 180.0)
+    ha = 360.0 - ha;
+
+  if (ha > 90.0)
+    ha = ha - 180.0;
+
+  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::startMove newFlip %i ha %f",
+	  newFlip, ha);
+
+  if (willFlip)
+    ha += ra_diff_flip;
+  else
+    ha += ra_diff;
+
+  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::startMove newFlip %i ha %f",
+	  newFlip, ha);
+
+  if (ha < haMinusLimit || ha > haPlusLimit)
+    {
+      willFlip = !willFlip;
+      newFlip = !newFlip;
+    }
+
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescopeGemini::startMove ha: %f ra_diff: %f lastMoveRa: %f telRa %f newFlip: %i willFlip: %i",
+	  ha, ra_diff, lastMoveRa, telRa, newFlip, willFlip);
+
+  // we fit to limit, aply model
+
+  pos.ra = lastMoveRa;
+  pos.dec = lastMoveDec;
+
+  applyModel (&pos, &model_change, newFlip, ln_get_julian_from_sys ());
+
+  lastMoveRa = pos.ra;
+  lastMoveDec = pos.dec;
 
   fixed_ha = nan ("f");
 
