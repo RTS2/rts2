@@ -83,10 +83,13 @@ public:
   int setGrb (int grbId);
   int setShower ();
 
-  void end ()
+  int end ()
   {
     maskState (0, EXEC_MASK_END, EXEC_END);
+    return 0;
   }
+
+  int stop ();
 };
 
 int
@@ -123,7 +126,13 @@ Rts2ConnExecutor::commandAuthorized ()
     {
       if (!paramEnd ())
 	return -2;
-      master->end ();
+      return master->end ();
+    }
+  else if (isCommand ("stop"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->stop ();
     }
   return Rts2DevConn::commandAuthorized ();
 }
@@ -589,6 +598,15 @@ Rts2Executor::setShower ()
   return setNow (TARGET_SHOWER);
 }
 
+int
+Rts2Executor::stop ()
+{
+  postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
+  updateScriptCount ();
+  if (scriptCount == 0)
+    switchTarget ();
+  return 0;
+}
 
 void
 Rts2Executor::queDarks ()
