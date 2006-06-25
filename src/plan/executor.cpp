@@ -83,9 +83,9 @@ public:
   int setGrb (int grbId);
   int setShower ();
 
-  void stop ()
+  void end ()
   {
-    maskState (0, EXEC_MASK_STOP, EXEC_STOP);
+    maskState (0, EXEC_MASK_END, EXEC_END);
   }
 };
 
@@ -119,11 +119,11 @@ Rts2ConnExecutor::commandAuthorized ()
 	return -2;
       return master->setNext (tar_id);
     }
-  else if (isCommand ("stop"))
+  else if (isCommand ("end"))
     {
       if (!paramEnd ())
 	return -2;
-      master->stop ();
+      master->end ();
     }
   return Rts2DevConn::commandAuthorized ();
 }
@@ -298,7 +298,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 		       currentTarget->getTargetID ()))
 	    {
 	      // wait, if we are in stop..don't que it again..
-	      if ((getState (0) & EXEC_MASK_STOP) != EXEC_STOP)
+	      if ((getState (0) & EXEC_MASK_END) != EXEC_END)
 		event->setArg ((void *) currentTarget);
 	      // that will eventually hit devclient which post that message, which
 	      // will set currentTarget to this value and handle it same way as EVENT_OBSERVE,
@@ -333,6 +333,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 	  infoAll ();
 	  break;
 	}
+      postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
       if (waitState)
 	{
 	  postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
@@ -425,9 +426,9 @@ Rts2Executor::changeMasterState (int new_state)
     case SERVERD_NIGHT:
     case SERVERD_DUSK:
       // unblock stop state
-      if ((getState (0) & EXEC_MASK_STOP) == EXEC_STOP)
+      if ((getState (0) & EXEC_MASK_END) == EXEC_END)
 	{
-	  maskState (0, EXEC_MASK_STOP, EXEC_NOT_STOP);
+	  maskState (0, EXEC_MASK_END, EXEC_NOT_END);
 	}
       if (!currentTarget && nextTarget)
 	{
@@ -448,7 +449,7 @@ Rts2Executor::changeMasterState (int new_state)
     default:
       // we need to stop observation that is continuus
       // that will guarantie that in isContinues call, we will not que our target again
-      stop ();
+      end ();
       break;
     }
   return Rts2DeviceDb::changeMasterState (new_state);
@@ -676,9 +677,9 @@ Rts2Executor::doSwitch ()
 void
 Rts2Executor::switchTarget ()
 {
-  if ((getState (0) & EXEC_MASK_STOP) == EXEC_STOP)
+  if ((getState (0) & EXEC_MASK_END) == EXEC_END)
     {
-      maskState (0, EXEC_MASK_STOP, EXEC_NOT_STOP);
+      maskState (0, EXEC_MASK_END, EXEC_NOT_END);
       postEvent (new Rts2Event (EVENT_KILL_ALL));
       if (currentTarget)
 	{

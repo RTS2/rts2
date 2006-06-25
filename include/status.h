@@ -174,9 +174,9 @@
 #define EXEC_OBSERVE		0x04
 #define EXEC_LASTREAD		0x05
 
-#define EXEC_MASK_STOP		0x10
-#define EXEC_NOT_STOP		0x00
-#define EXEC_STOP		0x10
+#define EXEC_MASK_END		0x10
+#define EXEC_NOT_END		0x00
+#define EXEC_END		0x10
 
 #define EXEC_MASK_ACQ		0x60
 #define EXEC_NOT_ACQ		0x00
