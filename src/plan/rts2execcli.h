@@ -29,6 +29,8 @@
 
 #define EVENT_QUE_IMAGE		RTS2_LOCAL_EVENT+64
 
+#define EVENT_STOP_OBSERVATION  RTS2_LOCAL_EVENT+65
+
 class GuidingParams
 {
 public:
