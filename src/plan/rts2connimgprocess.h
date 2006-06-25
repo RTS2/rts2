@@ -46,8 +46,6 @@ public:
 class Rts2ConnImgProcess:public Rts2ConnProcess
 {
 private:
-  Rts2Conn * reqConn;
-
   char *imgPath;
 
   long id;
