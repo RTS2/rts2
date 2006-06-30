@@ -83,13 +83,11 @@ void
 Rts2DevClientCameraImage::writeFilter ()
 {
   int camFilter = images->getFilter ();
-  if (camFilter < 0)
-    camFilter = 0;
   char *flt = filter;
   char *flt_end;
   char imageFilter[4];
   int flt_len;
-  while (*flt)
+  while (camFilter >= 0 && *flt)
     {
       while (isspace (*flt))
 	flt++;

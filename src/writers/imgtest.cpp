@@ -71,5 +71,7 @@ main (int argc, char **argv)
   printOffset (image->getXoA () - 50, image->getYoA (), image);
   printOffset (image->getXoA (), image->getYoA () - 50, image);
 
+  printOffset (152, 150, image);
+
   return 0;
 }

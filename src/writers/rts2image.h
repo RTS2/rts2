@@ -314,6 +314,14 @@ public:
   // returns ra & dec distance in degrees of pixel [x,y] from device axis
   // I think it's better to use double precission even in pixel coordinates, as I'm then sure I'll not 
   // loose precision somewhere in calculation
+  /**
+   * Returns ra & dec distance in degrees of pixel [x,y] from device axis (XOA and YOA coordinates)
+   *
+   * Hint: if you want to guide telescope, you need to use that value.
+   * If target is W from telescope axis, it will be negative, and you need to move to W, so you need
+   * to decrease RA.
+   */
+
   int getOffset (double x, double y, double &chng_ra, double &chng_dec,
 		 double &sep_angle);
 

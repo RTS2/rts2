@@ -144,6 +144,7 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
 
   cameraName = new char[DEVICE_NAME_SIZE + 1];
   setValue ("CCD_NAME", camera->getName (), "camera name");
+  setValue ("CCD_TYPE", camera->getValueChar ("type"), "camera type");
   strcpy (cameraName, camera->getName ());
 
   mountName = NULL;
