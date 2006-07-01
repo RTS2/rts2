@@ -1865,7 +1865,26 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 
   fixed_ntries = 0;
 
-  return startMoveFixedReal ();
+  ret = startMoveFixedReal ();
+  // move OK
+  if (!ret)
+    return ret;
+  // try to do small change..
+#ifndef L4_GUIDE
+  if (fabs (ha_diff) < 2 && fabs (dec_diff) < 2)
+    {
+      ret = change_real (ha_diff, dec_diff);
+      if (!ret)
+	{
+	  fixed_ha = tar_ha;
+	  lastMoveDec += dec_diff;
+	  move_fixed = 0;	// we are performing change, not moveFixed
+	  maskState (0, TEL_MASK_MOVING, TEL_MOVING, "change started");
+	  return ret;
+	}
+    }
+#endif
+  return ret;
 }
 
 int
