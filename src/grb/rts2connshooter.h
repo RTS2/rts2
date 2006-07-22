@@ -25,7 +25,6 @@ private:
 
   int port;
 
-  int auger_listen_socket;
   char nbuf[AUGER_BUF_SIZE];
 
   int processAuger ();
@@ -36,8 +35,6 @@ public:
 
   virtual int idle ();
   virtual int init ();
-
-  virtual int add (fd_set * set);
 
   virtual int connectionError (int last_data_size);
   virtual int receive (fd_set * set);
