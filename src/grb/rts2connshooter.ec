@@ -152,7 +152,7 @@ Rts2ConnShooter::processAuger ()
      auger_ra,
      auger_dec)
     VALUES
-    (:db_auger_t3id,
+    (nextval('auger_t3id'),
      abstime(:db_auger_date),
      :db_auger_npixels,
      :db_auger_sdpphi,
