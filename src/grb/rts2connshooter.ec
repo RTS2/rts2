@@ -18,8 +18,8 @@ EXEC SQL include sqlca;
 void
 Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 {
-  // we need to handle somehow leap seconds, but that can wait
-  out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC;
+  // we need to handle somehow better leap seconds, but that can wait
+  out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC + 14.0;
 }
 
 // is called when nbuf contains '\n'
@@ -29,18 +29,113 @@ Rts2ConnShooter::processAuger ()
   EXEC SQL BEGIN DECLARE SECTION;
   int db_auger_t3id;
   double db_auger_date;
-  int db_auger_npixels;
+  int db_auger_npixels = 0;
+
   double db_auger_sdpphi;
   double db_auger_sdptheta;
   double db_auger_sdpangle;
+
+  double db_auger_ra;
+  double db_auger_dec;
   EXEC SQL END DECLARE SECTION;
 
+  int gap_ver;
+  int gap_stations;
+  double gap_theta;
+  double gap_phi;
+  double gap_energy;
+  
+  double gap_L;
+  double gap_B;
+  long gap_UTC;
+  long gap_core;
+  double gap_X;
+
+  double gap_Y;
+  double gap_S1000;
+  double gap_dS1000;
+
+  double gap_ctheta;
+  double gap_cphi;
+  double gap_dX;
+
+  double gap_dY;
+  long gap_comp;
+  long gap_isT5;
+  long gap_isT5p;
+  long gap_isT5pp;
+  
+  long gap_isICR;
+  long gap_isFd;
+  double gap_geomfit;
+  double gap_LDFfit;
+  double gap_globfitchi2;
+  
+  double gap_globfitndof;
+  double gap_LDFBeta;
+  double gap_LDFGamma;
+  double gap_R;
+  long gap_OldId;
+
   long gps_sec;
-  long gps_usec;
+
+  long gps_usec = 0;
+
+// 1 3 34.6514 -105.751 0.476843
+// -70.1905 -7.69034 1153170055 10108491 -24303.2
+// 24092.6 2.66637 0.662263 157.832 -66.922
+// 34.5033 -106.143 1.90774 1.92494 66.7804
+// 145.449 1 1039 1 1
+// 1 0 4.23941e-05 0.927834 0.903655
+// 0 -3.75494 -0.447885 9180.13 2460068
+// 837205268
 
   std::istringstream _is (nbuf);
-  _is >> db_auger_t3id >> gps_sec >> gps_usec >> db_auger_npixels >>
-    db_auger_sdpphi >> db_auger_sdptheta >> db_auger_sdpangle;
+  _is
+    >> gap_ver
+    >> gap_stations
+    >> gap_theta
+    >> gap_phi
+    >> gap_energy
+
+    >> gap_L
+    >> gap_B
+    >> gap_UTC
+    >> gap_core
+    >> gap_X
+
+    >> gap_Y
+    >> gap_S1000
+    >> gap_dS1000
+    >> db_auger_ra
+    >> db_auger_dec
+
+    >> gap_ctheta
+    >> gap_cphi
+    >> db_auger_sdptheta
+    >> db_auger_sdpphi
+    >> gap_dX
+
+    >> gap_dY
+    >> gap_comp
+    >> gap_isT5
+    >> gap_isT5p
+    >> gap_isT5pp
+
+    >> gap_isICR
+    >> gap_isFd
+    >> gap_geomfit
+    >> gap_LDFfit
+    >> gap_globfitchi2
+
+    >> gap_globfitndof
+    >> gap_LDFBeta
+    >> gap_LDFGamma
+    >> gap_R
+    >> gap_OldId
+    
+    >> gps_sec;
+
   if (_is.fail ())
     return -1;
 
@@ -53,11 +148,18 @@ Rts2ConnShooter::processAuger ()
      auger_npixels,
      auger_sdpphi,
      auger_sdptheta,
-     auger_sdpangle)
+     auger_sdpangle,
+     auger_ra,
+     auger_dec)
     VALUES
     (:db_auger_t3id,
-     abstime
-     (:db_auger_date),:db_auger_npixels,:db_auger_sdpphi,:db_auger_sdptheta,:db_auger_sdpangle);
+     abstime(:db_auger_date),
+     :db_auger_npixels,
+     :db_auger_sdpphi,
+     :db_auger_sdptheta,
+     :db_auger_sdpangle,
+     :db_auger_ra,
+     :db_auger_dec);
   if (sqlca.sqlcode)
     {
       syslog (LOG_ERR,
