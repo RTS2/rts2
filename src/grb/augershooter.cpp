@@ -43,8 +43,12 @@ Rts2DevAugerShooter::init ()
     return ret;
 
   Rts2Config *config = Rts2Config::instance ();
+  double minEnergy;
 
-  shootercnn = new Rts2ConnShooter (port, this);
+  minEnergy = 20;
+  config->getDouble ("augershooter", "minenergy", minEnergy);
+
+  shootercnn = new Rts2ConnShooter (port, this, minEnergy);
 
   ret = shootercnn->init ();
 

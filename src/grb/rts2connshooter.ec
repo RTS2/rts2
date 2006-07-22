@@ -137,10 +137,18 @@ Rts2ConnShooter::processAuger ()
     >> gps_sec;
 
   if (_is.fail ())
-  {
-    syslog (LOG_ERR, "Rts2ConnShooter::processAuger failed reading stream");
-    return -1;
-  }
+    {
+      syslog (LOG_ERR, "Rts2ConnShooter::processAuger failed reading stream");
+      return -1;
+    }
+
+  if (!(gap_comp && gap_isT5 && gap_energy > minEnergy))
+    {
+      syslog (LOG_DEBUG, "Rts2ConnShooter::processAuger ignore (gap_comp %f gap_isT5 %li gap_energy %f minEnergy %f)", gap_comp, gap_isT5, gap_energy, minEnergy);
+      return -1;
+    }
+
+  // valid shover and it's hibrid..
 
   getTimeTfromGPS (gps_sec, gps_usec, db_auger_date);
 
@@ -175,7 +183,7 @@ Rts2ConnShooter::processAuger ()
   return master->newShower ();
 }
 
-Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master):Rts2ConnNoSend
+Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master, double in_minEnergy):Rts2ConnNoSend
   (in_master)
 {
   master = in_master;
@@ -188,6 +196,8 @@ Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master):
   last_target_time = -1;
 
   setConnTimeout (-1);
+
+  minEnergy = in_minEnergy;
 }
 
 Rts2ConnShooter::~Rts2ConnShooter (void)
