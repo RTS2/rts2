@@ -595,6 +595,13 @@ Rts2Executor::setGrb (int grbId)
 int
 Rts2Executor::setShower ()
 {
+  // is during night and ready?
+  if (!(getMasterState () == SERVERD_NIGHT))
+    {
+      syslog (LOG_DEBUG, "Rts2Executor::setShow daylight shower ignored");
+      return -2;
+    }
+
   return setNow (TARGET_SHOWER);
 }
 
