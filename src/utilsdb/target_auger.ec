@@ -83,6 +83,13 @@ TargetAuger::getBonus (double JD)
   return ConstTarget::getBonus (JD);
 }
 
+int
+TargetAuger::considerForObserving (double JD)
+{
+  load ();
+  return ConstTarget::considerForObserving (JD);
+}
+
 void
 TargetAuger::printExtra (std::ostream & _os, double JD)
 {

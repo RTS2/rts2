@@ -15,6 +15,7 @@ public:
 
   virtual int load ();
   virtual float getBonus (double JD);
+  virtual int considerForObserving (double JD);
 
   virtual void printExtra (std::ostream & _os, double JD);
 };
