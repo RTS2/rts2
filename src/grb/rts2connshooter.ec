@@ -13,7 +13,7 @@
 
 EXEC SQL include sqlca;
 
-#define GPS_OFFSET	315961200
+#define GPS_OFFSET	315964800
 
 void
 Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
