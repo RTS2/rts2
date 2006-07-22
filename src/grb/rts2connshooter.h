@@ -5,7 +5,7 @@
 
 #include "augershooter.h"
 
-#define AUGER_BUF_SIZE	200
+#define AUGER_BUF_SIZE	500
 
 class Rts2DevAugerShooter;
 

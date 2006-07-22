@@ -27,7 +27,7 @@ int
 Rts2ConnShooter::processAuger ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_auger_t3id;
+//  int db_auger_t3id;
   double db_auger_date;
   int db_auger_npixels = 0;
 
@@ -60,7 +60,7 @@ Rts2ConnShooter::processAuger ()
   double gap_dX;
 
   double gap_dY;
-  long gap_comp;
+  double gap_comp;
   long gap_isT5;
   long gap_isT5p;
   long gap_isT5pp;
@@ -85,7 +85,7 @@ Rts2ConnShooter::processAuger ()
 // -70.1905 -7.69034 1153170055 10108491 -24303.2
 // 24092.6 2.66637 0.662263 157.832 -66.922
 // 34.5033 -106.143 1.90774 1.92494 66.7804
-// 145.449 1 1039 1 1
+// 145.449 1.11 1039 1 1
 // 1 0 4.23941e-05 0.927834 0.903655
 // 0 -3.75494 -0.447885 9180.13 2460068
 // 837205268
@@ -137,7 +137,10 @@ Rts2ConnShooter::processAuger ()
     >> gps_sec;
 
   if (_is.fail ())
+  {
+    syslog (LOG_ERR, "Rts2ConnShooter::processAuger failed reading stream");
     return -1;
+  }
 
   getTimeTfromGPS (gps_sec, gps_usec, db_auger_date);
 
@@ -308,7 +311,7 @@ Rts2ConnShooter::receive (fd_set * set)
 	}
       nbuf[ret] = '\0';
       processAuger ();
-      syslog (LOG_DEBUG, "Rts2ConnShooter::receive date: %s", nbuf);
+      syslog (LOG_DEBUG, "Rts2ConnShooter::receive data: %s", nbuf);
       successfullRead ();
       gettimeofday (&last_packet, NULL);
       // enable others to catch-up (FW connections will forward packet to their sockets)
