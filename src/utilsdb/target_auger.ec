@@ -2,7 +2,7 @@
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
 
-TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs):Target (in_tar_id, in_obs)
+TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs):ConstTarget (in_tar_id, in_obs)
 {
 
 }
@@ -17,55 +17,58 @@ TargetAuger::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_auger_t3id;
-  long d_auger_date;
+  double d_auger_date;
   int d_auger_npixels;
-  double d_auger_sdpphi;
-  double d_auger_sdptheta;
-  double d_auger_sdpangle;
+  double d_auger_ra;
+  double d_auger_dec;
   EXEC SQL END DECLARE SECTION;
 
-  EXEC SQL
-  SELECT
-    auger_t3id,
-    EXTRACT (EPOCH FROM auger_date),
-    auger_npixels,
-    auger_sdpphi,
-    auger_sdptheta,
-    auger_sdpangle
-  INTO
-    :d_auger_t3id,
-    :d_auger_date,
-    :d_auger_npixels,
-    :d_auger_sdpphi,
-    :d_auger_sdptheta,
-    :d_auger_sdpangle
-  FROM
-    auger
-  WHERE
-    auger_t3id = (SELECT MAX(auger_t3id) FROM auger);
+  struct ln_equ_posn pos;
+  struct ln_hrz_posn hrz;
+  double JD = ln_get_julian_from_sys ();
 
-  if (sqlca.sqlcode)
-  {
-    EXEC SQL ROLLBACK;
-    return -1;
-  }
+  EXEC SQL DECLARE cur_auger CURSOR FOR
+    SELECT
+      auger_t3id,
+      EXTRACT (EPOCH FROM auger_date),
+      auger_npixels,
+      auger_ra,
+      auger_dec
+    FROM
+      auger
+    ORDER BY
+      auger_date desc;
+
+  EXEC SQL OPEN cur_auger;
+  while (1)
+    {
+      EXEC SQL FETCH next FROM cur_auger INTO
+        :d_auger_t3id,
+        :d_auger_date,
+        :d_auger_npixels,
+        :d_auger_ra,
+        :d_auger_dec;
+      if (sqlca.sqlcode)
+	break;
+      pos.ra = d_auger_ra;
+      pos.dec = d_auger_dec;
+      ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+      if (hrz.alt > 10)
+      {
+        t3id = d_auger_t3id;
+        auger_date = d_auger_date;
+        npixels = d_auger_npixels;
+        setPosition (d_auger_ra, d_auger_dec);
+        EXEC SQL CLOSE cur_auger;
+	EXEC SQL COMMIT;
+        return Target::load ();
+      }
+    }
+  logMsgDb ("TargetAuger::load");
+  EXEC SQL CLOSE cur_auger;
   EXEC SQL ROLLBACK;
-  
-  t3id = d_auger_t3id;
-  date = d_auger_date;
-  npixels = d_auger_npixels;
-  sdpphi = d_auger_sdpphi;
-  sdptheta = d_auger_sdptheta;
-  sdpangle = d_auger_sdpangle;
-
-  return Target::load ();
-}
-
-int
-TargetAuger::getPosition (struct ln_equ_posn *pos, double JD)
-{
-  // samehow calculate auger position
-  return 0;
+  auger_date = 0;
+  return -1;
 }
 
 float
@@ -74,10 +77,10 @@ TargetAuger::getBonus (double JD)
   time_t jd_date;
   ln_get_timet_from_julian (JD, &jd_date);
   // shower too old - observe for 30 minutes..
-  if (jd_date > date + 1800)
-    return 0;
+  if (jd_date > auger_date + 1800)
+    return 1;
   // else return value from DB
-  return Target::getBonus (JD);
+  return ConstTarget::getBonus (JD);
 }
 
 void
@@ -85,9 +88,6 @@ TargetAuger::printExtra (std::ostream & _os)
 {
   _os
     << InfoVal<int> ("T3ID", t3id)
-    << InfoVal<Timestamp> ("DATE", Timestamp(date))
-    << InfoVal<int> ("NPIXELS", npixels)
-    << InfoVal<double> ("SDP_PHI", sdpphi)
-    << InfoVal<double> ("SDP_THETA", sdptheta)
-    << InfoVal<double> ("SDP_ANGLE", sdpangle);
+    << InfoVal<Timestamp> ("DATE", Timestamp(auger_date))
+    << InfoVal<int> ("NPIXELS", npixels);
 }
