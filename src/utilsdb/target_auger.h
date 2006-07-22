@@ -16,7 +16,7 @@ public:
   virtual int load ();
   virtual float getBonus (double JD);
 
-  virtual void printExtra (std::ostream & _os);
+  virtual void printExtra (std::ostream & _os, double JD);
 };
 
 #endif /* !__RTS2_TARGET_AUGER__ */

@@ -84,10 +84,11 @@ TargetAuger::getBonus (double JD)
 }
 
 void
-TargetAuger::printExtra (std::ostream & _os)
+TargetAuger::printExtra (std::ostream & _os, double JD)
 {
   _os
     << InfoVal<int> ("T3ID", t3id)
     << InfoVal<Timestamp> ("DATE", Timestamp(auger_date))
     << InfoVal<int> ("NPIXELS", npixels);
+  ConstTarget::printExtra (_os, JD);
 }
