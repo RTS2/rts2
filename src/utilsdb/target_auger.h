@@ -9,13 +9,20 @@ private:
   int t3id;
   double auger_date;
   int npixels;
+  int augerPriorityTimeout;
 public:
-    TargetAuger (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    TargetAuger (int in_tar_id, struct ln_lnlat_posn *in_obs,
+		 int in_augerPriorityTimeout);
     virtual ~ TargetAuger (void);
 
   virtual int load ();
   virtual float getBonus (double JD);
   virtual int considerForObserving (double JD);
+  virtual int changePriority (int pri_change, time_t * time_ch)
+  {
+    // do not drop priority
+    return 0;
+  }
   virtual int isContinues ()
   {
     return 1;

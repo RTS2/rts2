@@ -781,6 +781,10 @@ public:
   virtual int endObservation (int in_next_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int considerForObserving (double JD);
+  virtual int changePriority (int pri_change, time_t * time_ch)
+  {
+    return 0;
+  }
   virtual float getBonus (double JD);
 };
 
@@ -860,11 +864,17 @@ private:
   int gcnPacketMin;		// usefull for searching for packet class
   int gcnPacketMax;
 
+  int maxBonusTimeout;
+  int dayBonusTimeout;
+  int fiveBonusTimeout;
+
   const char *getSatelite ();
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
 public:
-    TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs,
+	       int in_maxBonusTimeout, int in_dayBonusTimeout,
+	       int in_fiveBonusTimeout);
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
