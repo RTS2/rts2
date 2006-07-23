@@ -2,9 +2,9 @@
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
 
-TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs):ConstTarget (in_tar_id, in_obs)
+TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, in_obs)
 {
-
+  augerPriorityTimeout = in_augerPriorityTimeout;
 }
 
 TargetAuger::~TargetAuger (void)
@@ -77,7 +77,7 @@ TargetAuger::getBonus (double JD)
   time_t jd_date;
   ln_get_timet_from_julian (JD, &jd_date);
   // shower too old - observe for 30 minutes..
-  if (jd_date > auger_date + 1800)
+  if (jd_date > auger_date + augerPriorityTimeout)
     return 1;
   // else return value from DB
   return ConstTarget::getBonus (JD);

@@ -1160,12 +1160,15 @@ LunarTarget::getScript (const char *deviceName, char *buf)
   return 0;
 }
 
-TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs) : 
+TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout) : 
 ConstTarget (in_tar_id, in_obs)
 {
   shouldUpdate = 1;
   grb_is_grb = true;
   gcnPacketType = -1;
+  maxBonusTimeout = in_maxBonusTimeout;
+  dayBonusTimeout = in_dayBonusTimeout;
+  fiveBonusTimeout = in_fiveBonusTimeout;
 }
 
 int
@@ -1402,19 +1405,19 @@ TargetGRB::getBonus (double JD)
           return -1;
 	break;
     }
-  if (now - (time_t) grbDate < 3600)
+  if (now - (time_t) grbDate < maxBonusTimeout)
   {
     // < 1 hour fixed boost to be sure to not miss it
     retBonus = ConstTarget::getBonus (JD) + 2000;
   }
-  else if (now - (time_t) grbDate < 86400)
+  else if (now - (time_t) grbDate < dayBonusTimeout)
   {
     // < 24 hour post burst
     retBonus = ConstTarget::getBonus (JD)
       + 1000.0 * cos ((double)((double)(now - (time_t) grbDate) / (2.0*86400.0))) 
       + 10.0 * cos ((double)((double)(now - lastUpdate) / (2.0*86400.0)));
   }
-  else if (now - (time_t) grbDate < 5 * 86400)
+  else if (now - (time_t) grbDate < fiveBonusTimeout)
   {
     // < 5 days post burst - add some time after last observation
     retBonus = ConstTarget::getBonus (JD)

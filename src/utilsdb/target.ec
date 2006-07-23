@@ -1378,7 +1378,7 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
       retTarget = new EllTarget (in_tar_id, in_obs);
       break;
     case TYPE_GRB:
-      retTarget = new TargetGRB (in_tar_id, in_obs);
+      retTarget = new TargetGRB (in_tar_id, in_obs, 3600, 86400, 5 * 86400);
       break;
     case TYPE_SWIFT_FOV:
       retTarget = new TargetSwiftFOV (in_tar_id, in_obs);
@@ -1396,7 +1396,7 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
       retTarget = new TargetPlan (in_tar_id, in_obs);
       break;
     case TYPE_AUGER:
-      retTarget = new TargetAuger (in_tar_id, in_obs);
+      retTarget = new TargetAuger (in_tar_id, in_obs, 1800);
       break;
     default:
       retTarget = new ConstTarget (in_tar_id, in_obs);
