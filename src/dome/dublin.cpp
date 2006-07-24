@@ -52,6 +52,10 @@ private:
 
   void openDomeReal ();
   void closeDomeReal ();
+
+  const char *isOnString (int mask);
+  int sendDublinMail (char *subject);
+
 protected:
     virtual int processOption (int in_opt);
   virtual int isGoodWeather ();
@@ -106,12 +110,15 @@ Rts2DevDomeDublin::executeSms (smsType_t type)
     {
     case TYPE_OPENED:
       msg = "Watcher roof opened as expected";
+      sendDublinMail ("WATCHER dome opened");
       break;
     case TYPE_CLOSED:
       msg = "Watcher roof closed as expected";
+      sendDublinMail ("WATCHER dome closed");
       break;
     case TYPE_STUCK:
       msg = "FAILURE! Watcher roof failed!!";
+      sendDublinMail ("WARNING CANNOT OPEN DOME! ROOF FAILED!");
       break;
     }
   asprintf (&cmd, "%s '%s'", smsExec, msg);
@@ -400,6 +407,31 @@ Rts2DevDomeDublin::endClose ()
   if (!domeFailed)
     executeSms (TYPE_CLOSED);
   return Rts2DevDome::endClose ();
+}
+
+const char *
+Rts2DevDomeDublin::isOnString (int mask)
+{
+  return (sw_state & mask) ? "on" : "off";
+}
+
+int
+Rts2DevDomeDublin::sendDublinMail (char *subject)
+{
+  char *text;
+  int ret;
+  asprintf (&text, "%s.\n"
+	    "CLOSE SWITCH:%s"
+	    "OPEN SWITCH:%s"
+	    "Weather::isGoodWeather %i\n"
+	    "raining: %i\n"
+	    "windspeed: %.2f km/h\n",
+	    subject,
+	    isOnString (4),
+	    isOnString (1), isGoodWeather (), rain, windspeed);
+  ret = sendMail (subject, text);
+  free (text);
+  return ret;
 }
 
 Rts2DevDomeDublin *device;
