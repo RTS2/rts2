@@ -33,7 +33,7 @@ Rts2ConnShooter::processAuger ()
 
   double db_auger_sdpphi;
   double db_auger_sdptheta;
-  double db_auger_sdpangle;
+  double db_auger_sdpangle = 0;
 
   double db_auger_ra;
   double db_auger_dec;

@@ -6,6 +6,7 @@ rts2-grbd
 rts2-grbforward
 rts2conngrb.cpp
 rts2connshooter.cpp
+rts2-augershooter
 *~
 *.log
 
