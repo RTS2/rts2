@@ -324,6 +324,7 @@ out:
 void
 process_command (struct device_struct *dev, char command[3])
 {
+  int despos;
   switch (command[0])
     {
     case PHOT_CMD_RESET:
@@ -336,6 +337,11 @@ process_command (struct device_struct *dev, char command[3])
     case PHOT_CMD_MOVEFILTER:
       if (dev->integration_enabled)
 	{
+	  despos = intargs (&command[1]);
+	  if (despos == 0)
+	    dev->filter_position += 30;
+	  if (despos == 297)
+	    dev->filter_position -= 30;
 	  dev->desired_position = intargs (&command[1]);
 	  filter_routine (dev);
 	}
@@ -355,6 +361,7 @@ process_command (struct device_struct *dev, char command[3])
       else
 	{
 	  dev->status |= PHOT_S_INTEGRATION_DIS;
+	  dev->filter_position += 30;
 	  dev->desired_position = 0;
 	  filter_routine (dev);
 	}
