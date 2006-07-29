@@ -93,7 +93,11 @@ Rts2ConnBufWeather::receive (fd_set * set)
   int ret, ret_c;
   char Wbuf[500];
   int data_size = 0;
+  float rtIsRaining;
   float rtRainRate;
+  float rtWetness;
+  float rtCloudTop;
+  float rtCloudBottom;
   float rtOutsideHum;
   float rtOutsideTemp;
   float weatherTimeout;
@@ -125,7 +129,8 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	  badSetWeatherTimeout ((int) weatherTimeout);
 	}
 
-      weather->getValue ("rtIsRaining", rtRainRate, ret);
+      weather->getValue ("rtIsRaining", rtIsRaining, ret);
+      weather->getValue ("rtRainRate", rtRainRate, ret);
       weather->getValue ("rtWindAvgSpeed", windspeed, ret);
       weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
       weather->getValue ("rtOutsideTemp", rtOutsideTemp, ret);
@@ -135,7 +140,46 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	  badSetWeatherTimeout (conn_timeout);
 	  return data_size;
 	}
-      rain = rtRainRate > 0 ? 1 : 0;
+      if (rtIsRaining > 0)
+	{
+	  ret_c = 0;
+	  // try to get more information about nature of rain and cloud cover
+	  weather->getValue ("rtCloudTop", rtCloudTop, ret_c);
+	  weather->getValue ("rtCloudBottom", rtCloudBottom, ret_c);
+	  weather->getValue ("rtWetness", rtWetness, ret_c);
+	  if (ret_c == 0)
+	    {
+	      float dew;
+	      float vapor;
+	      vapor =
+		(rtOutsideHum / 100) * 0.611 * exp (17.27 * rtOutsideTemp /
+						    (rtOutsideTemp + 237.3));
+	      dew =
+		ceil (10 *
+		      ((116.9 + 237.3 * log (vapor)) / (16.78 -
+							log (vapor)))) / 10;
+	      syslog (LOG_DEBUG,
+		      "Rts2ConnBufWeather::parse rtCloudBottom %f rtCloudTop %f rtRainRate %f rtWetness %f vapor %f dew %f",
+		      rtCloudBottom, rtCloudTop, rtRainRate, rtWetness, vapor,
+		      dew);
+	      if ((rtCloudBottom - rtCloudTop) > 2.5 && rtRainRate == 0
+		  && rtWetness < 15.0 && fabs (rtOutsideTemp - dew) < 3.0)
+		rain = 0;
+	      else if ((rtCloudBottom - rtCloudTop) > 3.0 && rtRainRate == 0
+		       && rtWetness < 7.0 && fabs (rtOutsideTemp - dew) < 6.0)
+		rain = 0;
+	      else
+		rain = 1;
+	    }
+	  else
+	    {
+	      rain = 1;
+	    }
+	}
+      else
+	{
+	  rain = 0;
+	}
       master->setTemperatur (rtOutsideTemp);
       master->setRain (rain);
       master->setHumidity (rtOutsideHum);
