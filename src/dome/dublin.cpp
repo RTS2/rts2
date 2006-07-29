@@ -40,7 +40,6 @@ class Rts2DevDomeDublin:public Rts2DevDome
 {
 private:
   int dome_state;
-  int ignoreMeteo;
   time_t timeOpenClose;
   bool domeFailed;
   char *smsExec;
@@ -83,10 +82,8 @@ Rts2DevDome (in_argc, in_argv)
 {
   domeModel = "DUBLIN_DOME";
   smsExec = NULL;
-  addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
   addOption ('S', "execute_sms", 1,
 	     "execute this commmand to send sms about roof");
-  ignoreMeteo = 0;
 
   weatherConn = NULL;
 
@@ -131,9 +128,6 @@ Rts2DevDomeDublin::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'I':
-      ignoreMeteo = 1;
-      break;
     case 'S':
       smsExec = optarg;
       break;
@@ -179,9 +173,6 @@ Rts2DevDomeDublin::init ()
 // SWITCH ON INTERFACE
   outb (1, BASE + 1);
 
-  if (ignoreMeteo)
-    return 0;
-
   for (i = 0; i < MAX_CONN; i++)
     {
       if (!connections[i])
@@ -216,7 +207,7 @@ Rts2DevDomeDublin::idle ()
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open
-	  sendMaster ("on");
+	  domeWeatherGood ();
 	}
     }
   else
@@ -224,12 +215,11 @@ Rts2DevDomeDublin::idle ()
       int ret;
       // close dome - don't thrust centrald to be running and closing
       // it for us
-      ret = closeDome ();
+      ret = closeDomeWeather ();
       if (ret == -1)
 	{
 	  setTimeout (10 * USEC_SEC);
 	}
-      setMasterStandby ();
     }
   return Rts2DevDome::idle ();
 }
@@ -252,19 +242,6 @@ Rts2DevDomeDublin::info ()
   // switches are both off either when we move enclosure or when dome failed
   if (domeFailed || timeOpenClose > 0)
     sw_state = 0;
-  else
-    switch (dome_state)
-      {
-      case WATCHER_DOME_OPEN:
-	sw_state = 1;
-	break;
-      case WATCHER_DOME_CLOSED:
-	sw_state = 4;
-	break;
-      default:
-	sw_state = 0;
-	break;
-      }
 
   if (weatherConn)
     {
@@ -338,6 +315,7 @@ Rts2DevDomeDublin::isOpened ()
     {
       syslog (LOG_ERR, "Rts2DevDomeDublin::isOpened timeout");
       domeFailed = true;
+      sw_state = 0;
       executeSms (TYPE_STUCK);
       // stop motor
       closeDomeReal ();
@@ -352,7 +330,10 @@ Rts2DevDomeDublin::endOpen ()
   timeOpenClose = 0;
   dome_state = WATCHER_DOME_OPEN;
   if (!domeFailed)
-    executeSms (TYPE_OPENED);
+    {
+      sw_state = 1;
+      executeSms (TYPE_OPENED);
+    }
   return Rts2DevDome::endOpen ();
 }
 
@@ -392,6 +373,7 @@ Rts2DevDomeDublin::isClosed ()
     {
       syslog (LOG_ERR, "Rts2DevDomeDublin::isClosed dome timeout");
       domeFailed = true;
+      sw_state = 0;
       executeSms (TYPE_STUCK);
       openDomeReal ();
       return -2;
@@ -405,7 +387,10 @@ Rts2DevDomeDublin::endClose ()
   timeOpenClose = 0;
   dome_state = WATCHER_DOME_CLOSED;
   if (!domeFailed)
-    executeSms (TYPE_CLOSED);
+    {
+      sw_state = 4;
+      executeSms (TYPE_CLOSED);
+    }
   return Rts2DevDome::endClose ();
 }
 
@@ -421,8 +406,8 @@ Rts2DevDomeDublin::sendDublinMail (char *subject)
   char *text;
   int ret;
   asprintf (&text, "%s.\n"
-	    "CLOSE SWITCH:%s"
-	    "OPEN SWITCH:%s"
+	    "CLOSE SWITCH:%s\n"
+	    "OPEN SWITCH:%s\n"
 	    "Weather::isGoodWeather %i\n"
 	    "raining: %i\n"
 	    "windspeed: %.2f km/h\n",
