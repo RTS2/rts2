@@ -55,7 +55,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
   addOption ('m', "model_file", 1,
 	     "name of file holding RTS2-calculated model parameters (for flip = 1, or for both when o is not specified)");
-  addOption ('o', "model_file_flip 0", 1,
+  addOption ('o', "model_file_flip_0", 1,
 	     "name of file holding RTS2-calculated model parameters for flip = 0");
 
   addOption ('S', "standby-park", 0, "park when switched to standby");
