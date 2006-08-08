@@ -59,6 +59,7 @@ Rts2TestSoap::run ()
   struct rts2__getEquResponse res;
   struct rts2__getTelescopeResponse resTel;
   struct rts2__getExecResponse exec;
+  struct rts2__getTargetResponse target;
   int ret;
 
   soap_init (&soap);
@@ -96,6 +97,14 @@ Rts2TestSoap::run ()
     << "Next" << std::endl
     << exec.next << std::endl
     << "Priority" << std::endl << exec.priority << std::endl;
+
+  ret = soap_call_rts2__getTarget (&soap, server, "", 1, target);
+  if (ret != SOAP_OK)
+    {
+      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+      return ret;
+    }
+  std::cout << "Target 1 is " << std::endl << target.target << std::endl;
 
   return ret;
 }

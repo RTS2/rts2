@@ -9,6 +9,12 @@
 #define EVENT_SOAP_EXEC_GETST  RTS2_LOCAL_EVENT+1002
 #define EVENT_SOAP_DOME_GETST  RTS2_LOCAL_EVENT+1003
 
+typedef struct soapExecGetst
+{
+  rts2__getExecResponse *res;
+  soap *in_soap;
+};
+
 class Rts2DevClientTelescopeSoap:public Rts2DevClientTelescope
 {
 public:
@@ -18,10 +24,8 @@ public:
 
 class Rts2DevClientExecutorSoap:public Rts2DevClientExecutor
 {
-private:
-  void fillTarget (int in_tar_id, rts2__target * out_target);
 public:
-    Rts2DevClientExecutorSoap (Rts2Conn * in_connection);
+  Rts2DevClientExecutorSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
 
@@ -31,5 +35,8 @@ public:
   Rts2DevClientDomeSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
+
+void fillTarget (int in_tar_id, struct soap *in_soap,
+		 rts2__target * out_target);
 
 #endif /*!__RTS2_SOAPCLI__ */

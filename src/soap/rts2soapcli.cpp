@@ -45,60 +45,18 @@ Rts2DevClientExecutorSoap::Rts2DevClientExecutorSoap (Rts2Conn * in_connection):
 }
 
 void
-Rts2DevClientExecutorSoap::fillTarget (int in_tar_id,
-				       rts2__target * out_target)
-{
-  Target *an_target;
-  struct ln_equ_posn pos;
-  const char *targetName;
-
-  an_target = createTarget (in_tar_id);
-  if (!an_target)
-    {
-      out_target->id = 0;
-      out_target->type = NULL;
-      out_target->name = NULL;
-      out_target->radec = NULL;
-      return;
-    }
-
-  out_target->id = an_target->getTargetID ();
-  targetName = an_target->getTargetName ();
-  out_target->name = (char *) malloc (strlen (targetName) + 1);
-  strcpy (out_target->name, targetName);
-  switch (an_target->getTargetType ())
-    {
-    case TYPE_OPORTUNITY:
-      out_target->type = "oportunity";
-      break;
-    case TYPE_GRB:
-      out_target->type = "grb";
-      break;
-    case TYPE_GRB_TEST:
-      out_target->type = "grb_test";
-      break;
-    default:
-    case TYPE_UNKNOW:
-      out_target->type = "unknow";
-      break;
-    }
-  an_target->getPosition (&pos);
-  out_target->radec = new rts2__radec ();
-  out_target->radec->ra = pos.ra;
-  out_target->radec->dec = pos.dec;
-}
-
-void
 Rts2DevClientExecutorSoap::postEvent (Rts2Event * event)
 {
+  struct soapExecGetst *gets;
   struct rts2__getExecResponse *res;
   switch (event->getType ())
     {
     case EVENT_SOAP_EXEC_GETST:
-      res = (rts2__getExecResponse *) event->getArg ();
-      fillTarget (getValueInteger ("current"), res->current);
-      fillTarget (getValueInteger ("next"), res->next);
-      fillTarget (getValueInteger ("priority"), res->priority);
+      gets = (soapExecGetst *) event->getArg ();
+      res = gets->res;
+      fillTarget (getValueInteger ("current"), gets->in_soap, res->current);
+      fillTarget (getValueInteger ("next"), gets->in_soap, res->next);
+      fillTarget (getValueInteger ("priority"), gets->in_soap, res->priority);
       break;
     }
 
@@ -123,4 +81,44 @@ Rts2DevClientDomeSoap::postEvent (Rts2Event * event)
       res->wind = getValueDouble ("windspeed");
       break;
     }
+}
+
+void
+fillTarget (int in_tar_id, struct soap *in_soap, rts2__target * out_target)
+{
+  Target *an_target;
+  struct ln_equ_posn pos;
+
+  an_target = createTarget (in_tar_id);
+  if (!an_target)
+    {
+      out_target->id = 0;
+      out_target->type = "";
+      out_target->name = "";
+      out_target->radec = NULL;
+      return;
+    }
+
+  out_target->id = an_target->getTargetID ();
+  out_target->name = std::string (an_target->getTargetName ());
+  switch (an_target->getTargetType ())
+    {
+    case TYPE_OPORTUNITY:
+      out_target->type = "oportunity";
+      break;
+    case TYPE_GRB:
+      out_target->type = "grb";
+      break;
+    case TYPE_GRB_TEST:
+      out_target->type = "grb_test";
+      break;
+    default:
+    case TYPE_UNKNOW:
+      out_target->type = "unknow";
+      break;
+    }
+  an_target->getPosition (&pos);
+  out_target->radec = soap_new_rts2__radec (in_soap, 1);
+  out_target->radec->ra = pos.ra;
+  out_target->radec->dec = pos.dec;
 }

@@ -89,7 +89,7 @@
 </message>
 
 <message name="getTargetRequest">
-  <part name="id" type="xsd:number"/>
+  <part name="id" type="xsd:positiveInteger"/>
 </message>
 
 <message name="getTargetResponse">
@@ -151,6 +151,15 @@
 <binding name="rts2" type="tns:exec">
   <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
   <operation name="getExec">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+  <operation name="getTarget">
     <SOAP:operation style="rpc" soapAction=""/>
     <input>
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>

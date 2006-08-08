@@ -23,6 +23,7 @@ rts2 = "urn:rts2"
 
 xsd__integer = | int
 xsd__positiveInteger = | unsigned int
+xsd__string = | std::string
 # You can extend structs and classes with member data and functions.
 # For example, adding a constructor to ns__myClass: ns__myClass = $ ns__myClass();
 # The general form is # class_name = $ member; 
