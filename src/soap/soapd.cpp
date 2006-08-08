@@ -169,35 +169,38 @@ Rts2Soapd::sendInfo (Rts2Conn * conn)
 Rts2Soapd *soapd;
 
 int
-ns1__getEqu (struct soap *in_soap, ns1__getEquResponse & res)
+rts2__getEqu (struct soap *in_soap, rts2__getEquResponse & res)
 {
-  res.radec = soap_new_ns1__radec (in_soap, 1);
+  res.radec = soap_new_rts2__radec (in_soap, 1);
   soapd->postEvent (new Rts2Event (EVENT_SOAP_TEL_GETEQU, (void *) &res));
   return SOAP_OK;
 }
 
 int
-ns1__getTelescope (struct soap *in_soap, char *name,
-		   ns1__getTelescopeResponse & res)
+rts2__getTelescope (struct soap *in_soap, char *name,
+		    rts2__getTelescopeResponse & res)
 {
-  res.tel = soap_new_ns1__telescope (in_soap, 1);
-  res.tel->target = soap_new_ns1__radec (in_soap, 1);
-  res.tel->mount = soap_new_ns1__radec (in_soap, 1);
-  res.tel->astrometry = soap_new_ns1__radec (in_soap, 1);
-  res.tel->err = soap_new_ns1__radec (in_soap, 1);
+  res.tel = soap_new_rts2__telescope (in_soap, 1);
+  res.tel->target = soap_new_rts2__radec (in_soap, 1);
+  res.tel->mount = soap_new_rts2__radec (in_soap, 1);
+  res.tel->astrometry = soap_new_rts2__radec (in_soap, 1);
+  res.tel->err = soap_new_rts2__radec (in_soap, 1);
   soapd->postEvent (new Rts2Event (EVENT_SOAP_TEL_GET, (void *) &res));
   return SOAP_OK;
 }
 
 int
-ns1__getExec (struct soap *in_soap, ns1__getExecResponse & res)
+rts2__getExec (struct soap *in_soap, rts2__getExecResponse & res)
 {
+  res.current = soap_new_rts2__target (in_soap, 1);
+  res.next = soap_new_rts2__target (in_soap, 1);
+  res.priority = soap_new_rts2__target (in_soap, 1);
   soapd->postEvent (new Rts2Event (EVENT_SOAP_EXEC_GETST, (void *) &res));
   return SOAP_OK;
 }
 
 int
-ns1__getDome (struct soap *in_soap, ns1__getDomeResponse & res)
+rts2__getDome (struct soap *in_soap, rts2__getDomeResponse & res)
 {
   soapd->postEvent (new Rts2Event (EVENT_SOAP_DOME_GETST, (void *) &res));
   return SOAP_OK;

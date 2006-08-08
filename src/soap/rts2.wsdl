@@ -39,6 +39,14 @@
       <element name="err" type="ns:radec" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
+  <complexType name="target">
+    <sequence>
+      <element name="id" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
+      <element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+      <element name="type" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+      <element name="radec" type="ns:radec" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
  </schema>
 
 </types>
@@ -75,8 +83,17 @@
 </message>
 
 <message name="getExecResponse">
-  <part name="current" type="xsd:int"/>
-  <part name="next" type="xsd:int"/>
+  <part name="current" type="ns:target"/>
+  <part name="next" type="ns:target"/>
+  <part name="priority" type="ns:target"/>
+</message>
+
+<message name="getTargetRequest">
+  <part name="id" type="xsd:number"/>
+</message>
+
+<message name="getTargetResponse">
+  <part name="target" type="ns:target"/>
 </message>
 
 <portType name="exec">
@@ -84,6 +101,11 @@
     <documentation>Get current and next target.</documentation>
     <input message="tns:getExecRequest"/>
     <output message="tns:getExecResponse"/>
+  </operation>
+  <operation name="getTarget">
+    <documentation>Get target information.</documentation>
+    <input message="tns:getTargetRequest"/>
+    <output message="tns:getTargetResponse"/>
   </operation>
 </portType>
 

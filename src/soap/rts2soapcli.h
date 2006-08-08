@@ -18,8 +18,10 @@ public:
 
 class Rts2DevClientExecutorSoap:public Rts2DevClientExecutor
 {
+private:
+  void fillTarget (int in_tar_id, rts2__target * out_target);
 public:
-  Rts2DevClientExecutorSoap (Rts2Conn * in_connection);
+    Rts2DevClientExecutorSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
 

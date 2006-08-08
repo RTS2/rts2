@@ -21,7 +21,7 @@ $(SOAP_CPP_SRC):$(SOAPHEADER)
 
 rts2_soapd_SOURCES = $(SOAP_CPP_CLIENT) $(SOAP_CPP_SERVER) soapd.cpp rts2soapcli.cpp
 rts2_soapd_CXXFLAGS = @LIB_GSOAP_CFLAGS@ @LIBPG_CFLAGS@
-rts2_soapd_LDFLAGS = @LIB_GSOAP@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2image.a ../utils/librts2block.a
+rts2_soapd_LDFLAGS = @LIB_GSOAP@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
 
 rts2_testsoap_SOURCES = $(SOAP_CPP_CLIENT) testsoap.cpp
 rts2_testsoap_CXXFLAGS = @LIB_GSOAP_CFLAGS@

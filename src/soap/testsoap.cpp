@@ -36,17 +36,34 @@ Rts2TestSoap::processOption (int in_opt)
   return 0;
 }
 
+std::ostream & operator << (std::ostream & _os, rts2__target * in_target)
+{
+  if (in_target->radec)
+    {
+      _os << in_target->id << std::endl
+	<< in_target->name << std::endl
+	<< in_target->type << std::endl
+	<< in_target->radec->ra << " " << in_target->radec->dec << std::endl;
+    }
+  else
+    {
+      _os << "target not selected" << std::endl;
+    }
+  return _os;
+}
+
 int
 Rts2TestSoap::run ()
 {
   struct soap soap;
-  struct ns1__getEquResponse res;
-  struct ns1__getTelescopeResponse resTel;
+  struct rts2__getEquResponse res;
+  struct rts2__getTelescopeResponse resTel;
+  struct rts2__getExecResponse exec;
   int ret;
 
   soap_init (&soap);
 
-  ret = soap_call_ns1__getEqu (&soap, server, "", res);
+  ret = soap_call_rts2__getEqu (&soap, server, "", res);
   if (ret != SOAP_OK)
     {
       std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -54,7 +71,7 @@ Rts2TestSoap::run ()
     }
   std::cout << res.radec->ra << " " << res.radec->dec << std::endl;
 
-  ret = soap_call_ns1__getTelescope (&soap, server, "", "T0", resTel);
+  ret = soap_call_rts2__getTelescope (&soap, server, "", "T0", resTel);
   if (ret != SOAP_OK)
     {
       std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -66,6 +83,19 @@ Rts2TestSoap::run ()
     << resTel.tel->astrometry->ra << " " << resTel.tel->astrometry->
     dec << std::endl << resTel.tel->err->ra << " " << resTel.tel->err->
     dec << std::endl;
+
+  ret = soap_call_rts2__getExec (&soap, server, "", exec);
+  if (ret != SOAP_OK)
+    {
+      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+      return ret;
+    }
+  std::cout
+    << "Current" << std::endl
+    << exec.current << std::endl
+    << "Next" << std::endl
+    << exec.next << std::endl
+    << "Priority" << std::endl << exec.priority << std::endl;
 
   return ret;
 }
