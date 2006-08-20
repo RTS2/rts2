@@ -348,6 +348,8 @@ CameraChip::sendFirstLine ()
   focusingHeader.y = chipUsedReadout->y;
   focusingHeader.filter = camera->getLastFilterNum ();
   focusingHeader.shutter = shutter_state;
+  focusingHeader.subexp = subExposure;
+  focusingHeader.nacc = nAcc;
   if (readoutConn)
     {
       int ret;
@@ -389,6 +391,33 @@ Rts2DevCamera::setGain (double in_gain)
   return -1;
 }
 
+int
+Rts2DevCamera::setSubExposure (double in_subexposure)
+{
+  subExposure = in_subexposure;
+  return 0;
+}
+
+int
+Rts2DevCamera::setSubExposure (Rts2Conn * conn, double in_subexposure)
+{
+  int ret;
+  if (in_subexposure < 0)
+    in_subexposure = nan ("f");
+  if (!isIdle ())
+    {
+      nextSubExposure = in_subexposure;
+      return 0;
+    }
+  ret = setSubExposure (in_subexposure);
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "cannot set subexposure");
+      return -1;
+    }
+  return ret;
+}
+
 Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
@@ -411,6 +440,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 
   exposureFilter = -1;
 
+  nextSubExposure = nan ("f");
+  defaultSubExposure = nan ("f");
+  subExposure = nan ("f");
+
   nightCoolTemp = nan ("f");
   focuserDevice = NULL;
   wheelDevice = NULL;
@@ -432,6 +465,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	     "name of device which is used as filter wheel");
   addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
   addOption ('E', "focexp", 1, "starting focusing exposure time");
+  addOption ('S', "subexposure", 1, "default subexposure");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -485,6 +519,8 @@ Rts2DevCamera::cancelPriorityOperations ()
   if (!isnan (defaultGain))
     setGain (defaultGain);
   nextGain = nan ("f");
+  setSubExposure (defaultSubExposure);
+  nextSubExposure = nan ("f");
   Rts2Device::cancelPriorityOperations ();
 }
 
@@ -523,6 +559,9 @@ Rts2DevCamera::processOption (int in_opt)
       break;
     case 'E':
       defFocusExposure = atof (optarg);
+      break;
+    case 'S':
+      defaultSubExposure = atof (optarg);
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -701,6 +740,7 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
   conn->sendValue ("exposure", lastExp);
   conn->sendValue ("gain", gain);
   conn->sendValue ("rnoise", rnoise);
+  conn->sendValue ("subexposure", subExposure);
   return 0;
 }
 
@@ -1312,6 +1352,13 @@ Rts2DevConnCamera::commandAuthorized ()
       if (paramNextDouble (&gain_set) || !paramEnd ())
 	return -2;
       return master->setGain (this, gain_set);
+    }
+  else if (isCommand ("subexposure"))
+    {
+      double subexposure;
+      if (paramNextDouble (&subexposure) || !paramEnd ())
+	return -2;
+      return master->setSubExposure (this, subexposure);
     }
   return Rts2DevConn::commandAuthorized ();
 }

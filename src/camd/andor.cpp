@@ -75,11 +75,46 @@ CameraAndorChip::startExposure (int light, float exptime)
       return -1;
     }
 
+  subExposure = camera->getSubExposure ();
+  if (!isnan (subExposure))
+    {
+      nAcc = (int) (exptime / subExposure);
+      float acq_exp, acq_acc, acq_kinetic;
+      if (nAcc == 0)
+	{
+	  nAcc = 1;
+	  subExposure = exptime;
+	}
+      ret = SetAcquisitionMode (2);
+      if (ret != DRV_SUCCESS)
+	return -1;
+      ret = SetExposureTime (subExposure);
+      if (ret != DRV_SUCCESS)
+	return -1;
+      ret = SetNumberAccumulations (nAcc);
+      if (ret != DRV_SUCCESS)
+	return -1;
+      ret = GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic);
+      if (ret != DRV_SUCCESS)
+	return -1;
+      exptime = nAcc * acq_exp;
+      subExposure = acq_exp;
+    }
+  else
+    {
+      // single scan
+      ret = SetAcquisitionMode (1);
+      if (ret != DRV_SUCCESS)
+	return -1;
+      ret = SetExposureTime (exptime);
+      if (ret != DRV_SUCCESS)
+	return -1;
+    }
+
   chipUsedReadout = new ChipSubset (chipReadout);
   usedBinningVertical = binningVertical;
   usedBinningHorizontal = binningHorizontal;
 
-  SetExposureTime (exptime);
   SetShutter (1, light == 1 ? 0 : 2, 50, 50);
   ret = StartAcquisition ();
   if (ret != DRV_SUCCESS)
@@ -156,6 +191,7 @@ private:
   bool printSpeedInfo;
   // number of AD channels
   int chanNum;
+  bool useFT;
 
   int printChannelInfo (int channel);
 
@@ -195,12 +231,15 @@ Rts2DevCamera (in_argc, in_argv)
   printSpeedInfo = false;
   chanNum = 0;
 
+  useFT = true;
+
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
   addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
   addOption ('V', "vertical_speed", 1, "set vertical readout speed");
   addOption ('A', "vs_amplitude", 1, "VS amplitude (0-4)");
   addOption ('C', "ad_channel", 1, "set AD channel which will be used");
+  addOption ('N', "noft", 0, "do not use frame transfer mode");
   addOption ('S', "speed_info", 0,
 	     "print speed info - information about speed available");
 }
@@ -263,6 +302,9 @@ Rts2DevCameraAndor::processOption (int in_opt)
 	}
     case 'S':
       printSpeedInfo = true;
+      break;
+    case 'N':
+      useFT = false;
       break;
     default:
       return Rts2DevCamera::processOption (in_opt);
@@ -343,8 +385,18 @@ Rts2DevCameraAndor::init ()
   //Set Read Mode to --Image--
   SetReadMode (4);
 
-  //Set Acquisition mode to --Single scan--
-  SetAcquisitionMode (1);
+  // use frame transfer mode
+  if (useFT)
+    {
+      ret = SetFrameTransferMode (1);
+      if (ret != DRV_SUCCESS)
+	{
+	  syslog (LOG_ERR,
+		  "Rts2DevCameraAndor::init cannot set frame transfer mode: %i",
+		  ret);
+	  return -1;
+	}
+    }
 
   //Get Detector dimensions
   GetDetector (&width, &height);

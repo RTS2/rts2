@@ -94,6 +94,8 @@ protected:
   int usedBinningVertical;
   int usedBinningHorizontal;
   float gain;
+  double subExposure;
+  int nAcc;
   struct imghdr focusingHeader;
 
   int sendReadoutData (char *data, size_t data_size);
@@ -212,6 +214,10 @@ private:
   // when we call that function, we must be sure that either filter or wheelDevice != NULL
   int camFilter (int new_filter);
 
+  double nextSubExposure;
+  double defaultSubExposure;
+  double subExposure;
+
 protected:
   int willConnect (Rts2Address * in_addr);
   char *device_file;
@@ -243,6 +249,7 @@ protected:
   double rnoise;
 
   virtual int setGain (double in_gain);
+  virtual int setSubExposure (double in_subexposure);
 public:
     Rts2DevCamera (int argc, char **argv);
     virtual ~ Rts2DevCamera (void);
@@ -349,6 +356,12 @@ public:
   int endFocusing ();
 
   int setGain (Rts2Conn * conn, double in_gain);
+  int setSubExposure (Rts2Conn * conn, double in_subexposure);
+
+  double getSubExposure (void)
+  {
+    return subExposure;
+  }
 
   bool isIdle ();
   bool isFocusing ();
