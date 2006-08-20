@@ -116,7 +116,7 @@ Rts2Conn::idle ()
       if (now > lastData + getConnTimeout ()
 	  && now > lastSendReady + getConnTimeout () / 4)
 	{
-	  ret = send ("T ready");
+	  ret = send (PROTO_TECHNICAL " ready");
 #ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Send T ready ret: %i name: '%s' type:%i", ret,
 		  getName (), type);
@@ -233,22 +233,22 @@ Rts2Conn::processLine ()
       command_buf_top++;
     }
   // messages..
-  if (isCommand ("M"))
+  if (isCommand (PROTO_MESSAGE))
     {
       ret = message ();
     }
   // informations..
-  else if (isCommand ("I"))
+  else if (isCommand (PROTO_INFO))
     {
       ret = informations ();
     }
   // status
-  else if (isCommand ("S"))
+  else if (isCommand (PROTO_STATUS))
     {
       ret = status ();
     }
   // technical - to keep connection working
-  else if (isCommand ("T"))
+  else if (isCommand (PROTO_TECHNICAL))
     {
       char *msg;
       if (paramNextString (&msg) || !paramEnd ())
@@ -258,7 +258,7 @@ Rts2Conn::processLine ()
 #ifdef DEBUG_EXTRA
 	  syslog (LOG_DEBUG, "Send T OK");
 #endif
-	  send ("T OK");
+	  send (PROTO_TECHNICAL " OK");
 	  return -1;
 	}
       if (!strcmp (msg, "OK"))
@@ -490,7 +490,7 @@ Rts2Conn::command ()
 		       p_login, p_status_txt);
       return -1;
     }
-  if (isCommand ("D"))
+  if (isCommand (PROTO_DATA))
     {
       char *p_command;
       if (paramNextString (&p_command))
@@ -520,9 +520,9 @@ Rts2Conn::command ()
 	return -1;
     }
   // don't respond to values with error - otherDevice does respond to
-  // values, i there is no other device, we have to take resposibility
+  // values, if there is no other device, we have to take resposibility
   // as it can fails (V without value), not with else
-  if (isCommand ("V"))
+  if (isCommand (PROTO_VALUE))
     return -1;
   syslog (LOG_DEBUG,
 	  "Rts2Conn::command unknow command: getCommand %s state: %i type: %i name: %s",
@@ -1158,7 +1158,7 @@ Rts2Block::sendMessage (char *message, int val1, int val2)
   char *msg;
   int ret;
 
-  asprintf (&msg, "M %s %i %i", message, val1, val2);
+  asprintf (&msg, PROTO_MESSAGE " %s %i %i", message, val1, val2);
   ret = sendMessage (msg);
   free (msg);
   return ret;
@@ -1170,7 +1170,7 @@ Rts2Block::sendStatusMessage (char *state_name, int state)
   char *msg;
   int ret;
 
-  asprintf (&msg, "S %s %i", state_name, state);
+  asprintf (&msg, PROTO_STATUS " %s %i", state_name, state);
   ret = sendMessage (msg);
   free (msg);
   return ret;

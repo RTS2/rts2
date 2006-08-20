@@ -21,9 +21,14 @@
 #include "rts2app.h"
 #include "rts2serverstate.h"
 
-#define MSG_COMMAND             0x01
-#define MSG_REPLY
-#define MSG_DATA                0x04
+// protocol specific commands
+#define PROTO_VALUE		"V"
+#define PROTO_DATA		"D"
+#define PROTO_AUTH		"A"
+#define PROTO_MESSAGE		"M"
+#define PROTO_INFO		"I"
+#define PROTO_STATUS		"S"
+#define PROTO_TECHNICAL		"T"
 
 #define MAX_CONN		20
 #define MAX_DATA		200
