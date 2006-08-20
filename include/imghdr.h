@@ -38,6 +38,8 @@ struct imghdr
   int filter;			//! Camera filter
   int shutter;
   int x, y;			//! image beginning (detector coordinates)
+  double subexp;		//! image subexposure
+  int nacc;			//! number of accumulations used to take image
 };
 
 #endif // __RTS_IMGHDR__
