@@ -195,7 +195,6 @@ rts2__getExec (struct soap *in_soap, rts2__getExecResponse & res)
   struct soapExecGetst gets;
   res.current = soap_new_rts2__target (in_soap, 1);
   res.next = soap_new_rts2__target (in_soap, 1);
-  res.priority = soap_new_rts2__target (in_soap, 1);
   gets.res = &res;
   gets.in_soap = in_soap;
   soapd->postEvent (new Rts2Event (EVENT_SOAP_EXEC_GETST, (void *) &gets));
@@ -210,6 +209,8 @@ rts2__getTarget (struct soap *in_soap, unsigned int id,
   fillTarget (id, in_soap, res.target);
   return SOAP_OK;
 }
+
+
 
 int
 rts2__getDome (struct soap *in_soap, rts2__getDomeResponse & res)

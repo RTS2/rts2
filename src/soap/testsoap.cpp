@@ -94,9 +94,8 @@ Rts2TestSoap::run ()
   std::cout
     << "Current" << std::endl
     << exec.current << std::endl
-    << "Next" << std::endl
-    << exec.next << std::endl
-    << "Priority" << std::endl << exec.priority << std::endl;
+    << "Next" << std::endl << exec.next << std::endl;
+  // << "Priority" << std::endl << exec.priority << std::endl;
 
   ret = soap_call_rts2__getTarget (&soap, server, "", 1, target);
   if (ret != SOAP_OK)

@@ -85,7 +85,7 @@
 <message name="getExecResponse">
   <part name="current" type="ns:target"/>
   <part name="next" type="ns:target"/>
-  <part name="priority" type="ns:target"/>
+  <part name="obsid" type="xsd:positiveInteger"/>
 </message>
 
 <message name="getTargetRequest">

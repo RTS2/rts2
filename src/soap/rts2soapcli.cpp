@@ -54,9 +54,9 @@ Rts2DevClientExecutorSoap::postEvent (Rts2Event * event)
     case EVENT_SOAP_EXEC_GETST:
       gets = (soapExecGetst *) event->getArg ();
       res = gets->res;
+      res->obsid = getValueInteger ("obsid");
       fillTarget (getValueInteger ("current"), gets->in_soap, res->current);
       fillTarget (getValueInteger ("next"), gets->in_soap, res->next);
-      fillTarget (getValueInteger ("priority"), gets->in_soap, res->priority);
       break;
     }
 
@@ -114,7 +114,7 @@ fillTarget (int in_tar_id, struct soap *in_soap, rts2__target * out_target)
       break;
     default:
     case TYPE_UNKNOW:
-      out_target->type = "unknow";
+      out_target->type = "unknown";
       break;
     }
   an_target->getPosition (&pos);
