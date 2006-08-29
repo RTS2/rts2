@@ -23,8 +23,10 @@ Rts2SimbadTarget::load ()
   char buf[LINEBUF];
 
   SesameSoapBinding *bind = new SesameSoapBinding ();
-  ns1__sesameResponse r;
-  bind->ns1__sesame (string (getTargetName ()), string ("ui"), r);
+  sesame__sesameResponse sesame_r;
+
+  bind->sesame__sesame (std::string (getTargetName ()), std::string ("ui"),
+			sesame_r);
   if (bind->soap->error != SOAP_OK)
     {
       cerr << "Cannot get coordinates for " << getTargetName () << endl;
@@ -35,8 +37,8 @@ Rts2SimbadTarget::load ()
   istringstream *iss = new istringstream ();
   cout << "Simbad response for '" << getTargetName () << "': " << endl
     << "***************************" << endl
-    << r._return_ << endl << "***************************" << endl;
-  iss->str (r._return_);
+    << sesame_r._return_ << endl << "***************************" << endl;
+  iss->str (sesame_r._return_);
   string str_type;
   while (*iss >> str_type)
     {
