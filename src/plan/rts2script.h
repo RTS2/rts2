@@ -130,7 +130,9 @@ Rts2Script::nextCommand (T & device,
       currScriptElement = *el_iter;
       ret = currScriptElement->nextCommand (&device, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
-	break;
+	{
+	  break;
+	}
       // move to next command
       el_iter++;
     }

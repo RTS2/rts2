@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <limits.h>
 #include <iostream>
 
@@ -221,6 +217,7 @@ void
 Rts2DevClientCameraExec::settingsOK ()
 {
   nextCommand ();
+  Rts2DevClientCameraImage::settingsOK ();
 }
 
 void

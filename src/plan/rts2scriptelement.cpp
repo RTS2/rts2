@@ -775,3 +775,19 @@ Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
     }
   return 0;
 }
+
+Rts2ScriptElementGain::Rts2ScriptElementGain (Rts2Script * in_script, double in_gain):Rts2ScriptElement
+  (in_script)
+{
+  gain = in_gain;
+}
+
+int
+Rts2ScriptElementGain::nextCommand (Rts2DevClientCamera * camera,
+				    Rts2Command ** new_command,
+				    char new_device[DEVICE_NAME_SIZE])
+{
+  *new_command = new Rts2CommandGain (camera, gain);
+  getDevice (new_device);
+  return 0;
+}

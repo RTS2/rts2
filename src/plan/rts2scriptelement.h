@@ -385,4 +385,18 @@ public:
   }
 };
 
+/**
+ * Set gain.
+ */
+class Rts2ScriptElementGain:public Rts2ScriptElement
+{
+private:
+  double gain;
+public:
+    Rts2ScriptElementGain (Rts2Script * in_script, double in_gain);
+  virtual int nextCommand (Rts2DevClientCamera * camera,
+			   Rts2Command ** new_command,
+			   char new_device[DEVICE_NAME_SIZE]);
+};
+
 #endif /* !__RTS2_SCRIPTELEMENT__ */

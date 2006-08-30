@@ -409,6 +409,13 @@ Rts2Script::parseBuf (Target * target, struct ln_equ_posn *target_pos)
 	return NULL;
       return new Rts2ScriptElementGuiding (this, init_exposure, end_signal);
     }
+  else if (!strcmp (commandStart, COMMAND_GAIN))
+    {
+      double in_gain;
+      if (getNextParamDouble (&in_gain))
+	return NULL;
+      return new Rts2ScriptElementGain (this, in_gain);
+    }
   return NULL;
 }
 
