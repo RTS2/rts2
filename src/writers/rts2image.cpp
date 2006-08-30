@@ -53,6 +53,8 @@ Rts2Image::initData ()
   isAcquiring = 0;
 
   config_rotang = nan ("f");
+
+  shutter = SHUT_UNKNOW;
 }
 
 Rts2Image::Rts2Image ()
@@ -113,6 +115,8 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   sexResults = in_image->sexResults;
   in_image->sexResults = NULL;
   sexResultNum = in_image->sexResultNum;
+
+  shutter = in_image->getShutter ();
 }
 
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
@@ -766,6 +770,9 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
   filter = im_h->filter;
   setValue ("SHUTTER", im_h->shutter,
 	    "shutter state (1 - open, 2 - closed, 3 - synchro)");
+  setValue ("SUBEXP", im_h->subexp, "subexposure length");
+  setValue ("NACC", im_h->nacc, "number of accumulations");
+  // dark images don't need to wait till imgprocess will pick them up for reprocessing
   switch (im_h->shutter)
     {
     case 1:
