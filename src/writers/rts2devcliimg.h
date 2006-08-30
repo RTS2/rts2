@@ -56,6 +56,7 @@ public:
   virtual void postEvent (Rts2Event * event);
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual Rts2Image *createImage (const struct timeval *expStart);
+  virtual void beforeProcess (Rts2Image * image);
   virtual void processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
 

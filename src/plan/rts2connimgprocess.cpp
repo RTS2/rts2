@@ -49,7 +49,7 @@ Rts2ConnImgProcess::newProcess ()
 #endif
 
   image = new Rts2Image (imgPath);
-  if (image->getType () == IMGTYPE_DARK)
+  if (image->getShutter () == SHUT_CLOSED)
     {
       astrometryStat = DARK;
       delete image;
@@ -89,7 +89,7 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
   int ret;
   const char *telescopeName;
   int corr_mark;
-  Rts2ImageDb *image;
+  Rts2ImageSkyDb *image;
 
   if (last_data_size < 0 && errno == EAGAIN)
     {
@@ -97,7 +97,7 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
       return 1;
     }
 
-  image = new Rts2ImageDb (imgPath);
+  image = new Rts2ImageSkyDb (imgPath);
   switch (astrometryStat)
     {
     case NOT_ASTROMETRY:

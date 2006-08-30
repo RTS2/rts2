@@ -61,6 +61,60 @@ Rts2Image::Rts2Image ()
   flags = IMAGE_KEEP_DATA;
 }
 
+Rts2Image::Rts2Image (Rts2Image * in_image)
+{
+  ffile = in_image->ffile;
+  in_image->ffile = NULL;
+  fits_status = in_image->fits_status;
+  flags = in_image->flags;
+  filter = in_image->filter;
+  exposureStart.tv_sec = in_image->exposureStart.tv_sec;
+  exposureStart.tv_usec = in_image->exposureStart.tv_usec;
+  exposureLength = in_image->exposureLength;
+  imageData = in_image->imageData;
+  in_image->imageData = NULL;
+  focPos = in_image->focPos;
+  naxis[0] = in_image->naxis[0];
+  naxis[1] = in_image->naxis[1];
+  signalNoise = in_image->signalNoise;
+  getFailed = in_image->getFailed;
+  average = in_image->average;
+  min = in_image->min;
+  max = in_image->max;
+  mean = in_image->mean;
+  histogram = in_image->histogram;
+  in_image->histogram = NULL;
+  isAcquiring = in_image->isAcquiring;
+  config_rotang = in_image->config_rotang;
+
+  epochId = in_image->epochId;
+  targetId = in_image->targetId;
+  targetIdSel = in_image->targetIdSel;
+  targetType = in_image->targetType;
+  targetName = in_image->targetName;
+  in_image->targetName = NULL;
+  obsId = in_image->obsId;
+  imgId = in_image->imgId;
+  cameraName = in_image->cameraName;
+  in_image->cameraName = NULL;
+  mountName = in_image->mountName;
+  in_image->mountName = NULL;
+  focName = in_image->focName;
+  in_image->focName = NULL;
+  imageName = in_image->imageName;
+  in_image->imageName = NULL;
+
+  pos_astr.ra = in_image->pos_astr.ra;
+  pos_astr.dec = in_image->pos_astr.dec;
+  ra_err = in_image->ra_err;
+  dec_err = in_image->dec_err;
+  img_err = in_image->img_err;
+
+  sexResults = in_image->sexResults;
+  in_image->sexResults = NULL;
+  sexResultNum = in_image->sexResultNum;
+}
+
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
 {
   initData ();
@@ -199,7 +253,6 @@ Rts2Image::Rts2Image (const char *in_filename)
   // astrometry get !!
   getValue ("CRVAL1", pos_astr.ra);
   getValue ("CRVAL2", pos_astr.dec);
-  getValueImageType ();
 }
 
 Rts2Image::~Rts2Image (void)
@@ -235,7 +288,7 @@ Rts2Image::createImage (char *in_filename)
 
   fits_status = 0;
   flags = IMAGE_NOT_SAVE;
-  imageType = IMGTYPE_UNKNOW;
+  shutter = SHUT_UNKNOW;
   ffile = NULL;
 
   setImageName (in_filename);
@@ -567,65 +620,6 @@ Rts2Image::setValue (char *name, time_t * sec, long usec, char *comment)
 }
 
 int
-Rts2Image::setValueImageType (int shutter_state)
-{
-  char *imgTypeText;
-  // guess image type..
-  switch (getTargetId ())
-    {
-    case TARGET_DARK:
-      imageType = IMGTYPE_DARK;
-      break;
-    case TARGET_FLAT:
-      switch (shutter_state)
-	{
-	case 1:
-	case 3:
-	  imageType = IMGTYPE_FLAT;
-	  break;
-	case 2:
-	  imageType = IMGTYPE_DARK;
-	  break;
-	}
-      break;
-    default:
-      switch (shutter_state)
-	{
-	case 1:
-	case 3:
-	  imageType = IMGTYPE_OBJECT;
-	  break;
-	case 2:
-	  imageType = IMGTYPE_DARK;
-	  break;
-	}
-    }
-  switch (imageType)
-    {
-    case IMGTYPE_DARK:
-      imgTypeText = "dark";
-      break;
-    case IMGTYPE_FLAT:
-      imgTypeText = "flat";
-      break;
-    case IMGTYPE_OBJECT:
-      imgTypeText = "object";
-      break;
-    case IMGTYPE_ZERO:
-      imgTypeText = "zero";
-      break;
-    case IMGTYPE_COMP:
-      imgTypeText = "comp";
-      break;
-    case IMGTYPE_UNKNOW:
-    default:
-      imgTypeText = "unknow";
-      break;
-    }
-  return setValue ("IMAGETYP", imgTypeText, "IRAF based image type");
-}
-
-int
 Rts2Image::getValue (char *name, int &value, char *comment)
 {
   int ret;
@@ -716,30 +710,6 @@ Rts2Image::getValue (char *name, char *value, int valLen, char *comment)
 }
 
 int
-Rts2Image::getValueImageType ()
-{
-  int ret;
-  char value[20];
-  ret = getValue ("IMAGETYP", value, 20);
-  if (ret)
-    return ret;
-  // switch based on IMAGETYPE
-  if (!strcasecmp (value, "dark"))
-    imageType = IMGTYPE_DARK;
-  else if (!strcasecmp (value, "flat"))
-    imageType = IMGTYPE_FLAT;
-  else if (!strcasecmp (value, "object"))
-    imageType = IMGTYPE_OBJECT;
-  else if (!strcasecmp (value, "zero"))
-    imageType = IMGTYPE_ZERO;
-  else if (!strcasecmp (value, "comp"))
-    imageType = IMGTYPE_COMP;
-  else
-    imageType = IMGTYPE_UNKNOW;
-  return 0;
-}
-
-int
 Rts2Image::getValues (char *name, int *values, int num, int nstart)
 {
   if (!ffile)
@@ -786,7 +756,6 @@ Rts2Image::getValues (char *name, char **values, int num, int nstart)
 int
 Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
-  setValueImageType (im_h->shutter);
   if (!ffile)
     return 0;
   setValue ("X", im_h->x, "image beginning - detector X coordinate");
@@ -797,14 +766,19 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
   filter = im_h->filter;
   setValue ("SHUTTER", im_h->shutter,
 	    "shutter state (1 - open, 2 - closed, 3 - synchro)");
-  // dark images don't need to wait till imgprocess will pick them up for reprocessing
-  if (imageType == IMGTYPE_DARK)
+  switch (im_h->shutter)
     {
-      return toDark ();
-    }
-  if (imageType == IMGTYPE_FLAT)
-    {
-      return toFlat ();
+    case 1:
+      shutter = SHUT_OPENED;
+      break;
+    case 2:
+      shutter = SHUT_CLOSED;
+      break;
+    case 3:
+      shutter = SHUT_SYNCHRO;
+      break;
+    default:
+      shutter = SHUT_UNKNOW;
     }
   return 0;
 }

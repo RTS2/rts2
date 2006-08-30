@@ -106,6 +106,7 @@ public:
   virtual void nextCommand ();
   virtual Rts2Image *createImage (const struct timeval *expStart);
   void queImage (Rts2Image * image);
+  virtual void beforeProcess (Rts2Image * image);
   virtual void processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
 

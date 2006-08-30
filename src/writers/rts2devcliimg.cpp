@@ -125,6 +125,8 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
   if (images)
     {
       images->writeDate (dataConn);
+      // create new image of requsted type
+      beforeProcess (images);
       if (saveImage)
 	{
 	  writeFilter ();
@@ -152,6 +154,12 @@ Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 	   expT.tm_hour, expT.tm_min, expT.tm_sec,
 	   int (expStart->tv_usec / 1000));
   return new Rts2Image (fn, expStart);
+}
+
+void
+Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
+{
+//  images = setValueImageType (image);
 }
 
 void

@@ -10,14 +10,99 @@
 EXEC SQL include sqlca;
 
 void
+Rts2ImageDb::initDbImage ()
+{
+}
+
+void
 Rts2ImageDb::reportSqlError (char *msg)
 {
   syslog (LOG_DEBUG, "SQL error %li %s (in %s)\n", sqlca.sqlcode,
   sqlca.sqlerrm.sqlerrmc, msg);
 }
 
+Rts2ImageDb::Rts2ImageDb (Rts2Image * in_image): Rts2Image (in_image)
+{
+}
+
+Rts2ImageDb::Rts2ImageDb (Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
+  Rts2Image (currTarget, camera, expStart)
+{
+  initDbImage ();
+}
+
+Rts2ImageDb::Rts2ImageDb (const char *in_filename) : Rts2Image (in_filename)
+{
+  initDbImage ();
+}
+
+Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
+{
+  initDbImage ();
+  // fill in filter
+  // fill in exposureStart
+  // fill in average (for darks..)
+  // fill in target_id
+  // fill in epochId
+  // fill in camera_name
+  // fill in mount_name
+  // fill in obsId
+  // fill in imgId
+  // fill in ra_err
+  // fill in dec_err
+  // fill in pos_astr (from astrometry)
+  // fill in imageType
+  // fill in imageName
+}
+
+Rts2ImageDb::Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposure):Rts2Image (in_img_date, in_img_usec, in_img_exposure)
+{
+}
+
 int
-Rts2ImageDb::updateObjectDB ()
+Rts2ImageDb::getOKCount ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_obs_id = getObsId ();
+  int db_count = 0;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    count (*)
+  INTO
+    :db_count
+  FROM
+    images
+  WHERE
+      obs_id = :db_obs_id
+    AND ((process_bitfield & 2) = 2);
+  EXEC SQL ROLLBACK;
+
+  return db_count;
+}
+
+int
+Rts2ImageDb::saveImage ()
+{
+  updateDB ();
+  return Rts2Image::saveImage ();
+}
+
+std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
+{
+  img_db.print (_os);
+  return _os;
+}
+
+/*********************************************************************
+ *
+ * Rts2ImageSkyDb class
+ *
+ ********************************************************************/
+
+int
+Rts2ImageSkyDb::updateDB ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_img_id = imgId;
@@ -130,88 +215,7 @@ Rts2ImageDb::updateObjectDB ()
 }
 
 int
-Rts2ImageDb::updateDarkDB ()
-{
-  EXEC SQL BEGIN DECLARE SECTION;
-  int d_img_id = imgId;
-  int d_obs_id = obsId;
-  int d_dark_date = getExposureSec ();
-  int d_dark_usec = getExposureUsec ();
-  float d_dark_exposure;
-  float d_dark_temperature = 100;
-  int d_dark_temperature_ind;
-  float d_dark_mean = getAverage ();
-  int d_epoch_id = epochId;
-  VARCHAR d_camera_name[8];
-  EXEC SQL END DECLARE SECTION;
-
-  d_dark_temperature_ind = getValue ("CCD_TEMP", d_dark_temperature);
-  d_dark_exposure = getExposureLength ();
-
-  strncpy (d_camera_name.arr, cameraName, 8);
-  d_camera_name.len = strlen (cameraName);
-
-  EXEC SQL
-  INSERT INTO
-    darks
-  (
-    img_id,
-    obs_id,
-    dark_date,
-    dark_usec,
-    dark_exposure,
-    dark_temperature,
-    dark_mean,
-    epoch_id,
-    camera_name
-  ) VALUES (
-    :d_img_id,
-    :d_obs_id,
-    abstime (:d_dark_date),
-    :d_dark_usec,
-    :d_dark_exposure,
-    :d_dark_temperature :d_dark_temperature_ind,
-    :d_dark_mean,
-    :d_epoch_id,
-    :d_camera_name
-  );
-  if (sqlca.sqlcode)
-  {
-    reportSqlError ("image DARK update");
-    EXEC SQL ROLLBACK;
-    return -1;
-  }
-  EXEC SQL COMMIT;
-  return 0;
-}
-
-int
-Rts2ImageDb::updateFlatDB ()
-{
-  // flat images aren't stored in DB - we store only finished flats
-  return 0;
-}
-
-int
-Rts2ImageDb::updateDB ()
-{
-  switch (getType ())
-  {
-    case IMGTYPE_OBJECT:
-      return updateObjectDB ();
-    case IMGTYPE_DARK:
-      return updateDarkDB ();
-    case IMGTYPE_FLAT:
-      return updateFlatDB ();
-    default:
-      break;
-  }
-  syslog (LOG_DEBUG, "unknow image type: %i", imageType);
-  return -1;
-}
-
-int
-Rts2ImageDb::updateAstrometry ()
+Rts2ImageSkyDb::updateAstrometry ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id = obsId;
@@ -296,7 +300,7 @@ Rts2ImageDb::updateAstrometry ()
 }
 
 int
-Rts2ImageDb::setDarkFromDb ()
+Rts2ImageSkyDb::setDarkFromDb ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   VARCHAR d_camera_name[8];
@@ -309,8 +313,7 @@ Rts2ImageDb::setDarkFromDb ()
   if (!cameraName)
     return -1;
 
-  if (!(getType () == IMGTYPE_OBJECT
-  || getType () == IMGTYPE_FLAT))
+  if (getShutter () == SHUT_CLOSED)
     return 0;
     
   strncpy (d_camera_name.arr, cameraName, 8);
@@ -336,7 +339,7 @@ Rts2ImageDb::setDarkFromDb ()
     :d_dark_name;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_DEBUG, "Rts2ImageDb::setDarkFromDb SQL error: %s (%li)",
+    syslog (LOG_DEBUG, "Rts2ImageSkyDb::setDarkFromDb SQL error: %s (%li)",
       sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
     EXEC SQL CLOSE dark_cursor;
     EXEC SQL ROLLBACK;
@@ -351,7 +354,7 @@ Rts2ImageDb::setDarkFromDb ()
 }
 
 void
-Rts2ImageDb::initDbImage ()
+Rts2ImageSkyDb::initDbImage ()
 {
   processBitfiedl = 0;
   getValue ("PROC", processBitfiedl);
@@ -359,14 +362,14 @@ Rts2ImageDb::initDbImage ()
 }
 
 int
-Rts2ImageDb::isCalibrationImage ()
+Rts2ImageSkyDb::isCalibrationImage ()
 {
   return (getTargetType () == TYPE_CALIBRATION
 	  || getTargetType () == TYPE_PHOTOMETRIC);
 }
 
 void
-Rts2ImageDb::updateCalibrationDb ()
+Rts2ImageSkyDb::updateCalibrationDb ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int db_air_last_image;
@@ -438,40 +441,31 @@ Rts2ImageDb::updateCalibrationDb ()
   }
 }
 
-Rts2ImageDb::Rts2ImageDb (Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
-  Rts2Image (currTarget, camera, expStart)
+Rts2ImageSkyDb::Rts2ImageSkyDb (Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
+  Rts2ImageDb (currTarget, camera, expStart)
 {
   initDbImage ();
 }
 
-Rts2ImageDb::Rts2ImageDb (const char *in_filename) : Rts2Image (in_filename)
+Rts2ImageSkyDb::Rts2ImageSkyDb (const char *in_filename) : Rts2ImageDb (in_filename)
 {
   initDbImage ();
 }
 
-Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
+Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Image * in_image): Rts2ImageDb (in_image)
 {
   initDbImage ();
-  // fill in filter
-  // fill in exposureStart
-  // fill in average (for darks..)
-  // fill in target_id
-  // fill in epochId
-  // fill in camera_name
-  // fill in mount_name
-  // fill in obsId
-  // fill in imgId
-  // fill in ra_err
-  // fill in dec_err
-  // fill in pos_astr (from astrometry)
-  // fill in imageType
-  // fill in imageName
 }
 
-Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, 
+Rts2ImageSkyDb::Rts2ImageSkyDb (int in_obs_id, int in_img_id) : Rts2ImageDb (in_obs_id, in_img_id)
+{
+  initDbImage ();
+}
+
+Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, 
     float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name,
     const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec,
-    double in_img_err, int in_epoch_id) : Rts2Image (in_img_date, in_img_usec, in_img_exposure)
+    double in_img_err, int in_epoch_id) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
 {
   targetId = in_tar_id;
   targetIdSel = in_tar_id;
@@ -486,7 +480,6 @@ Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_o
   focName = NULL;
   // construct image name..
 
-  imageType = IMGTYPE_UNKNOW;
   ra_err = in_img_err_ra;
   dec_err = in_img_err_dec;
   img_err = in_img_err;
@@ -502,13 +495,13 @@ Rts2ImageDb::Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id, char in_o
   strcpy (filter, in_img_filter);
 }
 
-Rts2ImageDb::~Rts2ImageDb ()
+Rts2ImageSkyDb::~Rts2ImageSkyDb ()
 {
   delete[] filter;
 }
 
 int
-Rts2ImageDb::toArchive ()
+Rts2ImageSkyDb::toArchive ()
 {
   int ret;
 
@@ -525,7 +518,7 @@ Rts2ImageDb::toArchive ()
 }
 
 int
-Rts2ImageDb::toTrash ()
+Rts2ImageSkyDb::toTrash ()
 {
   int ret; 
 
@@ -542,26 +535,25 @@ Rts2ImageDb::toTrash ()
 // write changes of image to DB..
 
 int
-Rts2ImageDb::saveImage ()
+Rts2ImageSkyDb::saveImage ()
 {
   if (!shouldSaveImage())
     return 0;
-  updateDB ();
   setDarkFromDb ();
   updateCalibrationDb ();
   setValue ("PROC", processBitfiedl, "procesing status; info in DB");
-  return Rts2Image::saveImage ();
+  return Rts2ImageDb::saveImage ();
 }
 
 int
-Rts2ImageDb::deleteImage ()
+Rts2ImageSkyDb::deleteImage ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_img_id = imgId;
   int d_obs_id = obsId;
   EXEC SQL END DECLARE SECTION;
 
-  if (getType () == IMGTYPE_OBJECT)
+  if (getImageType () == IMGTYPE_OBJECT)
   {
     EXEC SQL
     DELETE FROM
@@ -570,7 +562,7 @@ Rts2ImageDb::deleteImage ()
 	img_id = :d_img_id
       AND obs_id = :d_obs_id;
   }
-  else if (getType () == IMGTYPE_DARK)
+  else if (getImageType () == IMGTYPE_DARK)
   {
     EXEC SQL
     DELETE FROM
@@ -581,7 +573,7 @@ Rts2ImageDb::deleteImage ()
   }
   if (sqlca.sqlcode)
   {
-     reportSqlError ("Rts2ImageDb::deleteImage");
+     reportSqlError ("Rts2ImageSkyDb::deleteImage");
      EXEC SQL ROLLBACK;
   }
   else
@@ -591,31 +583,8 @@ Rts2ImageDb::deleteImage ()
   return Rts2Image::deleteImage ();
 }
 
-int
-Rts2ImageDb::getOKCount ()
-{
-  EXEC SQL BEGIN DECLARE SECTION;
-  int db_obs_id = getObsId ();
-  int db_count = 0;
-  EXEC SQL END DECLARE SECTION;
-
-  EXEC SQL
-  SELECT
-    count (*)
-  INTO
-    :db_count
-  FROM
-    images
-  WHERE
-      obs_id = :db_obs_id
-    AND ((process_bitfield & 2) = 2);
-  EXEC SQL ROLLBACK;
-
-  return db_count;
-}
-
 void
-Rts2ImageDb::printFileName (std::ostream &_os)
+Rts2ImageSkyDb::printFileName (std::ostream &_os)
 {
   _os << getImageBase ();
   if (processBitfiedl & ASTROMETRY_PROC)
@@ -637,15 +606,188 @@ Rts2ImageDb::printFileName (std::ostream &_os)
 }
 
 void
-Rts2ImageDb::getFileName (std::string &out_filename)
+Rts2ImageSkyDb::getFileName (std::string &out_filename)
 {
   std::ostringstream out;
   printFileName (out);
   out_filename = out.str();
 }
 
-std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
+/*********************************************************
+ *
+ * Rts2ImageDarkDb class
+ *
+ ********************************************************/
+
+int
+Rts2ImageDarkDb::updateDB ()
 {
-  img_db.print (_os);
-  return _os;
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_img_id = imgId;
+  int d_obs_id = obsId;
+  int d_dark_date = getExposureSec ();
+  int d_dark_usec = getExposureUsec ();
+  float d_dark_exposure;
+  float d_dark_temperature = 100;
+  int d_dark_temperature_ind;
+  float d_dark_mean = getAverage ();
+  int d_epoch_id = epochId;
+  VARCHAR d_camera_name[8];
+  EXEC SQL END DECLARE SECTION;
+
+  d_dark_temperature_ind = getValue ("CCD_TEMP", d_dark_temperature);
+  d_dark_exposure = getExposureLength ();
+
+  strncpy (d_camera_name.arr, cameraName, 8);
+  d_camera_name.len = strlen (cameraName);
+
+  EXEC SQL
+  INSERT INTO
+    darks
+  (
+    img_id,
+    obs_id,
+    dark_date,
+    dark_usec,
+    dark_exposure,
+    dark_temperature,
+    dark_mean,
+    epoch_id,
+    camera_name
+  ) VALUES (
+    :d_img_id,
+    :d_obs_id,
+    abstime (:d_dark_date),
+    :d_dark_usec,
+    :d_dark_exposure,
+    :d_dark_temperature :d_dark_temperature_ind,
+    :d_dark_mean,
+    :d_epoch_id,
+    :d_camera_name
+  );
+  if (sqlca.sqlcode)
+  {
+    reportSqlError ("image DARK update");
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL COMMIT;
+  return 0;
+}
+
+Rts2ImageDarkDb::Rts2ImageDarkDb (Rts2Image * in_image): Rts2ImageDb (in_image)
+{
+}
+
+void
+Rts2ImageDarkDb::print (std::ostream & _os, int in_flags)
+{
+  return Rts2ImageDb::print (_os, in_flags);
+}
+
+/*********************************************************
+ *
+ * Rts2ImageFlatDb class
+ *
+ ********************************************************/
+
+int
+Rts2ImageFlatDb::updateDB ()
+{
+  // flat images aren't stored in DB - we store only finished flats
+  return 0;
+}
+
+Rts2ImageFlatDb::Rts2ImageFlatDb (Rts2Image * in_image): Rts2ImageDb (in_image)
+{
+}
+
+void
+Rts2ImageFlatDb::print (std::ostream & _os, int in_flags)
+{
+  return Rts2ImageDb::print (_os, in_flags);
+}
+
+Rts2Image *
+setValueImageType (Rts2Image * in_image)
+{
+  char *imgTypeText = "unknow";
+  Rts2Image * ret_i = NULL;
+  // guess image type..
+  switch (in_image->getTargetId ())
+    {
+    case TARGET_DARK:
+      ret_i = new Rts2ImageDarkDb (in_image);
+      imgTypeText = "dark";
+      break;
+    case TARGET_FLAT:
+      switch (in_image->getShutter ())
+	{
+	case SHUT_OPENED:
+	case SHUT_SYNCHRO:
+	  ret_i = new Rts2ImageFlatDb (in_image);
+      	  imgTypeText = "flat";
+	  break;
+	case SHUT_CLOSED:
+	  ret_i = new Rts2ImageDarkDb (in_image);
+          imgTypeText = "dark";
+	  break;
+	case SHUT_UNKNOW:
+	  break;
+	}
+      break;
+    default:
+      switch (in_image->getShutter())
+	{
+	case SHUT_OPENED:
+	case SHUT_SYNCHRO:
+	  ret_i = new Rts2ImageSkyDb (in_image);
+          imgTypeText = "object";
+	  break;
+	case SHUT_CLOSED:
+	  ret_i = new Rts2ImageDarkDb (in_image);
+          imgTypeText = "dark";
+	  break;
+	case SHUT_UNKNOW:
+	  break;
+	}
+    }
+  if (ret_i)
+  {
+    ret_i->setValue ("IMAGETYP", imgTypeText, "IRAF based image type");
+    delete in_image;
+    return ret_i;
+  }
+  return in_image;
+}
+
+Rts2Image *
+getValueImageType (Rts2Image * in_image)
+{
+  int ret;
+  char value[20];
+  ret = in_image->getValue ("IMAGETYP", value, 20);
+  if (ret)
+    return in_image;
+  // switch based on IMAGETYPE
+  if (!strcasecmp (value, "dark"))
+  {
+    Rts2ImageDarkDb * darkI = new Rts2ImageDarkDb (in_image);
+    delete in_image;
+    return darkI;
+  }
+  else if (!strcasecmp (value, "flat"))
+  {
+    Rts2ImageFlatDb * flatI = new Rts2ImageFlatDb (in_image);
+    delete in_image;
+    return flatI;
+  }
+  else if (!strcasecmp (value, "object"))
+  {
+    Rts2ImageSkyDb * skyI = new Rts2ImageSkyDb (in_image);
+    delete in_image;
+    return skyI;
+  }
+  // "zero" and "comp" are not used
+  return in_image;
 }

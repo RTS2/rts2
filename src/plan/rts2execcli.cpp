@@ -96,6 +96,7 @@ Rts2DevClientCameraExec::createImage (const struct timeval * expStart)
 {
   imgCount++;
   if (currentTarget)
+    // create image based on target type and shutter state
     return new Rts2ImageDb (currentTarget, this, expStart);
   syslog (LOG_ERR,
 	  "Rts2DevClientCameraExec::createImage creating no-target image");
@@ -111,7 +112,8 @@ void
 Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
   // if unknow type, don't process image..
-  if (image->getType () != IMGTYPE_OBJECT)
+  if ((image->getShutter () != SHUT_OPENED
+       && image->getShutter () != SHUT_SYNCHRO))
     return;
 
   // find image processor with lowest que number..
@@ -120,6 +122,22 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
     return;
   image->saveImage ();
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
+}
+
+void
+Rts2DevClientCameraExec::beforeProcess (Rts2Image * image)
+{
+  images = setValueImageType (image);
+  img_type_t imageType = images->getImageType ();
+  // dark images don't need to wait till imgprocess will pick them up for reprocessing
+  if (imageType == IMGTYPE_DARK)
+    {
+      images->toDark ();
+    }
+  else if (imageType == IMGTYPE_FLAT)
+    {
+      images->toFlat ();
+    }
 }
 
 void
@@ -420,7 +438,7 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
     currentTarget->moveFailed ();
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveFailed (status);
-  // move failed because we get priority..
+  // move failed, either because of priority change, or because device failure
   getMaster ()->
     postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
 }

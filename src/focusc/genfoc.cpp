@@ -101,16 +101,17 @@ Rts2GenFocCamera::processImage (Rts2Image * image)
 {
   Rts2DevClientCameraFoc::processImage (image);
   std::cout << "Camera " << getName () << " image_type:";
-  switch (image->getType ())
+  switch (image->getShutter ())
     {
-    case IMGTYPE_DARK:
+    case SHUT_CLOSED:
       std::cout << "dark";
       break;
-    case IMGTYPE_OBJECT:
+    case SHUT_OPENED:
+    case SHUT_SYNCHRO:
       std::cout << "object";
       break;
     default:
-      std::cout << "unknow (" << image->getType () << ") ";
+      std::cout << "unknow";
       break;
     }
   std::cout << std::endl;

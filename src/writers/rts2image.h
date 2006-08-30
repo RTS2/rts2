@@ -29,6 +29,9 @@ typedef enum
   IMGTYPE_COMP
 } img_type_t;
 
+typedef enum
+{ SHUT_UNKNOW, SHUT_OPENED, SHUT_CLOSED, SHUT_SYNCHRO } shutter_t;
+
 class Rts2Image
 {
 private:
@@ -74,7 +77,7 @@ protected:
   char *mountName;
   char *focName;
   char *imageName;
-  img_type_t imageType;
+  shutter_t shutter;
 
   struct ln_equ_posn pos_astr;
   double ra_err;
@@ -83,25 +86,32 @@ protected:
 
   virtual int isGoodForFwhm (struct stardata *sr);
   char *getImageBase (void);
+
+  void setFitsFile (fitsfile * in_ffile)
+  {
+    ffile = in_ffile;
+  }
 public:
   // list of sex results..
   struct stardata *sexResults;
   int sexResultNum;
 
   // memory-only image..
-    Rts2Image ();
+  Rts2Image ();
+  // copy constructor
+  Rts2Image (Rts2Image * in_image);
   // memory-only with exposure time
-    Rts2Image (const struct timeval *in_exposureStart);
+  Rts2Image (const struct timeval *in_exposureStart);
   // skeleton for DB image
-    Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure);
+  Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure);
   // create image
-    Rts2Image (char *in_filename, const struct timeval *in_exposureStart);
+  Rts2Image (char *in_filename, const struct timeval *in_exposureStart);
   // create image in que
-    Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
-	       const struct timeval *in_exposureStart);
+  Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
+	     const struct timeval *in_exposureStart);
   // open image from disk..
-    Rts2Image (const char *in_filename);
-    virtual ~ Rts2Image (void);
+  Rts2Image (const char *in_filename);
+  virtual ~ Rts2Image (void);
 
   virtual int toQue ();
   virtual int toAcquisition ();
@@ -111,9 +121,14 @@ public:
   virtual int toMasterFlat ();
   virtual int toTrash ();
 
-  img_type_t getType ()
+  virtual img_type_t getImageType ()
   {
-    return imageType;
+    return IMGTYPE_UNKNOW;
+  }
+
+  shutter_t getShutter ()
+  {
+    return shutter;
   }
 
   int renameImage (char *new_filename);
@@ -124,7 +139,6 @@ public:
   int setValue (char *name, char value, char *comment);
   int setValue (char *name, const char *value, char *comment);
   int setValue (char *name, time_t * sec, long usec, char *comment);
-  int setValueImageType (int shutter_state);
 
   int getValue (char *name, int &value, char *comment = NULL);
   int getValue (char *name, long &value, char *comment = NULL);
@@ -132,7 +146,6 @@ public:
   int getValue (char *name, double &value, char *comment = NULL);
   int getValue (char *name, char &value, char *command = NULL);
   int getValue (char *name, char *value, int valLen, char *comment = NULL);
-  int getValueImageType ();
 
   int getValues (char *name, int *values, int num, int nstart = 1);
   int getValues (char *name, long *values, int num, int nstart = 1);
@@ -391,6 +404,19 @@ public:
   virtual void printFileName (std::ostream & _os);
 
   virtual void print (std::ostream & _os, int in_flags = 0);
+
+  /**
+   * Get fits file for use by other image.
+   *
+   * File pointer will be discarded and will not be closed - usefull for copy
+   * constructor, but for nothing else.
+   */
+  fitsfile *getFitsFile ()
+  {
+    fitsfile *ret = ffile;
+    ffile = NULL;
+    return ret;
+  }
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
 };

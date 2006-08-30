@@ -23,41 +23,72 @@
 // some error durring image operations occured, information in DB is unrealiable
 #define IMG_ERR		0x8000
 
+/**
+ * Abstract class, representing image in DB.
+ *
+ * Rts2ImageSkyDb, Rts2ImageFlatDb and Rts2ImageDarkDb inherit from that class.
+ */
 class Rts2ImageDb:public Rts2Image
 {
-private:
+protected:
+  virtual void initDbImage ();
   void reportSqlError (char *msg);
-  int updateObjectDB ();
-  int updateDarkDB ();
-  int updateFlatDB ();
-  int updateDB ();
+
+  virtual int updateDB ()
+  {
+    return -1;
+  }
+public:
+    Rts2ImageDb (Rts2Image * in_image);
+  Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
+	       const struct timeval * expStart);
+  Rts2ImageDb (const char *in_filename);
+  Rts2ImageDb (int in_obs_id, int in_img_id);
+  Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposure);
+
+  int getOKCount ();
+
+  virtual int saveImage ();
+
+  friend std::ostream & operator << (std::ostream & _os,
+				     Rts2ImageDb & img_db);
+};
+
+class Rts2ImageSkyDb:public Rts2ImageDb
+{
+private:
   int updateAstrometry ();
 
   int setDarkFromDb ();
 
   int processBitfiedl;
-  void initDbImage ();
   inline int isCalibrationImage ();
   void updateCalibrationDb ();
 
   char *filter;
+protected:
+    virtual void initDbImage ();
+  virtual int updateDB ();
 
 public:
-    Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
-		 const struct timeval *expStartd);
-    Rts2ImageDb (const char *in_filename);
+    Rts2ImageSkyDb (Target * currTarget, Rts2DevClientCamera * camera,
+		    const struct timeval *expStartd);
+    Rts2ImageSkyDb (const char *in_filename);
+  //! Construct image from already existed Rts2ImageDb instance
+    Rts2ImageSkyDb (Rts2Image * in_image);
   //! Construct image directly from DB (eg. retrieve all missing parameters)
-    Rts2ImageDb (int in_obs_id, int in_img_id);
+    Rts2ImageSkyDb (int in_obs_id, int in_img_id);
   //! Construcy image from one database row..
-    Rts2ImageDb (int in_tar_id, int in_obs_id, int in_img_id,
-		 char in_obs_subtype, long in_img_date, int in_img_usec,
-		 float in_img_exposure, float in_img_temperature,
-		 const char *in_img_filter, float in_img_alt, float in_img_az,
-		 const char *in_camera_name, const char *in_mount_name,
-		 bool in_delete_flag, int in_process_bitfield,
-		 double in_img_err_ra, double in_img_err_dec,
-		 double in_img_err, int in_epoch_id);
-    virtual ~ Rts2ImageDb (void);
+    Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id,
+		    char in_obs_subtype, long in_img_date, int in_img_usec,
+		    float in_img_exposure, float in_img_temperature,
+		    const char *in_img_filter, float in_img_alt,
+		    float in_img_az, const char *in_camera_name,
+		    const char *in_mount_name, bool in_delete_flag,
+		    int in_process_bitfield, double in_img_err_ra,
+		    double in_img_err_dec, double in_img_err,
+		    int in_epoch_id);
+    virtual ~ Rts2ImageSkyDb (void);
 
   virtual int toArchive ();
   virtual int toTrash ();
@@ -70,8 +101,6 @@ public:
     return filter;
   }
 
-  int getOKCount ();
-
   virtual bool haveOKAstrometry ()
   {
     return (processBitfiedl & ASTROMETRY_OK);
@@ -82,14 +111,47 @@ public:
     return (processBitfiedl & ASTROMETRY_PROC);
   }
 
-  friend std::ostream & operator << (std::ostream & _os,
-				     Rts2ImageDb & img_db);
-
   virtual void printFileName (std::ostream & _os);
 
   virtual void getFileName (std::string & out_filename);
+
+  virtual img_type_t getImageType ()
+  {
+    return IMGTYPE_OBJECT;
+  }
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2ImageDb & img_db);
+class Rts2ImageDarkDb:public Rts2ImageDb
+{
+protected:
+  virtual int updateDB ();
+public:
+    Rts2ImageDarkDb (Rts2Image * in_image);
+
+  virtual void print (std::ostream & _os, int in_flags = 0);
+
+  virtual img_type_t getImageType ()
+  {
+    return IMGTYPE_DARK;
+  }
+};
+
+class Rts2ImageFlatDb:public Rts2ImageDb
+{
+protected:
+  virtual int updateDB ();
+public:
+    Rts2ImageFlatDb (Rts2Image * in_image);
+
+  virtual void print (std::ostream & _os, int in_flags = 0);
+
+  virtual img_type_t getImageType ()
+  {
+    return IMGTYPE_FLAT;
+  }
+};
+
+Rts2Image *setValueImageType (Rts2Image * in_image);
+Rts2Image *getValueImageType (Rts2Image * in_image);
 
 #endif /* ! __RTS2_IMAGEDB__ */

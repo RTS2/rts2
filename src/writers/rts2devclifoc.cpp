@@ -100,7 +100,7 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
   Rts2DevClientCameraImage::processImage (image);
 
   // got requested dark..
-  if (image->getType () == IMGTYPE_DARK)
+  if (image->getShutter () == SHUT_CLOSED)
     {
       if (darkImage)
 	delete darkImage;
@@ -113,7 +113,7 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
     }
   else if (darkImage)
     image->substractDark (darkImage);
-  if (image->getType () == IMGTYPE_OBJECT && exe)
+  if (image->getShutter () == SHUT_OPENED && exe)
     {
       focConn =
 	new Rts2ConnFocus (getMaster (), image, exe, EVENT_CHANGE_FOCUS);
