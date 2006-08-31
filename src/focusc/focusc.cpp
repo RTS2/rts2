@@ -21,6 +21,7 @@ class Rts2focusc:public Rts2GenFocClient
 private:
   exposureType exposureT;
 protected:
+  virtual Rts2GenFocCamera * createFocCamera (Rts2Conn * conn);
   virtual void help ();
 public:
     Rts2focusc (int argc, char **argv);
@@ -38,29 +39,19 @@ class Rts2focuscCamera:public Rts2GenFocCamera
 private:
   Rts2focusc * master;
 protected:
-  virtual void queExposure ()
-  {
-    exposureT = master->getExposureType ();
-    Rts2GenFocCamera::queExposure ();
-  }
+  virtual void queExposure ();
 public:
-    Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master,
-		      const char *in_exe);
+    Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master);
 
-  virtual void postEvent (Rts2Event * event)
-  {
-    switch (event->getType ())
-      {
-      case EVENT_START_EXPOSURE:
-	Rts2GenFocCamera::postEvent (event);
-	if (connection->havePriority ())
-	  queExposure ();
-	return;
-      }
-    Rts2GenFocCamera::postEvent (event);
-  }
+  virtual void postEvent (Rts2Event * event);
   virtual void processImage (Rts2Image * image);
 };
+
+Rts2GenFocCamera *
+Rts2focusc::createFocCamera (Rts2Conn * conn)
+{
+  return new Rts2focuscCamera (conn, this);
+}
 
 void
 Rts2focusc::help ()
@@ -96,11 +87,32 @@ Rts2focusc::processOption (int in_opt)
   return 0;
 }
 
-Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master, const char *in_exe):Rts2GenFocCamera
+Rts2focuscCamera::Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master):Rts2GenFocCamera
   (in_connection,
    in_master)
 {
   master = in_master;
+}
+
+void
+Rts2focuscCamera::queExposure ()
+{
+  exposureT = master->getExposureType ();
+  Rts2GenFocCamera::queExposure ();
+}
+
+void
+Rts2focuscCamera::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_START_EXPOSURE:
+      Rts2GenFocCamera::postEvent (event);
+      if (connection->havePriority ())
+	queExposure ();
+      return;
+    }
+  Rts2GenFocCamera::postEvent (event);
 }
 
 void
