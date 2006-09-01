@@ -236,6 +236,8 @@ Rts2xfocusCamera::rebuildWindow ()
     XCreatePixmap (master->getDisplay (), window, windowHeight, windowWidth,
 		   master->getDepth ());
 
+  XDestroyImage (ximage);
+  ximage = NULL;
   gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
 }
 
