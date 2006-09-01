@@ -714,51 +714,29 @@ setValueImageType (Rts2Image * in_image)
   char *imgTypeText = "unknow";
   Rts2Image * ret_i = NULL;
   // guess image type..
-  switch (in_image->getTargetId ())
-    {
-    case TARGET_DARK:
-      ret_i = new Rts2ImageDarkDb (in_image);
-      imgTypeText = "dark";
-      break;
-    case TARGET_FLAT:
-      switch (in_image->getShutter ())
-	{
-	case SHUT_OPENED:
-	case SHUT_SYNCHRO:
-	  ret_i = new Rts2ImageFlatDb (in_image);
-      	  imgTypeText = "flat";
-	  break;
-	case SHUT_CLOSED:
-	  ret_i = new Rts2ImageDarkDb (in_image);
-          imgTypeText = "dark";
-	  break;
-	case SHUT_UNKNOW:
-	  break;
-	}
-      break;
-    default:
-      switch (in_image->getShutter())
-	{
-	case SHUT_OPENED:
-	case SHUT_SYNCHRO:
-	  ret_i = new Rts2ImageSkyDb (in_image);
-          imgTypeText = "object";
-	  break;
-	case SHUT_CLOSED:
-	  ret_i = new Rts2ImageDarkDb (in_image);
-          imgTypeText = "dark";
-	  break;
-	case SHUT_UNKNOW:
-	  break;
-	}
-    }
-  if (ret_i)
+  if (in_image->getShutter () == SHUT_CLOSED)
   {
-    ret_i->setValue ("IMAGETYP", imgTypeText, "IRAF based image type");
-    delete in_image;
-    return ret_i;
+     ret_i = new Rts2ImageDarkDb (in_image);
+     imgTypeText = "dark";
   }
-  return in_image;
+  else if (in_image->getShutter () == SHUT_UNKNOW)
+  {
+     // that should not happen
+     return in_image;
+  }
+  else if (in_image->getTargetType () == TYPE_FLAT)
+  {
+     ret_i = new Rts2ImageFlatDb (in_image);
+     imgTypeText = "flat";
+  }
+  else
+  {
+     ret_i = new Rts2ImageSkyDb (in_image);
+     imgTypeText = "object";
+  }
+  ret_i->setValue ("IMAGETYP", imgTypeText, "IRAF based image type");
+  delete in_image;
+  return ret_i;
 }
 
 Rts2Image *
