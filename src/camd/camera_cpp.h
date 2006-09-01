@@ -67,6 +67,8 @@ public:
 class CameraChip
 {
 private:
+  void initData (Rts2DevCamera * in_cam, int in_chip_id);
+
   int sendChip (Rts2Conn * conn, char *name, int value);
   int sendChip (Rts2Conn * conn, char *name, float value);
   int sendChip (Rts2Conn * conn, char *name, double value);
@@ -250,6 +252,8 @@ protected:
 
   virtual int setGain (double in_gain);
   virtual int setSubExposure (double in_subexposure);
+
+  void afterReadout ();
 public:
     Rts2DevCamera (int argc, char **argv);
     virtual ~ Rts2DevCamera (void);

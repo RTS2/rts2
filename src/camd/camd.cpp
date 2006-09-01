@@ -14,7 +14,8 @@
 #include "rts2devcliwheel.h"
 #include "rts2devclifocuser.h"
 
-CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
+void
+CameraChip::initData (Rts2DevCamera * in_cam, int in_chip_id)
 {
   camera = in_cam;
   chipId = in_chip_id;
@@ -38,30 +39,23 @@ CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
 
   focusingData = NULL;
   focusingDataTop = NULL;
+
+}
+
+CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
+{
+  initData (in_cam, in_chip_id);
 }
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
 			int in_height, double in_pixelX, double in_pixelY,
 			float in_gain)
 {
-  camera = in_cam;
-  chipId = in_chip_id;
-  exposureEnd.tv_sec = 0;
-  exposureEnd.tv_usec = 0;
-  readoutConn = NULL;
-  binningVertical = 1;
-  binningHorizontal = 1;
+  initData (in_cam, in_chip_id);
   setSize (in_width, in_height, 0, 0);
   pixelX = in_pixelX;
   pixelY = in_pixelY;
-  chipUsedReadout = NULL;
   gain = in_gain;
-  readoutLine = -1;
-  sendLine = -1;
-  shutter_state = -1;
-
-  focusingData = NULL;
-  focusingDataTop = NULL;
 }
 
 CameraChip::~CameraChip (void)
@@ -385,6 +379,8 @@ CameraChip::cancelPriorityOperations ()
   delete[]focusingData;
   focusingData = NULL;
   focusingDataTop = NULL;
+  subExposure = nan ("f");
+  nAcc = 1;
   box (-1, -1, -1, -1);
 }
 
@@ -657,12 +653,7 @@ Rts2DevCamera::checkReadouts ()
       else
 	{
 	  chips[i]->endReadout ();
-	  if (!isnan (nextGain))
-	    {
-	      setGain (nextGain);
-	      nextGain = nan ("f");
-	    }
-	  setTimeout (USEC_SEC);
+	  afterReadout ();
 	  if (ret == -2)
 	    maskState (i, CAM_MASK_READING, CAM_NOTREADING,
 		       "chip readout ended");
@@ -672,6 +663,22 @@ Rts2DevCamera::checkReadouts ()
 		       "chip readout ended with error");
 	}
     }
+}
+
+void
+Rts2DevCamera::afterReadout ()
+{
+  if (!isnan (nextGain))
+    {
+      setGain (nextGain);
+      nextGain = nan ("f");
+    }
+  if (!isnan (nextSubExposure))
+    {
+      setSubExposure (nextSubExposure);
+      nextSubExposure = nan ("f");
+    }
+  setTimeout (USEC_SEC);
 }
 
 void
@@ -1165,16 +1172,14 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
