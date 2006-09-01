@@ -1,11 +1,12 @@
 bin_PROGRAMS=
 
+noinst_DATA = rts2.wsdl
+noinst_HEADERS = rts2soapcli.h
+
 if GSOAP
 
 bin_PROGRAMS += rts2-soapd
 noinst_PROGRAMS = rts2-testsoap
-noinst_DATA = rts2.wsdl
-noinst_HEADERS = rts2soapcli.h
 
 SOAPHEADER = rts2.h
 SOAP_CPP_CLIENT = soapClient.cpp soapC.cpp

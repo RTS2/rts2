@@ -45,6 +45,7 @@
       <element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
       <element name="type" type="xsd:string" minOccurs="1" maxOccurs="1"/>
       <element name="radec" type="ns:radec" minOccurs="1" maxOccurs="1"/>
+      <element name="priority" type="xsd:double" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
  </schema>
