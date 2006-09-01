@@ -9,14 +9,30 @@ Rts2DevClientTelescopeSoap::Rts2DevClientTelescopeSoap (Rts2Conn * in_connection
 void
 Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
 {
-  struct rts2__getEquResponse *res;
+  struct rts2__getEquResponse *resEqu;
+  struct rts2__getAltResponse *resAlt;
   struct rts2__getTelescopeResponse *resTel;
+  struct ln_hrz_posn altaz;
+  struct ln_equ_posn radec;
+
+  getEqu (&radec);
+  getAltAz (&altaz);
+
   switch (event->getType ())
     {
     case EVENT_SOAP_TEL_GETEQU:
-      res = (rts2__getEquResponse *) event->getArg ();
-      res->radec->ra = getValueDouble ("ra");
-      res->radec->dec = getValueDouble ("dec");
+      resEqu = (rts2__getEquResponse *) event->getArg ();
+
+      resEqu->radec->ra = radec.ra;
+      resEqu->radec->dec = radec.dec;
+
+      break;
+    case EVENT_SOAP_TEL_GETALT:
+      resAlt = (rts2__getAltResponse *) event->getArg ();
+
+      resAlt->altaz->az = altaz.az;
+      resAlt->altaz->alt = altaz.alt;
+
       break;
     case EVENT_SOAP_TEL_GET:
       resTel = (rts2__getTelescopeResponse *) event->getArg ();
@@ -37,6 +53,41 @@ Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
     }
 
   Rts2DevClientTelescope::postEvent (event);
+}
+
+void
+Rts2DevClientTelescopeSoap::getObs (struct ln_lnlat_posn *obs)
+{
+  obs->lng = getValueDouble ("longtitude");
+  obs->lat = getValueDouble ("latitude");
+}
+
+void
+Rts2DevClientTelescopeSoap::getEqu (struct ln_equ_posn *tel)
+{
+  tel->ra = getValueDouble ("ra");
+  tel->dec = getValueDouble ("dec");
+}
+
+double
+Rts2DevClientTelescopeSoap::getLocalSiderealDeg ()
+{
+  return getValueDouble ("siderealtime") * 15.0;
+}
+
+void
+Rts2DevClientTelescopeSoap::getAltAz (struct ln_hrz_posn *hrz)
+{
+  struct ln_equ_posn pos;
+  struct ln_lnlat_posn obs;
+  double gst;
+
+  getEqu (&pos);
+  getObs (&obs);
+  gst = getLocalSiderealDeg () - obs.lng;
+  gst = ln_range_degrees (gst) / 15.0;
+
+  ln_get_hrz_from_equ_sidereal_time (&pos, &obs, gst, hrz);
 }
 
 Rts2DevClientExecutorSoap::Rts2DevClientExecutorSoap (Rts2Conn * in_connection):Rts2DevClientExecutor

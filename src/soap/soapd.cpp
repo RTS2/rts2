@@ -177,6 +177,14 @@ rts2__getEqu (struct soap *in_soap, rts2__getEquResponse & res)
 }
 
 int
+rts2__getAlt (struct soap *in_soap, rts2__getAltResponse & res)
+{
+  res.altaz = soap_new_rts2__altaz (in_soap, 1);
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_TEL_GETALT, (void *) &res));
+  return SOAP_OK;
+}
+
+int
 rts2__getTelescope (struct soap *in_soap, std::string name,
 		    rts2__getTelescopeResponse & res)
 {

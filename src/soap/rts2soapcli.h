@@ -5,9 +5,10 @@
 #include "soapH.h"
 
 #define EVENT_SOAP_TEL_GETEQU  RTS2_LOCAL_EVENT+1000
-#define EVENT_SOAP_TEL_GET     RTS2_LOCAL_EVENT+1001
-#define EVENT_SOAP_EXEC_GETST  RTS2_LOCAL_EVENT+1002
-#define EVENT_SOAP_DOME_GETST  RTS2_LOCAL_EVENT+1003
+#define EVENT_SOAP_TEL_GETALT  RTS2_LOCAL_EVENT+1001
+#define EVENT_SOAP_TEL_GET     RTS2_LOCAL_EVENT+1002
+#define EVENT_SOAP_EXEC_GETST  RTS2_LOCAL_EVENT+1003
+#define EVENT_SOAP_DOME_GETST  RTS2_LOCAL_EVENT+1004
 
 typedef struct soapExecGetst
 {
@@ -20,6 +21,10 @@ class Rts2DevClientTelescopeSoap:public Rts2DevClientTelescope
 public:
   Rts2DevClientTelescopeSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
+  void getObs (struct ln_lnlat_posn *obs);
+  void getEqu (struct ln_equ_posn *tel);
+  double getLocalSiderealDeg ();
+  void getAltAz (struct ln_hrz_posn *hrz);
 };
 
 class Rts2DevClientExecutorSoap:public Rts2DevClientExecutor
