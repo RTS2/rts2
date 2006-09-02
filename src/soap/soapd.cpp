@@ -245,7 +245,7 @@ rts2__getCentrald (struct soap *in_soap, rts2__getCentraldResponse & res)
     {
       res.system = rts2__system__ON;
     }
-  switch (state & SERVERD_STANDBY_MASK)
+  switch (state & SERVERD_STATUS_MASK)
     {
     case SERVERD_DAY:
       res.daytime = rts2__daytime__DAY;
