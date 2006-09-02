@@ -1,5 +1,5 @@
 #include "rts2targetapp.h"
-#include "rts2simbadtarget.h"
+#include "simbad/rts2simbadtarget.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 
@@ -123,6 +123,7 @@ Rts2TargetApp::askForObject (const char *desc)
       return 0;
     }
   // try to get target from SIMBAD
+//  target = new Rts2SimbadTarget (obj_text.c_str ());
   target = new Rts2SimbadTarget (obj_text.c_str ());
   ret = target->load ();
   if (ret)
