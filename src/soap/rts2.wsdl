@@ -54,6 +54,23 @@
       <element name="priority" type="xsd:double" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
+  <simpleType name="system">
+    <restriction base="xsd:string">
+      <enumeration value="OFF"/>
+      <enumeration value="STANDBY"/>
+      <enumeration value="ON"/>
+    </restriction>
+  </simpleType>
+  <simpleType name="daytime">
+    <restriction base="xsd:string">
+      <enumeration value="DAY"/>
+      <enumeration value="EVENING"/>
+      <enumeration value="DUSK"/>
+      <enumeration value="NIGHT"/>
+      <enumeration value="DAWN"/>
+      <enumeration value="MORNING"/>
+    </restriction>
+  </simpleType>
  </schema>
 
 </types>
@@ -145,6 +162,22 @@
   </operation>
 </portType>
 
+<message name="getCentraldRequest">
+</message>
+
+<message name="getCentraldResponse">
+  <part name="system" type="ns:system"/>
+  <part name="daytime" type="ns:daytime"/>
+</message>
+
+<portType name="centrald">
+  <operation name="getCentrald">
+    <documentation>Get current centrald status</documentation>
+    <input message="tns:getCentraldRequest"/>
+    <output message="tns:getCentraldResponse"/>
+  </operation>
+</portType>
+
 <binding name="rts2" type="tns:tel">
  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
  <operation name="getEqu">
@@ -201,6 +234,19 @@
 <binding name="rts2" type="tns:dome">
   <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
   <operation name="getDome">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+</binding>
+
+<binding name="rts2" type="tns:centrald">
+  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getCentrald">
     <SOAP:operation style="rpc" soapAction=""/>
     <input>
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>

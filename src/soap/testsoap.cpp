@@ -60,6 +60,7 @@ Rts2TestSoap::run ()
   struct rts2__getTelescopeResponse resTel;
   struct rts2__getExecResponse exec;
   struct rts2__getTargetResponse target;
+  struct rts2__getCentraldResponse centrald;
   int ret;
 
   soap_init (&soap);
@@ -104,6 +105,15 @@ Rts2TestSoap::run ()
       return ret;
     }
   std::cout << "Target 1 is " << std::endl << target.target << std::endl;
+
+  ret = soap_call_rts2__getCentrald (&soap, server, "", centrald);
+  if (ret != SOAP_OK)
+    {
+      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+      return ret;
+    }
+  std::cout << "System " << centrald.system << " daytime: " << centrald.
+    daytime << std::endl;
 
   return ret;
 }

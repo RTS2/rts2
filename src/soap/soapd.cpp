@@ -227,6 +227,48 @@ rts2__getDome (struct soap *in_soap, rts2__getDomeResponse & res)
   return SOAP_OK;
 }
 
+int
+rts2__getCentrald (struct soap *in_soap, rts2__getCentraldResponse & res)
+{
+  int state = soapd->getMasterState ();
+  if (state == SERVERD_OFF)
+    {
+      res.system = rts2__system__OFF;
+      res.daytime = rts2__daytime__DAY;
+      return SOAP_OK;
+    }
+  if ((state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+    {
+      res.system = rts2__system__STANDBY;
+    }
+  else
+    {
+      res.system = rts2__system__ON;
+    }
+  switch (state & SERVERD_STANDBY_MASK)
+    {
+    case SERVERD_DAY:
+      res.daytime = rts2__daytime__DAY;
+      break;
+    case SERVERD_EVENING:
+      res.daytime = rts2__daytime__EVENING;
+      break;
+    case SERVERD_DUSK:
+      res.daytime = rts2__daytime__DUSK;
+      break;
+    case SERVERD_NIGHT:
+      res.daytime = rts2__daytime__NIGHT;
+      break;
+    case SERVERD_DAWN:
+      res.daytime = rts2__daytime__DAWN;
+      break;
+    case SERVERD_MORNING:
+      res.daytime = rts2__daytime__MORNING;
+      break;
+    }
+  return SOAP_OK;
+}
+
 void
 killSignal (int sig)
 {
