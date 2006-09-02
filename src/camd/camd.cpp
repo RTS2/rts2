@@ -379,7 +379,7 @@ CameraChip::cancelPriorityOperations ()
   delete[]focusingData;
   focusingData = NULL;
   focusingDataTop = NULL;
-  subExposure = nan ("f");
+  subExposure = camera->getSubExposure ();
   nAcc = 1;
   box (-1, -1, -1, -1);
 }
@@ -561,6 +561,7 @@ Rts2DevCamera::processOption (int in_opt)
       break;
     case 'S':
       defaultSubExposure = atof (optarg);
+      setSubExposure (defaultSubExposure);
       break;
     default:
       return Rts2Device::processOption (in_opt);

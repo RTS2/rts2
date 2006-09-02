@@ -240,7 +240,7 @@ Rts2DevCamera (in_argc, in_argv)
   addOption ('A', "vs_amplitude", 1, "VS amplitude (0-4)");
   addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('N', "noft", 0, "do not use frame transfer mode");
-  addOption ('S', "speed_info", 0,
+  addOption ('I', "speed_info", 0,
 	     "print speed info - information about speed available");
 }
 
@@ -300,7 +300,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
 	  printf ("amplitude must be in 0-4 range\n");
 	  exit (EXIT_FAILURE);
 	}
-    case 'S':
+    case 'I':
       printSpeedInfo = true;
       break;
     case 'N':
