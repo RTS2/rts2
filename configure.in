@@ -371,6 +371,7 @@ AC_OUTPUT([Makefile
 	   src/writers/Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile
+	   src/db/simbad/Makefile
 	   src/soap/Makefile
 	   man/rts2.1
 	   man/rts2.conf.5
