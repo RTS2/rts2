@@ -61,6 +61,7 @@ Rts2TestSoap::run ()
   struct rts2__getExecResponse exec;
   struct rts2__getTargetResponse target;
   struct rts2__getCentraldResponse centrald;
+  struct rts2__setCentraldResponse centrald_set;
   int ret;
 
   soap_init (&soap);
@@ -114,6 +115,15 @@ Rts2TestSoap::run ()
     }
   std::cout << "System " << centrald.system << " daytime: " << centrald.
     daytime << std::endl;
+
+  ret =
+    soap_call_rts2__setCentrald (&soap, server, "", rts2__system__OFF,
+				 centrald_set);
+  if (ret != SOAP_OK)
+    {
+      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+      return ret;
+    }
 
   return ret;
 }

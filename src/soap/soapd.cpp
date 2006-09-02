@@ -2,6 +2,7 @@
 #include "rts2.nsmap"
 
 #include "../utils/rts2config.h"
+#include "../utils/rts2command.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "rts2soapcli.h"
 
@@ -265,6 +266,28 @@ rts2__getCentrald (struct soap *in_soap, rts2__getCentraldResponse & res)
     case SERVERD_MORNING:
       res.daytime = rts2__daytime__MORNING;
       break;
+    }
+  return SOAP_OK;
+}
+
+int
+rts2__setCentrald (struct soap *in_soap, enum rts2__system system,
+		   struct rts2__setCentraldResponse &res)
+{
+  switch (system)
+    {
+    case rts2__system__OFF:
+      soapd->getCentraldConn ()->queCommand (new Rts2Command (soapd, "off"));
+      break;
+    case rts2__system__STANDBY:
+      soapd->getCentraldConn ()->
+	queCommand (new Rts2Command (soapd, "standby"));
+      break;
+    case rts2__system__ON:
+      soapd->getCentraldConn ()->queCommand (new Rts2Command (soapd, "on"));
+      break;
+    defalt:
+      return SOAP_NO_METHOD;
     }
   return SOAP_OK;
 }

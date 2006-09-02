@@ -170,11 +170,23 @@
   <part name="daytime" type="ns:daytime"/>
 </message>
 
+<message name="setCentraldRequest">
+  <part name="system" type="ns:system"/>
+</message>
+
+<message name="setCentraldResponse">
+</message>
+
 <portType name="centrald">
   <operation name="getCentrald">
     <documentation>Get current centrald status</documentation>
     <input message="tns:getCentraldRequest"/>
     <output message="tns:getCentraldResponse"/>
+  </operation>
+  <operation name="setCentrald">
+    <documentation>Set current centrald status</documentation>
+    <input message="tns:setCentraldRequest"/>
+    <output message="tns:setCentraldResponse"/>
   </operation>
 </portType>
 
@@ -247,6 +259,15 @@
 <binding name="rts2" type="tns:centrald">
   <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
   <operation name="getCentrald">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+  <operation name="setCentrald">
     <SOAP:operation style="rpc" soapAction=""/>
     <input>
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
