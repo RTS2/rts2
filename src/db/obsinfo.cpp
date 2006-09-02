@@ -12,9 +12,11 @@ private:
   Rts2ObsSet * obsset;
   enum
   { BASIC_INFO, EXT_INFO, IMAGES, IMAGES_ASTR_OK, IMAGES_TRASH,
-    IMAGES_QUE
+    FLAT_IMAGES, DARK_IMAGES, IMAGES_QUE
   } action;
   int imageFlag;
+  int displayFlats ();
+  int displayDarks ();
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -30,7 +32,7 @@ Rts2AppDb (in_argc, in_argv)
   obsset = new Rts2ObsSet ();
   imageFlag = DISPLAY_ALL;
   addOption ('a', "action", 1,
-	     "i->images, a->with astrometry, t->trash images, q->que images (not yet processed)");
+	     "i->images, a->with astrometry, t->trash images, q->que images (not yet processed)\n\tf->falts, d->darks");
   addOption ('s', "short", 0, "short image listing");
   action = BASIC_INFO;
 }
@@ -66,6 +68,14 @@ Rts2ObsInfo::processOption (int in_opt)
 	  action = IMAGES_QUE;
 	  imageFlag = (imageFlag & ~DISPLAY_MASK_ASTR) | DISPLAY_ASTR_QUE;
 	  break;
+	case 'f':
+	  action = FLAT_IMAGES;
+	  imageFlag |= DISPLAY_SHORT;
+	  break;
+	case 'd':
+	  action = DARK_IMAGES;
+	  imageFlag |= DISPLAY_SHORT;
+	  break;
 	default:
 	  std::cerr << "Invalid action '" << *optarg << "'" << std::endl;
 	  return -1;
@@ -87,6 +97,28 @@ Rts2ObsInfo::processArgs (const char *arg)
   obs_id = atoi (arg);
   Rts2Obs obs = Rts2Obs (obs_id);
   obsset->push_back (obs);
+  return 0;
+}
+
+int
+Rts2ObsInfo::displayFlats ()
+{
+  if (obsset->empty ())
+    {
+      delete obsset;
+      obsset = new Rts2ObsSet (TYPE_FLAT, OBS_BIT_PROCESSED, true);
+    }
+  return 0;
+}
+
+int
+Rts2ObsInfo::displayDarks ()
+{
+  if (obsset->empty ())
+    {
+      delete obsset;
+      obsset = new Rts2ObsSet (TYPE_DARK, OBS_BIT_PROCESSED, true);
+    }
   return 0;
 }
 
@@ -117,6 +149,10 @@ Rts2ObsInfo::run ()
 	    return ret;
 	  obs.getImageSet ()->print (std::cout, imageFlag);
 	  break;
+	case FLAT_IMAGES:
+	  return displayFlats ();
+	case DARK_IMAGES:
+	  return displayDarks ();
 	}
     }
   return 0;
