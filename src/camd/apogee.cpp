@@ -133,12 +133,20 @@ CameraApogeeChip::isExposing ()
   status = camera->read_Status ();
 
   if (status != Camera_Status_ImageReady)
-    return 200;
+    {
+      if (status == Camera_Status_Flushing)
+	{
+	  // if flushing takes too much time, reset camera and end exposure
+	  time (&now);
+	  if (expExposureEnd < now)
+	    {
+	      camera->Reset ();
+	      return -1;
+	    }
+	}
+      return 200;
+    }
 
-  time (&now);
-
-  if (expExposureEnd < now)
-    return -1;
   // exposure has ended.. 
   return -2;
 }

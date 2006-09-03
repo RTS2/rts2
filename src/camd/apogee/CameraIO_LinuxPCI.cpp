@@ -228,11 +228,12 @@ CCameraIO::RegRead (short reg, unsigned short &val)
   Read (reg, val);
 }
 
-bool
-CCameraIO::FilterHome ()
+bool CCameraIO::FilterHome ()
 {
-  HANDLE hProcess;
-  DWORD Class;
+  HANDLE
+    hProcess;
+  DWORD
+    Class;
 
   if (m_HighPriority)
     {				// Store current process class and priority
@@ -243,20 +244,23 @@ CCameraIO::FilterHome ()
 
   // Find the home position
   m_FilterPosition = 0;
-  int Safety = 0;
+  int
+    Safety = 0;
   for (int I = 0; I < NUM_POSITIONS * NUM_STEPS_PER_FILTER * 2; I++)
     {
       // Advance the filter one step
       m_FilterStepPos += 1;
       if (m_FilterStepPos >= NUM_STEPS)
 	m_FilterStepPos = 0;
-      unsigned char Step = Steps[m_FilterStepPos];
+      unsigned char
+	Step = Steps[m_FilterStepPos];
 
       AuxOutput (Step);
       Sleep (STEP_DELAY);
 
       // Check for strobe
-      unsigned short val = 0;
+      unsigned short
+	val = 0;
       Read (Reg_Status, val);
       if (val & RegBit_GotTrigger)
 	{
@@ -281,7 +285,8 @@ CCameraIO::FilterHome ()
 	      m_FilterStepPos += 1;
 	      if (m_FilterStepPos >= NUM_STEPS)
 		m_FilterStepPos = 0;
-	      unsigned char Step2 = Steps[m_FilterStepPos];
+	      unsigned char
+		Step2 = Steps[m_FilterStepPos];
 
 	      AuxOutput (Step2);
 	      Sleep (STEP_DELAY);
@@ -359,8 +364,7 @@ CCameraIO::FilterSet (short Slot)
 ////////////////////////////////////////////////////////////
 // Normal exposure methods
 
-bool
-CCameraIO::Expose (double Duration, bool Light)
+bool CCameraIO::Expose (double Duration, bool Light)
 {
   if (!m_TDI && (Duration < m_MinExposure || Duration > m_MaxExposure))
     return false;
@@ -412,15 +416,19 @@ CCameraIO::Expose (double Duration, bool Light)
   m_ExposureNumX = m_NumX;
 
   // Calculate BIC, RawPixelCount, AIC
-  unsigned short BIC = m_ExposureBIC + m_ExposureStartX;	// unbinned columns
-  unsigned short RawPixelCount = m_ExposureNumX * m_ExposureBinX;
+  unsigned short
+    BIC = m_ExposureBIC + m_ExposureStartX;	// unbinned columns
+  unsigned short
+    RawPixelCount = m_ExposureNumX * m_ExposureBinX;
   m_ExposureAIC = m_ExposureColumns - BIC - RawPixelCount;	// unbinned columns
 
   if (m_BinY < 1 || m_BinY > MAXVBIN)
     return false;
   m_ExposureBinY = m_BinY;
 
-  unsigned short VBin, row_offset;
+  unsigned short
+    VBin,
+    row_offset;
 
   if (m_TDI)
     {				// row_offset is the drift time in milliseconds when in TDI mode
@@ -437,7 +445,8 @@ CCameraIO::Expose (double Duration, bool Light)
 	return false;
       m_ExposureNumY = m_NumY;
 
-      unsigned short BIR = m_ExposureBIR + m_ExposureStartY;	// unbinned rows
+      unsigned short
+	BIR = m_ExposureBIR + m_ExposureStartY;	// unbinned rows
       if (BIR >= MAXROWS)
 	return false;
       m_ExposureAIR = m_ExposureRows - BIR - m_ExposureNumY * m_ExposureBinY;	// unbinned rows
@@ -495,7 +504,8 @@ CCameraIO::Expose (double Duration, bool Light)
       Write (Reg_Command, m_RegShadow[Reg_Command]);
 
       // Update our status
-      unsigned short val = 0;
+      unsigned short
+	val = 0;
       Read (Reg_CommandReadback, val);
       if (val & RegBit_ShutterOverride)
 	m_Shutter = true;
@@ -520,13 +530,20 @@ CCameraIO::Expose (double Duration, bool Light)
   return true;
 }
 
-bool
-CCameraIO::BufferImage (char *bufferName)
+bool CCameraIO::BufferImage (char *bufferName)
 {
-  unsigned short *pImageData;
-  bool status;
-  short cols, rows, hbin, vbin;
-  short xSize, ySize;
+  unsigned short *
+    pImageData;
+  bool
+    status;
+  short
+    cols,
+    rows,
+    hbin,
+    vbin;
+  short
+    xSize,
+    ySize;
 
   cols = m_NumX * m_BinX;
   rows = m_NumY * m_BinY;
@@ -544,7 +561,7 @@ CCameraIO::BufferImage (char *bufferName)
 }
 
 bool
-CCameraIO::GetImage (unsigned short *pImageData, short &xSize, short &ySize)
+  CCameraIO::GetImage (unsigned short *pImageData, short &xSize, short &ySize)
 {
   int i;
   unsigned short BIC = m_ExposureBIC + m_ExposureStartX;
@@ -702,15 +719,15 @@ CCameraIO::GetImage (unsigned short *pImageData, short &xSize, short &ySize)
 ////////////////////////////////////////////////////////////
 // Drift scan methods
 
-bool
-CCameraIO::DigitizeLine ()
+bool CCameraIO::DigitizeLine ()
 {
   /////////////////////////////////////
   // All of these are done just in case
   // since they are called in Expose()
   StopFlushing ();
 
-  unsigned short BIC = m_ExposureBIC + m_ExposureStartX;
+  unsigned short
+    BIC = m_ExposureBIC + m_ExposureStartX;
   LoadColumnLayout (m_ExposureAIC, BIC,
 		    (unsigned short) m_ExposureNumX + m_ExposureSkipC);
   LoadTimerAndBinning (0.0, m_ExposureBinX, m_ExposureBinY);
@@ -732,10 +749,10 @@ CCameraIO::DigitizeLine ()
   return true;
 }
 
-bool
-CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
+bool CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
 {
-  int i;
+  int
+    i;
 
   if (m_WaitingforLine)
     {				// In case application did not poll read_Status
@@ -743,10 +760,12 @@ CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
 
       /////////////////////////////////////
       // Wait until camera is done clocking
-      clock_t StopTime = clock () + CLOCKS_PER_SEC;	// wait at most one second
+      clock_t
+	StopTime = clock () + CLOCKS_PER_SEC;	// wait at most one second
       while (true)
 	{
-	  unsigned short val = 0;
+	  unsigned short
+	    val = 0;
 	  Read (Reg_Status, val);
 	  if ((val & RegBit_LineDone) != 0)
 	    break;		// Line done
@@ -759,15 +778,18 @@ CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
 	}
     }
 
-  bool ret = false;		// assume failure
+  bool
+    ret = false;		// assume failure
 
 //        MaskIrqs();
 
   // NB Application must have allocated enough memory or else !!!
   if (pLineData != NULL)
     {
-      HANDLE hProcess;
-      DWORD Class;
+      HANDLE
+	hProcess;
+      DWORD
+	Class;
 
       if (m_HighPriority)
 	{			// Store current process class and priority
@@ -776,8 +798,10 @@ CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
 	  SetPriorityClass (hProcess, REALTIME_PRIORITY_CLASS);
 	}
 
-      long XPixels = long (m_ExposureNumX);
-      long SkipPixels = long (m_ExposureSkipC);
+      long
+	XPixels = long (m_ExposureNumX);
+      long
+	SkipPixels = long (m_ExposureSkipC);
 
       if (ReadLine (SkipPixels, XPixels, pLineData))
 	{			// Something went wrong
@@ -790,9 +814,12 @@ CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
 
 	  if (m_DataBits == 16)
 	    {			// Take care of two's complement converters
-	      unsigned short *Ptr = pLineData;
-	      short *Ptr2 = (short *) pLineData;
-	      long Size = m_ExposureNumX;
+	      unsigned short *
+		Ptr = pLineData;
+	      short *
+		Ptr2 = (short *) pLineData;
+	      long
+		Size = m_ExposureNumX;
 	      for (i = 0; i < Size; i++)
 		{
 		  *Ptr++ = (unsigned short) *Ptr2++ + 32768;
@@ -812,8 +839,8 @@ CCameraIO::GetLine (unsigned short *pLineData, short &xSize)
 }
 
 bool
-CCameraIO::BufferDriftScan (char *bufferName, int delay, int rowCount,
-			    int nblock)
+  CCameraIO::BufferDriftScan (char *bufferName, int delay, int rowCount,
+			      int nblock)
 {
   unsigned short *pImageData, *ptr;
   int irow;
@@ -874,9 +901,6 @@ CCameraIO::BufferDriftScan (char *bufferName, int delay, int rowCount,
 	    ((now2.tv_sec - now1.tv_sec) * 1000000 + now2.tv_usec -
 	     now1.tv_usec) / 1000;
 	}
-/*        printf(".");
-        fflush(stdout);
- */
     }
   sched_setscheduler (0, SCHED_OTHER, &s);
 
@@ -887,8 +911,8 @@ CCameraIO::BufferDriftScan (char *bufferName, int delay, int rowCount,
 // Easy to use methods
 
 bool
-CCameraIO::Snap (double Duration, bool Light, unsigned short *pImageData,
-		 short &xSize, short &ySize)
+  CCameraIO::Snap (double Duration, bool Light, unsigned short *pImageData,
+		   short &xSize, short &ySize)
 {
   // NB This also demonstrates how an application might use the
   // Expose and GetImage routines.
@@ -931,10 +955,10 @@ CCameraIO::Snap (double Duration, bool Light, unsigned short *pImageData,
 ////////////////////////////////////////////////////////////
 // Camera Settings
 
-Camera_Status
-CCameraIO::read_Status ()
+Camera_Status CCameraIO::read_Status ()
 {
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_Status, val);
 
   if (val & RegBit_Exposing)	//11.0
@@ -971,8 +995,7 @@ CCameraIO::read_Status ()
   return m_Status;
 }
 
-bool
-CCameraIO::read_Present ()
+bool CCameraIO::read_Present ()
 {
 // This does not work on all cameras
 /*
@@ -991,11 +1014,13 @@ CCameraIO::read_Present ()
 	if ( val & RegBit_LoopbackTest ) FailedLoopback = true;
 */
 
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_CommandReadback, val);	// Take snapshot of currrent status
   m_RegShadow[Reg_Command] = val;	// remember it in our write shadow
 
-  bool TriggerEnabled = (val & RegBit_TriggerEnable) != 0;
+  bool
+    TriggerEnabled = (val & RegBit_TriggerEnable) != 0;
 
   m_RegShadow[Reg_Command] &= ~RegBit_TriggerEnable;	// clear bit to 0
   Write (Reg_Command, m_RegShadow[Reg_Command]);
@@ -1026,10 +1051,10 @@ CCameraIO::read_Present ()
   return true;
 }
 
-bool
-CCameraIO::read_Shutter ()
+bool CCameraIO::read_Shutter ()
 {
-  unsigned short regval = 0;
+  unsigned short
+    regval = 0;
   Read (Reg_Status, regval);
   if (!(regval & RegBit_Exposing))
     {				// We are not exposing, but might have finnshed an exposure
@@ -1044,10 +1069,10 @@ CCameraIO::read_Shutter ()
   return m_Shutter;
 }
 
-bool
-CCameraIO::read_ForceShutterOpen ()
+bool CCameraIO::read_ForceShutterOpen ()
 {
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_CommandReadback, val);
   return ((val & RegBit_ShutterOverride) != 0);
 }
@@ -1090,10 +1115,10 @@ CCameraIO::write_ForceShutterOpen (bool val)
 
 
 
-bool
-CCameraIO::read_LongCable ()
+bool CCameraIO::read_LongCable ()
 {
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_CommandReadback, val);
   return ((val & RegBit_CableLength) != 0);
 }
@@ -1182,10 +1207,10 @@ CCameraIO::write_Test2Bits (short val)
   Write (Reg_AICCounter, m_RegShadow[Reg_AICCounter]);
 }
 
-bool
-CCameraIO::read_FastReadout ()
+bool CCameraIO::read_FastReadout ()
 {
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_CommandReadback, val);
   return ((val & RegBit_Focus) != 0);
 }
@@ -1201,10 +1226,10 @@ CCameraIO::write_FastReadout (bool val)
   Write (Reg_Command, m_RegShadow[Reg_Command]);
 }
 
-bool
-CCameraIO::read_UseTrigger ()
+bool CCameraIO::read_UseTrigger ()
 {
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_CommandReadback, val);
   return ((val & RegBit_TriggerEnable) != 0);
 }
@@ -1251,15 +1276,16 @@ CCameraIO::write_CoolerSetPoint (double val)
   Write (Reg_TempSetPoint, m_RegShadow[Reg_TempSetPoint]);
 }
 
-Camera_CoolerStatus
-CCameraIO::read_CoolerStatus ()
+Camera_CoolerStatus CCameraIO::read_CoolerStatus ()
 {
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_CommandReadback, val);
 
   if (val & RegBit_CoolerEnable)	//12.15
     {
-      unsigned short val2 = 0;
+      unsigned short
+	val2 = 0;
       Read (Reg_Status, val2);
 
       if (val & RegBit_CoolerShutdown)	//12.8
@@ -1290,10 +1316,10 @@ CCameraIO::read_CoolerStatus ()
   return m_CoolerStatus;
 }
 
-Camera_CoolerMode
-CCameraIO::read_CoolerMode ()
+Camera_CoolerMode CCameraIO::read_CoolerMode ()
 {
-  unsigned short val = 0;
+  unsigned short
+    val = 0;
   Read (Reg_CommandReadback, val);
 
   if (val & RegBit_CoolerShutdown)
@@ -1640,10 +1666,10 @@ CCameraIO::InitDefaults ()
 
 
 
-bool
-CCameraIO::InitDriver (unsigned short camnum)
+bool CCameraIO::InitDriver (unsigned short camnum)
 {
-  char deviceName[64];
+  char
+    deviceName[64];
 
   sprintf (deviceName, "%s%d", APOGEE_PCI_DEVICE, camnum);
   fileHandle =::open (deviceName, O_RDONLY);
