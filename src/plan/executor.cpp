@@ -566,15 +566,29 @@ Rts2Executor::setGrb (int grbId)
 	  return -2;
 	}
     }
-
-  // if we don't observe anything..bring us to GRB..
   if (!currentTarget)
     {
+      // if we don't observe anything..bring us to GRB..
+      if (priorityTarget)
+	{
+	  // it's not same..
+	  ret == grbTarget->compareWithTarget (priorityTarget, grb_sep_limit);
+	  if (ret == 0)
+	    {
+	      return setNow (grbTarget);
+	    }
+	  else
+	    {
+	      // wait till it will be properly processed
+	      return 0;
+	    }
+	}
       delete nextTarget;
       nextTarget = grbTarget;
       switchTarget ();
       return 0;
     }
+  // it's not same..
   ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit);
   if (ret == 0)
     {

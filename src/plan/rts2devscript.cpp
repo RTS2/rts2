@@ -80,6 +80,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	}
       delete nextComd;
       nextComd = NULL;
+      // null dont_execute_for
+      dont_execute_for = -1;
       break;
     case EVENT_STOP_OBSERVATION:
       deleteScript ();
