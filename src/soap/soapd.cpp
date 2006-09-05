@@ -207,6 +207,9 @@ rts2__getExec (struct soap *in_soap, rts2__getExecResponse & res)
   struct soapExecGetst gets;
   res.current = soap_new_rts2__target (in_soap, 1);
   res.next = soap_new_rts2__target (in_soap, 1);
+  res.obsid = -1;
+  nullTarget (res.current);
+  nullTarget (res.next);
   gets.res = &res;
   gets.in_soap = in_soap;
   soapd->postEvent (new Rts2Event (EVENT_SOAP_EXEC_GETST, (void *) &gets));
@@ -296,7 +299,7 @@ rts2__setCentrald (struct soap *in_soap, enum rts2__system system,
     case rts2__system__ON:
       soapd->getCentraldConn ()->queCommand (new Rts2Command (soapd, "on"));
       break;
-    defalt:
+    default:
       return SOAP_NO_METHOD;
     }
   return SOAP_OK;

@@ -52,4 +52,6 @@ public:
 void fillTarget (int in_tar_id, struct soap *in_soap,
 		 rts2__target * out_target);
 
+void nullTarget (rts2__target * out_target);
+
 #endif /*!__RTS2_SOAPCLI__ */

@@ -163,11 +163,7 @@ fillTarget (int in_tar_id, struct soap *in_soap, rts2__target * out_target)
   an_target = createTarget (in_tar_id);
   if (!an_target)
     {
-      out_target->id = 0;
-      out_target->type = "";
-      out_target->name = "";
-      out_target->radec = NULL;
-      out_target->priority = nan ("f");
+      nullTarget (out_target);
       return;
     }
 
@@ -197,4 +193,14 @@ fillTarget (int in_tar_id, struct soap *in_soap, rts2__target * out_target)
   out_target->radec->ra = pos.ra;
   out_target->radec->dec = pos.dec;
   out_target->priority = an_target->getBonus ();
+}
+
+void
+nullTarget (rts2__target * out_target)
+{
+  out_target->id = 0;
+  out_target->type = "";
+  out_target->name = "";
+  out_target->radec = NULL;
+  out_target->priority = nan ("f");
 }
