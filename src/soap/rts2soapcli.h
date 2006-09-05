@@ -17,6 +17,12 @@ typedef struct soapExecGetst
   soap *in_soap;
 };
 
+typedef struct soapCameraGet
+{
+  rts2__getCamerasResponse *res;
+  soap *in_soap;
+};
+
 class Rts2DevClientTelescopeSoap:public Rts2DevClientTelescope
 {
 public:

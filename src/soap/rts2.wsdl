@@ -47,10 +47,16 @@
   </complexType>
   <complexType name="camera">
     <sequence>
+      <element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
       <element name="exposure" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="focpos" type="xsd:double" minOccurs="1" maxOccurs="1"/>
-      <element name="status" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="status" type="ns:cameraStatus" minOccurs="1" maxOccurs="1"/>
     </sequence>
+  </complexType>
+  <complexType name="cameras">
+    <sequence>
+      <element name="camera" type="ns:camera" minOccurs="0" maxOccurs="unbounded"/>
+    </sequence>  
   </complexType>
   <complexType name="target">
     <sequence>
@@ -76,6 +82,15 @@
       <enumeration value="NIGHT"/>
       <enumeration value="DAWN"/>
       <enumeration value="MORNING"/>
+    </restriction>
+  </simpleType>
+  <simpleType name="cameraStatus">
+    <restriction base="xsd:string">
+      <enumeration value="IDLE"/>
+      <enumeration value="IMAGE"/>
+      <enumeration value="DARK"/>
+      <enumeration value="READOUT"/>
+      <enumeration value="ERROR"/>
     </restriction>
   </simpleType>
  </schema>
@@ -169,19 +184,17 @@
   </operation>
 </portType>
 
-<message name="getCameraRequest">
+<message name="getCamerasRequest">
 </message>
 
-<message name="getCameraResponse">
-  <part name="exposure" type="xsd:double"/>
-  <part name="focpos" type="xsd:positiveInteger"/>
-  <part name="status" type="xsd:positiveInteger"/>
+<message name="getCamerasResponse">
+  <part name="cameras" type="ns:cameras"/>
 </message>
 
 <portType name="camera">
-  <operation name="getCamera">
-    <input message="tns:getCameraRequest"/>
-    <output message="tns:getCameraResponse"/>
+  <operation name="getCameras">
+    <input message="tns:getCamerasRequest"/>
+    <output message="tns:getCamerasResponse"/>
   </operation>
 </portType>
 
@@ -281,7 +294,7 @@
 
 <binding name="rts2" type="tns:camera">
   <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
-    <operation name="getCamera">
+    <operation name="getCameras">
       <SOAP:operation style="rpc" soapAction=""/>
          <input>
 	   <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>

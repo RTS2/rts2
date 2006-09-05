@@ -14,7 +14,6 @@ SOAP_CPP_SERVER = soapServer.cpp
 
 rts2.h: rts2.wsdl
 	wsdl2h -s $< -o $@
-	@SOAP@ -i $@
 
 SOAP_CPP_SRC = $(SOAP_CPP_CLIENT) $(SOAP_CPP_SERVER) $(SOAP_H_FILES) $(SOAP_NS)
 $(SOAP_CPP_SRC):$(SOAPHEADER)
