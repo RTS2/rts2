@@ -143,21 +143,26 @@ void
 Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
 {
   soapCameraGet *cam_get;
-  class rts2__camera *cam;
+  class rts2__camera *cam = NULL;
   switch (event->getType ())
     {
     case EVENT_SOAP_CAMD_GET:
+      cam = ((rts2__getCameraResponse *) event)->camera;
+      break;
+    case EVENT_SOAP_CAMS_GET:
       cam_get = (soapCameraGet *) event->getArg ();
       cam = soap_new_rts2__camera (cam_get->in_soap, 1);
-
-      cam->name = getName ();
-      cam->exposure = getValueDouble ("exposure");
-      cam->focpos = getValueInteger ("focpos");
-      cam->status = rts2__cameraStatus__IDLE;
 
       cam_get->res->cameras->camera->push_back (cam);
 
       break;
+    }
+  if (cam != NULL)
+    {
+      cam->name = getName ();
+      cam->exposure = getValueDouble ("exposure");
+      cam->focpos = getValueInteger ("focpos");
+      cam->status = rts2__cameraStatus__IDLE;
     }
 }
 
