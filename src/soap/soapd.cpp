@@ -154,6 +154,9 @@ Rts2Soapd::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_DOME:
       cli = new Rts2DevClientDomeSoap (conn);
       break;
+    case DEVICE_TYPE_CCD:
+      cli = new Rts2DevClientCameraSoap (conn);
+      break;
     default:
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
@@ -225,6 +228,13 @@ int
 rts2__getDome (struct soap *in_soap, rts2__getDomeResponse & res)
 {
   soapd->postEvent (new Rts2Event (EVENT_SOAP_DOME_GETST, (void *) &res));
+  return SOAP_OK;
+}
+
+int
+rts2__getCamera (struct soap *in_soap, rts2__getCameraResponse & res)
+{
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_CAMD_GET, (void *) &res));
   return SOAP_OK;
 }
 

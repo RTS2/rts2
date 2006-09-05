@@ -9,6 +9,7 @@
 #define EVENT_SOAP_TEL_GET       RTS2_LOCAL_EVENT+1002
 #define EVENT_SOAP_EXEC_GETST    RTS2_LOCAL_EVENT+1003
 #define EVENT_SOAP_DOME_GETST    RTS2_LOCAL_EVENT+1004
+#define EVENT_SOAP_CAMD_GET	 RTS2_LOCAL_EVENT+1005
 
 typedef struct soapExecGetst
 {
@@ -38,6 +39,13 @@ class Rts2DevClientDomeSoap:public Rts2DevClientDome
 {
 public:
   Rts2DevClientDomeSoap (Rts2Conn * in_connection);
+  virtual void postEvent (Rts2Event * event);
+};
+
+class Rts2DevClientCameraSoap:public Rts2DevClientCamera
+{
+public:
+  Rts2DevClientCameraSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
 

@@ -134,6 +134,26 @@ Rts2DevClientDomeSoap::postEvent (Rts2Event * event)
     }
 }
 
+Rts2DevClientCameraSoap::Rts2DevClientCameraSoap (Rts2Conn * in_connection):Rts2DevClientCamera
+  (in_connection)
+{
+}
+
+void
+Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
+{
+  struct rts2__getCameraResponse *res;
+  switch (event->getType ())
+    {
+    case EVENT_SOAP_CAMD_GET:
+      res = (rts2__getCameraResponse *) event->getArg ();
+      res->exposure = getValueDouble ("exposure");
+      res->focpos = getValueInteger ("focpos");
+      res->status = getStatus (0);
+      break;
+    }
+}
+
 void
 fillTarget (int in_tar_id, struct soap *in_soap, rts2__target * out_target)
 {

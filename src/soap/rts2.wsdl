@@ -45,6 +45,13 @@
       <element name="err" type="ns:radec" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
+  <complexType name="camera">
+    <sequence>
+      <element name="exposure" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="focpos" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="status" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
   <complexType name="target">
     <sequence>
       <element name="id" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
@@ -162,6 +169,22 @@
   </operation>
 </portType>
 
+<message name="getCameraRequest">
+</message>
+
+<message name="getCameraResponse">
+  <part name="exposure" type="xsd:double"/>
+  <part name="focpos" type="xsd:positiveInteger"/>
+  <part name="status" type="xsd:positiveInteger"/>
+</message>
+
+<portType name="camera">
+  <operation name="getCamera">
+    <input message="tns:getCameraRequest"/>
+    <output message="tns:getCameraResponse"/>
+  </operation>
+</portType>
+
 <message name="getCentraldRequest">
 </message>
 
@@ -254,6 +277,19 @@
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
     </output>
   </operation>
+</binding>
+
+<binding name="rts2" type="tns:camera">
+  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="getCamera">
+      <SOAP:operation style="rpc" soapAction=""/>
+         <input>
+	   <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+	 </input>
+	 <output>
+	   <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+	 </output>
+     </operation>
 </binding>
 
 <binding name="rts2" type="tns:centrald">
