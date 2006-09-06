@@ -109,7 +109,8 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
   // if unknow type, don't process image..
   if ((image->getShutter () != SHUT_OPENED
-       && image->getShutter () != SHUT_SYNCHRO))
+       && image->getShutter () != SHUT_SYNCHRO)
+      || image->getImageType () == IMGTYPE_FLAT)
     return;
 
   // find image processor with lowest que number..
