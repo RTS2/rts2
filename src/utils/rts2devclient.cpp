@@ -242,6 +242,7 @@ Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClien
   addValue (new Rts2ValueInteger ("focpos"));
   addValue (new Rts2ValueDouble ("gain"));
   addValue (new Rts2ValueDouble ("rnoise"));
+  addValue (new Rts2ValueInteger ("shutter"));
 
   addValue (new Rts2ValueDouble ("exposure"));
   addValue (new Rts2ValueDouble ("subexposure"));
@@ -299,8 +300,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -620,8 +620,7 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool
-Rts2DevClientPhot::isIntegrating ()
+bool Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
