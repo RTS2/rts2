@@ -567,7 +567,7 @@ Rts2DevTelescopeIr::info ()
       struct ln_lnlat_posn observer;
       struct ln_equ_posn curr;
       hrz.az = az;
-      hrz.alt = 90 - zd;
+      hrz.alt = 90 - fabs (zd);
       observer.lng = telLongtitude;
       observer.lat = telLatitude;
       ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
