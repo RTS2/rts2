@@ -342,7 +342,7 @@ process_command (struct device_struct *dev, char command[3])
 	    dev->filter_position += 30;
 	  if (despos == 297)
 	    dev->filter_position -= 30;
-	  dev->desired_position = intargs (&command[1]);
+	  dev->desired_position = despos;
 	  filter_routine (dev);
 	}
       else
