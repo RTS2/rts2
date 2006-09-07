@@ -191,6 +191,10 @@ public:
 	readoutConn = NULL;
       }
   }
+  int getShutterState ()
+  {
+    return shutter_state;
+  }
   virtual int endReadout ();
   void clearReadout ();
   virtual int sendFirstLine ();

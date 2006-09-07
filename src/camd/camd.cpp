@@ -751,6 +751,7 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
   conn->sendValue ("exposure", lastExp);
   conn->sendValue ("gain", gain);
   conn->sendValue ("rnoise", rnoise);
+  conn->sendValue ("shutter", chips[0]->getShutterState ());
   conn->sendValue ("subexposure", subExposure);
   return 0;
 }
