@@ -767,6 +767,9 @@ Rts2DevDomeFram::closeDome ()
 
   if (zjisti_stav_portu () == -1)
     {
+      syslog (LOG_ERR, "Cannot read from port at close!");
+      sendFramMail
+	("ERROR FRAM DOME CANNOT BE CLOSED DUE TO ROOF CONTROLLER FAILURE!!");
       return -1;
     }
   if (movingState != MOVE_NONE)
