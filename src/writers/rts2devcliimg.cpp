@@ -159,7 +159,6 @@ Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 void
 Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
-//  images = setValueImageType (image);
 }
 
 void
