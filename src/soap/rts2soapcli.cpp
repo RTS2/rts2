@@ -1,5 +1,6 @@
 #include "rts2soapcli.h"
 #include "../utilsdb/target.h"
+#include "imghdr.h"
 
 Rts2DevClientTelescopeSoap::Rts2DevClientTelescopeSoap (Rts2Conn * in_connection):Rts2DevClientTelescope
   (in_connection)
@@ -159,10 +160,34 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
     }
   if (cam != NULL)
     {
+      int status = getStatus (0);
       cam->name = getName ();
       cam->exposure = getValueDouble ("exposure");
       cam->focpos = getValueInteger ("focpos");
-      cam->status = rts2__cameraStatus__IDLE;
+      if (status & DEVICE_ERROR_MASK)
+	{
+	  if (status & DEVICE_ERROR_MASK == DEVICE_ERROR_KILL)
+	    cam->status = rts2__cameraStatus__IDLE;
+	  else
+	    cam->status = rts2__cameraStatus__ERROR;
+	}
+      else
+	switch (status)
+	  {
+	  case CAM_EXPOSING:
+	  case CAM_DATA:
+	    if (getValueInteger ("shutter") == SHUTTER_CLOSED)
+	      cam->status = rts2__cameraStatus__DARK;
+	    else
+	      cam->status = rts2__cameraStatus__IMAGE;
+	    break;
+	  case CAM_READING:
+	    cam->status = rts2__cameraStatus__READOUT;
+	    break;
+	  default:
+	    cam->status = rts2__cameraStatus__IDLE;
+	    break;
+	  }
     }
 }
 
