@@ -33,7 +33,8 @@ Rts2Image::initData ()
   mountName = NULL;
   focName = NULL;
   imageData = NULL;
-  filter = -1;
+  filter_i = -1;
+  filter = NULL;
   average = 0;
   min = max = mean = 0;
   histogram = NULL;
@@ -69,7 +70,9 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   in_image->ffile = NULL;
   fits_status = in_image->fits_status;
   flags = in_image->flags;
+  filter_i = in_image->filter_i;
   filter = in_image->filter;
+  in_image->filter = NULL;
   exposureStart.tv_sec = in_image->exposureStart.tv_sec;
   exposureStart.tv_usec = in_image->exposureStart.tv_usec;
   exposureLength = in_image->exposureLength;
@@ -249,7 +252,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   ret = getValue ("FOC_POS", focPos);
   if (ret)
     focPos = -1;
-  getValue ("CAM_FILT", filter);
+  getValue ("CAM_FILT", filter_i);
   getValue ("AVERAGE", average);
   getValue ("RA_ERR", ra_err);
   getValue ("DEC_ERR", dec_err);
@@ -268,6 +271,7 @@ Rts2Image::~Rts2Image (void)
   delete[]mountName;
   delete[]focName;
   delete[]imageData;
+  delete[]filter;
   if (sexResults)
     free (sexResults);
 }
@@ -766,8 +770,8 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
   setValue ("Y", im_h->y, "image beginning - detector Y coordinate");
   setValue ("BIN_V", im_h->binnings[0], "X axis binning");
   setValue ("BIN_H", im_h->binnings[1], "Y axis binning");
-  setValue ("CAM_FILT", im_h->filter, "filter used for image");
-  filter = im_h->filter;
+  filter_i = im_h->filter;
+  setValue ("CAM_FILT", filter_i, "filter used for image");
   setValue ("SHUTTER", im_h->shutter,
 	    "shutter state (1 - open, 2 - closed, 3 - synchro)");
   setValue ("SUBEXP", im_h->subexp, "subexposure length");
@@ -910,6 +914,7 @@ Rts2Image::closeFile ()
       struct timeval now;
       gettimeofday (&now, NULL);
       setValue ("DATE", &(now.tv_sec), now.tv_usec, "creation date");
+      setValue ("FILTER", filter, "camera filter as string");
       fits_close_file (ffile, &fits_status);
       flags &= ~IMAGE_SAVE;
     }
@@ -960,6 +965,13 @@ Rts2Image::setFocuserName (const char *in_focuserName)
   focName = new char[strlen (in_focuserName) + 1];
   strcpy (focName, in_focuserName);
   setValue ("FOC_NAME", focName, "name of focuser");
+}
+
+void
+Rts2Image::setFilter (const char *in_filter)
+{
+  filter = new char[strlen (in_filter) + 1];
+  strcpy (filter, in_filter);
 }
 
 void

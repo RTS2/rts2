@@ -39,7 +39,8 @@ private:
   fitsfile *ffile;
   int fits_status;
   int flags;
-  int filter;
+  int filter_i;
+  char *filter;
   struct timeval exposureStart;
   float exposureLength;
   void setImageName (const char *in_filename);
@@ -241,9 +242,16 @@ public:
     return imgId;
   }
 
-  int getFilter ()
+  const char *getFilter ()
   {
     return filter;
+  }
+
+  void setFilter (const char *in_filter);
+
+  int getFilterNum ()
+  {
+    return filter_i;
   }
 
   void computeStatistics ();

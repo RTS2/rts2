@@ -65,7 +65,6 @@ private:
   inline int isCalibrationImage ();
   void updateCalibrationDb ();
 
-  char *filter;
 protected:
     virtual void initDbImage ();
   virtual int updateDB ();
@@ -95,11 +94,6 @@ public:
 
   virtual int saveImage ();
   virtual int deleteImage ();
-
-  const char *getFilter ()
-  {
-    return filter;
-  }
 
   virtual bool haveOKAstrometry ()
   {

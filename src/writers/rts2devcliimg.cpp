@@ -82,7 +82,7 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 void
 Rts2DevClientCameraImage::writeFilter ()
 {
-  int camFilter = images->getFilter ();
+  int camFilter = images->getFilterNum ();
   char *flt = filter;
   char *flt_end;
   char imageFilter[4];
@@ -115,7 +115,7 @@ Rts2DevClientCameraImage::writeFilter ()
     {
       strcpy (imageFilter, "UNK");
     }
-  images->setValue ("FILTER", imageFilter, "camera filter as string");
+  images->setFilter (imageFilter);
 }
 
 void

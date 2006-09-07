@@ -358,7 +358,6 @@ Rts2ImageSkyDb::initDbImage ()
 {
   processBitfiedl = 0;
   getValue ("PROC", processBitfiedl);
-  filter = NULL;
 }
 
 int
@@ -491,13 +490,11 @@ Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, cha
 
   epochId = in_epoch_id;
 
-  filter = new char[strlen(in_img_filter) + 1];
-  strcpy (filter, in_img_filter);
+  setFilter (in_img_filter);
 }
 
 Rts2ImageSkyDb::~Rts2ImageSkyDb ()
 {
-  delete[] filter;
 }
 
 int
