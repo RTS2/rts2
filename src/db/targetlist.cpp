@@ -6,6 +6,7 @@
 
 #define LIST_ALL	0x00
 #define LIST_GRB	0x01
+#define LIST_SELECTABLE 0x02
 
 class Rts2TargetList:public Rts2AppDb
 {
@@ -28,6 +29,8 @@ Rts2AppDb (in_argc, in_argv)
 {
   list = LIST_ALL;
   addOption ('g', "grb", 0, "list onlu GRBs");
+  addOption ('s', "selectable", 0,
+	     "list only targets considered by selector");
 }
 
 Rts2TargetList::~Rts2TargetList ()
@@ -40,7 +43,10 @@ Rts2TargetList::processOption (int in_opt)
   switch (in_opt)
     {
     case 'g':
-      list = LIST_GRB;
+      list |= LIST_GRB;
+      break;
+    case 's':
+      list |= LIST_SELECTABLE;
       break;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -80,6 +86,11 @@ Rts2TargetList::run ()
       tar_set_grb = new Rts2TargetSetGrb ();
       tar_set_grb->printGrbList (std::cout);
       delete tar_set_grb;
+      break;
+    case LIST_SELECTABLE:
+      tar_set = new Rts2TargetSetSelectable ();
+      tar_set->printBonusList (std::cout, ln_get_julian_from_sys ());
+      delete tar_set;
       break;
     default:
       tar_set = new Rts2TargetSet ();
