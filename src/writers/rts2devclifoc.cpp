@@ -29,10 +29,8 @@ Rts2DevClientCameraImage (in_connection)
 
 Rts2DevClientCameraFoc::~Rts2DevClientCameraFoc (void)
 {
-  if (exe)
-    delete exe;
-  if (darkImage)
-    delete darkImage;
+  delete[]exe;
+  delete darkImage;
   if (focConn)
     focConn->nullCamera ();
 }
@@ -113,7 +111,8 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
     }
   else if (darkImage)
     image->substractDark (darkImage);
-  if (image->getShutter () == SHUT_OPENED && exe)
+  if (image->getShutter () == SHUT_OPENED
+      || image->getShutter () == SHUT_SYNCHRO && exe)
     {
       focConn =
 	new Rts2ConnFocus (getMaster (), image, exe, EVENT_CHANGE_FOCUS);
