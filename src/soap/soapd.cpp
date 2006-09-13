@@ -237,23 +237,27 @@ rts2__getDome (struct soap *in_soap, rts2__getDomeResponse & res)
 int
 rts2__getCamera (struct soap *in_soap, rts2__getCameraResponse & res)
 {
-  res.camera = soap_new_rts2__camera (in_soap, 1);
-  soapd->postEvent (new Rts2Event (EVENT_SOAP_CAMD_GET, (void *) &res));
+  soapCameraGet cam_get;
+
+  cam_get.res = &res;
+  cam_get.in_soap = in_soap;
+
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_CAMD_GET, (void *) &cam_get));
   return SOAP_OK;
 }
 
 int
 rts2__getCameras (struct soap *in_soap, rts2__getCamerasResponse & res)
 {
-  soapCameraGet cam_get;
+  soapCamerasGet cams_get;
   res.cameras = soap_new_rts2__cameras (in_soap, 1);
   res.cameras->camera =
     soap_new_std__vectorTemplateOfPointerTorts2__camera (in_soap, 1);
 
-  cam_get.res = &res;
-  cam_get.in_soap = in_soap;
+  cams_get.res = &res;
+  cams_get.in_soap = in_soap;
 
-  soapd->postEvent (new Rts2Event (EVENT_SOAP_CAMS_GET, (void *) &cam_get));
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_CAMS_GET, (void *) &cams_get));
   return SOAP_OK;
 }
 

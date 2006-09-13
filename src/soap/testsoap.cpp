@@ -62,6 +62,7 @@ Rts2TestSoap::run ()
   struct rts2__getTargetResponse target;
   struct rts2__getCentraldResponse centrald;
   struct rts2__setCentraldResponse centrald_set;
+  struct rts2__getCameraResponse camera_res;
   struct rts2__getCamerasResponse cameras_res;
   int ret;
 
@@ -120,6 +121,13 @@ Rts2TestSoap::run ()
   ret =
     soap_call_rts2__setCentrald (&soap, server, "", rts2__system__OFF,
 				 centrald_set);
+  if (ret != SOAP_OK)
+    {
+      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+      return ret;
+    }
+
+  ret = soap_call_rts2__getCamera (&soap, server, "", camera_res);
   if (ret != SOAP_OK)
     {
       std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;

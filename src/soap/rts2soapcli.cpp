@@ -144,17 +144,22 @@ void
 Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
 {
   soapCameraGet *cam_get;
+  soapCamerasGet *cams_get;
   class rts2__camera *cam = NULL;
   switch (event->getType ())
     {
     case EVENT_SOAP_CAMD_GET:
-      cam = ((rts2__getCameraResponse *) event)->camera;
-      break;
-    case EVENT_SOAP_CAMS_GET:
       cam_get = (soapCameraGet *) event->getArg ();
       cam = soap_new_rts2__camera (cam_get->in_soap, 1);
 
-      cam_get->res->cameras->camera->push_back (cam);
+      cam_get->res->camera = cam;
+
+      break;
+    case EVENT_SOAP_CAMS_GET:
+      cams_get = (soapCamerasGet *) event->getArg ();
+      cam = soap_new_rts2__camera (cams_get->in_soap, 1);
+
+      cams_get->res->cameras->camera->push_back (cam);
 
       break;
     }
@@ -219,6 +224,12 @@ fillTarget (int in_tar_id, struct soap *in_soap, rts2__target * out_target)
       break;
     case TYPE_ELLIPTICAL:
       out_target->type = "solar system body";
+      break;
+    case TYPE_FLAT:
+      out_target->type = "flat frames";
+      break;
+    case TYPE_DARK:
+      out_target->type = "dark frames";
       break;
     default:
     case TYPE_UNKNOW:

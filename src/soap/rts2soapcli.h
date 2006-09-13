@@ -20,6 +20,12 @@ typedef struct soapExecGetst
 
 typedef struct soapCameraGet
 {
+  rts2__getCameraResponse *res;
+  soap *in_soap;
+};
+
+typedef struct soapCamerasGet
+{
   rts2__getCamerasResponse *res;
   soap *in_soap;
 };
