@@ -972,6 +972,7 @@ Rts2Image::setFilter (const char *in_filter)
 {
   filter = new char[strlen (in_filter) + 1];
   strcpy (filter, in_filter);
+  flags |= IMAGE_SAVE;
 }
 
 void
