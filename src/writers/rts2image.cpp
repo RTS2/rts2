@@ -120,6 +120,10 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   sexResultNum = in_image->sexResultNum;
 
   shutter = in_image->getShutter ();
+
+  // other image will be saved!
+  flags = in_image->flags;
+  in_image->flags &= ~IMAGE_SAVE;
 }
 
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
@@ -253,6 +257,8 @@ Rts2Image::Rts2Image (const char *in_filename)
   if (ret)
     focPos = -1;
   getValue ("CAM_FILT", filter_i);
+  filter = new char[5];
+  getValue ("FILTER", filter, 5);
   getValue ("AVERAGE", average);
   getValue ("RA_ERR", ra_err);
   getValue ("DEC_ERR", dec_err);
@@ -610,8 +616,8 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
       if (ret)
 	return ret;
     }
-  fits_update_key (ffile, TSTRING, name, (void *) value, comment,
-		   &fits_status);
+  ret = fits_update_key (ffile, TSTRING, name, (void *) value, comment,
+			 &fits_status);
   flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
 }
@@ -914,7 +920,6 @@ Rts2Image::closeFile ()
       struct timeval now;
       gettimeofday (&now, NULL);
       setValue ("DATE", &(now.tv_sec), now.tv_usec, "creation date");
-      setValue ("FILTER", filter, "camera filter as string");
       fits_close_file (ffile, &fits_status);
       flags &= ~IMAGE_SAVE;
     }
@@ -934,7 +939,7 @@ Rts2Image::deleteImage ()
   int ret;
   fits_close_file (ffile, &fits_status);
   ffile = NULL;
-  flags &= !IMAGE_SAVE;
+  flags &= ~IMAGE_SAVE;
   ret = unlink (getImageName ());
   return ret;
 }
@@ -972,7 +977,7 @@ Rts2Image::setFilter (const char *in_filter)
 {
   filter = new char[strlen (in_filter) + 1];
   strcpy (filter, in_filter);
-  flags |= IMAGE_SAVE;
+  setValue ("FILTER", filter, "camera filter as string");
 }
 
 void

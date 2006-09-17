@@ -123,18 +123,14 @@ Rts2ImageSkyDb::updateDB ()
   VARCHAR d_img_filter[3];
   EXEC SQL END DECLARE SECTION;
 
-  char tmp_filter[4] = "UNK";
-
   strncpy (d_mount_name.arr, getMountName (), 8);
   d_mount_name.len = strlen (getMountName ());
 
   strncpy (d_camera_name.arr, getCameraName (), 8);
   d_camera_name.len = strlen (getCameraName ());
 
-  getValue ("FILTER", tmp_filter, 4);
-
-  d_img_filter.len = strlen (tmp_filter) > 3 ? 3 : strlen (tmp_filter);
-  strncpy (d_img_filter.arr, tmp_filter, d_img_filter.len);
+  d_img_filter.len = strlen (getFilter()) > 3 ? 3 : strlen (getFilter());
+  strncpy (d_img_filter.arr, getFilter(), d_img_filter.len);
 
   d_img_temperature_ind = getValue ("CCD_TEMP", d_img_temperature);
   if (isnan (d_img_temperature))
