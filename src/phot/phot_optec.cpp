@@ -205,8 +205,8 @@ Rts2DevPhotOptec::startFilterMove (int new_filter)
   if (ret)
     return ret;
   time (&filter_move_timeout);
-  // 10 sec timeout for move
-  filter_move_timeout += 10;
+  // 20 sec timeout for move
+  filter_move_timeout += 20;
   return Rts2DevPhot::startFilterMove (new_filter);
 }
 
