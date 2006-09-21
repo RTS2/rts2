@@ -38,10 +38,14 @@ protected:
   {
     return -1;
   }
+
+  int getValueInd (char *name, double &value, int &ind, char *comment = NULL);
+  int getValueInd (char *name, float &value, int &ind, char *comment = NULL);
+
 public:
-    Rts2ImageDb (Rts2Image * in_image);
+  Rts2ImageDb (Rts2Image * in_image);
   Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
-	       const struct timeval * expStart);
+	       const struct timeval *expStart);
   Rts2ImageDb (const char *in_filename);
   Rts2ImageDb (int in_obs_id, int in_img_id);
   Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposure);

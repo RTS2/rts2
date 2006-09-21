@@ -21,6 +21,30 @@ Rts2ImageDb::reportSqlError (char *msg)
   sqlca.sqlerrm.sqlerrmc, msg);
 }
 
+int
+Rts2ImageDb::getValueInd (char *name, double &value, int &ind, char *comment)
+{
+  ind = getValue (name, value, comment);
+  if (ind)
+  {
+    value = 100;
+    ind = -1;
+  }
+  return 0;
+}
+
+int
+Rts2ImageDb::getValueInd (char *name, float &value, int &ind, char *comment)
+{
+  ind = getValue (name, value, comment);
+  if (ind)
+  {
+    value = 100;
+    ind = -1;
+  }
+  return 0;
+}
+
 Rts2ImageDb::Rts2ImageDb (Rts2Image * in_image): Rts2Image (in_image)
 {
 }
@@ -118,6 +142,12 @@ Rts2ImageSkyDb::updateDB ()
   int d_epoch_id = epochId;
   int d_med_id = 0;
   int d_proccess_bitfield = processBitfiedl;
+  float d_img_fwhm;
+  int d_img_fwhm_ind;
+  float d_img_limmag;
+  int d_img_limmag_ind;
+  float d_img_qmagmax;
+  int d_img_qmagmax_ind;
   VARCHAR d_mount_name[8];
   VARCHAR d_camera_name[8];
   VARCHAR d_img_filter[3];
@@ -132,15 +162,14 @@ Rts2ImageSkyDb::updateDB ()
   d_img_filter.len = strlen (getFilter()) > 3 ? 3 : strlen (getFilter());
   strncpy (d_img_filter.arr, getFilter(), d_img_filter.len);
 
-  d_img_temperature_ind = getValue ("CCD_TEMP", d_img_temperature);
-  if (isnan (d_img_temperature))
-  {
-    d_img_temperature = 100;
-    d_img_temperature_ind = -1;
-  }
   d_img_exposure = getExposureLength ();
   getValue ("ALT", d_img_alt);
   getValue ("AZ", d_img_az);
+
+  getValueInd ("CCD_TEMP", d_img_temperature, d_img_temperature_ind);
+  getValueInd ("FWHM", d_img_fwhm, d_img_fwhm_ind);
+  getValueInd ("QMAGMAX", d_img_qmagmax, d_img_limmag_ind);
+  getValueInd ("LIMMAG", d_img_limmag, d_img_limmag_ind);
 
   EXEC SQL
   INSERT INTO
@@ -160,7 +189,10 @@ Rts2ImageSkyDb::updateDB ()
     img_usec,
     epoch_id,
     med_id,
-    process_bitfield
+    process_bitfield,
+    img_fwhm,
+    img_limmag,
+    img_qmagmax
   )
   VALUES
   (
@@ -178,7 +210,10 @@ Rts2ImageSkyDb::updateDB ()
     :d_img_usec,
     :d_epoch_id,
     :d_med_id,
-    :d_proccess_bitfield
+    :d_proccess_bitfield,
+    :d_img_fwhm :d_img_fwhm_ind,
+    :d_img_limmag :d_img_limmag_ind,
+    :d_img_qmagmax :d_img_qmagmax_ind
   );
   // data found..do just update
   if (sqlca.sqlcode != 0)
