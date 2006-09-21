@@ -16,4 +16,9 @@ ALTER TABLE auger ADD COLUMN auger_dec		float8;
 ALTER TABLE auger ALTER auger_ra  SET NOT NULL;
 ALTER TABLE auger ALTER auger_dec SET NOT NULL;
 
+-- image quaility checks
+ALTER TABLE images ADD COLUMN img_fwhm float4;
+ALTER TABLE images ADD COLUMN img_limmag float4;
+ALTER TABLE images ADD COLUMN img_qmagmax float4;
+
 CREATE SEQUENCE auger_t3id;
