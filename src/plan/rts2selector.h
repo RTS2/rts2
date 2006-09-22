@@ -9,6 +9,8 @@ class Rts2Selector
 private:
   std::list < Target * >possibleTargets;
   void considerTarget (int consider_tar_id, double JD);
+  void checkTargetObservability ();
+  void checkTargetBonus ();
   void findNewTargets ();
   int selectFlats ();
   int selectDarks ();

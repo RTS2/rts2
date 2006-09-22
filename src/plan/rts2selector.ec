@@ -120,6 +120,35 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
   possibleTargets.push_back (newTar);
 }
 
+// enable targets which become observable
+void
+Rts2Selector::checkTargetObservability ()
+{
+  EXEC SQL
+  UPDATE
+    targets
+  SET
+    tar_next_observable = NULL
+  WHERE
+    tar_next_observable < now();
+  EXEC SQL COMMIT;
+}
+
+// drop old priorities..
+void
+Rts2Selector::checkTargetBonus ()
+{
+  EXEC SQL
+  UPDATE
+    targets
+  SET
+    tar_bonus = 0,
+    tar_bonus_time = NULL
+  WHERE
+    tar_bonus_time < now ();
+  EXEC SQL COMMIT;
+}
+
 void
 Rts2Selector::findNewTargets ()
 {
@@ -134,17 +163,8 @@ Rts2Selector::findNewTargets ()
 
   JD = ln_get_julian_from_sys ();
 
-  // drop old priorities..
-
-  EXEC SQL
-  UPDATE
-    targets
-  SET
-    tar_bonus = 0,
-    tar_bonus_time = NULL
-  WHERE
-    tar_bonus_time < now ();
-  EXEC SQL COMMIT;
+  checkTargetObservability();
+  checkTargetBonus();
 
   // drop targets which gets bellow horizont..
   
@@ -174,8 +194,9 @@ Rts2Selector::findNewTargets ()
     FROM
       targets
     WHERE
-        tar_enabled = true
-      AND tar_priority + tar_bonus > 0;
+        (tar_enabled = true)
+      AND (tar_priority + tar_bonus > 0)
+      AND ((tar_next_observable is null) OR (tar_next_observable < now ()));
   if (sqlca.sqlcode)
   {
     syslog (LOG_ERR, "findNewTargets: %s", sqlca.sqlerrm.sqlerrmc);
