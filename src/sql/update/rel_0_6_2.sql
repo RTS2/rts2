@@ -24,3 +24,17 @@ ALTER TABLE images ADD COLUMN img_qmagmax float4;
 ALTER TABLE targets ADD COLUMN tar_next_observable timestamp;
 
 CREATE SEQUENCE auger_t3id;
+
+-- relation between observations and auger targets is kept in this table
+CREATE TABLE auger_observation (
+	auger_t3id	integer NOT NULL REFERENCES auger (auger_t3id),
+	obs_id		integer NOT NULL REFERENCES observations (obs_id),
+CONSTRAINT auger_obs_prim_key PRIMARY KEY (auger_t3id, obs_id)
+);
+
+-- relation for follow-up calibration observations
+CREATE TABLE calibration_observations (
+	cal_obs_id	integer NOT NULL REFERENCES observations (obs_id),
+	obs_id		integer NOT NULL REFERENCES observations (obs_id),
+CONSTRAINT calibration_obs_prim_key PRIMARY KEY (cal_obs_id, obs_id)
+);
