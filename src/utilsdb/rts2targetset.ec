@@ -201,7 +201,7 @@ Rts2TargetSetSelectable::Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs) 
   load (std::string ("tar_enabled = true AND tar_priority + tar_bonus > 0"), std::string ("tar_priority + tar_bonus DESC"));
 }
 
-Rts2TargetSetCal::Rts2TargetSetCal (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver (), false)
+Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver (), false)
 {
   double airmass = in_masterTarget->getAirmass (JD);
   std::ostringstream os, func, ord;

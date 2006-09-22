@@ -21,4 +21,6 @@ ALTER TABLE images ADD COLUMN img_fwhm float4;
 ALTER TABLE images ADD COLUMN img_limmag float4;
 ALTER TABLE images ADD COLUMN img_qmagmax float4;
 
+ALTER TABLE targets ADD COLUMN tar_next_observable timestamp;
+
 CREATE SEQUENCE auger_t3id;

@@ -181,6 +181,7 @@ private:
   float tar_priority;
   float tar_bonus;
   time_t tar_bonus_time;
+  time_t tar_next_observable;
   bool tar_enabled;
 
 protected:
@@ -528,6 +529,9 @@ public:
   virtual float getBonus (double JD);
   virtual int changePriority (int pri_change, time_t * time_ch);
   int changePriority (int pri_change, double validJD);
+
+  virtual int setNextObservable (time_t * time_ch);
+  int setNextObservable (double validJD);
 
   int getNextImgId ()
   {

@@ -173,6 +173,7 @@ Target::Target ()
   tar_priority = 0;
   tar_bonus = nan ("f");
   tar_bonus_time = 0;
+  tar_next_observable = 0;
   tar_enabled = false;
 
   config->getFloat ("newtarget", "priority", tar_priority);
@@ -205,6 +206,8 @@ Target::loadTarget (int in_tar_id)
   int d_tar_bonus_ind;
   long d_tar_bonus_time;
   int d_tar_bonus_time_ind;
+  long d_tar_next_observable;
+  int d_tar_next_observable_ind;
   bool d_tar_enabled;
   int db_tar_id = in_tar_id;
   EXEC SQL END DECLARE SECTION;
@@ -215,12 +218,14 @@ Target::loadTarget (int in_tar_id)
     tar_priority,
     tar_bonus,
     EXTRACT (EPOCH FROM tar_bonus_time),
+    EXTRACT (EPOCH FROM tar_next_observable),
     tar_enabled
   INTO
     :d_tar_name,
     :d_tar_priority :d_tar_priority_ind,
     :d_tar_bonus :d_tar_bonus_ind,
     :d_tar_bonus_time :d_tar_bonus_time_ind,
+    :d_tar_next_observable :d_tar_next_observable_ind,
     :d_tar_enabled
   FROM
     targets
@@ -252,6 +257,11 @@ Target::loadTarget (int in_tar_id)
     tar_bonus_time = d_tar_bonus_time;
   else
     tar_bonus_time = 0;
+
+  if (d_tar_next_observable_ind >= 0)
+    tar_next_observable = d_tar_next_observable;
+  else
+    tar_next_observable = 0;
 
   tar_enabled = d_tar_enabled;
   
@@ -357,6 +367,7 @@ Target::save (int tar_id)
     tar_priority,
     tar_bonus,
     tar_bonus_time,
+    tar_next_observable,
     tar_enabled
   )
   VALUES
@@ -368,6 +379,7 @@ Target::save (int tar_id)
     :db_tar_priority,
     :db_tar_bonus :db_tar_bonus_ind,
     abstime (:db_tar_bonus_time :db_tar_bonus_time_ind),
+    null,
     :db_tar_enabled
   );
   // insert failed - try update
@@ -992,7 +1004,7 @@ Target::considerForObserving (double JD)
   int ret;
   if (getPosition (&curr_position, JD))
   {
-    changePriority (-100, JD + 1);
+    setNextObservable (JD + 1);
     return -1;
   }
   ret = isGood (lst, JD, &curr_position);
@@ -1004,14 +1016,14 @@ Target::considerForObserving (double JD)
     {
       // object doesn't rise, let's hope tomorrow it will rise
       syslog (LOG_DEBUG, "Target::considerForObserving tar %i don't rise", getTargetID ());
-      changePriority (-100, JD + 1);
+      setNextObservable (JD + 1);
       return -1;
     }
     // handle circumpolar objects..
     if (ret == 1)
     {
       syslog (LOG_DEBUG, "Target::considerForObserving is circumpolar, but is not good, scheduling after 10 minutes");
-      changePriority (-100, JD + 10.0 / (24.0 * 60.0));
+      setNextObservable (JD + 10.0 / (24.0 * 60.0));
       return -1;
     }
     // object is above horizont, but checker reject it..let's see what
@@ -1020,12 +1032,12 @@ Target::considerForObserving (double JD)
     {
       // object rose, but is not above horizont, let's hope in 12 minutes it will get above horizont
       syslog (LOG_DEBUG, "Target::considerForObserving %i will rise tommorow: %f JD %f", getTargetID (), rst.rise, JD);
-      changePriority (-100, JD + 12*(1.0/1440.0));
+      setNextObservable (JD + 12*(1.0/1440.0));
       return -1;
     }
     // object is setting, let's target it for next rise..
     syslog (LOG_DEBUG, "Target::considerForObserving %i will rise at: %f", getTargetID (), rst.rise);
-    changePriority (-100, rst.rise);
+    setNextObservable (rst.rise);
     return -1;
   }
   // target was selected for observation
@@ -1080,7 +1092,6 @@ Target::changePriority (int pri_change, time_t *time_ch)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    printf ("db_next_t: %i\n", db_next_t);
     logMsgDb ("Target::changePriority");
     EXEC SQL ROLLBACK;
     return -1;
@@ -1095,6 +1106,38 @@ Target::changePriority (int pri_change, double validJD)
   time_t next;
   ln_get_timet_from_julian (validJD, &next);
   return changePriority (pri_change, &next);
+}
+
+int
+Target::setNextObservable (time_t *time_ch)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int db_tar_id = getObsTargetID ();
+  int db_next_observable = (int) *time_ch;
+  EXEC SQL END DECLARE SECTION;
+  
+  EXEC SQL UPDATE 
+    targets
+  SET
+    tar_next_observable = abstime(:db_next_observable)
+  WHERE
+    tar_id = :db_tar_id;
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("Target::setNextObservable");
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL COMMIT;
+  return 0;
+}
+
+int
+Target::setNextObservable (double validJD)
+{
+  time_t next;
+  ln_get_timet_from_julian (validJD, &next);
+  return setNextObservable (&next);
 }
 
 int
@@ -1230,7 +1273,8 @@ Target::printExtra (std::ostream &_os, double JD)
   _os 
     << InfoVal<double> ("TARGET PRIORITY", tar_priority)
     << InfoVal<double> ("TARGET BONUS", tar_bonus)
-    << InfoVal<Timestamp> ("TARGET BONUS TIME", Timestamp(tar_bonus_time));
+    << InfoVal<Timestamp> ("TARGET BONUS TIME", Timestamp(tar_bonus_time))
+    << InfoVal<Timestamp> ("TARGET NEXT OBS.", Timestamp(tar_next_observable));
 }
 
 void
@@ -1585,7 +1629,7 @@ Target::sendInfo (std::ostream & _os, double JD)
 Rts2TargetSet *
 Target::getCalTargets (double JD)
 {
-  return new Rts2TargetSetCal (this, JD);
+  return new Rts2TargetSetCalibration (this, JD);
 }
 
 std::ostream &
