@@ -17,6 +17,7 @@ public:
 
   virtual int load ();
   virtual float getBonus (double JD);
+  virtual int startSlew (struct ln_equ_posn *pos);
   virtual int considerForObserving (double JD);
   virtual int changePriority (int pri_change, time_t * time_ch)
   {

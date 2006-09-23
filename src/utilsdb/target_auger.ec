@@ -84,6 +84,40 @@ TargetAuger::getBonus (double JD)
 }
 
 int
+TargetAuger::startSlew (struct ln_equ_posn *pos)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_obs_id;
+  int d_auger_t3id = t3id;
+  EXEC SQL END DECLARE SECTION;
+  int ret;
+  
+  ret = ConstTarget::startSlew (pos);
+  if (ret)
+    return ret;
+
+  d_obs_id = getObsId ();
+  EXEC SQL
+  INSERT INTO
+    auger_observation
+  (
+    auger_t3id,
+    obs_id
+  ) VALUES (
+    :d_auger_t3id,
+    :d_obs_id
+  );
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("TargetAuger::startSlew SQL error");
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL COMMIT;
+  return OBS_MOVE;
+}
+
+int
 TargetAuger::considerForObserving (double JD)
 {
   load ();
