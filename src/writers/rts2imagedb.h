@@ -179,6 +179,34 @@ template < class img > img * setValueImageType (img * in_image)
   return ret_i;
 }
 
-Rts2Image *getValueImageType (Rts2Image * in_image);
+template < class img > img * getValueImageType (img * in_image)
+{
+  int ret;
+  char value[20];
+  ret = in_image->getValue ("IMAGETYP", value, 20);
+  if (ret)
+    return in_image;
+  // switch based on IMAGETYPE
+  if (!strcasecmp (value, "dark"))
+    {
+      Rts2ImageDarkDb *darkI = new Rts2ImageDarkDb (in_image);
+      delete in_image;
+      return darkI;
+    }
+  else if (!strcasecmp (value, "flat"))
+    {
+      Rts2ImageFlatDb *flatI = new Rts2ImageFlatDb (in_image);
+      delete in_image;
+      return flatI;
+    }
+  else if (!strcasecmp (value, "object"))
+    {
+      Rts2ImageSkyDb *skyI = new Rts2ImageSkyDb (in_image);
+      delete in_image;
+      return skyI;
+    }
+  // "zero" and "comp" are not used
+  return in_image;
+}
 
 #endif /* ! __RTS2_IMAGEDB__ */
