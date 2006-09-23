@@ -1,6 +1,6 @@
 CREATE TABLE flats ( 
         obs_id		integer REFERENCES observations(obs_id),
-	img_id		integer NOT NOT,
+	img_id		integer NOT NULL,
 	flat_date	timestamp,
 	flat_date_usec  integer,
 	flat_exposure	integer,
