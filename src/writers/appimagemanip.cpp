@@ -121,13 +121,13 @@ Rts2AppImageManip::processOption (int in_opt)
   switch (in_opt)
     {
     case 'a':
-      operation &= IMAGEOP_ADDDATE;
+      operation |= IMAGEOP_ADDDATE;
       break;
     case 'i':
-      operation &= IMAGEOP_INSERT;
+      operation |= IMAGEOP_INSERT;
       break;
     case 't':
-      operation &= IMAGEOP_TEST;
+      operation |= IMAGEOP_TEST;
       break;
     default:
       return Rts2AppDbImage::processOption (in_opt);
@@ -166,8 +166,7 @@ void
 killSignal (int sig)
 {
   if (app)
-    delete
-      app;
+    delete app;
 }
 
 int
@@ -181,12 +180,10 @@ main (int argc, char **argv)
   ret = app->init ();
   if (ret)
     {
-      delete
-	app;
+      delete app;
       return 0;
     }
   ret = app->run ();
-  delete
-    app;
+  delete app;
   return ret;
 }
