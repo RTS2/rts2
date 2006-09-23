@@ -383,12 +383,17 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 void
 Rts2ConnGrb::getGrbBound (int grb_type, int &grb_start, int &grb_end)
 {
-  if (grb_type <= TYPE_SWIFT_BAT_TRANS)
+  if (grb_type <= TYPE_GLAST_SC_SLEW)
   {
+    if (grb_type >= TYPE_GLAST_GBM_GRB_ALERT)
+    {
+      grb_start = TYPE_GLAST_GBM_GRB_ALERT;
+      grb_end = TYPE_GLAST_SC_SLEW;
+    }
     if (grb_type >= TYPE_SWIFT_BAT_GRB_ALERT_SRC)
     {
       grb_start = TYPE_SWIFT_BAT_GRB_ALERT_SRC;
-      grb_end = TYPE_SWIFT_BAT_TRANS;
+      grb_end = TYPE_SWIFT_UVOT_NACK_POSITION;
     }
     else if (grb_type >= TYPE_MILAGRO_POS_SRC)
     {
