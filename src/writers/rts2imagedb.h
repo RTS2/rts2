@@ -149,7 +149,36 @@ public:
   }
 };
 
-Rts2Image *setValueImageType (Rts2Image * in_image);
+template < class img > img * setValueImageType (img * in_image)
+{
+  char *imgTypeText = "unknow";
+  img *ret_i = NULL;
+  // guess image type..
+  if (in_image->getShutter () == SHUT_CLOSED)
+    {
+      ret_i = new Rts2ImageDarkDb (in_image);
+      imgTypeText = "dark";
+    }
+  else if (in_image->getShutter () == SHUT_UNKNOW)
+    {
+      // that should not happen
+      return in_image;
+    }
+  else if (in_image->getTargetType () == TYPE_FLAT)
+    {
+      ret_i = new Rts2ImageFlatDb (in_image);
+      imgTypeText = "flat";
+    }
+  else
+    {
+      ret_i = new Rts2ImageSkyDb (in_image);
+      imgTypeText = "object";
+    }
+  ret_i->setValue ("IMAGETYP", imgTypeText, "IRAF based image type");
+  delete in_image;
+  return ret_i;
+}
+
 Rts2Image *getValueImageType (Rts2Image * in_image);
 
 #endif /* ! __RTS2_IMAGEDB__ */
