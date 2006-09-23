@@ -49,6 +49,7 @@
     <sequence>
       <element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
       <element name="exposure" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="temp" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="focpos" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="status" type="ns:cameraStatus" minOccurs="1" maxOccurs="1"/>
     </sequence>
@@ -65,6 +66,13 @@
       <element name="type" type="xsd:string" minOccurs="1" maxOccurs="1"/>
       <element name="radec" type="ns:radec" minOccurs="1" maxOccurs="1"/>
       <element name="priority" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
+  <complexType name="dome">
+    <sequence>
+      <element name="temp" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="humi" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="wind" type="xsd:double" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
   <simpleType name="system">
@@ -171,9 +179,7 @@
 </message>
 
 <message name="getDomeResponse">
-  <part name="temp" type="xsd:double"/>
-  <part name="humi" type="xsd:double"/>
-  <part name="wind" type="xsd:double"/>
+  <part name="dome" type="ns:dome"/>
 </message>
 
 <portType name="dome">

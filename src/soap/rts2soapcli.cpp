@@ -128,9 +128,9 @@ Rts2DevClientDomeSoap::postEvent (Rts2Event * event)
     {
     case EVENT_SOAP_DOME_GETST:
       res = (rts2__getDomeResponse *) event->getArg ();
-      res->temp = getValueDouble ("temperature");
-      res->humi = getValueDouble ("humidity");
-      res->wind = getValueDouble ("windspeed");
+      res->dome->temp = getValueDouble ("temperature");
+      res->dome->humi = getValueDouble ("humidity");
+      res->dome->wind = getValueDouble ("windspeed");
       break;
     }
 }
@@ -169,6 +169,7 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
       cam->name = getName ();
       cam->exposure = getValueDouble ("exposure");
       cam->focpos = getValueInteger ("focpos");
+      cam->temp = getValueDouble ("ccd_temperature");
       if (status & DEVICE_ERROR_MASK)
 	{
 	  if (status & DEVICE_ERROR_MASK == DEVICE_ERROR_KILL)
