@@ -12,6 +12,8 @@
 #define COR_ABERATION	0x01
 #define COR_PRECESSION	0x02
 #define COR_REFRACTION	0x04
+// if we will use model corrections..
+#define COR_MODEL	0x08
 
 // types of reset
 // acquired from 
@@ -290,6 +292,16 @@ public:
   int resetMount (Rts2Conn * conn, resetStates reset_state);
   virtual int getFlip ();
   virtual int grantPriority (Rts2Conn * conn);
+
+  void modelOff ()
+  {
+    corrections &= ~COR_MODEL;
+  }
+
+  void modelOn ()
+  {
+    corrections |= COR_MODEL;
+  }
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn

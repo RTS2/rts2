@@ -75,8 +75,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
     }
   telGuidingSpeed = nan ("f");
 
-  // default is to don't apply any corrections
-  corrections = 0x00;
+  // default is to aply model corrections
+  corrections = COR_MODEL;
 }
 
 Rts2DevTelescope::~Rts2DevTelescope (void)
@@ -238,7 +238,7 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
   struct ln_equ_posn hadec;
   double ra;
   double lst;
-  if (!model && !model0)
+  if ((!model && !model0) || !(corrections & COR_MODEL))
     {
       model_change->ra = 0;
       model_change->dec = 0;
@@ -1066,6 +1066,9 @@ Rts2DevConn (in_sock, in_master_device)
 int
 Rts2DevConnTelescope::commandAuthorized ()
 {
+  double tar_ra;
+  double tar_dec;
+
   if (isCommand ("exit"))
     {
       close (sock);
@@ -1081,18 +1084,24 @@ Rts2DevConnTelescope::commandAuthorized ()
     }
   else if (isCommand ("move"))
     {
-      double tar_ra;
-      double tar_dec;
       CHECK_PRIORITY;
       if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
 	  || !paramEnd ())
 	return -2;
+      master->modelOn ();
+      return master->startMove (this, tar_ra, tar_dec);
+    }
+  else if (isCommand ("move_not_model"))
+    {
+      CHECK_PRIORITY;
+      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
+	  || !paramEnd ())
+	return -2;
+      master->modelOff ();
       return master->startMove (this, tar_ra, tar_dec);
     }
   else if (isCommand ("resync"))
     {
-      double tar_ra;
-      double tar_dec;
       CHECK_PRIORITY;
       if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
 	  || !paramEnd ())
@@ -1101,23 +1110,22 @@ Rts2DevConnTelescope::commandAuthorized ()
     }
   else if (isCommand ("fixed"))
     {
-      double tar_ha;
-      double tar_dec;
       CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ha) || paramNextDouble (&tar_dec)
+      // tar_ra hold HA (Hour Angle)
+      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
 	  || !paramEnd ())
 	return -2;
-      return master->startMoveFixed (this, tar_ha, tar_dec);
+      master->modelOn ();
+      return master->startMoveFixed (this, tar_ra, tar_dec);
     }
   else if (isCommand ("setto"))
     {
-      double set_ra;
-      double set_dec;
       CHECK_PRIORITY;
-      if (paramNextDouble (&set_ra) || paramNextDouble (&set_dec)
+      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
 	  || !paramEnd ())
 	return -2;
-      return master->setTo (this, set_ra, set_dec);
+      master->modelOn ();
+      return master->setTo (this, tar_ra, tar_dec);
     }
   else if (isCommand ("correct"))
     {
@@ -1141,17 +1149,16 @@ Rts2DevConnTelescope::commandAuthorized ()
       CHECK_PRIORITY;
       if (!paramEnd ())
 	return -2;
+      master->modelOn ();
       return master->startPark (this);
     }
   else if (isCommand ("change"))
     {
-      double chng_ra;
-      double chng_dec;
       CHECK_PRIORITY;
-      if (paramNextDouble (&chng_ra) || paramNextDouble (&chng_dec)
+      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
 	  || !paramEnd ())
 	return -2;
-      return master->change (this, chng_ra, chng_dec);
+      return master->change (this, tar_ra, tar_dec);
     }
   else if (isCommand ("save_model"))
     {
