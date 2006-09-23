@@ -157,6 +157,7 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
   operation = IMAGEOP_NOOP;
   addOption ('d', "add-date", 0, "add DATE-OBS to image header");
   addOption ('i', "insert", 0, "insert/update images in the database");
+  addOption ('t', "test", 0, "test various image routines");
 }
 
 Rts2AppImageManip *
@@ -166,7 +167,8 @@ void
 killSignal (int sig)
 {
   if (app)
-    delete app;
+    delete
+      app;
 }
 
 int
@@ -180,10 +182,12 @@ main (int argc, char **argv)
   ret = app->init ();
   if (ret)
     {
-      delete app;
+      delete
+	app;
       return 0;
     }
   ret = app->run ();
-  delete app;
+  delete
+    app;
   return ret;
 }
