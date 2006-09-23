@@ -158,10 +158,20 @@ public:
 class Rts2CommandMove:public Rts2Command
 {
   Rts2DevClientTelescope *tel;
+protected:
+    Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel);
 public:
     Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel,
 		     double ra, double dec);
   virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandMoveUnmodelled:public Rts2CommandMove
+{
+public:
+  Rts2CommandMoveUnmodelled (Rts2Block * in_master,
+			     Rts2DevClientTelescope * in_tel, double ra,
+			     double dec);
 };
 
 class Rts2CommandMoveFixed:public Rts2Command

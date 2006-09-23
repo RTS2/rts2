@@ -258,6 +258,12 @@ Rts2CommandCameraSettings (in_camera)
   free (command);
 }
 
+Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel):
+Rts2Command (in_master)
+{
+  tel = in_tel;
+}
+
 Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master,
 				  Rts2DevClientTelescope * in_tel, double ra,
 				  double dec):
@@ -277,7 +283,18 @@ Rts2CommandMove::commandReturnFailed (int status)
   return Rts2Command::commandReturnFailed (status);
 }
 
-Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
+Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
+Rts2CommandMove (in_master, in_tel)
+{
+  char *command;
+  asprintf (&command, "move_not_model %lf %lf", ra, dec);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * in_master,
+					    Rts2DevClientTelescope * in_tel,
+					    double ra, double dec):
 Rts2Command (in_master)
 {
   char *command;
