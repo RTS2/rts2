@@ -1568,7 +1568,7 @@ TargetGRB::printExtra (std::ostream &_os, double JD)
   double firstObs = getFirstObs ();
   ConstTarget::printExtra (_os, JD);
   _os 
-    << getSatelite ()
+    << getSatelite () << std::endl
     << InfoVal<int> ("TYPE", gcnPacketType)
     << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") << std::endl
     << InfoVal<Timestamp> ("GRB DATE", Timestamp (grbDate))
