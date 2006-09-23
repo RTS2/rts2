@@ -285,6 +285,20 @@
 #define TYPE_SWIFT_BAT_GRB_POS_TEST      82	// SWIFT BAT GRB Position Test message
 #define TYPE_SWIFT_POINTDIR_SRC          83	// SWIFT Pointing Direction message
 #define TYPE_SWIFT_BAT_TRANS             84	// SWIFT BAT Transient Position message
+#define TYPE_SWIFT_UVOT_NACK_POSITION    89	// SWIFT UVOT not source
+
+// preliminary GLAST packets
+#define TYPE_GLAST_GBM_GRB_ALERT        110
+#define TYPE_GLAST_GBM_GRB_POS_ACK      111
+#define TYPE_GLAST_GBM_LC               112
+#define TYPE_GLAST_GBM_TRANS            118
+#define TYPE_GLAST_GBM_GRB_POS_TEST     119
+#define TYPE_GLAST_LAT_GRB_POS_INI      120
+#define TYPE_GLAST_LAT_GRB_POS_UPD      121
+#define TYPE_GLAST_LAT_GRB_POS_FIN      122
+#define TYPE_GLAST_LAT_TRANS            123
+#define TYPE_GLAST_OBS_REQUEST          125
+#define TYPE_GLAST_SC_SLEW              126
 
 #define FIND_SXC	0	// Used in hete_same()
 #define FIND_WXM	1	// Ditto; check the corners of a WXM box

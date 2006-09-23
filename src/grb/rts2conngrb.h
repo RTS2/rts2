@@ -54,6 +54,8 @@ private:
   int pr_swift_with_radec ();
   int pr_swift_without_radec ();
 
+  int pr_glast ();
+
   // GRB db stuff
   int addSwiftPoint (double roll, char *name, float obstime, float merit);
   int addIntegralPoint (double ra, double dec, const time_t * t);

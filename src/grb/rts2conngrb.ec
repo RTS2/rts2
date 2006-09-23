@@ -89,7 +89,7 @@ Rts2ConnGrb::pr_hete ()
 
   getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
 
-  grb_errorbox = (lbuf[H_WXM_DIM_NSIG] >> 16) / 60.0;
+  grb_errorbox = (lbuf[H_WXM_DIM_NSIG] >> 16) / 3600.0;
 
   if (!do_hete_test
     && (grb_type == TYPE_HETE_TEST 
@@ -154,7 +154,7 @@ Rts2ConnGrb::pr_integral ()
 
   ln_get_equ_prec2 (&pos_int, ln_get_julian_from_timet (&grb_date), JD2000, &pos_j2000);
 
-  grb_errorbox = (float) lbuf[BURST_ERROR]/60.0;
+  grb_errorbox = (float) lbuf[BURST_ERROR] / 3600.0;
 
   if (grb_errorbox < 0 && grb_type == TYPE_INTEGRAL_OFFLINE_SRC)
   {
@@ -216,7 +216,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
     case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
     case TYPE_SWIFT_XRT_POSITION_SRC:
     case TYPE_SWIFT_UVOT_POS_SRC:
-      grb_errorbox = (float) 60 * lbuf[BURST_ERROR] / 10000.0;
+      grb_errorbox = (float) lbuf[BURST_ERROR] / 10000.0;
       break;
     default:
       grb_errorbox = nan ("f");
@@ -284,6 +284,13 @@ Rts2ConnGrb::pr_swift_without_radec ()
   }
 
   return addGcnRaw (d_grb_id, d_grb_seqn, d_grb_type);
+}
+
+int
+Rts2ConnGrb::pr_glast ()
+{
+  // TODO implement that
+  return -1;
 }
 
 int
@@ -1098,6 +1105,19 @@ Rts2ConnGrb::receive (fd_set *set)
       case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
         pr_swift_without_radec ();
 	break;
+      case TYPE_GLAST_GBM_GRB_ALERT:
+      case TYPE_GLAST_GBM_GRB_POS_ACK:
+      case TYPE_GLAST_GBM_LC:
+      case TYPE_GLAST_GBM_TRANS:
+      case TYPE_GLAST_GBM_GRB_POS_TEST:
+      case TYPE_GLAST_LAT_GRB_POS_INI:
+      case TYPE_GLAST_LAT_GRB_POS_UPD:
+      case TYPE_GLAST_LAT_GRB_POS_FIN:
+      case TYPE_GLAST_LAT_TRANS:
+      case TYPE_GLAST_OBS_REQUEST:
+      case TYPE_GLAST_SC_SLEW:
+        pr_glast ();
+        break;
       case TYPE_KILL_SOCKET:
         connectionError (-1);
         break;
