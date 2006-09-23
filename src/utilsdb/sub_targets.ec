@@ -1169,6 +1169,10 @@ ConstTarget (in_tar_id, in_obs)
   maxBonusTimeout = in_maxBonusTimeout;
   dayBonusTimeout = in_dayBonusTimeout;
   fiveBonusTimeout = in_fiveBonusTimeout;
+
+  grb.ra = nan("f");
+  grb.dec = nan("f");
+  errorbox = nan("f");
 }
 
 int
@@ -1181,6 +1185,10 @@ TargetGRB::load ()
   int db_grb_id;
   bool db_grb_is_grb;
   int db_tar_id = getTargetID ();
+  double db_grb_ra;
+  double db_grb_dec;
+  float db_grb_errorbox;
+  int db_grb_errorbox_ind;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
@@ -1188,13 +1196,19 @@ TargetGRB::load ()
     EXTRACT (EPOCH FROM grb_last_update),
     grb_type,
     grb_id,
-    grb_is_grb
+    grb_is_grb,
+    grb_ra,
+    grb_dec,
+    grb_errorbox
   INTO
     :db_grb_date,
     :db_grb_last_update,
     :db_grb_type,
     :db_grb_id,
-    :db_grb_is_grb
+    :db_grb_is_grb,
+    :db_grb_ra,
+    :db_grb_dec,
+    :db_grb_errorbox :db_grb_errorbox_ind
   FROM
     grb
   WHERE
@@ -1237,6 +1251,12 @@ TargetGRB::load ()
 
   gcnGrbId = db_grb_id;
   grb_is_grb = db_grb_is_grb;
+  grb.ra = db_grb_ra;
+  grb.dec = db_grb_dec;
+  if (db_grb_errorbox_ind)
+    errorbox = db_grb_errorbox;
+  else
+    errorbox = nan("f");
   shouldUpdate = 0;
   return ConstTarget::load ();
 }
@@ -1544,7 +1564,10 @@ TargetGRB::printExtra (std::ostream &_os, double JD)
     << InfoVal<Timestamp> ("GRB DATE", Timestamp (grbDate))
     << InfoVal<Timestamp> ("GCN FIRST PACKET", Timestamp (firstPacket))
     << InfoVal<TimeDiff> ("GRB->GCN", TimeDiff (grbDate, firstPacket))
-    << InfoVal<Timestamp> ("GCN LAST UPDATE", Timestamp (lastUpdate));
+    << InfoVal<Timestamp> ("GCN LAST UPDATE", Timestamp (lastUpdate))
+    << InfoVal<LibnovaRaJ2000> ("GRB RA", LibnovaRaJ2000 (grb.ra))
+    << InfoVal<LibnovaDecJ2000> ("GRB DEC", LibnovaDecJ2000 (grb.dec))
+    << InfoVal<LibnovaDeg> ("GRB ERR", LibnovaDeg (errorbox));
   // get information about obsering time..
   if (isnan (firstObs))
   {

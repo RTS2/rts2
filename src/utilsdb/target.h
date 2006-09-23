@@ -875,6 +875,9 @@ private:
   int dayBonusTimeout;
   int fiveBonusTimeout;
 
+  struct ln_equ_posn grb;
+  float errorbox;
+
   const char *getSatelite ();
 protected:
     virtual int getDBScript (const char *camera_name, char *script);
