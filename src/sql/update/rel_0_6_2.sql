@@ -33,7 +33,7 @@ CONSTRAINT auger_obs_prim_key PRIMARY KEY (auger_t3id, obs_id)
 );
 
 -- relation for follow-up calibration observations
-CREATE TABLE calibration_observations (
+CREATE TABLE calibration_observation (
 	cal_obs_id	integer NOT NULL REFERENCES observations (obs_id),
 	obs_id		integer NOT NULL REFERENCES observations (obs_id),
 CONSTRAINT calibration_obs_prim_key PRIMARY KEY (cal_obs_id, obs_id)
