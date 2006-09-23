@@ -3,4 +3,4 @@
 Makefile
 Makefile.in
 rts2imagedb.cpp
-rts2-imgtest
+rts2-image
