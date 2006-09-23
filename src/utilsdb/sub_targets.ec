@@ -1236,11 +1236,17 @@ TargetGRB::load ()
     gcnPacketMin = 50;
     gcnPacketMax = 55;
   }
-  else if (gcnPacketType >= 60 && gcnPacketType <= 85)
+  else if (gcnPacketType >= 60 && gcnPacketType <= 90)
   {
     // SWIFT burst
     gcnPacketMin = 60;
-    gcnPacketMax = 85;
+    gcnPacketMax = 90;
+  }
+  else if (gcnPacketType >= 110 && gcnPacketType <= 150)
+  {
+    // GLAST
+    gcnPacketMin = 110;
+    gcnPacketMax = 150;
   }
   else
   {
@@ -1254,9 +1260,9 @@ TargetGRB::load ()
   grb.ra = db_grb_ra;
   grb.dec = db_grb_dec;
   if (db_grb_errorbox_ind)
-    errorbox = db_grb_errorbox;
-  else
     errorbox = nan("f");
+  else
+    errorbox = db_grb_errorbox;
   shouldUpdate = 0;
   return ConstTarget::load ();
 }
@@ -1547,6 +1553,10 @@ TargetGRB::getSatelite ()
     if (gcnPacketType >= 67)
       return "SWIFT BURST (XRT)";
     return "SWIFT BURST (BAT)";
+  }
+  else if (gcnPacketMin == 110)
+  {
+    return "GLAST";
   }
   return "Unknow type";
 }
