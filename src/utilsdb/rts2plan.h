@@ -28,7 +28,7 @@ public:
   int save ();
   int del ();
 
-  int startSlew (struct ln_equ_posn *position);
+  moveType startSlew (struct ln_equ_posn *position);
 
   Target *getTarget ();
   void clearTarget ()

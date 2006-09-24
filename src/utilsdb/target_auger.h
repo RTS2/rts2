@@ -17,7 +17,7 @@ public:
 
   virtual int load ();
   virtual float getBonus (double JD);
-  virtual int startSlew (struct ln_equ_posn *pos);
+  virtual moveType startSlew (struct ln_equ_posn *pos);
   virtual int considerForObserving (double JD);
   virtual int changePriority (int pri_change, time_t * time_ch)
   {
@@ -30,6 +30,8 @@ public:
   }
 
   virtual void printExtra (std::ostream & _os, double JD);
+
+  virtual void writeToImage (Rts2Image * image);
 };
 
 #endif /* !__RTS2_TARGET_AUGER__ */

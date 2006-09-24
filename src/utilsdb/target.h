@@ -97,11 +97,15 @@
 #define TARGET_INTEGRAL_FOV	11
 #define TARGET_SHOWER		12
 
-#define OBS_MOVE		0
-#define OBS_ALREADY_STARTED	1
-#define OBS_DONT_MOVE		2
-
-#define OBS_MOVE_FIXED		3
+typedef enum
+{
+  OBS_MOVE_FAILED = -1,
+  OBS_MOVE = 0,
+  OBS_ALREADY_STARTED,
+  OBS_DONT_MOVE,
+  OBS_MOVE_FIXED,
+  OBS_MOVE_UNMODELLED
+} moveType;
 
 // move was executed
 #define OBS_BIT_MOVED		0x01
@@ -129,6 +133,7 @@
 
 class Rts2Obs;
 class Rts2TargetSet;
+class Rts2Image;
 
 /**
  * Class for one observation.
@@ -467,7 +472,7 @@ public:
   // interruption of this target is not necessary
   // otherwise (when interruption is necessary) returns 0
   virtual int compareWithTarget (Target * in_target, double in_sep_limit);
-  virtual int startSlew (struct ln_equ_posn *position);
+  virtual moveType startSlew (struct ln_equ_posn *position);
   void moveStarted ();
   void moveEnded ();
   void moveFailed ();
@@ -644,6 +649,8 @@ public:
   }
 
   virtual Rts2TargetSet *getCalTargets (double JD);
+
+  virtual void writeToImage (Rts2Image * image);
 };
 
 class ConstTarget:public Target
@@ -718,7 +725,7 @@ public:
     virtual ~ DarkTarget (void);
   virtual int getScript (const char *deviceName, char *buf);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int startSlew (struct ln_equ_posn *position);
+  virtual moveType startSlew (struct ln_equ_posn *position);
   virtual int isContinues ()
   {
     return 1;
@@ -834,7 +841,7 @@ public:
     virtual ~ ModelTarget (void);
   virtual int load ();
   virtual int beforeMove ();
-  virtual int startSlew (struct ln_equ_posn *position);
+  virtual moveType startSlew (struct ln_equ_posn *position);
   virtual int endObservation (int in_next_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
 };
@@ -902,6 +909,8 @@ public:
   double getFirstPacket ();
   virtual void printExtra (std::ostream & _os, double JD);
   void printGrbList (std::ostream & _os);
+
+  virtual void writeToImage (Rts2Image * image);
 };
 
 /**
@@ -927,7 +936,7 @@ public:
   virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double JD);
-  virtual int startSlew (struct ln_equ_posn *position);
+  virtual moveType startSlew (struct ln_equ_posn *position);
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
   virtual float getBonus (double JD);
@@ -956,7 +965,7 @@ public:
   TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int considerForObserving (double JD);
   virtual float getBonus (double JD);
-  virtual int startSlew (struct ln_equ_posn *position);
+  virtual moveType startSlew (struct ln_equ_posn *position);
 };
 
 class Rts2Plan;
@@ -987,7 +996,7 @@ public:
   virtual float getBonus (double JD);
   virtual int isContinues ();
   virtual int beforeMove ();
-  virtual int startSlew (struct ln_equ_posn *position);
+  virtual moveType startSlew (struct ln_equ_posn *position);
 
   virtual void printExtra (std::ostream & _os, double JD);
 };

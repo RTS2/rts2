@@ -1,6 +1,7 @@
 #include "target_auger.h"
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
+#include "../writers/rts2image.h"
 
 TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, in_obs)
 {
@@ -83,17 +84,17 @@ TargetAuger::getBonus (double JD)
   return ConstTarget::getBonus (JD);
 }
 
-int
+moveType
 TargetAuger::startSlew (struct ln_equ_posn *pos)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
   int d_auger_t3id = t3id;
   EXEC SQL END DECLARE SECTION;
-  int ret;
+  moveType ret;
   
   ret = ConstTarget::startSlew (pos);
-  if (ret)
+  if (ret != OBS_MOVE)
     return ret;
 
   d_obs_id = getObsId ();
@@ -111,7 +112,7 @@ TargetAuger::startSlew (struct ln_equ_posn *pos)
   {
     logMsgDb ("TargetAuger::startSlew SQL error");
     EXEC SQL ROLLBACK;
-    return -1;
+    return OBS_MOVE_FAILED;
   }
   EXEC SQL COMMIT;
   return OBS_MOVE;
@@ -132,4 +133,11 @@ TargetAuger::printExtra (std::ostream & _os, double JD)
     << InfoVal<Timestamp> ("DATE", Timestamp(auger_date))
     << InfoVal<int> ("NPIXELS", npixels);
   ConstTarget::printExtra (_os, JD);
+}
+
+void
+TargetAuger::writeToImage (Rts2Image * image)
+{
+  ConstTarget::writeToImage (image);
+  image->setValue ("AGR_T3ID", t3id, "Auger target id");
 }

@@ -503,7 +503,7 @@ DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
-int
+moveType
 DarkTarget::startSlew (struct ln_equ_posn *position)
 {
   currPos.ra = position->ra;
@@ -1038,17 +1038,17 @@ ModelTarget::beforeMove ()
   return getNextPosition ();
 }
 
-int
+moveType
 ModelTarget::startSlew (struct ln_equ_posn *pos)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
   int d_step = step;
   EXEC SQL END DECLARE SECTION;
-  int ret;
+  moveType ret;
 
   ret = ConstTarget::startSlew (pos);
-  if (ret)
+  if (ret != OBS_MOVE)
     return ret;
 
   d_obs_id = getObsId ();
@@ -1072,7 +1072,7 @@ ModelTarget::startSlew (struct ln_equ_posn *pos)
   {
     EXEC SQL COMMIT;
   }
-  return OBS_MOVE;
+  return OBS_MOVE_UNMODELLED;
 }
 
 int
@@ -1610,6 +1610,15 @@ TargetGRB::printGrbList (std::ostream & _os)
     << std::endl;
 }
 
+void
+TargetGRB::writeToImage (Rts2Image * image)
+{
+  ConstTarget::writeToImage (image);
+  image->setValue ("GRB_RA", grb.ra, "GRB RA know at time of exposure");
+  image->setValue ("GRB_DEC", grb.dec, "GRB DEC know at time of exposure");
+  image->setValue ("GRB_ERR", errorbox, "GRB errorbox diameter");
+}
+
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
   swiftOnBonus = 0;
@@ -1744,17 +1753,17 @@ TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD)
   return ln_get_object_next_rst (JD, observer, &pos, rst);
 }
 
-int
+moveType
 TargetSwiftFOV::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
   int d_swift_id = swiftId;
   EXEC SQL END DECLARE SECTION;
-  int ret;
+  moveType ret;
   
   ret = Target::startSlew (position);
-  if (ret)
+  if (ret != OBS_MOVE)
     return ret;
 
   d_obs_id = getObsId ();
@@ -1772,7 +1781,7 @@ TargetSwiftFOV::startSlew (struct ln_equ_posn *position)
   {
     logMsgDb ("TargetSwiftFOV::startSlew SQL error");
     EXEC SQL ROLLBACK;
-    return -1;
+    return OBS_MOVE_FAILED;
   }
   EXEC SQL COMMIT;
   return OBS_MOVE;
@@ -1985,12 +1994,12 @@ TargetTerestial::getBonus (double JD)
   return 1;
 }
 
-int
+moveType
 TargetTerestial::startSlew (struct ln_equ_posn *pos)
 {
-  int ret;
+  moveType ret;
   ret = ConstTarget::startSlew (pos);
-  if (ret == -1)
+  if (ret != OBS_MOVE)
     return ret;
   return OBS_MOVE_FIXED;
 }
@@ -2294,10 +2303,10 @@ TargetPlan::beforeMove ()
   return Target::beforeMove ();
 }
 
-int
+moveType
 TargetPlan::startSlew (struct ln_equ_posn *pos)
 {
-  int ret;
+  moveType ret;
   if (selectedPlan)
   {
     ret = selectedPlan->startSlew (pos);

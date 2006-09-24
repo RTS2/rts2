@@ -423,7 +423,7 @@ Target::compareWithTarget (Target *in_target, double in_sep_limit)
   return (getDistance (&other_position) < in_sep_limit);
 }
 
-int
+moveType
 Target::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -479,7 +479,7 @@ Target::startSlew (struct ln_equ_posn *position)
   {
     logMsgDb ("cannot insert observation slew start to db");
     EXEC SQL ROLLBACK;
-    return -1;
+    return OBS_MOVE_FAILED;
   }
   EXEC SQL COMMIT;
   setObsId (d_obs_id);
@@ -1630,6 +1630,11 @@ Rts2TargetSet *
 Target::getCalTargets (double JD)
 {
   return new Rts2TargetSetCalibration (this, JD);
+}
+
+void
+Target::writeToImage (Rts2Image * image)
+{
 }
 
 std::ostream &

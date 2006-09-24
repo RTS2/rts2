@@ -200,14 +200,14 @@ Rts2Plan::del ()
   return 0;
 }
 
-int
+moveType
 Rts2Plan::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int db_plan_id = plan_id;
   int db_obs_id;
   EXEC SQL END DECLARE SECTION;
-  int ret;
+  moveType ret;
   ret = getTarget ()->startSlew (position);
   if (obs_id > 0)
     return ret;
