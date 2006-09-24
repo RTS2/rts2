@@ -366,6 +366,13 @@ Rts2DevClientTelescopeExec::syncTarget ()
 		    Rts2CommandMove (getMaster (), this,
 				     coord.ra, coord.dec));
       break;
+    case OBS_MOVE_UNMODELLED:
+      currentTarget->moveStarted ();
+      connection->
+	queCommand (new
+		    Rts2CommandMoveUnmodelled (getMaster (), this,
+					       coord.ra, coord.dec));
+      break;
     case OBS_MOVE_FIXED:
       currentTarget->moveStarted ();
       syslog (LOG_DEBUG,
@@ -399,6 +406,8 @@ Rts2DevClientTelescopeExec::syncTarget ()
 	queCommand (new
 		    Rts2CommandResyncMove (getMaster (), this,
 					   coord.ra, coord.dec));
+      break;
+    case OBS_DONT_MOVE:
       break;
     }
   return ret;
