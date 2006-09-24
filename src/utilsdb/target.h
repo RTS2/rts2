@@ -473,6 +473,7 @@ public:
   // otherwise (when interruption is necessary) returns 0
   virtual int compareWithTarget (Target * in_target, double in_sep_limit);
   virtual moveType startSlew (struct ln_equ_posn *position);
+  virtual moveType afterSlewProcessed ();
   void moveStarted ();
   void moveEnded ();
   void moveFailed ();
@@ -841,7 +842,7 @@ public:
     virtual ~ ModelTarget (void);
   virtual int load ();
   virtual int beforeMove ();
-  virtual moveType startSlew (struct ln_equ_posn *position);
+  virtual moveType afterSlewProcessed ();
   virtual int endObservation (int in_next_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
 };
@@ -936,7 +937,7 @@ public:
   virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double JD);
-  virtual moveType startSlew (struct ln_equ_posn *position);
+  virtual moveType afterSlewProcessed ();
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
   virtual float getBonus (double JD);
@@ -965,7 +966,7 @@ public:
   TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs);
   virtual int considerForObserving (double JD);
   virtual float getBonus (double JD);
-  virtual moveType startSlew (struct ln_equ_posn *position);
+  virtual moveType afterSlewProcessed ();
 };
 
 class Rts2Plan;

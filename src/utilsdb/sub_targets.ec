@@ -1039,17 +1039,12 @@ ModelTarget::beforeMove ()
 }
 
 moveType
-ModelTarget::startSlew (struct ln_equ_posn *pos)
+ModelTarget::afterSlewProcessed ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
   int d_step = step;
   EXEC SQL END DECLARE SECTION;
-  moveType ret;
-
-  ret = ConstTarget::startSlew (pos);
-  if (ret != OBS_MOVE)
-    return ret;
 
   d_obs_id = getObsId ();
 
@@ -1754,17 +1749,12 @@ TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD)
 }
 
 moveType
-TargetSwiftFOV::startSlew (struct ln_equ_posn *position)
+TargetSwiftFOV::afterSlewProcessed ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
   int d_swift_id = swiftId;
   EXEC SQL END DECLARE SECTION;
-  moveType ret;
-  
-  ret = Target::startSlew (position);
-  if (ret != OBS_MOVE)
-    return ret;
 
   d_obs_id = getObsId ();
   EXEC SQL
@@ -1995,12 +1985,8 @@ TargetTerestial::getBonus (double JD)
 }
 
 moveType
-TargetTerestial::startSlew (struct ln_equ_posn *pos)
+TargetTerestial::afterSlewProcessed ()
 {
-  moveType ret;
-  ret = ConstTarget::startSlew (pos);
-  if (ret != OBS_MOVE)
-    return ret;
   return OBS_MOVE_FIXED;
 }
 

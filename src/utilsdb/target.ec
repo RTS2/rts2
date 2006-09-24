@@ -483,6 +483,12 @@ Target::startSlew (struct ln_equ_posn *position)
   }
   EXEC SQL COMMIT;
   setObsId (d_obs_id);
+  return afterSlewProcessed ();
+}
+
+moveType
+Target::afterSlewProcessed ()
+{
   return OBS_MOVE;
 }
 

@@ -85,18 +85,13 @@ TargetAuger::getBonus (double JD)
 }
 
 moveType
-TargetAuger::startSlew (struct ln_equ_posn *pos)
+TargetAuger::afterSlewProcessed ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id;
   int d_auger_t3id = t3id;
   EXEC SQL END DECLARE SECTION;
-  moveType ret;
   
-  ret = ConstTarget::startSlew (pos);
-  if (ret != OBS_MOVE)
-    return ret;
-
   d_obs_id = getObsId ();
   EXEC SQL
   INSERT INTO
