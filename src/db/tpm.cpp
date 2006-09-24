@@ -22,6 +22,9 @@ private:
   int selFlip;
 
   struct ln_lnlat_posn obs;
+
+  double ra_step;
+  double dec_step;
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -39,7 +42,13 @@ TPM::TPM (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
   selFlip = -1;
+  ra_step = nan ("f");
+  dec_step = nan ("f");
   addOption ('f', "flip", 1, "select images with given flip (0 or 1)");
+  addOption ('r', "ra_step", 1,
+	     "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
+  addOption ('d', "dec_step", 1,
+	     "step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
 }
 
 TPM::~TPM (void)
@@ -65,6 +74,12 @@ TPM::processOption (int in_opt)
 	  help ();
 	  return -1;
 	}
+      break;
+    case 'r':
+      ra_step = atof (optarg);
+      break;
+    case 'd':
+      dec_step = atof (optarg);
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -158,6 +173,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
   double mean_sidereal;
   float expo;
   int imageFlip;
+  double aux0;
   double aux1;
 
   int ret;
@@ -190,6 +206,21 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
   JD = ln_get_julian_from_timet (&ct);
   mean_sidereal =
     ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) + obs.lng);
+
+  if (!isnan (ra_step))
+    {
+      ret = image->getValue ("MNT_AX0", aux0);
+      if (ret)
+	return ret;
+      actual.setRa ((ln_range_degrees (mean_sidereal - aux0)) / ra_step);
+    }
+  if (!isnan (dec_step))
+    {
+      ret = image->getValue ("MNT_AX1", aux1);
+      if (ret)
+	return ret;
+      actual.setDec (aux1 / dec_step);
+    }
 
   LibnovaHaM lst (mean_sidereal);
 
