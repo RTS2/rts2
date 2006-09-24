@@ -223,11 +223,23 @@ public:
     delete dec;
   }
 
+  void setRa (double in_ra)
+  {
+    delete ra;
+    ra = new LibnovaRa (in_ra);
+  }
+
   double getRa ()
   {
     if (ra)
       return ra->getRa ();
     return nan ("f");
+  }
+
+  void setDec (double in_dec)
+  {
+    delete dec;
+    dec = new LibnovaDec (in_dec);
   }
 
   double getDec ()
