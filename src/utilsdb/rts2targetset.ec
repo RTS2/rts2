@@ -211,7 +211,8 @@ Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, dou
     << in_masterTarget->getObserver ()->lng << ", "
     << in_masterTarget->getObserver ()->lat << ", "
     << JD << ") - " << airmass << ")";
-  os << func.str () << " < 0.1 AND ((type_id = 'c' AND tar_id <> 6) or type_id = 'l') AND tar_enabled = true";
+  os << func.str () << " < " << Rts2Config::instance()->getCallibrationAirmass ()
+    << " AND ((type_id = 'c' AND tar_id <> 6) or type_id = 'l') AND tar_enabled = true";
   ord << func.str () << " ASC";
   load (os.str (), ord.str ());
 }
