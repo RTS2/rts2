@@ -24,7 +24,9 @@ private:
   struct ln_lnlat_posn obs;
 
   double ra_step;
+  double ra_offset;
   double dec_step;
+  double dec_offset;
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -43,12 +45,16 @@ Rts2App (in_argc, in_argv)
 {
   selFlip = -1;
   ra_step = nan ("f");
+  ra_offset = 0;
   dec_step = nan ("f");
+  dec_offset = 0;
   addOption ('f', "flip", 1, "select images with given flip (0 or 1)");
   addOption ('r', "ra_step", 1,
 	     "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
+  addOption ('R', "ra_offset", 1, "ra offset in raw counts");
   addOption ('d', "dec_step", 1,
 	     "step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
+  addOption ('D', "dec_offset", 1, "dec offset in raw counts");
 }
 
 TPM::~TPM (void)
@@ -78,8 +84,14 @@ TPM::processOption (int in_opt)
     case 'r':
       ra_step = atof (optarg);
       break;
+    case 'R':
+      ra_offset = atof (optarg);
+      break;
     case 'd':
       dec_step = atof (optarg);
+      break;
+    case 'D':
+      dec_offset = atof (optarg);
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -212,14 +224,16 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
       ret = image->getValue ("MNT_AX0", aux0);
       if (ret)
 	return ret;
-      actual.setRa ((ln_range_degrees (mean_sidereal - aux0)) / ra_step);
+      actual.
+	setRa (ln_range_degrees
+	       (mean_sidereal - (aux0 - ra_offset) / ra_step));
     }
   if (!isnan (dec_step))
     {
       ret = image->getValue ("MNT_AX1", aux1);
       if (ret)
 	return ret;
-      actual.setDec (aux1 / dec_step);
+      actual.setDec ((aux1 - dec_offset) / dec_step);
     }
 
   LibnovaHaM lst (mean_sidereal);
