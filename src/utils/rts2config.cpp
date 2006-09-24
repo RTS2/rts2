@@ -18,6 +18,7 @@ Rts2Config::Rts2Config ()
   observer.lat = 0;
   observer.lng = 0;
   checker = NULL;
+  callibrationAirmass = 0.1;
 }
 
 Rts2Config::~Rts2Config ()
@@ -60,6 +61,7 @@ Rts2Config::loadFile (char *filename)
   // load horizont file..
   getString ("observatory", "horizont", horizont_file, 250);
   checker = new ObjectCheck (horizont_file);
+  getDouble ("observatory", "callibration_airmass", callibrationAirmass);
   return 0;
 }
 
