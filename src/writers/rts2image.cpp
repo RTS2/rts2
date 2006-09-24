@@ -214,6 +214,8 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
 
   mountName = NULL;
   focName = NULL;
+
+  currTarget->writeToImage (this);
 }
 
 Rts2Image::Rts2Image (const char *in_filename)
