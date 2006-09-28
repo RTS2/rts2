@@ -129,6 +129,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
       // ack message
       ret =
 	sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));
+      master->infoAll ();
     }
   return data_size;
 }

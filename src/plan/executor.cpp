@@ -72,7 +72,7 @@ public:
   virtual int info ()
   {
     updateScriptCount ();
-    return 0;
+    return Rts2DeviceDb::info ();
   }
   virtual int sendInfo (Rts2Conn * conn);
 

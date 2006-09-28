@@ -300,7 +300,7 @@ Rts2DevDomeIR::info ()
 
   getSNOW (&temperature, &humidity, &windspeed);
   nextOpen = getNextOpen ();
-  return 0;
+  return Rts2DevDome::info ();
 }
 
 int

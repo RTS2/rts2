@@ -558,7 +558,7 @@ Rts2DevDomeBart::info ()
       windspeed = weatherConn->getWindspeed ();
     }
   nextOpen = getNextOpen ();
-  return 0;
+  return Rts2DevDome::info ();
 }
 
 int

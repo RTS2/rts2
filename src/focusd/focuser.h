@@ -45,10 +45,6 @@ public:
   {
     return -1;
   };
-  virtual int info ()
-  {
-    return -1;
-  };
   virtual int baseInfo ()
   {
     return -1;

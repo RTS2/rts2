@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/file.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -643,6 +644,8 @@ Rts2Block (in_argc, in_argv)
 
   device_host = NULL;
 
+  timerclear (&info_time);
+
   lockf = 0;
 
   // now add options..
@@ -866,9 +869,19 @@ Rts2Device::ready ()
 }
 
 int
+Rts2Device::sendInfo (Rts2Conn * conn)
+{
+  conn->sendValue ("info_time",
+		   (double) (info_time.tv_sec +
+			     info_time.tv_usec / USEC_SEC));
+  return 0;
+}
+
+int
 Rts2Device::info ()
 {
-  return -1;
+  gettimeofday (&info_time, NULL);
+  return 0;
 }
 
 int

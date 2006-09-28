@@ -56,7 +56,6 @@ public:
     return 0;
   }
 
-  virtual int info ();
   virtual int baseInfo ();
 
   virtual int sendBaseInfo (Rts2Conn * conn);
@@ -231,12 +230,6 @@ Rts2ImageProc::idle ()
       changeRunning (newImage);
     }
   return Rts2Device::idle ();
-}
-
-int
-Rts2ImageProc::info ()
-{
-  return 0;
 }
 
 int

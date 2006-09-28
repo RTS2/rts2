@@ -38,10 +38,6 @@ public:
   {
     return 0;
   }
-  virtual int info ()
-  {
-    return 0;
-  }
   virtual int sendInfo (Rts2Conn * conn);
   virtual int sendBaseInfo (Rts2Conn * conn)
   {

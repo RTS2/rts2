@@ -24,7 +24,7 @@ int
 Rts2DevFilterd::info ()
 {
   filter = getFilterNum ();
-  return 0;
+  return Rts2Device::info ();
 }
 
 int

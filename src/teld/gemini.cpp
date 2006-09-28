@@ -1063,12 +1063,15 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1376,7 +1379,7 @@ Rts2DevTelescopeGemini::info ()
       telFlip = getFlip ();
     }
 
-  return 0;
+  return Rts2DevTelescope::info ();
 }
 
 /*! 
@@ -2250,12 +2253,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;

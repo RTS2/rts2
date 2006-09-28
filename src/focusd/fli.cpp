@@ -176,7 +176,7 @@ Rts2DevFocuserFli::info ()
 
   focPos = (int) steps;
 
-  return 0;
+  return Rts2DevFocuser::info ();
 }
 
 int

@@ -472,7 +472,7 @@ Rts2DevCameraFli::info ()
   if (ret)
     return -1;
   tempCCD = fliTemp;
-  return 0;
+  return Rts2DevCamera::info ();
 }
 
 int

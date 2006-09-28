@@ -547,7 +547,7 @@ Rts2DevCameraAndor::info ()
     {
       getTemp ();
     }
-  return 0;
+  return Rts2DevCamera::info ();
 }
 
 int

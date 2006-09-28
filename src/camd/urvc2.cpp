@@ -455,7 +455,7 @@ Rts2DevCameraUrvc2::info ()
   tempCCD = ccd_ad2c (qtsr.ccdThermistor);
   fan = gvr.fanEnabled;
   canDF = 1;
-  return 0;
+  return Rts2DevCamera::info ();
 }
 
 int

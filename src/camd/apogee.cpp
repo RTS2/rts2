@@ -887,7 +887,7 @@ Rts2DevCameraApogee::info ()
   tempCCD = camera->read_Temperature ();
   tempAir = nan ("f");
   coolingPower = 5000;
-  return 0;
+  return Rts2DevCamera::info ();
 }
 
 int

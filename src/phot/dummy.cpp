@@ -36,10 +36,6 @@ public:
   {
     return 0;
   };
-  virtual int info ()
-  {
-    return 0;
-  };
 
   virtual int homeFilter ();
   virtual int startFilterMove (int new_filter);

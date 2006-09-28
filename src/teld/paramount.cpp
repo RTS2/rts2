@@ -949,7 +949,9 @@ Rts2DevTelParamount::info ()
   ret = counts2sky (ac, dc, telRa, telDec);
   telAxis[0] = ac;
   telAxis[1] = dc;
-  return ret;
+  if (ret)
+    return ret;
+  return Rts2DevTelescope::info ();
 }
 
 int

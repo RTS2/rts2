@@ -51,7 +51,7 @@ Rts2DevFocuserDummy::baseInfo ()
 int
 Rts2DevFocuserDummy::info ()
 {
-  return 0;
+  return Rts2DevFocuser::info ();
 }
 
 int

@@ -86,7 +86,7 @@ public:
   {
     sleep (1);
     tempCCD = 100;
-    return 0;
+    return Rts2DevCamera::info ();
   }
   virtual int camChipInfo ()
   {

@@ -178,7 +178,7 @@ Rts2DevCupola::needSplitChange ()
     {
       if ((getState (0) & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
 	synced ();
-      return 0;
+      return Rts2DevDome::info ();
     }
   return 1;
 }

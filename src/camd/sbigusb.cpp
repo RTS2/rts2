@@ -264,7 +264,8 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE
+Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
@@ -414,7 +415,7 @@ Rts2DevCameraSbig::info ()
   coolingPower = (int) ((qtsr.power / 255.0) * 1000);
   tempCCD = pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE);
   tempRegulation = 1;
-  return 0;
+  return Rts2DevCamera::info ();
 }
 
 int

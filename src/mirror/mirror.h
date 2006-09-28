@@ -61,11 +61,6 @@ public:
     return -1;
   }
 
-  virtual int info ()
-  {
-    return -1;
-  }
-
   int startOpen (Rts2Conn * conn);
   int startClose (Rts2Conn * conn);
 

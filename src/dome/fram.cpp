@@ -1115,7 +1115,7 @@ Rts2DevDomeFram::info ()
   if (wdc_port > 0)
     temperature = getWDCTemp (2);
   nextOpen = getNextOpen ();
-  return 0;
+  return Rts2DevDome::info ();
 }
 
 int

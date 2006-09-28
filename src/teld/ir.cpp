@@ -587,7 +587,7 @@ Rts2DevTelescopeIr::info ()
   telAxis[0] = az;
   telAxis[1] = zd;
 
-  return 0;
+  return Rts2DevTelescope::info ();
 }
 
 int

@@ -13,6 +13,7 @@ Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
   processedBaseInfo = NOT_PROCESED;
   addValue (new Rts2ValueString ("type"));
   addValue (new Rts2ValueString ("serial"));
+  addValue (new Rts2ValueTime ("info_time"));
 
   waiting = NOT_WAITING;
 

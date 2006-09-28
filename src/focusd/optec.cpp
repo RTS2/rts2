@@ -278,10 +278,10 @@ Rts2DevFocuserOptec::getTemp (float *temp)
   return 0;
 }
 
-bool
-Rts2DevFocuserOptec::isAtStartPosition ()
+bool Rts2DevFocuserOptec::isAtStartPosition ()
 {
-  int ret;
+  int
+    ret;
   ret = getPos (&focPos);
   if (ret)
     return false;
@@ -311,7 +311,7 @@ Rts2DevFocuserOptec::info ()
   ret = getTemp (&focTemp);
   if (ret)
     return ret;
-  return 0;
+  return Rts2DevFocuser::info ();
 }
 
 int

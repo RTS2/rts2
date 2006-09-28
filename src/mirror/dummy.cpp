@@ -35,11 +35,6 @@ public:
   {
     return -1;
   }
-
-  virtual int info ()
-  {
-    return -1;
-  }
 };
 
 int

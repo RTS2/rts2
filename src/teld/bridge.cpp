@@ -125,7 +125,7 @@ Rts2DevTelescopeBridge::info ()
   telAxis[0] = Tstat->axis0_counts;
   telAxis[1] = Tstat->axis1_counts;
 
-  return 0;
+  return Rts2DevTelescope::info ();
 }
 
 int

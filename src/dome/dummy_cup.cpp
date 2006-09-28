@@ -41,11 +41,6 @@ Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
     return 0;
   }
 
-  virtual int info ()
-  {
-    return 0;
-  }
-
   virtual int baseInfo ()
   {
     return 0;

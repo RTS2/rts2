@@ -293,7 +293,7 @@ Rts2DevCameraAlta::info ()
   tempCCD = alta->read_TempCCD ();
   tempAir = alta->read_TempHeatsink ();
   fan = alta->read_FanMode () == Apn_FanMode_Low ? 0 : 1;
-  return 0;
+  return Rts2DevCamera::info ();
 }
 
 int

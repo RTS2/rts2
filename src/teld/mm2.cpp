@@ -779,7 +779,7 @@ Rts2DevTelescopeMM2::info ()
       || tel_read_dec () || tel_read_siderealtime () || tel_read_localtime ())
     return -1;
 
-  return 0;
+  return Rts2DevTelescope::info ();
 }
 
 /*! 

@@ -154,6 +154,8 @@ class Rts2Device:public Rts2Block
 
   char *device_host;
 
+  struct timeval info_time;
+
 protected:
   void setStateNames (int in_states_size, char **states_names);
   /**
@@ -194,10 +196,7 @@ public:
   virtual int baseInfo ();
 
   virtual int ready (Rts2Conn * conn);
-  virtual int sendInfo (Rts2Conn * conn)
-  {
-    return 0;
-  }
+  virtual int sendInfo (Rts2Conn * conn);
   virtual int sendBaseInfo (Rts2Conn * conn)
   {
     return 0;

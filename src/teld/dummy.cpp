@@ -83,7 +83,7 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
     telRa = newRa;
     telDec = newDec;
     telSiderealTime = getLocSidTime ();
-    return 0;
+    return Rts2DevTelescope::info ();
   }
 
   virtual int startMove (double tar_ra, double tar_dec)

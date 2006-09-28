@@ -93,14 +93,13 @@ public:
   }
 };
 
-uint16_t Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
+uint16_t
+Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
-  uint16_t
-    ret = 0xffff;
+  uint16_t ret = 0xffff;
   for (int l = 0; l < msgLen; l++)
     {
-      char
-	znakp = msgBuf[l];
+      char znakp = msgBuf[l];
       for (int i = 0; i < 8; i++)
 	{
 	  if ((ret ^ znakp) & 0x01)
@@ -423,8 +422,7 @@ Rts2DevCupolaMark::info ()
     {
       setCurrentAz (ln_range_degrees
 		    ((az_val * STEP_AZ_SIZE) + STEP_AZ_OFFSET));
-      Rts2DevCupola::info ();
-      return 0;
+      return Rts2DevCupola::info ();
     }
   return -1;
 }

@@ -273,7 +273,7 @@ Rts2DevFocuserRobofocus::info ()
   int state = getSwitchState ();
   if (state >= 0)
     focSwitches = state;
-  return 0;
+  return Rts2DevFocuser::info ();
 }
 
 

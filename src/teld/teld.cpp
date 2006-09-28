@@ -640,6 +640,7 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
   conn->sendValue ("correction_mark", moveMark);
   conn->sendValue ("num_corr", numCorr);
   conn->sendValue ("guiding_speed", telGuidingSpeed);
+  conn->sendValue ("corrections", corrections);
   return 0;
 }
 
