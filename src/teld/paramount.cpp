@@ -18,8 +18,7 @@
 
 // park positions
 #define PARK_AXIS0		0
-#define PARK_AXIS1		-2550000
-
+#define PARK_AXIS1		0
 
 typedef enum
 { T16, T32 } para_t;
@@ -118,6 +117,8 @@ private:
 
   CWORD16 status0;
   CWORD16 status1;
+
+  CWORD32 park_axis[2];
 
   // that's in degrees
   double haZero;
@@ -581,6 +582,9 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
   axis1.unitId = 0x64;
   axis1.axisId = 1;
 
+  park_axis[0] = PARK_AXIS0;
+  park_axis[1] = PARK_AXIS1;
+
   device_name = "/dev/ttyS0";
   paramount_cfg = "/etc/rts2/paramount.cfg";
   addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
@@ -589,13 +593,15 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
   addOption ('R', "recalculate", 1,
 	     "track update interval in sec; < 0 to disable track updates; defaults to 1 sec");
 
+  addOption ('D', "dec_park", 1, "DEC park position");
   // in degrees! 30 for south, -30 for north hemisphere 
   // it's (lst - ra(home))
-  haZero = 30.0;
+  // haZero and haCpd is handled in ::init, after we get latitude from config file
+  haZero = -30.0;
   decZero = 0;
 
   // how many counts per degree
-  haCpd = 32000.0;		// - for N hemisphere, + for S hemisphere
+  haCpd = -32000.0;		// - for N hemisphere, + for S hemisphere
   decCpd = -20883.33333333333;
 
   acMargin = 10000;
@@ -691,6 +697,9 @@ Rts2DevTelParamount::processOption (int in_opt)
       track_recalculate.tv_usec =
 	(int) ((rec_sec - track_recalculate.tv_sec) * USEC_SEC);
       break;
+    case 'D':
+      park_axis[1] = atoi (optarg);
+      break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
     }
@@ -704,13 +713,6 @@ Rts2DevTelParamount::init ()
   CWORD32 pos0, pos1;
   int ret;
   int i;
-  ret = Rts2DevTelescope::init ();
-  if (ret)
-    return ret;
-
-  ret = MKS3Init (device_name);
-  if (ret)
-    return -1;
 
   Rts2Config *config = Rts2Config::instance ();
   ret = config->loadFile ();
@@ -718,6 +720,21 @@ Rts2DevTelParamount::init ()
     return -1;
   telLongtitude = config->getObserver ()->lng;
   telLatitude = config->getObserver ()->lat;
+
+  if (telLatitude < 0)		// south hemispehere
+    {
+      // swap values which are opposite for south hemispehere
+      haZero *= -1.0;
+      haCpd *= -1.0;
+    }
+
+  ret = Rts2DevTelescope::init ();
+  if (ret)
+    return ret;
+
+  ret = MKS3Init (device_name);
+  if (ret)
+    return -1;
 
   ret = updateLimits ();
   if (ret)
@@ -792,6 +809,8 @@ Rts2DevTelParamount::updateTrack ()
   int ret;
 
   gettimeofday (&track_next, NULL);
+  if (track_recalculate.tv_sec < 0)
+    return;
   timeradd (&track_next, &track_recalculate, &track_next);
 
   if (!track0 || !track1)
@@ -1094,8 +1113,8 @@ Rts2DevTelParamount::isParking ()
 	return USEC_SEC / 10;
       moveState = TEL_SLEW;
       // move to park position
-      ret0 = MKS3PosTargetSet (axis0, PARK_AXIS0);
-      ret1 = MKS3PosTargetSet (axis1, PARK_AXIS1);
+      ret0 = MKS3PosTargetSet (axis0, park_axis[0]);
+      ret1 = MKS3PosTargetSet (axis1, park_axis[1]);
       ret = updateStatus ();
       if (ret)
 	return -1;
