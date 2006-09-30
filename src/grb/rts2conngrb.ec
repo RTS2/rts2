@@ -219,7 +219,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
       grb_errorbox = (float) lbuf[BURST_ERROR] / 10000.0;
       break;
     default:
-      grb_errorbox = nan ("f");
+      grb_errorbox = getInstrumentErrorBox (grb_type);
   }
   return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
@@ -260,7 +260,7 @@ Rts2ConnGrb::pr_swift_without_radec ()
 	// as burst can happen during slew, we have to put in fabs - otherwise we will not respond to burst
 	// catched during/before slew, but after pointdir notice was send
         if (fabs (grb_date - swiftLastPoint) < 3 * 3600)
-          addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, grb_date_usec, 60, false);
+          addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, grb_date_usec, getInstrumentErrorBox (d_grb_type), false);
         break;
       case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
         // update if not grb..
@@ -453,21 +453,19 @@ Rts2ConnGrb::getGrbBound (int grb_type, int &grb_start, int &grb_end)
 }
 
 bool
-Rts2ConnGrb::gcnContainsNewPos (int grb_type, int curr_grb_type)
+Rts2ConnGrb::gcnContainsGrbPos (int grb_type)
 {
-  // if that's an old update from less precise instrument..
-  if (grb_type < curr_grb_type)
-    return false;
   switch (grb_type)
   {
+    case TYPE_INTEGRAL_POINTDIR_SRC:
+    case TYPE_INTEGRAL_SPIACS_SRC:
     case TYPE_SWIFT_SCALEDMAP_SRC:
-    case TYPE_SWIFT_XRT_SPECTRUM_SRC:
-    case TYPE_SWIFT_XRT_LC_SRC:
     case TYPE_SWIFT_XRT_CENTROID_SRC:
     case TYPE_SWIFT_UVOT_DBURST_SRC:
     case TYPE_SWIFT_UVOT_FCHART_SRC:
     case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
     case TYPE_SWIFT_POINTDIR_SRC:
+    case TYPE_SWIFT_UVOT_NACK_POSITION:
       return false;
     default:
       return true;
@@ -477,6 +475,9 @@ Rts2ConnGrb::gcnContainsNewPos (int grb_type, int curr_grb_type)
 float
 Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
 {
+  // rules:
+  //  if it's only detection, return FOV of instrument
+  //  if it's position, return some conservative instrument everage position error
   switch (grb_type)
   {
     // INTEGRAL FOV
@@ -492,43 +493,49 @@ Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
     case TYPE_HETE_GNDANA_SRC:
     case TYPE_HETE_TEST:
     case TYPE_GRB_CNTRPART_SRC:
-      // .. is 3 arcmin
-      return 3.0 / 60.0;
+      // .. is 4 arcmin
+      return 4.0 / 60.0;
     case TYPE_INTEGRAL_WAKEUP_SRC:
     case TYPE_INTEGRAL_REFINED_SRC:
     case TYPE_INTEGRAL_OFFLINE_SRC:
-      //INTERVAL instrument error is 3 armin
-      return 3.0 / 60.0;
+      //INTEGRAL instrument error is 4 armin
+      return 4.0 / 60.0;
     case TYPE_INTEGRAL_SPIACS_SRC:
       // SPIACS is in fact all sky detector
       return 180.0;
+    case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
+      // BAT have 60 deg
+      return 60.0;
     case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
     case TYPE_SWIFT_BAT_GRB_LC_SRC:
     case TYPE_SWIFT_FOM_2OBSAT_SRC:
     case TYPE_SWIFT_FOSC_2OBSAT_SRC:
     case TYPE_SWIFT_BAT_GRB_LC_PROC_SRC:
     case TYPE_SWIFT_BAT_TRANS:
-    case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
     case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
     case TYPE_SWIFT_SCALEDMAP_SRC:
-      // BAT have 3 arcmin
-      return 3.0 / 60.0;
+      // BAT have 4 arcmin
+      return 4.0 / 60.0;
     case TYPE_SWIFT_XRT_POSITION_SRC:
     case TYPE_SWIFT_XRT_SPECTRUM_SRC:
     case TYPE_SWIFT_XRT_IMAGE_SRC:
     case TYPE_SWIFT_XRT_LC_SRC:
     case TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC:
     case TYPE_SWIFT_XRT_IMAGE_PROC_SRC:
-    case TYPE_SWIFT_XRT_CENTROID_SRC:
       // conservative estimate for XRT is 7 arcsec, including uncertanities
       return 7.0 / 3600.0;
-    case TYPE_SWIFT_UVOT_FCHART_SRC:
+    case TYPE_SWIFT_XRT_CENTROID_SRC:
+      // XRT FOV
+      return 15.0 / 60.0;
     case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
     case TYPE_SWIFT_UVOT_POS_SRC:
+      // that's VERY conservative estimate, we might refine it
+      return 6.0 / 3600.0;
+    case TYPE_SWIFT_UVOT_FCHART_SRC:
     case TYPE_SWIFT_UVOT_DBURST_SRC:
     case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
-      // that's VERY conservative estimate, we might refine it
-      return 7.0 / 3600.0;
+      // UVOT FOV
+      return 15.0 / 60.0;
     case TYPE_GLAST_GBM_GRB_ALERT:
     case TYPE_GLAST_GBM_GRB_POS_ACK:
     case TYPE_GLAST_GBM_LC:
@@ -576,16 +583,6 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
   int ret = 0;
 
-  if (isnan (d_grb_errorbox))
-  {
-    d_grb_errorbox_ind = -1;
-    d_grb_errorbox = 0;
-  }
-  else
-  {
-    d_grb_errorbox_ind = 0;
-  }
-
   gmtime_r (grb_date, &grb_broken_time);
   d_tar_name.len = snprintf (d_tar_name.arr, 150, "GRB %02d%02d%06.3f GCN #%i", 
     grb_broken_time.tm_year % 100, grb_broken_time.tm_mon + 1, grb_broken_time.tm_mday +
@@ -597,10 +594,12 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   EXEC SQL
   SELECT
     tar_id,
-    grb_type
+    grb_type,
+    grb_errorbox
   INTO
     :d_tar_id,
-    :d_curr_grb_type
+    :d_curr_grb_type,
+    :d_grb_errorbox :d_grb_errorbox_ind
   FROM
     grb
   WHERE
@@ -610,6 +609,16 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
   if (sqlca.sqlcode == ECPG_NOT_FOUND)
   {
+    d_grb_errorbox = grb_errorbox;
+    if (isnan (d_grb_errorbox))
+    {
+      d_grb_errorbox_ind = -1;
+      d_grb_errorbox = 0;
+    }
+    else
+    {
+      d_grb_errorbox_ind = 0;
+    }
     // insert part..we do care about HETE burst without coordinates
     if (d_grb_ra < -300 && d_grb_dec < -300)
     {
@@ -712,73 +721,87 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
       return 1;
     }
     // HETE burst have values -999 in some retraction notices..
-    if (gcnContainsNewPos (d_grb_type, d_curr_grb_type) && d_grb_ra > -300 && d_grb_dec > -300)
-      {
-	// update target informations..
-	EXEC SQL
-	UPDATE
-	  targets
-	SET
-	  tar_ra = :d_grb_ra,
-	  tar_dec = :d_grb_dec
-	WHERE
-	  tar_id = :d_tar_id;
-	if (sqlca.sqlcode)
-	{
-	  syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update targets: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
-	  EXEC SQL ROLLBACK;
-	}
-      }
-      else
-      {
-	// it's only update and it's not update that can bring new coordinates (UVOT, XRT,..)
-	syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint don't update coordinates for type %i (curr %i) ra: %f dec: %f", grb_type, d_curr_grb_type, d_grb_ra, d_grb_dec);
-      }
-    // update grb informations..
-    EXEC SQL
-    UPDATE
-      grb
-    SET
-      grb_seqn = :d_grb_seqn,
-      grb_type = :d_grb_type,
-      grb_ra = :d_grb_ra,
-      grb_dec = :d_grb_dec,
-      grb_is_grb = :d_grb_is_grb,
-      grb_last_update = (TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds')
-    WHERE
-      tar_id = :d_tar_id;
-
-    if (sqlca.sqlcode)
+    // do updates only when new position is better then old one
+    if (
+      (d_grb_errorbox_ind < 0
+        || isnan (grb_errorbox)
+	|| grb_errorbox <= d_grb_errorbox
+      )
+      && d_grb_ra > -300
+      && d_grb_dec > -300)
     {
-      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN : %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
-      EXEC SQL ROLLBACK;
-      ret = -1;
-    }
-    else
-    {
-      EXEC SQL COMMIT;
-    }
-
-    if (d_grb_errorbox_ind == 0)
-    {
+      // update target informations..
       EXEC SQL
       UPDATE
-        grb
+        targets
       SET
-        grb_errorbox = :d_grb_errorbox
+        tar_ra = :d_grb_ra,
+        tar_dec = :d_grb_dec
       WHERE
         tar_id = :d_tar_id;
-    }
-    if (sqlca.sqlcode)
-    {
-      syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN errorbox: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
-      EXEC SQL ROLLBACK;
-      ret = -1;
+      if (sqlca.sqlcode)
+      {
+        syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update targets: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+        EXEC SQL ROLLBACK;
+      }
+      // update grb informations..
+      // do updates only when new position is better then old one
+      if (gcnContainsGrbPos (d_grb_type)
+        && !isnan(grb_errorbox)
+	&& (d_grb_errorbox_ind < 0
+	  || grb_errorbox <= d_grb_errorbox)
+      )
+      {
+        EXEC SQL
+        UPDATE
+  	  grb
+        SET
+  	  grb_seqn = :d_grb_seqn,
+	  grb_type = :d_grb_type,
+	  grb_ra = :d_grb_ra,
+	  grb_dec = :d_grb_dec,
+	  grb_is_grb = :d_grb_is_grb,
+	  grb_last_update = (TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds')
+        WHERE
+	  tar_id = :d_tar_id;
+  
+        if (sqlca.sqlcode)
+        {
+	  syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN : %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+	  EXEC SQL ROLLBACK;
+	  ret = -1;
+        }
+	else
+	{
+	  EXEC SQL COMMIT;
+	}
+
+        d_grb_errorbox = grb_errorbox;
+	EXEC SQL
+	UPDATE
+	  grb
+	SET
+	  grb_errorbox = :d_grb_errorbox
+	WHERE
+	  tar_id = :d_tar_id;
+        if (sqlca.sqlcode)
+        {
+  	  syslog (LOG_ERR, "Rts2ConnGrb::addGcnPoint cannot update GCN errorbox: %li %s", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+	  EXEC SQL ROLLBACK;
+	  ret = -1;
+        }
+        else
+        {
+	  syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint grb updated: tar_id: %i grb_id: %i grb_seqn: %i", d_tar_id, d_grb_id, d_grb_seqn);
+	  EXEC SQL COMMIT;
+        }
+      }	
     }
     else
     {
-      syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint grb updated: tar_id: %i grb_id: %i grb_seqn: %i", d_tar_id, d_grb_id, d_grb_seqn);
-      EXEC SQL COMMIT;
+      syslog (LOG_DEBUG, "Rts2ConnGrb::addGcnPoint grb update ignored: grb_errorbox %f d_grb_errorbox %f d_grb_errorbox_ind %i", grb_errorbox, d_grb_errorbox, d_grb_errorbox_ind);
+      // do not update
+      d_grb_errorbox_ind = -1;
     }
   }
 
