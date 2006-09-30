@@ -77,6 +77,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
   // default is to aply model corrections
   corrections = COR_MODEL;
+
+  // send telescope position every 60 seconds
+  setIdleInfoInterval (60);
 }
 
 Rts2DevTelescope::~Rts2DevTelescope (void)

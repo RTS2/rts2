@@ -36,6 +36,7 @@ private:
   int ir_port;
   Client *tplc;
   time_t timeout;
+  double rotatorOffset;
   double cover;
   enum
   { OPENED, OPENING, CLOSING, CLOSED } cover_state;

@@ -138,6 +138,8 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
 
   makeModel = false;
 
+  rotatorOffset = 0;
+
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
   addOption ('t', "ir_tracking", 1,
@@ -145,6 +147,7 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
   addOption ('c', "ir_config", 1,
 	     "IR config file (with model, used for load_model/save_model");
   addOption ('O', "make_model", 0, "use offsets to make model");
+  addOption ('r', "rotator_offset", 1, "rotator offset, default to 0");
 
   strcpy (telType, "BOOTES_IR");
   strcpy (telSerialNumber, "001");
@@ -178,6 +181,9 @@ Rts2DevTelescopeIr::processOption (int in_opt)
       break;
     case 'O':
       makeModel = true;
+      break;
+    case 'r':
+      rotatorOffset = atof (optarg);
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -601,6 +607,8 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
 	  status);
 #endif
+  if (rotatorOffset != 0)
+    status = tpl_set ("DEROTATOR[3].OFFSET", rotatorOffset, &status);
 
   return status;
 }
@@ -767,8 +775,6 @@ int
 Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
 			     double real_dec)
 {
-  if (!makeModel)
-    return -1;
   // idea - convert current & astrometry position to alt & az, get
   // offset in alt & az, apply offset
   struct ln_equ_posn eq_astr;
@@ -776,8 +782,8 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   struct ln_hrz_posn hrz_astr;
   struct ln_hrz_posn hrz_target;
   struct ln_lnlat_posn observer;
-  double az_off;
-  double alt_off;
+  double az_off = 0;
+  double alt_off = 0;
   double sep;
   double jd = ln_get_julian_from_sys ();
   double quality;
@@ -793,8 +799,15 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
   getTargetAltAz (&hrz_target, jd);
   // calculate alt & az diff
-  az_off = hrz_target.az - hrz_astr.az;
-  alt_off = hrz_target.alt - hrz_astr.alt;
+  if (!makeModel)
+    {
+      status = tpl_get ("AZ.OFFSET", az_off, &status);
+      status = tpl_get ("ZD.OFFSET", alt_off, &status);
+      if (status)
+	return -1;
+    }
+  az_off += hrz_target.az - hrz_astr.az;
+  alt_off -= hrz_target.alt - hrz_astr.alt;
 
   status = tpl_get ("ZD.CURRPOS", zd, &status);
   if (status)
@@ -802,7 +815,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
       syslog (LOG_ERR, "Rts2DevTelescopeIr::correct cannot get ZD.CURRPOS");
       return -1;
     }
-  if (zd > 0)
+  if (zd < 0)
     alt_off *= -1;		// get ZD offset - when ZD < 0, it's actuall alt offset
   sep = ln_get_angular_separation (&eq_astr, &eq_target);
 #ifdef DEBUG_EXTRA
@@ -814,6 +827,10 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
     return -1;
   status = tpl_set ("AZ.OFFSET", az_off, &status);
   status = tpl_set ("ZD.OFFSET", alt_off, &status);
+  if (!makeModel)
+    {
+      return (status ? -1 : 0);
+    }
   // sample..
   status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);
