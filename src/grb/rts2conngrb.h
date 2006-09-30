@@ -61,7 +61,7 @@ private:
   int addIntegralPoint (double ra, double dec, const time_t * t);
 
   void getGrbBound (int grb_type, int &grb_start, int &grb_end);
-  bool gcnContainsNewPos (int grb_type, int curr_grb_typ);
+  bool gcnContainsGrbPos (int grb_type);
   float getInstrumentErrorBox (int grb_type);
 
   // DB operations
