@@ -119,7 +119,7 @@ Rts2ConnGrb::pr_hete ()
     || (lbuf[H_TRIG_FLAGS] & H_DEF_XRB))
     grb_is_grb = 0;
   
-  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
 
 int
@@ -162,7 +162,7 @@ Rts2ConnGrb::pr_integral ()
     grb_errorbox *= -1;
   }
 
-  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
 
 int
@@ -221,7 +221,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
     default:
       grb_errorbox = nan ("f");
   }
-  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox);
+  return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
 
 int
@@ -239,22 +239,28 @@ Rts2ConnGrb::pr_swift_without_radec ()
   time_t grb_date;
   long grb_date_usec;
 
+  double grb_ra;
+  double grb_dec;
+
+  int ret;
+
   d_grb_type = (int)(lbuf[PKT_TYPE]);
   d_grb_id = (lbuf[BURST_TRIG] >> S_TRIGNUM_SHIFT) & S_TRIGNUM_MASK;
   d_grb_seqn = (lbuf[BURST_TRIG] >> S_SEGNUM_SHIFT) & S_SEGNUM_MASK;
 
+  getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
+ 
   switch (d_grb_type)
     {
       case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
         // get S/C coordinates to slew on
-        getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
         // that's special in big errror-box
         // but as we specify last know ra/dec, we will slew to best location we know about burst
         // assume that swift will never spend more then three hours on one location, due to orbit parameters
 	// as burst can happen during slew, we have to put in fabs - otherwise we will not respond to burst
 	// catched during/before slew, but after pointdir notice was send
         if (fabs (grb_date - swiftLastPoint) < 3 * 3600)
-          addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, grb_date_usec, 60);
+          addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, grb_date_usec, 60, false);
         break;
       case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
         // update if not grb..
@@ -280,6 +286,20 @@ Rts2ConnGrb::pr_swift_without_radec ()
           syslog (LOG_DEBUG, "Rts2ConnGrb::pr_swift_without_radec grb_is_grb = false grb_id %i", d_grb_id);
           EXEC SQL COMMIT;
         }
+        break;
+      case TYPE_SWIFT_SCALEDMAP_SRC:
+      case TYPE_SWIFT_XRT_CENTROID_SRC:
+      case TYPE_SWIFT_UVOT_DBURST_SRC:
+      case TYPE_SWIFT_UVOT_FCHART_SRC:
+      case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
+      case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
+        grb_ra = lbuf[BURST_RA] / 10000.0;
+        grb_dec = lbuf[BURST_DEC] / 10000.0;
+        ret = addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, grb_ra, grb_dec, 1, &grb_date, grb_date_usec, getInstrumentErrorBox(d_grb_type), true);
+	// when it was sucessfullt added
+	// we don't have to add raw, as it was added in GcnPoint
+	if (!ret)
+	  return ret;
         break;
   }
 
@@ -454,8 +474,82 @@ Rts2ConnGrb::gcnContainsNewPos (int grb_type, int curr_grb_type)
   }
 }
 
+float
+Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
+{
+  switch (grb_type)
+  {
+    // INTEGRAL FOV
+    case TYPE_INTEGRAL_POINTDIR_SRC:
+      return 30.0;
+    // Swift FOV
+    case TYPE_SWIFT_POINTDIR_SRC: 
+      return 60.0;
+    // HETE instrumental error..
+    case TYPE_HETE_ALERT_SRC:
+    case TYPE_HETE_UPDATE_SRC:
+    case TYPE_HETE_FINAL_SRC:
+    case TYPE_HETE_GNDANA_SRC:
+    case TYPE_HETE_TEST:
+    case TYPE_GRB_CNTRPART_SRC:
+      // .. is 3 arcmin
+      return 3.0 / 60.0;
+    case TYPE_INTEGRAL_WAKEUP_SRC:
+    case TYPE_INTEGRAL_REFINED_SRC:
+    case TYPE_INTEGRAL_OFFLINE_SRC:
+      //INTERVAL instrument error is 3 armin
+      return 3.0 / 60.0;
+    case TYPE_INTEGRAL_SPIACS_SRC:
+      // SPIACS is in fact all sky detector
+      return 180.0;
+    case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
+    case TYPE_SWIFT_BAT_GRB_LC_SRC:
+    case TYPE_SWIFT_FOM_2OBSAT_SRC:
+    case TYPE_SWIFT_FOSC_2OBSAT_SRC:
+    case TYPE_SWIFT_BAT_GRB_LC_PROC_SRC:
+    case TYPE_SWIFT_BAT_TRANS:
+    case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
+    case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
+    case TYPE_SWIFT_SCALEDMAP_SRC:
+      // BAT have 3 arcmin
+      return 3.0 / 60.0;
+    case TYPE_SWIFT_XRT_POSITION_SRC:
+    case TYPE_SWIFT_XRT_SPECTRUM_SRC:
+    case TYPE_SWIFT_XRT_IMAGE_SRC:
+    case TYPE_SWIFT_XRT_LC_SRC:
+    case TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC:
+    case TYPE_SWIFT_XRT_IMAGE_PROC_SRC:
+    case TYPE_SWIFT_XRT_CENTROID_SRC:
+      // conservative estimate for XRT is 7 arcsec, including uncertanities
+      return 7.0 / 3600.0;
+    case TYPE_SWIFT_UVOT_FCHART_SRC:
+    case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
+    case TYPE_SWIFT_UVOT_POS_SRC:
+    case TYPE_SWIFT_UVOT_DBURST_SRC:
+    case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
+      // that's VERY conservative estimate, we might refine it
+      return 7.0 / 3600.0;
+    case TYPE_GLAST_GBM_GRB_ALERT:
+    case TYPE_GLAST_GBM_GRB_POS_ACK:
+    case TYPE_GLAST_GBM_LC:
+    case TYPE_GLAST_GBM_TRANS:
+    case TYPE_GLAST_GBM_GRB_POS_TEST:
+    case TYPE_GLAST_LAT_GRB_POS_INI:
+    case TYPE_GLAST_LAT_GRB_POS_UPD:
+    case TYPE_GLAST_LAT_GRB_POS_FIN:
+    case TYPE_GLAST_LAT_TRANS:
+    case TYPE_GLAST_OBS_REQUEST:
+    case TYPE_GLAST_SC_SLEW:
+      // TODO fill that by GLAST S/C specifications, when it will be 
+      // on launch pad
+      return 3.0;
+  }
+  syslog (LOG_WARNING, "Rts2ConnGrb::getInstrumentErrorBox unknow type: %i, returning 180.0", grb_type);
+  return 180.0;
+}
+
 int
-Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox)
+Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_tar_id;
@@ -612,6 +706,11 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
   }
   else
   {
+    if (insertOnly)
+    {
+      EXEC SQL ROLLBACK;
+      return 1;
+    }
     // HETE burst have values -999 in some retraction notices..
     if (gcnContainsNewPos (d_grb_type, d_curr_grb_type) && d_grb_ra > -300 && d_grb_dec > -300)
       {

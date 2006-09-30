@@ -62,9 +62,18 @@ private:
 
   void getGrbBound (int grb_type, int &grb_start, int &grb_end);
   bool gcnContainsNewPos (int grb_type, int curr_grb_typ);
+  float getInstrumentErrorBox (int grb_type);
+
+  // DB operations
+  // insert GCN position
+  // that's for notices with which we are sure they contain position
+  // if they are various NACK types, we set insertOnly flag to true and will
+  // only produce insert when it's new GRB (when packet with detection get lost, as
+  // was cause of GRB060929 and most probably others).
+  // Return -1 on error, 1 when insertOnly flag is true and it's update packet
   int addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		   double grb_dec, bool grb_is_grb, time_t * grb_date,
-		   long grb_date_usec, float grb_errorbox);
+		   long grb_date_usec, float grb_errorbox, bool insertOnly);
   int addGcnRaw (int grb_id, int grb_seqn, int grb_type);
 
   int gcn_port;
