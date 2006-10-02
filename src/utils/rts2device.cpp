@@ -648,6 +648,9 @@ Rts2Block (in_argc, in_argv)
 
   lockf = 0;
 
+  idleInfoInterval = -1;
+  nextIdleInfo = 0;
+
   // now add options..
   addOption ('l', "hostname", 1,
 	     "hostname, if it different from return of gethostname()");
@@ -838,6 +841,11 @@ Rts2Device::init ()
 int
 Rts2Device::idle ()
 {
+  time_t now = time (NULL);
+  if (idleInfoInterval >= 0 && now > nextIdleInfo)
+    {
+      infoAll ();
+    }
   return Rts2Block::idle ();
 }
 
@@ -934,6 +942,7 @@ Rts2Device::infoAll ()
 {
   Rts2Conn *conn;
   int ret;
+  nextIdleInfo = time (NULL) + idleInfoInterval;
   ret = info ();
   if (ret)
     return -1;

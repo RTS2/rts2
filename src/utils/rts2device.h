@@ -154,6 +154,9 @@ class Rts2Device:public Rts2Block
 
   char *device_host;
 
+  time_t idleInfoInterval;
+  time_t nextIdleInfo;
+
   struct timeval info_time;
 
 protected:
@@ -201,6 +204,12 @@ public:
   {
     return 0;
   }
+
+  void setIdleInfoInterval (time_t interval)
+  {
+    idleInfoInterval = interval;
+  }
+
   int info (Rts2Conn * conn);
   int infoAll ();
   virtual int baseInfo (Rts2Conn * conn);
