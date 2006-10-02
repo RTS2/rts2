@@ -522,15 +522,15 @@ Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
     case TYPE_SWIFT_XRT_LC_SRC:
     case TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC:
     case TYPE_SWIFT_XRT_IMAGE_PROC_SRC:
-      // conservative estimate for XRT is 7 arcsec, including uncertanities
-      return 7.0 / 3600.0;
+      // conservative estimate for XRT is 20 arcsec, including uncertanities
+      return 20.0 / 3600.0;
     case TYPE_SWIFT_XRT_CENTROID_SRC:
       // XRT FOV
       return 15.0 / 60.0;
     case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
     case TYPE_SWIFT_UVOT_POS_SRC:
       // that's VERY conservative estimate, we might refine it
-      return 6.0 / 3600.0;
+      return 19.0 / 3600.0;
     case TYPE_SWIFT_UVOT_FCHART_SRC:
     case TYPE_SWIFT_UVOT_DBURST_SRC:
     case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
