@@ -297,7 +297,7 @@ Rts2ImageSkyDb::updateAstrometry ()
   ret = getValue ("EQUINOX", equinox);
   if (ret)
     return -1;
-  ret = getValue ("EPOCH", epoch);
+  ret = getValue ("EPOCH_ID", epoch);
   if (ret)
     return -1;
 
