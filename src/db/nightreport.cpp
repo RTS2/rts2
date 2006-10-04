@@ -4,6 +4,8 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2obsset.h"
 
+#include "imgdisplay.h"
+
 #include <time.h>
 #include <iostream>
 
