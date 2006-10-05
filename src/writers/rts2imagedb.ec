@@ -25,7 +25,7 @@ int
 Rts2ImageDb::getValueInd (char *name, double &value, int &ind, char *comment)
 {
   ind = getValue (name, value, comment);
-  if (ind)
+  if (ind || isnan(value))
   {
     value = 100;
     ind = -1;
@@ -37,7 +37,7 @@ int
 Rts2ImageDb::getValueInd (char *name, float &value, int &ind, char *comment)
 {
   ind = getValue (name, value, comment);
-  if (ind)
+  if (ind || isnan(value))
   {
     value = 100;
     ind = -1;
