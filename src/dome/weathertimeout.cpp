@@ -11,6 +11,7 @@ class WeatherTimeout:public Rts2App
 {
 private:
   int timeout;			// in seconds
+  int udpPort;
 public:
     WeatherTimeout (int in_argc, char **in_argv);
 
@@ -22,8 +23,10 @@ WeatherTimeout::WeatherTimeout (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
   timeout = 3600;
+  udpPort = 5002;
 
   addOption ('t', "timeout", 1, "timeout (in seconds) to send");
+  addOption ('p', "udp_port", 1, "UDP port to which message will be send");
 }
 
 int
@@ -33,6 +36,9 @@ WeatherTimeout::processOption (int in_opt)
     {
     case 't':
       timeout = atoi (optarg);
+      break;
+    case 'p':
+      udpPort = atoi (optarg);
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -65,7 +71,7 @@ WeatherTimeout::run ()
   bind_addr.sin_addr.s_addr = htonl (INADDR_ANY);
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons (5002);
+  serv_addr.sin_port = htons (udpPort);
 
   server_info = gethostbyname ("localhost");
   if (!server_info)
