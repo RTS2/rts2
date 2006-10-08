@@ -652,7 +652,7 @@ Rts2Block (in_argc, in_argv)
   nextIdleInfo = 0;
 
   // now add options..
-  addOption ('l', "hostname", 1,
+  addOption ('L', "hostname", 1,
 	     "hostname, if it different from return of gethostname()");
   addOption ('s', "centrald_host", 1,
 	     "name of computer, on which central server runs");
@@ -707,7 +707,7 @@ Rts2Device::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'l':
+    case 'L':
       device_host = optarg;
       break;
     case 's':
