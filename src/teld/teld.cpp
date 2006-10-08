@@ -43,6 +43,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   decCorr = nan ("f");
   posErr = nan ("f");
 
+  sepLimit = 5.0;
+
   modelFile = NULL;
   model = NULL;
 
@@ -57,6 +59,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	     "name of file holding RTS2-calculated model parameters (for flip = 1, or for both when o is not specified)");
   addOption ('o', "model_file_flip_0", 1,
 	     "name of file holding RTS2-calculated model parameters for flip = 0");
+  addOption ('l', "separation limit", 1,
+	     "separation limit (corrections above that limit will be ignored)");
 
   addOption ('S', "standby-park", 0, "park when switched to standby");
 
@@ -101,6 +105,9 @@ Rts2DevTelescope::processOption (int in_opt)
       break;
     case 'o':
       modelFile0 = optarg;
+      break;
+    case 'l':
+      sepLimit = atoi (optarg);
       break;
     case 'S':
       standbyPark = true;
@@ -634,6 +641,7 @@ Rts2DevTelescope::sendInfo (Rts2Conn * conn)
   conn->sendValue ("dec_tar", lastTar.dec);
   conn->sendValue ("ra_corr", raCorr);
   conn->sendValue ("dec_corr", decCorr);
+  conn->sendValue ("pos_err", posErr);
   conn->sendValue ("know_position", knowPosition);
   conn->sendValue ("siderealtime", telSiderealTime);
   conn->sendValue ("localtime", telLocalTime);
@@ -856,21 +864,32 @@ Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 
 int
 Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
-			   double cor_dec, double real_ra, double real_dec)
+			   double cor_dec, struct ln_equ_posn *realPos)
 {
   int ret = -1;
+  struct ln_equ_posn targetPos;
   syslog (LOG_DEBUG,
 	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f real_ra: %f real_de: %f moveMark: %i cor_mark %i",
 	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec,
-	  real_ra, real_dec, moveMark, cor_mark);
+	  realPos->ra, realPos->dec, moveMark, cor_mark);
+  // not moved yet
   raCorr = cor_ra;
   decCorr = cor_dec;
-  // not moved yet
+  targetPos.ra = realPos->ra + cor_ra;
+  targetPos.dec = realPos->dec + cor_dec;
+  posErr = ln_get_angular_separation (&targetPos, realPos);
+  if (posErr > sepLimit)
+    {
+      syslog (LOG_DEBUG, "big separation: %f sepLimit: %f", posErr, sepLimit);
+      conn->sendCommandEnd (DEVDEM_E_IGNORE,
+			    "separation greater then separation limit, ignorng");
+      return -1;
+    }
   if (moveMark == cor_mark)
     {
       if (numCorr < maxCorrNum || maxCorrNum < 0)
 	{
-	  ret = correct (cor_ra, cor_dec, real_ra, real_dec);
+	  ret = correct (cor_ra, cor_dec, realPos->ra, realPos->dec);
 	  if (!ret)
 	    {
 	      numCorr++;
@@ -895,8 +914,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	{
 	  knowPosition = 1;
 	  info ();
-	  lastRa = real_ra;
-	  lastDec = real_dec;
+	  lastRa = realPos->ra;
+	  lastDec = realPos->dec;
 	}
       else
 	{
@@ -910,7 +929,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       // first change - set offsets
       if (numCorr == 0)
 	{
-	  ret = correctOffsets (cor_ra, cor_dec, real_ra, real_dec);
+	  ret = correctOffsets (cor_ra, cor_dec, realPos->ra, realPos->dec);
 	  if (ret == 0)
 	    numCorr++;
 	}
@@ -1134,19 +1153,16 @@ Rts2DevConnTelescope::commandAuthorized ()
   else if (isCommand ("correct"))
     {
       int cor_mark;
+      struct ln_equ_posn realPos;
       double cor_ra;
       double cor_dec;
-      double real_ra;
-      double real_dec;
       if (paramNextInteger (&cor_mark)
 	  || paramNextDouble (&cor_ra)
 	  || paramNextDouble (&cor_dec)
-	  || paramNextDouble (&real_ra)
-	  || paramNextDouble (&real_dec)
-	  || !paramEnd () || fabs (cor_ra) > 5 || fabs (cor_dec) > 5)
+	  || paramNextDouble (&realPos.ra)
+	  || paramNextDouble (&realPos.dec) || !paramEnd ())
 	return -2;
-      return master->correct (this, cor_mark, cor_ra, cor_dec, real_ra,
-			      real_dec);
+      return master->correct (this, cor_mark, cor_ra, cor_dec, &realPos);
     }
   else if (isCommand ("park"))
     {
