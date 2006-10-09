@@ -139,6 +139,17 @@ protected:
     out_tar->ra = lastTar.ra;
     out_tar->dec = lastTar.dec;
   }
+  void getTargetWithCor (struct ln_equ_posn *out_tar)
+  {
+    getTarget (out_tar);
+    out_tar->ra += locCorRa;
+    out_tar->dec += locCorDec;
+  }
+  void applyLocCorr (struct ln_equ_posn *tar)
+  {
+    tar->ra += locCorRa;
+    tar->dec += locCorDec;
+  }
   void getTargetCorrected (struct ln_equ_posn *out_tar)
   {
     getTargetCorrected (out_tar, ln_get_julian_from_sys ());

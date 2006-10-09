@@ -793,21 +793,16 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
 
   eq_astr.ra = real_ra;
   eq_astr.dec = real_dec;
-  getTarget (&eq_target);
+  eq_target.ra = real_ra + cor_ra;
+  eq_target.dec = real_dec + cor_dec;
+  applyLocCorr (&eq_target);
   observer.lng = telLongtitude;
   observer.lat = telLatitude;
   ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
-  getTargetAltAz (&hrz_target, jd);
+  ln_get_hrz_from_equ (&eq_target, &observer, jd, &hrz_target);
   // calculate alt & az diff
-  if (!makeModel)
-    {
-      status = tpl_get ("AZ.OFFSET", az_off, &status);
-      status = tpl_get ("ZD.OFFSET", alt_off, &status);
-      if (status)
-	return -1;
-    }
-  az_off += hrz_target.az - hrz_astr.az;
-  alt_off -= hrz_target.alt - hrz_astr.alt;
+  az_off = hrz_target.az - hrz_astr.az;
+  alt_off = hrz_target.alt - hrz_astr.alt;
 
   status = tpl_get ("ZD.CURRPOS", zd, &status);
   if (status)
@@ -815,7 +810,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
       syslog (LOG_ERR, "Rts2DevTelescopeIr::correct cannot get ZD.CURRPOS");
       return -1;
     }
-  if (zd < 0)
+  if (zd > 0)
     alt_off *= -1;		// get ZD offset - when ZD < 0, it's actuall alt offset
   sep = ln_get_angular_separation (&eq_astr, &eq_target);
 #ifdef DEBUG_EXTRA
@@ -828,9 +823,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   status = tpl_set ("AZ.OFFSET", az_off, &status);
   status = tpl_set ("ZD.OFFSET", alt_off, &status);
   if (!makeModel)
-    {
-      return (status ? -1 : 0);
-    }
+    return (status ? -1 : 1);
   // sample..
   status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);
@@ -838,11 +831,7 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::correct quality: % f status: %i",
 	  quality, status);
 #endif
-  if (status)
-    {
-      return -1;
-    }
-  return 0;
+  return (status ? -1 : 1);
 }
 
 /**

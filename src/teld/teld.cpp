@@ -823,6 +823,12 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
 	dontKnowPosition ();
     }
   infoAll ();
+  if (knowPosition == 2)
+    {
+      // we apply continuus corrections
+      conn->sendCommandEnd (DEVDEM_E_IGNORE, "continuus corrections");
+      return -1;
+    }
   tar_ra += locCorRa;
   tar_dec += locCorDec;
   if (isBellowResolution (locCorRa, locCorDec))
@@ -843,7 +849,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
   else
     {
       move_fixed = 0;
-      moveMark++;
+      if (knowPosition != 2)
+	moveMark++;
       maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
 		 "move started");
       move_connection = conn;
@@ -869,14 +876,14 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   int ret = -1;
   struct ln_equ_posn targetPos;
   syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f real_ra: %f real_de: %f moveMark: %i cor_mark %i",
+	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f real_ra: %f real_de: %f moveMark: %i cor_mark %i cor_ra %f cor_dec %f",
 	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec,
-	  realPos->ra, realPos->dec, moveMark, cor_mark);
+	  realPos->ra, realPos->dec, moveMark, cor_mark, cor_ra, cor_dec);
   // not moved yet
   raCorr = cor_ra;
   decCorr = cor_dec;
-  targetPos.ra = realPos->ra + cor_ra;
-  targetPos.dec = realPos->dec + cor_dec;
+  targetPos.ra = realPos->ra - cor_ra;
+  targetPos.dec = realPos->dec - cor_dec;
   posErr = ln_get_angular_separation (&targetPos, realPos);
   if (posErr > sepLimit)
     {
@@ -890,11 +897,19 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       if (numCorr < maxCorrNum || maxCorrNum < 0)
 	{
 	  ret = correct (cor_ra, cor_dec, realPos->ra, realPos->dec);
-	  if (!ret)
+	  if (ret == 1)
+	    {
+	      numCorr++;
+	      locCorRa += cor_ra;
+	      locCorDec += cor_dec;
+	      knowPosition = 2;
+	    }
+	  else if (ret == 0)
 	    {
 	      numCorr++;
 	      locCorRa = 0;
 	      locCorDec = 0;
+	      knowPosition = 1;
 	    }
 	}
       else
@@ -912,10 +927,17 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	}
       if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
 	{
-	  knowPosition = 1;
+	  if (!knowPosition)
+	    {
+	      knowPosition = 1;
+	    }
 	  info ();
-	  lastRa = realPos->ra;
-	  lastDec = realPos->dec;
+	  if (knowPosition != 2 || locCorNum == -1)
+	    {
+	      lastRa = realPos->ra;
+	      lastDec = realPos->dec;
+	    }
+	  locCorNum = moveMark;
 	}
       else
 	{
