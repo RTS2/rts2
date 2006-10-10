@@ -43,12 +43,13 @@ private:
   glob_t imageGlob;
   unsigned int globC;
   int reprocessingPossible;
+protected:
+    virtual int reloadConfig ();
 public:
     Rts2ImageProc (int argc, char **argv);
     virtual ~ Rts2ImageProc (void);
   virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
 
-  virtual int init ();
   virtual void postEvent (Rts2Event * event);
   virtual int idle ();
   virtual int ready ()
@@ -138,6 +139,8 @@ Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):Rts2DeviceDb (in_argc
   imageGlob.gl_offs = 0;
   globC = 0;
   reprocessingPossible = 0;
+
+  sendStop = 0;
 }
 
 Rts2ImageProc::~Rts2ImageProc (void)
@@ -155,10 +158,10 @@ Rts2ImageProc::createConnection (int in_sock, int conn_num)
 }
 
 int
-Rts2ImageProc::init ()
+Rts2ImageProc::reloadConfig ()
 {
   int ret;
-  ret = Rts2DeviceDb::init ();
+  ret = Rts2DeviceDb::reloadConfig ();
   if (ret)
     return ret;
 
@@ -196,11 +199,7 @@ Rts2ImageProc::init ()
     {
       syslog (LOG_ERR,
 	      "Rts2ImageProc::init cannot get flat process script, exiting");
-      return ret;
     }
-
-  sendStop = 0;
-
   return ret;
 }
 

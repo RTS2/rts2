@@ -48,6 +48,7 @@ private:
   void updateScriptCount ();
 protected:
     virtual int processOption (int in_opt);
+  virtual int reloadConfig ();
 public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
@@ -187,6 +188,21 @@ Rts2Executor::processOption (int in_opt)
 }
 
 int
+Rts2Executor::reloadConfig ()
+{
+  int ret;
+  Rts2Config *config;
+  ret = Rts2DeviceDb::reloadConfig ();
+  if (ret)
+    return ret;
+  config = Rts2Config::instance ();
+  observer = config->getObserver ();
+  config->getDouble ("grbd", "seplimit", grb_sep_limit);
+  config->getDouble ("grbd", "minsep", grb_min_sep);
+  return 0;
+}
+
+int
 Rts2Executor::init ()
 {
   int ret;
@@ -195,11 +211,6 @@ Rts2Executor::init ()
     return ret;
   // set priority..
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 20"));
-  Rts2Config *config;
-  config = Rts2Config::instance ();
-  observer = config->getObserver ();
-  config->getDouble ("grbd", "seplimit", grb_sep_limit);
-  config->getDouble ("grbd", "minsep", grb_min_sep);
   return 0;
 }
 

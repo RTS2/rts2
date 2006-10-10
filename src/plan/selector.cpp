@@ -67,10 +67,10 @@ private:
   int idle_select;
 protected:
     virtual int processOption (int in_opt);
+  virtual int reloadConfig ();
 public:
     Rts2SelectorDev (int argc, char **argv);
     virtual ~ Rts2SelectorDev (void);
-  virtual int init ();
   virtual int idle ();
 
   virtual int ready ()
@@ -116,8 +116,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SELECTOR, "SEL")
 
 Rts2SelectorDev::~Rts2SelectorDev (void)
 {
-  if (sel)
-    delete sel;
+  delete sel;
 }
 
 int
@@ -135,12 +134,12 @@ Rts2SelectorDev::processOption (int in_opt)
 }
 
 int
-Rts2SelectorDev::init ()
+Rts2SelectorDev::reloadConfig ()
 {
   int ret;
   struct ln_lnlat_posn *observer;
 
-  ret = Rts2DeviceDb::init ();
+  ret = Rts2DeviceDb::reloadConfig ();
   if (ret)
     return ret;
 
@@ -148,8 +147,9 @@ Rts2SelectorDev::init ()
   config = Rts2Config::instance ();
   observer = config->getObserver ();
 
-  sel = new Rts2Selector (observer);
+  delete sel;
 
+  sel = new Rts2Selector (observer);
   return 0;
 }
 
