@@ -666,7 +666,7 @@ Rts2ImageDarkDb::updateDB ()
   VARCHAR d_camera_name[8];
   EXEC SQL END DECLARE SECTION;
 
-  d_dark_temperature_ind = getValue ("CCD_TEMP", d_dark_temperature);
+  getValueInd ("CCD_TEMP", d_dark_temperature, d_dark_temperature_ind);
   d_dark_exposure = getExposureLength ();
 
   strncpy (d_camera_name.arr, cameraName, 8);
@@ -725,7 +725,54 @@ Rts2ImageDarkDb::print (std::ostream & _os, int in_flags)
 int
 Rts2ImageFlatDb::updateDB ()
 {
-  // flat images aren't stored in DB - we store only finished flats
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_img_id = imgId;
+  int d_obs_id = obsId;
+  int d_flat_date = getExposureSec ();
+  int d_flat_date_usec = getExposureUsec ();
+  float d_flat_exposure;
+  float d_flat_temperature = 100;
+  int d_flat_temperature_ind;
+  int d_epoch_id = epochId;
+  VARCHAR d_camera_name[8];
+  EXEC SQL END DECLARE SECTION;
+
+  getValueInd ("CCD_TEMP", d_flat_temperature, d_flat_temperature_ind);
+  d_flat_exposure = getExposureLength ();
+
+  strncpy (d_camera_name.arr, cameraName, 8);
+  d_camera_name.len = strlen (cameraName);
+
+  EXEC SQL
+  INSERT INTO
+    flats
+  (
+    obs_id,
+    img_id,
+    flat_date,
+    flat_date_usec,
+    flat_exposure,
+    flat_temperature,
+    epoch_id,
+    camera_name
+  ) VALUES (
+    :d_obs_id,
+    :d_img_id,
+    :d_flat_date,
+    :d_flat_date_usec,
+    :d_flat_exposure,
+    :d_flat_temperature :d_flat_temperature_ind,
+    :d_epoch_id,
+    :d_camera_name
+  );
+  if (sqlca.sqlcode)
+  {
+    reportSqlError ("image FLAT update");
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
+  EXEC SQL COMMIT;
+  
   return 0;
 }
 
