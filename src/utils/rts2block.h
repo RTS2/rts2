@@ -346,7 +346,6 @@ protected:
    * Address list related functions.
    **/
   virtual int addAddress (Rts2Address * in_addr);
-
 public:
     Rts2Conn * connections[MAX_CONN];
 
@@ -470,6 +469,8 @@ public:
    * Return connection with minimum (integer) value.
    */
   Rts2Conn *getMinConn (const char *valueName);
+
+  virtual void sigHUP (int sig);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

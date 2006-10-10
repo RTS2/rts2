@@ -19,6 +19,8 @@
 
 #include "imghdr.h"
 
+static Rts2Block *masterBlock = NULL;
+
 Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {
   sock = -1;
@@ -301,6 +303,9 @@ Rts2Conn::receive (fd_set * set)
 	  return acceptConn ();
 	}
       data_size = read (sock, buf_top, MAX_DATA - (buf_top - buf));
+      // ingore EINTR error
+      if (data_size == -1 && errno == EINTR)
+	return 0;
       if (data_size <= 0)
 	return connectionError (data_size);
       buf_top[data_size] = '\0';
@@ -960,6 +965,13 @@ Rts2Block::getPort (void)
   return port;
 }
 
+void
+signalHUP (int sig)
+{
+  if (masterBlock)
+    masterBlock->sigHUP (sig);
+}
+
 int
 Rts2Block::init ()
 {
@@ -1023,6 +1035,8 @@ Rts2Block::init ()
       sock = -1;
       return -1;
     }
+  masterBlock = this;
+  signal (SIGHUP, signalHUP);
   return 0;
 }
 
@@ -1223,7 +1237,7 @@ Rts2Block::run ()
 	}
       FD_SET (sock, &read_set);
       ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
-      if (ret)
+      if (ret > 0)
 	{
 	  // accept connection on master
 	  if (FD_ISSET (sock, &read_set))
@@ -1622,4 +1636,9 @@ Rts2Block::getMinConn (const char *valueName)
 	}
     }
   return minConn;
+}
+
+void
+Rts2Block::sigHUP (int sig)
+{
 }
