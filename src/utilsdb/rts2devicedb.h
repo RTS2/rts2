@@ -11,6 +11,7 @@ class Rts2DeviceDb:public Rts2Device
 protected:
     virtual int willConnect (Rts2Address * in_addr);
   virtual int processOption (int in_opt);
+  virtual int reloadConfig ();
 public:
     Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
 		  char *default_name);
@@ -18,6 +19,7 @@ public:
   int initDB ();
   virtual int init ();
   virtual void forkedInstance ();
+  virtual void sigHUP (int sig);
 };
 
 #endif /* !__RTS2_DEVICEDB__ */

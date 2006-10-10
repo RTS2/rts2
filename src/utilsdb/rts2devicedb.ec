@@ -1,11 +1,6 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 /**
  * This add database connectivity to device class
  */
-
 #include "rts2devicedb.h"
 
 EXEC SQL include sqlca;
@@ -56,6 +51,17 @@ Rts2DeviceDb::processOption (int in_opt)
 }
 
 int
+Rts2DeviceDb::reloadConfig ()
+{
+  Rts2Config *config;
+
+  // load config..
+
+  config = Rts2Config::instance ();
+  return config->loadFile (configFile);
+}
+
+int
 Rts2DeviceDb::initDB ()
 {
   int ret;
@@ -66,13 +72,13 @@ Rts2DeviceDb::initDB ()
 
   Rts2Config *config;
 
-  // load config..
+  ret = reloadConfig();
 
   config = Rts2Config::instance ();
-  ret = config->loadFile (configFile);
+
   if (ret)
     return ret;
-  
+
   if (connectString)
   {
     strncpy (conn_str, connectString, 200);
@@ -112,4 +118,10 @@ Rts2DeviceDb::forkedInstance ()
 // dosn't work??
 //  EXEC SQL DISCONNECT;
   Rts2Device::forkedInstance ();
+}
+
+void
+Rts2DeviceDb::sigHUP (int signal)
+{
+  reloadConfig();
 }
