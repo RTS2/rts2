@@ -643,6 +643,13 @@ Rts2DevDomeBart::checkCloud ()
   if (now < nextCloudMeas)
     return;
 
+  if (rain)
+    {
+      // check 120 seconds before roof opening
+      nextCloudMeas = getNextOpen () - 120;
+      return;
+    }
+
   // check that master is in right state..
   switch (getMasterState () & ~SERVERD_STANDBY_MASK)
     {
