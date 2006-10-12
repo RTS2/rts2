@@ -301,7 +301,8 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool Rts2DevClientCamera::isIdle ()
+bool
+Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -411,6 +412,7 @@ Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
   addValue (new Rts2ValueDouble ("windspeed"));
   addValue (new Rts2ValueDouble ("observingPossible"));
   addValue (new Rts2ValueInteger ("ignoreMeteo"));
+  addValue (new Rts2ValueDouble ("cloud"));
 }
 
 Rts2DevClientCopula::Rts2DevClientCopula (Rts2Conn * in_connection):Rts2DevClientDome
@@ -623,7 +625,8 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool Rts2DevClientPhot::isIntegrating ()
+bool
+Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
