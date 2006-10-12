@@ -137,6 +137,17 @@ private:
   int isOn (int c_port);
   int handle_zasuvky (int state);
 
+  char *cloud_dev;
+  int cloud_port;
+
+  time_t nextCloudMeas;
+
+  // cloud sensor functions
+  int cloudHeating (char perc);
+  int cloudMeasure (char angle);
+
+  void checkCloud ();
+
 protected:
   virtual int processOption (int in_opt);
   virtual int isGoodWeather ();
@@ -172,6 +183,7 @@ Rts2DevDome (in_argc, in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   addOption ('R', "rain_detector", 1, "/dev/file for rain detector");
+  addOption ('C', "cloud_sensor", 1, "/dev/file for cloud sensor");
   dome_file = "/dev/ttyS0";
   rain_detector = NULL;
   rain_port = -1;
@@ -182,6 +194,11 @@ Rts2DevDome (in_argc, in_argv)
 
   rain = 0;
   windspeed = nan ("f");
+
+  cloud_dev = NULL;
+  cloud_port = -1;
+
+  nextCloudMeas = 0;
 }
 
 Rts2DevDomeBart::~Rts2DevDomeBart (void)
@@ -356,6 +373,9 @@ Rts2DevDomeBart::processOption (int in_opt)
     case 'R':
       rain_detector = optarg;
       break;
+    case 'C':
+      cloud_dev = optarg;
+      break;
     default:
       return Rts2DevDome::processOption (in_opt);
     }
@@ -460,6 +480,32 @@ Rts2DevDomeBart::init ()
 	}
     }
 
+  if (cloud_dev)
+    {
+      cloud_port = open (cloud_dev, O_RDWR | O_NOCTTY);
+      if (cloud_port == -1)
+	{
+	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot open %s: %m",
+		  cloud_dev);
+	  return -1;
+	}
+      // setup values..
+      newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
+      newtio.c_iflag = IGNPAR;
+      newtio.c_oflag = 0;
+      newtio.c_lflag = 0;
+      newtio.c_cc[VMIN] = 0;
+      newtio.c_cc[VTIME] = 1;
+
+      tcflush (cloud_port, TCIOFLUSH);
+      ret = tcsetattr (cloud_port, TCSANOW, &newtio);
+      if (ret < 0)
+	{
+	  syslog (LOG_ERR, "Rts2DevDomeBart::init cloud tcsetattr: %m");
+	  return -1;
+	}
+    }
+
   if (ignoreMeteo)
     return 0;
 
@@ -490,6 +536,7 @@ int
 Rts2DevDomeBart::idle ()
 {
   // check for weather..
+  checkCloud ();
   if (isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
@@ -533,6 +580,85 @@ Rts2DevDomeBart::handle_zasuvky (int state)
       sleep (1);		// doplnil Ford
     }
   return 0;
+}
+
+int
+Rts2DevDomeBart::cloudHeating (char perc)
+{
+  int ret;
+  char buf[10];
+  ret = write (cloud_port, &perc, 1);
+  if (ret != 1)
+    return -1;
+  ret = read (cloud_port, buf, 9);
+  if (ret <= 0)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeBart::cloudHeating read: %m ret: %i", ret);
+      return -1;
+    }
+  buf[ret] = '\0';
+  syslog (LOG_DEBUG, "Rts2DevDomeBart::cloudHeating read: %s", buf);
+  return 0;
+}
+
+int
+Rts2DevDomeBart::cloudMeasure (char angle)
+{
+  int ret;
+  char buf[21];
+  int ang, ground, space;
+  ret = write (cloud_port, &angle, 1);
+  if (ret != 1)
+    return -1;
+  ret = read (cloud_port, buf, 20);
+  if (ret <= 0)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeBart::cloudMeasure read: %m ret: %i", ret);
+      return -1;
+    }
+  buf[ret] = '\0';
+  // now parse readed values
+  // A 1;G 18;S 18
+  ret = sscanf (buf, "A %i;G %i; S %i", &ang, &ground, &space);
+  if (ret != 3)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeBart::cloudMeasure invalid cloud sensor return: '%s'",
+	      buf);
+      return -1;
+    }
+  syslog (LOG_DEBUG,
+	  "Rts2DevDomeBart::cloudMeasure angle: %i ground: %i space: %i",
+	  ang, ground, space);
+  return 0;
+}
+
+void
+Rts2DevDomeBart::checkCloud ()
+{
+  time_t now;
+  if (cloud_port < 0)
+    return;
+  time (&now);
+  if (now < nextCloudMeas)
+    return;
+
+  // check that master is in right state..
+  switch (getMasterState () & ~SERVERD_STANDBY_MASK)
+    {
+    case SERVERD_EVENING:
+    case SERVERD_DUSK:
+    case SERVERD_NIGHT:
+    case SERVERD_DAWN:
+      cloudHeating ('k');
+      cloudMeasure ('7');
+      // 9 sec measurements..
+      nextCloudMeas = now + 9;
+      break;
+    default:
+      // next check after 60 seconds
+      nextCloudMeas = now + 60;
+    }
 }
 
 int
