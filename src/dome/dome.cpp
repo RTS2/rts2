@@ -28,6 +28,8 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
   weatherCanOpenDome = false;
   ignoreMeteo = false;
 
+  cloud = nan ("f");
+
 
   addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
   addOption ('P', "max_peek_windspeed", 1,
@@ -188,6 +190,7 @@ Rts2DevDome::sendInfo (Rts2Conn * conn)
   conn->sendValue ("windspeed", windspeed);
   conn->sendValue ("observingPossible", observingPossible);
   conn->sendValue ("ignoreMeteo", (ignoreMeteo ? 2 : 1));
+  conn->sendValue ("cloud", cloud);
   return 0;
 }
 

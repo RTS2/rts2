@@ -19,6 +19,7 @@ protected:
   time_t nextOpen;
   int rain;
   float windspeed;
+  double cloud;
 
   int observingPossible;
   int maxWindSpeed;
@@ -108,6 +109,10 @@ public:
   void setWindSpeed (float in_windpseed)
   {
     windspeed = in_windpseed;
+  }
+  void setCloud (double in_cloud)
+  {
+    cloud = in_cloud;
   }
   void setWeatherTimeout (time_t wait_time);
   void setSwState (int in_sw_state)
