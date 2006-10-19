@@ -179,6 +179,9 @@ CameraFliChip::stopExposure ()
       ret = FLICancelExposure (dev);
       if (ret)
 	return ret;
+      ret = FLIFlushRow (dev, chipSize->height, 1);
+      if (ret)
+	return ret;
     }
   delete buf;
   buf = NULL;
