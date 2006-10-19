@@ -206,6 +206,8 @@ private:
   int closingNum;
   int lastClosingNum;
 
+  bool sendContFailMail;
+
   int openWDC ();
   int closeWDC ();
 
@@ -768,10 +770,15 @@ Rts2DevDomeFram::closeDome ()
   if (zjisti_stav_portu () == -1)
     {
       syslog (LOG_ERR, "Cannot read from port at close!");
-      sendFramMail
-	("ERROR FRAM DOME CANNOT BE CLOSED DUE TO ROOF CONTROLLER FAILURE!!");
+      if (!sendContFailMail)
+	{
+	  sendFramMail
+	    ("ERROR FRAM DOME CANNOT BE CLOSED DUE TO ROOF CONTROLLER FAILURE!!");
+	  sendContFailMail = true;
+	}
       return -1;
     }
+  sendContFailMail = false;
   if (movingState != MOVE_NONE)
     {
       stopMove ();
@@ -1063,6 +1070,8 @@ Rts2DevDomeFram::Rts2DevDomeFram (int in_argc, char **in_argv):Rts2DevDome (in_a
   lastClosing = 0;
   closingNum = 0;
   lastClosingNum = -1;
+
+  sendContFailMail = false;
 }
 
 Rts2DevDomeFram::~Rts2DevDomeFram (void)
@@ -1159,6 +1168,7 @@ Rts2DevDomeFram::sendFramMail (char *subject)
 	    "End switch status:\n"
 	    "CLOSE SWITCH RIGHT:%s CLOSE SWITCH LEFT:%s\n"
 	    " OPEN SWITCH RIGHT:%s  OPEN SWITCH LEFT:%s\n"
+	    "next good weather: %s UT\n"
 	    "Weather::isGoodWeather %i\n"
 	    "raining: %i\n"
 	    "windspeed: %.2f km/h\n"
@@ -1169,6 +1179,7 @@ Rts2DevDomeFram::sendFramMail (char *subject)
 	    isOnString (KONCAK_ZAVRENI_LEVY),
 	    isOnString (KONCAK_OTEVRENI_PRAVY),
 	    isOnString (KONCAK_OTEVRENI_LEVY),
+	    ctime (&nextGoodWeather),
 	    isGoodWeather (), rain,
 	    windspeed, ret, closingNum, ctime (&lastClosing));
   ret = sendMail (subject, openText);
