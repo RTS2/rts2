@@ -726,7 +726,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       double sep;
       sep = getMoveTargetSep ();
       syslog (LOG_DEBUG, "Rts2DevTelescope::startMove sep: %f", sep);
-      if (sep > 2)
+      if (sep > sepLimit)
 	dontKnowPosition ();
     }
   tar_ra += locCorRa;
@@ -819,7 +819,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       double sep;
       sep = getMoveTargetSep ();
       syslog (LOG_DEBUG, "Rts2DevTelescope::startResyncMove sep: %f", sep);
-      if (sep > 2)
+      if (sep > sepLimit)
 	dontKnowPosition ();
     }
   infoAll ();
