@@ -60,8 +60,8 @@ Rts2AppDb (in_argc, in_argv)
 
   JD = ln_get_julian_from_sys ();
 
-  addOption ('E', "extendet", 2,
-	     "print extendet informations (visibility prediction,..)");
+  addOption ('E', "extended", 2,
+	     "print extended informations (visibility prediction,..)");
   addOption ('C', "calibartion", 0, "print recommended calibration targets");
   addOption ('o', "observations", 2,
 	     "print observations (in given time range)");
