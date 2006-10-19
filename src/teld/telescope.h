@@ -44,6 +44,10 @@ private:
   double posErr;
 
   double sepLimit;
+  // if correction is greater than that limit, it will preform correction
+  // immediately, independet of the camera exposures.  That is good to put NF
+  // to position on WF-NF setups.
+  double minGood;
 
   int knowPosition;
   double lastRa;
@@ -226,7 +230,10 @@ public:
   virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
 			      double real_dec)
   {
-    return -1;
+    locCorRa = cor_ra;
+    locCorDec = cor_dec;
+    knowPosition = 1;
+    return 0;
   }
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec)

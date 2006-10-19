@@ -44,6 +44,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   posErr = nan ("f");
 
   sepLimit = 5.0;
+  minGood = 180.0;
 
   modelFile = NULL;
   model = NULL;
@@ -61,6 +62,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	     "name of file holding RTS2-calculated model parameters for flip = 0");
   addOption ('l', "separation limit", 1,
 	     "separation limit (corrections above that limit will be ignored)");
+  addOption ('g', "min_good", 1,
+	     "minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
 
   addOption ('S', "standby-park", 0, "park when switched to standby");
 
@@ -107,7 +110,10 @@ Rts2DevTelescope::processOption (int in_opt)
       modelFile0 = optarg;
       break;
     case 'l':
-      sepLimit = atoi (optarg);
+      sepLimit = atof (optarg);
+      break;
+    case 'g':
+      minGood = atof (optarg);
       break;
     case 'S':
       standbyPark = true;
@@ -889,27 +895,54 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
     {
       syslog (LOG_DEBUG, "big separation: %f sepLimit: %f", posErr, sepLimit);
       conn->sendCommandEnd (DEVDEM_E_IGNORE,
-			    "separation greater then separation limit, ignorng");
+			    "separation greater then separation limit, ignoring");
       return -1;
     }
   if (moveMark == cor_mark)
     {
+      // it's so big that we need resync now
+      if (posErr >= minGood)
+	{
+	  if (numCorr == 0)
+	    {
+	      ret =
+		correctOffsets (cor_ra, cor_dec, realPos->ra, realPos->dec);
+	    }
+	  else
+	    {
+	      ret =
+		Rts2DevTelescope::correctOffsets (cor_ra, cor_dec,
+						  realPos->ra, realPos->dec);
+	    }
+	  if (!ret)
+	    {
+	      numCorr++;
+	    }
+	  ret = startResyncMove (conn, lastTar.ra, lastTar.dec);
+	  if (!ret)
+	    {
+	      locCorNum = moveMark;
+	      return 0;
+	    }
+	  // if immediatel resync failed, use correction
+	}
       if (numCorr < maxCorrNum || maxCorrNum < 0)
 	{
 	  ret = correct (cor_ra, cor_dec, realPos->ra, realPos->dec);
-	  if (ret == 1)
+	  switch (ret)
 	    {
+	    case 1:
 	      numCorr++;
 	      locCorRa += cor_ra;
 	      locCorDec += cor_dec;
 	      knowPosition = 2;
-	    }
-	  else if (ret == 0)
-	    {
+	      break;
+	    case 0:
 	      numCorr++;
 	      locCorRa = 0;
 	      locCorDec = 0;
 	      knowPosition = 1;
+	      break;
 	    }
 	}
       else
