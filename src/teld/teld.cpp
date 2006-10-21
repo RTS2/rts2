@@ -1193,7 +1193,7 @@ Rts2DevConnTelescope::commandAuthorized ()
       if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
 	  || !paramEnd ())
 	return -2;
-      master->modelOn ();
+      master->modelOff ();
       return master->startMoveFixed (this, tar_ra, tar_dec);
     }
   else if (isCommand ("setto"))
