@@ -234,7 +234,7 @@ Target::loadTarget (int in_tar_id)
   if (sqlca.sqlcode)
   {
     logMsgDb ("Target::load");
-    return 0;
+    return -1;
   }
 
   delete[] target_name;
