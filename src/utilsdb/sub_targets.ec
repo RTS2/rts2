@@ -1791,14 +1791,14 @@ TargetSwiftFOV::considerForObserving (double JD)
   {
     // no pointing..expect that after 3 minutes, it will be better,
     // as we can get new pointing from GCN
-    changePriority (-100, JD + 1/1440.0/20.0);
+    setNextObservable (JD + 1/1440.0/20.0);
     return -1;
   }
 
   ret = getPosition (&curr_position, JD);
   if (ret)
   {
-    changePriority (-100, JD + 1/1440.0/20.0);
+    setNextObservable (JD + 1/1440.0/20.0);
     return -1;
   }
 
@@ -1819,7 +1819,7 @@ TargetSwiftFOV::considerForObserving (double JD)
     {
       nextObs = swiftTimeEnd;
     }
-    changePriority (-50, &nextObs);
+    setNextObservable (&nextObs);
     return -1;
   }
 
@@ -1890,6 +1890,243 @@ TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
   << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
   << InfoVal<double> ("ROLL", swiftRoll);
 }
+
+TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
+{
+  target_id = TARGET_INTEGRAL_FOV;
+  integralId = -1;
+  oldIntegralId = -1;
+  integralOnBonus = 0;
+}
+
+TargetIntegralFOV::~TargetIntegralFOV (void)
+{
+}
+
+int
+TargetIntegralFOV::load ()
+{
+  struct ln_hrz_posn testHrz;
+  struct ln_equ_posn testEqu;
+  double JD = ln_get_julian_from_sys ();
+
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_integral_id = -1;
+  double d_integral_ra;
+  double d_integral_dec;
+  long d_integral_time;
+  EXEC SQL END DECLARE SECTION;
+
+  integralId = -1;
+
+  EXEC SQL DECLARE find_integral_poiniting CURSOR FOR
+    SELECT
+      integral_id,
+      integral_ra,
+      integral_dec,
+      EXTRACT (EPOCH FROM integral_time)
+    FROM
+      integral
+    WHERE
+        integral_time is not NULL
+    ORDER BY
+      integral_id desc;
+  EXEC SQL OPEN find_integral_poiniting;
+  while (1)
+  {
+    EXEC SQL FETCH next FROM find_integral_poiniting INTO
+      :d_integral_id,
+      :d_integral_ra,
+      :d_integral_dec,
+      :d_integral_time;
+    if (sqlca.sqlcode)
+      break;
+    // check for our altitude..
+    testEqu.ra = d_integral_ra;
+    testEqu.dec = d_integral_dec;
+    ln_get_hrz_from_equ (&testEqu, observer, JD, &testHrz);
+    if (testHrz.alt > 0)
+    {
+      if (testHrz.alt < 30)
+      {
+        testHrz.alt = 30;
+      // get equ coordinates we will observe..
+        ln_get_equ_from_hrz (&testHrz, observer, JD, &testEqu);
+      }	
+      integralFovCenter.ra = testEqu.ra;
+      integralFovCenter.dec = testEqu.dec;
+      if (oldIntegralId == -1)
+        oldIntegralId = d_integral_id;
+      integralId = d_integral_id;
+      integralTimeStart = d_integral_time;
+      break;
+    }
+  }
+  EXEC SQL CLOSE find_integral_poiniting;
+  if (integralId < 0)
+  {
+    setTargetName ("Cannot find any INTEGRAL FOV");
+    integralFovCenter.ra = nan ("f");
+    integralFovCenter.dec = nan ("f");
+    integralTimeStart = 0;
+    return 0;
+  }
+
+  std::ostringstream name;
+  name << "IntegralFOV #" << integralId
+  << " ( " << Timestamp(integralTimeStart) << " )";
+  setTargetName (name.str().c_str());
+  return 0;
+}
+
+int
+TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  *pos = integralFovCenter;
+  return 0;
+}
+
+int
+TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD)
+{
+  struct ln_equ_posn pos;
+  int ret;
+  
+  ret = getPosition (&pos, JD);
+  if (ret)
+    return ret;
+  return ln_get_object_next_rst (JD, observer, &pos, rst);
+}
+
+moveType
+TargetIntegralFOV::afterSlewProcessed ()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_obs_id;
+  int d_integral_id = integralId;
+  EXEC SQL END DECLARE SECTION;
+
+  d_obs_id = getObsId ();
+  EXEC SQL
+  INSERT INTO
+    integral_observation
+  (
+    integral_id,
+    obs_id
+  ) VALUES (
+    :d_integral_id,
+    :d_obs_id
+  );
+  if (sqlca.sqlcode)
+  {
+    logMsgDb ("TargetIntegralFOV::startSlew SQL error");
+    EXEC SQL ROLLBACK;
+    return OBS_MOVE_FAILED;
+  }
+  EXEC SQL COMMIT;
+  return OBS_MOVE;
+}
+
+int
+TargetIntegralFOV::considerForObserving (double JD)
+{
+  // find pointing
+  int ret;
+  struct ln_equ_posn curr_position;
+  double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
+
+  load ();
+
+  if (integralId < 0)
+  {
+    // no pointing..expect that after 3 minutes, it will be better,
+    // as we can get new pointing from GCN
+    setNextObservable (JD + 1/1440.0/20.0);
+    return -1;
+  }
+
+  ret = getPosition (&curr_position, JD);
+  if (ret)
+  {
+    setNextObservable (JD + 1/1440.0/20.0);
+    return -1;
+  }
+
+  ret = isGood (lst, JD, &curr_position);
+  
+  if (!ret)
+  {
+    time_t nextObs;
+    time (&nextObs);
+    nextObs += 120;
+    setNextObservable (&nextObs);
+    return -1;
+  }
+
+  return selectedAsGood ();
+}
+
+int
+TargetIntegralFOV::beforeMove ()
+{
+  // are we still the best swiftId on planet?
+  load ();
+  if (oldIntegralId != integralId)
+    endObservation (-1);  // startSlew will be called after move suceeded and will write new observation..
+  return 0;
+}
+
+float
+TargetIntegralFOV::getBonus (double JD)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+  int d_tar_id = target_id;
+  double d_bonus;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL
+  SELECT
+    tar_priority
+  INTO
+    :d_bonus
+  FROM
+    targets
+  WHERE
+    tar_id = :d_tar_id; 
+  
+  integralOnBonus = d_bonus;
+
+  time_t now;
+  ln_get_timet_from_julian (JD, &now);
+  if (now > integralTimeStart - 120)
+    return integralOnBonus;
+  if (now > integralTimeStart - 300)
+    return integralOnBonus / 2.0;
+  return 1;
+}
+
+int
+TargetIntegralFOV::isContinues ()
+{
+  double ret;
+  load ();
+  if (oldIntegralId != integralId)
+    return 0;
+  ret = Target::getBonus ();
+  // FOV become uinteresting..
+  if (ret == 1)
+    return 0;
+  return 1;
+}
+
+void
+TargetIntegralFOV::printExtra (std::ostream &_os, double JD)
+{
+  Target::printExtra (_os, JD);
+  _os 
+  << InfoVal<Timestamp> ("FROM", Timestamp (integralTimeStart));
+}
+
 
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {

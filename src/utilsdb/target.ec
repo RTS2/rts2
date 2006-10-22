@@ -1433,6 +1433,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
     case TYPE_SWIFT_FOV:
       retTarget = new TargetSwiftFOV (in_tar_id, in_obs);
       break;
+    case TYPE_INTEGRAL_FOV:
+      retTarget = new TargetIntegralFOV (in_tar_id, in_obs);
+      break;
     case TYPE_GPS:
       retTarget = new TargetGps (in_tar_id, in_obs);
       break;

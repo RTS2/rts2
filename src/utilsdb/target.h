@@ -946,6 +946,30 @@ public:
   virtual void printExtra (std::ostream & _os, double JD);
 };
 
+class TargetIntegralFOV:public Target
+{
+private:
+  int oldIntegralId;
+  int integralId;
+  struct ln_equ_posn integralFovCenter;
+  time_t integralTimeStart;
+  double integralOnBonus;
+public:
+    TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
+    virtual ~ TargetIntegralFOV (void);
+
+  virtual int load ();		// find Swift pointing for observation
+  virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual int getRST (struct ln_rst_time *rst, double JD);
+  virtual moveType afterSlewProcessed ();
+  virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
+  virtual int beforeMove ();
+  virtual float getBonus (double JD);
+  virtual int isContinues ();
+
+  virtual void printExtra (std::ostream & _os, double JD);
+};
+
 class TargetGps:public ConstTarget
 {
 public:
