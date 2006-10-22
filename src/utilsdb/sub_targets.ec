@@ -1635,6 +1635,7 @@ TargetSwiftFOV::load ()
   struct ln_hrz_posn testHrz;
   struct ln_equ_posn testEqu;
   double JD = ln_get_julian_from_sys ();
+  int ret;
 
   EXEC SQL BEGIN DECLARE SECTION;
   int d_swift_id = -1;
@@ -1648,6 +1649,10 @@ TargetSwiftFOV::load ()
   EXEC SQL END DECLARE SECTION;
 
   swiftId = -1;
+
+  ret = Target::load();
+  if (ret)
+    return ret;
 
   EXEC SQL DECLARE find_swift_poiniting CURSOR FOR
     SELECT
@@ -1917,7 +1922,13 @@ TargetIntegralFOV::load ()
   long d_integral_time;
   EXEC SQL END DECLARE SECTION;
 
+  int ret;
+
   integralId = -1;
+
+  ret = Target::load();
+  if (ret)
+    return ret;
 
   EXEC SQL DECLARE find_integral_poiniting CURSOR FOR
     SELECT
