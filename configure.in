@@ -372,11 +372,7 @@ AC_OUTPUT([Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile
 	   src/db/simbad/Makefile
-	   src/soap/Makefile
-	   man/rts2.1
-	   man/rts2.conf.5
-	   man/rts2-centrald.1
-	   man/rts2-cmon.1]
+	   src/soap/Makefile]
 )
 
 echo "
