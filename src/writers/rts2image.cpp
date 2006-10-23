@@ -1049,6 +1049,10 @@ Rts2Image::addStarData (struct stardata *sr)
 {
   if (sr->F <= 0)		// flux is not significant..
     return -1;
+  // do not take stars on edge..
+  if (sr->X == 0 || sr->X == getWidth ()
+      || sr->Y == 0 || sr->Y == getHeight ())
+    return -1;
 
   sexResultNum++;
   if (sexResultNum > 1)
