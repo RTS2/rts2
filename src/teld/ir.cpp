@@ -543,6 +543,9 @@ int
 Rts2DevTelescopeIr::info ()
 {
   double zd, az;
+#ifdef DEBUG_EXTRA
+  double zd_acc, zd_speed, az_acc, az_speed;
+#endif // DEBUG_EXTRA
   int status = 0;
   int track = 0;
 
@@ -550,12 +553,8 @@ Rts2DevTelescopeIr::info ()
     return -1;
 
   status = tpl_get ("POINTING.CURRENT.RA", telRa, &status);
-  if (status)
-    return -1;
   telRa *= 15.0;
   status = tpl_get ("POINTING.CURRENT.DEC", telDec, &status);
-  if (status)
-    return -1;
   status = tpl_get ("POINTING.TRACK", track, &status);
   if (status)
     return -1;
@@ -565,6 +564,17 @@ Rts2DevTelescopeIr::info ()
 
   status = tpl_get ("ZD.REALPOS", zd, &status);
   status = tpl_get ("AZ.REALPOS", az, &status);
+
+#ifdef DEBUG_EXTRA
+  status = tpl_get ("ZD.CURRSPEED", zd_speed, &status);
+  status = tpl_get ("ZD.CURRACC", zd_acc, &status);
+  status = tpl_get ("AZ.CURRSPEED", az_speed, &status);
+  status = tpl_get ("AZ.CURRACC", az_acc, &status);
+
+  syslog (LOG_DEBUG,
+	  "Rts2DevTelescope::info ra %f dec %f az %f az_speed %f az_acc %f zd %f zd_speed %f zd_acc %f track %i",
+	  telRa, telDec, az, az_speed, az_acc, zd, zd_speed, zd_acc, track);
+#endif // DEBUG_EXTRA
 
   if (!track)
     {
@@ -600,8 +610,8 @@ int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
   int status = 0;
-  status = tpl_setw ("POINTING.TARGET.RA", ra / 15.0, &status);
-  status = tpl_setw ("POINTING.TARGET.DEC", dec, &status);
+  status = tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
+  status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
   status = tpl_set ("POINTING.TRACK", irTracking, &status);
 #ifdef DEBUG_EXTRA
   syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
@@ -647,7 +657,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 
   // wait till we get it processed
   sep = getMoveTargetSep ();
-  if (sep > 1)
+  if (sep > 2)
     sleep (3);
   else if (sep > 2 / 60.0)
     usleep (USEC_SEC / 10);
