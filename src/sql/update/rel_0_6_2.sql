@@ -38,3 +38,9 @@ CREATE TABLE calibration_observation (
 	obs_id		integer NOT NULL REFERENCES observations (obs_id),
 CONSTRAINT calibration_obs_prim_key PRIMARY KEY (cal_obs_id, obs_id)
 );
+
+CREATE TABLE integral_observation (
+        integral_id        integer NOT NULL REFERENCES integral (integral_id),
+	obs_id		integer NOT NULL REFERENCES observations (obs_id),
+CONSTRAINT integral_obs_prim_key PRIMARY KEY (integral_id, obs_id)
+);
