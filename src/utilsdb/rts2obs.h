@@ -113,6 +113,30 @@ public:
   int getFirstErrors (double &eRa, double &eDec, double &eRad);
   int getAverageErrors (double &eRa, double &eDec, double &eRad);
 
+  /**
+   * Return -1 when previous position cannot
+   */
+  int getPrevPosition (struct ln_equ_posn &prevPoz,
+		       struct ln_hrz_posn &hrzPoz);
+
+  void getEqu (struct ln_equ_posn &equ)
+  {
+    equ.ra = obs_ra;
+    equ.dec = obs_dec;
+  }
+
+  void getHrz (struct ln_hrz_posn &hrz)
+  {
+    hrz.az = obs_az;
+    hrz.alt = obs_alt;
+  }
+
+  /**
+   * Return average slew speed in arc deg/sec. Return nan when slew speed cannot be determined.
+   */
+  double getPrevSeparation ();
+  double getSlewSpeed ();
+
   void maskState (int newBits);
   void unmaskState (int newBits);
 

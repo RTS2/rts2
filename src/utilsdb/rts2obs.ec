@@ -341,6 +341,46 @@ Rts2Obs::getAverageErrors (double &eRa, double &eDec, double &eRad)
   return imgset->getAverageErrors (eRa, eDec, eRad);
 }
 
+int
+Rts2Obs::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevHrz)
+{
+  int ret;
+  Rts2Obs prevObs = Rts2Obs (getObsId () - 1);
+  ret = prevObs.load();
+  if (ret)
+    return ret;
+  prevObs.getEqu (prevEqu);
+  prevObs.getHrz (prevHrz);
+  return 0;
+}
+
+double
+Rts2Obs::getPrevSeparation ()
+{
+  struct ln_equ_posn prevEqu, currEqu;
+  struct ln_hrz_posn prevHrz;
+  int ret;
+  ret = getPrevPosition (prevEqu, prevHrz);
+  if (ret)
+    return nan("f");
+
+  getEqu (currEqu);
+
+  return ln_get_angular_separation (&prevEqu, &currEqu);
+}
+
+double
+Rts2Obs::getSlewSpeed ()
+{
+  double prevSep = getPrevSeparation ();
+  if (isnan (prevSep)
+    || isnan(obs_slew)
+    || isnan (obs_start)
+    || (obs_start - obs_slew) <= 0)
+    return nan("f");
+  return prevSep / (obs_start - obs_slew);
+}
+
 void
 Rts2Obs::maskState (int newBits)
 {
@@ -432,6 +472,8 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
     if (obs.displayCounts & DISPLAY_SUMMARY)
       obs.printCountsSummary (_os);
   }
+
+  _os << " | " << std::setw (7) << obs.getSlewSpeed();
 
   _os.flags (old_settings);
   _os.precision (old_precision);
