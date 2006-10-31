@@ -4,6 +4,8 @@
 
 #include "rts2app.h"
 
+#include "config.h"
+
 #include <iostream>
 #include <sstream>
 #include <syslog.h>
@@ -16,6 +18,7 @@ Rts2Object ()
   argv = in_argv;
 
   addOption ('h', "help", 0, "write this help");
+  addOption ('V', "version", 0, "show program version");
 }
 
 Rts2App::~Rts2App ()
@@ -120,6 +123,9 @@ Rts2App::processOption (int in_opt)
     case 'h':
     case 0:
       help ();
+      exit (EXIT_SUCCESS);
+    case 'V':
+      std::cout << VERSION << std::cout;
       exit (EXIT_SUCCESS);
     case '?':
       break;
