@@ -43,6 +43,7 @@ class Rts2ConnCentrald;
 
 class Rts2Centrald:public Rts2Block
 {
+private:
   int priority_client;
   int current_state;
 
@@ -53,6 +54,7 @@ class Rts2Centrald:public Rts2Block
   int morning_off;
   int morning_standby;
 
+  int reloadConfig ();
 protected:
   int changeState (int new_state);
   int idle ();
@@ -99,6 +101,8 @@ public:
 
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   void connAdded (Rts2ConnCentrald * added);
+
+  virtual void sigHUP (int sig);
 };
 
 class Rts2ConnCentrald:public Rts2Conn
@@ -521,19 +525,31 @@ Rts2ConnCentrald::command ()
 Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
 	   in_argv)
 {
+  reloadConfig ();
   Rts2Config *
     config = Rts2Config::instance ();
-  config->loadFile ();
-  observer = config->getObserver ();
 
   current_state =
     config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
 
-  morning_off = config->getBoolean ("centrald", "morning_off");
-  morning_standby = config->getBoolean ("centrald", "morning_standby");
-
   addOption ('p', "port", 1, "port on which centrald will listen");
 }
+
+int
+Rts2Centrald::reloadConfig ()
+{
+  int ret;
+  Rts2Config *config = Rts2Config::instance ();
+  ret = config->loadFile ();
+  if (ret)
+    return ret;
+
+  morning_off = config->getBoolean ("centrald", "morning_off");
+  morning_standby = config->getBoolean ("centrald", "morning_standby");
+  return ret;
+}
+
+
 
 int
 Rts2Centrald::processOption (int in_opt)
@@ -668,6 +684,12 @@ Rts2Centrald::idle ()
 	}
     }
   return Rts2Block::idle ();
+}
+
+void
+Rts2Centrald::sigHUP (int sig)
+{
+  reloadConfig ();
 }
 
 int
