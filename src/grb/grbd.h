@@ -23,7 +23,9 @@ private:
   char *addExe;
   int execFollowups;
 
-  virtual int processOption (int in_opt);
+protected:
+    virtual int processOption (int in_opt);
+  virtual int reloadConfig ();
 public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();

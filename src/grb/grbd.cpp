@@ -109,13 +109,11 @@ Rts2DevGrb::processOption (int in_opt)
 }
 
 int
-Rts2DevGrb::init ()
+Rts2DevGrb::reloadConfig ()
 {
   int ret;
-
   Rts2Config *config;
-
-  ret = Rts2DeviceDb::init ();
+  ret = Rts2DeviceDb::reloadConfig ();
   if (ret)
     return ret;
 
@@ -151,6 +149,8 @@ Rts2DevGrb::init ()
 	  addExe = conf_addExe;
 	}
     }
+  if (gcncnn)
+    deleteConnection (gcncnn);
   // add connection..
   gcncnn =
     new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups,
@@ -166,6 +166,18 @@ Rts2DevGrb::init ()
       sleep (60);
     }
   addConnection (gcncnn);
+
+  return ret;
+}
+
+int
+Rts2DevGrb::init ()
+{
+  int ret;
+  ret = Rts2DeviceDb::init ();
+  if (ret)
+    return ret;
+
   // add forward connection
   if (forwardPort > 0)
     {
