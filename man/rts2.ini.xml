@@ -100,8 +100,46 @@
   <refsect1>
     <title>IMAGE PATH EXPRESSION</title>
     <para>
-      For image path, substrings begining with % are expanded to various
-      image-related values. They list is provided bellow.
+      Image path expression is processed before it is used. 
+    </para>
+
+    <refsect2>
+      <title>Example of image path expression</title>
+      <para>
+	If we have FITS file with name which was taken (based on RTS2 CTIME and
+	USEC) on 2006-10-17 at 18:22:03.447s, with R filter (RTS2 FILTER
+	keyword). Here we list few path expresions together with expected
+	values.
+      </para>
+      <variablelist>
+        <varlistentry>
+	  <term>
+	    <option>$DATE-OBS$/%F/%f</option>
+	  </term>
+  	  <listitem>
+	    <para>
+	      2006-10-17T18:22:03.447/R/20061017182203-0447.fits, if DATE-OBS keyword is filled.
+	    </para>
+	    <para>
+	      $DATE-OBS$/R/20061017182203-0447.fits, if DATE-OBS keyword cannot be found.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <para>
+      Substrings begining with $ and ending with $ are escaped to keyword value
+      with name equal to value enclosed in $. If that value is not found in header,
+      string $[name]$ will be put to path, where [name] is value name enclosed in $.
+    </para>
+    <para>
+      For example, string $DATE-OBS$ will be expanded to keyword value of
+      DATE-OBS keyword. If DATE-OBS keyword cannot be found, it will be copied,
+      e.g. remain $DATE-OBS$.
+    </para>
+    <para> 
+      Substrings begining with % are expanded to various image-related values.
+      They list is provided bellow.
     </para>
 
     <variablelist>
@@ -139,10 +177,34 @@
       </varlistentry>
       <varlistentry>
         <term>
+	  <option>E</option>
+        </term>
+        <listitem>
+          <para>CCD exposure in seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>e</option>
+        </term>
+        <listitem>
+          <para>Epoch of CCD observation.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>F</option>
+        </term>
+        <listitem>
+          <para>Filter which was used for exposure name.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>f</option>
         </term>
         <listitem>
-          <para>Standard filename (equivalent to %y%m%d%H%M%S-%s.fits).</para>
+          <para>Standard filename (same as %y%m%d%H%M%S-%s.fits).</para>
         </listitem>
       </varlistentry>
       <varlistentry>
