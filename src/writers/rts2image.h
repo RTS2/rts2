@@ -138,6 +138,8 @@ public:
 
   int renameImage (const char *new_filename);
   int renameImageExpand (std::string new_ex);
+  int copyImage (const char *copy_filename);
+  int copyImageExpand (std::string copy_ex);
 
   int setValue (char *name, int value, char *comment);
   int setValue (char *name, long value, char *comment);
@@ -237,6 +239,7 @@ public:
     return targetId;
   }
 
+  std::string getEpochString ();
   std::string getTargetString ();
   std::string getTargetSelString ();
   std::string getObsString ();
@@ -252,6 +255,9 @@ public:
   std::string getStartMinString ();
   std::string getStartSecString ();
   std::string getStartMSecString ();
+
+  // image parameter functions
+  std::string getExposureLengthString ();
 
   int getStartYear ()
   {

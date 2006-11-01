@@ -286,11 +286,19 @@ Rts2Image::~Rts2Image (void)
 std::string Rts2Image::expandPath (std::string expression)
 {
   std::string ret = "";
+  // FITS keyword cannot have more then 80 chars..
+  char
+    valueName[200];
+  char *
+    valueNameTop;
+  char *
+    valueNameEnd = valueName + 199;
   for (std::string::iterator iter = expression.begin ();
        iter != expression.end (); iter++)
     {
-      if (*iter == '%')
+      switch (*iter)
 	{
+	case '%':
 	  iter++;
 	  if (iter != expression.end ())
 	    {
@@ -310,6 +318,15 @@ std::string Rts2Image::expandPath (std::string expression)
 		  break;
 		case 'd':
 		  ret += getStartDayString ();
+		  break;
+		case 'E':
+		  ret += getExposureLengthString ();
+		  break;
+		case 'e':
+		  ret += getEpochString ();
+		  break;
+		case 'F':
+		  ret += getFilter ();
 		  break;
 		case 'f':
 		  ret += getOnlyFileName ();
@@ -349,9 +366,42 @@ std::string Rts2Image::expandPath (std::string expression)
 		  ret += *iter;
 		}
 	    }
-	}
-      else
-	{
+	  break;
+	  // that one enables to copy values from image header to expr
+	case '$':
+	  valueNameTop = valueName;
+	  for (iter++;
+	       (iter != expression.end ()) && (*iter != '$')
+	       && valueNameTop < valueNameEnd; iter++, valueNameTop++)
+	    *valueNameTop = *iter;
+	  if (iter == expression.end () || valueNameTop >= valueNameEnd)
+	    {
+	      ret += '$';
+	      ret += valueName;
+	    }
+	  else
+	    {
+	      // move to next char
+	      iter++;
+	      char
+		valB[200];
+	      int
+		g_ret;
+	      *valueNameTop = '\0';
+	      g_ret = getValue (valueName, valB, 200);
+	      if (g_ret)
+		{
+		  ret += '$';
+		  ret += valueName;
+		  ret += '$';
+		}
+	      else
+		{
+		  ret += valB;
+		}
+	    }
+	  break;
+	default:
 	  ret += *iter;
 	}
     }
@@ -505,15 +555,47 @@ int
 Rts2Image::renameImageExpand (std::string new_ex)
 {
   std::string new_filename;
-  int ret = 0;
 
   if (!imageName)
     return -1;
 
   new_filename = expandPath (new_ex);
-  ret = renameImage (new_filename.c_str ());
+  return renameImage (new_filename.c_str ());
+}
 
+int
+Rts2Image::copyImage (const char *copy_filename)
+{
+  char *cp_filename = new char[strlen (copy_filename) + 1];
+  strcpy (cp_filename, copy_filename);
+  fitsfile *cp_file;
+  fits_status = 0;
+
+  int ret;
+  ret = mkpath (cp_filename, 0777);
+  if (ret)
+    goto err;
+
+  fits_create_file (&cp_file, cp_filename, &fits_status);
+  fits_copy_file (ffile, cp_file, true, true, true, &fits_status);
+  fits_close_file (cp_file, &fits_status);
+  if (fits_status)
+    ret = fits_status;
+err:
+  delete[]cp_filename;
   return ret;
+}
+
+int
+Rts2Image::copyImageExpand (std::string copy_ex)
+{
+  std::string copy_filename;
+
+  if (!imageName)
+    return -1;
+
+  copy_filename = expandPath (copy_ex);
+  return copyImage (copy_filename.c_str ());
 }
 
 int
@@ -948,6 +1030,14 @@ Rts2Image::setMountName (const char *in_mountName)
   setValue ("MNT_NAME", mountName, "name of mount");
 }
 
+std::string Rts2Image::getEpochString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (3) << epochId;
+  return _os.str ();
+}
+
 std::string Rts2Image::getTargetString ()
 {
   std::ostringstream _os;
@@ -1041,6 +1131,13 @@ std::string Rts2Image::getStartMSecString ()
   std::ostringstream _os;
   _os.fill ('0');
   _os << std::setw (4) << ((int) (exposureStart.tv_usec / 1000.0));
+  return _os.str ();
+}
+
+std::string Rts2Image::getExposureLengthString ()
+{
+  std::ostringstream _os;
+  _os << getExposureLength ();
   return _os.str ();
 }
 
@@ -1218,7 +1315,7 @@ Rts2Image::getCenterRow (long row, int row_width, double &x)
   unsigned short data_max;
   long i;
   long j;
-  long k;
+  // long k;
   long maxI;
   if (!tmp_data)
     return -1;
@@ -1239,17 +1336,17 @@ Rts2Image::getCenterRow (long row, int row_width, double &x)
       rowData[j] = getShortMean (averageData, row_width);
     }
   // bin data in row..
-  i = j = k = 0;
-  while (j < getWidth ())
-    {
-      // last bit..
-      k += row_width;
-      rowData[i] =
-	getShortMean (rowData + j,
-		      (k > getWidth ())? (k - getWidth ()) : row_width);
-      i++;
-      j = k;
-    }
+  /* i = j = k = 0;
+     while (j < getWidth ())
+     {
+     // last bit..
+     k += row_width;
+     rowData[i] =
+     getShortMean (rowData + j,
+     (k > getWidth ())? (k - getWidth ()) : row_width);
+     i++;
+     j = k;
+     } */
   // decide, which part of slope we are in
   // i hold size of reduced rowData array
   // find maximum..

@@ -11,6 +11,8 @@
 #define IMAGEOP_ADDDATE		0x01
 #define IMAGEOP_INSERT		0x02
 #define IMAGEOP_TEST		0x04
+#define IMAGEOP_COPY		0x08
+#define IMAGEOP_MOVE		0x10
 
 class Rts2AppImageManip:public Rts2AppDbImage
 {
@@ -22,6 +24,9 @@ private:
   int addDate (Rts2Image * image);
   int insert (Rts2ImageDb * image);
   int testImage (Rts2Image * image);
+
+    std::string copy_expr;
+    std::string move_expr;
 protected:
     virtual int processOption (int in_opt);
   virtual int processImage (Rts2ImageDb * image);
@@ -108,10 +113,14 @@ Rts2AppImageManip::testImage (Rts2Image * image)
   std::cout << "Expression %b/%t/%i/%c/%f '" << image->
     expandPath (std::string ("%b/%t/%i/%c/%f")) << '\'' << std::endl;
 
-  std::cout << "Expression %b/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits '" << image->
+  std::
+    cout <<
+    "Expression $DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits '"
+    << image->
     expandPath (std::
-		string ("%b/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits")) << '\'' <<
-    std::endl;
+		string
+		("$DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits"))
+    << '\'' << std::endl;
 
 
   printOffset (image->getXoA () + 50, image->getYoA (), image);
@@ -129,11 +138,19 @@ Rts2AppImageManip::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'a':
+    case 'C':
+      operation |= IMAGEOP_COPY;
+      copy_expr = optarg;
+      break;
+    case 'd':
       operation |= IMAGEOP_ADDDATE;
       break;
     case 'i':
       operation |= IMAGEOP_INSERT;
+      break;
+    case 'm':
+      operation |= IMAGEOP_MOVE;
+      move_expr = optarg;
       break;
     case 't':
       operation |= IMAGEOP_TEST;
@@ -153,6 +170,10 @@ Rts2AppImageManip::processImage (Rts2ImageDb * image)
     insert (image);
   if (operation & IMAGEOP_TEST)
     testImage (image);
+  if (operation & IMAGEOP_COPY)
+    image->copyImageExpand (copy_expr);
+  if (operation & IMAGEOP_MOVE)
+    image->renameImageExpand (move_expr);
   return 0;
 }
 
@@ -164,8 +185,13 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
   config = Rts2Config::instance ();
 
   operation = IMAGEOP_NOOP;
+
+  addOption ('C', "copy", 1,
+	     "copy image(s) to path expression given as argument");
   addOption ('d', "add-date", 0, "add DATE-OBS to image header");
-  addOption ('i', "insert", 0, "insert/update images in the database");
+  addOption ('i', "insert", 0, "insert/update image(s) in the database");
+  addOption ('m', "move", 1,
+	     "move image(s) to path expression given as argument");
   addOption ('t', "test", 0, "test various image routines");
 }
 
@@ -176,7 +202,8 @@ void
 killSignal (int sig)
 {
   if (app)
-    delete app;
+    delete
+      app;
 }
 
 int
@@ -190,10 +217,12 @@ main (int argc, char **argv)
   ret = app->init ();
   if (ret)
     {
-      delete app;
+      delete
+	app;
       return 0;
     }
   ret = app->run ();
-  delete app;
+  delete
+    app;
   return ret;
 }
