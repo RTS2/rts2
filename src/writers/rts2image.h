@@ -42,6 +42,7 @@ private:
   int filter_i;
   char *filter;
   struct timeval exposureStart;
+  struct tm exposureGmTime;
   float exposureLength;
   void setImageName (const char *in_filename);
   int createImage (char *in_filename);
@@ -114,6 +115,9 @@ public:
   Rts2Image (const char *in_filename);
   virtual ~ Rts2Image (void);
 
+  // expand expression to image path
+  virtual std::string expandPath (std::string expression);
+
   virtual int toQue ();
   virtual int toAcquisition ();
   virtual int toArchive ();
@@ -132,7 +136,8 @@ public:
     return shutter;
   }
 
-  int renameImage (char *new_filename);
+  int renameImage (const char *new_filename);
+  int renameImageExpand (std::string new_ex);
 
   int setValue (char *name, int value, char *comment);
   int setValue (char *name, long value, char *comment);
@@ -194,6 +199,18 @@ public:
     return "(null)";
   }
 
+  void setExposureStart (const struct timeval *in_exposureStart)
+  {
+    setExposureStart (&in_exposureStart->tv_sec, in_exposureStart->tv_usec);
+  }
+
+  void setExposureStart (const time_t * in_sec, long in_usec)
+  {
+    exposureStart.tv_sec = *in_sec;
+    exposureStart.tv_usec = in_usec;
+    gmtime_r (in_sec, &exposureGmTime);
+  }
+
   long getExposureSec ()
   {
     return exposureStart.tv_sec;
@@ -220,7 +237,56 @@ public:
     return targetId;
   }
 
-  const char *getTargetName ();
+  std::string getTargetString ();
+  std::string getTargetSelString ();
+  std::string getObsString ();
+  std::string getImgIdString ();
+
+  // date related functions
+  std::string getStartYearString ();
+  std::string getStartMonthString ();
+  std::string getStartDayString ();
+  std::string getStartYDayString ();
+
+  std::string getStartHourString ();
+  std::string getStartMinString ();
+  std::string getStartSecString ();
+  std::string getStartMSecString ();
+
+  int getStartYear ()
+  {
+    return exposureGmTime.tm_year + 1900;
+  }
+
+  int getStartMonth ()
+  {
+    return exposureGmTime.tm_mon + 1;
+  }
+
+  int getStartDay ()
+  {
+    return exposureGmTime.tm_mday;
+  }
+
+  int getStartYDay ()
+  {
+    return exposureGmTime.tm_yday;
+  }
+
+  int getStartHour ()
+  {
+    return exposureGmTime.tm_hour;
+  }
+
+  int getStartMin ()
+  {
+    return exposureGmTime.tm_min;
+  }
+
+  int getStartSec ()
+  {
+    return exposureGmTime.tm_sec;
+  }
 
   int getTargetIdSel ()
   {

@@ -105,6 +105,15 @@ Rts2AppImageManip::testImage (Rts2Image * image)
 							       3) << " " << x
     << ":" << y << std::endl;
 
+  std::cout << "Expression %b/%t/%i/%c/%f '" << image->
+    expandPath (std::string ("%b/%t/%i/%c/%f")) << '\'' << std::endl;
+
+  std::cout << "Expression %b/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits '" << image->
+    expandPath (std::
+		string ("%b/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits")) << '\'' <<
+    std::endl;
+
+
   printOffset (image->getXoA () + 50, image->getYoA (), image);
   printOffset (image->getXoA (), image->getYoA () + 50, image);
   printOffset (image->getXoA () - 50, image->getYoA (), image);
@@ -167,8 +176,7 @@ void
 killSignal (int sig)
 {
   if (app)
-    delete
-      app;
+    delete app;
 }
 
 int
@@ -182,12 +190,10 @@ main (int argc, char **argv)
   ret = app->init ();
   if (ret)
     {
-      delete
-	app;
+      delete app;
       return 0;
     }
   ret = app->run ();
-  delete
-    app;
+  delete app;
   return ret;
 }

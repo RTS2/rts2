@@ -16,6 +16,7 @@
 #include "imgdisplay.h"
 
 #include <iomanip>
+#include <sstream>
 
 void
 Rts2Image::initData ()
@@ -73,8 +74,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   filter_i = in_image->filter_i;
   filter = in_image->filter;
   in_image->filter = NULL;
-  exposureStart.tv_sec = in_image->exposureStart.tv_sec;
-  exposureStart.tv_usec = in_image->exposureStart.tv_usec;
+  setExposureStart (&in_image->exposureStart);
   exposureLength = in_image->exposureLength;
   imageData = in_image->imageData;
   in_image->imageData = NULL;
@@ -130,7 +130,7 @@ Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
 {
   initData ();
   flags = IMAGE_KEEP_DATA;
-  exposureStart = *in_exposureStart;
+  setExposureStart (in_exposureStart);
   writeExposureStart ();
 }
 
@@ -138,8 +138,7 @@ Rts2Image::Rts2Image (long in_img_date, int in_img_usec,
 		      float in_img_exposure)
 {
   initData ();
-  exposureStart.tv_sec = in_img_date;
-  exposureStart.tv_usec = in_img_usec;
+  setExposureStart (&in_img_date, in_img_usec);
   exposureLength = in_img_exposure;
 }
 
@@ -149,7 +148,7 @@ Rts2Image::Rts2Image (char *in_filename,
   initData ();
 
   createImage (in_filename);
-  exposureStart = *in_exposureStart;
+  setExposureStart (in_exposureStart);
   writeExposureStart ();
 }
 
@@ -166,7 +165,7 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
   targetType = currTarget->getTargetType ();
   obsId = currTarget->getObsId ();
   imgId = currTarget->getNextImgId ();
-  exposureStart = *in_exposureStart;
+  setExposureStart (in_exposureStart);
 
   isAcquiring = currTarget->isAcquiring ();
   if (isAcquiring)
@@ -284,6 +283,81 @@ Rts2Image::~Rts2Image (void)
     free (sexResults);
 }
 
+std::string Rts2Image::expandPath (std::string expression)
+{
+  std::string ret = "";
+  for (std::string::iterator iter = expression.begin ();
+       iter != expression.end (); iter++)
+    {
+      if (*iter == '%')
+	{
+	  iter++;
+	  if (iter != expression.end ())
+	    {
+	      switch (*iter)
+		{
+		case '%':
+		  ret += '%';
+		  break;
+		case 'b':
+		  ret += getImageBase ();
+		  break;
+		case 'c':
+		  ret += cameraName;
+		  break;
+		case 'D':
+		  ret += getStartYDayString ();
+		  break;
+		case 'd':
+		  ret += getStartDayString ();
+		  break;
+		case 'f':
+		  ret += getOnlyFileName ();
+		  break;
+		case 'H':
+		  ret += getStartHourString ();
+		  break;
+		case 'i':
+		  ret += getImgIdString ();
+		  break;
+		case 'M':
+		  ret += getStartMinString ();
+		  break;
+		case 'm':
+		  ret += getStartMonthString ();
+		  break;
+		case 'o':
+		  ret += getObsString ();
+		  break;
+		case 'S':
+		  ret += getStartSecString ();
+		  break;
+		case 's':
+		  ret += getStartMSecString ();
+		  break;
+		case 'T':
+		  ret += getTargetString ();
+		  break;
+		case 't':
+		  ret += getTargetSelString ();
+		  break;
+		case 'y':
+		  ret += getStartYearString ();
+		  break;
+		default:
+		  ret += '%';
+		  ret += *iter;
+		}
+	    }
+	}
+      else
+	{
+	  ret += *iter;
+	}
+    }
+  return ret;
+}
+
 void
 Rts2Image::setImageName (const char *in_filename)
 {
@@ -363,150 +437,53 @@ Rts2Image::openImage (const char *in_filename)
 int
 Rts2Image::toQue ()
 {
-  char *new_filename;
-  int ret = 0;
-
-  if (!imageName)
-    return -1;
-
-  asprintf (&new_filename, "%s/que/%s/%s",
-	    getImageBase (), cameraName, getOnlyFileName ());
-
-  ret = renameImage (new_filename);
-
-  free (new_filename);
-  return ret;
+  return renameImageExpand ("%b/que/%c/%f");
 }
 
 int
 Rts2Image::toAcquisition ()
 {
-  char *new_filename;
-  int ret = 0;
-
-  if (!imageName)
-    return -1;
-
-  asprintf (&new_filename,
-	    "%s/acqusition/%s/%s/%s",
-	    getImageBase (), getTargetName (), cameraName,
-	    getOnlyFileName ());
-
-  ret = renameImage (new_filename);
-
-  free (new_filename);
-  return ret;
+  return renameImageExpand ("%b/acqusition/%t/%c/%f");
 }
 
 int
 Rts2Image::toArchive ()
 {
-  char *new_filename;
-  int ret = 0;
-
-  if (!imageName)
-    return -1;
-
-  asprintf (&new_filename,
-	    "%s/archive/%s/%s/object/%s",
-	    getImageBase (), getTargetName (), cameraName,
-	    getOnlyFileName ());
-
-  ret = renameImage (new_filename);
-
-  free (new_filename);
-  return ret;
+  return renameImageExpand ("%b/archive/%t/%c/object/%f");
 }
 
 // move to dark images area..
 int
 Rts2Image::toDark ()
 {
-  char *new_filename;
-  int ret = 0;
-
-  if (!imageName)
-    return -1;
-
   if (getTargetId () == TARGET_DARK)
     {
-      asprintf (&new_filename,
-		"%s/darks/%s/%s",
-		getImageBase (), cameraName, getOnlyFileName ());
+      return renameImageExpand ("%b/darks/%c/%f");
     }
-  else
-    {
-      asprintf (&new_filename,
-		"%s/archive/%s/%s/darks/%s",
-		getImageBase (), getTargetName (), cameraName,
-		getOnlyFileName ());
-    }
-  ret = renameImage (new_filename);
-
-  free (new_filename);
-  return ret;
+  // else..
+  return renameImageExpand ("%b/archive/%t/%c/darks/%f");
 }
 
 int
 Rts2Image::toFlat ()
 {
-  char *new_filename;
-  int ret = 0;
-
-  if (!imageName)
-    return -1;
-
-  asprintf (&new_filename,
-	    "%s/flat/%s/raw/%s",
-	    getImageBase (), cameraName, getOnlyFileName ());
-
-  ret = renameImage (new_filename);
-
-  free (new_filename);
-  return ret;
+  return renameImageExpand ("%b/flat/%c/raw/%f");
 }
 
 int
 Rts2Image::toMasterFlat ()
 {
-  char *new_filename;
-  int ret = 0;
-
-  if (!imageName)
-    return -1;
-
-  asprintf (&new_filename,
-	    "%s/flat/%s/master/%s",
-	    getImageBase (), cameraName, getOnlyFileName ());
-
-  ret = renameImage (new_filename);
-
-  free (new_filename);
-  return ret;
+  return renameImageExpand ("%b/flat/%c/master/%f");
 }
 
 int
 Rts2Image::toTrash ()
 {
-  char *new_filename;
-  int ret = 0;
-
-  if (!imageName)
-    return -1;
-
-  asprintf (&new_filename,
-	    "%s/trash/%s/%s/%s",
-	    getImageBase (), getTargetName (), cameraName,
-	    getOnlyFileName ());
-
-  ret = renameImage (new_filename);
-
-  free (new_filename);
-  return ret;
+  return renameImageExpand ("%b/trash/%t/%c/%f");
 }
 
 int
-Rts2Image::renameImage (char *new_filename)
+Rts2Image::renameImage (const char *new_filename)
 {
   int ret = 0;
   if (strcmp (new_filename, imageName))
@@ -524,16 +501,31 @@ Rts2Image::renameImage (char *new_filename)
   return ret;
 }
 
+int
+Rts2Image::renameImageExpand (std::string new_ex)
+{
+  std::string new_filename;
+  int ret = 0;
+
+  if (!imageName)
+    return -1;
+
+  new_filename = expandPath (new_ex);
+  ret = renameImage (new_filename.c_str ());
+
+  return ret;
+}
 
 int
 Rts2Image::writeExposureStart ()
 {
-  time_t t = exposureStart.tv_sec;
   setValue ("CTIME", exposureStart.tv_sec,
 	    "exposure start (seconds since 1.1.1970)");
   setValue ("USEC", exposureStart.tv_usec, "exposure start micro seconds");
-  setValue ("JD", ln_get_julian_from_timet (&t), "exposure JD");
-  setValue ("DATE-OBS", &t, exposureStart.tv_usec, "start of exposure");
+  setValue ("JD", ln_get_julian_from_timet (&exposureStart.tv_sec),
+	    "exposure JD");
+  setValue ("DATE-OBS", &exposureStart.tv_sec, exposureStart.tv_usec,
+	    "start of exposure");
   return 0;
 }
 
@@ -956,12 +948,100 @@ Rts2Image::setMountName (const char *in_mountName)
   setValue ("MNT_NAME", mountName, "name of mount");
 }
 
-const char *
-Rts2Image::getTargetName ()
+std::string Rts2Image::getTargetString ()
 {
-  static char buf[6];
-  sprintf (buf, "%05i", getTargetIdSel ());
-  return buf;
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (5) << getTargetId ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getTargetSelString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (5) << getTargetIdSel ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getObsString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (5) << getObsId ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getImgIdString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (5) << getImgId ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartYearString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (4) << getStartYear ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartMonthString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (2) << getStartMonth ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartDayString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (2) << getStartDay ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartYDayString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (3) << getStartYDay ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartHourString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (2) << getStartHour ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartMinString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (2) << getStartMin ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartSecString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (2) << getStartSec ();
+  return _os.str ();
+}
+
+std::string Rts2Image::getStartMSecString ()
+{
+  std::ostringstream _os;
+  _os.fill ('0');
+  _os << std::setw (4) << ((int) (exposureStart.tv_usec / 1000.0));
+  return _os.str ();
 }
 
 void
@@ -1207,7 +1287,7 @@ Rts2Image::getCenterCol (long col, int col_width, double &y)
   unsigned short data_max;
   long i;
   long j;
-  long k;
+  // long k;
   long maxI;
   if (!tmp_data)
     return -1;
@@ -1229,17 +1309,18 @@ Rts2Image::getCenterCol (long col, int col_width, double &y)
       colData[j] = getShortMean (averageData, col_width);
     }
   // bin data in row..
-  i = j = k = 0;
-  while (j < getHeight ())
-    {
-      // last bit..
-      k += col_width;
-      colData[i] =
-	getShortMean (colData + j,
-		      (k > getHeight ())? (k - getHeight ()) : col_width);
-      i++;
-      j = k;
-    }
+  /* i = j = k = 0;
+     while (j < getHeight ())
+     {
+     // last bit..
+     k += col_width;
+     colData[i] =
+     getShortMean (colData + j,
+     (k > getHeight ())? (k - getHeight ()) : col_width);
+     i++;
+     j = k;
+     }
+   */
   // find gauss on image..
   //ret = findGauss (colData, i, y);
   data_max = colData[0];
@@ -1308,12 +1389,10 @@ Rts2Image::getError (double &eRa, double &eDec, double &eRad)
 const char *
 Rts2Image::getOnlyFileName ()
 {
-  struct tm *expT;
   static char buf[25];
-  expT = gmtime (&exposureStart.tv_sec);
   sprintf (buf, "%04i%02i%02i%02i%02i%02i-%04li.fits",
-	   expT->tm_year + 1900, expT->tm_mon + 1, expT->tm_mday,
-	   expT->tm_hour, expT->tm_min, expT->tm_sec,
+	   getStartYear (), getStartMonth (), getStartDay (),
+	   getStartHour (), getStartMin (), getStartSec (),
 	   exposureStart.tv_usec / 1000);
   return buf;
 }
@@ -1366,6 +1445,10 @@ std::ostream & operator << (std::ostream & _os, Rts2Image * image)
   _os << "C " << image->getCameraName ()
     << " [" << image->getWidth () << ":"
     << image->getHeight () << "]"
-    << " RA " << image->getCenterRa () << " DEC " << image->getCenterDec ();
+    << " RA " << image->getCenterRa () << " (" << LibnovaDegArcMin (image->
+								    ra_err) <<
+    ") DEC " << image->getCenterDec () << " (" << LibnovaDegArcMin (image->
+								    dec_err)
+    << ") IMG_ERR " << LibnovaDegArcMin (image->img_err);
   return _os;
 }

@@ -622,11 +622,11 @@ Rts2ImageSkyDb::printFileName (std::ostream &_os)
   {
     if (processBitfiedl & ASTROMETRY_OK)
     {
-      _os << "/archive/" << getTargetName () << "/" << getCameraName () << "/object";
+      _os << "/archive/" << getTargetString () << "/" << getCameraName () << "/object";
     }
     else
     {
-      _os << "/trash/" << getTargetName () << "/" << getCameraName ();
+      _os << "/trash/" << getTargetString () << "/" << getCameraName ();
     }
   }
   else
