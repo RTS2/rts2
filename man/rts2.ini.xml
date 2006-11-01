@@ -265,8 +265,49 @@
 	    <para>Observatory altitute in meters. It is recorded to images.</para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>longtitude</option>
+	  </term>
+	  <listitem>
+	    <para>Observatory longtitude in degrees. Positive values are east from Greenwich, negative are west - e.g. America's
+	    locations should have negative longtitude, most of Europe positive.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>latitude</option>
+	  </term>
+	  <listitem>
+	    <para>Observatory latitude in degrees. Positive values are for northern hemisphere locations, negative for southern hemisphere
+	    - e.g. Republic of South Africa locations should have negative values, all Europe locations positive.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>epoch_id</option>
+	  </term>
+	  <listitem>
+	    <para>Epoch id. Epochs are used to divide observatory data to packages which can be easily backed on tapes/DVDs.</para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
+    <refsect2>
+      <title>centrald</title>
+      <para>Centrald information, such as if system should be put to off state each morning, or if it should be "on" after reboot.</para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>morning_off</option>
+	  </term>
+	  <listitem>
+	    <para>If set to true, centrald will switch it's state to OFF each morning.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

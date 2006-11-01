@@ -63,8 +63,92 @@
     <title>CENTRALD</title>
 
     <para>
-      rts2-centrald
+      rts2-centrald is used to provide name resolution service for RTS2 system.
+      Each device or service register to at least one centrald. Centrald
+      handles state transitons during day and night (day, dusk, evening, night,
+      dawn and morning.
     </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>RTS2 STATES</title>
+
+    <refsect2>
+      <title>OFF</title>
+    </refsect2>
+    <refsect2>
+      <title>STANDBY</title>
+    </refsect2>
+    <refsect2>
+      <title>ON</title>
+    </refsect2>
+
+    <para>ON and STANDBY states can have following substates. They are changed during day by rts2-centrald (1).</para>
+    <variablelist>
+      <varlistentry>
+	<term>
+	  <option>day</option>
+	</term>
+	<listitem>
+	  <para>
+	    During day, observatory is in idle state. CCDs are not cooled.
+	    Imgproc might run image and observation processing from last night.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>evening</option>
+	</term>
+	<listitem>
+	  <para>
+	    CCDs are cooled during evening. Light intensiti is still too high
+	    to take images, and cameras are not cooled to take dark images.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>dusk</option>
+	</term>
+	<listitem>
+	  <para>
+	    Cooled CCDs are used to take flat frames.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>night</option>
+	</term>
+	<listitem>
+	  <para>
+	    Observations are performed out during night.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>dawn</option>
+	</term>
+	<listitem>
+	  <para>
+	    Similar to dusk. Flat frames and darks are taken.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>morning</option>
+	</term>
+	<listitem>
+	  <para>
+	    CCDs are tempered to ambient temperature.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
 
   </refsect1>
 
@@ -81,21 +165,26 @@
     <title>SERVICES</title>
 
     <para>
-      rts2-executor, rts2-selector, rts2-imgproc, rts2-grbd, rts2-soapd
+      rts2-executor (1), rts2-selector (1), rts2-imgproc (1), rts2-grbd (1), rts2-soapd (1), rts2-augershooter (1)
     </para>
 
   </refsect1>
 
   <refsect1>
-    <title>SEE ALSO</title>
+    <title>MONITORING AND MANAGING UTILITIES</title>
 
-    <para>rts2-mon (1), rts2-target (1), rts2-targetinfo (1), rts2-focusc (1), rts2-xfocusc (1), rts2-seltest (1).</para>
-
+    <para>rts2-mon (1), rts2-target (1), rts2-targetinfo (1), rts2-focusc (1), rts2-xfocusc (1), rts2-seltest (1)</para>
   </refsect1>
   <refsect1>
     <title>FILES</title>
 
     <para>rts2.ini (5).</para>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>http://rts2.sf.net</para>
+
   </refsect1>
   <refsect1>
     <title>AUTHOR</title>
