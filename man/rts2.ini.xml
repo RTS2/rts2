@@ -1,0 +1,287 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
+  <!ENTITY dhdate      "<date>2006-10-21</date>">
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubánek">
+  <!ENTITY dhucpackage "<refentrytitle>rts2</refentrytitle>">
+  <!ENTITY dhpackage   "rts2.ini">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2006</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>The configuration file for Remote Telescope System, 2nd version</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>SYNOPSIS</title>
+
+    <para>
+      The rts2.ini file is a configuration file for the RTS2. rts2.ini
+      contains runtime configuration information for the RTS2 programs. The
+      complete description  of  the  file format and possible parameters held
+      within are here for reference purposes.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>FILE FORMAT</title>
+
+    <para>
+      The file consists of sections and parameters. A section begins with the
+      name of the section in square brackets and continues until the next
+      section begins.  Sections contain parameters of the form:
+    </para>
+
+    <para>
+      name = value
+    </para>
+
+    <para>
+      The file is line-based - that is, each newline-terminated line represents
+      either a comment, a section name or a parameter.
+    </para>
+
+    <para>
+      Section and parameter names are not case sensitive.
+    </para>
+
+    <para>
+      Only the first equals sign in a parameter is significant. Whitespace
+      before or after the first  equals  sign  is  discarded.  Leading,
+      trailing and internal whitespace in section and parameter names is
+      irrelevant. Leading and trailing whitespace in a parameter value is
+      discarded. Internal whitespace within a parameter value is retained
+      verbatim.
+    </para>
+
+    <para>
+      Any line beginning with a semicolon (``;'') or a hash (``#'') character
+      is ignored, as are lines containing only whitespace.
+    </para>
+
+    <para>
+      The values following the equals sign in parameters are all either a
+      string (no quotes needed) or a boolean,  which  may  be  given  as
+      yes/no,  0/1 or true/false.  Case is not significant in boolean values,
+      but is preserved in string values. Some items such as create modes are
+      numeric.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>IMAGE PATH EXPRESSION</title>
+    <para>
+      For image path, substrings begining with % are expanded to various
+      image-related values. They list is provided bellow.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>b</option>
+        </term>
+        <listitem>
+          <para>Image base path, ussually /images/[epoch].</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>c</option>
+        </term>
+        <listitem>
+          <para>Camera name.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>D</option>
+        </term>
+        <listitem>
+          <para>Exposure start day in the year</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>d</option>
+        </term>
+        <listitem>
+          <para>Exposure start day of the month.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>f</option>
+        </term>
+        <listitem>
+          <para>Standard filename (equivalent to %y%m%d%H%M%S-%s.fits).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>i</option>
+        </term>
+        <listitem>
+          <para>Image ID. Each image have number, which increase from 1 during observation.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>M</option>
+        </term>
+        <listitem>
+          <para>Exposure start Minute.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>m</option>
+        </term>
+        <listitem>
+          <para>Exposure start month.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>o</option>
+        </term>
+        <listitem>
+          <para>Observation ID.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>S</option>
+        </term>
+        <listitem>
+          <para>Exposure start seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>s</option>
+        </term>
+        <listitem>
+          <para>Exposure start miliseconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>T</option>
+        </term>
+        <listitem>
+          <para>Executor (selected) target ID.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>t</option>
+        </term>
+        <listitem>
+          <para>Target ID.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>y</option>
+        </term>
+        <listitem>
+          <para>Year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>CONFIGURATION FILE SECTION</title>
+    <refsect2>
+      <title>database</title>
+      <para>Provides configuration values necessary to connect to database.</para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>name</option>
+	  </term>
+	  <listitem>
+	    <para>Database name. Database must be properly configured. Command psql [name] must work for root or user specified with
+	    username and password.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>username</option>
+	  </term>
+	  <listitem>
+	    <para>Database username. This user should have write access to important RTS2 tables (observations,..), otherwise
+	    RTS2 will not be able to record important values.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>password</option>
+	  </term>
+	  <listitem>
+	    <para>Database password. It is used with username to login to database specified by name.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>observatory</title>
+      <para>Provide informations about observatory - it's location etc.</para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>altitude</option>
+	  </term>
+	  <listitem>
+	    <para>Observatory altitute in meters. It is recorded to images.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>rts2 (1).</para>
+
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+
+    <para>This manual page was written by &dhusername; &dhemail;.
+      Permission is granted to copy, distribute and/or modify this 
+      document under the terms of the &gnu; General Public License, 
+      Version 2 any later version published by the Free Software Foundation.
+    </para>
+
+  </refsect1>
+</refentry>

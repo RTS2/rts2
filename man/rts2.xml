@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
+  <!ENTITY dhdate      "<date>2006-10-21</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubánek">
+  <!ENTITY dhucpackage "<refentrytitle>rts2</refentrytitle>">
+  <!ENTITY dhpackage   "rts2">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2006</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>The configuration file for Remote Telescope System, 2nd version</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>ABOUT</title>
+
+    <para>
+      RTS2 is targeted for autonomous observations using robotic telescopes.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>RTS2 COMPONENTS</title>
+
+    <para>
+      RTS2 consists of three basic types of components:
+    </para>
+
+
+  </refsect1>
+
+  <refsect1>
+    <title>CENTRALD</title>
+
+    <para>
+      rts2-centrald
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>DEVICES</title>
+
+    <para>
+      teld-*, camd-*, filterd-*, dome-*, focusd-*
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>SERVICES</title>
+
+    <para>
+      rts2-executor, rts2-selector, rts2-imgproc, rts2-grbd, rts2-soapd
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>rts2-mon (1), rts2-target (1), rts2-targetinfo (1), rts2-focusc (1), rts2-xfocusc (1), rts2-seltest (1).</para>
+
+  </refsect1>
+  <refsect1>
+    <title>FILES</title>
+
+    <para>rts2.ini (5).</para>
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+
+    <para>This manual page was written by &dhusername; &dhemail;.
+      Permission is granted to copy, distribute and/or modify this 
+      document under the terms of the &gnu; General Public License, 
+      Version 2 any later version published by the Free Software Foundation.
+    </para>
+
+  </refsect1>
+</refentry>
