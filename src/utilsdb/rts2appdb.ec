@@ -333,7 +333,7 @@ Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2App (in_argc, in_argv)
   configFile = NULL;
 
   addOption ('b', "database", 1, "connect string to PSQL database (default to stars)");
-  addOption ('c', "config", 1, "configuration file");
+  addOption ('C', "config", 1, "configuration file");
 }
 
 Rts2AppDb::~Rts2AppDb ()
@@ -352,7 +352,7 @@ Rts2AppDb::processOption (int in_opt)
       connectString = new char[strlen (optarg) + 1];
       strcpy (connectString, optarg);
       break;
-    case 'c':
+    case 'C':
       configFile = optarg;
       break;
     default:
