@@ -183,7 +183,7 @@ Rts2DevDome (in_argc, in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
   addOption ('R', "rain_detector", 1, "/dev/file for rain detector");
-  addOption ('C', "cloud_sensor", 1, "/dev/file for cloud sensor");
+  addOption ('c', "cloud_sensor", 1, "/dev/file for cloud sensor");
   dome_file = "/dev/ttyS0";
   rain_detector = NULL;
   rain_port = -1;
@@ -373,7 +373,7 @@ Rts2DevDomeBart::processOption (int in_opt)
     case 'R':
       rain_detector = optarg;
       break;
-    case 'C':
+    case 'c':
       cloud_dev = optarg;
       break;
     default:

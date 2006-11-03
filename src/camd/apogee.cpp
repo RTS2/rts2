@@ -799,7 +799,7 @@ Rts2DevCamera (in_argc, in_argv)
 {
   addOption ('n', "device_id", 1,
 	     "device ID (ussualy 0, which is also default)");
-  addOption ('C', "config_name", 1,
+  addOption ('c', "config_name", 1,
 	     "device ini config file (default to /etc/rts2/apogee.ini");
   device_id = 0;
   cfgname = "/etc/rts2/apogee.ini";
@@ -823,7 +823,7 @@ Rts2DevCameraApogee::processOption (int in_opt)
     case 'n':
       device_id = atoi (optarg);
       break;
-    case 'C':
+    case 'c':
       cfgname = optarg;
       break;
     default:
