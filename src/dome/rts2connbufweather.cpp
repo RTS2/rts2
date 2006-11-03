@@ -100,6 +100,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
   float rtCloudBottom;
   float rtOutsideHum;
   float rtOutsideTemp;
+  double cloud = nan ("f");
   float weatherTimeout;
   if (sock >= 0 && FD_ISSET (sock, set))
     {
@@ -140,12 +141,15 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	  badSetWeatherTimeout (conn_timeout);
 	  return data_size;
 	}
+      // get information about cloud cover
+      ret_c = 0;
+      weather->getValue ("rtCloudTop", rtCloudTop, ret_c);
+      weather->getValue ("rtCloudBottom", rtCloudBottom, ret_c);
+      if (ret_c == 0)
+	cloud = rtCloudTop - rtCloudTop;
       if (rtIsRaining > 0)
 	{
-	  ret_c = 0;
 	  // try to get more information about nature of rain and cloud cover
-	  weather->getValue ("rtCloudTop", rtCloudTop, ret_c);
-	  weather->getValue ("rtCloudBottom", rtCloudBottom, ret_c);
 	  weather->getValue ("rtWetness", rtWetness, ret_c);
 	  if (ret_c == 0)
 	    {
@@ -184,6 +188,10 @@ Rts2ConnBufWeather::receive (fd_set * set)
       master->setRain (rain);
       master->setHumidity (rtOutsideHum);
       master->setWindSpeed (windspeed);
+      if (!isnan (cloud))
+	{
+	  master->setCloud (cloud);
+	}
       delete weather;
 
       time (&lastWeatherStatus);
