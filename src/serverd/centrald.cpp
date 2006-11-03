@@ -29,7 +29,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-#include "../utils/rts2block.h"
+#include "../utils/rts2daemon.h"
 #include "../utils/rts2config.h"
 #include "status.h"
 
@@ -41,7 +41,7 @@
 
 class Rts2ConnCentrald;
 
-class Rts2Centrald:public Rts2Block
+class Rts2Centrald:public Rts2Daemon
 {
 private:
   int priority_client;
@@ -522,8 +522,8 @@ Rts2ConnCentrald::command ()
   return 0;
 }
 
-Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
-	   in_argv)
+Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
+	    in_argv)
 {
   reloadConfig ();
   Rts2Config *
@@ -544,6 +544,8 @@ Rts2Centrald::reloadConfig ()
   if (ret)
     return ret;
 
+  observer = config->getObserver ();
+
   morning_off = config->getBoolean ("centrald", "morning_off");
   morning_standby = config->getBoolean ("centrald", "morning_standby");
   return ret;
@@ -560,7 +562,7 @@ Rts2Centrald::processOption (int in_opt)
       setPort (atoi (optarg));
       break;
     default:
-      return Rts2Block::processOption (in_opt);
+      return Rts2Daemon::processOption (in_opt);
     }
   return 0;
 }
@@ -569,7 +571,7 @@ int
 Rts2Centrald::init ()
 {
   setPort (PORT);
-  return Rts2Block::init ();
+  return Rts2Daemon::init ();
 }
 
 Rts2Conn *
@@ -683,7 +685,7 @@ Rts2Centrald::idle ()
 	  sendStatusMessage (SERVER_STATUS, current_state);
 	}
     }
-  return Rts2Block::idle ();
+  return Rts2Daemon::idle ();
 }
 
 void
