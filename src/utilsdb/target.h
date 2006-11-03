@@ -613,7 +613,7 @@ public:
   }
   virtual void sendInfo (std::ostream & _os, double JD);
 
-  std::string getUsersEmail (int in_event_mask);
+  std::string getUsersEmail (int in_event_mask, int &count);
 
 
   /**

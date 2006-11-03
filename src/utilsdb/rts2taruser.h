@@ -60,7 +60,7 @@ public:
 
   int load ();
   // returns users for given event
-    std::string getUsers (int in_event_mask);
+    std::string getUsers (int in_event_mask, int &count);
 };
 
 #endif /* !__RTS2_TARUSER__ */

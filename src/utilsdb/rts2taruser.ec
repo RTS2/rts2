@@ -130,11 +130,10 @@ Rts2TarUser::load ()
 }
 
 std::string
-Rts2TarUser::getUsers (int in_event_mask)
+Rts2TarUser::getUsers (int in_event_mask, int &count)
 {
   std::vector <Rts2UserEvent>::iterator user_iter;
   int ret;
-  int count;
   std::string email_list = "";
   if (users.empty ())
   {

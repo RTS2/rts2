@@ -74,10 +74,11 @@ void
 Target::sendTargetMail (int eventMask, const char *subject_text)
 {
   std::string mails;
-  
+
+  int count;
   // send mails
-  mails = getUsersEmail (eventMask);
-  if (mails.length ())
+  mails = getUsersEmail (eventMask, count);
+  if (count > 0)
   {
     std::ostringstream os;
     std::ostringstream subject;
@@ -1208,10 +1209,11 @@ Target::getLastObsTime ()
 }
 
 std::string
-Target::getUsersEmail (int in_event_mask)
+Target::getUsersEmail (int in_event_mask, int &count)
 {
   if (targetUsers)
-    return targetUsers->getUsers (in_event_mask);
+    return targetUsers->getUsers (in_event_mask, count);
+  count = 0;
   return std::string ("");
 }
 
@@ -1505,17 +1507,21 @@ sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int pri
     tar = createTarget (db_tar_id, in_obs);
     if (tar)
     {
-      std::string mails = tar->getUsersEmail (SEND_END_NIGHT);
-      std::string subject_text = std::string ("END OF NIGHT, TARGET #");
-      Rts2ObsSet obsset = Rts2ObsSet (db_tar_id, t_from, t_to);
-      tar->getTargetSubject (subject_text);
-      std::ostringstream os;
-      obsset.printImages (printImages);
-      obsset.printCounts (printCounts);
-      tar->sendInfo (os, JD);
-      tar->printExtra (os, JD);
-      os << obsset;
-      sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
+      int count;
+      std::string mails = tar->getUsersEmail (SEND_END_NIGHT, count);
+      if (count > 0)
+      {
+        std::string subject_text = std::string ("END OF NIGHT, TARGET #");
+        Rts2ObsSet obsset = Rts2ObsSet (db_tar_id, t_from, t_to);
+        tar->getTargetSubject (subject_text);
+        std::ostringstream os;
+        obsset.printImages (printImages);
+        obsset.printCounts (printCounts);
+        tar->sendInfo (os, JD);
+        tar->printExtra (os, JD);
+        os << obsset;
+        sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
+      }
       delete tar;
     }
   }
