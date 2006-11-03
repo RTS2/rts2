@@ -147,6 +147,8 @@ public:
   int setValue (char *name, char value, char *comment);
   int setValue (char *name, const char *value, char *comment);
   int setValue (char *name, time_t * sec, long usec, char *comment);
+  // that method is used to update DATE - creation date entry - for other file then ffile
+  int setCreationDate (fitsfile * out_file = NULL);
 
   int getValue (char *name, int &value, char *comment = NULL);
   int getValue (char *name, long &value, char *comment = NULL);

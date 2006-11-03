@@ -578,6 +578,9 @@ Rts2Image::copyImage (const char *copy_filename)
 
   fits_create_file (&cp_file, cp_filename, &fits_status);
   fits_copy_file (ffile, cp_file, true, true, true, &fits_status);
+  ret = setCreationDate (cp_file);
+  if (ret)
+    goto err;
   fits_close_file (cp_file, &fits_status);
   if (fits_status)
     ret = fits_status;
@@ -707,6 +710,28 @@ Rts2Image::setValue (char *name, time_t * sec, long usec, char *comment)
   strftime (buf, 25, "%Y-%m-%dT%H:%M:%S.", &t_tm);
   snprintf (buf + 20, 4, "%03li", usec / 1000);
   return setValue (name, buf, comment);
+}
+
+int
+Rts2Image::setCreationDate (fitsfile * out_file)
+{
+  int ret;
+  fitsfile *curr_ffile = ffile;
+
+  if (out_file)
+    {
+      ffile = out_file;
+    }
+
+  struct timeval now;
+  gettimeofday (&now, NULL);
+  ret = setValue ("DATE", &(now.tv_sec), now.tv_usec, "creation date");
+
+  if (out_file)
+    {
+      ffile = curr_ffile;
+    }
+  return ret;
 }
 
 int
@@ -993,9 +1018,7 @@ Rts2Image::closeFile ()
 			"CONFIG rotang - not corrected for flip");
 	    }
 	}
-      struct timeval now;
-      gettimeofday (&now, NULL);
-      setValue ("DATE", &(now.tv_sec), now.tv_usec, "creation date");
+      setCreationDate ();
       fits_close_file (ffile, &fits_status);
       flags &= ~IMAGE_SAVE;
     }
