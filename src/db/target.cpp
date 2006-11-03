@@ -69,7 +69,7 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('p', "priority", 1, "set target (fixed) priority");
   addOption ('b', "bonus", 1, "set target bonus to this value");
   addOption ('B', "bonus_time", 1, "set target bonus time to this value");
-  addOption ('C', "camera", 1, "next script will be set for given camera");
+  addOption ('c', "camera", 1, "next script will be set for given camera");
   addOption ('s', "script", 1, "set script for target and camera");
 }
 
@@ -110,7 +110,7 @@ Rts2TargetApp::processOption (int in_opt)
       new_bonus_time = mktime (&tm_ret);
       op |= OP_BONUS_TIME;
       break;
-    case 'C':
+    case 'c':
       if (camera)
 	return -1;
       camera = optarg;
