@@ -39,10 +39,10 @@ Rts2AppDb (in_argc, in_argv)
   operation = NO_OP;
 
   addOption ('n', "night", 1, "work with this night");
-  addOption ('D', "dump_plan", 0, "dump plan to standart output");
-  addOption ('L', "load_plan", 0, "load plan from standart input");
-  addOption ('G', "generate", 0, "generate plan based on targets");
-  addOption ('C', "copy_plan", 1,
+  addOption ('d', "dump_plan", 0, "dump plan to standart output");
+  addOption ('l', "load_plan", 0, "load plan from standart input");
+  addOption ('g', "generate", 0, "generate plan based on targets");
+  addOption ('c', "copy_plan", 1,
 	     "copy plan to given night (from night given by -n)");
 }
 
@@ -102,22 +102,22 @@ Rts2PlanApp::processOption (int in_opt)
       if (ret)
 	return ret;
       break;
-    case 'D':
+    case 'd':
       if (operation != NO_OP)
 	return -1;
       operation = OP_DUMP;
       break;
-    case 'L':
+    case 'l':
       if (operation != NO_OP)
 	return -1;
       operation = OP_LOAD;
       break;
-    case 'G':
+    case 'g':
       if (operation != NO_OP)
 	return -1;
       operation = OP_GENERATE;
       break;
-    case 'C':
+    case 'c':
       if (operation != NO_OP)
 	return -1;
       operation = OP_COPY;
