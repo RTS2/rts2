@@ -61,9 +61,9 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
   addExe = NULL;
   execFollowups = 0;
 
-  addOption ('S', "gcn_host", 1, "GCN host name");
-  addOption ('P', "gcn_port", 1, "GCN port");
-  addOption ('T', "test", 0,
+  addOption ('s', "gcn_host", 1, "GCN host name");
+  addOption ('p', "gcn_port", 1, "GCN port");
+  addOption ('t', "test", 0,
 	     "process test notices (default to off - don't process them)");
   addOption ('f', "forward", 1, "forward incoming notices to that port");
   addOption ('a', "add_exe", 1,
@@ -83,14 +83,14 @@ Rts2DevGrb::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'S':
+    case 's':
       gcn_host = new char[strlen (optarg) + 1];
       strcpy (gcn_host, optarg);
       break;
-    case 'P':
+    case 'p':
       gcn_port = atoi (optarg);
       break;
-    case 'T':
+    case 't':
       do_hete_test = 1;
       break;
     case 'f':
