@@ -151,9 +151,12 @@ Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
   // is first such image..
   if (image->getOKCount () == 1)
     {
+      int count;
       Rts2TarUser tar_user =
 	Rts2TarUser (image->getTargetId (), image->getTargetType ());
-      std::string mails = tar_user.getUsers (SEND_ASTRO_OK);
+      std::string mails = tar_user.getUsers (SEND_ASTRO_OK, count);
+      if (count == 0)
+	return;
       std::ostringstream subject;
       subject << "TARGET #"
 	<< image->getTargetIdSel ()
