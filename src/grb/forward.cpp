@@ -417,8 +417,8 @@ Rts2Block (in_argc, in_argv)
   gcn_port = -1;
   forwardPort = -1;
 
-  addOption ('S', "gcn_host", 1, "GCN host name");
-  addOption ('P', "gcn_port", 1, "GCN port");
+  addOption ('s', "gcn_host", 1, "GCN host name");
+  addOption ('p', "gcn_port", 1, "GCN port");
   addOption ('f', "forward", 1, "forward incoming notices to that port");
 }
 
@@ -433,11 +433,11 @@ Rts2AppFw::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'S':
+    case 's':
       gcn_host = new char[strlen (optarg) + 1];
       strcpy (gcn_host, optarg);
       break;
-    case 'P':
+    case 'p':
       gcn_port = atoi (optarg);
       break;
     case 'f':

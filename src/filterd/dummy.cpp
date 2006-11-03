@@ -26,14 +26,14 @@ Rts2DevFilterdDummy (int in_argc, char **in_argv):Rts2DevFilterd (in_argc,
   {
     filterNum = 0;
     filterSleep = 3;
-    addOption ('S', "filter_sleep", 1, "how long wait for filter change");
+    addOption ('s', "filter_sleep", 1, "how long wait for filter change");
   }
 
   virtual int Rts2DevFilterdDummy::processOption (int in_opt)
   {
     switch (in_opt)
       {
-      case 'S':
+      case 's':
 	filterSleep = atoi (optarg);
 	break;
       default:

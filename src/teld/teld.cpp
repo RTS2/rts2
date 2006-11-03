@@ -65,7 +65,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   addOption ('g', "min_good", 1,
 	     "minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
 
-  addOption ('S', "standby-park", 0, "park when switched to standby");
+  addOption ('s', "standby-park", 0, "park when switched to standby");
 
   maxCorrNum = 1;
 
@@ -115,7 +115,7 @@ Rts2DevTelescope::processOption (int in_opt)
     case 'g':
       minGood = atof (optarg);
       break;
-    case 'S':
+    case 's':
       standbyPark = true;
       break;
     default:

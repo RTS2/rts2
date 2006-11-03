@@ -231,7 +231,7 @@ Rts2DevCamera (in_argc, in_argv)
   usb_port = 0;
   reqSerialNumber = NULL;
   addOption ('u', "usb_port", 1, "USB port number - defaults to 0");
-  addOption ('S', "serial_number", 1,
+  addOption ('n', "serial_number", 1,
 	     "SBIG serial number to accept for that camera");
 }
 
@@ -253,7 +253,7 @@ Rts2DevCameraSbig::processOption (int in_opt)
 	  return -1;
 	}
       break;
-    case 'S':
+    case 'n':
       if (usb_port)
 	return -1;
       reqSerialNumber = optarg;
@@ -264,8 +264,7 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE
-Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
