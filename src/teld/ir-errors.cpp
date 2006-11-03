@@ -59,32 +59,40 @@ public:
   virtual int run ();
 };
 
-IrAxis
-Rts2DevIrError::getAxisStatus (const char *ax_name)
+IrAxis Rts2DevIrError::getAxisStatus (const char *ax_name)
 {
-  double referenced = nan ("f");
-  double currpos = nan ("f");
-  double targetpos = nan ("f");
-  double power = nan ("f");
+  double
+    referenced = nan ("f");
+  double
+    currpos = nan ("f");
+  double
+    targetpos = nan ("f");
+  double
+    power = nan ("f");
   std::ostringstream * os;
-  int status = 0;
+  int
+    status = 0;
 
   os = new std::ostringstream ();
   (*os) << ax_name << ".REFERENCED";
   status = tpl_get (os->str ().c_str (), referenced, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".CURRPOS";
   status = tpl_get (os->str ().c_str (), currpos, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".TARGETPOS";
   status = tpl_get (os->str ().c_str (), targetpos, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".POWER";
   status = tpl_get (os->str ().c_str (), power, &status);
-  delete os;
+  delete
+    os;
   return IrAxis (ax_name, referenced, currpos, targetpos, power);
 }
 
@@ -108,9 +116,9 @@ Rts2DevIrError::Rts2DevIrError (int in_argc, char **in_argv):
 Rts2DevTelescopeIr (in_argc, in_argv)
 {
   op = NO_OP;
-  addOption ('C', "calculate", 0, "Calculate model");
-  addOption ('R', "reset_model", 0, "Reset model counts");
-  addOption ('F', "referenced", 0, "Referencing status");
+  addOption ('c', "calculate", 0, "Calculate model");
+  addOption ('r', "reset_model", 0, "Reset model counts");
+  addOption ('f', "referenced", 0, "Referencing status");
 }
 
 int
@@ -118,13 +126,13 @@ Rts2DevIrError::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'C':
+    case 'c':
       op = CAL;
       break;
-    case 'R':
+    case 'r':
       op = RESET;
       break;
-    case 'F':
+    case 'f':
       op = REFERENCED;
       break;
     default:
