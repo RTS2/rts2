@@ -64,6 +64,8 @@ Rts2TargetSet::load (std::list<int> &target_ids)
 Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs, bool do_load)
 {
   obs = in_obs;
+  if (!obs)
+    obs = Rts2Config::instance ()->getObserver ();
   if (do_load)
     load (std::string ("true"), std::string ("tar_id ASC"));
 }
@@ -195,9 +197,6 @@ Rts2TargetSet::printBonusList (std::ostream & _os, double JD)
 
 Rts2TargetSetSelectable::Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs) : Rts2TargetSet (in_obs, false)
 {
-  obs = in_obs;
-  if (!obs)
-    obs = Rts2Config::instance ()->getObserver ();
   load (std::string ("tar_enabled = true AND tar_priority + tar_bonus > 0"), std::string ("tar_priority + tar_bonus DESC"));
 }
 
@@ -217,7 +216,7 @@ Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, dou
   load (os.str (), ord.str ());
 }
 
-Rts2TargetSetType::Rts2TargetSetType (char type) : Rts2TargetSet ()
+Rts2TargetSetType::Rts2TargetSetType (char type) : Rts2TargetSet (NULL, false)
 {
   std::ostringstream os;
   os << "type_id = '" << type << "'";
