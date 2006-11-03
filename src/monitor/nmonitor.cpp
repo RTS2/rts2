@@ -560,8 +560,9 @@ Rts2NMDome::print (WINDOW * wnd)
   mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
   mvwprintw (wnd, 2, 1, "Tem: %+4.1f oC Vap: %4.1f", temp, vapor);
   mvwprintw (wnd, 3, 1, "Hum: %3.0f dew: %+4.1f", humi, dew);
-  mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i", getValueDouble ("windspeed"),
-	     getValueInteger ("rain"));
+  mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i Cl: %2.1f",
+	     getValueDouble ("windspeed"), getValueInteger ("rain"),
+	     getValueDouble ("cloud"));
   printTimeDiff (wnd, 5, "NextO", time_to_open);
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
