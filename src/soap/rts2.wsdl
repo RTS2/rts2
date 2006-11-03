@@ -170,6 +170,14 @@
   <part name="target" type="ns:target"/>
 </message>
 
+<message name="setNowRequest">
+  <part name="id" type="xsd:positiveInteger"/>
+</message>
+
+<message name="setNowResponse">
+  <part name="target" type="ns:target"/>
+</message>
+
 <portType name="exec">
   <operation name="getExec">
     <documentation>Get current and next target.</documentation>
@@ -185,6 +193,11 @@
     <documentation>Set next target.</documentation>
     <input message="tns:setNextRequest"/>
     <output message="tns:setNextResponse"/>
+  </operation>
+  <operation name="setNow">
+    <documentation>Set next target.</documentation>
+    <input message="tns:setNowRequest"/>
+    <output message="tns:setNowResponse"/>
   </operation>
 </portType>
 
@@ -308,6 +321,15 @@
     </output>
   </operation>
   <operation name="setNext">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+  <operation name="setNow">
     <SOAP:operation style="rpc" soapAction=""/>
     <input>
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>

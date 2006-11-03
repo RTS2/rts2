@@ -102,6 +102,7 @@ Rts2DevClientExecutorSoap::postEvent (Rts2Event * event)
 {
   struct soapExecGetst *gets;
   struct soapExecNext *nexts;
+  struct soapExecNow *nows;
   struct rts2__getExecResponse *g_res;
   switch (event->getType ())
     {
@@ -116,6 +117,11 @@ Rts2DevClientExecutorSoap::postEvent (Rts2Event * event)
       nexts = (soapExecNext *) event->getArg ();
       queCommand (new Rts2CommandExecNext (getMaster (), nexts->next));
       fillTarget (nexts->next, nexts->in_soap, nexts->res->target);
+      break;
+    case EVENT_SOAP_EXEC_SET_NOW:
+      nows = (soapExecNow *) event->getArg ();
+      queCommand (new Rts2CommandExecNow (getMaster (), nows->now));
+      fillTarget (nows->now, nows->in_soap, nows->res->target);
       break;
     }
 

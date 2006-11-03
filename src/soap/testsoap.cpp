@@ -10,6 +10,7 @@ class Rts2TestSoap:public Rts2App
 private:
   char *server;
   int next;
+  int nowTarget;
 protected:
     virtual int processOption (int in_opt);
 public:
@@ -22,8 +23,10 @@ Rts2App (in_argc, in_argv)
 {
   server = "http://localhost:81";
   next = -1;
+  nowTarget = -1;
   addOption ('s', "server", 1, "soap server (default http://localhost:81");
   addOption ('n', "next", 1, "next target");
+  addOption ('N', "now", 1, "now (immediate) target");
 }
 
 int
@@ -36,6 +39,9 @@ Rts2TestSoap::processOption (int in_opt)
       break;
     case 'n':
       next = atoi (optarg);
+      break;
+    case 'N':
+      nowTarget = atoi (optarg);
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -72,6 +78,7 @@ Rts2TestSoap::run ()
   struct rts2__getCameraResponse camera_res;
   struct rts2__getCamerasResponse cameras_res;
   struct rts2__setNextResponse nextR;
+  struct rts2__setNowResponse nowR;
   int ret;
 
   soap_init (&soap);
@@ -165,6 +172,16 @@ Rts2TestSoap::run ()
 	  return ret;
 	}
       std::cout << "Next set to:" << std::endl << nextR.target << std::endl;
+    }
+  if (nowTarget > 0)
+    {
+      ret = soap_call_rts2__setNow (&soap, server, "", nowTarget, nowR);
+      if (ret != SOAP_OK)
+	{
+	  std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+	  return ret;
+	}
+      std::cout << "Now set to:" << std::endl << nowR.target << std::endl;
     }
   return ret;
 }

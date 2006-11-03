@@ -9,9 +9,10 @@
 #define EVENT_SOAP_TEL_GET       	RTS2_LOCAL_EVENT+1002
 #define EVENT_SOAP_EXEC_GETST    	RTS2_LOCAL_EVENT+1003
 #define EVENT_SOAP_EXEC_SET_NEXT	RTS2_LOCAL_EVENT+1004
-#define EVENT_SOAP_DOME_GETST    	RTS2_LOCAL_EVENT+1005
-#define EVENT_SOAP_CAMS_GET	 	RTS2_LOCAL_EVENT+1006
-#define EVENT_SOAP_CAMD_GET	 	RTS2_LOCAL_EVENT+1007
+#define EVENT_SOAP_EXEC_SET_NOW		RTS2_LOCAL_EVENT+1005
+#define EVENT_SOAP_DOME_GETST    	RTS2_LOCAL_EVENT+1006
+#define EVENT_SOAP_CAMS_GET	 	RTS2_LOCAL_EVENT+1007
+#define EVENT_SOAP_CAMD_GET	 	RTS2_LOCAL_EVENT+1008
 
 typedef struct soapExecGetst
 {
@@ -23,6 +24,13 @@ typedef struct soapExecNext
 {
   int next;
   rts2__setNextResponse *res;
+  soap *in_soap;
+};
+
+typedef struct soapExecNow
+{
+  int now;
+  rts2__setNowResponse *res;
   soap *in_soap;
 };
 
