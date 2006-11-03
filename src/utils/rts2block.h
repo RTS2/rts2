@@ -313,7 +313,6 @@ protected:
 
 class Rts2Block:public Rts2App
 {
-  int sock;
   int port;
   long int idle_timeout;	// in msec
   int priority_client;
@@ -321,21 +320,16 @@ class Rts2Block:public Rts2App
 
   // program options
 
-  char *mailAddress;
-
     std::list < Rts2Address * >blockAddress;
     std::list < Rts2User * >blockUsers;
 
-  int addConnection (int in_sock);
   int masterState;
 
 protected:
-  int deamonize;
+  char *mailAddress;
 
   virtual Rts2Conn *createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
-
-  virtual int processOption (int in_opt);
 
   virtual void cancelPriorityOperations ();
 
@@ -346,6 +340,8 @@ protected:
    * Address list related functions.
    **/
   virtual int addAddress (Rts2Address * in_addr);
+  virtual void addSelectSocks (fd_set * read_set);
+  virtual void selectSuccess (fd_set * read_set);
 public:
     Rts2Conn * connections[MAX_CONN];
 

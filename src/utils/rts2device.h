@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <vector>
 
-#include "rts2block.h"
+#include "rts2daemon.h"
 
 #define CHECK_PRIORITY if (!havePriority ()) { sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
 
@@ -137,7 +137,7 @@ public:
   };
 };
 
-class Rts2Device:public Rts2Block
+class Rts2Device:public Rts2Daemon
 {
   int lockf;
 

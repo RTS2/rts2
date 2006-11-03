@@ -193,8 +193,6 @@ Rts2Client::init ()
 {
   int ret;
 
-  deamonize = 0;
-
   ret = Rts2Block::init ();
   if (ret)
     return ret;

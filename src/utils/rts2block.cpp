@@ -925,24 +925,17 @@ Rts2App (in_argc, in_argv)
     {
       connections[i] = NULL;
     }
-  addOption ('M', "mail-to", 1, "send report mails to this adresses");
-  addOption ('i', "interactive", 0,
-	     "run in interactive mode, don't loose console");
-
-  deamonize = 1;
-  mailAddress = NULL;
   signal (SIGPIPE, SIG_IGN);
 
   masterState = 0;
   // allocate ports dynamically
   port = 0;
+  mailAddress = NULL;
 }
 
 Rts2Block::~Rts2Block (void)
 {
   int i;
-  if (sock >= 0)
-    close (sock);
   for (i = 0; i < MAX_CONN; i++)
     {
       Rts2Conn *conn;
@@ -980,61 +973,6 @@ Rts2Block::init ()
   if (ret)
     return ret;
 
-  if (deamonize)
-    {
-      ret = fork ();
-      if (ret < 0)
-	{
-	  perror ("Rts2Block::Rts2Device deamonize fork");
-	  exit (2);
-	}
-      if (ret)
-	exit (0);
-      close (0);
-      close (1);
-      close (2);
-      int f = open ("/dev/null", O_RDWR);
-      dup (f);
-      dup (f);
-      dup (f);
-    }
-
-  sock = socket (PF_INET, SOCK_STREAM, 0);
-  if (sock == -1)
-    {
-      syslog (LOG_ERR, "Rts2Block::init create socket %m");
-      return -1;
-    }
-  const int so_reuseaddr = 1;
-  setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr,
-	      sizeof (so_reuseaddr));
-  struct sockaddr_in server;
-  server.sin_family = AF_INET;
-  server.sin_port = htons (port);
-  server.sin_addr.s_addr = htonl (INADDR_ANY);
-  syslog (LOG_DEBUG, "Rts2Block::init binding to port: %i", port);
-  ret = bind (sock, (struct sockaddr *) &server, sizeof (server));
-  if (ret == -1)
-    {
-      syslog (LOG_ERR, "Rts2Block::init bind %m");
-      return -1;
-    }
-  socklen_t sock_size = sizeof (server);
-  ret = getsockname (sock, (struct sockaddr *) &server, &sock_size);
-  if (ret)
-    {
-      syslog (LOG_ERR, "Rts2Block::init getsockname %m");
-      return -1;
-    }
-  setPort (ntohs (server.sin_port));
-  ret = listen (sock, 5);
-  if (ret)
-    {
-      syslog (LOG_ERR, "Rts2Block::init cannot listen: %m");
-      close (sock);
-      sock = -1;
-      return -1;
-    }
   masterBlock = this;
   signal (SIGHUP, signalHUP);
   return 0;
@@ -1043,8 +981,6 @@ Rts2Block::init ()
 void
 Rts2Block::forkedInstance ()
 {
-  if (sock >= 0)
-    close (sock);
 }
 
 void
@@ -1079,26 +1015,6 @@ Rts2Block::addDataConnection (Rts2Conn * owner_conn, char *in_hostname,
 			       in_size);
   addConnection (conn);
   return conn;
-}
-
-int
-Rts2Block::addConnection (int in_sock)
-{
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      if (!connections[i])
-	{
-#ifdef DEBUG_ALL
-	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
-#endif
-	  connections[i] = createConnection (in_sock, i);
-	  return 0;
-	}
-    }
-  syslog (LOG_ERR,
-	  "Rts2Block::addConnection Cannot find empty connection!\n");
-  return -1;
 }
 
 int
@@ -1209,15 +1125,55 @@ Rts2Block::idle ()
   return 0;
 }
 
+void
+Rts2Block::addSelectSocks (fd_set * read_set)
+{
+  Rts2Conn *conn;
+  int i;
+  for (i = 0; i < MAX_CONN; i++)
+    {
+      conn = connections[i];
+      if (conn)
+	{
+	  conn->add (read_set);
+	}
+    }
+}
+
+void
+Rts2Block::selectSuccess (fd_set * read_set)
+{
+  int i;
+  Rts2Conn *conn;
+  int ret;
+
+  for (i = 0; i < MAX_CONN; i++)
+    {
+      conn = connections[i];
+      if (conn)
+	{
+	  if (conn->receive (read_set) == -1)
+	    {
+#ifdef DEBUG_EXTRA
+	      syslog (LOG_ERR,
+		      "Will delete connection %i, name: '%s'", i,
+		      conn->getName ());
+#endif
+	      ret = deleteConnection (conn);
+	      // delete connection only when it really requested to be deleted..
+	      if (!ret)
+		connections[i] = NULL;
+	    }
+	}
+    }
+}
+
 int
 Rts2Block::run ()
 {
   int ret;
-  int client;
   struct timeval read_tout;
-  Rts2Conn *conn;
   fd_set read_set;
-  int i;
 
   end_loop = 0;
 
@@ -1227,53 +1183,11 @@ Rts2Block::run ()
       read_tout.tv_usec = idle_timeout % USEC_SEC;
 
       FD_ZERO (&read_set);
-      for (i = 0; i < MAX_CONN; i++)
-	{
-	  conn = connections[i];
-	  if (conn)
-	    {
-	      conn->add (&read_set);
-	    }
-	}
-      FD_SET (sock, &read_set);
+      addSelectSocks (&read_set);
       ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
       if (ret > 0)
 	{
-	  // accept connection on master
-	  if (FD_ISSET (sock, &read_set))
-	    {
-	      struct sockaddr_in other_side;
-	      socklen_t addr_size = sizeof (struct sockaddr_in);
-	      client =
-		accept (sock, (struct sockaddr *) &other_side, &addr_size);
-	      if (client == -1)
-		{
-		  syslog (LOG_DEBUG, "client accept: %m %i", sock);
-		}
-	      else
-		{
-		  addConnection (client);
-		}
-	    }
-	  for (i = 0; i < MAX_CONN; i++)
-	    {
-	      conn = connections[i];
-	      if (conn)
-		{
-		  if (conn->receive (&read_set) == -1)
-		    {
-#ifdef DEBUG_EXTRA
-		      syslog (LOG_ERR,
-			      "Will delete connection %i, name: '%s'", i,
-			      conn->getName ());
-#endif
-		      ret = deleteConnection (conn);
-		      // delete connection only when it really requested to be deleted..
-		      if (!ret)
-			connections[i] = NULL;
-		    }
-		}
-	    }
+	  selectSuccess (&read_set);
 	}
       ret = idle ();
       if (ret == -1)
@@ -1323,23 +1237,6 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	}
     }
   priority_client = in_priority_client;
-  return 0;
-}
-
-int
-Rts2Block::processOption (int in_opt)
-{
-  switch (in_opt)
-    {
-    case 'i':
-      deamonize = 0;
-      break;
-    case 'M':
-      mailAddress = optarg;
-      break;
-    default:
-      return Rts2App::processOption (in_opt);
-    }
   return 0;
 }
 

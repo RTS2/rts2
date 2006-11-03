@@ -629,7 +629,7 @@ Rts2State::sendInfo (Rts2Conn * conn, int state_num)
 }
 
 Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, char *default_name):
-Rts2Block (in_argc, in_argv)
+Rts2Daemon (in_argc, in_argv)
 {
   /* put defaults to variables.. */
   device_name = default_name;
@@ -654,9 +654,10 @@ Rts2Block (in_argc, in_argv)
   // now add options..
   addOption ('L', "hostname", 1,
 	     "hostname, if it different from return of gethostname()");
-  addOption ('s', "centrald_host", 1,
+  addOption ('S', "centrald_host", 1,
 	     "name of computer, on which central server runs");
-  addOption ('q', "centrald_port", 1, "port number of central host");
+  addOption ('P', "centrald_port", 1, "port number of central host");
+  addOption ('M', "mail-to", 1, "send report mails to this adresses");
   addOption ('d', "device_name", 1, "name of device");
   addOption ('e', "log_stderr", 0,
 	     "logs also to stderr (not only to syslogd)");
@@ -710,11 +711,14 @@ Rts2Device::processOption (int in_opt)
     case 'L':
       device_host = optarg;
       break;
-    case 's':
+    case 'S':
       centrald_host = optarg;
       break;
-    case 'q':
+    case 'P':
       centrald_port = atoi (optarg);
+      break;
+    case 'M':
+      mailAddress = optarg;
       break;
     case 'd':
       device_name = optarg;
@@ -723,7 +727,7 @@ Rts2Device::processOption (int in_opt)
       log_option |= LOG_PERROR;
       break;
     default:
-      return Rts2Block::processOption (in_opt);
+      return Rts2Daemon::processOption (in_opt);
     }
   return 0;
 }
@@ -788,7 +792,7 @@ Rts2Device::init ()
 
   // try to open log file..
 
-  ret = Rts2Block::init ();
+  ret = Rts2Daemon::init ();
   if (ret)
     return ret;
 
@@ -846,7 +850,7 @@ Rts2Device::idle ()
     {
       infoAll ();
     }
-  return Rts2Block::idle ();
+  return Rts2Daemon::idle ();
 }
 
 int
