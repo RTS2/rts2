@@ -212,7 +212,12 @@ public:
   {
     exposureStart.tv_sec = *in_sec;
     exposureStart.tv_usec = in_usec;
-    gmtime_r (in_sec, &exposureGmTime);
+    setExposureStart ();
+  }
+
+  void setExposureStart ()
+  {
+    gmtime_r (&exposureStart.tv_sec, &exposureGmTime);
   }
 
   long getExposureSec ()

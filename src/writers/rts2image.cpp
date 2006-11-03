@@ -235,6 +235,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("IMGID", imgId);
   getValue ("CTIME", exposureStart.tv_sec);
   getValue ("USEC", exposureStart.tv_usec);
+  setExposureStart ();
   getValue ("EXPOSURE", exposureLength);
   ret = getValues ("NAXIS", naxis, 2);
   if (ret)
