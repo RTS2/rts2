@@ -217,6 +217,13 @@ Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, dou
   load (os.str (), ord.str ());
 }
 
+Rts2TargetSetType::Rts2TargetSetType (char type) : Rts2TargetSet ()
+{
+  std::ostringstream os;
+  os << "type_id = '" << type << "'";
+  load (os.str(), std::string ("tar_id ASC"));
+}
+
 Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)
 {
   obs = in_obs;
