@@ -309,6 +309,12 @@ public:
   Rts2CommandExecNext (Rts2Block * in_master, int next_id);
 };
 
+class Rts2CommandExecNow:public Rts2Command
+{
+public:
+  Rts2CommandExecNow (Rts2Block * in_master, int now_id);
+};
+
 class Rts2CommandExecGrb:public Rts2Command
 {
 public:

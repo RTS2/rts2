@@ -573,6 +573,15 @@ Rts2Command (in_master)
   free (command);
 }
 
+Rts2CommandExecNow::Rts2CommandExecNow (Rts2Block * in_master, int now_id):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "now %i", now_id);
+  setCommand (command);
+  free (command);
+}
+
 Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * in_master, int grb_id):
 Rts2Command (in_master)
 {
