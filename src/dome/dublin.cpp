@@ -43,6 +43,7 @@ private:
   time_t timeOpenClose;
   bool domeFailed;
   char *smsExec;
+  double cloud_bad;
 
   Rts2ConnBufWeather *weatherConn;
   bool isMoving ();
@@ -82,8 +83,11 @@ Rts2DevDome (in_argc, in_argv)
 {
   domeModel = "DUBLIN_DOME";
   smsExec = NULL;
-  addOption ('S', "execute_sms", 1,
+  cloud_bad = 0;
+  addOption ('s', "execute_sms", 1,
 	     "execute this commmand to send sms about roof");
+  addOption ('b', "cloud_bad", 1,
+	     "Close roof when cloud sensor value is bellow that number");
 
   weatherConn = NULL;
 
@@ -128,8 +132,11 @@ Rts2DevDomeDublin::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'S':
+    case 's':
       smsExec = optarg;
+      break;
+    case 'b':
+      cloud_bad = atof (optarg);
       break;
     default:
       return Rts2DevDome::processOption (in_opt);
@@ -142,6 +149,8 @@ Rts2DevDomeDublin::isGoodWeather ()
 {
   if (ignoreMeteo)
     return 1;
+  if (!isnan (cloud) && cloud <= cloud_bad)
+    return 0;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
   return 0;
@@ -253,12 +262,14 @@ Rts2DevDomeDublin::info ()
   return Rts2DevDome::info ();
 }
 
-bool
-Rts2DevDomeDublin::isMoving ()
+bool Rts2DevDomeDublin::isMoving ()
 {
-  int result;
-  int moving = 0;
-  int count;
+  int
+    result;
+  int
+    moving = 0;
+  int
+    count;
   for (count = 0; count < 100; count++)
     {
       result = (inb (BASE + 2));
