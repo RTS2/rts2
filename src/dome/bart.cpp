@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
@@ -120,6 +116,7 @@ private:
   int rain_port;
   char *dome_file;
   char *rain_detector;
+  FILE *mrak2_log;
 
   unsigned char spinac[2];
   unsigned char stav_portu[3];
@@ -144,7 +141,10 @@ private:
 
   // cloud sensor functions
   int cloudHeating (char perc);
+  // adjust cloud heating by air temperature.
+  int cloudHeating ();
   int cloudMeasure (char angle);
+  int cloudMeasureAll ();
 
   void checkCloud ();
 
@@ -199,12 +199,16 @@ Rts2DevDome (in_argc, in_argv)
   cloud_port = -1;
 
   nextCloudMeas = 0;
+
+  // oteviram file pro mrakomer2_log...
+  mrak2_log = fopen ("/var/log/mrakomer2", "a");
 }
 
 Rts2DevDomeBart::~Rts2DevDomeBart (void)
 {
   close (rain_port);
   close (dome_port);
+  fclose (mrak2_log);
 }
 
 int
@@ -586,11 +590,13 @@ int
 Rts2DevDomeBart::cloudHeating (char perc)
 {
   int ret;
-  char buf[10];
+  char buf[35];
+  ret = read (cloud_port, buf, 34);	// "flush"
   ret = write (cloud_port, &perc, 1);
   if (ret != 1)
     return -1;
-  ret = read (cloud_port, buf, 9);
+  sleep (1);
+  ret = read (cloud_port, buf, 14);
   if (ret <= 0)
     {
       syslog (LOG_ERR, "Rts2DevDomeBart::cloudHeating read: %m ret: %i", ret);
@@ -602,14 +608,28 @@ Rts2DevDomeBart::cloudHeating (char perc)
 }
 
 int
+Rts2DevDomeBart::cloudHeating ()
+{
+  char step = 'b';
+  if (temperature > 5)
+    return 0;
+  step += (char) ((-temperature + 5) / 4.0);
+  if (step > 'k')
+    step = 'k';
+  return cloudHeating (step);
+}
+
+int
 Rts2DevDomeBart::cloudMeasure (char angle)
 {
   int ret;
-  char buf[21];
+  char buf[35];
   int ang, ground, space;
+  ret = read (cloud_port, buf, 34);	// "flush"
   ret = write (cloud_port, &angle, 1);
   if (ret != 1)
     return -1;
+  sleep (4);
   ret = read (cloud_port, buf, 20);
   if (ret <= 0)
     {
@@ -633,6 +653,52 @@ Rts2DevDomeBart::cloudMeasure (char angle)
   return 0;
 }
 
+// posle 
+int
+Rts2DevDomeBart::cloudMeasureAll ()
+{
+  time_t now;
+
+  int ret;
+  char buf[35];
+  char buf_m = 'm';
+  int ground, s45, s90, s135;
+  ret = read (cloud_port, buf, 34);
+  ret = write (cloud_port, &buf_m, 1);
+  if (ret != 1)
+    return -1;
+  sleep (4);
+  ret = read (cloud_port, buf, 34);
+  if (ret <= 0)
+    {
+      syslog (LOG_ERR, "Rts2DevDomeBart::cloudMeasure read: %m ret: %i", ret);
+      return -1;
+    }
+  buf[ret] = '\0';
+  // now parse readed values
+  // G 0;S45 -31;S90 -38;S135 -36
+  ret =
+    sscanf (buf, "G %i;S45 %i;S90 %i;S135 %i", &ground, &s45, &s90, &s135);
+  if (ret != 4)
+    {
+      syslog (LOG_ERR,
+	      "Rts2DevDomeBart::cloudMeasure invalid cloud sensor return: '%s'",
+	      buf);
+      return -1;
+    }
+  syslog (LOG_DEBUG,
+	  "Rts2DevDomeBart::cloudMeasure ground: %i S45: %i S90: %i S135: %i",
+	  ground, s45, s90, s135);
+  time (&now);
+  fprintf (mrak2_log,
+	   "%li - G %i;S45 %i;S90 %i;S135 %i;Temp %.1f;Hum %.0f;Rain %i\n",
+	   (long int) now, ground, s45, s90, s135, temperature, humidity,
+	   rain);
+  setCloud (s90 - ground);
+  fflush (mrak2_log);
+  return 0;
+}
+
 void
 Rts2DevDomeBart::checkCloud ()
 {
@@ -645,8 +711,11 @@ Rts2DevDomeBart::checkCloud ()
 
   if (rain)
     {
-      // check 120 seconds before roof opening
-      nextCloudMeas = getNextOpen () - 120;
+      fprintf (mrak2_log,
+	       "%li - G nan;S45 nan;S90 nan;S135 nan;Temp %.1f;Hum %.0f;Rain %i\n",
+	       (long int) now, temperature, humidity, rain);
+      fflush (mrak2_log);
+      nextCloudMeas = now + 300;
       return;
     }
 
@@ -657,14 +726,15 @@ Rts2DevDomeBart::checkCloud ()
     case SERVERD_DUSK:
     case SERVERD_NIGHT:
     case SERVERD_DAWN:
-      cloudHeating ('k');
-      cloudMeasure ('7');
-      // 9 sec measurements..
-      nextCloudMeas = now + 9;
+      cloudHeating ();
+      cloudMeasureAll ();
+      nextCloudMeas = now + 60;	// TODO doresit dopeni kazdych 10 sec
       break;
     default:
-      // next check after 60 seconds
-      nextCloudMeas = now + 60;
+      cloudHeating ();
+      cloudMeasureAll ();
+      // 5 minutes mesasurements during the day phase
+      nextCloudMeas = now + 300;
     }
 }
 
