@@ -138,7 +138,7 @@ Rts2AppImageManip::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'C':
+    case 'c':
       operation |= IMAGEOP_COPY;
       copy_expr = optarg;
       break;
@@ -186,7 +186,7 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
 
   operation = IMAGEOP_NOOP;
 
-  addOption ('C', "copy", 1,
+  addOption ('c', "copy", 1,
 	     "copy image(s) to path expression given as argument");
   addOption ('d', "add-date", 0, "add DATE-OBS to image header");
   addOption ('i', "insert", 0, "insert/update image(s) in the database");
@@ -202,8 +202,7 @@ void
 killSignal (int sig)
 {
   if (app)
-    delete
-      app;
+    delete app;
 }
 
 int
@@ -217,12 +216,10 @@ main (int argc, char **argv)
   ret = app->init ();
   if (ret)
     {
-      delete
-	app;
+      delete app;
       return 0;
     }
   ret = app->run ();
-  delete
-    app;
+  delete app;
   return ret;
 }
