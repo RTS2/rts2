@@ -35,6 +35,7 @@ private:
   int printObservations;
   int printImages;
   int printCounts;
+  char targetType;
 
   double JD;
 public:
@@ -57,19 +58,20 @@ Rts2AppDb (in_argc, in_argv)
   printObservations = 0;
   printImages = 0;
   printCounts = 0;
+  targetType = '\0';
 
   JD = ln_get_julian_from_sys ();
 
   addOption ('E', "extended", 2,
 	     "print extended informations (visibility prediction,..)");
-  addOption ('C', "calibartion", 0, "print recommended calibration targets");
+  addOption ('c', "calibartion", 0, "print recommended calibration targets");
   addOption ('o', "observations", 2,
 	     "print observations (in given time range)");
   addOption ('i', "images", 2, "print images (in given time range)");
   addOption ('I', "images_summary", 0, "print image summary row");
   addOption ('p', "photometer", 2, "print counts (in given time range)");
   addOption ('P', "photometer_summary", 0, "print counts summary row");
-  addOption ('t', "target_type", 0,
+  addOption ('t', "target_type", 1,
 	     "search for target types, not for targets IDs");
   addOption ('d', "date", 1, "give informations for this data");
 }
@@ -88,7 +90,7 @@ Rts2TargetInfo::processOption (int in_opt)
     case 'E':
       printExtendet = 1;
       break;
-    case 'C':
+    case 'c':
       printCalTargets = 1;
       break;
     case 'o':
@@ -105,6 +107,9 @@ Rts2TargetInfo::processOption (int in_opt)
       break;
     case 'P':
       printCounts |= DISPLAY_SUMMARY;
+      break;
+    case 't':
+      targetType = *optarg;
       break;
     case 'd':
       ret = parseDate (optarg, JD);
@@ -229,6 +234,19 @@ int
 Rts2TargetInfo::run ()
 {
   std::list < int >::iterator tar_iter;
+  Rts2TargetSetType::iterator type_iter;
+
+  if (targetType != '\0')
+    {
+      Rts2TargetSetType typeSet = Rts2TargetSetType (targetType);
+      for (type_iter = typeSet.begin (); type_iter != typeSet.end ();
+	   type_iter++)
+	{
+	  target = *type_iter;
+	  printTargetInfo ();
+	}
+      return 0;
+    }
 
   for (tar_iter = targets.begin (); tar_iter != targets.end (); tar_iter++)
     {
