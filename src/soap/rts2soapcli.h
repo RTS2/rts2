@@ -4,17 +4,25 @@
 #include "../utils/rts2devclient.h"
 #include "soapH.h"
 
-#define EVENT_SOAP_TEL_GETEQU    RTS2_LOCAL_EVENT+1000
-#define EVENT_SOAP_TEL_GETALT    RTS2_LOCAL_EVENT+1001
-#define EVENT_SOAP_TEL_GET       RTS2_LOCAL_EVENT+1002
-#define EVENT_SOAP_EXEC_GETST    RTS2_LOCAL_EVENT+1003
-#define EVENT_SOAP_DOME_GETST    RTS2_LOCAL_EVENT+1004
-#define EVENT_SOAP_CAMS_GET	 RTS2_LOCAL_EVENT+1005
-#define EVENT_SOAP_CAMD_GET	 RTS2_LOCAL_EVENT+1006
+#define EVENT_SOAP_TEL_GETEQU    	RTS2_LOCAL_EVENT+1000
+#define EVENT_SOAP_TEL_GETALT   	RTS2_LOCAL_EVENT+1001
+#define EVENT_SOAP_TEL_GET       	RTS2_LOCAL_EVENT+1002
+#define EVENT_SOAP_EXEC_GETST    	RTS2_LOCAL_EVENT+1003
+#define EVENT_SOAP_EXEC_SET_NEXT	RTS2_LOCAL_EVENT+1004
+#define EVENT_SOAP_DOME_GETST    	RTS2_LOCAL_EVENT+1005
+#define EVENT_SOAP_CAMS_GET	 	RTS2_LOCAL_EVENT+1006
+#define EVENT_SOAP_CAMD_GET	 	RTS2_LOCAL_EVENT+1007
 
 typedef struct soapExecGetst
 {
   rts2__getExecResponse *res;
+  soap *in_soap;
+};
+
+typedef struct soapExecNext
+{
+  int next;
+  rts2__setNextResponse *res;
   soap *in_soap;
 };
 

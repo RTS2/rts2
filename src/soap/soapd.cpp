@@ -225,7 +225,21 @@ rts2__getTarget (struct soap *in_soap, unsigned int id,
   return SOAP_OK;
 }
 
+int
+rts2__setNext (struct soap *in_soap, unsigned int id,
+	       rts2__setNextResponse & res)
+{
+  struct soapExecNext setN;
+  res.target = soap_new_rts2__target (in_soap, 1);
+  nullTarget (res.target);
 
+  setN.next = id;
+  setN.res = &res;
+  setN.in_soap = in_soap;
+
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_EXEC_SET_NEXT, (void *) &setN));
+  return SOAP_OK;
+}
 
 int
 rts2__getDome (struct soap *in_soap, rts2__getDomeResponse & res)

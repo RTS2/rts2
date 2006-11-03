@@ -1,4 +1,5 @@
 #include "rts2soapcli.h"
+#include "../utils/rts2command.h"
 #include "../utilsdb/target.h"
 #include "imghdr.h"
 
@@ -100,15 +101,21 @@ void
 Rts2DevClientExecutorSoap::postEvent (Rts2Event * event)
 {
   struct soapExecGetst *gets;
-  struct rts2__getExecResponse *res;
+  struct soapExecNext *nexts;
+  struct rts2__getExecResponse *g_res;
   switch (event->getType ())
     {
     case EVENT_SOAP_EXEC_GETST:
       gets = (soapExecGetst *) event->getArg ();
-      res = gets->res;
-      res->obsid = getValueInteger ("obsid");
-      fillTarget (getValueInteger ("current"), gets->in_soap, res->current);
-      fillTarget (getValueInteger ("next"), gets->in_soap, res->next);
+      g_res = gets->res;
+      g_res->obsid = getValueInteger ("obsid");
+      fillTarget (getValueInteger ("current"), gets->in_soap, g_res->current);
+      fillTarget (getValueInteger ("next"), gets->in_soap, g_res->next);
+      break;
+    case EVENT_SOAP_EXEC_SET_NEXT:
+      nexts = (soapExecNext *) event->getArg ();
+      queCommand (new Rts2CommandExecNext (getMaster (), nexts->next));
+      fillTarget (nexts->next, nexts->in_soap, nexts->res->target);
       break;
     }
 

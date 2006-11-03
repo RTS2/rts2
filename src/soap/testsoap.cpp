@@ -7,7 +7,9 @@
 
 class Rts2TestSoap:public Rts2App
 {
+private:
   char *server;
+  int next;
 protected:
     virtual int processOption (int in_opt);
 public:
@@ -18,8 +20,10 @@ public:
 Rts2TestSoap::Rts2TestSoap (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
-  server = "http://localhost";
-  addOption ('s', "server", 1, "soap server (default http://localhost");
+  server = "http://localhost:81";
+  next = -1;
+  addOption ('s', "server", 1, "soap server (default http://localhost:81");
+  addOption ('n', "next", 1, "next target");
 }
 
 int
@@ -29,6 +33,9 @@ Rts2TestSoap::processOption (int in_opt)
     {
     case 's':
       server = optarg;
+      break;
+    case 'n':
+      next = atoi (optarg);
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -64,6 +71,7 @@ Rts2TestSoap::run ()
   struct rts2__setCentraldResponse centrald_set;
   struct rts2__getCameraResponse camera_res;
   struct rts2__getCamerasResponse cameras_res;
+  struct rts2__setNextResponse nextR;
   int ret;
 
   soap_init (&soap);
@@ -147,6 +155,16 @@ Rts2TestSoap::run ()
       rts2__camera *cam = (rts2__camera *) * cam_iter;
       std::cout << "Camera " << cam->name << " exposure " << cam->
 	exposure << std::endl;
+    }
+  if (next > 0)
+    {
+      ret = soap_call_rts2__setNext (&soap, server, "", next, nextR);
+      if (ret != SOAP_OK)
+	{
+	  std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+	  return ret;
+	}
+      std::cout << "Next set to:" << std::endl << nextR.target << std::endl;
     }
   return ret;
 }
