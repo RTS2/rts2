@@ -1,15 +1,5 @@
 #!/bin/sh
-# Run this to generate all the initial makefiles, etc.
 
-srcdir=`dirname $0`
-test -z "$srcdir" && srcdir=.
+AC_VERSION=1.8
 
-PKG_NAME="the package."
-
-(test -f $srcdir/configure.in) || {
-	echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
-	echo " top-level directory"
-	exit 1
-}
-
-. $srcdir/macros/autogen.sh
+aclocal-$AC_VERSION && libtoolize && automake-$AC_VERSION --add-missing && autoconf
