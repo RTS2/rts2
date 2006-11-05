@@ -126,7 +126,13 @@ Rts2Soapd::init ()
     config->getInteger ("observatory", "soap", soapPort);
 
   if (soapPort == -1)
-    return -1;
+    {
+      std::
+	cerr <<
+	"Rts2Soapd::init soap port was not specified, cannot start soapd." <<
+	std::endl;
+      return -1;
+    }
 
   Rts2SoapConn *s_conn = new Rts2SoapConn (soapPort, this);
   ret - s_conn->init ();
