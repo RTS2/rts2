@@ -56,6 +56,9 @@ Rts2Image::initData ()
 
   config_rotang = nan ("f");
 
+  exposureStart.tv_sec = 0;
+  exposureStart.tv_usec = 0;
+
   shutter = SHUT_UNKNOW;
 }
 
