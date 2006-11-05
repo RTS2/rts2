@@ -603,7 +603,7 @@ Rts2Conn::priorityChange ()
 }
 
 int
-Rts2Conn::send (char *msg)
+Rts2Conn::send (const char *msg)
 {
   int len;
   int ret;
@@ -632,6 +632,12 @@ Rts2Conn::send (char *msg)
   write (sock, "\r\n", 2);
   successfullSend ();
   return 0;
+}
+
+int
+Rts2Conn::send (std::string msg)
+{
+  return send (msg.c_str ());
 }
 
 void
@@ -670,6 +676,12 @@ Rts2Conn::connectionError (int last_data_size)
   if (strlen (getName ()))
     master->deleteAddress (getName ());
   return -1;
+}
+
+int
+Rts2Conn::sendMessage (Rts2Message & msg)
+{
+  return send (msg.toConn ());
 }
 
 int

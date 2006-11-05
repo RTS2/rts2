@@ -1,10 +1,12 @@
 #ifndef __RTS2_CONN__
 #define __RTS2_CONN__
 
+#include <string>
 #include <string.h>
 #include <time.h>
 
 #include "rts2serverstate.h"
+#include "rts2message.h"
 
 #define MAX_DATA		200
 
@@ -126,7 +128,9 @@ public:
   {
     return !strcmp (cmd, getCommand ());
   }
-  virtual int send (char *msg);
+  virtual int send (const char *msg);
+  int send (std::string msg);
+  int sendMessage (Rts2Message & msg);
   int sendValue (char *val_name, int value);
   int sendValue (char *val_name, int val1, int val2);
   int sendValue (char *val_name, int val1, double val2);

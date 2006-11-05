@@ -20,7 +20,7 @@ Rts2ConnNoSend::~Rts2ConnNoSend (void)
 }
 
 int
-Rts2ConnNoSend::send (char *messageg)
+Rts2ConnNoSend::send (const char *messageg)
 {
   return 1;
 }
