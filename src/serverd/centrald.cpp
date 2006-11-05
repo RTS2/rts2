@@ -646,7 +646,7 @@ Rts2Centrald::changePriority (time_t timeout)
       if (priority_client >= 0 && connections[priority_client])
 	connections[priority_client]->setHavePriority (1);
     }
-  return sendMessage ("priority_change", priority_client, timeout);
+  return sendPriorityChange (priority_client, timeout);
 }
 
 int
