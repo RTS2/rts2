@@ -488,7 +488,7 @@ Rts2ConnCentrald::command ()
 	  sendStatusInfo ();
 	  if (master->getPriorityClient () > -1)
 	    {
-	      asprintf (&msg, "M priority_change %i %i",
+	      asprintf (&msg, PROTO_PRIORITY " %i %i",
 			master->getPriorityClient (), 0);
 	      send (msg);
 	      free (msg);
