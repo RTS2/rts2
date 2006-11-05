@@ -1,0 +1,8 @@
+/var/log/rts2 {
+    rotate 4
+    compress
+    errors rtadmin@lascaux.asu.cas.cz
+    postrotate
+	/usr/bin/killall -HUP syslogd
+    endscript
+}
