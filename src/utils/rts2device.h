@@ -68,10 +68,10 @@ class Rts2DevConnMaster:public Rts2Conn
   int device_port;
   time_t nextTime;
 protected:
-  int command ();
-  int message ();
-  int informations ();
-  int status ();
+    virtual int command ();
+  virtual int priorityChange ();
+  virtual int informations ();
+  virtual int status ();
   virtual int connectionError (int last_data_size);
 public:
     Rts2DevConnMaster (Rts2Block * in_master,

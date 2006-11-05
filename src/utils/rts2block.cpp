@@ -234,10 +234,10 @@ Rts2Conn::processLine ()
       *command_buf_top = '\0';
       command_buf_top++;
     }
-  // messages..
-  if (isCommand (PROTO_MESSAGE))
+  // priority change
+  if (isCommand (PROTO_PRIORITY))
     {
-      ret = message ();
+      ret = priorityChange ();
     }
   // informations..
   else if (isCommand (PROTO_INFO))
@@ -609,7 +609,7 @@ Rts2Conn::commandReturn ()
 }
 
 int
-Rts2Conn::message ()
+Rts2Conn::priorityChange ()
 {
   // we don't want any messages yet..
   return -1;
@@ -1068,7 +1068,7 @@ Rts2Block::findCentralId (int in_id)
 }
 
 int
-Rts2Block::sendMessage (char *message)
+Rts2Block::sendAll (char *message)
 {
   int i;
   for (i = 0; i < MAX_CONN; i++)
@@ -1083,13 +1083,13 @@ Rts2Block::sendMessage (char *message)
 }
 
 int
-Rts2Block::sendMessage (char *message, int val1, int val2)
+Rts2Block::sendPriorityChange (int p_client, int timeout)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, PROTO_MESSAGE " %s %i %i", message, val1, val2);
-  ret = sendMessage (msg);
+  asprintf (&msg, PROTO_PRIORITY " %i %i", p_client, timeout);
+  ret = sendAll (msg);
   free (msg);
   return ret;
 }
@@ -1101,7 +1101,7 @@ Rts2Block::sendStatusMessage (char *state_name, int state)
   int ret;
 
   asprintf (&msg, PROTO_STATUS " %s %i", state_name, state);
-  ret = sendMessage (msg);
+  ret = sendAll (msg);
   free (msg);
   return ret;
 }

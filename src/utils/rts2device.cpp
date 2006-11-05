@@ -479,24 +479,15 @@ Rts2DevConnMaster::command ()
 }
 
 int
-Rts2DevConnMaster::message ()
+Rts2DevConnMaster::priorityChange ()
 {
-  char *msg;
-  if (paramNextString (&msg))
-    return -1;
-  if (!strcmp (msg, "priority_change"))
-    {
-      // change priority
-      int priority_client;
-      int timeout;
-      if (paramNextInteger (&priority_client))
-	return -1;
-      if (paramNextInteger (&timeout))
-	return -1;
-      master->setPriorityClient (priority_client, timeout);
-      return -1;
-    }
-  return -2;
+  // change priority
+  int priority_client;
+  int timeout;
+  if (paramNextInteger (&priority_client) || paramNextInteger (&timeout))
+    return -2;
+  master->setPriorityClient (priority_client, timeout);
+  return -1;
 }
 
 int

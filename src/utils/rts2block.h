@@ -25,10 +25,11 @@
 #define PROTO_VALUE		"V"
 #define PROTO_DATA		"D"
 #define PROTO_AUTH		"A"
-#define PROTO_MESSAGE		"M"
+#define PROTO_PRIORITY		"P"
 #define PROTO_INFO		"I"
 #define PROTO_STATUS		"S"
 #define PROTO_TECHNICAL		"T"
+//#define PROTO_MESSAGE         "M"
 
 #define MAX_CONN		20
 #define MAX_DATA		200
@@ -295,7 +296,7 @@ public:
 
 protected:
   virtual int command ();
-  virtual int message ();
+  virtual int priorityChange ();
   virtual int informations ();
   virtual int status ();
   int sendNextCommand ();
@@ -366,8 +367,8 @@ public:
   Rts2Conn *findName (const char *in_name);
   Rts2Conn *findCentralId (int in_id);
   virtual int sendStatusMessage (char *state_name, int state);
-  virtual int sendMessage (char *message);
-  virtual int sendMessage (char *message, int val1, int val2);
+  int sendAll (char *message);
+  int sendPriorityChange (int p_client, int timeout);
   virtual int idle ();
   void setTimeout (long int new_timeout)
   {
