@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <iostream>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -174,7 +175,7 @@ Rts2Block::findCentralId (int in_id)
 }
 
 int
-Rts2Block::sendAll (char *message)
+Rts2Block::sendAll (char *msg)
 {
   int i;
   for (i = 0; i < MAX_CONN; i++)
@@ -182,7 +183,7 @@ Rts2Block::sendAll (char *message)
       Rts2Conn *conn = connections[i];
       if (conn)
 	{
-	  conn->send (message);
+	  conn->send (msg);
 	}
     }
   return 0;
@@ -560,6 +561,13 @@ Rts2Block::getConnection (char *deviceName)
   conn = createClientConnection (devAddr);
   addConnection (conn);
   return conn;
+}
+
+int
+Rts2Block::message (Rts2Message & msg)
+{
+  std::cout << msg.toConn () << std::endl;
+  return -1;
 }
 
 int

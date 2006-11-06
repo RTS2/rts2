@@ -236,6 +236,11 @@ Rts2Conn::processLine ()
     {
       ret = status ();
     }
+  // message from application
+  else if (isCommand (PROTO_MESSAGE))
+    {
+      ret = message ();
+    }
   // technical - to keep connection working
   else if (isCommand (PROTO_TECHNICAL))
     {
@@ -554,6 +559,24 @@ Rts2Conn::status ()
 }
 
 int
+Rts2Conn::message ()
+{
+  struct timeval messageTime;
+  char *messageOName;
+  int messageType;
+
+  if (paramNextTimeval (&messageTime)
+      || paramNextString (&messageOName) || paramNextInteger (&messageType))
+    return -2;
+
+  Rts2Message rts2Message = Rts2Message
+    (messageTime, std::string (messageOName), messageType,
+     std::string (paramNextWholeString ()));
+
+  return master->message (rts2Message);
+}
+
+int
 Rts2Conn::sendNextCommand ()
 {
   // pop next command
@@ -607,14 +630,10 @@ Rts2Conn::send (const char *msg)
 {
   int len;
   int ret;
-
   if (sock == -1)
     return -1;
-
   len = strlen (msg);
-
   ret = write (sock, msg, len);
-
   if (ret != len)
     {
 #ifdef DEBUG_EXTRA
@@ -626,8 +645,8 @@ Rts2Conn::send (const char *msg)
       return -1;
     }
 #ifdef DEBUG_ALL
-  syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'", getCentraldId (),
-	  sock, ret, msg);
+  syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'",
+	  getCentraldId (), sock, ret, msg);
 #endif
   write (sock, "\r\n", 2);
   successfullSend ();
@@ -689,7 +708,6 @@ Rts2Conn::sendValue (char *val_name, int value)
 {
   char *msg;
   int ret;
-
   asprintf (&msg, "V %s %i", val_name, value);
   ret = send (msg);
   free (msg);
@@ -701,7 +719,6 @@ Rts2Conn::sendValue (char *val_name, int val1, int val2)
 {
   char *msg;
   int ret;
-
   asprintf (&msg, "V %s %i %i", val_name, val1, val2);
   ret = send (msg);
   free (msg);
@@ -713,7 +730,6 @@ Rts2Conn::sendValue (char *val_name, int val1, double val2)
 {
   char *msg;
   int ret;
-
   asprintf (&msg, "V %s %i %f", val_name, val1, val2);
   ret = send (msg);
   free (msg);
@@ -725,7 +741,6 @@ Rts2Conn::sendValue (char *val_name, char *value)
 {
   char *msg;
   int ret;
-
   asprintf (&msg, "V %s %s", val_name, value);
   ret = send (msg);
   free (msg);
@@ -737,7 +752,6 @@ Rts2Conn::sendValue (char *val_name, double value)
 {
   char *msg;
   int ret;
-
   asprintf (&msg, "V %s %f", val_name, value);
   ret = send (msg);
   free (msg);
@@ -749,7 +763,6 @@ Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 {
   char *msg;
   int ret;
-
   asprintf (&msg, "V %s %s %i", val_name, val1, val2);
   ret = send (msg);
   free (msg);
@@ -757,14 +770,13 @@ Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 }
 
 int
-Rts2Conn::sendValue (char *val_name, int val1, int val2, double val3,
-		     double val4, double val5, double val6)
+Rts2Conn::sendValue (char *val_name, int val1, int val2,
+		     double val3, double val4, double val5, double val6)
 {
   char *msg;
   int ret;
-
-  asprintf (&msg, "V %s %i %i %f %f %f %f", val_name, val1, val2, val3, val4,
-	    val5, val6);
+  asprintf (&msg, "V %s %i %i %f %f %f %f", val_name, val1, val2,
+	    val3, val4, val5, val6);
   ret = send (msg);
   free (msg);
   return ret;
@@ -775,7 +787,6 @@ Rts2Conn::sendValueTime (char *val_name, time_t * value)
 {
   char *msg;
   int ret;
-
   asprintf (&msg, "V %s %li", val_name, *value);
   ret = send (msg);
   free (msg);
@@ -786,11 +797,9 @@ int
 Rts2Conn::sendCommandEnd (int num, char *in_msg)
 {
   char *msg;
-
   asprintf (&msg, "%+04i %s", num, in_msg);
   send (msg);
   free (msg);
-
   return 0;
 }
 
@@ -839,6 +848,14 @@ Rts2Conn::paramNextString (char **str)
       command_buf_top++;
     }
   return 0;
+}
+
+char *
+Rts2Conn::paramNextWholeString ()
+{
+  while (isspace (*command_buf_top))
+    command_buf_top++;
+  return command_buf_top;
 }
 
 int
@@ -892,6 +909,18 @@ Rts2Conn::paramNextFloat (float *num)
   *num = strtof (str_num, &num_end);
   if (*num_end)
     return -1;
+  return 0;
+}
+
+int
+Rts2Conn::paramNextTimeval (struct timeval *tv)
+{
+  int sec;
+  int usec;
+  if (paramNextInteger (&sec) || paramNextInteger (&usec))
+    return -1;
+  tv->tv_sec = sec;
+  tv->tv_usec = usec;
   return 0;
 }
 

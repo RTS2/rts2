@@ -893,6 +893,18 @@ Rts2Device::baseInfo ()
   return -1;
 }
 
+void
+Rts2Device::sendMessage (messageType_t in_messageType,
+			 const char *in_messageString)
+{
+  Rts2Conn *centraldConn = getCentraldConn ();
+  if (!centraldConn)
+    return;
+  Rts2Message msg =
+    Rts2Message (getDeviceName (), in_messageType, in_messageString);
+  centraldConn->sendMessage (msg);
+}
+
 int
 Rts2Device::killAll ()
 {

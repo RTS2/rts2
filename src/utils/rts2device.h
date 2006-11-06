@@ -205,6 +205,10 @@ public:
     return 0;
   }
 
+  // only devices can send messages
+  void sendMessage (messageType_t in_messageType,
+		    const char *in_messageString);
+
   void setIdleInfoInterval (time_t interval)
   {
     idleInfoInterval = interval;

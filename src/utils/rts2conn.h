@@ -239,10 +239,12 @@ public:
 
   int paramEnd ();
   int paramNextString (char **str);
+  char *paramNextWholeString ();
   int paramNextStringNull (char **str);
   int paramNextInteger (int *num);
   int paramNextDouble (double *num);
   int paramNextFloat (float *num);
+  int paramNextTimeval (struct timeval *tv);
 
   // called when some data were sucessfully received
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
@@ -281,6 +283,7 @@ protected:
   virtual int priorityChange ();
   virtual int informations ();
   virtual int status ();
+  int message ();
   int sendNextCommand ();
 
   int commandReturn ();

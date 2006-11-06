@@ -18,6 +18,11 @@ public:
     Rts2Message (const struct timeval &in_messageTime,
 		 std::string in_messageOName, messageType_t in_messageType,
 		 std::string in_messageString);
+    Rts2Message (const struct timeval &in_messageTime,
+		 std::string in_messageOName, int in_messageType,
+		 std::string in_messageString);
+    Rts2Message (const char *in_messageOName, messageType_t in_messageType,
+		 const char *in_messageString);
     virtual ~ Rts2Message (void);
 
     std::string toConn ();

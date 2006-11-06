@@ -97,7 +97,7 @@ public:
   Rts2Conn *findName (const char *in_name);
   Rts2Conn *findCentralId (int in_id);
   virtual int sendStatusMessage (char *state_name, int state);
-  int sendAll (char *message);
+  int sendAll (char *msg);
   int sendPriorityChange (int p_client, int timeout);
   virtual int idle ();
   void setTimeout (long int new_timeout)
@@ -180,6 +180,8 @@ public:
   {
     return NULL;
   }
+
+  virtual int message (Rts2Message & msg);
 
   int queAll (Rts2Command * cmd);
   int queAll (char *text);
