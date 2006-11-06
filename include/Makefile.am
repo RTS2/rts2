@@ -4,5 +4,6 @@ noinst_HEADERS = config.h	\
 		imghdr.h	\
 		status.h	\
 		telescope_info.h \
-		imgdisplay.h
+		imgdisplay.h	\
+		message.h
 
