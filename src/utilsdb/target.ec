@@ -763,8 +763,9 @@ Target::getScript (const char *device_name, char *buf)
   if (!ret)
     return 0;
 
-  strncpy (buf, "", MAX_COMMAND_LENGTH);
-  return 0;
+  // default is empty script
+  *buf = '\0';
+  return -1;
 }
 
 int
