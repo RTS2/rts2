@@ -61,7 +61,7 @@ protected:
 
   virtual int processOption (int in_opt);
 
-  // those callbacks are now empty; they can be use in future
+  // those callbacks are now empty; they can be used in future
   // to link two centrald to enable cooperative observation
   virtual Rts2Conn *createClientConnection (char *in_deviceName)
   {
@@ -102,6 +102,12 @@ public:
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   void connAdded (Rts2ConnCentrald * added);
 
+  virtual void message (Rts2Message & msg);
+  void processMessage (Rts2Message & msg)
+  {
+    sendMessageAll (msg);
+  }
+
   virtual void sigHUP (int sig);
 };
 
@@ -125,11 +131,13 @@ private:
   int sendInfo ();
   int sendStatusInfo ();
   int sendAValue (char *name, int value);
+  int messageMask;
 public:
     Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 		      int in_centrald_id);
     virtual ~ Rts2ConnCentrald (void);
-  int sendInfo (Rts2Conn * conn);
+  virtual int sendMessage (Rts2Message & msg);
+  virtual int sendInfo (Rts2Conn * conn);
 };
 
 Rts2ConnCentrald::Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
@@ -138,6 +146,7 @@ Rts2Conn (in_sock, in_master)
 {
   master = in_master;
   setCentraldId (in_centrald_id);
+  messageMask = 0x00;
 }
 
 /*!
@@ -212,6 +221,14 @@ Rts2ConnCentrald::sendDeviceKey ()
   send (msg);
   free (msg);
   return 0;
+}
+
+int
+Rts2ConnCentrald::sendMessage (Rts2Message & msg)
+{
+  if (msg.passMask (messageMask))
+    return Rts2Conn::sendMessage (msg);
+  return -1;
 }
 
 int
@@ -511,15 +528,20 @@ Rts2ConnCentrald::command ()
 	  return -1;
 	}
     }
+  else if (isCommand ("message_mask"))
+    {
+      int newMask;
+      if (paramNextInteger (&newMask) || !paramEnd ())
+	return -2;
+      messageMask = newMask;
+      return 0;
+    }
   else if (getType () == DEVICE_SERVER)
     return commandDevice ();
   else if (getType () == CLIENT_SERVER)
     return commandClient ();
-  else
-    {
-      return Rts2Conn::command ();
-    }
-  return 0;
+  // else
+  return Rts2Conn::command ();
 }
 
 Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
@@ -686,6 +708,12 @@ Rts2Centrald::idle ()
 	}
     }
   return Rts2Daemon::idle ();
+}
+
+void
+Rts2Centrald::message (Rts2Message & msg)
+{
+  processMessage (msg);
 }
 
 void
