@@ -17,4 +17,4 @@ noinst_HEADERS = mkpath.h hms.h rts2app.h rts2block.h rts2daemon.h rts2device.h 
 	rts2address.h rts2user.h rts2client.h rts2command.h rts2value.h \
 	rts2devclient.h rts2dataconn.h rts2event.h rts2config.h rts2object.h objectcheck.h rts2connnosend.h \
 	rts2connfork.h rts2serverstate.h libnova_cpp.h timestamp.h rts2askchoice.h infoval.h \
-	rts2message.h rts2conn.h
+	rts2message.h rts2conn.h rts2logstream.h

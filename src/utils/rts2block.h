@@ -100,6 +100,7 @@ public:
   virtual int sendStatusMessage (char *state_name, int state);
   int sendAll (char *msg);
   int sendPriorityChange (int p_client, int timeout);
+  // only used in centrald!
   void sendMessageAll (Rts2Message & msg);
   virtual int idle ();
   void setTimeout (long int new_timeout)
