@@ -35,8 +35,7 @@
 #define EVENT_PRINT		RTS2_LOCAL_EVENT + 1
 #define EVENT_PRINT_SHORT	RTS2_LOCAL_EVENT + 2
 #define EVENT_PRINT_FULL	RTS2_LOCAL_EVENT + 3
-
-#define FORMAT_ONE_LINE		1
+#define EVENT_PRINT_MESSAGES	RTS2_LOCAL_EVENT + 4
 
 class Rts2CNMonConn:public Rts2ConnClient
 {
@@ -124,7 +123,7 @@ protected:
 public:
     MonWindow ()
   {
-    printFormat = 0;
+    printFormat = EVENT_PRINT_FULL;
     statusBegin = 1;
   }
 
@@ -163,17 +162,22 @@ MonWindow::postEvent (Rts2Event * event)
     {
     case EVENT_PRINT:
       window = (WINDOW *) event->getArg ();
-      if (printFormat == FORMAT_ONE_LINE)
-	printOneLine (window);
-      else
-	print (window);
+      switch (printFormat)
+	{
+	case EVENT_PRINT_SHORT:
+	  printOneLine (window);
+	  break;
+	case EVENT_PRINT_FULL:
+	  print (window);
+	  break;
+	case EVENT_PRINT_MESSAGES:
+	  break;
+	}
       break;
     case EVENT_PRINT_SHORT:
-      printFormat = 1;
-      break;
     case EVENT_PRINT_FULL:
-      printFormat = 0;
-      break;
+    case EVENT_PRINT_MESSAGES:
+      printFormat = event->getType ();
     }
 }
 
@@ -900,6 +904,63 @@ Rts2CNMonConn::print ()
 
 /*******************************************************
  *
+ * This class represent window with messages.
+ * 
+ ******************************************************/
+
+class MessageWindow:public Rts2Object
+{
+private:
+  WINDOW * wnd;
+  bool printWindow;
+public:
+
+    MessageWindow ()
+  {
+    wnd = newwin (LINES - 2, COLS - 2, 1, 1);
+    scrollok (wnd, true);
+    printWindow = false;
+  }
+
+  virtual ~ MessageWindow (void)
+  {
+    delwin (wnd);
+  }
+
+  virtual void postEvent (Rts2Event * event);
+  virtual void message (Rts2Message & msg);
+};
+
+void
+MessageWindow::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_PRINT:
+      if (printWindow)
+	wrefresh (wnd);
+      break;
+    case EVENT_PRINT_MESSAGES:
+      printWindow = true;
+      break;
+    case EVENT_PRINT_SHORT:
+    case EVENT_PRINT_FULL:
+      printWindow = false;
+      break;
+    }
+  Rts2Object::postEvent (event);
+}
+
+void
+MessageWindow::message (Rts2Message & msg)
+{
+  waddstr (wnd, msg.toConn ().c_str ());
+  waddstr (wnd, "\n");
+  wrefresh (wnd);
+}
+
+/*******************************************************
+ *
  * This class hold "root" window of display,
  * takes care about displaying it's connection etc..
  *
@@ -925,6 +986,8 @@ private:
 
   int messageBox (char *message);
 
+  MessageWindow *messageWindow;
+
   void refreshCommandWindow ()
   {
     mvwprintw (commandWindow, 0, 0, "%-*s", COLS, cmd_buf);
@@ -947,6 +1010,9 @@ public:
 
   virtual int init ();
   virtual int idle ();
+
+  virtual void postEvent (Rts2Event * event);
+
   virtual int deleteConnection (Rts2Conn * conn);
 
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
@@ -954,6 +1020,11 @@ public:
 
   virtual int willConnect (Rts2Address * in_addr);
   virtual int addAddress (Rts2Address * in_addr);
+
+  virtual void message (Rts2Message & msg)
+  {
+    messageWindow->message (msg);
+  }
 
   int resize ();
 
@@ -1032,6 +1103,7 @@ Rts2NMonitor::~Rts2NMonitor (void)
       delwin (statusWindow);
       delwin (commandWindow);
     }
+  delete messageWindow;
 }
 
 int
@@ -1108,7 +1180,11 @@ Rts2NMonitor::init ()
       init_pair (CLR_STATUS, COLOR_RED, COLOR_CYAN);
     }
   getCentraldConn ()->queCommand (new Rts2Command (this, "info"));
+  setMessageMask (MESSAGE_MASK_ALL);
   paintWindows ();
+
+  messageWindow = new MessageWindow ();
+
   return repaint ();
 }
 
@@ -1118,6 +1194,13 @@ Rts2NMonitor::idle ()
   repaint ();
   setTimeout (USEC_SEC);
   return Rts2Client::idle ();
+}
+
+void
+Rts2NMonitor::postEvent (Rts2Event * event)
+{
+  messageWindow->postEvent (new Rts2Event (event));
+  Rts2Client::postEvent (event);
 }
 
 int
@@ -1217,6 +1300,9 @@ Rts2NMonitor::processKey (int key)
     case KEY_F (5):
       queAll ("info");
       break;
+    case KEY_F (8):
+      postEvent (new Rts2Event (EVENT_PRINT_MESSAGES));
+      break;
     case KEY_F (9):
       postEvent (new Rts2Event (EVENT_PRINT_SHORT));
       break;
@@ -1266,7 +1352,7 @@ Rts2NMonitor::addAddress (Rts2Address * in_addr)
 }
 
 int
-Rts2NMonitor::messageBox (char *message)
+Rts2NMonitor::messageBox (char *msg)
 {
   int key = 0;
   WINDOW *wnd = newwin (5, COLS / 2, LINES / 2, COLS / 2 - COLS / 4);
@@ -1274,7 +1360,7 @@ Rts2NMonitor::messageBox (char *message)
   wcolor_set (wnd, CLR_WARNING, NULL);
   box (wnd, 0, 0);
   wcolor_set (wnd, CLR_TEXT, NULL);
-  mvwprintw (wnd, 2, 2 + (COLS / 2 - strlen (message)) / 2, message);
+  mvwprintw (wnd, 2, 2 + (COLS / 2 - strlen (msg)) / 2, msg);
   wrefresh (wnd);
   key = wgetch (wnd);
   del_panel (msg_pan);
