@@ -26,6 +26,11 @@ public:
     virtual ~ Rts2Message (void);
 
     std::string toConn ();
+
+  bool passMask (int in_mask)
+  {
+    return (((int) messageType) & in_mask);
+  }
 };
 
 #endif /* ! __RTS2_MESSAGE__ */

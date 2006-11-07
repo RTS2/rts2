@@ -63,6 +63,8 @@ private:
   int connectionTimeout;
   conn_state_t conn_state;
 
+  int message ();
+
 protected:
     Rts2ServerState * serverState[MAX_STATE];
 
@@ -130,7 +132,7 @@ public:
   }
   virtual int send (const char *msg);
   int send (std::string msg);
-  int sendMessage (Rts2Message & msg);
+  virtual int sendMessage (Rts2Message & msg);
   int sendValue (char *val_name, int value);
   int sendValue (char *val_name, int val1, int val2);
   int sendValue (char *val_name, int val1, double val2);
@@ -283,7 +285,6 @@ protected:
   virtual int priorityChange ();
   virtual int informations ();
   virtual int status ();
-  int message ();
   int sendNextCommand ();
 
   int commandReturn ();

@@ -339,4 +339,10 @@ public:
   Rts2CommandScriptEnds (Rts2Block * in_master);
 };
 
+class Rts2CommandMessageMask:public Rts2Command
+{
+public:
+  Rts2CommandMessageMask (Rts2Block * in_master, int in_mask);
+};
+
 #endif /* !__RTS2_COMMAND__ */

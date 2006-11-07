@@ -73,6 +73,7 @@ protected:
   virtual int addAddress (Rts2Address * in_addr);
   virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
+  void setMessageMask (int new_mask);
 public:
     Rts2Conn * connections[MAX_CONN];
 
@@ -99,6 +100,7 @@ public:
   virtual int sendStatusMessage (char *state_name, int state);
   int sendAll (char *msg);
   int sendPriorityChange (int p_client, int timeout);
+  void sendMessageAll (Rts2Message & msg);
   virtual int idle ();
   void setTimeout (long int new_timeout)
   {
@@ -181,7 +183,7 @@ public:
     return NULL;
   }
 
-  virtual int message (Rts2Message & msg);
+  virtual void message (Rts2Message & msg);
 
   int queAll (Rts2Command * cmd);
   int queAll (char *text);

@@ -608,3 +608,13 @@ Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block * in_master):Rts2Command
 {
   setCommand ("script_ends");
 }
+
+Rts2CommandMessageMask::Rts2CommandMessageMask (Rts2Block * in_master,
+						int in_mask):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "message_mask %i", in_mask);
+  setCommand (command);
+  free (command);
+}

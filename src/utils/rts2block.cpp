@@ -201,6 +201,20 @@ Rts2Block::sendPriorityChange (int p_client, int timeout)
   return ret;
 }
 
+void
+Rts2Block::sendMessageAll (Rts2Message & msg)
+{
+  int i;
+  for (i = 0; i < MAX_CONN; i++)
+    {
+      Rts2Conn *conn = connections[i];
+      if (conn)
+	{
+	  conn->sendMessage (msg);
+	}
+    }
+}
+
 int
 Rts2Block::sendStatusMessage (char *state_name, int state)
 {
@@ -273,6 +287,15 @@ Rts2Block::selectSuccess (fd_set * read_set)
 	    }
 	}
     }
+}
+
+void
+Rts2Block::setMessageMask (int new_mask)
+{
+  Rts2Conn *conn = getCentraldConn ();
+  if (!conn)
+    return;
+  conn->queCommand (new Rts2CommandMessageMask (this, new_mask));
 }
 
 int
@@ -563,11 +586,10 @@ Rts2Block::getConnection (char *deviceName)
   return conn;
 }
 
-int
+void
 Rts2Block::message (Rts2Message & msg)
 {
   std::cout << msg.toConn () << std::endl;
-  return -1;
 }
 
 int

@@ -573,7 +573,9 @@ Rts2Conn::message ()
     (messageTime, std::string (messageOName), messageType,
      std::string (paramNextWholeString ()));
 
-  return master->message (rts2Message);
+  master->message (rts2Message);
+  // message is always processed and do not need OK return
+  return -1;
 }
 
 int
