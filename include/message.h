@@ -9,6 +9,6 @@ typedef enum
   MESSAGE_DEBUG = 0x08
 } messageType_t;
 
-#define MESSAGE_MASK_ALL	0xFFFF;
+#define MESSAGE_MASK_ALL	0xFFFF
 
 #endif /* ! __RTS2_MESSAGE_T__ */
