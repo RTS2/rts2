@@ -765,6 +765,8 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       move_connection = conn;
     }
   infoAll ();
+  logStream (MESSAGE_INFO) << "start telescope move " << telRa << " " <<
+    telDec << " target " << tar_ra << " " << tar_dec << sendLog;
   return ret;
 }
 
