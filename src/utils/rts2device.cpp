@@ -313,15 +313,15 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
   Rts2Conn::setConnState (new_conn_state);
 }
 
+Rts2LogStream
+Rts2DevConn::logStream (messageType_t in_messageType)
+{
+  Rts2LogStream ls (master, in_messageType);
+  return ls;
+}
 
 
-Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master,
-				      char *in_device_host,
-				      int in_device_port,
-				      char *in_device_name,
-				      int in_device_type,
-				      char *in_master_host,
-				      int in_master_port):
+Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, char *in_master_host, int in_master_port):
 Rts2Conn (-1, in_master)
 {
   device_host = in_device_host;
@@ -924,10 +924,10 @@ Rts2Device::sendMessage (messageType_t in_messageType,
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream
-Rts2Device::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2Device::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (this, in_messageType);
+  Rts2LogStream
+  ls (this, in_messageType);
   return ls;
 }
 

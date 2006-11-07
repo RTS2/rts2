@@ -59,6 +59,8 @@ public:
 
   virtual void setKey (int in_key);
   virtual void setConnState (conn_state_t new_conn_state);
+
+  inline Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 class Rts2DevConnMaster:public Rts2Conn
