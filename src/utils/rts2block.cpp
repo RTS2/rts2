@@ -589,7 +589,6 @@ Rts2Block::getConnection (char *deviceName)
 void
 Rts2Block::message (Rts2Message & msg)
 {
-  std::cout << msg.toConn () << std::endl;
 }
 
 int
