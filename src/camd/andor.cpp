@@ -71,7 +71,7 @@ CameraAndorChip::startExposure (int light, float exptime)
 	      chipReadout->y + chipReadout->width);
   if (ret != DRV_SUCCESS)
     {
-      logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << send;
+      logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
       return -1;
     }
 
@@ -327,21 +327,21 @@ Rts2DevCameraAndor::printChannelInfo (int channel)
   ret = GetBitDepth (channel, &depth);
   if (ret != DRV_SUCCESS)
     {
-      logStream (MESSAGE_ERROR) <<
+      std::cerr <<
 	"andor printChannelInfo cannto get depth for channel " << channel <<
-	sendLog;
+	std::endl;
       return -1;
     }
-  logStream (MESSAGE_DEBUG) << "andor printChannelInfo depth for channel " <<
-    channel << " value: " << depth << sendLog;
+  std::cerr << "andor printChannelInfo depth for channel " <<
+    channel << " value: " << depth << std::endl;
   for (int j = 0; j < 2; j++)
     {
       ret = GetNumberHSSpeeds (channel, j, &speeds);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) <<
+	  std::cerr <<
 	    "andor printChannelInfo cannot get horizontal speeds for channel "
-	    << channel << " type " << j << sendLog;
+	    << channel << " type " << j << std::endl;
 	  return -1;
 	}
       for (i = 0; i < speeds; i++)
@@ -349,15 +349,15 @@ Rts2DevCameraAndor::printChannelInfo (int channel)
 	  ret = GetHSSpeed (channel, j, i, &value);
 	  if (ret != DRV_SUCCESS)
 	    {
-	      logStream (MESSAGE_ERROR) <<
+	      std::cerr <<
 		"andor printChannelInfo cannot get horizontal speed " << i <<
-		" channel " << channel << " type " << j << sendLog;
+		" channel " << channel << " type " << j << std::endl;
 	      return -1;
 	    }
-	  logStream (MESSAGE_DEBUG) <<
+	  std::cerr <<
 	    "andor printChannelInfo horizontal speed " << i << " channel " <<
-	    channel << " type " << type << " value " << value << " Hz" <<
-	    sendLog;
+	    channel << " type " << j << " value " << value << " Hz" <<
+	    std::endl;
 	}
     }
   return 0;
@@ -395,8 +395,8 @@ Rts2DevCameraAndor::init ()
       ret = SetFrameTransferMode (1);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot set frame transfer mode " << ret << sendLog;
+	  std::cerr <<
+	    "andor init cannot set frame transfer mode " << ret << std::endl;
 	  return -1;
 	}
     }
@@ -416,8 +416,8 @@ Rts2DevCameraAndor::init ()
       ret = SetADChannel (adChannel);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) << "andor init cannot set AD channel to "
-	    << adChannel << sendLog;
+	  std::cerr << "andor init cannot set AD channel to "
+	    << adChannel << std::endl;
 	  return -1;
 	}
     }
@@ -428,8 +428,8 @@ Rts2DevCameraAndor::init ()
       ret = SetVSAmplitude (vsamp);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) << "andor init set vs amplitude to " <<
-	    vsapm << " failed" << sendLog;
+	  std::cerr << "andor init set vs amplitude to " <<
+	    vsamp << " failed" << std::endl;
 	  return -1;
 	}
     }
@@ -439,9 +439,9 @@ Rts2DevCameraAndor::init ()
       ret = SetHSSpeed (0, horizontalSpeed);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) <<
+	  std::cerr <<
 	    "andor init cannot set horizontal speed to channel " << adChannel
-	    << ", type 0, value " << horizontalSpeed << sendLog;
+	    << ", type 0, value " << horizontalSpeed << std::endl;
 	  return -1;
 	}
     }
@@ -451,9 +451,9 @@ Rts2DevCameraAndor::init ()
       ret = SetVSSpeed (verticalSpeed);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) <<
+	  std::cerr <<
 	    "andor init cannot set vertical speed to " << verticalSpeed <<
-	    sendLog;
+	    std::endl;
 	  return -1;
 	}
     }
@@ -473,12 +473,11 @@ Rts2DevCameraAndor::init ()
       ret = GetNumberADChannels (&channels);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot get number of AD channels" << sendLog;
+	  std::cerr <<
+	    "andor init cannot get number of AD channels" << std::endl;
 	  return -1;
 	}
-      logStream (MESSAGE_DEBUG) << "andor init channels " << channels <<
-	sendLog;
+      std::cerr << "andor init channels " << channels << std::endl;
       // print horizontal channels..
       for (i = 0; i < channels; i++)
 	{
@@ -493,8 +492,7 @@ Rts2DevCameraAndor::init ()
       ret = GetNumberVSSpeeds (&speeds);
       if (ret != DRV_SUCCESS)
 	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot get horizontal speeds" << sendLog;
+	  std::cerr << "andor init cannot get horizontal speeds" << std::endl;
 	  return -1;
 	}
       for (i = 0; i < speeds; i++)
@@ -502,12 +500,12 @@ Rts2DevCameraAndor::init ()
 	  ret = GetVSSpeed (i, &value);
 	  if (ret != DRV_SUCCESS)
 	    {
-	      logStream (MESSAGE_ERROR) <<
-		"andor init cannot get vertical speed " << i << sendLog;
+	      std::cerr <<
+		"andor init cannot get vertical speed " << i << std::endl;
 	      return -1;
 	    }
-	  logStream (MESSAGE_DEBUG) << "andor::init vertical speed " << i <<
-	    " value " << value " Hz" << sendLog;
+	  std::cerr << "andor::init vertical speed " << i <<
+	    " value " << value << " Hz" << std::endl;
 	}
     }
   return Rts2DevCamera::initChips ();
