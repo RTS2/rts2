@@ -4,6 +4,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/rts2command.h"
 #include "../utilsdb/rts2devicedb.h"
+#include "../utilsdb/rts2messagedb.h"
 #include "rts2soapcli.h"
 
 #include <signal.h>
@@ -83,6 +84,8 @@ public:
   }
 
   virtual int sendInfo (Rts2Conn * conn);
+
+  virtual void message (Rts2Message & msg);
 };
 
 Rts2Soapd::Rts2Soapd (int in_argc, char **in_argv):
@@ -134,6 +137,8 @@ Rts2Soapd::init ()
       return -1;
     }
 
+  setMessageMask (MESSAGE_MASK_ALL);
+
   Rts2SoapConn *s_conn = new Rts2SoapConn (soapPort, this);
   ret - s_conn->init ();
   if (ret)
@@ -174,6 +179,13 @@ Rts2Soapd::sendInfo (Rts2Conn * conn)
 {
   conn->sendValue ("serverd", servedRequest);
   return 0;
+}
+
+void
+Rts2Soapd::message (Rts2Message & msg)
+{
+  Rts2MessageDB msgDB (msg);
+  msgDB.insertDB ();
 }
 
 Rts2Soapd *soapd;
