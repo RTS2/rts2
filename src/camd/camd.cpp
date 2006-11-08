@@ -249,6 +249,13 @@ CameraChip::doFocusing ()
   return 0;
 }
 
+Rts2LogStream
+CameraChip::logStream (messageType_t in_messageType)
+{
+  Rts2LogStream ls (camera, in_messageType);
+  return ls;
+}
+
 int
 CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
@@ -1174,16 +1181,14 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

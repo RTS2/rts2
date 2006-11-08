@@ -119,6 +119,9 @@ protected:
    * Return 0 if focusing should continue, !0 otherwise.
    */
   virtual int doFocusing ();
+
+  inline Rts2LogStream logStream (messageType_t in_messageType);
+
 public:
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
