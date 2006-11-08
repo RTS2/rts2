@@ -1,5 +1,6 @@
 #include "rts2block.h"
 #include "rts2message.h"
+#include "timestamp.h"
 
 #include <sys/time.h>
 #include <time.h>
@@ -62,6 +63,15 @@ std::string Rts2Message::toConn ()
   os << PROTO_MESSAGE
     << " " << messageTime.tv_sec
     << " " << messageTime.tv_usec
+    << " " << messageOName << " " << messageType << " " << messageString;
+  return os.str ();
+}
+
+std::string Rts2Message::toString ()
+{
+  std::ostringstream os;
+  os <<
+    Timestamp (&messageTime)
     << " " << messageOName << " " << messageType << " " << messageString;
   return os.str ();
 }
