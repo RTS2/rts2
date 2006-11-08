@@ -58,4 +58,10 @@ public:
   {
     return windspeed;
   }
+
+  Rts2LogStream logStream (messageType_t in_messageType)
+  {
+    Rts2LogStream ls (master, in_messageType);
+    return ls;
+  }
 };
