@@ -87,7 +87,7 @@ Rts2DevFocuserRobofocus::~Rts2DevFocuserRobofocus ()
 int
 Rts2DevFocuserRobofocus::foc_write (char *buf, int count)
 {
-  syslog (LOG_DEBUG, "Robofocus:will write:'%s'", buf);
+  logStream (MESSAGE_DEBUG) << "Robofocus will write: " << buf << sendLog;
   return write (foc_desc, buf, count);
 }
 
@@ -121,7 +121,8 @@ Rts2DevFocuserRobofocus::foc_read (char *buf, int count)
       readed += ret;
     }
 #ifdef DEBUG_ALL_PORT_COMM
-  syslog (LOG_DEBUG, "Robofocus: readed '%s'", buf[readed]);
+  logStream (MESSAGE_DEBUG) << "Robofocus  readed: " << buf[readed] <<
+    sendLog;
 #endif
   return readed;
 }
@@ -157,12 +158,14 @@ Rts2DevFocuserRobofocus::foc_write_read_no_reset (char *wbuf, int wcount,
       buf = (char *) malloc (tmp_rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
-      syslog (LOG_DEBUG, "Robofocus:readed %i %s", tmp_rcount, buf);
+      logStream (MESSAGE_DEBUG) << "Robofocus readed " << tmp_rcount << " " <<
+	buf << sendLog;
       free (buf);
     }
   else
     {
-      syslog (LOG_DEBUG, "Robofocus:readed returns %i", tmp_rcount);
+      logStream (MESSAGE_DEBUG) << "Robofocus readed returns " << tmp_rcount
+	<< sendLog;
     }
   return tmp_rcount;
 }

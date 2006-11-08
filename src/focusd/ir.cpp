@@ -62,7 +62,8 @@ Rts2DevFocuserIr::tpl_get (const char *name, T & val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  syslog (LOG_ERR, "Rts2DevFocuserIr::tpl_get error %i\n", cstatus);
+	  logStream (MESSAGE_ERROR) << "focuser IR tpl_get error " << cstatus
+	    << sendLog;
 	  *status = 1;
 	}
 
@@ -104,7 +105,8 @@ Rts2DevFocuserIr::tpl_setw (const char *name, T val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  syslog (LOG_ERR, "Rts2DevFocuserIr::tpl_setw error %i\n", cstatus);
+	  logStream (MESSAGE_ERROR) << "focuser IR tpl_setw error " << cstatus
+	    << sendLog;
 	  *status = 1;
 	}
       r.Dispose ();
@@ -170,14 +172,17 @@ Rts2DevFocuserIr::init ()
 
   tplc = new Client (ir_ip, ir_port, 2000);
 
-  syslog (LOG_DEBUG,
-	  "Status: ConnID = %i, connected: %s, authenticated %s, Welcome Message = %s",
-	  tplc->ConnID (), (tplc->IsConnected ()? "yes" : "no"),
-	  (tplc->IsAuth ()? "yes" : "no"), tplc->WelcomeMessage ().c_str ());
+  logStream (MESSAGE_DEBUG) << "focuser IR status: ConnID = " << tplc->
+    ConnID () << " , connected: " << (tplc->
+				      IsConnected ()? "yes" : "no") <<
+    " , authenticated " << (tplc->
+			    IsAuth ()? "yes" : "no") << ", Welcome Message = "
+    << tplc->WelcomeMessage ().c_str () << sendLog;
 
   if (!tplc->IsAuth () || !tplc->IsConnected ())
     {
-      syslog (LOG_ERR, "Connection to server failed");
+      logStream (MESSAGE_ERROR) << "focuser IR - connection to server failed"
+	<< sendLog;
       return -1;
     }
 
@@ -229,21 +234,23 @@ Rts2DevFocuserIr::stepOut (int num)
   status = tpl_get ("FOCUS.REFERENCED", referenced, &status);
   if (referenced != 1)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut referenced is : %i",
-	      referenced);
+      logStream (MESSAGE_ERROR) << "focuser IR stepOut referenced is: " <<
+	referenced << sendLog;
       return -1;
     }
   status = tpl_setw ("FOCUS.POWER", power, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set POWER to 1");
+      logStream (MESSAGE_ERROR) << "focuser IR stepOut cannot set POWER to 1"
+	<< sendLog;
     }
   status = tpl_get ("FOCUS.OFFSET", offset, &status);
   offset += (double) num / 1000.0;
   status = tpl_setw ("FOCUS.OFFSET", offset, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set offset!");
+      logStream (MESSAGE_ERROR) << "focuser IR stepOut cannot set offset!" <<
+	sendLog;
       return -1;
     }
   return 0;
@@ -261,20 +268,22 @@ Rts2DevFocuserIr::setTo (int num)
   status = tpl_get ("FOCUS.REFERENCED", referenced, &status);
   if (referenced != 1)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut referenced is : %i",
-	      referenced);
+      logStream (MESSAGE_ERROR) << "focuser IR stepOut referenced is: " <<
+	referenced << sendLog;
       return -1;
     }
   status = tpl_setw ("FOCUS.POWER", power, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set POWER to 1");
+      logStream (MESSAGE_ERROR) << "focuser IR stepOut cannot set POWER to 1"
+	<< sendLog;
     }
   offset = (double) num / 1000.0;
   status = tpl_setw ("FOCUS.OFFSET", offset, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::stepOut cannot set offset!");
+      logStream (MESSAGE_ERROR) << "focuser IR stepOut cannot set offset!" <<
+	sendLog;
       return -1;
     }
   setFocusTimeout (100);
@@ -289,28 +298,28 @@ Rts2DevFocuserIr::isFocusing ()
   status = tpl_get ("FOCUS.TARGETDISTANCE", targetdistance, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::isFocusing status: %i", status);
+      logStream (MESSAGE_ERROR) << "focuser IR isFocusing status: " << status
+	<< sendLog);
       return -1;
     }
   return (fabs (targetdistance) < 0.001) ? -2 : USEC_SEC / 50;
 }
 
-int
-Rts2DevFocuserIr::endFocusing ()
+int Rts2DevFocuserIr::endFocusing ()
 {
   int status = 0;
   int power = 0;
   status = tpl_setw ("FOCUS.POWER", power, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserIr::endFocusing cannot set POWER to 0");
+      logStream (MESSAGE_ERROR) <<
+	"focuser IR endFocusing cannot set POWER to 0" << sendLog;
       return -1;
     }
   return 0;
 }
 
-bool
-Rts2DevFocuserIr::isAtStartPosition ()
+bool Rts2DevFocuserIr::isAtStartPosition ()
 {
   int ret;
   ret = info ();
@@ -319,13 +328,12 @@ Rts2DevFocuserIr::isAtStartPosition ()
   return (fabs ((float) focPos) < 50);
 }
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
   Rts2DevFocuserIr *device = new Rts2DevFocuserIr (argc, argv);
 
   int ret;
-  ret = device->init ();
+    ret = device->init ();
   if (ret)
     {
       fprintf (stderr, "Cannot initialize focuser - exiting!\n");

@@ -77,8 +77,8 @@ Rts2DevFocuserOptec::foc_read (char *buf, int count, int timeouts)
 	{
 	  if (timeouts <= 0)
 	    {
-	      syslog (LOG_ERR, "Rts2DevFocuserOptec::foc_read %m (%i)",
-		      errno);
+	      logStream (MESSAGE_ERROR) << "focuser Optec foc_read " <<
+		strerror (errno) << " (" << errno << ")" << sendLog;
 	      return -1;
 	    }
 	  timeouts--;
@@ -105,7 +105,7 @@ Rts2DevFocuserOptec::foc_write (char *buf, int count)
 {
   int ret;
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Optec:will write:'%s'", buf);
+  logStream (MESSAGE_DEBUG) "focuser Optec will write: " << buf << sendLog;
 #endif
   ret = write (foc_desc, buf, count);
 //  tcflush (foc_desc, TCIFLUSH);
@@ -143,13 +143,15 @@ Rts2DevFocuserOptec::foc_write_read (char *wbuf, int wcount, char *rbuf,
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = '\0';
-      syslog (LOG_DEBUG, "Optec:readed %i %s", tmp_rcount, buf);
+      logStream (MESSAGE_DEBUG) << "focuser Optec readed " << tmp_rcount <<
+	" " << buf << sendLog;
       free (buf);
 #endif
     }
   else
     {
-      syslog (LOG_DEBUG, "Optec:readed returns %i", tmp_rcount);
+      logStream (MESSAGE_DEBUG) << "focuser Optec readed returns " <<
+	tmp_rcount << sendLog;
     }
   return tmp_rcount;
 }
@@ -253,7 +255,7 @@ Rts2DevFocuserOptec::getPos (int *position)
     {
       rbuf[6] = '\0';
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG, "0: %i", rbuf[0]);
+      logStream (MESSAGE_DEBUG) << "0: " << rbuf[0] << sendLog;
 #endif
       *position = atoi ((rbuf + 2));
     }
@@ -278,10 +280,10 @@ Rts2DevFocuserOptec::getTemp (float *temp)
   return 0;
 }
 
-bool Rts2DevFocuserOptec::isAtStartPosition ()
+bool
+Rts2DevFocuserOptec::isAtStartPosition ()
 {
-  int
-    ret;
+  int ret;
   ret = getPos (&focPos);
   if (ret)
     return false;
