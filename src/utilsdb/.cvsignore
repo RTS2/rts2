@@ -19,4 +19,5 @@ rts2plan.cpp
 rts2planset.cpp
 rts2prop.cpp
 target_auger.cpp
+rts2messagedb.cpp
 rts2-*
