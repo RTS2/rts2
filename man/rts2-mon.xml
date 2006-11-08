@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2006-10-21</date>">
+  <!ENTITY dhdate      "<date>2006-11-08</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubánek">
@@ -45,11 +45,77 @@
     <title>DESCRIPTION</title>
 
     <para>
-      Rts2-mon is ncurses based program, which display status of RTS2 components.
+      Rts2-mon is ncurses based program, which display status of RTS2 components. It also display
+      various system logs.
     </para>
 
   </refsect1>
   <refsect1>
+    <title>KEYS</title>
+    
+    <para>
+      These keys control rts2-mon behaviour:
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+          <option>F2</option>
+        </term>
+        <listitem>
+          <para>Switch RTS2 to off state.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>F3</option>
+        </term>
+        <listitem>
+          <para>Switch RTS2 to standby state.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>F4</option>
+        </term>
+        <listitem>
+          <para>Switch RTS2 to on state.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>F5</option>
+        </term>
+        <listitem>
+          <para>Refresh display.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>F8</option>
+        </term>
+        <listitem>
+          <para>Toggle between message and status display.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>F9</option>
+        </term>
+        <listitem>
+          <para>Toggle between short and long status display.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>F10</option>
+        </term>
+        <listitem>
+          <para>Exit from rts2-mon.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    
     <title>OPTIONS</title>
 
     <para>
