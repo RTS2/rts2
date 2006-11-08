@@ -400,4 +400,11 @@ public:
     Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device);
 };
 
+Rts2LogStream
+CameraChip::logStream (messageType_t in_messageType)
+{
+  Rts2LogStream ls (camera, in_messageType);
+  return ls;
+}
+
 #endif /* !__RTS2_CAMERA_CPP__ */
