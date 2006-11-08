@@ -44,7 +44,8 @@ Rts2DevFilterdIfw::writePort (char *buf, size_t len)
   ret = write (dev_port, buf, len);
   if (ret != len)
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::writePort '%s' %m", buf);
+      logStream (MESSAGE_ERROR) << "filter ifw writePort " << buf << " " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   return 0;
@@ -57,7 +58,8 @@ Rts2DevFilterdIfw::readPort (size_t len)
   ret = read (dev_port, filter_buff, len);
   if (ret <= 0)
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::readPort %m");
+      logStream (MESSAGE_ERROR) << "filter ifw readPort " << strerror (errno)
+	<< sendLog;
       filter_buff[0] = '\0';
       return -1;
     }
@@ -75,8 +77,8 @@ Rts2DevFilterdIfw::homeFilter ()
   readPort (4);
   if (strstr (filter_buff, "ER"))
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::init error while homing: %s",
-	      filter_buff);
+      logStream (MESSAGE_ERROR) << "filter ifw init error while homing " <<
+	filter_buff << sendLog;
       return -1;
     }
   return 0;
@@ -95,16 +97,16 @@ Rts2DevFilterdIfw::shutdown (void)
   /* Check for correct response from filter wheel */
   if (strcmp (filter_buff, "END"))
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::shutdown FILTER WHEEL ERROR: %s",
-	      filter_buff);
+      logStream (MESSAGE_ERROR) << "filter ifw shutdown FILTER WHEEL ERROR: "
+	<< filter_buff << sendLog;
       tcflush (dev_port, TCIFLUSH);
     }
   else
     {
       tcflush (dev_port, TCIFLUSH);
-      syslog (LOG_DEBUG,
-	      "Rts2DevFilterdIfw::shutdown Filter wheel shutdown: %s",
-	      filter_buff);
+      logStream (MESSAGE_DEBUG) <<
+	"filter ifw shutdown Filter wheel shutdown: " << filter_buff <<
+	sendLog;
     }
   close (dev_port);
   dev_port = -1;
@@ -158,20 +160,22 @@ Rts2DevFilterdIfw::init (void)
 
   if (dev_port == -1)
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::init cannot open '%s': %m",
-	      dev_file);
+      logStream (MESSAGE_ERROR) << "filter ifw init cannot open: " << dev_file
+	<< strerror (errno) << sendLog;
       return -1;
     }
   ret = fcntl (dev_port, F_SETFL, 0);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::init cannot fcntl: %m");
+      logStream (MESSAGE_ERROR) << "filter ifw init cannot fcntl " <<
+	strerror (errno) << sendLog;
     }
   /* get current serial port configuration */
   if (tcgetattr (dev_port, &term_options) < 0)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevFilterdIfw::init error reading serial port configuration: %m");
+      logStream (MESSAGE_ERROR) <<
+	"filter ifw init error reading serial port configuration: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -181,7 +185,8 @@ Rts2DevFilterdIfw::init (void)
   if (cfsetospeed (&term_options, B19200) < 0
       || cfsetispeed (&term_options, B19200) < 0)
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::init error setting baud rate: %m");
+      logStream (MESSAGE_ERROR) << "filter ifw init error setting baud rate: "
+	<< strerror (errno) << sendLog;
       return -1;
     }
 
@@ -210,7 +215,8 @@ Rts2DevFilterdIfw::init (void)
    */
   if (tcsetattr (dev_port, TCSANOW, &term_options))
     {
-      syslog (LOG_ERR, "Rts2DevFilterdIfw::init tcsetattr %m");
+      logStream (MESSAGE_ERROR) << "filter ifw init tcsetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -224,13 +230,13 @@ Rts2DevFilterdIfw::init (void)
   /* Check for correct response from filter wheel */
   if (filter_buff[0] != '!')
     {
-      syslog (LOG_DEBUG, "Rts2DevFilterdIfw::init FILTER WHEEL ERROR: %s",
-	      filter_buff);
+      logStream (MESSAGE_DEBUG) << "filter ifw init FILTER WHEEL ERROR: " <<
+	filter_buff << sendLog;
       tcflush (dev_port, TCIFLUSH);
       return -1;
     }
-  syslog (LOG_DEBUG, "Rts2DevFilterdIfw::init Filter wheel initialised: %s",
-	  filter_buff);
+  logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised: " <<
+    filter_buff << sendLog;
   return 0;
 }
 
@@ -266,9 +272,9 @@ Rts2DevFilterdIfw::getFilterNum (void)
 
   if (strstr (filter_buff, "ER"))
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevFilterdIfw::getFilterNum FILTER WHEEL ERROR: %s",
-	      filter_buff);
+      logStream (MESSAGE_DEBUG) <<
+	"filter ifw getFilterNum FILTER WHEEL ERROR: " << filter_buff <<
+	sendLog;
       filter_number = -1;
     }
   else
@@ -286,9 +292,9 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 
   if (new_filter > 4 || new_filter < 0)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevFilterdIfw::setFilterNum bad filter number: %i",
-	      new_filter);
+      logStream (MESSAGE_ERROR) <<
+	"filter ifw setFilterNum bad filter number: " << new_filter <<
+	sendLog;
       return -1;
     }
 
@@ -302,9 +308,9 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 
   if (filter_buff[0] != '*')
     {
-      syslog (LOG_ERR,
-	      "Rts2DevFilterdIfw::setFilterNum FILTER WHEEL ERROR: %s",
-	      filter_buff);
+      logStream (MESSAGE_ERROR) <<
+	"filter ifw setFilterNum FILTER WHEEL ERROR: " << filter_buff <<
+	sendLog;
       // make sure we will home filter, but home only once if there is still error
       if (homeCount == 0)
 	{
@@ -315,8 +321,8 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
     }
   else
     {
-      syslog (LOG_DEBUG, "Rts2DevFilterdIfw::setFilterNum Set filter: %s\n",
-	      filter_buff);
+      logStream (MESSAGE_DEBUG) << "filter ifw setFilterNum Set filter: " <<
+	filter_buff << sendLog;
       homeCount = 0;
       ret = 0;
     }
