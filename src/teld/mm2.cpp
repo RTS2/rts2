@@ -226,8 +226,8 @@ Rts2DevTelescopeMM2::tel_read_hash (char *buf, int count)
     }
   if (buf[readed] == '#')
     buf[readed] = 0;
-  syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::tel_read_hash: Hash-readed:'%s'",
-	  buf);
+  logStream (MESSAGE_DEBUG) << "MM2 tel_read_hash: Hash-readed " << buf <<
+    sendLog;
   return readed;
 }
 
@@ -245,7 +245,8 @@ Rts2DevTelescopeMM2::tel_read_hash (char *buf, int count)
 int
 Rts2DevTelescopeMM2::tel_write (char *buf, int count)
 {
-  syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::tel_write :will write:'%s'", buf);
+  logStream (MESSAGE_DEBUG) << "MM2 tel_write: will write: " << buf <<
+    sendLog;
   return write (tel_desc, buf, count);
 }
 
@@ -282,15 +283,14 @@ Rts2DevTelescopeMM2::tel_write_read (char *wbuf, int wcount, char *rbuf,
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
-      syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::tel_write_read: readed %i %s",
-	      tmp_rcount, buf);
+      logStream (MESSAGE_DEBUG) << "MM2 tel_write_read: readed " << tmp_rcount
+	<< " " << buf << sendLog;
       free (buf);
     }
   else
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeMM2::tel_write_read: readed returns %i",
-	      tmp_rcount);
+      logStream (MESSAGE_DEBUG) << "MM2 tel_write_read: readed returns " <<
+	tmp_rcount << sendLog;
     }
 
   return tmp_rcount;
@@ -453,13 +453,13 @@ Rts2DevTelescopeMM2::tel_rep_write (char *command)
       if (retstr == '1')
 	break;
       sleep (1);
-      syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::tel_rep_write - for %i time.",
-	      count);
+      logStream (MESSAGE_DEBUG) << "MM2 tel_rep_write - for " << count <<
+	" time." << sendLog;
     }
   if (count == 200)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeMM2::tel_rep_write unsucessful due to incorrect return.");
+      logStream (MESSAGE_ERROR) <<
+	"MM2 tel_rep_write unsucessful due to incorrect return." << sendLog;
       return -1;
     }
   return 0;
@@ -617,7 +617,8 @@ Rts2DevTelescopeMM2::init ()
 
   if (tcsetattr (tel_desc, TCSANOW, &tel_termios) < 0)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeMM2::init tcsetattr: %m");
+      logStream (MESSAGE_ERROR) << "MM2 init tcsetattr: " << strerror (errno)
+	<< sendLog;
       return -1;
     }
 
@@ -628,9 +629,8 @@ Rts2DevTelescopeMM2::init ()
   status &= ~TIOCM_DTR;
   ioctl (tel_desc, TIOCMSET, &status);
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeMM2::init initialization complete (on port '%s')",
-	  device_file);
+  logStream (MESSAGE_DEBUG) << "MM2 init initialization complete on port " <<
+    device_file << sendLog;
 
 // we get 12:34:4# while we're in short mode
 // and 12:34:45 while we're in long mode
@@ -738,9 +738,8 @@ Rts2DevTelescopeMM2::idle ()
 		}
 	    }
 	}
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeMM2::idle new pos: %f last_pos_ra: %f",
-	      telAxis[0], last_pos_ra);
+      logStream (MESSAGE_DEBUG) << "MM2 idle new pos " << telAxis[0] <<
+	" last_pos_ra " << last_pos_ra << sendLog;
       time (&last_pos_update);
     }
   return Rts2DevTelescope::idle ();
@@ -891,12 +890,10 @@ Rts2DevTelescopeMM2::tel_check_coords ()
 
   HA = get_hour_angle (object.ra);
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeMM2::tel_check_coords TELESCOPE ALT = %f, AZ = %f",
-	  hrz.alt, hrz.az);
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeMM2::tel_check_coords TELESCOPE HOUR ANGLE = %f",
-	  HA);
+  logStream (MESSAGE_DEBUG) << "MM2 tel_check_coords TELESCOPE ALT " << hrz.
+    alt << " AZ " << hrz.az << sendLog;
+  logStream (MESSAGE_DEBUG) << "MM2 tel_check_coords TELESCOPE HOUR ANGLE " <<
+    HA << sendLog;
 
   sep = getMoveTargetSep ();
 
@@ -940,7 +937,7 @@ Rts2DevTelescopeMM2::toggle_mode (int in_togle_count)
       ioctl (tel_desc, TIOCMSET, &status);
 
       sleep (2);
-      syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::toggle_mode toggle ends");
+      logStream (MESSAGE_DEBUG) << "MM2 toggle_mode toggle ends" << sendLog;
     }
 }
 
@@ -1011,7 +1008,7 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
   // calculate new pos..
   double new_pos = telAxis[0] + ra_diff;
 
-  syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::startMove new_pos: %f", new_pos);
+  logStream (MESSAGE_DEBUG) << "MM2 startMove new_pos " << new_pos << sendLog;
 
   if ((new_pos < -90) || (new_pos > NOT_SAFE_POS))
     {
@@ -1259,8 +1256,8 @@ Rts2DevTelescopeMM2::goodPark ()
       telAxis[0] = 180.0 - telAxis[0];
     }
   cw_pos = SAFE_CWD;
-  syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::isParking reset pos: %f",
-	  telAxis[0]);
+  logStream (MESSAGE_DEBUG) << "MM2 isParking reset pos " << telAxis[0] <<
+    sendLog;
 }
 
 int
