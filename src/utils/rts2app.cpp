@@ -125,7 +125,7 @@ Rts2App::processOption (int in_opt)
       help ();
       exit (EXIT_SUCCESS);
     case 'V':
-      std::cout << VERSION << std::cout;
+      std::cout << VERSION << std::endl;
       exit (EXIT_SUCCESS);
     case '?':
       break;
