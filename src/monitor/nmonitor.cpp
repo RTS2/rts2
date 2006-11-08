@@ -958,7 +958,7 @@ void
 MessageWindow::message (Rts2Message & msg)
 {
   WINDOW *wnd = panel_window (panel);
-  waddstr (wnd, msg.toConn ().c_str ());
+  waddstr (wnd, msg.toString ().c_str ());
   waddstr (wnd, "\n");
   update_panels ();
 }
