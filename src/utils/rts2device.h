@@ -110,7 +110,7 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
     dataConn = conn;
   }
   virtual int init ();
-  virtual int send (char *msg);
+  virtual int send (const char *msg);
   int send (char *data, size_t data_size);
 };
 

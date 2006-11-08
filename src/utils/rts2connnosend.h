@@ -13,7 +13,7 @@ public:
   Rts2ConnNoSend (int in_sock, Rts2Block * in_master);
     virtual ~ Rts2ConnNoSend (void);
 
-  virtual int send (const char *message);
+  virtual int send (const char *msg);
 };
 
 #endif /* !__RTS2_CONN_NOSEND__ */
