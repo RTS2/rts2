@@ -17,7 +17,7 @@ void
 Rts2MessageDB::insertDB ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double d_message_time = messageTime.tv_sec + (messageTime.tv_usec / USEC_SEC);
+  double d_message_time = messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;
   varchar d_message_oname[8];
   int d_message_type = messageType;
   varchar d_message_string[200];
@@ -52,5 +52,8 @@ Rts2MessageDB::insertDB ()
   if (sqlca.sqlcode)
   {
     std::cerr << "Error writing to DB: " << sqlca.sqlerrm.sqlerrmc << " " << sqlca.sqlcode << std::endl;
+    EXEC SQL ROLLBACK;
+    return;
   }
+  EXEC SQL COMMIT;
 }
