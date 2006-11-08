@@ -37,7 +37,7 @@ public:
   }
   Timestamp (struct timeval *tv)
   {
-    ts = tv->tv_sec + tv->tv_usec / USEC_SEC;
+    ts = tv->tv_sec + (double) tv->tv_usec / USEC_SEC;
   }
   void setTs (double _ts)
   {
