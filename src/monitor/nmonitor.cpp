@@ -40,7 +40,7 @@
 class Rts2CNMonConn:public Rts2ConnClient
 {
 private:
-  WINDOW * window;
+  PANEL * panel;
 protected:
   virtual void print ();
 
@@ -48,16 +48,20 @@ public:
     Rts2CNMonConn (Rts2Block * in_master,
 		   char *in_name):Rts2ConnClient (in_master, in_name)
   {
-    window = NULL;
+    panel = NULL;
   }
   virtual ~ Rts2CNMonConn (void)
   {
-    if (window)
+    if (hasPanel ())
       {
-	wclear (window);
-	wrefresh (window);
-	delwin (window);
+	del_panel (panel);
+	update_panels ();
       }
+  }
+
+  WINDOW *getWindow ()
+  {
+    return panel_window (panel);
   }
 
   virtual void postEvent (Rts2Event * event)
@@ -65,28 +69,28 @@ public:
     switch (event->getType ())
       {
       case EVENT_PRINT:
-	event->setArg ((void *) window);
+	event->setArg ((void *) panel);
 	break;
       }
     Rts2ConnClient::postEvent (event);
   }
 
-  int hasWindow ()
+  bool hasPanel ()
   {
-    return window != NULL;
+    return panel != NULL;
   }
 
-  void setWindow (WINDOW * in_window)
+  void setPanel (PANEL * in_panel)
   {
-    if (hasWindow ())
-      delwin (window);
-    window = in_window;
+    if (hasPanel ())
+      del_panel (panel);
+    panel = in_panel;
   }
 
   virtual int commandReturn (Rts2Command * cmd, int in_status)
   {
     print ();
-    wrefresh (window);
+    update_panels ();
     return 0;
   }
 
@@ -96,7 +100,7 @@ public:
     int ret;
     ret = Rts2ConnClient::command ();
     print ();
-    wrefresh (window);
+    update_panels ();
     return ret;
   }
 
@@ -105,7 +109,7 @@ public:
     int ret;
     ret = Rts2ConnClient::setState (in_state_name, in_value);
     print ();
-    wrefresh (window);
+    update_panels ();
     return ret;
   }
 };
@@ -157,20 +161,23 @@ MonWindow::printStatus (WINDOW * window, Rts2Conn * connection)
 void
 MonWindow::postEvent (Rts2Event * event)
 {
-  WINDOW *window;
+  PANEL *panel;
   switch (event->getType ())
     {
     case EVENT_PRINT:
-      window = (WINDOW *) event->getArg ();
+      panel = (PANEL *) event->getArg ();
       switch (printFormat)
 	{
 	case EVENT_PRINT_SHORT:
-	  printOneLine (window);
+	  show_panel (panel);
+	  printOneLine (panel_window (panel));
 	  break;
 	case EVENT_PRINT_FULL:
-	  print (window);
+	  show_panel (panel);
+	  print (panel_window (panel));
 	  break;
 	case EVENT_PRINT_MESSAGES:
+	  hide_panel (panel);
 	  break;
 	}
       break;
@@ -877,6 +884,7 @@ Rts2NMGrb::printOneLine (WINDOW * wnd)
 void
 Rts2CNMonConn::print ()
 {
+  WINDOW *window = getWindow ();
   if (has_colors ())
     wcolor_set (window, CLR_OK, NULL);
   else
@@ -897,9 +905,8 @@ Rts2CNMonConn::print ()
   else
     {
       // print values
-      otherDevice->postEvent (new Rts2Event (EVENT_PRINT, (void *) window));
+      otherDevice->postEvent (new Rts2Event (EVENT_PRINT, (void *) panel));
     }
-  wrefresh (window);
 }
 
 /*******************************************************
@@ -911,20 +918,20 @@ Rts2CNMonConn::print ()
 class MessageWindow:public Rts2Object
 {
 private:
-  WINDOW * wnd;
-  bool printWindow;
+  PANEL * panel;
 public:
 
-    MessageWindow ()
+  MessageWindow ()
   {
-    wnd = newwin (LINES - 2, COLS - 2, 1, 1);
-    scrollok (wnd, true);
-    printWindow = false;
+    WINDOW *wnd = newwin (LINES - 2, COLS - 2, 1, 1);
+      panel = new_panel (wnd);
+      scrollok (wnd, true);
+      hide_panel (panel);
   }
 
   virtual ~ MessageWindow (void)
   {
-    delwin (wnd);
+    del_panel (panel);
   }
 
   virtual void postEvent (Rts2Event * event);
@@ -936,16 +943,12 @@ MessageWindow::postEvent (Rts2Event * event)
 {
   switch (event->getType ())
     {
-    case EVENT_PRINT:
-      if (printWindow)
-	wrefresh (wnd);
-      break;
     case EVENT_PRINT_MESSAGES:
-      printWindow = true;
+      show_panel (panel);
       break;
     case EVENT_PRINT_SHORT:
     case EVENT_PRINT_FULL:
-      printWindow = false;
+      hide_panel (panel);
       break;
     }
   Rts2Object::postEvent (event);
@@ -954,9 +957,10 @@ MessageWindow::postEvent (Rts2Event * event)
 void
 MessageWindow::message (Rts2Message & msg)
 {
+  WINDOW *wnd = panel_window (panel);
   waddstr (wnd, msg.toConn ().c_str ());
   waddstr (wnd, "\n");
-  wrefresh (wnd);
+  update_panels ();
 }
 
 /*******************************************************
@@ -995,8 +999,10 @@ private:
     repaint ();
   }
 
+  int printType;
+
 protected:
-    virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
+  virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
   {
     Rts2CNMonConn *conn;
     conn = new Rts2CNMonConn (this, in_deviceName);
@@ -1060,6 +1066,7 @@ Rts2NMonitor::relocatesWindows ()
 {
   int win_num;
   WINDOW *connWin;
+  PANEL *connPanel;
   std::vector < Rts2CNMonConn * >::iterator conn_iter;
   Rts2CNMonConn *conn;
   win_num = clientConnections.size ();
@@ -1069,14 +1076,16 @@ Rts2NMonitor::relocatesWindows ()
        conn_iter != clientConnections.end (); conn_iter++)
     {
       conn = (*conn_iter);
-      if (!conn->hasWindow ())
+      if (!conn->hasPanel ())
 	{
 	  connWin =
 	    newwin (LINES / 4, COLS / 4, 1 + LINES / 4 * ((win_num - 1) / 4),
 		    COLS / 4 * ((win_num - 1) % 4));
-	  conn->setWindow (connWin);
+	  connPanel = new_panel (connWin);
+	  conn->setPanel (connPanel);
 	}
     }
+  update_panels ();
 }
 
 void
@@ -1094,6 +1103,7 @@ Rts2Client (in_argc, in_argv)
   connCols = -1;
   connLines = 0;
   cmd_col = 0;
+  printType = EVENT_PRINT_FULL;
 }
 
 Rts2NMonitor::~Rts2NMonitor (void)
@@ -1199,8 +1209,17 @@ Rts2NMonitor::idle ()
 void
 Rts2NMonitor::postEvent (Rts2Event * event)
 {
+  switch (event->getType ())
+    {
+    case EVENT_PRINT_FULL:
+    case EVENT_PRINT_SHORT:
+    case EVENT_PRINT_MESSAGES:
+      printType = event->getType ();
+      break;
+    }
   messageWindow->postEvent (new Rts2Event (event));
   Rts2Client::postEvent (event);
+  // ::postEvent deletes event
 }
 
 int
@@ -1269,7 +1288,7 @@ Rts2NMonitor::resize ()
        conn_iter != clientConnections.end (); conn_iter++)
     {
       conn = (*conn_iter);
-      conn->setWindow (NULL);
+      conn->setPanel (NULL);
     }
   erase ();
   endwin ();
@@ -1301,10 +1320,26 @@ Rts2NMonitor::processKey (int key)
       queAll ("info");
       break;
     case KEY_F (8):
-      postEvent (new Rts2Event (EVENT_PRINT_MESSAGES));
+      switch (printType)
+	{
+	case EVENT_PRINT_MESSAGES:
+	  postEvent (new Rts2Event (EVENT_PRINT_FULL));
+	  break;
+	default:
+	  postEvent (new Rts2Event (EVENT_PRINT_MESSAGES));
+	  break;
+	}
       break;
     case KEY_F (9):
-      postEvent (new Rts2Event (EVENT_PRINT_SHORT));
+      switch (printType)
+	{
+	case EVENT_PRINT_FULL:
+	  postEvent (new Rts2Event (EVENT_PRINT_SHORT));
+	  break;
+	default:
+	  postEvent (new Rts2Event (EVENT_PRINT_SHORT));
+	  break;
+	}
       break;
     case KEY_F (10):
       endRunLoop ();
