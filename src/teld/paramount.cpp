@@ -1062,6 +1062,8 @@ Rts2DevTelParamount::endMove ()
   std::cout << "Track init " << ret0 << " " << ret1 << std::endl; */
   // 1 sec sleep to get time to settle down
   sleep (1);
+  if (!ret)
+    return Rts2DevTelescope::endMove ();
   return ret;
 }
 

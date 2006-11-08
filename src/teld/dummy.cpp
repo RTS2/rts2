@@ -94,21 +94,11 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
     return 0;
   }
 
-  virtual int endMove ()
-  {
-    return 0;
-  }
-
   virtual int startMoveFixed (double tar_az, double tar_alt)
   {
     newRa = tar_az;
     newDec = tar_alt;
     countLong = 0;
-    return 0;
-  }
-
-  virtual int endMoveFixed ()
-  {
     return 0;
   }
 

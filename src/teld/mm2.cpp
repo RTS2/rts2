@@ -1118,7 +1118,7 @@ Rts2DevTelescopeMM2::endMove ()
 {
   // wait for mount to settle down after move
   sleep (2);
-  return 0;
+  return Rts2DevTelescope::endMove ();
 }
 
 int

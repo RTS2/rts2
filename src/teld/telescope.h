@@ -202,19 +202,10 @@ public:
   {
     return -1;
   }
-  virtual int endMove ()
-  {
-    return -1;
-  }
+  virtual int endMove ();
   virtual int stopMove ();
-  virtual int startMoveFixed (double tar_ha, double tar_dec)
-  {
-    return -1;
-  }
-  virtual int endMoveFixed ()
-  {
-    return -1;
-  }
+  virtual int startMoveFixed (double tar_ha, double tar_dec);
+  virtual int endMoveFixed ();
   virtual int startSearch ()
   {
     return -1;

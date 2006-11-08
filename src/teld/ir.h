@@ -80,7 +80,6 @@ public:
   virtual int info ();
   virtual int startMove (double tar_ra, double tar_dec);
   virtual int isMoving ();
-  virtual int endMove ();
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();

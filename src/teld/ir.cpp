@@ -692,12 +692,6 @@ Rts2DevTelescopeIr::isMoving ()
 }
 
 int
-Rts2DevTelescopeIr::endMove ()
-{
-  return 0;
-}
-
-int
 Rts2DevTelescopeIr::startPark ()
 {
   int status = 0;

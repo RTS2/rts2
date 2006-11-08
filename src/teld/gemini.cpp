@@ -1752,12 +1752,12 @@ Rts2DevTelescopeGemini::endMove ()
 	startWorm ();
       decChanged = false;
       timerclear (&changeTime);
-      return 0;
+      return Rts2DevTelescope::endMove ();
     }
 #endif
   tel_gemini_get (130, track);
 #ifdef DEBUG_EXTRA
-  logStream (MESSAGE_INFO) << "rate" << track << sendLog;
+  logStream (MESSAGE_DEBUG) << "rate" << track << sendLog;
 #endif
   // if (track != 135)
   //  {
@@ -1766,7 +1766,7 @@ Rts2DevTelescopeGemini::endMove ()
   tel_gemini_get (130, track);
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONtest#", 9) > 0)
-    return 0;
+    return Rts2DevTelescope::endMove ();
   return -1;
 }
 
@@ -1871,7 +1871,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
   ret = startMoveFixedReal ();
   // move OK
   if (!ret)
-    return ret;
+    return Rts2DevTelescope::startMoveFixed (tar_ha, tar_dec);
   // try to do small change..
 #ifndef L4_GUIDE
   if (!isnan (fixed_ha) && fabs (ha_diff) < 5 && fabs (dec_diff) < 5)
@@ -1883,7 +1883,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 	  lastMoveDec += dec_diff;
 	  move_fixed = 0;	// we are performing change, not moveFixed
 	  maskState (0, TEL_MASK_MOVING, TEL_MOVING, "change started");
-	  return ret;
+	  return Rts2DevTelescope::startMoveFixed (tar_ha, tar_dec);
 	}
     }
 #endif
@@ -1935,7 +1935,7 @@ Rts2DevTelescopeGemini::endMoveFixed ()
 #endif
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONfixed#", 10) > 0)
-    return 0;
+    return Rts2DevTelescope::endMoveFixed ();
   return -1;
 }
 

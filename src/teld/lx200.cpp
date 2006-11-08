@@ -117,7 +117,6 @@ public:
 
   virtual int startMove (double tar_ra, double tar_dec);
   virtual int isMoving ();
-  virtual int endMove ();
   virtual int stopMove ();
 
   virtual int startPark ();
@@ -850,12 +849,6 @@ Rts2DevTelescopeLX200::isMoving ()
       break;
     }
   return -1;
-}
-
-int
-Rts2DevTelescopeLX200::endMove ()
-{
-  return 0;
 }
 
 int

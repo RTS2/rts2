@@ -283,7 +283,7 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
   // change above 5 degrees are strange - reject them
   if (fabs (model_change->ra) > 5 || fabs (model_change->dec) > 5)
     {
-      logStream (MESSAGE_DEBUG) <<
+      logStream (MESSAGE_WARNING) <<
 	"telescope applyModel big change - rejecting " << model_change->
 	ra << " " << model_change->dec << sendLog;
       model_change->ra = 0;
@@ -579,7 +579,7 @@ Rts2DevTelescope::startGuide (char dir, double dir_dist)
       return -1;
     }
   double dir_timeout = (dir_dist / 15.0) * telGuidingSpeed;
-  logStream (MESSAGE_DEBUG) << "telescope startGuide dir " << dir_dist <<
+  logStream (MESSAGE_INFO) << "telescope startGuide dir " << dir_dist <<
     " timeout " << dir_timeout << sendLog;
   gettimeofday (&tv_add, NULL);
   tv_add.tv_sec = (int) (floor (dir_timeout));
@@ -614,7 +614,7 @@ Rts2DevTelescope::stopGuide (char dir)
     default:
       return -1;
     }
-  logStream (MESSAGE_DEBUG) << "telescope stopGuide dir " << dir << sendLog;
+  logStream (MESSAGE_INFO) << "telescope stopGuide dir " << dir << sendLog;
   maskState (0, state_dir, TEL_NOGUIDE, "guiding ended");
   return 0;
 }
@@ -622,7 +622,7 @@ Rts2DevTelescope::stopGuide (char dir)
 int
 Rts2DevTelescope::stopGuideAll ()
 {
-  logStream (MESSAGE_DEBUG) << "elescope stopGuideAll" << sendLog;
+  logStream (MESSAGE_INFO) << "telescope stopGuideAll" << sendLog;
   maskState (0, TEL_GUIDE_MASK, TEL_NOGUIDE, "guiding stoped");
   return 0;
 }
@@ -732,7 +732,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     {
       double sep;
       sep = getMoveTargetSep ();
-      logStream (MESSAGE_DEBUG) << "start telescopr move sep " << sep <<
+      logStream (MESSAGE_DEBUG) << "start telescope move sep " << sep <<
 	sendLog;
       if (sep > sepLimit)
 	dontKnowPosition ();
@@ -771,6 +771,28 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
   logStream (MESSAGE_INFO) << "start telescope move " << telRa << " " <<
     telDec << " target " << tar_ra << " " << tar_dec << sendLog;
   return ret;
+}
+
+int
+Rts2DevTelescope::endMove ()
+{
+  logStream (MESSAGE_INFO) << "telescope end move " << telRa << " " <<
+    telDec << " target " << lastTar.ra << " " << lastTar.dec << sendLog;
+  return 0;
+}
+
+int
+Rts2DevTelescope::startMoveFixed (double tar_ha, double tar_dec)
+{
+  logStream (MESSAGE_INFO) << "telescope start move fixed " << sendLog;
+  return 0;
+}
+
+int
+Rts2DevTelescope::endMoveFixed ()
+{
+  logStream (MESSAGE_INFO) << "telescope end move fixed " << sendLog;
+  return 0;
 }
 
 int
@@ -905,7 +927,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   posErr = ln_get_angular_separation (&targetPos, realPos);
   if (posErr > sepLimit)
     {
-      logStream (MESSAGE_DEBUG) << "big separation " << " " << posErr << " "
+      logStream (MESSAGE_WARNING) << "big separation " << " " << posErr << " "
 	<< sepLimit << sendLog;
       conn->sendCommandEnd (DEVDEM_E_IGNORE,
 			    "separation greater then separation limit, ignoring");
@@ -1037,7 +1059,7 @@ int
 Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
 {
   int ret;
-  logStream (MESSAGE_DEBUG) << "telescope change " << chng_ra << " " <<
+  logStream (MESSAGE_INFO) << "telescope change " << chng_ra << " " <<
     chng_dec << sendLog;
   if (lastTar.ra < 0)
     {
