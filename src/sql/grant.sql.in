@@ -131,3 +131,6 @@ GRANT ALL ON targets_users TO "__WWWUSER__";
 
 GRANT ALL ON type_users TO GROUP observers;
 GRANT ALL ON type_users TO "__WWWUSER__";
+
+GRANT ALL ON message TO GROUP observers;
+GRANT SELECT ON message TO "__WWWUSER__";
