@@ -283,9 +283,9 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
   // change above 5 degrees are strange - reject them
   if (fabs (model_change->ra) > 5 || fabs (model_change->dec) > 5)
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescope::applyModel big change - rejecting ra %f dec %f",
-	      model_change->ra, model_change->dec);
+      logStream (MESSAGE_DEBUG) <<
+	"telescope applyModel big change - rejecting " << model_change->
+	ra << " " << model_change->dec << sendLog;
       model_change->ra = 0;
       model_change->dec = 0;
       return;
@@ -579,9 +579,8 @@ Rts2DevTelescope::startGuide (char dir, double dir_dist)
       return -1;
     }
   double dir_timeout = (dir_dist / 15.0) * telGuidingSpeed;
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startGuide dir: %c dir_dist: %f dir_timeout: %f",
-	  dir, dir_dist, dir_timeout);
+  logStream (MESSAGE_DEBUG) << "telescope startGuide dir " << dir_dist <<
+    " timeout " << dir_timeout << sendLog;
   gettimeofday (&tv_add, NULL);
   tv_add.tv_sec = (int) (floor (dir_timeout));
   tv_add.tv_usec = (int) ((dir_timeout - tv_add.tv_sec) * USEC_SEC);
@@ -615,7 +614,7 @@ Rts2DevTelescope::stopGuide (char dir)
     default:
       return -1;
     }
-  syslog (LOG_DEBUG, "Rts2DevTelescope::stopGuide dir: %c", dir);
+  logStream (MESSAGE_DEBUG) << "telescope stopGuide dir " << dir << sendLog;
   maskState (0, state_dir, TEL_NOGUIDE, "guiding ended");
   return 0;
 }
@@ -623,7 +622,7 @@ Rts2DevTelescope::stopGuide (char dir)
 int
 Rts2DevTelescope::stopGuideAll ()
 {
-  syslog (LOG_DEBUG, "Rts2DevTelescope::stopGuideAll");
+  logStream (MESSAGE_DEBUG) << "elescope stopGuideAll" << sendLog;
   maskState (0, TEL_GUIDE_MASK, TEL_NOGUIDE, "guiding stoped");
   return 0;
 }
@@ -711,10 +710,12 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 
   applyCorrections (&pos, JD);
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec, lastTar.ra, lastTar.dec);
+  logStream (MESSAGE_DEBUG) <<
+    "start telescope move (intersting val 1) target " << tar_ra << " " <<
+    tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
+    knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
+    locCorDec << " last target " << lastTar.ra << " " << lastTar.
+    dec << sendLog;
   // target is without corrections
   ret = setTarget (tar_ra, tar_dec);
 
@@ -731,16 +732,18 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     {
       double sep;
       sep = getMoveTargetSep ();
-      syslog (LOG_DEBUG, "Rts2DevTelescope::startMove sep: %f", sep);
+      logStream (MESSAGE_DEBUG) << "start telescopr move sep " << sep <<
+	sendLog;
       if (sep > sepLimit)
 	dontKnowPosition ();
     }
   tar_ra += locCorRa;
   tar_dec += locCorDec;
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec);
+  logStream (MESSAGE_DEBUG) <<
+    "start telescope move (intersting val 2) target " << tar_ra << " " <<
+    tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
+    knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
+    locCorDec << sendLog;
   moveInfoCount = 0;
   ret = startMove (tar_ra, tar_dec);
   if (ret)
@@ -811,22 +814,26 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
 {
   int ret;
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startResyncMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec, lastTar.ra, lastTar.dec);
+  logStream (MESSAGE_DEBUG) <<
+    "telescope startResyncMove (intersting val 1) target " << tar_ra << " " <<
+    tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
+    knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
+    locCorDec << " last target " << lastTar.ra << " " << lastTar.
+    dec << sendLog;
 
   if (tar_ra != lastTar.ra || tar_dec != lastTar.dec)
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescope::startResyncMove called wrong - calling startMove!");
+      logStream (MESSAGE_DEBUG) <<
+	"telescope startResyncMove called wrong - calling startMove!" <<
+	sendLog;
       return startMove (conn, tar_ra, tar_dec);
     }
   if (knowPosition)
     {
       double sep;
       sep = getMoveTargetSep ();
-      syslog (LOG_DEBUG, "Rts2DevTelescope::startResyncMove sep: %f", sep);
+      logStream (MESSAGE_DEBUG) << "telescope startResyncMove sep" << sep <<
+	sendLog;
       if (sep > sepLimit)
 	dontKnowPosition ();
     }
@@ -846,10 +853,11 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       return -1;
     }
   applyCorrections (tar_ra, tar_dec);
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startResyncMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec);
+  logStream (MESSAGE_DEBUG) <<
+    "telescope startResyncMove (intersting val 2) target " << tar_ra << " " <<
+    tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
+    knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
+    locCorDec << sendLog;
   moveInfoCount = 0;
   ret = startMove (tar_ra, tar_dec);
   if (ret)
@@ -883,10 +891,12 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 {
   int ret = -1;
   struct ln_equ_posn targetPos;
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f real_ra: %f real_de: %f moveMark: %i cor_mark %i cor_ra %f cor_dec %f",
-	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec,
-	  realPos->ra, realPos->dec, moveMark, cor_mark, cor_ra, cor_dec);
+  logStream (MESSAGE_DEBUG) << "telescope correct (intersting val 1) " <<
+    lastRa << " " << lastDec << " known position " << knowPosition <<
+    " correction " << locCorNum << " " << locCorRa << " " << locCorDec <<
+    " real " << realPos->ra << " " << realPos->
+    dec << " move mark " << moveMark << " cor_mark " << cor_mark << " cor_ra "
+    << cor_ra << " cor_dec" << cor_dec << sendLog;
   // not moved yet
   raCorr = cor_ra;
   decCorr = cor_dec;
@@ -895,7 +905,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   posErr = ln_get_angular_separation (&targetPos, realPos);
   if (posErr > sepLimit)
     {
-      syslog (LOG_DEBUG, "big separation: %f sepLimit: %f", posErr, sepLimit);
+      logStream (MESSAGE_DEBUG) << "big separation " << " " << posErr << " "
+	<< sepLimit << sendLog;
       conn->sendCommandEnd (DEVDEM_E_IGNORE,
 			    "separation greater then separation limit, ignoring");
       return -1;
@@ -992,9 +1003,10 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	}
       // ignore changes - they will be (possibly) deleted at dontKnowPosition
     }
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::correct intersting val 2: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
+  logStream (MESSAGE_DEBUG) << "telescope correct (intersting val 2) " <<
+    lastRa << " " << lastDec << " known position " << knowPosition <<
+    " correction " << locCorNum << " " << locCorRa << " " << locCorDec <<
+    sendLog;
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform correction");
   return ret;
@@ -1025,7 +1037,8 @@ int
 Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
 {
   int ret;
-  syslog (LOG_DEBUG, "Rts2DevTelescope::change %f %f", chng_ra, chng_dec);
+  logStream (MESSAGE_DEBUG) << "telescope change " << chng_ra << " " <<
+    chng_dec << sendLog;
   if (lastTar.ra < 0)
     {
       ret = info ();

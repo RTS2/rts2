@@ -268,14 +268,16 @@ Rts2DevTelescopeGemini::tel_read (char *buf, int count)
     {
       int ret = read (tel_desc, &buf[readed], 1);
 #ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "read_from: %i size:%i\n", tel_desc, ret);
+      logStream (MESSAGE_DEBUG) << "Losmandy read from " << tel_desc <<
+	" size " << ret << sendLog;
 #endif
       if (ret <= 0)
 	{
 	  return -1;
 	}
 #ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "Losmandy: readed '%c'", buf[readed]);
+      logStream (MESSAGE_DEBUG) << "Losmandy readed " << buf[readed] <<
+	sendLog;
 #endif
     }
   return readed;
@@ -300,7 +302,8 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
       if (tel_read (&buf[readed], 1) < 0)
 	{
 	  buf[readed] = 0;
-	  syslog (LOG_DEBUG, "Losmandy: Hash-read error:'%s'", buf);
+	  logStream (MESSAGE_DEBUG) << "Losmandy Hash-read error " << buf <<
+	    sendLog;
 	  // we get something, let's wait a bit for all data to
 	  // flow-in so we can really flush them
 	  if (*buf)
@@ -323,7 +326,8 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
 	}
     }
   buf[readed] = 0;
-  syslog (LOG_DEBUG, "Losmandy:Hash-readed:'%s' %i", buf, readed);
+  logStream (MESSAGE_DEBUG) << "Losmandy Hash-readed " << buf << " size " <<
+    readed << sendLog;
   return readed;
 }
 
@@ -342,7 +346,7 @@ Rts2DevTelescopeGemini::tel_write (char *buf, int count)
 {
   int ret;
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Losmandy:will write:'%s'", buf);
+  logStream (MESSAGE_DEBUG) << "Losmandy will write " << buf << sendLog;
 #endif
   ret = write (tel_desc, buf, count);
   return ret;
@@ -379,12 +383,14 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
       char *buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
-      syslog (LOG_DEBUG, "Losmandy:readed %i '%s'", tmp_rcount, buf);
+      logStream (MESSAGE_DEBUG) << "Losmandy readed " << tmp_rcount <<
+	" size " << buf << sendLog;
       free (buf);
 #endif
       return 0;
     }
-  syslog (LOG_DEBUG, "Losmandy:readed returns %i", tmp_rcount);
+  logStream (MESSAGE_DEBUG) << "Losmandy readed returns " << tmp_rcount <<
+    sendLog;
   return -1;
 }
 
@@ -565,9 +571,8 @@ Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
   cal = tel_gemini_checksum (buf);
   if (cal != checksum)
     {
-      syslog (LOG_ERR,
-	      "invalid gemini checksum: should be '%c' (%i), is '%c' (%i) %i",
-	      cal, cal, checksum, checksum, ret);
+      logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
+	cal << " is " << checksum << " " << ret << sendLog;
       if (*buf || checksum)
 	sleep (5);
       tel_gemini_reset ();
@@ -605,8 +610,8 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t & val)
   *ptr = '\0';
   if (tel_gemini_checksum (buf) != checksum)
     {
-      syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
-	      tel_gemini_checksum (buf), checksum);
+      logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
+	tel_gemini_checksum (buf) << " is " << checksum << sendLog;
       if (*buf)
 	sleep (5);
       tcflush (tel_desc, TCIOFLUSH);
@@ -636,8 +641,8 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, double &val)
   *ptr = '\0';
   if (tel_gemini_checksum (buf) != checksum)
     {
-      syslog (LOG_ERR, "invalid gemini checksum: should be '%c', is '%c'",
-	      tel_gemini_checksum (buf), checksum);
+      logStream (MESSAGE_ERROR) << "invalid gemini checksum: should be " <<
+	tel_gemini_checksum (buf) << " is " << checksum << sendLog;
       if (*buf)
 	sleep (5);
       tcflush (tel_desc, TCIOFLUSH);
@@ -750,7 +755,7 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
       matchCount = 1;
       return ret;
     }
-  syslog (LOG_INFO, "GEMINI: time match");
+  logStream (MESSAGE_INFO) << "GEMINI: time match" << sendLog;
   return 0;
 }
 
@@ -862,12 +867,14 @@ Rts2DevTelescopeGemini::tel_rep_write (char *command)
       if (retstr == '1')
 	break;
       sleep (1);
-      syslog (LOG_DEBUG, "Losmandy:tel_rep_write - for %i time.", count);
+      logStream (MESSAGE_DEBUG) << "Losmandy tel_rep_write - for " << count <<
+	" time" << sendLog;
     }
   if (count == 200)
     {
-      syslog (LOG_ERR,
-	      "Losmandy:tel_rep_write unsucessful due to incorrect return.");
+      logStream (MESSAGE_ERROR) <<
+	"Losmandy tel_rep_write unsucessful due to incorrect return." <<
+	sendLog;
       return -1;
     }
   return 0;
@@ -1063,15 +1070,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1520,9 +1524,8 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
   lastMoveRa = tar_ra;
   lastMoveDec = tar_dec;
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeGemini::startMove lastMoveRa: %f telRa %f flip: %i",
-	  lastMoveRa, telRa, newFlip);
+  logStream (MESSAGE_DEBUG) << "Losmandy start move lastMoveRa " << lastMoveRa
+    << " telRa " << telRa << " flip " << newFlip << sendLog;
 
   ra_diff = ln_range_degrees (telRa - lastMoveRa);
   if (ra_diff > 180.0)
@@ -1548,10 +1551,10 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
   if (max_flip < max_not_flip)
     willFlip = true;
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeGemini::startMove ra_diff: %f dec_diff: %f ra_diff_flip: %f dec_diff_flip: %f max_not_flip: %f max_flip: %f willFlip %i",
-	  ra_diff, dec_diff, ra_diff_flip, dec_diff_flip, max_not_flip,
-	  max_flip, willFlip);
+  logStream (MESSAGE_DEBUG) << "Losmandy start move ra_diff " << ra_diff <<
+    " dec_diff " << dec_diff << " ra_diff_flip " << ra_diff_flip <<
+    " dec_diff_flip  " << dec_diff_flip << " max_not_flip " << max_not_flip <<
+    " max_flip " << max_flip << " willFlip " << willFlip << sendLog;
 
   // "do" flip
   if (willFlip)
@@ -1574,16 +1577,16 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
   if (ha > 90.0)
     ha = ha - 180.0;
 
-  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::startMove newFlip %i ha %f",
-	  newFlip, ha);
+  logStream (MESSAGE_DEBUG) << "Losmandy start move newFlip " << newFlip <<
+    " ha " << ha << sendLog;
 
   if (willFlip)
     ha += ra_diff_flip;
   else
     ha += ra_diff;
 
-  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::startMove newFlip %i ha %f",
-	  newFlip, ha);
+  logStream (MESSAGE_DEBUG) << "Losmandy start move newFlip " << newFlip <<
+    " ha " << ha << sendLog;
 
   if (ha < haMinusLimit || ha > haPlusLimit)
     {
@@ -1591,9 +1594,9 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
       newFlip = !newFlip;
     }
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeGemini::startMove ha: %f ra_diff: %f lastMoveRa: %f telRa %f newFlip: %i willFlip: %i",
-	  ha, ra_diff, lastMoveRa, telRa, newFlip, willFlip);
+  logStream (MESSAGE_DEBUG) << "Losmandy start move ha " << ha << " ra_diff "
+    << ra_diff << " lastMoveRa " << lastMoveRa << " telRa " << telRa <<
+    " newFlip  " << newFlip << " willFlip " << willFlip << sendLog;
 
   // we fit to limit, aply model
 
@@ -1613,7 +1616,7 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
   startWorm ();
   double sep = getMoveTargetSep ();
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change sep %f", sep);
+  logStream (MESSAGE_DEBUG) << "Losmandy change sep " << sep << sendLog;
 #endif
   if (sep > 1)
     {
@@ -1754,7 +1757,7 @@ Rts2DevTelescopeGemini::endMove ()
 #endif
   tel_gemini_get (130, track);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_INFO, "rate: %i", track);
+  logStream (MESSAGE_INFO) << "rate" << track << sendLog;
 #endif
   // if (track != 135)
   //  {
@@ -1908,9 +1911,8 @@ Rts2DevTelescopeGemini::isMovingFixed ()
       if (sep > 15.0 / 60.0 / 4.0)	// 15 seconds..
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG,
-		  "Rts2DevTelescopeGemini::isMovingFixed sep: %f arcsec",
-		  sep * 3600);
+	  logStream (MESSAGE_DEBUG) << "Losmandy isMovingFixed sep " << sep *
+	    3600 << " arcsec" << sendLog;
 #endif
 	  // reque move..
 	  ret = startMoveFixedReal ();
@@ -1929,7 +1931,7 @@ Rts2DevTelescopeGemini::endMoveFixed ()
   stopWorm ();
   tel_gemini_get (130, track);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "endMoveFixed track: %i", track);
+  logStream (MESSAGE_DEBUG) << "endMoveFixed track " << track << sendLog;
 #endif
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONfixed#", 10) > 0)
@@ -2106,8 +2108,8 @@ Rts2DevTelescopeGemini::isParking ()
     case '1':
       return -2;
     case '0':
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeGemini::isParking called without park command");
+      logStream (MESSAGE_ERROR) <<
+	"Losmandy isParking called without park command" << sendLog;
     default:
       return -1;
     }
@@ -2238,7 +2240,8 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 
   sep = ln_get_angular_separation (&pos1, &pos2);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::correct separation: %f", sep);
+  logStream (MESSAGE_DEBUG) << "Losmandy correct separation " << sep <<
+    sendLog;
 #endif
   if (sep > 5)
     return -1;
@@ -2253,11 +2256,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2453,8 +2457,8 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   if (ret)
     return ret;
 #ifdef DEBUG_EXTRA
-  syslog (LOG_INFO,
-	  "Rts2DevTelescopeGemini::change ra %f dec %f", telRa, telDec);
+  logStream (MESSAGE_INFO) << "Losmandy change ra " << telRa << " dec " <<
+    telDec << sendLog;
 #endif
   // decide, if we make change, or move using move command
 #ifdef L4_GUIDE
@@ -2468,7 +2472,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
 	return ret;
       // move wait ended .. log results
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::change move: %i", ret);
+      logStream (MESSAGE_DEBUG) << "Losmandy change move " << ret << sendLog;
 #endif
     }
   else
@@ -2533,9 +2537,8 @@ Rts2DevTelescopeGemini::saveModel ()
   config_file = fopen (geminiConfig, "w");
   if (!config_file)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeGemini::saveModel cannot open file '%s' : %m",
-	      geminiConfig);
+      logStream (MESSAGE_ERROR) << "Gemini saveModel cannot open file " <<
+	geminiConfig << sendLog;
       return -1;
     }
 
@@ -2568,9 +2571,8 @@ Rts2DevTelescopeGemini::loadModel ()
   config_file = fopen (geminiConfig, "r");
   if (!config_file)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeGemini::loadModel cannot open file '%s' : %m",
-	      geminiConfig);
+      logStream (MESSAGE_ERROR) << "Gemini loadModel cannot open file " <<
+	geminiConfig << sendLog;
       return -1;
     }
 
@@ -2584,16 +2586,15 @@ Rts2DevTelescopeGemini::loadModel ()
 	{
 	  ret = tel_gemini_setch (id, buf);
 	  if (ret)
-	    syslog (LOG_ERR,
-		    "Rts2DevTelescopeGemini::loadModel setch return: %i on '%s'",
-		    ret, buf);
+	    logStream (MESSAGE_ERROR) << "Gemini loadModel setch return " <<
+	      ret << " on " << buf << sendLog;
+
 	  free (buf);
 	}
       else
 	{
-	  syslog (LOG_ERR,
-		  "Rts2DevTelescopeGemini::loadModel invalid line: '%s'",
-		  line);
+	  logStream (MESSAGE_ERROR) << "Gemini loadModel invalid line " <<
+	    line << sendLog;
 	}
     }
   free (line);

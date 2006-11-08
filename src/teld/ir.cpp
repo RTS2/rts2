@@ -48,7 +48,8 @@ Rts2DevTelescopeIr::tpl_get (const char *name, T & val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_get error %i\n", cstatus);
+	  logStream (MESSAGE_ERROR) << "IR tpl_get error " << cstatus <<
+	    sendLog;
 	  *status = 1;
 	}
 
@@ -88,8 +89,8 @@ Rts2DevTelescopeIr::tpl_setw (const char *name, T val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  syslog (LOG_ERR, "Rts2DevTelescopeIr::tpl_setw error %i\n",
-		  cstatus);
+	  logStream (MESSAGE_ERROR) << "IR tpl_setw error " << cstatus <<
+	    sendLog;
 	  *status = 1;
 	}
       r.Dispose ();
@@ -108,8 +109,8 @@ Rts2DevTelescopeIr::coverClose ()
   status = tpl_set ("COVER.POWER", 1, &status);
   status = tpl_get ("COVER.TARGETPOS", targetPos, &status);
   cover_state = CLOSING;
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::coverClose status: %i targetPos:%f",
-	  status, targetPos);
+  logStream (MESSAGE_DEBUG) << "IR coverClose status " << status <<
+    " target position " << targetPos << sendLog;
   return status;
 }
 
@@ -122,7 +123,7 @@ Rts2DevTelescopeIr::coverOpen ()
   status = tpl_set ("COVER.TARGETPOS", 1, &status);
   status = tpl_set ("COVER.POWER", 1, &status);
   cover_state = OPENING;
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::coverOpen status: %i", status);
+  logStream (MESSAGE_DEBUG) << "IR coverOpen status " << status << sendLog;
   return status;
 }
 
@@ -276,9 +277,8 @@ Rts2DevTelescopeIr::addError (int in_error)
     {
       double zd;
       status = 0;
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeIr::checkErrors soft limit in ZD (%i)",
-	      errNum);
+      logStream (MESSAGE_ERROR) << "IR checkErrors soft limit in ZD (" <<
+	errNum << ")" << sendLog;
       status = tpl_get ("ZD.CURRPOS", zd, &status);
       if (!status)
 	{
@@ -287,14 +287,12 @@ Rts2DevTelescopeIr::addError (int in_error)
 	  if (zd > 80)
 	    zd = 20;
 	  status = tpl_set ("POINTING.TRACK", 0, &status);
-	  syslog (LOG_DEBUG,
-		  "Rts2DevTelescopeIr::checkErrors set pointing status %i",
-		  status);
+	  logStream (MESSAGE_DEBUG) << "IR checkErrors set pointing status "
+	    << status << sendLog;
 	  sleep (1);
 	  status = tpl_set ("ZD.TARGETPOS", zd, &status);
-	  syslog (LOG_ERR,
-		  "Rts2DevTelescopeIr::checkErrors zd soft limit reset %f (%i)",
-		  zd, status);
+	  logStream (MESSAGE_ERROR) << "IR checkErrors zd soft limit reset "
+	    << zd << " (" << status << ")" << sendLog;
 	  unsetTarget ();
 	}
     }
@@ -314,7 +312,7 @@ Rts2DevTelescopeIr::addError (int in_error)
     }
   // new error
   getError (in_error, desc);
-  syslog (LOG_ERR, "Rts2DevTelescopeIr::checkErrors %s", desc.c_str ());
+  logStream (MESSAGE_ERROR) << "IR checkErrors " << desc.c_str () << sendLog;
   errt = new ErrorTime (in_error);
   errorcodes.push_back (errt);
 }
@@ -337,9 +335,8 @@ Rts2DevTelescopeIr::checkErrors ()
       std::string list;
       status = tpl_get ("CABINET.STATUS.LIST", list, &status);
       if (status == 0)
-	syslog (LOG_ERR,
-		"Rts2DevTelescopeIr::checkErrors Telescope errors: %s",
-		list.c_str ());
+	logStatus (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
+	  list.c_str () << sendLog;
       // decode errors
       while (true)
 	{
@@ -386,8 +383,8 @@ Rts2DevTelescopeIr::checkCover ()
 	{
 	  tpl_set ("COVER.POWER", 0, &status);
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkCover opened %i",
-		  status);
+	  logStream (MESSAGE_DEBUG) << "IR checkCover opened " << status <<
+	    sendLog;
 #endif
 	  cover_state = OPENED;
 	  break;
@@ -400,8 +397,8 @@ Rts2DevTelescopeIr::checkCover ()
 	{
 	  tpl_set ("COVER.POWER", 0, &status);
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkCover closed %i",
-		  status);
+	  logStream (MESSAGE_DEBUG) << "IR checkCover closed " << status <<
+	    sendLog;
 #endif
 	  cover_state = CLOSED;
 	  break;
@@ -424,7 +421,8 @@ Rts2DevTelescopeIr::checkPower ()
   status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeIr::checkPower tpl_ret: %i", status);
+      logStream (MESSAGE_ERROR) << "IR checkPower tpl_ret " << status <<
+	sendLog;
       return;
     }
   if (power_state == 0)
@@ -433,22 +431,20 @@ Rts2DevTelescopeIr::checkPower ()
       status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
       if (status)
 	{
-	  syslog (LOG_ERR,
-		  "Rts2DevTelescopeIr::checkPower set power ot 1 ret: %i",
-		  status);
+	  logStream (MESSAGE_ERROR) << "IR checkPower set power ot 1 ret " <<
+	    status << sendLog;
 	  return;
 	}
       while (power_state == 0.5)
 	{
-	  syslog (LOG_DEBUG,
-		  "Rts2DevTelescopeIr::checkPower waiting for power up");
+	  logStream (MESSAGE_DEBUG) << "IR checkPower waiting for power up" <<
+	    sendLog;
 	  sleep (5);
 	  status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
 	  if (status)
 	    {
-	      syslog (LOG_ERR,
-		      "Rts2DevTelescopeIr::checkPower power_state ret: %i",
-		      status);
+	      logStream (MESSAGE_ERROR) << "IR checkPower power_state ret " <<
+		status << sendLog;
 	      return;
 	    }
 	}
@@ -458,23 +454,22 @@ Rts2DevTelescopeIr::checkPower ()
       status = tpl_get ("CABINET.REFERENCED", referenced, &status);
       if (status)
 	{
-	  syslog (LOG_ERR,
-		  "Rts2DevTelescopeIr::checkPower get referenced: %i",
-		  status);
+	  logStream (MESSAGE_ERROR) << "IR checkPower get referenced " <<
+	    status << sendLog;
 	  return;
 	}
       if (referenced == 1)
 	break;
-      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::checkPower referenced: %f",
-	      referenced);
+      logStream (MESSAGE_DEBUG) << "IR checkPower referenced " << referenced
+	<< sendLog;
       if (referenced == 0)
 	{
 	  int reinit = (nextReset == RESET_COLD_START ? 1 : 0);
 	  status = tpl_set ("CABINET.REINIT", reinit, &status);
 	  if (status)
 	    {
-	      syslog (LOG_ERR, "Rts2DevTelescopeIr::checkPower reinit: %i",
-		      status);
+	      logStream (MESSAGE_ERROR) << "IR checkPower reinit " << status
+		<< sendLog;
 	      return;
 	    }
 	}
@@ -571,9 +566,10 @@ Rts2DevTelescopeIr::info ()
   status = tpl_get ("AZ.CURRSPEED", az_speed, &status);
   status = tpl_get ("AZ.CURRACC", az_acc, &status);
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::info ra %f dec %f az %f az_speed %f az_acc %f zd %f zd_speed %f zd_acc %f track %i",
-	  telRa, telDec, az, az_speed, az_acc, zd, zd_speed, zd_acc, track);
+  logStream (MESSAGE_DEBUG) << "IR info ra " << telRa << " dec " << telDec <<
+    " az " << az << " az_speed " << az_speed << " az_acc " << az_acc << " zd "
+    << zd << " zd_speed " << zd_speed << " zd_acc " << zd_acc << " track " <<
+    track << sendLog;
 #endif // DEBUG_EXTRA
 
   if (!track)
@@ -614,8 +610,8 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
   status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
   status = tpl_set ("POINTING.TRACK", irTracking, &status);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startMove TRACK status: %i",
-	  status);
+  logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
+    sendLog;
 #endif
   if (rotatorOffset != 0)
     status = tpl_set ("DEROTATOR[3].OFFSET", rotatorOffset, &status);
@@ -647,7 +643,8 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   status = tpl_set ("ZD.OFFSET", alt_off, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeIr::startMove cannot zero offset");
+      logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" <<
+	sendLog;
       return -1;
     }
 
@@ -679,17 +676,16 @@ Rts2DevTelescopeIr::isMoving ()
   if (fabs (poin_dist) <= 0.01)
     {
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::isMoving target distance: %f",
-	      poin_dist);
+      logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist
+	<< sendLog;
 #endif
       return -2;
     }
   // finish due to timeout
   if (timeout < now)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeIr::isMoving targetdistance in timeout: %f (%i)",
-	      poin_dist, status);
+      logStream (MESSAGE_ERROR) << "IR isMoving target distance in timeout "
+	<< poin_dist << "(" << status << ")" << sendLog;
       return -1;
     }
   return USEC_SEC / 100;
@@ -708,17 +704,16 @@ Rts2DevTelescopeIr::startPark ()
   // Park to south+zenith
   status = tpl_set ("POINTING.TRACK", 0, &status);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::startPark tracking status: %i",
-	  status);
+  logStream (MESSAGE_DEBUG) << "IR startPark tracking status " << status <<
+    sendLog;
 #endif
   sleep (1);
   status = tpl_set ("AZ.TARGETPOS", 0, &status);
   status = tpl_set ("ZD.TARGETPOS", 0, &status);
   if (status)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeIr::startPark ZD.TARGETPOS status: %i",
-	      status);
+      logStream (MESSAGE_ERROR) << "IR startPark ZD.TARGETPOS status " <<
+	status << sendLog;
       return -1;
     }
   time (&timeout);
@@ -736,7 +731,7 @@ int
 Rts2DevTelescopeIr::endPark ()
 {
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::endPark");
+  logStream (MESSAGE_DEBUG) << "IR endPark" << sendLog;
 #endif
   return 0;
 }
@@ -752,20 +747,19 @@ Rts2DevTelescopeIr::stopMove ()
   status = tpl_get ("ZD.CURRPOS", zd, &status);
   if (status)
     {
-      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::stopMove cannot get ZD! (%i)",
-	      status);
+      logStream (MESSAGE_DEBUG) << "IR stopMove cannot get ZD! (" << status <<
+	")" << sendLog;
       return -1;
     }
   if (fabs (zd) < 1)
     {
-      syslog (LOG_DEBUG, "Rts2DevTelescopeIr::stopMove suspicious ZD.. %f",
-	      zd);
+      logStream (MESSAGE_DEBUG) << "IR stopMove suspicious ZD.. " << zd <<
+	sendLog;
       status = tpl_set ("POINTING.TRACK", 0, &status);
       if (status)
 	{
-	  syslog (LOG_DEBUG,
-		  "Rts2DevTelescopeIr::stopMove cannot set track: %i",
-		  status);
+	  logStream (MESSAGE_DEBUG) << "IR stopMove cannot set track: " <<
+	    status << sendLog;
 	  return -1;
 	}
       return 0;
@@ -817,16 +811,16 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   status = tpl_get ("ZD.CURRPOS", zd, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeIr::correct cannot get ZD.CURRPOS");
+      logStream (MESSAGE_ERROR) << "IR correct cannot get ZD.CURRPOS" <<
+	sendLog;
       return -1;
     }
   if (zd > 0)
     alt_off *= -1;		// get ZD offset - when ZD < 0, it's actuall alt offset
   sep = ln_get_angular_separation (&eq_astr, &eq_target);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeIr::correct az_off: %f zd_off: %f sep: %f",
-	  az_off, alt_off, sep);
+  logStream (MESSAGE_DEBUG) << "IR correct az_off " << az_off << " zd_off " <<
+    alt_off << " sep " << sep << sendLog;
 #endif
   if (sep > 2)
     return -1;
@@ -838,8 +832,8 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2DevTelescopeIr::correct quality: % f status: %i",
-	  quality, status);
+  logStream (MESSAGE_DEBUG) << "IR correct quality: " << quality << " status "
+    << status << sendLog;
 #endif
   return (status ? -1 : 1);
 }
@@ -869,7 +863,8 @@ Rts2DevTelescopeIr::saveModel ()
   status = tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel status: %i", status);
+      logStream (MESSAGE_ERROR) << "IR saveModel status: " << status <<
+	sendLog;
       return -1;
     }
   of.open ("/etc/rts2/ir.model", ios_base::out | ios_base::trunc);
@@ -881,7 +876,7 @@ Rts2DevTelescopeIr::saveModel ()
   of.close ();
   if (of.fail ())
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel file");
+      logStream (MESSAGE_ERROR) << "IR saveModel file" << sendLog;
       return -1;
     }
   return 0;
@@ -900,7 +895,7 @@ Rts2DevTelescopeIr::loadModel ()
   }
   catch (exception & e)
   {
-    syslog (LOG_DEBUG, "Rts2DevTelescopeIr::loadModel error");
+    logStream (MESSAGE_DEBUG) << "IR loadModel error" << sendLog;
     return -1;
   }
   status = tpl_set ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
@@ -912,7 +907,8 @@ Rts2DevTelescopeIr::loadModel ()
   status = tpl_set ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeIr::saveModel status: %i", status);
+      logStream (MESSAGE_ERROR) << "IR saveModel status: " << status <<
+	sendLog;
       return -1;
     }
   return 0;
@@ -964,28 +960,26 @@ Rts2DevTelescopeIr::resetMount (resetStates reset_mount)
   status = tpl_setw ("CABINET.POWER", power, &status);
   if (status)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeIr::resetMount powering off: %i",
-	      status);
+      logStream (MESSAGE_ERROR) << "IR resetMount powering off: " << status <<
+	sendLog;
       return -1;
     }
   while (true)
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeIr::resetMount waiting for power down");
+      logStream (MESSAGE_DEBUG) << "IR resetMount waiting for power down" <<
+	sendLog;
       sleep (5);
       status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
       if (status)
 	{
-	  syslog (LOG_ERR,
-		  "Rts2DevTelescopeIr::resetMount power_state ret: %i",
-		  status);
+	  logStream (MESSAGE_ERROR) << "IR resetMount power_state ret: " <<
+	    status << sendLog;
 	  return -1;
 	}
       if (power_state == 0 || power_state == -1)
 	{
-	  syslog (LOG_DEBUG,
-		  "Rts2DevTelescopeIr::resetMount final power_state : %f",
-		  power_state);
+	  logStream (MESSAGE_DEBUG) << "IR resetMount final power_state: " <<
+	    power_state << sendLog;
 	  break;
 	}
     }

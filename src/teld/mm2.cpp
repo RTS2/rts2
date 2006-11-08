@@ -192,14 +192,13 @@ Rts2DevTelescopeMM2::tel_read (char *buf, int count)
 	}
       if (ret < 0)
 	{
-	  syslog (LOG_DEBUG,
-		  "Rts2DevTelescopeMM2::tel_read: tel_desc read error %i (%m)",
-		  errno);
+	  logStream (MESSAGE_DEBUG) << "MM2 tel_read: tel_desc read error " <<
+	    errno << sendLog;
 	  return -1;
 	}
 #ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "Rts2DevTelescopeMM2::tel_read: readed '%c'",
-	      buf[readed]);
+      logStream (MESSAGE_DEBUG) << "MM2 tel_read: readed " << buf[readed] <<
+	sendLog;
 #endif
     }
   return readed;

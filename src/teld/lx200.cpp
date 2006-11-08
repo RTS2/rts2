@@ -154,14 +154,13 @@ Rts2DevTelescopeLX200::tel_read (char *buf, int count)
 	}
       if (ret < 0)
 	{
-	  syslog (LOG_DEBUG,
-		  "Rts2DevTelescopeLX200::tel_read: tel_desc read error %i (%m)",
-		  errno);
+	  logStream (MESSAGE_DEBUG) << "LX200 tel_read: tel_desc read error "
+	    << errno << sendLog;
 	  return -1;
 	}
 #ifdef DEBUG_ALL_PORT_COMM
-      syslog (LOG_DEBUG, "Rts2DevTelescopeLX200::tel_read: readed '%c'",
-	      buf[readed]);
+      logStream (MESSAGE_DEBUG) << "LX200 tel_read: readed " << buf[readed] <<
+	sendLog;
 #endif
     }
   return readed;
@@ -189,8 +188,8 @@ Rts2DevTelescopeLX200::tel_read_hash (char *buf, int count)
     }
   if (buf[readed] == '#')
     buf[readed] = 0;
-  syslog (LOG_DEBUG, "Rts2DevTelescopeLX200::tel_read_hash: Hash-readed:'%s'",
-	  buf);
+  logStream (MESSAGE_DEBUG) << "LX200 tel_read_hash: Hash-readed: " << buf <<
+    sendLog;
   return readed;
 }
 
@@ -208,8 +207,8 @@ Rts2DevTelescopeLX200::tel_read_hash (char *buf, int count)
 int
 Rts2DevTelescopeLX200::tel_write (char *buf, int count)
 {
-  syslog (LOG_DEBUG, "Rts2DevTelescopeLX200::tel_write :will write:'%s'",
-	  buf);
+  logStream (MESSAGE_DEBUG) << "LX200 tel_write :will write: " << buf <<
+    sendLog;
   return write (tel_desc, buf, count);
 }
 
@@ -246,16 +245,14 @@ Rts2DevTelescopeLX200::tel_write_read (char *wbuf, int wcount, char *rbuf,
       buf = (char *) malloc (rcount + 1);
       memcpy (buf, rbuf, rcount);
       buf[rcount] = 0;
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeLX200::tel_write_read: readed %i %s",
-	      tmp_rcount, buf);
+      logStream (MESSAGE_DEBUG) << "LX200 tel_write_read: readed " <<
+	tmp_rcount << " " << buf << sendLog;
       free (buf);
     }
   else
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeLX200::tel_write_read: readed returns %i",
-	      tmp_rcount);
+      logStream (MESSAGE_DEBUG) << "LX200 tel_write_read: readed returns " <<
+	tmp_rcount << sendLog;
     }
 
   return tmp_rcount;
@@ -427,13 +424,13 @@ Rts2DevTelescopeLX200::tel_rep_write (char *command)
       if (retstr == '1')
 	break;
       sleep (1);
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescopeLX200::tel_rep_write - for %i time.", count);
+      logStream (MESSAGE_DEBUG) << "LX200 tel_rep_write - for " << count <<
+	" time" << sendLog;
     }
   if (count == 200)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevTelescopeLX200::tel_rep_write unsucessful due to incorrect return.");
+      logStream (MESSAGE_ERROR) <<
+	"LX200 tel_rep_write unsucessful due to incorrect return." << sendLog;
       return -1;
     }
   return 0;
@@ -580,7 +577,7 @@ Rts2DevTelescopeLX200::init ()
 
   if (tcsetattr (tel_desc, TCSANOW, &tel_termios) < 0)
     {
-      syslog (LOG_ERR, "Rts2DevTelescopeLX200::init tcsetattr: %m");
+      logStream (MESSAGE_ERROR) << "LX200 init tcsetattr" << sendLog;
       return -1;
     }
 
@@ -591,9 +588,8 @@ Rts2DevTelescopeLX200::init ()
   status &= ~TIOCM_DTR;
   ioctl (tel_desc, TIOCMSET, &status);
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeLX200::init initialization complete (on port '%s')",
-	  device_file);
+  logStream (MESSAGE_DEBUG) << "LX200 init initialization complete on port "
+    << device_file << sendLog;
 
 // we get 12:34:4# while we're in short mode
 // and 12:34:45 while we're in long mode
@@ -754,12 +750,10 @@ Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
 
   HA = get_hour_angle (object.ra);
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeLX200::tel_check_coords TELESCOPE ALT = %f, AZ = %f",
-	  hrz.alt, hrz.az);
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescopeLX200::tel_check_coords TELESCOPE HOUR ANGLE = %f",
-	  HA);
+  logStream (MESSAGE_DEBUG) << "LX200 tel_check_coords TELESCOPE ALT " << hrz.
+    alt << " AZ " << hrz.az << sendLog;
+  logStream (MESSAGE_DEBUG) << "LX200 tel_check_coords TELESCOPE HOUR ANGLE "
+    << HA << sendLog;
 
   target.ra = ra;
   target.dec = dec;
