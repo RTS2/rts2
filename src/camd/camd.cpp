@@ -218,14 +218,16 @@ CameraChip::sendReadoutData (char *data, size_t data_size)
       time (&now);
       if (now > readout_started + readoutConn->getConnTimeout ())
 	{
-	  syslog (LOG_ERR,
-		  "CameraChip::sendReadoutData connection not established within timeout");
+	  logStream (MESSAGE_ERROR) <<
+	    "Chip sendReadoutData connection not established within timeout"
+	    << sendLog;
 	  return -1;
 	}
     }
   if (ret == -1)
     {
-      syslog (LOG_ERR, "CameraChip::sendReadoutData %m");
+      logStream (MESSAGE_ERROR) << "Chip sendReadoutData " << strerror (errno)
+	<< sendLog;
     }
   return ret;
 }
@@ -249,10 +251,10 @@ CameraChip::doFocusing ()
   return 0;
 }
 
-Rts2LogStream
-CameraChip::logStream (messageType_t in_messageType)
+Rts2LogStream CameraChip::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (camera, in_messageType);
+  Rts2LogStream
+  ls (camera, in_messageType);
   return ls;
 }
 
@@ -913,8 +915,8 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
     {
       if (!connections[i])
 	{
-	  syslog (LOG_DEBUG,
-		  "Rts2DevCamera::camReadout add data %i data_conn", i);
+	  logStream (MESSAGE_DEBUG) << "Camera camReadout add data " << i <<
+	    " data_conn" << sendLog;
 	  connections[i] = data_conn;
 	  break;
 	}
@@ -1181,14 +1183,16 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

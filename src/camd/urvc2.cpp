@@ -111,8 +111,8 @@ CameraUrvc2Chip::readoutOneLine ()
 	   chipReadout->width / binningVertical,
 	   chipReadout->height / binningVertical, binningVertical))
 	{
-	  syslog (LOG_DEBUG,
-		  "CameraUrvc2Chip::readoutOneLine readout return not-null");
+	  logStream (MESSAGE_DEBUG) <<
+	    "urvc2 chip readoutOneLine readout return not-null" << sendLog;
 	  return -1;
 	}
       dest_top =
@@ -358,11 +358,11 @@ Rts2DevCameraUrvc2::init ()
   begin_realtime ();
   CameraInit (base);
 
-  syslog (LOG_DEBUG, "::init");
+  logStream (MESSAGE_DEBUG) << "urvc2 init" << sendLog;
 
   if ((i = MicroCommand (MC_GET_VERSION, ST7_CAMERA, NULL, &gvr)))
     {
-      syslog (LOG_DEBUG, "GET_VERSION ret: %i", i);
+      logStream (MESSAGE_DEBUG) << "urvc2 GET_VERSION ret " << i << sendLog;
       return -1;
     }
 
@@ -370,11 +370,11 @@ Rts2DevCameraUrvc2::init ()
 
   if ((i = MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr)))
     {
-      syslog (LOG_DEBUG, "TEMP_STATUS ret: %i", i);
+      logStream (MESSAGE_DEBUG) << "urvc2 TEMP_STATUS ret " << i << sendLog;
       return -1;
     }
 
-  syslog (LOG_DEBUG, "get eeprom");
+  logStream (MESSAGE_DEBUG) << "urvc2 get eeprom" << sendLog;
 
   get_eeprom ();
 
@@ -385,7 +385,8 @@ Rts2DevCameraUrvc2::init ()
 
   for (i = 0; i < chipNum; i++)
     {
-      syslog (LOG_DEBUG, "new CameraUrvc2Chip %i", i);
+      logStream (MESSAGE_DEBUG) << "urvc2 new CameraUrvc2Chip " << i <<
+	sendLog;
       chips[i] =
 	new CameraUrvc2Chip (this, i, Cams[eePtr.model].horzImage,
 			     Cams[eePtr.model].vertImage,
@@ -409,7 +410,8 @@ Rts2DevCameraUrvc2::init ()
       tempRegulation = CAMERA_COOL_OFF;
     }
 
-  syslog (LOG_DEBUG, "init return %i", Cams[eePtr.model].horzImage);
+  logStream (MESSAGE_DEBUG) << "urvc2 init return " << Cams[eePtr.model].
+    horzImage << sendLog;
 
   filter = new Rts2FilterUrvc2 (this);
 

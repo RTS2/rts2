@@ -264,7 +264,8 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE
+Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
@@ -553,7 +554,8 @@ Rts2DevCameraSbig::camCoolTemp (float new_temp)
   SetTemperatureRegulationParams temp;
   PAR_ERROR ret;
   temp.regulation = REGULATION_ON;
-  syslog (LOG_DEBUG, "Rts2DevCameraSbig::camCoolTemp setTemp: %f", new_temp);
+  logStream (MESSAGE_DEBUG) << "sbig camCoolTemp setTemp " << new_temp <<
+    sendLog;
   if (fanState (TRUE))
     return -1;
   temp.ccdSetpoint = ccd_c2ad (new_temp);

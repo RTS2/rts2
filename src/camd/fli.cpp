@@ -438,11 +438,12 @@ Rts2DevCameraFli::init ()
       ret = FLISetNFlushes (dev, nflush);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2DevCameraFli::init FLISetNFlushes ret: %li",
-		  ret);
+	  logStream (MESSAGE_ERROR) << "fli init FLISetNFlushes ret " << ret
+	    << sendLog;
 	  return -1;
 	}
-      syslog (LOG_DEBUG, "Rts2DevCameraFli::init set Nflush to %i", nflush);
+      logStream (MESSAGE_DEBUG) "fli init set Nflush to " << nflush <<
+	sendLog;
     }
 
   chipNum = 1;

@@ -103,7 +103,8 @@ CameraApogeeChip::startExposure (int light, float exptime)
 
   if (!ret)
     {
-      syslog (LOG_ERR, "CameraApogeeChip::startExposure exposure error");
+      logStream (MESSAGE_ERROR) << "apogee startExposure exposure error" <<
+	sendLog;
       return -1;
     }
 
@@ -190,8 +191,8 @@ CameraApogeeChip::readoutOneLine ()
       camera->m_ExposureNumX = chipUsedReadout->width / usedBinningHorizontal;
       camera->m_ExposureNumY = chipUsedReadout->height / usedBinningVertical;
       status = camera->GetImage (dest_top, width, height);
-      syslog (LOG_DEBUG, "CameraApogeeChip::readoutOneLine status: %i",
-	      status);
+      logStream (MESSAGE_DEBUG) << "apogee readoutOneLine status " << status
+	<< sendLog;
       if (!status)
 	return -1;
       dest_top += width * height;

@@ -237,8 +237,8 @@ CameraMiniccdChip::isExposing ()
 	  // that's an error
 	  if (ret2 + ret1 != row_bytes)
 	    {
-	      syslog (LOG_ERR,
-		      "CameraMiniccdChip::isExposing cannot readout line");
+	      logStream (MESSAGE_ERROR) <<
+		"miniccd isExposing cannot readout line" << sendLog;
 	      endReadout ();
 	      return -2;
 	    }
@@ -280,14 +280,14 @@ CameraMiniccdChip::sendLineData (int numLines)
       CCD_ELEM_TYPE *msg = (CCD_ELEM_TYPE *) _data;
       if (msg[CCD_MSG_INDEX] != CCD_MSG_IMAGE)
 	{
-	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::sendLineData wrong image message");
+	  logStream (MESSAGE_ERROR) <<
+	    "miniccd sendLineData wrong image message" << sendLog;
 	  return -1;
 	}
       if (!chipUsedReadout)
 	{
-	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::sendLineData not chipUsedReadout");
+	  logStream (MESSAGE_ERROR) <<
+	    "miniccd sendLineData not chipUsedReadout" << sendLog;
 	  return -1;
 	}
       if ((unsigned int) (msg[CCD_MSG_LENGTH_LO_INDEX] +
@@ -295,10 +295,9 @@ CameraMiniccdChip::sendLineData (int numLines)
 	  ((chipUsedReadout->height / usedBinningVertical) *
 	   usedRowBytes) + CCD_MSG_IMAGE_LEN)
 	{
-	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::sendLineData wrong size %i",
-		  msg[CCD_MSG_LENGTH_LO_INDEX] +
-		  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
+	  logStream (MESSAGE_ERROR) << "miniccd sendLineData wrong size " <<
+	    msg[CCD_MSG_LENGTH_LO_INDEX] +
+	    (msg[CCD_MSG_LENGTH_HI_INDEX] << 16) << sendLog;
 	  return -1;
 	}
       send_top += CCD_MSG_IMAGE_LEN;
@@ -333,14 +332,14 @@ CameraMiniccdChip::getAllData ()
       CCD_ELEM_TYPE *msg = (CCD_ELEM_TYPE *) _data;
       if (msg[CCD_MSG_INDEX] != CCD_MSG_IMAGE)
 	{
-	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::getAllData wrong image message");
+	  logStream (MESSAGE_ERROR) <<
+	    "miniccd getAllData wrong image message" << sendLog;
 	  return NULL;
 	}
       if (!chipUsedReadout)
 	{
-	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::getAllData not chipUsedReadout");
+	  logStream (MESSAGE_ERROR) <<
+	    "miniccd getAllData not chipUsedReadout" << sendLog;
 	  return NULL;
 	}
       if ((unsigned int) (msg[CCD_MSG_LENGTH_LO_INDEX] +
@@ -348,10 +347,9 @@ CameraMiniccdChip::getAllData ()
 	  ((chipUsedReadout->height / usedBinningVertical) *
 	   usedRowBytes) + CCD_MSG_IMAGE_LEN)
 	{
-	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::getAllData wrong size %i",
-		  msg[CCD_MSG_LENGTH_LO_INDEX] +
-		  (msg[CCD_MSG_LENGTH_HI_INDEX] << 16));
+	  logStream (MESSAGE_ERROR) << "miniccd getAllData wrong size " <<
+	    msg[CCD_MSG_LENGTH_LO_INDEX] +
+	    (msg[CCD_MSG_LENGTH_HI_INDEX] << 16) << sendLog;
 	  return NULL;
 	}
       send_top += CCD_MSG_IMAGE_LEN;
@@ -616,7 +614,8 @@ CameraMiniccdInterleavedChip::init ()
 
   if (in_width != slaveChip[1]->getWidth ())
     {
-      syslog (LOG_ERR, "CameraMiniccdInterleavedChip::init not same width");
+      logStream (MESSAGE_ERROR) <<
+	"miniccd interleaved chip init not same width" << sendLog;
       return -1;
     }
 
@@ -624,8 +623,8 @@ CameraMiniccdInterleavedChip::init ()
 
   if (sizeof_pixel != slaveChip[1]->getSizeOfPixel ())
     {
-      syslog (LOG_ERR,
-	      "CameraMiniccdInterleavedChip::init not same sizeof pixel");
+      logStream (MESSAGE_ERROR) <<
+	"miniccd interleaved chip init not same sizeof pixel" << sendLog;
       return -1;
     }
 
@@ -903,9 +902,8 @@ Rts2DevCameraMiniccd::init ()
   msg_len = read (fd_ccd, (char *) msgr, CCD_MSG_CCD_LEN);
   if (msg_len != CCD_MSG_CCD_LEN)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevCameraMiniccd::init CCD message length wrong: %d",
-	      msg_len);
+      logStream (MESSAGE_ERROR) << "miniccd init CCD message length wrong " <<
+	msg_len << sendLog;
       return -1;
     }
   /*
@@ -913,9 +911,9 @@ Rts2DevCameraMiniccd::init ()
    */
   if (msgr[CCD_MSG_INDEX] != CCD_MSG_CCD)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevCameraMiniccd::init Wrong message returned from query: 0x%04X",
-	      msgr[CCD_MSG_INDEX]);
+      logStream (MESSAGE_ERROR) <<
+	"miniccd init Wrong message returned from query " <<
+	msgr[CCD_MSG_INDEX] << sendLog;
       return -1;
     }
   chipNum = msgr[CCD_CCD_FIELDS_INDEX];
