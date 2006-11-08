@@ -442,7 +442,7 @@ Rts2DevCameraFli::init ()
 	    << sendLog;
 	  return -1;
 	}
-      logStream (MESSAGE_DEBUG) "fli init set Nflush to " << nflush <<
+      logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush <<
 	sendLog;
     }
 
