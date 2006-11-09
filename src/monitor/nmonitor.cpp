@@ -1329,6 +1329,7 @@ Rts2NMonitor::processKey (int key)
 	  postEvent (new Rts2Event (EVENT_PRINT_MESSAGES));
 	  break;
 	}
+      update_panels ();
       break;
     case KEY_F (9):
       switch (printType)
@@ -1340,6 +1341,7 @@ Rts2NMonitor::processKey (int key)
 	  postEvent (new Rts2Event (EVENT_PRINT_SHORT));
 	  break;
 	}
+      update_panels ();
       break;
     case KEY_F (10):
       endRunLoop ();
