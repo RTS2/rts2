@@ -94,9 +94,13 @@ public:
     return 0;
   }
 
-  void setTemperatur (float in_temp)
+  void setTemperature (float in_temp)
   {
     temperature = in_temp;
+  }
+  float getTemperature ()
+  {
+    return temperature;
   }
   void setHumidity (float in_humidity)
   {
