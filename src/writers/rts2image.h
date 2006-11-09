@@ -45,6 +45,7 @@ private:
   struct tm exposureGmTime;
   float exposureLength;
   void setImageName (const char *in_filename);
+  int createImage (std::string in_filename);
   int createImage (char *in_filename);
   // when in_filename == NULL, we take image name stored in this->imageName
   int openImage ();
@@ -474,7 +475,7 @@ public:
   int getCoordAstrometry (LibnovaRaDec & radec);
   int getCoordMount (LibnovaRaDec & radec);
 
-  const char *getOnlyFileName ();
+  std::string getOnlyFileName ();
 
   virtual void getFileName (std::string & out_filename);
 

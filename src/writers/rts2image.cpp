@@ -158,7 +158,7 @@ Rts2Image::Rts2Image (char *in_filename,
 Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
 		      const struct timeval *in_exposureStart)
 {
-  char *in_filename;
+  std::string in_filename;
 
   initData ();
 
@@ -174,19 +174,14 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
   if (isAcquiring)
     {
       // put acqusition images to acqusition que
-      asprintf (&in_filename,
-		"%s/acqusition/que/%s/%s",
-		getImageBase (), camera->getName (), getOnlyFileName ());
+      in_filename = expandPath ("%b/acqusition/que/%c/%f");
     }
   else
     {
-      asprintf (&in_filename, "%s/que/%s/%s",
-		getImageBase (), camera->getName (), getOnlyFileName ());
+      in_filename = expandPath ("%b/que/%c/%f");
     }
 
   createImage (in_filename);
-
-  free (in_filename);
 
   writeExposureStart ();
 
@@ -423,6 +418,37 @@ Rts2Image::setImageName (const char *in_filename)
   if (*in_filename == '!')
     in_filename++;
   strcpy (imageName, in_filename);
+}
+
+int
+Rts2Image::createImage (std::string in_filename)
+{
+  int ret;
+
+  fits_status = 0;
+  flags = IMAGE_NOT_SAVE;
+  shutter = SHUT_UNKNOW;
+  ffile = NULL;
+
+  setImageName (in_filename.c_str ());
+
+  // make path for us..
+  ret = mkpath (getImageName (), 0777);
+  if (ret)
+    return -1;
+  naxis[0] = 1;
+  naxis[1] = 1;
+  fits_create_file (&ffile, getImageName (), &fits_status);
+  fits_create_img (ffile, USHORT_IMG, 2, naxis, &fits_status);
+  syslog (LOG_DEBUG, "Rts2Image::createImage %p %s", this, getImageName ());
+  if (fits_status)
+    {
+      fits_report_error (stderr, fits_status);
+      return -1;
+    }
+
+  flags = IMAGE_SAVE;
+  return 0;
 }
 
 int
@@ -1510,15 +1536,13 @@ Rts2Image::getError (double &eRa, double &eDec, double &eRad)
   return 0;
 }
 
-const char *
-Rts2Image::getOnlyFileName ()
+std::string Rts2Image::getOnlyFileName ()
 {
-  static char buf[25];
-  sprintf (buf, "%04i%02i%02i%02i%02i%02i-%04li.fits",
-	   getStartYear (), getStartMonth (), getStartDay (),
-	   getStartHour (), getStartMin (), getStartSec (),
-	   exposureStart.tv_usec / 1000);
-  return buf;
+  std::ostringstream os;
+  os << getStartYearString () << getStartMonthString () <<
+    getStartDayString () << getStartHourString () << getStartMinString () <<
+    getStartSecString () << "-" << getStartMSecString () << ".fits";
+  return os.str ();
 }
 
 void
