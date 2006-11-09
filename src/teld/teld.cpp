@@ -55,7 +55,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   standbyPark = false;
 
   addOption ('n', "max_corr_num", 1,
-	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
+	     "maximal number of corections aplied to mount during night (defaults to 1; -1 if unlimited)");
   addOption ('m', "model_file", 1,
 	     "name of file holding RTS2-calculated model parameters (for flip = 1, or for both when o is not specified)");
   addOption ('o', "model_file_flip_0", 1,
@@ -711,7 +711,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
   applyCorrections (&pos, JD);
 
   logStream (MESSAGE_DEBUG) <<
-    "start telescope move (intersting val 1) target " << tar_ra << " " <<
+    "start telescope move (interesting val 1) target " << tar_ra << " " <<
     tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
     knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
     locCorDec << " last target " << lastTar.ra << " " << lastTar.
@@ -740,7 +740,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
   tar_ra += locCorRa;
   tar_dec += locCorDec;
   logStream (MESSAGE_DEBUG) <<
-    "start telescope move (intersting val 2) target " << tar_ra << " " <<
+    "start telescope move (interesting val 2) target " << tar_ra << " " <<
     tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
     knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
     locCorDec << sendLog;
@@ -837,10 +837,10 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
   int ret;
 
   logStream (MESSAGE_DEBUG) <<
-    "telescope startResyncMove (intersting val 1) target " << tar_ra << " " <<
-    tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
-    knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
-    locCorDec << " last target " << lastTar.ra << " " << lastTar.
+    "telescope startResyncMove (interesting val 1) target " << tar_ra << " "
+    << tar_dec << " last " << lastRa << " " << lastDec << " known position "
+    << knowPosition << " correction " << locCorNum << " " << locCorRa << " "
+    << locCorDec << " last target " << lastTar.ra << " " << lastTar.
     dec << sendLog;
 
   if (tar_ra != lastTar.ra || tar_dec != lastTar.dec)
@@ -854,7 +854,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
     {
       double sep;
       sep = getMoveTargetSep ();
-      logStream (MESSAGE_DEBUG) << "telescope startResyncMove sep" << sep <<
+      logStream (MESSAGE_DEBUG) << "telescope startResyncMove sep " << sep <<
 	sendLog;
       if (sep > sepLimit)
 	dontKnowPosition ();
@@ -876,10 +876,10 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
     }
   applyCorrections (tar_ra, tar_dec);
   logStream (MESSAGE_DEBUG) <<
-    "telescope startResyncMove (intersting val 2) target " << tar_ra << " " <<
-    tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
-    knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
-    locCorDec << sendLog;
+    "telescope startResyncMove (interesting val 2) target " << tar_ra << " "
+    << tar_dec << " last " << lastRa << " " << lastDec << " known position "
+    << knowPosition << " correction " << locCorNum << " " << locCorRa << " "
+    << locCorDec << sendLog;
   moveInfoCount = 0;
   ret = startMove (tar_ra, tar_dec);
   if (ret)
@@ -913,12 +913,12 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 {
   int ret = -1;
   struct ln_equ_posn targetPos;
-  logStream (MESSAGE_DEBUG) << "telescope correct (intersting val 1) " <<
+  logStream (MESSAGE_DEBUG) << "telescope correct (interesting val 1) " <<
     lastRa << " " << lastDec << " known position " << knowPosition <<
     " correction " << locCorNum << " " << locCorRa << " " << locCorDec <<
     " real " << realPos->ra << " " << realPos->
     dec << " move mark " << moveMark << " cor_mark " << cor_mark << " cor_ra "
-    << cor_ra << " cor_dec" << cor_dec << sendLog;
+    << cor_ra << " cor_dec " << cor_dec << sendLog;
   // not moved yet
   raCorr = cor_ra;
   decCorr = cor_dec;
@@ -938,22 +938,28 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
       // it's so big that we need resync now
       if (posErr >= minGood)
 	{
-	  if (numCorr == 0)
+	  if (numCorr == 0 && (numCorr < maxCorrNum || maxCorrNum < 0))
 	    {
 	      ret =
 		correctOffsets (cor_ra, cor_dec, realPos->ra, realPos->dec);
+	      if (!ret)
+		{
+		  numCorr++;
+		  ret = startMove (conn, lastTar.ra, lastTar.dec);
+		}
 	    }
 	  else
 	    {
 	      ret =
 		Rts2DevTelescope::correctOffsets (cor_ra, cor_dec,
 						  realPos->ra, realPos->dec);
+	      if (!ret)
+		{
+		  numCorr++;
+		  ret = startResyncMove (conn, lastTar.ra, lastTar.dec);
+		}
 	    }
-	  if (!ret)
-	    {
-	      numCorr++;
-	    }
-	  ret = startResyncMove (conn, lastTar.ra, lastTar.dec);
+
 	  if (!ret)
 	    {
 	      locCorNum = moveMark;
@@ -1025,7 +1031,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	}
       // ignore changes - they will be (possibly) deleted at dontKnowPosition
     }
-  logStream (MESSAGE_DEBUG) << "telescope correct (intersting val 2) " <<
+  logStream (MESSAGE_DEBUG) << "telescope correct (interesting val 2) " <<
     lastRa << " " << lastDec << " known position " << knowPosition <<
     " correction " << locCorNum << " " << locCorRa << " " << locCorDec <<
     sendLog;
