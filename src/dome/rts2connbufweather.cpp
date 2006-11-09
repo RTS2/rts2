@@ -90,24 +90,26 @@ Rts2ConnFramWeather (in_weather_port, in_weather_timeout, in_master)
 int
 Rts2ConnBufWeather::receive (fd_set * set)
 {
+#define BUF_SIZE 1000
   int ret, ret_c;
-  char Wbuf[500];
+  char Wbuf[BUF_SIZE];
   int data_size = 0;
   float rtIsRaining;
-  float rtRainRate;
+  float rtRainRate = 0;
   float rtWetness;
   float rtCloudTop;
   float rtCloudBottom;
   float rtOutsideHum;
   float rtOutsideTemp;
+  float weatherTimeout = FRAM_CONN_TIMEOUT;
   double cloud = nan ("f");
-  float weatherTimeout;
   if (sock >= 0 && FD_ISSET (sock, set))
     {
       struct sockaddr_in from;
       socklen_t size = sizeof (from);
       data_size =
-	recvfrom (sock, Wbuf, 500, 0, (struct sockaddr *) &from, &size);
+	recvfrom (sock, Wbuf, BUF_SIZE - 1, 0, (struct sockaddr *) &from,
+		  &size);
       if (data_size < 0)
 	{
 	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
@@ -131,6 +133,13 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	}
 
       weather->getValue ("rtIsRaining", rtIsRaining, ret);
+      if (ret)
+	{
+	  ret = 0;
+	  weather->getValue ("rtRainRate", rtRainRate, ret);
+	  if (!ret)
+	    rtIsRaining = (rtRainRate > 0);
+	}
       weather->getValue ("rtRainRate", rtRainRate, ret);
       weather->getValue ("rtWindAvgSpeed", windspeed, ret);
       weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
@@ -147,7 +156,11 @@ Rts2ConnBufWeather::receive (fd_set * set)
       weather->getValue ("rtCloudBottom", rtCloudBottom, ret_c);
       if (ret_c == 0)
 	cloud = rtCloudTop - rtCloudTop;
-      if (rtIsRaining > 0)
+      if (rtRainRate != 0)
+	{
+	  rain = 1;
+	}
+      else if (rtIsRaining > 0)
 	{
 	  // try to get more information about nature of rain and cloud cover
 	  weather->getValue ("rtWetness", rtWetness, ret_c);
@@ -184,7 +197,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	{
 	  rain = 0;
 	}
-      master->setTemperatur (rtOutsideTemp);
+      master->setTemperature (rtOutsideTemp);
       master->setRain (rain);
       master->setHumidity (rtOutsideHum);
       master->setWindSpeed (windspeed);
@@ -210,4 +223,5 @@ Rts2ConnBufWeather::receive (fd_set * set)
       master->infoAll ();
     }
   return data_size;
+#undef BUF_SIZE
 }
