@@ -135,7 +135,7 @@ Rts2ConnDcm::receive (fd_set * set)
       if (rain)
 	syslog (LOG_DEBUG, "rain: %i date: %li status: %s",
 		rain, lastWeatherStatus, Wstatus);
-      master->setTemperatur (temp);
+      master->setTemperature (temp);
       master->setHumidity (humidity);
       master->setRain (rain);
       master->setSwState ((sw1 << 3) | (sw2 << 2) | (sw3 << 1) | (sw4));
