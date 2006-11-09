@@ -932,6 +932,13 @@ Target::getLunarRaDistance (double JD)
   return getRaDistance (&moon, JD);
 }
 
+/**
+ * This method is called to check that target which was selected as good is
+ * still the best.
+ * 
+ * It should reload from DB values, which are important for selection process,
+ * and if they indicate that target should not be observed, it should return -1.
+ */
 int
 Target::selectedAsGood ()
 {
@@ -942,17 +949,22 @@ Target::selectedAsGood ()
   int d_tar_priority_ind;
   float d_tar_bonus;
   int d_tar_bonus_ind;
+  long d_tar_next_observable;
+  int d_tar_next_observable_ind;
   EXEC SQL END DECLARE SECTION;
+
   // check if we are still enabled..
   EXEC SQL
   SELECT
     tar_enabled,
     tar_priority,
-    tar_bonus
+    tar_bonus,
+    tar_next_observable
   INTO
     :d_tar_enabled,
     :d_tar_priority :d_tar_priority_ind,
-    :d_tar_bonus :d_tar_bonus_ind
+    :d_tar_bonus :d_tar_bonus_ind,
+    :d_tar_next_observable :d_tar_next_observable_ind
   FROM
     targets
   WHERE
@@ -971,9 +983,18 @@ Target::selectedAsGood ()
     tar_bonus = d_tar_bonus;
   else
     tar_bonus = 0;
-    
+
   if (tar_enabled && tar_priority + tar_bonus >= 0)
+  {
+    if (d_tar_next_observable_ind >= 0)
+    {
+      time_t now;
+      time (&now);
+      if (now < d_tar_next_observable)
+	return -1;
+    }
     return 0;
+  }
   return -1;
 }
 
@@ -1123,6 +1144,8 @@ Target::setNextObservable (time_t *time_ch)
   int db_tar_id = getObsTargetID ();
   int db_next_observable = (int) *time_ch;
   EXEC SQL END DECLARE SECTION;
+
+  tar_next_observable = *time_ch;
   
   EXEC SQL UPDATE 
     targets
