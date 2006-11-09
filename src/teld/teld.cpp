@@ -291,6 +291,9 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
       return;
     }
 
+  logStream (MESSAGE_DEBUG) << "Rts2DevTelescope::applyModel offsets ra: " <<
+    model_change->ra << " dec: " << model_change->dec << sendLog;
+
   pos->ra = ra;
   pos->dec = hadec.dec;
 }
@@ -715,7 +718,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
     knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
     locCorDec << " last target " << lastTar.ra << " " << lastTar.
-    dec << sendLog;
+    dec << " correction" << corrections << sendLog;
   // target is without corrections
   ret = setTarget (tar_ra, tar_dec);
 
