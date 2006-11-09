@@ -12,7 +12,6 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
-#include <syslog.h>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -27,7 +26,7 @@
 #include "../utils/hms.h"
 
 // uncomment following line, if you want all port read logging (will
-// add about 10 30-bytes lines to syslog for every query). 
+// add about 10 30-bytes lines to logStream for every query). 
 // #define DEBUG_ALL_PORT_COMM
 
 #define RATE_SLEW	'S'
@@ -249,7 +248,7 @@ public:
 /*! 
  * Reads some data directly from port.
  * 
- * Log all flow as LOG_DEBUG to syslog
+ * Log all flow as LOG_DEBUG to logStream
  * 
  * @exception EIO when there aren't data from port
  * 
@@ -349,6 +348,11 @@ Rts2DevTelescopeGemini::tel_write (char *buf, int count)
   logStream (MESSAGE_DEBUG) << "Losmandy will write " << buf << sendLog;
 #endif
   ret = write (tel_desc, buf, count);
+  if (ret < 0)
+    {
+      logStream (MESSAGE_ERROR) << "Error during write " << errno << " "
+	<< strerror (errno) << sendLog;
+    }
   return ret;
 }
 
@@ -389,8 +393,8 @@ Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
 #endif
       return 0;
     }
-  logStream (MESSAGE_DEBUG) << "Losmandy readed returns " << tmp_rcount <<
-    sendLog;
+  logStream (MESSAGE_ERROR) << "error in read " << tmp_rcount << " " <<
+    strerror (errno) << sendLog;
   return -1;
 }
 
@@ -873,7 +877,7 @@ Rts2DevTelescopeGemini::tel_rep_write (char *command)
   if (count == 200)
     {
       logStream (MESSAGE_ERROR) <<
-	"Losmandy tel_rep_write unsucessful due to incorrect return." <<
+	"losmandy tel_rep_write unsucessful due to incorrect return." <<
 	sendLog;
       return -1;
     }
@@ -1070,12 +1074,15 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
-  int id;
-  int ret;
+  int32_t
+    t,
+    res = 1;
+  int
+    id;
+  int
+    ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -1166,8 +1173,9 @@ Rts2DevTelescopeGemini::init ()
 
   while (1)
     {
-      syslog (LOG_DEBUG, "Rts2DevTelescopeGemini::init open: %s",
-	      device_file);
+      std::
+	cerr << "Rts2DevTelescopeGemini::init open: " << device_file << std::
+	endl;
 
       tel_desc = open (device_file, O_RDWR);
       if (tel_desc < 0)
@@ -2256,12 +2264,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
