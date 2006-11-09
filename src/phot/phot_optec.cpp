@@ -155,8 +155,8 @@ Rts2DevPhotOptec::getCount ()
 	}
       else
 	{
-	  syslog (LOG_ERR, "Rts2DevPhotOptec::getCount invalid read ret: %i",
-		  ret);
+	  logStream (MESSAGE_ERROR) <<
+	    "phot Optec getCount invalid read ret: " << ret << sendLog;
 	  break;
 	}
     }
