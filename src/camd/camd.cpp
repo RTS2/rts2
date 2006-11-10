@@ -435,8 +435,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   fan = -1;
   filter = NULL;
   canDF = -1;
-  ccdType[0] = '0';
-  serialNumber[0] = '0';
+  ccdType[0] = '\0';
+  ccdRealType = ccdType;
+  serialNumber[0] = '\0';
   lastExp = nan ("f");
 
   exposureFilter = -1;
@@ -467,6 +468,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
   addOption ('e', "focexp", 1, "starting focusing exposure time");
   addOption ('s', "subexposure", 1, "default subexposure");
+  addOption ('t', "type", 1,
+	     "specify camera type (in case camera do not store it in FLASH ROM)");
 }
 
 Rts2DevCamera::~Rts2DevCamera ()
@@ -564,6 +567,9 @@ Rts2DevCamera::processOption (int in_opt)
     case 's':
       defaultSubExposure = atof (optarg);
       setSubExposure (defaultSubExposure);
+      break;
+    case 't':
+      ccdRealType = optarg;
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -761,7 +767,7 @@ Rts2DevCamera::sendInfo (Rts2Conn * conn)
 int
 Rts2DevCamera::sendBaseInfo (Rts2Conn * conn)
 {
-  conn->sendValue ("type", ccdType);
+  conn->sendValue ("type", ccdRealType);
   conn->sendValue ("serial", serialNumber);
   conn->sendValue ("chips", chipNum);
   conn->sendValue ("can_df", canDF);
@@ -1176,14 +1182,16 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

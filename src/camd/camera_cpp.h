@@ -243,6 +243,7 @@ protected:
 
   int canDF;			// if the camera can make dark frames
   char ccdType[64];
+  char *ccdRealType;
   char serialNumber[64];
 
   Rts2Filter *filter;
@@ -400,10 +401,10 @@ public:
     Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device);
 };
 
-Rts2LogStream
-CameraChip::logStream (messageType_t in_messageType)
+Rts2LogStream CameraChip::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (camera, in_messageType);
+  Rts2LogStream
+  ls (camera, in_messageType);
   return ls;
 }
 
