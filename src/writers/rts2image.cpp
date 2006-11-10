@@ -310,7 +310,10 @@ std::string Rts2Image::expandPath (std::string expression)
 		  ret += getImageBase ();
 		  break;
 		case 'c':
-		  ret += cameraName;
+		  if (cameraName)
+		    ret += cameraName;
+		  else
+		    ret += "NULL";
 		  break;
 		case 'D':
 		  ret += getStartYDayString ();
