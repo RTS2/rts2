@@ -129,8 +129,8 @@ Rts2Soapd::reloadConfig ()
       delete fileLog;
     }
   fileLog = new std::ofstream ();
-  fileLog->open ("/var/log/rts2", ios::out | ios::app);
-  return 0;
+  fileLog->open ("/var/log/rts2-debug", ios::out | ios::app);
+  return Rts2DeviceDb::reloadConfig ();
 }
 
 int
