@@ -130,7 +130,7 @@ Rts2NightMail::run ()
   config = Rts2Config::instance ();
   // email all possible targets
   sendEndMails (&t_from, &t_to, printImages, printCounts,
-		config->getObserver ());
+		config->getObserver (), this);
   return 0;
 }
 
