@@ -195,10 +195,12 @@ int
 Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
 {
   char *msg = NULL;
+  messageType_t msg_type = MESSAGE_ERROR;
   switch (reta)
     {
     case COMM_OKPACKET:
       msg = "comm packet OK";
+      msg_type = MESSAGE_DEBUG;
       break;
     case COMM_NOPACKET:
       msg = "comm no packet";
@@ -292,6 +294,7 @@ Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
 
     case MOTOR_OK:
       msg = "motor ok";
+      msg_type = MESSAGE_DEBUG;
       break;
     case MOTOR_OVERCURRENT:
       msg = "motor over current";
@@ -309,8 +312,8 @@ Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
       msg = "motor still slewing but command needs it stopped";
       break;
     }
-  if (msg)
-    std::cout << "Axis:" << axis.axisId << " " << msg << std::endl;
+  if (msg && msg_type != MESSAGE_DEBUG)
+    logStream (msg_type) << "Axis:" << axis.axisId << " " << msg << sendLog;
   return reta;
 }
 
@@ -504,12 +507,17 @@ Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
 
   LibnovaRaDec lchange (&model_change);
 
-  std::cout << "Before model " << ac << dc << lchange << std::endl;
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange <<
+    sendLog;
+#endif /* DEBUG_EXTRA */
 
   ac += (CWORD32) (model_change.ra * haCpd);
   dc += (CWORD32) (model_change.dec * decCpd);
 
-  std::cout << "After model" << ac << dc << std::endl;
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
+#endif /* DEBUG_EXTRA */
 
   ac -= homeOff;
 
@@ -823,9 +831,10 @@ Rts2DevTelParamount::updateTrack ()
       ret = sky2counts (&corr_pos, ac, dc, JD, homeOff);
       if (ret)
 	return;
-      std::
-	cout << "Rts2DevTelParamount::updateTrack " << ac << " " << dc <<
-	std::endl;
+#ifdef DEBUG_EXTRA
+      logStream (LOG_DEBUG) << "Rts2DevTelParamount::updateTrack " << ac <<
+	" " << dc << sendLog;
+#endif /* DEBUG_EXTRA */
       ret0 = MKS3PosTargetSet (axis0, (long) ac);
       ret1 = MKS3PosTargetSet (axis1, (long) dc);
 
@@ -854,9 +863,11 @@ Rts2DevTelParamount::updateTrack ()
   // calculate position at track_next time
   sky2counts (&corr_pos, ac, dc, JD, 0);
 
-  std::
-    cout << "Track ac " << ac << " dc " << dc << " " << track_delta << std::
-    endl;
+#ifdef DEBUG_EXTRA
+  logStream (LOG_DEBUG) << "Track ac " << ac << " dc " << dc << " " <<
+    track_delta << sendLog;
+#endif /* DEBUG_EXTRA */
+
   ret0 =
     MKS3ObjTrackPointAdd (axis0, track0,
 			  track_delta +
@@ -1057,7 +1068,9 @@ Rts2DevTelParamount::endMove ()
   ret_track = checkRet ();
   if (!ret_track)
     updateTrack ();
-  std::cout << "Track init " << ret0 << " " << ret1 << std::endl; */
+#ifdef DEBUG_EXTRA
+  std::cout << "Track init " << ret0 << " " << ret1 << std::endl;
+#endif // DEBUG_EXTRA */
   // 1 sec sleep to get time to settle down
   sleep (1);
   if (!ret)
