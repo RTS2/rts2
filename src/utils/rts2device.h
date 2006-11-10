@@ -19,8 +19,6 @@
 
 #include "rts2daemon.h"
 
-#include "rts2logstream.h"
-
 #define CHECK_PRIORITY if (!havePriority ()) { sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
 
 class Rts2Device;
@@ -213,10 +211,6 @@ public:
   // only devices can send messages
   void sendMessage (messageType_t in_messageType,
 		    const char *in_messageString);
-  inline void sendMessage (messageType_t in_messageType,
-			   std::ostringstream & _os);
-
-  Rts2LogStream logStream (messageType_t in_messageType);
 
   void setIdleInfoInterval (time_t interval)
   {

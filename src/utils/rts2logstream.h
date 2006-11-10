@@ -1,29 +1,29 @@
 #ifndef __RTS2_LOGSTREAM__
 #define __RTS2_LOGSTREAM__
 
-#include "rts2device.h"
+#include "rts2daemon.h"
 
 #include <sstream>
 
-class Rts2Device;
+class Rts2Daemon;
 
 class Rts2LogStream
 {
 private:
-  Rts2Device * masterDevice;
+  Rts2Daemon * masterDaemon;
   messageType_t messageType;
     std::ostringstream ls;
 public:
 
-    Rts2LogStream (Rts2Device * in_master, messageType_t in_type)
+    Rts2LogStream (Rts2Daemon * in_master, messageType_t in_type)
   {
-    masterDevice = in_master;
+    masterDaemon = in_master;
     messageType = in_type;
   }
 
   Rts2LogStream (Rts2LogStream & in_logStream)
   {
-    masterDevice = in_logStream.masterDevice;
+    masterDaemon = in_logStream.masterDaemon;
     messageType = in_logStream.messageType;
   }
 

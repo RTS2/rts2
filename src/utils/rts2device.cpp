@@ -23,18 +23,6 @@
 #define MINDATAPORT		5556
 #define MAXDATAPORT		5656
 
-Rts2LogStream & sendLog (Rts2LogStream & _ls)
-{
-  _ls.sendLog ();
-  return _ls;
-}
-
-void
-Rts2LogStream::sendLog ()
-{
-  masterDevice->sendMessage (messageType, ls.str ().c_str ());
-}
-
 int
 Rts2DevConn::commandAuthorized ()
 {
@@ -313,10 +301,10 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
   Rts2Conn::setConnState (new_conn_state);
 }
 
-Rts2LogStream Rts2DevConn::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2DevConn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (master, in_messageType);
+  Rts2LogStream ls (master, in_messageType);
   return ls;
 }
 
@@ -915,20 +903,6 @@ Rts2Device::sendMessage (messageType_t in_messageType,
   Rts2Message msg =
     Rts2Message (getDeviceName (), in_messageType, in_messageString);
   centraldConn->sendMessage (msg);
-}
-
-void
-Rts2Device::sendMessage (messageType_t in_messageType,
-			 std::ostringstream & _os)
-{
-  sendMessage (in_messageType, _os.str ().c_str ());
-}
-
-Rts2LogStream
-Rts2Device::logStream (messageType_t in_messageType)
-{
-  Rts2LogStream ls (this, in_messageType);
-  return ls;
 }
 
 int

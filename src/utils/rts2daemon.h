@@ -2,7 +2,13 @@
 #define __RTS2_DAEMON__
 
 #include "rts2block.h"
+#include "rts2logstream.h"
 
+/**
+ * Abstract class for centrald and all devices.
+ *
+ * This class contains functions which are common to components with one listening socket.
+ */
 class Rts2Daemon:public Rts2Block
 {
 private:
@@ -22,6 +28,14 @@ public:
   {
     return Rts2Block::addConnection (conn);
   }
+
+  // only deamons can send messages
+  virtual void sendMessage (messageType_t in_messageType,
+			    const char *in_messageString) = 0;
+  inline void sendMessage (messageType_t in_messageType,
+			   std::ostringstream & _os);
+
+  Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 #endif /* ! __RTS2_DAEMON__ */
