@@ -301,10 +301,10 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
   Rts2Conn::setConnState (new_conn_state);
 }
 
-Rts2LogStream
-Rts2DevConn::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2DevConn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (master, in_messageType);
+  Rts2LogStream
+  ls (master, in_messageType);
   return ls;
 }
 
@@ -642,6 +642,8 @@ Rts2Daemon (in_argc, in_argv)
   idleInfoInterval = -1;
   nextIdleInfo = 0;
 
+  mailAddress = NULL;
+
   // now add options..
   addOption ('L', "hostname", 1,
 	     "hostname, if it different from return of gethostname()");
@@ -903,6 +905,16 @@ Rts2Device::sendMessage (messageType_t in_messageType,
   Rts2Message msg =
     Rts2Message (getDeviceName (), in_messageType, in_messageString);
   centraldConn->sendMessage (msg);
+}
+
+int
+Rts2Device::sendMail (char *subject, char *text)
+{
+  // no mail will be send
+  if (!mailAddress)
+    return 0;
+
+  return sendMailTo (subject, text, mailAddress);
 }
 
 int

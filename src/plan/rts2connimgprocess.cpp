@@ -164,8 +164,8 @@ Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
 	<< ") GET ASTROMETRY (IMG_ID #" << image->getImgId () << ")";
       std::ostringstream os;
       os << image;
-      sendMailTo (subject.str ().c_str (), os.str ().c_str (),
-		  mails.c_str ());
+      master->sendMailTo (subject.str ().c_str (), os.str ().c_str (),
+			  mails.c_str ());
     }
 }
 
@@ -177,7 +177,7 @@ Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
   // last processed
   obsId = image->getObsId ();
   Rts2Obs observation = Rts2Obs (obsId);
-  ret = observation.checkUnprocessedImages ();
+  ret = observation.checkUnprocessedImages (master);
   if (ret == 0)
     {
       // que as

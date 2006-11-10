@@ -28,14 +28,6 @@ public:
   {
     return Rts2Block::addConnection (conn);
   }
-
-  // only deamons can send messages
-  virtual void sendMessage (messageType_t in_messageType,
-			    const char *in_messageString) = 0;
-  inline void sendMessage (messageType_t in_messageType,
-			   std::ostringstream & _os);
-
-  Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 #endif /* ! __RTS2_DAEMON__ */

@@ -263,7 +263,7 @@ Rts2Obs::getUnprocessedCount ()
 }
 
 int
-Rts2Obs::checkUnprocessedImages ()
+Rts2Obs::checkUnprocessedImages (Rts2Block *master)
 {
   int ret;
   load ();
@@ -285,7 +285,7 @@ Rts2Obs::checkUnprocessedImages ()
       << " ALL IMAGES PROCESSED";
     std::ostringstream os;
     os << *this;
-    sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
+    master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
   }
   return ret;
 }

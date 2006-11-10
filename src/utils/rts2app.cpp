@@ -270,9 +270,30 @@ Rts2App::parseDate (const char *in_date, struct tm *out_time)
   return -1;
 }
 
+void
+Rts2App::sendMessage (messageType_t in_messageType,
+		      const char *in_messageString)
+{
+  Rts2Message msg = Rts2Message ("app", in_messageType, in_messageString);
+  std::cerr << msg.toString () << std::endl;
+}
+
+void
+Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
+{
+  sendMessage (in_messageType, _os.str ().c_str ());
+}
+
+Rts2LogStream
+Rts2App::logStream (messageType_t in_messageType)
+{
+  Rts2LogStream ls (this, in_messageType);
+  return ls;
+}
+
 int
-sendMailTo (const char *subject, const char *text, const char *mailAddress,
-	    Rts2Object * master)
+Rts2App::sendMailTo (const char *subject, const char *text,
+		     const char *in_mailAddress)
 {
   int ret;
   char *cmd;
@@ -282,20 +303,21 @@ sendMailTo (const char *subject, const char *text, const char *mailAddress,
   ret = fork ();
   if (ret == -1)
     {
-      syslog (LOG_ERR, "Rts2Block::sendMail fork: %m");
+      logStream (MESSAGE_ERROR) << "Rts2Block::sendMail fork: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   if (ret != 0)
     {
       return 0;
     }
-  if (master)
-    master->forkedInstance ();
-  asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, mailAddress);
+  forkedInstance ();
+  asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, in_mailAddress);
   mailFile = popen (cmd, "w");
   if (!mailFile)
     {
-      syslog (LOG_ERR, "Rts2Block::sendMail popen: %m");
+      logStream (MESSAGE_ERROR) << "Rts2Block::sendMail popen: " <<
+	strerror (errno) << sendLog;
       exit (0);
     }
   fprintf (mailFile, "%s", text);

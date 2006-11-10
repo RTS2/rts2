@@ -6,6 +6,8 @@
 
 #include "rts2object.h"
 #include "rts2option.h"
+#include "rts2message.h"
+#include "rts2logstream.h"
 
 class Rts2App:public Rts2Object
 {
@@ -57,11 +59,18 @@ public:  Rts2App (int in_argc, char **in_argv);
    * @return -1 on error, 0 on succes
    */
   int parseDate (const char *in_date, struct tm *out_time);
-};
 
-// send mail to recepient; requires /usr/bin/mail binary; if master object is specified, that object
-// method forkedInstance will be called, which might close whenever descriptors are needed
-int sendMailTo (const char *subject, const char *text,
-		const char *mailAddress, Rts2Object * master = NULL);
+  virtual void sendMessage (messageType_t in_messageType,
+			    const char *in_messageString);
+  inline void sendMessage (messageType_t in_messageType,
+			   std::ostringstream & _os);
+
+  virtual Rts2LogStream logStream (messageType_t in_messageType);
+
+  // send mail to recepient; requires /usr/bin/mail binary; if master object is specified, that object
+  // method forkedInstance will be called, which might close whenever descriptors are needed
+  virtual int sendMailTo (const char *subject, const char *text,
+			  const char *in_mailAddress);
+};
 
 #endif /* !__RTS2_APP__ */

@@ -1,29 +1,29 @@
 #ifndef __RTS2_LOGSTREAM__
 #define __RTS2_LOGSTREAM__
 
-#include "rts2daemon.h"
-
 #include <sstream>
 
-class Rts2Daemon;
+#include <message.h>
+
+class Rts2App;
 
 class Rts2LogStream
 {
 private:
-  Rts2Daemon * masterDaemon;
+  Rts2App * masterApp;
   messageType_t messageType;
     std::ostringstream ls;
 public:
 
-    Rts2LogStream (Rts2Daemon * in_master, messageType_t in_type)
+    Rts2LogStream (Rts2App * in_master, messageType_t in_type)
   {
-    masterDaemon = in_master;
+    masterApp = in_master;
     messageType = in_type;
   }
 
   Rts2LogStream (Rts2LogStream & in_logStream)
   {
-    masterDaemon = in_logStream.masterDaemon;
+    masterApp = in_logStream.masterApp;
     messageType = in_logStream.messageType;
   }
 

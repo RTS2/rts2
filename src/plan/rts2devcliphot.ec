@@ -18,7 +18,7 @@ void
 Rts2DevClientPhotExec::integrationStart ()
 {
   if (currentTarget)
-    currentTarget->startObservation ();
+    currentTarget->startObservation (getMaster ());
   Rts2DevClientPhot::integrationStart ();
 }
 

@@ -71,7 +71,7 @@ Target::getTargetSubject (std::string &subj)
 }
 
 void
-Target::sendTargetMail (int eventMask, const char *subject_text)
+Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *master)
 {
   std::string mails;
 
@@ -95,7 +95,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text)
       observation->setPrintCounts (DISPLAY_ALL | DISPLAY_SUMMARY);
     }
     os << this << std::endl << *observation;
-    sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
+    master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
   }
 }
 
@@ -524,7 +524,7 @@ Target::wasMoved ()
 }
 
 int
-Target::startObservation ()
+Target::startObservation (Rts2Block *master)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int d_obs_id = obs_id;
@@ -550,7 +550,7 @@ Target::startObservation ()
     EXEC SQL COMMIT;
     obs_state |= OBS_BIT_STARTED;
 
-    sendTargetMail (SEND_START_OBS, "START OBSERVATION");
+    sendTargetMail (SEND_START_OBS, "START OBSERVATION", master);
   }
   return 0;
 }
@@ -582,6 +582,21 @@ Target::acqusitionFailed ()
 }
 
 int
+Target::endObservation (int in_next_id, Rts2Block *master)
+{
+  int old_obs_id = getObsId ();
+
+  int ret = endObservation (in_next_id);
+  sendTargetMail (SEND_END_OBS, "END OF OBSERVATION", master);
+
+  // check if that was the last observation..
+  Rts2Obs out_observation = Rts2Obs (old_obs_id);
+  out_observation.checkUnprocessedImages (master);
+
+  return ret;
+}
+
+int
 Target::endObservation (int in_next_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -609,12 +624,6 @@ Target::endObservation (int in_next_id)
       return -1;
     }
     EXEC SQL COMMIT;
-
-    sendTargetMail (SEND_END_OBS, "END OF OBSERVATION");
-
-    // check if that was the last observation..
-    Rts2Obs out_observation = Rts2Obs (getObsId ());
-    out_observation.checkUnprocessedImages ();
 
     obs_id = -1;
   }
@@ -1497,7 +1506,8 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 }
 
 void
-sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts, struct ln_lnlat_posn *in_obs)
+sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts,
+  struct ln_lnlat_posn *in_obs, Rts2App *master)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   long db_from = (long) *t_from;
@@ -1544,7 +1554,7 @@ sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int pri
         tar->sendInfo (os, JD);
         tar->printExtra (os, JD);
         os << obsset;
-        sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
+        master->sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
       }
       delete tar;
     }

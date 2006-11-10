@@ -37,7 +37,6 @@ Rts2App (in_argc, in_argv)
   masterState = 0;
   // allocate ports dynamically
   port = 0;
-  mailAddress = NULL;
 }
 
 Rts2Block::~Rts2Block (void)
@@ -83,11 +82,6 @@ Rts2Block::init ()
   masterBlock = this;
   signal (SIGHUP, signalHUP);
   return 0;
-}
-
-void
-Rts2Block::forkedInstance ()
-{
 }
 
 void
@@ -396,16 +390,6 @@ int
 Rts2Block::willConnect (Rts2Address * in_addr)
 {
   return 0;
-}
-
-int
-Rts2Block::sendMail (char *subject, char *text)
-{
-  // no mail will be send
-  if (!mailAddress)
-    return 0;
-
-  return sendMailTo (subject, text, mailAddress, this);
 }
 
 Rts2Address *

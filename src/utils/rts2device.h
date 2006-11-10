@@ -33,8 +33,9 @@ class Rts2Device;
 
 class Rts2DevConn:public Rts2Conn
 {
+private:
   // in case we know address of other side..
-  Rts2Address *address;
+  Rts2Address * address;
 
   Rts2Device *master;
 protected:
@@ -58,7 +59,7 @@ public:
   virtual void setKey (int in_key);
   virtual void setConnState (conn_state_t new_conn_state);
 
-  inline Rts2LogStream logStream (messageType_t in_messageType);
+  virtual Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 class Rts2DevConnMaster:public Rts2Conn
@@ -162,6 +163,8 @@ class Rts2Device:public Rts2Daemon
 
   struct timeval info_time;
 
+  char *mailAddress;
+
 protected:
   void setStateNames (int in_states_size, char **states_names);
   /**
@@ -209,8 +212,10 @@ public:
   }
 
   // only devices can send messages
-  void sendMessage (messageType_t in_messageType,
-		    const char *in_messageString);
+  virtual void sendMessage (messageType_t in_messageType,
+			    const char *in_messageString);
+
+  int sendMail (char *subject, char *text);
 
   void setIdleInfoInterval (time_t interval)
   {

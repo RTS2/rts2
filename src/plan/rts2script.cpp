@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "rts2script.h"
 #include "rts2scriptblock.h"
 #include "rts2scriptguiding.h"

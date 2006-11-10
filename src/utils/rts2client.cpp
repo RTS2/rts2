@@ -16,6 +16,7 @@
 #include "rts2block.h"
 #include "rts2client.h"
 #include "rts2devclient.h"
+#include "rts2logstream.h"
 
 Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, char *in_name):
 Rts2Conn (in_master)

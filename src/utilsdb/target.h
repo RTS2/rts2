@@ -177,7 +177,7 @@ private:
   int acquired;
   // which changes behaviour based on how many times we called them before
 
-  void sendTargetMail (int eventMask, const char *subject_text);	// send mail to users..
+  void sendTargetMail (int eventMask, const char *subject_text, Rts2Block * master);	// send mail to users..
 
   double minAlt;
 
@@ -481,7 +481,7 @@ public:
   bool wasMoved ();
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
-  int startObservation ();
+  int startObservation (Rts2Block * master);
   void acqusitionStart ();
   void acqusitionEnd ();
   void acqusitionFailed ();
@@ -509,6 +509,9 @@ public:
   // similar to startSlew - return 0 if observation ends, 1 if
   // it doesn't ends (ussually in case when in_next_id == target_id),
   // -1 on errror
+
+  int endObservation (int in_next_id, Rts2Block * master);
+
   virtual int endObservation (int in_next_id);
 
   // returns 1 if target is continuus - in case next target is same | next
@@ -1034,7 +1037,7 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 // send end mails
 void sendEndMails (const time_t * t_from, const time_t * t_to,
 		   int printImages, int printCounts,
-		   struct ln_lnlat_posn *in_obs);
+		   struct ln_lnlat_posn *in_obs, Rts2App * master);
 
 // print target information to stdout..
 std::ostream & operator << (std::ostream & _os, Target * target);

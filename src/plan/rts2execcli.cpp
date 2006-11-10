@@ -166,7 +166,7 @@ Rts2DevClientCameraExec::exposureStarted ()
       blockMove = 1;
     }
   if (currentTarget)
-    currentTarget->startObservation ();
+    currentTarget->startObservation (getMaster ());
   Rts2DevClientCameraImage::exposureStarted ();
 }
 

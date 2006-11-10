@@ -104,7 +104,7 @@ public:
    * was already finished, -1 when observation is still ongoing, > 0 when there are
    * return images to process, but observation was ended.
    */
-  int checkUnprocessedImages ();
+  int checkUnprocessedImages (Rts2Block * master);
 
   int getNumberOfImages ();
 

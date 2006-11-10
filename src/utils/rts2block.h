@@ -11,6 +11,8 @@
 #include <list>
 #include "status.h"
 
+#include <sstream>
+
 #include "rts2event.h"
 #include "rts2object.h"
 #include "rts2conn.h"
@@ -42,6 +44,8 @@ class Rts2ClientTCPDataConn;
 
 class Rts2DevClient;
 
+class Rts2LogStream;
+
 class Rts2Block:public Rts2App
 {
   int port;
@@ -57,9 +61,8 @@ class Rts2Block:public Rts2App
   int masterState;
 
 protected:
-  char *mailAddress;
 
-  virtual Rts2Conn *createClientConnection (char *in_deviceName) = 0;
+    virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
 
   virtual void cancelPriorityOperations ();
@@ -82,7 +85,6 @@ public:
   void setPort (int in_port);
   int getPort (void);
   virtual int init ();
-  virtual void forkedInstance ();
 
   int addConnection (Rts2Conn * conn);
 
@@ -139,8 +141,6 @@ public:
   {
     return masterState;
   }
-  // status-mail related functions  
-  int sendMail (char *subject, char *text);
   Rts2Address *findAddress (const char *blockName);
 
   void addAddress (const char *p_name, const char *p_host, int p_port,

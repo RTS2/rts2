@@ -5,18 +5,6 @@
 
 #include "rts2daemon.h"
 
-void
-Rts2LogStream::sendLog ()
-{
-  masterDaemon->sendMessage (messageType, ls.str ().c_str ());
-}
-
-Rts2LogStream & sendLog (Rts2LogStream & _ls)
-{
-  _ls.sendLog ();
-  return _ls;
-}
-
 int
 Rts2Daemon::addConnection (int in_sock)
 {
@@ -137,20 +125,6 @@ Rts2Daemon::forkedInstance ()
   if (listen_sock >= 0)
     close (listen_sock);
   Rts2Block::forkedInstance ();
-}
-
-void
-Rts2Daemon::sendMessage (messageType_t in_messageType,
-			 std::ostringstream & _os)
-{
-  sendMessage (in_messageType, _os.str ().c_str ());
-}
-
-Rts2LogStream Rts2Daemon::logStream (messageType_t in_messageType)
-{
-  Rts2LogStream
-  ls (this, in_messageType);
-  return ls;
 }
 
 void
