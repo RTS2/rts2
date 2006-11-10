@@ -63,8 +63,10 @@ class Rts2Soapd:public Rts2DeviceDb
 private:
   int soapPort;
   int servedRequest;
+    std::ofstream * fileLog;
 protected:
     virtual int processOption (int in_opt);
+  virtual int reloadConfig ();
 public:
     Rts2Soapd (int in_argc, char **in_argv);
     virtual ~ Rts2Soapd (void);
@@ -93,12 +95,15 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "SOAP")
 {
   soapPort = -1;
   servedRequest = 0;
+  fileLog = NULL;
   addOption ('o', "soap_port", 1,
 	     "soap port, if not specified, taken from config file (observatory, soap)");
 }
 
 Rts2Soapd::~Rts2Soapd (void)
 {
+  fileLog->close ();
+  delete fileLog;
 }
 
 int
@@ -112,6 +117,19 @@ Rts2Soapd::processOption (int in_opt)
     default:
       return Rts2DeviceDb::processOption (in_opt);
     }
+  return 0;
+}
+
+int
+Rts2Soapd::reloadConfig ()
+{
+  if (fileLog)
+    {
+      fileLog->close ();
+      delete fileLog;
+    }
+  fileLog = new std::ofstream ();
+  fileLog->open ("/var/log/rts2", ios::out | ios::app);
   return 0;
 }
 
@@ -184,8 +202,15 @@ Rts2Soapd::sendInfo (Rts2Conn * conn)
 void
 Rts2Soapd::message (Rts2Message & msg)
 {
-  Rts2MessageDB msgDB (msg);
-  msgDB.insertDB ();
+  if (msg.isNotDebug ())
+    {
+      Rts2MessageDB msgDB (msg);
+      msgDB.insertDB ();
+    }
+  if (fileLog)
+    {
+      (*fileLog) << msg;
+    }
 }
 
 Rts2Soapd *soapd;
