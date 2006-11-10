@@ -5,6 +5,7 @@
 
 #include <sys/time.h>
 #include <string>
+#include <fstream>
 
 class Rts2Message
 {
@@ -32,6 +33,13 @@ public:
   {
     return (((int) messageType) & in_mask);
   }
+
+  bool isNotDebug ()
+  {
+    return (!(messageType & MESSAGE_DEBUG));
+  }
 };
+
+std::ofstream & operator << (std::ofstream & _of, Rts2Message & msg);
 
 #endif /* ! __RTS2_MESSAGE__ */

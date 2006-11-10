@@ -75,3 +75,9 @@ std::string Rts2Message::toString ()
     << " " << messageOName << " " << messageType << " " << messageString;
   return os.str ();
 }
+
+std::ofstream & operator << (std::ofstream & _of, Rts2Message & msg)
+{
+  _of << msg.toString () << std::endl;
+  return _of;
+}
