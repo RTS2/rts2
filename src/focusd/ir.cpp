@@ -299,13 +299,14 @@ Rts2DevFocuserIr::isFocusing ()
   if (status)
     {
       logStream (MESSAGE_ERROR) << "focuser IR isFocusing status: " << status
-	<< sendLog);
+	<< sendLog;
       return -1;
     }
   return (fabs (targetdistance) < 0.001) ? -2 : USEC_SEC / 50;
 }
 
-int Rts2DevFocuserIr::endFocusing ()
+int
+Rts2DevFocuserIr::endFocusing ()
 {
   int status = 0;
   int power = 0;
@@ -319,7 +320,8 @@ int Rts2DevFocuserIr::endFocusing ()
   return 0;
 }
 
-bool Rts2DevFocuserIr::isAtStartPosition ()
+bool
+Rts2DevFocuserIr::isAtStartPosition ()
 {
   int ret;
   ret = info ();
@@ -328,12 +330,13 @@ bool Rts2DevFocuserIr::isAtStartPosition ()
   return (fabs ((float) focPos) < 50);
 }
 
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
   Rts2DevFocuserIr *device = new Rts2DevFocuserIr (argc, argv);
 
   int ret;
-    ret = device->init ();
+  ret = device->init ();
   if (ret)
     {
       fprintf (stderr, "Cannot initialize focuser - exiting!\n");

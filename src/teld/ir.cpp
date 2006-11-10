@@ -335,7 +335,7 @@ Rts2DevTelescopeIr::checkErrors ()
       std::string list;
       status = tpl_get ("CABINET.STATUS.LIST", list, &status);
       if (status == 0)
-	logStatus (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
+	logStream (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
 	  list.c_str () << sendLog;
       // decode errors
       while (true)
