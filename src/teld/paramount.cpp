@@ -183,8 +183,6 @@ public:
   virtual int startPark ();
   virtual int endPark ();
 
-  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
-			      double real_dec);
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec);
 
@@ -1145,17 +1143,10 @@ Rts2DevTelParamount::endPark ()
 }
 
 int
-Rts2DevTelParamount::correctOffsets (double cor_ra, double cor_dec,
-				     double real_ra, double real_dec)
-{
-  return 0;
-}
-
-int
 Rts2DevTelParamount::correct (double cor_ra, double cor_dec, double real_ra,
 			      double real_dec)
 {
-  return 0;
+  return correctOffsets (cor_ra, cor_dec, real_ra, real_dec);
 }
 
 int

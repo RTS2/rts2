@@ -918,8 +918,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   struct ln_equ_posn targetPos;
   logStream (MESSAGE_DEBUG) << "telescope correct (interesting val 1) " <<
     lastRa << " " << lastDec << " known position " << knowPosition <<
-    " correction " << locCorNum << " " << locCorRa << " " << locCorDec <<
-    " real " << realPos->ra << " " << realPos->
+    " numCorr " << numCorr << " correction " << locCorNum << " " << locCorRa
+    << " " << locCorDec << " real " << realPos->ra << " " << realPos->
     dec << " move mark " << moveMark << " cor_mark " << cor_mark << " cor_ra "
     << cor_ra << " cor_dec " << cor_dec << sendLog;
   // not moved yet
