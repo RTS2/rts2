@@ -102,6 +102,9 @@ public:
   virtual Rts2Conn *createConnection (int in_sock, int conn_num);
   void connAdded (Rts2ConnCentrald * added);
 
+  void sendMessage (messageType_t in_messageType,
+		    const char *in_messageString);
+
   virtual void message (Rts2Message & msg);
   void processMessage (Rts2Message & msg)
   {
@@ -708,6 +711,15 @@ Rts2Centrald::idle ()
 	}
     }
   return Rts2Daemon::idle ();
+}
+
+void
+Rts2Centrald::sendMessage (messageType_t in_messageType,
+			   const char *in_messageString)
+{
+  Rts2Message msg =
+    Rts2Message ("centrald", in_messageType, in_messageString);
+  sendMessageAll (msg);
 }
 
 void
