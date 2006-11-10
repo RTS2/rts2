@@ -6,3 +6,12 @@
 	/usr/bin/killall -HUP syslogd
     endscript
 }
+
+/var/log/rts2-debug {
+    rotate 4
+    compress
+    errors petr@kubanek.net
+    postrotate
+        /usr/bin/killall -HUP rts2-soapd
+    endscript
+}
