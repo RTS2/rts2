@@ -170,6 +170,12 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
   imgId = currTarget->getNextImgId ();
   setExposureStart (in_exposureStart);
 
+  cameraName = new char[DEVICE_NAME_SIZE + 1];
+  strcpy (cameraName, camera->getName ());
+
+  mountName = NULL;
+  focName = NULL;
+
   isAcquiring = currTarget->isAcquiring ();
   if (isAcquiring)
     {
@@ -204,13 +210,8 @@ Rts2Image::Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
       setValue ("OBJECT", "(null)", "target name was null");
     }
 
-  cameraName = new char[DEVICE_NAME_SIZE + 1];
   setValue ("CCD_NAME", camera->getName (), "camera name");
   setValue ("CCD_TYPE", camera->getValueChar ("type"), "camera type");
-  strcpy (cameraName, camera->getName ());
-
-  mountName = NULL;
-  focName = NULL;
 
   currTarget->writeToImage (this);
 }
