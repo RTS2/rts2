@@ -105,7 +105,7 @@ Rts2DevFocuserOptec::foc_write (char *buf, int count)
 {
   int ret;
 #ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) "focuser Optec will write: " << buf << sendLog;
+  logStream (MESSAGE_DEBUG) << "focuser Optec will write: " << buf << sendLog;
 #endif
   ret = write (foc_desc, buf, count);
 //  tcflush (foc_desc, TCIFLUSH);
@@ -280,10 +280,10 @@ Rts2DevFocuserOptec::getTemp (float *temp)
   return 0;
 }
 
-bool
-Rts2DevFocuserOptec::isAtStartPosition ()
+bool Rts2DevFocuserOptec::isAtStartPosition ()
 {
-  int ret;
+  int
+    ret;
   ret = getPos (&focPos);
   if (ret)
     return false;
