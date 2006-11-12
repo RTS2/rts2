@@ -873,6 +873,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
   tar_dec += locCorDec;
   if (isBellowResolution (locCorRa, locCorDec))
     {
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2DevTelescope::startResyncMove isBellowResolution" << sendLog;
       conn->sendCommandEnd (DEVDEM_E_IGNORE,
 			    "position change is bellow telescope resolution");
       return -1;
