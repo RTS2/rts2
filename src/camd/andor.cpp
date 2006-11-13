@@ -237,9 +237,9 @@ Rts2DevCamera (in_argc, in_argv)
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
   addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
-  addOption ('V', "vertical_speed", 1, "set vertical readout speed");
+  addOption ('v', "vertical_speed", 1, "set vertical readout speed");
   addOption ('A', "vs_amplitude", 1, "VS amplitude (0-4)");
-  addOption ('c', "ad_channel", 1, "set AD channel which will be used");
+  addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('N', "noft", 0, "do not use frame transfer mode");
   addOption ('I', "speed_info", 0,
 	     "print speed info - information about speed available");
@@ -276,7 +276,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'c':
+    case 'C':
       adChannel = atoi (optarg);
       break;
     case 'g':
@@ -294,7 +294,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
     case 'H':
       horizontalSpeed = atoi (optarg);
       break;
-    case 'V':
+    case 'v':
       verticalSpeed = atoi (optarg);
       break;
     case 'A':
