@@ -29,8 +29,9 @@ Rts2ConnFork::connectionError (int last_data_size)
 {
   if (last_data_size < 0 && errno == EAGAIN)
     {
-      syslog (LOG_DEBUG,
-	      "Rts2ConnFork::connectionError reported EAGAIN - that should not happen, ignoring");
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2ConnFork::connectionError reported EAGAIN - that should not happen, ignoring"
+	<< sendLog;
       return 1;
     }
   return Rts2Conn::connectionError (last_data_size);
@@ -63,8 +64,9 @@ Rts2ConnFork::init ()
   ret = pipe (filedes);
   if (ret)
     {
-      syslog (LOG_ERR,
-	      "Rts2ConnImgProcess::run cannot create pipe for process: %m");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ConnImgProcess::run cannot create pipe for process: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   // do everything that will be needed to done before forking
@@ -72,7 +74,8 @@ Rts2ConnFork::init ()
   childPid = fork ();
   if (childPid == -1)
     {
-      syslog (LOG_ERR, "Rts2ConnImgProcess::run cannot fork: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnImgProcess::run cannot fork: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   else if (childPid)		// parent
@@ -90,7 +93,8 @@ Rts2ConnFork::init ()
   master->forkedInstance ();
   ret = newProcess ();
   if (ret)
-    syslog (LOG_ERR, "Rts2ConnFork::init newProcess return : %i %m", ret);
+    logStream (MESSAGE_ERROR) << "Rts2ConnFork::init newProcess return : " <<
+      ret << " " << strerror (errno) << sendLog;
   exit (0);
 }
 

@@ -41,8 +41,9 @@ Rts2ConnNoSend (in_master)
   free (s_port);
   if (ret)
     {
-      syslog (LOG_ERR,
-	      "Rts2ClientTCPDataConn::Rts2ClientTCPDataConn getaddrinfo: %m");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ClientTCPDataConn::Rts2ClientTCPDataConn getaddrinfo: " <<
+	strerror (errno) << sendLog;
       freeaddrinfo (in_addr);
       sock = -1;
       return;
@@ -51,16 +52,18 @@ Rts2ConnNoSend (in_master)
     socket (in_addr->ai_family, in_addr->ai_socktype, in_addr->ai_protocol);
   if (sock == -1)
     {
-      syslog (LOG_ERR,
-	      "Rts2ClientTCPDataConn::Rts2ClientTCPDataConn socket: %m");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ClientTCPDataConn::Rts2ClientTCPDataConn socket: " <<
+	strerror (errno) << sendLog;
       freeaddrinfo (in_addr);
       return;
     }
   ret = fcntl (sock, F_SETFL, O_NONBLOCK);
   if (ret)
     {
-      syslog (LOG_ERR,
-	      "Rts2ClientTCPDataConn::Rts2ClientTCPDataConn cannot set socket non-blocking: %m");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ClientTCPDataConn::Rts2ClientTCPDataConn cannot set socket non-blocking: "
+	<< strerror (errno) << sendLog;
     }
   // try to connect
   ret = connect (sock, in_addr->ai_addr, in_addr->ai_addrlen);
@@ -124,15 +127,16 @@ Rts2ClientTCPDataConn::idle ()
       if (ret)
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %m");
+	  logStream (MESSAGE_ERROR) << "Rts2ConnClient::idle getsockopt " <<
+	    strerror (errno) << sendLog;
 #endif
 	  connectionError (-1);
 	}
       else if (err)
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %s",
-		  strerror (err));
+	  logStream (MESSAGE_ERROR) << "Rts2ConnClient::idle getsockopt " <<
+	    strerror (err) << sendLog;
 #endif
 	  if (err == EINPROGRESS)
 	    {

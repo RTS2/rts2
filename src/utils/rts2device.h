@@ -58,8 +58,6 @@ public:
 
   virtual void setKey (int in_key);
   virtual void setConnState (conn_state_t new_conn_state);
-
-  virtual Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 class Rts2DevConnMaster:public Rts2Conn
@@ -97,8 +95,8 @@ class Rts2DevConnData:public Rts2Conn
 protected:
   int command ()
   {
-    syslog (LOG_DEBUG, "Rts2DevConnData::command badCommand %s",
-	    getCommand ());
+    logStream (MESSAGE_DEBUG) << "Rts2DevConnData::command badCommand " <<
+      getCommand () << sendLog;
     // there isn't any command possible on data connection
     return -1;
   };

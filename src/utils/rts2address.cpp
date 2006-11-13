@@ -56,8 +56,6 @@ Rts2Address::getSockaddr (struct addrinfo **info)
   free (s_port);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2Address::getAddress getaddrinfor: %s",
-	      gai_strerror (ret));
       return -1;
     }
   return 0;

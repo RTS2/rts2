@@ -3,6 +3,7 @@
 #endif
 
 #include "rts2config.h"
+#include "rts2block.h"
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -50,7 +51,9 @@ Rts2Config::loadFile (char *filename)
   fp = fopen (filename, "r");
   if (fp == NULL)
     {
-      syslog (LOG_ERR, "Rts2Config::loadFile cannot open '%s'", filename);
+      getMasterBlock ()->
+	logStream (MESSAGE_ERROR) << "Rts2Config::loadFile cannot open " <<
+	filename << sendLog;
       return -1;
     }
   // get some commonly used values

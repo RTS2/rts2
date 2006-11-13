@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -14,14 +15,15 @@ Rts2Daemon::addConnection (int in_sock)
       if (!connections[i])
 	{
 #ifdef DEBUG_ALL
-	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
+	  logStream (MESSAGE_DEBUG) << "Rts2Block::addConnection add conn: "
+	    << i << sendLog;
 #endif
 	  connections[i] = createConnection (in_sock, i);
 	  return 0;
 	}
     }
-  syslog (LOG_ERR,
-	  "Rts2Block::addConnection Cannot find empty connection!\n");
+  logStream (MESSAGE_ERROR) <<
+    "Rts2Block::addConnection Cannot find empty connection!" << sendLog;
   return -1;
 }
 
@@ -66,7 +68,9 @@ Rts2Daemon::init ()
       ret = fork ();
       if (ret < 0)
 	{
-	  perror ("Rts2Daemon::int deamonize fork");
+	  std::
+	    cerr << "Rts2Daemon::int deamonize fork " << strerror (errno) <<
+	    std::endl;
 	  exit (2);
 	}
       if (ret)
@@ -83,7 +87,9 @@ Rts2Daemon::init ()
   listen_sock = socket (PF_INET, SOCK_STREAM, 0);
   if (listen_sock == -1)
     {
-      syslog (LOG_ERR, "Rts2Daemon::init create listen socket %m");
+      std::
+	cerr << "Rts2Daemon::init create listen socket " << strerror (errno)
+	<< std::endl;
       return -1;
     }
   const int so_reuseaddr = 1;
@@ -93,25 +99,30 @@ Rts2Daemon::init ()
   server.sin_family = AF_INET;
   server.sin_port = htons (getPort ());
   server.sin_addr.s_addr = htonl (INADDR_ANY);
-  syslog (LOG_DEBUG, "Rts2Daemon::init binding to port: %i", getPort ());
+  std::cerr << "Rts2Daemon::init binding to port: " << getPort () << std::
+    endl;
   ret = bind (listen_sock, (struct sockaddr *) &server, sizeof (server));
   if (ret == -1)
     {
-      syslog (LOG_ERR, "Rts2Daemon::init bind %m");
+      std::cerr << "Rts2Daemon::init bind " << strerror (errno) << std::endl;
       return -1;
     }
   socklen_t sock_size = sizeof (server);
   ret = getsockname (listen_sock, (struct sockaddr *) &server, &sock_size);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2Daemon::init getsockname %m");
+      std::
+	cerr << "Rts2Daemon::init getsockname " << strerror (errno) << std::
+	endl;
       return -1;
     }
   setPort (ntohs (server.sin_port));
   ret = listen (listen_sock, 5);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2Block::init cannot listen: %m");
+      std::
+	cerr << "Rts2Block::init cannot listen: " << strerror (errno) << std::
+	endl;
       close (listen_sock);
       listen_sock = -1;
       return -1;
@@ -147,7 +158,8 @@ Rts2Daemon::selectSuccess (fd_set * read_set)
 	accept (listen_sock, (struct sockaddr *) &other_side, &addr_size);
       if (client == -1)
 	{
-	  syslog (LOG_DEBUG, "client accept: %m %i", listen_sock);
+	  logStream (MESSAGE_DEBUG) << "client accept: " << strerror (errno)
+	    << " " << listen_sock << sendLog;
 	}
       else
 	{

@@ -22,6 +22,12 @@
 
 static Rts2Block *masterBlock = NULL;
 
+Rts2Block *
+getMasterBlock ()
+{
+  return masterBlock;
+}
+
 Rts2Block::Rts2Block (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
@@ -127,14 +133,15 @@ Rts2Block::addConnection (Rts2Conn * conn)
       if (!connections[i])
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG, "Rts2Block::addConnection add conn: %i", i);
+	  logStream (MESSAGE_DEBUG) << "Rts2Block::addConnection add conn: "
+	    << i << sendLog;
 #endif
 	  connections[i] = conn;
 	  return 0;
 	}
     }
-  syslog (LOG_ERR,
-	  "Rts2Block::addConnection Cannot find empty connection!\n");
+  logStream (MESSAGE_ERROR) <<
+    "Rts2Block::addConnection Cannot find empty connection!" << sendLog;
   return -1;
 }
 
@@ -270,9 +277,9 @@ Rts2Block::selectSuccess (fd_set * read_set)
 	  if (conn->receive (read_set) == -1)
 	    {
 #ifdef DEBUG_EXTRA
-	      syslog (LOG_ERR,
-		      "Will delete connection %i, name: '%s'", i,
-		      conn->getName ());
+	      logStream (MESSAGE_ERROR) <<
+		"Will delete connection " << i << ", name: " << conn->
+		getName () << sendLog;
 #endif
 	      ret = deleteConnection (conn);
 	      // delete connection only when it really requested to be deleted..
@@ -373,7 +380,7 @@ void
 Rts2Block::childReturned (pid_t child_pid)
 {
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "child returned: %i", child_pid);
+  logStream (MESSAGE_DEBUG) << "child returned: " << child_pid << sendLog;
 #endif
   for (int i = 0; i < MAX_CONN; i++)
     {
@@ -555,9 +562,9 @@ Rts2Block::getConnection (char *deviceName)
   if (!devAddr)
     {
 #ifdef DEBUG_EXTRA
-      syslog (LOG_ERR,
-	      "Cannot find device with name '%s', creating new connection",
-	      deviceName);
+      logStream (MESSAGE_ERROR) <<
+	"Cannot find device with name " << deviceName <<
+	", creating new connection" << sendLog;
 #endif
       conn = createClientConnection (deviceName);
       addConnection (conn);
@@ -594,8 +601,8 @@ Rts2Block::queAll (Rts2Command * command)
       else
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG, "Rts2Block::queAll no connection for %s",
-		  (*addr_iter)->getName ());
+	  logStream (MESSAGE_DEBUG) << "Rts2Block::queAll no connection for "
+	    << (*addr_iter)->getName () << sendLog;
 #endif
 	}
     }

@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -127,7 +128,11 @@ Rts2DevConn::init ()
   ret = address->getSockaddr (&device_addr);
 
   if (ret)
-    return ret;
+    {
+      logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: " <<
+	strerror (errno) << sendLog;
+      return ret;
+    }
   sock =
     socket (device_addr->ai_family, device_addr->ai_socktype,
 	    device_addr->ai_protocol);
@@ -171,15 +176,16 @@ Rts2DevConn::idle ()
       if (ret)
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %m");
+	  logStream (MESSAGE_ERROR) << "Rts2Dev2DevConn::idle getsockopt " <<
+	    strerror (errno) << sendLog;
 #endif
 	  connectionError (-1);
 	}
       else if (err)
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_ERR, "Rts2Dev2DevConn::idle getsockopt %s",
-		  strerror (err));
+	  logStream (MESSAGE_ERROR) << "Rts2Dev2DevConn::idle getsockopt " <<
+	    strerror (err) << sendLog;
 #endif
 	  connectionError (-1);
 	}
@@ -210,7 +216,8 @@ Rts2DevConn::authorizationFailed ()
   setCentraldId (-1);
   setConnState (CONN_DELETE);
   sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
-  syslog (LOG_DEBUG, "authorizationFailed: %s", getName ());
+  logStream (MESSAGE_DEBUG) << "authorization failed: " << getName () <<
+    sendLog;
   return 0;
 }
 
@@ -252,7 +259,8 @@ void
 Rts2DevConn::connAuth ()
 {
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "auth: %s state: %i", getName (), getConnState ());
+  logStream (MESSAGE_DEBUG) << "auth: " << getName () << " state: " <<
+    getConnState () << sendLog;
 #endif
   master->getCentraldConn ()->
     queCommand (new Rts2CommandAuthorize (master, getName ()));
@@ -274,9 +282,9 @@ Rts2DevConn::setKey (int in_key)
       else
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG,
-		  "Rts2DevConn::setKey invalid connection state: %i",
-		  getConnState ());
+	  logStream (MESSAGE_DEBUG) <<
+	    "Rts2DevConn::setKey invalid connection state: " <<
+	    getConnState () << sendLog;
 #endif
 	}
     }
@@ -301,15 +309,13 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
   Rts2Conn::setConnState (new_conn_state);
 }
 
-Rts2LogStream Rts2DevConn::logStream (messageType_t in_messageType)
-{
-  Rts2LogStream
-  ls (master, in_messageType);
-  return ls;
-}
-
-
-Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, char *in_master_host, int in_master_port):
+Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master,
+				      char *in_device_host,
+				      int in_device_port,
+				      char *in_device_name,
+				      int in_device_type,
+				      char *in_master_host,
+				      int in_master_port):
 Rts2Conn (-1, in_master)
 {
   device_host = in_device_host;
@@ -376,21 +382,25 @@ Rts2DevConnMaster::init ()
     }
   else
     {
-      syslog (LOG_ERR, "Rts2DevConnMaster::init cannot get host name %s : %m",
-	      master_host);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevConnMaster::init cannot get host name " << master_host << " "
+	<< strerror (errno) << sendLog;
       return -1;
     }
   // get hostname
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
     {
-      syslog (LOG_ERR, "Rts2DevConnMaster::init cannot create socket: %m");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevConnMaster::init cannot create socket: " << strerror (errno)
+	<< sendLog;
       return -1;
     }
   ret = connect (sock, (struct sockaddr *) &address, sizeof (address));
   if (ret < 0)
     {
-      syslog (LOG_ERR, "Rts2DevConnMaster::init cannot connect: %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevConnMaster::init cannot connect: "
+	<< strerror (errno) << sendLog;
       close (sock);
       sock = -1;
       return -1;
@@ -684,8 +694,8 @@ Rts2Device::setStateNames (int in_states_size, char **states_names)
   int i;
   char *state_name = *states_names;
 #ifdef DEBUG_ALL
-  syslog (LOG_DEBUG, "Rts2Device::setStateNames states: %i\n",
-	  in_states_size);
+  logStream (MESSAGE_DEBUG) << "Rts2Device::setStateNames states: " <<
+    in_states_size << sendLog;
 #endif
   states = (Rts2State **) malloc (sizeof (Rts2State *) * in_states_size);
   for (i = 0; i < in_states_size; i++)
@@ -768,9 +778,10 @@ Rts2Device::maskState (int state_num, int state_mask, int new_state,
 		       char *description)
 {
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG,
-	  "Rts2Device::maskState state: %i state_mask: %i new_state: %i desc: %s",
-	  state_num, state_mask, new_state, description);
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2Device::maskState state: " << state_num << " state_mask: " <<
+    state_mask << " new_state: " << new_state << " desc: " << description <<
+    sendLog;
 #endif
   states[state_num]->maskState (state_mask, new_state, description);
   return 0;
@@ -797,7 +808,7 @@ Rts2Device::init ()
 
   if (lockf == -1)
     {
-      syslog (LOG_ERR, "cannot open lock file %s", lock_fname);
+      std::cerr << "cannot open lock file " << lock_fname << std::endl;
       return -1;
     }
 
@@ -806,11 +817,14 @@ Rts2Device::init ()
     {
       if (errno == EWOULDBLOCK)
 	{
-	  syslog (LOG_ERR, "lock file %s owned by another process",
-		  lock_fname);
+	  std::
+	    cerr << "lock file " << lock_fname << " owned by another process"
+	    << std::endl;
 	  return -1;
 	}
-      syslog (LOG_ERR, "cannot flock %s: %m, lock_fname", lock_fname);
+      std::
+	cerr << "cannot flock " << lock_fname << ": " << strerror (errno) <<
+	std::endl;
       return -1;
     }
 
@@ -829,7 +843,7 @@ Rts2Device::init ()
 
   while (connections[0]->init () < 0)
     {
-      syslog (LOG_DEBUG, "Rts2Device::init waiting for master");
+      std::cerr << "Rts2Device::init waiting for master" << std::endl;
       sleep (60);
     }
   return ret;

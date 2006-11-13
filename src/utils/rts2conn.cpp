@@ -107,15 +107,16 @@ Rts2Conn::idle ()
 	{
 	  ret = send (PROTO_TECHNICAL " ready");
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG, "Send T ready ret: %i name: '%s' type:%i", ret,
-		  getName (), type);
+	  logStream (MESSAGE_DEBUG) << "Send T ready ret: " << ret <<
+	    " name: " << getName () << " type: " << type << sendLog;
 #endif
 	  time (&lastSendReady);
 	}
       if (now > (lastData + getConnTimeout () * 2))
 	{
-	  syslog (LOG_DEBUG, "Connection timeout: %li %li %li '%s' type: %i",
-		  lastGoodSend, lastData, now, getName (), type);
+	  logStream (MESSAGE_DEBUG) << "Connection timeout: " << lastGoodSend
+	    << " " << lastData << " " << now << " " << getName () << " " <<
+	    type << sendLog;
 	  connectionError (-1);
 	}
     }
@@ -125,14 +126,16 @@ Rts2Conn::idle ()
 int
 Rts2Conn::authorizationOK ()
 {
-  syslog (LOG_ERR, "authorization called on wrong connection");
+  logStream (MESSAGE_ERROR) << "authorization called on wrong connection" <<
+    sendLog;
   return -1;
 }
 
 int
 Rts2Conn::authorizationFailed ()
 {
-  syslog (LOG_ERR, "authorization failed on wrong connection");
+  logStream (MESSAGE_ERROR) << "authorization failed on wrong connection" <<
+    sendLog;
   return -1;
 }
 
@@ -145,7 +148,8 @@ Rts2Conn::acceptConn ()
   new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
   if (new_sock == -1)
     {
-      syslog (LOG_ERR, "Rts2Conn::acceptConn data accept %m");
+      logStream (MESSAGE_ERROR) << "Rts2Conn::acceptConn data accept " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   else
@@ -153,7 +157,8 @@ Rts2Conn::acceptConn ()
       close (sock);
       sock = new_sock;
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG, "Rts2Conn::acceptConn connection accepted");
+      logStream (MESSAGE_DEBUG) << "Rts2Conn::acceptConn connection accepted"
+	<< sendLog;
 #endif
       setConnState (CONN_CONNECTED);
       return 0;
@@ -250,7 +255,7 @@ Rts2Conn::processLine ()
       if (!strcmp (msg, "ready"))
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG, "Send T OK");
+	  logStream (MESSAGE_DEBUG) << "Send T OK" << sendLog;
 #endif
 	  send (PROTO_TECHNICAL " OK");
 	  return -1;
@@ -270,8 +275,8 @@ Rts2Conn::processLine ()
       ret = command ();
     }
 #ifdef DEBUG_ALL
-  syslog (LOG_DEBUG, "Rts2Conn::processLine [%i] command: %s ret: %i",
-	  getCentraldId (), getCommand (), ret);
+  logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" << getCentraldId ()
+    << "] command: " << getCommand () << " ret: " << ret << sendLog;
 #endif
   if (!ret)
     sendCommandEnd (0, "OK");
@@ -303,8 +308,8 @@ Rts2Conn::receive (fd_set * set)
       buf_top[data_size] = '\0';
       successfullRead ();
 #ifdef DEBUG_ALL
-      syslog (LOG_DEBUG, "Rts2Conn::receive reas: %s full_buf: %s size: %i",
-	      buf_top, buf, data_size);
+      logStream (MESSAGE_DEBUG) << "Rts2Conn::receive reas: " << buf_top <<
+	" full_buf: " << buf << " size: " << data_size << sendLog;
 #endif
       // put old data size into account..
       data_size += buf_top - buf;
@@ -436,6 +441,12 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
+Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
+{
+  Rts2LogStream ls (master, in_messageType);
+  return ls;
+}
+
 void
 Rts2Conn::queClear ()
 {
@@ -521,9 +532,10 @@ Rts2Conn::command ()
   // as it can fails (V without value), not with else
   if (isCommand (PROTO_VALUE))
     return -1;
-  syslog (LOG_DEBUG,
-	  "Rts2Conn::command unknow command: getCommand %s state: %i type: %i name: %s",
-	  getCommand (), conn_state, getType (), getName ());
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2Conn::command unknow command: getCommand " << getCommand () <<
+    " state: " << conn_state << " type: " << getType () << " name: " <<
+    getName () << sendLog;
   sendCommandEnd (-4, "Unknow command");
   return -4;
 }
@@ -601,7 +613,7 @@ Rts2Conn::commandReturn ()
   if (!runningCommand)
     {
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG, "Rts2Conn::commandReturn null!");
+      logStream (MESSAGE_DEBUG) << "Rts2Conn::commandReturn null!" << sendLog;
 #endif
       return -1;
     }
@@ -639,16 +651,17 @@ Rts2Conn::send (const char *msg)
   if (ret != len)
     {
 #ifdef DEBUG_EXTRA
-      syslog (LOG_ERR,
-	      "Rts2Conn::send [%i:%i] error %i state: %i sending '%s':%m",
-	      getCentraldId (), conn_state, sock, ret, msg);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2Conn::send [" << getCentraldId () << ":" << conn_state <<
+	"] error " << sock << " state: " << ret << " sending " << msg << ":"
+	strerror (errno) << sendLog;
 #endif
       connectionError (ret);
       return -1;
     }
 #ifdef DEBUG_ALL
-  syslog (LOG_DEBUG, "Rts2Conn::send [%i:%i] send %i: '%s'",
-	  getCentraldId (), sock, ret, msg);
+  logStream (MESSAGE_DEBUG) << "Rts2Conn::send [" << getCentraldId () << ":"
+    << sock << "] send " << ret << ": " << msg << sendLog;
 #endif
   write (sock, "\r\n", 2);
   successfullSend ();

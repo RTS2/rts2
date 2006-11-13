@@ -205,4 +205,6 @@ public:
   virtual void sigHUP (int sig);
 };
 
+Rts2Block *getMasterBlock ();
+
 #endif /*! __RTS2_NETBLOCK__ */

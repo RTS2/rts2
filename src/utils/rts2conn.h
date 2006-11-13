@@ -7,6 +7,7 @@
 
 #include "rts2serverstate.h"
 #include "rts2message.h"
+#include "rts2logstream.h"
 
 #define MAX_DATA		200
 
@@ -296,6 +297,8 @@ protected:
   {
     return (*(getCommand ()) == '+' || *(getCommand ()) == '-');
   }
+
+  Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 #endif /* ! __RTS2_CONN__ */

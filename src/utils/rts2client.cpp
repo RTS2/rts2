@@ -41,7 +41,11 @@ Rts2ConnClient::init ()
   ret = address->getSockaddr (&device_addr);
 
   if (ret)
-    return ret;
+    {
+      logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: " <<
+	strerror (errno) << sendLog;
+      return ret;
+    }
   sock =
     socket (device_addr->ai_family, device_addr->ai_socktype,
 	    device_addr->ai_protocol);
@@ -81,13 +85,14 @@ Rts2ConnClient::idle ()
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %m");
+	  logStream (MESSAGE_ERROR) << "Rts2ConnClient::idle getsockopt " <<
+	    strerror (errno) << sendLog;
 	  connectionError (-1);
 	}
       else if (err)
 	{
-	  syslog (LOG_ERR, "Rts2ConnClient::idle getsockopt %s",
-		  strerror (err));
+	  logStream (MESSAGE_ERROR) << "Rts2ConnClient::idle getsockopt " <<
+	    strerror (errno) << sendLog;
 	  connectionError (-1);
 	}
       else
