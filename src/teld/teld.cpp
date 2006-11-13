@@ -73,8 +73,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
   nextReset = RESET_RESTART;
 
-  lastTar.ra = -1000;
-  lastTar.dec = -1000;
+  unsetTarget ();
 
   for (int i = 0; i < 4; i++)
     {
@@ -388,8 +387,7 @@ Rts2DevTelescope::checkMoves ()
 	  maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
 		     DEVICE_ERROR_HW | TEL_OBSERVING,
 		     "move finished with error");
-	  lastTar.ra = -1000;
-	  lastTar.dec = -1000;
+	  unsetTarget ();
 	  move_connection = NULL;
 	  dontKnowPosition ();
 	}
@@ -950,6 +948,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	      if (!ret)
 		{
 		  numCorr++;
+		  unsetTarget ();
 		  ret = startMove (conn, lastTar.ra, lastTar.dec);
 		}
 	    }
