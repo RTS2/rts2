@@ -27,6 +27,9 @@ using namespace std;
 
 #include "atmcdLXd.h"
 
+/**
+ * Chip of Andor CCD.
+ */
 class CameraAndorChip:public CameraChip
 {
 private:
@@ -253,7 +256,10 @@ Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
 void
 Rts2DevCameraAndor::help ()
 {
-  printf ("Driver for Andor CCDs (iXon & others)\n");
+  std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl;
+  std::
+    cout << "Optimal values for vertical speed on iXon are: -H 1 -v 1 -C 1" <<
+    std::endl;
   Rts2DevCamera::help ();
 }
 
@@ -356,7 +362,7 @@ Rts2DevCameraAndor::printChannelInfo (int channel)
 	    }
 	  std::cerr <<
 	    "andor printChannelInfo horizontal speed " << i << " channel " <<
-	    channel << " type " << j << " value " << value << " Hz" <<
+	    channel << " type " << j << " value " << value << " MHz" <<
 	    std::endl;
 	}
     }
@@ -505,7 +511,7 @@ Rts2DevCameraAndor::init ()
 	      return -1;
 	    }
 	  std::cerr << "andor::init vertical speed " << i <<
-	    " value " << value << " Hz" << std::endl;
+	    " value " << value << " MHz" << std::endl;
 	}
     }
   return Rts2DevCamera::initChips ();
