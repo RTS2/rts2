@@ -198,7 +198,8 @@ Rts2DevDomeDublin::init ()
     }
   if (i == MAX_CONN)
     {
-      syslog (LOG_ERR, "no free conn for Rts2ConnFramWeather");
+      logStream (MESSAGE_ERROR) << "no free conn for Rts2ConnFramWeather" <<
+	sendLog;
       return -1;
     }
 
@@ -262,14 +263,12 @@ Rts2DevDomeDublin::info ()
   return Rts2DevDome::info ();
 }
 
-bool Rts2DevDomeDublin::isMoving ()
+bool
+Rts2DevDomeDublin::isMoving ()
 {
-  int
-    result;
-  int
-    moving = 0;
-  int
-    count;
+  int result;
+  int moving = 0;
+  int count;
   for (count = 0; count < 100; count++)
     {
       result = (inb (BASE + 2));
@@ -322,7 +321,8 @@ Rts2DevDomeDublin::isOpened ()
   // timeout
   if (now > timeOpenClose)
     {
-      syslog (LOG_ERR, "Rts2DevDomeDublin::isOpened timeout");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeDublin::isOpened timeout" <<
+	sendLog;
       domeFailed = true;
       sw_state = 0;
       executeSms (TYPE_STUCK);
@@ -380,7 +380,8 @@ Rts2DevDomeDublin::isClosed ()
   time (&now);
   if (now > timeOpenClose)
     {
-      syslog (LOG_ERR, "Rts2DevDomeDublin::isClosed dome timeout");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeDublin::isClosed dome timeout"
+	<< sendLog;
       domeFailed = true;
       sw_state = 0;
       executeSms (TYPE_STUCK);

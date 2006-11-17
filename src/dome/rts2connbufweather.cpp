@@ -112,13 +112,16 @@ Rts2ConnBufWeather::receive (fd_set * set)
 		  &size);
       if (data_size < 0)
 	{
-	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
+	  logStream (MESSAGE_DEBUG) << "error in receiving weather data: " <<
+	    sendLog;
 	  return 1;
 	}
       Wbuf[data_size] = 0;
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, Wbuf,
-	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
+      logStream (MESSAGE_DEBUG) << "readed: " << data_size << " " << Wbuf <<
+	" from  " << inet_ntoa (from.sin_addr) << " " << ntohs (from.
+								sin_port) <<
+	sendLog;
 #endif
       // parse weather info
       //rtExtraTemp2=3.3, rtWindSpeed=0.0, rtInsideHum=22.0, rtWindDir=207.0, rtExtraTemp1=3.9, rtRainRate=0.0, rtOutsideHum=52.0, rtWindAvgSpeed=0.4, rtInsideTemp=23.4, rtExtraHum1=51.0, rtBaroCurr=1000.0, rtExtraHum2=51.0, rtOutsideTemp=0.5/
@@ -175,10 +178,11 @@ Rts2ConnBufWeather::receive (fd_set * set)
 		ceil (10 *
 		      ((116.9 + 237.3 * log (vapor)) / (16.78 -
 							log (vapor)))) / 10;
-	      syslog (LOG_DEBUG,
-		      "Rts2ConnBufWeather::parse rtCloudBottom %f rtCloudTop %f rtRainRate %f rtWetness %f vapor %f dew %f",
-		      rtCloudBottom, rtCloudTop, rtRainRate, rtWetness, vapor,
-		      dew);
+	      logStream (MESSAGE_DEBUG) <<
+		"Rts2ConnBufWeather::parse rtCloudBottom " << rtCloudBottom <<
+		" rtCloudTop " << rtCloudTop << " rtRainRate " << rtRainRate
+		<< " rtWetness " << rtWetness << "vapor " << vapor << " dew "
+		<< dew << sendLog;
 	      if ((rtCloudBottom - rtCloudTop) > 2.5 && rtRainRate == 0
 		  && rtWetness < 15.0 && fabs (rtOutsideTemp - dew) < 3.0)
 		rain = 0;
@@ -208,8 +212,9 @@ Rts2ConnBufWeather::receive (fd_set * set)
       delete weather;
 
       time (&lastWeatherStatus);
-      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %li status: %i",
-	      windspeed, rain, lastWeatherStatus, ret);
+      logStream (MESSAGE_DEBUG) << "windspeed: " << windspeed << " rain: " <<
+	rain << " date: " << lastWeatherStatus << " status: " << ret <<
+	sendLog;
       if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
 	{
 	  time (&lastBadWeather);

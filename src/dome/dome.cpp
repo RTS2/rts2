@@ -100,7 +100,7 @@ Rts2DevDome::checkOpening ()
     {
       long ret;
       ret = isOpened ();
-      syslog (LOG_DEBUG, "isOPenede ret:%li", ret);
+      logStream (MESSAGE_DEBUG) << "isOpened ret: " << ret << sendLog;
       if (ret >= 0)
 	{
 	  setTimeout (ret);

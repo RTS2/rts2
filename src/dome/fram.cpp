@@ -261,49 +261,55 @@ Rts2DevDomeFram::zjisti_stav_portu_int ()
   ret = write (dome_port, &c, 1);
   if (ret != 1)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu writeA %m (%i)",
-	      ret);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeFram::zjisti_stav_portu writeA " << strerror (errno) <<
+	" (" << ret << ")" << sendLog;
       return -1;
     }
   ret = read (dome_port, &t1, 1);
   if (ret != 1)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu readA %m (%i)",
-	      ret);
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeFram::zjisti_stav_portu readA "
+	<< strerror (errno) << " (" << ret << ")" << sendLog;
       return -1;
     }
   ret = read (dome_port, &stav_portu[PORT_A], 1);
   if (ret != 1)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevDomeFram::zjisti_stav_portu read PORT_A %m (%i)", ret);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeFram::zjisti_stav_portu read PORT_A" << strerror (errno)
+	<< " (" << ret << ")" << sendLog;
       return -1;
     }
   c = STAV_PORTU | PORT_B;
   write (dome_port, &c, 1);
   if (ret != 1)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::zjisti_stav_portu writeB %m (%i)",
-	      ret);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeFram::zjisti_stav_portu writeB " << strerror (errno) <<
+	" (" << ret << ")" << sendLog;
       return -1;
     }
   ret = read (dome_port, &t2, 1);
   if (ret != 1)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevDomeFram::zjisti_stav_portu write PORT_B %m (%i)", ret);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeFram::zjisti_stav_portu write PORT_B " << strerror (errno)
+	<< " (" << ret << ")" << sendLog;
       return -1;
     }
   ret = read (dome_port, &stav_portu[PORT_B], 1);
   if (ret != 1)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevDomeFram::zjisti_stav_portu read PORT_B %m (%i)", ret);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeFram::zjisti_stav_portu read PORT_B " << strerror (errno)
+	<< " (" << ret << ")" << sendLog;
       return -1;
     }
-  syslog (LOG_DEBUG,
-	  "Rts2DevDomeFram::zjisti_stav_portu A: %x stav_portu[PORT_A]: %x B: %x stav_portu[PORT_B]: %x",
-	  t1, stav_portu[PORT_A], t2, stav_portu[PORT_B]);
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2DevDomeFram::zjisti_stav_portu A: " << t1 << " stav_portu[PORT_A]: "
+    << stav_portu[PORT_A] << " B: " << t2 << " stav_portu[PORT_B]: " <<
+    stav_portu[PORT_B] << sendLog;
   return 0;
 }
 
@@ -334,10 +340,11 @@ Rts2DevDomeFram::zapni_pin (unsigned char in_port, unsigned char pin)
   if (ret)
     return;
   c = ZAPIS_NA_PORT | in_port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
+  logStream (MESSAGE_DEBUG) << "port: " << in_port << " pin: " << pin <<
+    " write: " << c << sendLog;
   write (dome_port, &c, 1);
   c = stav_portu[in_port] | pin;
-  syslog (LOG_DEBUG, "zapni_pin: %xh", c);
+  logStream (MESSAGE_DEBUG) << "zapni_pin: " << c << sendLog;
   write (dome_port, &c, 1);
 }
 
@@ -350,10 +357,11 @@ Rts2DevDomeFram::vypni_pin (unsigned char in_port, unsigned char pin)
   if (ret)
     return;
   c = ZAPIS_NA_PORT | in_port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", in_port, pin, c);
+  logStream (MESSAGE_DEBUG) << "port: " << in_port << " pin: " << pin <<
+    " write: " << c << sendLog;
   write (dome_port, &c, 1);
   c = stav_portu[in_port] & (~pin);
-  syslog (LOG_DEBUG, "%xh", c);
+  logStream (MESSAGE_DEBUG) << c << sendLog;
   write (dome_port, &c, 1);
 }
 
@@ -385,8 +393,8 @@ Rts2DevDomeFram::checkMotorTimeout ()
   time_t now;
   time (&now);
   if (now >= timeoutEnd)
-    syslog (LOG_DEBUG, "timeout reached: %li state: %i", now - timeoutEnd,
-	    movingState);
+    logStream (MESSAGE_DEBUG) << "timeout reached: " << now -
+      timeoutEnd << " state: " << movingState << sendLog;
   return (now >= timeoutEnd);
 }
 
@@ -399,14 +407,16 @@ Rts2DevDomeFram::openWDC ()
   wdc_port = open (wdc_file, O_RDWR | O_NOCTTY);
   if (wdc_port < 0)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC Can't open device %s : %m",
-	      wdc_file);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeFram::openWDC Can't open device " << wdc_file << " :" <<
+	strerror (errno) << sendLog;
       return -1;
     }
   ret = tcgetattr (wdc_port, &oldtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC tcgetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeFram::openWDC tcgetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   newtio = oldtio;
@@ -420,7 +430,8 @@ Rts2DevDomeFram::openWDC ()
   ret = tcsetattr (wdc_port, TCSANOW, &newtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::openWDC tcsetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeFram::openWDC tcsetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -475,7 +486,8 @@ Rts2DevDomeFram::getWDCTimeOut ()
   reply[i] = 0;
 
   if (reply[0] == '!')
-    syslog (LOG_ERR, "Rts2DevDomeFram::getWDCTimeOut reply %s", reply + 1);
+    logStream (MESSAGE_ERROR) << "Rts2DevDomeFram::getWDCTimeOut reply " <<
+      reply + 1 << sendLog;
 
   return 0;
 
@@ -516,14 +528,15 @@ Rts2DevDomeFram::setWDCTimeOut (int on, double timeout)
     }
   while (q > 20);
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevDomeFram::setWDCTimeOut on: %i timeout: %lf q: %i", on,
-	  timeout, q);
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2DevDomeFram::setWDCTimeOut on: " << on << " timeout: " << timeout <<
+    " q: " << q << sendLog;
 
   reply[i] = 0;
 
   if (reply[0] == '!')
-    syslog (LOG_DEBUG, "Rts2DevDomeFram::setWDCTimeOut reply: %s", reply + 1);
+    logStream (MESSAGE_DEBUG) << "Rts2DevDomeFram::setWDCTimeOut reply: " <<
+      reply + 1 << sendLog;
 
   return 0;
 }
@@ -574,7 +587,7 @@ Rts2DevDomeFram::openLeftMove ()
 {
   ZAP (KOMPRESOR);
   sleep (1);
-  syslog (LOG_DEBUG, "opening left door");
+  logStream (MESSAGE_DEBUG) << "opening left door" << sendLog;
   ZAP (VENTIL_OTEVIRANI_LEVY);
   ZAP (VENTIL_AKTIVACNI);
   return 0;
@@ -587,7 +600,7 @@ Rts2DevDomeFram::openRightMove ()
   VYP (VENTIL_OTEVIRANI_LEVY);
   ZAP (KOMPRESOR);
   sleep (1);
-  syslog (LOG_DEBUG, "opening right door");
+  logStream (MESSAGE_DEBUG) << "opening right door" << sendLog;
   ZAP (VENTIL_OTEVIRANI_PRAVY);
   ZAP (VENTIL_AKTIVACNI);
   return 0;
@@ -598,7 +611,7 @@ Rts2DevDomeFram::closeRightMove ()
 {
   ZAP (KOMPRESOR);
   sleep (1);
-  syslog (LOG_DEBUG, "closing right door");
+  logStream (MESSAGE_DEBUG) << "closing right door" << sendLog;
   ZAP (VENTIL_ZAVIRANI_PRAVY);
   ZAP (VENTIL_AKTIVACNI);
   return 0;
@@ -611,7 +624,7 @@ Rts2DevDomeFram::closeLeftMove ()
   VYP (VENTIL_ZAVIRANI_PRAVY);
   ZAP (KOMPRESOR);
   sleep (1);
-  syslog (LOG_DEBUG, "closing left door");
+  logStream (MESSAGE_DEBUG) << "closing left door" << sendLog;
   ZAP (VENTIL_ZAVIRANI_LEVY);
   ZAP (VENTIL_AKTIVACNI);
   return 0;
@@ -708,7 +721,7 @@ long
 Rts2DevDomeFram::isOpened ()
 {
   int flag = 0;
-  syslog (LOG_DEBUG, "isOpened %i", movingState);
+  logStream (MESSAGE_DEBUG) << "isOpened " << movingState << sendLog;
   switch (movingState)
     {
     case MOVE_OPEN_LEFT_WAIT:
@@ -769,7 +782,8 @@ Rts2DevDomeFram::closeDome ()
 
   if (zjisti_stav_portu () == -1)
     {
-      syslog (LOG_ERR, "Cannot read from port at close!");
+      logStream (MESSAGE_ERROR) << "Cannot read from port at close!" <<
+	sendLog;
       if (!sendContFailMail)
 	{
 	  sendFramMail
@@ -788,7 +802,8 @@ Rts2DevDomeFram::closeDome ()
   time (&now);
   if (lastClosing + FRAM_TIME_CLOSING_RETRY > now)
     {
-      syslog (LOG_WARNING, "closeDome ignored - closing timeout not reached");
+      logStream (MESSAGE_WARNING) <<
+	"closeDome ignored - closing timeout not reached" << sendLog;
       return -1;
     }
 
@@ -799,8 +814,8 @@ Rts2DevDomeFram::closeDome ()
 
   if (closingNum > FRAM_MAX_CLOSING_RETRY)
     {
-      syslog (LOG_WARNING,
-	      "max closing retry reached, do not try closing again");
+      logStream (MESSAGE_WARNING) <<
+	"max closing retry reached, do not try closing again" << sendLog;
       sendFramMail ("FRAM WARNING - !!max closing retry reached!!");
       return -1;
     }
@@ -822,7 +837,7 @@ long
 Rts2DevDomeFram::isClosed ()
 {
   int flag = 0;			// send infoAll at end
-  syslog (LOG_DEBUG, "isClosed %i", movingState);
+  logStream (MESSAGE_DEBUG) << "isClosed " << movingState << sendLog;
   switch (movingState)
     {
     case MOVE_CLOSE_RIGHT_WAIT:
@@ -964,7 +979,8 @@ Rts2DevDomeFram::init ()
   ret = tcgetattr (dome_port, &oldtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::init tcgetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeFram::init tcgetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -981,7 +997,8 @@ Rts2DevDomeFram::init ()
   ret = tcsetattr (dome_port, TCSANOW, &newtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeFram::init tcsetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeFram::init tcsetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -1010,7 +1027,8 @@ Rts2DevDomeFram::init ()
     }
   if (i == MAX_CONN)
     {
-      syslog (LOG_ERR, "no free conn for Rts2ConnFramWeather");
+      logStream (MESSAGE_ERROR) << "no free conn for Rts2ConnFramWeather" <<
+	sendLog;
       return -1;
     }
 

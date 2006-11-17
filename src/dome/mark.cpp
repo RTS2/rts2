@@ -93,13 +93,14 @@ public:
   }
 };
 
-uint16_t
-Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
+uint16_t Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
-  uint16_t ret = 0xffff;
+  uint16_t
+    ret = 0xffff;
   for (int l = 0; l < msgLen; l++)
     {
-      char znakp = msgBuf[l];
+      char
+	znakp = msgBuf[l];
       for (int i = 0; i < 8; i++)
 	{
 	  if ((ret ^ znakp) & 0x01)
@@ -127,30 +128,32 @@ Rts2DevCupolaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
 #ifdef DEBUG_ALL
   for (int i = 0; i < w_buf_len; i++)
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevCupolaMark::write_read write byte %i value %x", i,
-	      w_buf[i]);
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2DevCupolaMark::write_read write byte " << i << "value " <<
+	w_buf[i] << sendLog;
     }
 #endif
   if (ret != w_buf_len)
     {
-      syslog (LOG_ERR, "Rts2DevCupolaMark::write_read ret != w_buf_len %i %i",
-	      ret, w_buf_len);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevCupolaMark::write_read ret != w_buf_len " << ret << " " <<
+	w_buf_len << sendLog;
       return -1;
     }
   ret = read (cop_desc, r_buf, r_buf_len);
 #ifdef DEBUG_ALL
   for (int i = 0; i < r_buf_len; i++)
     {
-      syslog (LOG_DEBUG,
-	      "Rts2DevCupolaMark::write_read read byte %i value %x", i,
-	      r_buf[i]);
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2DevCupolaMark::write_read read byte " << i << " value " <<
+	r_buf[i] << sendLog;
     }
 #endif
   if (ret != r_buf_len)
     {
-      syslog (LOG_ERR, "Rts2DevCupolaMark::write_read ret != r_buf_len %i %i",
-	      ret, r_buf_len);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevCupolaMark::write_read ret != r_buf_len " << ret << " " <<
+	r_buf_len << sendLog;
       return -1;
     }
   // get checksum
@@ -159,12 +162,12 @@ Rts2DevCupolaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
       ((crc16 & 0xff00) >> 8)
       || (r_buf[r_buf_len - 2] & (crc16 & 0x00ff)) != (crc16 & 0x00ff))
     {
-      syslog (LOG_ERR,
-	      "Rts2DevCupolaMark::write_read invalid checksum! (should be %x %x, is %x %x (%x %x))",
-	      ((crc16 & 0xff00) >> 8), (crc16 & 0x00ff), r_buf[r_buf_len - 1],
-	      r_buf[r_buf_len - 2],
-	      (r_buf[r_buf_len - 1] & ((crc16 & 0xff00) >> 8)),
-	      (r_buf[r_buf_len - 2] & (crc16 & 0x00ff)));
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevCupolaMark::write_read invalid checksum! (should be " <<
+	((crc16 & 0xff00) >> 8) << " " << (crc16 & 0x00ff) << " is " <<
+	r_buf[r_buf_len - 1] << " " << r_buf[r_buf_len - 2] << " ( " <<
+	(r_buf[r_buf_len - 1] & ((crc16 & 0xff00) >> 8)) << " " <<
+	(r_buf[r_buf_len - 2] & (crc16 & 0x00ff)) << " ))" << sendLog;
       return -1;
     }
   usleep (USEC_SEC / 10);
@@ -189,8 +192,8 @@ Rts2DevCupolaMark::readReg (int reg, uint16_t * reg_val)
   *reg_val = rbuf[3];
   *reg_val = *reg_val << 8;
   *reg_val |= (rbuf[4]);
-  syslog (LOG_DEBUG, "Rts2DevCupolaMark::readReg reg %i val %x", reg,
-	  *reg_val);
+  logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::readReg reg " << reg <<
+    " val " << *reg_val << sendLog;
   return 0;
 }
 
@@ -209,8 +212,8 @@ Rts2DevCupolaMark::writeReg (int reg, uint16_t reg_val)
   wbuf[3] = (reg & 0x00ff);
   wbuf[4] = (reg_val & 0xff00) >> 8;
   wbuf[5] = (reg_val & 0x00ff);
-  syslog (LOG_DEBUG, "Rts2DevCupolaMark::writeReg reg %i value %x", reg,
-	  reg_val);
+  logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::writeReg reg " << reg <<
+    " value " << reg_val << sendLog;
   return write_read (wbuf, 8, rbuf, 8);
 }
 
@@ -257,7 +260,8 @@ Rts2DevCupolaMark::init ()
   if (ret)
     return ret;
 
-  syslog (LOG_DEBUG, "Rts2DevCupolaMark::init open: %s", device_file);
+  logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::init open: " << device_file
+    << sendLog;
 
   cop_desc = open (device_file, O_RDWR);
   if (cop_desc < 0)
@@ -334,7 +338,8 @@ Rts2DevCupolaMark::idle ()
       ret = readReg (REG_STATE, &copState);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2DevCupola::idle cannot read reg!");
+	  logStream (MESSAGE_ERROR) << "Rts2DevCupola::idle cannot read reg!"
+	    << sendLog;
 	  sleep (2);
 	  tcflush (cop_desc, TCIOFLUSH);
 	  initialized = ERROR;
@@ -482,7 +487,8 @@ Rts2DevCupolaMark::slew ()
 	      if (ret)
 		return -1;
 	    }
-	  syslog (LOG_DEBUG, "Rts2DevCupolaMark::slew slow down");
+	  logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::slew slow down" <<
+	    sendLog;
 	}
       // test if we hit target destination
       if (fabs (getTargetDistance ()) < MIN_ERR)

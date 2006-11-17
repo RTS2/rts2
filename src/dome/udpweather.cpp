@@ -52,19 +52,22 @@ Rts2ConnFramWeather::init ()
   sock = socket (PF_INET, SOCK_DGRAM, 0);
   if (sock < 0)
     {
-      syslog (LOG_ERR, "Rts2ConnFramWeather::init socket: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnFramWeather::init socket: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   ret = fcntl (sock, F_SETFL, O_NONBLOCK);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2ConnFramWeather::init fcntl: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnFramWeather::init fcntl: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   ret = bind (sock, (struct sockaddr *) &bind_addr, sizeof (bind_addr));
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2ConnFramWeather::init bind: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnFramWeather::init bind: " <<
+	strerror (errno) << sendLog;
     }
   return ret;
 }
@@ -86,12 +89,15 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	recvfrom (sock, Wbuf, 80, 0, (struct sockaddr *) &from, &size);
       if (data_size < 0)
 	{
-	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
+	  logStream (MESSAGE_DEBUG) << "error in receiving weather data: %m"
+	    << strerror (errno) << sendLog;
 	  return 1;
 	}
       Wbuf[data_size] = 0;
-      syslog (LOG_DEBUG, "readed: %i %s from: %s:%i", data_size, Wbuf,
-	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
+      logStream (MESSAGE_DEBUG) << "readed: " << data_size << " " << Wbuf <<
+	" from " << inet_ntoa (from.sin_addr) << " " << ntohs (from.
+							       sin_port) <<
+	sendLog;
       // parse weather info
       ret =
 	sscanf (Wbuf,
@@ -101,7 +107,8 @@ Rts2ConnFramWeather::receive (fd_set * set)
 		&sec_f, Wstatus);
       if (ret != 9)
 	{
-	  syslog (LOG_ERR, "sscanf on udp data returned: %i", ret);
+	  logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret
+	    << sendLog;
 	  rain = 1;
 	  badSetWeatherTimeout (FRAM_CONN_TIMEOUT);
 	  return data_size;
@@ -116,8 +123,9 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	  // if sensors doesn't work, switch rain on
 	  rain = 1;
 	}
-      syslog (LOG_DEBUG, "windspeed: %f rain: %i date: %li status: %s",
-	      windspeed, rain, lastWeatherStatus, Wstatus);
+      logStream (MESSAGE_DEBUG) << "windspeed: " << windspeed << " rain: " <<
+	rain << " date: " << lastWeatherStatus << " status: " << Wstatus <<
+	sendLog;
       if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
 	{
 	  time (&lastBadWeather);

@@ -218,15 +218,16 @@ Rts2DevDomeBart::zjisti_stav_portu ()
   int ret;
   write (dome_port, &c, 1);
   if (read (dome_port, &ta, 1) < 1)
-    syslog (LOG_ERR, "read error 0");
+    logStream (MESSAGE_ERROR) << "read error 0" << sendLog;
   read (dome_port, &stav_portu[PORT_A], 1);
   c = STAV_PORTU | PORT_B;
   write (dome_port, &c, 1);
   if (read (dome_port, &tb, 1) < 1)
-    syslog (LOG_ERR, "read error 1");
+    logStream (MESSAGE_ERROR) << "read error 1" << sendLog;
   ret = read (dome_port, &stav_portu[PORT_B], 1);
-  syslog (LOG_DEBUG, "A stav: %x state: %x B stav: %x state: %x", ta,
-	  stav_portu[PORT_A], tb, stav_portu[PORT_B]);
+  logStream (MESSAGE_DEBUG) << "A stav:" << ta << " state:" <<
+    stav_portu[PORT_A] << " B stav: " << tb << " state: " <<
+    stav_portu[PORT_B] << sendLog;
   if (ret < 1)
     return -1;
   return 0;
@@ -238,10 +239,11 @@ Rts2DevDomeBart::zapni_pin (unsigned char c_port, unsigned char pin)
   unsigned char c;
   zjisti_stav_portu ();
   c = ZAPIS_NA_PORT | c_port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", c_port, pin, c);
+  logStream (MESSAGE_DEBUG) << "port:" << c_port << " pin:" << pin <<
+    " write:" << c << sendLog;
   write (dome_port, &c, 1);
   c = stav_portu[c_port] | pin;
-  syslog (LOG_DEBUG, "zapni_pin: %xh", c);
+  logStream (MESSAGE_DEBUG) << "zapni_pin: " << c << sendLog;
   write (dome_port, &c, 1);
 }
 
@@ -251,10 +253,11 @@ Rts2DevDomeBart::vypni_pin (unsigned char c_port, unsigned char pin)
   unsigned char c;
   zjisti_stav_portu ();
   c = ZAPIS_NA_PORT | c_port;
-  syslog (LOG_DEBUG, "port:%xh pin:%xh write: %x:", c_port, pin, c);
+  logStream (MESSAGE_DEBUG) << "port:" << c_port << " pin:" << pin <<
+    " write:" << c << sendLog;
   write (dome_port, &c, 1);
   c = stav_portu[c_port] & (~pin);
-  syslog (LOG_DEBUG, "%xh", c);
+  logStream (MESSAGE_DEBUG) << c << sendLog;
   write (dome_port, &c, 1);
 }
 
@@ -283,7 +286,7 @@ Rts2DevDomeBart::openDome ()
   VYP (SMER);
   sleep (1);
   ZAP (MOTOR);
-  syslog (LOG_DEBUG, "oteviram strechu");
+  logStream (MESSAGE_DEBUG) << "oteviram strechu" << sendLog;
   return Rts2DevDome::openDome ();
 }
 
@@ -333,7 +336,7 @@ Rts2DevDomeBart::closeDome ()
   ZAP (SMER);
   sleep (1);
   ZAP (MOTOR);
-  syslog (LOG_DEBUG, "zaviram strechu");
+  logStream (MESSAGE_DEBUG) << "zaviram strechu" << sendLog;
 
   return Rts2DevDome::closeDome ();
 }
@@ -394,9 +397,9 @@ Rts2DevDomeBart::isGoodWeather ()
   if (rain_port > 0)
     {
       ret = ioctl (rain_port, TIOCMGET, &flags);
-      syslog (LOG_DEBUG,
-	      "Rts2DevDomeBart::isGoodWeather flags: %08x %i rain:%i", flags,
-	      flags, (flags & TIOCM_RI));
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2DevDomeBart::isGoodWeather flags: " << flags << " rain: " <<
+	(flags & TIOCM_RI) << sendLog;
       // ioctl failed or it's raining..
       if (ret || !(flags & TIOCM_RI))
 	{
@@ -429,14 +432,16 @@ Rts2DevDomeBart::init ()
 
   if (dome_port == -1)
     {
-      syslog (LOG_ERR, "Rts2DevDomeBart::init open %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init open " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
   ret = tcgetattr (dome_port, &oldtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeBart::init tcgetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init tcgetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -453,7 +458,8 @@ Rts2DevDomeBart::init ()
   ret = tcsetattr (dome_port, TCSANOW, &newtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeBart::init tcsetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init tcsetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -464,14 +470,16 @@ Rts2DevDomeBart::init ()
       rain_port = open (rain_detector, O_RDWR | O_NOCTTY);
       if (rain_port == -1)
 	{
-	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot open %s : %m",
-		  rain_detector);
+	  logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init cannot open " <<
+	    rain_detector << " " << strerror (errno) << sendLog;
 	  return -1;
 	}
       ret = ioctl (rain_port, TIOCMGET, &flags);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot get flags: %m");
+	  logStream (MESSAGE_ERROR) <<
+	    "Rts2DevDomeBart::init cannot get flags: " << strerror (errno) <<
+	    sendLog;
 	  return -1;
 	}
       flags &= ~TIOCM_DTR;
@@ -479,7 +487,9 @@ Rts2DevDomeBart::init ()
       ret = ioctl (rain_port, TIOCMSET, &flags);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot set flags: %m");
+	  logStream (MESSAGE_ERROR) <<
+	    "Rts2DevDomeBart::init cannot set flags: " << strerror (errno) <<
+	    sendLog;
 	  return -1;
 	}
     }
@@ -489,8 +499,8 @@ Rts2DevDomeBart::init ()
       cloud_port = open (cloud_dev, O_RDWR | O_NOCTTY);
       if (cloud_port == -1)
 	{
-	  syslog (LOG_ERR, "Rts2DevDomeBart::init cannot open %s: %m",
-		  cloud_dev);
+	  logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init cannot open " <<
+	    cloud_dev << " " << strerror (errno) << sendLog;
 	  return -1;
 	}
       // setup values..
@@ -505,7 +515,9 @@ Rts2DevDomeBart::init ()
       ret = tcsetattr (cloud_port, TCSANOW, &newtio);
       if (ret < 0)
 	{
-	  syslog (LOG_ERR, "Rts2DevDomeBart::init cloud tcsetattr: %m");
+	  logStream (MESSAGE_ERROR) <<
+	    "Rts2DevDomeBart::init cloud tcsetattr: " << strerror (errno) <<
+	    sendLog;
 	  return -1;
 	}
     }
@@ -529,7 +541,8 @@ Rts2DevDomeBart::init ()
     }
   if (i == MAX_CONN)
     {
-      syslog (LOG_ERR, "no free conn for Rts2ConnBufWeather");
+      logStream (MESSAGE_ERROR) << "no free conn for Rts2ConnBufWeather" <<
+	sendLog;
       return -1;
     }
 
@@ -599,11 +612,13 @@ Rts2DevDomeBart::cloudHeating (char perc)
   ret = read (cloud_port, buf, 14);
   if (ret <= 0)
     {
-      syslog (LOG_ERR, "Rts2DevDomeBart::cloudHeating read: %m ret: %i", ret);
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::cloudHeating read: " <<
+	strerror (errno) << " ret: " << ret << sendLog;
       return -1;
     }
   buf[ret] = '\0';
-  syslog (LOG_DEBUG, "Rts2DevDomeBart::cloudHeating read: %s", buf);
+  logStream (MESSAGE_DEBUG) << "Rts2DevDomeBart::cloudHeating read: " << buf
+    << sendLog;
   return 0;
 }
 
@@ -633,7 +648,8 @@ Rts2DevDomeBart::cloudMeasure (char angle)
   ret = read (cloud_port, buf, 20);
   if (ret <= 0)
     {
-      syslog (LOG_ERR, "Rts2DevDomeBart::cloudMeasure read: %m ret: %i", ret);
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::cloudMeasure read: " <<
+	strerror (errno) << "ret:" << ret << sendLog;
       return -1;
     }
   buf[ret] = '\0';
@@ -642,14 +658,14 @@ Rts2DevDomeBart::cloudMeasure (char angle)
   ret = sscanf (buf, "A %i;G %i; S %i", &ang, &ground, &space);
   if (ret != 3)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevDomeBart::cloudMeasure invalid cloud sensor return: '%s'",
-	      buf);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeBart::cloudMeasure invalid cloud sensor return: " << buf
+	<< sendLog;
       return -1;
     }
-  syslog (LOG_DEBUG,
-	  "Rts2DevDomeBart::cloudMeasure angle: %i ground: %i space: %i",
-	  ang, ground, space);
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2DevDomeBart::cloudMeasure angle: " << ang << " ground: " << ground <<
+    " space: " << space << sendLog;
   return 0;
 }
 
@@ -671,7 +687,8 @@ Rts2DevDomeBart::cloudMeasureAll ()
   ret = read (cloud_port, buf, 34);
   if (ret <= 0)
     {
-      syslog (LOG_ERR, "Rts2DevDomeBart::cloudMeasure read: %m ret: %i", ret);
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::cloudMeasure read: " <<
+	strerror (errno) << " ret: " << ret << sendLog;
       return -1;
     }
   buf[ret] = '\0';
@@ -681,14 +698,14 @@ Rts2DevDomeBart::cloudMeasureAll ()
     sscanf (buf, "G %i;S45 %i;S90 %i;S135 %i", &ground, &s45, &s90, &s135);
   if (ret != 4)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevDomeBart::cloudMeasure invalid cloud sensor return: '%s'",
-	      buf);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2DevDomeBart::cloudMeasure invalid cloud sensor return: " << buf
+	<< sendLog;
       return -1;
     }
-  syslog (LOG_DEBUG,
-	  "Rts2DevDomeBart::cloudMeasure ground: %i S45: %i S90: %i S135: %i",
-	  ground, s45, s90, s135);
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2DevDomeBart::cloudMeasure ground: " << ground << " S45: " << s45 <<
+    " S90: " << s90 << " S135: " << s135 << sendLog;
   time (&now);
   fprintf (mrak2_log,
 	   "%li - G %i;S45 %i;S90 %i;S135 %i;Temp %.1f;Hum %.0f;Rain %i\n",

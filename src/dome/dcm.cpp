@@ -96,13 +96,16 @@ Rts2ConnDcm::receive (fd_set * set)
 	recvfrom (sock, Wbuf, 80, 0, (struct sockaddr *) &from, &size);
       if (data_size < 0)
 	{
-	  syslog (LOG_DEBUG, "error in receiving weather data: %m");
+	  logStream (MESSAGE_DEBUG) << "error in receiving weather data: " <<
+	    strerror (errno) << sendLog;
 	  return 1;
 	}
       Wbuf[data_size] = 0;
 #ifdef DEBUG_ALL
-      syslog (LOG_DEBUG, "readed: %i '%s' from: %s:%i", data_size, Wbuf,
-	      inet_ntoa (from.sin_addr), ntohs (from.sin_port));
+      logStream (MESSAGE_DEBUG) << "readed: " << data_size << " " << Wbuf <<
+	" from " << inet_ntoa (from.sin_addr) << " " << ntohs (from.
+							       sin_port) <<
+	sendLog;
 #endif
       // parse weather info
       // * 1A 2005-07-21 23:56:56 -10.67 98.9 0 c c o o ok
@@ -115,8 +118,8 @@ Rts2ConnDcm::receive (fd_set * set)
 		Wstatus);
       if (ret != 15)
 	{
-	  syslog (LOG_ERR, "sscanf on udp data returned: %i ('%s')", ret,
-		  Wbuf);
+	  logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret
+	    << " ( " << Wbuf << " )" << sendLog;
 	  rain = 1;
 	  setWeatherTimeout (FRAM_CONN_TIMEOUT);
 	  return data_size;
@@ -133,8 +136,8 @@ Rts2ConnDcm::receive (fd_set * set)
 	}
       // log only rain messages..they are interesting
       if (rain)
-	syslog (LOG_DEBUG, "rain: %i date: %li status: %s",
-		rain, lastWeatherStatus, Wstatus);
+	logStream (MESSAGE_DEBUG) << "rain: " << rain << "  date: " <<
+	  lastWeatherStatus << " status: " << Wstatus << sendLog;
       master->setTemperature (temp);
       master->setHumidity (humidity);
       master->setRain (rain);

@@ -351,7 +351,8 @@ Rts2DevDomeIR::init ()
   ret = tcgetattr (dome_port, &oldtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeIR::init tcgetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeIR::init tcgetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -368,7 +369,8 @@ Rts2DevDomeIR::init ()
   ret = tcsetattr (dome_port, TCSANOW, &newtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevDomeIR::init tcsetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevDomeIR::init tcsetattr %m" <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
