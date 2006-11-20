@@ -307,6 +307,7 @@ private:
   int retries;
   double spiral_scale_ra;
   double spiral_scale_dec;
+  double minFlux;
   Rts2Spiral *spiral;
 protected:
   /**

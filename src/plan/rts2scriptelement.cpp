@@ -539,11 +539,15 @@ Rts2ScriptElementAcquire (in_script, in_precision, in_expTime, in_center_pos)
   retries = 0;
   spiral_scale_ra = in_spiral_scale_ra;
   spiral_scale_dec = in_spiral_scale_dec;
+  minFlux = 5000;
 
   defaultImgProccess[0] = '\0';
 
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
 				      "sextractor", defaultImgProccess, 2000);
+
+  Rts2Config::instance ()->getDeviceMinFlux (in_script->getDefaultDevice (),
+					     minFlux);
   spiral = new Rts2Spiral ();
 }
 
@@ -672,8 +676,14 @@ Rts2ScriptElementAcquireStar::getSource (Rts2Image * image, double &ra_offset,
   double sep;
   float flux;
   ret = image->getBrightestOffset (off_x, off_y, flux);
-  if (ret || flux < 5000)
+  if (ret)
     return -1;
+  if (!isnan (minFlux) && flux < minFlux)
+    {
+      logStream (MESSAGE_INFO) << "Source too week: flux " << flux <<
+	" minFlux " << minFlux << sendLog;
+      return -1;
+    }
   ret = image->getOffset (off_x, off_y, ra_offset, dec_offset, sep);
   if (ret)
     return -1;
