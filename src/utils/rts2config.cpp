@@ -280,3 +280,9 @@ Rts2Config::getObjectChecker ()
 {
   return checker;
 }
+
+int
+Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
+{
+  return getDouble (device, "minflux", minFlux);
+}

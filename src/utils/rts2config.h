@@ -42,6 +42,7 @@ public:
   {
     return callibrationAirmass;
   }
+  int getDeviceMinFlux (const char *device, double &minFlux);
 };
 
 #endif /*! __RTS2_CONFIG__ */
