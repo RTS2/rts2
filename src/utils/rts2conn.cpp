@@ -109,7 +109,7 @@ Rts2Conn::idle ()
 #ifdef DEBUG_EXTRA
 	  logStream (MESSAGE_DEBUG) << "Send T ready ret: " << ret <<
 	    " name: " << getName () << " type: " << type << sendLog;
-#endif
+#endif /* DEBUG_EXTRA */
 	  time (&lastSendReady);
 	}
       if (now > (lastData + getConnTimeout () * 2))
@@ -441,7 +441,8 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2Conn::logStream (messageType_t in_messageType)
 {
   Rts2LogStream ls (master, in_messageType);
   return ls;
