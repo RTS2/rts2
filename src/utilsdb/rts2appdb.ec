@@ -7,8 +7,6 @@
 #include <iomanip>
 #include <string>
 
-#include <syslog.h>
-
 EXEC SQL INCLUDE sql3types;
 
 Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
@@ -392,7 +390,8 @@ Rts2AppDb::initDB ()
   EXEC SQL CONNECT TO :conn_str;
   if (sqlca.sqlcode != 0)
   {
-    syslog (LOG_ERR, "Rts2DeviceDb::init Cannot connect to DB %s: %s", conn_str, sqlca.sqlerrm.sqlerrmc); 
+    logStream (MESSAGE_ERROR) << "Rts2DeviceDb::init Cannot connect to DB '" << conn_str
+      << "': " << sqlca.sqlerrm.sqlerrmc << sendLog;
     return -1;
   }
 

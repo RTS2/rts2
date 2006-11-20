@@ -92,7 +92,7 @@ Rts2DeviceDb::initDB ()
   EXEC SQL CONNECT TO :conn_str;
   if (sqlca.sqlcode != 0)
   {
-    syslog (LOG_ERR, "Rts2DeviceDb::init Cannot connect to DB %s: %s", conn_str, sqlca.sqlerrm.sqlerrmc); 
+    logStream (MESSAGE_ERROR) << "Rts2DeviceDb::init Cannot connect to DB '" << conn_str << "' : " << sqlca.sqlerrm.sqlerrmc << sendLog;
     return -1;
   }
 

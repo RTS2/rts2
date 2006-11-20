@@ -114,7 +114,7 @@ Rts2ObsSet::load (std::string in_where)
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    syslog (LOG_ERR, "Rts2ObsSet::Rts2ObsSet cannot load observation set");
+    logStream (MESSAGE_ERROR) << "Rts2ObsSet::Rts2ObsSet cannot load observation set" << sendLog;
   }
   EXEC SQL CLOSE obs_cur_timestamps;
   free (stmp_c);

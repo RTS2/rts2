@@ -1,6 +1,5 @@
 #include "rts2taruser.h"
-
-#include <syslog.h>
+#include "../utils/rts2block.h"
 
 Rts2UserEvent::Rts2UserEvent (const Rts2UserEvent &in_user)
 {
@@ -76,7 +75,7 @@ Rts2TarUser::load ()
   }
   if (sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    syslog (LOG_ERR, "Rts2TarUsers::load cannot get users %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_ERROR) << "Rts2TarUsers::load cannot get users " << sqlca.sqlerrm.sqlerrmc << sendLog;
     EXEC SQL CLOSE cur_targets_users;
     EXEC SQL ROLLBACK;
     return -1;
@@ -110,7 +109,7 @@ Rts2TarUser::load ()
     Rts2UserEvent newUser = Rts2UserEvent (db_usr_email.arr, db_event_mask);
     if (std::find (users.begin (), users.end (), newUser) != users.end ())
     {
-      syslog (LOG_ERR, "Rts2TarUsers::load user already exists (tar_id %i)", tar_id);
+      logStream (MESSAGE_ERROR) << "Rts2TarUsers::load user already exists (tar_id " << tar_id << ")" << sendLog;
     }
     else
     {
@@ -119,7 +118,7 @@ Rts2TarUser::load ()
   }
   if (sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    syslog (LOG_ERR, "Rts2TarUsers::load cannot get users %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_ERROR) << "Rts2TarUsers::load cannot get users '" << sqlca.sqlerrm.sqlerrmc << "'" << sendLog;
     EXEC SQL CLOSE cur_type_users;
     EXEC SQL ROLLBACK;
     return -1;

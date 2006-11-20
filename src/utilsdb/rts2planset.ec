@@ -45,7 +45,7 @@ Rts2PlanSet::load (std::string in_where)
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    syslog (LOG_ERR, "Rts2PlanSet::load cannot load plan set");
+    logStream (MESSAGE_ERROR) << "Rts2PlanSet::load cannot load plan set" << sendLog;
     EXEC SQL CLOSE plan_cur;
     EXEC SQL ROLLBACK;
     delete[] stmp_c;
@@ -61,7 +61,7 @@ Rts2PlanSet::load (std::string in_where)
     ret = plan.load ();
     if (ret)
     {
-      syslog (LOG_ERR, "Rts2PlanSet cannot load plan with plan_id %i", *iter);
+      logStream (MESSAGE_ERROR) << "Rts2PlanSet cannot load plan with plan_id " << *iter << sendLog;
       continue;
     }
     push_back (plan);

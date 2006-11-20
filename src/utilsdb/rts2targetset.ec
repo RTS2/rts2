@@ -41,7 +41,7 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    syslog (LOG_ERR, "Rts2TargetSet::load cannot load targets");
+    logStream (MESSAGE_ERROR) << "Rts2TargetSet::load cannot load targets" << sendLog;
   }
   EXEC SQL CLOSE tar_cur;
   free (stmp_c);
@@ -269,7 +269,7 @@ Rts2TargetSetGrb::load ()
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    syslog (LOG_ERR, "Rts2TargetSet::load cannot load targets");
+    logStream (MESSAGE_ERROR) << "Rts2TargetSet::load cannot load targets" << sendLog;
   }
   EXEC SQL CLOSE grb_tar_cur;
   EXEC SQL ROLLBACK;

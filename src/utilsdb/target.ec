@@ -15,8 +15,6 @@
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
 
-#include <syslog.h>
-
 #include <sstream>
 #include <iomanip>
 
@@ -55,8 +53,8 @@ Target::logMsg (const char *message, const char *val)
 void
 Target::logMsgDb (const char *message)
 {
-  syslog (LOG_ERR, "SQL error: %li %s (at %s)", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc, message);
-  std::cerr << "SQL error: " <<  sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << message << std::endl;
+  logStream (MESSAGE_ERROR) << "SQL error: " << sqlca.sqlcode << " " <<
+  sqlca.sqlerrm.sqlerrmc << " (at " << message << ")" << sendLog;
 }
 
 void
@@ -1053,14 +1051,15 @@ Target::considerForObserving (double JD)
     if (ret == -1)
     {
       // object doesn't rise, let's hope tomorrow it will rise
-      syslog (LOG_DEBUG, "Target::considerForObserving tar %i don't rise", getTargetID ());
+      logStream (MESSAGE_DEBUG) << "Target::considerForObserving tar " << getTargetID () << " don't rise" << sendLog;
       setNextObservable (JD + 1);
       return -1;
     }
     // handle circumpolar objects..
     if (ret == 1)
     {
-      syslog (LOG_DEBUG, "Target::considerForObserving is circumpolar, but is not good, scheduling after 10 minutes");
+      logStream (MESSAGE_DEBUG) << "Target::considerForObserving tar "
+        << getTargetID () << " is circumpolar, but is not good, scheduling after 10 minutes" << sendLog;
       setNextObservable (JD + 10.0 / (24.0 * 60.0));
       return -1;
     }
@@ -1069,12 +1068,13 @@ Target::considerForObserving (double JD)
     if (rst.transit < rst.set && rst.set < rst.rise)
     {
       // object rose, but is not above horizont, let's hope in 12 minutes it will get above horizont
-      syslog (LOG_DEBUG, "Target::considerForObserving %i will rise tommorow: %f JD %f", getTargetID (), rst.rise, JD);
+      logStream (MESSAGE_DEBUG) << "Target::considerForObserving " <<
+        getTargetID () << " will rise tommorow: " << rst.rise << " JD:" << JD << sendLog;
       setNextObservable (JD + 12*(1.0/1440.0));
       return -1;
     }
     // object is setting, let's target it for next rise..
-    syslog (LOG_DEBUG, "Target::considerForObserving %i will rise at: %f", getTargetID (), rst.rise);
+    logStream (MESSAGE_DEBUG) << "Target::considerForObserving " << getTargetID () << " will rise at: " << rst.rise << sendLog;
     setNextObservable (rst.rise);
     return -1;
   }
@@ -1433,7 +1433,7 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "createTarget cannot get entry from targets table for target with ID %i", db_tar_id);
+    logStream (MESSAGE_ERROR) << "createTarget cannot get entry from targets table for target with ID " << db_tar_id << sendLog;
     return NULL;
   }
 
@@ -1495,8 +1495,8 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
   ret = retTarget->load ();
   if (ret)
   {
-    syslog (LOG_ERR, "Cannot create target: %i sqlcode: %li %s",
-    db_tar_id, sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_ERROR) << "Cannot create target: " << db_tar_id << " error code " <<
+      sqlca.sqlcode << " message " << sqlca.sqlerrm.sqlerrmc << sendLog;
     EXEC SQL ROLLBACK;
     delete retTarget;
     return NULL;

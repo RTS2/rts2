@@ -225,7 +225,7 @@ Rts2Plan::startSlew (struct ln_equ_posn *position)
     plan_id = :db_plan_id;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "Rts2Plan::startSlew %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    logStream (MESSAGE_ERROR) << "Rts2Plan::startSlew " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
     EXEC SQL ROLLBACK;
   }
   else

@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <iomanip>
-#include <syslog.h>
 #include <sstream>
 
 EXEC SQL INCLUDE sqlca;
@@ -127,7 +126,7 @@ Rts2Obs::load ()
     AND observations.tar_id = targets.tar_id;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_DEBUG, "Rts2Obs::load DB error: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    logStream (MESSAGE_ERROR) << "Rts2Obs::load DB error: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -208,7 +207,7 @@ Rts2Obs::loadCounts ()
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    syslog (LOG_DEBUG, "Rts2Obs::loadCounts DB error: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    logStream (MESSAGE_DEBUG) << "Rts2Obs::loadCounts DB error: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << sendLog;
     EXEC SQL CLOSE cur_counts;
     EXEC SQL ROLLBACK;
     return -1;
@@ -398,7 +397,7 @@ Rts2Obs::maskState (int newBits)
     obs_id = :db_obs_id;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "Rts2Obs::maskState: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    logStream (MESSAGE_ERROR) << "Rts2Obs::maskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
     EXEC SQL ROLLBACK;
     return;
   }
@@ -422,7 +421,7 @@ Rts2Obs::unmaskState (int newBits)
     obs_id = :db_obs_id;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "Rts2Obs::unmaskState: %s (%li)", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    logStream (MESSAGE_ERROR) << "Rts2Obs::unmaskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
     EXEC SQL ROLLBACK;
     return;
   }
