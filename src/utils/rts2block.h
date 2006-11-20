@@ -206,5 +206,6 @@ public:
 };
 
 Rts2Block *getMasterBlock ();
+Rts2LogStream logStream (messageType_t in_messageType);
 
 #endif /*! __RTS2_NETBLOCK__ */

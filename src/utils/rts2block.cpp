@@ -28,6 +28,13 @@ getMasterBlock ()
   return masterBlock;
 }
 
+Rts2LogStream
+logStream (messageType_t in_messageType)
+{
+  Rts2LogStream ls (masterBlock, in_messageType);
+  return ls;
+}
+
 Rts2Block::Rts2Block (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
