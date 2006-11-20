@@ -137,8 +137,6 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
   irTracking = 4;
   irConfig = "/etc/rts2/ir.ini";
 
-  makeModel = false;
-
   rotatorOffset = 0;
 
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
@@ -147,7 +145,6 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2DevTele
 	     "IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
   addOption ('c', "ir_config", 1,
 	     "IR config file (with model, used for load_model/save_model");
-  addOption ('O', "make_model", 0, "use offsets to make model");
   addOption ('r', "rotator_offset", 1, "rotator offset, default to 0");
 
   strcpy (telType, "BOOTES_IR");
@@ -179,9 +176,6 @@ Rts2DevTelescopeIr::processOption (int in_opt)
       break;
     case 'c':
       irConfig = optarg;
-      break;
-    case 'O':
-      makeModel = true;
       break;
     case 'r':
       rotatorOffset = atof (optarg);
@@ -820,15 +814,13 @@ Rts2DevTelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
     return -1;
   status = tpl_set ("AZ.OFFSET", az_off, &status);
   status = tpl_set ("ZD.OFFSET", alt_off, &status);
-  if (!makeModel)
+  if (isModelOn ())
     return (status ? -1 : 1);
   // sample..
   status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);
-#ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) << "IR correct quality: " << quality << " status "
     << status << sendLog;
-#endif
   return (status ? -1 : 1);
 }
 

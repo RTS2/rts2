@@ -59,7 +59,6 @@ private:
     std::list < ErrorTime * >errorcodes;
   int irTracking;
   char *irConfig;
-  bool makeModel;
 
 protected:
     template < typename T > int tpl_get (const char *name, T & val,

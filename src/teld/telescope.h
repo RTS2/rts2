@@ -313,6 +313,11 @@ public:
   {
     corrections |= COR_MODEL;
   }
+
+  bool isModelOn ()
+  {
+    return (corrections & COR_MODEL);
+  }
 };
 
 class Rts2DevConnTelescope:public Rts2DevConn
