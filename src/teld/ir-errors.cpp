@@ -40,7 +40,7 @@ std::ostream & operator << (std::ostream & _os, IrAxis irax)
   return _os;
 }
 
-class Rts2DevIrError:public Rts2DevTelescopeIr
+class Rts2DevIrError:public Rts2TelescopeIr
 {
   std::list < const char *>errList;
   enum
@@ -59,40 +59,32 @@ public:
   virtual int run ();
 };
 
-IrAxis Rts2DevIrError::getAxisStatus (const char *ax_name)
+IrAxis
+Rts2DevIrError::getAxisStatus (const char *ax_name)
 {
-  double
-    referenced = nan ("f");
-  double
-    currpos = nan ("f");
-  double
-    targetpos = nan ("f");
-  double
-    power = nan ("f");
+  double referenced = nan ("f");
+  double currpos = nan ("f");
+  double targetpos = nan ("f");
+  double power = nan ("f");
   std::ostringstream * os;
-  int
-    status = 0;
+  int status = 0;
 
   os = new std::ostringstream ();
   (*os) << ax_name << ".REFERENCED";
   status = tpl_get (os->str ().c_str (), referenced, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".CURRPOS";
   status = tpl_get (os->str ().c_str (), currpos, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".TARGETPOS";
   status = tpl_get (os->str ().c_str (), targetpos, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".POWER";
   status = tpl_get (os->str ().c_str (), power, &status);
-  delete
-    os;
+  delete os;
   return IrAxis (ax_name, referenced, currpos, targetpos, power);
 }
 
@@ -113,7 +105,7 @@ Rts2DevIrError::doReferenced ()
 }
 
 Rts2DevIrError::Rts2DevIrError (int in_argc, char **in_argv):
-Rts2DevTelescopeIr (in_argc, in_argv)
+Rts2TelescopeIr (in_argc, in_argv)
 {
   op = NO_OP;
   addOption ('c', "calculate", 0, "Calculate model");
@@ -136,7 +128,7 @@ Rts2DevIrError::processOption (int in_opt)
       op = REFERENCED;
       break;
     default:
-      return Rts2DevTelescopeIr::processOption (in_opt);
+      return Rts2TelescopeIr::processOption (in_opt);
     }
   return 0;
 }

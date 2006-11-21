@@ -29,24 +29,15 @@ public:
   int isError (int in_error);
 };
 
-class Rts2DevTelescopeIr:public Rts2DevTelescope
+class Rts2TelescopeIr:public Rts2DevTelescope
 {
 private:
   std::string * ir_ip;
   int ir_port;
   Client *tplc;
-  time_t timeout;
-  double rotatorOffset;
   double cover;
   enum
   { OPENED, OPENING, CLOSING, CLOSED } cover_state;
-
-  struct ln_equ_posn target;
-
-  virtual int coverClose ();
-  virtual int coverOpen ();
-
-  int startMoveReal (double ra, double dec);
 
   void addError (int in_error);
 
@@ -57,10 +48,10 @@ private:
   void initCoverState ();
 
     std::list < ErrorTime * >errorcodes;
-  int irTracking;
-  char *irConfig;
 
 protected:
+    time_t timeout;
+
     template < typename T > int tpl_get (const char *name, T & val,
 					 int *status);
     template < typename T > int tpl_set (const char *name, T val,
@@ -68,30 +59,25 @@ protected:
     template < typename T > int tpl_setw (const char *name, T val,
 					  int *status);
   virtual int processOption (int in_opt);
+
+  virtual int coverClose ();
+  virtual int coverOpen ();
 public:
-    Rts2DevTelescopeIr (int argc, char **argv);
-    virtual ~ Rts2DevTelescopeIr (void);
+    Rts2TelescopeIr (int argc, char **argv);
+    virtual ~ Rts2TelescopeIr (void);
   virtual int initDevice ();
   virtual int init ();
   virtual int idle ();
   virtual int ready ();
   virtual int baseInfo ();
   virtual int info ();
-  virtual int startMove (double tar_ra, double tar_dec);
-  virtual int isMoving ();
   virtual int startPark ();
   virtual int isParking ();
   virtual int endPark ();
-  virtual int stopMove ();
-  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
-			      double real_dec);
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec);
   virtual int saveModel ();
   virtual int loadModel ();
-  virtual int stopWorm ();
-  virtual int startWorm ();
-  virtual int changeMasterState (int new_state);
   virtual int resetMount (resetStates reset_mount);
 
   virtual int getError (int in_error, std::string & desc);
