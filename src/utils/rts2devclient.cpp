@@ -227,6 +227,13 @@ Rts2DevClient::getStatus (int stat_num)
   return connection->getState (stat_num);
 }
 
+Rts2LogStream Rts2DevClient::logStream (messageType_t in_messageType)
+{
+  Rts2LogStream
+  ls (getMaster (), in_messageType);
+  return ls;
+}
+
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
@@ -301,8 +308,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState (0) & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -625,8 +631,7 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool
-Rts2DevClientPhot::isIntegrating ()
+bool Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }

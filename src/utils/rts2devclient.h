@@ -92,6 +92,8 @@ public:
   }
 
   int getStatus (int stat_num);
+
+  Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 /**************************************
