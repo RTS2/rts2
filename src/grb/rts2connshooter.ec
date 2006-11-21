@@ -138,13 +138,17 @@ Rts2ConnShooter::processAuger ()
 
   if (_is.fail ())
     {
-      syslog (LOG_ERR, "Rts2ConnShooter::processAuger failed reading stream");
+      logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream" << sendLog;
       return -1;
     }
 
   if (!(gap_comp && gap_isT5 && gap_energy > minEnergy))
     {
-      syslog (LOG_DEBUG, "Rts2ConnShooter::processAuger ignore (gap_comp %f gap_isT5 %li gap_energy %f minEnergy %f)", gap_comp, gap_isT5, gap_energy, minEnergy);
+      logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "<
+        << gap_comp
+	<< " gap_isT5 " << gap_isT5
+	<< " gap_energy " << gap_energy
+	<< " minEnergy " << minEnergy << ")" << sendLog;
       return -1;
     }
 
@@ -173,9 +177,9 @@ Rts2ConnShooter::processAuger ()
      :db_auger_dec);
   if (sqlca.sqlcode)
     {
-      syslog (LOG_ERR,
-	      "Rts2ConnShooter::processAuger cannot add new value to db: %s (%li)",
-	      sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+      logStream (MESSAGE_ERROR)
+	      << "Rts2ConnShooter::processAuger cannot add new value to db: "
+	      << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")";
       EXEC SQL ROLLBACK;
       return -1;
     }
@@ -220,13 +224,12 @@ Rts2ConnShooter::idle ()
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2ConnShooter::idle getsockopt %m");
+	  logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (errno) << sendLog;
 	  connectionError (-1);
 	}
       else if (err)
 	{
-	  syslog (LOG_ERR, "Rts2ConnShooter::idle getsockopt %s",
-		  strerror (err));
+	  logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (err) << sendLog;
 	  connectionError (-1);
 	}
       else
@@ -254,7 +257,7 @@ Rts2ConnShooter::init_listen ()
   sock = socket (PF_INET, SOCK_DGRAM, 0);
   if (sock == -1)
     {
-      syslog (LOG_ERR, "Rts2ConnShooter::init_listen socket %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen socket " << strerror (errno) << sendLog;
       return -1;
     }
   struct sockaddr_in server;
@@ -265,7 +268,7 @@ Rts2ConnShooter::init_listen ()
   ret = fcntl (sock, F_SETFL, O_NONBLOCK);
   if (ret)
   {
-    syslog (LOG_ERR, "Rts2ConnShooter::init_listen fcntl: %m");
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen fcntl: " << strerror (errno) << sendLog;
     return -1;
   }
   
@@ -273,7 +276,7 @@ Rts2ConnShooter::init_listen ()
     bind (sock, (struct sockaddr *) &server, sizeof (server));
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2ConnShooter::init_listen bind: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen bind: " << strerror (errno) << sendLog;
       return -1;
     }
   setConnState (CONN_CONNECTED);
@@ -289,7 +292,7 @@ Rts2ConnShooter::init ()
 int
 Rts2ConnShooter::connectionError (int last_data_size)
 {
-  syslog (LOG_DEBUG, "Rts2ConnShooter::connectionError");
+  logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError" << sendLog;
   if (sock > 0)
     {
       close (sock);
@@ -321,7 +324,7 @@ Rts2ConnShooter::receive (fd_set * set)
 	}
       nbuf[ret] = '\0';
       processAuger ();
-      syslog (LOG_DEBUG, "Rts2ConnShooter::receive data: %s", nbuf);
+      logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::receive data: " << nbuf << sendLog;
       successfullRead ();
       gettimeofday (&last_packet, NULL);
       // enable others to catch-up (FW connections will forward packet to their sockets)

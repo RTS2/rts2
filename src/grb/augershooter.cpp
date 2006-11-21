@@ -71,7 +71,8 @@ Rts2DevAugerShooter::newShower ()
     }
   else
     {
-      syslog (LOG_ERR, "FATAL! No executor running to post shower!");
+      logStream (MESSAGE_ERROR) <<
+	"FATAL! No executor running to post shower!" << sendLog;
       return -1;
     }
   return 0;

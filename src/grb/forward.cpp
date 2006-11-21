@@ -11,6 +11,7 @@
 #include "rts2grbfw.h"
 
 #include <errno.h>
+#include <iostream>
 #include <netdb.h>
 #include <time.h>
 #include <sys/time.h>
@@ -75,9 +76,10 @@ int
 Rts2ConnFwGrb::pr_imalive ()
 {
   deltaValue = here_sod - getPktSod ();
-  syslog (LOG_DEBUG,
-	  "Rts2ConnFwGrb::pr_imalive last packet SN=%f delta=%5.2f last_delta=%.1f",
-	  getPktSod (), deltaValue, getPktSod () - last_imalive_sod);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ConnFwGrb::pr_imalive last packet SN="
+    << getPktSod () << " delta=" << deltaValue << " last_delta=" <<
+    (getPktSod () - last_imalive_sod) << sendLog;
   last_imalive_sod = getPktSod ();
   return 0;
 }
@@ -128,13 +130,14 @@ Rts2ConnFwGrb::idle ()
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
 	{
-	  syslog (LOG_ERR, "Rts2ConnFwGrb::idle getsockopt %m");
+	  logStream (MESSAGE_ERROR) << "Rts2ConnFwGrb::idle getsockopt " <<
+	    strerror (errno) << sendLog;
 	  connectionError (-1);
 	}
       else if (err)
 	{
-	  syslog (LOG_ERR, "Rts2ConnFwGrb::idle getsockopt %s",
-		  strerror (err));
+	  logStream (MESSAGE_ERROR) << "Rts2ConnFwGrb::idle getsockopt "
+	    << strerror (err) << sendLog;
 	  connectionError (-1);
 	}
       else
@@ -181,8 +184,8 @@ Rts2ConnFwGrb::init_call ()
   free (s_port);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2Address::getAddress getaddrinfor: %s",
-	      gai_strerror (ret));
+      logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: "
+	<< gai_strerror (ret) << sendLog;
       freeaddrinfo (info);
       return -1;
     }
@@ -225,7 +228,8 @@ Rts2ConnFwGrb::init_listen ()
   gcn_listen_sock = socket (PF_INET, SOCK_STREAM, 0);
   if (gcn_listen_sock == -1)
     {
-      syslog (LOG_ERR, "Rts2ConnFwGrb::init_listen socket %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnFwGrb::init_listen socket " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   const int so_reuseaddr = 1;
@@ -238,13 +242,15 @@ Rts2ConnFwGrb::init_listen ()
   ret = bind (gcn_listen_sock, (struct sockaddr *) &server, sizeof (server));
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2ConnFwGrb::init_listen bind: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnFwGrb::init_listen bind: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   ret = listen (gcn_listen_sock, 1);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2ConnFwGrb::init_listen listen: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnFwGrb::init_listen listen: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   setConnState (CONN_CONNECTED);
@@ -276,7 +282,7 @@ Rts2ConnFwGrb::add (fd_set * set)
 int
 Rts2ConnFwGrb::connectionError (int last_data_size)
 {
-  syslog (LOG_DEBUG, "Rts2ConnFwGrb::connectionError");
+  logStream (MESSAGE_DEBUG) << "Rts2ConnFwGrb::connectionError" << sendLog;
   if (sock > 0)
     {
       close (sock);
@@ -308,17 +314,20 @@ Rts2ConnFwGrb::receive (fd_set * set)
       if (sock == -1)
 	{
 	  // bad accept - strange
-	  syslog (LOG_ERR,
-		  "Rts2ConnFwGrb::receive accept on gcn_listen_sock: %m");
+	  logStream (MESSAGE_ERROR)
+	    << "Rts2ConnFwGrb::receive accept on gcn_listen_sock: " <<
+	    strerror (errno) << sendLog;
 	  connectionError (-1);
 	}
       // close listening socket..when we get connection
       close (gcn_listen_sock);
       gcn_listen_sock = -1;
       setConnState (CONN_CONNECTED);
-      syslog (LOG_DEBUG,
-	      "Rts2ConnFwGrb::receive accept gcn_listen_sock from %s %i",
-	      inet_ntoa (other_side.sin_addr), ntohs (other_side.sin_port));
+      logStream (MESSAGE_INFO)
+	<< "Rts2ConnFwGrb::receive accept gcn_listen_sock from "
+	<< inet_ntoa (other_side.sin_addr) << " port " << ntohs (other_side.
+								 sin_port) <<
+	sendLog;
     }
   else if (sock >= 0 && FD_ISSET (sock, set))
     {
@@ -370,8 +379,9 @@ Rts2ConnFwGrb::receive (fd_set * set)
 	  connectionError (-1);
 	  break;
 	default:
-	  syslog (LOG_ERR, "Rts2ConnFwGrb::receive unknow packet type: %ld",
-		  lbuf[PKT_TYPE]);
+	  logStream (MESSAGE_ERROR) <<
+	    "Rts2ConnFwGrb::receive unknow packet type: " << lbuf[PKT_TYPE] <<
+	    sendLog;
 	  break;
 	}
       // enable others to catch-up (FW connections will forward packet to their sockets)
@@ -460,8 +470,9 @@ Rts2AppFw::init ()
 
   if (!gcn_host || !gcn_port)
     {
-      syslog (LOG_ERR,
-	      "Rts2AppFw::init cannot init - please supply port and gcn hostname");
+      logStream (MESSAGE_ERROR)
+	<< "Rts2AppFw::init cannot init - please supply port and gcn hostname"
+	<< sendLog;
       return -1;
     }
 
@@ -473,8 +484,9 @@ Rts2AppFw::init ()
       ret = gcncnn->init ();
       if (!ret)
 	break;
-      syslog (LOG_ERR,
-	      "Rts2DevGrb::init cannot init conngrb, sleeping for 60 sec");
+      logStream (MESSAGE_ERROR)
+	<< "Rts2DevGrb::init cannot init conngrb, sleeping for 60 sec"
+	<< sendLog;
       sleep (60);
     }
   addConnection (gcncnn);
@@ -487,9 +499,9 @@ Rts2AppFw::init ()
       ret2 = forwardConnection->init ();
       if (ret2)
 	{
-	  syslog (LOG_ERR,
-		  "Rts2DevGrb::init cannot create forward connection, ignoring (%i)",
-		  ret2);
+	  logStream (MESSAGE_ERROR)
+	    << "Rts2DevGrb::init cannot create forward connection, ignoring ("
+	    << ret2 << ")" << sendLog;
 	  delete forwardConnection;
 	  forwardConnection = NULL;
 	}
@@ -523,7 +535,7 @@ main (int argc, char **argv)
   ret = grb->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot init GRB device, exiting");
+      std::cerr << "Cannot init GRB device, exiting" << std::endl;
       delete grb;
       return 1;
     }

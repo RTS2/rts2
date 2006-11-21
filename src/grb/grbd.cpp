@@ -161,8 +161,9 @@ Rts2DevGrb::reloadConfig ()
       ret = gcncnn->init ();
       if (!ret)
 	break;
-      syslog (LOG_ERR,
-	      "Rts2DevGrb::init cannot init conngrb, sleeping for 60 sec");
+      logStream (MESSAGE_ERROR)
+	<< "Rts2DevGrb::init cannot init conngrb, sleeping for 60 sec" <<
+	sendLog;
       sleep (60);
     }
   addConnection (gcncnn);
@@ -187,9 +188,9 @@ Rts2DevGrb::init ()
       ret2 = forwardConnection->init ();
       if (ret2)
 	{
-	  syslog (LOG_ERR,
-		  "Rts2DevGrb::init cannot create forward connection, ignoring (%i)",
-		  ret2);
+	  logStream (MESSAGE_ERROR)
+	    << "Rts2DevGrb::init cannot create forward connection, ignoring ("
+	    << ret2 << ")" << sendLog;
 	  delete forwardConnection;
 	  forwardConnection = NULL;
 	}
@@ -230,8 +231,8 @@ Rts2DevGrb::newGcnGrb (int tar_id)
     }
   else
     {
-      syslog (LOG_ERR, "FATAL! No executor running to post grb ID %i!",
-	      tar_id);
+      logStream (MESSAGE_ERROR) <<
+	"FATAL! No executor running to post grb ID " << tar_id << sendLog;
       return -1;
     }
   return 0;
@@ -258,7 +259,8 @@ main (int argc, char **argv)
   ret = grb->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot init GRB device, exiting");
+      logStream (MESSAGE_ERROR) << "Cannot init GRB device, exiting" <<
+	sendLog;
       delete grb;
       return 1;
     }
