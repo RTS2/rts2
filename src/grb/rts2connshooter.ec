@@ -144,7 +144,7 @@ Rts2ConnShooter::processAuger ()
 
   if (!(gap_comp && gap_isT5 && gap_energy > minEnergy))
     {
-      logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "<
+      logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
         << gap_comp
 	<< " gap_isT5 " << gap_isT5
 	<< " gap_energy " << gap_energy
