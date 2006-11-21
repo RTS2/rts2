@@ -1,4 +1,5 @@
 #include "mirror.h"
+#include <iostream>
 
 class Rts2DevMirrorDummy:public Rts2DevMirror
 {
@@ -46,7 +47,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize FRAM mirror - exiting!\n");
+      std::cerr << "Cannot initialize FRAM mirror - exiting!" << std::endl;
       exit (1);
     }
   device->run ();

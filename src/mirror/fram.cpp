@@ -4,8 +4,8 @@
  * @author Petr Kubanek <petr@lascaux.asu.cas.cz>
  */
 
+#include <iostream>
 #include <stdio.h>
-#include <syslog.h>
 #include <termios.h>
 #include <sys/file.h>
 #include <sys/types.h>
@@ -72,7 +72,7 @@ Rts2DevMirrorFram::mirror_command (char cmd, int arg, char *ret_cmd,
   time_t t;
   command_buffer[0] = cmd;
   *((int *) &command_buffer[1]) = arg;
-  syslog (LOG_DEBUG, "cmd %i arg %i", cmd, arg);
+  logStream (MESSAGE_DEBUG) << "cmd " << cmd << " arg " << arg << sendLog;
 
   ret = write (mirror_fd, command_buffer, 3);
   if (ret != 3)
@@ -97,8 +97,8 @@ Rts2DevMirrorFram::mirror_command (char cmd, int arg, char *ret_cmd,
 	}
       readed += ret;
     }
-  syslog (LOG_DEBUG, "ret_cmd : %i ret_arg: %i", command_buffer[0],
-	  command_buffer[1]);
+  logStream (MESSAGE_DEBUG) << "ret_cmd: " << command_buffer[0]
+    << " ret_arg: " << command_buffer[1] << sendLog;
   if (ret_cmd)
     *ret_cmd = command_buffer[0];
   if (ret_arg)
@@ -153,22 +153,26 @@ Rts2DevMirrorFram::init ()
 
   if (!mirror_dev)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevMirrorFram::init /dev entry wasn't passed as parameter - exiting");
+      logStream (MESSAGE_ERROR)
+	<<
+	"Rts2DevMirrorFram::init /dev entry wasn't passed as parameter - exiting"
+	<< sendLog;
       return -1;
     }
 
   mirror_fd = open (mirror_dev, O_RDWR);
   if (mirror_fd < 0)
     {
-      syslog (LOG_ERR, "Rts2DevMirrorFram::init mirror open: %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init mirror open: " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
   ret = tcgetattr (mirror_fd, &oldtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevMirrorFram::init tcgetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init tcgetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
@@ -185,12 +189,13 @@ Rts2DevMirrorFram::init ()
   ret = tcsetattr (mirror_fd, TCSANOW, &newtio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevMirrorFram::init tcsetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevMirrorFram::init tcsetattr " <<
+	strerror (errno) << sendLog;
       return -1;
     }
 
-  syslog (LOG_DEBUG, "Rts2DevMirrorFram::init mirror initialized on %s",
-	  mirror_dev);
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2DevMirrorFram::init mirror initialized on " << mirror_dev << sendLog;
 
   return startClose ();
 }
@@ -307,7 +312,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize FRAM mirror - exiting!\n");
+      std::cerr << "Cannot initialize FRAM mirror - exiting!" << std::endl;
       exit (1);
     }
   device->run ();
