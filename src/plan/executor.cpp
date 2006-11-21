@@ -282,8 +282,8 @@ Rts2Executor::postEvent (Rts2Event * event)
 	case NEXT_COMMAND_PRECISION_OK:
 	  if (currentTarget)
 	    {
-	      syslog (LOG_DEBUG, "NEXT_COMMAND_PRECISION_OK %i",
-		      currentTarget->getObsTargetID ());
+	      logStream (MESSAGE_DEBUG) << "NEXT_COMMAND_PRECISION_OK " <<
+		currentTarget->getObsTargetID () << sendLog;
 	      currentTarget->acqusitionEnd ();
 	    }
 	  maskState (0, EXEC_MASK_ACQ, EXEC_ACQ_OK);
@@ -555,7 +555,8 @@ Rts2Executor::setGrb (int grbId)
 	|| getMasterState () == SERVERD_DUSK
 	|| getMasterState () == SERVERD_DAWN))
     {
-      syslog (LOG_DEBUG, "Rts2Executor::setGrb daylight GRB ignored");
+      logStream (MESSAGE_DEBUG) << "Rts2Executor::setGrb daylight GRB ignored"
+	<< sendLog;
       return -2;
     }
 
@@ -570,7 +571,8 @@ Rts2Executor::setGrb (int grbId)
   // miss GRB:(
   if (!ret)
     {
-      syslog (LOG_DEBUG, "Rts2Executor::setGrb grbHrz alt:%f", grbHrz.alt);
+      logStream (MESSAGE_DEBUG) << "Rts2Executor::setGrb grbHrz alt:" <<
+	grbHrz.alt << sendLog;
       if (grbHrz.alt < 0)
 	{
 	  delete grbTarget;
@@ -623,7 +625,8 @@ Rts2Executor::setShower ()
   // is during night and ready?
   if (!(getMasterState () == SERVERD_NIGHT))
     {
-      syslog (LOG_DEBUG, "Rts2Executor::setShow daylight shower ignored");
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2Executor::setShow daylight shower ignored" << sendLog;
       return -2;
     }
 

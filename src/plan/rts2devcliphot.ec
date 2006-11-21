@@ -57,9 +57,8 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
       // we are in searching mode..
       if (waitScript == WAIT_SEARCH)
 	{
-	  syslog (LOG_DEBUG,
-		  "Rts2DevClientPhotExec::addCount WAIT_SEARCH %i %f %i",
-		  count, exp, is_ov);
+	  logStream (MESSAGE_DEBUG) << 
+		  "Rts2DevClientPhotExec::addCount WAIT_SEARCH " << count << " " << exp << " " << is_ov << sendLog;
 	  if (is_ov || (count / exp) > minFlux)
 	    searchSucess ();
 	}
@@ -74,7 +73,7 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
 
   if (is_ov)
     {
-      syslog (LOG_DEBUG, "Rts2DevClientPhotExec::addCount is_ov");
+      logStream (MESSAGE_DEBUG) << "Rts2DevClientPhotExec::addCount is_ov" << sendLog;
       return;
     }
 
@@ -129,8 +128,8 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
 
   if (sqlca.sqlcode != 0)
     {
-      syslog (LOG_ERR, "Rts2DevClientPhotExec::addCount db error %s",
-	      sqlca.sqlerrm.sqlerrmc);
+      logStream (MESSAGE_ERROR) << "Rts2DevClientPhotExec::addCount db error " <<
+	      sqlca.sqlerrm.sqlerrmc << sendLog;
       EXEC SQL ROLLBACK;
     }
   else

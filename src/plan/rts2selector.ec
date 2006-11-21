@@ -109,7 +109,7 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
     return;
   ret = newTar->considerForObserving (JD);
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "considerForObserving tar_id: %i ret: %i", newTar->getTargetID (), ret);
+  logStream (MESSAGE_DEBUG) << "considerForObserving tar_id: " << newTar->getTargetID () << " ret: " << ret << sendLog;
 #endif
   if (ret)
   {
@@ -179,7 +179,7 @@ Rts2Selector::findNewTargets ()
       old_list = target_list;
       target_list++;
       possibleTargets.erase (old_list);
-      syslog (LOG_DEBUG, "remove target tar_id %i from possible targets", tar->getTargetID ());
+      logStream (MESSAGE_DEBUG) << "remove target tar_id " << tar->getTargetID () << " from possible targets" << sendLog;
       delete tar;
     }
     else
@@ -199,14 +199,14 @@ Rts2Selector::findNewTargets ()
       AND ((tar_next_observable is null) OR (tar_next_observable < now ()));
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "findNewTargets: %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.sqlerrmc << sendLog;
     return;
   }
 
   EXEC SQL OPEN findnewtargets;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "findNewTargets: %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.sqlerrmc << sendLog;
     EXEC SQL ROLLBACK;
     return;
   }
@@ -224,7 +224,7 @@ Rts2Selector::findNewTargets ()
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
     // some DB error..strange, let's get out
-    syslog (LOG_DEBUG, "findNewTargets DB error: %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_DEBUG) << "findNewTargets DB error: " << sqlca.sqlerrm.sqlerrmc << sendLog;
     exit (1);
   }
   EXEC SQL CLOSE findnewtargets;
@@ -246,7 +246,7 @@ Rts2Selector::selectNextNight (int in_bonusLimit)
     Target *tar = *target_list;
     tar_bonus = tar->getBonus ();
 #ifdef DEBUG_EXTRA
-    syslog (LOG_DEBUG, "bonus: %i %f", tar->getTargetID (), tar_bonus);
+    logStream (MESSAGE_DEBUG) << "target: " << tar->getTargetID () << " bonus: " << tar_bonus << sendLog;
 #endif
     if (tar_bonus > maxBonus)
     {

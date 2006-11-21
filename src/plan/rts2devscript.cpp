@@ -153,8 +153,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	break;
       waitScript = NO_WAIT;
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG, "Rts2DevScript::postEvent EVENT_ACQUSITION_END %s",
-	      script_connection->getName ());
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2DevScript::postEvent EVENT_ACQUSITION_END " <<
+	script_connection->getName () << sendLog;
 #endif
       acqEnd = *(int *) event->getArg ();
       switch (acqEnd)
@@ -163,9 +164,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  nextCommand ();
 	  break;
 	case -5:		// failed with script deletion..
-	  syslog (LOG_DEBUG,
-		  "Rts2DevScript::postEvent EVENT_ACQUSITION_END -5 %s",
-		  script_connection->getName ());
+	  logStream (MESSAGE_DEBUG)
+	    << "Rts2DevScript::postEvent EVENT_ACQUSITION_END -5 "
+	    << script_connection->getName () << sendLog;
 	  break;
 	case NEXT_COMMAND_PRECISION_FAILED:
 	  deleteScript ();
@@ -236,8 +237,9 @@ Rts2DevScript::deleteScript ()
       // should not happen
       acqRet = -5;
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG,
-	      "Rts2DevScript::deleteScript sending EVENT_ACQUSITION_END");
+      logStream (MESSAGE_DEBUG)
+	<< "Rts2DevScript::deleteScript sending EVENT_ACQUSITION_END" <<
+	sendLog;
 #endif
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &acqRet));
@@ -333,9 +335,9 @@ Rts2DevScript::nextPreparedCommand ()
       clearWait ();		// don't wait for mount move - it will not happen
       waitScript = NO_WAIT;
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG,
-	      "Rts2DevScript::nextPreparedCommand sending EVENT_ACQUSITION_END %s %i",
-	      script_connection->getName (), ret);
+      logStream (MESSAGE_DEBUG)
+	<< "Rts2DevScript::nextPreparedCommand sending EVENT_ACQUSITION_END "
+	<< script_connection->getName () << " " << ret << sendLog;
 #endif
       script_connection->getMaster ()->
 	postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &ret));
@@ -417,9 +419,10 @@ Rts2DevScript::haveNextCommand ()
     }
   if (strcmp (cmd_device, script_connection->getName ()))
     {
-      syslog (LOG_ERR,
-	      "Rts2DevScript::haveNextCommand cmd_device %s ret %i conn %s",
-	      cmd_device, ret, script_connection->getName ());
+      logStream (MESSAGE_ERROR)
+	<< "Rts2DevScript::haveNextCommand cmd_device "
+	<< cmd_device << " ret " << ret << " conn " << script_connection->
+	getName () << sendLog;
       return 0;
     }
   return 1;

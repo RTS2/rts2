@@ -171,16 +171,18 @@ Rts2ImageProc::reloadConfig ()
   ret = config->getString ("imgproc", "astrometry", defaultImgProcess, 2000);
   if (ret)
     {
-      syslog (LOG_ERR,
-	      "Rts2ImageProc::init cannot get astrometry string, exiting!");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ImageProc::init cannot get astrometry string, exiting!" <<
+	sendLog;
       return ret;
     }
 
   ret = config->getString ("imgproc", "obsprocess", defaultObsProcess, 2000);
   if (ret)
     {
-      syslog (LOG_ERR,
-	      "Rts2ImageProc::init cannot get obs process script, exiting");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ImageProc::init cannot get obs process script, exiting" <<
+	sendLog;
       return ret;
     }
 
@@ -188,8 +190,9 @@ Rts2ImageProc::reloadConfig ()
     config->getString ("imgproc", "darkprocess", defaultDarkProcess, 2000);
   if (ret)
     {
-      syslog (LOG_ERR,
-	      "Rts2ImageProc::init cannot get dark process script, exiting");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ImageProc::init cannot get dark process script, exiting" <<
+	sendLog;
       return ret;
     }
 
@@ -197,8 +200,9 @@ Rts2ImageProc::reloadConfig ()
     config->getString ("imgproc", "flatprocess", defaultFlatProcess, 2000);
   if (ret)
     {
-      syslog (LOG_ERR,
-	      "Rts2ImageProc::init cannot get flat process script, exiting");
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ImageProc::init cannot get flat process script, exiting" <<
+	sendLog;
     }
   return ret;
 }

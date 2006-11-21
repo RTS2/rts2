@@ -94,8 +94,9 @@ Rts2DevClientCameraExec::createImage (const struct timeval * expStart)
   if (currentTarget)
     // create image based on target type and shutter state
     return new Rts2ImageDb (currentTarget, this, expStart);
-  syslog (LOG_ERR,
-	  "Rts2DevClientCameraExec::createImage creating no-target image");
+  logStream (MESSAGE_ERROR)
+    << "Rts2DevClientCameraExec::createImage creating no-target image" <<
+    sendLog;
   Rts2Image *image;
   char *name;
   asprintf (&name, "!/tmp/%s_%i.fits", connection->getName (), imgCount);
@@ -375,9 +376,11 @@ Rts2DevClientTelescopeExec::syncTarget ()
       break;
     case OBS_MOVE_FIXED:
       currentTarget->moveStarted ();
-      syslog (LOG_DEBUG,
-	      "Rts2DevClientCameraExec::syncTarget ha %f dec %f oha %f odec %f",
-	      coord.ra, coord.dec, fixedOffset.ra, fixedOffset.dec);
+      logStream (MESSAGE_DEBUG)
+	<< "Rts2DevClientCameraExec::syncTarget ha "
+	<< coord.ra << " dec " << coord.dec
+	<< " oha " << fixedOffset.ra << " odec " << fixedOffset.
+	dec << sendLog;
       // we are ofsetting in HA, but offset is in RA - hence -
       connection->
 	queCommand (new
@@ -390,9 +393,9 @@ Rts2DevClientTelescopeExec::syncTarget ()
       if (fixedOffset.ra != 0 || fixedOffset.dec != 0)
 	{
 #ifdef DEBUG_EXTRA
-	  syslog (LOG_DEBUG,
-		  "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra %lf dec %lf",
-		  fixedOffset.ra, fixedOffset.dec);
+	  logStream (MESSAGE_DEBUG)
+	    << "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra "
+	    << fixedOffset.ra << " dec " << fixedOffset.dec << sendLog;
 #endif
 	  connection->
 	    queCommand (new

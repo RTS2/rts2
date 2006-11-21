@@ -44,8 +44,8 @@ Rts2ConnImgProcess::newProcess ()
   Rts2Image *image;
 
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2ConnImgProcess::newProcess exe: %s img: %s (%i)",
-	  exePath, imgPath, getpid ());
+  logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::newProcess exe: " <<
+    exePath << " img: " << imgPath << " (" << getpid () << ")" << sendLog;
 #endif
 
   image = new Rts2Image (imgPath);
@@ -60,7 +60,8 @@ Rts2ConnImgProcess::newProcess ()
   if (exePath)
     {
       execl (exePath, exePath, imgPath, (char *) NULL);
-      syslog (LOG_ERR, "Rts2ConnImgProcess::newProcess: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnImgProcess::newProcess: " <<
+	strerror (errno) << sendLog;
     }
   return -2;
 }
@@ -72,14 +73,16 @@ Rts2ConnImgProcess::processLine ()
   ret =
     sscanf (getCommand (), "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
 	    &dec_err);
-#ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "receive: %s sscanf: %i", getCommand (), ret);
-#endif
   if (ret == 5)
     {
       astrometryStat = GET;
       // inform others..
     }
+#ifndef DEBUG_EXTRA
+  else
+#endif /* !DEBUG_EXTRA */
+    logStream (MESSAGE_DEBUG) << "receive: " << getCommand () << " sscanf: "
+      << ret << sendLog;
   return -1;
 }
 
@@ -93,7 +96,8 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 
   if (last_data_size < 0 && errno == EAGAIN)
     {
-      syslog (LOG_DEBUG, "Rts2ConnImgProcess::connectionError %m");
+      logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::connectionError " <<
+	strerror (errno) << sendLog;
       return 1;
     }
 
@@ -203,15 +207,15 @@ Rts2ConnObsProcess::newProcess ()
   char *obsTarIdCh;
   char *obsTarTypeCh;
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2ConnObsProcess::newProcess exe: %s obsid: %i",
-	  exePath, obsId);
+  logStream (MESSAGE_DEBUG) << "Rts2ConnObsProcess::newProcess exe: " <<
+    exePath << " obsid: " << obsId << sendLog;
 #endif
   obs = new Rts2Obs (obsId);
   ret = obs->load ();
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2ConnObsProcess::newProcess cannot load obs %i",
-	      obsId);
+      logStream (MESSAGE_ERROR) <<
+	"Rts2ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
       return ret;
     }
 
@@ -226,7 +230,8 @@ Rts2ConnObsProcess::newProcess ()
       execl (exePath, exePath, obsIdCh, obsTarIdCh, obsTarTypeCh,
 	     (char *) NULL);
       // if we get there, it's error in execl
-      syslog (LOG_ERR, "Rts2ConnObsProcess::newProcess: %m");
+      logStream (MESSAGE_ERROR) << "Rts2ConnObsProcess::newProcess: " <<
+	strerror (errno) << sendLog;
     }
   return -2;
 }

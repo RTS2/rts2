@@ -45,9 +45,10 @@ Rts2ScriptElementGuiding::checkGuidingSign (double &last, double &mult,
       last = act;
       return;
     }
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementGuiding::checkGuidingSign last: %f mult: %f act: %f bad_change:%f",
-	  last, mult, act, bad_change);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementGuiding::checkGuidingSign last: "
+    << last << " mult: " << mult << " act: " << act << " bad_change " <<
+    bad_change << sendLog;
   // try to detect sign change
   if ((fabs (act) > 2 * fabs (last)) && (fabs (act) > bad_change))
     {
@@ -59,9 +60,9 @@ Rts2ScriptElementGuiding::checkGuidingSign (double &last, double &mult,
     {
       last = act;
     }
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementGuiding::checkGuidingSign last: %f mult: %f act: %f",
-	  last, mult, act);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementGuiding::checkGuidingSign last: "
+    << last << " mult: " << mult << " act: " << act << sendLog;
 }
 
 void
@@ -83,33 +84,36 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 	  ret = image->getBrightestOffset (star_x, star_y, flux);
 	  if (ret)
 	    {
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA failed (numStars: %i)",
-		      image->sexResultNum);
+	      logStream (MESSAGE_DEBUG)
+		<<
+		"Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA failed (numStars: "
+		<< image->sexResultNum << ")" << sendLog;
 	      processingState = FAILED;
 	    }
 	  else
 	    {
 	      // guide..
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA %lf %lf",
-		      star_x, star_y);
+	      logStream (MESSAGE_DEBUG)
+		<< "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA "
+		<< star_x << " " << star_y << sendLog;
 	      ret =
 		image->getOffset (star_x, star_y, star_ra, star_dec,
 				  star_sep);
 	      if (ret)
 		{
-		  syslog (LOG_DEBUG,
-			  "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA getOffset %i",
-			  ret);
+		  logStream (MESSAGE_DEBUG)
+		    <<
+		    "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA getOffset "
+		    << ret << sendLog;
 		  processingState = NEED_IMAGE;
 		}
 	      else
 		{
 		  GuidingParams *pars;
-		  syslog (LOG_DEBUG,
-			  "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA offsets ra: %f dec: %f",
-			  star_ra, star_dec);
+		  logStream (MESSAGE_DEBUG)
+		    <<
+		    "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA offsets ra: "
+		    << star_ra << " dec: " << star_dec << sendLog;
 		  if (fabs (star_dec) > min_change)
 		    {
 		      checkGuidingSign (last_dec, dec_mult, star_dec);
@@ -172,9 +176,9 @@ Rts2ScriptElementGuiding::nextCommand (Rts2DevClientCamera * camera,
       return NEXT_COMMAND_NEXT;
     }
   // should not happen!
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementGuiding::nextCommand invalid state: %i",
-	  processingState);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementGuiding::nextCommand invalid state: "
+    << processingState << sendLog;
   return NEXT_COMMAND_NEXT;
 }
 
@@ -183,21 +187,22 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
 {
   int ret;
   Rts2ConnFocus *processor;
-  syslog (LOG_DEBUG, "Rts2ScriptElementGuiding::processImage state: %i",
-	  processingState);
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2ScriptElementGuiding::processImage state: " << processingState <<
+    sendLog;
   if (processingState != WAITING_IMAGE)
     {
-      syslog (LOG_ERR,
-	      "Rts2ScriptElementGuiding::processImage invalid processingState: %i",
-	      processingState);
+      logStream (MESSAGE_ERROR)
+	<< "Rts2ScriptElementGuiding::processImage invalid processingState: "
+	<< processingState << sendLog;
       processingState = FAILED;
       return -1;
     }
   obsId = image->getObsId ();
   imgId = image->getImgId ();
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementGuiding::processImage defaultImgProccess: %s",
-	  defaultImgProccess);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementGuiding::processImage defaultImgProccess: "
+    << defaultImgProccess << sendLog;
   processor =
     new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
 		       EVENT_GUIDING_DATA);
@@ -214,9 +219,9 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
       script->getMaster ()->addConnection (processor);
       processingState = NEED_IMAGE;
     }
-  syslog (LOG_DEBUG,
-	  "Rts2ConnImgProcess::processImage executed processor %i %p", ret,
-	  processor);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ConnImgProcess::processImage executed processor " << ret
+    << " processor " << processor << sendLog;
   return 0;
 }
 

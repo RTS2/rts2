@@ -229,9 +229,11 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 	  if (img_prec <= reqPrecision)
 	    {
 #ifdef DEBUG_EXTRA
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquire::postEvent seting PRECISION_OK on %f <= %f obsId %i imgId %i",
-		      img_prec, reqPrecision, obsId, imgId);
+	      logStream (MESSAGE_DEBUG)
+		<<
+		"Rts2ScriptElementAcquire::postEvent seting PRECISION_OK on "
+		<< img_prec << " <= " << reqPrecision << " obsId " << obsId <<
+		" imgId " << imgId << sendLog;
 #endif
 	      processingState = PRECISION_OK;
 	    }
@@ -290,8 +292,8 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
       return NEXT_COMMAND_PRECISION_FAILED;
     case PRECISION_OK:
 #ifdef DEBUG_EXTRA
-      syslog (LOG_DEBUG,
-	      "Rts2ScriptElementAcquire::nextCommand PRECISION_OK");
+      logStream (MESSAGE_DEBUG)
+	<< "Rts2ScriptElementAcquire::nextCommand PRECISION_OK" << sendLog;
 #endif
       return NEXT_COMMAND_PRECISION_OK;
     case PRECISION_BAD:
@@ -302,9 +304,9 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
       break;
     }
   // that should not happen!
-  syslog (LOG_ERR,
-	  "Rts2ScriptElementAcquire::nextCommand unexpected processing state %i",
-	  processingState);
+  logStream (MESSAGE_ERROR)
+    << "Rts2ScriptElementAcquire::nextCommand unexpected processing state "
+    << processingState << sendLog;
   return NEXT_COMMAND_NEXT;
 }
 
@@ -316,9 +318,10 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 
   if (processingState != WAITING_IMAGE || !image->getIsAcquiring ())
     {
-      syslog (LOG_ERR,
-	      "Rts2ScriptElementAcquire::processImage invalid processingState: %i isAcquiring: %i",
-	      processingState, image->getIsAcquiring ());
+      logStream (MESSAGE_ERROR)
+	<< "Rts2ScriptElementAcquire::processImage invalid processingState: "
+	<< processingState << " isAcquiring: " << image->
+	getIsAcquiring () << sendLog;
       return -1;
     }
   obsId = image->getObsId ();
@@ -369,9 +372,9 @@ Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
 //#ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementWaitAcquire::defnextCommand %i (%s) %i", ac.count,
-	  script->getDefaultDevice (), tar_id);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementWaitAcquire::defnextCommand " << ac.count
+    << " (" << script->getDefaultDevice () << ") " << tar_id << sendLog;
 //#endif
   if (ac.count)
     return NEXT_COMMAND_WAIT_ACQUSITION;
@@ -421,9 +424,9 @@ Rts2ScriptElementMirror::defnextCommand (Rts2DevClient * client,
       return NEXT_COMMAND_WAIT_MIRROR;
     }
   // nobody cared, find another..
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementMirror::defnextCommand nobody cared about mirror %s",
-	  mirror_name);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementMirror::defnextCommand nobody cared about mirror "
+    << mirror_name << sendLog;
   return NEXT_COMMAND_NEXT;
 }
 
@@ -513,8 +516,8 @@ Rts2ScriptElementWaitSignal::defnextCommand (Rts2DevClient * client,
   script->getMaster ()->
     postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
 #ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "Rts2ScriptElementWaitSignal::defnextCommand %i (%s)",
-	  ret, script->getDefaultDevice ());
+  logStream (MESSAGE_DEBUG) << "Rts2ScriptElementWaitSignal::defnextCommand "
+    << ret << " (" << script->getDefaultDevice () << ")" << sendLog;
 #endif
   if (ret != -1)
     return NEXT_COMMAND_NEXT;
@@ -576,9 +579,10 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 	  switch (ret)
 	    {
 	    case -1:
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireStar::postEvent EVENT_STAR_DATA failed (numStars: %i)",
-		      image->sexResultNum);
+	      logStream (MESSAGE_DEBUG)
+		<<
+		"Rts2ScriptElementAcquireStar::postEvent EVENT_STAR_DATA failed (numStars: "
+		<< image->sexResultNum << ")" << sendLog;
 	      retries++;
 	      if (retries >= maxRetries)
 		{
@@ -602,15 +606,16 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 				      (void *) &offset));
 	      break;
 	    case 0:
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f OK",
-		      offset.ra, offset.dec);
+	      logStream (MESSAGE_DEBUG)
+		<< "Rts2ScriptElementAcquireStar::offsets ra: "
+		<< offset.ra << " dec: " << offset.dec << " OK" << sendLog;
 	      processingState = PRECISION_OK;
 	      break;
 	    case 1:
-	      syslog (LOG_DEBUG,
-		      "Rts2ScriptElementAcquireStar::offsets ra: %f dec: %f failed",
-		      offset.ra, offset.dec);
+	      logStream (MESSAGE_DEBUG)
+		<< "Rts2ScriptElementAcquireStar::offsets ra: "
+		<< offset.ra << " dec: " << offset.
+		dec << " failed" << sendLog;
 	      retries++;
 	      if (retries >= maxRetries)
 		{
@@ -638,9 +643,10 @@ Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
   Rts2ConnFocus *processor;
   if (processingState != WAITING_IMAGE)
     {
-      syslog (LOG_ERR,
-	      "Rts2ScriptElementAcquireStar::processImage invalid processingState: %i",
-	      processingState);
+      logStream (MESSAGE_ERROR)
+	<<
+	"Rts2ScriptElementAcquireStar::processImage invalid processingState: "
+	<< processingState << sendLog;
       processingState = FAILED;
       return -1;
     }
@@ -713,14 +719,15 @@ Rts2ScriptElementAcquireHam::getSource (Rts2Image * image, double &ra_off,
   if (ret)
     return -1;			// continue HAM search..
   // change fixed offset
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementAcquireHam::getSource %lf %lf", ham_x, ham_y);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementAcquireHam::getSource " << ham_x << " " << ham_y <<
+    sendLog;
   ret = image->getOffset (ham_x, ham_y, ra_off, dec_off, sep);
   if (ret)
     return -1;
-  syslog (LOG_DEBUG,
-	  "Rts2ScriptElementAcquireHam::offsets ra: %f dec: %f",
-	  ra_off, dec_off);
+  logStream (MESSAGE_DEBUG)
+    << "Rts2ScriptElementAcquireHam::offsets ra: " << ra_off << " dec: " <<
+    dec_off << sendLog;
   if (sep < reqPrecision)
     return 0;
   return 1;
