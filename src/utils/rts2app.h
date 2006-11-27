@@ -71,6 +71,11 @@ public:  Rts2App (int in_argc, char **in_argv);
   // method forkedInstance will be called, which might close whenever descriptors are needed
   virtual int sendMailTo (const char *subject, const char *text,
 			  const char *in_mailAddress);
+
+  virtual void sigHUP (int sig);
 };
+
+Rts2App *getMasterApp ();
+Rts2LogStream logStream (messageType_t in_messageType);
 
 #endif /* !__RTS2_APP__ */

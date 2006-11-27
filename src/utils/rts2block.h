@@ -84,7 +84,6 @@ public:
     virtual ~ Rts2Block (void);
   void setPort (int in_port);
   int getPort (void);
-  virtual int init ();
 
   int addConnection (Rts2Conn * conn);
 
@@ -201,11 +200,6 @@ public:
    * Return connection with minimum (integer) value.
    */
   Rts2Conn *getMinConn (const char *valueName);
-
-  virtual void sigHUP (int sig);
 };
-
-Rts2Block *getMasterBlock ();
-Rts2LogStream logStream (messageType_t in_messageType);
 
 #endif /*! __RTS2_NETBLOCK__ */

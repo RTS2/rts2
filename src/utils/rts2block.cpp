@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <iostream>
 #include <netinet/in.h>
-#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,21 +18,6 @@
 #include "rts2dataconn.h"
 
 #include "imghdr.h"
-
-static Rts2Block *masterBlock = NULL;
-
-Rts2Block *
-getMasterBlock ()
-{
-  return masterBlock;
-}
-
-Rts2LogStream
-logStream (messageType_t in_messageType)
-{
-  Rts2LogStream ls (masterBlock, in_messageType);
-  return ls;
-}
 
 Rts2Block::Rts2Block (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
@@ -75,26 +59,6 @@ int
 Rts2Block::getPort (void)
 {
   return port;
-}
-
-void
-signalHUP (int sig)
-{
-  if (masterBlock)
-    masterBlock->sigHUP (sig);
-}
-
-int
-Rts2Block::init ()
-{
-  int ret;
-  ret = initOptions ();
-  if (ret)
-    return ret;
-
-  masterBlock = this;
-  signal (SIGHUP, signalHUP);
-  return 0;
 }
 
 void
@@ -666,9 +630,4 @@ Rts2Block::getMinConn (const char *valueName)
 	}
     }
   return minConn;
-}
-
-void
-Rts2Block::sigHUP (int sig)
-{
 }

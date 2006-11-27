@@ -7,9 +7,25 @@
 #include "config.h"
 
 #include <iostream>
+#include <signal.h>
 #include <sstream>
 #include <syslog.h>
 #include <libnova/libnova.h>
+
+static Rts2App *masterApp = NULL;
+
+Rts2App *
+getMasterApp ()
+{
+  return masterApp;
+}
+
+Rts2LogStream
+logStream (messageType_t in_messageType)
+{
+  Rts2LogStream ls (masterApp, in_messageType);
+  return ls;
+}
 
 Rts2App::Rts2App (int in_argc, char **in_argv):
 Rts2Object ()
@@ -92,9 +108,18 @@ Rts2App::initOptions ()
   return 0;
 }
 
+void
+signalHUP (int sig)
+{
+  masterApp->sigHUP (sig);
+}
+
 int
 Rts2App::init ()
 {
+  masterApp = this;
+  signal (SIGHUP, signalHUP);
+
   return initOptions ();
 }
 
@@ -324,4 +349,9 @@ Rts2App::sendMailTo (const char *subject, const char *text,
   pclose (mailFile);
   free (cmd);
   exit (0);
+}
+
+void
+Rts2App::sigHUP (int sig)
+{
 }
