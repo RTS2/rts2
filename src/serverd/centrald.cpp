@@ -20,7 +20,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <syslog.h>
 #include <malloc.h>
 #include <libnova/libnova.h>
 #include <stdarg.h>
@@ -652,8 +651,8 @@ Rts2Centrald::changePriority (time_t timeout)
     {
       Rts2Conn *conn = connections[i];
       if (conn)
-	syslog (LOG_DEBUG, "Rts2Centrald::changePriority priorit: %i, %i", i,
-		conn->getPriority ());
+	logStream (MESSAGE_DEBUG) << "Rts2Centrald::changePriority priorit: "
+	  << i << ", " << conn->getPriority () << sendLog;
       if (conn && conn->getPriority () > new_priority_max)
 	{
 	  new_priority_client = i;
