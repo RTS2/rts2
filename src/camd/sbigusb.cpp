@@ -191,7 +191,8 @@ private:
   {
     if (ret == CE_NO_ERROR)
       return 0;
-    syslog (LOG_ERR, "Rts2DevCameraSbig::checkSbigHw ret: %i", ret);
+    logStream (MESSAGE_ERROR) << "Rts2DevCameraSbig::checkSbigHw ret: " << ret
+      << sendLog;
     return -1;
   }
   int fanState (int newFanState);
@@ -598,7 +599,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize sbigusb camera - exiting!\n");
+      std::cerr << "Cannot initialize sbigusb camera - exiting!" << std::endl;
       exit (1);
     }
   device->run ();

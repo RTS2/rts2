@@ -373,7 +373,8 @@ Rts2DevCameraFli::init ()
 
   if (names[0] == NULL)
     {
-      syslog (LOG_ERR, "Rts2DevCameraFli::init No device found!");
+      logStream (MESSAGE_ERROR) << "Rts2DevCameraFli::init No device found!"
+	<< sendLog;
       return -1;
     }
 
@@ -555,7 +556,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize miniccd camera - exiting!\n");
+      std::cerr << "Cannot initialize miniccd camera - exiting!" << std::endl;
       exit (1);
     }
   device->run ();

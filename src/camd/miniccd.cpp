@@ -3,6 +3,7 @@
 #endif
 
 #include <fcntl.h>
+#include <iostream>
 #include <signal.h>
 #include "camera_cpp.h"
 
@@ -119,8 +120,9 @@ CameraMiniccdChip::init ()
       fd_chip = open (device_name, O_RDWR);
       if (fd_chip < 0)
 	{
-	  syslog (LOG_ERR,
-		  "CameraMiniccdChip::init cannot open device file: %m");
+	  logStream (MESSAGE_ERROR)
+	    << "CameraMiniccdChip::init cannot open device file: " <<
+	    strerror (errno) << sendLog;
 	  return fd_chip;
 	}
     }
@@ -135,9 +137,9 @@ CameraMiniccdChip::init ()
 
   if (msg_len != CCD_MSG_CCD_LEN)
     {
-      syslog (LOG_ERR,
-	      "CameraMiniccdChip::init CCD message length wrong: %d %m",
-	      msg_len);
+      logStream (MESSAGE_ERROR)
+	<< "CameraMiniccdChip::init CCD message length wrong: "
+	<< msg_len << " " << strerror (errno) << sendLog;
       return -1;
     }
 
@@ -886,9 +888,9 @@ Rts2DevCameraMiniccd::init ()
   fd_ccd = open (device_file, O_RDWR);
   if (fd_ccd < 0)
     {
-      syslog (LOG_ERR,
-	      "Rts2DevCameraMiniccd::init Unable to open device: %s %m",
-	      device_file);
+      logStream (MESSAGE_ERROR)
+	<< "Rts2DevCameraMiniccd::init Unable to open device: "
+	<< device_file << " " << strerror (errno) << sendLog;
       return -1;
     }
   /*
@@ -1034,7 +1036,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize miniccd camera - exiting!\n");
+      std::cerr << "Cannot initialize miniccd camera - exiting!" << std::endl;
       exit (1);
     }
   device->run ();

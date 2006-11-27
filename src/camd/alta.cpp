@@ -5,11 +5,6 @@
  *
  * @author petr
  */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <math.h>
 #include <signal.h>
 
@@ -360,7 +355,8 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize apogee alta camera - exiting!");
+      std::cerr << "Cannot initialize apogee alta camera - exiting!" << std::
+	endl;
       exit (1);
     }
   device->run ();

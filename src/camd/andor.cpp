@@ -630,7 +630,7 @@ main (int argc, char **argv)
   ret = device->init ();
   if (ret)
     {
-      syslog (LOG_ERR, "Cannot initialize Andor camera - exiting!");
+      std::cerr << "Cannot initialize Andor camera - exiting!" << std::endl;
       delete device;
       exit (1);
     }
