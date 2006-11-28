@@ -40,6 +40,9 @@ protected:
   double config_rotang;
   int flip;
   char filter[200];
+  char instrume[70];
+  char telescop[70];
+  char origin[70];
 
   float exposureTime;
   exposureType exposureT;

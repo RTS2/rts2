@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <libnova/libnova.h>
 #include <malloc.h>
 
@@ -348,6 +344,9 @@ std::string Rts2Image::expandPath (std::string expression)
 		  break;
 		case 'o':
 		  ret += getObsString ();
+		  break;
+		case 'p':
+		  ret += getProcessingString ();
 		  break;
 		case 'S':
 		  ret += getStartSecString ();
@@ -1140,6 +1139,12 @@ std::string Rts2Image::getImgIdString ()
   return _os.str ();
 }
 
+// Rts2Image can be only raw..
+std::string Rts2Image::getProcessingString ()
+{
+  return std::string ("RA");
+}
+
 std::string Rts2Image::getStartYearString ()
 {
   std::ostringstream _os;
@@ -1555,11 +1560,7 @@ Rts2Image::getError (double &eRa, double &eDec, double &eRad)
 
 std::string Rts2Image::getOnlyFileName ()
 {
-  std::ostringstream os;
-  os << getStartYearString () << getStartMonthString () <<
-    getStartDayString () << getStartHourString () << getStartMinString () <<
-    getStartSecString () << "-" << getStartMSecString () << ".fits";
-  return os.str ();
+  return expandPath ("%y%m%d%H%M%S-%s-%p.fits");
 }
 
 std::string Rts2Image::getFileName ()

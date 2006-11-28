@@ -5,7 +5,6 @@
 #include "rts2devclifoc.h"
 #include "../utils/timestamp.h"
 
-#include <iostream>
 #include <algorithm>
 
 Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection,
@@ -205,8 +204,8 @@ Rts2ConnFocus::newProcess ()
     {
       execl (exePath, exePath, img_path, (char *) NULL);
       // when execl fails..
-      syslog (LOG_ERR, "Rts2ConnFocus::newProcess: %m exePath: '%s'",
-	      exePath);
+      logStream (MESSAGE_ERROR) << "Rts2ConnFocus::newProcess: " <<
+	strerror (errno) << " exePath: '" << exePath << "'" << sendLog;
     }
   return -2;
 }
@@ -219,7 +218,8 @@ Rts2ConnFocus::processLine ()
   ret = sscanf (getCommand (), "change %i %i", &id, &change);
   if (ret == 2)
     {
-      std::cout << "Get change: " << id << " " << change << std::endl;
+      logStream (MESSAGE_DEBUG) << "Get change: " << id << " " << change <<
+	sendLog;
       if (change == INT_MAX)
 	return -1;		// that's not expected .. ignore it
       getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
@@ -233,15 +233,16 @@ Rts2ConnFocus::processLine ()
 		&sr.Fe, &sr.fwhm, &sr.flags);
       if (ret != 6)
 	{
-	  std::cout << "Get line: " << getCommand () << std::endl;
+	  logStream (MESSAGE_ERROR) << "Get line: " << getCommand () <<
+	    sendLog;
 	}
       else
 	{
 	  if (image)
 	    image->addStarData (&sr);
-	  std::cout << "Sex added (" << sr.X << ", " << sr.Y << ", " << sr.
-	    F << ", " << sr.Fe << ", " << sr.fwhm << ", " << sr.
-	    flags << ")" << std::endl;
+	  logStream (MESSAGE_DEBUG) << "Sex added (" << sr.X << ", " << sr.
+	    Y << ", " << sr.F << ", " << sr.Fe << ", " << sr.
+	    fwhm << ", " << sr.flags << ")" << sendLog;
 	}
     }
   return -1;
@@ -259,9 +260,9 @@ Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photome
       os.open (photometerFile, std::ofstream::out | std::ofstream::app);
       if (!os.is_open ())
 	{
-	  std::
-	    cout << "Cannot write to " << photometerFile << ", exiting." <<
-	    std::endl;
+	  connection->getMaster ()->
+	    logStream (MESSAGE_ERROR) << "Cannot write to " << photometerFile
+	    << ", exiting." << sendLog;
 	  exit (1);
 	}
     }
@@ -278,9 +279,10 @@ void
 Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
 {
   int currFilter = getValueInteger ("filter");
-  std::cout << "Count on " << connection->
-    getName () << ": filter: " << currFilter << " count " <<
-    count << " exp: " << exp << " is_ov: " << is_ov << std::endl;
+  connection->getMaster ()->
+    logStream (MESSAGE_DEBUG) << "Count on " << connection->
+    getName () << ": filter: " << currFilter << " count " << count << " exp: "
+    << exp << " is_ov: " << is_ov << sendLog;
   if (newFilter == currFilter)
     countCount++;
   if (photometerFile)

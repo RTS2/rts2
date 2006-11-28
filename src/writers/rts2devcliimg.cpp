@@ -43,6 +43,14 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   config->getDouble (connection->getName (), "rotang", config_rotang);
   config->getInteger (connection->getName (), "flip", flip);
   config->getString (connection->getName (), "filter", filter, 200);
+
+  telescop[0] = '\0';
+  instrume[0] = '\0';
+  origin[0] = '\0';
+
+  config->getString (connection->getName (), "instrume", instrume, 70);
+  config->getString (connection->getName (), "telescop", telescop, 70);
+  config->getString (connection->getName (), "origin", origin, 70);
 }
 
 Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
@@ -196,6 +204,11 @@ Rts2DevClientCameraImage::exposureStarted ()
 		    "xplate (scale in X axis; divide by binning (BIN_H)!)");
   images->setValue ("YPLATE", yplate,
 		    "yplate (scale in Y axis; divide by binning (BIN_V)!)");
+
+  images->setInstrument (instrume);
+  images->setTelescope (telescop);
+  images->setOrigin (origin);
+
   if (images->getTargetType () == TYPE_TERESTIAL
       && !isnan (ter_xoa) && !isnan (ter_yoa))
     {
@@ -226,8 +239,9 @@ Rts2DevClientCameraImage::exposureStarted ()
 void
 Rts2DevClientCameraImage::exposureEnd ()
 {
-  syslog (LOG_DEBUG, "Rts2DevClientCameraImage::exposureEnd %s",
-	  connection->getName ());
+  connection->getMaster ()->
+    logStream (MESSAGE_DEBUG) << "Rts2DevClientCameraImage::exposureEnd " <<
+    connection->getName () << sendLog;
   if (!isExposing)
     return Rts2DevClientCamera::exposureEnd ();
   isExposing = 0;

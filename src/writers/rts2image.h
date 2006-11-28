@@ -10,6 +10,7 @@
 #include <fitsio.h>
 #include <list>
 #include <ostream>
+#include <config.h>
 
 #include "imghdr.h"
 #include "../utils/libnova_cpp.h"
@@ -254,6 +255,8 @@ public:
   std::string getTargetSelString ();
   std::string getObsString ();
   std::string getImgIdString ();
+
+  virtual std::string getProcessingString ();
 
   // date related functions
   std::string getStartYearString ();
@@ -506,6 +509,26 @@ public:
     fitsfile *ret = ffile;
     ffile = NULL;
     return ret;
+  }
+
+  int setInstrument (char *instr)
+  {
+    return setValue ("INSTRUME", instr, "instrument used for acqusition");
+  }
+
+  int setTelescope (char *tel)
+  {
+    return setValue ("TELESCOP", tel, "telescope used for acqusition");
+  }
+
+  int setObserver ()
+  {
+    return setValue ("OBSERVER", "RTS2 " VERSION, "observer");
+  }
+
+  int setOrigin (char *orig)
+  {
+    return setValue ("ORIGIN", orig, "organisation responsible for data");
   }
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);

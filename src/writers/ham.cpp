@@ -26,7 +26,8 @@ Rts2Image::getHam (double &x, double &y)
     }
   qsort (sexResults, sexResultNum, sizeof (struct stardata), sdFluxCompare);
   // we think that first source is HAM
-  syslog (LOG_DEBUG, "Rts2Image::getHam flux0: %f", sexResults[0].F);
+  logStream (MESSAGE_DEBUG) << "Rts2Image::getHam flux0: " << sexResults[0].
+    F << sendLog;
   if (sexResults[0].F > 100000)
     {
       float dist;
@@ -51,7 +52,8 @@ Rts2Image::getHam (double &x, double &y)
 	  return 0;
 	}
       else
-	syslog (LOG_DEBUG, "Rts2Image::getHam big sidt: %f", dist);
+	logStream (MESSAGE_WARNING) << "Rts2Image::getHam big sidt: " << dist
+	  << sendLog;
     }
   // HAM not found..
   return -1;
@@ -66,8 +68,8 @@ Rts2Image::getBrightestOffset (double &x, double &y, float &flux)
     }
   qsort (sexResults, sexResultNum, sizeof (struct stardata), sdFluxCompare);
   // returns coordinates of brightest source
-  syslog (LOG_DEBUG, "Rts2Image::getBrightestOffset flux0: %f flags: %i",
-	  sexResults[0].F, sexResults[0].flags);
+  logStream (MESSAGE_INFO) << "Rts2Image::getBrightestOffset flux0: "
+    << sexResults[0].F << " flags " << sexResults[0].flags << sendLog;
   x = sexResults[0].X;
   y = sexResults[0].Y;
   flux = sexResults[0].F;
