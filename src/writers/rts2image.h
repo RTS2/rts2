@@ -94,6 +94,8 @@ protected:
   {
     ffile = in_ffile;
   }
+
+  std::string getFitsErrors ();
 public:
   // list of sex results..
   struct stardata *sexResults;
@@ -477,7 +479,7 @@ public:
 
   std::string getOnlyFileName ();
 
-  virtual void getFileName (std::string & out_filename);
+  virtual std::string getFileName ();
 
   virtual bool haveOKAstrometry ()
   {

@@ -17,8 +17,8 @@ Rts2ImageDb::initDbImage ()
 void
 Rts2ImageDb::reportSqlError (char *msg)
 {
-  syslog (LOG_DEBUG, "SQL error %li %s (in %s)\n", sqlca.sqlcode,
-  sqlca.sqlerrm.sqlerrmc, msg);
+  logStream (MESSAGE_DEBUG) << "SQL error #" << sqlca.sqlcode << " text " << sqlca.sqlerrm.sqlerrmc << " (in " <<
+    msg << ")" << sendLog;
 }
 
 int
@@ -373,8 +373,8 @@ Rts2ImageSkyDb::setDarkFromDb ()
     :d_dark_name;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_DEBUG, "Rts2ImageSkyDb::setDarkFromDb SQL error: %s (%li)",
-      sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+    logStream (MESSAGE_DEBUG) << "Rts2ImageSkyDb::setDarkFromDb SQL error: " << 
+      sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")";
     EXEC SQL CLOSE dark_cursor;
     EXEC SQL ROLLBACK;
     return -1;
@@ -636,12 +636,12 @@ Rts2ImageSkyDb::printFileName (std::ostream &_os)
   _os << "/" << getOnlyFileName ();
 }
 
-void
-Rts2ImageSkyDb::getFileName (std::string &out_filename)
+std::string
+Rts2ImageSkyDb::getFileName ()
 {
   std::ostringstream out;
   printFileName (out);
-  out_filename = out.str();
+  return out.str();
 }
 
 /*********************************************************

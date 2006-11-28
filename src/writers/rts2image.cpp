@@ -444,12 +444,14 @@ Rts2Image::createImage (std::string in_filename)
   naxis[1] = 1;
   fits_create_file (&ffile, getImageName (), &fits_status);
   fits_create_img (ffile, USHORT_IMG, 2, naxis, &fits_status);
-  syslog (LOG_DEBUG, "Rts2Image::createImage %p %s", this, getImageName ());
   if (fits_status)
     {
-      fits_report_error (stderr, fits_status);
+      logStream (MESSAGE_ERROR) << "Rts2Image::createImage " <<
+	getFitsErrors () << sendLog;
       return -1;
     }
+  logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << this << " " <<
+    getImageName () << sendLog;
 
   flags = IMAGE_SAVE;
   return 0;
@@ -474,10 +476,11 @@ Rts2Image::createImage (char *in_filename)
   naxis[1] = 1;
   fits_create_file (&ffile, in_filename, &fits_status);
   fits_create_img (ffile, USHORT_IMG, 2, naxis, &fits_status);
-  syslog (LOG_DEBUG, "Rts2Image::createImage %p %s", this, in_filename);
+  logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << in_filename <<
+    sendLog;
   if (fits_status)
     {
-      fits_report_error (stderr, fits_status);
+      logStream (MESSAGE_DEBUG) << getFitsErrors () << sendLog;
       return -1;
     }
 
@@ -509,7 +512,7 @@ Rts2Image::openImage (const char *in_filename)
     }
   if (fits_status)
     {
-      fits_report_error (stderr, fits_status);
+      logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
       return -1;
     }
 
@@ -654,6 +657,16 @@ Rts2Image::getImageBase ()
   static char buf[12];
   sprintf (buf, "/images/%03i", epochId);
   return buf;
+}
+
+std::string Rts2Image::getFitsErrors ()
+{
+  std::ostringstream os;
+  char
+    buf[30];
+  fits_get_errstatus (fits_status, buf);
+  os << " file " << getFileName () << " " << buf;
+  return os.str ();
 }
 
 int
@@ -949,7 +962,8 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
   // we have to copy data to FITS anyway, so let's do it right now..
   if (im_h->naxes != 2)
     {
-      syslog (LOG_ERR, "Rts2Image::writeDate not 2D image %i", im_h->naxes);
+      logStream (MESSAGE_ERROR) << "Rts2Image::writeDate not 2D image " <<
+	im_h->naxes << sendLog;
       return -1;
     }
   flags |= IMAGE_SAVE;
@@ -991,7 +1005,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 		  dataConn->getData (), &fits_status);
   if (fits_status)
     {
-      fits_report_error (stderr, fits_status);
+      logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
       return -1;
     }
   setValue ("AVERAGE", average, "average value of image");
@@ -1005,8 +1019,7 @@ Rts2Image::fitsStatusValue (char *valname)
   if (fits_status)
     {
       ret = -1;
-      fprintf (stderr, "error when setting value '%s'\n", valname);
-      fits_report_error (stderr, fits_status);
+      logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
     }
   fits_status = 0;
   return ret;
@@ -1549,10 +1562,9 @@ std::string Rts2Image::getOnlyFileName ()
   return os.str ();
 }
 
-void
-Rts2Image::getFileName (std::string & out_filename)
+std::string Rts2Image::getFileName ()
 {
-  out_filename = std::string (imageName);
+  return std::string (imageName);
 }
 
 void

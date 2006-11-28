@@ -111,7 +111,7 @@ public:
 
   virtual void printFileName (std::ostream & _os);
 
-  virtual void getFileName (std::string & out_filename);
+  virtual std::string getFileName ();
 
   virtual img_type_t getImageType ()
   {
