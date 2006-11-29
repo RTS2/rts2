@@ -283,6 +283,11 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
 	new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT,
 				 expTime);
       getDevice (new_device);
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2ScriptElementAcquire::nextCommand WAITING_IMAGE this " << this <<
+	sendLog;
+#endif /* DEBUG_EXTRA */
       processingState = WAITING_IMAGE;
       return NEXT_COMMAND_ACQUSITION_IMAGE;
     case WAITING_IMAGE:
@@ -321,7 +326,7 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
       logStream (MESSAGE_ERROR)
 	<< "Rts2ScriptElementAcquire::processImage invalid processingState: "
 	<< processingState << " isAcquiring: " << image->
-	getIsAcquiring () << sendLog;
+	getIsAcquiring () << " this " << this << sendLog;
       return -1;
     }
   obsId = image->getObsId ();

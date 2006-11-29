@@ -61,12 +61,21 @@ Rts2DevClientCameraExec::nextCommand ()
 {
   int ret;
   ret = haveNextCommand ();
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Rts2DevClientCameraExec::nextComd " << ret <<
+    sendLog;
+#endif /* DEBUG_EXTRA */
   if (!ret)
     return;
 
   if (nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE
       || nextComd->getCommandCond () == NO_EXPOSURE_MOVE)
     {
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) <<
+	"Rts2DevClientCameraExec::nextComd isExposing: " << isExposing <<
+	" isIdle: " << isIdle () << sendLog;
+#endif /* DEBUG_EXTRA */
       if (isExposing || !isIdle ())
 	{
 	  return;		// after current exposure ends..
@@ -75,6 +84,11 @@ Rts2DevClientCameraExec::nextCommand ()
       // move was executed
       if (currentTarget && nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE)
 	{
+#ifdef DEBUG_EXTRA
+	  logStream (MESSAGE_DEBUG) <<
+	    "Rts2DevClientCameraExec::nextComd wasMoved: " << currentTarget->
+	    wasMoved () << sendLog;
+#endif /* DEBUG_EXTRA */
 	  if (!currentTarget->wasMoved ())
 	    {
 	      return;

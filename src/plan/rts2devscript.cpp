@@ -26,6 +26,10 @@ Rts2DevScript::startTarget ()
 {
   // currentTarget should be nulled when script ends in
   // deleteScript
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Rts2DevScript::startTarget this " << this <<
+    " currentTarget " << currentTarget << sendLog;
+#endif /* DEBUG_EXTRA */
   if (!currentTarget)
     {
       if (!nextTarget)
@@ -90,6 +94,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
       setNextTarget ((Target *) event->getArg ());
       if (currentTarget)
 	break;
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) << "EVENT_SET_TARGET " << this << sendLog;
+#endif /* DEBUG_EXTRA */
       // we don't have target..so let's observe us
       startTarget ();
       nextCommand ();
@@ -115,6 +122,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  nextCommand ();
 	  break;
 	}
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) << "EVENT_OBSERVE " << this << sendLog;
+#endif /* DEBUG_EXTRA */
       startTarget ();
       nextCommand ();
       break;
@@ -388,6 +398,10 @@ Rts2DevScript::haveNextCommand ()
   if (ret < 0)
     {
       deleteScript ();
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) << "Rts2DevScript::haveNextCommand this " <<
+	this << " ret " << ret << sendLog;
+#endif /* DEBUG_EXTRA */
       startTarget ();
       if (!script)
 	{

@@ -97,7 +97,8 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
   if (last_data_size < 0 && errno == EAGAIN)
     {
       logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::connectionError " <<
-	strerror (errno) << sendLog;
+	strerror (errno) << " #" << errno << " last_data_size " <<
+	last_data_size << sendLog;
       return 1;
     }
 
