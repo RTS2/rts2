@@ -1,13 +1,6 @@
-/var/log/rts2 {
-    rotate 4
-    compress
-    postrotate
-	/usr/bin/killall -HUP syslogd
-    endscript
-}
-
 /var/log/rts2-debug {
-    rotate 4
+    daily
+    rotate 8
     compress
     postrotate
         /usr/bin/killall -HUP rts2-soapd
