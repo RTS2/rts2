@@ -1018,7 +1018,8 @@ Rts2Image::fitsStatusValue (char *valname)
   if (fits_status)
     {
       ret = -1;
-      logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
+      logStream (MESSAGE_ERROR) << getImageName () << " value " << valname <<
+	" error " << getFitsErrors () << sendLog;
     }
   fits_status = 0;
   return ret;
