@@ -1069,7 +1069,7 @@ Rts2DevTelParamount::endMove ()
   if (!ret_track)
     updateTrack ();
 #ifdef DEBUG_EXTRA
-  std::cout << "Track init " << ret0 << " " << ret1 << std::endl;
+  logStream(MESSAGE_DEBUG) << "Track init " << ret0 << " " << ret1 << sendLog;
 #endif // DEBUG_EXTRA */
   // 1 sec sleep to get time to settle down
   sleep (1);

@@ -156,7 +156,7 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 	      os << "END" << std::endl;
 	      return;
 	    }
-	  std::cerr << "Invalid end? E" << nd << std::endl;
+	  logStream (MESSAGE_ERROR) << "Invalid end? E" << nd << sendLog;
 	}
       // first line contains lat
       else if (!latLine)
@@ -225,7 +225,8 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 	  is.ignore (2000, is.widen ('\n'));
 	  if (is.fail ())
 	    {
-	      std::cerr << "Failed during file read" << std::endl;
+	      logStream (MESSAGE_ERROR) << "Failed during file read" <<
+		sendLog;
 	      return;
 	    }
 	  // calculate model position, output it,..
