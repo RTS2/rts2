@@ -49,7 +49,7 @@ Rts2TermME::apply (struct ln_equ_posn *pos,
       else
 	M = -M_PI + M;
     }
-  std::cout << M;
+  logStream(MESSAGE_DEBUG) << M << sendLog;
   M = M - ln_deg_to_rad (corr);
 
   if (M > M_PI)
@@ -255,7 +255,7 @@ Rts2TermHarmonics::getFunc (const char *in_func, int i)
       func[i] = COS;
       break;
     default:
-      std::cout << "Unknow function " << in_func << std::endl;
+      logStream (MESSAGE_ERROR) << "Unknow function " << in_func << sendLog;
       return NULL;
     }
   param[i] = *end;
@@ -288,7 +288,7 @@ Rts2TermHarmonics::getValue (struct ln_equ_posn *pos,
       ln_get_hrz_from_equ_sidereal_time (pos,  
       break; */
     default:
-      std::cout << "Unknow parameter " << param[i] << std::endl;
+      logStream (MESSAGE_ERROR) << "Unknow parameter " << param[i] << sendLog;
       val = nan ("f");
     }
   return val;
@@ -331,6 +331,7 @@ Rts2TermHarmonics::apply (struct ln_equ_posn *pos,
       pos->dec += resVal;
       break;
     default:
-      std::cout << "Cannot process (yet?) resType " << resType << std::endl;
+      logStream (MESSAGE_ERROR) << "Cannot process (yet?) resType " << resType
+	<< sendLog;
     }
 }
