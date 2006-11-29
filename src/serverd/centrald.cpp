@@ -9,12 +9,6 @@
  * @author petr
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#define DEBUG
-
 #include "riseset.h"
 
 #include <errno.h>
@@ -28,6 +22,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 
+#include <config.h>
 #include "../utils/rts2daemon.h"
 #include "../utils/rts2config.h"
 #include "status.h"
@@ -597,8 +592,16 @@ Rts2Centrald::init ()
   int ret;
   setPort (PORT);
   ret = Rts2Daemon::init ();
+  if (ret)
+    return ret;
   centraldConnRunning ();
-  return ret;
+  ret = checkLockFile (LOCK_PREFIX "centrald");
+  if (ret)
+    return ret;
+  ret = doDeamonize ();
+  if (ret)
+    return ret;
+  return lockFile ();
 }
 
 Rts2Conn *

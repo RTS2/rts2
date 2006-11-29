@@ -1,6 +1,6 @@
-#include <iostream>
 #include <stdio.h>
 #include <syslog.h>
+#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -31,6 +31,8 @@ Rts2Daemon::addConnection (int in_sock)
 Rts2Daemon::Rts2Daemon (int in_argc, char **in_argv):
 Rts2Block (in_argc, in_argv)
 {
+  lockf = 0;
+
   daemonize = DO_DEAMONIZE;
   addOption ('i', "interactive", 0,
 	     "run in interactive mode, don't loose console");
@@ -40,6 +42,8 @@ Rts2Daemon::~Rts2Daemon (void)
 {
   if (listen_sock >= 0)
     close (listen_sock);
+  if (lockf)
+    close (lockf);
 }
 
 int
@@ -57,6 +61,33 @@ Rts2Daemon::processOption (int in_opt)
 }
 
 int
+Rts2Daemon::checkLockFile (const char *lock_fname)
+{
+  int ret;
+  lockf = open (lock_fname, O_RDWR | O_CREAT);
+  if (lockf == -1)
+    {
+      logStream (MESSAGE_ERROR) << "cannot open lock file " << lock_fname <<
+	sendLog;
+      return -1;
+    }
+  ret = flock (lockf, LOCK_EX | LOCK_NB);
+  if (ret)
+    {
+      if (errno == EWOULDBLOCK)
+	{
+	  logStream (MESSAGE_ERROR) << "lock file " << lock_fname <<
+	    " owned by another process" << sendLog;
+	  return -1;
+	}
+      logStream (MESSAGE_DEBUG) << "cannot flock " << lock_fname << ": " <<
+	strerror (errno) << sendLog;
+      return -1;
+    }
+  return 0;
+}
+
+int
 Rts2Daemon::doDeamonize ()
 {
   if (daemonize != DO_DEAMONIZE)
@@ -65,9 +96,8 @@ Rts2Daemon::doDeamonize ()
   ret = fork ();
   if (ret < 0)
     {
-      std::
-	cerr << "Rts2Daemon::int daemonize fork " << strerror (errno) <<
-	std::endl;
+      logStream (MESSAGE_ERROR)
+	<< "Rts2Daemon::int daemonize fork " << strerror (errno) << sendLog;
       exit (2);
     }
   if (ret)
@@ -85,6 +115,33 @@ Rts2Daemon::doDeamonize ()
 }
 
 int
+Rts2Daemon::lockFile ()
+{
+  FILE *lock_file;
+  int ret;
+  if (!lockf)
+    return -1;
+  lock_file = fdopen (lockf, "w+");
+  if (!lock_file)
+    {
+      logStream (MESSAGE_ERROR) << "cannot open lock file for writing" <<
+	sendLog;
+      return -1;
+    }
+
+  fprintf (lock_file, "%i\n", getpid ());
+
+  ret = fflush (lock_file);
+  if (ret)
+    {
+      logStream (MESSAGE_DEBUG) << "cannot flush lock file " <<
+	strerror (errno) << sendLog;
+      return -1;
+    }
+  return 0;
+}
+
+int
 Rts2Daemon::init ()
 {
   int ret;
@@ -92,16 +149,11 @@ Rts2Daemon::init ()
   if (ret)
     return ret;
 
-  ret = doDeamonize ();
-  if (ret)
-    return ret;
-
   listen_sock = socket (PF_INET, SOCK_STREAM, 0);
   if (listen_sock == -1)
     {
-      std::
-	cerr << "Rts2Daemon::init create listen socket " << strerror (errno)
-	<< std::endl;
+      logStream (MESSAGE_ERROR) << "Rts2Daemon::init create listen socket " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   const int so_reuseaddr = 1;

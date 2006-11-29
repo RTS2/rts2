@@ -1,18 +1,16 @@
 #include <errno.h>
 #include <fcntl.h>
-#include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <getopt.h>
 
+#include <config.h>
 #include "status.h"
 #include "rts2device.h"
 #include "rts2command.h"
@@ -647,8 +645,6 @@ Rts2Daemon (in_argc, in_argv)
 
   timerclear (&info_time);
 
-  lockf = 0;
-
   idleInfoInterval = -1;
   nextIdleInfo = 0;
 
@@ -667,9 +663,6 @@ Rts2Daemon (in_argc, in_argv)
 Rts2Device::~Rts2Device (void)
 {
   int i;
-
-  if (lockf)
-    close (lockf);
 
   for (i = 0; i < statesSize; i++)
     delete states[i];
@@ -787,7 +780,6 @@ Rts2Device::init ()
 {
   int ret;
   char *lock_fname;
-  FILE *lock_file;
 
   // try to open log file..
 
@@ -795,39 +787,18 @@ Rts2Device::init ()
   if (ret)
     return ret;
 
-  asprintf (&lock_fname, "/var/run/rts2_%s", device_name);
-
-  lockf = open (lock_fname, O_RDWR | O_CREAT);
-
-  if (lockf == -1)
-    {
-      std::cerr << "cannot open lock file " << lock_fname << std::endl;
-      return -1;
-    }
-
-  ret = flock (lockf, LOCK_EX | LOCK_NB);
+  asprintf (&lock_fname, LOCK_PREFIX "%s", device_name);
+  ret = checkLockFile (lock_fname);
+  if (ret < 0)
+    return ret;
+  ret = doDeamonize ();
   if (ret)
-    {
-      if (errno == EWOULDBLOCK)
-	{
-	  std::
-	    cerr << "lock file " << lock_fname << " owned by another process"
-	    << std::endl;
-	  return -1;
-	}
-      std::
-	cerr << "cannot flock " << lock_fname << ": " << strerror (errno) <<
-	std::endl;
-      return -1;
-    }
-
-  lock_file = fdopen (lockf, "w+");
+    return ret;
+  ret = lockFile ();
+  if (ret)
+    return ret;
 
   free (lock_fname);
-
-  fprintf (lock_file, "%i\n", getpid ());
-
-  fflush (lock_file);
 
   conn_master =
     new Rts2DevConnMaster (this, device_host, getPort (), device_name,

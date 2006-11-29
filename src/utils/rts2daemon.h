@@ -17,9 +17,12 @@ private:
   { DONT_DEAMONIZE, DO_DEAMONIZE, IS_DEAMONIZED, CENTRALD_OK } daemonize;
   int listen_sock;
   int addConnection (int in_sock);
-  int doDeamonize ();
+  int lockf;
 protected:
-    virtual void addSelectSocks (fd_set * read_set);
+  int checkLockFile (const char *lock_fname);
+  int doDeamonize ();
+  int lockFile ();
+  virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
 public:
     Rts2Daemon (int in_argc, char **in_argv);

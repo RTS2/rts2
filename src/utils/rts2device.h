@@ -143,8 +143,7 @@ public:
 
 class Rts2Device:public Rts2Daemon
 {
-  int lockf;
-
+private:
   int statesSize;
   Rts2State **states;
   Rts2DevConnMaster *conn_master;
