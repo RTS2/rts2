@@ -359,7 +359,7 @@ Rts2DevCameraAndor::printChannelInfo (int channel)
 		" channel " << channel << " type " << j << sendLog;
 	      return -1;
 	    }
-	  std::out <<
+	  std::cout <<
 	    "andor printChannelInfo horizontal speed " << i << " channel " <<
 	    channel << " type " << j << " value " << value << " MHz" <<
 	    std::endl;
