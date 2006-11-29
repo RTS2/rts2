@@ -214,16 +214,7 @@ int
 main (int argc, char **argv)
 {
   Rts2DevTelescopeIr *device = new Rts2DevTelescopeIr (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      std::cerr << "Cannot initialize IR telescope - exiting!" << std::endl;
-      exit (1);
-    }
-  ret = device->run ();
+  int ret = device->run ();
   delete device;
-
   return ret;
 }
