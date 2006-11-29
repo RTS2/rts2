@@ -167,7 +167,7 @@ Rts2TelescopeIr::processOption (int in_opt)
 }
 
 int
-Rts2TelescopeIr::initDevice ()
+Rts2TelescopeIr::initIrDevice ()
 {
   Rts2Config *config = Rts2Config::instance ();
   config->loadFile (NULL);
@@ -211,7 +211,7 @@ Rts2TelescopeIr::init ()
   if (ret)
     return ret;
 
-  ret = initDevice ();
+  ret = initIrDevice ();
   if (ret)
     return ret;
 

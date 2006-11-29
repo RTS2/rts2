@@ -594,8 +594,11 @@ Rts2Centrald::processOption (int in_opt)
 int
 Rts2Centrald::init ()
 {
+  int ret;
   setPort (PORT);
-  return Rts2Daemon::init ();
+  ret = Rts2Daemon::init ();
+  centraldConnRunning ();
+  return ret;
 }
 
 Rts2Conn *
@@ -718,6 +721,7 @@ Rts2Centrald::sendMessage (messageType_t in_messageType,
 {
   Rts2Message msg =
     Rts2Message ("centrald", in_messageType, in_messageString);
+  Rts2Daemon::sendMessage (in_messageType, in_messageString);
   sendMessageAll (msg);
 }
 
@@ -736,11 +740,8 @@ Rts2Centrald::sigHUP (int sig)
 int
 main (int argc, char **argv)
 {
-  Rts2Centrald *centrald;
-  openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
-  centrald = new Rts2Centrald (argc, argv);
-  centrald->init ();
-  centrald->run ();
-
-  return 0;
+  Rts2Centrald *centrald = new Rts2Centrald (argc, argv);
+  int ret = centrald->run ();
+  delete centrald;
+  return ret;
 }

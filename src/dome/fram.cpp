@@ -1,13 +1,9 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
+#include <iostream>
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -1205,32 +1201,11 @@ Rts2DevDomeFram::sendFramMail (char *subject)
   return ret;
 }
 
-Rts2DevDomeFram *device;
-
-void
-switchoffSignal (int sig)
-{
-  syslog (LOG_DEBUG, "switchoffSignal signale: %i", sig);
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevDomeFram (argc, argv);
-
-  signal (SIGINT, switchoffSignal);
-  signal (SIGTERM, switchoffSignal);
-
-  int ret;
-  ret = device->init ();
-  device->sendFramMail ("FRAM DOME restart");
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dome - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevDomeFram *device = new Rts2DevDomeFram (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

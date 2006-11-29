@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -36,7 +35,7 @@ private:
   int dome_port;
   comedi_t *it;
 
-  int initDevice ();
+  int initIrDevice ();
   int getPort (int channel, double *value);
   int getSNOW (float *temp, float *humi, float *wind);
 
@@ -75,7 +74,7 @@ public:
 };
 
 int
-Rts2DevDomeIR::initDevice ()
+Rts2DevDomeIR::initIrDevice ()
 {
   it = comedi_open ("/dev/comedi0");
 
@@ -409,21 +408,11 @@ Rts2DevDomeIR::observing ()
   return 0;
 }
 
-Rts2DevDomeIR *device;
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevDomeIR (argc, argv);
-
-  int ret;
-  ret = device->init ();
-
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dome - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevDomeIR *device = new Rts2DevDomeIR (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

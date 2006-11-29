@@ -1,7 +1,5 @@
 #include "cupola.h"
 
-#include <signal.h>
-
 /*!
  * Dummy copula for testing.
  */
@@ -74,19 +72,11 @@ Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
   }
 };
 
-Rts2DevCupolaDummy *device;
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  device = new Rts2DevCupolaDummy (argc, argv);
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dummy copula - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevCupolaDummy *device = new Rts2DevCupolaDummy (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

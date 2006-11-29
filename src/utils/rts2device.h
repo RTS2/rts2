@@ -38,6 +38,8 @@ private:
   Rts2Address * address;
 
   Rts2Device *master;
+
+  int doDeamonize ();
 protected:
     virtual int commandAuthorized ();
   virtual int command ();

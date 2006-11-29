@@ -65,7 +65,7 @@ protected:
 public:
     Rts2TelescopeIr (int argc, char **argv);
     virtual ~ Rts2TelescopeIr (void);
-  virtual int initDevice ();
+  virtual int initIrDevice ();
   virtual int init ();
   virtual int idle ();
   virtual int ready ();

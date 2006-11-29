@@ -1,17 +1,18 @@
+#include "../utils/rts2app.h"
+
 #include <netdb.h>
 #include <netinet/in.h>
-#include <stdio.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include "../utils/rts2app.h"
 
 class WeatherTimeout:public Rts2App
 {
 private:
   int timeout;			// in seconds
   int udpPort;
+  int waitTime;
 public:
     WeatherTimeout (int in_argc, char **in_argv);
 
@@ -24,8 +25,11 @@ Rts2App (in_argc, in_argv)
 {
   timeout = 3600;
   udpPort = 5002;
+  waitTime = 100;
 
   addOption ('t', "timeout", 1, "timeout (in seconds) to send");
+  addOption ('w', "wait_time", 1,
+	     "time for which we will wait for answer, defaults to 100 sec");
   addOption ('p', "udp_port", 1, "UDP port to which message will be send");
 }
 
@@ -37,6 +41,16 @@ WeatherTimeout::processOption (int in_opt)
     case 't':
       timeout = atoi (optarg);
       break;
+    case 'w':
+      waitTime = atoi (optarg);
+      if (waitTime < 1)
+	{
+	  logStream (MESSAGE_WARNING)
+	    << "Invalid wait time specified (" << waitTime <<
+	    "). Wait time is set to 1 second." << sendLog;
+	  waitTime = 1;
+	}
+      break;
     case 'p':
       udpPort = atoi (optarg);
       break;
@@ -44,6 +58,13 @@ WeatherTimeout::processOption (int in_opt)
       return Rts2App::processOption (in_opt);
     }
   return 0;
+}
+
+void
+sigAlarm (int sig)
+{
+  logStream (MESSAGE_ERROR) << "WeatherTimeout::run timeout" << sendLog;
+  exit (1);
 }
 
 int
@@ -97,16 +118,19 @@ WeatherTimeout::run ()
     {
       perror ("write");
     }
+  signal (SIGALRM, sigAlarm);
+  alarm (waitTime);
   ret = recvfrom (sock, buf, 3, 0, (struct sockaddr *) &serv_addr, &size);
-
   if (ret < 0)
     {
-      perror ("recv");
+      logStream (MESSAGE_ERROR) << "Error in recvfrom " << strerror (errno) <<
+	sendLog;
+      return 1;
     }
 
   buf[3] = 0;
 
-  printf ("read %s\n", buf);
+  logStream (MESSAGE_DEBUG) << "Read " << buf << sendLog;
   free (send_string);
 
   close (sock);

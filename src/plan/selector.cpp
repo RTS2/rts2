@@ -13,8 +13,6 @@
 #include "../utils/rts2event.h"
 #include "../utils/rts2command.h"
 
-#include <signal.h>
-
 class Rts2DevClientTelescopeSel:public Rts2DevClientTelescope
 {
 protected:
@@ -227,27 +225,11 @@ Rts2SelectorDev::changeMasterState (int new_master_state)
   return Rts2DeviceDb::changeMasterState (new_master_state);
 }
 
-Rts2SelectorDev *selector;
-
-void
-killSignal (int sig)
-{
-  if (selector)
-    delete selector;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  selector = new Rts2SelectorDev (argc, argv);
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-  ret = selector->init ();
-  if (ret)
-    return ret;
-  selector->run ();
+  Rts2SelectorDev *selector = new Rts2SelectorDev (argc, argv);
+  int ret = selector->run ();
   delete selector;
-  return 0;
+  return ret;
 }

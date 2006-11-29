@@ -2,7 +2,6 @@
 #include "../writers/rts2imagedb.h"
 #include "../utils/rts2config.h"
 
-#include <signal.h>
 #include <iostream>
 
 #include <list>
@@ -30,22 +29,11 @@ public:
   }
 };
 
-Rts2MoveArchive *app;
-
-void
-killSignal (int sig)
-{
-  if (app)
-    delete app;
-}
-
 int
 main (int argc, char **argv)
 {
+  Rts2MoveArchive *app = new Rts2MoveArchive (argc, argv);
   int ret;
-  app = new Rts2MoveArchive (argc, argv);
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
   ret = app->init ();
   if (ret)
     {

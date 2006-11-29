@@ -1,9 +1,4 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <malloc.h>
-#include <syslog.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>

@@ -1,9 +1,7 @@
 #include "filterd.h"
 
 #include <fcntl.h>
-#include <signal.h>
 #include <string.h>
-#include <syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -330,30 +328,11 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
   return ret;
 }
 
-Rts2DevFilterdIfw *device = NULL;
-
-void
-killSignal (int sig)
-{
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevFilterdIfw (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      syslog (LOG_ERR, "Cannot initialize Optec filter wheel - exiting!\n");
-      exit (1);
-    }
-  device->run ();
+  Rts2DevFilterdIfw *device = new Rts2DevFilterdIfw (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

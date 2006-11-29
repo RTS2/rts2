@@ -20,8 +20,6 @@
 #include "libfli.h"
 #include "libfli-filter-focuser.h"
 
-#include <signal.h>
-
 class Rts2DevFilterdFli:public Rts2DevFilterd
 {
 private:
@@ -124,7 +122,8 @@ Rts2DevFilterdFli::init (void)
 
   if (names[0] == NULL)
     {
-      syslog (LOG_ERR, "Rts2DevFilterdFli::init No device found!");
+      logStream (MESSAGE_ERROR) << "Rts2DevFilterdFli::init No device found!"
+	<< sendLog;
       return -1;
     }
 
@@ -174,30 +173,11 @@ Rts2DevFilterdFli::homeFilter ()
   return setFilterNum (FLI_FILTERPOSITION_HOME);
 }
 
-Rts2DevFilterdFli *device = NULL;
-
-void
-killSignal (int sig)
-{
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevFilterdFli (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      syslog (LOG_ERR, "Cannot initialize fli filterd - exiting!\n");
-      exit (1);
-    }
-  device->run ();
+  Rts2DevFilterdFli *device = new Rts2DevFilterdFli (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

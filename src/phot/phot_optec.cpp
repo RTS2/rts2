@@ -3,10 +3,6 @@
  *
  * @author petr
  */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #define FILTER_STEP  33
 
 #include "phot.h"
@@ -15,7 +11,6 @@
 
 #include <fcntl.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -233,31 +228,11 @@ Rts2DevPhotOptec::disableMove ()
   return ret;
 }
 
-Rts2DevPhotOptec *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevPhotOptec (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      syslog (LOG_ERR, "Cannot initialize optec photometer - exiting!\n");
-      exit (1);
-    }
-  device->run ();
+  Rts2DevPhotOptec *device = new Rts2DevPhotOptec (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

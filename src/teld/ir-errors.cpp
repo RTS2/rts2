@@ -223,14 +223,14 @@ main (int argc, char **argv)
   ret = device->initOptions ();
   if (ret)
     {
-      exit (ret);
+      return ret;
     }
-  ret = device->initDevice ();
+  ret = device->initIrDevice ();
   if (ret)
     {
-      std::cerr << "Cannot initialize telescope bridge - exiting!" << std::
-	endl;
-      exit (ret);
+      logStream (MESSAGE_ERROR) << "Cannot initialize telescope - exiting!" <<
+	sendLog;
+      return ret;
     }
   ret = device->run ();
   delete device;

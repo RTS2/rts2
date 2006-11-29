@@ -29,8 +29,6 @@
 
 #include "libfli.h"
 
-#include <signal.h>
-
 class CameraFliChip:public CameraChip
 {
 private:
@@ -535,30 +533,11 @@ Rts2DevCameraFli::camCoolShutdown ()
   return camCoolTemp (40);
 }
 
-Rts2DevCameraFli *device = NULL;
-
-void
-killSignal (int sig)
-{
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevCameraFli (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      std::cerr << "Cannot initialize miniccd camera - exiting!" << std::endl;
-      exit (1);
-    }
-  device->run ();
+  Rts2DevCameraFli *device = new Rts2DevCameraFli (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

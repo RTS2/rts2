@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "rts2app.h"
 
 #include "config.h"
@@ -9,7 +5,6 @@
 #include <iostream>
 #include <signal.h>
 #include <sstream>
-#include <syslog.h>
 #include <libnova/libnova.h>
 
 static Rts2App *masterApp = NULL;
@@ -114,11 +109,23 @@ signalHUP (int sig)
   masterApp->sigHUP (sig);
 }
 
+void
+killSignal (int sig)
+{
+  signal (SIGHUP, exit);
+  signal (SIGINT, exit);
+  signal (SIGTERM, exit);
+  delete masterApp;
+  exit (0);
+}
+
 int
 Rts2App::init ()
 {
   masterApp = this;
   signal (SIGHUP, signalHUP);
+  signal (SIGINT, killSignal);
+  signal (SIGTERM, killSignal);
 
   return initOptions ();
 }
@@ -309,10 +316,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream
-Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (this, in_messageType);
+  Rts2LogStream
+  ls (this, in_messageType);
   return ls;
 }
 

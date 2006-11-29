@@ -149,23 +149,11 @@ Rts2PlanApp::run ()
   return -1;
 }
 
-Rts2PlanApp *app;
-
-void
-killSignal (int sig)
-{
-  if (app)
-    delete app;
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  app = new Rts2PlanApp (argc, argv);
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-  ret = app->init ();
+  Rts2PlanApp *app = new Rts2PlanApp (argc, argv);
+  int ret = app->init ();
   if (ret)
     {
       delete app;

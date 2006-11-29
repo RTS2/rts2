@@ -6,7 +6,6 @@
  * @author petr
  */
 #include <math.h>
-#include <signal.h>
 
 #include "camera_cpp.h"
 #include "ApnCamera.h"
@@ -332,33 +331,11 @@ Rts2DevCameraAlta::camCoolShutdown ()
   return 0;
 }
 
-Rts2DevCameraAlta *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-
-  device = new Rts2DevCameraAlta (argc, argv);
-
-  signal (SIGINT, killSignal);
-  signal (SIGTERM, killSignal);
-
-  ret = device->init ();
-  if (ret)
-    {
-      std::cerr << "Cannot initialize apogee alta camera - exiting!" << std::
-	endl;
-      exit (1);
-    }
-  device->run ();
+  Rts2DevCameraAlta *device = new Rts2DevCameraAlta (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

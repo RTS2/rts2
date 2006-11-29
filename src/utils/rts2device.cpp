@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <iostream>
@@ -360,6 +356,7 @@ Rts2DevConnMaster::connectionError (int last_data_size)
   if (!isConnState (CONN_BROKEN))
     {
       setConnState (CONN_BROKEN);
+      master->centraldConnBroken ();
       time (&nextTime);
       nextTime += 60;
     }
@@ -468,6 +465,7 @@ Rts2DevConnMaster::command ()
 	  if (paramNextInteger (&clientId) || !paramEnd ())
 	    return -2;
 	  setCentraldId (clientId);
+	  master->centraldConnRunning ();
 	  return -1;
 	}
     }
@@ -633,6 +631,8 @@ Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, char *d
 Rts2Daemon (in_argc, in_argv)
 {
   /* put defaults to variables.. */
+  conn_master = NULL;
+
   device_name = default_name;
   centrald_host = "localhost";
   centrald_port = 617;
@@ -662,8 +662,6 @@ Rts2Daemon (in_argc, in_argv)
   addOption ('P', "centrald_port", 1, "port number of central host");
   addOption ('M', "mail-to", 1, "send report mails to this adresses");
   addOption ('d', "device_name", 1, "name of device");
-  addOption ('e', "log_stderr", 0,
-	     "logs also to stderr (not only to syslogd)");
 }
 
 Rts2Device::~Rts2Device (void)
@@ -725,9 +723,6 @@ Rts2Device::processOption (int in_opt)
       break;
     case 'd':
       device_name = optarg;
-      break;
-    case 'e':
-      log_option |= LOG_PERROR;
       break;
     default:
       return Rts2Daemon::processOption (in_opt);
@@ -800,8 +795,6 @@ Rts2Device::init ()
   if (ret)
     return ret;
 
-  openlog (NULL, log_option, LOG_LOCAL0);
-
   asprintf (&lock_fname, "/var/run/rts2_%s", device_name);
 
   lockf = open (lock_fname, O_RDWR | O_CREAT);
@@ -843,7 +836,8 @@ Rts2Device::init ()
 
   while (connections[0]->init () < 0)
     {
-      std::cerr << "Rts2Device::init waiting for master" << std::endl;
+      logStream (MESSAGE_WARNING) << "Rts2Device::init waiting for master" <<
+	sendLog;
       sleep (60);
     }
   return ret;
@@ -913,6 +907,7 @@ void
 Rts2Device::sendMessage (messageType_t in_messageType,
 			 const char *in_messageString)
 {
+  Rts2Daemon::sendMessage (in_messageType, in_messageString);
   Rts2Conn *centraldConn = getCentraldConn ();
   if (!centraldConn)
     return;

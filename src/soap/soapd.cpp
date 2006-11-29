@@ -7,8 +7,6 @@
 #include "../utilsdb/rts2messagedb.h"
 #include "rts2soapcli.h"
 
-#include <signal.h>
-
 class Rts2SoapConn:public Rts2Conn
 {
 private:
@@ -399,23 +397,11 @@ rts2__setCentrald (struct soap *in_soap, enum rts2__system system,
   return SOAP_OK;
 }
 
-void
-killSignal (int sig)
-{
-  delete soapd;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
   int ret;
   soapd = new Rts2Soapd (argc, argv);
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-  ret = soapd->init ();
-  if (ret)
-    return ret;
   ret = soapd->run ();
   delete soapd;
   return ret;

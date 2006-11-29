@@ -6,7 +6,6 @@
  */
 
 #include <ctype.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
@@ -1074,15 +1073,12 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t Rts2DevTelescopeGemini::readRatiosInter (int startId)
+int32_t
+Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t
-    t,
-    res = 1;
-  int
-    id;
-  int
-    ret;
+  int32_t t, res = 1;
+  int id;
+  int ret;
   for (id = startId; id < startId + 5; id += 2)
     {
       ret = tel_gemini_get (id, t);
@@ -2264,11 +2260,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2790,28 +2787,11 @@ Rts2DevTelescopeGemini::getFlip ()
   return 0;
 }
 
-Rts2DevTelescopeGemini *device;
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevTelescopeGemini (argc, argv);
-  signal (SIGINT, killSignal);
-  signal (SIGTERM, killSignal);
-  int ret = -1;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot find telescope, exiting\n");
-      exit (1);
-    }
-  device->run ();
+  Rts2DevTelescopeGemini *device = new Rts2DevTelescopeGemini (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

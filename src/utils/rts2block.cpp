@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include "rts2block.h"
@@ -24,7 +23,6 @@ Rts2App (in_argc, in_argv)
 {
   idle_timeout = USEC_SEC * 10;
   priority_client = -1;
-  openlog (NULL, LOG_PID, LOG_LOCAL0);
   for (int i = 0; i < MAX_CONN; i++)
     {
       connections[i] = NULL;

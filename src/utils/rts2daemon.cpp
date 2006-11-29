@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdio.h>
+#include <syslog.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -30,7 +31,7 @@ Rts2Daemon::addConnection (int in_sock)
 Rts2Daemon::Rts2Daemon (int in_argc, char **in_argv):
 Rts2Block (in_argc, in_argv)
 {
-  daemonize = true;
+  daemonize = DO_DEAMONIZE;
   addOption ('i', "interactive", 0,
 	     "run in interactive mode, don't loose console");
 }
@@ -47,11 +48,39 @@ Rts2Daemon::processOption (int in_opt)
   switch (in_opt)
     {
     case 'i':
-      daemonize = false;
+      daemonize = DONT_DEAMONIZE;
       break;
     default:
       return Rts2Block::processOption (in_opt);
     }
+  return 0;
+}
+
+int
+Rts2Daemon::doDeamonize ()
+{
+  if (daemonize != DO_DEAMONIZE)
+    return 0;
+  int ret;
+  ret = fork ();
+  if (ret < 0)
+    {
+      std::
+	cerr << "Rts2Daemon::int daemonize fork " << strerror (errno) <<
+	std::endl;
+      exit (2);
+    }
+  if (ret)
+    exit (0);
+  close (0);
+  close (1);
+  close (2);
+  int f = open ("/dev/null", O_RDWR);
+  dup (f);
+  dup (f);
+  dup (f);
+  daemonize = IS_DEAMONIZED;
+  openlog (NULL, LOG_PID, LOG_DAEMON);
   return 0;
 }
 
@@ -63,26 +92,9 @@ Rts2Daemon::init ()
   if (ret)
     return ret;
 
-  if (daemonize)
-    {
-      ret = fork ();
-      if (ret < 0)
-	{
-	  std::
-	    cerr << "Rts2Daemon::int deamonize fork " << strerror (errno) <<
-	    std::endl;
-	  exit (2);
-	}
-      if (ret)
-	exit (0);
-      close (0);
-      close (1);
-      close (2);
-      int f = open ("/dev/null", O_RDWR);
-      dup (f);
-      dup (f);
-      dup (f);
-    }
+  ret = doDeamonize ();
+  if (ret)
+    return ret;
 
   listen_sock = socket (PF_INET, SOCK_STREAM, 0);
   if (listen_sock == -1)
@@ -99,30 +111,31 @@ Rts2Daemon::init ()
   server.sin_family = AF_INET;
   server.sin_port = htons (getPort ());
   server.sin_addr.s_addr = htonl (INADDR_ANY);
-  std::cerr << "Rts2Daemon::init binding to port: " << getPort () << std::
-    endl;
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Rts2Daemon::init binding to port: " <<
+    getPort () << sendLog;
+#endif /* DEBUG_EXTRA */
   ret = bind (listen_sock, (struct sockaddr *) &server, sizeof (server));
   if (ret == -1)
     {
-      std::cerr << "Rts2Daemon::init bind " << strerror (errno) << std::endl;
+      logStream (MESSAGE_ERROR) << "Rts2Daemon::init bind " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   socklen_t sock_size = sizeof (server);
   ret = getsockname (listen_sock, (struct sockaddr *) &server, &sock_size);
   if (ret)
     {
-      std::
-	cerr << "Rts2Daemon::init getsockname " << strerror (errno) << std::
-	endl;
+      logStream (MESSAGE_ERROR) << "Rts2Daemon::init getsockname " <<
+	strerror (errno) << sendLog;
       return -1;
     }
   setPort (ntohs (server.sin_port));
   ret = listen (listen_sock, 5);
   if (ret)
     {
-      std::
-	cerr << "Rts2Block::init cannot listen: " << strerror (errno) << std::
-	endl;
+      logStream (MESSAGE_ERROR) << "Rts2Block::init cannot listen: " <<
+	strerror (errno) << sendLog;
       close (listen_sock);
       listen_sock = -1;
       return -1;
@@ -131,11 +144,86 @@ Rts2Daemon::init ()
 }
 
 void
+Rts2Daemon::initDaemon ()
+{
+  int ret;
+  ret = init ();
+  if (ret)
+    {
+      logStream (MESSAGE_ERROR) << "Cannot init deamon, exiting" << sendLog;
+      exit (ret);
+    }
+}
+
+int
+Rts2Daemon::run ()
+{
+  initDaemon ();
+  return Rts2Block::run ();
+}
+
+void
 Rts2Daemon::forkedInstance ()
 {
   if (listen_sock >= 0)
     close (listen_sock);
   Rts2Block::forkedInstance ();
+}
+
+void
+Rts2Daemon::sendMessage (messageType_t in_messageType,
+			 const char *in_messageString)
+{
+  int prio;
+  switch (daemonize)
+    {
+    case IS_DEAMONIZED:
+    case DO_DEAMONIZE:
+      switch (in_messageType)
+	{
+	case MESSAGE_ERROR:
+	  prio = LOG_ERR;
+	  break;
+	case MESSAGE_WARNING:
+	  prio = LOG_WARNING;
+	  break;
+	case MESSAGE_INFO:
+	  prio = LOG_INFO;
+	  break;
+	case MESSAGE_DEBUG:
+	  prio = LOG_DEBUG;
+	  break;
+	}
+      syslog (prio, "%s", in_messageString);
+      if (daemonize == IS_DEAMONIZED)
+	break;
+    case DONT_DEAMONIZE:
+      // print to stdout
+      Rts2Block::sendMessage (in_messageType, in_messageString);
+      break;
+    case CENTRALD_OK:
+      break;
+    }
+}
+
+void
+Rts2Daemon::centraldConnRunning ()
+{
+  if (daemonize == IS_DEAMONIZED)
+    {
+      closelog ();
+      daemonize = CENTRALD_OK;
+    }
+}
+
+void
+Rts2Daemon::centraldConnBroken ()
+{
+  if (daemonize == CENTRALD_OK)
+    {
+      openlog (NULL, LOG_PID, LOG_DAEMON);
+      daemonize = IS_DEAMONIZED;
+    }
 }
 
 void

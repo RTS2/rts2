@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <signal.h>
 
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -843,32 +842,11 @@ Rts2DevDomeBart::changeMasterState (int new_state)
     }
 }
 
-
-Rts2DevDomeBart *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevDomeBart (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dome - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevDomeBart *device = new Rts2DevDomeBart (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

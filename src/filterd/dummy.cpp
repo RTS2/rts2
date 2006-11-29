@@ -1,7 +1,5 @@
 #include "filterd.h"
 
-#include <signal.h>
-
 class Rts2DevFilterdDummy:public Rts2DevFilterd
 {
 private:
@@ -43,30 +41,11 @@ Rts2DevFilterdDummy (int in_argc, char **in_argv):Rts2DevFilterd (in_argc,
   }
 };
 
-Rts2DevFilterdDummy *device = NULL;
-
-void
-killSignal (int sig)
-{
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevFilterdDummy (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      syslog (LOG_ERR, "Cannot initialize dummy filterd - exiting!\n");
-      exit (1);
-    }
-  device->run ();
+  Rts2DevFilterdDummy *device = new Rts2DevFilterdDummy (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

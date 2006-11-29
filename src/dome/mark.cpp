@@ -4,7 +4,6 @@
 #include <math.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <signal.h>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -575,27 +574,11 @@ Rts2DevCupolaMark::off ()
   return Rts2DevCupola::off ();
 }
 
-Rts2DevCupolaMark *device = NULL;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  device = new Rts2DevCupolaMark (argc, argv);
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dummy copula - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevCupolaMark *device = new Rts2DevCupolaMark (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

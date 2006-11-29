@@ -3,8 +3,6 @@
 #endif
 
 #include <fcntl.h>
-#include <iostream>
-#include <signal.h>
 #include "camera_cpp.h"
 
 #include "ccd_msg.h"
@@ -1015,30 +1013,11 @@ Rts2DevCameraMiniccd::camFilter (int in_filter)
   return 0;
 }
 
-Rts2DevCameraMiniccd *device;
-
-void
-killSignal (int sig)
-{
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevCameraMiniccd (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      std::cerr << "Cannot initialize miniccd camera - exiting!" << std::endl;
-      exit (1);
-    }
-  device->run ();
+  Rts2DevCameraMiniccd *device = new Rts2DevCameraMiniccd (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

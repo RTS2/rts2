@@ -1,12 +1,7 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 
 #include "camera_cpp.h"
 #include "../utils/rts2device.h"
@@ -577,31 +572,11 @@ Rts2DevCameraSbig::camCoolShutdown ()
   return checkSbigHw (ret);
 }
 
-Rts2DevCameraSbig *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevCameraSbig (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      std::cerr << "Cannot initialize sbigusb camera - exiting!" << std::endl;
-      exit (1);
-    }
-  device->run ();
+  Rts2DevCameraSbig *device = new Rts2DevCameraSbig (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

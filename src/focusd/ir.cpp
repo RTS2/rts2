@@ -334,14 +334,7 @@ int
 main (int argc, char **argv)
 {
   Rts2DevFocuserIr *device = new Rts2DevFocuserIr (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize focuser - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  int ret = device->run ();
   delete device;
+  return ret;
 }

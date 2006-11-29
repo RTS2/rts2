@@ -1,13 +1,8 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "rts2config.h"
 #include "rts2app.h"
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <syslog.h>
 #include <string.h>
 
 Rts2Config *

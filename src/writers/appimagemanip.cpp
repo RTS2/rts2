@@ -1,7 +1,6 @@
 #include "rts2appdbimage.h"
 #include "../utils/rts2config.h"
 
-#include <signal.h>
 #include <iostream>
 #include <iomanip>
 
@@ -195,29 +194,17 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
   addOption ('t', "test", 0, "test various image routines");
 }
 
-Rts2AppImageManip *
-  app;
-
-void
-killSignal (int sig)
-{
-  if (app)
-    delete app;
-}
-
 int
 main (int argc, char **argv)
 {
+  Rts2AppImageManip *
+    app = new Rts2AppImageManip (argc, argv);
   int
-    ret;
-  app = new Rts2AppImageManip (argc, argv);
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-  ret = app->init ();
+    ret = app->init ();
   if (ret)
     {
       delete app;
-      return 0;
+      return ret;
     }
   ret = app->run ();
   delete app;

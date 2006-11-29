@@ -109,8 +109,22 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	{
 	  logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret
 	    << sendLog;
-	  rain = 1;
-	  badSetWeatherTimeout (FRAM_CONN_TIMEOUT);
+	  int wtimeout = 3600;
+	  ret = sscanf (Wbuf, "weatherTimeout=%i", &wtimeout);
+	  if (ret != 1)
+	    {
+	      rain = 1;
+	      badSetWeatherTimeout (FRAM_CONN_TIMEOUT);
+	      return data_size;
+	    }
+	  badSetWeatherTimeout (wtimeout);
+	  logStream (MESSAGE_DEBUG) << "Weathertimeout " << wtimeout <<
+	    sendLog;
+	  // ack message
+	  ret =
+	    sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from,
+		    sizeof (from));
+	  master->infoAll ();
 	  return data_size;
 	}
       statDate.tm_isdst = 0;

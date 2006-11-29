@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <unistd.h>
 #include <iostream>
 #include <stdio.h>
@@ -459,32 +458,11 @@ Rts2ImageProc::checkNotProcessed ()
   return 0;
 }
 
-Rts2ImageProc *imgproc;
-
-void
-killSignal (int sig)
-{
-  if (imgproc)
-    delete imgproc;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  imgproc = new Rts2ImageProc (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  ret = imgproc->init ();
-  if (ret)
-    {
-      std::cerr << "cannot initialize image processor, exiting" << std::endl;
-      exit (1);
-    }
-  imgproc->run ();
+  Rts2ImageProc *imgproc = new Rts2ImageProc (argc, argv);
+  int ret = imgproc->run ();
   delete imgproc;
-  return 0;
+  return ret;
 }

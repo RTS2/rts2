@@ -14,7 +14,6 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <signal.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
@@ -969,28 +968,11 @@ Rts2DevTelescopeLX200::stopDir (char *dir)
   return -2;
 }
 
-Rts2DevTelescopeLX200 *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevTelescopeLX200 (argc, argv);
-
-  int ret = -1;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot find telescope, exiting\n");
-      exit (1);
-    }
-  device->run ();
+  Rts2DevTelescopeLX200 *device = new Rts2DevTelescopeLX200 (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

@@ -6,7 +6,6 @@
 #include "../utils/rts2config.h"
 #include "rts2selector.h"
 
-#include <signal.h>
 #include <iostream>
 
 class Rts2SelectorApp:public Rts2AppDb
@@ -63,26 +62,14 @@ Rts2SelectorApp::run ()
   return 0;
 }
 
-Rts2SelectorApp *selApp;
-
-void
-killSignal (int sig)
-{
-  if (selApp)
-    delete selApp;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  selApp = new Rts2SelectorApp (argc, argv);
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-  ret = selApp->init ();
+  Rts2SelectorApp *selApp = new Rts2SelectorApp (argc, argv);
+  int ret = selApp->init ();
   if (ret)
     return ret;
-  selApp->run ();
+  ret = selApp->run ();
   delete selApp;
+  return ret;
 }

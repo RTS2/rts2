@@ -4,7 +4,6 @@
 #include "rts2devcliphot.h"
 
 #include <vector>
-#include <signal.h>
 
 class Rts2Executor;
 
@@ -814,29 +813,11 @@ Rts2Executor::updateScriptCount ()
   postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) &scriptCount));
 }
 
-Rts2Executor *executor;
-
-void
-killSignal (int sig)
-{
-  delete executor;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  executor = new Rts2Executor (argc, argv);
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-  ret = executor->init ();
-  if (ret)
-    {
-      fprintf (stderr, "cannot start executor");
-      return ret;
-    }
-  executor->run ();
+  Rts2Executor *executor = new Rts2Executor (argc, argv);
+  int ret = executor->run ();
   delete executor;
-  return 0;
+  return ret;
 }

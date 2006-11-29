@@ -130,7 +130,8 @@ Rts2DevFocuserFli::init ()
 
   if (names[0] == NULL)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserFli::init No device found!");
+      logStream (MESSAGE_ERROR) << "Rts2DevFocuserFli::init No device found!"
+	<< sendLog;
       return -1;
     }
 
@@ -217,14 +218,7 @@ int
 main (int argc, char **argv)
 {
   Rts2DevFocuserFli *device = new Rts2DevFocuserFli (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize focuser - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  int ret = device->run ();
   delete device;
+  return ret;
 }

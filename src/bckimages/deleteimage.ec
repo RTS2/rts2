@@ -3,7 +3,6 @@
 #include "../writers/rts2imagedb.h"
 
 #include <iostream>
-#include <signal.h>
 #include <string.h>
 #include <list>
 
@@ -110,21 +109,11 @@ Rts2DeleteApp::run ()
   return findImages ();
 }
 
-Rts2DeleteApp *app;
-
-void
-killSignal (int sig)
-{
-  if (app)
-    delete app;
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  app = new Rts2DeleteApp (argc, argv);
-  ret = app->init ();
+  Rts2DeleteApp *app = new Rts2DeleteApp (argc, argv);
+  int ret = app->init ();
   if (ret)
   {
     delete app;

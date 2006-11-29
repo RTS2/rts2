@@ -1,9 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include <signal.h>
-
 #include "camera_cpp.h"
 
 class CameraDummyChip:public CameraChip
@@ -94,31 +88,11 @@ public:
   }
 };
 
-Rts2DevCameraDummy *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevCameraDummy (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      syslog (LOG_ERR, "Cannot initialize dummy camera - exiting!\n");
-      exit (1);
-    }
-  device->run ();
+  Rts2DevCameraDummy *device = new Rts2DevCameraDummy (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

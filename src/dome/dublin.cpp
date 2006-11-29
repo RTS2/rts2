@@ -5,8 +5,6 @@
  *
  * @author john
  */
-#include <signal.h>
-
 #include <sys/io.h>
 #include <asm/io.h>
 
@@ -429,32 +427,11 @@ Rts2DevDomeDublin::sendDublinMail (char *subject)
   return ret;
 }
 
-Rts2DevDomeDublin *device;
-
-void
-switchoffSignal (int sig)
-{
-  syslog (LOG_DEBUG, "switchoffSignal signale: %i", sig);
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevDomeDublin (argc, argv);
-
-  signal (SIGINT, switchoffSignal);
-  signal (SIGTERM, switchoffSignal);
-
-  int ret;
-  ret = device->init ();
-//  device->sendFramMail ("FRAM DOME restart");
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dome - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevDomeDublin *device = new Rts2DevDomeDublin (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

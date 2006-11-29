@@ -78,24 +78,11 @@ Rts2DevAugerShooter::newShower ()
   return 0;
 }
 
-Rts2DevAugerShooter *device = NULL;
-
-void
-killSignal (int sig)
-{
-  delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  device = new Rts2DevAugerShooter (argc, argv);
-  ret = device->init ();
-  if (ret)
-    return ret;
-  ret = device->run ();
+  Rts2DevAugerShooter *device = new Rts2DevAugerShooter (argc, argv);
+  int ret = device->run ();
   delete device;
   return ret;
 }

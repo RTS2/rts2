@@ -2,7 +2,6 @@
 #define _GNU_SOURCE
 #endif
 
-#include <signal.h>
 #include <libnova/libnova.h>
 
 #include "telescope.h"
@@ -136,31 +135,11 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
   }
 };
 
-Rts2DevTelescopeDummy *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevTelescopeDummy (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dummy telescope - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevTelescopeDummy *device = new Rts2DevTelescopeDummy (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

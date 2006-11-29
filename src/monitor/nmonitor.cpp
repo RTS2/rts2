@@ -1411,13 +1411,6 @@ Rts2NMonitor *monitor = NULL;
 
 // signal and keyboard handlers..
 
-void
-sigExit (int sig)
-{
-  delete monitor;
-  exit (0);
-}
-
 sighandler_t old_Winch;
 
 void
@@ -1448,8 +1441,6 @@ main (int argc, char **argv)
 
   monitor = new Rts2NMonitor (argc, argv);
 
-  signal (SIGINT, sigExit);
-  signal (SIGTERM, sigExit);
   old_Winch = signal (SIGWINCH, sigWinch);
 
   ret = monitor->init ();

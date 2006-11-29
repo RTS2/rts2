@@ -534,14 +534,7 @@ int
 main (int argc, char **argv)
 {
   Rts2DevCameraUrvc2 *device = new Rts2DevCameraUrvc2 (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize camera - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  int ret = device->run ();
   delete device;
+  return ret;
 }

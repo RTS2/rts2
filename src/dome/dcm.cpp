@@ -26,7 +26,6 @@
  * @author petr
  */
 
-#include <signal.h>
 #include <fcntl.h>
 
 #include "dome.h"
@@ -215,32 +214,11 @@ Rts2DevDomeDcm::baseInfo ()
   return 0;
 }
 
-Rts2DevDomeDcm *device;
-
-void
-switchoffSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  device = new Rts2DevDomeDcm (argc, argv);
-
-  signal (SIGINT, switchoffSignal);
-  signal (SIGTERM, switchoffSignal);
-
-  int ret;
-  ret = device->init ();
-//  device->sendFramMail ("FRAM DOME restart");
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize dome - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  Rts2DevDomeDcm *device = new Rts2DevDomeDcm (argc, argv);
+  int ret = device->run ();
   delete device;
+  return ret;
 }

@@ -11,11 +11,9 @@
 #include "rts2grbfw.h"
 
 #include <errno.h>
-#include <iostream>
 #include <netdb.h>
 #include <time.h>
 #include <sys/time.h>
-#include <signal.h>
 
 class Rts2ConnFwGrb:public Rts2ConnNoSend
 {
@@ -513,32 +511,19 @@ Rts2AppFw::init ()
   return ret;
 }
 
-Rts2AppFw *grb;
-
-void
-killSignal (int sig)
-{
-  if (grb)
-    delete grb;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  grb = new Rts2AppFw (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  ret = grb->init ();
+  Rts2AppFw *grb = new Rts2AppFw (argc, argv);
+  int ret = grb->init ();
   if (ret)
     {
-      std::cerr << "Cannot init GRB device, exiting" << std::endl;
+      logStream (MESSAGE_ERROR) << "Cannot init GRB device, exiting" <<
+	sendLog;
       delete grb;
-      return 1;
+      return ret;
     }
-  grb->run ();
+  ret = grb->run ();
   delete grb;
+  return ret;
 }

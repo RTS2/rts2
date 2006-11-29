@@ -14,8 +14,6 @@
 #include "../utils/rts2command.h"
 #include "grbd.h"
 
-#include <signal.h>
-
 class Rts2DevConnGrbd:public Rts2DevConn
 {
 private:
@@ -238,32 +236,11 @@ Rts2DevGrb::newGcnGrb (int tar_id)
   return 0;
 }
 
-Rts2DevGrb *grb = NULL;
-
-void
-killSignal (int sig)
-{
-  delete grb;
-  exit (0);
-}
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  grb = new Rts2DevGrb (argc, argv);
-
-  signal (SIGTERM, killSignal);
-  signal (SIGINT, killSignal);
-
-  ret = grb->init ();
-  if (ret)
-    {
-      logStream (MESSAGE_ERROR) << "Cannot init GRB device, exiting" <<
-	sendLog;
-      delete grb;
-      return 1;
-    }
-  grb->run ();
+  Rts2DevGrb *grb = new Rts2DevGrb (argc, argv);
+  int ret = grb->run ();
   delete grb;
+  return ret;
 }

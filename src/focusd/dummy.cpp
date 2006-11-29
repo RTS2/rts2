@@ -78,15 +78,7 @@ int
 main (int argc, char **argv)
 {
   Rts2DevFocuserDummy *device = new Rts2DevFocuserDummy (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize focuser - exiting!\n");
-      exit (1);
-    }
-  device->run ();
+  int ret = device->run ();
   delete device;
-  return 0;
+  return ret;
 }

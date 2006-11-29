@@ -6,7 +6,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <syslog.h>
 #include <vector>
 #include <list>
 #include "status.h"
@@ -200,6 +199,14 @@ public:
    * Return connection with minimum (integer) value.
    */
   Rts2Conn *getMinConn (const char *valueName);
+
+  virtual void centraldConnRunning ()
+  {
+  }
+
+  virtual void centraldConnBroken ()
+  {
+  }
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

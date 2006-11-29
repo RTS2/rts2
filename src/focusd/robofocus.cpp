@@ -94,7 +94,7 @@ Rts2DevFocuserRobofocus::foc_write (char *buf, int count)
 /*! 
  * Reads some data directly from port.
  *
- * Log all flow as LOG_DEBUG to syslog
+ * Log all flow as MESSAGE_ERROR
  *
  * @exception EIO when there aren't data from port
  *
@@ -227,7 +227,8 @@ Rts2DevFocuserRobofocus::init ()
   ret = tcgetattr (foc_desc, &tio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserRobofocus::init tcgetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevFocuserRobofocus::init tcgetattr "
+	<< strerror (errno) << sendLog;
       return -1;
     }
 
@@ -245,7 +246,8 @@ Rts2DevFocuserRobofocus::init ()
   ret = tcsetattr (foc_desc, TCSANOW, &tio);
   if (ret)
     {
-      syslog (LOG_ERR, "Rts2DevFocuserRobofocus::init tcsetattr %m");
+      logStream (MESSAGE_ERROR) << "Rts2DevFocuserRobofocus::init tcsetattr "
+	<< strerror (errno) << sendLog;
       return -1;
     }
   tcflush (foc_desc, TCIOFLUSH);
@@ -454,14 +456,7 @@ int
 main (int argc, char **argv)
 {
   Rts2DevFocuserRobofocus *device = new Rts2DevFocuserRobofocus (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      fprintf (stderr, "Cannot initialize focuser - exiting!\n");
-      exit (0);
-    }
-  device->run ();
+  int ret = device->run ();
   delete device;
+  return ret;
 }
