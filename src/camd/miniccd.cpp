@@ -3,6 +3,7 @@
 #endif
 
 #include <fcntl.h>
+#include <errno.h>
 #include "camera_cpp.h"
 
 #include "ccd_msg.h"

@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <fcntl.h>
 #include <time.h>
+#include <errno.h>
 
 #include "camera_cpp.h"
 #include "rts2devcliwheel.h"
@@ -1182,16 +1183,14 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getState (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
