@@ -110,7 +110,7 @@ Rts2Plan::save ()
       :db_plan_id;
     if (sqlca.sqlcode)
     {
-      std::cerr << "Error getting nextval" << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << std::endl;
+      logStream(MESSAGE_ERROR) << "Error getting nextval" << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << sendLog;
       return -1;
     }
   }
@@ -153,8 +153,8 @@ Rts2Plan::save ()
   );
   if (sqlca.sqlcode)
   {
-    std::cerr << "Error inserting plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc
-      << " prop_id:" << db_prop_id << " ind:" << db_prop_id_ind << std::endl;
+    logStream(MESSAGE_ERROR) << "Error inserting plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc
+      << " prop_id:" << db_prop_id << " ind:" << db_prop_id_ind << sendLog;
     // try update
     EXEC SQL UPDATE
       plan
@@ -168,7 +168,7 @@ Rts2Plan::save ()
       plan_id = :db_plan_id;
     if (sqlca.sqlcode)
     {
-      std::cerr << "Error updating plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << std::endl;
+      logStream(MESSAGE_ERROR) << "Error updating plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << sendLog;
       EXEC SQL ROLLBACK;
       return -1;
     }

@@ -1040,6 +1040,6 @@ void sendEndMails (const time_t * t_from, const time_t * t_to,
 		   struct ln_lnlat_posn *in_obs, Rts2App * master);
 
 // print target information to stdout..
-std::ostream & operator << (std::ostream & _os, Target * target);
+std::ostream & operator << (std::ostream & _os, Target & target);
 
 #endif /*! __RTS_TARGET__ */

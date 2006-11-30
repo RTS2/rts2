@@ -92,7 +92,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
       observation->setPrintImages (DISPLAY_ALL | DISPLAY_SUMMARY);
       observation->setPrintCounts (DISPLAY_ALL | DISPLAY_SUMMARY);
     }
-    os << this << std::endl << *observation;
+    os << (*this) << std::endl << *observation;
     master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
   }
 }
@@ -1687,8 +1687,8 @@ Target::writeToImage (Rts2Image * image)
 }
 
 std::ostream &
-operator << (std::ostream &_os, Target *target)
+operator << (std::ostream &_os, Target &target)
 {
-  target->sendInfo (_os);
+  target.sendInfo (_os);
   return _os;
 }

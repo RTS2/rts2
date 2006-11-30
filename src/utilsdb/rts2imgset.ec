@@ -154,7 +154,7 @@ Rts2ImgSet::load (std::string in_where)
   free (stmp_c);
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
-    std::cerr << "Rts2ImgSet::load error in DB: " << sqlca.sqlerrm.sqlerrmc << std::endl;
+    logStream(MESSAGE_ERROR) << "Rts2ImgSet::load error in DB: " << sqlca.sqlerrm.sqlerrmc << sendLog;
     EXEC SQL CLOSE cur_images;
     EXEC SQL ROLLBACK;
     return -1;
