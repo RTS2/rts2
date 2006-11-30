@@ -699,16 +699,37 @@ Rts2Image::setValue (char *name, long value, char *comment)
 }
 
 int
-Rts2Image::setValue (char *name, double value, char *comment)
+Rts2Image::setValue (char *name, float value, char *comment)
 {
   int ret;
+  float val = value;
   if (!ffile)
     {
       ret = openImage ();
       if (ret)
 	return ret;
     }
-  fits_update_key (ffile, TDOUBLE, name, &value, comment, &fits_status);
+  if (isnan (val))
+    val = FLOATNULLVALUE;
+  fits_update_key (ffile, TFLOAT, name, &val, comment, &fits_status);
+  flags |= IMAGE_SAVE;
+  return fitsStatusValue (name);
+}
+
+int
+Rts2Image::setValue (char *name, double value, char *comment)
+{
+  int ret;
+  double val = value;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
+  if (isnan (val))
+    val = DOUBLENULLVALUE;
+  fits_update_key (ffile, TDOUBLE, name, &val, comment, &fits_status);
   flags |= IMAGE_SAVE;
   return fitsStatusValue (name);
 }

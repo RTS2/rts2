@@ -147,6 +147,7 @@ public:
 
   int setValue (char *name, int value, char *comment);
   int setValue (char *name, long value, char *comment);
+  int setValue (char *name, float value, char *comment);
   int setValue (char *name, double value, char *comment);
   int setValue (char *name, char value, char *comment);
   int setValue (char *name, const char *value, char *comment);
