@@ -4,6 +4,7 @@
 #include <libnova/libnova.h>
 #include <ostream>
 #include <time.h>
+#include <math.h>
 
 class LibnovaRa
 {

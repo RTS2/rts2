@@ -1,6 +1,6 @@
 #include "libnova_cpp.h"
 
-#include <math.h>
+// (this is in libnova_cpp.h) #include <math.h>
 #include <iomanip>
 #include <sstream>
 
@@ -133,15 +133,30 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
   return _os;
 }
 
+
+/***************************************************
+ * operator >>
+ *
+ * Behaves sensibly if given deg >= 360, min >= 60, sec >= 60
+ */
+
 std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg)
 {
   struct ln_dms deg_dms;
+  unsigned deg, min;
   char neg;
-  _is >> neg >> deg_dms.degrees >> deg_dms.minutes >> deg_dms.seconds;
-  if (neg == '-')
-    deg_dms.neg = 1;
-  else
-    deg_dms.neg = 0;
+  _is >> neg >> deg >> min >> deg_dms.seconds;
+
+  deg_dms.neg = (neg == '-') ? 1 : 0;
+
+  // Let the sanity checking commence! (work our way up sec -> min -> deg)
+  min += (int) floor (deg_dms.seconds / 60);
+  deg_dms.seconds -= floor (deg_dms.seconds / 60) * 60;	/* *FIXME* neater way? */
+  deg += min / 60;
+  min %= 60;
+  deg_dms.minutes = min;
+  deg_dms.degrees = deg % 360;
+
   l_deg.fromDms (&deg_dms);
   return _is;
 }

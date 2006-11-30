@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
 
 #include <stdio.h>
 

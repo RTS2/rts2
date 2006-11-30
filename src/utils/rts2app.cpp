@@ -5,6 +5,7 @@
 #include <iostream>
 #include <signal.h>
 #include <sstream>
+#include <errno.h>
 #include <libnova/libnova.h>
 
 static Rts2App *masterApp = NULL;
@@ -316,10 +317,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (this, in_messageType);
+  Rts2LogStream ls (this, in_messageType);
   return ls;
 }
 
