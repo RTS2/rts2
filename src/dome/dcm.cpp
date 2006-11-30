@@ -27,7 +27,7 @@
  */
 
 #include <fcntl.h>
-
+#include <errno.h>
 #include "dome.h"
 #include "udpweather.h"
 

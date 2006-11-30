@@ -12,6 +12,7 @@
 
 #include "udpweather.h"
 #include <fcntl.h>
+#include <errno.h>
 
 Rts2ConnFramWeather::Rts2ConnFramWeather (int in_weather_port,
 					  int in_weather_timeout,

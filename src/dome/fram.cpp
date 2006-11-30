@@ -6,6 +6,16 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <errno.h>
+
+#if defined __GNUC__ && (__GNUC__ >=3)
+#	include <iostream>
+#	include <fstream>
+using namespace std;
+#else
+#	include <iostream.h>
+#	include <fstream.h>
+#endif
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -389,8 +399,10 @@ Rts2DevDomeFram::checkMotorTimeout ()
   time_t now;
   time (&now);
   if (now >= timeoutEnd)
+//    logStream (MESSAGE_DEBUG) << "timeout reached: " << now -
+//      timeoutEnd << " state: " << movingState << sendLog;
     logStream (MESSAGE_DEBUG) << "timeout reached: " << now -
-      timeoutEnd << " state: " << movingState << sendLog;
+      timeoutEnd << " state: " << int (movingState) << sendLog;
   return (now >= timeoutEnd);
 }
 
@@ -717,7 +729,7 @@ long
 Rts2DevDomeFram::isOpened ()
 {
   int flag = 0;
-  logStream (MESSAGE_DEBUG) << "isOpened " << movingState << sendLog;
+  logStream (MESSAGE_DEBUG) << "isOpened " << (int) movingState << sendLog;
   switch (movingState)
     {
     case MOVE_OPEN_LEFT_WAIT:
@@ -833,7 +845,7 @@ long
 Rts2DevDomeFram::isClosed ()
 {
   int flag = 0;			// send infoAll at end
-  logStream (MESSAGE_DEBUG) << "isClosed " << movingState << sendLog;
+  logStream (MESSAGE_DEBUG) << "isClosed " << (int) movingState << sendLog;
   switch (movingState)
     {
     case MOVE_CLOSE_RIGHT_WAIT:
