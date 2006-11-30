@@ -222,6 +222,11 @@ fillTarget (int in_tar_id, struct soap *in_soap, rts2__target * out_target)
       nullTarget (out_target);
       return;
     }
+  if (in_tar_id == -1)
+    {
+      nullTarget (out_target);
+      return;
+    }
   an_target = createTarget (in_tar_id);
   if (!an_target)
     {
