@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
+#include <errno.h>
 
 /*! 
  * Class for OPTEC filter wheel.
