@@ -2,7 +2,7 @@ Source: rts2
 Section: science
 Priority: optional
 Maintainer: Petr Kubanek <petr@kubanek.net>
-Build-Depends: debhelper (>= 4.0.0), autotools-dev, libnova-dev (>= 0.12.0), libecpg-dev
+Build-Depends: debhelper (>= 4.0.0), autotools-dev, libnova-dev (>= 0.12.0), libecpg-dev, xsltproc, docbook-xsl
 Standards-Version: 3.6.1
 
 Package: rts2
