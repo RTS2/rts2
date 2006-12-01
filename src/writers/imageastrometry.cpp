@@ -54,6 +54,8 @@ Rts2Image::getOffset (double x1, double y1, double x2, double y2,
 {
   int ret;
   struct ln_equ_posn pos1, pos2;
+  logStream (MESSAGE_DEBUG) << "Rts2Image::getOffset " << x1 << " " << y1 <<
+    " " << x2 << " " << y2 << sendLog;
   ret = getRaDec (x1, y1, pos1.ra, pos1.dec);
   if (ret)
     return ret;
@@ -63,6 +65,10 @@ Rts2Image::getOffset (double x1, double y1, double x2, double y2,
   chng_ra = pos1.ra - pos2.ra;
   chng_dec = pos1.dec - pos2.dec;
   sep_angle = ln_get_angular_separation (&pos1, &pos2);
+  logStream (MESSAGE_DEBUG) << "Rts2Image::getOffset " <<
+    pos1.ra << " " << pos1.dec << " " << pos2.ra << " " << pos2.
+    dec << " change " << chng_ra << " " << chng_dec << " sep " << sep_angle <<
+    sendLog;
   return ret;
 }
 
