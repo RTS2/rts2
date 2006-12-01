@@ -13,6 +13,7 @@
 #define OP_BONUS	0x08
 #define OP_BONUS_TIME	0x10
 #define OP_SCRIPT	0x20
+#define OP_NEXT_OBSER   0x40
 
 class CamScript
 {
@@ -69,6 +70,7 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('p', "priority", 1, "set target (fixed) priority");
   addOption ('b', "bonus", 1, "set target bonus to this value");
   addOption ('B', "bonus_time", 1, "set target bonus time to this value");
+  addOption ('o', "nextobs", 0, "clear next observable flag");
   addOption ('c', "camera", 1, "next script will be set for given camera");
   addOption ('s', "script", 1, "set script for target and camera");
 }
@@ -109,6 +111,9 @@ Rts2TargetApp::processOption (int in_opt)
 	return ret;
       new_bonus_time = mktime (&tm_ret);
       op |= OP_BONUS_TIME;
+      break;
+    case 'o':
+      op |= OP_NEXT_OBSER;
       break;
     case 'c':
       if (camera)
@@ -229,7 +234,10 @@ Rts2TargetApp::run ()
 	  target_set->setTargetScript (iter->cameraName, iter->script);
 	}
     }
-
+  if (op & OP_NEXT_OBSER)
+    {
+      target_set->setNextObservable (NULL);
+    }
   if (op == OP_NONE)
     {
       return runInteractive ();
