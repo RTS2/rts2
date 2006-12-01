@@ -12,6 +12,9 @@ template < class val > class InfoVal
 private:
   const char *desc;
   val value;
+
+  template < class v > friend std::ostream & operator<< (std::ostream & _os,
+							 InfoVal < v > _val);
 public:
   InfoVal (const char *in_desc, val in_value)
   {
@@ -19,15 +22,13 @@ public:
     value = in_value;
   }
 
-  friend std::ostream & operator<< < val > (std::ostream & _os,
-					    InfoVal < val > _val);
 };
 
-template < class val >
-  std::ostream & operator << (std::ostream & _os, InfoVal < val > _val)
+template < class v >
+  std::ostream & operator << (std::ostream & _os, InfoVal < v > _val)
 {
-  _os << std::left << std::setw (20) << _val.desc << std::right << _val.
-    value << std::endl;
+  _os << std::left << std::setw (20) << _val.desc << std::right << _val.value
+    << std::endl;
   return _os;
 }
 
