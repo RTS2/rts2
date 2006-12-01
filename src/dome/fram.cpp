@@ -44,10 +44,10 @@ using namespace std;
 #define FRAM_CHECK_TIMEOUT 1000
 
 // following times are in seconds!
-#define FRAM_TIME_OPEN_RIGHT	26
-#define FRAM_TIME_OPEN_LEFT	24
-#define FRAM_TIME_CLOSE_RIGHT	32
-#define FRAM_TIME_CLOSE_LEFT	28
+#define FRAM_TIME_OPEN_RIGHT	24
+#define FRAM_TIME_OPEN_LEFT	26
+#define FRAM_TIME_CLOSE_RIGHT	28
+#define FRAM_TIME_CLOSE_LEFT	32
 
 #define FRAM_TIME_RECLOSE_RIGHT 5
 #define FRAM_TIME_RECLOSE_LEFT  5
@@ -64,15 +64,23 @@ using namespace std;
 
 typedef enum
 { VENTIL_AKTIVACNI,
-  VENTIL_OTEVIRANI_PRAVY,
+  // tohle je prohozeny, je to spatne!! az nam prohozej ventily, je to treba zmenit
+  // petr 15.8.2006
+  // prohozeni je konecne, nebudeme to menit
+  // petr 17.11.2006
   VENTIL_OTEVIRANI_LEVY,
+  VENTIL_OTEVIRANI_PRAVY,
   VENTIL_ZAVIRANI_PRAVY,
   VENTIL_ZAVIRANI_LEVY,
   KOMPRESOR,
   ZASUVKA_PRAVA,
   ZASUVKA_LEVA,
-  KONCAK_OTEVRENI_PRAVY,
+  // tohle je prohozeny, je to spatne!! az nam prohozej koncaky, je to treba zmenit
+  // petr 15.8.2006
+  // prohozeni je konecne, nebudeme to menit
+  // petr 17.11.2006
   KONCAK_OTEVRENI_LEVY,
+  KONCAK_OTEVRENI_PRAVY,
   KONCAK_ZAVRENI_PRAVY,
   KONCAK_ZAVRENI_LEVY
 }
