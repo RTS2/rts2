@@ -170,7 +170,15 @@ public:
   int writeImgHeader (struct imghdr *im_h);
   int writeDate (Rts2ClientTCPDataConn * dataConn);
 
-  int fitsStatusValue (char *valname);
+  int fitsStatusValue (char *valname, const char *operation);
+  int fitsStatusSetValue (char *valname)
+  {
+    return fitsStatusValue (valname, "SetValue");
+  }
+  int fitsStatusGetValue (char *valname)
+  {
+    return fitsStatusValue (valname, "GetValue");
+  }
 
   double getAstrometryErr ();
 
@@ -482,8 +490,6 @@ public:
   int getCoordMount (LibnovaRaDec & radec);
 
   std::string getOnlyFileName ();
-
-  virtual std::string getFileName ();
 
   virtual bool haveOKAstrometry ()
   {

@@ -664,7 +664,7 @@ std::string Rts2Image::getFitsErrors ()
   char
     buf[30];
   fits_get_errstatus (fits_status, buf);
-  os << " file " << getFileName () << " " << buf;
+  os << " file " << getImageName () << " " << buf;
   return os.str ();
 }
 
@@ -680,7 +680,7 @@ Rts2Image::setValue (char *name, int value, char *comment)
     }
   fits_update_key (ffile, TINT, name, &value, comment, &fits_status);
   flags |= IMAGE_SAVE;
-  return fitsStatusValue (name);
+  return fitsStatusSetValue (name);
 }
 
 int
@@ -695,7 +695,7 @@ Rts2Image::setValue (char *name, long value, char *comment)
     }
   fits_update_key (ffile, TLONG, name, &value, comment, &fits_status);
   flags |= IMAGE_SAVE;
-  return fitsStatusValue (name);
+  return fitsStatusSetValue (name);
 }
 
 int
@@ -713,7 +713,7 @@ Rts2Image::setValue (char *name, float value, char *comment)
     val = FLOATNULLVALUE;
   fits_update_key (ffile, TFLOAT, name, &val, comment, &fits_status);
   flags |= IMAGE_SAVE;
-  return fitsStatusValue (name);
+  return fitsStatusSetValue (name);
 }
 
 int
@@ -731,7 +731,7 @@ Rts2Image::setValue (char *name, double value, char *comment)
     val = DOUBLENULLVALUE;
   fits_update_key (ffile, TDOUBLE, name, &val, comment, &fits_status);
   flags |= IMAGE_SAVE;
-  return fitsStatusValue (name);
+  return fitsStatusSetValue (name);
 }
 
 int
@@ -749,7 +749,7 @@ Rts2Image::setValue (char *name, char value, char *comment)
   val[1] = '\0';
   fits_update_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
   flags |= IMAGE_SAVE;
-  return fitsStatusValue (name);
+  return fitsStatusSetValue (name);
 }
 
 int
@@ -765,7 +765,7 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
   ret = fits_update_key (ffile, TSTRING, name, (void *) value, comment,
 			 &fits_status);
   flags |= IMAGE_SAVE;
-  return fitsStatusValue (name);
+  return fitsStatusSetValue (name);
 }
 
 int
@@ -812,7 +812,7 @@ Rts2Image::getValue (char *name, int &value, char *comment)
 	return ret;
     }
   fits_read_key (ffile, TINT, name, (void *) &value, comment, &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -826,7 +826,7 @@ Rts2Image::getValue (char *name, long &value, char *comment)
 	return ret;
     }
   fits_read_key (ffile, TLONG, name, (void *) &value, comment, &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -840,7 +840,7 @@ Rts2Image::getValue (char *name, float &value, char *comment)
 	return ret;
     }
   fits_read_key (ffile, TFLOAT, name, (void *) &value, comment, &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -855,7 +855,7 @@ Rts2Image::getValue (char *name, double &value, char *comment)
     }
   fits_read_key (ffile, TDOUBLE, name, (void *) &value, comment,
 		 &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -871,7 +871,7 @@ Rts2Image::getValue (char *name, char &value, char *comment)
     }
   fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
   value = *val;
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -888,7 +888,7 @@ Rts2Image::getValue (char *name, char *value, int valLen, char *comment)
   fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
   strncpy (value, val, valLen);
   value[valLen - 1] = '\0';
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -899,7 +899,7 @@ Rts2Image::getValues (char *name, int *values, int num, int nstart)
   int nfound;
   fits_read_keys_log (ffile, name, nstart, num, values, &nfound,
 		      &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -910,7 +910,7 @@ Rts2Image::getValues (char *name, long *values, int num, int nstart)
   int nfound;
   fits_read_keys_lng (ffile, name, nstart, num, values, &nfound,
 		      &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -921,7 +921,7 @@ Rts2Image::getValues (char *name, double *values, int num, int nstart)
   int nfound;
   fits_read_keys_dbl (ffile, name, nstart, num, values, &nfound,
 		      &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -932,7 +932,7 @@ Rts2Image::getValues (char *name, char **values, int num, int nstart)
   int nfound;
   fits_read_keys_str (ffile, name, nstart, num, values, &nfound,
 		      &fits_status);
-  return fitsStatusValue (name);
+  return fitsStatusGetValue (name);
 }
 
 int
@@ -1033,13 +1033,13 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 }
 
 int
-Rts2Image::fitsStatusValue (char *valname)
+Rts2Image::fitsStatusValue (char *valname, const char *operation)
 {
   int ret = 0;
   if (fits_status)
     {
       ret = -1;
-      logStream (MESSAGE_ERROR) << getImageName () << " value " << valname <<
+      logStream (MESSAGE_ERROR) << operation << " value " << valname <<
 	" error " << getFitsErrors () << sendLog;
     }
   fits_status = 0;
@@ -1281,7 +1281,7 @@ Rts2Image::getDataUShortInt ()
   fits_status =
     fits_read_img (ffile, USHORT_IMG, 1, getWidth () * getHeight (), &nullVal,
 		   imageData, &anyNull, &fits_status);
-  fitsStatusValue ("image");
+  fitsStatusGetValue ("image");
   return imageData;
 }
 
@@ -1583,11 +1583,6 @@ Rts2Image::getError (double &eRa, double &eDec, double &eRad)
 std::string Rts2Image::getOnlyFileName ()
 {
   return expandPath ("%y%m%d%H%M%S-%s-%p.fits");
-}
-
-std::string Rts2Image::getFileName ()
-{
-  return std::string (imageName);
 }
 
 void
