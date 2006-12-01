@@ -1,4 +1,4 @@
-#include "rts2scriptelement.h"
+#include "rts2script.h"
 
 #include "../utils/rts2config.h"
 #include "../writers/rts2imagedb.h"
@@ -311,7 +311,7 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
   // that should not happen!
   logStream (MESSAGE_ERROR)
     << "Rts2ScriptElementAcquire::nextCommand unexpected processing state "
-    << processingState << sendLog;
+    << (int) processingState << sendLog;
   return NEXT_COMMAND_NEXT;
 }
 
@@ -325,7 +325,7 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
     {
       logStream (MESSAGE_ERROR)
 	<< "Rts2ScriptElementAcquire::processImage invalid processingState: "
-	<< processingState << " isAcquiring: " << image->
+	<< (int) processingState << " isAcquiring: " << image->
 	getIsAcquiring () << " this " << this << sendLog;
       return -1;
     }
@@ -651,7 +651,7 @@ Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
       logStream (MESSAGE_ERROR)
 	<<
 	"Rts2ScriptElementAcquireStar::processImage invalid processingState: "
-	<< processingState << sendLog;
+	<< (int) processingState << sendLog;
       processingState = FAILED;
       return -1;
     }
