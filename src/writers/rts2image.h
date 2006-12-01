@@ -538,10 +538,10 @@ public:
     return setValue ("ORIGIN", orig, "organisation responsible for data");
   }
 
-  friend std::ostream & operator << (std::ostream & _os, Rts2Image * image);
+  friend std::ostream & operator << (std::ostream & _os, Rts2Image & image);
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2Image * image);
+std::ostream & operator << (std::ostream & _os, Rts2Image & image);
 
 //Rts2Image & operator - (Rts2Image & img_1, Rts2Image & img_2);
 //Rts2Image & operator + (Rts2Image & img_, Rts2Image & img_2);

@@ -1622,15 +1622,15 @@ Rts2Image::print (std::ostream & _os, int in_flags)
   _os.precision (old_precision);
 }
 
-std::ostream & operator << (std::ostream & _os, Rts2Image * image)
+std::ostream & operator << (std::ostream & _os, Rts2Image & image)
 {
-  _os << "C " << image->getCameraName ()
-    << " [" << image->getWidth () << ":"
-    << image->getHeight () << "]"
-    << " RA " << image->getCenterRa () << " (" << LibnovaDegArcMin (image->
-								    ra_err) <<
-    ") DEC " << image->getCenterDec () << " (" << LibnovaDegArcMin (image->
-								    dec_err)
-    << ") IMG_ERR " << LibnovaDegArcMin (image->img_err);
+  _os << "C " << image.getCameraName ()
+    << " [" << image.getWidth () << ":"
+    << image.getHeight () << "]"
+    << " RA " << image.getCenterRa () << " (" << LibnovaDegArcMin (image.
+								   ra_err) <<
+    ") DEC " << image.getCenterDec () << " (" << LibnovaDegArcMin (image.
+								   dec_err)
+    << ") IMG_ERR " << LibnovaDegArcMin (image.img_err);
   return _os;
 }
