@@ -1151,15 +1151,27 @@ Target::setNextObservable (time_t *time_ch)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int db_tar_id = getObsTargetID ();
-  int db_next_observable = (int) *time_ch;
+  int db_next_observable;
+  int db_next_observable_ind;
   EXEC SQL END DECLARE SECTION;
 
-  tar_next_observable = *time_ch;
+  if (time_ch)
+  {
+    db_next_observable = (int) *time_ch;
+    db_next_observable_ind = 0;
+    tar_next_observable = *time_ch;
+  }
+  else
+  {
+    db_next_observable = 0;
+    db_next_observable_ind = -1;
+    tar_next_observable = 0;
+  }
   
   EXEC SQL UPDATE 
     targets
   SET
-    tar_next_observable = abstime(:db_next_observable)
+    tar_next_observable = abstime(:db_next_observable :db_next_observable_ind)
   WHERE
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)

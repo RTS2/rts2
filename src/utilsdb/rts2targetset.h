@@ -39,6 +39,8 @@ public:
   void
   setTargetBonusTime (time_t * new_time);
   void
+  setNextObservable (time_t * time_ch);
+  void
   setTargetScript (const char *device_name, const char *script);
 
   int

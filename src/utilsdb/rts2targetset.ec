@@ -149,6 +149,15 @@ Rts2TargetSet::setTargetBonusTime (time_t *new_time)
 }
 
 void
+Rts2TargetSet::setNextObservable (time_t *time_ch)
+{
+  for (iterator iter = begin (); iter != end (); iter++)
+  {
+    (*iter)->setNextObservable (time_ch);
+  }
+}
+
+void
 Rts2TargetSet::setTargetScript (const char *device_name, const char *script)
 {
   for (iterator iter = begin (); iter != end (); iter++)
