@@ -1,7 +1,7 @@
 #ifndef __RTS2_SCRIPT_BLOCK__
 #define __RTS2_SCRIPT_BLOCK__
 
-#include "rts2scriptelement.h"
+#include "rts2script.h"
 
 /**
  * Block - text surrounded by {}.

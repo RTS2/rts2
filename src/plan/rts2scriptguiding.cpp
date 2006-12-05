@@ -178,7 +178,7 @@ Rts2ScriptElementGuiding::nextCommand (Rts2DevClientCamera * camera,
   // should not happen!
   logStream (MESSAGE_DEBUG)
     << "Rts2ScriptElementGuiding::nextCommand invalid state: "
-    << processingState << sendLog;
+    << (int) processingState << sendLog;
   return NEXT_COMMAND_NEXT;
 }
 
@@ -188,13 +188,13 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
   int ret;
   Rts2ConnFocus *processor;
   logStream (MESSAGE_DEBUG) <<
-    "Rts2ScriptElementGuiding::processImage state: " << processingState <<
-    sendLog;
+    "Rts2ScriptElementGuiding::processImage state: " << (int) processingState
+    << sendLog;
   if (processingState != WAITING_IMAGE)
     {
       logStream (MESSAGE_ERROR)
 	<< "Rts2ScriptElementGuiding::processImage invalid processingState: "
-	<< processingState << sendLog;
+	<< (int) processingState << sendLog;
       processingState = FAILED;
       return -1;
     }

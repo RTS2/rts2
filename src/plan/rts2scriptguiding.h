@@ -1,7 +1,7 @@
 #ifndef __RTS2_SCRIPT_GUIDING__
 #define __RTS2_SCRIPT_GUIDING__
 
-#include "rts2scriptelement.h"
+#include "rts2script.h"
 
 /**
  * Class for guiding.

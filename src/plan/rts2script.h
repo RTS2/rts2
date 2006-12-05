@@ -44,7 +44,7 @@
  * @author Petr Kubanek <petr@lascaux.asu.cas.cz>
  */
 
-class Rts2ScriptElement;
+//class Rts2ScriptElement;
 class Rts2SEBAcquired;
 
 class Rts2Script:public Rts2Object
