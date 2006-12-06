@@ -900,7 +900,7 @@ CalibrationTarget::getBonus (double JD)
   if (t_diff < validTime)
     return minBonus;
   // greater then MaxDelay is interesting
-  else if (t_diff < maxDelay)
+  else if (t_diff > maxDelay)
     return maxBonus;
   // otherwise linear increase
   return minBonus + ((maxBonus - minBonus) * t_diff / (maxDelay - validTime));
