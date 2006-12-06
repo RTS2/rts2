@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2006-10-21</date>">
+  <!ENTITY dhdate      "<date>2006-12-06</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubánek">
@@ -365,6 +365,80 @@
 	  </term>
 	  <listitem>
 	    <para>If set to true, centrald will switch it's state to OFF each morning.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>calibration</title>
+        <para>
+	  Provides infomations for calibration target - target 6 and Landold (or
+	  other) calibration selection.
+        </para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>airmass_distance</option>
+	  </term>
+	  <listitem>
+	    <para>Maximal airmass distance for calibration targets. Defaults to 0.1.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>lunar_dist</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Minimal lunar distance for calibration targets. It's recorded in
+	      degrees, defaults to 20.
+            </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>valid_time</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Calibration valid time. If we take at given airmass range image
+	      within last <b>valid_time</b> seconds, observing this target is
+	      not a high priority.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>max_delay</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Calibration maximal time in seconds. After that time, calibration
+	      observation will receive <b>max_bonus</b> bonus. Between
+	      valid_time and max_delay, bonus is calculated as: {min_bonus} + (({time from
+	      last image}-{valid_time})/({max_delay}-{valid_time}))*({max_bonus}-{min_bonus}).
+	      Default to 7200.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>min_bonus</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Calibration minimal bonus. Calibration bonus will not be lower then this value. Default to 1.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>max_bonus</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Calibration maximal bonus. Calibration bonus will not be greater then this value. Default to 300.
+	    </para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
