@@ -49,7 +49,7 @@ Rts2SelectorApp::run ()
   tar = createTarget (next_tar, observer);
   if (tar)
     {
-      std::cout << tar << std::endl;
+      std::cout << *tar << std::endl;
     }
   else
     {
