@@ -402,7 +402,7 @@
 	  <listitem>
 	    <para>
 	      Calibration valid time. If we take at given airmass range image
-	      within last <b>valid_time</b> seconds, observing this target is
+	      within last valid_time seconds, observing this target is
 	      not a high priority.
 	    </para>
 	  </listitem>
@@ -414,7 +414,7 @@
 	  <listitem>
 	    <para>
 	      Calibration maximal time in seconds. After that time, calibration
-	      observation will receive <b>max_bonus</b> bonus. Between
+	      observation will receive max_bonus bonus. Between
 	      valid_time and max_delay, bonus is calculated as: {min_bonus} + (({time from
 	      last image}-{valid_time})/({max_delay}-{valid_time}))*({max_bonus}-{min_bonus}).
 	      Default to 7200.
