@@ -1255,9 +1255,6 @@ main (int argc, char **argv)
 {
   int ret;
   device = new Rts2DevTelParamount (argc, argv);
-  ret = device->init ();
-  if (ret)
-    return ret;
   ret = device->run ();
   delete device;
   return ret;
