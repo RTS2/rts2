@@ -673,7 +673,9 @@ CalibrationTarget::load ()
   double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
   time_t now;
-  time_t hour_back;
+  time_t valid;
+
+  int fallback_obs_target_id = -1;
 
   std::list <PosCalibration *> cal_list;
   std::list <PosCalibration *> bad_list;
@@ -754,7 +756,7 @@ CalibrationTarget::load ()
   EXEC SQL OPEN cur_airmass_cal_images;
   obs_target_id = -1;
   time (&now);
-  hour_back = now - 3600;
+  valid = now - Rts2Config::instance()->getCalibrationValidTime();
   while (1)
   {
     EXEC SQL FETCH next FROM cur_airmass_cal_images
@@ -771,16 +773,19 @@ CalibrationTarget::load ()
       if (calib->getCurrAirmass () >= d_airmass_start 
 	&& calib->getCurrAirmass () < d_airmass_end)
       {
-	// if that target was already observerd..
-	if (calib->getNumObs (&hour_back, &now) > 0)
+	if (calib->getLunarDistance (JD) < Rts2Config::instance()->getCalibrationLunarDist())
 	{
+          bad_list.push_back (calib);
+	}
+	// if that target was already observerd..
+	else if (calib->getNumObs (&valid, &now) > 0)
+	{
+	  // if we do not have any target, pick that one
+	  if (fallback_obs_target_id == -1)
+	    fallback_obs_target_id = calib->getTargetID();
 	  // we have to que it for change - we need to change it's
 	  // priority outside current transaction, which hold cursor..
 	  bad_list.push_back (calib);
-	}
-	else if (calib->getLunarDistance (JD) < 20)
-	{
-          bad_list.push_back (calib);
 	}
 	else
 	{
@@ -802,7 +807,7 @@ CalibrationTarget::load ()
   // change priority for bad targets..
   for (cal_iter = bad_list.begin (); cal_iter != bad_list.end (); cal_iter++)
   {
-    (*cal_iter)->changePriority (-100, JD + 1.0/24.0);
+    (*cal_iter)->setNextObservable (JD + 1.0/24.0);
   }
   bad_list.clear ();
   // free cal_list..
@@ -829,7 +834,13 @@ CalibrationTarget::load ()
     needUpdate = 0;
     return ConstTarget::load ();
   }
-  // no target found..
+  // no target found..try fallback
+  if (fallback_obs_target_id != -1)
+  {
+    needUpdate = 0;
+    obs_target_id = fallback_obs_target_id;
+    return ConstTarget::load();
+  }
   return -1;
 }
 
@@ -876,21 +887,23 @@ CalibrationTarget::getBonus (double JD)
 {
   time_t now;
   time_t t_diff;
+
+  int validTime = Rts2Config::instance()->getCalibrationValidTime();
+  int maxDelay = Rts2Config::instance()->getCalibrationMaxDelay();
+  float minBonus = Rts2Config::instance()->getCalibrationMinBonus();
+  float maxBonus = Rts2Config::instance()->getCalibrationMaxBonus();
   if (obs_target_id <= 0)
     return -1;
   ln_get_timet_from_julian (JD, &now);
   t_diff = now - lastImage;
-  // 1 hour is not interesting..
-  if (t_diff < 3600)
-    return 1;
-  // 2 hours..
-  else if (t_diff < 7200)
-    return 50;
-  // interesting then..
-  else if (t_diff < 12 * 3600)
-    return 50 + (250 * ((double) t_diff / (12 * 3600)));
-  // required (but don't interrupt burst, please
-  return 300;
+  // smaller then valid_time is not interesting..
+  if (t_diff < validTime)
+    return minBonus;
+  // greater then MaxDelay is interesting
+  else if (t_diff < maxDelay)
+    return maxBonus;
+  // otherwise linear increase
+  return minBonus + ((maxBonus - minBonus) * t_diff / (maxDelay - validTime));
 }
 
 int

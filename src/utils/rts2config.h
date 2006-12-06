@@ -20,8 +20,12 @@ private:
 
   struct ln_lnlat_posn observer;
   ObjectCheck *checker;
-  double callibrationAirmass;
-
+  double calibrationAirmassDistance;
+  double calibrationLunarDist;
+  int calibrationValidTime;
+  int calibrationMaxDelay;
+  float calibrationMinBonus;
+  float calibrationMaxBonus;
 public:
     Rts2Config ();
     virtual ~ Rts2Config (void);
@@ -38,11 +42,31 @@ public:
   // some special functions..
   struct ln_lnlat_posn *getObserver ();
   ObjectCheck *getObjectChecker ();
-  double getCallibrationAirmass ()
+  double getCalibrationAirmassDistance ()
   {
-    return callibrationAirmass;
+    return calibrationAirmassDistance;
   }
   int getDeviceMinFlux (const char *device, double &minFlux);
+  double getCalibrationLunarDist ()
+  {
+    return calibrationLunarDist;
+  }
+  int getCalibrationValidTime ()
+  {
+    return calibrationValidTime;
+  }
+  int getCalibrationMaxDelay ()
+  {
+    return calibrationMaxDelay;
+  }
+  float getCalibrationMinBonus ()
+  {
+    return calibrationMinBonus;
+  }
+  float getCalibrationMaxBonus ()
+  {
+    return calibrationMaxBonus;
+  }
 };
 
 #endif /*! __RTS2_CONFIG__ */

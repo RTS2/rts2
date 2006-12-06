@@ -14,7 +14,12 @@ Rts2Config::Rts2Config ()
   observer.lat = 0;
   observer.lng = 0;
   checker = NULL;
-  callibrationAirmass = 0.1;
+  calibrationAirmassDistance = 0.1;
+  calibrationLunarDist = 20.0;
+  calibrationValidTime = 3600;
+  calibrationMaxDelay = 7200;
+  calibrationMinBonus = 1.0;
+  calibrationMaxBonus = 300.0;
 }
 
 Rts2Config::~Rts2Config ()
@@ -58,7 +63,12 @@ Rts2Config::loadFile (char *filename)
   // load horizont file..
   getString ("observatory", "horizont", horizont_file, 250);
   checker = new ObjectCheck (horizont_file);
-  getDouble ("observatory", "callibration_airmass", callibrationAirmass);
+  getDouble ("calibration", "airmass_distance", calibrationAirmassDistance);
+  getDouble ("calibration", "lunar_dist", calibrationLunarDist);
+  getInteger ("calibration", "valid_time", calibrationValidTime);
+  getInteger ("calibration", "max_delay", calibrationMaxDelay);
+  getFloat ("calibration", "min_bonus", calibrationMinBonus);
+  getFloat ("calibration", "max_bonus", calibrationMaxBonus);
   return 0;
 }
 
