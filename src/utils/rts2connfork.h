@@ -7,19 +7,24 @@ class Rts2ConnFork:public Rts2ConnNoSend
 {
 private:
   pid_t childPid;
+  time_t forkedTimeout;
 
 protected:
   char *exePath;
   virtual int connectionError (int last_data_size);
   virtual void beforeFork ();
 public:
-    Rts2ConnFork (Rts2Block * in_master, const char *in_exe);
+    Rts2ConnFork (Rts2Block * in_master, const char *in_exe, int in_timeout =
+		  0);
     virtual ~ Rts2ConnFork (void);
 
   virtual int newProcess ();
 
   virtual int init ();
   virtual void stop ();
+  void term ();
+
+  virtual int idle ();
 
   virtual void childReturned (pid_t in_child_pid);
 

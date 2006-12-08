@@ -19,7 +19,7 @@ protected:
   astrometry_stat_t astrometryStat;
 public:
     Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-		     const char *in_exe);
+		     const char *in_exe, int in_timeout);
 
   void deleteConnection (Rts2Conn * conn)
   {
@@ -59,7 +59,8 @@ protected:
 
 public:
     Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-			const char *in_exe, const char *in_path);
+			const char *in_exe, const char *in_path,
+			int in_timeout);
     virtual ~ Rts2ConnImgProcess (void);
 
   virtual int newProcess ();
@@ -73,7 +74,7 @@ private:
   Rts2Obs *obs;
 public:
     Rts2ConnObsProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-			const char *in_exe, int in_obsId);
+			const char *in_exe, int in_obsId, int in_timeout);
 
   virtual int newProcess ();
   virtual int processLine ();
@@ -83,7 +84,7 @@ class Rts2ConnDarkProcess:public Rts2ConnProcess
 {
 public:
   Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-		       const char *in_exe);
+		       const char *in_exe, int in_timeout);
 
   virtual int processLine ();
 };
@@ -92,7 +93,7 @@ class Rts2ConnFlatProcess:public Rts2ConnProcess
 {
 public:
   Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-		       const char *in_exe);
+		       const char *in_exe, int in_timeout);
 
   virtual int processLine ();
 };

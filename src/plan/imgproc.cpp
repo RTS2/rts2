@@ -390,7 +390,8 @@ Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImageConn;
   newImageConn =
-    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path);
+    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path,
+			    Rts2Config::instance ()->getAstrometryTimeout ());
   return que (newImageConn);
 }
 
@@ -399,7 +400,8 @@ Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImageConn;
   newImageConn =
-    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path);
+    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path,
+			    Rts2Config::instance ()->getAstrometryTimeout ());
   changeRunning (newImageConn);
   infoAll ();
   return 0;
@@ -409,7 +411,9 @@ int
 Rts2ImageProc::queObs (Rts2Conn * conn, int obsId)
 {
   Rts2ConnObsProcess *newObsConn;
-  newObsConn = new Rts2ConnObsProcess (this, conn, defaultObsProcess, obsId);
+  newObsConn =
+    new Rts2ConnObsProcess (this, conn, defaultObsProcess, obsId,
+			    Rts2Config::instance ()->getObsProcessTimeout ());
   return que (newObsConn);
 }
 
@@ -417,7 +421,10 @@ int
 Rts2ImageProc::queDarks (Rts2Conn * conn)
 {
   Rts2ConnDarkProcess *newDarkConn;
-  newDarkConn = new Rts2ConnDarkProcess (this, conn, defaultDarkProcess);
+  newDarkConn =
+    new Rts2ConnDarkProcess (this, conn, defaultDarkProcess,
+			     Rts2Config::instance ()->
+			     getDarkProcessTimeout ());
   return que (newDarkConn);
 }
 
@@ -425,7 +432,10 @@ int
 Rts2ImageProc::queFlats (Rts2Conn * conn)
 {
   Rts2ConnFlatProcess *newFlatConn;
-  newFlatConn = new Rts2ConnFlatProcess (this, conn, defaultFlatProcess);
+  newFlatConn =
+    new Rts2ConnFlatProcess (this, conn, defaultFlatProcess,
+			     Rts2Config::instance ()->
+			     getFlatProcessTimeout ());
   return que (newFlatConn);
 }
 

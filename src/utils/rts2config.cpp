@@ -14,6 +14,8 @@ Rts2Config::Rts2Config ()
   observer.lat = 0;
   observer.lng = 0;
   checker = NULL;
+  // default to 120 seconds
+  astrometryTimeout = 120;
   calibrationAirmassDistance = 0.1;
   calibrationLunarDist = 20.0;
   calibrationValidTime = 3600;
@@ -63,6 +65,7 @@ Rts2Config::loadFile (char *filename)
   // load horizont file..
   getString ("observatory", "horizont", horizont_file, 250);
   checker = new ObjectCheck (horizont_file);
+  getInteger ("imgproc", "astrometry_timeout", astrometryTimeout);
   getDouble ("calibration", "airmass_distance", calibrationAirmassDistance);
   getDouble ("calibration", "lunar_dist", calibrationLunarDist);
   getInteger ("calibration", "valid_time", calibrationValidTime);

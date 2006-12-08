@@ -20,6 +20,7 @@ private:
 
   struct ln_lnlat_posn observer;
   ObjectCheck *checker;
+  int astrometryTimeout;
   double calibrationAirmassDistance;
   double calibrationLunarDist;
   int calibrationValidTime;
@@ -47,6 +48,27 @@ public:
     return calibrationAirmassDistance;
   }
   int getDeviceMinFlux (const char *device, double &minFlux);
+
+  int getAstrometryTimeout ()
+  {
+    return astrometryTimeout;
+  }
+
+  int getObsProcessTimeout ()
+  {
+    return astrometryTimeout;
+  }
+
+  int getDarkProcessTimeout ()
+  {
+    return astrometryTimeout;
+  }
+
+  int getFlatProcessTimeout ()
+  {
+    return astrometryTimeout;
+  }
+
   double getCalibrationLunarDist ()
   {
     return calibrationLunarDist;

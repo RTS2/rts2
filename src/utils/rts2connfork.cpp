@@ -9,18 +9,28 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-Rts2ConnFork::Rts2ConnFork (Rts2Block * in_master, const char *in_exe):
+Rts2ConnFork::Rts2ConnFork (Rts2Block * in_master, const char *in_exe,
+			    int in_timeout):
 Rts2ConnNoSend (in_master)
 {
   childPid = -1;
   exePath = new char[strlen (in_exe) + 1];
   strcpy (exePath, in_exe);
+  if (in_timeout > 0)
+    {
+      time (&forkedTimeout);
+      forkedTimeout += in_timeout;
+    }
+  else
+    {
+      forkedTimeout = 0;
+    }
 }
 
 Rts2ConnFork::~Rts2ConnFork (void)
 {
   if (childPid > 0)
-    kill (childPid, SIGINT);
+    kill (-childPid, SIGINT);
   delete[]exePath;
 }
 
@@ -91,6 +101,9 @@ Rts2ConnFork::init ()
   // close all sockets so when we crash, we don't get any dailing
   // sockets
   master->forkedInstance ();
+  // start new group, so SIGTERM to group will kill all children
+  setpgrp ();
+
   ret = newProcess ();
   if (ret)
     logStream (MESSAGE_ERROR) << "Rts2ConnFork::init newProcess return : " <<
@@ -102,7 +115,31 @@ void
 Rts2ConnFork::stop ()
 {
   if (childPid > 0)
-    kill (childPid, SIGSTOP);
+    kill (-childPid, SIGSTOP);
+}
+
+void
+Rts2ConnFork::term ()
+{
+  if (childPid > 0)
+    kill (-childPid, SIGKILL);
+  childPid = -1;
+}
+
+int
+Rts2ConnFork::idle ()
+{
+  if (forkedTimeout > 0)
+    {
+      time_t now;
+      time (&now);
+      if (now > forkedTimeout)
+	{
+	  term ();
+	  endConnection ();
+	}
+    }
+  return 0;
 }
 
 void

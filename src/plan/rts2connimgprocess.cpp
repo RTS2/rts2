@@ -11,13 +11,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <signal.h>
 
 #include <sstream>
 
 Rts2ConnProcess::Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-				  const char *in_exe):
-Rts2ConnFork (in_master, in_exe)
+				  const char *in_exe, int in_timeout):
+Rts2ConnFork (in_master, in_exe, in_timeout)
 {
   reqConn = in_conn;
 }
@@ -25,8 +24,8 @@ Rts2ConnFork (in_master, in_exe)
 Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master,
 					Rts2Conn * in_conn,
 					const char *in_exe,
-					const char *in_path):
-Rts2ConnProcess (in_master, in_conn, in_exe)
+					const char *in_path, int in_timeout):
+Rts2ConnProcess (in_master, in_conn, in_exe, in_timeout)
 {
   imgPath = new char[strlen (in_path) + 1];
   strcpy (imgPath, in_path);
@@ -193,8 +192,9 @@ Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
 
 Rts2ConnObsProcess::Rts2ConnObsProcess (Rts2Block * in_master,
 					Rts2Conn * in_conn,
-					const char *in_exe, int in_obsId):
-Rts2ConnProcess (in_master, in_conn, in_exe)
+					const char *in_exe, int in_obsId,
+					int in_timeout):
+Rts2ConnProcess (in_master, in_conn, in_exe, in_timeout)
 {
   obsId = in_obsId;
   obs = NULL;
@@ -244,8 +244,9 @@ Rts2ConnObsProcess::processLine ()
   return -1;
 }
 
-Rts2ConnDarkProcess::Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe):Rts2ConnProcess (in_master, in_conn,
-		 in_exe)
+Rts2ConnDarkProcess::Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe, int in_timeout):Rts2ConnProcess (in_master, in_conn,
+		 in_exe,
+		 in_timeout)
 {
 }
 
@@ -255,8 +256,9 @@ Rts2ConnDarkProcess::processLine ()
   return -1;
 }
 
-Rts2ConnFlatProcess::Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe):Rts2ConnProcess (in_master, in_conn,
-		 in_exe)
+Rts2ConnFlatProcess::Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe, int in_timeout):Rts2ConnProcess (in_master, in_conn,
+		 in_exe,
+		 in_timeout)
 {
 }
 
