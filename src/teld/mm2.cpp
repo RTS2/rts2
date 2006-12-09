@@ -32,7 +32,7 @@
 #include <sys/ioctl.h>
 
 #include "telescope.h"
-#include "../utils/hms.h"
+#include "hms.h"
 #include "status.h"
 
 #include <termios.h>

@@ -22,7 +22,7 @@
 
 #include "telescope.h"
 #include "status.h"
-#include "../utils/hms.h"
+#include "hms.h"
 
 // uncomment following line, if you want all port read logging (will
 // add about 10 30-bytes lines to logStream for every query). 
