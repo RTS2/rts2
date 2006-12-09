@@ -57,9 +57,11 @@ function rts2-stop
 {
         rts2-stop-services
 	rts2-stop-devices
-        echo -n "Stopping RTS2 centrald daemon:"
-	start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}centrald
-	echo "rts2-centrald."
+	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
+        	echo -n "Stopping RTS2 centrald daemon:"
+		start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}centrald
+		echo "rts2-centrald."
+	fi
 }
 
 function rts2-reload
