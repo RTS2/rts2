@@ -675,7 +675,8 @@ CalibrationTarget::load ()
   time_t now;
   time_t valid;
 
-  int fallback_obs_target_id = -1;
+  PosCalibration *fallback_obs_calib = NULL;
+  time_t fallback_last_image;
 
   std::list <PosCalibration *> cal_list;
   std::list <PosCalibration *> bad_list;
@@ -781,10 +782,11 @@ CalibrationTarget::load ()
 	else if (calib->getNumObs (&valid, &now) > 0)
 	{
 	  // if we do not have any target, pick that one
-	  if (fallback_obs_target_id == -1)
-	    fallback_obs_target_id = calib->getTargetID();
-	  // we have to que it for change - we need to change it's
-	  // priority outside current transaction, which hold cursor..
+	  if (fallback_obs_calib == NULL)
+	  {
+	    fallback_obs_calib = calib;
+	    fallback_last_image = (time_t) d_airmass_last_image;
+	  }
 	  bad_list.push_back (calib);
 	}
 	else
@@ -810,6 +812,13 @@ CalibrationTarget::load ()
     (*cal_iter)->setNextObservable (JD + 1.0/24.0);
   }
   bad_list.clear ();
+  // no target found..try fallback
+  if (obs_target_id == -1 && fallback_obs_calib != NULL)
+  {
+    obs_target_id = fallback_obs_calib->getTargetID ();
+    fallback_obs_calib->getPosition (&airmassPosition, JD);
+    lastImage = fallback_last_image;
+  }
   // free cal_list..
   for (cal_iter = cal_list.begin (); cal_iter != cal_list.end ();)
   {
@@ -833,13 +842,6 @@ CalibrationTarget::load ()
   {
     needUpdate = 0;
     return ConstTarget::load ();
-  }
-  // no target found..try fallback
-  if (fallback_obs_target_id != -1)
-  {
-    needUpdate = 0;
-    obs_target_id = fallback_obs_target_id;
-    return ConstTarget::load();
   }
   return -1;
 }
