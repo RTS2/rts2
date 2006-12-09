@@ -698,6 +698,7 @@ CalibrationTarget::load ()
   WHERE
       tar_enabled = true
     AND (tar_bonus_time is NULL OR tar_bonus > 0)
+    AND ((tar_next_observable is null) OR (tar_next_observable < now()))
     AND tar_id != 6
     AND (
         type_id = 'c'
