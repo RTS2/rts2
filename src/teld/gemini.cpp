@@ -131,7 +131,7 @@ private:
   double maxPrecGuideRa;
   double maxPrecGuideDec;
 
-  int32_t readRatiosInter (int startId);
+  int readRatiosInter (int startId);
   int readRatios ();
   int readLimits ();
   int setCorrection ();
@@ -1073,10 +1073,11 @@ Rts2DevTelescopeGemini::geminiInit ()
   return 0;
 }
 
-int32_t
+int
 Rts2DevTelescopeGemini::readRatiosInter (int startId)
 {
-  int32_t t, res = 1;
+  int32_t t;
+  int res = 1;
   int id;
   int ret;
   for (id = startId; id < startId + 5; id += 2)
@@ -1760,14 +1761,6 @@ Rts2DevTelescopeGemini::endMove ()
     }
 #endif
   tel_gemini_get (130, track);
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "rate" << track << sendLog;
-#endif
-  // if (track != 135)
-  //  {
-  //    tel_gemini_set (131, 1);
-  //  }
-  tel_gemini_get (130, track);
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONtest#", 9) > 0)
     return Rts2DevTelescope::endMove ();
@@ -1860,7 +1853,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 	    {
 	      fixed_ha = tar_ha;
 	      lastMoveDec += dec_diff;
-	      move_fixed = 0;	// we are performing change, not moveFixed
+	      // move_fixed = 0;        // we are performing change, not moveFixed
 	      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "change started");
 	      return ret;
 	    }
@@ -1885,7 +1878,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 	{
 	  fixed_ha = tar_ha;
 	  lastMoveDec += dec_diff;
-	  move_fixed = 0;	// we are performing change, not moveFixed
+	  // move_fixed = 0;    // we are performing change, not moveFixed
 	  maskState (0, TEL_MASK_MOVING, TEL_MOVING, "change started");
 	  return Rts2DevTelescope::startMoveFixed (tar_ha, tar_dec);
 	}
@@ -1934,9 +1927,6 @@ Rts2DevTelescopeGemini::endMoveFixed ()
   int32_t track;
   stopWorm ();
   tel_gemini_get (130, track);
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "endMoveFixed track " << track << sendLog;
-#endif
   setTimeout (USEC_SEC);
   if (tel_write ("#:ONfixed#", 10) > 0)
     return Rts2DevTelescope::endMoveFixed ();
@@ -2260,12 +2250,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2417,14 +2406,20 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	      ret = tel_gemini_set (170, 2);
 	      if (ret)
 		return ret;
-	      startWorm ();
+	      worm_move_needed = 1;
 	      ret = telescope_start_move (direction);
 	    }
 	  // west..only turn worm on
 	  else
 	    {
-	      ret = startWorm ();
+	      ret = tel_set_rate (RATE_CENTER);
+	      if (ret)
+		return ret;
+	      ret = tel_gemini_set (170, 2);
+	      if (ret)
+		return ret;
 	      worm_move_needed = 1;
+	      ret = telescope_start_move (direction);
 	    }
 	}
       else
@@ -2462,7 +2457,7 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
     return ret;
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_INFO) << "Losmandy change ra " << telRa << " dec " <<
-    telDec << sendLog;
+    telDec << " move_fixed " << move_fixed << sendLog;
 #endif
   // decide, if we make change, or move using move command
 #ifdef L4_GUIDE
@@ -2471,7 +2466,14 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   if (fabs (chng_ra) > 20 / 60.0 || fabs (chng_dec) > 20 / 60.0)
 #endif
     {
-      ret = startMove (telRa + chng_ra, telDec + chng_dec);
+      if (move_fixed && !isnan (fixed_ha))
+	{
+	  ret = startMoveFixed (fixed_ha - chng_ra, telDec + chng_dec);
+	}
+      else
+	{
+	  ret = startMove (telRa + chng_ra, telDec + chng_dec);
+	}
       if (ret)
 	return ret;
       // move wait ended .. log results

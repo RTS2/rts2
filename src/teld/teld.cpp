@@ -1094,7 +1094,7 @@ Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
     }
   else
     {
-      move_fixed = 0;
+      // move_fixed = 0;
       moveMark++;
       maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
 		 "move started");
