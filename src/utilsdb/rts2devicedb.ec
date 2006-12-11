@@ -21,8 +21,8 @@ Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
   connectString = NULL; // defualt DB
   configFile = NULL;
 
-  addOption ('b', "database", 1, "connect string to PSQL database (default to stars)");
-  addOption ('c', "config", 1, "configuration file");
+  addOption ('B', "database", 1, "connect string to PSQL database (default to stars)");
+  addOption ('C', "config", 1, "configuration file");
 }
 
 Rts2DeviceDb::~Rts2DeviceDb (void)
@@ -37,11 +37,11 @@ Rts2DeviceDb::processOption (int in_opt)
 {
   switch (in_opt)
   {
-    case 'b':
+    case 'B':
       connectString = new char[strlen (optarg) + 1];
       strcpy (connectString, optarg);
       break;
-    case 'c':
+    case 'C':
       configFile = optarg;
       break;
     default:
