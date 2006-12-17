@@ -2250,12 +2250,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
@@ -2388,7 +2387,8 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	return ret;
       if (!isnan (fixed_ha))
 	{
-	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * (4.0)) * USEC_SEC);
+	  // we go 2x sidereal time, so divide by 2
+	  u_sleep = (long) (((fabs (chng_ra) * 60.0) * (2.0)) * USEC_SEC);
 	}
       else
 	{
