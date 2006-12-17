@@ -1423,7 +1423,7 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
   char command[6];
   int ret;
   // start worm if moving in RA DEC..
-  if (worm == 135 && (direction == DIR_EAST || direction == DIR_WEST))
+/*  if (worm == 135 && (direction == DIR_EAST || direction == DIR_WEST))
     {
       // G11 (version 3.x) have some problems with starting worm..give it some time
       // to react
@@ -1436,7 +1436,7 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
   else
     {
       worm_move_needed = 0;
-    }
+    } */
   sprintf (command, "#:M%c#", direction);
   ret = tel_write (command, 5) == 1 ? -1 : 0;
   // workaround suggested by Rene Goerlich
@@ -2250,11 +2250,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
