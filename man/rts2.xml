@@ -164,6 +164,58 @@
   </refsect1>
 
   <refsect1>
+    <title>IMAGE PROCESSING STATES</title>
+
+    <para>
+      During image processing, various image kind are created. Depending on processing
+      script configuration, following image kinds can be created:
+    </para>
+
+    <variablelist>
+      <varlistentry>
+	<term>
+	  <option>RA</option>
+	</term>
+	<listitem>
+	  <para>
+	    RAW images.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>DF</option>
+	</term>
+	<listitem>
+	  <para>
+	    RAW image, corrected by dark frame.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>FF</option>
+	</term>
+	<listitem>
+	  <para>
+	    RAW image, corrected by dark frame and flat frame.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>PR</option>
+	</term>
+	<listitem>
+	  <para>
+	    Processed image - image with astrometry etc..
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
     <title>RTS2 STATES</title>
 
     <refsect2>
@@ -176,7 +228,11 @@
       <title>ON</title>
     </refsect2>
 
-    <para>ON and STANDBY states can have following substates. They are changed during day by rts2-centrald (1).</para>
+    <para>
+      ON and STANDBY states can have following substates. They are changed
+      during day by rts2-centrald (1).
+    </para>
+
     <variablelist>
       <varlistentry>
 	<term>

@@ -204,7 +204,7 @@
 	  <option>f</option>
         </term>
         <listitem>
-          <para>Standard filename (same as %y%m%d%H%M%S-%s.fits).</para>
+          <para>Standard filename (same as %y%m%d%H%M%S-%s-%p.fits).</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -237,6 +237,17 @@
         </term>
         <listitem>
           <para>Observation ID.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>p</option>
+        </term>
+        <listitem>
+          <para>
+	    Processing state of image. See list of procesing state strings in
+	    rts2 (1), in "IMAGE PROCESSING STATES" section.
+          </para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -353,6 +364,14 @@
 	    <para>Epoch id. Epochs are used to divide observatory data to packages which can be easily backed on tapes/DVDs.</para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>epoch_id</option>
+	  </term>
+	  <listitem>
+	    <para>Epoch id. Epochs are used to divide observatory data to packages which can be easily backed on tapes/DVDs.</para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>
@@ -365,6 +384,64 @@
 	  </term>
 	  <listitem>
 	    <para>If set to true, centrald will switch it's state to OFF each morning.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>imgproc</title>
+      <para>This sections describes various image processing scripts.</para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>astrometry</option>
+	  </term>
+	  <listitem>
+	    <para>This script is called on all taked object image (not twilight flats, not darks).</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>astrometry_timeout</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Timeout in seconds for astrometry script. If it's greater then 0,
+	      alarm with exit handling is issued at forked instance, before
+	      astrometry script is started.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>imageglob</option>
+	  </term>
+	  <listitem>
+	    <para>Path to images, which will be feed to imgproc during day.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>obsprocess</option>
+	  </term>
+	  <listitem>
+	    <para>Script for observation processing. That one is called at end of the observing sequence.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>darkprocess</option>
+	  </term>
+	  <listitem>
+	    <para>Dark processing script, creates master dark from callibration darks.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>flatprocess</option>
+	  </term>
+	  <listitem>
+	    <para>Flat processing script, creates master flat from twilight flats.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
@@ -448,7 +525,7 @@
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (1).</para>
+    <para>rts2 (1), rts2.script (5).</para>
 
   </refsect1>
   <refsect1>

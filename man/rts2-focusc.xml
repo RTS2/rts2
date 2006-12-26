@@ -68,14 +68,6 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-h</option>
-          <option>--help</option>
-        </term>
-        <listitem>
-          <para>Show summary of options.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
         <term><option>-V</option>
           <option>--version</option>
         </term>
