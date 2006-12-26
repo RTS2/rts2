@@ -44,6 +44,7 @@ private:
     return TJD + 2440000.5 + SOD / 86400.0;
   }
   // process various messages..
+  int pr_test ();
   int pr_imalive ();
   int pr_swift_point ();	// swift pointing.
   int pr_integral_point ();	// integral pointing

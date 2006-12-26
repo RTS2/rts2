@@ -29,6 +29,18 @@ Rts2ConnGrb::getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long * use
 }
 
 int
+Rts2ConnGrb::pr_test ()
+{
+  logStream (MESSAGE_INFO) << "Test GCN notice Trig#: " << (lbuf[BURST_TRIG])
+    << " TJD: " << (lbuf[BURST_TJD])
+    << " RA: " << (lbuf[BURST_RA] / 10000.0)
+    << " DEC: " << (lbuf[BURST_DEC] / 10000.0)
+    << " Error: " << (lbuf[BURST_ERROR])
+    << sendLog;
+  return 0;
+}
+
+int
 Rts2ConnGrb::pr_imalive ()
 {
   deltaValue = here_sod - getPktSod ();
@@ -1193,6 +1205,9 @@ Rts2ConnGrb::receive (fd_set *set)
     // switch based on packet content
     switch (lbuf[PKT_TYPE])
     {
+      case TYPE_TEST_COORDS:
+        pr_test ();
+        break;
       case TYPE_IM_ALIVE:
         pr_imalive ();
         break;
