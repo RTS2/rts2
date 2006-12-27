@@ -69,7 +69,7 @@ Rts2AppDb (in_argc, in_argv)
 	     "disable given targets (they will not be picked up by selector");
   addOption ('p', "priority", 1, "set target (fixed) priority");
   addOption ('b', "bonus", 1, "set target bonus to this value");
-  addOption ('B', "bonus_time", 1, "set target bonus time to this value");
+  addOption ('t', "bonus_time", 1, "set target bonus time to this value");
   addOption ('o', "nextobs", 0, "clear next observable flag");
   addOption ('c', "camera", 1, "next script will be set for given camera");
   addOption ('s', "script", 1, "set script for target and camera");
@@ -105,7 +105,7 @@ Rts2TargetApp::processOption (int in_opt)
       new_bonus = atof (optarg);
       op |= OP_BONUS;
       break;
-    case 'B':
+    case 't':
       ret = Rts2App::parseDate (optarg, &tm_ret);
       if (ret)
 	return ret;
