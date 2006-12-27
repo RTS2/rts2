@@ -788,10 +788,6 @@ CalibrationTarget::load ()
 	    fallback_obs_calib = calib;
 	    fallback_last_image = (time_t) d_airmass_last_image;
 	  }
-	  else
-	  {
-	    bad_list.push_back (calib);
-	  }
 	}
 	else
 	{
