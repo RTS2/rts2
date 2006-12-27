@@ -948,8 +948,10 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	      if (!ret)
 		{
 		  numCorr++;
+		  double tar_ra = lastTar.ra;
+		  double tar_dec = lastTar.dec;
 		  unsetTarget ();
-		  ret = startMove (conn, lastTar.ra, lastTar.dec);
+		  ret = startMove (conn, tar_ra, tar_dec);
 		}
 	    }
 	  else
@@ -960,6 +962,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	      if (!ret)
 		{
 		  numCorr++;
+		  lastRa = realPos->ra;
+		  lastDec = realPos->dec;
 		  ret = startResyncMove (conn, lastTar.ra, lastTar.dec);
 		}
 	    }
