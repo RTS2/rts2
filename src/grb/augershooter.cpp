@@ -12,7 +12,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 {
   shootercnn = NULL;
   port = 1240;
-  addOption ('S', "shooter_port", 1,
+  addOption ('s', "shooter_port", 1,
 	     "port on which to listen for auger connection");
 }
 
@@ -25,7 +25,7 @@ Rts2DevAugerShooter::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'S':
+    case 's':
       port = atoi (optarg);
       break;
     default:
