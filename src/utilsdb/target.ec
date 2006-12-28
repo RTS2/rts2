@@ -966,7 +966,7 @@ Target::selectedAsGood ()
     tar_enabled,
     tar_priority,
     tar_bonus,
-    tar_next_observable
+    EXTRACT (EPOCH FROM tar_next_observable)
   INTO
     :d_tar_enabled,
     :d_tar_priority :d_tar_priority_ind,
