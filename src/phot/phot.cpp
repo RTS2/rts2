@@ -95,8 +95,6 @@ Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device):R
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
-  char *states_names[1] = { "phot" };
-  setStateNames (1, states_names);
   filter = 0;
 
   req_count = -1;
@@ -107,7 +105,7 @@ void
 Rts2DevPhot::checkFilterMove ()
 {
   long ret;
-  if ((getState (0) & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
+  if ((getState () & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
     {
       ret = isFilterMoving ();
       if (ret > 0)
@@ -158,7 +156,7 @@ Rts2DevPhot::idle ()
 }
 
 Rts2DevConn *
-Rts2DevPhot::createConnection (int in_sock, int conn_num)
+Rts2DevPhot::createConnection (int in_sock)
 {
   return new Rts2DevConnPhot (in_sock, this);
 }
@@ -172,7 +170,7 @@ Rts2DevPhot::homeFilter ()
 int
 Rts2DevPhot::startFilterMove (int new_filter)
 {
-  maskState (0, PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
+  maskState (PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
   return 0;
 }
 
@@ -186,7 +184,7 @@ int
 Rts2DevPhot::endFilterMove ()
 {
   infoAll ();
-  maskState (0, PHOT_MASK_FILTER, PHOT_FILTER_IDLE);
+  maskState (PHOT_MASK_FILTER, PHOT_FILTER_IDLE);
   return 0;
 }
 
@@ -209,15 +207,14 @@ Rts2DevPhot::startIntegrate (Rts2Conn * conn, float in_req_time,
       conn->sendCommandEnd (DEVDEM_E_HW, "cannot start integration");
       return -1;
     }
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "integration started");
+  maskState (PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "integration started");
   return 0;
 }
 
 int
 Rts2DevPhot::endIntegrate ()
 {
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-	     "integration finished");
+  maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "integration finished");
   // keep us update in old time
   startIntegrate ();
   req_count = -1;
@@ -227,7 +224,7 @@ Rts2DevPhot::endIntegrate ()
 int
 Rts2DevPhot::stopIntegrate ()
 {
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
+  maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 	     "Integration interrupted");
   startIntegrate ();
   return 0;
@@ -329,14 +326,7 @@ Rts2DevPhot::sendCount (int count, float exp, int is_ov)
   char *msg;
   int ret;
   asprintf (&msg, "%i %f %i", count, exp, is_ov);
-  for (int i = 1; i < MAX_CONN; i++)
-    {
-      Rts2Conn *conn = connections[i];
-      if (conn)
-	{
-	  conn->sendValue ("count", msg);
-	}
-    }
+  sendValueAll ("count", msg);
   if (req_count > 0)
     req_count--;
   if (req_count == 0)

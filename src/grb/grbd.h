@@ -30,7 +30,7 @@ public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();
   virtual int init ();
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual int ready ()
   {

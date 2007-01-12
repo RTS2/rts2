@@ -140,7 +140,7 @@ Rts2DevPhotOptec::getCount ()
 	    {
 	    case '0':
 	      filter = result[1] / FILTER_STEP;
-	      if ((getState (0) & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
+	      if ((getState () & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
 		endFilterMove ();
 	      break;
 	    case '-':

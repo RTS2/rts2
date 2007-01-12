@@ -38,7 +38,7 @@ protected:
 public:
     Rts2DevFocuser (int argc, char **argv);
   virtual int processOption (int in_opt);
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
 
   // callback functions
   virtual int ready ()

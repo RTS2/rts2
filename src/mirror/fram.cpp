@@ -236,7 +236,7 @@ Rts2DevMirrorFram::mirror_set ()
       move = steps;
     }
 
-  if ((getState (0) & MIRROR_MASK) == MIRROR_A_B)
+  if ((getState () & MIRROR_MASK) == MIRROR_A_B)
     {
       cmd = CMD_MIRROR_PLUS;
       new_pos = mpos + move;

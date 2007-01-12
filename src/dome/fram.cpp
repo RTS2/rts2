@@ -175,7 +175,7 @@ private:
 
   int isOn (int c_port);
   const char *isOnString (int c_port);
-  int handle_zasuvky (int state);
+  int handle_zasuvky (int zas);
 
   /**
    * 
@@ -1030,23 +1030,9 @@ Rts2DevDomeFram::init ()
 	return ret;
     }
 
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      if (!connections[i])
-	{
-	  weatherConn =
-	    new Rts2ConnFramWeather (5002, FRAM_WEATHER_TIMEOUT, this);
-	  weatherConn->init ();
-	  connections[i] = weatherConn;
-	  break;
-	}
-    }
-  if (i == MAX_CONN)
-    {
-      logStream (MESSAGE_ERROR) << "no free conn for Rts2ConnFramWeather" <<
-	sendLog;
-      return -1;
-    }
+  weatherConn = new Rts2ConnFramWeather (5002, FRAM_WEATHER_TIMEOUT, this);
+  weatherConn->init ();
+  addConnection (weatherConn);
 
   return 0;
 }
@@ -1061,7 +1047,7 @@ Rts2DevDomeFram::idle ()
   if (isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
+	  && ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open
@@ -1118,13 +1104,13 @@ Rts2DevDomeFram::~Rts2DevDomeFram (void)
 }
 
 int
-Rts2DevDomeFram::handle_zasuvky (int state)
+Rts2DevDomeFram::handle_zasuvky (int zas)
 {
   int i;
   for (i = 0; i < NUM_ZAS; i++)
     {
       int zasuvka_num = zasuvky_index[i];
-      if (zasuvky_stavy[state][i] == ZAS_VYP)
+      if (zasuvky_stavy[zas][i] == ZAS_VYP)
 	{
 	  vypni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
 	}
@@ -1187,7 +1173,7 @@ int
 Rts2DevDomeFram::observing ()
 {
   //handle_zasuvky (OBSERVING);
-  if ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED)
+  if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
     return openDome ();
   return 0;
 }

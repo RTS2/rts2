@@ -47,7 +47,7 @@ Rts2DevCupola::init ()
 }
 
 Rts2DevConn *
-Rts2DevCupola::createConnection (int in_sock, int conn_num)
+Rts2DevCupola::createConnection (int in_sock)
 {
   return new Rts2DevConnCupola (in_sock, this);
 }
@@ -56,7 +56,7 @@ int
 Rts2DevCupola::idle ()
 {
   long ret;
-  if ((getState (0) & DOME_COP_MASK_MOVE) == DOME_COP_MOVE)
+  if ((getState () & DOME_COP_MASK_MOVE) == DOME_COP_MOVE)
     {
       ret = isMoving ();
       if (ret >= 0)
@@ -112,21 +112,21 @@ Rts2DevCupola::moveTo (Rts2Conn * conn, double ra, double dec)
   ret = moveStart ();
   if (ret)
     return ret;
-  maskState (0, DOME_COP_MASK_SYNC, DOME_COP_NOT_SYNC);
+  maskState (DOME_COP_MASK_SYNC, DOME_COP_NOT_SYNC);
   return 0;
 }
 
 int
 Rts2DevCupola::moveStart ()
 {
-  maskState (0, DOME_COP_MASK_MOVE, DOME_COP_MOVE);
+  maskState (DOME_COP_MASK_MOVE, DOME_COP_MOVE);
   return 0;
 }
 
 int
 Rts2DevCupola::moveStop ()
 {
-  maskState (0, DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
+  maskState (DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
   infoAll ();
   return 0;
 }
@@ -135,13 +135,13 @@ void
 Rts2DevCupola::synced ()
 {
   infoAll ();
-  maskState (0, DOME_COP_MASK_SYNC, DOME_COP_SYNC);
+  maskState (DOME_COP_MASK_SYNC, DOME_COP_SYNC);
 }
 
 int
 Rts2DevCupola::moveEnd ()
 {
-  maskState (0, DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
+  maskState (DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
   infoAll ();
   return 0;
 }
@@ -176,7 +176,7 @@ Rts2DevCupola::needSplitChange ()
     targetDistance = (targetDistance + 360);
   if (fabs (targetDistance) < splitWidth)
     {
-      if ((getState (0) & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
+      if ((getState () & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
 	synced ();
       return Rts2DevDome::info ();
     }

@@ -178,7 +178,7 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
     }
   if (cam != NULL)
     {
-      int status = getStatus (0);
+      int status = getStatus ();
       cam->name = getName ();
       cam->exposure = getValueDouble ("exposure");
       cam->focpos = getValueInteger ("focpos");

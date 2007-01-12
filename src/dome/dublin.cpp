@@ -180,26 +180,13 @@ Rts2DevDomeDublin::init ()
 // SWITCH ON INTERFACE
   outb (1, BASE + 1);
 
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      if (!connections[i])
-	{
-	  weatherConn =
-	    new Rts2ConnBufWeather (5002, WATCHER_METEO_TIMEOUT,
-				    WATCHER_CONN_TIMEOUT,
-				    WATCHER_BAD_WEATHER_TIMEOUT,
-				    WATCHER_BAD_WINDSPEED_TIMEOUT, this);
-	  weatherConn->init ();
-	  connections[i] = weatherConn;
-	  break;
-	}
-    }
-  if (i == MAX_CONN)
-    {
-      logStream (MESSAGE_ERROR) << "no free conn for Rts2ConnFramWeather" <<
-	sendLog;
-      return -1;
-    }
+  weatherConn =
+    new Rts2ConnBufWeather (5002, WATCHER_METEO_TIMEOUT,
+			    WATCHER_CONN_TIMEOUT,
+			    WATCHER_BAD_WEATHER_TIMEOUT,
+			    WATCHER_BAD_WINDSPEED_TIMEOUT, this);
+  weatherConn->init ();
+  addConnection (weatherConn);
 
   return 0;
 }
@@ -211,7 +198,7 @@ Rts2DevDomeDublin::idle ()
   if (isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
+	  && ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open
@@ -261,12 +248,14 @@ Rts2DevDomeDublin::info ()
   return Rts2DevDome::info ();
 }
 
-bool
-Rts2DevDomeDublin::isMoving ()
+bool Rts2DevDomeDublin::isMoving ()
 {
-  int result;
-  int moving = 0;
-  int count;
+  int
+    result;
+  int
+    moving = 0;
+  int
+    count;
   for (count = 0; count < 100; count++)
     {
       result = (inb (BASE + 2));

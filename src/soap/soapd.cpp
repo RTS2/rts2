@@ -159,9 +159,7 @@ Rts2Soapd::init ()
   ret - s_conn->init ();
   if (ret)
     return -1;
-  ret = addConnection (s_conn);
-  if (ret)
-    return -1;
+  addConnection (s_conn);
 
   return 0;
 }

@@ -403,7 +403,7 @@ Rts2DevDomeIR::closeRight ()
 int
 Rts2DevDomeIR::observing ()
 {
-  if ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED)
+  if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
     return openDome ();
   return 0;
 }

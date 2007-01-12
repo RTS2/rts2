@@ -424,10 +424,8 @@ Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
   int i;
-  char *states_names[MAX_CHIPS] = { "img_chip", "trc_chip", "intr_chip" };
   for (i = 0; i < MAX_CHIPS; i++)
     chips[i] = NULL;
-  setStateNames (MAX_CHIPS, states_names);
   tempAir = nan ("f");
   tempCCD = nan ("f");
   tempSet = nan ("f");
@@ -604,7 +602,7 @@ Rts2DevCamera::initChips ()
 }
 
 Rts2DevConn *
-Rts2DevCamera::createConnection (int in_sock, int conn_num)
+Rts2DevCamera::createConnection (int in_sock)
 {
   return new Rts2DevConnCamera (in_sock, this);
 }
@@ -615,7 +613,7 @@ Rts2DevCamera::checkExposures ()
   long ret;
   for (int i = 0; i < chipNum; i++)
     {
-      if (getState (i) & CAM_EXPOSING)
+      if (getStateChip (i) & CAM_EXPOSING)
 	{
 	  // try to end exposure
 	  ret = camWaitExpose (i);
@@ -631,16 +629,18 @@ Rts2DevCamera::checkExposures ()
 	    }
 	  if (ret == -2)
 	    {
-	      maskState (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-			 CAM_NOEXPOSURE | CAM_DATA, "exposure chip finished");
+	      maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+			     CAM_NOEXPOSURE | CAM_DATA,
+			     "exposure chip finished");
 	      chips[i]->endExposure ();
 	    }
 	  if (ret == -1)
 	    {
-	      maskState (i,
-			 DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_DATA,
-			 DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NODATA,
-			 "exposure chip finished with error");
+	      maskStateChip (i,
+			     DEVICE_ERROR_MASK | CAM_MASK_EXPOSE |
+			     CAM_MASK_DATA,
+			     DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NODATA,
+			     "exposure chip finished with error");
 	      chips[i]->stopExposure ();
 	    }
 	}
@@ -653,7 +653,7 @@ Rts2DevCamera::checkReadouts ()
   int ret;
   for (int i = 0; i < chipNum; i++)
     {
-      if ((getState (i) & CAM_MASK_READING) != CAM_READING)
+      if ((getStateChip (i) & CAM_MASK_READING) != CAM_READING)
 	continue;
       ret = chips[i]->readoutOneLine ();
       if (ret >= 0)
@@ -665,12 +665,12 @@ Rts2DevCamera::checkReadouts ()
 	  chips[i]->endReadout ();
 	  afterReadout ();
 	  if (ret == -2)
-	    maskState (i, CAM_MASK_READING, CAM_NOTREADING,
-		       "chip readout ended");
+	    maskStateChip (i, CAM_MASK_READING, CAM_NOTREADING,
+			   "chip readout ended");
 	  else
-	    maskState (i, DEVICE_ERROR_MASK | CAM_MASK_READING,
-		       DEVICE_ERROR_HW | CAM_NOTREADING,
-		       "chip readout ended with error");
+	    maskStateChip (i, DEVICE_ERROR_MASK | CAM_MASK_READING,
+			   DEVICE_ERROR_HW | CAM_NOTREADING,
+			   "chip readout ended with error");
 	}
     }
 }
@@ -801,8 +801,8 @@ Rts2DevCamera::camStartExposure (int chip, int light, float exptime)
 
   lastExp = exptime;
   infoAll ();
-  maskState (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-	     CAM_EXPOSING | CAM_NODATA, "exposure chip started");
+  maskStateChip (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
   chips[chip]->setExposure (exptime,
 			    light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
   lastFilterNum = getFilterNum ();
@@ -853,7 +853,8 @@ Rts2DevCamera::camStopExpose (Rts2Conn * conn, int chip)
 {
   if (chips[chip]->isExposing () >= 0)
     {
-      maskState (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE, "exposure canceled");
+      maskStateChip (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+		     "exposure canceled");
       chips[chip]->endExposure ();
       return camStopExpose (chip);
     }
@@ -887,15 +888,15 @@ int
 Rts2DevCamera::camReadout (int chip)
 {
   int ret;
-  maskState (chip, CAM_MASK_READING | CAM_MASK_DATA, CAM_READING | CAM_NODATA,
-	     "chip readout started");
+  maskStateChip (chip, CAM_MASK_READING | CAM_MASK_DATA,
+		 CAM_READING | CAM_NODATA, "chip readout started");
   ret = chips[chip]->startReadout (NULL, NULL);
   if (!ret)
     {
       return 0;
     }
-  maskState (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
-	     DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
+  maskStateChip (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
+		 DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
   return -1;
 }
 
@@ -903,7 +904,6 @@ int
 Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 {
   int ret;
-  int i;
   // open data connection - wait socket
 
   Rts2DevConnData *data_conn;
@@ -911,24 +911,7 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 
   ret = data_conn->init ();
   // add data connection
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      if (!connections[i])
-	{
-	  logStream (MESSAGE_DEBUG) << "Camera camReadout add data " << i <<
-	    " data_conn" << sendLog;
-	  connections[i] = data_conn;
-	  break;
-	}
-    }
-
-  if (i == MAX_CONN)
-    {
-      delete data_conn;
-      conn->sendCommandEnd (DEVDEM_E_SYSTEM,
-			    "cannot create data connection for readout");
-      return -1;
-    }
+  addConnection (data_conn);
 
   struct sockaddr_in our_addr;
 
@@ -941,15 +924,15 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 
   data_conn->setAddress (&our_addr.sin_addr);
 
-  maskState (chip, CAM_MASK_READING | CAM_MASK_DATA, CAM_READING | CAM_NODATA,
-	     "chip readout started");
+  maskStateChip (chip, CAM_MASK_READING | CAM_MASK_DATA,
+		 CAM_READING | CAM_NODATA, "chip readout started");
   ret = chips[chip]->startReadout (data_conn, conn);
   if (!ret)
     {
       return 0;
     }
-  maskState (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
-	     DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
+  maskStateChip (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
+		 DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
   conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
   return -1;
 }
@@ -1046,6 +1029,20 @@ Rts2DevCamera::camFilter (int new_filter)
 }
 
 int
+Rts2DevCamera::getStateChip (int chip_num)
+{
+  return (getState () & (CAM_MASK_CHIP << (chip_num * 4))) >> (chip_num * 4);
+}
+
+void
+Rts2DevCamera::maskStateChip (int chip_num, int state_mask, int new_state,
+			      char *description)
+{
+  maskState (state_mask << (4 * chip_num), new_state << (4 * chip_num),
+	     description);
+}
+
+int
 Rts2DevCamera::camFilter (Rts2Conn * conn, int new_filter)
 {
   int ret;
@@ -1056,7 +1053,7 @@ Rts2DevCamera::camFilter (Rts2Conn * conn, int new_filter)
     }
   for (int i = 0; i < chipNum; i++)
     {
-      if (getState (i) & CAM_EXPOSING)
+      if (getStateChip (i) & CAM_EXPOSING)
 	{
 	  // que filter change after exposure ends..
 	  exposureFilter = new_filter;
@@ -1152,14 +1149,14 @@ Rts2DevCamera::startFocus (Rts2Conn * conn)
     }
   focusExposure = defFocusExposure;
   // idle routine will check for that..
-  maskState (0, CAM_MASK_FOCUSING, CAM_FOCUSING);
+  maskState (CAM_MASK_FOCUSING, CAM_FOCUSING);
   return 0;
 }
 
 int
 Rts2DevCamera::endFocusing ()
 {
-  maskState (0, CAM_MASK_FOCUSING, CAM_NOFOCUSING);
+  maskState (CAM_MASK_FOCUSING, CAM_NOFOCUSING);
   // to reset binnings etc..
   scriptEnds ();
   return 0;
@@ -1183,16 +1180,18 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
-  return ((getState (0) &
+  return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
-  return ((getState (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
+  return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
 
 Rts2DevConnCamera::Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device):

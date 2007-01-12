@@ -131,7 +131,7 @@ private:
   };
 
   int isOn (int c_port);
-  int handle_zasuvky (int state);
+  int handle_zasuvky (int zas);
 
   char *cloud_dev;
   int cloud_port;
@@ -524,26 +524,13 @@ Rts2DevDomeBart::init ()
   if (ignoreMeteo)
     return 0;
 
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      if (!connections[i])
-	{
-	  weatherConn =
-	    new Rts2ConnBufWeather (1500, BART_WEATHER_TIMEOUT,
-				    BART_CONN_TIMEOUT,
-				    BART_BAD_WEATHER_TIMEOUT,
-				    BART_BAD_WINDSPEED_TIMEOUT, this);
-	  weatherConn->init ();
-	  connections[i] = weatherConn;
-	  break;
-	}
-    }
-  if (i == MAX_CONN)
-    {
-      logStream (MESSAGE_ERROR) << "no free conn for Rts2ConnBufWeather" <<
-	sendLog;
-      return -1;
-    }
+  weatherConn =
+    new Rts2ConnBufWeather (1500, BART_WEATHER_TIMEOUT,
+			    BART_CONN_TIMEOUT,
+			    BART_BAD_WEATHER_TIMEOUT,
+			    BART_BAD_WINDSPEED_TIMEOUT, this);
+  weatherConn->init ();
+  addConnection (weatherConn);
 
   return 0;
 }
@@ -556,7 +543,7 @@ Rts2DevDomeBart::idle ()
   if (isGoodWeather ())
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
+	  && ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open
@@ -579,13 +566,13 @@ Rts2DevDomeBart::idle ()
 }
 
 int
-Rts2DevDomeBart::handle_zasuvky (int state)
+Rts2DevDomeBart::handle_zasuvky (int zas)
 {
   int i;
   for (i = 0; i < NUM_ZAS; i++)
     {
       int zasuvka_num = zasuvky_index[i];
-      if (zasuvky_stavy[state][i] == ZAS_VYP)
+      if (zasuvky_stavy[zas][i] == ZAS_VYP)
 	{
 	  zapni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
 	}

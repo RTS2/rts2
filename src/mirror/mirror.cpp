@@ -10,8 +10,6 @@
 Rts2DevMirror::Rts2DevMirror (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MIRROR, "M0")
 {
-  char *states_names[1] = { "mirror" };
-  setStateNames (1, states_names);
 }
 
 Rts2DevMirror::~Rts2DevMirror (void)
@@ -30,7 +28,7 @@ Rts2DevMirror::idle ()
 {
   int ret;
   ret = Rts2Device::idle ();
-  switch (getState (0) & MIRROR_MASK)
+  switch (getState () & MIRROR_MASK)
     {
     case MIRROR_A_B:
       ret = isOpened ();
@@ -51,7 +49,7 @@ Rts2DevMirror::idle ()
 }
 
 Rts2DevConn *
-Rts2DevMirror::createConnection (int in_sock, int conn_num)
+Rts2DevMirror::createConnection (int in_sock)
 {
   return new Rts2DevConnMirror (in_sock, this);
 }
@@ -114,7 +112,7 @@ Rts2DevConnMirror::commandAuthorized ()
 	  (strcasecmp (str_dir, "A") && strcasecmp (str_dir, "B")))
 	return -2;
       if (!strcasecmp (str_dir, "A"))
-	if ((master->getState (0) & MIRROR_MASK) != MIRROR_A)
+	if ((master->getState () & MIRROR_MASK) != MIRROR_A)
 	  {
 	    return master->startClose (this);
 	  }
@@ -124,7 +122,7 @@ Rts2DevConnMirror::commandAuthorized ()
 	    return -1;
 	  }
       else if (!strcasecmp (str_dir, "B"))
-	if ((master->getState (0) & MIRROR_MASK) != MIRROR_B)
+	if ((master->getState () & MIRROR_MASK) != MIRROR_B)
 	  {
 	    return master->startOpen (this);
 	  }

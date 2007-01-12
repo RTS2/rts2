@@ -192,12 +192,7 @@ Rts2DevDomeDcm::init ()
   weatherConn = new Rts2ConnDcm (dcm_weather_port, this);
   weatherConn->init ();
 
-  ret = addConnection (weatherConn);
-  if (ret)
-    {
-      delete weatherConn;
-      return -1;
-    }
+  addConnection (weatherConn);
 
   return 0;
 }

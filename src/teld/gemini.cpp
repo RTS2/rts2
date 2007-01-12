@@ -1231,7 +1231,7 @@ Rts2DevTelescopeGemini::idle ()
     }
   infoCount++;
   if (telMotorState == TEL_OK
-      && ((ret && (getState (0) & TEL_MASK_MOVING) == TEL_MASK_MOVING)
+      && ((ret && (getState () & TEL_MASK_MOVING) == TEL_MASK_MOVING)
 	  || (lastMotorState & 16)))
     {
       stopMove ();
@@ -1263,7 +1263,7 @@ Rts2DevTelescopeGemini::idle ()
 		case -2:
 		  // parked, let's move us to location where we belong
 		  forcedReparking = 0;
-		  if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
+		  if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 		    {
 		      // not ideal; lastMoveRa contains (possibly corrected) move values
 		      // but we don't care much about that as we have reparked..
@@ -1854,7 +1854,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 	      fixed_ha = tar_ha;
 	      lastMoveDec += dec_diff;
 	      // move_fixed = 0;        // we are performing change, not moveFixed
-	      maskState (0, TEL_MASK_MOVING, TEL_MOVING, "change started");
+	      maskState (TEL_MASK_MOVING, TEL_MOVING, "change started");
 	      return ret;
 	    }
 	}
@@ -1879,7 +1879,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 	  fixed_ha = tar_ha;
 	  lastMoveDec += dec_diff;
 	  // move_fixed = 0;    // we are performing change, not moveFixed
-	  maskState (0, TEL_MASK_MOVING, TEL_MOVING, "change started");
+	  maskState (TEL_MASK_MOVING, TEL_MOVING, "change started");
 	  return Rts2DevTelescope::startMoveFixed (tar_ha, tar_dec);
 	}
     }
@@ -2250,11 +2250,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;

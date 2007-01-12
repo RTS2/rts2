@@ -201,7 +201,7 @@ Rts2DevGrb::init ()
 }
 
 Rts2DevConn *
-Rts2DevGrb::createConnection (int in_sock, int conn_num)
+Rts2DevGrb::createConnection (int in_sock)
 {
   return new Rts2DevConnGrbd (in_sock, this);
 }

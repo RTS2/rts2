@@ -31,7 +31,7 @@ public:
   }
   virtual int idle ();
 
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual int deleteConnection (Rts2Conn * conn)
   {

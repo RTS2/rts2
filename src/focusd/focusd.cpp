@@ -23,9 +23,6 @@
 Rts2DevFocuser::Rts2DevFocuser (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
-  char *states_names[1] = { "focuser" };
-  setStateNames (1, states_names);
-
   focCamera[0] = '\0';
   focStepSec = 100;
   homePos = 750;
@@ -62,7 +59,7 @@ Rts2DevFocuser::processOption (int in_opt)
 }
 
 Rts2DevConn *
-Rts2DevFocuser::createConnection (int in_sock, int conn_num)
+Rts2DevFocuser::createConnection (int in_sock)
 {
   return new Rts2DevConnFocuser (in_sock, this);
 }
@@ -70,7 +67,7 @@ Rts2DevFocuser::createConnection (int in_sock, int conn_num)
 void
 Rts2DevFocuser::checkState ()
 {
-  if ((getState (0) & FOC_MASK_FOCUSING) == FOC_FOCUSING)
+  if ((getState () & FOC_MASK_FOCUSING) == FOC_FOCUSING)
     {
       int ret;
       ret = isFocusing ();
@@ -83,11 +80,11 @@ Rts2DevFocuser::checkState ()
 	  infoAll ();
 	  setTimeout (USEC_SEC);
 	  if (ret)
-	    maskState (0, DEVICE_ERROR_MASK | FOC_MASK_FOCUSING,
+	    maskState (DEVICE_ERROR_MASK | FOC_MASK_FOCUSING,
 		       DEVICE_ERROR_HW | FOC_SLEEPING,
 		       "focusing finished with error");
 	  else
-	    maskState (0, FOC_MASK_FOCUSING, FOC_SLEEPING,
+	    maskState (FOC_MASK_FOCUSING, FOC_SLEEPING,
 		       "focusing finished without errror");
 	}
     }
@@ -175,7 +172,7 @@ Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
     }
   else
     {
-      maskState (0, FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
+      maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
     }
   return ret;
 }
@@ -188,7 +185,7 @@ Rts2DevFocuser::setTo (Rts2Conn * conn, int num)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
   else
-    maskState (0, FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
+    maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
   return ret;
 }
 
@@ -200,7 +197,7 @@ Rts2DevFocuser::home (Rts2Conn * conn)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot home focuser");
   else
-    maskState (0, FOC_MASK_FOCUSING, FOC_FOCUSING, "homing started");
+    maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "homing started");
   return ret;
 }
 
@@ -209,7 +206,7 @@ Rts2DevFocuser::autoFocus (Rts2Conn * conn)
 {
   /* ask for priority */
 
-  maskState (0, FOC_MASK_FOCUSING, FOC_FOCUSING, "autofocus started");
+  maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "autofocus started");
 
   // command ("priority 50");
 
@@ -245,8 +242,7 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-bool
-Rts2DevFocuser::isAtStartPosition ()
+bool Rts2DevFocuser::isAtStartPosition ()
 {
   return false;
 }

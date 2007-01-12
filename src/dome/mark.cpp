@@ -92,14 +92,13 @@ public:
   }
 };
 
-uint16_t Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
+uint16_t
+Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
-  uint16_t
-    ret = 0xffff;
+  uint16_t ret = 0xffff;
   for (int l = 0; l < msgLen; l++)
     {
-      char
-	znakp = msgBuf[l];
+      char znakp = msgBuf[l];
       for (int i = 0; i < 8; i++)
 	{
 	  if ((ret ^ znakp) & 0x01)
@@ -287,12 +286,7 @@ Rts2DevCupolaMark::init ()
   weatherConn = new Rts2ConnFramWeather (weatherPort, 20, this);
   weatherConn->init ();
 
-  ret = addConnection (weatherConn);
-  if (ret)
-    {
-      delete weatherConn;
-      return -1;
-    }
+  addConnection (weatherConn);
 
   setTimeout (USEC_SEC);
 
@@ -312,7 +306,7 @@ Rts2DevCupolaMark::idle ()
 #endif
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-	  && ((getState (0) & DOME_DOME_MASK) == DOME_CLOSED))
+	  && ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
 	{
 	  // after centrald reply, that he switched the state, dome will
 	  // open

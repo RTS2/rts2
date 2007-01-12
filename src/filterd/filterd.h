@@ -27,7 +27,7 @@ public:
     Rts2DevFilterd (int in_argc, char **in_argv);
     virtual ~ Rts2DevFilterd (void);
 
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual int info ();
 

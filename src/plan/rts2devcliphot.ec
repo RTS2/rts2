@@ -52,7 +52,7 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
   double d_count_dec;
   VARCHAR d_counter_name[8];
   EXEC SQL END DECLARE SECTION;
-  if ((connection->getState (0) & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
+  if ((connection->getState () & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
     {
       // we are in searching mode..
       if (waitScript == WAIT_SEARCH)
@@ -178,7 +178,7 @@ Rts2DevClientPhotExec::nextCommand ()
 void
 Rts2DevClientPhotExec::filterMoveEnd ()
 {
-  if ((connection->getState (0) & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
+  if ((connection->getState () & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
     nextCommand ();
 }
 

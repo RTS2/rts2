@@ -3,8 +3,6 @@
 Rts2DevFilterd::Rts2DevFilterd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
-  char *states_names[1] = { "filter" };
-  setStateNames (1, states_names);
   filter = -1;
   filterType = NULL;
   serialNumber = NULL;
@@ -15,7 +13,7 @@ Rts2DevFilterd::~Rts2DevFilterd (void)
 }
 
 Rts2DevConn *
-Rts2DevFilterd::createConnection (int in_sock, int conn_num)
+Rts2DevFilterd::createConnection (int in_sock)
 {
   return new Rts2DevConnFilter (in_sock, this);
 }
@@ -64,16 +62,16 @@ int
 Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
 {
   int ret;
-  maskState (0, FILTERD_MASK, FILTERD_MOVE, "filter move started");
+  maskState (FILTERD_MASK, FILTERD_MOVE, "filter move started");
   ret = setFilterNum (new_filter);
   Rts2Device::infoAll ();
   if (ret == -1)
     {
-      maskState (0, DEVICE_ERROR_MASK | FILTERD_MASK,
+      maskState (DEVICE_ERROR_MASK | FILTERD_MASK,
 		 DEVICE_ERROR_HW | FILTERD_IDLE);
       conn->sendCommandEnd (DEVDEM_E_HW, "filter set failed");
     }
-  maskState (0, FILTERD_MASK, FILTERD_IDLE);
+  maskState (FILTERD_MASK, FILTERD_IDLE);
   return ret;
 }
 

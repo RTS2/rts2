@@ -16,11 +16,11 @@ public:
   virtual int init ();
   virtual int idle ();
 
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual int startOpen ()
   {
-    return maskState (0, MIRROR_MASK, MIRROR_A_B, "moving A->B");
+    return maskState (MIRROR_MASK, MIRROR_A_B, "moving A->B");
   }
   virtual int isOpened ()
   {
@@ -28,12 +28,12 @@ public:
   }
   virtual int endOpen ()
   {
-    return maskState (0, MIRROR_MASK, MIRROR_B, "moved A->B");
+    return maskState (MIRROR_MASK, MIRROR_B, "moved A->B");
   }
 
   virtual int startClose ()
   {
-    return maskState (0, MIRROR_MASK, MIRROR_B_A, "moving B->A");
+    return maskState (MIRROR_MASK, MIRROR_B_A, "moving B->A");
   }
   virtual int isClosed ()
   {
@@ -41,14 +41,14 @@ public:
   }
   virtual int endClose ()
   {
-    return maskState (0, MIRROR_MASK, MIRROR_A, "moved B->A");
+    return maskState (MIRROR_MASK, MIRROR_A, "moved B->A");
   }
 
   // return 1, when mirror is (still) moving
   virtual int isMoving ()
   {
-    return ((getState (0) & MIRROR_MASK) == MIRROR_A_B
-	    || (getState (0) & MIRROR_MASK) == MIRROR_B_A);
+    return ((getState () & MIRROR_MASK) == MIRROR_A_B
+	    || (getState () & MIRROR_MASK) == MIRROR_B_A);
   }
 
   virtual int ready ()

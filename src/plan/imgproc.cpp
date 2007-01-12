@@ -47,7 +47,7 @@ protected:
 public:
     Rts2ImageProc (int argc, char **argv);
     virtual ~ Rts2ImageProc (void);
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual void postEvent (Rts2Event * event);
   virtual int idle ();
@@ -151,7 +151,7 @@ Rts2ImageProc::~Rts2ImageProc (void)
 }
 
 Rts2DevConn *
-Rts2ImageProc::createConnection (int in_sock, int conn_num)
+Rts2ImageProc::createConnection (int in_sock)
 {
   return new Rts2DevConnImage (in_sock, this);
 }

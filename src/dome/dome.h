@@ -43,12 +43,12 @@ public:
   Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
   virtual int openDome ()
   {
-    maskState (0, DOME_DOME_MASK, DOME_OPENING, "opening dome");
+    maskState (DOME_DOME_MASK, DOME_OPENING, "opening dome");
     return 0;
   }
   virtual int endOpen ()
   {
-    maskState (0, DOME_DOME_MASK, DOME_OPENED, "dome opened");
+    maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened");
     return 0;
   };
   virtual long isOpened ()
@@ -58,12 +58,12 @@ public:
   int closeDomeWeather ();
   virtual int closeDome ()
   {
-    maskState (0, DOME_DOME_MASK, DOME_CLOSING, "closing dome");
+    maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
     return 0;
   };
   virtual int endClose ()
   {
-    maskState (0, DOME_DOME_MASK, DOME_CLOSED, "dome closed");
+    maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed");
     return 0;
   };
   virtual long isClosed ()
@@ -72,7 +72,7 @@ public:
   };
   int checkOpening ();
   virtual int init ();
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
   virtual int idle ();
 
   // callback function from dome connection

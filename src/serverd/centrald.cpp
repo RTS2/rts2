@@ -49,6 +49,8 @@ private:
   int morning_standby;
 
   int reloadConfig ();
+
+  int connNum;
 protected:
   int changeState (int new_state);
   int idle ();
@@ -93,8 +95,9 @@ public:
     return priority_client;
   }
 
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2Conn *createConnection (int in_sock);
   void connAdded (Rts2ConnCentrald * added);
+  Rts2Conn *getConnection (int conn_num);
 
   void sendMessage (messageType_t in_messageType,
 		    const char *in_messageString);
@@ -112,8 +115,7 @@ class Rts2ConnCentrald:public Rts2Conn
 {
 private:
   int authorized;
-  char status_txt[MAX_STATUS_TXT];
-  char login[MAX_STATUS_TXT];
+  char login[CLIENT_LOGIN_SIZE];
   Rts2Centrald *master;
   char hostname[HOST_NAME_MAX];
   int port;
@@ -231,18 +233,15 @@ Rts2ConnCentrald::sendMessage (Rts2Message & msg)
 int
 Rts2ConnCentrald::sendInfo ()
 {
-  int i;
-
   if (!paramEnd ())
     return -2;
 
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = master->connections.begin ();
+       iter != master->connections.end (); iter++)
     {
-      Rts2Conn *conn = master->connections[i];
-      if (conn)
-	{
-	  conn->sendInfo (this);
-	}
+      Rts2Conn *conn = *iter;
+      conn->sendInfo (this);
     }
   return 0;
 }
@@ -256,10 +255,9 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
   switch (getType ())
     {
     case CLIENT_SERVER:
-      asprintf (&msg, "user %i %i %c %s %s",
+      asprintf (&msg, "user %i %i %c %s",
 		getCentraldId (),
-		getPriority (),
-		havePriority ()? '*' : '-', login, status_txt);
+		getPriority (), havePriority ()? '*' : '-', login);
       ret = conn->send (msg);
       free (msg);
       break;
@@ -286,16 +284,18 @@ Rts2ConnCentrald::commandDevice ()
 	  || paramNextInteger (&dev_key) || !paramEnd ())
 	return -2;
 
-      if (client >= MAX_CONN || client < 0)
+      if (client < 0)
 	{
 	  return -2;
 	}
 
-      // client wanished when we processed data..
-      if (master->connections[client] == NULL)
+      Rts2Conn *conn = master->getConnection (client);
+
+      // client vanished when we processed data..
+      if (conn == NULL)
 	return -1;
 
-      if (master->connections[client]->getKey () == 0)
+      if (conn->getKey () == 0)
 	{
 	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM,
@@ -303,7 +303,7 @@ Rts2ConnCentrald::commandDevice ()
 	  return -1;
 	}
 
-      if (master->connections[client]->getKey () != dev_key)
+      if (conn->getKey () != dev_key)
 	{
 	  sendAValue ("authorization_failed", client);
 	  sendCommandEnd (DEVDEM_E_SYSTEM, "invalid authorization key");
@@ -353,10 +353,7 @@ Rts2ConnCentrald::sendStatusInfo ()
   char *msg;
   int ret;
 
-  ret = send ("I status_num 1");
-  if (ret)
-    return ret;
-  asprintf (&msg, "I status 0 %s %i", SERVER_STATUS, master->getState ());
+  asprintf (&msg, PROTO_INFO " %i", master->getState ());
   ret = send (msg);
   free (msg);
   return ret;
@@ -367,7 +364,7 @@ Rts2ConnCentrald::sendAValue (char *val_name, int value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "A %s %i", val_name, value);
+  asprintf (&msg, PROTO_AUTH " %s %i", val_name, value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -409,15 +406,6 @@ Rts2ConnCentrald::commandClient ()
       if (isCommand ("info"))
 	{
 	  return sendInfo ();
-	}
-      if (isCommand ("status_txt"))
-	{
-	  char *new_st;
-	  if (paramNextString (&new_st) || !paramEnd ())
-	    return -1;
-	  strncpy (status_txt, new_st, MAX_STATUS_TXT - 1);
-	  status_txt[MAX_STATUS_TXT - 1] = 0;
-	  return 0;
 	}
       if (isCommand ("priority") || isCommand ("prioritydeferred"))
 	{
@@ -548,6 +536,8 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   Rts2Config *
     config = Rts2Config::instance ();
 
+  connNum = 0;
+
   current_state =
     config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
 
@@ -605,21 +595,36 @@ Rts2Centrald::init ()
 }
 
 Rts2Conn *
-Rts2Centrald::createConnection (int in_sock, int conn_num)
+Rts2Centrald::createConnection (int in_sock)
 {
-  return new Rts2ConnCentrald (in_sock, this, conn_num);
+  connNum++;
+  while (getConnection (connNum))
+    connNum++;
+  return new Rts2ConnCentrald (in_sock, this, connNum);
 }
 
 void
 Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 {
-  for (int i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
-	added->sendInfo (conn);
+      Rts2Conn *conn = *iter;
+      added->sendInfo (conn);
     }
+}
+
+Rts2Conn *
+Rts2Centrald::getConnection (int conn_num)
+{
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
+    {
+      Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
+      if (conn->getCentraldId () == conn_num)
+	return conn;
+    }
+  return NULL;
 }
 
 /*!
@@ -629,7 +634,7 @@ int
 Rts2Centrald::changeState (int new_state)
 {
   current_state = new_state;
-  return sendStatusMessage (SERVER_STATUS, current_state);
+  return sendStatusMessage (current_state);
 }
 
 /*!
@@ -645,36 +650,36 @@ Rts2Centrald::changePriority (time_t timeout)
 {
   int new_priority_client = -1;
   int new_priority_max = 0;
-  int i;
+  std::list < Rts2Conn * >::iterator iter;
+  Rts2Conn *conn = getConnection (priority_client);
 
-  if (priority_client >= 0 && connections[priority_client])	// old priority client
+  if (priority_client >= 0 && conn)	// old priority client
     {
       new_priority_client = priority_client;
-      new_priority_max = connections[priority_client]->getPriority ();
+      new_priority_max = conn->getPriority ();
     }
   // find new client with highest priority
-  for (i = 0; i < MAX_CONN; i++)
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn = connections[i];
-      if (conn)
-	logStream (MESSAGE_DEBUG) << "Rts2Centrald::changePriority priorit: "
-	  << i << ", " << conn->getPriority () << sendLog;
-      if (conn && conn->getPriority () > new_priority_max)
+      conn = *iter;
+      if (conn->getPriority () > new_priority_max)
 	{
-	  new_priority_client = i;
+	  new_priority_client = conn->getCentraldId ();
 	  new_priority_max = conn->getPriority ();
 	}
     }
 
   if (priority_client != new_priority_client)
     {
-      if (priority_client >= 0 && connections[priority_client])
-	connections[priority_client]->setHavePriority (0);
+      conn = getConnection (priority_client);
+      if (priority_client >= 0 && conn)
+	conn->setHavePriority (0);
 
       priority_client = new_priority_client;
 
-      if (priority_client >= 0 && connections[priority_client])
-	connections[priority_client]->setHavePriority (1);
+      conn = getConnection (priority_client);
+      if (priority_client >= 0 && conn)
+	conn->setHavePriority (1);
     }
   return sendPriorityChange (priority_client, timeout);
 }
@@ -712,7 +717,7 @@ Rts2Centrald::idle ()
 	}
       if (current_state != old_current_state)
 	{
-	  sendStatusMessage (SERVER_STATUS, current_state);
+	  sendStatusMessage (current_state);
 	}
     }
   return Rts2Daemon::idle ();

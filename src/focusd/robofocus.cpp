@@ -275,9 +275,9 @@ Rts2DevFocuserRobofocus::info ()
   getPos (&focPos);
   getTemp (&focTemp);
   // querry for switch state 
-  int state = getSwitchState ();
-  if (state >= 0)
-    focSwitches = state;
+  int swstate = getSwitchState ();
+  if (swstate >= 0)
+    focSwitches = swstate;
   return Rts2DevFocuser::info ();
 }
 
@@ -368,12 +368,12 @@ Rts2DevFocuserRobofocus::setSwitch (int switch_num, int new_state)
   char command_buffer[9] = "FP001111";
   if (switch_num >= switchNum)
     return -1;
-  int state = getSwitchState ();
-  if (state < 0)
+  int swstate = getSwitchState ();
+  if (swstate < 0)
     return -1;
   for (int i = 0; i < switchNum; i++)
     {
-      if (state & (1 << i))
+      if (swstate & (1 << i))
 	command_buffer[i + 4] = '2';
     }
   command_buffer[switch_num + 4] = (new_state == 1 ? '2' : '1');

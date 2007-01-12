@@ -920,7 +920,7 @@ Rts2DevTelParamount::idle ()
       return Rts2Device::idle ();
     }
   // issue new track request..if needed and we aren't homing
-  if ((getState (0) & TEL_MASK_MOVING) == TEL_OBSERVING
+  if ((getState () & TEL_MASK_MOVING) == TEL_OBSERVING
       && !(status0 & MOTOR_HOMING) && !(status0 & MOTOR_SLEWING)
       && !(status1 & MOTOR_HOMING) && !(status1 & MOTOR_SLEWING))
     {

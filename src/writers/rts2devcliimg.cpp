@@ -446,7 +446,7 @@ Rts2DevClientMirrorImage::postEvent (Rts2Event * event)
       char *mirrVal;
       asprintf (&mirrVal, "MIR_%s", connection->getName ());
       image = (Rts2Image *) event->getArg ();
-      image->setValue (mirrVal, connection->getState (0), "mirror status");
+      image->setValue (mirrVal, connection->getState (), "mirror status");
       free (mirrVal);
       break;
     }

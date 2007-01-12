@@ -104,13 +104,20 @@ public:
     return ret;
   }
 
-  virtual int setState (char *in_state_name, int in_value)
+  virtual int setState (int in_value)
   {
     int ret;
-    ret = Rts2ConnClient::setState (in_state_name, in_value);
+    ret = Rts2ConnClient::setState (in_value);
     print ();
     update_panels ();
     return ret;
+  }
+
+  virtual void priorityChanged ()
+  {
+    Rts2ConnClient::priorityChanged ();
+    print ();
+    update_panels ();
   }
 };
 
@@ -143,18 +150,10 @@ public:
 int
 MonWindow::printStatus (WINDOW * window, Rts2Conn * connection)
 {
-  int nrow;
-  nrow = statusBegin;
-  for (int i = 0; i < MAX_STATE; i++)
-    {
-      Rts2ServerState *state = connection->getStateObject (i);
-      if (state)
-	{
-	  mvwprintw (window, nrow, 0, "%10s: %-5i", state->name,
-		     state->getValue ());
-	  nrow++;
-	}
-    }
+  Rts2ServerState *state = connection->getStateObject ();
+  mvwprintw (window, statusBegin, 0, "Status: %-5i", state->getValue ());
+  mvwprintw (window, statusBegin + 1, 0, "Priority: %s",
+	     connection->havePriority ()? "yes" : "no");
   return 0;
 }
 
@@ -281,7 +280,7 @@ Rts2NMTelescope::printOneLine (WINDOW * wnd)
 	     "Ra %07.3f Dec %+06.3f Flip %c Alt %f Az %f Status %i",
 	     getValueDouble ("ra_tel"), getValueDouble ("dec_tel"),
 	     getValueInteger ("flip") ? 'f' : 'n', hrz.alt, hrz.az,
-	     getStatus (0));
+	     getStatus ());
 }
 
 class Rts2NMCamera:public Rts2DevClientCamera, public MonWindow
@@ -337,7 +336,7 @@ Rts2NMCamera::printOneLine (WINDOW * wnd)
 	     "Exp: %.2f CCD %+05.1f oC Air %+05.1f oC Set %+05.1f Status ",
 	     getValueDouble ("exposure"), getValueDouble ("ccd_temperature"),
 	     getValueDouble ("air_temperature"),
-	     getValueDouble ("temperature_setpoint"), getStatus (0));
+	     getValueDouble ("temperature_setpoint"), getStatus ());
 }
 
 class Rts2NMFocus:public Rts2DevClientFocus, public MonWindow
@@ -419,7 +418,7 @@ void
 Rts2NMPhot::printOneLine (WINDOW * wnd)
 {
   mvwprintw (wnd, 0, 0, "Cnt %i (%0.3f) Fil %i Status %i",
-	     lastCount, lastExp, getValueInteger ("filter"), getStatus (0));
+	     lastCount, lastExp, getValueInteger ("filter"), getStatus ());
 }
 
 class Rts2NMFilter:public Rts2DevClientFilter, public MonWindow
@@ -454,7 +453,7 @@ void
 Rts2NMFilter::printOneLine (WINDOW * wnd)
 {
   mvwprintw (wnd, 0, 0, "Fil %i Status %i",
-	     getValueInteger ("filter"), getStatus (0));
+	     getValueInteger ("filter"), getStatus ());
 }
 
 class Rts2NMMirror:public Rts2DevClientMirror, public MonWindow
@@ -484,7 +483,7 @@ Rts2NMMirror::print (WINDOW * wnd)
 void
 Rts2NMMirror::printOneLine (WINDOW * wnd)
 {
-  mvwprintw (wnd, 0, 0, "Status %i", getStatus (0));
+  mvwprintw (wnd, 0, 0, "Status %i", getStatus ());
 }
 
 
@@ -646,7 +645,7 @@ Rts2NMDome::printOneLine (WINDOW * wnd)
 	     "Temp %+2.2f oC Humi %2.2f Dew %+2.2f oC Wind %4.1f Rain %i Open sw %c %c Close sw %c %c Status %i",
 	     temp, humi, dew, getValueDouble ("windspeed"),
 	     getValueInteger ("rain"), is_on (0), is_on (1), is_on (2),
-	     is_on (3), getStatus (0));
+	     is_on (3), getStatus ());
 #undef is_on
 }
 
@@ -723,7 +722,7 @@ Rts2NMCopula::printOneLine (WINDOW * wnd)
 	     "Az %06.2f Temp %+2.2f oC Humi %2.2f Dew %+2.2f oC Wind %4.1f Rain %i Open sw %c %c Close sw %c %c Status %i",
 	     getValueDouble ("az"), temp, humi, dew,
 	     getValueDouble ("windspeed"), getValueInteger ("rain"),
-	     is_on (0), is_on (1), is_on (2), is_on (3), getStatus (0));
+	     is_on (0), is_on (1), is_on (2), is_on (3), getStatus ());
 #undef is_on
 }
 
@@ -766,7 +765,7 @@ Rts2NMExecutor::printOneLine (WINDOW * wnd)
   mvwprintw (wnd, 0, 0, "Cur %i (%i) Next %i Prio %i ObsI %i Status %i",
 	     getValueInteger ("current"), getValueInteger ("current_sel"),
 	     getValueInteger ("next"), getValueInteger ("priority_target"),
-	     getValueInteger ("obsid"), getStatus (0));
+	     getValueInteger ("obsid"), getStatus ());
 }
 
 class Rts2NMSelector:public Rts2DevClientSelector, public MonWindow
@@ -796,7 +795,7 @@ Rts2NMSelector::print (WINDOW * wnd)
 void
 Rts2NMSelector::printOneLine (WINDOW * wnd)
 {
-  mvwprintw (wnd, 0, 0, "Status %i", getStatus (0));
+  mvwprintw (wnd, 0, 0, "Status %i", getStatus ());
 }
 
 class Rts2NMImgproc:public Rts2DevClientImgproc, public MonWindow

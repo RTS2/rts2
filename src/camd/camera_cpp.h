@@ -227,6 +227,10 @@ private:
   double defaultSubExposure;
   double subExposure;
 
+  int getStateChip (int chip_num);
+  void maskStateChip (int chip_num, int state_mask, int new_state,
+		      char *description);
+
 protected:
   int willConnect (Rts2Address * in_addr);
   char *device_file;
@@ -268,7 +272,7 @@ public:
 
   virtual int processOption (int in_opt);
   virtual int initChips ();
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
   void checkExposures ();
   void checkReadouts ();
 

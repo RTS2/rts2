@@ -7,9 +7,6 @@
 Rts2DevDome::Rts2DevDome (int in_argc, char **in_argv, int in_device_type):
 Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
-  char *states_names[1] = { "dome" };
-  setStateNames (1, states_names);
-
   sw_state = -1;
   temperature = nan ("f");
   humidity = nan ("f");
@@ -88,7 +85,7 @@ Rts2DevDome::init ()
 }
 
 Rts2DevConn *
-Rts2DevDome::createConnection (int in_sock, int conn_num)
+Rts2DevDome::createConnection (int in_sock)
 {
   return new Rts2DevConnDome (in_sock, this);
 }
@@ -96,7 +93,7 @@ Rts2DevDome::createConnection (int in_sock, int conn_num)
 int
 Rts2DevDome::checkOpening ()
 {
-  if ((getState (0) & DOME_DOME_MASK) == DOME_OPENING)
+  if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
     {
       long ret;
       ret = isOpened ();
@@ -110,7 +107,7 @@ Rts2DevDome::checkOpening ()
 	{
 	  endOpen ();
 	  infoAll ();
-	  maskState (0, DOME_DOME_MASK, DOME_OPENED,
+	  maskState (DOME_DOME_MASK, DOME_OPENED,
 		     "opening finished with error");
 	}
       if (ret == -2)
@@ -119,16 +116,16 @@ Rts2DevDome::checkOpening ()
 	  infoAll ();
 	  if (ret)
 	    {
-	      maskState (0, DOME_DOME_MASK, DOME_OPENED,
+	      maskState (DOME_DOME_MASK, DOME_OPENED,
 			 "dome opened with error");
 	    }
 	  else
 	    {
-	      maskState (0, DOME_DOME_MASK, DOME_OPENED, "dome opened");
+	      maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened");
 	    }
 	}
     }
-  else if ((getState (0) & DOME_DOME_MASK) == DOME_CLOSING)
+  else if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
     {
       long ret;
       ret = isClosed ();
@@ -141,7 +138,7 @@ Rts2DevDome::checkOpening ()
 	{
 	  endClose ();
 	  infoAll ();
-	  maskState (0, DOME_DOME_MASK, DOME_CLOSED,
+	  maskState (DOME_DOME_MASK, DOME_CLOSED,
 		     "closing finished with error");
 	}
       if (ret == -2)
@@ -150,18 +147,18 @@ Rts2DevDome::checkOpening ()
 	  infoAll ();
 	  if (ret)
 	    {
-	      maskState (0, DOME_DOME_MASK, DOME_CLOSED,
+	      maskState (DOME_DOME_MASK, DOME_CLOSED,
 			 "dome closed with error");
 	    }
 	  else
 	    {
-	      maskState (0, DOME_DOME_MASK, DOME_CLOSED, "dome closed");
+	      maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed");
 	    }
 	}
     }
   // if we are back in idle state..beware of copula state (bit non-structural, but I 
   // cannot find better solution)
-  if ((getState (0) & DOME_COP_MASK_MOVE) == DOME_COP_NOT_MOVE)
+  if ((getState () & DOME_COP_MASK_MOVE) == DOME_COP_NOT_MOVE)
     setTimeout (10 * USEC_SEC);
   return 0;
 }
@@ -214,7 +211,7 @@ int
 Rts2DevDome::observing ()
 {
   observingPossible = 1;
-  if ((getState (0) & DOME_DOME_MASK) != DOME_OPENED)
+  if ((getState () & DOME_DOME_MASK) != DOME_OPENED)
     return openDome ();
   return 0;
 }
@@ -223,7 +220,7 @@ int
 Rts2DevDome::standby ()
 {
   ignoreMeteo = false;
-  if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
+  if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
 }
@@ -232,7 +229,7 @@ int
 Rts2DevDome::off ()
 {
   ignoreMeteo = false;
-  if ((getState (0) & DOME_DOME_MASK) != DOME_CLOSED)
+  if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
 }

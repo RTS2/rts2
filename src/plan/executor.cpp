@@ -52,7 +52,7 @@ public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
   virtual int init ();
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
 
@@ -85,7 +85,7 @@ public:
 
   int end ()
   {
-    maskState (0, EXEC_MASK_END, EXEC_END);
+    maskState (EXEC_MASK_END, EXEC_END);
     return 0;
   }
 
@@ -146,11 +146,9 @@ Rts2ConnExecutor::Rts2ConnExecutor (int in_sock, Rts2Executor * in_master):Rts2D
 Rts2Executor::Rts2Executor (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
-  char *states_names[1] = { "executor" };
   currentTarget = NULL;
   nextTarget = NULL;
   priorityTarget = NULL;
-  setStateNames (1, states_names);
   scriptCount = -1;
 
   addOption ('I', "ignore_day", 0, "observe even during daytime");
@@ -214,7 +212,7 @@ Rts2Executor::init ()
 }
 
 Rts2DevConn *
-Rts2Executor::createConnection (int in_sock, int conn_num)
+Rts2Executor::createConnection (int in_sock)
 {
   return new Rts2ConnExecutor (in_sock, this);
 }
@@ -257,25 +255,25 @@ Rts2Executor::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_SLEW_TO_TARGET:
-      maskState (0, EXEC_STATE_MASK, EXEC_MOVE);
+      maskState (EXEC_STATE_MASK, EXEC_MOVE);
       break;
     case EVENT_OBSERVE:
       // we can get EVENT_OBSERVE in case of continues observation
     case EVENT_SCRIPT_STARTED:
-      maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
+      maskState (EXEC_STATE_MASK, EXEC_OBSERVE);
       break;
     case EVENT_ACQUIRE_START:
-      maskState (0, EXEC_STATE_MASK, EXEC_ACQUIRE);
+      maskState (EXEC_STATE_MASK, EXEC_ACQUIRE);
       break;
     case EVENT_ACQUIRE_WAIT:
-      maskState (0, EXEC_STATE_MASK, EXEC_ACQUIRE_WAIT);
+      maskState (EXEC_STATE_MASK, EXEC_ACQUIRE_WAIT);
       break;
     case EVENT_ACQUSITION_END:
       // we receive event before any connection - connections
       // receive it from Rts2Device.
       // So we can safely change target status here, and it will
       // propagate to devices connections
-      maskState (0, EXEC_STATE_MASK, EXEC_OBSERVE);
+      maskState (EXEC_STATE_MASK, EXEC_OBSERVE);
       switch (*(int *) event->getArg ())
 	{
 	case NEXT_COMMAND_PRECISION_OK:
@@ -285,13 +283,13 @@ Rts2Executor::postEvent (Rts2Event * event)
 		currentTarget->getObsTargetID () << sendLog;
 	      currentTarget->acqusitionEnd ();
 	    }
-	  maskState (0, EXEC_MASK_ACQ, EXEC_ACQ_OK);
+	  maskState (EXEC_MASK_ACQ, EXEC_ACQ_OK);
 	  break;
 	case -5:
 	case NEXT_COMMAND_PRECISION_FAILED:
 	  if (currentTarget)
 	    currentTarget->acqusitionFailed ();
-	  maskState (0, EXEC_MASK_ACQ, EXEC_ACQ_FAILED);
+	  maskState (EXEC_MASK_ACQ, EXEC_ACQ_FAILED);
 	  break;
 	}
       break;
@@ -299,7 +297,7 @@ Rts2Executor::postEvent (Rts2Event * event)
       updateScriptCount ();
       // that was last script running
       if (scriptCount == 0)
-	maskState (0, EXEC_STATE_MASK, EXEC_LASTREAD);
+	maskState (EXEC_STATE_MASK, EXEC_LASTREAD);
       break;
     case EVENT_SCRIPT_ENDED:
       updateScriptCount ();
@@ -307,7 +305,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 	{
 	  if (scriptCount == 0 && currentTarget->observationStarted ())
 	    {
-	      maskState (0, EXEC_STATE_MASK, EXEC_IDLE);
+	      maskState (EXEC_STATE_MASK, EXEC_IDLE);
 	      switchTarget ();
 	    }
 	  // scriptCount is not 0, but we hit continues target..
@@ -317,7 +315,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 		       currentTarget->getTargetID ()))
 	    {
 	      // wait, if we are in stop..don't que it again..
-	      if ((getState (0) & EXEC_MASK_END) != EXEC_END)
+	      if ((getState () & EXEC_MASK_END) != EXEC_END)
 		event->setArg ((void *) currentTarget);
 	      // that will eventually hit devclient which post that message, which
 	      // will set currentTarget to this value and handle it same way as EVENT_OBSERVE,
@@ -445,9 +443,9 @@ Rts2Executor::changeMasterState (int new_state)
     case SERVERD_NIGHT:
     case SERVERD_DUSK:
       // unblock stop state
-      if ((getState (0) & EXEC_MASK_END) == EXEC_END)
+      if ((getState () & EXEC_MASK_END) == EXEC_END)
 	{
-	  maskState (0, EXEC_MASK_END, EXEC_NOT_END);
+	  maskState (EXEC_MASK_END, EXEC_NOT_END);
 	}
       if (!currentTarget && nextTarget)
 	{
@@ -729,9 +727,9 @@ Rts2Executor::doSwitch ()
 void
 Rts2Executor::switchTarget ()
 {
-  if ((getState (0) & EXEC_MASK_END) == EXEC_END)
+  if ((getState () & EXEC_MASK_END) == EXEC_END)
     {
-      maskState (0, EXEC_MASK_END, EXEC_NOT_END);
+      maskState (EXEC_MASK_END, EXEC_NOT_END);
       postEvent (new Rts2Event (EVENT_KILL_ALL));
       if (currentTarget)
 	{

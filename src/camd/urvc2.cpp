@@ -314,7 +314,7 @@ Rts2DevCameraUrvc2::set_fan (int fan_state)
 
 int
 Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int in_fan,
-			     int state)
+			     int coolstate)
 {
   MicroTemperatureRegulationParams cool;
 
@@ -326,7 +326,7 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int in_fan,
 
   if (MicroCommand (MC_REGULATE_TEMP, cameraID, &cool, NULL))
     return -1;
-  tempRegulation = state;
+  tempRegulation = coolstate;
 
   return 0;
 }

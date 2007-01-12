@@ -119,7 +119,7 @@ protected:
   virtual int processOption (int in_opt);
   virtual void cancelPriorityOperations ()
   {
-    if ((getState (0) & TEL_MASK_SEARCHING) == TEL_SEARCH)
+    if ((getState () & TEL_MASK_SEARCHING) == TEL_SEARCH)
       {
 	stopSearch ();
       }
@@ -178,13 +178,13 @@ protected:
 
   void needStop ()
   {
-    maskState (0, TEL_MASK_NEED_STOP, TEL_NEED_STOP);
+    maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP);
   }
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual ~ Rts2DevTelescope (void);
   virtual int init ();
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+  virtual Rts2DevConn *createConnection (int in_sock);
   virtual int idle ();
   virtual void postEvent (Rts2Event * event);
   virtual int changeMasterState (int new_state);

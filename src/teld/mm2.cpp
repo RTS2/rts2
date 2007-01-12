@@ -678,7 +678,7 @@ Rts2DevTelescopeMM2::init ()
   if (status)
     return -1;
   move_fixed = 0;
-  maskState (0, TEL_MASK_MOVING, TEL_PARKING, "initial parking started");
+  maskState (TEL_MASK_MOVING, TEL_PARKING, "initial parking started");
   return 0;
 }
 
@@ -732,7 +732,7 @@ Rts2DevTelescopeMM2::idle ()
 	      if (ret == 0)
 		{
 		  move_state = MOVE_CLOSE_HOME;
-		  maskState (0, TEL_MASK_MOVING, TEL_MOVING,
+		  maskState (TEL_MASK_MOVING, TEL_MOVING,
 			     "forced move to avoid pilar crash");
 		}
 	    }

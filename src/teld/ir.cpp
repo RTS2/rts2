@@ -275,7 +275,7 @@ Rts2TelescopeIr::addError (int in_error)
 	  unsetTarget ();
 	}
     }
-  if ((getState (0) & TEL_MASK_MOVING) != TEL_PARKING)
+  if ((getState () & TEL_MASK_MOVING) != TEL_PARKING)
     {
       if (errNum == 58 || errNum == 59 || errNum == 90 || errNum == 91)
 	{
