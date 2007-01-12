@@ -391,7 +391,7 @@ Rts2DevClientTelescopeExec::syncTarget ()
     case OBS_MOVE_FIXED:
       currentTarget->moveStarted ();
       logStream (MESSAGE_DEBUG)
-	<< "Rts2DevClientCameraExec::syncTarget ha "
+	<< "Rts2DevClientTelescopeExec::syncTarget ha "
 	<< coord.ra << " dec " << coord.dec
 	<< " oha " << fixedOffset.ra << " odec " << fixedOffset.
 	dec << sendLog;
