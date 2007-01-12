@@ -215,7 +215,8 @@ Rts2Client::init ()
       std::cerr << "Trying to contact centrald\n";
       sleep (10);
     }
-  return addConnection (central_conn);
+  addConnection (central_conn);
+  return 0;
 }
 
 void
@@ -347,13 +348,8 @@ Rts2ConnCentraldClient::command ()
 int
 Rts2ConnCentraldClient::informations ()
 {
-  char *i_name;
-  int status_num;
-  char *state_name;
   int state_value;
-  if (paramNextString (&i_name) || paramNextInteger (&status_num)
-      || paramNextString (&state_name) || paramNextInteger (&state_value)
-      || !paramEnd ())
+  if (paramNextInteger (&state_value) || !paramEnd ())
     return 0;
   return master->setMasterState (state_value);
 }
@@ -361,9 +357,8 @@ Rts2ConnCentraldClient::informations ()
 int
 Rts2ConnCentraldClient::status ()
 {
-  char *msg;
   int new_state;
-  if (paramNextString (&msg) || paramNextInteger (&new_state) || !paramEnd ())
+  if (paramNextInteger (&new_state) || !paramEnd ())
     return -1;
   return master->setMasterState (new_state);
 }

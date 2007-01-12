@@ -16,7 +16,7 @@ private:
   enum
   { DONT_DEAMONIZE, DO_DEAMONIZE, IS_DEAMONIZED, CENTRALD_OK } daemonize;
   int listen_sock;
-  int addConnection (int in_sock);
+  void addConnectionSock (int in_sock);
   int lockf;
 protected:
   int checkLockFile (const char *lock_fname);
@@ -32,10 +32,6 @@ public:
   void initDaemon ();
   virtual int run ();
   virtual void forkedInstance ();
-  int addConnection (Rts2Conn * conn)
-  {
-    return Rts2Block::addConnection (conn);
-  }
   virtual void sendMessage (messageType_t in_messageType,
 			    const char *in_messageString);
   virtual void centraldConnRunning ();

@@ -28,12 +28,11 @@
 #define PROTO_DATA		"D"
 #define PROTO_AUTH		"A"
 #define PROTO_PRIORITY		"P"
+#define PROTO_PRIORITY_INFO	"Q"
 #define PROTO_INFO		"I"
 #define PROTO_STATUS		"S"
 #define PROTO_TECHNICAL		"T"
 #define PROTO_MESSAGE		"M"
-
-#define MAX_CONN		20
 
 #define USEC_SEC		1000000
 
@@ -77,14 +76,14 @@ protected:
   virtual void selectSuccess (fd_set * read_set);
   void setMessageMask (int new_mask);
 public:
-    Rts2Conn * connections[MAX_CONN];
+    std::list < Rts2Conn * >connections;
 
     Rts2Block (int in_argc, char **in_argv);
     virtual ~ Rts2Block (void);
   void setPort (int in_port);
   int getPort (void);
 
-  int addConnection (Rts2Conn * conn);
+  void addConnection (Rts2Conn * conn);
 
   virtual void postEvent (Rts2Event * event);
 
@@ -92,13 +91,14 @@ public:
    * Used to create new connection - so childrens can
    * create childrens of Rts2Conn
    */
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
+  virtual Rts2Conn *createConnection (int in_sock);
   Rts2Conn *addDataConnection (Rts2Conn * in_conn, char *in_hostname,
 			       int in_port, int in_size);
   Rts2Conn *findName (const char *in_name);
   Rts2Conn *findCentralId (int in_id);
-  virtual int sendStatusMessage (char *state_name, int state);
+  virtual int sendStatusMessage (int state);
   int sendAll (char *msg);
+  void sendValueAll (char *val_name, char *value);
   int sendPriorityChange (int p_client, int timeout);
   // only used in centrald!
   void sendMessageAll (Rts2Message & msg);
@@ -149,7 +149,7 @@ public:
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
   void addUser (int p_centraldId, int p_priority, char p_priority_have,
-		const char *p_login, const char *p_status_txt);
+		const char *p_login);
   int addUser (Rts2User * in_user);
 
   /***************************************************************

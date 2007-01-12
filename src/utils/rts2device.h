@@ -116,25 +116,19 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
 class Rts2State
 {
   int state;
-  char *state_name;
   Rts2Device *master;
 public:
-    Rts2State (Rts2Device * in_master, char *in_state_name)
+    Rts2State (Rts2Device * in_master)
   {
-    int len;
-      master = in_master;
-      len = strlen (in_state_name) + 1;
-      state_name = (char *) malloc (len);
-      strncpy (state_name, in_state_name, len);
-      state = 0;
+    master = in_master;
+    state = 0;
   };
   virtual ~ Rts2State (void)
   {
-    free (state_name);
   }
   void setState (int new_state, char *description);
   void maskState (int state_mask, int new_state, char *description);
-  int sendInfo (Rts2Conn * conn, int state_num);
+  int sendInfo (Rts2Conn * conn);
   int getState ()
   {
     return state;
@@ -144,8 +138,7 @@ public:
 class Rts2Device:public Rts2Daemon
 {
 private:
-  int statesSize;
-  Rts2State **states;
+  Rts2State * state;
   Rts2DevConnMaster *conn_master;
   char *centrald_host;
   int centrald_port;
@@ -165,14 +158,13 @@ private:
   char *mailAddress;
 
 protected:
-  void setStateNames (int in_states_size, char **states_names);
   /**
    * Process on option, when received from getopt () call.
    * 
    * @param in_opt  return value of getopt
    * @return 0 on success, -1 if option wasn't processed
    */
-  virtual int processOption (int in_opt);
+    virtual int processOption (int in_opt);
   void clearStatesPriority ();
 
   virtual Rts2Conn *createClientConnection (char *in_deviceName);
@@ -181,13 +173,12 @@ public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
 		char *default_name);
     virtual ~ Rts2Device (void);
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
-  int changeState (int state_num, int new_state, char *description);
-  int maskState (int state_num, int state_mask, int new_state,
-		 char *description = NULL);
-  int getState (int state_num)
+  virtual Rts2DevConn *createConnection (int in_sock);
+  int changeState (int new_state, char *description);
+  int maskState (int state_mask, int new_state, char *description = NULL);
+  int getState ()
   {
-    return states[state_num]->getState ();
+    return state->getState ();
   };
   virtual int init ();
   virtual int idle ();

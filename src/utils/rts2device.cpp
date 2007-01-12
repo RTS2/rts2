@@ -221,14 +221,6 @@ Rts2DevConn::setHavePriority (int in_have_priority)
   if (havePriority () != in_have_priority)
     {
       Rts2Conn::setHavePriority (in_have_priority);
-      if (havePriority ())
-	{
-	  send ("S priority 1 priority received");
-	}
-      else
-	{
-	  send ("S priority 0 priority lost");
-	}
     }
 }
 
@@ -499,13 +491,8 @@ Rts2DevConnMaster::priorityChange ()
 int
 Rts2DevConnMaster::informations ()
 {
-  char *i_name;
-  int status_num;
-  char *state_name;
   int state_value;
-  if (paramNextString (&i_name) || paramNextInteger (&status_num)
-      || paramNextString (&state_name) || paramNextInteger (&state_value)
-      || !paramEnd ())
+  if (paramNextInteger (&state_value) || !paramEnd ())
     return -1;
   return master->setMasterState (state_value);
 }
@@ -513,9 +500,8 @@ Rts2DevConnMaster::informations ()
 int
 Rts2DevConnMaster::status ()
 {
-  char *msg;
   int new_state;
-  if (paramNextString (&msg) || paramNextInteger (&new_state) || !paramEnd ())
+  if (paramNextInteger (&new_state) || !paramEnd ())
     return -1;
   return master->setMasterState (new_state);
 }
@@ -601,7 +587,7 @@ Rts2State::setState (int new_state, char *description)
       return;
     }
   state = new_state;
-  master->sendStatusMessage (state_name, state);
+  master->sendStatusMessage (state);
 };
 
 void
@@ -615,11 +601,11 @@ Rts2State::maskState (int state_mask, int new_state, char *description)
 }
 
 int
-Rts2State::sendInfo (Rts2Conn * conn, int state_num)
+Rts2State::sendInfo (Rts2Conn * conn)
 {
   int ret;
   char *msg;
-  asprintf (&msg, "I status %i %s %i", state_num, state_name, state);
+  asprintf (&msg, PROTO_INFO " %i", state);
   ret = conn->send (msg);
   free (msg);
   return ret;
@@ -636,8 +622,7 @@ Rts2Daemon (in_argc, in_argv)
   centrald_port = 617;
   log_option = 0;
 
-  statesSize = 0;
-  states = NULL;
+  state = new Rts2State (this);
 
   device_type = in_device_type;
 
@@ -662,39 +647,14 @@ Rts2Daemon (in_argc, in_argv)
 
 Rts2Device::~Rts2Device (void)
 {
-  int i;
-
-  for (i = 0; i < statesSize; i++)
-    delete states[i];
-  free (states);
-  states = NULL;
+  delete state;
+  state = NULL;
 }
 
 Rts2DevConn *
-Rts2Device::createConnection (int in_sock, int conn_num)
+Rts2Device::createConnection (int in_sock)
 {
   return new Rts2DevConn (in_sock, this);
-}
-
-void
-Rts2Device::setStateNames (int in_states_size, char **states_names)
-{
-  if (in_states_size == 0)
-    return;
-
-  int i;
-  char *state_name = *states_names;
-#ifdef DEBUG_ALL
-  logStream (MESSAGE_DEBUG) << "Rts2Device::setStateNames states: " <<
-    in_states_size << sendLog;
-#endif
-  states = (Rts2State **) malloc (sizeof (Rts2State *) * in_states_size);
-  for (i = 0; i < in_states_size; i++)
-    {
-      states[i] = new Rts2State (this, state_name);
-      state_name++;
-    }
-  statesSize = in_states_size;
 }
 
 int
@@ -726,19 +686,15 @@ Rts2Device::processOption (int in_opt)
 void
 Rts2Device::clearStatesPriority ()
 {
-  int i;
-  for (i = 0; i < statesSize; i++)
-    {
-      maskState (i, 0xffffff | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
-		 "all operations canceled by priority");
-    }
+  maskState (0xffffff | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
+	     "all operations canceled by priority");
 }
 
 Rts2Conn *
 Rts2Device::createClientConnection (char *in_device_name)
 {
   Rts2DevConn *conn;
-  conn = createConnection (-1, -1);
+  conn = createConnection (-1);
   conn->setDeviceName (in_device_name);
   return conn;
 }
@@ -749,29 +705,28 @@ Rts2Device::createClientConnection (Rts2Address * in_addres)
   Rts2DevConn *conn;
   if (in_addres->isAddress (device_name))
     return NULL;
-  conn = createConnection (-1, -1);
+  conn = createConnection (-1);
   conn->setDeviceAddress (in_addres);
   return conn;
 }
 
 int
-Rts2Device::changeState (int state_num, int new_state, char *description)
+Rts2Device::changeState (int new_state, char *description)
 {
-  states[state_num]->setState (new_state, description);
+  state->setState (new_state, description);
   return 0;
 }
 
 int
-Rts2Device::maskState (int state_num, int state_mask, int new_state,
-		       char *description)
+Rts2Device::maskState (int state_mask, int new_state, char *description)
 {
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) <<
-    "Rts2Device::maskState state: " << state_num << " state_mask: " <<
+    "Rts2Device::maskState state: " << " state_mask: " <<
     state_mask << " new_state: " << new_state << " desc: " << description <<
     sendLog;
 #endif
-  states[state_num]->maskState (state_mask, new_state, description);
+  state->maskState (state_mask, new_state, description);
   return 0;
 }
 
@@ -803,9 +758,9 @@ Rts2Device::init ()
   conn_master =
     new Rts2DevConnMaster (this, device_host, getPort (), device_name,
 			   device_type, centrald_host, centrald_port);
-  connections[0] = conn_master;
+  addConnection (conn_master);
 
-  while (connections[0]->init () < 0)
+  while (conn_master->init () < 0)
     {
       logStream (MESSAGE_WARNING) << "Rts2Device::init waiting for master" <<
 	sendLog;
@@ -834,16 +789,11 @@ Rts2Device::authorize (Rts2DevConn * conn)
 int
 Rts2Device::sendStatusInfo (Rts2DevConn * conn)
 {
-  int i;
   int ret;
-
-  for (i = 0; i < statesSize; i++)
-    {
-      ret = states[i]->sendInfo (conn, i);
-      if (ret)
-	return ret;
-    }
-  return conn->sendPriorityInfo (i);
+  ret = state->sendInfo (conn);
+  if (ret)
+    return ret;
+  return conn->sendPriorityInfo ();
 }
 
 int
@@ -939,19 +889,16 @@ Rts2Device::info (Rts2Conn * conn)
 int
 Rts2Device::infoAll ()
 {
-  Rts2Conn *conn;
   int ret;
   nextIdleInfo = time (NULL) + idleInfoInterval;
   ret = info ();
   if (ret)
     return -1;
-  for (int i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      conn = connections[i];
-      if (conn)
-	{
-	  sendInfo (conn);
-	}
+      Rts2Conn *conn = *iter;
+      sendInfo (conn);
     }
   return 0;
 }

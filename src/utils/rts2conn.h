@@ -11,8 +11,6 @@
 
 #define MAX_DATA		200
 
-#define MAX_STATE		5
-
 typedef enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER, DEVICE_DEVICE };
 
@@ -67,7 +65,7 @@ private:
   int message ();
 
 protected:
-    Rts2ServerState * serverState[MAX_STATE];
+    Rts2ServerState * serverState;
 
   Rts2Block *master;
   char *command_start;
@@ -75,8 +73,7 @@ protected:
 
   virtual int acceptConn ();
 
-  int setState (int in_state_num, char *in_state_name, int in_value);
-  virtual int setState (char *in_state_name, int in_value);
+  virtual int setState (int in_value);
 
   void setOtherType (int other_device_type);
 
@@ -104,13 +101,9 @@ public:
   virtual void postEvent (Rts2Event * event);
 
   virtual int add (fd_set * set);
-  virtual int getState (int state_num)
+  virtual int getState ()
   {
-    if (state_num < 0 || state_num >= MAX_STATE)
-      return -1;
-    if (serverState[state_num])
-      return serverState[state_num]->getValue ();
-    return -1;
+    return serverState->getValue ();
   }
   virtual int init ()
   {
@@ -188,14 +181,7 @@ public:
       key = in_key;
   }
   int havePriority ();
-  void setHavePriority (int in_have_priority)
-  {
-    if (in_have_priority)
-      send ("S priority 1 priority received");
-    else
-      send ("S priority 0 priority lost");
-    have_priority = in_have_priority;
-  };
+  void setHavePriority (int in_have_priority);
   int getHavePriority ()
   {
     return have_priority;
@@ -213,7 +199,7 @@ public:
     return centrald_id;
   };
   void setCentraldId (int in_centrald_id);
-  int sendPriorityInfo (int number);
+  int sendPriorityInfo ();
 
   virtual int sendInfo (Rts2Conn * conn)
   {
@@ -274,16 +260,16 @@ public:
     return connectionTimeout;
   }
 
-  Rts2ServerState *getStateObject (int state_num)
+  Rts2ServerState *getStateObject ()
   {
-    if (state_num < 0 || state_num >= MAX_STATE)
-      return NULL;
-    return serverState[state_num];
+    return serverState;
   }
 
 protected:
   virtual int command ();
+  virtual void priorityChanged ();
   virtual int priorityChange ();
+  int priorityInfo ();
   virtual int informations ();
   virtual int status ();
   int sendNextCommand ();

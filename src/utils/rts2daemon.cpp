@@ -8,25 +8,11 @@
 
 #include "rts2daemon.h"
 
-int
-Rts2Daemon::addConnection (int in_sock)
+void
+Rts2Daemon::addConnectionSock (int in_sock)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      if (!connections[i])
-	{
-#ifdef DEBUG_ALL
-	  logStream (MESSAGE_DEBUG) << "Rts2Block::addConnection add conn: "
-	    << i << sendLog;
-#endif
-	  connections[i] = createConnection (in_sock, i);
-	  return 0;
-	}
-    }
-  logStream (MESSAGE_ERROR) <<
-    "Rts2Block::addConnection Cannot find empty connection!" << sendLog;
-  return -1;
+  Rts2Conn *conn = createConnection (in_sock);
+  addConnection (conn);
 }
 
 Rts2Daemon::Rts2Daemon (int in_argc, char **in_argv):
@@ -304,7 +290,7 @@ Rts2Daemon::selectSuccess (fd_set * read_set)
 	}
       else
 	{
-	  addConnection (client);
+	  addConnectionSock (client);
 	}
     }
   Rts2Block::selectSuccess (read_set);

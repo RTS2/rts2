@@ -75,6 +75,7 @@ public:
   }
 
   virtual void stateChanged (Rts2ServerState * state);
+  void priorityInfo (bool have);
 
   const char *getName ();
 
@@ -91,7 +92,7 @@ public:
     return 0;
   }
 
-  int getStatus (int stat_num);
+  int getStatus ();
 
   Rts2LogStream logStream (messageType_t in_messageType);
 };

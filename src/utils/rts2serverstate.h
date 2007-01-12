@@ -10,26 +10,14 @@ private:
   int oldValue;
   time_t lastUpdate;
 public:
-  char *name;
-    Rts2ServerState (char *in_name)
+    Rts2ServerState ()
   {
-    name = new char[strlen (in_name) + 1];
-      strcpy (name, in_name);
-      lastUpdate = 0;
-      oldValue = 0;
-      value = 0;
+    lastUpdate = 0;
+    oldValue = 0;
+    value = 0;
   }
-   ~Rts2ServerState (void)
+  virtual ~ Rts2ServerState (void)
   {
-    delete[]name;
-  }
-  int isName (const char *in_name)
-  {
-    return !strcmp (name, in_name);
-  }
-  const char *getName ()
-  {
-    return name;
   }
   void setValue (int new_value)
   {

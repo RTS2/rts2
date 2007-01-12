@@ -21,8 +21,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
   conn_state = CONN_UNKNOW;
   type = NOT_DEFINED_SERVER;
   runningCommand = NULL;
-  for (int i = 0; i < MAX_STATE; i++)
-    serverState[i] = NULL;
+  serverState = new Rts2ServerState ();
   otherDevice = NULL;
   otherType = -1;
 
@@ -47,8 +46,7 @@ Rts2Object ()
   conn_state = CONN_CONNECTED;
   type = NOT_DEFINED_SERVER;
   runningCommand = NULL;
-  for (int i = 0; i < MAX_STATE; i++)
-    serverState[i] = NULL;
+  serverState = new Rts2ServerState ();
   otherDevice = NULL;
   otherType = -1;
 
@@ -63,9 +61,7 @@ Rts2Conn::~Rts2Conn (void)
 {
   if (sock >= 0)
     close (sock);
-  for (int i = 0; i < MAX_STATE; i++)
-    if (serverState[i])
-      delete serverState[i];
+  delete serverState;
   delete otherDevice;
   queClear ();
 }
@@ -166,29 +162,12 @@ Rts2Conn::acceptConn ()
 }
 
 int
-Rts2Conn::setState (int in_state_num, char *in_state_name, int in_value)
+Rts2Conn::setState (int in_value)
 {
-  if (!serverState[in_state_num])
-    serverState[in_state_num] = new Rts2ServerState (in_state_name);
-  return setState (in_state_name, in_value);
-}
-
-int
-Rts2Conn::setState (char *in_state_name, int in_value)
-{
-  for (int i = 0; i < MAX_STATE; i++)
-    {
-      Rts2ServerState *state;
-      state = serverState[i];
-      if (state && !strcmp (state->name, in_state_name))
-	{
-	  state->setValue (in_value);
-	  if (otherDevice)
-	    otherDevice->stateChanged (state);
-	  return 0;
-	}
-    }
-  return -1;
+  serverState->setValue (in_value);
+  if (otherDevice)
+    otherDevice->stateChanged (serverState);
+  return 0;
 }
 
 void
@@ -230,6 +209,10 @@ Rts2Conn::processLine ()
   if (isCommand (PROTO_PRIORITY))
     {
       ret = priorityChange ();
+    }
+  else if (isCommand (PROTO_PRIORITY_INFO))
+    {
+      ret = priorityInfo ();
     }
   // informations..
   else if (isCommand (PROTO_INFO))
@@ -386,6 +369,16 @@ Rts2Conn::havePriority ()
 }
 
 void
+Rts2Conn::setHavePriority (int in_have_priority)
+{
+  if (in_have_priority)
+    send (PROTO_PRIORITY_INFO " 1");
+  else
+    send (PROTO_PRIORITY_INFO " 0");
+  have_priority = in_have_priority;
+};
+
+void
 Rts2Conn::setCentraldId (int in_centrald_id)
 {
   centrald_id = in_centrald_id;
@@ -393,11 +386,11 @@ Rts2Conn::setCentraldId (int in_centrald_id)
 }
 
 int
-Rts2Conn::sendPriorityInfo (int number)
+Rts2Conn::sendPriorityInfo ()
 {
   char *msg;
   int ret;
-  asprintf (&msg, "I status %i priority %i", number, havePriority ());
+  asprintf (&msg, PROTO_PRIORITY_INFO " %i", havePriority ());
   ret = send (msg);
   free (msg);
   return ret;
@@ -488,15 +481,12 @@ Rts2Conn::command ()
       int p_priority;
       char *p_priority_have;
       char *p_login;
-      char *p_status_txt = NULL;
       if (paramNextInteger (&p_centraldId)
 	  || paramNextInteger (&p_priority)
-	  || paramNextString (&p_priority_have)
-	  || paramNextString (&p_login)
-	  || paramNextStringNull (&p_status_txt))
+	  || paramNextString (&p_priority_have) || paramNextString (&p_login))
 	return -2;
       master->addUser (p_centraldId, p_priority, (*p_priority_have == '*'),
-		       p_login, p_status_txt);
+		       p_login);
       return -1;
     }
   if (isCommand (PROTO_DATA))
@@ -544,30 +534,21 @@ Rts2Conn::command ()
 int
 Rts2Conn::informations ()
 {
-  char *sub_command;
-  int stat_num;
-  char *state_name;
   int value;
-  if (paramNextString (&sub_command)
-      || paramNextInteger (&stat_num)
-      || paramNextString (&state_name)
-      || paramNextInteger (&value) || !paramEnd ())
+  if (paramNextInteger (&value) || !paramEnd ())
     return -2;
   // set initial state & name
-  setState (stat_num, state_name, value);
+  setState (value);
   return -1;
 }
 
 int
 Rts2Conn::status ()
 {
-  char *stat_name;
   int value;
-  char *stat_text;
-  if (paramNextString (&stat_name)
-      || paramNextInteger (&value) || paramNextStringNull (&stat_text))
+  if (paramNextInteger (&value) || !paramEnd ())
     return -2;
-  setState (stat_name, value);
+  setState (value);
   return -1;
 }
 
@@ -633,11 +614,29 @@ Rts2Conn::commandReturn ()
   return -1;
 }
 
+void
+Rts2Conn::priorityChanged ()
+{
+}
+
 int
 Rts2Conn::priorityChange ()
 {
   // we don't want any messages yet..
   return -1;
+}
+
+int
+Rts2Conn::priorityInfo ()
+{
+  int have;
+  if (paramNextInteger (&have) || !paramEnd ())
+    return -2;
+  have_priority = have;
+  priorityChanged ();
+  if (otherDevice)
+    otherDevice->priorityInfo (have);
+  return 0;
 }
 
 int

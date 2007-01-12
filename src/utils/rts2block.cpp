@@ -23,10 +23,7 @@ Rts2App (in_argc, in_argv)
 {
   idle_timeout = USEC_SEC * 10;
   priority_client = -1;
-  for (int i = 0; i < MAX_CONN; i++)
-    {
-      connections[i] = NULL;
-    }
+
   signal (SIGPIPE, SIG_IGN);
 
   masterState = 0;
@@ -36,15 +33,15 @@ Rts2App (in_argc, in_argv)
 
 Rts2Block::~Rts2Block (void)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
-	delete conn;
-      connections[i] = NULL;
+      Rts2Conn *conn = *iter;
+      delete conn;
     }
+  connections.clear ();
+  blockAddress.clear ();
+  blockUsers.clear ();
 }
 
 void
@@ -63,20 +60,17 @@ void
 Rts2Block::postEvent (Rts2Event * event)
 {
   // send to all connections
-  for (int i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
-	{
-	  conn->postEvent (new Rts2Event (event));
-	}
+      Rts2Conn *conn = *iter;
+      conn->postEvent (new Rts2Event (event));
     }
   return Rts2App::postEvent (event);
 }
 
 Rts2Conn *
-Rts2Block::createConnection (int in_sock, int conn_num)
+Rts2Block::createConnection (int in_sock)
 {
   return new Rts2Conn (in_sock, this);
 }
@@ -93,37 +87,21 @@ Rts2Block::addDataConnection (Rts2Conn * owner_conn, char *in_hostname,
   return conn;
 }
 
-int
+void
 Rts2Block::addConnection (Rts2Conn * conn)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      if (!connections[i])
-	{
-#ifdef DEBUG_EXTRA
-	  logStream (MESSAGE_DEBUG) << "Rts2Block::addConnection add conn: "
-	    << i << sendLog;
-#endif
-	  connections[i] = conn;
-	  return 0;
-	}
-    }
-  logStream (MESSAGE_ERROR) <<
-    "Rts2Block::addConnection Cannot find empty connection!" << sendLog;
-  return -1;
+  connections.push_back (conn);
 }
 
 Rts2Conn *
 Rts2Block::findName (const char *in_name)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn = connections[i];
-      if (conn)
-	if (!strcmp (conn->getName (), in_name))
-	  return conn;
+      Rts2Conn *conn = *iter;
+      if (!strcmp (conn->getName (), in_name))
+	return conn;
     }
   // if connection not found, try to look to list of available
   // connections
@@ -133,13 +111,12 @@ Rts2Block::findName (const char *in_name)
 Rts2Conn *
 Rts2Block::findCentralId (int in_id)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn = connections[i];
-      if (conn)
-	if (conn->getCentraldId () == in_id)
-	  return conn;
+      Rts2Conn *conn = *iter;
+      if (conn->getCentraldId () == in_id)
+	return conn;
     }
   return NULL;
 }
@@ -147,16 +124,24 @@ Rts2Block::findCentralId (int in_id)
 int
 Rts2Block::sendAll (char *msg)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn = connections[i];
-      if (conn)
-	{
-	  conn->send (msg);
-	}
+      Rts2Conn *conn = *iter;
+      conn->send (msg);
     }
   return 0;
+}
+
+void
+Rts2Block::sendValueAll (char *val_name, char *value)
+{
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
+    {
+      Rts2Conn *conn = *iter;
+      conn->sendValue (val_name, value);
+    }
 }
 
 int
@@ -174,24 +159,21 @@ Rts2Block::sendPriorityChange (int p_client, int timeout)
 void
 Rts2Block::sendMessageAll (Rts2Message & msg)
 {
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn = connections[i];
-      if (conn)
-	{
-	  conn->sendMessage (msg);
-	}
+      Rts2Conn *conn = *iter;
+      conn->sendMessage (msg);
     }
 }
 
 int
-Rts2Block::sendStatusMessage (char *state_name, int state)
+Rts2Block::sendStatusMessage (int state)
 {
   char *msg;
   int ret;
 
-  asprintf (&msg, PROTO_STATUS " %s %i", state_name, state);
+  asprintf (&msg, PROTO_STATUS " %i", state);
   ret = sendAll (msg);
   free (msg);
   return ret;
@@ -207,11 +189,11 @@ Rts2Block::idle ()
     {
       childReturned (ret);
     }
-  for (int i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      conn = connections[i];
-      if (conn)
-	conn->idle ();
+      conn = *iter;
+      conn->idle ();
     }
   return 0;
 }
@@ -220,41 +202,44 @@ void
 Rts2Block::addSelectSocks (fd_set * read_set)
 {
   Rts2Conn *conn;
-  int i;
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      conn = connections[i];
-      if (conn)
-	{
-	  conn->add (read_set);
-	}
+      conn = *iter;
+      conn->add (read_set);
     }
 }
 
 void
 Rts2Block::selectSuccess (fd_set * read_set)
 {
-  int i;
   Rts2Conn *conn;
   int ret;
 
-  for (i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+
+  for (iter = connections.begin (); iter != connections.end ();)
     {
-      conn = connections[i];
-      if (conn)
+      conn = *iter;
+      if (conn->receive (read_set) == -1)
 	{
-	  if (conn->receive (read_set) == -1)
-	    {
 #ifdef DEBUG_EXTRA
-	      logStream (MESSAGE_ERROR) <<
-		"Will delete connection " << i << ", name: " << conn->
-		getName () << sendLog;
+	  logStream (MESSAGE_ERROR) <<
+	    "Will delete connection " << " name: " << conn->
+	    getName () << sendLog;
 #endif
-	      ret = deleteConnection (conn);
-	      // delete connection only when it really requested to be deleted..
-	      if (!ret)
-		connections[i] = NULL;
+	  ret = deleteConnection (conn);
+	  // delete connection only when it really requested to be deleted..
+	  if (!ret)
+	    {
+	      std::list < Rts2Conn * >::iterator del_iter = iter;
+	      iter++;
+	      connections.erase (del_iter);
 	    }
+	}
+      else
+	{
+	  iter++;
 	}
     }
 }
@@ -321,10 +306,11 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
   if (priConn && priConn->getHavePriority ())
     discard_priority = 0;
 
-  for (int i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      if (connections[i]
-	  && connections[i]->getCentraldId () == in_priority_client)
+      Rts2Conn *conn = *iter;
+      if (conn->getCentraldId () == in_priority_client)
 	{
 	  if (discard_priority)
 	    {
@@ -332,7 +318,7 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 	      if (priConn)
 		priConn->setHavePriority (0);
 	    }
-	  connections[i]->setHavePriority (1);
+	  conn->setHavePriority (1);
 	  break;
 	}
     }
@@ -351,14 +337,11 @@ Rts2Block::childReturned (pid_t child_pid)
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) << "child returned: " << child_pid << sendLog;
 #endif
-  for (int i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
-	{
-	  conn->childReturned (child_pid);
-	}
+      Rts2Conn *conn = *iter;
+      conn->childReturned (child_pid);
     }
 }
 
@@ -474,7 +457,7 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
 
 void
 Rts2Block::addUser (int p_centraldId, int p_priority, char p_priority_have,
-		    const char *p_login, const char *p_status_txt)
+		    const char *p_login)
 {
   int ret;
   std::list < Rts2User * >::iterator user_iter;
@@ -483,13 +466,11 @@ Rts2Block::addUser (int p_centraldId, int p_priority, char p_priority_have,
     {
       ret =
 	(*user_iter)->update (p_centraldId, p_priority, p_priority_have,
-			      p_login, p_status_txt);
+			      p_login);
       if (!ret)
 	return;
     }
-  addUser (new
-	   Rts2User (p_centraldId, p_priority, p_priority_have, p_login,
-		     p_status_txt));
+  addUser (new Rts2User (p_centraldId, p_priority, p_priority_have, p_login));
 }
 
 int
@@ -502,14 +483,12 @@ Rts2Block::addUser (Rts2User * in_user)
 Rts2Conn *
 Rts2Block::getOpenConnection (char *deviceName)
 {
-  Rts2Conn *conn;
+  std::list < Rts2Conn * >::iterator iter;
 
   // try to find active connection..
-  for (int i = 0; i < MAX_CONN; i++)
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      conn = connections[i];
-      if (!conn)
-	continue;
+      Rts2Conn *conn = *iter;
       if (conn->isName (deviceName))
 	return conn;
     }
@@ -588,17 +567,14 @@ Rts2Block::queAll (char *text)
 int
 Rts2Block::allQuesEmpty ()
 {
-  int ret;
-  for (int i = 0; i < MAX_CONN; i++)
+  int ret = 1;
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
-	{
-	  ret = conn->queEmpty ();
-	  if (!ret)
-	    return ret;
-	}
+      Rts2Conn *conn = *iter;
+      ret = conn->queEmpty ();
+      if (!ret)
+	return ret;
     }
   return ret;
 }
@@ -608,22 +584,19 @@ Rts2Block::getMinConn (const char *valueName)
 {
   int lovestValue = INT_MAX;
   Rts2Conn *minConn = NULL;
-  for (int i = 0; i < MAX_CONN; i++)
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Value *que_size;
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
+      Rts2Conn *conn = *iter;
+      que_size = conn->getValue (valueName);
+      if (que_size)
 	{
-	  que_size = conn->getValue (valueName);
-	  if (que_size)
+	  if (que_size->getValueInteger () >= 0
+	      && que_size->getValueInteger () < lovestValue)
 	    {
-	      if (que_size->getValueInteger () >= 0
-		  && que_size->getValueInteger () < lovestValue)
-		{
-		  minConn = conn;
-		  lovestValue = que_size->getValueInteger ();
-		}
+	      minConn = conn;
+	      lovestValue = que_size->getValueInteger ();
 	    }
 	}
     }
