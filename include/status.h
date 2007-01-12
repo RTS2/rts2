@@ -23,6 +23,7 @@
 #define DEVICE_ERROR_HW		0x020000
 
 // Camera status
+#define CAM_MASK_CHIP		0x0f
 #define CAM_MASK_EXPOSE		0x01
 
 #define CAM_NOEXPOSURE		0x00
@@ -38,23 +39,25 @@
 #define CAM_NODATA		0x00
 #define CAM_DATA		0x04
 
-#define CAM_MASK_FOCUSING	0x08
+#define CAM_MASK_FOCUSING	0x8000
 
-#define CAM_NOFOCUSING		0x00
-#define CAM_FOCUSING		0x08
+#define CAM_NOFOCUSING		0x0000
+#define CAM_FOCUSING		0x8000
 
-#define CAM_MASK_SHUTTER	0x30
+#define CAM_MASK_SHUTTER	0x3000
 
-#define CAM_SHUT_CLEARED	0x00
-#define CAM_SHUT_SET		0x10
-#define CAM_SHUT_TRANS		0x20
+#define CAM_SHUT_CLEARED	0x0000
+#define CAM_SHUT_SET		0x1000
+#define CAM_SHUT_TRANS		0x2000
 
+/*
 #define CAM_MASK_COOLING	0xC0
 
 #define CAM_COOL_OFF		0x00
 #define CAM_COOL_FAN		0x40
 #define CAM_COOL_PWR		0x80
 #define CAM_COOL_TEMP		0xC0
+*/
 
 // Photomer status
 #define PHOT_MASK_INTEGRATE	0x01
@@ -248,10 +251,5 @@
 
 // default serverd port
 #define SERVERD_PORT		5557
-
-// name of the default server status
-#define SERVER_STATUS		"server_st"
-
-#define MAX_STATUS_TXT		60
 
 #endif /* __RTS__STATUS__ */
