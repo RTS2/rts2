@@ -280,9 +280,19 @@ EllTarget::printExtra (std::ostream & _os, double JD)
 {
   Target::printExtra (_os, JD);
   _os
-    << InfoVal<TimeJD> ("EPOCH", TimeJD (orbit.JD))
-    << InfoVal<double> ("n", orbit.n)
-    << InfoVal<double> ("a", orbit.a)
+    << InfoVal<TimeJD> ("EPOCH", TimeJD (orbit.JD));
+  if (orbit.e < 1.0)
+  {
+    _os 
+      << InfoVal<double> ("n", orbit.n)
+      << InfoVal<double> ("a", orbit.a);
+  }
+  else if (orbit.e > 1.0)
+  {
+    _os
+      << InfoVal<double> ("q", orbit.a);
+  }  
+  _os  
     << InfoVal<double> ("e", orbit.e)
     << InfoVal<double> ("Peri.", orbit.w)
     << InfoVal<double> ("Node", orbit.omega)
