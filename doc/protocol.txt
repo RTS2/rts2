@@ -29,8 +29,8 @@ in V prefix for values, so they can be distinguished from commands. That change
 happen in release 0.5 of RTS2.
 
 Originally states doesn't use error mask (see 2c for description). Error mask
-was added in 0.5 branch. States should converge to one state per server in
-release 0.6 or 0.7.
+was added in 0.5 branch. States converge to one state per server in release
+0.7.
 
 It was originally expected that clients will query for values with info,
 baseinfo etc. call. That wsa droped in favour of server notifing all clients
@@ -96,13 +96,12 @@ EV 1
 
 2e. States
 
-States changes are reported with messages starting with 'S' character. First is
-state name, followed with new state (numerical value), and optional description
-of state change cause.
+States changes are reported with messages starting with 'S' character. There is
+new state (numerical value), and optional description of state change cause.
 
 Example:
 
-S img_chip 1 exposure started
+S 1 exposure started
 
 2f. Messages
 
