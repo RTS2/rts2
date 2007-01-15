@@ -515,13 +515,15 @@ Rts2Block::getConnection (char *deviceName)
 	", creating new connection" << sendLog;
 #endif
       conn = createClientConnection (deviceName);
-      addConnection (conn);
+      if (conn)
+	addConnection (conn);
       return conn;
     }
 
   // open connection to given address..
   conn = createClientConnection (devAddr);
-  addConnection (conn);
+  if (conn)
+    addConnection (conn);
   return conn;
 }
 
