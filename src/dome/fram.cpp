@@ -982,7 +982,6 @@ int
 Rts2DevDomeFram::init ()
 {
   struct termios oldtio, newtio;
-  int i;
 
   int ret = Rts2DevDome::init ();
   if (ret)

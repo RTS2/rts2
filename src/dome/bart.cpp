@@ -421,7 +421,6 @@ int
 Rts2DevDomeBart::init ()
 {
   struct termios oldtio, newtio;
-  int i;
 
   int ret = Rts2DevDome::init ();
   if (ret)
