@@ -414,7 +414,6 @@ Rts2DevCupolaMark::info ()
   int16_t az_val;
   rain = weatherConn->getRain ();
   windspeed = weatherConn->getWindspeed ();
-  nextOpen = getNextOpen ();
   ret = readReg (REG_POSITION, (uint16_t *) & az_val);
   if (!ret)
     {
@@ -422,6 +421,7 @@ Rts2DevCupolaMark::info ()
 		    ((az_val * STEP_AZ_SIZE) + STEP_AZ_OFFSET));
       return Rts2DevCupola::info ();
     }
+  Rts2DevCupola::info ();
   return -1;
 }
 

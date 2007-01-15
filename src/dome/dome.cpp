@@ -12,7 +12,6 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
   humidity = nan ("f");
   power_telescope = 0;
   power_cameras = 0;
-  nextOpen = -1;
   rain = 1;
   windspeed = nan ("f");	// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
 
@@ -36,6 +35,7 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
   time (&nextGoodWeather);
 
   nextGoodWeather += DEF_WEATHER_TIMEOUT;
+  nextOpen = getNextOpen ();
 }
 
 int
@@ -168,6 +168,13 @@ Rts2DevDome::idle ()
 {
   checkOpening ();
   return Rts2Device::idle ();
+}
+
+int
+Rts2DevDome::info ()
+{
+  nextOpen = getNextOpen ();
+  return Rts2Device::info ();
 }
 
 int

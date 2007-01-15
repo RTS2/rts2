@@ -243,7 +243,6 @@ Rts2DevDomeDublin::info ()
       rain = weatherConn->getRain ();
       windspeed = weatherConn->getWindspeed ();
     }
-  nextOpen = getNextOpen ();
 
   return Rts2DevDome::info ();
 }

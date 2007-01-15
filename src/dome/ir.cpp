@@ -298,7 +298,6 @@ Rts2DevDomeIR::info ()
   //rain = weatherConn->getRain ();
 
   getSNOW (&temperature, &humidity, &windspeed);
-  nextOpen = getNextOpen ();
   return Rts2DevDome::info ();
 }
 

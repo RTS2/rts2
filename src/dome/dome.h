@@ -75,6 +75,8 @@ public:
   virtual Rts2DevConn *createConnection (int in_sock);
   virtual int idle ();
 
+  virtual int info ();
+
   // callback function from dome connection
   virtual int sendBaseInfo (Rts2Conn * conn);
   virtual int sendInfo (Rts2Conn * conn);
