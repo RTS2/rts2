@@ -321,9 +321,13 @@ Rts2DevDomeFram::zjisti_stav_portu_int ()
       return -1;
     }
   logStream (MESSAGE_DEBUG) <<
-    "Rts2DevDomeFram::zjisti_stav_portu A: " << t1 << " stav_portu[PORT_A]: "
-    << stav_portu[PORT_A] << " B: " << t2 << " stav_portu[PORT_B]: " <<
-    stav_portu[PORT_B] << sendLog;
+    "Rts2DevDomeFram::zjisti_stav_portu A: "
+    << std::hex << t1
+    << " stav_portu[PORT_A]: "
+    << std::hex << stav_portu[PORT_A]
+    << " B: "
+    << std::hex << t2
+    << " stav_portu[PORT_B]: " << std::hex << stav_portu[PORT_B] << sendLog;
   return 0;
 }
 
@@ -354,11 +358,12 @@ Rts2DevDomeFram::zapni_pin (unsigned char in_port, unsigned char pin)
   if (ret)
     return;
   c = ZAPIS_NA_PORT | in_port;
-  logStream (MESSAGE_DEBUG) << "port: " << in_port << " pin: " << pin <<
-    " write: " << c << sendLog;
+  logStream (MESSAGE_DEBUG) << "port: "
+    << std::hex << in_port
+    << " pin: " << std::hex << pin << " write: " << std::hex << c << sendLog;
   write (dome_port, &c, 1);
   c = stav_portu[in_port] | pin;
-  logStream (MESSAGE_DEBUG) << "zapni_pin: " << c << sendLog;
+  logStream (MESSAGE_DEBUG) << "zapni_pin: " << std::hex << c << sendLog;
   write (dome_port, &c, 1);
 }
 
@@ -371,11 +376,12 @@ Rts2DevDomeFram::vypni_pin (unsigned char in_port, unsigned char pin)
   if (ret)
     return;
   c = ZAPIS_NA_PORT | in_port;
-  logStream (MESSAGE_DEBUG) << "port: " << in_port << " pin: " << pin <<
-    " write: " << c << sendLog;
+  logStream (MESSAGE_DEBUG) << "port: "
+    << std::hex << in_port
+    << " pin: " << std::hex << pin << " write: " << std::hex << c << sendLog;
   write (dome_port, &c, 1);
   c = stav_portu[in_port] & (~pin);
-  logStream (MESSAGE_DEBUG) << c << sendLog;
+  logStream (MESSAGE_DEBUG) << "vypni_pin: " << std::hex << c << sendLog;
   write (dome_port, &c, 1);
 }
 
