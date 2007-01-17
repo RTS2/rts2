@@ -211,8 +211,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
     return 0;
   ret = image->getValue ("MNT_AX1", aux1);
   if (ret)
-    return ret;
-
+    aux1 = -2;
   ct = (time_t) (ct + expo / 2);
 
   JD = ln_get_julian_from_timet (&ct);
