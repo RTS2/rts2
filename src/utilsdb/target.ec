@@ -103,6 +103,8 @@ Target::printAltTable (std::ostream & _os, double JD)
   int i;
   double jd_start = ((int) JD) - 0.5;
   struct ln_date date;
+  struct ln_hrz_posn hrz;
+  struct ln_equ_posn pos;
   double jd;
   int old_precison = _os.precision (0);
   std::ios_base::fmtflags old_settings = _os.flags ();
@@ -112,7 +114,7 @@ Target::printAltTable (std::ostream & _os, double JD)
 
   _os
     << std::endl
-    << "** HOUR, ALTITUDE, AZIMUTH and MOON DISTANCE table from " << LibnovaDate(&date) << " **"
+    << "** HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE, SOON POSITION table from " << LibnovaDate(&date) << " **"
     << std::endl
     << std::endl
     << "H   ";
@@ -125,36 +127,68 @@ Target::printAltTable (std::ostream & _os, double JD)
   _os.fill (old_fill);
   _os << std::endl;
 
-  // print alt
+  // print alt + az
+  std::ostringstream _os2;
+
   _os << "ALT ";
+  _os2 << "AZ  ";
+
+  _os2.precision (0);
+  _os2.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  
   jd = jd_start;
   for (i = 0; i <= 24; i++, jd += 1.0/24.0)
     {
-      struct ln_hrz_posn hrz;
       getAltAz (&hrz, jd);
       _os << " " << std::setw (3) << hrz.alt;
+      _os2 << " " << std::setw (3) << hrz.az;
     }
-  _os << std::endl;
+  _os
+    << std::endl
+    << _os2.str ()
+    << std::endl;
 
-  // print az
-  _os << "AZ  ";
-  jd = jd_start;
-  for (i = 0; i <= 24; i++, jd += 1.0/24.0)
-    {
-      struct ln_hrz_posn hrz;
-      getAltAz (&hrz, jd);
-      _os << " " << std::setw (3) << hrz.az;
-    }
-  _os << std::endl;
-
-  // print moon distances
+  // print lunar distances
   _os << "MD  ";
   jd = jd_start;
-  for (i = 0; i <= 24; i++, jd += 1/24.0)
+  for (i = 0; i <= 24; i++, jd += 1.0/24.0)
     {
       _os << " " << std::setw(3) << getLunarDistance (jd);
     }
   _os << std::endl;
+
+  // print solar distance
+  _os << "SD  ";
+  jd = jd_start;
+  for (i = 0; i <= 24; i++, jd += 1.0/24.0)
+    {
+      _os << " " << std::setw(3) << getSolarDistance (jd);
+    }
+  _os << std::endl;
+
+
+  // print sun position
+  std::ostringstream _os3;
+
+  _os << "SAL ";
+  _os3 << "SAZ ";
+
+  _os3.precision (0);
+  _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
+  jd = jd_start;
+  for (i = 0; i <= 24; i++, jd += 1.0/24.0)
+    {
+      ln_get_solar_equ_coords (jd, &pos);
+      ln_get_hrz_from_equ (&pos, getObserver(), jd, &hrz);
+      _os << " " << std::setw (3) << hrz.alt;
+      _os3 << " " << std::setw (3) << hrz.az;
+    }
+
+  _os
+    << std::endl
+    << _os3.str ()
+    << std::endl;
 
   _os.setf (old_settings);
   _os.precision (old_precison);
