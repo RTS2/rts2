@@ -97,6 +97,69 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
   }
 }
 
+void
+Target::printAltTable (std::ostream & _os, double JD)
+{
+  int i;
+  double jd_start = ((int) JD) - 0.5;
+  struct ln_date date;
+  double jd;
+  int old_precison = _os.precision (0);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
+  ln_get_date (jd_start, &date);
+
+  _os
+    << std::endl
+    << "** HOUR, ALTITUDE, AZIMUTH and MOON DISTANCE table from " << LibnovaDate(&date) << " **"
+    << std::endl
+    << std::endl
+    << "H   ";
+
+  char old_fill = _os.fill ('0');
+  for (i = 0; i <= 24; i++)
+    {
+      _os << "  " << std::setw (2) << i;
+    }
+  _os.fill (old_fill);
+  _os << std::endl;
+
+  // print alt
+  _os << "ALT ";
+  jd = jd_start;
+  for (i = 0; i <= 24; i++, jd += 1.0/24.0)
+    {
+      struct ln_hrz_posn hrz;
+      getAltAz (&hrz, jd);
+      _os << " " << std::setw (3) << hrz.alt;
+    }
+  _os << std::endl;
+
+  // print az
+  _os << "AZ  ";
+  jd = jd_start;
+  for (i = 0; i <= 24; i++, jd += 1.0/24.0)
+    {
+      struct ln_hrz_posn hrz;
+      getAltAz (&hrz, jd);
+      _os << " " << std::setw (3) << hrz.az;
+    }
+  _os << std::endl;
+
+  // print moon distances
+  _os << "MD  ";
+  jd = jd_start;
+  for (i = 0; i <= 24; i++, jd += 1/24.0)
+    {
+      _os << " " << std::setw(3) << getLunarDistance (jd);
+    }
+  _os << std::endl;
+
+  _os.setf (old_settings);
+  _os.precision (old_precison);
+}
+
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
 {
   Rts2Config *config;
@@ -1670,6 +1733,8 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
 	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now));
       }
   }
+
+  printAltTable (_os, JD);
 
   getGalLng (&gal, JD);
   _os 

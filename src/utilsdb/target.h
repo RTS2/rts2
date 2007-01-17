@@ -189,6 +189,8 @@ private:
   time_t tar_next_observable;
   bool tar_enabled;
 
+  void printAltTable (std::ostream & _os, double JD);
+
 protected:
   int target_id;
   int obs_target_id;
