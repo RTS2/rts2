@@ -646,7 +646,7 @@ Target::secToObjectSet (double JD)
 {
   struct ln_rst_time rst;
   int ret;
-  ret = getRST (&rst, JD);
+  ret = getRST (&rst, JD, getMinAlt ());
   if (ret)
     return -1;  // don't rise, circumpolar etc..
   ret = int ((rst.set - JD) * 86400.0);
@@ -661,7 +661,7 @@ Target::secToObjectRise (double JD)
 {
   struct ln_rst_time rst;
   int ret;
-  ret = getRST (&rst, JD);
+  ret = getRST (&rst, JD, getMinAlt ());
   if (ret)
     return -1;  // don't rise, circumpolar etc..
   ret = int ((rst.rise - JD) * 86400.0);
@@ -676,7 +676,7 @@ Target::secToObjectMeridianPass (double JD)
 {
   struct ln_rst_time rst;
   int ret;
-  ret = getRST (&rst, JD);
+  ret = getRST (&rst, JD, getMinAlt ());
   if (ret)
     return -1;  // don't rise, circumpolar etc..
   ret = int ((rst.transit - JD) * 86400.0);
@@ -1006,7 +1006,7 @@ Target::selectedAsGood ()
 }
 
 /**
- * return 0 if we cannot observe that target, 1 if it's above horizont.
+ * return 0 if we cannot observe that target, 1 if it's above horizon.
  */
 int
 Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
@@ -1034,7 +1034,7 @@ Target::isGood (double JD)
 int
 Target::considerForObserving (double JD)
 {
-  // horizont constrain..
+  // horizon constrain..
   struct ln_equ_posn curr_position;
   double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
   int ret;
@@ -1047,7 +1047,7 @@ Target::considerForObserving (double JD)
   if (!ret)
   {
     struct ln_rst_time rst;
-    ret = getRST (&rst, JD);
+    ret = getRST (&rst, JD, getMinAlt ());
     if (ret == -1)
     {
       // object doesn't rise, let's hope tomorrow it will rise
@@ -1063,11 +1063,11 @@ Target::considerForObserving (double JD)
       setNextObservable (JD + 10.0 / (24.0 * 60.0));
       return -1;
     }
-    // object is above horizont, but checker reject it..let's see what
+    // object is above horizon, but checker reject it..let's see what
     // will hapens in 12 minutes 
     if (rst.transit < rst.set && rst.set < rst.rise)
     {
-      // object rose, but is not above horizont, let's hope in 12 minutes it will get above horizont
+      // object rose, but is not above horizon, let's hope in 12 minutes it will get above horizon
       logStream (MESSAGE_DEBUG) << "Target::considerForObserving " <<
         getTargetID () << " obstarid " << getObsTargetID () << " will rise tommorow: " << rst.rise << " JD:" << JD << sendLog;
       setNextObservable (JD + 12*(1.0/1440.0));
@@ -1342,11 +1342,11 @@ Target::printShortInfo (std::ostream & _os, double JD)
   LibnovaRaDec raDec (&pos);
   LibnovaHrz hrzP (&hrz);
   _os
-   << std::setw (5) << getTargetID () << " | "
-   << getTargetType () << " | "
-   << std::left << std::setw (40) << (name ? name :  "null") << std::right << " | "
-   << raDec << " | "
-   << std::setw (5) << getAirmass (JD) << " | "
+   << std::setw (5) << getTargetID () << SEP
+   << getTargetType () << SEP
+   << std::left << std::setw (40) << (name ? name :  "null") << std::right << SEP
+   << raDec << SEP
+   << std::setw (5) << getAirmass (JD) << SEP
    << hrzP;
   _os.precision (old_prec);
 }
@@ -1363,12 +1363,12 @@ Target::printShortBonusInfo (std::ostream & _os, double JD)
   LibnovaRaDec raDec (&pos);
   LibnovaHrz hrzP (&hrz);
   _os
-   << std::setw (5) << getTargetID () << " | "
-   << std::setw (7) << getBonus (JD) << " | "
-   << getTargetType () << " | "
-   << std::left << std::setw (40) << (name ? name :  "null") << std::right << " | "
-   << raDec << " | "
-   << std::setw (5) << getAirmass (JD) << " | "
+   << std::setw (5) << getTargetID () << SEP
+   << std::setw (7) << getBonus (JD) << SEP
+   << getTargetType () << SEP
+   << std::left << std::setw (40) << (name ? name :  "null") << std::right << SEP
+   << raDec << SEP
+   << std::setw (5) << getAirmass (JD) << SEP
    << hrzP;
   _os.precision (old_prec);
 }
@@ -1596,7 +1596,7 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
     << InfoVal<LibnovaRa> ("HOUR ANGLE", LibnovaRa (hourangle))
     << InfoVal<double> ("AIRMASS", getAirmass (JD))
     << std::endl;
-  ret = getRST (&rst, JD);
+  ret = getRST (&rst, JD, LN_STAR_STANDART_HORIZON);
   switch (ret)
   {
     case 1:
@@ -1630,6 +1630,47 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
 	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now));
       }
   }
+  _os << std::endl
+    << InfoVal<double> ("MIN_ALT", getMinAlt ())
+    << std::endl
+    << "RISE, SET AND TRANSIT ABOVE MIN_ALT"
+    << std::endl
+    << std::endl;
+  ret = getRST (&rst, JD, getMinAlt ());
+  switch (ret)
+  {
+    case 1:
+      _os << " - CIRCUMPOLAR - " << std::endl;
+      rst.transit = JD + ((360 - hourangle) / 15.0 / 24.0);
+      _os << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now));
+      break;
+    case -1:
+      _os << " - DON'T RISE - " << std::endl;
+      break;
+    default:
+      if (rst.set < rst.rise && rst.rise < rst.transit)
+      {
+	_os 
+	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now)) 
+	  << InfoVal<TimeJDDiff> ("RISE", TimeJDDiff (rst.rise, now))
+	  << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now));
+      }
+      else if (rst.transit < rst.set && rst.set < rst.rise)
+      {
+	_os 
+	  << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now))
+	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now))
+	  << InfoVal<TimeJDDiff> ("RISE", TimeJDDiff (rst.rise, now));
+      }
+      else
+      {
+	_os 
+	  << InfoVal<TimeJDDiff> ("RISE", TimeJDDiff (rst.rise, now))
+	  << InfoVal<TimeJDDiff> ("TRANSIT", TimeJDDiff (rst.transit, now))
+	  << InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now));
+      }
+  }
+
   getGalLng (&gal, JD);
   _os 
     << std::endl
@@ -1676,14 +1717,13 @@ Target::sendInfo (std::ostream & _os, double JD)
     << InfoVal<int> ("7 DAYS OBS", getNumObs (&last, &now))
     << InfoVal<double> ("BONUS", getBonus (JD));
 
-  // is above horizont?
+  // is above horizon?
   gst = ln_get_mean_sidereal_time (JD);
   lst = gst + getObserver()->lng / 15.0;
   _os << (isGood (lst, JD, & pos)
-   ? "Target is above local horizont." 
-   : "Target is below local horizont, it's not possible to observe it.")
+   ? "Target is above local horizon." 
+   : "Target is below local horizon, it's not possible to observe it.")
    << std::endl;
-  _os << InfoVal<double> ("MIN_ALT", getMinAlt ());
   printExtra (_os, JD);
 }
 

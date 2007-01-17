@@ -105,7 +105,7 @@ ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-ConstTarget::getRST (struct ln_rst_time *rst, double JD)
+ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   struct ln_equ_posn pos;
   int ret;
@@ -113,7 +113,7 @@ ConstTarget::getRST (struct ln_rst_time *rst, double JD)
   ret = getPosition (&pos, JD);
   if (ret)
     return ret;
-  return ln_get_object_next_rst (JD, observer, &pos, rst);
+  return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
 int
@@ -249,7 +249,7 @@ EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-EllTarget::getRST (struct ln_rst_time *rst, double JD)
+EllTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   if (orbit.e == 1.0)
     {
@@ -259,7 +259,7 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
       par_orbit.w = orbit.w;
       par_orbit.omega = orbit.omega;
       par_orbit.JD = orbit.JD;
-      return ln_get_par_body_next_rst (JD, observer, &par_orbit, rst);
+      return ln_get_par_body_next_rst_horizon (JD, observer, &par_orbit, horizon, rst);
     }
   else if (orbit.e > 1.0)
     {
@@ -270,9 +270,9 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
       hyp_orbit.w = orbit.w;
       hyp_orbit.omega = orbit.omega;
       hyp_orbit.JD = orbit.JD;
-      return ln_get_hyp_body_next_rst (JD, observer, &hyp_orbit, rst);
+      return ln_get_hyp_body_next_rst_horizon (JD, observer, &hyp_orbit, horizon, rst);
     }
-  return ln_get_ell_body_next_rst (JD, observer, &orbit, rst);
+  return ln_get_ell_body_next_rst_horizon (JD, observer, &orbit, horizon, rst);
 }
 
 void
@@ -627,11 +627,11 @@ FlatTarget::load ()
         break;
       d_tar.ra = d_tar_ra;
       d_tar.dec = d_tar_dec;
-      // we should be at least 10 deg above horizont to be considered..
+      // we should be at least 10 deg above horizon to be considered..
       ln_get_hrz_from_equ (&d_tar, observer, JD, &hrz);
       if (hrz.alt < 10)
         continue;
-      // and of course we should be above horizont..
+      // and of course we should be above horizon..
       if (!isGood (lst, JD, &d_tar))
 	continue;
       // test if we found the best target..
@@ -1147,14 +1147,12 @@ OportunityTarget::getBonus (double JD)
 {
   double retBonus = 0;
   struct ln_hrz_posn hrz;
-  struct ln_rst_time rst;
   double lunarDist;
   double ha;
   double lastObs;
   time_t now;
   time_t start_t;
   getAltAz (&hrz, JD);
-  getRST (&rst, JD);
   lunarDist = getLunarDistance (JD);
   ha = getHourAngle ();
   lastObs = getLastObsTime ();
@@ -1189,9 +1187,9 @@ LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-LunarTarget::getRST (struct ln_rst_time *rst, double JD)
+LunarTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
-  return ln_get_lunar_rst (JD, observer, rst);
+  return ln_get_body_rst_horizon (JD, observer, ln_get_lunar_equ_coords, horizon, rst);
 }
 
 int
@@ -1641,12 +1639,12 @@ TargetGRB::printGrbList (std::ostream & _os)
   double firstObs = getFirstObs ();
   getPosition (&pos, ln_get_julian_from_sys ());
   _os
-    << std::setw(5) << getTargetID () << " | "
-    << LibnovaRa (pos.ra) << " | " 
-    << LibnovaDec (pos.dec) << " | "
-    << Timestamp (grbDate) << " | "
-    << std::setw(15) << TimeDiff (grbDate, firstObs) << " | "
-    << std::setw(15) << TimeDiff (getFirstPacket (), firstObs) << " | "
+    << std::setw(5) << getTargetID () << SEP
+    << LibnovaRa (pos.ra) << SEP 
+    << LibnovaDec (pos.dec) << SEP
+    << Timestamp (grbDate) << SEP
+    << std::setw(15) << TimeDiff (grbDate, firstObs) << SEP
+    << std::setw(15) << TimeDiff (getFirstPacket (), firstObs) << SEP
     << Timestamp (getLastObs ())
     << std::endl;
 }
@@ -1788,7 +1786,7 @@ TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD)
+TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   struct ln_equ_posn pos;
   int ret;
@@ -1796,7 +1794,7 @@ TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD)
   ret = getPosition (&pos, JD);
   if (ret)
     return ret;
-  return ln_get_object_next_rst (JD, observer, &pos, rst);
+  return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
 moveType
@@ -2044,7 +2042,7 @@ TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD)
+TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   struct ln_equ_posn pos;
   int ret;
@@ -2052,7 +2050,7 @@ TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD)
   ret = getPosition (&pos, JD);
   if (ret)
     return ret;
-  return ln_get_object_next_rst (JD, observer, &pos, rst);
+  return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
 moveType
@@ -2526,10 +2524,10 @@ TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
 }
 
 int
-TargetPlan::getRST (struct ln_rst_time *rst, double JD)
+TargetPlan::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   if (selectedPlan)
-    return selectedPlan->getTarget()->getRST (rst, JD);
+    return selectedPlan->getTarget()->getRST (rst, JD, horizon);
   // otherwise we have circumpolar target
   return 1;
 }

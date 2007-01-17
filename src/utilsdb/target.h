@@ -461,9 +461,9 @@ public:
 
   int getRST (struct ln_rst_time *rst)
   {
-    return getRST (rst, ln_get_julian_from_sys ());
+    return getRST (rst, ln_get_julian_from_sys (), LN_STAR_STANDART_HORIZON);
   }
-  virtual int getRST (struct ln_rst_time *rst, double jd)
+  virtual int getRST (struct ln_rst_time *rst, double jd, double horizon)
   {
     return -1;
   }
@@ -672,7 +672,7 @@ public:
   virtual int load ();
   virtual int save (int tar_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_rst_time *rst, double jd);
+  virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
   virtual void printExtra (std::ostream & _os, double JD);
 
@@ -694,7 +694,7 @@ public:
   };
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_rst_time *rst, double jd);
+  virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 
   virtual void printExtra (std::ostream & _os, double JD);
 };
@@ -867,7 +867,7 @@ public:
   LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
   virtual int getScript (const char *deviceName, char *buf);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_rst_time *rst, double jd);
+  virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 };
 
 class TargetGRB:public ConstTarget
@@ -939,7 +939,7 @@ public:
 
   virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_rst_time *rst, double JD);
+  virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
   virtual moveType afterSlewProcessed ();
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
@@ -963,7 +963,7 @@ public:
 
   virtual int load ();		// find Swift pointing for observation
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_rst_time *rst, double JD);
+  virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
   virtual moveType afterSlewProcessed ();
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int beforeMove ();
@@ -1018,7 +1018,7 @@ public:
   virtual int load ();
   virtual int load (double JD);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual int getRST (struct ln_rst_time *rst, double JD);
+  virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
   virtual int getObsTargetID ();
   virtual int considerForObserving (double JD);
   virtual float getBonus (double JD);

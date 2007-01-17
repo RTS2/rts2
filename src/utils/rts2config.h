@@ -12,6 +12,8 @@
 
 #include "objectcheck.h"
 
+#define SEP	"\t"
+
 class Rts2Config
 {
 private:

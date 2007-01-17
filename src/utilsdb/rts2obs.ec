@@ -4,6 +4,7 @@
 #include "rts2taruser.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
+#include "../utils/rts2config.h"
 
 #include <iostream>
 #include <iomanip>
@@ -436,27 +437,30 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
 
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os.precision (2);
-  _os << std::setw (5) << obs.obs_id << "|"
-    << std::setw(6) << obs.tar_id << "|"
-    << std::left << std::setw (20) << obs.tar_name << std::right << "|"
-    << Timestamp (obs.obs_slew) << "|"
-    << LibnovaRa (obs.obs_ra) << "|"
-    << LibnovaDec (obs.obs_dec) << "|"
-    << LibnovaDeg90 (obs.obs_alt) << "|"
-    << LibnovaDeg (obs.obs_az) << "|"
+  _os << std::setw (5) << obs.obs_id << SEP
+    << std::setw(6) << obs.tar_id << SEP
+    << std::left << std::setw (20) << obs.tar_name << std::right << SEP
+    << Timestamp (obs.obs_slew) << SEP
+    << LibnovaRa (obs.obs_ra) << SEP
+    << LibnovaDec (obs.obs_dec) << SEP
+    << LibnovaDeg90 (obs.obs_alt) << SEP
+    << LibnovaDeg (obs.obs_az) << SEP
     << std::setfill (' ');
 
   if (obs.obs_start > 0)
-    _os << std::setw (12) << TimeDiff (obs.obs_slew, obs.obs_start) << " | ";
+    _os << std::setw (12) << TimeDiff (obs.obs_slew, obs.obs_start) << SEP;
   else
-    _os << std::setw (12) << "not" << " | ";
+    _os << std::setw (12) << "not" << SEP;
 
   if (!isnan (obs.obs_end))
-    _os << std::setw (12) << TimeDiff (obs.obs_start, obs.obs_end) << " | ";
+    _os << std::setw (12) << TimeDiff (obs.obs_start, obs.obs_end) << SEP;
   else
-    _os << std::setw (12) << "not" << " | ";
+    _os << std::setw (12) << "not" << SEP;
 
-  _os << Rts2ObsState (obs.obs_state);
+  _os << SEP
+    << std::setw (7) << obs.getSlewSpeed() << SEP
+    << Rts2ObsState (obs.obs_state);
+
   if (obs.displayImages)
   {
     obs.loadImages ();
@@ -472,8 +476,6 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
     if (obs.displayCounts & DISPLAY_SUMMARY)
       obs.printCountsSummary (_os);
   }
-
-  _os << " | " << std::setw (7) << obs.getSlewSpeed();
 
   _os.flags (old_settings);
   _os.precision (old_precision);

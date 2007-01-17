@@ -240,7 +240,7 @@ Rts2SqlQuery::display ()
 	}
 	if (cur_col > 1)
 	{
-	  std::cout << " | ";
+	  std::cout << SEP;
 	}
 	std::cout << std::setw (len) << (*col_iter)->getHeader (len);
 	cur_col++;
@@ -255,7 +255,7 @@ Rts2SqlQuery::display ()
     for (cur_col = 1, col_iter = columns.begin (); cur_col <= cols && col_iter != columns.end (); cur_col++, col_iter++)
     {
       if (cur_col > 1)
-	std::cout << " | ";
+	std::cout << SEP;
       EXEC SQL GET DESCRIPTOR disp_desc VALUE :cur_col
       	:type = TYPE,
 	:scale = SCALE,
