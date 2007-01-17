@@ -296,7 +296,8 @@ EllTarget::printExtra (std::ostream & _os, double JD)
     << InfoVal<double> ("e", orbit.e)
     << InfoVal<double> ("Peri.", orbit.w)
     << InfoVal<double> ("Node", orbit.omega)
-    << InfoVal<double> ("Incl.", orbit.i);
+    << InfoVal<double> ("Incl.", orbit.i)
+    << std::endl;
 }
 
 PossibleDarks::PossibleDarks (DarkTarget *in_target, const char *in_deviceName)
@@ -1616,7 +1617,8 @@ TargetGRB::printExtra (std::ostream &_os, double JD)
     << InfoVal<Timestamp> ("GCN LAST UPDATE", Timestamp (lastUpdate))
     << InfoVal<LibnovaRaJ2000> ("GRB RA", LibnovaRaJ2000 (grb.ra))
     << InfoVal<LibnovaDecJ2000> ("GRB DEC", LibnovaDecJ2000 (grb.dec))
-    << InfoVal<LibnovaDeg> ("GRB ERR", LibnovaDeg (errorbox));
+    << InfoVal<LibnovaDeg> ("GRB ERR", LibnovaDeg (errorbox))
+    << std::endl;
   // get information about obsering time..
   if (isnan (firstObs))
   {
@@ -1933,11 +1935,12 @@ TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
 {
   Target::printExtra (_os, JD);
   _os 
-  << InfoVal<const char *> ("NAME", swiftName)
-  << InfoVal<int> ("SwiftFOW ID", swiftId)
-  << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
-  << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
-  << InfoVal<double> ("ROLL", swiftRoll);
+   << InfoVal<const char *> ("NAME", swiftName)
+   << InfoVal<int> ("SwiftFOW ID", swiftId)
+   << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
+   << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
+   << InfoVal<double> ("ROLL", swiftRoll)
+   << std::endl;
 }
 
 TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
@@ -2179,7 +2182,8 @@ TargetIntegralFOV::printExtra (std::ostream &_os, double JD)
 {
   Target::printExtra (_os, JD);
   _os 
-  << InfoVal<Timestamp> ("FROM", Timestamp (integralTimeStart));
+    << InfoVal<Timestamp> ("FROM", Timestamp (integralTimeStart))
+    << std::endl;
 }
 
 
@@ -2604,7 +2608,7 @@ TargetPlan::printExtra (std::ostream & _os, double JD)
       << "SELECTED PLAN" << std::endl
       << selectedPlan << std::endl
       << selectedPlan->getTarget () << std::endl
-      << "*************************************************" << std::endl;
+      << "*************************************************" << std::endl << std::endl;
   }
   else
   {
@@ -2615,10 +2619,10 @@ TargetPlan::printExtra (std::ostream & _os, double JD)
     _os << "NEXT PLAN" << std::endl
       << nextPlan << std::endl
       << nextPlan->getTarget () << std::endl
-      << "*************************************************" << std::endl;
+      << "*************************************************" << std::endl << std::endl;
   }
   else
   {
-    _os << "NO NEXT PLAN SELECTED" << std::endl;
+    _os << "NO NEXT PLAN SELECTED" << std::endl << std::endl;
   }
 }

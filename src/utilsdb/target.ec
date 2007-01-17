@@ -1387,10 +1387,12 @@ Target::printExtra (std::ostream &_os, double JD)
     _os << "Target is disabled" << std::endl;
   }
   _os 
+    << std::endl
     << InfoVal<double> ("TARGET PRIORITY", tar_priority)
     << InfoVal<double> ("TARGET BONUS", tar_bonus)
     << InfoVal<Timestamp> ("TARGET BONUS TIME", Timestamp(tar_bonus_time))
-    << InfoVal<Timestamp> ("TARGET NEXT OBS.", Timestamp(tar_next_observable));
+    << InfoVal<Timestamp> ("TARGET NEXT OBS.", Timestamp(tar_next_observable))
+    << std::endl;
 }
 
 void
