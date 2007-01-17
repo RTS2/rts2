@@ -1,3 +1,10 @@
+rts2 (0.6.2-1) unstable; urgency=low
+
+  * DB update
+  * new init structure
+
+ -- Petr Kubanek <petr@kubanek.net>  Wed, 06 Dec 2006 16:56:17 +0100
+
 rts2 (0.5.1-1) unstable; urgency=low
 
   * Added new columns to the DB
