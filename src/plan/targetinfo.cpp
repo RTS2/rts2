@@ -62,7 +62,7 @@ Rts2AppDb (in_argc, in_argv)
 
   JD = ln_get_julian_from_sys ();
 
-  addOption ('E', "extended", 2,
+  addOption ('e', "extended", 2,
 	     "print extended informations (visibility prediction,..)");
   addOption ('c', "calibartion", 0, "print recommended calibration targets");
   addOption ('o', "observations", 2,
@@ -87,7 +87,7 @@ Rts2TargetInfo::processOption (int in_opt)
   int ret;
   switch (in_opt)
     {
-    case 'E':
+    case 'e':
       printExtendet = 1;
       break;
     case 'c':

@@ -93,7 +93,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-E</option>
+        <term><option>-e</option>
           <option>--extended</option>
         </term>
         <listitem>
@@ -101,7 +101,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-C</option>
+        <term><option>-c</option>
           <option>--calibration</option>
         </term>
         <listitem>
