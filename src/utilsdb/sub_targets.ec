@@ -259,7 +259,7 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
       par_orbit.w = orbit.w;
       par_orbit.omega = orbit.omega;
       par_orbit.JD = orbit.JD;
-      return ln_get_par_body_rst (JD, observer, &par_orbit, rst);
+      return ln_get_par_body_next_rst (JD, observer, &par_orbit, rst);
     }
   else if (orbit.e > 1.0)
     {
@@ -270,9 +270,9 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD)
       hyp_orbit.w = orbit.w;
       hyp_orbit.omega = orbit.omega;
       hyp_orbit.JD = orbit.JD;
-      return ln_get_hyp_body_rst (JD, observer, &hyp_orbit, rst);
+      return ln_get_hyp_body_next_rst (JD, observer, &hyp_orbit, rst);
     }
-  return ln_get_ell_body_rst (JD, observer, &orbit, rst);
+  return ln_get_ell_body_next_rst (JD, observer, &orbit, rst);
 }
 
 void

@@ -30,23 +30,23 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
   rst_naut->rise = rst_naut->transit = rst_naut->set = 0;
   rst->rise = rst->transit = rst->set = 0;
   *sun_rs = 0;
-  double night_horizont = -10;
-  config->getDouble ("observatory", "night_horizont", night_horizont);
-  double day_horizont = 0;
-  config->getDouble ("observatory", "day_horizont", day_horizont);
+  double night_horizon = -10;
+  config->getDouble ("observatory", "night_horizon", night_horizon);
+  double day_horizon = 0;
+  config->getDouble ("observatory", "day_horizon", day_horizon);
   // find first next day, on which nautic sunset is occuring
   do
     {
       struct ln_rst_time t_rst;
       sun_naut =
-	ln_get_solar_rst_horizont (t_jd, observer, night_horizont, &t_rst);
+	ln_get_solar_rst_horizon (t_jd, observer, night_horizon, &t_rst);
       if (!rst_naut->rise && jd < t_rst.rise)
 	rst_naut->rise = t_rst.rise;
       if (!rst_naut->transit && jd < t_rst.transit)
 	rst_naut->transit = t_rst.transit;
       if (!rst_naut->set && jd < t_rst.set)
 	rst_naut->set = t_rst.set;
-      if (!ln_get_solar_rst_horizont (t_jd, observer, day_horizont, &t_rst))
+      if (!ln_get_solar_rst_horizon (t_jd, observer, day_horizon, &t_rst))
 	{
 	  *sun_rs = 1;
 	  if (!rst->set && jd < t_rst.set)

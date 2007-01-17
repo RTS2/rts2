@@ -1,1 +1,14 @@
- * dokumentace!!!!!!!!!!!!!!!!!!!
+* faster camd communication
+* image que processing
+  - finish obs, .. processing
+* logging-messaging
+  - rts2-mon
+  - jabberd
+* scripting
+  - custom values/parameters
+* record all values to fits header
+  - target auxiliray values (orbital parameters,..)
+* rts2-web
+  - statistics
+  - finish hibernate mapping
+  - virtual observatory

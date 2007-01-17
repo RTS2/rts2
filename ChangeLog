@@ -1,3 +1,29 @@
+0.7.0
+===
+ * cleaning of options (capital | lower case,..)
+ * added soapd, augershooter,..
+ * manual pages
+ * create events table
+ * mesaging
+ * clean of init, deamonize, .. (centrald have log file..)
+
+0.6.3
+===
+ * observation processing support
+   - obs_process script
+
+0.6.2
+==
+ * (fill in)
+
+0.6.1
+==
+ * (fill in)
+
+0.6.0
+==
+ * (fill in)
+
 0.5.2
 ===
  * guiding support

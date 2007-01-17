@@ -714,7 +714,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
     tar_dec << " last " << lastRa << " " << lastDec << " known position " <<
     knowPosition << " correction " << locCorNum << " " << locCorRa << " " <<
     locCorDec << " last target " << lastTar.ra << " " << lastTar.
-    dec << " correction" << corrections << sendLog;
+    dec << " correction " << corrections << sendLog;
   // target is without corrections
   ret = setTarget (tar_ra, tar_dec);
 
