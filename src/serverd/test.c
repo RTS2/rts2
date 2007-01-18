@@ -97,7 +97,10 @@ main (int argc, char **argv)
   int ndays = 5;
   int c;
 
-  obs = Rts2Config::instance ()->getObserver ();
+  Rts2Config *config = Rts2Config::instance ();
+  config->loadFile ();
+
+  obs = config->getObserver ();
   ev_time = time (NULL);
 
   while (1)
