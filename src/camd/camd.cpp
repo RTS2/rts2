@@ -1,8 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include <mcheck.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

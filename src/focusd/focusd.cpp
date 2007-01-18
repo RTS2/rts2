@@ -3,12 +3,6 @@
  *
  * @author standa
  */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include <mcheck.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -242,7 +236,8 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-bool Rts2DevFocuser::isAtStartPosition ()
+bool
+Rts2DevFocuser::isAtStartPosition ()
 {
   return false;
 }
