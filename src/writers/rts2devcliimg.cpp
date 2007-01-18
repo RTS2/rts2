@@ -69,7 +69,7 @@ Rts2DevClientCameraImage::queExposure ()
   connection->
     queCommand (new
 		Rts2CommandExposure (connection->getMaster (), this,
-				     exposureT, exposureTime));
+				     0, exposureT, exposureTime));
   isExposing = 1;
   if (exposureT != EXP_DARK)
     blockWait ();

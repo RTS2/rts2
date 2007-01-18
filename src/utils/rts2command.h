@@ -114,8 +114,21 @@ private:
   Rts2DevClientCamera * camera;
 public:
   Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera,
-		       exposureType exp_type, float exp_time);
+		       int chip, exposureType exp_type, float exp_time);
   virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandReadout:public Rts2Command
+{
+public:
+  Rts2CommandReadout (Rts2Block * in_master, int chip);
+};
+
+class Rts2CommandReadoutExposure:public Rts2Command
+{
+public:
+  Rts2CommandReadoutExposure (Rts2Block * in_master, int chip,
+			      exposureType exp_type, float exp_time);
 };
 
 class Rts2CommandFilter:public Rts2Command

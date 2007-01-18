@@ -345,6 +345,8 @@ public:
   int camCenter (Rts2Conn * conn, int chip, int in_w, int in_h);
   int camReadout (int chip);
   int camReadout (Rts2Conn * conn, int chip);
+  // start readout & do/que exposure, that's for frame transfer CCDs
+  int camReadoutExpose (Rts2Conn * conn, int chip, int light, float exptime);
   int camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin);
   int camStopRead (Rts2Conn * conn, int chip);
   int camCoolMax (Rts2Conn * conn);
@@ -405,10 +407,10 @@ public:
     Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device);
 };
 
-Rts2LogStream CameraChip::logStream (messageType_t in_messageType)
+Rts2LogStream
+CameraChip::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (camera, in_messageType);
+  Rts2LogStream ls (camera, in_messageType);
   return ls;
 }
 

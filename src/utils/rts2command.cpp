@@ -142,13 +142,14 @@ Rts2CommandCameraSettings (in_camera)
 
 Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master,
 					  Rts2DevClientCamera * in_camera,
+					  int chip,
 					  exposureType exp_type,
 					  float exp_time):
 Rts2Command (in_master)
 {
   char *command;
-  asprintf (&command, "expose 0 %i %f", (exp_type == EXP_LIGHT ? 1 : 0),
-	    exp_time);
+  asprintf (&command, "expose %i %i %f", chip,
+	    (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
   setCommand (command);
   free (command);
   camera = in_camera;
@@ -163,6 +164,28 @@ Rts2CommandExposure::commandReturnFailed (int status)
 {
   camera->exposureFailed (status);
   return Rts2Command::commandReturnFailed (status);
+}
+
+Rts2CommandReadout::Rts2CommandReadout (Rts2Block * in_master, int chip):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "readout %i", chip);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandReadoutExposure::Rts2CommandReadoutExposure (Rts2Block * in_master,
+							int chip,
+							exposureType exp_type,
+							float exp_time):
+Rts2Command (in_master)
+{
+  char *command;
+  asprintf (&command, "readout_exposure %i %i %f", chip,
+	    (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
+  setCommand (command);
+  free (command);
 }
 
 void

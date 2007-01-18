@@ -61,7 +61,7 @@ Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera,
 				      char new_device[DEVICE_NAME_SIZE])
 {
   *new_command =
-    new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT,
+    new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_LIGHT,
 			     expTime);
   getDevice (new_device);
   return 0;
@@ -79,7 +79,8 @@ Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera,
 				    char new_device[DEVICE_NAME_SIZE])
 {
   *new_command =
-    new Rts2CommandExposure (script->getMaster (), camera, EXP_DARK, expTime);
+    new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_DARK,
+			     expTime);
   getDevice (new_device);
   return 0;
 }
@@ -280,7 +281,7 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
     {
     case NEED_IMAGE:
       *new_command =
-	new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT,
+	new Rts2CommandExposure (script->getMaster (), 0, camera, EXP_LIGHT,
 				 expTime);
       getDevice (new_device);
 #ifdef DEBUG_EXTRA

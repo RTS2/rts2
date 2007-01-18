@@ -896,6 +896,14 @@ Rts2DevCamera::camReadout (int chip)
 }
 
 int
+Rts2DevCamera::camReadoutExpose (Rts2Conn * conn, int chip, int light,
+				 float exptime)
+{
+
+  return -1;
+}
+
+int
 Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 {
   int ret;
@@ -1175,16 +1183,14 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
@@ -1213,6 +1219,8 @@ int
 Rts2DevConnCamera::commandAuthorized ()
 {
   int chip;
+  float exptime;
+  int light;
 
   if (isCommand ("chipinfo"))
     {
@@ -1230,10 +1238,13 @@ Rts2DevConnCamera::commandAuthorized ()
       send ("ready - is camera ready?");
       send ("info - information about camera");
       send ("chipinfo <chip> - information about chip");
-      send ("expose <chip> <exposure> - start exposition on given chip");
+      send
+	("expose <chip> <light> <exposure> - start exposition on given chip");
       send ("stopexpo <chip> - stop exposition on given chip");
       send ("progexpo <chip> - query exposition progress");
       send ("readout <chip> - start reading given chip");
+      send
+	("readout_exposure <chip> <light> <exposure> - start readout and start/que next exposure, handy for frame transfer CDDs");
       send ("mirror <open|close> - open/close mirror");
       send
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
@@ -1252,8 +1263,6 @@ Rts2DevConnCamera::commandAuthorized ()
   // otherwise we will be unable to answer DEVDEM_E_PRIORITY
   else if (isCommand ("expose"))
     {
-      float exptime;
-      int light;
       CHECK_PRIORITY;
       if (paramNextChip (&chip)
 	  || paramNextInteger (&light)
@@ -1303,6 +1312,15 @@ Rts2DevConnCamera::commandAuthorized ()
       if (paramNextChip (&chip) || !paramEnd ())
 	return -2;
       return master->camReadout (this, chip);
+    }
+  else if (isCommand ("readout_exposure"))
+    {
+      CHECK_PRIORITY;
+      if (paramNextChip (&chip)
+	  || paramNextInteger (&light)
+	  || paramNextFloat (&exptime) || !paramEnd ())
+	return -2;
+      return master->camReadoutExpose (this, chip, light, exptime);
     }
   else if (isCommand ("binning"))
     {

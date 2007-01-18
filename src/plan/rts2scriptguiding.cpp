@@ -167,7 +167,7 @@ Rts2ScriptElementGuiding::nextCommand (Rts2DevClientCamera * camera,
 	return NEXT_COMMAND_NEXT;
     case NEED_IMAGE:
       *new_command =
-	new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT,
+	new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_LIGHT,
 				 expTime);
       getDevice (new_device);
       processingState = WAITING_IMAGE;
