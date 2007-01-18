@@ -25,7 +25,7 @@
  * to get that running. You can get libfli on http://www.moronski.com/fli
  */
 
-#include "camera_cpp.h"
+#include "camd.h"
 
 #include "libfli.h"
 

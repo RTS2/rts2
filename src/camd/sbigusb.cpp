@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "camera_cpp.h"
+#include "camd.h"
 #include "../utils/rts2device.h"
 #include "../utils/rts2block.h"
 

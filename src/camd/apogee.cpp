@@ -6,10 +6,6 @@
  * @author petr
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif /* !_GNU_SOURCE */
-
 #include <math.h>
 #include <strings.h>
 #include <sys/types.h>
@@ -29,7 +25,7 @@
 
 #include "apogee/CameraIO_Linux.h"
 
-#include "camera_cpp.h"
+#include "camd.h"
 
 // Error codes returned from config_load
 const int CCD_OPEN_NOERR = 0;	// No error detected

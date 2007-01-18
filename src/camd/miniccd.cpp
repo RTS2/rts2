@@ -1,10 +1,6 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <fcntl.h>
 #include <errno.h>
-#include "camera_cpp.h"
+#include "camd.h"
 
 #include "ccd_msg.h"
 #include "../utils/rts2device.h"

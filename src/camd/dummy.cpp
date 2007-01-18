@@ -1,4 +1,4 @@
-#include "camera_cpp.h"
+#include "camd.h"
 
 class CameraDummyChip:public CameraChip
 {

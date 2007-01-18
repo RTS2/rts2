@@ -6,7 +6,7 @@
 #include <time.h>
 #include <errno.h>
 
-#include "camera_cpp.h"
+#include "camd.h"
 #include "rts2devcliwheel.h"
 #include "rts2devclifocuser.h"
 

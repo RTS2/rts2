@@ -7,7 +7,7 @@
  */
 #include <math.h>
 
-#include "camera_cpp.h"
+#include "camd.h"
 #include "ApnCamera.h"
 
 class CameraChipAlta:public CameraChip

@@ -4,7 +4,7 @@ SUBDIRS = urvc2 apogee
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
-noinst_HEADERS = camera_cpp.h ccd_msg.h rts2devcliwheel.h filter.h rts2devclifocuser.h
+noinst_HEADERS = camd.h ccd_msg.h rts2devcliwheel.h filter.h rts2devclifocuser.h
 
 LDADD = ../utils/librts2block.a
 

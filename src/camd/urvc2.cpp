@@ -5,10 +5,6 @@
  * 
  * @author petr
  */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -19,7 +15,7 @@
 #include <sys/io.h>
 
 #include "urvc2/urvc.h"
-#include "camera_cpp.h"
+#include "camd.h"
 
 #define DEFAULT_CAMERA	ST8_CAMERA	// in case geteeprom fails
 
