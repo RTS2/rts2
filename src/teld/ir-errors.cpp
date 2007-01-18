@@ -9,21 +9,23 @@ private:
   double referenced;
   double currpos;
   double targetpos;
+  double offset;
   double power;
   const char *name;
 public:
     IrAxis (const char *in_name, double in_referenced, double in_currpos,
-	    double in_targetpos, double in_power);
+	    double in_targetpos, double in_offset, double in_power);
   friend std::ostream & operator << (std::ostream & _os, IrAxis irax);
 };
 
 IrAxis::IrAxis (const char *in_name, double in_referenced, double in_currpos,
-		double in_targetpos, double in_power)
+		double in_targetpos, double in_offset, double in_power)
 {
   name = in_name;
   referenced = in_referenced;
   currpos = in_currpos;
   targetpos = in_targetpos;
+  offset = in_offset;
   power = in_power;
 }
 
@@ -35,6 +37,7 @@ std::ostream & operator << (std::ostream & _os, IrAxis irax)
     << irax.name << ".REFERENCED " << irax.referenced << std::endl
     << irax.name << ".CURRPOS " << irax.currpos << std::endl
     << irax.name << ".TARGETPOS " << irax.targetpos << std::endl
+    << irax.name << ".OFFSET " << irax.offset << std::endl
     << irax.name << ".POWER " << irax.power << std::endl;
   _os.setf (old_settings);
   return _os;
@@ -59,33 +62,48 @@ public:
   virtual int run ();
 };
 
-IrAxis
-Rts2DevIrError::getAxisStatus (const char *ax_name)
+IrAxis Rts2DevIrError::getAxisStatus (const char *ax_name)
 {
-  double referenced = nan ("f");
-  double currpos = nan ("f");
-  double targetpos = nan ("f");
-  double power = nan ("f");
+  double
+    referenced = nan ("f");
+  double
+    currpos = nan ("f");
+  double
+    targetpos = nan ("f");
+  double
+    offset = nan ("f");
+  double
+    power = nan ("f");
   std::ostringstream * os;
-  int status = 0;
+  int
+    status = 0;
 
   os = new std::ostringstream ();
   (*os) << ax_name << ".REFERENCED";
   status = tpl_get (os->str ().c_str (), referenced, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".CURRPOS";
   status = tpl_get (os->str ().c_str (), currpos, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".TARGETPOS";
   status = tpl_get (os->str ().c_str (), targetpos, &status);
-  delete os;
+  delete
+    os;
+  os = new std::ostringstream ();
+  (*os) << ax_name << ".OFFSET";
+  status = tpl_get (os->str ().c_str (), offset, &status);
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".POWER";
   status = tpl_get (os->str ().c_str (), power, &status);
-  delete os;
-  return IrAxis (ax_name, referenced, currpos, targetpos, power);
+  delete
+    os;
+  return IrAxis (ax_name, referenced, currpos, targetpos, offset, power);
 }
 
 int
