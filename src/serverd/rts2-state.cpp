@@ -17,14 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <stdio.h>
+//#include <stdio.h>
 #include <time.h>
-#include <stdlib.h>
+//#include <stdlib.h>
+#include <iostream>
 #include "riseset.h"
+#include "../utils/libnova_cpp.h"
+#include "../utils/rts2app.h"
 #include "../utils/rts2config.h"
-#include <getopt.h>
-
-int verbose = 0;		// verbosity level
+#include "../utils/rts2centralstate.h"
 
 /*!
  * Prints current state on STDERR
@@ -39,97 +40,146 @@ int verbose = 0;		// verbosity level
  *
  * Configuration file CONFIG_FILE is used
  */
+class Rts2StateApp:public Rts2App
+{
+private:
+  int verbose;			// verbosity level
+  double lng;
+  double lat;
+  time_t currTime;
+protected:
+    virtual void help ();
+  virtual int processOption (int in_opt);
+public:
+    Rts2StateApp (int in_argc, char **in_argv);
+
+  virtual int init ();
+  virtual int run ();
+};
 
 void
-usage ()
+Rts2StateApp::help ()
 {
-  printf ("Observing state display tool.\n"
-	  "This program comes with ABSOLUTELY NO WARRANTY; for details\n"
-	  "see http://www.gnu.org.  This is free software, and you are welcome\n"
-	  "to redistribute it under certain conditions; see http://www.gnu.org\n"
-	  "for them.\n"
-	  "Program options:\n"
-	  "    -a set latitude (overwrites config file). \n"
-	  "    -c just print current state (one number) and exists\n"
-	  "    -t set time (int unix time)\n"
-	  "    -l set longtitude (overwrites config file). Negative for east of Greenwich)\n"
-	  "    -h prints that help\n" "    -v be verbose\n");
-  exit (EXIT_SUCCESS);
+  std::cout << "Observing state display tool." << std::endl;
+  Rts2App::help ();
+}
 
+int
+Rts2StateApp::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'a':
+      lat = atof (optarg);
+      break;
+    case 'c':
+      verbose = -1;
+      break;
+    case 'l':
+      lng = atof (optarg);
+      break;
+    case 't':
+      currTime = atoi (optarg);
+      if (!currTime)
+	{
+	  std::cerr << "Invalid time: " << optarg << std::endl;
+	  return -1;
+	}
+      break;
+    case 'v':
+      verbose++;
+      break;
+    default:
+      return Rts2App::processOption (in_opt);
+    }
+  return 0;
+}
+
+Rts2StateApp::Rts2StateApp (int in_argc, char **in_argv):Rts2App (in_argc,
+	 in_argv)
+{
+  lng = lat = -1000;
+  verbose = 0;
+
+  time (&currTime);
+
+  addOption ('a', "latitude", 1, "set latitude (overwrites config file)");
+  addOption ('l', "longtitude", 1,
+	     "set longtitude (overwrites config file). Negative for west from Greenwich)");
+  addOption ('c', "clear", 0,
+	     "just print current state (one number) and exists");
+  addOption ('t', "time", 1, "set time (int unix time)");
+  addOption ('v', "verbose", 0, "be verbose");
+}
+
+int
+Rts2StateApp::init ()
+{
+  Rts2Config *config;
+  int ret;
+
+  ret = Rts2App::init ();
+  if (ret)
+    return ret;
+
+  config = Rts2Config::instance ();
+
+  if (config->loadFile () == -1)
+    {
+      std::cerr << "Cannot read configuration file, exiting." << std::endl;
+      return -1;
+    }
+
+  if (lng != -1000)
+    config->getObserver ()->lng = lng;
+  if (lat != -1000)
+    config->getObserver ()->lat = lat;
+
+  return 0;
+}
+
+int
+Rts2StateApp::run ()
+{
+  int ret;
+  time_t ev_time;
+  int curr_type, next_type;
+
+  struct ln_lnlat_posn *obs;
+
+  ret = init ();
+  if (ret)
+    return ret;
+
+  obs = Rts2Config::instance ()->getObserver ();
+
+  if (verbose > 0)
+    std::cout << "Position: " << LibnovaPos (obs)
+      << " Time: " << LibnovaDate (&currTime) << std::endl;
+  if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time))
+    {
+      std::cerr << "Error getting next type" << std::endl;
+      return -1;
+    }
+  switch (verbose)
+    {
+    case -1:
+      std::cout << curr_type << std::endl;
+      break;
+    default:
+      std::cout
+	<< "Current: " << Rts2CentralState (curr_type)
+	<< " " << LibnovaDate (&currTime)
+	<< " next: " << Rts2CentralState (next_type)
+	<< " " << LibnovaDate (&ev_time) << std::endl;
+      break;
+    }
+  return 0;
 }
 
 int
 main (int argc, char **argv)
 {
-  struct ln_lnlat_posn obs;
-  time_t t, ev_time;
-  int curr_type, next_type;
-  int c;
-
-  Rts2Config *config;
-  config = Rts2Config::instance ();
-
-  if (config->loadFile () == -1)
-    {
-      fprintf (stderr, "Cannot read configuration file, exiting.");
-    }
-
-  config->getDouble ("observatory", "latitude", obs.lat);
-  config->getDouble ("observatory", "longtitude", obs.lng);
-
-  time (&t);
-
-  while (1)
-    {
-      c = getopt (argc, argv, "a:cl:hvt:");
-      if (c == -1)
-	break;
-      switch (c)
-	{
-	case 'a':
-	  obs.lat = atof (optarg);
-	  break;
-	case 'c':
-	  verbose = -1;
-	  break;
-	case 'l':
-	  obs.lng = atof (optarg);
-	  break;
-	case 't':
-	  t = atoi (optarg);
-	  if (!t)
-	    {
-	      fprintf (stderr, "Invalid time: %s\n", optarg);
-	      exit (1);
-	    }
-	  break;
-	case '?':
-	case 'h':
-	  usage ();
-	case 'v':
-	  verbose++;
-	  break;
-	default:
-	  fprintf (stderr, "Getopt returned unknow character %o\n", c);
-	}
-    }
-  if (verbose > 0)
-    printf ("Longtitude: %+f Latitude: %f Time: %s", obs.lng, obs.lat,
-	    ctime (&t));
-  if (next_event (&obs, &t, &curr_type, &next_type, &ev_time))
-    {
-      fprintf (stderr, "Error getting next type\n");
-      exit (EXIT_FAILURE);
-    }
-  switch (verbose)
-    {
-    case -1:
-      printf ("%i\n", curr_type);
-      break;
-    default:
-      printf ("current: %i next: %i next_time: %li %li (%s)", curr_type,
-	      next_type, t, ev_time, ctime (&ev_time));
-      break;
-    }
-  return 0;
+  Rts2StateApp app (argc, argv);
+  return app.run ();
 }
