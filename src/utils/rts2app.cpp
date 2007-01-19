@@ -30,7 +30,7 @@ Rts2Object ()
   argv = in_argv;
 
   addOption ('h', "help", 0, "write this help");
-  addOption ('V', "version", 0, "show program version");
+  addOption ('V', "version", 0, "show program version and license");
 }
 
 Rts2App::~Rts2App ()
@@ -158,7 +158,19 @@ Rts2App::processOption (int in_opt)
       help ();
       exit (EXIT_SUCCESS);
     case 'V':
-      std::cout << VERSION << std::endl;
+      std::cout << "Part of RTS2 version: " << VERSION << std::endl
+	<< std::endl
+	<<
+	"(C) 2001-2007 Petr Kubanek and others, see AUTHOR file for complete list"
+	<< std::endl << std::
+	endl << "This program comes with ABSOLUTELY NO WARRANTY; for details"
+	<< std::
+	endl <<
+	"see http://www.gnu.org.  This is free software, and you are welcome"
+	<< std::
+	endl <<
+	"to redistribute it under certain conditions; see http://www.gnu.org"
+	<< std::endl << "for them." << std::endl << std::endl;
       exit (EXIT_SUCCESS);
     case '?':
       break;
@@ -263,13 +275,6 @@ Rts2App::askForChr (const char *desc, char &out)
   std::cout << desc;
   std::cin.getline (temp, 200);
   out = *temp;
-  return 0;
-}
-
-int
-Rts2App::run ()
-{
-  std::cout << "Empty run methods!" << std::endl;
   return 0;
 }
 

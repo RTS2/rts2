@@ -35,15 +35,24 @@ protected:
   int askForDouble (const char *desc, double &val);
   int askForString (const char *desc, std::string & val);
 
+  virtual void help ();
+
 public:  Rts2App (int in_argc, char **in_argv);
     virtual ~ Rts2App ();
 
   int initOptions ();
   virtual int init ();
 
-  virtual void help ();
-
-  virtual int run ();
+  /**
+   * Run method of the application.
+   *
+   * Application is responsible for calling init () method to read 
+   * variables etc..
+   *
+   * Application also must define run method, hence this method is
+   * pure virtual.
+   */
+  virtual int run () = 0;
 
   /**
    * Ask user for char, used to ask for chair in choice question.

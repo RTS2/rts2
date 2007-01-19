@@ -463,3 +463,13 @@ std::ostream & operator << (std::ostream & _os, Rts2Night night)
     << " - " << LibnovaDate (night.getTo ());
   return _os;
 }
+
+std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos)
+{
+  _os
+    << LibnovaDeg (l_pos.getLongitude ())
+    << (l_pos.getLongitude () > 0 ? " E," : " W,")
+    << LibnovaDeg90 (l_pos.getLatitude ())
+    << (l_pos.getLatitude () > 0 ? " N" : " S");
+  return _os;
+}

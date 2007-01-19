@@ -401,6 +401,34 @@ public:
   friend std::ostream & operator << (std::ostream & _os, Rts2Night night);
 };
 
+class LibnovaPos
+{
+private:
+  struct ln_lnlat_posn pos;
+public:
+    LibnovaPos (const struct ln_lnlat_posn *in_pos)
+  {
+    pos.lng = in_pos->lng;
+    pos.lat = in_pos->lat;
+  }
+  LibnovaPos (double in_lng, double in_lat)
+  {
+    pos.lng = in_lng;
+    pos.lat = in_lat;
+  }
+
+  double getLongitude ()
+  {
+    return pos.lng;
+  }
+  double getLatitude ()
+  {
+    return pos.lat;
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos);
+};
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 std::istream & operator >> (std::istream & _os, LibnovaRa & l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
@@ -426,5 +454,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaHrz l_hrz);
 std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
 std::istream & operator >> (std::istream & _is, LibnovaDate & l_date);
 std::ostream & operator << (std::ostream & _os, Rts2Night night);
+
+std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos);
 
 #endif /* !__LIBNOVA_CPP__ */
