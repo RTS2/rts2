@@ -34,9 +34,13 @@ Rts2App (in_argc, in_argv)
 Rts2Block::~Rts2Block (void)
 {
   std::list < Rts2Conn * >::iterator iter;
-  for (iter = connections.begin (); iter != connections.end (); iter++)
+  std::list < Rts2Conn * >::iterator iter_tpm;
+  for (iter = connections.begin (); iter != connections.end ();)
     {
       Rts2Conn *conn = *iter;
+      iter_tpm = iter;
+      iter++;
+      connections.erase (iter_tpm);
       delete conn;
     }
   connections.clear ();
@@ -235,6 +239,7 @@ Rts2Block::selectSuccess (fd_set * read_set)
 	      std::list < Rts2Conn * >::iterator del_iter = iter;
 	      iter++;
 	      connections.erase (del_iter);
+	      delete conn;
 	    }
 	}
       else
@@ -290,7 +295,6 @@ Rts2Block::deleteConnection (Rts2Conn * conn)
     }
   if (conn->isConnState (CONN_DELETE))
     {
-      delete conn;
       return 0;
     }
   // don't delete us when we are in incorrect state
