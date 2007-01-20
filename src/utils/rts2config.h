@@ -35,7 +35,7 @@ public:
   static Rts2Config *instance ();
   int loadFile (char *filename = NULL);
   int getString (const char *section, const char *param, char *buf, int bufl);
-  int getString (const char *section, const char *param, std::string ** buf);
+  int getString (const char *section, const char *param, std::string & buf);
   int getInteger (const char *section, const char *param, int &value);
   int getFloat (const char *section, const char *param, float &value);
   int getDouble (const char *section, const char *param, double &value);
@@ -91,6 +91,8 @@ public:
   {
     return calibrationMaxBonus;
   }
+
+  std::vector < std::string > getCameraFilter (const char *camera_name);
 };
 
 #endif /*! __RTS2_CONFIG__ */

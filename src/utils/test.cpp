@@ -44,9 +44,24 @@ main (int argc, char **argv)
   printf ("ret: %i ", conf->getInteger ("hete", "dark_frequency", i_value));
   printf ("val %i\n", i_value);
 
+  std::vector < std::string > filt = conf->getCameraFilter ("C0");
+  for (std::vector < std::string >::iterator iter = filt.begin ();
+       iter != filt.end (); iter++)
+    {
+      printf ("filter: %s\n", (*iter).c_str ());
+    }
+
+  std::vector < std::string > filt2 = conf->getCameraFilter ("C1");
+  for (std::vector < std::string >::iterator iter = filt2.begin ();
+       iter != filt2.end (); iter++)
+    {
+      printf ("filter: %s\n", (*iter).c_str ());
+    }
+
   printf ("ret: %i ", conf->getString ("CNF1", "script", buf, 20));
   printf ("val %s\n", buf);
   printf ("ret: %i ", conf->getString ("observatory", "horizont", buf, 20));
+
   checker = new ObjectCheck (buf);
 
   for (value = 0; value < 360; value += 7.5)

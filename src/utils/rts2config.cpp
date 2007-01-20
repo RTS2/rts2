@@ -1,5 +1,6 @@
 #include "rts2config.h"
 #include "rts2app.h"
+#include <strtok.h>
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -180,15 +181,14 @@ Rts2Config::getString (const char *section, const char *param, char *buf,
 
 int
 Rts2Config::getString (const char *section, const char *param,
-		       std::string ** buf)
+		       std::string & buf)
 {
   char tmp_buf[BUF_SIZE];
   int ret;
   ret = getString (section, param, tmp_buf, BUF_SIZE);
   if (ret)
     return ret;
-  delete (*buf);
-  *buf = new std::string (tmp_buf);
+  buf = std::string (tmp_buf);
   return 0;
 #undef BUF_SIZE
 }
@@ -292,4 +292,22 @@ int
 Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
 {
   return getDouble (device, "minflux", minFlux);
+}
+
+std::vector < std::string >
+  Rts2Config::getCameraFilter (const char *camera_name)
+{
+  int ret;
+  std::string filters;
+  std::vector < std::string > filter_v;
+  ret = getString (camera_name, "filter", filters);
+  if (ret)
+    {
+      filter_v.push_back (std::string ("UNK"));
+    }
+  else
+    {
+      stringtok (filter_v, filters);
+    }
+  return filter_v;
 }
