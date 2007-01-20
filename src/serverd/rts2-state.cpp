@@ -17,10 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-//#include <stdio.h>
 #include <time.h>
-//#include <stdlib.h>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
+
 #include "riseset.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2app.h"
@@ -47,6 +48,9 @@ private:
   double lng;
   double lat;
   time_t currTime;
+  double JD;
+  void printAltTable (std::ostream & _os);
+  void printDayStates (std::ostream & _os);
 protected:
     virtual void help ();
   virtual int processOption (int in_opt);
@@ -56,6 +60,89 @@ public:
   virtual int init ();
   virtual int run ();
 };
+
+void
+Rts2StateApp::printAltTable (std::ostream & _os)
+{
+  int i;
+  double jd_start = ((int) JD) - 0.5;
+  struct ln_hrz_posn hrz;
+  struct ln_equ_posn pos;
+  double jd;
+  int old_precison = _os.precision (0);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
+  _os
+    << std::endl
+    << "** SOON POSITION table from "
+    << LibnovaDate (jd_start) << " **" << std::endl << std::endl << "H   ";
+
+  char old_fill = _os.fill ('0');
+  for (i = 0; i <= 24; i++)
+    {
+      _os << "  " << std::setw (2) << i;
+    }
+  _os.fill (old_fill);
+  _os << std::endl;
+
+  // print sun position
+  std::ostringstream _os3;
+
+  _os << "SAL ";
+  _os3 << "SAZ ";
+
+  _os3.precision (0);
+  _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
+  jd = jd_start;
+  for (i = 0; i <= 24; i++, jd += 1.0 / 24.0)
+    {
+      ln_get_solar_equ_coords (jd, &pos);
+      ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd,
+			   &hrz);
+      _os << " " << std::setw (3) << hrz.alt;
+      _os3 << " " << std::setw (3) << hrz.az;
+    }
+
+  _os << std::endl << _os3.str () << std::endl << std::endl;
+
+  _os.setf (old_settings);
+  _os.precision (old_precison);
+}
+
+void
+Rts2StateApp::printDayStates (std::ostream & _os)
+{
+  time_t ev_time, curr_time;
+  int curr_type, next_type;
+
+  curr_time = currTime;
+
+  while (curr_time < (currTime + 87000.0))
+    {
+      if (next_event
+	  (Rts2Config::instance ()->getObserver (), &curr_time, &curr_type,
+	   &next_type, &ev_time))
+	{
+	  std::cerr << "Error getting next type" << std::endl;
+	  return;
+	}
+      if (curr_time == currTime)
+	{
+	  _os
+	    << LibnovaDate (&currTime)
+	    << " " << Rts2CentralState (curr_type)
+	    << " (current)" << std::endl;
+	}
+      _os
+	<< LibnovaDate (&ev_time)
+	<< " " << Rts2CentralState (next_type) << std::endl;
+
+      curr_time = ev_time + 1;
+    }
+}
+
 
 void
 Rts2StateApp::help ()
@@ -122,6 +209,8 @@ Rts2StateApp::init ()
   if (ret)
     return ret;
 
+  JD = ln_get_julian_from_timet (&currTime);
+
   config = Rts2Config::instance ();
 
   if (config->loadFile () == -1)
@@ -154,8 +243,11 @@ Rts2StateApp::run ()
   obs = Rts2Config::instance ()->getObserver ();
 
   if (verbose > 0)
-    std::cout << "Position: " << LibnovaPos (obs)
+    std::cout
+      << "Position: "
+      << LibnovaPos (obs)
       << " Time: " << LibnovaDate (&currTime) << std::endl;
+
   if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time))
     {
       std::cerr << "Error getting next type" << std::endl;
@@ -167,11 +259,9 @@ Rts2StateApp::run ()
       std::cout << curr_type << std::endl;
       break;
     default:
-      std::cout
-	<< "Current: " << Rts2CentralState (curr_type)
-	<< " " << LibnovaDate (&currTime)
-	<< " next: " << Rts2CentralState (next_type)
-	<< " " << LibnovaDate (&ev_time) << std::endl;
+      printAltTable (std::cout);
+      printDayStates (std::cout);
+      std::cout << std::endl;
       break;
     }
   return 0;
