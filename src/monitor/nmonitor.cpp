@@ -1138,14 +1138,12 @@ Rts2NMonitor::repaint ()
 {
   char dateBuf[40];
   time_t now;
-  char stateBuf[20];
   time (&now);
 
   wcolor_set (statusWindow, CLR_STATUS, NULL);
 
-  getMasterState (stateBuf);
-
-  mvwprintw (statusWindow, 0, 0, "** Status: %s ** ", stateBuf);
+  mvwprintw (statusWindow, 0, 0, "** Status: %s ** ",
+	     getMasterStateString ().c_str ());
   wcolor_set (statusWindow, CLR_TEXT, NULL);
   strftime (dateBuf, 40, "%Y-%m-%dT%H:%M:%S", gmtime (&now));
   mvwprintw (statusWindow, 0, COLS - 40, "%40s", dateBuf);

@@ -105,7 +105,7 @@ public:
     return central_conn;
   }
 
-  void getMasterState (char buf[20]);
+  std::string getMasterStateString ();
 };
 
 #endif /* ! __RTS2_CLIENT__ */

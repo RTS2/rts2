@@ -14,6 +14,7 @@
 #include <fstream>
 
 #include "rts2block.h"
+#include "rts2centralstate.h"
 #include "rts2client.h"
 #include "rts2devclient.h"
 #include "rts2logstream.h"
@@ -219,48 +220,9 @@ Rts2Client::init ()
   return 0;
 }
 
-void
-Rts2Client::getMasterState (char buf[20])
+std::string Rts2Client::getMasterStateString ()
 {
-  int currMasterState;
-  currMasterState = Rts2Block::getMasterState ();
-  if (currMasterState == SERVERD_OFF)
-    {
-      strcpy (buf, "OFF");
-      return;
-    }
-  if ((currMasterState & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-    {
-      strcpy (buf, "standby ");
-    }
-  else
-    {
-      strcpy (buf, "ready ");
-    }
-  switch (currMasterState & SERVERD_STATUS_MASK)
-    {
-    case SERVERD_DAY:
-      strcat (buf, "day");
-      break;
-    case SERVERD_EVENING:
-      strcat (buf, "evening");
-      break;
-    case SERVERD_DUSK:
-      strcat (buf, "dusk");
-      break;
-    case SERVERD_NIGHT:
-      strcat (buf, "night");
-      break;
-    case SERVERD_DAWN:
-      strcat (buf, "dawn");
-      break;
-    case SERVERD_MORNING:
-      strcat (buf, "morning");
-      break;
-    default:
-      strcat (buf, "unknow");
-      break;
-    }
+  return Rts2CentralState (getMasterState ()).getString ();
 }
 
 /**
@@ -269,11 +231,7 @@ Rts2Client::getMasterState (char buf[20])
  * Used for putting devices names query etc..
  */
 
-Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master,
-						char *in_login,
-						char *in_password,
-						char *in_master_host,
-						char *in_master_port):
+Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, char *in_login, char *in_password, char *in_master_host, char *in_master_port):
 Rts2Conn (in_master)
 {
   master_host = in_master_host;
