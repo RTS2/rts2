@@ -5,5 +5,6 @@ noinst_HEADERS = config.h	\
 		status.h	\
 		telescope_info.h \
 		imgdisplay.h	\
-		message.h
+		message.h	\
+		strtok.h
 

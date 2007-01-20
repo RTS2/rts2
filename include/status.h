@@ -50,14 +50,12 @@
 #define CAM_SHUT_SET		0x1000
 #define CAM_SHUT_TRANS		0x2000
 
-/*
-#define CAM_MASK_COOLING	0xC0
+#define CAM_MASK_COOLING	0xC000
 
-#define CAM_COOL_OFF		0x00
-#define CAM_COOL_FAN		0x40
-#define CAM_COOL_PWR		0x80
-#define CAM_COOL_TEMP		0xC0
-*/
+#define CAM_COOL_OFF		0x0000
+#define CAM_COOL_FAN		0x4000
+#define CAM_COOL_PWR		0x8000
+#define CAM_COOL_TEMP		0xC000
 
 // Photomer status
 #define PHOT_MASK_INTEGRATE	0x01
