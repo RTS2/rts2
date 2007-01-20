@@ -161,7 +161,7 @@ Rts2App::processOption (int in_opt)
       std::cout << "Part of RTS2 version: " << VERSION << std::endl
 	<< std::endl
 	<<
-	"(C) 2001-2007 Petr Kubanek and others, see AUTHOR file for complete list"
+	"(C) 2001-2007 Petr Kubanek and others, see AUTHORS file for complete list"
 	<< std::endl << std::
 	endl << "This program comes with ABSOLUTELY NO WARRANTY; for details"
 	<< std::
@@ -322,10 +322,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream
-Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (this, in_messageType);
+  Rts2LogStream
+  ls (this, in_messageType);
   return ls;
 }
 
