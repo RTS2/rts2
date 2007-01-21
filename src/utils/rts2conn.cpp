@@ -434,10 +434,10 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream
-Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (master, in_messageType);
+  Rts2LogStream
+  ls (master, in_messageType);
   return ls;
 }
 
@@ -756,7 +756,7 @@ Rts2Conn::sendValue (char *val_name, char *value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %s", val_name, value);
+  asprintf (&msg, "V %s \"%s\"", val_name, value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -778,7 +778,7 @@ Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %s %i", val_name, val1, val2);
+  asprintf (&msg, "V %s \"%s\" %i", val_name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
@@ -812,7 +812,7 @@ int
 Rts2Conn::sendCommandEnd (int num, char *in_msg)
 {
   char *msg;
-  asprintf (&msg, "%+04i %s", num, in_msg);
+  asprintf (&msg, "%+04i \"%s\"", num, in_msg);
   send (msg);
   free (msg);
   return 0;
@@ -852,11 +852,23 @@ Rts2Conn::paramNextString (char **str)
 {
   while (isspace (*command_buf_top))
     command_buf_top++;
-  *str = command_buf_top;
   if (!*command_buf_top)
     return -1;
-  while (!isspace (*command_buf_top) && *command_buf_top)
-    command_buf_top++;
+  // start of string with spaces
+  if (*command_buf_top == '"')
+    {
+      command_buf_top++;
+      *str = command_buf_top;
+      while (*command_buf_top && *command_buf_top != '"')
+	command_buf_top++;
+    }
+  else
+    {
+      // eat next spaces
+      *str = command_buf_top;
+      while (!isspace (*command_buf_top) && *command_buf_top)
+	command_buf_top++;
+    }
   if (*command_buf_top)
     {
       *command_buf_top = '\0';
