@@ -51,6 +51,7 @@
       <element name="exposure" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="temp" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="focpos" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+      <element name="filter" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="status" type="ns:cameraStatus" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
@@ -73,6 +74,16 @@
       <element name="temp" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="humi" type="xsd:double" minOccurs="1" maxOccurs="1"/>
       <element name="wind" type="xsd:double" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
+  <complexType name="focus">
+    <sequence>
+      <element name="pos" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
+  <complexType name="filter">
+    <sequence>
+      <element name="filter" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
   <simpleType name="system">
@@ -216,6 +227,75 @@
   </operation>
 </portType>
 
+<message name="getFocusRequest">
+</message>
+
+<message name="getFocusResponse">
+  <part name="focus" type="ns:focus"/>
+</message>
+
+<message name="setFocSetRequest">
+  <part name="pos" type="xsd:positiveInteger"/>
+</message>
+
+<message name="setFocSetResponse">
+  <part name="focus" type="ns:focus"/>
+</message>
+
+<message name="setFocStepRequest">
+  <part name="step" type="xsd:positiveInteger"/>
+</message>
+
+<message name="setFocStepResponse">
+  <part name="focus" type="ns:focus"/>
+</message>
+
+<portType name="focus">
+  <operation name="getFocus">
+    <documentation>Get current focuser position</documentation>
+    <input message="tns:getFocusRequest"/>
+    <output message="tns:getFocusResponse"/>
+  </operation>
+  <operation name="setFocSet">
+    <documentation>Set focuser to position</documentation>
+    <input message="tns:setFocSetRequest"/>
+    <output message="tns:setFocSetResponse"/>
+  </operation>
+  <operation name="setFocStep">
+    <documentation>Change focuser position</documentation>
+    <input message="tns:setFocStepRequest"/>
+    <output message="tns:setFocStepResponse"/>
+  </operation>
+</portType>
+
+<message name="getFilterRequest">
+</message>
+  
+<message name="getFilterResponse">
+  <part name="filter" type="ns:filter"/>
+</message>
+
+<message name="setFilterRequest">
+  <part name="id" type="xsd:positiveInteger"/>
+</message>
+
+<message name="setFilterResponse">
+  <part name="filter" type="ns:filter"/>
+</message>
+
+<portType name="filter">
+  <operation name="getFilter">
+    <documentation>Get current filter</documentation>
+    <input message="tns:getFiltersRequest"/>
+    <output message="tns:getFilterResponse"/>
+  </operation>
+  <operation name="setFilter">
+    <documenttation>Set filter</documentation>
+    <input message="tns:setFilterRequest"/>
+    <output message="tns:setFilterResponse"/>
+  </operation>
+</portType>
+
 <message name="getCameraRequest">
 </message>
 
@@ -344,6 +424,59 @@
   <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
   <operation name="getDome">
     <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+</binding>
+
+<binding name="rts2" type="tns:focus">
+  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getFocus">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+  <operation name="setFocSet">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+  <operation name="setFocStep">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+</binding>
+
+<binding name="rts2" type="tns:filter">
+  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getFilter">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+  <operation name="setFilter">
+  <SOAP:operation style="rpc" soapAction=""/>
     <input>
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
     </input>

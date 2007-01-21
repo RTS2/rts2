@@ -161,7 +161,8 @@ Rts2TestSoap::run ()
     {
       rts2__camera *cam = (rts2__camera *) * cam_iter;
       std::cout << "Camera " << cam->name << " exposure " << cam->
-	exposure << std::endl;
+	exposure << " focuser " << cam->focpos << " filter " << cam->
+	filter << std::endl;
     }
   if (next > 0)
     {

@@ -148,6 +148,57 @@ Rts2DevClientDomeSoap::postEvent (Rts2Event * event)
     }
 }
 
+Rts2DevClientFocusSoap::Rts2DevClientFocusSoap (Rts2Conn * in_connection):Rts2DevClientFocus
+  (in_connection)
+{
+}
+
+void
+Rts2DevClientFocusSoap::postEvent (Rts2Event * event)
+{
+  struct rts2__getFocusResponse *res;
+  struct soapFocusSet *set;
+  struct soapFocusStep *steps;
+  switch (event->getType ())
+    {
+    case EVENT_SOAP_FOC_GET:
+      res = (rts2__getFocusResponse *) event->getArg ();
+      res->focus->pos = getValueInteger ("pos");
+      break;
+    case EVENT_SOAP_FOC_SET:
+      set = (soapFocusSet *) event->getArg ();
+      queCommand (new Rts2CommandSetFocus (this, set->pos));
+      break;
+    case EVENT_SOAP_FOC_STEP:
+      steps = (soapFocusStep *) event->getArg ();
+      queCommand (new Rts2CommandChangeFocus (this, steps->step));
+      break;
+    }
+}
+
+Rts2DevClientFilterSoap::Rts2DevClientFilterSoap (Rts2Conn * in_connection):Rts2DevClientFilter
+  (in_connection)
+{
+}
+
+void
+Rts2DevClientFilterSoap::postEvent (Rts2Event * event)
+{
+  struct rts2__getFilterResponse *res;
+  struct soapFilterSet *filters;
+  switch (event->getType ())
+    {
+    case EVENT_SOAP_FW_GET:
+      res = (rts2__getFilterResponse *) event->getArg ();
+      res->filter->filter = getValueInteger ("filter");
+      break;
+    case EVENT_SOAP_FW_SET:
+      filters = (soapFilterSet *) event->getArg ();
+      queCommand (new Rts2CommandFilter (this, filters->filter));
+      break;
+    }
+}
+
 Rts2DevClientCameraSoap::Rts2DevClientCameraSoap (Rts2Conn * in_connection):Rts2DevClientCamera
   (in_connection)
 {
@@ -183,6 +234,7 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
       cam->exposure = getValueDouble ("exposure");
       cam->focpos = getValueInteger ("focpos");
       cam->temp = getValueDouble ("ccd_temperature");
+      cam->filter = getValueInteger ("filter");
       if (status & DEVICE_ERROR_MASK)
 	{
 	  if (status & DEVICE_ERROR_MASK == DEVICE_ERROR_KILL)

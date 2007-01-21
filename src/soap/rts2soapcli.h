@@ -13,6 +13,11 @@
 #define EVENT_SOAP_DOME_GETST    	RTS2_LOCAL_EVENT+1006
 #define EVENT_SOAP_CAMS_GET	 	RTS2_LOCAL_EVENT+1007
 #define EVENT_SOAP_CAMD_GET	 	RTS2_LOCAL_EVENT+1008
+#define EVENT_SOAP_FOC_GET		RTS2_LOCAL_EVENT+1009
+#define EVENT_SOAP_FOC_SET		RTS2_LOCAL_EVENT+1010
+#define EVENT_SOAP_FOC_STEP		RTS2_LOCAL_EVENT+1011
+#define EVENT_SOAP_FW_GET		RTS2_LOCAL_EVENT+1012
+#define EVENT_SOAP_FW_SET		RTS2_LOCAL_EVENT+1013
 
 typedef struct soapExecGetst
 {
@@ -46,6 +51,27 @@ typedef struct soapCamerasGet
   soap *in_soap;
 };
 
+typedef struct soapFilterSet
+{
+  int filter;
+  rts2__setFilterResponse *res;
+  soap *in_soap;
+};
+
+typedef struct soapFocusSet
+{
+  int pos;
+  rts2__setFocSetResponse *res;
+  soap *in_soap;
+};
+
+typedef struct soapFocusStep
+{
+  int step;
+  rts2__setFocStepResponse *res;
+  soap *in_soap;
+};
+
 class Rts2DevClientTelescopeSoap:public Rts2DevClientTelescope
 {
 public:
@@ -75,6 +101,20 @@ class Rts2DevClientCameraSoap:public Rts2DevClientCamera
 {
 public:
   Rts2DevClientCameraSoap (Rts2Conn * in_connection);
+  virtual void postEvent (Rts2Event * event);
+};
+
+class Rts2DevClientFocusSoap:public Rts2DevClientFocus
+{
+public:
+  Rts2DevClientFocusSoap (Rts2Conn * in_connection);
+  virtual void postEvent (Rts2Event * event);
+};
+
+class Rts2DevClientFilterSoap:public Rts2DevClientFilter
+{
+public:
+  Rts2DevClientFilterSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
 

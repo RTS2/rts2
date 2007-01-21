@@ -182,6 +182,12 @@ Rts2Soapd::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_CCD:
       cli = new Rts2DevClientCameraSoap (conn);
       break;
+    case DEVICE_TYPE_FOCUS:
+      cli = new Rts2DevClientFocusSoap (conn);
+      break;
+    case DEVICE_TYPE_FW:
+      cli = new Rts2DevClientFilterSoap (conn);
+      break;
     default:
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
@@ -301,6 +307,67 @@ rts2__getDome (struct soap *in_soap, rts2__getDomeResponse & res)
 {
   res.dome = soap_new_rts2__dome (in_soap, 1);
   soapd->postEvent (new Rts2Event (EVENT_SOAP_DOME_GETST, (void *) &res));
+  return SOAP_OK;
+}
+
+int
+rts2__getFocus (struct soap *in_soap, rts2__getFocusResponse & res)
+{
+  res.focus = soap_new_rts2__focus (in_soap, 1);
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_FOC_GET, (void *) &res));
+  return SOAP_OK;
+}
+
+int
+rts2__setFocSet (struct soap *in_soap, unsigned int pos,
+		 rts2__setFocSetResponse & res)
+{
+  struct soapFocusSet setF;
+  res.focus = soap_new_rts2__focus (in_soap, 1);
+
+  setF.pos = pos;
+  setF.res = &res;
+  setF.in_soap = in_soap;
+
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_FOC_SET, (void *) &setF));
+  return SOAP_OK;
+}
+
+int
+rts2__setFocStep (struct soap *in_soap, unsigned int step,
+		  rts2__setFocStepResponse & res)
+{
+  struct soapFocusStep stepF;
+  res.focus = soap_new_rts2__focus (in_soap, 1);
+
+  stepF.step = step;
+  stepF.res = &res;
+  stepF.in_soap = in_soap;
+
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_FOC_STEP, (void *) &stepF));
+  return SOAP_OK;
+}
+
+int
+rts2__getFilter (struct soap *in_soap, rts2__getFilterResponse & res)
+{
+  res.filter = soap_new_rts2__filter (in_soap, 1);
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_FW_GET, (void *) &res));
+  return SOAP_OK;
+}
+
+int
+rts2__setFilter (struct soap *in_soap, unsigned int id,
+		 rts2__setFilterResponse & res)
+{
+  struct soapFilterSet setF;
+  res.filter = soap_new_rts2__filter (in_soap, 1);
+
+  setF.filter = id;
+  setF.res = &res;
+  setF.in_soap = in_soap;
+
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_FW_SET, (void *) &setF));
   return SOAP_OK;
 }
 
