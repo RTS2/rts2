@@ -188,6 +188,9 @@ Rts2Soapd::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_FW:
       cli = new Rts2DevClientFilterSoap (conn);
       break;
+    case DEVICE_TYPE_IMGPROC:
+      cli = new Rts2DevClientImgprocSoap (conn);
+      break;
     default:
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
@@ -368,6 +371,14 @@ rts2__setFilter (struct soap *in_soap, unsigned int id,
   setF.in_soap = in_soap;
 
   soapd->postEvent (new Rts2Event (EVENT_SOAP_FW_SET, (void *) &setF));
+  return SOAP_OK;
+}
+
+int
+rts2__getImgproc (struct soap *in_soap, rts2__getImgprocResponse & res)
+{
+  res.imgproc = soap_new_rts2__imgproc (in_soap, 1);
+  soapd->postEvent (new Rts2Event (EVENT_SOAP_IMG_GET, (void *) &res));
   return SOAP_OK;
 }
 

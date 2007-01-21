@@ -86,6 +86,14 @@
       <element name="filter" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
+  <complexType name="imgproc">
+    <sequence>
+      <element name="que" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
+      <element name="good" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
+      <element name="trash" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
+      <element name="morning" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
   <simpleType name="system">
     <restriction base="xsd:string">
       <enumeration value="OFF"/>
@@ -296,6 +304,21 @@
   </operation>
 </portType>
 
+<message name="getImgprocRequest">
+</message>
+
+<message name="getImgprocResponse">
+  <part name="imgproc" type="ns:imgproc"/>
+</message>
+
+<portType name="imgproc">
+  <operation name="getImgproc">
+    <documentation>Get current image processor values</documentation>
+    <input message="tns:getImgprocRequest"/>
+    <output message="tns:getImgprocResponse"/>
+  </operation>
+</portType>
+
 <message name="getCameraRequest">
 </message>
 
@@ -477,6 +500,19 @@
   </operation>
   <operation name="setFilter">
   <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+</binding>
+
+<binding name="rts2" type="tns:imgproc">
+  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getImgproc">
+    <SOAP:operation style="rpc" soapAction=""/>
     <input>
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
     </input>

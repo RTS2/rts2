@@ -176,6 +176,27 @@ Rts2DevClientFocusSoap::postEvent (Rts2Event * event)
     }
 }
 
+Rts2DevClientImgprocSoap::Rts2DevClientImgprocSoap (Rts2Conn * in_connection):Rts2DevClientImgproc
+  (in_connection)
+{
+}
+
+void
+Rts2DevClientImgprocSoap::postEvent (Rts2Event * event)
+{
+  struct rts2__getImgprocResponse *res;
+  switch (event->getType ())
+    {
+    case EVENT_SOAP_IMG_GET:
+      res = (rts2__getImgprocResponse *) event->getArg ();
+      res->imgproc->que = getValueInteger ("que_size");
+      res->imgproc->good = getValueInteger ("good_images");
+      res->imgproc->trash = getValueInteger ("trash_images");
+      res->imgproc->morning = getValueInteger ("morning_images");
+      break;
+    }
+}
+
 Rts2DevClientFilterSoap::Rts2DevClientFilterSoap (Rts2Conn * in_connection):Rts2DevClientFilter
   (in_connection)
 {

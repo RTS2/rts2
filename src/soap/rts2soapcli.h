@@ -18,6 +18,7 @@
 #define EVENT_SOAP_FOC_STEP		RTS2_LOCAL_EVENT+1011
 #define EVENT_SOAP_FW_GET		RTS2_LOCAL_EVENT+1012
 #define EVENT_SOAP_FW_SET		RTS2_LOCAL_EVENT+1013
+#define EVENT_SOAP_IMG_GET		RTS2_LOCAL_EVENT+1014
 
 typedef struct soapExecGetst
 {
@@ -115,6 +116,13 @@ class Rts2DevClientFilterSoap:public Rts2DevClientFilter
 {
 public:
   Rts2DevClientFilterSoap (Rts2Conn * in_connection);
+  virtual void postEvent (Rts2Event * event);
+};
+
+class Rts2DevClientImgprocSoap:public Rts2DevClientImgproc
+{
+public:
+  Rts2DevClientImgprocSoap (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
 
