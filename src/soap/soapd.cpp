@@ -60,7 +60,6 @@ class Rts2Soapd:public Rts2DeviceDb
 {
 private:
   int soapPort;
-  int servedRequest;
     std::ofstream * fileLog;
 protected:
     virtual int processOption (int in_opt);
@@ -78,13 +77,6 @@ public:
     return 0;
   }
 
-  virtual int baseInfo ()
-  {
-    return 0;
-  }
-
-  virtual int sendInfo (Rts2Conn * conn);
-
   virtual void message (Rts2Message & msg);
 };
 
@@ -92,7 +84,6 @@ Rts2Soapd::Rts2Soapd (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "SOAP")
 {
   soapPort = -1;
-  servedRequest = 0;
   fileLog = NULL;
   addOption ('o', "soap_port", 1,
 	     "soap port, if not specified, taken from config file (observatory, soap)");
@@ -195,13 +186,6 @@ Rts2Soapd::createOtherType (Rts2Conn * conn, int other_device_type)
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
   return cli;
-}
-
-int
-Rts2Soapd::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("serverd", servedRequest);
-  return 0;
 }
 
 void

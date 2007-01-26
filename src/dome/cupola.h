@@ -12,7 +12,11 @@ private:
   struct ln_equ_posn targetPos;
   struct ln_lnlat_posn *observer;	// defaults to 0, 0; will be readed from config file
 
-  double currentAz;		// azimut to which we are pointing; counted in libnova style (S->W->N->E)
+  Rts2ValueDouble *tarRa;
+  Rts2ValueDouble *tarDec;
+  Rts2ValueDouble *tarAlt;
+  Rts2ValueDouble *tarAz;
+  Rts2ValueDouble *currentAz;
 
   char *configFile;
 
@@ -31,7 +35,7 @@ protected:
 
   void setCurrentAz (double in_az)
   {
-    currentAz = in_az;
+    currentAz->setValueDouble (in_az);
   }
 
   double getTargetDistance ()
@@ -41,7 +45,7 @@ protected:
 
   double getCurrentAz ()
   {
-    return currentAz;
+    return currentAz->getValueDouble ();
   }
 
 public:
@@ -50,10 +54,8 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual Rts2DevConn *createConnection (int in_sock);
+  virtual int info ();
   virtual int idle ();
-
-  virtual int sendBaseInfo (Rts2Conn * conn);
-  virtual int sendInfo (Rts2Conn * conn);
 
   int moveTo (Rts2Conn * conn, double ra, double dec);
   virtual int moveStop ();

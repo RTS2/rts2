@@ -59,7 +59,6 @@ public:
   virtual int init ();
 
   virtual int ready ();
-  virtual int baseInfo ();
 };
 
 Rts2ConnDcm::Rts2ConnDcm (int in_weather_port, Rts2DevDomeDcm * in_master):
@@ -199,12 +198,6 @@ Rts2DevDomeDcm::init ()
 
 int
 Rts2DevDomeDcm::ready ()
-{
-  return 0;
-}
-
-int
-Rts2DevDomeDcm::baseInfo ()
 {
   return 0;
 }

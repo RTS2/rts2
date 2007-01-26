@@ -53,18 +53,15 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
     telAltitude = 0;
   }
 
-  virtual int init ()
+  virtual int initValues ()
   {
-    int ret;
-    ret = Rts2DevTelescope::init ();
-    if (ret)
-      return ret;
     Rts2Config *config;
     config = Rts2Config::instance ();
     config->loadFile ();
-    telLatitude = config->getObserver ()->lat;
-    telLongtitude = config->getObserver ()->lng;
-    return 0;
+    telLatitude->setValueDouble (config->getObserver ()->lat);
+    telLongtitude->setValueDouble (config->getObserver ()->lng);
+    strcpy (telType, "Dummy");
+    return Rts2DevTelescope::initValues ();
   }
 
   virtual int ready ()
@@ -72,16 +69,11 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
     return 0;
   }
 
-  virtual int baseInfo ()
-  {
-    return 0;
-  }
-
   virtual int info ()
   {
-    telRa = newRa;
-    telDec = newDec;
-    telSiderealTime = getLocSidTime ();
+    telRa->setValueDouble (newRa);
+    telDec->setValueDouble (newDec);
+    telSiderealTime->setValueDouble (getLocSidTime ());
     return Rts2DevTelescope::info ();
   }
 

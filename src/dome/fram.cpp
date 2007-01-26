@@ -248,7 +248,6 @@ public:
   virtual int idle ();
 
   virtual int ready ();
-  virtual int baseInfo ();
   virtual int info ();
 
   virtual int openDome ();
@@ -982,7 +981,7 @@ Rts2DevDomeFram::processOption (int in_opt)
 int
 Rts2DevDomeFram::isGoodWeather ()
 {
-  if (ignoreMeteo)
+  if (getIgnoreMeteo ())
     return 1;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
@@ -1147,21 +1146,21 @@ Rts2DevDomeFram::info ()
   ret = zjisti_stav_portu ();
   if (ret)
     return -1;
-  sw_state = getPortState (KONCAK_OTEVRENI_PRAVY);
-  sw_state |= (getPortState (KONCAK_OTEVRENI_LEVY) << 1);
-  sw_state |= (getPortState (KONCAK_ZAVRENI_PRAVY) << 2);
-  sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
-  rain = weatherConn->getRain ();
-  windspeed = weatherConn->getWindspeed ();
+  sw_state->setValueInteger (getPortState (KONCAK_OTEVRENI_PRAVY));
+  sw_state->setValueInteger (sw_state->
+			     getValueInteger () |
+			     (getPortState (KONCAK_OTEVRENI_LEVY) << 1));
+  sw_state->setValueInteger (sw_state->
+			     getValueInteger () |
+			     (getPortState (KONCAK_ZAVRENI_PRAVY) << 2));
+  sw_state->setValueInteger (sw_state->
+			     getValueInteger () |
+			     (getPortState (KONCAK_ZAVRENI_LEVY) << 3));
+  setRain (weatherConn->getRain ());
+  setWindSpeed (weatherConn->getWindspeed ());
   if (wdc_port > 0)
-    temperature = getWDCTemp (2);
+    setTemperature (getWDCTemp (2));
   return Rts2DevDome::info ();
-}
-
-int
-Rts2DevDomeFram::baseInfo ()
-{
-  return 0;
 }
 
 int
@@ -1211,8 +1210,8 @@ Rts2DevDomeFram::sendFramMail (char *subject)
 	    isOnString (KONCAK_OTEVRENI_PRAVY),
 	    isOnString (KONCAK_OTEVRENI_LEVY),
 	    ctime (&nextGoodWeather),
-	    isGoodWeather (), rain,
-	    windspeed, ret, closingNum, ctime (&lastClosing));
+	    isGoodWeather (), getRain (),
+	    getWindSpeed (), ret, closingNum, ctime (&lastClosing));
   ret = sendMail (subject, openText);
   free (openText);
   return ret;

@@ -67,9 +67,9 @@ public:
     virtual ~ Rts2TelescopeIr (void);
   virtual int initIrDevice ();
   virtual int init ();
+  virtual int initValues ();
   virtual int idle ();
   virtual int ready ();
-  virtual int baseInfo ();
   virtual int info ();
   virtual int startPark ();
   virtual int isParking ();

@@ -19,8 +19,6 @@
 #define REG_COP_CONTROL		0x03
 #define REG_SPLIT_CONTROL	0x04
 
-#define FAKE_WEATHER
-
 // average az size of one step (in arcdeg)
 #define STEP_AZ_SIZE		1
 
@@ -72,7 +70,6 @@ public:
 
   virtual int ready ();
   virtual int info ();
-  virtual int baseInfo ();
 
   virtual int openDome ();
   virtual long isOpened ();
@@ -299,11 +296,7 @@ Rts2DevCupolaMark::idle ()
   int ret;
   uint16_t copState;
   // check for weather..
-#ifndef FAKE_WEATHER
   if (weatherConn->isGoodWeather ())
-#else
-  if (true)
-#endif
     {
       if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	  && ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
@@ -358,10 +351,8 @@ int
 Rts2DevCupolaMark::openDome ()
 {
   int ret;
-#ifndef FAKE_WEATHER
   if (!weatherConn->isGoodWeather ())
     return -1;
-#endif
   ret = writeReg (REG_SPLIT_CONTROL, 0x0001);
   if (ret)
     return ret;
@@ -412,8 +403,8 @@ Rts2DevCupolaMark::info ()
 {
   int ret;
   int16_t az_val;
-  rain = weatherConn->getRain ();
-  windspeed = weatherConn->getWindspeed ();
+  setRain (weatherConn->getRain ());
+  setWindSpeed (weatherConn->getWindspeed ());
   ret = readReg (REG_POSITION, (uint16_t *) & az_val);
   if (!ret)
     {
@@ -421,14 +412,7 @@ Rts2DevCupolaMark::info ()
 		    ((az_val * STEP_AZ_SIZE) + STEP_AZ_OFFSET));
       return Rts2DevCupola::info ();
     }
-  Rts2DevCupola::info ();
-  return -1;
-}
-
-int
-Rts2DevCupolaMark::baseInfo ()
-{
-  return 0;
+  return Rts2DevCupola::info ();
 }
 
 /**

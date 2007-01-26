@@ -134,7 +134,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
     case EVENT_MOVE_QUESTION:
       if (blockMove)
 	{
-	  *(int *) event->getArg () = *(int *) event->getArg () + 1;
+	  ((Rts2ValueInteger *) event->getArg ())->inc ();
 	}
       break;
     case EVENT_OK_ASTROMETRY:

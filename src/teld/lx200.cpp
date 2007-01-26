@@ -106,7 +106,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int ready ();
-  virtual int baseInfo ();
+  virtual int initValues ();
   virtual int info ();
 
   virtual int setTo (double set_ra, double set_dec);
@@ -308,7 +308,7 @@ Rts2DevTelescopeLX200::tel_read_ra ()
   double new_ra;
   if (tel_read_hms (&new_ra, "#:GR#"))
     return -1;
-  telRa = new_ra * 15.0;
+  telRa->setValueDouble (new_ra * 15.0);
   return 0;
 }
 
@@ -320,7 +320,11 @@ Rts2DevTelescopeLX200::tel_read_ra ()
 int
 Rts2DevTelescopeLX200::tel_read_dec ()
 {
-  return tel_read_hms (&telDec, "#:GD#");
+  double t_telDec;
+  if (tel_read_hms (&t_telDec, "#:GD#"))
+    return -1;
+  telDec->setValueDouble (t_telDec);
+  return 0;
 }
 
 /*! 
@@ -345,8 +349,8 @@ Rts2DevTelescopeLX200::tel_read_localtime ()
   /* Convert it to local time representation. */
   loctime = localtime (&curtime);
 
-  telLocalTime =
-    loctime->tm_hour + loctime->tm_min / 60 + loctime->tm_sec / 3600;
+  telLocalTime->setValueDouble (loctime->tm_hour + loctime->tm_min / 60 +
+				loctime->tm_sec / 3600);
 
   return 0;
 }
@@ -367,7 +371,7 @@ int
 Rts2DevTelescopeLX200::tel_read_siderealtime ()
 {
   tel_read_longtitude ();
-  telSiderealTime = getLocSidTime ();
+  telSiderealTime->setValueDouble (getLocSidTime ());
   return 0;
 }
 
@@ -616,18 +620,18 @@ Rts2DevTelescopeLX200::ready ()
 *
 */
 int
-Rts2DevTelescopeLX200::baseInfo ()
+Rts2DevTelescopeLX200::initValues ()
 {
   if (tel_read_longtitude () || tel_read_latitude ())
     return -1;
 
   strcpy (telType, "LX200");
   strcpy (telSerialNumber, "000001");
-  telAltitude = 600;
+  telAltitude->setValueDouble (600);
 
   telFlip = 0;
 
-  return 0;
+  return Rts2DevTelescope::initValues ();
 }
 
 int
@@ -735,11 +739,11 @@ Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
 
   // ADDED BY JF
   // CALCULATE & PRINT ALT/AZ & HOUR ANGLE TO LOG
-  object.ra = telRa;
-  object.dec = telDec;
+  object.ra = telRa->getValueDouble ();
+  object.dec = telDec->getValueDouble ();
 
-  observer.lng = telLongtitude;
-  observer.lat = telLatitude;
+  observer.lng = telLongtitude->getValueDouble ();
+  observer.lat = telLatitude->getValueDouble ();
 
   JD = ln_get_julian_from_sys ();
 
@@ -771,7 +775,7 @@ double
 Rts2DevTelescopeLX200::get_hour_angle (double RA)
 {
   tel_read_siderealtime ();
-  return telSiderealTime - (RA / 15.0);
+  return telSiderealTime->getValueDouble () - (RA / 15.0);
 }
 
 void

@@ -3,6 +3,9 @@
 
 #include "rts2block.h"
 #include "rts2logstream.h"
+#include "rts2value.h"
+
+#include <vector>
 
 /**
  * Abstract class for centrald and all devices.
@@ -18,24 +21,60 @@ private:
   int listen_sock;
   void addConnectionSock (int in_sock);
   int lockf;
+
+    std::vector < Rts2Value * >values;
+  // values which do not change, they are send only once at connection
+  // initialization
+    std::vector < Rts2Value * >constValues;
+
+  Rts2ValueDouble *info_time;
+
+  time_t idleInfoInterval;
+  time_t nextIdleInfo;
 protected:
   int checkLockFile (const char *lock_fname);
   int doDeamonize ();
   int lockFile ();
   virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
+
+  void addValue (Rts2Value * value);
+  void addConstValue (Rts2Value * value);
+  void addConstValue (char *in_name, const char *in_desc, char *in_value);
+  void addConstValue (char *in_name, const char *in_desc, double in_value);
+  void addConstValue (char *in_name, const char *in_desc, int in_value);
+  void addConstValue (char *in_name, char *in_value);
+  void addConstValue (char *in_name, double in_value);
+  void addConstValue (char *in_name, int in_value);
 public:
     Rts2Daemon (int in_argc, char **in_argv);
     virtual ~ Rts2Daemon (void);
   virtual int processOption (int in_opt);
   virtual int init ();
+  virtual int initValues ();
   void initDaemon ();
   virtual int run ();
+  virtual int idle ();
+
+  void setIdleInfoInterval (time_t interval)
+  {
+    idleInfoInterval = interval;
+  }
+
   virtual void forkedInstance ();
   virtual void sendMessage (messageType_t in_messageType,
 			    const char *in_messageString);
   virtual void centraldConnRunning ();
   virtual void centraldConnBroken ();
+
+  virtual int baseInfo ();
+  int baseInfo (Rts2Conn * conn);
+  int sendBaseInfo (Rts2Conn * conn);
+
+  virtual int info ();
+  int info (Rts2Conn * conn);
+  int infoAll ();
+  int sendInfo (Rts2Conn * conn);
 };
 
 #endif /* ! __RTS2_DAEMON__ */

@@ -249,6 +249,21 @@ Rts2Conn::processLine ()
 	}
       return -2;
     }
+  // metainfo with values
+  else if (isCommand (PROTO_METAINFO))
+    {
+      if (otherDevice)
+	{
+	  int m_type;
+	  char *m_name;
+	  char *m_descr;
+	  if (paramNextInteger (&m_type)
+	      || paramNextString (&m_name)
+	      || paramNextString (&m_descr) || !paramEnd ())
+	    return -2;
+	  return otherDevice->metaInfo (m_type, m_name, m_descr);
+	}
+    }
   else if (isCommandReturn ())
     {
       ret = commandReturn ();
@@ -434,10 +449,10 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2Conn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (master, in_messageType);
+  Rts2LogStream ls (master, in_messageType);
   return ls;
 }
 
@@ -719,55 +734,55 @@ Rts2Conn::sendMessage (Rts2Message & msg)
 }
 
 int
-Rts2Conn::sendValue (char *val_name, int value)
+Rts2Conn::sendValue (std::string val_name, int value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %i", val_name, value);
+  asprintf (&msg, "V %s %i", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *val_name, int val1, int val2)
+Rts2Conn::sendValue (std::string val_name, int val1, int val2)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %i %i", val_name, val1, val2);
+  asprintf (&msg, "V %s %i %i", val_name.c_str (), val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *val_name, int val1, double val2)
+Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %i %f", val_name, val1, val2);
+  asprintf (&msg, "V %s %i %f", val_name.c_str (), val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *val_name, char *value)
+Rts2Conn::sendValue (std::string val_name, char *value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s \"%s\"", val_name, value);
+  asprintf (&msg, "V %s \"%s\"", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;
 }
 
 int
-Rts2Conn::sendValue (char *val_name, double value)
+Rts2Conn::sendValue (std::string val_name, double value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %f", val_name, value);
+  asprintf (&msg, "V %s %f", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -798,11 +813,11 @@ Rts2Conn::sendValue (char *val_name, int val1, int val2,
 }
 
 int
-Rts2Conn::sendValueTime (char *val_name, time_t * value)
+Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %li", val_name, *value);
+  asprintf (&msg, "V %s %li", val_name.c_str (), *value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -844,6 +859,8 @@ Rts2Conn::isConnState (conn_state_t in_conn_state)
 int
 Rts2Conn::paramEnd ()
 {
+  while (isspace (*command_buf_top))
+    command_buf_top++;
   return !*command_buf_top;
 }
 

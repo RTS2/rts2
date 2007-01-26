@@ -30,8 +30,8 @@ private:
   Rts2Conn * move_connection;
   int moveInfoCount;
   int moveInfoMax;
-  int moveMark;
-  int numCorr;
+  Rts2ValueInteger *moveMark;
+  Rts2ValueInteger *numCorr;
   int maxCorrNum;
 
   double locCorRa;
@@ -39,9 +39,9 @@ private:
   int locCorNum;
 
   // last errors
-  double raCorr;
-  double decCorr;
-  double posErr;
+  Rts2ValueDouble *raCorr;
+  Rts2ValueDouble *decCorr;
+  Rts2ValueDouble *posErr;
 
   double sepLimit;
   // if correction is greater than that limit, it will preform correction
@@ -49,9 +49,14 @@ private:
   // to position on WF-NF setups.
   double minGood;
 
-  int knowPosition;
-  double lastRa;
-  double lastDec;
+  Rts2ValueInteger *knowPosition;
+  Rts2ValueDouble *rasc;
+  Rts2ValueDouble *desc;
+  Rts2ValueDouble *lastRa;
+  Rts2ValueDouble *lastDec;
+  Rts2ValueDouble *lastTarRa;
+  Rts2ValueDouble *lastTarDec;
+
   struct ln_equ_posn lastTar;
 
   void checkMoves ();
@@ -74,7 +79,7 @@ private:
   void dontKnowPosition ();
 
 protected:
-  int corrections;
+    Rts2ValueInteger * corrections;
 
   void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change,
 		   int flip, double JD);
@@ -86,17 +91,18 @@ protected:
   char *device_file;
   char telType[64];
   char telSerialNumber[64];
-  double telRa;
-  double telDec;
-  double telSiderealTime;
-  double telLocalTime;
-  int telFlip;
-  double telAxis[2];
-  double telLongtitude;
-  double telLatitude;
-  double telAltitude;
+  Rts2ValueDouble *telRa;
+  Rts2ValueDouble *telDec;
+  Rts2ValueDouble *telSiderealTime;
+  Rts2ValueDouble *telLocalTime;
+  Rts2ValueInteger *telFlip;
+  Rts2ValueDouble *ax1;
+  Rts2ValueDouble *ax2;
+  Rts2ValueDouble *telLongtitude;
+  Rts2ValueDouble *telLatitude;
+  Rts2ValueDouble *telAltitude;
   double telParkDec;
-  double telGuidingSpeed;	// in multiply of sidereal speed..eg 1 == 15 arcsec/sec
+  Rts2ValueDouble *telGuidingSpeed;	// in multiply of sidereal speed..eg 1 == 15 arcsec/sec
   double searchRadius;
   double searchSpeed;		// in multiply of HA speed..eg 1 == 15 arcsec / sec
   virtual int isMovingFixed ()
@@ -134,7 +140,7 @@ protected:
 
   int getNumCorr ()
   {
-    return numCorr;
+    return numCorr->getValueInteger ();
   }
   // returns 0 when we need to 
   int setTarget (double tar_ra, double tar_dec);
@@ -184,6 +190,7 @@ public:
   Rts2DevTelescope (int argc, char **argv);
   virtual ~ Rts2DevTelescope (void);
   virtual int init ();
+  virtual int initValues ();
   virtual Rts2DevConn *createConnection (int in_sock);
   virtual int idle ();
   virtual void postEvent (Rts2Event * event);
@@ -223,7 +230,7 @@ public:
   {
     locCorRa = cor_ra;
     locCorDec = cor_dec;
-    knowPosition = 1;
+    knowPosition->setValueInteger (1);
     return 0;
   }
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
@@ -276,7 +283,7 @@ public:
   }
   double getLatitude ()
   {
-    return telLatitude;
+    return telLatitude->getValueDouble ();
   }
 
   virtual int startGuide (char dir, double dir_dist);
@@ -284,8 +291,7 @@ public:
   virtual int stopGuideAll ();
 
   // callback functions from telescope connection
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn);
+  virtual int info ();
 
   int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
   int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
@@ -306,17 +312,19 @@ public:
 
   void modelOff ()
   {
-    corrections &= ~COR_MODEL;
+    corrections->setValueInteger (corrections->
+				  getValueInteger () & ~COR_MODEL);
   }
 
   void modelOn ()
   {
-    corrections |= COR_MODEL;
+    corrections->setValueInteger (corrections->
+				  getValueInteger () | COR_MODEL);
   }
 
   bool isModelOn ()
   {
-    return (corrections & COR_MODEL);
+    return (corrections->getValueInteger () & COR_MODEL);
   }
 };
 

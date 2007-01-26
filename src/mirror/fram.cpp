@@ -52,7 +52,6 @@ public:
   virtual int init ();
 
   virtual int ready ();
-  virtual int baseInfo ();
 
   virtual int startOpen ();
   virtual int isOpened ();
@@ -270,12 +269,6 @@ Rts2DevMirrorFram::ready ()
 {
   int pos;
   return mirror_get (&pos);
-}
-
-int
-Rts2DevMirrorFram::baseInfo ()
-{
-  return 0;
 }
 
 int

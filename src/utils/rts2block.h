@@ -33,6 +33,7 @@
 #define PROTO_STATUS		"S"
 #define PROTO_TECHNICAL		"T"
 #define PROTO_MESSAGE		"M"
+#define PROTO_METAINFO		"E"
 
 #define USEC_SEC		1000000
 

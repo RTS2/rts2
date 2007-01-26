@@ -79,6 +79,7 @@ CameraApogeeChip::init ()
   gain = camera->m_Gain;
 
   dest = new short unsigned int[chipSize->width * chipSize->height];
+
   return 0;
 }
 
@@ -233,7 +234,6 @@ public:
   virtual int init ();
 
   virtual int ready ();
-  virtual int baseInfo ();
   virtual int info ();
 
   virtual int camChipInfo (int chip);
@@ -802,8 +802,8 @@ Rts2DevCamera (in_argc, in_argv)
 
   camera = NULL;
 
-  fan = 1;
-  canDF = 1;
+  fan->setValueInteger (1);
+  canDF->setValueInteger (1);
 }
 
 Rts2DevCameraApogee::~Rts2DevCameraApogee (void)
@@ -852,6 +852,10 @@ Rts2DevCameraApogee::init ()
   chipNum = 1;
   chips[0] = new CameraApogeeChip (this, camera);
 
+  strcpy (ccdType, "Apogee_");
+  strncat (ccdType, camera->m_Sensor, 10);
+  strcpy (serialNumber, "007");
+
   return Rts2DevCamera::initChips ();
 }
 
@@ -866,23 +870,14 @@ Rts2DevCameraApogee::ready ()
 }
 
 int
-Rts2DevCameraApogee::baseInfo ()
-{
-  strcpy (ccdType, "Apogee_");
-  strncat (ccdType, camera->m_Sensor, 10);
-  strcpy (serialNumber, "007");
-  return 0;
-}
-
-int
 Rts2DevCameraApogee::info ()
 {
 
-  tempRegulation = camera->read_CoolerMode ();
-  tempSet = camera->read_CoolerSetPoint ();
-  tempCCD = camera->read_Temperature ();
-  tempAir = nan ("f");
-  coolingPower = 5000;
+  tempRegulation->setValueInteger (camera->read_CoolerMode ());
+  tempSet->setValueDouble (camera->read_CoolerSetPoint ());
+  tempCCD->setValueDouble (camera->read_Temperature ());
+  tempAir->setValueDouble (nan ("f"));
+  coolingPower->setValueInteger (5000);
   return Rts2DevCamera::info ();
 }
 

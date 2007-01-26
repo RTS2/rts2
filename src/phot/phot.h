@@ -14,9 +14,12 @@ private:
 protected:
     Rts2Conn * integrateConn;
 
-  int filter;
+  Rts2ValueInteger *filter;
   float req_time;
   void setReqTime (float in_req_time);
+
+  char *photType;
+  char *serial;
 
   int sendCount (int count, float exp, int is_ov);
   virtual int startIntegrate ();
@@ -29,6 +32,8 @@ public:
   {
     return -1;
   }
+  virtual int initValues ();
+
   virtual int idle ();
 
   virtual Rts2DevConn *createConnection (int in_sock);
@@ -61,11 +66,6 @@ public:
 
   virtual int changeMasterState (int new_state);
 
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn)
-  {
-    return 0;
-  }
 };
 
 class Rts2DevConnPhot:public Rts2DevConn

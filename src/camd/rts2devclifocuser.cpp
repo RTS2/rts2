@@ -34,7 +34,7 @@ Rts2DevClientFocusCamera::postEvent (Rts2Event * event)
     case EVENT_FOCUSER_GET:
       if (!strcmp (getName (), fm->focuserName))
 	{
-	  fm->value = getValueInteger ("pos");
+	  fm->value = getValueInteger ("FOC_POS");
 	  fm->focuserName = NULL;
 	}
       break;

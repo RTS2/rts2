@@ -47,6 +47,11 @@ CameraChipAlta::init ()
   gain = alta->m_ReportedGainSixteenBit;
 
   dest = new short unsigned int[chipSize->width * chipSize->height];
+
+  strcpy (ccdType, "Alta_");
+  strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
+  sprintf (serialNumber, "%i", alta->m_CameraId);
+
   return 0;
 }
 
@@ -176,7 +181,6 @@ public:
 
   virtual int ready ();
   virtual int info ();
-  virtual int baseInfo ();
 
   virtual int camChipInfo (int chip);
 
@@ -268,15 +272,6 @@ Rts2DevCameraAlta::ready ()
   int ret;
   ret = alta->read_Present ();
   return (ret ? 0 : -1);
-}
-
-int
-Rts2DevCameraAlta::baseInfo ()
-{
-  strcpy (ccdType, "Alta_");
-  strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
-  sprintf (serialNumber, "%i", alta->m_CameraId);
-  return 0;
 }
 
 int

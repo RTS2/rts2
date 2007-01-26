@@ -3,13 +3,24 @@
 Rts2DevFilterd::Rts2DevFilterd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
-  filter = -1;
+  filter = new Rts2ValueInteger ("filter");
+  addValue (filter);
+
   filterType = NULL;
   serialNumber = NULL;
 }
 
 Rts2DevFilterd::~Rts2DevFilterd (void)
 {
+}
+
+int
+Rts2DevFilterd::initValues ()
+{
+  addConstValue ("type", filterType);
+  addConstValue ("serial", serialNumber);
+
+  return Rts2Device::initValues ();
 }
 
 Rts2DevConn *
@@ -21,23 +32,8 @@ Rts2DevFilterd::createConnection (int in_sock)
 int
 Rts2DevFilterd::info ()
 {
-  filter = getFilterNum ();
+  filter->setValueInteger (getFilterNum ());
   return Rts2Device::info ();
-}
-
-int
-Rts2DevFilterd::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("filter", filter);
-  return 0;
-}
-
-int
-Rts2DevFilterd::sendBaseInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("type", filterType);
-  conn->sendValue ("serial", serialNumber);
-  return 0;
 }
 
 int

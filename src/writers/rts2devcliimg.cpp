@@ -191,15 +191,8 @@ Rts2DevClientCameraImage::exposureStarted ()
   char *focuser;
   gettimeofday (&expStart, NULL);
   images = createImage (&expStart);
-  images->setValue ("CCD_TEMP", getValueChar ("ccd_temperature"),
-		    "CCD temperature");
   images->setExposureLength (exposureTime);
 
-  images->setValue ("GAIN", getValueDouble ("gain"), "CCD gain");
-  images->setValue ("RNOISE", getValueDouble ("rnoise"), "CCD readout noise");
-
-  images->setValue ("CAM_FAN", getValueInteger ("fan"),
-		    "fan on (1) / off (0)");
   images->setValue ("XPLATE", xplate,
 		    "xplate (scale in X axis; divide by binning (BIN_H)!)");
   images->setValue ("YPLATE", yplate,
@@ -244,11 +237,15 @@ Rts2DevClientCameraImage::exposureEnd ()
     connection->getName () << sendLog;
   if (!isExposing)
     return Rts2DevClientCamera::exposureEnd ();
+  images->writeClient (this);
   isExposing = 0;
   if (exposureT != EXP_DARK)
     unblockWait ();
   connection->
-    queCommand (new Rts2Command (connection->getMaster (), "readout 0"));
+    queCommand (new Rts2CommandReadout (connection->getMaster (), 0));
+//  connection->
+//    queCommand (new Rts2CommandExposure (connection->getMaster (), this, 0, exposureT, exposureTime, true));
+//  isExposing = 1;
   Rts2DevClientCamera::exposureEnd ();
 }
 
@@ -276,36 +273,21 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       struct ln_lnlat_posn obs;
       struct ln_hrz_posn hrz;
       double gst;
+      double infotime;
       image = (Rts2Image *) event->getArg ();
       image->setMountName (connection->getName ());
-      image->setValue ("MNT_TYPE", getValueChar ("type"), "mount telescope");
-      image->setValue ("MNT_MARK", getValueInteger ("correction_mark"),
-		       "mark used for mount corretion");
       getEqu (&object);
       getAltAz (&hrz);
       getObs (&obs);
-      image->setValue ("RASC", getValueDouble ("ra_tar"), "target RA");
-      image->setValue ("DECL", getValueDouble ("dec_tar"), "target DEC");
-      image->setValue ("CUR_RA", object.ra,
-		       "current RA (real or from astrometry)");
-      image->setValue ("CUR_DEC", object.dec,
-		       "current DEC (real or from astrometry)");
-      image->setValue ("MNT_RA", getValueDouble ("ra_tel"),
-		       "mount RA (read from sensors)");
-      image->setValue ("MNT_DEC", getValueDouble ("dec_tel"),
-		       "mount DEC (read from sensors)");
-      image->setValue ("MNT_AX0", getValueDouble ("axis0_counts"),
-		       "mount axis 0 counts");
-      image->setValue ("MNT_AX1", getValueDouble ("axis1_counts"),
-		       "mount axis 1 counts");
-      image->setValue ("LONG", obs.lng, "mount longtitude");
-      image->setValue ("LAT", obs.lat, "mount latitude");
       gst = getValueDouble ("siderealtime") * 15.0 - obs.lng;
       gst = ln_range_degrees (gst) / 15.0;
       image->setValue ("GST", gst, "Global Sidereal Time");
       image->setValue ("ALT", hrz.alt, "mount altitude");
       image->setValue ("AZ", hrz.az, "mount azimut");
-      image->setValue ("MNT_FLIP", getValueInteger ("flip"), "mount flip");
+      image->writeClient (this);
+      infotime = getValueDouble ("infotime");
+      image->setValue ("MNT_INFO", infotime,
+		       "time when mount informations were collected");
       break;
     case EVENT_GET_RADEC:
       getEqu ((struct ln_equ_posn *) event->getArg ());
@@ -322,22 +304,22 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 void
 Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 {
-  tel->ra = getValueDouble ("ra");
-  tel->dec = getValueDouble ("dec");
+  tel->ra = getValueDouble ("CUR_RA");
+  tel->dec = getValueDouble ("CUR_DEC");
 }
 
 void
 Rts2DevClientTelescopeImage::getEquTel (struct ln_equ_posn *tel)
 {
-  tel->ra = getValueDouble ("ra_tel");
-  tel->dec = getValueDouble ("dec_tel");
+  tel->ra = getValueDouble ("MNT_RA");
+  tel->dec = getValueDouble ("MNT_DEC");
 }
 
 void
 Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
 {
-  tar->ra = getValueDouble ("ra_tar");
-  tar->dec = getValueDouble ("dec_tar");
+  tar->ra = getValueDouble ("RASC");
+  tar->dec = getValueDouble ("DECS");
 }
 
 void
@@ -360,8 +342,8 @@ Rts2DevClientTelescopeImage::getAltAz (struct ln_hrz_posn *hrz)
 void
 Rts2DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
 {
-  obs->lng = getValueDouble ("longtitude");
-  obs->lat = getValueDouble ("latitude");
+  obs->lng = getValueDouble ("LONG");
+  obs->lat = getValueDouble ("LAT");
 }
 
 double
@@ -391,14 +373,7 @@ Rts2DevClientDomeImage::postEvent (Rts2Event * event)
     case EVENT_WRITE_TO_IMAGE:
       Rts2Image * image;
       image = (Rts2Image *) event->getArg ();
-      image->setValue ("DOME", connection->getName (), "name of the dome");
-      image->setValue ("RAIN", getValueInteger ("rain"),
-		       "whenever is raining");
-      image->setValue ("WINDSPED", getValueDouble ("windspeed"), "windspeed");
-      image->setValue ("DOME_TMP", getValueDouble ("temperature"),
-		       "temperature in degrees C");
-      image->setValue ("DOME_HUM", getValueDouble ("humidity"),
-		       "(outside) humidity");
+      image->writeClient (this);
       break;
     }
   Rts2DevClientDome::postEvent (event);
@@ -422,10 +397,7 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 	  || !connection->getName ()
 	  || strcmp (image->getFocuserName (), connection->getName ()))
 	break;
-      image->setValue ("FOC_TYPE", getValueInteger ("type"), "focuser type");
-      image->setFocPos (getValueInteger ("pos"));
-      image->setValue ("FOC_TEMP", getValueInteger ("temp"),
-		       "focuser temperature");
+      image->writeClient (this);
       break;
     }
   Rts2DevClientFocus::postEvent (event);
@@ -443,11 +415,8 @@ Rts2DevClientMirrorImage::postEvent (Rts2Event * event)
     {
     case EVENT_WRITE_TO_IMAGE:
       Rts2Image * image;
-      char *mirrVal;
-      asprintf (&mirrVal, "MIR_%s", connection->getName ());
       image = (Rts2Image *) event->getArg ();
-      image->setValue (mirrVal, connection->getState (), "mirror status");
-      free (mirrVal);
+      image->writeClient (this);
       break;
     }
   Rts2DevClientMirror::postEvent (event);

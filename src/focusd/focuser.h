@@ -19,10 +19,10 @@ protected:
   char *device_file;
   char focCamera[20];
   char focType[20];
-  int focPos;
+  Rts2ValueInteger *focPos;
   int focPositionNew;
-  float focTemp;
-  int focSwitches;		// bitfield holding power switches state - for Robofocus
+  Rts2ValueFloat *focTemp;
+  Rts2ValueInteger *focSwitches;	// bitfield holding power switches state - for Robofocus
   int switchNum;
   // minimal steps/sec count; 5 sec will be added to top it
   int focStepSec;
@@ -45,10 +45,6 @@ public:
   {
     return -1;
   };
-  virtual int baseInfo ()
-  {
-    return -1;
-  };
   virtual int stepOut (int num)
   {
     return -1;
@@ -65,15 +61,19 @@ public:
   }
 
   // callback functions from focuser connection
-  int idle ();
-  int ready (Rts2Conn * conn);
-  int sendInfo (Rts2Conn * conn);
-  int sendBaseInfo (Rts2Conn * conn);
+  virtual int initValues ();
+  virtual int idle ();
+  virtual int ready (Rts2Conn * conn);
   void checkState ();
   int stepOut (Rts2Conn * conn, int num);
   int setTo (Rts2Conn * conn, int num);
   int home (Rts2Conn * conn);
   int autoFocus (Rts2Conn * conn);
+
+  int getFocPos ()
+  {
+    return focPos->getValueInteger ();
+  }
 };
 
 class Rts2DevConnFocuser:public Rts2DevConn

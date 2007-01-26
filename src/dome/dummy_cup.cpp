@@ -34,6 +34,12 @@ Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
   {
   }
 
+  virtual int initValues ()
+  {
+    setCurrentAz (0);
+    return Rts2DevCupola::initValues ();
+  }
+
   virtual int ready ()
   {
     return 0;

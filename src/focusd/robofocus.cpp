@@ -40,8 +40,8 @@ private:
   int focus_move (char *cmd, int steps);
   void compute_checksum (char *cmd);
 
-  int getPos (int *position);
-  int getTemp (float *temperature);
+  int getPos (Rts2ValueInteger * position);
+  int getTemp (Rts2ValueFloat * temperature);
   int getSwitchState ();
 protected:
     virtual int processOption (int in_opt);
@@ -51,7 +51,7 @@ public:
    ~Rts2DevFocuserRobofocus (void);
   virtual int init ();
   virtual int ready ();
-  virtual int baseInfo ();
+  virtual int initValues ();
   virtual int info ();
   virtual int stepOut (int num);
   virtual int setTo (int num);
@@ -262,28 +262,28 @@ Rts2DevFocuserRobofocus::ready ()
 }
 
 int
-Rts2DevFocuserRobofocus::baseInfo ()
+Rts2DevFocuserRobofocus::initValues ()
 {
   strcpy (focType, "ROBOFOCUS");
-  return 0;
+  return Rts2DevFocuser::initValues ();
 }
 
 
 int
 Rts2DevFocuserRobofocus::info ()
 {
-  getPos (&focPos);
-  getTemp (&focTemp);
+  getPos (focPos);
+  getTemp (focTemp);
   // querry for switch state 
   int swstate = getSwitchState ();
   if (swstate >= 0)
-    focSwitches = swstate;
+    focSwitches->setValueInteger (swstate);
   return Rts2DevFocuser::info ();
 }
 
 
 int
-Rts2DevFocuserRobofocus::getPos (int *position)
+Rts2DevFocuserRobofocus::getPos (Rts2ValueInteger * position)
 {
   char command[10], rbuf[10];
   char command_buffer[9];
@@ -296,13 +296,13 @@ Rts2DevFocuserRobofocus::getPos (int *position)
 
   if (foc_write_read (command, 9, rbuf, 9) < 1)
     return -1;
-  *position = atoi (rbuf + 2);
+  position->setValueInteger (atoi (rbuf + 2));
   return 0;
 }
 
 
 int
-Rts2DevFocuserRobofocus::getTemp (float *temp)
+Rts2DevFocuserRobofocus::getTemp (Rts2ValueFloat * temp)
 {
   char command[10], rbuf[10];
   char command_buffer[9];
@@ -315,7 +315,7 @@ Rts2DevFocuserRobofocus::getTemp (float *temp)
 
   if (foc_write_read (command, 9, rbuf, 9) < 1)
     return -1;
-  *temp = ((atof (rbuf + 2) / 2) - 273.15);	// return temp in Celsius
+  temp->setValueFloat ((atof (rbuf + 2) / 2) - 273.15);	// return temp in Celsius
   return 0;
 }
 

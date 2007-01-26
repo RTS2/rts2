@@ -150,11 +150,6 @@ private:
 
   char *device_host;
 
-  time_t idleInfoInterval;
-  time_t nextIdleInfo;
-
-  struct timeval info_time;
-
   char *mailAddress;
 
 protected:
@@ -181,7 +176,6 @@ public:
     return state->getState ();
   };
   virtual int init ();
-  virtual int idle ();
   int authorize (Rts2DevConn * conn);
   int sendStatusInfo (Rts2DevConn * conn);
   int sendMaster (char *msg)
@@ -191,15 +185,8 @@ public:
 
   // callback functions for device 
   virtual int ready ();
-  virtual int info ();
-  virtual int baseInfo ();
 
   virtual int ready (Rts2Conn * conn);
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn)
-  {
-    return 0;
-  }
 
   // only devices can send messages
   virtual void sendMessage (messageType_t in_messageType,
@@ -207,14 +194,6 @@ public:
 
   int sendMail (char *subject, char *text);
 
-  void setIdleInfoInterval (time_t interval)
-  {
-    idleInfoInterval = interval;
-  }
-
-  int info (Rts2Conn * conn);
-  int infoAll ();
-  virtual int baseInfo (Rts2Conn * conn);
   int killAll ();
   virtual int scriptEnds ();
 

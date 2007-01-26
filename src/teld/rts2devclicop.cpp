@@ -4,32 +4,32 @@
 #include <math.h>
 #include <libnova/libnova.h>
 
-Rts2DevClientCopulaTeld::Rts2DevClientCopulaTeld (Rts2Conn * conn):Rts2DevClientCopula
+Rts2DevClientCupolaTeld::Rts2DevClientCupolaTeld (Rts2Conn * conn):Rts2DevClientCupola
   (conn)
 {
 }
 
-Rts2DevClientCopulaTeld::~Rts2DevClientCopulaTeld (void)
+Rts2DevClientCupolaTeld::~Rts2DevClientCupolaTeld (void)
 {
   getMaster ()->postEvent (new Rts2Event (EVENT_COP_SYNCED));
 }
 
 void
-Rts2DevClientCopulaTeld::syncEnded ()
+Rts2DevClientCupolaTeld::syncEnded ()
 {
   getMaster ()->postEvent (new Rts2Event (EVENT_COP_SYNCED));
-  Rts2DevClientCopula::syncEnded ();
+  Rts2DevClientCupola::syncEnded ();
 }
 
 void
-Rts2DevClientCopulaTeld::syncFailed (int status)
+Rts2DevClientCupolaTeld::syncFailed (int status)
 {
   getMaster ()->postEvent (new Rts2Event (EVENT_COP_SYNCED));
-  Rts2DevClientCopula::syncFailed (status);
+  Rts2DevClientCupola::syncFailed (status);
 }
 
 void
-Rts2DevClientCopulaTeld::postEvent (Rts2Event * event)
+Rts2DevClientCupolaTeld::postEvent (Rts2Event * event)
 {
   struct ln_equ_posn *dome_position;
   switch (event->getType ())
@@ -38,10 +38,10 @@ Rts2DevClientCopulaTeld::postEvent (Rts2Event * event)
       dome_position = (struct ln_equ_posn *) event->getArg ();
       connection->
 	queCommand (new
-		    Rts2CommandCopulaMove (this, dome_position->ra,
+		    Rts2CommandCupolaMove (this, dome_position->ra,
 					   dome_position->dec));
       dome_position->ra = nan ("f");
       break;
     }
-  Rts2DevClientCopula::postEvent (event);
+  Rts2DevClientCupola::postEvent (event);
 }

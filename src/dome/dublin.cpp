@@ -145,9 +145,9 @@ Rts2DevDomeDublin::processOption (int in_opt)
 int
 Rts2DevDomeDublin::isGoodWeather ()
 {
-  if (ignoreMeteo)
+  if (getIgnoreMeteo ())
     return 1;
-  if (!isnan (cloud) && cloud <= cloud_bad)
+  if (!isnan (getCloud ()) && getCloud () <= cloud_bad)
     return 0;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
@@ -240,8 +240,8 @@ Rts2DevDomeDublin::info ()
 
   if (weatherConn)
     {
-      rain = weatherConn->getRain ();
-      windspeed = weatherConn->getWindspeed ();
+      setRain (weatherConn->getRain ());
+      setWindSpeed (weatherConn->getWindspeed ());
     }
 
   return Rts2DevDome::info ();
@@ -326,7 +326,7 @@ Rts2DevDomeDublin::endOpen ()
   dome_state = WATCHER_DOME_OPEN;
   if (!domeFailed)
     {
-      sw_state = 1;
+      sw_state->setValueInteger (1);
       executeSms (TYPE_OPENED);
     }
   return Rts2DevDome::endOpen ();
@@ -384,7 +384,7 @@ Rts2DevDomeDublin::endClose ()
   dome_state = WATCHER_DOME_CLOSED;
   if (!domeFailed)
     {
-      sw_state = 4;
+      sw_state->setValueInteger (4);
       executeSms (TYPE_CLOSED);
     }
   return Rts2DevDome::endClose ();
@@ -393,7 +393,7 @@ Rts2DevDomeDublin::endClose ()
 const char *
 Rts2DevDomeDublin::isOnString (int mask)
 {
-  return (sw_state & mask) ? "on" : "off";
+  return (sw_state->getValueInteger () & mask) ? "on" : "off";
 }
 
 int
@@ -409,7 +409,7 @@ Rts2DevDomeDublin::sendDublinMail (char *subject)
 	    "windspeed: %.2f km/h\n",
 	    subject,
 	    isOnString (4),
-	    isOnString (1), isGoodWeather (), rain, windspeed);
+	    isOnString (1), isGoodWeather (), getRain (), getWindSpeed ());
   ret = sendMail (subject, text);
   free (text);
   return ret;

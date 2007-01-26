@@ -17,9 +17,8 @@ private:
 public:
     Rts2DevFocuserDummy (int argc, char **argv);
    ~Rts2DevFocuserDummy (void);
+  virtual int initValues ();
   virtual int ready ();
-  virtual int baseInfo ();
-  virtual int info ();
   virtual int stepOut (int num);
   virtual int isFocusing ();
 };
@@ -27,13 +26,20 @@ public:
 Rts2DevFocuserDummy::Rts2DevFocuserDummy (int in_argc, char **in_argv):
 Rts2DevFocuser (in_argc, in_argv)
 {
-  focPos = 3000;
-  focTemp = 100;
 }
 
 Rts2DevFocuserDummy::~Rts2DevFocuserDummy ()
 {
 }
+
+int
+Rts2DevFocuserDummy::initValues ()
+{
+  focPos->setValueInteger (3000);
+  focTemp->setValueFloat (100);
+  return Rts2DevFocuser::initValues ();
+}
+
 
 int
 Rts2DevFocuserDummy::ready ()
@@ -42,22 +48,9 @@ Rts2DevFocuserDummy::ready ()
 }
 
 int
-Rts2DevFocuserDummy::baseInfo ()
-{
-  strcpy (focType, "Dummy");
-  return 0;
-}
-
-int
-Rts2DevFocuserDummy::info ()
-{
-  return Rts2DevFocuser::info ();
-}
-
-int
 Rts2DevFocuserDummy::stepOut (int num)
 {
-  focPos += num;
+  focPos->setValueInteger (getFocPos () + num);
   steps = 125;
   if (num < 0)
     steps *= -1;
@@ -67,10 +60,10 @@ Rts2DevFocuserDummy::stepOut (int num)
 int
 Rts2DevFocuserDummy::isFocusing ()
 {
-  if (fabs (focPos - focPositionNew) < fabs (steps))
-    focPos = focPositionNew;
+  if (fabs (getFocPos () - focPositionNew) < fabs (steps))
+    focPos->setValueInteger (focPositionNew);
   else
-    focPos += steps;
+    focPos->setValueInteger (getFocPos () + steps);
   return Rts2DevFocuser::isFocusing ();
 }
 

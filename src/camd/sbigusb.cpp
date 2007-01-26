@@ -207,7 +207,6 @@ public:
   // callback functions for Camera alone
   virtual int ready ();
   virtual int info ();
-  virtual int baseInfo ();
   virtual int camChipInfo (int chip);
   virtual int camExpose (int chip, int light, float exptime);
   virtual long camWaitExpose (int chip);
@@ -260,8 +259,7 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE
-Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
@@ -380,6 +378,24 @@ Rts2DevCameraSbig::init ()
 			res.readoutInfo[0].gain);
   chips[1] = cc;
 
+  GetDriverInfoResults0 gccdir0;
+  pcam->GetDriverInfo (DRIVER_STD, gccdir0);
+  if (pcam->GetError () != CE_NO_ERROR)
+    return -1;
+  sprintf (ccdType, "SBIG_%i", pcam->GetCameraType ());
+  // get serial number
+
+  GetCCDInfoParams reqI;
+  GetCCDInfoResults2 resI;
+  PAR_ERROR ret;
+
+  reqI.request = CCD_INFO_EXTENDED;
+  ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &reqI, &resI);
+  if (ret != CE_NO_ERROR)
+    return -1;
+  strcpy (serialNumber, resI.serialNumber);
+  canDF->setValueInteger (1);
+
   return Rts2DevCamera::initChips ();
 }
 
@@ -412,29 +428,6 @@ Rts2DevCameraSbig::info ()
   tempCCD = pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE);
   tempRegulation = 1;
   return Rts2DevCamera::info ();
-}
-
-int
-Rts2DevCameraSbig::baseInfo ()
-{
-  GetDriverInfoResults0 gccdir0;
-  pcam->GetDriverInfo (DRIVER_STD, gccdir0);
-  if (pcam->GetError () != CE_NO_ERROR)
-    return -1;
-  sprintf (ccdType, "SBIG_%i", pcam->GetCameraType ());
-  // get serial number
-
-  GetCCDInfoParams req;
-  GetCCDInfoResults2 res;
-  PAR_ERROR ret;
-
-  req.request = CCD_INFO_EXTENDED;
-  ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &req, &res);
-  if (ret != CE_NO_ERROR)
-    return -1;
-  strcpy (serialNumber, res.serialNumber);
-  canDF = 1;
-  return 0;
 }
 
 int

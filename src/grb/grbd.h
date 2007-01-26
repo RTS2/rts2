@@ -23,6 +23,12 @@ private:
   char *addExe;
   int execFollowups;
 
+  Rts2ValueDouble *last_packet;
+  Rts2ValueDouble *delta;
+  Rts2ValueString *last_target;
+  Rts2ValueDouble *last_target_time;
+  Rts2ValueInteger *execConnection;
+
 protected:
     virtual int processOption (int in_opt);
   virtual int reloadConfig ();
@@ -36,15 +42,7 @@ public:
   {
     return 0;
   }
-  virtual int baseInfo ()
-  {
-    return 0;
-  }
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn)
-  {
-    return 0;
-  }
+  virtual int info ();
 
   int newGcnGrb (int tar_id);
 };

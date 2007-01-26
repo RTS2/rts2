@@ -19,7 +19,7 @@ protected:
   char *filterType;
   char *serialNumber;
 
-  int filter;
+  Rts2ValueInteger *filter;
 
   virtual int getFilterNum (void);
   virtual int setFilterNum (int new_filter);
@@ -27,12 +27,11 @@ public:
     Rts2DevFilterd (int in_argc, char **in_argv);
     virtual ~ Rts2DevFilterd (void);
 
+  virtual int initValues ();
+
   virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual int info ();
-
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn);
 
   int setFilterNum (Rts2DevConnFilter * conn, int new_filter);
 

@@ -8,7 +8,19 @@ Rts2DevDome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 {
   targetPos.ra = nan ("f");
   targetPos.dec = nan ("f");
-  currentAz = 0;		// pointing to south
+
+  tarRa = new Rts2ValueDouble ("tar_ra");
+  addValue (tarRa);
+  tarDec = new Rts2ValueDouble ("tar_dec");
+  addValue (tarDec);
+  tarAlt = new Rts2ValueDouble ("tar_alt");
+  addValue (tarAlt);
+  tarAz = new Rts2ValueDouble ("tar_az");
+  addValue (tarAz);
+
+  currentAz = new Rts2ValueDouble ("CUP_AZ", "cupola azimut");
+  addValue (currentAz);
+
   targetDistance = 0;
 
   configFile = NULL;
@@ -53,6 +65,20 @@ Rts2DevCupola::createConnection (int in_sock)
 }
 
 int
+Rts2DevCupola::info ()
+{
+  struct ln_hrz_posn hrz;
+  // target ra+dec
+  tarRa->setValueDouble (targetPos.ra);
+  tarDec->setValueDouble (targetPos.dec);
+  getTargetAltAz (&hrz);
+  tarAlt->setValueDouble (hrz.alt);
+  tarAz->setValueDouble (hrz.az);
+
+  return Rts2DevDome::info ();
+}
+
+int
 Rts2DevCupola::idle ()
 {
   long ret;
@@ -80,26 +106,6 @@ Rts2DevCupola::idle ()
       setTimeout (10 * USEC_SEC);
     }
   return Rts2DevDome::idle ();
-}
-
-int
-Rts2DevCupola::sendBaseInfo (Rts2Conn * conn)
-{
-  return Rts2DevDome::sendBaseInfo (conn);
-}
-
-int
-Rts2DevCupola::sendInfo (Rts2Conn * conn)
-{
-  struct ln_hrz_posn hrz;
-  // target ra+dec
-  conn->sendValue ("tar_ra", targetPos.ra);
-  conn->sendValue ("tar_dec", targetPos.dec);
-  getTargetAltAz (&hrz);
-  conn->sendValue ("tar_alt", hrz.alt);
-  conn->sendValue ("tar_az", hrz.az);
-  conn->sendValue ("az", currentAz);
-  return Rts2DevDome::sendInfo (conn);
 }
 
 int
@@ -160,6 +166,8 @@ Rts2DevCupola::needSplitChange ()
   int ret;
   struct ln_hrz_posn targetHrz;
   double splitWidth;
+  if (isnan (targetPos.ra) || isnan (targetPos.dec))
+    return 0;
   getTargetAltAz (&targetHrz);
   splitWidth = getSplitWidth (targetHrz.alt);
   if (splitWidth < 0)
@@ -178,7 +186,7 @@ Rts2DevCupola::needSplitChange ()
     {
       if ((getState () & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
 	synced ();
-      return Rts2DevDome::info ();
+      return info ();
     }
   return 1;
 }

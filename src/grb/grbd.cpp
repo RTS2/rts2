@@ -59,6 +59,21 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
   addExe = NULL;
   execFollowups = 0;
 
+  last_packet = new Rts2ValueDouble ("last_packet");
+  addValue (last_packet);
+
+  delta = new Rts2ValueDouble ("delta");
+  addValue (delta);
+
+  last_target = new Rts2ValueString ("last_target");
+  addValue (last_target);
+
+  last_target_time = new Rts2ValueDouble ("last_target_time");
+  addValue (last_target_time);
+
+  execConnection = new Rts2ValueInteger ("exec");
+  addValue (execConnection);
+
   addOption ('s', "gcn_host", 1, "GCN host name");
   addOption ('p', "gcn_port", 1, "GCN port");
   addOption ('t', "test", 0,
@@ -207,14 +222,14 @@ Rts2DevGrb::createConnection (int in_sock)
 }
 
 int
-Rts2DevGrb::sendInfo (Rts2Conn * conn)
+Rts2DevGrb::info ()
 {
-  conn->sendValue ("last_packet", gcncnn->lastPacket ());
-  conn->sendValue ("delta", gcncnn->delta ());
-  conn->sendValue ("last_target", gcncnn->lastTarget ());
-  conn->sendValue ("last_target_time", gcncnn->lastTargetTime ());
-  conn->sendValue ("exec", getOpenConnection ("EXEC") ? 1 : 0);
-  return 0;
+  last_packet->setValueDouble (gcncnn->lastPacket ());
+  delta->setValueDouble (gcncnn->delta ());
+  last_target->setValueString (gcncnn->lastTarget ());
+  last_target_time->setValueDouble (gcncnn->lastTargetTime ());
+  execConnection->setValueInteger (getOpenConnection ("EXEC") ? 1 : 0);
+  return Rts2DeviceDb::info ();
 }
 
 // that method is called when somebody want to immediatelly observe GRB

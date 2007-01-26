@@ -56,16 +56,8 @@ public:
     return -1;
   }
 
-  virtual int baseInfo ()
-  {
-    return -1;
-  }
-
   int startOpen (Rts2Conn * conn);
   int startClose (Rts2Conn * conn);
-
-  virtual int sendBaseInfo (Rts2Conn * conn);
-  virtual int sendInfo (Rts2Conn * conn);
 };
 
 class Rts2DevConnMirror:public Rts2DevConn

@@ -20,7 +20,7 @@ CameraChip::initData (Rts2DevCamera * in_cam, int in_chip_id)
   readoutConn = NULL;
   binningVertical = 1;
   binningHorizontal = 1;
-  gain = 0;
+  gain = nan ("f");
   chipSize = NULL;
   chipReadout = NULL;
   chipUsedReadout = NULL;
@@ -63,6 +63,43 @@ CameraChip::~CameraChip (void)
 }
 
 int
+CameraChip::init ()
+{
+  return 0;
+}
+
+int
+CameraChip::setBinning (int in_vert, int in_hori)
+{
+  binningVertical = in_vert;
+  binningHorizontal = in_hori;
+  return 0;
+}
+
+int
+CameraChip::box (int in_x, int in_y, int in_width, int in_height)
+{
+  // tests for -1 -> full size
+  if (in_x == -1)
+    in_x = chipSize->x;
+  if (in_y == -1)
+    in_y = chipSize->y;
+  if (in_width == -1)
+    in_width = chipSize->width;
+  if (in_height == -1)
+    in_height = chipSize->height;
+  if (in_x < chipSize->x || in_y < chipSize->y
+      || ((in_x - chipSize->x) + in_width) > chipSize->width
+      || ((in_y - chipSize->y) + in_height) > chipSize->height)
+    return -1;
+  chipReadout->x = in_x;
+  chipReadout->y = in_y;
+  chipReadout->width = in_width;
+  chipReadout->height = in_height;
+  return 0;
+}
+
+int
 CameraChip::center (int in_w, int in_h)
 {
   int x, y, w, h;
@@ -87,6 +124,12 @@ CameraChip::center (int in_w, int in_h)
       y = chipSize->height / 4;
     }
   return box (x, y, w, h);
+}
+
+int
+CameraChip::startExposure (int light, float exptime)
+{
+  return -1;
 }
 
 int
@@ -146,6 +189,12 @@ CameraChip::endExposure ()
 }
 
 int
+CameraChip::stopExposure ()
+{
+  return endExposure ();
+}
+
+int
 CameraChip::sendChip (Rts2Conn * conn, char *name, int value)
 {
   char *msg;
@@ -190,7 +239,6 @@ CameraChip::send (Rts2Conn * conn)
   sendChip (conn, "binning_horizontal", binningHorizontal);
   sendChip (conn, "pixelX", pixelX);
   sendChip (conn, "pixelY", pixelY);
-  sendChip (conn, "gain", gain);
   return 0;
 }
 
@@ -281,6 +329,15 @@ CameraChip::setReadoutConn (Rts2DevConnData * dataConn)
   readoutLine = 0;
   sendLine = 0;
   time (&readout_started);
+}
+
+void
+CameraChip::deleteConnection (Rts2Conn * conn)
+{
+  if (conn == readoutConn)
+    {
+      readoutConn = NULL;
+    }
 }
 
 int
@@ -377,9 +434,14 @@ CameraChip::cancelPriorityOperations ()
   delete[]focusingData;
   focusingData = NULL;
   focusingDataTop = NULL;
-  subExposure = camera->getSubExposure ();
+  subExposure = nan ("f");
   nAcc = 1;
   box (-1, -1, -1, -1);
+}
+
+bool CameraChip::supportFrameTransfer ()
+{
+  return false;
 }
 
 int
@@ -391,7 +453,7 @@ Rts2DevCamera::setGain (double in_gain)
 int
 Rts2DevCamera::setSubExposure (double in_subexposure)
 {
-  subExposure = in_subexposure;
+  subExposure->setValueDouble (in_subexposure);
   return 0;
 }
 
@@ -421,37 +483,57 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   int i;
   for (i = 0; i < MAX_CHIPS; i++)
     chips[i] = NULL;
-  tempAir = nan ("f");
-  tempCCD = nan ("f");
-  tempSet = nan ("f");
-  tempRegulation = -1;
-  coolingPower = -1;
-  fan = -1;
+  tempAir = new Rts2ValueFloat ("CCD_AIR", "detector air temperature");
+  addValue (tempAir);
+  tempCCD = new Rts2ValueFloat ("CCD_TEMP", "CCD temperature");
+  addValue (tempCCD);
+  tempSet = new Rts2ValueFloat ("CCD_SET", "CCD set temperature");
+  addValue (tempSet);
+  tempRegulation = new Rts2ValueInteger ("CCD_REG", "temperature regulation");
+  addValue (tempRegulation);
+  coolingPower = new Rts2ValueInteger ("CCD_PWR", "cooling power");
+  addValue (coolingPower);
+  fan = new Rts2ValueInteger ("CCD_FAN", "fan on (1) / off (0)");
+  addValue (fan);
   filter = NULL;
-  canDF = -1;
+  canDF = new Rts2ValueInteger ("can_df");
+  addValue (canDF);
   ccdType[0] = '\0';
   ccdRealType = ccdType;
   serialNumber[0] = '\0';
-  lastExp = nan ("f");
+
+  lastExp = new Rts2ValueFloat ("exposure");
+  addValue (lastExp);
+  subExposure = new Rts2ValueDouble ("subexposure");
+  addValue (subExposure);
+  camFilterVal = new Rts2ValueInteger ("filter");
+  addValue (camFilterVal);
+  camFocVal = new Rts2ValueInteger ("focpos");
+  addValue (camFocVal);
+  camShutterVal = new Rts2ValueInteger ("shutter");
+  addValue (camShutterVal);
 
   exposureFilter = -1;
 
   nextSubExposure = nan ("f");
   defaultSubExposure = nan ("f");
-  subExposure = nan ("f");
 
   nightCoolTemp = nan ("f");
   focuserDevice = NULL;
   wheelDevice = NULL;
-  filterMove = NOT_MOVE;
-  filterExpChip = -1;
+  nextExp = NOT_EXP;
+  nextExpChip = -1;
+  nextExpLight = 1;
   defBinning = 1;
   defFocusExposure = 10;
 
-  gain = nan ("f");
   defaultGain = nan ("f");
   nextGain = nan ("f");
-  rnoise = nan ("f");
+
+  rnoise = new Rts2ValueDouble ("RNOISE", "CCD readout noise");
+  addValue (rnoise);
+  gain = new Rts2ValueDouble ("GAIN", "CCD gain");
+  addValue (gain);
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
@@ -460,7 +542,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   addOption ('W', "filterwheel", 1,
 	     "name of device which is used as filter wheel");
   addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
-  addOption ('e', "focexp", 1, "starting focusing exposure time");
+  addOption ('e', "focexp", 1, "starting focusing exposure duration");
   addOption ('s', "subexposure", 1, "default subexposure");
   addOption ('t', "type", 1,
 	     "specify camera type (in case camera do not store it in FLASH ROM)");
@@ -520,6 +602,14 @@ Rts2DevCamera::cancelPriorityOperations ()
   setSubExposure (defaultSubExposure);
   nextSubExposure = nan ("f");
   Rts2Device::cancelPriorityOperations ();
+}
+
+int
+Rts2DevCamera::info ()
+{
+  camFilterVal->setValueInteger (getFilterNum ());
+  camFocVal->setValueInteger (getFocPos ());
+  return Rts2Device::info ();
 }
 
 int
@@ -592,8 +682,23 @@ Rts2DevCamera::initChips ()
 	  return ret;
 	}
     }
-  // init focuser - try to read focuser offsets & initial position from filer
+
   return 0;
+}
+
+int
+Rts2DevCamera::initValues ()
+{
+  // TODO init focuser - try to read focuser offsets & initial position from file
+  addConstValue ("focuser", focuserDevice);
+  addConstValue ("wheel", wheelDevice);
+
+  addConstValue ("chips", chipNum);
+
+  addConstValue ("CCD_TYPE", "camera type", ccdRealType);
+  addConstValue ("CCD_SER", "camera serial number", serialNumber);
+
+  return Rts2Device::initValues ();
 }
 
 Rts2DevConn *
@@ -683,6 +788,11 @@ Rts2DevCamera::afterReadout ()
       setSubExposure (nextSubExposure);
       nextSubExposure = nan ("f");
     }
+  if (nextExp == FT_EXP)
+    {
+      camStartExposure (nextExpChip, nextExpLight, nextExpTime);
+      nextExp = NOT_EXP;
+    }
   setTimeout (USEC_SEC);
 }
 
@@ -694,12 +804,12 @@ Rts2DevCamera::postEvent (Rts2Event * event)
     case EVENT_FILTER_MOVE_END:
       // update info about FW
       infoAll ();
-      filterMove = NOT_MOVE;
-      if (filterExpChip >= 0)
+      nextExp = NOT_EXP;
+      if (nextExpChip >= 0)
 	{
 	  // start qued exposure
-	  camStartExposure (filterExpChip, 1, filterExpTime);
-	  filterExpChip = -1;
+	  camStartExposure (nextExpChip, nextExpLight, nextExpTime);
+	  nextExpChip = -1;
 	}
       break;
     }
@@ -742,37 +852,6 @@ Rts2DevCamera::changeMasterState (int new_state)
 }
 
 int
-Rts2DevCamera::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("temperature_regulation", tempRegulation);
-  conn->sendValue ("temperature_setpoint", tempSet);
-  conn->sendValue ("air_temperature", tempAir);
-  conn->sendValue ("ccd_temperature", tempCCD);
-  conn->sendValue ("cooling_power", coolingPower);
-  conn->sendValue ("fan", fan);
-  conn->sendValue ("filter", getFilterNum ());
-  conn->sendValue ("focpos", getFocPos ());
-  conn->sendValue ("exposure", lastExp);
-  conn->sendValue ("gain", gain);
-  conn->sendValue ("rnoise", rnoise);
-  conn->sendValue ("shutter", chips[0]->getShutterState ());
-  conn->sendValue ("subexposure", subExposure);
-  return 0;
-}
-
-int
-Rts2DevCamera::sendBaseInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("type", ccdRealType);
-  conn->sendValue ("serial", serialNumber);
-  conn->sendValue ("chips", chipNum);
-  conn->sendValue ("can_df", canDF);
-  conn->sendValue ("focuser", focuserDevice);
-  conn->sendValue ("wheel", wheelDevice);
-  return 0;
-}
-
-int
 Rts2DevCamera::camChipInfo (Rts2Conn * conn, int chip)
 {
   int ret;
@@ -794,7 +873,7 @@ Rts2DevCamera::camStartExposure (int chip, int light, float exptime)
   if (ret)
     return ret;
 
-  lastExp = exptime;
+  lastExp->setValueFloat (exptime);
   infoAll ();
   maskStateChip (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
@@ -816,16 +895,17 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 {
   int ret;
 
-  if (light && filterMove == MOVE)
+  if (light && nextExp != NOT_EXP)
     {
       // que exposure after filter move ends
-      filterExpChip = chip;
-      filterExpTime = exptime;
+      nextExpChip = chip;
+      nextExpLight = light;
+      nextExpTime = exptime;
       ret = 0;
     }
   else
     {
-      filterExpChip = -1;
+      nextExpChip = -1;
       ret = camStartExposure (chip, light, exptime);
     }
   if (ret)
@@ -896,14 +976,6 @@ Rts2DevCamera::camReadout (int chip)
 }
 
 int
-Rts2DevCamera::camReadoutExpose (Rts2Conn * conn, int chip, int light,
-				 float exptime)
-{
-
-  return -1;
-}
-
-int
 Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 {
   int ret;
@@ -938,6 +1010,29 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 		 DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
   conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
   return -1;
+}
+
+int
+Rts2DevCamera::camReadoutExpose (Rts2Conn * conn, int chip, int light,
+				 float exptime)
+{
+  int ret;
+  // test if we can do frame transfer..
+  if (chips[chip]->supportFrameTransfer ())
+    {
+      ret = camExpose (conn, chip, light, exptime);
+      if (ret)
+	return ret;
+    }
+  else
+    {
+      // if we don't support frame transfer, store exposure
+      nextExp = FT_EXP;
+      nextExpChip = chip;
+      nextExpTime = exptime;
+      nextExpLight = light;
+    }
+  return camReadout (conn, chip);
 }
 
 int
@@ -1014,12 +1109,12 @@ Rts2DevCamera::camFilter (int new_filter)
       // filter move will be performed
       if (fs.filter == -1)
 	{
-	  filterMove = MOVE;
+	  nextExp = FILTER_MOVE;
 	  ret = 0;
 	}
       else
 	{
-	  filterMove = NOT_MOVE;
+	  nextExp = NOT_EXP;
 	  ret = -1;
 	}
     }

@@ -121,6 +121,7 @@ Rts2DevPhotOptec::init ()
       return -1;
     }
   // reset occurs on open of photometer file..
+  photType = "Optec";
   return 0;
 }
 
@@ -139,7 +140,7 @@ Rts2DevPhotOptec::getCount ()
 	  switch (result[0])
 	    {
 	    case '0':
-	      filter = result[1] / FILTER_STEP;
+	      filter->setValueInteger (result[1] / FILTER_STEP);
 	      if ((getState () & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
 		endFilterMove ();
 	      break;
@@ -223,7 +224,7 @@ Rts2DevPhotOptec::disableMove ()
 {
   int ret;
   ret = phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
-  filter = 0;
+  filter->setValueInteger (0);
   infoAll ();
   return ret;
 }

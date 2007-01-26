@@ -363,7 +363,6 @@ public:
   void setFocPos (int new_pos)
   {
     focPos = new_pos;
-    setValue ("FOC_POS", focPos, "focuser position");
   }
 
   int getIsAcquiring ()
@@ -537,6 +536,8 @@ public:
   {
     return setValue ("ORIGIN", orig, "organisation responsible for data");
   }
+
+  void writeClient (Rts2DevClient * client);
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image & image);
 };

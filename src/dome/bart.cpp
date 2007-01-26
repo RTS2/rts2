@@ -160,7 +160,6 @@ public:
   virtual int idle ();
 
   virtual int ready ();
-  virtual int baseInfo ();
   virtual int info ();
 
   virtual int openDome ();
@@ -190,9 +189,6 @@ Rts2DevDome (in_argc, in_argv)
   domeModel = "BART_FORD_2";
 
   weatherConn = NULL;
-
-  rain = 0;
-  windspeed = nan ("f");
 
   cloud_dev = NULL;
   cloud_port = -1;
@@ -402,15 +398,15 @@ Rts2DevDomeBart::isGoodWeather ()
       // ioctl failed or it's raining..
       if (ret || !(flags & TIOCM_RI))
 	{
-	  rain = 1;
+	  setRain (1);
 	  setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
-	  if (ignoreMeteo)
+	  if (getIgnoreMeteo () == 1)
 	    return 1;
 	  return 0;
 	}
-      rain = 0;
+      setRain (0);
     }
-  if (ignoreMeteo)
+  if (getIgnoreMeteo () == 1)
     return 1;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
@@ -520,7 +516,7 @@ Rts2DevDomeBart::init ()
 	}
     }
 
-  if (ignoreMeteo)
+  if (getIgnoreMeteo ())
     return 0;
 
   weatherConn =
@@ -611,9 +607,9 @@ int
 Rts2DevDomeBart::cloudHeating ()
 {
   char step = 'b';
-  if (temperature > 5)
+  if (getTemperature () > 5)
     return 0;
-  step += (char) ((-temperature + 5) / 4.0);
+  step += (char) ((-getTemperature () + 5) / 4.0);
   if (step > 'k')
     step = 'k';
   return cloudHeating (step);
@@ -694,8 +690,8 @@ Rts2DevDomeBart::cloudMeasureAll ()
   time (&now);
   fprintf (mrak2_log,
 	   "%li - G %i;S45 %i;S90 %i;S135 %i;Temp %.1f;Hum %.0f;Rain %i\n",
-	   (long int) now, ground, s45, s90, s135, temperature, humidity,
-	   rain);
+	   (long int) now, ground, s45, s90, s135, getTemperature (),
+	   humidity, rain);
   setCloud (s90 - ground);
   fflush (mrak2_log);
   return 0;
@@ -715,7 +711,7 @@ Rts2DevDomeBart::checkCloud ()
     {
       fprintf (mrak2_log,
 	       "%li - G nan;S45 nan;S90 nan;S135 nan;Temp %.1f;Hum %.0f;Rain %i\n",
-	       (long int) now, temperature, humidity, rain);
+	       (long int) now, getTemperature (), getHumidity (), getRain ());
       fflush (mrak2_log);
       nextCloudMeas = now + 300;
       return;
@@ -753,23 +749,22 @@ Rts2DevDomeBart::info ()
   ret = zjisti_stav_portu ();
   if (ret)
     return -1;
-  sw_state = getPortState (KONCAK_OTEVRENI_JIH);
-  sw_state |= (getPortState (KONCAK_OTEVRENI_SEVER) << 1);
-  sw_state |= (getPortState (KONCAK_ZAVRENI_JIH) << 2);
-  sw_state |= (getPortState (KONCAK_ZAVRENI_SEVER) << 3);
+  sw_state->setValueInteger (getPortState (KONCAK_OTEVRENI_JIH));
+  sw_state->setValueInteger (sw_state->
+			     getValueInteger () |
+			     (getPortState (KONCAK_OTEVRENI_SEVER) << 1));
+  sw_state->setValueInteger (sw_state->
+			     getValueInteger () |
+			     (getPortState (KONCAK_ZAVRENI_JIH) << 2));
+  sw_state->setValueInteger (sw_state->
+			     getValueInteger () |
+			     (getPortState (KONCAK_ZAVRENI_SEVER) << 3));
   if (weatherConn)
     {
-      rain |= weatherConn->getRain ();
-      windspeed = weatherConn->getWindspeed ();
+      setRain (weatherConn->getRain ());
+      setWindSpeed (weatherConn->getWindspeed ());
     }
-  nextOpen = getNextOpen ();
   return Rts2DevDome::info ();
-}
-
-int
-Rts2DevDomeBart::baseInfo ()
-{
-  return 0;
 }
 
 int

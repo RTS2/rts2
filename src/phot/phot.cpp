@@ -95,7 +95,11 @@ Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device):R
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
-  filter = 0;
+  filter = new Rts2ValueInteger ("filter");
+  addValue (filter);
+
+  photType = NULL;
+  serial = NULL;
 
   req_count = -1;
   setReqTime (1);
@@ -116,6 +120,15 @@ Rts2DevPhot::checkFilterMove ()
       // when it's -1 or -2..end filter move
       endFilterMove ();
     }
+}
+
+int
+Rts2DevPhot::initValues ()
+{
+  addConstValue ("type", photType);
+  addConstValue ("serial", serial);
+
+  return Rts2Device::initValues ();
 }
 
 int
@@ -237,7 +250,7 @@ Rts2DevPhot::homeFilter (Rts2Conn * conn)
   ret = homeFilter ();
   if (ret)
     return -1;
-  filter = 0;
+  filter->setValueInteger (0);
   infoAll ();
   return ret;
 }
@@ -311,13 +324,6 @@ Rts2DevPhot::setReqTime (float in_req_time)
       nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
       nextCountDue.tv_usec %= USEC_SEC;
     }
-}
-
-int
-Rts2DevPhot::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("filter", filter);
-  return 0;
 }
 
 int

@@ -242,22 +242,22 @@ Rts2NMTelescope::print (WINDOW * wnd)
 
   lst = getLocalSiderealDeg ();
 
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
+  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("MNT_TYPE"));
   mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
-	     tar.ra, tar.dec, getValueInteger ("flip") ? 'f' : 'n');
+	     tar.ra, tar.dec, getValueInteger ("MNT_FLIP") ? 'f' : 'n');
   if (getValueInteger ("know_position"))
-    mvwprintw (wnd, 3, 1, "Err: %.2f %.2f", getValueDouble ("ra_corr") * 60.0,
-	       getValueDouble ("dec_corr") * 60.0);
+    mvwprintw (wnd, 3, 1, "Err: %.2f %.2f", getValueDouble ("RA_CORR") * 60.0,
+	       getValueDouble ("DEC_CORR") * 60.0);
   else
     mvwprintw (wnd, 3, 1, "R+D/f: %07.3f%+06.3f/%c",
-	       tel.ra, tel.dec, getValueInteger ("flip") ? 'f' : 'n');
+	       tel.ra, tel.dec, getValueInteger ("MNT_FLIP") ? 'f' : 'n');
   mvwprintw (wnd, 4, 1, "Az/Al/D: %03.0f %+02.0f %s", altaz.az, altaz.alt,
 	     ln_hrz_to_nswe (&altaz));
 
-  mvwprintw (wnd, 5, 1, "x/y: %.0f %.0f", getValueDouble ("axis0_counts"),
-	     getValueDouble ("axis1_counts"));
+  mvwprintw (wnd, 5, 1, "x/y: %.0f %.0f", getValueDouble ("MNT_AX0"),
+	     getValueDouble ("MNT_AX1"));
   mvwprintw (wnd, 6, 1, "Lon/Lat: %+03.3f %+03.3f",
-	     getValueDouble ("longtitude"), getValueDouble ("latitude"));
+	     getValueDouble ("LONG"), getValueDouble ("LAT"));
 
   ln_rad_to_hms (ln_deg_to_rad (lst), &hms);
   mvwprintw (wnd, 7, 1, "Lsid: %07.3f (%02i:%02i:%02.1f)",
@@ -265,8 +265,7 @@ Rts2NMTelescope::print (WINDOW * wnd)
 	     hms.seconds);
 
   mvwprintw (wnd, 8, 1, "Corr: %i Exec: %i",
-	     getValueInteger ("correction_mark"),
-	     getValueInteger ("num_corr"));
+	     getValueInteger ("MNT_MARK"), getValueInteger ("num_corr"));
 
   printStatus (wnd, connection);
 }
@@ -304,26 +303,23 @@ public:
 void
 Rts2NMCamera::print (WINDOW * wnd)
 {
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
+  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("CCD_TYPE"));
+  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("CCD_SER"));
   mvwprintw (wnd, 3, 1, "Exp: %.2f %i Gain: %.2f",
 	     getValueDouble ("exposure"), getValueInteger ("shutter"),
-	     getValueDouble ("gain"));
+	     getValueDouble ("GAIN"));
 /*  if (info->chip_info)
     mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
 	       info->chip_info[0].height);
   else
     mvwprintw (wnd, 3, 1, "Siz: Unknow"); */
   mvwprintw (wnd, 4, 1, "S/A: %+05.1f %+05.1f oC",
-	     getValueDouble ("temperature_setpoint"),
-	     getValueDouble ("air_temperature"));
-  mvwprintw (wnd, 5, 1, "CCD: %+05.1f oC",
-	     getValueDouble ("ccd_temperature"));
+	     getValueDouble ("CCD_SET"), getValueDouble ("CCD_AIR"));
+  mvwprintw (wnd, 5, 1, "CCD: %+05.1f oC", getValueDouble ("CCD_TEMP"));
   mvwprintw (wnd, 6, 1, "CPo: %03.0f Foc: %i",
-	     getValueDouble ("cooling_power") / 10.0,
-	     getValueInteger ("focpos"));
+	     getValueDouble ("CCD_PWR") / 10.0, getValueInteger ("focpos"));
   mvwprintw (wnd, 7, 1, "Fan: %s Fil: %i",
-	     getValueDouble ("fan") ? "on " : "off",
+	     getValueDouble ("CCD_FAN") ? "on " : "off",
 	     getValueInteger ("filter"));
 
   printStatus (wnd, connection);
@@ -348,7 +344,7 @@ public:
     Rts2NMFocus (Rts2CNMonConn *
 		 in_connection):Rts2DevClientFocus (in_connection)
   {
-    setStatusBegin (6);
+    setStatusBegin (5);
   }
   virtual void postEvent (Rts2Event * event)
   {
@@ -360,18 +356,17 @@ public:
 void
 Rts2NMFocus::print (WINDOW * wnd)
 {
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
-  mvwprintw (wnd, 3, 1, "Temp: %+05.1f oC", getValueDouble ("temp"));
-  mvwprintw (wnd, 4, 1, "Pos: %+i", getValueInteger ("pos"));
+  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("FOC_TYPE"));
+  mvwprintw (wnd, 2, 1, "Temp: %+05.1f oC", getValueDouble ("FOC_TEMP"));
+  mvwprintw (wnd, 3, 1, "Pos: %+i", getValueInteger ("FOC_POS"));
   int switch_num = getValueInteger ("switch_num");
   if (switch_num > 0)
     {
       int switches = getValueInteger ("switches");
-      mvwprintw (wnd, 5, 1, "Switch: ");
+      mvwprintw (wnd, 4, 1, "Switch: ");
       for (int i = 0; i < switch_num; i++)
 	{
-	  mvwprintw (wnd, 5, 9 + i, (switches & (1 << i) ? "O" : "f"));
+	  mvwprintw (wnd, 4, 9 + i, (switches & (1 << i) ? "O" : "f"));
 	}
     }
 
@@ -551,8 +546,8 @@ Rts2NMDome::print (WINDOW * wnd)
   time (&now);
   time_to_open = getValueInteger ("next_open") - now;
 
-  temp = getValueDouble ("temperature");
-  humi = getValueDouble ("humidity");
+  temp = getValueDouble ("DOME_TMP");
+  humi = getValueDouble ("DOME_HUM");
 
   if (isnan (temp) || isnan (humi))
     {
@@ -567,12 +562,12 @@ Rts2NMDome::print (WINDOW * wnd)
 	10;
     }
 
-  mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
+  mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("dome_model"));
   mvwprintw (wnd, 2, 1, "Tem: %+4.1f oC Vap: %4.1f", temp, vapor);
   mvwprintw (wnd, 3, 1, "Hum: %3.0f dew: %+4.1f", humi, dew);
   mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i Cl: %2.1f",
-	     getValueDouble ("windspeed"), getValueInteger ("rain"),
-	     getValueDouble ("cloud"));
+	     getValueDouble ("WINDSPED"), getValueInteger ("RAIN"),
+	     getValueDouble ("CLOUD_S"));
   printTimeDiff (wnd, 5, "NextO", time_to_open);
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
@@ -649,13 +644,13 @@ Rts2NMDome::printOneLine (WINDOW * wnd)
 #undef is_on
 }
 
-class Rts2NMCopula:public Rts2DevClientCopula, public MonWindow
+class Rts2NMCupola:public Rts2DevClientCupola, public MonWindow
 {
 protected:
   virtual void print (WINDOW * wnd);
   virtual void printOneLine (WINDOW * wnd);
 public:
-    Rts2NMCopula (Rts2CNMonConn * in_connection):Rts2DevClientCopula
+    Rts2NMCupola (Rts2CNMonConn * in_connection):Rts2DevClientCupola
     (in_connection)
   {
     setStatusBegin (9);
@@ -663,12 +658,12 @@ public:
   virtual void postEvent (Rts2Event * event)
   {
     MonWindow::postEvent (event);
-    Rts2DevClientCopula::postEvent (event);
+    Rts2DevClientCupola::postEvent (event);
   }
 };
 
 void
-Rts2NMCopula::print (WINDOW * wnd)
+Rts2NMCupola::print (WINDOW * wnd)
 {
   int dome = getValueInteger ("dome");
   time_t now;
@@ -684,13 +679,13 @@ Rts2NMCopula::print (WINDOW * wnd)
 #define is_on(num)	((dome & (1 << num))? 'O' : 'f')
   mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
   mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
-  mvwprintw (wnd, 8, 1, "Az: %06.2f", getValueDouble ("az"));
+  mvwprintw (wnd, 8, 1, "Az: %06.2f", getValueDouble ("CUP_AZ"));
 
   printStatus (wnd, connection);
 }
 
 void
-Rts2NMCopula::printOneLine (WINDOW * wnd)
+Rts2NMCupola::printOneLine (WINDOW * wnd)
 {
   int dome = getValueInteger ("dome");
   time_t now;
@@ -1262,7 +1257,7 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_DOME:
       return new Rts2NMDome ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_COPULA:
-      return new Rts2NMCopula ((Rts2CNMonConn *) conn);
+      return new Rts2NMCupola ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_EXECUTOR:
       return new Rts2NMExecutor ((Rts2CNMonConn *) conn);
     case DEVICE_TYPE_SELECTOR:

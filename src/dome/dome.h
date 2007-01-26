@@ -8,20 +8,23 @@
 
 class Rts2DevDome:public Rts2Device
 {
+private:
+  Rts2ValueInteger * ignoreMeteo;
+
 protected:
   char *domeModel;
-  int sw_state;
+  Rts2ValueInteger *sw_state;
 
-  float temperature;
-  float humidity;
-  int power_telescope;
-  int power_cameras;
-  time_t nextOpen;
-  int rain;
-  float windspeed;
-  double cloud;
+  Rts2ValueFloat *temperature;
+  Rts2ValueFloat *humidity;
+  Rts2ValueInteger *power_telescope;
+  Rts2ValueInteger *power_cameras;
+  Rts2ValueTime *nextOpen;
+  Rts2ValueInteger *rain;
+  Rts2ValueFloat *windspeed;
+  Rts2ValueDouble *cloud;
 
-  int observingPossible;
+  Rts2ValueInteger *observingPossible;
   int maxWindSpeed;
   int maxPeekWindspeed;
   bool weatherCanOpenDome;
@@ -34,8 +37,6 @@ protected:
   {
     // we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
   }
-
-  bool ignoreMeteo;
 
   void domeWeatherGood ();
   virtual int isGoodWeather ();
@@ -72,14 +73,13 @@ public:
   };
   int checkOpening ();
   virtual int init ();
+  virtual int initValues ();
   virtual Rts2DevConn *createConnection (int in_sock);
   virtual int idle ();
 
   virtual int info ();
 
   // callback function from dome connection
-  virtual int sendBaseInfo (Rts2Conn * conn);
-  virtual int sendInfo (Rts2Conn * conn);
 
   virtual int observing ();
   virtual int standby ();
@@ -91,39 +91,60 @@ public:
 
   int setIgnoreMeteo (bool newIgnore)
   {
-    ignoreMeteo = newIgnore;
+    ignoreMeteo->setValueInteger (newIgnore ? 1 : 0);
     infoAll ();
     return 0;
   }
 
+  int getIgnoreMeteo ()
+  {
+    return ignoreMeteo->getValueInteger ();
+  }
+
   void setTemperature (float in_temp)
   {
-    temperature = in_temp;
+    temperature->setValueFloat (in_temp);
   }
   float getTemperature ()
   {
-    return temperature;
+    return temperature->getValueFloat ();
   }
   void setHumidity (float in_humidity)
   {
-    humidity = in_humidity;
+    humidity->setValueFloat (in_humidity);
+  }
+  float getHumidity ()
+  {
+    return humidity->getValueFloat ();
   }
   void setRain (int in_rain)
   {
-    rain = in_rain;
+    rain->setValueInteger (in_rain);
+  }
+  int getRain ()
+  {
+    return rain->getValueInteger ();
   }
   void setWindSpeed (float in_windpseed)
   {
-    windspeed = in_windpseed;
+    windspeed->setValueFloat (in_windpseed);
+  }
+  float getWindSpeed ()
+  {
+    return windspeed->getValueFloat ();
   }
   void setCloud (double in_cloud)
   {
-    cloud = in_cloud;
+    cloud->setValueDouble (in_cloud);
+  }
+  double getCloud ()
+  {
+    return cloud->getValueDouble ();
   }
   void setWeatherTimeout (time_t wait_time);
   void setSwState (int in_sw_state)
   {
-    sw_state = in_sw_state;
+    sw_state->setValueInteger (in_sw_state);
   }
 
   int getMaxPeekWindspeed ()

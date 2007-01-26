@@ -154,7 +154,6 @@ public:
 
   virtual int init ();
   virtual int ready ();
-  virtual int baseInfo ();
   virtual int info ();
   virtual int camChipInfo (int chip)
   {
@@ -242,7 +241,7 @@ Rts2FilterUrvc2::setFilterNum (int new_filter)
 void
 Rts2DevCameraUrvc2::get_eeprom ()
 {
-  if (tempRegulation == -1)
+  if (tempRegulation->getValueInteger () == -1)
     {
       if (GetEEPROM (cameraID, &eePtr) != CE_NO_ERROR)
 	{
@@ -322,7 +321,7 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int in_fan,
 
   if (MicroCommand (MC_REGULATE_TEMP, cameraID, &cool, NULL))
     return -1;
-  tempRegulation = coolstate;
+  tempRegulation->setValueInteger (coolstate);
 
   return 0;
 }
@@ -331,7 +330,7 @@ Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int in_argc, char **in_argv):Rts2DevCame
 	       in_argv)
 {
   cameraID = DEFAULT_CAMERA;
-  tempRegulation = -1;
+  tempRegulation->setValueInteger (-1);
 }
 
 int
@@ -397,19 +396,24 @@ Rts2DevCameraUrvc2::init ()
     case 0:
       // a bit strange: may have different
       // meanings... (freeze)
-      tempRegulation = (qtsr.power > 250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF;
+      tempRegulation->
+	setValueInteger ((qtsr.power >
+			  250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF);
       break;
     case 1:
-      tempRegulation = CAMERA_COOL_HOLD;
+      tempRegulation->setValueInteger (CAMERA_COOL_HOLD);
       break;
     default:
-      tempRegulation = CAMERA_COOL_OFF;
+      tempRegulation->setValueInteger (CAMERA_COOL_OFF);
     }
 
   logStream (MESSAGE_DEBUG) << "urvc2 init return " << Cams[eePtr.model].
     horzImage << sendLog;
 
   filter = new Rts2FilterUrvc2 (this);
+
+  strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
+  strcpy (serialNumber, (char *) eePtr.serialNumber);
 
   return Rts2DevCameraUrvc2::initChips ();
 }
@@ -424,19 +428,6 @@ Rts2DevCameraUrvc2::ready ()
 }
 
 int
-Rts2DevCameraUrvc2::baseInfo ()
-{
-  StatusResults gvr;
-  if (MicroCommand (MC_STATUS, cameraID, NULL, &gvr))
-    return -1;
-
-  strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
-  strcpy (serialNumber, (char *) eePtr.serialNumber);
-
-  return 0;
-}
-
-int
 Rts2DevCameraUrvc2::info ()
 {
   StatusResults gvr;
@@ -447,12 +438,13 @@ Rts2DevCameraUrvc2::info ()
   if (MicroCommand (MC_TEMP_STATUS, cameraID, NULL, &qtsr))
     return -1;
 
-  tempSet = ccd_ad2c (qtsr.ccdSetpoint);
-  coolingPower = (int) ((qtsr.power == 255) ? 1000 : qtsr.power * 3.906);
-  tempAir = ambient_ad2c (qtsr.ambientThermistor);
-  tempCCD = ccd_ad2c (qtsr.ccdThermistor);
-  fan = gvr.fanEnabled;
-  canDF = 1;
+  tempSet->setValueDouble (ccd_ad2c (qtsr.ccdSetpoint));
+  coolingPower->
+    setValueInteger ((int) ((qtsr.power == 255) ? 1000 : qtsr.power * 3.906));
+  tempAir->setValueDouble (ambient_ad2c (qtsr.ambientThermistor));
+  tempCCD->setValueDouble (ccd_ad2c (qtsr.ccdThermistor));
+  fan->setValueInteger (gvr.fanEnabled);
+  canDF->setValueInteger (1);
   return Rts2DevCamera::info ();
 }
 
@@ -492,7 +484,7 @@ Rts2DevCameraUrvc2::camCoolHold ()	/* hold on that temperature */
   QueryTemperatureStatusResults qtsr;
   float ot;			// optimal temperature
 
-  if (tempRegulation == CAMERA_COOL_HOLD)
+  if (tempRegulation->getValueInteger () == CAMERA_COOL_HOLD)
     return 0;			// already cooled
 
   if (isnan (nightCoolTemp))

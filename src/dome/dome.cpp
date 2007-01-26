@@ -7,21 +7,31 @@
 Rts2DevDome::Rts2DevDome (int in_argc, char **in_argv, int in_device_type):
 Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
-  sw_state = -1;
-  temperature = nan ("f");
-  humidity = nan ("f");
-  power_telescope = 0;
-  power_cameras = 0;
-  rain = 1;
-  windspeed = nan ("f");	// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
+  sw_state = new Rts2ValueInteger ("dome");
+  addValue (sw_state);
+  temperature = new Rts2ValueFloat ("DOME_TMP", "temperature in degrees C");
+  addValue (temperature);
+  humidity = new Rts2ValueFloat ("DOME_HUM", "(outside) humidity");
+  addValue (humidity);
+  power_telescope = new Rts2ValueInteger ("power_telescope");
+  addValue (power_telescope);
+  power_cameras = new Rts2ValueInteger ("power_cameras");
+  addValue (power_cameras);
+  rain = new Rts2ValueInteger ("RAIN", "whenever is raining");
+  rain->setValueInteger (1);
+  addValue (rain);
+  windspeed = new Rts2ValueFloat ("WINDSPED", "windspeed");
+  addValue (windspeed);		// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
 
   maxWindSpeed = 50;
   maxPeekWindspeed = 50;
   weatherCanOpenDome = false;
-  ignoreMeteo = false;
+  ignoreMeteo = new Rts2ValueInteger ("ignoreMeteo");
+  ignoreMeteo->setValueInteger (0);
+  addValue (ignoreMeteo);
 
-  cloud = nan ("f");
-
+  cloud = new Rts2ValueDouble ("CLOUD_S", "cloud sensor value");
+  addValue (cloud);
 
   addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
   addOption ('P', "max_peek_windspeed", 1,
@@ -30,12 +40,15 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 	     "specified that option if weather signal is allowed to open dome");
   addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
 
-  observingPossible = 0;
+  observingPossible = new Rts2ValueInteger ("observingPossible");
+  addValue (observingPossible);
 
   time (&nextGoodWeather);
 
   nextGoodWeather += DEF_WEATHER_TIMEOUT;
-  nextOpen = getNextOpen ();
+
+  nextOpen = new Rts2ValueTime ("next_open");
+  nextOpen->setValueTime (getNextOpen ());
 }
 
 int
@@ -53,7 +66,7 @@ Rts2DevDome::processOption (int in_opt)
       weatherCanOpenDome = true;
       break;
     case 'I':
-      ignoreMeteo = true;
+      ignoreMeteo->setValueInteger (1);
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -73,7 +86,7 @@ Rts2DevDome::domeWeatherGood ()
 int
 Rts2DevDome::isGoodWeather ()
 {
-  if (ignoreMeteo)
+  if (getIgnoreMeteo ())
     return 1;
   return 0;
 }
@@ -82,6 +95,13 @@ int
 Rts2DevDome::init ()
 {
   return Rts2Device::init ();
+}
+
+int
+Rts2DevDome::initValues ()
+{
+  addConstValue ("dome_model", domeModel);
+  return Rts2Device::initValues ();
 }
 
 Rts2DevConn *
@@ -173,39 +193,15 @@ Rts2DevDome::idle ()
 int
 Rts2DevDome::info ()
 {
-  nextOpen = getNextOpen ();
+  nextOpen->setValueTime (getNextOpen ());
   return Rts2Device::info ();
-}
-
-int
-Rts2DevDome::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("dome", sw_state);
-  conn->sendValue ("temperature", temperature);
-  conn->sendValue ("humidity", humidity);
-  conn->sendValue ("power_telescope", power_telescope);
-  conn->sendValue ("power_cameras", power_cameras);
-  conn->sendValueTime ("next_open", &nextOpen);
-  conn->sendValue ("rain", rain);
-  conn->sendValue ("windspeed", windspeed);
-  conn->sendValue ("observingPossible", observingPossible);
-  conn->sendValue ("ignoreMeteo", (ignoreMeteo ? 2 : 1));
-  conn->sendValue ("cloud", cloud);
-  return 0;
-}
-
-int
-Rts2DevDome::sendBaseInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("type", domeModel);
-  return 0;
 }
 
 int
 Rts2DevDome::closeDomeWeather ()
 {
   int ret;
-  if (ignoreMeteo == false)
+  if (getIgnoreMeteo () == 0)
     {
       ret = closeDome ();
       setMasterStandby ();
@@ -217,7 +213,7 @@ Rts2DevDome::closeDomeWeather ()
 int
 Rts2DevDome::observing ()
 {
-  observingPossible = 1;
+  observingPossible->setValueInteger (1);
   if ((getState () & DOME_DOME_MASK) != DOME_OPENED)
     return openDome ();
   return 0;
@@ -226,7 +222,7 @@ Rts2DevDome::observing ()
 int
 Rts2DevDome::standby ()
 {
-  ignoreMeteo = false;
+  ignoreMeteo->setValueInteger (0);
   if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
@@ -235,7 +231,7 @@ Rts2DevDome::standby ()
 int
 Rts2DevDome::off ()
 {
-  ignoreMeteo = false;
+  ignoreMeteo->setValueInteger (0);
   if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
@@ -270,7 +266,7 @@ Rts2DevDome::setMasterOn ()
 int
 Rts2DevDome::changeMasterState (int new_state)
 {
-  observingPossible = 0;
+  observingPossible->setValueInteger (0);
   if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
     {
       switch (new_state & SERVERD_STATUS_MASK)

@@ -216,7 +216,23 @@ Rts2TelescopeIr::init ()
     return ret;
 
   initCoverState ();
+
+  std::string serial;
+  int status = 0;
+
   return 0;
+}
+
+int
+Rts2TelescopeIr::initValues ()
+{
+  telLongtitude->setValueDouble (LONGITUDE);
+  telLatitude->setValueDouble (LATITUDE);
+  telAltitude->setValueDouble (ALTITUDE);
+  tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
+  strncpy (telSerialNumber, serial.c_str (), 64);
+
+  return Rts2DevTelescope::initValues ();
 }
 
 // decode IR error
@@ -497,20 +513,6 @@ int
 Rts2TelescopeIr::ready ()
 {
   return !tplc->IsConnected ();
-}
-
-int
-Rts2TelescopeIr::baseInfo ()
-{
-  std::string serial;
-  int status = 0;
-
-  telLongtitude = LONGITUDE;
-  telLatitude = LATITUDE;
-  telAltitude = ALTITUDE;
-  tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
-  strncpy (telSerialNumber, serial.c_str (), 64);
-  return 0;
 }
 
 int

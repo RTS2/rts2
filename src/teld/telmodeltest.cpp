@@ -12,13 +12,15 @@ class Rts2DevTelescopeModelTest:public Rts2DevTelescope
 public:
   Rts2DevTelescopeModelTest ():Rts2DevTelescope (0, NULL)
   {
-    telLongtitude = Rts2Config::instance ()->getObserver ()->lng;
-    telLatitude = Rts2Config::instance ()->getObserver ()->lat;
+    telLongtitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
+				   lng);
+    telLatitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
+				 lat);
   }
 
   void setObserverLat (double in_lat)
   {
-    telLatitude = in_lat;
+    telLatitude->setValueDouble (in_lat);
   }
 };
 

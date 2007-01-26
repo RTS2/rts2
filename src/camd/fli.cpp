@@ -265,7 +265,6 @@ public:
 
   virtual int ready ();
   virtual int info ();
-  virtual int baseInfo ();
 
   virtual int camChipInfo (int chip);
 
@@ -452,6 +451,19 @@ Rts2DevCameraFli::init ()
 
   snprintf (serialNumber, 64, "%li", serno);
 
+  long hwrev;
+  long fwrev;
+  ret = FLIGetModel (dev, ccdType, 64);
+  if (ret)
+    return -1;
+  ret = FLIGetHWRevision (dev, &hwrev);
+  if (ret)
+    return -1;
+  ret = FLIGetFWRevision (dev, &fwrev);
+  if (ret)
+    return -1;
+  sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
+
   return initChips ();
 }
 
@@ -474,28 +486,8 @@ Rts2DevCameraFli::info ()
   ret = FLIGetTemperature (dev, &fliTemp);
   if (ret)
     return -1;
-  tempCCD = fliTemp;
+  tempCCD->setValueDouble (fliTemp);
   return Rts2DevCamera::info ();
-}
-
-int
-Rts2DevCameraFli::baseInfo ()
-{
-  LIBFLIAPI ret;
-  long hwrev;
-  long fwrev;
-  ret = FLIGetModel (dev, ccdType, 64);
-  if (ret)
-    return -1;
-  ret = FLIGetHWRevision (dev, &hwrev);
-  if (ret)
-    return -1;
-  ret = FLIGetFWRevision (dev, &fwrev);
-  if (ret)
-    return -1;
-  sprintf (ccdType, "FLI_%li.%li", hwrev, fwrev);
-
-  return 0;
 }
 
 int
@@ -523,7 +515,7 @@ Rts2DevCameraFli::camCoolTemp (float new_temp)
   ret = FLISetTemperature (dev, new_temp);
   if (ret)
     return -1;
-  tempSet = new_temp;
+  tempSet->setValueDouble (new_temp);
   return 0;
 }
 

@@ -127,15 +127,15 @@ public:
   virtual int send (const char *msg);
   int send (std::string msg);
   virtual int sendMessage (Rts2Message & msg);
-  int sendValue (char *val_name, int value);
-  int sendValue (char *val_name, int val1, int val2);
-  int sendValue (char *val_name, int val1, double val2);
-  int sendValue (char *val_name, char *value);
-  int sendValue (char *val_name, double value);
+  int sendValue (std::string val_name, int value);
+  int sendValue (std::string val_name, int val1, int val2);
+  int sendValue (std::string val_name, int val1, double val2);
+  int sendValue (std::string val_name, char *value);
+  int sendValue (std::string val_name, double value);
   int sendValue (char *val_name, char *val1, int val2);
   int sendValue (char *val_name, int val1, int val2, double val3, double val4,
 		 double val5, double val6);
-  int sendValueTime (char *val_name, time_t * value);
+  int sendValueTime (std::string val_name, time_t * value);
   int sendCommandEnd (int num, char *in_msg);
   virtual int processLine ();
   virtual int receive (fd_set * set);

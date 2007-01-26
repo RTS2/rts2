@@ -808,7 +808,6 @@ public:
   virtual int init ();
 
   virtual int ready ();
-  virtual int baseInfo ();
   virtual int camChipInfo (int chip)
   {
     return !(fd_ccd != -1);
@@ -962,12 +961,6 @@ int
 Rts2DevCameraMiniccd::ready ()
 {
   return !(fd_ccd != -1);
-}
-
-int
-Rts2DevCameraMiniccd::baseInfo ()
-{
-  return 0;
 }
 
 int

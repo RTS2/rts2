@@ -31,25 +31,30 @@ private:
   unsigned short *dest;		// for chips..
   unsigned short *dest_top;
   char *send_top;
+  bool useFT;
 public:
     CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
 		     int in_height, double in_pixelX, double in_pixelY,
-		     float in_gain);
+		     float in_gain, bool in_useFT);
     virtual ~ CameraAndorChip (void);
+  virtual int init ();
   virtual int startExposure (int light, float exptime);
   virtual int stopExposure ();
+  virtual long isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
+  virtual bool supportFrameTransfer ();
 };
 
 CameraAndorChip::CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
 				  int in_width, int in_height,
 				  double in_pixelX, double in_pixelY,
-				  float in_gain):
+				  float in_gain, bool in_useFT):
 CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
 	    in_gain)
 {
   dest = new unsigned short[in_width * in_height];
+  in_useFT = useFT;
 };
 
 CameraAndorChip::~CameraAndorChip (void)
@@ -57,6 +62,24 @@ CameraAndorChip::~CameraAndorChip (void)
   delete dest;
 };
 
+
+int
+CameraAndorChip::init ()
+{
+  int ret;
+  // use frame transfer mode
+  if (useFT)
+    {
+      ret = SetFrameTransferMode (1);
+      if (ret != DRV_SUCCESS)
+	{
+	  logStream (MESSAGE_ERROR) <<
+	    "andor init cannot set frame transfer mode " << ret << sendLog;
+	  return -1;
+	}
+    }
+  return CameraChip::init ();
+}
 
 int
 CameraAndorChip::startExposure (int light, float exptime)
@@ -128,6 +151,22 @@ CameraAndorChip::stopExposure ()
   return CameraChip::stopExposure ();
 }
 
+long
+CameraAndorChip::isExposing ()
+{
+  int status;
+  int ret;
+  ret = CameraChip::isExposing ();
+  if (ret)
+    return ret;
+  ret = GetStatus (&status);
+  if (ret != DRV_SUCCESS)
+    return -1;
+  if (status == DRV_ACQUIRING)
+    return 100;
+  return 0;
+}
+
 int
 CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 {
@@ -142,12 +181,6 @@ CameraAndorChip::readoutOneLine ()
   int ret;
   if (readoutLine < chipUsedReadout->height)
     {
-      int status;
-      ret = GetStatus (&status);
-      if (ret != DRV_SUCCESS)
-	return -1;
-      if (status == DRV_ACQUIRING)
-	return 100;
       int size =
 	(chipUsedReadout->width / usedBinningHorizontal) *
 	(chipUsedReadout->height / usedBinningVertical);
@@ -179,7 +212,14 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-class Rts2DevCameraAndor:public Rts2DevCamera
+bool
+CameraAndorChip::supportFrameTransfer ()
+{
+  return useFT;
+}
+
+class Rts2DevCameraAndor:
+public Rts2DevCamera
 {
 private:
   char *andorRoot;
@@ -196,19 +236,18 @@ private:
 
   void getTemp ();
 protected:
-    virtual void help ();
+  virtual int processOption (int in_opt);
+  virtual void help ();
   virtual int setGain (double in_gain);
 public:
-    Rts2DevCameraAndor (int argc, char **argv);
-    virtual ~ Rts2DevCameraAndor (void);
+  Rts2DevCameraAndor (int argc, char **argv);
+  virtual ~ Rts2DevCameraAndor (void);
 
-  virtual int processOption (int in_opt);
   virtual int init ();
 
   // callback functions for Camera alone
   virtual int ready ();
   virtual int info ();
-  virtual int baseInfo ();
   virtual int camChipInfo (int chip);
   virtual int camCoolMax ();
   virtual int camCoolHold ();
@@ -222,7 +261,10 @@ Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
   andorRoot = "/root/andor/examples/common";
-  gain = 255;
+
+  defaultGain = 255;
+  gain->setValueDouble (defaultGain);
+
   horizontalSpeed = -1;
   verticalSpeed = -1;
   vsamp = -1;
@@ -268,7 +310,7 @@ Rts2DevCameraAndor::setGain (double in_gain)
       logStream (MESSAGE_ERROR) << "andor setGain error " << ret << sendLog;
       return -1;
     }
-  gain = in_gain;
+  gain->setValueDouble (in_gain);
   return 0;
 }
 
@@ -281,13 +323,13 @@ Rts2DevCameraAndor::processOption (int in_opt)
       adChannel = atoi (optarg);
       break;
     case 'g':
-      gain = atof (optarg);
-      if (gain > 255 || gain < 0)
+      defaultGain = atof (optarg);
+      if (defaultGain > 255 || defaultGain < 0)
 	{
 	  printf ("gain must be in 0-255 range\n");
 	  exit (EXIT_FAILURE);
 	}
-      defaultGain = gain;
+      gain->setValueDouble (defaultGain);
       break;
     case 'r':
       andorRoot = optarg;
@@ -390,18 +432,6 @@ Rts2DevCameraAndor::init ()
   //Set Read Mode to --Image--
   SetReadMode (4);
 
-  // use frame transfer mode
-  if (useFT)
-    {
-      ret = SetFrameTransferMode (1);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot set frame transfer mode " << ret << sendLog;
-	  return -1;
-	}
-    }
-
   //Get Detector dimensions
   GetDetector (&width, &height);
 
@@ -409,7 +439,7 @@ Rts2DevCameraAndor::init ()
   SetShutter (1, 0, 50, 50);
 
   SetExposureTime (5.0);
-  setGain (gain);
+  setGain (defaultGain);
 
   // adChannel
   if (adChannel >= 0)
@@ -461,7 +491,7 @@ Rts2DevCameraAndor::init ()
 
   chipNum = 1;
 
-  cc = new CameraAndorChip (this, 0, width, height, 10, 10, 1);
+  cc = new CameraAndorChip (this, 0, width, height, 10, 10, 1, useFT);
   chips[0] = cc;
   chips[1] = NULL;
 
@@ -511,6 +541,8 @@ Rts2DevCameraAndor::init ()
 	    " value " << value << " MHz" << std::endl;
 	}
     }
+  sprintf (ccdType, "ANDOR");
+
   return Rts2DevCamera::initChips ();
 }
 
@@ -530,8 +562,8 @@ Rts2DevCameraAndor::getTemp ()
       (c_status == DRV_ACQUIRING || c_status == DRV_NOT_INITIALIZED
        || c_status == DRV_ERROR_ACK))
     {
-      tempCCD = tmpTemp;
-      tempRegulation = (c_status != DRV_TEMPERATURE_OFF);
+      tempCCD->setValueDouble (tmpTemp);
+      tempRegulation->setValueInteger (c_status != DRV_TEMPERATURE_OFF);
     }
   else
     {
@@ -543,21 +575,13 @@ Rts2DevCameraAndor::getTemp ()
 int
 Rts2DevCameraAndor::info ()
 {
-  tempAir = nan ("f");
-  coolingPower = (int) (50 * 1000);
+  tempAir->setValueDouble (nan ("f"));
+  coolingPower->setValueInteger ((int) (50 * 1000));
   if (isIdle ())
     {
       getTemp ();
     }
   return Rts2DevCamera::info ();
-}
-
-int
-Rts2DevCameraAndor::baseInfo ()
-{
-  sprintf (ccdType, "ANDOR");
-  // get serial number
-  return 0;
 }
 
 int
@@ -586,7 +610,7 @@ Rts2DevCameraAndor::camCoolTemp (float new_temp)
 {
   CoolerON ();
   SetTemperature ((int) new_temp);
-  tempSet = new_temp;
+  tempSet->setValueDouble (new_temp);
   return 0;
 }
 
@@ -595,7 +619,7 @@ Rts2DevCameraAndor::camCoolShutdown ()
 {
   CoolerOFF ();
   SetTemperature (20);
-  tempSet = +50;
+  tempSet->setValueDouble (+50);
   return 0;
 }
 

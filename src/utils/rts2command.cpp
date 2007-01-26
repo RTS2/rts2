@@ -144,12 +144,16 @@ Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master,
 					  Rts2DevClientCamera * in_camera,
 					  int chip,
 					  exposureType exp_type,
-					  float exp_time):
+					  float exp_time, bool readout):
 Rts2Command (in_master)
 {
   char *command;
-  asprintf (&command, "expose %i %i %f", chip,
-	    (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
+  if (readout)
+    asprintf (&command, "readout_exposure %i %i %f", chip,
+	      (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
+  else
+    asprintf (&command, "expose %i %i %f", chip,
+	      (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
   setCommand (command);
   free (command);
   camera = in_camera;
@@ -171,19 +175,6 @@ Rts2Command (in_master)
 {
   char *command;
   asprintf (&command, "readout %i", chip);
-  setCommand (command);
-  free (command);
-}
-
-Rts2CommandReadoutExposure::Rts2CommandReadoutExposure (Rts2Block * in_master,
-							int chip,
-							exposureType exp_type,
-							float exp_time):
-Rts2Command (in_master)
-{
-  char *command;
-  asprintf (&command, "readout_exposure %i %i %f", chip,
-	    (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
   setCommand (command);
   free (command);
 }
@@ -442,7 +433,7 @@ Rts2Command (in_master)
   free (command);
 }
 
-Rts2CommandCopulaMove::Rts2CommandCopulaMove (Rts2DevClientCopula * in_copula,
+Rts2CommandCupolaMove::Rts2CommandCupolaMove (Rts2DevClientCupola * in_copula,
 					      double ra, double dec):
 Rts2Command (in_copula->getMaster ())
 {
@@ -454,7 +445,7 @@ Rts2Command (in_copula->getMaster ())
 }
 
 int
-Rts2CommandCopulaMove::commandReturnFailed (int status)
+Rts2CommandCupolaMove::commandReturnFailed (int status)
 {
   if (copula)
     copula->syncFailed (status);

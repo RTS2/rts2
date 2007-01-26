@@ -42,7 +42,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int ready ();
-  virtual int baseInfo ();
+  virtual int initValues ();
   virtual int info ();
   virtual int stepOut (int num);
   virtual int home ();
@@ -52,8 +52,6 @@ public:
 Rts2DevFocuserFli::Rts2DevFocuserFli (int in_argc, char **in_argv):
 Rts2DevFocuser (in_argc, in_argv)
 {
-  focTemp = nan ("f");
-
   deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
   fliDebug = FLIDEBUG_NONE;
   addOption ('D', "domain", 1,
@@ -154,14 +152,14 @@ Rts2DevFocuserFli::ready ()
 }
 
 int
-Rts2DevFocuserFli::baseInfo ()
+Rts2DevFocuserFli::initValues ()
 {
   LIBFLIAPI ret;
 
   ret = FLIGetModel (dev, focType, 20);
   if (ret)
     return -1;
-  return 0;
+  return Rts2DevFocuser::initValues ();
 }
 
 int
@@ -175,7 +173,7 @@ Rts2DevFocuserFli::info ()
   if (ret)
     return -1;
 
-  focPos = (int) steps;
+  focPos->setValueInteger ((int) steps);
 
   return Rts2DevFocuser::info ();
 }

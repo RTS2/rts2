@@ -33,8 +33,8 @@ private:
 		      int timeouts = 0);
 
   // high-level I/O functions
-  int getPos (int *position);
-  int getTemp (float *temperature);
+  int getPos (Rts2ValueInteger * position);
+  int getTemp (Rts2ValueFloat * temperature);
 protected:
     virtual bool isAtStartPosition ();
 public:
@@ -43,7 +43,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int ready ();
-  virtual int baseInfo ();
+  virtual int initValues ();
   virtual int info ();
   virtual int stepOut (int num);
   virtual int isFocusing ();
@@ -245,7 +245,7 @@ Rts2DevFocuserOptec::init ()
 }
 
 int
-Rts2DevFocuserOptec::getPos (int *position)
+Rts2DevFocuserOptec::getPos (Rts2ValueInteger * position)
 {
   char rbuf[9];
 
@@ -257,13 +257,13 @@ Rts2DevFocuserOptec::getPos (int *position)
 #ifdef DEBUG_EXTRA
       logStream (MESSAGE_DEBUG) << "0: " << rbuf[0] << sendLog;
 #endif
-      *position = atoi ((rbuf + 2));
+      position->setValueInteger (atoi ((rbuf + 2)));
     }
   return 0;
 }
 
 int
-Rts2DevFocuserOptec::getTemp (float *temp)
+Rts2DevFocuserOptec::getTemp (Rts2ValueFloat * temp)
 {
   char rbuf[10];
 
@@ -275,7 +275,7 @@ Rts2DevFocuserOptec::getTemp (float *temp)
   else
     {
       rbuf[7] = '\0';
-      *temp = atof ((rbuf + 2));
+      temp->setValueFloat (atof ((rbuf + 2)));
     }
   return 0;
 }
@@ -284,10 +284,10 @@ bool Rts2DevFocuserOptec::isAtStartPosition ()
 {
   int
     ret;
-  ret = getPos (&focPos);
+  ret = getPos (focPos);
   if (ret)
     return false;
-  return (focPos == 3500);
+  return (getFocPos () == 3500);
 }
 
 int
@@ -297,20 +297,20 @@ Rts2DevFocuserOptec::ready ()
 }
 
 int
-Rts2DevFocuserOptec::baseInfo ()
+Rts2DevFocuserOptec::initValues ()
 {
   strcpy (focType, "OPTEC_TCF");
-  return 0;
+  return Rts2DevFocuser::initValues ();
 }
 
 int
 Rts2DevFocuserOptec::info ()
 {
   int ret;
-  ret = getPos (&focPos);
+  ret = getPos (focPos);
   if (ret)
     return ret;
-  ret = getTemp (&focTemp);
+  ret = getTemp (focTemp);
   if (ret)
     return ret;
   return Rts2DevFocuser::info ();
@@ -323,11 +323,11 @@ Rts2DevFocuserOptec::stepOut (int num)
   char add = ' ';
   int ret;
 
-  ret = getPos (&focPos);
+  ret = getPos (focPos);
   if (ret)
     return ret;
 
-  if (focPos + num > 7000 || focPos + num < 0)
+  if (getFocPos () + num > 7000 || getFocPos () + num < 0)
     return -1;
 
   if (num < 0)

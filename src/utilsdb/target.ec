@@ -102,7 +102,6 @@ Target::printAltTable (std::ostream & _os, double JD)
 {
   int i;
   double jd_start = ((int) JD) - 0.5;
-  struct ln_date date;
   struct ln_hrz_posn hrz;
   struct ln_equ_posn pos;
   double jd;
@@ -110,11 +109,11 @@ Target::printAltTable (std::ostream & _os, double JD)
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
-  ln_get_date (jd_start, &date);
-
   _os
     << std::endl
-    << "** HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE, SOON POSITION table from " << LibnovaDate(&date) << " **"
+    << "** HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE, SOON POSITION table from "
+    << LibnovaDate (jd_start)
+    << " **"
     << std::endl
     << std::endl
     << "H   ";

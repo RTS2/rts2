@@ -27,6 +27,7 @@ class Rts2DevClient:public Rts2Object
 {
 private:
   int failedCount;
+    std::vector < Rts2Value * >values;
 protected:
     Rts2Conn * connection;
   enum
@@ -60,6 +61,7 @@ public:
   virtual ~ Rts2DevClient (void);
   virtual void postEvent (Rts2Event * event);
   void addValue (Rts2Value * value);
+  int metaInfo (int rts2Type, char *name, char *desc);
   Rts2Value *getValue (const char *value_name);
   char *getValueChar (const char *value_name);
   double getValueDouble (const char *value_name);
@@ -67,8 +69,6 @@ public:
 
   virtual int commandValue (const char *name);
   virtual int command ();
-
-  std::vector < Rts2Value * >values;
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn)
   {
@@ -95,6 +95,19 @@ public:
   int getStatus ();
 
   Rts2LogStream logStream (messageType_t in_messageType);
+
+  std::vector < Rts2Value * >::iterator valueBegin ()
+  {
+    return values.begin ();
+  }
+  std::vector < Rts2Value * >::iterator valueEnd ()
+  {
+    return values.end ();
+  }
+  Rts2Value *valueAt (int index)
+  {
+    return values[index];
+  }
 };
 
 /**************************************
@@ -166,13 +179,13 @@ public:
   Rts2DevClientDome (Rts2Conn * in_connection);
 };
 
-class Rts2DevClientCopula:public Rts2DevClientDome
+class Rts2DevClientCupola:public Rts2DevClientDome
 {
 protected:
   virtual void syncStarted ();
   virtual void syncEnded ();
 public:
-    Rts2DevClientCopula (Rts2Conn * in_connection);
+    Rts2DevClientCupola (Rts2Conn * in_connection);
   virtual void syncFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
 };

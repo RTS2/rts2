@@ -31,11 +31,6 @@ public:
   {
     return -1;
   }
-
-  virtual int baseInfo ()
-  {
-    return -1;
-  }
 };
 
 int

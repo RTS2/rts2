@@ -43,7 +43,7 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int ready ();
-  virtual int baseInfo ();
+  virtual int initValues ();
   virtual int info ();
   virtual int stepOut (int num);
   virtual int setTo (int num);
@@ -198,9 +198,10 @@ Rts2DevFocuserIr::ready ()
 }
 
 int
-Rts2DevFocuserIr::baseInfo ()
+Rts2DevFocuserIr::initValues ()
 {
-  return 0;
+  strcpy (focType, "FIR");
+  return Rts2DevFocuser::initValues ();
 }
 
 int
@@ -216,8 +217,7 @@ Rts2DevFocuserIr::info ()
   if (status)
     return -1;
 
-  focPos = (int) (realPos * 1000.0);
-  focTemp = nan ("f");
+  focPos->setValueInteger ((int) (realPos * 1000.0));
 
   return Rts2DevFocuser::info ();
 }

@@ -173,7 +173,6 @@ public:
   virtual int init ();
   virtual int idle ();
 
-  virtual int baseInfo ();
   virtual int info ();
 
   virtual int startMove (double tar_ra, double tar_dec);
@@ -549,7 +548,7 @@ Rts2DevTelParamount::counts2sky (CWORD32 & ac, CWORD32 dc, double &ra,
   // flipped
   if (fabs (dec) > 90)
     {
-      telFlip = 1;
+      telFlip->setValueInteger (1);
       if (dec > 0)
 	dec = 180 - dec;
       else
@@ -623,7 +622,8 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
   track1 = NULL;
 
   // apply all correction for paramount
-  corrections = COR_ABERATION | COR_PRECESSION | COR_REFRACTION;
+  corrections->
+    setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
 
   // int paramout values
   paramountValues.
@@ -724,8 +724,8 @@ Rts2DevTelParamount::init ()
   ret = config->loadFile ();
   if (ret)
     return -1;
-  telLongtitude = config->getObserver ()->lng;
-  telLatitude = config->getObserver ()->lat;
+  telLongtitude->setValueDouble (config->getObserver ()->lng);
+  telLatitude->setValueDouble (config->getObserver ()->lat);
 
   if (telLatitude < 0)		// south hemispehere
     {
@@ -800,6 +800,14 @@ Rts2DevTelParamount::init ()
   ret0 = MKS3MotorOff (axis0);
   ret1 = MKS3MotorOff (axis1);
   ret = checkRet ();
+  if (ret)
+    return ret;
+
+  CWORD16 pMajor, pMinor, pBuild;
+  ret = MKS3VersionGet (axis0, &pMajor, &pMinor, &pBuild);
+  if (ret)
+    return ret;
+  snprintf (telType, 64, "Paramount %i %i %i", pMajor, pMinor, pBuild);
 
   return ret;
 }
@@ -933,18 +941,6 @@ Rts2DevTelParamount::idle ()
 }
 
 int
-Rts2DevTelParamount::baseInfo ()
-{
-  CWORD16 pMajor, pMinor, pBuild;
-  int ret;
-  ret = MKS3VersionGet (axis0, &pMajor, &pMinor, &pBuild);
-  if (ret)
-    return ret;
-  snprintf (telType, 64, "Paramount_%i_%i_%i", pMajor, pMinor, pBuild);
-  return 0;
-}
-
-int
 Rts2DevTelParamount::info ()
 {
   CWORD32 ac = 0, dc = 0;
@@ -954,10 +950,14 @@ Rts2DevTelParamount::info ()
   ret = checkRet ();
   if (ret)
     return ret;
-  telSiderealTime = getLocSidTime ();
-  ret = counts2sky (ac, dc, telRa, telDec);
-  telAxis[0] = ac;
-  telAxis[1] = dc;
+  telSiderealTime->setValueDouble (getLocSidTime ());
+  double t_telRa;
+  double t_telDec;
+  ret = counts2sky (ac, dc, t_telRa, t_telDec);
+  telRa->setValueDouble (t_telRa);
+  telDec->setValueDouble (t_telDec);
+  ax1->setValueDouble (ac);
+  ax2->setValueDouble (dc);
   if (ret)
     return ret;
   return Rts2DevTelescope::info ();

@@ -22,8 +22,16 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
   homePos = 750;
   startPosition = INT_MIN;
 
-  focSwitches = 0;
+  focSwitches = new Rts2ValueInteger ("switches");
+  addValue (focSwitches);
+
+  focTemp = new Rts2ValueFloat ("FOC_TEMP", "focuser temperature");
+  addValue (focTemp);
+
   switchNum = 0;		// zero switches
+
+  focPos = new Rts2ValueInteger ("FOC_POS", "focuser position");
+  addValue (focPos);
 
   addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
   addOption ('o', "home", 1, "home position (default to 750!)");
@@ -85,6 +93,16 @@ Rts2DevFocuser::checkState ()
 }
 
 int
+Rts2DevFocuser::initValues ()
+{
+  addConstValue ("FOC_TYPE", "focuser type", focType);
+  addConstValue ("camera", focCamera);
+  addConstValue ("switch_num", switchNum);
+
+  return Rts2Device::initValues ();
+}
+
+int
 Rts2DevFocuser::idle ()
 {
   checkState ();
@@ -106,24 +124,6 @@ Rts2DevFocuser::ready (Rts2Conn * conn)
 }
 
 int
-Rts2DevFocuser::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("temp", focTemp);
-  conn->sendValue ("pos", focPos);
-  conn->sendValue ("switches", focSwitches);
-  return 0;
-}
-
-int
-Rts2DevFocuser::sendBaseInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("type", focType);
-  conn->sendValue ("camera", focCamera);
-  conn->sendValue ("switch_num", switchNum);
-  return 0;
-}
-
-int
 Rts2DevFocuser::setTo (int num)
 {
   int ret;
@@ -133,7 +133,7 @@ Rts2DevFocuser::setTo (int num)
     return ret;
 
   focPositionNew = num;
-  steps = num - focPos;
+  steps = num - getFocPos ();
   setFocusTimeout ((int) ceil (steps / focStepSec) + 5);
 
   return stepOut (steps);
@@ -153,7 +153,7 @@ Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
   if (ret)
     return ret;
 
-  focPositionNew = focPos + num;
+  focPositionNew = getFocPos () + num;
   setFocusTimeout ((int) ceil (abs (num) / focStepSec) + 5);
 
   ret = stepOut (num);
@@ -218,7 +218,7 @@ Rts2DevFocuser::isFocusing ()
   ret = info ();
   if (ret)
     return -1;
-  if (focPos != focPositionNew)
+  if (getFocPos () != focPositionNew)
     return USEC_SEC;
   return -2;
 }

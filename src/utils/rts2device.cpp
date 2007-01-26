@@ -628,11 +628,6 @@ Rts2Daemon (in_argc, in_argv)
 
   device_host = NULL;
 
-  timerclear (&info_time);
-
-  idleInfoInterval = -1;
-  nextIdleInfo = 0;
-
   mailAddress = NULL;
 
   // now add options..
@@ -770,17 +765,6 @@ Rts2Device::init ()
 }
 
 int
-Rts2Device::idle ()
-{
-  time_t now = time (NULL);
-  if (idleInfoInterval >= 0 && now > nextIdleInfo)
-    {
-      infoAll ();
-    }
-  return Rts2Daemon::idle ();
-}
-
-int
 Rts2Device::authorize (Rts2DevConn * conn)
 {
   return conn_master->authorize (conn);
@@ -798,28 +782,6 @@ Rts2Device::sendStatusInfo (Rts2DevConn * conn)
 
 int
 Rts2Device::ready ()
-{
-  return -1;
-}
-
-int
-Rts2Device::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("info_time",
-		   (double) (info_time.tv_sec +
-			     info_time.tv_usec / USEC_SEC));
-  return 0;
-}
-
-int
-Rts2Device::info ()
-{
-  gettimeofday (&info_time, NULL);
-  return 0;
-}
-
-int
-Rts2Device::baseInfo ()
 {
   return -1;
 }
@@ -871,47 +833,4 @@ Rts2Device::ready (Rts2Conn * conn)
       return -1;
     }
   return 0;
-}
-
-int
-Rts2Device::info (Rts2Conn * conn)
-{
-  int ret;
-  ret = info ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
-      return -1;
-    }
-  return sendInfo (conn);
-}
-
-int
-Rts2Device::infoAll ()
-{
-  int ret;
-  nextIdleInfo = time (NULL) + idleInfoInterval;
-  ret = info ();
-  if (ret)
-    return -1;
-  std::list < Rts2Conn * >::iterator iter;
-  for (iter = connections.begin (); iter != connections.end (); iter++)
-    {
-      Rts2Conn *conn = *iter;
-      sendInfo (conn);
-    }
-  return 0;
-}
-
-int
-Rts2Device::baseInfo (Rts2Conn * conn)
-{
-  int ret;
-  ret = baseInfo ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
-      return -1;
-    }
-  return sendBaseInfo (conn);
 }

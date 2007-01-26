@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "../utilsdb/rts2devicedb.h"
 #include "status.h"
 #include "rts2connimgprocess.h"
@@ -31,9 +27,12 @@ class Rts2ImageProc:public Rts2DeviceDb
 private:
   std::list < Rts2ConnProcess * >imagesQue;
   Rts2ConnProcess *runningImage;
-  int goodImages;
-  int trashImages;
-  int morningImages;
+  Rts2ValueInteger *goodImages;
+  Rts2ValueInteger *trashImages;
+  Rts2ValueInteger *morningImages;
+
+  Rts2ValueInteger *queSize;
+
   int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
   char defaultImgProcess[2000];
   char defaultObsProcess[2000];
@@ -56,10 +55,7 @@ public:
     return 0;
   }
 
-  virtual int baseInfo ();
-
-  virtual int sendBaseInfo (Rts2Conn * conn);
-  virtual int sendInfo (Rts2Conn * conn);
+  virtual int info ();
 
   virtual int changeMasterState (int new_state);
 
@@ -130,9 +126,20 @@ Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):Rts2DeviceDb (in_argc
 {
   runningImage = NULL;
 
-  goodImages = 0;
-  trashImages = 0;
-  morningImages = 0;
+  goodImages = new Rts2ValueInteger ("good_images");
+  goodImages->setValueInteger (0);
+  addValue (goodImages);
+
+  trashImages = new Rts2ValueInteger ("trash_images");
+  trashImages->setValueInteger (0);
+  addValue (trashImages);
+
+  morningImages = new Rts2ValueInteger ("morning_images");
+  morningImages->setValueInteger (0);
+  addValue (morningImages);
+
+  queSize = new Rts2ValueInteger ("que_size");
+  addValue (queSize);
 
   imageGlob.gl_pathc = 0;
   imageGlob.gl_offs = 0;
@@ -235,26 +242,10 @@ Rts2ImageProc::idle ()
 }
 
 int
-Rts2ImageProc::baseInfo ()
+Rts2ImageProc::info ()
 {
-  return 0;
-}
-
-int
-Rts2ImageProc::sendBaseInfo (Rts2Conn * conn)
-{
-  return 0;
-}
-
-int
-Rts2ImageProc::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("que_size",
-		   (int) imagesQue.size () + (runningImage ? 1 : 0));
-  conn->sendValue ("good_images", goodImages);
-  conn->sendValue ("trash_images", trashImages);
-  conn->sendValue ("morning_images", morningImages);
-  return 0;
+  queSize->setValueInteger ((int) imagesQue.size () + (runningImage ? 1 : 0));
+  return Rts2DeviceDb::info ();
 }
 
 int
@@ -307,13 +298,13 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
       switch (runningImage->getAstrometryStat ())
 	{
 	case GET:
-	  goodImages++;
+	  goodImages->inc ();
 	  break;
 	case TRASH:
-	  trashImages++;
+	  trashImages->inc ();
 	  break;
 	case MORNING:
-	  morningImages++;
+	  morningImages->inc ();
 	  break;
 	default:
 	  break;

@@ -23,11 +23,14 @@ public:
 
   virtual long getCount ();
 
-  virtual int ready ()
+  virtual int init ()
   {
-    return 0;
-  };
-  virtual int baseInfo ()
+    photType = "Dummy";
+    serial = "001";
+    return Rts2DevPhot::init ();
+  }
+
+  virtual int ready ()
   {
     return 0;
   };
@@ -73,7 +76,7 @@ Rts2DevPhotDummy::startIntegrate ()
 int
 Rts2DevPhotDummy::startFilterMove (int new_filter)
 {
-  filter = new_filter;
+  filter->setValueInteger (new_filter);
   filterCount = 10;
   return Rts2DevPhot::startFilterMove (new_filter);
 }

@@ -63,7 +63,7 @@
 // dec of visible earth rotational axis pole
 #define TEL_POLE	(TEL_LAT > 0 ? 90 : -90)
 
-// we shall not move below that POS - e.g. our target is to keep telAxis[0] in <-1 * NOT_SAFE_POS, NOT_SAFE_POS>
+// we shall not move below that POS - e.g. our target is to keep ax1 in <-1 * NOT_SAFE_POS, NOT_SAFE_POS>
 // it must be < 100.0 for system to work
 #define NOT_SAFE_POS	100.0
 
@@ -126,11 +126,11 @@ private:
   void goodPark ();
 
   double homeHA;		// value on which we will home mount; ussually is equal sidereal time * 15.0 - 90
-  // telAxis[0] have values ..-180..-90..0..90..180.. 0 is when mount is CWD position, fabs == 90 <=> at right angle (CW left or right)
+  // ax1 have values ..-180..-90..0..90..180.. 0 is when mount is CWD position, fabs == 90 <=> at right angle (CW left or right)
   // telAxis > 0 when we are observing at east, < 0 when we are observing at west
-  // it's similar to hour angle, but offset by 90 deg - following is true: fabs (HA - telAxis[0]) = 90 +- few arcmin
+  // it's similar to hour angle, but offset by 90 deg - following is true: fabs (HA - ax1) = 90 +- few arcmin
   //     (as calculation of telAxis is not precise)
-  // telAxis[0] is in arcdeg
+  // ax1 is in arcdeg
   enum
   { SAFE_CWD, CLOSE_CWL, CLOSE_CWR, UNKNOW }
   cw_pos;			// counterweight position
@@ -142,7 +142,7 @@ public:
   virtual int init ();
   virtual int idle ();
   virtual int ready ();
-  virtual int baseInfo ();
+  virtual int initValues ();
   virtual int info ();
 
   virtual int setTo (double set_ra, double set_dec);
@@ -347,7 +347,7 @@ Rts2DevTelescopeMM2::tel_read_ra ()
   double new_ra;
   if (tel_read_hms (&new_ra, "#:GR#"))
     return -1;
-  telRa = new_ra * 15.0;
+  telRa->setValueDouble (new_ra * 15.0);
   return 0;
 }
 
@@ -359,7 +359,11 @@ Rts2DevTelescopeMM2::tel_read_ra ()
 int
 Rts2DevTelescopeMM2::tel_read_dec ()
 {
-  return tel_read_hms (&telDec, "#:GD#");
+  double t_telDec;
+  if (tel_read_hms (&t_telDec, "#:GD#"))
+    return -1;
+  telDec->setValueDouble (t_telDec);
+  return 0;
 }
 
 /*! 
@@ -383,8 +387,8 @@ Rts2DevTelescopeMM2::tel_read_localtime ()
   /* Convert it to local time representation. */
   loctime = localtime (&curtime);
 
-  telLocalTime =
-    loctime->tm_hour + loctime->tm_min / 60 + loctime->tm_sec / 3600;
+  telLocalTime->setValueDouble (loctime->tm_hour + loctime->tm_min / 60 +
+				loctime->tm_sec / 3600);
 
   return 0;
 }
@@ -403,7 +407,7 @@ Rts2DevTelescopeMM2::tel_read_localtime ()
 int
 Rts2DevTelescopeMM2::tel_read_siderealtime ()
 {
-  telSiderealTime = getLocSidTime ();
+  telSiderealTime->setValueDouble (getLocSidTime ());
   return 0;
 }
 
@@ -542,8 +546,8 @@ Rts2DevTelescopeMM2::Rts2DevTelescopeMM2 (int in_argc, char **in_argv):Rts2DevTe
   move_state = NOT_MOVE;
   worm_state = RUNNING;
 
-  telLongtitude = TEL_LONG;
-  telLatitude = TEL_LAT;
+  telLongtitude->setValueDouble (TEL_LONG);
+  telLatitude->setValueDouble (TEL_LAT);
 }
 
 Rts2DevTelescopeMM2::~Rts2DevTelescopeMM2 (void)
@@ -654,24 +658,26 @@ Rts2DevTelescopeMM2::init ()
   tel_read_siderealtime ();
 
   // hour angle - 90
-  telAxis[0] = telSiderealTime * 15.0 - telRa - 90.0;
-  telAxis[0] = ln_range_degrees (telAxis[0]);
-  if (telAxis[0] > 180.0)
-    telAxis[0] = telAxis[0] - 360.0;
+  ax1->
+    setValueDouble (ln_range_degrees
+		    (telSiderealTime->getValueDouble () * 15.0 -
+		     telRa->getValueDouble () - 90.0));
+  if (ax1->getValueDouble () > 180.0)
+    ax1->setValueDouble (ax1->getValueDouble () - 360.0);
 
   // we suppose that we were before at safe range..
   // 90 is black magic:(, as we don't have more precise way how to measure that
-  if (telAxis[0] < -90.0)
+  if (ax1->getValueDouble () < -90.0)
     {
-      telAxis[0] += 180;
+      ax1->setValueDouble (ax1->getValueDouble () + 180);
     }
-  if (telAxis[0] > NOT_SAFE_POS)
+  if (ax1->getValueDouble () > NOT_SAFE_POS)
     {
-      telAxis[0] -= 180.0;
+      ax1->setValueDouble (ax1->getValueDouble () - 180);
     }
 
   time (&last_pos_update);
-  last_pos_ra = telRa;
+  last_pos_ra = telRa->getValueDouble ();
 
   status = startPark ();
   if (status)
@@ -692,13 +698,15 @@ Rts2DevTelescopeMM2::idle ()
       // let's update 
       // position by elapsed sidereal time
       // we are moving to west
-      telAxis[0] -= 360.0 * (now - last_pos_update) / LN_SIDEREAL_DAY_SEC;
+      ax1->setValueDouble (ax1->getValueDouble () -
+			   360.0 * (now -
+				    last_pos_update) / LN_SIDEREAL_DAY_SEC);
       // there was big change in ra, which we should keep track of - it can
       // be result of manual move of the telescope or performed goto
       double ha_change;
       if (tel_read_ra () == 0)
 	{
-	  ha_change = telRa - last_pos_ra;
+	  ha_change = telRa->getValueDouble () - last_pos_ra;
 	  ha_change = ln_range_degrees (ha_change);
 	  if (ha_change > 1.0 && ha_change < 359.0)
 	    {
@@ -710,24 +718,25 @@ Rts2DevTelescopeMM2::idle ()
 		ha_change = ha_change - 180.0;
 	      if (ha_change < -90.0)
 		ha_change = ha_change + 180.0;
-	      telAxis[0] += ha_change;
-	      last_pos_ra = telRa;
+	      ax1->setValueDouble (ax1->getValueDouble () + ha_change);
+	      last_pos_ra = telRa->getValueDouble ();
 	    }
 	  // too much on west..park and resync
-	  if (telAxis[0] < -100.0)
+	  if (ax1->getValueDouble () < -100.0)
 	    {
 	      int ret;
 	      tel_read_siderealtime ();
-	      homeHA = telSiderealTime * 15.0 + 90.0;
-	      double ha_diff = ln_range_degrees (homeHA - telRa);
+	      homeHA = telSiderealTime->getValueDouble () * 15.0 + 90.0;
+	      double ha_diff =
+		ln_range_degrees (homeHA - telRa->getValueDouble ());
 	      // keep on same side as current telRa
 	      if (ha_diff < 90 || ha_diff > 270)
-		homeHA = telSiderealTime * 15.0 - 90;
+		homeHA = telSiderealTime->getValueDouble () * 15.0 - 90;
 	      // make sure we will initiate move to part closer to our side..
 	      homeHA -= 30.0;
 	      homeHA = ln_range_degrees (homeHA);
 	      // recalculate homeHA to correct half
-	      ret = tel_slew_to (homeHA, telDec);
+	      ret = tel_slew_to (homeHA, telDec->getValueDouble ());
 	      if (ret == 0)
 		{
 		  move_state = MOVE_CLOSE_HOME;
@@ -736,8 +745,8 @@ Rts2DevTelescopeMM2::idle ()
 		}
 	    }
 	}
-      logStream (MESSAGE_DEBUG) << "MM2 idle new pos " << telAxis[0] <<
-	" last_pos_ra " << last_pos_ra << sendLog;
+      logStream (MESSAGE_DEBUG) << "MM2 idle new pos " << ax1->
+	getValueDouble () << " last_pos_ra " << last_pos_ra << sendLog;
       time (&last_pos_update);
     }
   return Rts2DevTelescope::idle ();
@@ -754,18 +763,18 @@ Rts2DevTelescopeMM2::ready ()
 *
 */
 int
-Rts2DevTelescopeMM2::baseInfo ()
+Rts2DevTelescopeMM2::initValues ()
 {
   if (tel_read_longtitude () || tel_read_latitude ())
     return -1;
 
   strcpy (telType, "MM2");
   strcpy (telSerialNumber, "000001");
-  telAltitude = 600;
+  telAltitude->setValueDouble (600);
 
-  telFlip = 0;
+  telFlip->setValueInteger (0);
 
-  return 0;
+  return Rts2DevTelescope::initValues ();
 }
 
 int
@@ -876,11 +885,11 @@ Rts2DevTelescopeMM2::tel_check_coords ()
 
   // ADDED BY JF
   // CALCULATE & PRINT ALT/AZ & HOUR ANGLE TO LOG
-  object.ra = telRa;
-  object.dec = telDec;
+  object.ra = telRa->getValueDouble ();
+  object.dec = telDec->getValueDouble ();
 
-  observer.lng = telLongtitude;
-  observer.lat = telLatitude;
+  observer.lng = telLongtitude->getValueDouble ();
+  observer.lat = telLatitude->getValueDouble ();
 
   JD = ln_get_julian_from_sys ();
 
@@ -909,7 +918,7 @@ double
 Rts2DevTelescopeMM2::get_hour_angle (double RA)
 {
   tel_read_siderealtime ();
-  return telSiderealTime - (RA / 15.0);
+  return telSiderealTime->getValueDouble () - (RA / 15.0);
 }
 
 void
@@ -963,11 +972,11 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
     return -1;
 
   // help variable - current pole distance and target pole distance
-  double pole_dist_act = telDec;
+  double pole_dist_act = telDec->getValueDouble ();
   double pole_dist_tar = tar_dec;
   if (TEL_LAT < 0)
     {
-      pole_dist_act = -1 * telDec;
+      pole_dist_act = -1 * telDec->getValueDouble ();
       pole_dist_tar = -1 * tar_dec;
     }
 
@@ -982,7 +991,7 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
   double step_diff_flip, step_diff;
 
   // we assume tar_ra = telRa + ra_diff
-  double ra_diff = ln_range_degrees (tar_ra - telRa);
+  double ra_diff = ln_range_degrees (tar_ra - telRa->getValueDouble ());
 
   step_diff_flip = MAX (pole_dist_act + pole_dist_tar, fabs (ra_diff - 180));
 
@@ -990,7 +999,7 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
     MAX (fabs (pole_dist_act - pole_dist_tar),
 	 (ra_diff > 180) ? (360.0 - ra_diff) : ra_diff);
 
-  // that's to calculate new telAxis[0] value; it measure mount movement in RA unit, which dynostar will choose to perform
+  // that's to calculate new ax1 value; it measure mount movement in RA unit, which dynostar will choose to perform
   if (step_diff_flip < step_diff)
     {
       // we will flip
@@ -1004,7 +1013,7 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
     ra_diff = ra_diff - 360.0;
 
   // calculate new pos..
-  double new_pos = telAxis[0] + ra_diff;
+  double new_pos = ax1->getValueDouble () + ra_diff;
 
   logStream (MESSAGE_DEBUG) << "MM2 startMove new_pos " << new_pos << sendLog;
 
@@ -1012,11 +1021,11 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
     {
       // go throught parking..
       tel_read_siderealtime ();
-      homeHA = telSiderealTime * 15.0 + 90;
-      double ha_diff = ln_range_degrees (homeHA - telRa);
+      homeHA = telSiderealTime->getValueDouble () * 15.0 + 90;
+      double ha_diff = ln_range_degrees (homeHA - telRa->getValueDouble ());
       // keep on same side as current telRa
       if (ha_diff < 90 || ha_diff > 270)
-	homeHA = telSiderealTime * 15.0 - 90;
+	homeHA = telSiderealTime->getValueDouble () * 15.0 - 90;
       // make sure we will initiate move to part closer to our side..
       if (new_pos < 0)
 	homeHA -= 30.0;
@@ -1024,7 +1033,7 @@ Rts2DevTelescopeMM2::startMove (double tar_ra, double tar_dec)
 	homeHA += (NOT_SAFE_POS - 90);
       homeHA = ln_range_degrees (homeHA);
       // recalculate homeHA to correct half
-      ret = tel_slew_to (homeHA, telDec);
+      ret = tel_slew_to (homeHA, telDec->getValueDouble ());
       if (ret)
 	{
 	  move_state = NOT_MOVE;
@@ -1066,12 +1075,12 @@ Rts2DevTelescopeMM2::isMoving ()
 	    {
 	      tel_read_siderealtime ();
 	      // repark mount after having it parked just a bit..
-	      homeHA = telSiderealTime * 15.0 + 90;
+	      homeHA = telSiderealTime->getValueDouble () * 15.0 + 90;
 	      // keep on same side as current telRa
-	      if (ln_range_degrees (homeHA - telRa) > 180)
-		homeHA = telSiderealTime * 15.0 - 90;
+	      if (ln_range_degrees (homeHA - telRa->getValueDouble ()) > 180)
+		homeHA = telSiderealTime->getValueDouble () * 15.0 - 90;
 	      homeHA = ln_range_degrees (homeHA);
-	      ret = tel_slew_to (homeHA, telDec);
+	      ret = tel_slew_to (homeHA, telDec->getValueDouble ());
 	      if (ret)
 		return -1;
 	      move_state = MOVE_HOME;
@@ -1194,7 +1203,7 @@ Rts2DevTelescopeMM2::startPark ()
 {
   int ret;
   tel_read_siderealtime ();
-  homeHA = telSiderealTime * 15.0 + 90;
+  homeHA = telSiderealTime->getValueDouble () * 15.0 + 90;
   homeHA = ln_range_degrees (homeHA);
   ret = tel_slew_to (homeHA, HOME_DEC);
   cw_pos = UNKNOW;
@@ -1242,20 +1251,22 @@ void
 Rts2DevTelescopeMM2::goodPark ()
 {
   tel_read_siderealtime ();
-  last_pos_ra = telRa;
-  telAxis[0] = telRa - telSiderealTime * 15.0 - 90;
-  telAxis[0] = ln_range_degrees (telAxis[0]);
-  if (telAxis[0] > 180.0)
+  last_pos_ra = telRa->getValueDouble ();
+  ax1->
+    setValueDouble (ln_range_degrees
+		    (telRa->getValueDouble () -
+		     telSiderealTime->getValueDouble () * 15.0 - 90));
+  if (ax1->getValueDouble () > 180.0)
     {
-      telAxis[0] = 360 - telAxis[0];
+      ax1->setValueDouble (360 - ax1->getValueDouble ());
     }
-  if (telAxis[0] > 90.0)
+  if (ax1->getValueDouble () > 90.0)
     {
-      telAxis[0] = 180.0 - telAxis[0];
+      ax1->setValueDouble (180.0 - ax1->getValueDouble ());
     }
   cw_pos = SAFE_CWD;
-  logStream (MESSAGE_DEBUG) << "MM2 isParking reset pos " << telAxis[0] <<
-    sendLog;
+  logStream (MESSAGE_DEBUG) << "MM2 isParking reset pos " << ax1->
+    getValueDouble () << sendLog;
 }
 
 int

@@ -141,59 +141,19 @@ public:
   {
     return chipSize->getHeight ();
   }
-  virtual int init ()
-  {
-    return 0;
-  }
+  virtual int init ();
   int send (Rts2Conn * conn);
-  virtual int setBinning (int in_vert, int in_hori)
-  {
-    binningVertical = in_vert;
-    binningHorizontal = in_hori;
-    return 0;
-  }
-  virtual int box (int in_x, int in_y, int in_width, int in_height)
-  {
-    // tests for -1 -> full size
-    if (in_x == -1)
-      in_x = chipSize->x;
-    if (in_y == -1)
-      in_y = chipSize->y;
-    if (in_width == -1)
-      in_width = chipSize->width;
-    if (in_height == -1)
-      in_height = chipSize->height;
-    if (in_x < chipSize->x || in_y < chipSize->y
-	|| ((in_x - chipSize->x) + in_width) > chipSize->width
-	|| ((in_y - chipSize->y) + in_height) > chipSize->height)
-      return -1;
-    chipReadout->x = in_x;
-    chipReadout->y = in_y;
-    chipReadout->width = in_width;
-    chipReadout->height = in_height;
-    return 0;
-  }
+  virtual int setBinning (int in_vert, int in_hori);
+  virtual int box (int in_x, int in_y, int in_width, int in_height);
   int center (int in_w, int in_h);
-  virtual int startExposure (int light, float exptime)
-  {
-    return -1;
-  }
+  virtual int startExposure (int light, float exptime);
   int setExposure (float exptime, int in_shutter_state);
   virtual long isExposing ();
   virtual int endExposure ();
-  virtual int stopExposure ()
-  {
-    return endExposure ();
-  }
+  virtual int stopExposure ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   void setReadoutConn (Rts2DevConnData * dataConn);
-  virtual void deleteConnection (Rts2Conn * conn)
-  {
-    if (conn == readoutConn)
-      {
-	readoutConn = NULL;
-      }
-  }
+  virtual void deleteConnection (Rts2Conn * conn);
   int getShutterState ()
   {
     return shutter_state;
@@ -203,6 +163,14 @@ public:
   virtual int sendFirstLine ();
   virtual int readoutOneLine ();
   virtual void cancelPriorityOperations ();
+  /**
+   * If chip support frame transfer.
+   *
+   * @return false (default) if we don't support frame transfer, so
+   * request for readout will be handled on-site, exposure will be
+   * handed when readout ends
+   */
+  virtual bool supportFrameTransfer ();
 };
 
 class Rts2DevCamera:public Rts2Device
@@ -211,11 +179,12 @@ private:
   char *focuserDevice;
   char *wheelDevice;
   enum
-  { NOT_MOVE, MOVE } filterMove;
-  int filterExpChip;
-  float filterExpTime;
+  { NOT_EXP, FILTER_MOVE, FT_EXP } nextExp;
+  int nextExpChip;
+  float nextExpTime;
+  int nextExpLight;
   int lastFilterNum;
-  float lastExp;
+  Rts2ValueFloat *lastExp;
 
   int exposureFilter;
 
@@ -225,27 +194,33 @@ private:
 
   double nextSubExposure;
   double defaultSubExposure;
-  double subExposure;
+  Rts2ValueDouble *subExposure;
+
+  Rts2ValueInteger *camFilterVal;
+  Rts2ValueInteger *camFocVal;
+  Rts2ValueInteger *camShutterVal;
 
   int getStateChip (int chip_num);
   void maskStateChip (int chip_num, int state_mask, int new_state,
 		      char *description);
 
 protected:
+    virtual int processOption (int in_opt);
+
   int willConnect (Rts2Address * in_addr);
   char *device_file;
   // camera chips
   CameraChip *chips[MAX_CHIPS];
   int chipNum;
   // temperature and others; all in deg Celsius
-  float tempAir;
-  float tempCCD;
-  float tempSet;
-  int tempRegulation;
-  int coolingPower;
-  int fan;
+  Rts2ValueFloat *tempAir;
+  Rts2ValueFloat *tempCCD;
+  Rts2ValueFloat *tempSet;
+  Rts2ValueInteger *tempRegulation;
+  Rts2ValueInteger *coolingPower;
+  Rts2ValueInteger *fan;
 
-  int canDF;			// if the camera can make dark frames
+  Rts2ValueInteger *canDF;	// if the camera can make dark frames
   char ccdType[64];
   char *ccdRealType;
   char serialNumber[64];
@@ -257,10 +232,10 @@ protected:
   virtual void cancelPriorityOperations ();
   int defBinning;
 
-  double gain;
+  Rts2ValueDouble *gain;
   double defaultGain;
   double nextGain;
-  double rnoise;
+  Rts2ValueDouble *rnoise;
 
   virtual int setGain (double in_gain);
   virtual int setSubExposure (double in_subexposure);
@@ -270,8 +245,8 @@ public:
     Rts2DevCamera (int argc, char **argv);
     virtual ~ Rts2DevCamera (void);
 
-  virtual int processOption (int in_opt);
   virtual int initChips ();
+  virtual int initValues ();
   virtual Rts2DevConn *createConnection (int in_sock);
   void checkExposures ();
   void checkReadouts ();
@@ -294,10 +269,7 @@ public:
   {
     return -1;
   }
-  virtual int baseInfo ()
-  {
-    return -1;
-  }
+  virtual int info ();
 
   virtual int scriptEnds ();
 
@@ -336,8 +308,6 @@ public:
   }
 
   // callback functions from camera connection
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn);
   int camChipInfo (Rts2Conn * conn, int chip);
   int camExpose (Rts2Conn * conn, int chip, int light, float exptime);
   int camStopExpose (Rts2Conn * conn, int chip);
@@ -374,7 +344,7 @@ public:
 
   double getSubExposure (void)
   {
-    return subExposure;
+    return subExposure->getValueDouble ();
   }
 
   bool isIdle ();

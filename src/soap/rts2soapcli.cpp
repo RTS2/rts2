@@ -39,17 +39,17 @@ Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
     case EVENT_SOAP_TEL_GET:
       resTel = (rts2__getTelescopeResponse *) event->getArg ();
 
-      resTel->tel->target->ra = getValueDouble ("ra_tar");
-      resTel->tel->target->dec = getValueDouble ("dec_tar");
+      resTel->tel->target->ra = getValueDouble ("RASC");
+      resTel->tel->target->dec = getValueDouble ("DECS");
 
-      resTel->tel->mount->ra = getValueDouble ("ra_tel");
-      resTel->tel->mount->dec = getValueDouble ("dec_tel");
+      resTel->tel->mount->ra = getValueDouble ("MNT_RA");
+      resTel->tel->mount->dec = getValueDouble ("MNT_DEC");
 
-      resTel->tel->astrometry->ra = getValueDouble ("ra");
-      resTel->tel->astrometry->dec = getValueDouble ("dec");
+      resTel->tel->astrometry->ra = getValueDouble ("CUR_RA");
+      resTel->tel->astrometry->dec = getValueDouble ("CUR_DEC");
 
-      resTel->tel->err->ra = getValueDouble ("ra_corr");
-      resTel->tel->err->dec = getValueDouble ("dec_corr");
+      resTel->tel->err->ra = getValueDouble ("RA_CORR");
+      resTel->tel->err->dec = getValueDouble ("DEC_CORR");
 
       break;
     }
@@ -60,15 +60,15 @@ Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
 void
 Rts2DevClientTelescopeSoap::getObs (struct ln_lnlat_posn *obs)
 {
-  obs->lng = getValueDouble ("longtitude");
-  obs->lat = getValueDouble ("latitude");
+  obs->lng = getValueDouble ("LONG");
+  obs->lat = getValueDouble ("LAT");
 }
 
 void
 Rts2DevClientTelescopeSoap::getEqu (struct ln_equ_posn *tel)
 {
-  tel->ra = getValueDouble ("ra");
-  tel->dec = getValueDouble ("dec");
+  tel->ra = getValueDouble ("CUR_RA");
+  tel->dec = getValueDouble ("CUR_DEC");
 }
 
 double
@@ -141,9 +141,9 @@ Rts2DevClientDomeSoap::postEvent (Rts2Event * event)
     {
     case EVENT_SOAP_DOME_GETST:
       res = (rts2__getDomeResponse *) event->getArg ();
-      res->dome->temp = getValueDouble ("temperature");
-      res->dome->humi = getValueDouble ("humidity");
-      res->dome->wind = getValueDouble ("windspeed");
+      res->dome->temp = getValueDouble ("DOME_TMP");
+      res->dome->humi = getValueDouble ("DOME_HUM");
+      res->dome->wind = getValueDouble ("WINDSPED");
       break;
     }
 }
@@ -254,7 +254,7 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
       cam->name = getName ();
       cam->exposure = getValueDouble ("exposure");
       cam->focpos = getValueInteger ("focpos");
-      cam->temp = getValueDouble ("ccd_temperature");
+      cam->temp = getValueDouble ("CCD_TEMP");
       cam->filter = getValueInteger ("filter");
       if (status & DEVICE_ERROR_MASK)
 	{

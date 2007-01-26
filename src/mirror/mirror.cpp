@@ -81,18 +81,6 @@ Rts2DevMirror::startClose (Rts2Conn * conn)
 }
 
 int
-Rts2DevMirror::sendInfo (Rts2Conn * conn)
-{
-  return 0;
-}
-
-int
-Rts2DevMirror::sendBaseInfo (Rts2Conn * conn)
-{
-  return 0;
-}
-
-int
 Rts2DevConnMirror::commandAuthorized ()
 {
   if (isCommand ("mirror"))

@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <algorithm>
 
 #include "rts2block.h"
@@ -11,9 +7,6 @@ Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
 {
   connection = in_connection;
   processedBaseInfo = NOT_PROCESED;
-  addValue (new Rts2ValueString ("type"));
-  addValue (new Rts2ValueString ("serial"));
-  addValue (new Rts2ValueTime ("info_time"));
 
   waiting = NOT_WAITING;
 
@@ -48,6 +41,44 @@ void
 Rts2DevClient::addValue (Rts2Value * value)
 {
   values.push_back (value);
+}
+
+int
+Rts2DevClient::metaInfo (int rts2Type, char *name, char *desc)
+{
+  Rts2Value *newValue;
+  switch (rts2Type & RTS2_VALUE_MASK)
+    {
+    case RTS2_VALUE_STRING:
+      newValue =
+	new Rts2ValueString (name, std::string (desc),
+			     rts2Type & RTS2_VALUE_FITS);
+      break;
+    case RTS2_VALUE_INTEGER:
+      newValue =
+	new Rts2ValueInteger (name, std::string (desc),
+			      rts2Type & RTS2_VALUE_FITS);
+      break;
+    case RTS2_VALUE_TIME:
+      newValue =
+	new Rts2ValueTime (name, std::string (desc),
+			   rts2Type & RTS2_VALUE_FITS);
+      break;
+    case RTS2_VALUE_DOUBLE:
+      newValue =
+	new Rts2ValueDouble (name, std::string (desc),
+			     rts2Type & RTS2_VALUE_FITS);
+      break;
+    case RTS2_VALUE_FLOAT:
+      newValue =
+	new Rts2ValueFloat (name, std::string (desc),
+			    rts2Type & RTS2_VALUE_FITS);
+      break;
+    default:
+      return -2;
+    }
+  addValue (newValue);
+  return -1;
 }
 
 Rts2Value *
@@ -102,7 +133,7 @@ Rts2DevClient::commandValue (const char *name)
     {
       Rts2Value *value;
       value = (*val_iter);
-      if (!strcmp (value->getName (), name))
+      if (value->isValue (name))
 	return value->setValue (connection);
     }
   return -2;
@@ -224,33 +255,16 @@ Rts2DevClient::getStatus ()
   return connection->getState ();
 }
 
-Rts2LogStream
-Rts2DevClient::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2DevClient::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (getMaster (), in_messageType);
+  Rts2LogStream
+  ls (getMaster (), in_messageType);
   return ls;
 }
 
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("chips"));
-  addValue (new Rts2ValueInteger ("can_df"));
-  addValue (new Rts2ValueInteger ("temperature_regulation"));
-  addValue (new Rts2ValueDouble ("temperature_setpoint"));
-  addValue (new Rts2ValueDouble ("air_temperature"));
-  addValue (new Rts2ValueDouble ("ccd_temperature"));
-  addValue (new Rts2ValueInteger ("cooling_power"));
-  addValue (new Rts2ValueInteger ("fan"));
-  addValue (new Rts2ValueInteger ("filter"));
-  addValue (new Rts2ValueString ("focuser"));
-  addValue (new Rts2ValueInteger ("focpos"));
-  addValue (new Rts2ValueDouble ("gain"));
-  addValue (new Rts2ValueDouble ("rnoise"));
-  addValue (new Rts2ValueInteger ("shutter"));
-
-  addValue (new Rts2ValueDouble ("exposure"));
-  addValue (new Rts2ValueDouble ("subexposure"));
 }
 
 void
@@ -301,8 +315,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -313,28 +326,6 @@ Rts2DevClientCamera::isIdle ()
 Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueDouble ("longtitude"));
-  addValue (new Rts2ValueDouble ("latitude"));
-  addValue (new Rts2ValueDouble ("altitude"));
-  addValue (new Rts2ValueDouble ("ra"));
-  addValue (new Rts2ValueDouble ("dec"));
-  addValue (new Rts2ValueDouble ("ra_tel"));
-  addValue (new Rts2ValueDouble ("dec_tel"));
-  addValue (new Rts2ValueDouble ("ra_tar"));
-  addValue (new Rts2ValueDouble ("dec_tar"));
-  addValue (new Rts2ValueDouble ("ra_corr"));
-  addValue (new Rts2ValueDouble ("dec_corr"));
-  addValue (new Rts2ValueDouble ("pos_err"));
-  addValue (new Rts2ValueInteger ("know_position"));
-  addValue (new Rts2ValueDouble ("siderealtime"));
-  addValue (new Rts2ValueDouble ("localtime"));
-  addValue (new Rts2ValueInteger ("flip"));
-  addValue (new Rts2ValueDouble ("axis0_counts"));
-  addValue (new Rts2ValueDouble ("axis1_counts"));
-  addValue (new Rts2ValueInteger ("correction_mark"));
-  addValue (new Rts2ValueInteger ("num_corr"));
-  addValue (new Rts2ValueDouble ("guiding_speed"));
-  addValue (new Rts2ValueInteger ("corrections"));
 }
 
 Rts2DevClientTelescope::~Rts2DevClientTelescope (void)
@@ -398,43 +389,30 @@ Rts2DevClientTelescope::searchEnd ()
 Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("dome"));
-  addValue (new Rts2ValueDouble ("temperature"));
-  addValue (new Rts2ValueDouble ("humidity"));
-  addValue (new Rts2ValueInteger ("power_telescope"));
-  addValue (new Rts2ValueInteger ("power_cameras"));
-  addValue (new Rts2ValueTime ("next_open"));
-  addValue (new Rts2ValueTime ("last_status"));
-  addValue (new Rts2ValueInteger ("rain"));
-  addValue (new Rts2ValueDouble ("windspeed"));
-  addValue (new Rts2ValueDouble ("observingPossible"));
-  addValue (new Rts2ValueInteger ("ignoreMeteo"));
-  addValue (new Rts2ValueDouble ("cloud"));
 }
 
-Rts2DevClientCopula::Rts2DevClientCopula (Rts2Conn * in_connection):Rts2DevClientDome
+Rts2DevClientCupola::Rts2DevClientCupola (Rts2Conn * in_connection):Rts2DevClientDome
   (in_connection)
 {
-  addValue (new Rts2ValueDouble ("az"));
 }
 
 void
-Rts2DevClientCopula::syncStarted ()
+Rts2DevClientCupola::syncStarted ()
 {
 }
 
 void
-Rts2DevClientCopula::syncEnded ()
+Rts2DevClientCupola::syncEnded ()
 {
 }
 
 void
-Rts2DevClientCopula::syncFailed (int status)
+Rts2DevClientCupola::syncFailed (int status)
 {
 }
 
 void
-Rts2DevClientCopula::stateChanged (Rts2ServerState * state)
+Rts2DevClientCupola::stateChanged (Rts2ServerState * state)
 {
   switch (state->getValue () & DOME_COP_MASK_SYNC)
     {
@@ -508,7 +486,6 @@ Rts2DevClientMirror::moveFailed (int status)
 Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("filter"));
   lastCount = -1;
   lastExp = -1.0;
   integrating = false;
@@ -613,8 +590,7 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool
-Rts2DevClientPhot::isIntegrating ()
+bool Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
@@ -622,7 +598,6 @@ Rts2DevClientPhot::isIntegrating ()
 Rts2DevClientFilter::Rts2DevClientFilter (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("filter"));
 }
 
 Rts2DevClientFilter::~Rts2DevClientFilter ()
@@ -674,10 +649,6 @@ Rts2DevClientAugerShooter::Rts2DevClientAugerShooter (Rts2Conn * in_connection):
 Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueDouble ("temp"));
-  addValue (new Rts2ValueInteger ("pos"));
-  addValue (new Rts2ValueInteger ("switch_num"));
-  addValue (new Rts2ValueInteger ("switches"));
 }
 
 Rts2DevClientFocus::~Rts2DevClientFocus (void)

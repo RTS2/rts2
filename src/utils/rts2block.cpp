@@ -440,7 +440,7 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_DOME:
       return new Rts2DevClientDome (conn);
     case DEVICE_TYPE_COPULA:
-      return new Rts2DevClientCopula (conn);
+      return new Rts2DevClientCupola (conn);
     case DEVICE_TYPE_PHOT:
       return new Rts2DevClientPhot (conn);
     case DEVICE_TYPE_FW:

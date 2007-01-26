@@ -29,7 +29,7 @@ private:
   void doSwitch ();
   void switchTarget ();
 
-  int scriptCount;		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
+  Rts2ValueInteger *scriptCount;	// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
   int waitState;
     std::vector < Target * >targetsQue;
   struct ln_lnlat_posn *observer;
@@ -38,13 +38,21 @@ private:
   double grb_sep_limit;
   double grb_min_sep;
 
-  int acqusitionOk;
-  int acqusitionFailed;
+  Rts2ValueInteger *acqusitionOk;
+  Rts2ValueInteger *acqusitionFailed;
 
   int setNow (Target * newTarget);
 
   void queTarget (Target * in_target);
   void updateScriptCount ();
+
+  Rts2ValueInteger *current_id;
+  Rts2ValueInteger *current_id_sel;
+  Rts2ValueInteger *current_obsid;
+
+  Rts2ValueInteger *next_id;
+  Rts2ValueInteger *priority_id;
+
 protected:
     virtual int processOption (int in_opt);
   virtual int reloadConfig ();
@@ -64,17 +72,7 @@ public:
   {
     return 0;
   }
-  virtual int baseInfo ()
-  {
-    return 0;
-  }
-  virtual int sendBaseInfo (Rts2Conn * conn);
-  virtual int info ()
-  {
-    updateScriptCount ();
-    return Rts2DeviceDb::info ();
-  }
-  virtual int sendInfo (Rts2Conn * conn);
+  virtual int info ();
 
   virtual int changeMasterState (int new_state);
 
@@ -149,7 +147,9 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
   currentTarget = NULL;
   nextTarget = NULL;
   priorityTarget = NULL;
-  scriptCount = -1;
+  scriptCount = new Rts2ValueInteger ("script_count");
+  scriptCount->setValueInteger (-1);
+  addValue (scriptCount);
 
   addOption ('I', "ignore_day", 0, "observe even during daytime");
   ignoreDay = 0;
@@ -159,8 +159,26 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 
   waitState = 0;
 
-  acqusitionOk = 0;
-  acqusitionFailed = 0;
+  acqusitionOk = new Rts2ValueInteger ("acqusition_ok");
+  acqusitionOk->setValueInteger (0);
+  addValue (acqusitionOk);
+
+  acqusitionFailed = new Rts2ValueInteger ("acqusition_failed");
+  acqusitionFailed->setValueInteger (0);
+  addValue (acqusitionFailed);
+
+  current_id = new Rts2ValueInteger ("current");
+  addValue (current_id);
+  current_id_sel = new Rts2ValueInteger ("current_sel");
+  addValue (current_id_sel);
+  current_obsid = new Rts2ValueInteger ("obsid");
+  addValue (current_obsid);
+
+  next_id = new Rts2ValueInteger ("next");
+  addValue (next_id);
+
+  priority_id = new Rts2ValueInteger ("priority_target");
+  addValue (priority_id);
 }
 
 Rts2Executor::~Rts2Executor (void)
@@ -296,14 +314,15 @@ Rts2Executor::postEvent (Rts2Event * event)
     case EVENT_LAST_READOUT:
       updateScriptCount ();
       // that was last script running
-      if (scriptCount == 0)
+      if (scriptCount->getValueInteger () == 0)
 	maskState (EXEC_STATE_MASK, EXEC_LASTREAD);
       break;
     case EVENT_SCRIPT_ENDED:
       updateScriptCount ();
       if (currentTarget)
 	{
-	  if (scriptCount == 0 && currentTarget->observationStarted ())
+	  if (scriptCount->getValueInteger () == 0
+	      && currentTarget->observationStarted ())
 	    {
 	      maskState (EXEC_STATE_MASK, EXEC_IDLE);
 	      switchTarget ();
@@ -324,7 +343,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 	}
       else
 	{
-	  if (scriptCount == 0)
+	  if (scriptCount->getValueInteger () == 0)
 	    switchTarget ();
 	}
       break;
@@ -364,7 +383,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 					 12 * (1.0 / 1440.0));
 	}
       updateScriptCount ();
-      if (scriptCount == 0)
+      if (scriptCount->getValueInteger () == 0)
 	switchTarget ();
       break;
     case EVENT_ENTER_WAIT:
@@ -388,46 +407,39 @@ Rts2Executor::idle ()
 }
 
 int
-Rts2Executor::sendBaseInfo (Rts2Conn * conn)
+Rts2Executor::info ()
 {
-  return 0;
-}
-
-int
-Rts2Executor::sendInfo (Rts2Conn * conn)
-{
+  updateScriptCount ();
   if (currentTarget)
     {
-      conn->sendValue ("current", currentTarget->getObsTargetID ());
-      conn->sendValue ("current_sel", currentTarget->getTargetID ());
-      conn->sendValue ("obsid", currentTarget->getObsId ());
+      current_id->setValueInteger (currentTarget->getObsTargetID ());
+      current_id_sel->setValueInteger (currentTarget->getTargetID ());
+      current_obsid->setValueInteger (currentTarget->getObsId ());
     }
   else
     {
-      conn->sendValue ("current", -1);
-      conn->sendValue ("current_sel", -1);
-      conn->sendValue ("obsid", -1);
+      current_id->setValueInteger (-1);
+      current_id_sel->setValueInteger (-1);
+      current_obsid->setValueInteger (-1);
     }
   if (nextTarget)
     {
-      conn->sendValue ("next", nextTarget->getTargetID ());
+      next_id->setValueInteger (nextTarget->getTargetID ());
     }
   else
     {
-      conn->sendValue ("next", -1);
+      next_id->setValueInteger (-1);
     }
   if (priorityTarget)
     {
-      conn->sendValue ("priority_target", priorityTarget->getTargetID ());
+      priority_id->setValueInteger (priorityTarget->getTargetID ());
     }
   else
     {
-      conn->sendValue ("priority_target", -1);
+      priority_id->setValueInteger (-1);
     }
-  conn->sendValue ("script_count", scriptCount);
-  conn->sendValue ("acqusition_ok", acqusitionOk);
-  conn->sendValue ("acqusition_failed", acqusitionFailed);
-  return 0;
+
+  return Rts2DeviceDb::info ();
 }
 
 int
@@ -635,7 +647,7 @@ Rts2Executor::stop ()
 {
   postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
   updateScriptCount ();
-  if (scriptCount == 0)
+  if (scriptCount->getValueInteger () == 0)
     switchTarget ();
   return 0;
 }
@@ -807,8 +819,8 @@ Rts2Executor::queTarget (Target * in_target)
 void
 Rts2Executor::updateScriptCount ()
 {
-  scriptCount = 0;
-  postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) &scriptCount));
+  scriptCount->setValueInteger (0);
+  postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) scriptCount));
 }
 
 int

@@ -12,6 +12,30 @@ void
 Rts2Daemon::addConnectionSock (int in_sock)
 {
   Rts2Conn *conn = createConnection (in_sock);
+  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
+       iter != constValues.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      int ret;
+      ret = val->sendMetaInfo (conn);
+      if (ret < 0)
+	{
+	  delete conn;
+	  return;
+	}
+    }
+  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
+       iter != values.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      int ret;
+      ret = val->sendMetaInfo (conn);
+      if (ret < 0)
+	{
+	  delete conn;
+	  return;
+	}
+    }
   addConnection (conn);
 }
 
@@ -21,12 +45,36 @@ Rts2Block (in_argc, in_argv)
   lockf = 0;
 
   daemonize = DO_DEAMONIZE;
+
+  info_time = new Rts2ValueDouble ("infotime");
+  info_time->setValueDouble (0);
+  addValue (info_time);
+
+  idleInfoInterval = -1;
+  nextIdleInfo = 0;
+
   addOption ('i', "interactive", 0,
 	     "run in interactive mode, don't loose console");
 }
 
 Rts2Daemon::~Rts2Daemon (void)
 {
+  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
+       iter != constValues.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      delete val;
+    }
+  constValues.clear ();
+
+  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
+       iter != values.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      delete val;
+    }
+  values.clear ();
+
   if (listen_sock >= 0)
     close (listen_sock);
   if (lockf)
@@ -182,6 +230,12 @@ Rts2Daemon::init ()
   return 0;
 }
 
+int
+Rts2Daemon::initValues ()
+{
+  return 0;
+}
+
 void
 Rts2Daemon::initDaemon ()
 {
@@ -189,7 +243,14 @@ Rts2Daemon::initDaemon ()
   ret = init ();
   if (ret)
     {
-      logStream (MESSAGE_ERROR) << "Cannot init deamon, exiting" << sendLog;
+      logStream (MESSAGE_ERROR) << "Cannot init daemon, exiting" << sendLog;
+      exit (ret);
+    }
+  ret = initValues ();
+  if (ret)
+    {
+      logStream (MESSAGE_ERROR) << "Cannot init values in daemon, exiting" <<
+	sendLog;
       exit (ret);
     }
 }
@@ -199,6 +260,17 @@ Rts2Daemon::run ()
 {
   initDaemon ();
   return Rts2Block::run ();
+}
+
+int
+Rts2Daemon::idle ()
+{
+  time_t now = time (NULL);
+  if (idleInfoInterval >= 0 && now > nextIdleInfo)
+    {
+      infoAll ();
+    }
+  return Rts2Block::idle ();
 }
 
 void
@@ -294,4 +366,155 @@ Rts2Daemon::selectSuccess (fd_set * read_set)
 	}
     }
   Rts2Block::selectSuccess (read_set);
+}
+
+void
+Rts2Daemon::addValue (Rts2Value * value)
+{
+  values.push_back (value);
+}
+
+void
+Rts2Daemon::addConstValue (Rts2Value * value)
+{
+  constValues.push_back (value);
+}
+
+void
+Rts2Daemon::addConstValue (char *in_name, const char *in_desc, char *in_value)
+{
+  Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
+  val->setValueString (in_value);
+  addConstValue (val);
+}
+
+void
+Rts2Daemon::addConstValue (char *in_name, const char *in_desc,
+			   double in_value)
+{
+  Rts2ValueDouble *val = new Rts2ValueDouble (in_name, std::string (in_desc));
+  val->setValueDouble (in_value);
+  addConstValue (val);
+}
+
+void
+Rts2Daemon::addConstValue (char *in_name, const char *in_desc, int in_value)
+{
+  Rts2ValueInteger *val =
+    new Rts2ValueInteger (in_name, std::string (in_desc));
+  val->setValueInteger (in_value);
+  addConstValue (val);
+}
+
+void
+Rts2Daemon::addConstValue (char *in_name, char *in_value)
+{
+  Rts2ValueString *val = new Rts2ValueString (in_name);
+  val->setValueString (in_value);
+  addConstValue (val);
+}
+
+void
+Rts2Daemon::addConstValue (char *in_name, double in_value)
+{
+  Rts2ValueDouble *val = new Rts2ValueDouble (in_name);
+  val->setValueDouble (in_value);
+  addConstValue (val);
+}
+
+void
+Rts2Daemon::addConstValue (char *in_name, int in_value)
+{
+  Rts2ValueInteger *val = new Rts2ValueInteger (in_name);
+  val->setValueInteger (in_value);
+  addConstValue (val);
+}
+
+
+int
+Rts2Daemon::baseInfo ()
+{
+  return 0;
+}
+
+int
+Rts2Daemon::baseInfo (Rts2Conn * conn)
+{
+  int ret;
+  ret = baseInfo ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
+      return -1;
+    }
+  return sendBaseInfo (conn);
+}
+
+int
+Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
+{
+  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
+       iter != constValues.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      int ret;
+      ret = val->sendInfo (conn);
+      if (ret)
+	return ret;
+    }
+  return 0;
+}
+
+int
+Rts2Daemon::info ()
+{
+  struct timeval infot;
+  gettimeofday (&infot, NULL);
+  info_time->setValueDouble (infot.tv_sec + infot.tv_usec / USEC_SEC);
+  return 0;
+}
+
+int
+Rts2Daemon::info (Rts2Conn * conn)
+{
+  int ret;
+  ret = info ();
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
+      return -1;
+    }
+  return sendInfo (conn);
+}
+
+int
+Rts2Daemon::infoAll ()
+{
+  int ret;
+  nextIdleInfo = time (NULL) + idleInfoInterval;
+  ret = info ();
+  if (ret)
+    return -1;
+  std::list < Rts2Conn * >::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
+    {
+      Rts2Conn *conn = *iter;
+      sendInfo (conn);
+    }
+  return 0;
+}
+
+int
+Rts2Daemon::sendInfo (Rts2Conn * conn)
+{
+  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
+       iter != values.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      int ret;
+      ret = val->sendInfo (conn);
+      if (ret)
+	return ret;
+    }
+  return 0;
 }

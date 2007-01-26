@@ -1622,6 +1622,50 @@ Rts2Image::print (std::ostream & _os, int in_flags)
   _os.precision (old_precision);
 }
 
+void
+Rts2Image::writeClient (Rts2DevClient * client)
+{
+  for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
+       iter != client->valueEnd (); iter++)
+    {
+      Rts2Value *val = *iter;
+      if (val->getWriteToFits ())
+	{
+	  time_t valT;
+	  std::string descStr = val->getDescription ();
+	  char *desc = (char *) malloc (descStr.length () + 1);
+	  strncpy (desc, descStr.c_str (), descStr.length ());
+	  desc[descStr.length ()] = '\0';
+
+	  std::string nameStr = val->getName ();
+	  char *name = (char *) malloc (nameStr.length () + 1);
+	  strncpy (name, nameStr.c_str (), nameStr.length ());
+	  name[nameStr.length ()] = '\0';
+	  switch (val->getValueType ())
+	    {
+	    case RTS2_VALUE_STRING:
+	      setValue (name, val->getValue (), desc);
+	      break;
+	    case RTS2_VALUE_INTEGER:
+	      setValue (name, val->getValue (), desc);
+	      break;
+	    case RTS2_VALUE_TIME:
+	      valT = val->getValueInteger ();
+	      setValue (name, &valT, 0, desc);
+	      break;
+	    case RTS2_VALUE_DOUBLE:
+	      setValue (name, val->getValueDouble (), desc);
+	      break;
+	    case RTS2_VALUE_FLOAT:
+	      setValue (name, val->getValueFloat (), desc);
+	      break;
+	    }
+	  free (desc);
+	  free (name);
+	}
+    }
+}
+
 std::ostream & operator << (std::ostream & _os, Rts2Image & image)
 {
   _os << "C " << image.getCameraName ()

@@ -114,7 +114,8 @@ private:
   Rts2DevClientCamera * camera;
 public:
   Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera,
-		       int chip, exposureType exp_type, float exp_time);
+		       int chip, exposureType exp_type, float exp_time,
+		       bool readout = false);
   virtual int commandReturnFailed (int status);
 };
 
@@ -122,13 +123,6 @@ class Rts2CommandReadout:public Rts2Command
 {
 public:
   Rts2CommandReadout (Rts2Block * in_master, int chip);
-};
-
-class Rts2CommandReadoutExposure:public Rts2Command
-{
-public:
-  Rts2CommandReadoutExposure (Rts2Block * in_master, int chip,
-			      exposureType exp_type, float exp_time);
 };
 
 class Rts2CommandFilter:public Rts2Command
@@ -262,11 +256,11 @@ public:
   }
 };
 
-class Rts2CommandCopulaMove:public Rts2Command
+class Rts2CommandCupolaMove:public Rts2Command
 {
-  Rts2DevClientCopula *copula;
+  Rts2DevClientCupola *copula;
 public:
-    Rts2CommandCopulaMove (Rts2DevClientCopula * in_copula, double ra,
+    Rts2CommandCupolaMove (Rts2DevClientCupola * in_copula, double ra,
 			   double dec);
   virtual int commandReturnFailed (int status);
 };
