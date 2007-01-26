@@ -981,7 +981,7 @@ Rts2DevDomeFram::processOption (int in_opt)
 int
 Rts2DevDomeFram::isGoodWeather ()
 {
-  if (getIgnoreMeteo ())
+  if (getIgnoreMeteo () == true)
     return 1;
   if (weatherConn)
     return weatherConn->isGoodWeather ();

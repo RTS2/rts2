@@ -91,14 +91,16 @@ public:
 
   int setIgnoreMeteo (bool newIgnore)
   {
-    ignoreMeteo->setValueInteger (newIgnore ? 1 : 0);
+    ignoreMeteo->setValueInteger (newIgnore ? 2 : 1);
     infoAll ();
     return 0;
   }
 
-  int getIgnoreMeteo ()
+  bool getIgnoreMeteo ()
   {
-    return ignoreMeteo->getValueInteger ();
+    if (ignoreMeteo->getValueInteger () == 2)
+      return true;
+    return false;
   }
 
   void setTemperature (float in_temp)

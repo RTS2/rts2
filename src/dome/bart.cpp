@@ -41,8 +41,8 @@
 
 typedef enum
 { ZASUVKA_1, ZASUVKA_2, ZASUVKA_3, ZASUVKA_4, ZASUVKA_5, ZASUVKA_6, MOTOR,
-  SMER, SVETLO, TOPENI, KONCAK_OTEVRENI_JIH, KONCAK_ZAVRENI_JIH,
-  KONCAK_OTEVRENI_SEVER, KONCAK_ZAVRENI_SEVER, RESET_1, RESET_2
+  SMER, SVETLO, KONCAK_OTEVRENI_JIH, KONCAK_ZAVRENI_JIH,
+  KONCAK_OTEVRENI_SEVER, KONCAK_ZAVRENI_SEVER
 } vystupy;
 
 struct typ_a
@@ -51,18 +51,6 @@ struct typ_a
   unsigned char pin;
 } adresa[] =
 {
-  {
-  PORT_A, 1},
-  {
-  PORT_A, 2},
-  {
-  PORT_A, 4},
-  {
-  PORT_A, 8},
-  {
-  PORT_A, 16},
-  {
-  PORT_A, 32},
   {
   PORT_B, 1},
   {
@@ -80,9 +68,15 @@ struct typ_a
   {
   PORT_B, 128},
   {
-  PORT_C, 1},
+  PORT_A, 1},
   {
-PORT_C, 32}};
+  PORT_A, 2},
+  {
+  PORT_A, 4},
+  {
+  PORT_A, 8},
+  {
+PORT_A, 16}};
 
 #define NUM_ZAS		5
 
@@ -127,7 +121,7 @@ private:
   void vypni_pin (unsigned char c_port, unsigned char pin);
   int getPortState (int c_port)
   {
-    return !!(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
+    return (stav_portu[adresa[c_port].port] & adresa[c_port].pin);
   };
 
   int isOn (int c_port);
@@ -272,7 +266,7 @@ Rts2DevDomeBart::isOn (int c_port)
 int
 Rts2DevDomeBart::openDome ()
 {
-  if (!isOn (KONCAK_OTEVRENI_JIH))
+  if (isOn (KONCAK_OTEVRENI_JIH))
     return endOpen ();
   if (!isGoodWeather ())
     return -1;
@@ -292,7 +286,7 @@ Rts2DevDomeBart::isOpened ()
   ret = zjisti_stav_portu ();
   if (ret)
     return ret;
-  if (isOn (KONCAK_OTEVRENI_JIH))
+  if (!isOn (KONCAK_OTEVRENI_JIH))
     return USEC_SEC;
   return -2;
 }
@@ -311,7 +305,7 @@ Rts2DevDomeBart::closeDome ()
 {
   int motor;
   int smer;
-  if (!isOn (KONCAK_ZAVRENI_JIH))
+  if (isOn (KONCAK_ZAVRENI_JIH))
     return endClose ();
   motor = isOn (MOTOR);
   smer = isOn (SMER);
@@ -343,7 +337,7 @@ Rts2DevDomeBart::isClosed ()
   ret = zjisti_stav_portu ();
   if (ret)
     return ret;
-  if (isOn (KONCAK_ZAVRENI_JIH))
+  if (!isOn (KONCAK_ZAVRENI_JIH))
     return USEC_SEC;
   return -2;
 }
@@ -400,13 +394,13 @@ Rts2DevDomeBart::isGoodWeather ()
 	{
 	  setRain (1);
 	  setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
-	  if (getIgnoreMeteo () == 1)
+	  if (getIgnoreMeteo () == true)
 	    return 1;
 	  return 0;
 	}
       setRain (0);
     }
-  if (getIgnoreMeteo () == 1)
+  if (getIgnoreMeteo () == true)
     return 1;
   if (weatherConn)
     return weatherConn->isGoodWeather ();
@@ -516,7 +510,7 @@ Rts2DevDomeBart::init ()
 	}
     }
 
-  if (getIgnoreMeteo ())
+  if (getIgnoreMeteo () == true)
     return 0;
 
   weatherConn =
@@ -749,16 +743,16 @@ Rts2DevDomeBart::info ()
   ret = zjisti_stav_portu ();
   if (ret)
     return -1;
-  sw_state->setValueInteger (getPortState (KONCAK_OTEVRENI_JIH));
+  sw_state->setValueInteger (!getPortState (KONCAK_OTEVRENI_JIH));
   sw_state->setValueInteger (sw_state->
 			     getValueInteger () |
-			     (getPortState (KONCAK_OTEVRENI_SEVER) << 1));
+			     (!getPortState (KONCAK_OTEVRENI_SEVER) << 1));
   sw_state->setValueInteger (sw_state->
 			     getValueInteger () |
-			     (getPortState (KONCAK_ZAVRENI_JIH) << 2));
+			     (!getPortState (KONCAK_ZAVRENI_JIH) << 2));
   sw_state->setValueInteger (sw_state->
 			     getValueInteger () |
-			     (getPortState (KONCAK_ZAVRENI_SEVER) << 3));
+			     (!getPortState (KONCAK_ZAVRENI_SEVER) << 3));
   if (weatherConn)
     {
       setRain (weatherConn->getRain ());

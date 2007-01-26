@@ -27,7 +27,7 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
   maxPeekWindspeed = 50;
   weatherCanOpenDome = false;
   ignoreMeteo = new Rts2ValueInteger ("ignoreMeteo");
-  ignoreMeteo->setValueInteger (0);
+  ignoreMeteo->setValueInteger (1);
   addValue (ignoreMeteo);
 
   cloud = new Rts2ValueDouble ("CLOUD_S", "cloud sensor value");
@@ -49,6 +49,7 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 
   nextOpen = new Rts2ValueTime ("next_open");
   nextOpen->setValueTime (getNextOpen ());
+  addValue (nextOpen);
 }
 
 int
@@ -66,7 +67,7 @@ Rts2DevDome::processOption (int in_opt)
       weatherCanOpenDome = true;
       break;
     case 'I':
-      ignoreMeteo->setValueInteger (1);
+      ignoreMeteo->setValueInteger (2);
       break;
     default:
       return Rts2Device::processOption (in_opt);
@@ -86,7 +87,7 @@ Rts2DevDome::domeWeatherGood ()
 int
 Rts2DevDome::isGoodWeather ()
 {
-  if (getIgnoreMeteo ())
+  if (getIgnoreMeteo () == true)
     return 1;
   return 0;
 }
@@ -201,7 +202,7 @@ int
 Rts2DevDome::closeDomeWeather ()
 {
   int ret;
-  if (getIgnoreMeteo () == 0)
+  if (getIgnoreMeteo () == false)
     {
       ret = closeDome ();
       setMasterStandby ();
@@ -222,7 +223,7 @@ Rts2DevDome::observing ()
 int
 Rts2DevDome::standby ()
 {
-  ignoreMeteo->setValueInteger (0);
+  ignoreMeteo->setValueInteger (1);
   if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
@@ -231,7 +232,7 @@ Rts2DevDome::standby ()
 int
 Rts2DevDome::off ()
 {
-  ignoreMeteo->setValueInteger (0);
+  ignoreMeteo->setValueInteger (1);
   if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
     return closeDome ();
   return 0;
