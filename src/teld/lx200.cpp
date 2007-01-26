@@ -629,7 +629,7 @@ Rts2DevTelescopeLX200::initValues ()
   strcpy (telSerialNumber, "000001");
   telAltitude->setValueDouble (600);
 
-  telFlip = 0;
+  telFlip->setValueInteger (0);
 
   return Rts2DevTelescope::initValues ();
 }

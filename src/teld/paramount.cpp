@@ -558,7 +558,7 @@ Rts2DevTelParamount::counts2sky (CWORD32 & ac, CWORD32 dc, double &ra,
     }
   else
     {
-      telFlip = 0;
+      telFlip->setValueInteger (0);
     }
 
   while (ac < acMin)

@@ -522,18 +522,22 @@ Rts2TelescopeIr::info ()
 #ifdef DEBUG_EXTRA
   double zd_acc, zd_speed, az_acc, az_speed;
 #endif // DEBUG_EXTRA
+  double t_telRa, t_telDec;
   int status = 0;
   int track = 0;
 
   if (!(tplc->IsAuth () && tplc->IsConnected ()))
     return -1;
 
-  status = tpl_get ("POINTING.CURRENT.RA", telRa, &status);
-  telRa *= 15.0;
-  status = tpl_get ("POINTING.CURRENT.DEC", telDec, &status);
+  status = tpl_get ("POINTING.CURRENT.RA", t_telRa, &status);
+  t_telRa *= 15.0;
+  status = tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
   status = tpl_get ("POINTING.TRACK", track, &status);
   if (status)
     return -1;
+
+  telRa->setValueDouble (t_telRa);
+  telDec->setValueDouble (t_telDec);
 
   telSiderealTime = getLocSidTime ();
   telLocalTime = 0;
@@ -547,10 +551,11 @@ Rts2TelescopeIr::info ()
   status = tpl_get ("AZ.CURRSPEED", az_speed, &status);
   status = tpl_get ("AZ.CURRACC", az_acc, &status);
 
-  logStream (MESSAGE_DEBUG) << "IR info ra " << telRa << " dec " << telDec <<
-    " az " << az << " az_speed " << az_speed << " az_acc " << az_acc << " zd "
-    << zd << " zd_speed " << zd_speed << " zd_acc " << zd_acc << " track " <<
-    track << sendLog;
+  logStream (MESSAGE_DEBUG) << "IR info ra " << telRa->
+    getValueDouble () << " dec " << telDec->
+    getValueDouble () << " az " << az << " az_speed " << az_speed <<
+    " az_acc " << az_acc << " zd " << zd << " zd_speed " << zd_speed <<
+    " zd_acc " << zd_acc << " track " << track << sendLog;
 #endif // DEBUG_EXTRA
 
   if (!track)
@@ -561,12 +566,12 @@ Rts2TelescopeIr::info ()
       struct ln_equ_posn curr;
       hrz.az = az;
       hrz.alt = 90 - fabs (zd);
-      observer.lng = telLongtitude;
-      observer.lat = telLatitude;
+      observer.lng = telLongtitude->getValueDouble ();
+      observer.lat = telLatitude->getValueDouble ();
       ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
-      telRa = curr.ra;
-      telDec = curr.dec;
-      telFlip = 0;
+      telRa->setValueDouble (curr.ra);
+      telDec->setValueDouble (curr.dec);
+      telFlip->setValueInteger (0);
     }
   else
     {
