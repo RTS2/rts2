@@ -255,10 +255,10 @@ Rts2DevClient::getStatus ()
   return connection->getState ();
 }
 
-Rts2LogStream Rts2DevClient::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2DevClient::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (getMaster (), in_messageType);
+  Rts2LogStream ls (getMaster (), in_messageType);
   return ls;
 }
 
@@ -315,7 +315,8 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool Rts2DevClientCamera::isIdle ()
+bool
+Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -590,7 +591,8 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool Rts2DevClientPhot::isIntegrating ()
+bool
+Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
@@ -642,8 +644,6 @@ Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
 Rts2DevClientAugerShooter::Rts2DevClientAugerShooter (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueTime ("last_target_time"));
-  addValue (new Rts2ValueTime ("last_packet"));
 }
 
 Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
@@ -693,14 +693,6 @@ Rts2DevClientFocus::stateChanged (Rts2ServerState * state)
 Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("current"));
-  addValue (new Rts2ValueInteger ("current_sel"));
-  addValue (new Rts2ValueInteger ("next"));
-  addValue (new Rts2ValueInteger ("priority_target"));
-  addValue (new Rts2ValueInteger ("obsid"));
-  addValue (new Rts2ValueInteger ("script_count"));
-  addValue (new Rts2ValueInteger ("acqusition_ok"));
-  addValue (new Rts2ValueInteger ("acqusition_failed"));
 }
 
 void
@@ -728,10 +720,6 @@ Rts2DevClientSelector::Rts2DevClientSelector (Rts2Conn * in_connection):Rts2DevC
 Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("que_size"));
-  addValue (new Rts2ValueInteger ("good_images"));
-  addValue (new Rts2ValueInteger ("trash_images"));
-  addValue (new Rts2ValueInteger ("morning_images"));
 }
 
 int
@@ -763,9 +751,4 @@ Rts2DevClientImgproc::command ()
 Rts2DevClientGrb::Rts2DevClientGrb (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
-  addValue (new Rts2ValueInteger ("last_packet"));
-  addValue (new Rts2ValueDouble ("delta"));
-  addValue (new Rts2ValueString ("last_target"));
-  addValue (new Rts2ValueDouble ("last_target_time"));
-  addValue (new Rts2ValueInteger ("exec"));
 }
