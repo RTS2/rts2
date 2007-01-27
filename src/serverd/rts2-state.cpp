@@ -49,6 +49,8 @@ private:
   double lat;
   time_t currTime;
   double JD;
+  void printAltTable (std::ostream & _os, double jd_start, double h_start,
+		      double h_end, double h_step = 1.0);
   void printAltTable (std::ostream & _os);
   void printDayStates (std::ostream & _os);
 protected:
@@ -62,10 +64,10 @@ public:
 };
 
 void
-Rts2StateApp::printAltTable (std::ostream & _os)
+Rts2StateApp::printAltTable (std::ostream & _os, double jd_start,
+			     double h_start, double h_end, double h_step)
 {
-  int i;
-  double jd_start = ((int) JD) - 0.5;
+  double i;
   struct ln_hrz_posn hrz;
   struct ln_equ_posn pos;
   double jd;
@@ -73,13 +75,13 @@ Rts2StateApp::printAltTable (std::ostream & _os)
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
-  _os
-    << std::endl
-    << "** SOON POSITION table from "
-    << LibnovaDate (jd_start) << " **" << std::endl << std::endl << "H   ";
-
   char old_fill = _os.fill ('0');
-  for (i = 0; i <= 24; i++)
+
+  jd_start += h_start / 24.0;
+
+  _os << "H   ";
+
+  for (i = h_start; i <= h_end; i += h_step)
     {
       _os << "  " << std::setw (2) << i;
     }
@@ -96,7 +98,7 @@ Rts2StateApp::printAltTable (std::ostream & _os)
   _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
   jd = jd_start;
-  for (i = 0; i <= 24; i++, jd += 1.0 / 24.0)
+  for (i = h_start; i <= h_end; i += h_step, jd += h_step / 24.0)
     {
       ln_get_solar_equ_coords (jd, &pos);
       ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd,
@@ -109,6 +111,21 @@ Rts2StateApp::printAltTable (std::ostream & _os)
 
   _os.setf (old_settings);
   _os.precision (old_precison);
+}
+
+void
+Rts2StateApp::printAltTable (std::ostream & _os)
+{
+  double jd_start = ((int) JD) - 0.5;
+
+  _os
+    << std::endl
+    << "** SUN POSITION table from "
+    << LibnovaDate (jd_start) << " **" << std::endl << std::endl;
+
+  printAltTable (_os, jd_start, -1, 11);
+  _os << std::endl;
+  printAltTable (_os, jd_start, 12, 24);
 }
 
 void
