@@ -68,11 +68,11 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
   target.dec = dec;
 
   // move to zenit - move to different dec instead
-  if (fabs (dec - telLatitude) <= BLIND_SIZE)
+  if (fabs (dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
     {
       if (fabs (ra / 15.0 - getLocSidTime ()) <= BLIND_SIZE / 15.0)
 	{
-	  target.dec = telLatitude - BLIND_SIZE;
+	  target.dec = telLatitude->getValueDouble () - BLIND_SIZE;
 	}
     }
 
@@ -158,7 +158,7 @@ Rts2DevTelescopeIr::stopMove ()
 	}
       return 0;
     }
-  startMoveReal (telRa, telDec);
+  startMoveReal (telRa->getValueDouble (), telDec->getValueDouble ());
   return 0;
 }
 

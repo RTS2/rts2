@@ -17,7 +17,7 @@
 #include <math.h>
 #include <time.h>
 
-#include <comedilib.h>
+//#include <comedilib.h>
 
 #include "dome.h"
 
@@ -33,7 +33,7 @@ class Rts2DevDomeIR:public Rts2DevDome
 private:
   char *dome_file;
   int dome_port;
-  comedi_t *it;
+//  comedi_t *it;
 
   int initIrDevice ();
   int getPort (int channel, double *value);
@@ -76,7 +76,7 @@ public:
 int
 Rts2DevDomeIR::initIrDevice ()
 {
-  it = comedi_open ("/dev/comedi0");
+//  it = comedi_open ("/dev/comedi0");
 
   return 0;
 }
@@ -84,7 +84,7 @@ Rts2DevDomeIR::initIrDevice ()
 int
 Rts2DevDomeIR::getPort (int channel, double *value)
 {
-  int subdev = 0;
+/*  int subdev = 0;
   int max, range = 0;
   lsampl_t data;
   comedi_range *rqn;
@@ -99,7 +99,7 @@ Rts2DevDomeIR::getPort (int channel, double *value)
   if (isnan (tmp))
     *value = -10;
   else
-    *value = 10 * tmp;
+    *value = 10 * tmp; */
 
   return 0;
 }
@@ -292,12 +292,18 @@ Rts2DevDomeIR::info ()
      sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
    */
   if (leftClosed () && rightClosed ())
-    sw_state = 4;
+    sw_state->setValueInteger (4);
   if (leftOpened () && rightOpened ())
-    sw_state = 1;
+    sw_state->setValueInteger (1);
   //rain = weatherConn->getRain ();
+  float t_temp;
+  float t_hum;
+  float t_wind;
 
-  getSNOW (&temperature, &humidity, &windspeed);
+  getSNOW (&t_temp, &t_hum, &t_wind);
+  setTemperature (t_temp);
+  setHumidity (t_hum);
+  setWindSpeed (t_wind);
   return Rts2DevDome::info ();
 }
 

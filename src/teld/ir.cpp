@@ -173,7 +173,7 @@ Rts2TelescopeIr::initIrDevice ()
   config->loadFile (NULL);
   // try to get default from config file
   if (!ir_ip)
-    config->getString ("ir", "ip", &ir_ip);
+    config->getString ("ir", "ip", *ir_ip);
   if (!ir_port)
     config->getInteger ("ir", "port", ir_port);
   if (!ir_ip || !ir_port)
@@ -217,15 +217,15 @@ Rts2TelescopeIr::init ()
 
   initCoverState ();
 
-  std::string serial;
-  int status = 0;
-
   return 0;
 }
 
 int
 Rts2TelescopeIr::initValues ()
 {
+  int status;
+  std::string serial;
+
   telLongtitude->setValueDouble (LONGITUDE);
   telLatitude->setValueDouble (LATITUDE);
   telAltitude->setValueDouble (ALTITUDE);
@@ -237,7 +237,7 @@ Rts2TelescopeIr::initValues ()
 
 // decode IR error
 int
-Rts2TelescopeIr::getError (int in_error, std::string & desc)
+Rts2TelescopeIr::getError (int in_error, std::string & descri)
 {
   char *txt;
   std::string err_desc;
@@ -255,14 +255,14 @@ Rts2TelescopeIr::getError (int in_error, std::string & desc)
     os << "Telescope sev: " << std::hex << (in_error & 0xff000000)
       << " err:" << std::hex << errNum << " desc: " << err_desc;
   free (txt);
-  desc = os.str ();
+  descri = os.str ();
   return status;
 }
 
 void
 Rts2TelescopeIr::addError (int in_error)
 {
-  std::string desc;
+  std::string descri;
   std::list < ErrorTime * >::iterator errIter;
   ErrorTime *errt;
   int status;
@@ -306,8 +306,8 @@ Rts2TelescopeIr::addError (int in_error)
 	return;
     }
   // new error
-  getError (in_error, desc);
-  logStream (MESSAGE_ERROR) << "IR checkErrors " << desc.c_str () << sendLog;
+  getError (in_error, descri);
+  logStream (MESSAGE_ERROR) << "IR checkErrors " << descri << sendLog;
   errt = new ErrorTime (in_error);
   errorcodes.push_back (errt);
 }
@@ -539,8 +539,8 @@ Rts2TelescopeIr::info ()
   telRa->setValueDouble (t_telRa);
   telDec->setValueDouble (t_telDec);
 
-  telSiderealTime = getLocSidTime ();
-  telLocalTime = 0;
+  telSiderealTime->setValueDouble (getLocSidTime ());
+  telLocalTime->setValueDouble (0);
 
   status = tpl_get ("ZD.REALPOS", zd, &status);
   status = tpl_get ("AZ.REALPOS", az, &status);
@@ -582,8 +582,8 @@ Rts2TelescopeIr::info ()
     return -1;
 
 
-  telAxis[0] = az;
-  telAxis[1] = zd;
+  ax1->setValueDouble (az);
+  ax2->setValueDouble (zd);
 
   return Rts2DevTelescope::info ();
 }
@@ -652,8 +652,8 @@ Rts2TelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   eq_target.ra = real_ra + cor_ra;
   eq_target.dec = real_dec + cor_dec;
   applyLocCorr (&eq_target);
-  observer.lng = telLongtitude;
-  observer.lat = telLatitude;
+  observer.lng = telLongtitude->getValueDouble ();
+  observer.lat = telLatitude->getValueDouble ();
   ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
   ln_get_hrz_from_equ (&eq_target, &observer, jd, &hrz_target);
   // calculate alt & az diff

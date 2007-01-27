@@ -163,12 +163,12 @@ Rts2DevIrError::processArgs (const char *arg)
 int
 Rts2DevIrError::run ()
 {
-  std::string desc;
+  std::string descri;
   for (std::list < const char *>::iterator iter = errList.begin ();
        iter != errList.end (); iter++)
     {
-      getError (atoi (*iter), desc);
-      std::cout << desc << std::endl;
+      getError (atoi (*iter), descri);
+      std::cout << descri << std::endl;
     }
   int status = 0;
   double fparam;
