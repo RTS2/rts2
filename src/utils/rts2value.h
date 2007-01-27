@@ -142,38 +142,6 @@ public:
   }
 };
 
-class Rts2ValueTime:public Rts2Value
-{
-private:
-  time_t value;
-public:
-  Rts2ValueTime (char *in_val_name);
-  Rts2ValueTime (char *in_val_name, std::string in_description,
-		 bool writeToFits = true);
-  virtual int setValue (Rts2Conn * connection);
-  virtual char *getValue ();
-  virtual double getValueDouble ()
-  {
-    return value;
-  }
-  virtual float getValueFloat ()
-  {
-    return value;
-  }
-  virtual int getValueInteger ()
-  {
-    return (int) value;
-  }
-  virtual void setValueInteger (int in_value)
-  {
-    value = in_value;
-  }
-  void setValueTime (time_t in_value)
-  {
-    value = in_value;
-  }
-};
-
 class Rts2ValueDouble:public Rts2Value
 {
 private:
@@ -198,7 +166,21 @@ public:
   }
   virtual int getValueInteger ()
   {
+    if (isnan (value))
+      return -1;
     return (int) value;
+  }
+};
+
+class Rts2ValueTime:public Rts2ValueDouble
+{
+public:
+  Rts2ValueTime (char *in_val_name);
+    Rts2ValueTime (char *in_val_name, std::string in_description,
+		   bool writeToFits = true);
+  void setValueTime (time_t in_value)
+  {
+    Rts2ValueDouble::setValueDouble (in_value);
   }
 };
 
@@ -230,6 +212,8 @@ public:
   }
   virtual int getValueInteger ()
   {
+    if (isnan (value))
+      return -1;
     return (int) value;
   }
 };

@@ -279,8 +279,13 @@ Rts2Conn::processLine ()
   if (!ret)
     sendCommandEnd (0, "OK");
   else if (ret == -2)
-    sendCommandEnd (DEVDEM_E_COMMAND,
-		    "invalid parameters/invalid number of parameters");
+    {
+      logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" <<
+	getCentraldId () << "] command: " << getCommand () << " ret: " << ret
+	<< sendLog;
+      sendCommandEnd (DEVDEM_E_COMMAND,
+		      "invalid parameters/invalid number of parameters");
+    }
   return ret;
 }
 
@@ -449,10 +454,10 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream
-Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (master, in_messageType);
+  Rts2LogStream
+  ls (master, in_messageType);
   return ls;
 }
 

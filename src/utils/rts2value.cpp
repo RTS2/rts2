@@ -129,40 +129,6 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
   return 0;
 }
 
-Rts2ValueTime::Rts2ValueTime (char *in_val_name):Rts2Value (in_val_name)
-{
-  value = 0;
-  rts2Type |= RTS2_VALUE_TIME;
-}
-
-Rts2ValueTime::Rts2ValueTime (char *in_val_name, std::string in_description,
-			      bool writeToFits):
-Rts2Value (in_val_name, in_description, writeToFits)
-{
-  value = 0;
-  rts2Type |= RTS2_VALUE_TIME;
-}
-
-
-char *
-Rts2ValueTime::getValue ()
-{
-  struct tm t;
-  gmtime_r (&value, &t);
-  strftime (buf, 100, "%Y-%m-%dT%H:%M:%S", &t);
-  return buf;
-}
-
-int
-Rts2ValueTime::setValue (Rts2Conn * connection)
-{
-  int new_value;
-  if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
-    return -3;
-  value = new_value;
-  return 0;
-}
-
 Rts2ValueDouble::Rts2ValueDouble (char *in_val_name):Rts2Value (in_val_name)
 {
   value = nan ("f");
@@ -195,7 +161,20 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
   return 0;
 }
 
-Rts2ValueFloat::Rts2ValueFloat (char *in_val_name):Rts2Value (in_val_name)
+Rts2ValueTime::Rts2ValueTime (char *in_val_name):Rts2ValueDouble (in_val_name)
+{
+  rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
+}
+
+Rts2ValueTime::Rts2ValueTime (char *in_val_name, std::string in_description,
+			      bool writeToFits):
+Rts2ValueDouble (in_val_name, in_description, writeToFits)
+{
+  rts2Type = (~RTS2_VALUE_TIME & rts2Type) | RTS2_VALUE_TIME;
+}
+
+Rts2ValueFloat::Rts2ValueFloat (char *in_val_name):
+Rts2Value (in_val_name)
 {
   value = nan ("f");
   rts2Type |= RTS2_VALUE_FLOAT;
