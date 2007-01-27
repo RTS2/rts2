@@ -189,6 +189,8 @@ private:
   time_t tar_next_observable;
   bool tar_enabled;
 
+  void printAltTable (std::ostream & _os, double jd_start, double h_start,
+		      double h_end, double h_step = 1.0);
   void printAltTable (std::ostream & _os, double JD);
 
 protected:
