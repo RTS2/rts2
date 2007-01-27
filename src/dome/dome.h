@@ -123,6 +123,10 @@ public:
   {
     rain->setValueInteger (in_rain);
   }
+  virtual void setRainWeather (int in_rain)
+  {
+    setRain (in_rain);
+  }
   int getRain ()
   {
     return rain->getValueInteger ();

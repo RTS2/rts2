@@ -156,6 +156,14 @@ public:
   virtual int ready ();
   virtual int info ();
 
+  // only use weather rain when we don't have rain detection
+  // from sensor mounted at BART
+  virtual void setRainWeather (int in_rain)
+  {
+    if (getRain () == 0)
+      setRain (in_rain);
+  }
+
   virtual int openDome ();
   virtual long isOpened ();
   virtual int endOpen ();
@@ -746,18 +754,13 @@ Rts2DevDomeBart::info ()
   sw_state->setValueInteger (!getPortState (KONCAK_OTEVRENI_JIH));
   sw_state->setValueInteger (sw_state->
 			     getValueInteger () |
-			     (!getPortState (KONCAK_OTEVRENI_SEVER) << 1));
+			     (!getPortState (SMER) << 1));
   sw_state->setValueInteger (sw_state->
 			     getValueInteger () |
 			     (!getPortState (KONCAK_ZAVRENI_JIH) << 2));
   sw_state->setValueInteger (sw_state->
 			     getValueInteger () |
-			     (!getPortState (KONCAK_ZAVRENI_SEVER) << 3));
-  if (weatherConn)
-    {
-      setRain (weatherConn->getRain ());
-      setWindSpeed (weatherConn->getWindspeed ());
-    }
+			     (!getPortState (MOTOR) << 3));
   return Rts2DevDome::info ();
 }
 

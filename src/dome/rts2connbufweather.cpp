@@ -202,7 +202,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
 	  rain = 0;
 	}
       master->setTemperature (rtOutsideTemp);
-      master->setRain (rain);
+      master->setRainWeather (rain);
       master->setHumidity (rtOutsideHum);
       master->setWindSpeed (windspeed);
       if (!isnan (cloud))
