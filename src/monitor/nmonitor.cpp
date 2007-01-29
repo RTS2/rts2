@@ -1,4 +1,8 @@
-#include <curses.h>
+extern "C"
+{
+#include <cdk/cdk.h>
+};
+
 #include <libnova/libnova.h>
 #include <getopt.h>
 #include <panel.h>
@@ -6,9 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <pthread.h>
-#include <limits.h>
 
 #include <iostream>
 #include <fstream>
@@ -19,6 +20,10 @@
 
 #include "../writers/rts2image.h"
 #include "../writers/rts2devcliimg.h"
+
+#ifdef HAVE_XCURSES
+char *XCursesProgramName = "rts2-mon";
+#endif
 
 #define LINE_SIZE	13
 #define COL_SIZE	25
@@ -39,57 +44,17 @@
 
 class Rts2CNMonConn:public Rts2ConnClient
 {
-private:
-  PANEL * panel;
-protected:
-  virtual void print ();
-
 public:
-    Rts2CNMonConn (Rts2Block * in_master,
-		   char *in_name):Rts2ConnClient (in_master, in_name)
+  Rts2CNMonConn (Rts2Block * in_master,
+		 char *in_name):Rts2ConnClient (in_master, in_name)
   {
-    panel = NULL;
   }
   virtual ~ Rts2CNMonConn (void)
   {
-    if (hasPanel ())
-      {
-	del_panel (panel);
-	update_panels ();
-      }
-  }
-
-  WINDOW *getWindow ()
-  {
-    return panel_window (panel);
-  }
-
-  virtual void postEvent (Rts2Event * event)
-  {
-    switch (event->getType ())
-      {
-      case EVENT_PRINT:
-	event->setArg ((void *) panel);
-	break;
-      }
-    Rts2ConnClient::postEvent (event);
-  }
-
-  bool hasPanel ()
-  {
-    return panel != NULL;
-  }
-
-  void setPanel (PANEL * in_panel)
-  {
-    if (hasPanel ())
-      del_panel (panel);
-    panel = in_panel;
   }
 
   virtual int commandReturn (Rts2Command * cmd, int in_status)
   {
-    print ();
     update_panels ();
     return 0;
   }
@@ -99,7 +64,6 @@ public:
     // for immediate updates of values..
     int ret;
     ret = Rts2ConnClient::command ();
-    print ();
     update_panels ();
     return ret;
   }
@@ -108,7 +72,6 @@ public:
   {
     int ret;
     ret = Rts2ConnClient::setState (in_value);
-    print ();
     update_panels ();
     return ret;
   }
@@ -116,23 +79,26 @@ public:
   virtual void priorityChanged ()
   {
     Rts2ConnClient::priorityChanged ();
-    print ();
     update_panels ();
   }
 };
 
-class MonWindow
+class MonWindow:public Rts2DevClient
 {
 private:
   int printFormat;
   int statusBegin;
 protected:
-  int printStatus (WINDOW * window, Rts2Conn * connection);
+  int printStatus (WINDOW * window, Rts2Conn * in_connection);
 
-  virtual void print (WINDOW * wnd) = 0;
-  virtual void printOneLine (WINDOW * wnd) = 0;
+  virtual void print (WINDOW * wnd)
+  {
+  }
+  virtual void printOneLine (WINDOW * wnd)
+  {
+  }
 public:
-    MonWindow ()
+MonWindow (Rts2Conn * in_connection):Rts2DevClient (in_connection)
   {
     printFormat = EVENT_PRINT_FULL;
     statusBegin = 1;
@@ -148,12 +114,12 @@ public:
 };
 
 int
-MonWindow::printStatus (WINDOW * window, Rts2Conn * connection)
+MonWindow::printStatus (WINDOW * window, Rts2Conn * in_connection)
 {
-  Rts2ServerState *state = connection->getStateObject ();
+  Rts2ServerState *state = in_connection->getStateObject ();
   mvwprintw (window, statusBegin, 0, "Status: %-5i", state->getValue ());
   mvwprintw (window, statusBegin + 1, 0, "Priority: %s",
-	     connection->havePriority ()? "yes" : "no");
+	     in_connection->havePriority ()? "yes" : "no");
   return 0;
 }
 
@@ -206,757 +172,6 @@ MonWindow::printTimeDiff (WINDOW * window, int row, char *text, double diff)
   mvwprintw (window, row, 1, "%s:%s", text, time_buf);
 }
 
-class Rts2NMTelescope:public Rts2DevClientTelescopeImage, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMTelescope (Rts2CNMonConn *
-		     in_connection):Rts2DevClientTelescopeImage
-    (in_connection)
-  {
-    setStatusBegin (9);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientTelescopeImage::postEvent (event);
-  }
-};
-
-void
-Rts2NMTelescope::print (WINDOW * wnd)
-{
-  struct ln_hrz_posn altaz;
-  struct ln_hms hms;
-  double lst;
-
-  struct ln_equ_posn tar, tel;
-  struct ln_lnlat_posn obs;
-
-  getEquTar (&tar);
-  getEquTel (&tel);
-  getAltAz (&altaz);
-  getObs (&obs);
-
-  lst = getLocalSiderealDeg ();
-
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("MNT_TYPE"));
-  mvwprintw (wnd, 2, 1, "R+D/f: %07.3f%+06.3f/%c",
-	     tar.ra, tar.dec, getValueInteger ("MNT_FLIP") ? 'f' : 'n');
-  if (getValueInteger ("know_position"))
-    mvwprintw (wnd, 3, 1, "Err: %.2f %.2f", getValueDouble ("RA_CORR") * 60.0,
-	       getValueDouble ("DEC_CORR") * 60.0);
-  else
-    mvwprintw (wnd, 3, 1, "R+D/f: %07.3f%+06.3f/%c",
-	       tel.ra, tel.dec, getValueInteger ("MNT_FLIP") ? 'f' : 'n');
-  mvwprintw (wnd, 4, 1, "Az/Al/D: %03.0f %+02.0f %s", altaz.az, altaz.alt,
-	     ln_hrz_to_nswe (&altaz));
-
-  mvwprintw (wnd, 5, 1, "x/y: %.0f %.0f", getValueDouble ("MNT_AX0"),
-	     getValueDouble ("MNT_AX1"));
-  mvwprintw (wnd, 6, 1, "Lon/Lat: %+03.3f %+03.3f",
-	     getValueDouble ("LONG"), getValueDouble ("LAT"));
-
-  ln_rad_to_hms (ln_deg_to_rad (lst), &hms);
-  mvwprintw (wnd, 7, 1, "Lsid: %07.3f (%02i:%02i:%02.1f)",
-	     getValueDouble ("siderealtime"), hms.hours, hms.minutes,
-	     hms.seconds);
-
-  mvwprintw (wnd, 8, 1, "Corr: %i Exec: %i",
-	     getValueInteger ("MNT_MARK"), getValueInteger ("num_corr"));
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMTelescope::printOneLine (WINDOW * wnd)
-{
-  struct ln_hrz_posn hrz;
-  getAltAz (&hrz);
-  mvwprintw (wnd, 0, 0,
-	     "Ra %07.3f Dec %+06.3f Flip %c Alt %f Az %f Status %i",
-	     getValueDouble ("ra_tel"), getValueDouble ("dec_tel"),
-	     getValueInteger ("flip") ? 'f' : 'n', hrz.alt, hrz.az,
-	     getStatus ());
-}
-
-class Rts2NMCamera:public Rts2DevClientCamera, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMCamera (Rts2CNMonConn *
-		  in_connection):Rts2DevClientCamera (in_connection)
-  {
-    setStatusBegin (8);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientCamera::postEvent (event);
-  }
-};
-
-void
-Rts2NMCamera::print (WINDOW * wnd)
-{
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("CCD_TYPE"));
-  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("CCD_SER"));
-  mvwprintw (wnd, 3, 1, "Exp: %.2f %i Gain: %.2f",
-	     getValueDouble ("exposure"), getValueInteger ("shutter"),
-	     getValueDouble ("GAIN"));
-/*  if (info->chip_info)
-    mvwprintw (wnd, 3, 1, "Siz: [%ix%i]", info->chip_info[0].width,
-	       info->chip_info[0].height);
-  else
-    mvwprintw (wnd, 3, 1, "Siz: Unknow"); */
-  mvwprintw (wnd, 4, 1, "S/A: %+05.1f %+05.1f oC",
-	     getValueDouble ("CCD_SET"), getValueDouble ("CCD_AIR"));
-  mvwprintw (wnd, 5, 1, "CCD: %+05.1f oC", getValueDouble ("CCD_TEMP"));
-  mvwprintw (wnd, 6, 1, "CPo: %03.0f Foc: %i",
-	     getValueDouble ("CCD_PWR") / 10.0, getValueInteger ("focpos"));
-  mvwprintw (wnd, 7, 1, "Fan: %s Fil: %i",
-	     getValueDouble ("CCD_FAN") ? "on " : "off",
-	     getValueInteger ("filter"));
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMCamera::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0,
-	     "Exp: %.2f CCD %+05.1f oC Air %+05.1f oC Set %+05.1f Status ",
-	     getValueDouble ("exposure"), getValueDouble ("ccd_temperature"),
-	     getValueDouble ("air_temperature"),
-	     getValueDouble ("temperature_setpoint"), getStatus ());
-}
-
-class Rts2NMFocus:public Rts2DevClientFocus, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMFocus (Rts2CNMonConn *
-		 in_connection):Rts2DevClientFocus (in_connection)
-  {
-    setStatusBegin (5);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientFocus::postEvent (event);
-  }
-};
-
-void
-Rts2NMFocus::print (WINDOW * wnd)
-{
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("FOC_TYPE"));
-  mvwprintw (wnd, 2, 1, "Temp: %+05.1f oC", getValueDouble ("FOC_TEMP"));
-  mvwprintw (wnd, 3, 1, "Pos: %+i", getValueInteger ("FOC_POS"));
-  int switch_num = getValueInteger ("switch_num");
-  if (switch_num > 0)
-    {
-      int switches = getValueInteger ("switches");
-      mvwprintw (wnd, 4, 1, "Switch: ");
-      for (int i = 0; i < switch_num; i++)
-	{
-	  mvwprintw (wnd, 4, 9 + i, (switches & (1 << i) ? "O" : "f"));
-	}
-    }
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMFocus::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Pos %+i Temp %+05.1f oC", getValueInteger ("pos"),
-	     getValueDouble ("temp"));
-}
-
-class Rts2NMPhot:public Rts2DevClientPhot, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMPhot (Rts2CNMonConn *
-		in_connection):Rts2DevClientPhot (in_connection)
-  {
-    setStatusBegin (5);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientPhot::postEvent (event);
-  }
-};
-
-void
-Rts2NMPhot::print (WINDOW * wnd)
-{
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
-  mvwprintw (wnd, 3, 1, "fil: %i", getValueInteger ("filter"));
-  mvwprintw (wnd, 4, 1, "cnt: %i (%0.3f)", lastCount, lastExp);
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMPhot::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Cnt %i (%0.3f) Fil %i Status %i",
-	     lastCount, lastExp, getValueInteger ("filter"), getStatus ());
-}
-
-class Rts2NMFilter:public Rts2DevClientFilter, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMFilter (Rts2CNMonConn *
-		  in_connection):Rts2DevClientFilter (in_connection)
-  {
-    setStatusBegin (4);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientFilter::postEvent (event);
-  }
-};
-
-void
-Rts2NMFilter::print (WINDOW * wnd)
-{
-  mvwprintw (wnd, 1, 1, "Typ: %-10s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Ser: %-10s", getValueChar ("serial"));
-  mvwprintw (wnd, 3, 1, "fil: %i", getValueInteger ("filter"));
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMFilter::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Fil %i Status %i",
-	     getValueInteger ("filter"), getStatus ());
-}
-
-class Rts2NMMirror:public Rts2DevClientMirror, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMMirror (Rts2CNMonConn *
-		  in_connection):Rts2DevClientMirror (in_connection)
-  {
-    setStatusBegin (1);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientMirror::postEvent (event);
-  }
-};
-
-void
-Rts2NMMirror::print (WINDOW * wnd)
-{
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMMirror::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Status %i", getStatus ());
-}
-
-
-class Rts2NMAuger:public Rts2DevClientAugerShooter, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMAuger (Rts2CNMonConn *
-		 in_connection):Rts2DevClientAugerShooter (in_connection)
-  {
-    setStatusBegin (2);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientAugerShooter::postEvent (event);
-  }
-};
-
-void
-Rts2NMAuger::print (WINDOW * wnd)
-{
-  mvwprintw (wnd, 1, 1, "Last packet: %i", getValueInteger ("last_packet"));
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMAuger::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Last packet: %i", getValueInteger ("last_packet"));
-}
-
-class Rts2NMDome:public Rts2DevClientDome, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMDome (Rts2CNMonConn *
-		in_connection):Rts2DevClientDome (in_connection)
-  {
-    setStatusBegin (9);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientDome::postEvent (event);
-  }
-};
-
-void
-Rts2NMDome::print (WINDOW * wnd)
-{
-  int dome = getValueInteger ("dome");
-  time_t now;
-  long time_to_open;
-  double temp;
-  double humi;
-  double vapor;
-  double dew;
-  char *ignoreString;
-  time (&now);
-  time_to_open = getValueInteger ("next_open") - now;
-
-  temp = getValueDouble ("DOME_TMP");
-  humi = getValueDouble ("DOME_HUM");
-
-  if (isnan (temp) || isnan (humi))
-    {
-      vapor = nan ("f");
-      dew = nan ("f");
-    }
-  else
-    {
-      vapor = (humi / 100) * 0.611 * exp (17.27 * temp / (temp + 237.3));
-      dew =
-	ceil (10 * ((116.9 + 237.3 * log (vapor)) / (16.78 - log (vapor)))) /
-	10;
-    }
-
-  mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("dome_model"));
-  mvwprintw (wnd, 2, 1, "Tem: %+4.1f oC Vap: %4.1f", temp, vapor);
-  mvwprintw (wnd, 3, 1, "Hum: %3.0f dew: %+4.1f", humi, dew);
-  mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i Cl: %2.1f",
-	     getValueDouble ("WINDSPED"), getValueInteger ("RAIN"),
-	     getValueDouble ("CLOUD_S"));
-  printTimeDiff (wnd, 5, "NextO", time_to_open);
-#define is_on(num)	((dome & (1 << num))? 'O' : 'f')
-  mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
-  mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
-  switch (getValueInteger ("ignoreMeteo"))
-    {
-    case 2:
-      ignoreString = "METEO OVERRIDE";
-      if (has_colors ())
-	wcolor_set (wnd, CLR_WARNING, NULL);
-      else
-	wstandout (wnd);
-      break;
-    case 1:
-      if (has_colors ())
-	wcolor_set (wnd, CLR_OK, NULL);
-      else
-	wstandout (wnd);
-      ignoreString = "meteo active";
-      break;
-    default:
-      if (has_colors ())
-	wcolor_set (wnd, CLR_WARNING, NULL);
-      else
-	wstandout (wnd);
-      ignoreString = "ignore unknow";
-      break;
-    }
-  mvwprintw (wnd, 8, 1, "%s", ignoreString);
-
-  if (has_colors ())
-    wcolor_set (wnd, CLR_TEXT, NULL);
-  else
-    wstandend (wnd);
-
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMDome::printOneLine (WINDOW * wnd)
-{
-  int dome = getValueInteger ("dome");
-  time_t now;
-  long time_to_open;
-  double temp;
-  double humi;
-  double vapor;
-  double dew;
-  time (&now);
-  time_to_open = getValueInteger ("next_open") - now;
-
-  temp = getValueDouble ("temperature");
-  humi = getValueDouble ("humidity");
-
-  if (isnan (temp) || isnan (humi))
-    {
-      vapor = nan ("f");
-      dew = nan ("f");
-    }
-  else
-    {
-      vapor = (humi / 100) * 0.611 * exp (17.27 * temp / (temp + 237.3));
-      dew =
-	ceil (10 * ((116.9 + 237.3 * log (vapor)) / (16.78 - log (vapor)))) /
-	10;
-    }
-
-  mvwprintw (wnd, 0, 0,
-	     "Temp %+2.2f oC Humi %2.2f Dew %+2.2f oC Wind %4.1f Rain %i Open sw %c %c Close sw %c %c Status %i",
-	     temp, humi, dew, getValueDouble ("windspeed"),
-	     getValueInteger ("rain"), is_on (0), is_on (1), is_on (2),
-	     is_on (3), getStatus ());
-#undef is_on
-}
-
-class Rts2NMCupola:public Rts2DevClientCupola, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMCupola (Rts2CNMonConn * in_connection):Rts2DevClientCupola
-    (in_connection)
-  {
-    setStatusBegin (9);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientCupola::postEvent (event);
-  }
-};
-
-void
-Rts2NMCupola::print (WINDOW * wnd)
-{
-  int dome = getValueInteger ("dome");
-  time_t now;
-  long time_to_open;
-  time (&now);
-  time_to_open = getValueInteger ("next_open") - now;
-  mvwprintw (wnd, 1, 1, "Mod: %s", getValueChar ("type"));
-  mvwprintw (wnd, 2, 1, "Tem: %+4.1f oC", getValueDouble ("temperature"));
-  mvwprintw (wnd, 3, 1, "Hum: %3.0f %", getValueDouble ("humidity"));
-  mvwprintw (wnd, 4, 1, "Wind: %4.1f rain:%i", getValueDouble ("windspeed"),
-	     getValueInteger ("rain"));
-  printTimeDiff (wnd, 5, "NextO", time_to_open);
-#define is_on(num)	((dome & (1 << num))? 'O' : 'f')
-  mvwprintw (wnd, 6, 1, "Open sw: %c %c", is_on (0), is_on (1));
-  mvwprintw (wnd, 7, 1, "Close s: %c %c", is_on (2), is_on (3));
-  mvwprintw (wnd, 8, 1, "Az: %06.2f", getValueDouble ("CUP_AZ"));
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMCupola::printOneLine (WINDOW * wnd)
-{
-  int dome = getValueInteger ("dome");
-  time_t now;
-  long time_to_open;
-  double temp;
-  double humi;
-  double vapor;
-  double dew;
-  time (&now);
-  time_to_open = getValueInteger ("next_open") - now;
-
-  temp = getValueDouble ("temperature");
-  humi = getValueDouble ("humidity");
-
-  if (isnan (temp) || isnan (humi))
-    {
-      vapor = nan ("f");
-      dew = nan ("f");
-    }
-  else
-    {
-      vapor = (humi / 100) * 0.611 * exp (17.27 * temp / (temp + 237.3));
-      dew =
-	ceil (10 * ((116.9 + 237.3 * log (vapor)) / (16.78 - log (vapor)))) /
-	10;
-    }
-
-  mvwprintw (wnd, 0, 0,
-	     "Az %06.2f Temp %+2.2f oC Humi %2.2f Dew %+2.2f oC Wind %4.1f Rain %i Open sw %c %c Close sw %c %c Status %i",
-	     getValueDouble ("az"), temp, humi, dew,
-	     getValueDouble ("windspeed"), getValueInteger ("rain"),
-	     is_on (0), is_on (1), is_on (2), is_on (3), getStatus ());
-#undef is_on
-}
-
-class Rts2NMExecutor:public Rts2DevClientExecutor, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMExecutor (Rts2CNMonConn * in_connection):Rts2DevClientExecutor
-    (in_connection)
-  {
-    setStatusBegin (8);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientExecutor::postEvent (event);
-  }
-};
-
-void
-Rts2NMExecutor::print (WINDOW * wnd)
-{
-  mvwprintw (wnd, 1, 1, "Curr: %i (%i)", getValueInteger ("current"),
-	     getValueInteger ("current_sel"));
-  mvwprintw (wnd, 2, 1, "Next: %i", getValueInteger ("next"));
-  mvwprintw (wnd, 3, 1, "Prio: %i", getValueInteger ("priority_target"));
-  mvwprintw (wnd, 4, 1, "ObsI: %i", getValueInteger ("obsid"));
-  mvwprintw (wnd, 5, 1, "ScCo: %i", getValueInteger ("script_count"));
-  mvwprintw (wnd, 6, 1, "Acq OK: %i", getValueInteger ("acqusition_ok"));
-  mvwprintw (wnd, 7, 1, "Acq Fa: %i", getValueInteger ("acqusition_failed"));
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMExecutor::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Cur %i (%i) Next %i Prio %i ObsI %i Status %i",
-	     getValueInteger ("current"), getValueInteger ("current_sel"),
-	     getValueInteger ("next"), getValueInteger ("priority_target"),
-	     getValueInteger ("obsid"), getStatus ());
-}
-
-class Rts2NMSelector:public Rts2DevClientSelector, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMSelector (Rts2CNMonConn * in_connection):Rts2DevClientSelector
-    (in_connection)
-  {
-    setStatusBegin (1);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientSelector::postEvent (event);
-  }
-};
-
-void
-Rts2NMSelector::print (WINDOW * wnd)
-{
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMSelector::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Status %i", getStatus ());
-}
-
-class Rts2NMImgproc:public Rts2DevClientImgproc, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMImgproc (Rts2CNMonConn * in_connection):Rts2DevClientImgproc
-    (in_connection)
-  {
-    setStatusBegin (5);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientImgproc::postEvent (event);
-  }
-};
-
-void
-Rts2NMImgproc::print (WINDOW * wnd)
-{
-  mvwprintw (wnd, 1, 1, "Que : %-5i", getValueInteger ("que_size"));
-  mvwprintw (wnd, 2, 1, "Good: %i", getValueInteger ("good_images"));
-  mvwprintw (wnd, 3, 1, "Trash: %i", getValueInteger ("trash_images"));
-  mvwprintw (wnd, 4, 1, "Morn: %i", getValueInteger ("morning_images"));
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMImgproc::printOneLine (WINDOW * wnd)
-{
-  mvwprintw (wnd, 0, 0, "Que %i Good %i Trash %i Morn %i",
-	     getValueInteger ("que_size"), getValueInteger ("good_images"),
-	     getValueInteger ("trash_images"),
-	     getValueInteger ("morning_images"));
-}
-
-class Rts2NMGrb:public Rts2DevClientGrb, public MonWindow
-{
-protected:
-  virtual void print (WINDOW * wnd);
-  virtual void printOneLine (WINDOW * wnd);
-public:
-    Rts2NMGrb (Rts2CNMonConn * in_connection):Rts2DevClientGrb (in_connection)
-  {
-    setStatusBegin (6);
-  }
-  virtual void postEvent (Rts2Event * event)
-  {
-    MonWindow::postEvent (event);
-    Rts2DevClientGrb::postEvent (event);
-  }
-};
-
-void
-Rts2NMGrb::print (WINDOW * wnd)
-{
-  time_t now;
-  time (&now);
-  long last_pack = (int) getValueDouble ("last_packet") - now;
-  printTimeDiff (wnd, 1, "L Pac", last_pack);
-  mvwprintw (wnd, 2, 1, "Delta: %-5i", getValueDouble ("delta"));
-  mvwprintw (wnd, 3, 1, "L Tar: %5", getValueChar ("last_target"));
-  mvwprintw (wnd, 4, 1, "LTime: %5f", getValueDouble ("last_target_time"));
-  mvwprintw (wnd, 5, 1, "Exec_link: %s",
-	     getValueInteger ("exec") ? "OK" : "failed");
-
-  printStatus (wnd, connection);
-}
-
-void
-Rts2NMGrb::printOneLine (WINDOW * wnd)
-{
-  time_t now;
-  time (&now);
-  long last_pack = (int) getValueDouble ("last_packet") - now;
-  printTimeDiff (wnd, 0, "L Pac", last_pack);
-}
-
-// here begins nmonitor common part
-
-void
-Rts2CNMonConn::print ()
-{
-  WINDOW *window = getWindow ();
-  if (has_colors ())
-    wcolor_set (window, CLR_OK, NULL);
-  else
-    wstandout (window);
-
-  werase (window);
-  mvwprintw (window, 0, 0, "== %-10s ==", getName ());
-
-  if (has_colors ())
-    wcolor_set (window, CLR_TEXT, NULL);
-  else
-    wstandend (window);
-
-  if (!otherDevice)
-    {
-      mvwprintw (window, 1, 0, "  UNKNOW DEV");
-    }
-  else
-    {
-      // print values
-      otherDevice->postEvent (new Rts2Event (EVENT_PRINT, (void *) panel));
-    }
-}
-
-/*******************************************************
- *
- * This class represent window with messages.
- * 
- ******************************************************/
-
-class MessageWindow:public Rts2Object
-{
-private:
-  PANEL * panel;
-public:
-
-  MessageWindow ()
-  {
-    WINDOW *wnd = newwin (LINES - 2, COLS - 2, 1, 1);
-      panel = new_panel (wnd);
-      scrollok (wnd, true);
-      hide_panel (panel);
-  }
-
-  virtual ~ MessageWindow (void)
-  {
-    del_panel (panel);
-  }
-
-  virtual void postEvent (Rts2Event * event);
-  virtual void message (Rts2Message & msg);
-};
-
-void
-MessageWindow::postEvent (Rts2Event * event)
-{
-  switch (event->getType ())
-    {
-    case EVENT_PRINT_MESSAGES:
-      show_panel (panel);
-      break;
-    case EVENT_PRINT_SHORT:
-    case EVENT_PRINT_FULL:
-      hide_panel (panel);
-      break;
-    }
-  Rts2Object::postEvent (event);
-}
-
-void
-MessageWindow::message (Rts2Message & msg)
-{
-  WINDOW *wnd = panel_window (panel);
-  waddstr (wnd, msg.toString ().c_str ());
-  waddstr (wnd, "\n");
-  update_panels ();
-}
-
 /*******************************************************
  *
  * This class hold "root" window of display,
@@ -969,9 +184,12 @@ class Rts2NMonitor:public Rts2Client
 private:
   WINDOW * statusWindow;
   WINDOW *commandWindow;
+  CDKSCREEN *cdkscreen;
+  CDKALPHALIST *deviceList;
+  CDKALPHALIST *valueList;
+  void *activeEntry;
+  CDKSWINDOW *msgwindow;
     std::vector < Rts2CNMonConn * >clientConnections;
-  int connCols;
-  int connLines;
   int cmd_col;
   char cmd_buf[CMD_BUF_LEN];
 
@@ -984,8 +202,6 @@ private:
 
   int messageBox (char *message);
 
-  MessageWindow *messageWindow;
-
   void refreshCommandWindow ()
   {
     mvwprintw (commandWindow, 0, 0, "%-*s", COLS, cmd_buf);
@@ -994,6 +210,9 @@ private:
   }
 
   int printType;
+
+  void drawValuesList ();
+  void drawValuesList (Rts2DevClient * client);
 
 protected:
   virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
@@ -1004,6 +223,10 @@ protected:
     return conn;
   }
 
+  virtual void addSelectSocks (fd_set * read_set);
+  virtual void selectSuccess (fd_set * read_set);
+
+  virtual int addAddress (Rts2Address * in_addr);
 public:
   Rts2NMonitor (int argc, char **argv);
   virtual ~ Rts2NMonitor (void);
@@ -1019,12 +242,8 @@ public:
 					  int other_device_type);
 
   virtual int willConnect (Rts2Address * in_addr);
-  virtual int addAddress (Rts2Address * in_addr);
 
-  virtual void message (Rts2Message & msg)
-  {
-    messageWindow->message (msg);
-  }
+  virtual void message (Rts2Message & msg);
 
   int resize ();
 
@@ -1058,27 +277,6 @@ Rts2NMonitor::executeCommand ()
 void
 Rts2NMonitor::relocatesWindows ()
 {
-  int win_num;
-  WINDOW *connWin;
-  PANEL *connPanel;
-  std::vector < Rts2CNMonConn * >::iterator conn_iter;
-  Rts2CNMonConn *conn;
-  win_num = clientConnections.size ();
-
-  // allocate window for our connection
-  for (conn_iter = clientConnections.begin ();
-       conn_iter != clientConnections.end (); conn_iter++)
-    {
-      conn = (*conn_iter);
-      if (!conn->hasPanel ())
-	{
-	  connWin =
-	    newwin (LINES / 4, COLS / 4, 1 + LINES / 4 * ((win_num - 1) / 4),
-		    COLS / 4 * ((win_num - 1) % 4));
-	  connPanel = new_panel (connWin);
-	  conn->setPanel (connPanel);
-	}
-    }
   update_panels ();
 }
 
@@ -1089,25 +287,114 @@ Rts2NMonitor::processConnection (Rts2CNMonConn * conn)
   relocatesWindows ();
 }
 
+void
+Rts2NMonitor::drawValuesList ()
+{
+  Rts2Conn *conn = getConnection (deviceList->entryField->info);
+  if (conn)
+    {
+      Rts2DevClient *client = conn->getOtherDevClient ();
+      if (client)
+	drawValuesList (client);
+    }
+}
+
+void
+Rts2NMonitor::drawValuesList (Rts2DevClient * client)
+{
+  int i = 0;
+  char *new_list[client->valueSize ()];
+  for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
+       iter != client->valueEnd (); iter++, i++)
+    {
+      Rts2Value *val = *iter;
+      asprintf (&new_list[i], "%-20s|%30s", val->getName ().c_str (),
+		val->getValue ());
+    }
+  setCDKAlphalistContents (valueList, (char **) new_list,
+			   client->valueSize ());
+  for (i = 0; i < client->valueSize (); i++)
+    {
+      free (new_list[i]);
+    }
+}
+
+void
+Rts2NMonitor::addSelectSocks (fd_set * read_set)
+{
+  // add stdin for ncurses input
+  FD_SET (1, read_set);
+  Rts2Client::addSelectSocks (read_set);
+}
+
+void
+Rts2NMonitor::selectSuccess (fd_set * read_set)
+{
+  Rts2Client::selectSuccess (read_set);
+  if (FD_ISSET (1, read_set))
+    {
+      chtype input = getch ();
+      switch (input)
+	{
+	case KEY_STAB:
+	case '\t':
+	  if (activeEntry == deviceList->entryField)
+	    activeEntry = valueList->entryField;
+	  else if (activeEntry == valueList->entryField)
+	    activeEntry = msgwindow;
+	  else
+	    activeEntry = deviceList->entryField;
+	  break;
+	default:
+	  if (activeEntry == msgwindow)
+	    injectCDKSwindow (msgwindow, input);
+	  else
+	    injectCDKEntry ((CDKENTRY *) activeEntry, input);
+	}
+      // draw device values
+      if (activeEntry == deviceList->entryField
+	  && deviceList->entryField->info)
+	{
+	  drawValuesList ();
+	}
+    }
+}
+
+int
+Rts2NMonitor::addAddress (Rts2Address * in_addr)
+{
+  int i = 0;
+  int ret;
+  ret = Rts2Client::addAddress (in_addr);
+  if (ret)
+    return ret;
+  const char *new_list[connectionSize ()];
+  for (std::list < Rts2Conn * >::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++, i++)
+    {
+      Rts2Conn *conn = *iter;
+      new_list[i] = conn->getName ();
+    }
+  setCDKAlphalistContents (deviceList, (char **) new_list, connectionSize ());
+  return 0;
+}
+
 Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):
 Rts2Client (in_argc, in_argv)
 {
   statusWindow = NULL;
   commandWindow = NULL;
-  connCols = -1;
-  connLines = 0;
+  cdkscreen = NULL;
+  deviceList = NULL;
+  valueList = NULL;
+  msgwindow = NULL;
   cmd_col = 0;
   printType = EVENT_PRINT_FULL;
 }
 
 Rts2NMonitor::~Rts2NMonitor (void)
 {
-  if (connCols >= 0)
-    {
-      delwin (statusWindow);
-      delwin (commandWindow);
-    }
-  delete messageWindow;
+  endCDK ();
 }
 
 int
@@ -1137,12 +424,13 @@ Rts2NMonitor::repaint ()
 
   wcolor_set (statusWindow, CLR_STATUS, NULL);
 
-  mvwprintw (statusWindow, 0, 0, "** Status: %s ** ",
-	     getMasterStateString ().c_str ());
+  mvwprintw (statusWindow, 0, 0, "** Status: %s ** %i ",
+	     getMasterStateString ().c_str (),
+	     deviceList->scrollField->currentItem);
   wcolor_set (statusWindow, CLR_TEXT, NULL);
   strftime (dateBuf, 40, "%Y-%m-%dT%H:%M:%S", gmtime (&now));
   mvwprintw (statusWindow, 0, COLS - 40, "%40s", dateBuf);
-  refresh ();
+//  refresh ();
   wrefresh (statusWindow);
   wrefresh (commandWindow);
   return 0;
@@ -1152,25 +440,44 @@ int
 Rts2NMonitor::init ()
 {
   int ret;
+  WINDOW *cursesWin;
   ret = Rts2Client::init ();
   if (ret)
     return ret;
 
-  if (!initscr ())
+  cursesWin = initscr ();
+  if (!cursesWin)
     {
       std::cerr << "ncurses not supported (initscr call failed)!" << std::
 	endl;
       return -1;
     }
+  sighandler_t oldCore = signal (SIGSEGV, SIG_IGN);
+  cdkscreen = initCDKScreen (cursesWin);
+  signal (SIGSEGV, oldCore);
 
-  connCols = COLS / COL_SIZE;
-  connLines = (LINES - 2) / LINE_SIZE;
+  initCDKColor ();
+
+  deviceList =
+    newCDKAlphalist (cdkscreen, 0, 0, LINES - 21, 20, "<C></B/24>Device list",
+		     NULL, NULL, 0, '_', A_REVERSE, TRUE, FALSE);
+
+  valueList =
+    newCDKAlphalist (cdkscreen, 20, 0, LINES - 21, COLS - 20,
+		     "<C></B/24>Value list", NULL, NULL, 0, '_', A_REVERSE,
+		     TRUE, FALSE);
+
+  msgwindow =
+    newCDKSwindow (cdkscreen, 0, LINES - 18, 18, COLS, "Messages", 1000, TRUE,
+		   FALSE);
+
+  drawCDKSwindow (msgwindow, msgwindow->box);
+
+  activeEntry = deviceList->entryField;
 
   cbreak ();
   keypad (stdscr, TRUE);
   noecho ();
-
-  start_color ();
 
   if (has_colors ())
     {
@@ -1185,7 +492,8 @@ Rts2NMonitor::init ()
   setMessageMask (MESSAGE_MASK_ALL);
   paintWindows ();
 
-  messageWindow = new MessageWindow ();
+  drawCDKAlphalist (deviceList, TRUE);
+  drawCDKAlphalist (valueList, TRUE);
 
   return repaint ();
 }
@@ -1209,7 +517,6 @@ Rts2NMonitor::postEvent (Rts2Event * event)
       printType = event->getType ();
       break;
     }
-  messageWindow->postEvent (new Rts2Event (event));
   Rts2Client::postEvent (event);
   // ::postEvent deletes event
 }
@@ -1238,50 +545,37 @@ Rts2NMonitor::deleteConnection (Rts2Conn * conn)
 Rts2DevClient *
 Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-  switch (other_device_type)
+  return new MonWindow (conn);
+}
+
+void
+Rts2NMonitor::message (Rts2Message & msg)
+{
+  char *buf;
+  char *fmt;
+  switch (msg.getType ())
     {
-    case DEVICE_TYPE_MOUNT:
-      return new Rts2NMTelescope ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_CCD:
-      return new Rts2NMCamera ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_FOCUS:
-      return new Rts2NMFocus ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_PHOT:
-      return new Rts2NMPhot ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_FW:
-      return new Rts2NMFilter ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_MIRROR:
-      return new Rts2NMMirror ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_AUGERSH:
-      return new Rts2NMAuger ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_DOME:
-      return new Rts2NMDome ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_COPULA:
-      return new Rts2NMCupola ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_EXECUTOR:
-      return new Rts2NMExecutor ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_SELECTOR:
-      return new Rts2NMSelector ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_IMGPROC:
-      return new Rts2NMImgproc ((Rts2CNMonConn *) conn);
-    case DEVICE_TYPE_GRB:
-      return new Rts2NMGrb ((Rts2CNMonConn *) conn);
-    default:
-      return Rts2Client::createOtherType (conn, other_device_type);
+    case MESSAGE_ERROR:
+      fmt = "<L></6></B>";
+      break;
+    case MESSAGE_WARNING:
+      fmt = "<L></5>";
+      break;
+    case MESSAGE_INFO:
+      fmt = "<L></4>";
+      break;
+    case MESSAGE_DEBUG:
+      fmt = "<L></3>";
+      break;
     }
+  asprintf (&buf, "%s%s", fmt, msg.toString ().c_str ());
+  addCDKSwindow (msgwindow, buf, BOTTOM);
+  free (buf);
 }
 
 int
 Rts2NMonitor::resize ()
 {
-  std::vector < Rts2CNMonConn * >::iterator conn_iter;
-  Rts2CNMonConn *conn;
-  for (conn_iter = clientConnections.begin ();
-       conn_iter != clientConnections.end (); conn_iter++)
-    {
-      conn = (*conn_iter);
-      conn->setPanel (NULL);
-    }
   erase ();
   endwin ();
   initscr ();
@@ -1372,15 +666,6 @@ Rts2NMonitor::willConnect (Rts2Address * in_addr)
 }
 
 int
-Rts2NMonitor::addAddress (Rts2Address * in_addr)
-{
-  int ret;
-  ret = Rts2Client::addAddress (in_addr);
-  repaint ();
-  return ret;
-}
-
-int
 Rts2NMonitor::messageBox (char *msg)
 {
   int key = 0;
@@ -1413,23 +698,10 @@ sigWinch (int sig)
   monitor->resize ();
 }
 
-void *
-inputThread (void *arg)
-{
-  int key;
-  while (1)
-    {
-      key = getch ();
-      monitor->processKey (key);
-    }
-}
-
 int
 main (int argc, char **argv)
 {
   int ret;
-  pthread_t keyThread;
-  pthread_attr_t keyThreadAttr;
 
   monitor = new Rts2NMonitor (argc, argv);
 
@@ -1441,9 +713,6 @@ main (int argc, char **argv)
       delete monitor;
       exit (0);
     }
-  pthread_attr_init (&keyThreadAttr);
-  pthread_attr_setstacksize (&keyThreadAttr, PTHREAD_STACK_MIN * 6);
-  pthread_create (&keyThread, &keyThreadAttr, inputThread, NULL);
   monitor->run ();
 
   delete (monitor);
