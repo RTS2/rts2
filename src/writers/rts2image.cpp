@@ -273,7 +273,9 @@ Rts2Image::~Rts2Image (void)
   delete[]cameraName;
   delete[]mountName;
   delete[]focName;
-  delete[]imageData;
+  if (!(flags & IMAGE_DONT_DELETE_DATA))
+    delete[]imageData;
+  imageData = NULL;
   delete[]filter;
   if (sexResults)
     free (sexResults);
@@ -1283,6 +1285,13 @@ Rts2Image::getDataUShortInt ()
 		   imageData, &anyNull, &fits_status);
   fitsStatusGetValue ("image");
   return imageData;
+}
+
+void
+Rts2Image::setDataUShortInt (unsigned short *in_data)
+{
+  imageData = in_data;
+  flags |= IMAGE_DONT_DELETE_DATA;
 }
 
 int

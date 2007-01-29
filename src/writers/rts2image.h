@@ -1,9 +1,10 @@
 #ifndef __RTS2_IMAGE__
 #define __RTS2_IMAGE__
 
-#define IMAGE_SAVE	0x01
-#define IMAGE_NOT_SAVE  0x00
-#define IMAGE_KEEP_DATA 0x02
+#define IMAGE_SAVE		0x01
+#define IMAGE_NOT_SAVE  	0x00
+#define IMAGE_KEEP_DATA 	0x02
+#define IMAGE_DONT_DELETE_DATA	0x04
 
 #include <sys/time.h>
 #include <time.h>
@@ -388,6 +389,8 @@ public:
   }
 
   unsigned short *getDataUShortInt ();
+  void setDataUShortInt (unsigned short *in_data);
+
   int substractDark (Rts2Image * darkImage);
 
   int setAstroResults (double ra, double dec, double ra_err, double dec_err);
