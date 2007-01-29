@@ -369,7 +369,7 @@ Rts2NMonitor::addAddress (Rts2Address * in_addr)
   if (ret)
     return ret;
   const char *new_list[connectionSize ()];
-  for (std::list < Rts2Conn * >::iterator iter = connectionBegin ();
+  for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++, i++)
     {
       Rts2Conn *conn = *iter;
@@ -433,6 +433,7 @@ Rts2NMonitor::repaint ()
 //  refresh ();
   wrefresh (statusWindow);
   wrefresh (commandWindow);
+  drawCDKSwindow (msgwindow, TRUE);
   return 0;
 }
 
@@ -471,8 +472,6 @@ Rts2NMonitor::init ()
     newCDKSwindow (cdkscreen, 0, LINES - 18, 18, COLS, "Messages", 1000, TRUE,
 		   FALSE);
 
-  drawCDKSwindow (msgwindow, msgwindow->box);
-
   activeEntry = deviceList->entryField;
 
   cbreak ();
@@ -494,6 +493,7 @@ Rts2NMonitor::init ()
 
   drawCDKAlphalist (deviceList, TRUE);
   drawCDKAlphalist (valueList, TRUE);
+  drawCDKSwindow (msgwindow, msgwindow->box);
 
   return repaint ();
 }
