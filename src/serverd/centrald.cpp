@@ -254,9 +254,9 @@ Rts2ConnCentrald::sendInfo ()
   if (!paramEnd ())
     return -2;
 
-  std::list < Rts2Conn * >::iterator iter;
-  for (iter = master->connections.begin ();
-       iter != master->connections.end (); iter++)
+  connections_t::iterator iter;
+  for (iter = master->connectionBegin ();
+       iter != master->connectionEnd (); iter++)
     {
       Rts2Conn *conn = *iter;
       conn->sendInfo (this);
@@ -624,8 +624,8 @@ Rts2Centrald::createConnection (int in_sock)
 void
 Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 {
-  std::list < Rts2Conn * >::iterator iter;
-  for (iter = connections.begin (); iter != connections.end (); iter++)
+  connections_t::iterator iter;
+  for (iter = connectionBegin (); iter != connectionEnd (); iter++)
     {
       Rts2Conn *conn = *iter;
       added->sendInfo (conn);
@@ -635,8 +635,8 @@ Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 Rts2Conn *
 Rts2Centrald::getConnection (int conn_num)
 {
-  std::list < Rts2Conn * >::iterator iter;
-  for (iter = connections.begin (); iter != connections.end (); iter++)
+  connections_t::iterator iter;
+  for (iter = connectionBegin (); iter != connectionEnd (); iter++)
     {
       Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
       if (conn->getCentraldId () == conn_num)
@@ -668,7 +668,7 @@ Rts2Centrald::changePriority (time_t timeout)
 {
   int new_priority_client = -1;
   int new_priority_max = 0;
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   Rts2Conn *conn = getConnection (priority_client);
 
   if (priority_client >= 0 && conn)	// old priority client
@@ -677,7 +677,7 @@ Rts2Centrald::changePriority (time_t timeout)
       new_priority_max = conn->getPriority ();
     }
   // find new client with highest priority
-  for (iter = connections.begin (); iter != connections.end (); iter++)
+  for (iter = connectionBegin (); iter != connectionEnd (); iter++)
     {
       conn = *iter;
       if (conn->getPriority () > new_priority_max)
