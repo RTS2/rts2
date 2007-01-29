@@ -495,8 +495,8 @@ Rts2Daemon::infoAll ()
   ret = info ();
   if (ret)
     return -1;
-  std::list < Rts2Conn * >::iterator iter;
-  for (iter = connections.begin (); iter != connections.end (); iter++)
+  connections_t::iterator iter;
+  for (iter = connectionBegin (); iter != connectionEnd (); iter++)
     {
       Rts2Conn *conn = *iter;
       sendInfo (conn);

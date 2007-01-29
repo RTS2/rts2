@@ -33,8 +33,8 @@ Rts2App (in_argc, in_argv)
 
 Rts2Block::~Rts2Block (void)
 {
-  std::list < Rts2Conn * >::iterator iter;
-  std::list < Rts2Conn * >::iterator iter_tpm;
+  connections_t::iterator iter;
+  connections_t::iterator iter_tpm;
   for (iter = connections.begin (); iter != connections.end ();)
     {
       Rts2Conn *conn = *iter;
@@ -64,7 +64,7 @@ void
 Rts2Block::postEvent (Rts2Event * event)
 {
   // send to all connections
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -100,7 +100,7 @@ Rts2Block::addConnection (Rts2Conn * conn)
 Rts2Conn *
 Rts2Block::findName (const char *in_name)
 {
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -115,7 +115,7 @@ Rts2Block::findName (const char *in_name)
 Rts2Conn *
 Rts2Block::findCentralId (int in_id)
 {
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -128,7 +128,7 @@ Rts2Block::findCentralId (int in_id)
 int
 Rts2Block::sendAll (char *msg)
 {
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -140,7 +140,7 @@ Rts2Block::sendAll (char *msg)
 void
 Rts2Block::sendValueAll (char *val_name, char *value)
 {
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -163,7 +163,7 @@ Rts2Block::sendPriorityChange (int p_client, int timeout)
 void
 Rts2Block::sendMessageAll (Rts2Message & msg)
 {
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -193,7 +193,7 @@ Rts2Block::idle ()
     {
       childReturned (ret);
     }
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       conn = *iter;
@@ -206,7 +206,7 @@ void
 Rts2Block::addSelectSocks (fd_set * read_set)
 {
   Rts2Conn *conn;
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       conn = *iter;
@@ -220,7 +220,7 @@ Rts2Block::selectSuccess (fd_set * read_set)
   Rts2Conn *conn;
   int ret;
 
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
 
   for (iter = connections.begin (); iter != connections.end ();)
     {
@@ -236,7 +236,7 @@ Rts2Block::selectSuccess (fd_set * read_set)
 	  // delete connection only when it really requested to be deleted..
 	  if (!ret)
 	    {
-	      std::list < Rts2Conn * >::iterator del_iter = iter;
+	      connections_t::iterator del_iter = iter;
 	      iter++;
 	      connections.erase (del_iter);
 	      delete conn;
@@ -310,7 +310,7 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
   if (priConn && priConn->getHavePriority ())
     discard_priority = 0;
 
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -341,7 +341,7 @@ Rts2Block::childReturned (pid_t child_pid)
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) << "child returned: " << child_pid << sendLog;
 #endif
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -487,7 +487,7 @@ Rts2Block::addUser (Rts2User * in_user)
 Rts2Conn *
 Rts2Block::getOpenConnection (char *deviceName)
 {
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
 
   // try to find active connection..
   for (iter = connections.begin (); iter != connections.end (); iter++)
@@ -574,7 +574,7 @@ int
 Rts2Block::allQuesEmpty ()
 {
   int ret = 1;
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Conn *conn = *iter;
@@ -590,7 +590,7 @@ Rts2Block::getMinConn (const char *valueName)
 {
   int lovestValue = INT_MAX;
   Rts2Conn *minConn = NULL;
-  std::list < Rts2Conn * >::iterator iter;
+  connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       Rts2Value *que_size;

@@ -45,126 +45,186 @@ class Rts2DevClient;
 
 class Rts2LogStream;
 
-class Rts2Block:public Rts2App
+typedef
+  std::list <
+Rts2Conn * >
+  connections_t;
+
+class
+  Rts2Block:
+  public
+  Rts2App
 {
-  int port;
-  long int idle_timeout;	// in msec
-  int priority_client;
-  int end_loop;
+  int
+    port;
+  long int
+    idle_timeout;		// in msec
+  int
+    priority_client;
+  int
+    end_loop;
 
-  // program options
+  connections_t
+    connections;
 
-    std::list < Rts2Address * >blockAddress;
-    std::list < Rts2User * >blockUsers;
+  std::list <
+  Rts2Address * >
+    blockAddress;
+  std::list <
+  Rts2User * >
+    blockUsers;
 
-  int masterState;
+  int
+    masterState;
 
 protected:
 
-    virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
-  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
+  virtual
+    Rts2Conn *
+  createClientConnection (char *in_deviceName) = 0;
+  virtual Rts2Conn *
+  createClientConnection (Rts2Address * in_addr) = 0;
 
-  virtual void cancelPriorityOperations ();
+  virtual void
+  cancelPriorityOperations ();
 
-  virtual void childReturned (pid_t child_pid);
-  virtual int willConnect (Rts2Address * in_addr);	// determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
+  virtual void
+  childReturned (pid_t child_pid);
+  virtual int
+  willConnect (Rts2Address * in_addr);	// determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
 
   /***
    * Address list related functions.
    **/
-  virtual int addAddress (Rts2Address * in_addr);
-  virtual void addSelectSocks (fd_set * read_set);
-  virtual void selectSuccess (fd_set * read_set);
-  void setMessageMask (int new_mask);
+  virtual int
+  addAddress (Rts2Address * in_addr);
+  virtual void
+  addSelectSocks (fd_set * read_set);
+  virtual void
+  selectSuccess (fd_set * read_set);
+  void
+  setMessageMask (int new_mask);
 public:
-    std::list < Rts2Conn * >connections;
 
-    Rts2Block (int in_argc, char **in_argv);
-    virtual ~ Rts2Block (void);
-  void setPort (int in_port);
-  int getPort (void);
+  Rts2Block (int in_argc, char **in_argv);
+  virtual ~
+  Rts2Block (void);
+  void
+  setPort (int in_port);
+  int
+  getPort (void);
 
-  void addConnection (Rts2Conn * conn);
+  void
+  addConnection (Rts2Conn * conn);
 
-    std::list < Rts2Conn * >::iterator connectionBegin ()
+  connections_t::iterator
+  connectionBegin ()
   {
     return connections.begin ();
   }
-  std::list < Rts2Conn * >::iterator connectionEnd ()
+  connections_t::iterator
+  connectionEnd ()
   {
     return connections.end ();
   }
-  int connectionSize ()
+  int
+  connectionSize ()
   {
     return connections.size ();
   }
 
-  virtual void postEvent (Rts2Event * event);
+  virtual void
+  postEvent (Rts2Event * event);
 
   /**
    * Used to create new connection - so childrens can
    * create childrens of Rts2Conn
    */
-  virtual Rts2Conn *createConnection (int in_sock);
-  Rts2Conn *addDataConnection (Rts2Conn * in_conn, char *in_hostname,
-			       int in_port, int in_size);
-  Rts2Conn *findName (const char *in_name);
-  Rts2Conn *findCentralId (int in_id);
-  virtual int sendStatusMessage (int state);
-  int sendAll (char *msg);
-  void sendValueAll (char *val_name, char *value);
-  int sendPriorityChange (int p_client, int timeout);
+  virtual Rts2Conn *
+  createConnection (int in_sock);
+  Rts2Conn *
+  addDataConnection (Rts2Conn * in_conn, char *in_hostname,
+		     int in_port, int in_size);
+  Rts2Conn *
+  findName (const char *in_name);
+  Rts2Conn *
+  findCentralId (int in_id);
+  virtual int
+  sendStatusMessage (int state);
+  int
+  sendAll (char *msg);
+  void
+  sendValueAll (char *val_name, char *value);
+  int
+  sendPriorityChange (int p_client, int timeout);
   // only used in centrald!
-  void sendMessageAll (Rts2Message & msg);
-  virtual int idle ();
-  void setTimeout (long int new_timeout)
+  void
+  sendMessageAll (Rts2Message & msg);
+  virtual int
+  idle ();
+  void
+  setTimeout (long int new_timeout)
   {
     idle_timeout = new_timeout;
   }
-  void setTimeoutMin (long int new_timeout)
+  void
+  setTimeoutMin (long int new_timeout)
   {
     if (new_timeout < idle_timeout)
       idle_timeout = new_timeout;
   }
-  void endRunLoop ()
+  void
+  endRunLoop ()
   {
     end_loop = 1;
   }
-  int run ();
-  virtual int deleteConnection (Rts2Conn * conn);
-  int setPriorityClient (int in_priority_client, int timeout);
-  void checkPriority (Rts2Conn * conn)
+  int
+  run ();
+  virtual int
+  deleteConnection (Rts2Conn * conn);
+  int
+  setPriorityClient (int in_priority_client, int timeout);
+  void
+  checkPriority (Rts2Conn * conn)
   {
     if (conn->getCentraldId () == priority_client)
       {
 	conn->setHavePriority (1);
       }
   }
-  virtual int changeMasterState (int new_state)
+  virtual int
+  changeMasterState (int new_state)
   {
     return 0;
   }
-  int setMasterState (int new_state)
+  int
+  setMasterState (int new_state)
   {
     masterState = new_state;
     return changeMasterState (new_state);
   }
-  int getMasterState ()
+  int
+  getMasterState ()
   {
     return masterState;
   }
-  Rts2Address *findAddress (const char *blockName);
+  Rts2Address *
+  findAddress (const char *blockName);
 
-  void addAddress (const char *p_name, const char *p_host, int p_port,
-		   int p_device_type);
+  void
+  addAddress (const char *p_name, const char *p_host, int p_port,
+	      int p_device_type);
 
-  void deleteAddress (const char *p_name);
+  void
+  deleteAddress (const char *p_name);
 
-  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-					  int other_device_type);
-  void addUser (int p_centraldId, int p_priority, char p_priority_have,
-		const char *p_login);
-  int addUser (Rts2User * in_user);
+  virtual Rts2DevClient *
+  createOtherType (Rts2Conn * conn, int other_device_type);
+  void
+  addUser (int p_centraldId, int p_priority, char p_priority_have,
+	   const char *p_login);
+  int
+  addUser (Rts2User * in_user);
 
   /***************************************************************
    * 
@@ -174,7 +234,8 @@ public:
    *
    ***************************************************************/
 
-  Rts2Conn *getOpenConnection (char *deviceName);
+  Rts2Conn *
+  getOpenConnection (char *deviceName);
 
   /***************************************************************
    *
@@ -189,22 +250,29 @@ public:
    * runned.
    *
    ***************************************************************/
-  Rts2Conn *getConnection (char *deviceName);
+  Rts2Conn *
+  getConnection (char *deviceName);
 
-  virtual Rts2Conn *getCentraldConn ()
+  virtual Rts2Conn *
+  getCentraldConn ()
   {
     return NULL;
   }
 
-  virtual void message (Rts2Message & msg);
+  virtual void
+  message (Rts2Message & msg);
 
-  int queAll (Rts2Command * cmd);
-  int queAll (char *text);
+  int
+  queAll (Rts2Command * cmd);
+  int
+  queAll (char *text);
 
-  int allQuesEmpty ();
+  int
+  allQuesEmpty ();
 
   // enables to grant priority for special device links
-  virtual int grantPriority (Rts2Conn * conn)
+  virtual int
+  grantPriority (Rts2Conn * conn)
   {
     return 0;
   }
@@ -212,13 +280,16 @@ public:
   /** 
    * Return connection with minimum (integer) value.
    */
-  Rts2Conn *getMinConn (const char *valueName);
+  Rts2Conn *
+  getMinConn (const char *valueName);
 
-  virtual void centraldConnRunning ()
+  virtual void
+  centraldConnRunning ()
   {
   }
 
-  virtual void centraldConnBroken ()
+  virtual void
+  centraldConnBroken ()
   {
   }
 };
