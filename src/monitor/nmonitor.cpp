@@ -42,6 +42,9 @@ char *XCursesProgramName = "rts2-mon";
 #define EVENT_PRINT_FULL	RTS2_LOCAL_EVENT + 3
 #define EVENT_PRINT_MESSAGES	RTS2_LOCAL_EVENT + 4
 
+enum messageAction
+{ SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
+
 class Rts2CNMonConn:public Rts2ConnClient
 {
 public:
@@ -83,95 +86,6 @@ public:
   }
 };
 
-class MonWindow:public Rts2DevClient
-{
-private:
-  int printFormat;
-  int statusBegin;
-protected:
-  int printStatus (WINDOW * window, Rts2Conn * in_connection);
-
-  virtual void print (WINDOW * wnd)
-  {
-  }
-  virtual void printOneLine (WINDOW * wnd)
-  {
-  }
-public:
-MonWindow (Rts2Conn * in_connection):Rts2DevClient (in_connection)
-  {
-    printFormat = EVENT_PRINT_FULL;
-    statusBegin = 1;
-  }
-
-  void postEvent (Rts2Event * event);
-  void printTimeDiff (WINDOW * window, int row, char *text, double diff);
-
-  void setStatusBegin (int in_status_begin)
-  {
-    statusBegin = in_status_begin;
-  }
-};
-
-int
-MonWindow::printStatus (WINDOW * window, Rts2Conn * in_connection)
-{
-  Rts2ServerState *state = in_connection->getStateObject ();
-  mvwprintw (window, statusBegin, 0, "Status: %-5i", state->getValue ());
-  mvwprintw (window, statusBegin + 1, 0, "Priority: %s",
-	     in_connection->havePriority ()? "yes" : "no");
-  return 0;
-}
-
-void
-MonWindow::postEvent (Rts2Event * event)
-{
-  PANEL *panel;
-  switch (event->getType ())
-    {
-    case EVENT_PRINT:
-      panel = (PANEL *) event->getArg ();
-      switch (printFormat)
-	{
-	case EVENT_PRINT_SHORT:
-	  show_panel (panel);
-	  printOneLine (panel_window (panel));
-	  break;
-	case EVENT_PRINT_FULL:
-	  show_panel (panel);
-	  print (panel_window (panel));
-	  break;
-	case EVENT_PRINT_MESSAGES:
-	  hide_panel (panel);
-	  break;
-	}
-      break;
-    case EVENT_PRINT_SHORT:
-    case EVENT_PRINT_FULL:
-    case EVENT_PRINT_MESSAGES:
-      printFormat = event->getType ();
-    }
-}
-
-void
-MonWindow::printTimeDiff (WINDOW * window, int row, char *text, double diff)
-{
-  char time_buf[50];
-  struct ln_hms hms;
-  time_buf[0] = '\0';
-  double t = fabs (diff);
-  if (t > 86400)
-    {
-      sprintf (time_buf, "%li days ", (long) (t / 86400));
-      t = (long) t % 86400;
-    }
-  // that will delete sign..
-  ln_deg_to_hms (360.0 * ((double) fabs (t) / 86400.0), &hms);
-  sprintf (time_buf, "%s%c%i:%02i:%04.1f", time_buf, diff > 0 ? '+' : '-',
-	   hms.hours, hms.minutes, hms.seconds);
-  mvwprintw (window, row, 1, "%s:%s", text, time_buf);
-}
-
 /*******************************************************
  *
  * This class hold "root" window of display,
@@ -183,11 +97,14 @@ class Rts2NMonitor:public Rts2Client
 {
 private:
   WINDOW * statusWindow;
-  WINDOW *commandWindow;
   CDKSCREEN *cdkscreen;
   CDKALPHALIST *deviceList;
   CDKALPHALIST *valueList;
+
+  CDKBUTTONBOX *msgBox;
+
   void *activeEntry;
+  void *msgOldEntry;
   CDKSWINDOW *msgwindow;
     std::vector < Rts2CNMonConn * >clientConnections;
   int cmd_col;
@@ -200,27 +117,25 @@ private:
   int paintWindows ();
   int repaint ();
 
-  int messageBox (char *message);
-
-  void refreshCommandWindow ()
-  {
-    mvwprintw (commandWindow, 0, 0, "%-*s", COLS, cmd_buf);
-    wrefresh (commandWindow);
-    repaint ();
-  }
-
   int printType;
 
   void drawValuesList ();
   void drawValuesList (Rts2DevClient * client);
 
+  void refreshAddress ();
+
+  messageAction msgAction;
+
+  void messageBox (char *query, messageAction action);
+  void messageBoxEnd ();
+
 protected:
-  virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
+    virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
   {
     Rts2CNMonConn *conn;
-    conn = new Rts2CNMonConn (this, in_deviceName);
-    processConnection (conn);
-    return conn;
+      conn = new Rts2CNMonConn (this, in_deviceName);
+      processConnection (conn);
+      return conn;
   }
 
   virtual void addSelectSocks (fd_set * read_set);
@@ -237,9 +152,6 @@ public:
   virtual void postEvent (Rts2Event * event);
 
   virtual int deleteConnection (Rts2Conn * conn);
-
-  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-					  int other_device_type);
 
   virtual int willConnect (Rts2Address * in_addr);
 
@@ -271,7 +183,6 @@ Rts2NMonitor::executeCommand ()
   cmd_conn->queCommand (new Rts2Command (this, cmd_sep));
   cmd_col = 0;
   cmd_buf[0] = '\0';
-  refreshCommandWindow ();
 }
 
 void
@@ -334,40 +245,14 @@ Rts2NMonitor::selectSuccess (fd_set * read_set)
   if (FD_ISSET (1, read_set))
     {
       chtype input = getch ();
-      switch (input)
-	{
-	case KEY_STAB:
-	case '\t':
-	  if (activeEntry == deviceList->entryField)
-	    activeEntry = valueList->entryField;
-	  else if (activeEntry == valueList->entryField)
-	    activeEntry = msgwindow;
-	  else
-	    activeEntry = deviceList->entryField;
-	  break;
-	default:
-	  if (activeEntry == msgwindow)
-	    injectCDKSwindow (msgwindow, input);
-	  else
-	    injectCDKEntry ((CDKENTRY *) activeEntry, input);
-	}
-      // draw device values
-      if (activeEntry == deviceList->entryField
-	  && deviceList->entryField->info)
-	{
-	  drawValuesList ();
-	}
+      processKey (input);
     }
 }
 
-int
-Rts2NMonitor::addAddress (Rts2Address * in_addr)
+void
+Rts2NMonitor::refreshAddress ()
 {
   int i = 0;
-  int ret;
-  ret = Rts2Client::addAddress (in_addr);
-  if (ret)
-    return ret;
   const char *new_list[connectionSize ()];
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++, i++)
@@ -376,18 +261,65 @@ Rts2NMonitor::addAddress (Rts2Address * in_addr)
       new_list[i] = conn->getName ();
     }
   setCDKAlphalistContents (deviceList, (char **) new_list, connectionSize ());
-  return 0;
+}
+
+void
+Rts2NMonitor::messageBox (char *query, messageAction action)
+{
+  char *buttons[] = { "Yes", "No" };
+  if (msgBox)
+    return;
+  msgAction = action;
+  msgBox = newCDKButtonbox (cdkscreen, CENTER, CENTER, 5, LINES / 2, query,
+			    1, 2, buttons, 2, A_REVERSE, TRUE, TRUE);
+  drawCDKButtonbox (msgBox, TRUE);
+  msgOldEntry = activeEntry;
+  activeEntry = msgBox;
+}
+
+void
+Rts2NMonitor::messageBoxEnd ()
+{
+  if (msgBox->exitType == vNORMAL && msgBox->currentButton == 0)
+    {
+      switch (msgAction)
+	{
+	case SWITCH_OFF:
+	  getCentraldConn ()->queCommand (new Rts2Command (this, "off"));
+	  break;
+	case SWITCH_STANDBY:
+	  getCentraldConn ()->queCommand (new Rts2Command (this, "standby"));
+	  break;
+	case SWITCH_ON:
+	  getCentraldConn ()->queCommand (new Rts2Command (this, "on"));
+	  break;
+	}
+    }
+  destroyCDKButtonbox (msgBox);
+  msgBox = NULL;
+  activeEntry = msgOldEntry;
+}
+
+int
+Rts2NMonitor::addAddress (Rts2Address * in_addr)
+{
+  int ret;
+  ret = Rts2Client::addAddress (in_addr);
+  if (ret)
+    return ret;
+  refreshAddress ();
+  return ret;
 }
 
 Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):
 Rts2Client (in_argc, in_argv)
 {
   statusWindow = NULL;
-  commandWindow = NULL;
   cdkscreen = NULL;
   deviceList = NULL;
   valueList = NULL;
   msgwindow = NULL;
+  msgBox = NULL;
   cmd_col = 0;
   printType = EVENT_PRINT_FULL;
 }
@@ -404,13 +336,8 @@ Rts2NMonitor::paintWindows ()
   // prepare main window..
   if (statusWindow)
     delwin (statusWindow);
-  if (commandWindow)
-    delwin (commandWindow);
   statusWindow = newwin (1, COLS, LINES - 1, 0);
   wbkgdset (statusWindow, A_BOLD | COLOR_PAIR (CLR_STATUS));
-  commandWindow = newwin (1, COLS, 0, 0);
-  wbkgdset (commandWindow, A_BOLD | COLOR_PAIR (CLR_STATUS));
-  waddch (commandWindow, 'C');
   curs_set (1);
   return 0;
 }
@@ -432,7 +359,6 @@ Rts2NMonitor::repaint ()
   mvwprintw (statusWindow, 0, COLS - 40, "%40s", dateBuf);
 //  refresh ();
   wrefresh (statusWindow);
-  wrefresh (commandWindow);
   drawCDKSwindow (msgwindow, TRUE);
   return 0;
 }
@@ -460,11 +386,11 @@ Rts2NMonitor::init ()
   initCDKColor ();
 
   deviceList =
-    newCDKAlphalist (cdkscreen, 0, 0, LINES - 21, 20, "<C></B/24>Device list",
+    newCDKAlphalist (cdkscreen, 0, 1, LINES - 22, 20, "<C></B/24>Device list",
 		     NULL, NULL, 0, '_', A_REVERSE, TRUE, FALSE);
 
   valueList =
-    newCDKAlphalist (cdkscreen, 20, 0, LINES - 21, COLS - 20,
+    newCDKAlphalist (cdkscreen, 20, 1, LINES - 22, COLS - 20,
 		     "<C></B/24>Value list", NULL, NULL, 0, '_', A_REVERSE,
 		     TRUE, FALSE);
 
@@ -493,7 +419,7 @@ Rts2NMonitor::init ()
 
   drawCDKAlphalist (deviceList, TRUE);
   drawCDKAlphalist (valueList, TRUE);
-  drawCDKSwindow (msgwindow, msgwindow->box);
+  drawCDKSwindow (msgwindow, TRUE);
 
   return repaint ();
 }
@@ -524,28 +450,10 @@ Rts2NMonitor::postEvent (Rts2Event * event)
 int
 Rts2NMonitor::deleteConnection (Rts2Conn * conn)
 {
-  // try to find us among clientConnections
-  std::vector < Rts2CNMonConn * >::iterator conn_iter;
-  Rts2CNMonConn *tmp_conn;
-
-  // allocate window for our connection
-  for (conn_iter = clientConnections.begin ();
-       conn_iter != clientConnections.end (); conn_iter++)
-    {
-      tmp_conn = (*conn_iter);
-      if (tmp_conn == conn)
-	{
-	  clientConnections.erase (conn_iter);
-	  break;
-	}
-    }
-  return Rts2Client::deleteConnection (conn);
-}
-
-Rts2DevClient *
-Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
-{
-  return new MonWindow (conn);
+  int ret;
+  ret = Rts2Client::deleteConnection (conn);
+  refreshAddress ();
+  return ret;
 }
 
 void
@@ -588,19 +496,25 @@ Rts2NMonitor::resize ()
 void
 Rts2NMonitor::processKey (int key)
 {
+  int ret;
   switch (key)
     {
+    case KEY_TAB:
+      if (activeEntry == deviceList->entryField)
+	activeEntry = valueList->entryField;
+      else if (activeEntry == valueList->entryField)
+	activeEntry = msgwindow;
+      else
+	activeEntry = deviceList->entryField;
+      break;
     case KEY_F (2):
-      if (messageBox ("Are you sure to switch off (y/n)?") == 'y')
-	getCentraldConn ()->queCommand (new Rts2Command (this, "off"));
+      messageBox ("</3>Are you sure to switch off?", SWITCH_OFF);
       break;
     case KEY_F (3):
-      if (messageBox ("Are you sure to switch to standby (y/n)?") == 'y')
-	getCentraldConn ()->queCommand (new Rts2Command (this, "standby"));
+      messageBox ("</3>Are you sure to switch to standby?", SWITCH_STANDBY);
       break;
     case KEY_F (4):
-      if (messageBox ("Are you sure to switch to on (y/n)?") == 'y')
-	getCentraldConn ()->queCommand (new Rts2Command (this, "on"));
+      messageBox ("</3>Are you sure to switch to on?", SWITCH_ON);
       break;
     case KEY_F (5):
       queAll ("info");
@@ -632,30 +546,29 @@ Rts2NMonitor::processKey (int key)
     case KEY_F (10):
       endRunLoop ();
       break;
-    case KEY_BACKSPACE:
-      if (cmd_col > 0)
-	{
-	  cmd_col--;
-	  cmd_buf[cmd_col] = '\0';
-	  refreshCommandWindow ();
-	  break;
-	}
-      beep ();
-      break;
-    case KEY_ENTER:
-    case '\n':
-      executeCommand ();
-      break;
+      // some input-sensitive commands
     default:
-      if (cmd_col >= CMD_BUF_LEN)
+      if (activeEntry == msgwindow)
 	{
-	  beep ();
-	  break;
+	  injectCDKSwindow (msgwindow, key);
 	}
-      cmd_buf[cmd_col++] = key;
-      cmd_buf[cmd_col] = '\0';
-      refreshCommandWindow ();
-      break;
+      if (activeEntry == msgBox)
+	{
+	  ret = injectCDKButtonbox (msgBox, key);
+	  if (ret != -1)
+	    {
+	      messageBoxEnd ();
+	    }
+	}
+      else
+	{
+	  injectCDKEntry ((CDKENTRY *) activeEntry, key);
+	}
+    }
+  // draw device values
+  if (activeEntry == deviceList->entryField && deviceList->entryField->info)
+    {
+      drawValuesList ();
     }
 }
 
@@ -663,25 +576,6 @@ int
 Rts2NMonitor::willConnect (Rts2Address * in_addr)
 {
   return 1;
-}
-
-int
-Rts2NMonitor::messageBox (char *msg)
-{
-  int key = 0;
-  WINDOW *wnd = newwin (5, COLS / 2, LINES / 2, COLS / 2 - COLS / 4);
-  PANEL *msg_pan = new_panel (wnd);
-  wcolor_set (wnd, CLR_WARNING, NULL);
-  box (wnd, 0, 0);
-  wcolor_set (wnd, CLR_TEXT, NULL);
-  mvwprintw (wnd, 2, 2 + (COLS / 2 - strlen (msg)) / 2, msg);
-  wrefresh (wnd);
-  key = wgetch (wnd);
-  del_panel (msg_pan);
-  delwin (wnd);
-  update_panels ();
-  doupdate ();
-  return key;
 }
 
 Rts2NMonitor *monitor = NULL;
