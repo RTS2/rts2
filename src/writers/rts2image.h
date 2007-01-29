@@ -389,7 +389,7 @@ public:
   }
 
   unsigned short *getDataUShortInt ();
-  void setDataUShortInt (unsigned short *in_data);
+  void setDataUShortInt (unsigned short *in_data, long in_naxis[2]);
 
   int substractDark (Rts2Image * darkImage);
 

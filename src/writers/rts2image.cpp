@@ -1288,9 +1288,11 @@ Rts2Image::getDataUShortInt ()
 }
 
 void
-Rts2Image::setDataUShortInt (unsigned short *in_data)
+Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
 {
   imageData = in_data;
+  naxis[0] = in_naxis[0];
+  naxis[1] = in_naxis[1];
   flags |= IMAGE_DONT_DELETE_DATA;
 }
 
