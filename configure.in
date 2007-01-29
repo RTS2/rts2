@@ -229,6 +229,13 @@ AC_SUBST(LIB_PANEL), [cat <<EOF
 EOF
 exit 1])
 
+AC_CHECK_LIB([cdk], [initCDKScreen], LIB_CDK="-lcdk"; 
+AC_SUBST(LIB_CDK), [cat << EOF
+**** You don't have CDK library.
+**** Please get one from http://www.vexus.ca/products/CDK/.
+EOF
+exit 1])
+
 AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
 AC_SUBST(LIB_NOVA), [cat << EOF
 **** You don't have libnova library version >= 0.10.
@@ -343,7 +350,6 @@ AM_CONFIG_HEADER(include/config.h)
 AC_OUTPUT([Makefile
 	   man/Makefile
 	   include/Makefile
-	   html/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
