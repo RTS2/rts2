@@ -86,6 +86,19 @@ public:
 
   void addConnection (Rts2Conn * conn);
 
+    std::list < Rts2Conn * >::iterator connectionBegin ()
+  {
+    return connections.begin ();
+  }
+  std::list < Rts2Conn * >::iterator connectionEnd ()
+  {
+    return connections.end ();
+  }
+  int connectionSize ()
+  {
+    return connections.size ();
+  }
+
   virtual void postEvent (Rts2Event * event);
 
   /**

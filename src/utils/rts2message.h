@@ -38,6 +38,13 @@ public:
   {
     return (!(messageType & MESSAGE_DEBUG));
   }
+
+  messageType_t getType ()
+  {
+    return messageType;
+  }
+
+  inline double getMessageTime ();
 };
 
 std::ofstream & operator << (std::ofstream & _of, Rts2Message & msg);

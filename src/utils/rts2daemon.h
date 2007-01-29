@@ -38,6 +38,11 @@ protected:
   virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
 
+  /**
+   * Adds value to list of values supported by daemon.
+   *
+   * \param value Rts2Value which will be added.
+   */
   void addValue (Rts2Value * value);
   void addConstValue (Rts2Value * value);
   void addConstValue (char *in_name, const char *in_desc, char *in_value);

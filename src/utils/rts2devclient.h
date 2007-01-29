@@ -108,6 +108,10 @@ public:
   {
     return values[index];
   }
+  int valueSize ()
+  {
+    return values.size ();
+  }
 };
 
 /**************************************

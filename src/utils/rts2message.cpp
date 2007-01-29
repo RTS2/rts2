@@ -76,6 +76,13 @@ std::string Rts2Message::toString ()
   return os.str ();
 }
 
+
+double
+Rts2Message::getMessageTime ()
+{
+  return messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;
+}
+
 std::ofstream & operator << (std::ofstream & _of, Rts2Message & msg)
 {
   _of << msg.toString () << std::endl;

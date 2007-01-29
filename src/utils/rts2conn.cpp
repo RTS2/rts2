@@ -263,6 +263,7 @@ Rts2Conn::processLine ()
 	    return -2;
 	  return otherDevice->metaInfo (m_type, m_name, m_descr);
 	}
+      ret = -2;
     }
   else if (isCommandReturn ())
     {

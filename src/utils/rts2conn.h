@@ -4,6 +4,7 @@
 #include <string>
 #include <string.h>
 #include <time.h>
+#include <list>
 
 #include "rts2serverstate.h"
 #include "rts2message.h"
@@ -263,6 +264,11 @@ public:
   Rts2ServerState *getStateObject ()
   {
     return serverState;
+  }
+
+  Rts2DevClient *getOtherDevClient ()
+  {
+    return otherDevice;
   }
 
 protected:
