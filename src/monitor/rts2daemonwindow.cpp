@@ -5,6 +5,10 @@ Rts2DaemonWindow::Rts2DaemonWindow (CDKSCREEN * cdkscreen)
 
 }
 
+Rts2DaemonWindow::~Rts2DaemonWindow (void)
+{
+
+}
 
 Rts2DeviceWindow::Rts2DeviceWindow (CDKSCREEN * cdkscreen, Rts2Conn * in_connection):Rts2DaemonWindow
   (cdkscreen)

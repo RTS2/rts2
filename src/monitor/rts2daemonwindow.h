@@ -13,6 +13,7 @@ class Rts2DaemonWindow
 {
 public:
   Rts2DaemonWindow (CDKSCREEN * cdkscreen);
+  virtual ~ Rts2DaemonWindow (void);
   virtual char *injectKey (int key) = 0;
   virtual void draw () = 0;
 };

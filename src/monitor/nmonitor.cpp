@@ -449,7 +449,8 @@ Rts2NMonitor::processKey (int key)
       msgOldEntry = activeEntry;
       activeEntry = menu;
       drawCDKAlphalist (deviceList, TRUE);
-      daemonWindow->draw ();
+      if (daemonWindow)
+	daemonWindow->draw ();
       drawCDKMenu (menu);
       break;
     case KEY_F (10):
