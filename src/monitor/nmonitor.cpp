@@ -45,47 +45,6 @@ char *XCursesProgramName = "rts2-mon";
 enum messageAction
 { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
 
-class Rts2CNMonConn:public Rts2ConnClient
-{
-public:
-  Rts2CNMonConn (Rts2Block * in_master,
-		 char *in_name):Rts2ConnClient (in_master, in_name)
-  {
-  }
-  virtual ~ Rts2CNMonConn (void)
-  {
-  }
-
-  virtual int commandReturn (Rts2Command * cmd, int in_status)
-  {
-    update_panels ();
-    return 0;
-  }
-
-  virtual int command ()
-  {
-    // for immediate updates of values..
-    int ret;
-    ret = Rts2ConnClient::command ();
-    update_panels ();
-    return ret;
-  }
-
-  virtual int setState (int in_value)
-  {
-    int ret;
-    ret = Rts2ConnClient::setState (in_value);
-    update_panels ();
-    return ret;
-  }
-
-  virtual void priorityChanged ()
-  {
-    Rts2ConnClient::priorityChanged ();
-    update_panels ();
-  }
-};
-
 /*******************************************************
  *
  * This class hold "root" window of display,
@@ -107,13 +66,11 @@ private:
   void *activeEntry;
   void *msgOldEntry;
   CDKSWINDOW *msgwindow;
-    std::vector < Rts2CNMonConn * >clientConnections;
   int cmd_col;
   char cmd_buf[CMD_BUF_LEN];
 
   void executeCommand ();
   void relocatesWindows ();
-  void processConnection (Rts2CNMonConn * conn);
 
   int paintWindows ();
   int repaint ();
@@ -131,21 +88,13 @@ private:
   void messageBoxEnd ();
 
 protected:
-    virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
-  {
-    Rts2CNMonConn *conn;
-      conn = new Rts2CNMonConn (this, in_deviceName);
-      processConnection (conn);
-      return conn;
-  }
-
-  virtual void addSelectSocks (fd_set * read_set);
+    virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
 
   virtual int addAddress (Rts2Address * in_addr);
 public:
-  Rts2NMonitor (int argc, char **argv);
-  virtual ~ Rts2NMonitor (void);
+    Rts2NMonitor (int argc, char **argv);
+    virtual ~ Rts2NMonitor (void);
 
   virtual int init ();
   virtual int idle ();
@@ -189,14 +138,7 @@ Rts2NMonitor::executeCommand ()
 void
 Rts2NMonitor::relocatesWindows ()
 {
-  update_panels ();
-}
-
-void
-Rts2NMonitor::processConnection (Rts2CNMonConn * conn)
-{
-  clientConnections.push_back (conn);
-  relocatesWindows ();
+  refreshCDKScreen (cdkscreen);
 }
 
 void
@@ -542,7 +484,7 @@ Rts2NMonitor::processKey (int key)
       queAll ("info");
       break;
     case KEY_F (8):
-      update_panels ();
+      refreshCDKScreen (cdkscreen);
       break;
     case KEY_F (9):
       msgOldEntry = activeEntry;
