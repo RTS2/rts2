@@ -5,7 +5,11 @@
 #include <string.h>
 #include <time.h>
 #include <list>
+#include <netinet/in.h>
 
+#include <status.h>
+
+#include "rts2object.h"
 #include "rts2serverstate.h"
 #include "rts2message.h"
 #include "rts2logstream.h"
