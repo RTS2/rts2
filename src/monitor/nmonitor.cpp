@@ -100,6 +100,7 @@ private:
   CDKSCREEN *cdkscreen;
   CDKALPHALIST *deviceList;
   CDKALPHALIST *valueList;
+  CDKMENU *menu;
 
   CDKBUTTONBOX *msgBox;
 
@@ -318,6 +319,7 @@ Rts2Client (in_argc, in_argv)
   cdkscreen = NULL;
   deviceList = NULL;
   valueList = NULL;
+  menu = NULL;
   msgwindow = NULL;
   msgBox = NULL;
   cmd_col = 0;
@@ -367,6 +369,9 @@ int
 Rts2NMonitor::init ()
 {
   int ret;
+  char *menulist[MAX_MENU_ITEMS][MAX_SUB_ITEMS];
+  int menuloc[] = { LEFT, RIGHT };
+  int submenusize[] = { 2, 2 };
   WINDOW *cursesWin;
   ret = Rts2Client::init ();
   if (ret)
@@ -394,6 +399,22 @@ Rts2NMonitor::init ()
 		     "<C></B/24>Value list", NULL, NULL, 0, '_', A_REVERSE,
 		     TRUE, FALSE);
 
+  menulist[0][0] = "</B>File<!B>";
+  menulist[1][0] = "</B>Edit<!B>";
+  menulist[2][0] = "</B>Help<!B>";
+  menulist[0][1] = "</B>Save<!B>";
+  menulist[1][1] = "</B>Cut<!B> ";
+  menulist[2][1] = "</B>On Edit <!B>";
+  menulist[0][2] = "</B>Exit<!B>";
+  menulist[1][2] = "</B>Copy<!B>";
+  menulist[2][2] = "</B>On File <!B>";
+  menulist[1][3] = "</B>Paste<!B>";
+  menulist[2][3] = "</B>About...<!B>";
+
+  menu =
+    newCDKMenu (cdkscreen, menulist, 2, submenusize, menuloc, TOP,
+		A_UNDERLINE, A_REVERSE);
+
   msgwindow =
     newCDKSwindow (cdkscreen, 0, LINES - 18, 18, COLS, "Messages", 1000, TRUE,
 		   FALSE);
@@ -419,6 +440,7 @@ Rts2NMonitor::init ()
 
   drawCDKAlphalist (deviceList, TRUE);
   drawCDKAlphalist (valueList, TRUE);
+  drawCDKMenu (menu);
   drawCDKSwindow (msgwindow, TRUE);
 
   return repaint ();
@@ -520,28 +542,11 @@ Rts2NMonitor::processKey (int key)
       queAll ("info");
       break;
     case KEY_F (8):
-      switch (printType)
-	{
-	case EVENT_PRINT_MESSAGES:
-	  postEvent (new Rts2Event (EVENT_PRINT_FULL));
-	  break;
-	default:
-	  postEvent (new Rts2Event (EVENT_PRINT_MESSAGES));
-	  break;
-	}
       update_panels ();
       break;
     case KEY_F (9):
-      switch (printType)
-	{
-	case EVENT_PRINT_FULL:
-	  postEvent (new Rts2Event (EVENT_PRINT_SHORT));
-	  break;
-	default:
-	  postEvent (new Rts2Event (EVENT_PRINT_SHORT));
-	  break;
-	}
-      update_panels ();
+      msgOldEntry = activeEntry;
+      activeEntry = menu;
       break;
     case KEY_F (10):
       endRunLoop ();
@@ -552,7 +557,19 @@ Rts2NMonitor::processKey (int key)
 	{
 	  injectCDKSwindow (msgwindow, key);
 	}
-      if (activeEntry == msgBox)
+      else if (activeEntry == menu)
+	{
+	  injectCDKMenu (menu, key);
+	  if (menu->exitType == vNORMAL)
+	    {
+	      activeEntry = msgOldEntry;
+	    }
+	  else if (menu->exitType == vESCAPE_HIT)
+	    {
+	      activeEntry = msgOldEntry;
+	    }
+	}
+      else if (activeEntry == msgBox)
 	{
 	  ret = injectCDKButtonbox (msgBox, key);
 	  if (ret != -1)
