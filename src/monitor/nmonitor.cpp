@@ -215,6 +215,8 @@ Rts2NMonitor::messageBox (char *query, messageAction action)
   msgAction = action;
   msgBox = newCDKButtonbox (cdkscreen, CENTER, CENTER, 5, LINES / 2, query,
 			    1, 2, buttons, 2, A_REVERSE, TRUE, TRUE);
+  drawCDKAlphalist (deviceList, TRUE);
+  drawCDKAlphalist (valueList, TRUE);
   drawCDKButtonbox (msgBox, TRUE);
   msgOldEntry = activeEntry;
   activeEntry = msgBox;
