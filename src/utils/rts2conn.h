@@ -106,10 +106,25 @@ public:
   virtual void postEvent (Rts2Event * event);
 
   virtual int add (fd_set * set);
-  virtual int getState ()
+  int getState ()
   {
     return serverState->getValue ();
   }
+  int getErrorState ()
+  {
+    return getState () & DEVICE_ERROR_MASK;
+  }
+  /**
+   * Get state without any error bits
+   * 
+   * \return State without error bits
+   */
+  int getRealState ()
+  {
+    return getState () & (~DEVICE_ERROR_MASK);
+  }
+  std::string getCameraChipState (int chipN);
+  std::string getStateString ();
   virtual int init ()
   {
     return -1;

@@ -76,6 +76,157 @@ Rts2Conn::add (fd_set * set)
   return 0;
 }
 
+std::string Rts2Conn::getCameraChipState (int chipN)
+{
+  int
+    chip_state =
+    (getRealState () & (CAM_MASK_CHIP << (chipN * 4))) >> (chipN * 4);
+  std::ostringstream _os;
+  if (chip_state == 0)
+    {
+      _os << chipN << " idle";
+    }
+  else
+    {
+      if (chip_state & CAM_EXPOSING)
+	{
+	  _os << chipN << " EXPOSING";
+	}
+      if (chip_state & CAM_READING)
+	{
+	  if (_os.str ().size ())
+	    _os << " | ";
+	  _os << chipN << " READING";
+	}
+      if (chip_state & CAM_DATA)
+	{
+	  if (_os.str ().size ())
+	    _os << " | ";
+	  _os << chipN << " DATA";
+	}
+    }
+  return _os.str ();
+}
+
+std::string Rts2Conn::getStateString ()
+{
+  std::ostringstream _os;
+  int
+    real_state = getRealState ();
+  int
+    chipN;
+  switch (getOtherType ())
+    {
+//  case DEVICE_TYPE_SERVERD:
+//    break;
+    case DEVICE_TYPE_MOUNT:
+      switch (real_state & TEL_MASK_MOVING)
+	{
+	case TEL_OBSERVING:
+	  _os << "observing";
+	  break;
+	case TEL_MOVING:
+	  _os << "MOVING";
+	  break;
+	case TEL_PARKED:
+	  _os << "PARKED";
+	  break;
+	case TEL_PARKING:
+	  _os << "PARKING";
+	  break;
+	default:
+	  _os << "unknow state " << real_state;
+	}
+      if (real_state & TEL_WAIT_COP)
+	_os << " | WAIT_FOR_CUPOLA";
+      if (real_state & TEL_SEARCH)
+	_os << " | SEARCHING";
+      if (real_state & TEL_GUIDE_NORTH)
+	_os << " | GUIDE_NORTH";
+      if (real_state & TEL_GUIDE_EAST)
+	_os << " | GUIDE_EAST";
+      if (real_state & TEL_GUIDE_SOUTH)
+	_os << " | GUIDE_SOUTH";
+      if (real_state & TEL_GUIDE_WEST)
+	_os << " | GUIDE_WEST";
+      if (real_state & TEL_NEED_STOP)
+	_os << " | NEED_FLIP";
+      break;
+    case DEVICE_TYPE_CCD:
+      if (otherDevice)
+	{
+	  chipN = otherDevice->getValueInteger ("chips");
+	  for (int i = 0; i < chipN; i++)
+	    _os << getCameraChipState (i);
+	  if (real_state & CAM_FOCUSING)
+	    _os << " | FOCUSING";
+	  switch (real_state & CAM_MASK_SHUTTER)
+	    {
+	    case CAM_SHUT_CLEARED:
+	      _os << " | SHUTTER_CLEARED";
+	      break;
+	    case CAM_SHUT_SET:
+	      _os << " | SHUTTER_SET";
+	      break;
+	    case CAM_SHUT_TRANS:
+	      _os << " | SHUTTER_TRANS";
+	      break;
+	    default:
+	      _os << " | shutter unknow";
+	    }
+	  switch (real_state & CAM_MASK_COOLING)
+	    {
+	    case CAM_COOL_OFF:
+	      _os << " | COOLING_OFF ";
+	      break;
+	    case CAM_COOL_FAN:
+	      _os << " | COOLING_FAN ";
+	      break;
+	    case CAM_COOL_PWR:
+	      _os << " | COOLING_ON_SET_POWER ";
+	      break;
+	    case CAM_COOL_TEMP:
+	      _os << " | COOLING_ON_SET_TEMP ";
+	      break;
+	    }
+	}
+      break;
+    case DEVICE_TYPE_DOME:
+      break;
+    case DEVICE_TYPE_WEATHER:
+      break;
+    case DEVICE_TYPE_ARCH:
+      break;
+    case DEVICE_TYPE_PHOT:
+      break;
+    case DEVICE_TYPE_PLAN:
+      break;
+    case DEVICE_TYPE_GRB:
+      break;
+    case DEVICE_TYPE_FOCUS:
+      break;
+    case DEVICE_TYPE_MIRROR:
+      break;
+    case DEVICE_TYPE_COPULA:
+      break;
+    case DEVICE_TYPE_FW:
+      break;
+    case DEVICE_TYPE_AUGERSH:
+      break;
+    case DEVICE_TYPE_EXECUTOR:
+      break;
+    case DEVICE_TYPE_IMGPROC:
+      break;
+    case DEVICE_TYPE_SELECTOR:
+      break;
+    case DEVICE_TYPE_SOAP:
+      break;
+    default:
+      _os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
+    }
+  return _os.str ();
+}
+
 void
 Rts2Conn::postEvent (Rts2Event * event)
 {
@@ -455,10 +606,10 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2Conn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (master, in_messageType);
+  Rts2LogStream ls (master, in_messageType);
   return ls;
 }
 
