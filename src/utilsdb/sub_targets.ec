@@ -2607,7 +2607,7 @@ TargetPlan::printExtra (std::ostream & _os, double JD)
     _os 
       << "SELECTED PLAN" << std::endl
       << selectedPlan << std::endl
-      << selectedPlan->getTarget () << std::endl
+      << *(selectedPlan->getTarget ()) << std::endl
       << "*************************************************" << std::endl << std::endl;
   }
   else
@@ -2618,7 +2618,7 @@ TargetPlan::printExtra (std::ostream & _os, double JD)
   {
     _os << "NEXT PLAN" << std::endl
       << nextPlan << std::endl
-      << nextPlan->getTarget () << std::endl
+      << *(nextPlan->getTarget ()) << std::endl
       << "*************************************************" << std::endl << std::endl;
   }
   else
