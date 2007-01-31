@@ -7,6 +7,7 @@ extern "C"
 }
 
 #include "../utils/rts2conn.h"
+#include "../utils/rts2client.h"
 #include "../utils/rts2devclient.h"
 
 class Rts2DaemonWindow
@@ -28,6 +29,19 @@ private:
 public:
     Rts2DeviceWindow (CDKSCREEN * cdkscreen, Rts2Conn * in_connection);
     virtual ~ Rts2DeviceWindow (void);
+  virtual char *injectKey (int key);
+  virtual void draw ();
+};
+
+class Rts2CentraldWindow:public Rts2DaemonWindow
+{
+private:
+  CDKSWINDOW * swindow;
+  Rts2Client *client;
+  void drawDevice (Rts2Conn * conn);
+public:
+    Rts2CentraldWindow (CDKSCREEN * cdkscreen, Rts2Client * in_client);
+    virtual ~ Rts2CentraldWindow (void);
   virtual char *injectKey (int key);
   virtual void draw ();
 };
