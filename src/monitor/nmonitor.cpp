@@ -344,6 +344,8 @@ Rts2NMonitor::init ()
   drawCDKMenu (menu);
   drawCDKSwindow (msgwindow, TRUE);
 
+  daemonWindow = new Rts2CentraldWindow (cdkscreen, this);
+
   return repaint ();
 }
 
@@ -496,13 +498,23 @@ Rts2NMonitor::processKey (int key)
 	}
     }
   // draw device values
-  if (activeEntry == deviceList->entryField && deviceList->entryField->info)
+  if (activeEntry == deviceList->entryField)
     {
-      Rts2Conn *conn = getConnection (deviceList->entryField->info);
-      if (conn)
+      if (!deviceList->entryField->info
+	  || *deviceList->entryField->info == '\0'
+	  || !strcmp (deviceList->entryField->info, "overview"))
 	{
 	  delete daemonWindow;
-	  daemonWindow = new Rts2DeviceWindow (cdkscreen, conn);
+	  daemonWindow = new Rts2CentraldWindow (cdkscreen, this);
+	}
+      else
+	{
+	  Rts2Conn *conn = getConnection (deviceList->entryField->info);
+	  if (conn)
+	    {
+	      delete daemonWindow;
+	      daemonWindow = new Rts2DeviceWindow (cdkscreen, conn);
+	    }
 	}
     }
 }
