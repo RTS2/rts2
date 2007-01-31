@@ -213,7 +213,7 @@ std::string Rts2Conn::getStateString ()
       switch (real_state & DOME_WEATHER_MASK)
 	{
 	case DOME_WEATHER_OK:
-	  _os << "| WEATHER OK";
+	  _os << " | WEATHER OK";
 	  break;
 	case DOME_WEATHER_BAD:
 	  _os << " | WEATHER BAD";
@@ -245,7 +245,7 @@ std::string Rts2Conn::getStateString ()
       else
 	_os << "idle";
       if (real_state & PHOT_FILTER_MOVE)
-	_os << "| FILTER_MOVING";
+	_os << " | FILTER_MOVING";
       break;
     case DEVICE_TYPE_GRB:
       _os << "grbd " << real_state;
@@ -315,21 +315,21 @@ std::string Rts2Conn::getStateString ()
 	  _os << "UNKNOW";
 	}
       if (real_state & EXEC_END)
-	_os << "| WILL ENDS";
+	_os << " | WILL ENDS";
       else
-	_os << "| not ending";
+	_os << " | not ending";
       switch (real_state & EXEC_MASK_ACQ)
 	{
 	case EXEC_NOT_ACQ:
 	  break;
 	case EXEC_ACQ_OK:
-	  _os << "| ACQUSITION OK";
+	  _os << " | ACQUSITION OK";
 	  break;
 	case EXEC_ACQ_FAILED:
-	  _os << "| ACQUSITION FAILED";
+	  _os << " | ACQUSITION FAILED";
 	  break;
 	default:
-	  _os << "| UNKNOW ACQUSTION " << (real_state & EXEC_MASK_ACQ);
+	  _os << " | UNKNOW ACQUSTION " << (real_state & EXEC_MASK_ACQ);
 	}
       break;
     case DEVICE_TYPE_IMGPROC:
@@ -729,10 +729,10 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream
-Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (master, in_messageType);
+  Rts2LogStream
+  ls (master, in_messageType);
   return ls;
 }
 
