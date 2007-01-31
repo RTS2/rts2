@@ -192,34 +192,157 @@ std::string Rts2Conn::getStateString ()
 	}
       break;
     case DEVICE_TYPE_DOME:
+    case DEVICE_TYPE_COPULA:
+      switch (real_state & DOME_DOME_MASK)
+	{
+	case DOME_CLOSED:
+	  _os << "CLOSED";
+	  break;
+	case DOME_OPENING:
+	  _os << "OPENING";
+	  break;
+	case DOME_OPENED:
+	  _os << "OPENED";
+	  break;
+	case DOME_CLOSING:
+	  _os << "CLOSING";
+	  break;
+	default:
+	  _os << "UNKNOW";
+	}
+      switch (real_state & DOME_WEATHER_MASK)
+	{
+	case DOME_WEATHER_OK:
+	  _os << "| WEATHER OK";
+	  break;
+	case DOME_WEATHER_BAD:
+	  _os << " | WEATHER BAD";
+	  break;
+	default:
+	  _os << " | WEATHER STATE UNKNOW";
+	}
+      if (getOtherType () == DEVICE_TYPE_COPULA)
+	{
+	  if (real_state & DOME_COP_MOVE)
+	    _os << " | CUPOLA_MOVING";
+	  else
+	    _os << " | cupola_idle";
+	  if (real_state & DOME_COP_SYNC)
+	    _os << " | cupola_synced";
+	  else
+	    _os << " | CUPOLA_NOT_SYNCED";
+	}
       break;
     case DEVICE_TYPE_WEATHER:
+      _os << "weather " << real_state;
       break;
     case DEVICE_TYPE_ARCH:
-      break;
-    case DEVICE_TYPE_PHOT:
+      _os << "arch " << real_state;
       break;
     case DEVICE_TYPE_PLAN:
+      if (real_state & PHOT_INTEGRATE)
+	_os << "INTEGRATING";
+      else
+	_os << "idle";
+      if (real_state & PHOT_FILTER_MOVE)
+	_os << "| FILTER_MOVING";
       break;
     case DEVICE_TYPE_GRB:
+      _os << "grbd " << real_state;
       break;
     case DEVICE_TYPE_FOCUS:
+      if (real_state & FOC_FOCUSING)
+	_os << "FOCUSING";
+      else
+	_os << "idle";
       break;
     case DEVICE_TYPE_MIRROR:
-      break;
-    case DEVICE_TYPE_COPULA:
+      switch (real_state & MIRROR_MASK)
+	{
+	case MIRROR_MOVE:
+	  _os << "MOVING";
+	  break;
+	case MIRROR_NOTMOVE:
+	  _os << "idle";
+	  break;
+	case MIRROR_A:
+	  _os << "A";
+	  break;
+	case MIRROR_A_B:
+	  _os << "MOVING_A_B";
+	  break;
+	case MIRROR_B:
+	  _os << "B";
+	  break;
+	case MIRROR_B_A:
+	  _os << "MOVING_B_A";
+	  break;
+	default:
+	  _os << "unknow";
+	}
       break;
     case DEVICE_TYPE_FW:
+      if (real_state & FILTERD_MOVE)
+	_os << "MOVING";
+      else
+	_os << "idle";
       break;
     case DEVICE_TYPE_AUGERSH:
+      _os << "augershooter " << real_state;
       break;
     case DEVICE_TYPE_EXECUTOR:
+      switch (real_state & EXEC_STATE_MASK)
+	{
+	case EXEC_IDLE:
+	  _os << "idle";
+	  break;
+	case EXEC_MOVE:
+	  _os << "MOVING TO NEXT TARGET";
+	  break;
+	case EXEC_ACQUIRE:
+	  _os << "ACQUIRING";
+	  break;
+	case EXEC_ACQUIRE_WAIT:
+	  _os << "ACQUIRE WAIT FOR PROCESSING";
+	  break;
+	case EXEC_OBSERVE:
+	  _os << "OBSERVING";
+	  break;
+	case EXEC_LASTREAD:
+	  _os << "OBSERVING IN LAST READ";
+	  break;
+	default:
+	  _os << "UNKNOW";
+	}
+      if (real_state & EXEC_END)
+	_os << "| WILL ENDS";
+      else
+	_os << "| not ending";
+      switch (real_state & EXEC_MASK_ACQ)
+	{
+	case EXEC_NOT_ACQ:
+	  break;
+	case EXEC_ACQ_OK:
+	  _os << "| ACQUSITION OK";
+	  break;
+	case EXEC_ACQ_FAILED:
+	  _os << "| ACQUSITION FAILED";
+	  break;
+	default:
+	  _os << "| UNKNOW ACQUSTION " << (real_state & EXEC_MASK_ACQ);
+	}
       break;
     case DEVICE_TYPE_IMGPROC:
+      if (real_state & IMGPROC_RUN)
+	_os << "PROCESS RUNNING";
+      else
+	_os << "idle";
       break;
     case DEVICE_TYPE_SELECTOR:
+      _os << "selector " << real_state;
       break;
     case DEVICE_TYPE_SOAP:
+      _os << "soapd " << real_state;
       break;
     default:
       _os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
