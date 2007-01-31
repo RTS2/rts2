@@ -96,7 +96,7 @@ Rts2NewTarget::run ()
   else
     ret = target->save ();
 
-  std::cout << target;
+  std::cout << *target;
 
   if (ret)
     {
