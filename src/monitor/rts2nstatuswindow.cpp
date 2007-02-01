@@ -25,6 +25,7 @@ Rts2NStatusWindow::draw ()
   time (&now);
 
   Rts2NWindow::draw ();
+  werase (window);
 
   wcolor_set (window, CLR_STATUS, NULL);
   mvwprintw (window, 0, 0, "%s", master->getMasterStateString ().c_str ());

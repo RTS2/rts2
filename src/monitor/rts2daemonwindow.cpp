@@ -77,7 +77,8 @@ Rts2NSelWindow::injectKey (int key)
       selrow = maxrow;
       break;
     case KEY_DOWN:
-      selrow++;
+      if (selrow < (maxrow - 1))
+	selrow++;
       break;
     case KEY_UP:
       if (selrow > 0)
@@ -160,6 +161,7 @@ Rts2NDeviceWindow::drawValuesList ()
 void
 Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 {
+  maxrow = 0;
   for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
        iter != client->valueEnd (); iter++)
     {
