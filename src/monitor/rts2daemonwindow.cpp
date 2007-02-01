@@ -41,11 +41,11 @@ Rts2NWindow::refresh ()
 {
   if (boxwin)
     {
-      wrefresh (boxwin);
+      wnoutrefresh (boxwin);
     }
   else
     {
-      wrefresh (window);
+      wnoutrefresh (window);
     }
 }
 
@@ -54,6 +54,11 @@ Rts2NSelWindow::Rts2NSelWindow (WINDOW * master_window, int x, int y, int w,
 Rts2NWindow (master_window, x, y, w, h, border)
 {
   selrow = 0;
+  maxrow = 0;
+  padoff_x = 0;
+  padoff_y = 0;
+//  scrolpad = newpad (100, 300);
+  scrolpad = window;
 }
 
 Rts2NSelWindow::~Rts2NSelWindow (void)
@@ -69,7 +74,7 @@ Rts2NSelWindow::injectKey (int key)
       selrow = 0;
       break;
     case KEY_END:
-      selrow = 5;
+      selrow = maxrow;
       break;
     case KEY_DOWN:
       selrow++;
@@ -86,13 +91,17 @@ Rts2NSelWindow::injectKey (int key)
 void
 Rts2NSelWindow::refresh ()
 {
+  int x, y;
+  int w, h;
   if (selrow >= 0)
     {
-      int w, h;
-      getmaxyx (window, h, w);
-      mvwchgat (window, selrow, 0, w, A_REVERSE, 0, NULL);
+      getmaxyx (scrolpad, h, w);
+      mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
     }
   Rts2NWindow::refresh ();
+//  getbegyx (window, y, x);
+//  getmaxyx (window, h, w);
+//  pnoutrefresh (scrolpad, 0, 0, y, x, y+h-2, x+w-2);
 }
 
 Rts2NDevListWindow::Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_block):Rts2NSelWindow (master_window, 0, 1, 10,
@@ -116,12 +125,14 @@ void
 Rts2NDevListWindow::draw ()
 {
   Rts2NWindow::draw ();
-  wclear (window);
+  wclear (scrolpad);
+  maxrow = 0;
   for (connections_t::iterator iter = block->connectionBegin ();
        iter != block->connectionEnd (); iter++)
     {
       Rts2Conn *conn = *iter;
-      wprintw (window, "%s\n", conn->getName ());
+      wprintw (scrolpad, "%s\n", conn->getName ());
+      maxrow++;
     }
   refresh ();
 }
@@ -153,9 +164,9 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
        iter != client->valueEnd (); iter++)
     {
       Rts2Value *val = *iter;
-      wprintw (window, "%-20s|%30s\n", val->getName ().c_str (),
+      wprintw (scrolpad, "%-20s|%30s\n", val->getName ().c_str (),
 	       val->getValue ());
-
+      maxrow++;
     }
 }
 
@@ -169,7 +180,7 @@ void
 Rts2NDeviceWindow::draw ()
 {
   Rts2NWindow::draw ();
-  werase (window);
+  werase (scrolpad);
   drawValuesList ();
   refresh ();
 }

@@ -5,13 +5,21 @@
 
 class Rts2NMsgBox:public Rts2NWindow
 {
+private:
+  const char *query;
+  const char **buttons;
+  int butnum;
 public:
-  Rts2NMsgBox (WINDOW * master_window);
-  virtual ~ Rts2NMsgBox (void);
+    Rts2NMsgBox (WINDOW * master_window, const char *in_query,
+		 const char *in_buttons[], int in_butnum);
+    virtual ~ Rts2NMsgBox (void);
   virtual int injectKey (int key);
   virtual void draw ();
-  enum
-  { MSG_YES, MSG_NO } exitState;
+  /**
+   * -1 when exited with KEY_ESC, >=0 when exited with enter, it's
+   *  index of selected button
+   */
+  int exitState;
 };
 
 #endif /* !__RTS2_NMSGBOX__ */

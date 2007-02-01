@@ -27,6 +27,10 @@ class Rts2NSelWindow:public Rts2NWindow
 {
 protected:
   int selrow;
+  int maxrow;
+  int padoff_x;
+  int padoff_y;
+  WINDOW *scrolpad;
 public:
     Rts2NSelWindow (WINDOW * master_window, int x, int y, int w, int h,
 		    int border = 1);

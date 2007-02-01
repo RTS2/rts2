@@ -3,6 +3,7 @@
 Rts2NMsgWindow::Rts2NMsgWindow (WINDOW * master_window):Rts2NWindow (master_window, 0, LINES - 19, COLS,
 	     18)
 {
+  scrollok (window, TRUE);
 }
 
 Rts2NMsgWindow::~Rts2NMsgWindow (void)

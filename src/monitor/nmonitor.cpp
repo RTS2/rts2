@@ -1,6 +1,5 @@
 #include <libnova/libnova.h>
 #include <getopt.h>
-#include <panel.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +19,9 @@
 #include "rts2nmenu.h"
 #include "rts2nmsgbox.h"
 #include "rts2nmsgwindow.h"
+#include "rts2nstatuswindow.h"
+
+#include "nmonitor.h"
 
 #ifdef HAVE_XCURSES
 char *XCursesProgramName = "rts2-mon";
@@ -27,13 +29,6 @@ char *XCursesProgramName = "rts2-mon";
 
 #define LINE_SIZE	13
 #define COL_SIZE	25
-
-#define CLR_OK		1
-#define CLR_TEXT	2
-#define CLR_PRIORITY	3
-#define CLR_WARNING	4
-#define CLR_FAILURE	5
-#define CLR_STATUS      6
 
 #define CMD_BUF_LEN    100
 
@@ -55,14 +50,15 @@ enum messageAction
 class Rts2NMonitor:public Rts2Client
 {
 private:
-  WINDOW * statusWindow;
-  WINDOW *cursesWin;
+  WINDOW * cursesWin;
   Rts2NDevListWindow *deviceList;
   Rts2NWindow *daemonWindow;
   Rts2NMsgWindow *msgwindow;
   Rts2NMenu *menu;
 
   Rts2NMsgBox *msgBox;
+
+  Rts2NStatusWindow *statusWindow;
 
   Rts2NWindow *activeWindow;
   Rts2NWindow *msgOldEntry;
@@ -81,7 +77,7 @@ private:
 
   messageAction msgAction;
 
-  void messageBox (char *query, messageAction action);
+  void messageBox (const char *query, messageAction action);
   void messageBoxEnd ();
 
 protected:
@@ -135,7 +131,7 @@ Rts2NMonitor::executeCommand ()
 void
 Rts2NMonitor::relocatesWindows ()
 {
-  update_panels ();
+  resize ();
 }
 
 
@@ -165,13 +161,13 @@ Rts2NMonitor::refreshAddress ()
 }
 
 void
-Rts2NMonitor::messageBox (char *query, messageAction action)
+Rts2NMonitor::messageBox (const char *query, messageAction action)
 {
+  const static char *buts[] = { "Yes", "No" };
   if (msgBox)
     return;
   msgAction = action;
-  msgBox = new Rts2NMsgBox (cursesWin);
-  deviceList->draw ();
+  msgBox = new Rts2NMsgBox (cursesWin, query, buts, 2);
   msgBox->draw ();
   msgOldEntry = activeWindow;
   activeWindow = msgBox;
@@ -180,7 +176,7 @@ Rts2NMonitor::messageBox (char *query, messageAction action)
 void
 Rts2NMonitor::messageBoxEnd ()
 {
-  if (msgBox->exitState == Rts2NMsgBox::MSG_NO)
+  if (msgBox->exitState == 0)
     {
       switch (msgAction)
 	{
@@ -230,6 +226,7 @@ Rts2NMonitor::~Rts2NMonitor (void)
   delete daemonWindow;
   delete msgBox;
   delete msgwindow;
+  delete statusWindow;
   endwin ();
 }
 
@@ -237,11 +234,8 @@ int
 Rts2NMonitor::paintWindows ()
 {
   curs_set (0);
-  // prepare main window..
-  if (statusWindow)
-    delwin (statusWindow);
-  statusWindow = newwin (1, COLS, LINES - 1, 0);
-  wbkgdset (statusWindow, A_BOLD | COLOR_PAIR (CLR_STATUS));
+  doupdate ();
+  refresh ();
   curs_set (1);
   return 0;
 }
@@ -249,22 +243,14 @@ Rts2NMonitor::paintWindows ()
 int
 Rts2NMonitor::repaint ()
 {
-  char dateBuf[40];
-  time_t now;
-  time (&now);
 
-  wcolor_set (statusWindow, CLR_STATUS, NULL);
-
-  mvwprintw (statusWindow, 0, 0, "** Status: %s ** ",
-	     getMasterStateString ().c_str ());
-  wcolor_set (statusWindow, CLR_TEXT, NULL);
-  strftime (dateBuf, 40, "%Y-%m-%dT%H:%M:%S", gmtime (&now));
-  mvwprintw (statusWindow, 0, COLS - 40, "%40s", dateBuf);
   deviceList->draw ();
   daemonWindow->draw ();
   msgwindow->draw ();
-  wrefresh (statusWindow);
-//  update_panels ();
+  statusWindow->draw ();
+  if (msgBox)
+    msgBox->draw ();
+  doupdate ();
   return 0;
 }
 
@@ -301,6 +287,8 @@ Rts2NMonitor::init ()
   msgwindow = new Rts2NMsgWindow (cursesWin);
 
   activeWindow = deviceList;
+
+  statusWindow = new Rts2NStatusWindow (cursesWin, this);
 
   cbreak ();
   keypad (stdscr, TRUE);
@@ -381,6 +369,7 @@ Rts2NMonitor::resize ()
 void
 Rts2NMonitor::processKey (int key)
 {
+  int ret = -1;
   switch (key)
     {
     case '\t':
@@ -393,19 +382,19 @@ Rts2NMonitor::processKey (int key)
 	activeWindow = deviceList;
       break;
     case KEY_F (2):
-      messageBox ("</3>Are you sure to switch off?", SWITCH_OFF);
+      messageBox ("Are you sure to switch off?", SWITCH_OFF);
       break;
     case KEY_F (3):
-      messageBox ("</3>Are you sure to switch to standby?", SWITCH_STANDBY);
+      messageBox ("Are you sure to switch to standby?", SWITCH_STANDBY);
       break;
     case KEY_F (4):
-      messageBox ("</3>Are you sure to switch to on?", SWITCH_ON);
+      messageBox ("Are you sure to switch to on?", SWITCH_ON);
       break;
     case KEY_F (5):
       queAll ("info");
       break;
     case KEY_F (8):
-      update_panels ();
+      doupdate ();
       break;
     case KEY_F (9):
       msgOldEntry = activeWindow;
@@ -420,7 +409,7 @@ Rts2NMonitor::processKey (int key)
       break;
       // some input-sensitive commands
     default:
-      activeWindow->injectKey (key);
+      ret = activeWindow->injectKey (key);
     }
   // draw device values
   if (activeWindow == deviceList)
@@ -439,6 +428,11 @@ Rts2NMonitor::processKey (int key)
 	      daemonWindow = new Rts2NDeviceWindow (cursesWin, conn);
 	    }
 	}
+    }
+  // handle msg box
+  if (activeWindow == msgBox && ret == 0)
+    {
+      messageBoxEnd ();
     }
 }
 
