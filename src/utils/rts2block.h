@@ -127,6 +127,18 @@ public:
   {
     return connections.end ();
   }
+  Rts2Conn *
+  connectionAt (int i)
+  {
+    int
+      j;
+    connections_t::iterator iter;
+    for (j = 0, iter = connections.begin ();
+	 j < i && iter != connections.end (); j++, iter++);
+    if (iter == connections.end ())
+      return NULL;
+    return *iter;
+  }
   int
   connectionSize ()
   {
