@@ -289,6 +289,7 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
       send (msg);
       free (msg);
       master->sendStatusInfo (this);
+      master->sendMetaInfo (this);
       master->baseInfo (this);
       master->info (this);
     }

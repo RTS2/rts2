@@ -12,29 +12,10 @@ void
 Rts2Daemon::addConnectionSock (int in_sock)
 {
   Rts2Conn *conn = createConnection (in_sock);
-  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
-       iter != constValues.end (); iter++)
+  if (sendMetaInfo (conn))
     {
-      Rts2Value *val = *iter;
-      int ret;
-      ret = val->sendMetaInfo (conn);
-      if (ret < 0)
-	{
-	  delete conn;
-	  return;
-	}
-    }
-  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
-       iter != values.end (); iter++)
-    {
-      Rts2Value *val = *iter;
-      int ret;
-      ret = val->sendMetaInfo (conn);
-      if (ret < 0)
-	{
-	  delete conn;
-	  return;
-	}
+      delete conn;
+      return;
     }
   addConnection (conn);
 }
@@ -515,6 +496,34 @@ Rts2Daemon::sendInfo (Rts2Conn * conn)
       ret = val->sendInfo (conn);
       if (ret)
 	return ret;
+    }
+  return 0;
+}
+
+int
+Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
+{
+  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
+       iter != constValues.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      int ret;
+      ret = val->sendMetaInfo (conn);
+      if (ret < 0)
+	{
+	  return -1;
+	}
+    }
+  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
+       iter != values.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      int ret;
+      ret = val->sendMetaInfo (conn);
+      if (ret < 0)
+	{
+	  return -1;
+	}
     }
   return 0;
 }
