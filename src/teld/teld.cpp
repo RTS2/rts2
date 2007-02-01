@@ -96,6 +96,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
   knowPosition = new Rts2ValueInteger ("know_position");
   knowPosition->setValueInteger (0);
+  addValue (knowPosition);
 
   rasc =
     new Rts2ValueDouble ("CUR_RA", "current RA (real or from astrometry");
