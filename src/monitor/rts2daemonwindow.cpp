@@ -1,33 +1,145 @@
 #include "rts2daemonwindow.h"
 
-Rts2DaemonWindow::Rts2DaemonWindow (CDKSCREEN * cdkscreen)
-{
+#include <iostream>
 
+Rts2NWindow::Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
+			  int border)
+{
+  switch (border)
+    {
+    case 0:
+      boxwin = NULL;
+      window = newwin (h, w, y, x);
+      break;
+    case 1:
+      boxwin = newwin (h, w, y, x);
+      box (boxwin, 0, 0);
+      window = derwin (boxwin, h - 2, w - 2, 1, 1);
+      break;
+    }
 }
 
-Rts2DaemonWindow::~Rts2DaemonWindow (void)
+Rts2NWindow::~Rts2NWindow (void)
 {
-
+  if (boxwin)
+    delwin (boxwin);
+  else
+    delwin (window);
 }
 
-Rts2DeviceWindow::Rts2DeviceWindow (CDKSCREEN * cdkscreen, Rts2Conn * in_connection):Rts2DaemonWindow
-  (cdkscreen)
+void
+Rts2NWindow::draw ()
 {
-  valueList =
-    newCDKAlphalist (cdkscreen, 20, 1, LINES - 22, COLS - 20,
-		     "<C></B/24>Value list", NULL, NULL, 0, '_', A_REVERSE,
-		     TRUE, FALSE);
+  if (boxwin)
+    {
+      box (boxwin, 0, 0);
+    }
+}
+
+void
+Rts2NWindow::refresh ()
+{
+  if (boxwin)
+    {
+      wrefresh (boxwin);
+    }
+  else
+    {
+      wrefresh (window);
+    }
+}
+
+Rts2NSelWindow::Rts2NSelWindow (WINDOW * master_window, int x, int y, int w,
+				int h, int border):
+Rts2NWindow (master_window, x, y, w, h, border)
+{
+  selrow = 0;
+}
+
+Rts2NSelWindow::~Rts2NSelWindow (void)
+{
+}
+
+int
+Rts2NSelWindow::injectKey (int key)
+{
+  switch (key)
+    {
+    case KEY_HOME:
+      selrow = 0;
+      break;
+    case KEY_END:
+      selrow = 5;
+      break;
+    case KEY_DOWN:
+      selrow++;
+      break;
+    case KEY_UP:
+      if (selrow > 0)
+	selrow--;
+      break;
+    }
+  draw ();
+  return 0;
+}
+
+void
+Rts2NSelWindow::refresh ()
+{
+  if (selrow >= 0)
+    {
+      int w, h;
+      getmaxyx (window, h, w);
+      mvwchgat (window, selrow, 0, w, A_REVERSE, 0, NULL);
+    }
+  Rts2NWindow::refresh ();
+}
+
+Rts2NDevListWindow::Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_block):Rts2NSelWindow (master_window, 0, 1, 10,
+		LINES -
+		20)
+{
+  block = in_block;
+}
+
+Rts2NDevListWindow::~Rts2NDevListWindow (void)
+{
+}
+
+int
+Rts2NDevListWindow::injectKey (int key)
+{
+  return Rts2NSelWindow::injectKey (key);
+}
+
+void
+Rts2NDevListWindow::draw ()
+{
+  Rts2NWindow::draw ();
+  wclear (window);
+  for (connections_t::iterator iter = block->connectionBegin ();
+       iter != block->connectionEnd (); iter++)
+    {
+      Rts2Conn *conn = *iter;
+      wprintw (window, "%s\n", conn->getName ());
+    }
+  refresh ();
+}
+
+Rts2NDeviceWindow::Rts2NDeviceWindow (WINDOW * master_window, Rts2Conn * in_connection):Rts2NSelWindow
+  (master_window, 10, 1, COLS - 10,
+   LINES - 20)
+{
   connection = in_connection;
   draw ();
 }
 
-Rts2DeviceWindow::~Rts2DeviceWindow ()
+Rts2NDeviceWindow::~Rts2NDeviceWindow ()
 {
-  destroyCDKAlphalist (valueList);
 }
 
 void
-Rts2DeviceWindow::drawValuesList ()
+Rts2NDeviceWindow::drawValuesList ()
 {
   Rts2DevClient *client = connection->getOtherDevClient ();
   if (client)
@@ -35,78 +147,68 @@ Rts2DeviceWindow::drawValuesList ()
 }
 
 void
-Rts2DeviceWindow::drawValuesList (Rts2DevClient * client)
+Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 {
-  int i = 0;
-  char *new_list[client->valueSize ()];
   for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
-       iter != client->valueEnd (); iter++, i++)
+       iter != client->valueEnd (); iter++)
     {
       Rts2Value *val = *iter;
-      asprintf (&new_list[i], "%-20s|%30s", val->getName ().c_str (),
-		val->getValue ());
-    }
-  setCDKAlphalistContents (valueList, (char **) new_list,
-			   client->valueSize ());
-  for (i = 0; i < client->valueSize (); i++)
-    {
-      free (new_list[i]);
+      wprintw (window, "%-20s|%30s\n", val->getName ().c_str (),
+	       val->getValue ());
+
     }
 }
 
-char *
-Rts2DeviceWindow::injectKey (int key)
+int
+Rts2NDeviceWindow::injectKey (int key)
 {
-  return injectCDKEntry (valueList->entryField, key);
+  return Rts2NSelWindow::injectKey (key);
 }
 
 void
-Rts2DeviceWindow::draw ()
+Rts2NDeviceWindow::draw ()
 {
+  Rts2NWindow::draw ();
+  werase (window);
   drawValuesList ();
-  drawCDKAlphalist (valueList, TRUE);
+  refresh ();
 }
 
 void
-Rts2CentraldWindow::drawDevice (Rts2Conn * conn)
+Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
 {
-  char *buf;
-  asprintf (&buf, "</1>%s %s ", conn->getName (),
-	    conn->getStateString ().c_str ());
-  addCDKSwindow (swindow, buf, BOTTOM);
-  free (buf);
+  wprintw (window, "%s %s\n", conn->getName (),
+	   conn->getStateString ().c_str ());
 }
 
-Rts2CentraldWindow::Rts2CentraldWindow (CDKSCREEN * cdkscreen, Rts2Client * in_client):Rts2DaemonWindow
-  (cdkscreen)
+Rts2NCentraldWindow::Rts2NCentraldWindow (WINDOW * master_window, Rts2Client * in_client):Rts2NWindow
+  (master_window, 10, 1, COLS - 10,
+   LINES - 20)
 {
-  swindow =
-    newCDKSwindow (cdkscreen, 20, 1, LINES - 24, COLS - 20, "Overwiew", 100,
-		   TRUE, FALSE);
   client = in_client;
   draw ();
 }
 
-Rts2CentraldWindow::~Rts2CentraldWindow (void)
+Rts2NCentraldWindow::~Rts2NCentraldWindow (void)
 {
 }
 
-char *
-Rts2CentraldWindow::injectKey (int key)
+int
+Rts2NCentraldWindow::injectKey (int key)
 {
-  injectCDKSwindow (swindow, key);
-  return NULL;
+  return 0;
 }
 
 void
-Rts2CentraldWindow::draw ()
+Rts2NCentraldWindow::draw ()
 {
-  cleanCDKSwindow (swindow);
+  Rts2NWindow::draw ();
+  werase (window);
   for (connections_t::iterator iter = client->connectionBegin ();
        iter != client->connectionEnd (); iter++)
     {
       Rts2Conn *conn = *iter;
       drawDevice (conn);
     }
-  drawCDKSwindow (swindow, TRUE);
+  refresh ();
 }
