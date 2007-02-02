@@ -9,4 +9,7 @@
 #define CLR_FAILURE	5
 #define CLR_STATUS      6
 
+#define K_ENTER		13
+#define K_ESC		27
+
 #endif /* !__RTS2_NMONITOR__ */

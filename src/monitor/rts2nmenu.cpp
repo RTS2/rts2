@@ -1,4 +1,5 @@
 #include "rts2nmenu.h"
+#include "nmonitor.h"
 
 void
 Rts2NAction::draw (WINDOW * master_window, int y)
@@ -84,9 +85,12 @@ Rts2NMenu::injectKey (int key)
       break;
     case '\n':
     case KEY_ENTER:
+    case K_ENTER:
       return 0;
     case KEY_EXIT:
-      return -1;
+    case K_ESC:
+      selSubmenu = NULL;
+      return 0;
     }
   return -1;
 }
@@ -109,14 +113,22 @@ Rts2NMenu::draw ()
 }
 
 void
+Rts2NMenu::enter ()
+{
+  selSubmenu = *selSubmenuIter;
+}
+
+void
+Rts2NMenu::leave ()
+{
+  selSubmenu = NULL;
+}
+
+void
 Rts2NMenu::addSubmenu (Rts2NSubmenu * in_submenu)
 {
   submenus.push_back (in_submenu);
   selSubmenuIter = submenus.begin ();
-  if (!selSubmenu)
-    {
-      selSubmenu = *selSubmenuIter;
-    }
   in_submenu->move (top_x, 0);
   top_x += in_submenu->getWidth () + 2;
 }

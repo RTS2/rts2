@@ -31,6 +31,16 @@ public:
   void grow (int max_w, int h_dif);
 
   virtual void refresh ();
+
+  /**
+   * Gets called when window get focus.
+   */
+  virtual void enter ();
+
+  /**
+   * Gets called when window lost focus.
+   */
+  virtual void leave ();
 };
 
 class Rts2NSelWindow:public Rts2NWindow

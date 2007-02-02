@@ -27,15 +27,11 @@
 char *XCursesProgramName = "rts2-mon";
 #endif
 
-#define LINE_SIZE	13
-#define COL_SIZE	25
-
 #define CMD_BUF_LEN    100
 
-#define EVENT_PRINT		RTS2_LOCAL_EVENT + 1
-#define EVENT_PRINT_SHORT	RTS2_LOCAL_EVENT + 2
-#define EVENT_PRINT_FULL	RTS2_LOCAL_EVENT + 3
-#define EVENT_PRINT_MESSAGES	RTS2_LOCAL_EVENT + 4
+#define MENU_OFF	1
+#define MENU_STANDBY	2
+#define MENU_ON		3
 
 enum messageAction
 { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
@@ -71,14 +67,14 @@ private:
   int paintWindows ();
   int repaint ();
 
-  int printType;
-
   void refreshAddress ();
 
   messageAction msgAction;
 
   void messageBox (const char *query, messageAction action);
   void messageBoxEnd ();
+  void menuPerform (int code);
+  void leaveMenu ();
 
 protected:
     virtual void addSelectSocks (fd_set * read_set);
@@ -91,8 +87,6 @@ public:
 
   virtual int init ();
   virtual int idle ();
-
-  virtual void postEvent (Rts2Event * event);
 
   virtual int deleteConnection (Rts2Conn * conn);
 
@@ -196,6 +190,28 @@ Rts2NMonitor::messageBoxEnd ()
   activeWindow = msgOldEntry;
 }
 
+void
+Rts2NMonitor::menuPerform (int code)
+{
+  switch (code)
+    {
+    case MENU_OFF:
+      break;
+    case MENU_STANDBY:
+      break;
+    case MENU_ON:
+      break;
+    }
+}
+
+void
+Rts2NMonitor::leaveMenu ()
+{
+  menu->leave ();
+  activeWindow = msgOldEntry;
+  msgOldEntry = NULL;
+}
+
 int
 Rts2NMonitor::addAddress (Rts2Address * in_addr)
 {
@@ -217,17 +233,16 @@ Rts2Client (in_argc, in_argv)
   msgwindow = NULL;
   msgBox = NULL;
   cmd_col = 0;
-  printType = EVENT_PRINT_FULL;
 }
 
 Rts2NMonitor::~Rts2NMonitor (void)
 {
+  endwin ();
   delete deviceList;
   delete daemonWindow;
   delete msgBox;
   delete msgwindow;
   delete statusWindow;
-  endwin ();
 }
 
 int
@@ -258,9 +273,6 @@ int
 Rts2NMonitor::init ()
 {
   int ret;
-//  char *menulist[MAX_MENU_ITEMS][MAX_SUB_ITEMS];
-//  int menuloc[] = { LEFT, RIGHT };
-//  int submenusize[] = { 4, 2 };
   ret = Rts2Client::init ();
   if (ret)
     return ret;
@@ -272,13 +284,20 @@ Rts2NMonitor::init ()
 	endl;
       return -1;
     }
+
+  cbreak ();
+  noecho ();
+  nonl ();
+  intrflush (stdscr, FALSE);
+  keypad (stdscr, TRUE);
+
   deviceList = new Rts2NDevListWindow (cursesWin, this);
 
   menu = new Rts2NMenu (cursesWin);
   Rts2NSubmenu *sub = new Rts2NSubmenu (cursesWin, "System");
-  sub->createAction ("Off", 1);
-  sub->createAction ("Standby", 2);
-  sub->createAction ("On", 3);
+  sub->createAction ("Off", MENU_OFF);
+  sub->createAction ("Standby", MENU_STANDBY);
+  sub->createAction ("On", MENU_ON);
   sub->createAction ("Exit", 4);
   menu->addSubmenu (sub);
 
@@ -292,10 +311,6 @@ Rts2NMonitor::init ()
   activeWindow = deviceList;
 
   statusWindow = new Rts2NStatusWindow (cursesWin, this);
-
-  cbreak ();
-  keypad (stdscr, TRUE);
-  noecho ();
 
   if (has_colors ())
     {
@@ -322,21 +337,6 @@ Rts2NMonitor::idle ()
   return Rts2Client::idle ();
 }
 
-void
-Rts2NMonitor::postEvent (Rts2Event * event)
-{
-  switch (event->getType ())
-    {
-    case EVENT_PRINT_FULL:
-    case EVENT_PRINT_SHORT:
-    case EVENT_PRINT_MESSAGES:
-      printType = event->getType ();
-      break;
-    }
-  Rts2Client::postEvent (event);
-  // ::postEvent deletes event
-}
-
 int
 Rts2NMonitor::deleteConnection (Rts2Conn * conn)
 {
@@ -360,7 +360,6 @@ Rts2NMonitor::resize ()
   initscr ();
   relocatesWindows ();
   paintWindows ();
-  postEvent (new Rts2Event (EVENT_PRINT));
   return repaint ();
 }
 
@@ -372,12 +371,14 @@ Rts2NMonitor::processKey (int key)
     {
     case '\t':
     case KEY_STAB:
+      activeWindow->leave ();
       if (activeWindow == deviceList)
 	activeWindow = daemonWindow;
       else if (activeWindow == daemonWindow)
 	activeWindow = msgwindow;
       else
 	activeWindow = deviceList;
+      activeWindow->enter ();
       break;
     case KEY_F (2):
       messageBox ("Are you sure to switch off?", SWITCH_OFF);
@@ -397,6 +398,7 @@ Rts2NMonitor::processKey (int key)
     case KEY_F (9):
       msgOldEntry = activeWindow;
       activeWindow = menu;
+      activeWindow->enter ();
       deviceList->draw ();
       if (daemonWindow)
 	daemonWindow->draw ();
@@ -431,6 +433,15 @@ Rts2NMonitor::processKey (int key)
   if (activeWindow == msgBox && ret == 0)
     {
       messageBoxEnd ();
+    }
+  else if (activeWindow == menu && ret == 0)
+    {
+      Rts2NAction *action;
+      action = menu->getSelAction ();
+      if (action)
+	menuPerform (action->getCode ());
+      else
+	leaveMenu ();
     }
 }
 

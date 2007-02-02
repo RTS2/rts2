@@ -20,6 +20,11 @@ public:
   {
   }
   void draw (WINDOW * master_window, int y);
+
+  int getCode ()
+  {
+    return code;
+  }
 };
 
 class Rts2NSubmenu:public Rts2NSelWindow
@@ -41,6 +46,10 @@ public:
   }
   void draw (WINDOW * master_window);
   void drawSubmenu ();
+  Rts2NAction *getSelAction ()
+  {
+    return actions[getSelRow ()];
+  }
 };
 
 class Rts2NMenu:public Rts2NWindow
@@ -55,7 +64,16 @@ public:
     virtual ~ Rts2NMenu (void);
   virtual int injectKey (int key);
   virtual void draw ();
+  virtual void enter ();
+  virtual void leave ();
+
   void addSubmenu (Rts2NSubmenu * in_submenu);
+  Rts2NAction *getSelAction ()
+  {
+    if (selSubmenu)
+      return selSubmenu->getSelAction ();
+    return NULL;
+  }
 };
 
 #endif /* !__RTS2_NMENU__ */

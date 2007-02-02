@@ -1,4 +1,5 @@
 #include "rts2nmsgbox.h"
+#include "nmonitor.h"
 
 Rts2NMsgBox::Rts2NMsgBox (WINDOW * master_window, const char *in_query,
 			  const char *in_buttons[], int in_butnum):
@@ -26,10 +27,11 @@ Rts2NMsgBox::injectKey (int key)
       exitState--;
       break;
     case KEY_EXIT:
+    case K_ESC:
       exitState = -1;
       return 0;
     case KEY_ENTER:
-    case '\n':
+    case K_ENTER:
       return 0;
     }
   if (exitState < 0)

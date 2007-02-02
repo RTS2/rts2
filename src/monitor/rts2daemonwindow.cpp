@@ -147,6 +147,16 @@ Rts2NWindow::refresh ()
     }
 }
 
+void
+Rts2NWindow::enter ()
+{
+}
+
+void
+Rts2NWindow::leave ()
+{
+}
+
 Rts2NSelWindow::Rts2NSelWindow (WINDOW * master_window, int x, int y, int w,
 				int h, int border):
 Rts2NWindow (master_window, x, y, w, h, border)
