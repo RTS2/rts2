@@ -15,6 +15,12 @@ Rts2NWindow::Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
       boxwin = newwin (h, w, y, x);
       box (boxwin, 0, 0);
       window = derwin (boxwin, h - 2, w - 2, 1, 1);
+      if (!window)
+	{
+	  endwin ();
+	  std::cout << "Cannot create window, exiting" << std::endl;
+	  exit (EXIT_FAILURE);
+	}
       break;
     }
 }
@@ -34,6 +40,98 @@ Rts2NWindow::draw ()
     {
       box (boxwin, 0, 0);
     }
+}
+
+int
+Rts2NWindow::getX ()
+{
+  int x, y;
+  if (boxwin)
+    getbegyx (boxwin, y, x);
+  else
+    getbegyx (window, y, x);
+  return x;
+}
+
+int
+Rts2NWindow::getY ()
+{
+  int x, y;
+  if (boxwin)
+    getbegyx (boxwin, y, x);
+  else
+    getbegyx (window, y, x);
+  return y;
+}
+
+int
+Rts2NWindow::getWidth ()
+{
+  int w, h;
+  if (boxwin)
+    getmaxyx (boxwin, h, w);
+  else
+    getmaxyx (boxwin, h, w);
+  return w;
+}
+
+int
+Rts2NWindow::getHeight ()
+{
+  int w, h;
+  if (boxwin)
+    getmaxyx (boxwin, h, w);
+  else
+    getmaxyx (boxwin, h, w);
+  return h;
+}
+
+void
+Rts2NWindow::move (int x, int y)
+{
+  if (boxwin)
+    {
+      mvwin (boxwin, y, x);
+//      mvwin (window, y + 1, x + 1);
+    }
+  else
+    {
+      mvwin (window, y, x);
+    }
+}
+
+void
+Rts2NWindow::resize (int x, int y, int w, int h)
+{
+  move (x, y);
+  if (boxwin)
+    {
+      wresize (boxwin, h, w);
+      wresize (window, h - 2, w - 2);
+    }
+  else
+    {
+      wresize (window, h, w);
+    }
+}
+
+void
+Rts2NWindow::grow (int max_w, int h_dif)
+{
+  int x, y, w, h;
+  if (boxwin)
+    {
+      getbegyx (boxwin, y, x);
+      getmaxyx (boxwin, h, w);
+    }
+  else
+    {
+      getbegyx (window, y, x);
+      getmaxyx (window, h, w);
+    }
+  if (max_w > w)
+    w = max_w;
+  resize (x, y, w, h + h_dif);
 }
 
 void
@@ -74,7 +172,7 @@ Rts2NSelWindow::injectKey (int key)
       selrow = 0;
       break;
     case KEY_END:
-      selrow = maxrow;
+      selrow = maxrow - 1;
       break;
     case KEY_DOWN:
       if (selrow < (maxrow - 1))
@@ -92,7 +190,7 @@ Rts2NSelWindow::injectKey (int key)
 void
 Rts2NSelWindow::refresh ()
 {
-  int x, y;
+//  int x, y;
   int w, h;
   if (selrow >= 0)
     {
@@ -126,7 +224,7 @@ void
 Rts2NDevListWindow::draw ()
 {
   Rts2NWindow::draw ();
-  wclear (scrolpad);
+  werase (scrolpad);
   maxrow = 0;
   for (connections_t::iterator iter = block->connectionBegin ();
        iter != block->connectionEnd (); iter++)

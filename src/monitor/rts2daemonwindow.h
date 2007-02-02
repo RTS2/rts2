@@ -20,6 +20,16 @@ public:
     virtual ~ Rts2NWindow (void);
   virtual int injectKey (int key) = 0;
   virtual void draw ();
+
+  int getX ();
+  int getY ();
+  int getWidth ();
+  int getHeight ();
+
+  void move (int x, int y);
+  void resize (int x, int y, int w, int h);
+  void grow (int max_w, int h_dif);
+
   virtual void refresh ();
 };
 

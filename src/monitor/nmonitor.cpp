@@ -235,7 +235,6 @@ Rts2NMonitor::paintWindows ()
 {
   curs_set (0);
   doupdate ();
-  refresh ();
   curs_set (1);
   return 0;
 }
@@ -248,6 +247,7 @@ Rts2NMonitor::repaint ()
   daemonWindow->draw ();
   msgwindow->draw ();
   statusWindow->draw ();
+  menu->draw ();
   if (msgBox)
     msgBox->draw ();
   doupdate ();
@@ -274,15 +274,18 @@ Rts2NMonitor::init ()
     }
   deviceList = new Rts2NDevListWindow (cursesWin, this);
 
-/*  menulist[0][0] = "</B>System<!B>";
-  menulist[0][1] = "</B>Off<!B>       </1>(F2)";
-  menulist[0][2] = "</B>Standby<!B>   </1>(F3)";
-  menulist[0][3] = "</B>Standby<!B>   </1>(F4)";
-
-  menulist[1][0] = "</B>Help<!B>";
-  menulist[1][1] = "</B>About...<!B>"; */
-
   menu = new Rts2NMenu (cursesWin);
+  Rts2NSubmenu *sub = new Rts2NSubmenu (cursesWin, "System");
+  sub->createAction ("Off", 1);
+  sub->createAction ("Standby", 2);
+  sub->createAction ("On", 3);
+  sub->createAction ("Exit", 4);
+  menu->addSubmenu (sub);
+
+  sub = new Rts2NSubmenu (cursesWin, "Help");
+  sub->createAction ("About", 5);
+  menu->addSubmenu (sub);
+
 
   msgwindow = new Rts2NMsgWindow (cursesWin);
 
@@ -305,11 +308,6 @@ Rts2NMonitor::init ()
     }
   getCentraldConn ()->queCommand (new Rts2Command (this, "info"));
   setMessageMask (MESSAGE_MASK_ALL);
-  paintWindows ();
-
-  deviceList->draw ();
-  menu->draw ();
-  msgwindow->draw ();
 
   daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
 
