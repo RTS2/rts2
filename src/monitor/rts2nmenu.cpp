@@ -68,7 +68,8 @@ Rts2NMenu::injectKey (int key)
     case KEY_END:
       if (selSubmenu)
 	{
-	  return selSubmenu->injectKey (key);
+	  selSubmenu->injectKey (key);
+	  return -1;
 	}
       break;
     case KEY_RIGHT:

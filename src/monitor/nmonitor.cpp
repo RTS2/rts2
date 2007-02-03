@@ -32,6 +32,8 @@ char *XCursesProgramName = "rts2-mon";
 #define MENU_OFF	1
 #define MENU_STANDBY	2
 #define MENU_ON		3
+#define MENU_EXIT	4
+#define MENU_ABOUT	5
 
 enum messageAction
 { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
@@ -64,7 +66,6 @@ private:
   void executeCommand ();
   void relocatesWindows ();
 
-  int paintWindows ();
   int repaint ();
 
   void refreshAddress ();
@@ -196,10 +197,19 @@ Rts2NMonitor::menuPerform (int code)
   switch (code)
     {
     case MENU_OFF:
+      messageBox ("Are you sure to switch off?", SWITCH_OFF);
       break;
     case MENU_STANDBY:
+      messageBox ("Are you sure to switch to standby?", SWITCH_STANDBY);
       break;
     case MENU_ON:
+      messageBox ("Are you sure to switch to on?", SWITCH_ON);
+      break;
+    case MENU_ABOUT:
+
+      break;
+    case MENU_EXIT:
+      endRunLoop ();
       break;
     }
 }
@@ -246,18 +256,9 @@ Rts2NMonitor::~Rts2NMonitor (void)
 }
 
 int
-Rts2NMonitor::paintWindows ()
-{
-  curs_set (0);
-  doupdate ();
-  curs_set (1);
-  return 0;
-}
-
-int
 Rts2NMonitor::repaint ()
 {
-
+  curs_set (0);
   deviceList->draw ();
   daemonWindow->draw ();
   msgwindow->draw ();
@@ -266,6 +267,7 @@ Rts2NMonitor::repaint ()
   if (msgBox)
     msgBox->draw ();
   doupdate ();
+  curs_set (1);
   return 0;
 }
 
@@ -298,11 +300,11 @@ Rts2NMonitor::init ()
   sub->createAction ("Off", MENU_OFF);
   sub->createAction ("Standby", MENU_STANDBY);
   sub->createAction ("On", MENU_ON);
-  sub->createAction ("Exit", 4);
+  sub->createAction ("Exit", MENU_EXIT);
   menu->addSubmenu (sub);
 
   sub = new Rts2NSubmenu (cursesWin, "Help");
-  sub->createAction ("About", 5);
+  sub->createAction ("About", MENU_ABOUT);
   menu->addSubmenu (sub);
 
 
@@ -359,7 +361,6 @@ Rts2NMonitor::resize ()
   endwin ();
   initscr ();
   relocatesWindows ();
-  paintWindows ();
   return repaint ();
 }
 

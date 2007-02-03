@@ -187,10 +187,14 @@ Rts2NSelWindow::injectKey (int key)
     case KEY_DOWN:
       if (selrow < (maxrow - 1))
 	selrow++;
+      else
+	selrow = 0;
       break;
     case KEY_UP:
       if (selrow > 0)
 	selrow--;
+      else
+	selrow = (maxrow - 1);
       break;
     }
   draw ();
@@ -240,7 +244,11 @@ Rts2NDevListWindow::draw ()
        iter != block->connectionEnd (); iter++)
     {
       Rts2Conn *conn = *iter;
-      wprintw (scrolpad, "%s\n", conn->getName ());
+      const char *name = conn->getName ();
+      if (*name == '\0')
+	wprintw (scrolpad, "status\n");
+      else
+	wprintw (scrolpad, "%s\n", conn->getName ());
       maxrow++;
     }
   refresh ();
