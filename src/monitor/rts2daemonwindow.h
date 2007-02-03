@@ -23,6 +23,8 @@ public:
 
   int getX ();
   int getY ();
+  int getCurX ();
+  int getCurY ();
   int getWidth ();
   int getHeight ();
 
@@ -41,6 +43,11 @@ public:
    * Gets called when window lost focus.
    */
   virtual void leave ();
+
+  /**
+   * Set screen cursor to current window.
+   */
+  void setCursor ();
 };
 
 class Rts2NSelWindow:public Rts2NWindow

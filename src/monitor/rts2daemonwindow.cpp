@@ -65,6 +65,29 @@ Rts2NWindow::getY ()
 }
 
 int
+Rts2NWindow::getCurX ()
+{
+  int x, y;
+  if (boxwin)
+    getyx (boxwin, y, x);
+  else
+    getyx (window, y, x);
+  return x + getX ();
+}
+
+int
+Rts2NWindow::getCurY ()
+{
+  int x, y;
+  if (boxwin)
+    getyx (boxwin, y, x);
+  else
+    getyx (window, y, x);
+  return y + getY ();
+}
+
+
+int
 Rts2NWindow::getWidth ()
 {
   int w, h;
@@ -92,7 +115,6 @@ Rts2NWindow::move (int x, int y)
   if (boxwin)
     {
       mvwin (boxwin, y, x);
-//      mvwin (window, y + 1, x + 1);
     }
   else
     {
@@ -155,6 +177,12 @@ Rts2NWindow::enter ()
 void
 Rts2NWindow::leave ()
 {
+}
+
+void
+Rts2NWindow::setCursor ()
+{
+  setsyx (getCurY (), getCurX ());
 }
 
 Rts2NSelWindow::Rts2NSelWindow (WINDOW * master_window, int x, int y, int w,
@@ -256,7 +284,7 @@ Rts2NDevListWindow::draw ()
 
 Rts2NDeviceWindow::Rts2NDeviceWindow (WINDOW * master_window, Rts2Conn * in_connection):Rts2NSelWindow
   (master_window, 10, 1, COLS - 10,
-   LINES - 20)
+   LINES - 25)
 {
   connection = in_connection;
   draw ();
@@ -312,7 +340,7 @@ Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
 
 Rts2NCentraldWindow::Rts2NCentraldWindow (WINDOW * master_window, Rts2Client * in_client):Rts2NWindow
   (master_window, 10, 1, COLS - 10,
-   LINES - 20)
+   LINES - 25)
 {
   client = in_client;
   draw ();

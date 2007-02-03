@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <list>
 
 #include <iostream>
 #include <fstream>
@@ -20,6 +21,7 @@
 #include "rts2nmsgbox.h"
 #include "rts2nmsgwindow.h"
 #include "rts2nstatuswindow.h"
+#include "rts2ncomwin.h"
 
 #include "nmonitor.h"
 
@@ -52,14 +54,15 @@ private:
   Rts2NDevListWindow *deviceList;
   Rts2NWindow *daemonWindow;
   Rts2NMsgWindow *msgwindow;
+  Rts2NComWin *comWindow;
   Rts2NMenu *menu;
 
   Rts2NMsgBox *msgBox;
 
   Rts2NStatusWindow *statusWindow;
 
-  Rts2NWindow *activeWindow;
-  Rts2NWindow *msgOldEntry;
+    std::list < Rts2NWindow * >windowStack;
+
   int cmd_col;
   char cmd_buf[CMD_BUF_LEN];
 
@@ -152,7 +155,6 @@ Rts2NMonitor::selectSuccess (fd_set * read_set)
 void
 Rts2NMonitor::refreshAddress ()
 {
-  deviceList->draw ();
 }
 
 void
@@ -164,8 +166,7 @@ Rts2NMonitor::messageBox (const char *query, messageAction action)
   msgAction = action;
   msgBox = new Rts2NMsgBox (cursesWin, query, buts, 2);
   msgBox->draw ();
-  msgOldEntry = activeWindow;
-  activeWindow = msgBox;
+  windowStack.push_back (msgBox);
 }
 
 void
@@ -187,8 +188,7 @@ Rts2NMonitor::messageBoxEnd ()
 	}
     }
   delete msgBox;
-  msgBox = NULL;
-  activeWindow = msgOldEntry;
+  windowStack.pop_back ();
 }
 
 void
@@ -218,8 +218,7 @@ void
 Rts2NMonitor::leaveMenu ()
 {
   menu->leave ();
-  activeWindow = msgOldEntry;
-  msgOldEntry = NULL;
+  windowStack.pop_back ();
 }
 
 int
@@ -239,6 +238,7 @@ Rts2Client (in_argc, in_argv)
   statusWindow = NULL;
   deviceList = NULL;
   daemonWindow = NULL;
+  comWindow = NULL;
   menu = NULL;
   msgwindow = NULL;
   msgBox = NULL;
@@ -263,11 +263,13 @@ Rts2NMonitor::repaint ()
   daemonWindow->draw ();
   msgwindow->draw ();
   statusWindow->draw ();
+  comWindow->draw ();
   menu->draw ();
   if (msgBox)
     msgBox->draw ();
-  doupdate ();
+  comWindow->setCursor ();
   curs_set (1);
+  doupdate ();
   return 0;
 }
 
@@ -295,6 +297,8 @@ Rts2NMonitor::init ()
 
   deviceList = new Rts2NDevListWindow (cursesWin, this);
 
+  comWindow = new Rts2NComWin (cursesWin);
+
   menu = new Rts2NMenu (cursesWin);
   Rts2NSubmenu *sub = new Rts2NSubmenu (cursesWin, "System");
   sub->createAction ("Off", MENU_OFF);
@@ -310,7 +314,7 @@ Rts2NMonitor::init ()
 
   msgwindow = new Rts2NMsgWindow (cursesWin);
 
-  activeWindow = deviceList;
+  windowStack.push_back (deviceList);
 
   statusWindow = new Rts2NStatusWindow (cursesWin, this);
 
@@ -367,19 +371,33 @@ Rts2NMonitor::resize ()
 void
 Rts2NMonitor::processKey (int key)
 {
+  Rts2NWindow *activeWindow = *(--windowStack.end ());
   int ret = -1;
   switch (key)
     {
     case '\t':
     case KEY_STAB:
-      activeWindow->leave ();
       if (activeWindow == deviceList)
-	activeWindow = daemonWindow;
+	{
+	  activeWindow->leave ();
+	  windowStack.pop_back ();
+	  windowStack.push_back (daemonWindow);
+	  activeWindow->enter ();
+	}
       else if (activeWindow == daemonWindow)
-	activeWindow = msgwindow;
-      else
-	activeWindow = deviceList;
-      activeWindow->enter ();
+	{
+	  activeWindow->leave ();
+	  windowStack.pop_back ();
+	  windowStack.push_back (msgwindow);
+	  msgwindow->enter ();
+	}
+      else if (activeWindow == msgwindow)
+	{
+	  activeWindow->leave ();
+	  windowStack.pop_back ();
+	  windowStack.push_back (deviceList);
+	  deviceList->enter ();
+	}
       break;
     case KEY_F (2):
       messageBox ("Are you sure to switch off?", SWITCH_OFF);
@@ -397,20 +415,25 @@ Rts2NMonitor::processKey (int key)
       doupdate ();
       break;
     case KEY_F (9):
-      msgOldEntry = activeWindow;
-      activeWindow = menu;
-      activeWindow->enter ();
-      deviceList->draw ();
-      if (daemonWindow)
-	daemonWindow->draw ();
-      menu->draw ();
+      windowStack.push_back (menu);
+      menu->enter ();
       break;
     case KEY_F (10):
       endRunLoop ();
       break;
-      // some input-sensitive commands
-    default:
+      // default for active window
+    case KEY_UP:
+    case KEY_DOWN:
+    case KEY_HOME:
+    case KEY_END:
+    case KEY_ENTER:
+    case K_ENTER:
+    case KEY_EXIT:
+    case K_ESC:
       ret = activeWindow->injectKey (key);
+      break;
+    default:
+      comWindow->injectKey (key);
     }
   // draw device values
   if (activeWindow == deviceList)
