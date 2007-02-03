@@ -1,5 +1,7 @@
 #include "rts2ncomwin.h"
 
+#include "nmonitor.h"
+
 Rts2NComWin::Rts2NComWin (WINDOW * master_window):Rts2NWindow (master_window, 11, LINES - 24, COLS - 12, 5,
 	     0)
 {
@@ -20,10 +22,13 @@ Rts2NComWin::injectKey (int key)
       getyx (window, y, x);
       mvwdelch (window, y, x - 1);
       break;
+    case KEY_ENTER:
+    case K_ENTER:
+      return 0;
     default:
       waddch (window, key);
     }
-  return 0;
+  return -1;
 }
 
 void

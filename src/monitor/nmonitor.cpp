@@ -318,15 +318,20 @@ Rts2NMonitor::init ()
 
   statusWindow = new Rts2NStatusWindow (cursesWin, this);
 
+  start_color ();
+  use_default_colors ();
+
   if (has_colors ())
     {
-      init_pair (CLR_OK, COLOR_GREEN, 0);
-      init_pair (CLR_TEXT, COLOR_WHITE, 0);
-      init_pair (CLR_PRIORITY, COLOR_CYAN, 0);
-      init_pair (CLR_WARNING, COLOR_RED, 0);
-      init_pair (CLR_FAILURE, COLOR_YELLOW, 0);
+      init_pair (CLR_DEFAULT, -1, -1);
+      init_pair (CLR_OK, COLOR_GREEN, -1);
+      init_pair (CLR_TEXT, COLOR_WHITE, -1);
+      init_pair (CLR_PRIORITY, COLOR_CYAN, -1);
+      init_pair (CLR_WARNING, COLOR_RED, -1);
+      init_pair (CLR_FAILURE, COLOR_YELLOW, -1);
       init_pair (CLR_STATUS, COLOR_RED, COLOR_CYAN);
     }
+
   getCentraldConn ()->queCommand (new Rts2Command (this, "info"));
   setMessageMask (MESSAGE_MASK_ALL);
 
@@ -424,6 +429,8 @@ Rts2NMonitor::processKey (int key)
       // default for active window
     case KEY_UP:
     case KEY_DOWN:
+    case KEY_LEFT:
+    case KEY_RIGHT:
     case KEY_HOME:
     case KEY_END:
     case KEY_ENTER:
@@ -433,7 +440,7 @@ Rts2NMonitor::processKey (int key)
       ret = activeWindow->injectKey (key);
       break;
     default:
-      comWindow->injectKey (key);
+      ret = comWindow->injectKey (key);
     }
   // draw device values
   if (activeWindow == deviceList)
@@ -466,6 +473,17 @@ Rts2NMonitor::processKey (int key)
 	menuPerform (action->getCode ());
       else
 	leaveMenu ();
+    }
+  else if (ret == 0 || (key == KEY_ENTER || key == K_ENTER))
+    {
+      char command[comWindow->getCurX () + 1];
+      Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
+      comWindow->getWinString (command, (comWindow->getCurX () - 1));
+      command[comWindow->getCurX () + 1] = '\0';
+      conn->queCommand (new Rts2Command (this, command));
+      comWindow->clear ();
+      mvwprintw (comWindow->getWriteWindow (), 1, 0, "%s", command);
+      mvwprintw (comWindow->getWriteWindow (), 0, 0, "");
     }
 }
 

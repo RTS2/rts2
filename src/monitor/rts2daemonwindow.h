@@ -28,6 +28,16 @@ public:
   int getWidth ();
   int getHeight ();
 
+  void getWinString (char *buf, int n)
+  {
+    mvwinnstr (window, 0, 0, buf, n);
+  }
+
+  virtual void clear ()
+  {
+    werase (window);
+  }
+
   void move (int x, int y);
   void resize (int x, int y, int w, int h);
   void grow (int max_w, int h_dif);
@@ -48,6 +58,16 @@ public:
    * Set screen cursor to current window.
    */
   void setCursor ();
+
+  /**
+   * Returns window which is used to write text
+   */
+  virtual WINDOW *getWriteWindow ()
+  {
+    return window;
+  }
+
+  void printState (Rts2Conn * conn);
 };
 
 class Rts2NSelWindow:public Rts2NWindow
@@ -67,6 +87,11 @@ public:
   int getSelRow ()
   {
     return selrow;
+  }
+
+  virtual void erase ()
+  {
+    werase (scrolpad);
   }
 };
 

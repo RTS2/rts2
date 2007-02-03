@@ -1,4 +1,5 @@
 #include "rts2daemonwindow.h"
+#include "nmonitor.h"
 
 #include <iostream>
 
@@ -185,6 +186,19 @@ Rts2NWindow::setCursor ()
   setsyx (getCurY (), getCurX ());
 }
 
+void
+Rts2NWindow::printState (Rts2Conn * conn)
+{
+  if (conn->getErrorState ())
+    wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
+  else if (conn->havePriority ())
+    wcolor_set (getWriteWindow (), CLR_OK, NULL);
+  wprintw (getWriteWindow (), "%s %s (%i) priority: %s\n", conn->getName (),
+	   conn->getStateString ().c_str (), conn->getState (),
+	   conn->havePriority ()? "yes" : "no");
+  wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
+}
+
 Rts2NSelWindow::Rts2NSelWindow (WINDOW * master_window, int x, int y, int w,
 				int h, int border):
 Rts2NWindow (master_window, x, y, w, h, border)
@@ -226,7 +240,7 @@ Rts2NSelWindow::injectKey (int key)
       break;
     }
   draw ();
-  return 0;
+  return -1;
 }
 
 void
@@ -305,7 +319,6 @@ Rts2NDeviceWindow::drawValuesList ()
 void
 Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 {
-  maxrow = 0;
   for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
        iter != client->valueEnd (); iter++)
     {
@@ -327,6 +340,8 @@ Rts2NDeviceWindow::draw ()
 {
   Rts2NWindow::draw ();
   werase (scrolpad);
+  maxrow = 1;
+  printState (connection);
   drawValuesList ();
   refresh ();
 }
@@ -334,8 +349,7 @@ Rts2NDeviceWindow::draw ()
 void
 Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
 {
-  wprintw (window, "%s %s\n", conn->getName (),
-	   conn->getStateString ().c_str ());
+  printState (conn);
 }
 
 Rts2NCentraldWindow::Rts2NCentraldWindow (WINDOW * master_window, Rts2Client * in_client):Rts2NWindow
@@ -353,7 +367,7 @@ Rts2NCentraldWindow::~Rts2NCentraldWindow (void)
 int
 Rts2NCentraldWindow::injectKey (int key)
 {
-  return 0;
+  return -1;
 }
 
 void
