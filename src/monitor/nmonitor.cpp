@@ -1,5 +1,4 @@
 #include <libnova/libnova.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -7,9 +6,6 @@
 
 #include <iostream>
 #include <fstream>
-
-#include <sys/ioctl.h>
-#include <termios.h>
 
 #include "nmonitor.h"
 
@@ -66,16 +62,13 @@ void
 Rts2NMonitor::selectSuccess (fd_set * read_set)
 {
   Rts2Client::selectSuccess (read_set);
-  if (FD_ISSET (1, read_set))
+  while (1)
     {
-      chtype input = getch ();
+      int input = getch ();
+      if (input == ERR)
+	break;
       processKey (input);
     }
-}
-
-void
-Rts2NMonitor::refreshAddress ()
-{
 }
 
 void
@@ -149,7 +142,6 @@ Rts2NMonitor::addAddress (Rts2Address * in_addr)
   ret = Rts2Client::addAddress (in_addr);
   if (ret)
     return ret;
-  refreshAddress ();
   return ret;
 }
 
@@ -221,6 +213,7 @@ Rts2NMonitor::init ()
   nonl ();
   intrflush (stdscr, FALSE);
   keypad (stdscr, TRUE);
+  timeout (0);
 
   deviceList = new Rts2NDevListWindow (cursesWin, this);
 
@@ -270,8 +263,6 @@ Rts2NMonitor::init ()
 int
 Rts2NMonitor::idle ()
 {
-  if (resizedRequest)
-    resize ();
   repaint ();
   setTimeout (USEC_SEC);
   return Rts2Client::idle ();
@@ -288,7 +279,6 @@ Rts2NMonitor::deleteConnection (Rts2Conn * conn)
 {
   int ret;
   ret = Rts2Client::deleteConnection (conn);
-  refreshAddress ();
   return ret;
 }
 
@@ -298,12 +288,9 @@ Rts2NMonitor::message (Rts2Message & msg)
   *msgwindow << msg;
 }
 
-int
+void
 Rts2NMonitor::resize ()
 {
-  printf ("resize %i %i\n", LINES, COLS);
-  resizedRequest = false;
-  return 0;
 }
 
 void
@@ -360,7 +347,7 @@ Rts2NMonitor::processKey (int key)
       endRunLoop ();
       break;
     case KEY_RESIZE:
-      printf ("resize %i %i\n", LINES, COLS);
+      resize ();
       break;
       // default for active window
     case KEY_UP:
@@ -410,7 +397,7 @@ Rts2NMonitor::processKey (int key)
       else
 	leaveMenu ();
     }
-  else if (ret == 0 || (key == KEY_ENTER || key == K_ENTER))
+  else if (ret == 0 || key == KEY_ENTER || key == K_ENTER)
     {
       char command[comWindow->getCurX () + 1];
       Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
@@ -437,35 +424,12 @@ Rts2NMonitor::willConnect (Rts2Address * in_addr)
 
 Rts2NMonitor *monitor = NULL;
 
-// signal and keyboard handlers..
-
-sighandler_t old_Winch;
-
-void
-sigWinch (int sig)
-{
-  // if (waiting || sig == 0) {
-  struct winsize size;
-
-  if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0)
-    {
-      resize_term (size.ws_row, size.ws_col);
-      monitor->setResizeRequest ();
-    }
-//      interrupted = FALSE;
-//  } else {
-//      interrupted = TRUE;
-//  }
-}
-
 int
 main (int argc, char **argv)
 {
   int ret;
 
   monitor = new Rts2NMonitor (argc, argv);
-
-  old_Winch = signal (SIGWINCH, sigWinch);
 
   ret = monitor->init ();
   if (ret)

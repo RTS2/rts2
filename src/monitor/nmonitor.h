@@ -68,8 +68,6 @@ private:
 
   int repaint ();
 
-  void refreshAddress ();
-
   messageAction msgAction;
 
   bool colorsOff;
@@ -102,7 +100,7 @@ public:
 
   virtual void message (Rts2Message & msg);
 
-  int resize ();
+  void resize ();
 
   void processKey (int key);
 
