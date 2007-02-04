@@ -36,6 +36,10 @@ public:
   {
     connection = conn;
   }
+  Rts2Conn *getConnection ()
+  {
+    return connection;
+  }
   virtual int send ();
   int commandReturn (int status);
   char *getText ()
