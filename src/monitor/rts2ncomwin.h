@@ -10,6 +10,8 @@ public:
   virtual ~ Rts2NComWin (void);
   virtual int injectKey (int key);
   virtual void draw ();
+
+  void commandReturn (Rts2Command * cmd, int cmd_status);
 };
 
 #endif /* !__RTS2_NCOMWIN__ */
