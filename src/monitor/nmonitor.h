@@ -79,6 +79,8 @@ private:
   void menuPerform (int code);
   void leaveMenu ();
 
+  void changeActive (Rts2NWindow * new_active);
+
 protected:
     virtual int processOption (int in_opt);
 

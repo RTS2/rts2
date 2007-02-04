@@ -135,6 +135,16 @@ Rts2NMonitor::leaveMenu ()
   windowStack.pop_back ();
 }
 
+void
+Rts2NMonitor::changeActive (Rts2NWindow * new_active)
+{
+  Rts2NWindow *activeWindow = *(--windowStack.end ());
+  windowStack.pop_back ();
+  activeWindow->leave ();
+  windowStack.push_back (new_active);
+  new_active->enter ();
+}
+
 int
 Rts2NMonitor::addAddress (Rts2Address * in_addr)
 {
@@ -304,24 +314,15 @@ Rts2NMonitor::processKey (int key)
     case KEY_STAB:
       if (activeWindow == deviceList)
 	{
-	  activeWindow->leave ();
-	  windowStack.pop_back ();
-	  windowStack.push_back (daemonWindow);
-	  activeWindow->enter ();
+	  changeActive (daemonWindow);
 	}
       else if (activeWindow == daemonWindow)
 	{
-	  activeWindow->leave ();
-	  windowStack.pop_back ();
-	  windowStack.push_back (msgwindow);
-	  msgwindow->enter ();
+	  changeActive (msgwindow);
 	}
       else if (activeWindow == msgwindow)
 	{
-	  activeWindow->leave ();
-	  windowStack.pop_back ();
-	  windowStack.push_back (deviceList);
-	  deviceList->enter ();
+	  changeActive (deviceList);
 	}
       break;
     case KEY_F (2):
