@@ -48,5 +48,5 @@ Rts2NComWin::commandReturn (Rts2Command * cmd, int cmd_status)
   mvwprintw (getWriteWindow (), 2, 0, "%s %+04i %s",
 	     cmd->getConnection ()->getName (), cmd_status, cmd->getText ());
   wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-  mvwprintw (getWriteWindow (), 0, 0, "");
+  wmove (getWriteWindow (), 0, 0);
 }

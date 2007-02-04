@@ -1,5 +1,4 @@
 #include <libnova/libnova.h>
-#include <getopt.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +7,9 @@
 
 #include <iostream>
 #include <fstream>
+
+#include <sys/ioctl.h>
+#include <termios.h>
 
 #include "nmonitor.h"
 
@@ -38,12 +40,19 @@ Rts2NMonitor::executeCommand ()
   cmd_buf[0] = '\0';
 }
 
-void
-Rts2NMonitor::relocatesWindows ()
+int
+Rts2NMonitor::processOption (int in_opt)
 {
-  resize ();
+  switch (in_opt)
+    {
+    case 'c':
+      colorsOff = true;
+      break;
+    default:
+      return Rts2Client::processOption (in_opt);
+    }
+  return 0;
 }
-
 
 void
 Rts2NMonitor::addSelectSocks (fd_set * read_set)
@@ -155,6 +164,12 @@ Rts2Client (in_argc, in_argv)
   msgwindow = NULL;
   msgBox = NULL;
   cmd_col = 0;
+
+  colorsOff = false;
+
+  resizedRequest = false;
+
+  addOption ('c', "color-off", 0, "don't use colors");
 }
 
 Rts2NMonitor::~Rts2NMonitor (void)
@@ -233,7 +248,7 @@ Rts2NMonitor::init ()
   start_color ();
   use_default_colors ();
 
-  if (has_colors ())
+  if (has_colors () && !colorsOff)
     {
       init_pair (CLR_DEFAULT, -1, -1);
       init_pair (CLR_OK, COLOR_GREEN, -1);
@@ -255,6 +270,8 @@ Rts2NMonitor::init ()
 int
 Rts2NMonitor::idle ()
 {
+  if (resizedRequest)
+    resize ();
   repaint ();
   setTimeout (USEC_SEC);
   return Rts2Client::idle ();
@@ -284,11 +301,9 @@ Rts2NMonitor::message (Rts2Message & msg)
 int
 Rts2NMonitor::resize ()
 {
-  erase ();
-  endwin ();
-  initscr ();
-  relocatesWindows ();
-  return repaint ();
+  printf ("resize %i %i\n", LINES, COLS);
+  resizedRequest = false;
+  return 0;
 }
 
 void
@@ -343,6 +358,9 @@ Rts2NMonitor::processKey (int key)
       break;
     case KEY_F (10):
       endRunLoop ();
+      break;
+    case KEY_RESIZE:
+      printf ("resize %i %i\n", LINES, COLS);
       break;
       // default for active window
     case KEY_UP:
@@ -401,7 +419,7 @@ Rts2NMonitor::processKey (int key)
       conn->queCommand (new Rts2Command (this, command));
       comWindow->clear ();
       mvwprintw (comWindow->getWriteWindow (), 1, 0, "%s", command);
-      mvwprintw (comWindow->getWriteWindow (), 0, 0, "");
+      wmove (comWindow->getWriteWindow (), 0, 0);
     }
 }
 
@@ -426,9 +444,18 @@ sighandler_t old_Winch;
 void
 sigWinch (int sig)
 {
-  if (old_Winch)
-    old_Winch (sig);
-  monitor->resize ();
+  // if (waiting || sig == 0) {
+  struct winsize size;
+
+  if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0)
+    {
+      resize_term (size.ws_row, size.ws_col);
+      monitor->setResizeRequest ();
+    }
+//      interrupted = FALSE;
+//  } else {
+//      interrupted = TRUE;
+//  }
 }
 
 int

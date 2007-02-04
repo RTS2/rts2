@@ -65,7 +65,6 @@ private:
   char cmd_buf[CMD_BUF_LEN];
 
   void executeCommand ();
-  void relocatesWindows ();
 
   int repaint ();
 
@@ -73,13 +72,19 @@ private:
 
   messageAction msgAction;
 
+  bool colorsOff;
+
+  bool resizedRequest;
+
   void messageBox (const char *query, messageAction action);
   void messageBoxEnd ();
   void menuPerform (int code);
   void leaveMenu ();
 
 protected:
-    virtual void addSelectSocks (fd_set * read_set);
+    virtual int processOption (int in_opt);
+
+  virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
 
   virtual int addAddress (Rts2Address * in_addr);
@@ -102,6 +107,11 @@ public:
   void processKey (int key);
 
   void commandReturn (Rts2Command * cmd, int cmd_status);
+
+  void setResizeRequest ()
+  {
+    resizedRequest = true;
+  }
 };
 
 class Rts2NMonConn:public Rts2ConnClient

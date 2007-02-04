@@ -6,6 +6,10 @@
 Rts2NWindow::Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
 			  int border)
 {
+  if (h <= 0)
+    h = 0;
+  if (w <= 0)
+    w = 0;
   switch (border)
     {
     case 0:
@@ -15,7 +19,27 @@ Rts2NWindow::Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
     case 1:
       boxwin = newwin (h, w, y, x);
       box (boxwin, 0, 0);
-      window = derwin (boxwin, h - 2, w - 2, 1, 1);
+      w -= 2;
+      if (w < 0)
+	{
+	  w = 0;
+	  x = 0;
+	}
+      else
+	{
+	  x = 1;
+	}
+      h -= 2;
+      if (h < 0)
+	{
+	  h = 0;
+	  y = 0;
+	}
+      else
+	{
+	  y = 1;
+	}
+      window = derwin (boxwin, h, w, x, y);
       if (!window)
 	{
 	  endwin ();
