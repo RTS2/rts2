@@ -106,9 +106,11 @@ Rts2NMenu::draw ()
     {
       Rts2NSubmenu *submenu = *iter;
       if (submenu == selSubmenu)
-	submenu->drawSubmenu ();
+	{
+	  submenu->drawSubmenu ();
+	  submenu->refresh ();
+	}
       submenu->draw (window);
-      submenu->refresh ();
     }
   refresh ();
 }

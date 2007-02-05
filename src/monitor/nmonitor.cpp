@@ -317,14 +317,17 @@ Rts2NMonitor::processKey (int key)
       if (activeWindow == deviceList)
 	{
 	  changeActive (daemonWindow);
+	  activeWindow = NULL;
 	}
       else if (activeWindow == daemonWindow)
 	{
 	  changeActive (msgwindow);
+	  activeWindow = NULL;
 	}
       else if (activeWindow == msgwindow)
 	{
 	  changeActive (deviceList);
+	  activeWindow = NULL;
 	}
       break;
     case KEY_F (2):

@@ -14,57 +14,29 @@ Rts2NLayout ()
   switch (border)
     {
     case 0:
-      boxwin = NULL;
       window = newwin (h, w, y, x);
+      _haveBox = false;
       break;
     case 1:
-      boxwin = newwin (h, w, y, x);
-      box (boxwin, 0, 0);
-      w -= 2;
-      if (w < 0)
-	{
-	  w = 0;
-	  x = 0;
-	}
-      else
-	{
-	  x = 1;
-	}
-      h -= 2;
-      if (h < 0)
-	{
-	  h = 0;
-	  y = 0;
-	}
-      else
-	{
-	  y = 1;
-	}
-      window = derwin (boxwin, h, w, x, y);
-      if (!window)
-	{
-	  endwin ();
-	  std::cout << "Cannot create window, exiting" << std::endl;
-	  exit (EXIT_FAILURE);
-	}
+      window = newwin (h, w, y, x);
+      box (window, 0, 0);
+      _haveBox = true;
       break;
     }
 }
 
 Rts2NWindow::~Rts2NWindow (void)
 {
-  if (boxwin)
-    delwin (boxwin);
-  else
-    delwin (window);
+  delwin (window);
 }
 
 void
 Rts2NWindow::draw ()
 {
-  if (boxwin)
+  werase (window);
+  if (haveBox ())
     {
-      box (boxwin, 0, 0);
+      box (window, 0, 0);
     }
 }
 
@@ -72,10 +44,7 @@ int
 Rts2NWindow::getX ()
 {
   int x, y;
-  if (boxwin)
-    getbegyx (boxwin, y, x);
-  else
-    getbegyx (window, y, x);
+  getbegyx (window, y, x);
   return x;
 }
 
@@ -83,10 +52,7 @@ int
 Rts2NWindow::getY ()
 {
   int x, y;
-  if (boxwin)
-    getbegyx (boxwin, y, x);
-  else
-    getbegyx (window, y, x);
+  getbegyx (window, y, x);
   return y;
 }
 
@@ -94,10 +60,7 @@ int
 Rts2NWindow::getCurX ()
 {
   int x, y;
-  if (boxwin)
-    getyx (boxwin, y, x);
-  else
-    getyx (window, y, x);
+  getyx (window, y, x);
   return x + getX ();
 }
 
@@ -105,10 +68,7 @@ int
 Rts2NWindow::getCurY ()
 {
   int x, y;
-  if (boxwin)
-    getyx (boxwin, y, x);
-  else
-    getyx (window, y, x);
+  getyx (window, y, x);
   return y + getY ();
 }
 
@@ -117,10 +77,7 @@ int
 Rts2NWindow::getWidth ()
 {
   int w, h;
-  if (boxwin)
-    getmaxyx (boxwin, h, w);
-  else
-    getmaxyx (boxwin, h, w);
+  getmaxyx (window, h, w);
   return w;
 }
 
@@ -128,38 +85,33 @@ int
 Rts2NWindow::getHeight ()
 {
   int w, h;
-  if (boxwin)
-    getmaxyx (boxwin, h, w);
-  else
-    getmaxyx (boxwin, h, w);
+  getmaxyx (window, h, w);
   return h;
+}
+
+void
+Rts2NWindow::errorMove ()
+{
+  endwin ();
+  std::cout << "Cannot move" << std::endl;
+  exit (EXIT_FAILURE);
 }
 
 void
 Rts2NWindow::move (int x, int y)
 {
-  if (boxwin)
-    {
-      mvwin (boxwin, y, x);
-    }
-  else
-    {
-      mvwin (window, y, x);
-    }
+  int _x, _y;
+  getbegyx (window, _y, _x);
+  if (x == _x && y == _y)
+    return;
+  if (mvwin (window, y, x) == ERR)
+    errorMove ();
 }
 
 void
 Rts2NWindow::resize (int x, int y, int w, int h)
 {
-  if (boxwin)
-    {
-      wresize (boxwin, h, w);
-      wresize (window, h - 2, w - 2);
-    }
-  else
-    {
-      wresize (window, h, w);
-    }
+  wresize (window, h, w);
   move (x, y);
 }
 
@@ -167,16 +119,8 @@ void
 Rts2NWindow::grow (int max_w, int h_dif)
 {
   int x, y, w, h;
-  if (boxwin)
-    {
-      getbegyx (boxwin, y, x);
-      getmaxyx (boxwin, h, w);
-    }
-  else
-    {
-      getbegyx (window, y, x);
-      getmaxyx (window, h, w);
-    }
+  getbegyx (window, y, x);
+  getmaxyx (window, h, w);
   if (max_w > w)
     w = max_w;
   resize (x, y, w, h + h_dif);
@@ -185,14 +129,7 @@ Rts2NWindow::grow (int max_w, int h_dif)
 void
 Rts2NWindow::refresh ()
 {
-  if (boxwin)
-    {
-      wnoutrefresh (boxwin);
-    }
-  else
-    {
-      wnoutrefresh (window);
-    }
+  wnoutrefresh (window);
 }
 
 void
@@ -232,8 +169,7 @@ Rts2NWindow (master_window, x, y, w, h, border)
   maxrow = 0;
   padoff_x = 0;
   padoff_y = 0;
-//  scrolpad = newpad (100, 300);
-  scrolpad = window;
+  scrolpad = newpad (100, 300);
 }
 
 Rts2NSelWindow::~Rts2NSelWindow (void)
@@ -271,7 +207,7 @@ Rts2NSelWindow::injectKey (int key)
 void
 Rts2NSelWindow::refresh ()
 {
-//  int x, y;
+  int x, y;
   int w, h;
   if (selrow >= 0)
     {
@@ -279,9 +215,12 @@ Rts2NSelWindow::refresh ()
       mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
     }
   Rts2NWindow::refresh ();
-//  getbegyx (window, y, x);
-//  getmaxyx (window, h, w);
-//  pnoutrefresh (scrolpad, 0, 0, y, x, y+h-2, x+w-2);
+  getbegyx (window, y, x);
+  getmaxyx (window, h, w);
+  if (haveBox ())
+    pnoutrefresh (scrolpad, 0, 0, y + 1, x + 1, y + h - 2, x + w - 2);
+  else
+    pnoutrefresh (scrolpad, 0, 0, y, x, y + h - 1, x + w - 1);
 }
 
 Rts2NDevListWindow::Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_block):Rts2NSelWindow (master_window, 0, 1, 10,
@@ -293,12 +232,6 @@ Rts2NDevListWindow::Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_b
 
 Rts2NDevListWindow::~Rts2NDevListWindow (void)
 {
-}
-
-int
-Rts2NDevListWindow::injectKey (int key)
-{
-  return Rts2NSelWindow::injectKey (key);
 }
 
 void
@@ -348,23 +281,17 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
        iter != client->valueEnd (); iter++)
     {
       Rts2Value *val = *iter;
-      wprintw (scrolpad, "%-20s|%30s\n", val->getName ().c_str (),
+      wprintw (getWriteWindow (), "%-20s|%30s\n", val->getName ().c_str (),
 	       val->getValue ());
       maxrow++;
     }
-}
-
-int
-Rts2NDeviceWindow::injectKey (int key)
-{
-  return Rts2NSelWindow::injectKey (key);
 }
 
 void
 Rts2NDeviceWindow::draw ()
 {
   Rts2NWindow::draw ();
-  werase (scrolpad);
+  werase (getWriteWindow ());
   maxrow = 1;
   printState (connection);
   drawValuesList ();
@@ -375,9 +302,10 @@ void
 Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
 {
   printState (conn);
+  maxrow++;
 }
 
-Rts2NCentraldWindow::Rts2NCentraldWindow (WINDOW * master_window, Rts2Client * in_client):Rts2NWindow
+Rts2NCentraldWindow::Rts2NCentraldWindow (WINDOW * master_window, Rts2Client * in_client):Rts2NSelWindow
   (master_window, 10, 1, COLS - 10,
    LINES - 25)
 {
@@ -389,17 +317,12 @@ Rts2NCentraldWindow::~Rts2NCentraldWindow (void)
 {
 }
 
-int
-Rts2NCentraldWindow::injectKey (int key)
-{
-  return -1;
-}
-
 void
 Rts2NCentraldWindow::draw ()
 {
-  Rts2NWindow::draw ();
-  werase (window);
+  Rts2NSelWindow::draw ();
+  werase (getWriteWindow ());
+  maxrow = 0;
   for (connections_t::iterator iter = client->connectionBegin ();
        iter != client->connectionEnd (); iter++)
     {

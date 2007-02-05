@@ -12,9 +12,11 @@
 
 class Rts2NWindow:public Rts2NLayout
 {
+private:
+  bool _haveBox;
+  void errorMove ();
 protected:
-  WINDOW * boxwin;
-  WINDOW *window;
+    WINDOW * window;
 public:
     Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
 		 int border = 1);
@@ -69,6 +71,11 @@ public:
   }
 
   void printState (Rts2Conn * conn);
+
+  bool haveBox ()
+  {
+    return _haveBox;
+  }
 };
 
 class Rts2NSelWindow:public Rts2NWindow
@@ -94,6 +101,11 @@ public:
   {
     werase (scrolpad);
   }
+
+  virtual WINDOW *getWriteWindow ()
+  {
+    return scrolpad;
+  }
 };
 
 class Rts2NDevListWindow:public Rts2NSelWindow
@@ -103,7 +115,6 @@ private:
 public:
   Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_block);
   virtual ~ Rts2NDevListWindow (void);
-  virtual int injectKey (int key);
   virtual void draw ();
 };
 
@@ -117,11 +128,10 @@ private:
 public:
     Rts2NDeviceWindow (WINDOW * master_window, Rts2Conn * in_connection);
     virtual ~ Rts2NDeviceWindow (void);
-  virtual int injectKey (int key);
   virtual void draw ();
 };
 
-class Rts2NCentraldWindow:public Rts2NWindow
+class Rts2NCentraldWindow:public Rts2NSelWindow
 {
 private:
   Rts2Client * client;
@@ -129,7 +139,6 @@ private:
 public:
     Rts2NCentraldWindow (WINDOW * master, Rts2Client * in_client);
     virtual ~ Rts2NCentraldWindow (void);
-  virtual int injectKey (int key);
   virtual void draw ();
 };
 
