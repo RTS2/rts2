@@ -300,6 +300,8 @@ Rts2NMonitor::message (Rts2Message & msg)
 void
 Rts2NMonitor::resize ()
 {
+  menu->resize (0, 0, COLS, 1);
+  statusWindow->resize (0, LINES - 1, COLS, 1);
   masterLayout->resize (0, 1, COLS, LINES - 2);
 }
 
