@@ -4,7 +4,8 @@
 #include <iostream>
 
 Rts2NWindow::Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
-			  int border)
+			  int border):
+Rts2NLayout ()
 {
   if (h <= 0)
     h = 0;
@@ -150,7 +151,6 @@ Rts2NWindow::move (int x, int y)
 void
 Rts2NWindow::resize (int x, int y, int w, int h)
 {
-  move (x, y);
   if (boxwin)
     {
       wresize (boxwin, h, w);
@@ -160,6 +160,7 @@ Rts2NWindow::resize (int x, int y, int w, int h)
     {
       wresize (window, h, w);
     }
+  move (x, y);
 }
 
 void

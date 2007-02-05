@@ -8,6 +8,7 @@
 #include "../writers/rts2image.h"
 #include "../writers/rts2devcliimg.h"
 
+#include "rts2nlayout.h"
 #include "rts2daemonwindow.h"
 #include "rts2nmenu.h"
 #include "rts2nmsgbox.h"
@@ -49,6 +50,8 @@ class Rts2NMonitor:public Rts2Client
 {
 private:
   WINDOW * cursesWin;
+  Rts2NLayout *masterLayout;
+  Rts2NLayoutBlock *daemonLayout;
   Rts2NDevListWindow *deviceList;
   Rts2NWindow *daemonWindow;
   Rts2NMsgWindow *msgwindow;
@@ -96,7 +99,6 @@ public:
   virtual int idle ();
 
   virtual Rts2ConnClient *createClientConnection (char *in_deviceName);
-  virtual int deleteConnection (Rts2Conn * conn);
 
   virtual int willConnect (Rts2Address * in_addr);
 

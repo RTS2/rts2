@@ -2,14 +2,15 @@
 #define __RTS2_DAEMONWINDOW__
 
 #include <curses.h>
-#include <panel.h>
+
+#include "rts2nlayout.h"
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2conn.h"
 #include "../utils/rts2client.h"
 #include "../utils/rts2devclient.h"
 
-class Rts2NWindow
+class Rts2NWindow:public Rts2NLayout
 {
 protected:
   WINDOW * boxwin;
@@ -39,7 +40,7 @@ public:
   }
 
   void move (int x, int y);
-  void resize (int x, int y, int w, int h);
+  virtual void resize (int x, int y, int w, int h);
   void grow (int max_w, int h_dif);
 
   virtual void refresh ();

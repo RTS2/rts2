@@ -102,6 +102,7 @@ Rts2NMonitor::messageBoxEnd ()
 	}
     }
   delete msgBox;
+  msgBox = NULL;
   windowStack.pop_back ();
 }
 
@@ -158,6 +159,8 @@ Rts2NMonitor::addAddress (Rts2Address * in_addr)
 Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):
 Rts2Client (in_argc, in_argv)
 {
+  masterLayout = NULL;
+  daemonLayout = NULL;
   statusWindow = NULL;
   deviceList = NULL;
   daemonWindow = NULL;
@@ -177,11 +180,10 @@ Rts2Client (in_argc, in_argv)
 Rts2NMonitor::~Rts2NMonitor (void)
 {
   endwin ();
-  delete deviceList;
-  delete daemonWindow;
   delete msgBox;
-  delete msgwindow;
   delete statusWindow;
+
+  delete masterLayout;
 }
 
 int
@@ -210,6 +212,7 @@ Rts2NMonitor::init ()
   if (ret)
     return ret;
 
+  // init ncurses
   cursesWin = initscr ();
   if (!cursesWin)
     {
@@ -225,10 +228,7 @@ Rts2NMonitor::init ()
   keypad (stdscr, TRUE);
   timeout (0);
 
-  deviceList = new Rts2NDevListWindow (cursesWin, this);
-
-  comWindow = new Rts2NComWin (cursesWin);
-
+  // create & init menu
   menu = new Rts2NMenu (cursesWin);
   Rts2NSubmenu *sub = new Rts2NSubmenu (cursesWin, "System");
   sub->createAction ("Off", MENU_OFF);
@@ -241,13 +241,7 @@ Rts2NMonitor::init ()
   sub->createAction ("About", MENU_ABOUT);
   menu->addSubmenu (sub);
 
-
-  msgwindow = new Rts2NMsgWindow (cursesWin);
-
-  windowStack.push_back (deviceList);
-
-  statusWindow = new Rts2NStatusWindow (cursesWin, this);
-
+  // start color mode
   start_color ();
   use_default_colors ();
 
@@ -262,10 +256,23 @@ Rts2NMonitor::init ()
       init_pair (CLR_STATUS, COLOR_RED, COLOR_CYAN);
     }
 
+  // init windows
+  deviceList = new Rts2NDevListWindow (cursesWin, this);
+  comWindow = new Rts2NComWin (cursesWin);
+  msgwindow = new Rts2NMsgWindow (cursesWin);
+  windowStack.push_back (deviceList);
+  statusWindow = new Rts2NStatusWindow (cursesWin, this);
+  daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
+
+  // init layout
+  daemonLayout = new Rts2NLayoutBlock (daemonWindow, comWindow, false, 66);
+  masterLayout = new Rts2NLayoutBlock (deviceList, daemonLayout, true, 10);
+  masterLayout = new Rts2NLayoutBlock (masterLayout, msgwindow, false, 75);
+
   getCentraldConn ()->queCommand (new Rts2Command (this, "info"));
   setMessageMask (MESSAGE_MASK_ALL);
 
-  daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
+  resize ();
 
   return repaint ();
 }
@@ -284,14 +291,6 @@ Rts2NMonitor::createClientConnection (char *in_deviceName)
   return new Rts2NMonConn (this, in_deviceName);
 }
 
-int
-Rts2NMonitor::deleteConnection (Rts2Conn * conn)
-{
-  int ret;
-  ret = Rts2Client::deleteConnection (conn);
-  return ret;
-}
-
 void
 Rts2NMonitor::message (Rts2Message & msg)
 {
@@ -301,6 +300,7 @@ Rts2NMonitor::message (Rts2Message & msg)
 void
 Rts2NMonitor::resize ()
 {
+  masterLayout->resize (0, 1, COLS, LINES - 2);
 }
 
 void
@@ -376,12 +376,15 @@ Rts2NMonitor::processKey (int key)
 	    {
 	      delete daemonWindow;
 	      daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
+	      daemonLayout->setLayoutA (daemonWindow);
 	    }
 	  else
 	    {
 	      delete daemonWindow;
 	      daemonWindow = new Rts2NDeviceWindow (cursesWin, conn);
+	      daemonLayout->setLayoutA (daemonWindow);
 	    }
+	  resize ();
 	}
     }
   // handle msg box
