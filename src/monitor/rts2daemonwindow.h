@@ -87,10 +87,11 @@ protected:
   int maxrow;
   int padoff_x;
   int padoff_y;
+  int lineOffset;
   WINDOW *scrolpad;
 public:
     Rts2NSelWindow (WINDOW * master_window, int x, int y, int w, int h,
-		    int border = 1);
+		    int border = 1, int sw = 300, int sh = 100);
     virtual ~ Rts2NSelWindow (void);
   virtual int injectKey (int key);
   virtual void refresh ();
@@ -107,6 +108,23 @@ public:
   virtual WINDOW *getWriteWindow ()
   {
     return scrolpad;
+  }
+
+  int getScrollWidth ()
+  {
+    int w, h;
+    getmaxyx (scrolpad, h, w);
+    return w;
+  }
+  int getScrollHeight ()
+  {
+    int w, h;
+    getmaxyx (scrolpad, h, w);
+    return h;
+  }
+  void setLineOffset (int new_lineOffset)
+  {
+    lineOffset = new_lineOffset;
   }
 };
 

@@ -12,6 +12,7 @@ Rts2NSelWindow (master_window, 0, 0, 2, 2)
 {
   text = in_text;
   grow (strlen (text) + 2, 0);
+  setLineOffset (0);
 }
 
 Rts2NSubmenu::~Rts2NSubmenu (void)

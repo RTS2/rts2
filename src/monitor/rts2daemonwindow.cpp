@@ -186,14 +186,15 @@ Rts2NWindow::printState (Rts2Conn * conn)
 }
 
 Rts2NSelWindow::Rts2NSelWindow (WINDOW * master_window, int x, int y, int w,
-				int h, int border):
+				int h, int border, int sw, int sh):
 Rts2NWindow (master_window, x, y, w, h, border)
 {
   selrow = 0;
   maxrow = 0;
   padoff_x = 0;
   padoff_y = 0;
-  scrolpad = newpad (100, 300);
+  scrolpad = newpad (sh, sw);
+  lineOffset = 1;
 }
 
 Rts2NSelWindow::~Rts2NSelWindow (void)
@@ -246,8 +247,8 @@ Rts2NSelWindow::injectKey (int key)
 	}
       break;
     }
-  if ((selrow - padoff_y + 1) >= getWriteHeight ())
-    padoff_y = selrow - getWriteHeight () + 2;
+  if ((selrow - padoff_y + lineOffset) >= getWriteHeight ())
+    padoff_y = selrow - getWriteHeight () + 1 + lineOffset;
   else if ((selrow - padoff_y) < 0)
     padoff_y = selrow;
   return -1;

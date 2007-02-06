@@ -265,7 +265,8 @@ Rts2NMonitor::init ()
   daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
 
   // init layout
-  daemonLayout = new Rts2NLayoutBlock (daemonWindow, comWindow, false, 66);
+  daemonLayout =
+    new Rts2NLayoutBlockFixedB (daemonWindow, comWindow, false, 5);
   masterLayout = new Rts2NLayoutBlock (deviceList, daemonLayout, true, 10);
   masterLayout = new Rts2NLayoutBlock (masterLayout, msgwindow, false, 75);
 

@@ -47,6 +47,52 @@ public:
   {
     layoutB = in_laB;
   }
+  Rts2NLayout *getLayoutA ()
+  {
+    return layoutA;
+  }
+  Rts2NLayout *getLayoutB ()
+  {
+    return layoutB;
+  }
+  virtual void resize (int x, int y, int w, int h);
+  int getRatio ()
+  {
+    return ratio;
+  }
+  bool isVertical ()
+  {
+    return vertical;
+  }
+};
+
+class Rts2NLayoutBlockFixedA:public Rts2NLayoutBlock
+{
+public:
+  Rts2NLayoutBlockFixedA (Rts2NLayout * in_laA, Rts2NLayout * in_laB,
+			  bool in_vertical,
+			  int sizeA):Rts2NLayoutBlock (in_laA, in_laB,
+						       in_vertical, sizeA)
+  {
+  }
+  virtual ~ Rts2NLayoutBlockFixedA (void)
+  {
+  }
+  virtual void resize (int x, int y, int w, int h);
+};
+
+class Rts2NLayoutBlockFixedB:public Rts2NLayoutBlock
+{
+public:
+  Rts2NLayoutBlockFixedB (Rts2NLayout * in_laA, Rts2NLayout * in_laB,
+			  bool in_vertical,
+			  int sizeB):Rts2NLayoutBlock (in_laA, in_laB,
+						       in_vertical, sizeB)
+  {
+  }
+  virtual ~ Rts2NLayoutBlockFixedB (void)
+  {
+  }
   virtual void resize (int x, int y, int w, int h);
 };
 
