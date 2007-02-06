@@ -11,14 +11,19 @@ Rts2NLayout ()
     h = 0;
   if (w <= 0)
     w = 0;
+  if (x < 0)
+    x = 0;
+  if (y < 0)
+    y = 0;
+  window = newwin (h, w, y, x);
+  if (!window)
+    errorMove ("newwin");
   switch (border)
     {
     case 0:
-      window = newwin (h, w, y, x);
       _haveBox = false;
       break;
     case 1:
-      window = newwin (h, w, y, x);
       box (window, 0, 0);
       _haveBox = true;
       break;
@@ -89,11 +94,29 @@ Rts2NWindow::getHeight ()
   return h;
 }
 
+int
+Rts2NWindow::getWriteWidth ()
+{
+  int ret = getHeight ();
+  if (haveBox ())
+    return ret - 2;
+  return ret;
+}
+
+int
+Rts2NWindow::getWriteHeight ()
+{
+  int ret = getHeight ();
+  if (haveBox ())
+    return ret - 2;
+  return ret;
+}
+
 void
-Rts2NWindow::errorMove ()
+Rts2NWindow::errorMove (const char *op)
 {
   endwin ();
-  std::cout << "Cannot move" << std::endl;
+  std::cout << "Cannot perform ncurses operation " << op << std::endl;
   exit (EXIT_FAILURE);
 }
 
@@ -105,13 +128,14 @@ Rts2NWindow::move (int x, int y)
   if (x == _x && y == _y)
     return;
   if (mvwin (window, y, x) == ERR)
-    errorMove ();
+    errorMove ("mvwin");
 }
 
 void
 Rts2NWindow::resize (int x, int y, int w, int h)
 {
-  wresize (window, h, w);
+  if (wresize (window, h, w) == ERR)
+    errorMove ("wresize");
   move (x, y);
 }
 
@@ -199,8 +223,33 @@ Rts2NSelWindow::injectKey (int key)
       else
 	selrow = (maxrow - 1);
       break;
+    case KEY_LEFT:
+      if (padoff_x > 0)
+	{
+	  padoff_x--;
+	}
+      else
+	{
+	  beep ();
+	  flash ();
+	}
+      break;
+    case KEY_RIGHT:
+      if (padoff_x < 300)
+	{
+	  padoff_x++;
+	}
+      else
+	{
+	  beep ();
+	  flash ();
+	}
+      break;
     }
-  draw ();
+  if ((selrow - padoff_y + 1) >= getWriteHeight ())
+    padoff_y = selrow - getWriteHeight () + 2;
+  else if ((selrow - padoff_y) < 0)
+    padoff_y = selrow;
   return -1;
 }
 
@@ -218,9 +267,10 @@ Rts2NSelWindow::refresh ()
   getbegyx (window, y, x);
   getmaxyx (window, h, w);
   if (haveBox ())
-    pnoutrefresh (scrolpad, 0, 0, y + 1, x + 1, y + h - 2, x + w - 2);
+    pnoutrefresh (scrolpad, padoff_y, padoff_x, y + 1, x + 1, y + h - 2,
+		  x + w - 2);
   else
-    pnoutrefresh (scrolpad, 0, 0, y, x, y + h - 1, x + w - 1);
+    pnoutrefresh (scrolpad, padoff_y, padoff_x, y, x, y + h - 1, x + w - 1);
 }
 
 Rts2NDevListWindow::Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_block):Rts2NSelWindow (master_window, 0, 1, 10,

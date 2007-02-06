@@ -14,7 +14,7 @@ class Rts2NWindow:public Rts2NLayout
 {
 private:
   bool _haveBox;
-  void errorMove ();
+  void errorMove (const char *op);
 protected:
     WINDOW * window;
 public:
@@ -30,6 +30,8 @@ public:
   int getCurY ();
   int getWidth ();
   int getHeight ();
+  int getWriteWidth ();
+  int getWriteHeight ();
 
   void getWinString (char *buf, int n)
   {
