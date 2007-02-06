@@ -239,13 +239,16 @@ std::string Rts2Conn::getStateString ()
     case DEVICE_TYPE_ARCH:
       _os << "arch " << real_state;
       break;
-    case DEVICE_TYPE_PLAN:
+    case DEVICE_TYPE_PHOT:
       if (real_state & PHOT_INTEGRATE)
 	_os << "INTEGRATING";
       else
 	_os << "idle";
       if (real_state & PHOT_FILTER_MOVE)
 	_os << " | FILTER_MOVING";
+      break;
+    case DEVICE_TYPE_PLAN:
+      _os << "plan (not supported) ";
       break;
     case DEVICE_TYPE_GRB:
       _os << "grbd " << real_state;
@@ -729,10 +732,10 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream
-Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (master, in_messageType);
+  Rts2LogStream
+  ls (master, in_messageType);
   return ls;
 }
 
