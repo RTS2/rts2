@@ -14,9 +14,9 @@ class Rts2NWindow:public Rts2NLayout
 {
 private:
   bool _haveBox;
-  void errorMove (const char *op);
 protected:
-    WINDOW * window;
+  WINDOW * window;
+  void errorMove (const char *op);
 public:
     Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
 		 int border = 1);
@@ -32,11 +32,6 @@ public:
   int getHeight ();
   int getWriteWidth ();
   int getWriteHeight ();
-
-  void getWinString (char *buf, int n)
-  {
-    mvwinnstr (window, 0, 0, buf, n);
-  }
 
   virtual void clear ()
   {
@@ -62,7 +57,7 @@ public:
   /**
    * Set screen cursor to current window.
    */
-  void setCursor ();
+  virtual void setCursor ();
 
   /**
    * Returns window which is used to write text

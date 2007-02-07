@@ -16,6 +16,7 @@ void
 Rts2NMsgWindow::draw ()
 {
   Rts2NWindow::draw ();
+  werase (getWriteWindow ());
   maxrow = 0;
   for (std::list < Rts2Message >::iterator iter = messages.begin ();
        iter != messages.end () && maxrow < (padoff_y + getScrollHeight ());

@@ -199,6 +199,7 @@ Rts2NWindow (master_window, x, y, w, h, border)
 
 Rts2NSelWindow::~Rts2NSelWindow (void)
 {
+  delwin (scrolpad);
 }
 
 int

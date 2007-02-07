@@ -407,7 +407,7 @@ Rts2NMonitor::processKey (int key)
       else
 	leaveMenu ();
     }
-  else if (ret == 0 || key == KEY_ENTER || key == K_ENTER)
+  else if (key == KEY_ENTER || key == K_ENTER)
     {
       char command[comWindow->getCurX () + 1];
       Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
@@ -415,7 +415,7 @@ Rts2NMonitor::processKey (int key)
       command[comWindow->getCurX () + 1] = '\0';
       conn->queCommand (new Rts2Command (this, command));
       comWindow->clear ();
-      mvwprintw (comWindow->getWriteWindow (), 1, 0, "%s", command);
+      comWindow->printCommand (command);
       wmove (comWindow->getWriteWindow (), 0, 0);
     }
 }
