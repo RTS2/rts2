@@ -52,8 +52,7 @@ Rts2GenFocCamera::postEvent (Rts2Event * event)
 void
 Rts2GenFocCamera::getPriority ()
 {
-  if (exposureCount && isIdle ())
-    queExposure ();
+  std::cout << "Get priority" << std::endl;
 }
 
 void
