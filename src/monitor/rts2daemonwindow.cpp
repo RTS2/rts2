@@ -215,8 +215,8 @@ Rts2NSelWindow::injectKey (int key)
       break;
     case KEY_DOWN:
       if (selrow == -1)
-	selrow = (maxrow - 1);
-      if (selrow < (maxrow - 1))
+	selrow = 0;
+      else if (selrow < (maxrow - 1))
 	selrow++;
       else
 	selrow = 0;
@@ -224,7 +224,7 @@ Rts2NSelWindow::injectKey (int key)
     case KEY_UP:
       if (selrow == -1)
 	selrow = (maxrow - 1);
-      if (selrow > 0)
+      else if (selrow > 0)
 	selrow--;
       else
 	selrow = (maxrow - 1);
@@ -274,13 +274,16 @@ Rts2NSelWindow::refresh ()
   int x, y;
   int w, h;
   getmaxyx (scrolpad, h, w);
-  if (selrow >= 0)
+  if (maxrow > 0)
     {
-      mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
-    }
-  else if (selrow == -1)
-    {
-      mvwchgat (scrolpad, maxrow - 1, 0, w, A_REVERSE, 0, NULL);
+      if (selrow >= 0)
+	{
+	  mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
+	}
+      else if (selrow == -1)
+	{
+	  mvwchgat (scrolpad, maxrow - 1, 0, w, A_REVERSE, 0, NULL);
+	}
     }
   Rts2NWindow::refresh ();
   getbegyx (window, y, x);
