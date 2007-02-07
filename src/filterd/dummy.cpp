@@ -27,7 +27,7 @@ Rts2DevFilterdDummy (int in_argc, char **in_argv):Rts2DevFilterd (in_argc,
     addOption ('s', "filter_sleep", 1, "how long wait for filter change");
   }
 
-  virtual int Rts2DevFilterdDummy::processOption (int in_opt)
+  virtual int processOption (int in_opt)
   {
     switch (in_opt)
       {
