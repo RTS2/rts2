@@ -281,9 +281,10 @@ Rts2NMonitor::init ()
 int
 Rts2NMonitor::idle ()
 {
+  int ret = Rts2Client::idle ();
   repaint ();
   setTimeout (USEC_SEC);
-  return Rts2Client::idle ();
+  return ret;
 }
 
 Rts2ConnClient *
