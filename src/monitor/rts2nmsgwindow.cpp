@@ -8,6 +8,7 @@ Rts2NMsgWindow::Rts2NMsgWindow (WINDOW * master_window):Rts2NSelWindow (master_w
 {
   msgMask = 0x07;
   setLineOffset (0);
+  setSelRow (-1);
 }
 
 Rts2NMsgWindow::~Rts2NMsgWindow (void)
@@ -64,9 +65,6 @@ Rts2NMsgWindow::add (Rts2Message & msg)
       messages.pop_front ();
     }
   messages.push_back (msg);
-  if (getSelRow () == maxrow - 1)
-    setSelRow (messages.size () - 1);
-
 }
 
 Rts2NMsgWindow & operator << (Rts2NMsgWindow & msgwin, Rts2Message & msg)
