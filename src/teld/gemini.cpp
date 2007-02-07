@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <errno.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
@@ -43,44 +44,46 @@
 
 int arr[] = { 0, 1, 2, 3 };
 
-struct
+typedef struct searchDirs_t
 {
   short raDiv;
   short decDiv;
-} searchDirs[SEARCH_STEPS] =
-{
+};
+
+searchDirs_t searchDirs[SEARCH_STEPS] = {
   {
-  0, 1},
+   0, 1},
   {
-  0, -1},
+   0, -1},
   {
-  0, -1},
+   0, -1},
   {
-  0, 1},
+   0, 1},
   {
-  1, 0},
+   1, 0},
   {
-  -1, 0},
+   -1, 0},
   {
-  -1, 0},
+   -1, 0},
   {
-  1, 0},
+   1, 0},
   {
-  1, 1},
+   1, 1},
   {
-  -1, -1},
+   -1, -1},
   {
-  -1, -1},
+   -1, -1},
   {
-  1, 1},
+   1, 1},
   {
-  -1, 1},
+   -1, 1},
   {
-  1, -1},
+   1, -1},
   {
-  1, -1},
+   1, -1},
   {
--1, 1}};
+   -1, 1}
+};
 
 class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
@@ -2262,12 +2265,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
