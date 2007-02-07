@@ -46,8 +46,6 @@ Rts2NComWin::refresh ()
 {
   int x, y;
   int w, h;
-  mvwprintw (window, 0, 0, "xxxxx");
-  mvwprintw (window, 1, 1, "xxxxx");
   Rts2NWindow::refresh ();
   getbegyx (window, y, x);
   getmaxyx (window, h, w);

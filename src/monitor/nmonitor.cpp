@@ -123,6 +123,16 @@ Rts2NMonitor::menuPerform (int code)
     case MENU_ABOUT:
 
       break;
+
+    case MENU_DEBUG_BASIC:
+      msgwindow->setMsgMask (0x03);
+      break;
+    case MENU_DEBUG_LIMITED:
+      msgwindow->setMsgMask (0x07);
+      break;
+    case MENU_DEBUG_FULL:
+      msgwindow->setMsgMask (MESSAGE_MASK_ALL);
+      break;
     case MENU_EXIT:
       endRunLoop ();
       break;
@@ -237,6 +247,12 @@ Rts2NMonitor::init ()
   sub->createAction ("Exit", MENU_EXIT);
   menu->addSubmenu (sub);
 
+  sub = new Rts2NSubmenu (cursesWin, "Debug");
+  sub->createAction ("Basic", MENU_DEBUG_BASIC);
+  sub->createAction ("Limited", MENU_DEBUG_LIMITED);
+  sub->createAction ("Full", MENU_DEBUG_FULL);
+  menu->addSubmenu (sub);
+
   sub = new Rts2NSubmenu (cursesWin, "Help");
   sub->createAction ("About", MENU_ABOUT);
   menu->addSubmenu (sub);
@@ -249,10 +265,10 @@ Rts2NMonitor::init ()
     {
       init_pair (CLR_DEFAULT, -1, -1);
       init_pair (CLR_OK, COLOR_GREEN, -1);
-      init_pair (CLR_TEXT, COLOR_WHITE, -1);
+      init_pair (CLR_TEXT, COLOR_BLUE, -1);
       init_pair (CLR_PRIORITY, COLOR_CYAN, -1);
-      init_pair (CLR_WARNING, COLOR_RED, -1);
-      init_pair (CLR_FAILURE, COLOR_YELLOW, -1);
+      init_pair (CLR_WARNING, COLOR_YELLOW, -1);
+      init_pair (CLR_FAILURE, COLOR_RED, -1);
       init_pair (CLR_STATUS, COLOR_RED, COLOR_CYAN);
     }
 

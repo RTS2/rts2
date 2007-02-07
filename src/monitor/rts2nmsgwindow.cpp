@@ -6,6 +6,8 @@ Rts2NMsgWindow::Rts2NMsgWindow (WINDOW * master_window):Rts2NSelWindow (master_w
 		18, 1, 300,
 		500)
 {
+  msgMask = 0x07;
+  setLineOffset (0);
 }
 
 Rts2NMsgWindow::~Rts2NMsgWindow (void)
@@ -15,16 +17,22 @@ Rts2NMsgWindow::~Rts2NMsgWindow (void)
 void
 Rts2NMsgWindow::draw ()
 {
-  Rts2NWindow::draw ();
+  Rts2NSelWindow::draw ();
   werase (getWriteWindow ());
   maxrow = 0;
+  int i = 0;
   for (std::list < Rts2Message >::iterator iter = messages.begin ();
        iter != messages.end () && maxrow < (padoff_y + getScrollHeight ());
-       iter++, maxrow++)
+       iter++, i++)
     {
-      if (maxrow < padoff_y)
-	continue;
       Rts2Message msg = *iter;
+      if (!msg.passMask (msgMask))
+	continue;
+      if (maxrow < padoff_y)
+	{
+	  maxrow++;
+	  continue;
+	}
       switch (msg.getType ())
 	{
 	case MESSAGE_ERROR:
@@ -43,6 +51,7 @@ Rts2NMsgWindow::draw ()
       mvwprintw (getWriteWindow (), maxrow, 0, "%s",
 		 msg.toString ().c_str ());
       wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
+      maxrow++;
     }
   refresh ();
 }
@@ -55,6 +64,9 @@ Rts2NMsgWindow::add (Rts2Message & msg)
       messages.pop_front ();
     }
   messages.push_back (msg);
+  if (getSelRow () == maxrow - 1)
+    setSelRow (messages.size () - 1);
+
 }
 
 Rts2NMsgWindow & operator << (Rts2NMsgWindow & msgwin, Rts2Message & msg)

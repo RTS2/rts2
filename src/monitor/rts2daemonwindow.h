@@ -89,10 +89,15 @@ public:
 		    int border = 1, int sw = 300, int sh = 100);
     virtual ~ Rts2NSelWindow (void);
   virtual int injectKey (int key);
+  virtual void draw ();
   virtual void refresh ();
   int getSelRow ()
   {
     return selrow;
+  }
+  void setSelRow (int new_sel)
+  {
+    selrow = new_sel;
   }
 
   virtual void erase ()
