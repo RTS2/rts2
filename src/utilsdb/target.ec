@@ -105,9 +105,16 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
   struct ln_hrz_posn hrz;
   struct ln_equ_posn pos;
   double jd;
-  int old_precison = _os.precision (0);
-  std::ios_base::fmtflags old_settings = _os.flags ();
-  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  
+  int old_precison;
+  std::ios_base::fmtflags old_settings;
+
+  if (header)
+  {
+    old_precison = _os.precision (0);
+    old_settings = _os.flags ();
+    _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  }
 
   jd_start += h_start / 24.0;
 
@@ -132,10 +139,9 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
   {
     _os << "ALT ";
     _os2 << "AZ  ";
+    _os2.precision (0);
+    _os2.setf (std::ios_base::fixed, std::ios_base::floatfield);
   }
-
-  _os2.precision (0);
-  _os2.setf (std::ios_base::fixed, std::ios_base::floatfield);
   
   jd = jd_start;
   for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
@@ -194,10 +200,9 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
   {
     _os << "SAL ";
     _os3 << "SAZ ";
+    _os3.precision (0);
+    _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
   }
-
-  _os3.precision (0);
-  _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
   jd = jd_start;
   for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
@@ -220,8 +225,11 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     _os << _os3.str ();
   }
 
-  _os.setf (old_settings);
-  _os.precision (old_precison);
+  if (header)
+  {
+    _os.setf (old_settings);
+    _os.precision (old_precison);
+  }
 }
 
 void
@@ -244,13 +252,26 @@ Target::printAltTable (std::ostream & _os, double JD)
 void
 Target::printAltTableSingleCol (std::ostream & _os, double JD, double step)
 {
- double jd_start = ((int) JD) - 0.5;
- for (double i = 0; i < 24; i+=step)
- {
-   _os << i << " ";
-   printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
-   _os << std::endl;
- }
+  struct ln_rst_time t_rst;
+  ln_get_body_next_rst_horizon (JD, observer, ln_get_solar_equ_coords, LN_SOLAR_CIVIL_HORIZON, &t_rst);
+  double jd_start = ((int) JD) - 0.5;
+  if (t_rst.rise < t_rst.set)
+    t_rst.rise += 1.0;
+  char old_fill = _os.fill ('0');
+  int old_p = _os.precision (4);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  for (double i = ((int)((t_rst.set - jd_start)*(24.0/step))*step);
+    i < ((int)((t_rst.rise - jd_start)*(24.0/step))*step);
+    i+=step)
+  {
+    _os << std::setw (7) << (i < 24.0 ? i : (i - 24.0)) << " ";
+    printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
+    _os << std::endl;
+  }
+  _os.setf (old_settings);
+  _os.precision (old_p);
+  _os.fill (old_fill);
 }
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
