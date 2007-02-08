@@ -3,12 +3,20 @@
 
 #include "target.h"
 
+typedef void (*get_equ_t) (double, struct ln_equ_posn *);
+
+typedef struct planet_info_t
+{
+  char *name;
+  get_equ_t function;
+};
+
 class TargetPlanet:public Target
 {
 private:
-  int planet_id;		// 0-10
+  planet_info_t * planet_info;
 public:
-    TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs);
+  TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ TargetPlanet (void);
 
   virtual int load ();
