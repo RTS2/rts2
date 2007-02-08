@@ -45,13 +45,15 @@ private:
   Target *target;
   struct ln_lnlat_posn *obs;
   void printTargetInfo ();
-  void printTargetInfoGNU (double pbeg, double pend);
+  void printTargetInfoGNU (double jd_start, double pbeg, double pend,
+			   double step);
   int printExtendet;
   int printCalTargets;
   int printObservations;
   int printImages;
   int printCounts;
   bool printGNU;
+  bool addMoon;
   char targetType;
   virtual int printTargets (Rts2TargetSet & set);
 
@@ -77,6 +79,7 @@ Rts2AppDb (in_argc, in_argv)
   printImages = 0;
   printCounts = 0;
   printGNU = false;
+  addMoon = true;
   targetType = '\0';
 
   JD = ln_get_julian_from_sys ();
@@ -84,6 +87,7 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('e', "extended", 2,
 	     "print extended informations (visibility prediction,..)");
   addOption ('g', "gnuplot", 0, "print in GNU plot format");
+  addOption ('m', "moon", 0, "do not plot moon");
   addOption ('c', "calibartion", 0, "print recommended calibration targets");
   addOption ('o', "observations", 2,
 	     "print observations (in given time range)");
@@ -112,6 +116,9 @@ Rts2TargetInfo::processOption (int in_opt)
       break;
     case 'g':
       printGNU = true;
+      break;
+    case 'm':
+      addMoon = false;
       break;
     case 'c':
       printCalTargets = 1;
@@ -232,31 +239,21 @@ Rts2TargetInfo::printTargetInfo ()
 }
 
 void
-Rts2TargetInfo::printTargetInfoGNU (double pbeg, double pend)
+Rts2TargetInfo::printTargetInfoGNU (double jd_start, double pbeg, double pend,
+				    double step)
 {
-  double step = 0.25;
-  double jd_start = ((int) JD) - 0.5;
-
-  char old_fill = std::cout.fill ('0');
-  int old_p = std::cout.precision (4);
-  std::ios_base::fmtflags old_settings = std::cout.flags ();
-  std::cout.setf (std::ios_base::fixed, std::ios_base::floatfield);
-
   for (double i = pbeg; i <= pend; i += step)
     {
       double h = i;
+      // normalizae h to <-12;12>
       if (h > 24.0)
 	h -= 24.0;
       if (h > 12.0)
 	h -= 24.0;
-      std::cout << std::setw (7) << h << " ";
+      std::cout << std::setw (10) << h << " ";
       target->printAltTableSingleCol (std::cout, jd_start, i, step);
       std::cout << std::endl;
     }
-
-  std::cout.setf (old_settings);
-  std::cout.precision (old_p);
-  std::cout.fill (old_fill);
 }
 
 int
@@ -270,6 +267,10 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
   double rise;
   double nbeg;
   double nend;
+
+  char old_fill;
+  int old_p;
+  std::ios_base::fmtflags old_settings;
 
   if (printGNU)
     {
@@ -287,6 +288,11 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
       rise = get_norm_hour (t_rst.rise);
       nbeg = get_norm_hour (n_rst.set);
       nend = get_norm_hour (n_rst.rise);
+
+      old_fill = std::cout.fill ('0');
+      old_p = std::cout.precision (7);
+      old_settings = std::cout.flags ();
+      std::cout.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
       std::cout
 	<< "sset=" << sset << std::endl
@@ -321,10 +327,15 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	"set arrow from (nend/2+nbeg/2),0 to (nend/2+nbeg/2),90 nohead lt 0"
 	<< std::endl << "plot \\" << std::endl;
 
+      if (addMoon)
+	{
+	  std::cout << "     \"-\" u 1:2 smooth csplines t \"Moon\"";
+	}
+
       for (iter = set.begin (); iter != set.end (); iter++)
 	{
 	  target = *iter;
-	  if (iter != set.begin ())
+	  if (iter != set.begin () || addMoon)
 	    std::cout << ", \\" << std::endl;
 	  std::cout
 	    << "     \"-\" u 1:2 smooth csplines t \""
@@ -333,12 +344,32 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
       std::cout << std::endl;
     }
 
+  sset -= 1.0;
+  rise += 1.0;
+
+  double jd_start = ((int) JD) - 0.5;
+  double step = 0.2;
+
+  if (printGNU && addMoon)
+    {
+      struct ln_hrz_posn moonHrz;
+      struct ln_equ_posn moonEqu;
+      for (double i = sset; i <= rise; i += step)
+	{
+	  ln_get_lunar_equ_coords (jd_start + i, &moonEqu);
+	  ln_get_hrz_from_equ (&moonEqu, obs, JD, &moonHrz);
+	  std::cout
+	    << i << " " << moonHrz.alt << " " << moonHrz.az << std::endl;
+	}
+      std::cout << "e" << std::endl;
+    }
+
   for (iter = set.begin (); iter != set.end (); iter++)
     {
       target = *iter;
       if (printGNU)
 	{
-	  printTargetInfoGNU (sset - 1.0, rise + 1.0);
+	  printTargetInfoGNU (jd_start, sset, rise, step);
 	  std::cout << "e" << std::endl;
 	}
       else
@@ -346,6 +377,14 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	  printTargetInfo ();
 	}
     }
+
+  if (printGNU)
+    {
+      std::cout.setf (old_settings);
+      std::cout.precision (old_p);
+      std::cout.fill (old_fill);
+    }
+
   return (set.size () == 0 ? -1 : 0);
 }
 
