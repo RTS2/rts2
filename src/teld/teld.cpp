@@ -35,7 +35,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
   lastTarRa = new Rts2ValueDouble ("RASC", "target RA");
   addValue (lastTarRa);
-  lastTarDec = new Rts2ValueDouble ("DECS", "target DEC");
+  lastTarDec = new Rts2ValueDouble ("DECL", "target DEC");
   addValue (lastTarDec);
 
   ax1 = new Rts2ValueDouble ("MNT_AX0", "mount axis 0 counts");
