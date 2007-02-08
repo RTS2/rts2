@@ -22,6 +22,21 @@ std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
   return _os;
 }
 
+double
+get_norm_hour (double JD)
+{
+  struct ln_date tmp_date;
+  double ret;
+
+  ln_get_date (JD, &tmp_date);
+  ret =
+    tmp_date.hours + (double) tmp_date.minutes / 24.0 +
+    (double) tmp_date.seconds / 3600.0;
+  if (ret > 12.0)
+    ret -= 24.0;
+  return ret;
+}
+
 class Rts2TargetInfo:public Rts2AppDb
 {
 private:
@@ -30,6 +45,7 @@ private:
   Target *target;
   struct ln_lnlat_posn *obs;
   void printTargetInfo ();
+  void printTargetInfoGNU (double pbeg, double pend);
   int printExtendet;
   int printCalTargets;
   int printObservations;
@@ -37,6 +53,7 @@ private:
   int printCounts;
   bool printGNU;
   char targetType;
+  virtual int printTargets (Rts2TargetSet & set);
 
   double JD;
 public:
@@ -147,11 +164,6 @@ Rts2TargetInfo::processArgs (const char *arg)
 void
 Rts2TargetInfo::printTargetInfo ()
 {
-  if (printGNU)
-    {
-      target->printAltTableSingleCol (std::cout, JD, 0.25);
-      return;
-    }
   target->sendInfo (std::cout, JD);
   // print scripts..
   Rts2CamList::iterator cam_names;
@@ -219,6 +231,124 @@ Rts2TargetInfo::printTargetInfo ()
   return;
 }
 
+void
+Rts2TargetInfo::printTargetInfoGNU (double pbeg, double pend)
+{
+  double step = 0.25;
+  double jd_start = ((int) JD) - 0.5;
+
+  char old_fill = std::cout.fill ('0');
+  int old_p = std::cout.precision (4);
+  std::ios_base::fmtflags old_settings = std::cout.flags ();
+  std::cout.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
+  for (double i = pbeg; i <= pend; i += step)
+    {
+      double h = i;
+      if (h > 24.0)
+	h -= 24.0;
+      if (h > 12.0)
+	h -= 24.0;
+      std::cout << std::setw (7) << h << " ";
+      target->printAltTableSingleCol (std::cout, jd_start, i, step);
+      std::cout << std::endl;
+    }
+
+  std::cout.setf (old_settings);
+  std::cout.precision (old_p);
+  std::cout.fill (old_fill);
+}
+
+int
+Rts2TargetInfo::printTargets (Rts2TargetSet & set)
+{
+  Rts2TargetSet::iterator iter;
+  struct ln_rst_time t_rst;
+  struct ln_rst_time n_rst;
+
+  double sset;
+  double rise;
+  double nbeg;
+  double nend;
+
+  if (printGNU)
+    {
+      ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
+				    LN_SOLAR_CIVIL_HORIZON, &t_rst);
+      ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
+				    LN_SOLAR_NAUTIC_HORIZON, &n_rst);
+
+      if (t_rst.rise < t_rst.set)
+	t_rst.rise += 1.0;
+      if (n_rst.rise < n_rst.set)
+	n_rst.rise += 1.0;
+
+      sset = get_norm_hour (t_rst.set);
+      rise = get_norm_hour (t_rst.rise);
+      nbeg = get_norm_hour (n_rst.set);
+      nend = get_norm_hour (n_rst.rise);
+
+      std::cout
+	<< "sset=" << sset << std::endl
+	<< "rise=" << rise << std::endl
+	<< "nend=" << nend << std::endl
+	<< "nbeg=" << nbeg << std::endl
+	<< "set yrange [0:90] noreverse" << std::endl
+	<< "set xrange [sset:rise] noreverse" << std::endl
+	<< "set xlabel \"Time UT [h]\"" << std::endl
+	<<
+	"set xtics ( \"12\" -12, \"13\" -11, \"14\" -10, \"15\" -9, \"16\" -8, \"17\" -7, \"18\" -6, \"19\" -5, \"20\" -4, \"21\" -3, \"22\" -2, \"23\" -1, \"0\" 0, \"1\" 1, \"2\" 2, \"3\" 3, \"4\" 4, \"5\" 5, \"6\" 6, \"7\" 7, \"8\" 8, \"9\" 9, \"10\" 10, \"11\" 11, \"12\" 12)"
+	<< std::
+	endl << "set arrow from nbeg,0 to nbeg,90 nohead lt 0" << std::
+	endl << "set arrow from nend,0 to nend,90 nohead lt 0" << std::
+	endl << "set ylabel \"altitude\"" << std::
+	endl << "set y2label \"airmass\"" << std::
+	endl <<
+	"set y2tics ( \"1.00\" 90, \"1.05\" 72.25, \"1.10\" 65.38, \"1.20\" 56.44, \"1.30\" 50.28 , \"1.50\" 41.81, \"2.00\" 30, \"3.00\" 20, \"6.00\" 10)"
+	<< std::
+	endl << "set arrow from sset,10 to rise,10 nohead lt 0" << std::
+	endl << "set arrow from sset,20 to rise,20 nohead lt 0" << std::
+	endl << "set arrow from sset,30 to rise,30 nohead lt 0" << std::
+	endl << "set arrow from sset,41.81 to rise,41.81 nohead lt 0" << std::
+	endl << "set arrow from sset,50.28 to rise,50.28 nohead lt 0" << std::
+	endl << "set arrow from sset,56.44 to rise,56.44 nohead lt 0" << std::
+	endl << "set arrow from sset,65.38 to rise,65.38 nohead lt 0" << std::
+	endl << "set arrow from sset,72.25 to rise,72.25 nohead lt 0" << std::
+	endl << "set arrow from sset,81.93 to rise,81.93 nohead lt 0" << std::
+	endl << "set arrow from nbeg,0 to nbeg,90 nohead lt 0" << std::
+	endl << "set arrow from nend,0 to nend,90 nohead lt 0" << std::
+	endl <<
+	"set arrow from (nend/2+nbeg/2),0 to (nend/2+nbeg/2),90 nohead lt 0"
+	<< std::endl << "plot \\" << std::endl;
+
+      for (iter = set.begin (); iter != set.end (); iter++)
+	{
+	  target = *iter;
+	  if (iter != set.begin ())
+	    std::cout << ", \\" << std::endl;
+	  std::cout
+	    << "     \"-\" u 1:2 smooth csplines t \""
+	    << target->getTargetName () << "\"";
+	}
+      std::cout << std::endl;
+    }
+
+  for (iter = set.begin (); iter != set.end (); iter++)
+    {
+      target = *iter;
+      if (printGNU)
+	{
+	  printTargetInfoGNU (sset - 1.0, rise + 1.0);
+	  std::cout << "e" << std::endl;
+	}
+      else
+	{
+	  printTargetInfo ();
+	}
+    }
+  return (set.size () == 0 ? -1 : 0);
+}
+
 int
 Rts2TargetInfo::init ()
 {
@@ -244,35 +374,14 @@ Rts2TargetInfo::init ()
 int
 Rts2TargetInfo::run ()
 {
-  std::list < int >::iterator tar_iter;
-  Rts2TargetSetType::iterator type_iter;
-
   if (targetType != '\0')
     {
       Rts2TargetSetType typeSet = Rts2TargetSetType (targetType);
-      for (type_iter = typeSet.begin (); type_iter != typeSet.end ();
-	   type_iter++)
-	{
-	  target = *type_iter;
-	  printTargetInfo ();
-	}
-      return 0;
+      return printTargets (typeSet);
     }
 
-  for (tar_iter = targets.begin (); tar_iter != targets.end (); tar_iter++)
-    {
-      int tar_id;
-      tar_id = *tar_iter;
-      target = createTarget (tar_id, obs);
-      if (!target)
-	{
-	  std::cerr << "Cannot find target with id: " << tar_id << std::endl;
-	  continue;
-	}
-      printTargetInfo ();
-      delete target;
-    }
-  return 0;
+  Rts2TargetSet tar_set = Rts2TargetSet (targets);
+  return printTargets (tar_set);
 }
 
 int
