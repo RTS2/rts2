@@ -160,6 +160,7 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
   else
   {
     _os << _os2.str ();
+    return;
   }
 
   // print lunar distances
