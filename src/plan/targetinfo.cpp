@@ -29,12 +29,13 @@ private:
   Rts2CamList cameras;
   Target *target;
   struct ln_lnlat_posn *obs;
-  int printTargetInfo ();
+  void printTargetInfo ();
   int printExtendet;
   int printCalTargets;
   int printObservations;
   int printImages;
   int printCounts;
+  bool printGNU;
   char targetType;
 
   double JD;
@@ -58,12 +59,14 @@ Rts2AppDb (in_argc, in_argv)
   printObservations = 0;
   printImages = 0;
   printCounts = 0;
+  printGNU = false;
   targetType = '\0';
 
   JD = ln_get_julian_from_sys ();
 
   addOption ('e', "extended", 2,
 	     "print extended informations (visibility prediction,..)");
+  addOption ('g', "gnuplot", 0, "print in GNU plot format");
   addOption ('c', "calibartion", 0, "print recommended calibration targets");
   addOption ('o', "observations", 2,
 	     "print observations (in given time range)");
@@ -89,6 +92,9 @@ Rts2TargetInfo::processOption (int in_opt)
     {
     case 'e':
       printExtendet = 1;
+      break;
+    case 'g':
+      printGNU = true;
       break;
     case 'c':
       printCalTargets = 1;
@@ -138,9 +144,14 @@ Rts2TargetInfo::processArgs (const char *arg)
   return 0;
 }
 
-int
+void
 Rts2TargetInfo::printTargetInfo ()
 {
+  if (printGNU)
+    {
+      target->printAltTableSingleCol (std::cout, JD, 0.25);
+      return;
+    }
   target->sendInfo (std::cout, JD);
   // print scripts..
   Rts2CamList::iterator cam_names;
@@ -205,7 +216,7 @@ Rts2TargetInfo::printTargetInfo ()
 	  imgset.clear ();
 	}
     }
-  return 0;
+  return;
 }
 
 int
