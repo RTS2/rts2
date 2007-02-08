@@ -250,28 +250,9 @@ Target::printAltTable (std::ostream & _os, double JD)
 }
 
 void
-Target::printAltTableSingleCol (std::ostream & _os, double JD, double step)
+Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step)
 {
-  struct ln_rst_time t_rst;
-  ln_get_body_next_rst_horizon (JD, observer, ln_get_solar_equ_coords, LN_SOLAR_CIVIL_HORIZON, &t_rst);
-  double jd_start = ((int) JD) - 0.5;
-  if (t_rst.rise < t_rst.set)
-    t_rst.rise += 1.0;
-  char old_fill = _os.fill ('0');
-  int old_p = _os.precision (4);
-  std::ios_base::fmtflags old_settings = _os.flags ();
-  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-  for (double i = ((int)((t_rst.set - jd_start)*(24.0/step))*step);
-    i < ((int)((t_rst.rise - jd_start)*(24.0/step))*step);
-    i+=step)
-  {
-    _os << std::setw (7) << (i < 24.0 ? i : (i - 24.0)) << " ";
-    printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
-    _os << std::endl;
-  }
-  _os.setf (old_settings);
-  _os.precision (old_p);
-  _os.fill (old_fill);
+  printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
 }
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)

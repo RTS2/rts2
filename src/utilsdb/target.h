@@ -614,7 +614,8 @@ public:
     sendInfo (_os, ln_get_julian_from_sys ());
   }
   virtual void sendInfo (std::ostream & _os, double JD);
-  void printAltTableSingleCol (std::ostream & _os, double JD, double step);
+  void printAltTableSingleCol (std::ostream & _os, double jd_start, double i,
+			       double step);
 
   std::string getUsersEmail (int in_event_mask, int &count);
 
