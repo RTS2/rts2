@@ -37,6 +37,7 @@
 #define TYPE_TERESTIAL		'T'
 #define TYPE_CALIBRATION	'c'
 #define TYPE_MODEL		'm'
+#define TYPE_PLANET		'L'
 
 #define TYPE_SWIFT_FOV		'W'
 #define TYPE_INTEGRAL_FOV	'I'
@@ -190,7 +191,7 @@ private:
   bool tar_enabled;
 
   void printAltTable (std::ostream & _os, double jd_start, double h_start,
-		      double h_end, double h_step = 1.0);
+		      double h_end, double h_step = 1.0, bool header = true);
   void printAltTable (std::ostream & _os, double JD);
 
 protected:
@@ -235,10 +236,7 @@ public:
     return getPosition (pos, ln_get_julian_from_sys ());
   }
   // return target position at given julian date
-  virtual int getPosition (struct ln_equ_posn *pos, double JD)
-  {
-    return -1;
-  }
+  virtual int getPosition (struct ln_equ_posn *pos, double JD) = 0;
 
   // some libnova trivials to get more comfortable access to
   // coordinates
@@ -467,10 +465,7 @@ public:
   {
     return getRST (rst, ln_get_julian_from_sys (), LN_STAR_STANDART_HORIZON);
   }
-  virtual int getRST (struct ln_rst_time *rst, double jd, double horizon)
-  {
-    return -1;
-  }
+  virtual int getRST (struct ln_rst_time *rst, double jd, double horizon) = 0;
 
   // returns 1 when we are almost the same target, so 
   // interruption of this target is not necessary
@@ -619,6 +614,7 @@ public:
     sendInfo (_os, ln_get_julian_from_sys ());
   }
   virtual void sendInfo (std::ostream & _os, double JD);
+  void printAltTableSingleCol (std::ostream & _os, double JD, double step);
 
   std::string getUsersEmail (int in_event_mask, int &count);
 
@@ -733,7 +729,11 @@ public:
     virtual ~ DarkTarget (void);
   virtual int getScript (const char *deviceName, char *buf);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual moveType startSlew (struct ln_equ_posn *position);
+  virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
+  {
+    return 1;
+  }
+  virtual moveType startSlew (struct ln_equ_posn * position);
   virtual int isContinues ()
   {
     return 1;
@@ -786,6 +786,13 @@ public:
   {
     in_pos->ra = object.ra;
     in_pos->dec = object.dec;
+    return 0;
+  }
+  virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
+  {
+    struct ln_equ_posn pos;
+    getPosition (&pos, JD);
+    ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
     return 0;
   }
 };

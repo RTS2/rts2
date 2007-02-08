@@ -5,6 +5,7 @@
 #include "imgdisplay.h"
 #include "target.h"
 #include "target_auger.h"
+#include "rts2targetplanet.h"
 #include "rts2obs.h"
 #include "rts2obsset.h"
 #include "rts2targetset.h"
@@ -98,7 +99,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
 }
 
 void
-Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step)
+Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step, bool header)
 {
   double i;
   struct ln_hrz_posn hrz;
@@ -108,24 +109,30 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
-  _os
-    << "H   ";
-
   jd_start += h_start / 24.0;
 
-  char old_fill = _os.fill ('0');
-  for (i = h_start; i <= h_end; i+=h_step)
-    {
-      _os << "  " << std::setw (2) << i;
-    }
-  _os.fill (old_fill);
-  _os << std::endl;
+  if (header)
+  {
+    _os
+      << "H   ";
+
+    char old_fill = _os.fill ('0');
+    for (i = h_start; i <= h_end; i+=h_step)
+      {
+	_os << "  " << std::setw (2) << i;
+      }
+    _os.fill (old_fill);
+    _os << std::endl;
+  }
 
   // print alt + az
   std::ostringstream _os2;
 
-  _os << "ALT ";
-  _os2 << "AZ  ";
+  if (header)
+  {
+    _os << "ALT ";
+    _os2 << "AZ  ";
+  }
 
   _os2.precision (0);
   _os2.setf (std::ios_base::fixed, std::ios_base::floatfield);
@@ -137,35 +144,57 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
       _os << " " << std::setw (3) << hrz.alt;
       _os2 << " " << std::setw (3) << hrz.az;
     }
-  _os
-    << std::endl
-    << _os2.str ()
-    << std::endl;
+  if (header)
+  {
+    _os
+      << std::endl
+      << _os2.str ()
+      << std::endl;
+  }
+  else
+  {
+    _os << _os2.str ();
+  }
 
   // print lunar distances
-  _os << "MD  ";
+  if (header)
+  {
+    _os << "MD  ";
+  }
   jd = jd_start;
   for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
     {
       _os << " " << std::setw(3) << getLunarDistance (jd);
     }
-  _os << std::endl;
+  if (header)
+  {
+    _os << std::endl;
+  }
 
   // print solar distance
-  _os << "SD  ";
+  if (header)
+  {
+    _os << "SD  ";
+  }
   jd = jd_start;
   for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
     {
       _os << " " << std::setw(3) << getSolarDistance (jd);
     }
-  _os << std::endl;
+  if (header)
+  {
+    _os << std::endl;
+  }
 
 
   // print sun position
   std::ostringstream _os3;
 
-  _os << "SAL ";
-  _os3 << "SAZ ";
+  if (header)
+  {
+    _os << "SAL ";
+    _os3 << "SAZ ";
+  }
 
   _os3.precision (0);
   _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
@@ -179,10 +208,17 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
       _os3 << " " << std::setw (3) << hrz.az;
     }
 
-  _os
-    << std::endl
-    << _os3.str ()
-    << std::endl;
+  if (header)
+  {
+    _os
+      << std::endl
+      << _os3.str ()
+      << std::endl;
+  }
+  else
+  {
+    _os << _os3.str ();
+  }
 
   _os.setf (old_settings);
   _os.precision (old_precison);
@@ -203,6 +239,18 @@ Target::printAltTable (std::ostream & _os, double JD)
  printAltTable (_os, jd_start, -1, 11);
  _os << std::endl;
  printAltTable (_os, jd_start, 12, 24);
+}
+
+void
+Target::printAltTableSingleCol (std::ostream & _os, double JD, double step)
+{
+ double jd_start = ((int) JD) - 0.5;
+ for (double i = 0; i < 24; i+=step)
+ {
+   _os << i << " ";
+   printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
+   _os << std::endl;
+ }
 }
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
@@ -1607,6 +1655,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
       break;
     case TYPE_AUGER:
       retTarget = new TargetAuger (in_tar_id, in_obs, 1800);
+      break;
+    case TYPE_PLANET:
+      retTarget = new TargetPlanet (in_tar_id, in_obs);
       break;
     default:
       retTarget = new ConstTarget (in_tar_id, in_obs);
