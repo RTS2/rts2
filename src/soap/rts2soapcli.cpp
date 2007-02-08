@@ -40,7 +40,7 @@ Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
       resTel = (rts2__getTelescopeResponse *) event->getArg ();
 
       resTel->tel->target->ra = getValueDouble ("RASC");
-      resTel->tel->target->dec = getValueDouble ("DECS");
+      resTel->tel->target->dec = getValueDouble ("DECL");
 
       resTel->tel->mount->ra = getValueDouble ("MNT_RA");
       resTel->tel->mount->dec = getValueDouble ("MNT_DEC");
