@@ -319,7 +319,7 @@ void
 Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
 {
   tar->ra = getValueDouble ("RASC");
-  tar->dec = getValueDouble ("DECS");
+  tar->dec = getValueDouble ("DECL");
 }
 
 void
