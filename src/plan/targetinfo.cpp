@@ -53,7 +53,7 @@ private:
   bool printObservations;
   int printImages;
   int printCounts;
-  bool printGNU;
+  int printGNU;
   bool addMoon;
   char targetType;
   virtual int printTargets (Rts2TargetSet & set);
@@ -80,7 +80,7 @@ Rts2AppDb (in_argc, in_argv)
   printObservations = false;
   printImages = 0;
   printCounts = 0;
-  printGNU = false;
+  printGNU = 0;
   addMoon = true;
   targetType = '\0';
 
@@ -89,7 +89,8 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('s', "selectable", 0, "print only selectable targets");
   addOption ('e', "extended", 2,
 	     "print extended informations (visibility prediction,..)");
-  addOption ('g', "gnuplot", 0, "print in GNU plot format");
+  addOption ('g', "gnuplot", 2,
+	     "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
   addOption ('m', "moon", 0, "do not plot moon");
   addOption ('c', "calibartion", 0, "print recommended calibration targets");
   addOption ('o', "observations", 2,
@@ -121,7 +122,14 @@ Rts2TargetInfo::processOption (int in_opt)
       printExtendet = true;
       break;
     case 'g':
-      printGNU = true;
+      printGNU = 1;
+      if (optarg)
+	{
+	  if (!strcmp (optarg, "ps"))
+	    printGNU = 2;
+	  if (!strcmp (optarg, "png"))
+	    printGNU = 3;
+	}
       break;
     case 'm':
       addMoon = false;
@@ -331,7 +339,20 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	endl << "set arrow from nend,0 to nend,90 nohead lt 0" << std::
 	endl <<
 	"set arrow from (nend/2+nbeg/2),0 to (nend/2+nbeg/2),90 nohead lt 0"
-	<< std::endl << "plot \\" << std::endl;
+	<< std::endl;
+
+      switch (printGNU)
+	{
+	case 2:
+	  std::cout << "set terminal postscript color solid";
+	  break;
+	case 3:
+	  std::cout << "set terminal png";
+	  break;
+	default:
+	  std::cout << "set terminal x11 persist";
+	}
+      std::cout << std::endl << "plot \\" << std::endl;
 
       if (addMoon)
 	{
