@@ -47,9 +47,10 @@ private:
   void printTargetInfo ();
   void printTargetInfoGNU (double jd_start, double pbeg, double pend,
 			   double step);
-  int printExtendet;
-  int printCalTargets;
-  int printObservations;
+  bool printSelectable;
+  bool printExtendet;
+  bool printCalTargets;
+  bool printObservations;
   int printImages;
   int printCounts;
   bool printGNU;
@@ -73,9 +74,10 @@ Rts2TargetInfo::Rts2TargetInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   obs = NULL;
-  printExtendet = 0;
-  printCalTargets = 0;
-  printObservations = 0;
+  printSelectable = false;
+  printExtendet = false;
+  printCalTargets = false;
+  printObservations = false;
   printImages = 0;
   printCounts = 0;
   printGNU = false;
@@ -84,6 +86,7 @@ Rts2AppDb (in_argc, in_argv)
 
   JD = ln_get_julian_from_sys ();
 
+  addOption ('s', "selectable", 0, "print only selectable targets");
   addOption ('e', "extended", 2,
 	     "print extended informations (visibility prediction,..)");
   addOption ('g', "gnuplot", 0, "print in GNU plot format");
@@ -111,8 +114,11 @@ Rts2TargetInfo::processOption (int in_opt)
   int ret;
   switch (in_opt)
     {
+    case 's':
+      printSelectable = true;
+      break;
     case 'e':
-      printExtendet = 1;
+      printExtendet = true;
       break;
     case 'g':
       printGNU = true;
@@ -121,10 +127,10 @@ Rts2TargetInfo::processOption (int in_opt)
       addMoon = false;
       break;
     case 'c':
-      printCalTargets = 1;
+      printCalTargets = true;
       break;
     case 'o':
-      printObservations = 1;
+      printObservations = true;
       break;
     case 'i':
       printImages |= DISPLAY_ALL;
@@ -413,6 +419,20 @@ Rts2TargetInfo::init ()
 int
 Rts2TargetInfo::run ()
 {
+  if (printSelectable)
+    {
+      if (targetType != '\0')
+	{
+	  Rts2TargetSetSelectable selSet =
+	    Rts2TargetSetSelectable (targetType);
+	  return printTargets (selSet);
+	}
+      else
+	{
+	  Rts2TargetSetSelectable selSet = Rts2TargetSetSelectable ();
+	  return printTargets (selSet);
+	}
+    }
   if (targetType != '\0')
     {
       Rts2TargetSetType typeSet = Rts2TargetSetType (targetType);
