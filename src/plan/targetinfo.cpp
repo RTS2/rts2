@@ -356,6 +356,21 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	  std::cout << "     \"-\" u 1:2 smooth csplines t \"Moon\"";
 	}
 
+      // find and print calibration targets..
+      if (printCalTargets)
+	{
+	  Rts2TargetSet calibSet = Rts2TargetSet (obs, false);
+	  for (iter = set.begin (); iter != set.end (); iter++)
+	    {
+	      target = *iter;
+	      Rts2TargetSet *addS = target->getCalTargets ();
+	      calibSet.merge (*addS);
+	      addS->clear ();
+	      delete addS;
+	    }
+	  set.merge (calibSet);
+	}
+
       for (iter = set.begin (); iter != set.end (); iter++)
 	{
 	  target = *iter;
