@@ -26,15 +26,11 @@ double
 get_norm_hour (double JD)
 {
   struct ln_date tmp_date;
-  double ret;
 
   ln_get_date (JD, &tmp_date);
-  ret =
-    tmp_date.hours + (double) tmp_date.minutes / 24.0 +
+  return
+    tmp_date.hours + (double) tmp_date.minutes / 60.0 +
     (double) tmp_date.seconds / 3600.0;
-  if (ret > 12.0)
-    ret -= 24.0;
-  return ret;
 }
 
 class Rts2TargetInfo:public Rts2AppDb
@@ -292,19 +288,10 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
       nbeg = get_norm_hour (n_rst.set);
       nend = get_norm_hour (n_rst.rise);
 
-      if (rise < sset)
+      if (nbeg < sset || sset > rise)
 	{
-	  if (rise < 0)
-	    rise += 24.0;
-	  else
-	    sset -= 24.0;
-	}
-      if (nend < nbeg)
-	{
-	  if (nend < 0)
-	    nend += 24.0;
-	  else
-	    nbeg -= 24.0;
+	  sset -= 24.0;
+	  nbeg -= 24.0;
 	}
 
       old_fill = std::cout.fill ('0');
@@ -347,7 +334,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	{
 	  if (i != (int) floor (sset))
 	    std::cout << ", ";
-	  std::cout << '"' << i << "\" " << i;
+	  std::cout << '"' << (i < 0 ? i + 24 : i) << "\" " << i;
 	}
       std::cout << ')' << std::endl;
 
