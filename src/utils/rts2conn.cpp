@@ -732,10 +732,10 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream Rts2Conn::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2Conn::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (master, in_messageType);
+  Rts2LogStream ls (master, in_messageType);
   return ls;
 }
 
@@ -1055,6 +1055,17 @@ Rts2Conn::sendValue (std::string val_name, char *value)
   char *msg;
   int ret;
   asprintf (&msg, "V %s \"%s\"", val_name.c_str (), value);
+  ret = send (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Conn::sendValueRaw (std::string val_name, char *value)
+{
+  char *msg;
+  int ret;
+  asprintf (&msg, "V %s %s", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;

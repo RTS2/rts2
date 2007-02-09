@@ -155,7 +155,7 @@ Rts2DevClient::command ()
 void
 Rts2DevClient::stateChanged (Rts2ServerState * state)
 {
-  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_ERROR_HW)
+  if (connection->getErrorState () == DEVICE_ERROR_HW)
     incFailedCount ();
 }
 
@@ -255,10 +255,10 @@ Rts2DevClient::getStatus ()
   return connection->getState ();
 }
 
-Rts2LogStream
-Rts2DevClient::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2DevClient::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (getMaster (), in_messageType);
+  Rts2LogStream
+  ls (getMaster (), in_messageType);
   return ls;
 }
 
@@ -294,29 +294,28 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 	  getValue () & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA))
     {
     case CAM_EXPOSING:
-      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+      if (connection->getErrorState () == DEVICE_NO_ERROR)
 	exposureStarted ();
       else
-	exposureFailed (state->getValue () & DEVICE_ERROR_MASK);
+	exposureFailed (connection->getErrorState ());
       break;
     case CAM_DATA:
-      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+      if (connection->getErrorState () == DEVICE_NO_ERROR)
 	exposureEnd ();
       else
-	exposureFailed (state->getValue () & DEVICE_ERROR_MASK);
+	exposureFailed (connection->getErrorState ());
       break;
     case CAM_NODATA | CAM_NOTREADING | CAM_NOEXPOSURE:
-      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+      if (connection->getErrorState () == DEVICE_NO_ERROR)
 	readoutEnd ();
       else
-	exposureFailed (state->getValue () & DEVICE_ERROR_MASK);
+	exposureFailed (connection->getErrorState ());
       break;
     }
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -346,10 +345,10 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
       break;
     case TEL_OBSERVING:
     case TEL_PARKED:
-      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+      if (connection->getErrorState () == DEVICE_NO_ERROR)
 	moveEnd ();
       else
-	moveFailed (state->getValue () & DEVICE_ERROR_MASK);
+	moveFailed (connection->getErrorState ());
       break;
     }
   switch (state->getValue () & TEL_MASK_SEARCHING)
@@ -358,10 +357,10 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
       searchStart ();
       break;
     case TEL_NOSEARCH:
-      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+      if (connection->getErrorState () == DEVICE_NO_ERROR)
 	searchEnd ();
       else
-	searchFailed (state->getValue () & DEVICE_ERROR_MASK);
+	searchFailed (connection->getErrorState ());
       break;
     }
   Rts2DevClient::stateChanged (state);
@@ -418,13 +417,13 @@ Rts2DevClientCupola::stateChanged (Rts2ServerState * state)
   switch (state->getValue () & DOME_COP_MASK_SYNC)
     {
     case DOME_COP_NOT_SYNC:
-      if (state->getValue () & DEVICE_ERROR_MASK)
+      if (connection->getErrorState ())
 	syncFailed (state->getValue ());
       else
 	syncStarted ();
       break;
     case DOME_COP_SYNC:
-      if (state->getValue () & DEVICE_ERROR_MASK)
+      if (connection->getErrorState ())
 	syncFailed (state->getValue ());
       else
 	syncEnded ();
@@ -446,9 +445,9 @@ Rts2DevClientMirror::~Rts2DevClientMirror (void)
 void
 Rts2DevClientMirror::stateChanged (Rts2ServerState * state)
 {
-  if (state->getValue () & DEVICE_ERROR_MASK)
+  if (connection->getErrorState ())
     {
-      moveFailed (state->getValue () & DEVICE_ERROR_MASK);
+      moveFailed (connection->getErrorState ());
     }
   else
     {
@@ -523,10 +522,10 @@ Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
       switch (state->getValue () & PHOT_MASK_INTEGRATE)
 	{
 	case PHOT_NOINTEGRATE:
-	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	  if (connection->getErrorState () == DEVICE_NO_ERROR)
 	    integrationEnd ();
 	  else
-	    integrationFailed (state->getValue () & DEVICE_ERROR_MASK);
+	    integrationFailed (connection->getErrorState ());
 	  break;
 	case PHOT_INTEGRATE:
 	  integrationStart ();
@@ -541,10 +540,10 @@ Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
 	  filterMoveStart ();
 	  break;
 	case PHOT_FILTER_IDLE:
-	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	  if (connection->getErrorState () == DEVICE_NO_ERROR)
 	    filterMoveEnd ();
 	  else
-	    filterMoveFailed ((state->getValue () & DEVICE_ERROR_MASK));
+	    filterMoveFailed (connection->getErrorState ());
 	  break;
 	}
     }
@@ -591,8 +590,7 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool
-Rts2DevClientPhot::isIntegrating ()
+bool Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
@@ -632,10 +630,10 @@ Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
 	  filterMoveStart ();
 	  break;
 	case FILTERD_IDLE:
-	  if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+	  if (connection->getErrorState () == DEVICE_NO_ERROR)
 	    filterMoveEnd ();
 	  else
-	    filterMoveFailed ((state->getValue () & DEVICE_ERROR_MASK));
+	    filterMoveFailed (connection->getErrorState ());
 	  break;
 	}
     }
@@ -681,10 +679,10 @@ Rts2DevClientFocus::stateChanged (Rts2ServerState * state)
       focusingStart ();
       break;
     case FOC_SLEEPING:
-      if ((state->getValue () & DEVICE_ERROR_MASK) == DEVICE_NO_ERROR)
+      if (connection->getErrorState () == DEVICE_NO_ERROR)
 	focusingEnd ();
       else
-	focusingFailed (state->getValue () & DEVICE_ERROR_MASK);
+	focusingFailed (connection->getErrorState ());
       break;
     }
   Rts2DevClient::stateChanged (state);

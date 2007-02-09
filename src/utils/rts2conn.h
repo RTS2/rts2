@@ -151,6 +151,7 @@ public:
   int sendValue (std::string val_name, int val1, int val2);
   int sendValue (std::string val_name, int val1, double val2);
   int sendValue (std::string val_name, char *value);
+  int sendValueRaw (std::string val_name, char *value);
   int sendValue (std::string val_name, double value);
   int sendValue (char *val_name, char *val1, int val2);
   int sendValue (char *val_name, int val1, int val2, double val3, double val4,

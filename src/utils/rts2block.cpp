@@ -148,6 +148,17 @@ Rts2Block::sendValueAll (char *val_name, char *value)
     }
 }
 
+void
+Rts2Block::sendValueRawAll (char *val_name, char *value)
+{
+  connections_t::iterator iter;
+  for (iter = connections.begin (); iter != connections.end (); iter++)
+    {
+      Rts2Conn *conn = *iter;
+      conn->sendValueRaw (val_name, value);
+    }
+}
+
 int
 Rts2Block::sendPriorityChange (int p_client, int timeout)
 {
