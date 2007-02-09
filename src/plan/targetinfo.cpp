@@ -258,13 +258,7 @@ Rts2TargetInfo::printTargetInfoGNU (double jd_start, double pbeg, double pend,
 {
   for (double i = pbeg; i <= pend; i += step)
     {
-      double h = i;
-      // normalizae h to <-12;12>
-      if (h > 24.0)
-	h -= 24.0;
-      if (h > 12.0)
-	h -= 24.0;
-      std::cout << std::setw (10) << h << " ";
+      std::cout << std::setw (10) << i << " ";
       target->printAltTableSingleCol (std::cout, jd_start, i, step);
       std::cout << std::endl;
     }
@@ -293,15 +287,25 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
       ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
 				    LN_SOLAR_NAUTIC_HORIZON, &n_rst);
 
-      if (t_rst.rise < t_rst.set)
-	t_rst.rise += 1.0;
-      if (n_rst.rise < n_rst.set)
-	n_rst.rise += 1.0;
-
       sset = get_norm_hour (t_rst.set);
       rise = get_norm_hour (t_rst.rise);
       nbeg = get_norm_hour (n_rst.set);
       nend = get_norm_hour (n_rst.rise);
+
+      if (rise < sset)
+	{
+	  if (rise < 0)
+	    rise += 24.0;
+	  else
+	    sset -= 24.0;
+	}
+      if (nend < nbeg)
+	{
+	  if (nend < 0)
+	    nend += 24.0;
+	  else
+	    nbeg -= 24.0;
+	}
 
       old_fill = std::cout.fill ('0');
       old_p = std::cout.precision (7);
@@ -316,12 +320,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	<< "set yrange [0:90] noreverse" << std::endl
 	<< "set xrange [sset:rise] noreverse" << std::endl
 	<< "set xlabel \"Time UT [h]\"" << std::endl
-	<<
-	"set xtics ( \"12\" -12, \"13\" -11, \"14\" -10, \"15\" -9, \"16\" -8, \"17\" -7, \"18\" -6, \"19\" -5, \"20\" -4, \"21\" -3, \"22\" -2, \"23\" -1, \"0\" 0, \"1\" 1, \"2\" 2, \"3\" 3, \"4\" 4, \"5\" 5, \"6\" 6, \"7\" 7, \"8\" 8, \"9\" 9, \"10\" 10, \"11\" 11, \"12\" 12)"
-	<< std::
-	endl << "set arrow from nbeg,0 to nbeg,90 nohead lt 0" << std::
-	endl << "set arrow from nend,0 to nend,90 nohead lt 0" << std::
-	endl << "set ylabel \"altitude\"" << std::
+	<< "set ylabel \"altitude\"" << std::
 	endl << "set y2label \"airmass\"" << std::
 	endl <<
 	"set y2tics ( \"1.00\" 90, \"1.05\" 72.25, \"1.10\" 65.38, \"1.20\" 56.44, \"1.30\" 50.28 , \"1.50\" 41.81, \"2.00\" 30, \"3.00\" 20, \"6.00\" 10)"
@@ -339,7 +338,18 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	endl << "set arrow from nend,0 to nend,90 nohead lt 0" << std::
 	endl <<
 	"set arrow from (nend/2+nbeg/2),0 to (nend/2+nbeg/2),90 nohead lt 0"
-	<< std::endl;
+	<< std::endl << "set xtics ( ";
+
+      sset -= 1.0;
+      rise += 1.0;
+
+      for (int i = (int)floor (sset); i < (int) ceil (rise); i++)
+	{
+	  if (i != (int) floor (sset))
+	    std::cout << ", ";
+	  std::cout << '"' << i << "\" " << i;
+	}
+      std::cout << ')' << std::endl;
 
       switch (printGNU)
 	{
@@ -370,9 +380,6 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	}
       std::cout << std::endl;
     }
-
-  sset -= 1.0;
-  rise += 1.0;
 
   double jd_start = ((int) JD) - 0.5;
   double step = 0.2;
