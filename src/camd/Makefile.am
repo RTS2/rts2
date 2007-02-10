@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = urvc2 apogee
+SUBDIRS = urvc2 apogee edtsao
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
@@ -43,4 +43,12 @@ bin_PROGRAMS += rts2-camd-fli
 rts2_camd_fli_SOURCES = camd.cpp fli.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
 rts2_camd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
 rts2_camd_fli_CXXFLAGS = @INC_FLI@
+endif
+
+if EDTPDV
+bin_PROGRAMS += rts2-camd-edtsao
+
+rts2_camd_edtsao_SOURCES = camd.cpp edtsao.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
+rts2_camd_edtsao_LDFLAGS = edtsao/libedtsao.a @LIB_PTHREAD@ @LIB_EDTPDV@ 
+rts2_camd_edtsao_CXXFLAGS = @INC_EDTPDV@
 endif

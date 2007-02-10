@@ -1,5 +1,3 @@
-#Id#
-
 noinst_LIBRARIES = liburvc2.a
 noinst_HEADERS = urvc.h 
 
