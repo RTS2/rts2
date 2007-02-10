@@ -19,9 +19,9 @@ protected:
 
   struct ln_lnlat_posn *
     obs;
-  Rts2TargetSet (struct ln_lnlat_posn *in_obs, bool do_load);
 public:
   // print all targets..
+  Rts2TargetSet (struct ln_lnlat_posn *in_obs, bool do_load);
   Rts2TargetSet (struct ln_lnlat_posn *in_obs = NULL);
   Rts2TargetSet (struct ln_equ_posn *pos, double radius,
 		 struct ln_lnlat_posn *in_obs = NULL);
@@ -52,8 +52,10 @@ public:
   printBonusList (std::ostream & _os, double JD);
 };
 
-class Rts2TargetSetSelectable:
-public Rts2TargetSet
+class
+  Rts2TargetSetSelectable:
+  public
+  Rts2TargetSet
 {
 public:
   Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs = NULL);
@@ -64,10 +66,8 @@ public:
 /**
  * Holds calibration targets
  */
-class
-  Rts2TargetSetCalibration:
-  public
-  Rts2TargetSet
+class Rts2TargetSetCalibration:
+public Rts2TargetSet
 {
 public:
   Rts2TargetSetCalibration (Target * in_masterTarget, double JD);
@@ -76,25 +76,21 @@ public:
 /**
  * Holds targets by type
  */
-class
-  Rts2TargetSetType:
-  public
-  Rts2TargetSet
+class Rts2TargetSetType:
+public Rts2TargetSet
 {
 public:
   Rts2TargetSetType (char type);
 };
 
-class TargetGRB;
+class
+  TargetGRB;
 
 /**
  * Holds last GRBs
  */
-class
-  Rts2TargetSetGrb:
-  public
-  std::list <
-TargetGRB * >
+class Rts2TargetSetGrb:
+public std::list < TargetGRB * >
 {
 private:
   void
@@ -105,8 +101,7 @@ protected:
     obs;
 public:
   Rts2TargetSetGrb (struct ln_lnlat_posn *in_obs = NULL);
-  virtual ~
-  Rts2TargetSetGrb (void);
+  virtual ~ Rts2TargetSetGrb (void);
 
   void
   printGrbList (std::ostream & _os);
