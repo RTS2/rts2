@@ -93,6 +93,8 @@ public:
   virtual void refresh ();
   int getSelRow ()
   {
+    if (selrow == -1)
+      return (maxrow - 1);
     return selrow;
   }
   void setSelRow (int new_sel)
