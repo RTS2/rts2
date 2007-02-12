@@ -97,6 +97,19 @@ AC_SUBST(ANDOR)
 AC_SUBST(LIB_ANDOR)
 AC_SUBST(INC_ANDOR)
 
+# test for EDT PDV boards
+AC_ARG_WITH(edtpdv,
+[  --with-edtpdv           path to EDT-PDV SDK files, needed to build EDT cameras (http://www.edt.com/software],
+EDTPDV="${withval}";
+LIB_EDTPDV="-L${EDTPDV} -lpdv -ldl";
+INC_EDTPDV="-I${EDTPDV}",
+[EDTPDV=no])
+
+AM_CONDITIONAL(EDTPDV, test x$EDTPDV != xno)
+AC_SUBST(EDTPDV)
+AC_SUBST(LIB_EDTPDV)
+AC_SUBST(INC_EDTPDV)
+
 # for Alta we need special library:(
 AC_ARG_WITH(alta,
 [  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
@@ -221,14 +234,6 @@ AC_SUBST(LIB_NCURSES), [cat << EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([panel], [update_panels], LIB_PANEL="-lpanel";
-AC_SUBST(LIB_PANEL), [cat <<EOF
-**** You don't have panel library installed, which is
-**** ussually part of ncurses library. Please prove
-**** your system for such library.
-EOF
-exit 1])
-
 AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
 AC_SUBST(LIB_NOVA), [cat << EOF
 **** You don't have libnova library version >= 0.10.
@@ -348,6 +353,7 @@ AC_OUTPUT([Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile
 	   src/camd/apogee/Makefile
+	   src/camd/edtsao/Makefile
 	   src/dome/Makefile
 	   src/filterd/Makefile
 	   src/focusc/Makefile
@@ -387,6 +393,7 @@ echo "
 CCD's:
   sbig		${SBIG}
   andor         ${ANDOR}
+  edtsao	${EDTPDV}
   alta          ${ALTA}
   fli		${FLI}
 
