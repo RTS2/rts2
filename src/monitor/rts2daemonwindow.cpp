@@ -1,5 +1,6 @@
 #include "rts2daemonwindow.h"
 #include "nmonitor.h"
+#include "../utils/timestamp.h"
 
 #include <iostream>
 
@@ -349,12 +350,28 @@ Rts2NDeviceWindow::drawValuesList ()
 void
 Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 {
+  struct timeval tv;
+  gettimeofday (&tv, NULL);
+  double now = tv.tv_sec + tv.tv_usec / USEC_SEC;
   for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
        iter != client->valueEnd (); iter++)
     {
       Rts2Value *val = *iter;
-      wprintw (getWriteWindow (), "%-20s|%30s\n", val->getName ().c_str (),
-	       val->getValue ());
+      // customize value display
+      std::ostringstream _os;
+      switch (val->getValueType ())
+	{
+	case RTS2_VALUE_TIME:
+	  _os << LibnovaDateDouble (val->
+				    getValueDouble ()) << " (" <<
+	    TimeDiff (now, val->getValueDouble ()) << ")";
+	  wprintw (getWriteWindow (), "%-20s|%30s\n",
+		   val->getName ().c_str (), _os.str ().c_str ());
+	  break;
+	default:
+	  wprintw (getWriteWindow (), "%-20s|%30s\n",
+		   val->getName ().c_str (), val->getValue ());
+	}
       maxrow++;
     }
 }
