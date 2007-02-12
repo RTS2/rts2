@@ -59,7 +59,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
   addExe = NULL;
   execFollowups = 0;
 
-  last_packet = new Rts2ValueDouble ("last_packet");
+  last_packet = new Rts2ValueTime ("last_packet");
   addValue (last_packet);
 
   delta = new Rts2ValueDouble ("delta");
@@ -68,7 +68,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
   last_target = new Rts2ValueString ("last_target");
   addValue (last_target);
 
-  last_target_time = new Rts2ValueDouble ("last_target_time");
+  last_target_time = new Rts2ValueTime ("last_target_time");
   addValue (last_target_time);
 
   execConnection = new Rts2ValueInteger ("exec");
