@@ -27,7 +27,7 @@ Rts2Block (in_argc, in_argv)
 
   daemonize = DO_DEAMONIZE;
 
-  info_time = new Rts2ValueDouble ("infotime");
+  info_time = new Rts2ValueTime ("infotime");
   info_time->setValueDouble (0);
   addValue (info_time);
 

@@ -334,8 +334,12 @@ public:
 
 class LibnovaDate
 {
-private:
+protected:
   struct ln_date date;
+  // don't intialize value
+    LibnovaDate (bool sysinit)
+  {
+  }
 public:
     LibnovaDate ()
   {
@@ -370,6 +374,18 @@ public:
   friend std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
   friend std::istream & operator >> (std::istream & _is,
 				     LibnovaDate & l_date);
+};
+
+class LibnovaDateDouble:public LibnovaDate
+{
+public:
+  // take double as time_t argument
+  LibnovaDateDouble (double t):LibnovaDate (false)
+  {
+    time_t tt = (time_t) ceil (t);
+      ln_get_date_from_timet (&tt, &date);
+      date.seconds += (t - tt);
+  }
 };
 
 /** 
