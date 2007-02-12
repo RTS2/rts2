@@ -46,8 +46,6 @@ class CameraSbigChip:public CameraChip
   unsigned short *dest_top;
   char *send_top;
   int sbig_readout_mode;
-
-  void probe;
 public:
     CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
 		    int in_height, double in_pixelX, double in_pixelY,
@@ -261,7 +259,8 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE
+Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
