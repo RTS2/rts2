@@ -508,7 +508,7 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 {
 private:
   PdvDev * pd;
-  char *devname;
+  char devname[16];
   int devunit;
   bool notimeout;
   int sdelay;
