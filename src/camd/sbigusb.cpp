@@ -46,6 +46,8 @@ class CameraSbigChip:public CameraChip
   unsigned short *dest_top;
   char *send_top;
   int sbig_readout_mode;
+
+  void probe;
 public:
     CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
 		    int in_height, double in_pixelX, double in_pixelY,

@@ -18,7 +18,7 @@ private:
   unsigned short *dest_top;
   char *send_top;
 
-  u_int stat;
+  u_int status;
   bool shutter;
   bool overrun;
 
@@ -34,11 +34,37 @@ private:
   int dsub;
 
   int edtwrite (unsigned long lval);
-  void probe ();
+  int writeBinFile (char *filename);
 
+  // perform camera-specific functions
+  /** perform camera reset */
+  void reset ();
+  /** set high or low gain */
+  int setEDTGain (bool high)
+  {
+    if (high)
+      return edtwrite (SAO_GAIN_HIGH);
+    return edtwrite (SAO_GAIN_LOW);
+  }
+  int setEDTSplit (bool on)
+  {
+    if (on)
+      return edtwrite (SAO_SPLIT_ON);
+    return edtwrite (SAO_SPLIT_OFF);
+  }
+  int setEDTUni (bool on)
+  {
+    if (on)
+      return edtwrite (SAO_UNI_ON);
+    return edtwrite (SAO_UNI_OFF);
+  }
+  int setDAC ();
+
+  void probe ();
 public:
-    CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd);
-    virtual ~ CameraEdtSaoChip (void);
+  CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd);
+  virtual ~ CameraEdtSaoChip (void);
+  virtual int init ();
   virtual int startExposure (int light, float exptime);
   virtual int stopExposure ();
   virtual long isExposing ();
@@ -57,12 +83,121 @@ CameraEdtSaoChip::edtwrite (unsigned long lval)
   return 0;
 }
 
+int
+CameraEdtSaoChip::writeBinFile (char *filename)
+{
+  // taken from edtwriteblk.c, heavily modified
+  FILE *fp;
+  struct stat stbuf;
+  u_int cbuf[256 * 4];
+  u_int *cptr;
+  int loops;
+  int nwrite;
+
+  fp = fopen (filename, "r");
+  if (!fp)
+    {
+      logStream (MESSAGE_ERROR) << "cannot open file " << filename << sendLog;
+      return -1;
+    }
+  if (stat (filename, &stbuf) == -1)
+    {
+      logStream (MESSAGE_ERROR) << "fsize: can't access " << filename <<
+	sendLog;
+      return -1;
+    }
+  logStream (MESSAGE_DEBUG) << "writing " << filename << "  - " << stbuf.
+    st_size << " bytes" << sendLog;
+  cptr = cbuf;
+  loops = 0;
+  /*pdv_reset_serial(pd); */
+  while ((nwrite = fread (cbuf, 4, 1, fp)) > 0)
+    {
+      ccd_serial_write (pd, (u_char *) (cptr), nwrite * 4);
+      if (verbose)
+	{
+	  sao_print_command (cptr, nwrite);
+	}
+      loops++;
+    }
+  fclose (fp);
+  logStream (MESSAGE_DEBUG) << "Total number of serial commands: " << loops <<
+    sendLog;
+  return 0;
+}
+
+void
+CameraEdtSaoChip::reset ()
+{
+  pdv_flush_fifo (pd);
+  pdv_reset_serial (pd);
+  edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
+  edt_reg_write (pd, PDV_MODE_CNTL, 1);
+  edt_msleep (10);
+  edt_reg_write (pd, PDV_MODE_CNTL, 0);
+  sleep (1);
+}
+
+int
+CameraEdtSaoChip::setDAC ()
+{
+  // values taken from ccdsetup script
+  int ret;
+  unsigned long edtVal[] = {
+    0xa0384a65,			// RD = 13
+    0x00000001,			// sleep 1
+    0xa0080800,			// Vhi = 5
+    0xa0084333,			// Phi = 2
+    0xa0088ccc,			// Rhi = 8
+    0xa008c666,			// Shi = 4
+    0xa0180666,			// Slo = -4
+    0xa0184ccc,			// Plo = -8
+    0xa0188000,			// Vlo = 0
+    0xa018c199,			// Rlo = -1
+    0xa0288b32,			// OG2 = -2
+    0xa028c999,			// OG1 = -1
+    0xa0380a65,			// DD = 13
+    0xa0388cf6,			// OD2 = 21
+    // 0xa038cd94, // OD1 = 22
+    0xa038ce32,			// OD1 = 23
+    0x30080100,			// a/d offset channel 1
+    0x30180100,			// a/d offset channel 2
+    0x30280200,			// a/d offset channel 3
+    0x30380200,			// a/d offset channel 4
+    0x51000040,			// ioram channel order
+    0x51000141,
+    0x51000202,
+    0x51008303,
+    0x00000000
+  };				// end
+  unsigned long *valp = edtVal;
+  while (*valp != 0x00000000)
+    {
+      if (*valp == 0x000000001)
+	{
+	  sleep (1);
+	}
+      else
+	{
+	  ret = edtwrite (*valp);
+	  if (ret)
+	    {
+	      logStream (MESSAGE_ERROR) << "error writing value " << *valp <<
+		sendLog;
+	      return -1;
+	    }
+	}
+      valp++;
+    }
+  return 0;
+}
+
 void
 CameraEdtSaoChip::probe ()
 {
-  stat = edt_reg_read (pd, PDV_STAT);
-  shutter = stat & PDV_CHAN_ID0;
-  overrun = stat & PDV_OVERRUN;
+  status = edt_reg_read (pd, PDV_STAT);
+  shutter = status & PDV_CHAN_ID0;
+  overrun = status & PDV_OVERRUN;
 }
 
 CameraEdtSaoChip::CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id,
@@ -82,8 +217,39 @@ CameraEdtSaoChip::~CameraEdtSaoChip (void)
 }
 
 int
+CameraEdtSaoChip::init ()
+{
+  int ret;
+
+  // do initialization
+  reset ();
+
+  ret = setDAC ();
+  if (ret)
+    return ret;
+
+  ret = writeBinFile ("ccdsc.bin");
+  if (ret)
+    return ret;
+
+  ret = writeBinFile ("ccdpc.bin");
+  return ret;
+}
+
+int
 CameraEdtSaoChip::startExposure (int light, float exptime)
 {
+  // taken from readout script
+  edtwrite (0x51000040);	//  channel order
+  edtwrite (0x51000141);
+  edtwrite (0x51000242);
+  edtwrite (0x51008343);
+
+  writeBinFile ("ccdpc.bin");
+  writeBinFile ("lsst_nidlesc.bin");
+  edtwrite (0x4c000000);	// fclr 4 - but parameter isn't used
+  writeBinFile ("lsst_freezesc.bin");
+
   // taken from expose.c
   edtwrite (0x52000000 | (long) (exptime * 100));	/* set time */
 
@@ -110,6 +276,8 @@ CameraEdtSaoChip::isExposing ()
   probe ();
   if ((!overrun && shutter) || overrun)
     return 100;
+  pdv_serial_wait (pd, 100, 4);
+  writeBinFile ("lsst_unfreezesc.bin");
   return 0;
 }
 
@@ -329,6 +497,7 @@ CameraEdtSaoChip::endReadout ()
   pdv_flush_fifo (pd);
   pdv_reset_serial (pd);
   edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
+  writeBinFile ("lsst_pidlesc.bin");
   return CameraChip::endReadout ();
 }
 
@@ -347,36 +516,11 @@ private:
   bool verbose;
 
   int edtwrite (unsigned long lval);
-
-  // perform camera-specific functions
-  /** perform camera reset */
-  void reset ();
-  /** set high or low gain */
-  int setEDTGain (bool high)
-  {
-    if (high)
-      return edtwrite (SAO_GAIN_HIGH);
-    return edtwrite (SAO_GAIN_LOW);
-  }
-  int setEDTSplit (bool on)
-  {
-    if (on)
-      return edtwrite (SAO_SPLIT_ON);
-    return edtwrite (SAO_SPLIT_OFF);
-  }
-  int setEDTUni (bool on)
-  {
-    if (on)
-      return edtwrite (SAO_UNI_ON);
-    return edtwrite (SAO_UNI_OFF);
-  }
-  int writeBinFile (char *filename);
-  int setDAC ();
 protected:
-  virtual int processOption (int in_opt);
+    virtual int processOption (int in_opt);
 public:
-  Rts2CamdEdtSao (int in_argc, char **in_argv);
-  virtual ~ Rts2CamdEdtSao (void);
+    Rts2CamdEdtSao (int in_argc, char **in_argv);
+    virtual ~ Rts2CamdEdtSao (void);
 
   virtual int init ();
   virtual int initValues ();
@@ -404,125 +548,6 @@ Rts2DevCamera (in_argc, in_argv)
 Rts2CamdEdtSao::~Rts2CamdEdtSao (void)
 {
   edt_close (pd);
-}
-
-int
-Rts2CamdEdtSao::edtwrite (unsigned long lval)
-{
-  unsigned long lsval = lval;
-  if (ft_byteswap ())
-    swap4 ((char *) &lsval, (char *) &lval, sizeof (lval));
-  ccd_serial_write (pd, (u_char *) (&lsval), 4);
-  return 0;
-}
-
-void
-Rts2CamdEdtSao::reset ()
-{
-  pdv_flush_fifo (pd);
-  pdv_reset_serial (pd);
-  edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
-  edt_reg_write (pd, PDV_MODE_CNTL, 1);
-  edt_msleep (10);
-  edt_reg_write (pd, PDV_MODE_CNTL, 0);
-  sleep (1);
-}
-
-int
-Rts2CamdEdtSao::writeBinFile (char *filename)
-{
-  // taken from edtwriteblk.c, heavily modified
-  FILE *fp;
-  struct stat stbuf;
-  u_int cbuf[256 * 4];
-  u_int *cptr;
-  int loops;
-  int nwrite;
-
-  fp = fopen (filename, "r");
-  if (!fp)
-    {
-      logStream (MESSAGE_ERROR) << "cannot open file " << filename << sendLog;
-      return -1;
-    }
-  if (stat (filename, &stbuf) == -1)
-    {
-      logStream (MESSAGE_ERROR) << "fsize: can't access " << filename <<
-	sendLog;
-      return -1;
-    }
-  logStream (MESSAGE_DEBUG) << "writing " << filename << "  - " << stbuf.
-    st_size << " bytes" << sendLog;
-  cptr = cbuf;
-  loops = 0;
-  /*pdv_reset_serial(pd); */
-  while ((nwrite = fread (cbuf, 4, 1, fp)) > 0)
-    {
-      ccd_serial_write (pd, (u_char *) (cptr), nwrite * 4);
-      if (verbose)
-	{
-	  sao_print_command (cptr, nwrite);
-	}
-      loops++;
-    }
-  fclose (fp);
-  logStream (MESSAGE_DEBUG) << "Total number of serial commands: " << loops <<
-    sendLog;
-  return 0;
-}
-
-int
-Rts2CamdEdtSao::setDAC ()
-{
-  // values taken from ccdsetup script
-  int ret;
-  unsigned long edtVal[] = {
-    0xa0384a65,			// RD = 13
-    0x00000001,			// sleep 1
-    0xa0080800,			// Vhi = 5
-    0xa0084333,			// Phi = 2
-    0xa0088ccc,			// Rhi = 8
-    0xa008c666,			// Shi = 4
-    0xa0180666,			// Slo = -4
-    0xa0184ccc,			// Plo = -8
-    0xa0188000,			// Vlo = 0
-    0xa018c199,			// Rlo = -1
-    0xa0288b32,			// OG2 = -2
-    0xa028c999,			// OG1 = -1
-    0xa0380a65,			// DD = 13
-    0xa0388cf6,			// OD2 = 21
-    // 0xa038cd94, // OD1 = 22
-    0xa038ce32,			// OD1 = 23
-    0x30080100,			// a/d offset channel 1
-    0x30180100,			// a/d offset channel 2
-    0x30280200,			// a/d offset channel 3
-    0x30380200,			// a/d offset channel 4
-    0x51000040,			// ioram channel order
-    0x51000141,
-    0x51000202,
-    0x51008303,
-    0x00000000
-  };				// end
-  unsigned long *valp = edtVal;
-  while (*valp != 0x00000000)
-    {
-      if (*valp == 0x000000001)
-	{
-	  sleep (1);
-	}
-      else
-	{
-	  ret = edtwrite (*valp);
-	  if (ret)
-	    {
-	      logStream (MESSAGE_ERROR) << "error writing value " << *valp <<
-		sendLog;
-	      return -1;
-	    }
-	}
-      valp++;
-    }
-  return 0;
 }
 
 int
@@ -574,13 +599,6 @@ Rts2CamdEdtSao::init ()
     ccd_picture_timeout (pd, 0);
 
   ccd_set_serial_delay (pd, sdelay);
-
-  // do initialization
-  reset ();
-
-  ret = setDAC ();
-  if (ret)
-    return ret;
 
   chipNum = 1;
 

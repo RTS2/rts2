@@ -54,7 +54,7 @@ CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
 	    in_gain)
 {
   dest = new unsigned short[in_width * in_height];
-  in_useFT = useFT;
+  useFT = in_useFT;
 };
 
 CameraAndorChip::~CameraAndorChip (void)
@@ -212,49 +212,73 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool
-CameraAndorChip::supportFrameTransfer ()
+bool CameraAndorChip::supportFrameTransfer ()
 {
   return useFT;
 }
 
-class Rts2DevCameraAndor:
-public Rts2DevCamera
+class
+  Rts2DevCameraAndor:
+  public
+  Rts2DevCamera
 {
 private:
-  char *andorRoot;
-  int horizontalSpeed;
-  int verticalSpeed;
-  int vsamp;
-  int adChannel;
-  bool printSpeedInfo;
+  char *
+    andorRoot;
+  int
+    horizontalSpeed;
+  int
+    verticalSpeed;
+  int
+    vsamp;
+  int
+    adChannel;
+  bool
+    printSpeedInfo;
   // number of AD channels
-  int chanNum;
-  bool useFT;
+  int
+    chanNum;
+  bool
+    useFT;
 
-  int printChannelInfo (int channel);
+  int
+  printChannelInfo (int channel);
 
-  void getTemp ();
+  void
+  getTemp ();
 protected:
-  virtual int processOption (int in_opt);
-  virtual void help ();
-  virtual int setGain (double in_gain);
+  virtual int
+  processOption (int in_opt);
+  virtual void
+  help ();
+  virtual int
+  setGain (double in_gain);
 public:
   Rts2DevCameraAndor (int argc, char **argv);
-  virtual ~ Rts2DevCameraAndor (void);
+  virtual ~
+  Rts2DevCameraAndor (void);
 
-  virtual int init ();
+  virtual int
+  init ();
 
   // callback functions for Camera alone
-  virtual int ready ();
-  virtual int info ();
-  virtual int camChipInfo (int chip);
-  virtual int camCoolMax ();
-  virtual int camCoolHold ();
-  virtual int camCoolTemp (float new_temp);
-  virtual int camCoolShutdown ();
+  virtual int
+  ready ();
+  virtual int
+  info ();
+  virtual int
+  camChipInfo (int chip);
+  virtual int
+  camCoolMax ();
+  virtual int
+  camCoolHold ();
+  virtual int
+  camCoolTemp (float new_temp);
+  virtual int
+  camCoolShutdown ();
 
-  virtual int camExpose (int chip, int light, float exptime);
+  virtual int
+  camExpose (int chip, int light, float exptime);
 };
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
