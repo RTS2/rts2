@@ -142,19 +142,23 @@ Rts2ConnShooter::processAuger ()
       return -1;
     }
 
-  if (!(gap_comp && gap_isT5 && gap_energy > minEnergy))
+  // valid shover and it's hibrid..
+
+  getTimeTfromGPS (gps_sec, gps_usec, db_auger_date);
+
+  if ((!(gap_comp && gap_isT5 && gap_energy > minEnergy))
+    || master->wasSeen (db_auger_date, db_auger_ra, db_auger_dec))
     {
       logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
         << gap_comp
 	<< " gap_isT5 " << gap_isT5
 	<< " gap_energy " << gap_energy
-	<< " minEnergy " << minEnergy << ")" << sendLog;
+	<< " minEnergy " << minEnergy 
+	<< " ra " << db_auger_ra
+	<< " dec " << db_auger_dec
+	<< ")" << sendLog;
       return -1;
     }
-
-  // valid shover and it's hibrid..
-
-  getTimeTfromGPS (gps_sec, gps_usec, db_auger_date);
 
   EXEC SQL INSERT INTO
     auger
@@ -184,7 +188,7 @@ Rts2ConnShooter::processAuger ()
       return -1;
     }
   EXEC SQL COMMIT;
-  return master->newShower ();
+  return master->newShower (db_auger_date, db_auger_ra, db_auger_dec);
 }
 
 Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master, double in_minEnergy):Rts2ConnNoSend

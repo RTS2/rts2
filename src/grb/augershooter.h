@@ -13,6 +13,9 @@ class Rts2DevAugerShooter:public Rts2DeviceDb
 private:
   Rts2ConnShooter * shootercnn;
   int port;
+  Rts2ValueTime *lastAugerDate;
+  Rts2ValueDouble *lastAugerRa;
+  Rts2ValueDouble *lastAugerDec;
 protected:
     virtual int processOption (int in_opt);
 public:
@@ -25,7 +28,8 @@ public:
   }
 
   virtual int init ();
-  int newShower ();
+  int newShower (double lastDate, double ra, double dec);
+  bool wasSeen (double lastDate, double ra, double dec);
 };
 
 #endif /*! __RTS2_AUGERSHOOTER__ */

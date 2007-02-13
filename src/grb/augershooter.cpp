@@ -14,6 +14,13 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
   port = 1240;
   addOption ('s', "shooter_port", 1,
 	     "port on which to listen for auger connection");
+
+  lastAugerDate = new Rts2ValueTime ("last_date");
+  addValue (lastAugerDate);
+  lastAugerRa = new Rts2ValueDouble ("last_ra");
+  addValue (lastAugerRa);
+  lastAugerDec = new Rts2ValueDouble ("last_dec");
+  addValue (lastAugerDec);
 }
 
 Rts2DevAugerShooter::~Rts2DevAugerShooter (void)
@@ -61,9 +68,12 @@ Rts2DevAugerShooter::init ()
 }
 
 int
-Rts2DevAugerShooter::newShower ()
+Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
 {
   Rts2Conn *exec;
+  lastAugerDate->setValueDouble (lastDate);
+  lastAugerRa->setValueDouble (ra);
+  lastAugerDec->setValueDouble (dec);
   exec = getOpenConnection ("EXEC");
   if (exec)
     {
@@ -76,6 +86,14 @@ Rts2DevAugerShooter::newShower ()
       return -1;
     }
   return 0;
+}
+
+bool
+Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
+{
+  return (fabs (lastDate - lastAugerDate->getValueDouble ()) < 5
+	  && ra == lastAugerRa->getValueDouble ()
+	  && dec == lastAugerDec->getValueDouble ());
 }
 
 int
