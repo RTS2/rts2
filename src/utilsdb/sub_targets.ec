@@ -709,6 +709,7 @@ CalibrationTarget::load ()
 
   PosCalibration *fallback_obs_calib = NULL;
   time_t fallback_last_image;
+  double fallback_last_time = 0;
 
   std::list <PosCalibration *> cal_list;
   std::list <PosCalibration *> bad_list;
@@ -814,11 +815,14 @@ CalibrationTarget::load ()
 	// if that target was already observerd..
 	else if (calib->getNumObs (&valid, &now) > 0)
 	{
-	  // if we do not have any target, pick that one
-	  if (fallback_obs_calib == NULL)
+	  // if we do not have any target, pick that on
+	  double calib_last_time = calib->getLastObsTime ();
+	  if (fallback_obs_calib == NULL ||
+	    calib_last_time > fallback_last_time)
 	  {
 	    fallback_obs_calib = calib;
 	    fallback_last_image = (time_t) d_airmass_last_image;
+	    fallback_last_time = calib_last_time;
 	  }
 	}
 	else
