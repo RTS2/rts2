@@ -1544,7 +1544,8 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
   lastMoveDec = tar_dec;
 
   logStream (MESSAGE_DEBUG) << "Losmandy start move lastMoveRa " << lastMoveRa
-    << " telRa " << telRa << " flip " << newFlip << sendLog;
+    << " telRa " << telRa->
+    getValueDouble () << " flip " << newFlip << sendLog;
 
   ra_diff = ln_range_degrees (telRa->getValueDouble () - lastMoveRa);
   if (ra_diff > 180.0)
@@ -1615,8 +1616,9 @@ Rts2DevTelescopeGemini::startMove (double tar_ra, double tar_dec)
     }
 
   logStream (MESSAGE_DEBUG) << "Losmandy start move ha " << ha << " ra_diff "
-    << ra_diff << " lastMoveRa " << lastMoveRa << " telRa " << telRa <<
-    " newFlip  " << newFlip << " willFlip " << willFlip << sendLog;
+    << ra_diff << " lastMoveRa " << lastMoveRa << " telRa " << telRa->
+    getValueDouble () << " newFlip  " << newFlip << " willFlip " << willFlip
+    << sendLog;
 
   // we fit to limit, aply model
 
@@ -2472,8 +2474,9 @@ Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
   if (ret)
     return ret;
 #ifdef DEBUG_EXTRA
-  logStream (MESSAGE_INFO) << "Losmandy change ra " << telRa << " dec " <<
-    telDec << " move_fixed " << move_fixed << sendLog;
+  logStream (MESSAGE_INFO) << "Losmandy change ra " << telRa->
+    getValueDouble () << " dec " << telDec->
+    getValueDouble () << " move_fixed " << move_fixed << sendLog;
 #endif
   // decide, if we make change, or move using move command
 #ifdef L4_GUIDE
