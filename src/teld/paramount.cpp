@@ -443,7 +443,7 @@ Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
 
   // pretend we are at north hemispehere.. at least for dec
   dec = pos->dec;
-  if (telLatitude < 0)
+  if (telLatitude->getValueDouble () < 0)
     dec *= -1;
 
   dec = decZero + dec;
@@ -463,7 +463,7 @@ Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
 
   // purpose of following code is to get from west side of flip
   // on S, we prefer negative values
-  if (telLatitude < 0)
+  if (telLatitude->getValueDouble () < 0)
     {
       while ((ac - acMargin) < acMin)
 	// ticks per revolution - don't have idea where to get that
@@ -478,7 +478,7 @@ Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
       flip = !flip;
     }
   // while on N we would like to see positive values
-  if (telLatitude > 0)
+  if (telLatitude->getValueDouble () > 0)
     {
       while ((ac - acMargin) < acMin)
 	// ticks per revolution - don't have idea where to get that
@@ -501,7 +501,8 @@ Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
   applyModel (pos, &model_change, flip, JD);
 
   // when fliped, change sign - most probably work diferently on N and S; tested only on S
-  if ((flip && telLatitude < 0) || (!flip && telLatitude > 0))
+  if ((flip && telLatitude->getValueDouble () < 0)
+      || (!flip && telLatitude->getValueDouble () > 0))
     model_change.dec *= -1;
 
   LibnovaRaDec lchange (&model_change);
@@ -572,7 +573,7 @@ Rts2DevTelParamount::counts2sky (CWORD32 & ac, CWORD32 dc, double &ra,
 
   ra = ln_range_degrees (ra);
 
-  if (telLatitude < 0)
+  if (telLatitude->getValueDouble () < 0)
     dec *= -1;
 
   return 0;
@@ -724,19 +725,20 @@ Rts2DevTelParamount::init ()
   ret = config->loadFile ();
   if (ret)
     return -1;
+
+  ret = Rts2DevTelescope::init ();
+  if (ret)
+    return ret;
+
   telLongtitude->setValueDouble (config->getObserver ()->lng);
   telLatitude->setValueDouble (config->getObserver ()->lat);
 
-  if (telLatitude < 0)		// south hemispehere
+  if (telLatitude->getValueDouble () < 0)	// south hemispehere
     {
       // swap values which are opposite for south hemispehere
       haZero *= -1.0;
       haCpd *= -1.0;
     }
-
-  ret = Rts2DevTelescope::init ();
-  if (ret)
-    return ret;
 
   ret = MKS3Init (device_name);
   if (ret)
@@ -909,7 +911,7 @@ Rts2DevTelParamount::idle ()
       return Rts2Device::idle ();
     }
   ac += homeOff;
-  if (telLatitude < 0)
+  if (telLatitude->getValueDouble () < 0)
     {
       if ((ac + acMargin) > acMax)
 	needStop ();
