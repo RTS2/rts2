@@ -575,7 +575,7 @@ Rts2TelescopeIr::info ()
     }
   else
     {
-      telFlip = 0;
+      telFlip->setValueInteger (0);
     }
 
   if (status)
