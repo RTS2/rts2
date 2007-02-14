@@ -501,7 +501,7 @@ Rts2TelescopeIr::getCover ()
 {
   double cor_tmp;
   int status;
-  tpl_get ("COVER.REALPOS", cover, &status);
+  tpl_get ("COVER.REALPOS", cor_tmp, &status);
   if (status)
     return;
   cover->setValueDouble (cor_tmp);
@@ -510,7 +510,6 @@ Rts2TelescopeIr::getCover ()
 void
 Rts2TelescopeIr::initCoverState ()
 {
-  int status = 0;
   getCover ();
   if (cover->getValueDouble () == 0)
     cover_state = CLOSED;
