@@ -35,7 +35,7 @@ private:
   std::string * ir_ip;
   int ir_port;
   Client *tplc;
-  double cover;
+  Rts2ValueDouble *cover;
   enum
   { OPENED, OPENING, CLOSING, CLOSED } cover_state;
 
@@ -45,7 +45,11 @@ private:
   void checkCover ();
   void checkPower ();
 
+  void getCover ();
   void initCoverState ();
+
+  Rts2ValueDouble *derotatorOffset;
+  Rts2ValueDouble *derotatorCurrpos;
 
     std::list < ErrorTime * >errorcodes;
 
