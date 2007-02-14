@@ -47,8 +47,8 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  logStream (MESSAGE_ERROR) << "IR tpl_get error " << cstatus <<
-	    sendLog;
+	  logStream (MESSAGE_ERROR) << "IR tpl_get error " << name <<
+	    " status " << cstatus << sendLog;
 	  *status = 1;
 	}
 
@@ -88,8 +88,8 @@ Rts2TelescopeIr::tpl_setw (const char *name, T val, int *status)
 
       if (cstatus != TPLC_OK)
 	{
-	  logStream (MESSAGE_ERROR) << "IR tpl_setw error " << cstatus <<
-	    sendLog;
+	  logStream (MESSAGE_ERROR) << "IR tpl_setw error " << name << " val "
+	    << val << " status " << cstatus << sendLog;
 	  *status = 1;
 	}
       r.Dispose ();
@@ -133,13 +133,22 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   ir_port = 0;
   tplc = NULL;
 
+  derotatorOffset = new Rts2ValueDouble ("DER_OFF", "derotator offset");
+  addValue (derotatorOffset);
+  derotatorCurrpos =
+    new Rts2ValueDouble ("DER_CUR", "derotator current position");
+  addValue (derotatorCurrpos);
+
+  cover = new Rts2ValueDouble ("cover");
+  addValue (cover);
+
+
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
 
   strcpy (telType, "BOOTES_IR");
   strcpy (telSerialNumber, "001");
 
-  cover = 0;
   cover_state = CLOSED;
 }
 
@@ -373,8 +382,8 @@ Rts2TelescopeIr::checkCover ()
   switch (cover_state)
     {
     case OPENING:
-      tpl_get ("COVER.REALPOS", cover, &status);
-      if (cover == 1.0)
+      getCover ();
+      if (cover->getValueDouble () == 1.0)
 	{
 	  tpl_set ("COVER.POWER", 0, &status);
 #ifdef DEBUG_EXTRA
@@ -387,8 +396,8 @@ Rts2TelescopeIr::checkCover ()
       setTimeout (USEC_SEC);
       break;
     case CLOSING:
-      tpl_get ("COVER.REALPOS", cover, &status);
-      if (cover == 0.0)
+      getCover ();
+      if (cover->getValueDouble () == 0.0)
 	{
 	  tpl_set ("COVER.POWER", 0, &status);
 #ifdef DEBUG_EXTRA
@@ -459,13 +468,15 @@ Rts2TelescopeIr::checkPower ()
 	<< sendLog;
       if (referenced == 0)
 	{
-	  int reinit = (nextReset == RESET_COLD_START ? 1 : 0);
-	  status = tpl_set ("CABINET.REINIT", reinit, &status);
-	  if (status)
+	  if (nextReset == RESET_COLD_START)
 	    {
-	      logStream (MESSAGE_ERROR) << "IR checkPower reinit " << status
-		<< sendLog;
-	      return;
+	      status = tpl_set ("CABINET.REINIT", 1, &status);
+	      if (status)
+		{
+		  logStream (MESSAGE_ERROR) << "IR checkPower reinit " <<
+		    status << sendLog;
+		  return;
+		}
 	    }
 	}
       sleep (1);
@@ -486,13 +497,24 @@ Rts2TelescopeIr::checkPower ()
 }
 
 void
+Rts2TelescopeIr::getCover ()
+{
+  double cor_tmp;
+  int status;
+  tpl_get ("COVER.REALPOS", cover, &status);
+  if (status)
+    return;
+  cover->setValueDouble (cor_tmp);
+}
+
+void
 Rts2TelescopeIr::initCoverState ()
 {
   int status = 0;
-  tpl_get ("COVER.REALPOS", cover, &status);
-  if (cover == 0)
+  getCover ();
+  if (cover->getValueDouble () == 0)
     cover_state = CLOSED;
-  else if (cover == 1)
+  else if (cover->getValueDouble () == 1)
     cover_state = OPENED;
   else
     cover_state = CLOSING;
@@ -584,6 +606,16 @@ Rts2TelescopeIr::info ()
 
   ax1->setValueDouble (az);
   ax2->setValueDouble (zd);
+
+  double tmp_derOff;
+  double tmp_derCur;
+  tpl_get ("DEROTATOR[3].OFFSET", tmp_derOff, &status);
+  tpl_get ("DEROTATOR[3].CURRPOS", tmp_derCur, &status);
+  if (status == TPL_OK)
+    {
+      derotatorOffset->setValueDouble (tmp_derOff);
+      derotatorCurrpos->setValueDouble (tmp_derCur);
+    }
 
   return Rts2DevTelescope::info ();
 }
