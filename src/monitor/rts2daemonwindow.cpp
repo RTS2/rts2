@@ -259,13 +259,6 @@ Rts2NSelWindow::injectKey (int key)
 void
 Rts2NSelWindow::draw ()
 {
-  // normalize selrow
-  if (selrow == -1)
-    padoff_y = (maxrow - 1) - getWriteHeight () + 1 + lineOffset;
-  else if ((selrow - padoff_y + lineOffset) >= getWriteHeight ())
-    padoff_y = selrow - getWriteHeight () + 1 + lineOffset;
-  else if ((selrow - padoff_y) < 0)
-    padoff_y = selrow;
   Rts2NWindow::draw ();
 }
 
@@ -289,6 +282,13 @@ Rts2NSelWindow::refresh ()
   Rts2NWindow::refresh ();
   getbegyx (window, y, x);
   getmaxyx (window, h, w);
+  // normalize selrow
+  if (selrow == -1)
+    padoff_y = (maxrow - 1) - getWriteHeight () + 1 + lineOffset;
+  else if ((selrow - padoff_y + lineOffset) >= getWriteHeight ())
+    padoff_y = selrow - getWriteHeight () + 1 + lineOffset;
+  else if ((selrow - padoff_y) < 0)
+    padoff_y = selrow;
   if (haveBox ())
     pnoutrefresh (scrolpad, padoff_y, padoff_x, y + 1, x + 1, y + h - 2,
 		  x + w - 2);
