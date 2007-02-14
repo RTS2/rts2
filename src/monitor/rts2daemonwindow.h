@@ -16,7 +16,7 @@ private:
   bool _haveBox;
 protected:
   WINDOW * window;
-  void errorMove (const char *op);
+  void errorMove (const char *op, int y, int x, int h, int w);
 public:
     Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
 		 int border = 1);

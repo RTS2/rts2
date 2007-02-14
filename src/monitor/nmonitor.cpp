@@ -182,7 +182,8 @@ Rts2Client (in_argc, in_argv)
 
   colorsOff = false;
 
-  resizedRequest = false;
+  old_lines = 0;
+  old_cols = 0;
 
   addOption ('c', "color-off", 0, "don't use colors");
 }
@@ -200,6 +201,8 @@ int
 Rts2NMonitor::repaint ()
 {
   curs_set (0);
+  if (LINES != old_lines || COLS != old_cols)
+    resize ();
   deviceList->draw ();
   daemonWindow->draw ();
   msgwindow->draw ();
@@ -321,6 +324,9 @@ Rts2NMonitor::resize ()
   menu->resize (0, 0, COLS, 1);
   statusWindow->resize (0, LINES - 1, COLS, 1);
   masterLayout->resize (0, 1, COLS, LINES - 2);
+
+  old_lines = LINES;
+  old_cols = COLS;
 }
 
 void

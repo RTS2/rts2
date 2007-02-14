@@ -79,14 +79,15 @@ private:
 
   bool colorsOff;
 
-  bool resizedRequest;
-
   void messageBox (const char *query, messageAction action);
   void messageBoxEnd ();
   void menuPerform (int code);
   void leaveMenu ();
 
   void changeActive (Rts2NWindow * new_active);
+
+  int old_lines;
+  int old_cols;
 
 protected:
     virtual int processOption (int in_opt);
@@ -113,11 +114,6 @@ public:
   void processKey (int key);
 
   void commandReturn (Rts2Command * cmd, int cmd_status);
-
-  void setResizeRequest ()
-  {
-    resizedRequest = true;
-  }
 };
 
 class Rts2NMonConn:public Rts2ConnClient

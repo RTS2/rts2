@@ -18,7 +18,7 @@ Rts2NLayout ()
     y = 0;
   window = newwin (h, w, y, x);
   if (!window)
-    errorMove ("newwin");
+    errorMove ("newwin", y, x, h, w);
   switch (border)
     {
     case 0:
@@ -114,10 +114,15 @@ Rts2NWindow::getWriteHeight ()
 }
 
 void
-Rts2NWindow::errorMove (const char *op)
+Rts2NWindow::errorMove (const char *op, int y, int x, int h, int w)
 {
   endwin ();
-  std::cout << "Cannot perform ncurses operation " << op << std::endl;
+  std::cout << "Cannot perform ncurses operation " << op
+    << " y x h w "
+    << y << " "
+    << x << " "
+    << h << " "
+    << w << " " << "LINES COLS " << LINES << " " << COLS << std::endl;
   exit (EXIT_FAILURE);
 }
 
@@ -129,14 +134,14 @@ Rts2NWindow::move (int x, int y)
   if (x == _x && y == _y)
     return;
   if (mvwin (window, y, x) == ERR)
-    errorMove ("mvwin");
+    errorMove ("mvwin", y, x, -1, -1);
 }
 
 void
 Rts2NWindow::resize (int x, int y, int w, int h)
 {
   if (wresize (window, h, w) == ERR)
-    errorMove ("wresize");
+    errorMove ("wresize", 0, 0, h, w);
   move (x, y);
 }
 
