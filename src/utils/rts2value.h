@@ -103,7 +103,7 @@ public:
 		     bool writeToFits = true);
     virtual ~ Rts2ValueString (void)
   {
-    delete value;
+    delete[]value;
   }
   virtual int setValue (Rts2Conn * connection);
   virtual char *getValue ();
