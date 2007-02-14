@@ -616,6 +616,8 @@ Rts2TelescopeIr::info ()
       derotatorCurrpos->setValueDouble (tmp_derCur);
     }
 
+  getCover ();
+
   return Rts2DevTelescope::info ();
 }
 
