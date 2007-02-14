@@ -48,6 +48,12 @@ Rts2DevScript::startTarget ()
   delete nextComd;
   nextComd = NULL;
 
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Rts2DevScript::startTarget currentTarget " <<
+    currentTarget->getTargetID () << " OBS ID " << currentTarget->
+    getObsTargetID () << sendLog;
+#endif
+
   script_connection->getMaster ()->
     postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
@@ -200,6 +206,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	    ac->count++;
 	  break;
 	}
+      // that's intentional, as acqueryQuery should be send to all
+      // scripts for processing
     case EVENT_SIGNAL_QUERY:
       if (script)
 	script->postEvent (new Rts2Event (event));
