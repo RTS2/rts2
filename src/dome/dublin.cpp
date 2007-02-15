@@ -236,7 +236,7 @@ Rts2DevDomeDublin::info ()
 {
   // switches are both off either when we move enclosure or when dome failed
   if (domeFailed || timeOpenClose > 0)
-    sw_state = 0;
+    sw_state->setValueInteger (0);
 
   if (weatherConn)
     {
@@ -308,7 +308,7 @@ Rts2DevDomeDublin::isOpened ()
       logStream (MESSAGE_ERROR) << "Rts2DevDomeDublin::isOpened timeout" <<
 	sendLog;
       domeFailed = true;
-      sw_state = 0;
+      sw_state->setValueInteger (0);
       executeSms (TYPE_STUCK);
       // stop motor
       closeDomeReal ();
@@ -367,7 +367,7 @@ Rts2DevDomeDublin::isClosed ()
       logStream (MESSAGE_ERROR) << "Rts2DevDomeDublin::isClosed dome timeout"
 	<< sendLog;
       domeFailed = true;
-      sw_state = 0;
+      sw_state->setValueInteger (0);
       executeSms (TYPE_STUCK);
       openDomeReal ();
       return -2;
