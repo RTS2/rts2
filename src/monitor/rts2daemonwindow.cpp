@@ -66,16 +66,16 @@ int
 Rts2NWindow::getCurX ()
 {
   int x, y;
-  getyx (window, y, x);
-  return x + getX ();
+  getyx (getWriteWindow (), y, x);
+  return x;
 }
 
 int
 Rts2NWindow::getCurY ()
 {
   int x, y;
-  getyx (window, y, x);
-  return y + getY ();
+  getyx (getWriteWindow (), y, x);
+  return y;
 }
 
 

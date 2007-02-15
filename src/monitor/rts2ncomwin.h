@@ -23,6 +23,11 @@ public:
 
   virtual void setCursor ();
 
+  virtual WINDOW *getWriteWindow ()
+  {
+    return comwin;
+  }
+
   void getWinString (char *buf, int n)
   {
     mvwinnstr (comwin, 0, 0, buf, n);

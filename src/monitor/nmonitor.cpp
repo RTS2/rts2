@@ -280,7 +280,7 @@ Rts2NMonitor::init ()
   comWindow = new Rts2NComWin (cursesWin);
   msgwindow = new Rts2NMsgWindow (cursesWin);
   windowStack.push_back (deviceList);
-  statusWindow = new Rts2NStatusWindow (cursesWin, this);
+  statusWindow = new Rts2NStatusWindow (cursesWin, comWindow, this);
   daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
 
   // init layout
@@ -432,10 +432,11 @@ Rts2NMonitor::processKey (int key)
     }
   else if (key == KEY_ENTER || key == K_ENTER)
     {
-      char command[comWindow->getCurX () + 1];
+      int curX = comWindow->getCurX ();
+      char command[curX + 1];
       Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
-      comWindow->getWinString (command, (comWindow->getCurX () - 1));
-      command[comWindow->getCurX () + 1] = '\0';
+      comWindow->getWinString (command, curX);
+      command[curX] = '\0';
       conn->queCommand (new Rts2Command (this, command));
       comWindow->clear ();
       comWindow->printCommand (command);
