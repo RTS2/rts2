@@ -868,9 +868,8 @@ CalibrationTarget::load ()
   if (sqlca.sqlcode)
   {
     logMsgDb ("CalibrationTarget::load cannot find any airmass_cal_images entry");
-    EXEC SQL CLOSE cur_airmass_cal_images;
-    EXEC SQL ROLLBACK;
-    return -1;
+    // don't return, as we can have fallback target, which loaded
+    // properly
   }
   EXEC SQL CLOSE cur_airmass_cal_images;
   EXEC SQL COMMIT;
