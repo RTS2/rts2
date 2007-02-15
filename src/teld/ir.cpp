@@ -139,6 +139,9 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
     new Rts2ValueDouble ("DER_CUR", "derotator current position");
   addValue (derotatorCurrpos);
 
+  mountTrack = new Rts2ValueInteger ("TRACK", "mount track");
+  addValue (mountTrack);
+
   cover = new Rts2ValueDouble ("cover");
   addValue (cover);
 
@@ -617,6 +620,8 @@ Rts2TelescopeIr::info ()
     }
 
   getCover ();
+
+  mountTrack->setValueInteger (track);
 
   return Rts2DevTelescope::info ();
 }
