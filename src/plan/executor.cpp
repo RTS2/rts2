@@ -496,7 +496,10 @@ Rts2Executor::setNext (int nextId)
     }
   nextTarget = createTarget (nextId, observer);
   if (!nextTarget)
-    return -1;
+    {
+      // error
+      return -2;
+    }
   if (!currentTarget)
     switchTarget ();
   else
