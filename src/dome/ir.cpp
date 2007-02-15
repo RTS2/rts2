@@ -286,10 +286,10 @@ Rts2DevDomeIR::info ()
      return -1;
    */
   /*
-     sw_state = getPortState (KONCAK_OTEVRENI_PRAVY);
-     sw_state |= (getPortState (KONCAK_OTEVRENI_LEVY) << 1);
-     sw_state |= (getPortState (KONCAK_ZAVRENI_PRAVY) << 2);
-     sw_state |= (getPortState (KONCAK_ZAVRENI_LEVY) << 3);
+     sw_state->setValueInteger (getPortState (KONCAK_OTEVRENI_PRAVY));
+     sw_state->setValueInteger (sw_state->getValueInteger | (getPortState (KONCAK_OTEVRENI_LEVY) << 1));
+     sw_state->setValueInteger (sw_state->getValueInteger | (getPortState (KONCAK_ZAVRENI_PRAVY) << 2));
+     sw_state->setValueInteger (sw_state->setValueInteger | (getPortState (KONCAK_ZAVRENI_LEVY) << 3));
    */
   if (leftClosed () && rightClosed ())
     sw_state->setValueInteger (4);
