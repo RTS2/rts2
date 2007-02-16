@@ -36,15 +36,6 @@ public:
 int
 main (int argc, char **argv)
 {
-  Rts2DevMirrorDummy *device = new Rts2DevMirrorDummy (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      std::cerr << "Cannot initialize FRAM mirror - exiting!" << std::endl;
-      exit (1);
-    }
-  device->run ();
-  delete device;
+  Rts2DevMirrorDummy device = Rts2DevMirrorDummy (argc, argv);
+  return device.run ();
 }

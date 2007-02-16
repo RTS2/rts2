@@ -18,12 +18,6 @@ Rts2DevMirror::~Rts2DevMirror (void)
 }
 
 int
-Rts2DevMirror::init ()
-{
-  return Rts2Device::init ();
-}
-
-int
 Rts2DevMirror::idle ()
 {
   int ret;

@@ -9,11 +9,6 @@ class Rts2DevMirror:public Rts2Device
 public:
   Rts2DevMirror (int argc, char **argv);
     virtual ~ Rts2DevMirror (void);
-  virtual int processOption (int in_opt)
-  {
-    return Rts2Device::processOption (in_opt);
-  }
-  virtual int init ();
   virtual int idle ();
 
   virtual Rts2DevConn *createConnection (int in_sock);

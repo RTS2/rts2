@@ -300,15 +300,6 @@ Rts2DevMirrorFram::isClosed ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevMirrorFram *device = new Rts2DevMirrorFram (argc, argv);
-
-  int ret;
-  ret = device->init ();
-  if (ret)
-    {
-      std::cerr << "Cannot initialize FRAM mirror - exiting!" << std::endl;
-      exit (1);
-    }
-  device->run ();
-  delete device;
+  Rts2DevMirrorFram device = Rts2DevMirrorFram (argc, argv);
+  return device.run ();
 }
