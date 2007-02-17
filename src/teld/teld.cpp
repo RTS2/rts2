@@ -17,31 +17,17 @@
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
-  telRa = new Rts2ValueDouble ("MNT_RA", "mount RA (read from sensors)");
-  addValue (telRa);
-  telDec = new Rts2ValueDouble ("MNT_DEC", "mount DEC (read from sensors)");
-  addValue (telDec);
-
-  telSiderealTime = new Rts2ValueDouble ("siderealtime");
-  addValue (telSiderealTime);
-
-  telLocalTime = new Rts2ValueDouble ("localtime");
-  addValue (telLocalTime);
-
-  lastRa = new Rts2ValueDouble ("LAST_RA", "last target RA");
-  addValue (lastRa);
-  lastDec = new Rts2ValueDouble ("LAST_DEC", "last target DEC");
-  addValue (lastDec);
-
-  lastTarRa = new Rts2ValueDouble ("RASC", "target RA");
-  addValue (lastTarRa);
-  lastTarDec = new Rts2ValueDouble ("DECL", "target DEC");
-  addValue (lastTarDec);
-
-  ax1 = new Rts2ValueDouble ("MNT_AX0", "mount axis 0 counts");
-  addValue (ax1);
-  ax2 = new Rts2ValueDouble ("MNT_AX1", "mount axis 1 counts");
-  addValue (ax2);
+  createValue (telRa, "MNT_RA", "mount RA (read from sensors)");
+  createValue (telDec, "MNT_DEC", "mount DEC (read from sensors)");
+  createValue (telSiderealTime, "siderealtime",
+	       "telescope local sidereal time", false);
+  createValue (telLocalTime, "localtime", "telescope local time", false);
+  createValue (lastRa, "LAST_RA", "last target RA");
+  createValue (lastDec, "LAST_DEC", "last target DEC");
+  createValue (lastTarRa, "RASC", "target RA");
+  createValue (lastTarDec, "DECL", "target DEC");
+  createValue (ax1, "MNT_AX0", "mount axis 0 counts");
+  createValue (ax2, "MNT_AX1", "mount axis 1 counts");
 
   move_fixed = 0;
 
@@ -49,24 +35,20 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   moveInfoCount = 0;
   moveInfoMax = 100;
 
-  moveMark = new Rts2ValueInteger ("MNT_MARK", "correction mark");
+  createValue (moveMark, "MNT_MARK", "correction mark");
   moveMark->setValueInteger (0);
-  addValue (moveMark);
 
-  numCorr = new Rts2ValueInteger ("num_corr");
+  createValue (numCorr, "num_corr", "number of corrections send to mount",
+	       false);
   numCorr->setValueInteger (0);
-  addValue (numCorr);
 
   locCorNum = -1;
   locCorRa = 0;
   locCorDec = 0;
 
-  raCorr = new Rts2ValueDouble ("RA_CORR", "correction in RA");
-  addValue (raCorr);
-  decCorr = new Rts2ValueDouble ("DEC_CORR", "corrections in DEC");
-  addValue (decCorr);
-  posErr = new Rts2ValueDouble ("pos_err");
-  addValue (posErr);
+  createValue (raCorr, "RA_CORR", "correction in RA");
+  createValue (decCorr, "DEC_CORR", "corrections in DEC");
+  createValue (posErr, "pos_err", "error in degrees", false);
 
   sepLimit = 5.0;
   minGood = 180.0;
@@ -94,16 +76,12 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
   maxCorrNum = 1;
 
-  knowPosition = new Rts2ValueInteger ("know_position");
+  createValue (knowPosition, "know_position", "if position is know or not",
+	       false);
   knowPosition->setValueInteger (0);
-  addValue (knowPosition);
 
-  rasc =
-    new Rts2ValueDouble ("CUR_RA", "current RA (real or from astrometry");
-  addValue (rasc);
-  desc =
-    new Rts2ValueDouble ("CUR_DEC", "current DEC (real or from astrometry");
-  addValue (desc);
+  createValue (rasc, "CUR_RA", "current RA (real or from astrometry");
+  createValue (desc, "CUR_DEC", "current DEC (real or from astrometry");
 
   nextReset = RESET_RESTART;
 
@@ -113,11 +91,11 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
     {
       timerclear (dir_timeouts + i);
     }
-  telGuidingSpeed = new Rts2ValueDouble ("guiding_speed");
-  addValue (telGuidingSpeed);
+  createValue (telGuidingSpeed, "guiding_speed", "telescope guiding speed",
+	       false);
 
   // default is to aply model corrections
-  corrections = new Rts2ValueInteger ("RTS_COR", "RTS2 corrections bitmask");
+  createValue (corrections, "RTS_COR", "RTS2 corrections bitmask");
   corrections->setValueInteger (COR_MODEL);
 
   // send telescope position every 60 seconds
@@ -360,15 +338,11 @@ Rts2DevTelescope::init ()
 	return ret;
     }
 
-  telLongtitude = new Rts2ValueDouble ("LONG", "telescope longtitude");
-  addConstValue (telLongtitude);
-  telLatitude = new Rts2ValueDouble ("LAT", "telescope latitude");
-  addConstValue (telLatitude);
-  telAltitude = new Rts2ValueDouble ("ALTI", "telescope altitude");
-  addConstValue (telAltitude);
+  createConstValue (telLongtitude, "LONG", "telescope longtitude");
+  createConstValue (telLatitude, "LAT", "telescope latitude");
+  createConstValue (telAltitude, "ALTI", "telescope altitude");
 
-  telFlip = new Rts2ValueInteger ("MNT_FLIP", "telescope flip");
-  addValue (telFlip);
+  createValue (telFlip, "MNT_FLIP", "telescope flip");
 
   return 0;
 }

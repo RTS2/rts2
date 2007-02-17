@@ -133,18 +133,12 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   ir_port = 0;
   tplc = NULL;
 
-  derotatorOffset = new Rts2ValueDouble ("DER_OFF", "derotator offset");
-  addValue (derotatorOffset);
-  derotatorCurrpos =
-    new Rts2ValueDouble ("DER_CUR", "derotator current position");
-  addValue (derotatorCurrpos);
+  createValue (derotatorOffset, "DER_OFF", "derotator offset");
+  createValue (derotatorCurrpos, "DER_CUR", "derotator current position");
 
-  mountTrack = new Rts2ValueInteger ("TRACK", "mount track");
-  addValue (mountTrack);
+  createValue (mountTrack, "TRACK", "mount track");
 
-  cover = new Rts2ValueDouble ("cover");
-  addValue (cover);
-
+  createValue (cover, "cover", "cover state (1 = opened)", false);
 
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
