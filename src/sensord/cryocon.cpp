@@ -13,6 +13,7 @@ private:
   int writeRead (char *buf, Rts2ValueDouble * val);
 
   Rts2ValueDouble *tempA;
+  Rts2ValueDouble *tempB;
 public:
     Rts2DevSensorCryocon (int argc, char **argv);
     virtual ~ Rts2DevSensorCryocon (void);
@@ -64,6 +65,8 @@ Rts2DevSensor (in_argc, in_argv)
 
   tempA = new Rts2ValueDouble ("TEMPA", "cryocon temperature from channel A");
   addValue (tempA);
+  tempB = new Rts2ValueDouble ("TEMPB", "cryocon temperature from channel B");
+  addValue (tempB);
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
@@ -115,6 +118,9 @@ Rts2DevSensorCryocon::info ()
 {
   int ret;
   ret = writeRead ("INPUT A:TEMP?", tempA);
+  if (ret)
+    return ret;
+  ret = writeRead ("INPUT B:TEMP?", tempB);
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
