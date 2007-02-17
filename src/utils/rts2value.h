@@ -6,15 +6,18 @@
 #include <math.h>
 #include <time.h>
 
-#define RTS2_VALUE_STRING	0x01
-#define RTS2_VALUE_INTEGER	0x02
-#define RTS2_VALUE_TIME		0x03
-#define RTS2_VALUE_DOUBLE	0x04
-#define RTS2_VALUE_FLOAT	0x05
+#define RTS2_VALUE_STRING	0x00000001
+#define RTS2_VALUE_INTEGER	0x00000002
+#define RTS2_VALUE_TIME		0x00000003
+#define RTS2_VALUE_DOUBLE	0x00000004
+#define RTS2_VALUE_FLOAT	0x00000005
+#define RTS2_VALUE_BOOL		0x00000006
 
-#define RTS2_VALUE_MASK		0xff
+#define RTS2_VALUE_MASK		0x000000ff
 
-#define RTS2_VALUE_FITS		0x100
+#define RTS2_VALUE_FITS		0x00000100
+
+#define RTS2_TYPE_MASK		0x00ff0000
 
 class Rts2Conn;
 
@@ -31,7 +34,7 @@ private:
   std::string description;
 protected:
   char buf[100];
-  int rts2Type;
+  int32_t rts2Type;
 public:
     Rts2Value (char *in_val_name);
     Rts2Value (char *in_val_name, std::string in_description,
@@ -215,6 +218,25 @@ public:
     if (isnan (value))
       return -1;
     return (int) value;
+  }
+};
+
+class Rts2ValueBool:public Rts2ValueInteger
+{
+  // value - 0 means unknow, 1 is false, 2 is true
+public:
+  Rts2ValueBool (char *in_val_name);
+    Rts2ValueBool (char *in_val_name, std::string in_description,
+		   bool writeToFits = true);
+
+  void setValueBool (bool in_bool)
+  {
+    setValueInteger (in_bool ? 2 : 1);
+  }
+
+  bool getValueBool ()
+  {
+    return getValueInteger () == 2 ? true : false;
   }
 };
 

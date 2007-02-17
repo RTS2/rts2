@@ -239,7 +239,7 @@ Rts2Block::selectSuccess (fd_set * read_set)
       if (conn->receive (read_set) == -1)
 	{
 #ifdef DEBUG_EXTRA
-	  logStream (MESSAGE_ERROR) <<
+	  logStream (MESSAGE_DEBUG) <<
 	    "Will delete connection " << " name: " << conn->
 	    getName () << sendLog;
 #endif

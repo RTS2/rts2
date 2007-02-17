@@ -204,3 +204,15 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
   value = new_value;
   return 0;
 }
+
+Rts2ValueBool::Rts2ValueBool (char *in_val_name):Rts2ValueInteger (in_val_name)
+{
+  rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
+}
+
+Rts2ValueBool::Rts2ValueBool (char *in_val_name, std::string in_description,
+			      bool writeToFits):
+Rts2ValueInteger (in_val_name, in_description, writeToFits)
+{
+  rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
+}

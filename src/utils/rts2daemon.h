@@ -44,6 +44,36 @@ protected:
    * \param value Rts2Value which will be added.
    */
   void addValue (Rts2Value * value);
+  /**
+   * Create new value, and return pointer to it.
+   *
+   * \param value          Rts2Value which will be created
+   * \param in_val_name    value name
+   * \param in_description value description
+   * \param writeToFits    when true, value will be writen to FITS
+   */
+    template < typename T > void createValue (T * &val, char *in_val_name,
+					      std::string in_description,
+					      bool writeToFits = true)
+  {
+    val = new T (in_val_name, in_description, writeToFits);
+    addValue (val);
+  }
+  /**
+   * Create new constant value, and return pointer to it.
+   *
+   * \param value          Rts2Value which will be created
+   * \param in_val_name    value name
+   * \param in_description value description
+   * \param writeToFits    when true, value will be writen to FITS
+   */
+  template < typename T > void createConstValue (T * &val, char *in_val_name,
+						 std::string in_description,
+						 bool writeToFits = true)
+  {
+    val = new T (in_val_name, in_description, writeToFits);
+    addConstValue (val);
+  }
   void addConstValue (Rts2Value * value);
   void addConstValue (char *in_name, const char *in_desc, char *in_value);
   void addConstValue (char *in_name, const char *in_desc, double in_value);
@@ -52,8 +82,8 @@ protected:
   void addConstValue (char *in_name, double in_value);
   void addConstValue (char *in_name, int in_value);
 public:
-    Rts2Daemon (int in_argc, char **in_argv);
-    virtual ~ Rts2Daemon (void);
+  Rts2Daemon (int in_argc, char **in_argv);
+  virtual ~ Rts2Daemon (void);
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int initValues ();
