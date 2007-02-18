@@ -43,6 +43,7 @@ public:
     return 0;
   }
   virtual int info ();
+  virtual void postEvent (Rts2Event * event);
 
   int newGcnGrb (int tar_id);
 };

@@ -59,20 +59,16 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
   addExe = NULL;
   execFollowups = 0;
 
-  last_packet = new Rts2ValueTime ("last_packet");
-  addValue (last_packet);
+  createValue (last_packet, "last_packet", "time from last packet", false);
 
-  delta = new Rts2ValueDouble ("delta");
-  addValue (delta);
+  createValue (delta, "delta", "delta time from last packet", false);
 
-  last_target = new Rts2ValueString ("last_target");
-  addValue (last_target);
+  createValue (last_target, "last_target", "id of last GRB target", false);
 
-  last_target_time = new Rts2ValueTime ("last_target_time");
-  addValue (last_target_time);
+  createValue (last_target_time, "last_target_time", "time of last target",
+	       false);
 
-  execConnection = new Rts2ValueInteger ("exec");
-  addValue (execConnection);
+  createValue (execConnection, "exec", "exec connection", false);
 
   addOption ('s', "gcn_host", 1, "GCN host name");
   addOption ('p', "gcn_port", 1, "GCN port");
@@ -230,6 +226,18 @@ Rts2DevGrb::info ()
   last_target_time->setValueDouble (gcncnn->lastTargetTime ());
   execConnection->setValueInteger (getOpenConnection ("EXEC") ? 1 : 0);
   return Rts2DeviceDb::info ();
+}
+
+void
+Rts2DevGrb::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case RTS2_EVENT_GRB_PACKET:
+      infoAll ();
+      break;
+    }
+  Rts2DeviceDb::postEvent (event);
 }
 
 // that method is called when somebody want to immediatelly observe GRB
