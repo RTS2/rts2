@@ -23,10 +23,10 @@ private:
   char *addExe;
   int execFollowups;
 
-  Rts2ValueDouble *last_packet;
+  Rts2ValueTime *last_packet;
   Rts2ValueDouble *delta;
   Rts2ValueString *last_target;
-  Rts2ValueDouble *last_target_time;
+  Rts2ValueTime *last_target_time;
   Rts2ValueInteger *execConnection;
 
 protected:
