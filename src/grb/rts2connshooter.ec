@@ -1,4 +1,5 @@
 #include "rts2connshooter.h"
+#include "../utils/libnova_cpp.h"
 
 #include <errno.h>
 #include <netdb.h>
@@ -81,6 +82,8 @@ Rts2ConnShooter::processAuger ()
 
   long gps_usec = 0;
 
+  time_t now;
+
 // 1 3 34.6514 -105.751 0.476843
 // -70.1905 -7.69034 1153170055 10108491 -24303.2
 // 24092.6 2.66637 0.662263 157.832 -66.922
@@ -146,11 +149,15 @@ Rts2ConnShooter::processAuger ()
 
   getTimeTfromGPS (gps_sec, gps_usec, db_auger_date);
 
+  time (&now);
+
   if ((!(gap_comp && gap_isT5 && gap_energy > minEnergy))
+    || now - db_auger_date > maxTime
     || master->wasSeen (db_auger_date, db_auger_ra, db_auger_dec))
     {
       logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
         << gap_comp
+	<< " date " << LibnovaDate (db_auger_date)
 	<< " gap_isT5 " << gap_isT5
 	<< " gap_energy " << gap_energy
 	<< " minEnergy " << minEnergy 
@@ -191,7 +198,8 @@ Rts2ConnShooter::processAuger ()
   return master->newShower (db_auger_date, db_auger_ra, db_auger_dec);
 }
 
-Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master, double in_minEnergy):Rts2ConnNoSend
+Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter *
+in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend
   (in_master)
 {
   master = in_master;
@@ -206,6 +214,7 @@ Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master, 
   setConnTimeout (-1);
 
   minEnergy = in_minEnergy;
+  maxTime = in_maxTime;
 }
 
 Rts2ConnShooter::~Rts2ConnShooter (void)

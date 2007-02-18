@@ -15,12 +15,9 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
   addOption ('s', "shooter_port", 1,
 	     "port on which to listen for auger connection");
 
-  lastAugerDate = new Rts2ValueTime ("last_date");
-  addValue (lastAugerDate);
-  lastAugerRa = new Rts2ValueDouble ("last_ra");
-  addValue (lastAugerRa);
-  lastAugerDec = new Rts2ValueDouble ("last_dec");
-  addValue (lastAugerDec);
+  createValue (lastAugerDate, "last_date", "date of last shower", false);
+  createValue (lastAugerRa, "last_ra", "RA of last shower", false);
+  createValue (lastAugerDec, "last_dec", "DEC of last shower", false);
 }
 
 Rts2DevAugerShooter::~Rts2DevAugerShooter (void)
@@ -51,11 +48,13 @@ Rts2DevAugerShooter::init ()
 
   Rts2Config *config = Rts2Config::instance ();
   double minEnergy;
-
   minEnergy = 20;
   config->getDouble ("augershooter", "minenergy", minEnergy);
 
-  shootercnn = new Rts2ConnShooter (port, this, minEnergy);
+  int maxTime = 600;
+  config->getInteger ("augershooter", "maxtime", maxTime);
+
+  shootercnn = new Rts2ConnShooter (port, this, minEnergy, maxTime);
 
   ret = shootercnn->init ();
 
@@ -88,8 +87,7 @@ Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
   return 0;
 }
 
-bool
-Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
+bool Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 {
   return (fabs (lastDate - lastAugerDate->getValueDouble ()) < 5
 	  && ra == lastAugerRa->getValueDouble ()
@@ -99,8 +97,11 @@ Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 int
 main (int argc, char **argv)
 {
-  Rts2DevAugerShooter *device = new Rts2DevAugerShooter (argc, argv);
-  int ret = device->run ();
-  delete device;
+  Rts2DevAugerShooter *
+    device = new Rts2DevAugerShooter (argc, argv);
+  int
+    ret = device->run ();
+  delete
+    device;
   return ret;
 }
