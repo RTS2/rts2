@@ -157,7 +157,7 @@ Rts2ConnShooter::processAuger ()
     {
       logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
         << gap_comp
-	<< " date " << LibnovaDate (db_auger_date)
+	<< " date " << LibnovaDateDouble (db_auger_date)
 	<< " gap_isT5 " << gap_isT5
 	<< " gap_energy " << gap_energy
 	<< " minEnergy " << minEnergy 
@@ -179,7 +179,7 @@ Rts2ConnShooter::processAuger ()
      auger_dec)
     VALUES
     (nextval('auger_t3id'),
-     abstime(:db_auger_date),
+     (TIMESTAMP 'epoch' + :db_auger_date * INTERVAL '1 seconds'),
      :db_auger_npixels,
      :db_auger_sdpphi,
      :db_auger_sdptheta,
