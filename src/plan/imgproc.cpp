@@ -126,20 +126,18 @@ Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):Rts2DeviceDb (in_argc
 {
   runningImage = NULL;
 
-  goodImages = new Rts2ValueInteger ("good_images");
+  createValue (goodImages, "good_images", "number of good images", false);
   goodImages->setValueInteger (0);
-  addValue (goodImages);
 
-  trashImages = new Rts2ValueInteger ("trash_images");
+  createValue (trashImages, "trash_images",
+	       "number of images which ended in trash (bad images)", false);
   trashImages->setValueInteger (0);
-  addValue (trashImages);
 
-  morningImages = new Rts2ValueInteger ("morning_images");
+  createValue (morningImages, "morning_images",
+	       "number of images which will be processed at morning", false);
   morningImages->setValueInteger (0);
-  addValue (morningImages);
 
-  queSize = new Rts2ValueInteger ("que_size");
-  addValue (queSize);
+  createValue (queSize, "que_size", "size of image que", false);
 
   imageGlob.gl_pathc = 0;
   imageGlob.gl_offs = 0;

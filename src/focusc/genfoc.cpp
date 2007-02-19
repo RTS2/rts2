@@ -350,9 +350,9 @@ Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
       return new Rts2DevClientPhotFoc (conn, photometerFile, photometerTime,
 				       photometerFilterChange, skipFilters);
     case DEVICE_TYPE_DOME:
-      return new Rts2DevClientDomeImage (conn);
     case DEVICE_TYPE_MIRROR:
-      return new Rts2DevClientMirrorImage (conn);
+    case DEVICE_TYPE_SENSOR:
+      return new Rts2DevClientWriteImage (conn);
     default:
       return Rts2Client::createOtherType (conn, other_device_type);
     }

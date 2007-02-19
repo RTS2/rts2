@@ -31,12 +31,6 @@ private:
 
   time_t idleInfoInterval;
   time_t nextIdleInfo;
-protected:
-  int checkLockFile (const char *lock_fname);
-  int doDeamonize ();
-  int lockFile ();
-  virtual void addSelectSocks (fd_set * read_set);
-  virtual void selectSuccess (fd_set * read_set);
 
   /**
    * Adds value to list of values supported by daemon.
@@ -44,6 +38,13 @@ protected:
    * \param value Rts2Value which will be added.
    */
   void addValue (Rts2Value * value);
+protected:
+  int checkLockFile (const char *lock_fname);
+  int doDeamonize ();
+  int lockFile ();
+  virtual void addSelectSocks (fd_set * read_set);
+  virtual void selectSuccess (fd_set * read_set);
+
   /**
    * Create new value, and return pointer to it.
    *

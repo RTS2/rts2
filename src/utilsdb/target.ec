@@ -24,19 +24,19 @@ EXEC SQL include sqlca;
 void
 Target::logMsg (const char *message)
 {
-  printf ("%s\n", message);
+  logStream (MESSAGE_DEBUG) << message << sendLog;
 }
 
 void
 Target::logMsg (const char *message, int num)
 {
-  printf ("%s %i\n", message, num);
+  logStream (MESSAGE_DEBUG) << message << " " << num << sendLog;
 }
 
 void
 Target::logMsg (const char *message, long num)
 {
-  printf ("%s %li\n", message, num);
+  logStream (MESSAGE_DEBUG) << message << " " << num << sendLog;
 }
 
 void
@@ -48,7 +48,7 @@ Target::logMsg (const char *message, double num)
 void
 Target::logMsg (const char *message, const char *val)
 {
-  printf ("%s %s\n", message, val);
+  logStream (MESSAGE_DEBUG) << message << " " << val << sendLog;
 }
 
 void
@@ -239,7 +239,7 @@ Target::printAltTable (std::ostream & _os, double JD)
   double jd_start = ((int) JD) - 0.5;
   _os
     << std::endl
-    << "** HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE, SOON POSITION table from "
+    << "** HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE, SUN POSITION table from "
     << LibnovaDate (jd_start)
     << " **"
     << std::endl

@@ -7,31 +7,26 @@
 Rts2DevDome::Rts2DevDome (int in_argc, char **in_argv, int in_device_type):
 Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
-  sw_state = new Rts2ValueInteger ("dome");
-  addValue (sw_state);
-  temperature = new Rts2ValueFloat ("DOME_TMP", "temperature in degrees C");
-  addValue (temperature);
-  humidity = new Rts2ValueFloat ("DOME_HUM", "(outside) humidity");
-  addValue (humidity);
-  power_telescope = new Rts2ValueInteger ("power_telescope");
-  addValue (power_telescope);
-  power_cameras = new Rts2ValueInteger ("power_cameras");
-  addValue (power_cameras);
-  rain = new Rts2ValueInteger ("RAIN", "whenever is raining");
+  createValue (sw_state, "dome", "dome status mask", false);
+  createValue (temperature, "DOME_TMP", "temperature in degrees C");
+  createValue (humidity, "DOME_HUM", "(outside) humidity");
+  createValue (power_telescope, "power_telescope", "if telescope have power",
+	       false);
+  createValue (power_cameras, "power_cameras", "if camera(s) have power",
+	       false);
+  createValue (rain, "RAIN", "whenever is raining");
   rain->setValueInteger (1);
-  addValue (rain);
-  windspeed = new Rts2ValueFloat ("WINDSPED", "windspeed");
-  addValue (windspeed);		// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
+  createValue (windspeed, "WINDSPED", "windspeed");
+  // as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
 
   maxWindSpeed = 50;
   maxPeekWindspeed = 50;
   weatherCanOpenDome = false;
-  ignoreMeteo = new Rts2ValueInteger ("ignoreMeteo");
+  createValue (ignoreMeteo, "ignoreMeteo", "if meteo situation is ignored",
+	       false);
   ignoreMeteo->setValueInteger (1);
-  addValue (ignoreMeteo);
 
-  cloud = new Rts2ValueDouble ("CLOUD_S", "cloud sensor value");
-  addValue (cloud);
+  createValue (cloud, "CLOUD_S", "cloud sensor value");
 
   addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
   addOption ('P', "max_peek_windspeed", 1,
@@ -40,16 +35,16 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 	     "specified that option if weather signal is allowed to open dome");
   addOption ('I', "ignore_meteo", 0, "whenever to ignore meteo station");
 
-  observingPossible = new Rts2ValueInteger ("observingPossible");
-  addValue (observingPossible);
+  createValue (observingPossible, "observingPossible",
+	       "if observation is possible", false);
 
   time (&nextGoodWeather);
 
   nextGoodWeather += DEF_WEATHER_TIMEOUT;
 
-  nextOpen = new Rts2ValueTime ("next_open");
+  createValue (nextOpen, "next_open", "time when we can next time open dome",
+	       false);
   nextOpen->setValueTime (getNextOpen ());
-  addValue (nextOpen);
 }
 
 int

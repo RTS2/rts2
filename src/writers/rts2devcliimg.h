@@ -83,13 +83,6 @@ public:
   double getDistance (struct ln_equ_posn *in_pos);
 };
 
-class Rts2DevClientDomeImage:public Rts2DevClientDome
-{
-public:
-  Rts2DevClientDomeImage (Rts2Conn * in_connection);
-  virtual void postEvent (Rts2Event * event);
-};
-
 class Rts2DevClientFocusImage:public Rts2DevClientFocus
 {
 public:
@@ -97,10 +90,10 @@ public:
   virtual void postEvent (Rts2Event * event);
 };
 
-class Rts2DevClientMirrorImage:public Rts2DevClientMirror
+class Rts2DevClientWriteImage:public Rts2DevClient
 {
 public:
-  Rts2DevClientMirrorImage (Rts2Conn * in_connection);
+  Rts2DevClientWriteImage (Rts2Conn * in_connection);
   virtual void postEvent (Rts2Event * event);
 };
 

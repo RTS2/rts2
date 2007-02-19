@@ -147,9 +147,9 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
   currentTarget = NULL;
   nextTarget = NULL;
   priorityTarget = NULL;
-  scriptCount = new Rts2ValueInteger ("script_count");
+  createValue (scriptCount, "script_count", "number of running scripts",
+	       false);
   scriptCount->setValueInteger (-1);
-  addValue (scriptCount);
 
   addOption ('I', "ignore_day", 0, "observe even during daytime");
   ignoreDay = 0;
@@ -159,26 +159,23 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 
   waitState = 0;
 
-  acqusitionOk = new Rts2ValueInteger ("acqusition_ok");
+  createValue (acqusitionOk, "acqusition_ok",
+	       "number of acqusitions completed sucesfully", false);
   acqusitionOk->setValueInteger (0);
-  addValue (acqusitionOk);
 
-  acqusitionFailed = new Rts2ValueInteger ("acqusition_failed");
+  createValue (acqusitionFailed, "acqusition_failed",
+	       "number of acqusitions which failed", false);
   acqusitionFailed->setValueInteger (0);
-  addValue (acqusitionFailed);
 
-  current_id = new Rts2ValueInteger ("current");
-  addValue (current_id);
-  current_id_sel = new Rts2ValueInteger ("current_sel");
-  addValue (current_id_sel);
-  current_obsid = new Rts2ValueInteger ("obsid");
-  addValue (current_obsid);
+  createValue (current_id, "current", "ID of current target", false);
+  createValue (current_id_sel, "current_sel",
+	       "ID of currently selected target", false);
+  createValue (current_obsid, "obsid", "ID of observation", false);
 
-  next_id = new Rts2ValueInteger ("next");
-  addValue (next_id);
+  createValue (next_id, "next", "ID of next target", false);
 
-  priority_id = new Rts2ValueInteger ("priority_target");
-  addValue (priority_id);
+  createValue (priority_id, "priority_target",
+	       "ID of priority target (should be NULL in most cases", false);
 }
 
 Rts2Executor::~Rts2Executor (void)
@@ -250,14 +247,15 @@ Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_FOCUS:
       cli = new Rts2DevClientFocusImage (conn);
       break;
-    case DEVICE_TYPE_DOME:
-      cli = new Rts2DevClientDomeImage (conn);
+    case DEVICE_TYPE_PHOT:
+      cli = new Rts2DevClientPhotExec (conn);
       break;
     case DEVICE_TYPE_MIRROR:
       cli = new Rts2DevClientMirrorExec (conn);
       break;
-    case DEVICE_TYPE_PHOT:
-      cli = new Rts2DevClientPhotExec (conn);
+    case DEVICE_TYPE_DOME:
+    case DEVICE_TYPE_SENSOR:
+      cli = new Rts2DevClientWriteImage (conn);
       break;
     default:
       cli = Rts2DeviceDb::createOtherType (conn, other_device_type);

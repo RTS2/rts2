@@ -20,4 +20,5 @@ SUBDIRS = \
 	bckimages \
 	sql \
 	db \
-	soap
+	soap \
+	sensord

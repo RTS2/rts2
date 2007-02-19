@@ -360,25 +360,6 @@ Rts2DevClientTelescopeImage::getDistance (struct ln_equ_posn *in_pos)
   return ln_get_angular_separation (&tel, in_pos);
 }
 
-Rts2DevClientDomeImage::Rts2DevClientDomeImage (Rts2Conn * in_connection):Rts2DevClientDome
-  (in_connection)
-{
-}
-
-void
-Rts2DevClientDomeImage::postEvent (Rts2Event * event)
-{
-  switch (event->getType ())
-    {
-    case EVENT_WRITE_TO_IMAGE:
-      Rts2Image * image;
-      image = (Rts2Image *) event->getArg ();
-      image->writeClient (this);
-      break;
-    }
-  Rts2DevClientDome::postEvent (event);
-}
-
 Rts2DevClientFocusImage::Rts2DevClientFocusImage (Rts2Conn * in_connection):Rts2DevClientFocus
   (in_connection)
 {
@@ -403,13 +384,13 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
   Rts2DevClientFocus::postEvent (event);
 }
 
-Rts2DevClientMirrorImage::Rts2DevClientMirrorImage (Rts2Conn * in_connection):Rts2DevClientMirror
+Rts2DevClientWriteImage::Rts2DevClientWriteImage (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
 }
 
 void
-Rts2DevClientMirrorImage::postEvent (Rts2Event * event)
+Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 {
   switch (event->getType ())
     {
@@ -419,9 +400,8 @@ Rts2DevClientMirrorImage::postEvent (Rts2Event * event)
       image->writeClient (this);
       break;
     }
-  Rts2DevClientMirror::postEvent (event);
+  Rts2DevClient::postEvent (event);
 }
-
 
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command
   (in_owner)

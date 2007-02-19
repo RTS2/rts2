@@ -81,9 +81,9 @@ public:
   {
     supportFrameT = false;
     infoSleep = 0;
-    readoutSleep =
-      new Rts2ValueDouble ("readout", "readout sleep in sec", true);
+    createValue (readoutSleep, "readout", "readout sleep in sec", true);
     readoutSleep->setValueDouble (0);
+
     width = 200;
     height = 100;
     addOption ('f', "frame_transfer", 0,
@@ -94,9 +94,6 @@ public:
 	       "device will sleep i nanosecunds before each readout");
     addOption ('w', "width", 1, "width of simulated CCD");
     addOption ('g', "height", 1, "height of simulated CCD");
-
-    // add camera specific values
-    addValue (readoutSleep);
   }
   virtual ~ Rts2DevCameraDummy (void)
   {

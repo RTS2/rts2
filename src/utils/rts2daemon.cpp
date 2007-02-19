@@ -27,9 +27,8 @@ Rts2Block (in_argc, in_argv)
 
   daemonize = DO_DEAMONIZE;
 
-  info_time = new Rts2ValueTime ("infotime");
-  info_time->setValueDouble (0);
-  addValue (info_time);
+  createValue (info_time, "infotime",
+	       "time when this informations were correct", false);
 
   idleInfoInterval = -1;
   nextIdleInfo = 0;

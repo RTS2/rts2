@@ -483,35 +483,23 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   int i;
   for (i = 0; i < MAX_CHIPS; i++)
     chips[i] = NULL;
-  tempAir = new Rts2ValueFloat ("CCD_AIR", "detector air temperature");
-  addValue (tempAir);
-  tempCCD = new Rts2ValueFloat ("CCD_TEMP", "CCD temperature");
-  addValue (tempCCD);
-  tempSet = new Rts2ValueFloat ("CCD_SET", "CCD set temperature");
-  addValue (tempSet);
-  tempRegulation = new Rts2ValueInteger ("CCD_REG", "temperature regulation");
-  addValue (tempRegulation);
-  coolingPower = new Rts2ValueInteger ("CCD_PWR", "cooling power");
-  addValue (coolingPower);
-  fan = new Rts2ValueInteger ("CCD_FAN", "fan on (1) / off (0)");
-  addValue (fan);
+  createValue (tempAir, "CCD_AIR", "detector air temperature");
+  createValue (tempCCD, "CCD_TEMP", "CCD temperature");
+  createValue (tempSet, "CCD_SET", "CCD set temperature");
+  createValue (tempRegulation, "CCD_REG", "temperature regulation");
+  createValue (coolingPower, "CCD_PWR", "cooling power");
+  createValue (fan, "CCD_FAN", "fan on (1) / off (0)");
   filter = NULL;
-  canDF = new Rts2ValueInteger ("can_df");
-  addValue (canDF);
+  createValue (canDF, "can_df", "if camera can do dark frames", false);
   ccdType[0] = '\0';
   ccdRealType = ccdType;
   serialNumber[0] = '\0';
 
-  lastExp = new Rts2ValueFloat ("exposure");
-  addValue (lastExp);
-  subExposure = new Rts2ValueDouble ("subexposure");
-  addValue (subExposure);
-  camFilterVal = new Rts2ValueInteger ("filter");
-  addValue (camFilterVal);
-  camFocVal = new Rts2ValueInteger ("focpos");
-  addValue (camFocVal);
-  camShutterVal = new Rts2ValueInteger ("shutter");
-  addValue (camShutterVal);
+  createValue (lastExp, "exposure", "current exposure time", false);
+  createValue (subExposure, "subexposure", "current subexposure", false);
+  createValue (camFilterVal, "filter", "used filter number", false);
+  createValue (camFocVal, "focpos", "position of focuser", false);
+  createValue (camShutterVal, "shutter", "shutter position", false);
 
   exposureFilter = -1;
 
@@ -530,10 +518,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   defaultGain = nan ("f");
   nextGain = nan ("f");
 
-  rnoise = new Rts2ValueDouble ("RNOISE", "CCD readout noise");
-  addValue (rnoise);
-  gain = new Rts2ValueDouble ("GAIN", "CCD gain");
-  addValue (gain);
+  createValue (rnoise, "RNOISE", "CCD readout noise");
+  createValue (gain, "GAIN", "CCD gain");
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");

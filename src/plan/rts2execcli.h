@@ -138,7 +138,7 @@ public:
   virtual void searchFailed (int status);
 };
 
-class Rts2DevClientMirrorExec:public Rts2DevClientMirrorImage
+class Rts2DevClientMirrorExec:public Rts2DevClientMirror
 {
 protected:
   virtual void mirrorA ();

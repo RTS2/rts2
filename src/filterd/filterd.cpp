@@ -3,8 +3,7 @@
 Rts2DevFilterd::Rts2DevFilterd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
-  filter = new Rts2ValueInteger ("filter");
-  addValue (filter);
+  createValue (filter, "filter", "used filter", false);
 
   filterType = NULL;
   serialNumber = NULL;

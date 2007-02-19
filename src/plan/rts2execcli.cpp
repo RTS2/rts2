@@ -481,7 +481,7 @@ Rts2DevClientTelescopeExec::searchFailed (int status)
   getMaster ()->postEvent (new Rts2Event (EVENT_TEL_SEARCH_END));
 }
 
-Rts2DevClientMirrorExec::Rts2DevClientMirrorExec (Rts2Conn * in_connection):Rts2DevClientMirrorImage
+Rts2DevClientMirrorExec::Rts2DevClientMirrorExec (Rts2Conn * in_connection):Rts2DevClientMirror
   (in_connection)
 {
 }
@@ -502,7 +502,7 @@ Rts2DevClientMirrorExec::postEvent (Rts2Event * event)
 	}
       break;
     }
-  Rts2DevClientMirrorImage::postEvent (event);
+  Rts2DevClientMirror::postEvent (event);
 }
 
 void
