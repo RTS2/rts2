@@ -197,6 +197,21 @@ AC_SUBST(PCI8255)
 AC_SUBST(LIB_PCI8255)
 AC_SUBST(INC_PCI8255)
 
+# check for GPIB
+AC_ARG_WITH(gpib,
+[  --with-gpib             build with support for GPIB devices],
+GPIBLIB="${withval}";
+LIB_GPIB="-lgpib",
+[GPIBLIB=no])
+
+if test "x$GPIBLIB" != "xno" ; then
+  AC_CHECK_HEADERS([gpib/ib.h])
+fi
+
+AM_CONDITIONAL(GPIBLIB, test x$GPIBLIB != xno)
+AC_SUBST(GPIBLIB)
+AC_SUBST(LIB_GPIB)
+
 # Checks for libraries.
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -268,21 +283,6 @@ exit 1])
 #EOF
 #exit 1])
 
-WWWUSER="none"
-
-AC_MSG_CHECKING(for httpd.conf)
-httpd_conf=`find /etc /usr/local/etc -name httpd.conf 2>/dev/null | head -n1`
-if test "z"$httpd_conf = "z" ; then
-	AC_MSG_RESULT(none found)
-else
-	AC_MSG_RESULT($httpd_conf)
-	AC_MSG_CHECKING(for User in httpd.conf)
-	WWWUSER=`grep '^User.*$' $httpd_conf | head -n1 | sed -e "s/\(.*User *\| *$\)//"`
-	AC_MSG_RESULT($WWWUSER)
-fi
-
-AC_SUBST(WWWUSER)
-
 AC_MSG_CHECKING(for date)
 DATE=`date +%Y-%m-%d`
 if test "z"$DATE = "z" ; then
@@ -323,6 +323,8 @@ AC_ECPG
 
 # Check for gsoap
 AC_GSOAP
+
+AC_CHECK_HEADERS
 
 # Checks for library functions.
 AC_FUNC_FORK
@@ -377,7 +379,8 @@ AC_OUTPUT([Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile
 	   src/db/simbad/Makefile
-	   src/soap/Makefile]
+	   src/soap/Makefile
+	   src/sensord/Makefile]
 )
 
 echo "
@@ -385,17 +388,17 @@ echo "
  RTS2 build configuration 
 
   focusing      ${focusing}
-  mirror	${mirror}
+  mirror        ${mirror}
   xfocusc       ${xfocusc}
-  psql		${psql}
-  libnova	${libnova}
+  psql          ${psql}
+  libnova       ${libnova}
 
 CCD's:
-  sbig		${SBIG}
+  sbig          ${SBIG}
   andor         ${ANDOR}
-  edtsao	${EDTPDV}
+  edtsao        ${EDTPDV}
   alta          ${ALTA}
-  fli		${FLI}
+  fli           ${FLI}
 
 MOUNT's:
   opentpl       ${OPENTPL}
@@ -404,7 +407,8 @@ MOUNT's:
 DOME's:
   PCI8255       ${PCI8255}
 
-gsoap           ${gsoap}  
+gsoap           ${gsoap}
+gpib            ${GPIBLIB}
 
 ***************************************
 
