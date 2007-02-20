@@ -144,22 +144,21 @@ CameraEdtSaoChip::setDAC ()
   // values taken from ccdsetup script
   int ret;
   unsigned long edtVal[] = {
-    0xa0384a65,			// RD = 13
+    0xa0384732,			// RD = 9
     0x00000001,			// sleep 1
     0xa0080800,			// Vhi = 5
     0xa0084333,			// Phi = 2
-    0xa0088ccc,			// Rhi = 8
-    0xa008c666,			// Shi = 4
-    0xa0180666,			// Slo = -4
-    0xa0184ccc,			// Plo = -8
+    0xa00887ff,			// Rhi = 5
+    0xa008c4cc,			// Shi = 3
+    0xa0180b32,			// Slo = -7
+    0xa0184e65,			// Plo = -9
     0xa0188000,			// Vlo = 0
-    0xa018c199,			// Rlo = -1
+    0xa018c7ff,			// Rlo = -5
     0xa0288b32,			// OG2 = -2
-    0xa028c999,			// OG1 = -1
-    0xa0380a65,			// DD = 13
-    0xa0388cf6,			// OD2 = 21
-    // 0xa038cd94, // OD1 = 22
-    0xa038ce32,			// OD1 = 23
+    0xa028cfff,			// OG1 = -5
+    0xa0380bfe,			// DD = 15
+    0xa0388ccc,			// OD2 = 20
+    0xa038cccc,			// OD1 = 20
     0x30080100,			// a/d offset channel 1
     0x30180100,			// a/d offset channel 2
     0x30280200,			// a/d offset channel 3
@@ -202,11 +201,11 @@ CameraEdtSaoChip::probe ()
 
 CameraEdtSaoChip::CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id,
 				    PdvDev * in_pd):
-CameraChip (in_cam, in_chip_id, 2048, 1024, 0, 0, nan ("f"))
+CameraChip (in_cam, in_chip_id, 2040, 520, 0, 0, nan ("f"))
 {
-  dest = new unsigned short[2048 * 1024];
+  dest = new unsigned short[2040 * 520];
   verbose = false;
-  channels = 4;
+  channels = 2;
   depth = 2;
   pd = in_pd;
 }
@@ -224,15 +223,19 @@ CameraEdtSaoChip::init ()
   // do initialization
   reset ();
 
+  ret = writeBinFile ("e2vsc.bin");
+  if (ret)
+    return ret;
+
+  ret = writeBinFile ("e2vpc.bin");
+  if (ret)
+    return ret;
+
+  ret = writeBinFile ("e2v_pidlesc.bin");
+  if (ret)
+    return ret;
+
   ret = setDAC ();
-  if (ret)
-    return ret;
-
-  ret = writeBinFile ("ccdsc.bin");
-  if (ret)
-    return ret;
-
-  ret = writeBinFile ("ccdpc.bin");
   return ret;
 }
 
@@ -241,14 +244,12 @@ CameraEdtSaoChip::startExposure (int light, float exptime)
 {
   // taken from readout script
   edtwrite (0x51000040);	//  channel order
-  edtwrite (0x51000141);
-  edtwrite (0x51000242);
-  edtwrite (0x51008343);
+  edtwrite (0x51008141);
 
-  writeBinFile ("ccdpc.bin");
-  writeBinFile ("lsst_nidlesc.bin");
-  edtwrite (0x4c000000);	// fclr 4 - but parameter isn't used
-  writeBinFile ("lsst_freezesc.bin");
+  writeBinFile ("e2vpc.bin");
+  writeBinFile ("e2v_nidlesc.bin");
+  edtwrite (0x4c000000);	// fclr 5 - but parameter isn't used
+  writeBinFile ("e2v_freezesc.bin");
 
   // taken from expose.c
   edtwrite (0x52000000 | (long) (exptime * 100));	/* set time */
@@ -277,7 +278,7 @@ CameraEdtSaoChip::isExposing ()
   if ((!overrun && shutter) || overrun)
     return 100;
   pdv_serial_wait (pd, 100, 4);
-  writeBinFile ("lsst_unfreezesc.bin");
+  writeBinFile ("e2v_unfreezesc.bin");
   return 0;
 }
 
@@ -310,9 +311,11 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   /*
    * SET SIZE VARIABLES FOR IMAGE
    */
-  width = chipUsedReadout->width;
-  width /= channels;
-  height = chipUsedReadout->height;
+  width = 1020;
+  height = 520;
+  /* width = chipUsedReadout->width;
+     width /= channels;
+     height = chipUsedReadout->height; */
   ret = pdv_setsize (pd, width * channels * dsub, height);
   if (ret == -1)
     {
@@ -322,12 +325,11 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
     }
   pdv_set_width (pd, width * channels * dsub);
   pdv_set_height (pd, height);
-  // not sure if that's needed..
-  // chipUsedReadout->width = pdv_get_width(pd);
-  // chipUsedReadout->height = pdv_get_height(pd);
+  chipUsedReadout->width = pdv_get_width (pd);
+  chipUsedReadout->height = pdv_get_height (pd);
   depth = pdv_get_depth (pd);
   db = bits2bytes (depth);
-  imagesize = width * height * db;
+  imagesize = chipUsedReadout->width * chipUsedReadout->height * db;
 
   /*
    * SET TIMEOUT
@@ -335,10 +337,13 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
    */
   if (!set_timeout)
     timeout_val =
-      (width / channels) * height / 1000 * timeout_val * 5 / 2000 + 2000;
+      (chipUsedReadout->width / channels) * chipUsedReadout->height / 1000 *
+      timeout_val * 5 / 2000 + 2000;
   pdv_set_timeout (pd, timeout_val);
   printf ("timeout_val: %d millisecs\n", timeout_val);
-  printf ("width: %d height: %d imagesize: %d\n", width, height, imagesize);
+  printf ("width: %d height: %d imagesize: %d depth %i\n",
+	  chipUsedReadout->width, chipUsedReadout->height, imagesize, depth);
+  fflush (stdout);
 
   /*
    * ALLOCATE MEMORY for the image, and make sure it's aligned on a page
@@ -348,13 +353,15 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   pdv_flush_fifo (pd);		/* MC - add a flush */
   numbufs = 1;
   bufsize = imagesize * dsub;
-  if (verbose)
-    printf ("number of buffers: %d bufsize: %d\n", numbufs, bufsize);
-  free (bufs);
+//  if (verbose)
+  printf ("number of buffers: %d bufsize: %d\n", numbufs, bufsize);
+  fflush (stdout);
   bufs = (u_char **) malloc (numbufs * sizeof (u_char *));
   for (i = 0; i < numbufs; i++)
     bufs[i] = (u_char *) pdv_alloc (bufsize);
   pdv_set_buffers (pd, numbufs, bufs);
+  printf ("end of startReadout\n");
+  fflush (stdout);
   return 0;
 }
 
@@ -381,6 +388,8 @@ CameraEdtSaoChip::readoutOneLine ()
 	<< " width " << pdv_get_width (pd)
 	<< " height " << pdv_get_height (pd)
 	<< " depth " << pdv_get_depth (pd) << sendLog;
+
+      fflush (stdout);
 
       int tb = pdv_timeouts (pd);
       pdv_start_image (pd);
@@ -471,6 +480,7 @@ CameraEdtSaoChip::readoutOneLine ()
 	pdv_free (bufs[i]);	/* free buf memory */
 
       dest_top += size;
+      readoutLine = chipUsedReadout->width;
       return 0;
     }
   if (sendLine == 0)
@@ -497,7 +507,7 @@ CameraEdtSaoChip::endReadout ()
   pdv_flush_fifo (pd);
   pdv_reset_serial (pd);
   edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
-  writeBinFile ("lsst_pidlesc.bin");
+  writeBinFile ("e2v_pidlesc.bin");
   return CameraChip::endReadout ();
 }
 
