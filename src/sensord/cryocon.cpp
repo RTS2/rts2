@@ -63,10 +63,8 @@ Rts2DevSensor (in_argc, in_argv)
   minor = 0;
   pad = 0;
 
-  tempA = new Rts2ValueDouble ("TEMPA", "cryocon temperature from channel A");
-  addValue (tempA);
-  tempB = new Rts2ValueDouble ("TEMPB", "cryocon temperature from channel B");
-  addValue (tempB);
+  createValue (tempA, "TEMPA", "cryocon temperature from channel A");
+  createValue (tempB, "TEMPB", "cryocon temperature from channel B");
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
