@@ -75,9 +75,19 @@ private:
   Rts2ValueDouble *readoutSleep;
   int width;
   int height;
+protected:
+    virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
+  {
+    if (old_value == readoutSleep)
+      {
+	readoutSleep->setValueDouble (new_value->getValueDouble ());
+	return 0;
+      }
+    return Rts2DevCamera::setValue (old_value, new_value);
+  }
 public:
-    Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
-								    in_argv)
+Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
+		 in_argv)
   {
     supportFrameT = false;
     infoSleep = 0;
