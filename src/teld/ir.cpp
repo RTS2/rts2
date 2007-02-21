@@ -179,9 +179,14 @@ Rts2TelescopeIr::initIrDevice ()
   config->loadFile (NULL);
   // try to get default from config file
   if (!ir_ip)
-    config->getString ("ir", "ip", *ir_ip);
+    {
+      ir_ip = new std::string ();
+      config->getString ("ir", "ip", *ir_ip);
+    }
   if (!ir_port)
-    config->getInteger ("ir", "port", ir_port);
+    {
+      config->getInteger ("ir", "port", ir_port);
+    }
   if (!ir_ip || !ir_port)
     {
       std::
