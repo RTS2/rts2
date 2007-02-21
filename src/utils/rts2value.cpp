@@ -93,6 +93,12 @@ Rts2ValueString::setValueString (char *in_value)
   strcpy (value, in_value);
 }
 
+void
+Rts2ValueString::setFromValue (Rts2Value * newValue)
+{
+  setValueString (newValue->getValue ());
+}
+
 Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name):
 Rts2Value (in_val_name)
 {
@@ -125,6 +131,12 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
   return 0;
 }
 
+void
+Rts2ValueInteger::setFromValue (Rts2Value * newValue)
+{
+  setValueInteger (newValue->getValueInteger ());
+}
+
 Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value
   (in_val_name)
 {
@@ -154,6 +166,12 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
     return -3;
   value = new_value;
   return 0;
+}
+
+void
+Rts2ValueDouble::setFromValue (Rts2Value * newValue)
+{
+  setValueDouble (newValue->getValueDouble ());
 }
 
 Rts2ValueTime::Rts2ValueTime (std::string in_val_name):Rts2ValueDouble
@@ -197,6 +215,12 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
     return -3;
   value = new_value;
   return 0;
+}
+
+void
+Rts2ValueFloat::setFromValue (Rts2Value * newValue)
+{
+  setValueFloat (newValue->getValueFloat ());
 }
 
 Rts2ValueBool::Rts2ValueBool (std::string in_val_name):Rts2ValueInteger

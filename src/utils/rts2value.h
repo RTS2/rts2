@@ -94,6 +94,7 @@ public:
   {
     return send (connection);
   }
+  virtual void setFromValue (Rts2Value * newValue) = 0;
 };
 
 class Rts2ValueString:public Rts2Value
@@ -110,7 +111,8 @@ public:
   }
   virtual int setValue (Rts2Conn * connection);
   virtual char *getValue ();
-  void setValueString (char *in_value);
+  virtual void setValueString (char *in_value);
+  virtual void setFromValue (Rts2Value * newValue);
 };
 
 class Rts2ValueInteger:public Rts2Value
@@ -143,6 +145,7 @@ public:
   {
     return value++;
   }
+  virtual void setFromValue (Rts2Value * newValue);
 };
 
 class Rts2ValueDouble:public Rts2Value
@@ -173,6 +176,7 @@ public:
       return -1;
     return (int) value;
   }
+  virtual void setFromValue (Rts2Value * newValue);
 };
 
 class Rts2ValueTime:public Rts2ValueDouble
@@ -219,6 +223,7 @@ public:
       return -1;
     return (int) value;
   }
+  virtual void setFromValue (Rts2Value * newValue);
 };
 
 class Rts2ValueBool:public Rts2ValueInteger

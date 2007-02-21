@@ -554,7 +554,11 @@ Rts2Daemon::setValue (Rts2Conn * conn)
   if (conn->paramNextString (&v_name))
     return -2;
   Rts2Value *old_value = getValue (v_name);
+  if (!old_value)
+    return -2;
   Rts2Value *newValue;
+
+  // create new value, which will be passed to hook
   switch (old_value->getValueType ())
     {
     case RTS2_VALUE_STRING:
@@ -601,5 +605,13 @@ Rts2Daemon::setValue (Rts2Conn * conn)
   ret = newValue->setValue (conn);
   if (ret)
     return ret;
-  return setValue (old_value, newValue);
+
+  // call hook
+  ret = setValue (old_value, newValue);
+  if (ret)
+    return ret;
+
+  // set value after sucessfull return..
+  old_value->setFromValue (newValue);
+  return 0;
 }
