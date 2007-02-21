@@ -24,6 +24,7 @@
 #define CLR_WARNING	5
 #define CLR_FAILURE	6
 #define CLR_STATUS      7
+#define CLR_FITS	8
 
 #define K_ENTER		13
 #define K_ESC		27

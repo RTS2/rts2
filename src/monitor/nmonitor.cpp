@@ -273,6 +273,7 @@ Rts2NMonitor::init ()
       init_pair (CLR_WARNING, COLOR_YELLOW, -1);
       init_pair (CLR_FAILURE, COLOR_RED, -1);
       init_pair (CLR_STATUS, COLOR_RED, COLOR_CYAN);
+      init_pair (CLR_FITS, COLOR_BLUE, -1);
     }
 
   // init windows

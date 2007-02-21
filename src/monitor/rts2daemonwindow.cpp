@@ -364,6 +364,10 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
       Rts2Value *val = *iter;
       // customize value display
       std::ostringstream _os;
+      if (val->getWriteToFits ())
+	wcolor_set (getWriteWindow (), CLR_FITS, NULL);
+      else
+	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
       switch (val->getValueType ())
 	{
 	case RTS2_VALUE_TIME:
@@ -382,6 +386,13 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 }
 
 void
+Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
+{
+  mvwprintw (window, getHeight () - 1, 2, "D: \"%s\"",
+	     val->getDescription ().c_str ());
+}
+
+void
 Rts2NDeviceWindow::draw ()
 {
   Rts2NWindow::draw ();
@@ -389,6 +400,9 @@ Rts2NDeviceWindow::draw ()
   maxrow = 1;
   printState (connection);
   drawValuesList ();
+  int s = getSelRow ();
+  if (s >= 1 && connection->getOtherDevClient ())
+    printValueDesc (connection->getOtherDevClient ()->valueAt (s - 1));
   refresh ();
 }
 
