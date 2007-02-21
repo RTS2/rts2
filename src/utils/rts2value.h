@@ -36,8 +36,8 @@ protected:
   char buf[100];
   int32_t rts2Type;
 public:
-    Rts2Value (char *in_val_name);
-    Rts2Value (char *in_val_name, std::string in_description,
+    Rts2Value (std::string in_val_name);
+    Rts2Value (std::string in_val_name, std::string in_description,
 	       bool writeToFits = true);
     virtual ~ Rts2Value (void)
   {
@@ -101,8 +101,8 @@ class Rts2ValueString:public Rts2Value
 private:
   char *value;
 public:
-    Rts2ValueString (char *in_val_name);
-    Rts2ValueString (char *in_val_name, std::string in_description,
+    Rts2ValueString (std::string in_val_name);
+    Rts2ValueString (std::string in_val_name, std::string in_description,
 		     bool writeToFits = true);
     virtual ~ Rts2ValueString (void)
   {
@@ -118,8 +118,8 @@ class Rts2ValueInteger:public Rts2Value
 private:
   int value;
 public:
-    Rts2ValueInteger (char *in_val_name);
-    Rts2ValueInteger (char *in_val_name, std::string in_description,
+    Rts2ValueInteger (std::string in_val_name);
+    Rts2ValueInteger (std::string in_val_name, std::string in_description,
 		      bool writeToFits = true);
   virtual int setValue (Rts2Conn * connection);
   void setValueInteger (int in_value)
@@ -150,8 +150,8 @@ class Rts2ValueDouble:public Rts2Value
 private:
   double value;
 public:
-    Rts2ValueDouble (char *in_val_name);
-    Rts2ValueDouble (char *in_val_name, std::string in_description,
+    Rts2ValueDouble (std::string in_val_name);
+    Rts2ValueDouble (std::string in_val_name, std::string in_description,
 		     bool writeToFits = true);
   virtual int setValue (Rts2Conn * connection);
   void setValueDouble (double in_value)
@@ -178,9 +178,9 @@ public:
 class Rts2ValueTime:public Rts2ValueDouble
 {
 public:
-  Rts2ValueTime (char *in_val_name);
-    Rts2ValueTime (char *in_val_name, std::string in_description,
-		   bool writeToFits = true);
+  Rts2ValueTime (std::string in_val_name);
+  Rts2ValueTime (std::string in_val_name, std::string in_description,
+		 bool writeToFits = true);
   void setValueTime (time_t in_value)
   {
     Rts2ValueDouble::setValueDouble (in_value);
@@ -192,8 +192,8 @@ class Rts2ValueFloat:public Rts2Value
 private:
   float value;
 public:
-    Rts2ValueFloat (char *in_val_name);
-    Rts2ValueFloat (char *in_val_name, std::string in_description,
+    Rts2ValueFloat (std::string in_val_name);
+    Rts2ValueFloat (std::string in_val_name, std::string in_description,
 		    bool writeToFits = true);
   virtual int setValue (Rts2Conn * connection);
   void setValueDouble (double in_value)
@@ -225,9 +225,9 @@ class Rts2ValueBool:public Rts2ValueInteger
 {
   // value - 0 means unknow, 1 is false, 2 is true
 public:
-  Rts2ValueBool (char *in_val_name);
-    Rts2ValueBool (char *in_val_name, std::string in_description,
-		   bool writeToFits = true);
+  Rts2ValueBool (std::string in_val_name);
+  Rts2ValueBool (std::string in_val_name, std::string in_description,
+		 bool writeToFits = true);
 
   void setValueBool (bool in_bool)
   {

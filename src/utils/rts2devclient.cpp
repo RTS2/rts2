@@ -44,37 +44,33 @@ Rts2DevClient::addValue (Rts2Value * value)
 }
 
 int
-Rts2DevClient::metaInfo (int rts2Type, char *name, char *desc)
+Rts2DevClient::metaInfo (int rts2Type, std::string name, std::string desc)
 {
   Rts2Value *newValue;
   switch (rts2Type & RTS2_VALUE_MASK)
     {
     case RTS2_VALUE_STRING:
-      newValue =
-	new Rts2ValueString (name, std::string (desc),
-			     rts2Type & RTS2_VALUE_FITS);
+      newValue = new Rts2ValueString (name, desc, rts2Type & RTS2_VALUE_FITS);
       break;
     case RTS2_VALUE_INTEGER:
       newValue =
-	new Rts2ValueInteger (name, std::string (desc),
-			      rts2Type & RTS2_VALUE_FITS);
+	new Rts2ValueInteger (name, desc, rts2Type & RTS2_VALUE_FITS);
       break;
     case RTS2_VALUE_TIME:
-      newValue =
-	new Rts2ValueTime (name, std::string (desc),
-			   rts2Type & RTS2_VALUE_FITS);
+      newValue = new Rts2ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS);
       break;
     case RTS2_VALUE_DOUBLE:
-      newValue =
-	new Rts2ValueDouble (name, std::string (desc),
-			     rts2Type & RTS2_VALUE_FITS);
+      newValue = new Rts2ValueDouble (name, desc, rts2Type & RTS2_VALUE_FITS);
       break;
     case RTS2_VALUE_FLOAT:
-      newValue =
-	new Rts2ValueFloat (name, std::string (desc),
-			    rts2Type & RTS2_VALUE_FITS);
+      newValue = new Rts2ValueFloat (name, desc, rts2Type & RTS2_VALUE_FITS);
+      break;
+    case RTS2_VALUE_BOOL:
+      newValue = new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS);
       break;
     default:
+      logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
+	sendLog;
       return -2;
     }
   addValue (newValue);
@@ -255,13 +251,6 @@ Rts2DevClient::getStatus ()
   return connection->getState ();
 }
 
-Rts2LogStream Rts2DevClient::logStream (messageType_t in_messageType)
-{
-  Rts2LogStream
-  ls (getMaster (), in_messageType);
-  return ls;
-}
-
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
@@ -315,7 +304,8 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool Rts2DevClientCamera::isIdle ()
+bool
+Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -590,7 +580,8 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool Rts2DevClientPhot::isIntegrating ()
+bool
+Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }

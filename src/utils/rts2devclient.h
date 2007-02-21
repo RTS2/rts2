@@ -61,7 +61,7 @@ public:
   virtual ~ Rts2DevClient (void);
   virtual void postEvent (Rts2Event * event);
   void addValue (Rts2Value * value);
-  int metaInfo (int rts2Type, char *name, char *desc);
+  int metaInfo (int rts2Type, std::string name, std::string desc);
   Rts2Value *getValue (const char *value_name);
   char *getValueChar (const char *value_name);
   double getValueDouble (const char *value_name);
@@ -93,8 +93,6 @@ public:
   }
 
   int getStatus ();
-
-  Rts2LogStream logStream (messageType_t in_messageType);
 
   std::vector < Rts2Value * >::iterator valueBegin ()
   {

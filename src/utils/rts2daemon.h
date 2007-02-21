@@ -38,6 +38,7 @@ private:
    * \param value Rts2Value which will be added.
    */
   void addValue (Rts2Value * value);
+  Rts2Value *getValue (const char *v_name);
 protected:
   int checkLockFile (const char *lock_fname);
   int doDeamonize ();
@@ -82,6 +83,16 @@ protected:
   void addConstValue (char *in_name, char *in_value);
   void addConstValue (char *in_name, double in_value);
   void addConstValue (char *in_name, int in_value);
+
+  /** 
+   * Set value. That one should be owerwrited in descendants.
+   * 
+   * \param  old_value	old value (pointer), can be directly
+   * 			compared by pointer stored in object
+   * \param  new_value	new value
+   * \return 0 when we can set value, -1 on error.
+   */
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
   Rts2Daemon (int in_argc, char **in_argv);
   virtual ~ Rts2Daemon (void);
@@ -112,6 +123,8 @@ public:
   int infoAll ();
   int sendInfo (Rts2Conn * conn);
   int sendMetaInfo (Rts2Conn * conn);
+
+  virtual int setValue (Rts2Conn * conn);
 };
 
 #endif /* ! __RTS2_DAEMON__ */

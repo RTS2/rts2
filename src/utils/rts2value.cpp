@@ -5,16 +5,16 @@
 #include "rts2block.h"
 #include "rts2value.h"
 
-Rts2Value::Rts2Value (char *in_val_name)
+Rts2Value::Rts2Value (std::string in_val_name)
 {
-  valueName = std::string (in_val_name);
+  valueName = in_val_name;
   rts2Type = 0;
 }
 
-Rts2Value::Rts2Value (char *in_val_name, std::string in_description,
+Rts2Value::Rts2Value (std::string in_val_name, std::string in_description,
 		      bool writeToFits)
 {
-  valueName = std::string (in_val_name);
+  valueName = in_val_name;
   rts2Type = 0;
   description = in_description;
   if (writeToFits)
@@ -42,16 +42,14 @@ Rts2Value::send (Rts2Conn * connection)
   return connection->sendValue (getName (), getValue ());
 }
 
-Rts2ValueString::Rts2ValueString (char *in_val_name):
+Rts2ValueString::Rts2ValueString (std::string in_val_name):
 Rts2Value (in_val_name)
 {
   value = NULL;
   rts2Type |= RTS2_VALUE_STRING;
 }
 
-Rts2ValueString::Rts2ValueString (char *in_val_name,
-				  std::string in_description,
-				  bool writeToFits):
+Rts2ValueString::Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits):
 Rts2Value (in_val_name, in_description, writeToFits)
 {
   value = NULL;
@@ -95,16 +93,14 @@ Rts2ValueString::setValueString (char *in_value)
   strcpy (value, in_value);
 }
 
-Rts2ValueInteger::Rts2ValueInteger (char *in_val_name):
+Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name):
 Rts2Value (in_val_name)
 {
   value = 0;
   rts2Type |= RTS2_VALUE_INTEGER;
 }
 
-Rts2ValueInteger::Rts2ValueInteger (char *in_val_name,
-				    std::string in_description,
-				    bool writeToFits):
+Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits):
 Rts2Value (in_val_name, in_description, writeToFits)
 {
   value = 0;
@@ -129,15 +125,14 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
   return 0;
 }
 
-Rts2ValueDouble::Rts2ValueDouble (char *in_val_name):Rts2Value (in_val_name)
+Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value
+  (in_val_name)
 {
   value = nan ("f");
   rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
-Rts2ValueDouble::Rts2ValueDouble (char *in_val_name,
-				  std::string in_description,
-				  bool writeToFits):
+Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits):
 Rts2Value (in_val_name, in_description, writeToFits)
 {
   value = nan ("f");
@@ -161,27 +156,26 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
   return 0;
 }
 
-Rts2ValueTime::Rts2ValueTime (char *in_val_name):Rts2ValueDouble (in_val_name)
+Rts2ValueTime::Rts2ValueTime (std::string in_val_name):Rts2ValueDouble
+  (in_val_name)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
-Rts2ValueTime::Rts2ValueTime (char *in_val_name, std::string in_description,
-			      bool writeToFits):
+Rts2ValueTime::Rts2ValueTime (std::string in_val_name, std::string in_description, bool writeToFits):
 Rts2ValueDouble (in_val_name, in_description, writeToFits)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
-Rts2ValueFloat::Rts2ValueFloat (char *in_val_name):
+Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name):
 Rts2Value (in_val_name)
 {
   value = nan ("f");
   rts2Type |= RTS2_VALUE_FLOAT;
 }
 
-Rts2ValueFloat::Rts2ValueFloat (char *in_val_name, std::string in_description,
-				bool writeToFits):
+Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name, std::string in_description, bool writeToFits):
 Rts2Value (in_val_name, in_description, writeToFits)
 {
   value = nan ("f");
@@ -205,14 +199,14 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
   return 0;
 }
 
-Rts2ValueBool::Rts2ValueBool (char *in_val_name):Rts2ValueInteger (in_val_name)
+Rts2ValueBool::Rts2ValueBool (std::string in_val_name):Rts2ValueInteger
+  (in_val_name)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
 }
 
-Rts2ValueBool::Rts2ValueBool (char *in_val_name, std::string in_description,
-			      bool writeToFits):
-Rts2ValueInteger (in_val_name, in_description, writeToFits)
+Rts2ValueBool::Rts2ValueBool (std::string in_val_name, std::string in_description, bool writeToFits):Rts2ValueInteger (in_val_name, in_description,
+		  writeToFits)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
 }

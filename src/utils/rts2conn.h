@@ -309,8 +309,6 @@ protected:
   {
     return (*(getCommand ()) == '+' || *(getCommand ()) == '-');
   }
-
-  Rts2LogStream logStream (messageType_t in_messageType);
 };
 
 #endif /* ! __RTS2_CONN__ */

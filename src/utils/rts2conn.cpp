@@ -538,9 +538,14 @@ Rts2Conn::processLine ()
 	      || paramNextString (&m_name)
 	      || paramNextString (&m_descr) || !paramEnd ())
 	    return -2;
-	  return otherDevice->metaInfo (m_type, m_name, m_descr);
+	  return otherDevice->metaInfo (m_type, std::string (m_name),
+					std::string (m_descr));
 	}
       ret = -2;
+    }
+  else if (isCommand (PROTO_SET_VALUE))
+    {
+      ret = master->setValue (this);
     }
   else if (isCommandReturn ())
     {
@@ -732,13 +737,6 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-Rts2LogStream
-Rts2Conn::logStream (messageType_t in_messageType)
-{
-  Rts2LogStream ls (master, in_messageType);
-  return ls;
-}
-
 void
 Rts2Conn::queClear ()
 {
@@ -773,7 +771,7 @@ Rts2Conn::command ()
       master->addAddress (p_name, p_host, p_port, p_device_type);
       return -1;
     }
-  if (isCommand ("user"))
+  else if (isCommand ("user"))
     {
       int p_centraldId;
       int p_priority;
@@ -787,7 +785,7 @@ Rts2Conn::command ()
 		       p_login);
       return -1;
     }
-  if (isCommand (PROTO_DATA))
+  else if (isCommand (PROTO_DATA))
     {
       char *p_command;
       if (paramNextString (&p_command))

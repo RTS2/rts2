@@ -354,6 +354,19 @@ Rts2Daemon::addValue (Rts2Value * value)
   values.push_back (value);
 }
 
+Rts2Value *
+Rts2Daemon::getValue (const char *v_name)
+{
+  std::vector < Rts2Value * >::iterator iter;
+  for (iter = values.begin (); iter != values.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      if (val->isValue (v_name))
+	return val;
+    }
+  return NULL;
+}
+
 void
 Rts2Daemon::addConstValue (Rts2Value * value)
 {
@@ -410,6 +423,12 @@ Rts2Daemon::addConstValue (char *in_name, int in_value)
   addConstValue (val);
 }
 
+int
+Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
+{
+  // we don't know how to set values, so return -2
+  return -2;
+}
 
 int
 Rts2Daemon::baseInfo ()
@@ -525,4 +544,62 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	}
     }
   return 0;
+}
+
+int
+Rts2Daemon::setValue (Rts2Conn * conn)
+{
+  char *v_name;
+  int ret;
+  if (conn->paramNextString (&v_name))
+    return -2;
+  Rts2Value *old_value = getValue (v_name);
+  Rts2Value *newValue;
+  switch (old_value->getValueType ())
+    {
+    case RTS2_VALUE_STRING:
+      newValue =
+	new Rts2ValueString (old_value->getName ().c_str (),
+			     old_value->getDescription (),
+			     old_value->getWriteToFits ());
+      break;
+    case RTS2_VALUE_INTEGER:
+      newValue =
+	new Rts2ValueInteger (old_value->getName ().c_str (),
+			      old_value->getDescription (),
+			      old_value->getWriteToFits ());
+      break;
+    case RTS2_VALUE_TIME:
+      newValue =
+	new Rts2ValueTime (old_value->getName ().c_str (),
+			   old_value->getDescription (),
+			   old_value->getWriteToFits ());
+      break;
+    case RTS2_VALUE_DOUBLE:
+      newValue =
+	new Rts2ValueDouble (old_value->getName ().c_str (),
+			     old_value->getDescription (),
+			     old_value->getWriteToFits ());
+      break;
+    case RTS2_VALUE_FLOAT:
+      newValue =
+	new Rts2ValueFloat (old_value->getName ().c_str (),
+			    old_value->getDescription (),
+			    old_value->getWriteToFits ());
+      break;
+    case RTS2_VALUE_BOOL:
+      newValue =
+	new Rts2ValueBool (old_value->getName ().c_str (),
+			   old_value->getDescription (),
+			   old_value->getWriteToFits ());
+      break;
+    default:
+      logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
+	getValueType () << sendLog;
+      return -2;
+    }
+  ret = newValue->setValue (conn);
+  if (ret)
+    return ret;
+  return setValue (old_value, newValue);
 }

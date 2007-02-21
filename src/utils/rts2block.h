@@ -51,10 +51,8 @@ typedef
 Rts2Conn * >
   connections_t;
 
-class
-  Rts2Block:
-  public
-  Rts2App
+class Rts2Block:
+public Rts2App
 {
   int
     port;
@@ -65,24 +63,17 @@ class
   int
     end_loop;
 
-  connections_t
-    connections;
+  connections_t connections;
 
-  std::list <
-  Rts2Address * >
-    blockAddress;
-  std::list <
-  Rts2User * >
-    blockUsers;
+  std::list < Rts2Address * >blockAddress;
+  std::list < Rts2User * >blockUsers;
 
   int
     masterState;
 
 protected:
 
-  virtual
-    Rts2Conn *
-  createClientConnection (char *in_deviceName) = 0;
+  virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *
   createClientConnection (Rts2Address * in_addr) = 0;
 
@@ -108,8 +99,7 @@ protected:
 public:
 
   Rts2Block (int in_argc, char **in_argv);
-  virtual ~
-  Rts2Block (void);
+  virtual ~ Rts2Block (void);
   void
   setPort (int in_port);
   int
@@ -118,13 +108,11 @@ public:
   void
   addConnection (Rts2Conn * conn);
 
-  connections_t::iterator
-  connectionBegin ()
+  connections_t::iterator connectionBegin ()
   {
     return connections.begin ();
   }
-  connections_t::iterator
-  connectionEnd ()
+  connections_t::iterator connectionEnd ()
   {
     return connections.end ();
   }
@@ -307,6 +295,12 @@ public:
   virtual void
   centraldConnBroken ()
   {
+  }
+
+  virtual int
+  setValue (Rts2Conn * conn)
+  {
+    return -2;
   }
 };
 
