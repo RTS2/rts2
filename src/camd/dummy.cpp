@@ -80,7 +80,6 @@ protected:
   {
     if (old_value == readoutSleep)
       {
-	readoutSleep->setValueDouble (new_value->getValueDouble ());
 	return 0;
       }
     return Rts2DevCamera::setValue (old_value, new_value);
