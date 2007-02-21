@@ -75,5 +75,9 @@ Rts2NComWin::commandReturn (Rts2Command * cmd, int cmd_status)
   mvwprintw (statuspad, 1, 0, "%s %+04i %s",
 	     cmd->getConnection ()->getName (), cmd_status, cmd->getText ());
   wcolor_set (statuspad, CLR_DEFAULT, NULL);
+  int y, x;
+  getyx (statuspad, y, x);
+  for (; x < getWidth (); x++)
+    mvwaddch (statuspad, y, x, ' ');
   wmove (comwin, 0, 0);
 }
