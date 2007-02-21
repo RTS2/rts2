@@ -35,6 +35,10 @@ public:
   void printCommand (char *cmd)
   {
     mvwprintw (statuspad, 0, 0, "%s", cmd);
+    int y, x;
+    getyx (statuspad, y, x);
+    for (; x < getWidth (); x++)
+      mvwaddch (statuspad, y, x, ' ');
   }
 
   void commandReturn (Rts2Command * cmd, int cmd_status);
