@@ -135,6 +135,7 @@ CameraEdtSaoChip::reset ()
   edt_reg_write (pd, PDV_MODE_CNTL, 1);
   edt_msleep (10);
   edt_reg_write (pd, PDV_MODE_CNTL, 0);
+
   sleep (1);
 }
 
@@ -222,6 +223,19 @@ CameraEdtSaoChip::init ()
 
   // do initialization
   reset ();
+
+  ret = setEDTGain (false);
+  if (ret)
+    return ret;
+  ret = edtwrite (SAO_PARALER_SP);
+  if (ret)
+    return ret;
+  ret = setEDTSplit (true);
+  if (ret)
+    return ret;
+  ret = setEDTUni (false);
+  if (ret)
+    return ret;
 
   ret = writeBinFile ("e2vsc.bin");
   if (ret)
