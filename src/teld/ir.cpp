@@ -126,6 +126,21 @@ Rts2TelescopeIr::coverOpen ()
   return status;
 }
 
+int
+Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  int status = TPL_OK;
+  if (old_value == mountTrack)
+    {
+      status =
+	tpl_set ("POINTING.TRACK", new_value->getValueInteger (), &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  return Rts2DevTelescope::setValue (old_value, new_value);
+}
+
 Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
 		  in_argv)
 {

@@ -69,6 +69,8 @@ protected:
 
   virtual int coverClose ();
   virtual int coverOpen ();
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
     Rts2TelescopeIr (int argc, char **argv);
     virtual ~ Rts2TelescopeIr (void);
