@@ -378,7 +378,8 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	    std::cout << ", \\" << std::endl;
 	  std::cout
 	    << "     \"-\" u 1:2 smooth csplines t \""
-	    << target->getTargetName () << "\"";
+	    << target->getTargetName ()
+	    << " (" << target->getTargetID () << ")\"";
 	}
       std::cout << std::endl;
     }
