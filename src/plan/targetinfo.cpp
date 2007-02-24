@@ -392,8 +392,9 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
       struct ln_equ_posn moonEqu;
       for (double i = sset; i <= rise; i += step)
 	{
-	  ln_get_lunar_equ_coords (jd_start + i, &moonEqu);
-	  ln_get_hrz_from_equ (&moonEqu, obs, JD, &moonHrz);
+	  double jd = jd_start + i / 24.0;
+	  ln_get_lunar_equ_coords (jd, &moonEqu);
+	  ln_get_hrz_from_equ (&moonEqu, obs, jd, &moonHrz);
 	  std::cout
 	    << i << " " << moonHrz.alt << " " << moonHrz.az << std::endl;
 	}
