@@ -33,16 +33,16 @@ Rts2DevSensorKeithley::writeGPIB (const char *buf)
 {
   int ret;
   ret = ibwrt (gpib_dev, buf, strlen (buf));
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
+    " ret " << ret << sendLog;
+#endif
   if (ret & ERR)
     {
       logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
 	sendLog;
       return -1;
     }
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
-    " ret " << ret << sendLog;
-#endif
   return 0;
 }
 
@@ -50,7 +50,7 @@ int
 Rts2DevSensorKeithley::readGPIB (char *buf, int blen)
 {
   int ret;
-  buf[0] = '0';
+  buf[0] = '\0';
   ret = ibrd (gpib_dev, buf, blen);
   if (ret & ERR)
     {
@@ -59,8 +59,8 @@ Rts2DevSensorKeithley::readGPIB (char *buf, int blen)
       return -1;
     }
 #ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << buf <<
-    " ret " << ret << sendLog;
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << buf <<
+    "' ret " << ret << sendLog;
 #endif
   return 0;
 }
@@ -76,7 +76,7 @@ Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueBool * val)
   ret = readGPIB (rb, 10);
   if (ret)
     return ret;
-  if (!strcmp (rb, "ON"))
+  if (atoi (rb) == 1)
     val->setValueBool (true);
   else
     val->setValueBool (false);
@@ -101,7 +101,7 @@ Rts2DevSensorKeithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
   int ret;
   if (old_value == azero)
     {
-      ret = setGPIB ("SYSTEM:AZER", (Rts2ValueBool *) new_value);
+      ret = setGPIB ("SYSTEM:AZERO", (Rts2ValueBool *) new_value);
       if (ret)
 	return -2;
       return 0;
@@ -115,13 +115,13 @@ Rts2DevSensor (in_argc, in_argv)
   gpib_dev = -1;
 
   minor = 0;
-  pad = 10;
+  pad = 14;
 
   createValue (azero, "AZERO", "SYSTEM:AZERO value");
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
-	     "device number (default to 10, counted from 0, not from 1)");
+	     "device number (default to 14, counted from 0, not from 1)");
 }
 
 Rts2DevSensorKeithley::~Rts2DevSensorKeithley (void)

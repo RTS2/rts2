@@ -63,7 +63,7 @@ Rts2DevSensor (in_argc, in_argv)
   gpib_dev = -1;
 
   minor = 0;
-  pad = 0;
+  pad = 12;
 
   createValue (tempA, "TEMPA", "cryocon temperature from channel A");
   createValue (tempB, "TEMPB", "cryocon temperature from channel B");
@@ -72,7 +72,7 @@ Rts2DevSensor (in_argc, in_argv)
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
-	     "device number (default to 0, counted from 0, not from 1)");
+	     "device number (default to 12, counted from 0, not from 1)");
 }
 
 Rts2DevSensorCryocon::~Rts2DevSensorCryocon (void)
