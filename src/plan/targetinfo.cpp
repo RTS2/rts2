@@ -43,6 +43,7 @@ private:
   void printTargetInfo ();
   void printTargetInfoGNU (double jd_start, double pbeg, double pend,
 			   double step);
+  void printTargetInfoDS9 ();
   bool printSelectable;
   bool printExtendet;
   bool printCalTargets;
@@ -50,6 +51,7 @@ private:
   int printImages;
   int printCounts;
   int printGNU;
+  bool printDS9;
   bool addMoon;
   char targetType;
   virtual int printTargets (Rts2TargetSet & set);
@@ -77,6 +79,7 @@ Rts2AppDb (in_argc, in_argv)
   printImages = 0;
   printCounts = 0;
   printGNU = 0;
+  printDS9 = false;
   addMoon = true;
   targetType = '\0';
 
@@ -98,6 +101,7 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('t', "target_type", 1,
 	     "search for target types, not for targets IDs");
   addOption ('d', "date", 1, "give informations for this data");
+  addOption ('9', "ds9", 0, "print DS9 .reg file for target");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()
@@ -155,6 +159,9 @@ Rts2TargetInfo::processOption (int in_opt)
       ret = parseDate (optarg, JD);
       if (ret)
 	return ret;
+      break;
+    case '9':
+      printDS9 = true;
       break;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -258,6 +265,12 @@ Rts2TargetInfo::printTargetInfoGNU (double jd_start, double pbeg, double pend,
       target->printAltTableSingleCol (std::cout, jd_start, i, step);
       std::cout << std::endl;
     }
+}
+
+void
+Rts2TargetInfo::printTargetInfoDS9 ()
+{
+  target->printDS9Reg (std::cout, JD);
 }
 
 int
@@ -387,7 +400,11 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
   double jd_start = ((int) JD) - 0.5;
   double step = 0.2;
 
-  if (printGNU && addMoon)
+  if (printDS9)
+    {
+      std::cout << "fk5" << std::endl;
+    }
+  else if (printGNU && addMoon)
     {
       struct ln_hrz_posn moonHrz;
       struct ln_equ_posn moonEqu;
@@ -405,7 +422,11 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
   for (iter = set.begin (); iter != set.end (); iter++)
     {
       target = *iter;
-      if (printGNU)
+      if (printDS9)
+	{
+	  printTargetInfoDS9 ();
+	}
+      else if (printGNU)
 	{
 	  printTargetInfoGNU (jd_start, sset, rise, step);
 	  std::cout << "e" << std::endl;
