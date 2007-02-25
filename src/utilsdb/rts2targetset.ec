@@ -5,6 +5,21 @@
 #include <sstream>
 
 void
+Rts2TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
+{
+  const char *top = target_type;
+  _os << "( ";
+  while (*top)
+  {
+    if (top != target_type)
+      _os << " or ";
+    _os << "type_id = '" << *top << "'";
+    top++;
+  }
+  _os << ")";
+}
+
+void
 Rts2TargetSet::load (std::string in_where, std::string order_by)
 {
   EXEC SQL BEGIN DECLARE SECTION;
@@ -209,10 +224,11 @@ Rts2TargetSetSelectable::Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs) 
   load (std::string ("tar_enabled = true AND tar_priority + tar_bonus > 0"), std::string ("tar_priority + tar_bonus DESC"));
 }
 
-Rts2TargetSetSelectable::Rts2TargetSetSelectable (char target_type, struct ln_lnlat_posn *in_obs) : Rts2TargetSet (in_obs, false)
+Rts2TargetSetSelectable::Rts2TargetSetSelectable (const char *target_type, struct ln_lnlat_posn *in_obs) : Rts2TargetSet (in_obs, false)
 {
   std::ostringstream os;
-  os << "type_id = '" << target_type << "' AND tar_enabled = true AND tar_priority + tar_bonus > 0";
+  printTypeWhere (os, target_type);
+  os << "' AND tar_enabled = true AND tar_priority + tar_bonus > 0";
   load (os.str(), std::string ("tar_id ASC"));
 }
 
@@ -232,10 +248,10 @@ Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, dou
   load (os.str (), ord.str ());
 }
 
-Rts2TargetSetType::Rts2TargetSetType (char type) : Rts2TargetSet (NULL, false)
+Rts2TargetSetType::Rts2TargetSetType (const char *target_type) : Rts2TargetSet (NULL, false)
 {
   std::ostringstream os;
-  os << "type_id = '" << type << "'";
+  printTypeWhere (os, target_type);
   load (os.str(), std::string ("tar_id ASC"));
 }
 

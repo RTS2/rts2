@@ -17,6 +17,9 @@ protected:
   void
   load (std::list < int >&target_ids);
 
+  void
+  printTypeWhere (std::ostream & _os, const char *target_type);
+
   struct ln_lnlat_posn *
     obs;
 public:
@@ -59,8 +62,8 @@ class
 {
 public:
   Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs = NULL);
-  Rts2TargetSetSelectable (char target_type, struct ln_lnlat_posn *in_obs =
-			   NULL);
+  Rts2TargetSetSelectable (const char *target_type,
+			   struct ln_lnlat_posn *in_obs = NULL);
 };
 
 /**
@@ -80,7 +83,7 @@ class Rts2TargetSetType:
 public Rts2TargetSet
 {
 public:
-  Rts2TargetSetType (char type);
+  Rts2TargetSetType (const char *target_type);
 };
 
 class
