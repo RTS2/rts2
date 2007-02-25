@@ -13,17 +13,21 @@ private:
   int writeGPIB (const char *buf);
   int readGPIB (char *buf, int blen);
 
+  int getGPIB (const char *buf, Rts2ValueString * val);
+
   int getGPIB (const char *buf, Rts2ValueBool * val);
   int setGPIB (const char *buf, Rts2ValueBool * val);
 
   Rts2ValueBool *azero;
 protected:
     virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+  virtual int processOption (int in_opt);
 public:
     Rts2DevSensorKeithley (int argc, char **argv);
     virtual ~ Rts2DevSensorKeithley (void);
 
-  virtual int processOption (int in_opt);
+  virtual int initValues ();
+
   virtual int init ();
   virtual int info ();
 };
@@ -62,6 +66,21 @@ Rts2DevSensorKeithley::readGPIB (char *buf, int blen)
   logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << buf <<
     "' ret " << ret << sendLog;
 #endif
+  return 0;
+}
+
+int
+Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueString * val)
+{
+  int ret;
+  char rb[200];
+  ret = writeGPIB (buf);
+  if (ret)
+    return ret;
+  ret = readGPIB (rb, 200);
+  if (ret)
+    return ret;
+  val->setValueString (rb);
   return 0;
 }
 
@@ -127,6 +146,18 @@ Rts2DevSensor (in_argc, in_argv)
 Rts2DevSensorKeithley::~Rts2DevSensorKeithley (void)
 {
   ibonl (gpib_dev, 0);
+}
+
+int
+Rts2DevSensorKeithley::initValues ()
+{
+  int ret;
+  Rts2ValueString *model = new Rts2ValueString ("model");
+  ret = getGPIB ("IDN?", model);
+  if (ret)
+    return -1;
+  addConstValue (model);
+  return Rts2DevSensor::initValues ();
 }
 
 int
