@@ -602,6 +602,13 @@ public:
 
   virtual void printShortBonusInfo (std::ostream & _os, double JD);
 
+  void printDS9Reg (std::ostream & _os)
+  {
+    printDS9Reg (_os, ln_get_julian_from_sys ());
+  }
+
+  virtual void printDS9Reg (std::ostream & _os, double JD);
+
   /**
    * Prints position info for given JD.
    *

@@ -1513,6 +1513,14 @@ Target::printShortInfo (std::ostream & _os, double JD)
 }
 
 void
+Target::printDS9Reg (std::ostream & _os, double JD)
+{
+  struct ln_equ_posn pos;
+  getPosition (&pos, JD);
+  _os << "circle(" << pos.ra << "," << pos.dec << ",1')" << std::endl;
+}
+
+void
 Target::printShortBonusInfo (std::ostream & _os, double JD)
 {
   struct ln_equ_posn pos;
