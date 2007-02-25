@@ -7,6 +7,11 @@
 void
 Rts2TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
 {
+  if (*target_type == '\0')
+  {
+    _os << "true";
+    return;
+  }
   const char *top = target_type;
   _os << "( ";
   while (*top)
@@ -116,6 +121,18 @@ Rts2TargetSet::Rts2TargetSet (std::list<int> &tar_ids, struct ln_lnlat_posn *in_
   if (!obs)
     obs = Rts2Config::instance ()->getObserver ();
   load (tar_ids);
+}
+
+Rts2TargetSet::Rts2TargetSet (const char *target_type, struct
+ln_lnlat_posn *in_obs)
+{
+  obs = in_obs;
+  if (!obs)
+    obs = Rts2Config::instance ()->getObserver ();
+
+  std::ostringstream os;
+  printTypeWhere (os, target_type);
+  load (os.str(), std::string ("tar_id ASC"));
 }
 
 Rts2TargetSet::~Rts2TargetSet (void)
@@ -246,13 +263,6 @@ Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, dou
     << " AND ((type_id = 'c' AND tar_id <> 6) or type_id = 'l') AND tar_enabled = true";
   ord << func.str () << " ASC";
   load (os.str (), ord.str ());
-}
-
-Rts2TargetSetType::Rts2TargetSetType (const char *target_type) : Rts2TargetSet (NULL, false)
-{
-  std::ostringstream os;
-  printTypeWhere (os, target_type);
-  load (os.str(), std::string ("tar_id ASC"));
 }
 
 Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)

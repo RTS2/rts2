@@ -488,7 +488,7 @@ Rts2TargetInfo::run ()
     }
   if (targetType)
     {
-      Rts2TargetSetType typeSet = Rts2TargetSetType (targetType);
+      Rts2TargetSet typeSet = Rts2TargetSet (targetType);
       return printTargets (typeSet);
     }
 

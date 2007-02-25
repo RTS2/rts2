@@ -13,6 +13,7 @@ class Rts2TargetList:public Rts2AppDb
 private:
   // which target to list
   int list;
+  char *targetType;
 public:
     Rts2TargetList (int argc, char **argv);
     virtual ~ Rts2TargetList (void);
@@ -28,9 +29,12 @@ Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   list = LIST_ALL;
+  targetType = NULL;
+
   addOption ('g', "grb", 0, "list onlu GRBs");
   addOption ('s', "selectable", 0,
 	     "list only targets considered by selector");
+  addOption ('t', "target_type", 1, "print given target types");
 }
 
 Rts2TargetList::~Rts2TargetList ()
@@ -47,6 +51,9 @@ Rts2TargetList::processOption (int in_opt)
       break;
     case 's':
       list |= LIST_SELECTABLE;
+      break;
+    case 't':
+      targetType = optarg;
       break;
     default:
       return Rts2AppDb::processOption (in_opt);
@@ -88,12 +95,12 @@ Rts2TargetList::run ()
       delete tar_set_grb;
       break;
     case LIST_SELECTABLE:
-      tar_set = new Rts2TargetSetSelectable ();
+      tar_set = new Rts2TargetSetSelectable (targetType);
       tar_set->printBonusList (std::cout, ln_get_julian_from_sys ());
       delete tar_set;
       break;
     default:
-      tar_set = new Rts2TargetSet ();
+      tar_set = new Rts2TargetSet (targetType);
       std::cout << (*tar_set);
       delete tar_set;
       break;
