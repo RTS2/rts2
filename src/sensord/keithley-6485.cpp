@@ -10,9 +10,15 @@ private:
 
   int gpib_dev;
 
-  int writeRead (char *buf, Rts2ValueInteger * val);
+  int writeGPIB (const char *buf);
+  int readGPIB (char *buf, int blen);
 
-  Rts2ValueInteger *azero;
+  int getGPIB (const char *buf, Rts2ValueBool * val);
+  int setGPIB (const char *buf, Rts2ValueBool * val);
+
+  Rts2ValueBool *azero;
+protected:
+    virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
     Rts2DevSensorKeithley (int argc, char **argv);
     virtual ~ Rts2DevSensorKeithley (void);
@@ -23,11 +29,9 @@ public:
 };
 
 int
-Rts2DevSensorKeithley::writeRead (char *buf, Rts2ValueInteger * val)
+Rts2DevSensorKeithley::writeGPIB (const char *buf)
 {
-  char rb[50];
   int ret;
-  rb[0] = '0';
   ret = ibwrt (gpib_dev, buf, strlen (buf));
   if (ret & ERR)
     {
@@ -39,22 +43,70 @@ Rts2DevSensorKeithley::writeRead (char *buf, Rts2ValueInteger * val)
   logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
     " ret " << ret << sendLog;
 #endif
-  ret = ibrd (gpib_dev, rb, 50);
+  return 0;
+}
+
+int
+Rts2DevSensorKeithley::readGPIB (char *buf, int blen)
+{
+  int ret;
+  buf[0] = '0';
+  ret = ibrd (gpib_dev, buf, blen);
   if (ret & ERR)
     {
-      logStream (MESSAGE_ERROR) << "error reading " << rb << " " << ret <<
+      logStream (MESSAGE_ERROR) << "error reading " << buf << " " << ret <<
 	sendLog;
       return -1;
     }
 #ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << rb << " ret "
-    << ret << sendLog;
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << buf <<
+    " ret " << ret << sendLog;
 #endif
-  if (!strcmp (rb, "ON"))
-    val->setValueInteger (1);
-  else
-    val->setValueInteger (0);
   return 0;
+}
+
+int
+Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueBool * val)
+{
+  int ret;
+  char rb[10];
+  ret = writeGPIB (buf);
+  if (ret)
+    return ret;
+  ret = readGPIB (rb, 10);
+  if (ret)
+    return ret;
+  if (!strcmp (rb, "ON"))
+    val->setValueBool (true);
+  else
+    val->setValueBool (false);
+  return 0;
+}
+
+int
+Rts2DevSensorKeithley::setGPIB (const char *buf, Rts2ValueBool * val)
+{
+  char wr[strlen (buf) + 5];
+  strcpy (wr, buf);
+  if (val->getValueBool ())
+    strcat (wr, " ON");
+  else
+    strcat (wr, " OFF");
+  return writeGPIB (wr);
+}
+
+int
+Rts2DevSensorKeithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  int ret;
+  if (old_value == azero)
+    {
+      ret = setGPIB ("SYSTEM:AZER", (Rts2ValueBool *) new_value);
+      if (ret)
+	return -2;
+      return 0;
+    }
+  return Rts2DevSensor::setValue (old_value, new_value);
 }
 
 Rts2DevSensorKeithley::Rts2DevSensorKeithley (int in_argc, char **in_argv):
@@ -63,13 +115,13 @@ Rts2DevSensor (in_argc, in_argv)
   gpib_dev = -1;
 
   minor = 0;
-  pad = 0;
+  pad = 10;
 
   createValue (azero, "AZERO", "SYSTEM:AZERO value");
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
-	     "device number (default to 0, counted from 0, not from 1)");
+	     "device number (default to 10, counted from 0, not from 1)");
 }
 
 Rts2DevSensorKeithley::~Rts2DevSensorKeithley (void)
@@ -116,7 +168,7 @@ int
 Rts2DevSensorKeithley::info ()
 {
   int ret;
-  ret = writeRead ("SYSTEM:AZERO?", azero);
+  ret = getGPIB ("SYSTEM:AZERO?", azero);
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
