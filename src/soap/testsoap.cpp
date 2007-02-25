@@ -11,6 +11,7 @@ private:
   char *server;
   int next;
   int nowTarget;
+  bool setOff;
 protected:
     virtual int processOption (int in_opt);
 public:
@@ -24,9 +25,11 @@ Rts2App (in_argc, in_argv)
   server = "http://localhost:81";
   next = -1;
   nowTarget = -1;
+  setOff = false;
   addOption ('s', "server", 1, "soap server (default http://localhost:81");
   addOption ('n', "next", 1, "next target");
   addOption ('N', "now", 1, "now (immediate) target");
+  addOption ('o', "set_off", 0, "set centrald to off");
 }
 
 int
@@ -42,6 +45,9 @@ Rts2TestSoap::processOption (int in_opt)
       break;
     case 'N':
       nowTarget = atoi (optarg);
+      break;
+    case 'o':
+      setOff = true;
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -133,13 +139,16 @@ Rts2TestSoap::run ()
   std::cout << "System " << centrald.system << " daytime: " << centrald.
     daytime << std::endl;
 
-  ret =
-    soap_call_rts2__setCentrald (&soap, server, "", rts2__system__OFF,
-				 centrald_set);
-  if (ret != SOAP_OK)
+  if (setOff)
     {
-      std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
-      return ret;
+      ret =
+	soap_call_rts2__setCentrald (&soap, server, "", rts2__system__OFF,
+				     centrald_set);
+      if (ret != SOAP_OK)
+	{
+	  std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
+	  return ret;
+	}
     }
 
   ret = soap_call_rts2__getCamera (&soap, server, "", camera_res);
