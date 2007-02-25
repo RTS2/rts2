@@ -238,6 +238,18 @@ public:
   // return target position at given julian date
   virtual int getPosition (struct ln_equ_posn *pos, double JD) = 0;
 
+  // return target semi-diameter, in degrees
+  double getSDiam ()
+  {
+    return getSDiam (ln_get_julian_from_sys ());
+  }
+
+  virtual double getSDiam (double JD)
+  {
+    // 30 arcsec..
+    return 30.0 / 3600.0;
+  }
+
   // some libnova trivials to get more comfortable access to
   // coordinates
   int getAltAz (struct ln_hrz_posn *hrz)
@@ -906,7 +918,7 @@ private:
   int fiveBonusTimeout;
 
   struct ln_equ_posn grb;
-  float errorbox;
+  double errorbox;
 
   const char *getSatelite ();
 protected:
@@ -931,6 +943,9 @@ public:
 
   double getFirstPacket ();
   virtual void printExtra (std::ostream & _os, double JD);
+
+  virtual void printDS9Reg (std::ostream & _os, double JD);
+
   void printGrbList (std::ostream & _os);
 
   virtual void writeToImage (Rts2Image * image);

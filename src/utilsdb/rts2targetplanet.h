@@ -36,7 +36,7 @@ public:
   virtual double getEarthDistance (double JD);
   virtual double getSolarDistance (double JD);
   virtual double getMagnitude (double JD);
-  double getSDiam (double JD);
+  virtual double getSDiam (double JD);
   double getPhase (double JD);
   double getDisk (double JD);
 };

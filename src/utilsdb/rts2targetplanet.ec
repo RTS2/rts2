@@ -1,5 +1,6 @@
 #include "rts2targetplanet.h"
 #include "../utils/infoval.h"
+#include "../utils/libnova_cpp.h"
 
 #define PLANETS		10
 
@@ -165,7 +166,7 @@ TargetPlanet::printExtra (std::ostream & _os, double JD)
     << InfoVal<double> ("EARTH DISTANCE", getEarthDistance (JD))
     << InfoVal<double> ("SOLAR DISTANCE", getSolarDistance (JD))
     << InfoVal<double> ("MAGNITUDE", getMagnitude (JD))
-    << InfoVal<double> ("SDIAM", getSDiam (JD))
+    << InfoVal<LibnovaDegDist> ("SDIAM", LibnovaDegDist (getSDiam (JD)))
     << InfoVal<double> ("PHASE", getPhase (JD))
     << InfoVal<double> ("DISK", getDisk (JD))
     << std::endl;
@@ -198,7 +199,8 @@ double
 TargetPlanet::getSDiam (double JD)
 {
   if (planet_info->sdiam_func)
-    return planet_info->sdiam_func (JD);
+    // return value is in arcsec..
+    return planet_info->sdiam_func (JD) / 3600.0;
   return nan("f");
 }
 

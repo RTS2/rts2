@@ -1230,7 +1230,7 @@ TargetGRB::load ()
   int db_tar_id = getTargetID ();
   double db_grb_ra;
   double db_grb_dec;
-  float db_grb_errorbox;
+  double db_grb_errorbox;
   int db_grb_errorbox_ind;
   EXEC SQL END DECLARE SECTION;
 
@@ -1620,7 +1620,7 @@ TargetGRB::printExtra (std::ostream &_os, double JD)
     << InfoVal<Timestamp> ("GCN LAST UPDATE", Timestamp (lastUpdate))
     << InfoVal<LibnovaRaJ2000> ("GRB RA", LibnovaRaJ2000 (grb.ra))
     << InfoVal<LibnovaDecJ2000> ("GRB DEC", LibnovaDecJ2000 (grb.dec))
-    << InfoVal<LibnovaDeg> ("GRB ERR", LibnovaDeg (errorbox))
+    << InfoVal<LibnovaDegDist> ("GRB ERR", LibnovaDegDist (errorbox))
     << std::endl;
   // get information about obsering time..
   if (isnan (firstObs))
@@ -1635,6 +1635,14 @@ TargetGRB::printExtra (std::ostream &_os, double JD)
       << InfoVal<TimeDiff> ("GCN delta", TimeDiff (firstPacket, firstObs));
   }
   _os << std::endl;
+}
+
+void
+TargetGRB::printDS9Reg (std::ostream & _os, double JD)
+{
+  struct ln_equ_posn pos;
+  getPosition (&pos, JD);
+  _os << "circle(" << pos.ra << "," << pos.dec << "," << errorbox << ")" << std::endl;
 }
 
 void

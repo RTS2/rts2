@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "imgdisplay.h"
 #include "target.h"
 #include "target_auger.h"
@@ -1517,7 +1513,7 @@ Target::printDS9Reg (std::ostream & _os, double JD)
 {
   struct ln_equ_posn pos;
   getPosition (&pos, JD);
-  _os << "circle(" << pos.ra << "," << pos.dec << ",1')" << std::endl;
+  _os << "circle(" << pos.ra << "," << pos.dec << "," << getSDiam (JD) << ")" << std::endl;
 }
 
 void
