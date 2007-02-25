@@ -53,7 +53,7 @@ private:
   int printGNU;
   bool printDS9;
   bool addMoon;
-  char targetType;
+  char *targetType;
   virtual int printTargets (Rts2TargetSet & set);
 
   double JD;
@@ -81,7 +81,7 @@ Rts2AppDb (in_argc, in_argv)
   printGNU = 0;
   printDS9 = false;
   addMoon = true;
-  targetType = '\0';
+  targetType = NULL;
 
   JD = ln_get_julian_from_sys ();
 
@@ -153,7 +153,7 @@ Rts2TargetInfo::processOption (int in_opt)
       printCounts |= DISPLAY_SUMMARY;
       break;
     case 't':
-      targetType = *optarg;
+      targetType = optarg;
       break;
     case 'd':
       ret = parseDate (optarg, JD);
@@ -474,7 +474,7 @@ Rts2TargetInfo::run ()
 {
   if (printSelectable)
     {
-      if (targetType != '\0')
+      if (targetType)
 	{
 	  Rts2TargetSetSelectable selSet =
 	    Rts2TargetSetSelectable (targetType);
@@ -486,7 +486,7 @@ Rts2TargetInfo::run ()
 	  return printTargets (selSet);
 	}
     }
-  if (targetType != '\0')
+  if (targetType)
     {
       Rts2TargetSetType typeSet = Rts2TargetSetType (targetType);
       return printTargets (typeSet);
