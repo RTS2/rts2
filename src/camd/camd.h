@@ -120,8 +120,6 @@ protected:
    */
   virtual int doFocusing ();
 
-  inline Rts2LogStream logStream (messageType_t in_messageType);
-
 public:
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
@@ -241,6 +239,8 @@ protected:
   virtual int setSubExposure (double in_subexposure);
 
   void afterReadout ();
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
     Rts2DevCamera (int argc, char **argv);
     virtual ~ Rts2DevCamera (void);
@@ -376,12 +376,5 @@ protected:
 public:
     Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device);
 };
-
-Rts2LogStream
-CameraChip::logStream (messageType_t in_messageType)
-{
-  Rts2LogStream ls (camera, in_messageType);
-  return ls;
-}
 
 #endif /* !__RTS2_CAMERA_CPP__ */

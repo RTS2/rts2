@@ -439,7 +439,8 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool CameraChip::supportFrameTransfer ()
+bool
+CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -780,6 +781,16 @@ Rts2DevCamera::afterReadout ()
       nextExp = NOT_EXP;
     }
   setTimeout (USEC_SEC);
+}
+
+int
+Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == gain)
+    {
+      return setGain (new_value->getValueDouble ());
+    }
+  return Rts2Device::setValue (old_value, new_value);
 }
 
 void
@@ -1264,14 +1275,16 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
