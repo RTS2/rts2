@@ -15,10 +15,13 @@ private:
 
   int getGPIB (const char *buf, Rts2ValueString * val);
 
+  int getGPIB (const char *buf, Rts2ValueDouble * val);
+
   int getGPIB (const char *buf, Rts2ValueBool * val);
   int setGPIB (const char *buf, Rts2ValueBool * val);
 
   Rts2ValueBool *azero;
+  Rts2ValueDouble *current;
 protected:
     virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
   virtual int processOption (int in_opt);
@@ -80,7 +83,34 @@ Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueString * val)
   ret = readGPIB (rb, 200);
   if (ret)
     return ret;
+  for (char *rb_top = rb; *rb_top; rb_top++)
+    {
+      if (*rb_top == '\n')
+	{
+	  *rb_top = '\0';
+	  break;
+	}
+    }
   val->setValueString (rb);
+  return 0;
+}
+
+int
+Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueDouble * val)
+{
+  int ret;
+  char rb[200];
+  double rval;
+  ret = writeGPIB (buf);
+  if (ret)
+    return ret;
+  ret = readGPIB (rb, 200);
+  if (ret)
+    return ret;
+  ret = sscanf (rb, "%lf", &rval);
+  if (ret != 1)
+    return -1;
+  val->setValueDouble (rval);
   return 0;
 }
 
@@ -137,6 +167,7 @@ Rts2DevSensor (in_argc, in_argv)
   pad = 14;
 
   createValue (azero, "AZERO", "SYSTEM:AZERO value");
+  createValue (current, "CURRENT", "Measured current");
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
@@ -153,7 +184,7 @@ Rts2DevSensorKeithley::initValues ()
 {
   int ret;
   Rts2ValueString *model = new Rts2ValueString ("model");
-  ret = getGPIB ("IDN?", model);
+  ret = getGPIB ("*IDN?", model);
   if (ret)
     return -1;
   addConstValue (model);
@@ -200,6 +231,12 @@ Rts2DevSensorKeithley::info ()
 {
   int ret;
   ret = getGPIB ("SYSTEM:AZERO?", azero);
+  if (ret)
+    return ret;
+  ret = writeGPIB ("CONF:CURR");
+  if (ret)
+    return ret;
+  ret = getGPIB ("READ?", current);
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
