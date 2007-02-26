@@ -2,10 +2,7 @@
 * image que processing
   - finish obs, .. processing
 * logging-messaging
-  - rts2-mon
   - jabberd
-* scripting
-  - custom values/parameters
 * record all values to fits header
   - target auxiliray values (orbital parameters,..)
 * rts2-web
