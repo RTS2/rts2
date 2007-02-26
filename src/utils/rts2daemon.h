@@ -27,7 +27,7 @@ private:
   // initialization
     std::vector < Rts2Value * >constValues;
 
-  Rts2ValueDouble *info_time;
+  Rts2ValueTime *info_time;
 
   time_t idleInfoInterval;
   time_t nextIdleInfo;
