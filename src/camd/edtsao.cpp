@@ -367,15 +367,13 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   pdv_flush_fifo (pd);		/* MC - add a flush */
   numbufs = 1;
   bufsize = imagesize * dsub;
-//  if (verbose)
-  printf ("number of buffers: %d bufsize: %d\n", numbufs, bufsize);
+  if (verbose)
+    printf ("number of buffers: %d bufsize: %d\n", numbufs, bufsize);
   fflush (stdout);
   bufs = (u_char **) malloc (numbufs * sizeof (u_char *));
   for (i = 0; i < numbufs; i++)
     bufs[i] = (u_char *) pdv_alloc (bufsize);
   pdv_set_buffers (pd, numbufs, bufs);
-  printf ("end of startReadout\n");
-  fflush (stdout);
   return 0;
 }
 
@@ -492,6 +490,84 @@ CameraEdtSaoChip::readoutOneLine ()
 	}
       for (i = 0; i < numbufs; i++)
 	pdv_free (bufs[i]);	/* free buf memory */
+
+      // swap for split mode
+
+      int width = chipUsedReadout->width / dsub;
+
+      if (channels == 2)
+	{
+	  /* split mode - assumes 16 bit/pixel and 2 channels */
+	  // do it in place, without allocating second memory
+	  /*uint_16t *dx = (uint_16t *) send_top;
+	     for (int r = 0; r < chipUsedReadout->height; r++)
+	     for (int c = 0; c < chipUsedReadout->width / 2; c++)
+	     {
+	     // swap values
+	     int fp = r * chipUsedReadout->height + c;
+	     int fp2 = r * chipUsedReadout->height + c * 2;
+	     uint16_t v = dx[fp+1];
+	     dx[fp+1] = dx[fp2];
+	     dx[fp2] = v;
+	     } */
+
+	  int pixd = 0;
+	  int pixt;
+	  int row;
+
+	  int pixsize = chipUsedReadout->width * chipUsedReadout->height;
+	  u_int16_t *dx = (u_int16_t *) malloc (pixsize * 4);
+
+	  logStream (MESSAGE_DEBUG) << "split mode" << sendLog;
+	  while (pixd < pixsize)
+	    {			/* do all the even pixels */
+	      row = pixd / width;
+	      pixt = pixd / 2 + row * width / 2;
+	      i = pixd * 2;
+	      j = pixt;
+	      if (j > pixsize)
+		{
+		  printf ("j: %i i: %i pixd: %i pixels: %i\n", j, i, pixd,
+			  pixsize);
+		}
+	      else
+		{
+		  dx[j] = (send_top[i + 1] << 8) + send_top[i];
+		}
+	      pixd += 2;
+	    }
+	  pixd = 1;
+	  while (pixd < pixsize)
+	    {			/* do all the odd pixels */
+	      row = pixd / width;
+	      pixt = (3 * row * width / 2 + width) - (pixd + 1) / 2;
+	      i = pixd * 2;
+	      j = pixt;
+	      if (j > pixsize)
+		{
+		  printf ("j: %i i: %i pixd: %i pixels: %i\n", j, i, pixd,
+			  pixsize);
+		}
+	      else
+		{
+		  dx[j] = (send_top[i + 1] << 8) + send_top[i];
+		}
+	      pixd += 2;
+	    }
+	  memcpy (send_top, dx, pixsize * 2);
+
+	  free (dx);
+	}
+      else
+	{
+	  logStream (MESSAGE_DEBUG) << "single channel" << sendLog;
+	  // /* already stored loend
+	  j = 0;
+	  for (i = 0; i < imagesize; i += 2)
+	    {
+	      send_top[j++] = (send_top[i + 1] << 8) + send_top[i];
+	    }
+	}
 
       dest_top += size;
       readoutLine = chipUsedReadout->width;
