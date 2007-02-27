@@ -117,4 +117,21 @@ public:
   }
 };
 
+class Rts2SEBFor:public Rts2ScriptElementBlock
+{
+private:
+  int max;
+protected:
+    virtual bool endLoop ()
+  {
+    return loopCount >= max;
+  }
+public:
+    Rts2SEBFor (Rts2Script * in_script,
+		int in_max):Rts2ScriptElementBlock (in_script)
+  {
+    max = in_max;
+  }
+};
+
 #endif /* !__RTS2_SCRIPT_BLOCK__ */

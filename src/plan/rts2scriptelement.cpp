@@ -1,3 +1,5 @@
+#include <iterator>
+
 #include "rts2script.h"
 
 #include "../utils/rts2config.h"
@@ -800,18 +802,48 @@ Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
   return 0;
 }
 
-Rts2ScriptElementGain::Rts2ScriptElementGain (Rts2Script * in_script, double in_gain):Rts2ScriptElement
+Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_script, const char *chng_str):Rts2ScriptElement
   (in_script)
 {
-  gain = in_gain;
+  std::string chng_s = std::string (chng_str);
+  op = '\0';
+  int
+    op_end = 0;
+  int
+    i;
+  std::string::iterator iter;
+  for (iter = chng_s.begin (), i = 0; iter != chng_s.end (); iter++, i++)
+    {
+      char
+	ch = *iter;
+      if (ch == '+' || ch == '=' || ch == '=')
+	{
+	  if (op == '\0')
+	    {
+	      valName = chng_s.substr (0, i);
+	      op = ch;
+	    }
+	  op_end = i;
+	}
+    }
+  if (op == '\0')
+    return;
+  operand = chng_s.substr (op_end + 1);
+}
+
+Rts2ScriptElementChangeValue::~Rts2ScriptElementChangeValue (void)
+{
 }
 
 int
-Rts2ScriptElementGain::nextCommand (Rts2DevClientCamera * camera,
-				    Rts2Command ** new_command,
-				    char new_device[DEVICE_NAME_SIZE])
+Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
+					      Rts2Command ** new_command,
+					      char
+					      new_device[DEVICE_NAME_SIZE])
 {
-  *new_command = new Rts2CommandGain (camera, gain);
+  if (op == '\0' || operand.size () == 0)
+    return -1;
+  *new_command = new Rts2CommandChangeValue (client, valName, op, operand);
   getDevice (new_device);
   return 0;
 }

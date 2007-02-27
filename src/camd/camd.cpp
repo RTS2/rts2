@@ -439,8 +439,7 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool
-CameraChip::supportFrameTransfer ()
+bool CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -499,7 +498,12 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   createValue (lastExp, "exposure", "current exposure time", false);
   createValue (subExposure, "subexposure", "current subexposure", false);
   createValue (camFilterVal, "filter", "used filter number", false);
+
   createValue (camFocVal, "focpos", "position of focuser", false);
+  createValue (nextFocPos, "next_focpos", "qued focuser position change",
+	       false);
+  nextFocPos->setValueInteger (INT_MIN);
+
   createValue (camShutterVal, "shutter", "shutter position", false);
 
   exposureFilter = -1;
@@ -510,17 +514,22 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   nightCoolTemp = nan ("f");
   focuserDevice = NULL;
   wheelDevice = NULL;
-  nextExp = NOT_EXP;
+
+  createValue (nextExp, "next_exp",
+	       "state of next exposure (0 when next exposure is possible",
+	       false);
+  nextExp->setValueInteger (NOT_EXP);
+
   nextExpChip = -1;
   nextExpLight = 1;
   defBinning = 1;
   defFocusExposure = 10;
 
   defaultGain = nan ("f");
-  nextGain = nan ("f");
 
   createValue (rnoise, "RNOISE", "CCD readout noise");
   createValue (gain, "GAIN", "CCD gain");
+  createValue (nextGain, "next_gain", "CCD next gain", false);
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
@@ -585,7 +594,7 @@ Rts2DevCamera::cancelPriorityOperations ()
   clearStatesPriority ();
   if (!isnan (defaultGain))
     setGain (defaultGain);
-  nextGain = nan ("f");
+  nextGain->setValueDouble (nan ("f"));
   setSubExposure (defaultSubExposure);
   nextSubExposure = nan ("f");
   Rts2Device::cancelPriorityOperations ();
@@ -611,7 +620,7 @@ Rts2DevCamera::scriptEnds ()
   setTimeout (USEC_SEC);
   if (!isnan (defaultGain))
     setGain (defaultGain);
-  nextGain = nan ("f");
+  nextGain->setValueDouble (nan ("f"));
   return Rts2Device::scriptEnds ();
 }
 
@@ -708,27 +717,36 @@ Rts2DevCamera::checkExposures ()
 	    {
 	      setTimeout (ret);
 	    }
-	  // handle filter command
-	  if (exposureFilter >= 0)
+	  else
 	    {
-	      camFilter (exposureFilter);
-	      exposureFilter = -1;
-	    }
-	  if (ret == -2)
-	    {
-	      maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-			     CAM_NOEXPOSURE | CAM_DATA,
-			     "exposure chip finished");
-	      chips[i]->endExposure ();
-	    }
-	  if (ret == -1)
-	    {
-	      maskStateChip (i,
-			     DEVICE_ERROR_MASK | CAM_MASK_EXPOSE |
-			     CAM_MASK_DATA,
-			     DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NODATA,
-			     "exposure chip finished with error");
-	      chips[i]->stopExposure ();
+	      // handle commands qued after exposure end
+	      if (exposureFilter >= 0)
+		{
+		  camFilter (exposureFilter);
+		  exposureFilter = -1;
+		}
+	      if (nextFocPos->getValueInteger () != INT_MIN)
+		{
+		  setFocuser (nextFocPos->getValueInteger ());
+		  nextFocPos->setValueInteger (INT_MIN);
+		}
+	      if (ret == -2)
+		{
+		  maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+				 CAM_NOEXPOSURE | CAM_DATA,
+				 "exposure chip finished");
+		  chips[i]->endExposure ();
+		}
+	      if (ret == -1)
+		{
+		  maskStateChip (i,
+				 DEVICE_ERROR_MASK | CAM_MASK_EXPOSE |
+				 CAM_MASK_DATA,
+				 DEVICE_ERROR_HW | CAM_NOEXPOSURE |
+				 CAM_NODATA,
+				 "exposure chip finished with error");
+		  chips[i]->stopExposure ();
+		}
 	    }
 	}
     }
@@ -765,20 +783,20 @@ Rts2DevCamera::checkReadouts ()
 void
 Rts2DevCamera::afterReadout ()
 {
-  if (!isnan (nextGain))
+  if (!isnan (nextGain->getValueDouble ()))
     {
-      setGain (nextGain);
-      nextGain = nan ("f");
+      setGain (nextGain->getValueDouble ());
+      nextGain->setValueDouble (nan ("f"));
     }
   if (!isnan (nextSubExposure))
     {
       setSubExposure (nextSubExposure);
       nextSubExposure = nan ("f");
     }
-  if (nextExp == FT_EXP)
+  if (nextExp->getValueInteger () == FT_EXP)
     {
       camStartExposure (nextExpChip, nextExpLight, nextExpTime);
-      nextExp = NOT_EXP;
+      nextExp->setValueInteger (NOT_EXP);
     }
   setTimeout (USEC_SEC);
 }
@@ -790,6 +808,10 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
     {
       return setGain (new_value->getValueDouble ());
     }
+  if (old_value == camFocVal)
+    {
+      return setFocuser (new_value->getValueInteger ());
+    }
   return Rts2Device::setValue (old_value, new_value);
 }
 
@@ -799,10 +821,21 @@ Rts2DevCamera::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_FILTER_MOVE_END:
+    case EVENT_FOCUSER_END_MOVE:
+      switch (event->getType ())
+	{
+	case EVENT_FILTER_MOVE_END:
+	  nextExp->setValueInteger (nextExp->
+				    getValueInteger () & ~FILTER_MOVE);
+	  break;
+	case EVENT_FOCUSER_END_MOVE:
+	  nextExp->setValueInteger (nextExp->
+				    getValueInteger () & ~FOCUSER_MOVE);
+	  break;
+	}
       // update info about FW
       infoAll ();
-      nextExp = NOT_EXP;
-      if (nextExpChip >= 0)
+      if (nextExp->getValueInteger () == NOT_EXP && nextExpChip >= 0)
 	{
 	  // start qued exposure
 	  camStartExposure (nextExpChip, nextExpLight, nextExpTime);
@@ -892,9 +925,9 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
 {
   int ret;
 
-  if (light && nextExp != NOT_EXP)
+  if (light && nextExp->getValueInteger () != NOT_EXP)
     {
-      // que exposure after filter move ends
+      // que exposure after filter or focuser move ends
       nextExpChip = chip;
       nextExpLight = light;
       nextExpTime = exptime;
@@ -1024,7 +1057,7 @@ Rts2DevCamera::camReadoutExpose (Rts2Conn * conn, int chip, int light,
   else
     {
       // if we don't support frame transfer, store exposure
-      nextExp = FT_EXP;
+      nextExp->setValueInteger (FT_EXP);
       nextExpChip = chip;
       nextExpTime = exptime;
       nextExpLight = light;
@@ -1106,12 +1139,14 @@ Rts2DevCamera::camFilter (int new_filter)
       // filter move will be performed
       if (fs.filter == -1)
 	{
-	  nextExp = FILTER_MOVE;
+	  nextExp->setValueInteger (nextExp->
+				    getValueInteger () | FILTER_MOVE);
 	  ret = 0;
 	}
       else
 	{
-	  nextExp = NOT_EXP;
+	  nextExp->setValueInteger (nextExp->
+				    getValueInteger () & ~FILTER_MOVE);
 	  ret = -1;
 	}
     }
@@ -1182,12 +1217,20 @@ Rts2DevCamera::getFilterNum ()
 }
 
 int
-Rts2DevCamera::setFocuser (Rts2Conn * conn, int new_set)
+Rts2DevCamera::setFocuser (int new_set)
 {
-  if (!focuserDevice)
+  if (focuserDevice == NULL)
     {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have focuser");
       return -1;
+    }
+  for (int i = 0; i < chipNum; i++)
+    {
+      if (getStateChip (i) & CAM_EXPOSING)
+	{
+	  // que focuser change after exposure ends..
+	  nextFocPos->setValueInteger (new_set);
+	  return 0;
+	}
     }
   struct focuserMove fm;
   fm.focuserName = focuserDevice;
@@ -1195,8 +1238,27 @@ Rts2DevCamera::setFocuser (Rts2Conn * conn, int new_set)
   postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
   if (fm.focuserName)
     {
-      conn->sendCommandEnd (DEVDEM_E_HW, "error during focusing");
+      nextExp->setValueInteger (nextExp->getValueInteger () & ~FOCUSER_MOVE);
       return -1;
+    }
+  nextExp->setValueInteger (nextExp->getValueInteger () | FOCUSER_MOVE);
+  return 0;
+}
+
+int
+Rts2DevCamera::setFocuser (Rts2Conn * conn, int new_set)
+{
+  int ret;
+  if (!focuserDevice)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have focuser");
+      return -1;
+    }
+  ret = setFocuser (new_set);
+  if (ret)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "error during focusing");
+      return ret;
     }
   return 0;
 }
@@ -1263,7 +1325,7 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   int ret;
   if (!isIdle ())
     {
-      nextGain = in_gain;
+      nextGain->setValueDouble (in_gain);
       return 0;
     }
   ret = setGain (in_gain);
@@ -1275,16 +1337,14 @@ Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
   return ret;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

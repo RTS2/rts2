@@ -6,11 +6,11 @@
 #include <ctype.h>
 
 // test if next element is one that is given
-bool
-Rts2Script::isNext (const char *element)
+bool Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t el_len = strlen (element);
+  size_t
+    el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -405,12 +405,35 @@ Rts2Script::parseBuf (Target * target, struct ln_equ_posn *target_pos)
 	return NULL;
       return new Rts2ScriptElementGuiding (this, init_exposure, end_signal);
     }
-  else if (!strcmp (commandStart, COMMAND_GAIN))
+  else if (!strcmp (commandStart, COMMAND_BLOCK_FOR))
     {
-      double in_gain;
-      if (getNextParamDouble (&in_gain))
+      char *el;
+      int max;
+      Rts2ScriptElement *newElement;
+      Rts2SEBFor *forEl;
+      // test for block start..
+      if (getNextParamInteger (&max))
 	return NULL;
-      return new Rts2ScriptElementGain (this, in_gain);
+      el = nextElement ();
+      // error, return NULL
+      if (*el != '{')
+	return NULL;
+      forEl = new Rts2SEBFor (this, max);
+      // parse block..
+      while (1)
+	{
+	  newElement = parseBuf (target, target_pos);
+	  // "}" will result in NULL, which we capture here
+	  if (!newElement)
+	    break;
+	  forEl->addElement (newElement);
+	}
+      return forEl;
+    }
+  // setValue fallback
+  else if (strchr (commandStart, '='))
+    {
+      return new Rts2ScriptElementChangeValue (this, commandStart);
     }
   return NULL;
 }

@@ -387,17 +387,21 @@ public:
 };
 
 /**
- * Set gain.
+ * Set value.
  */
-class Rts2ScriptElementGain:public Rts2ScriptElement
+class Rts2ScriptElementChangeValue:public Rts2ScriptElement
 {
 private:
-  double gain;
+  std::string valName;
+  char op;
+    std::string operand;
 public:
-    Rts2ScriptElementGain (Rts2Script * in_script, double in_gain);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+    Rts2ScriptElementChangeValue (Rts2Script * in_script,
+				  const char *chng_str);
+    virtual ~ Rts2ScriptElementChangeValue (void);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
 };
 
 #endif /* !__RTS2_SCRIPTELEMENT__ */

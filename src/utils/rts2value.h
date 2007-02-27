@@ -51,6 +51,7 @@ public:
     return valueName;
   }
   virtual int setValue (Rts2Conn * connection) = 0;
+  virtual int doOpValue (char op, Rts2Value * old_value);
   virtual char *getValue () = 0;
   virtual double getValueDouble ()
   {
@@ -124,6 +125,7 @@ public:
     Rts2ValueInteger (std::string in_val_name, std::string in_description,
 		      bool writeToFits = true);
   virtual int setValue (Rts2Conn * connection);
+  virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueInteger (int in_value)
   {
     value = in_value;
@@ -157,6 +159,7 @@ public:
     Rts2ValueDouble (std::string in_val_name, std::string in_description,
 		     bool writeToFits = true);
   virtual int setValue (Rts2Conn * connection);
+  virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueDouble (double in_value)
   {
     value = in_value;
@@ -200,6 +203,7 @@ public:
     Rts2ValueFloat (std::string in_val_name, std::string in_description,
 		    bool writeToFits = true);
   virtual int setValue (Rts2Conn * connection);
+  virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueDouble (double in_value)
   {
     value = (float) in_value;

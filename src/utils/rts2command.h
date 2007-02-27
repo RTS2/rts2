@@ -160,10 +160,15 @@ public:
 		     int height);
 };
 
-class Rts2CommandGain:public Rts2CommandCameraSettings
+class Rts2CommandChangeValue:public Rts2Command
 {
+private:
+  Rts2DevClient * client;
 public:
-  Rts2CommandGain (Rts2DevClientCamera * in_camera, double gain);
+  Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
+			  char op, std::string in_operand);
+  virtual int commandReturnOK ();
+  virtual int commandReturnFailed (int status);
 };
 
 class Rts2CommandMove:public Rts2Command

@@ -550,8 +550,9 @@ int
 Rts2Daemon::setValue (Rts2Conn * conn)
 {
   char *v_name;
+  char *op;
   int ret;
-  if (conn->paramNextString (&v_name))
+  if (conn->paramNextString (&v_name) || conn->paramNextString (&op))
     return -2;
   Rts2Value *old_value = getValue (v_name);
   if (!old_value)
@@ -603,6 +604,9 @@ Rts2Daemon::setValue (Rts2Conn * conn)
       return -2;
     }
   ret = newValue->setValue (conn);
+  if (ret)
+    return ret;
+  ret = newValue->doOpValue (*op, old_value);
   if (ret)
     return ret;
 

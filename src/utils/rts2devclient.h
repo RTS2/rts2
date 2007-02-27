@@ -110,6 +110,12 @@ public:
   {
     return values.size ();
   }
+  virtual void settingsOK ()
+  {
+  }
+  virtual void settingsFailed (int status)
+  {
+  }
 };
 
 /**************************************
@@ -143,12 +149,6 @@ public:
   {
   }
   virtual void focuserFailed (int status)
-  {
-  }
-  virtual void settingsOK ()
-  {
-  }
-  virtual void settingsFailed (int status)
   {
   }
 

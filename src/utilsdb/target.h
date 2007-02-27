@@ -73,7 +73,7 @@
 #define COMMAND_GUIDING		"guiding"
 #define COMMAND_BLOCK_ACQ	"ifacq"
 #define COMMAND_BLOCK_ELSE	"else"
-#define COMMAND_GAIN		"gain"
+#define COMMAND_BLOCK_FOR	"for"
 
 // HAM acqusition - only on FRAM telescope
 #define COMMAND_HAM		"HAM"

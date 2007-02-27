@@ -262,14 +262,32 @@ Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int chip,
   free (command);
 }
 
-Rts2CommandGain::Rts2CommandGain (Rts2DevClientCamera * in_camera,
-				  double gain):
-Rts2CommandCameraSettings (in_camera)
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
+						std::string in_valName,
+						char op,
+						std::string in_operand):
+Rts2Command (in_client->getMaster ())
 {
   char *command;
-  asprintf (&command, "gain %f", gain);
+  client = in_client;
+  asprintf (&command, PROTO_SET_VALUE " %s %c %s", in_valName.c_str (), op,
+	    in_operand.c_str ());
   setCommand (command);
   free (command);
+}
+
+int
+Rts2CommandChangeValue::commandReturnOK ()
+{
+  client->settingsOK ();
+  return Rts2Command::commandReturnOK ();
+}
+
+int
+Rts2CommandChangeValue::commandReturnFailed (int status)
+{
+  client->settingsFailed (status);
+  return Rts2Command::commandReturnFailed (status);
 }
 
 Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel):
@@ -278,9 +296,7 @@ Rts2Command (in_master)
   tel = in_tel;
 }
 
-Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master,
-				  Rts2DevClientTelescope * in_tel, double ra,
-				  double dec):
+Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
 Rts2Command (in_master)
 {
   char *command;

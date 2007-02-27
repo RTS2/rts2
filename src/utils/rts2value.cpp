@@ -22,6 +22,20 @@ Rts2Value::Rts2Value (std::string in_val_name, std::string in_description,
 }
 
 int
+Rts2Value::doOpValue (char op, Rts2Value * old_value)
+{
+  switch (op)
+    {
+    case '=':
+      return 0;
+    default:
+      logStream (MESSAGE_ERROR) << "unknow op '" << op << "' for type " <<
+	getValueType () << sendLog;
+      return -1;
+    }
+}
+
+int
 Rts2Value::sendMetaInfo (Rts2Conn * connection)
 {
   int ret;
@@ -131,6 +145,23 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
   return 0;
 }
 
+int
+Rts2ValueInteger::doOpValue (char op, Rts2Value * old_value)
+{
+  switch (op)
+    {
+    case '+':
+      setValueInteger (old_value->getValueInteger () + getValueInteger ());
+      break;
+    case '-':
+      setValueInteger (old_value->getValueInteger () - getValueInteger ());
+      break;
+    default:
+      return Rts2Value::doOpValue (op, old_value);
+    }
+  return 0;
+}
+
 void
 Rts2ValueInteger::setFromValue (Rts2Value * newValue)
 {
@@ -165,6 +196,23 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
   if (connection->paramNextDouble (&new_value) || !connection->paramEnd ())
     return -3;
   value = new_value;
+  return 0;
+}
+
+int
+Rts2ValueDouble::doOpValue (char op, Rts2Value * old_value)
+{
+  switch (op)
+    {
+    case '+':
+      setValueDouble (old_value->getValueDouble () + getValueDouble ());
+      break;
+    case '-':
+      setValueDouble (old_value->getValueDouble () - getValueDouble ());
+      break;
+    default:
+      return Rts2Value::doOpValue (op, old_value);
+    }
   return 0;
 }
 
@@ -214,6 +262,23 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
   if (connection->paramNextFloat (&new_value) || !connection->paramEnd ())
     return -3;
   value = new_value;
+  return 0;
+}
+
+int
+Rts2ValueFloat::doOpValue (char op, Rts2Value * old_value)
+{
+  switch (op)
+    {
+    case '+':
+      setValueFloat (old_value->getValueFloat () + getValueFloat ());
+      break;
+    case '-':
+      setValueFloat (old_value->getValueFloat () - getValueFloat ());
+      break;
+    default:
+      return Rts2Value::doOpValue (op, old_value);
+    }
   return 0;
 }
 

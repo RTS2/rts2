@@ -171,13 +171,17 @@ public:
   virtual bool supportFrameTransfer ();
 };
 
+#define NOT_EXP		0x00
+#define FILTER_MOVE     0x01
+#define FT_EXP		0x02
+#define FOCUSER_MOVE	0x04
+
 class Rts2DevCamera:public Rts2Device
 {
 private:
   char *focuserDevice;
   char *wheelDevice;
-  enum
-  { NOT_EXP, FILTER_MOVE, FT_EXP } nextExp;
+  Rts2ValueInteger *nextExp;
   int nextExpChip;
   float nextExpTime;
   int nextExpLight;
@@ -197,6 +201,9 @@ private:
   Rts2ValueInteger *camFilterVal;
   Rts2ValueInteger *camFocVal;
   Rts2ValueInteger *camShutterVal;
+
+  Rts2ValueDouble *nextGain;
+  Rts2ValueInteger *nextFocPos;
 
   int getStateChip (int chip_num);
   void maskStateChip (int chip_num, int state_mask, int new_state,
@@ -232,7 +239,6 @@ protected:
 
   Rts2ValueDouble *gain;
   double defaultGain;
-  double nextGain;
   Rts2ValueDouble *rnoise;
 
   virtual int setGain (double in_gain);
@@ -328,6 +334,7 @@ public:
   virtual int getFilterNum ();
 
   // focuser functions
+  int setFocuser (int new_set);
   int setFocuser (Rts2Conn * conn, int new_set);
   int stepFocuser (Rts2Conn * conn, int step_count);
   int getFocPos ();

@@ -76,7 +76,12 @@ private:
   int width;
   int height;
 protected:
-    virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
+    virtual int setGain (double in_gain)
+  {
+    return 0;
+  }
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
   {
     if (old_value == readoutSleep)
       {
