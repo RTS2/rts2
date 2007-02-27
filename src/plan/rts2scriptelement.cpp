@@ -816,7 +816,7 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
     {
       char
 	ch = *iter;
-      if (ch == '+' || ch == '=' || ch == '=')
+      if (ch == '+' || ch == '-' || ch == '=')
 	{
 	  if (op == '\0')
 	    {
