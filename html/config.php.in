@@ -1,3 +1,0 @@
-<?php
-define ('NAME', 'Put there name of your telescope and cp to config.php');
-?>

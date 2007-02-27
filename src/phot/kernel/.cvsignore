@@ -1,5 +1,0 @@
-*.cmd
-*.o
-*.ko
-phot.mod.c
-.tmp_versions

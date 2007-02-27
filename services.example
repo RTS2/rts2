@@ -1,5 +1,0 @@
-#service	service_name	options
-imgproc		IMGP
-grbd		GRBD
-executor	EXEC
-selector	SEL
