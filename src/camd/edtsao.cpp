@@ -202,7 +202,7 @@ CameraEdtSaoChip::probe ()
 
 CameraEdtSaoChip::CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id,
 				    PdvDev * in_pd):
-CameraChip (in_cam, in_chip_id, 2040, 520, 0, 0, nan ("f"))
+CameraChip (in_cam, in_chip_id, 2040, 520, 0, 0)
 {
   dest = new unsigned short[2040 * 520];
   verbose = false;

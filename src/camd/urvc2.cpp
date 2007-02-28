@@ -27,8 +27,7 @@ class CameraUrvc2Chip:public CameraChip
   char *send_top;
 public:
     CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		     int in_height, double in_pixelX, double in_pixelY,
-		     float in_gain);
+		     int in_height, double in_pixelX, double in_pixelY);
     virtual ~ CameraUrvc2Chip ();
 
   virtual int setBinning (int in_vert, int in_hori);
@@ -41,10 +40,8 @@ public:
 
 CameraUrvc2Chip::CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id,
 				  int in_width, int in_height,
-				  double in_pixelX, double in_pixelY,
-				  float in_gain):
-CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
-	    in_gain)
+				  double in_pixelX, double in_pixelY):
+CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY)
 {
   OpenCCD (in_chip_id, &C);
   img = new unsigned short int[C->horzImage * C->vertImage];
@@ -386,8 +383,7 @@ Rts2DevCameraUrvc2::init ()
 	new CameraUrvc2Chip (this, i, Cams[eePtr.model].horzImage,
 			     Cams[eePtr.model].vertImage,
 			     Cams[eePtr.model].pixelX,
-			     Cams[eePtr.model].pixelY,
-			     (i ? eePtr.trackingGain : eePtr.imagingGain));
+			     Cams[eePtr.model].pixelY);
     }
 
   // determine temperature regulation state

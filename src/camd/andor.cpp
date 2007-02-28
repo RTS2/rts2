@@ -31,6 +31,7 @@ private:
   unsigned short *dest;		// for chips..
   unsigned short *dest_top;
   char *send_top;
+  float gain;
   bool useFT;
 public:
     CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
@@ -50,10 +51,10 @@ CameraAndorChip::CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
 				  int in_width, int in_height,
 				  double in_pixelX, double in_pixelY,
 				  float in_gain, bool in_useFT):
-CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
-	    in_gain)
+CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY)
 {
   dest = new unsigned short[in_width * in_height];
+  gain = in_gain;
   useFT = in_useFT;
 };
 
@@ -212,79 +213,67 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool CameraAndorChip::supportFrameTransfer ()
+bool
+CameraAndorChip::supportFrameTransfer ()
 {
   return useFT;
 }
 
-class
-  Rts2DevCameraAndor:
-  public
-  Rts2DevCamera
+class Rts2DevCameraAndor:
+public Rts2DevCamera
 {
 private:
-  char *
-    andorRoot;
-  int
-    horizontalSpeed;
-  int
-    verticalSpeed;
-  int
-    vsamp;
-  int
-    adChannel;
-  bool
-    printSpeedInfo;
+  char *andorRoot;
+  int horizontalSpeed;
+  int verticalSpeed;
+  int vsamp;
+  int adChannel;
+  bool printSpeedInfo;
   // number of AD channels
-  int
-    chanNum;
-  bool
-    useFT;
+  int chanNum;
+  bool useFT;
 
-  int
-  printChannelInfo (int channel);
+  int printChannelInfo (int channel);
 
-  void
-  getTemp ();
+  Rts2ValueDouble *gain;
+  double defaultGain;
+
+  void getTemp ();
+  int setGain (double in_gain);
+
 protected:
-  virtual int
-  processOption (int in_opt);
-  virtual void
-  help ();
-  virtual int
-  setGain (double in_gain);
+  virtual int processOption (int in_opt);
+  virtual void help ();
+  virtual void cancelPriorityOperations ();
+  virtual void afterReadout ();
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 public:
   Rts2DevCameraAndor (int argc, char **argv);
-  virtual ~
-  Rts2DevCameraAndor (void);
+  virtual ~ Rts2DevCameraAndor (void);
 
-  virtual int
-  init ();
+  virtual int init ();
 
   // callback functions for Camera alone
-  virtual int
-  ready ();
-  virtual int
-  info ();
-  virtual int
-  camChipInfo (int chip);
-  virtual int
-  camCoolMax ();
-  virtual int
-  camCoolHold ();
-  virtual int
-  camCoolTemp (float new_temp);
-  virtual int
-  camCoolShutdown ();
+  virtual int ready ();
+  virtual int info ();
+  virtual int scriptEnds ();
+  virtual int camChipInfo (int chip);
+  virtual int camCoolMax ();
+  virtual int camCoolHold ();
+  virtual int camCoolTemp (float new_temp);
+  virtual int camCoolShutdown ();
 
-  virtual int
-  camExpose (int chip, int light, float exptime);
+  virtual int camExpose (int chip, int light, float exptime);
 };
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
   andorRoot = "/root/andor/examples/common";
+
+  createValue (gain, "GAIN", "CCD gain");
+  createValue (nextGain, "next_gain", "CCD next gain", false);
 
   defaultGain = 255;
   gain->setValueDouble (defaultGain);
@@ -337,6 +326,45 @@ Rts2DevCameraAndor::setGain (double in_gain)
   gain->setValueDouble (in_gain);
   return 0;
 }
+
+void
+Rts2DevCameraAndor::cancelPriorityOperations ()
+{
+  if (!isnan (defaultGain))
+    setGain (defaultGain);
+  nextGain->setValueDouble (nan ("f"));
+  Rts2DevCamera::cancelPriorityOperations ();
+}
+
+int
+Rts2DevCameraAndor::scriptEnds ()
+{
+  if (!isnan (defaultGain))
+    setGain (defaultGain);
+  nextGain->setValueDouble (nan ("f"));
+  return Rts2DevCamera::scriptEnds ();
+}
+
+void
+Rts2DevCameraAndor::afterReadout ()
+{
+  if (!isnan (nextGain->getValueDouble ()))
+    {
+      setGain (nextGain->getValueDouble ());
+      nextGain->setValueDouble (nan ("f"));
+    }
+}
+
+int
+Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == gain)
+    {
+      return setGain (new_value->getValueDouble ());
+    }
+  return Rts2DevCamera::setValue (old_value, new_value);
+}
+
 
 int
 Rts2DevCameraAndor::processOption (int in_opt)

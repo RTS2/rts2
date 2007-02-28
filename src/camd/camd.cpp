@@ -20,7 +20,6 @@ CameraChip::initData (Rts2DevCamera * in_cam, int in_chip_id)
   readoutConn = NULL;
   binningVertical = 1;
   binningHorizontal = 1;
-  gain = nan ("f");
   chipSize = NULL;
   chipReadout = NULL;
   chipUsedReadout = NULL;
@@ -44,14 +43,12 @@ CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
 }
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-			int in_height, double in_pixelX, double in_pixelY,
-			float in_gain)
+			int in_height, double in_pixelX, double in_pixelY)
 {
   initData (in_cam, in_chip_id);
   setSize (in_width, in_height, 0, 0);
   pixelX = in_pixelX;
   pixelY = in_pixelY;
-  gain = in_gain;
 }
 
 CameraChip::~CameraChip (void)
@@ -445,12 +442,6 @@ bool CameraChip::supportFrameTransfer ()
 }
 
 int
-Rts2DevCamera::setGain (double in_gain)
-{
-  return -1;
-}
-
-int
 Rts2DevCamera::setSubExposure (double in_subexposure)
 {
   subExposure->setValueDouble (in_subexposure);
@@ -525,11 +516,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   defBinning = 1;
   defFocusExposure = 10;
 
-  defaultGain = nan ("f");
-
   createValue (rnoise, "RNOISE", "CCD readout noise");
-  createValue (gain, "GAIN", "CCD gain");
-  createValue (nextGain, "next_gain", "CCD next gain", false);
 
   // cooling & other options..
   addOption ('c', "cooling_temp", 1, "default night cooling temperature");
@@ -592,9 +579,6 @@ Rts2DevCamera::cancelPriorityOperations ()
   setTimeout (USEC_SEC);
   // init states etc..
   clearStatesPriority ();
-  if (!isnan (defaultGain))
-    setGain (defaultGain);
-  nextGain->setValueDouble (nan ("f"));
   setSubExposure (defaultSubExposure);
   nextSubExposure = nan ("f");
   Rts2Device::cancelPriorityOperations ();
@@ -618,9 +602,6 @@ Rts2DevCamera::scriptEnds ()
       chips[i]->setBinning (defBinning, defBinning);
     }
   setTimeout (USEC_SEC);
-  if (!isnan (defaultGain))
-    setGain (defaultGain);
-  nextGain->setValueDouble (nan ("f"));
   return Rts2Device::scriptEnds ();
 }
 
@@ -727,7 +708,7 @@ Rts2DevCamera::checkExposures ()
 		}
 	      if (nextFocPos->getValueInteger () != INT_MIN)
 		{
-		  setFocuser (nextFocPos->getValueInteger ());
+		  setFocuserDontCheck (nextFocPos->getValueInteger ());
 		  nextFocPos->setValueInteger (INT_MIN);
 		}
 	      if (ret == -2)
@@ -783,11 +764,6 @@ Rts2DevCamera::checkReadouts ()
 void
 Rts2DevCamera::afterReadout ()
 {
-  if (!isnan (nextGain->getValueDouble ()))
-    {
-      setGain (nextGain->getValueDouble ());
-      nextGain->setValueDouble (nan ("f"));
-    }
   if (!isnan (nextSubExposure))
     {
       setSubExposure (nextSubExposure);
@@ -804,10 +780,6 @@ Rts2DevCamera::afterReadout ()
 int
 Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-  if (old_value == gain)
-    {
-      return setGain (new_value->getValueDouble ());
-    }
   if (old_value == camFocVal)
     {
       return setFocuser (new_value->getValueInteger ());
@@ -1217,6 +1189,22 @@ Rts2DevCamera::getFilterNum ()
 }
 
 int
+Rts2DevCamera::setFocuserDontCheck (int new_set)
+{
+  struct focuserMove fm;
+  fm.focuserName = focuserDevice;
+  fm.value = new_set;
+  postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
+  if (fm.focuserName)
+    {
+      nextExp->setValueInteger (nextExp->getValueInteger () & ~FOCUSER_MOVE);
+      return -1;
+    }
+  nextExp->setValueInteger (nextExp->getValueInteger () | FOCUSER_MOVE);
+  return 0;
+}
+
+int
 Rts2DevCamera::setFocuser (int new_set)
 {
   if (focuserDevice == NULL)
@@ -1232,17 +1220,7 @@ Rts2DevCamera::setFocuser (int new_set)
 	  return 0;
 	}
     }
-  struct focuserMove fm;
-  fm.focuserName = focuserDevice;
-  fm.value = new_set;
-  postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
-  if (fm.focuserName)
-    {
-      nextExp->setValueInteger (nextExp->getValueInteger () & ~FOCUSER_MOVE);
-      return -1;
-    }
-  nextExp->setValueInteger (nextExp->getValueInteger () | FOCUSER_MOVE);
-  return 0;
+  return setFocuserDontCheck (new_set);
 }
 
 int
@@ -1317,24 +1295,6 @@ Rts2DevCamera::endFocusing ()
   // to reset binnings etc..
   scriptEnds ();
   return 0;
-}
-
-int
-Rts2DevCamera::setGain (Rts2Conn * conn, double in_gain)
-{
-  int ret;
-  if (!isIdle ())
-    {
-      nextGain->setValueDouble (in_gain);
-      return 0;
-    }
-  ret = setGain (in_gain);
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot set gain");
-      return -1;
-    }
-  return ret;
 }
 
 bool Rts2DevCamera::isIdle ()
@@ -1532,13 +1492,6 @@ Rts2DevConnCamera::commandAuthorized ()
   else if (isCommand ("focus"))
     {
       return master->startFocus (this);
-    }
-  else if (isCommand ("gain"))
-    {
-      double gain_set;
-      if (paramNextDouble (&gain_set) || !paramEnd ())
-	return -2;
-      return master->setGain (this, gain_set);
     }
   else if (isCommand ("subexposure"))
     {

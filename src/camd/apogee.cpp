@@ -76,7 +76,6 @@ CameraApogeeChip::init ()
   binningVertical = camera->m_BinY;
   pixelX = camera->m_PixelXSize;
   pixelY = camera->m_PixelYSize;
-  gain = camera->m_Gain;
 
   dest = new short unsigned int[chipSize->width * chipSize->height];
 

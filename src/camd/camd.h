@@ -95,7 +95,6 @@ protected:
   int binningHorizontal;
   int usedBinningVertical;
   int usedBinningHorizontal;
-  float gain;
   double subExposure;
   int nAcc;
   struct imghdr focusingHeader;
@@ -123,8 +122,7 @@ protected:
 public:
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
     CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		int in_height, double in_pixelX, double in_pixelY,
-		float in_gain);
+		int in_height, double in_pixelX, double in_pixelY);
     virtual ~ CameraChip (void);
   void setSize (int in_width, int in_height, int in_x, int in_y)
   {
@@ -237,14 +235,11 @@ protected:
   virtual void cancelPriorityOperations ();
   int defBinning;
 
-  Rts2ValueDouble *gain;
-  double defaultGain;
   Rts2ValueDouble *rnoise;
 
-  virtual int setGain (double in_gain);
   virtual int setSubExposure (double in_subexposure);
 
-  void afterReadout ();
+  virtual void afterReadout ();
 
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
@@ -334,6 +329,7 @@ public:
   virtual int getFilterNum ();
 
   // focuser functions
+  int setFocuserDontCheck (int new_set);
   int setFocuser (int new_set);
   int setFocuser (Rts2Conn * conn, int new_set);
   int stepFocuser (Rts2Conn * conn, int step_count);
@@ -346,7 +342,6 @@ public:
   int startFocus (Rts2Conn * conn);
   int endFocusing ();
 
-  int setGain (Rts2Conn * conn, double in_gain);
   int setSubExposure (Rts2Conn * conn, double in_subexposure);
 
   double getSubExposure (void)

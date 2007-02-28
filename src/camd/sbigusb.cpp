@@ -48,8 +48,7 @@ class CameraSbigChip:public CameraChip
   int sbig_readout_mode;
 public:
     CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		    int in_height, double in_pixelX, double in_pixelY,
-		    float in_gain);
+		    int in_height, double in_pixelX, double in_pixelY);
     virtual ~ CameraSbigChip ();
   virtual int setBinning (int in_vert, int in_hori)
   {
@@ -68,9 +67,8 @@ public:
 
 CameraSbigChip::CameraSbigChip (Rts2DevCamera * in_cam, int in_chip_id,
 				int in_width, int in_height, double in_pixelX,
-				double in_pixelY, float in_gain):
-CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY,
-	    in_gain)
+				double in_pixelY):
+CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY)
 {
   dest = new unsigned short[in_width * in_height];
   GetCCDInfoParams req;
@@ -259,8 +257,7 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE
-Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
@@ -361,8 +358,7 @@ Rts2DevCameraSbig::init ()
     new CameraSbigChip (this, 0, res.readoutInfo[0].width,
 			res.readoutInfo[0].height,
 			res.readoutInfo[0].pixelWidth,
-			res.readoutInfo[0].pixelHeight,
-			res.readoutInfo[0].gain);
+			res.readoutInfo[0].pixelHeight);
   chips[0] = cc;
 
   req.request = CCD_INFO_TRACKING;
@@ -375,8 +371,7 @@ Rts2DevCameraSbig::init ()
     new CameraSbigChip (this, 1, res.readoutInfo[0].width,
 			res.readoutInfo[0].height / 2,
 			res.readoutInfo[0].pixelWidth,
-			res.readoutInfo[0].pixelHeight,
-			res.readoutInfo[0].gain);
+			res.readoutInfo[0].pixelHeight);
   chips[1] = cc;
 
   GetDriverInfoResults0 gccdir0;
