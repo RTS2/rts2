@@ -10,14 +10,18 @@
 
 #include <libnova/libnova.h>
 
+#define MAX_COMMAND_LENGTH              2000
+
 class Rts2Target
 {
 private:
   int moveCount;
+  int img_id;			// count for images
 public:
     Rts2Target ()
   {
     moveCount = 0;
+    img_id = 0;
   }
   virtual ~ Rts2Target (void)
   {
@@ -64,6 +68,16 @@ public:
   bool wasMoved ()
   {
     return (moveCount == 2);
+  }
+
+  int getCurrImgId ()
+  {
+    return img_id;
+  }
+
+  int getNextImgId ()
+  {
+    return ++img_id;
   }
 };
 

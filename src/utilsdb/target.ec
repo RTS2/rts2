@@ -270,7 +270,6 @@ Rts2Target ()
   obs_id = -1;
   observation = NULL;
 
-  img_id = 0;
   obs_state = 0;
   target_id = in_tar_id;
   obs_target_id = -1;
@@ -305,7 +304,6 @@ Target::Target ()
   obs_id = -1;
   observation = NULL;
 
-  img_id = 0;
   obs_state = 0;
   target_id = -1;
   obs_target_id = -1;

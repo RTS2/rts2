@@ -20,8 +20,6 @@
 #define PHOT_TIMEOUT			10
 #define EXPOSURE_TIMEOUT		50
 
-#define MAX_COMMAND_LENGTH              2000
-
 #define TARGET_NAME_LEN		150
 
 #define TYPE_UNKNOW		'u'
@@ -162,7 +160,6 @@ private:
   int epochId;
   int obs_id;
   Rts2Obs *observation;
-  int img_id;			// count for images
 
   int obs_state;		// 0 - not started 0x01 - slew started 0x02 - images taken 0x04 - acquistion started
   // mask with 0xf0 - 0x00 - nominal end 0x10 - interupted 0x20 - acqusition don't converge
@@ -540,11 +537,6 @@ public:
 
   virtual int setNextObservable (time_t * time_ch);
   int setNextObservable (double validJD);
-
-  int getNextImgId ()
-  {
-    return ++img_id;
-  }
 
   int getSelected ()
   {
