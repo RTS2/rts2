@@ -191,6 +191,7 @@ private:
   int camStartExposure (int chip, int light, float exptime);
   // when we call that function, we must be sure that either filter or wheelDevice != NULL
   int camFilter (int new_filter);
+  int camFilter (const char *new_filter);
 
   double nextSubExposure;
   double defaultSubExposure;
@@ -200,7 +201,6 @@ private:
   Rts2ValueInteger *camFocVal;
   Rts2ValueInteger *camShutterVal;
 
-  Rts2ValueDouble *nextGain;
   Rts2ValueInteger *nextFocPos;
 
   int getStateChip (int chip_num);
