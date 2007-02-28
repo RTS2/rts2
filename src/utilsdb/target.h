@@ -1,5 +1,5 @@
-#ifndef __RTS_TARGET__
-#define __RTS_TARGET__
+#ifndef __RTS_TARGETDB__
+#define __RTS_TARGETDB__
 
 #include <errno.h>
 #include <libnova/libnova.h>
@@ -11,6 +11,7 @@
 
 #include "../utils/objectcheck.h"
 #include "../utils/rts2device.h"
+#include "../utils/rts2target.h"
 
 #include "rts2taruser.h"
 #include "rts2targetset.h"
@@ -155,7 +156,7 @@ class Rts2Image;
  *
  * Target is backed by observation entry in the DB. 
  */
-class Target
+class Target:public Rts2Target
 {
 private:
   int epochId;
@@ -181,8 +182,6 @@ private:
   void sendTargetMail (int eventMask, const char *subject_text, Rts2Block * master);	// send mail to users..
 
   double minAlt;
-
-  int moveCount;
 
   float tar_priority;
   float tar_bonus;
@@ -231,12 +230,6 @@ public:
   {
     return observer;
   }
-  int getPosition (struct ln_equ_posn *pos)
-  {
-    return getPosition (pos, ln_get_julian_from_sys ());
-  }
-  // return target position at given julian date
-  virtual int getPosition (struct ln_equ_posn *pos, double JD) = 0;
 
   // return target semi-diameter, in degrees
   double getSDiam ()
@@ -485,19 +478,14 @@ public:
   virtual int compareWithTarget (Target * in_target, double in_sep_limit);
   virtual moveType startSlew (struct ln_equ_posn *position);
   virtual moveType afterSlewProcessed ();
-  void moveStarted ();
-  void moveEnded ();
-  void moveFailed ();
-  bool moveWasStarted ();
-  bool wasMoved ();
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
   int startObservation (Rts2Block * master);
-  void acqusitionStart ();
+  virtual void acqusitionStart ();
   void acqusitionEnd ();
   void acqusitionFailed ();
   // called when waiting for acqusition..
-  int isAcquired ()
+  virtual int isAcquired ()
   {
     return (acquired == 1);
   }
@@ -1076,4 +1064,4 @@ void sendEndMails (const time_t * t_from, const time_t * t_to,
 // print target information to stdout..
 std::ostream & operator << (std::ostream & _os, Target & target);
 
-#endif /*! __RTS_TARGET__ */
+#endif /*! __RTS_TARGETDB__ */

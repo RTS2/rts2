@@ -252,14 +252,14 @@ Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double i, d
   printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
 }
 
-Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs)
+Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):
+Rts2Target ()
 {
   Rts2Config *config;
   config = Rts2Config::instance ();
 
   observer = in_obs;
   selected = 0;
-  moveCount = 0;
 
   epochId = 1;
   config->getInteger ("observatory", "epoch_id", epochId);
@@ -295,7 +295,6 @@ Target::Target ()
 
   observer = config->getObserver ();
   selected = 0;
-  moveCount = 0;
 
   epochId = 1;
   config->getInteger ("observatory", "epoch_id", epochId);
@@ -644,36 +643,6 @@ moveType
 Target::afterSlewProcessed ()
 {
   return OBS_MOVE;
-}
-
-void
-Target::moveStarted ()
-{
-  moveCount = 1;
-}
-
-void
-Target::moveEnded ()
-{
-  moveCount = 2;
-}
-
-void
-Target::moveFailed ()
-{
-  moveCount = 3;
-}
-
-bool
-Target::moveWasStarted ()
-{
-  return (moveCount != 0);
-}
-
-bool
-Target::wasMoved ()
-{
-  return moveCount == 2;
 }
 
 int
