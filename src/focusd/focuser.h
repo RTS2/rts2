@@ -22,8 +22,6 @@ protected:
   Rts2ValueInteger *focPos;
   int focPositionNew;
   Rts2ValueFloat *focTemp;
-  Rts2ValueInteger *focSwitches;	// bitfield holding power switches state - for Robofocus
-  int switchNum;
   // minimal steps/sec count; 5 sec will be added to top it
   int focStepSec;
   int startPosition;
@@ -35,6 +33,11 @@ protected:
 
   virtual bool isAtStartPosition ();
   int checkStartPosition ();
+
+  void createFocTemp ()
+  {
+    createValue (focTemp, "FOC_TEMP", "focuser temperature");
+  }
 public:
     Rts2DevFocuser (int argc, char **argv);
   virtual int processOption (int in_opt);

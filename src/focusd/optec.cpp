@@ -26,6 +26,9 @@ private:
   int foc_desc;
   int status;
   bool damagedTempSens;
+
+  Rts2ValueFloat *focTemp;
+
   // low-level I/O functions
   int foc_read (char *buf, int count, int timeouts);
   int foc_write (char *buf, int count);
@@ -34,7 +37,7 @@ private:
 
   // high-level I/O functions
   int getPos (Rts2ValueInteger * position);
-  int getTemp (Rts2ValueFloat * temperature);
+  int getTemp ();
 protected:
     virtual bool isAtStartPosition ();
 public:
@@ -163,6 +166,7 @@ Rts2DevFocuserOptec::Rts2DevFocuserOptec (int in_argc, char **in_argv):Rts2DevFo
 {
   device_file = FOCUSER_PORT;
   damagedTempSens = false;
+  focTemp = NULL;
 
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
   addOption ('D', "damaged_temp_sensor", 0,
@@ -207,6 +211,12 @@ Rts2DevFocuserOptec::init ()
 
   if (ret)
     return ret;
+
+  if (!damagedTempSens)
+    {
+      createFocTemp ();
+      createValue (focTemp, "FOC_TEMP", "focuser temperature");
+    }
 
   foc_desc = open (device_file, O_RDWR);
 
@@ -263,7 +273,7 @@ Rts2DevFocuserOptec::getPos (Rts2ValueInteger * position)
 }
 
 int
-Rts2DevFocuserOptec::getTemp (Rts2ValueFloat * temp)
+Rts2DevFocuserOptec::getTemp ()
 {
   char rbuf[10];
 
@@ -275,15 +285,15 @@ Rts2DevFocuserOptec::getTemp (Rts2ValueFloat * temp)
   else
     {
       rbuf[7] = '\0';
-      temp->setValueFloat (atof ((rbuf + 2)));
+      focTemp->setValueFloat (atof ((rbuf + 2)));
     }
   return 0;
 }
 
-bool Rts2DevFocuserOptec::isAtStartPosition ()
+bool
+Rts2DevFocuserOptec::isAtStartPosition ()
 {
-  int
-    ret;
+  int ret;
   ret = getPos (focPos);
   if (ret)
     return false;
@@ -310,7 +320,7 @@ Rts2DevFocuserOptec::info ()
   ret = getPos (focPos);
   if (ret)
     return ret;
-  ret = getTemp (focTemp);
+  ret = getTemp ();
   if (ret)
     return ret;
   return Rts2DevFocuser::info ();

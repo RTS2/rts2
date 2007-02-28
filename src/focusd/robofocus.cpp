@@ -30,6 +30,9 @@ private:
   char checksum;
   int step_num;
 
+  Rts2ValueInteger *focSwitches;	// bitfield holding power switches state - for Robofocus
+  int switchNum;
+
   // low-level I/O functions
   int foc_read (char *buf, int count);
   int foc_write (char *buf, int count);
@@ -49,6 +52,7 @@ protected:
 public:
     Rts2DevFocuserRobofocus (int argc, char **argv);
    ~Rts2DevFocuserRobofocus (void);
+
   virtual int init ();
   virtual int ready ();
   virtual int initValues ();
@@ -64,9 +68,13 @@ Rts2DevFocuser (in_argc, in_argv)
 {
   device_file = FOCUSER_PORT;
 
+  createValue (focSwitches, "switches", "focuser switches", false);
+  switchNum = 4;
+
+  createFocTemp ();
+
   addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
 
-  switchNum = 4;
 }
 
 Rts2DevFocuserRobofocus::~Rts2DevFocuserRobofocus ()
@@ -265,6 +273,7 @@ int
 Rts2DevFocuserRobofocus::initValues ()
 {
   strcpy (focType, "ROBOFOCUS");
+  addConstValue ("switch_num", switchNum);
   return Rts2DevFocuser::initValues ();
 }
 

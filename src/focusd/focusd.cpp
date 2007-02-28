@@ -22,11 +22,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
   homePos = 750;
   startPosition = INT_MIN;
 
-  createValue (focSwitches, "switches", "focuser switches", false);
-
-  createValue (focTemp, "FOC_TEMP", "focuser temperature");
-
-  switchNum = 0;		// zero switches
+  focTemp = NULL;
 
   createValue (focPos, "FOC_POS", "focuser position");
 
@@ -94,7 +90,6 @@ Rts2DevFocuser::initValues ()
 {
   addConstValue ("FOC_TYPE", "focuser type", focType);
   addConstValue ("camera", focCamera);
-  addConstValue ("switch_num", switchNum);
 
   return Rts2Device::initValues ();
 }
@@ -233,7 +228,8 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-bool Rts2DevFocuser::isAtStartPosition ()
+bool
+Rts2DevFocuser::isAtStartPosition ()
 {
   return false;
 }

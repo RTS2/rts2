@@ -26,6 +26,7 @@ public:
 Rts2DevFocuserDummy::Rts2DevFocuserDummy (int in_argc, char **in_argv):
 Rts2DevFocuser (in_argc, in_argv)
 {
+  createFocTemp ();
 }
 
 Rts2DevFocuserDummy::~Rts2DevFocuserDummy ()
