@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "rts2execcli.h"
-#include "../writers/rts2imagedb.h"
+#include "../writers/rts2image.h"
 #include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
 
@@ -101,24 +101,6 @@ Rts2DevClientCameraExec::nextCommand ()
   blockMove = 1;		// as we run a script..
 }
 
-Rts2Image *
-Rts2DevClientCameraExec::createImage (const struct timeval * expStart)
-{
-  imgCount++;
-  if (currentTarget)
-    // create image based on target type and shutter state
-    return new Rts2ImageDb (currentTarget, this, expStart);
-  logStream (MESSAGE_ERROR)
-    << "Rts2DevClientCameraExec::createImage creating no-target image" <<
-    sendLog;
-  Rts2Image *image;
-  char *name;
-  asprintf (&name, "!/tmp/%s_%i.fits", connection->getName (), imgCount);
-  image = new Rts2Image (name, expStart);
-  free (name);
-  return image;
-}
-
 void
 Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
@@ -134,22 +116,6 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
     return;
   image->saveImage ();
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
-}
-
-void
-Rts2DevClientCameraExec::beforeProcess (Rts2Image * image)
-{
-  images = setValueImageType (image);
-  img_type_t imageType = images->getImageType ();
-  // dark images don't need to wait till imgprocess will pick them up for reprocessing
-  if (imageType == IMGTYPE_DARK)
-    {
-      images->toDark ();
-    }
-  else if (imageType == IMGTYPE_FLAT)
-    {
-      images->toFlat ();
-    }
 }
 
 void
@@ -180,8 +146,6 @@ Rts2DevClientCameraExec::exposureStarted ()
     {
       blockMove = 1;
     }
-  if (currentTarget)
-    currentTarget->startObservation (getMaster ());
   Rts2DevClientCameraImage::exposureStarted ();
 }
 

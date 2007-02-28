@@ -1,6 +1,7 @@
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
 #include "rts2execcli.h"
+#include "rts2execclidb.h"
 #include "rts2devcliphot.h"
 
 #include <vector>
@@ -53,6 +54,8 @@ private:
   Rts2ValueInteger *next_id;
   Rts2ValueInteger *priority_id;
 
+  Rts2ValueInteger *img_id;
+
 protected:
     virtual int processOption (int in_opt);
   virtual int reloadConfig ();
@@ -65,8 +68,6 @@ public:
 					  int other_device_type);
 
   virtual void postEvent (Rts2Event * event);
-
-  virtual int idle ();
 
   virtual int ready ()
   {
@@ -176,6 +177,8 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 
   createValue (priority_id, "priority_target",
 	       "ID of priority target (should be NULL in most cases", false);
+
+  createValue (img_id, "img_id", "ID of current image", false);
 }
 
 Rts2Executor::~Rts2Executor (void)
@@ -242,7 +245,7 @@ Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
       cli = new Rts2DevClientTelescopeExec (conn);
       break;
     case DEVICE_TYPE_CCD:
-      cli = new Rts2DevClientCameraExec (conn);
+      cli = new Rts2DevClientCameraExecDb (conn);
       break;
     case DEVICE_TYPE_FOCUS:
       cli = new Rts2DevClientFocusImage (conn);
@@ -399,12 +402,6 @@ Rts2Executor::postEvent (Rts2Event * event)
 }
 
 int
-Rts2Executor::idle ()
-{
-  return Rts2Device::idle ();
-}
-
-int
 Rts2Executor::info ()
 {
   updateScriptCount ();
@@ -413,12 +410,14 @@ Rts2Executor::info ()
       current_id->setValueInteger (currentTarget->getObsTargetID ());
       current_id_sel->setValueInteger (currentTarget->getTargetID ());
       current_obsid->setValueInteger (currentTarget->getObsId ());
+      img_id->setValueInteger (currentTarget->getCurrImgId ());
     }
   else
     {
       current_id->setValueInteger (-1);
       current_id_sel->setValueInteger (-1);
       current_obsid->setValueInteger (-1);
+      img_id->setValueInteger (-1);
     }
   if (nextTarget)
     {

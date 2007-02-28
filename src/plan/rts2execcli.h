@@ -104,9 +104,7 @@ public:
   virtual ~ Rts2DevClientCameraExec (void);
   virtual void postEvent (Rts2Event * event);
   virtual void nextCommand ();
-  virtual Rts2Image *createImage (const struct timeval *expStart);
   void queImage (Rts2Image * image);
-  virtual void beforeProcess (Rts2Image * image);
   virtual void processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
 

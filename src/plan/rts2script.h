@@ -2,11 +2,14 @@
 #define __RTS2_SCRIPT__
 
 #include "rts2scriptelement.h"
+#ifndef NOT_PGSQL
+#include "rts2scriptelementacquire.h"
+#endif
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2devclient.h"
-#include "../utilsdb/target.h"
+#include "../utils/rts2target.h"
 #include "../writers/rts2image.h"
 
 #include <list>
@@ -31,22 +34,25 @@
 // when return value contains that mask, we will keep command,
 // as we get it from block
 #define NEXT_COMMAND_MASK_BLOCK		0x100000
-/*!
+
+#define EVENT_OK_ASTROMETRY	RTS2_LOCAL_EVENT + 200
+#define EVENT_NOT_ASTROMETRY	RTS2_LOCAL_EVENT + 201
+#define EVENT_ALL_PROCESSED	RTS2_LOCAL_EVENT + 202
+
+class Rts2ScriptElement;
+class Rts2SEBAcquired;
+
+/**
  * Holds script to execute on given device.
  * Script might include commands to other devices; in such case device
  * name must be given in script, separated from command with .
  * (point).
  *
- * It should be extended in future to enable actions depending on
- * results of observations etc..now we have only small core to build
- * on.
+ * It should be extended to enable actions depending on results of
+ * observations etc..now we have only small core to build on.
  *
- * @author Petr Kubanek <petr@lascaux.asu.cas.cz>
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-
-//class Rts2ScriptElement;
-class Rts2SEBAcquired;
-
 class Rts2Script:public Rts2Object
 {
 private:
@@ -63,7 +69,7 @@ private:
   int getNextParamDouble (double *val);
   int getNextParamInteger (int *val);
   // we should not save reference to target, as it can be changed|deleted without our knowledge
-  Rts2ScriptElement *parseBuf (Target * target,
+  Rts2ScriptElement *parseBuf (Rts2Target * target,
 			       struct ln_equ_posn *target_pos);
     std::list < Rts2ScriptElement * >elements;
     std::list < Rts2ScriptElement * >::iterator el_iter;
@@ -71,7 +77,9 @@ private:
   // is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
   int executedCount;
 public:
-    Rts2Script (Rts2Block * in_master, const char *cam_name, Target * target);
+    Rts2Script (Rts2Block * in_master, const char *cam_name, char *script);
+    Rts2Script (Rts2Block * in_master, const char *cam_name,
+		Rts2Target * target);
     virtual ~ Rts2Script (void);
   virtual void postEvent (Rts2Event * event);
     template < typename T > int nextCommand (T & device,

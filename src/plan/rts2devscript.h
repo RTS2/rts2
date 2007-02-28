@@ -11,7 +11,6 @@
  * That class provide scripting interface for devices, so they can 
  * run scrips..
  */
-
 class Rts2DevScript:public Rts2Object
 {
 private:

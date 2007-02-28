@@ -1,8 +1,6 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "rts2connimgprocess.h"
+#include "rts2script.h"
+
 #include "../utils/rts2command.h"
 #include "../utilsdb/rts2taruser.h"
 #include "../utilsdb/rts2obs.h"

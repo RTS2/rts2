@@ -1,6 +1,8 @@
 #include "rts2devscript.h"
 #include "rts2execcli.h"
 
+#define DEBUG_EXTRA
+
 Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
 {
   currentTarget = NULL;

@@ -1,6 +1,7 @@
 #include "../utilsdb/rts2devicedb.h"
 #include "status.h"
 #include "rts2connimgprocess.h"
+#include "rts2script.h"
 
 #include <glob.h>
 #include <sys/types.h>

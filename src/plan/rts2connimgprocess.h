@@ -5,10 +5,6 @@
 #include "../writers/rts2imagedb.h"
 #include "../utilsdb/rts2obs.h"
 
-#define EVENT_OK_ASTROMETRY	RTS2_LOCAL_EVENT + 200
-#define EVENT_NOT_ASTROMETRY	RTS2_LOCAL_EVENT + 201
-#define EVENT_ALL_PROCESSED	RTS2_LOCAL_EVENT + 202
-
 typedef enum
 { NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT } astrometry_stat_t;
 
