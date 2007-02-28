@@ -130,6 +130,32 @@ int
 Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   int status = TPL_OK;
+  if (old_value == derotatorOffset)
+    {
+      status =
+	tpl_set ("DEROTATOR[3].OFFSET", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  else if (old_value == cover)
+    {
+      switch (new_value->getValueInteger ())
+	{
+	case 1:
+	  status = coverOpen ();
+	  break;
+	case 0:
+	  status = coverClose ();
+	  break;
+	default:
+	  return -2;
+	}
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
   if (old_value == mountTrack)
     {
       status =
