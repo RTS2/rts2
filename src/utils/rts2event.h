@@ -13,6 +13,9 @@
 
 #define EVENT_GET_RADEC		10
 #define EVENT_MOUNT_CHANGE	11
+
+#define EVENT_SET_SCRIPT	12
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
 
@@ -20,7 +23,7 @@
 // so far those offeset ranges (from RTS2_LOCAL_EVENT) are reserved for:
 //
 // rts2execcli.h            50- 99
-// rts2connimgprocess.h    200-249
+// rts2script.h            200-249
 // rts2scriptelement.h     250-299
 // rts2devclifoc.h         500-549
 // rts2devclicop.h         550-599
