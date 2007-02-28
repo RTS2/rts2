@@ -116,11 +116,11 @@ AC_ARG_WITH(alta,
 # checks for libusb-config
 AC_CHECK_PROG(LIBUSB_CONFIG, libusb-config, yes, no)
 if test "$LIBUSB_CONFIG" = "yes"; then
- LIBUSB_LDFLAGS=`libusb-config --libs`
- LIBUSB_CFLAGS=`libusb-config --cflags`
- LIBUSB_VERSION=`libusb-config --version`
+  LIBUSB_LDFLAGS=`libusb-config --libs`
+  LIBUSB_CFLAGS=`libusb-config --cflags`
+  LIBUSB_VERSION=`libusb-config --version`
 else
- AC_MSG_ERROR([libusb not found!])
+  AC_MSG_ERROR([libusb not found!])
 fi
 ALTA="${withval}";
 LIB_ALTA="${ALTA}/ApnCamera.o ${ALTA}/ApnCamera_USB.o ${ALTA}/ApogeeUsbLinux.o ${ALTA}/ApnCamData*.o ${ALTA}/ApnCamTable.o ${LIBUSB_LDFLAGS}";
@@ -318,8 +318,12 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
-AC_POSTGRESQL
-AC_ECPG
+if test "x"$psql = xyes ; then
+  AC_POSTGRESQL
+  AC_ECPG
+fi
+
+AM_CONDITIONAL(PGSQL, test x$psql = xyes)
 
 # Check for gsoap
 AC_GSOAP
@@ -407,6 +411,7 @@ MOUNT's:
 DOME's:
   PCI8255       ${PCI8255}
 
+pgsql		${psql}
 gsoap           ${gsoap}
 gpib            ${GPIBLIB}
 
