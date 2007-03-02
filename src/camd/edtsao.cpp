@@ -727,6 +727,9 @@ Rts2CamdEdtSao::initChips ()
 int
 main (int argc, char **argv)
 {
-  Rts2CamdEdtSao device = Rts2CamdEdtSao (argc, argv);
-  return device.run ();
+  int ret;
+  Rts2CamdEdtSao *device = new Rts2CamdEdtSao (argc, argv);
+  ret = device->run ();
+  delete device;
+  return ret;
 }
