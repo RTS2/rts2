@@ -100,7 +100,7 @@ Rts2TelescopeIr::tpl_setw (const char *name, T val, int *status)
 int
 Rts2TelescopeIr::coverClose ()
 {
-  int status = 0;
+  int status = TPL_OK;
   double targetPos;
   if (cover_state == CLOSED)
     return 0;
@@ -116,7 +116,7 @@ Rts2TelescopeIr::coverClose ()
 int
 Rts2TelescopeIr::coverOpen ()
 {
-  int status = 0;
+  int status = TPL_OK;
   if (cover_state == OPENED)
     return 0;
   status = tpl_set ("COVER.TARGETPOS", 1, &status);
@@ -139,7 +139,7 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return -2;
       return 0;
     }
-  else if (old_value == cover)
+  if (old_value == cover)
     {
       switch (new_value->getValueInteger ())
 	{
@@ -164,6 +164,70 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return -2;
       return 0;
     }
+  if (old_value == model_aoff)
+    {
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.AOFF", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == model_zoff)
+    {
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.ZOFF", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == model_ae)
+    {
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.AE", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == model_an)
+    {
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.AN", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == model_npae)
+    {
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.NPAE", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == model_ca)
+    {
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.CA", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == model_flex)
+    {
+      status =
+	tpl_set ("POINTING.POINTINGPARAMS.FLEX", new_value->getValueDouble (),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+
   return Rts2DevTelescope::setValue (old_value, new_value);
 }
 
@@ -180,6 +244,15 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   createValue (mountTrack, "TRACK", "mount track");
 
   createValue (cover, "cover", "cover state (1 = opened)", false);
+
+  createValue (model_dumpFile, "dump_file", "model dump file", false);
+  createValue (model_aoff, "aoff", "model azimuth offset", false);
+  createValue (model_zoff, "zoff", "model zenith offset", false);
+  createValue (model_ae, "ae", "azimuth equator? offset", false);
+  createValue (model_an, "an", "azimuth nadir? offset", false);
+  createValue (model_npae, "npae", "not polar adjusted equator?", false);
+  createValue (model_ca, "ca", "model ca parameter", false);
+  createValue (model_flex, "flex", "model flex parameter", false);
 
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
@@ -252,6 +325,12 @@ Rts2TelescopeIr::initIrDevice ()
       std::cerr << "Connection to server failed" << std::endl;
       return -1;
     }
+
+  // infoModel
+  int ret = infoModel ();
+  if (ret)
+    return ret;
+
   return 0;
 }
 
@@ -275,7 +354,7 @@ Rts2TelescopeIr::init ()
 int
 Rts2TelescopeIr::initValues ()
 {
-  int status;
+  int status = TPL_OK;
   std::string serial;
 
   telLongtitude->setValueDouble (LONGITUDE);
@@ -294,10 +373,9 @@ Rts2TelescopeIr::getError (int in_error, std::string & descri)
   char *txt;
   std::string err_desc;
   std::ostringstream os;
-  int status;
+  int status = TPL_OK;
   int errNum = in_error & 0x00ffffff;
   asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errNum);
-  status = 0;
   status = tpl_get (txt, err_desc, &status);
   if (status)
     os << "Telescope getting error: " << status
@@ -317,13 +395,12 @@ Rts2TelescopeIr::addError (int in_error)
   std::string descri;
   std::list < ErrorTime * >::iterator errIter;
   ErrorTime *errt;
-  int status;
+  int status = TPL_OK;
   int errNum = in_error & 0x00ffffff;
   // try to park if on limit switches..
   if (errNum == 88 || errNum == 89)
     {
       double zd;
-      status = 0;
       logStream (MESSAGE_ERROR) << "IR checkErrors soft limit in ZD (" <<
 	errNum << ")" << sendLog;
       status = tpl_get ("ZD.CURRPOS", zd, &status);
@@ -367,7 +444,7 @@ Rts2TelescopeIr::addError (int in_error)
 void
 Rts2TelescopeIr::checkErrors ()
 {
-  int status = 0;
+  int status = TPL_OK;
   int listCount;
   time_t now;
   std::list < ErrorTime * >::iterator errIter;
@@ -421,7 +498,7 @@ Rts2TelescopeIr::checkErrors ()
 void
 Rts2TelescopeIr::checkCover ()
 {
-  int status = 0;
+  int status = TPL_OK;
   switch (cover_state)
     {
     case OPENING:
@@ -461,10 +538,9 @@ Rts2TelescopeIr::checkCover ()
 void
 Rts2TelescopeIr::checkPower ()
 {
-  int status;
+  int status = TPL_OK;
   double power_state;
   double referenced;
-  status = 0;
   status = tpl_get ("CABINET.POWER_STATE", power_state, &status);
   if (status)
     {
@@ -543,7 +619,7 @@ void
 Rts2TelescopeIr::getCover ()
 {
   double cor_tmp;
-  int status;
+  int status = TPL_OK;
   tpl_get ("COVER.REALPOS", cor_tmp, &status);
   if (status)
     return;
@@ -560,6 +636,36 @@ Rts2TelescopeIr::initCoverState ()
     cover_state = OPENED;
   else
     cover_state = CLOSING;
+}
+
+int
+Rts2TelescopeIr::infoModel ()
+{
+  int status = TPL_OK;
+
+  std::string dumpfile;
+  double aoff, zoff, ae, an, npae, ca, flex;
+
+  status = tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
+  status = tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+  if (status != TPL_OK)
+    return -1;
+
+//  model_dumpFile->setValueString (dumpfile);
+  model_aoff->setValueDouble (aoff);
+  model_zoff->setValueDouble (zoff);
+  model_ae->setValueDouble (ae);
+  model_an->setValueDouble (an);
+  model_npae->setValueDouble (npae);
+  model_ca->setValueDouble (ca);
+  model_flex->setValueDouble (flex);
+  return 0;
 }
 
 int
@@ -587,7 +693,7 @@ Rts2TelescopeIr::info ()
   double zd_acc, zd_speed, az_acc, az_speed;
 #endif // DEBUG_EXTRA
   double t_telRa, t_telDec;
-  int status = 0;
+  int status = TPL_OK;
   int track = 0;
 
   if (!(tplc->IsAuth () && tplc->IsConnected ()))
@@ -669,7 +775,7 @@ Rts2TelescopeIr::info ()
 int
 Rts2TelescopeIr::startPark ()
 {
-  int status = 0;
+  int status = TPL_OK;
   // Park to south+zenith
   status = tpl_set ("POINTING.TRACK", 0, &status);
 #ifdef DEBUG_EXTRA
@@ -723,7 +829,7 @@ Rts2TelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
   double quality;
   double zd;
   int sample = 1;
-  int status = 0;
+  int status = TPL_OK;
 
   eq_astr.ra = real_ra;
   eq_astr.dec = real_dec;
@@ -780,7 +886,7 @@ int
 Rts2TelescopeIr::saveModel ()
 {
   std::ofstream of;
-  int status = 0;
+  int status = TPL_OK;
   double aoff, zoff, ae, an, npae, ca, flex;
   status = tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
@@ -814,7 +920,7 @@ int
 Rts2TelescopeIr::loadModel ()
 {
   std::ifstream ifs;
-  int status = 0;
+  int status = TPL_OK;
   double aoff, zoff, ae, an, npae, ca, flex;
   try
   {
@@ -845,7 +951,7 @@ Rts2TelescopeIr::loadModel ()
 int
 Rts2TelescopeIr::resetMount (resetStates reset_mount)
 {
-  int status = 0;
+  int status = TPL_OK;
   int power = 0;
   double power_state;
   status = tpl_setw ("CABINET.POWER", power, &status);

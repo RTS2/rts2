@@ -54,6 +54,18 @@ private:
 
   Rts2ValueDouble *cover;
 
+  // model values
+  Rts2ValueString *model_dumpFile;
+  Rts2ValueDouble *model_aoff;
+  Rts2ValueDouble *model_zoff;
+  Rts2ValueDouble *model_ae;
+  Rts2ValueDouble *model_an;
+  Rts2ValueDouble *model_npae;
+  Rts2ValueDouble *model_ca;
+  Rts2ValueDouble *model_flex;
+
+  int infoModel ();
+
     std::list < ErrorTime * >errorcodes;
 
 protected:
