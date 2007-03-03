@@ -231,7 +231,7 @@ private:
   int
     verticalSpeed;
   int
-    vsamp;
+    vsampli;
   int
     adChannel;
   bool
@@ -250,6 +250,23 @@ private:
   Rts2ValueDouble *
     nextGain;
 
+  Rts2ValueInteger *
+    adChan;
+  Rts2ValueInteger *
+    VSAmp;
+  Rts2ValueInteger *
+    HSpeed;
+  Rts2ValueInteger *
+    VSpeed;
+
+  // informational values
+  Rts2ValueFloat *
+    HSpeedHZ;
+  Rts2ValueFloat *
+    VSpeedHZ;
+  Rts2ValueInteger *
+    bitDepth;
+
   double
     defaultGain;
 
@@ -257,6 +274,15 @@ private:
   getTemp ();
   int
   setGain (double in_gain);
+
+  int
+  setADChannel (int in_adchan);
+  int
+  setVSAmplifier (int in_vsamp);
+  int
+  setHSSpeed (int in_hsspeed);
+  int
+  setVSSpeed (int in_vsspeed);
 
 protected:
   virtual int
@@ -308,13 +334,22 @@ Rts2DevCamera (in_argc, in_argv)
   createValue (gain, "GAIN", "CCD gain");
   createValue (nextGain, "next_gain", "CCD next gain", false);
 
+  createValue (adChan, "ADCHAN", "Used andor AD Channel", true);
+  adChan->setValueInteger (1);
+  createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true);
+  VSAmp->setValueInteger (0);
+  createValue (VSpeed, "VSPEED", "Vertical shift speed", true);
+  VSpeed->setValueInteger (1);
+  createValue (HSpeed, "HSPEED", "Horizontal shift speed", true);
+  HSpeed->setValueInteger (1);
+
   defaultGain = 255;
   gain->setValueDouble (defaultGain);
 
-  horizontalSpeed = -1;
-  verticalSpeed = -1;
-  vsamp = -1;
-  adChannel = -1;
+  horizontalSpeed = 1;
+  verticalSpeed = 1;
+  vsampli = -1;
+  adChannel = 1;
   printSpeedInfo = false;
   chanNum = 0;
 
@@ -341,8 +376,9 @@ Rts2DevCameraAndor::help ()
 {
   std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl;
   std::
-    cout << "Optimal values for vertical speed on iXon are: -H 1 -v 1 -C 1" <<
-    std::endl;
+    cout <<
+    "Optimal values for vertical speed on iXon are: -H 1 -v 1 -C 1, those are default"
+    << std::endl;
   Rts2DevCamera::help ();
 }
 
@@ -357,6 +393,68 @@ Rts2DevCameraAndor::setGain (double in_gain)
       return -1;
     }
   gain->setValueDouble (in_gain);
+  return 0;
+}
+
+int
+Rts2DevCameraAndor::setADChannel (int in_adchan)
+{
+  int ret;
+  ret = SetADChannel (in_adchan);
+  if (ret != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) << "andor setADChannel error " << ret <<
+	sendLog;
+      return -1;
+    }
+  adChan->setValueInteger (in_adchan);
+  return 0;
+}
+
+
+int
+Rts2DevCameraAndor::setVSAmplifier (int in_vsamp)
+{
+  int ret;
+  ret = SetVSAmplitude (in_vsamp);
+  if (ret != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) << "andor setVSAmplifier error " << ret <<
+	sendLog;
+      return -1;
+    }
+  VSAmp->setValueInteger (in_vsamp);
+  return 0;
+}
+
+int
+Rts2DevCameraAndor::setHSSpeed (int in_hsspeed)
+{
+  int ret;
+  ret = SetHSSpeed (0, in_hsspeed);
+  if (ret != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) << "andor setHSSpeed error " << ret <<
+	sendLog;
+      return -1;
+    }
+  HSpeed->setValueInteger (in_hsspeed);
+  return 0;
+
+}
+
+int
+Rts2DevCameraAndor::setVSSpeed (int in_vsspeed)
+{
+  int ret;
+  ret = SetVSSpeed (in_vsspeed);
+  if (ret != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) << "andor setVSSpeed error " << ret <<
+	sendLog;
+      return -1;
+    }
+  VSpeed->setValueInteger (in_vsspeed);
   return 0;
 }
 
@@ -391,10 +489,40 @@ Rts2DevCameraAndor::afterReadout ()
 int
 Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
+  int ret;
   if (old_value == gain)
     {
       return setGain (new_value->getValueDouble ());
     }
+  if (old_value == adChan)
+    {
+      ret = setADChannel (new_value->getValueInteger ());
+      if (ret)
+	return -2;
+      return 0;
+    }
+  if (old_value == VSAmp)
+    {
+      ret = setVSAmplifier (new_value->getValueInteger ());
+      if (ret)
+	return -2;
+      return 0;
+    }
+  if (old_value == HSpeed)
+    {
+      ret = setHSSpeed (new_value->getValueInteger ());
+      if (ret)
+	return -2;
+      return 0;
+    }
+  if (old_value == VSpeed)
+    {
+      ret = setVSSpeed (new_value->getValueInteger ());
+      if (ret)
+	return -2;
+      return 0;
+    }
+
   return Rts2DevCamera::setValue (old_value, new_value);
 }
 
@@ -426,8 +554,8 @@ Rts2DevCameraAndor::processOption (int in_opt)
       verticalSpeed = atoi (optarg);
       break;
     case 'A':
-      vsamp = atoi (optarg);
-      if (vsamp < 0 || vsamp > 4)
+      vsampli = atoi (optarg);
+      if (vsampli < 0 || vsampli > 4)
 	{
 	  printf ("amplitude must be in 0-4 range\n");
 	  exit (EXIT_FAILURE);
@@ -529,49 +657,31 @@ Rts2DevCameraAndor::init ()
   // adChannel
   if (adChannel >= 0)
     {
-      ret = SetADChannel (adChannel);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) << "andor init cannot set AD channel to "
-	    << adChannel << sendLog;
-	  return -1;
-	}
+      ret = setADChannel (adChannel);
+      if (ret)
+	return -1;
     }
 
   // vertical amplitude
-  if (vsamp >= 0)
+  if (vsampli >= 0)
     {
-      ret = SetVSAmplitude (vsamp);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) << "andor init set vs amplitude to " <<
-	    vsamp << " failed" << sendLog;
-	  return -1;
-	}
+      ret = setVSAmplifier (vsampli);
+      if (ret)
+	return -1;
     }
 
   if (horizontalSpeed >= 0)
     {
-      ret = SetHSSpeed (0, horizontalSpeed);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot set horizontal speed to channel " << adChannel
-	    << ", type 0, value " << horizontalSpeed << sendLog;
-	  return -1;
-	}
+      ret = setHSSpeed (horizontalSpeed);
+      if (ret)
+	return -1;
     }
 
   if (verticalSpeed >= 0)
     {
-      ret = SetVSSpeed (verticalSpeed);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot set vertical speed to " << verticalSpeed <<
-	    sendLog;
-	  return -1;
-	}
+      ret = setVSSpeed (verticalSpeed);
+      if (ret)
+	return -1;
     }
 
   chipNum = 1;
