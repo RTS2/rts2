@@ -47,7 +47,8 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('n', "night-date", 1, "report for night around given date");
   addOption ('i', "images", 0, "print image listing");
   addOption ('I', "images_summary", 0, "print image summary row");
-  addOption ('p', "photometer", 0, "print counts listing");
+  addOption ('p', "photometer", 2,
+	     "print counts listing; can be followed by format, txt for plain");
   addOption ('P', "photometer_summary", 0, "print counts summary row");
   addOption ('s', "statistics", 0, "print night statistics");
 }
@@ -90,7 +91,17 @@ Rts2NightReport::processOption (int in_opt)
       printImages |= DISPLAY_SUMMARY;
       break;
     case 'p':
-      printCounts |= DISPLAY_ALL;
+      if (optarg)
+	{
+	  if (strcmp (optarg, "txt"))
+	    printCounts = DISPLAY_SHORT;
+	  else
+	    printCounts |= DISPLAY_ALL;
+	}
+      else
+	{
+	  printCounts |= DISPLAY_ALL;
+	}
       break;
     case 'P':
       printCounts |= DISPLAY_SUMMARY;
