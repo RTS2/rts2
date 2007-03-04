@@ -250,7 +250,8 @@ Rts2Obs::printObsHeader (std::ostream & _os)
 
   _os << SEP
     << std::setw (7) << getSlewSpeed() << SEP
-    << Rts2ObsState (obs_state);
+    << Rts2ObsState (obs_state)
+    << std::endl;
 
   _os.flags (old_settings);
   _os.precision (old_precision);
@@ -497,7 +498,8 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   if (obs.displayCounts)
   {
     obs.loadCounts ();
-    _os << std::endl;
+    if (obs.displayCounts != DISPLAY_SHORT)
+      _os << std::endl;
     if (obs.displayCounts & DISPLAY_SHORT)
       obs.printCountsShort (_os);
     if (obs.displayCounts & DISPLAY_ALL)
