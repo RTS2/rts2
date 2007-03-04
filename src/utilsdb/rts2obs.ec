@@ -1,4 +1,3 @@
-#include "imgdisplay.h"
 #include "rts2obs.h"
 #include "target.h"
 #include "rts2taruser.h"
@@ -21,6 +20,7 @@ Rts2Obs::Rts2Obs (int in_obs_id)
   imgset = NULL;
   displayImages = 0;
   displayCounts = 0;
+  printHeader = true;
 }
 
 Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra, 
@@ -216,6 +216,61 @@ Rts2Obs::loadCounts ()
   EXEC SQL CLOSE cur_counts;
   EXEC SQL COMMIT;
   return 0;
+}
+
+void
+Rts2Obs::printObsHeader (std::ostream & _os)
+{
+  if (!printHeader)
+    return;
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  int old_precision = _os.precision ();
+
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  _os.precision (2);
+  _os << std::setw (5) << obs_id << SEP
+    << std::setw(6) << tar_id << SEP
+    << std::left << std::setw (20) << tar_name << std::right << SEP
+    << Timestamp (obs_slew) << SEP
+    << LibnovaRa (obs_ra) << SEP
+    << LibnovaDec (obs_dec) << SEP
+    << LibnovaDeg90 (obs_alt) << SEP
+    << LibnovaDeg (obs_az) << SEP
+    << std::setfill (' ');
+
+  if (obs_start > 0)
+    _os << std::setw (12) << TimeDiff (obs_slew, obs_start) << SEP;
+  else
+    _os << std::setw (12) << "not" << SEP;
+
+  if (!isnan (obs_end))
+    _os << std::setw (12) << TimeDiff (obs_start, obs_end) << SEP;
+  else
+    _os << std::setw (12) << "not" << SEP;
+
+  _os << SEP
+    << std::setw (7) << getSlewSpeed() << SEP
+    << Rts2ObsState (obs_state);
+
+  _os.flags (old_settings);
+  _os.precision (old_precision);
+}
+
+void
+Rts2Obs::printCountsShort (std::ostream &_os)
+{
+  std::vector <Rts2Count>::iterator count_iter;
+  if (counts.empty ())
+  {
+    return;
+  }
+  for (count_iter = counts.begin (); count_iter != counts.end (); count_iter++)
+  {
+    _os
+      << tar_id 
+      << SEP << obs_id
+      << SEP << (*count_iter);
+  }
 }
 
 void
@@ -432,35 +487,7 @@ Rts2Obs::unmaskState (int newBits)
 
 std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
 {
-  std::ios_base::fmtflags old_settings = _os.flags ();
-  int old_precision = _os.precision ();
-
-  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-  _os.precision (2);
-  _os << std::setw (5) << obs.obs_id << SEP
-    << std::setw(6) << obs.tar_id << SEP
-    << std::left << std::setw (20) << obs.tar_name << std::right << SEP
-    << Timestamp (obs.obs_slew) << SEP
-    << LibnovaRa (obs.obs_ra) << SEP
-    << LibnovaDec (obs.obs_dec) << SEP
-    << LibnovaDeg90 (obs.obs_alt) << SEP
-    << LibnovaDeg (obs.obs_az) << SEP
-    << std::setfill (' ');
-
-  if (obs.obs_start > 0)
-    _os << std::setw (12) << TimeDiff (obs.obs_slew, obs.obs_start) << SEP;
-  else
-    _os << std::setw (12) << "not" << SEP;
-
-  if (!isnan (obs.obs_end))
-    _os << std::setw (12) << TimeDiff (obs.obs_start, obs.obs_end) << SEP;
-  else
-    _os << std::setw (12) << "not" << SEP;
-
-  _os << SEP
-    << std::setw (7) << obs.getSlewSpeed() << SEP
-    << Rts2ObsState (obs.obs_state);
-
+  obs.printObsHeader (_os);
   if (obs.displayImages)
   {
     obs.loadImages ();
@@ -471,15 +498,13 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   {
     obs.loadCounts ();
     _os << std::endl;
+    if (obs.displayCounts & DISPLAY_SHORT)
+      obs.printCountsShort (_os);
     if (obs.displayCounts & DISPLAY_ALL)
       obs.printCounts (_os);
     if (obs.displayCounts & DISPLAY_SUMMARY)
       obs.printCountsSummary (_os);
   }
-
-  _os.flags (old_settings);
-  _os.precision (old_precision);
-
   return _os;
 }
 

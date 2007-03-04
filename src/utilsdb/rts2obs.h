@@ -5,6 +5,8 @@
 #include <time.h>
 #include <vector>
 
+#include "imgdisplay.h"
+
 #include "../utils/timestamp.h"
 
 #include "rts2count.h"
@@ -27,6 +29,8 @@ private:
 
   int displayImages;
   int displayCounts;
+
+  bool printHeader;
 
   int tar_id;
     std::string tar_name;
@@ -60,6 +64,10 @@ public:
   int load ();
   int loadImages ();
   int loadCounts ();
+
+  void printObsHeader (std::ostream & _os);
+
+  void printCountsShort (std::ostream & _os);
   void printCounts (std::ostream & _os);
   void printCountsSummary (std::ostream & _os);
 
@@ -70,6 +78,8 @@ public:
 
   void setPrintCounts (int in_printCounts)
   {
+    if (in_printCounts == DISPLAY_SHORT)
+      printHeader = false;
     displayCounts = in_printCounts;
   }
 
