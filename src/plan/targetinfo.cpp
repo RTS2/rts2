@@ -96,7 +96,7 @@ Rts2AppDb (in_argc, in_argv)
 	     "print observations (in given time range)");
   addOption ('i', "images", 2, "print images (in given time range)");
   addOption ('I', "images_summary", 0, "print image summary row");
-  addOption ('p', "photometer", 2, "print counts (in given time range)");
+  addOption ('p', "photometer", 2, "print counts (in given format)");
   addOption ('P', "photometer_summary", 0, "print counts summary row");
   addOption ('t', "target_type", 1,
 	     "search for target types, not for targets IDs");
@@ -147,7 +147,15 @@ Rts2TargetInfo::processOption (int in_opt)
       printImages |= DISPLAY_SUMMARY;
       break;
     case 'p':
-      printCounts |= DISPLAY_ALL;
+      if (optarg)
+	{
+	  if (!strcmp (optarg, "txt"))
+	    printCounts = DISPLAY_SHORT;
+	  else
+	    printCounts |= DISPLAY_ALL;
+	}
+      else
+	printCounts |= DISPLAY_ALL;
       break;
     case 'P':
       printCounts |= DISPLAY_SUMMARY;
