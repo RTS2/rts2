@@ -1,11 +1,10 @@
 #ifndef __RTS2_DEVCLIENT__
 #define __RTS2_DEVCLIENT__
 
-#include <vector>
-
 #include "rts2object.h"
 #include "rts2block.h"
 #include "rts2value.h"
+#include "rts2valuelist.h"
 
 class Rts2Command;
 class Rts2ClientTCPDataConn;
@@ -27,7 +26,7 @@ class Rts2DevClient:public Rts2Object
 {
 private:
   int failedCount;
-    std::vector < Rts2Value * >values;
+  Rts2ValueList values;
 protected:
     Rts2Conn * connection;
   enum
@@ -94,11 +93,11 @@ public:
 
   int getStatus ();
 
-  std::vector < Rts2Value * >::iterator valueBegin ()
+  Rts2ValueList::iterator valueBegin ()
   {
     return values.begin ();
   }
-  std::vector < Rts2Value * >::iterator valueEnd ()
+  Rts2ValueList::iterator valueEnd ()
   {
     return values.end ();
   }

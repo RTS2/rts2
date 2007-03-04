@@ -1,7 +1,7 @@
 #ifndef __RTS2_VALUELIST__
 #define __RTS2_VALUELIST__
 
-#include <list>
+#include <vector>
 
 #include "rts2value.h"
 
@@ -10,7 +10,7 @@
  * be reseted when new script starts etc..
  */
 class Rts2ValueList:public
-  std::list <
+  std::vector <
 Rts2Value * >
 {
 public:
