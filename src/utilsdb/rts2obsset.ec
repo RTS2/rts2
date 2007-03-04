@@ -288,7 +288,6 @@ std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)
     (*obs_iter).setPrintImages (obs_set.getPrintImages ());
     (*obs_iter).setPrintCounts (obs_set.getPrintCounts ());
     _os << (*obs_iter);
-    _os << std::endl;
   }
   return _os;
 }
