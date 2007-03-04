@@ -1,5 +1,7 @@
 # $Id$
 
+if PGSQL
+
 AM_CXXFLAGS = @LIBPG_CFLAGS@
 AM_CFLAGS = @LIBPG_CFLAGS@
 AM_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@
@@ -38,5 +40,7 @@ rts2_newtarget_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ ../uti
 rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
 rts2_simbadinfo_CXXFLAGS = @LIBPG_CFLAGS@ @LIB_GSOAP_CFLAGS@
 rts2_simbadinfo_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a @LIB_GSOAP@ 
+
+endif
 
 endif
