@@ -156,6 +156,28 @@ Rts2NMonitor::changeActive (Rts2NWindow * new_active)
   new_active->enter ();
 }
 
+void
+Rts2NMonitor::changeListConnection ()
+{
+  Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
+  if (conn)
+    {
+      if (conn->getName () == std::string (""))
+	{
+	  delete daemonWindow;
+	  daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
+	  daemonLayout->setLayoutA (daemonWindow);
+	}
+      else
+	{
+	  delete daemonWindow;
+	  daemonWindow = new Rts2NDeviceWindow (cursesWin, conn);
+	  daemonLayout->setLayoutA (daemonWindow);
+	}
+      resize ();
+    }
+}
+
 int
 Rts2NMonitor::addAddress (Rts2Address * in_addr)
 {
@@ -204,6 +226,10 @@ Rts2NMonitor::repaint ()
   if (LINES != old_lines || COLS != old_cols)
     resize ();
   deviceList->draw ();
+  if (daemonWindow == NULL)
+    {
+      changeListConnection ();
+    }
   daemonWindow->draw ();
   msgwindow->draw ();
   statusWindow->draw ();
@@ -313,6 +339,17 @@ Rts2NMonitor::createClientConnection (char *in_deviceName)
   return new Rts2NMonConn (this, in_deviceName);
 }
 
+int
+Rts2NMonitor::deleteConnection (Rts2Conn * conn)
+{
+  if (conn == connectionAt (deviceList->getSelRow ()))
+    {
+      // that will trigger daemonWindow reregistration before repaint
+      daemonWindow = NULL;
+    }
+  return Rts2Client::deleteConnection (conn);
+}
+
 void
 Rts2NMonitor::message (Rts2Message & msg)
 {
@@ -399,23 +436,7 @@ Rts2NMonitor::processKey (int key)
   // draw device values
   if (activeWindow == deviceList)
     {
-      Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
-      if (conn)
-	{
-	  if (conn->getName () == std::string (""))
-	    {
-	      delete daemonWindow;
-	      daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
-	      daemonLayout->setLayoutA (daemonWindow);
-	    }
-	  else
-	    {
-	      delete daemonWindow;
-	      daemonWindow = new Rts2NDeviceWindow (cursesWin, conn);
-	      daemonLayout->setLayoutA (daemonWindow);
-	    }
-	  resize ();
-	}
+      changeListConnection ();
     }
   // handle msg box
   if (activeWindow == msgBox && ret == 0)
@@ -449,12 +470,6 @@ void
 Rts2NMonitor::commandReturn (Rts2Command * cmd, int cmd_status)
 {
   comWindow->commandReturn (cmd, cmd_status);
-}
-
-int
-Rts2NMonitor::willConnect (Rts2Address * in_addr)
-{
-  return 1;
 }
 
 Rts2NMonitor *monitor = NULL;

@@ -86,6 +86,7 @@ private:
   void leaveMenu ();
 
   void changeActive (Rts2NWindow * new_active);
+  void changeListConnection ();
 
   int old_lines;
   int old_cols;
@@ -106,7 +107,7 @@ public:
 
   virtual Rts2ConnClient *createClientConnection (char *in_deviceName);
 
-  virtual int willConnect (Rts2Address * in_addr);
+  virtual int deleteConnection (Rts2Conn * conn);
 
   virtual void message (Rts2Message & msg);
 
