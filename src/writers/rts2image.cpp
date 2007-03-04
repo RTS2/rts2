@@ -6,6 +6,7 @@
 
 #include "../utils/mkpath.h"
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
 #include "../utilsdb/target.h"
 
@@ -1616,18 +1617,18 @@ Rts2Image::print (std::ostream & _os, int in_flags)
     }
 
   if (in_flags & DISPLAY_OBS)
-    _os << std::setw (5) << getObsId () << " | ";
+    _os << std::setw (5) << getObsId () << SEP;
 
   _os
-    << std::setw (5) << getCameraName () << " | "
-    << std::setw (4) << getImgId () << " | "
+    << std::setw (5) << getCameraName () << SEP
+    << std::setw (4) << getImgId () << SEP
     << Timestamp (getExposureSec () +
 		  (double) getExposureUsec () /
-		  USEC_SEC) << " | " << std::
-    setw (3) << getFilter () << " | " << std::
-    setw (8) << getExposureLength () << "' | " << LibnovaDegArcMin (ra_err) <<
-    " | " << LibnovaDegArcMin (dec_err) << " | " << LibnovaDegArcMin (img_err)
-    << std::endl;
+		  USEC_SEC) << SEP << std::
+    setw (3) << getFilter () << SEP << std::
+    setw (8) << getExposureLength () << "'" << SEP <<
+    LibnovaDegArcMin (ra_err) << SEP << LibnovaDegArcMin (dec_err) << SEP <<
+    LibnovaDegArcMin (img_err) << std::endl;
 
   _os.flags (old_settings);
   _os.precision (old_precision);
