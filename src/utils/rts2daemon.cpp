@@ -39,22 +39,6 @@ Rts2Block (in_argc, in_argv)
 
 Rts2Daemon::~Rts2Daemon (void)
 {
-  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
-       iter != constValues.end (); iter++)
-    {
-      Rts2Value *val = *iter;
-      delete val;
-    }
-  constValues.clear ();
-
-  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
-       iter != values.end (); iter++)
-    {
-      Rts2Value *val = *iter;
-      delete val;
-    }
-  values.clear ();
-
   if (listen_sock >= 0)
     close (listen_sock);
   if (lockf)
@@ -357,7 +341,7 @@ Rts2Daemon::addValue (Rts2Value * value)
 Rts2Value *
 Rts2Daemon::getValue (const char *v_name)
 {
-  std::vector < Rts2Value * >::iterator iter;
+  Rts2ValueList::iterator iter;
   for (iter = values.begin (); iter != values.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -452,7 +436,7 @@ Rts2Daemon::baseInfo (Rts2Conn * conn)
 int
 Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
 {
-  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
+  for (Rts2ValueList::iterator iter = constValues.begin ();
        iter != constValues.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -506,7 +490,7 @@ Rts2Daemon::infoAll ()
 int
 Rts2Daemon::sendInfo (Rts2Conn * conn)
 {
-  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
+  for (Rts2ValueList::iterator iter = values.begin ();
        iter != values.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -521,7 +505,7 @@ Rts2Daemon::sendInfo (Rts2Conn * conn)
 int
 Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 {
-  for (std::vector < Rts2Value * >::iterator iter = constValues.begin ();
+  for (Rts2ValueList::iterator iter = constValues.begin ();
        iter != constValues.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -532,7 +516,7 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	  return -1;
 	}
     }
-  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
+  for (Rts2ValueList::iterator iter = values.begin ();
        iter != values.end (); iter++)
     {
       Rts2Value *val = *iter;

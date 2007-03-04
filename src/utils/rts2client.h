@@ -15,12 +15,6 @@ class Rts2ConnClient:public Rts2Conn
 {
 private:
   Rts2Address * address;
-protected:
-/*  virtual int command ();
-  virtual int message ();
-  virtual int informations ();
-  virtual int status ();
-  virtual int commandReturn (); */
 public:
   Rts2ConnClient (Rts2Block * in_master, char *in_name);
     virtual ~ Rts2ConnClient (void);

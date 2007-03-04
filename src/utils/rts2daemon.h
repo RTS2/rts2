@@ -4,6 +4,7 @@
 #include "rts2block.h"
 #include "rts2logstream.h"
 #include "rts2value.h"
+#include "rts2valuelist.h"
 
 #include <vector>
 
@@ -22,10 +23,10 @@ private:
   void addConnectionSock (int in_sock);
   int lockf;
 
-    std::vector < Rts2Value * >values;
+  Rts2ValueList values;
   // values which do not change, they are send only once at connection
   // initialization
-    std::vector < Rts2Value * >constValues;
+  Rts2ValueList constValues;
 
   Rts2ValueTime *info_time;
 
@@ -90,7 +91,7 @@ protected:
    * \param  old_value	old value (pointer), can be directly
    * 			compared by pointer stored in object
    * \param  new_value	new value
-   * \return 0 when we can set value, -1 on error.
+   * \return 0 when we can set value, -2 on error, 
    */
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
