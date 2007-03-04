@@ -7,7 +7,7 @@
 void
 Rts2TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
 {
-  if (*target_type == '\0')
+  if (target_type == NULL || *target_type == '\0')
   {
     _os << "true";
     return;
