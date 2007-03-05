@@ -23,10 +23,10 @@ private:
   void addConnectionSock (int in_sock);
   int lockf;
 
-  Rts2ValueList values;
+  Rts2ValueVector values;
   // values which do not change, they are send only once at connection
   // initialization
-  Rts2ValueList constValues;
+  Rts2ValueVector constValues;
 
   Rts2ValueTime *info_time;
 
@@ -94,6 +94,13 @@ protected:
    * \return 0 when we can set value, -2 on error, 
    */
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+  /**
+   * Returns whenever value change with old_value needs to be qued or
+   * not.
+   * \param old_value Rts2CondValue object describing the old_value
+   */
+  virtual bool queValueChange (Rts2CondValue * old_value) = 0;
 public:
   Rts2Daemon (int in_argc, char **in_argv);
   virtual ~ Rts2Daemon (void);

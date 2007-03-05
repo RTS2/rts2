@@ -341,7 +341,7 @@ Rts2Daemon::addValue (Rts2Value * value)
 Rts2Value *
 Rts2Daemon::getValue (const char *v_name)
 {
-  Rts2ValueList::iterator iter;
+  Rts2ValueVector::iterator iter;
   for (iter = values.begin (); iter != values.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -436,7 +436,7 @@ Rts2Daemon::baseInfo (Rts2Conn * conn)
 int
 Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
 {
-  for (Rts2ValueList::iterator iter = constValues.begin ();
+  for (Rts2ValueVector::iterator iter = constValues.begin ();
        iter != constValues.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -490,7 +490,7 @@ Rts2Daemon::infoAll ()
 int
 Rts2Daemon::sendInfo (Rts2Conn * conn)
 {
-  for (Rts2ValueList::iterator iter = values.begin ();
+  for (Rts2ValueVector::iterator iter = values.begin ();
        iter != values.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -505,7 +505,7 @@ Rts2Daemon::sendInfo (Rts2Conn * conn)
 int
 Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 {
-  for (Rts2ValueList::iterator iter = constValues.begin ();
+  for (Rts2ValueVector::iterator iter = constValues.begin ();
        iter != constValues.end (); iter++)
     {
       Rts2Value *val = *iter;
@@ -516,7 +516,7 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	  return -1;
 	}
     }
-  for (Rts2ValueList::iterator iter = values.begin ();
+  for (Rts2ValueVector::iterator iter = values.begin ();
        iter != values.end (); iter++)
     {
       Rts2Value *val = *iter;

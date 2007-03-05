@@ -113,32 +113,10 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
   int send (char *data, size_t data_size);
 };
 
-class Rts2State
-{
-  int state;
-  Rts2Device *master;
-public:
-    Rts2State (Rts2Device * in_master)
-  {
-    master = in_master;
-    state = 0;
-  };
-  virtual ~ Rts2State (void)
-  {
-  }
-  void setState (int new_state, char *description);
-  void maskState (int state_mask, int new_state, char *description);
-  int sendInfo (Rts2Conn * conn);
-  int getState ()
-  {
-    return state;
-  };
-};
-
 class Rts2Device:public Rts2Daemon
 {
 private:
-  Rts2State * state;
+  int state;
   Rts2DevConnMaster *conn_master;
   char *centrald_host;
   int centrald_port;
@@ -152,6 +130,9 @@ private:
 
   char *mailAddress;
 
+  void setState (int new_state, char *description);
+  int sendStateInfo (Rts2Conn * conn);
+
 protected:
   /**
    * Process on option, when received from getopt () call.
@@ -164,16 +145,21 @@ protected:
 
   virtual Rts2Conn *createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
+
+  virtual bool queValueChange (Rts2CondValue * old_value)
+  {
+    return (old_value->getStateCondition () & getState ());
+  }
 public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
 		char *default_name);
-    virtual ~ Rts2Device (void);
+  virtual ~ Rts2Device (void);
   virtual Rts2DevConn *createConnection (int in_sock);
   int changeState (int new_state, char *description);
   int maskState (int state_mask, int new_state, char *description = NULL);
   int getState ()
   {
-    return state->getState ();
+    return state;
   };
   virtual int init ();
   int authorize (Rts2DevConn * conn);

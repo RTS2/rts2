@@ -26,7 +26,7 @@ class Rts2DevClient:public Rts2Object
 {
 private:
   int failedCount;
-  Rts2ValueList values;
+  Rts2ValueVector values;
 protected:
     Rts2Conn * connection;
   enum
@@ -93,11 +93,11 @@ public:
 
   int getStatus ();
 
-  Rts2ValueList::iterator valueBegin ()
+  Rts2ValueVector::iterator valueBegin ()
   {
     return values.begin ();
   }
-  Rts2ValueList::iterator valueEnd ()
+  Rts2ValueVector::iterator valueEnd ()
   {
     return values.end ();
   }

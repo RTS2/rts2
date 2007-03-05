@@ -579,39 +579,6 @@ Rts2DevConnData::sendHeader ()
   return 0;
 }
 
-void
-Rts2State::setState (int new_state, char *description)
-{
-  // state was set..do not set it again
-  if (state == new_state)
-    {
-      return;
-    }
-  state = new_state;
-  master->sendStatusMessage (state);
-};
-
-void
-Rts2State::maskState (int state_mask, int new_state, char *description)
-{
-  int masked_state = state;
-  // null from state all errors..
-  masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
-  masked_state |= new_state;
-  setState (masked_state, description);
-}
-
-int
-Rts2State::sendInfo (Rts2Conn * conn)
-{
-  int ret;
-  char *msg;
-  asprintf (&msg, PROTO_INFO " %i", state);
-  ret = conn->send (msg);
-  free (msg);
-  return ret;
-}
-
 Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, char *default_name):
 Rts2Daemon (in_argc, in_argv)
 {
@@ -623,7 +590,7 @@ Rts2Daemon (in_argc, in_argv)
   centrald_port = 617;
   log_option = 0;
 
-  state = new Rts2State (this);
+  state = 0;
 
   device_type = in_device_type;
 
@@ -643,8 +610,6 @@ Rts2Daemon (in_argc, in_argv)
 
 Rts2Device::~Rts2Device (void)
 {
-  delete state;
-  state = NULL;
 }
 
 Rts2DevConn *
@@ -706,10 +671,33 @@ Rts2Device::createClientConnection (Rts2Address * in_addres)
   return conn;
 }
 
+void
+Rts2Device::setState (int new_state, char *description)
+{
+  // state was set..do not set it again
+  if (state == new_state)
+    {
+      return;
+    }
+  state = new_state;
+  sendStatusMessage (state);
+}
+
+int
+Rts2Device::sendStateInfo (Rts2Conn * conn)
+{
+  int ret;
+  char *msg;
+  asprintf (&msg, PROTO_INFO " %i", state);
+  ret = conn->send (msg);
+  free (msg);
+  return ret;
+}
+
 int
 Rts2Device::changeState (int new_state, char *description)
 {
-  state->setState (new_state, description);
+  setState (new_state, description);
   return 0;
 }
 
@@ -722,7 +710,11 @@ Rts2Device::maskState (int state_mask, int new_state, char *description)
     state_mask << " new_state: " << new_state << " desc: " << description <<
     sendLog;
 #endif
-  state->maskState (state_mask, new_state, description);
+  int masked_state = state;
+  // null from state all errors..
+  masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
+  masked_state |= new_state;
+  setState (masked_state, description);
   return 0;
 }
 
@@ -775,7 +767,7 @@ int
 Rts2Device::sendStatusInfo (Rts2DevConn * conn)
 {
   int ret;
-  ret = state->sendInfo (conn);
+  ret = sendStateInfo (conn);
   if (ret)
     return ret;
   return conn->sendPriorityInfo ();
