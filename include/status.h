@@ -203,6 +203,8 @@
 #define DEVDEM_E_TIMEOUT	-7	// connection has time-outed
 #define DEVDEM_E_IGNORE         -8	// command mind as unnecessary..
 
+#define DEVDEM_I_QUED		1	// value change was qued
+
 // Client errors goes together, intersection between devdem and plancomm clients
 // must be empty.
 
