@@ -86,6 +86,11 @@ protected:
     return NULL;
   }
 
+  virtual bool queValueChange (Rts2CondValue * old_value)
+  {
+    return false;
+  }
+
 public:
   Rts2Centrald (int in_argc, char **in_argv);
 

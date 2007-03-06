@@ -333,19 +333,19 @@ Rts2Daemon::selectSuccess (fd_set * read_set)
 }
 
 void
-Rts2Daemon::addValue (Rts2Value * value)
+Rts2Daemon::addValue (Rts2Value * value, int queCondition)
 {
-  values.push_back (value);
+  values.push_back (new Rts2CondValue (value, queCondition));
 }
 
-Rts2Value *
+Rts2CondValue *
 Rts2Daemon::getValue (const char *v_name)
 {
-  Rts2ValueVector::iterator iter;
+  Rts2CondValueVector::iterator iter;
   for (iter = values.begin (); iter != values.end (); iter++)
     {
-      Rts2Value *val = *iter;
-      if (val->isValue (v_name))
+      Rts2CondValue *val = *iter;
+      if (val->getValue ()->isValue (v_name))
 	return val;
     }
   return NULL;
@@ -412,6 +412,28 @@ Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 {
   // we don't know how to set values, so return -2
   return -2;
+}
+
+int
+Rts2Daemon::setValue (Rts2Value * old_value, char op, Rts2Value * new_value)
+{
+  int ret;
+  ret = new_value->doOpValue (op, old_value);
+  if (ret)
+    goto err;
+
+  // call hook
+  ret = setValue (old_value, new_value);
+  if (ret)
+    goto err;
+
+  // set value after sucessfull return..
+  old_value->setFromValue (new_value);
+  delete new_value;
+  return 0;
+err:
+  delete new_value;
+  return ret;
 }
 
 int
@@ -490,10 +512,10 @@ Rts2Daemon::infoAll ()
 int
 Rts2Daemon::sendInfo (Rts2Conn * conn)
 {
-  for (Rts2ValueVector::iterator iter = values.begin ();
+  for (Rts2CondValueVector::iterator iter = values.begin ();
        iter != values.end (); iter++)
     {
-      Rts2Value *val = *iter;
+      Rts2Value *val = (*iter)->getValue ();
       int ret;
       ret = val->sendInfo (conn);
       if (ret)
@@ -516,10 +538,10 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	  return -1;
 	}
     }
-  for (Rts2ValueVector::iterator iter = values.begin ();
+  for (Rts2CondValueVector::iterator iter = values.begin ();
        iter != values.end (); iter++)
     {
-      Rts2Value *val = *iter;
+      Rts2Value *val = (*iter)->getValue ();
       int ret;
       ret = val->sendMetaInfo (conn);
       if (ret < 0)
@@ -538,7 +560,8 @@ Rts2Daemon::setValue (Rts2Conn * conn)
   int ret;
   if (conn->paramNextString (&v_name) || conn->paramNextString (&op))
     return -2;
-  Rts2Value *old_value = getValue (v_name);
+  Rts2CondValue *old_value_cond = getValue (v_name);
+  Rts2Value *old_value = old_value_cond->getValue ();
   if (!old_value)
     return -2;
   Rts2Value *newValue;
@@ -589,17 +612,19 @@ Rts2Daemon::setValue (Rts2Conn * conn)
     }
   ret = newValue->setValue (conn);
   if (ret)
-    return ret;
-  ret = newValue->doOpValue (*op, old_value);
-  if (ret)
-    return ret;
+    goto err;
 
-  // call hook
-  ret = setValue (old_value, newValue);
-  if (ret)
-    return ret;
+  // que change if that's necessary
+  if (queValueChange (old_value_cond))
+    {
+      queValues.push_back (new Rts2ValueQue (old_value_cond, *op, newValue));
+      conn->sendCommandEnd (DEVDEM_I_QUED, "value change was qued");
+      return -1;
+    }
 
-  // set value after sucessfull return..
-  old_value->setFromValue (newValue);
-  return 0;
+  return setValue (old_value, *op, newValue);
+
+err:
+  delete newValue;
+  return ret;
 }

@@ -674,12 +674,42 @@ Rts2Device::createClientConnection (Rts2Address * in_addres)
 void
 Rts2Device::setState (int new_state, char *description)
 {
+  int ret;
   // state was set..do not set it again
   if (state == new_state)
     {
       return;
     }
   state = new_state;
+  // try to wake-up qued changes..
+  for (Rts2ValueQueVector::iterator iter = queValues.begin ();
+       iter != queValues.end ();)
+    {
+      Rts2ValueQue *queVal = *iter;
+      // free qued values
+      if (!queValueChange (queVal->getCondValue ()))
+	{
+	  std::string newValStr =
+	    std::string (queVal->getNewValue ()->getValue ());
+	  ret =
+	    setValue (queVal->getOldValue (), queVal->getOperation (),
+		      queVal->getNewValue ());
+	  if (ret)
+	    logStream (MESSAGE_ERROR) << "cannot set qued value " << queVal->
+	      getOldValue ()->getName () << " with operation " << queVal->
+	      getOperation () << " and new value value " << newValStr <<
+	      sendLog;
+	  else
+	    logStream (MESSAGE_DEBUG) << "change value of' " << queVal->
+	      getOldValue ()->getName () << "' from que" << sendLog;
+	  delete queVal;
+	  iter = queValues.erase (iter);
+	}
+      else
+	{
+	  iter++;
+	}
+    }
   sendStatusMessage (state);
 }
 

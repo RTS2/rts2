@@ -33,14 +33,11 @@ Rts2App (in_argc, in_argv)
 
 Rts2Block::~Rts2Block (void)
 {
-  connections_t::iterator iter;
-  connections_t::iterator iter_tpm;
-  for (iter = connections.begin (); iter != connections.end ();)
+  for (connections_t::iterator iter = connections.begin ();
+       iter != connections.end ();)
     {
       Rts2Conn *conn = *iter;
-      iter_tpm = iter;
-      iter++;
-      connections.erase (iter_tpm);
+      iter = connections.erase (iter);
       delete conn;
     }
   connections.clear ();
@@ -247,10 +244,12 @@ Rts2Block::selectSuccess (fd_set * read_set)
 	  // delete connection only when it really requested to be deleted..
 	  if (!ret)
 	    {
-	      connections_t::iterator del_iter = iter;
-	      iter++;
-	      connections.erase (del_iter);
+	      iter = connections.erase (iter);
 	      delete conn;
+	    }
+	  else
+	    {
+	      iter++;
 	    }
 	}
       else

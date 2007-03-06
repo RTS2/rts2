@@ -23,7 +23,7 @@ private:
   void addConnectionSock (int in_sock);
   int lockf;
 
-  Rts2ValueVector values;
+  Rts2CondValueVector values;
   // values which do not change, they are send only once at connection
   // initialization
   Rts2ValueVector constValues;
@@ -38,14 +38,16 @@ private:
    *
    * \param value Rts2Value which will be added.
    */
-  void addValue (Rts2Value * value);
-  Rts2Value *getValue (const char *v_name);
+  void addValue (Rts2Value * value, int queCondition = 0);
+  Rts2CondValue *getValue (const char *v_name);
 protected:
   int checkLockFile (const char *lock_fname);
   int doDeamonize ();
   int lockFile ();
   virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
+
+  Rts2ValueQueVector queValues;
 
   /**
    * Create new value, and return pointer to it.
@@ -57,10 +59,11 @@ protected:
    */
     template < typename T > void createValue (T * &val, char *in_val_name,
 					      std::string in_description,
-					      bool writeToFits = true)
+					      bool writeToFits =
+					      true, int queCondition = 0)
   {
     val = new T (in_val_name, in_description, writeToFits);
-    addValue (val);
+    addValue (val, queCondition);
   }
   /**
    * Create new constant value, and return pointer to it.
@@ -94,6 +97,7 @@ protected:
    * \return 0 when we can set value, -2 on error, 
    */
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+  int setValue (Rts2Value * old_value, char op, Rts2Value * new_value);
 
   /**
    * Returns whenever value change with old_value needs to be qued or

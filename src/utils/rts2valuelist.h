@@ -29,12 +29,10 @@ public:
 /**
  * Holds state condition for value.
  */
-class
-  Rts2CondValue
+class Rts2CondValue
 {
 private:
-  Rts2Value *
-    value;
+  Rts2Value * value;
   int
     stateCondtion;
 public:
@@ -43,16 +41,18 @@ public:
     value = in_value;
     stateCondtion = in_stateCondtion;
   }
-  ~
-  Rts2CondValue (void)
+  ~Rts2CondValue (void)
   {
-    delete
-      value;
+    delete value;
   }
   int
   getStateCondition ()
   {
     return stateCondtion;
+  }
+  bool queValueChange (int state)
+  {
+    return (getStateCondition () & state);
   }
   Rts2Value *
   getValue ()
@@ -61,22 +61,87 @@ public:
   }
 };
 
-class
-  Rts2CondValueVector:
-  public
-  std::vector <
-Rts2CondValue * >
+class Rts2CondValueVector:
+public std::vector < Rts2CondValue * >
 {
 public:
   Rts2CondValueVector ()
   {
 
   }
-  ~
-  Rts2CondValueVector (void)
+  ~Rts2CondValueVector (void)
   {
     for (Rts2CondValueVector::iterator iter = begin (); iter != end ();
 	 iter++)
+      delete *
+	iter;
+  }
+};
+
+/**
+ * Holds value changes which cannot be handled by device immediately.
+ */
+class Rts2ValueQue
+{
+private:
+  char
+    operation;
+  Rts2CondValue *
+    old_value;
+  Rts2Value *
+    new_value;
+public:
+  Rts2ValueQue (Rts2CondValue * in_old_value, char in_operation,
+		Rts2Value * in_new_value)
+  {
+    old_value = in_old_value;
+    operation = in_operation;
+    new_value = in_new_value;
+  }
+  ~Rts2ValueQue (void)
+  {
+  }
+  int
+  getStateCondition ()
+  {
+    return old_value->getStateCondition ();
+  }
+  bool queValueChange (int state)
+  {
+    return (getStateCondition () & state);
+  }
+  Rts2CondValue *
+  getCondValue ()
+  {
+    return old_value;
+  }
+  Rts2Value *
+  getOldValue ()
+  {
+    return old_value->getValue ();
+  }
+  char
+  getOperation ()
+  {
+    return operation;
+  }
+  Rts2Value *
+  getNewValue ()
+  {
+    return new_value;
+  }
+};
+
+class Rts2ValueQueVector:
+public std::vector < Rts2ValueQue * >
+{
+public:
+  Rts2ValueQueVector ()
+  {
+  }
+  ~Rts2ValueQueVector (void)
+  {
+    for (Rts2ValueQueVector::iterator iter = begin (); iter != end (); iter++)
       delete *
 	iter;
   }

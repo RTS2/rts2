@@ -148,7 +148,7 @@ protected:
 
   virtual bool queValueChange (Rts2CondValue * old_value)
   {
-    return (old_value->getStateCondition () & getState ());
+    return old_value->queValueChange (getState ());
   }
 public:
     Rts2Device (int in_argc, char **in_argv, int in_device_type,
