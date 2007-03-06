@@ -229,7 +229,7 @@ Rts2NSelWindow::injectKey (int key)
       break;
     case KEY_UP:
       if (selrow == -1)
-	selrow = (maxrow - 1);
+	selrow = (maxrow - 2);
       else if (selrow > 0)
 	selrow--;
       else
@@ -273,6 +273,8 @@ Rts2NSelWindow::refresh ()
   int x, y;
   int w, h;
   getmaxyx (scrolpad, h, w);
+  if (selrow >= maxrow)
+    selrow = maxrow - 1;
   if (maxrow > 0)
     {
       if (selrow >= 0)
