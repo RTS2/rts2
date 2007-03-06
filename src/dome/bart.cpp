@@ -693,7 +693,7 @@ Rts2DevDomeBart::cloudMeasureAll ()
   fprintf (mrak2_log,
 	   "%li - G %i;S45 %i;S90 %i;S135 %i;Temp %.1f;Hum %.0f;Rain %i\n",
 	   (long int) now, ground, s45, s90, s135, getTemperature (),
-	   humidity, rain);
+	   getHumidity (), getRain ());
   setCloud (s90 - ground);
   fflush (mrak2_log);
   return 0;
@@ -709,7 +709,7 @@ Rts2DevDomeBart::checkCloud ()
   if (now < nextCloudMeas)
     return;
 
-  if (rain)
+  if (getRain ())
     {
       fprintf (mrak2_log,
 	       "%li - G nan;S45 nan;S90 nan;S135 nan;Temp %.1f;Hum %.0f;Rain %i\n",
