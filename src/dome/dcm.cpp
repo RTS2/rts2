@@ -81,6 +81,8 @@ Rts2ConnDcm::receive (fd_set * set)
   int data_size = 0;
   struct tm statDate;
   float temp;
+  float tmp_humidity;
+  int tmp_rain;
   float humidity;
 
   int sw1, sw2, sw3, sw4;
@@ -112,8 +114,8 @@ Rts2ConnDcm::receive (fd_set * set)
 		"%s %i-%u-%u %u:%u:%f %f %f %i %i %i %i %i %s",
 		dome_name, &statDate.tm_year, &statDate.tm_mon,
 		&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
-		&sec_f, &temp, &humidity, &rain, &sw1, &sw2, &sw3, &sw4,
-		Wstatus);
+		&sec_f, &temp, &tmp_humidity, &tmp_rain, &sw1, &sw2, &sw3,
+		&sw4, Wstatus);
       if (ret != 15)
 	{
 	  logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret
@@ -130,15 +132,15 @@ Rts2ConnDcm::receive (fd_set * set)
       if (strcmp (Wstatus, "ok"))
 	{
 	  // if sensors doesn't work, switch rain on
-	  rain = 1;
+	  tmp_rain = 1;
 	}
       // log only rain messages..they are interesting
-      if (rain)
-	logStream (MESSAGE_DEBUG) << "rain: " << rain << "  date: " <<
+      if (tmp_rain)
+	logStream (MESSAGE_DEBUG) << "rain: " << tmp_rain << "  date: " <<
 	  lastWeatherStatus << " status: " << Wstatus << sendLog;
       master->setTemperature (temp);
-      master->setHumidity (humidity);
-      master->setRain (rain);
+      master->setHumidity (tmp_humidity);
+      master->setRain (tmp_rain);
       master->setSwState ((sw1 << 3) | (sw2 << 2) | (sw3 << 1) | (sw4));
       if (sw1 && sw2)
 	{
