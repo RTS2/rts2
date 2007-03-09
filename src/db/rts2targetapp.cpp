@@ -38,13 +38,15 @@ Rts2TargetApp::askForDegrees (const char *desc, double &val)
 }
 
 int
-Rts2TargetApp::askForObject (const char *desc)
+Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
 {
-  std::string obj_text ("");
   int ret;
-  ret = askForString (desc, obj_text);
-  if (ret)
-    return ret;
+  if (obj_text.length () == 0)
+    {
+      ret = askForString (desc, obj_text);
+      if (ret)
+	return ret;
+    }
   std::istringstream is (obj_text);
   // now try to parse it to ra dec..
   double ra = 0;

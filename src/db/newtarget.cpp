@@ -15,11 +15,20 @@
 
 class Rts2NewTarget:public Rts2TargetApp
 {
-public:
-  Rts2NewTarget (int in_argc, char **in_argv);
-    virtual ~ Rts2NewTarget (void);
+private:
+  int n_tar_id;
+  const char *n_tar_name;
+  const char *n_tar_ra_dec;
+
+  int saveTarget ();
+protected:
+    virtual void help ();
 
   virtual int processOption (int in_opt);
+  virtual int processArgs (const char *arg);
+public:
+    Rts2NewTarget (int in_argc, char **in_argv);
+    virtual ~ Rts2NewTarget (void);
 
   virtual int run ();
 };
@@ -28,12 +37,27 @@ public:
 Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):
 Rts2TargetApp (in_argc, in_argv)
 {
+  n_tar_id = INT_MIN;
+  n_tar_name = NULL;
+  n_tar_ra_dec = NULL;
 }
 
 Rts2NewTarget::~Rts2NewTarget (void)
 {
 }
 
+void
+Rts2NewTarget::help ()
+{
+  Rts2TargetApp::help ();
+  std::cout
+    <<
+    "You can specify target on command line. Arguments must be in following order:"
+    << std::endl << "  <target_id> <target_name> <target ra + dec>" << std::
+    endl <<
+    "If you specify them, you will be quired only if there exists target within 10' from target"
+    << std::endl << "which you specified" << std::endl;
+}
 
 int
 Rts2NewTarget::processOption (int in_opt)
@@ -47,18 +71,105 @@ Rts2NewTarget::processOption (int in_opt)
 }
 
 int
+Rts2NewTarget::processArgs (const char *arg)
+{
+  if (n_tar_id == INT_MIN)
+    n_tar_id = atoi (arg);
+  else if (n_tar_name == NULL)
+    n_tar_name = arg;
+  else if (n_tar_ra_dec == NULL)
+    n_tar_ra_dec = arg;
+  else
+    return -1;
+  return 0;
+}
+
+int
+Rts2NewTarget::saveTarget ()
+{
+  std::string target_name;
+  int ret;
+
+  if (n_tar_id == INT_MIN)
+    askForInt ("Target ID", n_tar_id);
+  // create target if we don't create it..
+  if (n_tar_name == NULL)
+    {
+      target_name = target->getTargetName ();
+      askForString ("Target NAME", target_name);
+    }
+  else
+    {
+      target_name = std::string (n_tar_name);
+    }
+  target->setTargetName (target_name.c_str ());
+
+  target->setTargetType (TYPE_OPORTUNITY);
+  if (n_tar_id != INT_MIN)
+    ret = target->save (false, n_tar_id);
+  else
+    ret = target->save (false);
+
+  if (ret)
+    {
+      if (askForBoolean
+	  ("Target with given ID already exists. Do you want to overwrite it?",
+	   false))
+	{
+	  if (n_tar_id != INT_MIN)
+	    ret = target->save (true, n_tar_id);
+	  else
+	    ret = target->save (true);
+	}
+      else
+	{
+	  std::cout << "No target created, exiting." << std::endl;
+	  return -1;
+	}
+    }
+
+  std::cout << *target;
+
+  if (ret)
+    {
+      std::cerr << "Error when saving target." << std::endl;
+    }
+  return ret;
+}
+
+int
 Rts2NewTarget::run ()
 {
   // 10 arcmin default radius
   static double radius = 10.0 / 60.0;
-  int n_tar_id = 0;
   int ret;
-  std::string target_name;
-  // ask for target ID..
-  std::cout << "Default values are written at [].." << std::endl;
-  ret = askForObject ("Target name, RA&DEC or anything else");
+  // ask for target name..
+  if (n_tar_ra_dec == NULL)
+    {
+      if (n_tar_name == NULL)
+	{
+	  std::cout << "Default values are written at [].." << std::endl;
+	  ret = askForObject ("Target name, RA&DEC or anything else");
+	}
+      else
+	{
+	  ret =
+	    askForObject ("Target name, RA&DEC or anything else",
+			  std::string (n_tar_name));
+	}
+    }
+  else
+    {
+      ret =
+	askForObject ("Target, RA&DEC or anything else",
+		      std::string (n_tar_ra_dec));
+    }
   if (ret)
     return ret;
+
+  if (n_tar_id != INT_MIN)
+    return saveTarget ();
+
   Rts2AskChoice selection = Rts2AskChoice (this);
   selection.addChoice ('s', "Save");
   selection.addChoice ('q', "Quit");
@@ -69,10 +180,10 @@ Rts2NewTarget::run ()
     {
       char sel_ret;
       sel_ret = selection.query (std::cout);
-      if (sel_ret == 's')
-	break;
       switch (sel_ret)
 	{
+	case 's':
+	  return saveTarget ();
 	case 'q':
 	  return 0;
 	case 'o':
@@ -83,26 +194,11 @@ Rts2NewTarget::run ()
 	  askForDegrees ("Radius", radius);
 	  target->printTargets (radius, std::cout);
 	  break;
+	default:
+	  std::cerr << "Unknow key pressed: " << sel_ret << std::endl;
+	  return -1;
 	}
     }
-  askForInt ("Target ID", n_tar_id);
-  target_name = target->getTargetName ();
-  askForString ("Target NAME", target_name);
-  target->setTargetName (target_name.c_str ());
-
-  target->setTargetType (TYPE_OPORTUNITY);
-  if (n_tar_id > 0)
-    ret = target->save (n_tar_id);
-  else
-    ret = target->save ();
-
-  std::cout << *target;
-
-  if (ret)
-    {
-      std::cerr << "Error when saving target." << std::endl;
-    }
-  return ret;
 }
 
 int
