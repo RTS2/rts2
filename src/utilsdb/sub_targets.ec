@@ -59,7 +59,7 @@ ConstTarget::load ()
 }
 
 int
-ConstTarget::save (int tar_id)
+ConstTarget::save (bool overwrite, int tar_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   double d_tar_ra;
@@ -69,7 +69,7 @@ ConstTarget::save (int tar_id)
 
   int ret;
 
-  ret = Target::save (tar_id);
+  ret = Target::save (overwrite, tar_id);
   if (ret)
     return ret;
 
