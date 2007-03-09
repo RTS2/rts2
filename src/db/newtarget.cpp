@@ -19,6 +19,7 @@ private:
   int n_tar_id;
   const char *n_tar_name;
   const char *n_tar_ra_dec;
+  double radius;
 
   int saveTarget ();
 protected:
@@ -40,6 +41,9 @@ Rts2TargetApp (in_argc, in_argv)
   n_tar_id = INT_MIN;
   n_tar_name = NULL;
   n_tar_ra_dec = NULL;
+  radius = nan ("f");
+  addOption ('r', "radius", 2,
+	     "Input radius - before entering target, databse will be checked if it does not contain target within r degrees from new target, and if it does, it will ofer creating new target or forgeting about it");
 }
 
 Rts2NewTarget::~Rts2NewTarget (void)
@@ -64,8 +68,14 @@ Rts2NewTarget::processOption (int in_opt)
 {
   switch (in_opt)
     {
+    case 'r':
+      if (optarg)
+	radius = atof (optarg);
+      else
+	radius = 1.0 / 60.0;
+      break;
     default:
-      return Rts2AppDb::processOption (in_opt);
+      return Rts2TargetApp::processOption (in_opt);
     }
   return 0;
 }
@@ -105,6 +115,31 @@ Rts2NewTarget::saveTarget ()
   target->setTargetName (target_name.c_str ());
 
   target->setTargetType (TYPE_OPORTUNITY);
+
+  if (!isnan (radius))
+    {
+      Rts2TargetSet tarset = target->getTargets (radius);
+      if (tarset.size () == 0)
+	{
+	  std::
+	    cout << "No targets were found within " << LibnovaDegDist (radius)
+	    << " from entered target." << std::cout;
+	}
+      else
+	{
+	  std::
+	    cout << "Following targets were found within " <<
+	    LibnovaDegDist (radius) << " from entered target:" << std::
+	    endl << tarset << std::endl;
+	  if (askForBoolean ("Would you like to enter target anyway?", false)
+	      == false)
+	    {
+	      std::cout << "No target created, exiting." << std::endl;
+	      return -1;
+	    }
+	}
+    }
+
   if (n_tar_id != INT_MIN)
     ret = target->save (false, n_tar_id);
   else
@@ -140,8 +175,9 @@ Rts2NewTarget::saveTarget ()
 int
 Rts2NewTarget::run ()
 {
-  // 10 arcmin default radius
-  static double radius = 10.0 / 60.0;
+  double t_radius = 10.0 / 60.0;
+  if (!isnan (radius))
+    t_radius = radius;
   int ret;
   // ask for target name..
   if (n_tar_ra_dec == NULL)
@@ -187,12 +223,12 @@ Rts2NewTarget::run ()
 	case 'q':
 	  return 0;
 	case 'o':
-	  askForDegrees ("Radius", radius);
-	  target->printObservations (radius, std::cout);
+	  askForDegrees ("Radius", t_radius);
+	  target->printObservations (t_radius, std::cout);
 	  break;
 	case 't':
-	  askForDegrees ("Radius", radius);
-	  target->printTargets (radius, std::cout);
+	  askForDegrees ("Radius", t_radius);
+	  target->printTargets (t_radius, std::cout);
 	  break;
 	default:
 	  std::cerr << "Unknow key pressed: " << sel_ret << std::endl;
