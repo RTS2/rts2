@@ -42,8 +42,7 @@ Rts2TargetApp (in_argc, in_argv)
   n_tar_name = NULL;
   n_tar_ra_dec = NULL;
   radius = nan ("f");
-  addOption ('r', "radius", 2,
-	     "Input radius - before entering target, databse will be checked if it does not contain target within r degrees from new target, and if it does, it will ofer creating new target or forgeting about it");
+  addOption ('r', "radius", 2, "radius for target checks");
 }
 
 Rts2NewTarget::~Rts2NewTarget (void)
