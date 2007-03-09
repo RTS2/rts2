@@ -2,6 +2,7 @@
 #include "target.h"
 #include "target_auger.h"
 #include "rts2targetplanet.h"
+#include "rts2targetgrb.h"
 #include "rts2obs.h"
 #include "rts2obsset.h"
 #include "rts2targetset.h"
@@ -422,7 +423,7 @@ Target::loadTarget (int in_tar_id)
 }
 
 int
-Target::save ()
+Target::save (bool overwrite)
 {
   EXEC SQL BEGIN DECLARE SECTION;
   int db_new_id = getTargetID ();
@@ -443,11 +444,11 @@ Target::save ()
     }
   }
 
-  return save (db_new_id);
+  return save (overwrite, db_new_id);
 }
 
 int
-Target::save (int tar_id)
+Target::save (bool overwrite, int tar_id)
 {
   // first, try an update..
   EXEC SQL BEGIN DECLARE SECTION;
@@ -537,6 +538,11 @@ Target::save (int tar_id)
   if (sqlca.sqlcode)
   {
     EXEC SQL ROLLBACK;
+
+    if (!overwrite)
+    {
+
+    }
 
     EXEC SQL
     UPDATE

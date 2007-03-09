@@ -2,6 +2,8 @@
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 
+#include "rts2targetgrb.h"
+
 #include <sstream>
 
 void
@@ -199,14 +201,14 @@ Rts2TargetSet::setTargetScript (const char *device_name, const char *script)
 }
 
 int
-Rts2TargetSet::save ()
+Rts2TargetSet::save (bool overwrite)
 {
   int ret = 0;
   int ret_s;
   
   for (iterator iter = begin (); iter != end (); iter++)
   {
-    ret_s = (*iter)->save ();
+    ret_s = (*iter)->save (overwrite);
     if (ret_s)
       ret--;
   }
