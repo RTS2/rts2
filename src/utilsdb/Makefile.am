@@ -2,7 +2,7 @@
 
 noinst_HEADERS = rts2devicedb.h target.h rts2appdb.h rts2sqlcolumn.h rts2obs.h rts2obsset.h \
 	rts2taruser.h rts2count.h rts2imgset.h rts2targetset.h rts2plan.h rts2planset.h rts2prop.h \
-	rts2camlist.h target_auger.h rts2messagedb.h rts2targetplanet.h rts2targetgrb.h
+	rts2camlist.h target_auger.h rts2messagedb.h rts2targetplanet.h rts2targetgrb.h scriptcommands.h
 
 EXTRA_DIST = rts2devicedb.ec target.ec sub_targets.ec rts2appdb.ec airmasscale.ec rts2sqlcolumn.ec rts2obs.ec \
 	rts2obsset.ec rts2taruser.ec rts2count.ec rts2imgset.ec rts2targetset.ec rts2plan.ec rts2planset.ec rts2prop.ec \

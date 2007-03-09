@@ -16,6 +16,8 @@
 #include "rts2taruser.h"
 #include "rts2targetset.h"
 
+#include "scriptcommands.h"
+
 #define MAX_READOUT_TIME		120
 #define PHOT_TIMEOUT			10
 #define EXPOSURE_TIMEOUT		50
@@ -51,35 +53,6 @@
 
 // master plan target
 #define TYPE_PLAN		'p'
-
-#define COMMAND_EXPOSURE	"E"
-#define COMMAND_DARK		"D"
-#define COMMAND_FILTER		"F"
-#define COMMAND_FOCUSING	'O'
-#define COMMAND_CHANGE		"C"
-#define COMMAND_BINNING		"BIN"
-#define COMMAND_BOX		"BOX"
-#define COMMAND_CENTER		"CENTER"
-// must be paired with COMMAND_CHANGE
-#define COMMAND_WAIT		"W"
-#define COMMAND_ACQUIRE		"A"
-#define COMMAND_WAIT_ACQUIRE	"Aw"
-#define COMMAND_MIRROR_MOVE	"M"
-#define COMMAND_PHOTOMETER	"P"
-#define COMMAND_STAR_SEARCH	"star"
-#define COMMAND_PHOT_SEARCH	"PS"
-#define COMMAND_BLOCK_WAITSIG   "block_waitsig"
-#define COMMAND_GUIDING		"guiding"
-#define COMMAND_BLOCK_ACQ	"ifacq"
-#define COMMAND_BLOCK_ELSE	"else"
-#define COMMAND_BLOCK_FOR	"for"
-
-// HAM acqusition - only on FRAM telescope
-#define COMMAND_HAM		"HAM"
-
-// signal handling..
-#define COMMAND_SEND_SIGNAL	"SS"
-#define COMMAND_WAIT_SIGNAL	"SW"
 
 #define TARGET_DARK		1
 #define TARGET_FLAT		2
