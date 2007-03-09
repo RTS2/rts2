@@ -541,7 +541,7 @@ Target::save (bool overwrite, int tar_id)
 
     if (!overwrite)
     {
-
+      return -1;
     }
 
     EXEC SQL
