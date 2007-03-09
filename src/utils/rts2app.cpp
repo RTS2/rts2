@@ -206,7 +206,12 @@ Rts2App::askForInt (const char *desc, int &val)
   char temp[200];
   while (1)
     {
-      std::cout << desc << " [" << val << "]: ";
+      std::cout << desc << " [";
+      if (val == INT_MIN)
+	std::cout << " new id ";
+      else
+	std::cout << val;
+      std::cout << "]: ";
       std::cin.getline (temp, 200);
       std::string str_val (temp);
       if (str_val.empty ())
@@ -266,6 +271,39 @@ Rts2App::askForString (const char *desc, std::string & val)
     }
   std::cout << desc << ": " << val << std::endl;
   return 0;
+}
+
+bool Rts2App::askForBoolean (const char *desc, bool val)
+{
+  char
+    temp[20];
+  while (1)
+    {
+      std::cout << desc << " (y/n) [" << (val ? "y" : "n") << "]: ";
+      std::cin.getline (temp, 20);
+      // use default value
+      if (strlen (temp) == 0)
+	break;
+      switch (*temp)
+	{
+	case 'Y':
+	case 'y':
+	  val = true;
+	  break;
+	case 'N':
+	case 'n':
+	  val = false;
+	  break;
+	default:
+	  std::cout << "Invalid string!" << std::endl;
+	  std::cin.clear ();
+	  std::cin.ignore (2000, '\n');
+	  continue;
+	}
+      break;
+    }
+  std::cout << desc << ": " << (val ? "y" : "n") << std::endl;
+  return val;
 }
 
 int

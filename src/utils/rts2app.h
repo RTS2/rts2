@@ -34,6 +34,7 @@ protected:
   int askForInt (const char *desc, int &val);
   int askForDouble (const char *desc, double &val);
   int askForString (const char *desc, std::string & val);
+  bool askForBoolean (const char *desc, bool val);
 
   virtual void help ();
 
