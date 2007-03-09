@@ -55,8 +55,8 @@ Rts2NewTarget::help ()
     "You can specify target on command line. Arguments must be in following order:"
     << std::endl << "  <target_id> <target_name> <target ra + dec>" << std::
     endl <<
-    "If you specify them, you will be quired only if there exists target within 10' from target"
-    << std::endl << "which you specified" << std::endl;
+    "If you specify them, you will be quired only if there exists target within 10' from target which you specified"
+    << std::endl;
 }
 
 int
