@@ -1524,13 +1524,24 @@ Target::printObservations (double radius, double JD, std::ostream &_os)
   return obsset.size ();
 }
 
-int
-Target::printTargets (double radius, double JD, std::ostream &_os)
+Rts2TargetSet Target::getTargets (double radius)
+{
+  return getTargets (radius, ln_get_julian_from_sys ());
+}
+
+Rts2TargetSet Target::getTargets (double radius, double JD)
 {
   struct ln_equ_posn tar_pos;
   getPosition (&tar_pos, JD);
   
   Rts2TargetSet tarset = Rts2TargetSet (&tar_pos, radius);
+  return tarset;
+}
+
+int
+Target::printTargets (double radius, double JD, std::ostream &_os)
+{
+  Rts2TargetSet tarset = getTargets (radius, JD);
   _os << tarset;
 
   return tarset.size ();

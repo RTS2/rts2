@@ -630,6 +630,9 @@ public:
 
   int printObservations (double radius, double JD, std::ostream & _os);
 
+  Rts2TargetSet getTargets (double radius);
+  Rts2TargetSet getTargets (double radius, double JD);
+
   int printTargets (double radius, std::ostream & _os)
   {
     return printTargets (radius, ln_get_julian_from_sys (), _os);
