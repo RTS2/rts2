@@ -197,7 +197,7 @@ Rts2TargetApp::runInteractive ()
 	case 'q':
 	  return 0;
 	case 's':
-	  return target_set->save ();
+	  return target_set->save (true);
 	}
     }
 }
@@ -243,7 +243,7 @@ Rts2TargetApp::run ()
       return runInteractive ();
     }
 
-  return target_set->save ();
+  return target_set->save (true);
 }
 
 int
