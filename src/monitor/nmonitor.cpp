@@ -202,6 +202,8 @@ Rts2Client (in_argc, in_argv)
   msgBox = NULL;
   cmd_col = 0;
 
+  oldCommand = NULL;
+
   colorsOff = false;
 
   old_lines = 0;
@@ -459,7 +461,8 @@ Rts2NMonitor::processKey (int key)
       Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
       comWindow->getWinString (command, curX);
       command[curX] = '\0';
-      conn->queCommand (new Rts2Command (this, command));
+      oldCommand = new Rts2Command (this, command);
+      conn->queCommand (oldCommand);
       comWindow->clear ();
       comWindow->printCommand (command);
       wmove (comWindow->getWriteWindow (), 0, 0);
@@ -469,7 +472,8 @@ Rts2NMonitor::processKey (int key)
 void
 Rts2NMonitor::commandReturn (Rts2Command * cmd, int cmd_status)
 {
-  comWindow->commandReturn (cmd, cmd_status);
+  if (oldCommand == cmd)
+    comWindow->commandReturn (cmd, cmd_status);
 }
 
 Rts2NMonitor *monitor = NULL;

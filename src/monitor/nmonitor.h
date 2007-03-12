@@ -67,6 +67,8 @@ private:
 
   Rts2NStatusWindow *statusWindow;
 
+  Rts2Command *oldCommand;
+
     std::list < Rts2NWindow * >windowStack;
 
   int cmd_col;
