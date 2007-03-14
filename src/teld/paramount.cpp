@@ -112,6 +112,8 @@ private:
   char *device_name;
   char *paramount_cfg;
 
+  bool setIndices;
+
   int ret0;
   int ret1;
 
@@ -459,7 +461,9 @@ Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
   // gets the limits
   ret = updateLimits ();
   if (ret)
-    return -1;
+    {
+      return -1;
+    }
 
   // purpose of following code is to get from west side of flip
   // on S, we prefer negative values
@@ -591,6 +595,8 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
   park_axis[0] = PARK_AXIS0;
   park_axis[1] = PARK_AXIS1;
 
+  setIndices = false;
+
   device_name = "/dev/ttyS0";
   paramount_cfg = "/etc/rts2/paramount.cfg";
   addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
@@ -598,6 +604,8 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
 	     "paramount config file (default /etc/rts2/paramount.cfg");
   addOption ('R', "recalculate", 1,
 	     "track update interval in sec; < 0 to disable track updates; defaults to 1 sec");
+  addOption ('s', "set indices", 0,
+	     "if we need to load indices as first operation");
 
   addOption ('D', "dec_park", 1, "DEC park position");
   // in degrees! 30 for south, -30 for north hemisphere 
@@ -704,6 +712,9 @@ Rts2DevTelParamount::processOption (int in_opt)
       track_recalculate.tv_usec =
 	(int) ((rec_sec - track_recalculate.tv_sec) * USEC_SEC);
       break;
+    case 's':
+      setIndices = true;
+      break;
     case 'D':
       park_axis[1] = atoi (optarg);
       break;
@@ -747,6 +758,13 @@ Rts2DevTelParamount::init ()
   ret = updateLimits ();
   if (ret)
     return -1;
+
+  if (setIndices)
+    {
+      ret = loadModel ();
+      if (ret)
+	return -1;
+    }
 
   moveState = TEL_SLEW;
 
@@ -1241,7 +1259,11 @@ Rts2DevTelParamount::loadModel ()
 		  // found value
 		  ret = (*iter).readAxis (is, *used_axe);
 		  if (ret)
-		    return -1;
+		    {
+		      logStream (MESSAGE_ERROR) << "Error setting value for "
+			<< name << ", ret: " << ret << sendLog;
+		      return -1;
+		    }
 		  is.ignore (2000, is.widen ('\n'));
 		}
 	    }
