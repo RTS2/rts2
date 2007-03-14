@@ -133,6 +133,8 @@ private:
   int checkRet ();
   int updateStatus ();
 
+  int loadModelFromFile ();
+
     std::vector < ParaVal > paramountValues;
 
   int saveAxis (std::ostream & os, const MKS3Id & axis);
@@ -1201,7 +1203,7 @@ Rts2DevTelParamount::saveModel ()
 }
 
 int
-Rts2DevTelParamount::loadModel ()
+Rts2DevTelParamount::loadModelFromFile ()
 {
   std::string name;
   std::ifstream is (paramount_cfg);
@@ -1243,7 +1245,7 @@ Rts2DevTelParamount::loadModel ()
 	      std::string name_ap;
 	      is >> name_ap;
 	      if (is.fail ())
-		return -1;
+		return 0;
 	      name = name + std::string (" ") + name_ap;
 	    }
 	  name = name.substr (0, name.size () - 1);
@@ -1269,15 +1271,26 @@ Rts2DevTelParamount::loadModel ()
 	    }
 	}
     }
+  return 0;
+}
+
+int
+Rts2DevTelParamount::loadModel ()
+{
+  int ret;
+  ret = loadModelFromFile ();
+  if (ret)
+    return ret;
+
   ret0 = MKS3ConstsStore (axis0);
   ret1 = MKS3ConstsStore (axis1);
-  ret = checkRetAxis ();
+  ret = checkRet ();
   if (ret)
     return -1;
 
   ret0 = MKS3ConstsReload (axis0);
   ret1 = MKS3ConstsReload (axis1);
-  ret = checkRetAxis ();
+  ret = checkRet ();
   if (ret)
     return -1;
   return 0;
