@@ -1269,6 +1269,17 @@ Rts2DevTelParamount::loadModel ()
 	    }
 	}
     }
+  ret0 = MKS3ConstsStore (axis0);
+  ret1 = MKS3ConstsStore (axis1);
+  ret = checkRetAxis ();
+  if (ret)
+    return -1;
+
+  ret0 = MKS3ConstsReload (axis0);
+  ret1 = MKS3ConstsReload (axis1);
+  ret = checkRetAxis ();
+  if (ret)
+    return -1;
   return 0;
 }
 
