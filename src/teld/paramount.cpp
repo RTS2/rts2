@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <fcntl.h>
 
 #define TEL_SLEW		0x00
 #define TEL_FORCED_HOMING0	0x01
@@ -134,6 +135,8 @@ private:
   int updateStatus ();
 
   int loadModelFromFile ();
+
+  int saveFlash ();
 
     std::vector < ParaVal > paramountValues;
 
@@ -606,7 +609,7 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTe
 	     "paramount config file (default /etc/rts2/paramount.cfg");
   addOption ('R', "recalculate", 1,
 	     "track update interval in sec; < 0 to disable track updates; defaults to 1 sec");
-  addOption ('s', "set indices", 0,
+  addOption ('t', "set indices", 0,
 	     "if we need to load indices as first operation");
 
   addOption ('D', "dec_park", 1, "DEC park position");
@@ -714,7 +717,7 @@ Rts2DevTelParamount::processOption (int in_opt)
       track_recalculate.tv_usec =
 	(int) ((rec_sec - track_recalculate.tv_sec) * USEC_SEC);
       break;
-    case 's':
+    case 't':
       setIndices = true;
       break;
     case 'D':
@@ -1185,6 +1188,17 @@ Rts2DevTelParamount::correct (double cor_ra, double cor_dec, double real_ra,
 }
 
 int
+Rts2DevTelParamount::saveFlash ()
+{
+  CWORD16 data[4000];
+  int file = open ("/etc/rts2/flash", O_CREAT | O_TRUNC);
+  MKS3UserSpaceRead (axis0, 0, 4000, data);
+  write (file, data, 4000 * sizeof (CWORD16));
+  close (file);
+  return 0;
+}
+
+int
 Rts2DevTelParamount::saveModel ()
 {
   // dump Paramount stuff
@@ -1278,6 +1292,7 @@ int
 Rts2DevTelParamount::loadModel ()
 {
   int ret;
+
   ret = loadModelFromFile ();
   if (ret)
     return ret;
