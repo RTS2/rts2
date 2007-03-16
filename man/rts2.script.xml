@@ -48,14 +48,23 @@
       Scripting is used to command variours devices which can be found in RTS2 setup.
     </para>
 
+    <para>
+      Script can contains block, enclosed in curved brackets ({}).
+      Those block ussually cames after for, if and similar commands.
+    </para>
+
   </refsect1>
   <refsect1>
     <title>COMMANDS</title>
 
-    <para> Commands are separated by arbitary number of spaces.
-    Parameters are in following description enclosed in {curved
-    brackets}, explanation of their meaning is given in text.
-    Numerical values are entered in standard decimal notation.</para>
+    <para>
+      Commands are separated by arbitary number of spaces.  As
+      notation, parameters are in following description enclosed in
+      {curved brackets}, explanation of their meaning is given in
+      text.  Numerical values are entered in standard decimal
+      notation.
+    </para>
+
     <variablelist>
       <varlistentry>
         <term>
@@ -67,7 +76,9 @@
 	    in seconds.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>D {exposure_time}</option>
 	</term>
@@ -77,7 +88,9 @@
 	    in seconds.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>F {filter_number}</option>
 	</term>
@@ -87,7 +100,9 @@
 	    always counted from 0.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>F {filter_number}</option>
 	</term>
@@ -97,7 +112,9 @@
 	    always counted from 0.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>F {filter_number}</option>
 	</term>
@@ -107,7 +124,9 @@
 	    always counted from 0.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>O {unknow}</option>
 	</term>
@@ -116,7 +135,9 @@
 	    Reserved for focusing command. Not implemented yet.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>BIN {binning} </option>
 	</term>
@@ -126,7 +147,9 @@
 	    dropped in favour of constant settings.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>BOX {x} {y} {width} {heigh} </option>
 	</term>
@@ -136,7 +159,9 @@
 	    upper left cornen (x and y) and width and heigh.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>CENTER {width} {heigh} </option>
 	</term>
@@ -146,7 +171,9 @@
 	    pixels).
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>W</option>
 	</term>
@@ -155,7 +182,9 @@
 	    Generic wait for any signal.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>A {precision} {exposure_time}</option>
 	</term>
@@ -166,10 +195,12 @@
 	    target position, repeat it. It can take more images, as
 	    long as precission of last image is at least twice better
 	    then previous image - e.g. if o1 is offset of last image,
-	    and o0 is offset of previous one, o1 < o2 / 2.
+	    and o0 is offset of previous one, o1 &lt; o2 / 2.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
         <term>
 	  <option>Aw</option>
 	</term>
@@ -180,13 +211,189 @@
 	    pass to next command.
 	  </para>
 	</listitem>
+      </varlistentry>
 
+      <varlistentry>
+        <term>
+	  <option>M {mirror_position}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Move mirror to new position, specified by
+	    {mirror_position} numeric argument.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>P {filter} {exposure} {count}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Do measurements on photometer. Filter is filter number
+	    (integer), exposure is exposure time in seconds (float
+	    number), and count is integer specifing how many
+	    measurements will be taken.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>star {repeat_number} {precision} {exposure} {min_flux}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Try to find on image stars with (raw) flux large than
+	    {min_flux}. Exposure lenght and required precision from
+	    star center can be specified. {repeat_number} specified
+	    how many time will be search performed. If star brighter
+	    then {min_flux} is not found on taken image, telescope is
+	    shift on spherical path in order to find a bright star.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>PS {radius} {speed}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Do cross search of maxima on photometer. Radius specify
+	    radius in degrees, which will be searched, and speed
+	    specified speed which will be used.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>block_waitsig {signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute next block only if given signal arrives.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>guiding {exposure_time} {end_signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Start guiding on given camera. Exposure of {exposure_time}
+	    lenght are taken, brightest stars on them is founded, and
+	    correction commands are then feed to telescope. When
+	    {end_signal} is sended (using SS command), guiding loop is
+	    stoped.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>ifacq [block] [else [block]]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Start given commands only if acquistion of target ended
+	    sucessfully.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>for {repeat_number} [block]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute commands in block for {repeat_number} times.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>HAM {repeat_number} {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Search for HAM source. It is similar as searching for
+	    stars, but terrestial movement commands are used.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>SS {signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Send given signal. Other scripts can wait for signal with
+	    SW command. Signal is integer number, which should be
+	    unique in script.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>SW {signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Wait for signal. Execution of script is paused until
+	    signal with given number is send.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>tardisable</option>
+	</term>
+	<listitem>
+	  <para>
+	    Disable target. In consectutive selector runs, it will not
+	    be considered for selection. Target can be re-enabled by
+	    rts2-target (1) command executed with -e option.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>tempdisable {seconds}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Temporaly disable target for {seconds}. If next selector
+	    run hapened earlier then {seconds} time from now, target
+	    will not be considered. Target temporary disable is
+	    stored in NEXT_OBSERVABLE target parameter, which can be
+	    reseted by rts2-target (1) command executed with -o option.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLES</title>
+
+    <para>focpos-=50 for 10 { E 10 focpos+=10 }</para>
 
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (1).</para>
+    <para>rts2 (1), rts2-target (1).</para>
 
   </refsect1>
   <refsect1>
