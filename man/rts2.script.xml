@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2006-11-02</date>">
+  <!ENTITY dhdate      "<date>2007-03-17</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubánek">
@@ -50,6 +50,137 @@
 
   </refsect1>
   <refsect1>
+    <title>COMMANDS</title>
+
+    <para> Commands are separated by arbitary number of spaces.
+    Parameters are in following description enclosed in {curved
+    brackets}, explanation of their meaning is given in text.
+    Numerical values are entered in standard decimal notation.</para>
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>E {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Takes light exposure. Exposure time is specified
+	    in seconds.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>D {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Takes dark frame, usefull for callibration. Exposure time is specified
+	    in seconds.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>F {filter_number}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Changes filter on camera filter wheel. Filter numbers are
+	    always counted from 0.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>F {filter_number}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Changes filter on camera filter wheel. Filter numbers are
+	    always counted from 0.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>F {filter_number}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Changes filter on camera filter wheel. Filter numbers are
+	    always counted from 0.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>O {unknow}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Reserved for focusing command. Not implemented yet.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>BIN {binning} </option>
+	</term>
+	<listitem>
+	  <para>
+	    Change both vertical and horizontal binning. Will be
+	    dropped in favour of constant settings.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>BOX {x} {y} {width} {heigh} </option>
+	</term>
+	<listitem>
+	  <para>
+	    Readout area of chip, specified by pixel coordinates of
+	    upper left cornen (x and y) and width and heigh.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>CENTER {width} {heigh} </option>
+	</term>
+	<listitem>
+	  <para>
+	    Readout center of chip of provided width and heigh (in
+	    pixels).
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>W</option>
+	</term>
+	<listitem>
+	  <para>
+	    Generic wait for any signal.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>A {precision} {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Take image of {exposure_time}, try astrometry, wait for
+	    result. If image is not within {precision} degrees from
+	    target position, repeat it. It can take more images, as
+	    long as precission of last image is at least twice better
+	    then previous image - e.g. if o1 is offset of last image,
+	    and o0 is offset of previous one, o1 < o2 / 2.
+	  </para>
+	</listitem>
+
+        <term>
+	  <option>Aw</option>
+	</term>
+	<listitem>
+	  <para>
+	    Wait for finish of A command on other camera. If there
+	    isn't any script with A command for any device, it will
+	    pass to next command.
+	  </para>
+	</listitem>
+
 
   </refsect1>
   <refsect1>
