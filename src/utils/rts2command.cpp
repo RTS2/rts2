@@ -47,19 +47,31 @@ Rts2Command::commandReturn (int status)
 {
   if (connection)
     connection->commandReturn (this, status);
-  if (status)
-    return commandReturnFailed (status);
-  return commandReturnOK ();
+  switch (status)
+    {
+    case 0:
+      return commandReturnOK ();
+    case 1:
+      return commandReturnQued ();
+    default:
+      return commandReturnFailed (status);
+    }
 }
 
 int
-Rts2Command::commandReturnFailed (int status)
+Rts2Command::commandReturnOK ()
 {
   return -1;
 }
 
 int
-Rts2Command::commandReturnOK ()
+Rts2Command::commandReturnQued ()
+{
+  return commandReturnOK ();
+}
+
+int
+Rts2Command::commandReturnFailed (int status)
 {
   return -1;
 }

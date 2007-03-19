@@ -51,6 +51,7 @@ public:
     return commandCond;
   }
   virtual int commandReturnOK ();
+  virtual int commandReturnQued ();
   virtual int commandReturnFailed (int status);
 };
 

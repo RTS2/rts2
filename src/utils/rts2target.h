@@ -9,6 +9,7 @@
  */
 
 #include <libnova/libnova.h>
+#include <time.h>
 
 #define MAX_COMMAND_LENGTH              2000
 
@@ -17,11 +18,13 @@ class Rts2Target
 private:
   int moveCount;
   int img_id;			// count for images
+  bool tar_enabled;
 public:
     Rts2Target ()
   {
     moveCount = 0;
     img_id = 0;
+    tar_enabled = true;
   }
   virtual ~ Rts2Target (void)
   {
@@ -79,6 +82,19 @@ public:
   {
     return ++img_id;
   }
+
+  bool getTargetEnabled ()
+  {
+    return tar_enabled;
+  }
+  void setTargetEnabled (bool new_en = true)
+  {
+    tar_enabled = new_en;
+  }
+  virtual int setNextObservable (time_t * time_ch) = 0;
+
+  virtual int save (bool overwrite) = 0;
+  virtual int save (bool overwrite, int tar_id) = 0;
 };
 
 #endif /* !__RTS2_TARGET__ */
