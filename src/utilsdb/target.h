@@ -157,7 +157,6 @@ private:
   float tar_bonus;
   time_t tar_bonus_time;
   time_t tar_next_observable;
-  bool tar_enabled;
 
   void printAltTable (std::ostream & _os, double jd_start, double h_start,
 		      double h_end, double h_step = 1.0, bool header = true);
@@ -192,7 +191,7 @@ public:
   virtual int load ();
   // load target data from give target id
   int loadTarget (int in_tar_id);
-  int save (bool overwrite);
+  virtual int save (bool overwrite);
   virtual int save (bool overwrite, int tar_id);
   virtual int getScript (const char *device_name, char *buf);
   int setScript (const char *device_name, const char *buf);
@@ -379,14 +378,6 @@ public:
     delete target_comment;
     target_comment = new char[strlen (in_target_comment) + 1];
     strcpy (target_comment, in_target_comment);
-  }
-  bool getTargetEnabled ()
-  {
-    return tar_enabled;
-  }
-  void setTargetEnabled (bool new_en = true)
-  {
-    tar_enabled = new_en;
   }
 
   float getTargetPriority ()

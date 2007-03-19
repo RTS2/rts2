@@ -30,4 +30,9 @@
 #define COMMAND_SEND_SIGNAL	"SS"
 #define COMMAND_WAIT_SIGNAL	"SW"
 
+// target operations
+#define COMMAND_TARGET_DISABLE	"tardisable"
+#define COMMAND_TAR_TEMP_DISAB	"tempdisable"
+#define COMMAND_TARGET_BOOST	"tarboost"
+
 #endif /* !__RTS2_SCRIPTCOMMANDS__ */

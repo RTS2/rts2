@@ -326,10 +326,11 @@ Target::Target ()
   tar_bonus = nan ("f");
   tar_bonus_time = 0;
   tar_next_observable = 0;
-  tar_enabled = false;
+  bool n_tar_enabled = false;
 
   config->getFloat ("newtarget", "priority", tar_priority);
-  config->getBoolean ("newtarget", "enabled", tar_enabled);
+  config->getBoolean ("newtarget", "enabled", n_tar_enabled);
+  setTargetEnabled (n_tar_enabled);
 }
 
 Target::~Target (void)
@@ -415,7 +416,7 @@ Target::loadTarget (int in_tar_id)
   else
     tar_next_observable = 0;
 
-  tar_enabled = d_tar_enabled;
+  setTargetEnabled (d_tar_enabled);
   
   // load target users for events..
   targetUsers = new Rts2TarUser (getTargetID (), getTargetType ());
@@ -1109,7 +1110,7 @@ Target::selectedAsGood ()
     logMsgDb ("Target::selectedAsGood");
     return -1;
   }
-  tar_enabled = d_tar_enabled;
+  setTargetEnabled (d_tar_enabled);
   if (d_tar_priority_ind >= 0)
     tar_priority = d_tar_priority;
   else
@@ -1119,7 +1120,7 @@ Target::selectedAsGood ()
   else
     tar_bonus = 0;
 
-  if (tar_enabled && tar_priority + tar_bonus >= 0)
+  if (getTargetEnabled () && tar_priority + tar_bonus >= 0)
   {
     if (d_tar_next_observable_ind >= 0)
     {
@@ -1443,7 +1444,7 @@ Target::getLastObs ()
 void
 Target::printExtra (std::ostream &_os, double JD)
 {
-  if (tar_enabled)
+  if (getTargetEnabled ())
   {
     _os << "Target is enabled" << std::endl;
   }
