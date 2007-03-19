@@ -51,70 +51,132 @@
 
   </refsect1>
   <refsect1>
-    <title>KEYS</title>
-    
+    <title>RTS2-MON SCREEN</title>
+
     <para>
-      These keys control rts2-mon behaviour:
+      When you run rts2-mon, screen is divided into four principal
+      areas - menu bar, device list and status display, RTS2 messages
+      space and 
     </para>
 
-    <variablelist>
-      <varlistentry>
-        <term>
-          <option>F2</option>
-        </term>
-        <listitem>
-          <para>Switch RTS2 to off state.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>F3</option>
-        </term>
-        <listitem>
-          <para>Switch RTS2 to standby state.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>F4</option>
-        </term>
-        <listitem>
-          <para>Switch RTS2 to on state.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>F5</option>
-        </term>
-        <listitem>
-          <para>Refresh display.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>F8</option>
-        </term>
-        <listitem>
-          <para>Toggle between message and status display.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>F9</option>
-        </term>
-        <listitem>
-          <para>Toggle between short and long status display.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>F10</option>
-        </term>
-        <listitem>
-          <para>Exit from rts2-mon.</para>
-        </listitem>
-      </varlistentry>
-    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>KEYS</title>
+
+    <refsect2>
+      <title>State switching keys</title>
+    
+      <para>
+	RTS2 state can be switched by F2, F3 and F4 keys. After you
+	press that key, message dialog with question to confirm state
+	change appear. You can use arrow keys to change answer, and
+	confirm the message box by pressing enter. If you choose Yes as
+	answer to question, RTS2 state will be changed.
+      </para>
+
+      <para>
+	For detailed discussions of various states, please see rts2 (7).
+      </para>
+
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>F2</option>
+	  </term>
+	  <listitem>
+	    <para>Switch RTS2 to off state.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F3</option>
+	  </term>
+	  <listitem>
+	    <para>Switch RTS2 to standby state.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F4</option>
+	  </term>
+	  <listitem>
+	    <para>Switch RTS2 to on state.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2>
+      <title>Movement keys</title>
+
+      <para>
+        As text which should be displayed in rts2-mon windows must
+        not necessary fit inside windows where it should be
+	displayed, following keys can be used to shift text.
+      </para>
+
+      <variablelist>
+        <varlistentry>
+	  <term>
+	    <option>up, down (arrows)</option>
+	  </term>
+	  <listitem>
+	    Move focus on selection list up or down.
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>home</option>
+	  </term>
+	  <listitem>
+	    Move focus on selection list to first entry.
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>end</option>
+	  </term>
+	  <listitem>
+	    Move focus on selection list to last entry.
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2>
+      <title>Rts2-mon functions keys</title>
+    
+      <para>
+	Those are keys, which execute rts2-mon functions:
+      </para>
+
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>F5</option>
+	  </term>
+	  <listitem>
+	    <para>Refresh display.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F9</option>
+	  </term>
+	  <listitem>
+	    <para>Enter to menu.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F10</option>
+	  </term>
+	  <listitem>
+	    <para>Exit from rts2-mon.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
     
     <title>OPTIONS</title>
 
