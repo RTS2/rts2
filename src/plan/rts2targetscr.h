@@ -29,6 +29,11 @@ public:
   virtual void acqusitionStart ();
 
   virtual int isAcquired ();
+
+  virtual int setNextObservable (time_t * time_ch);
+
+  virtual int save (bool overwrite);
+  virtual int save (bool overwrite, int tar_id);
 };
 
 #endif /* !__RTS2_TARGESCR__ */

@@ -1,4 +1,5 @@
 #include "rts2script.h"
+#include "rts2setarget.h"
 #include "rts2scriptblock.h"
 #include "rts2scriptguiding.h"
 #include <string.h>
@@ -433,6 +434,17 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	  forEl->addElement (newElement);
 	}
       return forEl;
+    }
+  else if (!strcmp (commandStart, COMMAND_TARGET_DISABLE))
+    {
+      return new Rts2SETDisable (this, target);
+    }
+  else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
+    {
+      int seconds;
+      if (getNextParamInteger (&seconds))
+	return NULL;
+      return new Rts2SETTempDisable (this, target, seconds);
     }
   // setValue fallback
   else if (strchr (commandStart, '='))

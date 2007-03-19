@@ -3,12 +3,14 @@
 bin_PROGRAMS = rts2-scriptexec
 noinst_HEADERS = rts2execcli.h rts2script.h rts2connimgprocess.h rts2selector.h rts2scriptelement.h \
 		 rts2devscript.h rts2devcliphot.h rts2spiral.h rts2scriptblock.h rts2scriptguiding.h \
-		 rts2execclidb.h rts2scriptelementacquire.h scriptexec.h rts2targetscr.h
+		 rts2execclidb.h rts2scriptelementacquire.h scriptexec.h rts2targetscr.h \
+		 rts2setarget.h
 
 EXTRA_DIST = rts2selector.ec rts2devcliphot.ec
 
 rts2_scriptexec_SOURCES = scriptexec.cpp rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2devscript.cpp \
-			rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp
+			rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp \
+			rts2setarget.cpp
 rts2_scriptexec_CXXFLAGS = -DNOT_PGSQL @LIBPG_CFLAGS@
 rts2_scriptexec_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2image.a ../utils/librts2block.a 
 
@@ -18,7 +20,8 @@ bin_PROGRAMS += rts2-executor rts2-imgproc rts2-selector rts2-seltest rts2-targe
 	       rts2-plan
 
 rts2_executor_SOURCES = executor.cpp rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2connimgprocess.cpp rts2devscript.cpp \
-			rts2devcliphot.cpp rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2execclidb.cpp rts2scriptelementacquire.cpp
+			rts2devcliphot.cpp rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2execclidb.cpp rts2scriptelementacquire.cpp \
+			rts2setarget.cpp
 rts2_executor_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_executor_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
@@ -35,7 +38,7 @@ rts2_seltest_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_seltest_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
 rts2_targetinfo_SOURCES = targetinfo.cpp rts2script.cpp rts2scriptelement.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2connimgprocess.cpp \
-			  rts2spiral.cpp rts2scriptelementacquire.cpp
+			  rts2spiral.cpp rts2scriptelementacquire.cpp rts2setarget.cpp
 rts2_targetinfo_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_targetinfo_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
 

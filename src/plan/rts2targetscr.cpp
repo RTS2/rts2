@@ -46,3 +46,21 @@ Rts2TargetScr::isAcquired ()
 {
   return 1;
 }
+
+int
+Rts2TargetScr::setNextObservable (time_t * time_ch)
+{
+  return 0;
+}
+
+int
+Rts2TargetScr::save (bool overwrite)
+{
+  return 0;
+}
+
+int
+Rts2TargetScr::save (bool overwrite, int tar_id)
+{
+  return 0;
+}
