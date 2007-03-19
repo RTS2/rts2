@@ -158,7 +158,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
       weather->getValue ("rtCloudTop", rtCloudTop, ret_c);
       weather->getValue ("rtCloudBottom", rtCloudBottom, ret_c);
       if (ret_c == 0)
-	cloud = rtCloudTop - rtCloudTop;
+	cloud = rtCloudBottom - rtCloudTop;
       if (rtRainRate != 0)
 	{
 	  rain = 1;
