@@ -156,29 +156,39 @@ public:
   // that method is used to update DATE - creation date entry - for other file then ffile
   int setCreationDate (fitsfile * out_file = NULL);
 
-  int getValue (char *name, int &value, char *comment = NULL);
-  int getValue (char *name, long &value, char *comment = NULL);
-  int getValue (char *name, float &value, char *comment = NULL);
-  int getValue (char *name, double &value, char *comment = NULL);
-  int getValue (char *name, char &value, char *command = NULL);
-  int getValue (char *name, char *value, int valLen, char *comment = NULL);
+  int getValue (char *name, int &value, bool required = false, char *comment =
+		NULL);
+  int getValue (char *name, long &value, bool required =
+		false, char *comment = NULL);
+  int getValue (char *name, float &value, bool required =
+		false, char *comment = NULL);
+  int getValue (char *name, double &value, bool required =
+		false, char *comment = NULL);
+  int getValue (char *name, char &value, bool required =
+		false, char *command = NULL);
+  int getValue (char *name, char *value, int valLen, bool required =
+		false, char *comment = NULL);
 
-  int getValues (char *name, int *values, int num, int nstart = 1);
-  int getValues (char *name, long *values, int num, int nstart = 1);
-  int getValues (char *name, double *values, int num, int nstart = 1);
-  int getValues (char *name, char **values, int num, int nstart = 1);
+  int getValues (char *name, int *values, int num, bool required =
+		 false, int nstart = 1);
+  int getValues (char *name, long *values, int num, bool required =
+		 false, int nstart = 1);
+  int getValues (char *name, double *values, int num, bool required =
+		 false, int nstart = 1);
+  int getValues (char *name, char **values, int num, bool required =
+		 false, int nstart = 1);
 
   int writeImgHeader (struct imghdr *im_h);
   int writeDate (Rts2ClientTCPDataConn * dataConn);
 
-  int fitsStatusValue (char *valname, const char *operation);
-  int fitsStatusSetValue (char *valname)
+  int fitsStatusValue (char *valname, const char *operation, bool required);
+  int fitsStatusSetValue (char *valname, bool required = true)
   {
-    return fitsStatusValue (valname, "SetValue");
+    return fitsStatusValue (valname, "SetValue", required);
   }
-  int fitsStatusGetValue (char *valname)
+  int fitsStatusGetValue (char *valname, bool required)
   {
-    return fitsStatusValue (valname, "GetValue");
+    return fitsStatusValue (valname, "GetValue", required);
   }
 
   double getAstrometryErr ();
