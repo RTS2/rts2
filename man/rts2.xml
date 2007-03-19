@@ -58,49 +58,6 @@
     </para>
   </refsect1>
   <refsect1>
-    <title>AUTONOMOUS OBSERVATORY SYSTEM</title>
-    <para>
-      It is widely accepted that full automated operation of telescopes not
-      only enables observers to live life during the day, but also enables
-      better use of telescope time and brings costs savings and better
-      efficiency to the whole observational setup.
-    </para>
-    <para>
-      If the observer's goal is to hunt for GRBs afterglows (the task for which
-      RTS2 was designed), it will be impractical for him to wait for a couple
-      of months for a suitable GRB, in the meantime performing only routine
-      night observations, and then to attempt to perform precise observations
-      of a GRB location as quickly as possible (in minutes, preferably seconds)
-      when a suitable GRB trigger arrives.  It will be even more difficult, if
-      not impossible, for an observer to carry out these observations in remote
-      places, such as middle of the South American Pampas.
-    </para> 
-    <para>
-      There are some remote observing solutions offered for amateur or
-      semi-professional observers, primary focused on acquiring nice images of
-      the night sky with a telescope under computer control. There are only a
-      few complete packages capable of managing a whole integrated observatory
-      which are targeted at the scientific community. RTS2 is to our knowledge
-      the only one for which the complete source code is available, released
-      under GNU General Public Licence, which allows the code to be modified.
-    </para>
-    <para>
-      In addition, most of the imaging systems offered run on the Microsoft
-      Windows platform, which is renowned in the industry for the instability
-      of the operating system kernel, and which is, given its GUI-oriented
-      nature, quite difficult to manage truly remotely over long distances.
-      RTS2 was primary developed on Linux OS, which is quite easily - even
-      over long distances - controlled through various remote shell options,
-      SSH now being the most widely used. An SSH session from Europe to say
-      South America is easily conceivable due to its low bandwidth usage.
-    </para>
-    <para>
-      That definitely is not true for GUI based remote access, which both
-      Windows (usually as extra-paid service) and Linux/UNIX (as core of X
-      Window System) allow.
-    </para>
-  </refsect1>
-  <refsect1>
     <title>RTS2 COMPONENTS</title>
 
     <para>
@@ -155,7 +112,7 @@
           <para>
 	     ncurses (3ncurses) based rts2-mon, console based rts2-cmon, X-Window image
 	     grabber rts2-xfocusc, console grabber rts2-focusc, and
-	     \emph{rts2-soapd}, which enables access to the RTS2 system through
+	     rts2-soapd, which enables access to the RTS2 system through
 	     the Simple Object Access Protocol (SOAP).
           </para>
 	</listitem>
@@ -220,12 +177,41 @@
 
     <refsect2>
       <title>OFF</title>
+      <para>
+        This is safe state from roof point of view. In OFF state,
+	system will never try to observe, will not open the dome. It
+	might interact with some devices in putting them to safe state
+	(e.g. park the mount).
+      </para>
+      <para>
+        OFF state is your choice when you know that system will not
+	observe, e.g. when some components are broken. OFF state is
+	also your choice in case of bad weather - in OFF state, system
+	make sure dome will remain closed.
+      </para>
     </refsect2>
     <refsect2>
       <title>STANDBY</title>
+      <para>
+        Standby state is between on and off state. In this state,
+	cameras are cooled, and telescope is prepared for observation.
+	But no observation is performed, and dome remain closed, so
+	telescope is protected from the elements.
+      </para>
+      <para>
+        When running with meteo station, meteo station can trigger
+	change of state from on to standby in case of bad weather, and
+	from standby to on when weather is good. !!STANDBY STATE DOES
+	NOT GUARANTEE THAT DOME WILL REMAIN CLOSED!! When you need to
+	be sure that dome remain closed, please use off state.
+      </para>
     </refsect2>
     <refsect2>
       <title>ON</title>
+      <para>
+        Dome is opened at evening and closed at morning, observations
+	are performed. That is main operating stat of the system.
+      </para>
     </refsect2>
 
     <para>
@@ -445,6 +431,54 @@
       Version 2 any later version published by the Free Software Foundation.
     </para>
 
+  </refsect1>
+
+  <refsect1>
+    <title>AUTONOMOUS OBSERVATORY SYSTEM</title>
+    <para>
+      Here is some theoretical background, please skip it if you are
+      looking for description of system.
+    </para>
+    <para>
+      It is widely accepted that full automated operation of telescopes not
+      only enables observers to live life during the day, but also enables
+      better use of telescope time and brings costs savings and better
+      efficiency to the whole observational setup.
+    </para>
+    <para>
+      If the observer's goal is to hunt for GRBs afterglows (the task for which
+      RTS2 was designed), it will be impractical for him to wait for a couple
+      of months for a suitable GRB, in the meantime performing only routine
+      night observations, and then to attempt to perform precise observations
+      of a GRB location as quickly as possible (in minutes, preferably seconds)
+      when a suitable GRB trigger arrives.  It will be even more difficult, if
+      not impossible, for an observer to carry out these observations in remote
+      places, such as middle of the South American Pampas.
+    </para> 
+    <para>
+      There are some remote observing solutions offered for amateur or
+      semi-professional observers, primary focused on acquiring nice images of
+      the night sky with a telescope under computer control. There are only a
+      few complete packages capable of managing a whole integrated observatory
+      which are targeted at the scientific community. RTS2 is to our knowledge
+      the only one for which the complete source code is available, released
+      under GNU General Public Licence, which allows the code to be modified.
+    </para>
+    <para>
+      In addition, most of the imaging systems offered run on the Microsoft
+      Windows platform, which is renowned in the industry for the instability
+      of the operating system kernel, and which is, given its GUI-oriented
+      nature, quite difficult to manage truly remotely over long distances.
+      RTS2 was primary developed on Linux OS, which is quite easily - even
+      over long distances - controlled through various remote shell options,
+      SSH now being the most widely used. An SSH session from Europe to say
+      South America is easily conceivable due to its low bandwidth usage.
+    </para>
+    <para>
+      That definitely is not true for GUI based remote access, which both
+      Windows (usually as extra-paid service) and Linux/UNIX (as core of X
+      Window System) allow.
+    </para>
   </refsect1>
 
   <refsect1>
