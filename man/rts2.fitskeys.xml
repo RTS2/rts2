@@ -9,7 +9,7 @@
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubánek">
   <!ENTITY dhucpackage "<refentrytitle>rts2</refentrytitle>">
-  <!ENTITY dhpackage   "rts2.ini">
+  <!ENTITY dhpackage   "rts2.fitskeys">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -26,7 +26,7 @@
       &dhsurname;
     </author>
     <copyright>
-      <year>2006</year>
+      <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -39,16 +39,23 @@
   <refnamediv>
     <refname>&dhpackage;</refname>
 
-    <refpurpose>The configuration file for Remote Telescope System, 2nd version</refpurpose>
+    <refpurpose>
+      List of FITS keys written by various devices to produced FITS
+      files
+    </refpurpose>
+
   </refnamediv>
   <refsect1>
     <title>SYNOPSIS</title>
 
     <para>
-      The rts2.ini file is a configuration file for the RTS2. rts2.ini
-      contains runtime configuration information for the RTS2 programs. The
-      complete description  of  the  file format and possible parameters held
-      within are here for reference purposes.
+      RTS2 writes values, which were deemed usefull to record, to FITS
+      file. As RTS2 can support various instruments, each with
+      different values, the FITS key names cannot be specified with
+      FITS template file.
+
+      Instead, various RTS2 devices can define keys which will be
+      written to a RTS2 image. 
     </para>
 
   </refsect1>
@@ -366,20 +373,10 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
-	    <option>horizont</option>
+	    <option>epoch_id</option>
 	  </term>
 	  <listitem>
-	    <para>
-	      Horizon file. This file contains list of horizon
-	      hour angle and declination, both in degrees. Horizon is
-	      estimated by linear approximation between both points.
-	    </para>
-	    <para>
-	      Current format, which allows only hour angle and
-	      declination values, is insufficient and should be
-	      extended by option to enter horizon in alt-az
-	      coordinates.
-	    </para>
+	    <para>Epoch id. Epochs are used to divide observatory data to packages which can be easily backed on tapes/DVDs.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
@@ -396,20 +393,6 @@
 	    <para>If set to true, centrald will switch it's state to OFF each morning.</para>
 	  </listitem>
 	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>reboot_on</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      If set to true, centrald will switch it's state to ON
-	      after reboot. It's more wise to leave that value to
-	      false, as you will then switch the setup on once you
-	      will regain connection to the RTS2 computer.
-	    </para>
-	  </listitem>
-	</varlistentry>
-
       </variablelist>
     </refsect2>
     <refsect2>
@@ -549,7 +532,7 @@
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (1), rts2.script (5).</para>
+    <para>rts2 (1).</para>
 
   </refsect1>
   <refsect1>

@@ -398,6 +398,10 @@
     </refsect2>
   </refsect1>  
   <refsect1>
+    <title>FITS FILES</title>
+    <para>
+      rts2.fitskeys (5)
+    </para>
     <title>DEVICES</title>
 
     <para>

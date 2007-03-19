@@ -382,6 +382,20 @@
 	</listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term>
+	  <option>tarboost {seconds} {bonus}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Temporaly boost target for {seconds}. It changes value of
+	    TARGET BONUS and TARGET BONUS TIME fields. Those fields
+	    can be changed by rts2-target (1) command executed with -b
+	    and -t options.
+	  </para>
+	</listitem>
+      </varlistentry>
+
     </variablelist>
   </refsect1>
   <refsect1>
