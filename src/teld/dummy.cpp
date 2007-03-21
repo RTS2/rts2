@@ -73,7 +73,6 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
   {
     telRa->setValueDouble (newRa);
     telDec->setValueDouble (newDec);
-    telSiderealTime->setValueDouble (getLocSidTime ());
     return Rts2DevTelescope::info ();
   }
 

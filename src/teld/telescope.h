@@ -43,11 +43,11 @@ private:
   Rts2ValueDouble *decCorr;
   Rts2ValueDouble *posErr;
 
-  double sepLimit;
+  Rts2ValueDouble *sepLimit;
   // if correction is greater than that limit, it will preform correction
   // immediately, independet of the camera exposures.  That is good to put NF
   // to position on WF-NF setups.
-  double minGood;
+  Rts2ValueDouble *minGood;
 
   Rts2ValueInteger *knowPosition;
   Rts2ValueDouble *rasc;
@@ -93,6 +93,8 @@ protected:
   char telSerialNumber[64];
   Rts2ValueDouble *telRa;
   Rts2ValueDouble *telDec;
+  Rts2ValueDouble *telAlt;
+  Rts2ValueDouble *telAz;
   Rts2ValueDouble *telSiderealTime;
   Rts2ValueDouble *telLocalTime;
   Rts2ValueInteger *telFlip;
@@ -173,8 +175,9 @@ protected:
   double getMoveTargetSep ();
   void getTargetAltAz (struct ln_hrz_posn *hrz);
   void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
-  double getLocSidTime ();
+  virtual double getLocSidTime ();
   double getLocSidTime (double JD);
+  double getSidTime (double JD);
   double getLstDeg (double JD);
 
   virtual bool isBellowResolution (double ra_off, double dec_off)
@@ -289,6 +292,8 @@ public:
   virtual int startGuide (char dir, double dir_dist);
   virtual int stopGuide (char dir);
   virtual int stopGuideAll ();
+
+  virtual int getAltAz ();
 
   // callback functions from telescope connection
   virtual int info ();

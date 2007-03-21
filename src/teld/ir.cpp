@@ -709,7 +709,6 @@ Rts2TelescopeIr::info ()
   telRa->setValueDouble (t_telRa);
   telDec->setValueDouble (t_telDec);
 
-  telSiderealTime->setValueDouble (getLocSidTime ());
   telLocalTime->setValueDouble (0);
 
   status = tpl_get ("ZD.REALPOS", zd, &status);

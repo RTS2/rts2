@@ -837,21 +837,6 @@ Rts2DevTelescopeGemini::tel_read_longtitude ()
 }
 
 /*! 
- * Returns losmandy sidereal time.
- * 
- * @param tptr		where time will be stored
- * 
- * @return -1 and errno on error, otherwise 0
- */
-int
-Rts2DevTelescopeGemini::tel_read_siderealtime ()
-{
-  tel_read_longtitude ();
-  telSiderealTime->setValueDouble (getLocSidTime ());
-  return 0;
-}
-
-/*! 
  * Reads losmandy latitude.
  * 
  * @param latptr	here latitude will be stored  
@@ -1390,8 +1375,7 @@ Rts2DevTelescopeGemini::info ()
 {
   telFlip->setValueInteger (0);
 
-  if (tel_read_ra () || tel_read_dec ()
-      || tel_read_siderealtime () || tel_read_localtime ())
+  if (tel_read_ra () || tel_read_dec () || tel_read_localtime ())
     return -1;
   if (bootesSensors)
     {
@@ -1803,7 +1787,7 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
   int ret;
 
   // compute ra
-  tel_read_siderealtime ();
+  telSiderealTime->setValueDouble (getLocSidTime ());
 
   lastMoveRa = telSiderealTime->getValueDouble () * 15.0 - fixed_ha;
 
@@ -2267,11 +2251,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;

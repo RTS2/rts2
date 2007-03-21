@@ -975,7 +975,6 @@ Rts2DevTelParamount::info ()
   ret = checkRet ();
   if (ret)
     return ret;
-  telSiderealTime->setValueDouble (getLocSidTime ());
   double t_telRa;
   double t_telDec;
   ret = counts2sky (ac, dc, t_telRa, t_telDec);

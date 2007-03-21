@@ -119,8 +119,6 @@ private:
 
   int tel_check_coords ();
 
-  double get_hour_angle (double RA);
-
   void toggle_mode (int in_togle_count);
   void set_move_timeout (time_t plus_time);
   void goodPark ();
@@ -655,7 +653,7 @@ Rts2DevTelescopeMM2::init ()
   if (status)
     return -1;
 
-  tel_read_siderealtime ();
+  telSiderealTime->setValueDouble (getLocSidTime ());
 
   // hour angle - 90
   ax1->
@@ -725,7 +723,7 @@ Rts2DevTelescopeMM2::idle ()
 	  if (ax1->getValueDouble () < -100.0)
 	    {
 	      int ret;
-	      tel_read_siderealtime ();
+	      telSiderealTime->setValueDouble (getLocSidTime ());
 	      homeHA = telSiderealTime->getValueDouble () * 15.0 + 90.0;
 	      double ha_diff =
 		ln_range_degrees (homeHA - telRa->getValueDouble ());
@@ -780,8 +778,7 @@ Rts2DevTelescopeMM2::initValues ()
 int
 Rts2DevTelescopeMM2::info ()
 {
-  if (tel_read_ra ()
-      || tel_read_dec () || tel_read_siderealtime () || tel_read_localtime ())
+  if (tel_read_ra () || tel_read_dec () || tel_read_localtime ())
     return -1;
 
   return Rts2DevTelescope::info ();
@@ -867,7 +864,6 @@ Rts2DevTelescopeMM2::tel_check_coords ()
 {
   // ADDED BY JF
   double JD;
-  double HA;
 
   double sep;
   time_t now;
@@ -895,12 +891,8 @@ Rts2DevTelescopeMM2::tel_check_coords ()
 
   ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
 
-  HA = get_hour_angle (object.ra);
-
   logStream (MESSAGE_DEBUG) << "MM2 tel_check_coords TELESCOPE ALT " << hrz.
     alt << " AZ " << hrz.az << sendLog;
-  logStream (MESSAGE_DEBUG) << "MM2 tel_check_coords TELESCOPE HOUR ANGLE " <<
-    HA << sendLog;
 
   sep = getMoveTargetSep ();
 
@@ -910,16 +902,6 @@ Rts2DevTelescopeMM2::tel_check_coords ()
   return 1;
 }
 
-
-/* Convert RA to Hour Angle
-* 
-*/
-double
-Rts2DevTelescopeMM2::get_hour_angle (double RA)
-{
-  tel_read_siderealtime ();
-  return telSiderealTime->getValueDouble () - (RA / 15.0);
-}
 
 void
 Rts2DevTelescopeMM2::toggle_mode (int in_togle_count)

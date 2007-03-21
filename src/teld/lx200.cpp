@@ -97,8 +97,6 @@ private:
 
   int tel_check_coords (double ra, double dec);
 
-  double get_hour_angle (double RA);
-
   void set_move_timeout (time_t plus_time);
 public:
     Rts2DevTelescopeLX200 (int argc, char **argv);
@@ -721,7 +719,6 @@ Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
 {
   // ADDED BY JF
   double JD;
-  double HA;
 
   double sep;
   time_t now;
@@ -749,12 +746,8 @@ Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
 
   ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
 
-  HA = get_hour_angle (object.ra);
-
   logStream (MESSAGE_DEBUG) << "LX200 tel_check_coords TELESCOPE ALT " << hrz.
     alt << " AZ " << hrz.az << sendLog;
-  logStream (MESSAGE_DEBUG) << "LX200 tel_check_coords TELESCOPE HOUR ANGLE "
-    << HA << sendLog;
 
   target.ra = ra;
   target.dec = dec;
@@ -767,16 +760,6 @@ Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
   return 1;
 }
 
-
-/* Convert RA to Hour Angle
-* 
-*/
-double
-Rts2DevTelescopeLX200::get_hour_angle (double RA)
-{
-  tel_read_siderealtime ();
-  return telSiderealTime->getValueDouble () - (RA / 15.0);
-}
 
 void
 Rts2DevTelescopeLX200::set_move_timeout (time_t plus_time)

@@ -19,6 +19,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
   createValue (telRa, "MNT_RA", "mount RA (read from sensors)");
   createValue (telDec, "MNT_DEC", "mount DEC (read from sensors)");
+  createValue (telAlt, "ALT", "mount ALT", true);
+  createValue (telAz, "AZ", "mount AZIMUTH", true);
   createValue (telSiderealTime, "siderealtime",
 	       "telescope local sidereal time", false);
   createValue (telLocalTime, "localtime", "telescope local time", false);
@@ -50,8 +52,11 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   createValue (decCorr, "DEC_CORR", "corrections in DEC");
   createValue (posErr, "pos_err", "error in degrees", false);
 
-  sepLimit = 5.0;
-  minGood = 180.0;
+  createValue (sepLimit, "seplimit", "separation limit", false);
+  sepLimit->setValueDouble (5.0);
+
+  createValue (minGood, "mingood", "minimal good distance (FOV)", false);
+  minGood->setValueDouble (180.0);
 
   modelFile = NULL;
   model = NULL;
@@ -95,7 +100,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	       false);
 
   // default is to aply model corrections
-  createValue (corrections, "RTS_COR", "RTS2 corrections bitmask");
+  createValue (corrections, "RTS_COR", "RTS2 corrections bitmask", true);
   corrections->setValueInteger (COR_MODEL);
 
   // send telescope position every 60 seconds
@@ -123,10 +128,10 @@ Rts2DevTelescope::processOption (int in_opt)
       modelFile0 = optarg;
       break;
     case 'l':
-      sepLimit = atof (optarg);
+      sepLimit->setValueDouble (atof (optarg));
       break;
     case 'g':
-      minGood = atof (optarg);
+      minGood->setValueDouble (atof (optarg));
       break;
     case 's':
       standbyPark = true;
@@ -216,6 +221,12 @@ Rts2DevTelescope::getLocSidTime (double JD)
     ln_get_apparent_sidereal_time (JD) * 15.0 +
     telLongtitude->getValueDouble ();
   return ln_range_degrees (ret) / 15.0;
+}
+
+double
+Rts2DevTelescope::getSidTime (double JD)
+{
+  return ln_get_apparent_sidereal_time (JD);
 }
 
 double
@@ -663,8 +674,37 @@ Rts2DevTelescope::stopGuideAll ()
 }
 
 int
+Rts2DevTelescope::getAltAz ()
+{
+  struct ln_equ_posn telpos;
+  struct ln_lnlat_posn observer;
+  struct ln_hrz_posn hrz;
+
+  telpos.ra = telRa->getValueDouble ();
+  telpos.dec = telDec->getValueDouble ();
+
+  observer.lng = telLongtitude->getValueDouble ();
+  observer.lat = telLatitude->getValueDouble ();
+
+  ln_get_hrz_from_equ_sidereal_time (&telpos, &observer,
+				     getSidTime (ln_get_julian_from_sys ()),
+				     &hrz);
+
+  telAlt->setValueDouble (hrz.alt);
+  telAz->setValueDouble (hrz.az);
+
+  return 0;
+}
+
+int
 Rts2DevTelescope::info ()
 {
+
+  telSiderealTime->setValueDouble (getLocSidTime ());
+
+  // calculate alt+az
+  getAltAz ();
+
   if (knowPosition->getValueInteger ())
     {
       rasc->setValueDouble (lastRa->getValueDouble ());
@@ -744,7 +784,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       sep = getMoveTargetSep ();
       logStream (MESSAGE_DEBUG) << "start telescope move sep " << sep <<
 	sendLog;
-      if (sep > sepLimit)
+      if (sep > sepLimit->getValueDouble ())
 	dontKnowPosition ();
     }
   tar_ra += locCorRa;
@@ -871,7 +911,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       sep = getMoveTargetSep ();
       logStream (MESSAGE_DEBUG) << "telescope startResyncMove sep " << sep <<
 	sendLog;
-      if (sep > sepLimit)
+      if (sep > sepLimit->getValueDouble ())
 	dontKnowPosition ();
     }
   infoAll ();
@@ -960,10 +1000,11 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   targetPos.ra = realPos->ra - cor_ra;
   targetPos.dec = realPos->dec - cor_dec;
   posErr->setValueDouble (ln_get_angular_separation (&targetPos, realPos));
-  if (posErr->getValueDouble () > sepLimit)
+  if (posErr->getValueDouble () > sepLimit->getValueDouble ())
     {
       logStream (MESSAGE_WARNING)
-	<< "big separation " << posErr << " " << sepLimit << sendLog;
+	<< "big separation " << posErr << " " << sepLimit->
+	getValueDouble () << sendLog;
       conn->sendCommandEnd (DEVDEM_E_IGNORE,
 			    "separation greater then separation limit, ignoring");
       return -1;
@@ -971,7 +1012,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   if (moveMark->getValueInteger () == cor_mark)
     {
       // it's so big that we need resync now
-      if (posErr->getValueDouble () >= minGood)
+      if (posErr->getValueDouble () >= minGood->getValueDouble ())
 	{
 	  if (numCorr->getValueInteger () == 0
 	      && (numCorr->getValueInteger () < maxCorrNum || maxCorrNum < 0))
