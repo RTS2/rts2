@@ -91,6 +91,9 @@ public:
   virtual int initValues ();
   virtual int idle ();
   virtual int ready ();
+
+  virtual int getAltAz ();
+
   virtual int info ();
   virtual int startPark ();
   virtual int isParking ();

@@ -686,6 +686,24 @@ Rts2TelescopeIr::ready ()
 }
 
 int
+Rts2TelescopeIr::getAltAz ()
+{
+  int status = TPL_OK;
+  double zd, az;
+
+  status = tpl_get ("ZD.REALPOS", zd, &status);
+  status = tpl_get ("AZ.REALPOS", az, &status);
+
+  if (status != TPL_OK)
+    return -1;
+
+  telAlt->setValueDouble (90 - fabs (zd));
+  telAz->setValueDouble (az);
+
+  return 0;
+}
+
+int
 Rts2TelescopeIr::info ()
 {
   double zd, az;
