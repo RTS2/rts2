@@ -17,8 +17,6 @@ protected:
 
   Rts2ValueFloat *temperature;
   Rts2ValueFloat *humidity;
-  Rts2ValueInteger *power_telescope;
-  Rts2ValueInteger *power_cameras;
   Rts2ValueTime *nextOpen;
   Rts2ValueInteger *rain;
   Rts2ValueFloat *windspeed;

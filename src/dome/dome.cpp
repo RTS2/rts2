@@ -10,10 +10,6 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
   createValue (sw_state, "dome", "dome status mask", false);
   createValue (temperature, "DOME_TMP", "temperature in degrees C");
   createValue (humidity, "DOME_HUM", "(outside) humidity");
-  createValue (power_telescope, "power_telescope", "if telescope have power",
-	       false);
-  createValue (power_cameras, "power_cameras", "if camera(s) have power",
-	       false);
   createValue (rain, "RAIN", "whenever is raining");
   rain->setValueInteger (1);
   createValue (windspeed, "WINDSPED", "windspeed");

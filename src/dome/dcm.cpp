@@ -83,7 +83,6 @@ Rts2ConnDcm::receive (fd_set * set)
   float temp;
   float tmp_humidity;
   int tmp_rain;
-  float humidity;
 
   int sw1, sw2, sw3, sw4;
 
