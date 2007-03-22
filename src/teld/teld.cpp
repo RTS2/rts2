@@ -17,17 +17,19 @@
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
-  createValue (telRa, "MNT_RA", "mount RA (read from sensors)");
-  createValue (telDec, "MNT_DEC", "mount DEC (read from sensors)");
-  createValue (telAlt, "ALT", "mount ALT", true);
-  createValue (telAz, "AZ", "mount AZIMUTH", true);
+  createValue (telRa, "MNT_RA", "mount RA (read from sensors)", true,
+	       RTS2_DT_RA);
+  createValue (telDec, "MNT_DEC", "mount DEC (read from sensors)", true,
+	       RTS2_DT_DEC);
+  createValue (telAlt, "ALT", "mount ALT", true, RTS2_DT_DEC);
+  createValue (telAz, "AZ", "mount AZIMUTH", true, RTS2_DT_DEGREES);
   createValue (telSiderealTime, "siderealtime",
 	       "telescope local sidereal time", false);
   createValue (telLocalTime, "localtime", "telescope local time", false);
-  createValue (lastRa, "LAST_RA", "last target RA");
-  createValue (lastDec, "LAST_DEC", "last target DEC");
-  createValue (lastTarRa, "RASC", "target RA");
-  createValue (lastTarDec, "DECL", "target DEC");
+  createValue (lastRa, "LAST_RA", "last target RA", true, RTS2_DT_RA);
+  createValue (lastDec, "LAST_DEC", "last target DEC", true, RTS2_DT_DEC);
+  createValue (lastTarRa, "RASC", "target RA", true, RTS2_DT_RA);
+  createValue (lastTarDec, "DECL", "target DEC", true, RTS2_DT_DEC);
   createValue (ax1, "MNT_AX0", "mount axis 0 counts");
   createValue (ax2, "MNT_AX1", "mount axis 1 counts");
 
@@ -48,14 +50,18 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   locCorRa = 0;
   locCorDec = 0;
 
-  createValue (raCorr, "RA_CORR", "correction in RA");
-  createValue (decCorr, "DEC_CORR", "corrections in DEC");
-  createValue (posErr, "pos_err", "error in degrees", false);
+  createValue (raCorr, "RA_CORR", "correction in RA", true, RTS2_DT_DEG_DIST);
+  createValue (decCorr, "DEC_CORR", "corrections in DEC", true,
+	       RTS2_DT_DEG_DIST);
+  createValue (posErr, "pos_err", "error in degrees", false,
+	       RTS2_DT_DEG_DIST);
 
-  createValue (sepLimit, "seplimit", "separation limit", false);
+  createValue (sepLimit, "seplimit", "separation limit", false,
+	       RTS2_DT_DEG_DIST);
   sepLimit->setValueDouble (5.0);
 
-  createValue (minGood, "mingood", "minimal good distance (FOV)", false);
+  createValue (minGood, "mingood", "minimal good distance (FOV)", false,
+	       RTS2_DT_DEG_DIST);
   minGood->setValueDouble (180.0);
 
   modelFile = NULL;
@@ -85,8 +91,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	       false);
   knowPosition->setValueInteger (0);
 
-  createValue (rasc, "CUR_RA", "current RA (real or from astrometry");
-  createValue (desc, "CUR_DEC", "current DEC (real or from astrometry");
+  createValue (rasc, "CUR_RA", "current RA (real or from astrometry", true,
+	       RTS2_DT_RA);
+  createValue (desc, "CUR_DEC", "current DEC (real or from astrometry", true,
+	       RTS2_DT_DEC);
 
   nextReset = RESET_RESTART;
 

@@ -238,21 +238,29 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   ir_port = 0;
   tplc = NULL;
 
-  createValue (derotatorOffset, "DER_OFF", "derotator offset");
-  createValue (derotatorCurrpos, "DER_CUR", "derotator current position");
+  createValue (derotatorOffset, "DER_OFF", "derotator offset", true,
+	       RTS2_DT_DEG_DIST);
+  createValue (derotatorCurrpos, "DER_CUR", "derotator current position",
+	       true, RTS2_DT_DEGREES);
 
   createValue (mountTrack, "TRACK", "mount track");
 
   createValue (cover, "cover", "cover state (1 = opened)", false);
 
   createValue (model_dumpFile, "dump_file", "model dump file", false);
-  createValue (model_aoff, "aoff", "model azimuth offset", false);
-  createValue (model_zoff, "zoff", "model zenith offset", false);
-  createValue (model_ae, "ae", "azimuth equator? offset", false);
-  createValue (model_an, "an", "azimuth nadir? offset", false);
-  createValue (model_npae, "npae", "not polar adjusted equator?", false);
-  createValue (model_ca, "ca", "model ca parameter", false);
-  createValue (model_flex, "flex", "model flex parameter", false);
+  createValue (model_aoff, "aoff", "model azimuth offset", false,
+	       RTS2_DT_DEG_DIST);
+  createValue (model_zoff, "zoff", "model zenith offset", false,
+	       RTS2_DT_DEG_DIST);
+  createValue (model_ae, "ae", "azimuth equator? offset", false,
+	       RTS2_DT_DEG_DIST);
+  createValue (model_an, "an", "azimuth nadir? offset", false,
+	       RTS2_DT_DEG_DIST);
+  createValue (model_npae, "npae", "not polar adjusted equator?", false,
+	       RTS2_DT_DEG_DIST);
+  createValue (model_ca, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
+  createValue (model_flex, "flex", "model flex parameter", false,
+	       RTS2_DT_DEG_DIST);
 
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
