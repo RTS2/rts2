@@ -74,8 +74,6 @@ private:
   int cmd_col;
   char cmd_buf[CMD_BUF_LEN];
 
-  void executeCommand ();
-
   int repaint ();
 
   messageAction msgAction;

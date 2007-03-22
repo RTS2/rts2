@@ -1,6 +1,7 @@
 #include "rts2daemonwindow.h"
 #include "nmonitor.h"
 #include "../utils/timestamp.h"
+#include "../utils/rts2displayvalue.h"
 
 #include <iostream>
 
@@ -381,7 +382,7 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 	  break;
 	default:
 	  wprintw (getWriteWindow (), "%-20s|%30s\n",
-		   val->getName ().c_str (), val->getValue ());
+		   val->getName ().c_str (), getDisplayValue (val).c_str ());
 	}
       maxrow++;
     }
