@@ -26,12 +26,12 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
   struct ln_hms ra_hms;
   l_ra.toHms (&ra_hms);
   char old_fill = _os.fill ('0');
-  int old_precison = _os.precision (2);
+  int old_precison = _os.precision (3);
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << std::setw (2) << ra_hms.hours << " "
     << std::setw (2) << ra_hms.minutes << " "
-    << std::setw (5) << ra_hms.seconds;
+    << std::setw (6) << ra_hms.seconds;
   _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
@@ -56,10 +56,10 @@ std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM)
 {
   struct ln_hms hms;
   l_haM.toHms (&hms);
-  int old_precison = _os.precision (2);
+  int old_precison = _os.precision (3);
   char old_fill = _os.fill ('0');
   _os << std::setw (2) << hms.hours << " "
-    << std::setw (5) << (hms.minutes + hms.seconds / 60.0);
+    << std::setw (6) << (hms.minutes + hms.seconds / 60.0);
   _os.fill (old_fill);
   _os.precision (old_precison);
   return _os;
@@ -86,11 +86,11 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra)
   struct ln_hms ra_hms;
   l_ra.toHms (&ra_hms);
   char old_fill = _os.fill ('0');
-  int old_precison = _os.precision (1);
+  int old_precison = _os.precision (3);
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << std::setw (2) << ra_hms.hours
-    << std::setw (2) << ra_hms.minutes << std::setw (4) << ra_hms.seconds;
+    << std::setw (2) << ra_hms.minutes << std::setw (6) << ra_hms.seconds;
   _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
@@ -217,13 +217,13 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
   struct ln_dms deg_dms;
   l_dec.toDms (&deg_dms);
   char old_fill = _os.fill ('0');
-  int old_precison = _os.precision (1);
+  int old_precison = _os.precision (2);
   std::ios_base::fmtflags old_settings = _os.flags ();
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   _os << (deg_dms.neg ? '-' : '+')
     << std::setw (2) << deg_dms.degrees << " "
     << std::setw (2) << deg_dms.minutes << " "
-    << std::setw (4) << deg_dms.seconds;
+    << std::setw (5) << deg_dms.seconds;
   _os.setf (old_settings);
   _os.precision (old_precison);
   _os.fill (old_fill);
