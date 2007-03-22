@@ -56,13 +56,15 @@ protected:
    * \param in_val_name    value name
    * \param in_description value description
    * \param writeToFits    when true, value will be writen to FITS
+   * \param displayType    value display type, one of the RTS2_DT_xxx constant
    */
     template < typename T > void createValue (T * &val, char *in_val_name,
 					      std::string in_description,
 					      bool writeToFits =
-					      true, int queCondition = 0)
+					      true, int32_t displayType =
+					      0, int queCondition = 0)
   {
-    val = new T (in_val_name, in_description, writeToFits);
+    val = new T (in_val_name, in_description, writeToFits, displayType);
     addValue (val, queCondition);
   }
   /**
@@ -75,9 +77,11 @@ protected:
    */
   template < typename T > void createConstValue (T * &val, char *in_val_name,
 						 std::string in_description,
-						 bool writeToFits = true)
+						 bool writeToFits =
+						 true, int32_t displayType =
+						 0)
   {
-    val = new T (in_val_name, in_description, writeToFits);
+    val = new T (in_val_name, in_description, writeToFits, displayType);
     addConstValue (val);
   }
   void addConstValue (Rts2Value * value);

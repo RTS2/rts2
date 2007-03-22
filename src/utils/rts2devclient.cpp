@@ -50,23 +50,34 @@ Rts2DevClient::metaInfo (int rts2Type, std::string name, std::string desc)
   switch (rts2Type & RTS2_VALUE_MASK)
     {
     case RTS2_VALUE_STRING:
-      newValue = new Rts2ValueString (name, desc, rts2Type & RTS2_VALUE_FITS);
+      newValue =
+	new Rts2ValueString (name, desc, rts2Type & RTS2_VALUE_FITS,
+			     rts2Type & RTS2_TYPE_MASK);
       break;
     case RTS2_VALUE_INTEGER:
       newValue =
-	new Rts2ValueInteger (name, desc, rts2Type & RTS2_VALUE_FITS);
+	new Rts2ValueInteger (name, desc, rts2Type & RTS2_VALUE_FITS,
+			      rts2Type & RTS2_TYPE_MASK);
       break;
     case RTS2_VALUE_TIME:
-      newValue = new Rts2ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS);
+      newValue =
+	new Rts2ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS,
+			   rts2Type & RTS2_TYPE_MASK);
       break;
     case RTS2_VALUE_DOUBLE:
-      newValue = new Rts2ValueDouble (name, desc, rts2Type & RTS2_VALUE_FITS);
+      newValue =
+	new Rts2ValueDouble (name, desc, rts2Type & RTS2_VALUE_FITS,
+			     rts2Type & RTS2_TYPE_MASK);
       break;
     case RTS2_VALUE_FLOAT:
-      newValue = new Rts2ValueFloat (name, desc, rts2Type & RTS2_VALUE_FITS);
+      newValue =
+	new Rts2ValueFloat (name, desc, rts2Type & RTS2_VALUE_FITS,
+			    rts2Type & RTS2_TYPE_MASK);
       break;
     case RTS2_VALUE_BOOL:
-      newValue = new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS);
+      newValue =
+	new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS,
+			   rts2Type & RTS2_TYPE_MASK);
       break;
     default:
       logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<

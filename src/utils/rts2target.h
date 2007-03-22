@@ -92,6 +92,7 @@ public:
     tar_enabled = new_en;
   }
   virtual int setNextObservable (time_t * time_ch) = 0;
+  virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL) = 0;
 
   virtual int save (bool overwrite) = 0;
   virtual int save (bool overwrite, int tar_id) = 0;
