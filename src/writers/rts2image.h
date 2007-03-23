@@ -11,6 +11,7 @@
 #include <fitsio.h>
 #include <list>
 #include <ostream>
+#include <vector>
 #include <config.h>
 
 #include "imghdr.h"
@@ -19,6 +20,13 @@
 #include "../utils/rts2devclient.h"
 #include "../utils/mkpath.h"
 #include "../utilsdb/target.h"
+
+struct pixel
+{
+  int x;
+  int y;
+  unsigned short value;
+};
 
 struct stardata
 {
@@ -553,6 +561,20 @@ public:
   void writeClient (Rts2DevClient * client);
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image & image);
+  // image processing routines and values
+  double classicMedian (double *q, int n, double *sigma);
+  int findMaxIntensity (unsigned short *in_data, struct pixel *ret);
+  unsigned short getPixel (unsigned short *data, int x, int y);
+  int findStar (unsigned short *data);
+  int aperture (unsigned short *data, struct pixel pix, struct pixel *ret);
+  int centroid (unsigned short *data, struct pixel pix, float *px, float *py);
+  int radius (unsigned short *data, double px, double py, int rmax);
+  int integrate (unsigned short *data, double px, double py, int size,
+		 float *ret);
+  int evalAF (float *result, float *error);
+
+  std::vector < pixel > list;
+  double median, sigma;
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Image & image);

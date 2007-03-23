@@ -12,6 +12,7 @@
 #define IMAGEOP_TEST		0x04
 #define IMAGEOP_COPY		0x08
 #define IMAGEOP_MOVE		0x10
+#define IMAGEOP_EVAL		0x20
 
 class Rts2AppImageManip:public Rts2AppDbImage
 {
@@ -23,6 +24,7 @@ private:
   int addDate (Rts2Image * image);
   int insert (Rts2ImageDb * image);
   int testImage (Rts2Image * image);
+  int testEval (Rts2Image * image);
 
     std::string copy_expr;
     std::string move_expr;
@@ -133,6 +135,18 @@ Rts2AppImageManip::testImage (Rts2Image * image)
 }
 
 int
+Rts2AppImageManip::testEval (Rts2Image * image)
+{
+  float value, error;
+
+  image->evalAF (&value, &error);
+
+  std::cout << "value: " << value << " error: " << error << std::endl;
+
+  return 0;
+}
+
+int
 Rts2AppImageManip::processOption (int in_opt)
 {
   switch (in_opt)
@@ -154,6 +168,9 @@ Rts2AppImageManip::processOption (int in_opt)
     case 't':
       operation |= IMAGEOP_TEST;
       break;
+    case 'e':
+      operation |= IMAGEOP_EVAL;
+      break;
     default:
       return Rts2AppDbImage::processOption (in_opt);
     }
@@ -173,6 +190,8 @@ Rts2AppImageManip::processImage (Rts2ImageDb * image)
     image->copyImageExpand (copy_expr);
   if (operation & IMAGEOP_MOVE)
     image->renameImageExpand (move_expr);
+  if (operation & IMAGEOP_EVAL)
+    testEval (image);
   return 0;
 }
 
@@ -191,6 +210,7 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
   addOption ('i', "insert", 0, "insert/update image(s) in the database");
   addOption ('m', "move", 1,
 	     "move image(s) to path expression given as argument");
+  addOption ('e', "eval", 0, "image evaluation for AF purpose");
   addOption ('t', "test", 0, "test various image routines");
 }
 
@@ -203,10 +223,12 @@ main (int argc, char **argv)
     ret = app->init ();
   if (ret)
     {
-      delete app;
+      delete
+	app;
       return ret;
     }
   ret = app->run ();
-  delete app;
+  delete
+    app;
   return ret;
 }
