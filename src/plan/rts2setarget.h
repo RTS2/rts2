@@ -49,4 +49,22 @@ public:
 			      char new_device[DEVICE_NAME_SIZE]);
 };
 
+class Rts2SETTarBoost:public Rts2SETarget
+{
+private:
+  int seconds;
+  int bonus;
+public:
+    Rts2SETTarBoost (Rts2Script * in_script, Rts2Target * in_target,
+		     int in_seconds, int in_bonus):Rts2SETarget (in_script,
+								 in_target)
+  {
+    seconds = in_seconds;
+    bonus = in_bonus;
+  }
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
+};
+
 #endif /* !__RTS2_SETARGET__ */

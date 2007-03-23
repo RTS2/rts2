@@ -31,6 +31,7 @@ public:
   virtual int isAcquired ();
 
   virtual int setNextObservable (time_t * time_ch);
+  virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL);
 
   virtual int save (bool overwrite);
   virtual int save (bool overwrite, int tar_id);

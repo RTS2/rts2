@@ -22,3 +22,16 @@ Rts2SETTempDisable::defnextCommand (Rts2DevClient * client,
   getTarget ()->save (true);
   return NEXT_COMMAND_NEXT;
 }
+
+int
+Rts2SETTarBoost::defnextCommand (Rts2DevClient * client,
+				 Rts2Command ** new_command,
+				 char new_device[DEVICE_NAME_SIZE])
+{
+  time_t now;
+  time (&now);
+  now += seconds;
+  getTarget ()->setTargetBonus (bonus, &now);
+  getTarget ()->save (true);
+  return NEXT_COMMAND_NEXT;
+}

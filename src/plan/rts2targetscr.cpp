@@ -53,6 +53,12 @@ Rts2TargetScr::setNextObservable (time_t * time_ch)
   return 0;
 }
 
+void
+Rts2TargetScr::setTargetBonus (float new_bonus, time_t * new_time)
+{
+
+}
+
 int
 Rts2TargetScr::save (bool overwrite)
 {
