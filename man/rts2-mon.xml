@@ -56,10 +56,21 @@
     <para>
       When you run rts2-mon, screen is divided into four principal
       areas - menu bar, device list and status display, RTS2 messages
-      space and 
+      space and status bar at bottom.
+    </para>
+
+    <para>
+      Status bar display at left current system staus. On right, current UT
+      time is displayed.
     </para>
 
   </refsect1>
+<!--  <refsect1>
+    <title>ENTERING COMMANDS IN RTS2-MON</title>
+
+    <para>
+    </para>
+  </refsect1> -->
   <refsect1>
     <title>KEYS</title>
 
@@ -138,6 +149,14 @@
 	  </term>
 	  <listitem>
 	    Move focus on selection list to last entry.
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>left, right (arrows)</option>
+	  </term>
+	  <listitem>
+	    Shift text left or right, so part which cannot be visible becomes visible.
 	  </listitem>
 	</varlistentry>
       </variablelist>
