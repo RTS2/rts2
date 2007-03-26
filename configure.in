@@ -212,6 +212,16 @@ AM_CONDITIONAL(GPIBLIB, test x$GPIBLIB != xno)
 AC_SUBST(GPIBLIB)
 AC_SUBST(LIB_GPIB)
 
+# Define lock file prefix
+AC_ARG_WITH(lock,
+[  --with-lock-prefix      specify lock file path prefix, default to /var/run/rts2_],
+LOCK_PREFIX="${withval}",
+LOCK_PREFIX="/var/run/rts2_")
+
+AH_TEMPLATE([LOCK_PREFIX],[Lock file prefix path])
+
+AC_DEFINE_UNQUOTED(LOCK_PREFIX, "$LOCK_PREFIX", [Lock file prefix path])
+
 # Checks for libraries.
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -349,7 +359,7 @@ AC_FUNC_VPRINTF
 AC_TYPE_MODE_T
 
 AC_CONFIG_SRCDIR(src)
-AM_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADER(include/config.h)
 
 AC_OUTPUT([Makefile
 	   man/Makefile
@@ -414,6 +424,8 @@ DOME's:
 pgsql		${psql}
 gsoap           ${gsoap}
 gpib            ${GPIBLIB}
+
+lock prefix     ${LOCK_PREFIX}
 
 ***************************************
 
