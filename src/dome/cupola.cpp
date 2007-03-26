@@ -9,12 +9,14 @@ Rts2DevDome (in_argc, in_argv, DEVICE_TYPE_COPULA)
   targetPos.ra = nan ("f");
   targetPos.dec = nan ("f");
 
-  createValue (tarRa, "tar_ra", "copula target ra", false);
-  createValue (tarDec, "tar_dec", "copula target dec", false);
-  createValue (tarAlt, "tar_alt", "copula target altitude", false);
-  createValue (tarAz, "tar_az", "copula target azimut", false);
+  createValue (tarRa, "tar_ra", "copula target ra", false, RTS2_DT_RA);
+  createValue (tarDec, "tar_dec", "copula target dec", false, RTS2_DT_DEC);
+  createValue (tarAlt, "tar_alt", "copula target altitude", false,
+	       RTS2_DT_DEC);
+  createValue (tarAz, "tar_az", "copula target azimut", false,
+	       RTS2_DT_DEGREES);
 
-  createValue (currentAz, "CUP_AZ", "cupola azimut");
+  createValue (currentAz, "CUP_AZ", "cupola azimut", true, RTS2_DT_DEGREES);
 
   targetDistance = 0;
 
