@@ -491,10 +491,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   createValue (subExposure, "subexposure", "current subexposure", false);
   createValue (camFilterVal, "filter", "used filter number", false);
 
-  createValue (camFocVal, "focpos", "position of focuser", false);
-  createValue (nextFocPos, "next_focpos", "qued focuser position change",
-	       false);
-  nextFocPos->setValueInteger (INT_MIN);
+  createValue (camFocVal, "focpos", "position of focuser", false, 0,
+	       CAM_EXPOSING);
 
   createValue (camShutterVal, "shutter", "shutter position", false);
 
@@ -706,11 +704,6 @@ Rts2DevCamera::checkExposures ()
 		{
 		  camFilter (exposureFilter);
 		  exposureFilter = -1;
-		}
-	      if (nextFocPos->getValueInteger () != INT_MIN)
-		{
-		  setFocuserDontCheck (nextFocPos->getValueInteger ());
-		  nextFocPos->setValueInteger (INT_MIN);
 		}
 	      if (ret == -2)
 		{
@@ -1196,8 +1189,12 @@ Rts2DevCamera::getFilterNum ()
 }
 
 int
-Rts2DevCamera::setFocuserDontCheck (int new_set)
+Rts2DevCamera::setFocuser (int new_set)
 {
+  if (!focuserDevice)
+    {
+      return -1;
+    }
   struct focuserMove fm;
   fm.focuserName = focuserDevice;
   fm.value = new_set;
@@ -1212,48 +1209,10 @@ Rts2DevCamera::setFocuserDontCheck (int new_set)
 }
 
 int
-Rts2DevCamera::setFocuser (int new_set)
-{
-  if (focuserDevice == NULL)
-    {
-      return -1;
-    }
-  for (int i = 0; i < chipNum; i++)
-    {
-      if (getStateChip (i) & CAM_EXPOSING)
-	{
-	  // que focuser change after exposure ends..
-	  nextFocPos->setValueInteger (new_set);
-	  return 0;
-	}
-    }
-  return setFocuserDontCheck (new_set);
-}
-
-int
-Rts2DevCamera::setFocuser (Rts2Conn * conn, int new_set)
-{
-  int ret;
-  if (!focuserDevice)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have focuser");
-      return -1;
-    }
-  ret = setFocuser (new_set);
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "error during focusing");
-      return ret;
-    }
-  return 0;
-}
-
-int
-Rts2DevCamera::stepFocuser (Rts2Conn * conn, int step_count)
+Rts2DevCamera::stepFocuser (int step_count)
 {
   if (!focuserDevice)
     {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have focuser");
       return -1;
     }
   struct focuserMove fm;
@@ -1262,9 +1221,10 @@ Rts2DevCamera::stepFocuser (Rts2Conn * conn, int step_count)
   postEvent (new Rts2Event (EVENT_FOCUSER_STEP, (void *) &fm));
   if (fm.focuserName)
     {
-      conn->sendCommandEnd (DEVDEM_E_HW, "error during focusing");
+      nextExp->setValueInteger (nextExp->getValueInteger () & ~FOCUSER_MOVE);
       return -1;
     }
+  nextExp->setValueInteger (nextExp->getValueInteger () | FOCUSER_MOVE);
   return 0;
 }
 
@@ -1483,20 +1443,6 @@ Rts2DevConnCamera::commandAuthorized ()
       if (paramNextInteger (&new_filter) || !paramEnd ())
 	return -2;
       return master->camFilter (this, new_filter);
-    }
-  else if (isCommand ("step"))
-    {
-      int foc_step;
-      if (paramNextInteger (&foc_step) || !paramEnd ())
-	return -2;
-      return master->stepFocuser (this, foc_step);
-    }
-  else if (isCommand ("set"))
-    {
-      int foc_set;
-      if (paramNextInteger (&foc_set) || !paramEnd ())
-	return -2;
-      return master->setFocuser (this, foc_set);
     }
   else if (isCommand ("focus"))
     {

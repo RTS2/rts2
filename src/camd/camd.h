@@ -201,8 +201,6 @@ private:
   Rts2ValueInteger *camFocVal;
   Rts2ValueInteger *camShutterVal;
 
-  Rts2ValueInteger *nextFocPos;
-
   int getStateChip (int chip_num);
   void maskStateChip (int chip_num, int state_mask, int new_state,
 		      char *description);
@@ -329,10 +327,8 @@ public:
   virtual int getFilterNum ();
 
   // focuser functions
-  int setFocuserDontCheck (int new_set);
   int setFocuser (int new_set);
-  int setFocuser (Rts2Conn * conn, int new_set);
-  int stepFocuser (Rts2Conn * conn, int step_count);
+  int stepFocuser (int step_count);
   int getFocPos ();
 
   float focusExposure;
