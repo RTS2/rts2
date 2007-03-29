@@ -48,6 +48,10 @@ public:
   int
   getAverageErrors (double &eRa, double &eDec, double &eRad);
 
+  std::vector <
+    Rts2ImgSetStat >::iterator
+  getStat (std::string in_filter);
+
   friend
     std::ostream &
   operator << (std::ostream & _os, Rts2ImgSet & img_set);

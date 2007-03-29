@@ -10,9 +10,9 @@
 class Rts2ImgSetStat
 {
 public:
-  Rts2ImgSetStat ()
+  Rts2ImgSetStat (std::string in_filter = std::string (""))
   {
-    filter = std::string ("");
+    filter = in_filter;
     img_alt = 0;
     img_az = 0;
     img_err = 0;

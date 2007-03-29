@@ -4,6 +4,7 @@
 #include <iomanip>
 
 #include "../utils/libnova_cpp.h"
+#include "../utils/timestamp.h"
 
 void
 Rts2ImgSetStat::stat ()
@@ -26,16 +27,14 @@ Rts2ImgSetStat::stat ()
 
 std::ostream & operator << (std::ostream & _os, Rts2ImgSetStat & stat)
 {
-  _os << "images:" << stat.count;
+  _os << std::setw (6) << stat.count;
   if (stat.count == 0)
     return _os;
-  _os << " with exposure " << stat.exposure << " seconds ";
-  int old_precision = _os.precision (0);
-  _os << " with astrometry:" << stat.astro_count
-    << " (" << std::setw (3) << (100 * stat.astro_count / stat.count) << "%)";
-  _os.precision (2);
-  _os << " avg. alt:" << LibnovaDeg90 (stat.img_alt)
-    << " avg. err:" << LibnovaDegArcMin (stat.img_err);
-  _os.precision (old_precision);
+  _os << " " << std::setw (20) << TimeDiff (stat.exposure);
+  _os << std::setw (6) << stat.astro_count
+    << " (" << std::setw (3) << (100 * stat.astro_count /
+				 stat.count) << "%) ";
+  _os << LibnovaDeg90 (stat.img_alt) << " " << LibnovaDegArcMin (stat.
+								 img_err);
   return _os;
 }
