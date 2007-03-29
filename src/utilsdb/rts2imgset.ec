@@ -6,7 +6,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include "../utils/libnova_cpp.h"
 #include "../writers/rts2imagedb.h"
 
 Rts2ImgSet::Rts2ImgSet ()
@@ -55,15 +54,6 @@ Rts2ImgSet::load (std::string in_where)
 
   int d_epoch_id;
   EXEC SQL END DECLARE SECTION;
-
-  img_alt = 0;
-  img_az  = 0;
-  img_err = 0;
-  img_err_ra  = 0;
-  img_err_dec = 0;
-
-  count = 0;
-  astro_count = 0;
 
   asprintf (&stmp_c,
   "SELECT "
@@ -132,16 +122,17 @@ Rts2ImgSet::load (std::string in_where)
     if (d_img_err_ind < 0)
       d_img_err = nan ("f");
 
-    img_alt += d_img_alt;
-    img_az  += d_img_az;
+    allStat.img_alt += d_img_alt;
+    allStat.img_az  += d_img_az;
     if (!isnan (d_img_err))
     {
-      img_err += d_img_err;
-      img_err_ra  += d_img_err_ra;
-      img_err_dec += d_img_err_dec;
-      astro_count++;
+      allStat.img_err += d_img_err;
+      allStat.img_err_ra  += d_img_err_ra;
+      allStat.img_err_dec += d_img_err_dec;
+      allStat.astro_count++;
     }
-    count++;
+    allStat.count++;
+    allStat.exposure += d_img_exposure;
 
     d_img_filter.arr[d_img_filter.len] = '\0';
       
@@ -171,21 +162,7 @@ void
 Rts2ImgSet::stat ()
 {
   // compute statistics
-
-  img_alt /= count;
-  img_az  /= count;
-  if (astro_count > 0)
-  {
-    img_err /= astro_count;
-    img_err_ra  /= astro_count;
-    img_err_dec /= astro_count;
-  }
-  else
-  {
-    img_err = nan ("f");
-    img_err_ra = nan ("f");
-    img_err_dec = nan ("f");
-  }
+  allStat.stat ();
 }
 
 void
@@ -316,15 +293,6 @@ Rts2ImgSetDarks::load ()
 
 std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)
 {
-  _os << "images:" << img_set.count;
-  if (img_set.count == 0)
-    return _os;
-  int old_precision = _os.precision(0);
-  _os << " with astrometry:" << img_set.astro_count
-    << " (" << std::setw(3) << (100 * img_set.astro_count / img_set.count) << "%)";
-  _os.precision(2);
-  _os << " avg. alt:" << LibnovaDeg90 (img_set.img_alt)
-    << " avg. err:" << LibnovaDegArcMin (img_set.img_err);
-  _os.precision (old_precision);
+  _os << img_set.allStat;
   return _os;
 }
