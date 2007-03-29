@@ -369,7 +369,7 @@ Rts2TelescopeIr::initValues ()
   telLatitude->setValueDouble (LATITUDE);
   telAltitude->setValueDouble (ALTITUDE);
   tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
-  strncpy (telSerialNumber, serial.c_str (), 64);
+  addConstValue ("IR_HWID", serial.c_str ());
 
   return Rts2DevTelescope::initValues ();
 }

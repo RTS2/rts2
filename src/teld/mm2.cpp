@@ -767,7 +767,6 @@ Rts2DevTelescopeMM2::initValues ()
     return -1;
 
   strcpy (telType, "MM2");
-  strcpy (telSerialNumber, "000001");
   telAltitude->setValueDouble (600);
 
   telFlip->setValueInteger (0);
@@ -1283,8 +1282,6 @@ Rts2DevTelescopeMM2::stopDir (char *dir)
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeMM2 *device = new Rts2DevTelescopeMM2 (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevTelescopeMM2 device = Rts2DevTelescopeMM2 (argc, argv);
+  return device.run ();
 }

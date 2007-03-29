@@ -624,7 +624,6 @@ Rts2DevTelescopeLX200::initValues ()
     return -1;
 
   strcpy (telType, "LX200");
-  strcpy (telSerialNumber, "000001");
   telAltitude->setValueDouble (600);
 
   telFlip->setValueInteger (0);
@@ -957,8 +956,6 @@ Rts2DevTelescopeLX200::stopDir (char *dir)
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeLX200 *device = new Rts2DevTelescopeLX200 (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevTelescopeLX200 device = Rts2DevTelescopeLX200 (argc, argv);
+  return device.run ();
 }

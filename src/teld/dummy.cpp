@@ -129,8 +129,6 @@ Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeDummy *device = new Rts2DevTelescopeDummy (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevTelescopeDummy device = Rts2DevTelescopeDummy (argc, argv);
+  return device.run ();
 }

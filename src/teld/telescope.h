@@ -90,7 +90,6 @@ protected:
   virtual int willConnect (Rts2Address * in_addr);
   char *device_file;
   char telType[64];
-  char telSerialNumber[64];
   Rts2ValueDouble *telRa;
   Rts2ValueDouble *telDec;
   Rts2ValueDouble *telAlt;

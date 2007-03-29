@@ -1260,7 +1260,6 @@ Rts2DevTelescopeGemini::initValues ()
   buf[4] = '\0';
   strcat (telType, "_");
   strcat (telType, buf);
-  strcpy (telSerialNumber, "000001");
   telAltitude->setValueDouble (600);
 
   return Rts2DevTelescope::initValues ();
@@ -2802,8 +2801,6 @@ Rts2DevTelescopeGemini::getFlip ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeGemini *device = new Rts2DevTelescopeGemini (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevTelescopeGemini device = Rts2DevTelescopeGemini (argc, argv);
+  return device.run ();
 }

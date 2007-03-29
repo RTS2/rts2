@@ -1310,14 +1310,9 @@ Rts2DevTelParamount::loadModel ()
   return 0;
 }
 
-Rts2DevTelParamount *device;
-
 int
 main (int argc, char **argv)
 {
-  int ret;
-  device = new Rts2DevTelParamount (argc, argv);
-  ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevTelParamount device = Rts2DevTelParamount (argc, argv);
+  return device.run ();
 }

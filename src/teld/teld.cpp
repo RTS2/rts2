@@ -370,7 +370,6 @@ int
 Rts2DevTelescope::initValues ()
 {
   addConstValue ("MNT_TYPE", "mount telescope", telType);
-  addConstValue ("MNT_SER", "mount serial", telSerialNumber);
   return Rts2Device::initValues ();
 }
 

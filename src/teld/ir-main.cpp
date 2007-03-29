@@ -213,8 +213,6 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
 int
 main (int argc, char **argv)
 {
-  Rts2DevTelescopeIr *device = new Rts2DevTelescopeIr (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevTelescopeIr device = Rts2DevTelescopeIr (argc, argv);
+  return device.run ();
 }
