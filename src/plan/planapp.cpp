@@ -152,14 +152,11 @@ Rts2PlanApp::run ()
 int
 main (int argc, char **argv)
 {
-  Rts2PlanApp *app = new Rts2PlanApp (argc, argv);
-  int ret = app->init ();
+  Rts2PlanApp app = Rts2PlanApp (argc, argv);
+  int ret = app.init ();
   if (ret)
     {
-      delete app;
-      return 0;
+      return ret;
     }
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

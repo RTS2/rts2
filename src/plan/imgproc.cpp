@@ -461,8 +461,6 @@ Rts2ImageProc::checkNotProcessed ()
 int
 main (int argc, char **argv)
 {
-  Rts2ImageProc *imgproc = new Rts2ImageProc (argc, argv);
-  int ret = imgproc->run ();
-  delete imgproc;
-  return ret;
+  Rts2ImageProc imgproc = Rts2ImageProc (argc, argv);
+  return imgproc.run ();
 }
