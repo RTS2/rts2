@@ -83,6 +83,12 @@ public:
   {
   }
 
+  TimeDiff (double in_time)
+  {
+    time_1 = 0;
+    time_2 = in_time;
+  }
+
   /**
    * Construct time diff from two doubles.
    *
