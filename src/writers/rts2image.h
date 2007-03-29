@@ -19,7 +19,7 @@
 #include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/mkpath.h"
-#include "../utilsdb/target.h"
+#include "../utils/rts2target.h"
 
 struct pixel
 {
@@ -122,7 +122,7 @@ public:
   // create image
   Rts2Image (char *in_filename, const struct timeval *in_exposureStart);
   // create image in que
-  Rts2Image (Target * currTarget, Rts2DevClientCamera * camera,
+  Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
 	     const struct timeval *in_exposureStart);
   // open image from disk..
   Rts2Image (const char *in_filename);

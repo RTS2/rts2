@@ -21,8 +21,16 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 {
 private:
   void writeFilter ();
+  bool isExposing;
 protected:
-  int isExposing;
+    bool getIsExposing ()
+  {
+    return isExposing;
+  }
+  void setIsExposing (bool in_isExposing)
+  {
+    isExposing = in_isExposing;
+  }
   // we have to allocate that field as soon as we get the knowledge of
   // camera chip numbers..
   Rts2Image *images;
@@ -54,8 +62,8 @@ protected:
   virtual void exposureEnd ();
   virtual void readoutEnd ();
 public:
-    Rts2DevClientCameraImage (Rts2Conn * in_connection);
-    virtual ~ Rts2DevClientCameraImage (void);
+  Rts2DevClientCameraImage (Rts2Conn * in_connection);
+  virtual ~ Rts2DevClientCameraImage (void);
   virtual void postEvent (Rts2Event * event);
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual Rts2Image *createImage (const struct timeval *expStart);

@@ -49,7 +49,7 @@ Rts2ImageDb::Rts2ImageDb (Rts2Image * in_image): Rts2Image (in_image)
 {
 }
 
-Rts2ImageDb::Rts2ImageDb (Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
+Rts2ImageDb::Rts2ImageDb (Rts2Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
   Rts2Image (currTarget, camera, expStart)
 {
   initDbImage ();
@@ -474,7 +474,7 @@ Rts2ImageSkyDb::updateCalibrationDb ()
   }
 }
 
-Rts2ImageSkyDb::Rts2ImageSkyDb (Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
+Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) : 
   Rts2ImageDb (currTarget, camera, expStart)
 {
   initDbImage ();

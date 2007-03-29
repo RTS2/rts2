@@ -19,7 +19,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   exposureChip = 0;
   exposureCount = 0;
 
-  isExposing = 0;
+  isExposing = false;
 
   Rts2Config *
     config;
@@ -62,7 +62,7 @@ Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
 void
 Rts2DevClientCameraImage::queExposure ()
 {
-  if (isExposing || !exposureCount)
+  if (getIsExposing () || !exposureCount)
     return;
   if (exposureCount > 0)
     exposureCount--;
@@ -70,7 +70,7 @@ Rts2DevClientCameraImage::queExposure ()
     queCommand (new
 		Rts2CommandExposure (connection->getMaster (), this,
 				     0, exposureT, exposureTime));
-  isExposing = 1;
+  setIsExposing (true);
   if (exposureT != EXP_DARK)
     blockWait ();
 }
@@ -177,7 +177,7 @@ Rts2DevClientCameraImage::processImage (Rts2Image * image)
 void
 Rts2DevClientCameraImage::exposureFailed (int status)
 {
-  isExposing = 0;
+  setIsExposing (false);
   readoutEnd ();		// pretend we can expose new image after failure..
 }
 
@@ -235,17 +235,17 @@ Rts2DevClientCameraImage::exposureEnd ()
   connection->getMaster ()->
     logStream (MESSAGE_DEBUG) << "Rts2DevClientCameraImage::exposureEnd " <<
     connection->getName () << sendLog;
-  if (!isExposing)
+  if (!getIsExposing ())
     return Rts2DevClientCamera::exposureEnd ();
   images->writeClient (this);
-  isExposing = 0;
+  setIsExposing (false);
   if (exposureT != EXP_DARK)
     unblockWait ();
   connection->
     queCommand (new Rts2CommandReadout (connection->getMaster (), 0));
 //  connection->
 //    queCommand (new Rts2CommandExposure (connection->getMaster (), this, 0, exposureT, exposureTime, true));
-//  isExposing = 1;
+//  setIsExposing (true);
   Rts2DevClientCamera::exposureEnd ();
 }
 

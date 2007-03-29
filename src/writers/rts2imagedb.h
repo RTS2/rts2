@@ -11,6 +11,7 @@
 #define __RTS2_IMAGEDB__
 
 #include "rts2image.h"
+#include "../utils/rts2target.h"
 #include "../utilsdb/rts2taruser.h"
 
 // process_bitfield content
@@ -44,7 +45,7 @@ protected:
 
 public:
   Rts2ImageDb (Rts2Image * in_image);
-  Rts2ImageDb (Target * currTarget, Rts2DevClientCamera * camera,
+  Rts2ImageDb (Rts2Target * currTarget, Rts2DevClientCamera * camera,
 	       const struct timeval *expStart);
   Rts2ImageDb (const char *in_filename);
   Rts2ImageDb (int in_obs_id, int in_img_id);
@@ -74,7 +75,7 @@ protected:
   virtual int updateDB ();
 
 public:
-    Rts2ImageSkyDb (Target * currTarget, Rts2DevClientCamera * camera,
+    Rts2ImageSkyDb (Rts2Target * currTarget, Rts2DevClientCamera * camera,
 		    const struct timeval *expStartd);
     Rts2ImageSkyDb (const char *in_filename);
   //! Construct image from already existed Rts2ImageDb instance
