@@ -77,7 +77,6 @@ private:
   // is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
   int executedCount;
 public:
-    Rts2Script (Rts2Block * in_master, const char *cam_name, char *script);
     Rts2Script (Rts2Block * in_master, const char *cam_name,
 		Rts2Target * target);
     virtual ~ Rts2Script (void);

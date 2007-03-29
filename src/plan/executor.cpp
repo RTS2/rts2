@@ -69,6 +69,8 @@ public:
 
   virtual void postEvent (Rts2Event * event);
 
+  virtual void deviceReady (Rts2Conn * conn);
+
   virtual int ready ()
   {
     return 0;
@@ -238,34 +240,24 @@ Rts2Executor::createConnection (int in_sock)
 Rts2DevClient *
 Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-  Rts2DevClient *cli;
   switch (other_device_type)
     {
     case DEVICE_TYPE_MOUNT:
-      cli = new Rts2DevClientTelescopeExec (conn);
-      break;
+      return new Rts2DevClientTelescopeExec (conn);
     case DEVICE_TYPE_CCD:
-      cli = new Rts2DevClientCameraExecDb (conn);
-      break;
+      return new Rts2DevClientCameraExecDb (conn);
     case DEVICE_TYPE_FOCUS:
-      cli = new Rts2DevClientFocusImage (conn);
-      break;
+      return new Rts2DevClientFocusImage (conn);
     case DEVICE_TYPE_PHOT:
-      cli = new Rts2DevClientPhotExec (conn);
-      break;
+      return new Rts2DevClientPhotExec (conn);
     case DEVICE_TYPE_MIRROR:
-      cli = new Rts2DevClientMirrorExec (conn);
-      break;
+      return new Rts2DevClientMirrorExec (conn);
     case DEVICE_TYPE_DOME:
     case DEVICE_TYPE_SENSOR:
-      cli = new Rts2DevClientWriteImage (conn);
-      break;
+      return new Rts2DevClientWriteImage (conn);
     default:
-      cli = Rts2DeviceDb::createOtherType (conn, other_device_type);
+      return Rts2DeviceDb::createOtherType (conn, other_device_type);
     }
-  if (currentTarget)
-    cli->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-  return cli;
 }
 
 void
@@ -399,6 +391,14 @@ Rts2Executor::postEvent (Rts2Event * event)
       break;
     }
   Rts2Device::postEvent (event);
+}
+
+void
+Rts2Executor::deviceReady (Rts2Conn * conn)
+{
+  if (currentTarget)
+    conn->
+      postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 }
 
 int
@@ -826,8 +826,6 @@ Rts2Executor::updateScriptCount ()
 int
 main (int argc, char **argv)
 {
-  Rts2Executor *executor = new Rts2Executor (argc, argv);
-  int ret = executor->run ();
-  delete executor;
-  return ret;
+  Rts2Executor executor = Rts2Executor (argc, argv);
+  return executor.run ();
 }

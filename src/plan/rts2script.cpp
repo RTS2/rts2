@@ -2,15 +2,16 @@
 #include "rts2setarget.h"
 #include "rts2scriptblock.h"
 #include "rts2scriptguiding.h"
+#include "../utilsdb/scriptcommands.h"
 #include <string.h>
 #include <ctype.h>
 
 // test if next element is one that is given
-bool Rts2Script::isNext (const char *element)
+bool
+Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t
-    el_len = strlen (element);
+  size_t el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
