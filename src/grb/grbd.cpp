@@ -262,8 +262,6 @@ Rts2DevGrb::newGcnGrb (int tar_id)
 int
 main (int argc, char **argv)
 {
-  Rts2DevGrb *grb = new Rts2DevGrb (argc, argv);
-  int ret = grb->run ();
-  delete grb;
-  return ret;
+  Rts2DevGrb grb = Rts2DevGrb (argc, argv);
+  return grb.run ();
 }

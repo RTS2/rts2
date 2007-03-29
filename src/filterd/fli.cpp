@@ -176,8 +176,6 @@ Rts2DevFilterdFli::homeFilter ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevFilterdFli *device = new Rts2DevFilterdFli (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevFilterdFli device = Rts2DevFilterdFli (argc, argv);
+  return device.run ();
 }

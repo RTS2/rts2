@@ -332,8 +332,6 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 int
 main (int argc, char **argv)
 {
-  Rts2DevFilterdIfw *device = new Rts2DevFilterdIfw (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevFilterdIfw device = Rts2DevFilterdIfw (argc, argv);
+  return device.run ();
 }

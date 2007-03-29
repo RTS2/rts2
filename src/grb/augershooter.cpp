@@ -87,7 +87,8 @@ Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
   return 0;
 }
 
-bool Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
+bool
+Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 {
   return (fabs (lastDate - lastAugerDate->getValueDouble ()) < 5
 	  && ra == lastAugerRa->getValueDouble ()
@@ -97,11 +98,6 @@ bool Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 int
 main (int argc, char **argv)
 {
-  Rts2DevAugerShooter *
-    device = new Rts2DevAugerShooter (argc, argv);
-  int
-    ret = device->run ();
-  delete
-    device;
-  return ret;
+  Rts2DevAugerShooter device = Rts2DevAugerShooter (argc, argv);
+  return device.run ();
 }

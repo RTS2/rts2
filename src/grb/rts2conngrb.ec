@@ -1262,6 +1262,7 @@ Rts2ConnGrb::receive (fd_set *set)
       case TYPE_SWIFT_UVOT_DBURST_SRC:
       // processed messages
       case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
+      case TYPE_SWIFT_UVOT_NACK_POSITION:
         pr_swift_without_radec ();
 	break;
       case TYPE_GLAST_GBM_GRB_ALERT:

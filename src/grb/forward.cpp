@@ -514,16 +514,13 @@ Rts2AppFw::init ()
 int
 main (int argc, char **argv)
 {
-  Rts2AppFw *grb = new Rts2AppFw (argc, argv);
-  int ret = grb->init ();
+  Rts2AppFw grb = Rts2AppFw (argc, argv);
+  int ret = grb.init ();
   if (ret)
     {
       logStream (MESSAGE_ERROR) << "Cannot init GRB device, exiting" <<
 	sendLog;
-      delete grb;
       return ret;
     }
-  ret = grb->run ();
-  delete grb;
-  return ret;
+  return grb.run ();
 }
