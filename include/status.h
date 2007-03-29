@@ -7,12 +7,6 @@
 #ifndef __RTS__STATUS__
 #define __RTS__STATUS__
 
-// device priority
-#define DEVICE_NOPRIORITY	0
-#define DEVICE_PRIORITY		1
-
-#define DEVICE_MASK_PRIORITY	1
-
 // mask used to communicate errors which occured on device
 #define DEVICE_ERROR_MASK	0xff0000
 
@@ -21,6 +15,12 @@
 #define DEVICE_ERROR_KILL	0x010000
 // unspecified HW error occured
 #define DEVICE_ERROR_HW		0x020000
+// device not ready..
+#define DEVICE_NOT_READY	0x040000
+
+#define DEVICE_STATUS_MASK	0x00ffff
+
+#define DEVICE_IDLE		0x000000
 
 // Camera status
 #define CAM_MASK_CHIP		0x0f
