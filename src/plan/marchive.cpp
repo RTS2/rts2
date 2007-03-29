@@ -32,15 +32,12 @@ public:
 int
 main (int argc, char **argv)
 {
-  Rts2MoveArchive *app = new Rts2MoveArchive (argc, argv);
+  Rts2MoveArchive app = Rts2MoveArchive (argc, argv);
   int ret;
-  ret = app->init ();
+  ret = app.init ();
   if (ret)
     {
-      delete app;
-      return 0;
+      return ret;
     }
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

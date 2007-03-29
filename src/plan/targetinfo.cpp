@@ -508,11 +508,9 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  Rts2TargetInfo *app;
-  app = new Rts2TargetInfo (argc, argv);
-  ret = app->init ();
+  Rts2TargetInfo app = Rts2TargetInfo (argc, argv);
+  ret = app.init ();
   if (ret)
-    return 1;
-  app->run ();
-  delete app;
+    return ret;
+  return app.run ();
 }
