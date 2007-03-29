@@ -62,7 +62,12 @@ private:
 
   int next_id;
 
-  int idle_select;
+  Rts2ValueInteger *idle_select;
+  Rts2ValueBool *selEnabled;
+
+  Rts2ValueDouble *flatSunMin;
+  Rts2ValueDouble *flatSunMax;
+
 protected:
     virtual int processOption (int in_opt);
   virtual int reloadConfig ();
@@ -83,6 +88,8 @@ public:
 
   int selectNext ();		// return next observation..
   int updateNext ();
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 };
 
 Rts2SelectorDev::Rts2SelectorDev (int in_argc, char **in_argv):
@@ -92,7 +99,20 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SELECTOR, "SEL")
   next_id = -1;
   time (&last_selected);
 
-  idle_select = 300;
+  createValue (idle_select, "idle_select",
+	       "time in seconds in which at least one selection will be performed",
+	       false);
+  idle_select->setValueInteger (300);
+
+  createValue (selEnabled, "selector_enabled",
+	       "if selector should select next targets", false);
+  selEnabled->setValueBool (true);
+
+  createValue (flatSunMin, "flat_sun_min",
+	       "minimal Solar height for flat selection", false);
+  createValue (flatSunMax, "flat_sun_max",
+	       "maximal Solar height for flat selection", false);
+
   addOption ('I', "idle_select", 1,
 	     "selection timeout (reselect every I seconds)");
 }
@@ -105,10 +125,12 @@ Rts2SelectorDev::~Rts2SelectorDev (void)
 int
 Rts2SelectorDev::processOption (int in_opt)
 {
+  int t_idle;
   switch (in_opt)
     {
     case 'I':
-      idle_select = atoi (optarg);
+      t_idle = atoi (optarg);
+      idle_select->setValueInteger (t_idle);
       break;
     default:
       return Rts2DeviceDb::processOption (in_opt);
@@ -133,6 +155,10 @@ Rts2SelectorDev::reloadConfig ()
   delete sel;
 
   sel = new Rts2Selector (observer);
+
+  flatSunMin->setValueDouble (sel->getFlatSunMin ());
+  flatSunMax->setValueDouble (sel->getFlatSunMax ());
+
   return 0;
 }
 
@@ -141,7 +167,7 @@ Rts2SelectorDev::idle ()
 {
   time_t now;
   time (&now);
-  if (now > last_selected + idle_select)
+  if (now > last_selected + idle_select->getValueInteger ())
     {
       updateNext ();
       time (&last_selected);
@@ -160,7 +186,7 @@ Rts2SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_EXECUTOR:
       ret = Rts2DeviceDb::createOtherType (conn, other_device_type);
       updateNext ();
-      if (next_id > 0)
+      if (next_id > 0 && selEnabled->getValueBool ())
 	conn->queCommand (new Rts2CommandExecNext (this, next_id));
       return ret;
     default:
@@ -194,7 +220,7 @@ Rts2SelectorDev::updateNext ()
   if (next_id > 0)
     {
       exec = getOpenConnection ("EXEC");
-      if (exec)
+      if (exec && selEnabled->getValueBool ())
 	{
 	  exec->queCommand (new Rts2CommandExecNext (this, next_id));
 	}
@@ -204,8 +230,37 @@ Rts2SelectorDev::updateNext ()
 }
 
 int
+Rts2SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == selEnabled || old_value == idle_select)
+    {
+      return 0;
+    }
+  if (old_value == flatSunMin)
+    {
+      sel->setFlatSunMin (new_value->getValueDouble ());
+      return 0;
+    }
+  if (old_value == flatSunMax)
+    {
+      sel->setFlatSunMax (new_value->getValueDouble ());
+      return 0;
+    }
+
+  return Rts2DeviceDb::setValue (old_value, new_value);
+}
+
+int
 Rts2SelectorDev::changeMasterState (int new_master_state)
 {
+  switch (new_master_state)
+    {
+    case SERVERD_MORNING:
+    case SERVERD_MORNING | SERVERD_STANDBY:
+    case SERVERD_OFF:
+      selEnabled->setValueBool (true);
+      break;
+    }
   updateNext ();
   return Rts2DeviceDb::changeMasterState (new_master_state);
 }
@@ -213,8 +268,6 @@ Rts2SelectorDev::changeMasterState (int new_master_state)
 int
 main (int argc, char **argv)
 {
-  Rts2SelectorDev *selector = new Rts2SelectorDev (argc, argv);
-  int ret = selector->run ();
-  delete selector;
-  return ret;
+  Rts2SelectorDev selector = Rts2SelectorDev (argc, argv);
+  return selector.run ();
 }
