@@ -5,7 +5,7 @@
 
 #include "../utils/rts2object.h"
 #include "../utils/rts2block.h"
-#include "../utilsdb/target.h"
+#include "../utils/rts2target.h"
 
 /**
  * That class provide scripting interface for devices, so they can 
@@ -15,13 +15,13 @@ class Rts2DevScript:public Rts2Object
 {
 private:
   Rts2Conn * script_connection;
-  Rts2Script *nextScript;
-  Target *nextTarget;
-  int dont_execute_for;
-  void setNextTarget (Target * in_target);
-protected:
-    Target * currentTarget;
   Rts2Script *script;
+  Rts2Script *nextScript;
+  Rts2Target *nextTarget;
+  int dont_execute_for;
+  void setNextTarget (Rts2Target * in_target);
+protected:
+    Rts2Target * currentTarget;
   Rts2Command *nextComd;
   char cmd_device[DEVICE_NAME_SIZE];
 
@@ -77,6 +77,15 @@ public:
   virtual ~ Rts2DevScript (void);
   virtual void postEvent (Rts2Event * event);
   virtual void nextCommand () = 0;
+
+  void setScript (Rts2Script * in_script)
+  {
+    script = in_script;
+  }
+  Rts2Script *getScript ()
+  {
+    return script;
+  }
 };
 
 

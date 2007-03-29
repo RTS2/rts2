@@ -1,8 +1,6 @@
 #include "rts2devscript.h"
 #include "rts2execcli.h"
 
-#define DEBUG_EXTRA
-
 Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
 {
   currentTarget = NULL;
@@ -34,14 +32,12 @@ Rts2DevScript::startTarget ()
     {
       if (!nextTarget)
 	return;
-      script = nextScript;
       currentTarget = nextTarget;
       nextScript = NULL;
       nextTarget = NULL;
     }
-  script =
-    new Rts2Script (script_connection->getMaster (),
-		    script_connection->getName (), currentTarget);
+  setScript (new Rts2Script (script_connection->getMaster (),
+			     script_connection->getName (), currentTarget));
 
   clearFailedCount ();
   queCommandFromScript (new
@@ -85,7 +81,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
       if (script)
 	{
 	  tmp_script = script;
-	  script = NULL;
+	  setScript (NULL);
 	  delete tmp_script;
 	}
       delete nextComd;
@@ -97,7 +93,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
       deleteScript ();
       break;
     case EVENT_SET_TARGET:
-      setNextTarget ((Target *) event->getArg ());
+      setNextTarget ((Rts2Target *) event->getArg ());
       if (currentTarget)
 	break;
 #ifdef DEBUG_EXTRA
@@ -115,7 +111,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
       if (event->getArg ())
 	// we get new target..handle that same way as EVENT_OBSERVE command,
 	// telescope will not move
-	setNextTarget ((Target *) event->getArg ());
+	setNextTarget ((Rts2Target *) event->getArg ());
       // we still have something to do
       if (currentTarget)
 	break;
@@ -285,7 +281,7 @@ Rts2DevScript::deleteScript ()
 	  dont_execute_for = currentTarget->getTargetID ();
 	}
       tmp_script = script;
-      script = NULL;
+      setScript (NULL);
       delete tmp_script;
       currentTarget = NULL;
       // that can result in call to startTarget and
@@ -304,7 +300,7 @@ Rts2DevScript::searchSucess ()
 }
 
 void
-Rts2DevScript::setNextTarget (Target * in_target)
+Rts2DevScript::setNextTarget (Rts2Target * in_target)
 {
   Rts2Script *tmp_script;
   if (nextTarget)
@@ -408,7 +404,8 @@ Rts2DevScript::haveNextCommand ()
       deleteScript ();
 #ifdef DEBUG_EXTRA
       logStream (MESSAGE_DEBUG) << "Rts2DevScript::haveNextCommand this " <<
-	this << " ret " << ret << sendLog;
+	this << " for connection " << script_connection->
+	getName () << " ret " << ret << sendLog;
 #endif /* DEBUG_EXTRA */
       startTarget ();
       if (!script)
