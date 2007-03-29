@@ -119,6 +119,19 @@ public:
   friend std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg);
 };
 
+class LibnovaDeg180:public LibnovaDeg
+{
+public:
+  LibnovaDeg180 ():LibnovaDeg ()
+  {
+  }
+  LibnovaDeg180 (double in_deg):LibnovaDeg (ln_range_degrees (in_deg))
+  {
+  }
+
+  friend std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg);
+};
+
 class LibnovaDec:public LibnovaDeg90
 {
 public:

@@ -207,6 +207,32 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg)
   return _os;
 }
 
+std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg)
+{
+  if (isnan (l_deg.deg))
+    {
+      _os << std::setw (11) << "nan";
+      return _os;
+    }
+  struct ln_dms deg_dms;
+  if (l_deg.deg > 180.0)
+    l_deg.deg = l_deg.deg - 360.0;
+  l_deg.toDms (&deg_dms);
+  char old_fill = _os.fill ('0');
+  int old_precison = _os.precision (2);
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+  _os
+    << std::setw (1) << (deg_dms.neg ? '-' : '+')
+    << std::setw (3) << deg_dms.degrees << " "
+    << std::setw (2) << deg_dms.minutes << " "
+    << std::setw (5) << deg_dms.seconds;
+  _os.setf (old_settings);
+  _os.precision (old_precison);
+  _os.fill (old_fill);
+  return _os;
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 {
   if (isnan (l_dec.deg))
