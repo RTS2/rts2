@@ -112,14 +112,11 @@ Rts2DeleteApp::run ()
 int
 main (int argc, char **argv)
 {
-  Rts2DeleteApp *app = new Rts2DeleteApp (argc, argv);
-  int ret = app->init ();
+  Rts2DeleteApp app = Rts2DeleteApp (argc, argv);
+  int ret = app.init ();
   if (ret)
   {
-    delete app;
     return 0;
   }
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

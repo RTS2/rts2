@@ -191,7 +191,13 @@ Rts2Client (in_argc, in_argv)
 
 Rts2NMonitor::~Rts2NMonitor (void)
 {
+  erase ();
+  refresh ();
+
+  nocbreak ();
+  echo ();
   endwin ();
+
   delete msgBox;
   delete statusWindow;
 
@@ -427,9 +433,14 @@ Rts2NMonitor::processKey (int key)
       Rts2NAction *action;
       action = menu->getSelAction ();
       if (action)
-	menuPerform (action->getCode ());
+	{
+	  leaveMenu ();
+	  menuPerform (action->getCode ());
+	}
       else
-	leaveMenu ();
+	{
+	  leaveMenu ();
+	}
     }
   else if (key == KEY_ENTER || key == K_ENTER)
     {
@@ -472,31 +483,17 @@ Rts2NMonitor::commandReturn (Rts2Command * cmd, int cmd_status)
     comWindow->commandReturn (cmd, cmd_status);
 }
 
-Rts2NMonitor *monitor = NULL;
-
 int
 main (int argc, char **argv)
 {
   int ret;
 
-  monitor = new Rts2NMonitor (argc, argv);
+  Rts2NMonitor monitor = Rts2NMonitor (argc, argv);
 
-  ret = monitor->init ();
+  ret = monitor.init ();
   if (ret)
     {
-      delete monitor;
       exit (0);
     }
-  monitor->run ();
-
-  delete (monitor);
-
-  erase ();
-  refresh ();
-
-  nocbreak ();
-  echo ();
-  endwin ();
-
-  return 0;
+  return monitor.run ();
 }

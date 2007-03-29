@@ -136,22 +136,17 @@ Rts2focuscCamera::processImage (Rts2Image * image)
   std::cout << std::endl;
 }
 
-Rts2focusc *client;
-
 int
 main (int argc, char **argv)
 {
   int ret;
 
-  client = new Rts2focusc (argc, argv);
-  ret = client->init ();
+  Rts2focusc client = Rts2focusc (argc, argv);
+  ret = client.init ();
   if (ret)
     {
       std::cerr << "Cannot init focuser client" << std::endl;
-      delete client;
       return ret;
     }
-  client->run ();
-  delete client;
-  return 0;
+  return client.run ();
 }

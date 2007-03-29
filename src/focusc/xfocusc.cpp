@@ -904,16 +904,12 @@ Rts2xfocus::createFocCamera (Rts2Conn * conn)
 int
 main (int argc, char **argv)
 {
-  Rts2xfocus *masterFocus;
   int ret;
-  masterFocus = new Rts2xfocus (argc, argv);
-  ret = masterFocus->init ();
+  Rts2xfocus masterFocus = Rts2xfocus (argc, argv);
+  ret = masterFocus.init ();
   if (ret)
     {
-      delete masterFocus;
-      return 1;
+      return ret;
     }
-  masterFocus->run ();
-  delete masterFocus;
-  return 0;
+  return masterFocus.run ();
 }
