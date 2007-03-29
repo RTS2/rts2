@@ -1,3 +1,7 @@
+/***************************************************************
+ * Andor driver (optimised/specialised for iXon model
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,21 +25,56 @@ using namespace std;
 #endif
 
 #include "atmcdLXd.h"
+//We need at least version 2.7.  2.6 API doesn't have frame transfer
+#define ANDOR_ROOT "/root/andor2.7/examples/common"
 
+#define IXON_DEFAULT_GAIN 255
+#define IXON_MAX_GAIN 255
+
+#define ANDOR_SHUTTER_AUTO 0
+#define ANDOR_SHUTTER_OPEN 1
+#define ANDOR_SHUTTER_CLOSED 2
+// Mode definitions for the BOOTES projects iXon camera.
+// Arguably they shouldn't be here, but....
+typedef struct ixon_mode_t
+{
+  int ad;			///0=14bit (3,5,10MHz), 1=16bit (1MHz)
+  int hsspeed;			///speed setting (varies with ADC, see docs)
+  int vsspeed;			///
+  int vs_amp;			///driving voltage, 0-4, leave low if possible
+  int disable_em;		///0 = use EMCCD
+  int em_gain;			///0-255 (0 does not imply bypass)
+} ixon_mode;
+
+#define IXON_MODES 6
+const ixon_mode mode_def[] = { {1, 0, 0, 1, 0, 255},	//16 bit @ 1MHz
+{0, 0, 0, 1, 0, 255},		//14 bit @ 3MHz
+{0, 1, 0, 1, 0, 255},		//14 bit @ 5MHz
+{0, 2, 0, 1, 0, 255},		//14 bit @ 10MHz
+{1, 0, 0, 1, 1, 0},		//16 bit @ 1MHz, no em
+{0, 0, 0, 1, 1, 0}
+};				//14 bit @ 3MHz, no em
+
+/***********************************************************************/
 /**
- * Chip of Andor CCD.
+ * Andor Camera Chip
+ *
+ * In this case, handles memory and some startup hardware poking
  */
+
 class CameraAndorChip:public CameraChip
 {
 private:
-  unsigned short *dest;		// for chips..
+  AndorCapabilities cap;
+  unsigned short *dest;		/// Memory array for reading out
   unsigned short *dest_top;
   char *send_top;
   float gain;
   bool useFT;
+  int andor_shutter_state;
+
 public:
-    CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		     int in_height, double in_pixelX, double in_pixelY,
+    CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
 		     float in_gain, bool in_useFT);
     virtual ~ CameraAndorChip (void);
   virtual int init ();
@@ -45,60 +84,105 @@ public:
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
   virtual bool supportFrameTransfer ();
+
+  // *FIXME* only CameraAndor needs to play with this, do we need functions?
+  int use_shutter_anyway;	// Use shutter even if we have FT
+  void closeShutter ();
 };
 
 CameraAndorChip::CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
-				  int in_width, int in_height,
-				  double in_pixelX, double in_pixelY,
 				  float in_gain, bool in_useFT):
-CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY)
+CameraChip (in_cam, in_chip_id)
 {
-  dest = new unsigned short[in_width * in_height];
   gain = in_gain;
   useFT = in_useFT;
-};
+}
 
 CameraAndorChip::~CameraAndorChip (void)
 {
   delete dest;
 };
 
-
+/** init()
+ * Should not be called until post andor Initialise() call
+ * Finds out various pieces of information from the Andor library,
+ * and switches on frame transfer if the camera has it.
+ */
 int
 CameraAndorChip::init ()
 {
   int ret;
-  // use frame transfer mode
-  if (useFT)
+  float x_um, y_um;
+  int x_pix, y_pix;
+
+  SetShutter (1, ANDOR_SHUTTER_CLOSED, 50, 50);
+  andor_shutter_state = ANDOR_SHUTTER_CLOSED;
+  use_shutter_anyway = 0;
+
+  if ((ret = GetPixelSize (&x_um, &y_um)) != DRV_SUCCESS)
     {
-      ret = SetFrameTransferMode (1);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot set frame transfer mode " << ret << sendLog;
-	  return -1;
-	}
+      logStream (MESSAGE_ERROR) <<
+	"andor chip cannot get pixel size" << ret << sendLog;
+      return -1;
     }
+
+  //GetPixelSize returns floats, pixel[XY] are doubles
+  pixelX = x_um;
+  pixelY = y_um;
+
+  if ((ret = GetDetector (&x_pix, &y_pix)) != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) <<
+	"andor chip cannot get detector size" << ret << sendLog;
+      return -1;
+    }
+  setSize (x_pix, y_pix, 0, 0);
+  dest = new unsigned short[x_pix * y_pix];
+
+  if ((ret = GetCapabilities (&cap)) != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) <<
+	"andor chip failed to retrieve camera capabilities" << ret << sendLog;
+      return -1;
+    }
+
+  // use frame transfer mode
+  if ((cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER) && (useFT) &&
+      ((ret = SetFrameTransferMode (1)) != DRV_SUCCESS))
+    {
+      logStream (MESSAGE_ERROR) <<
+	"andor init attempt to set frame transfer failed " << ret << sendLog;
+      return -1;
+    }
+
   return CameraChip::init ();
 }
+
 
 int
 CameraAndorChip::startExposure (int light, float exptime)
 {
   int ret;
 
-  ret =
-    SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
-	      chipReadout->x + chipReadout->height, chipReadout->y + 1,
-	      chipReadout->y + chipReadout->width);
-  if (ret != DRV_SUCCESS)
+  if ((ret =
+       SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
+		 chipReadout->x + chipReadout->height, chipReadout->y + 1,
+		 chipReadout->y + chipReadout->width)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
       return -1;
     }
 
   subExposure = camera->getSubExposure ();
-  if (!isnan (subExposure))
+  if (isnan (subExposure))
+    {
+      // single scan
+      if (SetAcquisitionMode (AC_ACQMODE_SINGLE) != DRV_SUCCESS)
+	return -1;
+      if (SetExposureTime (exptime) != DRV_SUCCESS)
+	return -1;
+    }
+  else
     {
       nAcc = (int) (exptime / subExposure);
       float acq_exp, acq_acc, acq_kinetic;
@@ -107,39 +191,33 @@ CameraAndorChip::startExposure (int light, float exptime)
 	  nAcc = 1;
 	  subExposure = exptime;
 	}
-      ret = SetAcquisitionMode (2);
-      if (ret != DRV_SUCCESS)
+      if (SetAcquisitionMode (AC_ACQMODE_VIDEO) != DRV_SUCCESS)
 	return -1;
-      ret = SetExposureTime (subExposure);
-      if (ret != DRV_SUCCESS)
+      if (SetExposureTime (subExposure) != DRV_SUCCESS)
 	return -1;
-      ret = SetNumberAccumulations (nAcc);
-      if (ret != DRV_SUCCESS)
+      if (SetNumberAccumulations (nAcc) != DRV_SUCCESS)
 	return -1;
-      ret = GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic);
-      if (ret != DRV_SUCCESS)
+      if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) !=
+	  DRV_SUCCESS)
 	return -1;
       exptime = nAcc * acq_exp;
       subExposure = acq_exp;
-    }
-  else
-    {
-      // single scan
-      ret = SetAcquisitionMode (1);
-      if (ret != DRV_SUCCESS)
-	return -1;
-      ret = SetExposureTime (exptime);
-      if (ret != DRV_SUCCESS)
-	return -1;
     }
 
   chipUsedReadout = new ChipSubset (chipReadout);
   usedBinningVertical = binningVertical;
   usedBinningHorizontal = binningHorizontal;
 
-  SetShutter (1, light == 1 ? 0 : 2, 50, 50);
-  ret = StartAcquisition ();
-  if (ret != DRV_SUCCESS)
+  int new_state = (light) ? ANDOR_SHUTTER_AUTO : ANDOR_SHUTTER_CLOSED;
+
+  if ((light) && (useFT) && (!use_shutter_anyway))
+    new_state = ANDOR_SHUTTER_OPEN;
+
+  if (new_state != andor_shutter_state)
+    SetShutter (1, new_state, 50, 50);
+  andor_shutter_state = new_state;
+
+  if ((ret = StartAcquisition ()) != DRV_SUCCESS)
     return -1;
   return 0;
 }
@@ -152,21 +230,21 @@ CameraAndorChip::stopExposure ()
   return CameraChip::stopExposure ();
 }
 
+
 long
 CameraAndorChip::isExposing ()
 {
   int status;
   int ret;
-  ret = CameraChip::isExposing ();
-  if (ret)
+  if ((ret = CameraChip::isExposing ()) != 0)
     return ret;
-  ret = GetStatus (&status);
-  if (ret != DRV_SUCCESS)
+  if (GetStatus (&status) != DRV_SUCCESS)
     return -1;
   if (status == DRV_ACQUIRING)
     return 100;
   return 0;
 }
+
 
 int
 CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
@@ -175,6 +253,7 @@ CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   send_top = (char *) dest;
   return CameraChip::startReadout (dataConn, conn);
 }
+
 
 int
 CameraAndorChip::readoutOneLine ()
@@ -213,35 +292,60 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool
-CameraAndorChip::supportFrameTransfer ()
+bool CameraAndorChip::supportFrameTransfer ()
 {
-  return useFT;
+  return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
 
-class Rts2DevCameraAndor:
-public Rts2DevCamera
+void
+CameraAndorChip::closeShutter ()
+{
+  SetShutter (1, ANDOR_SHUTTER_CLOSED, 50, 50);
+  andor_shutter_state = ANDOR_SHUTTER_CLOSED;
+}
+
+
+
+/***********************************************************************
+ ***********************************************************************/
+
+/**
+ * Andor camera, as seen by the outside world.
+ *
+ * This was originally written for an iXon, and doesn't handle anything
+ * an iXon can't do.  If used with a different Andor camera, it should
+ * respond reasonably well to the absence of iXon features
+ *
+ ************************************************************************
+ ***********************************************************************/
+
+class Rts2DevCameraAndor:public Rts2DevCamera
 {
 private:
   char *andorRoot;
   int horizontalSpeed;
   int verticalSpeed;
   int vsampli;
-  int adChannel;
   bool printSpeedInfo;
   // number of AD channels
   int chanNum;
-  bool useFT;
+
+  int disable_ft;
+  int shutter_with_ft;
+  int mode;
 
   int printChannelInfo (int channel);
+  int do_print_speed_info ();
 
   Rts2ValueDouble *gain;
   Rts2ValueDouble *nextGain;
 
-  Rts2ValueInteger *adChan;
+  Rts2ValueInteger *Mode;
+  Rts2ValueInteger *useFT;
   Rts2ValueInteger *VSAmp;
   Rts2ValueInteger *HSpeed;
   Rts2ValueInteger *VSpeed;
+  Rts2ValueInteger *FTShutter;
 
   // informational values
   Rts2ValueFloat *HSpeedHZ;
@@ -252,22 +356,24 @@ private:
 
   void getTemp ();
   int setGain (double in_gain);
-
   int setADChannel (int in_adchan);
   int setVSAmplifier (int in_vsamp);
   int setHSSpeed (int in_hsspeed);
   int setVSSpeed (int in_vsspeed);
+  int setFTShutter (int force);
+  int setMode (int mode);
+
 
 protected:
-  virtual int processOption (int in_opt);
+    virtual int processOption (int in_opt);
   virtual void help ();
   virtual void cancelPriorityOperations ();
   virtual void afterReadout ();
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 public:
-  Rts2DevCameraAndor (int argc, char **argv);
-  virtual ~ Rts2DevCameraAndor (void);
+    Rts2DevCameraAndor (int argc, char **argv);
+    virtual ~ Rts2DevCameraAndor (void);
 
   virtual int init ();
 
@@ -292,36 +398,38 @@ Rts2DevCamera (in_argc, in_argv)
   createValue (gain, "GAIN", "CCD gain");
   createValue (nextGain, "next_gain", "CCD next gain", false);
 
-  createValue (adChan, "ADCHAN", "Used andor AD Channel", true);
-  adChan->setValueInteger (1);
+  createValue (Mode, "MODE", "Camera mode", true);
+  Mode->setValueInteger (0);
   createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true);
   VSAmp->setValueInteger (0);
   createValue (VSpeed, "VSPEED", "Vertical shift speed", true);
   VSpeed->setValueInteger (1);
   createValue (HSpeed, "HSPEED", "Horizontal shift speed", true);
   HSpeed->setValueInteger (1);
+  createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false);
+  HSpeed->setValueInteger (1);
+  createValue (useFT, "USEFT", "Use FT", false);
+  HSpeed->setValueInteger (1);
 
   defaultGain = 255;
-  gain->setValueDouble (defaultGain);
+  gain->setValueDouble (255.0);
 
   horizontalSpeed = 1;
   verticalSpeed = 1;
   vsampli = -1;
-  adChannel = 1;
   printSpeedInfo = false;
-  chanNum = 0;
 
-  useFT = true;
 
+  addOption ('m', "mode", 1, "Which mode to use");
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
   addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
   addOption ('v', "vertical_speed", 1, "set vertical readout speed");
   addOption ('A', "vs_amplitude", 1, "VS amplitude (0-4)");
-  addOption ('C', "ad_channel", 1, "set AD channel which will be used");
   addOption ('N', "noft", 0, "do not use frame transfer mode");
   addOption ('I', "speed_info", 0,
 	     "print speed info - information about speed available");
+  addOption ('S', "ft-uses-shutter", 0, "force use of shutter with FT");
 }
 
 Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
@@ -344,8 +452,7 @@ int
 Rts2DevCameraAndor::setGain (double in_gain)
 {
   int ret;
-  ret = SetEMCCDGain ((int) in_gain);
-  if (ret != DRV_SUCCESS)
+  if ((ret = SetEMCCDGain ((int) in_gain)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor setGain error " << ret << sendLog;
       return -1;
@@ -358,14 +465,12 @@ int
 Rts2DevCameraAndor::setADChannel (int in_adchan)
 {
   int ret;
-  ret = SetADChannel (in_adchan);
-  if (ret != DRV_SUCCESS)
+  if ((ret = SetADChannel (in_adchan)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor setADChannel error " << ret <<
 	sendLog;
       return -1;
     }
-  adChan->setValueInteger (in_adchan);
   return 0;
 }
 
@@ -405,14 +510,50 @@ int
 Rts2DevCameraAndor::setVSSpeed (int in_vsspeed)
 {
   int ret;
-  ret = SetVSSpeed (in_vsspeed);
-  if (ret != DRV_SUCCESS)
+  if ((ret = SetVSSpeed (in_vsspeed)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor setVSSpeed error " << ret <<
 	sendLog;
       return -1;
     }
   VSpeed->setValueInteger (in_vsspeed);
+  return 0;
+}
+
+int
+Rts2DevCameraAndor::setFTShutter (int force)
+{
+  for (int i = 0; chips[i] != NULL; i++)
+    ((CameraAndorChip *) chips[i])->use_shutter_anyway = force;
+  FTShutter->setValueInteger ((force == 0) ? 0 : 1);
+  return 0;
+}
+
+
+int
+Rts2DevCameraAndor::setMode (int in_mode)
+{
+/*	int ret;
+	const ixon_mode *m;
+
+	if ((in_mode < 0 ) || (in_mode>=IXON_MODES)) {
+		logStream (MESSAGE_ERROR) << "andor setMode failed: " << in_mode
+                   << " is not a valid mode!" <<ret <<sendLog;
+		return -1;
+	}
+
+	m=&mode_def[in_mode];
+	if ((ret = setADChannel(m->ad))!=0)
+		return ret;
+
+	if ((ret = SetHSSpeed(m->disable_em, m->hsspeed))!=DRV_SUCCESS)
+		return -1;
+
+	if ((ret = setVSAmplitude(m->vs_amp))!=0)
+		return -1;
+
+	// *FIXME*
+	mode->setValueInteger(in_mode); */
   return 0;
 }
 
@@ -431,6 +572,9 @@ Rts2DevCameraAndor::scriptEnds ()
   if (!isnan (defaultGain))
     setGain (defaultGain);
   nextGain->setValueDouble (nan ("f"));
+  // *FIXME* Wow, this is ugly
+  CameraAndorChip *c = (CameraAndorChip *) chips[0];
+  c->closeShutter ();
   return Rts2DevCamera::scriptEnds ();
 }
 
@@ -447,39 +591,18 @@ Rts2DevCameraAndor::afterReadout ()
 int
 Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-  int ret;
   if (old_value == gain)
-    {
-      return setGain (new_value->getValueDouble ());
-    }
-  if (old_value == adChan)
-    {
-      ret = setADChannel (new_value->getValueInteger ());
-      if (ret)
-	return -2;
-      return 0;
-    }
+    return setGain (new_value->getValueDouble ());
+  if (old_value == Mode)
+    return setMode (new_value->getValueInteger () == 0) ? 0 : -2;
   if (old_value == VSAmp)
-    {
-      ret = setVSAmplifier (new_value->getValueInteger ());
-      if (ret)
-	return -2;
-      return 0;
-    }
+    return setVSAmplifier (new_value->getValueInteger () == 0) ? 0 : -2;
   if (old_value == HSpeed)
-    {
-      ret = setHSSpeed (new_value->getValueInteger ());
-      if (ret)
-	return -2;
-      return 0;
-    }
+    return setHSSpeed (new_value->getValueInteger () == 0) ? 0 : -2;
   if (old_value == VSpeed)
-    {
-      ret = setVSSpeed (new_value->getValueInteger ());
-      if (ret)
-	return -2;
-      return 0;
-    }
+    return setVSSpeed (new_value->getValueInteger () == 0) ? 0 : -2;
+  if (old_value == FTShutter)
+    return setFTShutter (new_value->getValueInteger () == 0) ? 0 : -2;
 
   return Rts2DevCamera::setValue (old_value, new_value);
 }
@@ -490,12 +613,9 @@ Rts2DevCameraAndor::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'C':
-      adChannel = atoi (optarg);
-      break;
     case 'g':
       defaultGain = atof (optarg);
-      if (defaultGain > 255 || defaultGain < 0)
+      if (defaultGain > IXON_MAX_GAIN || defaultGain < 0)
 	{
 	  printf ("gain must be in 0-255 range\n");
 	  exit (EXIT_FAILURE);
@@ -524,6 +644,8 @@ Rts2DevCameraAndor::processOption (int in_opt)
     case 'N':
       useFT = false;
       break;
+    case 'S':
+      shutter_with_ft = true;
     default:
       return Rts2DevCamera::processOption (in_opt);
     }
@@ -577,123 +699,98 @@ Rts2DevCameraAndor::printChannelInfo (int channel)
   return 0;
 }
 
+
+int
+Rts2DevCameraAndor::do_print_speed_info ()
+{
+  int ret;
+  int channels;
+  int speeds;
+  float value;
+  int i;
+  if ((ret = GetNumberADChannels (&channels)) != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) <<
+	"andor init cannot get number of AD channels" << sendLog;
+      return -1;
+    }
+  logStream (MESSAGE_INFO) << "andor init channels " << channels << sendLog;
+  // print horizontal channels..
+  for (i = 0; i < channels; i++)
+    if ((ret = printChannelInfo (i)) != 0)
+      return ret;
+
+  // print vertical channels..
+  if ((ret = GetNumberVSSpeeds (&speeds)) != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) <<
+	"andor init cannot get horizontal speeds" << sendLog;
+      return -1;
+    }
+  for (i = 0; i < speeds; i++)
+    {
+      if ((ret = GetVSSpeed (i, &value)) != DRV_SUCCESS)
+	{
+	  logStream (MESSAGE_ERROR) <<
+	    "andor init cannot get vertical speed " << i << sendLog;
+	  return -1;
+	}
+      std::cout << "andor::init vertical speed " << i <<
+	" value " << value << " MHz" << std::endl;
+    }
+  return 0;
+}
+
 int
 Rts2DevCameraAndor::init ()
 {
   CameraAndorChip *cc;
-  unsigned long error;
-  int width;
-  int height;
+  unsigned long err;
   int ret;
 
-  ret = Rts2DevCamera::init ();
-  if (ret)
+  if ((ret = Rts2DevCamera::init ()) != 0)
     return ret;
 
-  error = Initialize (andorRoot);
-
-  if (error != DRV_SUCCESS)
+  if ((err = Initialize (andorRoot)) != DRV_SUCCESS)
     {
-      cout << "Initialisation error...exiting" << endl;
+      cout << "Andor library init failed (code " << err << "). exiting" <<
+	endl;
       return -1;
     }
 
   sleep (2);			//sleep to allow initialization to complete
 
-  //Set Read Mode to --Image--
-  SetReadMode (4);
-
-  //Get Detector dimensions
-  GetDetector (&width, &height);
-
-  //Initialize Shutter
-  SetShutter (1, 0, 50, 50);
-
   SetExposureTime (5.0);
   setGain (defaultGain);
 
-  // adChannel
-  if (adChannel >= 0)
-    {
-      ret = setADChannel (adChannel);
-      if (ret)
-	return -1;
-    }
+  /*
+     if (setMode(0)!=0)
+     return -1; */
 
+  if (setADChannel (1) != 0)
+    return -1;
+/*
   // vertical amplitude
-  if (vsampli >= 0)
-    {
-      ret = setVSAmplifier (vsampli);
-      if (ret)
+  if ((vsampli >= 0) && (setVSAmplifier(vsampli)!=0))
 	return -1;
-    }
 
-  if (horizontalSpeed >= 0)
-    {
-      ret = setHSSpeed (horizontalSpeed);
-      if (ret)
-	return -1;
-    }
+  if ((horizontalSpeed >= 0) && (setHSSpeed(horizontalSpeed)!=0))
+	  return -1;
 
-  if (verticalSpeed >= 0)
-    {
-      ret = setVSSpeed (verticalSpeed);
-      if (ret)
-	return -1;
-    }
+  if ((verticalSpeed >= 0) && (setVSSpeed (verticalSpeed)!=0))
+	return -1; */
 
   chipNum = 1;
 
-  cc = new CameraAndorChip (this, 0, width, height, 10, 10, 1, useFT);
+  // *FIXME* this is borked until we figure out exactly who knows about
+  // shutters vs. FT - hardcoded as "gain=1", "use ft=1"
+  cc = new CameraAndorChip (this, 0, 1, 1);
   chips[0] = cc;
   chips[1] = NULL;
 
   if (printSpeedInfo)
-    {
-      int channels;
-      int speeds;
-      float value;
-      int i;
-      ret = GetNumberADChannels (&channels);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot get number of AD channels" << sendLog;
-	  return -1;
-	}
-      logStream (MESSAGE_INFO) << "andor init channels " << channels <<
-	sendLog;
-      // print horizontal channels..
-      for (i = 0; i < channels; i++)
-	{
-	  ret = printChannelInfo (i);
-	  if (ret)
-	    {
-	      return ret;
-	    }
-	}
+    do_print_speed_info ();
 
-      // print vertical channels..
-      ret = GetNumberVSSpeeds (&speeds);
-      if (ret != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot get horizontal speeds" << sendLog;
-	  return -1;
-	}
-      for (i = 0; i < speeds; i++)
-	{
-	  ret = GetVSSpeed (i, &value);
-	  if (ret != DRV_SUCCESS)
-	    {
-	      logStream (MESSAGE_ERROR) <<
-		"andor init cannot get vertical speed " << i << sendLog;
-	      return -1;
-	    }
-	  std::cout << "andor::init vertical speed " << i <<
-	    " value " << value << " MHz" << std::endl;
-	}
-    }
   sprintf (ccdType, "ANDOR");
 
   return Rts2DevCamera::initChips ();
@@ -773,8 +870,12 @@ Rts2DevCameraAndor::camCoolShutdown ()
   CoolerOFF ();
   SetTemperature (20);
   tempSet->setValueDouble (+50);
+  // *FIXME* Wow, this is ugly
+  CameraAndorChip *c = (CameraAndorChip *) chips[0];
+  c->closeShutter ();
   return 0;
 }
+
 
 int
 Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
