@@ -6,7 +6,7 @@
 
 #include "../writers/rts2devcliimg.h"
 #include "../utils/rts2event.h"
-#include "../utilsdb/target.h"
+#include "../utils/rts2target.h"
 
 #define EVENT_SCRIPT_STARTED   RTS2_LOCAL_EVENT+50
 #define EVENT_LAST_READOUT     RTS2_LOCAL_EVENT+51
@@ -118,7 +118,7 @@ public:
 class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
 {
 private:
-  Target * currentTarget;
+  Rts2Target * currentTarget;
   int blockMove;
   Rts2CommandChange *cmdChng;
 

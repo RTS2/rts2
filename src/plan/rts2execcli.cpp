@@ -44,14 +44,14 @@ Rts2DevClientCameraExec::startTarget ()
 int
 Rts2DevClientCameraExec::getNextCommand ()
 {
-  return script->nextCommand (*this, &nextComd, cmd_device);
+  return getScript ()->nextCommand (*this, &nextComd, cmd_device);
 }
 
 void
 Rts2DevClientCameraExec::clearBlockMove ()
 {
   // we will be cleared when exposure ends..
-  if (isExposing)
+  if (getIsExposing ())
     return;
   Rts2DevScript::clearBlockMove ();
 }
@@ -73,10 +73,10 @@ Rts2DevClientCameraExec::nextCommand ()
     {
 #ifdef DEBUG_EXTRA
       logStream (MESSAGE_DEBUG) <<
-	"Rts2DevClientCameraExec::nextComd isExposing: " << isExposing <<
-	" isIdle: " << isIdle () << sendLog;
+	"Rts2DevClientCameraExec::nextComd isExposing: " << getIsExposing ()
+	<< " isIdle: " << isIdle () << sendLog;
 #endif /* DEBUG_EXTRA */
-      if (isExposing || !isIdle ())
+      if (getIsExposing () || !isIdle ())
 	{
 	  return;		// after current exposure ends..
 	}
@@ -94,7 +94,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	      return;
 	    }
 	}
-      isExposing = 1;
+      setIsExposing (true);
     }
   connection->queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
@@ -123,9 +123,9 @@ Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
   int ret;
   // try processing in script..
-  if (script && !queCurrentImage)
+  if (getScript () && !queCurrentImage)
     {
-      ret = script->processImage (image);
+      ret = getScript ()->processImage (image);
       if (!ret)
 	{
 	  return;
@@ -142,7 +142,7 @@ void
 Rts2DevClientCameraExec::exposureStarted ()
 {
   // we control observations..
-  if (script)
+  if (getScript ())
     {
       blockMove = 1;
     }
@@ -153,7 +153,8 @@ void
 Rts2DevClientCameraExec::exposureEnd ()
 {
   blockMove = 0;
-  if (!script || (script && script->isLastCommand ()))
+  if (!getScript ()
+      || (getScript () && !nextComd && getScript ()->isLastCommand ()))
     {
       deleteScript ();
       // EVENT_LAST_READOUT will start new script, when it's possible
