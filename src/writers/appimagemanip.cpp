@@ -217,18 +217,13 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
 int
 main (int argc, char **argv)
 {
-  Rts2AppImageManip *
-    app = new Rts2AppImageManip (argc, argv);
+  Rts2AppImageManip
+    app = Rts2AppImageManip (argc, argv);
   int
-    ret = app->init ();
+    ret = app.init ();
   if (ret)
     {
-      delete
-	app;
       return ret;
     }
-  ret = app->run ();
-  delete
-    app;
-  return ret;
+  return app.run ();
 }

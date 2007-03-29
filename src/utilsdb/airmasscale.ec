@@ -155,21 +155,16 @@ Rts2AirmasScale::run ()
   return -1;
 }
 
-Rts2AirmasScale *app;
-
 int
 main (int argc, char **argv)
 {
   int ret;
-  app = new Rts2AirmasScale (argc, argv);
-  ret = app->init ();
+  Rts2AirmasScale app = Rts2AirmasScale (argc, argv);
+  ret = app.init ();
   if (ret)
   {
     std::cerr << "Cannot init Rts2AirmasScale app" << std::endl;
-    delete app;
     return ret;
   }
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }
