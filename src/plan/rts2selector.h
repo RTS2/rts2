@@ -22,6 +22,24 @@ public:
     virtual ~ Rts2Selector (void);
   int selectNext (int masterState);	// return next observation..
   int selectNextNight (int in_bonusLimit = 0);
+
+  double getFlatSunMin ()
+  {
+    return flat_sun_min;
+  }
+  double getFlatSunMax ()
+  {
+    return flat_sun_max;
+  }
+
+  void setFlatSunMin (double in_m)
+  {
+    flat_sun_min = in_m;
+  }
+  void setFlatSunMax (double in_m)
+  {
+    flat_sun_max = in_m;
+  }
 };
 
 #endif /* !__RTS2_SELECTOR__ */
