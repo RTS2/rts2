@@ -81,8 +81,6 @@ Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
 int
 main (int argc, char **argv)
 {
-  Rts2DevCupolaDummy *device = new Rts2DevCupolaDummy (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCupolaDummy device = Rts2DevCupolaDummy (argc, argv);
+  return device.run ();
 }

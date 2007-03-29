@@ -1220,8 +1220,6 @@ Rts2DevDomeFram::sendFramMail (char *subject)
 int
 main (int argc, char **argv)
 {
-  Rts2DevDomeFram *device = new Rts2DevDomeFram (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevDomeFram device = Rts2DevDomeFram (argc, argv);
+  return device.run ();
 }

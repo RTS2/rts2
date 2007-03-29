@@ -247,12 +247,14 @@ Rts2DevDomeDublin::info ()
   return Rts2DevDome::info ();
 }
 
-bool
-Rts2DevDomeDublin::isMoving ()
+bool Rts2DevDomeDublin::isMoving ()
 {
-  int result;
-  int moving = 0;
-  int count;
+  int
+    result;
+  int
+    moving = 0;
+  int
+    count;
   for (count = 0; count < 100; count++)
     {
       result = (inb (BASE + 2));
@@ -416,8 +418,6 @@ Rts2DevDomeDublin::sendDublinMail (char *subject)
 int
 main (int argc, char **argv)
 {
-  Rts2DevDomeDublin *device = new Rts2DevDomeDublin (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevDomeDublin device = Rts2DevDomeDublin (argc, argv);
+  return device.run ();
 }

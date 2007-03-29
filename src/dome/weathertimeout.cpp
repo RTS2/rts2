@@ -142,10 +142,9 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  WeatherTimeout *app = new WeatherTimeout (argc, argv);
-  ret = app->init ();
-  if (!ret)
-    ret = app->run ();
-  delete app;
-  return ret;
+  WeatherTimeout app = WeatherTimeout (argc, argv);
+  ret = app.init ();
+  if (ret)
+    return ret;
+  return app.run ();
 }

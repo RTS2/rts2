@@ -206,8 +206,6 @@ Rts2DevDomeDcm::ready ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevDomeDcm *device = new Rts2DevDomeDcm (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevDomeDcm device = Rts2DevDomeDcm (argc, argv);
+  return device.run ();
 }

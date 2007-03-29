@@ -823,8 +823,6 @@ Rts2DevDomeBart::changeMasterState (int new_state)
 int
 main (int argc, char **argv)
 {
-  Rts2DevDomeBart *device = new Rts2DevDomeBart (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevDomeBart device = Rts2DevDomeBart (argc, argv);
+  return device.run ();
 }
