@@ -61,6 +61,8 @@ private:
   int setDAC ();
 
   void probe ();
+
+  int fclr (int num);
 public:
   CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd);
   virtual ~ CameraEdtSaoChip (void);
@@ -200,8 +202,38 @@ CameraEdtSaoChip::probe ()
   overrun = status & PDV_OVERRUN;
 }
 
-CameraEdtSaoChip::CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id,
-				    PdvDev * in_pd):
+int
+CameraEdtSaoChip::fclr (int num)
+{
+  const int maxnum = 32000;
+  for (int i = 0; i < num; i++)
+    {
+      int j;
+      edtwrite (0x4c000000);
+      edtwrite (0x00000000);
+      for (j = 0; j < 10; j++)
+	probe ();
+      for (j = 0; j < maxnum; j++)
+	{
+	  probe ();
+	  if (!((!overrun && shutter) || overrun))
+	    break;
+	}
+      if (j == maxnum)
+	return -1;
+      for (j = 0; j < maxnum; j++)
+	{
+	  probe ();
+	  if (!((!overrun && !shutter) || overrun))
+	    break;
+	}
+      if (j == maxnum)
+	return -1;
+      pdv_serial_wait (pd, 10, 4);
+    }
+}
+
+CameraEdtSaoChip::CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd):
 CameraChip (in_cam, in_chip_id, 2040, 520, 0, 0)
 {
   dest = new unsigned short[2040 * 520];
@@ -262,7 +294,8 @@ CameraEdtSaoChip::startExposure (int light, float exptime)
 
   writeBinFile ("e2vpc.bin");
   writeBinFile ("e2v_nidlesc.bin");
-  edtwrite (0x4c000000);	// fclr 5 - but parameter isn't used
+  if (fclr (5))
+    return -1;
   writeBinFile ("e2v_freezesc.bin");
 
   // taken from expose.c
@@ -727,9 +760,6 @@ Rts2CamdEdtSao::initChips ()
 int
 main (int argc, char **argv)
 {
-  int ret;
-  Rts2CamdEdtSao *device = new Rts2CamdEdtSao (argc, argv);
-  ret = device->run ();
-  delete device;
-  return ret;
+  Rts2CamdEdtSao device = Rts2CamdEdtSao (argc, argv);
+  return device.run ();
 }

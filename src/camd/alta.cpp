@@ -329,8 +329,6 @@ Rts2DevCameraAlta::camCoolShutdown ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraAlta *device = new Rts2DevCameraAlta (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCameraAlta device = Rts2DevCameraAlta (argc, argv);
+  return device.run ();
 }

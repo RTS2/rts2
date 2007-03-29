@@ -215,8 +215,6 @@ Rts2DevFocuserFli::isFocusing ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevFocuserFli *device = new Rts2DevFocuserFli (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevFocuserFli device = Rts2DevFocuserFli (argc, argv);
+  return device.run ();
 }

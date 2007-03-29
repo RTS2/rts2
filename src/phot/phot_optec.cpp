@@ -232,8 +232,6 @@ Rts2DevPhotOptec::disableMove ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevPhotOptec *device = new Rts2DevPhotOptec (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevPhotOptec device = Rts2DevPhotOptec (argc, argv);
+  return device.run ();
 }

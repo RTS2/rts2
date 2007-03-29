@@ -464,8 +464,6 @@ Rts2DevFocuserRobofocus::compute_checksum (char *cmd)
 int
 main (int argc, char **argv)
 {
-  Rts2DevFocuserRobofocus *device = new Rts2DevFocuserRobofocus (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevFocuserRobofocus device = Rts2DevFocuserRobofocus (argc, argv);
+  return device.run ();
 }

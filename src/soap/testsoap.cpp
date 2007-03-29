@@ -197,17 +197,13 @@ Rts2TestSoap::run ()
 }
 
 
-Rts2TestSoap *app;
-
 int
 main (int argc, char **argv)
 {
   int ret;
-  app = new Rts2TestSoap (argc, argv);
-  ret = app->init ();
+  Rts2TestSoap app = Rts2TestSoap (argc, argv);
+  ret = app.init ();
   if (ret)
     return ret;
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

@@ -26,6 +26,7 @@ public:
 Rts2DevFocuserDummy::Rts2DevFocuserDummy (int in_argc, char **in_argv):
 Rts2DevFocuser (in_argc, in_argv)
 {
+  strcpy (focType, "Dummy");
   createFocTemp ();
 }
 
@@ -71,8 +72,6 @@ Rts2DevFocuserDummy::isFocusing ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevFocuserDummy *device = new Rts2DevFocuserDummy (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevFocuserDummy device = Rts2DevFocuserDummy (argc, argv);
+  return device.run ();
 }

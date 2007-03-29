@@ -517,8 +517,6 @@ Rts2DevCameraUrvc2::camCoolShutdown ()	/* ramp to ambient */
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraUrvc2 *device = new Rts2DevCameraUrvc2 (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCameraUrvc2 device = Rts2DevCameraUrvc2 (argc, argv);
+  return device.run ();
 }

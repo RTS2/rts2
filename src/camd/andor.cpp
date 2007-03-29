@@ -213,117 +213,75 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool CameraAndorChip::supportFrameTransfer ()
+bool
+CameraAndorChip::supportFrameTransfer ()
 {
   return useFT;
 }
 
-class
-  Rts2DevCameraAndor:
-  public
-  Rts2DevCamera
+class Rts2DevCameraAndor:
+public Rts2DevCamera
 {
 private:
-  char *
-    andorRoot;
-  int
-    horizontalSpeed;
-  int
-    verticalSpeed;
-  int
-    vsampli;
-  int
-    adChannel;
-  bool
-    printSpeedInfo;
+  char *andorRoot;
+  int horizontalSpeed;
+  int verticalSpeed;
+  int vsampli;
+  int adChannel;
+  bool printSpeedInfo;
   // number of AD channels
-  int
-    chanNum;
-  bool
-    useFT;
+  int chanNum;
+  bool useFT;
 
-  int
-  printChannelInfo (int channel);
+  int printChannelInfo (int channel);
 
-  Rts2ValueDouble *
-    gain;
-  Rts2ValueDouble *
-    nextGain;
+  Rts2ValueDouble *gain;
+  Rts2ValueDouble *nextGain;
 
-  Rts2ValueInteger *
-    adChan;
-  Rts2ValueInteger *
-    VSAmp;
-  Rts2ValueInteger *
-    HSpeed;
-  Rts2ValueInteger *
-    VSpeed;
+  Rts2ValueInteger *adChan;
+  Rts2ValueInteger *VSAmp;
+  Rts2ValueInteger *HSpeed;
+  Rts2ValueInteger *VSpeed;
 
   // informational values
-  Rts2ValueFloat *
-    HSpeedHZ;
-  Rts2ValueFloat *
-    VSpeedHZ;
-  Rts2ValueInteger *
-    bitDepth;
+  Rts2ValueFloat *HSpeedHZ;
+  Rts2ValueFloat *VSpeedHZ;
+  Rts2ValueInteger *bitDepth;
 
-  double
-    defaultGain;
+  double defaultGain;
 
-  void
-  getTemp ();
-  int
-  setGain (double in_gain);
+  void getTemp ();
+  int setGain (double in_gain);
 
-  int
-  setADChannel (int in_adchan);
-  int
-  setVSAmplifier (int in_vsamp);
-  int
-  setHSSpeed (int in_hsspeed);
-  int
-  setVSSpeed (int in_vsspeed);
+  int setADChannel (int in_adchan);
+  int setVSAmplifier (int in_vsamp);
+  int setHSSpeed (int in_hsspeed);
+  int setVSSpeed (int in_vsspeed);
 
 protected:
-  virtual int
-  processOption (int in_opt);
-  virtual void
-  help ();
-  virtual void
-  cancelPriorityOperations ();
-  virtual void
-  afterReadout ();
-  virtual int
-  setValue (Rts2Value * old_value, Rts2Value * new_value);
+  virtual int processOption (int in_opt);
+  virtual void help ();
+  virtual void cancelPriorityOperations ();
+  virtual void afterReadout ();
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 public:
   Rts2DevCameraAndor (int argc, char **argv);
-  virtual ~
-  Rts2DevCameraAndor (void);
+  virtual ~ Rts2DevCameraAndor (void);
 
-  virtual int
-  init ();
+  virtual int init ();
 
   // callback functions for Camera alone
-  virtual int
-  ready ();
-  virtual int
-  info ();
-  virtual int
-  scriptEnds ();
-  virtual int
-  camChipInfo (int chip);
-  virtual int
-  camCoolMax ();
-  virtual int
-  camCoolHold ();
-  virtual int
-  camCoolTemp (float new_temp);
-  virtual int
-  camCoolShutdown ();
+  virtual int ready ();
+  virtual int info ();
+  virtual int scriptEnds ();
+  virtual int camChipInfo (int chip);
+  virtual int camCoolMax ();
+  virtual int camCoolHold ();
+  virtual int camCoolTemp (float new_temp);
+  virtual int camCoolShutdown ();
 
-  virtual int
-  camExpose (int chip, int light, float exptime);
+  virtual int camExpose (int chip, int light, float exptime);
 };
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
@@ -828,8 +786,6 @@ Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraAndor *device = new Rts2DevCameraAndor (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCameraAndor device = Rts2DevCameraAndor (argc, argv);
+  return device.run ();
 }

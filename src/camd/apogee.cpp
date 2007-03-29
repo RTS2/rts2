@@ -928,8 +928,6 @@ Rts2DevCameraApogee::camCoolTemp (float new_temp)
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraApogee *device = new Rts2DevCameraApogee (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCameraApogee device = Rts2DevCameraApogee (argc, argv);
+  return device.run ();
 }

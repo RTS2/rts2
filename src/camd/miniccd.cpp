@@ -1006,8 +1006,6 @@ Rts2DevCameraMiniccd::camFilter (int in_filter)
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraMiniccd *device = new Rts2DevCameraMiniccd (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCameraMiniccd device = Rts2DevCameraMiniccd (argc, argv);
+  return device.run ();
 }

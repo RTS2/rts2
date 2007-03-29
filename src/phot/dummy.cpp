@@ -105,8 +105,6 @@ Rts2DevPhotDummy::disableMove ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevPhotDummy *device = new Rts2DevPhotDummy (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevPhotDummy device = Rts2DevPhotDummy (argc, argv);
+  return device.run ();
 }

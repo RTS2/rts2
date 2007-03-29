@@ -114,6 +114,7 @@ Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
   {
     readoutSleep = NULL;
   }
+
   virtual int processOption (int in_opt)
   {
     switch (in_opt)
@@ -178,8 +179,6 @@ Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraDummy *device = new Rts2DevCameraDummy (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCameraDummy device = Rts2DevCameraDummy (argc, argv);
+  return device.run ();
 }

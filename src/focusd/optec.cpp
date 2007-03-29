@@ -290,10 +290,10 @@ Rts2DevFocuserOptec::getTemp ()
   return 0;
 }
 
-bool
-Rts2DevFocuserOptec::isAtStartPosition ()
+bool Rts2DevFocuserOptec::isAtStartPosition ()
 {
-  int ret;
+  int
+    ret;
   ret = getPos (focPos);
   if (ret)
     return false;
@@ -372,8 +372,6 @@ Rts2DevFocuserOptec::isFocusing ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevFocuserOptec *device = new Rts2DevFocuserOptec (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevFocuserOptec device = Rts2DevFocuserOptec (argc, argv);
+  return device.run ();
 }

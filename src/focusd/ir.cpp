@@ -320,10 +320,10 @@ Rts2DevFocuserIr::endFocusing ()
   return 0;
 }
 
-bool Rts2DevFocuserIr::isAtStartPosition ()
+bool
+Rts2DevFocuserIr::isAtStartPosition ()
 {
-  int
-    ret;
+  int ret;
   ret = info ();
   if (ret)
     return false;
@@ -333,11 +333,6 @@ bool Rts2DevFocuserIr::isAtStartPosition ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevFocuserIr *
-    device = new Rts2DevFocuserIr (argc, argv);
-  int
-    ret = device->run ();
-  delete
-    device;
-  return ret;
+  Rts2DevFocuserIr device = Rts2DevFocuserIr (argc, argv);
+  return device.run ();
 }

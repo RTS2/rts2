@@ -528,8 +528,6 @@ Rts2DevCameraFli::camCoolShutdown ()
 int
 main (int argc, char **argv)
 {
-  Rts2DevCameraFli *device = new Rts2DevCameraFli (argc, argv);
-  int ret = device->run ();
-  delete device;
-  return ret;
+  Rts2DevCameraFli device = Rts2DevCameraFli (argc, argv);
+  return device.run ();
 }
