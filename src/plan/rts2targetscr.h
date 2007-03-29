@@ -3,6 +3,7 @@
 
 #include "scriptexec.h"
 #include "../utils/rts2target.h"
+#include "../writers/rts2image.h"
 
 class Rts2ScriptExec;
 
@@ -24,17 +25,15 @@ public:
   // return target position at given julian date
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
 
-  virtual int getObsTargetID ();
-
-  virtual void acqusitionStart ();
-
-  virtual int isAcquired ();
-
   virtual int setNextObservable (time_t * time_ch);
   virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL);
 
   virtual int save (bool overwrite);
   virtual int save (bool overwrite, int tar_id);
+
+  virtual moveType startSlew (struct ln_equ_posn *position);
+  virtual int startObservation (Rts2Block * master);
+  virtual void writeToImage (Rts2Image * image);
 };
 
 #endif /* !__RTS2_TARGESCR__ */
