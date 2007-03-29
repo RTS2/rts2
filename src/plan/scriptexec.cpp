@@ -33,6 +33,13 @@ Rts2ScriptExec::findScript (std::string in_deviceName)
   return NULL;
 }
 
+void
+Rts2ScriptExec::updateScriptCount ()
+{
+  scriptCount->setValueInteger (0);
+  postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) scriptCount));
+}
+
 int
 Rts2ScriptExec::processOption (int in_opt)
 {
@@ -82,8 +89,11 @@ Rts2ScriptExec::init ()
   if (ret)
     return ret;
 
+  getCentraldConn ()->queCommand (new Rts2Command (this, "priority 20"));
+
   // create current target
   currentTarget = new Rts2TargetScr (this);
+  currentTarget->moveEnded ();
 
   return 0;
 }
@@ -126,8 +136,6 @@ Rts2ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
     default:
       cli = Rts2Client::createOtherType (conn, other_device_type);
     }
-  std::cout << "send EVENT_SET_TARGET to " << conn->getName () << std::endl;
-  cli->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
   return cli;
 }
 
@@ -137,10 +145,6 @@ Rts2ScriptExec::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_SCRIPT_ENDED:
-      scriptCount->setValueInteger (0);
-      postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) scriptCount));
-      if (scriptCount->getValueInteger () == 0)
-	endRunLoop ();
       break;
     case EVENT_MOVE_OK:
       if (waitState)
@@ -148,10 +152,10 @@ Rts2ScriptExec::postEvent (Rts2Event * event)
 	  postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
 	  break;
 	}
-      postEvent (new Rts2Event (EVENT_OBSERVE));
+//      postEvent (new Rts2Event (EVENT_OBSERVE));
       break;
     case EVENT_MOVE_FAILED:
-      endRunLoop ();
+      //endRunLoop ();
       break;
     case EVENT_ENTER_WAIT:
       waitState = 1;
@@ -167,6 +171,25 @@ Rts2ScriptExec::postEvent (Rts2Event * event)
   Rts2Client::postEvent (event);
 }
 
+void
+Rts2ScriptExec::deviceReady (Rts2Conn * conn)
+{
+  if (conn->havePriority ())
+    {
+      conn->
+	postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+      conn->postEvent (new Rts2Event (EVENT_OBSERVE));
+    }
+  Rts2Client::deviceReady (conn);
+}
+
+void
+Rts2ScriptExec::deviceIdle (Rts2Conn * conn)
+{
+  updateScriptCount ();
+  if (scriptCount->getValueInteger () == 0)
+    endRunLoop ();
+}
 
 int
 main (int argc, char **argv)

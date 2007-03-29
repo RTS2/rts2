@@ -45,6 +45,8 @@ private:
 
   Rts2TargetScr *currentTarget;
 
+  void updateScriptCount ();
+
 protected:
     virtual int processOption (int in_opt);
 public:
@@ -60,6 +62,8 @@ public:
 					  int other_device_type);
 
   virtual void postEvent (Rts2Event * event);
+  virtual void deviceReady (Rts2Conn * conn);
+  virtual void deviceIdle (Rts2Conn * conn);
 
   int getPosition (struct ln_equ_posn *pos, double JD)
   {
