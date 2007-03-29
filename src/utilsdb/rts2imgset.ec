@@ -327,7 +327,7 @@ Rts2ImgSetDarks::load ()
 
 std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)
 {
-  _os << "Filter  all#             exposure good# ( %%%) avg. alt        avg. err " << std::endl;
+  _os << "Filter  all#             exposure good# ( %%%)    avg. err     avg. alt      avg. az" << std::endl;
   for (std::vector <Rts2ImgSetStat>::iterator iter = img_set.filterStat.begin (); iter != img_set.filterStat.end (); iter++)
   {
     Rts2ImgSetStat stat = *iter;

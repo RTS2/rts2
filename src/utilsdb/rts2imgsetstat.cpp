@@ -34,7 +34,8 @@ std::ostream & operator << (std::ostream & _os, Rts2ImgSetStat & stat)
   _os << std::setw (6) << stat.astro_count
     << " (" << std::setw (3) << (100 * stat.astro_count /
 				 stat.count) << "%) ";
-  _os << LibnovaDeg90 (stat.img_alt) << " " << LibnovaDegArcMin (stat.
-								 img_err);
+  _os << LibnovaDegArcMin (stat.img_err) << " " << LibnovaDeg90 (stat.
+								 img_alt) <<
+    " " << LibnovaDeg360 (stat.img_az);
   return _os;
 }
