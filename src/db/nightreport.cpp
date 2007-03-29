@@ -174,21 +174,16 @@ Rts2NightReport::run ()
   return 0;
 }
 
-Rts2NightReport *app;
-
-
 int
 main (int argc, char **argv)
 {
   int ret;
-  app = new Rts2NightReport (argc, argv);
-  ret = app->init ();
+  Rts2NightReport app = Rts2NightReport (argc, argv);
+  ret = app.init ();
   if (ret)
     {
       std::cerr << "Cannot init app" << std::endl;
       return 1;
     }
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

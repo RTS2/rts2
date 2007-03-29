@@ -247,11 +247,9 @@ main (int argc, char **argv)
 {
   int ret;
 
-  TPM *app = new TPM (argc, argv);
-  ret = app->init ();
+  TPM app = TPM (argc, argv);
+  ret = app.init ();
   if (ret)
     return ret;
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

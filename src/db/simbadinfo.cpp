@@ -92,11 +92,9 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  Rts2SimbadInfo *app;
-  app = new Rts2SimbadInfo (argc, argv);
-  ret = app->init ();
+  Rts2SimbadInfo app = Rts2SimbadInfo (argc, argv);
+  ret = app.init ();
   if (ret)
     return 1;
-  app->run ();
-  delete app;
+  return app.run ();
 }

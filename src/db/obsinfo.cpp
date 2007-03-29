@@ -158,17 +158,13 @@ Rts2ObsInfo::run ()
   return 0;
 }
 
-Rts2ObsInfo *app;
-
 int
 main (int argc, char **argv)
 {
   int ret;
-  app = new Rts2ObsInfo (argc, argv);
-  ret = app->init ();
+  Rts2ObsInfo app = Rts2ObsInfo (argc, argv);
+  ret = app.init ();
   if (ret)
     return ret;
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

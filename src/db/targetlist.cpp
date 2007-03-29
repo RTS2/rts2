@@ -112,11 +112,9 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  Rts2TargetList *app;
-  app = new Rts2TargetList (argc, argv);
-  ret = app->init ();
+  Rts2TargetList app = Rts2TargetList (argc, argv);
+  ret = app.init ();
   if (ret)
     return 1;
-  app->run ();
-  delete app;
+  return app.run ();
 }

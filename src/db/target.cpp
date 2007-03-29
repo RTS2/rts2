@@ -250,12 +250,9 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  Rts2TargetApp *app;
-  app = new Rts2TargetApp (argc, argv);
-  ret = app->init ();
+  Rts2TargetApp app = Rts2TargetApp (argc, argv);
+  ret = app.init ();
   if (ret)
     return 1;
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

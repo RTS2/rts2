@@ -134,21 +134,16 @@ Rts2NightMail::run ()
   return 0;
 }
 
-Rts2NightMail *app;
-
-
 int
 main (int argc, char **argv)
 {
   int ret;
-  app = new Rts2NightMail (argc, argv);
-  ret = app->init ();
+  Rts2NightMail app = Rts2NightMail (argc, argv);
+  ret = app.init ();
   if (ret)
     {
       std::cerr << "Cannot init app" << std::endl;
       return 1;
     }
-  ret = app->run ();
-  delete app;
-  return ret;
+  return app.run ();
 }

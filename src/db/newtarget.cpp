@@ -240,11 +240,9 @@ int
 main (int argc, char **argv)
 {
   int ret;
-  Rts2NewTarget *app;
-  app = new Rts2NewTarget (argc, argv);
-  ret = app->init ();
+  Rts2NewTarget app = Rts2NewTarget (argc, argv);
+  ret = app.init ();
   if (ret)
     return 1;
-  app->run ();
-  delete app;
+  return app.run ();
 }
