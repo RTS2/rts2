@@ -65,7 +65,7 @@ TargetAuger::load ()
         return Target::load ();
       }
     }
-  logMsgDb ("TargetAuger::load");
+  logMsgDb ("TargetAuger::load", MESSAGE_ERROR);
   EXEC SQL CLOSE cur_auger;
   EXEC SQL ROLLBACK;
   auger_date = 0;
@@ -105,7 +105,7 @@ TargetAuger::afterSlewProcessed ()
   );
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetAuger::startSlew SQL error");
+    logMsgDb ("TargetAuger::startSlew SQL error", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return OBS_MOVE_FAILED;
   }

@@ -19,39 +19,9 @@
 EXEC SQL include sqlca;
 
 void
-Target::logMsg (const char *message)
+Target::logMsgDb (const char *message, messageType_t msgType)
 {
-  logStream (MESSAGE_DEBUG) << message << sendLog;
-}
-
-void
-Target::logMsg (const char *message, int num)
-{
-  logStream (MESSAGE_DEBUG) << message << " " << num << sendLog;
-}
-
-void
-Target::logMsg (const char *message, long num)
-{
-  logStream (MESSAGE_DEBUG) << message << " " << num << sendLog;
-}
-
-void
-Target::logMsg (const char *message, double num)
-{
-  printf ("%s %f\n", message, num);
-}
-
-void
-Target::logMsg (const char *message, const char *val)
-{
-  logStream (MESSAGE_DEBUG) << message << " " << val << sendLog;
-}
-
-void
-Target::logMsgDb (const char *message)
-{
-  logStream (MESSAGE_ERROR) << "SQL error: " << sqlca.sqlcode << " " <<
+  logStream (msgType) << "SQL error: " << sqlca.sqlcode << " " <<
   sqlca.sqlerrm.sqlerrmc << " (at " << message << ")" << sendLog;
 }
 
@@ -260,18 +230,16 @@ Rts2Target ()
   config = Rts2Config::instance ();
 
   observer = in_obs;
-  selected = 0;
 
-  epochId = 1;
-  config->getInteger ("observatory", "epoch_id", epochId);
+  int epId = 1;
+  config->getInteger ("observatory", "epoch_id", epId);
+  setEpoch (epId);
 
   minAlt = 0;
   config->getDouble ("observatory", "min_alt", minAlt);
 
-  obs_id = -1;
   observation = NULL;
 
-  obs_state = 0;
   target_id = in_tar_id;
   obs_target_id = -1;
   target_type = TYPE_UNKNOW;
@@ -284,8 +252,6 @@ Rts2Target ()
   airmassScale = 750.0;
 
   observationStart = -1;
-
-  acquired = 0;
 }
 
 Target::Target ()
@@ -294,18 +260,16 @@ Target::Target ()
   config = Rts2Config::instance ();
 
   observer = config->getObserver ();
-  selected = 0;
 
-  epochId = 1;
-  config->getInteger ("observatory", "epoch_id", epochId);
+  int epId = 1;
+  config->getInteger ("observatory", "epoch_id", epId);
+  setEpoch (epId);
 
   minAlt = 0;
   config->getDouble ("observatory", "min_alt", minAlt);
 
-  obs_id = -1;
   observation = NULL;
 
-  obs_state = 0;
   target_id = -1;
   obs_target_id = -1;
   target_type = TYPE_UNKNOW;
@@ -318,9 +282,6 @@ Target::Target ()
   airmassScale = 750.0;
 
   observationStart = -1;
-
-  acquired = 0;
-
 
   tar_priority = 0;
   tar_bonus = nan ("f");
@@ -386,7 +347,7 @@ Target::loadTarget (int in_tar_id)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("Target::load");
+    logMsgDb ("Target::load", MESSAGE_ERROR);
     return -1;
   }
 
@@ -440,7 +401,7 @@ Target::save (bool overwrite)
       :db_new_id;
     if (sqlca.sqlcode)
     {
-      logMsgDb ("Target::save cannot get new tar_id");
+      logMsgDb ("Target::save cannot get new tar_id", MESSAGE_ERROR);
       return -1;
     }
   }
@@ -561,7 +522,7 @@ Target::save (bool overwrite, int tar_id)
 
     if (sqlca.sqlcode)
     {
-      logMsgDb ("Target::save");
+      logMsgDb ("Target::save", MESSAGE_ERROR);
       EXEC SQL ROLLBACK;
       return -1;
     }
@@ -597,7 +558,7 @@ Target::startSlew (struct ln_equ_posn *position)
 
   getPosition (position);
 
-  if (obs_id > 0) // we already observe that target
+  if (getObsId () > 0) // we already observe that target
     return OBS_ALREADY_STARTED;
 
   d_obs_ra = position->ra;
@@ -635,7 +596,7 @@ Target::startSlew (struct ln_equ_posn *position)
   );
   if (sqlca.sqlcode != 0)
   {
-    logMsgDb ("cannot insert observation slew start to db");
+    logMsgDb ("cannot insert observation slew start to db", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return OBS_MOVE_FAILED;
   }
@@ -654,12 +615,12 @@ int
 Target::startObservation (Rts2Block *master)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_obs_id = obs_id;
+  int d_obs_id = getObsId ();
   EXEC SQL END DECLARE SECTION;
   if (observationStarted ())
     return 0;
   time (&observationStart);
-  if (obs_id > 0)
+  if (getObsId () > 0)
   {
     EXEC SQL
     UPDATE
@@ -670,42 +631,16 @@ Target::startObservation (Rts2Block *master)
       obs_id = :d_obs_id;
     if (sqlca.sqlcode != 0)
     {
-      logMsgDb ("cannot start observation");
+      logMsgDb ("cannot start observation", MESSAGE_ERROR);
       EXEC SQL ROLLBACK;
       return -1;
     }
     EXEC SQL COMMIT;
-    obs_state |= OBS_BIT_STARTED;
+    obsStarted ();
 
     sendTargetMail (SEND_START_OBS, "START OBSERVATION", master);
   }
   return 0;
-}
-
-void
-Target::acqusitionStart ()
-{
-  obs_state |= OBS_BIT_ACQUSITION;
-}
-
-void
-Target::acqusitionEnd ()
-{
-  obs_state &= ~ OBS_BIT_ACQUSITION;
-  acquired = 1;
-}
-
-void
-Target::interupted ()
-{
-  obs_state |= OBS_BIT_INTERUPED;
-}
-
-void
-Target::acqusitionFailed ()
-{
-  obs_state |= OBS_BIT_ACQUSITION_FAI;
-  acquired = -1;
 }
 
 int
@@ -727,13 +662,13 @@ int
 Target::endObservation (int in_next_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_obs_id = obs_id;
-  int d_obs_state = obs_state;
+  int d_obs_id = getObsId ();
+  int d_obs_state = getObsState ();
   EXEC SQL END DECLARE SECTION;
 
   if (isContinues () == 1 && in_next_id == getTargetID ())
     return 1;
-  if (obs_id > 0)
+  if (getObsId () > 0)
   {
     EXEC SQL
     UPDATE
@@ -745,14 +680,14 @@ Target::endObservation (int in_next_id)
       obs_id = :d_obs_id;
     if (sqlca.sqlcode != 0)
     {
-      logMsgDb ("cannot end observation");
+      logMsgDb ("cannot end observation", MESSAGE_ERROR);
       EXEC SQL ROLLBACK;
-      obs_id = -1;
+      setObsId (-1);
       return -1;
     }
     EXEC SQL COMMIT;
 
-    obs_id = -1;
+    setObsId (-1);
   }
   observationStart = -1;
   return 0;
@@ -870,7 +805,7 @@ Target::getDBScript (const char *camera_name, char *script)
   script[sc_script.len] = '\0';
   return 0;
 err:
-  logMsgDb ("err db_get_script");
+  logMsgDb ("err db_get_script", MESSAGE_DEBUG);
   script[0] = '\0';
   return -1;
 }
@@ -949,7 +884,7 @@ Target::setScript (const char *device_name, const char *buf)
       AND tar_id = :d_tar_id;
     if (sqlca.sqlcode)
     {
-      logMsgDb ("Target::setScript");
+      logMsgDb ("Target::setScript", MESSAGE_ERROR);
       EXEC SQL ROLLBACK;
       return -1;
     }
@@ -1107,7 +1042,7 @@ Target::selectedAsGood ()
     tar_id = :d_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("Target::selectedAsGood");
+    logMsgDb ("Target::selectedAsGood", MESSAGE_ERROR);
     return -1;
   }
   setTargetEnabled (d_tar_enabled);
@@ -1227,7 +1162,7 @@ Target::dropBonus ()
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("Target::dropBonus");
+    logMsgDb ("Target::dropBonus", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -1259,7 +1194,7 @@ Target::changePriority (int pri_change, time_t *time_ch)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("Target::changePriority");
+    logMsgDb ("Target::changePriority", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -1305,7 +1240,7 @@ Target::setNextObservable (time_t *time_ch)
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("Target::setNextObservable");
+    logMsgDb ("Target::setNextObservable", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -1377,7 +1312,7 @@ Target::getLastObsTime ()
            return 356 * 86400.0;
         }
       else
-        logMsgDb ("Target::getLastObsTime");
+        logMsgDb ("Target::getLastObsTime", MESSAGE_ERROR);
     }
   return d_time_diff;
 }
@@ -1831,11 +1766,11 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
     << std::endl
     << InfoVal<LibnovaDeg360> ("GAL. LONGITUDE", LibnovaDeg360 (gal.l))
     << InfoVal<LibnovaDeg90> ("GAL. LATITUDE", LibnovaDeg90 (gal.b))
-    << InfoVal<LibnovaDeg360> ("GAL. CENTER DIST.", LibnovaDeg360 (getGalCenterDist (JD)))
+    << InfoVal<LibnovaDeg180> ("GAL. CENTER DIST.", LibnovaDeg180 (getGalCenterDist (JD)))
     << InfoVal<LibnovaDeg360> ("SOLAR DIST.", LibnovaDeg360 (getSolarDistance (JD)))
-    << InfoVal<LibnovaDeg> ("SOLAR RA DIST.", LibnovaDeg (getSolarRaDistance (JD)))
+    << InfoVal<LibnovaDeg180> ("SOLAR RA DIST.", LibnovaDeg180 (getSolarRaDistance (JD)))
     << InfoVal<LibnovaDeg360> ("LUNAR DIST.", LibnovaDeg360 (getLunarDistance (JD)))
-    << InfoVal<LibnovaDeg> ("LUNAR RA DIST.", LibnovaDeg (getLunarRaDistance (JD)))
+    << InfoVal<LibnovaDeg180> ("LUNAR RA DIST.", LibnovaDeg180 (getLunarRaDistance (JD)))
     << std::endl;
 }
 

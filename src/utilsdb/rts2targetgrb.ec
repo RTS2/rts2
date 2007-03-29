@@ -60,7 +60,7 @@ TargetGRB::load ()
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetGRB::load");
+    logMsgDb ("TargetGRB::load", MESSAGE_ERROR);
     return -1;
   }
   grbDate = db_grb_date; 
@@ -199,7 +199,7 @@ TargetGRB::getDBScript (const char *camera_name, char *script)
   }
   if (sqlca.sqlcode)
     {
-      logMsgDb ("TargetGRB::getDBScript database error");
+      logMsgDb ("TargetGRB::getDBScript database error", MESSAGE_ERROR);
       script[0] = '\0';
       EXEC SQL CLOSE find_grb_script;
       EXEC SQL ROLLBACK;
@@ -335,7 +335,7 @@ TargetGRB::isContinues ()
 
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetGRB::isContinues");
+    logMsgDb ("TargetGRB::isContinues", MESSAGE_ERROR);
     return -1;
   }
   getPosition (&pos, ln_get_julian_from_sys ());

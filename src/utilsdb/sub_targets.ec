@@ -49,7 +49,7 @@ ConstTarget::load ()
     tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ConstTarget::load");
+    logMsgDb ("ConstTarget::load", MESSAGE_ERROR);
     return -1;
   }
   position.ra = d_ra;
@@ -89,7 +89,7 @@ ConstTarget::save (bool overwrite, int tar_id)
 
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ConstTarget::save");
+    logMsgDb ("ConstTarget::save", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -138,7 +138,7 @@ ConstTarget::selectedAsGood ()
     tar_id = :d_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ConstTarget::selectedAsGood");
+    logMsgDb ("ConstTarget::selectedAsGood", MESSAGE_ERROR);
     return -1;
   }
   position.ra = d_tar_ra;
@@ -205,7 +205,7 @@ EllTarget::load ()
     ell.tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("EllTarget::load");
+    logMsgDb ("EllTarget::load", MESSAGE_ERROR);
     return -1;
   }
   orbit.a = ell_a;
@@ -300,6 +300,26 @@ EllTarget::printExtra (std::ostream & _os, double JD)
     << std::endl;
 }
 
+void
+EllTarget::writeToImage (Rts2Image * image)
+{
+  Target::writeToImage (image);
+  image->setValue ("ELL_EPOCH", orbit.JD, "epoch of the orbit");
+  if (orbit.e < 1.0)
+  {
+    image->setValue ("ELL_N", orbit.n, "n parameter of the orbit");
+    image->setValue ("ELL_A", orbit.a, "a parameter of the orbit");
+  }
+  else if (orbit.e > 1.0)
+  {
+    image->setValue ("ELL_Q", orbit.a, "q parameter of the orbit");
+  }
+  image->setValue ("ELL_E", orbit.e, "orbit eccentricity");
+  image->setValue ("ELL_PERI", orbit.w, "perihelium parameter");
+  image->setValue ("ELL_NODE", orbit.omega, "node angle");
+  image->setValue ("ELL_INCL", orbit.i, "orbit inclination");
+}
+
 PossibleDarks::PossibleDarks (DarkTarget *in_target, const char *in_deviceName)
 {
   deviceName = new char [strlen (in_deviceName) + 1];
@@ -355,7 +375,7 @@ PossibleDarks::defaultDark ()
     if (tmp_s == tmp_c)
     {
       // error occured
-      target->logMsg ("PossibleDarks::defaultDark invalid entry");
+      logStream (MESSAGE_ERROR) << "PossibleDarks::defaultDark invalid entry" << sendLog;
     }
     else
     {
@@ -431,7 +451,8 @@ PossibleDarks::dbDark ()
   EXEC SQL OPEN dark_target;
   if (sqlca.sqlcode)
   {
-    target->logMsgDb ("PossibleDarks::getDb cannot open cursor dark_target, get default 10 sec darks");
+    target->logMsgDb ("PossibleDarks::getDb cannot open cursor dark_target, get default 10 sec darks",
+      (sqlca.sqlcode == ECPG_NOT_FOUND) ? MESSAGE_DEBUG : MESSAGE_ERROR);
     EXEC SQL CLOSE dark_target;
     return defaultDark ();
   }
@@ -446,7 +467,7 @@ PossibleDarks::dbDark ()
       EXEC SQL ROLLBACK;
       if (dark_exposures.size () == 0)
       {
-        target->logMsgDb ("PossibleDarks::getDb cannot get entry for darks (will use only defaults)");
+        target->logMsgDb ("PossibleDarks::getDb cannot get entry for darks (will use only defaults)", MESSAGE_DEBUG);
       }
       break;
     }
@@ -646,7 +667,7 @@ FlatTarget::load ()
   if ((sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
     || obs_target_id <= 0)
     {
-      logMsgDb ("FlatTarget::load");
+      logMsgDb ("FlatTarget::load", MESSAGE_ERROR);
       EXEC SQL CLOSE flat_targets;
       //in that case, we will simply use generic flat target..
       return 0;
@@ -768,7 +789,7 @@ CalibrationTarget::load ()
       delete *cal_iter2;
     }
     cal_list.clear ();
-    logMsgDb ("CalibrationTarget::load cannot load any possible target");
+    logMsgDb ("CalibrationTarget::load cannot load any possible target", MESSAGE_ERROR);
     EXEC SQL CLOSE pos_calibration;
     EXEC SQL ROLLBACK;
     return -1;
@@ -839,7 +860,7 @@ CalibrationTarget::load ()
       break;
     char *logmsg;
     asprintf (&logmsg, "CalibrationTarget::load cannot find any target for airmass between %f and %f", d_airmass_start, d_airmass_end);
-    logMsgDb (logmsg);
+    logMsgDb (logmsg, MESSAGE_DEBUG);
     free (logmsg);
   }
   // change priority for bad targets..
@@ -867,7 +888,8 @@ CalibrationTarget::load ()
   // SQL test..
   if (sqlca.sqlcode)
   {
-    logMsgDb ("CalibrationTarget::load cannot find any airmass_cal_images entry");
+    logMsgDb ("CalibrationTarget::load cannot find any airmass_cal_images entry",
+      (sqlca.sqlcode == ECPG_NOT_FOUND) ? MESSAGE_DEBUG : MESSAGE_ERROR);
     // don't return, as we can have fallback target, which loaded
     // properly
   }
@@ -998,7 +1020,7 @@ ModelTarget::load ()
   ;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ModelTarget::ModelTarget");
+    logMsgDb ("ModelTarget::ModelTarget", MESSAGE_ERROR);
     return -1;
   }
   alt_start = d_alt_start;
@@ -1038,7 +1060,7 @@ ModelTarget::writeStep ()
     tar_id = :d_tar_id;
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ModelTarget::writeStep");
+    logMsgDb ("ModelTarget::writeStep", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return -1;
   }
@@ -1110,7 +1132,7 @@ ModelTarget::afterSlewProcessed ()
   );
   if (sqlca.sqlcode)
   {
-    logMsgDb ("ModelTarget::endObservation");
+    logMsgDb ("ModelTarget::endObservation", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
   }
   else
@@ -1363,7 +1385,7 @@ TargetSwiftFOV::afterSlewProcessed ()
   );
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetSwiftFOV::startSlew SQL error");
+    logMsgDb ("TargetSwiftFOV::startSlew SQL error", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return OBS_MOVE_FAILED;
   }
@@ -1620,7 +1642,7 @@ TargetIntegralFOV::afterSlewProcessed ()
   );
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetIntegralFOV::startSlew SQL error");
+    logMsgDb ("TargetIntegralFOV::startSlew SQL error", MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     return OBS_MOVE_FAILED;
   }
@@ -1888,7 +1910,8 @@ TargetPlan::refreshNext ()
     plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_next) AND obs_id IS NULL);
   if (sqlca.sqlcode)
   {
-    logMsgDb ("TargetPlan::refreshNext cannot load next target");
+    logMsgDb ("TargetPlan::refreshNext cannot load next target",
+      (sqlca.sqlcode == ECPG_NOT_FOUND) ? MESSAGE_DEBUG : MESSAGE_ERROR);
     EXEC SQL ROLLBACK;
     // we can be last plan entry - so change us, so selectedTarget will be changed
     return;
@@ -2004,7 +2027,8 @@ TargetPlan::load (double JD)
     if (sqlca.sqlcode != ECPG_NOT_FOUND
       || db_next_plan_id == -1)
     {
-      logMsgDb ("TargetPlan::load cannot find any plan");
+      if (sqlca.sqlcode != ECPG_NOT_FOUND)
+        logMsgDb ("TargetPlan::load cannot find any plan", MESSAGE_ERROR);
       EXEC SQL CLOSE cur_plan;
       return 0;
     }

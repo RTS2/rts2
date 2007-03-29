@@ -1,5 +1,6 @@
 #include "imgdisplay.h"
 #include "rts2obsset.h"
+#include "target.h"
 
 #include <sstream>
 

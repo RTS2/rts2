@@ -22,37 +22,6 @@
 #define PHOT_TIMEOUT			10
 #define EXPOSURE_TIMEOUT		50
 
-#define TARGET_NAME_LEN		150
-
-#define TYPE_UNKNOW		'u'
-
-#define TYPE_OPORTUNITY         'O'
-#define TYPE_GRB                'G'
-#define TYPE_GRB_TEST		'g'
-#define TYPE_SKY_SURVEY         'S'
-#define TYPE_GPS                'P'
-#define TYPE_ELLIPTICAL         'E'
-#define TYPE_HETE               'H'
-#define TYPE_PHOTOMETRIC	'M'
-#define TYPE_TECHNICAL          't'
-#define TYPE_TERESTIAL		'T'
-#define TYPE_CALIBRATION	'c'
-#define TYPE_MODEL		'm'
-#define TYPE_PLANET		'L'
-
-#define TYPE_SWIFT_FOV		'W'
-#define TYPE_INTEGRAL_FOV	'I'
-
-#define TYPE_AUGER		'A'
-
-#define TYPE_DARK		'd'
-#define TYPE_FLAT		'f'
-#define TYPE_FOCUSING		'o'
-
-#define TYPE_LANDOLT		'l'
-
-// master plan target
-#define TYPE_PLAN		'p'
 
 #define TARGET_DARK		1
 #define TARGET_FLAT		2
@@ -69,40 +38,6 @@
 #define TARGET_SWIFT_FOV	10
 #define TARGET_INTEGRAL_FOV	11
 #define TARGET_SHOWER		12
-
-typedef enum
-{
-  OBS_MOVE_FAILED = -1,
-  OBS_MOVE = 0,
-  OBS_ALREADY_STARTED,
-  OBS_DONT_MOVE,
-  OBS_MOVE_FIXED,
-  OBS_MOVE_UNMODELLED
-} moveType;
-
-// move was executed
-#define OBS_BIT_MOVED		0x01
-// observation started - expect some nice images in db
-#define OBS_BIT_STARTED		0x02
-// set while in acquisition
-#define OBS_BIT_ACQUSITION	0x04
-// when observation was interupted
-#define OBS_BIT_INTERUPED	0x10
-// when acqusition failed
-#define OBS_BIT_ACQUSITION_FAI	0x20
-// observation was processed
-#define OBS_BIT_PROCESSED	0x40
-
-// send message when observation stars
-#define SEND_START_OBS		0x01
-// send message when first image from given observation get astrometry
-#define SEND_ASTRO_OK		0x02
-// send message at the end of observation
-#define SEND_END_OBS		0x04
-// send message at end of processing
-#define SEND_END_PROC		0x08
-// send message at end of night, with all observations and number of images obtained/processed
-#define SEND_END_NIGHT		0x10
 
 class Rts2Obs;
 class Rts2TargetSet;
@@ -130,14 +65,9 @@ class Rts2Image;
 class Target:public Rts2Target
 {
 private:
-  int epochId;
-  int obs_id;
-  Rts2Obs *observation;
+  Rts2Obs * observation;
 
-  int obs_state;		// 0 - not started 0x01 - slew started 0x02 - images taken 0x04 - acquistion started
-  // mask with 0xf0 - 0x00 - nominal end 0x10 - interupted 0x20 - acqusition don't converge
   int type;			// light, dark, flat, flat_dark
-  int selected;			// how many times startObservation was called
 
   int startCalledNum;		// how many times startObservation was called - good to know for targets
   double airmassScale;
@@ -146,7 +76,6 @@ private:
 
   Rts2TarUser *targetUsers;
 
-  int acquired;
   // which changes behaviour based on how many times we called them before
 
   void sendTargetMail (int eventMask, const char *subject_text, Rts2Block * master);	// send mail to users..
@@ -163,28 +92,18 @@ private:
   void printAltTable (std::ostream & _os, double JD);
 
 protected:
-  int target_id;
-  int obs_target_id;
-  char target_type;
-  char *target_name;
   char *target_comment;
   struct ln_lnlat_posn *observer;
 
   virtual int getDBScript (const char *camera_name, char *script);
 
-  // print nice formated log strings
-  void logMsg (const char *message, int num);
-  void logMsg (const char *message, long num);
-  void logMsg (const char *message, double num);
-  void logMsg (const char *message, const char *val);
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
 public:
     Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
   // create new target. Save will save it to the database..
     Target ();
     virtual ~ Target (void);
-  void logMsg (const char *message);
-  void logMsgDb (const char *message);
+  void logMsgDb (const char *message, messageType_t msgType);
   void getTargetSubject (std::string & subj);
 
   // that method is GUARANTIE to be called after target creating to load data from DB
@@ -336,39 +255,6 @@ public:
 
   int secToObjectMeridianPass (double JD);
 
-  int getEpoch ()
-  {
-    return epochId;
-  }
-
-  int getTargetID ()
-  {
-    return target_id;
-  }
-  virtual int getObsTargetID ()
-  {
-    if (obs_target_id > 0)
-      return obs_target_id;
-    return getTargetID ();
-  }
-  char getTargetType ()
-  {
-    return target_type;
-  }
-  void setTargetType (char in_target_type)
-  {
-    target_type = in_target_type;
-  }
-  const char *getTargetName ()
-  {
-    return target_name;
-  }
-  void setTargetName (const char *in_target_name)
-  {
-    delete[]target_name;
-    target_name = new char[strlen (in_target_name) + 1];
-    strcpy (target_name, in_target_name);
-  }
   const char *getTargetComment ()
   {
     return target_comment;
@@ -400,7 +286,7 @@ public:
     return &tar_bonus_time;
   }
 
-  void setTargetBonus (float new_bonus, time_t * new_time = NULL)
+  virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL)
   {
     tar_bonus = new_bonus;
     if (new_time)
@@ -410,21 +296,6 @@ public:
   void setTargetBonusTime (time_t * new_time)
   {
     tar_bonus_time = *new_time;
-  }
-
-  int getObsId ()
-  {
-    return obs_id;
-  }
-
-  /**
-   * Set observation ID and start observation
-   */
-  void setObsId (int new_obs_id)
-  {
-    obs_id = new_obs_id;
-    selected++;
-    obs_state |= OBS_BIT_MOVED;
   }
 
   int getRST (struct ln_rst_time *rst)
@@ -441,30 +312,7 @@ public:
   virtual moveType afterSlewProcessed ();
   // return 1 if observation is already in progress, 0 if observation started, -1 on error
   // 2 if we don't need to move
-  int startObservation (Rts2Block * master);
-  virtual void acqusitionStart ();
-  void acqusitionEnd ();
-  void acqusitionFailed ();
-  // called when waiting for acqusition..
-  virtual int isAcquired ()
-  {
-    return (acquired == 1);
-  }
-  // return 0 when acquistion isn't running, non 0 when we are currently
-  // acquiring target (searching for correct field)
-  int isAcquiring ()
-  {
-    return (obs_state & OBS_BIT_ACQUSITION);
-  }
-  int getAcquired ()
-  {
-    return acquired;
-  }
-  void nullAcquired ()
-  {
-    acquired = 0;
-  }
-  void interupted ();
+  virtual int startObservation (Rts2Block * master);
 
   // similar to startSlew - return 0 if observation ends, 1 if
   // it doesn't ends (ussually in case when in_next_id == target_id),
@@ -501,11 +349,6 @@ public:
 
   virtual int setNextObservable (time_t * time_ch);
   int setNextObservable (double validJD);
-
-  int getSelected ()
-  {
-    return selected;
-  }
 
   int getNumObs (time_t * start_time, time_t * end_time);
   double getLastObsTime ();	// return time in seconds to last observation of same target
@@ -664,6 +507,8 @@ public:
   virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 
   virtual void printExtra (std::ostream & _os, double JD);
+
+  virtual void writeToImage (Rts2Image * image);
 };
 
 class DarkTarget;
