@@ -275,9 +275,7 @@ Rts2Block::run ()
   struct timeval read_tout;
   fd_set read_set;
 
-  end_loop = 0;
-
-  while (!end_loop)
+  while (!getEndLoop ())
     {
       read_tout.tv_sec = idle_timeout / USEC_SEC;
       read_tout.tv_usec = idle_timeout % USEC_SEC;
@@ -342,6 +340,16 @@ Rts2Block::setPriorityClient (int in_priority_client, int timeout)
 
 void
 Rts2Block::cancelPriorityOperations ()
+{
+}
+
+void
+Rts2Block::deviceReady (Rts2Conn * conn)
+{
+}
+
+void
+Rts2Block::deviceIdle (Rts2Conn * conn)
 {
 }
 

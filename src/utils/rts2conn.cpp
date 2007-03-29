@@ -5,6 +5,9 @@
 #include "rts2dataconn.h"
 #include "rts2event.h"
 #include "rts2value.h"
+#ifdef DEBUG_ALL
+#include <iostream>
+#endif /* DEBUG_ALL */
 
 #include <errno.h>
 
@@ -350,6 +353,12 @@ std::string Rts2Conn::getStateString ()
     default:
       _os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
     }
+  if (getState () & DEVICE_ERROR_KILL)
+    _os << " | PRIORITY CHANGED ";
+  if (getState () & DEVICE_ERROR_HW)
+    _os << " | HW ERROR ";
+  if (getState () & DEVICE_NOT_READY)
+    _os << " | NOT READY ";
   return _os.str ();
 }
 
@@ -444,6 +453,16 @@ Rts2Conn::setState (int in_value)
   serverState->setValue (in_value);
   if (otherDevice)
     otherDevice->stateChanged (serverState);
+  if (serverState->maskValueChanged (DEVICE_NOT_READY))
+    {
+      if ((serverState->getValue () & DEVICE_NOT_READY) == 0)
+	master->deviceReady (this);
+    }
+  else if (serverState->maskValueChanged (DEVICE_STATUS_MASK)
+	   && (serverState->getValue () & DEVICE_STATUS_MASK) == DEVICE_IDLE)
+    {
+      master->deviceIdle (this);
+    }
   return 0;
 }
 
@@ -956,8 +975,8 @@ Rts2Conn::send (const char *msg)
       return -1;
     }
 #ifdef DEBUG_ALL
-  logStream (MESSAGE_DEBUG) << "Rts2Conn::send [" << getCentraldId () << ":"
-    << sock << "] send " << ret << ": " << msg << sendLog;
+  std::cout << "Rts2Conn::send [" << getCentraldId () << ":"
+    << sock << "] send " << ret << ": " << msg << std::endl;
 #endif
   write (sock, "\r\n", 2);
   successfullSend ();

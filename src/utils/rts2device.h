@@ -131,7 +131,6 @@ private:
   char *mailAddress;
 
   void setState (int new_state, char *description);
-  int sendStateInfo (Rts2Conn * conn);
 
 protected:
   /**
@@ -163,7 +162,6 @@ public:
   };
   virtual int init ();
   int authorize (Rts2DevConn * conn);
-  int sendStatusInfo (Rts2DevConn * conn);
   int sendMaster (char *msg)
   {
     return conn_master->send (msg);
@@ -173,6 +171,8 @@ public:
   virtual int ready ();
 
   virtual int ready (Rts2Conn * conn);
+
+  int sendStateInfo (Rts2Conn * conn);
 
   // only devices can send messages
   virtual void sendMessage (messageType_t in_messageType,

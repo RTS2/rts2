@@ -121,7 +121,7 @@ public:
    */
   int getRealState ()
   {
-    return getState () & (~DEVICE_ERROR_MASK);
+    return getState () & DEVICE_STATUS_MASK;
   }
   std::string getCameraChipState (int chipN);
   std::string getStateString ();

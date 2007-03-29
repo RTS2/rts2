@@ -22,6 +22,8 @@ private:
   int argc;
   char **argv;
 
+  bool end_loop;
+
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);	// for non-optional args
@@ -54,6 +56,24 @@ public:  Rts2App (int in_argc, char **in_argv);
    * pure virtual.
    */
   virtual int run () = 0;
+
+  /**
+   * If running in loop, caused end of loop.
+   */
+  virtual void endRunLoop ()
+  {
+    exit (0);
+  }
+
+  bool getEndLoop ()
+  {
+    return end_loop;
+  }
+
+  void setEndLoop (bool in_end_loop)
+  {
+    end_loop = in_end_loop;
+  }
 
   /**
    * Ask user for char, used to ask for chair in choice question.

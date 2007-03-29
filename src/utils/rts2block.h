@@ -54,14 +54,13 @@ Rts2Conn * >
 class Rts2Block:
 public Rts2App
 {
+private:
   int
     port;
   long int
     idle_timeout;		// in msec
   int
     priority_client;
-  int
-    end_loop;
 
   connections_t connections;
 
@@ -177,11 +176,6 @@ public:
     if (new_timeout < idle_timeout)
       idle_timeout = new_timeout;
   }
-  void
-  endRunLoop ()
-  {
-    end_loop = 1;
-  }
   int
   run ();
   virtual int
@@ -196,6 +190,24 @@ public:
 	conn->setHavePriority (1);
       }
   }
+
+  /**
+   * This function is called when device on given connection is ready
+   * to accept commands.
+   *
+   * \param conn connection representing device which became ready
+   */
+  virtual void
+  deviceReady (Rts2Conn * conn);
+
+  /**
+   * Called when some device connected to us become idle.
+   *
+   * \param conn connection representing device which became idle
+   */
+  virtual void
+  deviceIdle (Rts2Conn * conn);
+
   virtual int
   changeMasterState (int new_state)
   {
@@ -301,6 +313,12 @@ public:
   setValue (Rts2Conn * conn)
   {
     return -2;
+  }
+
+  virtual void
+  endRunLoop ()
+  {
+    setEndLoop (true);
   }
 };
 

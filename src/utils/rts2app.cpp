@@ -29,6 +29,8 @@ Rts2Object ()
   argc = in_argc;
   argv = in_argv;
 
+  end_loop = false;
+
   addOption ('h', "help", 0, "write this help");
   addOption ('V', "version", 0, "show program version and license");
 }
@@ -116,8 +118,14 @@ killSignal (int sig)
   signal (SIGHUP, exit);
   signal (SIGINT, exit);
   signal (SIGTERM, exit);
-  delete masterApp;
-  exit (0);
+  if (masterApp)
+    {
+      if (masterApp->getEndLoop ())
+	{
+	  exit (0);
+	}
+      masterApp->endRunLoop ();
+    }
 }
 
 int
@@ -204,7 +212,7 @@ int
 Rts2App::askForInt (const char *desc, int &val)
 {
   char temp[200];
-  while (1)
+  while (!getEndLoop ())
     {
       std::cout << desc << " [";
       if (val == INT_MIN)
@@ -232,7 +240,7 @@ int
 Rts2App::askForDouble (const char *desc, double &val)
 {
   char temp[200];
-  while (1)
+  while (!getEndLoop ())
     {
       std::cout << desc << " [" << val << "]: ";
       std::cin.getline (temp, 200);
@@ -255,7 +263,7 @@ int
 Rts2App::askForString (const char *desc, std::string & val)
 {
   char temp[201];
-  while (1)
+  while (!getEndLoop ())
     {
       std::cout << desc << " [" << val << "]: ";
       std::cin.getline (temp, 200);
@@ -273,11 +281,11 @@ Rts2App::askForString (const char *desc, std::string & val)
   return 0;
 }
 
-bool Rts2App::askForBoolean (const char *desc, bool val)
+bool
+Rts2App::askForBoolean (const char *desc, bool val)
 {
-  char
-    temp[20];
-  while (1)
+  char temp[20];
+  while (!getEndLoop ())
     {
       std::cout << desc << " (y/n) [" << (val ? "y" : "n") << "]: ";
       std::cin.getline (temp, 20);
@@ -360,10 +368,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (this, in_messageType);
+  Rts2LogStream ls (this, in_messageType);
   return ls;
 }
 

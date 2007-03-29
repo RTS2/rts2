@@ -195,11 +195,12 @@ int
 Rts2DevConn::authorizationOK ()
 {
   setConnState (CONN_AUTH_OK);
-  master->sendStatusInfo (this);
+  sendPriorityInfo ();
   master->baseInfo ();
   master->sendBaseInfo (this);
   master->info ();
   master->sendInfo (this);
+  master->sendStateInfo (this);
   sendCommandEnd (0, "OK authorized");
   return 0;
 }
@@ -288,10 +289,11 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 		master->getDeviceType ());
       send (msg);
       free (msg);
-      master->sendStatusInfo (this);
       master->sendMetaInfo (this);
       master->baseInfo (this);
       master->info (this);
+      sendPriorityInfo ();
+      master->sendStateInfo (this);
     }
   Rts2Conn::setConnState (new_conn_state);
 }
@@ -791,16 +793,6 @@ int
 Rts2Device::authorize (Rts2DevConn * conn)
 {
   return conn_master->authorize (conn);
-}
-
-int
-Rts2Device::sendStatusInfo (Rts2DevConn * conn)
-{
-  int ret;
-  ret = sendStateInfo (conn);
-  if (ret)
-    return ret;
-  return conn->sendPriorityInfo ();
 }
 
 int

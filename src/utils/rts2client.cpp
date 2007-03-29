@@ -169,7 +169,7 @@ Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc,
   login = "petr";
   password = "petr";
 
-  addOption ('s', "centrald_server", 1,
+  addOption ('S', "centrald_server", 1,
 	     "hostname of central server; default to localhost");
   addOption ('q', "centrald_port", 1, "port of centrald server");
 }
@@ -183,7 +183,7 @@ Rts2Client::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 's':
+    case 'S':
       central_host = optarg;
       break;
     case 'q':
@@ -208,10 +208,10 @@ Rts2Client::init ()
     new Rts2ConnCentraldClient (this, login, password, central_host,
 				central_port);
   ret = 1;
-  while (1)
+  while (!getEndLoop ())
     {
       ret = central_conn->init ();
-      if (!ret)
+      if (!ret || getEndLoop ())
 	break;
       std::cerr << "Trying to contact centrald\n";
       sleep (10);

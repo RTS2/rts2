@@ -2,6 +2,7 @@
 #define __RTS2_SERVER_STATE__
 
 #include <string.h>
+#include <status.h>
 
 class Rts2ServerState
 {
@@ -14,7 +15,7 @@ public:
   {
     lastUpdate = 0;
     oldValue = 0;
-    value = 0;
+    value = DEVICE_NOT_READY;
   }
   virtual ~ Rts2ServerState (void)
   {
