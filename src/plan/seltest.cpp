@@ -65,11 +65,9 @@ Rts2SelectorApp::run ()
 int
 main (int argc, char **argv)
 {
-  Rts2SelectorApp *selApp = new Rts2SelectorApp (argc, argv);
-  int ret = selApp->init ();
+  Rts2SelectorApp selApp = Rts2SelectorApp (argc, argv);
+  int ret = selApp.init ();
   if (ret)
     return ret;
-  ret = selApp->run ();
-  delete selApp;
-  return ret;
+  return selApp.run ();
 }
