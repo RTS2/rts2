@@ -771,8 +771,6 @@ Rts2Centrald::sigHUP (int sig)
 int
 main (int argc, char **argv)
 {
-  Rts2Centrald *centrald = new Rts2Centrald (argc, argv);
-  int ret = centrald->run ();
-  delete centrald;
-  return ret;
+  Rts2Centrald centrald = Rts2Centrald (argc, argv);
+  return centrald.run ();
 }
