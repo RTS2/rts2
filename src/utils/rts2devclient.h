@@ -172,6 +172,7 @@ public:
   {
   }
   virtual void stateChanged (Rts2ServerState * state);
+  virtual void postEvent (Rts2Event * event);
 };
 
 class Rts2DevClientDome:public Rts2DevClient

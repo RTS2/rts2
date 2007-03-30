@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "rts2block.h"
+#include "rts2command.h"
 #include "rts2devclient.h"
 
 Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
@@ -385,6 +386,26 @@ Rts2DevClientTelescope::searchStart ()
 void
 Rts2DevClientTelescope::searchEnd ()
 {
+}
+
+void
+Rts2DevClientTelescope::postEvent (Rts2Event * event)
+{
+  bool qe;
+  switch (event->getType ())
+    {
+    case EVENT_QUICK_ENABLE:
+      qe = *((bool *) event->getArg ());
+      connection->
+	queCommand (new
+		    Rts2CommandChangeValue (this,
+					    std::string ("quick_enabled"),
+					    '=',
+					    qe ? std::string ("2") : std::
+					    string ("1")));
+      break;
+    }
+  Rts2DevClient::postEvent (event);
 }
 
 Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
