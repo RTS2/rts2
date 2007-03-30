@@ -141,7 +141,7 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
 int
 Rts2DevClientPhotExec::getNextCommand ()
 {
-  return script->nextCommand (*this, &nextComd, cmd_device);
+  return getScript()->nextCommand (*this, &nextComd, cmd_device);
 }
 
 void
