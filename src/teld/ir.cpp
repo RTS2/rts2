@@ -266,7 +266,6 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   addOption ('P', "ir_port", 1, "IR TCP/IP port number");
 
   strcpy (telType, "BOOTES_IR");
-  strcpy (telSerialNumber, "001");
 
   cover_state = CLOSED;
 }
