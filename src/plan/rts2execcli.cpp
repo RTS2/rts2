@@ -96,7 +96,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	}
       setIsExposing (true);
     }
-  connection->queCommand (nextComd);
+  queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
   blockMove = 1;		// as we run a script..
 }
@@ -257,6 +257,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	      fixedOffset.ra = 0;
 	      fixedOffset.dec = 0;
 	    case OBS_MOVE_FIXED:
+	      queCommand (new Rts2CommandScriptEnds (getMaster ()));
 	    case OBS_ALREADY_STARTED:
 	      blockMove = 1;
 	      break;
@@ -285,7 +286,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
     case EVENT_ENTER_WAIT:
       if (cmdChng)
 	{
-	  connection->queCommand (cmdChng);
+	  queCommand (cmdChng);
 	  cmdChng = NULL;
 	}
       else
@@ -317,12 +318,11 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
       break;
     case EVENT_TEL_START_GUIDING:
       gp = (GuidingParams *) event->getArg ();
-      connection->
-	queCommand (new
-		    Rts2CommandStartGuide (getMaster (), gp->dir, gp->dist));
+      queCommand (new
+		  Rts2CommandStartGuide (getMaster (), gp->dir, gp->dist));
       break;
     case EVENT_TEL_STOP_GUIDING:
-      connection->queCommand (new Rts2CommandStopGuideAll (getMaster ()));
+      queCommand (new Rts2CommandStopGuideAll (getMaster ()));
       break;
     }
   Rts2DevClientTelescopeImage::postEvent (event);
@@ -341,17 +341,14 @@ Rts2DevClientTelescopeExec::syncTarget ()
     {
     case OBS_MOVE:
       currentTarget->moveStarted ();
-      connection->
-	queCommand (new
-		    Rts2CommandMove (getMaster (), this,
-				     coord.ra, coord.dec));
+      queCommand (new
+		  Rts2CommandMove (getMaster (), this, coord.ra, coord.dec));
       break;
     case OBS_MOVE_UNMODELLED:
       currentTarget->moveStarted ();
-      connection->
-	queCommand (new
-		    Rts2CommandMoveUnmodelled (getMaster (), this,
-					       coord.ra, coord.dec));
+      queCommand (new
+		  Rts2CommandMoveUnmodelled (getMaster (), this,
+					     coord.ra, coord.dec));
       break;
     case OBS_MOVE_FIXED:
       currentTarget->moveStarted ();
@@ -361,11 +358,10 @@ Rts2DevClientTelescopeExec::syncTarget ()
 	<< " oha " << fixedOffset.ra << " odec " << fixedOffset.
 	dec << sendLog;
       // we are ofsetting in HA, but offset is in RA - hence -
-      connection->
-	queCommand (new
-		    Rts2CommandMoveFixed (getMaster (), this,
-					  coord.ra - fixedOffset.ra,
-					  coord.dec + fixedOffset.dec));
+      queCommand (new
+		  Rts2CommandMoveFixed (getMaster (), this,
+					coord.ra - fixedOffset.ra,
+					coord.dec + fixedOffset.dec));
       break;
     case OBS_ALREADY_STARTED:
       currentTarget->moveStarted ();
@@ -376,18 +372,16 @@ Rts2DevClientTelescopeExec::syncTarget ()
 	    << "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra "
 	    << fixedOffset.ra << " dec " << fixedOffset.dec << sendLog;
 #endif
-	  connection->
-	    queCommand (new
-			Rts2CommandChange (this, fixedOffset.ra,
-					   fixedOffset.dec));
+	  queCommand (new
+		      Rts2CommandChange (this, fixedOffset.ra,
+					 fixedOffset.dec));
 	  fixedOffset.ra = 0;
 	  fixedOffset.dec = 0;
 	  break;
 	}
-      connection->
-	queCommand (new
-		    Rts2CommandResyncMove (getMaster (), this,
-					   coord.ra, coord.dec));
+      queCommand (new
+		  Rts2CommandResyncMove (getMaster (), this,
+					 coord.ra, coord.dec));
       break;
     case OBS_DONT_MOVE:
       break;
@@ -461,8 +455,7 @@ Rts2DevClientMirrorExec::postEvent (Rts2Event * event)
       se = (Rts2ScriptElementMirror *) event->getArg ();
       if (se->isMirrorName (connection->getName ()))
 	{
-	  connection->
-	    queCommand (new Rts2CommandMirror (this, se->getMirrorPos ()));
+	  queCommand (new Rts2CommandMirror (this, se->getMirrorPos ()));
 	  se->takeJob ();
 	}
       break;
