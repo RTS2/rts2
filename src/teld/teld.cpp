@@ -64,6 +64,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	       RTS2_DT_DEG_DIST);
   minGood->setValueDouble (180.0);
 
+  createValue (quickEnabled, "quick_enabled",
+	       "if on-line corrections are enabled", false);
+  quickEnabled->setValueBool (true);
+
   modelFile = NULL;
   model = NULL;
 
@@ -242,6 +246,16 @@ Rts2DevTelescope::getLstDeg (double JD)
 {
   return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
 			   telLongtitude->getValueDouble ());
+}
+
+int
+Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == quickEnabled)
+    {
+      return 0;
+    }
+  return Rts2Device::setValue (old_value, new_value);
 }
 
 void
@@ -1019,7 +1033,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   if (moveMark->getValueInteger () == cor_mark)
     {
       // it's so big that we need resync now
-      if (posErr->getValueDouble () >= minGood->getValueDouble ())
+      if (posErr->getValueDouble () >= minGood->getValueDouble ()
+	  && quickEnabled->getValueBool ())
 	{
 	  if (numCorr->getValueInteger () == 0
 	      && (numCorr->getValueInteger () < maxCorrNum || maxCorrNum < 0))

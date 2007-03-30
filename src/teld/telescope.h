@@ -49,6 +49,8 @@ private:
   // to position on WF-NF setups.
   Rts2ValueDouble *minGood;
 
+  Rts2ValueBool *quickEnabled;
+
   Rts2ValueInteger *knowPosition;
   Rts2ValueDouble *rasc;
   Rts2ValueDouble *desc;
@@ -188,6 +190,8 @@ protected:
   {
     maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP);
   }
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
   Rts2DevTelescope (int argc, char **argv);
   virtual ~ Rts2DevTelescope (void);
