@@ -741,6 +741,13 @@ Rts2DevTelescope::info ()
   return Rts2Device::info ();
 }
 
+int
+Rts2DevTelescope::scriptEnds ()
+{
+  quickEnabled->setValueBool (true);
+  return Rts2Device::scriptEnds ();
+}
+
 void
 Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
 {
