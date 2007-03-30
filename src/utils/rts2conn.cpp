@@ -1038,7 +1038,7 @@ Rts2Conn::sendValue (std::string val_name, int value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %i", val_name.c_str (), value);
+  asprintf (&msg, PROTO_VALUE " %s %i", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -1049,7 +1049,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, int val2)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %i %i", val_name.c_str (), val1, val2);
+  asprintf (&msg, PROTO_VALUE " %s %i %i", val_name.c_str (), val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
@@ -1060,7 +1060,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %i %f", val_name.c_str (), val1, val2);
+  asprintf (&msg, PROTO_VALUE " %s %i %f", val_name.c_str (), val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
@@ -1071,7 +1071,7 @@ Rts2Conn::sendValue (std::string val_name, char *value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s \"%s\"", val_name.c_str (), value);
+  asprintf (&msg, PROTO_VALUE " %s \"%s\"", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -1082,7 +1082,7 @@ Rts2Conn::sendValueRaw (std::string val_name, char *value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %s", val_name.c_str (), value);
+  asprintf (&msg, PROTO_VALUE " %s %s", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -1093,7 +1093,7 @@ Rts2Conn::sendValue (std::string val_name, double value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %f", val_name.c_str (), value);
+  asprintf (&msg, PROTO_VALUE " %s %f", val_name.c_str (), value);
   ret = send (msg);
   free (msg);
   return ret;
@@ -1104,7 +1104,7 @@ Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s \"%s\" %i", val_name, val1, val2);
+  asprintf (&msg, PROTO_VALUE " %s \"%s\" %i", val_name, val1, val2);
   ret = send (msg);
   free (msg);
   return ret;
@@ -1116,7 +1116,7 @@ Rts2Conn::sendValue (char *val_name, int val1, int val2,
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %i %i %f %f %f %f", val_name, val1, val2,
+  asprintf (&msg, PROTO_VALUE " %s %i %i %f %f %f %f", val_name, val1, val2,
 	    val3, val4, val5, val6);
   ret = send (msg);
   free (msg);
@@ -1128,7 +1128,7 @@ Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 {
   char *msg;
   int ret;
-  asprintf (&msg, "V %s %li", val_name.c_str (), *value);
+  asprintf (&msg, PROTO_VALUE " %s %li", val_name.c_str (), *value);
   ret = send (msg);
   free (msg);
   return ret;
