@@ -380,6 +380,12 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 	  wprintw (getWriteWindow (), "%-20s|%30s\n",
 		   val->getName ().c_str (), _os.str ().c_str ());
 	  break;
+	case RTS2_VALUE_BOOL:
+	  wprintw (getWriteWindow (), "%-20s|%30s\n",
+		   val->getName ().c_str (),
+		   ((Rts2ValueBool *) val)->
+		   getValueBool ()? "true" : "false");
+	  break;
 	default:
 	  wprintw (getWriteWindow (), "%-20s|%30s\n",
 		   val->getName ().c_str (), getDisplayValue (val).c_str ());
