@@ -95,6 +95,12 @@ Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
   switch (processingState)
     {
     case NEED_IMAGE:
+      if (isnan (lastPrecision))
+	{
+	  bool en = false;
+	  script->getMaster ()->
+	    postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
+	}
       *new_command =
 	new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_LIGHT,
 				 expTime);
