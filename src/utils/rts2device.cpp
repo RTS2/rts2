@@ -828,6 +828,7 @@ int
 Rts2Device::killAll ()
 {
   cancelPriorityOperations ();
+  scriptEnds ();
   return 0;
 }
 
