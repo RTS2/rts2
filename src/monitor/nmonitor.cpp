@@ -468,7 +468,7 @@ Rts2NMonitor::processKey (int key)
 	  conn = connectionAt (deviceList->getSelRow ());
 	  cmd_top = command;
 	}
-      oldCommand = new Rts2Command (this, command);
+      oldCommand = new Rts2Command (this, cmd_top);
       conn->queCommand (oldCommand);
       comWindow->clear ();
       comWindow->printCommand (command);
