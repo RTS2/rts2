@@ -139,10 +139,24 @@ TargetPlanet::load ()
 }
 
 int
-TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD)
+TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
 {
   planet_info->rst_func (JD, pos);
+
+  ln_get_parallax (pos, getEarthDistance (JD), observer, 1706, JD, parallax);
+
+  pos->ra += parallax->ra;
+  pos->dec += parallax->dec;
+  
   return 0;
+}
+
+int
+TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD)
+{
+  struct ln_equ_posn parallax;
+
+  return getPosition (pos, JD, &parallax);
 }
 
 int
@@ -161,6 +175,8 @@ TargetPlanet::isContinues ()
 void
 TargetPlanet::printExtra (std::ostream & _os, double JD)
 {
+  struct ln_equ_posn pos, parallax;
+  getPosition (&pos, JD, &parallax);
   _os
     << std::endl
     << InfoVal<double> ("EARTH DISTANCE", getEarthDistance (JD))
@@ -169,6 +185,8 @@ TargetPlanet::printExtra (std::ostream & _os, double JD)
     << InfoVal<LibnovaDegDist> ("SDIAM", LibnovaDegDist (getSDiam (JD)))
     << InfoVal<double> ("PHASE", getPhase (JD))
     << InfoVal<double> ("DISK", getDisk (JD))
+    << InfoVal<LibnovaDegDist> ("PARALLAX RA", LibnovaDegDist (parallax.ra))
+    << InfoVal<LibnovaDegDist> ("PARALLAX DEC", LibnovaDegDist (parallax.dec))
     << std::endl;
   Target::printExtra (_os, JD);
 }
@@ -176,7 +194,12 @@ TargetPlanet::printExtra (std::ostream & _os, double JD)
 double
 TargetPlanet::getEarthDistance (double JD)
 {
-  return planet_info->earth_func (JD);
+  double ret;
+  ret = planet_info->earth_func (JD);
+  // moon distance is in km:(
+  if (planet_info == &(planets[3]))
+    return ret / 149.598E6;
+  return ret;
 }
 
 double

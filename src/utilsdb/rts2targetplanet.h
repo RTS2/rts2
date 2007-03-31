@@ -22,8 +22,10 @@ class TargetPlanet:public Target
 {
 private:
   planet_info_t * planet_info;
+  int getPosition (struct ln_equ_posn *pos, double JD,
+		   struct ln_equ_posn *parallax);
 public:
-  TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs);
+    TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ TargetPlanet (void);
 
   virtual int load ();
