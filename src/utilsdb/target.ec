@@ -3,6 +3,7 @@
 #include "target_auger.h"
 #include "rts2targetplanet.h"
 #include "rts2targetgrb.h"
+#include "rts2targetell.h"
 #include "rts2obs.h"
 #include "rts2obsset.h"
 #include "rts2targetset.h"

@@ -35,10 +35,10 @@ public:
   virtual int isContinues ();
   virtual void printExtra (std::ostream & _os, double JD);
 
-  virtual double getEarthDistance (double JD);
-  virtual double getSolarDistance (double JD);
-  virtual double getMagnitude (double JD);
-  virtual double getSDiam (double JD);
+  double getEarthDistance (double JD);
+  double getSolarDistance (double JD);
+  double getMagnitude (double JD);
+  double getSDiam (double JD);
   double getPhase (double JD);
   double getDisk (double JD);
 };
