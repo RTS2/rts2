@@ -268,28 +268,34 @@ Rts2Block::setMessageMask (int new_mask)
   conn->queCommand (new Rts2CommandMessageMask (this, new_mask));
 }
 
-int
-Rts2Block::run ()
+void
+Rts2Block::oneRunLoop ()
 {
   int ret;
   struct timeval read_tout;
   fd_set read_set;
 
+  read_tout.tv_sec = idle_timeout / USEC_SEC;
+  read_tout.tv_usec = idle_timeout % USEC_SEC;
+
+  FD_ZERO (&read_set);
+  addSelectSocks (&read_set);
+  ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
+  if (ret > 0)
+    {
+      selectSuccess (&read_set);
+    }
+  ret = idle ();
+  if (ret == -1)
+    endRunLoop ();
+}
+
+int
+Rts2Block::run ()
+{
   while (!getEndLoop ())
     {
-      read_tout.tv_sec = idle_timeout / USEC_SEC;
-      read_tout.tv_usec = idle_timeout % USEC_SEC;
-
-      FD_ZERO (&read_set);
-      addSelectSocks (&read_set);
-      ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
-      if (ret > 0)
-	{
-	  selectSuccess (&read_set);
-	}
-      ret = idle ();
-      if (ret == -1)
-	break;
+      oneRunLoop ();
     }
   return 0;
 }

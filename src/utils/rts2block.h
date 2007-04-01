@@ -176,6 +176,8 @@ public:
     if (new_timeout < idle_timeout)
       idle_timeout = new_timeout;
   }
+  void
+  oneRunLoop ();
   int
   run ();
   virtual int
