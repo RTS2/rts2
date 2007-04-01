@@ -1,4 +1,8 @@
-#include "rts2elltarget.h"
+#include "rts2targetell.h"
+
+#include "../utils/infoval.h"
+#include "../utils/libnova_cpp.h"
+#include "../writers/rts2image.h"
 
 // EllTarget - good for commets and so on
 EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
@@ -132,7 +136,8 @@ EllTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 void
 EllTarget::printExtra (std::ostream & _os, double JD)
 {
-  Target::printExtra (_os, JD);
+  struct ln_equ_posn pos, parallax;
+  getPosition (&pos, JD, &parallax);
   _os
     << InfoVal<TimeJD> ("EPOCH", TimeJD (orbit.JD));
   if (orbit.e < 1.0)
@@ -157,6 +162,7 @@ EllTarget::printExtra (std::ostream & _os, double JD)
     << InfoVal<LibnovaDegDist> ("PARALLAX RA", LibnovaDegDist (parallax.ra))
     << InfoVal<LibnovaDegDist> ("PARALLAX DEC", LibnovaDegDist (parallax.dec))
     << std::endl;
+  Target::printExtra (_os, JD);
 }
 
 void
