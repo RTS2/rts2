@@ -29,6 +29,16 @@ public:
     std::string toConn ();
     std::string toString ();
 
+  const char *getMessageOName ()
+  {
+    return messageOName.c_str ();
+  }
+
+  const char *getMessageString ()
+  {
+    return messageString.c_str ();
+  }
+
   bool passMask (int in_mask)
   {
     return (((int) messageType) & in_mask);
