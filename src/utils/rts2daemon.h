@@ -16,9 +16,9 @@
 class Rts2Daemon:public Rts2Block
 {
 private:
-  // 0 - don't deamonize, 1 - do deamonize, 2 - is already deamonized, 3 - deamonized & centrald is running, don't print to stdout
+  // 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
   enum
-  { DONT_DEAMONIZE, DO_DEAMONIZE, IS_DEAMONIZED, CENTRALD_OK } daemonize;
+  { DONT_DAEMONIZE, DO_DAEMONIZE, IS_DAEMONIZED, CENTRALD_OK } daemonize;
   int listen_sock;
   void addConnectionSock (int in_sock);
   int lockf;
@@ -42,6 +42,10 @@ private:
   Rts2CondValue *getValue (const char *v_name);
 protected:
   int checkLockFile (const char *lock_fname);
+  void setNotDeamonize ()
+  {
+    daemonize = DONT_DAEMONIZE;
+  }
   int doDeamonize ();
   int lockFile ();
   virtual void addSelectSocks (fd_set * read_set);
@@ -58,11 +62,11 @@ protected:
    * \param writeToFits    when true, value will be writen to FITS
    * \param displayType    value display type, one of the RTS2_DT_xxx constant
    */
-    template < typename T > void createValue (T * &val, char *in_val_name,
-					      std::string in_description,
-					      bool writeToFits =
-					      true, int32_t displayType =
-					      0, int queCondition = 0)
+  template < typename T > void createValue (T * &val, char *in_val_name,
+					    std::string in_description,
+					    bool writeToFits =
+					    true, int32_t displayType =
+					    0, int queCondition = 0)
   {
     val = new T (in_val_name, in_description, writeToFits, displayType);
     addValue (val, queCondition);

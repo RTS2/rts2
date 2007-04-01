@@ -25,7 +25,7 @@ Rts2Block (in_argc, in_argv)
 {
   lockf = 0;
 
-  daemonize = DO_DEAMONIZE;
+  daemonize = DO_DAEMONIZE;
 
   createValue (info_time, "infotime",
 	       "time when this informations were correct", false);
@@ -51,7 +51,7 @@ Rts2Daemon::processOption (int in_opt)
   switch (in_opt)
     {
     case 'i':
-      daemonize = DONT_DEAMONIZE;
+      daemonize = DONT_DAEMONIZE;
       break;
     default:
       return Rts2Block::processOption (in_opt);
@@ -89,7 +89,7 @@ Rts2Daemon::checkLockFile (const char *lock_fname)
 int
 Rts2Daemon::doDeamonize ()
 {
-  if (daemonize != DO_DEAMONIZE)
+  if (daemonize != DO_DAEMONIZE)
     return 0;
   int ret;
   ret = fork ();
@@ -108,7 +108,7 @@ Rts2Daemon::doDeamonize ()
   dup (f);
   dup (f);
   dup (f);
-  daemonize = IS_DEAMONIZED;
+  daemonize = IS_DAEMONIZED;
   openlog (NULL, LOG_PID, LOG_DAEMON);
   return 0;
 }
@@ -252,8 +252,8 @@ Rts2Daemon::sendMessage (messageType_t in_messageType,
   int prio;
   switch (daemonize)
     {
-    case IS_DEAMONIZED:
-    case DO_DEAMONIZE:
+    case IS_DAEMONIZED:
+    case DO_DAEMONIZE:
       switch (in_messageType)
 	{
 	case MESSAGE_ERROR:
@@ -270,9 +270,9 @@ Rts2Daemon::sendMessage (messageType_t in_messageType,
 	  break;
 	}
       syslog (prio, "%s", in_messageString);
-      if (daemonize == IS_DEAMONIZED)
+      if (daemonize == IS_DAEMONIZED)
 	break;
-    case DONT_DEAMONIZE:
+    case DONT_DAEMONIZE:
       // print to stdout
       Rts2Block::sendMessage (in_messageType, in_messageString);
       break;
@@ -284,7 +284,7 @@ Rts2Daemon::sendMessage (messageType_t in_messageType,
 void
 Rts2Daemon::centraldConnRunning ()
 {
-  if (daemonize == IS_DEAMONIZED)
+  if (daemonize == IS_DAEMONIZED)
     {
       closelog ();
       daemonize = CENTRALD_OK;
@@ -297,7 +297,7 @@ Rts2Daemon::centraldConnBroken ()
   if (daemonize == CENTRALD_OK)
     {
       openlog (NULL, LOG_PID, LOG_DAEMON);
-      daemonize = IS_DEAMONIZED;
+      daemonize = IS_DAEMONIZED;
     }
 }
 
