@@ -715,12 +715,18 @@ Rts2Centrald::idle ()
   int call_state;
   int old_current_state;
 
+  if (current_state == SERVERD_OFF)
+    return Rts2Daemon::idle ();
+
   curr_time = time (NULL);
+
+  if (curr_time < next_event_time)
+    return Rts2Daemon::idle ();
 
   next_event (observer, &curr_time, &call_state, &next_event_type,
 	      &next_event_time);
 
-  if (current_state != SERVERD_OFF && current_state != call_state)
+  if (current_state != call_state)
     {
       old_current_state = current_state;
       if ((current_state & SERVERD_STATUS_MASK) == SERVERD_MORNING
