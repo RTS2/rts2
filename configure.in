@@ -212,6 +212,23 @@ AM_CONDITIONAL(GPIBLIB, test x$GPIBLIB != xno)
 AC_SUBST(GPIBLIB)
 AC_SUBST(LIB_GPIB)
 
+# check for INDI sources
+AC_ARG_WITH(indi,
+[  --with-indi             build with INDI bridge],
+INDI="${withval}";
+LIB_INDI="-L${withval} ";
+INC_INDI="-I${withval} ",
+[INDI=no])
+
+if test "x$INDI" != "xno" ; then
+  AC_CHECK_HEADERS([${INDI}/indidevapi.h ${INDI}/indicom.h])
+fi
+
+AM_CONDITIONAL(INDI, test x$INDI != xno)
+AC_SUBST(INDI)
+AC_SUBST(LIB_INDI)
+AC_SUBST(INC_INDI)
+  
 # Define lock file prefix
 AC_ARG_WITH(lock,
 [  --with-lock-prefix      specify lock file path prefix, default to /var/run/rts2_],
@@ -371,6 +388,7 @@ AC_OUTPUT([Makefile
 	   src/camd/apogee/Makefile
 	   src/camd/edtsao/Makefile
 	   src/dome/Makefile
+	   src/indi/Makefile
 	   src/filterd/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
@@ -424,6 +442,7 @@ DOME's:
 pgsql		${psql}
 gsoap           ${gsoap}
 gpib            ${GPIBLIB}
+INDI            ${INDI}
 
 lock prefix     ${LOCK_PREFIX}
 

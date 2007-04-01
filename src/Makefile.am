@@ -21,4 +21,5 @@ SUBDIRS = \
 	sql \
 	db \
 	soap \
-	sensord
+	sensord \
+	indi
