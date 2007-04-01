@@ -950,6 +950,8 @@ in_do_hete_test, char *in_addExe, int in_execFollowups, Rts2DevGrb *in_master):R
 
   addExe = in_addExe;
   execFollowups = in_execFollowups;
+
+  gcnReceivedBytes = 0;
 }
 
 Rts2ConnGrb::~Rts2ConnGrb (void)
@@ -1135,6 +1137,7 @@ Rts2ConnGrb::connectionError (int last_data_size)
     sock = -1;
     setConnState (CONN_BROKEN);
   }
+  gcnReceivedBytes = 0;
   return -1;
 }
 
@@ -1169,16 +1172,20 @@ Rts2ConnGrb::receive (fd_set *set)
     // translate packages to linux..
     short *sp;			// Ptr to a short; used for the swapping
     short pl, ph;			// Low part & high part
-    ret = read (sock, (char*) nbuf, sizeof (nbuf));
+    ret = read (sock, ((char*) nbuf) + gcnReceivedBytes, sizeof (nbuf) - gcnReceivedBytes);
     if (ret == 0 && isConnState (CONN_CONNECTING))
     {
       setConnState (CONN_CONNECTED);
     }
-    else if (ret <= 0)
+    else if (ret < 0)
     {
       connectionError (ret);
       return -1;
     }
+    gcnReceivedBytes += ret;
+    // we don't receive full packet..
+    if (gcnReceivedBytes < SIZ_PKT)
+      return ret;
     successfullRead ();
     gettimeofday (&last_packet, NULL);
     /* Immediately echo back the packet so GCN can monitor:

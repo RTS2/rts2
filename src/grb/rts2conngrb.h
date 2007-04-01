@@ -17,6 +17,8 @@ private:
   // whenewer to exec script even for follow-ups slew (only Swift can make those)
   int execFollowups;
 
+  int gcnReceivedBytes;		// number of bytes received
+
   long lbuf[SIZ_PKT];		// local buffer - swaped for Linux 
   long nbuf[SIZ_PKT];		// network buffer
   struct timeval last_packet;
