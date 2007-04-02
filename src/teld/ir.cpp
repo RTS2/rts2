@@ -139,6 +139,15 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return -2;
       return 0;
     }
+  if (old_value == derotatorPower)
+    {
+      status =
+	tpl_set ("DEROTATOR[3].POWER", derotatorPower->getValueBool ()? 1 : 0,
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
   if (old_value == cover)
     {
       switch (new_value->getValueInteger ())
@@ -238,10 +247,15 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   ir_port = 0;
   tplc = NULL;
 
+  doCheckPower = false;
+
   createValue (derotatorOffset, "DER_OFF", "derotator offset", true,
 	       RTS2_DT_DEG_DIST);
   createValue (derotatorCurrpos, "DER_CUR", "derotator current position",
 	       true, RTS2_DT_DEGREES);
+
+  createValue (derotatorPower, "derotatorPower", "derotator power setting",
+	       false);
 
   createValue (mountTrack, "TRACK", "mount track");
 
@@ -263,7 +277,9 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
 	       RTS2_DT_DEG_DIST);
 
   addOption ('I', "ir_ip", 1, "IR TCP/IP address");
-  addOption ('P', "ir_port", 1, "IR TCP/IP port number");
+  addOption ('N', "ir_port", 1, "IR TCP/IP port number");
+  addOption ('p', "check power", 0,
+	     "whenever to check for power state != 0 (currently depreciated)");
 
   strcpy (telType, "BOOTES_IR");
 
@@ -284,8 +300,11 @@ Rts2TelescopeIr::processOption (int in_opt)
     case 'I':
       ir_ip = new std::string (optarg);
       break;
-    case 'P':
+    case 'N':
       ir_port = atoi (optarg);
+      break;
+    case 'p':
+      doCheckPower = true;
       break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
@@ -555,6 +574,10 @@ Rts2TelescopeIr::checkPower ()
 	sendLog;
       return;
     }
+
+  if (!doCheckPower)
+    return;
+
   if (power_state == 0)
     {
       status = tpl_setw ("CABINET.POWER", 1, &status);
@@ -718,8 +741,9 @@ Rts2TelescopeIr::info ()
   double zd_acc, zd_speed, az_acc, az_speed;
 #endif // DEBUG_EXTRA
   double t_telRa, t_telDec;
-  int status = TPL_OK;
   int track = 0;
+  int derPower = 0;
+  int status = TPL_OK;
 
   if (!(tplc->IsAuth () && tplc->IsConnected ()))
     return -1;
@@ -783,10 +807,12 @@ Rts2TelescopeIr::info ()
   double tmp_derCur;
   tpl_get ("DEROTATOR[3].OFFSET", tmp_derOff, &status);
   tpl_get ("DEROTATOR[3].CURRPOS", tmp_derCur, &status);
+  tpl_get ("DEROTATOR[3].POWER", derPower, &status);
   if (status == TPL_OK)
     {
       derotatorOffset->setValueDouble (tmp_derOff);
       derotatorCurrpos->setValueDouble (tmp_derCur);
+      derotatorPower->setValueBool (derPower == 1);
     }
 
   getCover ();
@@ -809,6 +835,7 @@ Rts2TelescopeIr::startPark ()
   sleep (1);
   status = tpl_set ("AZ.TARGETPOS", 0, &status);
   status = tpl_set ("ZD.TARGETPOS", 0, &status);
+  status = tpl_set ("DEROTATOR[3].POWER", 0, &status);
   if (status)
     {
       logStream (MESSAGE_ERROR) << "IR startPark ZD.TARGETPOS status " <<

@@ -44,11 +44,15 @@ private:
   void checkCover ();
   void checkPower ();
 
+  bool doCheckPower;
+
   void getCover ();
   void initCoverState ();
 
   Rts2ValueDouble *derotatorOffset;
   Rts2ValueDouble *derotatorCurrpos;
+
+  Rts2ValueBool *derotatorPower;
 
   Rts2ValueInteger *mountTrack;
 
@@ -83,9 +87,14 @@ protected:
   virtual int coverOpen ();
 
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+  bool getDerotatorPower ()
+  {
+    return derotatorPower->getValueBool ();
+  }
 public:
     Rts2TelescopeIr (int argc, char **argv);
-    virtual ~ Rts2TelescopeIr (void);
+  virtual ~ Rts2TelescopeIr (void);
   virtual int initIrDevice ();
   virtual int init ();
   virtual int initValues ();
