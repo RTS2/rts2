@@ -92,7 +92,7 @@ void
 Rts2GrbForwardClientConn::forwardPacket (long *nbuf)
 {
   int ret;
-  ret = write (sock, nbuf, SIZ_PKT);
+  ret = write (sock, nbuf, SIZ_PKT * sizeof (nbuf[0]));
   if (ret != SIZ_PKT)
     {
       logStream (MESSAGE_ERROR)

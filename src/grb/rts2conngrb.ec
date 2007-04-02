@@ -1184,8 +1184,9 @@ Rts2ConnGrb::receive (fd_set *set)
     }
     gcnReceivedBytes += ret;
     // we don't receive full packet..
-    if (gcnReceivedBytes < SIZ_PKT * sizeof(nbuf[0]))
+    if (gcnReceivedBytes < (int) (SIZ_PKT * sizeof(nbuf[0])))
       return ret;
+    gcnReceivedBytes = 0;
     successfullRead ();
     gettimeofday (&last_packet, NULL);
     /* Immediately echo back the packet so GCN can monitor:
