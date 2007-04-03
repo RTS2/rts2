@@ -865,8 +865,8 @@ Rts2DevTelParamount::updateTrack ()
       if (ret)
 	return;
 #ifdef DEBUG_EXTRA
-      logStream (LOG_DEBUG) << "Rts2DevTelParamount::updateTrack " << ac <<
-	" " << dc << sendLog;
+      logStream (MESSAGE_DEBUG) << "Rts2DevTelParamount::updateTrack " << ac
+	<< " " << dc << sendLog;
 #endif /* DEBUG_EXTRA */
       ret0 = MKS3PosTargetSet (axis0, (long) ac);
       ret1 = MKS3PosTargetSet (axis1, (long) dc);
@@ -897,7 +897,7 @@ Rts2DevTelParamount::updateTrack ()
   sky2counts (&corr_pos, ac, dc, JD, 0);
 
 #ifdef DEBUG_EXTRA
-  logStream (LOG_DEBUG) << "Track ac " << ac << " dc " << dc << " " <<
+  logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " <<
     track_delta << sendLog;
 #endif /* DEBUG_EXTRA */
 
@@ -1035,6 +1035,11 @@ Rts2DevTelParamount::startMove (double tar_ra, double tar_dec)
     }
 
   moveState = TEL_SLEW;
+
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Rts2DevTelParamount::startMove " << ac <<
+    " " << dc << sendLog;
+#endif /* DEBUG_EXTRA */
 
   ret0 = MKS3PosTargetSet (axis0, (long) ac);
   ret1 = MKS3PosTargetSet (axis1, (long) dc);
