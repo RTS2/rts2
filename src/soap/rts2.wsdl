@@ -298,7 +298,7 @@
     <output message="tns:getFilterResponse"/>
   </operation>
   <operation name="setFilter">
-    <documenttation>Set filter</documentation>
+    <documentation>Set filter</documentation>
     <input message="tns:setFilterRequest"/>
     <output message="tns:setFilterResponse"/>
   </operation>
