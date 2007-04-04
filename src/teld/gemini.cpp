@@ -1008,7 +1008,7 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   guidingSpeed->setValueFloat (0.8);
   createValue (guideLimit, "guideLimit", "limit to to change between ",
 	       false);
-  guideLimit->setValueDouble (5.0 / 3600.0);
+  guideLimit->setValueDouble (5.0 / 60.0);
 }
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
@@ -2322,7 +2322,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
     }
   else
     { */
-  tel_gemini_set (GEMINI_CMD_RATE_GUIDE, 0.8);
+  tel_gemini_set (GEMINI_CMD_RATE_GUIDE, guidingSpeed->getValueFloat ());
   if (!getFlip ())
     {
       chng_dec *= -1;
@@ -2370,20 +2370,25 @@ Rts2DevTelescopeGemini::change_ra (double chng_ra)
   long u_sleep;
   struct timeval now;
   int ret;
-  // first - RA direction
   // slew speed to 1 - 0.25 arcmin / sec
   direction = (chng_ra > 0) ? DIR_EAST : DIR_WEST;
-  ret = tel_gemini_set (GEMINI_CMD_RATE_GUIDE, 0.8);
-  if (ret == -1)
-    return ret;
   if (!isnan (fixed_ha))
     {
-      // we go 2x sidereal time, so divide by 2
-      u_sleep = (long) (((fabs (chng_ra) * 60.0) * (2.0)) * USEC_SEC);
+      if (fabs (chng_ra) > guideLimit->getValueDouble ())
+	centeringSpeed->setValueInteger (20);
+      else
+	centeringSpeed->setValueInteger (2);
+      // divide by sidereal speed we will use..
+      u_sleep =
+	(long) (((fabs (chng_ra) * 60.0) *
+		 (4.0 / ((float) centeringSpeed->getValueInteger ()))) *
+		USEC_SEC);
     }
   else
     {
-      u_sleep = (long) (((fabs (chng_ra) * 60.0) * (4.0 / 0.8)) * USEC_SEC);
+      u_sleep =
+	(long) (((fabs (chng_ra) * 60.0) *
+		 (4.0 / guidingSpeed->getValueFloat ())) * USEC_SEC);
     }
   changeTimeRa.tv_sec = (long) (u_sleep / USEC_SEC);
   changeTimeRa.tv_usec = (long) (u_sleep - changeTimeRa.tv_sec);
@@ -2419,6 +2424,14 @@ Rts2DevTelescopeGemini::change_ra (double chng_ra)
     }
   else
     {
+      ret = tel_set_rate (RATE_GUIDE);
+      if (ret)
+	return ret;
+      ret =
+	tel_gemini_set (GEMINI_CMD_RATE_GUIDE,
+			guidingSpeed->getValueFloat ());
+      if (ret)
+	return ret;
       ret = telescope_start_move (direction);
     }
   gettimeofday (&now, NULL);
@@ -2435,13 +2448,36 @@ Rts2DevTelescopeGemini::change_dec (double chng_dec)
   int ret;
   // slew speed to 20 - 5 arcmin / sec
   direction = chng_dec > 0 ? DIR_NORTH : DIR_SOUTH;
-  ret = tel_set_rate (RATE_GUIDE);
-  if (ret == -1)
-    return ret;
-  ret = tel_gemini_set (GEMINI_CMD_RATE_GUIDE, 0.8);
-  if (ret)
-    return ret;
-  u_sleep = (long) ((fabs (chng_dec) * 60.0) * (4.0 / 0.8) * USEC_SEC);
+  if (fabs (chng_dec) > guideLimit->getValueDouble ())
+    {
+      centeringSpeed->setValueInteger (20);
+      ret = tel_set_rate (RATE_CENTER);
+      if (ret == -1)
+	return ret;
+      ret =
+	tel_gemini_set (GEMINI_CMD_RATE_CENTER,
+			centeringSpeed->getValueInteger ());
+      if (ret)
+	return ret;
+      u_sleep =
+	(long) ((fabs (chng_dec) * 60.0) *
+		(4.0 / ((float) centeringSpeed->getValueInteger ())) *
+		USEC_SEC);
+    }
+  else
+    {
+      ret = tel_set_rate (RATE_GUIDE);
+      if (ret == -1)
+	return ret;
+      ret =
+	tel_gemini_set (GEMINI_CMD_RATE_GUIDE,
+			guidingSpeed->getValueFloat ());
+      if (ret)
+	return ret;
+      u_sleep =
+	(long) ((fabs (chng_dec) * 60.0) *
+		(4.0 / guidingSpeed->getValueFloat ()) * USEC_SEC);
+    }
   changeTimeDec.tv_sec = (long) (u_sleep / USEC_SEC);
   changeTimeDec.tv_usec = (long) (u_sleep - changeTimeDec.tv_sec);
   ret = telescope_start_move (direction);
