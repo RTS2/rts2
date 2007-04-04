@@ -139,6 +139,22 @@
 
       <varlistentry>
         <term>
+	  <option>C {ra_diff} {dec_diff}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Change mount position before next exposure by {ra_diff}
+	    and {dec_diff}. Wait for time when no exposure are
+	    running, then perform move, then continue exposing.
+	  </para>
+	  <para>
+	    {ra_diff} and {dec_diff} are in arcdegrees.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
 	  <option>BIN {binning} </option>
 	</term>
 	<listitem>
