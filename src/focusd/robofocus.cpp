@@ -260,6 +260,11 @@ Rts2DevFocuserRobofocus::init ()
     }
   tcflush (foc_desc, TCIOFLUSH);
 
+  // turn paramount on
+  ret = setSwitch (1, 1);
+  if (ret)
+    return -1;
+
   return 0;
 }
 
