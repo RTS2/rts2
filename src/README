@@ -11,3 +11,4 @@ phot		Photocounters daemon
 focusc		GUI focuser etc..
 focusd		Focuser
 bckimages	Thinks for image archive management
+indi		INDI (KStars) device driver
