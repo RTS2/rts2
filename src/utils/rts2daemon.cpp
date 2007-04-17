@@ -561,6 +561,8 @@ Rts2Daemon::setValue (Rts2Conn * conn)
   if (conn->paramNextString (&v_name) || conn->paramNextString (&op))
     return -2;
   Rts2CondValue *old_value_cond = getValue (v_name);
+  if (!old_value_cond)
+    return -2;
   Rts2Value *old_value = old_value_cond->getValue ();
   if (!old_value)
     return -2;
