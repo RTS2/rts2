@@ -255,6 +255,10 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
     {
       return 0;
     }
+  if (old_value == sepLimit)
+    {
+      return 0;
+    }
   return Rts2Device::setValue (old_value, new_value);
 }
 
