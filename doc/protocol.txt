@@ -130,6 +130,15 @@ Example:
 
 P 100 0
 
+2i. Values change
+
+Values changes are prefixed with X. Those commands are used to change value of the device.
+X is followed by value name, operation (=,+ or -) and new value as string.
+
+Example:
+
+X GAIN = 20
+
 3. Command strategy
 
 Before command proceed with end reply (+000 OK in most cases), it must:
