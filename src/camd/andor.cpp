@@ -313,8 +313,7 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool
-CameraAndorChip::supportFrameTransfer ()
+bool CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -415,10 +414,10 @@ Rts2DevCamera (in_argc, in_argv)
   andorRoot = "/root/andor/examples/common";
 
   createValue (gain, "GAIN", "CCD gain", true, 0,
-	       CAM_EXPOSING | CAM_READING | CAM_DATA);
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
 
   createValue (Mode, "MODE", "Camera mode", true, 0,
-	       CAM_EXPOSING | CAM_READING | CAM_DATA);
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   Mode->setValueInteger (0);
   createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true);
   VSAmp->setValueInteger (0);
@@ -426,9 +425,10 @@ Rts2DevCamera (in_argc, in_argv)
   VSpeed->setValueInteger (1);
   createValue (HSpeed, "HSPEED", "Horizontal shift speed", true);
   HSpeed->setValueInteger (1);
-  createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false);
+  createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false, 0, 0,
+	       true);
   HSpeed->setValueInteger (1);
-  createValue (useFT, "USEFT", "Use FT", false);
+  createValue (useFT, "USEFT", "Use FT", false, 0, 0, true);
   HSpeed->setValueInteger (1);
 
   defaultGain = 255;
