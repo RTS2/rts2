@@ -24,7 +24,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 
   focTemp = NULL;
 
-  createValue (focPos, "FOC_POS", "focuser position");
+  createValue (focPos, "FOC_POS", "focuser position", true, 0, 0, true);
 
   addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
   addOption ('o', "home", 1, "home position (default to 750!)");
@@ -228,8 +228,7 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-bool
-Rts2DevFocuser::isAtStartPosition ()
+bool Rts2DevFocuser::isAtStartPosition ()
 {
   return false;
 }
