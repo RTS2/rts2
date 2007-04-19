@@ -354,7 +354,6 @@ private:
   int mode;
 
   Rts2ValueDouble *gain;
-  Rts2ValueDouble *nextGain;
 
   Rts2ValueInteger *Mode;
   Rts2ValueInteger *useFT;
@@ -389,7 +388,6 @@ protected:
     virtual int processOption (int in_opt);
   virtual void help ();
   virtual void cancelPriorityOperations ();
-  virtual void afterReadout ();
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 public:
@@ -416,8 +414,8 @@ Rts2DevCamera (in_argc, in_argv)
 {
   andorRoot = "/root/andor/examples/common";
 
-  createValue (gain, "GAIN", "CCD gain", true);
-  createValue (nextGain, "next_gain", "CCD next gain", false);
+  createValue (gain, "GAIN", "CCD gain", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA);
 
   createValue (Mode, "MODE", "Camera mode", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA);
@@ -580,7 +578,6 @@ Rts2DevCameraAndor::cancelPriorityOperations ()
 {
   if (!isnan (defaultGain))
     setGain (defaultGain);
-  nextGain->setValueDouble (nan ("f"));
   Rts2DevCamera::cancelPriorityOperations ();
 }
 
@@ -596,21 +593,10 @@ Rts2DevCameraAndor::scriptEnds ()
 {
   if (!isnan (defaultGain))
     setGain (defaultGain);
-  nextGain->setValueDouble (nan ("f"));
   // *FIXME* Wow, this is ugly
   CameraAndorChip *c = (CameraAndorChip *) chips[0];
   c->closeShutter ();
   return Rts2DevCamera::scriptEnds ();
-}
-
-void
-Rts2DevCameraAndor::afterReadout ()
-{
-  if (!isnan (nextGain->getValueDouble ()))
-    {
-      setGain (nextGain->getValueDouble ());
-      nextGain->setValueDouble (nan ("f"));
-    }
 }
 
 int
