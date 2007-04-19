@@ -34,6 +34,7 @@ using namespace std;
 #define ANDOR_SHUTTER_AUTO 0
 #define ANDOR_SHUTTER_OPEN 1
 #define ANDOR_SHUTTER_CLOSED 2
+
 // Mode definitions for the BOOTES projects iXon camera.
 // Arguably they shouldn't be here, but....
 typedef struct ixon_mode_t
@@ -43,17 +44,16 @@ typedef struct ixon_mode_t
   int vsspeed;			///
   int vs_amp;			///driving voltage, 0-4, leave low if possible
   int disable_em;		///0 = use EMCCD
-  int em_gain;			///0-255 (0 does not imply bypass)
 } ixon_mode;
 
 #define IXON_MODES 6
-const ixon_mode mode_def[] = { {1, 0, 0, 1, 0, 255},	//16 bit @ 1MHz
-{0, 0, 0, 1, 0, 255},		//14 bit @ 3MHz
-{0, 1, 0, 1, 0, 255},		//14 bit @ 5MHz
-{0, 2, 0, 1, 0, 255},		//14 bit @ 10MHz
-{1, 0, 0, 1, 1, 0},		//16 bit @ 1MHz, no em
-{0, 0, 0, 1, 1, 0}
-};				//14 bit @ 3MHz, no em
+const ixon_mode mode_def[] = { {1, 0, 0, 1, 0},	//16 bit @ 1MHz
+{0, 2, 0, 1, 0},		//14 bit @ 3MHz
+{0, 1, 0, 1, 0},		//14 bit @ 5MHz
+{0, 0, 0, 1, 0},		//14 bit @ 10MHz
+{1, 0, 0, 1, 1},		//16 bit @ 1MHz, no em
+{0, 0, 0, 1, 1}			//14 bit @ 3MHz, no em
+};
 
 /***********************************************************************/
 /**
@@ -164,10 +164,11 @@ CameraAndorChip::startExposure (int light, float exptime)
 {
   int ret;
 
-  if ((ret =
-       SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
-		 chipReadout->x + chipReadout->height, chipReadout->y + 1,
-		 chipReadout->y + chipReadout->width)) != DRV_SUCCESS)
+  ret =
+    SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
+	      chipReadout->x + chipReadout->height, chipReadout->y + 1,
+	      chipReadout->y + chipReadout->width);
+  if (ret != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
       return -1;
@@ -191,7 +192,9 @@ CameraAndorChip::startExposure (int light, float exptime)
 	  nAcc = 1;
 	  subExposure = exptime;
 	}
-      if (SetAcquisitionMode (AC_ACQMODE_VIDEO) != DRV_SUCCESS)
+
+      // Acquisition mode 2 is "accumulate"
+      if (SetAcquisitionMode (2) != DRV_SUCCESS)
 	return -1;
       if (SetExposureTime (subExposure) != DRV_SUCCESS)
 	return -1;
@@ -214,7 +217,16 @@ CameraAndorChip::startExposure (int light, float exptime)
     new_state = ANDOR_SHUTTER_OPEN;
 
   if (new_state != andor_shutter_state)
-    SetShutter (1, new_state, 50, 50);
+    {
+      logStream (MESSAGE_DEBUG) << "SetShutter " << new_state << sendLog;
+      ret = SetShutter (1, new_state, 50, 50);
+      if (ret != DRV_SUCCESS)
+	{
+	  logStream (MESSAGE_ERROR) << "Cannot set shutter state to " <<
+	    new_state << " error " << ret << sendLog;
+	  return -1;
+	}
+    }
   andor_shutter_state = new_state;
 
   if ((ret = StartAcquisition ()) != DRV_SUCCESS)
@@ -254,6 +266,14 @@ CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   return CameraChip::startReadout (dataConn, conn);
 }
 
+
+/***************************************************************
+ * readoutOneLine
+ *
+ * For each exposure, the first time this function is called, it reads out
+ * the entire image from the camera (into dest).  Subsequent calls return
+ * lines from dest.
+ */
 
 int
 CameraAndorChip::readoutOneLine ()
@@ -334,20 +354,17 @@ private:
   int shutter_with_ft;
   int mode;
 
-  int printChannelInfo (int channel);
-  int do_print_speed_info ();
-
   Rts2ValueDouble *gain;
   Rts2ValueDouble *nextGain;
 
   Rts2ValueInteger *Mode;
   Rts2ValueInteger *useFT;
   Rts2ValueInteger *VSAmp;
-  Rts2ValueInteger *HSpeed;
-  Rts2ValueInteger *VSpeed;
   Rts2ValueInteger *FTShutter;
 
   // informational values
+  Rts2ValueInteger *HSpeed;
+  Rts2ValueInteger *VSpeed;
   Rts2ValueFloat *HSpeedHZ;
   Rts2ValueFloat *VSpeedHZ;
   Rts2ValueInteger *bitDepth;
@@ -357,12 +374,17 @@ private:
   void getTemp ();
   int setGain (double in_gain);
   int setADChannel (int in_adchan);
-  int setVSAmplifier (int in_vsamp);
-  int setHSSpeed (int in_hsspeed);
+  int setVSAmplitude (int in_vsamp);
+  int setHSSpeed (int in_amp, int in_hsspeed);
   int setVSSpeed (int in_vsspeed);
   int setFTShutter (int force);
   int setMode (int mode);
 
+  int printInfo ();
+  int printCapabilities (AndorCapabilities * cap);
+  int printNumberADCs ();
+  int printHSSpeeds (int camera_type, int ad_channel, int amplifier);
+  int printVSSpeeds ();
 
 protected:
     virtual int processOption (int in_opt);
@@ -395,7 +417,7 @@ Rts2DevCamera (in_argc, in_argv)
 {
   andorRoot = "/root/andor/examples/common";
 
-  createValue (gain, "GAIN", "CCD gain");
+  createValue (gain, "GAIN", "CCD gain", true);
   createValue (nextGain, "next_gain", "CCD next gain", false);
 
   createValue (Mode, "MODE", "Camera mode", true);
@@ -414,8 +436,8 @@ Rts2DevCamera (in_argc, in_argv)
   defaultGain = 255;
   gain->setValueDouble (255.0);
 
-  horizontalSpeed = 1;
-  verticalSpeed = 1;
+  horizontalSpeed = 0;
+  verticalSpeed = 0;
   vsampli = -1;
   printSpeedInfo = false;
 
@@ -476,13 +498,12 @@ Rts2DevCameraAndor::setADChannel (int in_adchan)
 
 
 int
-Rts2DevCameraAndor::setVSAmplifier (int in_vsamp)
+Rts2DevCameraAndor::setVSAmplitude (int in_vsamp)
 {
   int ret;
-  ret = SetVSAmplitude (in_vsamp);
-  if (ret != DRV_SUCCESS)
+  if ((ret = SetVSAmplitude (in_vsamp)) != DRV_SUCCESS)
     {
-      logStream (MESSAGE_ERROR) << "andor setVSAmplifier error " << ret <<
+      logStream (MESSAGE_ERROR) << "andor setVSAmplitude error " << ret <<
 	sendLog;
       return -1;
     }
@@ -491,11 +512,10 @@ Rts2DevCameraAndor::setVSAmplifier (int in_vsamp)
 }
 
 int
-Rts2DevCameraAndor::setHSSpeed (int in_hsspeed)
+Rts2DevCameraAndor::setHSSpeed (int in_channel, int in_hsspeed)
 {
   int ret;
-  ret = SetHSSpeed (0, in_hsspeed);
-  if (ret != DRV_SUCCESS)
+  if ((ret = SetHSSpeed (in_channel, in_hsspeed)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor setHSSpeed error " << ret <<
 	sendLog;
@@ -533,27 +553,31 @@ Rts2DevCameraAndor::setFTShutter (int force)
 int
 Rts2DevCameraAndor::setMode (int in_mode)
 {
-/*	int ret;
-	const ixon_mode *m;
+  int ret;
+  const ixon_mode *m;
 
-	if ((in_mode < 0 ) || (in_mode>=IXON_MODES)) {
-		logStream (MESSAGE_ERROR) << "andor setMode failed: " << in_mode
-                   << " is not a valid mode!" <<ret <<sendLog;
-		return -1;
-	}
+  if ((in_mode < 0) || (in_mode >= IXON_MODES))
+    {
+      logStream (MESSAGE_ERROR) << "andor setMode failed: " << in_mode
+	<< " is not a valid mode!" << ret << sendLog;
+      return -1;
+    }
 
-	m=&mode_def[in_mode];
-	if ((ret = setADChannel(m->ad))!=0)
-		return ret;
+  m = &mode_def[in_mode];
+  if ((ret = setADChannel (m->ad)) != 0)
+    return ret;
 
-	if ((ret = SetHSSpeed(m->disable_em, m->hsspeed))!=DRV_SUCCESS)
-		return -1;
+  if ((ret = SetHSSpeed (m->disable_em, m->hsspeed)) != DRV_SUCCESS)
+    return -1;
 
-	if ((ret = setVSAmplitude(m->vs_amp))!=0)
-		return -1;
+  if ((ret = setVSSpeed (m->vsspeed)) != 0)
+    return ret;
 
-	// *FIXME*
-	mode->setValueInteger(in_mode); */
+  if ((ret = setVSAmplitude (m->vs_amp)) != 0)
+    return -1;
+
+  // *FIXME*
+  Mode->setValueInteger (in_mode);
   return 0;
 }
 
@@ -565,6 +589,13 @@ Rts2DevCameraAndor::cancelPriorityOperations ()
   nextGain->setValueDouble (nan ("f"));
   Rts2DevCamera::cancelPriorityOperations ();
 }
+
+
+/********************************************************************
+ * scriptEnds
+ *
+ * Ensure that we definitely leave the shutter closed.
+ */
 
 int
 Rts2DevCameraAndor::scriptEnds ()
@@ -596,11 +627,11 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == Mode)
     return setMode (new_value->getValueInteger () == 0) ? 0 : -2;
   if (old_value == VSAmp)
-    return setVSAmplifier (new_value->getValueInteger () == 0) ? 0 : -2;
-  if (old_value == HSpeed)
+    return setVSAmplitude (new_value->getValueInteger () == 0) ? 0 : -2;
+/*  if (old_value == HSpeed)
     return setHSSpeed (new_value->getValueInteger () == 0) ? 0 : -2;
   if (old_value == VSpeed)
-    return setVSSpeed (new_value->getValueInteger () == 0) ? 0 : -2;
+    return setVSSpeed (new_value->getValueInteger () == 0) ? 0 : -2;*/
   if (old_value == FTShutter)
     return setFTShutter (new_value->getValueInteger () == 0) ? 0 : -2;
 
@@ -652,94 +683,254 @@ Rts2DevCameraAndor::processOption (int in_opt)
   return 0;
 }
 
+/*******************************************************************
+ * printInfo (multiple functions)
+ *
+ * Do a full probe of what the attached camera can do, and print it out.
+ * Note that an amount of stuff is duplicated between here and CameraAndorChip
+ * so if/when that gets merged, some info may aready be available.
+ * 
+ */
+
 int
-Rts2DevCameraAndor::printChannelInfo (int channel)
+Rts2DevCameraAndor::printCapabilities (AndorCapabilities * cap)
 {
-  int ret;
-  int speeds;
-  float value;
-  int depth;
-  int i;
-  ret = GetBitDepth (channel, &depth);
-  if (ret != DRV_SUCCESS)
+  printf ("Acquisition modes: ");
+  if (cap->ulAcqModes == 0)
+    printf ("<none>");
+  if (cap->ulAcqModes & AC_ACQMODE_SINGLE)
+    printf (" SINGLE");
+  if (cap->ulAcqModes & AC_ACQMODE_VIDEO)
+    printf (" VIDEO");
+  if (cap->ulAcqModes & AC_ACQMODE_ACCUMULATE)
+    printf (" ACCUMULATE");
+  if (cap->ulAcqModes & AC_ACQMODE_KINETIC)
+    printf (" KINETIC");
+  if (cap->ulAcqModes & AC_ACQMODE_FRAMETRANSFER)
+    printf (" FRAMETRANSFER");
+  if (cap->ulAcqModes & AC_ACQMODE_FASTKINETICS)
+    printf (" FASTKINETICS");
+
+  printf ("\nRead modes: ");
+  if (cap->ulReadModes & AC_READMODE_FULLIMAGE)
+    printf (" FULLIMAGE");
+  if (cap->ulReadModes & AC_READMODE_SUBIMAGE)
+    printf (" SUBIMAGE");
+  if (cap->ulReadModes & AC_READMODE_SINGLETRACK)
+    printf (" SINGLETRACK");
+  if (cap->ulReadModes & AC_READMODE_FVB)
+    printf (" FVB");
+  if (cap->ulReadModes & AC_READMODE_MULTITRACK)
+    printf (" MULTITRACK");
+  if (cap->ulReadModes & AC_READMODE_RANDOMTRACK)
+    printf (" RANDOMTRACK");
+
+  printf ("\nTrigger modes: ");
+  if (cap->ulTriggerModes & AC_TRIGGERMODE_INTERNAL)
+    printf (" INTERNAL");
+  if (cap->ulTriggerModes & AC_TRIGGERMODE_EXTERNAL)
+    printf (" EXTERNAL");
+
+  printf ("\nPixel modes: ");
+  if (cap->ulPixelMode & AC_PIXELMODE_8BIT)
+    printf (" 8BIT");
+  if (cap->ulPixelMode & AC_PIXELMODE_14BIT)
+    printf (" 14BIT");
+  if (cap->ulPixelMode & AC_PIXELMODE_16BIT)
+    printf (" 16BIT");
+  if (cap->ulPixelMode & AC_PIXELMODE_32BIT)
+    printf (" 32BIT");
+  if (cap->ulPixelMode & AC_PIXELMODE_32BIT)
+    printf (" 32BIT");
+  if (cap->ulPixelMode & AC_PIXELMODE_MONO)
+    printf (" MONO");
+  if (cap->ulPixelMode & AC_PIXELMODE_RGB)
+    printf (" RGB");
+  if (cap->ulPixelMode & AC_PIXELMODE_CMY)
+    printf (" CMY");
+
+
+  printf ("\nSettable variables: ");
+  if (cap->ulSetFunctions & AC_SETFUNCTION_VREADOUT)
+    printf (" VREADOUT");
+  if (cap->ulSetFunctions & AC_SETFUNCTION_HREADOUT)
+    printf (" HREADOUT");
+  if (cap->ulSetFunctions & AC_SETFUNCTION_TEMPERATURE)
+    printf (" TEMPERATURE");
+  if (cap->ulSetFunctions & AC_SETFUNCTION_GAIN)
+    printf (" GAIN");
+  if (cap->ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
+    printf (" EMCCDGAIN");
+
+  printf ("\n");
+  return 0;
+}
+
+/****************************************************************
+ * printNumberADCs
+ *
+ * Prints out number and bit-depth of available AD channels, and returns
+ * the number of AD channels found, 0 on error.
+ */
+
+int
+Rts2DevCameraAndor::printNumberADCs ()
+{
+  int ret, n_ad;
+  if ((ret = GetNumberADChannels (&n_ad)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) <<
-	"andor printChannelInfo cannto get depth for channel " << channel <<
-	sendLog;
+	"andor cannot get number of AD channels" << sendLog;
       return -1;
     }
-  logStream (MESSAGE_ERROR) << "andor printChannelInfo depth for channel " <<
-    channel << " value: " << depth << sendLog;
-  for (int j = 0; j < 2; j++)
+  printf ("AD Channels: %d (", n_ad);
+  for (int ad = 0; ad < n_ad; ad++)
     {
-      ret = GetNumberHSSpeeds (channel, j, &speeds);
-      if (ret != DRV_SUCCESS)
+      int depth;
+      if ((ret = GetBitDepth (ad, &depth)) != DRV_SUCCESS)
 	{
 	  logStream (MESSAGE_ERROR) <<
-	    "andor printChannelInfo cannot get horizontal speeds for channel "
-	    << channel << " type " << j << sendLog;
+	    "andor cannot get depth for ad " << ad << sendLog;
 	  return -1;
 	}
-      for (i = 0; i < speeds; i++)
+      if (n_ad > 1)
+	printf ("%d=%d-bit", ad, depth);
+      else
+	printf ("%d-bit", depth);
+      if (ad == (n_ad - 1))
+	printf (")\n");
+      else
+	printf (", ");
+    }
+  return n_ad;
+}
+
+
+int
+Rts2DevCameraAndor::printHSSpeeds (int camera_type, int ad, int amp)
+{
+  int ret, nhs;
+  if ((ret = GetNumberHSSpeeds (ad, amp, &nhs)) != DRV_SUCCESS)
+    {
+      logStream (MESSAGE_ERROR) <<
+	"andor cannot get number of horizontal speeds " << sendLog;
+      return -1;
+    }
+
+  printf ("Horizontal speeds: %d (", nhs);
+
+  for (int s = 0; s < nhs; s++)
+    {
+      float val;
+      if ((ret = GetHSSpeed (ad, amp, s, &val)) != DRV_SUCCESS)
 	{
-	  ret = GetHSSpeed (channel, j, i, &value);
-	  if (ret != DRV_SUCCESS)
-	    {
-	      logStream (MESSAGE_ERROR) <<
-		"andor printChannelInfo cannot get horizontal speed " << i <<
-		" channel " << channel << " type " << j << sendLog;
-	      return -1;
-	    }
-	  std::cout <<
-	    "andor printChannelInfo horizontal speed " << i << " channel " <<
-	    channel << " type " << j << " value " << value << " MHz" <<
-	    std::endl;
+	  logStream (MESSAGE_ERROR) <<
+	    "andor cannot get horizontal speed " << s <<
+	    " ad " << ad << " amp " << amp << sendLog;
+	  return -1;
 	}
+      printf ("%.2f", val);
+      if (s == (nhs - 1))
+	switch (camera_type)
+	  {
+	  case AC_CAMERATYPE_IXON:
+	    printf (" MHz)\n");
+	    break;
+	  default:
+	    printf (" usec/pix)\n");
+	    break;
+	  }
+      else
+	printf (", ");
     }
   return 0;
 }
 
 
 int
-Rts2DevCameraAndor::do_print_speed_info ()
+Rts2DevCameraAndor::printVSSpeeds ()
 {
-  int ret;
-  int channels;
-  int speeds;
-  float value;
-  int i;
-  if ((ret = GetNumberADChannels (&channels)) != DRV_SUCCESS)
+  int ret, vspeeds;
+  if ((ret = GetNumberVSSpeeds (&vspeeds)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) <<
-	"andor init cannot get number of AD channels" << sendLog;
+	"andor init cannot get vertical speeds" << sendLog;
       return -1;
     }
-  logStream (MESSAGE_INFO) << "andor init channels " << channels << sendLog;
-  // print horizontal channels..
-  for (i = 0; i < channels; i++)
-    if ((ret = printChannelInfo (i)) != 0)
-      return ret;
-
-  // print vertical channels..
-  if ((ret = GetNumberVSSpeeds (&speeds)) != DRV_SUCCESS)
+  printf ("Vertical Speeds: %d (", vspeeds);
+  for (int s = 0; s < vspeeds; s++)
     {
-      logStream (MESSAGE_ERROR) <<
-	"andor init cannot get horizontal speeds" << sendLog;
-      return -1;
-    }
-  for (i = 0; i < speeds; i++)
-    {
-      if ((ret = GetVSSpeed (i, &value)) != DRV_SUCCESS)
-	{
-	  logStream (MESSAGE_ERROR) <<
-	    "andor init cannot get vertical speed " << i << sendLog;
-	  return -1;
-	}
-      std::cout << "andor::init vertical speed " << i <<
-	" value " << value << " MHz" << std::endl;
+      float val;
+      GetVSSpeed (s, &val);
+      printf ("%.2f", val);
+      if (s == (vspeeds - 1))
+	printf (" usec/pix)\n");
+      else
+	printf (", ");
     }
   return 0;
 }
+
+int
+Rts2DevCameraAndor::printInfo ()
+{
+  AndorCapabilities cap;
+  int ret;
+  int n_ad, n_amp;
+  char name[128];
+
+  GetCapabilities (&cap);
+  printf ("Camera type: ");
+  switch (cap.ulCameraType)
+    {
+    case AC_CAMERATYPE_PDA:
+      printf ("PDA");
+      break;
+    case AC_CAMERATYPE_IXON:
+      printf ("IXON");
+      break;
+    case AC_CAMERATYPE_ICCD:
+      printf ("ICCD");
+      break;
+    case AC_CAMERATYPE_EMCCD:
+      printf ("EMCCD");
+      break;
+    case AC_CAMERATYPE_CCD:
+      printf ("CCD");
+      break;
+    case AC_CAMERATYPE_ISTAR:
+      printf ("ISTAR");
+      break;
+    case AC_CAMERATYPE_VIDEO:
+      printf ("VIDEO");
+      break;
+    default:
+      printf ("<unknown> (code is %lu)", cap.ulCameraType);
+      break;
+    }
+
+  GetHeadModel (name);
+  printf (" Model: %s\n", name);
+
+  printCapabilities (&cap);
+
+  if ((n_ad = printNumberADCs ()) < 1)
+    return -1;
+
+  GetNumberAmp (&n_amp);
+  printf ("Output amplifiers: %d\n", n_amp);
+
+  for (int ad = 0; ad < n_ad; ad++)
+    for (int amp = 0; amp < n_amp; amp++)
+      if ((ret = printHSSpeeds (cap.ulCameraType, ad, amp)) != 0)
+	return ret;
+
+  if ((ret = printVSSpeeds ()) != 0)
+    return ret;
+
+  return 0;
+}
+
 
 int
 Rts2DevCameraAndor::init ()
@@ -763,13 +954,15 @@ Rts2DevCameraAndor::init ()
   SetExposureTime (5.0);
   setGain (defaultGain);
 
-  /*
-     if (setMode(0)!=0)
-     return -1; */
+  //Set Read Mode to --Image--
+  SetReadMode (4);
 
-  if (setADChannel (1) != 0)
+  if (setMode (3) != 0)
     return -1;
 /*
+  if (setADChannel (1) != 0)
+    return -1;
+
   // vertical amplitude
   if ((vsampli >= 0) && (setVSAmplifier(vsampli)!=0))
 	return -1;
@@ -789,7 +982,7 @@ Rts2DevCameraAndor::init ()
   chips[1] = NULL;
 
   if (printSpeedInfo)
-    do_print_speed_info ();
+    printInfo ();
 
   sprintf (ccdType, "ANDOR");
 
