@@ -46,8 +46,9 @@ typedef struct ixon_mode_t
   int disable_em;		///0 = use EMCCD
 } ixon_mode;
 
-#define IXON_MODES 6
-const ixon_mode mode_def[] = { {1, 0, 0, 1, 0},	//16 bit @ 1MHz
+#define IXON_MODES 7
+const ixon_mode mode_def[] = { {1, 0, 5, 1, 0},	//default with which we worked
+{1, 0, 0, 1, 0},		//16 bit @ 1MHz
 {0, 2, 0, 1, 0},		//14 bit @ 3MHz
 {0, 1, 0, 1, 0},		//14 bit @ 5MHz
 {0, 0, 0, 1, 0},		//14 bit @ 10MHz
@@ -312,7 +313,8 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool CameraAndorChip::supportFrameTransfer ()
+bool
+CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -343,9 +345,6 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 {
 private:
   char *andorRoot;
-  int horizontalSpeed;
-  int verticalSpeed;
-  int vsampli;
   bool printSpeedInfo;
   // number of AD channels
   int chanNum;
@@ -420,7 +419,8 @@ Rts2DevCamera (in_argc, in_argv)
   createValue (gain, "GAIN", "CCD gain", true);
   createValue (nextGain, "next_gain", "CCD next gain", false);
 
-  createValue (Mode, "MODE", "Camera mode", true);
+  createValue (Mode, "MODE", "Camera mode", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA);
   Mode->setValueInteger (0);
   createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true);
   VSAmp->setValueInteger (0);
@@ -436,18 +436,12 @@ Rts2DevCamera (in_argc, in_argv)
   defaultGain = 255;
   gain->setValueDouble (255.0);
 
-  horizontalSpeed = 0;
-  verticalSpeed = 0;
-  vsampli = -1;
   printSpeedInfo = false;
 
 
   addOption ('m', "mode", 1, "Which mode to use");
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
   addOption ('g', "gain", 1, "set camera gain level (0-255)");
-  addOption ('H', "horizontal_speed", 1, "set horizontal readout speed");
-  addOption ('v', "vertical_speed", 1, "set vertical readout speed");
-  addOption ('A', "vs_amplitude", 1, "VS amplitude (0-4)");
   addOption ('N', "noft", 0, "do not use frame transfer mode");
   addOption ('I', "speed_info", 0,
 	     "print speed info - information about speed available");
@@ -625,15 +619,15 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == gain)
     return setGain (new_value->getValueDouble ());
   if (old_value == Mode)
-    return setMode (new_value->getValueInteger () == 0) ? 0 : -2;
+    return setMode (new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == VSAmp)
-    return setVSAmplitude (new_value->getValueInteger () == 0) ? 0 : -2;
-/*  if (old_value == HSpeed)
-    return setHSSpeed (new_value->getValueInteger () == 0) ? 0 : -2;
+    return setVSAmplitude (new_value->getValueInteger ()) == 0 ? 0 : -2;
+  if (old_value == HSpeed)
+    return setHSSpeed (0, new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == VSpeed)
-    return setVSSpeed (new_value->getValueInteger () == 0) ? 0 : -2;*/
+    return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == FTShutter)
-    return setFTShutter (new_value->getValueInteger () == 0) ? 0 : -2;
+    return setFTShutter (new_value->getValueInteger ()) == 0 ? 0 : -2;
 
   return Rts2DevCamera::setValue (old_value, new_value);
 }
@@ -656,19 +650,6 @@ Rts2DevCameraAndor::processOption (int in_opt)
     case 'r':
       andorRoot = optarg;
       break;
-    case 'H':
-      horizontalSpeed = atoi (optarg);
-      break;
-    case 'v':
-      verticalSpeed = atoi (optarg);
-      break;
-    case 'A':
-      vsampli = atoi (optarg);
-      if (vsampli < 0 || vsampli > 4)
-	{
-	  printf ("amplitude must be in 0-4 range\n");
-	  exit (EXIT_FAILURE);
-	}
     case 'I':
       printSpeedInfo = true;
       break;
@@ -942,9 +923,10 @@ Rts2DevCameraAndor::init ()
   if ((ret = Rts2DevCamera::init ()) != 0)
     return ret;
 
-  if ((err = Initialize (andorRoot)) != DRV_SUCCESS)
+  err = Initialize (andorRoot);
+  if (err != DRV_SUCCESS)
     {
-      cout << "Andor library init failed (code " << err << "). exiting" <<
+      cerr << "Andor library init failed (code " << err << "). exiting" <<
 	endl;
       return -1;
     }
@@ -955,23 +937,16 @@ Rts2DevCameraAndor::init ()
   setGain (defaultGain);
 
   //Set Read Mode to --Image--
-  SetReadMode (4);
+  ret = SetReadMode (4);
+  if (ret != DRV_SUCCESS)
+    {
+      cerr << "Cannot set read mode (" << ret << "), exiting" << endl;
+      return -1;
+    }
 
-  if (setMode (3) != 0)
+
+  if (setMode (0) != 0)
     return -1;
-/*
-  if (setADChannel (1) != 0)
-    return -1;
-
-  // vertical amplitude
-  if ((vsampli >= 0) && (setVSAmplifier(vsampli)!=0))
-	return -1;
-
-  if ((horizontalSpeed >= 0) && (setHSSpeed(horizontalSpeed)!=0))
-	  return -1;
-
-  if ((verticalSpeed >= 0) && (setVSSpeed (verticalSpeed)!=0))
-	return -1; */
 
   chipNum = 1;
 
