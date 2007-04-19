@@ -27,6 +27,8 @@ Rts2Block (in_argc, in_argv)
 
   daemonize = DO_DAEMONIZE;
 
+  values_were_saved = false;
+
   createValue (info_time, "infotime",
 	       "time when this informations were correct", false);
 
@@ -333,9 +335,52 @@ Rts2Daemon::selectSuccess (fd_set * read_set)
 }
 
 void
-Rts2Daemon::addValue (Rts2Value * value, int queCondition)
+Rts2Daemon::saveValues ()
 {
-  values.push_back (new Rts2CondValue (value, queCondition));
+  for (Rts2CondValueVector::iterator iter = values.begin ();
+       iter != values.end (); iter++)
+    {
+      Rts2CondValue *val = *iter;
+      if (val->saveValue ())
+	{
+	  Rts2Value *old_value = duplicateValue (val->getValue ());
+	  savedValues.push_back (old_value);
+	}
+    }
+  values_were_saved = true;
+}
+
+void
+Rts2Daemon::loadValues ()
+{
+  for (Rts2ValueVector::iterator iter = savedValues.begin ();
+       iter != savedValues.end (); iter++)
+    {
+      Rts2Value *new_val = *iter;
+      Rts2CondValue *old_val = getValue (new_val->getName ().c_str ());
+      if (old_val == NULL)
+	{
+	  logStream (MESSAGE_ERROR) <<
+	    "Rts2Daemon::loadValues cannot get value " << new_val->
+	    getName () << sendLog;
+	}
+      // if there was error setting value
+      else if (setValue (old_val, '=', new_val) == -2)
+	{
+	  logStream (MESSAGE_ERROR) <<
+	    "Rts2Daemon::loadValues cannot set value " << new_val->
+	    getName () << sendLog;
+	}
+      delete new_val;
+    }
+  savedValues.clear ();
+  values_were_saved = false;
+}
+
+void
+Rts2Daemon::addValue (Rts2Value * value, int queCondition, bool save_value)
+{
+  values.push_back (new Rts2CondValue (value, queCondition, save_value));
 }
 
 Rts2CondValue *
@@ -349,6 +394,49 @@ Rts2Daemon::getValue (const char *v_name)
 	return val;
     }
   return NULL;
+}
+
+Rts2Value *
+Rts2Daemon::duplicateValue (Rts2Value * old_value)
+{
+  // create new value, which will be passed to hook
+  switch (old_value->getValueType ())
+    {
+    case RTS2_VALUE_STRING:
+      return
+	new Rts2ValueString (old_value->getName ().c_str (),
+			     old_value->getDescription (),
+			     old_value->getWriteToFits ());
+    case RTS2_VALUE_INTEGER:
+      return
+	new Rts2ValueInteger (old_value->getName ().c_str (),
+			      old_value->getDescription (),
+			      old_value->getWriteToFits ());
+    case RTS2_VALUE_TIME:
+      return
+	new Rts2ValueTime (old_value->getName ().c_str (),
+			   old_value->getDescription (),
+			   old_value->getWriteToFits ());
+    case RTS2_VALUE_DOUBLE:
+      return
+	new Rts2ValueDouble (old_value->getName ().c_str (),
+			     old_value->getDescription (),
+			     old_value->getWriteToFits ());
+    case RTS2_VALUE_FLOAT:
+      return
+	new Rts2ValueFloat (old_value->getName ().c_str (),
+			    old_value->getDescription (),
+			    old_value->getWriteToFits ());
+    case RTS2_VALUE_BOOL:
+      return
+	new Rts2ValueBool (old_value->getName ().c_str (),
+			   old_value->getDescription (),
+			   old_value->getWriteToFits ());
+    default:
+      logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
+	getValueType () << sendLog;
+      return NULL;
+    }
 }
 
 void
@@ -415,13 +503,33 @@ Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 }
 
 int
+Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op,
+		      Rts2Value * new_value)
+{
+  // que change if that's necessary
+  if (queValueChange (old_value_cond))
+    {
+      queValues.push_back (new Rts2ValueQue (old_value_cond, op, new_value));
+      return -1;
+    }
+
+  return setValue (old_value_cond->getValue (), op, new_value);
+}
+
+int
 Rts2Daemon::setValue (Rts2Value * old_value, char op, Rts2Value * new_value)
 {
   int ret;
+
   ret = new_value->doOpValue (op, old_value);
   if (ret)
     goto err;
 
+  // save values before first change
+  if (!values_were_saved)
+    {
+      saveValues ();
+    }
   // call hook
   ret = setValue (old_value, new_value);
   if (ret)
@@ -568,63 +676,23 @@ Rts2Daemon::setValue (Rts2Conn * conn)
     return -2;
   Rts2Value *newValue;
 
-  // create new value, which will be passed to hook
-  switch (old_value->getValueType ())
-    {
-    case RTS2_VALUE_STRING:
-      newValue =
-	new Rts2ValueString (old_value->getName ().c_str (),
-			     old_value->getDescription (),
-			     old_value->getWriteToFits ());
-      break;
-    case RTS2_VALUE_INTEGER:
-      newValue =
-	new Rts2ValueInteger (old_value->getName ().c_str (),
-			      old_value->getDescription (),
-			      old_value->getWriteToFits ());
-      break;
-    case RTS2_VALUE_TIME:
-      newValue =
-	new Rts2ValueTime (old_value->getName ().c_str (),
-			   old_value->getDescription (),
-			   old_value->getWriteToFits ());
-      break;
-    case RTS2_VALUE_DOUBLE:
-      newValue =
-	new Rts2ValueDouble (old_value->getName ().c_str (),
-			     old_value->getDescription (),
-			     old_value->getWriteToFits ());
-      break;
-    case RTS2_VALUE_FLOAT:
-      newValue =
-	new Rts2ValueFloat (old_value->getName ().c_str (),
-			    old_value->getDescription (),
-			    old_value->getWriteToFits ());
-      break;
-    case RTS2_VALUE_BOOL:
-      newValue =
-	new Rts2ValueBool (old_value->getName ().c_str (),
-			   old_value->getDescription (),
-			   old_value->getWriteToFits ());
-      break;
-    default:
-      logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
-	getValueType () << sendLog;
-      return -2;
-    }
+  newValue = duplicateValue (old_value);
+
+  if (newValue == NULL)
+    return -2;
+
   ret = newValue->setValue (conn);
   if (ret)
     goto err;
 
-  // que change if that's necessary
-  if (queValueChange (old_value_cond))
-    {
-      queValues.push_back (new Rts2ValueQue (old_value_cond, *op, newValue));
-      conn->sendCommandEnd (DEVDEM_I_QUED, "value change was qued");
-      return -1;
-    }
+  ret = setValue (old_value_cond, *op, newValue);
 
-  return setValue (old_value, *op, newValue);
+  // value change was qued
+  if (ret == -1)
+    {
+      conn->sendCommandEnd (DEVDEM_I_QUED, "value change was qued");
+    }
+  return ret;
 
 err:
   delete newValue;

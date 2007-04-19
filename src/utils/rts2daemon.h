@@ -38,8 +38,29 @@ private:
    *
    * \param value Rts2Value which will be added.
    */
-  void addValue (Rts2Value * value, int queCondition = 0);
+  void addValue (Rts2Value * value, int queCondition = 0, bool save_value =
+		 false);
   Rts2CondValue *getValue (const char *v_name);
+
+  Rts2Value *duplicateValue (Rts2Value * old_value);
+
+  /**
+   * Perform value changes. Check if value can be changed before performing change.
+   * 
+   * \return 0 when value change can be performed, -2 on error, -1 when value change is qued.
+   */
+  int setValue (Rts2CondValue * old_value_cond, char op,
+		Rts2Value * new_value);
+
+  /**
+   * Holds vector of values which are indendet to be saved. There are two methods, saveValues and loadValues.
+   * saveValues is called from \see setValue(Rts2Value,char,Rts2ValueVector) before first value value is changed. Once values are saved,
+   * values_were_saved turns to true and we don't call saveValues before loadValues is called.
+   * loadValues reset values_were_saved flag, load all values from savedValues
+   */
+  Rts2ValueVector savedValues;
+  bool values_were_saved;
+
 protected:
   int checkLockFile (const char *lock_fname);
   void setNotDeamonize ()
@@ -52,6 +73,9 @@ protected:
   virtual void selectSuccess (fd_set * read_set);
 
   Rts2ValueQueVector queValues;
+
+  void saveValues ();
+  void loadValues ();
 
   /**
    * Create new value, and return pointer to it.
@@ -66,10 +90,11 @@ protected:
 					    std::string in_description,
 					    bool writeToFits =
 					    true, int32_t displayType =
-					    0, int queCondition = 0)
+					    0, int queCondition =
+					    0, bool save_value = false)
   {
     val = new T (in_val_name, in_description, writeToFits, displayType);
-    addValue (val, queCondition);
+    addValue (val, queCondition, save_value);
   }
   /**
    * Create new constant value, and return pointer to it.
@@ -102,9 +127,13 @@ protected:
    * \param  old_value	old value (pointer), can be directly
    * 			compared by pointer stored in object
    * \param  new_value	new value
-   * \return 0 when we can set value, -2 on error, 
+   * \return 0 when we can set value, -2 on error.
    */
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+  /**
+   * Perform value change.
+   */
   int setValue (Rts2Value * old_value, char op, Rts2Value * new_value);
 
   /**

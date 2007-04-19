@@ -835,6 +835,7 @@ Rts2Device::killAll ()
 int
 Rts2Device::scriptEnds ()
 {
+  loadValues ();
   return 0;
 }
 
