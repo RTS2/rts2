@@ -49,7 +49,10 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
   status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
   status = tpl_set ("POINTING.TRACK", irTracking, &status);
   if (!getDerotatorPower ())
-    status = tpl_set ("DEROTATOR[3].POWER", 1, &status);
+    {
+      status = tpl_set ("DEROTATOR[3].POWER", 1, &status);
+      status = tpl_set ("CABINET.POWER", 1, &status);
+    }
 
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
