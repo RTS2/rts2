@@ -118,7 +118,8 @@ Rts2Soapd::reloadConfig ()
       delete fileLog;
     }
   fileLog = new std::ofstream ();
-  fileLog->open ("/var/log/rts2-debug", ios::out | ios::app);
+  fileLog->open ("/var/log/rts2-debug",
+		 std::ios_base::out | std::ios_base::app);
   return Rts2DeviceDb::reloadConfig ();
 }
 
@@ -147,7 +148,7 @@ Rts2Soapd::init ()
   setMessageMask (MESSAGE_MASK_ALL);
 
   Rts2SoapConn *s_conn = new Rts2SoapConn (soapPort, this);
-  ret - s_conn->init ();
+  ret = s_conn->init ();
   if (ret)
     return -1;
   addConnection (s_conn);
@@ -384,7 +385,11 @@ rts2__getCameras (struct soap *in_soap, rts2__getCamerasResponse & res)
   soapCamerasGet cams_get;
   res.cameras = soap_new_rts2__cameras (in_soap, 1);
   res.cameras->camera =
+#ifdef WITH_FAST
+    *soap_new_std__vectorTemplateOfPointerTorts2__camera (in_soap, 1);
+#else
     soap_new_std__vectorTemplateOfPointerTorts2__camera (in_soap, 1);
+#endif
 
   cams_get.res = &res;
   cams_get.in_soap = in_soap;

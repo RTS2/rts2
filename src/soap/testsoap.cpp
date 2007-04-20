@@ -165,8 +165,14 @@ Rts2TestSoap::run ()
       return ret;
     }
   std::vector < rts2__camera * >::iterator cam_iter;
+
+#ifdef WITH_FAST
+  for (cam_iter = cameras_res.cameras->camera.begin ();
+       cam_iter != cameras_res.cameras->camera.end (); cam_iter++)
+#else
   for (cam_iter = cameras_res.cameras->camera->begin ();
        cam_iter != cameras_res.cameras->camera->end (); cam_iter++)
+#endif
     {
       rts2__camera *cam = (rts2__camera *) * cam_iter;
       std::cout << "Camera " << cam->name << " exposure " << cam->

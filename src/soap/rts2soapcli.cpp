@@ -244,7 +244,11 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
       cams_get = (soapCamerasGet *) event->getArg ();
       cam = soap_new_rts2__camera (cams_get->in_soap, 1);
 
+#ifdef WITH_FAST
+      cams_get->res->cameras->camera.push_back (cam);
+#else
       cams_get->res->cameras->camera->push_back (cam);
+#endif
 
       break;
     }
