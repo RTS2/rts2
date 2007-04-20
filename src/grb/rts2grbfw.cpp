@@ -93,7 +93,7 @@ Rts2GrbForwardClientConn::forwardPacket (long *nbuf)
 {
   int ret;
   ret = write (sock, nbuf, SIZ_PKT * sizeof (nbuf[0]));
-  if (ret != SIZ_PKT)
+  if (ret != SIZ_PKT * sizeof (nbuf[0]))
     {
       logStream (MESSAGE_ERROR)
 	<< "Rts2GrbForwardClientConn::forwardPacket cannot forward "
