@@ -8,7 +8,7 @@ Rts2GrbExecConn::Rts2GrbExecConn (Rts2Block * in_master, char *execFile,
 				  float in_grb_errorbox):
 Rts2ConnFork (in_master, execFile)
 {
-  argvs = new (char *)[11];
+  argvs = new char *[11];
   // defaults..
   argvs[0] = execFile;
   // pass real arguments..
