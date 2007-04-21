@@ -109,9 +109,11 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SELECTOR, "SEL")
   selEnabled->setValueBool (true);
 
   createValue (flatSunMin, "flat_sun_min",
-	       "minimal Solar height for flat selection", false);
+	       "minimal Solar height for flat selection", false,
+	       RTS2_DT_DEGREES);
   createValue (flatSunMax, "flat_sun_max",
-	       "maximal Solar height for flat selection", false);
+	       "maximal Solar height for flat selection", false,
+	       RTS2_DT_DEGREES);
 
   addOption ('I', "idle_select", 1,
 	     "selection timeout (reselect every I seconds)");
