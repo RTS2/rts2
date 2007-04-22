@@ -28,8 +28,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   createValue (telLocalTime, "localtime", "telescope local time", false);
   createValue (lastRa, "LAST_RA", "last target RA", true, RTS2_DT_RA);
   createValue (lastDec, "LAST_DEC", "last target DEC", true, RTS2_DT_DEC);
-  createValue (lastTarRa, "RASC", "target RA", true, RTS2_DT_RA);
-  createValue (lastTarDec, "DECL", "target DEC", true, RTS2_DT_DEC);
+  createValue (lastTarRa, "RASC", "best estimate of RA", true, RTS2_DT_RA);
+  createValue (lastTarDec, "DECL", "best estimate of DEC", true, RTS2_DT_DEC);
+  createValue (targetRa, "TAR_RA", "target RA", true, RTS2_DT_RA);
+  createValue (targetDec, "TAR_DEC", "target DEC", true, RTS2_DT_DEC);
   createValue (ax1, "MNT_AX0", "mount axis 0 counts");
   createValue (ax2, "MNT_AX1", "mount axis 1 counts");
 
@@ -850,6 +852,10 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
 	}
       move_connection = conn;
     }
+
+  targetRa->setValueDouble (tar_ra);
+  targetDec->setValueDouble (tar_dec);
+
   infoAll ();
   logStream (MESSAGE_INFO) << "start telescope move " << telRa->
     getValueDouble () << " " << telDec->
@@ -891,6 +897,8 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
   else
     {
+      targetRa->setValueDouble (tar_ha);
+      targetDec->setValueDouble (tar_dec);
       move_fixed = 1;
       moveMark->inc ();
       maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,

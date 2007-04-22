@@ -59,6 +59,9 @@ private:
   Rts2ValueDouble *lastTarRa;
   Rts2ValueDouble *lastTarDec;
 
+  Rts2ValueDouble *targetRa;
+  Rts2ValueDouble *targetDec;
+
   struct ln_equ_posn lastTar;
 
   void checkMoves ();
