@@ -472,7 +472,9 @@ Rts2TargetInfo::init ()
       obs = config->getObserver ();
     }
 
-  cameras = Rts2CamList ();
+  ret = cameras.load ();
+  if (ret)
+    return -1;
 
   return 0;
 }
