@@ -851,3 +851,9 @@ Rts2Device::ready (Rts2Conn * conn)
     }
   return 0;
 }
+
+void
+Rts2Device::sigHUP (int sig)
+{
+  // do nothing
+}
