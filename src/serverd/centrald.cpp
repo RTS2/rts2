@@ -580,7 +580,12 @@ Rts2Centrald::reloadConfig ()
 
   morning_off = config->getBoolean ("centrald", "morning_off");
   morning_standby = config->getBoolean ("centrald", "morning_standby");
-  return ret;
+
+  next_event_time = 0;
+
+  // recalculate next_event_time
+
+  return idle ();
 }
 
 
