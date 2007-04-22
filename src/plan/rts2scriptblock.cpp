@@ -78,7 +78,8 @@ Rts2ScriptElementBlock::defnextCommand (Rts2DevClient * client,
   int ret;
   while (1)
     {
-      ret = (*curr_element)->defnextCommand (client, new_command, new_device);
+      Rts2ScriptElement *ce = *curr_element;
+      ret = ce->defnextCommand (client, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
 	break;
       curr_element++;
@@ -101,7 +102,8 @@ Rts2ScriptElementBlock::nextCommand (Rts2DevClientCamera * client,
   int ret;
   while (1)
     {
-      ret = (*curr_element)->nextCommand (client, new_command, new_device);
+      Rts2ScriptElement *ce = *curr_element;
+      ret = ce->nextCommand (client, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
 	break;
       curr_element++;
@@ -127,7 +129,8 @@ Rts2ScriptElementBlock::nextCommand (Rts2DevClientPhot * client,
 
   while (1)
     {
-      ret = (*curr_element)->nextCommand (client, new_command, new_device);
+      Rts2ScriptElement *ce = *curr_element;
+      ret = ce->nextCommand (client, new_command, new_device);
       if (ret != NEXT_COMMAND_NEXT)
 	break;
       curr_element++;
@@ -200,8 +203,7 @@ Rts2SEBAcquired::~Rts2SEBAcquired (void)
   delete elseBlock;
 }
 
-bool
-Rts2SEBAcquired::endLoop ()
+bool Rts2SEBAcquired::endLoop ()
 {
   return (loopCount != 0);
 }
@@ -345,8 +347,7 @@ Rts2SEBAcquired::addElseElement (Rts2ScriptElement * element)
   elseBlock->addElement (element);
 }
 
-bool
-Rts2SEBElse::endLoop ()
+bool Rts2SEBElse::endLoop ()
 {
   return (loopCount != 0);
 }
