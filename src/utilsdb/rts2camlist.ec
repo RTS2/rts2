@@ -1,8 +1,9 @@
 #include "rts2camlist.h"
 
+#include "../utils/rts2app.h"
+
 Rts2CamList::Rts2CamList ()
 {
-  load ();
 }
 
 Rts2CamList::~Rts2CamList ()
@@ -22,6 +23,16 @@ Rts2CamList::load ()
   FROM
     cameras;
   EXEC SQL OPEN cur_cams;
+
+  if (sqlca.sqlcode)
+  {
+    logStream (MESSAGE_ERROR) 
+      << "Cannot load camera list: " 
+      << sqlca.sqlcode
+      << " (" << sqlca.sqlerrm.sqlerrmc << ")" 
+      << sendLog;
+    return -1;
+  }
   while (1)
   {
     EXEC SQL FETCH NEXT
