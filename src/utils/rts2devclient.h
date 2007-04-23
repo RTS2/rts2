@@ -141,7 +141,7 @@ public:
   virtual void filterOK ()
   {
   }
-  virtual void filterFailed ()
+  virtual void filterFailed (int status)
   {
   }
   virtual void focuserOK ()

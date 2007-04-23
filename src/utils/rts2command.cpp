@@ -246,7 +246,7 @@ int
 Rts2CommandFilter::commandReturnFailed (int status)
 {
   if (camera)
-    camera->filterFailed ();
+    camera->filterFailed (status);
   if (phot)
     phot->filterMoveFailed (status);
   if (filterCli)
