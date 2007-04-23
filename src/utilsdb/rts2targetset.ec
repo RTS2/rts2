@@ -247,7 +247,7 @@ Rts2TargetSetSelectable::Rts2TargetSetSelectable (const char *target_type, struc
 {
   std::ostringstream os;
   printTypeWhere (os, target_type);
-  os << "' AND tar_enabled = true AND tar_priority + tar_bonus > 0";
+  os << " AND tar_enabled = true AND tar_priority + tar_bonus > 0";
   load (os.str(), std::string ("tar_id ASC"));
 }
 
