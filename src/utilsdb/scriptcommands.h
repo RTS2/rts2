@@ -23,6 +23,9 @@
 #define COMMAND_BLOCK_ELSE	"else"
 #define COMMAND_BLOCK_FOR	"for"
 
+// hex pattern
+#define COMMAND_HEX		"hex"
+
 // HAM acqusition - only on FRAM telescope
 #define COMMAND_HAM		"HAM"
 
