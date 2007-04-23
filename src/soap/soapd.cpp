@@ -446,7 +446,11 @@ rts2__getDeviceList (struct soap *in_soap, rts2__getDeviceListResponse & res)
 {
   res.devices = soap_new_rts2__devices (in_soap, 1);
   res.devices->device =
+#ifdef WITH_FAST
+    *soap_new_std__vectorTemplateOfPointerTorts2__device (in_soap, 1);
+#else
     soap_new_std__vectorTemplateOfPointerTorts2__device (in_soap, 1);
+#endif
 
   for (connections_t::iterator iter = soapd->connectionBegin ();
        iter != soapd->connectionEnd (); iter++)
@@ -457,7 +461,11 @@ rts2__getDeviceList (struct soap *in_soap, rts2__getDeviceListResponse & res)
 	{
 	  rts2__device *dev = soap_new_rts2__device (in_soap, 1);
 	  dev->name = name;
+#ifdef WITH_FAST
+	  res.devices->device.push_back (dev);
+#else
 	  res.devices->device->push_back (dev);
+#endif
 	}
     }
 
