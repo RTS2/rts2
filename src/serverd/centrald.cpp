@@ -583,9 +583,7 @@ Rts2Centrald::reloadConfig ()
 
   next_event_time = 0;
 
-  // recalculate next_event_time
-
-  return idle ();
+  return 0;
 }
 
 
@@ -777,6 +775,7 @@ void
 Rts2Centrald::sigHUP (int sig)
 {
   reloadConfig ();
+  idle ();
 }
 
 int
