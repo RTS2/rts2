@@ -2,16 +2,17 @@
 #include "rts2setarget.h"
 #include "rts2scriptblock.h"
 #include "rts2scriptguiding.h"
+#include "rts2sehex.h"
 #include "../utilsdb/scriptcommands.h"
 #include <string.h>
 #include <ctype.h>
 
 // test if next element is one that is given
-bool
-Rts2Script::isNext (const char *element)
+bool Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t el_len = strlen (element);
+  size_t
+    el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -92,16 +93,20 @@ Rts2Object ()
   strcpy (defaultDevice, cam_name);
   master = in_master;
   cmdBufTop = cmdBuf;
-  do
+  while (1)
     {
       element = parseBuf (target, &target_pos);
       if (!element)
 	break;
       elements.push_back (element);
     }
-  while (1);
   executedCount = 0;
   currScriptElement = NULL;
+  for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+    {
+      element = *el_iter;
+      element->beforeExecuting ();
+    }
   el_iter = elements.begin ();
 }
 
@@ -454,6 +459,33 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
       if (getNextParamInteger (&seconds) || getNextParamInteger (&bonus))
 	return NULL;
       return new Rts2SETTarBoost (this, target, seconds, bonus);
+    }
+  else if (!strcmp (commandStart, COMMAND_HEX))
+    {
+      double ra_size;
+      double dec_size;
+      if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
+	return NULL;
+      char *el;
+      Rts2SEHex *hexEl;
+      Rts2ScriptElement *newElement;
+      // test for block start..
+      el = nextElement ();
+      // error, return NULL
+      if (*el != '{')
+	return NULL;
+      hexEl = new Rts2SEHex (this, ra_size, dec_size);
+      // parse block..
+      while (1)
+	{
+	  newElement = parseBuf (target, target_pos);
+	  // "}" will result in NULL, which we capture here
+	  if (!newElement)
+	    break;
+	  hexEl->addElement (newElement);
+	}
+      // block can end by script end as well..
+      return hexEl;
     }
 
   // setValue fallback

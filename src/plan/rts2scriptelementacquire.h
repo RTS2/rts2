@@ -1,6 +1,7 @@
 #ifndef __RTS2_SCRIPT_ELEMENT_ACQUIRE__
 #define __RTS2_SCRIPT_ELEMENT_ACQUIRE__
 
+#include "rts2script.h"
 #include "rts2scriptelement.h"
 
 class Rts2ScriptElementAcquire:public Rts2ScriptElement

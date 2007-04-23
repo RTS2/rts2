@@ -144,8 +144,7 @@ Rts2ScriptElementCenter::nextCommand (Rts2DevClientCamera * camera,
 Rts2ScriptElementChange::Rts2ScriptElementChange (Rts2Script * in_script, double in_ra, double in_dec):Rts2ScriptElement
   (in_script)
 {
-  ra = in_ra;
-  dec = in_dec;
+  setChangeRaDec (in_ra, in_dec);
 }
 
 int

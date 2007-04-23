@@ -96,6 +96,13 @@ public:
   virtual void cancelCommands ()
   {
   }
+  /**
+   * This method will be called once after whole script is finished
+   * and before first item in script should be execute
+   */
+  virtual void beforeExecuting ()
+  {
+  }
 };
 
 class Rts2ScriptElementExpose:public Rts2ScriptElement
@@ -165,6 +172,11 @@ public:
   virtual int defnextCommand (Rts2DevClient * client,
 			      Rts2Command ** new_command,
 			      char new_device[DEVICE_NAME_SIZE]);
+  void setChangeRaDec (double in_ra, double in_dec)
+  {
+    ra = in_ra;
+    dec = in_dec;
+  }
 };
 
 class Rts2ScriptElementWait:public Rts2ScriptElement

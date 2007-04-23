@@ -1,6 +1,7 @@
 #ifndef __RTS2_SETARGET__
 #define __RTS2_SETARGET__
 
+#include "rts2script.h"
 #include "rts2scriptelementacquire.h"
 #include "rts2scriptelement.h"
 #include "../utils/rts2target.h"

@@ -14,14 +14,22 @@ private:
   std::list < Rts2ScriptElement * >blockElements;
   std::list < Rts2ScriptElement * >::iterator curr_element;
   int blockScriptRet (int ret);
-protected:
   int loopCount;
-  virtual bool endLoop ()
+protected:
+    virtual bool endLoop ()
   {
     return true;
   }
+  virtual bool getNextLoop ()
+  {
+    return endLoop ();
+  }
+  int getLoopCount ()
+  {
+    return loopCount;
+  }
 public:
-    Rts2ScriptElementBlock (Rts2Script * in_script);
+  Rts2ScriptElementBlock (Rts2Script * in_script);
   virtual ~ Rts2ScriptElementBlock (void);
 
   virtual void addElement (Rts2ScriptElement * element);
@@ -124,7 +132,7 @@ private:
 protected:
     virtual bool endLoop ()
   {
-    return loopCount >= max;
+    return getLoopCount () >= max;
   }
 public:
     Rts2SEBFor (Rts2Script * in_script,

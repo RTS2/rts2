@@ -2,6 +2,7 @@
 #define __RTS2_SCRIPT__
 
 #include "rts2scriptelement.h"
+
 #ifndef NOT_PGSQL
 #include "rts2scriptelementacquire.h"
 #endif
