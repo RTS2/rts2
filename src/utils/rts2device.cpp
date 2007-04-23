@@ -785,6 +785,8 @@ Rts2Device::init ()
       logStream (MESSAGE_WARNING) << "Rts2Device::init waiting for master" <<
 	sendLog;
       sleep (60);
+      if (getEndLoop ())
+	return -1;
     }
   return ret;
 }
