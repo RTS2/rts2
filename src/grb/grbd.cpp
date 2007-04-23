@@ -174,6 +174,8 @@ Rts2DevGrb::reloadConfig ()
 	<< "Rts2DevGrb::init cannot init conngrb, sleeping for 60 sec" <<
 	sendLog;
       sleep (60);
+      if (getEndLoop ())
+	return -1;
     }
   addConnection (gcncnn);
 
