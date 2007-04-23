@@ -5,6 +5,7 @@
 #include "rts2devclifoc.h"
 #include "../utils/timestamp.h"
 
+#include <errno.h>
 #include <algorithm>
 
 Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection,
