@@ -191,7 +191,7 @@ void
 Rts2DevClientCameraExec::filterFailed (int status)
 {
   nextCommand ();
-  Rts2DevClientCameraImage::filterFailed ();
+  Rts2DevClientCameraImage::filterFailed (status);
 }
 
 void
