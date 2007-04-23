@@ -5,6 +5,7 @@
 #include "../utils/rts2command.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/rts2messagedb.h"
+#include "../utils/rts2block.h"
 #include "rts2soapcli.h"
 
 class Rts2SoapConn:public Rts2Conn
@@ -437,6 +438,29 @@ rts2__getCentrald (struct soap *in_soap, rts2__getCentraldResponse & res)
       res.daytime = rts2__daytime__MORNING;
       break;
     }
+  return SOAP_OK;
+}
+
+int
+rts2__getDeviceList (struct soap *in_soap, rts2__getDeviceListResponse & res)
+{
+  res.devices = soap_new_rts2__devices (in_soap, 1);
+  res.devices->device =
+    soap_new_std__vectorTemplateOfPointerTorts2__device (in_soap, 1);
+
+  for (connections_t::iterator iter = soapd->connectionBegin ();
+       iter != soapd->connectionEnd (); iter++)
+    {
+      Rts2Conn *conn = *iter;
+      const char *name = conn->getName ();
+      if (std::string (name).length ())
+	{
+	  rts2__device *dev = soap_new_rts2__device (in_soap, 1);
+	  dev->name = name;
+	  res.devices->device->push_back (dev);
+	}
+    }
+
   return SOAP_OK;
 }
 

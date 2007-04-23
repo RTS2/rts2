@@ -94,6 +94,16 @@
       <element name="morning" type="xsd:positiveInteger" minOccurs="1" maxOccurs="1"/>
     </sequence>
   </complexType>
+  <complexType name="device">
+    <sequence>
+      <element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
+  <complexType name="devices">
+    <sequence>
+      <element name="device" type="ns:device" minOccurs="0" maxOccurs="unbounded"/>
+    </sequence>
+  </complexType>
   <simpleType name="system">
     <restriction base="xsd:string">
       <enumeration value="OFF"/>
@@ -344,6 +354,20 @@
   </operation>
 </portType>
 
+<message name="getDeviceListRequest">
+</message>
+
+<message name="getDeviceListResponse">
+  <part name="devices" type="ns:devices"/>
+</message>
+
+<portType name="devices">
+  <operation name="getDeviceList">
+    <input message="tns:getDeviceListRequest"/>
+    <output message="tns:getDeviceListResponse"/>
+  </operation>
+</portType>
+
 <message name="getCentraldRequest">
 </message>
 
@@ -556,6 +580,19 @@
     </output>
   </operation>
   <operation name="setCentrald">
+    <SOAP:operation style="rpc" soapAction=""/>
+    <input>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </input>
+    <output>
+      <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+    </output>
+  </operation>
+</binding>
+
+<binding name="rts2" type="tns:devices">
+  <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getDeviceList">
     <SOAP:operation style="rpc" soapAction=""/>
     <input>
       <SOAP:body use="encoded" namespace="urn:rts2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
