@@ -104,30 +104,6 @@
 
       <varlistentry>
         <term>
-	  <option>F {filter_number}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Changes filter on camera filter wheel. Filter numbers are
-	    always counted from 0.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
-	  <option>F {filter_number}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Changes filter on camera filter wheel. Filter numbers are
-	    always counted from 0.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
 	  <option>O {unknow}</option>
 	</term>
 	<listitem>
@@ -146,6 +122,22 @@
 	    Change mount position before next exposure by {ra_diff}
 	    and {dec_diff}. Wait for time when no exposure are
 	    running, then perform move, then continue exposing.
+	  </para>
+	  <para>
+	    {ra_diff} and {dec_diff} are in arcdegrees.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>hex {ra_diff} {dec_diff} [block]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Change mount position in hex pattern after finishing
+	    [block] and execute [block] again. This will produce
+	    images which are aligned on hexagonal path.
 	  </para>
 	  <para>
 	    {ra_diff} and {dec_diff} are in arcdegrees.
