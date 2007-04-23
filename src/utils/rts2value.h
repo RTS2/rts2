@@ -86,7 +86,7 @@ public:
 
   std::string getDescription ()
   {
-    return description.c_str ();
+    return description;
   }
 
   int getValueType ()

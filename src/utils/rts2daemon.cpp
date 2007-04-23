@@ -372,7 +372,6 @@ Rts2Daemon::loadValues ()
 	    "Rts2Daemon::loadValues cannot set value " << new_val->
 	    getName () << sendLog;
 	}
-      delete new_val;
     }
   savedValues.clear ();
   values_were_saved = false;
@@ -405,32 +404,32 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value)
     {
     case RTS2_VALUE_STRING:
       return
-	new Rts2ValueString (old_value->getName ().c_str (),
+	new Rts2ValueString (old_value->getName (),
 			     old_value->getDescription (),
 			     old_value->getWriteToFits ());
     case RTS2_VALUE_INTEGER:
       return
-	new Rts2ValueInteger (old_value->getName ().c_str (),
+	new Rts2ValueInteger (old_value->getName (),
 			      old_value->getDescription (),
 			      old_value->getWriteToFits ());
     case RTS2_VALUE_TIME:
       return
-	new Rts2ValueTime (old_value->getName ().c_str (),
+	new Rts2ValueTime (old_value->getName (),
 			   old_value->getDescription (),
 			   old_value->getWriteToFits ());
     case RTS2_VALUE_DOUBLE:
       return
-	new Rts2ValueDouble (old_value->getName ().c_str (),
+	new Rts2ValueDouble (old_value->getName (),
 			     old_value->getDescription (),
 			     old_value->getWriteToFits ());
     case RTS2_VALUE_FLOAT:
       return
-	new Rts2ValueFloat (old_value->getName ().c_str (),
+	new Rts2ValueFloat (old_value->getName (),
 			    old_value->getDescription (),
 			    old_value->getWriteToFits ());
     case RTS2_VALUE_BOOL:
       return
-	new Rts2ValueBool (old_value->getName ().c_str (),
+	new Rts2ValueBool (old_value->getName (),
 			   old_value->getDescription (),
 			   old_value->getWriteToFits ());
     default:
