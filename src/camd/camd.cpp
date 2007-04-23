@@ -436,7 +436,8 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool CameraChip::supportFrameTransfer ()
+bool
+CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -572,6 +573,9 @@ Rts2DevCamera::cancelPriorityOperations ()
   for (i = 0; i < chipNum; i++)
     {
       chips[i]->cancelPriorityOperations ();
+      maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING,
+		     CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING,
+		     "chip exposure interrupted");
       chips[i]->setBinning (defBinning, defBinning);
     }
   setTimeout (USEC_SEC);
@@ -1263,14 +1267,16 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
