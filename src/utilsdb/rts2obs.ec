@@ -42,6 +42,7 @@ Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int 
   imgset = NULL;
   displayImages = 0;
   displayCounts = 0;
+  printHeader = true;
 }
 
 Rts2Obs::~Rts2Obs (void)
