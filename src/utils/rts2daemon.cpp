@@ -300,6 +300,7 @@ Rts2Daemon::centraldConnBroken ()
     {
       openlog (NULL, LOG_PID, LOG_DAEMON);
       daemonize = IS_DAEMONIZED;
+      logStream (MESSAGE_WARNING) << "connection to centrald lost" << sendLog;
     }
 }
 
