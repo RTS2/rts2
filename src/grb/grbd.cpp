@@ -159,7 +159,10 @@ Rts2DevGrb::reloadConfig ()
 	}
     }
   if (gcncnn)
-    deleteConnection (gcncnn);
+    {
+      deleteConnection (gcncnn);
+      delete gcncnn;
+    }
   // add connection..
   gcncnn =
     new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups,
