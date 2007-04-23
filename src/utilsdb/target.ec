@@ -1116,7 +1116,11 @@ Target::considerForObserving (double JD)
     if (ret == -1)
     {
       // object doesn't rise, let's hope tomorrow it will rise
-      logStream (MESSAGE_DEBUG) << "Target::considerForObserving tar " << getTargetID () << " obstarid " << getObsTargetID () << " don't rise" << sendLog;
+      logStream (MESSAGE_DEBUG)
+        << "Target::considerForObserving tar " << getTargetID ()
+	<< " obstarid " << getObsTargetID ()
+	<< " don't rise"
+	<< sendLog;
       setNextObservable (JD + 1);
       return -1;
     }
@@ -1124,7 +1128,10 @@ Target::considerForObserving (double JD)
     if (ret == 1)
     {
       logStream (MESSAGE_DEBUG) << "Target::considerForObserving tar "
-        << getTargetID () << " obstarid " << getObsTargetID () << " is circumpolar, but is not good, scheduling after 10 minutes" << sendLog;
+        << getTargetID ()
+	<< " obstarid " << getObsTargetID ()
+	<< " is circumpolar, but is not good, scheduling after 10 minutes"
+	<< sendLog;
       setNextObservable (JD + 10.0 / (24.0 * 60.0));
       return -1;
     }
@@ -1133,13 +1140,21 @@ Target::considerForObserving (double JD)
     if (rst.transit < rst.set && rst.set < rst.rise)
     {
       // object rose, but is not above horizon, let's hope in 12 minutes it will get above horizon
-      logStream (MESSAGE_DEBUG) << "Target::considerForObserving " <<
-        getTargetID () << " obstarid " << getObsTargetID () << " will rise tommorow: " << rst.rise << " JD:" << JD << sendLog;
+      logStream (MESSAGE_DEBUG) << "Target::considerForObserving " 
+        << getTargetID () 
+	<< " obstarid " << getObsTargetID () 
+	<< " will rise tommorow: " << LibnovaDate (rst.rise)
+	<< " JD:" << JD
+	<< sendLog;
       setNextObservable (JD + 12*(1.0/1440.0));
       return -1;
     }
     // object is setting, let's target it for next rise..
-    logStream (MESSAGE_DEBUG) << "Target::considerForObserving " << getTargetID () << " obstarid " << getObsTargetID () << " will rise at: " << rst.rise << sendLog;
+    logStream (MESSAGE_DEBUG)
+      << "Target::considerForObserving " << getTargetID ()
+      << " obstarid " << getObsTargetID ()
+      << " will rise at: " << LibnovaDate (rst.rise)
+      << sendLog;
     setNextObservable (rst.rise);
     return -1;
   }
