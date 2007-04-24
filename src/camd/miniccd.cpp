@@ -923,7 +923,7 @@ Rts2DevCameraMiniccd::init ()
 
   strncpy (ccdType, (char *) &msgr[CCD_CCD_NAME_INDEX], CCD_CCD_NAME_LEN / 2);
 
-  ccdType[strlen (msgr[CCD_CCD_NAME_INDEX])] = '\0';
+  ccdType[strlen ((char *) msgr[CCD_CCD_NAME_INDEX])] = '\0';
 
   CameraMiniccdChip *miniChips[2];
 
