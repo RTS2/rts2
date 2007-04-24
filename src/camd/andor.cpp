@@ -86,6 +86,8 @@ public:
   virtual int readoutOneLine ();
   virtual bool supportFrameTransfer ();
 
+  int setUseFT (bool in_useFT);
+
   // *FIXME* only CameraAndor needs to play with this, do we need functions?
   int use_shutter_anyway;	// Use shutter even if we have FT
   void closeShutter ();
@@ -318,6 +320,19 @@ bool CameraAndorChip::supportFrameTransfer ()
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
 
+int
+CameraAndorChip::setUseFT (bool in_useFT)
+{
+  int status;
+  if (!supportFrameTransfer ())
+    return -1;
+  status = SetFrameTransferMode (in_useFT ? 1 : 0);
+  if (status != DRV_SUCCESS)
+    return -1;
+  useFT = in_useFT;
+  return 0;
+}
+
 void
 CameraAndorChip::closeShutter ()
 {
@@ -355,7 +370,7 @@ private:
   Rts2ValueDouble *gain;
 
   Rts2ValueInteger *Mode;
-  Rts2ValueInteger *useFT;
+  Rts2ValueBool *useFT;
   Rts2ValueInteger *VSAmp;
   Rts2ValueInteger *FTShutter;
 
@@ -428,14 +443,14 @@ Rts2DevCamera (in_argc, in_argv)
   createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false, 0, 0,
 	       true);
   HSpeed->setValueInteger (1);
+
   createValue (useFT, "USEFT", "Use FT", false, 0, 0, true);
-  HSpeed->setValueInteger (1);
+  useFT->setValueBool (true);
 
   defaultGain = 255;
   gain->setValueDouble (255.0);
 
   printSpeedInfo = false;
-
 
   addOption ('m', "mode", 1, "Which mode to use");
   addOption ('r', "root", 1, "directory with Andor detector.ini file");
@@ -614,6 +629,12 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
     return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == FTShutter)
     return setFTShutter (new_value->getValueInteger ()) == 0 ? 0 : -2;
+  if (old_value == useFT)
+    {
+      CameraAndorChip *c = (CameraAndorChip *) chips[0];
+      return c->setUseFT (((Rts2ValueBool *) new_value)->getValueBool ()) ==
+	0 ? 0 : -2;
+    }
 
   return Rts2DevCamera::setValue (old_value, new_value);
 }
@@ -640,7 +661,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
       printSpeedInfo = true;
       break;
     case 'N':
-      useFT = false;
+      useFT->setValueBool (false);
       break;
     case 'S':
       shutter_with_ft = true;
@@ -938,7 +959,7 @@ Rts2DevCameraAndor::init ()
 
   // *FIXME* this is borked until we figure out exactly who knows about
   // shutters vs. FT - hardcoded as "gain=1", "use ft=1"
-  cc = new CameraAndorChip (this, 0, 1, 1);
+  cc = new CameraAndorChip (this, 0, 1, useFT->getValueBool ());
   chips[0] = cc;
   chips[1] = NULL;
 
