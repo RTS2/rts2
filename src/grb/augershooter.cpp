@@ -16,8 +16,10 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 	     "port on which to listen for auger connection");
 
   createValue (lastAugerDate, "last_date", "date of last shower", false);
-  createValue (lastAugerRa, "last_ra", "RA of last shower", false);
-  createValue (lastAugerDec, "last_dec", "DEC of last shower", false);
+  createValue (lastAugerRa, "last_ra", "RA of last shower", false,
+	       RTS2_DT_RA);
+  createValue (lastAugerDec, "last_dec", "DEC of last shower", false,
+	       RTS2_DT_DEC);
 }
 
 Rts2DevAugerShooter::~Rts2DevAugerShooter (void)
@@ -87,8 +89,7 @@ Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
   return 0;
 }
 
-bool
-Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
+bool Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 {
   return (fabs (lastDate - lastAugerDate->getValueDouble ()) < 5
 	  && ra == lastAugerRa->getValueDouble ()
@@ -98,6 +99,7 @@ Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 int
 main (int argc, char **argv)
 {
-  Rts2DevAugerShooter device = Rts2DevAugerShooter (argc, argv);
+  Rts2DevAugerShooter
+    device = Rts2DevAugerShooter (argc, argv);
   return device.run ();
 }
