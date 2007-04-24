@@ -923,11 +923,7 @@ Rts2DevCameraMiniccd::init ()
 
   strncpy (ccdType, (char *) &msgr[CCD_CCD_NAME_INDEX], CCD_CCD_NAME_LEN / 2);
 
-  for (i = 0; i < CCD_CCD_NAME_LEN / 2; i++)
-    if (ccdType[i] == ' ')
-      ccdType[i] = '_';
-
-  ccdType[CCD_CCD_NAME_LEN] = '\x0';
+  ccdType[strlen (msgr[CCD_CCD_NAME_INDEX])] = '\0';
 
   CameraMiniccdChip *miniChips[2];
 
@@ -937,7 +933,7 @@ Rts2DevCameraMiniccd::init ()
       chip_device_name = new char[strlen (device_file) + 2];
       strcpy (chip_device_name, device_file);
       chip_device_name[strlen (device_file)] = i + '0';
-      chip_device_name[strlen (device_file) + 1] = '\x0';
+      chip_device_name[strlen (device_file) + 1] = '\0';
       miniChips[i - 1] = new CameraMiniccdChip (this, i, chip_device_name);
       chips[i] = miniChips[i - 1];
     }
