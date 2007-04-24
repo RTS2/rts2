@@ -6,11 +6,12 @@
 class Rts2DevCupolaDummy:public Rts2DevCupola
 {
 private:
-  int mcount;
+  Rts2ValueInteger * mcount;
+  Rts2ValueInteger *moveCountTop;
 protected:
     virtual int moveStart ()
   {
-    mcount = 0;
+    mcount->setValueInteger (0);
     return Rts2DevCupola::moveStart ();
   }
   virtual int moveEnd ()
@@ -22,16 +23,26 @@ protected:
   }
   virtual long isMoving ()
   {
-    if (mcount >= 100)
+    if (mcount->getValueInteger () >= moveCountTop->getValueInteger ())
       return -2;
-    mcount++;
+    mcount->inc ();
     return USEC_SEC;
   }
-
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
+  {
+    if (old_value == moveCountTop)
+      {
+	return 0;
+      }
+    return Rts2DevCupola::setValue (old_value, new_value);
+  }
 public:
 Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
 		 in_argv)
   {
+    createValue (mcount, "mcount", "moving count", false);
+    createValue (moveCountTop, "moveCountTop", "move count top", false);
+    moveCountTop->setValueInteger (100);
   }
 
   virtual int initValues ()
@@ -52,7 +63,7 @@ Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
 
   virtual int openDome ()
   {
-    mcount = 0;
+    mcount->setValueInteger (0);
     return Rts2DevCupola::openDome ();
   }
 
@@ -63,7 +74,7 @@ Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
 
   virtual int closeDome ()
   {
-    mcount = 0;
+    mcount->setValueInteger (0);
     return Rts2DevCupola::closeDome ();
   }
 
