@@ -42,7 +42,7 @@ private:
 		 false);
   Rts2CondValue *getValue (const char *v_name);
 
-  Rts2Value *duplicateValue (Rts2Value * old_value);
+  Rts2Value *duplicateValue (Rts2Value * old_value, bool withVal = false);
 
   /**
    * Perform value changes. Check if value can be changed before performing change.
