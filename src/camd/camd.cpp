@@ -492,7 +492,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   createValue (camFilterVal, "filter", "used filter number", false);
 
   createValue (camFocVal, "focpos", "position of focuser", false, 0,
-	       CAM_EXPOSING);
+	       CAM_EXPOSING, true);
 
   createValue (camShutterVal, "shutter", "shutter position", false);
 
@@ -578,6 +578,8 @@ Rts2DevCamera::cancelPriorityOperations ()
 		     "chip exposure interrupted");
       chips[i]->setBinning (defBinning, defBinning);
     }
+  nextExp->setValueInteger (NOT_EXP);
+  nextExpChip = -1;
   setTimeout (USEC_SEC);
   // init states etc..
   clearStatesPriority ();
