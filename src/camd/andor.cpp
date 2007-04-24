@@ -372,7 +372,7 @@ private:
   Rts2ValueInteger *Mode;
   Rts2ValueBool *useFT;
   Rts2ValueInteger *VSAmp;
-  Rts2ValueInteger *FTShutter;
+  Rts2ValueBool *FTShutter;
 
   // informational values
   Rts2ValueInteger *HSpeed;
@@ -442,7 +442,7 @@ Rts2DevCamera (in_argc, in_argv)
   HSpeed->setValueInteger (1);
   createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false, 0, 0,
 	       true);
-  HSpeed->setValueInteger (1);
+  FTShutter->setValueBool (false);
 
   createValue (useFT, "USEFT", "Use FT", false, 0, 0, true);
   useFT->setValueBool (true);
@@ -519,10 +519,10 @@ Rts2DevCameraAndor::setVSAmplitude (int in_vsamp)
 }
 
 int
-Rts2DevCameraAndor::setHSSpeed (int in_channel, int in_hsspeed)
+Rts2DevCameraAndor::setHSSpeed (int in_amp, int in_hsspeed)
 {
   int ret;
-  if ((ret = SetHSSpeed (in_channel, in_hsspeed)) != DRV_SUCCESS)
+  if ((ret = SetHSSpeed (in_amp, in_hsspeed)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor setHSSpeed error " << ret <<
 	sendLog;
@@ -552,7 +552,7 @@ Rts2DevCameraAndor::setFTShutter (int force)
 {
   for (int i = 0; chips[i] != NULL; i++)
     ((CameraAndorChip *) chips[i])->use_shutter_anyway = force;
-  FTShutter->setValueInteger ((force == 0) ? 0 : 1);
+  FTShutter->setValueBool ((force == 0) ? false : true);
   return 0;
 }
 
@@ -574,7 +574,7 @@ Rts2DevCameraAndor::setMode (int in_mode)
   if ((ret = setADChannel (m->ad)) != 0)
     return ret;
 
-  if ((ret = SetHSSpeed (m->disable_em, m->hsspeed)) != DRV_SUCCESS)
+  if ((ret = setHSSpeed (m->disable_em, m->hsspeed)) != 0)
     return -1;
 
   if ((ret = setVSSpeed (m->vsspeed)) != 0)
@@ -628,7 +628,8 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == VSpeed)
     return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == FTShutter)
-    return setFTShutter (new_value->getValueInteger ()) == 0 ? 0 : -2;
+    return setFTShutter (((Rts2ValueBool *) new_value)->getValueBool ()) ==
+      0 ? 0 : -2;
   if (old_value == useFT)
     {
       CameraAndorChip *c = (CameraAndorChip *) chips[0];
