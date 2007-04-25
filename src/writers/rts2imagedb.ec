@@ -218,8 +218,11 @@ Rts2ImageSkyDb::updateDB ()
   // data found..do just update
   if (sqlca.sqlcode != 0)
   {
-    printf ("Cannot insert new image, triing update (error: %li %s)\n",
-    sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+    if (sqlca.sqlcode != ECPG_PGSQL)
+    {
+      printf ("Cannot insert new image, triing update (error: %li %s)\n",
+      sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
+    }
     EXEC SQL ROLLBACK;
     EXEC SQL
     UPDATE
