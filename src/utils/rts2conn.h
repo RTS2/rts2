@@ -14,7 +14,7 @@
 #include "rts2message.h"
 #include "rts2logstream.h"
 
-#define MAX_DATA		200
+#define MAX_DATA		2000
 
 typedef enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER, DEVICE_DEVICE };
