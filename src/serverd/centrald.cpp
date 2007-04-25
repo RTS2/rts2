@@ -1,4 +1,4 @@
-/* 
+/*s 
  * Centrald - RTS2 coordinator
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
  *
@@ -70,8 +70,7 @@ private:
 
   int connNum;
 protected:
-  int changeState (int new_state);
-  int idle ();
+  int changeState (int new_state, const char *user);
 
   virtual int processOption (int in_opt);
 
@@ -94,20 +93,23 @@ protected:
 public:
   Rts2Centrald (int in_argc, char **in_argv);
 
-  int init ();
+  virtual int idle ();
+
+  virtual int init ();
+
   int changePriority (time_t timeout);
 
-  int changeStateOn ()
+  int changeStateOn (const char *user)
   {
-    return changeState ((next_event_type + 5) % 6);
+    return changeState ((next_event_type + 5) % 6, user);
   }
-  int changeStateStandby ()
+  int changeStateStandby (const char *user)
   {
-    return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6));
+    return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6), user);
   }
-  int changeStateOff ()
+  int changeStateOff (const char *user)
   {
-    return changeState (SERVERD_OFF);
+    return changeState (SERVERD_OFF, user);
   }
   inline int getState ()
   {
@@ -348,7 +350,7 @@ Rts2ConnCentrald::commandDevice ()
     }
   if (isCommand ("on"))
     {
-      return master->changeStateOn ();
+      return master->changeStateOn (getName ());
     }
   if (isCommand ("priority") || isCommand ("prioritydeferred"))
     {
@@ -356,11 +358,11 @@ Rts2ConnCentrald::commandDevice ()
     }
   if (isCommand ("standby"))
     {
-      return master->changeStateStandby ();
+      return master->changeStateStandby (getName ());
     }
   if (isCommand ("off"))
     {
-      return master->changeStateOff ();
+      return master->changeStateOff (getName ());
     }
   return -1;
 }
@@ -440,15 +442,15 @@ Rts2ConnCentrald::commandClient ()
 	}
       if (isCommand ("on"))
 	{
-	  return master->changeStateOn ();
+	  return master->changeStateOn (login);
 	}
       if (isCommand ("standby"))
 	{
-	  return master->changeStateStandby ();
+	  return master->changeStateStandby (login);
 	}
       if (isCommand ("off"))
 	{
-	  return master->changeStateOff ();
+	  return master->changeStateOff (login);
 	}
     }
   return Rts2Conn::command ();
@@ -657,8 +659,10 @@ Rts2Centrald::getConnection (int conn_num)
  * @param new_state		new state, if -1 -> 3
  */
 int
-Rts2Centrald::changeState (int new_state)
+Rts2Centrald::changeState (int new_state, const char *user)
 {
+  logStream (MESSAGE_INFO) << "State switched to " << new_state << " by " <<
+    user << sendLog;
   current_state = new_state;
   return sendStatusMessage (current_state);
 }
@@ -749,6 +753,8 @@ Rts2Centrald::idle ()
 	}
       if (current_state != old_current_state)
 	{
+	  logStream (MESSAGE_INFO) << "changed state from " <<
+	    old_current_state << " to " << current_state << sendLog;
 	  sendStatusMessage (current_state);
 	}
     }
