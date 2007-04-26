@@ -171,8 +171,19 @@ Rts2ScriptElementBlock::cancelCommands ()
     return (*curr_element)->cancelCommands ();
 }
 
-Rts2SEBSignalEnd::Rts2SEBSignalEnd (Rts2Script * in_script, int end_sig_num):Rts2ScriptElementBlock
-  (in_script)
+void
+Rts2ScriptElementBlock::beforeExecuting ()
+{
+  Rts2ScriptElement::beforeExecuting ();
+  std::list < Rts2ScriptElement * >::iterator iter;
+  for (iter = blockElements.begin (); iter != blockElements.end (); iter++)
+    {
+      (*iter)->beforeExecuting ();
+    }
+}
+
+Rts2SEBSignalEnd::Rts2SEBSignalEnd (Rts2Script * in_script, int end_sig_num):
+Rts2ScriptElementBlock (in_script)
 {
   sig_num = end_sig_num;
 }
@@ -206,8 +217,7 @@ Rts2SEBAcquired::~Rts2SEBAcquired (void)
   delete elseBlock;
 }
 
-bool
-Rts2SEBAcquired::endLoop ()
+bool Rts2SEBAcquired::endLoop ()
 {
   return (getLoopCount () != 0);
 }
@@ -351,8 +361,7 @@ Rts2SEBAcquired::addElseElement (Rts2ScriptElement * element)
   elseBlock->addElement (element);
 }
 
-bool
-Rts2SEBElse::endLoop ()
+bool Rts2SEBElse::endLoop ()
 {
   return (getLoopCount () != 0);
 }
