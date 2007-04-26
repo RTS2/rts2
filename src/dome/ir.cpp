@@ -164,22 +164,10 @@ Rts2DevDomeIR::Rts2DevDomeIR (int in_argc, char **in_argv):Rts2DevDome (in_argc,
 	     in_argv)
 {
   addOption ('f', "dome_file", 1, "/dev file for dome serial port");
-  // addOption ('w', "wdc_file", 1, "/dev file with watch-dog card");
-  // addOption ('t', "wdc_timeout", 1, "WDC timeout (default to 30 seconds");
 
   dome_file = "/dev/ttyS0";
-  // wdc_file = NULL;
-  // wdc_port = -1;
-  // wdcTimeOut = 30.0;
 
-
-  // movingState = MOVE_NONE;
-
-  // weatherConn = NULL;
-
-  // lastClosing = 0;
-  // closingNum = 0;
-  // lastClosingNum = -1;
+  domeModel = "IR";
 }
 
 Rts2DevDomeIR::~Rts2DevDomeIR (void)
