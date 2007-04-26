@@ -10,6 +10,7 @@
 
 #include "rts2nlayout.h"
 #include "rts2daemonwindow.h"
+#include "rts2ndevicewindow.h"
 #include "rts2nmenu.h"
 #include "rts2nmsgbox.h"
 #include "rts2nmsgwindow.h"
