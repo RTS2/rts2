@@ -3,6 +3,8 @@
 
 #include "rts2nwindow.h"
 
+#include "../utils/rts2block.h"
+#include "../utils/rts2conn.h"
 #include "../utils/rts2client.h"
 #include "../utils/rts2devclient.h"
 
@@ -20,7 +22,6 @@ public:
 		    int border = 1, int sw = 300, int sh = 100);
     virtual ~ Rts2NSelWindow (void);
   virtual int injectKey (int key);
-  virtual void draw ();
   virtual void refresh ();
   int getSelRow ()
   {
@@ -75,6 +76,7 @@ class Rts2NCentraldWindow:public Rts2NSelWindow
 {
 private:
   Rts2Client * client;
+  void printState (Rts2Conn * conn);
   void drawDevice (Rts2Conn * conn);
 public:
     Rts2NCentraldWindow (WINDOW * master, Rts2Client * in_client);

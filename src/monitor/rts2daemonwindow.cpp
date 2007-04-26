@@ -74,12 +74,6 @@ Rts2NSelWindow::injectKey (int key)
 }
 
 void
-Rts2NSelWindow::draw ()
-{
-  Rts2NWindow::draw ();
-}
-
-void
 Rts2NSelWindow::refresh ()
 {
   int x, y;
@@ -144,6 +138,19 @@ Rts2NDevListWindow::draw ()
       maxrow++;
     }
   refresh ();
+}
+
+void
+Rts2NCentraldWindow::printState (Rts2Conn * conn)
+{
+  if (conn->getErrorState ())
+    wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
+  else if (conn->havePriority ())
+    wcolor_set (getWriteWindow (), CLR_OK, NULL);
+  wprintw (getWriteWindow (), "%s %s (%i) priority: %s\n", conn->getName (),
+	   conn->getStateString ().c_str (), conn->getState (),
+	   conn->havePriority ()? "yes" : "no");
+  wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
 
 void

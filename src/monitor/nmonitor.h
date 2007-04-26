@@ -45,13 +45,12 @@
 enum messageAction
 { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
 
-/*******************************************************
+/**
  *
  * This class hold "root" window of display,
  * takes care about displaying it's connection etc..
  *
- ******************************************************/
-
+ */
 class Rts2NMonitor:public Rts2Client
 {
 private:
@@ -119,6 +118,9 @@ public:
   void commandReturn (Rts2Command * cmd, int cmd_status);
 };
 
+/**
+ * Make sure that update of connection state is notified in monitor.
+ */
 class Rts2NMonConn:public Rts2ConnClient
 {
 private:

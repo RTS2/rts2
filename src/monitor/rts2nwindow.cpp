@@ -176,16 +176,3 @@ Rts2NWindow::setCursor ()
 {
   setsyx (getCurY (), getCurX ());
 }
-
-void
-Rts2NWindow::printState (Rts2Conn * conn)
-{
-  if (conn->getErrorState ())
-    wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
-  else if (conn->havePriority ())
-    wcolor_set (getWriteWindow (), CLR_OK, NULL);
-  wprintw (getWriteWindow (), "%s %s (%i) priority: %s\n", conn->getName (),
-	   conn->getStateString ().c_str (), conn->getState (),
-	   conn->havePriority ()? "yes" : "no");
-  wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-}

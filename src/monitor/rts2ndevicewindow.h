@@ -9,13 +9,17 @@ class Rts2NDeviceWindow:public Rts2NSelWindow
 private:
   WINDOW * valueList;
   Rts2Conn *connection;
+  void printState ();
   void drawValuesList ();
   void drawValuesList (Rts2DevClient * client);
   void printValueDesc (Rts2Value * val);
+  void endValueBox ();
+  void createValueBox ();
+  Rts2NValueBox *valueBox;
 public:
     Rts2NDeviceWindow (WINDOW * master_window, Rts2Conn * in_connection);
     virtual ~ Rts2NDeviceWindow (void);
-//  virtual int injectKey (int key);
+  virtual int injectKey (int key);
   virtual void draw ();
 };
 

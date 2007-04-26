@@ -413,6 +413,7 @@ Rts2NMonitor::processKey (int key)
     case K_ENTER:
     case KEY_EXIT:
     case K_ESC:
+    case KEY_F (6):
       ret = activeWindow->injectKey (key);
       break;
     default:

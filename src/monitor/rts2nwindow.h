@@ -5,9 +5,6 @@
 
 #include "rts2nlayout.h"
 
-#include "../utils/rts2block.h"
-#include "../utils/rts2conn.h"
-
 /**
  * Basic class for NCurser windows.
  */
@@ -67,8 +64,6 @@ public:
   {
     return window;
   }
-
-  void printState (Rts2Conn * conn);
 
   bool haveBox ()
   {
