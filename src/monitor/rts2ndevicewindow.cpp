@@ -21,6 +21,7 @@ Rts2NDeviceWindow::~Rts2NDeviceWindow ()
 void
 Rts2NDeviceWindow::printState ()
 {
+  wattron (window, A_REVERSE);
   if (connection->getErrorState ())
     wcolor_set (window, CLR_FAILURE, NULL);
   else if (connection->havePriority ())
@@ -29,6 +30,7 @@ Rts2NDeviceWindow::printState ()
 	     connection->getStateString ().c_str (), connection->getState (),
 	     connection->havePriority ()? "yes" : "no");
   wcolor_set (window, CLR_DEFAULT, NULL);
+  wattroff (window, A_REVERSE);
 }
 
 void
@@ -82,14 +84,17 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
   wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
   mvwvline (getWriteWindow (), 0, 20, ACS_VLINE,
 	    (maxrow > getHeight ()? maxrow : getHeight ()));
+  mvwaddch (window, 0, 21, ACS_TTEE);
   mvwaddch (window, getHeight () - 1, 21, ACS_BTEE);
 }
 
 void
 Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
 {
+  wattron (window, A_REVERSE);
   mvwprintw (window, getHeight () - 1, 2, "D: \"%s\"",
 	     val->getDescription ().c_str ());
+  wattroff (window, A_REVERSE);
 }
 
 void
@@ -139,8 +144,8 @@ Rts2NDeviceWindow::draw ()
 {
   Rts2NWindow::draw ();
   werase (getWriteWindow ());
-  printState ();
   drawValuesList ();
+  printState ();
   int s = getSelRow ();
   if (s >= 0 && connection->getOtherDevClient ())
     printValueDesc (connection->getOtherDevClient ()->valueAt (s));

@@ -102,6 +102,8 @@ Rts2NMenu::draw ()
 {
   Rts2NWindow::draw ();
   werase (window);
+  wcolor_set (window, CLR_MENU, NULL);
+  mvwhline (window, 0, 0, ' ', getWidth ());
   for (std::vector < Rts2NSubmenu * >::iterator iter = submenus.begin ();
        iter != submenus.end (); iter++)
     {

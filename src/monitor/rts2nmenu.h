@@ -5,6 +5,9 @@
 
 #include <vector>
 
+/**
+ * One action item for Rts2NSubmenu.
+ */
 class Rts2NAction
 {
 private:
@@ -27,6 +30,10 @@ public:
   }
 };
 
+/**
+ * Submenu class. Holds list of actions which will be displayed in
+ * submenu.
+ */
 class Rts2NSubmenu:public Rts2NSelWindow
 {
 private:
@@ -52,6 +59,10 @@ public:
   }
 };
 
+/**
+ * Application menu. It holds submenus, which organize different
+ * actions.
+ */
 class Rts2NMenu:public Rts2NWindow
 {
 private:
