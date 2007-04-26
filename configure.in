@@ -8,7 +8,6 @@ AC_PREREQ(2.50)
 AM_MAINTAINER_MODE
 
 # Checks for programs.
-AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
 
@@ -48,14 +47,14 @@ esac],[xfocusc=yes])
 AM_CONDITIONAL(XFOCUSC, test x$xfocusc = xyes)
 
 AC_ARG_WITH(libnova,
-[  --without-libnova       don't build libnova dependent programs],
+[  --with-libnova       path to libnova or "no" if libnova is not installed],
 [case "${withval}" in
 	yes) libnova=yes ;;
 	no)  libnova=no ;;
-	*) AC_MSG_ERROR(bad value ${withval} for --without-libnova) ;;
+	*) libnova=${withval} ;;
 esac],[libnova=yes])
 
-AM_CONDITIONAL(LIBNOVA, test x$libnova = xyes)
+AM_CONDITIONAL(LIBNOVA, test x$libnova != xno)
 
 AC_ARG_WITH(pgsql,
 [  --without-pgsql         don't build pgsql dependent clients],
@@ -276,13 +275,22 @@ AC_SUBST(LIB_NCURSES), [cat << EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
-AC_SUBST(LIB_NOVA), [cat << EOF
+if test "x${libnova}" != "xno"; then
+  if test "x${libnova}" != "xyes"; then
+    LDFLAGS="${LDFLAGS} -L${libnova}/lib"
+  fi
+  AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova", 
+[cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
-exit 1])
-AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
+  exit 1])
+  if test "x${libnova}" != "xyes"; then
+    LIB_NOVA="-L${libnova}/lib ${LIB_NOVA}"
+  fi
+  AC_SUBST(LIB_NOVA)
+  AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
+fi  
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
 AC_SUBST(LIB_PTHREAD), [cat << EOF
