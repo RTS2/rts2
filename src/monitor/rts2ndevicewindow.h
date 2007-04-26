@@ -17,7 +17,7 @@ private:
   void createValueBox ();
   Rts2NValueBox *valueBox;
 public:
-    Rts2NDeviceWindow (WINDOW * master_window, Rts2Conn * in_connection);
+    Rts2NDeviceWindow (Rts2Conn * in_connection);
     virtual ~ Rts2NDeviceWindow (void);
   virtual int injectKey (int key);
   virtual void draw ();

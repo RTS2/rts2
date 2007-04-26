@@ -3,8 +3,7 @@
 
 #include <iostream>
 
-Rts2NWindow::Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
-			  int border):
+Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, int border):
 Rts2NLayout ()
 {
   if (h <= 0)

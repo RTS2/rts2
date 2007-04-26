@@ -7,8 +7,8 @@ Rts2NAction::draw (WINDOW * master_window, int y)
   mvwprintw (master_window, y, 0, "%s", text);
 }
 
-Rts2NSubmenu::Rts2NSubmenu (WINDOW * master_window, const char *in_text):
-Rts2NSelWindow (master_window, 0, 0, 2, 2)
+Rts2NSubmenu::Rts2NSubmenu (const char *in_text):
+Rts2NSelWindow (0, 0, 2, 2)
 {
   text = in_text;
   grow (strlen (text) + 2, 0);
@@ -39,8 +39,7 @@ Rts2NSubmenu::drawSubmenu ()
     }
 }
 
-Rts2NMenu::Rts2NMenu (WINDOW * master_window):Rts2NWindow (master_window, 0, 0, COLS, 1,
-	     0)
+Rts2NMenu::Rts2NMenu ():Rts2NWindow (0, 0, COLS, 1, 0)
 {
   selSubmenuIter = submenus.begin ();
   selSubmenu = NULL;

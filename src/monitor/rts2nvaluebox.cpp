@@ -1,15 +1,16 @@
 #include "rts2nvaluebox.h"
 
-Rts2NValueBox::Rts2NValueBox (WINDOW * master_window, int x, int y, int w,
-			      int h, Rts2Value * in_val):
-Rts2NWindow (master_window, x, y, w, h)
+Rts2NValueBox::Rts2NValueBox (Rts2NWindow * top, int x, int y, int w, int h,
+			      Rts2Value * in_val):
+Rts2NSelWindow (top->getX () + x, top->getY () + y, w, h)
 {
+  topWindow = top;
   val = in_val;
 }
 
-Rts2NValueBoxBool::Rts2NValueBoxBool (WINDOW * master_window,
+Rts2NValueBoxBool::Rts2NValueBoxBool (Rts2NWindow * top,
 				      Rts2ValueBool * in_val, int y):
-Rts2NValueBox (master_window, 1, y, 10, 4, in_val)
+Rts2NValueBox (top, 1, y, 10, 4, in_val)
 {
 
 }

@@ -5,8 +5,8 @@
 #include "../utils/rts2displayvalue.h"
 
 
-Rts2NDeviceWindow::Rts2NDeviceWindow (WINDOW * master_window, Rts2Conn * in_connection):Rts2NSelWindow
-  (master_window, 10, 1, COLS - 10,
+Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):Rts2NSelWindow
+  (10, 1, COLS - 10,
    LINES - 25)
 {
   connection = in_connection;
@@ -114,7 +114,8 @@ Rts2NDeviceWindow::createValueBox ()
       switch (val->getValueType ())
 	{
 	case RTS2_VALUE_BOOL:
-	  valueBox = new Rts2NValueBoxBool (window, (Rts2ValueBool *) val, s);
+	  valueBox =
+	    new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, s - 2);
 	  break;
 	default:
 	  break;
@@ -149,9 +150,10 @@ Rts2NDeviceWindow::draw ()
   int s = getSelRow ();
   if (s >= 0 && connection->getOtherDevClient ())
     printValueDesc (connection->getOtherDevClient ()->valueAt (s));
+  refresh ();
   if (valueBox)
     {
       valueBox->draw ();
+//    valueBox->refresh ();
     }
-  refresh ();
 }

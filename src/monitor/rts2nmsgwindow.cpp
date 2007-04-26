@@ -2,9 +2,8 @@
 
 #include "nmonitor.h"
 
-Rts2NMsgWindow::Rts2NMsgWindow (WINDOW * master_window):Rts2NSelWindow (master_window, 0, LINES - 19, COLS,
-		18, 1, 300,
-		500)
+Rts2NMsgWindow::Rts2NMsgWindow ():Rts2NSelWindow (0, LINES - 19, COLS,
+		18, 1, 300, 500)
 {
   msgMask = 0x07;
   setLineOffset (0);

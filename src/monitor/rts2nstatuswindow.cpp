@@ -1,7 +1,7 @@
 #include "rts2nstatuswindow.h"
 #include "nmonitor.h"
 
-Rts2NStatusWindow::Rts2NStatusWindow (WINDOW * master_window, Rts2NComWin * in_comWin, Rts2Client * in_master):Rts2NWindow (master_window, 0, LINES - 1, COLS, 1,
+Rts2NStatusWindow::Rts2NStatusWindow (Rts2NComWin * in_comWin, Rts2Client * in_master):Rts2NWindow (0, LINES - 1, COLS, 1,
 	     0)
 {
   master = in_master;

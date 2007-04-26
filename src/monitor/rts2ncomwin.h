@@ -9,7 +9,7 @@ private:
   WINDOW * comwin;
   WINDOW *statuspad;
 public:
-    Rts2NComWin (WINDOW * master_window);
+    Rts2NComWin ();
     virtual ~ Rts2NComWin (void);
   virtual int injectKey (int key);
   virtual void draw ();

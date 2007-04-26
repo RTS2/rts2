@@ -12,7 +12,7 @@ private:
   std::list < Rts2Message > messages;
   int msgMask;
 public:
-    Rts2NMsgWindow (WINDOW * master_window);
+    Rts2NMsgWindow ();
     virtual ~ Rts2NMsgWindow (void);
   virtual void draw ();
   friend Rts2NMsgWindow & operator << (Rts2NMsgWindow & msgwin,

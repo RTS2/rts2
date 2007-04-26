@@ -10,7 +10,7 @@ private:
   const char **buttons;
   int butnum;
 public:
-    Rts2NMsgBox (WINDOW * master_window, const char *in_query,
+    Rts2NMsgBox (const char *in_query,
 		 const char *in_buttons[], int in_butnum);
     virtual ~ Rts2NMsgBox (void);
   virtual int injectKey (int key);

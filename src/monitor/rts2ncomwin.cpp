@@ -2,8 +2,7 @@
 
 #include "nmonitor.h"
 
-Rts2NComWin::Rts2NComWin (WINDOW * master_window):Rts2NWindow (master_window, 11, LINES - 24, COLS - 12, 5,
-	     0)
+Rts2NComWin::Rts2NComWin ():Rts2NWindow (11, LINES - 24, COLS - 12, 5, 0)
 {
   comwin = newpad (1, 300);
   statuspad = newpad (3, 300);

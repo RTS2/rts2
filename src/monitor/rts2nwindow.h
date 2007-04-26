@@ -16,8 +16,7 @@ protected:
   WINDOW * window;
   void errorMove (const char *op, int y, int x, int h, int w);
 public:
-    Rts2NWindow (WINDOW * master_window, int x, int y, int w, int h,
-		 int border = 1);
+    Rts2NWindow (int x, int y, int w, int h, int border = 1);
     virtual ~ Rts2NWindow (void);
   virtual int injectKey (int key) = 0;
   virtual void draw ();
@@ -30,6 +29,16 @@ public:
   int getHeight ();
   int getWriteWidth ();
   int getWriteHeight ();
+
+  void setX (int x)
+  {
+    move (x, getY ());
+  }
+
+  void setY (int y)
+  {
+    move (getX (), y);
+  }
 
   virtual void clear ()
   {

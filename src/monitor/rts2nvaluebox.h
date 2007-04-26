@@ -4,17 +4,19 @@
 #include "../utils/rts2value.h"
 
 #include "rts2nwindow.h"
+#include "rts2daemonwindow.h"
 
 /**
  * Holds edit box for value.
  */
-class Rts2NValueBox:public Rts2NWindow
+class Rts2NValueBox:public Rts2NSelWindow
 {
 private:
-  Rts2Value * val;
+  Rts2NWindow * topWindow;
+  Rts2Value *val;
 public:
-  Rts2NValueBox (WINDOW * master_window, int x, int y, int w, int h,
-		 Rts2Value * in_val);
+    Rts2NValueBox (Rts2NWindow * top, int x, int y, int w, int h,
+		   Rts2Value * in_val);
   virtual int injectKey (int key) = 0;
 };
 
@@ -24,7 +26,7 @@ public:
 class Rts2NValueBoxBool:public Rts2NValueBox
 {
 public:
-  Rts2NValueBoxBool (WINDOW * master_window, Rts2ValueBool * in_val, int y);
+  Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int y);
   virtual int injectKey (int key);
   virtual void draw ();
 };

@@ -18,8 +18,8 @@ protected:
   int lineOffset;
   WINDOW *scrolpad;
 public:
-    Rts2NSelWindow (WINDOW * master_window, int x, int y, int w, int h,
-		    int border = 1, int sw = 300, int sh = 100);
+    Rts2NSelWindow (int x, int y, int w, int h, int border = 1, int sw =
+		    300, int sh = 100);
     virtual ~ Rts2NSelWindow (void);
   virtual int injectKey (int key);
   virtual void refresh ();
@@ -67,7 +67,7 @@ class Rts2NDevListWindow:public Rts2NSelWindow
 private:
   Rts2Block * block;
 public:
-  Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_block);
+  Rts2NDevListWindow (Rts2Block * in_block);
   virtual ~ Rts2NDevListWindow (void);
   virtual void draw ();
 };
@@ -79,7 +79,7 @@ private:
   void printState (Rts2Conn * conn);
   void drawDevice (Rts2Conn * conn);
 public:
-    Rts2NCentraldWindow (WINDOW * master, Rts2Client * in_client);
+    Rts2NCentraldWindow (Rts2Client * in_client);
     virtual ~ Rts2NCentraldWindow (void);
   virtual void draw ();
 };

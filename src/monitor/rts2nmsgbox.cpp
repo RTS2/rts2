@@ -1,9 +1,9 @@
 #include "rts2nmsgbox.h"
 #include "nmonitor.h"
 
-Rts2NMsgBox::Rts2NMsgBox (WINDOW * master_window, const char *in_query,
+Rts2NMsgBox::Rts2NMsgBox (const char *in_query,
 			  const char *in_buttons[], int in_butnum):
-Rts2NWindow (master_window, COLS / 2 - 25, LINES / 2 - 15, 50, 5)
+Rts2NWindow (COLS / 2 - 25, LINES / 2 - 15, 50, 5)
 {
   query = in_query;
   buttons = in_buttons;

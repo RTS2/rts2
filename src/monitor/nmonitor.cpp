@@ -55,7 +55,7 @@ Rts2NMonitor::messageBox (const char *query, messageAction action)
   if (msgBox)
     return;
   msgAction = action;
-  msgBox = new Rts2NMsgBox (cursesWin, query, buts, 2);
+  msgBox = new Rts2NMsgBox (query, buts, 2);
   msgBox->draw ();
   windowStack.push_back (msgBox);
 }
@@ -142,13 +142,13 @@ Rts2NMonitor::changeListConnection ()
       if (conn->getName () == std::string (""))
 	{
 	  delete daemonWindow;
-	  daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
+	  daemonWindow = new Rts2NCentraldWindow (this);
 	  daemonLayout->setLayoutA (daemonWindow);
 	}
       else
 	{
 	  delete daemonWindow;
-	  daemonWindow = new Rts2NDeviceWindow (cursesWin, conn);
+	  daemonWindow = new Rts2NDeviceWindow (conn);
 	  daemonLayout->setLayoutA (daemonWindow);
 	}
       resize ();
@@ -253,21 +253,21 @@ Rts2NMonitor::init ()
   timeout (0);
 
   // create & init menu
-  menu = new Rts2NMenu (cursesWin);
-  Rts2NSubmenu *sub = new Rts2NSubmenu (cursesWin, "System");
+  menu = new Rts2NMenu ();
+  Rts2NSubmenu *sub = new Rts2NSubmenu ("System");
   sub->createAction ("Off", MENU_OFF);
   sub->createAction ("Standby", MENU_STANDBY);
   sub->createAction ("On", MENU_ON);
   sub->createAction ("Exit", MENU_EXIT);
   menu->addSubmenu (sub);
 
-  sub = new Rts2NSubmenu (cursesWin, "Debug");
+  sub = new Rts2NSubmenu ("Debug");
   sub->createAction ("Basic", MENU_DEBUG_BASIC);
   sub->createAction ("Limited", MENU_DEBUG_LIMITED);
   sub->createAction ("Full", MENU_DEBUG_FULL);
   menu->addSubmenu (sub);
 
-  sub = new Rts2NSubmenu (cursesWin, "Help");
+  sub = new Rts2NSubmenu ("Help");
   sub->createAction ("About", MENU_ABOUT);
   menu->addSubmenu (sub);
 
@@ -289,12 +289,12 @@ Rts2NMonitor::init ()
     }
 
   // init windows
-  deviceList = new Rts2NDevListWindow (cursesWin, this);
-  comWindow = new Rts2NComWin (cursesWin);
-  msgwindow = new Rts2NMsgWindow (cursesWin);
+  deviceList = new Rts2NDevListWindow (this);
+  comWindow = new Rts2NComWin ();
+  msgwindow = new Rts2NMsgWindow ();
   windowStack.push_back (deviceList);
-  statusWindow = new Rts2NStatusWindow (cursesWin, comWindow, this);
-  daemonWindow = new Rts2NCentraldWindow (cursesWin, this);
+  statusWindow = new Rts2NStatusWindow (comWindow, this);
+  daemonWindow = new Rts2NCentraldWindow (this);
 
   // init layout
   daemonLayout =

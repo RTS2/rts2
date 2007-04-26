@@ -40,7 +40,7 @@ private:
   std::vector < Rts2NAction * >actions;
   const char *text;
 public:
-    Rts2NSubmenu (WINDOW * master_window, const char *in_text);
+    Rts2NSubmenu (const char *in_text);
     virtual ~ Rts2NSubmenu (void);
   void addAction (Rts2NAction * in_action)
   {
@@ -71,7 +71,7 @@ private:
   Rts2NSubmenu *selSubmenu;
   int top_x;
 public:
-    Rts2NMenu (WINDOW * master_window);
+    Rts2NMenu ();
     virtual ~ Rts2NMenu (void);
   virtual int injectKey (int key);
   virtual void draw ();

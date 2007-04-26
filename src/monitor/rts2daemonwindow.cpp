@@ -3,9 +3,9 @@
 
 #include <iostream>
 
-Rts2NSelWindow::Rts2NSelWindow (WINDOW * master_window, int x, int y, int w,
-				int h, int border, int sw, int sh):
-Rts2NWindow (master_window, x, y, w, h, border)
+Rts2NSelWindow::Rts2NSelWindow (int x, int y, int w, int h, int border,
+				int sw, int sh):
+Rts2NWindow (x, y, w, h, border)
 {
   selrow = 0;
   maxrow = 0;
@@ -109,7 +109,7 @@ Rts2NSelWindow::refresh ()
     pnoutrefresh (scrolpad, padoff_y, padoff_x, y, x, y + h - 1, x + w - 1);
 }
 
-Rts2NDevListWindow::Rts2NDevListWindow (WINDOW * master_window, Rts2Block * in_block):Rts2NSelWindow (master_window, 0, 1, 10,
+Rts2NDevListWindow::Rts2NDevListWindow (Rts2Block * in_block):Rts2NSelWindow (0, 1, 10,
 		LINES -
 		20)
 {
@@ -160,8 +160,8 @@ Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
   maxrow++;
 }
 
-Rts2NCentraldWindow::Rts2NCentraldWindow (WINDOW * master_window, Rts2Client * in_client):Rts2NSelWindow
-  (master_window, 10, 1, COLS - 10,
+Rts2NCentraldWindow::Rts2NCentraldWindow (Rts2Client * in_client):Rts2NSelWindow
+  (10, 1, COLS - 10,
    LINES - 25)
 {
   client = in_client;
