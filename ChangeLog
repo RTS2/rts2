@@ -1,11 +1,14 @@
 0.7.0
 ===
  * cleaning of options (capital | lower case,..)
+   - copula->cupola cleanup
  * added soapd, augershooter,..
  * manual pages
  * create events table
  * mesaging
  * clean of init, deamonize, .. (centrald have log file..)
+ * custom values
+ * filter table & better filter support
 
 0.6.3
 ===
