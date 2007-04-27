@@ -68,6 +68,7 @@ private:
   float signalNoise;
   int getFailed;
   double average;
+  double stdev;
   short int min;
   short int max;
   short int mean;
@@ -372,6 +373,11 @@ public:
   double getAverage ()
   {
     return average;
+  }
+
+  double getStdDev ()
+  {
+    return stdev;
   }
 
   int getFocPos ()

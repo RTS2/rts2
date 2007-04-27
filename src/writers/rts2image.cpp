@@ -34,6 +34,7 @@ Rts2Image::initData ()
   filter_i = -1;
   filter = NULL;
   average = 0;
+  stdev = 0;
   min = max = mean = 0;
   histogram = NULL;
   imageData = NULL;
@@ -84,6 +85,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   signalNoise = in_image->signalNoise;
   getFailed = in_image->getFailed;
   average = in_image->average;
+  stdev = in_image->stdev;
   min = in_image->min;
   max = in_image->max;
   mean = in_image->mean;
@@ -258,6 +260,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   filter = new char[5];
   getValue ("FILTER", filter, 5, true);
   getValue ("AVERAGE", average, true);
+  getValue ("STDEV", stdev, false);
   getValue ("RA_ERR", ra_err, false);
   getValue ("DEC_ERR", dec_err, false);
   getValue ("POS_ERR", img_err, false);
@@ -985,6 +988,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
   int ret;
 
   average = 0;
+  stdev = 0;
 
   im_h = dataConn->getImageHeader ();
   // we have to copy data to FITS anyway, so let's do it right now..
@@ -1019,9 +1023,23 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       pixel++;
     }
   if ((dataConn->getSize () / 2) > 0)
-    average /= dataConn->getSize () / 2;
+    {
+      average /= dataConn->getSize () / 2;
+      // calculate stdev
+      pixel = dataConn->getData ();
+      while (pixel < top)
+	{
+	  double tmp_s = *pixel - average;
+	  stdev += tmp_s * tmp_s;
+	  pixel++;
+	}
+      stdev = sqrt (stdev / (dataConn->getSize () / 2));
+    }
   else
-    average = 0;
+    {
+      average = 0;
+      stdev = 0;
+    }
 
   ret = writeImgHeader (im_h);
 
@@ -1037,6 +1055,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       return -1;
     }
   setValue ("AVERAGE", average, "average value of image");
+  setValue ("STDEV", stdev, "standart deviation value of image");
   return ret;
 }
 
