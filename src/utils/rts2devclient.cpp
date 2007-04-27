@@ -343,7 +343,7 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
     case TEL_MOVING:
     case TEL_MOVING | TEL_WAIT_COP:
     case TEL_PARKING:
-      moveStart ();
+      moveStart (state->getValue () & TEL_CORRECTING);
       break;
     case TEL_OBSERVING:
     case TEL_PARKED:
@@ -369,13 +369,15 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 }
 
 void
-Rts2DevClientTelescope::moveStart ()
+Rts2DevClientTelescope::moveStart (bool correcting)
 {
+  moveWasCorrecting = correcting;
 }
 
 void
 Rts2DevClientTelescope::moveEnd ()
 {
+  moveWasCorrecting = false;
 }
 
 void

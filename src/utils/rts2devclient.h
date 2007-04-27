@@ -157,7 +157,8 @@ public:
 class Rts2DevClientTelescope:public Rts2DevClient
 {
 protected:
-  virtual void moveStart ();
+  bool moveWasCorrecting;
+  virtual void moveStart (bool correcting);
   virtual void moveEnd ();
   virtual void searchStart ();
   virtual void searchEnd ();
@@ -167,6 +168,7 @@ public:
   /*! gets calledn when move finished without success */
   virtual void moveFailed (int status)
   {
+    moveWasCorrecting = false;
   }
   virtual void searchFailed (int status)
   {
