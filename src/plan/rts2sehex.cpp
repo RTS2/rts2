@@ -30,13 +30,13 @@ Rts2SEHex::getDec ()
   return path.getDec () * dec_size;
 }
 
-bool
-Rts2SEHex::endLoop ()
+bool Rts2SEHex::endLoop ()
 {
   return !path.haveNext ();
 }
 
-bool Rts2SEHex::getNextLoop ()
+bool
+Rts2SEHex::getNextLoop ()
 {
   if (path.getNext ())
     {
@@ -69,8 +69,6 @@ Rts2ScriptElementBlock (in_script)
   ra_size = in_ra_size;
   dec_size = in_dec_size;
   changeEl = NULL;
-
-  constructPath ();
 }
 
 Rts2SEHex::~Rts2SEHex (void)
@@ -81,6 +79,9 @@ Rts2SEHex::~Rts2SEHex (void)
 void
 Rts2SEHex::beforeExecuting ()
 {
+  if (!path.haveNext ())
+    constructPath ();
+
   if (path.haveNext ())
     {
       changeEl = new Rts2ScriptElementChange (script, getRa (), getDec ());
