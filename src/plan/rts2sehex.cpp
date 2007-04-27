@@ -30,19 +30,20 @@ Rts2SEHex::getDec ()
   return path.getDec () * dec_size;
 }
 
-bool
-Rts2SEHex::endLoop ()
+bool Rts2SEHex::endLoop ()
 {
   return !path.haveNext ();
 }
 
-bool Rts2SEHex::getNextLoop ()
+bool
+Rts2SEHex::getNextLoop ()
 {
   if (path.getNext ())
     {
       changeEl->setChangeRaDec (getRa (), getDec ());
       return false;
     }
+  afterBlockEnd ();
   return true;
 }
 
