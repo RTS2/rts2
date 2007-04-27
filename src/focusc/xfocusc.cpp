@@ -395,11 +395,17 @@ Rts2xfocusCamera::printInfo ()
   int len;
   XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
   len =
-    asprintf (&stringBuf, "L: %d M: %d H: %d Min: %d Avg: %.2f Max: %d",
-	      low, med, hig, min, average, max);
+    asprintf (&stringBuf,
+	      "L: %d M: %d H: %d Min: %d Max: %d", low, med, hig, min, max);
   XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100,
 		    20, stringBuf, len);
   free (stringBuf);
+
+  len = asprintf (&stringBuf, "Avg: %.2f Stdev: %2.f", average, stdev);
+  XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 50,
+		    32, stringBuf, len);
+  free (stringBuf);
+
   if (lastImage)
     {
       len =
@@ -689,7 +695,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
   im_ptr = image->getDataUShortInt ();
   average = 0;
   max = 0;
-  min = 65536;
+  min = USHRT_MAX;
   for (i = 0; i < pixmapHeight; i++)
     for (j = 0; j < pixmapWidth; j++)
       {
@@ -703,6 +709,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
       }
 
   average /= dataSize;
+  stdev = image->getStdDev ();
 
   low = med = hig = 0;
   j = 0;
@@ -717,7 +724,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	hig = i;
     }
   if (!hig)
-    hig = 65536;
+    hig = USHRT_MAX;
   if (low == hig)
     low = hig / 2 - 1;
 
@@ -743,8 +750,13 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
       }
 
   std::
-    cout << "Data low:" << low << " med:" << med << " hig:" << hig <<
-    " min:" << min << " average:" << average << " max:" << max << std::endl;
+    cout << "Data low:" << low
+    << " med:" << med
+    << " hig:" << hig
+    << " min:" << min
+    << " max:" << max
+    << " average:" << average << " " << image->getAverage ()
+    << " stdev " << stdev << std::endl;
 
   XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
 
