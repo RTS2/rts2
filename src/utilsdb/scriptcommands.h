@@ -25,6 +25,8 @@
 
 // hex pattern
 #define COMMAND_HEX		"hex"
+// 5x5 pattern
+#define COMMAND_FXF		"fxf"
 
 // HAM acqusition - only on FRAM telescope
 #define COMMAND_HAM		"HAM"
