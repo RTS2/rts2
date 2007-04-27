@@ -63,8 +63,6 @@ private:
     ra_size;
   double
     dec_size;
-  Rts2Path
-    path;
   Rts2ScriptElementChange *
     changeEl;
   double
@@ -72,11 +70,16 @@ private:
   double
   getDec ();
 protected:
-  virtual
-    bool
+  Rts2Path
+    path;
+
+  virtual bool
   endLoop ();
   virtual bool
   getNextLoop ();
+
+  virtual void
+  constructPath ();
 public:
   Rts2SEHex (Rts2Script * in_script, double in_ra_size, double in_dec_size);
   virtual ~
@@ -84,6 +87,20 @@ public:
 
   virtual void
   beforeExecuting ();
+};
+
+class
+  Rts2SEFF:
+  public
+  Rts2SEHex
+{
+protected:
+  virtual void
+  constructPath ();
+public:
+  Rts2SEFF (Rts2Script * in_script, double in_ra_size, double in_dec_size);
+  virtual ~
+  Rts2SEFF (void);
 };
 
 #endif /* !__RTS2_SEHEX__ */

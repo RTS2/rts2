@@ -487,6 +487,33 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
       // block can end by script end as well..
       return hexEl;
     }
+  else if (!strcmp (commandStart, COMMAND_FXF))
+    {
+      double ra_size;
+      double dec_size;
+      if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
+	return NULL;
+      char *el;
+      Rts2SEFF *ffEl;
+      Rts2ScriptElement *newElement;
+      // test for block start..
+      el = nextElement ();
+      // error, return NULL
+      if (*el != '{')
+	return NULL;
+      ffEl = new Rts2SEFF (this, ra_size, dec_size);
+      // parse block..
+      while (1)
+	{
+	  newElement = parseBuf (target, target_pos);
+	  // "}" will result in NULL, which we capture here
+	  if (!newElement)
+	    break;
+	  ffEl->addElement (newElement);
+	}
+      // block can end by script end as well..
+      return ffEl;
+    }
 
   // setValue fallback
   else if (strchr (commandStart, '='))

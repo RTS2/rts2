@@ -22,11 +22,21 @@ protected:
   }
   virtual bool getNextLoop ()
   {
-    return endLoop ();
+    bool ret = endLoop ();
+    if (ret)
+      afterBlockEnd ();
+    return ret;
   }
   int getLoopCount ()
   {
     return loopCount;
+  }
+  // called after one loop ends
+  // prepare us for next execution
+  void afterBlockEnd ()
+  {
+    loopCount = 0;
+    curr_element = blockElements.begin ();
   }
 public:
   Rts2ScriptElementBlock (Rts2Script * in_script);
