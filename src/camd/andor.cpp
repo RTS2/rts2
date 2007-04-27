@@ -434,17 +434,21 @@ Rts2DevCamera (in_argc, in_argv)
   createValue (Mode, "MODE", "Camera mode", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   Mode->setValueInteger (0);
-  createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true);
+  createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   VSAmp->setValueInteger (0);
-  createValue (VSpeed, "VSPEED", "Vertical shift speed", true);
+  createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   VSpeed->setValueInteger (1);
-  createValue (HSpeed, "HSPEED", "Horizontal shift speed", true);
+  createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   HSpeed->setValueInteger (1);
-  createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false, 0, 0,
-	       true);
+  createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   FTShutter->setValueBool (false);
 
-  createValue (useFT, "USEFT", "Use FT", false, 0, 0, true);
+  createValue (useFT, "USEFT", "Use FT", false, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   useFT->setValueBool (true);
 
   defaultGain = 255;
