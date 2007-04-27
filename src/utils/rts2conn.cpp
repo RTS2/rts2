@@ -140,6 +140,8 @@ std::string Rts2Conn::getStateString ()
 	default:
 	  _os << "unknow state " << real_state;
 	}
+      if (real_state & TEL_CORRECTING)
+	_os << " | CORRECTING";
       if (real_state & TEL_WAIT_COP)
 	_os << " | WAIT_FOR_CUPOLA";
       if (real_state & TEL_SEARCH)
