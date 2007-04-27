@@ -30,13 +30,13 @@ Rts2SEHex::getDec ()
   return path.getDec () * dec_size;
 }
 
-bool Rts2SEHex::endLoop ()
+bool
+Rts2SEHex::endLoop ()
 {
   return !path.haveNext ();
 }
 
-bool
-Rts2SEHex::getNextLoop ()
+bool Rts2SEHex::getNextLoop ()
 {
   if (path.getNext ())
     {
@@ -50,17 +50,24 @@ void
 Rts2SEHex::constructPath ()
 {
   // construct path
-  path.addRaDec (1, 1);
-  path.addRaDec (1, 0);
-  path.addRaDec (1, -1);
-  path.addRaDec (0, -1);
-  path.addRaDec (-1, -1);
+#define SQRT3	0.866
   path.addRaDec (-1, 0);
-  path.addRaDec (-1, 1);
-  path.addRaDec (0, 1);
+  path.addRaDec (0.5, SQRT3);
+  path.addRaDec (1, 0);
+  path.addRaDec (0.5, -SQRT3);
+  path.addRaDec (-0.5, -SQRT3);
+  path.addRaDec (-1, 0);
+  path.addRaDec (0.5, SQRT3);
+#undef SQRT3
   path.endPath ();
 }
 
+void
+Rts2SEHex::afterBlockEnd ()
+{
+  Rts2ScriptElementBlock::afterBlockEnd ();
+  path.rewindPath ();
+}
 
 Rts2SEHex::Rts2SEHex (Rts2Script * in_script, double in_ra_size,
 		      double in_dec_size):

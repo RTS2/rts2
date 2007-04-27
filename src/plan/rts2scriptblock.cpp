@@ -41,6 +41,13 @@ Rts2ScriptElementBlock::blockScriptRet (int ret)
 }
 
 void
+Rts2ScriptElementBlock::afterBlockEnd ()
+{
+  loopCount = 0;
+  curr_element = blockElements.begin ();
+}
+
+void
 Rts2ScriptElementBlock::addElement (Rts2ScriptElement * element)
 {
   blockElements.push_back (element);
@@ -217,7 +224,8 @@ Rts2SEBAcquired::~Rts2SEBAcquired (void)
   delete elseBlock;
 }
 
-bool Rts2SEBAcquired::endLoop ()
+bool
+Rts2SEBAcquired::endLoop ()
 {
   return (getLoopCount () != 0);
 }
@@ -361,7 +369,8 @@ Rts2SEBAcquired::addElseElement (Rts2ScriptElement * element)
   elseBlock->addElement (element);
 }
 
-bool Rts2SEBElse::endLoop ()
+bool
+Rts2SEBElse::endLoop ()
 {
   return (getLoopCount () != 0);
 }

@@ -24,6 +24,11 @@ public:
   {
     top = begin ();
   }
+  void
+  rewindPath ()
+  {
+    top = begin ();
+  }
   bool
   getNext ()
   {
@@ -80,6 +85,8 @@ protected:
 
   virtual void
   constructPath ();
+  virtual void
+  afterBlockEnd ();
 public:
   Rts2SEHex (Rts2Script * in_script, double in_ra_size, double in_dec_size);
   virtual ~

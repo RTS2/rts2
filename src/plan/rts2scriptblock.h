@@ -33,11 +33,7 @@ protected:
   }
   // called after one loop ends
   // prepare us for next execution
-  void afterBlockEnd ()
-  {
-    loopCount = 0;
-    curr_element = blockElements.begin ();
-  }
+  virtual void afterBlockEnd ();
 public:
   Rts2ScriptElementBlock (Rts2Script * in_script);
   virtual ~ Rts2ScriptElementBlock (void);
