@@ -594,7 +594,7 @@ Rts2Executor::setGrb (int grbId)
       if (priorityTarget)
 	{
 	  // it's not same..
-	  ret == grbTarget->compareWithTarget (priorityTarget, grb_sep_limit);
+	  ret = grbTarget->compareWithTarget (priorityTarget, grb_sep_limit);
 	  if (ret == 0)
 	    {
 	      return setNow (grbTarget);
