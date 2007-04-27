@@ -306,10 +306,13 @@ public:
 
   virtual int scriptEnds ();
 
-  int startMove (Rts2Conn * conn, double tar_ra, double tar_dec);
-  int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec);
+  int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
+		 bool onlyCorrect);
+  int startMoveFixed (Rts2Conn * conn, double tar_ha, double tar_dec,
+		      bool onlyCorrect);
   int startSearch (Rts2Conn * conn, double radius, double in_searchSpeed);
-  int startResyncMove (Rts2Conn * conn, double tar_ra, double tar_dec);
+  int startResyncMove (Rts2Conn * conn, double tar_ra, double tar_dec,
+		       bool onlyCorrect);
   int setTo (Rts2Conn * conn, double set_ra, double set_dec);
   int correct (Rts2Conn * conn, int cor_mark, double cor_ra, double cor_dec,
 	       struct ln_equ_posn *realPos);

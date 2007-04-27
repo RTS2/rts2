@@ -455,8 +455,9 @@ Rts2DevTelescope::checkMoves ()
 	{
 	  if (move_connection)
 	    sendInfo (move_connection);
-	  maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING,
-		     DEVICE_ERROR_HW | TEL_OBSERVING,
+	  maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
+		     TEL_MASK_MOVING,
+		     DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
 		     "move finished with error");
 	  unsetTarget ();
 	  move_connection = NULL;
@@ -471,13 +472,15 @@ Rts2DevTelescope::checkMoves ()
 	    ret = endMove ();
 	  if (ret)
 	    {
-	      maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING,
-			 DEVICE_ERROR_HW | TEL_OBSERVING,
+	      maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
+			 TEL_MASK_MOVING,
+			 DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
 			 "move finished with error");
 	      dontKnowPosition ();
 	    }
 	  else
-	    maskState (TEL_MASK_MOVING, TEL_OBSERVING,
+	    maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING,
+		       TEL_NOT_CORRECTING | TEL_OBSERVING,
 		       "move finished without error");
 	  if (move_connection)
 	    {
@@ -780,7 +783,8 @@ Rts2DevTelescope::applyCorrections (double &tar_ra, double &tar_dec)
 }
 
 int
-Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
+Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
+			     bool onlyCorrect)
 {
   int ret;
   struct ln_equ_posn pos;
@@ -842,13 +846,23 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
       // somebody cared about it..
       if (isnan (pos.ra))
 	{
-	  maskState (TEL_MASK_COP_MOVING, TEL_MOVING | TEL_WAIT_COP,
-		     "move started");
+	  if (onlyCorrect)
+	    maskState (TEL_MASK_COP_MOVING | TEL_MASK_CORRECTING,
+		       TEL_MOVING | TEL_CORRECTING | TEL_WAIT_COP,
+		       "move started");
+	  else
+	    maskState (TEL_MASK_COP_MOVING, TEL_MOVING | TEL_WAIT_COP,
+		       "move started");
 	}
       else
 	{
-	  maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		     "move started");
+	  if (onlyCorrect)
+	    maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP |
+		       TEL_MASK_CORRECTING, TEL_MOVING | TEL_CORRECTING,
+		       "move started");
+	  else
+	    maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		       "move started");
 	}
       move_connection = conn;
     }
@@ -889,7 +903,7 @@ Rts2DevTelescope::endMoveFixed ()
 
 int
 Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
-				  double tar_dec)
+				  double tar_dec, bool onlyCorrect)
 {
   int ret;
   ret = startMoveFixed (tar_ha, tar_dec);
@@ -901,8 +915,12 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
       targetDec->setValueDouble (tar_dec);
       move_fixed = 1;
       moveMark->inc ();
-      maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		 "move started");
+      if (onlyCorrect)
+	maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP,
+		   TEL_MOVING | TEL_CORRECTING, "move started");
+      else
+	maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		   "move started");
       dontKnowPosition ();
       move_connection = conn;
     }
@@ -926,7 +944,7 @@ Rts2DevTelescope::startSearch (Rts2Conn * conn, double radius,
 
 int
 Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
-				   double tar_dec)
+				   double tar_dec, bool onlyCorrect)
 {
   int ret;
 
@@ -943,7 +961,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       logStream (MESSAGE_DEBUG) <<
 	"telescope startResyncMove called wrong - calling startMove!" <<
 	sendLog;
-      return startMove (conn, tar_ra, tar_dec);
+      return startMove (conn, tar_ra, tar_dec, onlyCorrect);
     }
   if (knowPosition->getValueInteger ())
     {
@@ -987,8 +1005,12 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       move_fixed = 0;
       if (knowPosition->getValueInteger () != 2)
 	moveMark->inc ();
-      maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		 "move started");
+      if (onlyCorrect)
+	maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP,
+		   TEL_CORRECTING | TEL_MOVING, "correction move started");
+      else
+	maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		   "correction move started");
       move_connection = conn;
     }
   return ret;
@@ -1066,7 +1088,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 		  double tar_ra = lastTar.ra;
 		  double tar_dec = lastTar.dec;
 		  unsetTarget ();
-		  ret = startMove (conn, tar_ra, tar_dec);
+		  ret = startMove (conn, tar_ra, tar_dec, true);
 		}
 	    }
 	  else
@@ -1079,7 +1101,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 		  numCorr->inc ();
 		  lastRa->setValueDouble (realPos->ra);
 		  lastDec->setValueDouble (realPos->dec);
-		  ret = startResyncMove (conn, lastTar.ra, lastTar.dec);
+		  ret = startResyncMove (conn, lastTar.ra, lastTar.dec, true);
 		}
 	    }
 
@@ -1222,8 +1244,8 @@ Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
     {
       // move_fixed = 0;
       moveMark->inc ();
-      maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		 "move started");
+      maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP | TEL_MASK_CORRECTING,
+		 TEL_MOVING | TEL_CORRECTING, "move started");
       move_connection = conn;
     }
   return ret;
@@ -1340,7 +1362,7 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  || !paramEnd ())
 	return -2;
       master->modelOn ();
-      return master->startMove (this, tar_ra, tar_dec);
+      return master->startMove (this, tar_ra, tar_dec, false);
     }
   else if (isCommand ("move_not_model"))
     {
@@ -1349,7 +1371,7 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  || !paramEnd ())
 	return -2;
       master->modelOff ();
-      return master->startMove (this, tar_ra, tar_dec);
+      return master->startMove (this, tar_ra, tar_dec, false);
     }
   else if (isCommand ("resync"))
     {
@@ -1357,7 +1379,7 @@ Rts2DevConnTelescope::commandAuthorized ()
       if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
 	  || !paramEnd ())
 	return -2;
-      return master->startResyncMove (this, tar_ra, tar_dec);
+      return master->startResyncMove (this, tar_ra, tar_dec, true);
     }
   else if (isCommand ("fixed"))
     {
@@ -1367,7 +1389,7 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  || !paramEnd ())
 	return -2;
       master->modelOff ();
-      return master->startMoveFixed (this, tar_ra, tar_dec);
+      return master->startMoveFixed (this, tar_ra, tar_dec, false);
     }
   else if (isCommand ("setto"))
     {
