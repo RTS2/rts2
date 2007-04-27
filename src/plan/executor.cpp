@@ -348,6 +348,12 @@ Rts2Executor::postEvent (Rts2Event * event)
 	}
       postEvent (new Rts2Event (EVENT_OBSERVE));
       break;
+    case EVENT_CORRECTING_OK:
+      if (waitState)
+	{
+	  postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
+	}
+      break;
     case EVENT_MOVE_FAILED:
       if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
 	{

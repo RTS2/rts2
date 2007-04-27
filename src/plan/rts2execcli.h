@@ -31,6 +31,8 @@
 
 #define EVENT_STOP_OBSERVATION  RTS2_LOCAL_EVENT+65
 
+#define EVENT_CORRECTING_OK	RTS2_LOCAL_EVENT+66
+
 class GuidingParams
 {
 public:

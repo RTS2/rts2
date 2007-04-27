@@ -105,6 +105,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
       break;
       // when we finish move, we can observe
     case EVENT_MOVE_OK:
+    case EVENT_CORRECTING_OK:
       break;
     case EVENT_LAST_READOUT:
     case EVENT_SCRIPT_ENDED:

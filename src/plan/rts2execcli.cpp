@@ -299,6 +299,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	}
       break;
     case EVENT_MOVE_OK:
+    case EVENT_CORRECTING_OK:
     case EVENT_MOVE_FAILED:
       break;
     case EVENT_MOVE_QUESTION:
@@ -404,7 +405,10 @@ Rts2DevClientTelescopeExec::moveEnd ()
 {
   if (currentTarget)
     currentTarget->moveEnded ();
-  getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
+  if (moveWasCorrecting)
+    getMaster ()->postEvent (new Rts2Event (EVENT_CORRECTING_OK));
+  else
+    getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
   blockMove = 0;
   Rts2DevClientTelescopeImage::moveEnd ();
 }
