@@ -59,7 +59,8 @@ private:
    * loadValues reset values_were_saved flag, load all values from savedValues
    */
   Rts2ValueVector savedValues;
-  bool values_were_saved;
+
+  void saveValue (Rts2CondValue * val);
 
 protected:
   int checkLockFile (const char *lock_fname);
@@ -74,7 +75,6 @@ protected:
 
   Rts2ValueQueVector queValues;
 
-  void saveValues ();
   void loadValues ();
 
   /**
@@ -132,7 +132,7 @@ protected:
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
   /**
-   * Perform value change.
+   * Really perform value change.
    */
   int setValue (Rts2Value * old_value, char op, Rts2Value * new_value);
 

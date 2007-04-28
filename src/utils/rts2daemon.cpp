@@ -27,8 +27,6 @@ Rts2Block (in_argc, in_argv)
 
   daemonize = DO_DAEMONIZE;
 
-  values_were_saved = false;
-
   createValue (info_time, "infotime",
 	       "time when this informations were correct", false);
 
@@ -336,19 +334,11 @@ Rts2Daemon::selectSuccess (fd_set * read_set)
 }
 
 void
-Rts2Daemon::saveValues ()
+Rts2Daemon::saveValue (Rts2CondValue * val)
 {
-  for (Rts2CondValueVector::iterator iter = values.begin ();
-       iter != values.end (); iter++)
-    {
-      Rts2CondValue *val = *iter;
-      if (val->saveValue ())
-	{
-	  Rts2Value *old_value = duplicateValue (val->getValue (), true);
-	  savedValues.push_back (old_value);
-	}
-    }
-  values_were_saved = true;
+  Rts2Value *old_value = duplicateValue (val->getValue (), true);
+  savedValues.push_back (old_value);
+  val->setValueSave ();
 }
 
 void
@@ -372,9 +362,9 @@ Rts2Daemon::loadValues ()
 	    "Rts2Daemon::loadValues cannot set value " << new_val->
 	    getName () << sendLog;
 	}
+      old_val->clearValueSave ();
     }
   savedValues.clear ();
-  values_were_saved = false;
 }
 
 void
@@ -532,6 +522,10 @@ Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op,
       return -1;
     }
 
+  // save values before first change
+  if (old_value_cond->needSaveValue ())
+    saveValue (old_value_cond);
+
   return setValue (old_value_cond->getValue (), op, new_value);
 }
 
@@ -544,11 +538,6 @@ Rts2Daemon::setValue (Rts2Value * old_value, char op, Rts2Value * new_value)
   if (ret)
     goto err;
 
-  // save values before first change
-  if (!values_were_saved)
-    {
-      saveValues ();
-    }
   // call hook
   ret = setValue (old_value, new_value);
   if (ret)

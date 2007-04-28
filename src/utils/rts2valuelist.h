@@ -29,13 +29,11 @@ public:
 /**
  * Holds state condition for value.
  */
-class
-  Rts2CondValue
+class Rts2CondValue
 {
 private:
-  Rts2Value *
-    value;
-  bool
+  Rts2Value * value;
+  int
     save;
   int
     stateCondition;
@@ -44,29 +42,45 @@ public:
 		 bool in_save_value)
   {
     value = in_value;
-    save = in_save_value;
+    save = in_save_value ? 0x01 : 0x00;
     stateCondition = in_stateCondition;
   }
-  ~
-  Rts2CondValue (void)
+  ~Rts2CondValue (void)
   {
-    delete
-      value;
+    delete value;
   }
   int
   getStateCondition ()
   {
     return stateCondition;
   }
-  bool
-  queValueChange (int state)
+  bool queValueChange (int state)
   {
     return (getStateCondition () & state);
   }
-  bool
-  saveValue ()
+  /**
+   * Returns true if value should be saved before it will be changed.
+   */
+  bool saveValue ()
   {
-    return save;
+    return save & 0x01;
+  }
+  /**
+   * Returns true if value needs to be saved.
+   */
+  bool needSaveValue ()
+  {
+    return save == 0x01;
+  }
+  void
+  setValueSave ()
+  {
+    save &= 0x02;
+  }
+  void
+  clearValueSave ()
+  {
+    save &= ~0x02;
   }
   Rts2Value *
   getValue ()
@@ -75,19 +89,15 @@ public:
   }
 };
 
-class
-  Rts2CondValueVector:
-  public
-  std::vector <
-Rts2CondValue * >
+class Rts2CondValueVector:
+public std::vector < Rts2CondValue * >
 {
 public:
   Rts2CondValueVector ()
   {
 
   }
-  ~
-  Rts2CondValueVector (void)
+  ~Rts2CondValueVector (void)
   {
     for (Rts2CondValueVector::iterator iter = begin (); iter != end ();
 	 iter++)
@@ -99,8 +109,7 @@ public:
 /**
  * Holds value changes which cannot be handled by device immediately.
  */
-class
-  Rts2ValueQue
+class Rts2ValueQue
 {
 private:
   char
@@ -117,8 +126,7 @@ public:
     operation = in_operation;
     new_value = in_new_value;
   }
-  ~
-  Rts2ValueQue (void)
+  ~Rts2ValueQue (void)
   {
   }
   int
@@ -126,8 +134,7 @@ public:
   {
     return old_value->getStateCondition ();
   }
-  bool
-  queValueChange (int state)
+  bool queValueChange (int state)
   {
     return (getStateCondition () & state);
   }
@@ -153,18 +160,14 @@ public:
   }
 };
 
-class
-  Rts2ValueQueVector:
-  public
-  std::vector <
-Rts2ValueQue * >
+class Rts2ValueQueVector:
+public std::vector < Rts2ValueQue * >
 {
 public:
   Rts2ValueQueVector ()
   {
   }
-  ~
-  Rts2ValueQueVector (void)
+  ~Rts2ValueQueVector (void)
   {
     for (Rts2ValueQueVector::iterator iter = begin (); iter != end (); iter++)
       delete *

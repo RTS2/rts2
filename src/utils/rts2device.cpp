@@ -647,6 +647,12 @@ Rts2Device::processOption (int in_opt)
 }
 
 void
+Rts2Device::cancelPriorityOperations ()
+{
+  scriptEnds ();
+}
+
+void
 Rts2Device::clearStatesPriority ()
 {
   maskState (0xffffff | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
@@ -830,7 +836,6 @@ int
 Rts2Device::killAll ()
 {
   cancelPriorityOperations ();
-  scriptEnds ();
   return 0;
 }
 

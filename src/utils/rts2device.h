@@ -145,6 +145,8 @@ protected:
   virtual Rts2Conn *createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
+  virtual void cancelPriorityOperations ();
+
   virtual bool queValueChange (Rts2CondValue * old_value)
   {
     return old_value->queValueChange (getState ());
