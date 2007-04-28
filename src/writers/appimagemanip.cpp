@@ -88,41 +88,40 @@ int
 Rts2AppImageManip::testImage (Rts2Image * image)
 {
   double ra, dec, x, y;
-  std::cout << image << std::endl;
-  std::cout << "Image XoA and Yoa: [" << image->getXoA () << ":" << image->
-    getYoA () << "]" << std::endl;
-  std::cout << "[XoA:YoA] RA: " << image->
-    getCenterRa () << " DEC: " << image->getCenterDec () << std::endl;
-  std::cout << "FLIP: " << image->getFlip () << std::endl;
-  image->getRaDec (image->getXoA (), image->getYoA (), ra, dec);
-  std::cout << "ROTANG: " << ln_rad_to_deg (image->
-					    getRotang ()) << " (deg) XPLATE: "
-    << image->getXPlate () << " YPLATE: " << image->getYPlate () << std::endl;
-  std::cout << "RA and DEC of [XoA:YoA]: " << ra << ", " << dec << std::endl;
-  image->getRaDec (0, 0, ra, dec);
-  std::cout << "RA and DEC of [0:0]: " << ra << ", " << dec << std::endl;
-  image->getRaDec (image->getWidth (), 0, ra, dec);
-  std::cout << "RA and DEC of [W:0]: " << ra << ", " << dec << std::endl;
-  image->getRaDec (0, image->getHeight (), ra, dec);
-  std::cout << "RA and DEC of [0:H]: " << ra << ", " << dec << std::endl;
-  image->getRaDec (image->getWidth (), image->getHeight (), ra, dec);
-  std::cout << "RA and DEC of [W:H]: " << ra << ", " << dec << std::endl;
-  std::cout << "Rts2Image::getCenterRow " << image->getCenter (x, y,
-							       3) << " " << x
-    << ":" << y << std::endl;
-
-  std::cout << "Expression %b/%t/%i/%c/%f '" << image->
-    expandPath (std::string ("%b/%t/%i/%c/%f")) << '\'' << std::endl;
-
-  std::
-    cout <<
+  std::cout
+    << image << std::endl
+    << "average " << image->getAverage () << std::endl
+    << "stdev " << image->getStdDev () << std::endl
+    << "bg_stdev " << image->getBgStdDev () << std::endl
+    << "Image XoA and Yoa: [" << image->getXoA ()
+    << ":" << image->getYoA () << "]" << std::endl
+    << "[XoA:YoA] RA: " << image->getCenterRa ()
+    << " DEC: " << image->getCenterDec () << std::endl
+    << "FLIP: " << image->getFlip () << std::endl
+    << image->getRaDec (image->getXoA (), image->getYoA (), ra, dec)
+    << "ROTANG: " << ln_rad_to_deg (image->getRotang ())
+    << " (deg) XPLATE: " << image->getXPlate ()
+    << " YPLATE: " << image->getYPlate () << std::endl
+    << "RA and DEC of [XoA:YoA]: " << ra << ", " << dec << std::endl
+    << image->getRaDec (0, 0, ra, dec)
+    << "RA and DEC of [0:0]: " << ra << ", " << dec << std::endl
+    << image->getRaDec (image->getWidth (), 0, ra, dec)
+    << "RA and DEC of [W:0]: " << ra << ", " << dec << std::endl
+    << image->getRaDec (0, image->getHeight (), ra, dec)
+    << "RA and DEC of [0:H]: " << ra << ", " << dec << std::endl
+    << image->getRaDec (image->getWidth (), image->getHeight (), ra, dec)
+    << "RA and DEC of [W:H]: " << ra << ", " << dec << std::endl
+    << "Rts2Image::getCenterRow " << image->getCenter (x, y, 3) << " " << x
+    << ":" << y << std::endl
+    << "Expression %b/%t/%i/%c/%f '" << image->
+    expandPath (std::string ("%b/%t/%i/%c/%f")) << '\'' << std::
+    endl <<
     "Expression $DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits '"
     << image->
     expandPath (std::
 		string
 		("$DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits"))
     << '\'' << std::endl;
-
 
   printOffset (image->getXoA () + 50, image->getYoA (), image);
   printOffset (image->getXoA (), image->getYoA () + 50, image);
@@ -217,8 +216,7 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
 int
 main (int argc, char **argv)
 {
-  Rts2AppImageManip
-    app = Rts2AppImageManip (argc, argv);
+  Rts2AppImageManip app = Rts2AppImageManip (argc, argv);
   int
     ret = app.init ();
   if (ret)
