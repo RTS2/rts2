@@ -110,6 +110,7 @@ protected:
   unsigned short low, med, hig, max, min;
   double average;
   double stdev;
+  double bg_stdev;
   int autoSave;
   int histogram[HISTOGRAM_LIMIT];
 

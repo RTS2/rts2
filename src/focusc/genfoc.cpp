@@ -16,6 +16,7 @@ Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient *
 
   average = 0;
   stdev = 0;
+  bg_stdev = 0;
 
   low = med = hig = 0;
 

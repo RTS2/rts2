@@ -401,7 +401,9 @@ Rts2xfocusCamera::printInfo ()
 		    20, stringBuf, len);
   free (stringBuf);
 
-  len = asprintf (&stringBuf, "Avg: %.2f Stdev: %2.f", average, stdev);
+  len =
+    asprintf (&stringBuf, "Avg: %.2f Stdev: %.2f Bg Stdev: %.2f", average,
+	      stdev, bg_stdev);
   XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 50,
 		    32, stringBuf, len);
   free (stringBuf);
@@ -710,6 +712,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 
   average /= dataSize;
   stdev = image->getStdDev ();
+  bg_stdev = image->getBgStdDev ();
 
   low = med = hig = 0;
   j = 0;
@@ -756,7 +759,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
     << " min:" << min
     << " max:" << max
     << " average:" << average << " " << image->getAverage ()
-    << " stdev " << stdev << std::endl;
+    << " stdev " << stdev << " bg stdev " << bg_stdev << std::endl;
 
   XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
 
