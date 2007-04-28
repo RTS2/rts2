@@ -718,7 +718,7 @@ Rts2Image::setValue (char *name, float value, char *comment)
       if (ret)
 	return ret;
     }
-  if (isnan (val))
+  if (isnan (val) || isinf (val))
     val = FLOATNULLVALUE;
   fits_update_key (ffile, TFLOAT, name, &val, comment, &fits_status);
   flags |= IMAGE_SAVE;
@@ -736,7 +736,7 @@ Rts2Image::setValue (char *name, double value, char *comment)
       if (ret)
 	return ret;
     }
-  if (isnan (val))
+  if (isnan (val) || isinf (val))
     val = DOUBLENULLVALUE;
   fits_update_key (ffile, TDOUBLE, name, &val, comment, &fits_status);
   flags |= IMAGE_SAVE;
