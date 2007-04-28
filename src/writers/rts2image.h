@@ -69,6 +69,7 @@ private:
   int getFailed;
   double average;
   double stdev;
+  double bg_stdev;
   short int min;
   short int max;
   short int mean;
@@ -378,6 +379,14 @@ public:
   double getStdDev ()
   {
     return stdev;
+  }
+
+  /**
+   * Return 
+   */
+  double getBgStdDev ()
+  {
+    return bg_stdev;
   }
 
   int getFocPos ()

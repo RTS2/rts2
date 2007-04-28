@@ -35,6 +35,7 @@ Rts2Image::initData ()
   filter = NULL;
   average = 0;
   stdev = 0;
+  bg_stdev = 0;
   min = max = mean = 0;
   histogram = NULL;
   imageData = NULL;
@@ -86,6 +87,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   getFailed = in_image->getFailed;
   average = in_image->average;
   stdev = in_image->stdev;
+  bg_stdev = in_image->bg_stdev;
   min = in_image->min;
   max = in_image->max;
   mean = in_image->mean;
@@ -261,6 +263,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("FILTER", filter, 5, true);
   getValue ("AVERAGE", average, true);
   getValue ("STDEV", stdev, false);
+  getValue ("BGSTDEV", bg_stdev, false);
   getValue ("RA_ERR", ra_err, false);
   getValue ("DEC_ERR", dec_err, false);
   getValue ("POS_ERR", img_err, false);
@@ -989,6 +992,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 
   average = 0;
   stdev = 0;
+  bg_stdev = 0;
 
   im_h = dataConn->getImageHeader ();
   // we have to copy data to FITS anyway, so let's do it right now..
@@ -1022,6 +1026,9 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       average += *pixel;
       pixel++;
     }
+
+  int bg_size = 0;
+
   if ((dataConn->getSize () / 2) > 0)
     {
       average /= dataConn->getSize () / 2;
@@ -1029,11 +1036,18 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       pixel = dataConn->getData ();
       while (pixel < top)
 	{
-	  double tmp_s = *pixel - average;
-	  stdev += tmp_s * tmp_s;
+	  long double tmp_s = *pixel - average;
+	  long double tmp_ss = tmp_s * tmp_s;
+	  if (fabs (tmp_s) < average / 10)
+	    {
+	      bg_stdev += tmp_ss;
+	      bg_size++;
+	    }
+	  stdev += tmp_ss;
 	  pixel++;
 	}
       stdev = sqrt (stdev / (dataConn->getSize () / 2));
+      bg_stdev = sqrt (bg_stdev / bg_size);
     }
   else
     {
@@ -1056,6 +1070,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     }
   setValue ("AVERAGE", average, "average value of image");
   setValue ("STDEV", stdev, "standart deviation value of image");
+  setValue ("BGSTDEV", stdev, "standart deviation value of background");
   return ret;
 }
 
