@@ -87,8 +87,7 @@ AC_SUBST(INC_SBIG)
 AC_ARG_WITH(andor,
 [  --with-andor            path to Andor CCD driver, build Andor CCD driver],
 ANDOR="${withval}";
-LIB_ANDOR="-L${ANDOR} -landor-shared-gcc3";
-INC_ANDOR="-I${ANDOR}",
+LIB_ANDOR="-landor",
 [ANDOR=no])
 
 AM_CONDITIONAL(ANDOR, test x$ANDOR != xno)

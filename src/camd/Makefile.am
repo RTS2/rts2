@@ -18,8 +18,7 @@ endif
 if ANDOR 
 bin_PROGRAMS += rts2-camd-andor
 rts2_camd_andor_SOURCES = camd.cpp andor.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
-rts2_camd_andor_LDFLAGS = @LIB_ANDOR@ @LIB_M@ @LIB_PTHREAD@ @LIB_FLI@
-rts2_camd_andor_CXXFLAGS = @INC_ANDOR@ @INC_FLI@
+rts2_camd_andor_LDFLAGS = @LIB_ANDOR@ @LIB_M@ @LIB_PTHREAD@
 endif
 
 rts2_camd_miniccd_SOURCES = camd.cpp miniccd.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
