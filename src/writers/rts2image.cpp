@@ -1702,7 +1702,7 @@ Rts2Image::writeClient (Rts2DevClient * client)
 	      setValue (name, val->getValue (), desc);
 	      break;
 	    case RTS2_VALUE_INTEGER:
-	      setValue (name, val->getValue (), desc);
+	      setValue (name, val->getValueInteger (), desc);
 	      break;
 	    case RTS2_VALUE_TIME:
 	      valT = val->getValueInteger ();
