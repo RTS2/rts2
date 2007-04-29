@@ -169,7 +169,15 @@ public:
   }
   void setTargetEnabled (bool new_en = true)
   {
-    tar_enabled = new_en;
+    if (tar_enabled != new_en)
+      {
+	logStream (MESSAGE_INFO) << "Target " << getTargetID () << (new_en ?
+								    " enabled"
+								    :
+								    " disabled")
+	  << sendLog;
+	tar_enabled = new_en;
+      }
   }
   virtual int setNextObservable (time_t * time_ch) = 0;
   virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL) = 0;
