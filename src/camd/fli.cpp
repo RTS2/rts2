@@ -355,7 +355,7 @@ Rts2DevCameraFli::init ()
   char *nam_sep;
   char **nam;			// current name
 
-  long serno = 0;
+  //long serno = 0;
 
   ret_c = Rts2DevCamera::init ();
   if (ret_c)
@@ -447,9 +447,9 @@ Rts2DevCameraFli::init ()
   chipNum = 1;
   chips[0] = new CameraFliChip (this, 0, dev);
 
-  FLIGetSerialNum (dev, &serno);
+  // FLIGetSerialNum (dev, &serno);
 
-  snprintf (serialNumber, 64, "%li", serno);
+  // snprintf (serialNumber, 64, "%li", serno);
 
   long hwrev;
   long fwrev;

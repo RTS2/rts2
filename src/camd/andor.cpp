@@ -26,7 +26,11 @@ using namespace std;
 
 #include "atmcdLXd.h"
 //We need at least version 2.7.  2.6 API doesn't have frame transfer
-#define ANDOR_ROOT "/root/andor2.7/examples/common"
+//#define ANDOR_ROOT "/root/andor2.7/examples/common"
+
+//That's root for andor2.77
+#define ANDOR_ROOT "/usr/local/etc/andor"
+
 
 #define IXON_DEFAULT_GAIN 255
 #define IXON_MAX_GAIN 255
@@ -70,13 +74,13 @@ private:
   unsigned short *dest;		/// Memory array for reading out
   unsigned short *dest_top;
   char *send_top;
-  float gain;
+  int gain;
   bool useFT;
   int andor_shutter_state;
 
 public:
     CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
-		     float in_gain, bool in_useFT);
+		     int in_gain, bool in_useFT);
     virtual ~ CameraAndorChip (void);
   virtual int init ();
   virtual int startExposure (int light, float exptime);
@@ -94,7 +98,7 @@ public:
 };
 
 CameraAndorChip::CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
-				  float in_gain, bool in_useFT):
+				  int in_gain, bool in_useFT):
 CameraChip (in_cam, in_chip_id)
 {
   gain = in_gain;
@@ -315,7 +319,8 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool CameraAndorChip::supportFrameTransfer ()
+bool
+CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -367,7 +372,7 @@ private:
   int shutter_with_ft;
   int mode;
 
-  Rts2ValueDouble *gain;
+  Rts2ValueInteger *gain;
 
   Rts2ValueInteger *Mode;
   Rts2ValueBool *useFT;
@@ -375,16 +380,18 @@ private:
   Rts2ValueBool *FTShutter;
 
   // informational values
+  Rts2ValueInteger *ADChannel;
+  Rts2ValueBool *EMOn;
   Rts2ValueInteger *HSpeed;
   Rts2ValueInteger *VSpeed;
   Rts2ValueFloat *HSpeedHZ;
   Rts2ValueFloat *VSpeedHZ;
   Rts2ValueInteger *bitDepth;
 
-  double defaultGain;
+  int defaultGain;
 
   void getTemp ();
-  int setGain (double in_gain);
+  int setGain (int in_gain);
   int setADChannel (int in_adchan);
   int setVSAmplitude (int in_vsamp);
   int setHSSpeed (int in_amp, int in_hsspeed);
@@ -434,12 +441,19 @@ Rts2DevCamera (in_argc, in_argv)
   createValue (Mode, "MODE", "Camera mode", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   Mode->setValueInteger (0);
+  createValue (ADChannel, "ADCHANEL",
+	       "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit",
+	       true, 0, CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+  ADChannel->setValueInteger (0);
   createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   VSAmp->setValueInteger (0);
   createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   VSpeed->setValueInteger (1);
+  createValue (EMOn, "EMON", "If EM is enabled", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+  EMOn->setValueBool (true);
   createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   HSpeed->setValueInteger (1);
@@ -452,7 +466,7 @@ Rts2DevCamera (in_argc, in_argv)
   useFT->setValueBool (true);
 
   defaultGain = 255;
-  gain->setValueDouble (255.0);
+  gain->setValueInteger (255);
 
   printSpeedInfo = false;
 
@@ -482,15 +496,15 @@ Rts2DevCameraAndor::help ()
 }
 
 int
-Rts2DevCameraAndor::setGain (double in_gain)
+Rts2DevCameraAndor::setGain (int in_gain)
 {
   int ret;
-  if ((ret = SetEMCCDGain ((int) in_gain)) != DRV_SUCCESS)
+  if ((ret = SetEMCCDGain (in_gain)) != DRV_SUCCESS)
     {
       logStream (MESSAGE_ERROR) << "andor setGain error " << ret << sendLog;
       return -1;
     }
-  gain->setValueDouble (in_gain);
+  gain->setValueInteger (in_gain);
   return 0;
 }
 
@@ -504,6 +518,7 @@ Rts2DevCameraAndor::setADChannel (int in_adchan)
 	sendLog;
       return -1;
     }
+  ADChannel->setValueInteger (in_adchan);
   return 0;
 }
 
@@ -532,6 +547,7 @@ Rts2DevCameraAndor::setHSSpeed (int in_amp, int in_hsspeed)
 	sendLog;
       return -1;
     }
+  EMOn->setValueBool (in_amp == 0 ? true : false);
   HSpeed->setValueInteger (in_hsspeed);
   return 0;
 
@@ -622,13 +638,19 @@ int
 Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   if (old_value == gain)
-    return setGain (new_value->getValueDouble ());
+    return setGain (new_value->getValueInteger ());
   if (old_value == Mode)
     return setMode (new_value->getValueInteger ()) == 0 ? 0 : -2;
+  if (old_value == ADChannel)
+    return setADChannel (new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == VSAmp)
     return setVSAmplitude (new_value->getValueInteger ()) == 0 ? 0 : -2;
+  if (old_value == EMOn)
+    return setHSSpeed (((Rts2ValueBool *) new_value)->getValueBool (),
+		       HSpeed->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == HSpeed)
-    return setHSSpeed (0, new_value->getValueInteger ()) == 0 ? 0 : -2;
+    return setHSSpeed (EMOn->getValueBool ()? 0 : 1,
+		       new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == VSpeed)
     return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == FTShutter)
@@ -651,13 +673,13 @@ Rts2DevCameraAndor::processOption (int in_opt)
   switch (in_opt)
     {
     case 'g':
-      defaultGain = atof (optarg);
+      defaultGain = atoi (optarg);
       if (defaultGain > IXON_MAX_GAIN || defaultGain < 0)
 	{
 	  printf ("gain must be in 0-255 range\n");
 	  exit (EXIT_FAILURE);
 	}
-      gain->setValueDouble (defaultGain);
+      gain->setValueInteger (defaultGain);
       break;
     case 'r':
       andorRoot = optarg;
