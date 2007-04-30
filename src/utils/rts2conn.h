@@ -14,7 +14,7 @@
 #include "rts2message.h"
 #include "rts2logstream.h"
 
-#define MAX_DATA		2000
+#define MAX_DATA		200
 
 typedef enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER, DEVICE_DEVICE };
@@ -42,7 +42,8 @@ class Rts2Value;
 class Rts2Conn:public Rts2Object
 {
 private:
-  char buf[MAX_DATA + 2];
+  char *buf;
+  size_t buf_size;
   char *buf_top;
   char *command_buf_top;
 

@@ -10,9 +10,13 @@
 #endif /* DEBUG_ALL */
 
 #include <errno.h>
+#include <syslog.h>
 
 Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {
+  buf = new char[MAX_DATA + 1];
+  buf_size = MAX_DATA;
+
   sock = -1;
   master = in_master;
   buf_top = buf;
@@ -38,6 +42,9 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):
 Rts2Object ()
 {
+  buf = new char[MAX_DATA + 1];
+  buf_size = MAX_DATA;
+
   sock = in_sock;
   master = in_master;
   buf_top = buf;
@@ -67,6 +74,7 @@ Rts2Conn::~Rts2Conn (void)
   delete serverState;
   delete otherDevice;
   queClear ();
+  delete[]buf;
 }
 
 int
@@ -566,7 +574,11 @@ Rts2Conn::processLine ()
     }
   else if (isCommand (PROTO_SET_VALUE))
     {
-      ret = master->setValue (this);
+      ret = master->setValue (this, false);
+    }
+  else if (isCommand (PROTO_SET_VALUE_DEF))
+    {
+      ret = master->setValue (this, true);
     }
   else if (isCommandReturn ())
     {
@@ -606,7 +618,19 @@ Rts2Conn::receive (fd_set * set)
 	{
 	  return acceptConn ();
 	}
-      data_size = read (sock, buf_top, MAX_DATA - (buf_top - buf));
+      data_size = read (sock, buf_top, buf_size - (buf_top - buf));
+      // increase buffer if it's too small
+      if (data_size == 0 && ((int) buf_size) == (buf_top - buf))
+	{
+	  char *new_buf = new char[buf_size + MAX_DATA + 1];
+	  memcpy (new_buf, buf, buf_size);
+	  buf_top = new_buf + (buf_top - buf);
+	  buf_size += MAX_DATA;
+	  delete[]buf;
+	  buf = new_buf;
+	  // read us again..
+	  return 0;
+	}
       // ingore EINTR error
       if (data_size == -1 && errno == EINTR)
 	return 0;
@@ -678,12 +702,12 @@ Rts2Conn::setAddress (struct in_addr *in_address)
 }
 
 void
-Rts2Conn::getAddress (char *addrBuf, int buf_size)
+Rts2Conn::getAddress (char *addrBuf, int in_buf_size)
 {
   char *addr_s;
   addr_s = inet_ntoa (addr);
-  strncpy (addrBuf, addr_s, buf_size);
-  addrBuf[buf_size - 1] = '0';
+  strncpy (addrBuf, addr_s, in_buf_size);
+  addrBuf[in_buf_size - 1] = '0';
 }
 
 int
@@ -967,6 +991,9 @@ Rts2Conn::send (const char *msg)
   ret = write (sock, msg, len);
   if (ret != len)
     {
+      syslog (LOG_ERR,
+	      "Cannot send msg: %s to sock %i with len %i, ret %i errno %i message %m",
+	      msg, sock, len, ret, errno);
 #ifdef DEBUG_EXTRA
       logStream (MESSAGE_ERROR) <<
 	"Rts2Conn::send [" << getCentraldId () << ":" << conn_state <<
