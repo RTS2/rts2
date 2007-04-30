@@ -121,10 +121,10 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	  if (ret != 1)
 	    {
 	      rain = 1;
-	      cancelIgnore ();
 	      badSetWeatherTimeout (FRAM_CONN_TIMEOUT);
 	      return data_size;
 	    }
+	  cancelIgnore ();
 	  badSetWeatherTimeout (wtimeout);
 	  logStream (MESSAGE_DEBUG) << "Weathertimeout " << wtimeout <<
 	    sendLog;
