@@ -186,14 +186,11 @@ private:
   int lastFilterNum;
   Rts2ValueFloat *lastExp;
 
-  int exposureFilter;
-
   int camStartExposure (int chip, int light, float exptime);
   // when we call that function, we must be sure that either filter or wheelDevice != NULL
   int camFilter (int new_filter);
   int camFilter (const char *new_filter);
 
-  double nextSubExposure;
   double defaultSubExposure;
   Rts2ValueDouble *subExposure;
 
@@ -322,7 +319,6 @@ public:
   int camCoolHold (Rts2Conn * conn);
   int camCoolTemp (Rts2Conn * conn, float new_temp);
   int camCoolShutdown (Rts2Conn * conn);
-  int camFilter (Rts2Conn * conn, int new_filter);
 
   virtual int getFilterNum ();
 
@@ -337,8 +333,6 @@ public:
   // autofocus
   int startFocus (Rts2Conn * conn);
   int endFocusing ();
-
-  int setSubExposure (Rts2Conn * conn, double in_subexposure);
 
   double getSubExposure (void)
   {

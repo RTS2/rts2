@@ -449,26 +449,6 @@ Rts2DevCamera::setSubExposure (double in_subexposure)
   return 0;
 }
 
-int
-Rts2DevCamera::setSubExposure (Rts2Conn * conn, double in_subexposure)
-{
-  int ret;
-  if (in_subexposure < 0)
-    in_subexposure = nan ("f");
-  if (!isIdle ())
-    {
-      nextSubExposure = in_subexposure;
-      return 0;
-    }
-  ret = setSubExposure (in_subexposure);
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot set subexposure");
-      return -1;
-    }
-  return ret;
-}
-
 Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
@@ -488,17 +468,16 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   serialNumber[0] = '\0';
 
   createValue (lastExp, "exposure", "current exposure time", false);
-  createValue (subExposure, "subexposure", "current subexposure", false);
-  createValue (camFilterVal, "filter", "used filter number", false);
+  createValue (subExposure, "subexposure", "current subexposure", false,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+  createValue (camFilterVal, "filter", "used filter number", false,
+	       CAM_EXPOSING, true);
 
   createValue (camFocVal, "focpos", "position of focuser", false, 0,
 	       CAM_EXPOSING, true);
 
   createValue (camShutterVal, "shutter", "shutter position", false);
 
-  exposureFilter = -1;
-
-  nextSubExposure = nan ("f");
   defaultSubExposure = nan ("f");
 
   nightCoolTemp = nan ("f");
@@ -584,7 +563,6 @@ Rts2DevCamera::cancelPriorityOperations ()
   // init states etc..
   clearStatesPriority ();
   setSubExposure (defaultSubExposure);
-  nextSubExposure = nan ("f");
   Rts2Device::cancelPriorityOperations ();
 }
 
@@ -704,12 +682,6 @@ Rts2DevCamera::checkExposures ()
 	    }
 	  else
 	    {
-	      // handle commands qued after exposure end
-	      if (exposureFilter >= 0)
-		{
-		  camFilter (exposureFilter);
-		  exposureFilter = -1;
-		}
 	      if (ret == -2)
 		{
 		  maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
@@ -763,11 +735,6 @@ Rts2DevCamera::checkReadouts ()
 void
 Rts2DevCamera::afterReadout ()
 {
-  if (!isnan (nextSubExposure))
-    {
-      setSubExposure (nextSubExposure);
-      nextSubExposure = nan ("f");
-    }
   if (nextExp->getValueInteger () == FT_EXP)
     {
       camStartExposure (nextExpChip, nextExpLight, nextExpTime);
@@ -781,7 +748,11 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   if (old_value == camFocVal)
     {
-      return setFocuser (new_value->getValueInteger ());
+      return setFocuser (new_value->getValueInteger ()) == 0 ? 0 : -2;
+    }
+  if (old_value == subExposure)
+    {
+      return setSubExposure (new_value->getValueDouble ()) == 0 ? 0 : -2;
     }
   return Rts2Device::setValue (old_value, new_value);
 }
@@ -1150,32 +1121,6 @@ Rts2DevCamera::maskStateChip (int chip_num, int state_mask, int new_state,
 }
 
 int
-Rts2DevCamera::camFilter (Rts2Conn * conn, int new_filter)
-{
-  int ret;
-  if (!filter && !wheelDevice)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera doesn't have filter wheel");
-      return -1;
-    }
-  for (int i = 0; i < chipNum; i++)
-    {
-      if (getStateChip (i) & CAM_EXPOSING)
-	{
-	  // que filter change after exposure ends..
-	  exposureFilter = new_filter;
-	  return 0;
-	}
-    }
-  ret = camFilter (new_filter);
-  if (ret == -1)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "camera set filter failed");
-    }
-  return ret;
-}
-
-int
 Rts2DevCamera::getFilterNum ()
 {
   if (wheelDevice)
@@ -1442,23 +1387,9 @@ Rts2DevConnCamera::commandAuthorized ()
 	return -2;
       return master->camCoolTemp (this, new_temp);
     }
-  else if (isCommand ("filter"))
-    {
-      int new_filter;
-      if (paramNextInteger (&new_filter) || !paramEnd ())
-	return -2;
-      return master->camFilter (this, new_filter);
-    }
   else if (isCommand ("focus"))
     {
       return master->startFocus (this);
-    }
-  else if (isCommand ("subexposure"))
-    {
-      double subexposure;
-      if (paramNextDouble (&subexposure) || !paramEnd ())
-	return -2;
-      return master->setSubExposure (this, subexposure);
     }
   return Rts2DevConn::commandAuthorized ();
 }
