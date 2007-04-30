@@ -103,7 +103,9 @@ public:
   }
   Rts2Value *valueAt (int index)
   {
-    return values[index];
+    if ((size_t) index < values.size ())
+      return values[index];
+    return NULL;
   }
   int valueSize ()
   {

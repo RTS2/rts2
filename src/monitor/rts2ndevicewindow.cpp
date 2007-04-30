@@ -111,6 +111,8 @@ Rts2NDeviceWindow::createValueBox ()
   if (s >= 0 && connection->getOtherDevClient ())
     {
       Rts2Value *val = connection->getOtherDevClient ()->valueAt (s);
+      if (!val)
+	return;
       switch (val->getValueType ())
 	{
 	case RTS2_VALUE_BOOL:
@@ -148,8 +150,10 @@ Rts2NDeviceWindow::draw ()
   drawValuesList ();
   printState ();
   int s = getSelRow ();
-  if (s >= 0 && connection->getOtherDevClient ())
-    printValueDesc (connection->getOtherDevClient ()->valueAt (s));
+  Rts2Value *val;
+  if (s >= 0 && connection->getOtherDevClient ()
+      && (val = connection->getOtherDevClient ()->valueAt (s)) != NULL)
+    printValueDesc (val);
   refresh ();
   if (valueBox)
     {
