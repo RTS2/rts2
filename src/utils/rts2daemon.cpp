@@ -342,6 +342,21 @@ Rts2Daemon::saveValue (Rts2CondValue * val)
 }
 
 void
+Rts2Daemon::deleteSaveValue (Rts2CondValue * val)
+{
+  for (Rts2ValueVector::iterator iter = savedValues.begin ();
+       iter != savedValues.end (); iter++)
+    {
+      Rts2Value *new_val = *iter;
+      if (new_val->isValue (val->getValue ()->getName ().c_str ()))
+	{
+	  savedValues.erase (iter);
+	  return;
+	}
+    }
+}
+
+void
 Rts2Daemon::loadValues ()
 {
   for (Rts2ValueVector::iterator iter = savedValues.begin ();
@@ -354,6 +369,12 @@ Rts2Daemon::loadValues ()
 	  logStream (MESSAGE_ERROR) <<
 	    "Rts2Daemon::loadValues cannot get value " << new_val->
 	    getName () << sendLog;
+	}
+      // we don't need to save this one
+      else if (old_val->ignoreLoad ())
+	{
+	  // just reset it..
+	  old_val->clearIgnoreSave ();
 	}
       // if there was error setting value
       else if (setValue (old_val, '=', new_val) == -2)
@@ -515,6 +536,7 @@ int
 Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op,
 		      Rts2Value * new_value)
 {
+
   // que change if that's necessary
   if (queValueChange (old_value_cond))
     {
@@ -522,17 +544,20 @@ Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op,
       return -1;
     }
 
-  // save values before first change
-  if (old_value_cond->needSaveValue ())
-    saveValue (old_value_cond);
-
-  return setValue (old_value_cond->getValue (), op, new_value);
+  return doSetValue (old_value_cond, op, new_value);
 }
 
 int
-Rts2Daemon::setValue (Rts2Value * old_value, char op, Rts2Value * new_value)
+Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
+			Rts2Value * new_value)
 {
   int ret;
+
+  Rts2Value *old_value = old_cond_value->getValue ();
+
+  // save values before first change
+  if (old_cond_value->needSaveValue ())
+    saveValue (old_cond_value);
 
   ret = new_value->doOpValue (op, old_value);
   if (ret)
@@ -546,6 +571,14 @@ Rts2Daemon::setValue (Rts2Value * old_value, char op, Rts2Value * new_value)
   // set value after sucessfull return..
   old_value->setFromValue (new_value);
   delete new_value;
+
+  // if in previous step we put ignore load, reset it now
+  if (old_cond_value->ignoreLoad ())
+    {
+      saveValue (old_cond_value);
+      old_cond_value->clearIgnoreSave ();
+    }
+
   return 0;
 err:
   delete new_value;
@@ -669,7 +702,7 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 }
 
 int
-Rts2Daemon::setValue (Rts2Conn * conn)
+Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
 {
   char *v_name;
   char *op;
@@ -692,6 +725,12 @@ Rts2Daemon::setValue (Rts2Conn * conn)
   ret = newValue->setValue (conn);
   if (ret)
     goto err;
+
+  if (overwriteSaved)
+    {
+      old_value_cond->setIgnoreSave ();
+      deleteSaveValue (old_value_cond);
+    }
 
   ret = setValue (old_value_cond, *op, newValue);
 

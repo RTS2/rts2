@@ -700,8 +700,8 @@ Rts2Device::setState (int new_state, char *description)
 	  std::string newValStr =
 	    std::string (queVal->getNewValue ()->getValue ());
 	  ret =
-	    setValue (queVal->getOldValue (), queVal->getOperation (),
-		      queVal->getNewValue ());
+	    doSetValue (queVal->getCondValue (), queVal->getOperation (),
+			queVal->getNewValue ());
 	  if (ret)
 	    logStream (MESSAGE_ERROR) << "cannot set qued value " << queVal->
 	      getOldValue ()->getName () << " with operation " << queVal->

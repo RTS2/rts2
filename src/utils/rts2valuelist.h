@@ -75,12 +75,27 @@ public:
   void
   setValueSave ()
   {
-    save &= 0x02;
+    save |= 0x02;
   }
   void
   clearValueSave ()
   {
     save &= ~0x02;
+  }
+  void
+  setIgnoreSave ()
+  {
+    save |= 0x04;
+  }
+  bool
+  ignoreLoad ()
+  {
+    return save & 0x04;
+  }
+  void
+  clearIgnoreSave ()
+  {
+    save &= ~0x04;
   }
   Rts2Value *
   getValue ()

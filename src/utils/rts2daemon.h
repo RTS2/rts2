@@ -61,6 +61,7 @@ private:
   Rts2ValueVector savedValues;
 
   void saveValue (Rts2CondValue * val);
+  void deleteSaveValue (Rts2CondValue * val);
 
 protected:
   int checkLockFile (const char *lock_fname);
@@ -134,7 +135,8 @@ protected:
   /**
    * Really perform value change.
    */
-  int setValue (Rts2Value * old_value, char op, Rts2Value * new_value);
+  int doSetValue (Rts2CondValue * old_cond_value, char op,
+		  Rts2Value * new_value);
 
   /**
    * Returns whenever value change with old_value needs to be qued or
@@ -173,7 +175,7 @@ public:
   int sendInfo (Rts2Conn * conn);
   int sendMetaInfo (Rts2Conn * conn);
 
-  virtual int setValue (Rts2Conn * conn);
+  virtual int setValue (Rts2Conn * conn, bool overwriteSaved);
 };
 
 #endif /* ! __RTS2_DAEMON__ */
