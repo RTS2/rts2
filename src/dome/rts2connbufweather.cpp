@@ -132,6 +132,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
       // if we found weatherTimeout - that's message beeing send to us to set timeout
       if (!ret_c)
 	{
+	  cancelIgnore ();
 	  badSetWeatherTimeout ((int) weatherTimeout);
 	}
 

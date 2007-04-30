@@ -34,6 +34,12 @@ Rts2ConnFramWeather::setWeatherTimeout (time_t wait_time)
 }
 
 void
+Rts2ConnFramWeather::cancelIgnore ()
+{
+  master->setIgnoreMeteo (false);
+}
+
+void
 Rts2ConnFramWeather::badSetWeatherTimeout (time_t wait_time)
 {
   master->setWeatherTimeout (wait_time);
@@ -115,6 +121,7 @@ Rts2ConnFramWeather::receive (fd_set * set)
 	  if (ret != 1)
 	    {
 	      rain = 1;
+	      cancelIgnore ();
 	      badSetWeatherTimeout (FRAM_CONN_TIMEOUT);
 	      return data_size;
 	    }
