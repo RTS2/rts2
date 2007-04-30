@@ -1065,7 +1065,7 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
   if (posErr->getValueDouble () > sepLimit->getValueDouble ())
     {
       logStream (MESSAGE_WARNING)
-	<< "big separation " << posErr << " " << sepLimit->
+	<< "big separation " << posErr->getValueDouble () << " " << sepLimit->
 	getValueDouble () << sendLog;
       conn->sendCommandEnd (DEVDEM_E_IGNORE,
 			    "separation greater then separation limit, ignoring");
@@ -1144,7 +1144,8 @@ Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
 	      // next correction with same mark will be ignored
 	    }
 	}
-      if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
+      if (fabs (locCorRa) < sepLimit->getValueDouble ()
+	  && fabs (locCorRa) < sepLimit->getValueDouble ())
 	{
 	  if (!knowPosition->getValueInteger ())
 	    {
