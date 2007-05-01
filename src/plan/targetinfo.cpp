@@ -129,6 +129,8 @@ Rts2TargetInfo::processOption (int in_opt)
 	    printGNU = 2;
 	  if (!strcmp (optarg, "png"))
 	    printGNU = 3;
+	  if (!strcmp (optarg, "eps"))
+	    printGNU = 4;
 	}
       break;
     case 'm':
@@ -367,6 +369,9 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	case 3:
 	  std::cout << "set terminal png";
 	  break;
+	case 4:
+	  std::cout << "set terminal postscript eps color solid";
+	  break;
 	default:
 	  std::cout << "set terminal x11 persist";
 	}
@@ -374,7 +379,8 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 
       if (addMoon)
 	{
-	  std::cout << "     \"-\" u 1:2 smooth csplines t \"Moon\"";
+	  std::
+	    cout << "     \"-\" u 1:2 smooth csplines lt 0 lw 3 t \"Moon\"";
 	}
 
       // find and print calibration targets..
@@ -398,7 +404,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	  if (iter != set.begin () || addMoon)
 	    std::cout << ", \\" << std::endl;
 	  std::cout
-	    << "     \"-\" u 1:2 smooth csplines t \""
+	    << "     \"-\" u 1:2 smooth csplines lw 2 t \""
 	    << target->getTargetName ()
 	    << " (" << target->getTargetID () << ")\"";
 	}
