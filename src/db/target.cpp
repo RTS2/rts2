@@ -208,11 +208,11 @@ Rts2TargetApp::run ()
   target_set = new Rts2TargetSet (tar_ids);
   if ((op & OP_MASK_EN) == OP_ENABLE)
     {
-      target_set->setTargetEnabled (true);
+      target_set->setTargetEnabled (true, true);
     }
   if ((op & OP_MASK_EN) == OP_DISABLE)
     {
-      target_set->setTargetEnabled (false);
+      target_set->setTargetEnabled (false, true);
     }
   if (op & OP_PRIORITY)
     {
