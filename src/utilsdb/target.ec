@@ -292,7 +292,7 @@ Target::Target ()
 
   config->getFloat ("newtarget", "priority", tar_priority);
   config->getBoolean ("newtarget", "enabled", n_tar_enabled);
-  setTargetEnabled (n_tar_enabled);
+  setTargetEnabled (n_tar_enabled, false);
 }
 
 Target::~Target (void)
@@ -378,7 +378,7 @@ Target::loadTarget (int in_tar_id)
   else
     tar_next_observable = 0;
 
-  setTargetEnabled (d_tar_enabled);
+  setTargetEnabled (d_tar_enabled, false);
   
   // load target users for events..
   targetUsers = new Rts2TarUser (getTargetID (), getTargetType ());
@@ -1046,7 +1046,7 @@ Target::selectedAsGood ()
     logMsgDb ("Target::selectedAsGood", MESSAGE_ERROR);
     return -1;
   }
-  setTargetEnabled (d_tar_enabled);
+  setTargetEnabled (d_tar_enabled, false);
   if (d_tar_priority_ind >= 0)
     tar_priority = d_tar_priority;
   else

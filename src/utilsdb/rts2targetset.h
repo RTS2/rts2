@@ -37,7 +37,7 @@ public:
   Rts2TargetSet (void);
 
   void
-  setTargetEnabled (bool enabled = true);
+  setTargetEnabled (bool enabled = true, bool logit = false);
   void
   setTargetPriority (float new_priority);
   void

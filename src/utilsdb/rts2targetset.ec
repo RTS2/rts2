@@ -147,11 +147,11 @@ Rts2TargetSet::~Rts2TargetSet (void)
 }
 
 void
-Rts2TargetSet::setTargetEnabled (bool enabled)
+Rts2TargetSet::setTargetEnabled (bool enabled, bool logit)
 {
   for (iterator iter = begin (); iter != end (); iter++)
   {
-    (*iter)->setTargetEnabled (enabled);
+    (*iter)->setTargetEnabled (enabled, logit);
   }
 }
 

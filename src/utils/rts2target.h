@@ -167,15 +167,16 @@ public:
   {
     return tar_enabled;
   }
-  void setTargetEnabled (bool new_en = true)
+  void setTargetEnabled (bool new_en = true, bool logit = false)
   {
     if (tar_enabled != new_en)
       {
-	logStream (MESSAGE_INFO) << "Target " << getTargetID () << (new_en ?
-								    " enabled"
-								    :
-								    " disabled")
-	  << sendLog;
+	if (logit)
+	  logStream (MESSAGE_INFO) << "Target " << getTargetID () << (new_en ?
+								      " enabled"
+								      :
+								      " disabled")
+	    << sendLog;
 	tar_enabled = new_en;
       }
   }
