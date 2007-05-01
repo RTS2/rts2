@@ -156,6 +156,7 @@ public:
   int copyImage (const char *copy_filename);
   int copyImageExpand (std::string copy_ex);
 
+  int setValue (char *name, bool value, char *comment);
   int setValue (char *name, int value, char *comment);
   int setValue (char *name, long value, char *comment);
   int setValue (char *name, float value, char *comment);
@@ -166,6 +167,8 @@ public:
   // that method is used to update DATE - creation date entry - for other file then ffile
   int setCreationDate (fitsfile * out_file = NULL);
 
+  int getValue (char *name, bool & value, bool required =
+		false, char *comment = NULL);
   int getValue (char *name, int &value, bool required = false, char *comment =
 		NULL);
   int getValue (char *name, long &value, bool required =

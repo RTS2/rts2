@@ -678,6 +678,21 @@ std::string Rts2Image::getFitsErrors ()
 }
 
 int
+Rts2Image::setValue (char *name, bool value, char *comment)
+{
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
+  fits_update_key (ffile, TLOGICAL, name, &value, comment, &fits_status);
+  flags |= IMAGE_SAVE;
+  return fitsStatusSetValue (name, true);
+}
+
+int
 Rts2Image::setValue (char *name, int value, char *comment)
 {
   int ret;
@@ -808,6 +823,21 @@ Rts2Image::setCreationDate (fitsfile * out_file)
       ffile = curr_ffile;
     }
   return ret;
+}
+
+int
+Rts2Image::getValue (char *name, bool & value, bool required, char *comment)
+{
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
+  fits_read_key (ffile, TLOGICAL, name, (void *) &value, comment,
+		 &fits_status);
+  return fitsStatusGetValue (name, required);
 }
 
 int
@@ -1713,6 +1743,14 @@ Rts2Image::writeClient (Rts2DevClient * client)
 	      break;
 	    case RTS2_VALUE_FLOAT:
 	      setValue (name, val->getValueFloat (), desc);
+	      break;
+	    case RTS2_VALUE_BOOL:
+	      setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
+	      break;
+	    default:
+	      logStream (MESSAGE_ERROR) <<
+		"Don't know how to write to FITS file header value '" << name
+		<< "' of type " << val->getValueType () << sendLog;
 	      break;
 	    }
 	  free (desc);
