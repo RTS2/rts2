@@ -393,12 +393,6 @@ Rts2DevTelescope::initValues ()
   return Rts2Device::initValues ();
 }
 
-Rts2DevConn *
-Rts2DevTelescope::createConnection (int in_sock)
-{
-  return new Rts2DevConnTelescope (in_sock, this);
-}
-
 void
 Rts2DevTelescope::checkMoves ()
 {
@@ -1331,134 +1325,123 @@ Rts2DevTelescope::grantPriority (Rts2Conn * conn)
   return Rts2Device::grantPriority (conn);
 }
 
-Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device):
-Rts2DevConn (in_sock, in_master_device)
-{
-  master = in_master_device;
-}
-
 int
-Rts2DevConnTelescope::commandAuthorized ()
+Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 {
   double tar_ra;
   double tar_dec;
 
-  if (isCommand ("exit"))
+  if (conn->isCommand ("help"))
     {
-      close (sock);
-      return -1;
-    }
-  else if (isCommand ("help"))
-    {
-      send ("ready - is telescope ready?");
-      send ("info - information about telescope");
-      send ("exit - exit from connection");
-      send ("help - print, what you are reading just now");
+      conn->send ("ready - is telescope ready?");
+      conn->send ("info - information about telescope");
+      conn->send ("exit - exit from connection");
+      conn->send ("help - print, what you are reading just now");
       return 0;
     }
-  else if (isCommand ("move"))
+  else if (conn->isCommand ("move"))
     {
       CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+	  || !conn->paramEnd ())
 	return -2;
-      master->modelOn ();
-      return master->startMove (this, tar_ra, tar_dec, false);
+      modelOn ();
+      return startMove (conn, tar_ra, tar_dec, false);
     }
-  else if (isCommand ("move_not_model"))
+  else if (conn->isCommand ("move_not_model"))
     {
       CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+	  || !conn->paramEnd ())
 	return -2;
-      master->modelOff ();
-      return master->startMove (this, tar_ra, tar_dec, false);
+      modelOff ();
+      return startMove (conn, tar_ra, tar_dec, false);
     }
-  else if (isCommand ("resync"))
+  else if (conn->isCommand ("resync"))
     {
       CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+	  || !conn->paramEnd ())
 	return -2;
-      return master->startResyncMove (this, tar_ra, tar_dec, true);
+      return startResyncMove (conn, tar_ra, tar_dec, true);
     }
-  else if (isCommand ("fixed"))
+  else if (conn->isCommand ("fixed"))
     {
       CHECK_PRIORITY;
       // tar_ra hold HA (Hour Angle)
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+	  || !conn->paramEnd ())
 	return -2;
-      master->modelOff ();
-      return master->startMoveFixed (this, tar_ra, tar_dec, false);
+      modelOff ();
+      return startMoveFixed (conn, tar_ra, tar_dec, false);
     }
-  else if (isCommand ("setto"))
+  else if (conn->isCommand ("setto"))
     {
       CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+	  || !conn->paramEnd ())
 	return -2;
-      master->modelOn ();
-      return master->setTo (this, tar_ra, tar_dec);
+      modelOn ();
+      return setTo (conn, tar_ra, tar_dec);
     }
-  else if (isCommand ("correct"))
+  else if (conn->isCommand ("correct"))
     {
       int cor_mark;
       struct ln_equ_posn realPos;
       double cor_ra;
       double cor_dec;
-      if (paramNextInteger (&cor_mark)
-	  || paramNextDouble (&cor_ra)
-	  || paramNextDouble (&cor_dec)
-	  || paramNextDouble (&realPos.ra)
-	  || paramNextDouble (&realPos.dec) || !paramEnd ())
+      if (conn->paramNextInteger (&cor_mark)
+	  || conn->paramNextDouble (&cor_ra)
+	  || conn->paramNextDouble (&cor_dec)
+	  || conn->paramNextDouble (&realPos.ra)
+	  || conn->paramNextDouble (&realPos.dec) || !conn->paramEnd ())
 	return -2;
-      return master->correct (this, cor_mark, cor_ra, cor_dec, &realPos);
+      return correct (conn, cor_mark, cor_ra, cor_dec, &realPos);
     }
-  else if (isCommand ("park"))
+  else if (conn->isCommand ("park"))
     {
       CHECK_PRIORITY;
-      if (!paramEnd ())
+      if (!conn->paramEnd ())
 	return -2;
-      master->modelOn ();
-      return master->startPark (this);
+      modelOn ();
+      return startPark (conn);
     }
-  else if (isCommand ("change"))
+  else if (conn->isCommand ("change"))
     {
       CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+	  || !conn->paramEnd ())
 	return -2;
-      return master->change (this, tar_ra, tar_dec);
+      return change (conn, tar_ra, tar_dec);
     }
-  else if (isCommand ("save_model"))
+  else if (conn->isCommand ("save_model"))
     {
-      return master->saveModel (this);
+      return saveModel (conn);
     }
-  else if (isCommand ("load_model"))
+  else if (conn->isCommand ("load_model"))
     {
-      return master->loadModel (this);
+      return loadModel (conn);
     }
-  else if (isCommand ("worm_stop"))
+  else if (conn->isCommand ("worm_stop"))
     {
-      return master->stopWorm (this);
+      return stopWorm (conn);
     }
-  else if (isCommand ("worm_start"))
+  else if (conn->isCommand ("worm_start"))
     {
-      return master->startWorm (this);
+      return startWorm (conn);
     }
-  else if (isCommand ("reset"))
+  else if (conn->isCommand ("reset"))
     {
       char *param;
       resetStates reset_state;
       CHECK_PRIORITY;
-      if (paramEnd ())
+      if (conn->paramEnd ())
 	{
 	  reset_state = RESET_RESTART;
 	}
       else
 	{
-	  if (paramNextString (&param) || !paramEnd ())
+	  if (conn->paramNextString (&param) || !conn->paramEnd ())
 	    return -2;
 	  // switch param cases
 	  if (!strcmp (param, "restart"))
@@ -1472,58 +1455,58 @@ Rts2DevConnTelescope::commandAuthorized ()
 	  else
 	    return -2;
 	}
-      return master->resetMount (this, reset_state);
+      return resetMount (conn, reset_state);
     }
-  else if (isCommand ("start_dir"))
+  else if (conn->isCommand ("start_dir"))
     {
       char *dir;
-      if (paramNextString (&dir) || !paramEnd ())
+      if (conn->paramNextString (&dir) || !conn->paramEnd ())
 	return -2;
-      return master->startDir (dir);
+      return startDir (dir);
     }
-  else if (isCommand ("stop_dir"))
+  else if (conn->isCommand ("stop_dir"))
     {
       char *dir;
-      if (paramNextString (&dir) || !paramEnd ())
+      if (conn->paramNextString (&dir) || !conn->paramEnd ())
 	return -2;
-      return master->stopDir (dir);
+      return stopDir (dir);
     }
-  else if (isCommand ("start_guide"))
+  else if (conn->isCommand ("start_guide"))
     {
       char *dir;
       double dir_timeout;
-      if (paramNextString (&dir)
-	  || paramNextDouble (&dir_timeout) || !paramEnd ())
+      if (conn->paramNextString (&dir)
+	  || conn->paramNextDouble (&dir_timeout) || !conn->paramEnd ())
 	return -2;
-      return master->startGuide (*dir, dir_timeout);
+      return startGuide (*dir, dir_timeout);
     }
-  else if (isCommand ("stop_guide"))
+  else if (conn->isCommand ("stop_guide"))
     {
       char *dir;
-      if (paramNextString (&dir) || !paramEnd ())
+      if (conn->paramNextString (&dir) || !conn->paramEnd ())
 	return -2;
-      return master->stopGuide (*dir);
+      return stopGuide (*dir);
     }
-  else if (isCommand ("stop_guide_all"))
+  else if (conn->isCommand ("stop_guide_all"))
     {
-      if (!paramEnd ())
+      if (!conn->paramEnd ())
 	return -2;
-      return master->stopGuideAll ();
+      return stopGuideAll ();
     }
-  else if (isCommand ("search"))
+  else if (conn->isCommand ("search"))
     {
       double in_radius;
       double in_searchSpeed;
-      if (paramNextDouble (&in_radius) || paramNextDouble (&in_searchSpeed)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&in_radius)
+	  || conn->paramNextDouble (&in_searchSpeed) || !conn->paramEnd ())
 	return -2;
-      return master->startSearch (this, in_radius, in_searchSpeed);
+      return startSearch (conn, in_radius, in_searchSpeed);
     }
-  else if (isCommand ("searchstop"))
+  else if (conn->isCommand ("searchstop"))
     {
-      if (!paramEnd ())
+      if (!conn->paramEnd ())
 	return -2;
-      return master->stopSearch ();
+      return stopSearch ();
     }
-  return Rts2DevConn::commandAuthorized ();
+  return Rts2Device::commandAuthorized (conn);
 }

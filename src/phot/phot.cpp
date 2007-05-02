@@ -21,77 +21,6 @@
 #include <syslog.h>
 #include <time.h>
 
-int
-Rts2DevConnPhot::commandAuthorized ()
-{
-  int ret;
-  if (isCommand ("home"))
-    {
-      return master->homeFilter ();
-    }
-  else if (isCommand ("integrate"))
-    {
-      float new_req_time;
-      int new_req_count;
-      if (paramNextFloat (&new_req_time) || paramNextInteger (&new_req_count)
-	  || !paramEnd ())
-	return -2;
-
-      return master->startIntegrate (this, new_req_time, new_req_count);
-    }
-
-  else if (isCommand ("intfil"))
-    {
-      int new_filter;
-      float new_req_time;
-      int new_req_count;
-      if (paramNextInteger (&new_filter) || paramNextFloat (&new_req_time)
-	  || paramNextInteger (&new_req_count) || !paramEnd ())
-	return -2;
-
-      ret = master->moveFilter (this, new_filter);
-      if (ret)
-	return ret;
-      return master->startIntegrate (this, new_req_time, new_req_count);
-    }
-
-  else if (isCommand ("stop"))
-    {
-      return master->stopIntegrate ();
-    }
-
-  else if (isCommand ("filter"))
-    {
-      int new_filter;
-      if (paramNextInteger (&new_filter) || !paramEnd ())
-	return -2;
-      return master->moveFilter (this, new_filter);
-    }
-  else if (isCommand ("enable"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->enableFilter (this);
-    }
-  else if (isCommand ("help"))
-    {
-      send ("info - phot informations");
-      send ("exit - exit from main loop");
-      send ("help - print, what you are reading just now");
-      send ("integrate <time> <count> - start integration");
-      send ("enable - enable filter movements");
-      send ("stop - stop any running integration");
-      return 0;
-    }
-  return Rts2DevConn::commandAuthorized ();
-}
-
-Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device):Rts2DevConn (in_sock,
-	     in_master_device)
-{
-  master = in_master_device;
-}
-
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
@@ -165,12 +94,6 @@ Rts2DevPhot::idle ()
   // check filter moving..
   checkFilterMove ();
   return Rts2Device::idle ();
-}
-
-Rts2DevConn *
-Rts2DevPhot::createConnection (int in_sock)
-{
-  return new Rts2DevConnPhot (in_sock, this);
 }
 
 int
@@ -338,4 +261,70 @@ Rts2DevPhot::sendCount (int count, float exp, int is_ov)
     endIntegrate ();
   free (msg);
   return ret;
+}
+
+int
+Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
+{
+  int ret;
+  if (conn->isCommand ("home"))
+    {
+      return homeFilter ();
+    }
+  else if (conn->isCommand ("integrate"))
+    {
+      float new_req_time;
+      int new_req_count;
+      if (conn->paramNextFloat (&new_req_time)
+	  || conn->paramNextInteger (&new_req_count) || !conn->paramEnd ())
+	return -2;
+
+      return startIntegrate (conn, new_req_time, new_req_count);
+    }
+
+  else if (conn->isCommand ("intfil"))
+    {
+      int new_filter;
+      float new_req_time;
+      int new_req_count;
+      if (conn->paramNextInteger (&new_filter)
+	  || conn->paramNextFloat (&new_req_time)
+	  || conn->paramNextInteger (&new_req_count) || !conn->paramEnd ())
+	return -2;
+
+      ret = moveFilter (conn, new_filter);
+      if (ret)
+	return ret;
+      return startIntegrate (conn, new_req_time, new_req_count);
+    }
+
+  else if (conn->isCommand ("stop"))
+    {
+      return stopIntegrate ();
+    }
+
+  else if (conn->isCommand ("filter"))
+    {
+      int new_filter;
+      if (conn->paramNextInteger (&new_filter) || !conn->paramEnd ())
+	return -2;
+      return moveFilter (conn, new_filter);
+    }
+  else if (conn->isCommand ("enable"))
+    {
+      if (!conn->paramEnd ())
+	return -2;
+      return enableFilter (conn);
+    }
+  else if (conn->isCommand ("help"))
+    {
+      conn->send ("info - phot informations");
+      conn->send ("exit - exit from main loop");
+      conn->send ("help - print, what you are reading just now");
+      conn->send ("integrate <time> <count> - start integration");
+      conn->send ("enable - enable filter movements");
+      conn->send ("stop - stop any running integration");
+      return 0;
+    }
+  return Rts2Device::commandAuthorized (conn);
 }

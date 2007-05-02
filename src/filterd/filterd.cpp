@@ -22,12 +22,6 @@ Rts2DevFilterd::initValues ()
   return Rts2Device::initValues ();
 }
 
-Rts2DevConn *
-Rts2DevFilterd::createConnection (int in_sock)
-{
-  return new Rts2DevConnFilter (in_sock, this);
-}
-
 int
 Rts2DevFilterd::info ()
 {
@@ -79,7 +73,7 @@ Rts2DevFilterd::setFilterNumMask (int new_filter)
 }
 
 int
-Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
+Rts2DevFilterd::setFilterNum (Rts2Conn * conn, int new_filter)
 {
   int ret;
   ret = setFilterNumMask (new_filter);
@@ -90,36 +84,29 @@ Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
   return ret;
 }
 
-Rts2DevConnFilter::Rts2DevConnFilter (int in_sock, Rts2DevFilterd * in_master_device):Rts2DevConn (in_sock,
-	     in_master_device)
-{
-  master = in_master_device;
-}
-
 int
-Rts2DevConnFilter::commandAuthorized ()
+Rts2DevFilterd::commandAuthorized (Rts2Conn * conn)
 {
-  if (isCommand ("filter"))
+  if (conn->isCommand ("filter"))
     {
       int new_filter;
-      if (paramNextInteger (&new_filter) || !paramEnd ())
+      if (conn->paramNextInteger (&new_filter) || !conn->paramEnd ())
 	return -2;
-      return master->setFilterNum (this, new_filter);
+      return setFilterNum (conn, new_filter);
     }
-  else if (isCommand ("home"))
+  else if (conn->isCommand ("home"))
     {
-      if (!paramEnd ())
+      if (!conn->paramEnd ())
 	return -2;
-      return master->homeFilter ();
+      return homeFilter ();
     }
-  else if (isCommand ("help"))
+  else if (conn->isCommand ("help"))
     {
-      send ("ready - is filter ready?");
-      send ("info - information about camera");
-      send ("filter <filter number> - set camera filter");
-      send ("exit - exit from connection");
-      send ("help - print, what you are reading just now");
+      conn->send ("ready - is filter ready?");
+      conn->send ("info - information about camera");
+      conn->send ("exit - exit from connection");
+      conn->send ("help - print, what you are reading just now");
       return 0;
     }
-  return Rts2DevConn::commandAuthorized ();
+  return Rts2Device::commandAuthorized (conn);
 }

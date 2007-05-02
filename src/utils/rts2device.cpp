@@ -19,54 +19,12 @@
 #define MAXDATAPORT		5656
 
 int
-Rts2DevConn::commandAuthorized ()
-{
-  if (isCommand ("ready"))
-    {
-      return master->ready (this);
-    }
-  else if (isCommand ("info"))
-    {
-      return master->info (this);
-    }
-  else if (isCommand ("base_info"))
-    {
-      return master->baseInfo (this);
-    }
-  else if (isCommand ("killall"))
-    {
-      CHECK_PRIORITY;
-      return master->killAll ();
-    }
-  else if (isCommand ("script_ends"))
-    {
-      CHECK_PRIORITY;
-      return master->scriptEnds ();
-    }
-  // pseudo-command; will not be answered with ok ect..
-  // as it can occur inside command block
-  else if (isCommand ("this_device"))
-    {
-      char *deviceName;
-      int deviceType;
-      if (paramNextString (&deviceName)
-	  || paramNextInteger (&deviceType) || !paramEnd ())
-	return -2;
-      setName (deviceName);
-      setOtherType (deviceType);
-      return -1;
-    }
-  // we need to try that - due to other device commands
-  return -5;
-}
-
-int
 Rts2DevConn::command ()
 {
   int ret;
   if ((getCentraldId () != -1 && isConnState (CONN_AUTH_OK)) || getType () == DEVICE_DEVICE)	// authorized and running
     {
-      ret = commandAuthorized ();
+      ret = master->commandAuthorized (this);
       if (ret == DEVDEM_E_HW)
 	{
 	  sendCommandEnd (DEVDEM_E_HW, "device error");
@@ -618,6 +576,54 @@ Rts2DevConn *
 Rts2Device::createConnection (int in_sock)
 {
   return new Rts2DevConn (in_sock, this);
+}
+
+int
+Rts2Device::commandAuthorized (Rts2Conn * conn)
+{
+  if (conn->isCommand ("ready"))
+    {
+      return ready (conn);
+    }
+  else if (conn->isCommand ("info"))
+    {
+      return info (conn);
+    }
+  else if (conn->isCommand ("base_info"))
+    {
+      return baseInfo (conn);
+    }
+  else if (conn->isCommand ("killall"))
+    {
+      CHECK_PRIORITY;
+      return killAll ();
+    }
+  else if (conn->isCommand ("exit"))
+    {
+      conn->setConnState (CONN_DELETE);
+      deleteConnection (conn);
+      return -1;
+    }
+  else if (conn->isCommand ("script_ends"))
+    {
+      CHECK_PRIORITY;
+      return scriptEnds ();
+    }
+  // pseudo-command; will not be answered with ok ect..
+  // as it can occur inside command block
+  else if (conn->isCommand ("this_device"))
+    {
+      char *deviceName;
+      int deviceType;
+      if (conn->paramNextString (&deviceName)
+	  || conn->paramNextInteger (&deviceType) || !conn->paramEnd ())
+	return -2;
+      conn->setName (deviceName);
+      conn->setOtherType (deviceType);
+      return -1;
+    }
+  // we need to try that - due to other device commands
+  return -5;
 }
 
 int

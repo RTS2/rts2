@@ -8,16 +8,6 @@
 
 class Rts2Executor;
 
-class Rts2ConnExecutor:public Rts2DevConn
-{
-private:
-  Rts2Executor * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2ConnExecutor (int in_sock, Rts2Executor * in_master);
-};
-
 class Rts2Executor:public Rts2DeviceDb
 {
 private:
@@ -63,7 +53,6 @@ public:
     Rts2Executor (int argc, char **argv);
     virtual ~ Rts2Executor (void);
   virtual int init ();
-  virtual Rts2DevConn *createConnection (int in_sock);
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
 
@@ -91,58 +80,9 @@ public:
   }
 
   int stop ();
+
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
-
-int
-Rts2ConnExecutor::commandAuthorized ()
-{
-  int tar_id;
-  if (isCommand ("grb"))
-    {
-      // change observation if we are to far from GRB position..
-      if (paramNextInteger (&tar_id) || !paramEnd ())
-	return -2;
-      return master->setGrb (tar_id);
-    }
-  else if (isCommand ("shower"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->setShower ();
-    }
-  else if (isCommand ("now"))
-    {
-      // change observation imediatelly - in case of burst etc..
-      if (paramNextInteger (&tar_id) || !paramEnd ())
-	return -2;
-      return master->setNow (tar_id);
-    }
-  else if (isCommand ("next"))
-    {
-      if (paramNextInteger (&tar_id) || !paramEnd ())
-	return -2;
-      return master->setNext (tar_id);
-    }
-  else if (isCommand ("end"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->end ();
-    }
-  else if (isCommand ("stop"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->stop ();
-    }
-  return Rts2DevConn::commandAuthorized ();
-}
-
-Rts2ConnExecutor::Rts2ConnExecutor (int in_sock, Rts2Executor * in_master):Rts2DevConn (in_sock,
-	     in_master)
-{
-  master = in_master;
-}
 
 Rts2Executor::Rts2Executor (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
@@ -229,12 +169,6 @@ Rts2Executor::init ()
   // set priority..
   getCentraldConn ()->queCommand (new Rts2Command (this, "priority 20"));
   return 0;
-}
-
-Rts2DevConn *
-Rts2Executor::createConnection (int in_sock)
-{
-  return new Rts2ConnExecutor (in_sock, this);
 }
 
 Rts2DevClient *
@@ -828,6 +762,53 @@ Rts2Executor::updateScriptCount ()
   scriptCount->setValueInteger (0);
   postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) scriptCount));
 }
+
+int
+Rts2Executor::commandAuthorized (Rts2Conn * conn)
+{
+  int tar_id;
+  if (conn->isCommand ("grb"))
+    {
+      // change observation if we are to far from GRB position..
+      if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+	return -2;
+      return setGrb (tar_id);
+    }
+  else if (conn->isCommand ("shower"))
+    {
+      if (!conn->paramEnd ())
+	return -2;
+      return setShower ();
+    }
+  else if (conn->isCommand ("now"))
+    {
+      // change observation imediatelly - in case of burst etc..
+      if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+	return -2;
+      return setNow (tar_id);
+    }
+  else if (conn->isCommand ("next"))
+    {
+      if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+	return -2;
+      return setNext (tar_id);
+    }
+  else if (conn->isCommand ("end"))
+    {
+      if (!conn->paramEnd ())
+	return -2;
+      return end ();
+    }
+  else if (conn->isCommand ("stop"))
+    {
+      if (!conn->paramEnd ())
+	return -2;
+      return stop ();
+    }
+  return Rts2DeviceDb::commandAuthorized (conn);
+}
+
+
 
 int
 main (int argc, char **argv)

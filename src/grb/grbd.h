@@ -36,7 +36,6 @@ public:
     Rts2DevGrb (int argc, char **argv);
     virtual ~ Rts2DevGrb ();
   virtual int init ();
-  virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual int ready ()
   {
@@ -46,6 +45,8 @@ public:
   virtual void postEvent (Rts2Event * event);
 
   int newGcnGrb (int tar_id);
+
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 #endif /* __RTS2_GRBD__ */

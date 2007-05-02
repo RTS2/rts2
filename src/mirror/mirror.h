@@ -11,8 +11,6 @@ public:
     virtual ~ Rts2DevMirror (void);
   virtual int idle ();
 
-  virtual Rts2DevConn *createConnection (int in_sock);
-
   virtual int startOpen ()
   {
     return maskState (MIRROR_MASK, MIRROR_A_B, "moving A->B");
@@ -53,22 +51,8 @@ public:
 
   int startOpen (Rts2Conn * conn);
   int startClose (Rts2Conn * conn);
-};
 
-class Rts2DevConnMirror:public Rts2DevConn
-{
-private:
-  Rts2DevMirror * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnMirror (int in_sock,
-		       Rts2DevMirror *
-		       in_master_device):Rts2DevConn (in_sock,
-						      in_master_device)
-  {
-    master = in_master_device;
-  }
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 #endif /* ! __RTS2_MIRROR__ */

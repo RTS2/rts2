@@ -53,12 +53,6 @@ Rts2DevFocuser::processOption (int in_opt)
   return 0;
 }
 
-Rts2DevConn *
-Rts2DevFocuser::createConnection (int in_sock)
-{
-  return new Rts2DevConnFocuser (in_sock, this);
-}
-
 void
 Rts2DevFocuser::checkState ()
 {
@@ -243,71 +237,60 @@ Rts2DevFocuser::checkStartPosition ()
   return 0;
 }
 
-Rts2DevConnFocuser::Rts2DevConnFocuser (int in_sock, Rts2DevFocuser * in_master_device):
-Rts2DevConn (in_sock, in_master_device)
-{
-  master = in_master_device;
-}
-
 int
-Rts2DevConnFocuser::commandAuthorized ()
+Rts2DevFocuser::commandAuthorized (Rts2Conn * conn)
 {
-  if (isCommand ("exit"))
+  if (conn->isCommand ("help"))
     {
-      close (sock);
-      return -1;
-    }
-  else if (isCommand ("help"))
-    {
-      send ("ready - is focuser ready?");
-      send ("info  - information about focuser");
-      send ("step  - move by given steps offset");
-      send ("set   - set to given position");
-      send ("focus - auto focusing");
-      send ("exit  - exit from connection");
-      send ("help  - print, what you are reading just now");
+      conn->send ("ready - is focuser ready?");
+      conn->send ("info  - information about focuser");
+      conn->send ("step  - move by given steps offset");
+      conn->send ("set   - set to given position");
+      conn->send ("focus - auto focusing");
+      conn->send ("exit  - exit from connection");
+      conn->send ("help  - print, what you are reading just now");
       return 0;
     }
-  else if (isCommand ("step"))
+  else if (conn->isCommand ("step"))
     {
       int num;
       // CHECK_PRIORITY;
 
-      if (paramNextInteger (&num) || !paramEnd ())
+      if (conn->paramNextInteger (&num) || !conn->paramEnd ())
 	return -2;
 
-      return master->stepOut (this, num);
+      return stepOut (conn, num);
     }
-  else if (isCommand ("set"))
+  else if (conn->isCommand ("set"))
     {
       int num;
       // CHECK_PRIORITY;
 
-      if (paramNextInteger (&num) || !paramEnd ())
+      if (conn->paramNextInteger (&num) || !conn->paramEnd ())
 	return -2;
 
-      return master->setTo (this, num);
+      return setTo (conn, num);
     }
-  else if (isCommand ("focus"))
+  else if (conn->isCommand ("focus"))
     {
       // CHECK_PRIORITY;
 
-      return master->autoFocus (this);
+      return autoFocus (conn);
     }
-  else if (isCommand ("home"))
+  else if (conn->isCommand ("home"))
     {
-      if (!paramEnd ())
+      if (!conn->paramEnd ())
 	return -2;
-      return master->home (this);
+      return home (conn);
     }
-  else if (isCommand ("switch"))
+  else if (conn->isCommand ("switch"))
     {
       int switch_num;
       int new_state;
-      if (paramNextInteger (&switch_num) || paramNextInteger (&new_state)
-	  || !paramEnd ())
+      if (conn->paramNextInteger (&switch_num)
+	  || conn->paramNextInteger (&new_state) || !conn->paramEnd ())
 	return -2;
-      return master->setSwitch (switch_num, new_state);
+      return setSwitch (switch_num, new_state);
     }
-  return Rts2DevConn::commandAuthorized ();
+  return Rts2Device::commandAuthorized (conn);
 }

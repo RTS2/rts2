@@ -200,7 +200,6 @@ public:
   virtual ~ Rts2DevTelescope (void);
   virtual int init ();
   virtual int initValues ();
-  virtual Rts2DevConn *createConnection (int in_sock);
   virtual int idle ();
   virtual void postEvent (Rts2Event * event);
   virtual int changeMasterState (int new_state);
@@ -342,16 +341,8 @@ public:
   {
     return (corrections->getValueInteger () & COR_MODEL);
   }
-};
 
-class Rts2DevConnTelescope:public Rts2DevConn
-{
-private:
-  Rts2DevTelescope * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device);
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 #endif /* !__RTS2_TELD_CPP__ */

@@ -14,40 +14,6 @@
 #include "../utils/rts2command.h"
 #include "grbd.h"
 
-class Rts2DevConnGrbd:public Rts2DevConn
-{
-private:
-  Rts2DevGrb * master;
-public:
-  Rts2DevConnGrbd (int in_sock, Rts2DevGrb * in_master);
-    virtual ~ Rts2DevConnGrbd (void);
-
-  virtual int commandAuthorized ();
-};
-
-Rts2DevConnGrbd::Rts2DevConnGrbd (int in_sock, Rts2DevGrb * in_master):
-Rts2DevConn (in_sock, in_master)
-{
-  master = in_master;
-}
-
-Rts2DevConnGrbd::~Rts2DevConnGrbd (void)
-{
-}
-
-int
-Rts2DevConnGrbd::commandAuthorized ()
-{
-  if (isCommand ("test"))
-    {
-      int tar_id;
-      if (paramNextInteger (&tar_id) || !paramEnd ())
-	return -2;
-      return master->newGcnGrb (tar_id);
-    }
-  return Rts2DevConn::commandAuthorized ();
-}
-
 Rts2DevGrb::Rts2DevGrb (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 {
@@ -216,12 +182,6 @@ Rts2DevGrb::init ()
   return ret;
 }
 
-Rts2DevConn *
-Rts2DevGrb::createConnection (int in_sock)
-{
-  return new Rts2DevConnGrbd (in_sock, this);
-}
-
 int
 Rts2DevGrb::info ()
 {
@@ -262,6 +222,19 @@ Rts2DevGrb::newGcnGrb (int tar_id)
       return -1;
     }
   return 0;
+}
+
+int
+Rts2DevGrb::commandAuthorized (Rts2Conn * conn)
+{
+  if (conn->isCommand ("test"))
+    {
+      int tar_id;
+      if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+	return -2;
+      return newGcnGrb (tar_id);
+    }
+  return Rts2DeviceDb::commandAuthorized (conn);
 }
 
 int

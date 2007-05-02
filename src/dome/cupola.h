@@ -53,7 +53,6 @@ public:
 
   virtual int processOption (int in_opt);
   virtual int init ();
-  virtual Rts2DevConn *createConnection (int in_sock);
   virtual int info ();
   virtual int idle ();
 
@@ -68,22 +67,8 @@ public:
   virtual int needSplitChange ();
   // calculate split width in arcdeg for given altititude; when copula don't have split at given altitude, returns -1
   virtual double getSplitWidth (double alt) = 0;
-};
 
-class Rts2DevConnCupola:public Rts2DevConnDome
-{
-private:
-  Rts2DevCupola * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnCupola (int in_sock,
-		       Rts2DevCupola *
-		       in_master_device):Rts2DevConnDome (in_sock,
-							  in_master_device)
-  {
-    master = in_master_device;
-  }
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 #endif /* !__RTS2_COPULA__ */

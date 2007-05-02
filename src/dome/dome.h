@@ -72,7 +72,6 @@ public:
   int checkOpening ();
   virtual int init ();
   virtual int initValues ();
-  virtual Rts2DevConn *createConnection (int in_sock);
   virtual int idle ();
 
   virtual int info ();
@@ -164,21 +163,8 @@ public:
   {
     return nextGoodWeather;
   }
-};
 
-class Rts2DevConnDome:public Rts2DevConn
-{
-private:
-  Rts2DevDome * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnDome (int in_sock,
-		     Rts2DevDome * in_master_device):Rts2DevConn (in_sock,
-								  in_master_device)
-  {
-    master = in_master_device;
-  };
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 #endif /* ! __RTS2_DOME__ */

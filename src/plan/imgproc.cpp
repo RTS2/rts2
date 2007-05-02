@@ -13,16 +13,6 @@
 
 class Rts2ImageProc;
 
-class Rts2DevConnImage:public Rts2DevConn
-{
-private:
-  Rts2ImageProc * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnImage (int in_sock, Rts2ImageProc * in_master);
-};
-
 class Rts2ImageProc:public Rts2DeviceDb
 {
 private:
@@ -47,7 +37,6 @@ protected:
 public:
     Rts2ImageProc (int argc, char **argv);
     virtual ~ Rts2ImageProc (void);
-  virtual Rts2DevConn *createConnection (int in_sock);
 
   virtual void postEvent (Rts2Event * event);
   virtual int idle ();
@@ -74,56 +63,12 @@ public:
 
   int checkNotProcessed ();
   void changeRunning (Rts2ConnProcess * newImage);
+
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
-Rts2DevConnImage::Rts2DevConnImage (int in_sock, Rts2ImageProc * in_master):
-Rts2DevConn (in_sock, in_master)
-{
-  master = in_master;
-}
-
-int
-Rts2DevConnImage::commandAuthorized ()
-{
-  if (isCommand ("que_image"))
-    {
-      char *in_imageName;
-      if (paramNextString (&in_imageName) || !paramEnd ())
-	return -2;
-      return master->queImage (this, in_imageName);
-    }
-  else if (isCommand ("do_image"))
-    {
-      char *in_imageName;
-      if (paramNextString (&in_imageName) || !paramEnd ())
-	return -2;
-      return master->doImage (this, in_imageName);
-    }
-  else if (isCommand ("que_obs"))
-    {
-      int obsId;
-      if (paramNextInteger (&obsId) || !paramEnd ())
-	return -2;
-      return master->queObs (this, obsId);
-    }
-  else if (isCommand ("que_darks"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->queDarks (this);
-    }
-  else if (isCommand ("que_flats"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->queFlats (this);
-    }
-
-  return Rts2DevConn::commandAuthorized ();
-}
-
-Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_IMGPROC,
-	      "IMGP")
+Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):
+Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_IMGPROC, "IMGP")
 {
   runningImage = NULL;
 
@@ -154,12 +99,6 @@ Rts2ImageProc::~Rts2ImageProc (void)
     delete runningImage;
   if (imageGlob.gl_pathc)
     globfree (&imageGlob);
-}
-
-Rts2DevConn *
-Rts2ImageProc::createConnection (int in_sock)
-{
-  return new Rts2DevConnImage (in_sock, this);
 }
 
 int
@@ -456,6 +395,46 @@ Rts2ImageProc::checkNotProcessed ()
   if (imageGlob.gl_pathc > 0)
     return queImage (NULL, imageGlob.gl_pathv[0]);
   return 0;
+}
+
+int
+Rts2ImageProc::commandAuthorized (Rts2Conn * conn)
+{
+  if (conn->isCommand ("que_image"))
+    {
+      char *in_imageName;
+      if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
+	return -2;
+      return queImage (conn, in_imageName);
+    }
+  else if (conn->isCommand ("do_image"))
+    {
+      char *in_imageName;
+      if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
+	return -2;
+      return doImage (conn, in_imageName);
+    }
+  else if (conn->isCommand ("que_obs"))
+    {
+      int obsId;
+      if (conn->paramNextInteger (&obsId) || !conn->paramEnd ())
+	return -2;
+      return queObs (conn, obsId);
+    }
+  else if (conn->isCommand ("que_darks"))
+    {
+      if (!conn->paramEnd ())
+	return -2;
+      return queDarks (conn);
+    }
+  else if (conn->isCommand ("que_flats"))
+    {
+      if (!conn->paramEnd ())
+	return -2;
+      return queFlats (conn);
+    }
+
+  return Rts2DeviceDb::commandAuthorized (conn);
 }
 
 int

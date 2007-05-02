@@ -11,8 +11,6 @@
  * @author petr
  */
 
-class Rts2DevConnFilter;
-
 class Rts2DevFilterd:public Rts2Device
 {
 private:
@@ -34,23 +32,13 @@ public:
 
   virtual int initValues ();
 
-  virtual Rts2DevConn *createConnection (int in_sock);
-
   virtual int info ();
 
-  int setFilterNum (Rts2DevConnFilter * conn, int new_filter);
+  int setFilterNum (Rts2Conn * conn, int new_filter);
 
   virtual int homeFilter ();
-};
 
-class Rts2DevConnFilter:public Rts2DevConn
-{
-private:
-  Rts2DevFilterd * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnFilter (int in_sock, Rts2DevFilterd * in_master_device);
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 #endif /* !__RTS2_FILTERD__ */

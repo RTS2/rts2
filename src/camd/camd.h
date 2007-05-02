@@ -202,6 +202,8 @@ private:
   void maskStateChip (int chip_num, int state_mask, int new_state,
 		      char *description);
 
+  int paramNextChip (Rts2Conn * conn, int *in_chip);
+
 protected:
     virtual int processOption (int in_opt);
 
@@ -243,7 +245,6 @@ public:
 
   virtual int initChips ();
   virtual int initValues ();
-  virtual Rts2DevConn *createConnection (int in_sock);
   void checkExposures ();
   void checkReadouts ();
 
@@ -356,17 +357,8 @@ public:
   {
     return lastFilterNum;
   }
-};
 
-class Rts2DevConnCamera:public Rts2DevConn
-{
-private:
-  Rts2DevCamera * master;
-  int paramNextChip (int *in_chip);
-protected:
-    virtual int commandAuthorized ();
-public:
-    Rts2DevConnCamera (int in_sock, Rts2DevCamera * in_master_device);
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 #endif /* !__RTS2_CAMERA_CPP__ */

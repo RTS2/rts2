@@ -81,8 +81,6 @@ protected:
 
   virtual int setState (int in_value);
 
-  void setOtherType (int other_device_type);
-
   Rts2DevClient *otherDevice;
   int otherType;
 
@@ -175,6 +173,7 @@ public:
   {
     port = in_port;
   }
+  void setOtherType (int other_device_type);
   void getAddress (char *addrBuf, int buf_size);
   int getLocalPort ()
   {

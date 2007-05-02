@@ -96,12 +96,6 @@ Rts2DevDome::initValues ()
   return Rts2Device::initValues ();
 }
 
-Rts2DevConn *
-Rts2DevDome::createConnection (int in_sock)
-{
-  return new Rts2DevConnDome (in_sock, this);
-}
-
 int
 Rts2DevDome::checkOpening ()
 {
@@ -297,27 +291,27 @@ Rts2DevDome::setWeatherTimeout (time_t wait_time)
 }
 
 int
-Rts2DevConnDome::commandAuthorized ()
+Rts2DevDome::commandAuthorized (Rts2Conn * conn)
 {
-  if (isCommand ("open"))
+  if (conn->isCommand ("open"))
     {
-      return master->openDome ();
+      return openDome ();
     }
-  else if (isCommand ("close"))
+  else if (conn->isCommand ("close"))
     {
-      return master->closeDome ();
+      return closeDome ();
     }
-  else if (isCommand ("ignore"))
+  else if (conn->isCommand ("ignore"))
     {
       char *ignore;
       bool newIgnore = false;
-      if (paramNextString (&ignore) || !paramEnd ())
+      if (conn->paramNextString (&ignore) || !conn->paramEnd ())
 	return -2;
       if (!strcasecmp (ignore, "on"))
 	{
 	  newIgnore = true;
 	}
-      return master->setIgnoreMeteo (newIgnore);
+      return setIgnoreMeteo (newIgnore);
     }
-  return Rts2DevConn::commandAuthorized ();
+  return Rts2Device::commandAuthorized (conn);
 }

@@ -55,12 +55,6 @@ Rts2DevCupola::init ()
   return 0;
 }
 
-Rts2DevConn *
-Rts2DevCupola::createConnection (int in_sock)
-{
-  return new Rts2DevConnCupola (in_sock, this);
-}
-
 int
 Rts2DevCupola::info ()
 {
@@ -189,16 +183,16 @@ Rts2DevCupola::needSplitChange ()
 }
 
 int
-Rts2DevConnCupola::commandAuthorized ()
+Rts2DevCupola::commandAuthorized (Rts2Conn * conn)
 {
-  if (isCommand ("move"))
+  if (conn->isCommand ("move"))
     {
       double tar_ra;
       double tar_dec;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
+      if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
+	  || !conn->paramEnd ())
 	return -2;
-      return master->moveTo (this, tar_ra, tar_dec);
+      return moveTo (conn, tar_ra, tar_dec);
     }
-  return Rts2DevConnDome::commandAuthorized ();
+  return Rts2DevDome::commandAuthorized (conn);
 }

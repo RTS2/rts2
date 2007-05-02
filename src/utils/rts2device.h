@@ -19,7 +19,7 @@
 
 #include "rts2daemon.h"
 
-#define CHECK_PRIORITY if (!havePriority ()) { sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
+#define CHECK_PRIORITY if (!conn->havePriority ()) { conn->sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
 
 class Rts2Device;
 
@@ -41,8 +41,7 @@ private:
 
   int doDeamonize ();
 protected:
-    virtual int commandAuthorized ();
-  virtual int command ();
+    virtual int command ();
 public:
     Rts2DevConn (int in_sock, Rts2Device * in_master);
 
@@ -156,6 +155,9 @@ public:
 		char *default_name);
   virtual ~ Rts2Device (void);
   virtual Rts2DevConn *createConnection (int in_sock);
+
+  virtual int commandAuthorized (Rts2Conn * conn);
+
   int changeState (int new_state, char *description);
   int maskState (int state_mask, int new_state, char *description = NULL);
   int getState ()

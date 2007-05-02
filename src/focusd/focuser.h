@@ -41,7 +41,6 @@ protected:
 public:
     Rts2DevFocuser (int argc, char **argv);
   virtual int processOption (int in_opt);
-  virtual Rts2DevConn *createConnection (int in_sock);
 
   // callback functions
   virtual int ready ()
@@ -77,15 +76,8 @@ public:
   {
     return focPos->getValueInteger ();
   }
+
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
-class Rts2DevConnFocuser:public Rts2DevConn
-{
-private:
-  Rts2DevFocuser * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnFocuser (int in_sock, Rts2DevFocuser * in_master_device);
-};
 #endif

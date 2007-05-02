@@ -36,8 +36,6 @@ public:
 
   virtual int idle ();
 
-  virtual Rts2DevConn *createConnection (int in_sock);
-
   virtual int deleteConnection (Rts2Conn * conn)
   {
     if (integrateConn == conn)
@@ -66,19 +64,7 @@ public:
 
   virtual int changeMasterState (int new_state);
 
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
-
-class Rts2DevConnPhot:public Rts2DevConn
-{
-private:
-  Rts2DevPhot * master;
-  int keepInformed;
-protected:
-    virtual int commandAuthorized ();
-public:
-    Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device);
-};
-
-
 
 #endif /* !__RTS2_PHOT__ */
