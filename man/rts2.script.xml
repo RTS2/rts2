@@ -147,6 +147,22 @@
 
       <varlistentry>
         <term>
+	  <option>fxf {ra_diff} {dec_diff} [block]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Change mount position in 5x5 rectangular pattern after finishing
+	    [block] and execute [block] again. This will produce images which
+	    are aligned on rectangular path.
+	  </para>
+	  <para>
+	    {ra_diff} and {dec_diff} are in arcdegrees.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
 	  <option>BIN {binning} </option>
 	</term>
 	<listitem>
