@@ -195,7 +195,7 @@ void
 Rts2CommandFilter::setCommandFilter (int filter)
 {
   char *command;
-  asprintf (&command, "filter %i", filter);
+  asprintf (&command, PROTO_SET_VALUE " filter = %i", filter);
   setCommand (command);
   free (command);
 }
