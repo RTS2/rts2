@@ -436,7 +436,8 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool CameraChip::supportFrameTransfer ()
+bool
+CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -1217,14 +1218,16 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
@@ -1284,10 +1287,7 @@ Rts2DevConnCamera::commandAuthorized ()
 	("binning <chip> <binning_id> - set new binning; actual from next readout on");
       send ("stopread <chip> - stop reading given chip");
       send ("cooltemp <temp> - cooling temperature");
-      send ("set <steps> - change focus to the given steps");
-      send ("step <steps> - change focus by given steps");
       send ("focus - try to autofocus picture");
-      send ("filter <filter number> - set camera filter");
       send ("exit - exit from connection");
       send ("help - print, what you are reading just now");
       return 0;
