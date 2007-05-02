@@ -48,13 +48,21 @@ Rts2DevFilterd::setFilterNum (int new_filter)
 }
 
 int
+Rts2DevFilterd::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == filter)
+    return setFilterNumMask (new_value->getValueInteger ()) == 0 ? 0 : -2;
+  return Rts2Device::setValue (old_value, new_value);
+}
+
+int
 Rts2DevFilterd::homeFilter ()
 {
   return -1;
 }
 
 int
-Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
+Rts2DevFilterd::setFilterNumMask (int new_filter)
 {
   int ret;
   maskState (FILTERD_MASK, FILTERD_MOVE, "filter move started");
@@ -64,9 +72,21 @@ Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
     {
       maskState (DEVICE_ERROR_MASK | FILTERD_MASK,
 		 DEVICE_ERROR_HW | FILTERD_IDLE);
-      conn->sendCommandEnd (DEVDEM_E_HW, "filter set failed");
+      return ret;
     }
   maskState (FILTERD_MASK, FILTERD_IDLE);
+  return ret;
+}
+
+int
+Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
+{
+  int ret;
+  ret = setFilterNumMask (new_filter);
+  if (ret == -1)
+    {
+      conn->sendCommandEnd (DEVDEM_E_HW, "filter set failed");
+    }
   return ret;
 }
 

@@ -15,6 +15,8 @@ class Rts2DevConnFilter;
 
 class Rts2DevFilterd:public Rts2Device
 {
+private:
+  int setFilterNumMask (int new_filter);
 protected:
   char *filterType;
   char *serialNumber;
@@ -23,6 +25,9 @@ protected:
 
   virtual int getFilterNum (void);
   virtual int setFilterNum (int new_filter);
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 public:
     Rts2DevFilterd (int in_argc, char **in_argv);
     virtual ~ Rts2DevFilterd (void);
