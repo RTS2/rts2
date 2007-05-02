@@ -134,7 +134,7 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
   // print lunar distances
   if (header)
   {
-    _os << "MD  ";
+    _os << "LD  ";
   }
   jd = jd_start;
   for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
@@ -1787,6 +1787,7 @@ Target::sendPositionInfo (std::ostream &_os, double JD)
     << InfoVal<LibnovaDeg180> ("SOLAR RA DIST.", LibnovaDeg180 (getSolarRaDistance (JD)))
     << InfoVal<LibnovaDeg360> ("LUNAR DIST.", LibnovaDeg360 (getLunarDistance (JD)))
     << InfoVal<LibnovaDeg180> ("LUNAR RA DIST.", LibnovaDeg180 (getLunarRaDistance (JD)))
+    << InfoVal<LibnovaDeg360> ("LUNAR PHASE", LibnovaDeg360 (ln_get_lunar_phase (JD)))
     << std::endl;
 }
 
