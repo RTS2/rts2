@@ -11,6 +11,7 @@
 Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
 {
   script = in_script;
+  startPos = script->getParsedStartPos ();
 }
 
 Rts2ScriptElement::~Rts2ScriptElement ()
@@ -51,6 +52,18 @@ Rts2ScriptElement::nextCommand (Rts2DevClientPhot * phot,
 				char new_device[DEVICE_NAME_SIZE])
 {
   return defnextCommand (phot, new_command, new_device);
+}
+
+int
+Rts2ScriptElement::getStartPos ()
+{
+  return startPos;
+}
+
+int
+Rts2ScriptElement::getLen ()
+{
+  return len;
 }
 
 Rts2ScriptElementExpose::Rts2ScriptElementExpose (Rts2Script * in_script, float in_expTime):

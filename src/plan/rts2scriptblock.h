@@ -58,6 +58,9 @@ public:
   virtual int waitForSignal (int in_sig);
   virtual void cancelCommands ();
   virtual void beforeExecuting ();
+
+  virtual int getStartPos ();
+  virtual int getLen ();
 };
 
 /**

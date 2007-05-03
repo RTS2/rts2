@@ -63,8 +63,11 @@ class Rts2Script;
  */
 class Rts2ScriptElement:public Rts2Object
 {
+private:
+  int startPos;
+  int len;
 protected:
-  Rts2Script * script;
+    Rts2Script * script;
   void getDevice (char new_device[DEVICE_NAME_SIZE]);
 public:
     Rts2ScriptElement (Rts2Script * in_script);
@@ -103,6 +106,12 @@ public:
   virtual void beforeExecuting ()
   {
   }
+  virtual int getStartPos ();
+  void setLen (int in_len)
+  {
+    len = in_len;
+  }
+  virtual int getLen ();
 };
 
 class Rts2ScriptElementExpose:public Rts2ScriptElement

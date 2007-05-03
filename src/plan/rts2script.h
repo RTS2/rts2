@@ -60,6 +60,8 @@ private:
   char *cmdBuf;
     std::string wholeScript;
   char *cmdBufTop;
+  char *commandStart;
+
   char defaultDevice[DEVICE_NAME_SIZE];
 
   Rts2ScriptElement *currScriptElement;
@@ -123,6 +125,10 @@ public:
   {
     return wholeScript;
   }
+  int getParsedStartPos ()
+  {
+    return commandStart - cmdBuf;
+  }
 };
 
 template < typename T > int
@@ -146,6 +152,19 @@ Rts2Script::nextCommand (T & device,
 	return NEXT_COMMAND_END_SCRIPT;
       currScriptElement = *el_iter;
       ret = currScriptElement->nextCommand (&device, new_command, new_device);
+      // send info about currently executed script element..
+      device.
+	queCommand (new
+		    Rts2CommandChangeValueDontReturn (&device,
+						      "scriptPosition", '=',
+						      currScriptElement->
+						      getStartPos ()));
+      device.
+	queCommand (new
+		    Rts2CommandChangeValueDontReturn (&device, "scriptLen",
+						      '=',
+						      currScriptElement->
+						      getLen ()));
       if (ret != NEXT_COMMAND_NEXT)
 	{
 	  break;

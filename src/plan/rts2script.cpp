@@ -94,11 +94,13 @@ Rts2Object ()
   strcpy (defaultDevice, cam_name);
   master = in_master;
   cmdBufTop = cmdBuf;
+  commandStart = cmdBuf;
   while (1)
     {
       element = parseBuf (target, &target_pos);
       if (!element)
 	break;
+      element->setLen (cmdBufTop - commandStart);
       elements.push_back (element);
     }
   executedCount = 0;
@@ -167,7 +169,6 @@ Rts2Script::postEvent (Rts2Event * event)
 Rts2ScriptElement *
 Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 {
-  char *commandStart;
   char *devSep;
   char new_device[DEVICE_NAME_SIZE];
   int ret;
@@ -356,6 +357,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	  // "}" will result in NULL, which we capture here
 	  if (!newElement)
 	    break;
+	  newElement->setLen (cmdBufTop - commandStart);
 	  blockEl->addElement (newElement);
 	}
       // block can end by script end as well..
@@ -382,6 +384,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	  // "}" will result in NULL, which we capture here
 	  if (!newElement)
 	    break;
+	  newElement->setLen (cmdBufTop - commandStart);
 	  acqIfEl->addElement (newElement);
 	}
       // test for if..
@@ -397,6 +400,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	      // "}" will result in NULL, which we capture here
 	      if (!newElement)
 		break;
+	      newElement->setLen (cmdBufTop - commandStart);
 	      acqIfEl->addElseElement (newElement);
 	    }
 	}
@@ -438,6 +442,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	  // "}" will result in NULL, which we capture here
 	  if (!newElement)
 	    break;
+	  newElement->setLen (cmdBufTop - commandStart);
 	  forEl->addElement (newElement);
 	}
       return forEl;
@@ -483,6 +488,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	  // "}" will result in NULL, which we capture here
 	  if (!newElement)
 	    break;
+	  newElement->setLen (cmdBufTop - commandStart);
 	  hexEl->addElement (newElement);
 	}
       // block can end by script end as well..
@@ -510,6 +516,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	  // "}" will result in NULL, which we capture here
 	  if (!newElement)
 	    break;
+	  newElement->setLen (cmdBufTop - commandStart);
 	  ffEl->addElement (newElement);
 	}
       // block can end by script end as well..
