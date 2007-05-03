@@ -74,15 +74,7 @@ Rts2Value (in_val_name, in_description, writeToFits, displayType)
 char *
 Rts2ValueString::getValue ()
 {
-  if (!value)
-    {
-      return NULL;
-    }
-  else
-    {
-      strcpy (buf, value);
-      return buf;
-    }
+  return value;
 }
 
 int
