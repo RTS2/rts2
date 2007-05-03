@@ -11,6 +11,8 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
   blockMove = 0;
   waitScript = NO_WAIT;
   dont_execute_for = -1;
+  scriptLoopCount = 0;
+  lastTargetObsID = -1;
   script_connection = in_script_connection;
 }
 
@@ -35,6 +37,14 @@ Rts2DevScript::startTarget ()
       currentTarget = nextTarget;
       nextScript = NULL;
       nextTarget = NULL;
+      if (lastTargetObsID == currentTarget->getObsTargetID ())
+	scriptLoopCount++;
+      else
+	scriptLoopCount = 0;
+    }
+  else
+    {
+      scriptLoopCount++;
     }
   setScript (new Rts2Script (script_connection->getMaster (),
 			     script_connection->getName (), currentTarget));
@@ -43,6 +53,9 @@ Rts2DevScript::startTarget ()
   queCommandFromScript (new
 			Rts2CommandScriptEnds (script_connection->
 					       getMaster ()));
+
+  scriptBegin ();
+
   delete nextComd;
   nextComd = NULL;
 
@@ -241,6 +254,41 @@ Rts2DevScript::postEvent (Rts2Event * event)
 }
 
 void
+Rts2DevScript::scriptBegin ()
+{
+  Rts2DevClient *cli = script_connection->getOtherDevClient ();
+  if (cli == NULL)
+    {
+      return;
+    }
+  if (script == NULL)
+    {
+      queCommandFromScript (new
+			    Rts2CommandChangeValue (cli,
+						    std::string ("SCRIPREP"),
+						    '=', 0));
+      queCommandFromScript (new
+			    Rts2CommandChangeValue (cli,
+						    std::string ("SCRIPT"),
+						    '=', std::string ("")));
+    }
+  else
+    {
+      queCommandFromScript (new
+			    Rts2CommandChangeValue (cli,
+						    std::string ("SCRIPREP"),
+						    '=', scriptLoopCount));
+      queCommandFromScript (new
+			    Rts2CommandChangeValue (cli,
+						    std::string ("SCRIPT"),
+						    '=',
+						    std::string (script->
+								 getScriptBuf
+								 ())));
+    }
+}
+
+void
 Rts2DevScript::deleteScript ()
 {
   Rts2Script *tmp_script;
@@ -265,15 +313,20 @@ Rts2DevScript::deleteScript ()
   nextComd = NULL;
   if (script)
     {
-      if (currentTarget && script->getExecutedCount () == 0)
+      if (currentTarget)
 	{
-	  dont_execute_for = currentTarget->getTargetID ();
-	  if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
+	  lastTargetObsID = currentTarget->getObsTargetID ();
+	  if (script->getExecutedCount () == 0)
 	    {
-	      tmp_script = nextScript;
-	      nextScript = NULL;
-	      delete tmp_script;
-	      nextTarget = NULL;
+	      dont_execute_for = currentTarget->getTargetID ();
+	      if (nextTarget
+		  && nextTarget->getTargetID () == dont_execute_for)
+		{
+		  tmp_script = nextScript;
+		  nextScript = NULL;
+		  delete tmp_script;
+		  nextTarget = NULL;
+		}
 	    }
 	}
       if (getFailedCount () > 0)

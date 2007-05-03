@@ -114,6 +114,10 @@ public:
   {
     return executedCount;
   }
+  const char *getScriptBuf ()
+  {
+    return cmdBuf;
+  }
 };
 
 template < typename T > int

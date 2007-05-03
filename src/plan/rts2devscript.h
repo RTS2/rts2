@@ -19,7 +19,11 @@ private:
   Rts2Script *nextScript;
   Rts2Target *nextTarget;
   int dont_execute_for;
+  int scriptLoopCount;
+  int lastTargetObsID;
   void setNextTarget (Rts2Target * in_target);
+
+  void scriptBegin ();
 protected:
     Rts2Target * currentTarget;
   Rts2Command *nextComd;
