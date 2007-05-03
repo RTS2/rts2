@@ -8,7 +8,7 @@ Rts2Device (in_argc, in_argv, in_device_type, default_name)
 	       true);
   scriptRepCount->setValueInteger (0);
   createValue (runningScript, "SCRIPT", "script used to take this images",
-	       false, 0, 0, true);
+	       true, 0, 0, true);
   runningScript->setValueString ("");
 }
 
