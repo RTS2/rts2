@@ -1747,8 +1747,6 @@ Rts2Image::writeClient (Rts2DevClient * client)
 		<< "' of type " << val->getValueType () << sendLog;
 	      break;
 	    }
-	  free (desc);
-	  free (name);
 	}
     }
 }
