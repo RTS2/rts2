@@ -254,17 +254,21 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 	  imagesQue.erase (img_iter);
 	  changeRunning (*img_iter);
 	}
-      else if (reprocessingPossible)
+      else
 	{
-	  if (globC < imageGlob.gl_pathc)
+	  maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_IDLE);
+	  if (reprocessingPossible)
 	    {
-	      queImage (NULL, imageGlob.gl_pathv[globC]);
-	      globC++;
-	    }
-	  else if (imageGlob.gl_pathc > 0)
-	    {
-	      globfree (&imageGlob);
-	      imageGlob.gl_pathc = 0;
+	      if (globC < imageGlob.gl_pathc)
+		{
+		  queImage (NULL, imageGlob.gl_pathv[globC]);
+		  globC++;
+		}
+	      else if (imageGlob.gl_pathc > 0)
+		{
+		  globfree (&imageGlob);
+		  imageGlob.gl_pathc = 0;
+		}
 	    }
 	}
     }
@@ -285,6 +289,7 @@ Rts2ImageProc::changeRunning (Rts2ConnProcess * newImage)
       else
 	{
 	  imagesQue.push_front (newImage);
+	  infoAll ();
 	  return;
 	}
     }
@@ -294,12 +299,16 @@ Rts2ImageProc::changeRunning (Rts2ConnProcess * newImage)
     {
       delete runningImage;
       runningImage = NULL;
+      maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN,
+		 DEVICE_ERROR_HW | IMGPROC_IDLE);
+      infoAll ();
       return;
     }
   else if (ret == 0)
     {
       addConnection (runningImage);
     }
+  maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_RUN);
   infoAll ();
 }
 
