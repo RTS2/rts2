@@ -189,6 +189,7 @@
 #define EXEC_ACQ_OK		0x20
 #define EXEC_ACQ_FAILED		0x40
 
+#define IMGPROC_MASK_RUN	0x01
 #define IMGPROC_IDLE		0x00
 #define IMGPROC_RUN		0x01
 
