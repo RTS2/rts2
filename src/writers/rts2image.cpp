@@ -212,7 +212,6 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
     }
 
   setValue ("CCD_NAME", camera->getName (), "camera name");
-  setValue ("CCD_TYPE", camera->getValueChar ("type"), "camera type");
 
   currTarget->writeToImage (this);
 }
