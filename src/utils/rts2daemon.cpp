@@ -536,7 +536,6 @@ int
 Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op,
 		      Rts2Value * new_value)
 {
-
   // que change if that's necessary
   if (queValueChange (old_value_cond))
     {
@@ -578,6 +577,8 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
       saveValue (old_cond_value);
       old_cond_value->clearIgnoreSave ();
     }
+
+  sendValueAll (old_value);
 
   return 0;
 err:
@@ -671,6 +672,17 @@ Rts2Daemon::sendInfo (Rts2Conn * conn)
 	return ret;
     }
   return 0;
+}
+
+void
+Rts2Daemon::sendValueAll (Rts2Value * value)
+{
+  connections_t::iterator iter;
+  for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+    {
+      Rts2Conn *conn = *iter;
+      value->sendInfo (conn);
+    }
 }
 
 int

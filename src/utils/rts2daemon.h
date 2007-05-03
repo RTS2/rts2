@@ -63,6 +63,11 @@ private:
   void saveValue (Rts2CondValue * val);
   void deleteSaveValue (Rts2CondValue * val);
 
+  /**
+   * Send new value over the wire to all connections.
+   */
+
+  void sendValueAll (Rts2Value * value);
 protected:
   int checkLockFile (const char *lock_fname);
   void setNotDeamonize ()
