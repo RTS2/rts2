@@ -1,12 +1,12 @@
 #ifndef __RTS2_PHOT__
 #define __RTS2_PHOT__
 
-#include "../utils/rts2device.h"
+#include "../utils/rts2scriptdevice.h"
 #include "status.h"
 
 #include <sys/time.h>
 
-class Rts2DevPhot:public Rts2Device
+class Rts2DevPhot:public Rts2ScriptDevice
 {
 private:
   int req_count;
@@ -40,7 +40,7 @@ public:
   {
     if (integrateConn == conn)
       integrateConn = NULL;
-    return Rts2Device::deleteConnection (conn);
+    return Rts2ScriptDevice::deleteConnection (conn);
   }
 
   virtual int homeFilter ();

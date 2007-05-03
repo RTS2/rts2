@@ -22,7 +22,7 @@
 #include <time.h>
 
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
+Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
   createValue (filter, "filter", "used filter", false);
 
@@ -56,7 +56,7 @@ Rts2DevPhot::initValues ()
   addConstValue ("type", photType);
   addConstValue ("serial", serial);
 
-  return Rts2Device::initValues ();
+  return Rts2ScriptDevice::initValues ();
 }
 
 int
@@ -93,7 +93,7 @@ Rts2DevPhot::idle ()
     }
   // check filter moving..
   checkFilterMove ();
-  return Rts2Device::idle ();
+  return Rts2ScriptDevice::idle ();
 }
 
 int
@@ -215,7 +215,7 @@ Rts2DevPhot::cancelPriorityOperations ()
 {
   stopIntegrate ();
   clearStatesPriority ();
-  Rts2Device::cancelPriorityOperations ();
+  Rts2ScriptDevice::cancelPriorityOperations ();
 }
 
 int
@@ -326,5 +326,5 @@ Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
       conn->send ("stop - stop any running integration");
       return 0;
     }
-  return Rts2Device::commandAuthorized (conn);
+  return Rts2ScriptDevice::commandAuthorized (conn);
 }
