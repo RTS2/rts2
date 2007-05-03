@@ -786,8 +786,8 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
       if (ret)
 	return ret;
     }
-  ret = fits_update_key (ffile, TSTRING, name, (void *) value, comment,
-			 &fits_status);
+  fits_update_key_longstr (ffile, name, (char *) value, comment,
+			   &fits_status);
   flags |= IMAGE_SAVE;
   return fitsStatusSetValue (name);
 }
@@ -928,6 +928,21 @@ Rts2Image::getValue (char *name, char *value, int valLen, bool required,
   fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
   strncpy (value, val, valLen);
   value[valLen - 1] = '\0';
+  return fitsStatusGetValue (name, required);
+}
+
+int
+Rts2Image::getValue (char *name, char **value, int valLen, bool required,
+		     char *comment)
+{
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
+  fits_read_key_longstr (ffile, name, value, comment, &fits_status);
   return fitsStatusGetValue (name, required);
 }
 

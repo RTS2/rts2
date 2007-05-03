@@ -181,6 +181,8 @@ public:
 		false, char *command = NULL);
   int getValue (char *name, char *value, int valLen, bool required =
 		false, char *comment = NULL);
+  int getValue (char *name, char **value, int valLen, bool required =
+		false, char *comment = NULL);
 
   int getValues (char *name, int *values, int num, bool required =
 		 false, int nstart = 1);
