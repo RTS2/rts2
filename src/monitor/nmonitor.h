@@ -27,6 +27,7 @@
 #define CLR_STATUS      7
 #define CLR_FITS	8
 #define CLR_MENU	9
+#define CLR_SCRIPT_CURRENT 10
 
 #define K_ENTER		13
 #define K_ESC		27

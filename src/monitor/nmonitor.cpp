@@ -286,6 +286,7 @@ Rts2NMonitor::init ()
       init_pair (CLR_STATUS, COLOR_RED, COLOR_CYAN);
       init_pair (CLR_FITS, COLOR_BLUE, -1);
       init_pair (CLR_MENU, COLOR_RED, COLOR_CYAN);
+      init_pair (CLR_SCRIPT_CURRENT, COLOR_RED, COLOR_CYAN);
     }
 
   // init windows
