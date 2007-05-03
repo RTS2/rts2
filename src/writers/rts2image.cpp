@@ -780,6 +780,9 @@ int
 Rts2Image::setValue (char *name, const char *value, char *comment)
 {
   int ret;
+  // we will not save null values
+  if (!value)
+    return 0;
   if (!ffile)
     {
       ret = openImage ();
