@@ -161,7 +161,24 @@ public:
 		     int height);
 };
 
-class Rts2CommandChangeValue:public Rts2Command
+/**
+ * Issue command to change value, but do not send return status.
+ */
+class Rts2CommandChangeValueDontReturn:public Rts2Command
+{
+public:
+  Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
+				    std::string in_valName, char op,
+				    int in_operand);
+    Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
+				      std::string in_valName, char op,
+				      std::string in_operand);
+};
+
+/**
+ * Issue command to change value, send return status and handle it.
+ */
+class Rts2CommandChangeValue:public Rts2CommandChangeValueDontReturn
 {
 private:
   Rts2DevClient * client;

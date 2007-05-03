@@ -274,31 +274,49 @@ Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int chip,
   free (command);
 }
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
-						std::string in_valName,
-						char op, int in_operand):
+Rts2CommandChangeValueDontReturn::
+Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
+				  std::string in_valName, char op,
+				  int in_operand):
 Rts2Command (in_client->getMaster ())
 {
   char *command;
-  client = in_client;
   asprintf (&command, PROTO_SET_VALUE " %s %c %i", in_valName.c_str (), op,
 	    in_operand);
   setCommand (command);
   free (command);
 }
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
-						std::string in_valName,
-						char op,
-						std::string in_operand):
+Rts2CommandChangeValueDontReturn::
+Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
+				  std::string in_valName, char op,
+				  std::string in_operand):
 Rts2Command (in_client->getMaster ())
 {
   char *command;
-  client = in_client;
   asprintf (&command, PROTO_SET_VALUE " %s %c \"%s\"", in_valName.c_str (),
 	    op, in_operand.c_str ());
   setCommand (command);
   free (command);
+}
+
+
+
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
+						std::string in_valName,
+						char op, int in_operand):
+Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
+{
+  client = in_client;
+}
+
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
+						std::string in_valName,
+						char op,
+						std::string in_operand):
+Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
+{
+  client = in_client;
 }
 
 int

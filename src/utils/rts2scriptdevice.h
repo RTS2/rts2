@@ -8,6 +8,8 @@ class Rts2ScriptDevice:public Rts2Device
 private:
   Rts2ValueInteger * scriptRepCount;
   Rts2ValueString *runningScript;
+  Rts2ValueInteger *scriptPosition;
+  Rts2ValueInteger *scriptLen;
 protected:
     virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:

@@ -23,6 +23,9 @@
 #define RTS2_DT_DEGREES		0x00030000
 #define RTS2_DT_DEG_DIST	0x00040000
 
+// script value, when we will display it, we might look for scriptPosition and scriptLen, which will show current script position
+#define RTS2_DT_SCRIPT		0x00100000
+
 class Rts2Conn;
 
 /***********************************
