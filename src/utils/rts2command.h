@@ -167,7 +167,9 @@ private:
   Rts2DevClient * client;
 public:
   Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
-			  char op, std::string in_operand);
+			  char op, int in_operand);
+    Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
+			    char op, std::string in_operand);
   virtual int commandReturnOK ();
   virtual int commandReturnFailed (int status);
 };
