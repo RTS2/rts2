@@ -60,6 +60,36 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 	wcolor_set (getWriteWindow (), CLR_FITS, NULL);
       else
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
+      // ultra special handling of SCRIPT value
+      if (val->getValueDisplayType () == RTS2_DT_SCRIPT)
+	{
+	  wprintw (getWriteWindow (), "%-20s ", val->getName ().c_str ());
+	  wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
+	  char *valStart = val->getValue ();
+	  char *valTop = valStart;
+	  int scriptPosition = client->getValueInteger ("scriptPosition");
+	  int scriptEnd =
+	    client->getValueInteger ("scriptLen") + scriptPosition;
+	  while (*valTop && (valTop - valStart < scriptPosition))
+	    {
+	      waddch (getWriteWindow (), *valTop);
+	      valTop++;
+	    }
+	  wcolor_set (getWriteWindow (), CLR_SCRIPT_CURRENT, NULL);
+	  while (*valTop && (valTop - valStart < scriptEnd))
+	    {
+	      waddch (getWriteWindow (), *valTop);
+	      valTop++;
+	    }
+	  wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
+	  while (*valTop)
+	    {
+	      waddch (getWriteWindow (), *valTop);
+	      valTop++;
+	    }
+	  waddch (getWriteWindow (), '\n');
+	  continue;
+	}
       switch (val->getValueType ())
 	{
 	case RTS2_VALUE_TIME:
