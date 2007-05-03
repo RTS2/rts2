@@ -1717,15 +1717,9 @@ Rts2Image::writeClient (Rts2DevClient * client)
       if (val->getWriteToFits ())
 	{
 	  time_t valT;
-	  std::string descStr = val->getDescription ();
-	  char *desc = (char *) malloc (descStr.length () + 1);
-	  strncpy (desc, descStr.c_str (), descStr.length ());
-	  desc[descStr.length ()] = '\0';
+	  char *desc = (char *) val->getDescription ().c_str ();
+	  char *name = (char *) val->getName ().c_str ();
 
-	  std::string nameStr = val->getName ();
-	  char *name = (char *) malloc (nameStr.length () + 1);
-	  strncpy (name, nameStr.c_str (), nameStr.length ());
-	  name[nameStr.length ()] = '\0';
 	  switch (val->getValueType ())
 	    {
 	    case RTS2_VALUE_STRING:
