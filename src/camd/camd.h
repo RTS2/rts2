@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "../utils/rts2block.h"
-#include "../utils/rts2device.h"
+#include "../utils/rts2scriptdevice.h"
 #include "imghdr.h"
 
 #include "filter.h"
@@ -174,7 +174,7 @@ public:
 #define FT_EXP		0x02
 #define FOCUSER_MOVE	0x04
 
-class Rts2DevCamera:public Rts2Device
+class Rts2DevCamera:public Rts2ScriptDevice
 {
 private:
   char *focuserDevice;

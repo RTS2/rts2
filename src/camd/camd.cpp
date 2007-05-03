@@ -436,8 +436,7 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool
-CameraChip::supportFrameTransfer ()
+bool CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -450,7 +449,7 @@ Rts2DevCamera::setSubExposure (double in_subexposure)
 }
 
 Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
+Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
   int i;
   for (i = 0; i < MAX_CHIPS; i++)
@@ -529,7 +528,7 @@ Rts2DevCamera::willConnect (Rts2Address * in_addr)
   if (focuserDevice && in_addr->getType () == DEVICE_TYPE_FOCUS
       && in_addr->isAddress (focuserDevice))
     return 1;
-  return Rts2Device::willConnect (in_addr);
+  return Rts2ScriptDevice::willConnect (in_addr);
 }
 
 Rts2DevClient *
@@ -542,7 +541,7 @@ Rts2DevCamera::createOtherType (Rts2Conn * conn, int other_device_type)
     case DEVICE_TYPE_FOCUS:
       return new Rts2DevClientFocusCamera (conn);
     }
-  return Rts2Device::createOtherType (conn, other_device_type);
+  return Rts2ScriptDevice::createOtherType (conn, other_device_type);
 }
 
 void
@@ -563,7 +562,7 @@ Rts2DevCamera::cancelPriorityOperations ()
   // init states etc..
   clearStatesPriority ();
   setSubExposure (defaultSubExposure);
-  Rts2Device::cancelPriorityOperations ();
+  Rts2ScriptDevice::cancelPriorityOperations ();
 }
 
 int
@@ -571,7 +570,7 @@ Rts2DevCamera::info ()
 {
   camFilterVal->setValueInteger (getFilterNum ());
   camFocVal->setValueInteger (getFocPos ());
-  return Rts2Device::info ();
+  return Rts2ScriptDevice::info ();
 }
 
 int
@@ -584,7 +583,7 @@ Rts2DevCamera::scriptEnds ()
       chips[i]->setBinning (defBinning, defBinning);
     }
   setTimeout (USEC_SEC);
-  return Rts2Device::scriptEnds ();
+  return Rts2ScriptDevice::scriptEnds ();
 }
 
 int
@@ -615,7 +614,7 @@ Rts2DevCamera::processOption (int in_opt)
       ccdRealType = optarg;
       break;
     default:
-      return Rts2Device::processOption (in_opt);
+      return Rts2ScriptDevice::processOption (in_opt);
     }
   return 0;
 }
@@ -657,7 +656,7 @@ Rts2DevCamera::initValues ()
   addConstValue ("CCD_TYPE", "camera type", ccdRealType);
   addConstValue ("CCD_SER", "camera serial number", serialNumber);
 
-  return Rts2Device::initValues ();
+  return Rts2ScriptDevice::initValues ();
 }
 
 void
@@ -752,7 +751,7 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
     {
       return camFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
     }
-  return Rts2Device::setValue (old_value, new_value);
+  return Rts2ScriptDevice::setValue (old_value, new_value);
 }
 
 void
@@ -783,7 +782,7 @@ Rts2DevCamera::postEvent (Rts2Event * event)
 	}
       break;
     }
-  Rts2Device::postEvent (event);
+  Rts2ScriptDevice::postEvent (event);
 }
 
 int
@@ -798,7 +797,7 @@ Rts2DevCamera::idle ()
       if (ret)
 	endFocusing ();
     }
-  return Rts2Device::idle ();
+  return Rts2ScriptDevice::idle ();
 }
 
 int
@@ -1093,7 +1092,7 @@ Rts2DevCamera::camFilter (int new_filter)
   else
     {
       ret = filter->setFilterNum (new_filter);
-      Rts2Device::infoAll ();
+      Rts2ScriptDevice::infoAll ();
     }
   return ret;
 }
@@ -1212,16 +1211,14 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
@@ -1377,5 +1374,5 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
     {
       return startFocus (conn);
     }
-  return Rts2Device::commandAuthorized (conn);
+  return Rts2ScriptDevice::commandAuthorized (conn);
 }
