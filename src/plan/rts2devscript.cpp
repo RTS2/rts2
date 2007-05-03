@@ -282,9 +282,8 @@ Rts2DevScript::scriptBegin ()
 			    Rts2CommandChangeValue (cli,
 						    std::string ("SCRIPT"),
 						    '=',
-						    std::string (script->
-								 getScriptBuf
-								 ())));
+						    script->
+						    getWholeScript ()));
     }
 }
 

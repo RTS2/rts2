@@ -8,11 +8,11 @@
 #include <ctype.h>
 
 // test if next element is one that is given
-bool Rts2Script::isNext (const char *element)
+bool
+Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t
-    el_len = strlen (element);
+  size_t el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -90,6 +90,7 @@ Rts2Object ()
   target->getPosition (&target_pos);
   cmdBuf = new char[strlen (scriptText) + 1];
   strcpy (cmdBuf, scriptText);
+  wholeScript = std::string (scriptText);
   strcpy (defaultDevice, cam_name);
   master = in_master;
   cmdBufTop = cmdBuf;

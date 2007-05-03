@@ -58,6 +58,7 @@ class Rts2Script:public Rts2Object
 {
 private:
   char *cmdBuf;
+    std::string wholeScript;
   char *cmdBufTop;
   char defaultDevice[DEVICE_NAME_SIZE];
 
@@ -117,6 +118,10 @@ public:
   const char *getScriptBuf ()
   {
     return cmdBuf;
+  }
+  const std::string getWholeScript ()
+  {
+    return wholeScript;
   }
 };
 
