@@ -1,5 +1,7 @@
 #include "rts2grbexecconn.h"
 
+#include <unistd.h>
+
 Rts2GrbExecConn::Rts2GrbExecConn (Rts2Block * in_master, char *execFile,
 				  int in_tar_id, int in_grb_id,
 				  int in_grb_seqn, int in_grb_type,

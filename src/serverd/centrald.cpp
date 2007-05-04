@@ -66,6 +66,8 @@ private:
   int morning_off;
   int morning_standby;
 
+  char *configFile;
+
   int reloadConfig ();
 
   int connNum;
@@ -561,6 +563,9 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
 
   current_state = SERVERD_OFF;
 
+  configFile = NULL;
+
+  addOption ('C', "config", 1, "configuration file");
   addOption ('p', "port", 1, "port on which centrald will listen");
 }
 
@@ -569,7 +574,7 @@ Rts2Centrald::reloadConfig ()
 {
   int ret;
   Rts2Config *config = Rts2Config::instance ();
-  ret = config->loadFile ();
+  ret = config->loadFile (configFile);
   if (ret)
     return ret;
 
@@ -583,13 +588,14 @@ Rts2Centrald::reloadConfig ()
   return 0;
 }
 
-
-
 int
 Rts2Centrald::processOption (int in_opt)
 {
   switch (in_opt)
     {
+    case 'C':
+      configFile = optarg;
+      break;
     case 'p':
       setPort (atoi (optarg));
       break;

@@ -8,6 +8,9 @@
 #include <errno.h>
 #include <libnova/libnova.h>
 
+#include <sys/types.h>
+#include <unitsd.h>
+
 static Rts2App *masterApp = NULL;
 
 Rts2App *

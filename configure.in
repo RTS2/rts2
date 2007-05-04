@@ -56,6 +56,16 @@ esac],[libnova=yes])
 
 AM_CONDITIONAL(LIBNOVA, test x$libnova != xno)
 
+AC_ARG_WITH(jpeg,
+[  --with-jpeg       path to JPEG lib or "no" if JPEG libs are not installed],
+[case "${withval}" in
+	yes) libjpeg=yes ;;
+	no)  libjpeg=no ;;
+	*) libjpeg=${withval} ;;
+esac],[libjpeg=yes])
+
+AM_CONDITIONAL(LIBJPEG, test x$libjpeg != xno)
+
 AC_ARG_WITH(pgsql,
 [  --without-pgsql         don't build pgsql dependent clients],
 [case "${withval}" in
@@ -229,7 +239,7 @@ AC_SUBST(INC_INDI)
   
 # Define lock file prefix
 AC_ARG_WITH(lock,
-[  --with-lock-prefix      specify lock file path prefix, default to /var/run/rts2_],
+[  --with-lock             specify lock file path prefix, default to /var/run/rts2_],
 LOCK_PREFIX="${withval}",
 LOCK_PREFIX="/var/run/rts2_")
 
@@ -286,8 +296,12 @@ EOF
   exit 1])
   if test "x${libnova}" != "xyes"; then
     LIB_NOVA="-L${libnova}/lib ${LIB_NOVA}"
+    NOVA_CFLAGS="-I${libnova}/include"
+  else
+    NOVA_CFLAGS=""
   fi
   AC_SUBST(LIB_NOVA)
+  AC_SUBST(NOVA_CFLAGS)
   AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
 fi  
 
@@ -303,12 +317,26 @@ if test "x"$xfocusc = "xyes"; then
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 fi
 
-AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg";
-AC_SUBST(LIB_JPEG), [cat << EOF
+
+if test "x${libjpeg}" != "xno"; then
+  if test "x${libjpeg}" != "xyes"; then
+    LDFLAGS="${LDFLAGS} -L${libjpeg}/lib"
+  fi
+  AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg",
+[cat << EOF
 **** You don't have jpeg library installed.
 **** Please try to get it somewhere.
 EOF
-exit 1])
+  exit 1])
+  if test "x${libjpeg}" != "xyes"; then
+    LIB_JPEG="-L${libjpeg}/lib ${LIB_JPEG}"
+    JPEG_CFLAGS="-I${libjpeg}/include"
+  else
+    JPEG_CFLAGS=""
+  fi
+  AC_SUBST(LIB_JPEG)
+  AC_SUBST(JPEG_CFLAGS)
+fi
 
 #AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 #AC_SUBST(LIB_COMEDI), [cat << EOF

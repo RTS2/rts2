@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <syslog.h>
+#include <unistd.h>
 
 Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {

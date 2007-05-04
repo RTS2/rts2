@@ -2,6 +2,8 @@
 
 noinst_PROGRAMS = test
 
+AM_CXXFLAGS=@NOVA_CFLAGS@
+
 test_SOURCES = test.cpp mkpath.c
 test_LDFLAGS = @LIB_NOVA@ librts2block.a
 
