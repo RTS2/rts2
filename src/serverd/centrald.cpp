@@ -557,14 +557,9 @@ Rts2ConnCentrald::command ()
 Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
 	    in_argv)
 {
-  reloadConfig ();
-  Rts2Config *
-    config = Rts2Config::instance ();
-
   connNum = 0;
 
-  current_state =
-    config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
+  current_state = SERVERD_OFF;
 
   addOption ('p', "port", 1, "port on which centrald will listen");
 }
@@ -612,6 +607,16 @@ Rts2Centrald::init ()
   ret = Rts2Daemon::init ();
   if (ret)
     return ret;
+
+  ret = reloadConfig ();
+  if (ret)
+    return ret;
+
+  Rts2Config *config = Rts2Config::instance ();
+
+  current_state =
+    config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
+
   centraldConnRunning ();
   ret = checkLockFile (LOCK_PREFIX "centrald");
   if (ret)
