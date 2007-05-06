@@ -10,8 +10,8 @@ Rts2NSelWindow (top->getX () + x, top->getY () + y, w, h)
 }
 
 Rts2NValueBoxBool::Rts2NValueBoxBool (Rts2NWindow * top,
-				      Rts2ValueBool * in_val, int y):
-Rts2NValueBox (top, 1, y, 10, 4, in_val)
+				      Rts2ValueBool * in_val, int x, int y):
+Rts2NValueBox (top, x, y, 10, 4, in_val)
 {
   maxrow = 2;
   setLineOffset (0);

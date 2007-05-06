@@ -32,7 +32,7 @@ public:
 class Rts2NValueBoxBool:public Rts2NValueBox
 {
 public:
-  Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int y);
+  Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int x, int y);
   virtual int injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
