@@ -471,11 +471,14 @@ Rts2NMonitor::processKey (int key)
 	  conn = connectionAt (deviceList->getSelRow ());
 	  cmd_top = command;
 	}
-      oldCommand = new Rts2Command (this, cmd_top);
-      conn->queCommand (oldCommand);
-      comWindow->clear ();
-      comWindow->printCommand (command);
-      wmove (comWindow->getWriteWindow (), 0, 0);
+      if (*cmd_top)
+	{
+	  oldCommand = new Rts2Command (this, cmd_top);
+	  conn->queCommand (oldCommand);
+	  comWindow->clear ();
+	  comWindow->printCommand (command);
+	  wmove (comWindow->getWriteWindow (), 0, 0);
+	}
     }
 }
 

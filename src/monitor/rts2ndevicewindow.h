@@ -12,6 +12,7 @@ private:
   void printState ();
   void drawValuesList ();
   void drawValuesList (Rts2DevClient * client);
+  Rts2Value *getSelValue ();
   void printValueDesc (Rts2Value * val);
   void endValueBox ();
   void createValueBox ();

@@ -118,6 +118,15 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
   mvwaddch (window, getHeight () - 1, 21, ACS_BTEE);
 }
 
+Rts2Value *
+Rts2NDeviceWindow::getSelValue ()
+{
+  int s = getSelRow ();
+  if (s >= 0 && connection->getOtherDevClient ())
+    return connection->getOtherDevClient ()->valueAt (s);
+  return NULL;
+}
+
 void
 Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
 {
@@ -158,6 +167,7 @@ Rts2NDeviceWindow::createValueBox ()
 int
 Rts2NDeviceWindow::injectKey (int key)
 {
+  int ret;
   switch (key)
     {
     case KEY_F (6):
@@ -165,9 +175,17 @@ Rts2NDeviceWindow::injectKey (int key)
 	endValueBox ();
       createValueBox ();
       break;
-    default:
-      if (valueBox)
-	return valueBox->injectKey (key);
+    }
+  if (valueBox)
+    {
+      ret = valueBox->injectKey (key);
+      if (ret == 0)
+	{
+	  if (getSelValue ())
+	    valueBox->sendValue (connection);
+	  endValueBox ();
+	}
+      return -1;
     }
   return Rts2NSelWindow::injectKey (key);
 }
@@ -179,15 +197,12 @@ Rts2NDeviceWindow::draw ()
   werase (getWriteWindow ());
   drawValuesList ();
   printState ();
-  int s = getSelRow ();
-  Rts2Value *val;
-  if (s >= 0 && connection->getOtherDevClient ()
-      && (val = connection->getOtherDevClient ()->valueAt (s)) != NULL)
+  Rts2Value *val = getSelValue ();
+  if (val != NULL)
     printValueDesc (val);
   refresh ();
   if (valueBox)
     {
       valueBox->draw ();
-//    valueBox->refresh ();
     }
 }
