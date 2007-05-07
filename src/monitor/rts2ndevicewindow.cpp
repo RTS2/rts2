@@ -173,10 +173,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_F (6):
@@ -212,7 +212,13 @@ Rts2NDeviceWindow::draw ()
     printValueDesc (val);
   refresh ();
   if (valueBox)
-    {
-      valueBox->draw ();
-    }
+    valueBox->draw ();
+}
+
+bool
+Rts2NDeviceWindow::setCursor ()
+{
+  if (valueBox)
+    return valueBox->setCursor ();
+  return Rts2NSelWindow::setCursor ();
 }

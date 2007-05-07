@@ -28,6 +28,8 @@ public:
   virtual keyRet injectKey (int key);
   virtual void refresh ();
 
+  virtual bool setCursor ();
+
   virtual WINDOW *getWriteWindow ()
   {
     return comwin;

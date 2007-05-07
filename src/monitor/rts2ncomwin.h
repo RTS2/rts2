@@ -21,7 +21,7 @@ public:
     Rts2NWindow::clear ();
   }
 
-  virtual void setCursor ();
+  virtual bool setCursor ();
 
   virtual WINDOW *getWriteWindow ()
   {

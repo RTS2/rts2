@@ -57,6 +57,11 @@ Rts2NValueBoxBool::sendValue (Rts2Conn * connection)
 					getSelRow () == 0));
 }
 
+bool Rts2NValueBoxBool::setCursor ()
+{
+  return false;
+}
+
 Rts2NValueBoxFloat::Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int x, int y):
 Rts2NValueBox (top, in_val),
 Rts2NWindowEditDigits (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
@@ -98,6 +103,11 @@ Rts2NValueBoxFloat::sendValue (Rts2Conn * connection)
 					getValue ()->getName (), '=', tval));
 }
 
+bool Rts2NValueBoxFloat::setCursor ()
+{
+  return Rts2NWindowEditDigits::setCursor ();
+}
+
 Rts2NValueBoxDouble::Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x, int y):
 Rts2NValueBox (top, in_val),
 Rts2NWindowEditDigits (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
@@ -137,4 +147,9 @@ Rts2NValueBoxDouble::sendValue (Rts2Conn * connection)
     queCommand (new
 		Rts2CommandChangeValue (connection->getOtherDevClient (),
 					getValue ()->getName (), '=', tval));
+}
+
+bool Rts2NValueBoxDouble::setCursor ()
+{
+  return Rts2NWindowEditDigits::setCursor ();
 }

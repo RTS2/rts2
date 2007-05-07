@@ -54,14 +54,16 @@ Rts2NComWin::refresh ()
     errorMove ("pnoutrefresh statuspad", y + 1, x, y + h - 1, x + w - 1);
 }
 
-void
-Rts2NComWin::setCursor ()
+bool Rts2NComWin::setCursor ()
 {
-  int x, y;
+  int
+    x,
+    y;
   getyx (comwin, y, x);
   x += getX ();
   y += getY ();
   setsyx (y, x);
+  return true;
 }
 
 void

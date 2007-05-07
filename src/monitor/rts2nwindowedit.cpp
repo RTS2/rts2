@@ -22,16 +22,16 @@ Rts2NWindowEdit::~Rts2NWindowEdit (void)
   delwin (comwin);
 }
 
-bool Rts2NWindowEdit::passKey (int key)
+bool
+Rts2NWindowEdit::passKey (int key)
 {
   return isalnum (key);
 }
 
-keyRet Rts2NWindowEdit::injectKey (int key)
+keyRet
+Rts2NWindowEdit::injectKey (int key)
 {
-  int
-    x,
-    y;
+  int x, y;
   if (isalnum (key))
     {
       if (passKey (key))
@@ -84,15 +84,25 @@ Rts2NWindowEdit::refresh ()
 	       MIN (y + ey + eh, y + h - 1), MIN (x + ex + ew, x + w - 2));
 }
 
-Rts2NWindowEditDigits::Rts2NWindowEditDigits (int x, int y, int w, int h,
-					      int in_ex, int in_ey, int in_ew,
-					      int in_eh, int border):
+bool
+Rts2NWindowEdit::setCursor ()
+{
+  int x, y;
+  getbegyx (getWriteWindow (), y, x);
+  x += getCurX ();
+  y += getCurY ();
+  setsyx (y, x);
+  return true;
+}
+
+Rts2NWindowEditDigits::Rts2NWindowEditDigits (int x, int y, int w, int h, int in_ex, int in_ey, int in_ew, int in_eh, int border):
 Rts2NWindowEdit (x, y, w, h, in_ex, in_ey, in_ew, in_eh, border)
 {
 }
 
 
-bool Rts2NWindowEditDigits::passKey (int key)
+bool
+Rts2NWindowEditDigits::passKey (int key)
 {
   if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
     return true;

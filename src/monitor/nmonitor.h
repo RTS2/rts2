@@ -93,6 +93,11 @@ private:
   int old_lines;
   int old_cols;
 
+  Rts2NWindow *getActiveWindow ()
+  {
+    return *(--windowStack.end ());
+  }
+
 protected:
     virtual int processOption (int in_opt);
 
@@ -101,8 +106,8 @@ protected:
 
   virtual int addAddress (Rts2Address * in_addr);
 public:
-    Rts2NMonitor (int argc, char **argv);
-    virtual ~ Rts2NMonitor (void);
+  Rts2NMonitor (int argc, char **argv);
+  virtual ~ Rts2NMonitor (void);
 
   virtual int init ();
   virtual int idle ();

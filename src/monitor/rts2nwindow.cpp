@@ -176,8 +176,7 @@ Rts2NWindow::leave ()
 {
 }
 
-void
-Rts2NWindow::setCursor ()
+bool Rts2NWindow::setCursor ()
 {
-  setsyx (getCurY (), getCurX ());
+  return false;
 }

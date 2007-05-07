@@ -73,8 +73,9 @@ public:
 
   /**
    * Set screen cursor to current window.
+   * Return true if the window claims cursor, otherwise return false.
    */
-  virtual void setCursor ();
+  virtual bool setCursor ();
 
   /**
    * Returns window which is used to write text

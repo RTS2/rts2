@@ -26,6 +26,7 @@ public:
   virtual keyRet injectKey (int key) = 0;
   virtual void draw () = 0;
   virtual void sendValue (Rts2Conn * connection) = 0;
+  virtual bool setCursor () = 0;
 };
 
 /**
@@ -38,6 +39,7 @@ public:
   virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
+  virtual bool setCursor ();
 };
 
 /**
@@ -52,6 +54,7 @@ public:
   virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
+  virtual bool setCursor ();
 };
 
 /**
@@ -66,6 +69,7 @@ public:
   virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
+  virtual bool setCursor ();
 };
 
 #endif /* !__RTS2_NVALUEBOX__ */

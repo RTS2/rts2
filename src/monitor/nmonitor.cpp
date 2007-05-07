@@ -222,7 +222,10 @@ Rts2NMonitor::repaint ()
   menu->draw ();
   if (msgBox)
     msgBox->draw ();
-  comWindow->setCursor ();
+
+  Rts2NWindow *activeWindow = getActiveWindow ();
+  if (!activeWindow->setCursor ())
+    comWindow->setCursor ();
   curs_set (1);
   doupdate ();
   return 0;
@@ -359,7 +362,7 @@ Rts2NMonitor::resize ()
 void
 Rts2NMonitor::processKey (int key)
 {
-  Rts2NWindow *activeWindow = *(--windowStack.end ());
+  Rts2NWindow *activeWindow = getActiveWindow ();
   keyRet ret = RKEY_HANDLED;
   switch (key)
     {
