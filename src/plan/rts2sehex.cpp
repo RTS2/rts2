@@ -68,6 +68,9 @@ Rts2SEHex::afterBlockEnd ()
 {
   Rts2ScriptElementBlock::afterBlockEnd ();
   path.rewindPath ();
+  bool en = true;
+  script->getMaster ()->
+    postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
 }
 
 Rts2SEHex::Rts2SEHex (Rts2Script * in_script, double in_ra_size,
@@ -95,6 +98,10 @@ Rts2SEHex::beforeExecuting ()
       changeEl = new Rts2ScriptElementChange (script, getRa (), getDec ());
       addElement (changeEl);
     }
+
+  bool en = false;
+  script->getMaster ()->
+    postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
 }
 
 void
