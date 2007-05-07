@@ -290,6 +290,19 @@ Rts2Command (in_client->getMaster ())
 Rts2CommandChangeValueDontReturn::
 Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
 				  std::string in_valName, char op,
+				  float in_operand):
+Rts2Command (in_client->getMaster ())
+{
+  char *command;
+  asprintf (&command, PROTO_SET_VALUE " %s %c %f", in_valName.c_str (), op,
+	    in_operand);
+  setCommand (command);
+  free (command);
+}
+
+Rts2CommandChangeValueDontReturn::
+Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
+				  std::string in_valName, char op,
 				  double in_operand):
 Rts2Command (in_client->getMaster ())
 {

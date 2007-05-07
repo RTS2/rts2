@@ -172,6 +172,9 @@ public:
 				    int in_operand);
     Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
 				      std::string in_valName, char op,
+				      float in_operand);
+    Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
+				      std::string in_valName, char op,
 				      double in_operand);
     Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
 				      std::string in_valName, char op,
@@ -191,6 +194,8 @@ private:
 public:
   Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
 			  char op, int in_operand);
+    Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
+			    char op, float in_operand);
     Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
 			    char op, double in_operand);
     Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
