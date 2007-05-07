@@ -21,7 +21,7 @@ public:
     Rts2NSelWindow (int x, int y, int w, int h, int border = 1, int sw =
 		    300, int sh = 100);
     virtual ~ Rts2NSelWindow (void);
-  virtual int injectKey (int key);
+  virtual keyRet injectKey (int key);
   virtual void refresh ();
   int getSelRow ()
   {

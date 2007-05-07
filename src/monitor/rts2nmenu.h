@@ -73,7 +73,7 @@ private:
 public:
     Rts2NMenu ();
     virtual ~ Rts2NMenu (void);
-  virtual int injectKey (int key);
+  virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void enter ();
   virtual void leave ();

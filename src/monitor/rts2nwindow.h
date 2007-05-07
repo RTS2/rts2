@@ -5,6 +5,9 @@
 
 #include "rts2nlayout.h"
 
+typedef enum
+{ RKEY_ENTER, RKEY_HANDLED, RKEY_NOT_HANDLED } keyRet;
+
 /**
  * Basic class for NCurser windows.
  */
@@ -18,7 +21,13 @@ protected:
 public:
     Rts2NWindow (int x, int y, int w, int h, int border = 1);
     virtual ~ Rts2NWindow (void);
-  virtual int injectKey (int key) = 0;
+  /**
+   * Handles key pressed event. Return values has following meaning:
+   * RKEY_ENTER - enter key was pressed and was not handled by the window
+   * RKEY_HANDLED - key was handled by the window, futher processing should not happen
+   * RKEY_NOT_HANDLED - key was not handled, futher processing/default fall-back call is necessary
+   */
+  virtual keyRet injectKey (int key);
   virtual void draw ();
 
   int getX ();

@@ -1,8 +1,8 @@
 #include "rts2nmsgbox.h"
 #include "nmonitor.h"
 
-Rts2NMsgBox::Rts2NMsgBox (const char *in_query,
-			  const char *in_buttons[], int in_butnum):
+Rts2NMsgBox::Rts2NMsgBox (const char *in_query, const char *in_buttons[],
+			  int in_butnum):
 Rts2NWindow (COLS / 2 - 25, LINES / 2 - 15, 50, 5)
 {
   query = in_query;
@@ -15,7 +15,7 @@ Rts2NMsgBox::~Rts2NMsgBox (void)
 {
 }
 
-int
+keyRet
 Rts2NMsgBox::injectKey (int key)
 {
   switch (key)
@@ -29,16 +29,18 @@ Rts2NMsgBox::injectKey (int key)
     case KEY_EXIT:
     case K_ESC:
       exitState = -1;
-      return 0;
+      break;
     case KEY_ENTER:
     case K_ENTER:
-      return 0;
+      return RKEY_ENTER;
+    default:
+      return Rts2NWindow::injectKey (key);
     }
   if (exitState < 0)
     exitState = 0;
   if (exitState >= butnum)
     exitState = butnum - 1;
-  return -1;
+  return RKEY_HANDLED;
 }
 
 void

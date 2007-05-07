@@ -358,7 +358,7 @@ void
 Rts2NMonitor::processKey (int key)
 {
   Rts2NWindow *activeWindow = *(--windowStack.end ());
-  int ret = -1;
+  keyRet ret = RKEY_HANDLED;
   switch (key)
     {
     case '\t':
@@ -405,21 +405,11 @@ Rts2NMonitor::processKey (int key)
       resize ();
       break;
       // default for active window
-    case KEY_UP:
-    case KEY_DOWN:
-    case KEY_LEFT:
-    case KEY_RIGHT:
-    case KEY_HOME:
-    case KEY_END:
-    case KEY_ENTER:
-    case K_ENTER:
-    case KEY_EXIT:
-    case K_ESC:
-    case KEY_F (6):
-      ret = activeWindow->injectKey (key);
       break;
     default:
-      ret = comWindow->injectKey (key);
+      ret = activeWindow->injectKey (key);
+      if (ret != RKEY_ENTER && ret != RKEY_HANDLED)
+	ret = comWindow->injectKey (key);
     }
   // draw device values
   if (activeWindow == deviceList)

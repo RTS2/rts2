@@ -20,7 +20,7 @@ Rts2NSelWindow::~Rts2NSelWindow (void)
   delwin (scrolpad);
 }
 
-int
+keyRet
 Rts2NSelWindow::injectKey (int key)
 {
   switch (key)
@@ -69,8 +69,10 @@ Rts2NSelWindow::injectKey (int key)
 	  flash ();
 	}
       break;
+    default:
+      return Rts2NWindow::injectKey (key);
     }
-  return -1;
+  return RKEY_HANDLED;
 }
 
 void

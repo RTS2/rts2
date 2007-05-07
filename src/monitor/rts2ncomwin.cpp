@@ -14,7 +14,7 @@ Rts2NComWin::~Rts2NComWin (void)
   delwin (statuspad);
 }
 
-int
+keyRet
 Rts2NComWin::injectKey (int key)
 {
   int x, y;
@@ -26,11 +26,11 @@ Rts2NComWin::injectKey (int key)
       break;
     case KEY_ENTER:
     case K_ENTER:
-      return 0;
+      return RKEY_ENTER;
     default:
       waddch (comwin, key);
     }
-  return -1;
+  return Rts2NWindow::injectKey (key);
 }
 
 void

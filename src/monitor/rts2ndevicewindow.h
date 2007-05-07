@@ -20,7 +20,7 @@ private:
 public:
     Rts2NDeviceWindow (Rts2Conn * in_connection);
     virtual ~ Rts2NDeviceWindow (void);
-  virtual int injectKey (int key);
+  virtual keyRet injectKey (int key);
   virtual void draw ();
 };
 

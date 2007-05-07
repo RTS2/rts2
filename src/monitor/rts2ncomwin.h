@@ -11,7 +11,7 @@ private:
 public:
     Rts2NComWin ();
     virtual ~ Rts2NComWin (void);
-  virtual int injectKey (int key);
+  virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void refresh ();
 

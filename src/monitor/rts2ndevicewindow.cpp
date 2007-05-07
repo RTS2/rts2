@@ -161,7 +161,7 @@ Rts2NDeviceWindow::createValueBox ()
 	case RTS2_VALUE_DOUBLE:
 	  valueBox =
 	    new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21,
-				     s - 2);
+				     s - 1);
 	  break;
 	default:
 	  break;
@@ -169,28 +169,29 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-int
+keyRet
 Rts2NDeviceWindow::injectKey (int key)
 {
-  int ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_F (6):
       if (valueBox)
 	endValueBox ();
       createValueBox ();
-      break;
+      return RKEY_HANDLED;
     }
   if (valueBox)
     {
       ret = valueBox->injectKey (key);
-      if (ret == 0)
+      if (ret == RKEY_ENTER)
 	{
 	  if (getSelValue ())
 	    valueBox->sendValue (connection);
 	  endValueBox ();
+	  return RKEY_HANDLED;
 	}
-      return -1;
+      return ret;
     }
   return Rts2NSelWindow::injectKey (key);
 }

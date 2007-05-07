@@ -23,14 +23,14 @@ Rts2NSelWindow (top->getX () + x, top->getY () + y, 10, 4)
     setSelRow (1);
 }
 
-int
+keyRet
 Rts2NValueBoxBool::injectKey (int key)
 {
   switch (key)
     {
     case KEY_ENTER:
     case K_ENTER:
-      return 0;
+      return RKEY_ENTER;
       break;
     }
   return Rts2NSelWindow::injectKey (key);
@@ -60,11 +60,11 @@ Rts2NValueBoxBool::sendValue (Rts2Conn * connection)
 
 Rts2NValueBoxDouble::Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x, int y):
 Rts2NValueBox (top, in_val),
-Rts2NWindow (top->getX () + x, top->getY () + y, 10, 3)
+Rts2NWindow (top->getX () + x, top->getY () + y, 20, 3)
 {
 }
 
-int
+keyRet
 Rts2NValueBoxDouble::injectKey (int key)
 {
   switch (key)
@@ -75,14 +75,14 @@ Rts2NValueBoxDouble::injectKey (int key)
       break;
     case KEY_ENTER:
     case K_ENTER:
-      return 0;
+      return RKEY_ENTER;
       break;
     }
   if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
     {
 
     }
-  return -1;
+  return Rts2NWindow::injectKey (key);
 }
 
 void

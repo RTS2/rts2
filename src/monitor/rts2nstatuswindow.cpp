@@ -12,12 +12,6 @@ Rts2NStatusWindow::~Rts2NStatusWindow (void)
 {
 }
 
-int
-Rts2NStatusWindow::injectKey (int key)
-{
-  return 0;
-}
-
 void
 Rts2NStatusWindow::draw ()
 {

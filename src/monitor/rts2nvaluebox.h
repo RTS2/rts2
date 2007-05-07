@@ -22,7 +22,7 @@ protected:
 public:
     Rts2NValueBox (Rts2NWindow * top, Rts2Value * in_val);
   virtual ~ Rts2NValueBox (void);
-  virtual int injectKey (int key) = 0;
+  virtual keyRet injectKey (int key) = 0;
   virtual void draw () = 0;
   virtual void sendValue (Rts2Conn * connection) = 0;
 };
@@ -34,7 +34,7 @@ class Rts2NValueBoxBool:public Rts2NValueBox, public Rts2NSelWindow
 {
 public:
   Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int x, int y);
-  virtual int injectKey (int key);
+  virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
 };
@@ -47,7 +47,7 @@ class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindow
 public:
   Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x,
 		       int y);
-  virtual int injectKey (int key);
+  virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
 };

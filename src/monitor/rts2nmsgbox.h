@@ -13,7 +13,7 @@ public:
     Rts2NMsgBox (const char *in_query,
 		 const char *in_buttons[], int in_butnum);
     virtual ~ Rts2NMsgBox (void);
-  virtual int injectKey (int key);
+  virtual keyRet injectKey (int key);
   virtual void draw ();
   /**
    * -1 when exited with KEY_ESC, >=0 when exited with enter, it's

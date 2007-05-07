@@ -34,6 +34,12 @@ Rts2NWindow::~Rts2NWindow (void)
   delwin (window);
 }
 
+keyRet
+Rts2NWindow::injectKey (int key)
+{
+  return RKEY_NOT_HANDLED;
+}
+
 void
 Rts2NWindow::draw ()
 {
