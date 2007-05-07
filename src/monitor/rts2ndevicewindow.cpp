@@ -53,6 +53,8 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
   for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
        iter != client->valueEnd (); iter++)
     {
+      maxrow++;
+
       Rts2Value *val = *iter;
       // customize value display
       std::ostringstream _os;
@@ -109,7 +111,6 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 	  wprintw (getWriteWindow (), "%-20s %30s\n",
 		   val->getName ().c_str (), getDisplayValue (val).c_str ());
 	}
-      maxrow++;
     }
   wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
   mvwvline (getWriteWindow (), 0, 20, ACS_VLINE,
@@ -172,10 +173,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_F (6):
