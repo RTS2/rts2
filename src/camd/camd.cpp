@@ -436,7 +436,8 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool CameraChip::supportFrameTransfer ()
+bool
+CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -467,9 +468,9 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   serialNumber[0] = '\0';
 
   createValue (lastExp, "exposure", "current exposure time", false);
-  createValue (subExposure, "subexposure", "current subexposure", false,
+  createValue (subExposure, "subexposure", "current subexposure", false, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
-  createValue (camFilterVal, "filter", "used filter number", false,
+  createValue (camFilterVal, "filter", "used filter number", false, 0,
 	       CAM_EXPOSING, true);
 
   createValue (camFocVal, "focpos", "position of focuser", false, 0,
@@ -1211,14 +1212,16 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
