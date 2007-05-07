@@ -158,6 +158,11 @@ Rts2NDeviceWindow::createValueBox ()
 	  valueBox =
 	    new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 2);
 	  break;
+	case RTS2_VALUE_DOUBLE:
+	  valueBox =
+	    new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21,
+				     s - 2);
+	  break;
 	default:
 	  break;
 	}
