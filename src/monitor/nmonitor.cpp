@@ -410,7 +410,7 @@ Rts2NMonitor::processKey (int key)
       break;
     default:
       ret = activeWindow->injectKey (key);
-      if (ret != RKEY_ENTER && ret != RKEY_HANDLED)
+      if (ret == RKEY_NOT_HANDLED)
 	ret = comWindow->injectKey (key);
     }
   // draw device values

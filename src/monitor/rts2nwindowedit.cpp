@@ -22,22 +22,21 @@ Rts2NWindowEdit::~Rts2NWindowEdit (void)
   delwin (comwin);
 }
 
-bool
-Rts2NWindowEdit::passKey (int key)
+bool Rts2NWindowEdit::passKey (int key)
 {
   return isalnum (key);
 }
 
-keyRet
-Rts2NWindowEdit::injectKey (int key)
+keyRet Rts2NWindowEdit::injectKey (int key)
 {
-  int x, y;
+  int
+    x,
+    y;
   if (isalnum (key))
     {
       if (passKey (key))
 	{
 	  waddch (getWriteWindow (), key);
-	  return RKEY_HANDLED;
 	}
       // alfanum key, and it does not passed..
       else
@@ -45,6 +44,7 @@ Rts2NWindowEdit::injectKey (int key)
 	  beep ();
 	  flash ();
 	}
+      return RKEY_HANDLED;
     }
 
   switch (key)
@@ -53,10 +53,12 @@ Rts2NWindowEdit::injectKey (int key)
       getyx (comwin, y, x);
       mvwdelch (comwin, y, x - 1);
       return RKEY_HANDLED;
+    case KEY_EXIT:
+    case K_ESC:
+      return RKEY_ESC;
     case KEY_ENTER:
     case K_ENTER:
       return RKEY_ENTER;
-      break;
     case KEY_LEFT:
       break;
     case KEY_RIGHT:
@@ -90,8 +92,7 @@ Rts2NWindowEdit (x, y, w, h, in_ex, in_ey, in_ew, in_eh, border)
 }
 
 
-bool
-Rts2NWindowEditDigits::passKey (int key)
+bool Rts2NWindowEditDigits::passKey (int key)
 {
   if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
     return true;

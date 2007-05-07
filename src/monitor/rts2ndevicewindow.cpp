@@ -172,10 +172,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_F (6):
@@ -187,9 +187,9 @@ Rts2NDeviceWindow::injectKey (int key)
   if (valueBox)
     {
       ret = valueBox->injectKey (key);
-      if (ret == RKEY_ENTER)
+      if (ret == RKEY_ENTER || ret == RKEY_ESC)
 	{
-	  if (getSelValue ())
+	  if (ret == RKEY_ENTER)
 	    valueBox->sendValue (connection);
 	  endValueBox ();
 	  return RKEY_HANDLED;
