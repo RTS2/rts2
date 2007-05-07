@@ -252,6 +252,8 @@ Rts2NMonitor::init ()
   keypad (stdscr, TRUE);
   timeout (0);
 
+  ESCDELAY = 0;
+
   // create & init menu
   menu = new Rts2NMenu ();
   Rts2NSubmenu *sub = new Rts2NSubmenu ("System");
@@ -417,11 +419,11 @@ Rts2NMonitor::processKey (int key)
       changeListConnection ();
     }
   // handle msg box
-  if (activeWindow == msgBox && ret == 0)
+  if (activeWindow == msgBox && ret != RKEY_HANDLED)
     {
       messageBoxEnd ();
     }
-  else if (activeWindow == menu && ret == 0)
+  else if (activeWindow == menu && ret != RKEY_HANDLED)
     {
       Rts2NAction *action;
       action = menu->getSelAction ();
