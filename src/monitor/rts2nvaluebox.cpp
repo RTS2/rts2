@@ -23,7 +23,8 @@ Rts2NSelWindow (top->getX () + x, top->getY () + y, 10, 4)
     setSelRow (1);
 }
 
-keyRet Rts2NValueBoxBool::injectKey (int key)
+keyRet
+Rts2NValueBoxBool::injectKey (int key)
 {
   switch (key)
     {
@@ -59,32 +60,16 @@ Rts2NValueBoxBool::sendValue (Rts2Conn * connection)
 
 Rts2NValueBoxDouble::Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x, int y):
 Rts2NValueBox (top, in_val),
-Rts2NWindow (top->getX () + x, top->getY () + y, 20, 3)
+Rts2NWindowEdit (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300, 1)
 {
-  comwin = newpad (1, 300);
-  wprintw (comwin, "%f", in_val->getValueDouble ());
+  wprintw (getWriteWindow (), "%f", in_val->getValueDouble ());
 }
 
-Rts2NValueBoxDouble::~Rts2NValueBoxDouble (void)
+keyRet
+Rts2NValueBoxDouble::injectKey (int key)
 {
-  delwin (comwin);
-}
-
-keyRet Rts2NValueBoxDouble::injectKey (int key)
-{
-  int
-    x,
-    y;
   switch (key)
     {
-    case KEY_BACKSPACE:
-      getyx (comwin, y, x);
-      mvwdelch (comwin, y, x - 1);
-      return RKEY_HANDLED;
-    case KEY_LEFT:
-      break;
-    case KEY_RIGHT:
-      break;
     case KEY_ENTER:
     case K_ENTER:
       return RKEY_ENTER;
@@ -92,29 +77,17 @@ keyRet Rts2NValueBoxDouble::injectKey (int key)
     }
   if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
     {
-      waddch (comwin, key);
+      waddch (getWriteWindow (), key);
       return RKEY_HANDLED;
     }
-  return Rts2NWindow::injectKey (key);
+  return Rts2NWindowEdit::injectKey (key);
 }
 
 void
 Rts2NValueBoxDouble::draw ()
 {
-  Rts2NWindow::draw ();
+  Rts2NWindowEdit::draw ();
   refresh ();
-}
-
-void
-Rts2NValueBoxDouble::refresh ()
-{
-  int x, y;
-  int w, h;
-  Rts2NWindow::refresh ();
-  getbegyx (window, y, x);
-  getmaxyx (window, h, w);
-  if (pnoutrefresh (comwin, 0, 0, y + 1, x + 1, y + 1, x + w - 2) == ERR)
-    errorMove ("pnoutrefresh comwin", y, x, y + 1, x + w - 1);
 }
 
 void
@@ -124,7 +97,7 @@ Rts2NValueBoxDouble::sendValue (Rts2Conn * connection)
     return;
   char buf[200];
   char *endptr;
-  mvwinnstr (comwin, 0, 0, buf, 200);
+  mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
   double tval = strtod (buf, &endptr);
   if (*endptr != '\0' && *endptr != ' ')
     {

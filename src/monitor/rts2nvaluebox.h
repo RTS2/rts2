@@ -4,6 +4,7 @@
 #include "../utils/rts2value.h"
 
 #include "rts2nwindow.h"
+#include "rts2nwindowedit.h"
 #include "rts2daemonwindow.h"
 
 /**
@@ -40,20 +41,26 @@ public:
 };
 
 /**
- * Holds edit box for boolean value.
+ * Holds edit box for float value.
  */
-class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindow
+class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEdit
 {
-private:
-  WINDOW * comwin;
+public:
+  Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int x,
+		      int y);
+};
+
+/**
+ * Holds edit box for double value.
+ */
+class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindowEdit
+{
 public:
   Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x,
 		       int y);
-    virtual ~ Rts2NValueBoxDouble (void);
 
   virtual keyRet injectKey (int key);
   virtual void draw ();
-  virtual void refresh ();
   virtual void sendValue (Rts2Conn * connection);
 };
 

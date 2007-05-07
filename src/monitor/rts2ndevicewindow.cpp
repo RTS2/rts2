@@ -156,12 +156,11 @@ Rts2NDeviceWindow::createValueBox ()
 	{
 	case RTS2_VALUE_BOOL:
 	  valueBox =
-	    new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 2);
+	    new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
 	  break;
 	case RTS2_VALUE_DOUBLE:
 	  valueBox =
-	    new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21,
-				     s - 1);
+	    new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
 	  break;
 	default:
 	  break;
@@ -169,10 +168,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_F (6):
