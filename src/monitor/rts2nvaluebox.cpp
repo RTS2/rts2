@@ -62,6 +62,54 @@ bool Rts2NValueBoxBool::setCursor ()
   return false;
 }
 
+Rts2NValueBoxInteger::Rts2NValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * in_val, int x, int y):
+Rts2NValueBox (top, in_val),
+Rts2NWindowEditIntegers (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
+			 1)
+{
+  wprintw (getWriteWindow (), "%i", in_val->getValueInteger ());
+}
+
+keyRet
+Rts2NValueBoxInteger::injectKey (int key)
+{
+  return Rts2NWindowEditIntegers::injectKey (key);
+}
+
+void
+Rts2NValueBoxInteger::draw ()
+{
+  Rts2NWindowEditIntegers::draw ();
+  refresh ();
+}
+
+void
+Rts2NValueBoxInteger::sendValue (Rts2Conn * connection)
+{
+  if (!connection->getOtherDevClient ())
+    return;
+  char buf[200];
+  char *endptr;
+  mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+  int tval = strtol (buf, &endptr, 10);
+  if (*endptr != '\0' && *endptr != ' ')
+    {
+      // log error;
+      return;
+    }
+  connection->
+    queCommand (new
+		Rts2CommandChangeValue (connection->getOtherDevClient (),
+					getValue ()->getName (), '=', tval));
+}
+
+bool Rts2NValueBoxInteger::setCursor ()
+{
+  return Rts2NWindowEditIntegers::setCursor ();
+}
+
+
+
 Rts2NValueBoxFloat::Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int x, int y):
 Rts2NValueBox (top, in_val),
 Rts2NWindowEditDigits (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,

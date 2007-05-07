@@ -37,6 +37,18 @@ public:
 };
 
 /**
+ * This is window with edit box for integers
+ */
+class Rts2NWindowEditIntegers:public Rts2NWindowEdit
+{
+protected:
+  virtual bool passKey (int key);
+public:
+  Rts2NWindowEditIntegers (int x, int y, int w, int h, int in_ex, int in_ey,
+			   int in_ew, int in_eh, int border = 1);
+};
+
+/**
  * This is window with edit box for digits..
  */
 class Rts2NWindowEditDigits:public Rts2NWindowEdit
@@ -44,8 +56,8 @@ class Rts2NWindowEditDigits:public Rts2NWindowEdit
 protected:
   virtual bool passKey (int key);
 public:
-  Rts2NWindowEditDigits (int x, int y, int w, int h, int in_ex, int in_ey,
-			 int in_ew, int in_eh, int border = 1);
+    Rts2NWindowEditDigits (int x, int y, int w, int h, int in_ex, int in_ey,
+			   int in_ew, int in_eh, int border = 1);
 };
 
 #endif /* !__RTS2_NWINDOWEDIT__ */

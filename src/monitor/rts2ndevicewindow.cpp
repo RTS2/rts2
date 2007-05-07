@@ -159,6 +159,10 @@ Rts2NDeviceWindow::createValueBox ()
 	  valueBox =
 	    new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
 	  break;
+	case RTS2_VALUE_INTEGER:
+	  valueBox =
+	    new Rts2NValueBoxInteger (this, (Rts2ValueInteger *) val, 21, s);
+	  break;
 	case RTS2_VALUE_FLOAT:
 	  valueBox =
 	    new Rts2NValueBoxFloat (this, (Rts2ValueFloat *) val, 21, s);
