@@ -98,8 +98,10 @@ private:
     return *(--windowStack.end ());
   }
 
+  void sendCommand ();
+
 protected:
-    virtual int processOption (int in_opt);
+  virtual int processOption (int in_opt);
 
   virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);

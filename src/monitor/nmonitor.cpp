@@ -13,6 +13,43 @@
 char *XCursesProgramName = "rts2-mon";
 #endif
 
+void
+Rts2NMonitor::sendCommand ()
+{
+  int curX = comWindow->getCurX ();
+  char command[curX + 1];
+  char *cmd_top = command;
+  Rts2Conn *conn = NULL;
+  comWindow->getWinString (command, curX);
+  command[curX] = '\0';
+  // try to find ., which show DEVICE.command notation..
+  while (*cmd_top && !isspace (*cmd_top))
+    {
+      if (*cmd_top == '.')
+	{
+	  *cmd_top = '\0';
+	  conn = getConnection (command);
+	  *cmd_top = '.';
+	  cmd_top++;
+	  break;
+	}
+      cmd_top++;
+    }
+  if (conn == NULL)
+    {
+      conn = connectionAt (deviceList->getSelRow ());
+      cmd_top = command;
+    }
+  if (*cmd_top)
+    {
+      oldCommand = new Rts2Command (this, cmd_top);
+      conn->queCommand (oldCommand);
+      comWindow->clear ();
+      comWindow->printCommand (command);
+      wmove (comWindow->getWriteWindow (), 0, 0);
+    }
+}
+
 int
 Rts2NMonitor::processOption (int in_opt)
 {
@@ -414,7 +451,11 @@ Rts2NMonitor::processKey (int key)
     default:
       ret = activeWindow->injectKey (key);
       if (ret == RKEY_NOT_HANDLED)
-	ret = comWindow->injectKey (key);
+	{
+	  ret = comWindow->injectKey (key);
+	  if (key == KEY_ENTER || key == K_ENTER)
+	    sendCommand ();
+	}
     }
   // draw device values
   if (activeWindow == deviceList)
@@ -438,41 +479,6 @@ Rts2NMonitor::processKey (int key)
       else
 	{
 	  leaveMenu ();
-	}
-    }
-  else if (key == KEY_ENTER || key == K_ENTER)
-    {
-      int curX = comWindow->getCurX ();
-      char command[curX + 1];
-      char *cmd_top = command;
-      Rts2Conn *conn = NULL;
-      comWindow->getWinString (command, curX);
-      command[curX] = '\0';
-      // try to find ., which show DEVICE.command notation..
-      while (*cmd_top && !isspace (*cmd_top))
-	{
-	  if (*cmd_top == '.')
-	    {
-	      *cmd_top = '\0';
-	      conn = getConnection (command);
-	      *cmd_top = '.';
-	      cmd_top++;
-	      break;
-	    }
-	  cmd_top++;
-	}
-      if (conn == NULL)
-	{
-	  conn = connectionAt (deviceList->getSelRow ());
-	  cmd_top = command;
-	}
-      if (*cmd_top)
-	{
-	  oldCommand = new Rts2Command (this, cmd_top);
-	  conn->queCommand (oldCommand);
-	  comWindow->clear ();
-	  comWindow->printCommand (command);
-	  wmove (comWindow->getWriteWindow (), 0, 0);
 	}
     }
 }
