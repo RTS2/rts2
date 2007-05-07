@@ -62,6 +62,7 @@ Rts2NValueBox (top, in_val),
 Rts2NWindow (top->getX () + x, top->getY () + y, 20, 3)
 {
   comwin = newpad (1, 300);
+  wprintw (comwin, "%f", in_val->getValueDouble ());
 }
 
 Rts2NValueBoxDouble::~Rts2NValueBoxDouble (void)
