@@ -57,8 +57,7 @@ Rts2NMenu::~Rts2NMenu (void)
   submenus.clear ();
 }
 
-keyRet
-Rts2NMenu::injectKey (int key)
+keyRet Rts2NMenu::injectKey (int key)
 {
   switch (key)
     {
@@ -90,7 +89,7 @@ Rts2NMenu::injectKey (int key)
     case KEY_EXIT:
     case K_ESC:
       selSubmenu = NULL;
-      return RKEY_HANDLED;
+      return RKEY_ESC;
     default:
       return Rts2NWindow::injectKey (key);
     }
