@@ -15,8 +15,7 @@ Rts2NMsgBox::~Rts2NMsgBox (void)
 {
 }
 
-keyRet
-Rts2NMsgBox::injectKey (int key)
+keyRet Rts2NMsgBox::injectKey (int key)
 {
   switch (key)
     {
@@ -29,7 +28,7 @@ Rts2NMsgBox::injectKey (int key)
     case KEY_EXIT:
     case K_ESC:
       exitState = -1;
-      break;
+      return RKEY_ESC;
     case KEY_ENTER:
     case K_ENTER:
       return RKEY_ENTER;
