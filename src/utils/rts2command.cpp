@@ -349,6 +349,14 @@ Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
 						std::string in_valName,
+						char op, float in_operand):
+Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
+{
+  client = in_client;
+}
+
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
+						std::string in_valName,
 						char op, double in_operand):
 Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 {
