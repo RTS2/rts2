@@ -69,7 +69,6 @@ Rts2NMenu::injectKey (int key)
       if (selSubmenu)
 	{
 	  selSubmenu->injectKey (key);
-	  return RKEY_HANDLED;
 	}
       break;
     case KEY_RIGHT:
@@ -92,8 +91,10 @@ Rts2NMenu::injectKey (int key)
     case K_ESC:
       selSubmenu = NULL;
       return RKEY_HANDLED;
+    default:
+      return Rts2NWindow::injectKey (key);
     }
-  return Rts2NWindow::injectKey (key);
+  return RKEY_HANDLED;
 }
 
 void
