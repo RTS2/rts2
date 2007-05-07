@@ -23,8 +23,7 @@ Rts2NSelWindow (top->getX () + x, top->getY () + y, 10, 4)
     setSelRow (1);
 }
 
-keyRet
-Rts2NValueBoxBool::injectKey (int key)
+keyRet Rts2NValueBoxBool::injectKey (int key)
 {
   switch (key)
     {
@@ -62,13 +61,25 @@ Rts2NValueBoxDouble::Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * i
 Rts2NValueBox (top, in_val),
 Rts2NWindow (top->getX () + x, top->getY () + y, 20, 3)
 {
+  comwin = newpad (1, 300);
 }
 
-keyRet
-Rts2NValueBoxDouble::injectKey (int key)
+Rts2NValueBoxDouble::~Rts2NValueBoxDouble (void)
 {
+  delwin (comwin);
+}
+
+keyRet Rts2NValueBoxDouble::injectKey (int key)
+{
+  int
+    x,
+    y;
   switch (key)
     {
+    case KEY_BACKSPACE:
+      getyx (comwin, y, x);
+      mvwdelch (comwin, y, x - 1);
+      return RKEY_HANDLED;
     case KEY_LEFT:
       break;
     case KEY_RIGHT:
@@ -80,7 +91,8 @@ Rts2NValueBoxDouble::injectKey (int key)
     }
   if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
     {
-
+      waddch (comwin, key);
+      return RKEY_HANDLED;
     }
   return Rts2NWindow::injectKey (key);
 }
@@ -93,12 +105,33 @@ Rts2NValueBoxDouble::draw ()
 }
 
 void
+Rts2NValueBoxDouble::refresh ()
+{
+  int x, y;
+  int w, h;
+  Rts2NWindow::refresh ();
+  getbegyx (window, y, x);
+  getmaxyx (window, h, w);
+  if (pnoutrefresh (comwin, 0, 0, y + 1, x + 1, y + 1, x + w - 2) == ERR)
+    errorMove ("pnoutrefresh comwin", y, x, y + 1, x + w - 1);
+}
+
+void
 Rts2NValueBoxDouble::sendValue (Rts2Conn * connection)
 {
   if (!connection->getOtherDevClient ())
     return;
+  char buf[200];
+  char *endptr;
+  mvwinnstr (comwin, 0, 0, buf, 200);
+  double tval = strtod (buf, &endptr);
+  if (*endptr != '\0' && *endptr != ' ')
+    {
+      // log error;
+      return;
+    }
   connection->
     queCommand (new
 		Rts2CommandChangeValue (connection->getOtherDevClient (),
-					getValue ()->getName (), '=', 10));
+					getValue ()->getName (), '=', tval));
 }
