@@ -43,17 +43,21 @@ public:
 /**
  * Holds edit box for float value.
  */
-class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEdit
+class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEditDigits
 {
 public:
   Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int x,
 		      int y);
+
+  virtual keyRet injectKey (int key);
+  virtual void draw ();
+  virtual void sendValue (Rts2Conn * connection);
 };
 
 /**
  * Holds edit box for double value.
  */
-class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindowEdit
+class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindowEditDigits
 {
 public:
   Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x,

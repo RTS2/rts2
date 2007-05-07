@@ -23,8 +23,7 @@ Rts2NSelWindow (top->getX () + x, top->getY () + y, 10, 4)
     setSelRow (1);
 }
 
-keyRet
-Rts2NValueBoxBool::injectKey (int key)
+keyRet Rts2NValueBoxBool::injectKey (int key)
 {
   switch (key)
     {
@@ -58,9 +57,51 @@ Rts2NValueBoxBool::sendValue (Rts2Conn * connection)
 					getSelRow () == 0));
 }
 
+Rts2NValueBoxFloat::Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int x, int y):
+Rts2NValueBox (top, in_val),
+Rts2NWindowEditDigits (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
+		       1)
+{
+  wprintw (getWriteWindow (), "%f", in_val->getValueFloat ());
+}
+
+keyRet
+Rts2NValueBoxFloat::injectKey (int key)
+{
+  return Rts2NWindowEditDigits::injectKey (key);
+}
+
+void
+Rts2NValueBoxFloat::draw ()
+{
+  Rts2NWindowEditDigits::draw ();
+  refresh ();
+}
+
+void
+Rts2NValueBoxFloat::sendValue (Rts2Conn * connection)
+{
+  if (!connection->getOtherDevClient ())
+    return;
+  char buf[200];
+  char *endptr;
+  mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+  float tval = strtof (buf, &endptr);
+  if (*endptr != '\0' && *endptr != ' ')
+    {
+      // log error;
+      return;
+    }
+  connection->
+    queCommand (new
+		Rts2CommandChangeValue (connection->getOtherDevClient (),
+					getValue ()->getName (), '=', tval));
+}
+
 Rts2NValueBoxDouble::Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x, int y):
 Rts2NValueBox (top, in_val),
-Rts2NWindowEdit (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300, 1)
+Rts2NWindowEditDigits (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
+		       1)
 {
   wprintw (getWriteWindow (), "%f", in_val->getValueDouble ());
 }
@@ -68,25 +109,13 @@ Rts2NWindowEdit (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300, 1)
 keyRet
 Rts2NValueBoxDouble::injectKey (int key)
 {
-  switch (key)
-    {
-    case KEY_ENTER:
-    case K_ENTER:
-      return RKEY_ENTER;
-      break;
-    }
-  if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
-    {
-      waddch (getWriteWindow (), key);
-      return RKEY_HANDLED;
-    }
-  return Rts2NWindowEdit::injectKey (key);
+  return Rts2NWindowEditDigits::injectKey (key);
 }
 
 void
 Rts2NValueBoxDouble::draw ()
 {
-  Rts2NWindowEdit::draw ();
+  Rts2NWindowEditDigits::draw ();
   refresh ();
 }
 
