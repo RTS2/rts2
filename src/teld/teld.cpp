@@ -67,7 +67,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
   minGood->setValueDouble (180.0);
 
   createValue (quickEnabled, "quick_enabled",
-	       "if on-line corrections are enabled", false);
+	       "if on-line corrections are enabled", false, 0, true);
   quickEnabled->setValueBool (true);
 
   modelFile = NULL;
