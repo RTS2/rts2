@@ -2,8 +2,7 @@
 
 if PGSQL
 
-AM_CXXFLAGS = @LIBPG_CFLAGS@
-AM_CFLAGS = @LIBPG_CFLAGS@
+AM_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 AM_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@
 
 bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target rts2-tpm rts2-obsinfo
