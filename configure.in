@@ -56,6 +56,16 @@ esac],[libnova=yes])
 
 AM_CONDITIONAL(LIBNOVA, test x$libnova != xno)
 
+AC_ARG_WITH(cfitsio,
+[  --with-cfitsio       path to CFITSO library or "no" if cfitsio is not installed],
+[case "${withval}" in
+	yes) cfitsio=yes ;;
+	no)  cfitsio=no ;;
+	*) cfitsio=${withval} ;;
+esac],[cfitsio=yes])
+
+AM_CONDITIONAL(CFITSIO, test x$cfitsio != xno)
+
 AC_ARG_WITH(jpeg,
 [  --with-jpeg       path to JPEG lib or "no" if JPEG libs are not installed],
 [case "${withval}" in
@@ -256,13 +266,26 @@ LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
-AC_SUBST(LIB_CFITSIO), [cat <<EOF
+if test "x${cfitsio}" != "xno"; then
+  if test "x${cfitsio}" != "xyes"; then
+    LDFLAGS="${LDFLAGS} -L${cfitsio}/lib"
+  fi
+  AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
+, [cat <<EOF
 **** You don't have cfitsio installed.
 **** Please download one from 
 **** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
 EOF
 exit 1])
+  if test "x${cfitsio}" != "$xyes"; then
+    LIB_CFITSIO="-L${cfitsio}/lib ${LIB_CFITSIO}"
+    CFITSIO_CFLAGS="-I${cfitsio}/include"
+  else
+    CFITSIO_CFLAGS=""
+  fi
+  AC_SUBST(CFITSIO_CFLAGS)
+  AC_SUBST(LIB_CFITSIO)
+fi
 
 if test "x${wcs}" = "xyes"; then
 	AC_CHECK_LIB([wcs], [wcs2pix], LIB_WCS="-lwcs"; 
@@ -459,6 +482,7 @@ echo "
   xfocusc       ${xfocusc}
   psql          ${psql}
   libnova       ${libnova}
+  cfitsio       ${cfitsio}
 
 CCD's:
   sbig          ${SBIG}
