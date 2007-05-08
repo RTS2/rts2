@@ -100,8 +100,9 @@ Rts2SEHex::beforeExecuting ()
     }
 
   bool en = false;
-  script->getMaster ()->
-    postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
+  if (script->getMaster ())
+    script->getMaster ()->
+      postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
 }
 
 void
