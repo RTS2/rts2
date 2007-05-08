@@ -7,6 +7,7 @@
 
 #include <errno.h>
 #include <algorithm>
+#include <unistd.h>
 
 Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection,
 						const char *in_exe):

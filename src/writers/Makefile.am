@@ -15,10 +15,10 @@ bin_PROGRAMS = rts2-image
 noinst_LIBRARIES += librts2imagedb.a
 
 librts2imagedb_a_SOURCES = rts2image.cpp imageastrometry.cpp ham.cpp rts2devcliimg.cpp rts2imagedb.cpp rts2devclifoc.cpp
-librts2imagedb_a_CXXFLAGS = @LIBPG_CFLAGS@
+librts2imagedb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 
 rts2_image_SOURCES = appimagemanip.cpp imageprocess.cpp
-rts2_image_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_image_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 rts2_image_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a librts2imagedb.a ../utils/librts2block.a
 
 %.cpp: %.ec
