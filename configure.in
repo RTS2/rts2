@@ -277,7 +277,7 @@ if test "x${cfitsio}" != "xno"; then
 **** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
 EOF
 exit 1])
-  if test "x${cfitsio}" != "$xyes"; then
+  if test "x${cfitsio}" != "xyes"; then
     LIB_CFITSIO="-L${cfitsio}/lib ${LIB_CFITSIO}"
     CFITSIO_CFLAGS="-I${cfitsio}/include"
   else
