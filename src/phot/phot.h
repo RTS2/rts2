@@ -21,6 +21,8 @@ protected:
   char *photType;
   char *serial;
 
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
   int sendCount (int count, float exp, int is_ov);
   virtual int startIntegrate ();
   virtual int endIntegrate ();
@@ -57,7 +59,7 @@ public:
   virtual int stopIntegrate ();
 
   int homeFilter (Rts2Conn * conn);
-  int moveFilter (Rts2Conn * conn, int new_filter);
+  int moveFilter (int new_filter);
   int enableFilter (Rts2Conn * conn);
 
   virtual void cancelPriorityOperations ();

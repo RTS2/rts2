@@ -190,7 +190,7 @@ Rts2DevPhot::disableMove ()
 }
 
 int
-Rts2DevPhot::moveFilter (Rts2Conn * conn, int new_filter)
+Rts2DevPhot::moveFilter (int new_filter)
 {
   int ret;
   ret = startFilterMove (new_filter);
@@ -249,6 +249,14 @@ Rts2DevPhot::setReqTime (float in_req_time)
 }
 
 int
+Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == filter)
+    return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
+  return Rts2Device::setValue (old_value, new_value);
+}
+
+int
 Rts2DevPhot::sendCount (int count, float exp, int is_ov)
 {
   char *msg;
@@ -292,7 +300,7 @@ Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
 	  || conn->paramNextInteger (&new_req_count) || !conn->paramEnd ())
 	return -2;
 
-      ret = moveFilter (conn, new_filter);
+      ret = moveFilter (new_filter);
       if (ret)
 	return ret;
       return startIntegrate (conn, new_req_time, new_req_count);
@@ -308,7 +316,7 @@ Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
       int new_filter;
       if (conn->paramNextInteger (&new_filter) || !conn->paramEnd ())
 	return -2;
-      return moveFilter (conn, new_filter);
+      return moveFilter (new_filter);
     }
   else if (conn->isCommand ("enable"))
     {
