@@ -202,38 +202,42 @@ Rts2TargetInfo::processArgs (const char *arg)
 void
 Rts2TargetInfo::printTargetInfo ()
 {
-  target->sendInfo (std::cout, JD);
-  // print scripts..
-  Rts2CamList::iterator cam_names;
-  if (printExtendet)
+  if (!(printImages & DISPLAY_FILENAME))
     {
-      for (int i = 0; i < 10; i++)
+      target->sendInfo (std::cout, JD);
+      // print scripts..
+      Rts2CamList::iterator cam_names;
+      if (printExtendet)
 	{
-	  JD += 10;
+	  for (int i = 0; i < 10; i++)
+	    {
+	      JD += 10;
 
-	  std::cout << "==================================" << std::endl <<
-	    "Date: " << LibnovaDate (JD) << std::endl;
-	  target->sendPositionInfo (std::cout, JD);
+	      std::cout << "==================================" << std::
+		endl << "Date: " << LibnovaDate (JD) << std::endl;
+	      target->sendPositionInfo (std::cout, JD);
+	    }
 	}
-    }
-  for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
-    {
-      const char *cam_name = (*cam_names).c_str ();
-      int ret;
-      char script_buf[MAX_COMMAND_LENGTH];
-      int failedCount;
-      ret = target->getScript (cam_name, script_buf);
-      std::
-	cout << "Script for camera " << cam_name << ":'" << script_buf <<
-	"' ret (" << ret << ")" << std::endl;
-      // try to parse it..
-      Rts2Script script = Rts2Script (NULL, cam_name, target);
-      failedCount = script.getFaultLocation ();
-      if (failedCount != -1)
+      for (cam_names = cameras.begin (); cam_names != cameras.end ();
+	   cam_names++)
 	{
+	  const char *cam_name = (*cam_names).c_str ();
+	  int ret;
+	  char script_buf[MAX_COMMAND_LENGTH];
+	  int failedCount;
+	  ret = target->getScript (cam_name, script_buf);
 	  std::
-	    cout << "PARSING of script '" << script_buf << "' FAILED!!! AT "
-	    << failedCount << std::endl;
+	    cout << "Script for camera " << cam_name << ":'" << script_buf <<
+	    "' ret (" << ret << ")" << std::endl;
+	  // try to parse it..
+	  Rts2Script script = Rts2Script (NULL, cam_name, target);
+	  failedCount = script.getFaultLocation ();
+	  if (failedCount != -1)
+	    {
+	      std::
+		cout << "PARSING of script '" << script_buf <<
+		"' FAILED!!! AT " << failedCount << std::endl;
+	    }
 	}
     }
   // print recomended calibrations targets
