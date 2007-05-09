@@ -254,6 +254,11 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   createValue (derotatorCurrpos, "DER_CUR", "derotator current position",
 	       true, RTS2_DT_DEGREES);
 
+  createValue (targetDist, "target_dist", "distance in degrees to target",
+	       false, RTS2_DT_DEG_DIST);
+  createValue (targetTime, "target_time", "reach target time in seconds",
+	       false);
+
   createValue (derotatorPower, "derotatorPower", "derotator power setting",
 	       false);
 
@@ -818,6 +823,17 @@ Rts2TelescopeIr::info ()
   getCover ();
 
   mountTrack->setValueInteger (track);
+
+  status = TPL_OK;
+  double point_dist;
+  double point_time;
+  tpl_get ("POINTING.TARGETDISTANCE", point_dist, &status);
+  tpl_get ("POINTING.SLEWINGTIME", point_time, &status);
+  if (status == TPL_OK)
+    {
+      targetDist->setValueDouble (point_dist);
+      targetTime->setValueDouble (point_time);
+    }
 
   return Rts2DevTelescope::info ();
 }

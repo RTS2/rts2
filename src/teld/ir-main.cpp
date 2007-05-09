@@ -103,6 +103,8 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
     sleep (3);
   else if (sep > 2 / 60.0)
     usleep (USEC_SEC / 10);
+  else
+    usleep (USEC_SEC / 10);
 
   time (&timeout);
   timeout += 120;

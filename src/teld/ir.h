@@ -54,6 +54,9 @@ private:
 
   Rts2ValueBool *derotatorPower;
 
+  Rts2ValueDouble *targetDist;
+  Rts2ValueDouble *targetTime;
+
   Rts2ValueInteger *mountTrack;
 
   Rts2ValueDouble *cover;
