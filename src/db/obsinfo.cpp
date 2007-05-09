@@ -17,6 +17,7 @@ private:
   int imageFlag;
   int displayFlats ();
   int displayDarks ();
+  void printObsImages (Rts2Obs & obs);
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -30,9 +31,10 @@ Rts2ObsInfo::Rts2ObsInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
   obsset = new Rts2ObsSet ();
-  imageFlag = DISPLAY_ALL;
+  imageFlag = 0;
   addOption ('a', "action", 1,
 	     "i->images, a->with astrometry, t->trash images, q->que images (not yet processed)\n\tf->falts, d->darks");
+  addOption ('l', "filenames", 0, "print filenames");
   addOption ('s', "short", 0, "short image listing");
   action = BASIC_INFO;
 }
@@ -84,6 +86,9 @@ Rts2ObsInfo::processOption (int in_opt)
     case 's':
       imageFlag |= DISPLAY_SHORT;
       break;
+    case 'l':
+      imageFlag |= DISPLAY_FILENAME;
+      break;
     default:
       return Rts2AppDb::processOption (in_opt);
     }
@@ -122,6 +127,14 @@ Rts2ObsInfo::displayDarks ()
   return 0;
 }
 
+void
+Rts2ObsInfo::printObsImages (Rts2Obs & obs)
+{
+  if (!imageFlag || obs.loadImages ())
+    return;
+  obs.getImageSet ()->print (std::cout, imageFlag);
+}
+
 int
 Rts2ObsInfo::run ()
 {
@@ -137,6 +150,7 @@ Rts2ObsInfo::run ()
 	{
 	case BASIC_INFO:
 	  std::cout << obs << std::endl;
+	  printObsImages (obs);
 	  break;
 	case EXT_INFO:
 	  std::cout << obs << std::endl;
@@ -144,10 +158,7 @@ Rts2ObsInfo::run ()
 	case IMAGES_ASTR_OK:
 	case IMAGES_TRASH:
 	case IMAGES_QUE:
-	  ret = obs.loadImages ();
-	  if (ret)
-	    return ret;
-	  obs.getImageSet ()->print (std::cout, imageFlag);
+	  printObsImages (obs);
 	  break;
 	case FLAT_IMAGES:
 	  return displayFlats ();
