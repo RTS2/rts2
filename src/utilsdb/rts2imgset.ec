@@ -188,7 +188,7 @@ Rts2ImgSet::stat ()
 void
 Rts2ImgSet::print (std::ostream &_os, int printImages)
 {
-  if (printImages & DISPLAY_ALL)
+  if ((printImages & DISPLAY_ALL) || (printImages & DISPLAY_FILENAME))
   {
     std::vector <Rts2Image *>::iterator img_iter;
     if (empty () && !(printImages & DISPLAY_SHORT))

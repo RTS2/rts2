@@ -1696,9 +1696,11 @@ Rts2Image::printFileName (std::ostream & _os)
 void
 Rts2Image::print (std::ostream & _os, int in_flags)
 {
-  std::ios_base::fmtflags old_settings = _os.flags ();
-  int old_precision = _os.precision (2);
-
+  if (in_flags & DISPLAY_FILENAME)
+    {
+      printFileName (_os);
+      _os << SEP;
+    }
   if (in_flags & DISPLAY_SHORT)
     {
       printFileName (_os);
@@ -1708,6 +1710,12 @@ Rts2Image::print (std::ostream & _os, int in_flags)
 
   if (in_flags & DISPLAY_OBS)
     _os << std::setw (5) << getObsId () << SEP;
+
+  if (!(in_flags & DISPLAY_ALL))
+    return;
+
+  std::ios_base::fmtflags old_settings = _os.flags ();
+  int old_precision = _os.precision (2);
 
   _os
     << std::setw (5) << getCameraName () << SEP

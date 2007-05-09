@@ -1,4 +1,3 @@
-#include "imgdisplay.h"
 #include "target.h"
 #include "target_auger.h"
 #include "rts2targetplanet.h"
@@ -1500,7 +1499,7 @@ Target::printTargets (double radius, double JD, std::ostream &_os)
 }
 
 int
-Target::printImages (double JD, std::ostream &_os)
+Target::printImages (double JD, std::ostream &_os, int flags)
 {
   struct ln_equ_posn tar_pos;
   int ret;
@@ -1514,7 +1513,7 @@ Target::printImages (double JD, std::ostream &_os)
   if (ret)
     return ret;
 
-  img_set.print (std::cout, DISPLAY_ALL);
+  img_set.print (std::cout, flags);
 
   return img_set.size ();
 }

@@ -44,6 +44,8 @@ Rts2Plan::load ()
   int db_obs_id;
   int db_obs_id_ind;
   double db_plan_start;
+  double db_plan_end;
+  int db_plan_end_ind;
   int db_plan_status;
   EXEC SQL END DECLARE SECTION;
 
@@ -52,12 +54,14 @@ Rts2Plan::load ()
     tar_id,
     obs_id,
     EXTRACT (EPOCH FROM plan_start),
+    EXTRACT (EPOCH FROM plan_end),
     plan_status
   INTO
     :db_prop_id :db_prop_id_ind,
     :db_tar_id,
     :db_obs_id :db_obs_id_ind,
     :db_plan_start,
+    :db_plan_end :db_plan_end_ind,
     :db_plan_status
   FROM
     plan
@@ -78,6 +82,10 @@ Rts2Plan::load ()
   else
     obs_id = db_obs_id;
   plan_start = (long) db_plan_start;
+  if (db_plan_end_ind)
+    plan_end = -1;
+  else
+    plan_end = (long) db_plan_end;
   plan_status = db_plan_status;
   EXEC SQL COMMIT;
   return 0;
@@ -94,6 +102,8 @@ Rts2Plan::save ()
   int db_obs_id = obs_id;
   int db_obs_id_ind;
   long db_plan_start = plan_start;
+  long db_plan_end = plan_end;
+  int db_plan_end_ind = (plan_end == -1 ? -1 : 0);
   int db_plan_status = plan_status;
   EXEC SQL END DECLARE SECTION;
 
@@ -141,6 +151,7 @@ Rts2Plan::save ()
     prop_id,
     obs_id,
     plan_start,
+    plan_end,
     plan_status
   )
   VALUES (
@@ -149,6 +160,7 @@ Rts2Plan::save ()
     :db_prop_id :db_prop_id_ind,
     :db_obs_id :db_obs_id_ind,
     abstime (:db_plan_start),
+    abstime (:db_plan_end :db_plan_end_ind),
     :db_plan_status
   );
   if (sqlca.sqlcode)
@@ -163,6 +175,7 @@ Rts2Plan::save ()
       prop_id = :db_prop_id :db_prop_id_ind,
       obs_id = :db_obs_id :db_obs_id_ind,
       plan_start = abstime (:db_plan_start),
+      plan_end = abstime (:db_plan_end :db_plan_end_ind),
       plan_status = :db_plan_status
     WHERE
       plan_id = :db_plan_id;
@@ -266,12 +279,14 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
 {
   struct ln_hrz_posn hrz;
   time_t plan_start;
+  time_t plan_end;
   const char *tar_name;
   struct ln_lnlat_posn *obs;
   int good;
   double JD;
   int ret;
   plan_start = plan->getPlanStart ();
+  plan_end = plan->getPlanEnd ();
   JD = ln_get_julian_from_timet (&plan_start);
   ret = plan->load ();
   if (ret)
@@ -287,14 +302,15 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
   obs = Rts2Config::instance()->getObserver ();
   plan->getTarget ()->getAltAz (&hrz, JD);
   LibnovaHrz lHrz (&hrz);
-  _os << "  " << std::setw (8) << plan->plan_id << "|"
-    << std::setw (8) << plan->prop_id << "|"
-    << std::left << std::setw (20) << tar_name << "|"
-    << std::right << std::setw (8) << plan->tar_id << "|"
-    << std::setw (8) << plan->obs_id << "|"
-    << std::setw (9) << LibnovaDate (&(plan->plan_start)) << "|"
-    << std::setw (8) << plan->plan_status << "|"
-    << lHrz << "|"
+  _os << "  " << std::setw (8) << plan->plan_id << SEP
+    << std::setw (8) << plan->prop_id << SEP
+    << std::left << std::setw (20) << tar_name << SEP
+    << std::right << std::setw (8) << plan->tar_id << SEP
+    << std::setw (8) << plan->obs_id << SEP
+    << std::setw (9) << LibnovaDate (&(plan->plan_start)) << SEP
+    << std::setw (9) << LibnovaDate (&(plan->plan_end)) << SEP
+    << std::setw (8) << plan->plan_status << SEP
+    << lHrz << SEP
     << std::setw(1) << (good ? 'G' : 'B')
     << std::endl;
 

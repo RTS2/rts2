@@ -16,6 +16,8 @@ protected:
   int tar_id;
   int obs_id;
   time_t plan_start;
+  time_t plan_end;
+
   int plan_status;
 
   Target *target;
@@ -46,6 +48,11 @@ public:
   time_t getPlanStart ()
   {
     return plan_start;
+  }
+
+  time_t getPlanEnd ()
+  {
+    return plan_end;
   }
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Plan * plan);

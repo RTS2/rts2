@@ -1,6 +1,7 @@
 #ifndef __RTS_TARGETDB__
 #define __RTS_TARGETDB__
 
+#include "imgdisplay.h"
 #include <errno.h>
 #include <libnova/libnova.h>
 #include <ostream>
@@ -447,12 +448,12 @@ public:
 
   int printTargets (double radius, double JD, std::ostream & _os);
 
-  int printImages (std::ostream & _os)
+  int printImages (std::ostream & _os, int flags = DISPLAY_ALL)
   {
-    return printImages (ln_get_julian_from_sys (), _os);
+    return printImages (ln_get_julian_from_sys (), _os, flags);
   }
 
-  int printImages (double JD, std::ostream & _os);
+  int printImages (double JD, std::ostream & _os, int flags = DISPLAY_ALL);
 
   /**
    * Return calibration targets for given target
