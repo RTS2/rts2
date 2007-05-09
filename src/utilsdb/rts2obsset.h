@@ -3,7 +3,6 @@
 
 #include "rts2obs.h"
 
-#include <pgtypes_timestamp.h>
 #include <string>
 #include <vector>
 
