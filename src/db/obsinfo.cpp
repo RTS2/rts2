@@ -149,7 +149,8 @@ Rts2ObsInfo::run ()
       switch (action)
 	{
 	case BASIC_INFO:
-	  std::cout << obs << std::endl;
+	  if (!(imageFlag & DISPLAY_FILENAME))
+	    std::cout << obs << std::endl;
 	  printObsImages (obs);
 	  break;
 	case EXT_INFO:
