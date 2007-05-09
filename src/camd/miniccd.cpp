@@ -925,7 +925,7 @@ Rts2DevCameraMiniccd::init ()
 
   char *top = ccdType;
 
-  while ((isalnum (*top) || isspace (*top))
+  while ((isgraph (*top) || isspace (*top))
 	 && top - ccdType < CCD_CCD_NAME_LEN / 2)
     top++;
   *top = '\0';
