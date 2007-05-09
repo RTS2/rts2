@@ -30,7 +30,9 @@ keyRet Rts2NValueBoxBool::injectKey (int key)
     case KEY_ENTER:
     case K_ENTER:
       return RKEY_ENTER;
-      break;
+    case KEY_EXIT:
+    case K_ESC:
+      return RKEY_ESC;
     }
   return Rts2NSelWindow::injectKey (key);
 }
