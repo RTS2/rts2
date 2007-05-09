@@ -130,7 +130,8 @@ CameraApogeeChip::isExposing ()
 
   if (status != Camera_Status_ImageReady)
     {
-      if (status == Camera_Status_Flushing)
+      if (status == Camera_Status_Flushing
+	  || status == Camera_Status_Exposing)
 	{
 	  // if flushing takes too much time, reset camera and end exposure
 	  time (&now);
