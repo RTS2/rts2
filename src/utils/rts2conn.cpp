@@ -269,7 +269,7 @@ std::string Rts2Conn::getStateString ()
       break;
     case DEVICE_TYPE_FOCUS:
       if (real_state & FOC_FOCUSING)
-	_os << "FOCUSING";
+	_os << "CHANGING";
       else
 	_os << "idle";
       break;
