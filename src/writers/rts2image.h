@@ -468,9 +468,6 @@ public:
     return naxis[1];
   }
 
-  // returns ra & dec distance in degrees of pixel [x,y] from device axis
-  // I think it's better to use double precission even in pixel coordinates, as I'm then sure I'll not 
-  // loose precision somewhere in calculation
   /**
    * Returns ra & dec distance in degrees of pixel [x,y] from device axis (XOA and YOA coordinates)
    *
@@ -486,10 +483,12 @@ public:
   int getOffset (double x1, double y1, double x2, double y2, double &chng_ra,
 		 double &chng_dec, double &sep_angle);
 
-  // this function is good only for HAM source detection on FRAM telescope in Argentina.
-  // HAM is calibration source, which is used test target for photometer to measure it's sesitivity 
-  // (and other things, such as athmospheric dispersion..).
-  // You most probably don't need it.
+  /**
+   * This function is good only for HAM source detection on FRAM telescope in Argentina.
+   * HAM is calibration source, which is used test target for photometer to measure it's sesitivity 
+   * (and other things, such as athmospheric dispersion..).
+   * You most probably don't need it.
+   */
   int getHam (double &x, double &y);
 
   // return offset & flux of the brightest star in field
@@ -530,6 +529,16 @@ public:
   int getCoordTarget (LibnovaRaDec & radec);
   int getCoordAstrometry (LibnovaRaDec & radec);
   int getCoordMount (LibnovaRaDec & radec);
+
+  /**
+   * Retrieves from FITS headers best target coordinates.
+   *
+   * Those are taken from RASC and DECL keywords, which are filled by
+   * astrometry value, if astrometry was processed sucessfully from this image,
+   * and target values corrected by any know offsets if astrometry is not know
+   * or invalid.
+   */
+  int getCoordBest (LibnovaRaDec & radec);
 
   std::string getOnlyFileName ();
 
@@ -582,7 +591,18 @@ public:
 
   void writeClient (Rts2DevClient * client);
 
+  /**
+   * This will create WCS from record available at the FITS file.
+   *
+   * @param x_off  offset of the X coordinate (most probably computed from bright star location)
+   * @param y_off  offset of the Y coordinate (most probably computed from bright star location)
+   *
+   * @return 0 on success, -1 on error.
+   */
+  int createWCS (double x_off = 0, double y_off = 0);
+
   friend std::ostream & operator << (std::ostream & _os, Rts2Image & image);
+
   // image processing routines and values
   double classicMedian (double *q, int n, double *sigma);
   int findMaxIntensity (unsigned short *in_data, struct pixel *ret);

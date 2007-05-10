@@ -216,7 +216,7 @@ Rts2Image::getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name)
 int
 Rts2Image::getCoordTarget (LibnovaRaDec & radec)
 {
-  return getCoord (radec, "RASC", "DECL");
+  return getCoord (radec, "TAR_RA", "TAR_DEC");
 }
 
 int
@@ -229,4 +229,47 @@ int
 Rts2Image::getCoordMount (LibnovaRaDec & radec)
 {
   return getCoord (radec, "MNT_RA", "MNT_DEC");
+}
+
+int
+Rts2Image::getCoordBest (LibnovaRaDec & radec)
+{
+  return getCoord (radec, "RASC", "DECL");
+}
+
+int
+Rts2Image::createWCS (double x_off, double y_off)
+{
+  LibnovaRaDec radec;
+  int ret;
+
+  ret = getCoordTarget (radec);
+  if (ret)
+    return ret;
+
+  getFailed = 0;
+
+  double rotang = getRotang ();
+
+  // now create the record
+  setValue ("RADECSYS", "FK5", "WCS coordinate system");
+
+  setValue ("CTYPE1", "RA---TAN", "WCS axis 1 coordinates");
+  setValue ("CTYPE2", "DEC--TAN", "WCS axis 2 coordinates");
+
+  setValue ("CRVAL1", radec.getRa (), "WCS RA");
+  setValue ("CRVAL2", radec.getDec (), "WCS DEC");
+
+  setValue ("CDELT1", getXPlate (), "WCS X pixel size");
+  setValue ("CDELT2", getYPlate (), "WCS Y pixel size");
+
+  setValue ("CROTA1", rotang, "WCS rotang");
+  setValue ("CROTA2", rotang, "WCS rotang");
+
+  setValue ("CRPIX1", naxis[0] / 2.0 + x_off, "X center");
+  setValue ("CRPIX2", naxis[1] / 2.0 + y_off, "Y center");
+
+  setValue ("EPOCH", 2000.0, "WCS equinox");
+
+  return getFailed == 0;
 }

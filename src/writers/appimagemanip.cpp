@@ -13,6 +13,7 @@
 #define IMAGEOP_COPY		0x08
 #define IMAGEOP_MOVE		0x10
 #define IMAGEOP_EVAL		0x20
+#define IMAGEOP_CREATEWCS	0x40
 
 class Rts2AppImageManip:public Rts2AppDbImage
 {
@@ -25,6 +26,7 @@ private:
   int insert (Rts2ImageDb * image);
   int testImage (Rts2Image * image);
   int testEval (Rts2Image * image);
+  void createWCS (Rts2Image * image);
 
     std::string copy_expr;
     std::string move_expr;
@@ -145,6 +147,15 @@ Rts2AppImageManip::testEval (Rts2Image * image)
   return 0;
 }
 
+void
+Rts2AppImageManip::createWCS (Rts2Image * image)
+{
+  int ret = image->createWCS ();
+
+  if (ret)
+    std::cerr << "Create WCS returned with error " << ret << std::endl;
+}
+
 int
 Rts2AppImageManip::processOption (int in_opt)
 {
@@ -170,6 +181,9 @@ Rts2AppImageManip::processOption (int in_opt)
     case 'e':
       operation |= IMAGEOP_EVAL;
       break;
+    case 'w':
+      operation |= IMAGEOP_CREATEWCS;
+      break;
     default:
       return Rts2AppDbImage::processOption (in_opt);
     }
@@ -191,6 +205,8 @@ Rts2AppImageManip::processImage (Rts2ImageDb * image)
     image->renameImageExpand (move_expr);
   if (operation & IMAGEOP_EVAL)
     testEval (image);
+  if (operation & IMAGEOP_CREATEWCS)
+    createWCS (image);
   return 0;
 }
 
@@ -211,6 +227,8 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
 	     "move image(s) to path expression given as argument");
   addOption ('e', "eval", 0, "image evaluation for AF purpose");
   addOption ('t', "test", 0, "test various image routines");
+  addOption ('w', "wcs", 0,
+	     "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
 }
 
 int
