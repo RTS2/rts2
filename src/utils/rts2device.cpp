@@ -715,7 +715,8 @@ Rts2Device::setState (int new_state, char *description)
 	      sendLog;
 	  else
 	    logStream (MESSAGE_DEBUG) << "change value of' " << queVal->
-	      getOldValue ()->getName () << "' from que" << sendLog;
+	      getOldValue ()->
+	      getName () << "' from que to " newValStr << sendLog;
 	  delete queVal;
 	  iter = queValues.erase (iter);
 	}
