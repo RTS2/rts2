@@ -169,7 +169,7 @@ void
 EllTarget::writeToImage (Rts2Image * image)
 {
   Target::writeToImage (image);
-  image->setValue ("ELL_EPOCH", orbit.JD, "epoch of the orbit");
+  image->setValue ("ELL_EPO", orbit.JD, "epoch of the orbit");
   if (orbit.e < 1.0)
   {
     image->setValue ("ELL_N", orbit.n, "n parameter of the orbit");
