@@ -38,10 +38,13 @@ private:
   void updateScriptCount ();
 
   Rts2ValueInteger *current_id;
+  Rts2ValueString *current_name;
+  Rts2ValueString *current_type;
   Rts2ValueInteger *current_id_sel;
   Rts2ValueInteger *current_obsid;
 
   Rts2ValueInteger *next_id;
+  Rts2ValueString *next_name;
   Rts2ValueInteger *priority_id;
 
   Rts2ValueInteger *img_id;
@@ -111,11 +114,14 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
   acqusitionFailed->setValueInteger (0);
 
   createValue (current_id, "current", "ID of current target", false);
+  createValue (current_name, "current_name", "name of current target", false);
+  createValue (current_type, "current_type", "type of current target", false);
   createValue (current_id_sel, "current_sel",
 	       "ID of currently selected target", false);
   createValue (current_obsid, "obsid", "ID of observation", false);
 
   createValue (next_id, "next", "ID of next target", false);
+  createValue (next_name, "next_name", "name of next target", false);
 
   createValue (priority_id, "priority_target",
 	       "ID of priority target (should be NULL in most cases", false);
@@ -353,6 +359,7 @@ Rts2Executor::info ()
   if (currentTarget)
     {
       current_id->setValueInteger (currentTarget->getObsTargetID ());
+      current_name->setValueString (currentTarget->getTargetName ());
       current_id_sel->setValueInteger (currentTarget->getTargetID ());
       current_obsid->setValueInteger (currentTarget->getObsId ());
       img_id->setValueInteger (currentTarget->getCurrImgId ());
@@ -367,6 +374,7 @@ Rts2Executor::info ()
   if (nextTarget)
     {
       next_id->setValueInteger (nextTarget->getTargetID ());
+      next_name->setValueString (nextTarget->getTargetName ());
     }
   else
     {
