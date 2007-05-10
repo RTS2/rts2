@@ -235,7 +235,10 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("CTIME", exposureStart.tv_sec, true);
   getValue ("USEC", exposureStart.tv_usec, true);
   setExposureStart ();
-  getValue ("EXPOSURE", exposureLength, true);
+  // if EXPTIM fails..
+  ret = getValue ("EXPTIME", exposureLength, true);
+  if (ret)
+    getValue ("EXPOSURE", exposureLength, true);
   ret = getValues ("NAXIS", naxis, 2, true);
   if (ret)
     {
@@ -519,7 +522,11 @@ Rts2Image::openImage (const char *in_filename)
     }
   if (fits_status)
     {
-      logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
+      if (!(flags & IMAGE_CANNOT_LOAD))
+	{
+	  logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
+	  flags |= IMAGE_CANNOT_LOAD;
+	}
       return -1;
     }
 

@@ -5,6 +5,7 @@
 #define IMAGE_NOT_SAVE  	0x00
 #define IMAGE_KEEP_DATA 	0x02
 #define IMAGE_DONT_DELETE_DATA	0x04
+#define IMAGE_CANNOT_LOAD	0x08
 
 #include <sys/time.h>
 #include <time.h>
@@ -272,7 +273,8 @@ public:
   void setExposureLength (float in_exposureLength)
   {
     exposureLength = in_exposureLength;
-    setValue ("EXPOSURE", exposureLength, "exposure time");
+    setValue ("EXPOSURE", exposureLength, "exposure length in seconds");
+    setValue ("EXPTIME", exposureLength, "exposure length in seconds");
   }
 
   float getExposureLength ()
