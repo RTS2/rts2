@@ -88,7 +88,7 @@ Rts2ValueString::setValue (Rts2Conn * connection)
 }
 
 void
-Rts2ValueString::setValueString (char *in_value)
+Rts2ValueString::setValueString (const char *in_value)
 {
   delete[]value;
   if (!in_value)
