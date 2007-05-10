@@ -35,12 +35,22 @@ class Rts2AppDb:public Rts2App
 private:
   char *connectString;
   char *configFile;
+
+  int initDB ();
+
+protected:
+    virtual int processOption (int in_opt);
+  /**
+   * Called for query if the application really needs database access.
+   *
+   * @return true when the application needs database access.
+   */
+  virtual bool doInitDB ();
+
 public:
     Rts2AppDb (int argc, char **argv);
     virtual ~ Rts2AppDb (void);
 
-  virtual int processOption (int in_opt);
-  int initDB ();
   virtual int init ();
 
   int parseDate (const char *in_date, double &JD);

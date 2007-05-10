@@ -236,7 +236,7 @@ Rts2Image::Rts2Image (const char *in_filename)
   getValue ("USEC", exposureStart.tv_usec, true);
   setExposureStart ();
   // if EXPTIM fails..
-  ret = getValue ("EXPTIME", exposureLength, true);
+  ret = getValue ("EXPTIME", exposureLength, false);
   if (ret)
     getValue ("EXPOSURE", exposureLength, true);
   ret = getValues ("NAXIS", naxis, 2, true);

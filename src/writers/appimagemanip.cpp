@@ -32,6 +32,7 @@ private:
     std::string move_expr;
 protected:
     virtual int processOption (int in_opt);
+  virtual bool doInitDB ();
   virtual int processImage (Rts2ImageDb * image);
 public:
     Rts2AppImageManip (int in_argc, char **in_argv);
@@ -190,6 +191,11 @@ Rts2AppImageManip::processOption (int in_opt)
   return 0;
 }
 
+bool Rts2AppImageManip::doInitDB ()
+{
+  return (operation & IMAGEOP_MOVE) || (operation & IMAGEOP_INSERT);
+}
+
 int
 Rts2AppImageManip::processImage (Rts2ImageDb * image)
 {
@@ -213,10 +219,6 @@ Rts2AppImageManip::processImage (Rts2ImageDb * image)
 Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImage (in_argc,
 		in_argv)
 {
-  Rts2Config *
-    config;
-  config = Rts2Config::instance ();
-
   operation = IMAGEOP_NOOP;
 
   addOption ('c', "copy", 1,
@@ -234,7 +236,8 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
 int
 main (int argc, char **argv)
 {
-  Rts2AppImageManip app = Rts2AppImageManip (argc, argv);
+  Rts2AppImageManip
+    app = Rts2AppImageManip (argc, argv);
   int
     ret = app.init ();
   if (ret)

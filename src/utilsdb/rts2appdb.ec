@@ -359,24 +359,22 @@ Rts2AppDb::processOption (int in_opt)
   return 0;
 }
 
+bool
+Rts2AppDb::doInitDB ()
+{
+  return true;
+}
+
 int
 Rts2AppDb::initDB ()
 {
-  int ret;
   EXEC SQL BEGIN DECLARE SECTION;
   char conn_str[200];
   EXEC SQL END DECLARE SECTION;
   // try to connect to DB
 
-  Rts2Config *config;
+  Rts2Config *config = Rts2Config::instance ();
 
-  // load config..
-
-  config = Rts2Config::instance ();
-  ret = config->loadFile (configFile);
-  if (ret)
-    return ret;
-  
   if (connectString)
   {
     strncpy (conn_str, connectString, 200);
@@ -401,14 +399,24 @@ Rts2AppDb::initDB ()
 int
 Rts2AppDb::init ()
 {
+  Rts2Config *config;
   int ret;
 
   ret = Rts2App::init ();
   if (ret)
     return ret;
 
-  // load config.
-  return initDB ();
+  // load config..
+
+  config = Rts2Config::instance ();
+  ret = config->loadFile (configFile);
+  if (ret)
+    return ret;
+
+  if (doInitDB ())
+    // load config.
+    ret = initDB ();
+  return ret;
 }
 
 int

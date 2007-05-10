@@ -243,11 +243,11 @@ Rts2Image::createWCS (double x_off, double y_off)
   LibnovaRaDec radec;
   int ret;
 
+  getFailed = 0;
+
   ret = getCoordTarget (radec);
   if (ret)
     return ret;
-
-  getFailed = 0;
 
   double rotang = getRotang ();
 
@@ -271,5 +271,5 @@ Rts2Image::createWCS (double x_off, double y_off)
 
   setValue ("EPOCH", 2000.0, "WCS equinox");
 
-  return getFailed == 0;
+  return getFailed == 0 ? 0 : -1;
 }
