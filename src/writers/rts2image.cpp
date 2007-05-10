@@ -1123,8 +1123,8 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       return -1;
     }
   setValue ("AVERAGE", average, "average value of image");
-  setValue ("STDEV", stdev, "standart deviation value of image");
-  setValue ("BGSTDEV", stdev, "standart deviation value of background");
+  setValue ("STDEV", stdev, "standard deviation value of image");
+  setValue ("BGSTDEV", stdev, "standard deviation value of background");
   return ret;
 }
 
