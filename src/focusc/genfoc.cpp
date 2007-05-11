@@ -98,10 +98,10 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
   return image;
 }
 
-void
-Rts2GenFocCamera::processImage (Rts2Image * image)
+imageProceRes Rts2GenFocCamera::processImage (Rts2Image * image)
 {
-  Rts2DevClientCameraFoc::processImage (image);
+  imageProceRes
+    res = Rts2DevClientCameraFoc::processImage (image);
   std::cout << "Camera " << getName () << " image_type:";
   switch (image->getShutter ())
     {
@@ -117,6 +117,7 @@ Rts2GenFocCamera::processImage (Rts2Image * image)
       break;
     }
   std::cout << std::endl;
+  return res;
 }
 
 void

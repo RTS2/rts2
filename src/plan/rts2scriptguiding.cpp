@@ -159,7 +159,7 @@ Rts2ScriptElementGuiding::nextCommand (Rts2DevClientCamera * camera,
     {
     case WAITING_IMAGE:
       *new_command = NULL;
-      return NEXT_COMMAND_NEXT;
+      return NEXT_COMMAND_KEEP;
     case NO_IMAGE:
       script->getMaster ()->
 	postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
@@ -213,6 +213,7 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
       delete processor;
       processor = NULL;
       processingState = FAILED;
+      return -1;
     }
   else
     {
@@ -222,7 +223,7 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
   logStream (MESSAGE_DEBUG)
     << "Rts2ConnImgProcess::processImage executed processor " << ret
     << " processor " << processor << sendLog;
-  return 0;
+  return 1;
 }
 
 int

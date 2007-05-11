@@ -44,7 +44,6 @@ public:
     Rts2focuscCamera (Rts2Conn * in_connection, Rts2focusc * in_master);
 
   virtual void postEvent (Rts2Event * event);
-  virtual void processImage (Rts2Image * image);
 };
 
 Rts2GenFocCamera *
@@ -113,27 +112,6 @@ Rts2focuscCamera::postEvent (Rts2Event * event)
       return;
     }
   Rts2GenFocCamera::postEvent (event);
-}
-
-void
-Rts2focuscCamera::processImage (Rts2Image * image)
-{
-  Rts2GenFocCamera::processImage (image);
-  std::cout << "Camera " << getName () << " image_type:";
-  switch (image->getShutter ())
-    {
-    case SHUT_CLOSED:
-      std::cout << "dark";
-      break;
-    case SHUT_OPENED:
-    case SHUT_SYNCHRO:
-      std::cout << "object";
-      break;
-    default:
-      std::cout << "unknow";
-      break;
-    }
-  std::cout << std::endl;
 }
 
 int

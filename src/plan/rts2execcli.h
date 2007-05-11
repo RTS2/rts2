@@ -107,7 +107,7 @@ public:
   virtual void postEvent (Rts2Event * event);
   virtual void nextCommand ();
   void queImage (Rts2Image * image);
-  virtual void processImage (Rts2Image * image);
+  virtual imageProceRes processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
 
   virtual void filterOK ();

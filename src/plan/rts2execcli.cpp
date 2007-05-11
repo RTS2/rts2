@@ -118,18 +118,23 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
-void
-Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-  int ret;
+  int
+    ret;
   // try processing in script..
   if (getScript () && !queCurrentImage)
     {
       ret = getScript ()->processImage (image);
-      if (!ret)
+      if (ret > 0)
 	{
-	  return;
+	  return IMAGE_KEEP_COPY;
 	}
+      else if (ret == 0)
+	{
+	  return IMAGE_DO_BASIC_PROCESSING;
+	}
+      // otherwise que image processing
     }
   else
     {

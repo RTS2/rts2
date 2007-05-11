@@ -151,7 +151,7 @@ public:
 
   virtual void postEvent (Rts2Event * event);
 
-  virtual void processImage (Rts2Image * image);
+  virtual imageProceRes processImage (Rts2Image * image);
   void setCrossType (int in_crossType);
 };
 
@@ -659,15 +659,20 @@ Rts2xfocusCamera::printFWHMTable ()
     redraw ();
 }
 
-void
-Rts2xfocusCamera::processImage (Rts2Image * image)
+imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 {
-  int dataSize;
-  int i, j, k;
-  unsigned short *im_ptr;
+  int
+    dataSize;
+  int
+    i,
+    j,
+    k;
+  unsigned short *
+    im_ptr;
 
   // get to upper classes as well
-  Rts2DevClientCameraFoc::processImage (image);
+  imageProceRes
+    res = Rts2DevClientCameraFoc::processImage (image);
 
   pixmapWidth = image->getWidth ();
   pixmapHeight = image->getHeight ();
@@ -736,7 +741,8 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
   for (j = 0; j < pixmapHeight; j++)
     for (i = 0; i < pixmapWidth; i++)
       {
-	unsigned short val;
+	unsigned short
+	  val;
 	val = *im_ptr;
 	im_ptr++;
 	if (val < low)
@@ -781,6 +787,8 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 
   redraw ();
   XFlush (master->getDisplay ());
+
+  return res;
 }
 
 void
