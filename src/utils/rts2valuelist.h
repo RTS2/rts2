@@ -97,6 +97,22 @@ public:
   {
     save &= ~0x04;
   }
+  // mark that next operation is value load from que..
+  void
+  loadFromQue ()
+  {
+    save |= 0x08;
+  }
+  void
+  clearLoadedFromQue ()
+  {
+    save &= ~0x08;
+  }
+  bool
+  loadedFromQue ()
+  {
+    return save & 0x08;
+  }
   Rts2Value *
   getValue ()
   {

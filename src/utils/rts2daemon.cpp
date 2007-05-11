@@ -40,6 +40,7 @@ Rts2Block (in_argc, in_argv)
 
 Rts2Daemon::~Rts2Daemon (void)
 {
+  savedValues.clear ();
   if (listen_sock >= 0)
     close (listen_sock);
   if (lockf)
@@ -360,8 +361,9 @@ Rts2Daemon::deleteSaveValue (Rts2CondValue * val)
 void
 Rts2Daemon::loadValues ()
 {
+  int ret;
   for (Rts2ValueVector::iterator iter = savedValues.begin ();
-       iter != savedValues.end (); iter++)
+       iter != savedValues.end ();)
     {
       Rts2Value *new_val = *iter;
       Rts2CondValue *old_val = getValue (new_val->getName ().c_str ());
@@ -378,15 +380,30 @@ Rts2Daemon::loadValues ()
 	  old_val->clearIgnoreSave ();
 	}
       // if there was error setting value
-      else if (setValue (old_val, '=', new_val) == -2)
+      else
 	{
-	  logStream (MESSAGE_ERROR) <<
-	    "Rts2Daemon::loadValues cannot set value " << new_val->
-	    getName () << sendLog;
+	  ret = setValue (old_val, '=', new_val);
+	  if (ret == -2)
+	    {
+	      logStream (MESSAGE_ERROR) <<
+		"Rts2Daemon::loadValues cannot set value " << new_val->
+		getName () << sendLog;
+	    }
+	  // if value change is qued, inform value, that it should delete after next load..
+	  if (ret == 0)
+	    {
+	      old_val->clearValueSave ();
+	      // this will put to iter next value..
+	      iter = savedValues.erase (iter);
+	      continue;
+	    }
+	  else
+	    {
+	      old_val->loadFromQue ();
+	    }
 	}
-      old_val->clearValueSave ();
+      iter++;
     }
-  savedValues.clear ();
 }
 
 void
@@ -577,6 +594,13 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
     {
       saveValue (old_cond_value);
       old_cond_value->clearIgnoreSave ();
+    }
+
+  // if the previous one was postponed, clear that flag..
+  if (old_cond_value->loadedFromQue ())
+    {
+      old_cond_value->clearLoadedFromQue ();
+      deleteSaveValue (old_cond_value);
     }
 
   sendValueAll (old_value);
