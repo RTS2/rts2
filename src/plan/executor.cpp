@@ -38,9 +38,9 @@ private:
   void updateScriptCount ();
 
   Rts2ValueInteger *current_id;
+  Rts2ValueInteger *current_id_sel;
   Rts2ValueString *current_name;
   Rts2ValueString *current_type;
-  Rts2ValueInteger *current_id_sel;
   Rts2ValueInteger *current_obsid;
 
   Rts2ValueInteger *next_id;
@@ -114,10 +114,10 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
   acqusitionFailed->setValueInteger (0);
 
   createValue (current_id, "current", "ID of current target", false);
-  createValue (current_name, "current_name", "name of current target", false);
-  createValue (current_type, "current_type", "type of current target", false);
   createValue (current_id_sel, "current_sel",
 	       "ID of currently selected target", false);
+  createValue (current_name, "current_name", "name of current target", false);
+  createValue (current_type, "current_type", "type of current target", false);
   createValue (current_obsid, "obsid", "ID of observation", false);
 
   createValue (next_id, "next", "ID of next target", false);
@@ -368,6 +368,7 @@ Rts2Executor::info ()
     {
       current_id->setValueInteger (-1);
       current_id_sel->setValueInteger (-1);
+      current_name->setValueString (NULL);
       current_obsid->setValueInteger (-1);
       img_id->setValueInteger (-1);
     }
@@ -379,6 +380,7 @@ Rts2Executor::info ()
   else
     {
       next_id->setValueInteger (-1);
+      next_name->setValueString (NULL);
     }
   if (priorityTarget)
     {
