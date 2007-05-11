@@ -253,7 +253,7 @@ Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   if (old_value == filter)
     return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
-  return Rts2Device::setValue (old_value, new_value);
+  return Rts2ScriptDevice::setValue (old_value, new_value);
 }
 
 int
