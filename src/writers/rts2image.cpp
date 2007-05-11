@@ -1748,7 +1748,6 @@ Rts2Image::writeClient (Rts2DevClient * client)
       Rts2Value *val = *iter;
       if (val->getWriteToFits ())
 	{
-	  time_t valT;
 	  char *desc = (char *) val->getDescription ().c_str ();
 	  char *name = (char *) val->getName ().c_str ();
 
@@ -1761,8 +1760,7 @@ Rts2Image::writeClient (Rts2DevClient * client)
 	      setValue (name, val->getValueInteger (), desc);
 	      break;
 	    case RTS2_VALUE_TIME:
-	      valT = val->getValueInteger ();
-	      setValue (name, &valT, 0, desc);
+	      setValue (name, val->getValueDouble (), desc);
 	      break;
 	    case RTS2_VALUE_DOUBLE:
 	      setValue (name, val->getValueDouble (), desc);

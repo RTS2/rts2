@@ -143,7 +143,9 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
 	  images->saveImage ();
 	}
       // do basic processing
-      processImage (images);
+      imageProceRes res = processImage (images);
+      if (res == IMAGE_KEEP_COPY)
+	images = NULL;
     }
 }
 
@@ -169,9 +171,10 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-void
+imageProceRes
 Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
+  return IMAGE_DO_BASIC_PROCESSING;
 }
 
 void

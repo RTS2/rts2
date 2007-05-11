@@ -10,13 +10,14 @@
 
 #include <libnova/libnova.h>
 
-/**************************************
- *
+typedef enum
+{ IMAGE_DO_BASIC_PROCESSING, IMAGE_KEEP_COPY } imageProceRes;
+
+/**
  * Defines client descendants capable to stream themselves
  * to an Rts2Image.
  * 
- *************************************/
-
+ */
 class Rts2DevClientCameraImage:public Rts2DevClientCamera
 {
 private:
@@ -68,7 +69,15 @@ public:
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
   virtual Rts2Image *createImage (const struct timeval *expStart);
   virtual void beforeProcess (Rts2Image * image);
-  virtual void processImage (Rts2Image * image);
+  /**
+   * This function carries image processing.  Based on the return value, image
+   * will be deleted when new image is taken, or deleting of the image will
+   * become responsibility of process which forked with this call.
+   *
+   * @return IMAGE_DO_BASIC_PROCESSING when image still should be handled by
+   * connection, or IMAGE_KEEP_COPY if processing instance will delete image.
+   */
+  virtual imageProceRes processImage (Rts2Image * image);
   virtual void exposureFailed (int status);
 
   void setSaveImage (int in_saveImage)

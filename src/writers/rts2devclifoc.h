@@ -30,7 +30,7 @@ public:
     Rts2DevClientCameraFoc (Rts2Conn * in_connection, const char *in_exe);
     virtual ~ Rts2DevClientCameraFoc (void);
   virtual void postEvent (Rts2Event * event);
-  virtual void processImage (Rts2Image * image);
+  virtual imageProceRes processImage (Rts2Image * image);
   // will cause camera to change focus by given steps BEFORE exposition
   // when change == INT_MAX, focusing don't converge
   virtual void focusChange (Rts2Conn * focus);
@@ -53,7 +53,8 @@ private:
   int change;
   int endEvent;
 protected:
-    virtual void beforeFork ();
+    virtual void initFailed ();
+  virtual void beforeFork ();
 public:
     Rts2ConnFocus (Rts2Block * in_master, Rts2Image * in_image,
 		   const char *in_exe, int in_endEvent);

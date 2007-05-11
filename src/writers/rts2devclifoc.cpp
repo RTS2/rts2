@@ -90,19 +90,21 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
   Rts2DevClientCameraImage::postEvent (event);
 }
 
-void
-Rts2DevClientCameraFoc::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 {
   // create focus connection
-  int ret;
+  int
+    ret;
 
-  Rts2DevClientCameraImage::processImage (image);
+  imageProceRes
+    res = Rts2DevClientCameraImage::processImage (image);
 
   // got requested dark..
   if (image->getShutter () == SHUT_CLOSED)
     {
       if (darkImage)
-	delete darkImage;
+	delete
+	  darkImage;
       darkImage = image;
       darkImage->saveImage ();
       exposureCount = 1;
@@ -120,12 +122,15 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
       ret = focConn->init ();
       if (ret)
 	{
-	  delete focConn;
-	  return;
+	  delete
+	    focConn;
+	  return IMAGE_DO_BASIC_PROCESSING;
 	}
       // after we finish, we will call focus routines..
       connection->getMaster ()->addConnection (focConn);
+      return IMAGE_KEEP_COPY;
     }
+  return res;
 }
 
 void
@@ -186,6 +191,13 @@ Rts2ConnFocus::~Rts2ConnFocus (void)
   if (change == INT_MAX)	// we don't get focus change, let's try next image..
     getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
   delete[]img_path;
+  delete image;
+}
+
+void
+Rts2ConnFocus::initFailed ()
+{
+  image = NULL;
 }
 
 void
