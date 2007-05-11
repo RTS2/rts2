@@ -13,6 +13,10 @@ protected:
   char *exePath;
   virtual int connectionError (int last_data_size);
   virtual void beforeFork ();
+  /**
+   * Called when initialization of the connection fails at some point.
+   */
+  virtual void initFailed ();
 public:
     Rts2ConnFork (Rts2Block * in_master, const char *in_exe, int in_timeout =
 		  0);

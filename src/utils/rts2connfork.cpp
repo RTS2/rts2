@@ -52,6 +52,11 @@ Rts2ConnFork::beforeFork ()
 {
 }
 
+void
+Rts2ConnFork::initFailed ()
+{
+}
+
 int
 Rts2ConnFork::newProcess ()
 {
@@ -68,6 +73,7 @@ Rts2ConnFork::init ()
     {
       // continue
       kill (childPid, SIGCONT);
+      initFailed ();
       return 1;
     }
   int filedes[2];
@@ -77,6 +83,7 @@ Rts2ConnFork::init ()
       logStream (MESSAGE_ERROR) <<
 	"Rts2ConnImgProcess::run cannot create pipe for process: " <<
 	strerror (errno) << sendLog;
+      initFailed ();
       return -1;
     }
   // do everything that will be needed to done before forking
@@ -86,6 +93,7 @@ Rts2ConnFork::init ()
     {
       logStream (MESSAGE_ERROR) << "Rts2ConnImgProcess::run cannot fork: " <<
 	strerror (errno) << sendLog;
+      initFailed ();
       return -1;
     }
   else if (childPid)		// parent
