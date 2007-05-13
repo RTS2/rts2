@@ -29,7 +29,8 @@ Rts2DevClientTelescopeSel::Rts2DevClientTelescopeSel (Rts2Conn * in_connection):
 void
 Rts2DevClientTelescopeSel::moveEnd ()
 {
-  connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+  if (!moveWasCorrecting)
+    connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
   Rts2DevClientTelescope::moveEnd ();
 }
 
