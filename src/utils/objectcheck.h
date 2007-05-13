@@ -30,7 +30,8 @@ public:
    * 
    * @return 0 if we can observe, <0 otherwise
    */
-  int is_good (double lst, double ra, double dec, int hardness = 0);
+  int is_good (double lst, const struct ln_equ_posn *equ,
+	       const struct ln_hrz_posn *hrz, int hardness = 0);
 };
 
 #endif /* ! __RTS2__OBJECTCHECK__ */

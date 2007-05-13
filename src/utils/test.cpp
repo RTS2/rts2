@@ -13,6 +13,19 @@
 #include "objectcheck.h"
 #include "rts2config.h"
 
+void
+printIsGoodTest (ObjectCheck * checker, double ra, double dec)
+{
+  struct ln_equ_posn pos;
+  pos.ra = ra;
+  pos.dec = dec;
+  struct ln_hrz_posn hrz;
+  ln_get_hrz_from_equ_sidereal_time (&pos,
+				     Rts2Config::instance ()->getObserver (),
+				     0, &hrz);
+  printf ("%f %f is_good: %i\n", ra, dec, checker->is_good (0, &pos, &hrz));
+}
+
 int
 main (int argc, char **argv)
 {
@@ -66,10 +79,9 @@ main (int argc, char **argv)
 
   for (value = 0; value < 360; value += 7.5)
     {
-      printf ("%f -20 is_good: %i\n", value,
-	      checker->is_good (0, value, -20));
-      printf ("%f 0 is_good: %i\n", value, checker->is_good (18, value, 0));
-      printf ("%f 30 is_good: %i\n", value, checker->is_good (18, value, 30));
+      printIsGoodTest (checker, value, -20);
+      printIsGoodTest (checker, value, 0);
+      printIsGoodTest (checker, value, 30);
     }
 
   delete checker;

@@ -612,7 +612,12 @@ CalibrationTarget::load ()
       :db_tar_name;
     if (sqlca.sqlcode)
       break;
-    if (Rts2Config::instance ()->getObjectChecker ()->is_good (lst, db_tar_ra, db_tar_dec))
+    struct ln_equ_posn pos;
+    pos.ra = db_tar_ra;
+    pos.dec = db_tar_dec;
+    struct ln_hrz_posn hrz;
+    ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+    if (Rts2Config::instance ()->getObjectChecker ()->is_good (lst, &pos, &hrz))
     {
       PosCalibration *newCal = new PosCalibration (db_tar_id, db_tar_ra, db_tar_dec, db_type_id,
         db_tar_name.arr, observer, JD);

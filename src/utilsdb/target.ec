@@ -1079,7 +1079,7 @@ Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
   getAltAz (&hrz, JD);
   if (hrz.alt < getMinAlt ())
     return 0;
-  return Rts2Config::instance ()->getObjectChecker ()->is_good (lst, pos->ra, pos->dec);
+  return Rts2Config::instance ()->getObjectChecker ()->is_good (lst, pos, &hrz);
 }
 
 int

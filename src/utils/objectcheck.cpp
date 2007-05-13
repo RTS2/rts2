@@ -90,14 +90,11 @@ ObjectCheck::is_above_horizont (double ha, double dec, double ra1,
 }
 
 int
-ObjectCheck::is_good (double lst, double ra, double dec, int hardness)
+ObjectCheck::is_good (double lst, const struct ln_equ_posn *equ,
+		      const struct ln_hrz_posn *hrz, int hardness)
 {
   std::vector < struct ln_equ_posn >::iterator Iter1;
   struct ln_lnlat_posn *observer;
-
-  double ha = (lst * 15.0 - ra);	// normalize
-  ha = ln_range_degrees (ha);
-  ha /= 15.0;
 
   double last_ra = 0, last_dec = 0;
 
@@ -105,25 +102,19 @@ ObjectCheck::is_good (double lst, double ra, double dec, int hardness)
 
   if (horizont.size () == 0)
     {
-      struct ln_equ_posn curr;
-      struct ln_hrz_posn hrz;
-      double gst;
-      curr.ra = ra;
-      curr.dec = dec;
-      gst = lst - observer->lng / 15.0;
-      gst = ln_range_degrees (gst * 15.0) / 15.0;
-      ln_get_hrz_from_equ_sidereal_time (&curr,
-					 Rts2Config::instance ()->
-					 getObserver (), gst, &hrz);
-      return hrz.alt > 0;
+      return hrz->alt > 0;
     }
+
+  double ha = (lst * 15.0 - equ->ra);	// normalize
+  ha = ln_range_degrees (ha);
+  ha /= 15.0;
 
   for (Iter1 = horizont.begin (); Iter1 != horizont.end (); Iter1++)
     {
       if (Iter1->ra > ha)
 	{
-	  return is_above_horizont (ha, dec, last_ra, last_dec, Iter1->ra,
-				    Iter1->dec, observer->lat);
+	  return is_above_horizont (ha, equ->dec, last_ra, last_dec,
+				    Iter1->ra, Iter1->dec, observer->lat);
 	}
       last_ra = Iter1->ra;
       last_dec = Iter1->dec;
@@ -133,6 +124,6 @@ ObjectCheck::is_good (double lst, double ra, double dec, int hardness)
 
   Iter1 = horizont.begin ();
 
-  return is_above_horizont (ha, dec, last_ra, last_dec, Iter1->ra + 24.0,
+  return is_above_horizont (ha, equ->dec, last_ra, last_dec, Iter1->ra + 24.0,
 			    Iter1->dec, observer->lat);
 }
