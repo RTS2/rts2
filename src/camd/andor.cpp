@@ -212,6 +212,7 @@ CameraAndorChip::startExposure (int light, float exptime)
 	return -1;
       exptime = nAcc * acq_exp;
       subExposure = acq_exp;
+      camera->setSubExposure (subExposure);
     }
 
   chipUsedReadout = new ChipSubset (chipReadout);
@@ -319,8 +320,7 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool
-CameraAndorChip::supportFrameTransfer ()
+bool CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }

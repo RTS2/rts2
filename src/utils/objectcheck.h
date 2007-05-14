@@ -5,21 +5,53 @@
 #include <libnova/ln_types.h>
 
 /**
+ * This holds one value of the horizon file.
+ */
+class HorizonEntry
+{
+public:
+  struct ln_hrz_posn hrz;
+
+    HorizonEntry (double in_az, double in_alt)
+  {
+    hrz.az = in_az;
+    hrz.alt = in_alt;
+  }
+};
+
+typedef
+std::vector < struct HorizonEntry >
+  horizon_t;
+
+/**
  * Class for checking, whenewer observation target is correct or no.
  *
  * @author Petr Kubanek <petr@lascaux.asu.cas.cz>
  */
-class ObjectCheck
+class
+  ObjectCheck
 {
 private:
-  std::vector < struct ln_equ_posn >horizont;
-  int load_horizont (char *horizont_file);
-  inline int is_above_horizont (double st, double dec, double ra1,
-				double dec1, double ra2, double dec2,
-				double lat);
+  enum
+  {
+    LST_DEC,
+    AZ_ALT
+  } horType;
+
+  horizon_t
+    horizon;
+  int
+  load_horizon (char *horizon_file);
+
+  double
+  getHorizonHeightAz (double az, horizon_t::iterator iter1,
+		      horizon_t::iterator iter2);
+
 public:
-    ObjectCheck (char *horizont_file);
-   ~ObjectCheck ();
+  ObjectCheck (char *horizon_file);
+
+   ~
+  ObjectCheck ();
   /**
    * Check, if that target can be observerd.
    *
@@ -30,8 +62,11 @@ public:
    * 
    * @return 0 if we can observe, <0 otherwise
    */
-  int is_good (double lst, const struct ln_equ_posn *equ,
-	       const struct ln_hrz_posn *hrz, int hardness = 0);
+  int
+  is_good (const struct ln_hrz_posn *hrz, int hardness = 0);
+
+  double
+  getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness);
 };
 
 #endif /* ! __RTS2__OBJECTCHECK__ */

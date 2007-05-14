@@ -41,8 +41,8 @@ private:
   Target *target;
   struct ln_lnlat_posn *obs;
   void printTargetInfo ();
-  void printTargetInfoGNU (double jd_start, double pbeg, double pend,
-			   double step);
+  void printTargetInfoGNUplot (double jd_start, double pbeg, double pend,
+			       double step);
   void printTargetInfoDS9 ();
   bool printSelectable;
   bool printExtendet;
@@ -50,9 +50,10 @@ private:
   bool printObservations;
   int printImages;
   int printCounts;
-  int printGNU;
+  int printGNUplot;
   bool printDS9;
   bool addMoon;
+  bool addHorizon;
   char *targetType;
   virtual int printTargets (Rts2TargetSet & set);
 
@@ -78,9 +79,10 @@ Rts2AppDb (in_argc, in_argv)
   printObservations = false;
   printImages = 0;
   printCounts = 0;
-  printGNU = 0;
+  printGNUplot = 0;
   printDS9 = false;
   addMoon = true;
+  addHorizon = true;
   targetType = NULL;
 
   JD = ln_get_julian_from_sys ();
@@ -123,15 +125,15 @@ Rts2TargetInfo::processOption (int in_opt)
       printExtendet = true;
       break;
     case 'g':
-      printGNU = 1;
+      printGNUplot = 1;
       if (optarg)
 	{
 	  if (!strcmp (optarg, "ps"))
-	    printGNU = 2;
+	    printGNUplot = 2;
 	  if (!strcmp (optarg, "png"))
-	    printGNU = 3;
+	    printGNUplot = 3;
 	  if (!strcmp (optarg, "eps"))
-	    printGNU = 4;
+	    printGNUplot = 4;
 	}
       break;
     case 'm':
@@ -274,8 +276,8 @@ Rts2TargetInfo::printTargetInfo ()
 }
 
 void
-Rts2TargetInfo::printTargetInfoGNU (double jd_start, double pbeg, double pend,
-				    double step)
+Rts2TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg,
+					double pend, double step)
 {
   for (double i = pbeg; i <= pend; i += step)
     {
@@ -307,7 +309,11 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
   int old_p;
   std::ios_base::fmtflags old_settings;
 
-  if (printGNU)
+  // if there is more then one target, we will not print horizont - it's useless
+  if (set.size () > 1)
+    addHorizon = false;
+
+  if (printGNUplot)
     {
       ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
 				    LN_SOLAR_CIVIL_HORIZON, &t_rst);
@@ -369,7 +375,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	}
       std::cout << ')' << std::endl;
 
-      switch (printGNU)
+      switch (printGNUplot)
 	{
 	case 2:
 	  std::cout << "set terminal postscript color solid";
@@ -390,6 +396,14 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	  std::
 	    cout << "     \"-\" u 1:2 smooth csplines lt 0 lw 3 t \"Moon\"";
 	}
+      if (addHorizon)
+	{
+	  if (addMoon)
+	    std::cout << ", \\" << std::endl;
+	  std::
+	    cout <<
+	    "     \"-\" u 1:2 smooth csplines lt 2 lw 3 t \"Horizon\"";
+	}
 
       // find and print calibration targets..
       if (printCalTargets)
@@ -409,7 +423,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
       for (iter = set.begin (); iter != set.end (); iter++)
 	{
 	  target = *iter;
-	  if (iter != set.begin () || addMoon)
+	  if (iter != set.begin () || addMoon || addHorizon)
 	    std::cout << ", \\" << std::endl;
 	  std::cout
 	    << "     \"-\" u 1:2 smooth csplines lw 2 t \""
@@ -426,19 +440,36 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
     {
       std::cout << "fk5" << std::endl;
     }
-  else if (printGNU && addMoon)
+  else if (printGNUplot)
     {
-      struct ln_hrz_posn moonHrz;
-      struct ln_equ_posn moonEqu;
-      for (double i = sset; i <= rise; i += step)
+      if (addMoon)
 	{
-	  double jd = jd_start + i / 24.0;
-	  ln_get_lunar_equ_coords (jd, &moonEqu);
-	  ln_get_hrz_from_equ (&moonEqu, obs, jd, &moonHrz);
-	  std::cout
-	    << i << " " << moonHrz.alt << " " << moonHrz.az << std::endl;
+	  struct ln_hrz_posn moonHrz;
+	  struct ln_equ_posn moonEqu;
+	  for (double i = sset; i <= rise; i += step)
+	    {
+	      double jd = jd_start + i / 24.0;
+	      ln_get_lunar_equ_coords (jd, &moonEqu);
+	      ln_get_hrz_from_equ (&moonEqu, obs, jd, &moonHrz);
+	      std::cout
+		<< i << " " << moonHrz.alt << " " << moonHrz.az << std::endl;
+	    }
+	  std::cout << "e" << std::endl;
 	}
-      std::cout << "e" << std::endl;
+      if (addHorizon)
+	{
+	  struct ln_hrz_posn hor;
+	  for (double i = sset; i <= rise; i += step)
+	    {
+	      double jd = jd_start + i / 24.0;
+	      (*(set.begin ()))->getAltAz (&hor, jd);
+	      std::cout
+		<< i << " "
+		<< Rts2Config::instance ()->getObjectChecker ()->
+		getHorizonHeight (&hor, 0) << " " << hor.az << std::endl;
+	    }
+	  std::cout << "e" << std::endl;
+	}
     }
 
   for (iter = set.begin (); iter != set.end (); iter++)
@@ -448,9 +479,9 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	{
 	  printTargetInfoDS9 ();
 	}
-      else if (printGNU)
+      else if (printGNUplot)
 	{
-	  printTargetInfoGNU (jd_start, sset, rise, step);
+	  printTargetInfoGNUplot (jd_start, sset, rise, step);
 	  std::cout << "e" << std::endl;
 	}
       else
@@ -459,7 +490,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	}
     }
 
-  if (printGNU)
+  if (printGNUplot)
     {
       std::cout.setf (old_settings);
       std::cout.precision (old_p);

@@ -2,128 +2,170 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <vector>
+#include <string.h>
 
 #include <algorithm>
 
 #include <libnova/libnova.h>
 #include <libnova/utility.h>
 #include "objectcheck.h"
+#include "libnova_cpp.h"
 
-using namespace std;
-
-ObjectCheck::ObjectCheck (char *horizont_file)
+ObjectCheck::ObjectCheck (char *horizon_file)
 {
-  load_horizont (horizont_file);
-}
-
-bool
-RAcomp (struct ln_equ_posn pos1, struct ln_equ_posn pos2)
-{
-  return pos1.ra < pos2.ra;
-}
-
-int
-ObjectCheck::load_horizont (char *horizont_file)
-{
-  ifstream inf;
-  double ra;
-  double dec;
-
-  inf.open (horizont_file);
-
-  if (inf.fail ())
-    {
-      cerr << "Cannot open horizont file " << horizont_file << endl;
-      return 0;
-    }
-
-  inf.exceptions (ifstream::goodbit | ifstream::failbit | ifstream::badbit);
-
-  while (!inf.eof ())
-    {
-      struct ln_equ_posn *pos;
-      pos = (struct ln_equ_posn *) malloc (sizeof (struct ln_equ_posn));
-      try
-      {
-	inf >> ra >> dec;
-      }
-      catch (exception & e)
-      {
-	inf.clear ();
-	inf.ignore (20000, '\n');
-	continue;
-      };
-      if (!inf.good ())
-	{
-	  inf.clear ();
-	  inf.ignore (20000, '\n');
-	  continue;
-	}
-      pos->ra = ra;
-      pos->dec = dec;
-      horizont.push_back (*pos);
-    }
-
-  // sort horizont file
-  sort (horizont.begin (), horizont.end (), RAcomp);
-
-  return 0;
+  horType = LST_DEC;
+  load_horizon (horizon_file);
 }
 
 ObjectCheck::~ObjectCheck (void)
 {
-  horizont.clear ();
+  horizon.clear ();
 }
 
-inline int
-ObjectCheck::is_above_horizont (double ha, double dec, double ra1,
-				double dec1, double ra2, double dec2,
-				double lat)
+bool
+RAcomp (HorizonEntry hor1, HorizonEntry hor2)
 {
-  double iter;
-  iter = dec1 + (ha - ra1) * (dec2 - dec1) / (ra2 - ra1);
-  if (lat < 0)
-    return (dec < iter);
-  return (dec > iter);
+  return hor1.hrz.az < hor2.hrz.az;
 }
 
 int
-ObjectCheck::is_good (double lst, const struct ln_equ_posn *equ,
-		      const struct ln_hrz_posn *hrz, int hardness)
+ObjectCheck::load_horizon (char *horizon_file)
 {
-  std::vector < struct ln_equ_posn >::iterator Iter1;
-  struct ln_lnlat_posn *observer;
+  std::ifstream inf;
 
-  double last_ra = 0, last_dec = 0;
+  struct ln_equ_posn pos;
+  struct ln_hrz_posn hrz;
 
-  observer = Rts2Config::instance ()->getObserver ();
+  inf.open (horizon_file);
 
-  if (horizont.size () == 0)
+  if (inf.fail ())
     {
-      return hrz->alt > 0;
+      std::cerr << "Cannot open horizon file " << horizon_file << std::endl;
+      return -1;
     }
 
-  double ha = (lst * 15.0 - equ->ra);	// normalize
-  ha = ln_range_degrees (ha);
-  ha /= 15.0;
 
-  for (Iter1 = horizont.begin (); Iter1 != horizont.end (); Iter1++)
+  while (!inf.eof ())
     {
-      if (Iter1->ra > ha)
+      char buf[80];
+
+      inf.getline (buf, 80);
+
+      if (inf.fail ())
 	{
-	  return is_above_horizont (ha, equ->dec, last_ra, last_dec,
-				    Iter1->ra, Iter1->dec, observer->lat);
+	  if (inf.eof ())
+	    return 0;
+	  std::cerr << "Error getting line from " << horizon_file << std::
+	    endl;
+	  return -1;
 	}
-      last_ra = Iter1->ra;
-      last_dec = Iter1->dec;
+
+      // now parse the line..
+      for (char *top = buf; *top && *top != '\n'; top++)
+	{
+	  if (isspace (*top))
+	    continue;
+	  // comment
+	  if (*top == ';' || *top == '#')
+	    break;
+	  if (isalpha (*top))
+	    {
+	      if (!strcasecmp (top, "AZ-ALT"))
+		{
+		  horType = AZ_ALT;
+		}
+	      else if (!strcasecmp (top, "LST-DEC"))
+		{
+		  horType = LST_DEC;
+		}
+	      else
+		{
+		  std::
+		    cerr << "Unknow horizon file type: " << horType << std::
+		    endl;
+		  return -1;
+		}
+	    }
+	  // otherwise get val1 and val2
+	  LibnovaDeg val1;
+	  LibnovaDeg val2;
+	  std::istringstream is;
+	  is.str (std::string (buf));
+	  is >> val1 >> val2;
+	  if (!is.fail () || is.eof ())
+	    {
+	      switch (horType)
+		{
+		case AZ_ALT:
+		  horizon.
+		    push_back (HorizonEntry (val1.getDeg (), val2.getDeg ()));
+		  break;
+		case LST_DEC:
+		  pos.ra = val1.getDeg () * 15.0;
+		  pos.dec = val2.getDeg ();
+		  ln_get_hrz_from_equ_sidereal_time (&pos,
+						     Rts2Config::instance ()->
+						     getObserver (), 0, &hrz);
+		  horizon.push_back (HorizonEntry (hrz.az, hrz.alt));
+		  break;
+		}
+	      break;
+	    }
+	  else
+	    {
+	      std::cerr << "Error converting " << buf
+		<< " in " << horizon_file
+		<< " to val1 val2 pair" << std::endl;
+	      return -1;
+	    }
+	}
     }
 
-  // on the sss e
+  // sort horizon file
+  sort (horizon.begin (), horizon.end (), RAcomp);
 
-  Iter1 = horizont.begin ();
+  return 0;
+}
 
-  return is_above_horizont (ha, equ->dec, last_ra, last_dec, Iter1->ra + 24.0,
-			    Iter1->dec, observer->lat);
+int
+ObjectCheck::is_good (const struct ln_hrz_posn *hrz, int hardness)
+{
+  return hrz->alt > getHorizonHeight (hrz, hardness);
+}
+
+double
+ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1,
+				 horizon_t::iterator iter2)
+{
+  double az1;
+  if ((*iter1).hrz.az > (*iter2).hrz.az)
+    az1 = (*iter1).hrz.az - 360.0;
+  else
+    az1 = (*iter1).hrz.az;
+  return (*iter1).hrz.alt + (az - az1) * ((*iter2).hrz.alt -
+					  (*iter1).hrz.alt) /
+    ((*iter2).hrz.az - az1);
+}
+
+double
+ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness)
+{
+  if (horizon.size () == 0)
+    return 0;
+
+  horizon_t::iterator iter = horizon.begin ();
+  horizon_t::iterator iter_last = iter;
+
+  iter++;
+
+  for (; iter != horizon.end (); iter++)
+    {
+      if ((*iter).hrz.az > hrz->az)
+	return getHorizonHeightAz (hrz->az, iter_last, iter);
+      iter_last = iter;
+    }
+  return getHorizonHeightAz (hrz->az, iter_last, horizon.begin ());
 }

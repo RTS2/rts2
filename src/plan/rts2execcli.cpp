@@ -141,6 +141,7 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
       queCurrentImage = false;
     }
   queImage (image);
+  return IMAGE_DO_BASIC_PROCESSING;
 }
 
 void

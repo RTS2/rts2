@@ -59,6 +59,8 @@ Rts2Image::initData ()
   exposureStart.tv_usec = 0;
 
   shutter = SHUT_UNKNOW;
+
+  flags = 0;
 }
 
 Rts2Image::Rts2Image ()

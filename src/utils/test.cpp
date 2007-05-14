@@ -23,7 +23,9 @@ printIsGoodTest (ObjectCheck * checker, double ra, double dec)
   ln_get_hrz_from_equ_sidereal_time (&pos,
 				     Rts2Config::instance ()->getObserver (),
 				     0, &hrz);
-  printf ("%f %f is_good: %i\n", ra, dec, checker->is_good (0, &pos, &hrz));
+  printf ("%f %f height: %f\n", hrz.az, hrz.alt,
+	  checker->getHorizonHeight (&hrz, 0));
+  printf ("%f %f is_good: %i\n", ra, dec, checker->is_good (&hrz));
 }
 
 int
@@ -38,7 +40,7 @@ main (int argc, char **argv)
   assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
   assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
 
-  Rts2Config *conf = new Rts2Config ();
+  Rts2Config *conf = Rts2Config::instance ();
 
   printf ("ret %i\n", conf->loadFile ("test.ini"));
 

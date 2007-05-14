@@ -68,12 +68,19 @@ public:
 
 class LibnovaDeg
 {
+private:
+  void fromNegDouble (bool neg, double res)
+  {
+    if (neg)
+      res *= -1;
+    deg = res;
+  }
 protected:
   double deg;
   void toDms (struct ln_dms *deg_dms);
   void fromDms (struct ln_dms *deg_dms);
 public:
-    LibnovaDeg ()
+  LibnovaDeg ()
   {
     deg = nan ("f");
   }
@@ -90,6 +97,20 @@ public:
     return deg;
   }
   friend std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
+  /**
+   * Input operator. Accept inputs in following forms:
+   *
+   * <ul>
+   *   <li>[+-]DDD.ddd</li>
+   *   <li>[+-]DDD:MM.mmm</li>
+   *   <li>[+-]DDD:MM:SS.ssss</li>
+   * </ul>
+   *
+   * It assumes that : or space is 60th unit delimiter, while next + or - mark another deg unit.
+   *
+   * So "+25:45:16" is one LibnovaDeg value, but "+25 45 16 +87 56 78" will be
+   * readed as two LibnovaDeg values.
+   */
   friend std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg);
 };
 

@@ -142,22 +142,60 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 
 std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg)
 {
-  struct ln_dms deg_dms;
-  unsigned deg, min;
-  char neg;
-  _is >> neg >> deg >> min >> deg_dms.seconds;
+  double res = 0;
+  bool neg = false;
 
-  deg_dms.neg = (neg == '-') ? 1 : 0;
-
-  // Let the sanity checking commence! (work our way up sec -> min -> deg)
-  min += (int) floor (deg_dms.seconds / 60);
-  deg_dms.seconds -= floor (deg_dms.seconds / 60) * 60;	/* *FIXME* neater way? */
-  deg += min / 60;
-  min %= 60;
-  deg_dms.minutes = min;
-  deg_dms.degrees = deg % 360;
-
-  l_deg.fromDms (&deg_dms);
+  // divider for degrees conversion
+  int unit = 1;
+  // unfortuantelly we have to parse one by one
+  while (_is.good ())
+    {
+      int next = _is.peek ();
+      // ignore spaces..
+      if (isspace (next) || next == ':')
+	{
+	  _is.get ();
+	  continue;
+	}
+      if (next == '-' || next == '+')
+	{
+	  if (unit == 1)
+	    {
+	      neg = (next == '-') ? true : false;
+	      _is.get ();
+	    }
+	  else
+	    {
+	      // it's beggingin of next deg..
+	      l_deg.fromNegDouble (neg, res);
+	      return _is;
+	    }
+	}
+      // otherwise, try to get number..
+      double t_deg;
+      _is >> t_deg;
+      if (_is.fail ())
+	{
+	  if (unit != 1 && (_is.eof ()))
+	    {
+	      l_deg.fromNegDouble (neg, res);
+	      return _is;
+	    }
+	  else
+	    {
+	      return _is;
+	    }
+	}
+      res += t_deg / unit;
+      // seconds..
+      if (unit == 3600)
+	{
+	  l_deg.fromNegDouble (neg, res);
+	  return _is;
+	}
+      unit *= 60;
+    }
+  l_deg.fromNegDouble (neg, res);
   return _is;
 }
 
