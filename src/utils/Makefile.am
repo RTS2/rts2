@@ -2,6 +2,8 @@
 
 noinst_PROGRAMS = test
 
+bin_PROGRAMS=rts2-horizon
+
 AM_CXXFLAGS=@NOVA_CFLAGS@
 
 test_SOURCES = test.cpp mkpath.c
@@ -21,3 +23,6 @@ noinst_HEADERS = mkpath.h rts2app.h rts2block.h rts2daemon.h rts2device.h rts2op
 	rts2connfork.h rts2serverstate.h libnova_cpp.h timestamp.h rts2askchoice.h infoval.h \
 	rts2message.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
 	rts2displayvalue.h rts2scriptdevice.h
+
+rts2_horizon_SOURCES = horizonapp.cpp
+rts2_horizon_LDFLAGS = @LIB_NOVA@ librts2block.a
