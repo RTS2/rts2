@@ -159,6 +159,10 @@ ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness)
     return 0;
 
   horizon_t::iterator iter = horizon.begin ();
+
+  if (hrz->az < (*iter).hrz.az)
+    return getHorizonHeightAz (hrz->az, iter, --horizon.end ());
+
   horizon_t::iterator iter_last = iter;
 
   iter++;
