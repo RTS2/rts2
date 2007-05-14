@@ -1508,7 +1508,7 @@ Rts2DevTelescopeGemini::tel_start_move ()
 
   if (retstr == '0')
     {
-      sleep (1);
+      sleep (5);
       return 0;
     }
   // otherwise read reply..
@@ -2253,11 +2253,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
