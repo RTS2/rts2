@@ -88,6 +88,8 @@ ObjectCheck::load_horizon (char *horizon_file)
 		    endl;
 		  return -1;
 		}
+	      // exit from the loop, get next line
+	      break;
 	    }
 	  // otherwise get val1 and val2
 	  LibnovaDeg val1;
