@@ -28,12 +28,16 @@ private:
   int testEval (Rts2Image * image);
   void createWCS (Rts2Image * image);
 
+  double off_x, off_y;
+
     std::string copy_expr;
     std::string move_expr;
 protected:
     virtual int processOption (int in_opt);
   virtual bool doInitDB ();
   virtual int processImage (Rts2ImageDb * image);
+
+  virtual void help ();
 public:
     Rts2AppImageManip (int in_argc, char **in_argv);
 };
@@ -151,7 +155,7 @@ Rts2AppImageManip::testEval (Rts2Image * image)
 void
 Rts2AppImageManip::createWCS (Rts2Image * image)
 {
-  int ret = image->createWCS ();
+  int ret = image->createWCS (off_x, off_y);
 
   if (ret)
     std::cerr << "Create WCS returned with error " << ret << std::endl;
@@ -160,6 +164,7 @@ Rts2AppImageManip::createWCS (Rts2Image * image)
 int
 Rts2AppImageManip::processOption (int in_opt)
 {
+  char *off_sep;
   switch (in_opt)
     {
     case 'c':
@@ -185,13 +190,29 @@ Rts2AppImageManip::processOption (int in_opt)
     case 'w':
       operation |= IMAGEOP_CREATEWCS;
       break;
+    case 'o':
+      off_sep = index (optarg, '"');
+      if (off_sep)
+	{
+	  *off_sep = '\0';
+	  off_sep++;
+	  off_x = atof (optarg);
+	  off_y = atof (off_sep);
+	}
+      else
+	{
+	  off_x = atof (optarg);
+	  off_y = off_x;
+	}
+      break;
     default:
       return Rts2AppDbImage::processOption (in_opt);
     }
   return 0;
 }
 
-bool Rts2AppImageManip::doInitDB ()
+bool
+Rts2AppImageManip::doInitDB ()
 {
   return (operation & IMAGEOP_MOVE) || (operation & IMAGEOP_INSERT);
 }
@@ -216,10 +237,26 @@ Rts2AppImageManip::processImage (Rts2ImageDb * image)
   return 0;
 }
 
-Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImage (in_argc,
-		in_argv)
+void
+Rts2AppImageManip::help ()
+{
+  Rts2AppDbImage::help ();
+  std::cout << "Examples:" << std::endl
+    <<
+    "  rts2-image -w 123.fits                 .. write WCS to file 123, based on information stored by RTS2 in the file"
+    << std::
+    endl <<
+    "  rts2-image -w -o 20.12:10.56 123.fits  .. same as above, but add X offset of 20.12 pixels and Y offset of 10.56 pixels to WCS"
+    << std::endl;
+}
+
+Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):
+Rts2AppDbImage (in_argc, in_argv)
 {
   operation = IMAGEOP_NOOP;
+
+  off_x = 0;
+  off_y = 0;
 
   addOption ('c', "copy", 1,
 	     "copy image(s) to path expression given as argument");
@@ -231,15 +268,15 @@ Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):Rts2AppDbImag
   addOption ('t', "test", 0, "test various image routines");
   addOption ('w', "wcs", 0,
 	     "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
+  addOption ('o', "offsets", 1,
+	     "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
 }
 
 int
 main (int argc, char **argv)
 {
-  Rts2AppImageManip
-    app = Rts2AppImageManip (argc, argv);
-  int
-    ret = app.init ();
+  Rts2AppImageManip app = Rts2AppImageManip (argc, argv);
+  int ret = app.init ();
   if (ret)
     {
       return ret;
