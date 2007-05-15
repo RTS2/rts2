@@ -34,7 +34,7 @@ class
 private:
   enum
   {
-    LST_DEC,
+    HA_DEC,
     AZ_ALT
   } horType;
 
@@ -67,6 +67,18 @@ public:
 
   double
   getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness);
+
+  horizon_t::iterator
+  begin ()
+  {
+    return horizon.begin ();
+  }
+
+  horizon_t::iterator
+  end ()
+  {
+    return horizon.end ();
+  }
 };
 
 #endif /* ! __RTS2__OBJECTCHECK__ */

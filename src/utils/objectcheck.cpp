@@ -16,7 +16,7 @@
 
 ObjectCheck::ObjectCheck (char *horizon_file)
 {
-  horType = LST_DEC;
+  horType = HA_DEC;
   load_horizon (horizon_file);
 }
 
@@ -41,6 +41,8 @@ ObjectCheck::load_horizon (char *horizon_file)
 
   inf.open (horizon_file);
 
+  struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
+
   if (inf.fail ())
     {
       std::cerr << "Cannot open horizon file " << horizon_file << std::endl;
@@ -57,7 +59,7 @@ ObjectCheck::load_horizon (char *horizon_file)
       if (inf.fail ())
 	{
 	  if (inf.eof ())
-	    return 0;
+	    break;
 	  std::cerr << "Error getting line from " << horizon_file << std::
 	    endl;
 	  return -1;
@@ -77,9 +79,9 @@ ObjectCheck::load_horizon (char *horizon_file)
 		{
 		  horType = AZ_ALT;
 		}
-	      else if (!strcasecmp (top, "LST-DEC"))
+	      else if (!strcasecmp (top, "HA-DEC"))
 		{
-		  horType = LST_DEC;
+		  horType = HA_DEC;
 		}
 	      else
 		{
@@ -105,12 +107,16 @@ ObjectCheck::load_horizon (char *horizon_file)
 		  horizon.
 		    push_back (HorizonEntry (val1.getDeg (), val2.getDeg ()));
 		  break;
-		case LST_DEC:
+		case HA_DEC:
 		  pos.ra = val1.getDeg () * 15.0;
 		  pos.dec = val2.getDeg ();
-		  ln_get_hrz_from_equ_sidereal_time (&pos,
-						     Rts2Config::instance ()->
-						     getObserver (), 0, &hrz);
+
+		  ln_get_hrz_from_equ_sidereal_time (&pos, observer,
+						     observer->lng / -15.0,
+						     &hrz);
+		  if (hrz.az == 360.0)
+		    hrz.az = 0.0;
+
 		  horizon.push_back (HorizonEntry (hrz.az, hrz.alt));
 		  break;
 		}
@@ -147,8 +153,8 @@ ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1,
     az1 = (*iter1).hrz.az - 360.0;
   else
     az1 = (*iter1).hrz.az;
-  return (*iter1).hrz.alt + (az - az1) * ((*iter2).hrz.alt -
-					  (*iter1).hrz.alt) /
+  return (*iter1).hrz.alt + ln_range_degrees (az - az1) * ((*iter2).hrz.alt -
+							   (*iter1).hrz.alt) /
     ((*iter2).hrz.az - az1);
 }
 
