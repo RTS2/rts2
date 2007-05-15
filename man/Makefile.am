@@ -10,7 +10,8 @@ man_MANS = \
     rts2-xfocusc.1 \
     rts2-seltest.1 \
     rts2.script.5 \
-    rts2.fitskeys.5 
+    rts2.fitskeys.5 \
+    rts2-horizon.1
 
 DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl
 XP=xsltproc -''-nonet
@@ -43,6 +44,9 @@ rts2.script.5: rts2.script.xml
 	$(XP) $(DB2MAN) $<
 
 rts2.fitskeys.5: rts2.fitskeys.xml
+	$(XP) $(DB2MAN) $<
+
+rts2-horizon.1: rts2-horizon.xml
 	$(XP) $(DB2MAN) $<
 
 CLEANFILES = *.1 *.5 *.7
