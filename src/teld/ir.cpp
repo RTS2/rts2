@@ -733,7 +733,7 @@ Rts2TelescopeIr::getAltAz ()
     return -1;
 
   telAlt->setValueDouble (90 - fabs (zd));
-  telAz->setValueDouble (az);
+  telAz->setValueDouble (ln_range_degrees (az + 180));
 
   return 0;
 }
