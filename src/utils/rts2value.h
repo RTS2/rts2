@@ -21,6 +21,9 @@ protected:
   char buf[100];
 public:
     Rts2Value (char *in_val_name);
+    virtual ~ Rts2Value (void)
+  {
+  }
   int isValue (char *in_val_name)
   {
     return !strcmp (in_val_name, valueName);
