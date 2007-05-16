@@ -544,7 +544,7 @@ Rts2Executor::setGrb (int grbId)
 	}
     }
   // if we're already disabled, don't execute us
-  if (grbTarget->getTargetEnabled () == true)
+  if (grbTarget->getTargetEnabled () == false)
     {
       logStream (MESSAGE_INFO)
 	<< "Ignored execution request for GRB target " << grbTarget->
