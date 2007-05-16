@@ -587,7 +587,6 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
 
   // set value after sucessfull return..
   old_value->setFromValue (new_value);
-  delete new_value;
 
   // if in previous step we put ignore load, reset it now
   if (old_cond_value->ignoreLoad ())
@@ -601,6 +600,10 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
     {
       old_cond_value->clearLoadedFromQue ();
       deleteSaveValue (old_cond_value);
+    }
+  else
+    {
+      delete new_value;
     }
 
   sendValueAll (old_value);
