@@ -17,7 +17,7 @@
 
 <refentry>
   <refentryinfo>
-    <title>rts2-horizon</title>
+    <title>&dhpackage;</title>
     <productname>rts2</productname>
     <releaseinfo role="version">0.7.0</releaseinfo>
     &dhdate;
@@ -45,9 +45,8 @@
     </legalnotice>
   </refentryinfo>
   <refmeta>
-    &dhucpackage;
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
-    <productname>RTS2</productname>
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
@@ -69,13 +68,13 @@
 	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-f <replaceable>horizon-file</replaceable></option></arg>
+        <arg choice="plain"><option>-f <replaceable>horizon file</replaceable></option></arg>
 	<arg choice="plain"><option>--horizon <replaceable>horizon file</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1 id="described">
+  <refsect1 id="description">
     <title>DESCRIPTION</title>
 
     <para>
@@ -277,13 +276,6 @@ AZ-ALT ; that's now obligatory, as default is HA-DEC system
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>
       </citerefentry>
-    </para>
-
-  </refsect1>
-  <refsect1>
-    <title>COPYRIGHT</title>
-
-    <para>
     </para>
 
   </refsect1>

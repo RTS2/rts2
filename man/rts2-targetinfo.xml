@@ -3,12 +3,11 @@
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
-  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2006-10-21</date>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-05-17</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
-  <!ENTITY dhusername  "Petr Kubánek">
-  <!ENTITY dhucpackage "<refentrytitle>rts2-targetinfo</refentrytitle>">
+  <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-targetinfo">
 
   <!ENTITY debian      "<productname>Debian</productname>">
@@ -18,39 +17,121 @@
 
 <refentry>
   <refentryinfo>
-    <address>
-      &dhemail;
-    </address>
-    <author>
-      &dhfirstname;
-      &dhsurname;
-    </author>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
     <copyright>
-      <year>2006</year>
+      <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    &dhdate;
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
   </refentryinfo>
   <refmeta>
-    &dhucpackage;
-
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-
     <refpurpose>Prints informations about target.</refpurpose>
   </refnamediv>
-  <refsect1>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>rts2-targetinfo</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-V</option></arg>
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-b <replaceable>databaze</replaceable></option></arg>
+	<arg choice="plain"><option>--database <replaceable>database</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-C <replaceable>config-file</replaceable></option></arg>
+	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-e</option></arg>
+	<arg choice="plain"><option>--extended</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-g<replaceable>gnuplot options</replaceable></option></arg>
+	<arg choice="plain"><option>--gnuplot<replaceable>gnuplot options</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-m</option></arg>
+	<arg choice="plain"><option>--moon</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-c</option></arg>
+	<arg choice="plain"><option>--calibration</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-o</option></arg>
+	<arg choice="plain"><option>--observations</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-i</option></arg>
+	<arg choice="plain"><option>--images</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-I</option></arg>
+	<arg choice="plain"><option>--images_summary</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-p</option></arg>
+	<arg choice="plain"><option>--photometer</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-P</option></arg>
+	<arg choice="plain"><option>--photometer_summary</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-t</option></arg>
+	<arg choice="plain"><option>--target_type</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-d</option></arg>
+	<arg choice="plain"><option>--date</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-9</option></arg>
+	<arg choice="plain"><option>--ds9</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
     <title>DESCRIPTION</title>
 
     <para>
-      rts2-targetinfo list various informations about target(s) given by target id on 
+      <command>rts2-targetsinfo</command> list various informations about target(s) given by target id or other parameters at the 
       command line.
     </para>
 
   </refsect1>
-  <refsect1>
+  <refsect1 id="options">
     <title>OPTIONS</title>
 
     <para>
@@ -61,107 +142,206 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>-h</option>
-          <option>--help</option>
-        </term>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
         <listitem>
           <para>Show summary of options.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-V</option>
-          <option>--version</option>
-        </term>
+        <term><option>-V</option></term>
+        <term><option>--version</option></term>
         <listitem>
           <para>Show version of program.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-b</option>
-          <option>--database</option>
-        </term>
+        <term><option>-b <replaceable class="parameter">database-name</replaceable></option></term>
+        <term><option>--database <replaceable class="parameter">database-name</replaceable></option></term>
         <listitem>
           <para>Specify database name. Will overwrite database name specified in rts2.ini (5).</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-c</option>
-          <option>--config</option>
-        </term>
+        <term><option>-C <replaceable class="parameter">config-file</replaceable></option></term>
+        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
         <listitem>
-          <para>Configuration file. Default to /etc/rts2/rts2.ini.</para>
+          <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-e</option>
-          <option>--extended</option>
-        </term>
+        <term><option>-e</option></term>
+        <term><option>--extended</option></term>
         <listitem>
           <para>Print extended information about source - visibility in next 10 hours and next 10 days.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-c</option>
-          <option>--calibration</option>
-        </term>
+        <term><option>-g<replaceable class="parameter">gnuplot option</replaceable></option></term>
+        <term><option>--gnuplot<replaceable class="parameter">gnuplot option</replaceable></option></term>
+        <listitem>
+          <para>
+	    Print commands for gnuplot. Usual call with -g option will be:
+	    <screen>
+	      <command>&dhpackage; -g | gnuplot</command>
+	    </screen>
+	    Please do not make space between -g and <replaceable>gnuplot option</replaceable>.
+	    <replaceable>gnuplot option</replaceable> can be one of the following:
+	    <variablelist>
+	      <varlistentry>
+	        <term><option>x11</option></term>
+		<listitem>
+		  <para>Prints command for plot to X11 terminal.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>ps</option></term>
+		<listitem>
+		  <para>Tell gnuplot to output to the ps file.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>png</option></term>
+		<listitem>
+		  <para>Tell gnuplot to output to the png file.</para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	  .</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-m</option></term>
+        <term><option>--moon</option></term>
+        <listitem>
+          <para>Plot moon coordinates at the graph.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c</option></term>
+        <term><option>--calibration</option></term>
         <listitem>
           <para>Find calibration files for given source and print them.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-o</option>
-          <option>--observations</option>
-        </term>
+        <term><option>-o</option></term>
+        <term><option>--observations</option></term>
         <listitem>
           <para>Print observations of given target(s).</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-i</option>
-          <option>--images</option>
-        </term>
+        <term><option>-i</option></term>
+        <term><option>--images</option></term>
         <listitem>
-          <para>Information about images.</para>
+          <para>Print acquired images as well.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-I</option>
-          <option>--images_summary</option>
-        </term>
+        <term><option>-I</option></term>
+        <term><option>--images_summary</option></term>
         <listitem>
           <para>Images summary rows.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-p</option>
-          <option>--photometer</option>
-        </term>
+        <term><option>-p</option></term>
+        <term><option>--photometer</option></term>
         <listitem>
           <para>Print counts measured by photometer.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-P</option>
-          <option>--photometer_summary</option>
-        </term>
+        <term><option>-P</option></term>
+        <term><option>--photometer_summary</option></term>
         <listitem>
           <para>Summary of photometer counts.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-t</option>
-          <option>--target_type</option>
-        </term>
+        <term><option>-t <replaceable class="parameter">target type</replaceable></option></term>
+        <term><option>--target_type <replaceable class="parameter">target type</replaceable></option></term>
         <listitem>
-          <para>List information for given target types.</para>
+          <para>List information for given target types. <replaceable>target type</replaceable> can be one of the following:
+	    <variablelist>
+	      <varlistentry>
+	        <term><option>O</option></term>
+		<listitem>
+		  <para>Opportunity targets, various observations stuff.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>G</option></term>
+		<listitem>
+		  <para>Gamma Ray Bursts, as received from GCN.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>S</option></term>
+		<listitem>
+		  <para>Sky survey targets.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>E</option></term>
+		<listitem>
+		  <para>Elliptical targets, various small solar system bodies.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>P</option></term>
+		<listitem>
+		  <para>Gallactic plane scan.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>H</option></term>
+		<listitem>
+		  <para>HETE field of view target.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>t</option></term>
+		<listitem>
+		  <para>Technical target, so far not used.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>T</option></term>
+		<listitem>
+		  <para>Terrestial target. This one have fixed HA and DEC.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>m</option></term>
+		<listitem>
+		  <para>Modelling target. That one is used to build telescope pointing model.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+	        <term><option>L</option></term>
+		<listitem>
+		  <para>Planets. Used to observe Sun, all solar system planes including one dwarf planet (Pluto) and the Moon.</para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	    You can find all targets type in "types" table in the database.
+	  </para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-d</option>
-          <option>--date</option>
-        </term>
+        <term><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <term><option>--date <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
         <listitem>
           <para>Print information for given date. Date must be given in YYYY-MM-DDTHH:MM:SS.sss format.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-9</option></term>
+        <term><option>--ds9</option></term>
+        <listitem>
+          <para>Prints out DS9 .reg file. That is especially usefull for GRB observations, when it prints out various error boxes.</para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -169,16 +349,19 @@
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (1), rts2.ini (5).</para>
-
-  </refsect1>
-  <refsect1>
-    <title>COPYRIGHT</title>
-
-    <para>This manual page was written by &dhusername; &dhemail;.
-      Permission is granted to copy, distribute and/or modify this 
-      document under the terms of the &gnu; General Public License, 
-      Version 2 any later version published by the Free Software Foundation.
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-horizon</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
     </para>
 
   </refsect1>
