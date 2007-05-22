@@ -191,7 +191,7 @@ Rts2AppImageManip::processOption (int in_opt)
       operation |= IMAGEOP_CREATEWCS;
       break;
     case 'o':
-      off_sep = index (optarg, '"');
+      off_sep = index (optarg, ':');
       if (off_sep)
 	{
 	  *off_sep = '\0';
@@ -211,8 +211,7 @@ Rts2AppImageManip::processOption (int in_opt)
   return 0;
 }
 
-bool
-Rts2AppImageManip::doInitDB ()
+bool Rts2AppImageManip::doInitDB ()
 {
   return (operation & IMAGEOP_MOVE) || (operation & IMAGEOP_INSERT);
 }
