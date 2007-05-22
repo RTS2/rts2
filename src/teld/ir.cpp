@@ -42,8 +42,8 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 
   if (!*status)
     {
-      Request & r = tplc->Get (name, false);
-      cstatus = r.Wait (USEC_SEC);
+      Request *r = tplc->Get (name, false);
+      cstatus = r->Wait (2000);
 
       if (cstatus != TPLC_OK)
 	{
@@ -54,14 +54,18 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 
       if (!*status)
 	{
-	  RequestAnswer & answr = r.GetAnswer ();
+	  RequestAnswer & answr = r->GetAnswer ();
 
-	  if (answr.begin ()->second.first == TPL_OK)
-	    val = (T) answr.begin ()->second.second;
+	  if (answr.begin ()->result == TPL_OK)
+	    val = (T) * (answr.begin ()->values.begin ());
 	  else
 	    *status = 2;
 	}
-      r.Dispose ();
+#ifdef DEBUG_EXTRA
+      std::cout << "tpl_get name " << name << " val " << val << std::endl;
+#endif
+
+      delete r;
     }
   return *status;
 }
@@ -71,7 +75,14 @@ Rts2TelescopeIr::tpl_set (const char *name, T val, int *status)
 {
   if (!*status)
     {
-      tplc->Set (name, Value (val), true);	// change to set...?
+      Request *r = tplc->Set (name, Value (val), false);	// change to set...?
+      r->Wait (2000);
+
+#ifdef DEBUG_EXTRA
+      std::cout << "tpl_set 1 name " << name << " val " << val << std::endl;
+#endif
+
+      delete r;
     }
   return *status;
 }
@@ -83,8 +94,8 @@ Rts2TelescopeIr::tpl_setw (const char *name, T val, int *status)
 
   if (!*status)
     {
-      Request & r = tplc->Set (name, Value (val), false);	// change to set...?
-      cstatus = r.Wait ();
+      Request *r = tplc->Set (name, Value (val), false);	// change to set...?
+      cstatus = r->Wait ();
 
       if (cstatus != TPLC_OK)
 	{
@@ -92,7 +103,12 @@ Rts2TelescopeIr::tpl_setw (const char *name, T val, int *status)
 	    << val << " status " << cstatus << sendLog;
 	  *status = 1;
 	}
-      r.Dispose ();
+
+#ifdef DEBUG_EXTRA
+      std::cout << "tpl_setw name " << name << " val " << val << std::endl;
+#endif
+
+      delete r;
     }
   return *status;
 }
@@ -343,8 +359,8 @@ Rts2TelescopeIr::initIrDevice ()
   tplc = new Client (*ir_ip, ir_port);
 
   logStream (MESSAGE_DEBUG)
-    << "Status: ConnID = "
-    << tplc->ConnID () << " connected: " << (tplc->
+    << "Status: ConnId = "
+    << tplc->ConnId () << " connected: " << (tplc->
 					     IsConnected ()? "yes" : "no") <<
     " authenticated " << (tplc->
 			  IsAuth ()? "yes" : "no") << " Welcome Message " <<
@@ -485,8 +501,8 @@ Rts2TelescopeIr::checkErrors ()
   if (status == 0 && listCount > 0)
     {
       // print errors to log & ends..
-      string::size_type pos = 1;
-      string::size_type lastpos = 1;
+      std::string::size_type pos = 1;
+      std::string::size_type lastpos = 1;
       std::string list;
       status = tpl_get ("CABINET.STATUS.LIST", list, &status);
       if (status == 0)
@@ -499,10 +515,11 @@ Rts2TelescopeIr::checkErrors ()
 	  if (lastpos > list.size ())
 	    break;
 	  pos = list.find (',', lastpos);
-	  if (pos == string::npos)
-	    pos = list.find ('"', lastpos);
-	  if (pos == string::npos)
-	    break;		// we reach string end..
+	  if (pos == std::string::npos)
+	    {
+	      pos = list.find ('"', lastpos);
+	      break;		// we reach string end..
+	    }
 	  errn = atoi (list.substr (lastpos, pos - lastpos).c_str ());
 	  addError (errn);
 	  lastpos = pos + 1;
@@ -968,7 +985,7 @@ Rts2TelescopeIr::saveModel ()
 	sendLog;
       return -1;
     }
-  of.open ("/etc/rts2/ir.model", ios_base::out | ios_base::trunc);
+  of.open ("/etc/rts2/ir.model", std::ios_base::out | std::ios_base::trunc);
   of.precision (20);
   of << aoff << " "
     << zoff << " "
@@ -994,7 +1011,7 @@ Rts2TelescopeIr::loadModel ()
     ifs.open ("/etc/rts2/ir.model");
     ifs >> aoff >> zoff >> ae >> an >> npae >> ca >> flex;
   }
-  catch (exception & e)
+  catch (std::exception & e)
   {
     logStream (MESSAGE_DEBUG) << "IR loadModel error" << sendLog;
     return -1;

@@ -105,6 +105,8 @@ Rts2DevIrError::doReferenced ()
   std::cout << "CABINET.REFERENCED " << fpar << std::endl;
   status = tpl_get ("CABINET.POWER", fpar, &status);
   std::cout << "CABINET.POWER " << fpar << std::endl;
+  status = tpl_get ("CABINET.POWER_STATE", fpar, &status);
+  std::cout << "CABINET.POWER_STATE " << fpar << std::endl;
   std::cout << getAxisStatus ("ZD");
   std::cout << getAxisStatus ("AZ");
   std::cout << getAxisStatus ("FOCUS");

@@ -20,11 +20,11 @@ if OPENTPL
 bin_PROGRAMS += rts2-teld-ir rts2-ir-errors
 rts2_teld_ir_SOURCES = teld.cpp rts2devclicop.cpp ir.cpp ir-main.cpp
 rts2_teld_ir_LDFLAGS = @LIB_OPENTPL@
-rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H @INC_OPENTPL@
+rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
 
 rts2_ir_errors_SOURCES = teld.cpp rts2devclicop.cpp ir.cpp ir-errors.cpp
 rts2_ir_errors_LDFLAGS = @LIB_OPENTPL@
-rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H @INC_OPENTPL@
+rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
 endif
 
 if PARALIB
