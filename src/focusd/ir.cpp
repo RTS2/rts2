@@ -57,8 +57,8 @@ Rts2DevFocuserIr::tpl_get (const char *name, T & val, int *status)
 
   if (!*status)
     {
-      Request & r = tplc->Get (name, false);
-      cstatus = r.Wait (USEC_SEC);
+      Request *r = tplc->Get (name, false);
+      cstatus = r->Wait (USEC_SEC);
 
       if (cstatus != TPLC_OK)
 	{
@@ -69,14 +69,15 @@ Rts2DevFocuserIr::tpl_get (const char *name, T & val, int *status)
 
       if (!*status)
 	{
-	  RequestAnswer & answr = r.GetAnswer ();
+	  RequestAnswer & answr = r->GetAnswer ();
 
-	  if (answr.begin ()->second.first == TPL_OK)
-	    val = (T) answr.begin ()->second.second;
+	  if (answr.begin ()->result == TPL_OK)
+	    val = (T) * (answr.begin ()->values.begin ());
 	  else
 	    *status = 2;
 	}
-      r.Dispose ();
+
+      delete r;
     }
   return *status;
 }
@@ -88,7 +89,10 @@ Rts2DevFocuserIr::tpl_set (const char *name, T val, int *status)
 
   if (!*status)
     {
-      tplc->Set (name, Value (val), true);	// change to set...?
+      Request *r = tplc->Set (name, Value (val), true);	// change to set...?
+      r->Wait (2000);
+
+      delete r;
     }
   return *status;
 }
@@ -100,8 +104,8 @@ Rts2DevFocuserIr::tpl_setw (const char *name, T val, int *status)
 
   if (!*status)
     {
-      Request & r = tplc->Set (name, Value (val), false);	// change to set...?
-      cstatus = r.Wait ();
+      Request *r = tplc->Set (name, Value (val), false);	// change to set...?
+      cstatus = r->Wait ();
 
       if (cstatus != TPLC_OK)
 	{
@@ -109,7 +113,8 @@ Rts2DevFocuserIr::tpl_setw (const char *name, T val, int *status)
 	    << sendLog;
 	  *status = 1;
 	}
-      r.Dispose ();
+
+      delete r;
     }
   return *status;
 }
@@ -172,8 +177,8 @@ Rts2DevFocuserIr::init ()
 
   tplc = new Client (ir_ip, ir_port, 2000);
 
-  logStream (MESSAGE_DEBUG) << "focuser IR status: ConnID = " << tplc->
-    ConnID () << " , connected: " << (tplc->
+  logStream (MESSAGE_DEBUG) << "focuser IR status: ConnId = " << tplc->
+    ConnId () << " , connected: " << (tplc->
 				      IsConnected ()? "yes" : "no") <<
     " , authenticated " << (tplc->
 			    IsAuth ()? "yes" : "no") << ", Welcome Message = "
