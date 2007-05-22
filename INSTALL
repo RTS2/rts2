@@ -10,21 +10,17 @@ Instalation from CVS
    For inpatient (works on Debian/sarge with automake-1.7 installed -
 apt-get install automake-1.7):
 
-petr@omega:~/rts2$ aclocal-1.7
-petr@omega:~/rts2$ automake-1.7 --add-missing
-petr@omega:~/rts2$ autoconf
-petr@omega:~/rts2$ autoheader
+uuser@host:~/rts2$ ./autogen.sh
 
-   You should take all actions which are required to install an
-autoconf & automake based project. Namely, you should make those
-steps:
+Edit autogen.sh and set automake version to something other (see AC_VERSION
+parameter at top). It most probably will not work with automake versions 1.5
+and lower. This script will perform following steps:
    
-   Run aclocal, preferably aclocal-1.6 or newer (aclocal-1.6 is then
-name of the script) to produce acinclude.m4 from aclocal.m4.
+   Run aclocal, preferably aclocal-1.6 or newer (aclocal-1.6 is then name of
+   the script) to produce acinclude.m4 from aclocal.m4.
    
-   Run automake --add-missing, preferably automake-1.6 or newer (same
-as to aclocal apply to automake) to produce Makefile.in from
-Makefile.am. 
+   Run automake --add-missing, preferably automake-1.6 or newer (same as to
+   aclocal apply to automake) to produce Makefile.in from Makefile.am. 
 
    Run autoconf, preferably autoconf2.50 or newer, to produce
 configure from configure.in.
