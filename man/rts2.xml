@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2006-12-06</date>">
+  <!ENTITY dhdate      "<date>2007-05-17</date>">
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,18 +18,57 @@
 
 <refentry>
   <refentryinfo>
-    <address>
-      &dhemail;
-    </address>
-    <author>
-      &dhfirstname;
-      &dhsurname;
-    </author>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+	  &dhemail;
+	</address>
+      </author>
+      <author>
+        <firstname>Martin</firstname>
+	<surname>Jelinek</surname>
+	<contrib>Contributed with ideas, bug-fixes, gnuplotting commands. And do most of the image analysis.</contrib>
+      </author>
+      <author>
+        <firstname>Stanislav</firstname>
+	<surname>Vitek</surname>
+	<contrib>Image processing, some focus deamons, web integration.</contrib>
+      </author>
+      <author>
+        <firstname>John</firstname>
+	<surname>French</surname>
+	<contrib>Watcher dome controller.</contrib>
+      </author>
+      <author>
+        <firstname>Ronan</firstname>
+	<surname>Cunniffe</surname>
+	<contrib>Changes to camd logic to support Andor CCDs, and to support fast-readout cameras.</contrib>
+      </author>
+      <author>
+        <surname>and many othersa</surname>
+	<contrib>ideas, bug-fixing, small changes.</contrib>
+      </author>
+    </authorgroup>
     <copyright>
       <year>2006</year>
+      <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    &dhdate;
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
   </refentryinfo>
   <refmeta>
     &dhucpackage;
@@ -386,13 +425,19 @@
   <refsect1>
     <title>FITS FILES</title>
     <para>
-      rts2.fitskeys (5)
+      <citerefentry>
+        <refentrytitle>rts2.fitskeys</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
     </para>
     <title>DEVICES</title>
 
     <para>
       teld-*, camd-*, filterd-*, dome-*, focusd-*, mirrord-*
-      rts2-camd-andor (1)
+      <citerefentry>
+        <refentrytitle>rts2-camd-andor</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
     </para>
 
   </refsect1>
@@ -401,7 +446,30 @@
     <title>SERVICES</title>
 
     <para>
-      rts2-executor (1), rts2-selector (1), rts2-imgproc (1), rts2-grbd (1), rts2-soapd (1), rts2-augershooter (1)
+      <citerefentry>
+        <refentrytitle>rts2-executor</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-selector</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-imgproc</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-grbd</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-soapd</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-augershooter</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
     </para>
 
   </refsect1>
@@ -409,7 +477,32 @@
   <refsect1>
     <title>MONITORING AND MANAGING UTILITIES</title>
 
-    <para>rts2-mon (1), rts2-target (1), rts2-targetinfo (1), rts2-focusc (1), rts2-xfocusc (1), rts2-seltest (1)</para>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-mon</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-target</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-targetinfo</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+         <refentrytitle>rts2-focusc</refentrytitle>
+	 <manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+         <refentrytitle>rts2-xfocusc</refentrytitle>
+	 <manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-seltest</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
   </refsect1>
   <refsect1>
     <title>FILES</title>
@@ -420,16 +513,6 @@
     <title>SEE ALSO</title>
 
     <para>http://rts2.sf.net</para>
-
-  </refsect1>
-  <refsect1>
-    <title>LICENSE</title>
-
-    <para>This manual page was written by &dhusername; &dhemail;.
-      Permission is granted to copy, distribute and/or modify this 
-      document under the terms of the &gnu; General Public License, 
-      Version 2 any later version published by the Free Software Foundation.
-    </para>
 
   </refsect1>
 

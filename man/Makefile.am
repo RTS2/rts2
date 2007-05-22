@@ -11,10 +11,23 @@ man_MANS = \
     rts2-seltest.1 \
     rts2.script.5 \
     rts2.fitskeys.5 \
-    rts2-horizon.1
+    rts2-horizon.1 \
+    rts2-mon.1
+
+doc_FOP = \
+    rts2-man.fop \
+    rts2-book.fop
+
+doc_PDF = \
+    rts2-man.pdf \
+    rts2-book.pdf
+
+XP=xsltproc -''-nonet
 
 DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl
-XP=xsltproc -''-nonet
+
+DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl
+FOP=fop
 
 rts2.7: rts2.xml
 	$(XP) $(DB2MAN) $<
@@ -48,5 +61,19 @@ rts2.fitskeys.5: rts2.fitskeys.xml
 
 rts2-horizon.1: rts2-horizon.xml
 	$(XP) $(DB2MAN) $<
+
+# now FOP & related activites..
+
+rts2-man.fop: rts2-mon.xml
+	$(XP) $(DB2FOP) $< > $@
+
+rts2-man.pdf: rts2-man.fop
+	$(FOP) $< $@
+
+rts2-book.fop: rts2-book.xml
+	$(XP) $(DB2FOP) $< > $@
+
+rts2-book.pdf: rts2-book.fop
+	$(FOP) $< $@
 
 CLEANFILES = *.1 *.5 *.7

@@ -3,50 +3,103 @@
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
-  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2006-11-08</date>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-05-17</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
-  <!ENTITY dhusername  "Petr Kubánek">
-  <!ENTITY dhucpackage "<refentrytitle>rts2-mon</refentrytitle>">
+  <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-mon">
 
-  <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
 ]>
 
 <refentry>
   <refentryinfo>
-    <address>
-      &dhemail;
-    </address>
-    <author>
-      &dhfirstname;
-      &dhsurname;
-    </author>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
     <copyright>
-      <year>2006</year>
+      <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    &dhdate;
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
   </refentryinfo>
   <refmeta>
-    &dhucpackage;
-
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-
-    <refpurpose>Interactively monitor status of RTS2 components.</refpurpose>
+    <refpurpose>Allow interactive control of the RTS2 system.</refpurpose>
   </refnamediv>
-  <refsect1>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-V</option></arg>
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-S <replaceable>central server hostname</replaceable></option></arg>
+	<arg choice="plain"><option>--centrald_server <replaceable>central server hostname</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-q <replaceable>port number</replaceable></option></arg>
+	<arg choice="plain"><option>--centrald_port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-c</option></arg>
+	<arg choice="plain"><option>--color-off</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
     <title>DESCRIPTION</title>
 
+  </refsect1>
+  <refsect1 id="basic_operation">
+    <title>BASIC OPERATION</title>
     <para>
-      Rts2-mon is ncurses based program, which display status of RTS2 components. It also display
-      various system logs.
+      Probably the most basic operation is to switch system states. Please
+      press F2, F3, or F4 keys to switch states. To switch system to on, you
+      will press F4. When system is in on, it is observing.
+    </para>
+
+    <para>
+      To switch system to off, please press F2 key. To switch to standby, use
+      F3 keys. Use off state when you are sure you will not observe, or use F3
+      key and standby mode when you think you might be able to observe later
+      tonight.
+    </para>
+
+    <para>
+      After you press key to change state, small confirmation window will
+      appear. Use left and right keys and enter key to confirm your selection.
+      You most probably would like to press enter key to confirm selected yes.
     </para>
 
   </refsect1>
@@ -60,33 +113,83 @@
     </para>
 
     <para>
-      Status bar display at left current system staus. On right, current UT
-      time is displayed.
+      Standart screen layout will display following elements:
+
+      <variablelist>
+        <varlistentry>
+	  <term>menu</term>
+	  <listitem>
+	    <para>
+	      This is the uppermost line of the screen. You can enter menu
+	      pressing F9 key, and exit it pressing ESC key. In menu you will
+	      find generic command to switch RTS2 to off, standby and on
+	      states.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>device listing</term>
+	  <listitem>
+	    <para>
+	      Devices are listed in left part of the screen. You can use up and
+	      down arrows to move between devices. Once you have selected
+	      device which you want, press TAB key to move to the variable
+	      listing.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>variable list</term>
+	  <listitem>
+	    <para>
+	      The center and left part of the screen holds information about
+	      RTS2 device variables, or device states. For central server, list
+	      of devices and their states will be shown.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>log window</term>
+	  <listitem>
+	    <para>
+	      Log window display messages, as they are passed through RTS2
+	      system. Those messages include debug messages. To change filter
+	      which governs which message will be displayed, go to the menu and
+	      select "Debug" option.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>status bar</term>
+	  <listitem>
+	    <para>
+	      Status bar display current system status. Left is system state
+	      (on, standby or off and substate - day, night, etc..), right is
+	      current <acronym>UT</acronym>.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
     </para>
 
   </refsect1>
-<!--  <refsect1>
-    <title>ENTERING COMMANDS IN RTS2-MON</title>
-
-    <para>
-    </para>
-  </refsect1> -->
-  <refsect1>
+  <refsect1 id="keys">
     <title>KEYS</title>
 
-    <refsect2>
+     <refsect2>
       <title>State switching keys</title>
     
       <para>
-	RTS2 state can be switched by F2, F3 and F4 keys. After you
-	press that key, message dialog with question to confirm state
-	change appear. You can use arrow keys to change answer, and
-	confirm the message box by pressing enter. If you choose Yes as
-	answer to question, RTS2 state will be changed.
+	RTS2 state can be switched by F2, F3 and F4 keys. After you press that
+	key, message dialog with question to confirm state change appear. You
+	can use arrow keys to change answer, and confirm the message box by
+	pressing enter. If you choose Yes as answer to question, RTS2 state
+	will be changed.
       </para>
 
       <para>
-	For detailed discussions of various states, please see rts2 (7).
+	For detailed discussions of various states, please see
+	<citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
       </para>
 
       <variablelist>
@@ -129,7 +232,8 @@
       <variablelist>
         <varlistentry>
 	  <term>
-	    <option>up, down (arrows)</option>
+	    <option>up</option>
+	    <option>down</option>
 	  </term>
 	  <listitem>
 	    Move focus on selection list up or down.
@@ -163,7 +267,7 @@
     </refsect2>
 
     <refsect2>
-      <title>Rts2-mon functions keys</title>
+      <title>rts2-mon functions keys</title>
     
       <para>
 	Those are keys, which execute rts2-mon functions:
@@ -196,7 +300,9 @@
 	</varlistentry>
       </variablelist>
     </refsect2>
-    
+
+  </refsect1>
+  <refsect1 id="options">
     <title>OPTIONS</title>
 
     <para>
@@ -207,17 +313,15 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>-h</option>
-          <option>--help</option>
-        </term>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
         <listitem>
           <para>Show summary of options.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-V</option>
-          <option>--version</option>
-        </term>
+        <term><option>-V</option></term>
+        <term><option>--version</option></term>
         <listitem>
           <para>Show version of program.</para>
         </listitem>
@@ -227,16 +331,19 @@
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (7).</para>
-
-  </refsect1>
-  <refsect1>
-    <title>COPYRIGHT</title>
-
-    <para>This manual page was written by &dhusername; &dhemail;.
-      Permission is granted to copy, distribute and/or modify this 
-      document under the terms of the &gnu; General Public License, 
-      Version 2 any later version published by the Free Software Foundation.
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-horizon</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
     </para>
 
   </refsect1>

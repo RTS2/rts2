@@ -8,7 +8,6 @@
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhucpackage "<refentrytitle>rts2-horizon</refentrytitle>">
   <!ENTITY dhpackage   "rts2-horizon">
 
   <!ENTITY gnu         "<acronym>GNU</acronym>">
