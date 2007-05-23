@@ -18,6 +18,7 @@ private:
    * Prints help message, describing all options
    */
   void helpOptions ();
+  int initOptions ();
 
   int argc;
   char **argv;
@@ -39,12 +40,10 @@ protected:
   bool askForBoolean (const char *desc, bool val);
 
   virtual void help ();
+  virtual int init ();
 
 public:  Rts2App (int in_argc, char **in_argv);
     virtual ~ Rts2App ();
-
-  int initOptions ();
-  virtual int init ();
 
   /**
    * Run method of the application.
@@ -52,7 +51,7 @@ public:  Rts2App (int in_argc, char **in_argv);
    * Application is responsible for calling init () method to read 
    * variables etc..
    *
-   * Application also must define run method, hence this method is
+   * Both Rts2Daemon and Rts2AppBase define run method, as this method is
    * pure virtual.
    */
   virtual int run () = 0;

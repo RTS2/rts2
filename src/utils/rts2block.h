@@ -191,8 +191,7 @@ public:
   }
   void
   oneRunLoop ();
-  int
-  run ();
+
   virtual int
   deleteConnection (Rts2Conn * conn);
   int

@@ -13,7 +13,7 @@ class Rts2SelectorApp:public Rts2AppDb
 public:
   Rts2SelectorApp (int argc, char **argv);
     virtual ~ Rts2SelectorApp (void);
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2SelectorApp::Rts2SelectorApp (int in_argc, char **in_argv):
@@ -26,7 +26,7 @@ Rts2SelectorApp::~Rts2SelectorApp (void)
 }
 
 int
-Rts2SelectorApp::run ()
+Rts2SelectorApp::doProcessing ()
 {
   int next_tar;
 
@@ -66,8 +66,5 @@ int
 main (int argc, char **argv)
 {
   Rts2SelectorApp selApp = Rts2SelectorApp (argc, argv);
-  int ret = selApp.init ();
-  if (ret)
-    return ret;
   return selApp.run ();
 }

@@ -1,4 +1,4 @@
-#include "rts2app.h"
+#include "rts2cliapp.h"
 #include "rts2config.h"
 
 #include <iostream>
@@ -12,7 +12,7 @@
  * (C) 2007 Petr Kubanek <petr@kubanek.net>
  */
 
-class HorizonApp:public Rts2App
+class HorizonApp:public Rts2CliApp
 {
 private:
   char *configFile;
@@ -23,15 +23,15 @@ private:
 protected:
     virtual int processOption (int in_arg);
 
+  virtual int init ();
 public:
     HorizonApp (int in_argc, char **in_argv);
 
-  virtual int init ();
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 HorizonApp::HorizonApp (int in_argc, char **in_argv):
-Rts2App (in_argc, in_argv)
+Rts2CliApp (in_argc, in_argv)
 {
   op = 0;
   configFile = NULL;
@@ -58,7 +58,7 @@ HorizonApp::processOption (int in_opt)
       op = OP_DUMP;
       break;
     default:
-      return Rts2App::processOption (in_opt);
+      return Rts2CliApp::processOption (in_opt);
     }
   return 0;
 }
@@ -68,7 +68,7 @@ HorizonApp::init ()
 {
   int ret;
 
-  ret = Rts2App::init ();
+  ret = Rts2CliApp::init ();
   if (ret)
     return ret;
 
@@ -80,7 +80,7 @@ HorizonApp::init ()
 }
 
 int
-HorizonApp::run ()
+HorizonApp::doProcessing ()
 {
   struct ln_hrz_posn hrz;
   ObjectCheck *checker;
@@ -126,10 +126,6 @@ HorizonApp::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   HorizonApp app = HorizonApp (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return ret;
   return app.run ();
 }

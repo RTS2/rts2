@@ -16,13 +16,16 @@ private:
   struct tm *tm_night;
   int printImages;
   int printCounts;
+
+protected:
+    virtual int processOption (int in_opt);
+  virtual int init ();
+
 public:
     Rts2NightMail (int argc, char **argv);
     virtual ~ Rts2NightMail (void);
 
-  virtual int processOption (int in_opt);
-  virtual int init ();
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2NightMail::Rts2NightMail (int in_argc, char **in_argv):
@@ -124,7 +127,7 @@ Rts2NightMail::init ()
 }
 
 int
-Rts2NightMail::run ()
+Rts2NightMail::doProcessing ()
 {
   Rts2Config *config;
   config = Rts2Config::instance ();
@@ -137,13 +140,6 @@ Rts2NightMail::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2NightMail app = Rts2NightMail (argc, argv);
-  ret = app.init ();
-  if (ret)
-    {
-      std::cerr << "Cannot init app" << std::endl;
-      return 1;
-    }
   return app.run ();
 }

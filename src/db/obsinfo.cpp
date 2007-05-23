@@ -24,7 +24,7 @@ protected:
 public:
     Rts2ObsInfo (int in_argc, char **in_argv);
     virtual ~ Rts2ObsInfo (void);
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2ObsInfo::Rts2ObsInfo (int in_argc, char **in_argv):
@@ -136,7 +136,7 @@ Rts2ObsInfo::printObsImages (Rts2Obs & obs)
 }
 
 int
-Rts2ObsInfo::run ()
+Rts2ObsInfo::doProcessing ()
 {
   int ret;
   Rts2ObsSet::iterator iter;
@@ -173,10 +173,6 @@ Rts2ObsInfo::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2ObsInfo app = Rts2ObsInfo (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return ret;
   return app.run ();
 }

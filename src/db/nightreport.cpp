@@ -20,13 +20,16 @@ private:
   void printObsList ();
   void printStatistics ();
   Rts2ObsSet *obs_set;
+
+protected:
+    virtual int processOption (int in_opt);
+  virtual int init ();
+
 public:
     Rts2NightReport (int argc, char **argv);
     virtual ~ Rts2NightReport (void);
 
-  virtual int processOption (int in_opt);
-  virtual int init ();
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):
@@ -153,7 +156,7 @@ Rts2NightReport::printStatistics ()
 }
 
 int
-Rts2NightReport::run ()
+Rts2NightReport::doProcessing ()
 {
 //  char *whereStr;
   Rts2Config *config;
@@ -177,13 +180,6 @@ Rts2NightReport::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2NightReport app = Rts2NightReport (argc, argv);
-  ret = app.init ();
-  if (ret)
-    {
-      std::cerr << "Cannot init app" << std::endl;
-      return 1;
-    }
   return app.run ();
 }

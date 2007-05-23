@@ -493,14 +493,6 @@ Rts2NMonitor::commandReturn (Rts2Command * cmd, int cmd_status)
 int
 main (int argc, char **argv)
 {
-  int ret;
-
   Rts2NMonitor monitor = Rts2NMonitor (argc, argv);
-
-  ret = monitor.init ();
-  if (ret)
-    {
-      exit (0);
-    }
   return monitor.run ();
 }

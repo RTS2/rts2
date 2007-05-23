@@ -43,15 +43,18 @@ private:
     std::list < CamScript > new_scripts;
 
   int runInteractive ();
+
+protected:
+    virtual int processOption (int in_opt);
+
+  virtual int processArgs (const char *arg);
+  virtual int init ();
+
 public:
     Rts2TargetApp (int argc, char **argv);
     virtual ~ Rts2TargetApp (void);
 
-  virtual int processOption (int in_opt);
-
-  virtual int processArgs (const char *arg);
-  virtual int init ();
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):
@@ -203,7 +206,7 @@ Rts2TargetApp::runInteractive ()
 }
 
 int
-Rts2TargetApp::run ()
+Rts2TargetApp::doProcessing ()
 {
   target_set = new Rts2TargetSet (tar_ids);
   if ((op & OP_MASK_EN) == OP_ENABLE)
@@ -249,10 +252,6 @@ Rts2TargetApp::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2TargetApp app = Rts2TargetApp (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return 1;
   return app.run ();
 }

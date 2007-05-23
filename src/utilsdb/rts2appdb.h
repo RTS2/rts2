@@ -5,7 +5,7 @@
 #include <ostream>
 
 #include "rts2sqlcolumn.h"
-#include "../utils/rts2app.h"
+#include "../utils/rts2cliapp.h"
 #include "../utils/timestamp.h"
 
 // for SQL tables display on console..
@@ -30,7 +30,7 @@ public:
   void display ();
 };
 
-class Rts2AppDb:public Rts2App
+class Rts2AppDb:public Rts2CliApp
 {
 private:
   char *connectString;
@@ -46,6 +46,7 @@ protected:
    * @return true when the application needs database access.
    */
   virtual bool doInitDB ();
+  virtual void afterProcessing ();
 
 public:
     Rts2AppDb (int argc, char **argv);

@@ -275,10 +275,5 @@ int
 main (int argc, char **argv)
 {
   Rts2AppImageManip app = Rts2AppImageManip (argc, argv);
-  int ret = app.init ();
-  if (ret)
-    {
-      return ret;
-    }
   return app.run ();
 }

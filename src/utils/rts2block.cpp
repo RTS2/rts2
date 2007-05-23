@@ -291,16 +291,6 @@ Rts2Block::oneRunLoop ()
 }
 
 int
-Rts2Block::run ()
-{
-  while (!getEndLoop ())
-    {
-      oneRunLoop ();
-    }
-  return 0;
-}
-
-int
 Rts2Block::deleteConnection (Rts2Conn * conn)
 {
   if (conn->havePriority ())

@@ -31,7 +31,7 @@ public:
     Rts2NewTarget (int in_argc, char **in_argv);
     virtual ~ Rts2NewTarget (void);
 
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 
@@ -172,7 +172,7 @@ Rts2NewTarget::saveTarget ()
 }
 
 int
-Rts2NewTarget::run ()
+Rts2NewTarget::doProcessing ()
 {
   double t_radius = 10.0 / 60.0;
   if (!isnan (radius))
@@ -239,10 +239,6 @@ Rts2NewTarget::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2NewTarget app = Rts2NewTarget (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return 1;
   return app.run ();
 }

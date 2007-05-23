@@ -225,7 +225,11 @@ int
 Rts2Daemon::run ()
 {
   initDaemon ();
-  return Rts2Block::run ();
+  while (!getEndLoop ())
+    {
+      oneRunLoop ();
+    }
+  return 0;
 }
 
 int

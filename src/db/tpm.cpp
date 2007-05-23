@@ -8,11 +8,11 @@
 #include <ostream>
 #include <iostream>
 
-#include "../utils/rts2app.h"
+#include "../utils/rts2cliapp.h"
 #include "../utils/rts2config.h"
 #include "../writers/rts2image.h"
 
-class TPM:public Rts2App
+class TPM:public Rts2CliApp
 {
 private:
   std::vector < std::string > filenames;
@@ -30,18 +30,18 @@ private:
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
+  virtual int init ();
 public:
     TPM (int argc, char **argv);
     virtual ~ TPM (void);
 
-  virtual int init ();
-  virtual int run ();
+  virtual int doProcessing ();
 
   virtual void help ();
 };
 
 TPM::TPM (int in_argc, char **in_argv):
-Rts2App (in_argc, in_argv)
+Rts2CliApp (in_argc, in_argv)
 {
   selFlip = -1;
   ra_step = nan ("f");
@@ -94,7 +94,7 @@ TPM::processOption (int in_opt)
       dec_offset = atof (optarg);
       break;
     default:
-      return Rts2App::processOption (in_opt);
+      return Rts2CliApp::processOption (in_opt);
     }
   return 0;
 }
@@ -110,7 +110,7 @@ int
 TPM::init ()
 {
   int ret;
-  ret = Rts2App::init ();
+  ret = Rts2CliApp::init ();
   if (ret)
     return ret;
   if (filenames.empty ())
@@ -123,7 +123,7 @@ TPM::init ()
 }
 
 int
-TPM::run ()
+TPM::doProcessing ()
 {
   bool firstLine = false;
   for (std::vector < std::string >::iterator iter = filenames.begin ();
@@ -156,7 +156,7 @@ TPM::help ()
     cout <<
     "Option proudced should be sufficient to run it throught TPOINT and get model"
     << std::endl;
-  Rts2App::help ();
+  Rts2CliApp::help ();
 }
 
 int
@@ -245,11 +245,6 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 int
 main (int argc, char **argv)
 {
-  int ret;
-
   TPM app = TPM (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return ret;
   return app.run ();
 }

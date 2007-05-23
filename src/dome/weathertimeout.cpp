@@ -1,4 +1,4 @@
-#include "../utils/rts2app.h"
+#include "../utils/rts2cliapp.h"
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -8,21 +8,23 @@
 #include <unistd.h>
 #include <errno.h>
 
-class WeatherTimeout:public Rts2App
+class WeatherTimeout:public Rts2CliApp
 {
 private:
   int timeout;			// in seconds
   int udpPort;
   int waitTime;
+
+protected:
+    virtual int processOption (int in_opt);
+  virtual int doProcessing ();
+
 public:
     WeatherTimeout (int in_argc, char **in_argv);
-
-  virtual int processOption (int in_opt);
-  virtual int run ();
 };
 
 WeatherTimeout::WeatherTimeout (int in_argc, char **in_argv):
-Rts2App (in_argc, in_argv)
+Rts2CliApp (in_argc, in_argv)
 {
   timeout = 3600;
   udpPort = 5002;
@@ -56,7 +58,7 @@ WeatherTimeout::processOption (int in_opt)
       udpPort = atoi (optarg);
       break;
     default:
-      return Rts2App::processOption (in_opt);
+      return Rts2CliApp::processOption (in_opt);
     }
   return 0;
 }
@@ -69,7 +71,7 @@ sigAlarm (int sig)
 }
 
 int
-WeatherTimeout::run ()
+WeatherTimeout::doProcessing ()
 {
   int sock;
   struct sockaddr_in bind_addr;
@@ -141,10 +143,6 @@ WeatherTimeout::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   WeatherTimeout app = WeatherTimeout (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return ret;
   return app.run ();
 }

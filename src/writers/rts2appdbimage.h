@@ -28,7 +28,7 @@ public:
     return 0;
   }
 
-  virtual int run ()
+  virtual int doProcessing ()
   {
     int ret = 0;
     std::list < const char *>::iterator img_iter;

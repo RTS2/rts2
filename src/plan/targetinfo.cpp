@@ -58,15 +58,16 @@ private:
   virtual int printTargets (Rts2TargetSet & set);
 
   double JD;
-public:
-    Rts2TargetInfo (int argc, char **argv);
-    virtual ~ Rts2TargetInfo (void);
 
   virtual int processOption (int in_opt);
 
   virtual int processArgs (const char *arg);
   virtual int init ();
-  virtual int run ();
+public:
+    Rts2TargetInfo (int argc, char **argv);
+    virtual ~ Rts2TargetInfo (void);
+
+  virtual int doProcessing ();
 };
 
 Rts2TargetInfo::Rts2TargetInfo (int in_argc, char **in_argv):
@@ -525,7 +526,7 @@ Rts2TargetInfo::init ()
 }
 
 int
-Rts2TargetInfo::run ()
+Rts2TargetInfo::doProcessing ()
 {
   if (printSelectable)
     {
@@ -554,10 +555,6 @@ Rts2TargetInfo::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2TargetInfo app = Rts2TargetInfo (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return ret;
   return app.run ();
 }

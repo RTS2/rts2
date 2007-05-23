@@ -1,11 +1,11 @@
 #include "soaprts2Proxy.h"
 #include "rts2.nsmap"
 
-#include "../utils/rts2app.h"
+#include "../utils/rts2cliapp.h"
 
 #include <iostream>
 
-class Rts2TestSoap:public Rts2App
+class Rts2TestSoap:public Rts2CliApp
 {
 private:
   char *server;
@@ -16,11 +16,11 @@ protected:
     virtual int processOption (int in_opt);
 public:
     Rts2TestSoap (int in_argc, char **in_argv);
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2TestSoap::Rts2TestSoap (int in_argc, char **in_argv):
-Rts2App (in_argc, in_argv)
+Rts2CliApp (in_argc, in_argv)
 {
   server = "http://localhost:81";
   next = -1;
@@ -50,7 +50,7 @@ Rts2TestSoap::processOption (int in_opt)
       setOff = true;
       break;
     default:
-      return Rts2App::processOption (in_opt);
+      return Rts2CliApp::processOption (in_opt);
     }
   return 0;
 }
@@ -72,7 +72,7 @@ std::ostream & operator << (std::ostream & _os, rts2__target * in_target)
 }
 
 int
-Rts2TestSoap::run ()
+Rts2TestSoap::doProcessing ()
 {
   struct soap soap;
   struct rts2__getEquResponse res;
@@ -206,10 +206,6 @@ Rts2TestSoap::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2TestSoap app = Rts2TestSoap (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return ret;
   return app.run ();
 }

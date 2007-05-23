@@ -99,13 +99,9 @@ Rts2ScriptExec::init ()
 }
 
 int
-Rts2ScriptExec::run ()
+Rts2ScriptExec::doProcessing ()
 {
-  int ret;
-  ret = init ();
-  if (ret)
-    return ret;
-  return Rts2Client::run ();
+  return 0;
 }
 
 Rts2DevClient *

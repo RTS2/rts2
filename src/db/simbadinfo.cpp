@@ -15,13 +15,14 @@
 
 class Rts2SimbadInfo:public Rts2TargetApp
 {
-public:
-  Rts2SimbadInfo (int in_argc, char **in_argv);
-    virtual ~ Rts2SimbadInfo (void);
-
+protected:
   virtual int processOption (int in_opt);
 
-  virtual int run ();
+public:
+    Rts2SimbadInfo (int in_argc, char **in_argv);
+    virtual ~ Rts2SimbadInfo (void);
+
+  virtual int doProcessing ();
 };
 
 Rts2SimbadInfo::Rts2SimbadInfo (int in_argc, char **in_argv):
@@ -45,7 +46,7 @@ Rts2SimbadInfo::processOption (int in_opt)
 }
 
 int
-Rts2SimbadInfo::run ()
+Rts2SimbadInfo::doProcessing ()
 {
   static double radius = 10.0 / 60.0;
   int ret;
@@ -91,10 +92,6 @@ Rts2SimbadInfo::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2SimbadInfo app = Rts2SimbadInfo (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return 1;
   return app.run ();
 }

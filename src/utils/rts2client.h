@@ -87,12 +87,14 @@ protected:
     virtual Rts2ConnClient * createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
   virtual int willConnect (Rts2Address * in_addr);
+
+  virtual int processOption (int in_opt);
+  virtual int init ();
 public:
     Rts2Client (int in_argc, char **in_argv);
     virtual ~ Rts2Client (void);
 
-  virtual int processOption (int in_opt);
-  virtual int init ();
+  virtual int run ();
 
   virtual Rts2Conn *getCentraldConn ()
   {

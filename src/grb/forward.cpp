@@ -14,6 +14,7 @@
 #include <netdb.h>
 #include <time.h>
 #include <sys/time.h>
+#include <iostream>
 
 class Rts2ConnFwGrb:public Rts2ConnNoSend
 {
@@ -409,12 +410,13 @@ protected:
     return NULL;
   }
 
+  virtual int processOption (int in_opt);
+  virtual int init ();
+
 public:
   Rts2AppFw (int arcg, char **argv);
   virtual ~ Rts2AppFw (void);
-
-  virtual int processOption (int in_opt);
-  virtual int init ();
+  virtual int run ();
 };
 
 Rts2AppFw::Rts2AppFw (int in_argc, char **in_argv):
@@ -512,15 +514,25 @@ Rts2AppFw::init ()
 }
 
 int
+Rts2AppFw::run ()
+{
+  int ret;
+  ret = init ();
+  if (ret)
+    {
+      std::cerr << "Cannot init app, exiting";
+      return ret;
+    }
+  while (!getEndLoop ())
+    {
+      oneRunLoop ();
+    }
+  return 0;
+}
+
+int
 main (int argc, char **argv)
 {
   Rts2AppFw grb = Rts2AppFw (argc, argv);
-  int ret = grb.init ();
-  if (ret)
-    {
-      logStream (MESSAGE_ERROR) << "Cannot init GRB device, exiting" <<
-	sendLog;
-      return ret;
-    }
   return grb.run ();
 }

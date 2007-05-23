@@ -49,14 +49,15 @@ private:
 
 protected:
     virtual int processOption (int in_opt);
+
+  virtual int init ();
+  virtual int doProcessing ();
+
 public:
     Rts2ScriptExec (int in_argc, char **in_argv);
     virtual ~ Rts2ScriptExec (void);
 
   Rts2ScriptForDevice *findScript (std::string deviceName);
-
-  virtual int init ();
-  virtual int run ();
 
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);

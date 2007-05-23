@@ -118,13 +118,6 @@ Rts2CMonitor::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2CMonitor monitor = Rts2CMonitor (argc, argv);
-  ret = monitor.init ();
-  if (ret)
-    {
-      cerr << "Cannot initialize Monitor\n";
-      return 1;
-    }
   return monitor.run ();
 }

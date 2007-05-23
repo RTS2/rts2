@@ -202,7 +202,10 @@ Rts2Client::init ()
 
   ret = Rts2Block::init ();
   if (ret)
-    return ret;
+    {
+      std::cerr << "Cannot init application, exiting." << std::endl;
+      return ret;
+    }
 
   central_conn =
     new Rts2ConnCentraldClient (this, login, password, central_host,
@@ -217,6 +220,23 @@ Rts2Client::init ()
       sleep (10);
     }
   addConnection (central_conn);
+  return 0;
+}
+
+int
+Rts2Client::run ()
+{
+  int ret;
+  ret = init ();
+  if (ret)
+    {
+      std::cerr << "Cannot init client, exiting." << std::endl;
+      return ret;
+    }
+  while (!getEndLoop ())
+    {
+      oneRunLoop ();
+    }
   return 0;
 }
 

@@ -14,15 +14,18 @@ private:
   // which target to list
   int list;
   char *targetType;
+
+protected:
+    virtual int processOption (int in_opt);
+
+  virtual int processArgs (const char *arg);
+  virtual int init ();
+
 public:
     Rts2TargetList (int argc, char **argv);
     virtual ~ Rts2TargetList (void);
 
-  virtual int processOption (int in_opt);
-
-  virtual int processArgs (const char *arg);
-  virtual int init ();
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):
@@ -83,7 +86,7 @@ Rts2TargetList::init ()
 }
 
 int
-Rts2TargetList::run ()
+Rts2TargetList::doProcessing ()
 {
   Rts2TargetSetGrb *tar_set_grb;
   Rts2TargetSet *tar_set;
@@ -111,10 +114,6 @@ Rts2TargetList::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2TargetList app = Rts2TargetList (argc, argv);
-  ret = app.init ();
-  if (ret)
-    return 1;
   return app.run ();
 }

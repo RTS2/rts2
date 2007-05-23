@@ -25,7 +25,7 @@ public:
     Rts2PlanApp (int in_argc, char **in_argv);
     virtual ~ Rts2PlanApp (void);
 
-  virtual int run ();
+  virtual int doProcessing ();
 };
 
 Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):
@@ -129,7 +129,7 @@ Rts2PlanApp::processOption (int in_opt)
 }
 
 int
-Rts2PlanApp::run ()
+Rts2PlanApp::doProcessing ()
 {
   switch (operation)
     {
@@ -153,10 +153,5 @@ int
 main (int argc, char **argv)
 {
   Rts2PlanApp app = Rts2PlanApp (argc, argv);
-  int ret = app.init ();
-  if (ret)
-    {
-      return ret;
-    }
   return app.run ();
 }

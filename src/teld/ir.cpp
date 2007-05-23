@@ -75,8 +75,8 @@ Rts2TelescopeIr::tpl_set (const char *name, T val, int *status)
 {
   if (!*status)
     {
-      Request *r = tplc->Set (name, Value (val), false);	// change to set...?
-      r->Wait (2000);
+      Request *r = tplc->Set (name, Value (val), true);	// change to set...?
+//      r->Wait (2000);
 
 #ifdef DEBUG_EXTRA
       std::cout << "tpl_set 1 name " << name << " val " << val << std::endl;
