@@ -8,20 +8,22 @@ TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs, int in_a
   augerPriorityTimeout = in_augerPriorityTimeout;
 }
 
+
 TargetAuger::~TargetAuger (void)
 {
 
 }
 
+
 int
 TargetAuger::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_auger_t3id;
-  double d_auger_date;
-  int d_auger_npixels;
-  double d_auger_ra;
-  double d_auger_dec;
+    int d_auger_t3id;
+    double d_auger_date;
+    int d_auger_npixels;
+    double d_auger_ra;
+    double d_auger_dec;
   EXEC SQL END DECLARE SECTION;
 
   struct ln_equ_posn pos;
@@ -37,40 +39,41 @@ TargetAuger::load ()
       auger_dec
     FROM
       auger
-    ORDER BY
+      ORDER BY
       auger_date desc;
 
   EXEC SQL OPEN cur_auger;
   while (1)
-    {
-      EXEC SQL FETCH next FROM cur_auger INTO
+  {
+    EXEC SQL FETCH next FROM cur_auger INTO
         :d_auger_t3id,
         :d_auger_date,
         :d_auger_npixels,
         :d_auger_ra,
         :d_auger_dec;
-      if (sqlca.sqlcode)
-	break;
-      pos.ra = d_auger_ra;
-      pos.dec = d_auger_dec;
-      ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
-      if (hrz.alt > 10)
-      {
-        t3id = d_auger_t3id;
-        auger_date = d_auger_date;
-        npixels = d_auger_npixels;
-        setPosition (d_auger_ra, d_auger_dec);
-        EXEC SQL CLOSE cur_auger;
-	EXEC SQL COMMIT;
-        return Target::load ();
-      }
+    if (sqlca.sqlcode)
+      break;
+    pos.ra = d_auger_ra;
+    pos.dec = d_auger_dec;
+    ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+    if (hrz.alt > 10)
+    {
+      t3id = d_auger_t3id;
+      auger_date = d_auger_date;
+      npixels = d_auger_npixels;
+      setPosition (d_auger_ra, d_auger_dec);
+      EXEC SQL CLOSE cur_auger;
+      EXEC SQL COMMIT;
+      return Target::load ();
     }
+  }
   logMsgDb ("TargetAuger::load", MESSAGE_ERROR);
   EXEC SQL CLOSE cur_auger;
   EXEC SQL ROLLBACK;
   auger_date = 0;
   return -1;
 }
+
 
 float
 TargetAuger::getBonus (double JD)
@@ -84,25 +87,26 @@ TargetAuger::getBonus (double JD)
   return ConstTarget::getBonus (JD);
 }
 
+
 moveType
 TargetAuger::afterSlewProcessed ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_obs_id;
-  int d_auger_t3id = t3id;
+    int d_obs_id;
+    int d_auger_t3id = t3id;
   EXEC SQL END DECLARE SECTION;
-  
+
   d_obs_id = getObsId ();
   EXEC SQL
-  INSERT INTO
-    auger_observation
-  (
-    auger_t3id,
-    obs_id
-  ) VALUES (
-    :d_auger_t3id,
-    :d_obs_id
-  );
+    INSERT INTO
+      auger_observation
+      (
+      auger_t3id,
+      obs_id
+      ) VALUES (
+      :d_auger_t3id,
+      :d_obs_id
+      );
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetAuger::startSlew SQL error", MESSAGE_ERROR);
@@ -113,12 +117,14 @@ TargetAuger::afterSlewProcessed ()
   return OBS_MOVE;
 }
 
+
 int
 TargetAuger::considerForObserving (double JD)
 {
   load ();
   return ConstTarget::considerForObserving (JD);
 }
+
 
 void
 TargetAuger::printExtra (std::ostream & _os, double JD)
@@ -129,6 +135,7 @@ TargetAuger::printExtra (std::ostream & _os, double JD)
     << InfoVal<int> ("NPIXELS", npixels);
   ConstTarget::printExtra (_os, JD);
 }
+
 
 void
 TargetAuger::writeToImage (Rts2Image * image)

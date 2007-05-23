@@ -26,25 +26,26 @@ Rts2TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
   _os << ")";
 }
 
+
 void
 Rts2TargetSet::load (std::string in_where, std::string order_by)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  char *stmp_c;
+    char *stmp_c;
 
-  int db_tar_id;
+    int db_tar_id;
   EXEC SQL END DECLARE SECTION;
 
   std::list <int> target_ids;
 
-  asprintf (&stmp_c, 
-  "SELECT "
-   "tar_id"
-  " FROM "
+  asprintf (&stmp_c,
+    "SELECT "
+    "tar_id"
+    " FROM "
     "targets"
-  " WHERE "
+    " WHERE "
     "%s"
-  " ORDER BY %s;",
+    " ORDER BY %s;",
     in_where.c_str(), order_by.c_str());
 
   EXEC SQL PREPARE tar_stmp FROM :stmp_c;
@@ -56,7 +57,7 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
   while (1)
   {
     EXEC SQL FETCH next FROM tar_cur INTO
-      :db_tar_id;
+        :db_tar_id;
     if (sqlca.sqlcode)
       break;
     target_ids.push_back (db_tar_id);
@@ -72,6 +73,7 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
   load (target_ids);
 }
 
+
 void
 Rts2TargetSet::load (std::list<int> &target_ids)
 {
@@ -83,6 +85,7 @@ Rts2TargetSet::load (std::list<int> &target_ids)
   }
 }
 
+
 Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs, bool do_load)
 {
   obs = in_obs;
@@ -92,6 +95,7 @@ Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs, bool do_load)
     load (std::string ("true"), std::string ("tar_id ASC"));
 }
 
+
 Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs)
 {
   obs = in_obs;
@@ -99,6 +103,7 @@ Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs)
     obs = Rts2Config::instance ()->getObserver ();
   load (std::string ("true"), std::string ("tar_id ASC"));
 }
+
 
 Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs)
 {
@@ -117,6 +122,7 @@ Rts2TargetSet::Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_
   load (os.str(), where_os.str());
 }
 
+
 Rts2TargetSet::Rts2TargetSet (std::list<int> &tar_ids, struct ln_lnlat_posn *in_obs)
 {
   obs = in_obs;
@@ -124,6 +130,7 @@ Rts2TargetSet::Rts2TargetSet (std::list<int> &tar_ids, struct ln_lnlat_posn *in_
     obs = Rts2Config::instance ()->getObserver ();
   load (tar_ids);
 }
+
 
 Rts2TargetSet::Rts2TargetSet (const char *target_type, struct
 ln_lnlat_posn *in_obs)
@@ -137,6 +144,7 @@ ln_lnlat_posn *in_obs)
   load (os.str(), std::string ("tar_id ASC"));
 }
 
+
 Rts2TargetSet::~Rts2TargetSet (void)
 {
   for (Rts2TargetSet::iterator iter = begin (); iter != end (); iter++)
@@ -145,6 +153,7 @@ Rts2TargetSet::~Rts2TargetSet (void)
   }
   clear ();
 }
+
 
 void
 Rts2TargetSet::setTargetEnabled (bool enabled, bool logit)
@@ -155,6 +164,7 @@ Rts2TargetSet::setTargetEnabled (bool enabled, bool logit)
   }
 }
 
+
 void
 Rts2TargetSet::setTargetPriority (float new_priority)
 {
@@ -163,6 +173,7 @@ Rts2TargetSet::setTargetPriority (float new_priority)
     (*iter)->setTargetPriority (new_priority);
   }
 }
+
 
 void
 Rts2TargetSet::setTargetBonus (float new_bonus)
@@ -173,6 +184,7 @@ Rts2TargetSet::setTargetBonus (float new_bonus)
   }
 }
 
+
 void
 Rts2TargetSet::setTargetBonusTime (time_t *new_time)
 {
@@ -181,6 +193,7 @@ Rts2TargetSet::setTargetBonusTime (time_t *new_time)
     (*iter)->setTargetBonusTime (new_time);
   }
 }
+
 
 void
 Rts2TargetSet::setNextObservable (time_t *time_ch)
@@ -191,6 +204,7 @@ Rts2TargetSet::setNextObservable (time_t *time_ch)
   }
 }
 
+
 void
 Rts2TargetSet::setTargetScript (const char *device_name, const char *script)
 {
@@ -200,12 +214,13 @@ Rts2TargetSet::setTargetScript (const char *device_name, const char *script)
   }
 }
 
+
 int
 Rts2TargetSet::save (bool overwrite)
 {
   int ret = 0;
   int ret_s;
-  
+
   for (iterator iter = begin (); iter != end (); iter++)
   {
     ret_s = (*iter)->save (overwrite);
@@ -215,6 +230,7 @@ Rts2TargetSet::save (bool overwrite)
   // return number of targets for which save failed
   return ret;
 }
+
 
 std::ostream &
 Rts2TargetSet::print (std::ostream & _os, double JD)
@@ -227,6 +243,7 @@ Rts2TargetSet::print (std::ostream & _os, double JD)
   return _os;
 }
 
+
 std::ostream &
 Rts2TargetSet::printBonusList (std::ostream & _os, double JD)
 {
@@ -238,10 +255,12 @@ Rts2TargetSet::printBonusList (std::ostream & _os, double JD)
   return _os;
 }
 
+
 Rts2TargetSetSelectable::Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs) : Rts2TargetSet (in_obs, false)
 {
   load (std::string ("tar_enabled = true AND tar_priority + tar_bonus > 0"), std::string ("tar_priority + tar_bonus DESC"));
 }
+
 
 Rts2TargetSetSelectable::Rts2TargetSetSelectable (const char *target_type, struct ln_lnlat_posn *in_obs) : Rts2TargetSet (in_obs, false)
 {
@@ -250,6 +269,7 @@ Rts2TargetSetSelectable::Rts2TargetSetSelectable (const char *target_type, struc
   os << " AND tar_enabled = true AND tar_priority + tar_bonus > 0";
   load (os.str(), std::string ("tar_id ASC"));
 }
+
 
 Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver (), false)
 {
@@ -267,6 +287,7 @@ Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, dou
   load (os.str (), ord.str ());
 }
 
+
 Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)
 {
   obs = in_obs;
@@ -274,6 +295,7 @@ Rts2TargetSetGrb::Rts2TargetSetGrb (struct ln_lnlat_posn * in_obs)
     obs = Rts2Config::instance ()->getObserver ();
   load ();
 }
+
 
 Rts2TargetSetGrb::~Rts2TargetSetGrb (void)
 {
@@ -284,29 +306,30 @@ Rts2TargetSetGrb::~Rts2TargetSetGrb (void)
   clear ();
 }
 
+
 void
 Rts2TargetSetGrb::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_tar_id;
+    int db_tar_id;
   EXEC SQL END DECLARE SECTION;
 
   std::list <int> target_ids;
 
   EXEC SQL DECLARE grb_tar_cur CURSOR FOR
-  SELECT
-    tar_id
-  FROM
-    grb
-  ORDER BY
-    grb_date DESC;
+    SELECT
+      tar_id
+    FROM
+      grb
+      ORDER BY
+      grb_date DESC;
 
   EXEC SQL OPEN grb_tar_cur;
 
   while (1)
   {
     EXEC SQL FETCH next FROM grb_tar_cur INTO
-      :db_tar_id;
+        :db_tar_id;
     if (sqlca.sqlcode)
       break;
     target_ids.push_back (db_tar_id);
@@ -326,6 +349,7 @@ Rts2TargetSetGrb::load ()
   }
 }
 
+
 void
 Rts2TargetSetGrb::printGrbList (std::ostream & _os)
 {
@@ -334,6 +358,7 @@ Rts2TargetSetGrb::printGrbList (std::ostream & _os)
     (*iter)->printGrbList (_os);
   }
 }
+
 
 std::ostream & operator << (std::ostream &_os, Rts2TargetSet &tar_set)
 {

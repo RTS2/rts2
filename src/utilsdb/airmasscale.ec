@@ -11,7 +11,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 Copyright 2005 Petr Kubanek  */
 
@@ -23,23 +23,24 @@ Copyright 2005 Petr Kubanek  */
 
 class Rts2AirmasScale: public Rts2AppDb
 {
-private:
-  enum {printAction, setAirmass} action;
-  double steps;
-  double max;
+  private:
+    enum {printAction, setAirmass}
+    action;
+    double steps;
+    double max;
 
-  // action functions
-  int doSetAirmass ();
-  int doPrintAction ();
-public:
-  Rts2AirmasScale (int argc, char **argv);
+    // action functions
+    int doSetAirmass ();
+    int doPrintAction ();
+  public:
+    Rts2AirmasScale (int argc, char **argv);
 
-  virtual void help ();
-  virtual int processOption (int in_opt);
-  virtual int processArgs (const char *arg);
+    virtual void help ();
+    virtual int processOption (int in_opt);
+    virtual int processArgs (const char *arg);
 
-  virtual int init ();
-  virtual int run ();
+    virtual int init ();
+    virtual int run ();
 };
 
 Rts2AirmasScale::Rts2AirmasScale (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_argv)
@@ -50,12 +51,14 @@ Rts2AirmasScale::Rts2AirmasScale (int in_argc, char **in_argv): Rts2AppDb (in_ar
   addOption ('s', "set", 0, "set airmass scales");
 }
 
+
 void
 Rts2AirmasScale::help ()
 {
   std::cout << "Without any option print current airmass-scale table" << std::endl;
   Rts2AppDb::help ();
 }
+
 
 int
 Rts2AirmasScale::processOption (int in_opt)
@@ -70,6 +73,7 @@ Rts2AirmasScale::processOption (int in_opt)
   }
   return 0;
 }
+
 
 int
 Rts2AirmasScale::processArgs (const char *arg)
@@ -88,6 +92,7 @@ Rts2AirmasScale::processArgs (const char *arg)
   return -1;
 }
 
+
 int
 Rts2AirmasScale::init ()
 {
@@ -99,12 +104,13 @@ Rts2AirmasScale::init ()
   return 0;
 }
 
+
 int
 Rts2AirmasScale::doSetAirmass ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  float db_airmass_start;
-  float db_airmass_end;
+    float db_airmass_start;
+    float db_airmass_end;
   EXEC SQL END DECLARE SECTION;
 
   for (db_airmass_start = ln_get_airmass (90, 750.0); db_airmass_start < max; db_airmass_start += steps)
@@ -113,17 +119,17 @@ Rts2AirmasScale::doSetAirmass ()
     if (db_airmass_end > max)
       db_airmass_end = 1000;
     EXEC SQL
-    INSERT INTO
-      airmass_cal_images
-    (
-      air_airmass_start,
-      air_airmass_end
-    )
-    VALUES
-    (
-      :db_airmass_start,
-      :db_airmass_end
-    );
+      INSERT INTO
+        airmass_cal_images
+        (
+        air_airmass_start,
+        air_airmass_end
+        )
+      VALUES
+        (
+        :db_airmass_start,
+        :db_airmass_end
+        );
     if (sqlca.sqlcode)
     {
       std::cerr << "Cannot insert to airmass_cal_images: " << sqlca.sqlerrm.sqlerrmc << std::endl;
@@ -135,12 +141,14 @@ Rts2AirmasScale::doSetAirmass ()
   return 0;
 }
 
+
 int
 Rts2AirmasScale::doPrintAction ()
 {
   std::cout << "Not implemented!" << std::endl;
   return -1;
 }
+
 
 int
 Rts2AirmasScale::run ()
@@ -154,6 +162,7 @@ Rts2AirmasScale::run ()
   }
   return -1;
 }
+
 
 int
 main (int argc, char **argv)

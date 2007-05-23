@@ -9,44 +9,45 @@ EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_ta
 {
 }
 
+
 int
 EllTarget::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double ell_minpause;
-  double ell_a;
-  double ell_e;
-  double ell_i;
-  double ell_w;
-  double ell_omega;
-  double ell_n;
-  double ell_JD;
-//  double min_m;			// minimal magnitude
-  int db_tar_id = getTargetID ();
+    double ell_minpause;
+    double ell_a;
+    double ell_e;
+    double ell_i;
+    double ell_w;
+    double ell_omega;
+    double ell_n;
+    double ell_JD;
+    //  double min_m;			// minimal magnitude
+    int db_tar_id = getTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
-    EXTRACT(EPOCH FROM ell_minpause),
-    ell_a,
-    ell_e,
-    ell_i,
-    ell_w,
-    ell_omega,
-    ell_n,
-    ell_JD
-  INTO
-    :ell_minpause,
-    :ell_a,
-    :ell_e,
-    :ell_i,
-    :ell_w,
-    :ell_omega,
-    :ell_n,
-    :ell_JD
-  FROM
-    ell
-  WHERE
-    ell.tar_id = :db_tar_id;
+      EXTRACT(EPOCH FROM ell_minpause),
+      ell_a,
+      ell_e,
+      ell_i,
+      ell_w,
+      ell_omega,
+      ell_n,
+      ell_JD
+    INTO
+      :ell_minpause,
+      :ell_a,
+      :ell_e,
+      :ell_i,
+      :ell_w,
+      :ell_omega,
+      :ell_n,
+      :ell_JD
+    FROM
+      ell
+    WHERE
+      ell.tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
     logMsgDb ("EllTarget::load", MESSAGE_ERROR);
@@ -62,42 +63,44 @@ EllTarget::load ()
   return Target::load ();
 }
 
+
 int
 EllTarget::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
 {
   if (orbit.e == 1.0)
-    {
-      struct ln_par_orbit par_orbit;
-      par_orbit.q = orbit.a;
-      par_orbit.i = orbit.i;
-      par_orbit.w = orbit.w;
-      par_orbit.omega = orbit.omega;
-      par_orbit.JD = orbit.JD;
-      ln_get_par_body_equ_coords (JD, &par_orbit, pos);
-    }
+  {
+    struct ln_par_orbit par_orbit;
+    par_orbit.q = orbit.a;
+    par_orbit.i = orbit.i;
+    par_orbit.w = orbit.w;
+    par_orbit.omega = orbit.omega;
+    par_orbit.JD = orbit.JD;
+    ln_get_par_body_equ_coords (JD, &par_orbit, pos);
+  }
   else if (orbit.e > 1.0)
-    {
-      struct ln_hyp_orbit hyp_orbit;
-      hyp_orbit.q = orbit.a;
-      hyp_orbit.e = orbit.e;
-      hyp_orbit.i = orbit.i;
-      hyp_orbit.w = orbit.w;
-      hyp_orbit.omega = orbit.omega;
-      hyp_orbit.JD = orbit.JD;
-      ln_get_hyp_body_equ_coords (JD, &hyp_orbit, pos);
-    }
+  {
+    struct ln_hyp_orbit hyp_orbit;
+    hyp_orbit.q = orbit.a;
+    hyp_orbit.e = orbit.e;
+    hyp_orbit.i = orbit.i;
+    hyp_orbit.w = orbit.w;
+    hyp_orbit.omega = orbit.omega;
+    hyp_orbit.JD = orbit.JD;
+    ln_get_hyp_body_equ_coords (JD, &hyp_orbit, pos);
+  }
   else
-    {
-      ln_get_ell_body_equ_coords (JD, &orbit, pos);
-    }
+  {
+    ln_get_ell_body_equ_coords (JD, &orbit, pos);
+  }
 
   ln_get_parallax (pos, getEarthDistance (JD), observer, 1706, JD, parallax);
 
   pos->ra += parallax->ra;
   pos->dec += parallax->dec;
- 
+
   return 0;
 }
+
 
 int
 EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -106,32 +109,34 @@ EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
   return getPosition (pos, JD, &parallax);
 }
 
+
 int
 EllTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   if (orbit.e == 1.0)
-    {
-      struct ln_par_orbit par_orbit;
-      par_orbit.q = orbit.a;
-      par_orbit.i = orbit.i;
-      par_orbit.w = orbit.w;
-      par_orbit.omega = orbit.omega;
-      par_orbit.JD = orbit.JD;
-      return ln_get_par_body_next_rst_horizon (JD, observer, &par_orbit, horizon, rst);
-    }
+  {
+    struct ln_par_orbit par_orbit;
+    par_orbit.q = orbit.a;
+    par_orbit.i = orbit.i;
+    par_orbit.w = orbit.w;
+    par_orbit.omega = orbit.omega;
+    par_orbit.JD = orbit.JD;
+    return ln_get_par_body_next_rst_horizon (JD, observer, &par_orbit, horizon, rst);
+  }
   else if (orbit.e > 1.0)
-    {
-      struct ln_hyp_orbit hyp_orbit;
-      hyp_orbit.q = orbit.a;
-      hyp_orbit.e = orbit.e;
-      hyp_orbit.i = orbit.i;
-      hyp_orbit.w = orbit.w;
-      hyp_orbit.omega = orbit.omega;
-      hyp_orbit.JD = orbit.JD;
-      return ln_get_hyp_body_next_rst_horizon (JD, observer, &hyp_orbit, horizon, rst);
-    }
+  {
+    struct ln_hyp_orbit hyp_orbit;
+    hyp_orbit.q = orbit.a;
+    hyp_orbit.e = orbit.e;
+    hyp_orbit.i = orbit.i;
+    hyp_orbit.w = orbit.w;
+    hyp_orbit.omega = orbit.omega;
+    hyp_orbit.JD = orbit.JD;
+    return ln_get_hyp_body_next_rst_horizon (JD, observer, &hyp_orbit, horizon, rst);
+  }
   return ln_get_ell_body_next_rst_horizon (JD, observer, &orbit, horizon, rst);
 }
+
 
 void
 EllTarget::printExtra (std::ostream & _os, double JD)
@@ -142,7 +147,7 @@ EllTarget::printExtra (std::ostream & _os, double JD)
     << InfoVal<TimeJD> ("EPOCH", TimeJD (orbit.JD));
   if (orbit.e < 1.0)
   {
-    _os 
+    _os
       << InfoVal<double> ("n", orbit.n)
       << InfoVal<double> ("a", orbit.a);
   }
@@ -150,8 +155,8 @@ EllTarget::printExtra (std::ostream & _os, double JD)
   {
     _os
       << InfoVal<double> ("q", orbit.a);
-  }  
-  _os  
+  }
+  _os
     << InfoVal<double> ("e", orbit.e)
     << InfoVal<double> ("Peri.", orbit.w)
     << InfoVal<double> ("Node", orbit.omega)
@@ -164,6 +169,7 @@ EllTarget::printExtra (std::ostream & _os, double JD)
     << std::endl;
   Target::printExtra (_os, JD);
 }
+
 
 void
 EllTarget::writeToImage (Rts2Image * image)
@@ -185,57 +191,59 @@ EllTarget::writeToImage (Rts2Image * image)
   image->setValue ("ELL_INCL", orbit.i, "orbit inclination");
 }
 
+
 double
 EllTarget::getEarthDistance (double JD)
 {
   if (orbit.e == 1.0)
-    {
-      struct ln_par_orbit par_orbit;
-      par_orbit.q = orbit.a;
-      par_orbit.i = orbit.i;
-      par_orbit.w = orbit.w;
-      par_orbit.omega = orbit.omega;
-      par_orbit.JD = orbit.JD;
-      return ln_get_par_body_earth_dist (JD, &par_orbit);
-    }
+  {
+    struct ln_par_orbit par_orbit;
+    par_orbit.q = orbit.a;
+    par_orbit.i = orbit.i;
+    par_orbit.w = orbit.w;
+    par_orbit.omega = orbit.omega;
+    par_orbit.JD = orbit.JD;
+    return ln_get_par_body_earth_dist (JD, &par_orbit);
+  }
   else if (orbit.e > 1.0)
-    {
-      struct ln_hyp_orbit hyp_orbit;
-      hyp_orbit.q = orbit.a;
-      hyp_orbit.e = orbit.e;
-      hyp_orbit.i = orbit.i;
-      hyp_orbit.w = orbit.w;
-      hyp_orbit.omega = orbit.omega;
-      hyp_orbit.JD = orbit.JD;
-      return ln_get_hyp_body_earth_dist (JD, &hyp_orbit);
-    }
+  {
+    struct ln_hyp_orbit hyp_orbit;
+    hyp_orbit.q = orbit.a;
+    hyp_orbit.e = orbit.e;
+    hyp_orbit.i = orbit.i;
+    hyp_orbit.w = orbit.w;
+    hyp_orbit.omega = orbit.omega;
+    hyp_orbit.JD = orbit.JD;
+    return ln_get_hyp_body_earth_dist (JD, &hyp_orbit);
+  }
   return ln_get_ell_body_earth_dist (JD, &orbit);
 }
+
 
 double
 EllTarget::getSolarDistance (double JD)
 {
   if (orbit.e == 1.0)
-    {
-      struct ln_par_orbit par_orbit;
-      par_orbit.q = orbit.a;
-      par_orbit.i = orbit.i;
-      par_orbit.w = orbit.w;
-      par_orbit.omega = orbit.omega;
-      par_orbit.JD = orbit.JD;
-      return ln_get_par_body_solar_dist (JD, &par_orbit);
-    }
+  {
+    struct ln_par_orbit par_orbit;
+    par_orbit.q = orbit.a;
+    par_orbit.i = orbit.i;
+    par_orbit.w = orbit.w;
+    par_orbit.omega = orbit.omega;
+    par_orbit.JD = orbit.JD;
+    return ln_get_par_body_solar_dist (JD, &par_orbit);
+  }
   else if (orbit.e > 1.0)
-    {
-      struct ln_hyp_orbit hyp_orbit;
-      hyp_orbit.q = orbit.a;
-      hyp_orbit.e = orbit.e;
-      hyp_orbit.i = orbit.i;
-      hyp_orbit.w = orbit.w;
-      hyp_orbit.omega = orbit.omega;
-      hyp_orbit.JD = orbit.JD;
-      return ln_get_hyp_body_solar_dist (JD, &hyp_orbit);
-    }
+  {
+    struct ln_hyp_orbit hyp_orbit;
+    hyp_orbit.q = orbit.a;
+    hyp_orbit.e = orbit.e;
+    hyp_orbit.i = orbit.i;
+    hyp_orbit.w = orbit.w;
+    hyp_orbit.omega = orbit.omega;
+    hyp_orbit.JD = orbit.JD;
+    return ln_get_hyp_body_solar_dist (JD, &hyp_orbit);
+  }
   return ln_get_ell_body_solar_dist (JD, &orbit);
 
 }

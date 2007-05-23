@@ -7,20 +7,24 @@ Rts2UserEvent::Rts2UserEvent (const Rts2UserEvent &in_user)
   event_mask = in_user.event_mask;
 }
 
+
 Rts2UserEvent::Rts2UserEvent (const char *in_usr_email, int in_event_mask)
 {
   usr_email = std::string (in_usr_email);
   event_mask = in_event_mask;
 }
 
+
 Rts2UserEvent::~Rts2UserEvent (void)
 {
 }
+
 
 bool operator == (Rts2UserEvent _user1, Rts2UserEvent _user2)
 {
   return (_user1.usr_email == _user2.usr_email);
 }
+
 
 /**********************************************************************
  *  Rts2TarUser class
@@ -32,33 +36,35 @@ Rts2TarUser::Rts2TarUser (int in_target, char in_type_id)
   type_id = in_type_id;
 }
 
+
 Rts2TarUser::~Rts2TarUser (void)
 {
 }
+
 
 int
 Rts2TarUser::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_tar_id = tar_id;
-  char db_type_id = type_id;
+    int db_tar_id = tar_id;
+    char db_type_id = type_id;
 
-  int db_usr_id;
-  VARCHAR db_usr_email[USER_EMAIL_LEN];
-  int db_event_mask;
+    int db_usr_id;
+    VARCHAR db_usr_email[USER_EMAIL_LEN];
+    int db_event_mask;
   EXEC SQL END DECLARE SECTION;
 
   // get Rts2TarUsers from targets_users
 
   EXEC SQL DECLARE cur_targets_users CURSOR FOR
-  SELECT
-    users.usr_id,
-    usr_email,
-    event_mask
-  FROM
-    users,
-    targets_users
-  WHERE
+    SELECT
+      users.usr_id,
+      usr_email,
+      event_mask
+    FROM
+      users,
+      targets_users
+    WHERE
       tar_id = :db_tar_id
     AND targets_users.usr_id = users.usr_id;
 
@@ -66,9 +72,9 @@ Rts2TarUser::load ()
   while (1)
   {
     EXEC SQL FETCH next FROM cur_targets_users INTO
-      :db_usr_id,
-      :db_usr_email,
-      :db_event_mask;
+        :db_usr_id,
+        :db_usr_email,
+        :db_event_mask;
     if (sqlca.sqlcode)
       break;
     users.push_back (Rts2UserEvent (db_usr_email.arr, db_event_mask));
@@ -86,14 +92,14 @@ Rts2TarUser::load ()
   // get Rts2TarUsers from type_users
 
   EXEC SQL DECLARE cur_type_users CURSOR FOR
-  SELECT
-    users.usr_id,
-    usr_email,
-    event_mask
-  FROM
-    users,
-    type_users
-  WHERE
+    SELECT
+      users.usr_id,
+      usr_email,
+      event_mask
+    FROM
+      users,
+      type_users
+    WHERE
       type_id = :db_type_id
     AND type_users.usr_id = users.usr_id;
 
@@ -101,9 +107,9 @@ Rts2TarUser::load ()
   while (1)
   {
     EXEC SQL FETCH next FROM cur_type_users INTO
-      :db_usr_id,
-      :db_usr_email,
-      :db_event_mask;
+        :db_usr_id,
+        :db_usr_email,
+        :db_event_mask;
     if (sqlca.sqlcode)
       break;
     Rts2UserEvent newUser = Rts2UserEvent (db_usr_email.arr, db_event_mask);
@@ -128,6 +134,7 @@ Rts2TarUser::load ()
   return 0;
 }
 
+
 std::string
 Rts2TarUser::getUsers (int in_event_mask, int &count)
 {
@@ -146,7 +153,7 @@ Rts2TarUser::getUsers (int in_event_mask, int &count)
     if ((*user_iter).haveMask (in_event_mask))
     {
       if (count != 0)
-	email_list += ", ";
+        email_list += ", ";
       email_list += (*user_iter).getUserEmail ();
       count++;
     }

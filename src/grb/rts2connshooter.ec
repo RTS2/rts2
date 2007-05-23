@@ -14,7 +14,7 @@
 
 EXEC SQL include sqlca;
 
-#define GPS_OFFSET	315964800
+#define GPS_OFFSET  315964800
 
 void
 Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
@@ -23,21 +23,22 @@ Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
   out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC + 14.0;
 }
 
+
 // is called when nbuf contains '\n'
 int
 Rts2ConnShooter::processAuger ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-//  int db_auger_t3id;
-  double db_auger_date;
-  int db_auger_npixels = 0;
+    //  int db_auger_t3id;
+    double db_auger_date;
+    int db_auger_npixels = 0;
 
-  double db_auger_sdpphi;
-  double db_auger_sdptheta;
-  double db_auger_sdpangle = 0;
+    double db_auger_sdpphi;
+    double db_auger_sdptheta;
+    double db_auger_sdpangle = 0;
 
-  double db_auger_ra;
-  double db_auger_dec;
+    double db_auger_ra;
+    double db_auger_dec;
   EXEC SQL END DECLARE SECTION;
 
   int gap_ver;
@@ -45,7 +46,7 @@ Rts2ConnShooter::processAuger ()
   double gap_theta;
   double gap_phi;
   double gap_energy;
-  
+
   double gap_L;
   double gap_B;
   long gap_UTC;
@@ -65,13 +66,13 @@ Rts2ConnShooter::processAuger ()
   long gap_isT5;
   long gap_isT5p;
   long gap_isT5pp;
-  
+
   long gap_isICR;
   long gap_isFd;
   double gap_geomfit;
   double gap_LDFfit;
   double gap_globfitchi2;
-  
+
   double gap_globfitndof;
   double gap_LDFBeta;
   double gap_LDFGamma;
@@ -84,14 +85,14 @@ Rts2ConnShooter::processAuger ()
 
   time_t now;
 
-// 1 3 34.6514 -105.751 0.476843
-// -70.1905 -7.69034 1153170055 10108491 -24303.2
-// 24092.6 2.66637 0.662263 157.832 -66.922
-// 34.5033 -106.143 1.90774 1.92494 66.7804
-// 145.449 1.11 1039 1 1
-// 1 0 4.23941e-05 0.927834 0.903655
-// 0 -3.75494 -0.447885 9180.13 2460068
-// 837205268
+  // 1 3 34.6514 -105.751 0.476843
+  // -70.1905 -7.69034 1153170055 10108491 -24303.2
+  // 24092.6 2.66637 0.662263 157.832 -66.922
+  // 34.5033 -106.143 1.90774 1.92494 66.7804
+  // 145.449 1.11 1039 1 1
+  // 1 0 4.23941e-05 0.927834 0.903655
+  // 0 -3.75494 -0.447885 9180.13 2460068
+  // 837205268
 
   std::istringstream _is (nbuf);
   _is
@@ -136,14 +137,14 @@ Rts2ConnShooter::processAuger ()
     >> gap_LDFGamma
     >> gap_R
     >> gap_OldId
-    
+
     >> gps_sec;
 
   if (_is.fail ())
-    {
-      logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream" << sendLog;
-      return -1;
-    }
+  {
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream" << sendLog;
+    return -1;
+  }
 
   // valid shover and it's hibrid..
 
@@ -154,53 +155,54 @@ Rts2ConnShooter::processAuger ()
   if ((!(gap_comp && gap_isT5 && gap_energy > minEnergy))
     || now - db_auger_date > maxTime
     || master->wasSeen (db_auger_date, db_auger_ra, db_auger_dec))
-    {
-      logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
-        << gap_comp
-	<< " date " << LibnovaDateDouble (db_auger_date)
-	<< " gap_isT5 " << gap_isT5
-	<< " gap_energy " << gap_energy
-	<< " minEnergy " << minEnergy 
-	<< " ra " << db_auger_ra
-	<< " dec " << db_auger_dec
-	<< ")" << sendLog;
-      return -1;
-    }
+  {
+    logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
+      << gap_comp
+      << " date " << LibnovaDateDouble (db_auger_date)
+      << " gap_isT5 " << gap_isT5
+      << " gap_energy " << gap_energy
+      << " minEnergy " << minEnergy
+      << " ra " << db_auger_ra
+      << " dec " << db_auger_dec
+      << ")" << sendLog;
+    return -1;
+  }
 
   EXEC SQL INSERT INTO
-    auger
-    (auger_t3id,
-     auger_date,
-     auger_npixels,
-     auger_sdpphi,
-     auger_sdptheta,
-     auger_sdpangle,
-     auger_ra,
-     auger_dec)
+      auger
+      (auger_t3id,
+      auger_date,
+      auger_npixels,
+      auger_sdpphi,
+      auger_sdptheta,
+      auger_sdpangle,
+      auger_ra,
+      auger_dec)
     VALUES
-    (nextval('auger_t3id'),
-     (TIMESTAMP 'epoch' + :db_auger_date * INTERVAL '1 seconds'),
-     :db_auger_npixels,
-     :db_auger_sdpphi,
-     :db_auger_sdptheta,
-     :db_auger_sdpangle,
-     :db_auger_ra,
-     :db_auger_dec);
+      (nextval('auger_t3id'),
+      (TIMESTAMP 'epoch' + :db_auger_date * INTERVAL '1 seconds'),
+      :db_auger_npixels,
+      :db_auger_sdpphi,
+      :db_auger_sdptheta,
+      :db_auger_sdpangle,
+      :db_auger_ra,
+      :db_auger_dec);
   if (sqlca.sqlcode)
-    {
-      logStream (MESSAGE_ERROR)
-	      << "Rts2ConnShooter::processAuger cannot add new value to db: "
-	      << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")";
-      EXEC SQL ROLLBACK;
-      return -1;
-    }
+  {
+    logStream (MESSAGE_ERROR)
+      << "Rts2ConnShooter::processAuger cannot add new value to db: "
+      << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")";
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
   EXEC SQL COMMIT;
   return master->newShower (db_auger_date, db_auger_ra, db_auger_dec);
 }
 
+
 Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter *
 in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend
-  (in_master)
+(in_master)
 {
   master = in_master;
   port = in_port;
@@ -217,9 +219,11 @@ in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend
   maxTime = in_maxTime;
 }
 
+
 Rts2ConnShooter::~Rts2ConnShooter (void)
 {
 }
+
 
 int
 Rts2ConnShooter::idle ()
@@ -232,33 +236,34 @@ Rts2ConnShooter::idle ()
   time (&now);
 
   switch (getConnState ())
-    {
+  {
     case CONN_CONNECTING:
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
-	{
-	  logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (errno) << sendLog;
-	  connectionError (-1);
-	}
+      {
+        logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (errno) << sendLog;
+        connectionError (-1);
+      }
       else if (err)
-	{
-	  logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (err) << sendLog;
-	  connectionError (-1);
-	}
+      {
+        logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (err) << sendLog;
+        connectionError (-1);
+      }
       else
-	{
-	  setConnState (CONN_CONNECTED);
-	}
+      {
+        setConnState (CONN_CONNECTED);
+      }
       break;
     case CONN_CONNECTED:
       // mayby handle connection error?
       break;
     default:
       break;
-    }
+  }
   // we don't like to get called upper code with timeouting stuff..
   return 0;
 }
+
 
 int
 Rts2ConnShooter::init_listen ()
@@ -269,10 +274,10 @@ Rts2ConnShooter::init_listen ()
 
   sock = socket (PF_INET, SOCK_DGRAM, 0);
   if (sock == -1)
-    {
-      logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen socket " << strerror (errno) << sendLog;
-      return -1;
-    }
+  {
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen socket " << strerror (errno) << sendLog;
+    return -1;
+  }
   struct sockaddr_in server;
   server.sin_family = AF_INET;
   server.sin_port = htons (port);
@@ -284,17 +289,18 @@ Rts2ConnShooter::init_listen ()
     logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen fcntl: " << strerror (errno) << sendLog;
     return -1;
   }
-  
+
   ret =
     bind (sock, (struct sockaddr *) &server, sizeof (server));
   if (ret)
-    {
-      logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen bind: " << strerror (errno) << sendLog;
-      return -1;
-    }
+  {
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen bind: " << strerror (errno) << sendLog;
+    return -1;
+  }
   setConnState (CONN_CONNECTED);
   return 0;
 }
+
 
 int
 Rts2ConnShooter::init ()
@@ -302,55 +308,59 @@ Rts2ConnShooter::init ()
   return init_listen ();
 }
 
+
 int
 Rts2ConnShooter::connectionError (int last_data_size)
 {
   logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError" << sendLog;
   if (sock > 0)
-    {
-      close (sock);
-      sock = -1;
-    }
+  {
+    close (sock);
+    sock = -1;
+  }
   if (!isConnState (CONN_BROKEN))
-    {
-      sock = -1;
-      setConnState (CONN_BROKEN);
-    }
+  {
+    sock = -1;
+    setConnState (CONN_BROKEN);
+  }
   return -1;
 }
+
 
 int
 Rts2ConnShooter::receive (fd_set * set)
 {
   int ret = 0;
   if (sock >= 0 && FD_ISSET (sock, set))
+  {
+    ret = read (sock, nbuf, sizeof (nbuf));
+    if (ret == 0 && isConnState (CONN_CONNECTING))
     {
-      ret = read (sock, nbuf, sizeof (nbuf));
-      if (ret == 0 && isConnState (CONN_CONNECTING))
-	{
-	  setConnState (CONN_CONNECTED);
-	}
-      else if (ret <= 0)
-	{
-	  connectionError (ret);
-	  return -1;
-	}
-      nbuf[ret] = '\0';
-      processAuger ();
-      logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::receive data: " << nbuf << sendLog;
-      successfullRead ();
-      gettimeofday (&last_packet, NULL);
-      // enable others to catch-up (FW connections will forward packet to their sockets)
-      getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
+      setConnState (CONN_CONNECTED);
     }
+    else if (ret <= 0)
+    {
+      connectionError (ret);
+      return -1;
+    }
+    nbuf[ret] = '\0';
+    processAuger ();
+    logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::receive data: " << nbuf << sendLog;
+    successfullRead ();
+    gettimeofday (&last_packet, NULL);
+    // enable others to catch-up (FW connections will forward packet to their sockets)
+    getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
+  }
   return ret;
 }
+
 
 int
 Rts2ConnShooter::lastPacket ()
 {
   return last_packet.tv_sec;
 }
+
 
 double
 Rts2ConnShooter::lastTargetTime ()

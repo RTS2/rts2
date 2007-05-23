@@ -13,14 +13,15 @@ class Rts2DeleteApp: public Rts2AppDb
 
   int dont_delete;
   std::list <const char *> imageNames;
-public:
-  Rts2DeleteApp (int argc, char **argv);
-  virtual ~Rts2DeleteApp (void);
 
-  virtual int processOption (int in_opt);
-  virtual int processArgs (const char *in_arg);
+  protected:
+    virtual int processOption (int in_opt);
+    virtual int processArgs (const char *in_arg);
+  public:
+    Rts2DeleteApp (int argc, char **argv);
+    virtual ~Rts2DeleteApp (void);
 
-  virtual int run ();
+    virtual int doProcessing ();
 };
 
 int
@@ -29,6 +30,7 @@ Rts2DeleteApp::findImages ()
   // find images in db and run delete on them..
   return 0;
 }
+
 
 int
 Rts2DeleteApp::deleteImage (const char *in_name)
@@ -57,16 +59,19 @@ Rts2DeleteApp::deleteImage (const char *in_name)
   return ret;
 }
 
+
 Rts2DeleteApp::Rts2DeleteApp (int in_argc, char **in_argv) : Rts2AppDb (in_argc, in_argv)
 {
   addOption ('n', "notmod", 1, "don't delete anything, just show what will be done");
   dont_delete = 0;
 }
 
+
 Rts2DeleteApp::~Rts2DeleteApp (void)
 {
   imageNames.clear ();
 }
+
 
 int
 Rts2DeleteApp::processOption (int in_opt)
@@ -82,6 +87,7 @@ Rts2DeleteApp::processOption (int in_opt)
   return 0;
 }
 
+
 int
 Rts2DeleteApp::processArgs (const char *in_arg)
 {
@@ -89,8 +95,9 @@ Rts2DeleteApp::processArgs (const char *in_arg)
   return 0;
 }
 
+
 int
-Rts2DeleteApp::run ()
+Rts2DeleteApp::doProcessing ()
 {
   int ret;
   if (imageNames.size () != 0)
@@ -109,14 +116,10 @@ Rts2DeleteApp::run ()
   return findImages ();
 }
 
+
 int
 main (int argc, char **argv)
 {
   Rts2DeleteApp app = Rts2DeleteApp (argc, argv);
-  int ret = app.init ();
-  if (ret)
-  {
-    return 0;
-  }
   return app.run ();
 }

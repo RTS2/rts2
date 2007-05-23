@@ -10,76 +10,76 @@ void
 Rts2ObsSet::load (std::string in_where)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  char *stmp_c;
-  
-  VARCHAR db_tar_name[TARGET_NAME_LEN];
-  int db_tar_id;
-  int db_obs_id;
-  double db_obs_ra;
-  double db_obs_dec;
-  double db_obs_alt;
-  double db_obs_az;
-  double db_obs_slew;
-  double db_obs_start;
-  int db_obs_state;
-  double db_obs_end;
+    char *stmp_c;
 
-  int db_tar_ind;
-  char db_tar_type;
-  int db_obs_ra_ind;
-  int db_obs_dec_ind;
-  int db_obs_alt_ind;
-  int db_obs_az_ind;
-  int db_obs_slew_ind;
-  int db_obs_start_ind;
-  int db_obs_state_ind;
-  int db_obs_end_ind;
+    VARCHAR db_tar_name[TARGET_NAME_LEN];
+    int db_tar_id;
+    int db_obs_id;
+    double db_obs_ra;
+    double db_obs_dec;
+    double db_obs_alt;
+    double db_obs_az;
+    double db_obs_slew;
+    double db_obs_start;
+    int db_obs_state;
+    double db_obs_end;
+
+    int db_tar_ind;
+    char db_tar_type;
+    int db_obs_ra_ind;
+    int db_obs_dec_ind;
+    int db_obs_alt_ind;
+    int db_obs_az_ind;
+    int db_obs_slew_ind;
+    int db_obs_start_ind;
+    int db_obs_state_ind;
+    int db_obs_end_ind;
   EXEC SQL END DECLARE SECTION;
 
   initObsSet ();
 
-  asprintf (&stmp_c, 
-  "SELECT "
-   "tar_name,"
-   "observations.tar_id,"
-   "type_id,"
-   "obs_id,"
-   "obs_ra,"
-   "obs_dec,"
-   "obs_alt,"
-   "obs_az,"
-   "EXTRACT (EPOCH FROM obs_slew),"
-   "EXTRACT (EPOCH FROM obs_start),"
-   "obs_state,"
-   "EXTRACT (EPOCH FROM obs_end)"
-  " FROM "
+  asprintf (&stmp_c,
+    "SELECT "
+    "tar_name,"
+    "observations.tar_id,"
+    "type_id,"
+    "obs_id,"
+    "obs_ra,"
+    "obs_dec,"
+    "obs_alt,"
+    "obs_az,"
+    "EXTRACT (EPOCH FROM obs_slew),"
+    "EXTRACT (EPOCH FROM obs_start),"
+    "obs_state,"
+    "EXTRACT (EPOCH FROM obs_end)"
+    " FROM "
     "observations, targets"
-  " WHERE "
-      "observations.tar_id = targets.tar_id "
+    " WHERE "
+    "observations.tar_id = targets.tar_id "
     "AND %s"
     " ORDER BY obs_id DESC;",
     in_where.c_str());
 
   EXEC SQL PREPARE obs_stmp FROM :stmp_c;
-  
+
   EXEC SQL DECLARE obs_cur_timestamps CURSOR FOR obs_stmp;
 
   EXEC SQL OPEN obs_cur_timestamps;
   while (1)
   {
     EXEC SQL FETCH next FROM obs_cur_timestamps INTO
-      :db_tar_name :db_tar_ind,
-      :db_tar_id,
-      :db_tar_type,
-      :db_obs_id,
-      :db_obs_ra :db_obs_ra_ind,
-      :db_obs_dec :db_obs_dec_ind,
-      :db_obs_alt :db_obs_alt_ind,
-      :db_obs_az :db_obs_az_ind,
-      :db_obs_slew :db_obs_slew_ind,
-      :db_obs_start :db_obs_start_ind,
-      :db_obs_state :db_obs_state_ind,
-      :db_obs_end :db_obs_end_ind;
+        :db_tar_name :db_tar_ind,
+        :db_tar_id,
+        :db_tar_type,
+        :db_obs_id,
+        :db_obs_ra :db_obs_ra_ind,
+        :db_obs_dec :db_obs_dec_ind,
+        :db_obs_alt :db_obs_alt_ind,
+        :db_obs_az :db_obs_az_ind,
+        :db_obs_slew :db_obs_slew_ind,
+        :db_obs_start :db_obs_start_ind,
+        :db_obs_state :db_obs_state_ind,
+        :db_obs_end :db_obs_end_ind;
     if (sqlca.sqlcode)
       break;
     if (db_tar_ind < 0)
@@ -108,9 +108,9 @@ Rts2ObsSet::load (std::string in_where)
     if (db_obs_state & OBS_BIT_STARTED)
     {
       if (db_obs_state & OBS_BIT_ACQUSITION_FAI)
-	failedNum++;
+        failedNum++;
       else
-	successNum++;
+        successNum++;
     }
   }
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -122,61 +122,67 @@ Rts2ObsSet::load (std::string in_where)
   EXEC SQL ROLLBACK;
 }
 
+
 Rts2ObsSet::Rts2ObsSet (void)
 {
 }
+
 
 Rts2ObsSet::Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t)
 {
   std::ostringstream os;
   os << "observations.tar_id = "
-     << in_tar_id
-     << " AND observations.obs_slew >= abstime ("
-     << *start_t
-     << ") AND ((observations.obs_slew <= abstime ("
-     << *end_t
-     << ") AND (observations.obs_end is NULL OR observations.obs_end < abstime ("
-     << *end_t
-     << "))";
+    << in_tar_id
+    << " AND observations.obs_slew >= abstime ("
+    << *start_t
+    << ") AND ((observations.obs_slew <= abstime ("
+    << *end_t
+    << ") AND (observations.obs_end is NULL OR observations.obs_end < abstime ("
+    << *end_t
+    << "))";
   load (os.str());
 }
+
 
 Rts2ObsSet::Rts2ObsSet (const time_t * start_t, const time_t * end_t)
 {
   std::ostringstream os;
   os << "observations.obs_slew >= abstime ("
-     << *start_t
-     << ") AND ((observations.obs_slew <= abstime ("
-     << *end_t
-     << ") AND observations.obs_end is NULL) OR observations.obs_end < abstime ("
-     << *end_t
-     << "))";
+    << *start_t
+    << ") AND ((observations.obs_slew <= abstime ("
+    << *end_t
+    << ") AND observations.obs_end is NULL) OR observations.obs_end < abstime ("
+    << *end_t
+    << "))";
   load (os.str());
 }
+
 
 Rts2ObsSet::Rts2ObsSet (int in_tar_id)
 {
   std::ostringstream os;
   os << "observations.tar_id = "
-     << in_tar_id;
+    << in_tar_id;
   load (os.str());
 }
+
 
 Rts2ObsSet::Rts2ObsSet (char type_id, int state_mask, bool inv)
 {
   std::ostringstream os;
   os << "(targets.type_id = "
-     << type_id
-     << ") and ((observations.obs_state & "
-     << state_mask 
-     << ") ";
+    << type_id
+    << ") and ((observations.obs_state & "
+    << state_mask
+    << ") ";
   if (inv)
     os << "!";
   os << "= "
-     << state_mask
-     << ")";
+    << state_mask
+    << ")";
   load (os.str());
 }
+
 
 Rts2ObsSet::Rts2ObsSet (struct ln_equ_posn * position, double radius)
 {
@@ -188,10 +194,12 @@ Rts2ObsSet::Rts2ObsSet (struct ln_equ_posn * position, double radius)
   load (os.str());
 }
 
+
 Rts2ObsSet::~Rts2ObsSet (void)
 {
   clear ();
 }
+
 
 int
 Rts2ObsSet::computeStatistics ()
@@ -206,7 +214,7 @@ Rts2ObsSet::computeStatistics ()
   errFirstRa = 0;
   errFirstDec = 0;
   errFirstRad = 0;
-  
+
   errAvgRa = 0;
   errAvgDec = 0;
   errAvgRad = 0;
@@ -243,9 +251,10 @@ Rts2ObsSet::computeStatistics ()
   errAvgRa /= anum;
   errAvgDec /= anum;
   errAvgRad /= anum;
-  
+
   return 0;
 }
+
 
 void
 Rts2ObsSet::printStatistics (std::ostream & _os)
@@ -257,7 +266,7 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
   _os << "Number of observations: " << size () << std::endl
     << "Succesfully ended:" << success << std::endl
     << "Failed:" << failed << std::endl
-    << "Number of images:" << allNum 
+    << "Number of images:" << allNum
     << " with astrometry:" << goodNum
     << " without astrometry:" << (allNum - goodNum);
   if (allNum > 0)
@@ -268,17 +277,18 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
   if (goodNum > 0)
   {
     _os
-    << "First images : " << firstNum << " from " << size () 
-    << "(" << (size () > 0 ? 100 * firstNum / size () : nan ("f")) << "%)" << std::endl
-    << "First images errors: ra " << LibnovaDegArcMin (errFirstRa)
-    << " dec: " << LibnovaDegArcMin (errFirstDec)
-    << " radius: " << LibnovaDegArcMin (errFirstRad) << std::endl
-    << "Average error ra: " << LibnovaDegArcMin (errAvgRa)
-    << " dec: " << LibnovaDegArcMin (errAvgDec)
-    << " radius: " << LibnovaDegArcMin (errAvgRad) << std::endl;
+      << "First images : " << firstNum << " from " << size ()
+      << "(" << (size () > 0 ? 100 * firstNum / size () : nan ("f")) << "%)" << std::endl
+      << "First images errors: ra " << LibnovaDegArcMin (errFirstRa)
+      << " dec: " << LibnovaDegArcMin (errFirstDec)
+      << " radius: " << LibnovaDegArcMin (errFirstRad) << std::endl
+      << "Average error ra: " << LibnovaDegArcMin (errAvgRa)
+      << " dec: " << LibnovaDegArcMin (errAvgDec)
+      << " radius: " << LibnovaDegArcMin (errAvgRad) << std::endl;
   }
   _os.precision (prec);
 }
+
 
 std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)
 {

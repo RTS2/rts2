@@ -2,9 +2,9 @@
 #include "../utils/infoval.h"
 #include "../utils/libnova_cpp.h"
 
-#define PLANETS		10
+#define PLANETS   10
 
-planet_info_t planets[PLANETS] = 
+planet_info_t planets[PLANETS] =
 {
   {
     "Sun",
@@ -113,9 +113,11 @@ TargetPlanet::TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs):Target (ta
   planet_info = NULL;
 }
 
+
 TargetPlanet::~TargetPlanet (void)
 {
 }
+
 
 int
 TargetPlanet::load ()
@@ -138,6 +140,7 @@ TargetPlanet::load ()
   return -1;
 }
 
+
 int
 TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
 {
@@ -147,9 +150,10 @@ TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_pos
 
   pos->ra += parallax->ra;
   pos->dec += parallax->dec;
-  
+
   return 0;
 }
+
 
 int
 TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD)
@@ -159,6 +163,7 @@ TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD)
   return getPosition (pos, JD, &parallax);
 }
 
+
 int
 TargetPlanet::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
@@ -166,11 +171,13 @@ TargetPlanet::getRST (struct ln_rst_time *rst, double JD, double horizon)
   return 0;
 }
 
+
 int
 TargetPlanet::isContinues ()
 {
   return 0;
 }
+
 
 void
 TargetPlanet::printExtra (std::ostream & _os, double JD)
@@ -191,6 +198,7 @@ TargetPlanet::printExtra (std::ostream & _os, double JD)
   Target::printExtra (_os, JD);
 }
 
+
 double
 TargetPlanet::getEarthDistance (double JD)
 {
@@ -202,6 +210,7 @@ TargetPlanet::getEarthDistance (double JD)
   return ret;
 }
 
+
 double
 TargetPlanet::getSolarDistance (double JD)
 {
@@ -210,6 +219,7 @@ TargetPlanet::getSolarDistance (double JD)
   return 0;
 }
 
+
 double
 TargetPlanet::getMagnitude (double JD)
 {
@@ -217,6 +227,7 @@ TargetPlanet::getMagnitude (double JD)
     return planet_info->mag_func (JD);
   return nan("f");
 }
+
 
 double
 TargetPlanet::getSDiam (double JD)
@@ -227,6 +238,7 @@ TargetPlanet::getSDiam (double JD)
   return nan("f");
 }
 
+
 double
 TargetPlanet::getPhase (double JD)
 {
@@ -234,6 +246,7 @@ TargetPlanet::getPhase (double JD)
     return planet_info->phase_func (JD);
   return nan("f");
 }
+
 
 double
 TargetPlanet::getDisk (double JD)

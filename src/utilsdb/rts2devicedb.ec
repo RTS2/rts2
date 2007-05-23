@@ -10,20 +10,22 @@ Rts2DeviceDb::willConnect (Rts2Address * in_addr)
 {
   if (in_addr->getType () < getDeviceType ()
     || (in_addr->getType () == getDeviceType ()
-      && strcmp (in_addr->getName (), getDeviceName ()) < 0))
+    && strcmp (in_addr->getName (), getDeviceName ()) < 0))
     return 1;
   return 0;
 }
 
+
 Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
-   char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_name)
+char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_name)
 {
-  connectString = NULL; // defualt DB
+  connectString = NULL;          // defualt DB
   configFile = NULL;
 
   addOption ('B', "database", 1, "connect string to PSQL database (default to stars)");
   addOption ('C', "config", 1, "configuration file");
 }
+
 
 Rts2DeviceDb::~Rts2DeviceDb (void)
 {
@@ -31,6 +33,7 @@ Rts2DeviceDb::~Rts2DeviceDb (void)
   if (connectString)
     delete connectString;
 }
+
 
 int
 Rts2DeviceDb::processOption (int in_opt)
@@ -50,6 +53,7 @@ Rts2DeviceDb::processOption (int in_opt)
   return 0;
 }
 
+
 int
 Rts2DeviceDb::reloadConfig ()
 {
@@ -61,12 +65,13 @@ Rts2DeviceDb::reloadConfig ()
   return config->loadFile (configFile);
 }
 
+
 int
 Rts2DeviceDb::initDB ()
 {
   int ret;
   EXEC SQL BEGIN DECLARE SECTION;
-  char conn_str[200];
+    char conn_str[200];
   EXEC SQL END DECLARE SECTION;
   // try to connect to DB
 
@@ -99,6 +104,7 @@ Rts2DeviceDb::initDB ()
   return 0;
 }
 
+
 int
 Rts2DeviceDb::init ()
 {
@@ -112,13 +118,15 @@ Rts2DeviceDb::init ()
   return initDB ();
 }
 
+
 void
 Rts2DeviceDb::forkedInstance ()
 {
-// dosn't work??
-//  EXEC SQL DISCONNECT;
+  // dosn't work??
+  //  EXEC SQL DISCONNECT;
   Rts2Device::forkedInstance ();
 }
+
 
 void
 Rts2DeviceDb::sigHUP (int signal)

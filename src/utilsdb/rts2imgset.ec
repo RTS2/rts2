@@ -12,6 +12,7 @@ Rts2ImgSet::Rts2ImgSet ()
 {
 }
 
+
 Rts2ImgSet::~Rts2ImgSet (void)
 {
   std::vector <Rts2Image *>::iterator img_iter;
@@ -22,41 +23,42 @@ Rts2ImgSet::~Rts2ImgSet (void)
   clear ();
 }
 
+
 int
 Rts2ImgSet::load (std::string in_where)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  char *stmp_c;
+    char *stmp_c;
 
-  int d_tar_id;
-  int d_obs_id;
-  int d_img_id;
-  char d_obs_subtype;
-  long d_img_date;
-  int d_img_usec;
-  float d_img_exposure;
-  float d_img_temperature;
-  VARCHAR d_img_filter[3];
-  float d_img_alt;
-  float d_img_az;
-  VARCHAR d_camera_name[DEVICE_NAME_SIZE];
-  VARCHAR d_mount_name[DEVICE_NAME_SIZE];
-  bool d_delete_flag;
-  int d_process_bitfield;
-  double d_img_err_ra;
-  double d_img_err_dec;
-  double d_img_err;
+    int d_tar_id;
+    int d_obs_id;
+    int d_img_id;
+    char d_obs_subtype;
+    long d_img_date;
+    int d_img_usec;
+    float d_img_exposure;
+    float d_img_temperature;
+    VARCHAR d_img_filter[3];
+    float d_img_alt;
+    float d_img_az;
+    VARCHAR d_camera_name[DEVICE_NAME_SIZE];
+    VARCHAR d_mount_name[DEVICE_NAME_SIZE];
+    bool d_delete_flag;
+    int d_process_bitfield;
+    double d_img_err_ra;
+    double d_img_err_dec;
+    double d_img_err;
 
-  int d_img_temperature_ind;
-  int d_img_err_ra_ind;
-  int d_img_err_dec_ind;
-  int d_img_err_ind;
+    int d_img_temperature_ind;
+    int d_img_err_ra_ind;
+    int d_img_err_dec_ind;
+    int d_img_err_ind;
 
-  int d_epoch_id;
+    int d_epoch_id;
   EXEC SQL END DECLARE SECTION;
 
   asprintf (&stmp_c,
-  "SELECT "
+    "SELECT "
     "tar_id,"
     "img_id,"
     "images.obs_id,"
@@ -76,12 +78,12 @@ Rts2ImgSet::load (std::string in_where)
     "img_err_dec,"
     "img_err,"
     "epoch_id"
-  " FROM "
+    " FROM "
     "images,"
     "observations"
-  " WHERE "
+    " WHERE "
     " images.obs_id = observations.obs_id AND %s "
-  " ORDER BY "
+    " ORDER BY "
     "img_id DESC;", in_where.c_str());
 
   EXEC SQL PREPARE cur_images_stmp FROM :stmp_c;
@@ -92,30 +94,30 @@ Rts2ImgSet::load (std::string in_where)
   while (1)
   {
     EXEC SQL FETCH next FROM cur_images INTO
-      :d_tar_id,
-      :d_img_id,
-      :d_obs_id,
-      :d_obs_subtype,
-      :d_img_date,
-      :d_img_usec,
-      :d_img_exposure,
-      :d_img_temperature :d_img_temperature_ind,
-      :d_img_filter,
-      :d_img_alt,
-      :d_img_az,
-      :d_camera_name,
-      :d_mount_name,
-      :d_delete_flag,
-      :d_process_bitfield,
-      :d_img_err_ra :d_img_err_ra_ind,
-      :d_img_err_dec :d_img_err_dec_ind,
-      :d_img_err :d_img_err_ind,
-      :d_epoch_id;
+        :d_tar_id,
+        :d_img_id,
+        :d_obs_id,
+        :d_obs_subtype,
+        :d_img_date,
+        :d_img_usec,
+        :d_img_exposure,
+        :d_img_temperature :d_img_temperature_ind,
+        :d_img_filter,
+        :d_img_alt,
+        :d_img_az,
+        :d_camera_name,
+        :d_mount_name,
+        :d_delete_flag,
+        :d_process_bitfield,
+        :d_img_err_ra :d_img_err_ra_ind,
+        :d_img_err_dec :d_img_err_dec_ind,
+        :d_img_err :d_img_err_ind,
+        :d_epoch_id;
     if (sqlca.sqlcode)
       break;
 
     d_img_filter.arr[d_img_filter.len] = '\0';
- 
+
     if (d_img_temperature_ind < 0)
       d_img_temperature = nan ("f");
     if (d_img_err_ra_ind < 0)
@@ -150,7 +152,7 @@ Rts2ImgSet::load (std::string in_where)
     }
     (*iter).count++;
     (*iter).exposure += d_img_exposure;
-     
+
     push_back (new Rts2ImageSkyDb (d_tar_id, d_obs_id, d_img_id, d_obs_subtype,
       d_img_date, d_img_usec, d_img_exposure, d_img_temperature, d_img_filter.arr, d_img_alt, d_img_az,
       d_camera_name.arr, d_mount_name.arr, d_delete_flag, d_process_bitfield, d_img_err_ra,
@@ -173,6 +175,7 @@ Rts2ImgSet::load (std::string in_where)
   return 0;
 }
 
+
 void
 Rts2ImgSet::stat ()
 {
@@ -184,6 +187,7 @@ Rts2ImgSet::stat ()
     (*iter).stat();
   }
 }
+
 
 void
 Rts2ImgSet::print (std::ostream &_os, int printImages)
@@ -200,11 +204,11 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
     {
       Rts2Image *image = (*img_iter);
       if ((printImages & DISPLAY_ASTR_OK) && !image->haveOKAstrometry ())
-	continue;
+        continue;
       if ((printImages & DISPLAY_ASTR_TRASH) && (image->haveOKAstrometry () || !image->isProcessed ()))
-	continue;
+        continue;
       if ((printImages & DISPLAY_ASTR_QUE) && image->isProcessed ())
-	continue;
+        continue;
       image->print (_os, printImages);
     }
   }
@@ -213,6 +217,7 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
     _os << *this << std::endl;
   }
 }
+
 
 int
 Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
@@ -247,6 +252,7 @@ Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
   return aNum;
 }
 
+
 std::vector <Rts2ImgSetStat>::iterator
 Rts2ImgSet::getStat (std::string in_filter)
 {
@@ -261,10 +267,12 @@ Rts2ImgSet::getStat (std::string in_filter)
   return --(filterStat.end());
 }
 
+
 Rts2ImgSetTarget::Rts2ImgSetTarget (int in_tar_id)
 {
   tar_id = in_tar_id;
 }
+
 
 int
 Rts2ImgSetTarget::load ()
@@ -280,6 +288,7 @@ Rts2ImgSetObs::Rts2ImgSetObs (Rts2Obs *in_observation)
   observation = in_observation;
 }
 
+
 int
 Rts2ImgSetObs::load ()
 {
@@ -288,25 +297,29 @@ Rts2ImgSetObs::load ()
   return Rts2ImgSet::load (os.str());
 }
 
+
 Rts2ImgSetPosition::Rts2ImgSetPosition (struct ln_equ_posn * in_pos)
 {
   pos = *in_pos;
 }
 
+
 int
 Rts2ImgSetPosition::load ()
 {
   std::ostringstream os;
-  os << "isinwcs (" << pos.ra 
+  os << "isinwcs (" << pos.ra
     << ", " << pos.dec
     << ", astrometry)";
   return Rts2ImgSet::load (os.str ());
 }
 
+
 Rts2ImgSetFlats::Rts2ImgSetFlats (Rts2ObsSet *in_observations)
 {
   observations = in_observations;
 }
+
 
 int
 Rts2ImgSetFlats::load ()
@@ -314,10 +327,12 @@ Rts2ImgSetFlats::load ()
   return -1;
 }
 
+
 Rts2ImgSetDarks::Rts2ImgSetDarks (Rts2ObsSet *in_observations)
 {
   observations = in_observations;
 }
+
 
 int
 Rts2ImgSetDarks::load ()
@@ -325,13 +340,14 @@ Rts2ImgSetDarks::load ()
   return -1;
 }
 
+
 std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)
 {
   _os << "Filter  all#             exposure good# ( %%%)    avg. err     avg. alt      avg. az" << std::endl;
   for (std::vector <Rts2ImgSetStat>::iterator iter = img_set.filterStat.begin (); iter != img_set.filterStat.end (); iter++)
   {
     Rts2ImgSetStat stat = *iter;
-    _os << std::setw (5) << stat.filter << " " << stat  << std::endl; 
+    _os << std::setw (5) << stat.filter << " " << stat  << std::endl;
   }
   _os << "Total " << img_set.allStat;
   return _os;

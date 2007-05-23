@@ -5,8 +5,8 @@
 #include <iomanip>
 
 Rts2Count::Rts2Count (int in_obs_id, long in_count_date, int in_count_usec,
-		      int in_count_value, float in_count_exposure,
-		      char in_count_filter)
+int in_count_value, float in_count_exposure,
+char in_count_filter)
 {
   obs_id = in_obs_id;
   count_time.tv_sec = in_count_date;
@@ -15,6 +15,7 @@ Rts2Count::Rts2Count (int in_obs_id, long in_count_date, int in_count_usec,
   count_exposure = in_count_exposure;
   count_filter = in_count_filter;
 }
+
 
 std::ostream & operator << (std::ostream & _os, Rts2Count & in_count)
 {

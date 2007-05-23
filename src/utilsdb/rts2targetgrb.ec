@@ -5,7 +5,7 @@
 #include "../utils/infoval.h"
 #include "../writers/rts2image.h"
 
-TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout) : 
+TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout) :
 ConstTarget (in_tar_id, in_obs)
 {
   shouldUpdate = 1;
@@ -20,50 +20,51 @@ ConstTarget (in_tar_id, in_obs)
   errorbox = nan("f");
 }
 
+
 int
 TargetGRB::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double  db_grb_date;
-  double  db_grb_last_update;
-  int db_grb_type;
-  int db_grb_id;
-  bool db_grb_is_grb;
-  int db_tar_id = getTargetID ();
-  double db_grb_ra;
-  double db_grb_dec;
-  double db_grb_errorbox;
-  int db_grb_errorbox_ind;
+    double  db_grb_date;
+    double  db_grb_last_update;
+    int db_grb_type;
+    int db_grb_id;
+    bool db_grb_is_grb;
+    int db_tar_id = getTargetID ();
+    double db_grb_ra;
+    double db_grb_dec;
+    double db_grb_errorbox;
+    int db_grb_errorbox_ind;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
-    EXTRACT (EPOCH FROM grb_date),
-    EXTRACT (EPOCH FROM grb_last_update),
-    grb_type,
-    grb_id,
-    grb_is_grb,
-    grb_ra,
-    grb_dec,
-    grb_errorbox
-  INTO
-    :db_grb_date,
-    :db_grb_last_update,
-    :db_grb_type,
-    :db_grb_id,
-    :db_grb_is_grb,
-    :db_grb_ra,
-    :db_grb_dec,
-    :db_grb_errorbox :db_grb_errorbox_ind
-  FROM
-    grb
-  WHERE
-    tar_id = :db_tar_id;
+      EXTRACT (EPOCH FROM grb_date),
+      EXTRACT (EPOCH FROM grb_last_update),
+      grb_type,
+      grb_id,
+      grb_is_grb,
+      grb_ra,
+      grb_dec,
+      grb_errorbox
+    INTO
+      :db_grb_date,
+      :db_grb_last_update,
+      :db_grb_type,
+      :db_grb_id,
+      :db_grb_is_grb,
+      :db_grb_ra,
+      :db_grb_dec,
+      :db_grb_errorbox :db_grb_errorbox_ind
+    FROM
+      grb
+    WHERE
+      tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetGRB::load", MESSAGE_ERROR);
     return -1;
   }
-  grbDate = db_grb_date; 
+  grbDate = db_grb_date;
   // we don't expect grbDate to change much during observation,
   // so we will not update that in beforeMove (or somewhere else)
   lastUpdate = db_grb_last_update;
@@ -112,6 +113,7 @@ TargetGRB::load ()
   return ConstTarget::load ();
 }
 
+
 int
 TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
 {
@@ -132,6 +134,7 @@ TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
   return ConstTarget::getPosition (pos, JD);
 }
 
+
 int
 TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
 {
@@ -144,14 +147,15 @@ TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
   return ConstTarget::compareWithTarget (in_target, in_sep_limit);
 }
 
+
 int
 TargetGRB::getDBScript (const char *camera_name, char *script)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_post_sec;
-  int d_pos_ind;
-  VARCHAR sc_script[2000];
-  VARCHAR d_camera_name[8];
+    int d_post_sec;
+    int d_pos_ind;
+    VARCHAR sc_script[2000];
+    VARCHAR d_camera_name[8];
   EXEC SQL END DECLARE SECTION;
 
   time_t now;
@@ -180,14 +184,14 @@ TargetGRB::getDBScript (const char *camera_name, char *script)
       grb_script
     WHERE
       camera_name = :d_camera_name
-    ORDER BY
+      ORDER BY
       grb_script_end ASC;
   EXEC SQL OPEN find_grb_script;
   while (1)
   {
     EXEC SQL FETCH next FROM find_grb_script INTO
-      :d_post_sec :d_pos_ind,
-      :sc_script;
+        :d_post_sec :d_pos_ind,
+        :sc_script;
     if (sqlca.sqlcode)
       break;
     if (post_sec < d_post_sec || d_pos_ind < 0)
@@ -198,19 +202,20 @@ TargetGRB::getDBScript (const char *camera_name, char *script)
     }
   }
   if (sqlca.sqlcode)
-    {
-      logMsgDb ("TargetGRB::getDBScript database error", MESSAGE_ERROR);
-      script[0] = '\0';
-      EXEC SQL CLOSE find_grb_script;
-      EXEC SQL ROLLBACK;
-      return -1;
-    }
+  {
+    logMsgDb ("TargetGRB::getDBScript database error", MESSAGE_ERROR);
+    script[0] = '\0';
+    EXEC SQL CLOSE find_grb_script;
+    EXEC SQL ROLLBACK;
+    return -1;
+  }
   strncpy (script, sc_script.arr, sc_script.len);
   script[sc_script.len] = '\0';
   EXEC SQL CLOSE find_grb_script;
   EXEC SQL COMMIT;
   return 0;
 }
+
 
 int
 TargetGRB::getScript (const char *deviceName, char *buf)
@@ -224,7 +229,7 @@ TargetGRB::getScript (const char *deviceName, char *buf)
     return ret;
 
   time (&now);
-  
+
   // switch based on time after burst..
   // that one has to be hard-coded, there is no way how to
   // specify it from config (there can be some, but it will be rather
@@ -245,6 +250,7 @@ TargetGRB::getScript (const char *deviceName, char *buf)
   return 0;
 }
 
+
 int
 TargetGRB::beforeMove ()
 {
@@ -254,6 +260,7 @@ TargetGRB::beforeMove ()
   load ();
   return 0;
 }
+
 
 float
 TargetGRB::getBonus (double JD)
@@ -265,17 +272,17 @@ TargetGRB::getBonus (double JD)
   // special SWIFT handling..
   // last packet we have is SWIFT_ALERT..
   switch (gcnPacketType)
-    {
-      case 60:
-        // we don't get ACK | position within 1 hour..drop our priority back to some mimimum value
-        if (now - (time_t) grbDate > 3600)
-          return 1;
-        break;
-      case 62:
-        if (now - lastUpdate > 1800)
-          return -1;
-	break;
-    }
+  {
+    case 60:
+      // we don't get ACK | position within 1 hour..drop our priority back to some mimimum value
+      if (now - (time_t) grbDate > 3600)
+        return 1;
+      break;
+    case 62:
+      if (now - lastUpdate > 1800)
+        return -1;
+      break;
+  }
   if (now - (time_t) grbDate < maxBonusTimeout)
   {
     // < 1 hour fixed boost to be sure to not miss it
@@ -285,7 +292,7 @@ TargetGRB::getBonus (double JD)
   {
     // < 24 hour post burst
     retBonus = ConstTarget::getBonus (JD)
-      + 1000.0 * cos ((double)((double)(now - (time_t) grbDate) / (2.0*86400.0))) 
+      + 1000.0 * cos ((double)((double)(now - (time_t) grbDate) / (2.0*86400.0)))
       + 10.0 * cos ((double)((double)(now - lastUpdate) / (2.0*86400.0)));
   }
   else if (now - (time_t) grbDate < fiveBonusTimeout)
@@ -305,13 +312,14 @@ TargetGRB::getBonus (double JD)
   return retBonus;
 }
 
+
 int
 TargetGRB::isContinues ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_tar_id = getTargetID ();
-  double db_tar_ra;
-  double db_tar_dec;
+    int db_tar_id = getTargetID ();
+    double db_tar_ra;
+    double db_tar_dec;
   EXEC SQL END DECLARE SECTION;
 
   struct ln_equ_posn pos;
@@ -321,15 +329,15 @@ TargetGRB::isContinues ()
     return 0;
 
   EXEC SQL SELECT
-    tar_ra,
-    tar_dec
-  INTO
-    :db_tar_ra,
-    :db_tar_dec
-  FROM
-    grb,
-    targets
-  WHERE
+      tar_ra,
+      tar_dec
+    INTO
+      :db_tar_ra,
+      :db_tar_dec
+    FROM
+      grb,
+      targets
+    WHERE
       targets.tar_id = :db_tar_id
     AND targets.tar_id = grb.tar_id;
 
@@ -341,37 +349,38 @@ TargetGRB::isContinues ()
   getPosition (&pos, ln_get_julian_from_sys ());
   if (pos.ra == db_tar_ra && pos.dec == db_tar_dec)
     return 1;
-  // we get big update, lets synchronize again..  
+  // we get big update, lets synchronize again..
   shouldUpdate = 1;
   return 0;
 }
+
 
 double
 TargetGRB::getFirstPacket ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_grb_id = gcnGrbId;
-  int db_grb_type_min = gcnPacketMin;
-  int db_grb_type_max = gcnPacketMax;
-  long db_grb_update;
-  long db_grb_update_usec;
+    int db_grb_id = gcnGrbId;
+    int db_grb_type_min = gcnPacketMin;
+    int db_grb_type_max = gcnPacketMax;
+    long db_grb_update;
+    long db_grb_update_usec;
   EXEC SQL END DECLARE SECTION;
   EXEC SQL DECLARE cur_grb_first_packet CURSOR FOR
-  SELECT
-    EXTRACT (EPOCH FROM grb_update),
-    grb_update_usec
-  FROM
-    grb_gcn
-  WHERE
+    SELECT
+      EXTRACT (EPOCH FROM grb_update),
+      grb_update_usec
+    FROM
+      grb_gcn
+    WHERE
       grb_id = :db_grb_id
     AND grb_type BETWEEN :db_grb_type_min AND :db_grb_type_max
-  ORDER BY
-    grb_update asc,
-    grb_update_usec asc;
+      ORDER BY
+      grb_update asc,
+      grb_update_usec asc;
   EXEC SQL OPEN cur_grb_first_packet;
   EXEC SQL FETCH next FROM cur_grb_first_packet INTO
-    :db_grb_update,
-    :db_grb_update_usec;
+      :db_grb_update,
+      :db_grb_update_usec;
   if (sqlca.sqlcode)
   {
     EXEC SQL CLOSE cur_grb_first_packet;
@@ -382,6 +391,7 @@ TargetGRB::getFirstPacket ()
   EXEC SQL ROLLBACK;
   return db_grb_update + (double) db_grb_update_usec / USEC_SEC;
 }
+
 
 const char *
 TargetGRB::getSatelite ()
@@ -406,13 +416,14 @@ TargetGRB::getSatelite ()
   return "Unknow type";
 }
 
+
 void
 TargetGRB::printExtra (std::ostream &_os, double JD)
 {
   double firstPacket = getFirstPacket ();
   double firstObs = getFirstObs ();
   ConstTarget::printExtra (_os, JD);
-  _os 
+  _os
     << getSatelite () << std::endl
     << InfoVal<int> ("TYPE", gcnPacketType)
     << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") << std::endl
@@ -431,13 +442,14 @@ TargetGRB::printExtra (std::ostream &_os, double JD)
   }
   else
   {
-    _os 
+    _os
       << InfoVal<Timestamp> ("FIRST OBSERVATION", Timestamp (firstObs))
       << InfoVal<TimeDiff> ("GRB delta", TimeDiff (grbDate, firstObs))
       << InfoVal<TimeDiff> ("GCN delta", TimeDiff (firstPacket, firstObs));
   }
   _os << std::endl;
 }
+
 
 void
 TargetGRB::printDS9Reg (std::ostream & _os, double JD)
@@ -447,6 +459,7 @@ TargetGRB::printDS9Reg (std::ostream & _os, double JD)
   _os << "circle(" << pos.ra << "," << pos.dec << "," << errorbox << ")" << std::endl;
 }
 
+
 void
 TargetGRB::printGrbList (std::ostream & _os)
 {
@@ -455,7 +468,7 @@ TargetGRB::printGrbList (std::ostream & _os)
   getPosition (&pos, ln_get_julian_from_sys ());
   _os
     << std::setw(5) << getTargetID () << SEP
-    << LibnovaRa (pos.ra) << SEP 
+    << LibnovaRa (pos.ra) << SEP
     << LibnovaDec (pos.dec) << SEP
     << Timestamp (grbDate) << SEP
     << std::setw(15) << TimeDiff (grbDate, firstObs) << SEP
@@ -463,6 +476,7 @@ TargetGRB::printGrbList (std::ostream & _os)
     << Timestamp (getLastObs ())
     << std::endl;
 }
+
 
 void
 TargetGRB::writeToImage (Rts2Image * image)

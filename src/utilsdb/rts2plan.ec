@@ -17,6 +17,7 @@ Rts2Plan::Rts2Plan ()
   plan_status = 0;
 }
 
+
 Rts2Plan::Rts2Plan (int in_plan_id)
 {
   plan_id = in_plan_id;
@@ -28,45 +29,47 @@ Rts2Plan::Rts2Plan (int in_plan_id)
   plan_status = 0;
 }
 
+
 Rts2Plan::~Rts2Plan (void)
 {
   delete target;
 }
 
+
 int
 Rts2Plan::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_plan_id = plan_id;
-  int db_prop_id;
-  int db_prop_id_ind;
-  int db_tar_id;
-  int db_obs_id;
-  int db_obs_id_ind;
-  double db_plan_start;
-  double db_plan_end;
-  int db_plan_end_ind;
-  int db_plan_status;
+    int db_plan_id = plan_id;
+    int db_prop_id;
+    int db_prop_id_ind;
+    int db_tar_id;
+    int db_obs_id;
+    int db_obs_id_ind;
+    double db_plan_start;
+    double db_plan_end;
+    int db_plan_end_ind;
+    int db_plan_status;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL SELECT
-    prop_id,
-    tar_id,
-    obs_id,
-    EXTRACT (EPOCH FROM plan_start),
-    EXTRACT (EPOCH FROM plan_end),
-    plan_status
-  INTO
-    :db_prop_id :db_prop_id_ind,
-    :db_tar_id,
-    :db_obs_id :db_obs_id_ind,
-    :db_plan_start,
-    :db_plan_end :db_plan_end_ind,
-    :db_plan_status
-  FROM
-    plan
-  WHERE
-    plan_id = :db_plan_id;
+      prop_id,
+      tar_id,
+      obs_id,
+      EXTRACT (EPOCH FROM plan_start),
+      EXTRACT (EPOCH FROM plan_end),
+      plan_status
+    INTO
+      :db_prop_id :db_prop_id_ind,
+      :db_tar_id,
+      :db_obs_id :db_obs_id_ind,
+      :db_plan_start,
+      :db_plan_end :db_plan_end_ind,
+      :db_plan_status
+    FROM
+      plan
+    WHERE
+      plan_id = :db_plan_id;
   if (sqlca.sqlcode)
   {
     EXEC SQL ROLLBACK;
@@ -91,20 +94,21 @@ Rts2Plan::load ()
   return 0;
 }
 
+
 int
 Rts2Plan::save ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_plan_id = plan_id;
-  int db_tar_id = tar_id;
-  int db_prop_id = prop_id;
-  int db_prop_id_ind;
-  int db_obs_id = obs_id;
-  int db_obs_id_ind;
-  long db_plan_start = plan_start;
-  long db_plan_end = plan_end;
-  int db_plan_end_ind = (plan_end == -1 ? -1 : 0);
-  int db_plan_status = plan_status;
+    int db_plan_id = plan_id;
+    int db_tar_id = tar_id;
+    int db_prop_id = prop_id;
+    int db_prop_id_ind;
+    int db_obs_id = obs_id;
+    int db_obs_id_ind;
+    long db_plan_start = plan_start;
+    long db_plan_end = plan_end;
+    int db_plan_end_ind = (plan_end == -1 ? -1 : 0);
+    int db_plan_status = plan_status;
   EXEC SQL END DECLARE SECTION;
 
   // don't save entries with same target id as master plan
@@ -114,10 +118,10 @@ Rts2Plan::save ()
   if (db_plan_id == -1)
   {
     EXEC SQL
-    SELECT
+      SELECT
       nextval ('plan_id')
-    INTO
-      :db_plan_id;
+      INTO
+        :db_plan_id;
     if (sqlca.sqlcode)
     {
       logStream(MESSAGE_ERROR) << "Error getting nextval" << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << sendLog;
@@ -146,39 +150,39 @@ Rts2Plan::save ()
   }
 
   EXEC SQL INSERT INTO plan (
-    plan_id,
-    tar_id,
-    prop_id,
-    obs_id,
-    plan_start,
-    plan_end,
-    plan_status
-  )
-  VALUES (
-    :db_plan_id,
-    :db_tar_id,
-    :db_prop_id :db_prop_id_ind,
-    :db_obs_id :db_obs_id_ind,
-    abstime (:db_plan_start),
-    abstime (:db_plan_end :db_plan_end_ind),
-    :db_plan_status
-  );
+      plan_id,
+      tar_id,
+      prop_id,
+      obs_id,
+      plan_start,
+      plan_end,
+      plan_status
+      )
+    VALUES (
+      :db_plan_id,
+      :db_tar_id,
+      :db_prop_id :db_prop_id_ind,
+      :db_obs_id :db_obs_id_ind,
+      abstime (:db_plan_start),
+      abstime (:db_plan_end :db_plan_end_ind),
+      :db_plan_status
+      );
   if (sqlca.sqlcode)
   {
     logStream(MESSAGE_ERROR) << "Error inserting plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc
       << " prop_id:" << db_prop_id << " ind:" << db_prop_id_ind << sendLog;
     // try update
     EXEC SQL UPDATE
-      plan
-    SET
-      tar_id = :db_tar_id,
-      prop_id = :db_prop_id :db_prop_id_ind,
-      obs_id = :db_obs_id :db_obs_id_ind,
-      plan_start = abstime (:db_plan_start),
-      plan_end = abstime (:db_plan_end :db_plan_end_ind),
-      plan_status = :db_plan_status
-    WHERE
-      plan_id = :db_plan_id;
+        plan
+      SET
+        tar_id = :db_tar_id,
+        prop_id = :db_prop_id :db_prop_id_ind,
+        obs_id = :db_obs_id :db_obs_id_ind,
+        plan_start = abstime (:db_plan_start),
+        plan_end = abstime (:db_plan_end :db_plan_end_ind),
+        plan_status = :db_plan_status
+      WHERE
+        plan_id = :db_plan_id;
     if (sqlca.sqlcode)
     {
       logStream(MESSAGE_ERROR) << "Error updating plan " << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << sendLog;
@@ -190,20 +194,21 @@ Rts2Plan::save ()
   return 0;
 }
 
+
 int
 Rts2Plan::del ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_plan_id = plan_id;
+    int db_plan_id = plan_id;
   EXEC SQL END DECLARE SECTION;
 
   if (db_plan_id == -1)
     return 0;
 
   EXEC SQL DELETE FROM
-    plan
-  WHERE
-    plan_id = :db_plan_id;
+      plan
+    WHERE
+      plan_id = :db_plan_id;
   if (sqlca.sqlcode)
   {
     EXEC SQL ROLLBACK;
@@ -213,12 +218,13 @@ Rts2Plan::del ()
   return 0;
 }
 
+
 moveType
 Rts2Plan::startSlew (struct ln_equ_posn *position)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_plan_id = plan_id;
-  int db_obs_id;
+    int db_plan_id = plan_id;
+    int db_obs_id;
   EXEC SQL END DECLARE SECTION;
   moveType ret;
   ret = getTarget ()->startSlew (position);
@@ -229,13 +235,13 @@ Rts2Plan::startSlew (struct ln_equ_posn *position)
   db_obs_id = obs_id;
 
   EXEC SQL
-  UPDATE
-    plan
-  SET
-    obs_id = :db_obs_id,
-    plan_status = plan_status | 1
-  WHERE
-    plan_id = :db_plan_id;
+    UPDATE
+      plan
+    SET
+      obs_id = :db_obs_id,
+      plan_status = plan_status | 1
+    WHERE
+      plan_id = :db_plan_id;
   if (sqlca.sqlcode)
   {
     logStream (MESSAGE_ERROR) << "Rts2Plan::startSlew " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
@@ -248,6 +254,7 @@ Rts2Plan::startSlew (struct ln_equ_posn *position)
   return ret;
 }
 
+
 Target *
 Rts2Plan::getTarget ()
 {
@@ -256,6 +263,7 @@ Rts2Plan::getTarget ()
   target = createTarget (tar_id);
   return target;
 }
+
 
 Rts2Obs *
 Rts2Plan::getObservation ()
@@ -274,6 +282,7 @@ Rts2Plan::getObservation ()
   }
   return observation;
 }
+
 
 std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
 {
@@ -317,6 +326,7 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
   return _os;
 }
 
+
 std::istream & operator >> (std::istream & _is, Rts2Plan & plan)
 {
   char buf[201];
@@ -326,11 +336,11 @@ std::istream & operator >> (std::istream & _is, Rts2Plan & plan)
   comt = strchr (buf, '#');
   if (comt)
     *comt = '\0';
- 
- std::istringstream buf_s (buf);
- LibnovaDate start_date;
- buf_s >> plan.tar_id >> start_date;
- start_date.getTimeT (& plan.plan_start);
 
- return _is;
+  std::istringstream buf_s (buf);
+  LibnovaDate start_date;
+  buf_s >> plan.tar_id >> start_date;
+  start_date.getTimeT (& plan.plan_start);
+
+  return _is;
 }

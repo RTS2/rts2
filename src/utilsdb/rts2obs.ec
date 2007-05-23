@@ -23,9 +23,10 @@ Rts2Obs::Rts2Obs (int in_obs_id)
   printHeader = true;
 }
 
-Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra, 
-      double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start,
-      int in_obs_state, double in_obs_end)
+
+Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra,
+double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start,
+int in_obs_state, double in_obs_end)
 {
   tar_id = in_tar_id;
   tar_name = std::string (in_tar_name);
@@ -45,6 +46,7 @@ Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int 
   printHeader = true;
 }
 
+
 Rts2Obs::~Rts2Obs (void)
 {
   std::vector <Rts2Image *>::iterator img_iter;
@@ -57,29 +59,30 @@ Rts2Obs::~Rts2Obs (void)
   }
 }
 
+
 int
 Rts2Obs::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  VARCHAR db_tar_name[TARGET_NAME_LEN];
-  int db_tar_id;
-  char db_tar_type;
-  int db_obs_id = obs_id;
-  double db_obs_ra;
-  int ind_obs_ra;
-  double db_obs_dec;
-  int ind_obs_dec;
-  double db_obs_alt;
-  int ind_obs_alt;
-  double db_obs_az;
-  int ind_obs_az;
-  double db_obs_slew;
-  int ind_obs_slew;
-  double db_obs_start;
-  int ind_obs_start;
-  int db_obs_state;
-  double db_obs_end;
-  int ind_obs_end;
+    VARCHAR db_tar_name[TARGET_NAME_LEN];
+    int db_tar_id;
+    char db_tar_type;
+    int db_obs_id = obs_id;
+    double db_obs_ra;
+    int ind_obs_ra;
+    double db_obs_dec;
+    int ind_obs_dec;
+    double db_obs_alt;
+    int ind_obs_alt;
+    double db_obs_az;
+    int ind_obs_az;
+    double db_obs_slew;
+    int ind_obs_slew;
+    double db_obs_start;
+    int ind_obs_start;
+    int db_obs_state;
+    double db_obs_end;
+    int ind_obs_end;
   EXEC SQL END DECLARE SECTION;
 
   // already loaded
@@ -96,34 +99,34 @@ Rts2Obs::load ()
   obs_end = nan ("f");
 
   EXEC SQL
-  SELECT
-    tar_name,
-    observations.tar_id,
-    type_id,
-    obs_ra,
-    obs_dec,
-    obs_alt,
-    obs_az,
-    EXTRACT (EPOCH FROM obs_slew),
-    EXTRACT (EPOCH FROM obs_start),
-    obs_state,
-    EXTRACT (EPOCH FROM obs_end)
-  INTO
-    :db_tar_name,
-    :db_tar_id,
-    :db_tar_type,
-    :db_obs_ra     :ind_obs_ra,
-    :db_obs_dec    :ind_obs_dec,
-    :db_obs_alt    :ind_obs_alt,
-    :db_obs_az     :ind_obs_az,
-    :db_obs_slew   :ind_obs_slew,
-    :db_obs_start  :ind_obs_start,
-    :db_obs_state,
-    :db_obs_end    :ind_obs_end
-  FROM
-    observations,
-    targets
-  WHERE
+    SELECT
+      tar_name,
+      observations.tar_id,
+      type_id,
+      obs_ra,
+      obs_dec,
+      obs_alt,
+      obs_az,
+      EXTRACT (EPOCH FROM obs_slew),
+      EXTRACT (EPOCH FROM obs_start),
+      obs_state,
+      EXTRACT (EPOCH FROM obs_end)
+    INTO
+      :db_tar_name,
+      :db_tar_id,
+      :db_tar_type,
+      :db_obs_ra     :ind_obs_ra,
+      :db_obs_dec    :ind_obs_dec,
+      :db_obs_alt    :ind_obs_alt,
+      :db_obs_az     :ind_obs_az,
+      :db_obs_slew   :ind_obs_slew,
+      :db_obs_start  :ind_obs_start,
+      :db_obs_state,
+      :db_obs_end    :ind_obs_end
+    FROM
+      observations,
+      targets
+    WHERE
       obs_id = :db_obs_id
     AND observations.tar_id = targets.tar_id;
   if (sqlca.sqlcode)
@@ -154,6 +157,7 @@ Rts2Obs::load ()
   return 0;
 }
 
+
 int
 Rts2Obs::loadImages ()
 {
@@ -169,39 +173,40 @@ Rts2Obs::loadImages ()
   return imgset->load ();
 }
 
+
 int
 Rts2Obs::loadCounts ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_obs_id = obs_id;
-  long db_count_date;
-  int db_count_usec;
-  int db_count_value;
-  float db_count_exposure;
-  char db_count_filter;
+    int db_obs_id = obs_id;
+    long db_count_date;
+    int db_count_usec;
+    int db_count_value;
+    float db_count_exposure;
+    char db_count_filter;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL DECLARE cur_counts CURSOR FOR
-  SELECT
-    EXTRACT (EPOCH FROM count_date),
-    count_usec,
-    count_value,
-    count_exposure,
-    count_filter
-  FROM
-    counts
-  WHERE
-    obs_id = :db_obs_id;
+    SELECT
+      EXTRACT (EPOCH FROM count_date),
+      count_usec,
+      count_value,
+      count_exposure,
+      count_filter
+    FROM
+      counts
+    WHERE
+      obs_id = :db_obs_id;
 
   EXEC SQL OPEN cur_counts;
   while (1)
   {
     EXEC SQL FETCH next FROM cur_counts INTO
-      :db_count_date,
-      :db_count_usec,
-      :db_count_value,
-      :db_count_exposure,
-      :db_count_filter;
+        :db_count_date,
+        :db_count_usec,
+        :db_count_value,
+        :db_count_exposure,
+        :db_count_filter;
     if (sqlca.sqlcode)
       break;
     counts.push_back (Rts2Count (obs_id, db_count_date, db_count_usec, db_count_value, db_count_exposure,
@@ -218,6 +223,7 @@ Rts2Obs::loadCounts ()
   EXEC SQL COMMIT;
   return 0;
 }
+
 
 void
 Rts2Obs::printObsHeader (std::ostream & _os)
@@ -258,6 +264,7 @@ Rts2Obs::printObsHeader (std::ostream & _os)
   _os.precision (old_precision);
 }
 
+
 void
 Rts2Obs::printCountsShort (std::ostream &_os)
 {
@@ -269,11 +276,12 @@ Rts2Obs::printCountsShort (std::ostream &_os)
   for (count_iter = counts.begin (); count_iter != counts.end (); count_iter++)
   {
     _os
-      << tar_id 
+      << tar_id
       << SEP << obs_id
       << SEP << (*count_iter);
   }
 }
+
 
 void
 Rts2Obs::printCounts (std::ostream &_os)
@@ -290,34 +298,37 @@ Rts2Obs::printCounts (std::ostream &_os)
   }
 }
 
+
 void
 Rts2Obs::printCountsSummary (std::ostream &_os)
 {
   _os << "       Number of counts:" << counts.size () << std::endl;
 }
 
+
 int
 Rts2Obs::getUnprocessedCount ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_obs_id = getObsId ();
-  int db_count = 0;
+    int db_obs_id = getObsId ();
+    int db_count = 0;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
-  SELECT
+    SELECT
     count (*)
-  INTO
-    :db_count
-  FROM
-    images
-  WHERE
+    INTO
+      :db_count
+    FROM
+      images
+    WHERE
       obs_id = :db_obs_id
     AND ((process_bitfield & 1) = 0);
   EXEC SQL ROLLBACK;
 
   return db_count;
 }
+
 
 int
 Rts2Obs::checkUnprocessedImages (Rts2Block *master)
@@ -347,6 +358,7 @@ Rts2Obs::checkUnprocessedImages (Rts2Block *master)
   return ret;
 }
 
+
 int
 Rts2Obs::getNumberOfImages ()
 {
@@ -355,6 +367,7 @@ Rts2Obs::getNumberOfImages ()
     return imgset->size ();
   return 0;
 }
+
 
 int
 Rts2Obs::getNumberOfGoodImages ()
@@ -371,6 +384,7 @@ Rts2Obs::getNumberOfGoodImages ()
   }
   return ret;
 }
+
 
 int
 Rts2Obs::getFirstErrors (double &eRa, double &eDec, double &eRad)
@@ -390,6 +404,7 @@ Rts2Obs::getFirstErrors (double &eRa, double &eDec, double &eRad)
   return -1;
 }
 
+
 int
 Rts2Obs::getAverageErrors (double &eRa, double &eDec, double &eRad)
 {
@@ -398,6 +413,7 @@ Rts2Obs::getAverageErrors (double &eRa, double &eDec, double &eRad)
     return -1;
   return imgset->getAverageErrors (eRa, eDec, eRad);
 }
+
 
 int
 Rts2Obs::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevHrz)
@@ -411,6 +427,7 @@ Rts2Obs::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevH
   prevObs.getHrz (prevHrz);
   return 0;
 }
+
 
 double
 Rts2Obs::getPrevSeparation ()
@@ -427,6 +444,7 @@ Rts2Obs::getPrevSeparation ()
   return ln_get_angular_separation (&prevEqu, &currEqu);
 }
 
+
 double
 Rts2Obs::getSlewSpeed ()
 {
@@ -439,20 +457,21 @@ Rts2Obs::getSlewSpeed ()
   return prevSep / (obs_start - obs_slew);
 }
 
+
 void
 Rts2Obs::maskState (int newBits)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_obs_id = obs_id;
-  int db_newBits = newBits;
+    int db_obs_id = obs_id;
+    int db_newBits = newBits;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL UPDATE
-    observations 
-  SET
-    obs_state = obs_state | :db_newBits
-  WHERE
-    obs_id = :db_obs_id;
+      observations
+    SET
+      obs_state = obs_state | :db_newBits
+    WHERE
+      obs_id = :db_obs_id;
   if (sqlca.sqlcode)
   {
     logStream (MESSAGE_ERROR) << "Rts2Obs::maskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
@@ -463,20 +482,21 @@ Rts2Obs::maskState (int newBits)
   obs_state |= newBits;
 }
 
+
 void
 Rts2Obs::unmaskState (int newBits)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_obs_id = obs_id;
-  int db_newBits = ~newBits;
+    int db_obs_id = obs_id;
+    int db_newBits = ~newBits;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL UPDATE
-    observations 
-  SET
-    obs_state = obs_state & :db_newBits
-  WHERE
-    obs_id = :db_obs_id;
+      observations
+    SET
+      obs_state = obs_state & :db_newBits
+    WHERE
+      obs_id = :db_obs_id;
   if (sqlca.sqlcode)
   {
     logStream (MESSAGE_ERROR) << "Rts2Obs::unmaskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
@@ -486,6 +506,7 @@ Rts2Obs::unmaskState (int newBits)
   EXEC SQL COMMIT;
   obs_state |= newBits;
 }
+
 
 std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
 {
@@ -511,6 +532,7 @@ std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
   return _os;
 }
 
+
 std::ostream & operator << (std::ostream &_os, Rts2ObsState obs_state)
 {
   if (obs_state.state & OBS_BIT_STARTED)
@@ -519,7 +541,7 @@ std::ostream & operator << (std::ostream &_os, Rts2ObsState obs_state)
     _os << 'M';
   else
     _os << ' ';
-    
+
   if (obs_state.state & OBS_BIT_ACQUSITION_FAI)
     _os << 'F';
   else if (obs_state.state & OBS_BIT_ACQUSITION)

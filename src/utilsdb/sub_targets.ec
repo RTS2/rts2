@@ -15,10 +15,12 @@ ConstTarget::ConstTarget () : Target ()
 {
 }
 
+
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
 Target (in_tar_id, in_obs)
 {
 }
+
 
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):
 Target (in_tar_id, in_obs)
@@ -27,26 +29,27 @@ Target (in_tar_id, in_obs)
   position.dec = pos->dec;
 }
 
+
 int
 ConstTarget::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double d_ra;
-  double d_dec;
-  int db_tar_id = getObsTargetID ();
+    double d_ra;
+    double d_dec;
+    int db_tar_id = getObsTargetID ();
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
-  SELECT 
-    tar_ra,
-    tar_dec
-  INTO
-    :d_ra,
-    :d_dec
-  FROM
-    targets
-  WHERE
-    tar_id = :db_tar_id;
+    SELECT
+      tar_ra,
+      tar_dec
+    INTO
+      :d_ra,
+      :d_dec
+    FROM
+      targets
+    WHERE
+      tar_id = :db_tar_id;
   if (sqlca.sqlcode)
   {
     logMsgDb ("ConstTarget::load", MESSAGE_ERROR);
@@ -58,13 +61,14 @@ ConstTarget::load ()
   return Target::load ();
 }
 
+
 int
 ConstTarget::save (bool overwrite, int tar_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double d_tar_ra;
-  double d_tar_dec;
-  int d_tar_id;
+    double d_tar_ra;
+    double d_tar_dec;
+    int d_tar_id;
   EXEC SQL END DECLARE SECTION;
 
   int ret;
@@ -79,13 +83,13 @@ ConstTarget::save (bool overwrite, int tar_id)
   d_tar_id = tar_id;
 
   EXEC SQL
-  UPDATE
-    targets
-  SET
-    tar_ra = :d_tar_ra,
-    tar_dec = :d_tar_dec
-  WHERE
-    tar_id = :d_tar_id;
+    UPDATE
+      targets
+    SET
+      tar_ra = :d_tar_ra,
+      tar_dec = :d_tar_dec
+    WHERE
+      tar_id = :d_tar_id;
 
   if (sqlca.sqlcode)
   {
@@ -97,6 +101,7 @@ ConstTarget::save (bool overwrite, int tar_id)
   return 0;
 }
 
+
 int
 ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
@@ -104,38 +109,40 @@ ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 int
 ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   struct ln_equ_posn pos;
   int ret;
-  
+
   ret = getPosition (&pos, JD);
   if (ret)
     return ret;
   return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
+
 int
 ConstTarget::selectedAsGood ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_tar_id = target_id;
-  double d_tar_ra;
-  double d_tar_dec;
+    int d_tar_id = target_id;
+    double d_tar_ra;
+    double d_tar_dec;
   EXEC SQL END DECLARE SECTION;
   // check if we are still enabled..
   EXEC SQL
-  SELECT
-    tar_ra,
-    tar_dec
-  INTO
-    :d_tar_ra,
-    :d_tar_dec
-  FROM
-    targets
-  WHERE
-    tar_id = :d_tar_id;
+    SELECT
+      tar_ra,
+      tar_dec
+    INTO
+      :d_tar_ra,
+      :d_tar_dec
+    FROM
+      targets
+    WHERE
+      tar_id = :d_tar_id;
   if (sqlca.sqlcode)
   {
     logMsgDb ("ConstTarget::selectedAsGood", MESSAGE_ERROR);
@@ -146,6 +153,7 @@ ConstTarget::selectedAsGood ()
   return Target::selectedAsGood ();
 }
 
+
 int
 ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
 {
@@ -154,11 +162,13 @@ ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
   return (getDistance (&other_position) < in_sep_limit);
 }
 
+
 void
 ConstTarget::printExtra (std::ostream &_os, double JD)
 {
   Target::printExtra (_os, JD);
 }
+
 
 PossibleDarks::PossibleDarks (DarkTarget *in_target, const char *in_deviceName)
 {
@@ -167,11 +177,13 @@ PossibleDarks::PossibleDarks (DarkTarget *in_target, const char *in_deviceName)
   target = in_target;
 }
 
+
 PossibleDarks::~PossibleDarks ()
 {
   delete[] deviceName;
   dark_exposures.clear ();
 }
+
 
 void
 PossibleDarks::addDarkExposure (float exp)
@@ -184,6 +196,7 @@ PossibleDarks::addDarkExposure (float exp)
   }
   dark_exposures.push_back (exp);
 }
+
 
 int
 PossibleDarks::defaultDark ()
@@ -198,9 +211,9 @@ PossibleDarks::defaultDark ()
   config = Rts2Config::instance ();
   ret = config->getString (deviceName, "darks", dark_exps, 1000);
   if (ret)
-    {
-      return 0;
-    }
+  {
+    return 0;
+  }
   // get the getCalledNum th observation
   // count how many exposures are in dark list..
   tmp_s = dark_exps;
@@ -232,13 +245,14 @@ PossibleDarks::defaultDark ()
   return 0;
 }
 
+
 int
 PossibleDarks::dbDark ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  VARCHAR d_camera_name[DEVICE_NAME_SIZE];
-  float d_img_exposure;
-  int d_dark_count;
+    VARCHAR d_camera_name[DEVICE_NAME_SIZE];
+    float d_img_exposure;
+    int d_dark_count;
   EXEC SQL END DECLARE SECTION;
 
   strncpy (d_camera_name.arr, deviceName, DEVICE_NAME_SIZE);
@@ -248,46 +262,46 @@ PossibleDarks::dbDark ()
 
   EXEC SQL DECLARE dark_target CURSOR FOR
     SELECT
-        img_exposure,
-        (SELECT
-          count (*)
-        FROM
-          darks
-        WHERE
-            darks.camera_name = images.camera_name
-          AND now () - dark_date < '18 hour'
-        ) AS dark_count
-      FROM
-        images,
-        darks
-      WHERE
-	  images.camera_name = :d_camera_name
-	AND now () - img_date < '1 day'
-	AND now () - dark_date < '1 day'
-	AND dark_exposure = img_exposure
-      GROUP BY
-        img_exposure,
-        images.camera_name
+      img_exposure,
+      (SELECT
+    count (*)
+    FROM
+      darks
+    WHERE
+      darks.camera_name = images.camera_name
+    AND now () - dark_date < '18 hour'
+      ) AS dark_count
+    FROM
+      images,
+      darks
+    WHERE
+      images.camera_name = :d_camera_name
+    AND now () - img_date < '1 day'
+    AND now () - dark_date < '1 day'
+    AND dark_exposure = img_exposure
+    GROUP BY
+      img_exposure,
+      images.camera_name
     UNION
-      SELECT
-        img_exposure,
-        0
-      FROM
-        images
-      WHERE
-          images.camera_name = :d_camera_name
-        AND now () - img_date < '1 day'
-        AND NOT EXISTS (SELECT *
-          FROM
-            darks
-          WHERE
-              darks.camera_name = images.camera_name
-            AND dark_exposure = img_exposure
-            AND now () - dark_date < '1 day'
-	)
+    SELECT
+      img_exposure,
+      0
+    FROM
+      images
+    WHERE
+      images.camera_name = :d_camera_name
+    AND now () - img_date < '1 day'
+    AND NOT EXISTS (SELECT *
+    FROM
+      darks
+    WHERE
+      darks.camera_name = images.camera_name
+    AND dark_exposure = img_exposure
+    AND now () - dark_date < '1 day'
+      )
       ORDER BY
-        img_exposure DESC,
-	dark_count DESC;
+      img_exposure DESC,
+      dark_count DESC;
   EXEC SQL OPEN dark_target;
   if (sqlca.sqlcode)
   {
@@ -299,8 +313,8 @@ PossibleDarks::dbDark ()
   while (true)
   {
     EXEC SQL FETCH next FROM dark_target INTO
-      :d_img_exposure,
-      :d_dark_count;
+        :d_img_exposure,
+        :d_dark_count;
     if (sqlca.sqlcode)
     {
       EXEC SQL CLOSE dark_target;
@@ -317,6 +331,7 @@ PossibleDarks::dbDark ()
   defaultDark ();
   return 0;
 }
+
 
 int
 PossibleDarks::getScript (char *buf)
@@ -341,17 +356,20 @@ PossibleDarks::getScript (char *buf)
   return 0;
 }
 
+
 int
 PossibleDarks::isName (const char *in_deviceName)
 {
   return !strcmp (in_deviceName, deviceName);
 }
 
+
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
 {
   currPos.ra = 0;
   currPos.dec = 0;
 }
+
 
 DarkTarget::~DarkTarget ()
 {
@@ -364,6 +382,7 @@ DarkTarget::~DarkTarget ()
   }
   darkList.clear ();
 }
+
 
 int
 DarkTarget::getScript (const char *deviceName, char *buf)
@@ -389,12 +408,14 @@ DarkTarget::getScript (const char *deviceName, char *buf)
   return darkEntry->getScript (buf);
 }
 
+
 int
 DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
   *pos = currPos;
   return 0;
 }
+
 
 moveType
 DarkTarget::startSlew (struct ln_equ_posn *position)
@@ -410,9 +431,11 @@ DarkTarget::startSlew (struct ln_equ_posn *position)
   return OBS_DONT_MOVE;
 }
 
+
 FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
 }
+
 
 void
 FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
@@ -426,6 +449,7 @@ FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
   ln_get_equ_from_hrz (&hrz, observer, JD, pos);
 }
 
+
 int
 FlatTarget::getScript (const char *deviceName, char *buf)
 {
@@ -437,6 +461,7 @@ FlatTarget::getScript (const char *deviceName, char *buf)
   return 0;
 }
 
+
 // we will try to find target, that is among empty fields, and is at oposite location from sun
 // that target will then become our target_id, so entries in observation log
 // will refer to that id, not to generic flat target_id
@@ -444,10 +469,10 @@ int
 FlatTarget::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double d_tar_ra;
-  double d_tar_dec;
-  int d_tar_id;
-  const int db_target_flat = TARGET_FLAT;
+    double d_tar_ra;
+    double d_tar_dec;
+    int d_tar_id;
+    const int db_target_flat = TARGET_FLAT;
   EXEC SQL END DECLARE SECTION;
 
   if (getTargetID () != TARGET_FLAT)
@@ -467,54 +492,55 @@ FlatTarget::load ()
   getAntiSolarPos (&antiSolarPosition, JD);
 
   EXEC SQL DECLARE flat_targets CURSOR FOR
-  SELECT
-    tar_ra,
-    tar_dec,
-    tar_id
-  FROM
-    targets
-  WHERE
+    SELECT
+      tar_ra,
+      tar_dec,
+      tar_id
+    FROM
+      targets
+    WHERE
       type_id = 'f'
     AND (tar_bonus_time is NULL OR tar_bonus > 0)
     AND tar_enabled = true
     AND tar_id <> :db_target_flat;
   EXEC SQL OPEN flat_targets;
   while (1)
-    {
-      EXEC SQL FETCH next FROM flat_targets INTO
+  {
+    EXEC SQL FETCH next FROM flat_targets INTO
         :d_tar_ra,
-	:d_tar_dec,
-	:d_tar_id;
-      if (sqlca.sqlcode)
-        break;
-      d_tar.ra = d_tar_ra;
-      d_tar.dec = d_tar_dec;
-      // we should be at least 10 deg above horizon to be considered..
-      ln_get_hrz_from_equ (&d_tar, observer, JD, &hrz);
-      if (hrz.alt < 10)
-        continue;
-      // and of course we should be above horizon..
-      if (!isGood (lst, JD, &d_tar))
-	continue;
-      // test if we found the best target..
-      curDist = ln_get_angular_separation (&d_tar, &antiSolarPosition);
-      if (curDist < minAntiDist)
-        {
-          obs_target_id = d_tar_id;
-          minAntiDist = curDist;
-        }
+        :d_tar_dec,
+        :d_tar_id;
+    if (sqlca.sqlcode)
+      break;
+    d_tar.ra = d_tar_ra;
+    d_tar.dec = d_tar_dec;
+    // we should be at least 10 deg above horizon to be considered..
+    ln_get_hrz_from_equ (&d_tar, observer, JD, &hrz);
+    if (hrz.alt < 10)
+      continue;
+    // and of course we should be above horizon..
+    if (!isGood (lst, JD, &d_tar))
+      continue;
+    // test if we found the best target..
+    curDist = ln_get_angular_separation (&d_tar, &antiSolarPosition);
+    if (curDist < minAntiDist)
+    {
+      obs_target_id = d_tar_id;
+      minAntiDist = curDist;
     }
+  }
   if ((sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
     || obs_target_id <= 0)
-    {
-      logMsgDb ("FlatTarget::load", MESSAGE_ERROR);
-      EXEC SQL CLOSE flat_targets;
-      //in that case, we will simply use generic flat target..
-      return 0;
-    }
+  {
+    logMsgDb ("FlatTarget::load", MESSAGE_ERROR);
+    EXEC SQL CLOSE flat_targets;
+    //in that case, we will simply use generic flat target..
+    return 0;
+  }
   EXEC SQL CLOSE flat_targets;
   return ConstTarget::load ();
 }
+
 
 int
 FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -527,6 +553,7 @@ FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 int
 FlatTarget::considerForObserving (double JD)
 {
@@ -536,12 +563,14 @@ FlatTarget::considerForObserving (double JD)
   return ConstTarget::considerForObserving (JD);
 }
 
+
 CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
   airmassPosition.ra = airmassPosition.dec = 0;
   time (&lastImage);
   needUpdate = 1;
 }
+
 
 // the idea is to cover uniformly whole sky.
 // in airmass_cal_images table we have recorded previous observations
@@ -550,20 +579,18 @@ int
 CalibrationTarget::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  double d_airmass_start;
-  double d_airmass_end;
-  long d_airmass_last_image;
+    double d_airmass_start;
+    double d_airmass_end;
+    long d_airmass_last_image;
 
-  double db_tar_ra;
-  double db_tar_dec;
-  int db_tar_id;
-  char db_type_id;
-  VARCHAR db_tar_name[TARGET_NAME_LEN];
+    double db_tar_ra;
+    double db_tar_dec;
+    int db_tar_id;
+    char db_type_id;
+    VARCHAR db_tar_name[TARGET_NAME_LEN];
   EXEC SQL END DECLARE SECTION;
 
   double JD = ln_get_julian_from_sys ();
-
-  double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
   time_t now;
   time_t valid;
@@ -581,35 +608,35 @@ CalibrationTarget::load ()
   // create airmass & target_id pool (I dislike idea of creating
   // target object, as that will cost me a lot of resources
   EXEC SQL DECLARE pos_calibration CURSOR FOR
-  SELECT
-    tar_ra,
-    tar_dec,
-    tar_id,
-    type_id,
-    tar_name
-  FROM
-    targets
-  WHERE
+    SELECT
+      tar_ra,
+      tar_dec,
+      tar_id,
+      type_id,
+      tar_name
+    FROM
+      targets
+    WHERE
       tar_enabled = true
     AND (tar_bonus_time is NULL OR tar_bonus > 0)
     AND ((tar_next_observable is null) OR (tar_next_observable < now()))
     AND tar_id != 6
     AND (
-        type_id = 'c'
-      OR type_id = 'M'
-    )
-  ORDER BY
-    tar_priority + tar_bonus desc;
+      type_id = 'c'
+    OR type_id = 'M'
+      )
+      ORDER BY
+      tar_priority + tar_bonus desc;
   EXEC SQL OPEN pos_calibration;
   while (1)
   {
     EXEC SQL FETCH next FROM pos_calibration
-    INTO
-      :db_tar_ra,
-      :db_tar_dec,
-      :db_tar_id,
-      :db_type_id,
-      :db_tar_name;
+      INTO
+        :db_tar_ra,
+        :db_tar_dec,
+        :db_tar_id,
+        :db_type_id,
+        :db_tar_name;
     if (sqlca.sqlcode)
       break;
     struct ln_equ_posn pos;
@@ -645,15 +672,15 @@ CalibrationTarget::load ()
   // center airmass is 1.5 - when we don't have any images in airmass_cal_images,
   // order us by distance from such center distance
   EXEC SQL DECLARE cur_airmass_cal_images CURSOR FOR
-  SELECT
-    air_airmass_start,
-    air_airmass_end,
-    EXTRACT (EPOCH FROM air_last_image)
-  FROM
-    airmass_cal_images
-  ORDER BY
-    air_last_image asc,
-    abs (1.5 - (air_airmass_start + air_airmass_end) / 2) asc;
+    SELECT
+      air_airmass_start,
+      air_airmass_end,
+      EXTRACT (EPOCH FROM air_last_image)
+    FROM
+      airmass_cal_images
+      ORDER BY
+      air_last_image asc,
+      abs (1.5 - (air_airmass_start + air_airmass_end) / 2) asc;
   EXEC SQL OPEN cur_airmass_cal_images;
   obs_target_id = -1;
   time (&now);
@@ -661,44 +688,44 @@ CalibrationTarget::load ()
   while (1)
   {
     EXEC SQL FETCH next FROM cur_airmass_cal_images
-    INTO
-      :d_airmass_start,
-      :d_airmass_end,
-      :d_airmass_last_image;
+      INTO
+        :d_airmass_start,
+        :d_airmass_end,
+        :d_airmass_last_image;
     if (sqlca.sqlcode)
       break;
     // find any target which lies within requested airmass range
     for (cal_iter = cal_list.begin (); cal_iter != cal_list.end (); cal_iter++)
     {
       PosCalibration *calib = *cal_iter;
-      if (calib->getCurrAirmass () >= d_airmass_start 
-	&& calib->getCurrAirmass () < d_airmass_end)
+      if (calib->getCurrAirmass () >= d_airmass_start
+        && calib->getCurrAirmass () < d_airmass_end)
       {
-	if (calib->getLunarDistance (JD) < Rts2Config::instance()->getCalibrationLunarDist())
-	{
+        if (calib->getLunarDistance (JD) < Rts2Config::instance()->getCalibrationLunarDist())
+        {
           bad_list.push_back (calib);
-	}
-	// if that target was already observerd..
-	else if (calib->getNumObs (&valid, &now) > 0)
-	{
-	  // if we do not have any target, pick that on
-	  double calib_last_time = calib->getLastObsTime ();
-	  if (fallback_obs_calib == NULL ||
-	    calib_last_time > fallback_last_time)
-	  {
-	    fallback_obs_calib = calib;
-	    fallback_last_image = (time_t) d_airmass_last_image;
-	    fallback_last_time = calib_last_time;
-	  }
-	}
-	else
-	{
-	  // switch current target coordinates..
-	  obs_target_id = calib->getTargetID ();
-	  calib->getPosition (&airmassPosition, JD);
-	  lastImage = (time_t) d_airmass_last_image;
-	  break;
-	}
+        }
+        // if that target was already observerd..
+        else if (calib->getNumObs (&valid, &now) > 0)
+        {
+          // if we do not have any target, pick that on
+          double calib_last_time = calib->getLastObsTime ();
+          if (fallback_obs_calib == NULL ||
+            calib_last_time > fallback_last_time)
+          {
+            fallback_obs_calib = calib;
+            fallback_last_image = (time_t) d_airmass_last_image;
+            fallback_last_time = calib_last_time;
+          }
+        }
+        else
+        {
+          // switch current target coordinates..
+          obs_target_id = calib->getTargetID ();
+          calib->getPosition (&airmassPosition, JD);
+          lastImage = (time_t) d_airmass_last_image;
+          break;
+        }
       }
     }
     if (obs_target_id != -1)
@@ -748,6 +775,7 @@ CalibrationTarget::load ()
   return -1;
 }
 
+
 int
 CalibrationTarget::beforeMove ()
 {
@@ -757,12 +785,14 @@ CalibrationTarget::beforeMove ()
   return ConstTarget::beforeMove ();
 }
 
+
 int
 CalibrationTarget::endObservation (int in_next_id)
 {
   needUpdate = 1;
   return ConstTarget::endObservation (in_next_id);
 }
+
 
 int
 CalibrationTarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -778,6 +808,7 @@ CalibrationTarget::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 int
 CalibrationTarget::considerForObserving (double JD)
 {
@@ -785,6 +816,7 @@ CalibrationTarget::considerForObserving (double JD)
   load ();
   return ConstTarget::considerForObserving (JD);
 }
+
 
 float
 CalibrationTarget::getBonus (double JD)
@@ -810,6 +842,7 @@ CalibrationTarget::getBonus (double JD)
   return minBonus + ((maxBonus - minBonus) * t_diff / (maxDelay - validTime));
 }
 
+
 int
 FocusingTarget::getScript (const char *device_name, char *buf)
 {
@@ -818,51 +851,53 @@ FocusingTarget::getScript (const char *device_name, char *buf)
   return 0;
 }
 
+
 ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
   modelStepType = 2;
   Rts2Config::instance ()->getInteger ("observatory", "model_step_type", modelStepType);
 }
 
+
 int
 ModelTarget::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_tar_id = getTargetID ();
-  float d_alt_start;
-  float d_alt_stop;
-  float d_alt_step;
-  float d_az_start;
-  float d_az_stop;
-  float d_az_step;
-  float d_noise;
-  int d_step;
+    int d_tar_id = getTargetID ();
+    float d_alt_start;
+    float d_alt_stop;
+    float d_alt_step;
+    float d_az_start;
+    float d_az_stop;
+    float d_az_step;
+    float d_noise;
+    int d_step;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
-  SELECT
-    alt_start,
-    alt_stop,
-    alt_step,
-    az_start,
-    az_stop,
-    az_step,
-    noise,
-    step
-  INTO
-    :d_alt_start,
-    :d_alt_stop,
-    :d_alt_step,
-    :d_az_start,
-    :d_az_stop,
-    :d_az_step,
-    :d_noise,
-    :d_step
-  FROM
-    target_model
-  WHERE
-    tar_id = :d_tar_id
-  ;
+    SELECT
+      alt_start,
+      alt_stop,
+      alt_step,
+      az_start,
+      az_stop,
+      az_step,
+      noise,
+      step
+    INTO
+      :d_alt_start,
+      :d_alt_stop,
+      :d_alt_step,
+      :d_az_start,
+      :d_az_stop,
+      :d_az_step,
+      :d_noise,
+      :d_step
+    FROM
+      target_model
+    WHERE
+      tar_id = :d_tar_id
+      ;
   if (sqlca.sqlcode)
   {
     logMsgDb ("ModelTarget::ModelTarget", MESSAGE_ERROR);
@@ -885,24 +920,26 @@ ModelTarget::load ()
   return ConstTarget::load ();
 }
 
+
 ModelTarget::~ModelTarget (void)
 {
 }
+
 
 int
 ModelTarget::writeStep ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_tar_id = getTargetID ();
-  int d_step = step;
+    int d_tar_id = getTargetID ();
+    int d_step = step;
   EXEC SQL END DECLARE SECTION;
   EXEC SQL
-  UPDATE
-    target_model
-  SET
-    step = :d_step
-  WHERE
-    tar_id = :d_tar_id;
+    UPDATE
+      target_model
+    SET
+      step = :d_step
+    WHERE
+      tar_id = :d_tar_id;
   if (sqlca.sqlcode)
   {
     logMsgDb ("ModelTarget::writeStep", MESSAGE_ERROR);
@@ -912,6 +949,7 @@ ModelTarget::writeStep ()
   EXEC SQL COMMIT;
   return 0;
 }
+
 
 int
 ModelTarget::getNextPosition ()
@@ -926,11 +964,12 @@ ModelTarget::getNextPosition ()
       // random model
       step += (int) (((double) random () * ((fabs (360.0 / az_step) + 1) * fabs((alt_stop - alt_start) / alt_step) + 1)) / RAND_MAX);
       break;
-    default:  
+    default:
       step += modelStepType * ((int) fabs ((alt_stop - alt_start) / alt_step) + 1) + 1;
   }
   return calPosition ();
 }
+
 
 int
 ModelTarget::calPosition ()
@@ -947,34 +986,36 @@ ModelTarget::calPosition ()
   return 0;
 }
 
+
 int
 ModelTarget::beforeMove ()
 {
-  endObservation (-1); // we will not observe same model target twice
+  endObservation (-1);           // we will not observe same model target twice
   nullAcquired ();
   return getNextPosition ();
 }
+
 
 moveType
 ModelTarget::afterSlewProcessed ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_obs_id;
-  int d_step = step;
+    int d_obs_id;
+    int d_step = step;
   EXEC SQL END DECLARE SECTION;
 
   d_obs_id = getObsId ();
 
   EXEC SQL
-  INSERT INTO
-    model_observation
-  (
-    obs_id,
-    step
-  ) VALUES (
-    :d_obs_id,
-    :d_step
-  );
+    INSERT INTO
+      model_observation
+      (
+      obs_id,
+      step
+      ) VALUES (
+      :d_obs_id,
+      :d_step
+      );
   if (sqlca.sqlcode)
   {
     logMsgDb ("ModelTarget::endObservation", MESSAGE_ERROR);
@@ -987,6 +1028,7 @@ ModelTarget::afterSlewProcessed ()
   return OBS_MOVE_UNMODELLED;
 }
 
+
 int
 ModelTarget::endObservation (int in_next_id)
 {
@@ -994,6 +1036,7 @@ ModelTarget::endObservation (int in_next_id)
     writeStep ();
   return ConstTarget::endObservation (in_next_id);
 }
+
 
 int
 ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -1008,10 +1051,12 @@ ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 // pick up some opportunity target; don't pick it too often
 OportunityTarget::OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
 }
+
 
 float
 OportunityTarget::getBonus (double JD)
@@ -1045,10 +1090,12 @@ OportunityTarget::getBonus (double JD)
   return ConstTarget::getBonus (JD) + retBonus;
 }
 
+
 // will pickup the Moon
 LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
 }
+
 
 int
 LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -1057,11 +1104,13 @@ LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 int
 LunarTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   return ln_get_body_rst_horizon (JD, observer, ln_get_lunar_equ_coords, horizon, rst);
 }
+
 
 int
 LunarTarget::getScript (const char *deviceName, char *buf)
@@ -1069,6 +1118,7 @@ LunarTarget::getScript (const char *deviceName, char *buf)
   strcpy (buf, "E 1");
   return 0;
 }
+
 
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
@@ -1080,10 +1130,12 @@ TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Tar
   target_name = new char[200];
 }
 
+
 TargetSwiftFOV::~TargetSwiftFOV (void)
 {
   delete[] swiftName;
 }
+
 
 int
 TargetSwiftFOV::load ()
@@ -1094,14 +1146,14 @@ TargetSwiftFOV::load ()
   int ret;
 
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_swift_id = -1;
-  double d_swift_ra;
-  double d_swift_dec;
-  double d_swift_roll;
-  int d_swift_roll_null;
-  int d_swift_time;
-  float d_swift_obstime;
-  VARCHAR d_swift_name[70];
+    int d_swift_id = -1;
+    double d_swift_ra;
+    double d_swift_dec;
+    double d_swift_roll;
+    int d_swift_roll_null;
+    int d_swift_time;
+    float d_swift_obstime;
+    VARCHAR d_swift_name[70];
   EXEC SQL END DECLARE SECTION;
 
   swiftId = -1;
@@ -1122,21 +1174,21 @@ TargetSwiftFOV::load ()
     FROM
       swift
     WHERE
-        swift_time is not NULL
-      AND swift_obstime is not NULL
-    ORDER BY
+      swift_time is not NULL
+    AND swift_obstime is not NULL
+      ORDER BY
       swift_id desc;
   EXEC SQL OPEN find_swift_poiniting;
   while (1)
   {
     EXEC SQL FETCH next FROM find_swift_poiniting INTO
-      :d_swift_id,
-      :d_swift_ra,
-      :d_swift_dec,
-      :d_swift_roll :d_swift_roll_null,
-      :d_swift_time,
-      :d_swift_obstime,
-      :d_swift_name;
+        :d_swift_id,
+        :d_swift_ra,
+        :d_swift_dec,
+        :d_swift_roll :d_swift_roll_null,
+        :d_swift_time,
+        :d_swift_obstime,
+        :d_swift_name;
     if (sqlca.sqlcode)
       break;
     // check for our altitude..
@@ -1148,9 +1200,9 @@ TargetSwiftFOV::load ()
       if (testHrz.alt < 30)
       {
         testHrz.alt = 30;
-      // get equ coordinates we will observe..
+        // get equ coordinates we will observe..
         ln_get_equ_from_hrz (&testHrz, observer, JD, &testEqu);
-      }	
+      }
       swiftFovCenter.ra = testEqu.ra;
       swiftFovCenter.dec = testEqu.dec;
       if (oldSwiftId == -1)
@@ -1183,12 +1235,13 @@ TargetSwiftFOV::load ()
   swiftName[d_swift_name.len] = '\0';
 
   std::ostringstream name;
-  name << "SwiftFOV #" << swiftId 
-  << " ( " << Timestamp(swiftTimeStart)
-  << " - " << Timestamp(swiftTimeEnd) << " )";
+  name << "SwiftFOV #" << swiftId
+    << " ( " << Timestamp(swiftTimeStart)
+    << " - " << Timestamp(swiftTimeEnd) << " )";
   setTargetName (name.str().c_str());
   return 0;
 }
+
 
 int
 TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
@@ -1197,37 +1250,39 @@ TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 int
 TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   struct ln_equ_posn pos;
   int ret;
-  
+
   ret = getPosition (&pos, JD);
   if (ret)
     return ret;
   return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
+
 moveType
 TargetSwiftFOV::afterSlewProcessed ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_obs_id;
-  int d_swift_id = swiftId;
+    int d_obs_id;
+    int d_swift_id = swiftId;
   EXEC SQL END DECLARE SECTION;
 
   d_obs_id = getObsId ();
   EXEC SQL
-  INSERT INTO
-    swift_observation
-  (
-    swift_id,
-    obs_id
-  ) VALUES (
-    :d_swift_id,
-    :d_obs_id
-  );
+    INSERT INTO
+      swift_observation
+      (
+      swift_id,
+      obs_id
+      ) VALUES (
+      :d_swift_id,
+      :d_obs_id
+      );
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetSwiftFOV::startSlew SQL error", MESSAGE_ERROR);
@@ -1237,6 +1292,7 @@ TargetSwiftFOV::afterSlewProcessed ()
   EXEC SQL COMMIT;
   return OBS_MOVE;
 }
+
 
 int
 TargetSwiftFOV::considerForObserving (double JD)
@@ -1264,15 +1320,16 @@ TargetSwiftFOV::considerForObserving (double JD)
   }
 
   ret = isGood (lst, JD, &curr_position);
-  
+
   if (!ret)
   {
     time_t nextObs;
     time (&nextObs);
-    if (nextObs > swiftTimeEnd) // we found pointing that already
-    				  // happens..hope that after 2
-				  // minutes, we will get better
-				  // results
+                                 // we found pointing that already
+    if (nextObs > swiftTimeEnd)
+      // happens..hope that after 2
+      // minutes, we will get better
+      // results
     {
       nextObs += 2 * 60;
     }
@@ -1287,34 +1344,36 @@ TargetSwiftFOV::considerForObserving (double JD)
   return selectedAsGood ();
 }
 
+
 int
 TargetSwiftFOV::beforeMove ()
 {
   // are we still the best swiftId on planet?
   load ();
   if (oldSwiftId != swiftId)
-    endObservation (-1);  // startSlew will be called after move suceeded and will write new observation..
+    endObservation (-1);         // startSlew will be called after move suceeded and will write new observation..
   return 0;
 }
+
 
 float
 TargetSwiftFOV::getBonus (double JD)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_tar_id = target_id;
-  double d_bonus;
+    int d_tar_id = target_id;
+    double d_bonus;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
-  SELECT
-    tar_priority
-  INTO
-    :d_bonus
-  FROM
-    targets
-  WHERE
-    tar_id = :d_tar_id; 
-  
+    SELECT
+      tar_priority
+    INTO
+      :d_bonus
+    FROM
+      targets
+    WHERE
+      tar_id = :d_tar_id;
+
   swiftOnBonus = d_bonus;
 
   time_t now;
@@ -1325,6 +1384,7 @@ TargetSwiftFOV::getBonus (double JD)
     return swiftOnBonus / 2.0;
   return 1;
 }
+
 
 int
 TargetSwiftFOV::isContinues ()
@@ -1340,18 +1400,20 @@ TargetSwiftFOV::isContinues ()
   return 1;
 }
 
+
 void
 TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
 {
   Target::printExtra (_os, JD);
-  _os 
-   << InfoVal<const char *> ("NAME", swiftName)
-   << InfoVal<int> ("SwiftFOW ID", swiftId)
-   << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
-   << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
-   << InfoVal<double> ("ROLL", swiftRoll)
-   << std::endl;
+  _os
+    << InfoVal<const char *> ("NAME", swiftName)
+    << InfoVal<int> ("SwiftFOW ID", swiftId)
+    << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
+    << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
+    << InfoVal<double> ("ROLL", swiftRoll)
+    << std::endl;
 }
+
 
 TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
@@ -1361,9 +1423,11 @@ TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_ob
   integralOnBonus = 0;
 }
 
+
 TargetIntegralFOV::~TargetIntegralFOV (void)
 {
 }
+
 
 int
 TargetIntegralFOV::load ()
@@ -1373,10 +1437,10 @@ TargetIntegralFOV::load ()
   double JD = ln_get_julian_from_sys ();
 
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_integral_id = -1;
-  double d_integral_ra;
-  double d_integral_dec;
-  long d_integral_time;
+    int d_integral_id = -1;
+    double d_integral_ra;
+    double d_integral_dec;
+    long d_integral_time;
   EXEC SQL END DECLARE SECTION;
 
   int ret;
@@ -1396,17 +1460,17 @@ TargetIntegralFOV::load ()
     FROM
       integral
     WHERE
-        integral_time is not NULL
-    ORDER BY
+      integral_time is not NULL
+      ORDER BY
       integral_id desc;
   EXEC SQL OPEN find_integral_poiniting;
   while (1)
   {
     EXEC SQL FETCH next FROM find_integral_poiniting INTO
-      :d_integral_id,
-      :d_integral_ra,
-      :d_integral_dec,
-      :d_integral_time;
+        :d_integral_id,
+        :d_integral_ra,
+        :d_integral_dec,
+        :d_integral_time;
     if (sqlca.sqlcode)
       break;
     // check for our altitude..
@@ -1418,9 +1482,9 @@ TargetIntegralFOV::load ()
       if (testHrz.alt < 30)
       {
         testHrz.alt = 30;
-      // get equ coordinates we will observe..
+        // get equ coordinates we will observe..
         ln_get_equ_from_hrz (&testHrz, observer, JD, &testEqu);
-      }	
+      }
       integralFovCenter.ra = testEqu.ra;
       integralFovCenter.dec = testEqu.dec;
       if (oldIntegralId == -1)
@@ -1442,10 +1506,11 @@ TargetIntegralFOV::load ()
 
   std::ostringstream name;
   name << "IntegralFOV #" << integralId
-  << " ( " << Timestamp(integralTimeStart) << " )";
+    << " ( " << Timestamp(integralTimeStart) << " )";
   setTargetName (name.str().c_str());
   return 0;
 }
+
 
 int
 TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
@@ -1454,37 +1519,39 @@ TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 int
 TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
   struct ln_equ_posn pos;
   int ret;
-  
+
   ret = getPosition (&pos, JD);
   if (ret)
     return ret;
   return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
+
 moveType
 TargetIntegralFOV::afterSlewProcessed ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_obs_id;
-  int d_integral_id = integralId;
+    int d_obs_id;
+    int d_integral_id = integralId;
   EXEC SQL END DECLARE SECTION;
 
   d_obs_id = getObsId ();
   EXEC SQL
-  INSERT INTO
-    integral_observation
-  (
-    integral_id,
-    obs_id
-  ) VALUES (
-    :d_integral_id,
-    :d_obs_id
-  );
+    INSERT INTO
+      integral_observation
+      (
+      integral_id,
+      obs_id
+      ) VALUES (
+      :d_integral_id,
+      :d_obs_id
+      );
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetIntegralFOV::startSlew SQL error", MESSAGE_ERROR);
@@ -1494,6 +1561,7 @@ TargetIntegralFOV::afterSlewProcessed ()
   EXEC SQL COMMIT;
   return OBS_MOVE;
 }
+
 
 int
 TargetIntegralFOV::considerForObserving (double JD)
@@ -1521,7 +1589,7 @@ TargetIntegralFOV::considerForObserving (double JD)
   }
 
   ret = isGood (lst, JD, &curr_position);
-  
+
   if (!ret)
   {
     time_t nextObs;
@@ -1534,34 +1602,36 @@ TargetIntegralFOV::considerForObserving (double JD)
   return selectedAsGood ();
 }
 
+
 int
 TargetIntegralFOV::beforeMove ()
 {
   // are we still the best swiftId on planet?
   load ();
   if (oldIntegralId != integralId)
-    endObservation (-1);  // startSlew will be called after move suceeded and will write new observation..
+    endObservation (-1);         // startSlew will be called after move suceeded and will write new observation..
   return 0;
 }
+
 
 float
 TargetIntegralFOV::getBonus (double JD)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int d_tar_id = target_id;
-  double d_bonus;
+    int d_tar_id = target_id;
+    double d_bonus;
   EXEC SQL END DECLARE SECTION;
 
   EXEC SQL
-  SELECT
-    tar_priority
-  INTO
-    :d_bonus
-  FROM
-    targets
-  WHERE
-    tar_id = :d_tar_id; 
-  
+    SELECT
+      tar_priority
+    INTO
+      :d_bonus
+    FROM
+      targets
+    WHERE
+      tar_id = :d_tar_id;
+
   integralOnBonus = d_bonus;
 
   time_t now;
@@ -1572,6 +1642,7 @@ TargetIntegralFOV::getBonus (double JD)
     return integralOnBonus / 2.0;
   return 1;
 }
+
 
 int
 TargetIntegralFOV::isContinues ()
@@ -1587,11 +1658,12 @@ TargetIntegralFOV::isContinues ()
   return 1;
 }
 
+
 void
 TargetIntegralFOV::printExtra (std::ostream &_os, double JD)
 {
   Target::printExtra (_os, JD);
-  _os 
+  _os
     << InfoVal<Timestamp> ("FROM", Timestamp (integralTimeStart))
     << std::endl;
 }
@@ -1600,6 +1672,7 @@ TargetIntegralFOV::printExtra (std::ostream &_os, double JD)
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
 }
+
 
 float
 TargetGps::getBonus (double JD)
@@ -1627,9 +1700,11 @@ TargetGps::getBonus (double JD)
   return ConstTarget::getBonus (JD) + 20 * (hrz.alt / (90 - observer->lat + curr.dec)) + gal_ctr / 9 - numobs * 10 - numobs2 * 5;
 }
 
+
 TargetSkySurvey::TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
 }
+
 
 float
 TargetSkySurvey::getBonus (double JD)
@@ -1644,9 +1719,11 @@ TargetSkySurvey::getBonus (double JD)
   return ConstTarget::getBonus (JD) - numobs * 10;
 }
 
+
 TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
 }
+
 
 int
 TargetTerestial::considerForObserving (double JD)
@@ -1654,6 +1731,7 @@ TargetTerestial::considerForObserving (double JD)
   // we can obsere it any time..
   return selectedAsGood ();
 }
+
 
 float
 TargetTerestial::getBonus (double JD)
@@ -1669,7 +1747,7 @@ TargetTerestial::getBonus (double JD)
   minofday = now_t->tm_hour * 60 + now_t->tm_min;
   // HAM times (all UTC) (min of day)
   // 1:30 - 3:30          90 - 210
-  // 4:00 - 6:00         240 - 360 
+  // 4:00 - 6:00         240 - 360
   // 6:30 - 8:30         390 - 510
   // not correct times..
   if (minofday < 100
@@ -1679,7 +1757,7 @@ TargetTerestial::getBonus (double JD)
     return 1;
 
   // we can observe..
-  
+
   start_t = now - 3600;
   numobs = getNumObs (&start_t, &now);
 
@@ -1690,11 +1768,13 @@ TargetTerestial::getBonus (double JD)
   return 1;
 }
 
+
 moveType
 TargetTerestial::afterSlewProcessed ()
 {
   return OBS_MOVE_FIXED;
 }
+
 
 TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (in_tar_id, in_obs)
 {
@@ -1707,20 +1787,22 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
   nextTargetRefresh = 0;
 }
 
+
 TargetPlan::~TargetPlan (void)
 {
   delete selectedPlan;
   delete nextPlan;
 }
 
+
 // refresh next time..
 void
 TargetPlan::refreshNext ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_next_plan_id;
-  long db_next_plan_start;
-  long db_next;
+    int db_next_plan_id;
+    long db_next_plan_start;
+    long db_next;
   EXEC SQL END DECLARE SECTION;
 
   time_t now;
@@ -1743,16 +1825,16 @@ TargetPlan::refreshNext ()
   db_next = now - 1800;
 
   EXEC SQL
-  SELECT
-    plan_id,
-    EXTRACT (EPOCH FROM plan_start)
-  INTO
-    :db_next_plan_id,
-    :db_next_plan_start
-  FROM
-    plan
-  WHERE
-    plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_next) AND obs_id IS NULL);
+    SELECT
+      plan_id,
+      EXTRACT (EPOCH FROM plan_start)
+    INTO
+      :db_next_plan_id,
+      :db_next_plan_start
+    FROM
+      plan
+    WHERE
+      plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_next) AND obs_id IS NULL);
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetPlan::refreshNext cannot load next target",
@@ -1778,22 +1860,24 @@ TargetPlan::refreshNext ()
   return;
 }
 
+
 int
 TargetPlan::load ()
 {
   return load (ln_get_julian_from_sys ());
 }
 
+
 int
 TargetPlan::load (double JD)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int db_cur_plan_id;
-  double db_cur_plan_start;
-  int db_obs_id;
-  int db_obs_id_ind;
+    int db_cur_plan_id;
+    double db_cur_plan_start;
+    int db_obs_id;
+    int db_obs_id_ind;
 
-  long last;
+    long last;
   EXEC SQL END DECLARE SECTION;
 
   int db_plan_id = -1;
@@ -1820,25 +1904,25 @@ TargetPlan::load (double JD)
   nextTargetRefresh = now + 60;
 
   EXEC SQL DECLARE cur_plan CURSOR FOR
-  SELECT
-    plan_id,
-    obs_id,
-    EXTRACT (EPOCH FROM plan_start)
-  FROM
-    plan
-  WHERE
+    SELECT
+      plan_id,
+      obs_id,
+      EXTRACT (EPOCH FROM plan_start)
+    FROM
+      plan
+    WHERE
       EXTRACT (EPOCH FROM plan_start) >= :last
     AND tar_id <> 7
-  ORDER BY
-    plan_start ASC;
+      ORDER BY
+      plan_start ASC;
 
   EXEC SQL OPEN cur_plan;
   while (1)
   {
     EXEC SQL FETCH next FROM cur_plan INTO
-      :db_cur_plan_id,
-      :db_obs_id :db_obs_id_ind,
-      :db_cur_plan_start;
+        :db_cur_plan_id,
+        :db_obs_id :db_obs_id_ind,
+        :db_cur_plan_start;
     if (sqlca.sqlcode)
       break;
     if (db_cur_plan_start > now)
@@ -1860,8 +1944,8 @@ TargetPlan::load (double JD)
       }
       else
       {
-	db_next_plan_id = db_cur_plan_id;
-	break;
+        db_next_plan_id = db_cur_plan_id;
+        break;
       }
     }
     // keep for futher reference
@@ -1881,7 +1965,7 @@ TargetPlan::load (double JD)
     if (db_plan_id == -1)
     {
       db_plan_id = db_next_plan_id;
-    }  
+    }
     db_next_plan_id = -1;
   }
   EXEC SQL CLOSE cur_plan;
@@ -1920,6 +2004,7 @@ TargetPlan::load (double JD)
   return 0;
 }
 
+
 int
 TargetPlan::getDBScript (const char *camera_name, char *script)
 {
@@ -1927,6 +2012,7 @@ TargetPlan::getDBScript (const char *camera_name, char *script)
     return selectedPlan->getTarget()->getScript (camera_name, script);
   return Target::getDBScript (camera_name, script);
 }
+
 
 int
 TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
@@ -1939,6 +2025,7 @@ TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
   return 0;
 }
 
+
 int
 TargetPlan::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
@@ -1948,6 +2035,7 @@ TargetPlan::getRST (struct ln_rst_time *rst, double JD, double horizon)
   return 1;
 }
 
+
 int
 TargetPlan::getObsTargetID ()
 {
@@ -1955,6 +2043,7 @@ TargetPlan::getObsTargetID ()
     return selectedPlan->getTarget()->getObsTargetID ();
   return Target::getObsTargetID ();
 }
+
 
 int
 TargetPlan::considerForObserving (double JD)
@@ -1966,6 +2055,7 @@ TargetPlan::considerForObserving (double JD)
   return Target::considerForObserving (JD);
 }
 
+
 float
 TargetPlan::getBonus (double JD)
 {
@@ -1974,6 +2064,7 @@ TargetPlan::getBonus (double JD)
     return Target::getBonus (JD);
   return 0;
 }
+
 
 int
 TargetPlan::isContinues ()
@@ -1989,6 +2080,7 @@ TargetPlan::isContinues ()
   return 0;
 }
 
+
 int
 TargetPlan::beforeMove ()
 {
@@ -1996,6 +2088,7 @@ TargetPlan::beforeMove ()
     selectedPlan->getTarget ()->beforeMove ();
   return Target::beforeMove ();
 }
+
 
 moveType
 TargetPlan::startSlew (struct ln_equ_posn *pos)
@@ -2010,13 +2103,14 @@ TargetPlan::startSlew (struct ln_equ_posn *pos)
   return Target::startSlew (pos);
 }
 
+
 void
 TargetPlan::printExtra (std::ostream & _os, double JD)
 {
   Target::printExtra (_os, JD);
   if (selectedPlan)
   {
-    _os 
+    _os
       << "SELECTED PLAN" << std::endl
       << selectedPlan << std::endl
       << *(selectedPlan->getTarget ()) << std::endl
