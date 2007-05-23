@@ -59,40 +59,51 @@ public:
     virtual ~ Rts2DevIrError (void)
   {
   }
+  virtual int doProcessing ();
   virtual int run ();
 };
 
-IrAxis
-Rts2DevIrError::getAxisStatus (const char *ax_name)
+IrAxis Rts2DevIrError::getAxisStatus (const char *ax_name)
 {
-  double referenced = nan ("f");
-  double currpos = nan ("f");
-  double targetpos = nan ("f");
-  double offset = nan ("f");
-  double power = nan ("f");
+  double
+    referenced = nan ("f");
+  double
+    currpos = nan ("f");
+  double
+    targetpos = nan ("f");
+  double
+    offset = nan ("f");
+  double
+    power = nan ("f");
   std::ostringstream * os;
-  int status = 0;
+  int
+    status = 0;
 
   os = new std::ostringstream ();
   (*os) << ax_name << ".REFERENCED";
   status = tpl_get (os->str ().c_str (), referenced, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".CURRPOS";
   status = tpl_get (os->str ().c_str (), currpos, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".TARGETPOS";
   status = tpl_get (os->str ().c_str (), targetpos, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".OFFSET";
   status = tpl_get (os->str ().c_str (), offset, &status);
-  delete os;
+  delete
+    os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".POWER";
   status = tpl_get (os->str ().c_str (), power, &status);
-  delete os;
+  delete
+    os;
   return IrAxis (ax_name, referenced, currpos, targetpos, offset, power);
 }
 
@@ -153,7 +164,7 @@ Rts2DevIrError::processArgs (const char *arg)
 }
 
 int
-Rts2DevIrError::run ()
+Rts2DevIrError::doProcessing ()
 {
   std::string descri;
   for (std::list < const char *>::iterator iter = errList.begin ();
@@ -227,22 +238,27 @@ Rts2DevIrError::run ()
 }
 
 int
-main (int argc, char **argv)
+Rts2DevIrError::run ()
 {
-  Rts2DevIrError device = Rts2DevIrError (argc, argv);
-
   int ret;
-  ret = device.initOptions ();
+  ret = initOptions ();
   if (ret)
     {
       return ret;
     }
-  ret = device.initIrDevice ();
+  ret = initIrDevice ();
   if (ret)
     {
       logStream (MESSAGE_ERROR) << "Cannot initialize telescope - exiting!" <<
 	sendLog;
       return ret;
     }
+  return doProcessing ();
+}
+
+int
+main (int argc, char **argv)
+{
+  Rts2DevIrError device = Rts2DevIrError (argc, argv);
   return device.run ();
 }

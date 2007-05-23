@@ -38,17 +38,22 @@ ErrorTime::isError (int in_error)
 template < typename T > int
 Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 {
-  int cstatus;
+  int cstatus = TPL_OK;
 
   if (!*status)
     {
+#ifdef DEBUG_EXTRA
+      if (!*status)
+	std::cout << "tpl_get name " << name << std::endl;
+#endif
       Request *r = tplc->Get (name, false);
-      cstatus = r->Wait (2000);
+      cstatus = r->Wait (5000);
 
       if (cstatus != TPLC_OK)
 	{
 	  logStream (MESSAGE_ERROR) << "IR tpl_get error " << name <<
 	    " status " << cstatus << sendLog;
+	  r->Abort ();
 	  *status = 1;
 	}
 
@@ -61,8 +66,10 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 	  else
 	    *status = 2;
 	}
+
 #ifdef DEBUG_EXTRA
-      std::cout << "tpl_get name " << name << " val " << val << std::endl;
+      if (!*status)
+	std::cout << "tpl_get name " << name << " val " << val << std::endl;
 #endif
 
       delete r;
@@ -73,16 +80,22 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 template < typename T > int
 Rts2TelescopeIr::tpl_set (const char *name, T val, int *status)
 {
+//  int cstatus;
+
   if (!*status)
     {
-      Request *r = tplc->Set (name, Value (val), true);	// change to set...?
-//      r->Wait (2000);
+#ifdef DEBUG_EXTRA
+      std::cout << "tpl_set name " << name << std::endl;
+#endif
+      tplc->Set (name, Value (val), false);	// change to set...?
+//      cstatus = r->Wait (5000);
 
 #ifdef DEBUG_EXTRA
-      std::cout << "tpl_set 1 name " << name << " val " << val << std::endl;
+      if (!*status)
+	std::cout << "tpl_set name " << name << " val " << val << std::endl;
 #endif
 
-      delete r;
+//      delete r;
     }
   return *status;
 }
@@ -94,18 +107,24 @@ Rts2TelescopeIr::tpl_setw (const char *name, T val, int *status)
 
   if (!*status)
     {
+#ifdef DEBUG_EXTRA
+      std::cout << "tpl_setw name " << name << std::endl;
+#endif
+
       Request *r = tplc->Set (name, Value (val), false);	// change to set...?
-      cstatus = r->Wait ();
+      cstatus = r->Wait (5000);
 
       if (cstatus != TPLC_OK)
 	{
 	  logStream (MESSAGE_ERROR) << "IR tpl_setw error " << name << " val "
 	    << val << " status " << cstatus << sendLog;
+	  r->Abort ();
 	  *status = 1;
 	}
 
 #ifdef DEBUG_EXTRA
-      std::cout << "tpl_setw name " << name << " val " << val << std::endl;
+      if (!*status)
+	std::cout << "tpl_setw name " << name << " val " << val << std::endl;
 #endif
 
       delete r;
