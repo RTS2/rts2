@@ -32,15 +32,17 @@ class Rts2AirmasScale: public Rts2AppDb
     // action functions
     int doSetAirmass ();
     int doPrintAction ();
-  public:
-    Rts2AirmasScale (int argc, char **argv);
 
     virtual void help ();
+
     virtual int processOption (int in_opt);
     virtual int processArgs (const char *arg);
 
     virtual int init ();
-    virtual int run ();
+  public:
+    Rts2AirmasScale (int argc, char **argv);
+
+    virtual int doProcessing ();
 };
 
 Rts2AirmasScale::Rts2AirmasScale (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_argv)
@@ -151,7 +153,7 @@ Rts2AirmasScale::doPrintAction ()
 
 
 int
-Rts2AirmasScale::run ()
+Rts2AirmasScale::doProcessing ()
 {
   switch (action)
   {
@@ -167,13 +169,6 @@ Rts2AirmasScale::run ()
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2AirmasScale app = Rts2AirmasScale (argc, argv);
-  ret = app.init ();
-  if (ret)
-  {
-    std::cerr << "Cannot init Rts2AirmasScale app" << std::endl;
-    return ret;
-  }
   return app.run ();
 }
