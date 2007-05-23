@@ -3,47 +3,53 @@
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
-  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2007-01-29</date>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-05-23</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
-  <!ENTITY dhusername  "Petr Kubánek">
-  <!ENTITY dhucpackage "<refentrytitle>rts2</refentrytitle>">
+  <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2.fitskeys">
 
-  <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
 ]>
 
 <refentry>
   <refentryinfo>
-    <address>
-      &dhemail;
-    </address>
-    <author>
-      &dhfirstname;
-      &dhsurname;
-    </author>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
     <copyright>
       <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    &dhdate;
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
   </refentryinfo>
   <refmeta>
-    &dhucpackage;
-    &debian;
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-
-    <refpurpose>
-      List of FITS keys written by various devices to produced FITS
-      files
-    </refpurpose>
-
+    <refpurpose>List of FITS keys written by RTS2 in CCD FITS files.</refpurpose>
   </refnamediv>
   <refsect1>
     <title>SYNOPSIS</title>
@@ -125,7 +131,8 @@
       </varlistentry>
       <varlistentry>
         <term>
-	  <option>LONG,LAT</option>
+	  <option>LONG</option>
+	  <option>LAT</option>
         </term>
         <listitem>
           <para>
@@ -288,7 +295,8 @@
     <variablelist>
       <varlistentry>
         <term>
-	  <option>RASC, DECL</option>
+	  <option>RASC</option>
+	  <option>DECL</option>
 	</term>
 	<listitem>
           <para>
@@ -305,7 +313,8 @@
       </varlistentry>
       <varlistentry>
         <term>
-          <option>MNT_RA, MNT_DEC</option>
+          <option>MNT_RA</option>
+	  <option>MNT_DEC</option>
 	</term>
 	<listitem>
 	  <para>
@@ -319,7 +328,8 @@
       </varlistentry>
       <varlistentry>
         <term>
-          <option>LAST_RA, LAST_DECL</option>
+          <option>LAST_RA</option>
+	  <option>LAST_DECL</option>
 	</term>
 	<listitem>
           <para>
@@ -331,7 +341,8 @@
       </varlistentry>
       <varlistentry>
         <term>
-          <option>TAR_RA, TAR_DEC</option>
+          <option>TAR_RA</option>
+	  <option>TAR_DEC</option>
 	</term>
 	<listitem>
           <para>
@@ -355,7 +366,8 @@
       </varlistentry>
       <varlistentry>
         <term>
-          <option>MNT_AX0, MNT_AX1</option>
+          <option>MNT_AX0</option>
+	  <option>MNT_AX1</option>
 	</term>
 	<listitem>
 	  <para>
@@ -365,7 +377,8 @@
       </varlistentry>
       <varlistentry>
         <term>
-          <option>RA_CORR, DEC_CORR</option>
+          <option>RA_CORR</option>
+	  <option>DEC_CORR</option>
 	</term>
 	<listitem>
 	  <para>
@@ -504,16 +517,11 @@
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (1).</para>
-
-  </refsect1>
-  <refsect1>
-    <title>COPYRIGHT</title>
-
-    <para>This manual page was written by &dhusername; &dhemail;.
-      Permission is granted to copy, distribute and/or modify this 
-      document under the terms of the &gnu; General Public License, 
-      Version 2 any later version published by the Free Software Foundation.
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
     </para>
 
   </refsect1>
