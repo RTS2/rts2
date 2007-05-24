@@ -48,7 +48,7 @@ HorizonApp::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'c':
+    case OPT_CONFIG:
       configFile = optarg;
       break;
     case 'f':

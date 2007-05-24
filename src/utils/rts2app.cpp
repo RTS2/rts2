@@ -75,9 +75,12 @@ Rts2App::initOptions ()
   for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
     {
       opt = (*opt_iter);
-      opt->getOptionStruct (an_option);
+      if (opt->haveLongOption ())
+	{
+	  opt->getOptionStruct (an_option);
+	  an_option++;
+	}
       opt->getOptionChar (&end_opt);
-      an_option++;
     }
 
   *end_opt = '\0';
@@ -186,7 +189,10 @@ Rts2App::processOption (int in_opt)
 	<< std::endl << "for them." << std::endl << std::endl;
       exit (EXIT_SUCCESS);
     case '?':
-      break;
+      std::cerr << "Invalid option encountered, exiting." << std::endl
+	<< "For correct ussage, please consult following:" << std::endl;
+      help ();
+      exit (EXIT_FAILURE);
     default:
       std::
 	cout << "Unknow option: " << in_opt << "(" << (char) in_opt << ")" <<
@@ -286,10 +292,10 @@ Rts2App::askForString (const char *desc, std::string & val)
   return 0;
 }
 
-bool
-Rts2App::askForBoolean (const char *desc, bool val)
+bool Rts2App::askForBoolean (const char *desc, bool val)
 {
-  char temp[20];
+  char
+    temp[20];
   while (!getEndLoop ())
     {
       std::cout << desc << " (y/n) [" << (val ? "y" : "n") << "]: ";
@@ -373,10 +379,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream
-Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (this, in_messageType);
+  Rts2LogStream
+  ls (this, in_messageType);
   return ls;
 }
 

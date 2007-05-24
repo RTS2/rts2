@@ -10,6 +10,10 @@
 #define OPT_DATABASE	1000
 #define OPT_CONFIG	1001
 
+// here starts local playground..
+#define OPT_LOCAL	10000
+
+
 class Rts2Option
 {
   int short_option;
@@ -27,6 +31,10 @@ public:
   }
   void help ();
   void getOptionChar (char **end_opt);
+  bool haveLongOption ()
+  {
+    return long_option != NULL;
+  }
   void getOptionStruct (struct option *options)
   {
     options->name = long_option;
