@@ -88,24 +88,22 @@ Rts2AppDb (in_argc, in_argv)
 
   JD = ln_get_julian_from_sys ();
 
-  addOption ('s', "selectable", 0, "print only selectable targets");
-  addOption ('e', "extended", 2,
+  addOption ('s', NULL, 0, "print only selectable targets");
+  addOption ('e', NULL, 1,
 	     "print extended informations (visibility prediction,..)");
-  addOption ('g', "gnuplot", 2,
+  addOption ('g', NULL, 2,
 	     "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
-  addOption ('m', "moon", 0, "do not plot moon");
-  addOption ('c', "calibartion", 0, "print recommended calibration targets");
-  addOption ('o', "observations", 2,
-	     "print observations (in given time range)");
-  addOption ('i', "images", 2, "print images (in given time range)");
-  addOption ('I', "images_summary", 0, "print image summary row");
-  addOption ('l', "display filename", 0, "print image filename");
-  addOption ('p', "photometer", 2, "print counts (in given format)");
-  addOption ('P', "photometer_summary", 0, "print counts summary row");
-  addOption ('t', "target_type", 1,
-	     "search for target types, not for targets IDs");
-  addOption ('d', "date", 1, "give informations for this data");
-  addOption ('9', "ds9", 0, "print DS9 .reg file for target");
+  addOption ('m', NULL, 0, "do not plot moon");
+  addOption ('c', NULL, 0, "print recommended calibration targets");
+  addOption ('o', NULL, 2, "print observations (in given time range)");
+  addOption ('i', NULL, 2, "print images (in given time range)");
+  addOption ('I', NULL, 0, "print image summary row");
+  addOption ('l', NULL, 0, "list images filenames");
+  addOption ('p', NULL, 2, "print counts (in given format)");
+  addOption ('P', NULL, 0, "print counts summary row");
+  addOption ('t', NULL, 1, "search for target types, not for targets IDs");
+  addOption ('d', NULL, 1, "give informations for this data");
+  addOption ('9', NULL, 0, "print DS9 .reg file for target");
 }
 
 Rts2TargetInfo::~Rts2TargetInfo ()
