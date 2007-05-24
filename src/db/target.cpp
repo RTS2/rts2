@@ -67,15 +67,15 @@ Rts2AppDb (in_argc, in_argv)
 
   camera = NULL;
 
-  addOption ('e', "enable", 0, "enable given targets");
-  addOption ('d', "disable", 0,
+  addOption ('e', NULL, 0, "enable given targets");
+  addOption ('d', NULL, 0,
 	     "disable given targets (they will not be picked up by selector");
-  addOption ('p', "priority", 1, "set target (fixed) priority");
-  addOption ('b', "bonus", 1, "set target bonus to this value");
-  addOption ('t', "bonus_time", 1, "set target bonus time to this value");
+  addOption ('p', NULL, 1, "set target (fixed) priority");
+  addOption ('b', NULL, 1, "set target bonus to this value");
+  addOption ('t', NULL, 1, "set target bonus time to this value");
   addOption ('o', "nextobs", 0, "clear next observable flag");
-  addOption ('c', "camera", 1, "next script will be set for given camera");
-  addOption ('s', "script", 1, "set script for target and camera");
+  addOption ('c', NULL, 1, "next script will be set for given camera");
+  addOption ('s', NULL, 1, "set script for target and camera");
 }
 
 Rts2TargetApp::~Rts2TargetApp ()
