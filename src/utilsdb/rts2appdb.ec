@@ -7,9 +7,6 @@
 #include <iomanip>
 #include <string>
 
-#define OPT_DATABASE  1000
-#define OPT_CONFIG  1001
-
 EXEC SQL INCLUDE sql3types;
 
 Rts2SqlQuery::Rts2SqlQuery (const char *in_from)

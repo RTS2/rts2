@@ -4,6 +4,12 @@
 #include <getopt.h>
 #include <malloc.h>
 
+// custom configuration values
+
+#define OPT_VERSION	999
+#define OPT_DATABASE	1000
+#define OPT_CONFIG	1001
+
 class Rts2Option
 {
   int short_option;
