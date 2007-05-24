@@ -7,6 +7,9 @@
 #include <iomanip>
 #include <string>
 
+#define OPT_DATABASE  1000
+#define OPT_CONFIG  1001
+
 EXEC SQL INCLUDE sql3types;
 
 Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
@@ -338,8 +341,8 @@ Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_arg
   connectString = NULL;
   configFile = NULL;
 
-  addOption ('b', "database", 1, "connect string to PSQL database (default to stars)");
-  addOption ('C', "config", 1, "configuration file");
+  addOption (OPT_DATABASE, "database", 1, "connect string to PSQL database (default to stars)");
+  addOption (OPT_CONFIG, "config", 1, "configuration file");
 }
 
 
@@ -355,11 +358,11 @@ Rts2AppDb::processOption (int in_opt)
 {
   switch (in_opt)
   {
-    case 'b':
+    case OPT_DATABASE:
       connectString = new char[strlen (optarg) + 1];
       strcpy (connectString, optarg);
       break;
-    case 'C':
+    case OPT_CONFIG:
       configFile = optarg;
       break;
     default:
