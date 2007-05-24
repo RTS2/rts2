@@ -32,7 +32,7 @@ rts2_camd_dummy_SOURCES = camd.cpp dummy.cpp rts2devcliwheel.cpp rts2devclifocus
 
 if ALTA
 bin_PROGRAMS += rts2-camd-alta
-rts2_camd_alta_SOURCES = camd.cpp alta.cpp alta/ApnCamera_Linux.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
+rts2_camd_alta_SOURCES = camd.cpp alta.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
 rts2_camd_alta_LDFLAGS = @LIB_ALTA@ @LIB_M@
 rts2_camd_alta_CXXFLAGS = @INC_ALTA@
 endif

@@ -39,18 +39,14 @@ CameraChipAlta::CameraChipAlta (Rts2DevCamera * in_cam, CApnCamera * in_alta):Ca
 int
 CameraChipAlta::init ()
 {
-  setSize (alta->m_RoiPixelsH, alta->m_RoiPixelsV, 0, 0);
-  binningHorizontal = alta->m_RoiBinningH;
-  binningVertical = alta->m_RoiBinningV;
+  setSize (alta->read_RoiPixelsH (), alta->read_RoiPixelsV (), 0, 0);
+  binningHorizontal = alta->read_RoiBinningH ();
+  binningVertical = alta->read_RoiBinningV ();
   pixelX = nan ("f");
   pixelY = nan ("f");
-  gain = alta->m_ReportedGainSixteenBit;
+//  gain = alta->m_ReportedGainSixteenBit;
 
   dest = new short unsigned int[chipSize->width * chipSize->height];
-
-  strcpy (ccdType, "Alta_");
-  strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
-  sprintf (serialNumber, "%i", alta->m_CameraId);
 
   return 0;
 }
@@ -118,8 +114,8 @@ CameraChipAlta::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   // set region of intereset..
   alta->write_RoiPixelsV (chipUsedReadout->height);
   alta->write_RoiStartY (chipUsedReadout->y);
-  alta->m_RoiStartX = chipUsedReadout->x;
-  alta->m_RoiPixelsH = chipUsedReadout->width;
+  alta->write_RoiStartX (chipUsedReadout->x);
+  alta->write_RoiPixelsH (chipUsedReadout->width);
   dest_top = dest;
   send_top = (char *) dest;
   return ret;
@@ -174,7 +170,7 @@ private:
   CApnCamera * alta;
   int bit12;
 public:
-    Rts2DevCameraAlta::Rts2DevCameraAlta (int argc, char **argv);
+    Rts2DevCameraAlta (int argc, char **argv);
     virtual ~ Rts2DevCameraAlta (void);
   virtual int processOption (int in_opt);
   virtual int init ();
@@ -263,6 +259,10 @@ Rts2DevCameraAlta::init ()
   chipNum = 1;
   chips[0] = new CameraChipAlta (this, alta);
 
+  strcpy (ccdType, "Alta ");
+  strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
+  sprintf (serialNumber, "%i", alta->m_CameraId);
+
   return Rts2DevCamera::initChips ();
 }
 
@@ -277,11 +277,11 @@ Rts2DevCameraAlta::ready ()
 int
 Rts2DevCameraAlta::info ()
 {
-  tempRegulation = alta->read_CoolerEnable ();
-  tempSet = alta->read_CoolerSetPoint ();
-  tempCCD = alta->read_TempCCD ();
-  tempAir = alta->read_TempHeatsink ();
-  fan = alta->read_FanMode () == Apn_FanMode_Low ? 0 : 1;
+  tempRegulation->setValueInteger (alta->read_CoolerEnable ());
+  tempSet->setValueFloat (alta->read_CoolerSetPoint ());
+  tempCCD->setValueFloat (alta->read_TempCCD ());
+  tempAir->setValueFloat (alta->read_TempHeatsink ());
+  fan->setValueInteger (alta->read_FanMode () == Apn_FanMode_Low ? 0 : 1);
   return Rts2DevCamera::info ();
 }
 
