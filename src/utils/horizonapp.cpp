@@ -37,7 +37,7 @@ Rts2CliApp (in_argc, in_argv)
   configFile = NULL;
   horizonFile = NULL;
 
-  addOption ('c', "config", 1, "configuration file");
+  addOption ('c', NULL, 1, "configuration file");
   addOption ('f', "horizon", 1,
 	     "horizon file; overwrites file specified in configuration file");
   addOption ('d', "dump", 0, "dump horizon file in AZ-ALT format");

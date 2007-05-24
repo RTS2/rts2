@@ -13,6 +13,8 @@
 
 static Rts2App *masterApp = NULL;
 
+#define OPT_VERSION	999
+
 Rts2App *
 getMasterApp ()
 {
@@ -35,7 +37,7 @@ Rts2Object ()
   end_loop = false;
 
   addOption ('h', "help", 0, "write this help");
-  addOption ('V', "version", 0, "show program version and license");
+  addOption (OPT_VERSION, "version", 0, "show program version and license");
 }
 
 Rts2App::~Rts2App ()
@@ -168,7 +170,7 @@ Rts2App::processOption (int in_opt)
     case 0:
       help ();
       exit (EXIT_SUCCESS);
-    case 'V':
+    case OPT_VERSION:
       std::cout << "Part of RTS2 version: " << VERSION << std::endl
 	<< std::endl
 	<<
@@ -201,7 +203,7 @@ Rts2App::processArgs (const char *arg)
 }
 
 int
-Rts2App::addOption (char in_short_option, char *in_long_option,
+Rts2App::addOption (int in_short_option, char *in_long_option,
 		    int in_has_arg, char *in_help_msg)
 {
   Rts2Option *an_option =

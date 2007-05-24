@@ -2,16 +2,16 @@
 #define __RTS2_OPTION__
 
 #include <getopt.h>
-#include <stdio.h>
+#include <malloc.h>
 
 class Rts2Option
 {
-  char short_option;
+  int short_option;
   char *long_option;
   int has_arg;
   char *help_msg;
 public:
-    Rts2Option (char in_short_option, char *in_long_option, int in_has_arg,
+    Rts2Option (int in_short_option, char *in_long_option, int in_has_arg,
 		char *in_help_msg)
   {
     short_option = in_short_option;
@@ -19,10 +19,7 @@ public:
     has_arg = in_has_arg;
     help_msg = in_help_msg;
   }
-  void help ()
-  {
-    printf ("\t-%c|--%-15s  %s\n", short_option, long_option, help_msg);
-  }
+  void help ();
   void getOptionChar (char **end_opt);
   void getOptionStruct (struct option *options)
   {

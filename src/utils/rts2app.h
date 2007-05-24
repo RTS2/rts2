@@ -28,7 +28,7 @@ private:
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);	// for non-optional args
-  int addOption (char in_short_option, char *in_long_option, int in_has_arg,
+  int addOption (int in_short_option, char *in_long_option, int in_has_arg,
 		 char *in_help_msg);
 
   /**
