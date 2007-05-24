@@ -102,8 +102,9 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     _os << std::endl;
   }
 
-  // print alt + az
+  // print alt + az + airmass
   std::ostringstream _os2;
+  std::ostringstream _os3;
 
   if (header)
   {
@@ -111,6 +112,9 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     _os2 << "AZ  ";
     _os2.precision (0);
     _os2.setf (std::ios_base::fixed, std::ios_base::floatfield);
+    _os3 << "AIR ";
+    _os3.precision (1);
+    _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
   }
 
   jd = jd_start;
@@ -119,21 +123,24 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     getAltAz (&hrz, jd);
     _os << " " << std::setw (3) << hrz.alt;
     _os2 << " " << std::setw (3) << hrz.az;
+    _os3 << " " << std::setw (3) << getAirmass (jd);
   }
   if (header)
   {
     _os
       << std::endl
       << _os2.str ()
+      << std::endl
+      << _os3.str ()
       << std::endl;
   }
   else
   {
-    _os << _os2.str ();
+    _os << _os2.str () << _os3.str ();
     return;
   }
 
-  // print lunar distances
+  // print lunar distances and airmass
   if (header)
   {
     _os << "LD  ";
@@ -164,14 +171,14 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
   }
 
   // print sun position
-  std::ostringstream _os3;
+  std::ostringstream _os4;
 
   if (header)
   {
     _os << "SAL ";
-    _os3 << "SAZ ";
-    _os3.precision (0);
-    _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
+    _os4 << "SAZ ";
+    _os4.precision (0);
+    _os4.setf (std::ios_base::fixed, std::ios_base::floatfield);
   }
 
   jd = jd_start;
@@ -180,19 +187,19 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     ln_get_solar_equ_coords (jd, &pos);
     ln_get_hrz_from_equ (&pos, getObserver(), jd, &hrz);
     _os << " " << std::setw (3) << hrz.alt;
-    _os3 << " " << std::setw (3) << hrz.az;
+    _os4 << " " << std::setw (3) << hrz.az;
   }
 
   if (header)
   {
     _os
       << std::endl
-      << _os3.str ()
+      << _os4.str ()
       << std::endl;
   }
   else
   {
-    _os << _os3.str ();
+    _os << _os4.str ();
   }
 
   if (header)
