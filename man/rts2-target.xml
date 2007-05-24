@@ -3,54 +3,98 @@
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
-  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2006-10-21</date>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-05-24</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
-  <!ENTITY dhusername  "Petr Kubánek">
-  <!ENTITY dhucpackage "<refentrytitle>rts2-target</refentrytitle>">
+  <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-target">
 
-  <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
 ]>
 
 <refentry>
   <refentryinfo>
-    <address>
-      &dhemail;
-    </address>
-    <author>
-      &dhfirstname;
-      &dhsurname;
-    </author>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
     <copyright>
-      <year>2006</year>
+      <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    &dhdate;
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
   </refentryinfo>
   <refmeta>
-    &dhucpackage;
-
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-
     <refpurpose>Manage target entry.</refpurpose>
   </refnamediv>
-  <refsect1>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>rts2-target</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--database <replaceable>database</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-e</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-d</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-p <replaceable>priority</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-b <replaceable>bonus</replaceable></option></arg>
+      </arg>
+
+      <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
     <title>DESCRIPTION</title>
 
     <para>
-      rts2-target enable user to manage target entry. Using that program, user can enable or disable targets, change
-      target priority and perform various other management tasks.
+      <command>rts2-target</command> enable user to manage target entry. Using
+      that program, user can enable or disable targets, change target priority
+      and perform various other management tasks.
     </para>
 
   </refsect1>
-  <refsect1>
+  <refsect1 id="options">
     <title>OPTIONS</title>
 
     <para>
@@ -61,36 +105,46 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>-h</option>
-          <option>--help</option>
-        </term>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
         <listitem>
           <para>Show summary of options.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-V</option>
-          <option>--version</option>
-        </term>
+        <term><option>--version</option></term>
         <listitem>
           <para>Show version of program.</para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>--database <replaceable class="parameter">database-name</replaceable></option></term>
+        <listitem>
+          <para>Specify database name. Will overwrite database name specified in rts2.ini (5).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
+        <listitem>
+          <para>specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (1), rts2.ini (5).</para>
-
-  </refsect1>
-  <refsect1>
-    <title>COPYRIGHT</title>
-
-    <para>This manual page was written by &dhusername; &dhemail;.
-      Permission is granted to copy, distribute and/or modify this 
-      document under the terms of the &gnu; General Public License, 
-      Version 2 any later version published by the Free Software Foundation.
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
     </para>
 
   </refsect1>

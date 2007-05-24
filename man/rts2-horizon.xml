@@ -59,11 +59,9 @@
 	<arg choice="plain"><option>--help</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-V</option></arg>
 	<arg choice="plain"><option>--version</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-c <replaceable>config-file</replaceable></option></arg>
 	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -103,23 +101,19 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>-h</option>
-          <option>--help</option>
-        </term>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
         <listitem>
           <para>Show summary of options.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-V</option>
-          <option>--version</option>
-        </term>
+        <term><option>--version</option></term>
         <listitem>
           <para>Show version of program.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-c <replaceable class="parameter">config-file</replaceable></option></term>
         <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
         <listitem>
           <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
@@ -134,9 +128,8 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-d</option>
-          <option>--dump</option>
-        </term>
+        <term><option>-d</option></term>
+        <term><option>--dump</option></term>
         <listitem>
 	  <para>Dump internal az-alt horizon used for horizon calculations.
 	  This option will perform dump of the horizon file, transformed to

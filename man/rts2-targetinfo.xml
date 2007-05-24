@@ -59,64 +59,52 @@
 	<arg choice="plain"><option>--help</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-V</option></arg>
 	<arg choice="plain"><option>--version</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-b <replaceable>databaze</replaceable></option></arg>
 	<arg choice="plain"><option>--database <replaceable>database</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-C <replaceable>config-file</replaceable></option></arg>
 	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-s</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-e</option></arg>
-	<arg choice="plain"><option>--extended</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-g<replaceable>gnuplot options</replaceable></option></arg>
-	<arg choice="plain"><option>--gnuplot<replaceable>gnuplot options</replaceable></option></arg>
+        <arg choice="plain"><option>-g<replaceable>gnuplot-options</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-m</option></arg>
-	<arg choice="plain"><option>--moon</option></arg>
+	<arg choice="plain"><option>-m</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-c</option></arg>
-	<arg choice="plain"><option>--calibration</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-o</option></arg>
-	<arg choice="plain"><option>--observations</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-i</option></arg>
-	<arg choice="plain"><option>--images</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-I</option></arg>
-	<arg choice="plain"><option>--images_summary</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-p</option></arg>
-	<arg choice="plain"><option>--photometer</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-P</option></arg>
-	<arg choice="plain"><option>--photometer_summary</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-t</option></arg>
-	<arg choice="plain"><option>--target_type</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-d</option></arg>
-	<arg choice="plain"><option>--date</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-9</option></arg>
-	<arg choice="plain"><option>--ds9</option></arg>
       </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -148,21 +136,18 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-V</option></term>
         <term><option>--version</option></term>
         <listitem>
           <para>Show version of program.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-b <replaceable class="parameter">database-name</replaceable></option></term>
         <term><option>--database <replaceable class="parameter">database-name</replaceable></option></term>
         <listitem>
           <para>Specify database name. Will overwrite database name specified in rts2.ini (5).</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-C <replaceable class="parameter">config-file</replaceable></option></term>
         <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
         <listitem>
           <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
@@ -170,22 +155,20 @@
       </varlistentry>
       <varlistentry>
         <term><option>-e</option></term>
-        <term><option>--extended</option></term>
         <listitem>
           <para>Print extended information about source - visibility in next 10 hours and next 10 days.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-g<replaceable class="parameter">gnuplot option</replaceable></option></term>
-        <term><option>--gnuplot<replaceable class="parameter">gnuplot option</replaceable></option></term>
+        <term><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></term>
         <listitem>
           <para>
 	    Print commands for gnuplot. Usual call with -g option will be:
 	    <screen>
 	      <command>&dhpackage; -g | gnuplot</command>
 	    </screen>
-	    Please do not make space between -g and <replaceable>gnuplot option</replaceable>.
-	    <replaceable>gnuplot option</replaceable> can be one of the following:
+	    Please do not make space between -g and <replaceable>gnuplot-option</replaceable>.
+	    <replaceable>gnuplot-option</replaceable> can be one of the following:
 	    <variablelist>
 	      <varlistentry>
 	        <term><option>x11</option></term>
@@ -211,56 +194,48 @@
       </varlistentry>
       <varlistentry>
         <term><option>-m</option></term>
-        <term><option>--moon</option></term>
         <listitem>
           <para>Plot moon coordinates at the graph.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-c</option></term>
-        <term><option>--calibration</option></term>
         <listitem>
           <para>Find calibration files for given source and print them.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-o</option></term>
-        <term><option>--observations</option></term>
         <listitem>
           <para>Print observations of given target(s).</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-i</option></term>
-        <term><option>--images</option></term>
         <listitem>
           <para>Print acquired images as well.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-I</option></term>
-        <term><option>--images_summary</option></term>
         <listitem>
           <para>Images summary rows.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-p</option></term>
-        <term><option>--photometer</option></term>
         <listitem>
           <para>Print counts measured by photometer.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-P</option></term>
-        <term><option>--photometer_summary</option></term>
         <listitem>
           <para>Summary of photometer counts.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-t <replaceable class="parameter">target type</replaceable></option></term>
-        <term><option>--target_type <replaceable class="parameter">target type</replaceable></option></term>
         <listitem>
           <para>List information for given target types. <replaceable>target type</replaceable> can be one of the following:
 	    <variablelist>
@@ -331,19 +306,85 @@
       </varlistentry>
       <varlistentry>
         <term><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
-        <term><option>--date <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
         <listitem>
           <para>Print information for given date. Date must be given in YYYY-MM-DDTHH:MM:SS.sss format.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-9</option></term>
-        <term><option>--ds9</option></term>
         <listitem>
           <para>Prints out DS9 .reg file. That is especially usefull for GRB observations, when it prints out various error boxes.</para>
         </listitem>
       </varlistentry>
     </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>TARGET INFO OUTPUT</title>
+
+    <para>
+      Default target info call will output various target values. Those should
+      be easy to understand, as they are written in plain english and describe
+      basic celestial body properties.
+    </para>
+
+    <para>
+      A bit tricky to understand can be HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE,
+      SUN POSITION table. It list various target parameters, spaced by 1 hour.
+      First row in table is UT hour, -1 is 1 hour before start interval which can be read from table header.
+      Following abrevations are used inside table:
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>H</option></term>
+        <listitem>
+          <para>Hour from start date.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>ALT</option></term>
+        <listitem>
+          <para>Object altitude.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>AZ</option></term>
+        <listitem>
+          <para>Object azimuth.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>AIR</option></term>
+        <listitem>
+          <para>Object airmass at give time.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>LD</option></term>
+        <listitem>
+          <para>Object-Lunar distance in degrees.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>SD</option></term>
+        <listitem>
+          <para>Object-Solar distance in degrees.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>SAL</option></term>
+        <listitem>
+          <para>Altitude of the Sun.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>SAZ</option></term>
+        <listitem>
+          <para>Azimuth of the Sun.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
