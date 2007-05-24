@@ -123,7 +123,11 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     getAltAz (&hrz, jd);
     _os << " " << std::setw (3) << hrz.alt;
     _os2 << " " << std::setw (3) << hrz.az;
-    _os3 << " " << std::setw (3) << getAirmass (jd);
+    double am = getAirmass (jd);
+    if (am > 9)
+      _os3 << " nan";
+    else
+      _os3 << " " << std::setw (3) << getAirmass (jd);
   }
   if (header)
   {
