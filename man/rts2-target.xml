@@ -79,7 +79,21 @@
       <arg choice="opt">
         <arg choice="plain"><option>-b <replaceable>bonus</replaceable></option></arg>
       </arg>
-
+      <arg choice="opt">
+        <arg choice="plain"><option>-t <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-n <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-o</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-c <replaceable>camera-name</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-s <replaceable>script</replaceable></option></arg>
+      </arg>
       <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -126,11 +140,127 @@
       <varlistentry>
         <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
         <listitem>
-          <para>specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
+          <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>
       </varlistentry>
-
+      <varlistentry>
+        <term><option>-e</option></term>
+        <listitem>
+          <para>
+	    Enable target. Enabled target will be considered by
+	    <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	    for observation.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-d</option></term>
+        <listitem>
+          <para>
+	    Disable target. Disabled target will not be considered by 
+	    <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	    for observation.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-p <replaceable class="parameter">priority</replaceable></option></term>
+        <listitem>
+          <para>
+	    Change target priority.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-b <replaceable class="parameter">bonus</replaceable></option></term>
+        <listitem>
+          <para>
+	    Change target bonus priority
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-t <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <listitem>
+          <para>
+	    Change target bonus time. When time specified on command line
+	    passed, target bonus will drop back to 0, leaving only fixed
+	    priority for selector to decide which target is the best one.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-n <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set next observable date. Target will not be considered by
+	    <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	    before that time pass.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-o</option></term>
+        <listitem>
+          <para>
+	    Clear next observable time. That will put time set by -n option or by selector back to NULL value, which means that
+	    target does not have any observational constrain.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c <replaceable class="parameter">camera-name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify camera name. That is used once script is specified for the target. Ussuall call is:
+	    <screen>
+	      <command>&dhpackage;</command> <option>-c</option> <replaceable>C0</replaceable> <option>-s</option> <replaceable>'for 200 { E 20 }'</replaceable> <replaceable>1000 1001</replaceable>
+	    </screen>
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-s <replaceable class="parameter">script</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify script. Before <option>-s</option> option, you need to
+	    specify <option>-c</option> camera option for name of the camera.
+	    For script syntax, please consult
+	    <citerefentry><refentrytitle>rts2.script</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
+
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLES</title>
+
+    <para>
+      Following example enable target 1000 for selector. It will set next
+      observing date to 13th March 2013, at 13 hours, 53 minutes and 43.133
+      seconds. Target will not be observed before this date.
+    </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-e</option> <option>-n</option> <replaceable>2013-03-13T13:53:43.133</replaceable> <replaceable>1000</replaceable>
+    </screen>
+
+    <para>
+      This example will disable target for selection and change target script for camera C5.
+    </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-d</option> <option>-c</option> <replaceable>C5</replaceable> <option>-s</option> <replaceable>'F 3 for 10 { E 200 }'</replaceable> <replaceable>1000</replaceable>
+    </screen>
+
+    <para>
+      This example will set bonus and next bonus time - time until next bonus will be valid.
+    </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-b</option> <replaceable>100</replaceable> <option>-t</option> <replaceable>2007-05-20T12:34:26</replaceable> <replaceable>1000</replaceable> <replaceable>1001</replaceable>
+    </screen>
 
   </refsect1>
   <refsect1>
@@ -139,6 +269,10 @@
     <para>
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-selector</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
       <citerefentry>

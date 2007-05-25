@@ -74,7 +74,7 @@
         <arg choice="plain"><option>-e</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-g<replaceable>gnuplot-options</replaceable></option></arg>
+        <arg choice="plain"><option>-g<replaceable>gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>-m</option></arg>
@@ -101,7 +101,7 @@
         <arg choice="plain"><option>-t</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-d</option></arg>
+        <arg choice="plain"><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-9</option></arg>
@@ -165,7 +165,7 @@
           <para>
 	    Print commands for gnuplot. Usual call with -g option will be:
 	    <screen>
-	      <command>&dhpackage; -g | gnuplot</command>
+	      <command>&dhpackage;</command> <option>-g</option> | <command>gnuplot</command>
 	    </screen>
 	    Please do not make space between -g and <replaceable>gnuplot-option</replaceable>.
 	    <replaceable>gnuplot-option</replaceable> can be one of the following:
