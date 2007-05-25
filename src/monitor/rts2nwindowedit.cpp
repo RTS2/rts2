@@ -45,8 +45,14 @@ Rts2NWindowEdit::injectKey (int key)
     case K_ENTER:
       return RKEY_ENTER;
     case KEY_LEFT:
+      x = getCurX ();
+      if (x > 0)
+	wmove (getWriteWindow (), getCurY (), x - 1);
       break;
     case KEY_RIGHT:
+      x = getCurX ();
+      if (x < getWidth () - 3)
+	wmove (getWriteWindow (), getCurY (), x + 1);
       break;
     default:
       if (isalnum (key))
