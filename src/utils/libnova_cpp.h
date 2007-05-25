@@ -436,7 +436,7 @@ public:
     time (&to);
     from = to - 86400;
   }
-  Rts2Night (struct tm *in_date, struct ln_lnlat_posn *obs);
+  Rts2Night (struct ln_date *ln_night, struct ln_lnlat_posn *obs);
   Rts2Night (double JD, struct ln_lnlat_posn *obs);
 
   time_t *getFrom ()

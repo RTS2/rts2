@@ -79,16 +79,6 @@ public:  Rts2App (int in_argc, char **in_argv);
    */
   int askForChr (const char *desc, char &out);
 
-  /**
-   * Parses and initialize tm structure from char.
-   *
-   * String can contain either date, in that case it will be converted to night
-   * starting on that date, or full date with time (hour, hour:min, or hour:min:sec).
-   *
-   * @return -1 on error, 0 on succes
-   */
-  int parseDate (const char *in_date, struct tm *out_time);
-
   virtual void sendMessage (messageType_t in_messageType,
 			    const char *in_messageString);
   inline void sendMessage (messageType_t in_messageType,

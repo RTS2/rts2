@@ -495,15 +495,16 @@ std::istream & operator >> (std::istream & _is, LibnovaDate & l_date)
   return _is;
 }
 
-Rts2Night::Rts2Night (struct tm * tm_night, struct ln_lnlat_posn * obs)
+Rts2Night::Rts2Night (struct ln_date * ln_night, struct ln_lnlat_posn * obs)
 {
-  struct tm tm_tmp;
+  struct ln_date ln_tmp;
   // let's calculate time from..t_from will contains start of night
   // local 12:00 will be at ~ give time..
-  tm_tmp = *tm_night;
-  tm_tmp.tm_hour = (int) ln_range_degrees (180.0 - obs->lng) / 15;
-  tm_tmp.tm_min = tm_tmp.tm_sec = 0;
-  from = mktime (&tm_tmp);
+  ln_tmp = *ln_night;
+  ln_tmp.hours = (int) ln_range_degrees (180.0 - obs->lng) / 15;
+  ln_tmp.minutes = 0;
+  ln_tmp.seconds = 0;
+  ln_get_timet_from_julian (ln_get_julian_day (&ln_tmp), &from);
   to = from + 86400;
 }
 

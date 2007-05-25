@@ -55,6 +55,8 @@ public:
   virtual int init ();
 
   int parseDate (const char *in_date, double &JD);
+
+  int parseDate (const char *in_date, time_t * out_time);
 };
 
 #endif /* !__RTS2_APPDB__ */

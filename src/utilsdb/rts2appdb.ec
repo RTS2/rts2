@@ -445,13 +445,23 @@ Rts2AppDb::init ()
 int
 Rts2AppDb::parseDate (const char *in_date, double &JD)
 {
-  struct tm tm_date;
   struct ln_date l_date;
   int ret;
-  ret = Rts2CliApp::parseDate (in_date, &tm_date);
+  ret = Rts2CliApp::parseDate (in_date, &l_date);
   if (ret)
     return ret;
-  ln_get_date_from_tm (&tm_date, &l_date);
   JD = ln_get_julian_day (&l_date);
+  return 0;
+}
+
+int
+Rts2AppDb::parseDate (const char *in_date, time_t *out_time)
+{
+  int ret;
+  struct ln_date l_date;
+  ret = Rts2CliApp::parseDate (in_date, &l_date);
+  if (ret)
+    return ret;
+  ln_get_timet_from_julian (ln_get_julian_day (&l_date), out_time);
   return 0;
 }

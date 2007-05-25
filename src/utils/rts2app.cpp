@@ -292,10 +292,10 @@ Rts2App::askForString (const char *desc, std::string & val)
   return 0;
 }
 
-bool Rts2App::askForBoolean (const char *desc, bool val)
+bool
+Rts2App::askForBoolean (const char *desc, bool val)
 {
-  char
-    temp[20];
+  char temp[20];
   while (!getEndLoop ())
     {
       std::cout << desc << " (y/n) [" << (val ? "y" : "n") << "]: ";
@@ -335,36 +335,6 @@ Rts2App::askForChr (const char *desc, char &out)
   return 0;
 }
 
-int
-Rts2App::parseDate (const char *in_date, struct tm *out_time)
-{
-  char *ret;
-  char *ret2;
-  out_time->tm_isdst = 0;
-  out_time->tm_hour = out_time->tm_min = out_time->tm_sec = 0;
-  ret = strptime (in_date, "%Y-%m-%d", out_time);
-  if (ret && ret != in_date)
-    {
-      // we end with is T, let's check if it contains time..
-      if (*ret == 'T')
-	{
-	  ret2 = strptime (ret, "T%H:%M:%S", out_time);
-	  if (ret2 && *ret2 == '\0')
-	    return 0;
-	  ret2 = strptime (ret, "T%H:%M", out_time);
-	  if (ret2 && *ret2 == '\0')
-	    return 0;
-	  ret2 = strptime (ret, "T%H", out_time);
-	  if (ret2 && *ret2 == '\0')
-	    return 0;
-	  return -1;
-	}
-      // only year..
-      return 0;
-    }
-  return -1;
-}
-
 void
 Rts2App::sendMessage (messageType_t in_messageType,
 		      const char *in_messageString)
@@ -379,10 +349,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (this, in_messageType);
+  Rts2LogStream ls (this, in_messageType);
   return ls;
 }
 
