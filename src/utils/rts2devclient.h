@@ -58,9 +58,14 @@ protected:
 public:
   Rts2DevClient (Rts2Conn * in_connection);
   virtual ~ Rts2DevClient (void);
+
   virtual void postEvent (Rts2Event * event);
+
   void addValue (Rts2Value * value);
+
   int metaInfo (int rts2Type, std::string name, std::string desc);
+  int selMetaInfo (const char *value_name, char *sel_name);
+
   Rts2Value *getValue (const char *value_name);
   char *getValueChar (const char *value_name);
   double getValueDouble (const char *value_name);

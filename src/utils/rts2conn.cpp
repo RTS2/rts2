@@ -573,6 +573,19 @@ Rts2Conn::processLine ()
 	}
       ret = -2;
     }
+  else if (isCommand (PROTO_SELMETAINFO))
+    {
+      if (otherDevice)
+	{
+	  char *m_name;
+	  char *sel_name;
+	  if (paramNextString (&m_name)
+	      || paramNextString (&sel_name) || !paramEnd ())
+	    return -2;
+	  return otherDevice->selMetaInfo (m_name, sel_name);
+	}
+      ret = -2;
+    }
   else if (isCommand (PROTO_SET_VALUE))
     {
       ret = master->setValue (this, false);

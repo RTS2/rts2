@@ -5,6 +5,7 @@
 #include <string>
 #include <math.h>
 #include <time.h>
+#include <vector>
 
 #define RTS2_VALUE_STRING	0x00000001
 #define RTS2_VALUE_INTEGER	0x00000002
@@ -12,6 +13,7 @@
 #define RTS2_VALUE_DOUBLE	0x00000004
 #define RTS2_VALUE_FLOAT	0x00000005
 #define RTS2_VALUE_BOOL		0x00000006
+#define RTS2_VALUE_SELECTION	0x00000007
 
 #define RTS2_VALUE_MASK		0x000000ff
 
@@ -52,8 +54,13 @@ protected:
   {
     rts2Type |= (RTS2_TYPE_MASK & displayType);
   }
+
+  /**
+   * Send values meta infomration. @see sendMetaInfo adds to it actual value.
+   */
+  virtual int sendTypeMetaInfo (Rts2Conn * connection);
 public:
-    Rts2Value (std::string in_val_name);
+  Rts2Value (std::string in_val_name);
   Rts2Value (std::string in_val_name, std::string in_description,
 	     bool writeToFits = true, int32_t displayType = 0);
   virtual ~ Rts2Value (void)
@@ -267,6 +274,38 @@ public:
   bool getValueBool ()
   {
     return getValueInteger () == 2 ? true : false;
+  }
+};
+
+/**
+ * This value adds as meta-information allowed content in strings.
+ * It can be used for named selection list (think of enums..).
+ */
+class Rts2ValueSelection:public Rts2ValueInteger
+{
+private:
+  // holds variables bag..
+  std::vector < std::string > valNames;
+
+protected:
+  virtual int sendTypeMetaInfo (Rts2Conn * connection);
+
+public:
+    Rts2ValueSelection (std::string in_val_name);
+    Rts2ValueSelection (std::string in_val_name, std::string in_description,
+			bool writeToFits = false, int32_t displayType = 0);
+
+  void addSelVal (char *sel_name)
+  {
+    valNames.push_back (std::string (sel_name));
+  }
+
+  std::string getSelVal ()
+  {
+    int val = getValueInteger ();
+    if (val < 0 || (unsigned int) val >= valNames.size ())
+      return std::string ("out of range");
+    return valNames[val];
   }
 };
 

@@ -443,7 +443,7 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
       if (withVal)
 	((Rts2ValueString *) dup_val)->setValueString (old_value->
 						       getValue ());
-      return dup_val;
+      break;
     case RTS2_VALUE_INTEGER:
       dup_val = new Rts2ValueInteger (old_value->getName (),
 				      old_value->getDescription (),
@@ -451,7 +451,7 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
       if (withVal)
 	((Rts2ValueInteger *) dup_val)->setValueInteger (old_value->
 							 getValueInteger ());
-      return dup_val;
+      break;
     case RTS2_VALUE_TIME:
       dup_val = new Rts2ValueTime (old_value->getName (),
 				   old_value->getDescription (),
@@ -459,7 +459,7 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
       if (withVal)
 	((Rts2ValueTime *) dup_val)->setValueDouble (old_value->
 						     getValueDouble ());
-      return dup_val;
+      break;
     case RTS2_VALUE_DOUBLE:
       dup_val = new Rts2ValueDouble (old_value->getName (),
 				     old_value->getDescription (),
@@ -467,7 +467,7 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
       if (withVal)
 	((Rts2ValueDouble *) dup_val)->setValueDouble (old_value->
 						       getValueDouble ());
-      return dup_val;
+      break;
     case RTS2_VALUE_FLOAT:
       dup_val = new Rts2ValueFloat (old_value->getName (),
 				    old_value->getDescription (),
@@ -475,7 +475,7 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
       if (withVal)
 	((Rts2ValueFloat *) dup_val)->setValueFloat (old_value->
 						     getValueFloat ());
-      return dup_val;
+      break;
     case RTS2_VALUE_BOOL:
       dup_val = new Rts2ValueBool (old_value->getName (),
 				   old_value->getDescription (),
@@ -483,12 +483,21 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
       if (withVal)
 	((Rts2ValueBool *) dup_val)->
 	  setValueBool (((Rts2ValueBool *) old_value)->getValueBool ());
-      return dup_val;
+      break;
+    case RTS2_VALUE_SELECTION:
+      dup_val = new Rts2ValueSelection (old_value->getName (),
+					old_value->getDescription (),
+					old_value->getWriteToFits ());
+      if (withVal)
+	((Rts2ValueInteger *) dup_val)->
+	  setValueInteger (old_value->getValueInteger ());
+      break;
     default:
       logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
 	getValueType () << sendLog;
       return NULL;
     }
+  return dup_val;
 }
 
 void

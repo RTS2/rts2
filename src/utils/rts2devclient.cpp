@@ -80,6 +80,11 @@ Rts2DevClient::metaInfo (int rts2Type, std::string name, std::string desc)
 	new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS,
 			   rts2Type & RTS2_TYPE_MASK);
       break;
+    case RTS2_VALUE_SELECTION:
+      newValue =
+	new Rts2ValueSelection (name, desc, rts2Type & RTS2_VALUE_FITS,
+				rts2Type & RTS2_TYPE_MASK);
+      break;
     default:
       logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
 	sendLog;
@@ -87,6 +92,16 @@ Rts2DevClient::metaInfo (int rts2Type, std::string name, std::string desc)
     }
   addValue (newValue);
   return -1;
+}
+
+int
+Rts2DevClient::selMetaInfo (const char *value_name, char *sel_name)
+{
+  Rts2Value *val = getValue (value_name);
+  if (!val || val->getValueType () != RTS2_VALUE_SELECTION)
+    return -1;
+  ((Rts2ValueSelection *) val)->addSelVal (sel_name);
+  return 0;
 }
 
 Rts2Value *

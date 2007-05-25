@@ -37,17 +37,24 @@ Rts2Value::doOpValue (char op, Rts2Value * old_value)
 }
 
 int
-Rts2Value::sendMetaInfo (Rts2Conn * connection)
+Rts2Value::sendTypeMetaInfo (Rts2Conn * connection)
 {
-  int ret;
   std::ostringstream _os;
   _os
     << PROTO_METAINFO << " "
     << rts2Type << " "
     << '"' << getName () << "\" " << '"' << description << "\" ";
-  ret = connection->send (_os.str ());
+  return connection->send (_os.str ());
+}
+
+int
+Rts2Value::sendMetaInfo (Rts2Conn * connection)
+{
+  int ret;
+  ret = sendTypeMetaInfo (connection);
   if (ret < 0)
     return ret;
+
   return send (connection);
 }
 
@@ -292,4 +299,38 @@ Rts2ValueBool::Rts2ValueBool (std::string in_val_name, std::string in_descriptio
 		  displayType)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
+}
+
+Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name):Rts2ValueInteger
+  (in_val_name)
+{
+  rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_SELECTION;
+}
+
+Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):Rts2ValueInteger (in_val_name, in_description,
+		  writeToFits,
+		  displayType)
+{
+  rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_SELECTION;
+}
+
+int
+Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
+{
+  int ret;
+  ret = Rts2ValueInteger::sendTypeMetaInfo (connection);
+  if (ret)
+    return ret;
+  // now send selection values..
+  std::ostringstream _os;
+
+  for (std::vector < std::string >::iterator iter = valNames.begin ();
+       iter != valNames.end (); iter++)
+    {
+      std::string val = *iter;
+      _os << PROTO_SELMETAINFO << " \"" << getName () << "\" \"" << val <<
+	"\"\n";
+    }
+
+  return connection->send (_os.str ());
 }
