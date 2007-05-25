@@ -5,15 +5,16 @@
 
 #include <iostream>
 
-#define OP_NONE		0x00
-#define OP_ENABLE	0x03
-#define OP_DISABLE	0x01
-#define OP_MASK_EN	0x03
-#define OP_PRIORITY	0x04
-#define OP_BONUS	0x08
-#define OP_BONUS_TIME	0x10
-#define OP_SCRIPT	0x20
-#define OP_NEXT_OBSER   0x40
+#define OP_NONE		0x0000
+#define OP_ENABLE	0x0003
+#define OP_DISABLE	0x0001
+#define OP_MASK_EN	0x0003
+#define OP_PRIORITY	0x0004
+#define OP_BONUS	0x0008
+#define OP_BONUS_TIME	0x0010
+#define OP_NEXT_TIME    0x0020
+#define OP_SCRIPT	0x0040
+#define OP_NEXT_OBSER   0x0080
 
 class CamScript
 {
@@ -38,6 +39,7 @@ private:
   float new_priority;
   float new_bonus;
   time_t new_bonus_time;
+  time_t new_next_time;
 
   const char *camera;
     std::list < CamScript > new_scripts;
@@ -73,7 +75,8 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('p', NULL, 1, "set target (fixed) priority");
   addOption ('b', NULL, 1, "set target bonus to this value");
   addOption ('t', NULL, 1, "set target bonus time to this value");
-  addOption ('o', "nextobs", 0, "clear next observable flag");
+  addOption ('n', NULL, 1, "set next observable time this value");
+  addOption ('o', NULL, 0, "clear next observable time");
   addOption ('c', NULL, 1, "next script will be set for given camera");
   addOption ('s', NULL, 1, "set script for target and camera");
 }
@@ -86,8 +89,6 @@ Rts2TargetApp::~Rts2TargetApp ()
 int
 Rts2TargetApp::processOption (int in_opt)
 {
-  int ret;
-  struct tm tm_ret;
   switch (in_opt)
     {
     case 'e':
@@ -109,12 +110,11 @@ Rts2TargetApp::processOption (int in_opt)
       op |= OP_BONUS;
       break;
     case 't':
-      ret = Rts2App::parseDate (optarg, &tm_ret);
-      if (ret)
-	return ret;
-      new_bonus_time = mktime (&tm_ret);
       op |= OP_BONUS_TIME;
-      break;
+      return parseDate (optarg, &new_bonus_time);
+    case 'n':
+      op |= OP_NEXT_TIME;
+      return parseDate (optarg, &new_next_time);
     case 'o':
       op |= OP_NEXT_OBSER;
       break;
@@ -228,6 +228,10 @@ Rts2TargetApp::doProcessing ()
   if (op & OP_BONUS_TIME)
     {
       target_set->setTargetBonusTime (&new_bonus_time);
+    }
+  if (op & OP_NEXT_TIME)
+    {
+      target_set->setNextObservable (&new_next_time);
     }
   if (op & OP_SCRIPT)
     {

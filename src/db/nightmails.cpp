@@ -13,7 +13,7 @@ class Rts2NightMail:public Rts2AppDb
 {
 private:
   time_t t_from, t_to;
-  struct tm *tm_night;
+  struct ln_date *tm_night;
   int printImages;
   int printCounts;
 
@@ -51,35 +51,21 @@ Rts2AppDb (in_argc, in_argv)
 
 Rts2NightMail::~Rts2NightMail (void)
 {
-  if (tm_night)
-    delete tm_night;
+  delete tm_night;
 }
 
 int
 Rts2NightMail::processOption (int in_opt)
 {
-  int ret;
-  struct tm tm_ret;
   switch (in_opt)
     {
     case 'f':
-      ret = Rts2App::parseDate (optarg, &tm_ret);
-      if (ret)
-	return ret;
-      t_from = mktime (&tm_ret);
-      break;
+      return parseDate (optarg, &t_from);
     case 't':
-      ret = Rts2App::parseDate (optarg, &tm_ret);
-      if (ret)
-	return ret;
-      t_to = mktime (&tm_ret);
-      break;
+      return parseDate (optarg, &t_to);
     case 'n':
-      tm_night = new struct tm;
-      ret = Rts2App::parseDate (optarg, tm_night);
-      if (ret)
-	return ret;
-      break;
+      tm_night = new struct ln_date;
+      return Rts2CliApp::parseDate (optarg, tm_night);
     case 'i':
       printImages |= DISPLAY_ALL;
       break;
@@ -110,13 +96,14 @@ Rts2NightMail::init ()
     {
       // let's calculate time from..t_from will contains start of night
       // local 12:00 will be at ~ give time..
-      tm_night->tm_hour =
+      tm_night->hours =
 	(int) ln_range_degrees (Rts2Config::instance ()->getObserver ()->lng /
 				15);
-      if (tm_night->tm_hour > 12)
-	tm_night->tm_hour = 24 - tm_night->tm_hour;
-      tm_night->tm_min = tm_night->tm_sec = 0;
-      t_from = mktime (tm_night);
+      if (tm_night->hours > 12)
+	tm_night->hours = 24 - tm_night->hours;
+      tm_night->minutes = 0;
+      tm_night->seconds = 0;
+      ln_get_timet_from_julian (ln_get_julian_day (tm_night), &t_from);
       if (t_from + 86400 > t_to)
 	t_from -= 86400;
       t_to = t_from + 86400;

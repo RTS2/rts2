@@ -13,7 +13,7 @@ class Rts2NightReport:public Rts2AppDb
 {
 private:
   time_t t_from, t_to;
-  struct tm *tm_night;
+  struct ln_date *tm_night;
   int printImages;
   int printCounts;
   int printStat;
@@ -65,28 +65,16 @@ Rts2NightReport::~Rts2NightReport (void)
 int
 Rts2NightReport::processOption (int in_opt)
 {
-  int ret;
-  struct tm tm_ret;
   switch (in_opt)
     {
     case 'f':
-      ret = Rts2App::parseDate (optarg, &tm_ret);
-      if (ret)
-	return ret;
-      t_from = mktime (&tm_ret);
-      break;
+      return parseDate (optarg, &t_from);
     case 't':
-      ret = Rts2App::parseDate (optarg, &tm_ret);
-      if (ret)
-	return ret;
-      t_to = mktime (&tm_ret);
+      return parseDate (optarg, &t_to);
       break;
     case 'n':
-      tm_night = new struct tm;
-      ret = Rts2App::parseDate (optarg, tm_night);
-      if (ret)
-	return ret;
-      break;
+      tm_night = new struct ln_date;
+      return Rts2CliApp::parseDate (optarg, tm_night);
     case 'i':
       printImages |= DISPLAY_ALL;
       break;
