@@ -69,9 +69,9 @@ Rts2DevDome::processOption (int in_opt)
 void
 Rts2DevDome::domeWeatherGood ()
 {
-  if (weatherCanOpenDome)
+  if (weatherCanOpenDome && !getIgnoreMeteo ())
     {
-      sendMaster ("on");
+      setMasterOn ();
     }
 }
 
