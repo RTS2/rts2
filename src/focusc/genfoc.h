@@ -64,7 +64,8 @@ public:
   virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 					  int other_device_type);
   virtual int init ();
-  virtual int run ();
+
+  virtual void centraldConnRunning ();
 
   float defaultExpousure ()
   {

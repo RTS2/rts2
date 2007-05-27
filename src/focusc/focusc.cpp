@@ -117,14 +117,6 @@ Rts2focuscCamera::postEvent (Rts2Event * event)
 int
 main (int argc, char **argv)
 {
-  int ret;
-
   Rts2focusc client = Rts2focusc (argc, argv);
-  ret = client.init ();
-  if (ret)
-    {
-      std::cerr << "Cannot init focuser client" << std::endl;
-      return ret;
-    }
   return client.run ();
 }

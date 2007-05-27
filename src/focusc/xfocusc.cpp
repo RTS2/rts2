@@ -659,20 +659,15 @@ Rts2xfocusCamera::printFWHMTable ()
     redraw ();
 }
 
-imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
+imageProceRes
+Rts2xfocusCamera::processImage (Rts2Image * image)
 {
-  int
-    dataSize;
-  int
-    i,
-    j,
-    k;
-  unsigned short *
-    im_ptr;
+  int dataSize;
+  int i, j, k;
+  unsigned short *im_ptr;
 
   // get to upper classes as well
-  imageProceRes
-    res = Rts2DevClientCameraFoc::processImage (image);
+  imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
 
   pixmapWidth = image->getWidth ();
   pixmapHeight = image->getHeight ();
@@ -741,8 +736,7 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
   for (j = 0; j < pixmapHeight; j++)
     for (i = 0; i < pixmapWidth; i++)
       {
-	unsigned short
-	  val;
+	unsigned short val;
 	val = *im_ptr;
 	im_ptr++;
 	if (val < low)
@@ -927,12 +921,6 @@ Rts2xfocus::createFocCamera (Rts2Conn * conn)
 int
 main (int argc, char **argv)
 {
-  int ret;
   Rts2xfocus masterFocus = Rts2xfocus (argc, argv);
-  ret = masterFocus.init ();
-  if (ret)
-    {
-      return ret;
-    }
   return masterFocus.run ();
 }
