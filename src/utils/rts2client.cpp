@@ -305,6 +305,7 @@ Rts2ConnCentraldClient::command ()
       if (paramNextInteger (&p_centrald_id) || !paramEnd ())
 	return -2;
       setCentraldId (p_centrald_id);
+      master->centraldConnRunning ();
       return -1;
     }
   if (isCommand ("authorization_key"))
