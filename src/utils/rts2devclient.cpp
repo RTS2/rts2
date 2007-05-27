@@ -148,6 +148,26 @@ Rts2DevClient::getValueInteger (const char *value_name)
   return -1;
 }
 
+const char *
+Rts2DevClient::getValueSelection (const char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val->getValueType () != RTS2_VALUE_SELECTION)
+    return "UNK";
+  return ((Rts2ValueSelection *) val)->getSelVal ().c_str ();
+}
+
+const char *
+Rts2DevClient::getValueSelection (const char *value_name, int val_num)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val->getValueType () != RTS2_VALUE_SELECTION)
+    return "UNK";
+  return ((Rts2ValueSelection *) val)->getSelVal (val_num).c_str ();
+}
+
 int
 Rts2DevClient::commandValue (const char *name)
 {

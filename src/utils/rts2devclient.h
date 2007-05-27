@@ -70,6 +70,8 @@ public:
   char *getValueChar (const char *value_name);
   double getValueDouble (const char *value_name);
   int getValueInteger (const char *value_name);
+  const char *getValueSelection (const char *value_name, int val);
+  const char *getValueSelection (const char *value_name);
 
   virtual int commandValue (const char *name);
   virtual int command ();

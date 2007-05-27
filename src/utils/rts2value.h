@@ -297,16 +297,37 @@ public:
 
   void addSelVal (char *sel_name)
   {
-    valNames.push_back (std::string (sel_name));
+    addSelVal (std::string (sel_name));
+  }
+
+  void addSelVal (std::string sel_name)
+  {
+    valNames.push_back (sel_name);
   }
 
   std::string getSelVal ()
   {
-    int val = getValueInteger ();
+    return getSelVal (getValueInteger ());
+  }
+
+  std::string getSelVal (int val)
+  {
     if (val < 0 || (unsigned int) val >= valNames.size ())
-      return std::string ("out of range");
+      return std::string ("UNK");
     return valNames[val];
   }
+
+  std::vector < std::string >::iterator selBegin ()
+  {
+    return valNames.begin ();
+  }
+
+  std::vector < std::string >::iterator selEnd ()
+  {
+    return valNames.end ();
+  }
+
+  void duplicateSelVals (Rts2ValueSelection * otherValue);
 };
 
 #endif /* !__RTS2_VALUE__ */

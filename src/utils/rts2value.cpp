@@ -334,3 +334,14 @@ Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
 
   return connection->send (_os.str ());
 }
+
+void
+Rts2ValueSelection::duplicateSelVals (Rts2ValueSelection * otherValue)
+{
+  valNames.clear ();
+  for (std::vector < std::string >::iterator iter = otherValue->selBegin ();
+       iter != otherValue->selEnd (); iter++)
+    {
+      addSelVal (*iter);
+    }
+}
