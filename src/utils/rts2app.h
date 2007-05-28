@@ -18,7 +18,6 @@ private:
    * Prints help message, describing all options
    */
   void helpOptions ();
-  int initOptions ();
 
   int argc;
   char **argv;
@@ -30,6 +29,8 @@ protected:
   virtual int processArgs (const char *arg);	// for non-optional args
   int addOption (int in_short_option, char *in_long_option, int in_has_arg,
 		 char *in_help_msg);
+
+  int initOptions ();
 
   /**
    * Ask user for integer.
