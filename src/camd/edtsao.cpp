@@ -7,6 +7,23 @@
  * update regulary.
  */
 
+// helper struct for splitModes
+typedef struct SplitConf
+{
+  bool splitMode;
+  bool uniMode;
+  int chanNum;
+  const char *patFile;
+  int ioPar1;
+  int ioPar2;
+};
+
+const SplitConf splitConf[] = {
+  {true, false, 2, "e2vsplit.bin", 0x51000040, 0x51008141},
+  {false, false, 1, "e2vunsplit.bin", 0x51000040, 0x51008101},
+  {false, true, 1, "e2vunsplit.bin", 0x51000000, 0x51008141}
+};
+
 /** 
  * Class for EDT-SAO chip.
  */
@@ -37,7 +54,7 @@ private:
   int dsub;
 
   int edtwrite (unsigned long lval);
-  int writeBinFile (char *filename);
+  int writeBinFile (const char *filename);
 
   // perform camera-specific functions
   /** perform camera reset */
@@ -78,6 +95,11 @@ public:
   virtual int readoutOneLine ();
   virtual void cancelPriorityOperations ();
   virtual int endReadout ();
+
+  void setSplitMode (int in_splitMode)
+  {
+    split_mode = in_splitMode;
+  }
 };
 
 int
@@ -91,7 +113,7 @@ CameraEdtSaoChip::edtwrite (unsigned long lval)
 }
 
 int
-CameraEdtSaoChip::writeBinFile (char *filename)
+CameraEdtSaoChip::writeBinFile (const char *filename)
 {
   // taken from edtwriteblk.c, heavily modified
   FILE *fp;
@@ -283,18 +305,8 @@ CameraEdtSaoChip::init ()
   ret = edtwrite (SAO_PARALER_SP);
   if (ret)
     return ret;
-  ret = setEDTSplit (true);
-  if (ret)
-    return ret;
-  ret = setEDTUni (false);
-  if (ret)
-    return ret;
 
   ret = writeBinFile ("e2vsc.bin");
-  if (ret)
-    return ret;
-
-  ret = writeBinFile ("e2vpc.bin");
   if (ret)
     return ret;
 
@@ -309,15 +321,27 @@ CameraEdtSaoChip::init ()
 int
 CameraEdtSaoChip::startExposure (int light, float exptime)
 {
+  int ret;
   // taken from readout script
-  edtwrite (0x51000040);	//  channel order
-  edtwrite (0x51008141);
+  // set split modes.. (0 - center, 1 - left, 2 - right
+  const SplitConf *conf = &splitConf[split_mode];
+  channels = conf->chanNum;
+  ret = setEDTSplit (conf->splitMode);
+  if (ret)
+    return ret;
+  ret = setEDTUni (conf->uniMode);
+  if (ret)
+    return ret;
 
-  writeBinFile ("e2vpc.bin");
+  edtwrite (conf->ioPar1);	//  channel order
+  edtwrite (conf->ioPar2);
+
+  writeBinFile (conf->patFile);
   writeBinFile ("e2v_nidlesc.bin");
   if (fclr (5))
     return -1;
-  writeBinFile ("e2v_freezesc.bin");
+  if (channels != 1)
+    writeBinFile ("e2v_freezesc.bin");
 
   // taken from expose.c
   edtwrite (0x52000000 | (long) (exptime * 100));	/* set time */
@@ -346,7 +370,8 @@ CameraEdtSaoChip::isExposing ()
   if ((!overrun && shutter) || overrun)
     return 100;
   pdv_serial_wait (pd, 100, 4);
-  writeBinFile ("e2v_unfreezesc.bin");
+  if (channels != 1)
+    writeBinFile ("e2v_unfreezesc.bin");
   return 0;
 }
 
@@ -364,12 +389,15 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   numbufs = 4;
   dsub = 1;
 
+  if (!chipUsedReadout)
+    {
+      chipUsedReadout = new ChipSubset (chipReadout);
+      usedBinningVertical = binningVertical;
+      usedBinningHorizontal = binningHorizontal;
+    }
+
   dest_top = dest;
   send_top = (char *) dest;
-
-  ret = CameraChip::startReadout (dataConn, conn);
-  if (ret)
-    return ret;
 
   // taken from kepler.c
   pdv_set_header_dma (pd, 0);
@@ -379,11 +407,13 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   /*
    * SET SIZE VARIABLES FOR IMAGE
    */
-  width = 1020;
+  if (channels == 1)
+    width = 2024;
+  else
+    width = 1020;
   height = 520;
-  /* width = chipUsedReadout->width;
-     width /= channels;
-     height = chipUsedReadout->height; */
+  // width = chipUsedReadout->width;
+  // height = chipUsedReadout->height;
   ret = pdv_setsize (pd, width * channels * dsub, height);
   if (ret == -1)
     {
@@ -398,6 +428,10 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   depth = pdv_get_depth (pd);
   db = bits2bytes (depth);
   imagesize = chipUsedReadout->width * chipUsedReadout->height * db;
+
+  ret = CameraChip::startReadout (dataConn, conn);
+  if (ret)
+    return ret;
 
   /*
    * SET TIMEOUT
@@ -636,15 +670,14 @@ CameraEdtSaoChip::readoutOneLine ()
 	{
 	  logStream (MESSAGE_DEBUG) << "single channel" << sendLog;
 	  // /* already stored loend
-	  j = 0;
-	  for (i = 0; i < imagesize; i += 2)
-	    {
-	      send_top[j++] = (send_top[i + 1] << 8) + send_top[i];
-	    }
+	  /*for (i = 0; i < imagesize; i += 2)
+	     {
+	     send_top[i] = (send_top[i + 1] << 8) + send_top[i];
+	     } */
 	}
 
       dest_top += size;
-      readoutLine = chipUsedReadout->width;
+      readoutLine = chipUsedReadout->height;
       return 0;
     }
   if (sendLine == 0)
@@ -695,13 +728,14 @@ private:
   int sdelay;
 
   // 0 - unsplit, 1 - left, 2 - right
-  Rts2ValueInteger *splitMode;
+  Rts2ValueSelection *splitMode;
 
   bool verbose;
 
   int edtwrite (unsigned long lval);
 protected:
     virtual int processOption (int in_opt);
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
     Rts2CamdEdtSao (int in_argc, char **in_argv);
     virtual ~ Rts2CamdEdtSao (void);
@@ -728,8 +762,14 @@ Rts2DevCamera (in_argc, in_argv)
   addOption ('s', "sdelay", 1, "serial delay");
   addOption ('v', "verbose", 0, "verbose report");
 
-  createValue (splitMode, "SPL_MODE", "split mode of the readout", true);
+  createValue (splitMode, "SPL_MODE", "split mode of the readout", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   splitMode->setValueInteger (0);
+
+  // add possible split modes
+  splitMode->addSelVal ("BOTH");
+  splitMode->addSelVal ("LEFT");
+  splitMode->addSelVal ("RIGHT");
 }
 
 Rts2CamdEdtSao::~Rts2CamdEdtSao (void)
@@ -763,6 +803,18 @@ Rts2CamdEdtSao::processOption (int in_opt)
       return Rts2DevCamera::processOption (in_opt);
     }
   return 0;
+}
+
+int
+Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == splitMode)
+    {
+      ((CameraEdtSaoChip *) chips[0])->setSplitMode (new_value->
+						     getValueInteger ());
+      return 0;
+    }
+  return Rts2DevCamera::setValue (old_value, new_value);
 }
 
 int
