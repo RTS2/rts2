@@ -18,6 +18,9 @@ private:
   unsigned short *dest_top;
   char *send_top;
 
+  // split mode
+  int split_mode;
+
   u_int status;
   bool shutter;
   bool overrun;
@@ -64,7 +67,8 @@ private:
 
   int fclr (int num);
 public:
-  CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd);
+  CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd,
+		    int in_splitMode);
   virtual ~ CameraEdtSaoChip (void);
   virtual int init ();
   virtual int startExposure (int light, float exptime);
@@ -205,7 +209,9 @@ CameraEdtSaoChip::probe ()
 int
 CameraEdtSaoChip::fclr (int num)
 {
-  const int maxnum = 32000;
+  time_t now;
+  time_t end_time;
+  edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
   for (int i = 0; i < num; i++)
     {
       int j;
@@ -213,33 +219,45 @@ CameraEdtSaoChip::fclr (int num)
       edtwrite (0x00000000);
       for (j = 0; j < 10; j++)
 	probe ();
-      for (j = 0; j < maxnum; j++)
+      time (&end_time);
+      end_time += 7;
+      while ((!overrun && (status & PDV_CHAN_ID1)) || overrun)
 	{
 	  probe ();
-	  if (!((!overrun && shutter) || overrun))
-	    break;
+	  time (&now);
+	  if (now > end_time)
+	    {
+	      logStream (MESSAGE_ERROR) << "timeout during fclr, phase 1" <<
+		sendLog;
+	      return -1;
+	    }
 	}
-      if (j == maxnum)
-	return -1;
-      for (j = 0; j < maxnum; j++)
+      time (&end_time);
+      end_time += 7;
+      while ((!overrun && !(status & PDV_CHAN_ID1)) || overrun)
 	{
 	  probe ();
-	  if (!((!overrun && !shutter) || overrun))
-	    break;
+	  time (&now);
+	  if (now > end_time)
+	    {
+	      logStream (MESSAGE_ERROR) << "timeout during fclr, phase 2" <<
+		sendLog;
+	      return -1;
+	    }
 	}
-      if (j == maxnum)
-	return -1;
       pdv_serial_wait (pd, 10, 4);
     }
+  return 0;
 }
 
-CameraEdtSaoChip::CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd):
+CameraEdtSaoChip::CameraEdtSaoChip (Rts2DevCamera * in_cam, int in_chip_id, PdvDev * in_pd, int in_splitMode):
 CameraChip (in_cam, in_chip_id, 2040, 520, 0, 0)
 {
   dest = new unsigned short[2040 * 520];
   verbose = false;
   channels = 2;
   depth = 2;
+  split_mode = in_splitMode;
   pd = in_pd;
 }
 
@@ -521,6 +539,7 @@ CameraEdtSaoChip::readoutOneLine ()
 	    }
 	  printf ("\n");
 	}
+
       for (i = 0; i < numbufs; i++)
 	pdv_free (bufs[i]);	/* free buf memory */
 
@@ -530,26 +549,12 @@ CameraEdtSaoChip::readoutOneLine ()
 
       if (channels == 2)
 	{
-	  /* split mode - assumes 16 bit/pixel and 2 channels */
-	  // do it in place, without allocating second memory
-	  /*uint_16t *dx = (uint_16t *) send_top;
-	     for (int r = 0; r < chipUsedReadout->height; r++)
-	     for (int c = 0; c < chipUsedReadout->width / 2; c++)
-	     {
-	     // swap values
-	     int fp = r * chipUsedReadout->height + c;
-	     int fp2 = r * chipUsedReadout->height + c * 2;
-	     uint16_t v = dx[fp+1];
-	     dx[fp+1] = dx[fp2];
-	     dx[fp2] = v;
-	     } */
-
 	  int pixd = 0;
 	  int pixt;
 	  int row;
 
 	  int pixsize = chipUsedReadout->width * chipUsedReadout->height;
-	  u_int16_t *dx = (u_int16_t *) malloc (pixsize * 4);
+	  uint16_t *dx = (uint16_t *) malloc (pixsize * 4);
 
 	  logStream (MESSAGE_DEBUG) << "split mode" << sendLog;
 	  while (pixd < pixsize)
@@ -587,9 +592,42 @@ CameraEdtSaoChip::readoutOneLine ()
 		}
 	      pixd += 2;
 	    }
+
 	  memcpy (send_top, dx, pixsize * 2);
 
 	  free (dx);
+
+	  /* split mode - assumes 16 bit/pixel and 2 channels */
+	  // do it in place, without allocating second memory
+	  dx = (uint16_t *) send_top;
+	  for (int r = 0; r < chipUsedReadout->height; r++)
+	    {
+	      int fp, fp2;
+	      uint16_t v;
+	      // split first half
+	      for (int c = 0; c < chipUsedReadout->width / 4; c++)
+		{
+		  // swap values
+		  fp = r * chipUsedReadout->width + c;
+		  fp2 = fp + chipUsedReadout->width / 4;
+		  v = dx[fp];
+		  dx[fp] = dx[fp2];
+		  dx[fp2] = v;
+		}
+	      // and then do second half..
+	      for (int c = chipUsedReadout->width / 2;
+		   c <
+		   chipUsedReadout->width / 2 + chipUsedReadout->width / 4;
+		   c++)
+		{
+		  // swap values
+		  fp = r * chipUsedReadout->width + c;
+		  fp2 = fp + chipUsedReadout->width / 4;
+		  v = dx[fp];
+		  dx[fp] = dx[fp2];
+		  dx[fp2] = v;
+		}
+	    }
 	}
       else
 	{
@@ -646,6 +684,9 @@ private:
   bool notimeout;
   int sdelay;
 
+  // 0 - unsplit, 1 - left, 2 - right
+  Rts2ValueInteger *splitMode;
+
   bool verbose;
 
   int edtwrite (unsigned long lval);
@@ -676,6 +717,9 @@ Rts2DevCamera (in_argc, in_argv)
   addOption ('t', "notimeout", 0, "don't timeout");
   addOption ('s', "sdelay", 1, "serial delay");
   addOption ('v', "verbose", 0, "verbose report");
+
+  createValue (splitMode, "SPL_MODE", "split mode of the readout", true);
+  splitMode->setValueInteger (0);
 }
 
 Rts2CamdEdtSao::~Rts2CamdEdtSao (void)
@@ -735,7 +779,8 @@ Rts2CamdEdtSao::init ()
 
   chipNum = 1;
 
-  chips[0] = new CameraEdtSaoChip (this, 0, pd);
+  chips[0] =
+    new CameraEdtSaoChip (this, 0, pd, splitMode->getValueInteger ());
   chips[1] = NULL;
 
   return Rts2CamdEdtSao::initChips ();
