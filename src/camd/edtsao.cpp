@@ -389,12 +389,12 @@ CameraEdtSaoChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
   numbufs = 4;
   dsub = 1;
 
-  if (!chipUsedReadout)
-    {
-      chipUsedReadout = new ChipSubset (chipReadout);
-      usedBinningVertical = binningVertical;
-      usedBinningHorizontal = binningHorizontal;
-    }
+  if (chipUsedReadout)
+    delete chipUsedReadout;
+
+  chipUsedReadout = new ChipSubset (chipReadout);
+  usedBinningVertical = binningVertical;
+  usedBinningHorizontal = binningHorizontal;
 
   dest_top = dest;
   send_top = (char *) dest;
