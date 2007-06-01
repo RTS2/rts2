@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <vector>
 
+#define OPT_CHANGE_FILTER   OPT_LOCAL + 50
+
 Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):Rts2DevClientCameraFoc (in_connection,
 			in_master->
 			getExePath ())
@@ -98,10 +100,10 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
   return image;
 }
 
-imageProceRes
-Rts2GenFocCamera::processImage (Rts2Image * image)
+imageProceRes Rts2GenFocCamera::processImage (Rts2Image * image)
 {
-  imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
+  imageProceRes
+    res = Rts2DevClientCameraFoc::processImage (image);
   std::cout << "Camera " << getName () << " image_type:";
   switch (image->getShutter ())
     {
@@ -220,6 +222,8 @@ Rts2Client (in_argc, in_argv)
   photometerFilterChange = 0;
   configFile = NULL;
 
+  addOption (OPT_CONFIG, "config", 1, "configuration file");
+
   addOption ('d', "device", 1,
 	     "camera device name(s) (multiple for multiple cameras)");
   addOption ('A', "autodark", 0, "take (and use) dark image");
@@ -238,7 +242,7 @@ Rts2Client (in_argc, in_argv)
   addOption ('o', "output", 1, "save results to given file");
   addOption ('T', "photometer_time", 1,
 	     "photometer integration time (in seconds); default to 1 second");
-  addOption ('C', "change_filter", 1,
+  addOption (OPT_CHANGE_FILTER, "change_filter", 1,
 	     "change filter on photometer after taking n counts; default to 0 (don't change)");
   addOption ('K', "skip_filter", 1, "Skip that filter number");
 }
@@ -253,6 +257,9 @@ Rts2GenFocClient::processOption (int in_opt)
 {
   switch (in_opt)
     {
+    case OPT_CONFIG:
+      configFile = optarg;
+      break;
     case 'd':
       cameraNames.push_back (optarg);
       break;
@@ -292,7 +299,7 @@ Rts2GenFocClient::processOption (int in_opt)
     case 'T':
       photometerTime = atof (optarg);
       break;
-    case 'C':
+    case OPT_CHANGE_FILTER:
       photometerFilterChange = atoi (optarg);
       break;
     case 'K':
@@ -367,6 +374,10 @@ Rts2GenFocClient::init ()
   Rts2Config *config;
   int ret;
 
+  ret = Rts2Client::init ();
+  if (ret)
+    return ret;
+
   config = Rts2Config::instance ();
   ret = config->loadFile (configFile);
   if (ret)
@@ -376,7 +387,7 @@ Rts2GenFocClient::init ()
 	<< ")" << std::endl;
       return ret;
     }
-  return Rts2Client::init ();
+  return 0;
 }
 
 void
