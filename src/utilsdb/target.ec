@@ -102,7 +102,7 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     _os << std::endl;
   }
 
-  // print alt + az + airmass
+  // print alt + az + airmass or bonus
   std::ostringstream _os2;
   std::ostringstream _os3;
 
@@ -123,11 +123,18 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     getAltAz (&hrz, jd);
     _os << " " << std::setw (3) << hrz.alt;
     _os2 << " " << std::setw (3) << hrz.az;
-    double am = getAirmass (jd);
-    if (am > 9)
-      _os3 << " nan";
+    if (header)
+    {
+      double am = getAirmass (jd);
+      if (am > 9)
+        _os3 << " nan";
+      else
+        _os3 << " " << std::setw (3) << getAirmass (jd);
+    }
     else
-      _os3 << " " << std::setw (3) << getAirmass (jd);
+    {
+      _os3 << " " << getBonus (jd);
+    }
   }
   if (header)
   {
