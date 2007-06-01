@@ -76,6 +76,7 @@ public:
   virtual long isExposing ();
   virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
   virtual int readoutOneLine ();
+  virtual void cancelPriorityOperations ();
   virtual int endReadout ();
 };
 
@@ -227,7 +228,9 @@ CameraEdtSaoChip::fclr (int num)
 	  time (&now);
 	  if (now > end_time)
 	    {
-	      logStream (MESSAGE_ERROR) << "timeout during fclr, phase 1" <<
+	      logStream (MESSAGE_ERROR) <<
+		"timeout during fclr, phase 1. Overrun: " << overrun <<
+		" status & PDV_CHAN_ID1 " << (status & PDV_CHAN_ID1) <<
 		sendLog;
 	      return -1;
 	    }
@@ -659,6 +662,13 @@ CameraEdtSaoChip::readoutOneLine ()
   if (send_top < (char *) dest_top)
     return 0;
   return -2;
+}
+
+void
+CameraEdtSaoChip::cancelPriorityOperations ()
+{
+  CameraChip::cancelPriorityOperations ();
+  init ();
 }
 
 int
