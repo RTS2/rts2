@@ -1773,6 +1773,11 @@ Rts2Image::writeClient (Rts2DevClient * client)
 	    case RTS2_VALUE_BOOL:
 	      setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
 	      break;
+	    case RTS2_VALUE_SELECTION:
+	      setValue (name,
+			((Rts2ValueSelection *) val)->getSelVal ().c_str (),
+			desc);
+	      break;
 	    default:
 	      logStream (MESSAGE_ERROR) <<
 		"Don't know how to write to FITS file header value '" << name
