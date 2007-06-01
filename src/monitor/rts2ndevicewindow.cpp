@@ -107,6 +107,12 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 		   ((Rts2ValueBool *) val)->
 		   getValueBool ()? "true" : "false");
 	  break;
+	case RTS2_VALUE_SELECTION:
+	  wprintw (getWriteWindow (), "%-20s %5i %24s\n",
+		   val->getName ().c_str (),
+		   val->getValueInteger (),
+		   ((Rts2ValueSelection *) val)->getSelVal ().c_str ());
+	  break;
 	default:
 	  wprintw (getWriteWindow (), "%-20s %30s\n",
 		   val->getName ().c_str (), getDisplayValue (val).c_str ());
@@ -177,10 +183,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_F (6):
@@ -219,8 +225,7 @@ Rts2NDeviceWindow::draw ()
     valueBox->draw ();
 }
 
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
