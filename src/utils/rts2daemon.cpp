@@ -148,7 +148,11 @@ Rts2Daemon::init ()
   int ret;
   ret = Rts2Block::init ();
   if (ret)
-    return ret;
+    {
+      logStream (MESSAGE_ERROR) << "Rts2Daemon::init Rts2block returns " <<
+	ret << sendLog;
+      return ret;
+    }
 
   listen_sock = socket (PF_INET, SOCK_STREAM, 0);
   if (listen_sock == -1)
@@ -488,6 +492,8 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
       dup_val = new Rts2ValueSelection (old_value->getName (),
 					old_value->getDescription (),
 					old_value->getWriteToFits ());
+      ((Rts2ValueSelection *) dup_val)->
+	copySel ((Rts2ValueSelection *) old_value);
       if (withVal)
 	((Rts2ValueInteger *) dup_val)->
 	  setValueInteger (old_value->getValueInteger ());

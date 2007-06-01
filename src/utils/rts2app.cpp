@@ -99,16 +99,25 @@ Rts2App::initOptions ()
 	break;
       ret = processOption (c);
       if (ret)
-	return ret;
+	{
+	  logStream (MESSAGE_ERROR) << "Error processing option " << c << " "
+	    << (char) c << sendLog;
+	  return ret;
+	}
     }
 
   delete[]opt_char;
 
   while (optind < argc)
     {
-      ret = processArgs (argv[optind++]);
+      ret = processArgs (argv[optind]);
       if (ret)
-	return ret;
+	{
+	  logStream (MESSAGE_ERROR) << "Error processing arg " << argv[optind]
+	    << sendLog;
+	  return ret;
+	}
+      optind++;
     }
 
   return 0;
@@ -292,10 +301,10 @@ Rts2App::askForString (const char *desc, std::string & val)
   return 0;
 }
 
-bool
-Rts2App::askForBoolean (const char *desc, bool val)
+bool Rts2App::askForBoolean (const char *desc, bool val)
 {
-  char temp[20];
+  char
+    temp[20];
   while (!getEndLoop ())
     {
       std::cout << desc << " (y/n) [" << (val ? "y" : "n") << "]: ";
@@ -349,10 +358,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream
-Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream ls (this, in_messageType);
+  Rts2LogStream
+  ls (this, in_messageType);
   return ls;
 }
 

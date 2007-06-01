@@ -6,6 +6,7 @@
 #include <math.h>
 #include <time.h>
 #include <vector>
+#include <iostream>
 
 #define RTS2_VALUE_STRING	0x00000001
 #define RTS2_VALUE_INTEGER	0x00000002
@@ -295,6 +296,12 @@ public:
     Rts2ValueSelection (std::string in_val_name, std::string in_description,
 			bool writeToFits = false, int32_t displayType = 0);
 
+  virtual int setValue (Rts2Conn * connection);
+
+  int getSelIndex (std::string in_val);
+
+  void copySel (Rts2ValueSelection * sel);
+
   void addSelVal (char *sel_name)
   {
     addSelVal (std::string (sel_name));
@@ -325,6 +332,11 @@ public:
   std::vector < std::string >::iterator selEnd ()
   {
     return valNames.end ();
+  }
+
+  int selSize ()
+  {
+    return valNames.size ();
   }
 
   void duplicateSelVals (Rts2ValueSelection * otherValue);

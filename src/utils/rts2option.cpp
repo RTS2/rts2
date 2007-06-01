@@ -26,7 +26,7 @@ Rts2Option::getOptionChar (char **end_opt)
 void
 Rts2Option::help ()
 {
-  if (isalnum (short_option))
+  if (short_option < 900)
     {
       if (long_option)
 	{

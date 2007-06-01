@@ -32,7 +32,7 @@ Rts2Value::doOpValue (char op, Rts2Value * old_value)
     default:
       logStream (MESSAGE_ERROR) << "unknow op '" << op << "' for type " <<
 	getValueType () << sendLog;
-      return -1;
+      return -2;
     }
 }
 
@@ -89,7 +89,7 @@ Rts2ValueString::setValue (Rts2Conn * connection)
 {
   char *new_value;
   if (connection->paramNextString (&new_value) || !connection->paramEnd ())
-    return -3;
+    return -2;
   setValueString (new_value);
   return 0;
 }
@@ -140,7 +140,7 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
 {
   int new_value;
   if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
-    return -3;
+    return -2;
   value = new_value;
   return 0;
 }
@@ -194,7 +194,7 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
 {
   double new_value;
   if (connection->paramNextDouble (&new_value) || !connection->paramEnd ())
-    return -3;
+    return -2;
   value = new_value;
   return 0;
 }
@@ -260,7 +260,7 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
 {
   float new_value;
   if (connection->paramNextFloat (&new_value) || !connection->paramEnd ())
-    return -3;
+    return -2;
   value = new_value;
   return 0;
 }
@@ -312,6 +312,50 @@ Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name, std::string in_
 		  displayType)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_SELECTION;
+}
+
+int
+Rts2ValueSelection::setValue (Rts2Conn * connection)
+{
+  char *new_value;
+  char *end;
+  if (connection->paramNextString (&new_value) || !connection->paramEnd ())
+    return -2;
+  // try if it's number
+  int ret = strtol (new_value, &end, 10);
+  if (!*end)
+    {
+      setValueInteger (ret);
+      return 0;
+    }
+  ret = getSelIndex (std::string (new_value));
+  if (ret < 0)
+    return -2;
+  setValueInteger (ret);
+  return 0;
+}
+
+int
+Rts2ValueSelection::getSelIndex (std::string in_val)
+{
+  int i = 0;
+  for (std::vector < std::string >::iterator iter = valNames.begin ();
+       iter != valNames.end (); iter++, i++)
+    {
+      if (*iter == in_val)
+	return i;
+    }
+  return -2;
+}
+
+void
+Rts2ValueSelection::copySel (Rts2ValueSelection * sel)
+{
+  for (std::vector < std::string >::iterator iter = sel->selBegin ();
+       iter != sel->selEnd (); iter++)
+    {
+      addSelVal (*iter);
+    }
 }
 
 int
