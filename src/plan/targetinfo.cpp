@@ -33,6 +33,14 @@ get_norm_hour (double JD)
     (double) tmp_date.seconds / 3600.0;
 }
 
+#define GNUPLOT_TYPE_MASK	0x0f
+#define GNUPLOT_TYPE_X11	0x01
+#define GNUPLOT_TYPE_PS		0x02
+#define GNUPLOT_TYPE_PNG	0x03
+#define GNUPLOT_TYPE_EPS	0x04
+
+#define GNUPLOT_BONUS		0x10
+
 class Rts2TargetInfo:public Rts2AppDb
 {
 private:
@@ -43,6 +51,8 @@ private:
   void printTargetInfo ();
   void printTargetInfoGNUplot (double jd_start, double pbeg, double pend,
 			       double step);
+  void printTargetInfoGNUBonus (double jd_start, double pbeg, double pend,
+				double step);
   void printTargetInfoDS9 ();
   bool printSelectable;
   bool printExtendet;
@@ -91,6 +101,7 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('s', NULL, 0, "print only selectable targets");
   addOption ('e', NULL, 1,
 	     "print extended informations (visibility prediction,..)");
+  addOption ('b', NULL, 0, "print bonus of target as well");
   addOption ('g', NULL, 2,
 	     "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
   addOption ('m', NULL, 0, "do not plot moon");
@@ -123,16 +134,19 @@ Rts2TargetInfo::processOption (int in_opt)
     case 'e':
       printExtendet = true;
       break;
+    case 'b':
+      printGNUplot |= GNUPLOT_BONUS;
+      break;
     case 'g':
-      printGNUplot = 1;
+      printGNUplot |= GNUPLOT_TYPE_X11;
       if (optarg)
 	{
 	  if (!strcmp (optarg, "ps"))
-	    printGNUplot = 2;
+	    printGNUplot |= GNUPLOT_TYPE_PS;
 	  if (!strcmp (optarg, "png"))
-	    printGNUplot = 3;
+	    printGNUplot |= GNUPLOT_TYPE_PNG;
 	  if (!strcmp (optarg, "eps"))
-	    printGNUplot = 4;
+	    printGNUplot |= GNUPLOT_TYPE_EPS;
 	}
       break;
     case 'm':
@@ -287,6 +301,17 @@ Rts2TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg,
 }
 
 void
+Rts2TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg,
+					 double pend, double step)
+{
+  for (double i = pbeg; i <= pend; i += step)
+    {
+      std::cout << std::setw (10) << i << " "
+	<< target->getBonus (jd_start + i / 24.0) << std::endl;
+    }
+}
+
+void
 Rts2TargetInfo::printTargetInfoDS9 ()
 {
   target->printDS9Reg (std::cout, JD);
@@ -343,12 +368,23 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	<< "set yrange [0:90] noreverse" << std::endl
 	<< "set xrange [sset:rise] noreverse" << std::endl
 	<< "set xlabel \"Time UT [h]\"" << std::endl
-	<< "set ylabel \"altitude\"" << std::
-	endl << "set y2label \"airmass\"" << std::
-	endl <<
-	"set y2tics ( \"1.00\" 90, \"1.05\" 72.25, \"1.10\" 65.38, \"1.20\" 56.44, \"1.30\" 50.28 , \"1.50\" 41.81, \"2.00\" 30, \"3.00\" 20, \"6.00\" 10)"
-	<< std::
-	endl << "set arrow from sset,10 to rise,10 nohead lt 0" << std::
+	<< "set ylabel \"altitude\"" << std::endl;
+
+      if (printGNUplot & GNUPLOT_BONUS)
+	{
+	  std::cout << "set y2label \"bonus\"" << std::endl;
+	}
+      else
+	{
+	  std::cout
+	    << "set y2label \"airmass\"" << std::endl
+	    <<
+	    "set y2tics ( \"1.00\" 90, \"1.05\" 72.25, \"1.10\" 65.38, \"1.20\" 56.44, \"1.30\" 50.28 , \"1.50\" 41.81, \"2.00\" 30, \"3.00\" 20, \"6.00\" 10)"
+	    << std::endl;
+	}
+
+      std::cout
+	<< "set arrow from sset,10 to rise,10 nohead lt 0" << std::
 	endl << "set arrow from sset,20 to rise,20 nohead lt 0" << std::
 	endl << "set arrow from sset,30 to rise,30 nohead lt 0" << std::
 	endl << "set arrow from sset,41.81 to rise,41.81 nohead lt 0" << std::
@@ -374,15 +410,15 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	}
       std::cout << ')' << std::endl;
 
-      switch (printGNUplot)
+      switch (printGNUplot & GNUPLOT_TYPE_MASK)
 	{
-	case 2:
+	case GNUPLOT_TYPE_PS:
 	  std::cout << "set terminal postscript color solid";
 	  break;
-	case 3:
+	case GNUPLOT_TYPE_PNG:
 	  std::cout << "set terminal png";
 	  break;
-	case 4:
+	case GNUPLOT_TYPE_EPS:
 	  std::cout << "set terminal postscript eps color solid";
 	  break;
 	default:
@@ -428,6 +464,14 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	    << "     \"-\" u 1:2 smooth csplines lw 2 t \""
 	    << target->getTargetName ()
 	    << " (" << target->getTargetID () << ")\"";
+	  if (printGNUplot & GNUPLOT_BONUS)
+	    {
+	      std::cout
+		<< ", \\" << std::endl
+		<< "     \"-\" u 1:2 smooth csplines lw 2 t \"bonus for "
+		<< target->getTargetName ()
+		<< " (" << target->getTargetID () << ")\" axes x1y2";
+	    }
 	}
       std::cout << std::endl;
     }
@@ -482,6 +526,11 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	{
 	  printTargetInfoGNUplot (jd_start, sset, rise, step);
 	  std::cout << "e" << std::endl;
+	  if (printGNUplot & GNUPLOT_BONUS)
+	    {
+	      printTargetInfoGNUBonus (jd_start, sset, rise, step);
+	      std::cout << "e" << std::endl;
+	    }
 	}
       else
 	{
