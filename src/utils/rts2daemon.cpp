@@ -65,7 +65,9 @@ int
 Rts2Daemon::checkLockFile (const char *lock_fname)
 {
   int ret;
-  lockf = open (lock_fname, O_RDWR | O_CREAT);
+  mode_t old_mask = umask (022);
+  lockf = open (lock_fname, O_RDWR | O_CREAT, 0666);
+  umask (old_mask);
   if (lockf == -1)
     {
       logStream (MESSAGE_ERROR) << "cannot open lock file " << lock_fname <<
