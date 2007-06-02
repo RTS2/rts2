@@ -56,12 +56,12 @@
     <title>SYNOPSIS</title>
 
     <para>
-      Scripting is used to command variours devices which can be found in RTS2 setup.
+      Scripting is used to command various devices, which can be found in RTS2 setup.
     </para>
 
     <para>
-      Script can contains block, enclosed in curved brackets ({}).
-      Those block ussually cames after for, if and similar commands.
+      Script can contain block, enclosed in curved brackets ({}).
+      This block ussually comes after 'for', 'if' and similar commands.
     </para>
 
   </refsect1>
@@ -69,11 +69,11 @@
     <title>COMMANDS</title>
 
     <para>
-      Commands are separated by arbitary number of spaces.  As
-      notation, parameters are in following description enclosed in
-      {curved brackets}, explanation of their meaning is given in
-      text.  Numerical values are entered in standard decimal
-      notation.
+      Commands are separated by an arbitrary number of spaces. 
+      Here in this description we use parameters enclosed in
+      {curved brackets}, and afterwards explanation of their 
+      meaning is given in text.  Numerical values are entered 
+      in standard decimal notation.
     </para>
 
     <variablelist>
@@ -95,7 +95,7 @@
 	</term>
 	<listitem>
 	  <para>
-	    Takes dark frame, usefull for callibration. Exposure time is specified
+	    Takes dark frame, useful for calibration. Exposure time is specified
 	    in seconds.
 	  </para>
 	</listitem>
@@ -115,7 +115,7 @@
 
       <varlistentry>
         <term>
-	  <option>O {unknow}</option>
+	  <option>O {unknown}</option>
 	</term>
 	<listitem>
 	  <para>
@@ -131,11 +131,11 @@
 	<listitem>
 	  <para>
 	    Change mount position before next exposure by {ra_diff}
-	    and {dec_diff}. Wait for time when no exposure are
-	    running, then perform move, then continue exposing.
+	    and {dec_diff}. Wait until no exposure is
+	    going on, then perform move, then continue exposing.
 	  </para>
 	  <para>
-	    {ra_diff} and {dec_diff} are in arcdegrees.
+	    {ra_diff} and {dec_diff} are in degrees.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -151,7 +151,7 @@
 	    images which are aligned on hexagonal path.
 	  </para>
 	  <para>
-	    {ra_diff} and {dec_diff} are in arcdegrees.
+	    {ra_diff} and {dec_diff} are in degrees.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -163,11 +163,11 @@
 	<listitem>
 	  <para>
 	    Change mount position in 5x5 rectangular pattern after finishing
-	    [block] and execute [block] again. This will produce images which
+	    [block] and execute [block] again. This will produce images, which
 	    are aligned on rectangular path.
 	  </para>
 	  <para>
-	    {ra_diff} and {dec_diff} are in arcdegrees.
+	    {ra_diff} and {dec_diff} are in degrees.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -190,19 +190,19 @@
 	</term>
 	<listitem>
 	  <para>
-	    Readout area of chip, specified by pixel coordinates of
-	    upper left cornen (x and y) and width and heigh.
+	    Readout only area of the chip, specified by pixel coordinates of
+	    upper left corner (x and y) and by area width and height.
 	  </para>
 	</listitem>
       </varlistentry>
 
       <varlistentry>
         <term>
-	  <option>CENTER {width} {heigh} </option>
+	  <option>CENTER {width} {height} </option>
 	</term>
 	<listitem>
 	  <para>
-	    Readout center of chip of provided width and heigh (in
+	    Readout center of the chip of provided width and height (in
 	    pixels).
 	  </para>
 	</listitem>
@@ -225,12 +225,13 @@
 	</term>
 	<listitem>
 	  <para>
-	    Take image of {exposure_time}, try astrometry, wait for
-	    result. If image is not within {precision} degrees from
-	    target position, repeat it. It can take more images, as
-	    long as precission of last image is at least twice better
-	    then previous image - e.g. if o1 is offset of last image,
-	    and o0 is offset of previous one, o1 &lt; o2 / 2.
+	    Takes an image of {exposure_time}, tries astrometry, waits for
+	    a result. If the image is not within {precision} in degrees from
+	    a target position, then the procedure is repeated. 
+            It will continue and it will take multiple images, as
+	    long as precision of the last image is at least twice better
+	    than previous image - e.g. if o1 is offset of the last image,
+	    and o0 is offset of previous one, o1 &lt; o0 / 2.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -241,9 +242,9 @@
 	</term>
 	<listitem>
 	  <para>
-	    Wait for finish of A command on other camera. If there
-	    isn't any script with A command for any device, it will
-	    pass to next command.
+	    Wait until A command on other camera is finished. If there
+	    is no running script with A command on any other device, it will
+	    continue with the next command.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -266,9 +267,9 @@
 	</term>
 	<listitem>
 	  <para>
-	    Do measurements on photometer. Filter is filter number
-	    (integer), exposure is exposure time in seconds (float
-	    number), and count is integer specifing how many
+	    Do measurements using photometer. {filter} is filter number
+	    (integer), {exposure} is exposure time in seconds (float
+	    number), and {count} is integer specifying how many
 	    measurements will be taken.
 	  </para>
 	</listitem>
@@ -280,12 +281,13 @@
 	</term>
 	<listitem>
 	  <para>
-	    Try to find on image stars with (raw) flux large than
-	    {min_flux}. Exposure lenght and required precision from
-	    star center can be specified. {repeat_number} specified
+	    Try to find stars with (raw) flux larger than
+	    {min_flux} on the image. Exposure length and required precision  from
+	    star center can be specified. {repeat_number} specifies
 	    how many time will be search performed. If star brighter
-	    then {min_flux} is not found on taken image, telescope is
-	    shift on spherical path in order to find a bright star.
+	    than {min_flux} is not found on the taken image, telescope is
+	    moved on the spiral path around target coordinates 
+            in order to find a bright star.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -296,9 +298,9 @@
 	</term>
 	<listitem>
 	  <para>
-	    Do cross search of maxima on photometer. Radius specify
-	    radius in degrees, which will be searched, and speed
-	    specified speed which will be used.
+	    Do cross-shaped search of maxima on photometer. {radius} specifies
+	    size of the arms in degrees, which will be searched, and speed
+	    specifies speed which will be used.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -321,10 +323,10 @@
 	<listitem>
 	  <para>
 	    Start guiding on given camera. Exposure of {exposure_time}
-	    lenght are taken, brightest stars on them is founded, and
-	    correction commands are then feed to telescope. When
+	    length is taken, brightest stars on the image are identified, and
+	    correction commands are then feed to the telescope. When
 	    {end_signal} is sended (using SS command), guiding loop is
-	    stoped.
+	    stopped.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -335,7 +337,7 @@
 	</term>
 	<listitem>
 	  <para>
-	    Start given commands only if acquistion of target ended
+	    Start given commands only if acquisition of target ended
 	    sucessfully.
 	  </para>
 	</listitem>
@@ -358,8 +360,8 @@
 	</term>
 	<listitem>
 	  <para>
-	    Search for HAM source. It is similar as searching for
-	    stars, but terrestial movement commands are used.
+	    Search for terrestrial light source (HAM). It is similar as searching for
+	    stars, but terrestrial movement commands are used.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -383,8 +385,8 @@
 	</term>
 	<listitem>
 	  <para>
-	    Wait for signal. Execution of script is paused until
-	    signal with given number is send.
+	    Wait for a signal. Execution of the script is paused until
+	    the signal with given number ({}) is send.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -423,7 +425,7 @@
 	</term>
 	<listitem>
 	  <para>
-	    Temporaly boost target for {seconds}. It changes value of
+	    Temporary boost of target for {seconds}. It changes value of
 	    TARGET BONUS and TARGET BONUS TIME fields. Those fields
 	    can be changed by rts2-target (1) command executed with -b
 	    and -t options.
