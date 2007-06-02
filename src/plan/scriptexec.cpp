@@ -72,8 +72,8 @@ Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc
   waitState = 0;
   currentTarget = NULL;
 
-  addOption ('d', "device", 1, "name of next script device");
-  addOption ('s', "script", 1, "device script (for device specified with d)");
+  addOption ('d', NULL, 1, "name of next script device");
+  addOption ('s', NULL, 1, "device script (for device specified with d)");
 }
 
 Rts2ScriptExec::~Rts2ScriptExec (void)

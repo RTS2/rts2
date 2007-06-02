@@ -547,7 +547,7 @@ Rts2Daemon (in_argc, in_argv)
 
   device_name = default_name;
   centrald_host = "localhost";
-  centrald_port = 617;
+  centrald_port = atoi (CENTRALD_PORT);
   log_option = 0;
 
   state = 0;
@@ -559,11 +559,11 @@ Rts2Daemon (in_argc, in_argv)
   mailAddress = NULL;
 
   // now add options..
-  addOption ('L', "hostname", 1,
+  addOption (OPT_LOCALHOST, "localhost", 1,
 	     "hostname, if it different from return of gethostname()");
-  addOption ('S', "centrald_host", 1,
+  addOption (OPT_SERVER, "server", 1,
 	     "name of computer, on which central server runs");
-  addOption ('P', "centrald_port", 1, "port number of central host");
+  addOption (OPT_PORT, "port", 1, "port number of central host");
   addOption ('M', "mail-to", 1, "send report mails to this adresses");
   addOption ('d', "device_name", 1, "name of device");
 }
@@ -631,13 +631,13 @@ Rts2Device::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'L':
+    case OPT_LOCALHOST:
       device_host = optarg;
       break;
-    case 'S':
+    case OPT_SERVER:
       centrald_host = optarg;
       break;
-    case 'P':
+    case OPT_PORT:
       centrald_port = atoi (optarg);
       break;
     case 'M':

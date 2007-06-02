@@ -19,6 +19,8 @@
 #include "rts2devclient.h"
 #include "rts2logstream.h"
 
+#include <config.h>
+
 Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, char *in_name):
 Rts2Conn (in_master)
 {
@@ -164,14 +166,14 @@ Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc,
 	   in_argv)
 {
   central_host = "localhost";
-  central_port = "617";
+  central_port = CENTRALD_PORT;
 
   login = "petr";
   password = "petr";
 
-  addOption ('S', "centrald_server", 1,
+  addOption (OPT_SERVER, "server", 1,
 	     "hostname of central server; default to localhost");
-  addOption ('q', "centrald_port", 1, "port of centrald server");
+  addOption (OPT_PORT, "port", 1, "port of centrald server");
 }
 
 Rts2Client::~Rts2Client (void)
@@ -183,10 +185,10 @@ Rts2Client::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'S':
+    case OPT_SERVER:
       central_host = optarg;
       break;
-    case 'q':
+    case OPT_PORT:
       central_port = optarg;
       break;
     default:

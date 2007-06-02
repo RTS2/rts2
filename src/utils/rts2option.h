@@ -10,9 +10,12 @@
 #define OPT_DATABASE	1000
 #define OPT_CONFIG	1001
 
+#define OPT_LOCALHOST	1002
+#define OPT_SERVER	1003
+#define OPT_PORT	1004
+
 // here starts local playground..
 #define OPT_LOCAL	10000
-
 
 class Rts2Option
 {

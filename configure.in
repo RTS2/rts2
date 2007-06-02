@@ -257,6 +257,17 @@ AH_TEMPLATE([LOCK_PREFIX],[Lock file prefix path])
 
 AC_DEFINE_UNQUOTED(LOCK_PREFIX, "$LOCK_PREFIX", [Lock file prefix path])
 
+# Default centrald port
+AC_ARG_WITH(port,
+[  --with-port             default centrald port. If this value is not specified, 617 is used],
+CENTRALD_PORT="${withval}",
+CENTRALD_PORT="617")
+
+AH_TEMPLATE([CENTRALD_PORT],[Default centrald port])
+
+AC_DEFINE_UNQUOTED(CENTRALD_PORT, "$CENTRALD_PORT", [Default centrald port])
+
+
 # Checks for libraries.
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -504,6 +515,7 @@ gpib            ${GPIBLIB}
 INDI            ${INDI}
 
 lock prefix     ${LOCK_PREFIX}
+centrald port	${CENTRALD_PORT}
 
 ***************************************
 
