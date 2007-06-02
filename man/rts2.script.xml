@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-05-23</date>">
+  <!ENTITY dhdate      "<date>2007-06-02</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -28,6 +28,11 @@
 	<address>
           &dhemail;
 	</address>
+      </author>
+      <author>
+	<firstname>Michael</firstname>
+	<surname>Prouza</surname>
+	<contrib>Contributed to the man page</contrib>
       </author>
     </authorgroup>
     <copyright>
@@ -439,6 +444,10 @@
     <title>EXAMPLES</title>
 
     <para>focpos-=50 for 10 { E 10 focpos+=10 }</para>
+
+    <para>for 3 { E 1 E 5 E 10 SPL_MODE+=1 }</para>
+
+    <para>for 3 { GAIN=0 for 10 { E 1 GAIN+=1 } SPL_MODE+=1 }</para>
 
   </refsect1>
   <refsect1>
