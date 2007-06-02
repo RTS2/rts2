@@ -80,8 +80,10 @@
     <title>DESCRIPTION</title>
 
     <para>
-      <command>&dhpackage;</command> enable execution of different script on
-      the specified devices. It is aimed to users who wish to run script on devices without supporting infrastructure of the <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+      <command>&dhpackage;</command> enables execution of different scripts on
+      the specified devices. It is dedicated for users who wish to run scripts on devices without 
+      supporting infrastructure of the 
+    <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
     </para>
 
   </refsect1>
@@ -89,8 +91,8 @@
     <title>OPTIONS</title>
 
     <para>
-      These programs follow the usual &gnu; command line syntax,
-      with long options starting with two dashes (`-').  A summary of
+      This program follows the usual &gnu; command line syntax,
+      with long options starting with two dashes (`--').  A summary of
       options is included below.
     </para>
 
@@ -114,8 +116,8 @@
           <para>
 	    Specify name of the host, which runs
 	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
-	    This option is needed only on setups which uses multiple computers.
-	    It defaults to localhost, which will work on simple setups.
+	    This option is needed only for setups that use multiple computers.
+	    Its default is localhost. Default will work for simple setups.
 	  </para>
         </listitem>
       </varlistentry>
@@ -126,7 +128,7 @@
 	    Specify port of the
 	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
 	    It defaults to RTS2 default port, specified during system
-	    configuration. This value is ussualy 617.
+	    configuration. This value is usually 617.
 	  </para>
         </listitem>
       </varlistentry>
@@ -134,10 +136,10 @@
         <term><option>-d <replaceable class="parameter">device name</replaceable></option></term>
         <listitem>
           <para>
-	    Specify device which will be used. The most common is "C0", for
-	    first cammera. Check
+	    Specify a device that will be used. The most common one is "C0", for
+	    the main camera. Check
 	    <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-	    for list of the devices present in your setup.
+	    for a list of the devices that are present in your setup.
 	  </para>
         </listitem>
       </varlistentry>
@@ -145,7 +147,7 @@
         <term><option>-s <replaceable class="parameter">script</replaceable></option></term>
         <listitem>
           <para>
-	    Specify script which will be excuted. This option must be preceeded
+	    Specify script that will be executed. This option MUST be preceeded
 	    with <option>-d</option> option. For details of the script syntax,
 	    please see
 	    <citerefentry><refentrytitle>rts2.script</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
@@ -158,7 +160,7 @@
     <title>COMMAND OUTPUT</title>
 
     <para>
-      Output to standart output are logging mesages from the application.
+      Output goes to standard output and it consists of logging messages from the application.
     </para>
 
   </refsect1>
@@ -166,7 +168,7 @@
     <title>EXAMPLES</title>
 
     <para>
-      Following command will execute simple sxript, which takes 10 times 5 and 10 second exposures, on device C0.
+      The following example will execute simple script that takes 10 times 5 and 10 second exposures using device C0.
     </para>
 
     <screen>
