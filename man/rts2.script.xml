@@ -32,7 +32,7 @@
       <author>
 	<firstname>Michael</firstname>
 	<surname>Prouza</surname>
-	<contrib>Contributed to the man page</contrib>
+	<contrib>Contributed to the man page.</contrib>
       </author>
     </authorgroup>
     <copyright>
@@ -114,6 +114,55 @@
 	  <para>
 	    Changes filter on camera filter wheel. Filter numbers are
 	    always counted from 0.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <replaceable>{value name}</replaceable><replaceable>operation</replaceable><replaceable>{new value}</replaceable>
+	</term>
+	<listitem>
+	  <para>
+	    Perform value change of the specified value. <replaceable>value
+	    name</replaceable> is name of the value, <replaceable>new
+	    value</replaceable> is new value, either as string, or number in
+	    decimal notation. <replaceable>operation</replaceable> can be one
+	    of the following:
+	    <variablelist>
+  	      <varlistentry>
+	        <term>
+		  <option>=</option>
+		</term>
+		<para>
+		  Set new value. It works with all types of variables.
+		</para>
+	      </varlistentry>
+  	      <varlistentry>
+	        <term>
+		  <option>+=</option>
+		</term>
+		<para>
+		  Increase value. Works only with numeric values.
+		</para>
+	      </varlistentry>
+  	      <varlistentry>
+	        <term>
+		  <option>-=</option>
+		</term>
+		<para>
+		  Decrease value. Works only with numeric values.
+		</para>
+	      </varlistentry>
+	    </variablelist>
+	    Please see EXAMPLES section for sample scripts, which might clear
+	    how this command operates better than the description.
+	  </para>
+	  <para>
+	    Value name, operation and new value must be written without space.
+	    This is invalid syntax: <option>focpos +=10</option>,
+	    <option>focpos+= 10</option>. This is valid:
+	    <option>focpos+=10</option>.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -448,6 +497,8 @@
     <para>for 3 { E 1 E 5 E 10 SPL_MODE+=1 }</para>
 
     <para>for 3 { GAIN=0 for 10 { E 1 GAIN+=1 } SPL_MODE+=1 }</para>
+
+    <para>GAIN=20 for 3 { E 1 GAIN-=1 }</para>
 
   </refsect1>
   <refsect1>
