@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='ISO-8859-1'?>
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
@@ -74,6 +74,9 @@
         <arg choice="plain"><option>-e</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-b</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-g<replaceable>gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -106,6 +109,7 @@
       <arg choice="opt">
         <arg choice="plain"><option>-9</option></arg>
       </arg>
+      <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -158,6 +162,14 @@
         <listitem>
           <para>Print extended information about source - visibility in next 10 hours and next 10 days.</para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-b</option></term>
+	<listitem>
+	  <para>
+	    Prints target bonus. It is only usefull with <option>-g</option>. 
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></term>
@@ -384,6 +396,19 @@
 	</listitem>
       </varlistentry>
     </variablelist>
+
+  </refsect1>
+
+  <refsect1>
+    <title>EXAMPLES</title>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-b</option> <option>-g<replaceable>ps</replaceable></option> <replaceable>1000</replaceable> | <command>gnuplot</command>
+    </screen>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-c</option> <replaceable>1000</replaceable>
+    </screen>
 
   </refsect1>
   <refsect1>
