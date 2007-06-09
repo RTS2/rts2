@@ -193,7 +193,7 @@ private:
   double defaultSubExposure;
   Rts2ValueDouble *subExposure;
 
-  Rts2ValueInteger *camFilterVal;
+  Rts2ValueSelection *camFilterVal;
   Rts2ValueInteger *camFocVal;
   Rts2ValueInteger *camShutterVal;
 
@@ -246,6 +246,8 @@ public:
   virtual int initValues ();
   void checkExposures ();
   void checkReadouts ();
+
+  virtual void deviceReady (Rts2Conn * conn);
 
   virtual void postEvent (Rts2Event * event);
 

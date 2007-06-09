@@ -755,6 +755,21 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 }
 
 void
+Rts2DevCamera::deviceReady (Rts2Conn * conn)
+{
+  // if that's filter wheel
+  if (wheelDevice && !strcmp (conn->getName (), wheelDevice)
+      && conn->getOtherDevClient ())
+    {
+      // copy content of device filter variable to our list..
+      Rts2Value *val = conn->getOtherDevClient ()->getValue ("filter");
+      // it's filter and it's correct type
+      if (val->getValueType () == RTS2_VALUE_SELECTION)
+	camFilterVal->duplicateSelVals ((Rts2ValueSelection *) val);
+    }
+}
+
+void
 Rts2DevCamera::postEvent (Rts2Event * event)
 {
   switch (event->getType ())

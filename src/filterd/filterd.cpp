@@ -5,12 +5,27 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
   createValue (filter, "filter", "used filter", false);
 
+  addOption ('F', NULL, 1, "filter names, separated by space(s)");
+
   filterType = NULL;
   serialNumber = NULL;
 }
 
 Rts2DevFilterd::~Rts2DevFilterd (void)
 {
+}
+
+int
+Rts2DevFilterd::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'F':
+      return setFilters (optarg);
+    default:
+      return Rts2Device::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -56,12 +71,44 @@ Rts2DevFilterd::homeFilter ()
 }
 
 int
+Rts2DevFilterd::setFilters (char *filters)
+{
+  char *top;
+  while (*filters)
+    {
+      // skip leading spaces
+      while (*filters
+	     && (*filters == ':' || *filters == '"' || *filters == '\''))
+	filters++;
+      if (!*filters)
+	break;
+      top = filters;
+      // find filter string
+      while (*top && *top != ':' && *top != '"' && *top != '\'')
+	top++;
+      // it's natural end, add and break..
+      if (!*top)
+	{
+	  if (top != filters)
+	    filter->addSelVal (filters);
+	  break;
+	}
+      *top = '\0';
+      filter->addSelVal (filters);
+      filters = top + 1;
+    }
+  if (filter->selSize () == 0)
+    return -1;
+  return 0;
+}
+
+int
 Rts2DevFilterd::setFilterNumMask (int new_filter)
 {
   int ret;
   maskState (FILTERD_MASK, FILTERD_MOVE, "filter move started");
   ret = setFilterNum (new_filter);
-  Rts2Device::infoAll ();
+  infoAll ();
   if (ret == -1)
     {
       maskState (DEVICE_ERROR_MASK | FILTERD_MASK,

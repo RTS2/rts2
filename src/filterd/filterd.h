@@ -14,12 +14,22 @@
 class Rts2DevFilterd:public Rts2Device
 {
 private:
+  /**
+   * Set filter names from space separated argument list.
+   *
+   * @return -1 on error, otherwise 0.
+   */
+  int setFilters (char *filters);
   int setFilterNumMask (int new_filter);
 protected:
   char *filterType;
   char *serialNumber;
 
-  Rts2ValueInteger *filter;
+  Rts2ValueSelection *filter;
+
+  virtual int processOption (int in_opt);
+
+  virtual int initValues ();
 
   virtual int getFilterNum (void);
   virtual int setFilterNum (int new_filter);
@@ -29,8 +39,6 @@ protected:
 public:
     Rts2DevFilterd (int in_argc, char **in_argv);
     virtual ~ Rts2DevFilterd (void);
-
-  virtual int initValues ();
 
   virtual int info ();
 
