@@ -372,7 +372,9 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 
       if (printGNUplot & GNUPLOT_BONUS)
 	{
-	  std::cout << "set y2label \"bonus\"" << std::endl;
+	  std::cout
+	    << "set y2label \"bonus\"" << std::endl
+	    << "set y2range [0:]" << std::endl << "set y2tics" << std::endl;
 	}
       else
 	{
