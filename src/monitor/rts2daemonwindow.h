@@ -60,6 +60,10 @@ public:
   {
     lineOffset = new_lineOffset;
   }
+  int getPadoffY ()
+  {
+    return padoff_y;
+  }
 };
 
 class Rts2NDevListWindow:public Rts2NSelWindow

@@ -159,6 +159,7 @@ Rts2NDeviceWindow::createValueBox ()
       Rts2Value *val = connection->getOtherDevClient ()->valueAt (s);
       if (!val)
 	return;
+      s -= getPadoffY ();
       switch (val->getValueType ())
 	{
 	case RTS2_VALUE_BOOL:
@@ -183,10 +184,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_F (6):
@@ -225,7 +226,8 @@ Rts2NDeviceWindow::draw ()
     valueBox->draw ();
 }
 
-bool Rts2NDeviceWindow::setCursor ()
+bool
+Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
