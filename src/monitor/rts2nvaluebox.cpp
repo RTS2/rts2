@@ -23,7 +23,8 @@ Rts2NSelWindow (top->getX () + x, top->getY () + y, 10, 4)
     setSelRow (1);
 }
 
-keyRet Rts2NValueBoxBool::injectKey (int key)
+keyRet
+Rts2NValueBoxBool::injectKey (int key)
 {
   switch (key)
     {
@@ -59,7 +60,8 @@ Rts2NValueBoxBool::sendValue (Rts2Conn * connection)
 					getSelRow () == 0));
 }
 
-bool Rts2NValueBoxBool::setCursor ()
+bool
+Rts2NValueBoxBool::setCursor ()
 {
   return false;
 }
@@ -72,8 +74,7 @@ Rts2NWindowEditIntegers (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
   wprintw (getWriteWindow (), "%i", in_val->getValueInteger ());
 }
 
-keyRet
-Rts2NValueBoxInteger::injectKey (int key)
+keyRet Rts2NValueBoxInteger::injectKey (int key)
 {
   return Rts2NWindowEditIntegers::injectKey (key);
 }
@@ -105,7 +106,8 @@ Rts2NValueBoxInteger::sendValue (Rts2Conn * connection)
 					getValue ()->getName (), '=', tval));
 }
 
-bool Rts2NValueBoxInteger::setCursor ()
+bool
+Rts2NValueBoxInteger::setCursor ()
 {
   return Rts2NWindowEditIntegers::setCursor ();
 }
@@ -120,8 +122,7 @@ Rts2NWindowEditDigits (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
   wprintw (getWriteWindow (), "%f", in_val->getValueFloat ());
 }
 
-keyRet
-Rts2NValueBoxFloat::injectKey (int key)
+keyRet Rts2NValueBoxFloat::injectKey (int key)
 {
   return Rts2NWindowEditDigits::injectKey (key);
 }
@@ -153,7 +154,8 @@ Rts2NValueBoxFloat::sendValue (Rts2Conn * connection)
 					getValue ()->getName (), '=', tval));
 }
 
-bool Rts2NValueBoxFloat::setCursor ()
+bool
+Rts2NValueBoxFloat::setCursor ()
 {
   return Rts2NWindowEditDigits::setCursor ();
 }
@@ -166,8 +168,7 @@ Rts2NWindowEditDigits (top->getX () + x, top->getY () + y, 20, 3, 1, 1, 300,
   wprintw (getWriteWindow (), "%f", in_val->getValueDouble ());
 }
 
-keyRet
-Rts2NValueBoxDouble::injectKey (int key)
+keyRet Rts2NValueBoxDouble::injectKey (int key)
 {
   return Rts2NWindowEditDigits::injectKey (key);
 }
@@ -199,7 +200,65 @@ Rts2NValueBoxDouble::sendValue (Rts2Conn * connection)
 					getValue ()->getName (), '=', tval));
 }
 
-bool Rts2NValueBoxDouble::setCursor ()
+bool
+Rts2NValueBoxDouble::setCursor ()
 {
   return Rts2NWindowEditDigits::setCursor ();
+}
+
+Rts2NValueBoxSelection::Rts2NValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * in_val, int x, int y):
+Rts2NValueBox (top, in_val),
+Rts2NSelWindow (top->getX () + x, top->getY () + y, 15, 5)
+{
+  maxrow = 0;
+  setLineOffset (0);
+  setSelRow (in_val->getValueInteger ());
+}
+
+keyRet
+Rts2NValueBoxSelection::injectKey (int key)
+{
+  switch (key)
+    {
+    case KEY_ENTER:
+    case K_ENTER:
+      return RKEY_ENTER;
+    case KEY_EXIT:
+    case K_ESC:
+      return RKEY_ESC;
+    }
+  return Rts2NSelWindow::injectKey (key);
+}
+
+void
+Rts2NValueBoxSelection::draw ()
+{
+  Rts2NSelWindow::draw ();
+  werase (getWriteWindow ());
+  Rts2ValueSelection *vals = (Rts2ValueSelection *) getValue ();
+  maxrow = 0;
+  for (std::vector < std::string >::iterator iter = vals->selBegin ();
+       iter != vals->selEnd (); iter++, maxrow++)
+    {
+      mvwprintw (getWriteWindow (), maxrow, 1, (*iter).c_str ());
+    }
+  refresh ();
+}
+
+void
+Rts2NValueBoxSelection::sendValue (Rts2Conn * connection)
+{
+  if (!connection->getOtherDevClient ())
+    return;
+  connection->
+    queCommand (new
+		Rts2CommandChangeValue (connection->getOtherDevClient (),
+					getValue ()->getName (), '=',
+					getSelRow ()));
+}
+
+bool
+Rts2NValueBoxSelection::setCursor ()
+{
+  return false;
 }

@@ -178,16 +178,21 @@ Rts2NDeviceWindow::createValueBox ()
 	  valueBox =
 	    new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
 	  break;
+	case RTS2_VALUE_SELECTION:
+	  valueBox =
+	    new Rts2NValueBoxSelection (this, (Rts2ValueSelection *) val, 21,
+					s);
+	  break;
 	default:
 	  break;
 	}
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_F (6):
@@ -226,8 +231,7 @@ Rts2NDeviceWindow::draw ()
     valueBox->draw ();
 }
 
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();

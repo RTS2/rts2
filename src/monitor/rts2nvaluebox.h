@@ -88,4 +88,18 @@ public:
   virtual bool setCursor ();
 };
 
+/**
+ * Holds edit box for selection value.
+ */
+class Rts2NValueBoxSelection:public Rts2NValueBox, public Rts2NSelWindow
+{
+public:
+  Rts2NValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * in_val,
+			  int x, int y);
+  virtual keyRet injectKey (int key);
+  virtual void draw ();
+  virtual void sendValue (Rts2Conn * connection);
+  virtual bool setCursor ();
+};
+
 #endif /* !__RTS2_NVALUEBOX__ */
