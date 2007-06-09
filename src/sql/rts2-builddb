@@ -37,8 +37,27 @@ $PSQLDB < update/rel_0_7_0.sql
 
 $PSQLDB < init_data.sql
 
+# if asked, load Landoldts and planets
+echo -n "Would you like to create Landolt calibration fields targets [Y|n]?"
+read repl
+
+if [ "x$repl" = 'xY' -o "x$repl" = 'xy' -o "x$repl" = 'x' ]; then
+  $PSQLDB < data/landolt.sql
+  echo "Landolt fields targets created."
+else
+  echo "Landolt fields targets skipped."
+fi
+
+echo -n "Would you like to create targets for planets [Y|n]?"
+read repl
+if [ "x$repl" = 'xY' -o "x$repl" = 'xy' -o "x$repl" = 'x' ]; then
+  $PSQLDB < data/planets.sql
+  echo "Planet targets created"
+else
+  echo "Planet targets skipped."
+fi
+
+
 # grant rights
 
 $PSQLDB < grant.sql
-
-
