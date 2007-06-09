@@ -88,6 +88,8 @@ private:
   time_t tar_bonus_time;
   time_t tar_next_observable;
 
+  void writeAirmass (std::ostream & _os, double jd);
+
   void printAltTable (std::ostream & _os, double jd_start, double h_start,
 		      double h_end, double h_step = 1.0, bool header = true);
   void printAltTable (std::ostream & _os, double JD);

@@ -67,6 +67,15 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
   }
 }
 
+void
+Target::writeAirmass (std::ostream & _os, double jd)
+{
+  double am = getAirmass (jd);
+  if (am > 9)
+    _os << " nan";
+  else
+    _os << std::setw (4) << getAirmass (jd);
+}
 
 void
 Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step, bool header)
@@ -125,11 +134,8 @@ Target::printAltTable (std::ostream & _os, double jd_start, double h_start, doub
     _os2 << " " << std::setw (3) << hrz.az;
     if (header)
     {
-      double am = getAirmass (jd);
-      if (am > 9)
-        _os3 << " nan";
-      else
-        _os3 << " " << std::setw (3) << getAirmass (jd);
+      _os3 << " ";
+      writeAirmass (_os3, jd);
     }
     else
     {
@@ -1499,9 +1505,10 @@ Target::printShortInfo (std::ostream & _os, double JD)
     << std::setw (5) << getTargetID () << SEP
     << getTargetType () << SEP
     << std::left << std::setw (40) << (name ? name :  "null") << std::right << SEP
-    << raDec << SEP
-    << std::setw (5) << getAirmass (JD) << SEP
-    << hrzP;
+    << raDec << SEP;
+  writeAirmass (_os, JD);
+  _os
+    << SEP << hrzP;
   _os.precision (old_prec);
 }
 
@@ -1531,9 +1538,10 @@ Target::printShortBonusInfo (std::ostream & _os, double JD)
     << std::setw (7) << getBonus (JD) << SEP
     << getTargetType () << SEP
     << std::left << std::setw (40) << (name ? name :  "null") << std::right << SEP
-    << raDec << SEP
-    << std::setw (5) << getAirmass (JD) << SEP
-    << hrzP;
+    << raDec << SEP;
+  writeAirmass (_os, JD);
+  _os 
+    << SEP << hrzP;
   _os.precision (old_prec);
 }
 
