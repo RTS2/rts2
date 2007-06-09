@@ -12,7 +12,7 @@
 
 #include "objectcheck.h"
 
-#define SEP	"\t"
+#define SEP	" "
 
 class Rts2Config
 {
