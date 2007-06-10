@@ -77,6 +77,9 @@
         <arg choice="plain"><option>-b</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-B</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-g<replaceable>gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -164,14 +167,6 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-b</option></term>
-	<listitem>
-	  <para>
-	    Prints target bonus. It is only usefull with <option>-g</option>. 
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
         <term><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></term>
         <listitem>
           <para>
@@ -203,6 +198,27 @@
 	    </variablelist>
 	  .</para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-b</option></term>
+	<listitem>
+	  <para>
+	    Prints target(s) bonus. This option does not print target
+	    altitude and airmass. This option activate gnuplot mode - see
+	    <option>-g</option> option for details how to use its output. 
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-B</option></term>
+	<listitem>
+	  <para>
+	    Prints target(s) bonus. This option print target altitude and
+	    airmass, so the output is a bit messy. This option activate gnuplot
+	    mode - see <option>-g</option> option for details how to use its
+	    output. 
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-m</option></term>
