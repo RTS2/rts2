@@ -25,7 +25,7 @@ AC_ARG_ENABLE(focusing,
 esac],[focusing=yes])
 
 AM_CONDITIONAL(FOCUSING, test x$focusing = xyes)
-
+B_A
 AC_ARG_ENABLE(mirror,
 [  --disable-mirror        disables mirror code in camd (=>camd is a bit smaller)],
 [case "${enableval}" in
@@ -141,7 +141,7 @@ else
   AC_MSG_ERROR([libusb not found!])
 fi
 ALTA="${withval}";
-LIB_ALTA="${ALTA}/ApnCamera.o ${ALTA}/ApnCamera_USB.o ${ALTA}/ApogeeUsbLinux.o ${ALTA}/ApnCamData*.o ${ALTA}/ApnCamTable.o ${LIBUSB_LDFLAGS}";
+LIB_ALTA="${ALTA}/apogee_USB.so ${LIBUSB_LDFLAGS}";
 INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${LIBUSB_CFLAGS}",
 [ALTA=no])
 
