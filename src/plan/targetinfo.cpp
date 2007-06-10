@@ -394,7 +394,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	    << "set y2label \"bonus\"" << std::endl
 	    << "set y2range [0:]" << std::endl << "set y2tics" << std::endl;
 	}
-      else
+      else if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
 	{
 	  std::cout
 	    << "set y2label \"airmass\"" << std::endl
@@ -403,20 +403,32 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	    << std::endl;
 	}
 
+      if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
+	{
+	  std::cout
+	    << "set arrow from sset,10 to rise,10 nohead lt 0" << std::
+	    endl << "set arrow from sset,20 to rise,20 nohead lt 0" << std::
+	    endl << "set arrow from sset,30 to rise,30 nohead lt 0" << std::
+	    endl << "set arrow from sset,41.81 to rise,41.81 nohead lt 0" <<
+	    std::
+	    endl << "set arrow from sset,50.28 to rise,50.28 nohead lt 0" <<
+	    std::
+	    endl << "set arrow from sset,56.44 to rise,56.44 nohead lt 0" <<
+	    std::
+	    endl << "set arrow from sset,65.38 to rise,65.38 nohead lt 0" <<
+	    std::
+	    endl << "set arrow from sset,72.25 to rise,72.25 nohead lt 0" <<
+	    std::
+	    endl << "set arrow from sset,81.93 to rise,81.93 nohead lt 0" <<
+	    std::endl;
+	}
+
       std::cout
-	<< "set arrow from sset,10 to rise,10 nohead lt 0" << std::
-	endl << "set arrow from sset,20 to rise,20 nohead lt 0" << std::
-	endl << "set arrow from sset,30 to rise,30 nohead lt 0" << std::
-	endl << "set arrow from sset,41.81 to rise,41.81 nohead lt 0" << std::
-	endl << "set arrow from sset,50.28 to rise,50.28 nohead lt 0" << std::
-	endl << "set arrow from sset,56.44 to rise,56.44 nohead lt 0" << std::
-	endl << "set arrow from sset,65.38 to rise,65.38 nohead lt 0" << std::
-	endl << "set arrow from sset,72.25 to rise,72.25 nohead lt 0" << std::
-	endl << "set arrow from sset,81.93 to rise,81.93 nohead lt 0" << std::
-	endl << "set arrow from nbeg,0 to nbeg,90 nohead lt 0" << std::
-	endl << "set arrow from nend,0 to nend,90 nohead lt 0" << std::
+	<< "set arrow from nbeg,graph 0 to nbeg,graph 1 nohead lt 0" << std::
+	endl << "set arrow from nend,graph 0 to nend,graph 1 nohead lt 0" <<
+	std::
 	endl <<
-	"set arrow from (nend/2+nbeg/2),0 to (nend/2+nbeg/2),90 nohead lt 0"
+	"set arrow from (nend/2+nbeg/2),graph 0 to (nend/2+nbeg/2),graph 1 nohead lt 0"
 	<< std::endl << "set xtics ( ";
 
       sset -= 1.0;
