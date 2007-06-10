@@ -102,10 +102,10 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('s', NULL, 0, "print only selectable targets");
   addOption ('e', NULL, 1,
 	     "print extended informations (visibility prediction,..)");
-  addOption ('b', NULL, 0, "gnuplot bonus of the target");
-  addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
   addOption ('g', NULL, 2,
 	     "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
+  addOption ('b', NULL, 0, "gnuplot bonus of the target");
+  addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
   addOption ('m', NULL, 0, "do not plot moon");
   addOption ('c', NULL, 0, "print recommended calibration targets");
   addOption ('o', NULL, 2, "print observations (in given time range)");
@@ -136,12 +136,6 @@ Rts2TargetInfo::processOption (int in_opt)
     case 'e':
       printExtendet = true;
       break;
-    case 'b':
-      printGNUplot |= GNUPLOT_BONUS_ONLY;
-      break;
-    case 'B':
-      printGNUplot |= GNUPLOT_BONUS;
-      break;
     case 'g':
       if (optarg)
 	{
@@ -158,6 +152,12 @@ Rts2TargetInfo::processOption (int in_opt)
 	{
 	  printGNUplot |= GNUPLOT_TYPE_X11;
 	}
+      break;
+    case 'b':
+      printGNUplot |= GNUPLOT_BONUS_ONLY;
+      break;
+    case 'B':
+      printGNUplot |= GNUPLOT_BONUS;
       break;
     case 'm':
       addMoon = false;
