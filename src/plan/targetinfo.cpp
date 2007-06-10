@@ -478,10 +478,11 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
       for (iter = set.begin (); iter != set.end (); iter++)
 	{
 	  target = *iter;
-	  if (iter != set.begin () || addMoon || addHorizon)
-	    std::cout << ", \\" << std::endl;
 	  if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
 	    {
+	      if (iter != set.begin () || addMoon || addHorizon)
+		std::cout << ", \\" << std::endl;
+
 	      std::cout
 		<< "     \"-\" u 1:2 smooth csplines lw 2 t \""
 		<< target->getTargetName ()
@@ -490,12 +491,15 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	  if ((printGNUplot & GNUPLOT_BONUS)
 	      || (printGNUplot & GNUPLOT_BONUS_ONLY))
 	    {
+	      if (iter != set.begin () || addMoon || addHorizon
+		  || !(printGNUplot & GNUPLOT_BONUS_ONLY))
+		std::cout << ", \\" << std::endl;
 	      std::cout
-		<< ", \\" << std::endl
 		<< "     \"-\" u 1:2 smooth csplines lw 2 t \"bonus for "
-		<< target->getTargetName () << " (" << target->getTargetID ();
+		<< target->getTargetName () << " (" << target->getTargetID ()
+		<< ")\"";
 	      if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
-		std::cout << ")\" axes x1y2";
+		std::cout << " axes x1y2";
 	    }
 	}
       std::cout << std::endl;
