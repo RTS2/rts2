@@ -1,10 +1,12 @@
-bin_PROGRAMS = rts2-sensor-dummy
+bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257
 
 noinst_HEADERS = sensord.h
 
 LDADD = ../utils/librts2block.a
 
 rts2_sensor_dummy_SOURCES = sensord.cpp dummy.cpp
+
+rts2_sensor_ms257_SOURCES = sensord.cpp ms257.cpp
 
 if GPIBLIB
 
