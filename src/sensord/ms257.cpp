@@ -12,6 +12,10 @@ class Rts2DevSensorMS257:public Rts2DevSensor
 private:
   Rts2ValueDouble * msVer;
   Rts2ValueDouble *wavelenght;
+  Rts2ValueInteger *slitA;
+  Rts2ValueInteger *slitB;
+  Rts2ValueInteger *slitC;
+  Rts2ValueInteger *bandPass;
 
   int dev_port;
 
@@ -202,6 +206,11 @@ Rts2DevSensor (in_argc, in_argv)
   createValue (msVer, "version", "version of MS257", false);
   createValue (wavelenght, "WAVELENG", "monochromator wavelength", true);
 
+  createValue (slitA, "SLIT_A", "Width of the A slit in um", true);
+  createValue (slitB, "SLIT_B", "Width of the B slit in um", true);
+  createValue (slitC, "SLIT_C", "Width of the C slit in um", true);
+  createValue (bandPass, "BANDPASS", "Automatic slit width in nm", true);
+
   addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
 
@@ -211,6 +220,22 @@ Rts2DevSensorMS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == wavelenght)
     {
       return writeValue ("GW", new_value->getValueDouble (), '!');
+    }
+  if (old_value == slitA)
+    {
+      return writeValue ("SLITA", new_value->getValueInteger (), '!');
+    }
+  if (old_value == slitB)
+    {
+      return writeValue ("SLITB", new_value->getValueInteger (), '!');
+    }
+  if (old_value == slitC)
+    {
+      return writeValue ("SLITC", new_value->getValueInteger (), '!');
+    }
+  if (old_value == bandPass)
+    {
+      return writeValue ("BANDPASS", new_value->getValueInteger (), '=');
     }
   return Rts2DevSensor::setValue (old_value, new_value);
 }
@@ -291,6 +316,9 @@ Rts2DevSensorMS257::init ()
 
   char *rstr;
 
+  // try to read ready sign first..
+  readPort (&rstr);
+
   ret = writePort ("!DL");
   if (ret)
     return ret;
@@ -315,6 +343,18 @@ Rts2DevSensorMS257::info ()
 {
   int ret;
   ret = readRts2Value ("PW", wavelenght);
+  if (ret)
+    return ret;
+  ret = readRts2Value ("SLITA", slitA);
+  if (ret)
+    return ret;
+  ret = readRts2Value ("SLITB", slitB);
+  if (ret)
+    return ret;
+  ret = readRts2Value ("SLITC", slitC);
+  if (ret)
+    return ret;
+  ret = readRts2Value ("BANDPASS", bandPass);
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
