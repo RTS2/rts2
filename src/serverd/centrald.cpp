@@ -45,8 +45,6 @@
 #include "../utils/rts2config.h"
 #include "status.h"
 
-#define PORT	617
-
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX		255
 #endif
@@ -565,8 +563,8 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
 
   configFile = NULL;
 
-  addOption ('C', "config", 1, "configuration file");
-  addOption ('p', "port", 1, "port on which centrald will listen");
+  addOption (OPT_CONFIG, "config", 1, "configuration file");
+  addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
 }
 
 int
@@ -593,10 +591,10 @@ Rts2Centrald::processOption (int in_opt)
 {
   switch (in_opt)
     {
-    case 'C':
+    case OPT_CONFIG:
       configFile = optarg;
       break;
-    case 'p':
+    case OPT_PORT:
       setPort (atoi (optarg));
       break;
     default:
@@ -609,7 +607,7 @@ int
 Rts2Centrald::init ()
 {
   int ret;
-  setPort (PORT);
+  setPort (atoi (CENTRALD_PORT));
   ret = Rts2Daemon::init ();
   if (ret)
     return ret;
