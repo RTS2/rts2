@@ -1283,7 +1283,7 @@ int
 Rts2Conn::paramNextDouble (double *num)
 {
   char *str_num;
-  char *num_end;
+  int ret;
   if (paramNextString (&str_num))
     return -1;
   if (!strcmp (str_num, "nan"))
@@ -1291,8 +1291,8 @@ Rts2Conn::paramNextDouble (double *num)
       *num = nan ("f");
       return 0;
     }
-  *num = strtod (str_num, &num_end);
-  if (*num_end)
+  ret = sscanf (str_num, "%lf", num);
+  if (ret != 1)
     return -1;
   return 0;
 }
@@ -1301,11 +1301,11 @@ int
 Rts2Conn::paramNextFloat (float *num)
 {
   char *str_num;
-  char *num_end;
+  int ret;
   if (paramNextString (&str_num))
     return -1;
-  *num = strtof (str_num, &num_end);
-  if (*num_end)
+  ret = sscanf (str_num, "%f", num);
+  if (ret != 1)
     return -1;
   return 0;
 }

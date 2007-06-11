@@ -185,7 +185,7 @@ Rts2Value (in_val_name, in_description, writeToFits, displayType)
 char *
 Rts2ValueDouble::getValue ()
 {
-  sprintf (buf, "%lf", value);
+  sprintf (buf, "%.20le", value);
   return buf;
 }
 
@@ -251,7 +251,7 @@ Rts2Value (in_val_name, in_description, writeToFits, displayType)
 char *
 Rts2ValueFloat::getValue ()
 {
-  sprintf (buf, "%lf", value);
+  sprintf (buf, "%.20e", value);
   return buf;
 }
 
