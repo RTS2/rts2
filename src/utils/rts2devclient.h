@@ -83,11 +83,25 @@ public:
   virtual void stateChanged (Rts2ServerState * state);
   void priorityInfo (bool have);
 
-  const char *getName ();
+  const char *getName ()
+  {
+    return connection->getName ();
+  }
 
-  Rts2Block *getMaster ();
+  int getOtherType ()
+  {
+    return connection->getOtherType ();
+  }
 
-  int queCommand (Rts2Command * cmd);
+  Rts2Block *getMaster ()
+  {
+    return connection->getMaster ();
+  }
+
+  int queCommand (Rts2Command * cmd)
+  {
+    return connection->queCommand (cmd);
+  }
 
   int commandReturn (Rts2Command * cmd, int status)
   {

@@ -211,24 +211,6 @@ Rts2DevClient::priorityInfo (bool have)
     lostPriority ();
 }
 
-const char *
-Rts2DevClient::getName ()
-{
-  return connection->getName ();
-}
-
-Rts2Block *
-Rts2DevClient::getMaster ()
-{
-  return connection->getMaster ();
-}
-
-int
-Rts2DevClient::queCommand (Rts2Command * cmd)
-{
-  return connection->queCommand (cmd);
-}
-
 void
 Rts2DevClient::getPriority ()
 {
@@ -351,8 +333,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -649,8 +630,7 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool
-Rts2DevClientPhot::isIntegrating ()
+bool Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
