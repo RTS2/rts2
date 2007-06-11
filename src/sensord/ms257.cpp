@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#define DEBUG_EXTRA
+
 class Rts2DevSensorMS257:public Rts2DevSensor
 {
 private:
@@ -16,6 +18,7 @@ private:
   Rts2ValueInteger *slitB;
   Rts2ValueInteger *slitC;
   Rts2ValueInteger *bandPass;
+  Rts2ValueSelection *shutter;
 
   int dev_port;
 
@@ -36,6 +39,7 @@ private:
   char *dev;
 protected:
     virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+  virtual int processOption (int in_opt);
 
 public:
     Rts2DevSensorMS257 (int in_argc, char **in_argv);
@@ -56,23 +60,23 @@ int
 Rts2DevSensorMS257::writePort (const char *str)
 {
   int ret;
-  int ret1;
   ret = write (dev_port, str, strlen (str));
 #ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "Writing " << str << sendLog;
+  logStream (MESSAGE_DEBUG) << "Writing '" << str << "' (" << strlen (str) <<
+    ")" << sendLog;
 #endif
   if (ret != (int) strlen (str))
     {
       resetDevice ();
-      return ret;
+      return -1;
     }
-  ret1 = write (dev_port, "\n", 1);
-  if (ret1 != 1)
+  ret = write (dev_port, "\n", 1);
+  if (ret != 1)
     {
       resetDevice ();
       return -1;
     }
-  return ret;
+  return 0;
 }
 
 int
@@ -104,10 +108,11 @@ Rts2DevSensorMS257::readPort (char **rstr)
 	}
     }
   // check that we match \cr\lf[E|value]>
-  if (buf[0] != '\r' || buf[1] != '\n')
+  if (buf[0] != '\n' || buf[1] != '\n')
     {
-      logStream (MESSAGE_ERROR) << "Reply string does not start with CR LF" <<
-	sendLog;
+      logStream (MESSAGE_ERROR) << "Reply string does not start with CR LF"
+	<< " (" << std::hex << (int) buf[0] << std::
+	hex << (int) buf[1] << ")" << sendLog;
       return -1;
     }
   *rstr = buf + 2;
@@ -120,7 +125,7 @@ Rts2DevSensorMS257::readPort (char **rstr)
       logStream (MESSAGE_ERROR) << "Error: " << *rstr << sendLog;
       return -1;
     }
-  return i;
+  return 0;
 }
 
 int
@@ -129,7 +134,7 @@ Rts2DevSensorMS257::readPort (int &ret)
   int r;
   char *rstr;
   r = readPort (&rstr);
-  if (r <= 0)
+  if (r)
     return r;
   ret = atoi (rstr);
   return 0;
@@ -141,7 +146,7 @@ Rts2DevSensorMS257::readPort (double &ret)
   int r;
   char *rstr;
   r = readPort (&rstr);
-  if (r <= 0)
+  if (r)
     return r;
   ret = atof (rstr);
   return 0;
@@ -211,6 +216,11 @@ Rts2DevSensor (in_argc, in_argv)
   createValue (slitC, "SLIT_C", "Width of the C slit in um", true);
   createValue (bandPass, "BANDPASS", "Automatic slit width in nm", true);
 
+  createValue (shutter, "shutter", "Shutter settings", false);
+  shutter->addSelVal ("SLOW");
+  shutter->addSelVal ("FAST");
+  shutter->addSelVal ("MANUAL");
+
   addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
 
@@ -237,7 +247,30 @@ Rts2DevSensorMS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
     {
       return writeValue ("BANDPASS", new_value->getValueInteger (), '=');
     }
+  if (old_value == shutter)
+    {
+      char *shttypes[] = { "S", "F", "M" };
+      if (new_value->getValueInteger () > 2
+	  || new_value->getValueInteger () < 0)
+	return -1;
+      return writeValue ("SHTRTYPE", shttypes[new_value->getValueInteger ()],
+			 '=');
+    }
   return Rts2DevSensor::setValue (old_value, new_value);
+}
+
+int
+Rts2DevSensorMS257::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'f':
+      dev = optarg;
+      break;
+    default:
+      return Rts2DevSensor::processOption (in_opt);
+    }
+  return 0;
 }
 
 int
@@ -314,17 +347,10 @@ Rts2DevSensorMS257::init ()
       return -1;
     }
 
-  char *rstr;
+  // char *rstr;
 
   // try to read ready sign first..
-  readPort (&rstr);
-
-  ret = writePort ("!DL");
-  if (ret)
-    return ret;
-  ret = readPort (&rstr);
-  if (ret)
-    return ret;
+  //readPort (&rstr);
 
   ret = readRts2Value ("VER", msVer);
   if (ret)
@@ -357,6 +383,25 @@ Rts2DevSensorMS257::info ()
   ret = readRts2Value ("BANDPASS", bandPass);
   if (ret)
     return ret;
+  char *shttype;
+  char **shttype_p = &shttype;
+  ret = readValue ("SHTRTYPE", shttype_p);
+  switch (**shttype_p)
+    {
+    case 'S':
+      shutter->setValueInteger (0);
+      break;
+    case 'F':
+      shutter->setValueInteger (1);
+      break;
+    case 'M':
+      shutter->setValueInteger (2);
+      break;
+    default:
+      logStream (MESSAGE_ERROR) << "Unknow shutter value: " << *shttype <<
+	sendLog;
+      return -1;
+    }
   return Rts2DevSensor::info ();
 }
 
