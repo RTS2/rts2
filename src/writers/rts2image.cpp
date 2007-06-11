@@ -1752,6 +1752,14 @@ Rts2Image::writeClient (Rts2DevClient * client)
 	{
 	  char *desc = (char *) val->getDescription ().c_str ();
 	  char *name = (char *) val->getName ().c_str ();
+	  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
+	    {
+	      name =
+		new char[strlen (name) + strlen (client->getName ()) + 2];
+	      strcpy (name, client->getName ());
+	      strcat (name, ".");
+	      strcat (name, val->getName ().c_str ());
+	    }
 
 	  switch (val->getValueType ())
 	    {
@@ -1783,6 +1791,10 @@ Rts2Image::writeClient (Rts2DevClient * client)
 		"Don't know how to write to FITS file header value '" << name
 		<< "' of type " << val->getValueType () << sendLog;
 	      break;
+	    }
+	  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
+	    {
+	      delete[]name;
 	    }
 	}
     }
