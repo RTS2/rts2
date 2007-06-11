@@ -7,8 +7,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#define DEBUG_EXTRA
-
 class Rts2DevSensorMS257:public Rts2DevSensor
 {
 private:
@@ -19,6 +17,9 @@ private:
   Rts2ValueInteger *slitC;
   Rts2ValueInteger *bandPass;
   Rts2ValueSelection *shutter;
+  Rts2ValueInteger *filter1;
+  Rts2ValueInteger *filter2;
+  Rts2ValueInteger *msteps;
 
   int dev_port;
 
@@ -35,6 +36,7 @@ private:
     template < typename T > int readValue (const char *valueName, T & val);
 
   int readRts2Value (const char *valueName, Rts2Value * val);
+  int readRts2ValueFilter (const char *valueName, Rts2ValueInteger * val);
 
   char *dev;
 protected:
@@ -202,6 +204,27 @@ Rts2DevSensorMS257::readRts2Value (const char *valueName, Rts2Value * val)
   return -1;
 }
 
+int
+Rts2DevSensorMS257::readRts2ValueFilter (const char *valueName,
+					 Rts2ValueInteger * val)
+{
+  int ret;
+  char *cval;
+  char **pval = &cval;
+  int iret;
+  ret = readValue (valueName, pval);
+  if (ret)
+    return ret;
+  if ((*cval != 'M' && *cval != 'A') || cval[1] != ':')
+    {
+      logStream (MESSAGE_ERROR) << "Unknow filter state: " << cval << sendLog;
+      return -1;
+    }
+  iret = atoi (cval + 2);
+  val->setValueInteger (iret);
+  return 0;
+}
+
 Rts2DevSensorMS257::Rts2DevSensorMS257 (int in_argc, char **in_argv):
 Rts2DevSensor (in_argc, in_argv)
 {
@@ -220,6 +243,11 @@ Rts2DevSensor (in_argc, in_argv)
   shutter->addSelVal ("SLOW");
   shutter->addSelVal ("FAST");
   shutter->addSelVal ("MANUAL");
+
+  createValue (filter1, "FILT_1", "filter 1 position", true);
+  createValue (filter2, "FILT_2", "filter 2 position", true);
+  createValue (msteps, "MSTEPS",
+	       "Current grating position in terms of motor steps", true);
 
   addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
@@ -255,6 +283,18 @@ Rts2DevSensorMS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return -1;
       return writeValue ("SHTRTYPE", shttypes[new_value->getValueInteger ()],
 			 '=');
+    }
+  if (old_value == filter1)
+    {
+      return writeValue ("FILT1", new_value->getValueInteger (), '!');
+    }
+  if (old_value == filter2)
+    {
+      return writeValue ("FILT2", new_value->getValueInteger (), '!');
+    }
+  if (old_value == msteps)
+    {
+      return writeValue ("GS", new_value->getValueInteger (), '!');
     }
   return Rts2DevSensor::setValue (old_value, new_value);
 }
@@ -402,6 +442,15 @@ Rts2DevSensorMS257::info ()
 	sendLog;
       return -1;
     }
+  ret = readRts2ValueFilter ("FILT1", filter1);
+  if (ret)
+    return ret;
+//  ret = readRts2Value ("FILT2", filter2);
+//  if (ret)
+//    return ret;
+  ret = readRts2Value ("PS", msteps);
+  if (ret)
+    return ret;
   return Rts2DevSensor::info ();
 }
 
