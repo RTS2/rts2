@@ -18,18 +18,19 @@ private:
   Rts2ValueInteger *bandPass;
   Rts2ValueSelection *shutter;
   Rts2ValueInteger *filter1;
-  Rts2ValueInteger *filter2;
+//  Rts2ValueInteger *filter2;
   Rts2ValueInteger *msteps;
+  Rts2ValueInteger *grat;
 
   int dev_port;
 
   void resetDevice ();
   int writePort (const char *str);
-  int readPort (char **rstr);
+  int readPort (char **rstr, const char *cmd);
 
   // specialized readPort functions..
-  int readPort (int &ret);
-  int readPort (double &ret);
+  int readPort (int &ret, const char *cmd);
+  int readPort (double &ret, const char *cmd);
 
     template < typename T > int writeValue (const char *valueName, T val,
 					    char qStr = '=');
@@ -82,7 +83,7 @@ Rts2DevSensorMS257::writePort (const char *str)
 }
 
 int
-Rts2DevSensorMS257::readPort (char **rstr)
+Rts2DevSensorMS257::readPort (char **rstr, const char *cmd)
 {
   static char buf[20];
   int i = 0;
@@ -124,18 +125,19 @@ Rts2DevSensorMS257::readPort (char **rstr)
 #endif
   if (**rstr == 'E')
     {
-      logStream (MESSAGE_ERROR) << "Error: " << *rstr << sendLog;
+      logStream (MESSAGE_ERROR) << "Cmd: " << cmd << " Error: " << *rstr <<
+	sendLog;
       return -1;
     }
   return 0;
 }
 
 int
-Rts2DevSensorMS257::readPort (int &ret)
+Rts2DevSensorMS257::readPort (int &ret, const char *cmd)
 {
   int r;
   char *rstr;
-  r = readPort (&rstr);
+  r = readPort (&rstr, cmd);
   if (r)
     return r;
   ret = atoi (rstr);
@@ -143,11 +145,11 @@ Rts2DevSensorMS257::readPort (int &ret)
 }
 
 int
-Rts2DevSensorMS257::readPort (double &ret)
+Rts2DevSensorMS257::readPort (double &ret, const char *cmd)
 {
   int r;
   char *rstr;
-  r = readPort (&rstr);
+  r = readPort (&rstr, cmd);
   if (r)
     return r;
   ret = atof (rstr);
@@ -164,7 +166,7 @@ Rts2DevSensorMS257::writeValue (const char *valueName, T val, char qStr)
   ret = writePort (_os.str ().c_str ());
   if (ret)
     return ret;
-  ret = readPort (&rstr);
+  ret = readPort (&rstr, _os.str ().c_str ());
   return ret;
 }
 
@@ -178,7 +180,7 @@ Rts2DevSensorMS257::readValue (const char *valueName, T & val)
   ret = writePort (buf);
   if (ret)
     return ret;
-  ret = readPort (val);
+  ret = readPort (val, buf);
   return ret;
 }
 
@@ -245,9 +247,10 @@ Rts2DevSensor (in_argc, in_argv)
   shutter->addSelVal ("MANUAL");
 
   createValue (filter1, "FILT_1", "filter 1 position", true);
-  createValue (filter2, "FILT_2", "filter 2 position", true);
+//  createValue (filter2, "FILT_2", "filter 2 position", true);
   createValue (msteps, "MSTEPS",
 	       "Current grating position in terms of motor steps", true);
+  createValue (grat, "GRATING", "Grating position", true);
 
   addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
@@ -288,13 +291,17 @@ Rts2DevSensorMS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
     {
       return writeValue ("FILT1", new_value->getValueInteger (), '!');
     }
-  if (old_value == filter2)
+/*  if (old_value == filter2)
     {
       return writeValue ("FILT2", new_value->getValueInteger (), '!');
-    }
+    } */
   if (old_value == msteps)
     {
       return writeValue ("GS", new_value->getValueInteger (), '!');
+    }
+  if (old_value == grat)
+    {
+      return writeValue ("GRAT", new_value->getValueInteger (), '!');
     }
   return Rts2DevSensor::setValue (old_value, new_value);
 }
@@ -401,6 +408,11 @@ Rts2DevSensorMS257::init ()
   if (ret)
     return ret;
 
+  // open shutter - init
+  ret = writeValue ("SHUTTER", 0, '!');
+  if (ret)
+    return ret;
+
   return 0;
 }
 
@@ -445,10 +457,15 @@ Rts2DevSensorMS257::info ()
   ret = readRts2ValueFilter ("FILT1", filter1);
   if (ret)
     return ret;
-//  ret = readRts2Value ("FILT2", filter2);
-//  if (ret)
-//    return ret;
+/*  ret = readRts2Value ("FILT2", filter2);
+  if (ret)
+    return ret;
+*/
   ret = readRts2Value ("PS", msteps);
+  if (ret)
+    return ret;
+  usleep (100);
+  ret = readRts2ValueFilter ("GRAT", grat);
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
