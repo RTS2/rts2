@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 /*!
  *
  * Display images from RTS2 camera devices in nifty Xwindow.
@@ -206,7 +202,7 @@ Rts2xfocusCamera::buildWindow ()
 		   0, master->getDepth (), InputOutput, master->getVisual (),
 		   0, &xswa);
   pixmap =
-    XCreatePixmap (master->getDisplay (), window, windowHeight, windowWidth,
+    XCreatePixmap (master->getDisplay (), window, windowWidth, windowHeight,
 		   master->getDepth ());
 
   gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
@@ -233,7 +229,7 @@ Rts2xfocusCamera::rebuildWindow ()
   if (pixmap)
     XFreePixmap (master->getDisplay (), pixmap);
   pixmap =
-    XCreatePixmap (master->getDisplay (), window, windowHeight, windowWidth,
+    XCreatePixmap (master->getDisplay (), window, windowWidth, windowHeight,
 		   master->getDepth ());
 
   if (ximage)
@@ -659,15 +655,20 @@ Rts2xfocusCamera::printFWHMTable ()
     redraw ();
 }
 
-imageProceRes
-Rts2xfocusCamera::processImage (Rts2Image * image)
+imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 {
-  int dataSize;
-  int i, j, k;
-  unsigned short *im_ptr;
+  int
+    dataSize;
+  int
+    i,
+    j,
+    k;
+  unsigned short *
+    im_ptr;
 
   // get to upper classes as well
-  imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
+  imageProceRes
+    res = Rts2DevClientCameraFoc::processImage (image);
 
   pixmapWidth = image->getWidth ();
   pixmapHeight = image->getHeight ();
@@ -736,7 +737,8 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
   for (j = 0; j < pixmapHeight; j++)
     for (i = 0; i < pixmapWidth; i++)
       {
-	unsigned short val;
+	unsigned short
+	  val;
 	val = *im_ptr;
 	im_ptr++;
 	if (val < low)
