@@ -78,6 +78,10 @@ public:
   virtual int setValue (Rts2Conn * connection) = 0;
   virtual int doOpValue (char op, Rts2Value * old_value);
   virtual char *getValue () = 0;
+  virtual char *getDisplayValue ()
+  {
+    return getValue ();
+  }
   int32_t getValueDisplayType ()
   {
     return rts2Type & RTS2_TYPE_MASK;
@@ -194,6 +198,7 @@ public:
     value = in_value;
   }
   virtual char *getValue ();
+  virtual char *getDisplayValue ();
   virtual double getValueDouble ()
   {
     return value;
@@ -242,6 +247,7 @@ public:
     value = in_value;
   }
   virtual char *getValue ();
+  virtual char *getDisplayValue ();
   virtual double getValueDouble ()
   {
     return value;

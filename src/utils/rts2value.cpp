@@ -189,6 +189,17 @@ Rts2ValueDouble::getValue ()
   return buf;
 }
 
+char *
+Rts2ValueDouble::getDisplayValue ()
+{
+  double absv = fabs (value);
+  if ((absv > 10e-3 && absv < 10e+5) || absv == 0)
+    sprintf (buf, "%lf", value);
+  else
+    sprintf (buf, "%.20le", value);
+  return buf;
+}
+
 int
 Rts2ValueDouble::setValue (Rts2Conn * connection)
 {
@@ -252,6 +263,17 @@ char *
 Rts2ValueFloat::getValue ()
 {
   sprintf (buf, "%.20e", value);
+  return buf;
+}
+
+char *
+Rts2ValueFloat::getDisplayValue ()
+{
+  double absv = fabs (value);
+  if ((absv > 10e-3 && absv < 10e+5) || absv == 0)
+    sprintf (buf, "%lf", value);
+  else
+    sprintf (buf, "%.20le", value);
   return buf;
 }
 

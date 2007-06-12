@@ -24,7 +24,7 @@ getDisplayValue (Rts2Value * value)
       _os << LibnovaDegDist (value->getValueDouble ());
       break;
     default:
-      tmp_val = value->getValue ();
+      tmp_val = value->getDisplayValue ();
       if (tmp_val)
 	return std::string (tmp_val);
       return std::string ("");
