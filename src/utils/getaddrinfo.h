@@ -193,36 +193,45 @@
 #define PF_UNSPEC PF_INET
 #endif
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /*
  * struct addrinfo.
  */
-struct addrinfo
-{
-  int ai_flags;
-  int ai_family;
-  int ai_socktype;
-  int ai_protocol;
-  socklen_t ai_addrlen;
-  char *ai_canonname;
-  struct sockaddr *ai_addr;
-  struct addrinfo *ai_next;
-};
+  struct addrinfo
+  {
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    socklen_t ai_addrlen;
+    char *ai_canonname;
+    struct sockaddr *ai_addr;
+    struct addrinfo *ai_next;
+  };
 
 /*
  * Functions.
  */
 #ifdef __STDC__
-const char *gai_strerror (int);
-void freeaddrinfo (struct addrinfo *);
-int getaddrinfo (const char *, const char *, const struct addrinfo *,
-		 struct addrinfo **);
-int getnameinfo (const struct sockaddr *, socklen_t, char *,
-		 socklen_t, char *, socklen_t, int);
+  const char *gai_strerror (int);
+  void freeaddrinfo (struct addrinfo *);
+  int getaddrinfo (const char *, const char *, const struct addrinfo *,
+		   struct addrinfo **);
+  int getnameinfo (const struct sockaddr *, socklen_t, char *,
+		   socklen_t, char *, socklen_t, int);
 #else
-const char *gai_strerror ();
-void freeaddrinfo ();
-int getaddrinfo ();
-int getnameinfo ();
+  const char *gai_strerror ();
+  void freeaddrinfo ();
+  int getaddrinfo ();
+  int getnameinfo ();
+#endif
+
+#ifdef __cplusplus
+};
 #endif
 
 #endif /* not GETADDRINFO_H */

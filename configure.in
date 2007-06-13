@@ -437,7 +437,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo])
 
-AM_CONDITIONAL(NOT_GETADDRINFO, test x$HAVE_GETADDRINFO = x)
+AM_CONDITIONAL(NOT_GETADDRINFO, test x${HAVE_GETADDRINFO} = x)
 
 AC_CHECK_HEADERS([limits.h]) 
 AC_FUNC_CHOWN 

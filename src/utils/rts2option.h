@@ -3,6 +3,7 @@
 
 #include <getopt.h>
 #include <malloc.h>
+#include <stdio.h>
 
 // custom configuration values
 
