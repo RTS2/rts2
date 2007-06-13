@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "status.h"
+#include <config.h>
 
 // CYGWIN workaround
 #ifndef HAVE_GETADDRINFO
