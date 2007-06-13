@@ -246,6 +246,19 @@ AM_CONDITIONAL(INDI, test x$INDI != xno)
 AC_SUBST(INDI)
 AC_SUBST(LIB_INDI)
 AC_SUBST(INC_INDI)
+
+# Check for A3200
+AC_ARG_WITH(a3200,
+[  --with-a3200           path for A3200 SDK],
+A3200="${withval}";
+LIB_A3200="${withval}/Lib/A32Cmplr.lib ${withval}/Lib/A32Sys.lib";
+INC_A3200="-I${withval}/Include",
+[A3200=no])
+
+AM_CONDITIONAL(A3200, test x$A3200 != xno)
+AC_SUBST(A3200)
+AC_SUBST(LIB_A3200)
+AC_SUBST(INC_A3200)
   
 # Define lock file prefix
 AC_ARG_WITH(lock,
@@ -373,6 +386,7 @@ EOF
   AC_SUBST(LIB_JPEG)
   AC_SUBST(JPEG_CFLAGS)
 fi
+
 
 #AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 #AC_SUBST(LIB_COMEDI), [cat << EOF
@@ -512,6 +526,9 @@ MOUNT's:
 
 DOME's:
   PCI8255       ${PCI8255}
+
+SENSOR's:
+  A3200         ${A3200}
 
 pgsql		${psql}
 gsoap           ${gsoap}
