@@ -5,6 +5,14 @@
 
 #include "status.h"
 
+// CYGWIN workaround
+#ifndef HAVE_GETADDRINFO
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include "getaddrinfo.h"
+#endif
+
 class Rts2Address
 {
   char name[DEVICE_NAME_SIZE];
