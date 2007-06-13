@@ -88,6 +88,8 @@ Rts2DevSensorA3200::info ()
   DOUBLE dPositionCmd[MAX_REQUESTED];
   DOUBLE dVelocityAvg[MAX_REQUESTED];
 
+  AERERR_CODE eRc;
+
   mAxis = AXISMASK_1 | AXISMASK_2;	// we want axes 1 and 2 only
   dwUnits = 0;			// we want counts as units for the pos/vels
 

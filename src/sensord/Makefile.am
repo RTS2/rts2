@@ -19,3 +19,13 @@ rts2_sensor_keithley_6485_SOURCES = sensord.cpp keithley-6485.cpp
 rts2_sensor_keithley_6485_LDFLAGS = @LIB_GPIB@
 
 endif
+
+if A3200
+
+bin_PROGRAMS += rts2-sensor-a3200
+
+rts2_sensor_a3200_SOURCES = sensord.cpp a3200.cpp
+rts2_sensor_a3200_CXXFLAGS = @INC_A3200@
+rts2_sensor_a3200_LDADD = @LIB_A3200@ ../utils/librts2block.a
+
+endif
