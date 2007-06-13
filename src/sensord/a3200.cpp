@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <AerSys.h>
 
+#define AX_SCALE 10000
+
 // when we'll have more then 3 axes, please change this
 #define MAX_REQUESTED 3
 
@@ -67,7 +69,7 @@ Rts2DevSensorA3200::home ()
       logErr ("home MHome for Enable", eRc);
       return -1;
     }
-  eRc = AerMoveMWaitDone (hAerCtrl, mAxis, 100, 0);
+  eRc = AerMoveMWaitDone (hAerCtrl, mAxis, 10000, 0);
   if (eRc != AERERR_NOERR)
     {
       logErr ("home MoveMWait for Home", eRc);
@@ -81,13 +83,12 @@ int
 Rts2DevSensorA3200::moveAxis (AXISINDEX ax, LONG tar)
 {
   AERERR_CODE eRc;
-  eRc = AerMoveAbsolute (hAerCtrl, ax, tar, 100000);
+  eRc = AerMoveAbsolute (hAerCtrl, ax, tar, 1000000);
   if (eRc != AERERR_NOERR)
     {
       logErr ("moveAxis MoveAbsolute", eRc);
       return -1;
     }
-  logStream (MESSAGE_DEBUG) << "Moving " << ax << " to " << tar << sendLog;
   eRc = AerMoveWaitDone (hAerCtrl, ax, 10000, 0);
   if (eRc != AERERR_NOERR)
     {
@@ -102,15 +103,15 @@ Rts2DevSensorA3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   if (old_value == ax1)
     {
-      return moveAxis (AXISINDEX_1, new_value->getValueLong ());
+      return moveAxis (AXISINDEX_1, new_value->getValueDouble () * AX_SCALE);
     }
   if (old_value == ax2)
     {
-      return moveAxis (AXISINDEX_2, new_value->getValueLong ());
+      return moveAxis (AXISINDEX_2, new_value->getValueDouble () * AX_SCALE);
     }
   if (old_value == ax3)
     {
-      return moveAxis (AXISINDEX_3, new_value->getValueLong ());
+      return moveAxis (AXISINDEX_3, new_value->getValueLong () * AX_SCALE);
     }
   return Rts2DevSensor::setValue (old_value, new_value);
 }
@@ -193,9 +194,9 @@ Rts2DevSensorA3200::info ()
       logErr ("info AerStatusGetAxisInfoEx", eRc);
       return -1;
     }
-  ax1->setValueDouble (dPosition[0]);
-  ax2->setValueDouble (dPosition[1]);
-  ax3->setValueDouble (dPosition[2]);
+  ax1->setValueDouble (dPosition[0] / AX_SCALE);
+  ax2->setValueDouble (dPosition[1] / AX_SCALE);
+  ax3->setValueDouble (dPosition[2] / AX_SCALE);
   return Rts2DevSensor::info ();
 }
 
