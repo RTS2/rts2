@@ -12,11 +12,15 @@ private:
   HAERCTRL hAerCtrl;
   Rts2ValueDouble *ax1;
   Rts2ValueDouble *ax2;
+  Rts2ValueDouble *ax3;
+
+  LPCTSTR initFile;
 
   void logErr (char *proc, AERERR_CODE eRc);
 
 protected:
     virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+  virtual int processOption (int in_opt);
 
 public:
     Rts2DevSensorA3200 (int in_argc, char **in_argv);
@@ -48,11 +52,26 @@ Rts2DevSensorA3200::Rts2DevSensorA3200 (int in_argc, char **in_argv):Rts2DevSens
 
   createValue (ax1, "AX1", "first axis", true);
   createValue (ax2, "AX2", "second axis", true);
+  createValue (ax3, "AX3", "third axis", true);
+
+  addOption ('f', NULL, 1, "Init file");
 }
 
 Rts2DevSensorA3200::~Rts2DevSensorA3200 (void)
 {
   AerSysStop (hAerCtrl);
+}
+
+int
+Rts2DevSensorA3200::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'f':
+      initFile = optarg;
+      return 0;
+    }
+  return Rts2DevSensor::processOption (in_opt);
 }
 
 int
@@ -65,7 +84,7 @@ Rts2DevSensorA3200::init ()
     return ret;
 
   eRc =
-    AerSysInitialize (0, NULL, 1, &hAerCtrl, NULL, NULL, NULL, NULL, NULL,
+    AerSysInitialize (0, initFile, 1, &hAerCtrl, NULL, NULL, NULL, NULL, NULL,
 		      NULL, NULL, NULL);
 
   if (eRc != AERERR_NOERR)
@@ -90,7 +109,7 @@ Rts2DevSensorA3200::info ()
 
   AERERR_CODE eRc;
 
-  mAxis = AXISMASK_1 | AXISMASK_2;	// we want axes 1 and 2 only
+  mAxis = AXISMASK_1 | AXISMASK_2 | AXISMASK_3;	// three axis
   dwUnits = 0;			// we want counts as units for the pos/vels
 
   eRc = AerStatusGetAxisInfoEx (hAerCtrl, mAxis, dwUnits,
@@ -105,6 +124,7 @@ Rts2DevSensorA3200::info ()
     }
   ax1->setValueDouble (dPosition[0]);
   ax2->setValueDouble (dPosition[1]);
+  ax3->setValueDouble (dPosition[2]);
   return 0;
 }
 
