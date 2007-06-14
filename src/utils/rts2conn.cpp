@@ -1021,7 +1021,8 @@ Rts2Conn::send (const char *msg)
       return -1;
     }
 #ifdef DEBUG_ALL
-  std::cout << "Rts2Conn::send [" << getCentraldId () << ":"
+  std::
+    cerr << "Rts2Conn::send " << getName () << " [" << getCentraldId () << ":"
     << sock << "] send " << ret << ": " << msg << std::endl;
 #endif
   write (sock, "\r\n", 2);
