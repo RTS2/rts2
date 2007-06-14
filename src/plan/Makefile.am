@@ -8,6 +8,8 @@ noinst_HEADERS = rts2execcli.h rts2script.h rts2connimgprocess.h rts2selector.h 
 
 EXTRA_DIST = rts2selector.ec rts2devcliphot.ec
 
+CLEANFILES = rts2selector.cpp rts2devcliphot.cpp
+
 rts2_scriptexec_SOURCES = scriptexec.cpp rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2devscript.cpp \
 			rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp \
 			rts2setarget.cpp rts2sehex.cpp
