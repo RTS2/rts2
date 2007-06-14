@@ -330,11 +330,15 @@ public:
 class Rts2ScriptElementChangeValue:public Rts2ScriptElement
 {
 private:
-  std::string valName;
+  char *deviceName;
+    std::string valName;
   char op;
     std::string operand;
+protected:
+  void getDevice (char new_device[DEVICE_NAME_SIZE]);
 public:
     Rts2ScriptElementChangeValue (Rts2Script * in_script,
+				  const char *in_device_value,
 				  const char *chng_str);
     virtual ~ Rts2ScriptElementChangeValue (void);
   virtual int defnextCommand (Rts2DevClient * client,

@@ -495,7 +495,7 @@ Rts2DevScript::haveNextCommand ()
 	<< "Rts2DevScript::haveNextCommand cmd_device "
 	<< cmd_device << " ret " << ret << " conn " << script_connection->
 	getName () << sendLog;
-      return 0;
+      return 1;
     }
   return 1;
 }

@@ -68,6 +68,21 @@ Rts2DevClientCameraExec::nextCommand ()
   if (!ret)
     return;
 
+  // send command to other device
+  if (strcmp (getName (), cmd_device))
+    {
+      Rts2Conn *cmdConn = getMaster ()->getConnection (cmd_device);
+      if (!cmdConn)
+	{
+	  logStream (MESSAGE_ERROR) << "Unknow device : " << cmd_device <<
+	    sendLog;
+	  return;
+	}
+      cmdConn->queCommand (nextComd);
+      nextComd = NULL;
+      return;
+    }
+
   if (nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE
       || nextComd->getCommandCond () == NO_EXPOSURE_MOVE)
     {
@@ -118,10 +133,10 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
-imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-  int
-    ret;
+  int ret;
   // try processing in script..
   if (getScript () && !queCurrentImage)
     {

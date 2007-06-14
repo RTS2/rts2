@@ -449,9 +449,11 @@ Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
   return 0;
 }
 
-Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_script, const char *chng_str):Rts2ScriptElement
+Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_script, const char *new_device, const char *chng_str):Rts2ScriptElement
   (in_script)
 {
+  deviceName = new char[strlen (new_device) + 1];
+  strcpy (deviceName, new_device);
   std::string chng_s = std::string (chng_str);
   op = '\0';
   int
@@ -480,6 +482,13 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 
 Rts2ScriptElementChangeValue::~Rts2ScriptElementChangeValue (void)
 {
+  delete[]deviceName;
+}
+
+void
+Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
+{
+  strcpy (new_device, deviceName);
 }
 
 int

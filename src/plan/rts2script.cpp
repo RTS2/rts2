@@ -8,11 +8,11 @@
 #include <ctype.h>
 
 // test if next element is one that is given
-bool
-Rts2Script::isNext (const char *element)
+bool Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t el_len = strlen (element);
+  size_t
+    el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -526,7 +526,8 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
   // setValue fallback
   else if (strchr (commandStart, '='))
     {
-      return new Rts2ScriptElementChangeValue (this, commandStart);
+      return new Rts2ScriptElementChangeValue (this, new_device,
+					       commandStart);
     }
   return NULL;
 }
