@@ -2,6 +2,26 @@
 
 #include <gpib/ib.h>
 
+class Rts2DevSensorCryocon;
+
+/**
+ * Structure which holds information about input channel
+ */
+class Rts2ValueTempInput
+{
+private:
+  char chan;
+public:
+    Rts2ValueDouble * values[6];
+
+    Rts2ValueTempInput (Rts2DevSensorCryocon * dev, char in_chan);
+
+  char getChannel ()
+  {
+    return chan;
+  }
+};
+
 class Rts2DevSensorCryocon:public Rts2DevSensor
 {
 private:
@@ -12,18 +32,39 @@ private:
 
   int writeRead (char *buf, Rts2ValueDouble * val);
 
-  Rts2ValueDouble *tempA;
-  Rts2ValueDouble *tempB;
-  Rts2ValueDouble *tempC;
-  Rts2ValueDouble *tempD;
+  Rts2ValueTempInput *chans[4];
+  Rts2ValueDouble *statTime;
+
+  Rts2ValueDouble *amb;
 public:
     Rts2DevSensorCryocon (int argc, char **argv);
     virtual ~ Rts2DevSensorCryocon (void);
+
+  void createTempInputValue (Rts2ValueDouble ** val, char chan,
+			     const char *name, const char *desc);
 
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int info ();
 };
+
+Rts2ValueTempInput::Rts2ValueTempInput (Rts2DevSensorCryocon * dev,
+					char in_chan)
+{
+  chan = in_chan;
+  // values are passed to dev, and device deletes them!
+  dev->createTempInputValue (&values[0], chan, "TEMP",
+			     "cryocon temperature from channel ");
+  dev->createTempInputValue (&values[1], chan, "MINIMUM",
+			     "minimum temperature on channel ");
+  dev->createTempInputValue (&values[2], chan, "MAXIMUM",
+			     "maximum temperature on channel ");
+  dev->createTempInputValue (&values[3], chan, "VARIANCE",
+			     "temperature variance of channel ");
+  dev->createTempInputValue (&values[4], chan, "SLOPE", "slope of channel ");
+  dev->createTempInputValue (&values[5], chan, "OFFSET",
+			     "temp offset of channel ");
+}
 
 int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueDouble * val)
@@ -65,10 +106,15 @@ Rts2DevSensor (in_argc, in_argv)
   minor = 0;
   pad = 12;
 
-  createValue (tempA, "TEMPA", "cryocon temperature from channel A");
-  createValue (tempB, "TEMPB", "cryocon temperature from channel B");
-  createValue (tempC, "TEMPC", "cryocon temperature from channel C");
-  createValue (tempD, "TEMPD", "cryocon temperature from channel D");
+  for (int i = 0; i < 4; i++)
+    {
+      chans[i] = new Rts2ValueTempInput (this, 'A' + i);
+    }
+
+  createValue (statTime, "STATTIME", "time for which statistic was collected",
+	       true);
+
+  createValue (amb, "AMBIENT", "cryocon ambient temperature");
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
@@ -78,6 +124,20 @@ Rts2DevSensor (in_argc, in_argv)
 Rts2DevSensorCryocon::~Rts2DevSensorCryocon (void)
 {
   ibonl (gpib_dev, 0);
+}
+
+void
+Rts2DevSensorCryocon::createTempInputValue (Rts2ValueDouble ** val, char chan,
+					    const char *name,
+					    const char *desc)
+{
+  char *n = new char[strlen (name) + 2];
+  strcpy (n, name);
+  strncat (n, &chan, 1);
+  char *d = new char[strlen (desc) + 2];
+  strcpy (d, desc);
+  strncat (d, &chan, 1);
+  createValue (*val, n, d, true);
 }
 
 int
@@ -119,16 +179,25 @@ int
 Rts2DevSensorCryocon::info ()
 {
   int ret;
-  ret = writeRead ("INPUT A:TEMP?", tempA);
+  char buf[50] = "INPUT ";
+  for (int i = 0; i < 4; i++)
+    {
+      buf[6] = chans[i]->getChannel ();
+      buf[7] = ':';
+      for (int v = 0; v < 6; v++)
+	{
+	  strcpy (buf + 8, chans[i]->values[v]->getName ().c_str ());
+	  buf[strlen (buf) - 1] = '?';
+	  ret = writeRead (buf, chans[i]->values[v]);
+	  if (ret)
+	    return ret;
+	}
+    }
+  ret = writeRead ("STATS:TIME?", statTime);
   if (ret)
     return ret;
-  ret = writeRead ("INPUT B:TEMP?", tempB);
-  if (ret)
-    return ret;
-  ret = writeRead ("INPUT C:TEMP?", tempC);
-  if (ret)
-    return ret;
-  ret = writeRead ("INPUT D:TEMP?", tempD);
+  statTime->setValueDouble (statTime->getValueDouble () * 60.0);
+  ret = writeRead ("SYSTEM:AMBIENT?", amb);
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
