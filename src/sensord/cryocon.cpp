@@ -31,11 +31,14 @@ private:
   int gpib_dev;
 
   int writeRead (char *buf, Rts2ValueDouble * val);
+  int writeRead (char *buf, Rts2ValueFloat * val);
 
   Rts2ValueTempInput *chans[4];
   Rts2ValueDouble *statTime;
 
   Rts2ValueDouble *amb;
+  Rts2ValueFloat *htrread;
+  Rts2ValueFloat *htrhst;
 public:
     Rts2DevSensorCryocon (int argc, char **argv);
     virtual ~ Rts2DevSensorCryocon (void);
@@ -98,6 +101,38 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueDouble * val)
   return 0;
 }
 
+int
+Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueFloat * val)
+{
+  char rb[50];
+  int ret;
+  rb[0] = '0';
+  ret = ibwrt (gpib_dev, buf, strlen (buf));
+  if (ret & ERR)
+    {
+      logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
+	sendLog;
+      return -1;
+    }
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
+    " ret " << ret << sendLog;
+#endif
+  ret = ibrd (gpib_dev, rb, 50);
+  if (ret & ERR)
+    {
+      logStream (MESSAGE_ERROR) << "error reading " << rb << " " << ret <<
+	sendLog;
+      return -1;
+    }
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << rb << " ret "
+    << ret << sendLog;
+#endif
+  val->setValueFloat (atof (rb));
+  return 0;
+}
+
 Rts2DevSensorCryocon::Rts2DevSensorCryocon (int in_argc, char **in_argv):
 Rts2DevSensor (in_argc, in_argv)
 {
@@ -114,7 +149,9 @@ Rts2DevSensor (in_argc, in_argv)
   createValue (statTime, "STATTIME", "time for which statistic was collected",
 	       true);
 
-  createValue (amb, "AMBIENT", "cryocon ambient temperature");
+  createValue (amb, "AMBIENT", "cryocon ambient temperature", true);
+  createValue (htrread, "HTRREAD", "Heater read back current", true);
+  createValue (htrhst, "HTRHST", "Heater heat sink temperature", true);
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
@@ -198,6 +235,12 @@ Rts2DevSensorCryocon::info ()
     return ret;
   statTime->setValueDouble (statTime->getValueDouble () * 60.0);
   ret = writeRead ("SYSTEM:AMBIENT?", amb);
+  if (ret)
+    return ret;
+  ret = writeRead ("SYSTEM:HTRREAD?", htrread);
+  if (ret)
+    return ret;
+  ret = writeRead ("SYSTEM:HTRHST?", htrhst);
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
