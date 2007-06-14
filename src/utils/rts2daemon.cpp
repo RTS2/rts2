@@ -36,6 +36,8 @@ Rts2Block (in_argc, in_argv)
 
   addOption ('i', "interactive", 0,
 	     "run in interactive mode, don't loose console");
+  addOption (OPT_LOCALPORT, "local-port", 1,
+	     "define local port on which we will listen to incoming requests");
 }
 
 Rts2Daemon::~Rts2Daemon (void)
@@ -54,6 +56,9 @@ Rts2Daemon::processOption (int in_opt)
     {
     case 'i':
       daemonize = DONT_DAEMONIZE;
+      break;
+    case OPT_LOCALPORT:
+      setPort (atoi (optarg));
       break;
     default:
       return Rts2Block::processOption (in_opt);

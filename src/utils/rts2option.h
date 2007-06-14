@@ -15,6 +15,8 @@
 #define OPT_SERVER	1003
 #define OPT_PORT	1004
 
+#define OPT_LOCALPORT	1005
+
 // here starts local playground..
 #define OPT_LOCAL	10000
 

@@ -5,6 +5,9 @@
 #include "rts2dataconn.h"
 #include "rts2event.h"
 #include "rts2value.h"
+
+#define DEBUG_ALL
+
 #ifdef DEBUG_ALL
 #include <iostream>
 #endif /* DEBUG_ALL */
