@@ -22,6 +22,36 @@ public:
   }
 };
 
+/**
+ * Structure which holds loop inforamtions
+ */
+class Rts2ValueLoop
+{
+private:
+  int loop;
+public:
+    Rts2ValueSelection * source;
+  Rts2ValueDouble *setpt;
+  Rts2ValueSelection *type;
+  Rts2ValueSelection *range;
+  Rts2ValueBool *ramp;
+  Rts2ValueDouble *rate;
+  Rts2ValueDouble *pgain;
+  Rts2ValueDouble *igain;
+  Rts2ValueDouble *dgain;
+  Rts2ValueDouble *htrread;
+  Rts2ValueFloat *pmanual;
+
+    Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop);
+
+  Rts2Value *values[11];
+
+  int getLoop ()
+  {
+    return loop;
+  }
+};
+
 class Rts2DevSensorCryocon:public Rts2DevSensor
 {
 private:
@@ -30,10 +60,14 @@ private:
 
   int gpib_dev;
 
+  int writeRead (char *buf, Rts2Value * val);
+
   int writeRead (char *buf, Rts2ValueDouble * val);
   int writeRead (char *buf, Rts2ValueFloat * val);
 
   Rts2ValueTempInput *chans[4];
+  Rts2ValueLoop *loops[2];
+
   Rts2ValueDouble *statTime;
 
   Rts2ValueDouble *amb;
@@ -45,6 +79,19 @@ public:
 
   void createTempInputValue (Rts2ValueDouble ** val, char chan,
 			     const char *name, const char *desc);
+
+    template < typename T > void createLoopValue (T * &val, int loop,
+						  char *in_val_name,
+						  char *in_desc,
+						  bool writeToFits = true)
+  {
+    char *n = new char[strlen (in_val_name) + 3];
+      n[0] = '1' + loop;
+      n[1] = '.';
+      strcpy (n + 2, in_val_name);
+      createValue (val, n, in_desc, writeToFits);
+      delete[] n;
+  }
 
   virtual int processOption (int in_opt);
   virtual int init ();
@@ -67,6 +114,53 @@ Rts2ValueTempInput::Rts2ValueTempInput (Rts2DevSensorCryocon * dev,
   dev->createTempInputValue (&values[4], chan, "SLOPE", "slope of channel ");
   dev->createTempInputValue (&values[5], chan, "OFFSET",
 			     "temp offset of channel ");
+}
+
+Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
+{
+  dev->createLoopValue (source, loop, "SOURCE", "Control lopp source input");
+  values[0] = source;
+  dev->createLoopValue (setpt, loop, "SETPT", "Control loop set point");
+  values[1] = setpt;
+  dev->createLoopValue (type, loop, "TYPE", "Control loop control type");
+  values[2] = type;
+  dev->createLoopValue (range, loop, "RANGE", "Control loop output range");
+  values[3] = range;
+  dev->createLoopValue (ramp, loop, "RAMP", "Control loop ramp status");
+  values[4] = ramp;
+  dev->createLoopValue (rate, loop, "RATE", "Control loop ramp rate");
+  values[5] = rate;
+  dev->createLoopValue (pgain, loop, "PGAIN",
+			"Control loop proportional gain term");
+  values[6] = pgain;
+  dev->createLoopValue (igain, loop, "IGAIN",
+			"Control loop integral gain term");
+  values[7] = igain;
+  dev->createLoopValue (dgain, loop, "DGAIN",
+			"Control loop derivative gain term");
+  values[8] = dgain;
+  dev->createLoopValue (htrread, loop, "HTRREAD",
+			"Control loop output current");
+  values[9] = htrread;
+  dev->createLoopValue (pmanual, loop, "PMANUAL",
+			"Control loop manual power output setting");
+  values[10] = pmanual;
+}
+
+int
+Rts2DevSensorCryocon::writeRead (char *buf, Rts2Value * val)
+{
+  switch (val->getValueType ())
+    {
+    case RTS2_VALUE_DOUBLE:
+      return writeRead (buf, (Rts2ValueDouble *) val);
+    case RTS2_VALUE_FLOAT:
+      return writeRead (buf, (Rts2ValueFloat *) val);
+    default:
+      logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->
+	getName () << " of type " << val->getValueType () << sendLog;
+    }
+  return -1;
 }
 
 int
@@ -141,9 +235,16 @@ Rts2DevSensor (in_argc, in_argv)
   minor = 0;
   pad = 12;
 
-  for (int i = 0; i < 4; i++)
+  int i;
+
+  for (i = 0; i < 4; i++)
     {
       chans[i] = new Rts2ValueTempInput (this, 'A' + i);
+    }
+
+  for (i = 0; i < 2; i++)
+    {
+      loops[i] = new Rts2ValueLoop (this, i);
     }
 
   createValue (statTime, "STATTIME", "time for which statistic was collected",
@@ -175,6 +276,8 @@ Rts2DevSensorCryocon::createTempInputValue (Rts2ValueDouble ** val, char chan,
   strcpy (d, desc);
   strncat (d, &chan, 1);
   createValue (*val, n, d, true);
+  delete[]n;
+  delete[]d;
 }
 
 int
@@ -217,17 +320,35 @@ Rts2DevSensorCryocon::info ()
 {
   int ret;
   char buf[50] = "INPUT ";
-  for (int i = 0; i < 4; i++)
+  int i;
+  int v;
+  for (i = 0; i < 4; i++)
     {
       buf[6] = chans[i]->getChannel ();
       buf[7] = ':';
-      for (int v = 0; v < 6; v++)
+      for (v = 0; v < 6; v++)
 	{
 	  strcpy (buf + 8, chans[i]->values[v]->getName ().c_str ());
 	  buf[strlen (buf) - 1] = '?';
 	  ret = writeRead (buf, chans[i]->values[v]);
 	  if (ret)
 	    return ret;
+	}
+    }
+  strcpy (buf, "LOOP ");
+  // run info for loops
+  for (i = 0; i < 2; i++)
+    {
+      buf[5] = '1' + i;
+      buf[6] = ':';
+      for (v = 0; v < 11; v++)
+	{
+	  Rts2Value *val = loops[i]->values[v];
+	  strcpy (buf + 7, val->getName ().c_str () + 2);
+	  std::cout << "buf " << buf << std::endl;
+	  buf[strlen (buf) + 1] = '\0';
+	  buf[strlen (buf)] = '?';
+	  writeRead (buf, val);
 	}
     }
   ret = writeRead ("STATS:TIME?", statTime);
