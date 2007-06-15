@@ -29,6 +29,10 @@
 // script value, when we will display it, we might look for scriptPosition and scriptLen, which will show current script position
 #define RTS2_DT_SCRIPT		0x00100000
 
+// BOP mask is taken from status.h, and occupied highest byte (0xff000000)
+
+#include <status.h>
+
 class Rts2Conn;
 
 /***********************************
@@ -85,6 +89,10 @@ public:
   int32_t getValueDisplayType ()
   {
     return rts2Type & RTS2_TYPE_MASK;
+  }
+  int32_t getBopMask ()
+  {
+    return rts2Type & BOP_MASK;
   }
   virtual double getValueDouble ()
   {

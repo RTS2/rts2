@@ -55,7 +55,6 @@ class Rts2Centrald:public Rts2Daemon
 {
 private:
   int priority_client;
-  int current_state;
 
   int next_event_type;
   time_t next_event_time;
@@ -110,10 +109,6 @@ public:
   int changeStateOff (const char *user)
   {
     return changeState (SERVERD_OFF, user);
-  }
-  inline int getState ()
-  {
-    return current_state;
   }
   inline int getPriorityClient ()
   {
@@ -559,7 +554,7 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
 {
   connNum = 0;
 
-  current_state = SERVERD_OFF;
+  setState (SERVERD_OFF, "Initial configuration");
 
   configFile = NULL;
 
@@ -618,8 +613,8 @@ Rts2Centrald::init ()
 
   Rts2Config *config = Rts2Config::instance ();
 
-  current_state =
-    config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
+  setState (config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF,
+	    "init");
 
   centraldConnRunning ();
   ret = checkLockFile (LOCK_PREFIX "centrald");
@@ -672,8 +667,8 @@ Rts2Centrald::changeState (int new_state, const char *user)
 {
   logStream (MESSAGE_INFO) << "State switched to " << new_state << " by " <<
     user << sendLog;
-  current_state = new_state;
-  return sendStatusMessage (current_state);
+  setState (new_state, user);
+  return sendStatusMessage (getState ());
 }
 
 /*!
@@ -731,7 +726,7 @@ Rts2Centrald::idle ()
   int call_state;
   int old_current_state;
 
-  if (current_state == SERVERD_OFF)
+  if (getState () == SERVERD_OFF)
     return Rts2Daemon::idle ();
 
   curr_time = time (NULL);
@@ -742,29 +737,32 @@ Rts2Centrald::idle ()
   next_event (observer, &curr_time, &call_state, &next_event_type,
 	      &next_event_time);
 
-  if (current_state != call_state)
+  if (getState () != call_state)
     {
-      old_current_state = current_state;
-      if ((current_state & SERVERD_STATUS_MASK) == SERVERD_MORNING
+      old_current_state = getState ();
+      if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
 	  && call_state == SERVERD_DAY)
 	{
 	  if (morning_off)
-	    current_state = SERVERD_OFF;
+	    setState (SERVERD_OFF, "by idle routine");
 	  else if (morning_standby)
-	    current_state = call_state | SERVERD_STANDBY;
+	    setState (call_state | SERVERD_STANDBY, "by idle routine");
 	  else
-	    current_state =
-	      (current_state & SERVERD_STANDBY_MASK) | call_state;
+	    setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
+		      "by idle routine");
 	}
       else
 	{
-	  current_state = (current_state & SERVERD_STANDBY_MASK) | call_state;
+	  setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
+		    "by idle routine");
 	}
-      if (current_state != old_current_state)
+
+      // distribute new state
+      if (getState () != old_current_state)
 	{
 	  logStream (MESSAGE_INFO) << "changed state from " <<
-	    old_current_state << " to " << current_state << sendLog;
-	  sendStatusMessage (current_state);
+	    old_current_state << " to " << getState () << sendLog;
+	  sendStatusMessage (getState ());
 	}
     }
   return Rts2Daemon::idle ();

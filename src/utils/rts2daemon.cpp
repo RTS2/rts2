@@ -28,6 +28,8 @@ Rts2Block (in_argc, in_argv)
 
   daemonize = DO_DAEMONIZE;
 
+  state = 0;
+
   createValue (info_time, "infotime",
 	       "time when this informations were correct", false);
 
@@ -520,6 +522,41 @@ Rts2Daemon::addConstValue (Rts2Value * value)
 }
 
 void
+Rts2Daemon::addBopValue (Rts2Value * value)
+{
+  bopValues.push_back (value);
+  // create status mask and send it..
+  checkBopStatus ();
+}
+
+void
+Rts2Daemon::removeBopValue (Rts2Value * value)
+{
+  for (Rts2ValueVector::iterator iter = bopValues.begin ();
+       iter != bopValues.end ();)
+    {
+      if (*iter == value)
+	iter = bopValues.erase (iter);
+      else
+	iter++;
+    }
+  checkBopStatus ();
+}
+
+void
+Rts2Daemon::checkBopStatus ()
+{
+  int new_state = getState ();
+  for (Rts2ValueVector::iterator iter = bopValues.begin ();
+       iter != bopValues.end (); iter++)
+    {
+      Rts2Value *val = *iter;
+      new_state |= val->getBopMask ();
+    }
+  setState (new_state, "changed due to bop");
+}
+
+void
 Rts2Daemon::addConstValue (char *in_name, const char *in_desc, char *in_value)
 {
   Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
@@ -810,4 +847,35 @@ Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
 err:
   delete newValue;
   return ret;
+}
+
+void
+Rts2Daemon::setState (int new_state, const char *description)
+{
+  if (state == new_state)
+    return;
+  stateChanged (new_state, state, description);
+}
+
+void
+Rts2Daemon::stateChanged (int new_state, int old_state,
+			  const char *description)
+{
+  state = new_state;
+}
+
+void
+Rts2Daemon::maskState (int state_mask, int new_state, const char *description)
+{
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) <<
+    "Rts2Device::maskState state: " << " state_mask: " <<
+    state_mask << " new_state: " << new_state << " desc: " << description <<
+    sendLog;
+#endif
+  int masked_state = state;
+  // null from state all errors..
+  masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
+  masked_state |= new_state;
+  setState (masked_state, description);
 }

@@ -13,7 +13,8 @@ public:
 
   virtual int startOpen ()
   {
-    return maskState (MIRROR_MASK, MIRROR_A_B, "moving A->B");
+    maskState (MIRROR_MASK, MIRROR_A_B, "moving A->B");
+    return 0;
   }
   virtual int isOpened ()
   {
@@ -21,12 +22,14 @@ public:
   }
   virtual int endOpen ()
   {
-    return maskState (MIRROR_MASK, MIRROR_B, "moved A->B");
+    maskState (MIRROR_MASK, MIRROR_B, "moved A->B");
+    return 0;
   }
 
   virtual int startClose ()
   {
-    return maskState (MIRROR_MASK, MIRROR_B_A, "moving B->A");
+    maskState (MIRROR_MASK, MIRROR_B_A, "moving B->A");
+    return 0;
   }
   virtual int isClosed ()
   {
@@ -34,7 +37,8 @@ public:
   }
   virtual int endClose ()
   {
-    return maskState (MIRROR_MASK, MIRROR_A, "moved B->A");
+    maskState (MIRROR_MASK, MIRROR_A, "moved B->A");
+    return 0;
   }
 
   // return 1, when mirror is (still) moving

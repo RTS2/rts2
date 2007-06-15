@@ -550,8 +550,6 @@ Rts2Daemon (in_argc, in_argv)
   centrald_port = atoi (CENTRALD_PORT);
   log_option = 0;
 
-  state = 0;
-
   device_type = in_device_type;
 
   device_host = NULL;
@@ -686,15 +684,11 @@ Rts2Device::createClientConnection (Rts2Address * in_addres)
 }
 
 void
-Rts2Device::setState (int new_state, char *description)
+Rts2Device::stateChanged (int new_state, int old_state,
+			  const char *description)
 {
   int ret;
-  // state was set..do not set it again
-  if (state == new_state)
-    {
-      return;
-    }
-  state = new_state;
+  Rts2Daemon::stateChanged (new_state, old_state, description);
   // try to wake-up qued changes..
   for (Rts2ValueQueVector::iterator iter = queValues.begin ();
        iter != queValues.end ();)
@@ -725,7 +719,7 @@ Rts2Device::setState (int new_state, char *description)
 	  iter++;
 	}
     }
-  sendStatusMessage (state);
+  sendStatusMessage (getState ());
 }
 
 int
@@ -733,34 +727,10 @@ Rts2Device::sendStateInfo (Rts2Conn * conn)
 {
   int ret;
   char *msg;
-  asprintf (&msg, PROTO_INFO " %i", state);
+  asprintf (&msg, PROTO_INFO " %i", getState ());
   ret = conn->send (msg);
   free (msg);
   return ret;
-}
-
-int
-Rts2Device::changeState (int new_state, char *description)
-{
-  setState (new_state, description);
-  return 0;
-}
-
-int
-Rts2Device::maskState (int state_mask, int new_state, char *description)
-{
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) <<
-    "Rts2Device::maskState state: " << " state_mask: " <<
-    state_mask << " new_state: " << new_state << " desc: " << description <<
-    sendLog;
-#endif
-  int masked_state = state;
-  // null from state all errors..
-  masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
-  masked_state |= new_state;
-  setState (masked_state, description);
-  return 0;
 }
 
 int

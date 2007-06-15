@@ -621,7 +621,8 @@ Rts2DevTelescope::stopSearch ()
 int
 Rts2DevTelescope::endSearch ()
 {
-  return maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
+  maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
+  return 0;
 }
 
 int

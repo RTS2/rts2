@@ -23,10 +23,17 @@ private:
   void addConnectionSock (int in_sock);
   int lockf;
 
+  // daemon state
+  int state;
+
   Rts2CondValueVector values;
   // values which do not change, they are send only once at connection
   // initialization
   Rts2ValueVector constValues;
+
+  // This vector holds list of values which are currenlty beeing changed
+  // It is used to manage BOP mask
+  Rts2ValueVector bopValues;
 
   Rts2ValueTime *info_time;
 
@@ -127,6 +134,16 @@ protected:
   void addConstValue (char *in_name, double in_value);
   void addConstValue (char *in_name, int in_value);
 
+  /**
+   * BOP management routines.
+   * Those routines are used to manage BOP (Block OPeration) mask. It is used
+   * to decide, which actions can be performed without disturbing observation.
+   */
+  void addBopValue (Rts2Value * in_value);
+  void removeBopValue (Rts2Value * in_value);
+
+  void checkBopStatus ();
+
   /** 
    * Set value. That one should be owerwrited in descendants.
    * 
@@ -183,6 +200,25 @@ public:
   int sendMetaInfo (Rts2Conn * conn);
 
   virtual int setValue (Rts2Conn * conn, bool overwriteSaved);
+
+  // state management functions
+protected:
+  /**
+   * Called to set new state value
+   */
+  void setState (int new_state, const char *description);
+  virtual void stateChanged (int new_state, int old_state,
+			     const char *description);
+public:
+  /**
+   * Called when state is changed.
+   */
+  void maskState (int state_mask, int new_state, const char *description =
+		  NULL);
+  int getState ()
+  {
+    return state;
+  };
 };
 
 #endif /* ! __RTS2_DAEMON__ */

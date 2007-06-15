@@ -115,8 +115,7 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
 class Rts2Device:public Rts2Daemon
 {
 private:
-  int state;
-  Rts2DevConnMaster *conn_master;
+  Rts2DevConnMaster * conn_master;
   char *centrald_host;
   int centrald_port;
   int device_port;
@@ -128,8 +127,6 @@ private:
   char *device_host;
 
   char *mailAddress;
-
-  void setState (int new_state, char *description);
 
 protected:
   /**
@@ -143,6 +140,9 @@ protected:
 
   virtual Rts2Conn *createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
+
+  virtual void stateChanged (int new_state, int old_state,
+			     const char *description);
 
   virtual void cancelPriorityOperations ();
 
@@ -158,12 +158,6 @@ public:
 
   virtual int commandAuthorized (Rts2Conn * conn);
 
-  int changeState (int new_state, char *description);
-  int maskState (int state_mask, int new_state, char *description = NULL);
-  int getState ()
-  {
-    return state;
-  };
   virtual int init ();
   int authorize (Rts2DevConn * conn);
   int sendMaster (char *msg)
