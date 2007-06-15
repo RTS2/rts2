@@ -380,6 +380,16 @@ Rts2ValueSelection::copySel (Rts2ValueSelection * sel)
     }
 }
 
+void
+Rts2ValueSelection::addSelVals (const char **vals)
+{
+  while (*vals != NULL)
+    {
+      addSelVal (*vals);
+      vals++;
+    }
+}
+
 int
 Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
 {

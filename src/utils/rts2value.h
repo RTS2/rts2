@@ -306,6 +306,14 @@ public:
 
   int getSelIndex (std::string in_val);
 
+  int setSelIndex (char *selVal)
+  {
+    int i = getSelIndex (std::string (selVal));
+    if (i < 0)
+        return -1;
+      setValueInteger (i);
+      return 0;
+  }
   void copySel (Rts2ValueSelection * sel);
 
   void addSelVal (char *sel_name)
@@ -317,6 +325,8 @@ public:
   {
     valNames.push_back (sel_name);
   }
+
+  void addSelVals (const char **vals);
 
   std::string getSelVal ()
   {
