@@ -299,10 +299,6 @@ Rts2DevSensorGpib (in_argc, in_argv)
   createValue (htrhst, "HTRHST", "Heater heat sink temperature", true);
 
   createValue (heaterEnabled, "HEATER", "Heater enabled/disabled", true);
-
-  addOption ('m', "minor", 1, "board number (default to 0)");
-  addOption ('p', "pad", 1,
-	     "device number (default to 12, counted from 0, not from 1)");
 }
 
 Rts2DevSensorCryocon::~Rts2DevSensorCryocon (void)

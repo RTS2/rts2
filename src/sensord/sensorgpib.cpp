@@ -107,6 +107,9 @@ Rts2DevSensorGpib::Rts2DevSensorGpib (int in_argc, char **in_argv):Rts2DevSensor
 
   minor = 0;
   pad = 0;
+
+  addOption ('m', "minor", 1, "board number (default to 0)");
+  addOption ('p', "pad", 1, "device number (counted from 0, not from 1)");
 }
 
 Rts2DevSensorGpib::~Rts2DevSensorGpib (void)

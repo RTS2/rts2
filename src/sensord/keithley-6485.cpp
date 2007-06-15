@@ -116,10 +116,6 @@ Rts2DevSensorGpib (in_argc, in_argv)
 
   createValue (azero, "AZERO", "SYSTEM:AZERO value");
   createValue (current, "CURRENT", "Measured current");
-
-  addOption ('m', "minor", 1, "board number (default to 0)");
-  addOption ('p', "pad", 1,
-	     "device number (default to 14, counted from 0, not from 1)");
 }
 
 Rts2DevSensorKeithley::~Rts2DevSensorKeithley (void)
