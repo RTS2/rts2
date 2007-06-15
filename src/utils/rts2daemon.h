@@ -149,15 +149,17 @@ protected:
    * \param old_value Rts2CondValue object describing the old_value
    */
   virtual bool queValueChange (Rts2CondValue * old_value) = 0;
-public:
-  Rts2Daemon (int in_argc, char **in_argv);
-  virtual ~ Rts2Daemon (void);
+
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int initValues ();
   void initDaemon ();
-  virtual int run ();
   virtual int idle ();
+
+public:
+  Rts2Daemon (int in_argc, char **in_argv);
+  virtual ~ Rts2Daemon (void);
+  virtual int run ();
 
   void setIdleInfoInterval (time_t interval)
   {
