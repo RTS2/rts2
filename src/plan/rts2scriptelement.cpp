@@ -465,12 +465,14 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
     {
       char
 	ch = *iter;
-      if (ch == '+' || ch == '-' || ch == '=')
+      if (!op && (ch == '+' || ch == '-' || ch == '='))
 	{
-	  if (op == '\0')
+	  valName = chng_s.substr (0, i);
+	  op = ch;
+	  if (ch == '+' || ch == '-' && (*(iter + 1) == '='))
 	    {
-	      valName = chng_s.substr (0, i);
-	      op = ch;
+	      iter++;
+	      i++;
 	    }
 	  op_end = i;
 	}

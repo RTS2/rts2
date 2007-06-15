@@ -1,5 +1,8 @@
 #include "sensord.h"
 
+#define TEMP_VALS	6
+#define LOOP_VALS	11
+
 #include <gpib/ib.h>
 
 class Rts2DevSensorCryocon;
@@ -12,7 +15,7 @@ class Rts2ValueTempInput
 private:
   char chan;
 public:
-    Rts2ValueDouble * values[6];
+    Rts2ValueDouble * values[TEMP_VALS];
 
     Rts2ValueTempInput (Rts2DevSensorCryocon * dev, char in_chan);
 
@@ -44,7 +47,7 @@ public:
 
     Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop);
 
-  Rts2Value *values[11];
+  Rts2Value *values[LOOP_VALS];
 
   int getLoop ()
   {
@@ -60,6 +63,8 @@ private:
 
   int gpib_dev;
 
+  int write (const char *buf, const char *newVal);
+
   int writeRead (char *buf, char *val);
 
   int writeRead (char *buf, Rts2Value * val);
@@ -69,6 +74,8 @@ private:
   int writeRead (char *buf, Rts2ValueBool * val);
   int writeRead (char *buf, Rts2ValueSelection * val);
 
+  const char *getLoopVal (int l, Rts2Value * val);
+
   Rts2ValueTempInput *chans[4];
   Rts2ValueLoop *loops[2];
 
@@ -77,6 +84,9 @@ private:
   Rts2ValueDouble *amb;
   Rts2ValueFloat *htrread;
   Rts2ValueFloat *htrhst;
+protected:
+    virtual int setValue (Rts2Value * oldValue, Rts2Value * newValue);
+
 public:
     Rts2DevSensorCryocon (int argc, char **argv);
     virtual ~ Rts2DevSensorCryocon (void);
@@ -163,6 +173,28 @@ Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
   dev->createLoopValue (pmanual, loop, "PMANUAL",
 			"Control loop manual power output setting");
   values[10] = pmanual;
+}
+
+int
+Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
+{
+  int ret;
+  char *vbuf = new char[strlen (buf) + strlen (newVal) + 2];
+  strcpy (vbuf, buf);
+  strcat (vbuf, " ");
+  strcat (vbuf, newVal);
+  ret = ibwrt (gpib_dev, vbuf, strlen (vbuf));
+//#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "write " << vbuf << sendLog;
+//#endif
+  delete[]vbuf;
+  if (ret & ERR)
+    {
+      logStream (MESSAGE_ERROR) << "error writing " << buf << " to " << newVal
+	<< sendLog;
+      return -1;
+    }
+  return 0;
 }
 
 int
@@ -257,6 +289,31 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueSelection * val)
   if (ret)
     return ret;
   return val->setSelIndex (rb);
+}
+
+const char *
+Rts2DevSensorCryocon::getLoopVal (int l, Rts2Value * val)
+{
+  static char buf[100];
+  strcpy (buf, "LOOP ");
+  // run info for loops
+  buf[5] = '1' + l;
+  buf[6] = ':';
+  strcpy (buf + 7, val->getName ().c_str () + 2);
+  return buf;
+}
+
+int
+Rts2DevSensorCryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
+{
+  for (int l = 0; l < 2; l++)
+    for (int i = 0; i < LOOP_VALS; i++)
+      {
+	Rts2Value *val = loops[l]->values[i];
+	if (oldValue == val)
+	  return write (getLoopVal (l, val), newValue->getDisplayValue ());
+      }
+  return Rts2DevSensor::setValue (oldValue, newValue);
 }
 
 Rts2DevSensorCryocon::Rts2DevSensorCryocon (int in_argc, char **in_argv):
@@ -358,7 +415,7 @@ Rts2DevSensorCryocon::info ()
     {
       buf[6] = chans[i]->getChannel ();
       buf[7] = ':';
-      for (v = 0; v < 6; v++)
+      for (v = 0; v < TEMP_VALS; v++)
 	{
 	  strcpy (buf + 8, chans[i]->values[v]->getName ().c_str ());
 	  buf[strlen (buf) - 1] = '?';
@@ -373,7 +430,7 @@ Rts2DevSensorCryocon::info ()
     {
       buf[5] = '1' + i;
       buf[6] = ':';
-      for (v = 0; v < 11; v++)
+      for (v = 0; v < LOOP_VALS; v++)
 	{
 	  Rts2Value *val = loops[i]->values[v];
 	  strcpy (buf + 7, val->getName ().c_str () + 2);

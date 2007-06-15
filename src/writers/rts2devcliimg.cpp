@@ -142,8 +142,7 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes
-Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }
@@ -162,7 +161,7 @@ Rts2DevClientCameraImage::exposureStarted ()
     delete images;
   exposureTime = getValueDouble ("exposure");
   struct timeval expStart;
-  char *focuser;
+  const char *focuser;
   gettimeofday (&expStart, NULL);
   images = createImage (&expStart);
   images->setExposureLength (exposureTime);

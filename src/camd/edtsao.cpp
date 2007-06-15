@@ -636,35 +636,35 @@ CameraEdtSaoChip::readoutOneLine ()
 
 	  /* split mode - assumes 16 bit/pixel and 2 channels */
 	  // do it in place, without allocating second memory
-	  dx = (uint16_t *) send_top;
-	  for (int r = 0; r < chipUsedReadout->height; r++)
-	    {
-	      int fp, fp2;
-	      uint16_t v;
-	      // split first half
-	      for (int c = 0; c < chipUsedReadout->width / 4; c++)
-		{
-		  // swap values
-		  fp = r * chipUsedReadout->width + c;
-		  fp2 = fp + chipUsedReadout->width / 4;
-		  v = dx[fp];
-		  dx[fp] = dx[fp2];
-		  dx[fp2] = v;
-		}
-	      // and then do second half..
-	      for (int c = chipUsedReadout->width / 2;
-		   c <
-		   chipUsedReadout->width / 2 + chipUsedReadout->width / 4;
-		   c++)
-		{
-		  // swap values
-		  fp = r * chipUsedReadout->width + c;
-		  fp2 = fp + chipUsedReadout->width / 4;
-		  v = dx[fp];
-		  dx[fp] = dx[fp2];
-		  dx[fp2] = v;
-		}
-	    }
+	  /*dx = (uint16_t *) send_top;
+	     for (int r = 0; r < chipUsedReadout->height; r++)
+	     {
+	     int fp, fp2;
+	     uint16_t v;
+	     // split first half
+	     for (int c = 0; c < chipUsedReadout->width / 4; c++)
+	     {
+	     // swap values
+	     fp = r * chipUsedReadout->width + c;
+	     fp2 = fp + chipUsedReadout->width / 4;
+	     v = dx[fp];
+	     dx[fp] = dx[fp2];
+	     dx[fp2] = v;
+	     }
+	     // and then do second half..
+	     for (int c = chipUsedReadout->width / 2;
+	     c <
+	     chipUsedReadout->width / 2 + chipUsedReadout->width / 4;
+	     c++)
+	     {
+	     // swap values
+	     fp = r * chipUsedReadout->width + c;
+	     fp2 = fp + chipUsedReadout->width / 4;
+	     v = dx[fp];
+	     dx[fp] = dx[fp2];
+	     dx[fp2] = v;
+	     }
+	     } */
 	}
       else
 	{

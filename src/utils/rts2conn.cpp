@@ -1114,7 +1114,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 }
 
 int
-Rts2Conn::sendValue (std::string val_name, char *value)
+Rts2Conn::sendValue (std::string val_name, const char *value)
 {
   char *msg;
   int ret;

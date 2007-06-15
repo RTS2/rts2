@@ -78,7 +78,7 @@ Rts2Value (in_val_name, in_description, writeToFits, displayType)
   rts2Type |= RTS2_VALUE_STRING;
 }
 
-char *
+const char *
 Rts2ValueString::getValue ()
 {
   return value;
@@ -128,7 +128,7 @@ Rts2Value (in_val_name, in_description, writeToFits, displayType)
 }
 
 
-char *
+const char *
 Rts2ValueInteger::getValue ()
 {
   sprintf (buf, "%i", value);
@@ -182,14 +182,14 @@ Rts2Value (in_val_name, in_description, writeToFits, displayType)
   rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
-char *
+const char *
 Rts2ValueDouble::getValue ()
 {
   sprintf (buf, "%.20le", value);
   return buf;
 }
 
-char *
+const char *
 Rts2ValueDouble::getDisplayValue ()
 {
   double absv = fabs (value);
@@ -259,14 +259,14 @@ Rts2Value (in_val_name, in_description, writeToFits, displayType)
   rts2Type |= RTS2_VALUE_FLOAT;
 }
 
-char *
+const char *
 Rts2ValueFloat::getValue ()
 {
   sprintf (buf, "%.20e", value);
   return buf;
 }
 
-char *
+const char *
 Rts2ValueFloat::getDisplayValue ()
 {
   double absv = fabs (value);

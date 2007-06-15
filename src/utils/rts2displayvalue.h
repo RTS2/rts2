@@ -8,7 +8,7 @@ std::string
 getDisplayValue (Rts2Value * value)
 {
   std::ostringstream _os;
-  char *tmp_val;
+  const char *tmp_val;
   switch (value->getValueDisplayType ())
     {
     case RTS2_DT_RA:

@@ -118,7 +118,7 @@ Rts2DevClient::getValue (const char *value_name)
   return NULL;
 }
 
-char *
+const char *
 Rts2DevClient::getValueChar (const char *value_name)
 {
   Rts2Value *val;

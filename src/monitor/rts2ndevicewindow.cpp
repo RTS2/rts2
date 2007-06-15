@@ -67,8 +67,8 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 	{
 	  wprintw (getWriteWindow (), "%-20s ", val->getName ().c_str ());
 	  wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-	  char *valStart = val->getValue ();
-	  char *valTop = valStart;
+	  const char *valStart = val->getValue ();
+	  const char *valTop = valStart;
 	  int scriptPosition = client->getValueInteger ("scriptPosition");
 	  int scriptEnd =
 	    client->getValueInteger ("scriptLen") + scriptPosition;
@@ -189,10 +189,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_F (6):
@@ -231,7 +231,8 @@ Rts2NDeviceWindow::draw ()
     valueBox->draw ();
 }
 
-bool Rts2NDeviceWindow::setCursor ()
+bool
+Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();

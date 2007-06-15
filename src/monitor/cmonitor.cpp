@@ -36,7 +36,7 @@ Rts2CMonitorConnection::printStatus ()
        val_iter != otherDevice->valueEnd (); val_iter++)
     {
       Rts2Value *val = (*val_iter);
-      char *val_buf;
+      const char *val_buf;
       val_buf = val->getValue ();
       cout << fixed << setprecision (2);
       if (val_buf)

@@ -77,8 +77,8 @@ public:
   }
   virtual int setValue (Rts2Conn * connection) = 0;
   virtual int doOpValue (char op, Rts2Value * old_value);
-  virtual char *getValue () = 0;
-  virtual char *getDisplayValue ()
+  virtual const char *getValue () = 0;
+  virtual const char *getDisplayValue ()
   {
     return getValue ();
   }
@@ -144,7 +144,7 @@ public:
     delete[]value;
   }
   virtual int setValue (Rts2Conn * connection);
-  virtual char *getValue ();
+  virtual const char *getValue ();
   virtual void setValueString (const char *in_value);
   virtual void setFromValue (Rts2Value * newValue);
 };
@@ -163,7 +163,7 @@ public:
   {
     value = in_value;
   }
-  virtual char *getValue ();
+  virtual const char *getValue ();
   virtual double getValueDouble ()
   {
     return value;
@@ -197,8 +197,8 @@ public:
   {
     value = in_value;
   }
-  virtual char *getValue ();
-  virtual char *getDisplayValue ();
+  virtual const char *getValue ();
+  virtual const char *getDisplayValue ();
   virtual double getValueDouble ()
   {
     return value;
@@ -246,8 +246,8 @@ public:
   {
     value = in_value;
   }
-  virtual char *getValue ();
-  virtual char *getDisplayValue ();
+  virtual const char *getValue ();
+  virtual const char *getDisplayValue ();
   virtual double getValueDouble ()
   {
     return value;
@@ -306,13 +306,18 @@ public:
 
   int getSelIndex (std::string in_val);
 
+  virtual const char *getDisplayValue ()
+  {
+    return getSelVal ().c_str ();
+  }
+
   int setSelIndex (char *selVal)
   {
     int i = getSelIndex (std::string (selVal));
     if (i < 0)
-        return -1;
-      setValueInteger (i);
-      return 0;
+      return -1;
+    setValueInteger (i);
+    return 0;
   }
   void copySel (Rts2ValueSelection * sel);
 

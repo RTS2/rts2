@@ -499,7 +499,7 @@ Rts2Block::addUser (Rts2User * in_user)
 }
 
 Rts2Conn *
-Rts2Block::getOpenConnection (char *deviceName)
+Rts2Block::getOpenConnection (const char *deviceName)
 {
   connections_t::iterator iter;
 
