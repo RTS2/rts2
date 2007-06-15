@@ -63,6 +63,7 @@ private:
 
   int gpib_dev;
 
+  int write (const char *buf);
   int write (const char *buf, const char *newVal);
 
   int writeRead (char *buf, char *val);
@@ -110,6 +111,8 @@ public:
   virtual int processOption (int in_opt);
   virtual int init ();
   virtual int info ();
+
+  virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 Rts2ValueTempInput::Rts2ValueTempInput (Rts2DevSensorCryocon * dev,
@@ -176,6 +179,22 @@ Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
 }
 
 int
+Rts2DevSensorCryocon::write (const char *buf)
+{
+  int ret;
+  ret = ibwrt (gpib_dev, buf, strlen (buf));
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "write " << buf << sendLog;
+#endif
+  if (ret & ERR)
+    {
+      logStream (MESSAGE_ERROR) << "error writing " << buf << sendLog;
+      return -1;
+    }
+  return 0;
+}
+
+int
 Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
 {
   int ret;
@@ -183,18 +202,9 @@ Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
   strcpy (vbuf, buf);
   strcat (vbuf, " ");
   strcat (vbuf, newVal);
-  ret = ibwrt (gpib_dev, vbuf, strlen (vbuf));
-//#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "write " << vbuf << sendLog;
-//#endif
+  ret = write (vbuf);
   delete[]vbuf;
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error writing " << buf << " to " << newVal
-	<< sendLog;
-      return -1;
-    }
-  return 0;
+  return ret;
 }
 
 int
@@ -434,7 +444,6 @@ Rts2DevSensorCryocon::info ()
 	{
 	  Rts2Value *val = loops[i]->values[v];
 	  strcpy (buf + 7, val->getName ().c_str () + 2);
-	  std::cout << "buf " << buf << std::endl;
 	  buf[strlen (buf) + 1] = '\0';
 	  buf[strlen (buf)] = '?';
 	  writeRead (buf, val);
@@ -454,6 +463,21 @@ Rts2DevSensorCryocon::info ()
   if (ret)
     return ret;
   return Rts2DevSensor::info ();
+}
+
+int
+Rts2DevSensorCryocon::commandAuthorized (Rts2Conn * conn)
+{
+  if (conn->isCommand ("control"))
+    {
+      return write ("CONTROL");
+    }
+  else if (conn->isCommand ("stop"))
+    {
+      return write ("STOP");
+    }
+
+  return Rts2DevSensor::commandAuthorized (conn);
 }
 
 int
