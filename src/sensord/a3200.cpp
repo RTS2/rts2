@@ -111,7 +111,7 @@ Rts2DevSensorA3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
     }
   if (old_value == ax3)
     {
-      return moveAxis (AXISINDEX_3, new_value->getValueLong () * AX_SCALE);
+      return moveAxis (AXISINDEX_3, new_value->getValueDouble () * AX_SCALE);
     }
   return Rts2DevSensor::setValue (old_value, new_value);
 }
