@@ -10,7 +10,8 @@ rts2_sensor_ms257_SOURCES = ms257.cpp
 
 if GPIBLIB
 
-bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-6485
+bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-6485 \
+	rts2-sensor-keithley-487
 
 LDADD += sensorgpib.o @LIB_GPIB@
 

@@ -14,7 +14,7 @@ private:
   int gpib_dev;
 protected:
   int gpibWrite (const char *buf);
-  int gpibRead (char *buf, int blen);
+  int gpibRead (void *buf, int blen);
   int gpibWriteRead (char *buf, char *val);
 
   virtual int processOption (int in_opt);

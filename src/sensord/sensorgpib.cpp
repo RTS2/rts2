@@ -17,10 +17,9 @@ Rts2DevSensorGpib::gpibWrite (const char *buf)
 }
 
 int
-Rts2DevSensorGpib::gpibRead (char *buf, int blen)
+Rts2DevSensorGpib::gpibRead (void *buf, int blen)
 {
   int ret;
-  buf[0] = '\0';
   ret = ibrd (gpib_dev, buf, blen);
   if (ret & ERR)
     {
