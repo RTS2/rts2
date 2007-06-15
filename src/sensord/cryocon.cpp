@@ -60,10 +60,14 @@ private:
 
   int gpib_dev;
 
+  int writeRead (char *buf, char *val);
+
   int writeRead (char *buf, Rts2Value * val);
 
   int writeRead (char *buf, Rts2ValueDouble * val);
   int writeRead (char *buf, Rts2ValueFloat * val);
+  int writeRead (char *buf, Rts2ValueBool * val);
+  int writeRead (char *buf, Rts2ValueSelection * val);
 
   Rts2ValueTempInput *chans[4];
   Rts2ValueLoop *loops[2];
@@ -118,14 +122,28 @@ Rts2ValueTempInput::Rts2ValueTempInput (Rts2DevSensorCryocon * dev,
 
 Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
 {
+  loop = in_loop;
+
   dev->createLoopValue (source, loop, "SOURCE", "Control lopp source input");
   values[0] = source;
+  // fill in values
+  const char *sourceVals[] = { "CHA", "CHB", "CHC", "CHD", NULL };
+  source->addSelVals (sourceVals);
+
   dev->createLoopValue (setpt, loop, "SETPT", "Control loop set point");
   values[1] = setpt;
   dev->createLoopValue (type, loop, "TYPE", "Control loop control type");
+
   values[2] = type;
+  const char *typeVals[] =
+    { "Off", "PID", "Man", "Table", "RampP", "RampT", NULL };
+  type->addSelVals (typeVals);
+
   dev->createLoopValue (range, loop, "RANGE", "Control loop output range");
   values[3] = range;
+  const char *rangeVals[] = { "50W", "5.0W", "0.5W", "0.05W", NULL };
+  range->addSelVals (rangeVals);
+
   dev->createLoopValue (ramp, loop, "RAMP", "Control loop ramp status");
   values[4] = ramp;
   dev->createLoopValue (rate, loop, "RATE", "Control loop ramp rate");
@@ -148,6 +166,37 @@ Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
 }
 
 int
+Rts2DevSensorCryocon::writeRead (char *buf, char *val)
+{
+  int ret;
+  *val = '\0';
+  ret = ibwrt (gpib_dev, buf, strlen (buf));
+  if (ret & ERR)
+    {
+      logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
+	sendLog;
+      return -1;
+    }
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
+    " ret " << ret << sendLog;
+#endif
+  ret = ibrd (gpib_dev, val, 50);
+  if (ret & ERR)
+    {
+      logStream (MESSAGE_ERROR) << "error reading reply from " << buf <<
+	", readed " << val << " " << ret << sendLog;
+      return -1;
+    }
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << val <<
+    " ret " << ret << sendLog;
+#endif
+  return 0;
+}
+
+
+int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2Value * val)
 {
   switch (val->getValueType ())
@@ -156,6 +205,10 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2Value * val)
       return writeRead (buf, (Rts2ValueDouble *) val);
     case RTS2_VALUE_FLOAT:
       return writeRead (buf, (Rts2ValueFloat *) val);
+    case RTS2_VALUE_BOOL:
+      return writeRead (buf, (Rts2ValueBool *) val);
+    case RTS2_VALUE_SELECTION:
+      return writeRead (buf, (Rts2ValueSelection *) val);
     default:
       logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->
 	getName () << " of type " << val->getValueType () << sendLog;
@@ -167,30 +220,9 @@ int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueDouble * val)
 {
   char rb[50];
-  int ret;
-  rb[0] = '0';
-  ret = ibwrt (gpib_dev, buf, strlen (buf));
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
-	sendLog;
-      return -1;
-    }
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
-    " ret " << ret << sendLog;
-#endif
-  ret = ibrd (gpib_dev, rb, 50);
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error reading " << rb << " " << ret <<
-	sendLog;
-      return -1;
-    }
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << rb << " ret "
-    << ret << sendLog;
-#endif
+  int ret = writeRead (buf, rb);
+  if (ret)
+    return ret;
   val->setValueDouble (atof (rb));
   return 0;
 }
@@ -199,32 +231,32 @@ int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueFloat * val)
 {
   char rb[50];
-  int ret;
-  rb[0] = '0';
-  ret = ibwrt (gpib_dev, buf, strlen (buf));
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
-	sendLog;
-      return -1;
-    }
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
-    " ret " << ret << sendLog;
-#endif
-  ret = ibrd (gpib_dev, rb, 50);
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error reading " << rb << " " << ret <<
-	sendLog;
-      return -1;
-    }
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << rb << " ret "
-    << ret << sendLog;
-#endif
+  int ret = writeRead (buf, rb);
+  if (ret)
+    return ret;
   val->setValueFloat (atof (rb));
   return 0;
+}
+
+int
+Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueBool * val)
+{
+  char rb[50];
+  int ret = writeRead (buf, rb);
+  if (ret)
+    return ret;
+  val->setValueBool (!strcmp (rb, "ON"));
+  return 0;
+}
+
+int
+Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueSelection * val)
+{
+  char rb[50];
+  int ret = writeRead (buf, rb);
+  if (ret)
+    return ret;
+  return val->setSelIndex (rb);
 }
 
 Rts2DevSensorCryocon::Rts2DevSensorCryocon (int in_argc, char **in_argv):
