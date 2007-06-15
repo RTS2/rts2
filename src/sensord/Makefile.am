@@ -1,6 +1,6 @@
 bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257
 
-noinst_HEADERS = sensord.h
+noinst_HEADERS = sensord.h sensorgpib.h
 
 LDADD = ../utils/librts2block.a
 
@@ -12,11 +12,18 @@ if GPIBLIB
 
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-6485
 
-rts2_sensor_cryocon_SOURCES = sensord.cpp cryocon.cpp
+rts2_sensor_cryocon_SOURCES = sensord.cpp sensorgpib.cpp cryocon.cpp
 rts2_sensor_cryocon_LDFLAGS = @LIB_GPIB@
 
-rts2_sensor_keithley_6485_SOURCES = sensord.cpp keithley-6485.cpp
+rts2_sensor_keithley_6485_SOURCES = sensord.cpp sensorgpib.cpp keithley-6485.cpp
 rts2_sensor_keithley_6485_LDFLAGS = @LIB_GPIB@
+
+rts2_sensor_keithley_487_SOURCES = sensord.cpp keithley-487.cpp
+rts2_sensor_keithley_487_LDFLAGS = @LIB_GPIB@
+
+else
+
+EXTRA_DIST = sensorgpib.cpp cryocon.cpp keithley-6485.cpp keithley-487.cpp
 
 endif
 
@@ -27,5 +34,9 @@ bin_PROGRAMS += rts2-sensor-a3200
 rts2_sensor_a3200_SOURCES = sensord.cpp a3200.cpp
 rts2_sensor_a3200_CXXFLAGS = @INC_A3200@
 rts2_sensor_a3200_LDADD = @LIB_A3200@ ../utils/librts2block.a
+
+else
+
+EXTRA_DIST = a3200.cpp
 
 endif

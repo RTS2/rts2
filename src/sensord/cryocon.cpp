@@ -1,9 +1,7 @@
-#include "sensord.h"
+#include "sensorgpib.h"
 
 #define TEMP_VALS	6
 #define LOOP_VALS	11
-
-#include <gpib/ib.h>
 
 class Rts2DevSensorCryocon;
 
@@ -55,18 +53,9 @@ public:
   }
 };
 
-class Rts2DevSensorCryocon:public Rts2DevSensor
+class Rts2DevSensorCryocon:public Rts2DevSensorGpib
 {
-private:
-  int minor;
-  int pad;
-
-  int gpib_dev;
-
-  int write (const char *buf);
   int write (const char *buf, const char *newVal);
-
-  int writeRead (char *buf, char *val);
 
   int writeRead (char *buf, Rts2Value * val);
 
@@ -109,8 +98,6 @@ public:
       delete[] n;
   }
 
-  virtual int processOption (int in_opt);
-  virtual int init ();
   virtual int info ();
 
   virtual int commandAuthorized (Rts2Conn * conn);
@@ -179,21 +166,6 @@ Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
   values[10] = pmanual;
 }
 
-int
-Rts2DevSensorCryocon::write (const char *buf)
-{
-  int ret;
-  ret = ibwrt (gpib_dev, buf, strlen (buf));
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "write " << buf << sendLog;
-#endif
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error writing " << buf << sendLog;
-      return -1;
-    }
-  return 0;
-}
 
 int
 Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
@@ -203,41 +175,10 @@ Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
   strcpy (vbuf, buf);
   strcat (vbuf, " ");
   strcat (vbuf, newVal);
-  ret = write (vbuf);
+  ret = gpibWrite (vbuf);
   delete[]vbuf;
   return ret;
 }
-
-int
-Rts2DevSensorCryocon::writeRead (char *buf, char *val)
-{
-  int ret;
-  *val = '\0';
-  ret = ibwrt (gpib_dev, buf, strlen (buf));
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
-	sendLog;
-      return -1;
-    }
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
-    " ret " << ret << sendLog;
-#endif
-  ret = ibrd (gpib_dev, val, 50);
-  if (ret & ERR)
-    {
-      logStream (MESSAGE_ERROR) << "error reading reply from " << buf <<
-	", readed " << val << " " << ret << sendLog;
-      return -1;
-    }
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << val <<
-    " ret " << ret << sendLog;
-#endif
-  return 0;
-}
-
 
 int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2Value * val)
@@ -263,7 +204,7 @@ int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueDouble * val)
 {
   char rb[50];
-  int ret = writeRead (buf, rb);
+  int ret = gpibWriteRead (buf, rb);
   if (ret)
     return ret;
   val->setValueDouble (atof (rb));
@@ -274,7 +215,7 @@ int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueFloat * val)
 {
   char rb[50];
-  int ret = writeRead (buf, rb);
+  int ret = gpibWriteRead (buf, rb);
   if (ret)
     return ret;
   val->setValueFloat (atof (rb));
@@ -285,7 +226,7 @@ int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueBool * val)
 {
   char rb[50];
-  int ret = writeRead (buf, rb);
+  int ret = gpibWriteRead (buf, rb);
   if (ret)
     return ret;
   val->setValueBool (!strcmp (rb, "ON"));
@@ -296,7 +237,7 @@ int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueSelection * val)
 {
   char rb[50];
-  int ret = writeRead (buf, rb);
+  int ret = gpibWriteRead (buf, rb);
   if (ret)
     return ret;
   return val->setSelIndex (rb);
@@ -326,23 +267,19 @@ Rts2DevSensorCryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
       }
   if (oldValue == heaterEnabled)
     {
-      int ret;
       if (((Rts2ValueBool *) newValue)->getValueBool ())
-	return write ("CONTROL");
-      return write ("STOP");
+	return gpibWrite ("CONTROL");
+      return gpibWrite ("STOP");
     }
-  return Rts2DevSensor::setValue (oldValue, newValue);
+  return Rts2DevSensorGpib::setValue (oldValue, newValue);
 }
 
 Rts2DevSensorCryocon::Rts2DevSensorCryocon (int in_argc, char **in_argv):
-Rts2DevSensor (in_argc, in_argv)
+Rts2DevSensorGpib (in_argc, in_argv)
 {
-  gpib_dev = -1;
-
-  minor = 0;
-  pad = 12;
-
   int i;
+
+  setPad (12);
 
   for (i = 0; i < 4; i++)
     {
@@ -370,7 +307,6 @@ Rts2DevSensor (in_argc, in_argv)
 
 Rts2DevSensorCryocon::~Rts2DevSensorCryocon (void)
 {
-  ibonl (gpib_dev, 0);
 }
 
 void
@@ -387,41 +323,6 @@ Rts2DevSensorCryocon::createTempInputValue (Rts2ValueDouble ** val, char chan,
   createValue (*val, n, d, true);
   delete[]n;
   delete[]d;
-}
-
-int
-Rts2DevSensorCryocon::processOption (int in_opt)
-{
-  switch (in_opt)
-    {
-    case 'm':
-      minor = atoi (optarg);
-      break;
-    case 'p':
-      pad = atoi (optarg);
-      break;
-    default:
-      return Rts2DevSensor::processOption (in_opt);
-    }
-  return 0;
-}
-
-int
-Rts2DevSensorCryocon::init ()
-{
-  int ret;
-  ret = Rts2DevSensor::init ();
-  if (ret)
-    return ret;
-
-  gpib_dev = ibdev (minor, pad, 0, T3s, 1, 0);
-  if (gpib_dev < 0)
-    {
-      logStream (MESSAGE_ERROR) << "cannot init cryocon on " << minor << " "
-	<< pad << sendLog;
-      return -1;
-    }
-  return 0;
 }
 
 int
@@ -472,7 +373,7 @@ Rts2DevSensorCryocon::info ()
   ret = writeRead ("SYSTEM:HTRHST?", htrhst);
   if (ret)
     return ret;
-  return Rts2DevSensor::info ();
+  return Rts2DevSensorGpib::info ();
 }
 
 int
@@ -480,14 +381,14 @@ Rts2DevSensorCryocon::commandAuthorized (Rts2Conn * conn)
 {
   if (conn->isCommand ("control"))
     {
-      return write ("CONTROL");
+      return gpibWrite ("CONTROL");
     }
   else if (conn->isCommand ("stop"))
     {
-      return write ("STOP");
+      return gpibWrite ("STOP");
     }
 
-  return Rts2DevSensor::commandAuthorized (conn);
+  return Rts2DevSensorGpib::commandAuthorized (conn);
 }
 
 int
