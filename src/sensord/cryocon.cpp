@@ -85,6 +85,7 @@ private:
   Rts2ValueDouble *amb;
   Rts2ValueFloat *htrread;
   Rts2ValueFloat *htrhst;
+  Rts2ValueBool *heaterEnabled;
 protected:
     virtual int setValue (Rts2Value * oldValue, Rts2Value * newValue);
 
@@ -323,6 +324,13 @@ Rts2DevSensorCryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 	if (oldValue == val)
 	  return write (getLoopVal (l, val), newValue->getDisplayValue ());
       }
+  if (oldValue == heaterEnabled)
+    {
+      int ret;
+      if (((Rts2ValueBool *) newValue)->getValueBool ())
+	return write ("CONTROL");
+      return write ("STOP");
+    }
   return Rts2DevSensor::setValue (oldValue, newValue);
 }
 
@@ -352,6 +360,8 @@ Rts2DevSensor (in_argc, in_argv)
   createValue (amb, "AMBIENT", "cryocon ambient temperature", true);
   createValue (htrread, "HTRREAD", "Heater read back current", true);
   createValue (htrhst, "HTRHST", "Heater heat sink temperature", true);
+
+  createValue (heaterEnabled, "HEATER", "Heater enabled/disabled", true);
 
   addOption ('m', "minor", 1, "board number (default to 0)");
   addOption ('p', "pad", 1,
