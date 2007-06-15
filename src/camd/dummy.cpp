@@ -73,10 +73,20 @@ private:
   bool supportFrameT;
   int infoSleep;
   Rts2ValueDouble *readoutSleep;
+  Rts2ValueSelection *dataType;
   int width;
   int height;
+
+  int setDataType (Rts2ValueSelection * new_data_type)
+  {
+    static int dataTypes[] =
+      { RTS2_DATA_INTEGER, RTS2_DATA_LONG, RTS2_DATA_LONGLONG,
+RTS2_DATA_FLOAT, RTS2_DATA_DOUBLE, RTS2_DATA_BYTE };
+    chips[0]->setUsedDataType (dataTypes[new_data_type->getValueInteger ()]);
+    return 0;
+  }
 protected:
-    virtual int setGain (double in_gain)
+  virtual int setGain (double in_gain)
   {
     return 0;
   }
@@ -86,6 +96,10 @@ protected:
     if (old_value == readoutSleep)
       {
 	return 0;
+      }
+    if (old_value == dataType)
+      {
+	return setDataType ((Rts2ValueSelection *) new_value);
       }
     return Rts2DevCamera::setValue (old_value, new_value);
   }
@@ -98,6 +112,15 @@ Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
     createValue (readoutSleep, "readout", "readout sleep in sec", true, 0,
 		 CAM_EXPOSING | CAM_READING | CAM_DATA, true);
     readoutSleep->setValueDouble (0);
+
+    createValue (dataType, "data_type", "used data type", true, 0,
+		 CAM_READING | CAM_DATA, false);
+    dataType->addSelVal ("INTEGER");
+    dataType->addSelVal ("LONG");
+    dataType->addSelVal ("LONGLONG");
+    dataType->addSelVal ("FLOAT");
+    dataType->addSelVal ("DOUBLE");
+    dataType->addSelVal ("BYTE");
 
     width = 200;
     height = 100;

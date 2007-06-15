@@ -29,6 +29,14 @@
 
 #define MAX_AXES	5	//! Maximum number of axes we should considered.
 
+// various datatypes
+#define RTS2_DATA_BYTE		8
+#define RTS2_DATA_INTEGER	16
+#define RTS2_DATA_LONG		32
+#define RTS2_DATA_LONGLONG	64
+#define RTS2_DATA_FLOAT		-32
+#define RTS2_DATA_DOUBLE	-64
+
 struct imghdr
 {
   int data_type;

@@ -6,6 +6,8 @@ noinst_HEADERS = rts2image.h rts2devcliimg.h rts2imagedb.h rts2devclifoc.h rts2a
 
 EXTRA_DIST = rts2imagedb.ec
 
+CLEANFILES = rts2imagedb.cpp
+
 librts2image_a_SOURCES = rts2image.cpp imageastrometry.cpp ham.cpp rts2devcliimg.cpp rts2devclifoc.cpp imageprocess.cpp
 librts2image_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 

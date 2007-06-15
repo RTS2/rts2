@@ -35,6 +35,7 @@ CameraChip::initData (Rts2DevCamera * in_cam, int in_chip_id)
   focusingData = NULL;
   focusingDataTop = NULL;
 
+  usedDataType = RTS2_DATA_INTEGER;
 }
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
@@ -310,9 +311,7 @@ CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 
       asprintf (&msg, "D connect %i %s %i %i", chipId, address,
 		dataConn->getLocalPort (),
-		(chipUsedReadout->width / usedBinningHorizontal)
-		* (chipUsedReadout->height / usedBinningVertical)
-		* sizeof (unsigned short) + sizeof (imghdr));
+		chipUsedSize () * usedPixelByteSize () + sizeof (imghdr));
       conn->send (msg);
       free (msg);
     }
@@ -387,7 +386,7 @@ CameraChip::sendFirstLine ()
 	}
       focusingDataTop = focusingData;
     }
-  focusingHeader.data_type = 1;
+  focusingHeader.data_type = usedDataType;
   focusingHeader.naxes = 2;
   focusingHeader.sizes[0] = chipUsedReadout->width / usedBinningHorizontal;
   focusingHeader.sizes[1] = chipUsedReadout->height / usedBinningVertical;
@@ -436,8 +435,7 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool
-CameraChip::supportFrameTransfer ()
+bool CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -1221,16 +1219,14 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool
-Rts2DevCamera::isIdle ()
+bool Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool
-Rts2DevCamera::isFocusing ()
+bool Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

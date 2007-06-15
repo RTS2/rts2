@@ -75,6 +75,19 @@ private:
   time_t readout_started;
   int shutter_state;
 
+  int chipUsedSize ()
+  {
+    return (chipUsedReadout->width / usedBinningHorizontal)
+      * (chipUsedReadout->height / usedBinningVertical);
+  }
+
+  int usedPixelByteSize ()
+  {
+    return abs (usedDataType / 8);
+  }
+
+  int usedDataType;
+
 protected:
   int chipId;
   struct timeval exposureEnd;
@@ -120,10 +133,10 @@ protected:
   virtual int doFocusing ();
 
 public:
-    CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
-    CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-		int in_height, double in_pixelX, double in_pixelY);
-    virtual ~ CameraChip (void);
+  CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
+  CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+	      int in_height, double in_pixelX, double in_pixelY);
+  virtual ~ CameraChip (void);
   void setSize (int in_width, int in_height, int in_x, int in_y)
   {
     chipSize = new ChipSubset (in_x, in_y, in_width, in_height);
@@ -167,6 +180,14 @@ public:
    * handed when readout ends
    */
   virtual bool supportFrameTransfer ();
+
+  /**
+   * Set used data type.
+   */
+  void setUsedDataType (int in_data_type)
+  {
+    usedDataType = in_data_type;
+  }
 };
 
 #define NOT_EXP		0x00
