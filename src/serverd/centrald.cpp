@@ -129,6 +129,8 @@ public:
   }
 
   virtual void sigHUP (int sig);
+
+  void bopMaskChanged (Rts2ConnCentrald * conn);
 };
 
 class Rts2ConnCentrald:public Rts2Conn
@@ -151,6 +153,8 @@ private:
   int sendStatusInfo ();
   int sendAValue (char *name, int value);
   int messageMask;
+protected:
+    virtual void setState (int in_value);
 public:
     Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 		      int in_centrald_id);
@@ -158,6 +162,16 @@ public:
   virtual int sendMessage (Rts2Message & msg);
   virtual int sendInfo (Rts2Conn * conn);
 };
+
+void
+Rts2ConnCentrald::setState (int in_value)
+{
+  Rts2Conn::setState (in_value);
+  if (serverState->maskValueChanged (BOP_MASK))
+    {
+      master->bopMaskChanged (this);
+    }
+}
 
 Rts2ConnCentrald::Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 				    int in_centrald_id):
@@ -789,6 +803,18 @@ Rts2Centrald::sigHUP (int sig)
 {
   reloadConfig ();
   idle ();
+}
+
+void
+Rts2Centrald::bopMaskChanged (Rts2ConnCentrald * conn)
+{
+  int bopState = 0;
+  for (connections_t::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++)
+    {
+      bopState |= (*iter)->getBopState ();
+    }
+  maskState (BOP_MASK, bopState, "changed BOP state");
 }
 
 int

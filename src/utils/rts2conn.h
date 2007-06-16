@@ -79,7 +79,7 @@ protected:
 
   virtual int acceptConn ();
 
-  virtual int setState (int in_value);
+  virtual void setState (int in_value);
 
   Rts2DevClient *otherDevice;
   int otherType;
@@ -113,6 +113,11 @@ public:
   {
     return getState () & DEVICE_ERROR_MASK;
   }
+  int getBopState ()
+  {
+    return getState () & BOP_MASK;
+  }
+
   /**
    * Get state without any error bits
    * 

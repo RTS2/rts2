@@ -461,7 +461,7 @@ Rts2Conn::acceptConn ()
     }
 }
 
-int
+void
 Rts2Conn::setState (int in_value)
 {
   serverState->setValue (in_value);
@@ -477,7 +477,6 @@ Rts2Conn::setState (int in_value)
     {
       master->deviceIdle (this);
     }
-  return 0;
 }
 
 void
