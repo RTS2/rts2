@@ -12,6 +12,10 @@ class Rts2DevTelescopeModelTest:public Rts2DevTelescope
 public:
   Rts2DevTelescopeModelTest ():Rts2DevTelescope (0, NULL)
   {
+    createConstValue (telLongtitude, "LONG", "telescope longtitude");
+    createConstValue (telLatitude, "LAT", "telescope latitude");
+    createConstValue (telAltitude, "ALTI", "telescope altitude");
+
     telLongtitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
 				   lng);
     telLatitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
@@ -31,8 +35,9 @@ private:
   Rts2TelModel *model;
     std::vector < std::string > runFiles;
   Rts2DevTelescopeModelTest *telescope;
-  int verbose;
-  int generate;			// generate arteficial data
+  bool errors;
+  bool verbose;
+  bool generate;		// generate arteficial data
 
   void test (double ra, double dec);
   void runOnFile (std::string filename, std::ostream & os);
@@ -56,11 +61,13 @@ Rts2App (in_argc, in_argv)
   modelFile = NULL;
   model = NULL;
   telescope = NULL;
-  verbose = 0;
-  generate = 0;
-  addOption ('m', "model-file", 1, "Model file to use");
-  addOption ('v', "verbose", 0, "Report model progress");
-  addOption ('g', "generate", 0, "Generate arteficial data");
+  errors = false;
+  verbose = false;
+  generate = false;
+  addOption ('m', NULL, 1, "Model file to use");
+  addOption ('e', NULL, 0, "Print errors");
+  addOption ('v', NULL, 0, "Report model progress");
+  addOption ('g', NULL, 0, "Generate arteficial data");
 }
 
 TelModelTest::~TelModelTest (void)
@@ -77,11 +84,14 @@ TelModelTest::processOption (int in_opt)
     case 'm':
       modelFile = optarg;
       break;
+    case 'e':
+      errors = true;
+      break;
     case 'v':
-      verbose++;
+      verbose = true;
       break;
     case 'g':
-      generate = 1;
+      generate = true;
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -114,6 +124,7 @@ TelModelTest::init ()
 
   model = new Rts2TelModel (telescope, modelFile);
   ret = model->load ();
+
   return ret;
 }
 
@@ -143,17 +154,17 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
   while (!is.eof ())
     {
       // ignore
-      firstChar = is.get ();
+      firstChar = is.peek ();
       if (firstChar == ':')
 	{
 	  is.getline (caption, 80);
-	  os << firstChar << caption << std::endl;
+	  os << caption << std::endl;
 	}
       else if (firstChar == 'E')
 	{
 	  std::string nd;
 	  is >> nd;
-	  if (nd == "ND")
+	  if (nd == "END")
 	    {
 	      os << "END" << std::endl;
 	      return;
@@ -219,6 +230,9 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 	  int m, d;
 	  double epoch;
 
+	  if (firstChar == '!')
+	    firstChar = is.get ();
+
 	  LibnovaRaDec _in;
 	  LibnovaRaDec _out;
 	  LibnovaHaM lst;
@@ -235,7 +249,7 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 	  struct ln_equ_posn pos;
 	  _out.getPos (&pos);
 	  pos.ra = ln_range_degrees (lst.getRa () - pos.ra);
-	  if (verbose > 0)
+	  if (verbose)
 	    model->applyVerbose (&pos);
 	  else
 	    model->apply (&pos);
@@ -243,6 +257,18 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 	  pos.ra = ln_range_degrees (lst.getRa () - pos.ra);
 	  std::cout.precision (1);
 	  LibnovaRaDec _out_in (&pos);
+
+	  if (errors)
+	    {
+	      struct ln_equ_posn pos_in, pos_out;
+	      _in.getPos (&pos_in);
+	      _out_in.getPos (&pos_out);
+	      std::
+		cout <<
+		LibnovaDegDist (ln_get_angular_separation
+				(&pos_in, &pos_out));
+	    }
+
 	  std::cout << "  " << _out_in << " "
 	    << m << " "
 	    << d << " " << epoch << "   " << _out << "   " << lst << " ";
