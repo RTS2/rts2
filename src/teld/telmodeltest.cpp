@@ -35,7 +35,7 @@ private:
   Rts2TelModel *model;
     std::vector < std::string > runFiles;
   Rts2DevTelescopeModelTest *telescope;
-  bool errors;
+  int errors;
   bool verbose;
   bool generate;		// generate arteficial data
 
@@ -61,7 +61,7 @@ Rts2App (in_argc, in_argv)
   modelFile = NULL;
   model = NULL;
   telescope = NULL;
-  errors = false;
+  errors = 0;
   verbose = false;
   generate = false;
   addOption ('m', NULL, 1, "Model file to use");
@@ -85,7 +85,7 @@ TelModelTest::processOption (int in_opt)
       modelFile = optarg;
       break;
     case 'e':
-      errors = true;
+      errors++;
       break;
     case 'v':
       verbose = true;
@@ -169,7 +169,7 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 	      os << "END" << std::endl;
 	      return;
 	    }
-	  logStream (MESSAGE_ERROR) << "Invalid end? E" << nd << sendLog;
+	  logStream (MESSAGE_ERROR) << "Invalid end? " << nd << sendLog;
 	}
       // first line contains lat
       else if (!latLine)
@@ -267,6 +267,13 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 		cout <<
 		LibnovaDegDist (ln_get_angular_separation
 				(&pos_in, &pos_out));
+	      if (errors > 1)
+		{
+		  std::cout << LibnovaDegArcMin (pos_in.ra -
+						 pos_out.
+						 ra) << " " <<
+		    LibnovaDegArcMin (pos_in.dec - pos_out.dec);
+		}
 	    }
 
 	  std::cout << "  " << _out_in << " "
