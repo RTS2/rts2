@@ -193,10 +193,30 @@ TPM::headline (Rts2Image * image, std::ostream & _os)
   image->getValue ("LAT", obs.lat);
   image->getValue ("LONG", obs.lng);
   // standart header
-  _os << "RTS2 model from astrometry" << std::endl << ":EQUAT" << std::endl	// we are observing on equatorial mount
-    << ":J2000" << std::endl	// everuthing is J2000
-    << ":NODA" << std::endl	// don't know
-    << " " << LibnovaDeg90 (obs.lat) << " 2000 1 01" << std::endl;	// we have J2000, not refracted coordinates from mount
+  _os << "RTS2 model from astrometry" << std::endl << ":EQUAT" << std::endl;	// we are observing on equatorial mount
+  switch (tarCorType)
+    {
+    case TARGET:
+    case BEST:
+      _os << ":J2000" << std::endl;
+      break;
+    case MOUNT:
+      // mount is geocentric
+      break;
+    }
+  _os << ":NODA" << std::endl;	// don't know
+  switch (tarCorType)
+    {
+    case TARGET:
+    case BEST:
+      _os << " " << LibnovaDeg90 (obs.lat) << " 2000 1 01" << std::endl;	// we have J2000, not refracted coordinates from mount
+      break;
+    case MOUNT:
+      _os << " " << LibnovaDeg90 (obs.
+				  lat) << " YYYY MM DD 20 1000 60" << std::
+	endl;
+      break;
+    }
   return 0;
 }
 
@@ -273,8 +293,19 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
   LibnovaHaM lst (mean_sidereal);
 
-  _os << actual << " 0 0 2000.0 " << target << " " << lst << " " << imageFlip
-    << " " << aux1 << std::endl;
+  _os << actual;
+  switch (tarCorType)
+    {
+    case TARGET:
+    case BEST:
+      _os << " 0 0 2000.0 ";
+      break;
+    case MOUNT:
+      _os << " ";
+      // geocentric..
+      break;
+    }
+  _os << target << " " << lst << " " << imageFlip << " " << aux1 << std::endl;
   return 0;
 }
 
