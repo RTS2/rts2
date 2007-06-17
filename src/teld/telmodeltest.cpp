@@ -37,7 +37,6 @@ private:
   Rts2DevTelescopeModelTest *telescope;
   int errors;
   bool verbose;
-  bool generate;		// generate arteficial data
 
   void test (double ra, double dec);
   void runOnFile (std::string filename, std::ostream & os);
@@ -63,11 +62,10 @@ Rts2App (in_argc, in_argv)
   telescope = NULL;
   errors = 0;
   verbose = false;
-  generate = false;
   addOption ('m', NULL, 1, "Model file to use");
   addOption ('e', NULL, 0, "Print errors");
   addOption ('v', NULL, 0, "Report model progress");
-  addOption ('g', NULL, 0, "Generate arteficial data");
+  addOption ('i', NULL, 1, "Print model for given RA and DEC");
 }
 
 TelModelTest::~TelModelTest (void)
@@ -90,8 +88,7 @@ TelModelTest::processOption (int in_opt)
     case 'v':
       verbose = true;
       break;
-    case 'g':
-      generate = true;
+    case 'i':
       break;
     default:
       return Rts2App::processOption (in_opt);
