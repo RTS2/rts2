@@ -212,9 +212,10 @@ TPM::headline (Rts2Image * image, std::ostream & _os)
       _os << " " << LibnovaDeg90 (obs.lat) << " 2000 1 01" << std::endl;	// we have J2000, not refracted coordinates from mount
       break;
     case MOUNT:
-      _os << " " << LibnovaDeg90 (obs.
-				  lat) << " YYYY MM DD 20 1000 60" << std::
-	endl;
+      _os << " " << LibnovaDeg90 (obs.lat)
+	<< " " << image->getStartYearString ()
+	<< " " << image->getStartMonthString ()
+	<< " " << image->getStartDayString () << " 20 1000 60" << std::endl;
       break;
     }
   return 0;
