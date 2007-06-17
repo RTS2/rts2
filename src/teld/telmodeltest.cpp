@@ -162,7 +162,7 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
   img.getCoordTarget (posTar);
   img.getCoordAstrometry (posImg);
   LibnovaRaDec pTar (&posTar);
-  os << pTar;
+  os << "Target: " << pTar << std::endl;
   double lst = img.getExposureLST ();
   posTar.ra = ln_range_degrees (lst - posTar.ra);
   if (verbose)
@@ -172,7 +172,7 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
   posTar.ra = ln_range_degrees (lst - posTar.ra);
   LibnovaRaDec pTar2 (&posTar);
   LibnovaRaDec pImg (&posImg);
-  os << " " << pTar2 << " " << pImg << std::endl;
+  os << "Model:  " << pTar2 << std::endl << "Image:  " << pImg << std::endl;
 }
 
 void
