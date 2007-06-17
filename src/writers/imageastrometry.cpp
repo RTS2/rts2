@@ -199,14 +199,48 @@ Rts2Image::getFlip ()
 }
 
 int
+Rts2Image::getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name)
+{
+  int ret;
+  ret = getValue (ra_name, radec.ra);
+  if (ret)
+    return ret;
+  ret = getValue (dec_name, radec.dec);
+  if (ret)
+    return ret;
+  return 0;
+}
+
+int
+Rts2Image::getCoordTarget (struct ln_equ_posn &radec)
+{
+  return getCoord (radec, "TAR_RA", "TAR_DEC");
+}
+
+int
+Rts2Image::getCoordAstrometry (struct ln_equ_posn &radec)
+{
+  return getCoord (radec, "CRVAL1", "CRVAL2");
+}
+
+int
+Rts2Image::getCoordMount (struct ln_equ_posn &radec)
+{
+  return getCoord (radec, "MNT_RA", "MNT_DEC");
+}
+
+int
+Rts2Image::getCoordBest (struct ln_equ_posn &radec)
+{
+  return getCoord (radec, "RASC", "DECL");
+}
+
+int
 Rts2Image::getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name)
 {
   int ret;
   struct ln_equ_posn pos;
-  ret = getValue (ra_name, pos.ra);
-  if (ret)
-    return ret;
-  ret = getValue (dec_name, pos.dec);
+  ret = getCoord (pos, ra_name, dec_name);
   if (ret)
     return ret;
   radec.setPos (&pos);

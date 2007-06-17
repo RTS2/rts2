@@ -525,6 +525,13 @@ public:
     config_rotang = in_config_rotang;
   }
 
+  int getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name);
+  int getCoordTarget (struct ln_equ_posn &radec);
+  int getCoordAstrometry (struct ln_equ_posn &radec);
+  int getCoordMount (struct ln_equ_posn &radec);
+
+  int getCoordBest (struct ln_equ_posn &radec);
+
   int getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name);
   int getCoordTarget (LibnovaRaDec & radec);
   int getCoordAstrometry (LibnovaRaDec & radec);
@@ -602,6 +609,18 @@ public:
   int createWCS (double x_off = 0, double y_off = 0);
 
   friend std::ostream & operator << (std::ostream & _os, Rts2Image & image);
+
+  double getLongtitude ();
+
+  /**
+   * Gets julian data of exposure start
+   */
+  double getExposureJD ();
+
+  /**
+   * Get image LST (local sidereal time).
+   */
+  double getExposureLST ();
 
   // image processing routines and values
   double classicMedian (double *q, int n, double *sigma);

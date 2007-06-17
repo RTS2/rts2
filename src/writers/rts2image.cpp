@@ -1800,6 +1800,32 @@ Rts2Image::writeClient (Rts2DevClient * client)
     }
 }
 
+double
+Rts2Image::getLongtitude ()
+{
+  double lng = nan ("f");
+  getValue ("LONG", lng, true);
+  return lng;
+}
+
+
+double
+Rts2Image::getExposureJD ()
+{
+  return ln_get_julian_from_timet (&exposureStart.tv_sec) +
+    exposureStart.tv_usec / USEC_SEC / 86400.0;
+}
+
+double
+Rts2Image::getExposureLST ()
+{
+  double ret;
+  ret =
+    ln_get_apparent_sidereal_time (getExposureJD () * 15.0 +
+				   getLongtitude ());
+  return ln_range_degrees (ret) / 15.0;
+}
+
 std::ostream & operator << (std::ostream & _os, Rts2Image & image)
 {
   _os << "C " << image.getCameraName ()
