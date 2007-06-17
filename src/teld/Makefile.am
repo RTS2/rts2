@@ -14,7 +14,10 @@ rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
 
+if PGSQL
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
+rts2_telmodeltest_LDADD = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@ ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD}
+endif
 
 if OPENTPL
 bin_PROGRAMS += rts2-teld-ir rts2-ir-errors

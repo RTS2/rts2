@@ -1,5 +1,6 @@
 #include "model/telmodel.h"
 #include "../utils/libnova_cpp.h"
+#include "../writers/rts2imagedb.h"
 
 #include <iostream>
 #include <fstream>
@@ -37,9 +38,13 @@ private:
   Rts2DevTelescopeModelTest *telescope;
   int errors;
   bool verbose;
+  // if input are images
+  bool image;
 
   void test (double ra, double dec);
   void runOnFile (std::string filename, std::ostream & os);
+  void runOnFitsFile (std::string filename, std::ostream & os);
+  void runOnDatFile (std::string filename, std::ostream & os);
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -61,6 +66,7 @@ Rts2App (in_argc, in_argv)
   model = NULL;
   telescope = NULL;
   errors = 0;
+  image = false;
   verbose = false;
   addOption ('m', NULL, 1, "Model file to use");
   addOption ('e', NULL, 0, "Print errors");
@@ -89,6 +95,7 @@ TelModelTest::processOption (int in_opt)
       verbose = true;
       break;
     case 'i':
+      image = true;
       break;
     default:
       return Rts2App::processOption (in_opt);
@@ -138,6 +145,35 @@ TelModelTest::test (double ra, double dec)
 
 void
 TelModelTest::runOnFile (std::string filename, std::ostream & os)
+{
+  if (image)
+    runOnFitsFile (filename, os);
+  runOnDatFile (filename, os);
+}
+
+void
+TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
+{
+  // load image data
+  Rts2ImageDb img (filename.c_str ());
+  struct ln_equ_posn posTar;
+  struct ln_equ_posn posImg;
+  img.getCoordTarget (posTar);
+  img.getCoordAstrometry (posImg);
+  LibnovaRaDec pTar (&posTar);
+  os << pTar;
+  posTar.ra = ln_range_degrees (img.getExposureLST () - posTar.ra);
+  if (verbose)
+    model->applyVerbose (&posTar);
+  else
+    model->apply (&posTar);
+  LibnovaRaDec pTar2 (&posTar);
+  LibnovaRaDec pImg (&posImg);
+  os << " " << pTar2 << " " << pImg << std::endl;
+}
+
+void
+TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 {
   char caption[81];
   double temp;
