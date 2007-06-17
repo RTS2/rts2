@@ -27,6 +27,9 @@ private:
   double ra_offset;
   double dec_step;
   double dec_offset;
+
+  enum
+  { TARGET, BEST, MOUNT } tarCorType;
 protected:
     virtual int processOption (int in_opt);
   virtual int processArgs (const char *arg);
@@ -43,18 +46,21 @@ public:
 TPM::TPM (int in_argc, char **in_argv):
 Rts2CliApp (in_argc, in_argv)
 {
+  tarCorType = BEST;
   selFlip = -1;
   ra_step = nan ("f");
   ra_offset = 0;
   dec_step = nan ("f");
   dec_offset = 0;
-  addOption ('f', "flip", 1, "select images with given flip (0 or 1)");
-  addOption ('r', "ra_step", 1,
+  addOption ('t', NULL, 1,
+	     "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL)");
+  addOption ('f', NULL, 1, "select images with given flip (0 or 1)");
+  addOption ('r', NULL, 1,
 	     "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
-  addOption ('R', "ra_offset", 1, "ra offset in raw counts");
-  addOption ('d', "dec_step", 1,
+  addOption ('R', NULL, 1, "ra offset in raw counts");
+  addOption ('d', NULL, 1,
 	     "step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
-  addOption ('D', "dec_offset", 1, "dec offset in raw counts");
+  addOption ('D', NULL, 1, "dec offset in raw counts");
 }
 
 TPM::~TPM (void)
@@ -67,6 +73,25 @@ TPM::processOption (int in_opt)
 {
   switch (in_opt)
     {
+    case 't':
+      switch (*optarg)
+	{
+	case 't':
+	  tarCorType = TARGET;
+	  break;
+	case 'b':
+	  tarCorType = BEST;
+	  break;
+	case 'm':
+	  tarCorType = MOUNT;
+	  break;
+	default:
+	  std::
+	    cerr << "Invalit coordinates type (" << *optarg <<
+	    "), expected t or b" << std::endl;
+	  return -1;
+	}
+      break;
     case 'f':
       if (!strcmp (optarg, "1"))
 	selFlip = 1;
@@ -193,7 +218,18 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
   ret = image->getCoordAstrometry (actual);
   if (ret)
     return ret;
-  ret = image->getCoordTarget (target);
+  switch (tarCorType)
+    {
+    case TARGET:
+      ret = image->getCoordTarget (target);
+      break;
+    case BEST:
+      ret = image->getCoordBest (target);
+      break;
+    case MOUNT:
+      ret = image->getCoordMount (target);
+      break;
+    }
   if (ret)
     return ret;
 
