@@ -71,7 +71,7 @@ Rts2App (in_argc, in_argv)
   addOption ('m', NULL, 1, "Model file to use");
   addOption ('e', NULL, 0, "Print errors");
   addOption ('v', NULL, 0, "Report model progress");
-  addOption ('i', NULL, 1, "Print model for given RA and DEC");
+  addOption ('i', NULL, 0, "Print model for given images");
 }
 
 TelModelTest::~TelModelTest (void)
@@ -148,7 +148,8 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 {
   if (image)
     runOnFitsFile (filename, os);
-  runOnDatFile (filename, os);
+  else
+    runOnDatFile (filename, os);
 }
 
 void
@@ -162,11 +163,13 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
   img.getCoordAstrometry (posImg);
   LibnovaRaDec pTar (&posTar);
   os << pTar;
-  posTar.ra = ln_range_degrees (img.getExposureLST () - posTar.ra);
+  double lst = img.getExposureLST ();
+  posTar.ra = ln_range_degrees (lst - posTar.ra);
   if (verbose)
     model->applyVerbose (&posTar);
   else
     model->apply (&posTar);
+  posTar.ra = ln_range_degrees (lst - posTar.ra);
   LibnovaRaDec pTar2 (&posTar);
   LibnovaRaDec pImg (&posImg);
   os << " " << pTar2 << " " << pImg << std::endl;
