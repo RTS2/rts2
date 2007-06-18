@@ -9,8 +9,8 @@ SUBDIRS = \
 	filterd \
 	wcs \
 	utilsdb \
-	teld \
 	writers \
+	teld \
 	monitor \
 	focusc \
 	serverd \
