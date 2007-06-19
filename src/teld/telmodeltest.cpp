@@ -159,20 +159,25 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
   Rts2ImageDb img (filename.c_str ());
   struct ln_equ_posn posTar;
   struct ln_equ_posn posImg;
+  LibnovaRaDec posMount;
+
   img.getCoordTarget (posTar);
   img.getCoordAstrometry (posImg);
+  img.getCoordMount (posMount);
+
   LibnovaRaDec pTar (&posTar);
   os << "Target: " << pTar << std::endl;
   double lst = img.getExposureLST ();
   posTar.ra = ln_range_degrees (lst - posTar.ra);
   if (verbose)
-    model->applyVerbose (&posTar);
+    model->reverseVerbose (&posTar);
   else
-    model->apply (&posTar);
+    model->reverse (&posTar);
   posTar.ra = ln_range_degrees (lst - posTar.ra);
   LibnovaRaDec pTar2 (&posTar);
   LibnovaRaDec pImg (&posImg);
-  os << "Model:  " << pTar2 << std::endl << "Image:  " << pImg << std::endl;
+  os << "Model:  " << pTar2 << std::endl
+    << "Mount:  " << posMount << std::endl << "Image:  " << pImg << std::endl;
 }
 
 void
