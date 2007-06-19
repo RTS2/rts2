@@ -183,6 +183,7 @@ Rts2DevTelescope::getTargetCorrected (struct ln_equ_posn *out_tar, double JD)
 {
   getTarget (out_tar);
   applyCorrections (out_tar, JD);
+  applyLocCorr (out_tar);
 }
 
 double
@@ -789,6 +790,9 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
   struct ln_equ_posn pos;
   double JD;
 
+  targetRa->setValueDouble (tar_ra);
+  targetDec->setValueDouble (tar_dec);
+
   pos.ra = tar_ra;
   pos.dec = tar_dec;
 
@@ -865,9 +869,6 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
 	}
       move_connection = conn;
     }
-
-  targetRa->setValueDouble (tar_ra);
-  targetDec->setValueDouble (tar_dec);
 
   infoAll ();
   logStream (MESSAGE_INFO) << "start telescope move " << telRa->

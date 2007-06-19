@@ -842,10 +842,6 @@ Rts2DevTelParamount::updateTrack ()
 {
   double JD;
   struct ln_equ_posn corr_pos;
-  double track_delta;
-  CWORD32 ac, dc, homeOff;
-  MKS3ObjTrackStat stat0, stat1;
-  int ret;
 
   gettimeofday (&track_next, NULL);
   if (track_recalculate.tv_sec < 0)
@@ -855,36 +851,14 @@ Rts2DevTelParamount::updateTrack ()
   if (!track0 || !track1)
     {
       JD = ln_get_julian_from_sys ();
-      ret = getHomeOffset (homeOff);
-      if (ret)
-	return;
 
       getTargetCorrected (&corr_pos, JD);
-
-      ret = sky2counts (&corr_pos, ac, dc, JD, homeOff);
-      if (ret)
-	return;
-#ifdef DEBUG_EXTRA
-      logStream (MESSAGE_DEBUG) << "Rts2DevTelParamount::updateTrack " << ac
-	<< " " << dc << sendLog;
-#endif /* DEBUG_EXTRA */
-      ret0 = MKS3PosTargetSet (axis0, (long) ac);
-      ret1 = MKS3PosTargetSet (axis1, (long) dc);
-
-      // if that's too far..home us
-      if (ret0 == MAIN_AT_LIMIT)
-	{
-	  ret0 = MKS3Home (axis0, 0);
-	  moveState |= TEL_FORCED_HOMING0;
-	}
-      if (ret1 == MAIN_AT_LIMIT)
-	{
-	  ret1 = MKS3Home (axis1, 0);
-	  moveState |= TEL_FORCED_HOMING1;
-	}
-      checkRet ();
+      startMove (corr_pos.ra, corr_pos.dec);
       return;
     }
+  double track_delta;
+  CWORD32 ac, dc;
+  MKS3ObjTrackStat stat0, stat1;
 
   track_delta =
     track_next.tv_sec - track_start_time.tv_sec + (track_next.tv_usec -

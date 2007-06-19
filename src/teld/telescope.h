@@ -152,8 +152,8 @@ protected:
   int setTarget (double tar_ra, double tar_dec);
   void getTarget (struct ln_equ_posn *out_tar)
   {
-    out_tar->ra = lastTar.ra;
-    out_tar->dec = lastTar.dec;
+    out_tar->ra = targetRa->getValueDouble ();
+    out_tar->dec = targetDec->getValueDouble ();
   }
   void getTargetWithCor (struct ln_equ_posn *out_tar)
   {
