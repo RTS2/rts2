@@ -48,6 +48,8 @@ private:
 
   bool isScriptRunning ();
 
+    std::string getStreamAsString (std::istream & _is);
+
 protected:
     virtual int processOption (int in_opt);
 

@@ -3,6 +3,7 @@
 #include "rts2devcliphot.h"
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 // Rts2ScriptForDevice
@@ -20,9 +21,35 @@ Rts2ScriptForDevice::~Rts2ScriptForDevice (void)
 
 // Rts2ScriptExec class
 
+std::string Rts2ScriptExec::getStreamAsString (std::istream & _is)
+{
+  std::string out;
+  while (!_is.eof ())
+    {
+      std::string buf;
+      getline (_is, buf);
+      size_t
+	hi = buf.find ("#");
+      if (hi != std::string::npos)
+	{
+	  buf = buf.substr (0, hi);
+	}
+      out += std::string (" ") + buf;
+    }
+  return out;
+}
+
 Rts2ScriptForDevice *
 Rts2ScriptExec::findScript (std::string in_deviceName)
 {
+  // take script from stdin
+  if (deviceName)
+    {
+      scripts.
+	push_back (Rts2ScriptForDevice
+		   (std::string (deviceName), getStreamAsString (std::cin)));
+      deviceName = NULL;
+    }
   for (std::vector < Rts2ScriptForDevice >::iterator iter = scripts.begin ();
        iter != scripts.end (); iter++)
     {
@@ -47,12 +74,15 @@ Rts2ScriptExec::isScriptRunning ()
   postEvent (new
 	     Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION,
 			(void *) &runningScripts));
+  if (runningScripts == 0)
+    logStream (MESSAGE_DEBUG) << "runningScripts 0" << sendLog;
   return (runningScripts > 0);
 }
 
 int
 Rts2ScriptExec::processOption (int in_opt)
 {
+  std::ifstream * is;
   switch (in_opt)
     {
     case 'd':
@@ -67,6 +97,19 @@ Rts2ScriptExec::processOption (int in_opt)
       scripts.
 	push_back (Rts2ScriptForDevice
 		   (std::string (deviceName), std::string (optarg)));
+      deviceName = NULL;
+      break;
+    case 'f':
+      if (!deviceName)
+	{
+	  std::cerr << "unknow device name" << std::endl;
+	  return -1;
+	}
+      is = new std::ifstream (optarg);
+      scripts.
+	push_back (Rts2ScriptForDevice
+		   (std::string (deviceName), getStreamAsString (*is)));
+      delete is;
       deviceName = NULL;
       break;
     default:
@@ -84,6 +127,7 @@ Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc
 
   addOption ('d', NULL, 1, "name of next script device");
   addOption ('s', NULL, 1, "device script (for device specified with d)");
+  addOption ('f', NULL, 1, "script filename");
 }
 
 Rts2ScriptExec::~Rts2ScriptExec (void)
