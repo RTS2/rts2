@@ -155,6 +155,12 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  ((Rts2ValueInteger *) event->getArg ())->inc ();
 	}
       break;
+    case EVENT_SCRIPT_RUNNING_QUESTION:
+      // either we have script or there are some commands in que
+      if ((script && !script->isLastCommand ())
+	  || !script_connection->queEmpty ())
+	(*((int *) event->getArg ()))++;
+      break;
     case EVENT_OK_ASTROMETRY:
     case EVENT_NOT_ASTROMETRY:
     case EVENT_STAR_DATA:

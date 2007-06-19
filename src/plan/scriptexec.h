@@ -41,11 +41,12 @@ private:
   char *deviceName;
 
   int waitState;
-  Rts2ValueInteger *scriptCount;	// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
 
   Rts2TargetScr *currentTarget;
 
-  void updateScriptCount ();
+  time_t nextRunningQ;
+
+  bool isScriptRunning ();
 
 protected:
     virtual int processOption (int in_opt);
@@ -64,6 +65,7 @@ public:
 
   virtual void postEvent (Rts2Event * event);
   virtual void deviceReady (Rts2Conn * conn);
+  virtual int idle ();
   virtual void deviceIdle (Rts2Conn * conn);
 
   int getPosition (struct ln_equ_posn *pos, double JD)

@@ -28,16 +28,26 @@ Rts2ScriptExec::findScript (std::string in_deviceName)
     {
       Rts2ScriptForDevice *ds = &(*iter);
       if (ds->isDevice (in_deviceName))
-	return ds;
+	{
+	  if (!nextRunningQ)
+	    {
+	      time (&nextRunningQ);
+	      nextRunningQ += 5;
+	    }
+	  return ds;
+	}
     }
   return NULL;
 }
 
-void
-Rts2ScriptExec::updateScriptCount ()
+bool
+Rts2ScriptExec::isScriptRunning ()
 {
-  scriptCount->setValueInteger (0);
-  postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) scriptCount));
+  int runningScripts = 0;
+  postEvent (new
+	     Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION,
+			(void *) &runningScripts));
+  return (runningScripts > 0);
 }
 
 int
@@ -68,9 +78,9 @@ Rts2ScriptExec::processOption (int in_opt)
 Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc,
 	    in_argv)
 {
-  scriptCount = new Rts2ValueInteger ("script_count");
   waitState = 0;
   currentTarget = NULL;
+  nextRunningQ = 0;
 
   addOption ('d', NULL, 1, "name of next script device");
   addOption ('s', NULL, 1, "device script (for device specified with d)");
@@ -179,11 +189,27 @@ Rts2ScriptExec::deviceReady (Rts2Conn * conn)
   Rts2Client::deviceReady (conn);
 }
 
+int
+Rts2ScriptExec::idle ()
+{
+  if (nextRunningQ != 0)
+    {
+      time_t now;
+      time (&now);
+      if (nextRunningQ < now)
+	{
+	  if (!isScriptRunning ())
+	    endRunLoop ();
+	  nextRunningQ = now + 5;
+	}
+    }
+  return Rts2Client::idle ();
+}
+
 void
 Rts2ScriptExec::deviceIdle (Rts2Conn * conn)
 {
-  updateScriptCount ();
-  if (scriptCount->getValueInteger () == 0)
+  if (!isScriptRunning ())
     endRunLoop ();
 }
 
