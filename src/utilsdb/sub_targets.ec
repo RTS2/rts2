@@ -519,7 +519,7 @@ FlatTarget::load ()
     if (hrz.alt < 10)
       continue;
     // and of course we should be above horizon..
-    if (!isGood (lst, JD, &d_tar))
+    if (!isAboveHorizon (&hrz))
       continue;
     // test if we found the best target..
     curDist = ln_get_angular_separation (&d_tar, &antiSolarPosition);
@@ -572,7 +572,7 @@ FlatTarget::printExtra (std::ostream & _os, double JD)
   struct ln_equ_posn pos;
   getPosition (&pos, JD);
   _os
-    << InfoVal<LibnovaDegDist> ("ANTISOL_DIST", ln_get_angular_separation (&pos, &antisol))
+    << InfoVal<LibnovaDeg180> ("ANTISOL_DIST", ln_get_angular_separation (&pos, &antisol))
     << std::endl;
 }
 
@@ -1037,7 +1037,8 @@ ModelTarget::afterSlewProcessed ()
   {
     EXEC SQL COMMIT;
   }
-  return OBS_MOVE_UNMODELLED;
+//  return OBS_MOVE_UNMODELLED;
+  return OBS_MOVE;
 }
 
 

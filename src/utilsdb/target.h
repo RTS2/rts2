@@ -337,8 +337,9 @@ public:
 
   virtual int beforeMove ();	// called when we can move to next observation - good to generate next target in mosaic observation etc..
   int postprocess ();
-  virtual int isGood (double lst, double JD, struct ln_equ_posn *pos);
-  virtual int isGood (double JD);
+  virtual bool isGood (double lst, double JD, struct ln_equ_posn *pos);
+  virtual bool isGood (double JD);
+  bool isAboveHorizon (struct ln_hrz_posn *hrz);
   // scheduler functions
   virtual int considerForObserving (double JD);	// return 0, when target can be observed, otherwise modify tar_bonus..
   virtual int dropBonus ();
