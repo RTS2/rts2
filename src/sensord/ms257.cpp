@@ -46,6 +46,7 @@ protected:
 
 public:
     Rts2DevSensorMS257 (int in_argc, char **in_argv);
+    virtual ~ Rts2DevSensorMS257 (void);
 
   virtual int init ();
   virtual int info ();
@@ -253,6 +254,11 @@ Rts2DevSensor (in_argc, in_argv)
   createValue (grat, "GRATING", "Grating position", true);
 
   addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
+}
+
+Rts2DevSensorMS257::~Rts2DevSensorMS257 ()
+{
+  close (dev_port);
 }
 
 int
