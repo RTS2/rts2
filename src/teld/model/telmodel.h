@@ -82,6 +82,7 @@ public:
   int applyVerbose (struct ln_equ_posn *pos);
 
   int reverse (struct ln_equ_posn *pos);
+  int reverseVerbose (struct ln_equ_posn *pos);
   int reverse (struct ln_equ_posn *pos, double sid);
 
   friend std::istream & operator >> (std::istream & is, Rts2TelModel * model);

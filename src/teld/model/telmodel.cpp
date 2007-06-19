@@ -74,6 +74,40 @@ Rts2TelModel::reverse (struct ln_equ_posn *pos)
 }
 
 int
+Rts2TelModel::reverseVerbose (struct ln_equ_posn *pos)
+{
+  struct ln_equ_posn pos2;
+
+  for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+       iter != terms.end (); iter++)
+    {
+      struct ln_equ_posn old_pos = *pos;
+
+      pos2.ra = pos->ra;
+      pos2.dec = pos->dec;
+
+      logStream (MESSAGE_DEBUG) << (*iter) << "Before: " << pos->
+	ra << " " << pos->dec << sendLog;
+
+      (*iter)->apply (pos, cond);
+
+      logStream (MESSAGE_DEBUG) << "After1: " << pos->ra << " " << pos->dec <<
+	"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
+						 old_pos.
+						 dec) << ")" << sendLog;
+
+      pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
+      pos->dec = 2 * pos2.dec - pos->dec;
+
+      logStream (MESSAGE_DEBUG) << "After2: " << pos->ra << " " << pos->dec <<
+	"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
+						 old_pos.
+						 dec) << ")" << sendLog;
+    }
+  return 0;
+}
+
+int
 Rts2TelModel::reverse (struct ln_equ_posn *pos, double sid)
 {
   for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
