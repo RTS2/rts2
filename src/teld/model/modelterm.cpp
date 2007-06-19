@@ -267,6 +267,9 @@ Rts2TermHarmonics::getFunc (const char *in_func, int i)
       times *= 10;
       end++;
     }
+  // if there isn't multiplier..
+  if (mul[i] == 0)
+    mul[i] = 1;
   return end;
 }
 
