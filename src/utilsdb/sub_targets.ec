@@ -563,6 +563,18 @@ FlatTarget::considerForObserving (double JD)
   return ConstTarget::considerForObserving (JD);
 }
 
+void
+FlatTarget::printExtra (std::ostream & _os, double JD)
+{
+  ConstTarget::printExtra (_os, JD);
+  struct ln_equ_posn antisol;
+  getAntiSolarPos (&antisol, JD);
+  struct ln_equ_posn pos;
+  getPosition (&pos, JD);
+  _os
+    << InfoVal<LibnovaDegDist> ("ANTISOL_DIST", ln_get_angular_separation (&pos, &antisol))
+    << std::endl;
+}
 
 CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {

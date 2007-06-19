@@ -551,6 +551,7 @@ public:
   {
     return 1;
   }
+  virtual void printExtra (std::ostream & _os, double JD);
 };
 
 // possible calibration target
