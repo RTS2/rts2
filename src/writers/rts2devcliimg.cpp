@@ -142,7 +142,8 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }
@@ -244,6 +245,8 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       Rts2Image * image;
       struct ln_equ_posn object;
       struct ln_lnlat_posn obs;
+      struct ln_equ_posn suneq;
+      struct ln_hrz_posn sunhrz;
       double infotime;
       image = (Rts2Image *) event->getArg ();
       image->setMountName (connection->getName ());
@@ -253,6 +256,10 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       infotime = getValueDouble ("infotime");
       image->setValue ("MNT_INFO", infotime,
 		       "time when mount informations were collected");
+      ln_get_solar_equ_coords (image->getExposureJD (), &suneq);
+      ln_get_hrz_from_equ (&suneq, &obs, image->getExposureJD (), &sunhrz);
+      image->setValue ("SUN_ALT", sunhrz.alt, "solar altitude");
+      image->setValue ("SUN_AZ", sunhrz.az, "solar azimuth");
       break;
     case EVENT_GET_RADEC:
       getEqu ((struct ln_equ_posn *) event->getArg ());
