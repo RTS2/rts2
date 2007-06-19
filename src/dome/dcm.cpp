@@ -157,6 +157,7 @@ Rts2DevDomeDcm::Rts2DevDomeDcm (int in_argc, char **in_argv):
 Rts2DevDome (in_argc, in_argv)
 {
   weatherConn = NULL;
+  domeModel = "DCM";
   addOption ('W', "dcm_weather", 1,
 	     "UPD port number of packets from DCM (default to 4998)");
   dcm_weather_port = 4998;
