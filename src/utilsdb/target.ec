@@ -1136,18 +1136,15 @@ Target::selectedAsGood ()
 /**
  * return 0 if we cannot observe that target, 1 if it's above horizon.
  */
-int
+bool
 Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
 {
   struct ln_hrz_posn hrz;
   getAltAz (&hrz, JD);
-  if (hrz.alt < getMinAlt ())
-    return 0;
-  return Rts2Config::instance ()->getObjectChecker ()->is_good (&hrz);
+  return isAboveHorizon (&hrz);
 }
 
-
-int
+bool
 Target::isGood (double JD)
 {
   struct ln_equ_posn pos;
@@ -1155,6 +1152,13 @@ Target::isGood (double JD)
   return isGood (ln_get_mean_sidereal_time (JD) + observer->lng / 15.0, JD, &pos);
 }
 
+bool
+Target::isAboveHorizon (struct ln_hrz_posn *hrz)
+{
+  if (hrz->alt < getMinAlt ())
+    return 0;
+  return Rts2Config::instance ()->getObjectChecker ()->is_good (hrz);
+}
 
 /****
  *
