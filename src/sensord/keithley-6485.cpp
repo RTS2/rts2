@@ -147,6 +147,8 @@ Rts2DevSensorKeithley::info ()
   ret = getGPIB ("READ?", current);
   if (ret)
     return ret;
+  // scale current
+  current->setValueDouble (current->getValueDouble () * 10e+12);
   return Rts2DevSensorGpib::info ();
 }
 
