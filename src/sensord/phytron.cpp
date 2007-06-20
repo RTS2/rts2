@@ -130,7 +130,15 @@ Rts2DevSensorPhytron::setAxis (int new_val)
   ret = writePort (cmdbuf);
   if (ret)
     return ret;
-  return readPort ();
+  ret = readPort ();
+  if (ret)
+    return ret;
+  do
+    {
+      ret = readAxis ();
+    }
+  while (axis0->getValueInteger () != new_val);
+  return 0;
 }
 
 Rts2DevSensorPhytron::Rts2DevSensorPhytron (int in_argc, char **in_argv):
