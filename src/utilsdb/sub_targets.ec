@@ -968,6 +968,10 @@ ModelTarget::getNextPosition ()
 {
   switch (modelStepType)
   {
+    case-2:
+      // completly random model
+      step = -2;
+      break;
     case -1:
       // linear model
       step++;
@@ -986,12 +990,25 @@ ModelTarget::getNextPosition ()
 int
 ModelTarget::calPosition ()
 {
-  hrz_poz.az = az_start + az_step * (step / alt_size);
-  hrz_poz.alt = alt_start + alt_step * (step % alt_size);
-  ra_noise = 2 * noise * ((double) random () / RAND_MAX);
-  ra_noise -= noise;
-  dec_noise = 2 * noise * ((double) random () / RAND_MAX);
-  dec_noise -= noise;
+  switch (modelStepType)
+  {
+    case -2:
+      hrz_poz.az = 360 * ((double) random () / RAND_MAX);
+      hrz_poz.alt = 2 + 88 * ((double) random () / RAND_MAX);
+      hrz_poz.alt = 90 * sin (ln_range_degrees (hrz_poz.alt));
+      if (!isAboveHorizon (&hrz_poz))
+	hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
+      ra_noise = 0;
+      dec_noise = 0;
+      break;
+    default:
+      hrz_poz.az = az_start + az_step * (step / alt_size);
+      hrz_poz.alt = alt_start + alt_step * (step % alt_size);
+      ra_noise = 2 * noise * ((double) random () / RAND_MAX);
+      ra_noise -= noise;
+      dec_noise = 2 * noise * ((double) random () / RAND_MAX);
+      dec_noise -= noise;
+  }
   // null ra + dec .. for recurent call do getPosition (JD..)
   equ_poz.ra = -1000;
   equ_poz.dec = -1000;
