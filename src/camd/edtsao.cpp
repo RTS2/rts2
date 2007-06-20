@@ -1,6 +1,8 @@
 #include "camd.h"
 #include "edtsao/interface.h"
 
+#define OPT_NOTIMEOUT  OPT_LOCAL + 3
+
 /*
  * Depends on libedtsao.a, which is build from edtsao directory. This
  * contains unmodified files from EDT-SAO distribution, and should be
@@ -767,7 +769,7 @@ Rts2DevCamera (in_argc, in_argv)
 
   addOption ('p', "devname", 1, "device name");
   addOption ('n', "devunit", 1, "device unit number");
-  addOption ('t', "notimeout", 0, "don't timeout");
+  addOption (OPT_NOTIMEOUT, "notimeout", 0, "don't timeout");
   addOption ('s', "sdelay", 1, "serial delay");
   addOption ('v', "verbose", 0, "verbose report");
 
@@ -807,7 +809,7 @@ Rts2CamdEdtSao::processOption (int in_opt)
     case 'n':
       devunit = atoi (optarg);
       break;
-    case 't':
+    case OPT_NOTIMEOUT:
       notimeout = true;
       break;
     case 's':
