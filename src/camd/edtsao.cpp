@@ -59,13 +59,6 @@ private:
   // perform camera-specific functions
   /** perform camera reset */
   void reset ();
-  /** set high or low gain */
-  int setEDTGain (bool high)
-  {
-    if (high)
-      return edtwrite (SAO_GAIN_HIGH);
-    return edtwrite (SAO_GAIN_LOW);
-  }
   int setEDTSplit (bool on)
   {
     if (on)
@@ -99,6 +92,14 @@ public:
   void setSplitMode (int in_splitMode)
   {
     split_mode = in_splitMode;
+  }
+
+  /** set high or low gain */
+  int setEDTGain (bool high)
+  {
+    if (high)
+      return edtwrite (SAO_GAIN_HIGH);
+    return edtwrite (SAO_GAIN_LOW);
   }
 };
 
@@ -299,7 +300,7 @@ CameraEdtSaoChip::init ()
   // do initialization
   reset ();
 
-  ret = setEDTGain (false);
+  ret = setEDTGain (true);
   if (ret)
     return ret;
   ret = edtwrite (SAO_PARALER_SP);
@@ -729,6 +730,7 @@ private:
 
   // 0 - unsplit, 1 - left, 2 - right
   Rts2ValueSelection *splitMode;
+  Rts2ValueSelection *edtGain;
 
   bool verbose;
 
@@ -770,6 +772,14 @@ Rts2DevCamera (in_argc, in_argv)
   splitMode->addSelVal ("BOTH");
   splitMode->addSelVal ("LEFT");
   splitMode->addSelVal ("RIGHT");
+
+  createValue (edtGain, "EGAIN", "gain (high or low)", true, 0,
+	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+
+  edtGain->addSelVal ("HIGH");
+  edtGain->addSelVal ("LOW");
+
+  edtGain->setValueInteger (0);
 }
 
 Rts2CamdEdtSao::~Rts2CamdEdtSao (void)
@@ -813,6 +823,12 @@ Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
       ((CameraEdtSaoChip *) chips[0])->setSplitMode (new_value->
 						     getValueInteger ());
       return 0;
+    }
+  if (old_value == edtGain)
+    {
+      return ((CameraEdtSaoChip *) chips[0])->setEDTGain (new_value->
+							  getValueInteger ()
+							  == 0);
     }
   return Rts2DevCamera::setValue (old_value, new_value);
 }
