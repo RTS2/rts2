@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257
+bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-phytron
 
 noinst_HEADERS = sensord.h sensorgpib.h
 
@@ -7,6 +7,8 @@ LDADD = sensord.o ../utils/librts2block.a
 rts2_sensor_dummy_SOURCES = dummy.cpp
 
 rts2_sensor_ms257_SOURCES = ms257.cpp
+
+rts2_sensor_phytron_SOURCES = phytron.cpp
 
 if GPIBLIB
 
