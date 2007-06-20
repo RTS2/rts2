@@ -773,7 +773,7 @@ Rts2DevCamera (in_argc, in_argv)
   splitMode->addSelVal ("LEFT");
   splitMode->addSelVal ("RIGHT");
 
-  createValue (edtGain, "EGAIN", "gain (high or low)", true, 0,
+  createValue (edtGain, "GAIN", "gain (high or low)", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
 
   edtGain->addSelVal ("HIGH");
