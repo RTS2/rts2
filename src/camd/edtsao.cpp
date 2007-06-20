@@ -124,20 +124,27 @@ CameraEdtSaoChip::writeBinFile (const char *filename)
   int loops;
   int nwrite;
 
-  fp = fopen (filename, "r");
+  char *full_name;
+  asprintf (&full_name, "/home/ccdtest/bin/%s", filename);
+
+  fp = fopen (full_name, "r");
   if (!fp)
     {
-      logStream (MESSAGE_ERROR) << "cannot open file " << filename << sendLog;
-      return -1;
-    }
-  if (stat (filename, &stbuf) == -1)
-    {
-      logStream (MESSAGE_ERROR) << "fsize: can't access " << filename <<
+      logStream (MESSAGE_ERROR) << "cannot open file " << full_name <<
 	sendLog;
+      free (full_name);
       return -1;
     }
-  logStream (MESSAGE_DEBUG) << "writing " << filename << "  - " << stbuf.
+  if (stat (full_name, &stbuf) == -1)
+    {
+      logStream (MESSAGE_ERROR) << "fsize: can't access " << full_name <<
+	sendLog;
+      free (full_name);
+      return -1;
+    }
+  logStream (MESSAGE_DEBUG) << "writing " << full_name << "  - " << stbuf.
     st_size << " bytes" << sendLog;
+  free (full_name);
   cptr = cbuf;
   loops = 0;
   /*pdv_reset_serial(pd); */
