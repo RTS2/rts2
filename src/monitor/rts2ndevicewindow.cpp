@@ -68,6 +68,8 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 	  wprintw (getWriteWindow (), "%-20s ", val->getName ().c_str ());
 	  wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 	  const char *valStart = val->getValue ();
+	  if (!valStart)
+	    continue;
 	  const char *valTop = valStart;
 	  int scriptPosition = client->getValueInteger ("scriptPosition");
 	  int scriptEnd =
