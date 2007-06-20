@@ -181,6 +181,7 @@ public:
   void setIdleInfoInterval (time_t interval)
   {
     idleInfoInterval = interval;
+    setTimeoutMin ((long int) interval * USEC_SEC);
   }
 
   virtual void forkedInstance ();

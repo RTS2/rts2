@@ -249,9 +249,16 @@ int
 Rts2Daemon::idle ()
 {
   time_t now = time (NULL);
-  if (idleInfoInterval >= 0 && now > nextIdleInfo)
+  if (idleInfoInterval >= 0)
     {
-      infoAll ();
+      if (now >= nextIdleInfo)
+	{
+	  infoAll ();
+	}
+      else
+	{
+	  setTimeoutMin ((nextIdleInfo - now) * USEC_SEC);
+	}
     }
   return Rts2Block::idle ();
 }
