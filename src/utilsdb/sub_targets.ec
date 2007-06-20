@@ -968,7 +968,7 @@ ModelTarget::getNextPosition ()
 {
   switch (modelStepType)
   {
-    case-2:
+    case -2:
       // completly random model
       step = -2;
       break;
@@ -995,7 +995,7 @@ ModelTarget::calPosition ()
     case -2:
       hrz_poz.az = 360 * ((double) random () / RAND_MAX);
       hrz_poz.alt = 2 + 88 * ((double) random () / RAND_MAX);
-      hrz_poz.alt = 90 * sin (ln_range_degrees (hrz_poz.alt));
+      hrz_poz.alt = 90 * sin (ln_deg_to_rad (hrz_poz.alt));
       if (!isAboveHorizon (&hrz_poz))
 	hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
       ra_noise = 0;
