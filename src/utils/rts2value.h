@@ -19,6 +19,12 @@
 #define RTS2_VALUE_MASK		0x000000ff
 
 #define RTS2_VALUE_FITS		0x00000100
+#define RTS2_VWHEN_MASK		0x0000f000
+
+#define RTS2_VWHEN_BEFORE_EXP	0x00000000
+#define RTS2_VWHEN_AFTER_START	0x00001000
+#define RTS2_VWHEN_BEFORE_END	0x00002000
+#define RTS2_VWHEN_AFTER_END	0x00003000
 
 #define RTS2_TYPE_MASK		0x00ff0000
 #define RTS2_DT_RA		0x00010000
@@ -49,6 +55,17 @@ private:
 protected:
   char buf[100];
   int32_t rts2Type;
+
+  void setValueFlags (int32_t flags)
+  {
+    rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK) & flags;
+  }
+
+  int32_t getValueFlags ()
+  {
+    return rts2Type & RTS2_VWHEN_MASK;
+  }
+
   /**
    * Set value display type - part covered by RTS2_TYPE_MASK
    * 
@@ -67,7 +84,7 @@ protected:
 public:
   Rts2Value (std::string in_val_name);
   Rts2Value (std::string in_val_name, std::string in_description,
-	     bool writeToFits = true, int32_t displayType = 0);
+	     bool writeToFits = true, int32_t flags = 0);
   virtual ~ Rts2Value (void)
   {
   }
@@ -146,7 +163,7 @@ private:
 public:
     Rts2ValueString (std::string in_val_name);
     Rts2ValueString (std::string in_val_name, std::string in_description,
-		     bool writeToFits = true, int32_t displayType = 0);
+		     bool writeToFits = true, int32_t flags = 0);
     virtual ~ Rts2ValueString (void)
   {
     delete[]value;
@@ -164,7 +181,7 @@ private:
 public:
     Rts2ValueInteger (std::string in_val_name);
     Rts2ValueInteger (std::string in_val_name, std::string in_description,
-		      bool writeToFits = true, int32_t displayType = 0);
+		      bool writeToFits = true, int32_t flags = 0);
   virtual int setValue (Rts2Conn * connection);
   virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueInteger (int in_value)
@@ -198,7 +215,7 @@ private:
 public:
     Rts2ValueDouble (std::string in_val_name);
     Rts2ValueDouble (std::string in_val_name, std::string in_description,
-		     bool writeToFits = true, int32_t displayType = 0);
+		     bool writeToFits = true, int32_t flags = 0);
   virtual int setValue (Rts2Conn * connection);
   virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueDouble (double in_value)
@@ -229,7 +246,7 @@ class Rts2ValueTime:public Rts2ValueDouble
 public:
   Rts2ValueTime (std::string in_val_name);
   Rts2ValueTime (std::string in_val_name, std::string in_description,
-		 bool writeToFits = true, int32_t displayType = 0);
+		 bool writeToFits = true, int32_t flags = 0);
   void setValueTime (time_t in_value)
   {
     Rts2ValueDouble::setValueDouble (in_value);
@@ -243,7 +260,7 @@ private:
 public:
     Rts2ValueFloat (std::string in_val_name);
     Rts2ValueFloat (std::string in_val_name, std::string in_description,
-		    bool writeToFits = true, int32_t displayType = 0);
+		    bool writeToFits = true, int32_t flags = 0);
   virtual int setValue (Rts2Conn * connection);
   virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueDouble (double in_value)
@@ -279,7 +296,7 @@ class Rts2ValueBool:public Rts2ValueInteger
 public:
   Rts2ValueBool (std::string in_val_name);
   Rts2ValueBool (std::string in_val_name, std::string in_description,
-		 bool writeToFits = true, int32_t displayType = 0);
+		 bool writeToFits = true, int32_t flags = 0);
 
   void setValueBool (bool in_bool)
   {
@@ -308,7 +325,7 @@ protected:
 public:
     Rts2ValueSelection (std::string in_val_name);
     Rts2ValueSelection (std::string in_val_name, std::string in_description,
-			bool writeToFits = false, int32_t displayType = 0);
+			bool writeToFits = false, int32_t flags = 0);
 
   virtual int setValue (Rts2Conn * connection);
 

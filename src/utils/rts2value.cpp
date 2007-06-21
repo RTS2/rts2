@@ -12,14 +12,14 @@ Rts2Value::Rts2Value (std::string in_val_name)
 }
 
 Rts2Value::Rts2Value (std::string in_val_name, std::string in_description,
-		      bool writeToFits, int32_t displayType)
+		      bool writeToFits, int32_t flags)
 {
   valueName = in_val_name;
   rts2Type = 0;
   description = in_description;
   if (writeToFits)
     setWriteToFits ();
-  setValueDisplayType (displayType);
+  setValueFlags (flags);
 }
 
 int
@@ -71,8 +71,8 @@ Rts2Value (in_val_name)
   rts2Type |= RTS2_VALUE_STRING;
 }
 
-Rts2ValueString::Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):
-Rts2Value (in_val_name, in_description, writeToFits, displayType)
+Rts2ValueString::Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
+Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
   value = NULL;
   rts2Type |= RTS2_VALUE_STRING;
@@ -120,8 +120,8 @@ Rts2Value (in_val_name)
   rts2Type |= RTS2_VALUE_INTEGER;
 }
 
-Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):
-Rts2Value (in_val_name, in_description, writeToFits, displayType)
+Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
+Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
   value = 0;
   rts2Type |= RTS2_VALUE_INTEGER;
@@ -175,8 +175,8 @@ Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value
   rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
-Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):
-Rts2Value (in_val_name, in_description, writeToFits, displayType)
+Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
+Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
   value = nan ("f");
   rts2Type |= RTS2_VALUE_DOUBLE;
@@ -239,8 +239,8 @@ Rts2ValueTime::Rts2ValueTime (std::string in_val_name):Rts2ValueDouble
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
-Rts2ValueTime::Rts2ValueTime (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):
-Rts2ValueDouble (in_val_name, in_description, writeToFits, displayType)
+Rts2ValueTime::Rts2ValueTime (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
+Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
@@ -252,8 +252,8 @@ Rts2Value (in_val_name)
   rts2Type |= RTS2_VALUE_FLOAT;
 }
 
-Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):
-Rts2Value (in_val_name, in_description, writeToFits, displayType)
+Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
+Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
   value = nan ("f");
   rts2Type |= RTS2_VALUE_FLOAT;
@@ -316,9 +316,9 @@ Rts2ValueBool::Rts2ValueBool (std::string in_val_name):Rts2ValueInteger
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
 }
 
-Rts2ValueBool::Rts2ValueBool (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):Rts2ValueInteger (in_val_name, in_description,
+Rts2ValueBool::Rts2ValueBool (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueInteger (in_val_name, in_description,
 		  writeToFits,
-		  displayType)
+		  flags)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
 }
@@ -329,9 +329,9 @@ Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name):Rts2ValueIntege
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_SELECTION;
 }
 
-Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits, int32_t displayType):Rts2ValueInteger (in_val_name, in_description,
+Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueInteger (in_val_name, in_description,
 		  writeToFits,
-		  displayType)
+		  flags)
 {
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_SELECTION;
 }
