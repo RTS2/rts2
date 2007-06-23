@@ -138,6 +138,15 @@ public:
   virtual void settingsFailed (int status)
   {
   }
+
+  virtual void infoOK ()
+  {
+  }
+  virtual void infoFailed ()
+  {
+  }
+
+  virtual void idle ();
 };
 
 /**************************************

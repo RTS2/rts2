@@ -153,7 +153,6 @@ public:
 		  int w, int h);
 };
 
-
 class Rts2CommandCenter:public Rts2CommandCameraSettings
 {
 public:
@@ -394,6 +393,14 @@ class Rts2CommandMessageMask:public Rts2Command
 {
 public:
   Rts2CommandMessageMask (Rts2Block * in_master, int in_mask);
+};
+
+class Rts2CommandInfo:public Rts2Command
+{
+public:
+  Rts2CommandInfo (Rts2DevClient * in_client);
+  virtual int commandReturnOK ();
+  virtual int commandReturnFailed (int status);
 };
 
 #endif /* !__RTS2_COMMAND__ */

@@ -752,3 +752,25 @@ Rts2Command (in_master)
   setCommand (command);
   free (command);
 }
+
+Rts2CommandInfo::Rts2CommandInfo (Rts2DevClient * in_client):Rts2Command (in_client->
+	     getMaster
+	     ())
+{
+}
+
+int
+Rts2CommandInfo::commandReturnOK ()
+{
+  if (connection && connection->getOtherDevClient ())
+    connection->getOtherDevClient ()->infoOK ();
+  return Rts2Command::commandReturnOK ();
+}
+
+int
+Rts2CommandInfo::commandReturnFailed (int status)
+{
+  if (connection && connection->getOtherDevClient ())
+    connection->getOtherDevClient ()->infoFailed ();
+  return Rts2Command::commandReturnFailed (status);
+}
