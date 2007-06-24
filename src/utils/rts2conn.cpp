@@ -416,6 +416,8 @@ Rts2Conn::idle ()
 	  connectionError (-1);
 	}
     }
+  if (otherDevice != NULL)
+    otherDevice->idle ();
   return 0;
 }
 
@@ -482,8 +484,7 @@ Rts2Conn::setState (int in_value)
 void
 Rts2Conn::setOtherType (int other_device_type)
 {
-  if (otherDevice)
-    delete otherDevice;
+  delete otherDevice;
   otherDevice = master->createOtherType (this, other_device_type);
   otherType = other_device_type;
 }

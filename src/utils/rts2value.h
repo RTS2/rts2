@@ -61,11 +61,6 @@ protected:
     rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK) & flags;
   }
 
-  int32_t getValueFlags ()
-  {
-    return rts2Type & RTS2_VWHEN_MASK;
-  }
-
   /**
    * Set value display type - part covered by RTS2_TYPE_MASK
    * 
@@ -102,6 +97,10 @@ public:
   virtual const char *getDisplayValue ()
   {
     return getValue ();
+  }
+  int32_t getValueWriteFlags ()
+  {
+    return rts2Type & RTS2_VWHEN_MASK;
   }
   int32_t getValueDisplayType ()
   {
@@ -251,6 +250,7 @@ public:
   {
     Rts2ValueDouble::setValueDouble (in_value);
   }
+  virtual const char *getDisplayValue ();
 };
 
 class Rts2ValueFloat:public Rts2Value

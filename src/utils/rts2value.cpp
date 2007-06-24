@@ -245,6 +245,13 @@ Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
+const char *
+Rts2ValueTime::getDisplayValue ()
+{
+  sprintf (buf, "%lf", getValueDouble ());
+  return buf;
+}
+
 Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name):
 Rts2Value (in_val_name)
 {
