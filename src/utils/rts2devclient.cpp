@@ -280,6 +280,11 @@ Rts2DevClient::getStatus ()
   return connection->getState ();
 }
 
+void
+Rts2DevClient::idle ()
+{
+}
+
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
