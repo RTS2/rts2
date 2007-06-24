@@ -753,10 +753,10 @@ Rts2Command (in_master)
   free (command);
 }
 
-Rts2CommandInfo::Rts2CommandInfo (Rts2DevClient * in_client):Rts2Command (in_client->
-	     getMaster
-	     ())
+Rts2CommandInfo::Rts2CommandInfo (Rts2Block * in_master):Rts2Command
+  (in_master)
 {
+  setCommand ("info");
 }
 
 int

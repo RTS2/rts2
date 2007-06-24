@@ -398,7 +398,7 @@ public:
 class Rts2CommandInfo:public Rts2Command
 {
 public:
-  Rts2CommandInfo (Rts2DevClient * in_client);
+  Rts2CommandInfo (Rts2Block * in_master);
   virtual int commandReturnOK ();
   virtual int commandReturnFailed (int status);
 };
