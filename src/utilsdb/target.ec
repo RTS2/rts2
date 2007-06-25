@@ -72,9 +72,9 @@ Target::writeAirmass (std::ostream & _os, double jd)
 {
   double am = getAirmass (jd);
   if (am > 9)
-    _os << " nan";
+    _os << "nan";
   else
-    _os << std::setw (4) << getAirmass (jd);
+    _os << std::setw (3) << getAirmass (jd);
 }
 
 void
