@@ -59,20 +59,16 @@
 	<arg choice="plain"><option>--help</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-V</option></arg>
 	<arg choice="plain"><option>--version</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-S <replaceable>central server hostname</replaceable></option></arg>
 	<arg choice="plain"><option>--centrald_server <replaceable>central server hostname</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-q <replaceable>port number</replaceable></option></arg>
 	<arg choice="plain"><option>--centrald_port <replaceable>port number</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-c</option></arg>
-	<arg choice="plain"><option>--color-off</option></arg>
       </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -320,10 +316,27 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-V</option></term>
         <term><option>--version</option></term>
         <listitem>
           <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--centrald_server <replaceable>central server hostname</replaceable></option></term>
+        <listitem>
+          <para>Change central server location. Defaults to localhost.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--centrald_port <replaceable>port number</replaceable></option></term>
+        <listitem>
+          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c</option></term>
+        <listitem>
+          <para>Switch off colors. Usefull for terminals which have problems with colors.</para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -334,7 +347,7 @@
     <para>
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
-	<manvolnum>1</manvolnum>
+	<manvolnum>7</manvolnum>
       </citerefentry>
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
