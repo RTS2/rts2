@@ -84,7 +84,7 @@ Rts2NightReport::processOption (int in_opt)
     case 'p':
       if (optarg)
 	{
-	  if (strcmp (optarg, "txt"))
+	  if (!strcmp (optarg, "txt"))
 	    printCounts = DISPLAY_SHORT;
 	  else
 	    printCounts |= DISPLAY_ALL;
