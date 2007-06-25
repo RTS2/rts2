@@ -46,14 +46,14 @@ public:
 TPM::TPM (int in_argc, char **in_argv):
 Rts2CliApp (in_argc, in_argv)
 {
-  tarCorType = BEST;
+  tarCorType = MOUNT;
   selFlip = -1;
   ra_step = nan ("f");
   ra_offset = 0;
   dec_step = nan ("f");
   dec_offset = 0;
   addOption ('t', NULL, 1,
-	     "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL)");
+	     "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL, m for MNT_RA and MNT_DEC)");
   addOption ('f', NULL, 1, "select images with given flip (0 or 1)");
   addOption ('r', NULL, 1,
 	     "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
