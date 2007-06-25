@@ -658,12 +658,16 @@ public:
   virtual moveType afterSlewProcessed ();
   virtual int endObservation (int in_next_id);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
+  virtual double getMinAlt ()
+  {
+    return -1;
+  }
 };
 
 class OportunityTarget:public ConstTarget
 {
 public:
-  OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+  OportunityTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
   virtual float getBonus (double JD);
   virtual int isContinues ()
   {
