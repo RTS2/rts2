@@ -1,6 +1,6 @@
 SUBDIRS = model
 
-bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 rts2-telmodeltest
+bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200
 
 noinst_HEADERS = telescope.h maps.h rts2devclicop.h ir.h hms.h
 
@@ -15,6 +15,8 @@ rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
 
 if PGSQL
+bin_PROGRAMS += rts2-telmodeltest
+
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
 rts2_telmodeltest_LDADD = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@ ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD}
 endif
