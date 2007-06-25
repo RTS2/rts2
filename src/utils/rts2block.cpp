@@ -57,6 +57,17 @@ Rts2Block::getPort (void)
   return port;
 }
 
+bool Rts2Block::commandQueEmpty ()
+{
+  for (connections_t::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++)
+    {
+      if (!(*iter)->queEmpty ())
+	return false;
+    }
+  return true;
+}
+
 void
 Rts2Block::postEvent (Rts2Event * event)
 {
