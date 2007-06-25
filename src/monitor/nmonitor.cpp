@@ -223,7 +223,7 @@ Rts2Client (in_argc, in_argv)
   old_lines = 0;
   old_cols = 0;
 
-  addOption ('c', "color-off", 0, "don't use colors");
+  addOption ('c', NULL, 0, "don't use colors");
 }
 
 Rts2NMonitor::~Rts2NMonitor (void)
