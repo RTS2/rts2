@@ -721,10 +721,7 @@ Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
 int
 Rts2Daemon::info ()
 {
-  struct timeval infot;
-  gettimeofday (&infot, NULL);
-  info_time->setValueDouble (infot.tv_sec +
-			     (double) infot.tv_usec / USEC_SEC);
+  info_time->setValueDouble (getNow ());
   return 0;
 }
 
