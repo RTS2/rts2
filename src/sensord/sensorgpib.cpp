@@ -35,10 +35,9 @@ Rts2DevSensorGpib::gpibRead (void *buf, int blen)
 }
 
 int
-Rts2DevSensorGpib::gpibWriteRead (char *buf, char *val)
+Rts2DevSensorGpib::gpibWriteRead (char *buf, char *val, int blen)
 {
   int ret;
-  *val = '\0';
   ret = ibwrt (gpib_dev, buf, strlen (buf));
   if (ret & ERR)
     {
@@ -50,7 +49,9 @@ Rts2DevSensorGpib::gpibWriteRead (char *buf, char *val)
   logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
     " ret " << ret << sendLog;
 #endif
-  ret = ibrd (gpib_dev, val, 50);
+  *val = '\0';
+  ret = ibrd (gpib_dev, val, blen);
+  val[ibcnt] = '\0';
   if (ret & ERR)
     {
       logStream (MESSAGE_ERROR) << "error reading reply from " << buf <<
@@ -113,5 +114,6 @@ Rts2DevSensorGpib::Rts2DevSensorGpib (int in_argc, char **in_argv):Rts2DevSensor
 
 Rts2DevSensorGpib::~Rts2DevSensorGpib (void)
 {
+  ibclr (gpib_dev);
   ibonl (gpib_dev, 0);
 }

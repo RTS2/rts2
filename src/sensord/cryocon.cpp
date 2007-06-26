@@ -1,8 +1,5 @@
 #include "sensorgpib.h"
 
-#define TEMP_VALS	6
-#define LOOP_VALS	11
-
 class Rts2DevSensorCryocon;
 
 /**
@@ -13,7 +10,7 @@ class Rts2ValueTempInput
 private:
   char chan;
 public:
-    Rts2ValueDouble * values[TEMP_VALS];
+    std::list < Rts2Value * >values;
 
     Rts2ValueTempInput (Rts2DevSensorCryocon * dev, char in_chan);
 
@@ -45,7 +42,7 @@ public:
 
     Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop);
 
-  Rts2Value *values[LOOP_VALS];
+    std::list < Rts2Value * >values;
 
   int getLoop ()
   {
@@ -58,6 +55,8 @@ class Rts2DevSensorCryocon:public Rts2DevSensorGpib
   int write (const char *buf, const char *newVal);
 
   int writeRead (char *buf, Rts2Value * val);
+  int writeRead (char *subsystem, std::list < Rts2Value * >&vals,
+		 int prefix_num);
 
   int writeRead (char *buf, Rts2ValueDouble * val);
   int writeRead (char *buf, Rts2ValueFloat * val);
@@ -68,6 +67,8 @@ class Rts2DevSensorCryocon:public Rts2DevSensorGpib
 
   Rts2ValueTempInput *chans[4];
   Rts2ValueLoop *loops[2];
+
+    std::list < Rts2Value * >systemList;
 
   Rts2ValueDouble *statTime;
 
@@ -108,17 +109,29 @@ Rts2ValueTempInput::Rts2ValueTempInput (Rts2DevSensorCryocon * dev,
 {
   chan = in_chan;
   // values are passed to dev, and device deletes them!
-  dev->createTempInputValue (&values[0], chan, "TEMP",
+  Rts2ValueDouble *v;
+
+  dev->createTempInputValue (&v, chan, "TEMP",
 			     "cryocon temperature from channel ");
-  dev->createTempInputValue (&values[1], chan, "MINIMUM",
+  values.push_back (v);
+
+  dev->createTempInputValue (&v, chan, "MINIMUM",
 			     "minimum temperature on channel ");
-  dev->createTempInputValue (&values[2], chan, "MAXIMUM",
+  values.push_back (v);
+
+  dev->createTempInputValue (&v, chan, "MAXIMUM",
 			     "maximum temperature on channel ");
-  dev->createTempInputValue (&values[3], chan, "VARIANCE",
+  values.push_back (v);
+
+  dev->createTempInputValue (&v, chan, "VARIANCE",
 			     "temperature variance of channel ");
-  dev->createTempInputValue (&values[4], chan, "SLOPE", "slope of channel ");
-  dev->createTempInputValue (&values[5], chan, "OFFSET",
-			     "temp offset of channel ");
+  values.push_back (v);
+
+  dev->createTempInputValue (&v, chan, "SLOPE", "slope of channel ");
+  values.push_back (v);
+
+  dev->createTempInputValue (&v, chan, "OFFSET", "temp offset of channel ");
+  values.push_back (v);
 }
 
 Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
@@ -126,44 +139,57 @@ Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
   loop = in_loop;
 
   dev->createLoopValue (source, loop, "SOURCE", "Control lopp source input");
-  values[0] = source;
+  values.push_back (source);
+
   // fill in values
   const char *sourceVals[] = { "CHA", "CHB", "CHC", "CHD", NULL };
   source->addSelVals (sourceVals);
 
   dev->createLoopValue (setpt, loop, "SETPT", "Control loop set point");
-  values[1] = setpt;
+  values.push_back (setpt);
+
   dev->createLoopValue (type, loop, "TYPE", "Control loop control type");
 
-  values[2] = type;
+  values.push_back (type);
+
   const char *typeVals[] =
-    { "Off", "PID", "Man", "Table", "RampP", "RampT", NULL };
+    { "Off", "PID", "MAN", "Table", "RampP", "RampT", NULL };
   type->addSelVals (typeVals);
 
   dev->createLoopValue (range, loop, "RANGE", "Control loop output range");
-  values[3] = range;
-  const char *rangeVals[] = { "50W", "5.0W", "0.5W", "0.05W", NULL };
+  values.push_back (range);
+
+  const char *rangeVals[] =
+    { "50W", "5.0W", "0.5W", "0.05W", "25W", "2.5W", "0.25W", "0.03W", "HTR",
+    NULL
+  };
   range->addSelVals (rangeVals);
 
   dev->createLoopValue (ramp, loop, "RAMP", "Control loop ramp status");
-  values[4] = ramp;
+  values.push_back (ramp);
+
   dev->createLoopValue (rate, loop, "RATE", "Control loop ramp rate");
-  values[5] = rate;
+  values.push_back (rate);
+
   dev->createLoopValue (pgain, loop, "PGAIN",
 			"Control loop proportional gain term");
-  values[6] = pgain;
+  values.push_back (pgain);
+
   dev->createLoopValue (igain, loop, "IGAIN",
 			"Control loop integral gain term");
-  values[7] = igain;
+  values.push_back (igain);
+
   dev->createLoopValue (dgain, loop, "DGAIN",
 			"Control loop derivative gain term");
-  values[8] = dgain;
+  values.push_back (dgain);
+
   dev->createLoopValue (htrread, loop, "HTRREAD",
 			"Control loop output current");
-  values[9] = htrread;
+  values.push_back (htrread);
+
   dev->createLoopValue (pmanual, loop, "PMANUAL",
 			"Control loop manual power output setting");
-  values[10] = pmanual;
+  values.push_back (pmanual);
 }
 
 
@@ -201,6 +227,60 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2Value * val)
 }
 
 int
+Rts2DevSensorCryocon::writeRead (char *subsystem,
+				 std::list < Rts2Value * >&vals,
+				 int prefix_num)
+{
+  char rb[500];
+  char *retTop;
+  char *retEnd;
+  std::list < Rts2Value * >::iterator iter;
+  int ret;
+
+  strcpy (rb, subsystem);
+
+  for (iter = vals.begin (); iter != vals.end (); iter++)
+    {
+      if (iter != vals.begin ())
+	strcat (rb, ";");
+      strcat (rb, (*iter)->getName ().c_str () + prefix_num);
+      strcat (rb, "?");
+    }
+  ret = gpibWriteRead (rb, rb, 500);
+  if (ret)
+    return ret;
+  // spit reply and set values..
+  retTop = rb;
+  for (iter = vals.begin (); iter != vals.end (); iter++)
+    {
+      retEnd = retTop;
+      if (*retEnd == '\0')
+	{
+	  logStream (MESSAGE_ERROR) << "Cannot find reply for value " <<
+	    (*iter)->getName () << sendLog;
+	  return -1;
+	}
+      while (*retEnd && *retEnd != ';')
+	{
+	  if (*retEnd == ' ')
+	    *retEnd = '\0';
+	  retEnd++;
+	}
+      *retEnd = '\0';
+
+      ret = (*iter)->setValueString (retTop);
+      if (ret)
+	{
+	  logStream (MESSAGE_ERROR) << "Error when setting value " <<
+	    (*iter)->getName () << " to " << retTop << sendLog;
+	  return ret;
+	}
+      retTop = retEnd + 1;
+    }
+  return 0;
+}
+
+int
 Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueDouble * val)
 {
   char rb[50];
@@ -229,7 +309,7 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueBool * val)
   int ret = gpibWriteRead (buf, rb);
   if (ret)
     return ret;
-  val->setValueBool (!strcmp (rb, "ON"));
+  val->setValueBool (!strncmp (rb, "ON", 2));
   return 0;
 }
 
@@ -259,9 +339,10 @@ int
 Rts2DevSensorCryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 {
   for (int l = 0; l < 2; l++)
-    for (int i = 0; i < LOOP_VALS; i++)
+    for (std::list < Rts2Value * >::iterator iter = loops[l]->values.begin ();
+	 iter != loops[l]->values.end (); iter++)
       {
-	Rts2Value *val = loops[l]->values[i];
+	Rts2Value *val = *iter;
 	if (oldValue == val)
 	  return write (getLoopVal (l, val), newValue->getDisplayValue ());
       }
@@ -299,6 +380,10 @@ Rts2DevSensorGpib (in_argc, in_argv)
   createValue (htrhst, "HTRHST", "Heater heat sink temperature", true);
 
   createValue (heaterEnabled, "HEATER", "Heater enabled/disabled", true);
+
+  systemList.push_back (amb);
+  systemList.push_back (htrread);
+  systemList.push_back (htrhst);
 }
 
 Rts2DevSensorCryocon::~Rts2DevSensorCryocon (void)
@@ -310,9 +395,10 @@ Rts2DevSensorCryocon::createTempInputValue (Rts2ValueDouble ** val, char chan,
 					    const char *name,
 					    const char *desc)
 {
-  char *n = new char[strlen (name) + 2];
-  strcpy (n, name);
-  strncat (n, &chan, 1);
+  char *n = new char[strlen (name) + 3];
+  n[0] = chan;
+  n[1] = '.';
+  strcpy (n + 2, name);
   char *d = new char[strlen (desc) + 2];
   strcpy (d, desc);
   strncat (d, &chan, 1);
@@ -327,46 +413,34 @@ Rts2DevSensorCryocon::info ()
   int ret;
   char buf[50] = "INPUT ";
   int i;
-  int v;
+  buf[8] = '\0';
   for (i = 0; i < 4; i++)
     {
       buf[6] = chans[i]->getChannel ();
       buf[7] = ':';
-      for (v = 0; v < TEMP_VALS; v++)
-	{
-	  strcpy (buf + 8, chans[i]->values[v]->getName ().c_str ());
-	  buf[strlen (buf) - 1] = '?';
-	  ret = writeRead (buf, chans[i]->values[v]);
-	  if (ret)
-	    return ret;
-	}
+      ret = writeRead (buf, chans[i]->values, 2);
+      if (ret)
+	return ret;
     }
   strcpy (buf, "LOOP ");
+  buf[7] = '\0';
   // run info for loops
   for (i = 0; i < 2; i++)
     {
       buf[5] = '1' + i;
       buf[6] = ':';
-      for (v = 0; v < LOOP_VALS; v++)
-	{
-	  Rts2Value *val = loops[i]->values[v];
-	  strcpy (buf + 7, val->getName ().c_str () + 2);
-	  buf[strlen (buf) + 1] = '\0';
-	  buf[strlen (buf)] = '?';
-	  writeRead (buf, val);
-	}
+      ret = writeRead (buf, loops[i]->values, 2);
+      if (ret)
+	return ret;
     }
   ret = writeRead ("STATS:TIME?", statTime);
   if (ret)
     return ret;
   statTime->setValueDouble (statTime->getValueDouble () * 60.0);
-  ret = writeRead ("SYSTEM:AMBIENT?", amb);
+  ret = writeRead ("SYSTEM:", systemList, 0);
   if (ret)
     return ret;
-  ret = writeRead ("SYSTEM:HTRREAD?", htrread);
-  if (ret)
-    return ret;
-  ret = writeRead ("SYSTEM:HTRHST?", htrhst);
+  ret = writeRead ("CONTROL?", heaterEnabled);
   if (ret)
     return ret;
   return Rts2DevSensorGpib::info ();
