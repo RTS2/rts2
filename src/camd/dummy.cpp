@@ -81,7 +81,8 @@ private:
   {
     static int dataTypes[] =
       { RTS2_DATA_INTEGER, RTS2_DATA_LONG, RTS2_DATA_LONGLONG,
-RTS2_DATA_FLOAT, RTS2_DATA_DOUBLE, RTS2_DATA_BYTE };
+      RTS2_DATA_FLOAT, RTS2_DATA_DOUBLE, RTS2_DATA_BYTE
+    };
     chips[0]->setUsedDataType (dataTypes[new_data_type->getValueInteger ()]);
     return 0;
   }
@@ -107,6 +108,8 @@ public:
 Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
 		 in_argv)
   {
+    createTempCCD ();
+
     supportFrameT = false;
     infoSleep = 0;
     createValue (readoutSleep, "readout", "readout sleep in sec", true, 0,

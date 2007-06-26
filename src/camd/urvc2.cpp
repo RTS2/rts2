@@ -326,6 +326,13 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel, int in_fan,
 Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
 	       in_argv)
 {
+  createTempAir ();
+  createTempCCD ();
+  createTempSet ();
+  createTempRegulation ();
+  createCoolingPower ();
+  createCamFan ();
+
   cameraID = DEFAULT_CAMERA;
   tempRegulation->setValueInteger (-1);
 }
@@ -440,7 +447,6 @@ Rts2DevCameraUrvc2::info ()
   tempAir->setValueDouble (ambient_ad2c (qtsr.ambientThermistor));
   tempCCD->setValueDouble (ccd_ad2c (qtsr.ccdThermistor));
   fan->setValueInteger (gvr.fanEnabled);
-  canDF->setValueInteger (1);
   return Rts2DevCamera::info ();
 }
 

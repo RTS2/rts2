@@ -240,7 +240,6 @@ protected:
   Rts2ValueInteger *coolingPower;
   Rts2ValueInteger *fan;
 
-  Rts2ValueInteger *canDF;	// if the camera can make dark frames
   char ccdType[64];
   char *ccdRealType;
   char serialNumber[64];
@@ -259,9 +258,40 @@ protected:
   virtual void afterReadout ();
 
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+  void createTempAir ()
+  {
+    createValue (tempAir, "CCD_AIR", "detector air temperature");
+  }
+
+  void createTempCCD ()
+  {
+    createValue (tempCCD, "CCD_TEMP", "CCD temperature");
+  }
+
+  void createTempSet ()
+  {
+    createValue (tempSet, "CCD_SET", "CCD set temperature");
+  }
+
+  void createTempRegulation ()
+  {
+    createValue (tempRegulation, "CCD_REG", "temperature regulation");
+  }
+
+  void createCoolingPower ()
+  {
+    createValue (coolingPower, "CCD_PWR", "cooling power");
+  }
+
+  void createCamFan ()
+  {
+    createValue (fan, "CCD_FAN", "fan on (1) / off (0)");
+  }
+
 public:
-    Rts2DevCamera (int argc, char **argv);
-    virtual ~ Rts2DevCamera (void);
+  Rts2DevCamera (int argc, char **argv);
+  virtual ~ Rts2DevCamera (void);
 
   virtual int initChips ();
   virtual int initValues ();

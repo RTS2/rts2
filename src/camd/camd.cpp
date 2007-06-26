@@ -453,14 +453,13 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
   int i;
   for (i = 0; i < MAX_CHIPS; i++)
     chips[i] = NULL;
-  createValue (tempAir, "CCD_AIR", "detector air temperature");
-  createValue (tempCCD, "CCD_TEMP", "CCD temperature");
-  createValue (tempSet, "CCD_SET", "CCD set temperature");
-  createValue (tempRegulation, "CCD_REG", "temperature regulation");
-  createValue (coolingPower, "CCD_PWR", "cooling power");
-  createValue (fan, "CCD_FAN", "fan on (1) / off (0)");
+  tempAir = NULL;
+  tempCCD = NULL;
+  tempSet = NULL;
+  tempRegulation = NULL;
+  coolingPower = NULL;
+  fan = NULL;
   filter = NULL;
-  createValue (canDF, "can_df", "if camera can do dark frames", false);
   ccdType[0] = '\0';
   ccdRealType = ccdType;
   serialNumber[0] = '\0';

@@ -189,6 +189,12 @@ public:
 Rts2DevCameraAlta::Rts2DevCameraAlta (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
+  createTempAir ();
+  createTempCCD ();
+  createTempRegulation ();
+  createTempSet ();
+  createCamFan ();
+
   alta = NULL;
   addOption ('B', "12bits", 0,
 	     "switch to 12 bit readout mode; see alta specs for details");

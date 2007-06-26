@@ -277,6 +277,9 @@ public:
 Rts2DevCameraFli::Rts2DevCameraFli (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
+  createTempSet ();
+  createTempCCD ();
+
   deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
   fliDebug = FLIDEBUG_NONE;
   hwRev = -1;

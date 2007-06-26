@@ -954,7 +954,6 @@ Rts2DevCameraMiniccd::init ()
       chips[0] = new CameraMiniccdChip (this, 0, fd_ccd);
     }
 
-  canDF = 0;			// starlight cameras cannot do DF
   return Rts2DevCameraMiniccd::initChips ();
 }
 

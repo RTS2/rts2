@@ -793,6 +793,11 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 Rts2DevCameraApogee::Rts2DevCameraApogee (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
+
+  createTempRegulation ();
+  createTempSet ();
+  createTempCCD ();
+
   addOption ('n', "device_id", 1,
 	     "device ID (ussualy 0, which is also default)");
   addOption ('a', "config_name", 1,
@@ -801,9 +806,6 @@ Rts2DevCamera (in_argc, in_argv)
   cfgname = "/etc/rts2/apogee.ini";
 
   camera = NULL;
-
-  fan->setValueInteger (1);
-  canDF->setValueInteger (1);
 }
 
 Rts2DevCameraApogee::~Rts2DevCameraApogee (void)
@@ -876,8 +878,6 @@ Rts2DevCameraApogee::info ()
   tempRegulation->setValueInteger (camera->read_CoolerMode ());
   tempSet->setValueDouble (camera->read_CoolerSetPoint ());
   tempCCD->setValueDouble (camera->read_Temperature ());
-  tempAir->setValueDouble (nan ("f"));
-  coolingPower->setValueInteger (5000);
   return Rts2DevCamera::info ();
 }
 

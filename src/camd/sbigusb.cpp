@@ -220,6 +220,12 @@ public:
 Rts2DevCameraSbig::Rts2DevCameraSbig (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
+  createTempAir ();
+  createTempSet ();
+  createCoolingPower ();
+  createTempCCD ();
+  createCamFan ();
+
   pcam = NULL;
   usb_port = 0;
   reqSerialNumber = NULL;
@@ -257,7 +263,8 @@ Rts2DevCameraSbig::processOption (int in_opt)
   return 0;
 }
 
-SBIG_DEVICE_TYPE Rts2DevCameraSbig::getDevType ()
+SBIG_DEVICE_TYPE
+Rts2DevCameraSbig::getDevType ()
 {
   switch (usb_port)
     {
@@ -417,12 +424,11 @@ Rts2DevCameraSbig::info ()
   if (pcam->SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) !=
       CE_NO_ERROR)
     return -1;
-  fan = qcsr.status & 0x100;
-  tempAir = pcam->ADToDegreesC (qtsr.ambientThermistor, FALSE);
-  tempSet = pcam->ADToDegreesC (qtsr.ccdSetpoint, TRUE);
-  coolingPower = (int) ((qtsr.power / 255.0) * 1000);
-  tempCCD = pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE);
-  tempRegulation = 1;
+  fan->setValueInteger (qcsr.status & 0x100);
+  tempAir->setValueFloat (pcam->ADToDegreesC (qtsr.ambientThermistor, FALSE));
+  tempSet->setValueFloat (pcam->ADToDegreesC (qtsr.ccdSetpoint, TRUE));
+  coolingPower->setValueInteger ((int) ((qtsr.power / 255.0) * 1000));
+  tempCCD->setValueFloat (pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE));
   return Rts2DevCamera::info ();
 }
 

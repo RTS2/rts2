@@ -320,7 +320,8 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool CameraAndorChip::supportFrameTransfer ()
+bool
+CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -433,6 +434,10 @@ public:
 Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
+  createTempCCD ();
+  createTempRegulation ();
+  createTempSet ();
+
   andorRoot = "/root/andor/examples/common";
 
   createValue (gain, "GAIN", "CCD gain", true, 0,
@@ -1027,8 +1032,6 @@ Rts2DevCameraAndor::getTemp ()
 int
 Rts2DevCameraAndor::info ()
 {
-  tempAir->setValueDouble (nan ("f"));
-  coolingPower->setValueInteger ((int) (50 * 1000));
   if (isIdle ())
     {
       getTemp ();
