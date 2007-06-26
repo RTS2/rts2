@@ -92,6 +92,11 @@ public:
     return valueName;
   }
   virtual int setValue (Rts2Conn * connection) = 0;
+  /**
+   * Set value from string.
+   * return -1 when value cannot be set from string.
+   */
+  virtual int setValueString (const char *in_value) = 0;
   virtual int doOpValue (char op, Rts2Value * old_value);
   virtual const char *getValue () = 0;
   virtual const char *getDisplayValue ()
@@ -168,8 +173,8 @@ public:
     delete[]value;
   }
   virtual int setValue (Rts2Conn * connection);
+  virtual int setValueString (const char *in_value);
   virtual const char *getValue ();
-  virtual void setValueString (const char *in_value);
   virtual void setFromValue (Rts2Value * newValue);
 };
 
@@ -182,6 +187,7 @@ public:
     Rts2ValueInteger (std::string in_val_name, std::string in_description,
 		      bool writeToFits = true, int32_t flags = 0);
   virtual int setValue (Rts2Conn * connection);
+  virtual int setValueString (const char *in_value);
   virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueInteger (int in_value)
   {
@@ -216,6 +222,7 @@ public:
     Rts2ValueDouble (std::string in_val_name, std::string in_description,
 		     bool writeToFits = true, int32_t flags = 0);
   virtual int setValue (Rts2Conn * connection);
+  virtual int setValueString (const char *in_value);
   virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueDouble (double in_value)
   {
@@ -262,6 +269,7 @@ public:
     Rts2ValueFloat (std::string in_val_name, std::string in_description,
 		    bool writeToFits = true, int32_t flags = 0);
   virtual int setValue (Rts2Conn * connection);
+  virtual int setValueString (const char *in_value);
   virtual int doOpValue (char op, Rts2Value * old_value);
   void setValueDouble (double in_value)
   {
@@ -297,6 +305,7 @@ public:
   Rts2ValueBool (std::string in_val_name);
   Rts2ValueBool (std::string in_val_name, std::string in_description,
 		 bool writeToFits = true, int32_t flags = 0);
+  virtual int setValueString (const char *in_value);
 
   void setValueBool (bool in_bool)
   {
@@ -328,6 +337,7 @@ public:
 			bool writeToFits = false, int32_t flags = 0);
 
   virtual int setValue (Rts2Conn * connection);
+  virtual int setValueString (const char *in_value);
 
   int getSelIndex (std::string in_val);
 

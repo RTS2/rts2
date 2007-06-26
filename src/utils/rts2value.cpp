@@ -94,17 +94,18 @@ Rts2ValueString::setValue (Rts2Conn * connection)
   return 0;
 }
 
-void
+int
 Rts2ValueString::setValueString (const char *in_value)
 {
   delete[]value;
   if (!in_value)
     {
       value = NULL;
-      return;
+      return -1;
     }
   value = new char[strlen (in_value) + 1];
   strcpy (value, in_value);
+  return 0;
 }
 
 void
@@ -142,6 +143,13 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
   if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
     return -2;
   value = new_value;
+  return 0;
+}
+
+int
+Rts2ValueInteger::setValueString (const char *in_value)
+{
+  setValueInteger (atoi (in_value));
   return 0;
 }
 
@@ -207,6 +215,13 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
   if (connection->paramNextDouble (&new_value) || !connection->paramEnd ())
     return -2;
   value = new_value;
+  return 0;
+}
+
+int
+Rts2ValueDouble::setValueString (const char *in_value)
+{
+  setValueDouble (atof (in_value));
   return 0;
 }
 
@@ -295,6 +310,13 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
 }
 
 int
+Rts2ValueFloat::setValueString (const char *in_value)
+{
+  setValueDouble (atof (in_value));
+  return 0;
+}
+
+int
 Rts2ValueFloat::doOpValue (char op, Rts2Value * old_value)
 {
   switch (op)
@@ -330,6 +352,20 @@ Rts2ValueBool::Rts2ValueBool (std::string in_val_name, std::string in_descriptio
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
 }
 
+int
+Rts2ValueBool::setValueString (const char *in_value)
+{
+  if (!strcasecmp (in_value, "ON") || !strcasecmp (in_value, "TRUE")
+      || !strcasecmp (in_value, "YES") || !strcmp (in_value, "1"))
+    setValueBool (true);
+  else if (!strcasecmp (in_value, "OFF") || !strcasecmp (in_value, "FALSE")
+	   || !strcasecmp (in_value, "NO") || !strcmp (in_value, "0"))
+    setValueBool (false);
+  else
+    return -1;
+  return 0;
+}
+
 Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name):Rts2ValueInteger
   (in_val_name)
 {
@@ -347,19 +383,29 @@ int
 Rts2ValueSelection::setValue (Rts2Conn * connection)
 {
   char *new_value;
-  char *end;
   if (connection->paramNextString (&new_value) || !connection->paramEnd ())
     return -2;
   // try if it's number
-  int ret = strtol (new_value, &end, 10);
+  int ret;
+  ret = setValueString (new_value);
+  if (ret)
+    return -2;
+  return 0;
+}
+
+int
+Rts2ValueSelection::setValueString (const char *in_value)
+{
+  char *end;
+  int ret = strtol (in_value, &end, 10);
   if (!*end)
     {
       setValueInteger (ret);
       return 0;
     }
-  ret = getSelIndex (std::string (new_value));
+  ret = getSelIndex (std::string (in_value));
   if (ret < 0)
-    return -2;
+    return -1;
   setValueInteger (ret);
   return 0;
 }
