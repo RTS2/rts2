@@ -648,7 +648,11 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
 
   ret = new_value->doOpValue (op, old_value);
   if (ret)
-    goto err;
+    {
+      // translate error to real error, not only qued error
+      ret = -2;
+      goto err;
+    }
 
   // call hook
   ret = setValue (old_value, new_value);

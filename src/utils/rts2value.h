@@ -189,9 +189,14 @@ public:
   virtual int setValue (Rts2Conn * connection);
   virtual int setValueString (const char *in_value);
   virtual int doOpValue (char op, Rts2Value * old_value);
-  void setValueInteger (int in_value)
+  /**
+   * Returns -1 on error
+   *
+   */
+  virtual int setValueInteger (int in_value)
   {
     value = in_value;
+    return 0;
   }
   virtual const char *getValue ();
   virtual double getValueDouble ()
@@ -344,6 +349,13 @@ public:
   virtual const char *getDisplayValue ()
   {
     return getSelVal ().c_str ();
+  }
+
+  virtual int setValueInteger (int in_value)
+  {
+    if (in_value < 0 || (size_t) in_value >= valNames.size ())
+      return -1;
+    return Rts2ValueInteger::setValueInteger (in_value);
   }
 
   int setSelIndex (char *selVal)

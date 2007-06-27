@@ -32,7 +32,7 @@ Rts2Value::doOpValue (char op, Rts2Value * old_value)
     default:
       logStream (MESSAGE_ERROR) << "unknow op '" << op << "' for type " <<
 	getValueType () << sendLog;
-      return -2;
+      return -1;
     }
 }
 
@@ -149,8 +149,7 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
 int
 Rts2ValueInteger::setValueString (const char *in_value)
 {
-  setValueInteger (atoi (in_value));
-  return 0;
+  return setValueInteger (atoi (in_value));
 }
 
 int
@@ -159,15 +158,15 @@ Rts2ValueInteger::doOpValue (char op, Rts2Value * old_value)
   switch (op)
     {
     case '+':
-      setValueInteger (old_value->getValueInteger () + getValueInteger ());
-      break;
+      return setValueInteger (old_value->getValueInteger () +
+			      getValueInteger ());
     case '-':
-      setValueInteger (old_value->getValueInteger () - getValueInteger ());
-      break;
-    default:
-      return Rts2Value::doOpValue (op, old_value);
+      return setValueInteger (old_value->getValueInteger () -
+			      getValueInteger ());
+    case '=':
+      return setValueInteger (getValueInteger ());
     }
-  return 0;
+  return Rts2Value::doOpValue (op, old_value);
 }
 
 void
@@ -400,14 +399,12 @@ Rts2ValueSelection::setValueString (const char *in_value)
   int ret = strtol (in_value, &end, 10);
   if (!*end)
     {
-      setValueInteger (ret);
-      return 0;
+      return setValueInteger (ret);
     }
   ret = getSelIndex (std::string (in_value));
   if (ret < 0)
     return -1;
-  setValueInteger (ret);
-  return 0;
+  return setValueInteger (ret);
 }
 
 int
