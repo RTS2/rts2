@@ -430,9 +430,13 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
+AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
+
 if test "x"$psql = xyes ; then
   AC_POSTGRESQL
   AC_ECPG
+
+  AC_DEFINE_UNQUOTED(HAVE_PGSQL, 1, [Whenever PGSQL is installed])
 fi
 
 AM_CONDITIONAL(PGSQL, test x$psql = xyes)

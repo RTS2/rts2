@@ -85,6 +85,9 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
+/* Whenever PGSQL is installed */
+#undef HAVE_PGSQL
+
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
 
