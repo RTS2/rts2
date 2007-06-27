@@ -1,4 +1,8 @@
+#ifdef HAVE_PGSQL
 #include "rts2appdbimage.h"
+#else
+#include "rts2appimage.h"
+#endif /* HAVE_PGSQL */
 #include "../utils/rts2config.h"
 
 #include <iostream>
@@ -8,14 +12,20 @@
 
 #define IMAGEOP_NOOP		0x00
 #define IMAGEOP_ADDDATE		0x01
+#ifdef HAVE_PGSQL
 #define IMAGEOP_INSERT		0x02
+#endif /* HAVE_PGSQL */
 #define IMAGEOP_TEST		0x04
 #define IMAGEOP_COPY		0x08
 #define IMAGEOP_MOVE		0x10
 #define IMAGEOP_EVAL		0x20
 #define IMAGEOP_CREATEWCS	0x40
 
+#ifdef HAVE_PGSQL
 class Rts2AppImageManip:public Rts2AppDbImage
+#else
+class Rts2AppImageManip:public Rts2AppImage
+#endif				/* HAVE_PGSQL */
 {
 private:
   int operation;
@@ -23,7 +33,9 @@ private:
   void printOffset (double x, double y, Rts2Image * image);
 
   int addDate (Rts2Image * image);
+#ifdef HAVE_PGSQL
   int insert (Rts2ImageDb * image);
+#endif
   int testImage (Rts2Image * image);
   int testEval (Rts2Image * image);
   void createWCS (Rts2Image * image);
@@ -34,8 +46,13 @@ private:
     std::string move_expr;
 protected:
     virtual int processOption (int in_opt);
+#ifdef HAVE_PGSQL
   virtual bool doInitDB ();
+
   virtual int processImage (Rts2ImageDb * image);
+#else
+  virtual int processImage (Rts2Image * image);
+#endif				/* HAVE_PGSQL */
 
   virtual void help ();
 public:
@@ -85,11 +102,13 @@ Rts2AppImageManip::addDate (Rts2Image * image)
   return ret;
 }
 
+#ifdef HAVE_PGSQL
 int
 Rts2AppImageManip::insert (Rts2ImageDb * image)
 {
   return image->saveImage ();
 }
+#endif /* HAVE_PGSQL */
 
 int
 Rts2AppImageManip::testImage (Rts2Image * image)
@@ -174,9 +193,11 @@ Rts2AppImageManip::processOption (int in_opt)
     case 'd':
       operation |= IMAGEOP_ADDDATE;
       break;
+#ifdef HAVE_PGSQL
     case 'i':
       operation |= IMAGEOP_INSERT;
       break;
+#endif /* HAVE_PGSQL */
     case 'm':
       operation |= IMAGEOP_MOVE;
       move_expr = optarg;
@@ -206,23 +227,37 @@ Rts2AppImageManip::processOption (int in_opt)
 	}
       break;
     default:
+#ifdef HAVE_PGSQL
       return Rts2AppDbImage::processOption (in_opt);
+#else
+      return Rts2AppImage::processOption (in_opt);
+#endif
     }
   return 0;
 }
 
+#ifdef HAVE_PGSQL
 bool Rts2AppImageManip::doInitDB ()
 {
   return (operation & IMAGEOP_MOVE) || (operation & IMAGEOP_INSERT);
 }
+#endif
 
 int
+#ifdef HAVE_PGSQL
 Rts2AppImageManip::processImage (Rts2ImageDb * image)
+#else
+Rts2AppImageManip::processImage (Rts2Image * image)
+#endif				/* HAVE_PGSQL */
 {
+  if (operation == IMAGEOP_NOOP)
+    help ();
   if (operation & IMAGEOP_ADDDATE)
     addDate (image);
+#ifdef HAVE_PGSQL
   if (operation & IMAGEOP_INSERT)
     insert (image);
+#endif
   if (operation & IMAGEOP_TEST)
     testImage (image);
   if (operation & IMAGEOP_COPY)
@@ -239,7 +274,11 @@ Rts2AppImageManip::processImage (Rts2ImageDb * image)
 void
 Rts2AppImageManip::help ()
 {
+#ifdef HAVE_PGSQL
   Rts2AppDbImage::help ();
+#else
+  Rts2AppImage::help ();
+#endif /* HAVE_PGSQL */
   std::cout << "Examples:" << std::endl
     <<
     "  rts2-image -w 123.fits                 .. write WCS to file 123, based on information stored by RTS2 in the file"
@@ -250,7 +289,11 @@ Rts2AppImageManip::help ()
 }
 
 Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):
+#ifdef HAVE_PGSQL
 Rts2AppDbImage (in_argc, in_argv)
+#else
+Rts2AppImage (in_argc, in_argv)
+#endif
 {
   operation = IMAGEOP_NOOP;
 

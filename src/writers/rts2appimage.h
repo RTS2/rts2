@@ -1,12 +1,12 @@
 #ifndef __RTS2_APP_IMAGE__
 #define __RTS2_APP_IMAGE__
 
-#include "../utils/rts2app.h"
+#include "../utils/rts2cliapp.h"
 #include "rts2image.h"
 
 #include <list>
 
-class Rts2AppImage:public Rts2App
+class Rts2AppImage:public Rts2CliApp
 {
 protected:
   std::list < const char *>imageNames;
@@ -15,7 +15,7 @@ protected:
     return 0;
   }
 public:
-    Rts2AppImage (int in_argc, char **in_argv):Rts2App (in_argc, in_argv)
+    Rts2AppImage (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
   {
   }
   virtual ~ Rts2AppImage (void)
@@ -28,7 +28,7 @@ public:
     return 0;
   }
 
-  virtual int run ()
+  virtual int doProcessing ()
   {
     int ret = 0;
     std::list < const char *>::iterator img_iter;
