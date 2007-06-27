@@ -18,7 +18,7 @@ Rts2ImageDb::initDbImage ()
 void
 Rts2ImageDb::reportSqlError (char *msg)
 {
-  logStream (MESSAGE_DEBUG) << "SQL error #" << sqlca.sqlcode << " text " << sqlca.sqlerrm.sqlerrmc << " (in " <<
+  logStream (MESSAGE_ERROR) << "SQL error #" << sqlca.sqlcode << " text " << sqlca.sqlerrm.sqlerrmc << " (in " <<
     msg << ")" << sendLog;
 }
 
@@ -599,12 +599,14 @@ Rts2ImageSkyDb::saveImage ()
 {
   if (!shouldSaveImage())
     return 0;
+  int ret = Rts2ImageDb::saveImage ();
+  if (ret)
+    return ret;
   setDarkFromDb ();
   updateCalibrationDb ();
   setValue ("PROC", processBitfiedl, "procesing status; info in DB");
-  return Rts2ImageDb::saveImage ();
+  return 0;
 }
-
 
 int
 Rts2ImageSkyDb::deleteImage ()
