@@ -90,24 +90,26 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
   Rts2DevClientCameraImage::postEvent (event);
 }
 
-imageProceRes
-Rts2DevClientCameraFoc::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 {
   // create focus connection
-  int ret;
+  int
+    ret;
 
-  imageProceRes res = Rts2DevClientCameraImage::processImage (image);
+  imageProceRes
+    res = Rts2DevClientCameraImage::processImage (image);
 
   // got requested dark..
   if (image->getShutter () == SHUT_CLOSED)
     {
       if (darkImage)
-	delete darkImage;
+	delete
+	  darkImage;
       darkImage = image;
       darkImage->saveImage ();
       exposureCount = 1;
-      if (image == images)
-	images = NULL;
+      if (image == getTopImage ())
+	clearImages ();
       queExposure ();
     }
   else if (darkImage)
@@ -120,7 +122,8 @@ Rts2DevClientCameraFoc::processImage (Rts2Image * image)
       ret = focConn->init ();
       if (ret)
 	{
-	  delete focConn;
+	  delete
+	    focConn;
 	  return IMAGE_DO_BASIC_PROCESSING;
 	}
       // after we finish, we will call focus routines..

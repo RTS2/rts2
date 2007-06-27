@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <ctype.h>
 
 #include "rts2devcliimg.h"
@@ -10,7 +6,6 @@
 Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rts2DevClientCamera
   (in_connection)
 {
-  images = NULL;
   chipNumbers = 0;
   saveImage = 1;
 
@@ -55,8 +50,23 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 
 Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
 {
-  if (images)
-    delete images;
+}
+
+Rts2Image *
+Rts2DevClientCameraImage::setImage (Rts2Image * old_img,
+				    Rts2Image * new_image)
+{
+  for (CameraImages::iterator iter = images.begin (); iter != images.end ();
+       iter++)
+    {
+      CameraImage *ci = *iter;
+      if (ci->image == old_img)
+	{
+	  ci->image = new_image;
+	  return new_image;
+	}
+    }
+  return NULL;
 }
 
 void
@@ -90,33 +100,36 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 void
 Rts2DevClientCameraImage::writeFilter ()
 {
-  int camFilter = images->getFilterNum ();
+  int camFilter = getTopImage ()->getFilterNum ();
   char imageFilter[4];
   strncpy (imageFilter, getValueSelection ("filter", camFilter), 4);
   imageFilter[4] = '\0';
-  images->setFilter (imageFilter);
+  getTopImage ()->setFilter (imageFilter);
 }
 
 void
 Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
 {
   Rts2DevClientCamera::dataReceived (dataConn);
-  if (images)
+  if (getTopImage ())
     {
-      images->writeDate (dataConn);
+      getTopImage ()->writeDate (dataConn);
       // create new image of requsted type
-      beforeProcess (images);
+      beforeProcess (getTopImage ());
       if (saveImage)
 	{
 	  writeFilter ();
 	  // set filter..
 	  // save us to the disk..
-	  images->saveImage ();
+	  getTopImage ()->saveImage ();
 	}
       // do basic processing
-      imageProceRes res = processImage (images);
+      imageProceRes res = processImage (getTopImage ());
       if (res == IMAGE_KEEP_COPY)
-	images = NULL;
+	{
+	  setImage (getTopImage (), NULL);
+	  clearImages ();
+	}
     }
 }
 
@@ -158,48 +171,47 @@ Rts2DevClientCameraImage::exposureFailed (int status)
 void
 Rts2DevClientCameraImage::exposureStarted ()
 {
-  if (images)
-    delete images;
   exposureTime = getValueDouble ("exposure");
   struct timeval expStart;
   const char *focuser;
   gettimeofday (&expStart, NULL);
-  images = createImage (&expStart);
-  images->setExposureLength (exposureTime);
+  Rts2Image *image = createImage (&expStart);
+  image->setExposureLength (exposureTime);
 
-  images->setValue ("XPLATE", xplate,
-		    "xplate (scale in X axis; divide by binning (BIN_H)!)");
-  images->setValue ("YPLATE", yplate,
-		    "yplate (scale in Y axis; divide by binning (BIN_V)!)");
+  image->setValue ("XPLATE", xplate,
+		   "xplate (scale in X axis; divide by binning (BIN_H)!)");
+  image->setValue ("YPLATE", yplate,
+		   "yplate (scale in Y axis; divide by binning (BIN_V)!)");
 
-  images->setInstrument (instrume);
-  images->setTelescope (telescop);
-  images->setOrigin (origin);
+  image->setInstrument (instrume);
+  image->setTelescope (telescop);
+  image->setOrigin (origin);
 
-  if (images->getTargetType () == TYPE_TERESTIAL
+  if (image->getTargetType () == TYPE_TERESTIAL
       && !isnan (ter_xoa) && !isnan (ter_yoa))
     {
-      images->setValue ("CAM_XOA", ter_xoa,
-			"ter center in X axis (divide by binning (BIN_H)!)");
-      images->setValue ("CAM_YOA", ter_yoa,
-			"ter center in Y axis (divide by binning (BIN_V)!)");
+      image->setValue ("CAM_XOA", ter_xoa,
+		       "ter center in X axis (divide by binning (BIN_H)!)");
+      image->setValue ("CAM_YOA", ter_yoa,
+		       "ter center in Y axis (divide by binning (BIN_V)!)");
     }
   else
     {
-      images->setValue ("CAM_XOA", xoa,
-			"center in X axis (divide by binning (BIN_H)!)");
-      images->setValue ("CAM_YOA", yoa,
-			"center in Y axis (divide by binning (BIN_V)!)");
+      image->setValue ("CAM_XOA", xoa,
+		       "center in X axis (divide by binning (BIN_H)!)");
+      image->setValue ("CAM_YOA", yoa,
+		       "center in Y axis (divide by binning (BIN_V)!)");
     }
-  images->setConfigRotang (config_rotang);
-  images->setValue ("FLIP", flip,
-		    "camera flip (since most astrometry devices works as mirrors");
+  image->setConfigRotang (config_rotang);
+  image->setValue ("FLIP", flip,
+		   "camera flip (since most astrometry devices works as mirrors");
   focuser = getValueChar ("focuser");
   if (focuser)
     {
-      images->setFocuserName (focuser);
+      image->setFocuserName (focuser);
     }
-  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, images));
+  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, image));
+  images.push_back (new CameraImage (image, getMaster ()->getNow ()));
   Rts2DevClientCamera::exposureStarted ();
 }
 
@@ -211,7 +223,7 @@ Rts2DevClientCameraImage::exposureEnd ()
     connection->getName () << sendLog;
   if (!getIsExposing ())
     return Rts2DevClientCamera::exposureEnd ();
-  images->writeClient (this);
+  getTopImage ()->writeClient (this, EXPOSURE_START);
   setIsExposing (false);
   if (exposureT != EXP_DARK)
     unblockWait ();
@@ -252,7 +264,7 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setMountName (connection->getName ());
       getEqu (&object);
       getObs (&obs);
-      image->writeClient (this);
+      image->writeClient (this, EXPOSURE_START);
       infotime = getValueDouble ("infotime");
       image->setValue ("MNT_INFO", infotime,
 		       "time when mount informations were collected");
@@ -350,7 +362,7 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 	  || !connection->getName ()
 	  || strcmp (image->getFocuserName (), connection->getName ()))
 	break;
-      image->writeClient (this);
+      image->writeClient (this, EXPOSURE_START);
       break;
     }
   Rts2DevClientFocus::postEvent (event);
@@ -364,12 +376,16 @@ Rts2DevClientWriteImage::Rts2DevClientWriteImage (Rts2Conn * in_connection):Rts2
 void
 Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 {
+  Rts2Image *image;
   switch (event->getType ())
     {
     case EVENT_WRITE_TO_IMAGE:
-      Rts2Image * image;
       image = (Rts2Image *) event->getArg ();
-      image->writeClient (this);
+      image->writeClient (this, EXPOSURE_START);
+      break;
+    case EVENT_WRITE_TO_IMAGE_ENDS:
+      image = (Rts2Image *) event->getArg ();
+      image->writeClient (this, EXPOSURE_END);
       break;
     }
   Rts2DevClient::postEvent (event);

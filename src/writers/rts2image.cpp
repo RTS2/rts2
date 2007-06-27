@@ -1742,7 +1742,7 @@ Rts2Image::print (std::ostream & _os, int in_flags)
 }
 
 void
-Rts2Image::writeClient (Rts2DevClient * client)
+Rts2Image::writeClient (Rts2DevClient * client, imageWriteWhich_t which)
 {
   for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
        iter != client->valueEnd (); iter++)
@@ -1750,6 +1750,17 @@ Rts2Image::writeClient (Rts2DevClient * client)
       Rts2Value *val = *iter;
       if (val->getWriteToFits ())
 	{
+	  switch (which)
+	    {
+	    case EXPOSURE_START:
+	      if (val->getValueWriteFlags () != RTS2_VWHEN_BEFORE_EXP)
+		continue;
+	      break;
+	    case EXPOSURE_END:
+	      if (val->getValueWriteFlags () != RTS2_VWHEN_BEFORE_END)
+		continue;
+	      break;
+	    }
 	  char *desc = (char *) val->getDescription ().c_str ();
 	  char *name = (char *) val->getName ().c_str ();
 	  if (client->getOtherType () == DEVICE_TYPE_SENSOR)

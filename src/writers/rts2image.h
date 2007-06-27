@@ -43,6 +43,9 @@ typedef enum
 typedef enum
 { SHUT_UNKNOW, SHUT_OPENED, SHUT_CLOSED, SHUT_SYNCHRO } shutter_t;
 
+typedef enum
+{ EXPOSURE_START, EXPOSURE_END } imageWriteWhich_t;
+
 class Rts2Image
 {
 private:
@@ -596,7 +599,8 @@ public:
     return setValue ("ORIGIN", orig, "organisation responsible for data");
   }
 
-  void writeClient (Rts2DevClient * client);
+  void writeClient (Rts2DevClient * client, imageWriteWhich_t which =
+		    EXPOSURE_START);
 
   /**
    * This will create WCS from record available at the FITS file.
