@@ -171,6 +171,7 @@ Rts2DevClientCameraImage::exposureFailed (int status)
 void
 Rts2DevClientCameraImage::exposureStarted ()
 {
+  clearImages ();
   exposureTime = getValueDouble ("exposure");
   struct timeval expStart;
   const char *focuser;
