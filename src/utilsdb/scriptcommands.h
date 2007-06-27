@@ -1,6 +1,12 @@
 #ifndef __RTS2_SCRIPTCOMMANDS__
 #define __RTS2_SCRIPTCOMMANDS__
 
+/**
+ * This file list commands which can be introduced to script.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+
 #define COMMAND_EXPOSURE	"E"
 #define COMMAND_DARK		"D"
 #define COMMAND_FILTER		"F"
@@ -22,6 +28,7 @@
 #define COMMAND_BLOCK_ACQ	"ifacq"
 #define COMMAND_BLOCK_ELSE	"else"
 #define COMMAND_BLOCK_FOR	"for"
+#define COMMAND_WAITFOR		"waitfor"
 
 // hex pattern
 #define COMMAND_HEX		"hex"
