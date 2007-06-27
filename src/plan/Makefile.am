@@ -13,10 +13,15 @@ CLEANFILES = rts2selector.cpp rts2devcliphot.cpp
 rts2_scriptexec_SOURCES = scriptexec.cpp rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2devscript.cpp \
 			rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp \
 			rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp
-rts2_scriptexec_CXXFLAGS = -DNOT_PGSQL @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
-rts2_scriptexec_LDFLAGS = @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2image.a ../utils/librts2block.a 
+rts2_scriptexec_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
+
+# LDFLAGS are defined in PGSQL/nonPGSQL
 
 if PGSQL
+
+rts2_scriptexec_SOURCES += rts2scriptelementacquire.cpp rts2connimgprocess.cpp
+rts2_scriptexec_CXXFLAGS += @LIBPG_CFLAGS@
+rts2_scriptexec_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
 
 bin_PROGRAMS += rts2-executor rts2-imgproc rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
 	       rts2-plan
@@ -54,5 +59,9 @@ rts2_plan_LDFLAGS = @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ .
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
+
+else
+
+rts2_scriptexec_LDFLAGS = @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../writers/librts2image.a ../utils/librts2block.a 
 
 endif

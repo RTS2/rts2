@@ -9,11 +9,11 @@
 #include <ctype.h>
 
 // test if next element is one that is given
-bool
-Rts2Script::isNext (const char *element)
+bool Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t el_len = strlen (element);
+  size_t
+    el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -301,7 +301,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	return NULL;
       return new Rts2ScriptElementWaitSignal (this, signalNum);
     }
-#ifndef NOT_PGSQL
+#ifdef HAVE_PGSQL
   else if (!strcmp (commandStart, COMMAND_ACQUIRE))
     {
       double precision;
@@ -336,7 +336,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 					       exposure, scale, scale,
 					       target_pos);
     }
-#endif
+#endif /* HAVE_PGSQL */
   else if (!strcmp (commandStart, COMMAND_PHOT_SEARCH))
     {
       double searchRadius;

@@ -2,10 +2,11 @@
 #define __RTS2_SCRIPT__
 
 #include "rts2scriptelement.h"
+#include <config.h>
 
-#ifndef NOT_PGSQL
+#ifdef HAVE_PGSQL
 #include "rts2scriptelementacquire.h"
-#endif
+#endif /* HAVE_PGSQL */
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2command.h"
