@@ -458,7 +458,7 @@ Rts2xfocusCamera::redraw ()
   if (crossType > 0)
     printInfo ();
   // draw plots over stars..
-  drawStars (images);
+  drawStars (getTopImage ());
 
   printMouse ();
 
@@ -655,20 +655,15 @@ Rts2xfocusCamera::printFWHMTable ()
     redraw ();
 }
 
-imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
+imageProceRes
+Rts2xfocusCamera::processImage (Rts2Image * image)
 {
-  int
-    dataSize;
-  int
-    i,
-    j,
-    k;
-  unsigned short *
-    im_ptr;
+  int dataSize;
+  int i, j, k;
+  unsigned short *im_ptr;
 
   // get to upper classes as well
-  imageProceRes
-    res = Rts2DevClientCameraFoc::processImage (image);
+  imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
 
   pixmapWidth = image->getWidth ();
   pixmapHeight = image->getHeight ();
@@ -737,8 +732,7 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
   for (j = 0; j < pixmapHeight; j++)
     for (i = 0; i < pixmapWidth; i++)
       {
-	unsigned short
-	  val;
+	unsigned short val;
 	val = *im_ptr;
 	im_ptr++;
 	if (val < low)

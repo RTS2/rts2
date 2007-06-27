@@ -100,10 +100,10 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
   return image;
 }
 
-imageProceRes Rts2GenFocCamera::processImage (Rts2Image * image)
+imageProceRes
+Rts2GenFocCamera::processImage (Rts2Image * image)
 {
-  imageProceRes
-    res = Rts2DevClientCameraFoc::processImage (image);
+  imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
   std::cout << "Camera " << getName () << " image_type:";
   switch (image->getShutter ())
     {
@@ -141,13 +141,14 @@ Rts2GenFocCamera::printFWHMTable ()
 void
 Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 {
-  if (images->sexResultNum)
+  if (getTopImage ()->sexResultNum)
     {
       double fwhm;
       int focPos;
-      fwhm = images->getFWHM ();
-      focPos = images->getFocPos ();
-      fwhmDatas.push_back (new fwhmData (images->sexResultNum, focPos, fwhm));
+      fwhm = getTopImage ()->getFWHM ();
+      focPos = getTopImage ()->getFocPos ();
+      fwhmDatas.
+	push_back (new fwhmData (getTopImage ()->sexResultNum, focPos, fwhm));
     }
 
   printFWHMTable ();
