@@ -40,15 +40,15 @@ Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
 void
 Rts2DevClientCameraExecDb::beforeProcess (Rts2Image * image)
 {
-  images = setValueImageType (image);
-  img_type_t imageType = images->getImageType ();
+  Rts2Image *outimg = setImage (image, setValueImageType (image));
+  img_type_t imageType = outimg->getImageType ();
   // dark images don't need to wait till imgprocess will pick them up for reprocessing
   if (imageType == IMGTYPE_DARK)
     {
-      images->toDark ();
+      outimg->toDark ();
     }
   else if (imageType == IMGTYPE_FLAT)
     {
-      images->toFlat ();
+      outimg->toFlat ();
     }
 }

@@ -496,13 +496,5 @@ Rts2DevScript::haveNextCommand ()
       blockMove = 1;
       return 0;
     }
-  if (strcmp (cmd_device, script_connection->getName ()))
-    {
-      logStream (MESSAGE_ERROR)
-	<< "Rts2DevScript::haveNextCommand cmd_device "
-	<< cmd_device << " ret " << ret << " conn " << script_connection->
-	getName () << sendLog;
-      return 1;
-    }
   return 1;
 }

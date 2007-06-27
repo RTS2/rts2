@@ -65,6 +65,7 @@ protected:
 
   virtual int getFailedCount () = 0;
   virtual void clearFailedCount () = 0;
+  virtual void idle () = 0;
 
   virtual void deleteScript ();
 

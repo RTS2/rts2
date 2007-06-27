@@ -69,6 +69,7 @@ private:
   // test whenewer next element is one that is given..
   bool isNext (const char *element);
   char *nextElement ();
+  int getNextParamString (char **val);
   int getNextParamFloat (float *val);
   int getNextParamDouble (double *val);
   int getNextParamInteger (int *val);
@@ -129,6 +130,8 @@ public:
   {
     return commandStart - cmdBuf;
   }
+
+  void idle ();
 };
 
 template < typename T > int

@@ -92,6 +92,13 @@ protected:
     Rts2DevClient::clearFailedCount ();
   }
 
+  virtual void idle ()
+  {
+    if (getScript ())
+      getScript ()->idle ();
+    Rts2DevClientCameraImage::idle ();
+  }
+
   virtual void exposureStarted ();
   virtual void exposureEnd ();
   virtual void readoutEnd ();

@@ -12,6 +12,7 @@ Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
 {
   script = in_script;
   startPos = script->getParsedStartPos ();
+  timerclear (&idleTimeout);
 }
 
 Rts2ScriptElement::~Rts2ScriptElement ()
@@ -66,7 +67,34 @@ Rts2ScriptElement::getLen ()
   return len;
 }
 
-Rts2ScriptElementExpose::Rts2ScriptElementExpose (Rts2Script * in_script, float in_expTime):
+void
+Rts2ScriptElement::idleCall ()
+{
+  if (!timerisset (&idleTimeout))
+    return;
+  struct timeval tv;
+  gettimeofday (&tv, NULL);
+  if (timercmp (&tv, &nextIdle, >))
+    {
+      idle ();
+      timeradd (&tv, &idleTimeout, &nextIdle);
+    }
+}
+
+void
+Rts2ScriptElement::setIdleTimeout (double sec)
+{
+  nextIdle.tv_sec = (long int) floor (sec);
+  nextIdle.tv_usec = (long int) ((sec - (double) nextIdle.tv_sec) * USEC_SEC);
+}
+
+void
+Rts2ScriptElement::idle ()
+{
+}
+
+Rts2ScriptElementExpose::Rts2ScriptElementExpose (Rts2Script * in_script,
+						  float in_expTime):
 Rts2ScriptElement (in_script)
 {
   expTime = in_expTime;

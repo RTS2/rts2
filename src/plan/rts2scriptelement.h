@@ -66,6 +66,8 @@ class Rts2ScriptElement:public Rts2Object
 private:
   int startPos;
   int len;
+  struct timeval nextIdle;
+  struct timeval idleTimeout;
 protected:
     Rts2Script * script;
   void getDevice (char new_device[DEVICE_NAME_SIZE]);
@@ -112,6 +114,15 @@ public:
     len = in_len;
   }
   virtual int getLen ();
+
+  void idleCall ();
+
+  void setIdleTimeout (double sec);
+
+  /**
+   * called every n-second, defined by setIdleTimeout function.
+   */
+  virtual void idle ();
 };
 
 class Rts2ScriptElementExpose:public Rts2ScriptElement

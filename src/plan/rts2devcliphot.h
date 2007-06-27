@@ -49,6 +49,13 @@ protected:
     Rts2DevClient::clearFailedCount ();
   }
 
+  virtual void idle ()
+  {
+    if (getScript ())
+      getScript ()->idle ();
+    Rts2DevClientPhot::idle ();
+  }
+
   virtual void filterMoveEnd ();
 
   virtual void integrationStart ();

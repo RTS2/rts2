@@ -3,16 +3,17 @@
 #include "rts2scriptblock.h"
 #include "rts2scriptguiding.h"
 #include "rts2sehex.h"
+#include "rts2swaitfor.h"
 #include "../utilsdb/scriptcommands.h"
 #include <string.h>
 #include <ctype.h>
 
 // test if next element is one that is given
-bool Rts2Script::isNext (const char *element)
+bool
+Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t
-    el_len = strlen (element);
+  size_t el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -44,6 +45,15 @@ Rts2Script::nextElement ()
       cmdBufTop++;
     }
   return elementStart;
+}
+
+int
+Rts2Script::getNextParamString (char **val)
+{
+  *val = nextElement ();
+  if (!*val)
+    return -1;
+  return 0;
 }
 
 int
@@ -447,6 +457,15 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	}
       return forEl;
     }
+  else if (!strcmp (commandStart, COMMAND_WAITFOR))
+    {
+      char *val;
+      double tarval, range;
+      if (getNextParamString (&val) || getNextParamDouble (&tarval)
+	  || getNextParamDouble (&range))
+	return NULL;
+      return new Rts2SWaitFor (this, val, tarval, range);
+    }
   else if (!strcmp (commandStart, COMMAND_TARGET_DISABLE))
     {
       return new Rts2SETDisable (this, target);
@@ -538,4 +557,11 @@ Rts2Script::processImage (Rts2Image * image)
   if (executedCount < 0 || el_iter == elements.end ())
     return -1;
   return (*el_iter)->processImage (image);
+}
+
+void
+Rts2Script::idle ()
+{
+  if (el_iter != elements.end ())
+    (*el_iter)->idle ();
 }
