@@ -11,20 +11,26 @@ CLEANFILES = rts2imagedb.cpp
 librts2image_a_SOURCES = rts2image.cpp imageastrometry.cpp ham.cpp rts2devcliimg.cpp rts2devclifoc.cpp imageprocess.cpp
 librts2image_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
-if PGSQL
-
 bin_PROGRAMS = rts2-image
+
+rts2_image_SOURCES = appimagemanip.cpp imageprocess.cpp
+
+if PGSQL
 
 noinst_LIBRARIES += librts2imagedb.a
 
 librts2imagedb_a_SOURCES = rts2image.cpp imageastrometry.cpp ham.cpp rts2devcliimg.cpp rts2imagedb.cpp rts2devclifoc.cpp
 librts2imagedb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
-rts2_image_SOURCES = appimagemanip.cpp imageprocess.cpp
 rts2_image_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_image_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a librts2imagedb.a ../utils/librts2block.a
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
-endif
 
+else
+
+rts2_image_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
+rts2_image_LDFLAGS = @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2block.a librts2image.a
+
+endif
