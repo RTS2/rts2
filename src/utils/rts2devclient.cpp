@@ -53,37 +53,34 @@ Rts2DevClient::metaInfo (int rts2Type, std::string name, std::string desc)
     case RTS2_VALUE_STRING:
       newValue =
 	new Rts2ValueString (name, desc, rts2Type & RTS2_VALUE_FITS,
-			     rts2Type & RTS2_TYPE_MASK);
+			     rts2Type);
       break;
     case RTS2_VALUE_INTEGER:
       newValue =
 	new Rts2ValueInteger (name, desc, rts2Type & RTS2_VALUE_FITS,
-			      rts2Type & RTS2_TYPE_MASK);
+			      rts2Type);
       break;
     case RTS2_VALUE_TIME:
       newValue =
-	new Rts2ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS,
-			   rts2Type & RTS2_TYPE_MASK);
+	new Rts2ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
       break;
     case RTS2_VALUE_DOUBLE:
       newValue =
 	new Rts2ValueDouble (name, desc, rts2Type & RTS2_VALUE_FITS,
-			     rts2Type & RTS2_TYPE_MASK);
+			     rts2Type);
       break;
     case RTS2_VALUE_FLOAT:
       newValue =
-	new Rts2ValueFloat (name, desc, rts2Type & RTS2_VALUE_FITS,
-			    rts2Type & RTS2_TYPE_MASK);
+	new Rts2ValueFloat (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
       break;
     case RTS2_VALUE_BOOL:
       newValue =
-	new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS,
-			   rts2Type & RTS2_TYPE_MASK);
+	new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
       break;
     case RTS2_VALUE_SELECTION:
       newValue =
 	new Rts2ValueSelection (name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type & RTS2_TYPE_MASK);
+				rts2Type);
       break;
     default:
       logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
@@ -285,8 +282,7 @@ Rts2DevClient::idle ()
 {
 }
 
-bool
-Rts2DevClient::existWriteType (int w_type)
+bool Rts2DevClient::existWriteType (int w_type)
 {
   for (std::vector < Rts2Value * >::iterator iter = values.begin ();
        iter != values.end (); iter++)
@@ -350,8 +346,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -648,8 +643,7 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool
-Rts2DevClientPhot::isIntegrating ()
+bool Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }
