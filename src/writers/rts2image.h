@@ -84,6 +84,9 @@ private:
   double config_rotang;
 
   void initData ();
+
+  // writes one value to image
+  void writeClientValue (Rts2DevClient * client, Rts2Value * val);
 protected:
   int epochId;
   int targetId;

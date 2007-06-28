@@ -7,73 +7,30 @@
 #include "../utils/rts2command.h"
 
 #include "rts2image.h"
+#include "cameraimage.h"
 
 #include <libnova/libnova.h>
 
 typedef enum
 { IMAGE_DO_BASIC_PROCESSING, IMAGE_KEEP_COPY } imageProceRes;
 
-class CameraImage
-{
-public:
-  double exStart;
-  double exEnd;
-  Rts2Image *image;
-
-    CameraImage (Rts2Image * in_image, double in_exStart)
-  {
-    image = in_image;
-    exStart = in_exStart;
-    exEnd = nan ("f");
-  }
-  virtual ~ CameraImage (void)
-  {
-    delete image;
-  }
-};
-
-/**
- * That holds images for camd. Images are hold there till all informations are
- * collected, then they are put to processing.
- */
-class CameraImages:public
-  std::vector <
-CameraImage * >
-{
-public:
-  CameraImages ()
-  {
-  }
-  virtual ~
-  CameraImages (void)
-  {
-    for (CameraImages::iterator iter = begin (); iter != end (); iter++)
-      {
-	delete (*iter);
-      }
-    clear ();
-  }
-};
-
 /**
  * Defines client descendants capable to stream themselves
  * to an Rts2Image.
  * 
  */
-class Rts2DevClientCameraImage:
-public Rts2DevClientCamera
+class Rts2DevClientCameraImage:public Rts2DevClientCamera
 {
 private:
-  void
-  writeFilter ();
+  void writeFilter ();
   bool isExposing;
+
 protected:
-  bool getIsExposing ()
+    bool getIsExposing ()
   {
     return isExposing;
   }
-  void
-  setIsExposing (bool in_isExposing)
+  void setIsExposing (bool in_isExposing)
   {
     isExposing = in_isExposing;
   }
@@ -81,16 +38,28 @@ protected:
   // camera chip numbers..
   CameraImages images;
 
-  Rts2Image *
-  getTopImage ()
+  CameraImages::iterator getTopIter ()
+  {
+    if (images.begin () == images.end ())
+      return images.begin ();
+    return --images.end ();
+  }
+
+  CameraImage *getTop ()
+  {
+    if (images.begin () == images.end ())
+      return NULL;
+    return *(--images.end ());
+  }
+
+  Rts2Image *getTopImage ()
   {
     if (images.begin () == images.end ())
       return NULL;
     return (*(--images.end ()))->image;
   }
 
-  void
-  clearImages ()
+  void clearImages ()
   {
     for (CameraImages::iterator iter = images.begin (); iter != images.end ();
 	 iter++)
@@ -100,69 +69,42 @@ protected:
     images.clear ();
   }
 
-  Rts2Image *
-  setImage (Rts2Image * old_img, Rts2Image * new_image);
+  Rts2Image *setImage (Rts2Image * old_img, Rts2Image * new_image);
 
-  int
-    chipNumbers;
-  int
-    activeTargetId;
-  int
-    saveImage;
+  int chipNumbers;
+  int activeTargetId;
+  int saveImage;
 
   // some camera characteristics..
-  double
-    xplate;
-  double
-    yplate;
-  double
-    xoa;
-  double
-    yoa;
-  double
-    ter_xoa;
-  double
-    ter_yoa;
-  double
-    config_rotang;
-  int
-    flip;
-  char
-    filter[200];
-  char
-    instrume[70];
-  char
-    telescop[70];
-  char
-    origin[70];
+  double xplate;
+  double yplate;
+  double xoa;
+  double yoa;
+  double ter_xoa;
+  double ter_yoa;
+  double config_rotang;
+  int flip;
+  char filter[200];
+  char instrume[70];
+  char telescop[70];
+  char origin[70];
 
-  float
-    exposureTime;
+  float exposureTime;
   exposureType exposureT;
-  int
-    exposureChip;
-  int
-    exposureCount;		// -1 means exposure forewer
+  int exposureChip;
+  int exposureCount;		// -1 means exposure forewer
 
-  virtual void
-  queExposure ();
-  virtual void
-  exposureStarted ();
-  virtual void
-  exposureEnd ();
-  virtual void
-  readoutEnd ();
+  virtual void queExposure ();
+  virtual void exposureStarted ();
+  virtual void exposureEnd ();
+  virtual void readoutEnd ();
 public:
   Rts2DevClientCameraImage (Rts2Conn * in_connection);
   virtual ~ Rts2DevClientCameraImage (void);
-  virtual void
-  postEvent (Rts2Event * event);
-  virtual void
-  dataReceived (Rts2ClientTCPDataConn * dataConn);
-  virtual Rts2Image *
-  createImage (const struct timeval *expStart);
-  virtual void
-  beforeProcess (Rts2Image * image);
+  virtual void postEvent (Rts2Event * event);
+  virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
+  virtual Rts2Image *createImage (const struct timeval *expStart);
+  virtual void beforeProcess (Rts2Image * image);
   /**
    * This function carries image processing.  Based on the return value, image
    * will be deleted when new image is taken, or deleting of the image will
@@ -171,68 +113,56 @@ public:
    * @return IMAGE_DO_BASIC_PROCESSING when image still should be handled by
    * connection, or IMAGE_KEEP_COPY if processing instance will delete image.
    */
-  virtual imageProceRes
-  processImage (Rts2Image * image);
-  virtual void
-  exposureFailed (int status);
+  virtual imageProceRes processImage (Rts2Image * image);
 
-  void
-  setSaveImage (int in_saveImage)
+  CameraImages::iterator processCameraImage (CameraImages::iterator & cis);
+
+  virtual void exposureFailed (int status);
+
+  void setSaveImage (int in_saveImage)
   {
     saveImage = in_saveImage;
   }
 };
 
-class Rts2DevClientTelescopeImage:
-public Rts2DevClientTelescope
+class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope
 {
 public:
   Rts2DevClientTelescopeImage (Rts2Conn * in_connection);
-  virtual void
-  postEvent (Rts2Event * event);
-  void
-  getEqu (struct ln_equ_posn *tel);
-  void
-  getEquTel (struct ln_equ_posn *tel);
-  void
-  getEquTar (struct ln_equ_posn *tar);
-  void
-  getAltAz (struct ln_hrz_posn *hrz);
-  void
-  getObs (struct ln_lnlat_posn *obs);
-  double
-  getLocalSiderealDeg ();
-  double
-  getDistance (struct ln_equ_posn *in_pos);
+  virtual void postEvent (Rts2Event * event);
+  void getEqu (struct ln_equ_posn *tel);
+  void getEquTel (struct ln_equ_posn *tel);
+  void getEquTar (struct ln_equ_posn *tar);
+  void getAltAz (struct ln_hrz_posn *hrz);
+  void getObs (struct ln_lnlat_posn *obs);
+  double getLocalSiderealDeg ();
+  double getDistance (struct ln_equ_posn *in_pos);
 };
 
-class Rts2DevClientFocusImage:
-public Rts2DevClientFocus
+class Rts2DevClientFocusImage:public Rts2DevClientFocus
 {
 public:
   Rts2DevClientFocusImage (Rts2Conn * in_connection);
-  virtual void
-  postEvent (Rts2Event * event);
+  virtual void postEvent (Rts2Event * event);
 };
 
-class Rts2DevClientWriteImage:
-public Rts2DevClient
+class Rts2DevClientWriteImage:public Rts2DevClient
 {
 public:
   Rts2DevClientWriteImage (Rts2Conn * in_connection);
-  virtual void
-  postEvent (Rts2Event * event);
+  virtual void postEvent (Rts2Event * event);
+
+  virtual void infoOK ();
+  virtual void infoFailed ();
 };
 
-class Rts2CommandQueImage:
-public Rts2Command
+class Rts2CommandQueImage:public Rts2Command
 {
 public:
   Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image);
 };
 
-class Rts2CommandQueObs:
-public Rts2Command
+class Rts2CommandQueObs:public Rts2Command
 {
 public:
   Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId);

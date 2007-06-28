@@ -1742,6 +1742,55 @@ Rts2Image::print (std::ostream & _os, int in_flags)
 }
 
 void
+Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
+{
+  char *desc = (char *) val->getDescription ().c_str ();
+  char *name = (char *) val->getName ().c_str ();
+  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
+    {
+      name = new char[strlen (name) + strlen (client->getName ()) + 2];
+      strcpy (name, client->getName ());
+      strcat (name, ".");
+      strcat (name, val->getName ().c_str ());
+    }
+
+  switch (val->getValueType ())
+    {
+    case RTS2_VALUE_STRING:
+      setValue (name, val->getValue (), desc);
+      break;
+    case RTS2_VALUE_INTEGER:
+      setValue (name, val->getValueInteger (), desc);
+      break;
+    case RTS2_VALUE_TIME:
+      setValue (name, val->getValueDouble (), desc);
+      break;
+    case RTS2_VALUE_DOUBLE:
+      setValue (name, val->getValueDouble (), desc);
+      break;
+    case RTS2_VALUE_FLOAT:
+      setValue (name, val->getValueFloat (), desc);
+      break;
+    case RTS2_VALUE_BOOL:
+      setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
+      break;
+    case RTS2_VALUE_SELECTION:
+      setValue (name,
+		((Rts2ValueSelection *) val)->getSelVal ().c_str (), desc);
+      break;
+    default:
+      logStream (MESSAGE_ERROR) <<
+	"Don't know how to write to FITS file header value '" << name
+	<< "' of type " << val->getValueType () << sendLog;
+      break;
+    }
+  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
+    {
+      delete[]name;
+    }
+}
+
+void
 Rts2Image::writeClient (Rts2DevClient * client, imageWriteWhich_t which)
 {
   for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
@@ -1753,59 +1802,13 @@ Rts2Image::writeClient (Rts2DevClient * client, imageWriteWhich_t which)
 	  switch (which)
 	    {
 	    case EXPOSURE_START:
-	      if (val->getValueWriteFlags () != RTS2_VWHEN_BEFORE_EXP)
-		continue;
+	      if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
+		writeClientValue (client, val);
 	      break;
 	    case EXPOSURE_END:
-	      if (val->getValueWriteFlags () != RTS2_VWHEN_BEFORE_END)
-		continue;
+	      if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
+		writeClientValue (client, val);
 	      break;
-	    }
-	  char *desc = (char *) val->getDescription ().c_str ();
-	  char *name = (char *) val->getName ().c_str ();
-	  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
-	    {
-	      name =
-		new char[strlen (name) + strlen (client->getName ()) + 2];
-	      strcpy (name, client->getName ());
-	      strcat (name, ".");
-	      strcat (name, val->getName ().c_str ());
-	    }
-
-	  switch (val->getValueType ())
-	    {
-	    case RTS2_VALUE_STRING:
-	      setValue (name, val->getValue (), desc);
-	      break;
-	    case RTS2_VALUE_INTEGER:
-	      setValue (name, val->getValueInteger (), desc);
-	      break;
-	    case RTS2_VALUE_TIME:
-	      setValue (name, val->getValueDouble (), desc);
-	      break;
-	    case RTS2_VALUE_DOUBLE:
-	      setValue (name, val->getValueDouble (), desc);
-	      break;
-	    case RTS2_VALUE_FLOAT:
-	      setValue (name, val->getValueFloat (), desc);
-	      break;
-	    case RTS2_VALUE_BOOL:
-	      setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
-	      break;
-	    case RTS2_VALUE_SELECTION:
-	      setValue (name,
-			((Rts2ValueSelection *) val)->getSelVal ().c_str (),
-			desc);
-	      break;
-	    default:
-	      logStream (MESSAGE_ERROR) <<
-		"Don't know how to write to FITS file header value '" << name
-		<< "' of type " << val->getValueType () << sendLog;
-	      break;
-	    }
-	  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
-	    {
-	      delete[]name;
 	    }
 	}
     }

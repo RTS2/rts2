@@ -93,6 +93,13 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
     case EVENT_SET_TARGET_ID:
       activeTargetId = (int) event->getArg ();
       break;
+    case EVENT_INFO_DEVCLI_OK:
+      images.infoOK (this, (Rts2DevClient *) event->getArg (),
+		     getMaster ()->getNow ());
+      break;
+    case EVENT_INFO_DEVCLI_FAILED:
+      images.infoFailed (this, (Rts2DevClient *) event->getArg ());
+      break;
     }
   Rts2DevClientCamera::postEvent (event);
 }
@@ -113,22 +120,12 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
   Rts2DevClientCamera::dataReceived (dataConn);
   if (getTopImage ())
     {
-      getTopImage ()->writeDate (dataConn);
-      // create new image of requsted type
-      beforeProcess (getTopImage ());
-      if (saveImage)
+      CameraImages::iterator cis = getTopIter ();
+      CameraImage *ci = *cis;
+      ci->image->writeDate (dataConn);
+      if (ci->canDelete ())
 	{
-	  writeFilter ();
-	  // set filter..
-	  // save us to the disk..
-	  getTopImage ()->saveImage ();
-	}
-      // do basic processing
-      imageProceRes res = processImage (getTopImage ());
-      if (res == IMAGE_KEEP_COPY)
-	{
-	  setImage (getTopImage (), NULL);
-	  clearImages ();
+	  processCameraImage (cis);
 	}
     }
 }
@@ -150,13 +147,36 @@ Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
   return new Rts2Image (fn, expStart);
 }
 
+CameraImages::iterator
+  Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator & cis)
+{
+  CameraImage *ci = *cis;
+  // create new image of requsted type
+  beforeProcess (ci->image);
+  if (saveImage)
+    {
+      writeFilter ();
+      // set filter..
+      // save us to the disk..
+      ci->image->saveImage ();
+    }
+  // do basic processing
+  imageProceRes res = processImage (ci->image);
+  if (res == IMAGE_KEEP_COPY)
+    {
+      setImage (ci->image, NULL);
+    }
+  // remove us
+  delete ci;
+  return images.erase (cis);
+}
+
 void
 Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes
-Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }
@@ -211,8 +231,9 @@ Rts2DevClientCameraImage::exposureStarted ()
     {
       image->setFocuserName (focuser);
     }
-  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, image));
-  images.push_back (new CameraImage (image, getMaster ()->getNow ()));
+  CameraImage *ci = new CameraImage (image, getMaster ()->getNow ());
+  images.push_back (ci);
+  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, ci));
   Rts2DevClientCamera::exposureStarted ();
 }
 
@@ -224,7 +245,13 @@ Rts2DevClientCameraImage::exposureEnd ()
     connection->getName () << sendLog;
   if (!getIsExposing ())
     return Rts2DevClientCamera::exposureEnd ();
-  getTopImage ()->writeClient (this, EXPOSURE_START);
+
+  CameraImage *ci = getTop ();
+
+  ci->setExEnd (getMaster ()->getNow ());
+  ci->image->writeClient (this, EXPOSURE_START);
+
+  connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, ci));
   setIsExposing (false);
   if (exposureT != EXP_DARK)
     unblockWait ();
@@ -255,13 +282,15 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_WRITE_TO_IMAGE:
-      Rts2Image * image;
+      CameraImage * ci;
+      Rts2Image *image;
       struct ln_equ_posn object;
       struct ln_lnlat_posn obs;
       struct ln_equ_posn suneq;
       struct ln_hrz_posn sunhrz;
       double infotime;
-      image = (Rts2Image *) event->getArg ();
+      ci = (CameraImage *) event->getArg ();
+      image = ci->image;
       image->setMountName (connection->getName ());
       getEqu (&object);
       getObs (&obs);
@@ -320,8 +349,6 @@ Rts2DevClientTelescopeImage::getAltAz (struct ln_hrz_posn *hrz)
   gst = ln_range_degrees (gst) / 15.0;
 
   ln_get_hrz_from_equ_sidereal_time (&pos, &obs, gst, hrz);
-
-//  printf ("%f %f %f %f\n", pos.ra, pos.dec, hrz->alt, hrz->az);
 }
 
 void
@@ -356,8 +383,8 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
   switch (event->getType ())
     {
     case EVENT_WRITE_TO_IMAGE:
-      Rts2Image * image;
-      image = (Rts2Image *) event->getArg ();
+      CameraImage * ci = (CameraImage *) event->getArg ();
+      Rts2Image *image = ci->image;
       // check if we are correct focuser for given camera
       if (!image->getFocuserName ()
 	  || !connection->getName ()
@@ -377,19 +404,38 @@ Rts2DevClientWriteImage::Rts2DevClientWriteImage (Rts2Conn * in_connection):Rts2
 void
 Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 {
-  Rts2Image *image;
+  CameraImage *ci;
   switch (event->getType ())
     {
     case EVENT_WRITE_TO_IMAGE:
-      image = (Rts2Image *) event->getArg ();
-      image->writeClient (this, EXPOSURE_START);
+      ci = (CameraImage *) event->getArg ();
+      ci->image->writeClient (this, EXPOSURE_START);
+      // and check if we should trigger info call
+      if (existWriteType (RTS2_VWHEN_BEFORE_END))
+	{
+	  queCommand (new Rts2CommandInfo (getMaster ()));
+	  ci->waitForDevice (this, getMaster ()->getNow ());
+	}
       break;
     case EVENT_WRITE_TO_IMAGE_ENDS:
-      image = (Rts2Image *) event->getArg ();
-      image->writeClient (this, EXPOSURE_END);
+      ci = (CameraImage *) event->getArg ();
+      // do nothing now..
       break;
     }
   Rts2DevClient::postEvent (event);
+}
+
+void
+Rts2DevClientWriteImage::infoOK ()
+{
+  // see if somebody cares..
+  connection->postMaster (new Rts2Event (EVENT_INFO_DEVCLI_OK, this));
+}
+
+void
+Rts2DevClientWriteImage::infoFailed ()
+{
+  connection->postMaster (new Rts2Event (EVENT_INFO_DEVCLI_FAILED, this));
 }
 
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command
