@@ -81,7 +81,12 @@
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>rts2 (7).</para>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+    </para>
 
   </refsect1>
   <refsect1>

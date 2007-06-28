@@ -410,6 +410,17 @@
 
       <varlistentry>
         <term>
+	  <option>waitfor {variable} {value} {range}</option>
+	</term>
+	<listitem>
+	  <para>
+	    This command will wait for numeric {variable} to reach {value} with {range} margin.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
 	  <option>HAM {repeat_number} {exposure_time}</option>
 	</term>
 	<listitem>

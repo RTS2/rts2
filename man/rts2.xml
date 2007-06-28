@@ -502,12 +502,21 @@
         <refentrytitle>rts2-seltest</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-tpm</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
     </para>
   </refsect1>
   <refsect1>
     <title>FILES</title>
 
-    <para>rts2.ini (5).</para>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

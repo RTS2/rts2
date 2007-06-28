@@ -13,7 +13,9 @@ man_MANS = \
     rts2.fitskeys.5 \
     rts2-horizon.1 \
     rts2-mon.1 \
-    rts2-scriptexec.1
+    rts2-scriptexec.1 \
+    rts2-logger.1 \
+    rts2-tpm.1
 
 doc_FOP = \
     rts2-man.fop \
@@ -64,6 +66,12 @@ rts2-horizon.1: rts2-horizon.xml
 	$(XP) $(DB2MAN) $<
 
 rts2-scriptexec.1: rts2-scriptexec.xml
+	$(XP) $(DB2MAN) $<
+
+rts2-logger.1: rts2-logger.xml
+	$(XP) $(DB2MAN) $<
+
+rts2-tpm.1: rts2-tpm.xml
 	$(XP) $(DB2MAN) $<
 
 # now FOP & related activites..
