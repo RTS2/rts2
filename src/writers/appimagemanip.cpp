@@ -1,3 +1,5 @@
+#include <config.h>
+
 #ifdef HAVE_PGSQL
 #include "rts2appdbimage.h"
 #else
@@ -237,7 +239,8 @@ Rts2AppImageManip::processOption (int in_opt)
 }
 
 #ifdef HAVE_PGSQL
-bool Rts2AppImageManip::doInitDB ()
+bool
+Rts2AppImageManip::doInitDB ()
 {
   return (operation & IMAGEOP_MOVE) || (operation & IMAGEOP_INSERT);
 }
