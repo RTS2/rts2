@@ -52,6 +52,18 @@
     <refpurpose>Produce TPoint input data for telescope model building.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+
     <cmdsynopsis>
       <command>&dhpackage;</command>
       <arg choice="opt">
@@ -84,16 +96,7 @@
 	<arg choice="plain"><option>-D <replaceable>DEC offset</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&dhpackage;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-    </cmdsynopsis>
+
   </refsynopsisdiv>
 
   <refsect1 id="description">

@@ -62,10 +62,10 @@
 	<arg choice="plain"><option>--version</option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--centrald_server <replaceable>central server hostname</replaceable></option></arg>
+	<arg choice="plain"><option>--server <replaceable>central server hostname</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--centrald_port <replaceable>port number</replaceable></option></arg>
+	<arg choice="plain"><option>--port <replaceable>port number</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-c</option></arg>
@@ -322,13 +322,13 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--centrald_server <replaceable>central server hostname</replaceable></option></term>
+        <term><option>--server <replaceable>central server hostname</replaceable></option></term>
         <listitem>
           <para>Change central server location. Defaults to localhost.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--centrald_port <replaceable>port number</replaceable></option></term>
+        <term><option>--port <replaceable>port number</replaceable></option></term>
         <listitem>
           <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
         </listitem>

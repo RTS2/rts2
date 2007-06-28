@@ -114,7 +114,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
+        <term><option>--config <replaceable class="parameter">config file</replaceable></option></term>
         <listitem>
           <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>

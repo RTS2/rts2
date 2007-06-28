@@ -18,29 +18,67 @@
 
 <refentry>
   <refentryinfo>
-    <address>
-      &dhemail;
-    </address>
-    <author>
-      &dhfirstname;
-      &dhsurname;
-    </author>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
     <copyright>
-      <year>2006</year>
+      <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    &dhdate;
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
   </refentryinfo>
   <refmeta>
-    &dhucpackage;
-
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-
     <refpurpose>X-Window based focusing interface.</refpurpose>
   </refnamediv>
+  <refsynopsisdiv>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>--server <replaceable class="parameter">central server hostname</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--port <replaceable class="parameter">port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--config <replaceable class="parameter">config file</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
@@ -61,19 +99,34 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>-h</option>
-          <option>--help</option>
-        </term>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
         <listitem>
           <para>Show summary of options.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-V</option>
-          <option>--version</option>
-        </term>
+        <term><option>--version</option></term>
         <listitem>
           <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--server <replaceable class="parameter">central server hostname</replaceable></option></term>
+        <listitem>
+          <para>Change central server location. Defaults to localhost.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--port <replaceable class="parameter">port number</replaceable></option></term>
+        <listitem>
+          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--config <replaceable class="parameter">server name</replaceable></option></term>
+        <listitem>
+          <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -86,16 +139,6 @@
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
       </citerefentry>
-    </para>
-
-  </refsect1>
-  <refsect1>
-    <title>COPYRIGHT</title>
-
-    <para>This manual page was written by &dhusername; &dhemail;.
-      Permission is granted to copy, distribute and/or modify this 
-      document under the terms of the &gnu; General Public License, 
-      Version 2 any later version published by the Free Software Foundation.
     </para>
 
   </refsect1>
