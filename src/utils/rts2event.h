@@ -17,6 +17,11 @@
 
 #define EVENT_QUICK_ENABLE	12
 
+// info failed/sucess calls
+#define EVENT_INFO_DEVCLI_OK	14
+#define EVENT_INFO_DEVCLI_FAILED	15
+
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
 
