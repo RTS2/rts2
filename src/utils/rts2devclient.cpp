@@ -285,6 +285,18 @@ Rts2DevClient::idle ()
 {
 }
 
+bool
+Rts2DevClient::existWriteType (int w_type)
+{
+  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
+       iter != values.end (); iter++)
+    {
+      if ((*iter)->getValueWriteFlags () == w_type)
+	return true;
+    }
+  return false;
+}
+
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
   (in_connection)
 {
@@ -338,7 +350,8 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool Rts2DevClientCamera::isIdle ()
+bool
+Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
@@ -635,7 +648,8 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool Rts2DevClientPhot::isIntegrating ()
+bool
+Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }

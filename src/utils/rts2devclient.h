@@ -147,6 +147,11 @@ public:
   }
 
   virtual void idle ();
+
+  /**
+   * Returns true if we hold any value with given write type.
+   */
+  bool existWriteType (int w_type);
 };
 
 /**************************************
