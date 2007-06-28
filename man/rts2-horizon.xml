@@ -66,7 +66,9 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-f <replaceable>horizon file</replaceable></option></arg>
-	<arg choice="plain"><option>--horizon <replaceable>horizon file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-d</option></arg>
       </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -121,7 +123,6 @@
       </varlistentry>
       <varlistentry>
         <term><option>-f <replaceable class="parameter">horizon file</replaceable></option></term>
-        <term><option>--horizon <replaceable class="parameter">horizon file</replaceable></option></term>
         <listitem>
 	  <para>Specify horizon file. This value overwrites file specified in
 	  observatory section of the configuration file.</para>
@@ -129,7 +130,6 @@
       </varlistentry>
       <varlistentry>
         <term><option>-d</option></term>
-        <term><option>--dump</option></term>
         <listitem>
 	  <para>Dump internal az-alt horizon used for horizon calculations.
 	  This option will perform dump of the horizon file, transformed to
