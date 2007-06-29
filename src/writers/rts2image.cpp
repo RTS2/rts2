@@ -218,7 +218,7 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
   currTarget->writeToImage (this);
 }
 
-Rts2Image::Rts2Image (const char *in_filename)
+Rts2Image::Rts2Image (const char *in_filename, bool verbose)
 {
   int ret;
 
@@ -226,21 +226,21 @@ Rts2Image::Rts2Image (const char *in_filename)
 
   openImage (in_filename);
   // get info..
-  getValue ("EPOCH_ID", epochId, true);
-  getValue ("TARGET", targetId, true);
-  getValue ("TARSEL", targetIdSel, true);
-  getValue ("TARTYPE", targetType, true);
+  getValue ("EPOCH_ID", epochId, verbose);
+  getValue ("TARGET", targetId, verbose);
+  getValue ("TARSEL", targetIdSel, verbose);
+  getValue ("TARTYPE", targetType, verbose);
   targetName = new char[FLEN_VALUE];
-  getValue ("OBJECT", targetName, FLEN_VALUE, true);
-  getValue ("OBSID", obsId, true);
-  getValue ("IMGID", imgId, true);
-  getValue ("CTIME", exposureStart.tv_sec, true);
-  getValue ("USEC", exposureStart.tv_usec, true);
+  getValue ("OBJECT", targetName, FLEN_VALUE, verbose);
+  getValue ("OBSID", obsId, verbose);
+  getValue ("IMGID", imgId, verbose);
+  getValue ("CTIME", exposureStart.tv_sec, verbose);
+  getValue ("USEC", exposureStart.tv_usec, verbose);
   setExposureStart ();
   // if EXPTIM fails..
   ret = getValue ("EXPTIME", exposureLength, false);
   if (ret)
-    getValue ("EXPOSURE", exposureLength, true);
+    getValue ("EXPOSURE", exposureLength, verbose);
   ret = getValues ("NAXIS", naxis, 2, true);
   if (ret)
     {
@@ -262,10 +262,10 @@ Rts2Image::Rts2Image (const char *in_filename)
   ret = getValue ("FOC_POS", focPos);
   if (ret)
     focPos = -1;
-  getValue ("CAM_FILT", filter_i, true);
+  getValue ("CAM_FILT", filter_i, verbose);
   filter = new char[5];
-  getValue ("FILTER", filter, 5, true);
-  getValue ("AVERAGE", average, true);
+  getValue ("FILTER", filter, 5, verbose);
+  getValue ("AVERAGE", average, verbose);
   getValue ("STDEV", stdev, false);
   getValue ("BGSTDEV", bg_stdev, false);
   getValue ("RA_ERR", ra_err, false);

@@ -134,7 +134,7 @@ public:
   Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
 	     const struct timeval *in_exposureStart);
   // open image from disk..
-  Rts2Image (const char *in_filename);
+  Rts2Image (const char *in_filename, bool verbose = true);
   virtual ~ Rts2Image (void);
 
   // expand expression to image path

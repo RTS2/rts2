@@ -36,7 +36,7 @@ public:
 	 img_iter++)
       {
 	const char *an_name = *img_iter;
-	Rts2Image *image = new Rts2Image (an_name);
+	Rts2Image *image = new Rts2Image (an_name, false);
 	ret = processImage (image);
 	if (ret)
 	  return ret;

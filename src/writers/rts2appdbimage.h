@@ -36,7 +36,7 @@ public:
 	 img_iter++)
       {
 	const char *an_name = *img_iter;
-	Rts2ImageDb *imagedb = new Rts2ImageDb (an_name);
+	Rts2ImageDb *imagedb = new Rts2ImageDb (an_name, false);
 	Rts2ImageDb *image = getValueImageType (imagedb);
 	ret = processImage (image);
 	delete image;
