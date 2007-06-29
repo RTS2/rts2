@@ -12,16 +12,19 @@
 
 #include <list>
 
-#define IMAGEOP_NOOP		0x00
-#define IMAGEOP_ADDDATE		0x01
+#define IMAGEOP_NOOP		0x0000
+#define IMAGEOP_ADDDATE		0x0001
 #ifdef HAVE_PGSQL
-#define IMAGEOP_INSERT		0x02
+#define IMAGEOP_INSERT		0x0002
 #endif /* HAVE_PGSQL */
-#define IMAGEOP_TEST		0x04
-#define IMAGEOP_COPY		0x08
-#define IMAGEOP_MOVE		0x10
-#define IMAGEOP_EVAL		0x20
-#define IMAGEOP_CREATEWCS	0x40
+#define IMAGEOP_TEST		0x0004
+#define IMAGEOP_PRINT		0x0008
+#define IMAGEOP_COPY		0x0010
+#define IMAGEOP_MOVE		0x0020
+#define IMAGEOP_EVAL		0x0040
+#define IMAGEOP_CREATEWCS	0x0080
+
+#define OPT_ADDDATE		OPT_LOCAL + 5
 
 #ifdef HAVE_PGSQL
 class Rts2AppImageManip:public Rts2AppDbImage
@@ -44,6 +47,7 @@ private:
 
   double off_x, off_y;
 
+    std::string print_expr;
     std::string copy_expr;
     std::string move_expr;
 protected:
@@ -188,11 +192,15 @@ Rts2AppImageManip::processOption (int in_opt)
   char *off_sep;
   switch (in_opt)
     {
+    case 'p':
+      operation |= IMAGEOP_PRINT;
+      print_expr = optarg;
+      break;
     case 'c':
       operation |= IMAGEOP_COPY;
       copy_expr = optarg;
       break;
-    case 'd':
+    case OPT_ADDDATE:
       operation |= IMAGEOP_ADDDATE;
       break;
 #ifdef HAVE_PGSQL
@@ -263,6 +271,8 @@ Rts2AppImageManip::processImage (Rts2Image * image)
 #endif
   if (operation & IMAGEOP_TEST)
     testImage (image);
+  if (operation & IMAGEOP_PRINT)
+    std::cout << image->expandPath (print_expr) << std::endl;
   if (operation & IMAGEOP_COPY)
     image->copyImageExpand (copy_expr);
   if (operation & IMAGEOP_MOVE)
@@ -303,17 +313,18 @@ Rts2AppImage (in_argc, in_argv)
   off_x = 0;
   off_y = 0;
 
-  addOption ('c', "copy", 1,
+  addOption ('p', NULL, 1, "print image expression");
+  addOption ('c', NULL, 1,
 	     "copy image(s) to path expression given as argument");
-  addOption ('d', "add-date", 0, "add DATE-OBS to image header");
-  addOption ('i', "insert", 0, "insert/update image(s) in the database");
-  addOption ('m', "move", 1,
+  addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
+  addOption ('i', NULL, 0, "insert/update image(s) in the database");
+  addOption ('m', NULL, 1,
 	     "move image(s) to path expression given as argument");
-  addOption ('e', "eval", 0, "image evaluation for AF purpose");
-  addOption ('t', "test", 0, "test various image routines");
-  addOption ('w', "wcs", 0,
+  addOption ('e', NULL, 0, "image evaluation for AF purpose");
+  addOption ('t', NULL, 0, "test various image routines");
+  addOption ('w', NULL, 0,
 	     "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
-  addOption ('o', "offsets", 1,
+  addOption ('o', NULL, 1,
 	     "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
 }
 

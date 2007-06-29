@@ -396,8 +396,6 @@ std::string Rts2Image::expandPath (std::string expression)
 	    }
 	  else
 	    {
-	      // move to next char
-	      iter++;
 	      char
 		valB[200];
 	      int
