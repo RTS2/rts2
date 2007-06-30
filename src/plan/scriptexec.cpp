@@ -28,8 +28,7 @@ std::string Rts2ScriptExec::getStreamAsString (std::istream & _is)
     {
       std::string buf;
       getline (_is, buf);
-      size_t
-	hi = buf.find ("#");
+      size_t hi = buf.find ("#");
       if (hi != std::string::npos)
 	{
 	  buf = buf.substr (0, hi);
@@ -67,10 +66,10 @@ Rts2ScriptExec::findScript (std::string in_deviceName)
   return NULL;
 }
 
-bool
-Rts2ScriptExec::isScriptRunning ()
+bool Rts2ScriptExec::isScriptRunning ()
 {
-  int runningScripts = 0;
+  int
+    runningScripts = 0;
   postEvent (new
 	     Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION,
 			(void *) &runningScripts));
@@ -225,10 +224,9 @@ Rts2ScriptExec::postEvent (Rts2Event * event)
 void
 Rts2ScriptExec::deviceReady (Rts2Conn * conn)
 {
+  conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
   if (conn->havePriority ())
     {
-      conn->
-	postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
       conn->postEvent (new Rts2Event (EVENT_OBSERVE));
     }
   Rts2Client::deviceReady (conn);
