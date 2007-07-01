@@ -115,7 +115,8 @@ Rts2DevSensorGpib (in_argc, in_argv)
   setPad (14);
 
   createValue (azero, "AZERO", "SYSTEM:AZERO value");
-  createValue (current, "CURRENT", "Measured current");
+  createValue (current, "CURRENT", "Measured current", true,
+	       RTS2_VWHEN_BEFORE_END);
 }
 
 Rts2DevSensorKeithley::~Rts2DevSensorKeithley (void)
