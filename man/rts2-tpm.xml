@@ -56,17 +56,6 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-    </cmdsynopsis>
-
-    <cmdsynopsis>
-      <command>&dhpackage;</command>
-      <arg choice="opt">
 	<arg choice="plain"><option>-t 
 	  <group choice="req">
 	    <arg choice="plain">t</arg>
@@ -84,16 +73,25 @@
 	</option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>-r <replaceable>RA step size</replaceable></option></arg>
+	<option>-r <replaceable class="parameter">RA step size</replaceable>
+	  <arg choice="opt"><option>-R <replaceable class="parameter">RA offset</replaceable></option></arg>
+	</option>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>-R <replaceable>RA offset</replaceable></option></arg>
+	<option>-d <replaceable class="parameter">DEC step size</replaceable>
+	  <arg choice="opt"><option>-D <replaceable class="parameter">DEC offset</replaceable></option></arg>
+	</option>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>-d <replaceable>DEC step size</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>-D <replaceable>DEC offset</replaceable></option></arg>
+	<arg choice="plain"><option>--version</option></arg>
       </arg>
     </cmdsynopsis>
 

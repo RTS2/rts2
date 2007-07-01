@@ -506,6 +506,14 @@
         <refentrytitle>rts2-tpm</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-logger</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-image</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
     </para>
   </refsect1>
   <refsect1>

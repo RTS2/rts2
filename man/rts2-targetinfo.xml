@@ -62,10 +62,10 @@
 	<arg choice="plain"><option>--version</option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--database <replaceable>database</replaceable></option></arg>
+	<arg choice="plain"><option>--database <replaceable class="parameter">database name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
+	<arg choice="plain"><option>--config <replaceable class="parameter">configuration file</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-s</option></arg>
@@ -80,7 +80,7 @@
         <arg choice="plain"><option>-B</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-g<replaceable>gnuplot-option</replaceable></option></arg>
+        <arg choice="plain"><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>-m</option></arg>
@@ -112,7 +112,7 @@
       <arg choice="opt">
         <arg choice="plain"><option>-9</option></arg>
       </arg>
-      <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
+      <arg choice="plain" rep="repeat"><replaceable>target ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -149,13 +149,16 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--database <replaceable class="parameter">database-name</replaceable></option></term>
+        <term><option>--database <replaceable class="parameter">database name</replaceable></option></term>
         <listitem>
-          <para>Specify database name. Will overwrite database name specified in rts2.ini (5).</para>
+	  <para>
+	    Specify database name. Will overwrite database name specified in
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
+        <term><option>--config <replaceable class="parameter">configuration file</replaceable></option></term>
         <listitem>
           <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>

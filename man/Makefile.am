@@ -15,6 +15,7 @@ man_MANS = \
     rts2-mon.1 \
     rts2-scriptexec.1 \
     rts2-logger.1 \
+    rts2-image.1 \
     rts2-tpm.1
 
 doc_FOP = \
@@ -69,6 +70,9 @@ rts2-scriptexec.1: rts2-scriptexec.xml
 	$(XP) $(DB2MAN) $<
 
 rts2-logger.1: rts2-logger.xml
+	$(XP) $(DB2MAN) $<
+
+rts2-image.1: rts2-image.xml
 	$(XP) $(DB2MAN) $<
 
 rts2-tpm.1: rts2-tpm.xml
