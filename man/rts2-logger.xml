@@ -180,8 +180,6 @@
       <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>
       for list of devices and their variables.
     </para>
-
-    </para>
   </refsect1>
   <refsect1>
     <title>OUTPUT</title>
@@ -194,7 +192,7 @@
       printed as float point number which represents number of seconds since
       1.1.1970, the Unix stadard time.
     </para>
-  <refsect1>
+  </refsect1>
   <refsect1>
     <title>EXAMPLE</title>
 
