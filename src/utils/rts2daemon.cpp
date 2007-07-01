@@ -30,7 +30,7 @@ Rts2Block (in_argc, in_argv)
 
   state = 0;
 
-  createValue (info_time, "infotime",
+  createValue (info_time, RTS2_VALUE_INFOTIME,
 	       "time when this informations were correct", false);
 
   idleInfoInterval = -1;

@@ -27,6 +27,7 @@ class Rts2DevClient:public Rts2Object
 private:
   int failedCount;
   Rts2ValueVector values;
+  Rts2ValueTime *info_time;
 protected:
     Rts2Conn * connection;
   enum
@@ -152,6 +153,8 @@ public:
    * Returns true if we hold any value with given write type.
    */
   bool existWriteType (int w_type);
+
+  double getInfoTime ();
 };
 
 /**************************************
