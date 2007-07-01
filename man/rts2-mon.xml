@@ -55,13 +55,6 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-      <arg choice="opt">
 	<arg choice="plain"><option>--server <replaceable>central server hostname</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -70,6 +63,16 @@
       <arg choice="opt">
         <arg choice="plain"><option>-c</option></arg>
       </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>\
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -309,19 +312,6 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>-h</option></term>
-        <term><option>--help</option></term>
-        <listitem>
-          <para>Show summary of options.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--version</option></term>
-        <listitem>
-          <para>Show version of program.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
         <term><option>--server <replaceable>central server hostname</replaceable></option></term>
         <listitem>
           <para>Change central server location. Defaults to localhost.</para>
@@ -337,6 +327,19 @@
         <term><option>-c</option></term>
         <listitem>
           <para>Switch off colors. Usefull for terminals which have problems with colors.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
         </listitem>
       </varlistentry>
     </variablelist>

@@ -1,0 +1,234 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-06-24</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-logger">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2007</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Allow logging of interesting values to text file.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>--server <replaceable>central server hostname</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-f <replaceable>log file format</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    
+    <para>
+      This program connect to RTS2, and then dumps in predefined interval
+      values of intereset for each device.
+    </para>
+
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    <para>
+      These programs follow the usual &gnu; command line syntax,
+      with long options starting with two dashes (`-').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>--server <replaceable>central server hostname</replaceable></option></term>
+        <listitem>
+          <para>Change central server location. Defaults to localhost.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--port <replaceable>port number</replaceable></option></term>
+        <listitem>
+          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-f <replaceable>file name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify to take configuration input from file instead of from
+	    standart input, which is default. For description of file format
+	    please see CONFIGURATION FILE FORMAT section.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-V</option></term>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>CONFIGURATION FILE FORMAT</title>
+
+    <para>
+      Configuration file is written as text file. It can be specified by -f
+      option, or streamed to standart input. On each line, entries separated
+      with one or more space characters specify:
+    </para>
+
+    <para>
+      <variablelist>
+        <varlistentry>
+	  <term>device name</term>
+	  <listitem>
+	    <para>
+	      Name of the device. You can get the device name from rts2-mon.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>login interval in seconds</term>
+	  <listitem>
+	    <para>
+	      This specify how often log will be writen. Only integer number of
+	      second is currently accepted. Depending on RTS2 performance, the
+	      logged values can be written at arbitary time - system makes all
+	      efforts to get values in time, but it cannot guarantie delivery
+	      of the value at exact time.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>values (multiple listing)</term>
+	  <listitem>
+	    <para>
+	      List of variables to log.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </para>
+
+    <para>
+      You can always consult
+      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      for list of devices and their variables.
+    </para>
+
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>OUTPUT</title>
+
+    <para>
+      Output is written to standard output. On one line, one measurement is
+      recorded. Device name is printed, followed with space, followed with
+      space separated list of measured values. If you want to add time of
+      meassurement, please add infotime to configuration file. infotime is
+      printed as float point number which represents number of seconds since
+      1.1.1970, the Unix stadard time.
+    </para>
+  <refsect1>
+  <refsect1>
+    <title>EXAMPLE</title>
+
+    <para>
+      Following file will log once every 5 seconds values from C0 device, and
+      once every 8 seconds from S1 device. From C0, infotime (e.g. time when
+      this information was taken), MODE and GAIN are recorded. For S1,
+      infotime, TEMPA, TEMPB and TEMPC values are recorded.
+
+      <literallayout>
+C0 5 infotime MODE GAIN
+S1 8 infotime TEMPA TEMPB TEMPC
+      </literallayout>
+
+      The output will then contain:
+
+      <literallayout>
+C0 1183230001.403492 1 HIGH
+S1 1183230003.654364 -120.465 -100.6576 10.0809
+C0 1183230006.654364 1 HIGH
+C0 1183230012.236757 1 LOW
+S1 1183230013.567643 -120.345 -100.7654 10.3435
+      </literallayout>
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>
