@@ -95,7 +95,7 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
       break;
     case EVENT_INFO_DEVCLI_OK:
       images.infoOK (this, (Rts2DevClient *) event->getArg (),
-		     getMaster ()->getNow ());
+		     getInfoTime ());
       break;
     case EVENT_INFO_DEVCLI_FAILED:
       images.infoFailed (this, (Rts2DevClient *) event->getArg ());
@@ -176,7 +176,8 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }
