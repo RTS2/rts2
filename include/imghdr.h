@@ -31,11 +31,16 @@
 
 // various datatypes
 #define RTS2_DATA_BYTE		8
-#define RTS2_DATA_INTEGER	16
+#define RTS2_DATA_SHORT		16
 #define RTS2_DATA_LONG		32
 #define RTS2_DATA_LONGLONG	64
 #define RTS2_DATA_FLOAT		-32
 #define RTS2_DATA_DOUBLE	-64
+
+// unsigned data types
+#define RTS2_DATA_SBYTE		10
+#define RTS2_DATA_USHORT	20
+#define RTS2_DATA_ULONG		40
 
 struct imghdr
 {
