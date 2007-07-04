@@ -42,23 +42,23 @@ int
 CameraDummyChip::readoutOneLine ()
 {
   int ret;
+  int lineSize = lineByteSize ();
   if (sendLine == 0)
     {
       ret = CameraChip::sendFirstLine ();
       if (ret)
 	return ret;
-      data = new char[2 * (chipUsedReadout->width - chipUsedReadout->x)];
+      data = new char[lineSize];
     }
   if (readoutLine == 0 && readoutSleep > 0)
     usleep (readoutSleep);
-  for (int i = 0; i < 2 * chipUsedReadout->width; i++)
+  for (int i = 0; i < lineSize; i++)
     {
       data[i] = i + readoutLine;
     }
   readoutLine++;
   sendLine++;
-  ret = sendReadoutData (data,
-			 2 * (chipUsedReadout->width - chipUsedReadout->x));
+  ret = sendReadoutData (data, lineSize);
   if (ret < 0)
     return ret;
   if (readoutLine <
@@ -80,8 +80,9 @@ private:
   int setDataType (Rts2ValueSelection * new_data_type)
   {
     static int dataTypes[] =
-      { RTS2_DATA_INTEGER, RTS2_DATA_LONG, RTS2_DATA_LONGLONG,
-      RTS2_DATA_FLOAT, RTS2_DATA_DOUBLE, RTS2_DATA_BYTE
+      { RTS2_DATA_USHORT, RTS2_DATA_LONG, RTS2_DATA_LONGLONG,
+      RTS2_DATA_FLOAT, RTS2_DATA_DOUBLE, RTS2_DATA_BYTE, RTS2_DATA_SBYTE,
+	RTS2_DATA_ULONG
     };
     chips[0]->setUsedDataType (dataTypes[new_data_type->getValueInteger ()]);
     return 0;
@@ -118,12 +119,14 @@ Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
 
     createValue (dataType, "data_type", "used data type", true, 0,
 		 CAM_READING | CAM_DATA, false);
-    dataType->addSelVal ("INTEGER");
+    dataType->addSelVal ("UNSIGNED SHORT");
     dataType->addSelVal ("LONG");
     dataType->addSelVal ("LONGLONG");
     dataType->addSelVal ("FLOAT");
     dataType->addSelVal ("DOUBLE");
     dataType->addSelVal ("BYTE");
+    dataType->addSelVal ("SIGNED BYTE");
+    dataType->addSelVal ("UNSIGNED LONG");
 
     width = 200;
     height = 100;
