@@ -35,7 +35,7 @@ CameraChip::initData (Rts2DevCamera * in_cam, int in_chip_id)
   focusingData = NULL;
   focusingDataTop = NULL;
 
-  usedDataType = RTS2_DATA_INTEGER;
+  usedDataType = RTS2_DATA_USHORT;
 }
 
 CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
@@ -435,7 +435,8 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool CameraChip::supportFrameTransfer ()
+bool
+CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -1218,14 +1219,16 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }

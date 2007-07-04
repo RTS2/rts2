@@ -83,6 +83,8 @@ private:
 
   int usedPixelByteSize ()
   {
+    if (usedDataType == RTS2_DATA_ULONG)
+      return 4;
     return abs (usedDataType / 8);
   }
 
@@ -131,6 +133,12 @@ protected:
    * Return 0 if focusing should continue, !0 otherwise.
    */
   virtual int doFocusing ();
+
+  int lineByteSize ()
+  {
+    return usedPixelByteSize () * (chipUsedReadout->width -
+				   chipUsedReadout->x);
+  }
 
 public:
   CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
@@ -252,8 +260,6 @@ protected:
   int defBinning;
 
   Rts2ValueDouble *rnoise;
-
-  virtual int setSubExposure (double in_subexposure);
 
   virtual void afterReadout ();
 
@@ -386,6 +392,8 @@ public:
   // autofocus
   int startFocus (Rts2Conn * conn);
   int endFocusing ();
+
+  virtual int setSubExposure (double in_subexposure);
 
   double getSubExposure (void)
   {
