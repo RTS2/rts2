@@ -325,7 +325,8 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool CameraAndorChip::supportFrameTransfer ()
+bool
+CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -412,6 +413,8 @@ private:
   int printHSSpeeds (int camera_type, int ad_channel, int amplifier);
   int printVSSpeeds ();
 
+  void initAndorValues ();
+
 protected:
     virtual int processOption (int in_opt);
   virtual void help ();
@@ -423,7 +426,6 @@ public:
     virtual ~ Rts2DevCameraAndor (void);
 
   virtual int init ();
-  virtual int initValues ();
 
   // callback functions for Camera alone
   virtual int ready ();
@@ -447,8 +449,7 @@ Rts2DevCamera (in_argc, in_argv)
 
   andorRoot = "/root/andor/examples/common";
 
-  createValue (gain, "GAIN", "CCD gain", true, 0,
-	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+  gain = NULL;
 
   createValue (Mode, "MODE", "Camera mode", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
@@ -476,8 +477,7 @@ Rts2DevCamera (in_argc, in_argv)
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   useFT->setValueBool (true);
 
-  defaultGain = 255;
-  gain->setValueInteger (255);
+  defaultGain = IXON_DEFAULT_GAIN;
 
   printSpeedInfo = false;
 
@@ -623,7 +623,7 @@ Rts2DevCameraAndor::setMode (int in_mode)
 void
 Rts2DevCameraAndor::cancelPriorityOperations ()
 {
-  if (!isnan (defaultGain))
+  if (!isnan (defaultGain) && gain)
     setGain (defaultGain);
   Rts2DevCamera::cancelPriorityOperations ();
 }
@@ -638,7 +638,7 @@ Rts2DevCameraAndor::cancelPriorityOperations ()
 int
 Rts2DevCameraAndor::scriptEnds ()
 {
-  if (!isnan (defaultGain))
+  if (!isnan (defaultGain) && gain)
     setGain (defaultGain);
   // *FIXME* Wow, this is ugly
   CameraAndorChip *c = (CameraAndorChip *) chips[0];
@@ -691,7 +691,6 @@ Rts2DevCameraAndor::processOption (int in_opt)
 	  printf ("gain must be in 0-255 range\n");
 	  exit (EXIT_FAILURE);
 	}
-      gain->setValueInteger (defaultGain);
       break;
     case 'r':
       andorRoot = optarg;
@@ -977,7 +976,6 @@ Rts2DevCameraAndor::init ()
   sleep (2);			//sleep to allow initialization to complete
 
   SetExposureTime (5.0);
-  setGain (defaultGain);
 
   ret = GetCapabilities (&cap);
   if (ret != DRV_SUCCESS)
@@ -985,6 +983,8 @@ Rts2DevCameraAndor::init ()
       cerr << "Cannot call GetCapabilities " << ret << endl;
       return -1;
     }
+
+  initAndorValues ();
 
   //Set Read Mode to --Image--
   ret = SetReadMode (4);
@@ -1014,8 +1014,8 @@ Rts2DevCameraAndor::init ()
   return Rts2DevCamera::initChips ();
 }
 
-int
-Rts2DevCameraAndor::initValues ()
+void
+Rts2DevCameraAndor::initAndorValues ()
 {
   if (cap.ulCameraType == AC_CAMERATYPE_IXON)
     {
@@ -1023,7 +1023,12 @@ Rts2DevCameraAndor::initValues ()
 		   CAM_EXPOSING | CAM_READING | CAM_DATA, true);
       VSAmp->setValueInteger (0);
     }
-  return Rts2DevCamera::initValues ();
+  if (cap.ulSetFunctions & AC_SETFUNCTION_GAIN)
+    {
+      createValue (gain, "GAIN", "CCD gain", true, 0,
+		   CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+      setGain (defaultGain);
+    }
 }
 
 int
