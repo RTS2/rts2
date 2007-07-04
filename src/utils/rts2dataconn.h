@@ -36,9 +36,9 @@ public:
   virtual int idle ();
 
   virtual void dataReceived ();
-  unsigned short *getData ()
+  char *getData ()
   {
-    return (unsigned short *) (data + sizeof (imghdr));
+    return data + sizeof (imghdr);
   }
   int getSize ()
   {
