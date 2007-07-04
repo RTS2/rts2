@@ -165,7 +165,6 @@ CameraAndorChip::init ()
   return CameraChip::init ();
 }
 
-
 int
 CameraAndorChip::startExposure (int light, float exptime)
 {
@@ -186,9 +185,15 @@ CameraAndorChip::startExposure (int light, float exptime)
     {
       // single scan
       if (SetAcquisitionMode (AC_ACQMODE_SINGLE) != DRV_SUCCESS)
-	return -1;
+	{
+	  logStream (MESSAGE_ERROR) << "Cannot set AQ mode" << sendLog;
+	  return -1;
+	}
       if (SetExposureTime (exptime) != DRV_SUCCESS)
-	return -1;
+	{
+	  logStream (MESSAGE_ERROR) << "Cannot set exposure time" << sendLog;
+	  return -1;
+	}
     }
   else
     {
@@ -320,8 +325,7 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool
-CameraAndorChip::supportFrameTransfer ()
+bool CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -373,6 +377,8 @@ private:
   int shutter_with_ft;
   int mode;
 
+  AndorCapabilities cap;
+
   Rts2ValueInteger *gain;
 
   Rts2ValueInteger *Mode;
@@ -401,7 +407,7 @@ private:
   int setMode (int mode);
 
   int printInfo ();
-  int printCapabilities (AndorCapabilities * cap);
+  void printCapabilities ();
   int printNumberADCs ();
   int printHSSpeeds (int camera_type, int ad_channel, int amplifier);
   int printVSSpeeds ();
@@ -417,6 +423,7 @@ public:
     virtual ~ Rts2DevCameraAndor (void);
 
   virtual int init ();
+  virtual int initValues ();
 
   // callback functions for Camera alone
   virtual int ready ();
@@ -450,9 +457,8 @@ Rts2DevCamera (in_argc, in_argv)
 	       "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit",
 	       true, 0, CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   ADChannel->setValueInteger (0);
-  createValue (VSAmp, "SAMPLI", "Used andor shift amplitide", true, 0,
-	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
-  VSAmp->setValueInteger (0);
+  // create VSAmp only if we have amplitude set capability
+  VSAmp = NULL;
   createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0,
 	       CAM_EXPOSING | CAM_READING | CAM_DATA, true);
   VSpeed->setValueInteger (1);
@@ -597,15 +603,16 @@ Rts2DevCameraAndor::setMode (int in_mode)
 
   m = &mode_def[in_mode];
   if ((ret = setADChannel (m->ad)) != 0)
-    return ret;
+    return -1;
 
   if ((ret = setHSSpeed (m->disable_em, m->hsspeed)) != 0)
     return -1;
 
   if ((ret = setVSSpeed (m->vsspeed)) != 0)
-    return ret;
+    return -1;
 
-  if ((ret = setVSAmplitude (m->vs_amp)) != 0)
+  // only set VSAmp if it's defined
+  if (VSAmp && (ret = setVSAmplitude (m->vs_amp)) != 0)
     return -1;
 
   // *FIXME*
@@ -712,78 +719,77 @@ Rts2DevCameraAndor::processOption (int in_opt)
  * 
  */
 
-int
-Rts2DevCameraAndor::printCapabilities (AndorCapabilities * cap)
+void
+Rts2DevCameraAndor::printCapabilities ()
 {
   printf ("Acquisition modes: ");
-  if (cap->ulAcqModes == 0)
+  if (cap.ulAcqModes == 0)
     printf ("<none>");
-  if (cap->ulAcqModes & AC_ACQMODE_SINGLE)
+  if (cap.ulAcqModes & AC_ACQMODE_SINGLE)
     printf (" SINGLE");
-  if (cap->ulAcqModes & AC_ACQMODE_VIDEO)
+  if (cap.ulAcqModes & AC_ACQMODE_VIDEO)
     printf (" VIDEO");
-  if (cap->ulAcqModes & AC_ACQMODE_ACCUMULATE)
+  if (cap.ulAcqModes & AC_ACQMODE_ACCUMULATE)
     printf (" ACCUMULATE");
-  if (cap->ulAcqModes & AC_ACQMODE_KINETIC)
+  if (cap.ulAcqModes & AC_ACQMODE_KINETIC)
     printf (" KINETIC");
-  if (cap->ulAcqModes & AC_ACQMODE_FRAMETRANSFER)
+  if (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER)
     printf (" FRAMETRANSFER");
-  if (cap->ulAcqModes & AC_ACQMODE_FASTKINETICS)
+  if (cap.ulAcqModes & AC_ACQMODE_FASTKINETICS)
     printf (" FASTKINETICS");
 
   printf ("\nRead modes: ");
-  if (cap->ulReadModes & AC_READMODE_FULLIMAGE)
+  if (cap.ulReadModes & AC_READMODE_FULLIMAGE)
     printf (" FULLIMAGE");
-  if (cap->ulReadModes & AC_READMODE_SUBIMAGE)
+  if (cap.ulReadModes & AC_READMODE_SUBIMAGE)
     printf (" SUBIMAGE");
-  if (cap->ulReadModes & AC_READMODE_SINGLETRACK)
+  if (cap.ulReadModes & AC_READMODE_SINGLETRACK)
     printf (" SINGLETRACK");
-  if (cap->ulReadModes & AC_READMODE_FVB)
+  if (cap.ulReadModes & AC_READMODE_FVB)
     printf (" FVB");
-  if (cap->ulReadModes & AC_READMODE_MULTITRACK)
+  if (cap.ulReadModes & AC_READMODE_MULTITRACK)
     printf (" MULTITRACK");
-  if (cap->ulReadModes & AC_READMODE_RANDOMTRACK)
+  if (cap.ulReadModes & AC_READMODE_RANDOMTRACK)
     printf (" RANDOMTRACK");
 
   printf ("\nTrigger modes: ");
-  if (cap->ulTriggerModes & AC_TRIGGERMODE_INTERNAL)
+  if (cap.ulTriggerModes & AC_TRIGGERMODE_INTERNAL)
     printf (" INTERNAL");
-  if (cap->ulTriggerModes & AC_TRIGGERMODE_EXTERNAL)
+  if (cap.ulTriggerModes & AC_TRIGGERMODE_EXTERNAL)
     printf (" EXTERNAL");
 
   printf ("\nPixel modes: ");
-  if (cap->ulPixelMode & AC_PIXELMODE_8BIT)
+  if (cap.ulPixelMode & AC_PIXELMODE_8BIT)
     printf (" 8BIT");
-  if (cap->ulPixelMode & AC_PIXELMODE_14BIT)
+  if (cap.ulPixelMode & AC_PIXELMODE_14BIT)
     printf (" 14BIT");
-  if (cap->ulPixelMode & AC_PIXELMODE_16BIT)
+  if (cap.ulPixelMode & AC_PIXELMODE_16BIT)
     printf (" 16BIT");
-  if (cap->ulPixelMode & AC_PIXELMODE_32BIT)
+  if (cap.ulPixelMode & AC_PIXELMODE_32BIT)
     printf (" 32BIT");
-  if (cap->ulPixelMode & AC_PIXELMODE_32BIT)
+  if (cap.ulPixelMode & AC_PIXELMODE_32BIT)
     printf (" 32BIT");
-  if (cap->ulPixelMode & AC_PIXELMODE_MONO)
+  if (cap.ulPixelMode & AC_PIXELMODE_MONO)
     printf (" MONO");
-  if (cap->ulPixelMode & AC_PIXELMODE_RGB)
+  if (cap.ulPixelMode & AC_PIXELMODE_RGB)
     printf (" RGB");
-  if (cap->ulPixelMode & AC_PIXELMODE_CMY)
+  if (cap.ulPixelMode & AC_PIXELMODE_CMY)
     printf (" CMY");
 
 
   printf ("\nSettable variables: ");
-  if (cap->ulSetFunctions & AC_SETFUNCTION_VREADOUT)
+  if (cap.ulSetFunctions & AC_SETFUNCTION_VREADOUT)
     printf (" VREADOUT");
-  if (cap->ulSetFunctions & AC_SETFUNCTION_HREADOUT)
+  if (cap.ulSetFunctions & AC_SETFUNCTION_HREADOUT)
     printf (" HREADOUT");
-  if (cap->ulSetFunctions & AC_SETFUNCTION_TEMPERATURE)
+  if (cap.ulSetFunctions & AC_SETFUNCTION_TEMPERATURE)
     printf (" TEMPERATURE");
-  if (cap->ulSetFunctions & AC_SETFUNCTION_GAIN)
+  if (cap.ulSetFunctions & AC_SETFUNCTION_GAIN)
     printf (" GAIN");
-  if (cap->ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
+  if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
     printf (" EMCCDGAIN");
 
   printf ("\n");
-  return 0;
 }
 
 /****************************************************************
@@ -894,12 +900,10 @@ Rts2DevCameraAndor::printVSSpeeds ()
 int
 Rts2DevCameraAndor::printInfo ()
 {
-  AndorCapabilities cap;
   int ret;
   int n_ad, n_amp;
   char name[128];
 
-  GetCapabilities (&cap);
   printf ("Camera type: ");
   switch (cap.ulCameraType)
     {
@@ -932,7 +936,7 @@ Rts2DevCameraAndor::printInfo ()
   GetHeadModel (name);
   printf (" Model: %s\n", name);
 
-  printCapabilities (&cap);
+  printCapabilities ();
 
   if ((n_ad = printNumberADCs ()) < 1)
     return -1;
@@ -975,6 +979,13 @@ Rts2DevCameraAndor::init ()
   SetExposureTime (5.0);
   setGain (defaultGain);
 
+  ret = GetCapabilities (&cap);
+  if (ret != DRV_SUCCESS)
+    {
+      cerr << "Cannot call GetCapabilities " << ret << endl;
+      return -1;
+    }
+
   //Set Read Mode to --Image--
   ret = SetReadMode (4);
   if (ret != DRV_SUCCESS)
@@ -1001,6 +1012,18 @@ Rts2DevCameraAndor::init ()
   sprintf (ccdType, "ANDOR");
 
   return Rts2DevCamera::initChips ();
+}
+
+int
+Rts2DevCameraAndor::initValues ()
+{
+  if (cap.ulCameraType == AC_CAMERATYPE_IXON)
+    {
+      createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0,
+		   CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+      VSAmp->setValueInteger (0);
+    }
+  return Rts2DevCamera::initValues ();
 }
 
 int
