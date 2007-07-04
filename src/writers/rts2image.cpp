@@ -30,7 +30,6 @@ Rts2Image::initData ()
   cameraName = NULL;
   mountName = NULL;
   focName = NULL;
-  imageData = NULL;
   filter_i = -1;
   filter = NULL;
   average = 0;
@@ -39,6 +38,7 @@ Rts2Image::initData ()
   min = max = mean = 0;
   histogram = NULL;
   imageData = NULL;
+  imageType = RTS2_DATA_USHORT;
   sexResults = NULL;
   sexResultNum = 0;
   focPos = -1;
@@ -81,6 +81,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   setExposureStart (&in_image->exposureStart);
   exposureLength = in_image->exposureLength;
   imageData = in_image->imageData;
+  imageType = in_image->imageType;
   in_image->imageData = NULL;
   focPos = in_image->focPos;
   naxis[0] = in_image->naxis[0];
@@ -285,8 +286,9 @@ Rts2Image::~Rts2Image (void)
   delete[]mountName;
   delete[]focName;
   if (!(flags & IMAGE_DONT_DELETE_DATA))
-    delete[]imageData;
+    delete imageData;
   imageData = NULL;
+  imageType = RTS2_DATA_USHORT;
   delete[]filter;
   if (sexResults)
     free (sexResults);
@@ -486,13 +488,14 @@ Rts2Image::createImage (char *in_filename)
   naxis[1] = 1;
   fits_create_file (&ffile, in_filename, &fits_status);
   fits_create_img (ffile, USHORT_IMG, 2, naxis, &fits_status);
-  logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << in_filename <<
-    sendLog;
   if (fits_status)
     {
-      logStream (MESSAGE_DEBUG) << getFitsErrors () << sendLog;
+      logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " <<
+	getFitsErrors () << sendLog;
       return -1;
     }
+  logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << in_filename <<
+    sendLog;
 
   flags = IMAGE_SAVE;
   return 0;
@@ -524,7 +527,8 @@ Rts2Image::openImage (const char *in_filename)
     {
       if (!(flags & IMAGE_CANNOT_LOAD))
 	{
-	  logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
+	  logStream (MESSAGE_ERROR) << "openImage: " << getFitsErrors () <<
+	    sendLog;
 	  flags |= IMAGE_CANNOT_LOAD;
 	}
       return -1;
@@ -1057,14 +1061,15 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
       return -1;
     }
   flags |= IMAGE_SAVE;
+  imageType = im_h->data_type;
+
   naxis[0] = im_h->sizes[0];
   naxis[1] = im_h->sizes[1];
 
-  if (imageData)
-    delete[]imageData;
+  delete imageData;
   if (flags & IMAGE_KEEP_DATA)
     {
-      imageData = new unsigned short[dataConn->getSize ()];
+      imageData = new char[dataConn->getSize ()];
       memcpy (imageData, dataConn->getData (), dataConn->getSize ());
     }
   else
@@ -1073,7 +1078,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     }
 
   // calculate average..
-  pixel = dataConn->getData ();
+  pixel = (unsigned short *) dataConn->getData ();
   top = dataConn->getTop ();
   while (pixel < top)
     {
@@ -1083,11 +1088,11 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 
   int bg_size = 0;
 
-  if ((dataConn->getSize () / 2) > 0)
+  if ((dataConn->getSize () / getPixelByteSize ()) > 0)
     {
       average /= dataConn->getSize () / 2;
       // calculate stdev
-      pixel = dataConn->getData ();
+      pixel = (unsigned short *) dataConn->getData ();
       while (pixel < top)
 	{
 	  long double tmp_s = *pixel - average;
@@ -1114,12 +1119,83 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
   if (!ffile || !(flags & IMAGE_SAVE))
     return 0;
 
-  fits_resize_img (ffile, USHORT_IMG, im_h->naxes, naxis, &fits_status);
-  fits_write_img (ffile, USHORT_IMG, 1, dataConn->getSize () / 2,
-		  dataConn->getData (), &fits_status);
+  if (imageType == RTS2_DATA_SBYTE)
+    {
+      fits_resize_img (ffile, RTS2_DATA_BYTE, im_h->naxes, naxis,
+		       &fits_status);
+    }
+  else
+    {
+      fits_resize_img (ffile, imageType, im_h->naxes, naxis, &fits_status);
+    }
   if (fits_status)
     {
-      logStream (MESSAGE_ERROR) << getFitsErrors () << sendLog;
+      logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors ()
+	<< "imageType " << imageType << sendLog;
+      return -1;
+    }
+  switch (imageType)
+    {
+    case RTS2_DATA_BYTE:
+      fits_write_img_byt (ffile, 0, 1,
+			  dataConn->getSize () / getPixelByteSize (),
+			  (unsigned char *) dataConn->getData (),
+			  &fits_status);
+      break;
+    case RTS2_DATA_SHORT:
+      fits_write_img_sht (ffile, 0, 1,
+			  dataConn->getSize () / getPixelByteSize (),
+			  (int16_t *) dataConn->getData (), &fits_status);
+      break;
+    case RTS2_DATA_LONG:
+      fits_write_img_lng (ffile, 0, 1,
+			  dataConn->getSize () / getPixelByteSize (),
+			  (long int *) dataConn->getData (), &fits_status);
+      break;
+
+    case RTS2_DATA_LONGLONG:
+      fits_write_img_lnglng (ffile, 0, 1,
+			     dataConn->getSize () / getPixelByteSize (),
+			     (long long *) dataConn->getData (),
+			     &fits_status);
+      break;
+    case RTS2_DATA_FLOAT:
+      fits_write_img_flt (ffile, 0, 1,
+			  dataConn->getSize () / getPixelByteSize (),
+			  (float *) dataConn->getData (), &fits_status);
+      break;
+    case RTS2_DATA_DOUBLE:
+      fits_write_img_dbl (ffile, 0, 1,
+			  dataConn->getSize () / getPixelByteSize (),
+			  (double *) dataConn->getData (), &fits_status);
+      break;
+    case RTS2_DATA_SBYTE:
+      fits_write_img_sbyt (ffile, 0, 1,
+			   dataConn->getSize () / getPixelByteSize (),
+			   (signed char *) dataConn->getData (),
+			   &fits_status);
+      break;
+    case RTS2_DATA_USHORT:
+      fits_write_img_usht (ffile, 0, 1,
+			   dataConn->getSize () / getPixelByteSize (),
+			   (unsigned int16_t *) dataConn->getData (),
+			   &fits_status);
+      break;
+    case RTS2_DATA_ULONG:
+      fits_write_img_ulng (ffile, 0, 1,
+			   dataConn->getSize () / getPixelByteSize (),
+			   (unsigned long *) dataConn->getData (),
+			   &fits_status);
+      break;
+    default:
+      logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType <<
+	sendLog;
+      return -1;
+    }
+  if (fits_status)
+    {
+      logStream (MESSAGE_ERROR) << "cannot write data: " << getFitsErrors ()
+	<< sendLog;
       return -1;
     }
   setValue ("AVERAGE", average, "average value of image");
@@ -1362,33 +1438,118 @@ Rts2Image::computeStatistics ()
 
 }
 
-unsigned short *
-Rts2Image::getDataUShortInt ()
+int
+Rts2Image::loadData ()
 {
-  int ret;
-  if (imageData)
-    return imageData;
-  int nullVal = 0;
+  // try to load data..
   int anyNull = 0;
-  imageData = new unsigned short[getWidth () * getHeight ()];
+  int ret;
+  fits_get_img_equivtype (ffile, &imageType, &fits_status);
+  fitsStatusGetValue ("image equivType loadData", true);
+  imageData = new char[getWidth () * getHeight () * getPixelByteSize ()];
   if (!ffile)
     {
       ret = openImage ();
       if (ret)
+	return ret;
+    }
+  switch (imageType)
+    {
+    case RTS2_DATA_BYTE:
+      fits_read_img_byt (ffile, 0, 1,
+			 getWidth () * getHeight (), 0,
+			 (unsigned char *) imageData, &anyNull, &fits_status);
+      break;
+    case RTS2_DATA_SHORT:
+      fits_read_img_sht (ffile, 0, 1,
+			 getWidth () * getHeight (), 0,
+			 (int16_t *) imageData, &anyNull, &fits_status);
+      break;
+    case RTS2_DATA_LONG:
+      fits_read_img_lng (ffile, 0, 1,
+			 getWidth () * getHeight (), 0,
+			 (long int *) imageData, &anyNull, &fits_status);
+      break;
+
+    case RTS2_DATA_LONGLONG:
+      fits_read_img_lnglng (ffile, 0, 1,
+			    getWidth () * getHeight (), 0,
+			    (long long *) imageData, &anyNull, &fits_status);
+      break;
+    case RTS2_DATA_FLOAT:
+      fits_read_img_flt (ffile, 0, 1,
+			 getWidth () * getHeight (), 0,
+			 (float *) imageData, &anyNull, &fits_status);
+      break;
+    case RTS2_DATA_DOUBLE:
+      fits_read_img_dbl (ffile, 0, 1,
+			 getWidth () * getHeight (), 0,
+			 (double *) imageData, &anyNull, &fits_status);
+      break;
+    case RTS2_DATA_SBYTE:
+      fits_read_img_sbyt (ffile, 0, 1,
+			  getWidth () * getHeight (), 0,
+			  (signed char *) imageData, &anyNull, &fits_status);
+      break;
+    case RTS2_DATA_USHORT:
+      fits_read_img_usht (ffile, 0, 1,
+			  getWidth () * getHeight (), 0,
+			  (unsigned int16_t *) imageData, &anyNull,
+			  &fits_status);
+      break;
+    case RTS2_DATA_ULONG:
+      fits_read_img_ulng (ffile, 0, 1,
+			  getWidth () * getHeight (), 0,
+			  (unsigned long *) imageData, &anyNull,
+			  &fits_status);
+      break;
+    default:
+      logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType <<
+	sendLog;
+      delete imageData;
+      imageData = NULL;
+      return -1;
+    }
+  if (fits_status)
+    {
+      delete imageData;
+      imageData = NULL;
+      imageType = RTS2_DATA_USHORT;
+    }
+  return fitsStatusGetValue ("image image loadData", true);
+}
+
+void *
+Rts2Image::getData ()
+{
+  int ret;
+  if (!imageData)
+    {
+      ret = loadData ();
+      if (ret)
 	return NULL;
     }
+  return (void *) imageData;
+}
 
-  fits_status =
-    fits_read_img (ffile, USHORT_IMG, 1, getWidth () * getHeight (), &nullVal,
-		   imageData, &anyNull, &fits_status);
-  fitsStatusGetValue ("image", true);
-  return imageData;
+unsigned short *
+Rts2Image::getDataUShortInt ()
+{
+  if (getData () == NULL)
+    return NULL;
+  // switch by format
+  if (imageType == RTS2_DATA_USHORT)
+    return (unsigned short *) imageData;
+  // convert type to ushort int
+  return NULL;
 }
 
 void
 Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
 {
-  imageData = in_data;
+  delete imageData;
+  imageData = (char *) in_data;
+  imageType = RTS2_DATA_USHORT;
   naxis[0] = in_naxis[0];
   naxis[1] = in_naxis[1];
   flags |= IMAGE_DONT_DELETE_DATA;

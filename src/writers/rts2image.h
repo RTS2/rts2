@@ -65,7 +65,8 @@ private:
   int openImage ();
   int openImage (const char *in_filename);
   int writeExposureStart ();
-  unsigned short *imageData;
+  char *imageData;
+  int imageType;
   int focPos;
   // we assume that image is 2D
   long naxis[2];
@@ -429,12 +430,22 @@ public:
 
   void closeData ()
   {
-    if (imageData)
-      delete imageData;
+    delete imageData;
     imageData = NULL;
   }
 
+  int loadData ();
+
+  void *getData ();
   unsigned short *getDataUShortInt ();
+
+  int getPixelByteSize ()
+  {
+    if (imageType == RTS2_DATA_ULONG)
+      return 4;
+    return abs (imageType) / 8;
+  }
+
   void setDataUShortInt (unsigned short *in_data, long in_naxis[2]);
 
   int substractDark (Rts2Image * darkImage);
