@@ -325,8 +325,7 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool
-CameraAndorChip::supportFrameTransfer ()
+bool CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -1023,7 +1022,7 @@ Rts2DevCameraAndor::initAndorValues ()
 		   CAM_EXPOSING | CAM_READING | CAM_DATA, true);
       VSAmp->setValueInteger (0);
     }
-  if (cap.ulSetFunctions & AC_SETFUNCTION_GAIN)
+  if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
     {
       createValue (gain, "GAIN", "CCD gain", true, 0,
 		   CAM_EXPOSING | CAM_READING | CAM_DATA, true);
