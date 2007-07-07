@@ -3,6 +3,8 @@
 #include <sstream>
 #include <iomanip>
 
+#define OPT_SAMPLE OPT_LOCAL+5
+
 class IrAxis
 {
 private:
@@ -47,7 +49,7 @@ class Rts2DevIrError:public Rts2TelescopeIr
 {
   std::list < const char *>errList;
   enum
-  { NO_OP, CAL, RESET, REFERENCED } op;
+  { NO_OP, CAL, RESET, REFERENCED, SAMPLE } op;
 
   IrAxis getAxisStatus (const char *ax_name);
   int doReferenced ();
@@ -63,47 +65,37 @@ public:
   virtual int run ();
 };
 
-IrAxis Rts2DevIrError::getAxisStatus (const char *ax_name)
+IrAxis
+Rts2DevIrError::getAxisStatus (const char *ax_name)
 {
-  double
-    referenced = nan ("f");
-  double
-    currpos = nan ("f");
-  double
-    targetpos = nan ("f");
-  double
-    offset = nan ("f");
-  double
-    power = nan ("f");
+  double referenced = nan ("f");
+  double currpos = nan ("f");
+  double targetpos = nan ("f");
+  double offset = nan ("f");
+  double power = nan ("f");
   std::ostringstream * os;
-  int
-    status = 0;
+  int status = 0;
 
   os = new std::ostringstream ();
   (*os) << ax_name << ".REFERENCED";
   status = tpl_get (os->str ().c_str (), referenced, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".CURRPOS";
   status = tpl_get (os->str ().c_str (), currpos, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".TARGETPOS";
   status = tpl_get (os->str ().c_str (), targetpos, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".OFFSET";
   status = tpl_get (os->str ().c_str (), offset, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".POWER";
   status = tpl_get (os->str ().c_str (), power, &status);
-  delete
-    os;
+  delete os;
   return IrAxis (ax_name, referenced, currpos, targetpos, offset, power);
 }
 
@@ -148,9 +140,10 @@ Rts2DevIrError::Rts2DevIrError (int in_argc, char **in_argv):
 Rts2TelescopeIr (in_argc, in_argv)
 {
   op = NO_OP;
-  addOption ('c', "calculate", 0, "Calculate model");
-  addOption ('r', "reset_model", 0, "Reset model counts");
-  addOption ('f', "referenced", 0, "Referencing status");
+  addOption ('c', NULL, 0, "Calculate model");
+  addOption ('r', NULL, 0, "Reset model counts");
+  addOption ('f', NULL, 0, "Referencing status");
+  addOption (OPT_SAMPLE, "sample", 0, "Sample measurements");
 }
 
 int
@@ -166,6 +159,9 @@ Rts2DevIrError::processOption (int in_opt)
       break;
     case 'f':
       op = REFERENCED;
+      break;
+    case OPT_SAMPLE:
+      op = SAMPLE;
       break;
     default:
       return Rts2TelescopeIr::processOption (in_opt);
@@ -195,6 +191,8 @@ Rts2DevIrError::doProcessing ()
 
   switch (op)
     {
+    case SAMPLE:
+      status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
     case NO_OP:
       break;
     case CAL:
@@ -242,7 +240,7 @@ Rts2DevIrError::doProcessing ()
   std::cout << "ZD.OFFSET " << zoff << std::endl;
 
   status = tpl_get ("POINTING.TRACK ", track, &status);
-  std::cout << "POINTING.TRACK" << track << std::endl;
+  std::cout << "POINTING.TRACK " << track << std::endl;
 
   status =
     tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
