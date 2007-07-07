@@ -1,7 +1,6 @@
 
 SUBDIRS = \
 	utils	\
-	camd	\
 	phot	\
 	dome	\
 	focusd  \
@@ -10,6 +9,7 @@ SUBDIRS = \
 	wcs \
 	utilsdb \
 	writers \
+	camd	\
 	teld \
 	monitor \
 	focusc \
