@@ -111,6 +111,7 @@ int
 Rts2DevIrError::doReferenced ()
 {
   int status = 0;
+  int track;
   double fpar;
   status = tpl_get ("CABINET.REFERENCED", fpar, &status);
   std::cout << "CABINET.REFERENCED " << fpar << std::endl;
@@ -118,12 +119,28 @@ Rts2DevIrError::doReferenced ()
   std::cout << "CABINET.POWER " << fpar << std::endl;
   status = tpl_get ("CABINET.POWER_STATE", fpar, &status);
   std::cout << "CABINET.POWER_STATE " << fpar << std::endl;
+
+  status = tpl_get ("POINTING.TRACK", track, &status);
+  std::cout << "POINTING.TRACK " << track << std::endl;
+  status = tpl_get ("POINTING.CURRENT.RA", fpar, &status);
+  std::cout << "POINTING.CURRENT.RA " << fpar << std::endl;
+  status = tpl_get ("POINTING.CURRENT.DEC", fpar, &status);
+  std::cout << "POINTING.CURRENT.DEC " << fpar << std::endl;
+
+  status = tpl_get ("POINTING.TARGET.RA", fpar, &status);
+  std::cout << "POINTING.TARGET.RA " << fpar << std::endl;
+  status = tpl_get ("POINTING.TARGET.DEC", fpar, &status);
+  std::cout << "POINTING.TARGET.DEC " << fpar << std::endl;
+
   std::cout << getAxisStatus ("ZD");
   std::cout << getAxisStatus ("AZ");
   std::cout << getAxisStatus ("FOCUS");
   std::cout << getAxisStatus ("MIRROR");
   std::cout << getAxisStatus ("DEROTATOR[3]");
   std::cout << getAxisStatus ("COVER");
+  std::cout << getAxisStatus ("DOME[0]");
+  std::cout << getAxisStatus ("DOME[1]");
+  std::cout << getAxisStatus ("DOME[2]");
   return status;
 }
 
@@ -191,12 +208,12 @@ Rts2DevIrError::doProcessing ()
       break;
     case REFERENCED:
       return doReferenced ();
-      break;
     }
 
   // dump model
   double aoff, zoff, ae, an, npae, ca, flex;
   int recordcount;
+  int track;
   std::string dumpfile;
 
   status = tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
@@ -224,8 +241,11 @@ Rts2DevIrError::doProcessing ()
   std::cout << "AZ.OFFSET " << aoff << std::endl;
   std::cout << "ZD.OFFSET " << zoff << std::endl;
 
+  status = tpl_get ("POINTING.TRACK ", track, &status);
+  std::cout << "POINTING.TRACK" << track << std::endl;
+
   status =
-    tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT", recordcount, &status);
+    tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
 
   std::cout << "POINTING.POINTINGPARAMS.RECORDCOUNT " << recordcount << std::
     endl;

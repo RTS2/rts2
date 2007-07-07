@@ -162,6 +162,24 @@ Rts2TelescopeIr::coverOpen ()
 }
 
 int
+Rts2TelescopeIr::setTrack (int new_track)
+{
+  int status = TPL_OK;
+  status = tpl_set ("POINTING.TRACK", new_track, &status);
+  if (status != TPL_OK)
+    {
+      logStream (MESSAGE_ERROR) << "Cannot setTrack" << sendLog;
+    }
+  return status;
+}
+
+int
+Rts2TelescopeIr::setTrack (int new_track, bool autoEn)
+{
+  return setTrack ((new_track & ~128) | (autoEn ? 128 : 0));
+}
+
+int
 Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   int status = TPL_OK;
@@ -202,11 +220,48 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
     }
   if (old_value == mountTrack)
     {
-      status =
-	tpl_set ("POINTING.TRACK", new_value->getValueInteger (), &status);
+      status = setTrack (new_value->getValueInteger ());
       if (status != TPL_OK)
 	return -2;
       return 0;
+    }
+  if (old_value == domeAutotrack)
+    {
+      status =
+	setTrack (mountTrack->getValueInteger (),
+		  ((Rts2ValueBool *) new_value)->getValueBool ());
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == domeUp)
+    {
+      status =
+	tpl_set ("DOME[1].TARGETPOS",
+		 ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == domeDown)
+    {
+      status =
+	tpl_set ("DOME[2].TARGETPOS",
+		 ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
+  if (old_value == domeTargetAz)
+    {
+      status =
+	tpl_set ("DOME[0].TARGETPOS", new_value->getValueDouble (), &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+
     }
   if (old_value == model_aoff)
     {
@@ -298,6 +353,14 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
 	       false);
 
   createValue (mountTrack, "TRACK", "mount track");
+  createValue (domeAutotrack, "dome_auto_track", "dome auto tracking", false);
+  domeAutotrack->setValueBool (true);
+
+  createValue (domeUp, "dome_up", "upper dome cover", false);
+  createValue (domeDown, "dome_down", "dome down cover", false);
+
+  createValue (domeCurrAz, "dome_curr_az", "dome current azimunt", false);
+  createValue (domeTargetAz, "dome_target_az", "dome targer azimut", false);
 
   createValue (cover, "cover", "cover state (1 = opened)", false);
 
@@ -444,12 +507,16 @@ Rts2TelescopeIr::getError (int in_error, std::string & descri)
   asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errNum);
   status = tpl_get (txt, err_desc, &status);
   if (status)
-    os << "Telescope getting error: " << status
-      << " sev:" << std::hex << (in_error & 0xff000000)
-      << " err:" << std::hex << errNum;
+    os <<
+      "Telescope getting error: " <<
+      status <<
+      " sev:" <<
+      std::hex << (in_error & 0xff000000) << " err:" << std::hex << errNum;
   else
-    os << "Telescope sev: " << std::hex << (in_error & 0xff000000)
-      << " err:" << std::hex << errNum << " desc: " << err_desc;
+    os <<
+      "Telescope sev: " <<
+      std::hex << (in_error & 0xff000000) <<
+      " err:" << std::hex << errNum << " desc: " << err_desc;
   free (txt);
   descri = os.str ();
   return status;
@@ -467,8 +534,8 @@ Rts2TelescopeIr::addError (int in_error)
   if (errNum == 88 || errNum == 89)
     {
       double zd;
-      logStream (MESSAGE_ERROR) << "IR checkErrors soft limit in ZD (" <<
-	errNum << ")" << sendLog;
+      logStream (MESSAGE_ERROR) <<
+	"IR checkErrors soft limit in ZD (" << errNum << ")" << sendLog;
       status = tpl_get ("ZD.CURRPOS", zd, &status);
       if (!status)
 	{
@@ -476,13 +543,15 @@ Rts2TelescopeIr::addError (int in_error)
 	    zd = -20;
 	  if (zd > 80)
 	    zd = 20;
-	  status = tpl_set ("POINTING.TRACK", 0, &status);
-	  logStream (MESSAGE_DEBUG) << "IR checkErrors set pointing status "
-	    << status << sendLog;
+	  status = setTrack (0);
+	  logStream (MESSAGE_DEBUG) <<
+	    "IR checkErrors set pointing status " << status << sendLog;
 	  sleep (1);
+	  status = TPL_OK;
 	  status = tpl_set ("ZD.TARGETPOS", zd, &status);
-	  logStream (MESSAGE_ERROR) << "IR checkErrors zd soft limit reset "
-	    << zd << " (" << status << ")" << sendLog;
+	  logStream (MESSAGE_ERROR) <<
+	    "IR checkErrors zd soft limit reset " <<
+	    zd << " (" << status << ")" << sendLog;
 	  unsetTarget ();
 	}
     }
@@ -793,7 +862,7 @@ Rts2TelescopeIr::info ()
   t_telRa *= 15.0;
   status = tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
   status = tpl_get ("POINTING.TRACK", track, &status);
-  if (status)
+  if (status != TPL_OK)
     return -1;
 
   telRa->setValueDouble (t_telRa);
@@ -863,14 +932,23 @@ Rts2TelescopeIr::info ()
   status = TPL_OK;
   double point_dist;
   double point_time;
-  tpl_get ("POINTING.TARGETDISTANCE", point_dist, &status);
-  tpl_get ("POINTING.SLEWINGTIME", point_time, &status);
+  status = tpl_get ("POINTING.TARGETDISTANCE", point_dist, &status);
+  status = tpl_get ("POINTING.SLEWINGTIME", point_time, &status);
   if (status == TPL_OK)
     {
       targetDist->setValueDouble (point_dist);
       targetTime->setValueDouble (point_time);
     }
 
+  double dome_curr_az, dome_target_az;
+  status = TPL_OK;
+  status = tpl_get ("DOME[0].CURRPOS", dome_curr_az, &status);
+  status = tpl_get ("DOME[0].TARGETPOS", dome_target_az, &status);
+  if (status == TPL_OK)
+    {
+      domeCurrAz->setValueDouble (dome_curr_az);
+      domeTargetAz->setValueDouble (dome_target_az);
+    }
   return Rts2DevTelescope::info ();
 }
 
@@ -879,12 +957,13 @@ Rts2TelescopeIr::startPark ()
 {
   int status = TPL_OK;
   // Park to south+zenith
-  status = tpl_set ("POINTING.TRACK", 0, &status);
+  status = setTrack (0);
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) << "IR startPark tracking status " << status <<
     sendLog;
 #endif
   sleep (1);
+  status = TPL_OK;
   status = tpl_set ("AZ.TARGETPOS", 0, &status);
   status = tpl_set ("ZD.TARGETPOS", 0, &status);
   status = tpl_set ("DEROTATOR[3].POWER", 0, &status);

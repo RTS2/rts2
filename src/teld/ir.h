@@ -59,6 +59,12 @@ private:
 
   Rts2ValueInteger *mountTrack;
 
+  Rts2ValueBool *domeUp;
+  Rts2ValueBool *domeDown;
+
+  Rts2ValueDouble *domeCurrAz;
+  Rts2ValueDouble *domeTargetAz;
+
   Rts2ValueDouble *cover;
 
   // model values
@@ -86,8 +92,13 @@ protected:
 					  int *status);
   virtual int processOption (int in_opt);
 
-  virtual int coverClose ();
-  virtual int coverOpen ();
+  Rts2ValueBool *domeAutotrack;
+
+  int coverClose ();
+  int coverOpen ();
+
+  int setTrack (int new_track);
+  int setTrack (int new_track, bool autoEn);
 
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 

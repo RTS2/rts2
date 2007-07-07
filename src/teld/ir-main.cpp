@@ -45,13 +45,13 @@ int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
   int status = 0;
-  status = tpl_set ("POINTING.TRACK", irTracking, &status);
+  status = setTrack (irTracking, domeAutotrack->getValueBool ());
   status = tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
   if (!getDerotatorPower ())
     {
       status = tpl_set ("DEROTATOR[3].POWER", 1, &status);
-      status = tpl_set ("CABINET.POWER", 1, &status);
+//      status = tpl_set ("CABINET.POWER", 1, &status);
     }
 
 #ifdef DEBUG_EXTRA
@@ -157,7 +157,7 @@ Rts2DevTelescopeIr::stopMove ()
     {
       logStream (MESSAGE_DEBUG) << "IR stopMove suspicious ZD.. " << zd <<
 	sendLog;
-      status = tpl_set ("POINTING.TRACK", 0, &status);
+      status = setTrack (0);
       if (status)
 	{
 	  logStream (MESSAGE_DEBUG) << "IR stopMove cannot set track: " <<
@@ -184,9 +184,9 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2Telesco
 int
 Rts2DevTelescopeIr::startWorm ()
 {
-  int status = 0;
-  status = tpl_set ("POINTING.TRACK", irTracking, &status);
-  if (status)
+  int status = TPL_OK;
+  status = setTrack (irTracking, domeAutotrack->getValueBool ());
+  if (status != TPL_OK)
     return -1;
   return 0;
 }
@@ -194,8 +194,8 @@ Rts2DevTelescopeIr::startWorm ()
 int
 Rts2DevTelescopeIr::stopWorm ()
 {
-  int status = 0;
-  status = tpl_set ("POINTING.TRACK", 0, &status);
+  int status = TPL_OK;
+  status = setTrack (0);
   if (status)
     return -1;
   return 0;

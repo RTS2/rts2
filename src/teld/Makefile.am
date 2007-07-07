@@ -24,12 +24,11 @@ endif
 if OPENTPL
 bin_PROGRAMS += rts2-teld-ir rts2-ir-errors
 
-LDADD += ir.o
-rts2_teld_ir_SOURCES = ir-main.cpp
+rts2_teld_ir_SOURCES = ir-main.cpp ir.cpp
 rts2_teld_ir_LDFLAGS = @LIB_OPENTPL@
 rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
 
-rts2_ir_errors_SOURCES = ir-errors.cpp
+rts2_ir_errors_SOURCES = ir-errors.cpp ir.cpp
 rts2_ir_errors_LDFLAGS = @LIB_OPENTPL@
 rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
 else
