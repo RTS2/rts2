@@ -118,9 +118,6 @@ public:
   virtual int getAltAz ();
 
   virtual int info ();
-  virtual int startPark ();
-  virtual int isParking ();
-  virtual int endPark ();
   virtual int correct (double cor_ra, double cor_dec, double real_ra,
 		       double real_dec);
   virtual int saveModel ();

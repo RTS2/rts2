@@ -21,6 +21,11 @@ public:
   virtual int stopWorm ();
   virtual int startWorm ();
 
+  virtual int startPark ();
+  int moveCheck (bool park);
+  virtual int isParking ();
+  virtual int endPark ();
+
   virtual int changeMasterState (int new_state);
 };
 
@@ -114,28 +119,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 int
 Rts2DevTelescopeIr::isMoving ()
 {
-  int status = 0;
-  double poin_dist;
-  time_t now;
-  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-  time (&now);
-  // 0.01 = 36 arcsec
-  if (fabs (poin_dist) <= 0.01)
-    {
-#ifdef DEBUG_EXTRA
-      logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist
-	<< sendLog;
-#endif
-      return -2;
-    }
-  // finish due to timeout
-  if (timeout < now)
-    {
-      logStream (MESSAGE_ERROR) << "IR isMoving target distance in timeout "
-	<< poin_dist << "(" << status << ")" << sendLog;
-      return -1;
-    }
-  return USEC_SEC / 100;
+  return moveCheck (false);
 }
 
 int
@@ -167,6 +151,85 @@ Rts2DevTelescopeIr::stopMove ()
       return 0;
     }
   startMoveReal (telRa->getValueDouble (), telDec->getValueDouble ());
+  return 0;
+}
+
+int
+Rts2DevTelescopeIr::startPark ()
+{
+  int status = TPL_OK;
+  // Park to south+zenith
+  status = setTrack (0);
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "IR startPark tracking status " << status <<
+    sendLog;
+#endif
+  sleep (1);
+  status = TPL_OK;
+  status = tpl_set ("AZ.TARGETPOS", 0, &status);
+  status = tpl_set ("ZD.TARGETPOS", 0, &status);
+  status = tpl_set ("DEROTATOR[3].POWER", 0, &status);
+  if (status)
+    {
+      logStream (MESSAGE_ERROR) << "IR startPark ZD.TARGETPOS status " <<
+	status << sendLog;
+      return -1;
+    }
+  time (&timeout);
+  timeout += 300;
+  return 0;
+}
+
+int
+Rts2DevTelescopeIr::moveCheck (bool park)
+{
+  int status = TPL_OK;
+  int track;
+  double poin_dist;
+  time_t now;
+  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+  time (&now);
+  // 0.01 = 36 arcsec
+  if (fabs (poin_dist) <= 0.01)
+    {
+      // get track..
+      status = tpl_get ("POINTING.TRACK", track, &status);
+      if (track == 0 && !park)
+	{
+	  logStream (MESSAGE_WARNING) <<
+	    "Tracking sudently stopped, reenable tracking" << sendLog;
+	  setTrack (irTracking, domeAutotrack->getValueBool ());
+	  sleep (1);
+	  return USEC_SEC / 100;
+	}
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist
+	<< sendLog;
+#endif
+      return -2;
+    }
+  // finish due to timeout
+  if (timeout < now)
+    {
+      logStream (MESSAGE_ERROR) << "IR isMoving target distance in timeout "
+	<< poin_dist << "(" << status << ")" << sendLog;
+      return -1;
+    }
+  return USEC_SEC / 100;
+}
+
+int
+Rts2DevTelescopeIr::isParking ()
+{
+  return moveCheck (true);
+}
+
+int
+Rts2DevTelescopeIr::endPark ()
+{
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "IR endPark" << sendLog;
+#endif
   return 0;
 }
 

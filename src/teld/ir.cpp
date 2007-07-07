@@ -953,47 +953,6 @@ Rts2TelescopeIr::info ()
 }
 
 int
-Rts2TelescopeIr::startPark ()
-{
-  int status = TPL_OK;
-  // Park to south+zenith
-  status = setTrack (0);
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "IR startPark tracking status " << status <<
-    sendLog;
-#endif
-  sleep (1);
-  status = TPL_OK;
-  status = tpl_set ("AZ.TARGETPOS", 0, &status);
-  status = tpl_set ("ZD.TARGETPOS", 0, &status);
-  status = tpl_set ("DEROTATOR[3].POWER", 0, &status);
-  if (status)
-    {
-      logStream (MESSAGE_ERROR) << "IR startPark ZD.TARGETPOS status " <<
-	status << sendLog;
-      return -1;
-    }
-  time (&timeout);
-  timeout += 300;
-  return 0;
-}
-
-int
-Rts2TelescopeIr::isParking ()
-{
-  return isMoving ();
-}
-
-int
-Rts2TelescopeIr::endPark ()
-{
-#ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "IR endPark" << sendLog;
-#endif
-  return 0;
-}
-
-int
 Rts2TelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
 			  double real_dec)
 {
