@@ -37,6 +37,8 @@ private:
   Client *tplc;
   enum
   { OPENED, OPENING, CLOSING, CLOSED } cover_state;
+  enum
+  { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED } dome_state;
 
   void addError (int in_error);
 
@@ -47,6 +49,7 @@ private:
   bool doCheckPower;
 
   void getCover ();
+  void getDome ();
   void initCoverState ();
 
   Rts2ValueDouble *derotatorOffset;

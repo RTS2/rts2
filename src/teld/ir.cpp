@@ -165,6 +165,7 @@ int
 Rts2TelescopeIr::domeOpen ()
 {
   int status = TPL_OK;
+  dome_state = D_OPENING;
   status = tpl_set ("DOME[1].TARGETPOS", 1, &status);
   status = tpl_set ("DOME[2].TARGETPOS", 1, &status);
   logStream (MESSAGE_DEBUG) << "IR domeOpen status " << status << sendLog;
@@ -175,6 +176,7 @@ int
 Rts2TelescopeIr::domeClose ()
 {
   int status = TPL_OK;
+  dome_state = D_CLOSING;
   status = tpl_set ("DOME[1].TARGETPOS", 0, &status);
   status = tpl_set ("DOME[2].TARGETPOS", 0, &status);
   logStream (MESSAGE_DEBUG) << "IR domeClose status " << status << sendLog;
@@ -403,6 +405,7 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   strcpy (telType, "BOOTES_IR");
 
   cover_state = CLOSED;
+  dome_state = D_OPENING;
 }
 
 Rts2TelescopeIr::~Rts2TelescopeIr (void)
@@ -783,6 +786,28 @@ Rts2TelescopeIr::getCover ()
 }
 
 void
+Rts2TelescopeIr::getDome ()
+{
+  if (dome_state != D_CLOSING && dome_state != D_OPENING)
+    return;
+  int status = TPL_OK;
+  double dome_up, dome_down;
+  status = tpl_get ("DOME[1].CURRPOS", dome_up, &status);
+  status = tpl_get ("DOME[2].CURRPOS", dome_down, &status);
+  if (status != TPL_OK)
+    {
+      logStream (MESSAGE_ERROR) << "unknow dome state" << sendLog;
+      return;
+    }
+  domeUp->setValueFloat (dome_up);
+  domeDown->setValueFloat (dome_down);
+  if (dome_up == 1.0 && dome_down == 1.0)
+    dome_state = D_OPENED;
+  if (dome_up == 0.0 && dome_down == 0.0)
+    dome_state = D_CLOSED;
+}
+
+void
 Rts2TelescopeIr::initCoverState ()
 {
   getCover ();
@@ -942,6 +967,7 @@ Rts2TelescopeIr::info ()
     }
 
   getCover ();
+  getDome ();
 
   mountTrack->setValueInteger (track);
 

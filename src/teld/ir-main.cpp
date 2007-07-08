@@ -49,14 +49,14 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
-  int status = 0;
-  status = setTrack (irTracking, domeAutotrack->getValueBool ());
+  int status = TPL_OK;
+  status = setTrack (0);
   status = tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
   if (!getDerotatorPower ())
     {
       status = tpl_set ("DEROTATOR[3].POWER", 1, &status);
-//      status = tpl_set ("CABINET.POWER", 1, &status);
+      status = tpl_set ("CABINET.POWER", 1, &status);
     }
 
 #ifdef DEBUG_EXTRA
@@ -66,7 +66,10 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
   if (rotatorOffset != 0)
     status = tpl_set ("DEROTATOR[3].OFFSET", rotatorOffset, &status);
 
-  return status;
+  if (status != TPL_OK)
+    return status;
+
+  return setTrack (irTracking, domeAutotrack->getValueBool ());
 }
 
 int
