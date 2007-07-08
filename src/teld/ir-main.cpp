@@ -273,9 +273,11 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
     case SERVERD_NIGHT:
     case SERVERD_DAWN:
       coverOpen ();
+      domeOpen ();
       break;
     default:
       coverClose ();
+      domeClose ();
       break;
     }
   return Rts2DevTelescope::changeMasterState (new_state);

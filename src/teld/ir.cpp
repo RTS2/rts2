@@ -162,6 +162,26 @@ Rts2TelescopeIr::coverOpen ()
 }
 
 int
+Rts2TelescopeIr::domeOpen ()
+{
+  int status = TPL_OK;
+  status = tpl_set ("DOME[1].TARGETPOS", 1, &status);
+  status = tpl_set ("DOME[2].TARGETPOS", 1, &status);
+  logStream (MESSAGE_DEBUG) << "IR domeOpen status " << status << sendLog;
+  return status;
+}
+
+int
+Rts2TelescopeIr::domeClose ()
+{
+  int status = TPL_OK;
+  status = tpl_set ("DOME[1].TARGETPOS", 0, &status);
+  status = tpl_set ("DOME[2].TARGETPOS", 0, &status);
+  logStream (MESSAGE_DEBUG) << "IR domeClose status " << status << sendLog;
+  return status;
+}
+
+int
 Rts2TelescopeIr::setTrack (int new_track)
 {
   int status = TPL_OK;
@@ -237,9 +257,7 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == domeUp)
     {
       status =
-	tpl_set ("DOME[1].TARGETPOS",
-		 ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
-		 &status);
+	tpl_set ("DOME[1].TARGETPOS", new_value->getValueFloat (), &status);
       if (status != TPL_OK)
 	return -2;
       return 0;
@@ -247,9 +265,7 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == domeDown)
     {
       status =
-	tpl_set ("DOME[2].TARGETPOS",
-		 ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
-		 &status);
+	tpl_set ("DOME[2].TARGETPOS", new_value->getValueFloat (), &status);
       if (status != TPL_OK)
 	return -2;
       return 0;

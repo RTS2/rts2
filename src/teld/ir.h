@@ -59,8 +59,8 @@ private:
 
   Rts2ValueInteger *mountTrack;
 
-  Rts2ValueBool *domeUp;
-  Rts2ValueBool *domeDown;
+  Rts2ValueFloat *domeUp;
+  Rts2ValueFloat *domeDown;
 
   Rts2ValueDouble *domeCurrAz;
   Rts2ValueDouble *domeTargetAz;
@@ -96,6 +96,9 @@ protected:
 
   int coverClose ();
   int coverOpen ();
+
+  int domeOpen ();
+  int domeClose ();
 
   int setTrack (int new_track);
   int setTrack (int new_track, bool autoEn);
