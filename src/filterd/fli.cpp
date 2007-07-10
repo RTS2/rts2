@@ -158,7 +158,7 @@ int
 Rts2DevFilterdFli::setFilterNum (int new_filter)
 {
   LIBFLIAPI ret;
-  if (new_filter < 0 || new_filter >= filter_count)
+  if (new_filter < -1 || new_filter >= filter_count)
     return -1;
 
   ret = FLISetFilterPos (dev, new_filter);
