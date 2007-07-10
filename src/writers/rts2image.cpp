@@ -517,6 +517,13 @@ Rts2Image::openImage (const char *in_filename)
   if (in_filename)
     setImageName (in_filename);
 
+  closeFile ();
+
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Opening " << getImageName () << " ffile " <<
+    ffile << sendLog;
+#endif /* DEBUG_EXTRA */
+
   fits_open_diskfile (&ffile, imageName, READWRITE, &fits_status);
   if (fits_status == FILE_NOT_OPENED)
     {
@@ -1156,8 +1163,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     case RTS2_DATA_LONGLONG:
       fits_write_img_lnglng (ffile, 0, 1,
 			     dataConn->getSize () / getPixelByteSize (),
-			     (long long *) dataConn->getData (),
-			     &fits_status);
+			     (LONGLONG *) dataConn->getData (), &fits_status);
       break;
     case RTS2_DATA_FLOAT:
       fits_write_img_flt (ffile, 0, 1,
@@ -1234,7 +1240,12 @@ Rts2Image::getAstrometryErr ()
 int
 Rts2Image::closeFile ()
 {
-  if (flags & IMAGE_SAVE && ffile)
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Closing " << getImageName () << " ffile " <<
+    ffile << sendLog;
+#endif /* DEBUG_EXTRA */
+
+  if ((flags & IMAGE_SAVE) && ffile)
     {
       // save astrometry error
       if (!isnan (ra_err) && !isnan (dec_err))
@@ -1265,6 +1276,11 @@ Rts2Image::closeFile ()
       setCreationDate ();
       fits_close_file (ffile, &fits_status);
       flags &= ~IMAGE_SAVE;
+    }
+  else if (ffile)
+    {
+      // close ffile to free resources..
+      fits_close_file (ffile, &fits_status);
     }
   ffile = NULL;
   return 0;
@@ -1474,7 +1490,7 @@ Rts2Image::loadData ()
     case RTS2_DATA_LONGLONG:
       fits_read_img_lnglng (ffile, 0, 1,
 			    getWidth () * getHeight (), 0,
-			    (long long *) imageData, &anyNull, &fits_status);
+			    (LONGLONG *) imageData, &anyNull, &fits_status);
       break;
     case RTS2_DATA_FLOAT:
       fits_read_img_flt (ffile, 0, 1,
