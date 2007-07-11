@@ -10,31 +10,6 @@ using namespace OpenTPL;
 #define LATITUDE 37.064167
 #define ALTITUDE 2896
 
-ErrorTime::ErrorTime (int in_error)
-{
-  error = in_error;
-  time (&etime);
-}
-
-int
-ErrorTime::clean (time_t now)
-{
-  if (now - etime > 600)
-    return 1;
-  return 0;
-}
-
-int
-ErrorTime::isError (int in_error)
-{
-  if (error == in_error)
-    {
-      time (&etime);
-      return 1;
-    }
-  return 0;
-}
-
 template < typename T > int
 Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 {
@@ -205,6 +180,16 @@ int
 Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   int status = TPL_OK;
+  if (old_value == cabinetPower)
+    {
+      status =
+	tpl_set ("CABINET.POWER",
+		 ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+    }
   if (old_value == derotatorOffset)
     {
       status =
@@ -217,7 +202,8 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == derotatorPower)
     {
       status =
-	tpl_set ("DEROTATOR[3].POWER", derotatorPower->getValueBool ()? 1 : 0,
+	tpl_set ("DEROTATOR[3].POWER",
+		 ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
 		 &status);
       if (status != TPL_OK)
 	return -2;
@@ -275,7 +261,20 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == domeTargetAz)
     {
       status =
-	tpl_set ("DOME[0].TARGETPOS", new_value->getValueDouble (), &status);
+	tpl_set ("DOME[0].TARGETPOS",
+		 ln_range_degrees (new_value->getValueDouble () - 180.0),
+		 &status);
+      if (status != TPL_OK)
+	return -2;
+      return 0;
+
+    }
+  if (old_value == domePower)
+    {
+      status =
+	tpl_set ("DOME[0].POWER",
+		 ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
+		 &status);
       if (status != TPL_OK)
 	return -2;
       return 0;
@@ -357,6 +356,10 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
 
   doCheckPower = false;
 
+  createValue (cabinetPower, "cabinet_power", "power of cabinet", false);
+  createValue (cabinetPowerState, "cabinet_power_state",
+	       "power state of cabinet", false);
+
   createValue (derotatorOffset, "DER_OFF", "derotator offset", true,
 	       RTS2_DT_DEG_DIST);
   createValue (derotatorCurrpos, "DER_CUR", "derotator current position",
@@ -377,8 +380,13 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope 
   createValue (domeUp, "dome_up", "upper dome cover", false);
   createValue (domeDown, "dome_down", "dome down cover", false);
 
-  createValue (domeCurrAz, "dome_curr_az", "dome current azimunt", false);
-  createValue (domeTargetAz, "dome_target_az", "dome targer azimut", false);
+  createValue (domeCurrAz, "dome_curr_az", "dome current azimunt", false,
+	       RTS2_DT_DEGREES);
+  createValue (domeTargetAz, "dome_target_az", "dome targer azimut", false,
+	       RTS2_DT_DEGREES);
+  createValue (domePower, "dome_power", "if dome have power", false);
+  createValue (domeTarDist, "dome_tar_dist", "dome target distance", false,
+	       RTS2_DT_DEG_DIST);
 
   createValue (cover, "cover", "cover state (1 = opened)", false);
 
@@ -542,110 +550,39 @@ Rts2TelescopeIr::getError (int in_error, std::string & descri)
 }
 
 void
-Rts2TelescopeIr::addError (int in_error)
-{
-  std::string descri;
-  std::list < ErrorTime * >::iterator errIter;
-  ErrorTime *errt;
-  int status = TPL_OK;
-  int errNum = in_error & 0x00ffffff;
-  // try to park if on limit switches..
-  if (errNum == 88 || errNum == 89)
-    {
-      double zd;
-      logStream (MESSAGE_ERROR) <<
-	"IR checkErrors soft limit in ZD (" << errNum << ")" << sendLog;
-      status = tpl_get ("ZD.CURRPOS", zd, &status);
-      if (!status)
-	{
-	  if (zd < -80)
-	    zd = -20;
-	  if (zd > 80)
-	    zd = 20;
-	  status = setTrack (0);
-	  logStream (MESSAGE_DEBUG) <<
-	    "IR checkErrors set pointing status " << status << sendLog;
-	  sleep (1);
-	  status = TPL_OK;
-	  status = tpl_set ("ZD.TARGETPOS", zd, &status);
-	  logStream (MESSAGE_ERROR) <<
-	    "IR checkErrors zd soft limit reset " <<
-	    zd << " (" << status << ")" << sendLog;
-	  unsetTarget ();
-	}
-    }
-  if ((getState () & TEL_MASK_MOVING) != TEL_PARKING)
-    {
-      if (errNum == 58 || errNum == 59 || errNum == 90 || errNum == 91)
-	{
-	  // emergency park..
-	  Rts2DevTelescope::startPark (NULL);
-	}
-    }
-  for (errIter = errorcodes.begin (); errIter != errorcodes.end (); errIter++)
-    {
-      errt = *errIter;
-      if (errt->isError (in_error))
-	return;
-    }
-  // new error
-  getError (in_error, descri);
-  logStream (MESSAGE_ERROR) << "IR checkErrors " << descri << sendLog;
-  errt = new ErrorTime (in_error);
-  errorcodes.push_back (errt);
-}
-
-void
 Rts2TelescopeIr::checkErrors ()
 {
   int status = TPL_OK;
-  int listCount;
-  time_t now;
-  std::list < ErrorTime * >::iterator errIter;
-  ErrorTime *errt;
+  std::string list;
 
-  status = tpl_get ("CABINET.STATUS.LIST_COUNT", listCount, &status);
-  if (status == 0 && listCount > 0)
+  status = tpl_get ("CABINET.STATUS.LIST", list, &status);
+  if (status == 0 && list.length () > 2 && list != errorList)
     {
       // print errors to log & ends..
-      std::string::size_type pos = 1;
-      std::string::size_type lastpos = 1;
-      std::string list;
-      status = tpl_get ("CABINET.STATUS.LIST", list, &status);
-      if (status == 0)
-	logStream (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
-	  list.c_str () << sendLog;
-      // decode errors
-      while (true)
-	{
-	  int errn;
-	  if (lastpos > list.size ())
-	    break;
-	  pos = list.find (',', lastpos);
-	  if (pos == std::string::npos)
-	    {
-	      pos = list.find ('"', lastpos);
-	      break;		// we reach string end..
-	    }
-	  errn = atoi (list.substr (lastpos, pos - lastpos).c_str ());
-	  addError (errn);
-	  lastpos = pos + 1;
-	}
+      logStream (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
+	list << sendLog;
       tpl_set ("CABINET.STATUS.CLEAR", 1, &status);
-    }
-  // clean from list old errors..
-  time (&now);
-  for (errIter = errorcodes.begin (); errIter != errorcodes.end ();)
-    {
-      errt = *errIter;
-      if (errt->clean (now))
+      if (list == "\"ERR_Soft_Limit_max:4:ZD\"")
 	{
-	  errIter = errorcodes.erase (errIter);
-	  delete errt;
-	}
-      else
-	{
-	  errIter++;
+	  double zd;
+	  status = tpl_get ("ZD.CURRPOS", zd, &status);
+	  if (!status)
+	    {
+	      if (zd < -80)
+		zd = -85;
+	      if (zd > 80)
+		zd = 85;
+	      status = setTrack (0);
+	      logStream (MESSAGE_DEBUG) <<
+		"IR checkErrors set pointing status " << status << sendLog;
+	      sleep (1);
+	      status = TPL_OK;
+	      status = tpl_set ("ZD.TARGETPOS", zd, &status);
+	      logStream (MESSAGE_ERROR) <<
+		"IR checkErrors zd soft limit reset " <<
+		zd << " (" << status << ")" << sendLog;
+	      unsetTarget ();
+	    }
 	}
     }
 }
@@ -896,8 +833,18 @@ Rts2TelescopeIr::info ()
   int derPower = 0;
   int status = TPL_OK;
 
+  int cab_power;
+  double cab_power_state;
+
   if (!(tplc->IsAuth () && tplc->IsConnected ()))
     return -1;
+
+  status = tpl_get ("CABINET.POWER", cab_power, &status);
+  status = tpl_get ("CABINET.POWER_STATE", cab_power_state, &status);
+  if (status != TPL_OK)
+    return -1;
+  cabinetPower->setValueBool (cab_power == 1);
+  cabinetPowerState->setValueFloat (cab_power_state);
 
   status = tpl_get ("POINTING.CURRENT.RA", t_telRa, &status);
   t_telRa *= 15.0;
@@ -982,14 +929,18 @@ Rts2TelescopeIr::info ()
       targetTime->setValueDouble (point_time);
     }
 
-  double dome_curr_az, dome_target_az;
+  double dome_curr_az, dome_target_az, dome_tar_dist, dome_power;
   status = TPL_OK;
   status = tpl_get ("DOME[0].CURRPOS", dome_curr_az, &status);
   status = tpl_get ("DOME[0].TARGETPOS", dome_target_az, &status);
+  status = tpl_get ("DOME[0].TARGETDISTANCE", dome_tar_dist, &status);
+  status = tpl_get ("DOME[0].POWER", dome_power, &status);
   if (status == TPL_OK)
     {
-      domeCurrAz->setValueDouble (dome_curr_az);
-      domeTargetAz->setValueDouble (dome_target_az);
+      domeCurrAz->setValueDouble (ln_range_degrees (dome_curr_az + 180));
+      domeTargetAz->setValueDouble (ln_range_degrees (dome_target_az + 180));
+      domeTarDist->setValueDouble (dome_tar_dist);
+      domePower->setValueBool (dome_power == 1);
     }
   return Rts2DevTelescope::info ();
 }
@@ -1045,8 +996,8 @@ Rts2TelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
     return -1;
   status = tpl_set ("AZ.OFFSET", az_off, &status);
   status = tpl_set ("ZD.OFFSET", alt_off, &status);
-  if (isModelOn ())
-    return (status ? -1 : 1);
+//  if (isModelOn ())
+//    return (status ? -1 : 1);
   // sample..
   status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
   status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);

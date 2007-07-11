@@ -607,7 +607,6 @@ Rts2DevTelescope::changeMasterState (int new_state)
 int
 Rts2DevTelescope::stopMove ()
 {
-  unsetTarget ();
   return 0;
 }
 

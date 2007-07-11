@@ -19,16 +19,6 @@
 
 using namespace OpenTPL;
 
-class ErrorTime
-{
-  time_t etime;
-  int error;
-public:
-    ErrorTime (int in_error);
-  int clean (time_t now);
-  int isError (int in_error);
-};
-
 class Rts2TelescopeIr:public Rts2DevTelescope
 {
 private:
@@ -40,8 +30,6 @@ private:
   enum
   { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED } dome_state;
 
-  void addError (int in_error);
-
   void checkErrors ();
   void checkCover ();
   void checkPower ();
@@ -51,6 +39,11 @@ private:
   void getCover ();
   void getDome ();
   void initCoverState ();
+
+    std::string errorList;
+
+  Rts2ValueBool *cabinetPower;
+  Rts2ValueFloat *cabinetPowerState;
 
   Rts2ValueDouble *derotatorOffset;
   Rts2ValueDouble *derotatorCurrpos;
@@ -67,6 +60,8 @@ private:
 
   Rts2ValueDouble *domeCurrAz;
   Rts2ValueDouble *domeTargetAz;
+  Rts2ValueBool *domePower;
+  Rts2ValueDouble *domeTarDist;
 
   Rts2ValueDouble *cover;
 
@@ -81,8 +76,6 @@ private:
   Rts2ValueDouble *model_flex;
 
   int infoModel ();
-
-    std::list < ErrorTime * >errorcodes;
 
 protected:
     time_t timeout;

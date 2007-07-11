@@ -73,61 +73,47 @@ public:
   virtual int run ();
 };
 
-IrAxis Rts2DevIrError::getAxisStatus (const char *ax_name)
+IrAxis
+Rts2DevIrError::getAxisStatus (const char *ax_name)
 {
-  double
-    referenced = nan ("f");
-  double
-    currpos = nan ("f");
-  double
-    targetpos = nan ("f");
-  double
-    offset = nan ("f");
-  double
-    realpos = nan ("f");
-  double
-    power = nan ("f");
-  double
-    power_state = nan ("f");
+  double referenced = nan ("f");
+  double currpos = nan ("f");
+  double targetpos = nan ("f");
+  double offset = nan ("f");
+  double realpos = nan ("f");
+  double power = nan ("f");
+  double power_state = nan ("f");
   std::ostringstream * os;
-  int
-    status = 0;
+  int status = 0;
 
   os = new std::ostringstream ();
   (*os) << ax_name << ".REFERENCED";
   status = tpl_get (os->str ().c_str (), referenced, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".CURRPOS";
   status = tpl_get (os->str ().c_str (), currpos, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".TARGETPOS";
   status = tpl_get (os->str ().c_str (), targetpos, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".OFFSET";
   status = tpl_get (os->str ().c_str (), offset, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".REALPOS";
   status = tpl_get (os->str ().c_str (), realpos, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".POWER";
   status = tpl_get (os->str ().c_str (), power, &status);
-  delete
-    os;
+  delete os;
   os = new std::ostringstream ();
   (*os) << ax_name << ".POWER";
   status = tpl_get (os->str ().c_str (), power_state, &status);
-  delete
-    os;
+  delete os;
   return IrAxis (ax_name, referenced, currpos, targetpos, offset, realpos,
 		 power, power_state);
 }
@@ -138,12 +124,16 @@ Rts2DevIrError::doReferenced ()
   int status = 0;
   int track;
   double fpar;
+  std::string slist;
   status = tpl_get ("CABINET.REFERENCED", fpar, &status);
   std::cout << "CABINET.REFERENCED " << fpar << std::endl;
   status = tpl_get ("CABINET.POWER", fpar, &status);
   std::cout << "CABINET.POWER " << fpar << std::endl;
   status = tpl_get ("CABINET.POWER_STATE", fpar, &status);
   std::cout << "CABINET.POWER_STATE " << fpar << std::endl;
+
+  status = tpl_get ("CABINET.STATUS.LIST", slist, &status);
+  std::cout << "CABINET.STATUS.LIST " << slist << std::endl;
 
   status = tpl_get ("POINTING.TRACK", track, &status);
   std::cout << "POINTING.TRACK " << track << std::endl;

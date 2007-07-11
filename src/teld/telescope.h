@@ -173,8 +173,8 @@ protected:
   void getTargetCorrected (struct ln_equ_posn *out_tar, double JD);
   void unsetTarget ()
   {
-    lastTar.ra = -1000;
-    lastTar.dec = -1000;
+    lastTar.ra = telRa->getValueDouble ();
+    lastTar.dec = telDec->getValueDouble ();
   }
   double getMoveTargetSep ();
   void getTargetAltAz (struct ln_hrz_posn *hrz);

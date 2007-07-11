@@ -49,7 +49,7 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
-  int status = TPL_OK;
+  int status;
   status = setTrack (0);
   status = tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
@@ -69,7 +69,10 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
   if (status != TPL_OK)
     return status;
 
-  return setTrack (irTracking, domeAutotrack->getValueBool ());
+//  usleep (USEC_SEC);
+  status = setTrack (irTracking, domeAutotrack->getValueBool ());
+  usleep (USEC_SEC);
+  return status;
 }
 
 int
@@ -153,7 +156,6 @@ Rts2DevTelescopeIr::stopMove ()
 	}
       return 0;
     }
-  startMoveReal (telRa->getValueDouble (), telDec->getValueDouble ());
   return 0;
 }
 
