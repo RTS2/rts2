@@ -16,6 +16,8 @@
 #define RTS2_VALUE_BOOL		0x00000006
 #define RTS2_VALUE_SELECTION	0x00000007
 
+#define RTS2_VALUE_DOUBLE_STAT	0x00000014
+
 #define RTS2_VALUE_MASK		0x000000ff
 
 #define RTS2_VALUE_FITS		0x00000100
@@ -55,7 +57,7 @@ private:
   std::string valueName;
   std::string description;
 protected:
-  char buf[100];
+  char buf[200];
   int32_t rts2Type;
 
   void setValueFlags (int32_t flags)
@@ -222,7 +224,7 @@ public:
 
 class Rts2ValueDouble:public Rts2Value
 {
-private:
+protected:
   double value;
 public:
     Rts2ValueDouble (std::string in_val_name);

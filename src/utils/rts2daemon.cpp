@@ -514,6 +514,14 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 	((Rts2ValueInteger *) dup_val)->
 	  setValueInteger (old_value->getValueInteger ());
       break;
+    case RTS2_VALUE_DOUBLE_STAT:
+      dup_val = new Rts2ValueDoubleStat (old_value->getName (),
+					 old_value->getDescription (),
+					 old_value->getWriteToFits ());
+      if (withVal)
+	((Rts2ValueDoubleStat *) dup_val)->
+	  setValueDouble (old_value->getValueDouble ());
+      break;
     default:
       logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
 	getValueType () << sendLog;

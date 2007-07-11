@@ -5,6 +5,7 @@
 #include "rts2logstream.h"
 #include "rts2value.h"
 #include "rts2valuelist.h"
+#include "rts2valuestat.h"
 
 #include <vector>
 

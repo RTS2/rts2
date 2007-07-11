@@ -85,6 +85,11 @@ Rts2DevClient::metaInfo (int rts2Type, std::string name, std::string desc)
 	new Rts2ValueSelection (name, desc, rts2Type & RTS2_VALUE_FITS,
 				rts2Type);
       break;
+    case RTS2_VALUE_DOUBLE_STAT:
+      newValue =
+	new Rts2ValueDoubleStat (name, desc, rts2Type & RTS2_VALUE_FITS,
+				 rts2Type);
+      break;
     default:
       logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
 	sendLog;
