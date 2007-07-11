@@ -191,12 +191,17 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
+    case KEY_ENTER:
+    case K_ENTER:
+      // don't create new box if one already exists
+      if (valueBox)
+	break;
     case KEY_F (6):
       if (valueBox)
 	endValueBox ();
@@ -233,8 +238,7 @@ Rts2NDeviceWindow::draw ()
     valueBox->draw ();
 }
 
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
