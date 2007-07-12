@@ -325,7 +325,8 @@ CameraAndorChip::readoutOneLine ()
   return -2;
 }
 
-bool CameraAndorChip::supportFrameTransfer ()
+bool
+CameraAndorChip::supportFrameTransfer ()
 {
   return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
@@ -657,7 +658,7 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
   if (old_value == VSAmp)
     return setVSAmplitude (new_value->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == EMOn)
-    return setHSSpeed (((Rts2ValueBool *) new_value)->getValueBool (),
+    return setHSSpeed (((Rts2ValueBool *) new_value)->getValueBool ()? 0 : 1,
 		       HSpeed->getValueInteger ()) == 0 ? 0 : -2;
   if (old_value == HSpeed)
     return setHSSpeed (EMOn->getValueBool ()? 0 : 1,
