@@ -57,7 +57,8 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool Rts2Block::commandQueEmpty ()
+bool
+Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -632,4 +633,13 @@ Rts2Block::getMinConn (const char *valueName)
 	}
     }
   return minConn;
+}
+
+Rts2Value *
+Rts2Block::getValue (const char *device_name, const char *value_name)
+{
+  Rts2Conn *conn = getOpenConnection (device_name);
+  if (!conn)
+    return NULL;
+  return conn->getValue (value_name);
 }
