@@ -8,7 +8,40 @@ Rts2ValueDoubleStat::clearStat ()
   mean = nan ("f");
   min = nan ("f");
   max = nan ("f");
+  stdev = nan ("f");
   valueList.clear ();
+}
+
+void
+Rts2ValueDoubleStat::calculate ()
+{
+  if (valueList.size () == 0)
+    return;
+  std::vector < double >sorted = valueList;
+  std::sort (sorted.begin (), sorted.end ());
+  min = *(sorted.begin ());
+  max = *(--sorted.end ());
+  numMes = valueList.size ();
+  double sum = 0;
+  for (std::vector < double >::iterator iter = sorted.begin ();
+       iter != sorted.end (); iter++)
+    {
+      sum += (*iter);
+    }
+  setValueDouble (sum / numMes);
+  // calculate stdev
+  stdev = 0;
+  for (std::vector < double >::iterator iter = sorted.begin ();
+       iter != sorted.end (); iter++)
+    {
+      sum = *iter - getValueDouble ();
+      sum *= sum;
+      stdev += sqrt (sum / numMes);
+    }
+  if ((numMes % 2) == 1)
+    mean = sorted[numMes / 2];
+  else
+    mean = (sorted[numMes / 2 - 1] + sorted[numMes / 2]) / 2.0;
 }
 
 Rts2ValueDoubleStat::Rts2ValueDoubleStat (std::string in_val_name):Rts2ValueDouble
@@ -29,7 +62,7 @@ int
 Rts2ValueDoubleStat::setValue (Rts2Conn * connection)
 {
   if (connection->paramNextDouble (&value)
-      || connection->paramNextInteger (&numMes)
+      || connection->paramNextSizeT (&numMes)
       || connection->paramNextDouble (&mean)
       || connection->paramNextDouble (&min)
       || connection->paramNextDouble (&max)
@@ -49,9 +82,17 @@ Rts2ValueDoubleStat::getValue ()
 const char *
 Rts2ValueDoubleStat::getDisplayValue ()
 {
-  sprintf (buf, "%.20le %i %.20le %.20le %.20le %.20le",
+  sprintf (buf, "%f %i %f %f %f %f",
 	   getValueDouble (), numMes, mean, min, max, stdev);
   return buf;
+}
+
+int
+Rts2ValueDoubleStat::send (Rts2Conn * connection)
+{
+  if (numMes != valueList.size ())
+    calculate ();
+  return Rts2ValueDouble::send (connection);
 }
 
 void

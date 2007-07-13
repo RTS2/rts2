@@ -179,6 +179,7 @@ public:
   virtual int setValue (Rts2Conn * connection);
   virtual int setValueString (const char *in_value);
   virtual const char *getValue ();
+  virtual int send (Rts2Conn * connection);
   virtual void setFromValue (Rts2Value * newValue);
 };
 

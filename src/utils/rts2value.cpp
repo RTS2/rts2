@@ -61,7 +61,7 @@ Rts2Value::sendMetaInfo (Rts2Conn * connection)
 int
 Rts2Value::send (Rts2Conn * connection)
 {
-  return connection->sendValue (getName (), getValue ());
+  return connection->sendValueRaw (getName (), getValue ());
 }
 
 Rts2ValueString::Rts2ValueString (std::string in_val_name):
@@ -106,6 +106,12 @@ Rts2ValueString::setValueString (const char *in_value)
   value = new char[strlen (in_value) + 1];
   strcpy (value, in_value);
   return 0;
+}
+
+int
+Rts2ValueString::send (Rts2Conn * connection)
+{
+  return connection->sendValue (getName (), getValue ());
 }
 
 void
