@@ -1125,7 +1125,7 @@ Rts2Conn::sendValue (std::string val_name, const char *value)
 }
 
 int
-Rts2Conn::sendValueRaw (std::string val_name, char *value)
+Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 {
   char *msg;
   int ret;
@@ -1272,6 +1272,19 @@ Rts2Conn::paramNextStringNull (char **str)
 
 int
 Rts2Conn::paramNextInteger (int *num)
+{
+  char *str_num;
+  char *num_end;
+  if (paramNextString (&str_num))
+    return -1;
+  *num = strtol (str_num, &num_end, 10);
+  if (*num_end)
+    return -1;
+  return 0;
+}
+
+int
+Rts2Conn::paramNextSizeT (size_t * num)
 {
   char *str_num;
   char *num_end;
