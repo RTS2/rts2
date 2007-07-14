@@ -4,11 +4,22 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 {
 private:
   Rts2ValueDoubleStat * statTest;
+  Rts2ValueDoubleMinMax *minMaxTest;
 public:
-  Rts2DevSensorDummy (int in_argc, char **in_argv):Rts2DevSensor (in_argc,
-								  in_argv)
+    Rts2DevSensorDummy (int in_argc, char **in_argv):Rts2DevSensor (in_argc,
+								    in_argv)
   {
     createValue (statTest, "test_stat", "test stat value", true);
+    createValue (minMaxTest, "test_minmax", "test minmax value", true);
+    minMaxTest->setMin (0);
+    minMaxTest->setMax (10);
+  }
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
+  {
+    if (old_value == minMaxTest)
+      return 0;
+    return Rts2DevSensor::setValue (old_value, newValue);
   }
 
   virtual int commandAuthorized (Rts2Conn * conn)
