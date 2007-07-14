@@ -6,6 +6,7 @@
 #include "rts2value.h"
 #include "rts2valuelist.h"
 #include "rts2valuestat.h"
+#include "rts2valueminmax.h"
 
 #include <vector>
 

@@ -522,6 +522,16 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 	((Rts2ValueDoubleStat *) dup_val)->
 	  setValueDouble (old_value->getValueDouble ());
       break;
+    case RTS2_VALUE_DOUBLE_MMAX:
+      dup_val = new Rts2ValueDoubleMinMax (old_value->getName (),
+					   old_value->getDescription (),
+					   old_value->getWriteToFits ());
+      ((Rts2ValueDoubleMinMax *) dup_val)->
+	copyMinMax ((Rts2ValueDoubleMinMax *) old_value);
+      if (withVal)
+	((Rts2ValueDoubleMinMax *) dup_val)->
+	  setValueDouble (old_value->getValueDouble ());
+      break;
     default:
       logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
 	getValueType () << sendLog;
@@ -661,7 +671,6 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
       ret = -2;
       goto err;
     }
-
   // call hook
   ret = setValue (old_value, new_value);
   if (ret)

@@ -17,11 +17,11 @@ private:
   double max;
   double stdev;
     std::vector < double >valueList;
-  void clearStat ();
 public:
     Rts2ValueDoubleStat (std::string in_val_name);
     Rts2ValueDoubleStat (std::string in_val_name, std::string in_description,
 			 bool writeToFits = true, int32_t flags = 0);
+  void clearStat ();
   void calculate ();
 
   virtual int setValue (Rts2Conn * connection);
