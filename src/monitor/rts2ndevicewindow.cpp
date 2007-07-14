@@ -177,6 +177,7 @@ Rts2NDeviceWindow::createValueBox ()
 	    new Rts2NValueBoxFloat (this, (Rts2ValueFloat *) val, 21, s);
 	  break;
 	case RTS2_VALUE_DOUBLE:
+	case RTS2_VALUE_DOUBLE_MMAX:
 	  valueBox =
 	    new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
 	  break;
