@@ -25,10 +25,10 @@ private:
   Rts2ValueInteger *queSize;
 
   int sendStop;			// if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
-  char defaultImgProcess[2000];
-  char defaultObsProcess[2000];
-  char defaultDarkProcess[2000];
-  char defaultFlatProcess[2000];
+    std::string defaultImgProcess;
+    std::string defaultObsProcess;
+    std::string defaultDarkProcess;
+    std::string defaultFlatProcess;
   glob_t imageGlob;
   unsigned int globC;
   int reprocessingPossible;
@@ -112,7 +112,7 @@ Rts2ImageProc::reloadConfig ()
   Rts2Config *config;
   config = Rts2Config::instance ();
 
-  ret = config->getString ("imgproc", "astrometry", defaultImgProcess, 2000);
+  ret = config->getString ("imgproc", "astrometry", defaultImgProcess);
   if (ret)
     {
       logStream (MESSAGE_ERROR) <<
@@ -121,7 +121,7 @@ Rts2ImageProc::reloadConfig ()
       return ret;
     }
 
-  ret = config->getString ("imgproc", "obsprocess", defaultObsProcess, 2000);
+  ret = config->getString ("imgproc", "obsprocess", defaultObsProcess);
   if (ret)
     {
       logStream (MESSAGE_ERROR) <<
@@ -130,8 +130,7 @@ Rts2ImageProc::reloadConfig ()
       return ret;
     }
 
-  ret =
-    config->getString ("imgproc", "darkprocess", defaultDarkProcess, 2000);
+  ret = config->getString ("imgproc", "darkprocess", defaultDarkProcess);
   if (ret)
     {
       logStream (MESSAGE_ERROR) <<
@@ -140,8 +139,7 @@ Rts2ImageProc::reloadConfig ()
       return ret;
     }
 
-  ret =
-    config->getString ("imgproc", "flatprocess", defaultFlatProcess, 2000);
+  ret = config->getString ("imgproc", "flatprocess", defaultFlatProcess);
   if (ret)
     {
       logStream (MESSAGE_ERROR) <<
@@ -328,7 +326,7 @@ Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImageConn;
   newImageConn =
-    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path,
+    new Rts2ConnImgProcess (this, conn, defaultImgProcess.c_str (), in_path,
 			    Rts2Config::instance ()->getAstrometryTimeout ());
   return que (newImageConn);
 }
@@ -338,7 +336,7 @@ Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
 {
   Rts2ConnImgProcess *newImageConn;
   newImageConn =
-    new Rts2ConnImgProcess (this, conn, defaultImgProcess, in_path,
+    new Rts2ConnImgProcess (this, conn, defaultImgProcess.c_str (), in_path,
 			    Rts2Config::instance ()->getAstrometryTimeout ());
   changeRunning (newImageConn);
   infoAll ();
@@ -350,7 +348,7 @@ Rts2ImageProc::queObs (Rts2Conn * conn, int obsId)
 {
   Rts2ConnObsProcess *newObsConn;
   newObsConn =
-    new Rts2ConnObsProcess (this, conn, defaultObsProcess, obsId,
+    new Rts2ConnObsProcess (this, conn, defaultObsProcess.c_str (), obsId,
 			    Rts2Config::instance ()->getObsProcessTimeout ());
   return que (newObsConn);
 }
@@ -360,7 +358,7 @@ Rts2ImageProc::queDarks (Rts2Conn * conn)
 {
   Rts2ConnDarkProcess *newDarkConn;
   newDarkConn =
-    new Rts2ConnDarkProcess (this, conn, defaultDarkProcess,
+    new Rts2ConnDarkProcess (this, conn, defaultDarkProcess.c_str (),
 			     Rts2Config::instance ()->
 			     getDarkProcessTimeout ());
   return que (newDarkConn);
@@ -371,7 +369,7 @@ Rts2ImageProc::queFlats (Rts2Conn * conn)
 {
   Rts2ConnFlatProcess *newFlatConn;
   newFlatConn =
-    new Rts2ConnFlatProcess (this, conn, defaultFlatProcess,
+    new Rts2ConnFlatProcess (this, conn, defaultFlatProcess.c_str (),
 			     Rts2Config::instance ()->
 			     getFlatProcessTimeout ());
   return que (newFlatConn);
@@ -380,17 +378,17 @@ Rts2ImageProc::queFlats (Rts2Conn * conn)
 int
 Rts2ImageProc::checkNotProcessed ()
 {
-  char image_glob[250];
+  std::string image_glob;
   int ret;
 
   Rts2Config *config;
   config = Rts2Config::instance ();
 
-  ret = config->getString ("imgproc", "imageglob", image_glob, 250);
+  ret = config->getString ("imgproc", "imageglob", image_glob);
   if (ret)
     return ret;
 
-  ret = glob (image_glob, 0, NULL, &imageGlob);
+  ret = glob (image_glob.c_str (), 0, NULL, &imageGlob);
   if (ret)
     {
       globfree (&imageGlob);
