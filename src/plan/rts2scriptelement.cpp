@@ -67,18 +67,20 @@ Rts2ScriptElement::getLen ()
   return len;
 }
 
-void
+int
 Rts2ScriptElement::idleCall ()
 {
   if (!timerisset (&idleTimeout))
-    return;
+    return NEXT_COMMAND_KEEP;
   struct timeval tv;
   gettimeofday (&tv, NULL);
   if (timercmp (&tv, &nextIdle, >))
     {
-      idle ();
+      int ret = idle ();
       timeradd (&tv, &idleTimeout, &nextIdle);
+      return ret;
     }
+  return NEXT_COMMAND_KEEP;
 }
 
 void
@@ -88,13 +90,13 @@ Rts2ScriptElement::setIdleTimeout (double sec)
   nextIdle.tv_usec = (long int) ((sec - (double) nextIdle.tv_sec) * USEC_SEC);
 }
 
-void
+int
 Rts2ScriptElement::idle ()
 {
+  return NEXT_COMMAND_KEEP;
 }
 
-Rts2ScriptElementExpose::Rts2ScriptElementExpose (Rts2Script * in_script,
-						  float in_expTime):
+Rts2ScriptElementExpose::Rts2ScriptElementExpose (Rts2Script * in_script, float in_expTime):
 Rts2ScriptElement (in_script)
 {
   expTime = in_expTime;

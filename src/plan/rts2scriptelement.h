@@ -70,7 +70,7 @@ private:
   struct timeval idleTimeout;
 protected:
     Rts2Script * script;
-  void getDevice (char new_device[DEVICE_NAME_SIZE]);
+  virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 public:
     Rts2ScriptElement (Rts2Script * in_script);
     virtual ~ Rts2ScriptElement (void);
@@ -115,14 +115,16 @@ public:
   }
   virtual int getLen ();
 
-  void idleCall ();
+  int idleCall ();
 
   void setIdleTimeout (double sec);
 
   /**
-   * called every n-second, defined by setIdleTimeout function.
+   * called every n-second, defined by setIdleTimeout function. Return
+   * NEXT_COMMAND_KEEP when we should KEEP command or NEXT_COMMAND_NEXT when
+   * script should advance to next command.
    */
-  virtual void idle ();
+  virtual int idle ();
 };
 
 class Rts2ScriptElementExpose:public Rts2ScriptElement
@@ -346,7 +348,7 @@ private:
   char op;
     std::string operand;
 protected:
-  void getDevice (char new_device[DEVICE_NAME_SIZE]);
+    virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 public:
     Rts2ScriptElementChangeValue (Rts2Script * in_script,
 				  const char *in_device_value,

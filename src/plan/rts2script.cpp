@@ -9,11 +9,11 @@
 #include <ctype.h>
 
 // test if next element is one that is given
-bool Rts2Script::isNext (const char *element)
+bool
+Rts2Script::isNext (const char *element)
 {
   // skip spaces..
-  size_t
-    el_len = strlen (element);
+  size_t el_len = strlen (element);
   while (isspace (*cmdBufTop))
     cmdBufTop++;
   if (!strncmp (element, cmdBufTop, el_len))
@@ -93,14 +93,14 @@ Rts2Script::Rts2Script (Rts2Block * in_master, const char *cam_name, Rts2Target 
 Rts2Object ()
 {
   Rts2ScriptElement *element;
-  char scriptText[MAX_COMMAND_LENGTH];
+  std::string scriptText;
   struct ln_equ_posn target_pos;
 
   target->getScript (cam_name, scriptText);
   target->getPosition (&target_pos);
-  cmdBuf = new char[strlen (scriptText) + 1];
-  strcpy (cmdBuf, scriptText);
-  wholeScript = std::string (scriptText);
+  cmdBuf = new char[scriptText.length () + 1];
+  strcpy (cmdBuf, scriptText.c_str ());
+  wholeScript = scriptText;
   strcpy (defaultDevice, cam_name);
   master = in_master;
   cmdBufTop = cmdBuf;
@@ -464,7 +464,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
       if (getNextParamString (&val) || getNextParamDouble (&tarval)
 	  || getNextParamDouble (&range))
 	return NULL;
-      return new Rts2SWaitFor (this, val, tarval, range);
+      return new Rts2SWaitFor (this, new_device, val, tarval, range);
     }
   else if (!strcmp (commandStart, COMMAND_TARGET_DISABLE))
     {
@@ -559,9 +559,10 @@ Rts2Script::processImage (Rts2Image * image)
   return (*el_iter)->processImage (image);
 }
 
-void
+int
 Rts2Script::idle ()
 {
   if (el_iter != elements.end ())
-    (*el_iter)->idle ();
+    return (*el_iter)->idleCall ();
+  return NEXT_COMMAND_KEEP;
 }

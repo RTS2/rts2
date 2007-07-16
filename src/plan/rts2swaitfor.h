@@ -6,13 +6,16 @@
 class Rts2SWaitFor:public Rts2ScriptElement
 {
 private:
+  std::string deviceName;
   std::string valueName;
   double tarval;
   double range;
+protected:
+    virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 public:
-    Rts2SWaitFor (Rts2Script * in_script, char *valueName, double value,
-		  double range);
-  virtual void idle ();
+    Rts2SWaitFor (Rts2Script * in_script, const char *new_device,
+		  char *valueName, double value, double range);
+  virtual int idle ();
 };
 
 #endif /* !__RTS2_WAITFOR__ */

@@ -14,7 +14,7 @@ protected:
   { NEED_IMAGE, WAITING_IMAGE, WAITING_ASTROMETRY, WAITING_MOVE, PRECISION_OK,
     PRECISION_BAD, FAILED
   } processingState;
-  char defaultImgProccess[2000];
+    std::string defaultImgProccess;
   int obsId;
   int imgId;
   struct ln_equ_posn center_pos;

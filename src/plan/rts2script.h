@@ -132,7 +132,7 @@ public:
     return commandStart - cmdBuf;
   }
 
-  void idle ();
+  int idle ();
 };
 
 template < typename T > int

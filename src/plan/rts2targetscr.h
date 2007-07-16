@@ -20,7 +20,7 @@ public:
   virtual ~ Rts2TargetScr (void);
 
   // target manipulation functions
-  virtual int getScript (const char *device_name, char *buf);
+  virtual int getScript (const char *device_name, std::string & buf);
 
   // return target position at given julian date
   virtual int getPosition (struct ln_equ_posn *pos, double JD);

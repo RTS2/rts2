@@ -16,7 +16,7 @@ Rts2ScriptElement (in_script)
   expTime = in_expTime;
   processingState = NEED_IMAGE;
   Rts2Config::instance ()->getString ("imgproc", "astrometry",
-				      defaultImgProccess, 2000);
+				      defaultImgProccess);
   obsId = -1;
   imgId = -1;
 
@@ -154,7 +154,8 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
   obsId = image->getObsId ();
   imgId = image->getImgId ();
   processor =
-    new Rts2ConnImgProcess (script->getMaster (), NULL, defaultImgProccess,
+    new Rts2ConnImgProcess (script->getMaster (), NULL,
+			    defaultImgProccess.c_str (),
 			    image->getImageName (),
 			    Rts2Config::instance ()->getAstrometryTimeout ());
   // save image before processing..
@@ -201,10 +202,8 @@ Rts2ScriptElementAcquire (in_script, in_precision, in_expTime, in_center_pos)
   spiral_scale_dec = in_spiral_scale_dec;
   minFlux = 5000;
 
-  defaultImgProccess[0] = '\0';
-
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
-				      "sextractor", defaultImgProccess, 2000);
+				      "sextractor", defaultImgProccess);
 
   Rts2Config::instance ()->getDeviceMinFlux (in_script->getDefaultDevice (),
 					     minFlux);
@@ -310,8 +309,8 @@ Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
   obsId = image->getObsId ();
   imgId = image->getImgId ();
   processor =
-    new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
-		       EVENT_STAR_DATA);
+    new Rts2ConnFocus (script->getMaster (), image,
+		       defaultImgProccess.c_str (), EVENT_STAR_DATA);
   // save image before processing
   image->saveImage ();
   ret = processor->init ();

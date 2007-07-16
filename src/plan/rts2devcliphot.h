@@ -51,8 +51,7 @@ protected:
 
   virtual void idle ()
   {
-    if (getScript ())
-      getScript ()->idle ();
+    Rts2DevScript::idle ();
     Rts2DevClientPhot::idle ();
   }
 

@@ -248,7 +248,7 @@ Rts2TargetInfo::printTargetInfo ()
 	{
 	  const char *cam_name = (*cam_names).c_str ();
 	  int ret;
-	  char script_buf[MAX_COMMAND_LENGTH];
+	  std::string script_buf;
 	  int failedCount;
 	  ret = target->getScript (cam_name, script_buf);
 	  std::

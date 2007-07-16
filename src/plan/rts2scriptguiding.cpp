@@ -11,10 +11,9 @@ Rts2ScriptElement (in_script)
 {
   expTime = init_exposure;
   endSignal = in_endSignal;
-  defaultImgProccess[0] = '\0';
   processingState = NO_IMAGE;
   Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
-				      "sextractor", defaultImgProccess, 2000);
+				      "sextractor", defaultImgProccess);
   obsId = -1;
   imgId = -1;
 
@@ -204,8 +203,8 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
     << "Rts2ScriptElementGuiding::processImage defaultImgProccess: "
     << defaultImgProccess << sendLog;
   processor =
-    new Rts2ConnFocus (script->getMaster (), image, defaultImgProccess,
-		       EVENT_GUIDING_DATA);
+    new Rts2ConnFocus (script->getMaster (), image,
+		       defaultImgProccess.c_str (), EVENT_GUIDING_DATA);
   image->saveImage ();
   ret = processor->init ();
   if (ret < 0)

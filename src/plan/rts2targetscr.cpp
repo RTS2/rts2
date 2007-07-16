@@ -11,17 +11,17 @@ Rts2TargetScr::~Rts2TargetScr (void)
 }
 
 int
-Rts2TargetScr::getScript (const char *device_name, char *buf)
+Rts2TargetScr::getScript (const char *device_name, std::string & buf)
 {
   Rts2ScriptForDevice *script =
     master->findScript (std::string (device_name));
   if (script)
     {
-      strncpy (buf, script->getScript (), MAX_COMMAND_LENGTH);
+      buf = std::string (script->getScript ());
       return 0;
     }
 
-  *buf = '\0';
+  buf = std::string ("");
   return -1;
 }
 
@@ -55,8 +55,7 @@ Rts2TargetScr::save (bool overwrite, int tar_id)
   return 0;
 }
 
-moveType
-Rts2TargetScr::startSlew (struct ln_equ_posn * position)
+moveType Rts2TargetScr::startSlew (struct ln_equ_posn * position)
 {
   position->ra = position->dec = 0;
   return OBS_MOVE_FAILED;

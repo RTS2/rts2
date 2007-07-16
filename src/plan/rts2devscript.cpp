@@ -295,6 +295,19 @@ Rts2DevScript::scriptBegin ()
 }
 
 void
+Rts2DevScript::idle ()
+{
+  if (getScript ())
+    {
+      int ret = getScript ()->idle ();
+      if (ret == NEXT_COMMAND_NEXT)
+	{
+	  nextCommand ();
+	}
+    }
+}
+
+void
 Rts2DevScript::deleteScript ()
 {
   Rts2Script *tmp_script;

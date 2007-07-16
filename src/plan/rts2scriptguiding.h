@@ -22,7 +22,7 @@ private:
   int obsId;
   int imgId;
 
-  char defaultImgProccess[2000];
+    std::string defaultImgProccess;
   enum
   { NO_IMAGE, NEED_IMAGE, WAITING_IMAGE, FAILED
   } processingState;
