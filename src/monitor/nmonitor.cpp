@@ -447,7 +447,16 @@ Rts2NMonitor::processKey (int key)
       resize ();
       break;
       // default for active window
-      break;
+    case KEY_ENTER:
+    case K_ENTER:
+      // preproccesed enter in case device window is selected..
+      if (activeWindow == daemonWindow && comWindow->getCurX () != 0
+	  && !daemonWindow->needEnter ())
+	{
+	  ret = comWindow->injectKey (key);
+	  sendCommand ();
+	  break;
+	}
     default:
       ret = activeWindow->injectKey (key);
       if (ret == RKEY_NOT_HANDLED)

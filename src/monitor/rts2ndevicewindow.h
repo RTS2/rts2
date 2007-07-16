@@ -24,6 +24,10 @@ public:
   virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual bool setCursor ();
+  virtual bool needEnter ()
+  {
+    return valueBox != NULL;
+  }
 };
 
 #endif /* ! __RTS2_NDEVICEWINDOW__ */

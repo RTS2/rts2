@@ -89,6 +89,14 @@ public:
   {
     return _haveBox;
   }
+
+  /**
+   * Indicate this window needs enter, so enter key will not be stolen for wait command.
+   */
+  virtual bool needEnter ()
+  {
+    return false;
+  }
 };
 
 #endif /* !__RTS2_NWINDOW__ */
