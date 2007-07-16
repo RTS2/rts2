@@ -106,18 +106,17 @@ Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
       if (ra_six)
 	obj_ra *= 15.0;
       double obj_dec = dec_sign * dec;
-      char new_prefix[10];
+      std::string new_prefix;
 
       // default prefix for new RTS2 sources
-      strcpy (new_prefix, "RTS2");
+      new_prefix = std::string ("RTS2");
 
       // set name..
       ConstTarget *constTarget = new ConstTarget ();
       constTarget->setPosition (obj_ra, obj_dec);
       std::ostringstream os;
 
-      Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix,
-					  10);
+      Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
       os << new_prefix << LibnovaRaComp (obj_ra) <<
 	LibnovaDeg90Comp (obj_dec);
       constTarget->setTargetName (os.str ().c_str ());
