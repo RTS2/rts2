@@ -137,6 +137,8 @@ private:
   struct timeval exposureStart;
 
   double change_val;		// change value in degrees
+
+  int mouseTelChange_x, mouseTelChange_y;
 protected:
   virtual void printFWHMTable ();
 
@@ -149,6 +151,9 @@ public:
 
   virtual imageProceRes processImage (Rts2Image * image);
   void setCrossType (int in_crossType);
+
+  // process possible change requests
+  virtual void idle ();
 };
 
 Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection,
@@ -176,6 +181,9 @@ Rts2GenFocCamera (in_connection, in_master)
   timerclear (&exposureStart);
 
   change_val = in_change_val;
+
+  mouseTelChange_x = INT_MAX;
+  mouseTelChange_y = INT_MAX;
 }
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
@@ -589,37 +597,47 @@ Rts2xfocusCamera::XeventLoop ()
 	case ButtonPress:
 	  mouseX = ((XButtonPressedEvent *) & event)->x;
 	  mouseY = ((XButtonPressedEvent *) & event)->y;
-	  if (buttonX < 0 && buttonY < 0)
+	  if (((XButtonPressedEvent *) & event)->state & ControlMask)
 	    {
-	      buttonX = mouseX;
-	      buttonY = mouseY;
-	      buttonImageTime = exposureStart;
-	    }
-	  else
-	    {
-	      // calculate distance travelled, print it, pixels / sec travelled, discard button
-	      timersub (&exposureStart, &buttonImageTime, &exposureStart);
-	      double del =
-		exposureStart.tv_sec +
-		(double) exposureStart.tv_usec / USEC_SEC;
-	      double offsetX = buttonX - mouseX;
-	      double offsetY = buttonY - mouseY;
-	      if (del > 0)
+	      if (buttonX < 0 && buttonY < 0)
 		{
-		  printf
-		    ("Delay %.4f sec\nX offset: %.1f drift: %.1f pixels/sec\nY offset: %.1f drift: %1.f pixels/sec\n",
-		     del, offsetX, offsetX / del, offsetY, offsetY / del);
+		  buttonX = mouseX;
+		  buttonY = mouseY;
+		  buttonImageTime = exposureStart;
 		}
 	      else
 		{
-		  printf
-		    ("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n",
-		     del, offsetX, offsetY);
+		  // calculate distance travelled, print it, pixels / sec travelled, discard button
+		  timersub (&exposureStart, &buttonImageTime, &exposureStart);
+		  double del =
+		    exposureStart.tv_sec +
+		    (double) exposureStart.tv_usec / USEC_SEC;
+		  double offsetX = buttonX - mouseX;
+		  double offsetY = buttonY - mouseY;
+		  if (del > 0)
+		    {
+		      printf
+			("Delay %.4f sec\nX offset: %.1f drift: %.1f pixels/sec\nY offset: %.1f drift: %1.f pixels/sec\n",
+			 del, offsetX, offsetX / del, offsetY, offsetY / del);
+		    }
+		  else
+		    {
+		      printf
+			("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n",
+			 del, offsetX, offsetY);
+		    }
+		  // clear results
+		  buttonX = -1;
+		  buttonY = -1;
+		  timerclear (&buttonImageTime);
 		}
-	      // clear results
-	      buttonX = -1;
-	      buttonY = -1;
-	      timerclear (&buttonImageTime);
+	    }
+	  else
+	    {
+	      // move by given direction
+	      mouseTelChange_x = mouseX;
+	      mouseTelChange_y = mouseY;
+	      std::cout << "Change" << std::endl;
 	    }
 
 	  printf ("%i %i\n", mouseX, mouseY);
@@ -653,6 +671,12 @@ Rts2xfocusCamera::printFWHMTable ()
   Rts2GenFocCamera::printFWHMTable ();
   if (master->getStarsType ())
     redraw ();
+}
+
+void
+Rts2xfocusCamera::idle ()
+{
+  Rts2GenFocCamera::idle ();
 }
 
 imageProceRes
@@ -774,6 +798,27 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 
   exposureStart.tv_sec = image->getExposureSec ();
   exposureStart.tv_usec = image->getExposureUsec ();
+
+  // process mouse change events..
+
+  if (mouseTelChange_x != INT_MAX && mouseTelChange_y != INT_MAX
+      && getTopImage ())
+    {
+      struct ln_equ_posn change;
+      getTopImage ()->getRaDec (mouseTelChange_x, mouseTelChange_y, change.ra,
+				change.dec);
+
+      change.ra -= getTopImage ()->getCenterRa ();
+      change.dec -= getTopImage ()->getCenterDec ();
+
+      logStream (MESSAGE_DEBUG) << "Change X:" << mouseTelChange_x << " Y:" <<
+	mouseTelChange_y << " RA:" << change.ra << " DEC:" << change.
+	dec << sendLog;
+      master->
+	postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+      mouseTelChange_x = INT_MAX;
+      mouseTelChange_y = INT_MAX;
+    }
 
   redraw ();
   XFlush (master->getDisplay ());
@@ -902,6 +947,9 @@ Rts2xfocus::init ()
   rgb[256].blue = 0;
   rgb[256].flags = DoRed | DoGreen | DoBlue;
   ret = XAllocColor (display, colormap, &rgb[256]);
+
+  setTimeout (USEC_SEC);
+
   return 0;
 }
 
