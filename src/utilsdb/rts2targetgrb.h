@@ -26,7 +26,7 @@ private:
 
   const char *getSatelite ();
 protected:
-    virtual int getDBScript (const char *camera_name, char *script);
+    virtual int getDBScript (const char *camera_name, std::string & script);
 public:
     TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs,
 	       int in_maxBonusTimeout, int in_dayBonusTimeout,
@@ -34,7 +34,7 @@ public:
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
-  virtual int getScript (const char *deviceName, char *buf);
+  virtual int getScript (const char *deviceName, std::string & buf);
   virtual int beforeMove ();
   virtual float getBonus (double JD);
   virtual double getMinAlt ()

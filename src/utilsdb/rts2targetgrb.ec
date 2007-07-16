@@ -149,7 +149,7 @@ TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
 
 
 int
-TargetGRB::getDBScript (const char *camera_name, char *script)
+TargetGRB::getDBScript (const char *camera_name, std::string &script)
 {
   EXEC SQL BEGIN DECLARE SECTION;
     int d_post_sec;
@@ -196,21 +196,21 @@ TargetGRB::getDBScript (const char *camera_name, char *script)
       break;
     if (post_sec < d_post_sec || d_pos_ind < 0)
     {
-      strncpy (script, sc_script.arr, sc_script.len);
-      script[sc_script.len] = '\0';
+      sc_script.arr[sc_script.len] = '\0';
+      script = std::string (sc_script.arr);
       break;
     }
   }
   if (sqlca.sqlcode)
   {
     logMsgDb ("TargetGRB::getDBScript database error", MESSAGE_ERROR);
-    script[0] = '\0';
+    script = std::string ("");
     EXEC SQL CLOSE find_grb_script;
     EXEC SQL ROLLBACK;
     return -1;
   }
-  strncpy (script, sc_script.arr, sc_script.len);
-  script[sc_script.len] = '\0';
+  sc_script.arr[sc_script.len] = '\0';
+  script = std::string (script);
   EXEC SQL CLOSE find_grb_script;
   EXEC SQL COMMIT;
   return 0;
@@ -218,7 +218,7 @@ TargetGRB::getDBScript (const char *camera_name, char *script)
 
 
 int
-TargetGRB::getScript (const char *deviceName, char *buf)
+TargetGRB::getScript (const char *deviceName, std::string &buf)
 {
   int ret;
   time_t now;
@@ -237,15 +237,15 @@ TargetGRB::getScript (const char *deviceName, char *buf)
 
   if (now - (time_t) grbDate < 1000)
   {
-    strcpy (buf, "E 10 E 20 E 30 E 40");
+    buf = std::string ("E 10 E 20 E 30 E 40");
   }
   else if (now - (time_t) grbDate < 10000)
   {
-    strcpy (buf, "E 100 E 200");
+    buf = std::string ("E 100 E 200");
   }
   else
   {
-    strcpy (buf, "E 300");
+    buf = std::string ("E 300");
   }
   return 0;
 }

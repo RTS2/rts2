@@ -822,7 +822,7 @@ Target::postprocess ()
  * return -1 on error, 0 on success
  */
 int
-Target::getDBScript (const char *camera_name, char *script)
+Target::getDBScript (const char *camera_name, std::string &script)
 {
   EXEC SQL BEGIN DECLARE SECTION;
     int tar_id = getTargetID ();
@@ -850,12 +850,12 @@ Target::getDBScript (const char *camera_name, char *script)
     goto err;
   if (sc_indicator < 0)
     goto err;
-  strncpy (script, sc_script.arr, sc_script.len);
-  script[sc_script.len] = '\0';
+  sc_script.arr[sc_script.len] = '\0';
+  script = std::string (sc_script.arr);
   return 0;
   err:
   logMsgDb ("err db_get_script", MESSAGE_DEBUG);
-  script[0] = '\0';
+  script = std::string ("");
   return -1;
 }
 
@@ -869,7 +869,7 @@ Target::getDBScript (const char *camera_name, char *script)
  * @return 0 on success, < 0 on error
  */
 int
-Target::getScript (const char *device_name, char *buf)
+Target::getScript (const char *device_name, std::string &buf)
 {
   int ret;
   Rts2Config *config;
@@ -879,12 +879,12 @@ Target::getScript (const char *device_name, char *buf)
   if (!ret)
     return 0;
 
-  ret = config->getString (device_name, "script", buf, MAX_COMMAND_LENGTH);
+  ret = config->getString (device_name, "script", buf);
   if (!ret)
     return 0;
 
   // default is empty script
-  *buf = '\0';
+  buf = std::string ("");
   return -1;
 }
 

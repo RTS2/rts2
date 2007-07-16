@@ -70,8 +70,9 @@ int
 Rts2DeviceDb::initDB ()
 {
   int ret;
+  std::string cs;
   EXEC SQL BEGIN DECLARE SECTION;
-    char conn_str[200];
+  const char *conn_str;
   EXEC SQL END DECLARE SECTION;
   // try to connect to DB
 
@@ -86,13 +87,13 @@ Rts2DeviceDb::initDB ()
 
   if (connectString)
   {
-    strncpy (conn_str, connectString, 200);
+    conn_str = connectString;
   }
   else
   {
-    config->getString ("database", "name", conn_str, 200);
+    config->getString ("database", "name", cs);
+    conn_str = cs.c_str ();
   }
-  conn_str[199] = '\0';
 
   EXEC SQL CONNECT TO :conn_str;
   if (sqlca.sqlcode != 0)

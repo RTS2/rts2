@@ -201,22 +201,22 @@ PossibleDarks::addDarkExposure (float exp)
 int
 PossibleDarks::defaultDark ()
 {
-  char dark_exps [1000];
+  std::string dark_exps;
   char *tmp_c;
-  char *tmp_s;
+  const char *tmp_s;
   float exp;
   int ret;
 
   Rts2Config *config;
   config = Rts2Config::instance ();
-  ret = config->getString (deviceName, "darks", dark_exps, 1000);
+  ret = config->getString (deviceName, "darks", dark_exps);
   if (ret)
   {
     return 0;
   }
   // get the getCalledNum th observation
   // count how many exposures are in dark list..
-  tmp_s = dark_exps;
+  tmp_s = dark_exps.c_str ();
   while (*tmp_s)
   {
     // skip blanks..
@@ -334,25 +334,20 @@ PossibleDarks::dbDark ()
 
 
 int
-PossibleDarks::getScript (char *buf)
+PossibleDarks::getScript (std::string &buf)
 {
-  char *buf_top;
   std::list <float>::iterator dark_exp;
   if (dark_exposures.size () == 0)
   {
     dbDark ();
   }
-  buf_top = buf;
+  std::ostringstream _os;
   for (dark_exp = dark_exposures.begin (); dark_exp != dark_exposures.end (); dark_exp++)
   {
     float dark_ex = *dark_exp;
-    int len = sprintf (buf_top, "D %f", dark_ex);
-    buf_top += len;
-    *buf_top = ' ';
-    buf_top++;
+    _os << "D " << dark_ex << ' ';
   }
-  if (buf_top != buf)
-    *(--buf_top) = '\0';
+  buf = _os.str ();
   return 0;
 }
 
@@ -385,7 +380,7 @@ DarkTarget::~DarkTarget ()
 
 
 int
-DarkTarget::getScript (const char *deviceName, char *buf)
+DarkTarget::getScript (const char *deviceName, std::string &buf)
 {
   PossibleDarks *darkEntry = NULL;
   // try to find our script...
@@ -451,16 +446,16 @@ FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 
 
 int
-FlatTarget::getScript (const char *deviceName, char *buf)
+FlatTarget::getScript (const char *deviceName, std::string &buf)
 {
   int ret;
   ret = ConstTarget::getDBScript (deviceName, buf);
   if (!ret)
     return ret;
-  strcpy (buf, "E 1");
+  // default string
+  buf = std::string ("E 1");
   return 0;
 }
-
 
 // we will try to find target, that is among empty fields, and is at oposite location from sun
 // that target will then become our target_id, so entries in observation log
@@ -856,10 +851,9 @@ CalibrationTarget::getBonus (double JD)
 
 
 int
-FocusingTarget::getScript (const char *device_name, char *buf)
+FocusingTarget::getScript (const char *device_name, std::string &buf)
 {
-  buf[0] = COMMAND_FOCUSING;
-  buf[1] = 0;
+  buf = std::string (COMMAND_FOCUSING);
   return 0;
 }
 
@@ -1143,9 +1137,9 @@ LunarTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 
 
 int
-LunarTarget::getScript (const char *deviceName, char *buf)
+LunarTarget::getScript (const char *deviceName, std::string &buf)
 {
-  strcpy (buf, "E 1");
+  buf = std::string ("E 1");
   return 0;
 }
 
@@ -2036,7 +2030,7 @@ TargetPlan::load (double JD)
 
 
 int
-TargetPlan::getDBScript (const char *camera_name, char *script)
+TargetPlan::getDBScript (const char *camera_name, std::string &script)
 {
   if (selectedPlan)
     return selectedPlan->getTarget()->getScript (camera_name, script);

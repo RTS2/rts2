@@ -98,7 +98,7 @@ protected:
   char *target_comment;
   struct ln_lnlat_posn *observer;
 
-  virtual int getDBScript (const char *camera_name, char *script);
+  virtual int getDBScript (const char *camera_name, std::string & script);
 
   virtual int selectedAsGood ();	// get called when target was selected to update bonuses etc..
 public:
@@ -115,7 +115,7 @@ public:
   int loadTarget (int in_tar_id);
   virtual int save (bool overwrite);
   virtual int save (bool overwrite, int tar_id);
-  virtual int getScript (const char *device_name, char *buf);
+  virtual int getScript (const char *device_name, std::string & buf);
   int setScript (const char *device_name, const char *buf);
   struct ln_lnlat_posn *getObserver ()
   {
@@ -513,7 +513,7 @@ private:
 public:
     PossibleDarks (DarkTarget * in_target, const char *in_deviceName);
     virtual ~ PossibleDarks (void);
-  int getScript (char *buf);
+  int getScript (std::string & buf);
   int isName (const char *in_deviceName);
 };
 
@@ -525,7 +525,7 @@ private:
 public:
     DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ DarkTarget (void);
-  virtual int getScript (const char *deviceName, char *buf);
+  virtual int getScript (const char *deviceName, std::string & buf);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
   {
@@ -544,7 +544,7 @@ private:
   void getAntiSolarPos (struct ln_equ_posn *pos, double JD);
 public:
     FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-  virtual int getScript (const char *deviceName, char *buf);
+  virtual int getScript (const char *deviceName, std::string & buf);
   virtual int load ();
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int considerForObserving (double JD);
@@ -624,7 +624,7 @@ public:
 							     in_obs)
   {
   };
-  virtual int getScript (const char *deviceName, char *buf);
+  virtual int getScript (const char *deviceName, std::string & buf);
 };
 
 class ModelTarget:public ConstTarget
@@ -679,7 +679,7 @@ class LunarTarget:public Target
 {
 public:
   LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
-  virtual int getScript (const char *deviceName, char *buf);
+  virtual int getScript (const char *deviceName, std::string & buf);
   virtual int getPosition (struct ln_equ_posn *pos, double JD);
   virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 };
@@ -777,7 +777,7 @@ private:
   time_t nextTargetRefresh;
   void refreshNext ();
 protected:
-    virtual int getDBScript (const char *camera_name, char *script);
+    virtual int getDBScript (const char *camera_name, std::string & script);
 public:
     TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ TargetPlan (void);
