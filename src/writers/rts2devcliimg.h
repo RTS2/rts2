@@ -84,10 +84,10 @@ protected:
   double ter_yoa;
   double config_rotang;
   int flip;
-  char filter[200];
-  char instrume[70];
-  char telescop[70];
-  char origin[70];
+  std::string filter;
+  std::string instrume;
+  std::string telescop;
+  std::string origin;
 
   float exposureTime;
   exposureType exposureT;

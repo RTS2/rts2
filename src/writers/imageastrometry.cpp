@@ -75,34 +75,35 @@ Rts2Image::getOffset (double x1, double y1, double x2, double y2,
 double
 Rts2Image::getXoA ()
 {
-  int ret;
-  double val;
-  ret = getValue ("CAM_XOA", val);
-  if (ret)
-    {
-      getFailed++;
-      return getWidth () / 2.0;
-    }
-  return val;
+  return xoa;
 }
 
 double
 Rts2Image::getYoA ()
 {
-  int ret;
-  double val;
-  ret = getValue ("CAM_YOA", val);
-  if (ret)
-    {
-      getFailed++;
-      return getHeight () / 2.0;
-    }
-  return val;
+  return yoa;
+}
+
+void
+Rts2Image::setXoA (double in_xoa)
+{
+  xoa = in_xoa;
+  setValue ("CAM_XOA", in_xoa,
+	    "center in X axis (divide by binning (BIN_H)!)");
+}
+
+void
+Rts2Image::setYoA (double in_yoa)
+{
+  yoa = in_yoa;
+  setValue ("CAM_YOA", in_yoa,
+	    "center in Y axis (divide by binning (BIN_V)!)");
 }
 
 double
 Rts2Image::getRotang ()
 {
+//  return rotang;
   int ret;
   double val;
   ret = getValue ("ROTANG", val);
@@ -173,15 +174,7 @@ Rts2Image::getYPlate ()
 int
 Rts2Image::getMountFlip ()
 {
-  int ret;
-  int val;
-  ret = getValue ("MNT_FLIP", val);
-  if (ret)
-    {
-      getFailed++;
-      return -1;
-    }
-  return val;
+  return mnt_flip;
 }
 
 int

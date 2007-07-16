@@ -84,6 +84,11 @@ private:
   // and become nan once we save image (so mnt_flip can be applied properly).
   double config_rotang;
 
+  double xoa;
+  double yoa;
+
+  int mnt_flip;
+
   void initData ();
 
   // writes one value to image
@@ -517,6 +522,9 @@ public:
   double getXoA ();
   double getYoA ();
 
+  void setXoA (double in_xoa);
+  void setYoA (double in_yoa);
+
   // get rotang - get value from WCS when available; ROTANG is in radians, and is true rotang of image
   // (assumig top is N, left is E - e.g. is corrected for telescope flip)
   // it's WCS style - counterclockwise
@@ -593,12 +601,12 @@ public:
     return ret;
   }
 
-  int setInstrument (char *instr)
+  int setInstrument (const char *instr)
   {
     return setValue ("INSTRUME", instr, "instrument used for acqusition");
   }
 
-  int setTelescope (char *tel)
+  int setTelescope (const char *tel)
   {
     return setValue ("TELESCOP", tel, "telescope used for acqusition");
   }
@@ -608,7 +616,7 @@ public:
     return setValue ("OBSERVER", "RTS2 " VERSION, "observer");
   }
 
-  int setOrigin (char *orig)
+  int setOrigin (const char *orig)
   {
     return setValue ("ORIGIN", orig, "organisation responsible for data");
   }

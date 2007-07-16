@@ -37,15 +37,15 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   config->getDouble (connection->getName (), "ter_yoa", ter_yoa);
   config->getDouble (connection->getName (), "rotang", config_rotang);
   config->getInteger (connection->getName (), "flip", flip);
-  config->getString (connection->getName (), "filter", filter, 200);
+  config->getString (connection->getName (), "filter", filter);
 
   telescop[0] = '\0';
   instrume[0] = '\0';
   origin[0] = '\0';
 
-  config->getString (connection->getName (), "instrume", instrume, 70);
-  config->getString (connection->getName (), "telescop", telescop, 70);
-  config->getString (connection->getName (), "origin", origin, 70);
+  config->getString (connection->getName (), "instrume", instrume);
+  config->getString (connection->getName (), "telescop", telescop);
+  config->getString (connection->getName (), "origin", origin);
 }
 
 Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
@@ -176,8 +176,7 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes
-Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }
@@ -205,24 +204,20 @@ Rts2DevClientCameraImage::exposureStarted ()
   image->setValue ("YPLATE", yplate,
 		   "yplate (scale in Y axis; divide by binning (BIN_V)!)");
 
-  image->setInstrument (instrume);
-  image->setTelescope (telescop);
-  image->setOrigin (origin);
+  image->setInstrument (instrume.c_str ());
+  image->setTelescope (telescop.c_str ());
+  image->setOrigin (origin.c_str ());
 
   if (image->getTargetType () == TYPE_TERESTIAL
       && !isnan (ter_xoa) && !isnan (ter_yoa))
     {
-      image->setValue ("CAM_XOA", ter_xoa,
-		       "ter center in X axis (divide by binning (BIN_H)!)");
-      image->setValue ("CAM_YOA", ter_yoa,
-		       "ter center in Y axis (divide by binning (BIN_V)!)");
+      image->setXoA (ter_xoa);
+      image->setYoA (ter_yoa);
     }
   else
     {
-      image->setValue ("CAM_XOA", xoa,
-		       "center in X axis (divide by binning (BIN_H)!)");
-      image->setValue ("CAM_YOA", yoa,
-		       "center in Y axis (divide by binning (BIN_V)!)");
+      image->setXoA (xoa);
+      image->setYoA (yoa);
     }
   image->setConfigRotang (config_rotang);
   image->setValue ("FLIP", flip,

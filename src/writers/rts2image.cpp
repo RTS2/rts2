@@ -61,6 +61,11 @@ Rts2Image::initData ()
   shutter = SHUT_UNKNOW;
 
   flags = 0;
+
+  xoa = nan ("f");
+  yoa = nan ("f");
+
+  mnt_flip = 0;
 }
 
 Rts2Image::Rts2Image ()
@@ -131,6 +136,11 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   // other image will be saved!
   flags = in_image->flags;
   in_image->flags &= ~IMAGE_SAVE;
+
+  xoa = in_image->xoa;
+  yoa = in_image->yoa;
+
+  mnt_flip = in_image->mnt_flip;
 }
 
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
@@ -275,6 +285,13 @@ Rts2Image::Rts2Image (const char *in_filename, bool verbose)
   // astrometry get !!
   getValue ("CRVAL1", pos_astr.ra, false);
   getValue ("CRVAL2", pos_astr.dec, false);
+  // xoa..
+  xoa = yoa = 0;
+  getValue ("CAM_XOA", xoa, false);
+  getValue ("CAM_YOA", yoa, false);
+
+  mnt_flip = 0;
+  getValue ("MNT_FLIP", mnt_flip, false);
 }
 
 Rts2Image::~Rts2Image (void)
@@ -1921,6 +1938,8 @@ Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
 {
   char *desc = (char *) val->getDescription ().c_str ();
   char *name = (char *) val->getName ().c_str ();
+  char *name_stat;
+  char *n_top;
   if (client->getOtherType () == DEVICE_TYPE_SENSOR)
     {
       name = new char[strlen (name) + strlen (client->getName ()) + 2];
@@ -1941,7 +1960,27 @@ Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
       setValue (name, val->getValueDouble (), desc);
       break;
     case RTS2_VALUE_DOUBLE:
+    case RTS2_VALUE_DOUBLE_MMAX:
       setValue (name, val->getValueDouble (), desc);
+      break;
+    case RTS2_VALUE_DOUBLE_STAT:
+      setValue (name, val->getValueDouble (), desc);
+      name_stat = new char[strlen (name) + 5];
+      n_top = name_stat + strlen (name);
+      strcpy (name_stat, name);
+      *n_top = '.';
+      n_top++;
+      strcpy (n_top, "MEA");
+      setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMean (), desc);
+      strcpy (n_top, "MIN");
+      setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMin (), desc);
+      strcpy (n_top, "MAX");
+      setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMax (), desc);
+      strcpy (n_top, "STD");
+      setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getStdev (), desc);
+      strcpy (n_top, "NUM");
+      setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getNumMes (), desc);
+      delete[]name_stat;
       break;
     case RTS2_VALUE_FLOAT:
       setValue (name, val->getValueFloat (), desc);
