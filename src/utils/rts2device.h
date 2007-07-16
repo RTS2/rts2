@@ -1,10 +1,6 @@
 #ifndef __RTS2_DEVICE__
 #define __RTS2_DEVICE__
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 255
 #endif
@@ -18,6 +14,7 @@
 #include <vector>
 
 #include "rts2daemon.h"
+#include "rts2configraw.h"
 
 #define CHECK_PRIORITY if (!conn->havePriority ()) { conn->sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
 
@@ -118,6 +115,12 @@ private:
   Rts2DevConnMaster * conn_master;
   char *centrald_host;
   int centrald_port;
+
+  // mode related variable
+  char *modefile;
+  Rts2ConfigRaw *modeconf;
+  Rts2ValueSelection *modesel;
+
   int device_port;
   char *device_name;
   int device_type;

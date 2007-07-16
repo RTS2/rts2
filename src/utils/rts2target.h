@@ -116,7 +116,7 @@ public:
   {
   }
   // target manipulation functions
-  virtual int getScript (const char *device_name, char *buf) = 0;
+  virtual int getScript (const char *device_name, std::string & buf) = 0;
 
   int getPosition (struct ln_equ_posn *pos)
   {

@@ -28,8 +28,7 @@ std::vector < struct HorizonEntry >
  *
  * @author Petr Kubanek <petr@lascaux.asu.cas.cz>
  */
-class
-  ObjectCheck
+class ObjectCheck
 {
 private:
   enum
@@ -38,20 +37,18 @@ private:
     AZ_ALT
   } horType;
 
-  horizon_t
-    horizon;
+  horizon_t horizon;
   int
-  load_horizon (char *horizon_file);
+  load_horizon (const char *horizon_file);
 
   double
   getHorizonHeightAz (double az, horizon_t::iterator iter1,
 		      horizon_t::iterator iter2);
 
 public:
-  ObjectCheck (char *horizon_file);
+  ObjectCheck (const char *horizon_file);
 
-   ~
-  ObjectCheck ();
+  ~ObjectCheck ();
   /**
    * Check, if that target can be observerd.
    *
@@ -68,14 +65,12 @@ public:
   double
   getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness);
 
-  horizon_t::iterator
-  begin ()
+  horizon_t::iterator begin ()
   {
     return horizon.begin ();
   }
 
-  horizon_t::iterator
-  end ()
+  horizon_t::iterator end ()
   {
     return horizon.end ();
   }

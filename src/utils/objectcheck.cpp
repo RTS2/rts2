@@ -14,7 +14,7 @@
 #include "objectcheck.h"
 #include "libnova_cpp.h"
 
-ObjectCheck::ObjectCheck (char *horizon_file)
+ObjectCheck::ObjectCheck (const char *horizon_file)
 {
   horType = HA_DEC;
   load_horizon (horizon_file);
@@ -32,7 +32,7 @@ RAcomp (HorizonEntry hor1, HorizonEntry hor2)
 }
 
 int
-ObjectCheck::load_horizon (char *horizon_file)
+ObjectCheck::load_horizon (const char *horizon_file)
 {
   std::ifstream inf;
 

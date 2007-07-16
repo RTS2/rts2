@@ -17,6 +17,8 @@
 
 #define OPT_LOCALPORT	1005
 
+#define OPT_MODEFILE	1006
+
 // here starts local playground..
 #define OPT_LOCAL	10000
 

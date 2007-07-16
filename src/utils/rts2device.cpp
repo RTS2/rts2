@@ -548,6 +548,11 @@ Rts2Daemon (in_argc, in_argv)
   device_name = default_name;
   centrald_host = "localhost";
   centrald_port = atoi (CENTRALD_PORT);
+
+  modefile = NULL;
+  modeconf = NULL;
+  modesel = NULL;
+
   log_option = 0;
 
   device_type = in_device_type;
@@ -562,12 +567,14 @@ Rts2Daemon (in_argc, in_argv)
   addOption (OPT_SERVER, "server", 1,
 	     "name of computer, on which central server runs");
   addOption (OPT_PORT, "port", 1, "port number of central host");
+  addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
   addOption ('M', "mail-to", 1, "send report mails to this adresses");
   addOption ('d', "device_name", 1, "name of device");
 }
 
 Rts2Device::~Rts2Device (void)
 {
+  delete modeconf;
 }
 
 Rts2DevConn *
@@ -637,6 +644,9 @@ Rts2Device::processOption (int in_opt)
       break;
     case OPT_PORT:
       centrald_port = atoi (optarg);
+      break;
+    case OPT_MODEFILE:
+      modefile = optarg;
       break;
     case 'M':
       mailAddress = optarg;
@@ -757,6 +767,23 @@ Rts2Device::init ()
     return ret;
 
   free (lock_fname);
+
+  // check for modefile
+  if (modefile != NULL)
+    {
+      modeconf = new Rts2ConfigRaw ();
+      ret = modeconf->loadFile (modefile);
+      if (ret)
+	return ret;
+
+      createValue (modesel, "MODE", "mode name", true);
+
+      for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
+	   iter != modeconf->end (); iter++)
+	{
+	  modesel->addSelVal ((*iter)->getName ());
+	}
+    }
 
   conn_master =
     new Rts2DevConnMaster (this, device_host, getPort (), device_name,
