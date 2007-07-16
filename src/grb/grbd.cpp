@@ -97,10 +97,12 @@ Rts2DevGrb::reloadConfig ()
   // get some default, if we cannot get them from command line
   if (!gcn_host)
     {
-      gcn_host = new char[200];
-      ret = config->getString ("grbd", "server", gcn_host, 200);
+      std::string gcn_h;
+      ret = config->getString ("grbd", "server", gcn_h);
       if (ret)
 	return -1;
+      gcn_host = new char[gcn_h.length () + 1];
+      strcpy (gcn_host, gcn_h.c_str ());
     }
 
   if (gcn_port < 0)
@@ -113,15 +115,12 @@ Rts2DevGrb::reloadConfig ()
   // try to get exe from config
   if (!addExe)
     {
-      char *conf_addExe = new char[1024];
-      ret = config->getString ("grbd", "add_exe", conf_addExe, 200);
-      if (ret)
+      std::string conf_addExe;
+      ret = config->getString ("grbd", "add_exe", conf_addExe);
+      if (!ret)
 	{
-	  delete conf_addExe;
-	}
-      else
-	{
-	  addExe = conf_addExe;
+	  addExe = new char[conf_addExe.length () + 1];
+	  strcpy (addExe, conf_addExe.c_str ());
 	}
     }
   if (gcncnn)
