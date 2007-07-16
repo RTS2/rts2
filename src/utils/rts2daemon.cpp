@@ -390,7 +390,7 @@ Rts2Daemon::loadValues ()
        iter != savedValues.end ();)
     {
       Rts2Value *new_val = *iter;
-      Rts2CondValue *old_val = getValue (new_val->getName ().c_str ());
+      Rts2CondValue *old_val = getCondValue (new_val->getName ().c_str ());
       if (old_val == NULL)
 	{
 	  logStream (MESSAGE_ERROR) <<
@@ -436,8 +436,17 @@ Rts2Daemon::addValue (Rts2Value * value, int queCondition, bool save_value)
   values.push_back (new Rts2CondValue (value, queCondition, save_value));
 }
 
-Rts2CondValue *
+Rts2Value *
 Rts2Daemon::getValue (const char *v_name)
+{
+  Rts2CondValue *c_val = getCondValue (v_name);
+  if (c_val == NULL)
+    return NULL;
+  return c_val->getValue ();
+}
+
+Rts2CondValue *
+Rts2Daemon::getCondValue (const char *v_name)
 {
   Rts2CondValueVector::iterator iter;
   for (iter = values.begin (); iter != values.end (); iter++)
@@ -838,7 +847,7 @@ Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
   int ret;
   if (conn->paramNextString (&v_name) || conn->paramNextString (&op))
     return -2;
-  Rts2CondValue *old_value_cond = getValue (v_name);
+  Rts2CondValue *old_value_cond = getCondValue (v_name);
   if (!old_value_cond)
     return -2;
   Rts2Value *old_value = old_value_cond->getValue ();

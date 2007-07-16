@@ -131,6 +131,8 @@ private:
 
   char *mailAddress;
 
+  int setMode (int new_mode);
+
 protected:
   /**
    * Process on option, when received from getopt () call.
@@ -153,9 +155,11 @@ protected:
   {
     return old_value->queValueChange (getState ());
   }
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
-    Rts2Device (int in_argc, char **in_argv, int in_device_type,
-		char *default_name);
+  Rts2Device (int in_argc, char **in_argv, int in_device_type,
+	      char *default_name);
   virtual ~ Rts2Device (void);
   virtual Rts2DevConn *createConnection (int in_sock);
 

@@ -632,6 +632,66 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 }
 
 int
+Rts2Device::setMode (int new_mode)
+{
+  if (modesel == NULL)
+    {
+      logStream (MESSAGE_ERROR) << "Called setMode without modesel." <<
+	sendLog;
+      return -1;
+    }
+  if (new_mode < 0 || new_mode >= modesel->selSize ())
+    {
+      logStream (MESSAGE_ERROR) << "Invalid new mode " << new_mode << "." <<
+	sendLog;
+      return -1;
+    }
+  Rts2ConfigSection *sect = (*modeconf)[new_mode];
+  // setup values
+  for (Rts2ConfigSection::iterator iter = sect->begin ();
+       iter != sect->end (); iter++)
+    {
+      Rts2Value *val = getValue ((*iter).getValueName ().c_str ());
+      if (val == NULL)
+	{
+	  logStream (MESSAGE_ERROR) << "Cannot find value with name '" <<
+	    (*iter).getValueName () << "'." << sendLog;
+	  return -1;
+	}
+      // test for suffix
+      std::string suffix = (*iter).getSuffix ();
+      if (suffix.length () > 0)
+	{
+	  if (val->getValueType () == RTS2_VALUE_DOUBLE_MMAX)
+	    {
+	      if (!strcasecmp (suffix.c_str (), "min"))
+		{
+		  ((Rts2ValueDoubleMinMax *) val)->setMin ((*iter).
+							   getValueDouble ());
+		  sendValueAll (val);
+		  continue;
+		}
+	      else if (!strcasecmp (suffix.c_str (), "max"))
+		{
+		  ((Rts2ValueDoubleMinMax *) val)->setMax ((*iter).
+							   getValueDouble ());
+		  sendValueAll (val);
+		  continue;
+		}
+	    }
+	  logStream (MESSAGE_ERROR) << "Do not know what to do with suffix "
+	    << suffix << "." << sendLog;
+	  return -1;
+	}
+      // as fall back, exit
+      logStream (MESSAGE_ERROR) << "Cannot set value " << (*iter).
+	getValueName () << "." << sendLog;
+      return -1;
+    }
+  return 0;
+}
+
+int
 Rts2Device::processOption (int in_opt)
 {
   switch (in_opt)
@@ -664,6 +724,16 @@ void
 Rts2Device::cancelPriorityOperations ()
 {
   scriptEnds ();
+}
+
+int
+Rts2Device::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == modesel)
+    {
+      return setMode (new_value->getValueInteger ())? -2 : 0;
+    }
+  return Rts2Daemon::setValue (old_value, new_value);
 }
 
 void

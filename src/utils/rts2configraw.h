@@ -41,9 +41,24 @@ public:
     return (valueName == name && valueSuffix.length () == 0);
   }
 
+  std::string getValueName ()
+  {
+    return valueName;
+  }
+
+  std::string getSuffix ()
+  {
+    return valueSuffix;
+  }
+
   std::string getValue ()
   {
     return value;
+  }
+
+  double getValueDouble ()
+  {
+    return atof (value.c_str ());
   }
 
   friend std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
@@ -95,11 +110,8 @@ public:
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
-class
-  Rts2ConfigRaw:
-  public
-  std::vector <
-Rts2ConfigSection * >
+class Rts2ConfigRaw:
+public std::vector < Rts2ConfigSection * >
 {
 private:
   void
@@ -112,8 +124,7 @@ private:
   Rts2ConfigValue *
   getValue (const char *section, const char *param);
 protected:
-  std::ifstream *
-    configStream;
+  std::ifstream * configStream;
   virtual void
   getSpecialValues ()
   {
@@ -131,8 +142,7 @@ public:
   getFloat (const char *section, const char *param, float &value);
   int
   getDouble (const char *section, const char *param, double &value);
-  bool
-  getBoolean (const char *section, const char *param, bool def = false);
+  bool getBoolean (const char *section, const char *param, bool def = false);
 };
 
 #endif /*! __RTS2_CONFIG_RAW__ */

@@ -49,7 +49,6 @@ private:
    */
   void addValue (Rts2Value * value, int queCondition = 0, bool save_value =
 		 false);
-  Rts2CondValue *getValue (const char *v_name);
 
   Rts2Value *duplicateValue (Rts2Value * old_value, bool withVal = false);
 
@@ -72,12 +71,12 @@ private:
   void saveValue (Rts2CondValue * val);
   void deleteSaveValue (Rts2CondValue * val);
 
+protected:
   /**
    * Send new value over the wire to all connections.
    */
-
   void sendValueAll (Rts2Value * value);
-protected:
+
   int checkLockFile (const char *lock_fname);
   void setNotDeamonize ()
   {
@@ -89,6 +88,9 @@ protected:
   virtual void selectSuccess (fd_set * read_set);
 
   Rts2ValueQueVector queValues;
+
+  Rts2Value *getValue (const char *v_name);
+  Rts2CondValue *getCondValue (const char *v_name);
 
   void loadValues ();
 
