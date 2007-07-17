@@ -70,7 +70,8 @@ Rts2DevSensorKeithley487::info ()
       return -1;
     }
 
-  curr->setValueFloat (*((float *) (&(oneShot.value))));
+  // scale properly..
+  curr->setValueFloat (*((float *) (&(oneShot.value))) * 1e+12);
 
   return Rts2DevSensorGpib::info ();
 }
