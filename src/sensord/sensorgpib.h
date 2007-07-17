@@ -17,6 +17,8 @@ protected:
   int gpibRead (void *buf, int blen);
   int gpibWriteRead (char *buf, char *val, int blen = 50);
 
+  int gpibWaitSRQ ();
+
   virtual int processOption (int in_opt);
   virtual int init ();
 

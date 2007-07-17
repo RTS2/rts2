@@ -28,8 +28,8 @@ Rts2DevSensorGpib::gpibRead (void *buf, int blen)
       return -1;
     }
 #ifdef DEBUG_EXTRA
-  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << buf <<
-    "' ret " << ret << sendLog;
+  logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) buf
+    << "' ret " << ret << sendLog;
 #endif
   return 0;
 }
@@ -63,6 +63,24 @@ Rts2DevSensorGpib::gpibWriteRead (char *buf, char *val, int blen)
     " ret " << ret << sendLog;
 #endif
   return 0;
+}
+
+int
+Rts2DevSensorGpib::gpibWaitSRQ ()
+{
+  int ret;
+  short res;
+  while (true)
+    {
+      ret = iblines (gpib_dev, &res);
+      if (ret & ERR)
+	{
+	  logStream (MESSAGE_ERROR) << "Error while waiting for SRQ " << ret
+	    << sendLog;
+	}
+      if (res & BusSRQ)
+	return 0;
+    }
 }
 
 int
