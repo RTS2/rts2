@@ -123,10 +123,15 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
       CameraImages::iterator cis = getTopIter ();
       CameraImage *ci = *cis;
       ci->image->writeDate (dataConn);
+      ci->setDataWriten ();
       if (ci->canDelete ())
 	{
 	  processCameraImage (cis);
 	}
+    }
+  else
+    {
+      logStream (MESSAGE_DEBUG) << "getTopImage is NULL" << sendLog;
     }
 }
 
@@ -167,6 +172,9 @@ CameraImages::iterator
       setImage (ci->image, NULL);
     }
   // remove us
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
+#endif /* DEBUG_EXTRA */
   delete ci;
   return images.erase (cis);
 }
@@ -176,8 +184,7 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes
-Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }
@@ -192,7 +199,6 @@ Rts2DevClientCameraImage::exposureFailed (int status)
 void
 Rts2DevClientCameraImage::exposureStarted ()
 {
-  clearImages ();
   exposureTime = getValueDouble ("exposure");
   struct timeval expStart;
   const char *focuser;

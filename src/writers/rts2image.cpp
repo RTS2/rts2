@@ -1141,7 +1141,13 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
   ret = writeImgHeader (im_h);
 
   if (!ffile || !(flags & IMAGE_SAVE))
-    return 0;
+    {
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) << "not saving data " << ffile << " " <<
+	(flags & IMAGE_SAVE) << sendLog;
+#endif /* DEBUG_EXTRA */
+      return 0;
+    }
 
   if (imageType == RTS2_DATA_SBYTE)
     {
@@ -1224,6 +1230,9 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
   setValue ("AVERAGE", average, "average value of image");
   setValue ("STDEV", stdev, "standard deviation value of image");
   setValue ("BGSTDEV", stdev, "standard deviation value of background");
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "writeDate returns " << ret << sendLog;
+#endif /* DEBUG_EXTRA */
   return ret;
 }
 
@@ -1965,13 +1974,13 @@ Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
       break;
     case RTS2_VALUE_DOUBLE_STAT:
       setValue (name, val->getValueDouble (), desc);
-      name_stat = new char[strlen (name) + 5];
+      name_stat = new char[strlen (name) + 6];
       n_top = name_stat + strlen (name);
       strcpy (name_stat, name);
       *n_top = '.';
       n_top++;
-      strcpy (n_top, "MEA");
-      setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMean (), desc);
+      strcpy (n_top, "MODE");
+      setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMode (), desc);
       strcpy (n_top, "MIN");
       setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMin (), desc);
       strcpy (n_top, "MAX");

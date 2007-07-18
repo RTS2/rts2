@@ -43,6 +43,7 @@ private:
 public:
   double exStart;
   double exEnd;
+  bool dataWriten;
   Rts2Image *image;
 
     CameraImage (Rts2Image * in_image, double in_exStart)
@@ -50,6 +51,7 @@ public:
     image = in_image;
     exStart = in_exStart;
     exEnd = nan ("f");
+    dataWriten = false;
   }
   virtual ~ CameraImage (void);
 
@@ -59,6 +61,11 @@ public:
   void setExEnd (double in_exEnd)
   {
     exEnd = in_exEnd;
+  }
+
+  void setDataWriten ()
+  {
+    dataWriten = true;
   }
 
   bool canDelete ();

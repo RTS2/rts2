@@ -53,7 +53,7 @@ bool CameraImage::waitingFor (Rts2DevClient * devClient)
 
 bool CameraImage::canDelete ()
 {
-  if (isnan (exEnd))
+  if (isnan (exEnd) || !dataWriten)
     return false;
   return deviceWaits.empty ();
 }
