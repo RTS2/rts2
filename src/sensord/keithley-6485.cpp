@@ -241,60 +241,17 @@ int
 Rts2DevSensorKeithley::info ()
 {
   int ret;
-  // disable display
-//  char *buf;
+  char *buf;
   ret = getGPIB ("SYSTEM:AZERO?", azero);
   if (ret)
     return ret;
   // start and setup measurements..
-  ret = gpibWrite ("*RST");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("TRIG:DEL 0");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("TRIG:COUNT 100");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("SENS:CURR:RANG:AUTO ON");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("SENS:CURR:NPLC 1");
-  if (ret)
-    return ret;
-/*  ret = gpibWrite ("SENS:CURR:RANG 2000");
-  if (ret)
-    return ret; */
-  ret = gpibWrite ("SYST:ZCH OFF");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("SYST:AZER:STAT OFF");
-  if (ret)
-    return ret;
-/*  ret = gpibWrite ("DISP:ENAB OFF");
-  if (ret)
-    return ret;a */
-  ret = gpibWrite ("*CLS");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("TRAC:POIN 100");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("TRAC:CLE");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("TRAC:FEED:CONT NEXT");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("STAT:MEAS:ENAB 512");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("*SRE 0");
-  if (ret)
-    return ret;
-  //asprintf (&buf, "*RST; TRIG:DEL 0; TRIG:COUNT %i; SENS:CURR:RANG:AUTO OFF; SENS:CURR:NPLC .01; SENS:CURR:RANG .002; SYST:ZCH OFF; SYST:AZER:STAT OFF; DISP:ENAB OFF; *CLS; TRAC:POIN %i; TRAC:CLE; TRAC:FEED:CONT NEXT; STAT:MEAS:ENAB 512; *SRE 1", countNum->getValueInteger (), countNum->getValueInteger ()); 
-  //ret = gpibWrite (buf);
-  //free (buf);
+  //
+  asprintf (&buf,
+	    "*RST; TRIG:DEL 0; TRIG:COUNT %i; SENS:CURR:RANG:AUTO ON; SENS:CURR:NPLC 1; SYST:ZCH OFF; SYST:AZER:STAT OFF; *CLS; TRAC:POIN %i; TRAC:CLE; TRAC:FEED:CONT NEXT; STAT:MEAS:ENAB 512; *SRE 0",
+	    countNum->getValueInteger (), countNum->getValueInteger ());
+  ret = gpibWrite (buf);
+  free (buf);
 
   int icount = 0;
   while (icount < countNum->getValueInteger ())
