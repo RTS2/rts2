@@ -12,7 +12,7 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 {
 private:
   size_t numMes;
-  double mean;
+  double mode;
   double min;
   double max;
   double stdev;
@@ -35,9 +35,9 @@ public:
     return numMes;
   }
 
-  double getMean ()
+  double getMode ()
   {
-    return mean;
+    return mode;
   }
 
   double getMin ()

@@ -5,7 +5,7 @@ void
 Rts2ValueDoubleStat::clearStat ()
 {
   numMes = 0;
-  mean = nan ("f");
+  mode = nan ("f");
   min = nan ("f");
   max = nan ("f");
   stdev = nan ("f");
@@ -36,12 +36,13 @@ Rts2ValueDoubleStat::calculate ()
     {
       sum = *iter - getValueDouble ();
       sum *= sum;
-      stdev += sqrt (sum / numMes);
+      stdev += sum;
     }
+  stdev = sqrt (stdev / numMes);
   if ((numMes % 2) == 1)
-    mean = sorted[numMes / 2];
+    mode = sorted[numMes / 2];
   else
-    mean = (sorted[numMes / 2 - 1] + sorted[numMes / 2]) / 2.0;
+    mode = (sorted[numMes / 2 - 1] + sorted[numMes / 2]) / 2.0;
 }
 
 Rts2ValueDoubleStat::Rts2ValueDoubleStat (std::string in_val_name):Rts2ValueDouble
@@ -63,7 +64,7 @@ Rts2ValueDoubleStat::setValue (Rts2Conn * connection)
 {
   if (connection->paramNextDouble (&value)
       || connection->paramNextSizeT (&numMes)
-      || connection->paramNextDouble (&mean)
+      || connection->paramNextDouble (&mode)
       || connection->paramNextDouble (&min)
       || connection->paramNextDouble (&max)
       || connection->paramNextDouble (&stdev) || !connection->paramEnd ())
@@ -75,7 +76,7 @@ const char *
 Rts2ValueDoubleStat::getValue ()
 {
   sprintf (buf, "%.20le %i %.20le %.20le %.20le %.20le", value, numMes,
-	   mean, min, max, stdev);
+	   mode, min, max, stdev);
   return buf;
 }
 
@@ -83,7 +84,7 @@ const char *
 Rts2ValueDoubleStat::getDisplayValue ()
 {
   sprintf (buf, "%f %i %f %f %f %f",
-	   getValueDouble (), numMes, mean, min, max, stdev);
+	   getValueDouble (), numMes, mode, min, max, stdev);
   return buf;
 }
 
@@ -102,7 +103,7 @@ Rts2ValueDoubleStat::setFromValue (Rts2Value * newValue)
   if (newValue->getValueType () == RTS2_VALUE_DOUBLE_STAT)
     {
       numMes = ((Rts2ValueDoubleStat *) newValue)->getNumMes ();
-      mean = ((Rts2ValueDoubleStat *) newValue)->getMean ();
+      mode = ((Rts2ValueDoubleStat *) newValue)->getMode ();
       min = ((Rts2ValueDoubleStat *) newValue)->getMin ();
       max = ((Rts2ValueDoubleStat *) newValue)->getMax ();
       stdev = ((Rts2ValueDoubleStat *) newValue)->getStdev ();
