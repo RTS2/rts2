@@ -656,8 +656,9 @@ Rts2Conn::receive (fd_set * set)
       buf_top[data_size] = '\0';
       successfullRead ();
 #ifdef DEBUG_ALL
-      logStream (MESSAGE_DEBUG) << "Rts2Conn::receive reas: " << buf_top <<
-	" full_buf: " << buf << " size: " << data_size << sendLog;
+      logStream (MESSAGE_DEBUG) << "Rts2Conn::receive name " << getName () <<
+	" reas: " << buf_top << " full_buf: " << buf << " size: " << data_size
+	<< sendLog;
 #endif
       // put old data size into account..
       data_size += buf_top - buf;

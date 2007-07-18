@@ -19,12 +19,16 @@ public:
   {
     masterApp = in_master;
     messageType = in_type;
+    ls.setf (std::ios_base::fixed, std::ios_base::floatfield);
+    ls.precision (6);
   }
 
   Rts2LogStream (Rts2LogStream & in_logStream)
   {
     masterApp = in_logStream.masterApp;
     messageType = in_logStream.messageType;
+    ls.setf (std::ios_base::fixed, std::ios_base::floatfield);
+    ls.precision (6);
   }
 
   Rts2LogStream & operator << (Rts2LogStream & (*func) (Rts2LogStream &))
