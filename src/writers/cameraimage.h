@@ -54,7 +54,7 @@ public:
   virtual ~ CameraImage (void);
 
   void waitForDevice (Rts2DevClient * devClient, double after);
-  bool waitingFor (Rts2DevClient * devClient, double info_time = nan ("f"));
+  bool waitingFor (Rts2DevClient * devClient);
 
   void setExEnd (double in_exEnd)
   {
@@ -83,8 +83,7 @@ public:
   deleteOld ();
 
   void
-  infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client,
-	  double infotime);
+  infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client);
   void
   infoFailed (Rts2DevClientCameraImage * master, Rts2DevClient * client);
 };

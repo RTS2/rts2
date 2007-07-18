@@ -272,6 +272,11 @@ public:
     gmtime_r (&exposureStart.tv_sec, &exposureGmTime);
   }
 
+  double getExposureStart ()
+  {
+    return exposureStart.tv_sec + ((double) exposureStart.tv_usec / USEC_SEC);
+  }
+
   long getExposureSec ()
   {
     return exposureStart.tv_sec;

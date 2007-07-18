@@ -1,5 +1,6 @@
 #include "cameraimage.h"
 #include "rts2devcliimg.h"
+#include "../utils/timestamp.h"
 
 CameraImage::~CameraImage (void)
 {
@@ -18,31 +19,39 @@ CameraImage::waitForDevice (Rts2DevClient * devClient, double after)
   deviceWaits.push_back (new ImageDeviceWait (devClient, after));
 }
 
-bool
-CameraImage::waitingFor (Rts2DevClient * devClient, double info_time)
+bool CameraImage::waitingFor (Rts2DevClient * devClient)
 {
-  bool ret = false;
+  bool
+    ret = false;
   for (std::vector < ImageDeviceWait * >::iterator iter =
        deviceWaits.begin (); iter != deviceWaits.end ();)
     {
-      ImageDeviceWait *idw = *iter;
+      ImageDeviceWait *
+	idw = *iter;
       if (idw->getClient () == devClient
-	  && (isnan (info_time) || idw->getAfter () < info_time))
+	  && (isnan (devClient->getInfoTime ())
+	      || idw->getAfter () < devClient->getInfoTime ()))
 	{
-	  delete idw;
+	  delete
+	    idw;
 	  iter = deviceWaits.erase (iter);
 	  ret = true;
 	}
       else
 	{
+	  logStream (MESSAGE_DEBUG) << "waitingFor " << (idw->getClient () ==
+							 devClient) <<
+	    Timestamp (devClient->getInfoTime ()) << " " << Timestamp (idw->
+								       getAfter
+								       ()) <<
+	    sendLog;
 	  iter++;
 	}
     }
   return ret;
 }
 
-bool
-CameraImage::canDelete ()
+bool CameraImage::canDelete ()
 {
   if (isnan (exEnd))
     return false;
@@ -78,12 +87,12 @@ CameraImages::deleteOld ()
 
 void
 CameraImages::infoOK (Rts2DevClientCameraImage * master,
-		      Rts2DevClient * client, double infotime)
+		      Rts2DevClient * client)
 {
   for (CameraImages::iterator iter = begin (); iter != end ();)
     {
       CameraImage *ci = *iter;
-      if (ci->waitingFor (client, infotime))
+      if (ci->waitingFor (client))
 	{
 	  ci->image->writeClient (client, EXPOSURE_END);
 	  if (ci->canDelete ())

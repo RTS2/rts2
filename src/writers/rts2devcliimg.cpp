@@ -2,6 +2,7 @@
 
 #include "rts2devcliimg.h"
 #include "../utils/rts2config.h"
+#include "../utils/timestamp.h"
 
 Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rts2DevClientCamera
   (in_connection)
@@ -94,8 +95,7 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
       activeTargetId = (int) event->getArg ();
       break;
     case EVENT_INFO_DEVCLI_OK:
-      images.infoOK (this, (Rts2DevClient *) event->getArg (),
-		     getInfoTime ());
+      images.infoOK (this, (Rts2DevClient *) event->getArg ());
       break;
     case EVENT_INFO_DEVCLI_FAILED:
       images.infoFailed (this, (Rts2DevClient *) event->getArg ());
@@ -176,7 +176,8 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }
