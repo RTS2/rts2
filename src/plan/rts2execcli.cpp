@@ -78,6 +78,23 @@ Rts2DevClientCameraExec::nextCommand ()
 	    sendLog;
 	  return;
 	}
+      // WHILE_EXPOSING
+      if (nextComd->getCommandCond () == WHILE_EXPOSING)
+	{
+	  if (!getIsExposing ())
+	    {
+	      logStream (MESSAGE_WARNING) <<
+		"Tried to execute 'while exposing' command without exposure, executing it now"
+		<< sendLog;
+	    }
+	  else if (isIdle ())
+	    {
+	      return;
+	    }
+	}
+      logStream (MESSAGE_DEBUG) << "Executing WHILE_EXPOSING command" <<
+	sendLog;
+
       cmdConn->queCommand (nextComd);
       nextComd = NULL;
       return;
@@ -111,6 +128,22 @@ Rts2DevClientCameraExec::nextCommand ()
 	}
       setIsExposing (true);
     }
+  // when we would like to execute that while exposing
+  if (nextComd->getCommandCond () == WHILE_EXPOSING)
+    {
+      if (!getIsExposing ())
+	{
+	  logStream (MESSAGE_WARNING) <<
+	    "Tried to execute 'while exposing' command without exposure, executing it now"
+	    << sendLog;
+	}
+      else if (isIdle ())
+	{
+	  return;
+	}
+      logStream (MESSAGE_DEBUG) << "Executing WHILE_EXPOSING command" <<
+	sendLog;
+    }
   queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
   blockMove = 1;		// as we run a script..
@@ -133,10 +166,10 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
-imageProceRes
-Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-  int ret;
+  int
+    ret;
   // try processing in script..
   if (getScript () && !queCurrentImage)
     {
@@ -168,6 +201,8 @@ Rts2DevClientCameraExec::exposureStarted ()
       blockMove = 1;
     }
   Rts2DevClientCameraImage::exposureStarted ();
+  if (nextComd && nextComd->getCommandCond () == WHILE_EXPOSING)
+    nextCommand ();
 }
 
 void

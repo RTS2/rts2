@@ -535,7 +535,18 @@ Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
 {
   if (op == '\0' || operand.size () == 0)
     return -1;
-  *new_command = new Rts2CommandChangeValue (client, valName, op, operand);
+  // handle while exposing part..
+  if (valName[0] == '!')
+    {
+      *new_command =
+	new Rts2CommandChangeValue (client, valName.substr (1), op, operand,
+				    WHILE_EXPOSING);
+    }
+  else
+    {
+      *new_command =
+	new Rts2CommandChangeValue (client, valName, op, operand);
+    }
   getDevice (new_device);
   return 0;
 }
