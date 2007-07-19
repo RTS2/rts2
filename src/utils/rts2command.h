@@ -10,7 +10,7 @@ typedef enum
 
 typedef enum
 { NO_COND, NO_EXPOSURE_MOVE, NO_EXPOSURE_NO_MOVE,
-  IN_WAIT_STATE
+  IN_WAIT_STATE, WHILE_EXPOSING
 } commandCondType;
 
 class Rts2Command
@@ -180,7 +180,9 @@ public:
 				      bool in_operand);
     Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
 				      std::string in_valName, char op,
-				      std::string in_operand);
+				      std::string in_operand,
+				      commandCondType in_commandCond =
+				      NO_COND);
 };
 
 /**
@@ -200,7 +202,8 @@ public:
     Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
 			    char op, bool in_operand);
     Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
-			    char op, std::string in_operand);
+			    char op, std::string in_operand,
+			    commandCondType in_commandCond = NO_COND);
   virtual int commandReturnOK ();
   virtual int commandReturnFailed (int status);
 };
