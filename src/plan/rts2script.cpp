@@ -466,6 +466,13 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	return NULL;
       return new Rts2SWaitFor (this, new_device, val, tarval, range);
     }
+  else if (!strcmp (commandStart, COMMAND_SLEEP))
+    {
+      double sec;
+      if (getNextParamDouble (&sec))
+	return NULL;
+      return new Rts2SSleep (this, sec);
+    }
   else if (!strcmp (commandStart, COMMAND_TARGET_DISABLE))
     {
       return new Rts2SETDisable (this, target);

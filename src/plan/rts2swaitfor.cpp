@@ -44,3 +44,31 @@ Rts2SWaitFor::idle ()
     }
   return Rts2ScriptElement::idle ();
 }
+
+Rts2SSleep::Rts2SSleep (Rts2Script * in_script, double in_sec):Rts2ScriptElement
+  (in_script)
+{
+  sec = in_sec;
+}
+
+int
+Rts2SSleep::defnextCommand (Rts2DevClient * client,
+			    Rts2Command ** new_command,
+			    char new_device[DEVICE_NAME_SIZE])
+{
+  if (!isnan (sec))
+    {
+      // this caused idle to be called after sec..
+      // Rts2ScriptElement keep care that it will not be called before sec expires
+      setIdleTimeout (sec);
+      return NEXT_COMMAND_KEEP;
+    }
+  return NEXT_COMMAND_NEXT;
+}
+
+int
+Rts2SSleep::idle ()
+{
+  sec = nan ("f");
+  return NEXT_COMMAND_NEXT;
+}
