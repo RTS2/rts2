@@ -681,6 +681,21 @@ Rts2Image::copyImageExpand (std::string copy_ex)
 }
 
 int
+Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
+{
+  fitsfile *fp;
+  fits_status = 0;
+  long fpixel = 1;
+
+  fits_open_file (&fp, save_filename, READWRITE, &fits_status);
+  fits_write_img (fp, TUSHORT, fpixel, naxis[0] * naxis[1], in_data,
+		  &fits_status);
+  fits_close_file (fp, &fits_status);
+
+  return 0;
+}
+
+int
 Rts2Image::writeExposureStart ()
 {
   setValue ("CTIME", exposureStart.tv_sec,
@@ -1207,7 +1222,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     case RTS2_DATA_USHORT:
       fits_write_img_usht (ffile, 0, 1,
 			   dataConn->getSize () / getPixelByteSize (),
-			   (unsigned int16_t *) dataConn->getData (),
+			   (short unsigned int *) dataConn->getData (),
 			   &fits_status);
       break;
     case RTS2_DATA_ULONG:
@@ -1536,7 +1551,7 @@ Rts2Image::loadData ()
     case RTS2_DATA_USHORT:
       fits_read_img_usht (ffile, 0, 1,
 			  getWidth () * getHeight (), 0,
-			  (unsigned int16_t *) imageData, &anyNull,
+			  (short unsigned int *) imageData, &anyNull,
 			  &fits_status);
       break;
     case RTS2_DATA_ULONG:
