@@ -169,6 +169,8 @@ public:
   int copyImage (const char *copy_filename);
   int copyImageExpand (std::string copy_ex);
 
+  int saveImageData (const char *save_filename, unsigned short *in_data);
+
   int setValue (char *name, bool value, char *comment);
   int setValue (char *name, int value, char *comment);
   int setValue (char *name, long value, char *comment);
