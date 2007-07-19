@@ -29,6 +29,7 @@
 #define COMMAND_BLOCK_ELSE	"else"
 #define COMMAND_BLOCK_FOR	"for"
 #define COMMAND_WAITFOR		"waitfor"
+#define COMMAND_SLEEP		"sleep"
 
 // hex pattern
 #define COMMAND_HEX		"hex"
