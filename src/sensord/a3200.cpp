@@ -14,9 +14,9 @@ private:
   HAERCTRL hAerCtrl;
   AXISINDEX mAxis;
 
-  Rts2ValueDouble *ax1;
-  Rts2ValueDouble *ax2;
-  Rts2ValueDouble *ax3;
+  Rts2ValueDoubleMinMax *ax1;
+  Rts2ValueDoubleMinMax *ax2;
+  Rts2ValueDoubleMinMax *ax3;
 
   LPCTSTR initFile;
 
