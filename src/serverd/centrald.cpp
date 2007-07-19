@@ -64,9 +64,14 @@ private:
   int morning_standby;
 
   char *configFile;
+    std::string logFile;
+  // which sets logfile
+  enum
+  { LOGFILE_ARG, LOGFILE_DEF, LOGFILE_CNF } logFileSource;
 
     std::ofstream * fileLog;
 
+  void openLog ();
   int reloadConfig ();
 
   int connNum;
@@ -574,16 +579,35 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   setState (SERVERD_OFF, "Initial configuration");
 
   configFile = NULL;
+  logFileSource = LOGFILE_DEF;
   fileLog = NULL;
 
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
+  addOption (OPT_LOGFILE, "logfile", 1, "log file (put '-' to log to stderr");
 }
 
 Rts2Centrald::~Rts2Centrald (void)
 {
   fileLog->close ();
   delete fileLog;
+}
+
+void
+Rts2Centrald::openLog ()
+{
+  if (fileLog)
+    {
+      fileLog->close ();
+      delete fileLog;
+    }
+  if (logFile == std::string ("-"))
+    {
+      fileLog = NULL;
+      return;
+    }
+  fileLog = new std::ofstream ();
+  fileLog->open (logFile.c_str (), std::ios_base::out | std::ios_base::app);
 }
 
 int
@@ -595,14 +619,21 @@ Rts2Centrald::reloadConfig ()
   if (ret)
     return ret;
 
-  if (fileLog)
+  if (logFileSource != LOGFILE_ARG)
     {
-      fileLog->close ();
-      delete fileLog;
+      ret = config->getString ("centrald", "logfile", logFile);
+      if (ret)
+	{
+	  logFileSource = LOGFILE_DEF;
+	  logFile = "/var/log/rts2-debug";
+	}
+      else
+	{
+	  logFileSource = LOGFILE_CNF;
+	}
     }
-  fileLog = new std::ofstream ();
-  fileLog->open ("/var/log/rts2-debug",
-		 std::ios_base::out | std::ios_base::app);
+
+  openLog ();
 
   observer = config->getObserver ();
 
@@ -624,6 +655,10 @@ Rts2Centrald::processOption (int in_opt)
       break;
     case OPT_PORT:
       setPort (atoi (optarg));
+      break;
+    case OPT_LOGFILE:
+      logFile = std::string (optarg);
+      logFileSource = LOGFILE_ARG;
       break;
     default:
       return Rts2Daemon::processOption (in_opt);
@@ -814,11 +849,15 @@ Rts2Centrald::sendMessage (messageType_t in_messageType,
 void
 Rts2Centrald::message (Rts2Message & msg)
 {
+  processMessage (msg);
   if (fileLog)
     {
       (*fileLog) << msg;
     }
-  processMessage (msg);
+  else
+    {
+      std::cerr << msg.toString () << std::endl;
+    }
 }
 
 void
