@@ -36,8 +36,7 @@ Rts2Block (in_argc, in_argv)
   idleInfoInterval = -1;
   nextIdleInfo = 0;
 
-  addOption ('i', "interactive", 0,
-	     "run in interactive mode, don't loose console");
+  addOption ('i', NULL, 0, "run in interactive mode, don't loose console");
   addOption (OPT_LOCALPORT, "local-port", 1,
 	     "define local port on which we will listen to incoming requests");
 }
