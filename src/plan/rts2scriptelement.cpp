@@ -86,8 +86,12 @@ Rts2ScriptElement::idleCall ()
 void
 Rts2ScriptElement::setIdleTimeout (double sec)
 {
-  nextIdle.tv_sec = (long int) floor (sec);
-  nextIdle.tv_usec = (long int) ((sec - (double) nextIdle.tv_sec) * USEC_SEC);
+  idleTimeout.tv_sec = (long int) floor (sec);
+  idleTimeout.tv_usec =
+    (long int) ((sec - (double) nextIdle.tv_sec) * USEC_SEC);
+  // and set nextIdle appropriatly
+  gettimeofday (&nextIdle, NULL);
+  timeradd (&idleTimeout, &nextIdle, &nextIdle);
 }
 
 int

@@ -20,6 +20,14 @@ Rts2ScriptElement (in_script)
 }
 
 int
+Rts2SWaitFor::defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE])
+{
+  return idle ();
+}
+
+int
 Rts2SWaitFor::idle ()
 {
   Rts2Value *val =

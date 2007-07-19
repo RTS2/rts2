@@ -15,6 +15,9 @@ protected:
 public:
     Rts2SWaitFor (Rts2Script * in_script, const char *new_device,
 		  char *valueName, double value, double range);
+  virtual int defnextCommand (Rts2DevClient * client,
+			      Rts2Command ** new_command,
+			      char new_device[DEVICE_NAME_SIZE]);
   virtual int idle ();
 };
 
