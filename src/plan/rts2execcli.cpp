@@ -91,9 +91,11 @@ Rts2DevClientCameraExec::nextCommand ()
 	    {
 	      return;
 	    }
+#ifdef DEBUG_EXTRA
+	  logStream (MESSAGE_DEBUG) << "Executing WHILE_EXPOSING command" <<
+	    sendLog;
+#endif /* DEBUG_EXTRA */
 	}
-      logStream (MESSAGE_DEBUG) << "Executing WHILE_EXPOSING command" <<
-	sendLog;
 
       cmdConn->queCommand (nextComd);
       nextComd = NULL;
@@ -141,8 +143,10 @@ Rts2DevClientCameraExec::nextCommand ()
 	{
 	  return;
 	}
+#ifdef DEBUG_EXTRA
       logStream (MESSAGE_DEBUG) << "Executing WHILE_EXPOSING command" <<
 	sendLog;
+#endif /* DEBUG_EXTRA */
     }
   queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
@@ -166,10 +170,10 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
-imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-  int
-    ret;
+  int ret;
   // try processing in script..
   if (getScript () && !queCurrentImage)
     {
