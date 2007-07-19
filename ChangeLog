@@ -1,3 +1,11 @@
+2007-07-19
+ * Rts2SWaitFor and Rts2SSleep
+
+2007-07-16
+ * Stat value
+ * Rts2ConfigRaw
+ * monitor with edit functionality
+
 0.7.0
 ===
  * cleaning of options (capital | lower case,..)
