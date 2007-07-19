@@ -853,6 +853,7 @@ Rts2Device::init ()
 	{
 	  modesel->addSelVal ((*iter)->getName ());
 	}
+      setMode (0);
     }
 
   conn_master =
