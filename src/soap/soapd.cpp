@@ -61,7 +61,6 @@ class Rts2Soapd:public Rts2DeviceDb
 {
 private:
   int soapPort;
-    std::ofstream * fileLog;
 protected:
     virtual int processOption (int in_opt);
   virtual int reloadConfig ();
@@ -85,15 +84,12 @@ Rts2Soapd::Rts2Soapd (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "SOAP")
 {
   soapPort = -1;
-  fileLog = NULL;
   addOption ('o', "soap_port", 1,
 	     "soap port, if not specified, taken from config file (observatory, soap)");
 }
 
 Rts2Soapd::~Rts2Soapd (void)
 {
-  fileLog->close ();
-  delete fileLog;
 }
 
 int
@@ -113,14 +109,6 @@ Rts2Soapd::processOption (int in_opt)
 int
 Rts2Soapd::reloadConfig ()
 {
-  if (fileLog)
-    {
-      fileLog->close ();
-      delete fileLog;
-    }
-  fileLog = new std::ofstream ();
-  fileLog->open ("/var/log/rts2-debug",
-		 std::ios_base::out | std::ios_base::app);
   return Rts2DeviceDb::reloadConfig ();
 }
 
@@ -197,10 +185,6 @@ Rts2Soapd::message (Rts2Message & msg)
     {
       Rts2MessageDB msgDB (msg);
       msgDB.insertDB ();
-    }
-  if (fileLog)
-    {
-      (*fileLog) << msg;
     }
 }
 

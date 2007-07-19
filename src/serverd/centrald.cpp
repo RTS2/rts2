@@ -1,4 +1,4 @@
-/*s 
+/** 
  * Centrald - RTS2 coordinator
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
  *
@@ -65,6 +65,8 @@ private:
 
   char *configFile;
 
+    std::ofstream * fileLog;
+
   int reloadConfig ();
 
   int connNum;
@@ -91,6 +93,7 @@ protected:
 
 public:
   Rts2Centrald (int in_argc, char **in_argv);
+  virtual ~ Rts2Centrald (void);
 
   virtual int idle ();
 
@@ -571,9 +574,16 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   setState (SERVERD_OFF, "Initial configuration");
 
   configFile = NULL;
+  fileLog = NULL;
 
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
+}
+
+Rts2Centrald::~Rts2Centrald (void)
+{
+  fileLog->close ();
+  delete fileLog;
 }
 
 int
@@ -584,6 +594,15 @@ Rts2Centrald::reloadConfig ()
   ret = config->loadFile (configFile);
   if (ret)
     return ret;
+
+  if (fileLog)
+    {
+      fileLog->close ();
+      delete fileLog;
+    }
+  fileLog = new std::ofstream ();
+  fileLog->open ("/var/log/rts2-debug",
+		 std::ios_base::out | std::ios_base::app);
 
   observer = config->getObserver ();
 
@@ -795,6 +814,10 @@ Rts2Centrald::sendMessage (messageType_t in_messageType,
 void
 Rts2Centrald::message (Rts2Message & msg)
 {
+  if (fileLog)
+    {
+      (*fileLog) << msg;
+    }
   processMessage (msg);
 }
 
