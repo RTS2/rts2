@@ -168,7 +168,6 @@ Rts2ConfigRaw::parseConfigFile ()
 		      pstate = VAL_END;
 		      val = line.substr (beg, es - beg);
 		      es = line.length ();
-		      configStream->ignore (2000, '\n');
 		    }
 		  break;
 		case VAL_END:
@@ -193,6 +192,11 @@ Rts2ConfigRaw::parseConfigFile ()
 		<< "." << sendLog;
 	      return -1;
 	    }
+#ifdef DEBUG_EXTRA
+	  std::
+	    cout << "Pushing " << valName << " " << valSuffix << " " << val <<
+	    std::endl;
+#endif /* DEBUG_EXTRA */
 	  sect->push_back (Rts2ConfigValue (valName, valSuffix, val));
 	}
       ln++;
