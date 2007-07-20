@@ -737,14 +737,14 @@ Rts2DevTelParamount::init ()
   int ret;
   int i;
 
+  ret = Rts2DevTelescope::init ();
+  if (ret)
+    return ret;
+
   Rts2Config *config = Rts2Config::instance ();
   ret = config->loadFile ();
   if (ret)
     return -1;
-
-  ret = Rts2DevTelescope::init ();
-  if (ret)
-    return ret;
 
   telLongtitude->setValueDouble (config->getObserver ()->lng);
   telLatitude->setValueDouble (config->getObserver ()->lat);
@@ -842,6 +842,7 @@ Rts2DevTelParamount::updateTrack ()
 {
   double JD;
   struct ln_equ_posn corr_pos;
+  return;
 
   gettimeofday (&track_next, NULL);
   if (track_recalculate.tv_sec < 0)
