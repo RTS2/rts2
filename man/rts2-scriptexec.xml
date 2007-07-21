@@ -68,6 +68,9 @@
 	<arg choice="plain"><option>--port <replaceable>port</replaceable></option></arg>
       </arg>
       <arg choice="opt">
+	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-d</option> <replaceable>device name</replaceable></arg>
       </arg>
       <arg choice="opt">
@@ -133,6 +136,12 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
+        <listitem>
+          <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-d <replaceable class="parameter">device name</replaceable></option></term>
         <listitem>
           <para>
@@ -186,6 +195,10 @@
       </citerefentry>
       <citerefentry>
         <refentrytitle>rts2.script</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>
       </citerefentry>
     </para>
