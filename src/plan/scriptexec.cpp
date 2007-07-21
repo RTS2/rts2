@@ -2,6 +2,8 @@
 #include "rts2execcli.h"
 #include "rts2devcliphot.h"
 
+#include "../utils/rts2config.cpp"
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -85,6 +87,9 @@ Rts2ScriptExec::processOption (int in_opt)
   std::ifstream * is;
   switch (in_opt)
     {
+    case OPT_CONFIG:
+      configFile = optarg;
+      break;
     case 'd':
       deviceName = optarg;
       break;
@@ -124,6 +129,9 @@ Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc
   waitState = 0;
   currentTarget = NULL;
   nextRunningQ = 0;
+  configFile = NULL;
+
+  addOption (OPT_CONFIG, "config", 1, "configuration file");
 
   addOption ('d', NULL, 1, "name of next script device");
   addOption ('s', NULL, 1, "device script (for device specified with d)");
@@ -140,6 +148,13 @@ Rts2ScriptExec::init ()
 {
   int ret;
   ret = Rts2Client::init ();
+  if (ret)
+    return ret;
+
+  // load config..
+
+  Rts2Config *config = Rts2Config::instance ();
+  ret = config->loadFile (configFile);
   if (ret)
     return ret;
 
