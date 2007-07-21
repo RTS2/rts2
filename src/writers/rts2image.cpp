@@ -1964,7 +1964,8 @@ Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
   char *name = (char *) val->getName ().c_str ();
   char *name_stat;
   char *n_top;
-  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
+  if (client->getOtherType () == DEVICE_TYPE_SENSOR
+      || val->prefixWithDevice ())
     {
       name = new char[strlen (name) + strlen (client->getName ()) + 2];
       strcpy (name, client->getName ());
@@ -2022,7 +2023,8 @@ Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
 	<< "' of type " << val->getValueType () << sendLog;
       break;
     }
-  if (client->getOtherType () == DEVICE_TYPE_SENSOR)
+  if (client->getOtherType () == DEVICE_TYPE_SENSOR
+      || val->prefixWithDevice ())
     {
       delete[]name;
     }
