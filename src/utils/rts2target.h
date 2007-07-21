@@ -172,11 +172,9 @@ public:
     if (tar_enabled != new_en)
       {
 	if (logit)
-	  logStream (MESSAGE_INFO) << "Target " << getTargetID () << (new_en ?
-								      " enabled"
-								      :
-								      " disabled")
-	    << sendLog;
+	  logStream (MESSAGE_INFO) << (new_en ? "Enable" : "Disable") <<
+	    " target ID " << getTargetID () << " (" << getTargetName () <<
+	    ") " << sendLog;
 	tar_enabled = new_en;
       }
   }
