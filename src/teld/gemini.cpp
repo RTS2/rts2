@@ -1295,11 +1295,11 @@ Rts2DevTelescopeGemini::initValues ()
     case 6:
       decFlipLimit = 6750;
     }
-  if (expectedType > 0 || gem_type != expectedType)
+  if (expectedType > 0 && gem_type != expectedType)
     {
       logStream (MESSAGE_ERROR) <<
 	"Cannot init teld, because, it's type is not expected. Expected " <<
-	expectedType << " ( " << getGemType (expectedType) << ", get " <<
+	expectedType << " (" << getGemType (expectedType) << "), get " <<
 	gem_type << " (" << telType << ")." << sendLog;
       return -1;
     }
