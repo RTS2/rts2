@@ -39,6 +39,10 @@ ObjectCheck::load_horizon (const char *horizon_file)
   struct ln_equ_posn pos;
   struct ln_hrz_posn hrz;
 
+  // - is without horizon file
+  if (!strcmp (horizon_file, "-"))
+    return 0;
+
   inf.open (horizon_file);
 
   struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
