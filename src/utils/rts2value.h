@@ -22,6 +22,8 @@
 #define RTS2_VALUE_MASK		0x000000ff
 
 #define RTS2_VALUE_FITS		0x00000100
+#define RTS2_VALUE_DEVPREFIX	0x00000200
+
 #define RTS2_VWHEN_MASK		0x0000f000
 
 #define RTS2_VWHEN_BEFORE_EXP	0x00000000
@@ -63,7 +65,8 @@ protected:
 
   void setValueFlags (int32_t flags)
   {
-    rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK) & flags;
+    rts2Type |=
+      (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VALUE_DEVPREFIX) & flags;
   }
 
   /**
@@ -151,6 +154,11 @@ public:
   bool getWriteToFits ()
   {
     return (rts2Type & RTS2_VALUE_FITS);
+  }
+
+  bool prefixWithDevice ()
+  {
+    return (rts2Type & RTS2_VALUE_DEVPREFIX);
   }
 
   // send value metainformations, including description

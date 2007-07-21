@@ -846,7 +846,7 @@ Rts2Device::init ()
       if (ret)
 	return ret;
 
-      createValue (modesel, "MODE", "mode name", true);
+      createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX);
 
       for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
 	   iter != modeconf->end (); iter++)

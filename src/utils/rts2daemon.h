@@ -106,11 +106,11 @@ protected:
   template < typename T > void createValue (T * &val, char *in_val_name,
 					    std::string in_description,
 					    bool writeToFits =
-					    true, int32_t displayType =
+					    true, int32_t valueFlags =
 					    0, int queCondition =
 					    0, bool save_value = false)
   {
-    val = new T (in_val_name, in_description, writeToFits, displayType);
+    val = new T (in_val_name, in_description, writeToFits, valueFlags);
     addValue (val, queCondition, save_value);
   }
   /**
@@ -124,10 +124,9 @@ protected:
   template < typename T > void createConstValue (T * &val, char *in_val_name,
 						 std::string in_description,
 						 bool writeToFits =
-						 true, int32_t displayType =
-						 0)
+						 true, int32_t valueFlags = 0)
   {
-    val = new T (in_val_name, in_description, writeToFits, displayType);
+    val = new T (in_val_name, in_description, writeToFits, valueFlags);
     addConstValue (val);
   }
   void addConstValue (Rts2Value * value);
