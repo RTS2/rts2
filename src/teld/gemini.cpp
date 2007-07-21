@@ -45,6 +45,10 @@
 #define GEMINI_CMD_RATE_GUIDE	150
 #define GEMINI_CMD_RATE_CENTER	170
 
+#define OPT_BOOTES	OPT_LOCAL + 10
+#define OPT_CORR	OPT_LOCAL + 11
+#define OPT_EXPTYPE	OPT_LOCAL + 12
+
 int arr[] = { 0, 1, 2, 3 };
 
 typedef struct searchDirs_t
@@ -213,13 +217,19 @@ private:
   Rts2ValueFloat *guidingSpeed;
   Rts2ValueDouble *guideLimit;
 
+  int expectedType;
+
+  const char *getGemType (int gem_type);
+
+protected:
+    virtual int processOption (int in_opt);
+  virtual int initValues ();
+  virtual int idle ();
+
 public:
     Rts2DevTelescopeGemini (int argc, char **argv);
     virtual ~ Rts2DevTelescopeGemini (void);
-  virtual int processOption (int in_opt);
   virtual int init ();
-  virtual int initValues ();
-  virtual int idle ();
   virtual int changeMasterState (int new_state);
   virtual int ready ();
   virtual int info ();
@@ -965,13 +975,16 @@ Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts
   device_file = "/dev/ttyS0";
   geminiConfig = "/etc/rts2/gemini.ini";
   bootesSensors = 0;
+  expectedType = 0;
 
-  addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
-  addOption ('c', "config_file", 1, "config file (with model parameters)");
-  addOption ('b', "bootes", 0, "BOOTES G-11 (with 1/0 pointing sensor)");
-  addOption ('p', "corrections", 1,
+  addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
+  addOption ('c', NULL, 1, "config file (with model parameters)");
+  addOption (OPT_BOOTES, "bootes", 0,
+	     "BOOTES G-11 (with 1/0 pointing sensor)");
+  addOption (OPT_CORR, "corrections", 1,
 	     "level of correction done in Gemini - 0 none, 3 all");
-
+  addOption (OPT_EXPTYPE, "expected_type", 1,
+	     "expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
 
   lastMotorState = 0;
   telMotorState = TEL_OK;
@@ -1027,10 +1040,10 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
     case 'c':
       geminiConfig = optarg;
       break;
-    case 'b':
+    case OPT_BOOTES:
       bootesSensors = 1;
       break;
-    case 'p':
+    case OPT_CORR:
       switch (*optarg)
 	{
 	case '0':
@@ -1050,6 +1063,9 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
 	  std::cerr << "Invalid correction option " << optarg << std::endl;
 	  return -1;
 	}
+    case OPT_EXPTYPE:
+      expectedType = atoi (optarg);
+      break;
     default:
       return Rts2DevTelescope::processOption (in_opt);
     }
@@ -1241,6 +1257,27 @@ Rts2DevTelescopeGemini::init ()
   return 0;
 }
 
+const char *
+Rts2DevTelescopeGemini::getGemType (int gem_type)
+{
+  switch (gem_type)
+    {
+    case 1:
+      return "GM8";
+    case 2:
+      return "G-11";
+    case 3:
+      return "HGM-200";
+    case 4:
+      return "CI700";
+    case 5:
+      return "Titan";
+    case 6:
+      return "Titan50";
+    }
+  return "UNK";
+}
+
 int
 Rts2DevTelescopeGemini::initValues ()
 {
@@ -1249,30 +1286,22 @@ Rts2DevTelescopeGemini::initValues ()
   int ret;
   if (tel_read_longtitude () || tel_read_latitude ())
     return -1;
-  tel_gemini_get (0, gem_type);
+  ret = tel_gemini_get (0, gem_type);
+  if (ret)
+    return ret;
+  strcpy (telType, getGemType (gem_type));
   switch (gem_type)
     {
-    case 1:
-      strcpy (telType, "GM8");
-      break;
-    case 2:
-      strcpy (telType, "G-11");
-      break;
-    case 3:
-      strcpy (telType, "HGM-200");
-      break;
-    case 4:
-      strcpy (telType, "CI700");
-      break;
-    case 5:
-      strcpy (telType, "Titan");
-      break;
     case 6:
-      strcpy (telType, "Titan50");
       decFlipLimit = 6750;
-      break;
-    default:
-      sprintf (telType, "UNK_%2i", gem_type);
+    }
+  if (expectedType > 0 || gem_type != expectedType)
+    {
+      logStream (MESSAGE_ERROR) <<
+	"Cannot init teld, because, it's type is not expected. Expected " <<
+	expectedType << " ( " << getGemType (expectedType) << ", get " <<
+	gem_type << " (" << telType << ")." << sendLog;
+      return -1;
     }
   ret = tel_write_read_hash ("#:GV#", 5, buf, 4);
   if (ret <= 0)
@@ -2253,12 +2282,11 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool
+Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int
-    ret;
-  char
-    guiding;
+  int ret;
+  char guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
