@@ -1068,8 +1068,14 @@ ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
   if (equ_poz.ra < -10)
   {
     ln_get_equ_from_hrz (&hrz_poz, observer, JD, &equ_poz);
+    // put to right range
     equ_poz.ra += ra_noise;
+    equ_poz.ra = ln_range_degrees (equ_poz.ra);
     equ_poz.dec += dec_noise;
+    if (equ_poz.dec > 90)
+      equ_poz.dec = 90;
+    else if (equ_poz.dec < -90)
+      equ_poz.dec = -90;
   }
   *pos = equ_poz;
   return 0;
