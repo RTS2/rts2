@@ -38,6 +38,8 @@ Rts2Object ()
 
   addOption ('h', "help", 0, "write this help");
   addOption (OPT_VERSION, "version", 0, "show program version and license");
+
+  masterApp = this;
 }
 
 Rts2App::~Rts2App ()
@@ -148,7 +150,6 @@ killSignal (int sig)
 int
 Rts2App::init ()
 {
-  masterApp = this;
   signal (SIGHUP, signalHUP);
   signal (SIGINT, killSignal);
   signal (SIGTERM, killSignal);
@@ -301,10 +302,10 @@ Rts2App::askForString (const char *desc, std::string & val)
   return 0;
 }
 
-bool Rts2App::askForBoolean (const char *desc, bool val)
+bool
+Rts2App::askForBoolean (const char *desc, bool val)
 {
-  char
-    temp[20];
+  char temp[20];
   while (!getEndLoop ())
     {
       std::cout << desc << " (y/n) [" << (val ? "y" : "n") << "]: ";
@@ -358,10 +359,10 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
   sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream
+Rts2App::logStream (messageType_t in_messageType)
 {
-  Rts2LogStream
-  ls (this, in_messageType);
+  Rts2LogStream ls (this, in_messageType);
   return ls;
 }
 
