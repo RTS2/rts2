@@ -50,6 +50,7 @@ private:
 
     std::string getStreamAsString (std::istream & _is);
 
+  char *configFile;
 protected:
     virtual int processOption (int in_opt);
 
