@@ -50,7 +50,7 @@ int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
   int status;
-  status = setTrack (0);
+//  status = setTrack (0);
   status = tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
   status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
   if (!getDerotatorPower ())
@@ -118,7 +118,7 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
     usleep (USEC_SEC / 10);
 
   time (&timeout);
-  timeout += 120;
+  timeout += 300;
   return 0;
 }
 
@@ -192,21 +192,30 @@ Rts2DevTelescopeIr::moveCheck (bool park)
   int track;
   double poin_dist;
   time_t now;
-  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+  struct ln_equ_posn tPos;
+  struct ln_equ_posn cPos;
+//  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+  status = tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
+  status = tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
+  status = tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
+  status = tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
+  if (status != TPL_OK)
+    return -1;
+  poin_dist = ln_get_angular_separation (&cPos, &tPos);
   time (&now);
+  // get track..
+  status = tpl_get ("POINTING.TRACK", track, &status);
+  if (track == 0 && !park)
+    {
+      logStream (MESSAGE_WARNING) <<
+	"Tracking sudently stopped, reenable tracking" << sendLog;
+      setTrack (irTracking, domeAutotrack->getValueBool ());
+      sleep (1);
+      return USEC_SEC / 100;
+    }
   // 0.01 = 36 arcsec
   if (fabs (poin_dist) <= 0.01)
     {
-      // get track..
-      status = tpl_get ("POINTING.TRACK", track, &status);
-      if (track == 0 && !park)
-	{
-	  logStream (MESSAGE_WARNING) <<
-	    "Tracking sudently stopped, reenable tracking" << sendLog;
-	  setTrack (irTracking, domeAutotrack->getValueBool ());
-	  sleep (1);
-	  return USEC_SEC / 100;
-	}
 #ifdef DEBUG_EXTRA
       logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist
 	<< sendLog;
