@@ -4,6 +4,8 @@
 #include "../utils/rts2config.h"
 #include "ir.h"
 
+#define DEBUG_EXTRA
+
 using namespace OpenTPL;
 
 #define LONGITUDE -3.3847222
@@ -17,7 +19,7 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 
   if (!*status)
     {
-#ifdef DEBUG_EXTRA
+#ifdef DEBUG_ALL
       if (!*status)
 	std::cout << "tpl_get name " << name << std::endl;
 #endif
@@ -42,7 +44,7 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 	    *status = 2;
 	}
 
-#ifdef DEBUG_EXTRA
+#ifdef DEBUG_ALL
       if (!*status)
 	std::cout << "tpl_get name " << name << " val " << val << std::endl;
 #endif
@@ -60,12 +62,13 @@ Rts2TelescopeIr::tpl_set (const char *name, T val, int *status)
   if (!*status)
     {
 #ifdef DEBUG_EXTRA
-      std::cout << "tpl_set name " << name << std::endl;
+      logStream (MESSAGE_DEBUG) << "tpl_set name " << name << " val " << val
+	<< sendLog;
 #endif
       tplc->Set (name, Value (val), false);	// change to set...?
 //      cstatus = r->Wait (5000);
 
-#ifdef DEBUG_EXTRA
+#ifdef DEBUG_ALL
       if (!*status)
 	std::cout << "tpl_set name " << name << " val " << val << std::endl;
 #endif
@@ -83,7 +86,8 @@ Rts2TelescopeIr::tpl_setw (const char *name, T val, int *status)
   if (!*status)
     {
 #ifdef DEBUG_EXTRA
-      std::cout << "tpl_setw name " << name << std::endl;
+      logStream (MESSAGE_DEBUG) << "tpl_setw name " << name << " val " << val
+	<< sendLog;
 #endif
 
       Request *r = tplc->Set (name, Value (val), false);	// change to set...?
@@ -97,7 +101,7 @@ Rts2TelescopeIr::tpl_setw (const char *name, T val, int *status)
 	  *status = 1;
 	}
 
-#ifdef DEBUG_EXTRA
+#ifdef DEBUG_ALL
       if (!*status)
 	std::cout << "tpl_setw name " << name << " val " << val << std::endl;
 #endif
@@ -561,6 +565,7 @@ Rts2TelescopeIr::checkErrors ()
       // print errors to log & ends..
       logStream (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
 	list << sendLog;
+      errorList = list;
       tpl_set ("CABINET.STATUS.CLEAR", 1, &status);
       if (list == "\"ERR_Soft_Limit_max:4:ZD\"")
 	{
