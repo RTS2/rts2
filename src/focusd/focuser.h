@@ -34,6 +34,8 @@ protected:
   virtual bool isAtStartPosition ();
   int checkStartPosition ();
 
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
   void createFocTemp ()
   {
     createValue (focTemp, "FOC_TEMP", "focuser temperature");
@@ -47,10 +49,7 @@ public:
   {
     return -1;
   };
-  virtual int stepOut (int num)
-  {
-    return -1;
-  };
+  virtual int stepOut (int num) = 0;
   // set to given number
   // default to use stepOut function
   virtual int setTo (int num);
