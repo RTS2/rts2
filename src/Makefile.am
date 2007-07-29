@@ -22,4 +22,5 @@ SUBDIRS = \
 	db \
 	soap \
 	sensord \
-	indi
+	indi \
+	logger

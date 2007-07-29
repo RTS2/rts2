@@ -503,7 +503,8 @@ AC_OUTPUT([Makefile
 	   src/db/Makefile
 	   src/db/simbad/Makefile
 	   src/soap/Makefile
-	   src/sensord/Makefile]
+	   src/sensord/Makefile
+	   src/logger/Makefile]
 )
 
 echo "

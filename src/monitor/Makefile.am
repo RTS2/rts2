@@ -1,6 +1,6 @@
 # $Id$
 
-bin_PROGRAMS = rts2-mon rts2-cmon rts2-logger
+bin_PROGRAMS = rts2-mon rts2-cmon
 
 noinst_HEADERS = nmonitor.h rts2nwindow.h rts2daemonwindow.h rts2nmenu.h rts2nmsgbox.h rts2nmsgwindow.h rts2nstatuswindow.h \
 	rts2ncomwin.h rts2nlayout.h rts2nvaluebox.h rts2ndevicewindow.h rts2nwindowedit.h
@@ -13,7 +13,3 @@ rts2_mon_CXXFLAGS = @NOVA_CFLAGS@
 rts2_cmon_SOURCES = cmonitor.cpp
 rts2_cmon_LDFLAGS = @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a
 rts2_cmon_CXXFLAGS = @NOVA_CFLAGS@
-
-rts2_logger_SOURCES = logger.cpp
-rts2_logger_LDFLAGS = @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a
-rts2_logger_CXXFLAGS = @NOVA_CFLAGS@
