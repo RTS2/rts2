@@ -15,9 +15,9 @@ librts2block_a_SOURCES = rts2app.cpp rts2block.cpp rts2daemon.cpp rts2device.cpp
 	rts2address.cpp rts2user.cpp rts2client.cpp rts2command.cpp rts2value.cpp rts2valuestat.cpp \
 	rts2devclient.cpp rts2dataconn.cpp mkpath.c rts2configraw.cpp rts2config.cpp rts2connnosend.cpp \
 	rts2connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
-	rts2message.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp rts2scriptdevice.cpp \
-	rts2cliapp.cpp rts2valueminmax.cpp
-
+	rts2message.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp \
+	rts2displayvalue.cpp rts2scriptdevice.cpp \
+	rts2cliapp.cpp rts2valueminmax.cpp 
 # CYGWIN workaround
 
 if NOT_GETADDRINFO
