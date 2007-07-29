@@ -259,6 +259,7 @@
 #define DEVICE_TYPE_SELECTOR    22
 #define DEVICE_TYPE_SOAP	23
 #define DEVICE_TYPE_INDI	24
+#define DEVICE_TYPE_LOGD	25
 
 // and more to come..
 // #define DEVICE_TYPE_

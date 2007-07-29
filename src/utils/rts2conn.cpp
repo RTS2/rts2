@@ -364,6 +364,9 @@ std::string Rts2Conn::getStateString ()
     case DEVICE_TYPE_SENSOR:
       _os << "sensor " << real_state;
       break;
+    case DEVICE_TYPE_LOGD:
+      _os << "logd " << real_state;
+      break;
     default:
       _os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
     }
