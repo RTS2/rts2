@@ -35,6 +35,7 @@ Rts2Logd::setLogConfig (const char *new_config)
   if (ret)
     return ret;
   logConfig->setValueString (new_config);
+  setLogFile (logFile->getValue ());
   return ret;
 }
 

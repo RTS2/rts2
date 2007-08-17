@@ -1,5 +1,7 @@
 #include "rts2loggerbase.h"
 
+#include "../utils/rts2expander.h"
+
 Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn,
 					  double in_numberSec,
 					  std::list < std::string >
@@ -42,7 +44,9 @@ Rts2DevClientLogger::fillLogValues ()
 void
 Rts2DevClientLogger::setOutputFile (const char *filename)
 {
-  std::ofstream * nstream = new std::ofstream (filename);
+  Rts2Expander exp = Rts2Expander ();
+  std::ofstream * nstream =
+    new std::ofstream (exp.expand (filename).c_str ());
   if (nstream->fail ())
     {
       delete nstream;
