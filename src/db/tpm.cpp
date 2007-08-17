@@ -154,7 +154,7 @@ TPM::doProcessing ()
   for (std::vector < std::string >::iterator iter = filenames.begin ();
        iter != filenames.end (); iter++)
     {
-      Rts2Image *image = new Rts2Image ((*iter).c_str ());
+      Rts2Image *image = new Rts2Image ((*iter).c_str (), true, true);
       if (!firstLine)
 	{
 	  headline (image, std::cout);
