@@ -295,8 +295,7 @@ Rts2DevClient::idle ()
 {
 }
 
-bool
-Rts2DevClient::existWriteType (int w_type)
+bool Rts2DevClient::existWriteType (int w_type)
 {
   for (std::vector < Rts2Value * >::iterator iter = values.begin ();
        iter != values.end (); iter++)
@@ -368,13 +367,24 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
   Rts2DevClient::stateChanged (state);
 }
 
-bool
-Rts2DevClientCamera::isIdle ()
+bool Rts2DevClientCamera::isIdle ()
 {
   return ((connection->
 	   getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
 			  CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
+}
+
+bool Rts2DevClientCamera::isExposing ()
+{
+  return (connection->getState () && CAM_MASK_EXPOSE) == CAM_EXPOSING;
+}
+
+bool Rts2DevClientCamera::handlingData ()
+{
+  return ((connection->
+	   getState () & CAM_MASK_DATA) ||
+	  (connection->getState () & CAM_MASK_DATA));
 }
 
 Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2DevClient
@@ -666,8 +676,7 @@ Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
   lastExp = exp;
 }
 
-bool
-Rts2DevClientPhot::isIntegrating ()
+bool Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
 }

@@ -192,6 +192,8 @@ public:
   }
 
   bool isIdle ();
+  bool isExposing ();
+  bool handlingData ();
 };
 
 class Rts2DevClientTelescope:public Rts2DevClient
