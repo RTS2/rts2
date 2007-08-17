@@ -213,9 +213,9 @@ TPM::headline (Rts2Image * image, std::ostream & _os)
       break;
     case MOUNT:
       _os << " " << LibnovaDeg90 (obs.lat)
-	<< " " << image->getStartYearString ()
-	<< " " << image->getStartMonthString ()
-	<< " " << image->getStartDayString () << " 20 1000 60" << std::endl;
+	<< " " << image->getYearString ()
+	<< " " << image->getMonthString ()
+	<< " " << image->getDayString () << " 20 1000 60" << std::endl;
       break;
     }
   return 0;
