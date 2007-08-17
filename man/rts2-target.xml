@@ -65,7 +65,7 @@
 	<arg choice="plain"><option>--database <replaceable>database</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
+	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-e</option></arg>

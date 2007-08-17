@@ -261,6 +261,15 @@
       <command>&dhpackage;</command> <option>-p</option> <replaceable class="parameter">'$JD$ $EXPOSURE$ $CCD_NAME$'</replaceable> <replaceable>*.fits</replaceable>
     </screen>
 
+    <para>
+      This command will copy all fits files to directory formed from CCD_NAME
+      keyword and filename formed from DATE-OBS keyword followed by .fits.
+    </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-c</option> <replaceable class="parameter">'$CCD_NAME$/$DATE-OBS$.fits'</replaceable> <replaceable>*.fits</replaceable>
+    </screen>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
