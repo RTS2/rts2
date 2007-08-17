@@ -17,7 +17,7 @@ librts2block_a_SOURCES = rts2app.cpp rts2block.cpp rts2daemon.cpp rts2device.cpp
 	rts2connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
 	rts2message.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp \
 	rts2displayvalue.cpp rts2scriptdevice.cpp \
-	rts2cliapp.cpp rts2valueminmax.cpp 
+	rts2cliapp.cpp rts2valueminmax.cpp rts2expander.cpp
 # CYGWIN workaround
 
 if NOT_GETADDRINFO
@@ -29,7 +29,7 @@ noinst_HEADERS = mkpath.h rts2app.h rts2block.h rts2daemon.h rts2device.h rts2op
 	rts2devclient.h rts2dataconn.h rts2event.h rts2configraw.h rts2config.h rts2object.h rts2connnosend.h \
 	rts2connfork.h objectcheck.h rts2serverstate.h libnova_cpp.h timestamp.h rts2askchoice.h infoval.h \
 	rts2message.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
-	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h
+	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h rts2expander.h
 
 rts2_horizon_SOURCES = horizonapp.cpp
 rts2_horizon_LDFLAGS = @LIB_NOVA@ librts2block.a

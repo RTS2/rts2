@@ -11,6 +11,7 @@
 
 #include "rts2app.h"
 #include "rts2config.h"
+#include "rts2expander.h"
 
 class Rts2TestApp:public Rts2App
 {
@@ -81,6 +82,12 @@ Rts2TestApp::run ()
 	   viter != sect->end (); viter++)
 	std::cout << *viter << std::endl;
     }
+
+  // now do test expansions..
+  Rts2Expander *exp = new Rts2Expander ();
+  std::cout << "%D:%y-%m-%dT%H:%M:%S:%s:%u: " << exp->
+    expand ("%D:%y-%m-%dT%H:%M:%S:%s:%u") << std::endl;
+  delete exp;
 
   delete conf;
 
