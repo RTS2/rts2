@@ -568,8 +568,8 @@ Rts2Daemon (in_argc, in_argv)
 	     "name of computer, on which central server runs");
   addOption (OPT_PORT, "port", 1, "port number of central host");
   addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
-  addOption ('M', "mail-to", 1, "send report mails to this adresses");
-  addOption ('d', "device_name", 1, "name of device");
+  addOption ('M', NULL, 1, "send report mails to this adresses");
+  addOption ('d', NULL, 1, "name of device");
 }
 
 Rts2Device::~Rts2Device (void)
