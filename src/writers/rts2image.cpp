@@ -252,7 +252,7 @@ Rts2Expander ()
   currTarget->writeToImage (this);
 }
 
-Rts2Image::Rts2Image (const char *in_filename, bool verbose):
+Rts2Image::Rts2Image (const char *in_filename, bool verbose, bool readOnly):
 Rts2Expander ()
 {
   int ret;
@@ -260,7 +260,7 @@ Rts2Expander ()
 
   initData ();
 
-  openImage (in_filename);
+  openImage (in_filename, readOnly);
   // get info..
   getValue ("EPOCH_ID", epochId, verbose);
   getValue ("TARGET", targetId, verbose);
@@ -473,7 +473,7 @@ Rts2Image::openImage ()
 }
 
 int
-Rts2Image::openImage (const char *in_filename)
+Rts2Image::openImage (const char *in_filename, bool readOnly)
 {
   fits_status = 0;
 
@@ -487,12 +487,8 @@ Rts2Image::openImage (const char *in_filename)
     ffile << sendLog;
 #endif /* DEBUG_EXTRA */
 
-  fits_open_diskfile (&ffile, imageName, READWRITE, &fits_status);
-  if (fits_status == FILE_NOT_OPENED)
-    {
-      fits_status = 0;
-      fits_open_diskfile (&ffile, imageName, READONLY, &fits_status);
-    }
+  fits_open_diskfile (&ffile, imageName, readOnly ? READONLY : READWRITE,
+		      &fits_status);
   if (fits_status)
     {
       if (!(flags & IMAGE_CANNOT_LOAD))

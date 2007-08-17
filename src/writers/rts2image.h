@@ -62,7 +62,7 @@ private:
   int createImage (char *in_filename);
   // when in_filename == NULL, we take image name stored in this->imageName
   int openImage ();
-  int openImage (const char *in_filename);
+  int openImage (const char *in_filename, bool readOnly = false);
   int writeExposureStart ();
   char *imageData;
   int imageType;
@@ -148,7 +148,8 @@ public:
   Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
 	     const struct timeval *in_exposureStart);
   // open image from disk..
-  Rts2Image (const char *in_filename, bool verbose = true);
+  Rts2Image (const char *in_filename, bool verbose = true, bool readOnly =
+	     false);
   virtual ~ Rts2Image (void);
 
   virtual int toQue ();
