@@ -15,7 +15,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
   exposureChip = 0;
   exposureCount = 0;
 
-  isExposing = false;
+  isExposingFlag = false;
 
   Rts2Config *
     config;
@@ -138,18 +138,7 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
 Rts2Image *
 Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 {
-  struct tm expT;
-  char fn[50];
-  int camlen;
-  camlen = strlen (connection->getName ());
-  strcpy (fn, connection->getName ());
-  strcat (fn, "_");
-  gmtime_r (&expStart->tv_sec, &expT);
-  sprintf (fn + camlen + 1, "%i%02i%02i-%02i%02i%02i-%04i.fits",
-	   expT.tm_year + 1900, expT.tm_mon + 1, expT.tm_mday,
-	   expT.tm_hour, expT.tm_min, expT.tm_sec,
-	   int (expStart->tv_usec / 1000));
-  return new Rts2Image (fn, expStart);
+  return new Rts2Image ("%c_%y%d%m-%H%M%S-%s.fits", expStart, connection);
 }
 
 CameraImages::iterator
@@ -184,7 +173,8 @@ Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
 
-imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
   return IMAGE_DO_BASIC_PROCESSING;
 }

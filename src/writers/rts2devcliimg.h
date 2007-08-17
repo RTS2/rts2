@@ -23,16 +23,16 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 {
 private:
   void writeFilter ();
-  bool isExposing;
+  bool isExposingFlag;
 
 protected:
     bool getIsExposing ()
   {
-    return isExposing;
+    return isExposingFlag;
   }
   void setIsExposing (bool in_isExposing)
   {
-    isExposing = in_isExposing;
+    isExposingFlag = in_isExposing;
   }
   // we have to allocate that field as soon as we get the knowledge of
   // camera chip numbers..

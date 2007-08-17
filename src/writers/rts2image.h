@@ -19,6 +19,7 @@
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
+#include "../utils/rts2expander.h"
 #include "../utils/mkpath.h"
 #include "../utils/rts2target.h"
 
@@ -46,7 +47,7 @@ typedef enum
 typedef enum
 { EXPOSURE_START, EXPOSURE_END } imageWriteWhich_t;
 
-class Rts2Image
+class Rts2Image:public Rts2Expander
 {
 private:
   unsigned short *data;
@@ -55,8 +56,6 @@ private:
   int flags;
   int filter_i;
   char *filter;
-  struct timeval exposureStart;
-  struct tm exposureGmTime;
   float exposureLength;
   void setImageName (const char *in_filename);
   int createImage (std::string in_filename);
@@ -94,7 +93,6 @@ private:
   // writes one value to image
   void writeClientValue (Rts2DevClient * client, Rts2Value * val);
 protected:
-  int epochId;
   int targetId;
   int targetIdSel;
   char targetType;
@@ -121,6 +119,11 @@ protected:
   }
 
   std::string getFitsErrors ();
+
+  // expand expression to image path
+  virtual std::string expandVariable (char expression);
+  virtual std::string expandVariable (std::string expression);
+
 public:
   // list of sex results..
   struct stardata *sexResults;
@@ -132,19 +135,21 @@ public:
   Rts2Image (Rts2Image * in_image);
   // memory-only with exposure time
   Rts2Image (const struct timeval *in_exposureStart);
+  Rts2Image (const struct timeval *in_exposureS, float in_img_exposure);
   // skeleton for DB image
   Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure);
   // create image
   Rts2Image (char *in_filename, const struct timeval *in_exposureStart);
+  // create image from expand path
+  Rts2Image (const char *in_expression,
+	     const struct timeval *in_exposureStart,
+	     Rts2Conn * in_connection);
   // create image in que
   Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
 	     const struct timeval *in_exposureStart);
   // open image from disk..
   Rts2Image (const char *in_filename, bool verbose = true);
   virtual ~ Rts2Image (void);
-
-  // expand expression to image path
-  virtual std::string expandPath (std::string expression);
 
   virtual int toQue ();
   virtual int toAcquisition ();
@@ -182,41 +187,47 @@ public:
   // that method is used to update DATE - creation date entry - for other file then ffile
   int setCreationDate (fitsfile * out_file = NULL);
 
-  int getValue (char *name, bool & value, bool required =
+  int getValue (const char *name, bool & value, bool required =
 		false, char *comment = NULL);
-  int getValue (char *name, int &value, bool required = false, char *comment =
-		NULL);
-  int getValue (char *name, long &value, bool required =
+  int getValue (const char *name, int &value, bool required =
 		false, char *comment = NULL);
-  int getValue (char *name, float &value, bool required =
+  int getValue (const char *name, long &value, bool required =
 		false, char *comment = NULL);
-  int getValue (char *name, double &value, bool required =
+  int getValue (const char *name, float &value, bool required =
 		false, char *comment = NULL);
-  int getValue (char *name, char &value, bool required =
+  int getValue (const char *name, double &value, bool required =
+		false, char *comment = NULL);
+  int getValue (const char *name, char &value, bool required =
 		false, char *command = NULL);
-  int getValue (char *name, char *value, int valLen, bool required =
+  int getValue (const char *name, char *value, int valLen, bool required =
 		false, char *comment = NULL);
-  int getValue (char *name, char **value, int valLen, bool required =
+  int getValue (const char *name, char **value, int valLen, bool required =
 		false, char *comment = NULL);
 
-  int getValues (char *name, int *values, int num, bool required =
+  int getValues (const char *name, int *values, int num, bool required =
 		 false, int nstart = 1);
-  int getValues (char *name, long *values, int num, bool required =
+  int getValues (const char *name, long *values, int num, bool required =
 		 false, int nstart = 1);
-  int getValues (char *name, double *values, int num, bool required =
+  int getValues (const char *name, double *values, int num, bool required =
 		 false, int nstart = 1);
-  int getValues (char *name, char **values, int num, bool required =
+  int getValues (const char *name, char **values, int num, bool required =
 		 false, int nstart = 1);
 
   int writeImgHeader (struct imghdr *im_h);
   int writeDate (Rts2ClientTCPDataConn * dataConn);
 
-  int fitsStatusValue (char *valname, const char *operation, bool required);
-  int fitsStatusSetValue (char *valname, bool required = true)
+  std::string expandPath (std::string pathEx)
+  {
+    return expand (pathEx);
+  }
+
+  int fitsStatusValue (const char *valname, const char *operation,
+		       bool required);
+  int fitsStatusSetValue (const char *valname, bool required = true)
   {
     return fitsStatusValue (valname, "SetValue", required);
   }
-  int fitsStatusGetValue (char *valname, bool required)
+  int fitsStatusGetValue (const char *valname, bool required)
   {
     return fitsStatusValue (valname, "GetValue", required);
   }
@@ -233,6 +244,8 @@ public:
   }
 
   void setMountName (const char *in_mountName);
+
+  void setCameraName (const char *new_name);
 
   const char *getCameraName ()
   {
@@ -257,36 +270,24 @@ public:
     return "(null)";
   }
 
-  void setExposureStart (const struct timeval *in_exposureStart)
+  void setExposureStart (const struct timeval *tv)
   {
-    setExposureStart (&in_exposureStart->tv_sec, in_exposureStart->tv_usec);
-  }
-
-  void setExposureStart (const time_t * in_sec, long in_usec)
-  {
-    exposureStart.tv_sec = *in_sec;
-    exposureStart.tv_usec = in_usec;
-    setExposureStart ();
-  }
-
-  void setExposureStart ()
-  {
-    gmtime_r (&exposureStart.tv_sec, &exposureGmTime);
+    setExpandDate (tv);
   }
 
   double getExposureStart ()
   {
-    return exposureStart.tv_sec + ((double) exposureStart.tv_usec / USEC_SEC);
+    return getExpandDateCtime ();
   }
 
   long getExposureSec ()
   {
-    return exposureStart.tv_sec;
+    return getCtimeSec ();
   }
 
   long getExposureUsec ()
   {
-    return exposureStart.tv_usec;
+    return getCtimeUsec ();
   }
 
   void setExposureLength (float in_exposureLength)
@@ -306,7 +307,6 @@ public:
     return targetId;
   }
 
-  std::string getEpochString ();
   std::string getTargetString ();
   std::string getTargetSelString ();
   std::string getObsString ();
@@ -314,54 +314,8 @@ public:
 
   virtual std::string getProcessingString ();
 
-  // date related functions
-  std::string getStartYearString ();
-  std::string getStartMonthString ();
-  std::string getStartDayString ();
-  std::string getStartYDayString ();
-
-  std::string getStartHourString ();
-  std::string getStartMinString ();
-  std::string getStartSecString ();
-  std::string getStartMSecString ();
-
   // image parameter functions
   std::string getExposureLengthString ();
-
-  int getStartYear ()
-  {
-    return exposureGmTime.tm_year + 1900;
-  }
-
-  int getStartMonth ()
-  {
-    return exposureGmTime.tm_mon + 1;
-  }
-
-  int getStartDay ()
-  {
-    return exposureGmTime.tm_mday;
-  }
-
-  int getStartYDay ()
-  {
-    return exposureGmTime.tm_yday;
-  }
-
-  int getStartHour ()
-  {
-    return exposureGmTime.tm_hour;
-  }
-
-  int getStartMin ()
-  {
-    return exposureGmTime.tm_min;
-  }
-
-  int getStartSec ()
-  {
-    return exposureGmTime.tm_sec;
-  }
 
   int getTargetIdSel ()
   {

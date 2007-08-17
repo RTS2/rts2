@@ -26,7 +26,6 @@ Rts2Image::initData ()
   targetIdSel = -1;
   targetType = TYPE_UNKNOW;
   targetName = NULL;
-  epochId = -1;
   cameraName = NULL;
   mountName = NULL;
   focName = NULL;
@@ -55,9 +54,6 @@ Rts2Image::initData ()
 
   config_rotang = nan ("f");
 
-  exposureStart.tv_sec = 0;
-  exposureStart.tv_usec = 0;
-
   shutter = SHUT_UNKNOW;
 
   flags = 0;
@@ -68,13 +64,13 @@ Rts2Image::initData ()
   mnt_flip = 0;
 }
 
-Rts2Image::Rts2Image ()
+Rts2Image::Rts2Image ():Rts2Expander ()
 {
   initData ();
   flags = IMAGE_KEEP_DATA;
 }
 
-Rts2Image::Rts2Image (Rts2Image * in_image)
+Rts2Image::Rts2Image (Rts2Image * in_image):Rts2Expander (in_image)
 {
   ffile = in_image->ffile;
   in_image->ffile = NULL;
@@ -83,7 +79,6 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   filter_i = in_image->filter_i;
   filter = in_image->filter;
   in_image->filter = NULL;
-  setExposureStart (&in_image->exposureStart);
   exposureLength = in_image->exposureLength;
   imageData = in_image->imageData;
   imageType = in_image->imageType;
@@ -104,7 +99,6 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   isAcquiring = in_image->isAcquiring;
   config_rotang = in_image->config_rotang;
 
-  epochId = in_image->epochId;
   targetId = in_image->targetId;
   targetIdSel = in_image->targetIdSel;
   targetType = in_image->targetType;
@@ -143,7 +137,8 @@ Rts2Image::Rts2Image (Rts2Image * in_image)
   mnt_flip = in_image->mnt_flip;
 }
 
-Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
+Rts2Image::Rts2Image (const struct timeval *in_exposureStart):
+Rts2Expander ()
 {
   initData ();
   flags = IMAGE_KEEP_DATA;
@@ -151,16 +146,32 @@ Rts2Image::Rts2Image (const struct timeval *in_exposureStart)
   writeExposureStart ();
 }
 
-Rts2Image::Rts2Image (long in_img_date, int in_img_usec,
-		      float in_img_exposure)
+Rts2Image::Rts2Image (const struct timeval *in_exposureStart,
+		      float in_img_exposure):
+Rts2Expander ()
 {
   initData ();
-  setExposureStart (&in_img_date, in_img_usec);
+  setExposureStart (in_exposureStart);
+  writeExposureStart ();
+  exposureLength = in_img_exposure;
+}
+
+Rts2Image::Rts2Image (long in_img_date, int in_img_usec,
+		      float in_img_exposure):
+Rts2Expander ()
+{
+  struct timeval tv;
+  initData ();
+  tv.tv_sec = in_img_date;
+  tv.tv_usec = in_img_usec;
+  setExposureStart (&tv);
+  writeExposureStart ();
   exposureLength = in_img_exposure;
 }
 
 Rts2Image::Rts2Image (char *in_filename,
-		      const struct timeval *in_exposureStart)
+		      const struct timeval *in_exposureStart):
+Rts2Expander ()
 {
   initData ();
 
@@ -169,8 +180,21 @@ Rts2Image::Rts2Image (char *in_filename,
   writeExposureStart ();
 }
 
+Rts2Image::Rts2Image (const char *in_expression,
+		      const struct timeval *in_exposureStart,
+		      Rts2Conn * in_connection)
+{
+  initData ();
+  setCameraName (in_connection->getName ());
+
+  createImage (expandPath (in_expression));
+  setExposureStart (in_exposureStart);
+  writeExposureStart ();
+}
+
 Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
-		      const struct timeval *in_exposureStart)
+		      const struct timeval *in_exposureStart):
+Rts2Expander ()
 {
   std::string in_filename;
 
@@ -184,8 +208,7 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
   imgId = currTarget->getNextImgId ();
   setExposureStart (in_exposureStart);
 
-  cameraName = new char[DEVICE_NAME_SIZE + 1];
-  strcpy (cameraName, camera->getName ());
+  setCameraName (camera->getName ());
 
   mountName = NULL;
   focName = NULL;
@@ -229,9 +252,11 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
   currTarget->writeToImage (this);
 }
 
-Rts2Image::Rts2Image (const char *in_filename, bool verbose)
+Rts2Image::Rts2Image (const char *in_filename, bool verbose):
+Rts2Expander ()
 {
   int ret;
+  struct timeval tv;
 
   initData ();
 
@@ -245,9 +270,9 @@ Rts2Image::Rts2Image (const char *in_filename, bool verbose)
   getValue ("OBJECT", targetName, FLEN_VALUE, verbose);
   getValue ("OBSID", obsId, verbose);
   getValue ("IMGID", imgId, verbose);
-  getValue ("CTIME", exposureStart.tv_sec, verbose);
-  getValue ("USEC", exposureStart.tv_usec, verbose);
-  setExposureStart ();
+  getValue ("CTIME", tv.tv_sec, verbose);
+  getValue ("USEC", tv.tv_usec, verbose);
+  setExposureStart (&tv);
   // if EXPTIM fails..
   ret = getValue ("EXPTIME", exposureLength, false);
   if (ret)
@@ -311,131 +336,52 @@ Rts2Image::~Rts2Image (void)
     free (sexResults);
 }
 
-std::string Rts2Image::expandPath (std::string expression)
+std::string Rts2Image::expandVariable (char expression)
 {
-  std::string ret = "";
-  // FITS keyword cannot have more then 80 chars..
-  char
-    valueName[200];
-  char *
-    valueNameTop;
-  char *
-    valueNameEnd = valueName + 199;
-  for (std::string::iterator iter = expression.begin ();
-       iter != expression.end (); iter++)
+  switch (expression)
     {
-      switch (*iter)
-	{
-	case '%':
-	  iter++;
-	  if (iter != expression.end ())
-	    {
-	      switch (*iter)
-		{
-		case '%':
-		  ret += '%';
-		  break;
-		case 'b':
-		  ret += getImageBase ();
-		  break;
-		case 'c':
-		  if (cameraName)
-		    ret += cameraName;
-		  else
-		    ret += "NULL";
-		  break;
-		case 'D':
-		  ret += getStartYDayString ();
-		  break;
-		case 'd':
-		  ret += getStartDayString ();
-		  break;
-		case 'E':
-		  ret += getExposureLengthString ();
-		  break;
-		case 'e':
-		  ret += getEpochString ();
-		  break;
-		case 'F':
-		  ret += getFilter ();
-		  break;
-		case 'f':
-		  ret += getOnlyFileName ();
-		  break;
-		case 'H':
-		  ret += getStartHourString ();
-		  break;
-		case 'i':
-		  ret += getImgIdString ();
-		  break;
-		case 'M':
-		  ret += getStartMinString ();
-		  break;
-		case 'm':
-		  ret += getStartMonthString ();
-		  break;
-		case 'o':
-		  ret += getObsString ();
-		  break;
-		case 'p':
-		  ret += getProcessingString ();
-		  break;
-		case 'S':
-		  ret += getStartSecString ();
-		  break;
-		case 's':
-		  ret += getStartMSecString ();
-		  break;
-		case 'T':
-		  ret += getTargetString ();
-		  break;
-		case 't':
-		  ret += getTargetSelString ();
-		  break;
-		case 'y':
-		  ret += getStartYearString ();
-		  break;
-		default:
-		  ret += '%';
-		  ret += *iter;
-		}
-	    }
-	  break;
-	  // that one enables to copy values from image header to expr
-	case '$':
-	  valueNameTop = valueName;
-	  for (iter++;
-	       (iter != expression.end ()) && (*iter != '$')
-	       && valueNameTop < valueNameEnd; iter++, valueNameTop++)
-	    *valueNameTop = *iter;
-	  if (iter == expression.end () || valueNameTop >= valueNameEnd)
-	    {
-	      ret += '$';
-	      ret += valueName;
-	    }
-	  else
-	    {
-	      char
-		valB[200];
-	      int
-		g_ret;
-	      *valueNameTop = '\0';
-	      g_ret = getValue (valueName, valB, 200, true);
-	      if (g_ret)
-		{
-		  ret += '$';
-		  ret += valueName;
-		  ret += '$';
-		}
-	      else
-		{
-		  ret += valB;
-		}
-	    }
-	  break;
-	default:
-	  ret += *iter;
-	}
+    case 'b':
+      return getImageBase ();
+    case 'c':
+      return getCameraName ();
+    case 'E':
+      return getExposureLengthString ();
+    case 'F':
+      return getFilter ();
+    case 'f':
+      return getOnlyFileName ();
+    case 'i':
+      return getImgIdString ();
+    case 'o':
+      return getObsString ();
+    case 'p':
+      return getProcessingString ();
+    case 'T':
+      return getTargetString ();
+    case 't':
+      return getTargetSelString ();
+    default:
+      return Rts2Expander::expandVariable (expression);
+    }
+}
+
+std::string Rts2Image::expandVariable (std::string expression)
+{
+  std::string ret;
+  char
+    valB[200];
+  int
+    g_ret;
+  g_ret = getValue (expression.c_str (), valB, 200, true);
+  if (g_ret)
+    {
+      ret = '$';
+      ret += expression;
+      ret += '$';
+    }
+  else
+    {
+      ret = valB;
     }
   return ret;
 }
@@ -698,13 +644,12 @@ Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
 int
 Rts2Image::writeExposureStart ()
 {
-  setValue ("CTIME", exposureStart.tv_sec,
+  setValue ("CTIME", getCtimeSec (),
 	    "exposure start (seconds since 1.1.1970)");
-  setValue ("USEC", exposureStart.tv_usec, "exposure start micro seconds");
-  setValue ("JD", ln_get_julian_from_timet (&exposureStart.tv_sec),
-	    "exposure JD");
-  setValue ("DATE-OBS", &exposureStart.tv_sec, exposureStart.tv_usec,
-	    "start of exposure");
+  setValue ("USEC", getCtimeUsec (), "exposure start micro seconds");
+  time_t tim = getCtimeSec ();
+  setValue ("JD", getExposureJD (), "exposure JD");
+  setValue ("DATE-OBS", &tim, getCtimeUsec (), "start of exposure");
   return 0;
 }
 
@@ -878,7 +823,8 @@ Rts2Image::setCreationDate (fitsfile * out_file)
 }
 
 int
-Rts2Image::getValue (char *name, bool & value, bool required, char *comment)
+Rts2Image::getValue (const char *name, bool & value, bool required,
+		     char *comment)
 {
   int ret;
   if (!ffile)
@@ -887,13 +833,14 @@ Rts2Image::getValue (char *name, bool & value, bool required, char *comment)
       if (ret)
 	return ret;
     }
-  fits_read_key (ffile, TLOGICAL, name, (void *) &value, comment,
+  fits_read_key (ffile, TLOGICAL, (char *) name, (void *) &value, comment,
 		 &fits_status);
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValue (char *name, int &value, bool required, char *comment)
+Rts2Image::getValue (const char *name, int &value, bool required,
+		     char *comment)
 {
   int ret;
   if (!ffile)
@@ -902,57 +849,15 @@ Rts2Image::getValue (char *name, int &value, bool required, char *comment)
       if (ret)
 	return ret;
     }
-  fits_read_key (ffile, TINT, name, (void *) &value, comment, &fits_status);
-  return fitsStatusGetValue (name, required);
-}
-
-int
-Rts2Image::getValue (char *name, long &value, bool required, char *comment)
-{
-  int ret;
-  if (!ffile)
-    {
-      ret = openImage ();
-      if (ret)
-	return ret;
-    }
-  fits_read_key (ffile, TLONG, name, (void *) &value, comment, &fits_status);
-  return fitsStatusGetValue (name, required);
-}
-
-int
-Rts2Image::getValue (char *name, float &value, bool required, char *comment)
-{
-  int ret;
-  if (!ffile)
-    {
-      ret = openImage ();
-      if (ret)
-	return ret;
-    }
-  fits_read_key (ffile, TFLOAT, name, (void *) &value, comment, &fits_status);
-  return fitsStatusGetValue (name, required);
-}
-
-int
-Rts2Image::getValue (char *name, double &value, bool required, char *comment)
-{
-  int ret;
-  if (!ffile)
-    {
-      ret = openImage ();
-      if (ret)
-	return ret;
-    }
-  fits_read_key (ffile, TDOUBLE, name, (void *) &value, comment,
+  fits_read_key (ffile, TINT, (char *) name, (void *) &value, comment,
 		 &fits_status);
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValue (char *name, char &value, bool required, char *comment)
+Rts2Image::getValue (const char *name, long &value, bool required,
+		     char *comment)
 {
-  static char val[FLEN_VALUE];
   int ret;
   if (!ffile)
     {
@@ -960,13 +865,45 @@ Rts2Image::getValue (char *name, char &value, bool required, char *comment)
       if (ret)
 	return ret;
     }
-  fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
-  value = *val;
+  fits_read_key (ffile, TLONG, (char *) name, (void *) &value, comment,
+		 &fits_status);
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValue (char *name, char *value, int valLen, bool required,
+Rts2Image::getValue (const char *name, float &value, bool required,
+		     char *comment)
+{
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
+  fits_read_key (ffile, TFLOAT, (char *) name, (void *) &value, comment,
+		 &fits_status);
+  return fitsStatusGetValue (name, required);
+}
+
+int
+Rts2Image::getValue (const char *name, double &value, bool required,
+		     char *comment)
+{
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
+  fits_read_key (ffile, TDOUBLE, (char *) name, (void *) &value, comment,
+		 &fits_status);
+  return fitsStatusGetValue (name, required);
+}
+
+int
+Rts2Image::getValue (const char *name, char &value, bool required,
 		     char *comment)
 {
   static char val[FLEN_VALUE];
@@ -977,15 +914,34 @@ Rts2Image::getValue (char *name, char *value, int valLen, bool required,
       if (ret)
 	return ret;
     }
-  fits_read_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
+  fits_read_key (ffile, TSTRING, (char *) name, (void *) val, comment,
+		 &fits_status);
+  value = *val;
+  return fitsStatusGetValue (name, required);
+}
+
+int
+Rts2Image::getValue (const char *name, char *value, int valLen, bool required,
+		     char *comment)
+{
+  static char val[FLEN_VALUE];
+  int ret;
+  if (!ffile)
+    {
+      ret = openImage ();
+      if (ret)
+	return ret;
+    }
+  fits_read_key (ffile, TSTRING, (char *) name, (void *) val, comment,
+		 &fits_status);
   strncpy (value, val, valLen);
   value[valLen - 1] = '\0';
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValue (char *name, char **value, int valLen, bool required,
-		     char *comment)
+Rts2Image::getValue (const char *name, char **value, int valLen,
+		     bool required, char *comment)
 {
   int ret;
   if (!ffile)
@@ -994,54 +950,54 @@ Rts2Image::getValue (char *name, char **value, int valLen, bool required,
       if (ret)
 	return ret;
     }
-  fits_read_key_longstr (ffile, name, value, comment, &fits_status);
+  fits_read_key_longstr (ffile, (char *) name, value, comment, &fits_status);
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValues (char *name, int *values, int num, bool required,
+Rts2Image::getValues (const char *name, int *values, int num, bool required,
 		      int nstart)
 {
   if (!ffile)
     return -1;
   int nfound;
-  fits_read_keys_log (ffile, name, nstart, num, values, &nfound,
+  fits_read_keys_log (ffile, (char *) name, nstart, num, values, &nfound,
 		      &fits_status);
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValues (char *name, long *values, int num, bool required,
+Rts2Image::getValues (const char *name, long *values, int num, bool required,
 		      int nstart)
 {
   if (!ffile)
     return -1;
   int nfound;
-  fits_read_keys_lng (ffile, name, nstart, num, values, &nfound,
+  fits_read_keys_lng (ffile, (char *) name, nstart, num, values, &nfound,
 		      &fits_status);
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValues (char *name, double *values, int num, bool required,
-		      int nstart)
+Rts2Image::getValues (const char *name, double *values, int num,
+		      bool required, int nstart)
 {
   if (!ffile)
     return -1;
   int nfound;
-  fits_read_keys_dbl (ffile, name, nstart, num, values, &nfound,
+  fits_read_keys_dbl (ffile, (char *) name, nstart, num, values, &nfound,
 		      &fits_status);
   return fitsStatusGetValue (name, required);
 }
 
 int
-Rts2Image::getValues (char *name, char **values, int num, bool required,
+Rts2Image::getValues (const char *name, char **values, int num, bool required,
 		      int nstart)
 {
   if (!ffile)
     return -1;
   int nfound;
-  fits_read_keys_str (ffile, name, nstart, num, values, &nfound,
+  fits_read_keys_str (ffile, (char *) name, nstart, num, values, &nfound,
 		      &fits_status);
   return fitsStatusGetValue (name, required);
 }
@@ -1175,8 +1131,8 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
     }
   if (fits_status)
     {
-      logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors ()
-	<< "imageType " << imageType << sendLog;
+      logStream (MESSAGE_ERROR) << "cannot resize image: " <<
+	getFitsErrors () << "imageType " << imageType << sendLog;
       return -1;
     }
   switch (imageType)
@@ -1252,7 +1208,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 }
 
 int
-Rts2Image::fitsStatusValue (char *valname, const char *operation,
+Rts2Image::fitsStatusValue (const char *valname, const char *operation,
 			    bool required)
 {
   int ret = 0;
@@ -1347,19 +1303,18 @@ Rts2Image::deleteImage ()
 void
 Rts2Image::setMountName (const char *in_mountName)
 {
-  if (mountName)
-    delete[]mountName;
+  delete[]mountName;
   mountName = new char[strlen (in_mountName) + 1];
   strcpy (mountName, in_mountName);
   setValue ("MNT_NAME", mountName, "name of mount");
 }
 
-std::string Rts2Image::getEpochString ()
+void
+Rts2Image::setCameraName (const char *new_name)
 {
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (3) << epochId;
-  return _os.str ();
+  delete[]cameraName;
+  cameraName = new char[strlen (new_name) + 1];
+  strcpy (cameraName, new_name);
 }
 
 std::string Rts2Image::getTargetString ()
@@ -1398,70 +1353,6 @@ std::string Rts2Image::getImgIdString ()
 std::string Rts2Image::getProcessingString ()
 {
   return std::string ("RA");
-}
-
-std::string Rts2Image::getStartYearString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (4) << getStartYear ();
-  return _os.str ();
-}
-
-std::string Rts2Image::getStartMonthString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (2) << getStartMonth ();
-  return _os.str ();
-}
-
-std::string Rts2Image::getStartDayString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (2) << getStartDay ();
-  return _os.str ();
-}
-
-std::string Rts2Image::getStartYDayString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (3) << getStartYDay ();
-  return _os.str ();
-}
-
-std::string Rts2Image::getStartHourString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (2) << getStartHour ();
-  return _os.str ();
-}
-
-std::string Rts2Image::getStartMinString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (2) << getStartMin ();
-  return _os.str ();
-}
-
-std::string Rts2Image::getStartSecString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (2) << getStartSec ();
-  return _os.str ();
-}
-
-std::string Rts2Image::getStartMSecString ()
-{
-  std::ostringstream _os;
-  _os.fill ('0');
-  _os << std::setw (4) << ((int) (exposureStart.tv_usec / 1000.0));
-  return _os.str ();
 }
 
 std::string Rts2Image::getExposureLengthString ()
@@ -2066,8 +1957,9 @@ Rts2Image::getLongtitude ()
 double
 Rts2Image::getExposureJD ()
 {
-  return ln_get_julian_from_timet (&exposureStart.tv_sec) +
-    exposureStart.tv_usec / USEC_SEC / 86400.0;
+  time_t tim = getCtimeSec ();
+  return ln_get_julian_from_timet (&tim) +
+    getCtimeUsec () / USEC_SEC / 86400.0;
 }
 
 double
@@ -2086,9 +1978,9 @@ std::ostream & operator << (std::ostream & _os, Rts2Image & image)
     << " [" << image.getWidth () << ":"
     << image.getHeight () << "]"
     << " RA " << image.getCenterRa () << " (" << LibnovaDegArcMin (image.
-								   ra_err) <<
-    ") DEC " << image.getCenterDec () << " (" << LibnovaDegArcMin (image.
-								   dec_err)
+								   ra_err)
+    << ") DEC " << image.getCenterDec () << " (" << LibnovaDegArcMin (image.
+								      dec_err)
     << ") IMG_ERR " << LibnovaDegArcMin (image.img_err);
   return _os;
 }
