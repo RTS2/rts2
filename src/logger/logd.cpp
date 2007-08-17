@@ -5,7 +5,9 @@ class Rts2Logd:public Rts2Device, public Rts2LoggerBase
 {
 private:
   Rts2ValueString * logConfig;
+  Rts2ValueString *logFile;
   int setLogConfig (const char *new_config);
+  int setLogFile (const char *new_file);
 protected:
     virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
   virtual int processArgs (const char *arg);
@@ -21,6 +23,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
 {
   setTimeout (USEC_SEC);
   createValue (logConfig, "log_config", "logging configuration file", false);
+  createValue (logFile, "log_file", "logging file", false);
 }
 
 int
@@ -36,11 +39,22 @@ Rts2Logd::setLogConfig (const char *new_config)
 }
 
 int
+Rts2Logd::setLogFile (const char *new_file)
+{
+  postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void *) new_file));
+  return 0;
+}
+
+int
 Rts2Logd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   if (old_value == logConfig)
     {
       return (setLogConfig (new_value->getValue ()) == 0) ? 0 : -2;
+    }
+  if (old_value == logFile)
+    {
+      return (setLogFile (new_value->getValue ()) == 0) ? 0 : -2;
     }
   return Rts2Device::setValue (old_value, new_value);
 }

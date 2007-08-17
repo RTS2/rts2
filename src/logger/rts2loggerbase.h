@@ -2,6 +2,8 @@
 #include "../utils/rts2displayvalue.h"
 #include "../utils/rts2command.h"
 
+#define EVENT_SET_LOGFILE	RTS2_LOCAL_EVENT+800
+
 /**
  * This class logs given values to given file.
  *
@@ -13,18 +15,26 @@ private:
   std::list < Rts2Value * >logValues;
   std::list < std::string > logNames;
 
+  std::ostream * outputStream;
+
   time_t nextInfoCall;
   time_t numberSec;
 
   void fillLogValues ();
+protected:
+  void setOutputFile (const char *filename);
 public:
     Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec,
 			 std::list < std::string > &in_logNames);
 
+    virtual ~ Rts2DevClientLogger (void);
   virtual void infoOK ();
   virtual void infoFailed ();
 
   virtual void idle ();
+
+  // used to set command
+  virtual void postEvent (Rts2Event * event);
 };
 
 /**

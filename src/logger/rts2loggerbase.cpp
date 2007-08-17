@@ -9,6 +9,14 @@ Rts2DevClient (in_conn)
   time (&nextInfoCall);
   numberSec = (time_t) in_numberSec;
   logNames = in_logNames;
+
+  outputStream = &std::cout;
+}
+
+Rts2DevClientLogger::~Rts2DevClientLogger (void)
+{
+  if (outputStream != &std::cout)
+    delete outputStream;
 }
 
 void
@@ -24,12 +32,26 @@ Rts2DevClientLogger::fillLogValues ()
 	}
       else
 	{
-	  std::
-	    cerr << "Cannot find value '" << *iter << "' of device '" <<
-	    getName () << "', exiting." << std::endl;
-	  exit (EXIT_FAILURE);
+	  logStream (MESSAGE_ERROR) << "Cannot find value '" << *iter <<
+	    "' of device '" << getName () << "', exiting." << sendLog;
+	  getMaster ()->endRunLoop ();
 	}
     }
+}
+
+void
+Rts2DevClientLogger::setOutputFile (const char *filename)
+{
+  std::ofstream * nstream = new std::ofstream (filename);
+  if (nstream->fail ())
+    {
+      delete nstream;
+      return;
+    }
+  if (outputStream != &std::cout)
+    delete outputStream;
+
+  outputStream = nstream;
 }
 
 void
@@ -41,15 +63,15 @@ Rts2DevClientLogger::infoOK ()
   for (std::list < Rts2Value * >::iterator iter = logValues.begin ();
        iter != logValues.end (); iter++)
     {
-      std::cout << " " << getDisplayValue (*iter);
+      *outputStream << " " << getDisplayValue (*iter);
     }
-  std::cout << std::endl;
+  *outputStream << std::endl;
 }
 
 void
 Rts2DevClientLogger::infoFailed ()
 {
-  std::cout << "info failed" << std::endl;
+  *outputStream << "info failed" << std::endl;
 }
 
 void
@@ -62,6 +84,18 @@ Rts2DevClientLogger::idle ()
       queCommand (new Rts2CommandInfo (getMaster ()));
       nextInfoCall = now + numberSec;
     }
+}
+
+void
+Rts2DevClientLogger::postEvent (Rts2Event * event)
+{
+  switch (event->getType ())
+    {
+    case EVENT_SET_LOGFILE:
+      setOutputFile ((const char *) event->getArg ());
+      break;
+    }
+  Rts2DevClient::postEvent (event);
 }
 
 Rts2LoggerBase::Rts2LoggerBase ()
@@ -87,9 +121,9 @@ Rts2LoggerBase::readDevices (std::istream & is)
 
       if (is.eof () || is.fail ())
 	{
-	  std::
-	    cerr << "Cannot read device name or timeout, please correct line "
-	    << std::endl;
+	  logStream (MESSAGE_ERROR) <<
+	    "Cannot read device name or timeout, please correct line " <<
+	    sendLog;
 	  return -1;
 	}
       getline (is, values);
@@ -105,9 +139,8 @@ Rts2LoggerBase::readDevices (std::istream & is)
 	}
       if (valueList.empty ())
 	{
-	  std::
-	    cerr << "Value list for device " << devName <<
-	    " is empty, please correct that." << std::endl;
+	  logStream (MESSAGE_ERROR) << "Value list for device " << devName <<
+	    " is empty, please correct that." << sendLog;
 	  return -1;
 	}
       devicesNames.push_back (Rts2LogValName (devName, timeout, valueList));
