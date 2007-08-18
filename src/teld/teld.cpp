@@ -824,7 +824,7 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
       sep = getMoveTargetSep ();
       logStream (MESSAGE_DEBUG) << "start telescope move sep " << sep <<
 	sendLog;
-      if (sep > sepLimit->getValueDouble ())
+      if (isnan (sep) || sep > sepLimit->getValueDouble ())
 	dontKnowPosition ();
     }
   tar_ra += locCorRa;
@@ -968,7 +968,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
       sep = getMoveTargetSep ();
       logStream (MESSAGE_DEBUG) << "telescope startResyncMove sep " << sep <<
 	sendLog;
-      if (sep > sepLimit->getValueDouble ())
+      if (isnan (sep) || sep > sepLimit->getValueDouble ())
 	dontKnowPosition ();
     }
   infoAll ();
@@ -1328,6 +1328,48 @@ Rts2DevTelescope::grantPriority (Rts2Conn * conn)
   if (conn->getOtherType () == DEVICE_TYPE_IMGPROC)
     return 1;
   return Rts2Device::grantPriority (conn);
+}
+
+void
+Rts2DevTelescope::sigHUP (int sig)
+{
+  int ret;
+  if (modelFile)
+    {
+      delete model;
+      model = new Rts2TelModel (this, modelFile);
+      ret = model->load ();
+      if (ret)
+	{
+	  logStream (MESSAGE_ERROR) << "Failed to reload model from file " <<
+	    modelFile << sendLog;
+	  delete model;
+	  model = NULL;
+	}
+      else
+	{
+	  logStream (MESSAGE_INFO) << "Reloaded model from file " <<
+	    modelFile << sendLog;
+	}
+    }
+  if (modelFile0)
+    {
+      delete model0;
+      model0 = new Rts2TelModel (this, modelFile0);
+      ret = model0->load ();
+      if (ret)
+	{
+	  delete model0;
+	  logStream (MESSAGE_ERROR) << "Failed to reload model from file " <<
+	    modelFile0 << sendLog;
+	  model0 = NULL;
+	}
+      else
+	{
+	  logStream (MESSAGE_INFO) << "Reloaded model from file " <<
+	    modelFile0 << sendLog;
+	}
+    }
 }
 
 int

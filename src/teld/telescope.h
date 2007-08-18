@@ -342,6 +342,9 @@ public:
     return (corrections->getValueInteger () & COR_MODEL);
   }
 
+  // reload model
+  virtual void sigHUP (int sig);
+
   virtual int commandAuthorized (Rts2Conn * conn);
 };
 
