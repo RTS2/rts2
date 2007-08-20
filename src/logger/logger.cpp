@@ -22,8 +22,8 @@ Rts2Client (in_argc, in_argv)
   setTimeout (USEC_SEC);
   inputStream = NULL;
 
-  addOption ('f', NULL, 1,
-	     "specify input file, which holds information which values should be logged for which devices");
+  addOption ('c', NULL, 1,
+	     "specify config file with logged device, timeouts and values");
 }
 
 int
@@ -32,7 +32,7 @@ Rts2Logger::processOption (int in_opt)
   int ret;
   switch (in_opt)
     {
-    case 'f':
+    case 'c':
       inputStream = new std::ifstream (optarg);
       ret = readDevices (*inputStream);
       delete inputStream;

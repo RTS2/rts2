@@ -9,7 +9,9 @@ private:
   int setLogConfig (const char *new_config);
   int setLogFile (const char *new_file);
 protected:
-    virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+    virtual int processOption (int in_opt);
+  virtual int init ();
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
   virtual int processArgs (const char *arg);
   virtual int willConnect (Rts2Address * in_addr);
 public:
@@ -22,8 +24,13 @@ Rts2Logd::Rts2Logd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
 {
   setTimeout (USEC_SEC);
-  createValue (logConfig, "log_config", "logging configuration file", false);
-  createValue (logFile, "log_file", "logging file", false);
+
+  addOption ('c', NULL, 1,
+	     "specify config file with logged device, timeouts and values");
+  addOption ('o', NULL, 1, "output log file expression");
+
+  createValue (logConfig, "config", "logging configuration file", false);
+  createValue (logFile, "output", "logging file", false);
 }
 
 int
@@ -34,7 +41,6 @@ Rts2Logd::setLogConfig (const char *new_config)
   delete istream;
   if (ret)
     return ret;
-  logConfig->setValueString (new_config);
   setLogFile (logFile->getValue ());
   return ret;
 }
@@ -43,6 +49,33 @@ int
 Rts2Logd::setLogFile (const char *new_file)
 {
   postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void *) new_file));
+  return 0;
+}
+
+int
+Rts2Logd::processOption (int in_opt)
+{
+  switch (in_opt)
+    {
+    case 'c':
+      logConfig->setValueString (optarg);
+      return 0;
+    case 'o':
+      logFile->setValueString (optarg);
+      return 0;
+    }
+  return Rts2Device::processOption (in_opt);
+}
+
+int
+Rts2Logd::init ()
+{
+  int ret;
+  ret = Rts2Device::init ();
+  if (ret)
+    return ret;
+  if (*logConfig->getValue () != '\n')
+    return setLogConfig (logConfig->getValue ());
   return 0;
 }
 
