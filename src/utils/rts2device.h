@@ -141,6 +141,7 @@ protected:
    * @return 0 on success, -1 if option wasn't processed
    */
     virtual int processOption (int in_opt);
+  virtual int init ();
   void clearStatesPriority ();
 
   virtual Rts2Conn *createClientConnection (char *in_deviceName);
@@ -165,7 +166,6 @@ public:
 
   virtual int commandAuthorized (Rts2Conn * conn);
 
-  virtual int init ();
   int authorize (Rts2DevConn * conn);
   int sendMaster (char *msg)
   {

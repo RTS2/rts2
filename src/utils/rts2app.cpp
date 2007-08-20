@@ -36,6 +36,8 @@ Rts2Object ()
 
   end_loop = false;
 
+  tzset ();
+
   addOption ('h', "help", 0, "write this help");
   addOption (OPT_VERSION, "version", 0, "show program version and license");
 
@@ -189,14 +191,9 @@ Rts2App::processOption (int in_opt)
 	<<
 	"(C) 2001-2007 Petr Kubanek and others, see AUTHORS file for complete list"
 	<< std::endl << std::
-	endl << "This program comes with ABSOLUTELY NO WARRANTY; for details"
-	<< std::
 	endl <<
-	"see http://www.gnu.org.  This is free software, and you are welcome"
-	<< std::
-	endl <<
-	"to redistribute it under certain conditions; see http://www.gnu.org"
-	<< std::endl << "for them." << std::endl << std::endl;
+	"This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org.  This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for them."
+	<< std::endl << std::endl;
       exit (EXIT_SUCCESS);
     case '?':
       std::cerr << "Invalid option encountered, exiting." << std::endl
