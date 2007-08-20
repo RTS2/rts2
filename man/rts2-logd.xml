@@ -4,11 +4,11 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-06-24</date>">
+  <!ENTITY dhdate      "<date>2007-08-17</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhpackage   "rts2-logger">
+  <!ENTITY dhpackage   "rts2-logd">
 
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
@@ -49,7 +49,7 @@
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-    <refpurpose>Allow logging of interesting values to text file.</refpurpose>
+    <refpurpose>Daemon which allow logging of interesting values to text file.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
@@ -62,6 +62,9 @@
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>-c <replaceable>filename</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-f <replaceable>log format filename</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
     <cmdsynopsis>
@@ -80,8 +83,10 @@
     <title>DESCRIPTION</title>
     
     <para>
-      This program connect to RTS2, and then dumps in predefined interval
-      values of intereset for each device.
+      This daemon connect to RTS2, and then dumps in predefined interval values
+      of intereset for each device. It is similar to
+      <citerefentry><refentrytitle>rts2-logger</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+      except that it runs forewer and can be started as standard daemon, e.g. from rts2 configuration.
     </para>
 
   </refsect1>
@@ -113,7 +118,8 @@
           <para>
 	    Specify to take configuration input from file instead of from
 	    standart input, which is default. For description of file format
-	    please see CONFIGURATION FILE FORMAT section.
+	    please see CONFIGURATION FILE FORMAT section in
+	    <citerefentry><refentrytitle>rts2-logger</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
 	  </para>
         </listitem>
       </varlistentry>
@@ -134,89 +140,22 @@
     </variablelist>
   </refsect1>
   <refsect1>
-    <title>CONFIGURATION FILE FORMAT</title>
-
-    <para>
-      Configuration file is written as text file. It can be specified by -f
-      option, or streamed to standart input. On each line, entries separated
-      with one or more space characters specify:
-    </para>
-
-    <para>
-      <variablelist>
-        <varlistentry>
-	  <term>device name</term>
-	  <listitem>
-	    <para>
-	      Name of the device. You can get the device name from rts2-mon.
-	    </para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>login interval in seconds</term>
-	  <listitem>
-	    <para>
-	      This specify how often log will be writen. Only integer number of
-	      second is currently accepted. Depending on RTS2 performance, the
-	      logged values can be written at arbitary time - system makes all
-	      efforts to get values in time, but it cannot guarantie delivery
-	      of the value at exact time.
-	    </para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>values (multiple listing)</term>
-	  <listitem>
-	    <para>
-	      List of variables to log.
-	    </para>
-	  </listitem>
-	</varlistentry>
-      </variablelist>
-    </para>
-
-    <para>
-      You can always consult
-      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-      for list of devices and their variables.
-    </para>
-  </refsect1>
-  <refsect1>
     <title>OUTPUT</title>
 
     <para>
-      Output is written to standard output. On one line, one measurement is
-      recorded. Device name is printed, followed with space, followed with
-      space separated list of measured values. If you want to add time of
-      meassurement, please add infotime to configuration file. infotime is
-      printed as float point number which represents number of seconds since
-      1.1.1970, the Unix stadard time.
+      Output is written to standard output or to file specified with expansion
+      string using either -o option, or changing of output variable. For output
+      format, please see
+      <citerefentry><refentrytitle>rts2-logger</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      manual page.
     </para>
-  </refsect1>
-  <refsect1>
-    <title>EXAMPLE</title>
 
     <para>
-      Following file will log once every 5 seconds values from C0 device, and
-      once every 8 seconds from S1 device. From C0, infotime (e.g. time when
-      this information was taken), MODE and GAIN are recorded. For S1,
-      infotime, TEMPA, TEMPB and TEMPC values are recorded.
-
-      <literallayout>
-C0 5 infotime MODE GAIN
-S1 8 infotime TEMPA TEMPB TEMPC
-      </literallayout>
-
-      The output will then contain:
-
-      <literallayout>
-C0 1183230001.403492 1 HIGH
-S1 1183230003.654364 -120.465 -100.6576 10.0809
-C0 1183230006.654364 1 HIGH
-C0 1183230012.236757 1 LOW
-S1 1183230013.567643 -120.345 -100.7654 10.3435
-      </literallayout>
+      For details about expansion strings in output filename, please see
+      <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+      The string which you would most probably like to see is %y%m%d-%H%M%S.%s.
     </para>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
@@ -227,8 +166,12 @@ S1 1183230013.567643 -120.345 -100.7654 10.3435
 	<manvolnum>7</manvolnum>
       </citerefentry>
       <citerefentry>
-        <refentrytitle>rts2-logd</refentrytitle>
+        <refentrytitle>rts2-logger</refentrytitle>
 	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
       </citerefentry>
     </para>
 
