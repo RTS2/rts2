@@ -85,8 +85,8 @@ Rts2TestApp::run ()
 
   // now do test expansions..
   Rts2Expander *exp = new Rts2Expander ();
-  std::cout << "%D:%y-%m-%dT%H:%M:%S:%s:%u: " << exp->
-    expand ("%D:%y-%m-%dT%H:%M:%S:%s:%u") << std::endl;
+  std::cout << "%Z%D:%y-%m-%dT%H:%M:%S:%s:%u: " << exp->
+    expand ("%Z%D:%y-%m-%dT%H:%M:%S:%s:%u") << std::endl;
   delete exp;
 
   delete conf;
