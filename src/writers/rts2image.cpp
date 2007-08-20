@@ -138,20 +138,18 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2Expander (in_image)
 }
 
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart):
-Rts2Expander ()
+Rts2Expander (in_exposureStart)
 {
   initData ();
   flags = IMAGE_KEEP_DATA;
-  setExposureStart (in_exposureStart);
   writeExposureStart ();
 }
 
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart,
 		      float in_img_exposure):
-Rts2Expander ()
+Rts2Expander (in_exposureStart)
 {
   initData ();
-  setExposureStart (in_exposureStart);
   writeExposureStart ();
   exposureLength = in_img_exposure;
 }
@@ -171,30 +169,29 @@ Rts2Expander ()
 
 Rts2Image::Rts2Image (char *in_filename,
 		      const struct timeval *in_exposureStart):
-Rts2Expander ()
+Rts2Expander (in_exposureStart)
 {
   initData ();
 
   createImage (in_filename);
-  setExposureStart (in_exposureStart);
   writeExposureStart ();
 }
 
 Rts2Image::Rts2Image (const char *in_expression,
 		      const struct timeval *in_exposureStart,
-		      Rts2Conn * in_connection)
+		      Rts2Conn * in_connection):
+Rts2Expander (in_exposureStart)
 {
   initData ();
   setCameraName (in_connection->getName ());
 
   createImage (expandPath (in_expression));
-  setExposureStart (in_exposureStart);
   writeExposureStart ();
 }
 
 Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
 		      const struct timeval *in_exposureStart):
-Rts2Expander ()
+Rts2Expander (in_exposureStart)
 {
   std::string in_filename;
 
