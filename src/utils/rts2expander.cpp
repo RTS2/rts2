@@ -9,9 +9,14 @@ Rts2Expander::Rts2Expander ()
 {
   struct timeval tv;
   gettimeofday (&tv, NULL);
-  tzset ();
   epochId = -1;
   setExpandDate (&tv);
+}
+
+Rts2Expander::Rts2Expander (const struct timeval *tv)
+{
+  epochId = -1;
+  setExpandDate (tv);
 }
 
 Rts2Expander::Rts2Expander (Rts2Expander * in_expander)
@@ -131,6 +136,9 @@ std::string Rts2Expander::expandVariable (char var)
     case 's':
       ret += getMSecString ();
       break;
+    case 'Z':
+      ret += tzname[(expandDate.tm_isdst > 0) ? 1 : 0];
+      break;
     default:
       ret += '%';
       ret += var;
@@ -191,7 +199,7 @@ Rts2Expander::setExpandDate (const struct timeval *tv)
   expandTv.tv_sec = tv->tv_sec;
   expandTv.tv_usec = tv->tv_usec;
 
-  gmtime_r (&tv->tv_sec, &expandDate);
+  localtime_r (&expandTv.tv_sec, &expandDate);
 }
 
 double

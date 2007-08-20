@@ -60,6 +60,7 @@ protected:
   virtual std::string expandVariable (std::string expression);
 public:
   Rts2Expander ();
+  Rts2Expander (const struct timeval *tv);
   Rts2Expander (Rts2Expander * in_expander);
   virtual ~ Rts2Expander (void);
   std::string expand (std::string expression);
