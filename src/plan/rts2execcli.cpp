@@ -81,7 +81,7 @@ Rts2DevClientCameraExec::nextCommand ()
       if (nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE
 	  || nextComd->getCommandCond () == NO_EXPOSURE_MOVE)
 	{
-	  if (getIsExposing () || !isIdle ())
+	  if (getIsExposing ())
 	    {
 	      return;		// after current exposure ends..
 	    }
@@ -118,7 +118,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	"Rts2DevClientCameraExec::nextComd isExposing: " << getIsExposing ()
 	<< " isIdle: " << isIdle () << sendLog;
 #endif /* DEBUG_EXTRA */
-      if (getIsExposing () || !isIdle ())
+      if (getIsExposing ())
 	{
 	  return;		// after current exposure ends..
 	}
@@ -178,10 +178,10 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
-imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-  int
-    ret;
+  int ret;
   // try processing in script..
   if (getScript () && !queCurrentImage)
     {
