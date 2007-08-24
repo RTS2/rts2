@@ -64,7 +64,7 @@
 	<arg choice="plain"><option>-c <replaceable>filename</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>-f <replaceable>log format filename</replaceable></option></arg>
+	<arg choice="plain"><option>-o <replaceable>log format filename</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
     <cmdsynopsis>
@@ -124,6 +124,17 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-o <replaceable>filename</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify output filename, or output filename expansion string. For
+	    expansion string please see
+	    <citerefentry><refentrytitle>rts2-ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	    Most probably you will put there %y%m%d-%H%M%S.%s.log.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-h</option></term>
         <term><option>--help</option></term>
         <listitem>
@@ -153,7 +164,7 @@
     <para>
       For details about expansion strings in output filename, please see
       <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
-      The string which you would most probably like to see is %y%m%d-%H%M%S.%s.
+      The string which you would most probably like to see is %y%m%d-%H%M%S.%s.log.
     </para>
 
   </refsect1>
