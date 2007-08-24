@@ -24,6 +24,7 @@ private:
 
   void logErr (char *proc, AERERR_CODE eRc);
 
+  int moveEnable ();
   int home ();
   int moveAxis (AXISINDEX ax, LONG tar);
 
@@ -49,7 +50,7 @@ Rts2DevSensorA3200::logErr (char *proc, AERERR_CODE eRc)
 }
 
 int
-Rts2DevSensorA3200::home ()
+Rts2DevSensorA3200::moveEnable ()
 {
   AERERR_CODE eRc;
   eRc = AerMoveMEnable (hAerCtrl, mAxis);
@@ -64,6 +65,16 @@ Rts2DevSensorA3200::home ()
       logErr ("home MoveMWait for Enable", eRc);
       return -1;
     }
+  return 0;
+}
+
+int
+Rts2DevSensorA3200::home ()
+{
+  AERERR_CODE eRc;
+  int ret = moveEnable ();
+  if (ret)
+    return ret;
   logStream (MESSAGE_DEBUG) << "All axis enabled, homing" << sendLog;
   eRc = AerMoveMHome (hAerCtrl, mAxis);
   if (eRc != AERERR_NOERR)
@@ -167,7 +178,7 @@ Rts2DevSensorA3200::init ()
       logErr ("init AerSysInitialize", eRc);
       return -1;
     }
-  ret = home ();
+  ret = moveEnable ();
   return ret;
 }
 
@@ -200,6 +211,18 @@ Rts2DevSensorA3200::info ()
   ax2->setValueDouble (dPosition[1] / AX_SCALE2);
   ax3->setValueDouble (dPosition[2] / AX_SCALE3);
   return Rts2DevSensor::info ();
+}
+
+int
+Rts2DevSensorA3200::commandAuthorized (Rts2Conn * conn)
+{
+  if (conn->isCommand ("home"))
+    {
+      if (!conn->paramEnd ())
+	return -2;
+      return home ();
+    }
+  return Rts2DevSensor::commandAuthorized (conn);
 }
 
 int
