@@ -168,6 +168,11 @@ Rts2NDeviceWindow::createValueBox ()
 	  valueBox =
 	    new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
 	  break;
+	case RTS2_VALUE_STRING:
+	  valueBox =
+	    new Rts2NValueBoxString (this, (Rts2ValueString *) val, 21,
+				     s - 1);
+	  break;
 	case RTS2_VALUE_INTEGER:
 	  valueBox =
 	    new Rts2NValueBoxInteger (this, (Rts2ValueInteger *) val, 21, s);

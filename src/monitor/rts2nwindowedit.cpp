@@ -5,10 +5,10 @@
 
 #define MIN(x,y) ((x < y) ? x : y)
 
-Rts2NWindowEdit::Rts2NWindowEdit (int x, int y, int w, int h, int in_ex,
+Rts2NWindowEdit::Rts2NWindowEdit (int in_x, int in_y, int w, int h, int in_ex,
 				  int in_ey, int in_ew, int in_eh,
 				  int border):
-Rts2NWindow (x, y, w, h, border)
+Rts2NWindow (in_x, in_y, w, h, border)
 {
   ex = in_ex;
   ey = in_ey;
@@ -24,14 +24,11 @@ Rts2NWindowEdit::~Rts2NWindowEdit (void)
 
 bool Rts2NWindowEdit::passKey (int key)
 {
-  return isalnum (key);
+  return isalnum (key) || isspace (key);
 }
 
 keyRet Rts2NWindowEdit::injectKey (int key)
 {
-  int
-    x,
-    y;
   switch (key)
     {
     case KEY_BACKSPACE:
@@ -55,8 +52,8 @@ keyRet Rts2NWindowEdit::injectKey (int key)
 	wmove (getWriteWindow (), getCurY (), x + 1);
       break;
     default:
-      if (isalnum (key) || key == '+' || key == '-' || key == '.'
-	  || key == ',')
+      if (isalnum (key) || isspace (key) || key == '+' || key == '-'
+	  || key == '.' || key == ',')
 	{
 	  if (passKey (key))
 	    {
@@ -78,7 +75,6 @@ keyRet Rts2NWindowEdit::injectKey (int key)
 void
 Rts2NWindowEdit::refresh ()
 {
-  int x, y;
   int w, h;
   Rts2NWindow::refresh ();
   getbegyx (window, y, x);
@@ -92,9 +88,6 @@ Rts2NWindowEdit::refresh ()
 
 bool Rts2NWindowEdit::setCursor ()
 {
-  int
-    x,
-    y;
   getbegyx (getWriteWindow (), y, x);
   x += getCurX ();
   y += getCurY ();
@@ -102,11 +95,10 @@ bool Rts2NWindowEdit::setCursor ()
   return true;
 }
 
-Rts2NWindowEditIntegers::Rts2NWindowEditIntegers (int x, int y, int w, int h, int in_ex, int in_ey, int in_ew, int in_eh, int border):
-Rts2NWindowEdit (x, y, w, h, in_ex, in_ey, in_ew, in_eh, border)
+Rts2NWindowEditIntegers::Rts2NWindowEditIntegers (int in_x, int in_y, int w, int h, int in_ex, int in_ey, int in_ew, int in_eh, int border):
+Rts2NWindowEdit (in_x, in_y, w, h, in_ex, in_ey, in_ew, in_eh, border)
 {
 }
-
 
 bool Rts2NWindowEditIntegers::passKey (int key)
 {
@@ -115,8 +107,8 @@ bool Rts2NWindowEditIntegers::passKey (int key)
   return false;
 }
 
-Rts2NWindowEditDigits::Rts2NWindowEditDigits (int x, int y, int w, int h, int in_ex, int in_ey, int in_ew, int in_eh, int border):
-Rts2NWindowEdit (x, y, w, h, in_ex, in_ey, in_ew, in_eh, border)
+Rts2NWindowEditDigits::Rts2NWindowEditDigits (int in_x, int in_y, int w, int h, int in_ex, int in_ey, int in_ew, int in_eh, int border):
+Rts2NWindowEdit (in_x, in_y, w, h, in_ex, in_ey, in_ew, in_eh, border)
 {
 }
 

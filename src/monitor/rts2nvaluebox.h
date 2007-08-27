@@ -35,7 +35,22 @@ public:
 class Rts2NValueBoxBool:public Rts2NValueBox, public Rts2NSelWindow
 {
 public:
-  Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int x, int y);
+  Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int in_x,
+		     int in_y);
+  virtual keyRet injectKey (int key);
+  virtual void draw ();
+  virtual void sendValue (Rts2Conn * connection);
+  virtual bool setCursor ();
+};
+
+/**
+ * Holds edit box for string value.
+ */
+class Rts2NValueBoxString:public Rts2NValueBox, Rts2NWindowEdit
+{
+public:
+  Rts2NValueBoxString (Rts2NWindow * top, Rts2ValueString * in_val, int in_x,
+		       int in_y);
   virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
@@ -49,8 +64,8 @@ class Rts2NValueBoxInteger:public Rts2NValueBox,
   public Rts2NWindowEditIntegers
 {
 public:
-  Rts2NValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * in_val, int x,
-			int y);
+  Rts2NValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * in_val,
+			int in_x, int in_y);
 
   virtual keyRet injectKey (int key);
   virtual void draw ();
@@ -64,8 +79,8 @@ public:
 class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEditDigits
 {
 public:
-  Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int x,
-		      int y);
+  Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int in_x,
+		      int in_y);
 
   virtual keyRet injectKey (int key);
   virtual void draw ();
@@ -79,8 +94,8 @@ public:
 class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindowEditDigits
 {
 public:
-  Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int x,
-		       int y);
+  Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int in_x,
+		       int in_y);
 
   virtual keyRet injectKey (int key);
   virtual void draw ();
@@ -95,7 +110,7 @@ class Rts2NValueBoxSelection:public Rts2NValueBox, public Rts2NSelWindow
 {
 public:
   Rts2NValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * in_val,
-			  int x, int y);
+			  int in_x, int in_y);
   virtual keyRet injectKey (int key);
   virtual void draw ();
   virtual void sendValue (Rts2Conn * connection);
