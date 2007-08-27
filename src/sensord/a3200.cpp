@@ -38,6 +38,8 @@ public:
 
   virtual int init ();
   virtual int info ();
+
+  int commandAuthorized (Rts2Conn * conn);
 };
 
 void
@@ -76,10 +78,24 @@ Rts2DevSensorA3200::home ()
   if (ret)
     return ret;
   logStream (MESSAGE_DEBUG) << "All axis enabled, homing" << sendLog;
+  // first home Z axis..
+  eRc = AerMoveHome (hAerCtrl, AXISINDEX_3);
+  if (eRc != AERERR_NOERR)
+    {
+      logErr ("home Z axis", eRc);
+      return -1;
+    }
+  eRc = AerMoveWaitDone (hAerCtrl, AXISINDEX_3, 10000, 0);
+  if (eRc != AERERR_NOERR)
+    {
+      logErr ("home wait for Z axis", eRc);
+      return -1;
+    }
+  // now home all axis
   eRc = AerMoveMHome (hAerCtrl, mAxis);
   if (eRc != AERERR_NOERR)
     {
-      logErr ("home MHome for Enable", eRc);
+      logErr ("home MHome", eRc);
       return -1;
     }
   eRc = AerMoveMWaitDone (hAerCtrl, mAxis, 10000, 0);
