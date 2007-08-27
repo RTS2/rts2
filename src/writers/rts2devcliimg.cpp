@@ -138,7 +138,7 @@ Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
 Rts2Image *
 Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 {
-  return new Rts2Image ("%c_%y%d%m-%H%M%S-%s.fits", expStart, connection);
+  return new Rts2Image ("%c_%y%m%d-%H%M%S-%s.fits", expStart, connection);
 }
 
 CameraImages::iterator
