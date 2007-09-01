@@ -144,6 +144,35 @@ protected:
   virtual int init ();
   void clearStatesPriority ();
 
+  // sends operation block commands to master
+  // this functions should mark critical blocks during device execution
+  void blockExposure ()
+  {
+    maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible");
+  }
+  void clearExposure ()
+  {
+    maskState (BOP_EXPOSURE, ~BOP_EXPOSURE, "exposure possible");
+  }
+
+  void blockReadout ()
+  {
+    maskState (BOP_READOUT, BOP_READOUT, "readout not possible");
+  }
+  void clearReadout ()
+  {
+    maskState (BOP_READOUT, ~BOP_READOUT, "readout possible");
+  }
+
+  void blockTelMove ()
+  {
+    maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible");
+  }
+  void clearTelMove ()
+  {
+    maskState (BOP_TEL_MOVE, ~BOP_TEL_MOVE, "telescope move possible");
+  }
+
   virtual Rts2Conn *createClientConnection (char *in_deviceName);
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
