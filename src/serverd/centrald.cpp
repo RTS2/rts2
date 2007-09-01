@@ -136,7 +136,7 @@ public:
     sendMessageAll (msg);
   }
 
-  virtual void sigHUP (int sig);
+  virtual void signaledHUP ();
 
   void bopMaskChanged (Rts2ConnCentrald * conn);
 };
@@ -861,10 +861,10 @@ Rts2Centrald::message (Rts2Message & msg)
 }
 
 void
-Rts2Centrald::sigHUP (int sig)
+Rts2Centrald::signaledHUP ()
 {
   reloadConfig ();
-  idle ();
+  Rts2Daemon::signaledHUP ();
 }
 
 void

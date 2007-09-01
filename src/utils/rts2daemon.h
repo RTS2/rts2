@@ -71,6 +71,8 @@ private:
   void saveValue (Rts2CondValue * val);
   void deleteSaveValue (Rts2CondValue * val);
 
+  bool doHupIdleLoop;
+
 protected:
   /**
    * Send new value over the wire to all connections.
@@ -224,6 +226,18 @@ public:
   {
     return state;
   };
+
+  /**
+   * Called from idle loop after HUP signal occured.
+   *
+   * This is most probably callback you needed for handling HUP signal.
+   * Handling HUP signal when it occurs can be rather dangerous, as it might
+   * reloacte memory location - if you read pointer before HUP signal and use
+   * it after HUP signal, RTS2 does not guarantee that it will be still valid.
+   */
+
+  virtual void signaledHUP ();
+  virtual void sigHUP (int sig);
 };
 
 #endif /* ! __RTS2_DAEMON__ */

@@ -1331,7 +1331,7 @@ Rts2DevTelescope::grantPriority (Rts2Conn * conn)
 }
 
 void
-Rts2DevTelescope::sigHUP (int sig)
+Rts2DevTelescope::signaledHUP ()
 {
   int ret;
   if (modelFile)
@@ -1370,6 +1370,7 @@ Rts2DevTelescope::sigHUP (int sig)
 	    modelFile0 << sendLog;
 	}
     }
+  Rts2Device::signaledHUP ();
 }
 
 int

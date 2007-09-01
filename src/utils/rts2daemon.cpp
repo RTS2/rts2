@@ -28,6 +28,8 @@ Rts2Block (in_argc, in_argv)
 
   daemonize = DO_DAEMONIZE;
 
+  doHupIdleLoop = false;
+
   state = 0;
 
   createValue (info_time, RTS2_VALUE_INFOTIME,
@@ -259,6 +261,12 @@ Rts2Daemon::idle ()
 	  setTimeoutMin ((nextIdleInfo - now) * USEC_SEC);
 	}
     }
+  if (doHupIdleLoop)
+    {
+      signaledHUP ();
+      doHupIdleLoop = false;
+    }
+
   return Rts2Block::idle ();
 }
 
@@ -912,4 +920,16 @@ Rts2Daemon::maskState (int state_mask, int new_state, const char *description)
   masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
   masked_state |= new_state;
   setState (masked_state, description);
+}
+
+void
+Rts2Daemon::signaledHUP ()
+{
+  // empty here, shall be supplied in descendants..
+}
+
+void
+Rts2Daemon::sigHUP (int sig)
+{
+  doHupIdleLoop = true;
 }

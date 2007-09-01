@@ -201,7 +201,6 @@ public:
     return device_type;
   };
 
-  virtual void sigHUP (int sig);
 };
 
 #endif /* !__RTS2_DEVICE__ */

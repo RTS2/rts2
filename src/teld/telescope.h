@@ -343,7 +343,7 @@ public:
   }
 
   // reload model
-  virtual void sigHUP (int sig);
+  virtual void signaledHUP ();
 
   virtual int commandAuthorized (Rts2Conn * conn);
 };

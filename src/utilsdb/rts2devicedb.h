@@ -19,7 +19,7 @@ public:
   int initDB ();
   virtual int init ();
   virtual void forkedInstance ();
-  virtual void sigHUP (int sig);
+  virtual void signaledHUP ();
 };
 
 #endif /* !__RTS2_DEVICEDB__ */

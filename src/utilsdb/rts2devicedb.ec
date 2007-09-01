@@ -130,7 +130,8 @@ Rts2DeviceDb::forkedInstance ()
 
 
 void
-Rts2DeviceDb::sigHUP (int signal)
+Rts2DeviceDb::signaledHUP ()
 {
   reloadConfig();
+  Rts2DeviceDb::reloadConfig ();
 }
