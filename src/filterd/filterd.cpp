@@ -106,16 +106,17 @@ int
 Rts2DevFilterd::setFilterNumMask (int new_filter)
 {
   int ret;
-  maskState (FILTERD_MASK, FILTERD_MOVE, "filter move started");
+  maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_MOVE | BOP_EXPOSURE,
+	     "filter move started");
   ret = setFilterNum (new_filter);
   infoAll ();
   if (ret == -1)
     {
-      maskState (DEVICE_ERROR_MASK | FILTERD_MASK,
-		 DEVICE_ERROR_HW | FILTERD_IDLE);
+      maskState (DEVICE_ERROR_MASK | FILTERD_MASK | BOP_EXPOSURE,
+		 DEVICE_ERROR_HW | FILTERD_IDLE | ~BOP_EXPOSURE);
       return ret;
     }
-  maskState (FILTERD_MASK, FILTERD_IDLE);
+  maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_IDLE);
   return ret;
 }
 
