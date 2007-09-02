@@ -1,5 +1,24 @@
 # $Id$
 
+EXTRA_DIST = \
+    rts2.xml \
+    rts2.ini.xml \
+    rts2-mon.xml \
+    rts2-target.xml \
+    rts2-targetinfo.xml \
+    rts2-focusc.xml \
+    rts2-xfocusc.xml \
+    rts2-seltest.xml \
+    rts2.script.xml \
+    rts2.fitskeys.xml \
+    rts2-horizon.xml \
+    rts2-mon.xml \
+    rts2-scriptexec.xml \
+    rts2-logger.xml \
+    rts2-logd.xml \
+    rts2-image.xml \
+    rts2-tpm.xml
+
 man_MANS = \
     rts2.7 \
     rts2.ini.5 \
