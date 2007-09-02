@@ -376,6 +376,12 @@ std::string Rts2Conn::getStateString ()
     _os << " | HW ERROR ";
   if (getState () & DEVICE_NOT_READY)
     _os << " | NOT READY ";
+  if (getState () & BOP_EXPOSURE)
+    _os << " | BLOCK EXPOSURE ";
+  if (getState () & BOP_READOUT)
+    _os << " | BLOCK READOUT ";
+  if (getState () & BOP_TEL_MOVE)
+    _os << " | BLOCK TELESCOPE MOVEMENT ";
   return _os.str ();
 }
 
