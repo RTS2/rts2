@@ -5,6 +5,8 @@ bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm rts2-dome-dublin \
 
 noinst_HEADERS = dome.h udpweather.h cupola.h rts2connbufweather.h
 
+EXTRA_DIST = udpweather.cpp rts2connbufweather.cpp dome.cpp dummy_cup.cpp
+
 LDADD = dome.o ../utils/librts2block.a @LIB_NOVA@
 
 rts2_dome_bart_SOURCES = bart.cpp

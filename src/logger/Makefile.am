@@ -2,6 +2,8 @@ bin_PROGRAMS = rts2-logger rts2-logd
 
 noinst_HEADERS = rts2loggerbase.h
 
+EXTRA_DIST = rts2loggerbase.cpp
+
 LDADD = rts2loggerbase.o
 
 rts2_logger_SOURCES = logger.cpp

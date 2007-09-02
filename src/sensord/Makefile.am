@@ -2,6 +2,8 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-phytron
 
 noinst_HEADERS = sensord.h sensorgpib.h
 
+EXTRA_DIST = sensord.cpp
+
 LDADD = sensord.o ../utils/librts2block.a
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
@@ -25,7 +27,7 @@ rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
 
 else
 
-EXTRA_DIST = sensorgpib.cpp cryocon.cpp keithley-6485.cpp keithley-487.cpp
+EXTRA_DIST += sensorgpib.cpp cryocon.cpp keithley-6485.cpp keithley-487.cpp
 
 endif
 
@@ -39,6 +41,6 @@ rts2_sensor_a3200_LDFLAGS = @LIB_A3200@ ../utils/librts2block.a
 
 else
 
-EXTRA_DIST = a3200.cpp
+EXTRA_DIST += a3200.cpp
 
 endif

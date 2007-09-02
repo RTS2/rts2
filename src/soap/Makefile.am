@@ -1,7 +1,9 @@
 bin_PROGRAMS=
 
-noinst_DATA = rts2.wsdl
+noinst_DATA = rts2.wsdl typemap.dat
 noinst_HEADERS = rts2soapcli.h
+
+EXTRA_DIST = rts2.wsdl stlvector.h typemap.dat
 
 if GSOAP
 

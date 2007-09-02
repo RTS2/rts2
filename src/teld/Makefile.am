@@ -4,6 +4,8 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200
 
 noinst_HEADERS = telescope.h maps.h rts2devclicop.h ir.h hms.h
 
+EXTRA_DIST = teld.cpp rts2devclicop.cpp
+
 LDADD = teld.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
 rts2_teld_gemini_SOURCES = gemini.cpp hms.c
@@ -32,7 +34,7 @@ rts2_ir_errors_SOURCES = ir-errors.cpp ir.cpp
 rts2_ir_errors_LDFLAGS = @LIB_OPENTPL@
 rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
 else
-EXTRA_DIST = ir.cpp ir-main.cpp ir-errors.cpp
+EXTRA_DIST += ir.cpp ir-main.cpp ir-errors.cpp
 endif
 
 if PARALIB

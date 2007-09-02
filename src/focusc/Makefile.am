@@ -4,6 +4,8 @@ bin_PROGRAMS = rts2-focusc rts2-foctest
 
 noinst_HEADERS = genfoc.h
 
+EXTRA_DIST = genfoc.cpp
+
 rts2_focusc_SOURCES = focusc.cpp
 rts2_focusc_LDFLAGS = @LIB_PTHREAD@ @LIB_M@ @LIB_CFITSIO@ @LIB_NOVA@ ../writers/librts2image.a ../utils/librts2block.a
 rts2_focusc_LDADD = genfoc.o
