@@ -57,8 +57,7 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool
-Rts2Block::commandQueEmpty ()
+bool Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -199,6 +198,18 @@ Rts2Block::sendStatusMessage (int state)
 
   asprintf (&msg, PROTO_STATUS " %i", state);
   ret = sendAll (msg);
+  free (msg);
+  return ret;
+}
+
+int
+Rts2Block::sendStatusMessage (int state, Rts2Conn * conn)
+{
+  char *msg;
+  int ret;
+
+  asprintf (&msg, PROTO_STATUS " %i", state);
+  ret = conn->send (msg);
   free (msg);
   return ret;
 }
