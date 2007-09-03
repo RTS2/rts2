@@ -4,3 +4,4 @@ Makefile
 Makefile.in
 soap*
 SesameSoapBinding*
+simbad.h
