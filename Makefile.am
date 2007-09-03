@@ -4,4 +4,4 @@ SUBDIRS =	include \
 		man	\
 		src
 
-EXTRA_DIST = rts2.ini
+EXTRA_DIST = rts2.ini autogen.sh
