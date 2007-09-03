@@ -109,7 +109,8 @@ Rts2DevCupola::moveTo (Rts2Conn * conn, double ra, double dec)
   ret = moveStart ();
   if (ret)
     return ret;
-  maskState (DOME_COP_MASK_SYNC, DOME_COP_NOT_SYNC);
+  maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE,
+	     DOME_COP_NOT_SYNC | BOP_EXPOSURE);
   return 0;
 }
 
@@ -123,7 +124,8 @@ Rts2DevCupola::moveStart ()
 int
 Rts2DevCupola::moveStop ()
 {
-  maskState (DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
+  maskState (DOME_COP_MASK | BOP_EXPOSURE,
+	     DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
   infoAll ();
   return 0;
 }
@@ -132,13 +134,13 @@ void
 Rts2DevCupola::synced ()
 {
   infoAll ();
-  maskState (DOME_COP_MASK_SYNC, DOME_COP_SYNC);
+  maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE, DOME_COP_SYNC);
 }
 
 int
 Rts2DevCupola::moveEnd ()
 {
-  maskState (DOME_COP_MASK, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
+  maskState (DOME_COP_MASK | BOP_EXPOSURE, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
   infoAll ();
   return 0;
 }
