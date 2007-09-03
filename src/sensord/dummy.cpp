@@ -11,8 +11,6 @@ public:
   {
     createValue (statTest, "test_stat", "test stat value", true);
     createValue (minMaxTest, "test_minmax", "test minmax value", true);
-    minMaxTest->setMin (0);
-    minMaxTest->setMax (10);
   }
 
   virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
