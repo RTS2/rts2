@@ -230,6 +230,7 @@ public:
     return device_type;
   };
 
+  virtual int statusInfo (Rts2Conn * conn);
 };
 
 #endif /* !__RTS2_DEVICE__ */

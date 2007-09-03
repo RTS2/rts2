@@ -3,6 +3,7 @@
 
 #include "rts2block.h"
 
+#define RTS2_COMMAND_KEEP	-2
 #define RTS2_COMMAND_REQUE	-5
 
 typedef enum

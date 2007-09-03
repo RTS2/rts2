@@ -654,3 +654,21 @@ Rts2Block::getValue (const char *device_name, const char *value_name)
     return NULL;
   return conn->getValue (value_name);
 }
+
+int
+Rts2Block::statusInfo (Rts2Conn * conn)
+{
+  return -1;
+}
+
+bool
+Rts2Block::commandPending (Rts2Command * cmd)
+{
+  for (connections_t::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++)
+    {
+      if ((*iter)->commandPending (cmd))
+	return true;
+    }
+  return false;
+}

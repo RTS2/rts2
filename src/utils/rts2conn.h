@@ -239,6 +239,13 @@ public:
   {
     return (runningCommand == NULL && commandQue.size () == 0);
   }
+  /**
+   * Query if list of command (including running command) contains given command.
+   *
+   * \param cmd Rts2Command * we ask for
+   * \return true if we containt given command, false otherwise
+   */
+  bool commandPending (Rts2Command * cmd);
   void queClear ();
 
   virtual void addressUpdated (Rts2Address * in_addr)

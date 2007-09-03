@@ -619,7 +619,7 @@ Rts2Conn::processLine ()
     << "] command: " << getCommand () << " ret: " << ret << sendLog;
 #endif
   if (!ret)
-    sendCommandEnd (0, "OK");
+    sendCommandEnd (DEVDEM_OK, "OK");
   else if (ret == -2)
     {
 //      logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" <<
@@ -809,6 +809,21 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
+bool Rts2Conn::commandPending (Rts2Command * cmd)
+{
+  if (cmd == runningCommand)
+    return true;
+
+  for (std::list < Rts2Command * >::iterator que_iter = commandQue.begin ();
+       que_iter != commandQue.end (); que_iter++)
+    {
+      if (*que_iter == cmd)
+	return true;
+    }
+
+  return false;
+}
+
 void
 Rts2Conn::queClear ()
 {
@@ -856,6 +871,12 @@ Rts2Conn::command ()
       master->addUser (p_centraldId, p_priority, (*p_priority_have == '*'),
 		       p_login);
       return -1;
+    }
+  else if (isCommand ("status_info"))
+    {
+      if (!paramEnd ())
+	return -2;
+      return master->statusInfo (this);
     }
   else if (isCommand (PROTO_DATA))
     {
@@ -976,8 +997,10 @@ Rts2Conn::commandReturn ()
       break;
     case -1:
       delete runningCommand;
+    case RTS2_COMMAND_KEEP:
       sendNextCommand ();
       break;
+
     }
   return -1;
 }

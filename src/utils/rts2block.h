@@ -353,6 +353,12 @@ public:
     gettimeofday (&infot, NULL);
     return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
   }
+
+  virtual int
+  statusInfo (Rts2Conn * conn);
+
+  bool
+  commandPending (Rts2Command * cmd);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

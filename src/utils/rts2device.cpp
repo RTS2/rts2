@@ -933,3 +933,9 @@ Rts2Device::ready (Rts2Conn * conn)
     }
   return 0;
 }
+
+int
+Rts2Device::statusInfo (Rts2Conn * conn)
+{
+  return sendStatusMessage (getState (), conn);
+}
