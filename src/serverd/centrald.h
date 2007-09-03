@@ -74,13 +74,15 @@ protected:
     return false;
   }
 
+  virtual int init ();
+
+  virtual void connectionRemoved (Rts2Conn * conn);
+
 public:
   Rts2Centrald (int in_argc, char **in_argv);
   virtual ~ Rts2Centrald (void);
 
   virtual int idle ();
-
-  virtual int init ();
 
   int changePriority (time_t timeout);
 
@@ -116,7 +118,7 @@ public:
 
   virtual void signaledHUP ();
 
-  void bopMaskChanged (Rts2ConnCentrald * conn);
+  void bopMaskChanged ();
 
   virtual int statusInfo (Rts2Conn * conn);
 };

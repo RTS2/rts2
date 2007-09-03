@@ -37,7 +37,7 @@ Rts2ConnCentrald::setState (int in_value)
   Rts2Conn::setState (in_value);
   if (serverState->maskValueChanged (BOP_MASK))
     {
-      master->bopMaskChanged (this);
+      master->bopMaskChanged ();
     }
 }
 
@@ -573,6 +573,13 @@ Rts2Centrald::init ()
   return lockFile ();
 }
 
+void
+Rts2Centrald::connectionRemoved (Rts2Conn * conn)
+{
+  // make sure we will change BOP mask..
+  bopMaskChanged ();
+}
+
 Rts2Conn *
 Rts2Centrald::createConnection (int in_sock)
 {
@@ -745,7 +752,7 @@ Rts2Centrald::signaledHUP ()
 }
 
 void
-Rts2Centrald::bopMaskChanged (Rts2ConnCentrald * conn)
+Rts2Centrald::bopMaskChanged ()
 {
   int bopState = 0;
   for (connections_t::iterator iter = connectionBegin ();
