@@ -15,7 +15,7 @@ class Rts2DevSensorKeithley487:public Rts2DevSensorGpib
 private:
   Rts2ValueFloat * curr;
   Rts2ValueBool *sourceOn;
-  Rts2ValueFloat *voltage;
+  Rts2ValueDoubleMinMax *voltage;
 protected:
     virtual int init ();
   virtual int info ();
@@ -34,7 +34,9 @@ Rts2DevSensorGpib (in_argc, in_argv)
   createValue (sourceOn, "ON", "If voltage source is switched on", true);
   createValue (voltage, "VOLTAGE", "Voltage level", true);
 
-  voltage->setValueFloat (0);
+  voltage->setValueDouble (0);
+  voltage->setMin (-50);
+  voltage->setMax (0);
 }
 
 int
