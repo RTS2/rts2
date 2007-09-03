@@ -33,7 +33,7 @@ rad2deg (double rad)
  * Calculate word coordinates of given pixel.
  */
 void
-pix2wcs (struct kwcs2 *arg, double x, double y, double *ra, double *dec)
+RTS2pix2wcs (struct kwcs2 *arg, double x, double y, double *ra, double *dec)
 {
   double ra0, dec0;
   double dx, dy, tx;
@@ -89,12 +89,12 @@ main (int argc, char **argv)
   wcs.cd2_2 = 0.08;
   wcs.equinox = 2000.0;
 
-  pix2wcs (&wcs, 0, 0, &ra, &dec);
+  RTS2pix2wcs (&wcs, 0, 0, &ra, &dec);
   printf ("ra: %f dec : %f\n", ra, dec);
 
-  pix2wcs (&wcs, 400, 400, &ra, &dec);
+  RTS2pix2wcs (&wcs, 400, 400, &ra, &dec);
   printf ("ra: %f dec : %f\n", ra, dec);
 
-  pix2wcs (&wcs, 800, 800, &ra, &dec);
+  RTS2pix2wcs (&wcs, 800, 800, &ra, &dec);
   printf ("ra: %f dec : %f\n", ra, dec);
 }
