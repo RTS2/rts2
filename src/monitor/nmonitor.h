@@ -107,6 +107,9 @@ protected:
   virtual void selectSuccess (fd_set * read_set);
 
   virtual int addAddress (Rts2Address * in_addr);
+
+  virtual Rts2ConnCentraldClient *createCentralConn ();
+
 public:
   Rts2NMonitor (int argc, char **argv);
   virtual ~ Rts2NMonitor (void);
@@ -145,6 +148,35 @@ public:
   {
     master->commandReturn (cmd, in_status);
     return Rts2ConnClient::commandReturn (cmd, in_status);
+  }
+};
+
+/**
+ * Make sure that command end is properly reflected
+ */
+class Rts2NMonCentralConn:public Rts2ConnCentraldClient
+{
+private:
+  Rts2NMonitor * master;
+public:
+  Rts2NMonCentralConn (Rts2NMonitor * in_master,
+		       const char *in_login,
+		       const char *in_password,
+		       const char *in_master_host,
+		       const char
+		       *in_master_port):Rts2ConnCentraldClient (in_master,
+								in_login,
+								in_password,
+								in_master_host,
+								in_master_port)
+  {
+    master = in_master;
+  }
+
+  virtual int commandReturn (Rts2Command * cmd, int in_status)
+  {
+    master->commandReturn (cmd, in_status);
+    return Rts2ConnCentraldClient::commandReturn (cmd, in_status);
   }
 };
 

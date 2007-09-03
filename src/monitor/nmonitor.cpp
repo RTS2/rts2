@@ -72,6 +72,14 @@ Rts2NMonitor::addSelectSocks (fd_set * read_set)
   Rts2Client::addSelectSocks (read_set);
 }
 
+Rts2ConnCentraldClient *
+Rts2NMonitor::createCentralConn ()
+{
+  return new Rts2NMonCentralConn (this, getCentralLogin (),
+				  getCentralPassword (), getCentralHost (),
+				  getCentralPort ());
+}
+
 void
 Rts2NMonitor::selectSuccess (fd_set * read_set)
 {
