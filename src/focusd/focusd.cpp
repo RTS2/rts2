@@ -69,11 +69,11 @@ Rts2DevFocuser::checkState ()
 	  infoAll ();
 	  setTimeout (USEC_SEC);
 	  if (ret)
-	    maskState (DEVICE_ERROR_MASK | FOC_MASK_FOCUSING,
+	    maskState (DEVICE_ERROR_MASK | FOC_MASK_FOCUSING | BOP_EXPOSURE,
 		       DEVICE_ERROR_HW | FOC_SLEEPING,
 		       "focusing finished with error");
 	  else
-	    maskState (FOC_MASK_FOCUSING, FOC_SLEEPING,
+	    maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_SLEEPING,
 		       "focusing finished without errror");
 	}
     }
@@ -152,7 +152,8 @@ Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
     }
   else
     {
-      maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
+      maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE,
+		 FOC_FOCUSING | BOP_EXPOSURE, "focusing started");
     }
   return ret;
 }
@@ -165,7 +166,8 @@ Rts2DevFocuser::setTo (Rts2Conn * conn, int num)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
   else
-    maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "focusing started");
+    maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE,
+	       "focusing started");
   return ret;
 }
 
@@ -177,7 +179,8 @@ Rts2DevFocuser::home (Rts2Conn * conn)
   if (ret)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot home focuser");
   else
-    maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "homing started");
+    maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE,
+	       "homing started");
   return ret;
 }
 
@@ -222,8 +225,7 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-bool
-Rts2DevFocuser::isAtStartPosition ()
+bool Rts2DevFocuser::isAtStartPosition ()
 {
   return false;
 }
