@@ -1,4 +1,5 @@
 #include "rts2block.h"
+#include "rts2centralstate.h"
 #include "rts2conn.h"
 #include "rts2command.h"
 #include "rts2devclient.h"
@@ -129,8 +130,9 @@ std::string Rts2Conn::getStateString ()
     chipN;
   switch (getOtherType ())
     {
-//  case DEVICE_TYPE_SERVERD:
-//    break;
+    case DEVICE_TYPE_SERVERD:
+      _os << Rts2CentralState (getState ()).getString ();
+      break;
     case DEVICE_TYPE_MOUNT:
       switch (real_state & TEL_MASK_MOVING)
 	{
@@ -809,7 +811,8 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-bool Rts2Conn::commandPending (Rts2Command * cmd)
+bool
+Rts2Conn::commandPending (Rts2Command * cmd)
 {
   if (cmd == runningCommand)
     return true;
