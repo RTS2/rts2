@@ -24,8 +24,9 @@ Rts2NStatusWindow::draw ()
 
   wcolor_set (window, CLR_STATUS, NULL);
   mvwhline (window, 0, 0, ' ', getWidth ());
-  mvwprintw (window, 0, 0, "%s %i", master->getMasterStateString ().c_str (),
-	     comWin->getCurX ());
+  mvwprintw (window, 0, 0, "%s %x %i",
+	     master->getMasterStateString ().c_str (),
+	     master->getMasterState (), comWin->getCurX ());
   strftime (dateBuf, 20, "%Y-%m-%d %H:%M:%S", gmtime (&now));
   mvwprintw (window, 0, COLS - 19, "%19s", dateBuf);
   wcolor_set (window, CLR_DEFAULT, NULL);

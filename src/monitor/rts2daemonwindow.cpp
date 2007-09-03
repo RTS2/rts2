@@ -20,8 +20,7 @@ Rts2NSelWindow::~Rts2NSelWindow (void)
   delwin (scrolpad);
 }
 
-keyRet
-Rts2NSelWindow::injectKey (int key)
+keyRet Rts2NSelWindow::injectKey (int key)
 {
   switch (key)
     {
@@ -149,7 +148,7 @@ Rts2NCentraldWindow::printState (Rts2Conn * conn)
     wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
   else if (conn->havePriority ())
     wcolor_set (getWriteWindow (), CLR_OK, NULL);
-  wprintw (getWriteWindow (), "%s %s (%i) priority: %s\n", conn->getName (),
+  wprintw (getWriteWindow (), "%s %s (%x) priority: %s\n", conn->getName (),
 	   conn->getStateString ().c_str (), conn->getState (),
 	   conn->havePriority ()? "yes" : "no");
   wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);

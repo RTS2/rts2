@@ -26,7 +26,7 @@ Rts2NDeviceWindow::printState ()
     wcolor_set (window, CLR_FAILURE, NULL);
   else if (connection->havePriority ())
     wcolor_set (window, CLR_OK, NULL);
-  mvwprintw (window, 0, 2, "%s %s (%i) priority: %s", connection->getName (),
+  mvwprintw (window, 0, 2, "%s %s (%x) priority: %s", connection->getName (),
 	     connection->getStateString ().c_str (), connection->getState (),
 	     connection->havePriority ()? "yes" : "no");
   wcolor_set (window, CLR_DEFAULT, NULL);
@@ -197,10 +197,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_ENTER:
@@ -244,7 +244,8 @@ Rts2NDeviceWindow::draw ()
     valueBox->draw ();
 }
 
-bool Rts2NDeviceWindow::setCursor ()
+bool
+Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
