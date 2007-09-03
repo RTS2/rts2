@@ -205,6 +205,9 @@
 
 #define DEVDEM_DATA		0x80
 
+// all OK
+#define DEVDEM_OK		0
+
 // Errors
 
 #define DEVDEM_E_COMMAND	-1	// invalid command
