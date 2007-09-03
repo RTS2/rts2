@@ -4,10 +4,6 @@
  * @author petr
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "focuser.h"
 
 class Rts2DevFocuserDummy:public Rts2DevFocuser
