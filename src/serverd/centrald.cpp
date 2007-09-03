@@ -794,7 +794,7 @@ Rts2Centrald::idle ()
   int call_state;
   int old_current_state;
 
-  if (getState () == SERVERD_OFF)
+  if ((getState () & SERVERD_STATUS_MASK) == SERVERD_OFF)
     return Rts2Daemon::idle ();
 
   curr_time = time (NULL);
@@ -809,7 +809,7 @@ Rts2Centrald::idle ()
     {
       old_current_state = getState ();
       if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
-	  && call_state == SERVERD_DAY)
+	  && (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 	{
 	  if (morning_off)
 	    setState (SERVERD_OFF, "by idle routine");
@@ -877,6 +877,7 @@ Rts2Centrald::bopMaskChanged (Rts2ConnCentrald * conn)
       bopState |= (*iter)->getBopState ();
     }
   maskState (BOP_MASK, bopState, "changed BOP state");
+  sendStatusMessage (getState ());
 }
 
 int
