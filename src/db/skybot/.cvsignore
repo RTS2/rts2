@@ -3,4 +3,5 @@
 Makefile
 Makefile.in
 soap*
-SesameSoapBinding*
+SkyBoTBinding*
+skybot.h
