@@ -55,10 +55,8 @@ typedef
 Rts2Conn * >
   connections_t;
 
-class
-  Rts2Block:
-  public
-  Rts2App
+class Rts2Block:
+public Rts2App
 {
 private:
   int
@@ -68,24 +66,17 @@ private:
   int
     priority_client;
 
-  connections_t
-    connections;
+  connections_t connections;
 
-  std::list <
-  Rts2Address * >
-    blockAddress;
-  std::list <
-  Rts2User * >
-    blockUsers;
+  std::list < Rts2Address * >blockAddress;
+  std::list < Rts2User * >blockUsers;
 
   int
     masterState;
 
 protected:
 
-  virtual
-    Rts2Conn *
-  createClientConnection (char *in_deviceName) = 0;
+  virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *
   createClientConnection (Rts2Address * in_addr) = 0;
 
@@ -108,11 +99,21 @@ protected:
   selectSuccess (fd_set * read_set);
   void
   setMessageMask (int new_mask);
+
+  virtual int
+  deleteConnection (Rts2Conn * conn);
+  /**
+   * Called when connection is removed from connection list, but before connection object is deleted.
+   *
+   * \param conn Connection which is removed from connection list, and will be deleted after this command returns.
+   */
+  virtual void
+  connectionRemoved (Rts2Conn * conn);
+
 public:
 
   Rts2Block (int in_argc, char **in_argv);
-  virtual ~
-  Rts2Block (void);
+  virtual ~ Rts2Block (void);
   void
   setPort (int in_port);
   int
@@ -121,13 +122,11 @@ public:
   void
   addConnection (Rts2Conn * conn);
 
-  connections_t::iterator
-  connectionBegin ()
+  connections_t::iterator connectionBegin ()
   {
     return connections.begin ();
   }
-  connections_t::iterator
-  connectionEnd ()
+  connections_t::iterator connectionEnd ()
   {
     return connections.end ();
   }
@@ -148,8 +147,7 @@ public:
   {
     return connections.size ();
   }
-  bool
-  commandQueEmpty ();
+  bool commandQueEmpty ();
 
   virtual void
   postEvent (Rts2Event * event);
@@ -199,8 +197,6 @@ public:
   void
   oneRunLoop ();
 
-  virtual int
-  deleteConnection (Rts2Conn * conn);
   int
   setPriorityClient (int in_priority_client, int timeout);
   void
@@ -357,8 +353,7 @@ public:
   virtual int
   statusInfo (Rts2Conn * conn);
 
-  bool
-  commandPending (Rts2Command * cmd);
+  bool commandPending (Rts2Command * cmd);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

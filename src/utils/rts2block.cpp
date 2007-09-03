@@ -57,7 +57,8 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool Rts2Block::commandQueEmpty ()
+bool
+Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -268,6 +269,7 @@ Rts2Block::selectSuccess (fd_set * read_set)
 	  if (!ret)
 	    {
 	      iter = connections.erase (iter);
+	      connectionRemoved (conn);
 	      delete conn;
 	    }
 	  else
@@ -326,6 +328,11 @@ Rts2Block::deleteConnection (Rts2Conn * conn)
     }
   // don't delete us when we are in incorrect state
   return -1;
+}
+
+void
+Rts2Block::connectionRemoved (Rts2Conn * conn)
+{
 }
 
 int
@@ -661,8 +668,7 @@ Rts2Block::statusInfo (Rts2Conn * conn)
   return -1;
 }
 
-bool
-Rts2Block::commandPending (Rts2Command * cmd)
+bool Rts2Block::commandPending (Rts2Command * cmd)
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
