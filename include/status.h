@@ -10,14 +10,6 @@
 // mask used to communicate errors which occured on device
 #define DEVICE_ERROR_MASK	0x00ff0000
 
-// used to deal blocking functions
-// BOP is for Block OPeration
-#define BOP_MASK		0xff000000
-
-#define BOP_EXPOSURE		0x01000000
-#define BOP_READOUT		0x02000000
-#define BOP_TEL_MOVE		0x04000000
-
 #define DEVICE_NO_ERROR		0x00000000
 // this status is result of kill command, which occured
 #define DEVICE_ERROR_KILL	0x00010000
@@ -25,6 +17,14 @@
 #define DEVICE_ERROR_HW		0x00020000
 // device not ready..
 #define DEVICE_NOT_READY	0x00040000
+
+// used to deal blocking functions
+// BOP is for Block OPeration
+#define BOP_MASK		0xff000000
+
+#define BOP_EXPOSURE		0x01000000
+#define BOP_READOUT		0x02000000
+#define BOP_TEL_MOVE		0x04000000
 
 #define DEVICE_STATUS_MASK	0x0000ffff
 
