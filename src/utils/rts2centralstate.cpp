@@ -42,6 +42,13 @@ std::string Rts2CentralState::getString ()
       os << "ready ";
     }
   os << getStringShort ();
+  // check for blocking
+  if (getValue () & BOP_EXPOSURE)
+    os << ", block exposure";
+  if (getValue () & BOP_READOUT)
+    os << ", block readout";
+  if (getValue () & BOP_TEL_MOVE)
+    os << ", block telescope move";
   return os.str ();
 }
 

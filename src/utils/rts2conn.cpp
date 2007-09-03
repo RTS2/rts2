@@ -171,7 +171,7 @@ std::string Rts2Conn::getStateString ()
 	{
 	  chipN = otherDevice->getValueInteger ("chips");
 	  for (int i = 0; i < chipN; i++)
-	    _os << getCameraChipState (i);
+	    _os << std::hex << getCameraChipState (i);
 	  if (real_state & CAM_FOCUSING)
 	    _os << " | FOCUSING";
 	  switch (real_state & CAM_MASK_SHUTTER)
