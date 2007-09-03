@@ -163,7 +163,7 @@ Rts2DevFocuser::setTo (Rts2Conn * conn, int num)
 {
   int ret;
   ret = setTo (num);
-  if (ret)
+  if (ret && conn)
     conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
   else
     maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE,
@@ -225,7 +225,8 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-bool Rts2DevFocuser::isAtStartPosition ()
+bool
+Rts2DevFocuser::isAtStartPosition ()
 {
   return false;
 }
@@ -245,7 +246,7 @@ Rts2DevFocuser::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   if (old_value == focPos)
     {
-      return setTo (new_value->getValueInteger ())? -2 : 0;
+      return setTo (NULL, new_value->getValueInteger ())? -2 : 0;
     }
   return Rts2Device::setValue (old_value, new_value);
 }

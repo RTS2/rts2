@@ -48,7 +48,6 @@ Rts2DevFocuserDummy::ready ()
 int
 Rts2DevFocuserDummy::stepOut (int num)
 {
-  focPos->setValueInteger (getFocPos () + num);
   steps = 125;
   if (num < 0)
     steps *= -1;
