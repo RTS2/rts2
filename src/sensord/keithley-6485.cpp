@@ -15,6 +15,8 @@ private:
   int getGPIB (const char *buf, Rts2ValueBool * val);
   int setGPIB (const char *buf, Rts2ValueBool * val);
 
+  int waitOpc ();
+
   Rts2ValueBool *azero;
   Rts2ValueDoubleStat *current;
   Rts2ValueInteger *countNum;
@@ -179,6 +181,25 @@ Rts2DevSensorKeithley::setGPIB (const char *buf, Rts2ValueBool * val)
   return gpibWrite (wr);
 }
 
+int
+Rts2DevSensorKeithley::waitOpc ()
+{
+  int ret;
+  int icount = 0;
+  while (icount < countNum->getValueInteger ())
+    {
+      int opc;
+      ret = getGPIB ("*OPC?", opc);
+      if (ret)
+	return -1;
+      if (opc == 1)
+	return 0;
+      usleep (USEC_SEC / 100);
+      icount++;
+    }
+  return -1;
+}
+
 Rts2DevSensorKeithley::Rts2DevSensorKeithley (int in_argc, char **in_argv):
 Rts2DevSensorGpib (in_argc, in_argv)
 {
@@ -204,7 +225,53 @@ Rts2DevSensorKeithley::init ()
   ret = gpibWrite ("TRIG:DEL 0");
   if (ret)
     return -1;
-  return 0;
+  // start and setup measurements..
+  ret = gpibWrite ("*RST");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("TRIG:DEL 0");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("TRIG:COUNT 100");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("SENS:CURR:RANG:AUTO ON");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("SENS:CURR:NPLC 1");
+  if (ret)
+    return ret;
+/*  ret = gpibWrite ("SENS:CURR:RANG 2000");
+  if (ret)
+    return ret; */
+  ret = gpibWrite ("SYST:ZCH OFF");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("SYST:AZER:STAT OFF");
+  if (ret)
+    return ret;
+/*  ret = gpibWrite ("DISP:ENAB OFF");
+  if (ret)
+    return ret;a */
+  ret = gpibWrite ("TRAC:POIN 100");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("TRAC:CLE");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("TRAC:FEED:CONT NEXT");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("STAT:MEAS:ENAB 512");
+  if (ret)
+    return ret;
+  ret = gpibWrite ("*SRE 0");
+  if (ret)
+    return ret;
+
+  ret = waitOpc ();
+
+  return ret;
 }
 
 int
@@ -247,33 +314,6 @@ Rts2DevSensorKeithley::info ()
   if (ret)
     return ret;
   // start and setup measurements..
-  ret = gpibWrite ("*RST");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("TRIG:DEL 0");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("TRIG:COUNT 100");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("SENS:CURR:RANG:AUTO ON");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("SENS:CURR:NPLC 1");
-  if (ret)
-    return ret;
-/*  ret = gpibWrite ("SENS:CURR:RANG 2000");
-  if (ret)
-    return ret; */
-  ret = gpibWrite ("SYST:ZCH OFF");
-  if (ret)
-    return ret;
-  ret = gpibWrite ("SYST:AZER:STAT OFF");
-  if (ret)
-    return ret;
-/*  ret = gpibWrite ("DISP:ENAB OFF");
-  if (ret)
-    return ret;a */
   ret = gpibWrite ("*CLS");
   if (ret)
     return ret;
@@ -295,20 +335,9 @@ Rts2DevSensorKeithley::info ()
   //asprintf (&buf, "*RST; TRIG:DEL 0; TRIG:COUNT %i; SENS:CURR:RANG:AUTO OFF; SENS:CURR:NPLC .01; SENS:CURR:RANG .002; SYST:ZCH OFF; SYST:AZER:STAT OFF; DISP:ENAB OFF; *CLS; TRAC:POIN %i; TRAC:CLE; TRAC:FEED:CONT NEXT; STAT:MEAS:ENAB 512; *SRE 1", countNum->getValueInteger (), countNum->getValueInteger ()); 
   //ret = gpibWrite (buf);
   //free (buf);
-
-  int icount = 0;
-  while (icount < countNum->getValueInteger ())
-    {
-      int opc;
-      ret = getGPIB ("*OPC?", opc);
-      if (ret)
-	return -1;
-      if (opc == 1)
-	break;
-      usleep (USEC_SEC / 100);
-      icount++;
-    }
-
+  ret = waitOpc ();
+  if (ret)
+    return ret;
   // scale current
   current->clearStat ();
   // start taking data
