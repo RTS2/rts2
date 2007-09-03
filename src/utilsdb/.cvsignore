@@ -18,6 +18,9 @@ rts2camlist.cpp
 rts2plan.cpp
 rts2planset.cpp
 rts2prop.cpp
+rts2targetell.cpp
+rts2targetgrb.cpp
+rts2targetplanet.cpp
 target_auger.cpp
 rts2messagedb.cpp
 rts2-*
