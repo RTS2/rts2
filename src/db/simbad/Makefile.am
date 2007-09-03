@@ -1,6 +1,8 @@
 noinst_HEADERS = rts2simbadtarget.h
 noinst_DATA = simbad.wsdl typemap.dat
 
+EXTRA_DIST = simbad.wsdl typemap.dat
+
 if GSOAP
 noinst_LIBRARIES = libsimbad.a
 
