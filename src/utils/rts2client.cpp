@@ -264,6 +264,8 @@ Rts2Conn (in_master)
 
   login = in_login;
   password = in_password;
+
+  setOtherType (DEVICE_TYPE_SERVERD);
 }
 
 int
