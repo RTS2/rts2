@@ -379,7 +379,7 @@ Rts2DevTelescope::init ()
       model0 = new Rts2TelModel (this, modelFile0);
       ret = model0->load ();
       if (ret)
-	return ret;
+	return ret | BOP_EXPOSURE;
     }
 
   createConstValue (telLongtitude, "LONG", "telescope longtitude");
@@ -455,7 +455,7 @@ Rts2DevTelescope::checkMoves ()
 	  if (move_connection)
 	    sendInfo (move_connection);
 	  maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
-		     TEL_MASK_MOVING,
+		     TEL_MASK_MOVING | BOP_EXPOSURE,
 		     DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
 		     "move finished with error");
 	  unsetTarget ();
@@ -472,13 +472,13 @@ Rts2DevTelescope::checkMoves ()
 	  if (ret)
 	    {
 	      maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
-			 TEL_MASK_MOVING,
+			 TEL_MASK_MOVING | BOP_EXPOSURE,
 			 DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
 			 "move finished with error");
 	      dontKnowPosition ();
 	    }
 	  else
-	    maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING,
+	    maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE,
 		       TEL_NOT_CORRECTING | TEL_OBSERVING,
 		       "move finished without error");
 	  if (move_connection)
@@ -509,7 +509,7 @@ Rts2DevTelescope::checkMoves ()
       if (ret == -1)
 	{
 	  infoAll ();
-	  maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING,
+	  maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
 		     DEVICE_ERROR_HW | TEL_PARKED,
 		     "park command finished with error");
 	}
@@ -518,11 +518,11 @@ Rts2DevTelescope::checkMoves ()
 	  infoAll ();
 	  ret = endPark ();
 	  if (ret)
-	    maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING,
+	    maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
 		       DEVICE_ERROR_HW | TEL_PARKED,
 		       "park command finished with error");
 	  else
-	    maskState (TEL_MASK_MOVING, TEL_PARKED,
+	    maskState (TEL_MASK_MOVING | BOP_EXPOSURE, TEL_PARKED,
 		       "park command finished without error");
 	  if (move_connection)
 	    {
@@ -849,22 +849,25 @@ Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
       if (isnan (pos.ra))
 	{
 	  if (onlyCorrect)
-	    maskState (TEL_MASK_COP_MOVING | TEL_MASK_CORRECTING,
-		       TEL_MOVING | TEL_CORRECTING | TEL_WAIT_COP,
-		       "move started");
+	    maskState (TEL_MASK_COP_MOVING | TEL_MASK_CORRECTING |
+		       BOP_EXPOSURE,
+		       TEL_MOVING | TEL_CORRECTING | TEL_WAIT_COP |
+		       BOP_EXPOSURE, "move started");
 	  else
-	    maskState (TEL_MASK_COP_MOVING, TEL_MOVING | TEL_WAIT_COP,
+	    maskState (TEL_MASK_COP_MOVING | BOP_EXPOSURE,
+		       TEL_MOVING | TEL_WAIT_COP | BOP_EXPOSURE,
 		       "move started");
 	}
       else
 	{
 	  if (onlyCorrect)
 	    maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP |
-		       TEL_MASK_CORRECTING, TEL_MOVING | TEL_CORRECTING,
+		       TEL_MASK_CORRECTING | BOP_EXPOSURE,
+		       TEL_MOVING | TEL_CORRECTING | BOP_EXPOSURE,
 		       "move started");
 	  else
-	    maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		       "move started");
+	    maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
+		       TEL_MOVING | BOP_EXPOSURE, "move started");
 	}
       move_connection = conn;
     }
@@ -915,11 +918,12 @@ Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
       move_fixed = 1;
       moveMark->inc ();
       if (onlyCorrect)
-	maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP,
-		   TEL_MOVING | TEL_CORRECTING, "move started");
-      else
-	maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+	maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP
+		   | BOP_EXPOSURE, TEL_MOVING | TEL_CORRECTING | BOP_EXPOSURE,
 		   "move started");
+      else
+	maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
+		   TEL_MOVING | BOP_EXPOSURE, "move started");
       dontKnowPosition ();
       move_connection = conn;
     }
