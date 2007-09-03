@@ -20,7 +20,7 @@ if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
 
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
-rts2_telmodeltest_LDADD = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@ ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD}
+rts2_telmodeltest_LDADD = ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@
 endif
 
 if OPENTPL
