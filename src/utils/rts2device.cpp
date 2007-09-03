@@ -271,6 +271,8 @@ Rts2Conn (-1, in_master)
   device_type = in_device_type;
   strncpy (master_host, in_master_host, HOST_NAME_MAX);
   master_port = in_master_port;
+
+  setOtherType (DEVICE_TYPE_SERVERD);
 }
 
 Rts2DevConnMaster::~Rts2DevConnMaster (void)
