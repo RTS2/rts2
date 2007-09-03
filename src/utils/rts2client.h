@@ -30,16 +30,18 @@ public:
 
 class Rts2ConnCentraldClient:public Rts2Conn
 {
-  char *master_host;
-  char *master_port;
+private:
+  const char *master_host;
+  const char *master_port;
 
-  char *login;
-  char *password;
+  const char *login;
+  const char *password;
 
 public:
-    Rts2ConnCentraldClient (Rts2Block * in_master, char *in_login,
-			    char *in_password, char *in_master_host,
-			    char *in_master_port);
+    Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login,
+			    const char *in_password,
+			    const char *in_master_host,
+			    const char *in_master_port);
   virtual int init ();
 
   virtual int command ();
@@ -55,13 +57,15 @@ public:
 
 class Rts2CommandLogin:public Rts2Command
 {
-  char *login;
-  char *password;
+private:
+  const char *login;
+  const char *password;
 private:
   enum
   { LOGIN_SEND, PASSWORD_SEND, INFO_SEND } state;
 public:
-    Rts2CommandLogin (Rts2Block * master, char *in_login, char *in_password);
+    Rts2CommandLogin (Rts2Block * master, const char *in_login,
+		      const char *in_password);
   virtual int commandReturnOK ();
 };
 
@@ -90,9 +94,28 @@ protected:
 
   virtual int processOption (int in_opt);
   virtual int init ();
+
+  virtual Rts2ConnCentraldClient *createCentralConn ();
+
+  const char *getCentralLogin ()
+  {
+    return login;
+  }
+  const char *getCentralPassword ()
+  {
+    return password;
+  }
+  const char *getCentralHost ()
+  {
+    return central_host;
+  }
+  const char *getCentralPort ()
+  {
+    return central_port;
+  }
 public:
-    Rts2Client (int in_argc, char **in_argv);
-    virtual ~ Rts2Client (void);
+  Rts2Client (int in_argc, char **in_argv);
+  virtual ~ Rts2Client (void);
 
   virtual int run ();
 

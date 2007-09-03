@@ -193,6 +193,14 @@ Rts2Client::processOption (int in_opt)
   return 0;
 }
 
+Rts2ConnCentraldClient *
+Rts2Client::createCentralConn ()
+{
+  return new Rts2ConnCentraldClient (this, getCentralLogin (),
+				     getCentralPassword (), getCentralHost (),
+				     getCentralPort ());
+}
+
 int
 Rts2Client::init ()
 {
@@ -205,9 +213,8 @@ Rts2Client::init ()
       return ret;
     }
 
-  central_conn =
-    new Rts2ConnCentraldClient (this, login, password, central_host,
-				central_port);
+  central_conn = createCentralConn ();
+
   ret = 1;
   while (!getEndLoop ())
     {
@@ -249,7 +256,7 @@ std::string Rts2Client::getMasterStateString ()
  * Used for putting devices names query etc..
  */
 
-Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, char *in_login, char *in_password, char *in_master_host, char *in_master_port):
+Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):
 Rts2Conn (in_master)
 {
   master_host = in_master_host;
@@ -342,7 +349,7 @@ Rts2ConnCentraldClient::status ()
   return master->setMasterState (new_state);
 }
 
-Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, char *in_login, char *in_password):Rts2Command
+Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login, const char *in_password):Rts2Command
   (in_master)
 {
   char *
