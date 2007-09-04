@@ -5,10 +5,10 @@ class CameraDummyChip:public CameraChip
 private:
   char *data;
   bool supportFrameT;
-  int readoutSleep;
+  Rts2ValueDouble *readoutSleep;
 public:
     CameraDummyChip (Rts2DevCamera * in_cam, bool in_supportFrameT,
-		     int in_readoutSleep, int in_width,
+		     Rts2ValueDouble * in_readoutSleep, int in_width,
 		     int in_height):CameraChip (in_cam, 0)
   {
     supportFrameT = in_supportFrameT;
@@ -50,8 +50,8 @@ CameraDummyChip::readoutOneLine ()
 	return ret;
       data = new char[lineSize];
     }
-  if (readoutLine == 0 && readoutSleep > 0)
-    usleep (readoutSleep);
+  if (readoutLine == 0 && readoutSleep->getValueDouble () > 0)
+    usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
   for (int i = 0; i < lineSize; i++)
     {
       data[i] = i + readoutLine;
@@ -82,7 +82,7 @@ private:
     static int dataTypes[] =
       { RTS2_DATA_USHORT, RTS2_DATA_LONG, RTS2_DATA_LONGLONG,
       RTS2_DATA_FLOAT, RTS2_DATA_DOUBLE, RTS2_DATA_BYTE, RTS2_DATA_SBYTE,
-	RTS2_DATA_ULONG
+      RTS2_DATA_ULONG
     };
     chips[0]->setUsedDataType (dataTypes[new_data_type->getValueInteger ()]);
     return 0;
@@ -184,8 +184,7 @@ Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
   virtual int initChips ()
   {
     chips[0] =
-      new CameraDummyChip (this, supportFrameT,
-			   readoutSleep->getValueInteger (), width, height);
+      new CameraDummyChip (this, supportFrameT, readoutSleep, width, height);
     chipNum = 1;
     return Rts2DevCamera::initChips ();
   }
