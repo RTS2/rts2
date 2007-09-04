@@ -14,6 +14,8 @@
  * Abstract class for centrald and all devices.
  *
  * This class contains functions which are common to components with one listening socket.
+ *
+ * @ingroup RTS2Block
  */
 class Rts2Daemon:public Rts2Block
 {
@@ -45,7 +47,7 @@ private:
   /**
    * Adds value to list of values supported by daemon.
    *
-   * \param value Rts2Value which will be added.
+   * @param value Rts2Value which will be added.
    */
   void addValue (Rts2Value * value, int queCondition = 0, bool save_value =
 		 false);
@@ -55,7 +57,7 @@ private:
   /**
    * Perform value changes. Check if value can be changed before performing change.
    * 
-   * \return 0 when value change can be performed, -2 on error, -1 when value change is qued.
+   * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
    */
   int setValue (Rts2CondValue * old_value_cond, char op,
 		Rts2Value * new_value);
@@ -98,12 +100,13 @@ protected:
 
   /**
    * Create new value, and return pointer to it.
+   * It also saves value pointer to the internal values list.
    *
-   * \param value          Rts2Value which will be created
-   * \param in_val_name    value name
-   * \param in_description value description
-   * \param writeToFits    when true, value will be writen to FITS
-   * \param displayType    value display type, one of the RTS2_DT_xxx constant
+   * @param value          Rts2Value which will be created.
+   * @param in_val_name    Value name.
+   * @param in_description Value description.
+   * @param writeToFits    When true, value will be writen to FITS.
+   * @param displayType    Value display type, one of the RTS2_DT_xxx constant.
    */
   template < typename T > void createValue (T * &val, char *in_val_name,
 					    std::string in_description,
@@ -118,10 +121,10 @@ protected:
   /**
    * Create new constant value, and return pointer to it.
    *
-   * \param value          Rts2Value which will be created
-   * \param in_val_name    value name
-   * \param in_description value description
-   * \param writeToFits    when true, value will be writen to FITS
+   * @param value          Rts2Value which will be created
+   * @param in_val_name    value name
+   * @param in_description value description
+   * @param writeToFits    when true, value will be writen to FITS
    */
   template < typename T > void createConstValue (T * &val, char *in_val_name,
 						 std::string in_description,
@@ -142,25 +145,50 @@ protected:
   /**
    * BOP management routines.
    * Those routines are used to manage BOP (Block OPeration) mask. It is used
-   * to decide, which actions can be performed without disturbing observation.
+   * to decide, which actions can be performed without disturbing observation flow.
+   *
+   * @param in_value Value which will be added to blocking values.
+   *
+   * @note This function and @see Rts2Daemon::removeBopValue are called
+   * dynamically during execution of value changes when it is discovered, that
+   * value cannot be changed due to different state of device then is required.
    */
   void addBopValue (Rts2Value * in_value);
+
+  /**
+   * Remove value from BOP list.
+   *
+   * @see Rts2Daemon::addBopValue
+   *
+   * @param in_value Value which will be removed.
+   *
+   * @pre Value was sucessfully updated.
+   */
   void removeBopValue (Rts2Value * in_value);
 
+  /**
+   * Check if some of the BOP values can be removed from the list.
+   */
   void checkBopStatus ();
 
   /** 
    * Set value. That one should be owerwrited in descendants.
    * 
-   * \param  old_value	old value (pointer), can be directly
-   * 			compared by pointer stored in object
-   * \param  new_value	new value
-   * \return 0 when we can set value, -2 on error.
+   * @param  old_value	Old value (pointer), can be directly
+   * 	accesed th with pointer stored in object.
+   * @param  new_value	New value.
+   *
+   * @return 0 when value can be set, -1 when value set was qued and -2 on an error.
    */
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
   /**
    * Really perform value change.
+   *
+   * @param old_cond_value
+   * @param op Operation string. Permited values depends on value type
+   *   (numerical or string), but "=", "+=" and "-=" are ussualy supported.
+   * @param new_value 
    */
   int doSetValue (Rts2CondValue * old_cond_value, char op,
 		  Rts2Value * new_value);
@@ -182,6 +210,11 @@ public:
   virtual ~ Rts2Daemon (void);
   virtual int run ();
 
+  /**
+   * Init daemon.
+   * This is call to init daemon. It calls @see Rts2Daemon::init and @see Rts2Daemon::initValues
+   * functions to complete daemon initialization.
+   */
   void initDaemon ();
 
   void setIdleInfoInterval (time_t interval)
