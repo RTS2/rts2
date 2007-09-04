@@ -112,18 +112,22 @@ int
 Rts2DevSensorA3200::moveAxis (AXISINDEX ax, LONG tar)
 {
   AERERR_CODE eRc;
+  blockExposure ();
   eRc = AerMoveAbsolute (hAerCtrl, ax, tar, 1000000);
   if (eRc != AERERR_NOERR)
     {
       logErr ("moveAxis MoveAbsolute", eRc);
+      clearExposure ();
       return -1;
     }
   eRc = AerMoveWaitDone (hAerCtrl, ax, 10000, 0);
   if (eRc != AERERR_NOERR)
     {
-      logErr ("home MoveMWait for Home", eRc);
+      logErr ("MoveMWait for Home", eRc);
+      clearExposure ();
       return -1;
     }
+  clearExposure ();
   return 0;
 }
 
