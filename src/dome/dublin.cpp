@@ -6,7 +6,6 @@
  * @author john
  */
 #include <sys/io.h>
-#include <asm/io.h>
 
 #include "dome.h"
 #include "rts2connbufweather.h"
@@ -247,14 +246,12 @@ Rts2DevDomeDublin::info ()
   return Rts2DevDome::info ();
 }
 
-bool Rts2DevDomeDublin::isMoving ()
+bool
+Rts2DevDomeDublin::isMoving ()
 {
-  int
-    result;
-  int
-    moving = 0;
-  int
-    count;
+  int result;
+  int moving = 0;
+  int count;
   for (count = 0; count < 100; count++)
     {
       result = (inb (BASE + 2));
