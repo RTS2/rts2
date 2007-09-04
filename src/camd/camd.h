@@ -227,12 +227,43 @@ private:
   Rts2ValueInteger *camShutterVal;
 
   int getStateChip (int chip_num);
-  void maskStateChip (int chip_num, int state_mask, int new_state,
-		      char *description);
 
+  /**
+   * Change state of camera chip.
+   *
+   * This function changes state of chip. chip_state_mask and chip_new_state are
+   * shifted according to chip_num value, so they should contain common state
+   * mask and values, as defined in status.h. state_mask and new_state are not shifted.
+   *
+   * @param chip_num  Number of the chip, for most calls 0.\
+   * @param chip_state_mask  Chip state mask.
+   * @param chip_new_state New chip state.
+   * @param state_mask State mask for whole device. This argument should contain various BOP_XXX values.
+   * @param new_state New state for whole device.
+   * @param description Text describing operation which is performed.
+   */
+  void maskStateChip (int chip_num, int chip_state_mask, int chip_new_state,
+		      int state_mask, int new_state, char *description);
+
+  /**
+   * Retrieves chip number from connection, and check if it is valid.
+   *
+   * @param conn Connection from which next parameter will be retrieved. Function @see Rts2Conn::paramNextInteger is used.
+   * @param in_chip Memory location where chip number will be stored.
+   *
+   * @return 0 if chip number retrieved is valid, -1 when it is not valid.
+   */
   int paramNextChip (Rts2Conn * conn, int *in_chip);
 
 protected:
+  /**
+   * Handles options passed on the command line. For a list of options, please
+   * see output of component with -h parameter passed on command line.
+   *
+   * @param in_opt  Option.
+   *
+   * @return 0 when option was processed sucessfully, otherwise -1.
+   */
     virtual int processOption (int in_opt);
 
   int willConnect (Rts2Address * in_addr);
@@ -413,11 +444,23 @@ public:
     return Rts2Device::grantPriority (conn);
   }
 
+  /**
+   * Returns last filter number.
+   * This function is used to return last filter number, which will be saved to
+   * FITS file of the image. Problem is, that filter number can change during exposure.
+   * So the filter number, on which camera was set at the begging, is saved, and added
+   * to header of image data.
+   *
+   * @return Last filter number.
+   */
   int getLastFilterNum ()
   {
     return lastFilterNum;
   }
 
+  /**
+   * Handles camera commands.
+   */
   virtual int commandAuthorized (Rts2Conn * conn);
 };
 

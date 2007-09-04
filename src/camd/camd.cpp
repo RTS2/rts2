@@ -551,7 +551,7 @@ Rts2DevCamera::cancelPriorityOperations ()
       chips[i]->cancelPriorityOperations ();
       maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING,
 		     CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING,
-		     "chip exposure interrupted");
+		     BOP_TEL_MOVE, 0, "chip exposure interrupted");
       chips[i]->setBinning (defBinning, defBinning);
     }
   nextExp->setValueInteger (NOT_EXP);
@@ -676,7 +676,7 @@ Rts2DevCamera::checkExposures ()
 	      if (ret == -2)
 		{
 		  maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-				 CAM_NOEXPOSURE | CAM_DATA,
+				 CAM_NOEXPOSURE | CAM_DATA, BOP_TEL_MOVE, 0,
 				 "exposure chip finished");
 		  chips[i]->endExposure ();
 		}
@@ -686,7 +686,7 @@ Rts2DevCamera::checkExposures ()
 				 DEVICE_ERROR_MASK | CAM_MASK_EXPOSE |
 				 CAM_MASK_DATA,
 				 DEVICE_ERROR_HW | CAM_NOEXPOSURE |
-				 CAM_NODATA,
+				 CAM_NODATA, BOP_TEL_MOVE, 0,
 				 "exposure chip finished with error");
 		  chips[i]->stopExposure ();
 		}
@@ -713,11 +713,11 @@ Rts2DevCamera::checkReadouts ()
 	  chips[i]->endReadout ();
 	  afterReadout ();
 	  if (ret == -2)
-	    maskStateChip (i, CAM_MASK_READING, CAM_NOTREADING,
-			   "chip readout ended");
+	    maskStateChip (i, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE,
+			   0, "chip readout ended");
 	  else
 	    maskStateChip (i, DEVICE_ERROR_MASK | CAM_MASK_READING,
-			   DEVICE_ERROR_HW | CAM_NOTREADING,
+			   DEVICE_ERROR_HW | CAM_NOTREADING, BOP_TEL_MOVE, 0,
 			   "chip readout ended with error");
 	}
     }
@@ -862,7 +862,8 @@ Rts2DevCamera::camStartExposure (int chip, int light, float exptime)
   lastExp->setValueFloat (exptime);
   infoAll ();
   maskStateChip (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		 CAM_EXPOSING | CAM_NODATA, "exposure chip started");
+		 CAM_EXPOSING | CAM_NODATA, BOP_TEL_MOVE, BOP_TEL_MOVE,
+		 "exposure chip started");
   chips[chip]->setExposure (exptime,
 			    light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
   lastFilterNum = getFilterNum ();
@@ -914,7 +915,7 @@ Rts2DevCamera::camStopExpose (Rts2Conn * conn, int chip)
 {
   if (chips[chip]->isExposing () >= 0)
     {
-      maskStateChip (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE,
+      maskStateChip (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE, BOP_TEL_MOVE, 0,
 		     "exposure canceled");
       chips[chip]->endExposure ();
       return camStopExpose (chip);
@@ -950,14 +951,16 @@ Rts2DevCamera::camReadout (int chip)
 {
   int ret;
   maskStateChip (chip, CAM_MASK_READING | CAM_MASK_DATA,
-		 CAM_READING | CAM_NODATA, "chip readout started");
+		 CAM_READING | CAM_NODATA, BOP_TEL_MOVE, 0,
+		 "chip readout started");
   ret = chips[chip]->startReadout (NULL, NULL);
   if (!ret)
     {
       return 0;
     }
   maskStateChip (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
-		 DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
+		 DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0,
+		 "chip readout failed");
   return -1;
 }
 
@@ -986,14 +989,16 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
   data_conn->setAddress (&our_addr.sin_addr);
 
   maskStateChip (chip, CAM_MASK_READING | CAM_MASK_DATA,
-		 CAM_READING | CAM_NODATA, "chip readout started");
+		 CAM_READING | CAM_NODATA, BOP_TEL_MOVE, 0,
+		 "chip readout started");
   ret = chips[chip]->startReadout (data_conn, conn);
   if (!ret)
     {
       return 0;
     }
   maskStateChip (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
-		 DEVICE_ERROR_HW | CAM_NOTREADING, "chip readout failed");
+		 DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0,
+		 "chip readout failed");
   conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
   return -1;
 }
@@ -1121,11 +1126,12 @@ Rts2DevCamera::getStateChip (int chip_num)
 }
 
 void
-Rts2DevCamera::maskStateChip (int chip_num, int state_mask, int new_state,
-			      char *description)
+Rts2DevCamera::maskStateChip (int chip_num, int chip_state_mask,
+			      int chip_new_state, int state_mask,
+			      int new_state, char *description)
 {
-  maskState (state_mask << (4 * chip_num), new_state << (4 * chip_num),
-	     description);
+  maskState (state_mask | (chip_state_mask << (4 * chip_num)),
+	     new_state | (chip_new_state << (4 * chip_num)), description);
 }
 
 int
