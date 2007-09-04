@@ -16,7 +16,7 @@ rts2_flatprocess_LDFLAGS = ../utils/librts2block.a @LIB_CFITSIO@ @LIB_NOVA@ @LIB
 
 rts2_deleteimage_SOURCES = deleteimage.cpp
 rts2_deleteimage_CXXFLAGS = @LIBPG_CFLAGS@
-rts2_deleteimage_LDFLAGS = @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a 
+rts2_deleteimage_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@
 
 %.c: %.ec
 	@ECPG@ -o $@ $^

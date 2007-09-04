@@ -23,7 +23,7 @@ librts2imagedb_a_SOURCES = rts2image.cpp imageastrometry.cpp ham.cpp rts2devclii
 librts2imagedb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 rts2_image_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
-rts2_image_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ../utilsdb/librts2blockdb.a librts2imagedb.a ../utils/librts2block.a
+rts2_image_LDFLAGS = ../utilsdb/librts2blockdb.a librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
@@ -31,6 +31,6 @@ rts2_image_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ ..
 else
 
 rts2_image_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
-rts2_image_LDFLAGS = @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ librts2image.a ../utils/librts2block.a ../utils/mkpath.o
+rts2_image_LDFLAGS = librts2image.a ../utils/librts2block.a ../utils/mkpath.o @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 
 endif
