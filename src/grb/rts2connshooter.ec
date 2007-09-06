@@ -309,7 +309,7 @@ Rts2ConnShooter::init ()
 }
 
 
-int
+void
 Rts2ConnShooter::connectionError (int last_data_size)
 {
   logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError" << sendLog;
@@ -323,7 +323,6 @@ Rts2ConnShooter::connectionError (int last_data_size)
     sock = -1;
     setConnState (CONN_BROKEN);
   }
-  return -1;
 }
 
 

@@ -40,9 +40,10 @@ protected:
   void cancelIgnore ();
   void badSetWeatherTimeout (time_t wait_time);
 
-  virtual int connectionError (int last_data_size)
+  virtual void connectionError (int last_data_size)
   {
-    return 0;
+    // do NOT call Rts2Conn::connectionError. Weather connection must be kept even when error occurs.
+    return;
   }
 public:
     Rts2ConnFramWeather (int in_weather_port, int in_weather_timeout,

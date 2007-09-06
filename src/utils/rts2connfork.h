@@ -11,7 +11,7 @@ private:
 
 protected:
   char *exePath;
-  virtual int connectionError (int last_data_size);
+  virtual void connectionError (int last_data_size);
   virtual void beforeFork ();
   /**
    * Called when initialization of the connection fails at some point.

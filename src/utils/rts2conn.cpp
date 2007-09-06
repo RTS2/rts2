@@ -663,7 +663,10 @@ Rts2Conn::receive (fd_set * set)
       if (data_size == -1 && errno == EINTR)
 	return 0;
       if (data_size <= 0)
-	return connectionError (data_size);
+	{
+	  connectionError (data_size);
+	  return -1;
+	}
       buf_top[data_size] = '\0';
       successfullRead ();
 #ifdef DEBUG_ALL
@@ -1085,10 +1088,10 @@ Rts2Conn::getSuccessSend (time_t * in_t)
   *in_t = lastGoodSend;
 }
 
-int
-Rts2Conn::reachedSendTimeout ()
+bool Rts2Conn::reachedSendTimeout ()
 {
-  time_t now;
+  time_t
+    now;
   time (&now);
   return now > lastGoodSend + getConnTimeout ();
 }
@@ -1099,7 +1102,7 @@ Rts2Conn::successfullRead ()
   time (&lastData);
 }
 
-int
+void
 Rts2Conn::connectionError (int last_data_size)
 {
   setConnState (CONN_DELETE);
@@ -1108,7 +1111,6 @@ Rts2Conn::connectionError (int last_data_size)
   sock = -1;
   if (strlen (getName ()))
     master->deleteAddress (getName ());
-  return -1;
 }
 
 int

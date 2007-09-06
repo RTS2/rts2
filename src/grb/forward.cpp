@@ -55,7 +55,7 @@ public:
 
   virtual int add (fd_set * set);
 
-  virtual int connectionError (int last_data_size);
+  virtual void connectionError (int last_data_size);
   virtual int receive (fd_set * set);
 
   int lastPacket ();
@@ -278,7 +278,7 @@ Rts2ConnFwGrb::add (fd_set * set)
   return Rts2Conn::add (set);
 }
 
-int
+void
 Rts2ConnFwGrb::connectionError (int last_data_size)
 {
   logStream (MESSAGE_DEBUG) << "Rts2ConnFwGrb::connectionError" << sendLog;
@@ -293,7 +293,6 @@ Rts2ConnFwGrb::connectionError (int last_data_size)
       sock = -1;
       setConnState (CONN_BROKEN);
     }
-  return -1;
 }
 
 int

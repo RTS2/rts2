@@ -39,7 +39,7 @@ public:
   virtual int idle ();
   virtual int init ();
 
-  virtual int connectionError (int last_data_size);
+  virtual void connectionError (int last_data_size);
   virtual int receive (fd_set * set);
 
   int lastPacket ();

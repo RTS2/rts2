@@ -1157,7 +1157,7 @@ Rts2ConnGrb::add (fd_set * set)
 }
 
 
-int
+void
 Rts2ConnGrb::connectionError (int last_data_size)
 {
   logStream (MESSAGE_DEBUG) << "Rts2ConnGrb::connectionError" << sendLog;
@@ -1173,7 +1173,6 @@ Rts2ConnGrb::connectionError (int last_data_size)
     setConnState (CONN_BROKEN);
   }
   gcnReceivedBytes = 0;
-  return -1;
 }
 
 

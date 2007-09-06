@@ -1,6 +1,10 @@
 #ifndef __RTS2_CONN__
 #define __RTS2_CONN__
 
+/**
+ * @file Contains Rts2Conn class.
+ */
+
 #include <string>
 #include <string.h>
 #include <time.h>
@@ -59,10 +63,9 @@ class Rts2Event;
 class Rts2Value;
 
 /**
- * Holds one connection. It keeps connection running, check it states, and handles 
- * various TCP/IP issues.
- * Connection is primary network connection, but there are descendand classes
- * which holds forked instance output.
+ * Represents one connection. It keeps connection running, check it states, and
+ * handles various TCP/IP issues.  Connection is primary network connection,
+ * but there are descendand classes which holds forked instance output.
  *
  * Rts2Conn is used primarly in @see Rts2Block, which holds list of connections
  * and provide function to manage them.
@@ -130,7 +133,18 @@ protected:
    */
   void getSuccessSend (time_t * in_t);
 
-  int reachedSendTimeout ();
+  /**
+   * Called when there was not activity on connection. It sends to the other side IAM_ALIVE command,
+   * and wait for reply. 
+   *
+   * @return True when IAM_ALIVE should be send, otherwise false.
+   */
+  bool reachedSendTimeout ();
+
+  /**
+   * Called when some data are readed from socket. It updates connection timeout, so connection keeping
+   * packets will be send only when needed.
+   */
   void successfullRead ();
 
   /**
@@ -138,8 +152,9 @@ protected:
    *
    * @param last_data_size  < 0 when real error occurs, =0 when no more data on connection, >0 when there 
    * 	were sucessfully received data, but they were either not allowed or signaled end of connection
+   *
    */
-  virtual int connectionError (int last_data_size);
+  virtual void connectionError (int last_data_size);
 
 public:
     Rts2Conn (Rts2Block * in_master);

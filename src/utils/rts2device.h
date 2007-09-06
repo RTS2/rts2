@@ -72,7 +72,7 @@ protected:
   virtual int priorityChange ();
   virtual int informations ();
   virtual int status ();
-  virtual int connectionError (int last_data_size);
+  virtual void connectionError (int last_data_size);
 public:
     Rts2DevConnMaster (Rts2Block * in_master,
 		       char *in_device_host, int in_device_port,

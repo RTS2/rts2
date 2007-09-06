@@ -34,7 +34,7 @@ Rts2ConnFork::~Rts2ConnFork (void)
   delete[]exePath;
 }
 
-int
+void
 Rts2ConnFork::connectionError (int last_data_size)
 {
   if (last_data_size < 0 && errno == EAGAIN)
@@ -42,9 +42,9 @@ Rts2ConnFork::connectionError (int last_data_size)
       logStream (MESSAGE_DEBUG) <<
 	"Rts2ConnFork::connectionError reported EAGAIN - that should not happen, ignoring"
 	<< sendLog;
-      return 1;
+      return;
     }
-  return Rts2Conn::connectionError (last_data_size);
+  Rts2Conn::connectionError (last_data_size);
 }
 
 void

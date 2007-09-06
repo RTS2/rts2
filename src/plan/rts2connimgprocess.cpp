@@ -84,7 +84,7 @@ Rts2ConnImgProcess::processLine ()
   return -1;
 }
 
-int
+void
 Rts2ConnImgProcess::connectionError (int last_data_size)
 {
   int ret;
@@ -97,7 +97,7 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
       logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::connectionError " <<
 	strerror (errno) << " #" << errno << " last_data_size " <<
 	last_data_size << sendLog;
-      return 1;
+      return;
     }
 
   image = new Rts2ImageSkyDb (imgPath);
@@ -145,7 +145,7 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
   else
     master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
   delete image;
-  return Rts2ConnFork::connectionError (last_data_size);
+  Rts2ConnFork::connectionError (last_data_size);
 }
 
 void

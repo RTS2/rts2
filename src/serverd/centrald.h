@@ -29,6 +29,26 @@ class Rts2ConnCentrald;
 // defined in rts2commandstatusinfo.h
 class Rts2CommandStatusInfo;
 
+/**
+ * Class for central server.
+ *
+ * Central server supports following functions:
+ *
+ * - holds list of active system components
+ * - authorizes new connections to the system
+ * - activates pool of system BOP mask via "status_info" (Rts2CommandStatusInfo) command
+ * - holds and manage connection priorities
+ *
+ * Centrald is written to be as simple as possible. Commands are ussually
+ * passed directly to devices on separate connections, they do not go through
+ * centrald.
+ *
+ * @see Rts2Device
+ * @see Rts2DevConnMaster
+ * @see Rts2Client
+ * @see Rts2ConnCentraldClient
+ */
+
 class Rts2Centrald:public Rts2Daemon
 {
 private:
@@ -123,6 +143,11 @@ public:
   virtual int statusInfo (Rts2Conn * conn);
 };
 
+/**
+ * Represents connection from device or client to centrald.
+ *
+ * It is used in Rts2Centrald.
+ */
 class Rts2ConnCentrald:public Rts2Conn
 {
 private:

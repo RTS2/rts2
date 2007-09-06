@@ -298,7 +298,7 @@ Rts2DevConnMaster::registerDevice ()
   return ret;
 }
 
-int
+void
 Rts2DevConnMaster::connectionError (int last_data_size)
 {
   if (sock > 0)
@@ -313,7 +313,6 @@ Rts2DevConnMaster::connectionError (int last_data_size)
       time (&nextTime);
       nextTime += 60;
     }
-  return -1;
 }
 
 int
